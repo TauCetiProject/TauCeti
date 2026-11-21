@@ -129,51 +129,60 @@ theorem single_reflection_mem
 
 variable {R}
 
+/-- The weight-parabolic defining Hopf ideal of the indicator weight `w` of a raising-closed set `s`
+of indices lies in the defining ideal of the generated coordinate Hopf algebra. -/
+private theorem weightParabolicDefiningHopfIdeal_le_definingIdeal (s : Set (Fin 24))
+    (hs : ∀ i a, a ∈ s → d4TripledWeight a i = -1 → d4TripledReflection i a ∈ s)
+    (w : Fin 24 → ℤ) (hw : ∀ a, w a = 1 ∧ a ∈ s ∨ w a = 0 ∧ a ∉ s) :
+    GeneralLinear.weightParabolicDefiningHopfIdeal R w ≤
+      (definingIdeal R).comapOfSurjective (generatedCoordinateMap R).hom
+        (generatedCoordinateMap_surjective R) := by
+  classical
+  rw [CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal,
+    CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
+  rintro (i | ⟨⟩)
+  · rw [generator_inl, generatedCoordinateMap_comp_generatedCoordinateLift]
+    apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
+    intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    have ha : a ∉ s := by
+      intro ha
+      by_cases hb : b ∈ s <;> grind
+    have hb : b ∈ s := by
+      by_contra hb
+      grind
+    let A := CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)
+    let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
+      toConv (AlgHom.id R _)
+    have hm := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 24) A ↦
+      (g : Matrix (Fin 24) (Fin 24) A) a b)
+      (pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints
+        R (.inl i) A q)
+    rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear] at hm
+    simp only [BialgHom.mapDomain_apply, ofConv_toConv, Matrix.map_apply,
+      GeneralLinear.genericMatrix_apply, q, AlgHom.id_comp] at hm
+    rw [← BialgHom.comp_toAlgHom, ← _root_.CommHopfAlgCat.hom_comp,
+      generatedCoordinateMap_comp_generatedCoordinateLift] at hm
+    rw [hm, coe_rootSubgroupPoints_inl, raisingMatrix_def]
+    have hab' : a ≠ b := fun h ↦ ha (h ▸ hb)
+    have hedge : ¬(d4TripledWeight b i = -1 ∧ a = d4TripledReflection i b) := by
+      rintro ⟨hbi, rfl⟩
+      exact ha (hs i b hb hbi)
+    simp [Matrix.add_apply, hab', Matrix.smul_apply, Matrix.map_apply,
+      weightTable_weight, weightTable_reflection, hedge]
+  · rw [generator_inr, generatedCoordinateMap_comp_generatedCoordinateLift,
+      generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+    exact
+      GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker_weightTorusCoordinateBialgHom
+        w d4TripledWeight
+
 private theorem stable_of_raising_closed (s : Set (Fin 24))
     (hs : ∀ i a, a ∈ s → d4TripledWeight a i = -1 → d4TripledReflection i a ∈ s) :
     (Pi.basisFun R (Fin 24)).coordinateSpanIsStable (C := coordinateHopfAlgebra R) s := by
   classical
   let w : Fin 24 → ℤ := fun a ↦ if a ∈ s then 1 else 0
-  have hI : GeneralLinear.weightParabolicDefiningHopfIdeal R w ≤
-      (definingIdeal R).comapOfSurjective (generatedCoordinateMap R).hom
-        (generatedCoordinateMap_surjective R) := by
-    rw [CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal,
-      CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
-    rintro (i | ⟨⟩)
-    · rw [generator_inl, generatedCoordinateMap_comp_generatedCoordinateLift]
-      apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
-      intro a b hab
-      simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-      have ha : a ∉ s := by
-        intro ha
-        by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab
-      have hb : b ∈ s := by
-        by_contra hb
-        simp [w, ha, hb] at hab
-      let A := CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)
-      let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
-        toConv (AlgHom.id R _)
-      have hm := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 24) A ↦
-        (g : Matrix (Fin 24) (Fin 24) A) a b)
-        (pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints
-          R (.inl i) A q)
-      rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear] at hm
-      simp only [BialgHom.mapDomain_apply, ofConv_toConv, Matrix.map_apply,
-        GeneralLinear.genericMatrix_apply, q, AlgHom.id_comp] at hm
-      rw [← BialgHom.comp_toAlgHom, ← _root_.CommHopfAlgCat.hom_comp,
-        generatedCoordinateMap_comp_generatedCoordinateLift] at hm
-      rw [hm, coe_rootSubgroupPoints_inl, raisingMatrix_def]
-      have hab' : a ≠ b := fun h ↦ ha (h ▸ hb)
-      have hedge : ¬(d4TripledWeight b i = -1 ∧ a = d4TripledReflection i b) := by
-        rintro ⟨hbi, rfl⟩
-        exact ha (hs i b hb hbi)
-      simp [Matrix.add_apply, hab', Matrix.smul_apply, Matrix.map_apply,
-        weightTable_weight, weightTable_reflection, hedge]
-    · rw [generator_inr, generatedCoordinateMap_comp_generatedCoordinateLift,
-        generatorCoordinateMap_inr, GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-      exact
-        GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker_weightTorusCoordinateBialgHom
-          w d4TripledWeight
+  have hI := weightParabolicDefiningHopfIdeal_le_definingIdeal (R := R) s hs w
+    fun a ↦ by by_cases ha : a ∈ s <;> simp [w, ha]
   rw [Module.Basis.coordinateSpanIsStable_iff]
   intro a ha b hb
   rw [coefficientMatrix_basisFun, Matrix.map_apply, GeneralLinear.genericMatrix_apply,

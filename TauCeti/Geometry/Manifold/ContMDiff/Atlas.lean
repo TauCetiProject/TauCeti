@@ -38,14 +38,20 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `TauCeti.contMDiffAt_prodMap_id_of_mem_maximalAtlas`,
   `TauCeti.contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas`: a chart times the identity, and its
   inverse, are smooth.
+* `ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas`: a `C^n` map into a normed space, read
+  through the inverse of a chart of the maximal atlas, is `C^n`.
 * `TauCeti.conj_chartAt_source` and `TauCeti.comp_conj_chartAt`: the domain of that chart is
   where the extended chart lands in the domain of `c`, and in the model vector space it reads as
   `c ∘ extChartAt I x`.
 
 * `OpenPartialHomeomorph.toDiffeomorphSourceTarget`: a maximal-atlas chart as a native C^n
   diffeomorphism between its intrinsic open source and target, including models with corners.
-* `OpenPartialHomeomorph.contMDiffOn_extendTrans` and
-  `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
+* `TauCeti.extChartAtDiffeomorph`: on a boundaryless model, the extended chart at a point as a
+  native `C^n` diffeomorphism from `TauCeti.chartSourceOpens` onto `TauCeti.extChartTargetOpens`,
+  the open target of the chart in the model vector space.
+* `OpenPartialHomeomorph.contMDiffOn_extendTrans`, `OpenPartialHomeomorph.contMDiffAt_extendTrans`
+  and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
+  `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
 -/
 
@@ -132,6 +138,21 @@ theorem contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas
 
 end ProdMap
 
+section CompSymm
+
+variable {F M' : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace M']
+  [ChartedSpace E M'] {φ : OpenPartialHomeomorph M' E}
+
+/-- A map `f` that is `C^n` on a set `S`, read through the inverse of a chart `φ` of the maximal
+atlas, is `C^n` on the set of points of the target of `φ` that `φ.symm` sends into `S`. -/
+theorem _root_.ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas {f : M' → F} {S : Set M'}
+    (hf : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F) n f S) (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M') :
+    ContDiffOn 𝕜 n (f ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' S) :=
+  contMDiffOn_iff_contDiffOn.1 (hf.comp
+    ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono Set.inter_subset_left) Set.inter_subset_right)
+
+end CompSymm
+
 end TauCeti
 
 namespace OpenPartialHomeomorph
@@ -161,6 +182,22 @@ theorem contMDiffOn_extendTrans_symm (c : OpenPartialHomeomorph M H)
   exact ((contMDiffOn_symm_of_mem_maximalAtlas hc).comp h1 fun _ hv ↦ by
     simpa [extendTrans_target] using hv).congr fun _ _ ↦ by simp
 
+/-- A chart `c` of the maximal `C^n` atlas, read in `E` and moved to `F` by a `C^n` homeomorphism
+`Ψ`, is `C^n` at each point of the source of `c`. -/
+theorem contMDiffAt_extendTrans (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ) {x : M}
+    (hx : x ∈ c.source) : ContMDiffAt I 𝓘(𝕜, F) n (c.extendTrans I Ψ) x :=
+  (c.contMDiffOn_extendTrans hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_source.mem_nhds (by rwa [extendTrans_source]))
+
+/-- The inverse of `c.extendTrans I Ψ`, for `c` in the maximal `C^n` atlas and `Ψ.symm` of class
+`C^n`, is `C^n` at each point of its target. -/
+theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ.symm) {v : F}
+    (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
+  (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_target.mem_nhds hv)
+
 end OpenPartialHomeomorph
 
 namespace OpenPartialHomeomorph
@@ -180,12 +217,12 @@ def toDiffeomorphSourceTarget (c : OpenPartialHomeomorph M H)
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     intro x
     exact ((contMDiffOn_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
-      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
   contMDiff_invFun := by
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     intro x
     exact ((contMDiffOn_symm_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
-      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
 
 @[simp]
 theorem toDiffeomorphSourceTarget_apply_coe (c : OpenPartialHomeomorph M H)
@@ -204,3 +241,75 @@ theorem toDiffeomorphSourceTarget_symm_apply_coe (c : OpenPartialHomeomorph M H)
   rfl
 
 end OpenPartialHomeomorph
+
+namespace TauCeti
+
+open TopologicalSpace
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+variable (H) in
+/-- The domain of the preferred chart at `x`, as an open subset of the manifold. -/
+def chartSourceOpens (x : M) : Opens M :=
+  ⟨(chartAt H x).source, (chartAt H x).open_source⟩
+
+@[simp]
+theorem coe_chartSourceOpens (x : M) : (chartSourceOpens H x : Set M) = (chartAt H x).source :=
+  (rfl)
+
+@[simp]
+theorem mem_chartSourceOpens {x y : M} : y ∈ chartSourceOpens H x ↔ y ∈ (chartAt H x).source :=
+  Iff.rfl
+
+variable (I) in
+/-- On a boundaryless model, the target of the extended chart at `x`, as an open subset of the
+model vector space. -/
+def extChartTargetOpens [I.Boundaryless] (x : M) : Opens E :=
+  ⟨(extChartAt I x).target, isOpen_extChartAt_target x⟩
+
+@[simp]
+theorem coe_extChartTargetOpens [I.Boundaryless] (x : M) :
+    (extChartTargetOpens I x : Set E) = (extChartAt I x).target :=
+  (rfl)
+
+@[simp]
+theorem mem_extChartTargetOpens [I.Boundaryless] {x : M} {z : E} :
+    z ∈ extChartTargetOpens I x ↔ z ∈ (extChartAt I x).target :=
+  Iff.rfl
+
+variable (n) in
+/-- On a boundaryless model, the extended chart at `x` is a native `C^n` diffeomorphism from the
+domain of the chart onto its open target in the model vector space. -/
+def extChartAtDiffeomorph [I.Boundaryless] [IsManifold I n M] (x : M) :
+    chartSourceOpens H x ≃ₘ^n⟮I, 𝓘(𝕜, E)⟯ extChartTargetOpens I x where
+  toFun p := ⟨extChartAt I x p, (extChartAt I x).map_source (by
+    rw [extChartAt_source]
+    exact p.property)⟩
+  invFun z := ⟨(extChartAt I x).symm z, by
+    have h := (extChartAt I x).map_target z.property
+    rw [extChartAt_source] at h
+    exact h⟩
+  left_inv p := Subtype.ext <| (extChartAt I x).left_inv (by
+    rw [extChartAt_source]
+    exact p.property)
+  right_inv z := Subtype.ext <| (extChartAt I x).right_inv z.property
+  contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (extChartTargetOpens I x) _).mp
+    ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtypeVal fun p ↦ p.property)
+  contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff (chartSourceOpens H x) _).mp
+    ((contMDiffOn_extChartAt_symm x).comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property)
+
+@[simp]
+theorem coe_extChartAtDiffeomorph_apply [I.Boundaryless] [IsManifold I n M] (x : M)
+    (p : chartSourceOpens H x) :
+    (extChartAtDiffeomorph (I := I) n x p : E) = extChartAt I x p :=
+  (rfl)
+
+@[simp]
+theorem coe_extChartAtDiffeomorph_symm_apply [I.Boundaryless] [IsManifold I n M] (x : M)
+    (z : extChartTargetOpens I x) :
+    ((extChartAtDiffeomorph (I := I) n x).symm z : M) = (extChartAt I x).symm z :=
+  (rfl)
+
+end TauCeti

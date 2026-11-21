@@ -40,7 +40,7 @@ Under a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`, with `α = 1 - 2/q >
 
 `u⁻¹ ≤ D S^{1/α} R^{-1/α} ‖u⁻¹‖_{L²(B(x₀, R))}` on `B(x₀, R/2)`.
 
-The scale-invariant estimates from small negative powers are in
+The scale-invariant estimates from negative powers are in
 `TauCeti.Analysis.PDE.Regularity.Supersolution.Lp`.
 
 ## Main declarations
@@ -134,16 +134,15 @@ private theorem exists_nonneg_mem_w1p0Submodule_gradient_posPart_neg_smul_deriv
   have hdF : ContDiff ℝ 1 (deriv F) := (contDiff_succ_iff_deriv.1 hF).2.2
   set T₀ := -W1p.testFunctionSMulComp hp φ hdF hM' u
   have hvalT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.value T₀ x = -(φ x * deriv F (W1p.value u x)) := by
-    filter_upwards [Lp.coeFn_neg (W1p.value (W1p.testFunctionSMulComp hp φ hdF hM' u)),
+    filter_upwards [W1p.value_neg_ae (W1p.testFunctionSMulComp hp φ hdF hM' u),
       W1p.value_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
-    rw [← W1p.valueL_apply, map_neg, W1p.valueL_apply, h₁, Pi.neg_apply, h₂]
+    rw [h₁, Pi.neg_apply, h₂]
   have hgradT₀ : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient T₀ x =
       -(φ x * deriv (deriv F) (W1p.value u x)) • W1p.gradient u x -
         deriv F (W1p.value u x) • ∇ (φ : EuclideanSpace ℝ ι → ℝ) x := by
-    filter_upwards [Lp.coeFn_neg (W1p.gradient (W1p.testFunctionSMulComp hp φ hdF hM' u)),
+    filter_upwards [W1p.gradient_neg_ae (W1p.testFunctionSMulComp hp φ hdF hM' u),
       W1p.gradient_testFunctionSMulComp_ae hp φ hdF hM' u] with x h₁ h₂
-    rw [← W1p.gradientL_apply, map_neg, W1p.gradientL_apply, h₁, Pi.neg_apply, h₂,
-      neg_smul]
+    rw [h₁, Pi.neg_apply, h₂, neg_smul]
     abel
   refine ⟨W1p.posPart hp T₀, W1p.posPart_mem_w1p0Submodule hp
       ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem
@@ -241,7 +240,7 @@ theorem UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos
       continuous_const
   have hsub := w1p0Submodule_subset_of_isClosed hclosed fun φ =>
     energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos h ha hu hF hM hM' hF0 hum hF' hF'' φ
-  have := hsub v.2
+  have := hsub v.property
   rwa [mem_ofPred_eq, W1p.posPart_eq_self_of_ae_nonneg hp hv] at this
 
 /-! ### The lower bound for positive supersolutions -/
@@ -360,10 +359,10 @@ private theorem UniformlyEllipticOn.ae_invApprox_value_le_mul_setIntegral_rpow
   have hF0 : invApprox c 0 = 0 := by simp [invApprox]
   -- The bounds on `F'` and `F''` in the form required by `TauCeti.W1p.contDiffComp`.
   have hM : ∀ t, ‖deriv (invApprox c) t‖₊ ≤ ((c ^ 2)⁻¹).toNNReal := fun t => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
     exact abs_deriv_invApprox_le hc t
   have hM' : ∀ t, ‖deriv (deriv (invApprox c)) t‖₊ ≤ (3 / c ^ 3).toNNReal := fun t => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity)]
     exact abs_deriv_deriv_invApprox_le hc t
   have hval := W1p.value_contDiffComp_ae ENNReal.ofNat_ne_top (hF.of_le one_le_two) hM hF0 u
   have hw := hsub _ fun v hv => h.energyFormH1_contDiffComp_nonpos ha hu hF hM hM' hF0 hum

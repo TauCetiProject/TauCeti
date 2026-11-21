@@ -66,7 +66,7 @@ theorem exists_pow_eq_of_pow_lt_of_le_one
         (by
           rw [← hrz, map_mul, pow_succ] at hlt
           exact lt_of_mul_lt_mul_right' hlt)
-        r.2
+        r.property
       exact ⟨j + 1, by lia, by rw [pow_succ, hjr, ← map_mul, hrz]⟩
     · exact ⟨0, by lia, by rw [pow_zero, hz]⟩
 
@@ -75,7 +75,7 @@ values of `v` in `(v ϖ ^ n, 1]`. -/
 theorem natCard_range_inter_Ioc_pow (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (hϖ0 : (ϖ : F) ≠ 0) (n : ℕ) :
     Nat.card ↥(Set.range v ∩ Set.Ioc (v (ϖ : F) ^ n) 1) = n := by
-  have h0 : 0 < v (ϖ : F) := zero_lt_iff.2 ((map_ne_zero v).2 hϖ0)
+  have h0 : 0 < v (ϖ : F) := pos_iff_ne_zero.2 ((map_ne_zero v).2 hϖ0)
   have h1 := v.map_lt_one_of_maximalIdeal_eq_span hϖ
   have hS : Set.range v ∩ Set.Ioc (v (ϖ : F) ^ n) 1 =
       (v (ϖ : F) ^ ·) '' (Finset.range n : Set ℕ) := by

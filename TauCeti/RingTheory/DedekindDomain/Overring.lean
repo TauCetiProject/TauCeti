@@ -114,7 +114,7 @@ theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOne
     exact (inv_lt_one_of_one_lt₀ hb).le
   have hn : n ∈ v.asIdeal := by
     have hlt : v.valuation K (algebraMap A K n) < 1 := by
-      rw [← hnd, map_mul, v.valuation_eq_one_iff_notMem.mpr d.2, mul_one, map_inv₀]
+      rw [← hnd, map_mul, v.valuation_eq_one_iff_notMem.mpr d.property, mul_one, map_inv₀]
       exact inv_lt_one_of_one_lt₀ hb
     exact (v.valuation_lt_one_iff_mem (K := K) n).mp hlt
   have hd : algebraMap A B d = b * algebraMap A B n := by
@@ -122,7 +122,7 @@ theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOne
     rw [map_mul, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply, ← hnd,
       ← mul_assoc, mul_inv_cancel₀ hb0, one_mul]
   -- Since `d ∉ 𝔭` and `𝔭` is maximal, its inverse modulo `𝔭` puts `1` in `𝔭B`.
-  obtain ⟨y, i, hi, hyi⟩ := v.isMaximal.exists_inv d.2
+  obtain ⟨y, i, hi, hyi⟩ := v.isMaximal.exists_inv d.property
   rw [Ideal.eq_top_iff_one, ← map_one (algebraMap A B), ← hyi, map_add, map_mul, hd]
   exact Ideal.add_mem _ (Ideal.mul_mem_left _ _ (Ideal.mul_mem_left _ _
     (Ideal.mem_map_of_mem _ hn))) (Ideal.mem_map_of_mem _ hi)
@@ -149,15 +149,12 @@ theorem map_asIdeal_eq_asIdeal_of_valuation_eq [IsDedekindDomain B] [IsFractionR
     let Q : HeightOneSpectrum B :=
       ⟨M, hM.isPrime, fun hM0 ↦ hI0 (le_bot_iff.mp (hM0 ▸ hIM))⟩
     have hQ : v.valuation K = Q.valuation K := by
-      refine Valuation.eq_valuation_of_forall_mem_asIdeal_iff (Q.valuation_surjective K)
-        (fun a ↦ ?_) (fun a ↦ ?_)
-      · rw [IsScalarTower.algebraMap_apply A B K]
-        exact Q.valuation_le_one _
-      · rw [IsScalarTower.algebraMap_apply A B K, Q.valuation_lt_one_iff_mem]
-        refine ⟨fun ha ↦ hIM (Ideal.mem_map_of_mem _ ha), fun ha ↦ ?_⟩
-        have hvle : v.asIdeal ≤ M.comap (algebraMap A B) := fun a' ha' ↦
-          hIM (Ideal.mem_map_of_mem _ ha')
-        exact v.isMaximal.eq_of_le (Ideal.IsPrime.comap _).ne_top hvle ▸ ha
+      refine Valuation.eq_valuation_of_forall_mem_asIdeal_iff (Q.valuation_surjective K) fun a ↦ ?_
+      rw [IsScalarTower.algebraMap_apply A B K, Q.valuation_lt_one_iff_mem]
+      refine ⟨fun ha ↦ hIM (Ideal.mem_map_of_mem _ ha), fun ha ↦ ?_⟩
+      have hvle : v.asIdeal ≤ M.comap (algebraMap A B) := fun a' ha' ↦
+        hIM (Ideal.mem_map_of_mem _ ha')
+      exact v.isMaximal.eq_of_le (Ideal.IsPrime.comap _).ne_top hvle ▸ ha
     exact congrArg HeightOneSpectrum.asIdeal (valuation_injective (K := K) (hQ.symm.trans h.symm))
   -- so the part of `I` prime to `𝔓` is trivial, and `I` is a power of `𝔓`
   obtain ⟨Q, hPQ, hIQ⟩ := Ideal.eq_prime_pow_mul_coprime hI0 𝔓.asIdeal

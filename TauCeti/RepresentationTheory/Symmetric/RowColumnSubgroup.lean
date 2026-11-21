@@ -24,13 +24,13 @@ respectively columns, of `μ`.  It also records the transpositions that the two 
 swapping two labels of a common row lies in the row group, and swapping two labels of a common
 column lies in the column group.  Finally it recognises the two extreme shapes: the row group is
 everything exactly when the diagram has at most one row, the column group is everything exactly
-when it has at most one column, and either of those forces the other group to be trivial.
+when it has at most one column, and either of those forces the other group to be trivial.  Last,
+transposing a tableau exchanges the two groups, the labels of `tᵗ` being identified with those of
+`t` by `Equiv.permCongrHom` along `finCongr (YoungDiagram.card_transpose μ)`.
 
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layers 0 and 2.
 -/
 
 public section
@@ -165,7 +165,7 @@ theorem colSubgroupMulEquiv_symm_apply (t : YoungTableau μ) (σ : ∀ j, Equiv.
 tableau on it lies in row `0`. -/
 theorem rowIndex_eq_zero_of_colLen_le_one (t : YoungTableau μ) (h : μ.colLen 0 ≤ 1)
     (k : Fin μ.card) : rowIndex t k = 0 := by
-  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).2
+  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).property
   have hlt : (t.symm k : ℕ × ℕ).1 < μ.colLen (t.symm k : ℕ × ℕ).2 :=
     YoungDiagram.mem_iff_lt_colLen.mp hmem
   have hle : μ.colLen (t.symm k : ℕ × ℕ).2 ≤ μ.colLen 0 := μ.colLen_anti 0 _ (Nat.zero_le _)
@@ -176,7 +176,7 @@ theorem rowIndex_eq_zero_of_colLen_le_one (t : YoungTableau μ) (h : μ.colLen 0
 tableau on it lies in column `0`. -/
 theorem colIndex_eq_zero_of_rowLen_le_one (t : YoungTableau μ) (h : μ.rowLen 0 ≤ 1)
     (k : Fin μ.card) : colIndex t k = 0 := by
-  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).2
+  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).property
   have hlt : (t.symm k : ℕ × ℕ).2 < μ.rowLen (t.symm k : ℕ × ℕ).1 :=
     YoungDiagram.mem_iff_lt_rowLen.mp hmem
   have hle : μ.rowLen (t.symm k : ℕ × ℕ).1 ≤ μ.rowLen 0 := μ.rowLen_anti 0 _ (Nat.zero_le _)
@@ -230,6 +230,48 @@ theorem rowSubgroup_eq_bot_of_colSubgroup_eq_top (t : YoungTableau μ) (h : colS
     rowSubgroup t = ⊥ := by
   have hinf := rowSubgroup_inf_colSubgroup_eq_bot t
   rwa [h, inf_top_eq] at hinf
+
+/-! ## The row and column groups of the transposed tableau -/
+
+/-- A permutation of the labels of `tᵗ` preserves its rows exactly when, read on the labels of
+`t`, it preserves the columns of `t`.
+
+Not a `simp` lemma: `mem_rowSubgroup` and `rowIndex_transpose` already simplify the left-hand side
+to the pointwise condition on the columns of `t`. -/
+theorem mem_rowSubgroup_transpose {t : YoungTableau μ} {σ : Equiv.Perm (Fin μ.transpose.card)} :
+    σ ∈ rowSubgroup (transpose t) ↔
+      (finCongr (YoungDiagram.card_transpose μ)).permCongr σ ∈ colSubgroup t := by
+  simp only [mem_rowSubgroup, mem_colSubgroup, rowIndex_transpose, Equiv.permCongr_apply,
+    finCongr_apply, finCongr_symm]
+  exact ⟨fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ).symm k),
+    fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ) k)⟩
+
+/-- A permutation of the labels of `tᵗ` preserves its columns exactly when, read on the labels of
+`t`, it preserves the rows of `t`. As for `mem_rowSubgroup_transpose`, this is not a `simp`
+lemma. -/
+theorem mem_colSubgroup_transpose {t : YoungTableau μ} {σ : Equiv.Perm (Fin μ.transpose.card)} :
+    σ ∈ colSubgroup (transpose t) ↔
+      (finCongr (YoungDiagram.card_transpose μ)).permCongr σ ∈ rowSubgroup t := by
+  simp only [mem_rowSubgroup, mem_colSubgroup, colIndex_transpose, Equiv.permCongr_apply,
+    finCongr_apply, finCongr_symm]
+  exact ⟨fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ).symm k),
+    fun h k ↦ by simpa using h (Fin.cast (YoungDiagram.card_transpose μ) k)⟩
+
+/-- **Transposition turns the column group into the row group.** -/
+theorem rowSubgroup_transpose (t : YoungTableau μ) :
+    rowSubgroup (transpose t) = (colSubgroup t).map
+      (finCongr (YoungDiagram.card_transpose μ)).symm.permCongrHom.toMonoidHom := by
+  ext σ
+  rw [mem_rowSubgroup_transpose, Subgroup.mem_map_equiv, Equiv.permCongrHom_symm,
+    Equiv.symm_symm, Equiv.permCongrHom_coe]
+
+/-- **Transposition turns the row group into the column group.** -/
+theorem colSubgroup_transpose (t : YoungTableau μ) :
+    colSubgroup (transpose t) = (rowSubgroup t).map
+      (finCongr (YoungDiagram.card_transpose μ)).symm.permCongrHom.toMonoidHom := by
+  ext σ
+  rw [mem_colSubgroup_transpose, Subgroup.mem_map_equiv, Equiv.permCongrHom_symm,
+    Equiv.symm_symm, Equiv.permCongrHom_coe]
 
 end YoungTableau
 

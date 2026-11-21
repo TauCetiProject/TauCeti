@@ -170,14 +170,21 @@ private theorem crossing_isolated_left (h : IsPwC1ImmersionOn γ a b) {t₀ : �
   exact fun t ht hγt => (ne_of_lt ht.2)
     (h_once t (Ioo_subset_Icc_self ht) t₀ (right_mem_Icc.mpr (le_of_lt hc_lt)) hγt hcross)
 
-/-- **Crossings of an immersion are isolated**: at every interior crossing there is a punctured
-neighbourhood on which the immersion avoids `z₀`. -/
+/-- **Crossings of an immersion are isolated**: at every interior parameter there is a punctured
+neighbourhood on which the immersion avoids `z₀`. At a crossing this is the isolation of the
+crossing; off a crossing it is continuity of the curve. -/
 theorem IsPwC1ImmersionOn.eventually_ne_nhdsNE (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
-    (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) (hcross : γ t₀ = z₀) :
+    (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
     ∀ᶠ t in 𝓝[≠] t₀, γ t ≠ z₀ := by
-  rw [punctured_nhds_eq_nhdsWithin_sup_nhdsWithin, Filter.eventually_sup]
-  exact ⟨crossing_isolated_left h ⟨ht₀.1, ht₀.2.le⟩ hcross,
-    crossing_isolated_right h ⟨ht₀.1.le, ht₀.2⟩ hcross⟩
+  by_cases hcross : γ t₀ = z₀
+  · rw [punctured_nhds_eq_nhdsWithin_sup_nhdsWithin, Filter.eventually_sup]
+    exact ⟨crossing_isolated_left h ⟨ht₀.1, ht₀.2.le⟩ hcross,
+      crossing_isolated_right h ⟨ht₀.1.le, ht₀.2⟩ hcross⟩
+  · have hnhds : uIcc a b ∈ 𝓝 t₀ := by
+      rw [← Icc_min_max]
+      exact Icc_mem_nhds ht₀.1 ht₀.2
+    exact ((h.continuousOn.continuousAt hnhds).eventually_ne hcross).filter_mono
+      nhdsWithin_le_nhds
 
 /-- **HW Proposition 2.2: the crossing set of a piecewise-`C¹` immersion is finite** — the
 geometric input that makes the on-cycle singularities of the generalized residue theorem a

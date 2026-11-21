@@ -178,12 +178,8 @@ theorem lieSpan_rootGenerator_eq_top [NeZero (2 : K)] (n : ℕ) (hn : 4 ≤ n) :
         simp [Matrix.fromBlocks, Matrix.single_apply] at hab ⊢
       all_goals aesop
     · exact reverseDifferenceRootGenerator_mem_lieSpan n hn j i hij
-  have hsum (i j : Fin n) : sumRootGenerator (K := K) i j ∈ S := by
-    rcases lt_trichotomy i j with hij | rfl | hij
-    · exact hpos (sumRootGenerator_mem_positiveSimpleRootMatrixLieSpan n hn i j hij)
-    · simp
-    · rw [sumRootGenerator_swap]
-      exact S.neg_mem (hpos (sumRootGenerator_mem_positiveSimpleRootMatrixLieSpan n hn j i hij))
+  have hsum (i j : Fin n) : sumRootGenerator (K := K) i j ∈ S :=
+    hpos (sumRootGenerator_mem_positiveSimpleRootMatrixLieSpan n hn i j)
   have hneg (i j : Fin n) : negSumRootGenerator (K := K) i j ∈ S := by
     rcases lt_trichotomy i j with hij | rfl | hij
     · exact negSumRootGenerator_mem_lieSpan n hn i j hij

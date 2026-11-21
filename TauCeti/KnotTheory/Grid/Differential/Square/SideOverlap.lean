@@ -59,8 +59,9 @@ rectangles or rectangles sharing exactly one side column.
 * `TauCeti.GridRectangleDecomposition.target_apply_ne_iff_mem_sideColumns_union`: when exactly
   one side is common, the three side columns are precisely the columns moved between the endpoint
   states.
-* `TauCeti.GridRectangleDecomposition.sideColumns_union_eq_of_hasOneCommonSide`: any two
-  one-common-side decompositions between the same endpoint states use the same three columns.
+* `TauCeti.GridRectangleDecomposition.sideColumns_union_eq_of_hasOneCommonSide`: two
+  decompositions between the same endpoint states, one of which has one common side, use the same
+  three columns.
 
 ## References
 
@@ -169,8 +170,6 @@ theorem hasOneCommonSide_of_right_eq_left (D : GridRectangleDecomposition x z)
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hfirst := D.first.left_ne_right
-    have hsecond := D.second.left_ne_right
     grind
 
 /-- Two rectangles, the first starting where the second ends, whose other sides differ share
@@ -183,8 +182,6 @@ theorem hasOneCommonSide_of_left_eq_right (D : GridRectangleDecomposition x z)
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
-    have hfirst := D.first.left_ne_right
-    have hsecond := D.second.left_ne_right
     grind
 
 /-- If two rectangles share exactly one side column, that column occurs in one of the four
@@ -312,17 +309,6 @@ theorem target_apply_ne_iff_mem_sideColumns_union (D : GridRectangleDecompositio
     rw [← Equiv.Perm.mul_apply]
     apply Equiv.Perm.mem_support.mp
     rwa [support_swaps_eq_sideColumns_union D h]
-
-/-- Any two decompositions between the same endpoint states which each have one common side use
-the same three side columns. -/
-theorem sideColumns_union_eq_of_hasOneCommonSide
-    (D E : GridRectangleDecomposition x z) (hD : D.HasOneCommonSide)
-    (hE : E.HasOneCommonSide) :
-    D.first.sideColumns ∪ D.second.sideColumns =
-      E.first.sideColumns ∪ E.second.sideColumns := by
-  ext c
-  rw [← D.target_apply_ne_iff_mem_sideColumns_union hD,
-    ← E.target_apply_ne_iff_mem_sideColumns_union hE]
 
 /-- The two side pairs are disjoint exactly when their common-side set is empty. -/
 @[simp]
@@ -526,6 +512,39 @@ theorem not_hasDisjointSides_of_hasOneCommonSide (D : GridRectangleDecomposition
   have hzero := D.card_commonSideColumns_eq_zero_iff.mpr hdisjoint
   rw [HasOneCommonSide] at h
   omega
+
+/-- Two decompositions between the same endpoint states use the same three side columns when one of
+them has one common side: the other cannot have disjoint sides, which would move four columns, nor
+equal source and target. -/
+theorem sideColumns_union_eq_of_hasOneCommonSide
+    (D E : GridRectangleDecomposition x z) (hD : D.HasOneCommonSide) :
+    D.first.sideColumns ∪ D.second.sideColumns =
+      E.first.sideColumns ∪ E.second.sideColumns := by
+  have hE : E.HasOneCommonSide := by
+    refine (E.hasDisjointSides_or_hasOneCommonSide_of_ne
+      (D.target_ne_source_of_hasOneCommonSide hD)).resolve_left fun hdis ↦ ?_
+    -- the target is two disjoint transpositions of the source, so every decomposition of it has
+    -- disjoint sides
+    have hz : z = (x.swapColumns E.first.left E.first.right).swapColumns E.second.left
+        E.second.right :=
+      E.second.target_eq_swapColumns.trans
+        (congrArg (·.swapColumns E.second.left E.second.right) E.first.target_eq_swapColumns)
+    obtain ⟨hll, hlr, hrl, hrr⟩ := E.hasDisjointSides_iff.mp hdis
+    have hdisjoint : Disjoint ({E.first.left, E.first.right} : Finset (Fin n))
+        {E.second.left, E.second.right} := by
+      simp only [Finset.disjoint_insert_left, Finset.disjoint_singleton_left, Finset.mem_insert,
+        Finset.mem_singleton, not_or]
+      exact ⟨⟨hll, hlr⟩, hrl, hrr⟩
+    have key : ∀ (z' : GridState n) (D' : GridRectangleDecomposition x z'),
+        z' = (x.swapColumns E.first.left E.first.right).swapColumns E.second.left
+          E.second.right → D'.HasDisjointSides := by
+      rintro z' D' rfl
+      exact hasDisjointSides_of_disjoint x E.first.left_ne_right E.second.left_ne_right
+        hdisjoint D'
+    exact D.not_hasDisjointSides_of_hasOneCommonSide hD (key z D hz)
+  ext c
+  rw [← D.target_apply_ne_iff_mem_sideColumns_union hD,
+    ← E.target_apply_ne_iff_mem_sideColumns_union hE]
 
 /-- Off the diagonal, failing to have disjoint side pairs is equivalent to having a same-side or
 mixed-side overlap. -/

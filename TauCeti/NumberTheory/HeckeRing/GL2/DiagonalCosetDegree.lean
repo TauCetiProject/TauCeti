@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
@@ -64,11 +64,11 @@ private lemma a1_eq_a0_mul_ratio {N : ℕ} {a : Fin 2 → ℕ}
 
 private lemma conj_natDiagGL_mem_of_dvd (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ i, 0 < a i)
     (h_ratio : a 1 / a 0 = N) (h_dvd_a : a 0 ∣ a 1) (σ : SL(2, ℤ))
-    (hσ : (N : ℤ) ∣ σ.1 1 0) :
+    (hσ : (N : ℤ) ∣ σ.val 1 0) :
     (natDiagGL 2 a)⁻¹ * (σ : GL (Fin 2) ℚ) * natDiagGL 2 a ∈ SLnZ 2 := by
   obtain ⟨c, hc⟩ := hσ
   let τ_mat : Matrix (Fin 2) (Fin 2) ℤ :=
-    !![σ.1 0 0, (N : ℤ) * σ.1 0 1; c, σ.1 1 1]
+    !![σ.val 0 0, (N : ℤ) * σ.val 0 1; c, σ.val 1 1]
   have h_det : τ_mat.det = 1 := by
     simp only [τ_mat, Matrix.det_fin_two, Matrix.of_apply, Matrix.cons_val',
       Matrix.cons_val_zero, Matrix.cons_val_one]
@@ -77,7 +77,7 @@ private lemma conj_natDiagGL_mem_of_dvd (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ 
   let τ : SL(2, ℤ) := ⟨τ_mat, h_det⟩
   refine (mem_SLnZ_iff 2).mpr ⟨τ, ?_⟩
   have ha1 := a1_eq_a0_mul_ratio h_ratio h_dvd_a
-  have hcQ : (σ.1 1 0 : ℚ) = (N : ℚ) * (c : ℚ) := by exact_mod_cast hc
+  have hcQ : (σ.val 1 0 : ℚ) = (N : ℚ) * (c : ℚ) := by exact_mod_cast hc
   suffices h : natDiagGL 2 a * (τ : GL (Fin 2) ℚ) = (σ : GL (Fin 2) ℚ) * natDiagGL 2 a by
     have h' := congr_arg ((natDiagGL 2 a)⁻¹ * ·) h
     simp only [← mul_assoc, inv_mul_cancel, one_mul] at h'; exact h'
@@ -93,22 +93,22 @@ private lemma conj_natDiagGL_mem_of_dvd (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ 
 private lemma dvd_of_conj_natDiagGL_mem (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ i, 0 < a i)
     (h_ratio : a 1 / a 0 = N) (h_dvd_a : a 0 ∣ a 1) (σ : SL(2, ℤ))
     (hmem : (natDiagGL 2 a)⁻¹ * (σ : GL (Fin 2) ℚ) * natDiagGL 2 a ∈ SLnZ 2) :
-    (N : ℤ) ∣ σ.1 1 0 := by
+    (N : ℤ) ∣ σ.val 1 0 := by
   obtain ⟨τ, hτ⟩ := (mem_SLnZ_iff 2).mp hmem
   have ha1 := a1_eq_a0_mul_ratio h_ratio h_dvd_a
   have ha0_ne : (a 0 : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (ha 0).ne'
   have h_mul : natDiagGL 2 a * (τ : GL (Fin 2) ℚ) = (σ : GL (Fin 2) ℚ) * natDiagGL 2 a := by
     have := congr_arg (natDiagGL 2 a * ·) hτ
     simp only [← mul_assoc, mul_inv_cancel, one_mul] at this; exact this
-  have h_entry : (a 1 : ℚ) * (τ.1 1 0 : ℚ) = (σ.1 1 0 : ℚ) * (a 0 : ℚ) := by
+  have h_entry : (a 1 : ℚ) * (τ.val 1 0 : ℚ) = (σ.val 1 0 : ℚ) * (a 0 : ℚ) := by
     have h10 := Units.ext_iff.mp h_mul
     have := congr_arg (fun M ↦ M 1 0) h10
     simpa only [Units.val_mul, mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply,
       natDiagGL_coe 2 a ha, Matrix.diagonal_mul, Matrix.mul_diagonal,
       Matrix.map_apply, algebraMap_int_eq, eq_intCast] using this
-  have h_σ₁₀ : (σ.1 1 0 : ℚ) = (N : ℚ) * (τ.1 1 0 : ℚ) := by
+  have h_σ₁₀ : (σ.val 1 0 : ℚ) = (N : ℚ) * (τ.val 1 0 : ℚ) := by
     rw [ha1] at h_entry; field_simp at h_entry ⊢; linarith
-  exact ⟨τ.1 1 0, by exact_mod_cast h_σ₁₀⟩
+  exact ⟨τ.val 1 0, by exact_mod_cast h_σ₁₀⟩
 
 private lemma natDiagGL_conj_relIndex_eq_Gamma0_index (N : ℕ) (a : Fin 2 → ℕ) (ha : ∀ i, 0 < a i)
     (h_ratio : a 1 / a 0 = N) (h_dvd_a : a 0 ∣ a 1) :

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Group.Indicator
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.Algebra.Projectivization
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Reciprocal affine distance on projective space
@@ -107,7 +108,6 @@ theorem affineChartInvOneAddDistSq_mk (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) 
     congr 2
     ext j
     simp [div_eq_inv_mul]
-  have hn : 0 < ‖v i‖ := norm_pos_iff.2 h
   rw [hsub, norm_smul, norm_inv]
   field_simp
 
@@ -131,18 +131,18 @@ theorem continuous_affineChartInvOneAddDistSq :
     Continuous (affineChartInvOneAddDistSq i a) := by
   rw [continuous_iff]
   have hF : affineChartInvOneAddDistSq i a ∘ mk' 𝕜 = fun v : {v : Fin (n + 1) → 𝕜 // v ≠ 0} ↦
-      ‖v.1 i‖ ^ 2 /
-        (‖v.1 i‖ ^ 2 + ‖WithLp.toLp 2 (fun j ↦ v.1 (i.succAbove j)) - v.1 i • a‖ ^ 2) :=
+      ‖v.val i‖ ^ 2 /
+        (‖v.val i‖ ^ 2 + ‖WithLp.toLp 2 (fun j ↦ v.val (i.succAbove j)) - v.val i • a‖ ^ 2) :=
     funext fun v ↦ by simp only [Function.comp_apply, mk'_eq_mk, affineChartInvOneAddDistSq_mk]
   rw [hF]
-  have hi : Continuous fun v : {v : Fin (n + 1) → 𝕜 // v ≠ 0} ↦ v.1 i :=
-    (continuous_apply i).comp continuous_subtype_val
+  have hi : Continuous fun v : {v : Fin (n + 1) → 𝕜 // v ≠ 0} ↦ v.val i :=
+    (continuous_apply i).comp continuous_subtypeVal
   have hrest : Continuous fun v : {v : Fin (n + 1) → 𝕜 // v ≠ 0} ↦
-      WithLp.toLp 2 (fun j ↦ v.1 (i.succAbove j)) - v.1 i • a :=
+      WithLp.toLp 2 (fun j ↦ v.val (i.succAbove j)) - v.val i • a :=
     ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦
-      (continuous_apply _).comp continuous_subtype_val)).sub (hi.smul continuous_const)
+      (continuous_apply _).comp continuous_subtypeVal)).sub (hi.smul continuous_const)
   exact (hi.norm.pow 2).div ((hi.norm.pow 2).add (hrest.norm.pow 2)) fun v ↦
-    norm_sq_add_norm_sq_sub_smul_ne_zero i a v.1 v.2
+    norm_sq_add_norm_sq_sub_smul_ne_zero i a v.val v.property
 
 /-- The reciprocal affine distance is nonnegative. -/
 theorem affineChartInvOneAddDistSq_nonneg (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
@@ -152,8 +152,8 @@ theorem affineChartInvOneAddDistSq_nonneg (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) 
 /-- The reciprocal affine distance is at most `1`. -/
 theorem affineChartInvOneAddDistSq_le_one (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     affineChartInvOneAddDistSq i a x ≤ 1 :=
-  indicator_apply_le' (fun _ ↦ inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _)))
-    fun _ ↦ zero_le_one
+  indicator_apply_le' (fun _ ↦ dist_eq_norm (E := EuclideanSpace 𝕜 (Fin n)) _ a ▸
+    TauCeti.inv_one_add_norm_sub_sq_le_one _ a) fun _ ↦ zero_le_one
 
 /-- The reciprocal affine distance is positive exactly on the affine open. -/
 @[simp]

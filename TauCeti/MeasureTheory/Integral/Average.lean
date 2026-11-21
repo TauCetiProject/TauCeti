@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -54,12 +56,23 @@ Along an increasing sequence of sets `V n` covering a set `s` of finite measure,
 the pieces `s ∩ V n` converge to that of `s`, and so do the averages of an integrable function, as
 used when an inequality proved on each set of an exhaustion is passed to the whole domain.
 
+Since some point of a set lies at or above the average, a set of measure below `δ / c`, with
+`c > 0`, over which a real function has integral at least `δ` contains a point where the function
+exceeds `c`. No integrability assumption is needed, since otherwise the integral is `0`.
+
 Hölder's inequality also bounds the average by the `Lᵖ` seminorm on the set, with the
 normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ ∫⁻_s ‖f‖ₑ ^ q`.
 These estimates hold for arbitrary sets, including zero or infinite measure, with only the
 exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 
+Jensen's inequality also holds for a function that is convex and monotone on a half-line `[a, ∞)`
+applied to an integrable function that is almost everywhere at least `a`.
+
 ## Main results
+
+* `ConvexOn.map_average_le_of_monotoneOn_Ici`: for `g` almost everywhere at least `a` over a
+  finite nonzero measure, `Φ (⨍ g) ≤ ⨍ Φ ∘ g` when `Φ` is convex and monotone on `[a, ∞)` and
+  `g`, `Φ ∘ g` are integrable; it rests on `ConvexOn.continuousOn_Ici_of_monotoneOn`.
 
 * `TauCeti.enorm_setAverage_rpow_le`, `TauCeti.enorm_setAverage_le`: Hölder's bounds on an
   average over an arbitrary set, in `∫⁻` and `Lᵖ` form.
@@ -67,15 +80,28 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
   average over it is at most the integral of the extended norm over it.
+* `TauCeti.setLAverage_enorm_eq_ofReal_setAverage_norm`: the mean of the extended norm of an
+  integrable function over a set is the `ENNReal.ofReal` of the mean of its norm.
+* `TauCeti.ofReal_setAverage_norm_rpow`: the same for the power `‖h‖ ^ k`, `k ≥ 0`.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
   set of finite measure, `1 ≤ p < ∞`.
+* `ContinuousLinearMap.average_apply`: an average of continuous linear maps, applied to a vector,
+  is the average of the applications.
 * `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
   `TauCeti.setLAverage_enorm_add_sub_le`: the mean oscillation is infinite off integrability on a
   set of finite measure, ignores constants and is subadditive.
+* `TauCeti.setLAverage_enorm_sub_setAverage_congr_ae`,
+  `TauCeti.setLAverage_enorm_const_smul_sub_setAverage`: the mean oscillation depends only on the
+  a.e. class of `f` and is homogeneous.
+* `TauCeti.ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero`: on a set of
+  finite measure, a function with zero mean oscillation is a.e. equal to its average there.
 * `TauCeti.norm_setAverage_sub_le_of_subset`: the average over a subset `s ⊆ t`
   differs from a constant `c` by at most `μ t / μ s` times the average of `‖f - c‖` over `t`.
+* `TauCeti.norm_sub_le_setAverage_add_div_mul_setAverage_of_subset`: two constants `c` and `d`
+  approximating `g` on `s ⊆ t` and on `t` satisfy
+  `‖c - d‖ ≤ ⨍_s ‖g - c‖ + (μ t / μ s) ⨍_t ‖g - d‖`.
 * `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`: the average of a nonnegative function
   over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
 * `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of
@@ -83,6 +109,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 * `TauCeti.enorm_setAverage_sub_le_setLAverage`: on a set of finite positive measure, the average
   differs from a constant `c` by at most the average of `‖f - c‖ₑ`, with no integrability
   assumption.
+* `TauCeti.setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage`,
+  `TauCeti.setLAverage_setLAverage_enorm_sub_le`: the mean oscillation of `f` on `s` and the
+  average of `‖f x - f y‖ₑ` over pairs of points of `s` agree up to a factor `2`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
@@ -95,21 +124,53 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
+* `TauCeti.setLAverage_add_const`: a constant term comes out of the lower average over a set of
+  finite nonzero measure.
+* `TauCeti.laverage_rpow_enorm_rpow_inv_eq`: `(⨍ ‖f‖ ^ p) ^ (1/p)` is the `Lᵖ` seminorm divided by
+  the `p`-th root of the total mass.
+* `TauCeti.setLAverage_enorm_sq_le_of_setIntegral_le`: an estimate between Bochner integrals of
+  squared norms over sets `s` and `t` with `μ t = k μ s`, read between averages in `ℝ≥0∞`.
+* `TauCeti.ofReal_div_sq_mul_setLAverage_eq`: a factor `1 / λ²` in front of the average of `f²`
+  moves inside it as `(f / λ)²`.
+* `TauCeti.setLAverage_div_rpow_lt_top`: the average of `(f / c) ^ p` over `S` is finite when
+  the integral of `f ^ p` over `S` is.
+* `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
+  nonnegative function and `r ≥ 1`.
+* `TauCeti.sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq`: Jensen's inequality
+  `(⨍_s ‖h‖ₑ)² ≤ ofReal (⨍_s ‖h‖²)` between a lower average and a Bochner average.
+* `TauCeti.setLAverage_enorm_sq_le_of_ae_eq_zero`: the mean of `‖f‖²` is at most
+  `2 (1 + θ⁻¹)` times the mean of `‖f - c‖²` when `f` vanishes on a proportion `θ` of the set.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
   `TauCeti.setLAverage_smul_measure`, `TauCeti.setAverage_smul_measure`: averages are unchanged
   when the measure is multiplied by a positive finite scalar.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
-  `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
-  equivalence that rescales the measure by a constant.
+  `TauCeti.setAverage_comp_preimage_of_map_eq_smul`,
+  `TauCeti.setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul`: integrals, averages
+  and mean oscillations under a measurable equivalence that rescales the measure by a constant.
 * `TauCeti.tendsto_measureReal_inter_of_monotone`, `TauCeti.tendsto_setAverage_inter_of_monotone`:
   along an increasing sequence of sets covering `s`, the measures of and averages over the pieces
   of `s` converge to those over `s`.
+* `TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`: a set of measure below `δ / c` with
+  integral at least `δ` contains a point where the function exceeds `c`.
+* `TauCeti.setAverage_mul_setAverage_le_of_setLIntegral_mul_le`: a bound `C μ(B)²` on the product of
+  the integrals of two almost everywhere nonnegative functions over `B` is a bound `C` on the
+  product of their averages.
+* `TauCeti.setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn`: the deviation of `u` from its
+  mean over `T` on `A ⊆ U` is at most that of an approximation `v`, plus `(1 + μ(U) / μ(T))` times
+  the `L¹(U)` distance from `v` to `u`.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
+* `TauCeti.ae_eq_zero_of_setAverage_rpow_eq_zero`: a nonnegative `Lᵠ` function whose `p`-th power
+  has vanishing average over a set of finite positive measure vanishes almost everywhere there.
+* `TauCeti.average_rpow_le_average_add_const_rpow`: for `f ≥ 0` in `Lᵖ` on a finite measure
+  space, the average of `f ^ p` is at most that of `(f + δ) ^ p`.
 * `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
   `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
+* `TauCeti.enorm_sub_setAverage_eq_zero_of_subsingleton`: the deviation from the mean vanishes on a
+  subsingleton domain.
 -/
 
 public section
@@ -127,7 +188,7 @@ variable {α E : Type*} {_ : MeasurableSpace α} [NormedAddCommGroup E] [NormedS
 theorem enorm_average_le_laverage (μ : Measure α) (f : α → E) :
     ‖⨍ x, f x ∂μ‖ₑ ≤ ⨍⁻ x, ‖f x‖ₑ ∂μ := by
   rw [average_eq', laverage_eq']
-  exact enorm_integral_le_lintegral_enorm _
+  exact eNorm_integral_le_lintegral_eNorm _
 
 /-- The extended norm of an average over a set is at most the average of the extended norm over
 the set. -/
@@ -144,6 +205,26 @@ theorem measure_mul_enorm_setAverage_le (μ : Measure α) (f : α → E) (s : Se
   · rw [← measure_mul_setLAverage _ hs]
     gcongr
     exact enorm_setAverage_le_setLAverage μ f s
+
+omit [NormedSpace ℝ E] in
+/-- The mean of the extended norm of an integrable function over a set is the `ENNReal.ofReal` of
+the mean of its norm. -/
+theorem setLAverage_enorm_eq_ofReal_setAverage_norm {μ : Measure α} {s : Set α} {g : α → E}
+    (hg : IntegrableOn g s μ) :
+    ⨍⁻ x in s, ‖g x‖ₑ ∂μ = ENNReal.ofReal (⨍ x in s, ‖g x‖ ∂μ) := by
+  rw [setLAverage_eq, ofReal_setAverage hg.norm (ae_of_all _ fun _ => norm_nonneg _)]
+  simp only [ofReal_norm]
+
+omit [NormedSpace ℝ E] in
+/-- The `ENNReal.ofReal` of the mean of `‖h‖ ^ k` over a set, for `k ≥ 0` and `‖h‖ ^ k`
+integrable there, is the mean of `‖h‖ₑ ^ k`. -/
+theorem ofReal_setAverage_norm_rpow {μ : Measure α} {s : Set α} {h : α → E} {k : ℝ} (hk : 0 ≤ k)
+    (hi : IntegrableOn (fun x => ‖h x‖ ^ k) s μ) :
+    ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ k ∂μ) = ⨍⁻ x in s, ‖h x‖ₑ ^ k ∂μ := by
+  rw [ofReal_setAverage hi (ae_of_all _ fun x => by positivity), setLAverage_eq]
+  congr 1
+  refine lintegral_congr fun x => ?_
+  rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hk, ofReal_norm]
 
 end ENorm
 
@@ -173,7 +254,7 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
       enorm_setAverage_le_setLAverage mu f s
   have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
     have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
-      (u := fun y => ‖f y‖ₑ) hf.aestronglyMeasurable.enorm hq
+      (u := fun y => ‖f y‖ₑ) hq
     rwa [Measure.restrict_apply_univ] at this
   have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
   calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
@@ -202,7 +283,7 @@ theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) :
   rw [← ENNReal.rpow_mul, mul_inv_cancel₀ hq0.ne', ENNReal.rpow_one] at hroot
   refine hroot.trans_eq ?_
   rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.inv_rpow, ← ENNReal.rpow_neg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hf.aestronglyMeasurable, one_div]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hf.aestronglyMeasurable, one_div]
 
 end Holder
 
@@ -226,7 +307,7 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
         refine setLAverage_mono_ae s (.of_forall fun x => ?_)
         calc ‖f x - ⨍ y in s, f y ∂μ‖ₑ = ‖(f x - c) - ((⨍ y in s, f y ∂μ) - c)‖ₑ := by
               congr 1; abel
-          _ ≤ ‖f x - c‖ₑ + ‖(⨍ y in s, f y ∂μ) - c‖ₑ := enorm_sub_le
+          _ ≤ ‖f x - c‖ₑ + ‖(⨍ y in s, f y ∂μ) - c‖ₑ := eNorm_sub_le
           _ ≤ ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ := by
             rw [heq]
             gcongr
@@ -285,7 +366,7 @@ theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f (μ.rest
     by_contra h
     have hsub : IntegrableOn (fun y => f y - b) s μ :=
       ⟨hf.sub aestronglyMeasurable_const,
-        hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
+        hasFiniteIntegral_iff_eNorm.2 (lt_top_iff_ne_top.2 h)⟩
     simp_rw [sub_eq_add_neg] at hsub
     exact hfs (integrable_add_const_iff.1 hsub)
   rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
@@ -334,25 +415,233 @@ theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f 
       ≤ ∫⁻ y in s, (‖f y - ⨍ z in s, f z ∂μ‖ₑ + ‖g y - ⨍ z in s, g z ∂μ‖ₑ) ∂μ :=
         lintegral_mono fun y => by
           rw [add_sub_add_comm]
-          exact enorm_add_le _ _
-    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).enorm _
+          exact eNorm_add_le _ _
+    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).eNorm _
+
+omit [CompleteSpace F] in
+/-- The mean oscillation of `f` on a set depends only on the a.e. class of `f`. -/
+theorem setLAverage_enorm_sub_setAverage_congr_ae {g : X → F} (h : f =ᵐ[μ] g) (s : Set X) :
+    ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ = ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
+  have hs : f =ᵐ[μ.restrict s] g := ae_restrict_of_ae h
+  rw [average_congr hs]
+  exact laverage_congr (hs.mono fun y hy => by simp only [hy])
+
+omit [CompleteSpace F] in
+/-- The mean oscillation of `k • f` on a set is `‖k‖ₑ` times that of `f`. -/
+theorem setLAverage_enorm_const_smul_sub_setAverage {𝕜 : Type*} [NormedDivisionRing 𝕜]
+    [Module 𝕜 F] [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (s : Set X) :
+    ⨍⁻ y in s, ‖k • f y - ⨍ z in s, k • f z ∂μ‖ₑ ∂μ =
+      ‖k‖ₑ * ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
+  have havg : ⨍ z in s, k • f z ∂μ = k • ⨍ z in s, f z ∂μ := integral_smul k f
+  simp_rw [havg, ← smul_sub, eNorm_smul, setLAverage_eq,
+    lintegral_const_mul' _ _ eNorm_ne_top, mul_div_assoc]
+
+omit [CompleteSpace F] in
+/-- On a set of finite measure, an a.e. strongly measurable `f` with zero mean oscillation agrees
+a.e. on the set with its average. -/
+theorem ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (hs : μ s ≠ ∞)
+    (h : ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ = 0) :
+    ∀ᵐ y ∂μ.restrict s, f y = ⨍ z in s, f z ∂μ := by
+  rw [setLAverage_eq, ENNReal.div_eq_zero_iff] at h
+  refine h.elim (fun h => ?_) fun h => absurd h hs
+  filter_upwards [(lintegral_eq_zero_iff' (hf.sub aestronglyMeasurable_const).eNorm).1 h] with y hy
+  exact sub_eq_zero.1 (eNorm_eq_zero.1 hy)
 
 end Oscillation
 
-section SquareIntegrable
+section LAverage
 
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
-  {s : Set X}
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 
-/-- **Jensen's inequality for the square of a mean.** On a set `s` of finite nonzero measure, the
-square of the mean of `‖g‖` is at most the mean of `‖g‖²`. -/
-theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
-    (hg : IntegrableOn g s μ) (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
-    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ :=
-  (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
-    hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
+/-- A finite constant factor comes out of the lower average, as it does out of the average
+(`MeasureTheory.average_const_mul`). -/
+theorem laverage_const_mul {c : ℝ≥0∞} (hc : c ≠ ∞) (f : X → ℝ≥0∞) :
+    ⨍⁻ x, c * f x ∂μ = c * ⨍⁻ x, f x ∂μ := by
+  rw [laverage_eq, laverage_eq, lintegral_const_mul' _ _ hc, mul_div_assoc]
 
-end SquareIntegrable
+/-- A constant term comes out of the lower average over a set of finite nonzero measure. -/
+theorem setLAverage_add_const {s : Set X} (hs0 : μ s ≠ 0) (hs : μ s ≠ ∞) (f : X → ℝ≥0∞)
+    (c : ℝ≥0∞) : ⨍⁻ x in s, (f x + c) ∂μ = ⨍⁻ x in s, f x ∂μ + c := by
+  rw [setLAverage_eq, setLAverage_eq, lintegral_add_right _ measurable_const, setLIntegral_const,
+    ENNReal.add_div, ENNReal.mul_div_cancel_right hs0 hs]
+
+/-- For `0 < p < ∞`, the `p`-th root of the lower average of `‖f‖ₑ ^ p` is the `Lᵖ` seminorm of
+`f` divided by the `p`-th root of the total mass. -/
+theorem laverage_rpow_enorm_rpow_inv_eq {F : Type*} [NormedAddCommGroup F] {f : X → F}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
+    (⨍⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ p.toReal⁻¹ = eLpNorm f p μ / μ Set.univ ^ p.toReal⁻¹ := by
+  rw [laverage_eq, ENNReal.div_rpow_of_nonneg _ _ (inv_nonneg.2 ENNReal.toReal_nonneg),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf, one_div]
+
+/-- An estimate `∫_s ‖g‖² ≤ α ∫_t ‖f‖² + β ∫_t ‖G‖²` between Bochner integrals, read as one
+between averages in `ℝ≥0∞`, when the measure of `t` is finite and `k` times that of `s`. -/
+theorem setLAverage_enorm_sq_le_of_setIntegral_le {V W Y : Type*} [NormedAddCommGroup V]
+    [NormedAddCommGroup W] [NormedAddCommGroup Y] {g : X → V} {f : X → W} {G : X → Y}
+    {s t : Set X} {k : ℝ≥0∞} {α β : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β) (hst : μ t = k * μ s)
+    (ht : μ t ≠ ∞) (hg : IntegrableOn (fun x => ‖g x‖ ^ 2) s μ)
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) t μ) (hG : IntegrableOn (fun x => ‖G x‖ ^ 2) t μ)
+    (h : ∫ x in s, ‖g x‖ ^ 2 ∂μ ≤ α * ∫ x in t, ‖f x‖ ^ 2 ∂μ + β * ∫ x in t, ‖G x‖ ^ 2 ∂μ) :
+    ⨍⁻ x in s, ‖g x‖ₑ ^ (2 : ℝ) ∂μ ≤
+      k * (ENNReal.ofReal α * ⨍⁻ x in t, ‖f x‖ₑ ^ (2 : ℝ) ∂μ +
+        ENNReal.ofReal β * ⨍⁻ x in t, ‖G x‖ₑ ^ (2 : ℝ) ∂μ) := by
+  rw [setLAverage_eq]
+  refine ENNReal.div_le_of_le_mul ?_
+  rw [← MeasureTheory.ofReal_setIntegral_norm_sq_eq hg]
+  calc ENNReal.ofReal (∫ x in s, ‖g x‖ ^ 2 ∂μ)
+      ≤ ENNReal.ofReal (α * ∫ x in t, ‖f x‖ ^ 2 ∂μ + β * ∫ x in t, ‖G x‖ ^ 2 ∂μ) :=
+        ENNReal.ofReal_le_ofReal h
+    _ = ENNReal.ofReal α * ENNReal.ofReal (∫ x in t, ‖f x‖ ^ 2 ∂μ)
+          + ENNReal.ofReal β * ENNReal.ofReal (∫ x in t, ‖G x‖ ^ 2 ∂μ) := by
+        rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul hα,
+          ENNReal.ofReal_mul hβ]
+    _ = ENNReal.ofReal α * (μ t * ⨍⁻ x in t, ‖f x‖ₑ ^ (2 : ℝ) ∂μ)
+          + ENNReal.ofReal β * (μ t * ⨍⁻ x in t, ‖G x‖ₑ ^ (2 : ℝ) ∂μ) := by
+        rw [MeasureTheory.ofReal_setIntegral_norm_sq_eq hf,
+          MeasureTheory.ofReal_setIntegral_norm_sq_eq hG, measure_mul_setLAverage _ ht,
+          measure_mul_setLAverage _ ht]
+    _ = _ := by
+        rw [hst]
+        ring
+
+/-- A factor `1 / λ²` in front of the average of `f²` moves inside it as `(f / λ)²`. -/
+theorem ofReal_div_sq_mul_setLAverage_eq {S : Set X} (f : X → ℝ≥0∞) {lam : ℝ} (hlam : 0 < lam)
+    (c : ℝ) :
+    ENNReal.ofReal (c / lam ^ 2) * ⨍⁻ x in S, f x ^ (2 : ℝ) ∂μ =
+      ENNReal.ofReal c * ⨍⁻ x in S, (f x / ENNReal.ofReal lam) ^ (2 : ℝ) ∂μ := by
+  rw [← laverage_const_mul ENNReal.ofReal_ne_top, ← laverage_const_mul ENNReal.ofReal_ne_top]
+  congr 1
+  funext x
+  rw [ENNReal.div_rpow_of_nonneg _ _ zero_le_two, ENNReal.ofReal_rpow_of_pos hlam, Real.rpow_two,
+    ENNReal.ofReal_div_of_pos (by positivity), div_eq_mul_inv, div_eq_mul_inv]
+  ring
+
+/-- For `c ≠ 0` and `p ≥ 0`, the average of `(f / c) ^ p` over `S` is finite when the integral of
+`f ^ p` over `S` is. -/
+theorem setLAverage_div_rpow_lt_top {S : Set X} {f : X → ℝ≥0∞} {c : ℝ≥0∞} {p : ℝ} (hc : c ≠ 0)
+    (hp : 0 ≤ p) (hf : ∫⁻ x in S, f x ^ p ∂μ ≠ ∞) :
+    ⨍⁻ x in S, (f x / c) ^ p ∂μ < ∞ := by
+  have hcp : c⁻¹ ^ p ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hp (ENNReal.inv_ne_top.2 hc)
+  refine setLAverage_lt_top ?_
+  simp only [div_eq_mul_inv, ENNReal.mul_rpow_of_nonneg _ _ hp]
+  rw [lintegral_mul_const' _ _ hcp]
+  exact ENNReal.mul_ne_top hf hcp
+
+end LAverage
+
+section Jensen
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- **Jensen's inequality for the average of a nonnegative function**: for `r ≥ 1`, the `r`-th
+power of the average of `u` is at most the average of `u ^ r`. No finiteness is assumed: if the
+measure is zero or infinite, both averages vanish. -/
+theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} {r : ℝ}
+    (hr : 1 ≤ r) : (⨍⁻ x, u x ∂μ) ^ r ≤ ⨍⁻ x, u x ^ r ∂μ := by
+  have hr0 : 0 < r := one_pos.trans_le hr
+  rw [laverage_eq, laverage_eq]
+  rcases eq_or_ne (μ Set.univ) 0 with h0 | h0
+  · rw [Measure.measure_univ_eq_zero.1 h0]
+    simp [ENNReal.zero_rpow_of_pos hr0]
+  rcases eq_or_ne (μ Set.univ) ∞ with htop | htop
+  · simp [htop, ENNReal.zero_rpow_of_pos hr0]
+  have key := rpow_lintegral_le_measure_univ_rpow_mul (μ := μ) (u := u) hr
+  have hpow0 : μ Set.univ ^ r ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) htop).ne'
+  have hpowtop : μ Set.univ ^ r ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hr0.le htop
+  rw [ENNReal.div_rpow_of_nonneg _ _ hr0.le, ENNReal.div_le_iff hpow0 hpowtop]
+  calc (∫⁻ x, u x ∂μ) ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := key
+    _ = (∫⁻ x, u x ^ r ∂μ) / μ Set.univ * μ Set.univ ^ r := by
+      rw [ENNReal.rpow_sub _ _ h0 htop, ENNReal.rpow_one, ENNReal.div_eq_inv_mul,
+        ENNReal.div_eq_inv_mul]
+      ring
+
+/-- **Jensen's inequality for the square of a mean, in `ℝ≥0∞`.** If `‖h‖²` is integrable on `s`,
+the square of the mean of `‖h‖ₑ` over `s` is at most the mean of `‖h‖²`. No finiteness of the
+measure of `s` is assumed. -/
+theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s : Set X} {h : X → E} (hi : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
+    (⨍⁻ x in s, ‖h x‖ₑ ∂μ) ^ 2 ≤ ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ 2 ∂μ) := by
+  have h2 := ofReal_setAverage_norm_rpow zero_le_two (by simpa only [Real.rpow_two] using hi)
+  simp only [Real.rpow_two, ENNReal.rpow_two] at h2
+  rw [h2]
+  simpa only [ENNReal.rpow_two] using
+    rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
+
+/-- **Jensen's inequality for the square of a mean.** The square of the mean of `‖g‖` over `s` is
+at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. -/
+theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s : Set X} {g : X → E} (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ := by
+  have h1 := pow_le_pow_left' (enorm_setAverage_le_setLAverage μ (fun x ↦ ‖g x‖) s) 2
+  simp only [eNorm_norm] at h1
+  have h := h1.trans (sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq hg2)
+  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
+  simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
+
+end Jensen
+
+section VanishingProportion
+
+open scoped NNReal
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- **The mean of `‖f‖²` is controlled by the mean oscillation when `f` vanishes on a fixed
+proportion of the set.** If `f` vanishes almost everywhere on a subset `S` of `s` with
+`θ μ(s) ≤ μ(S)`, `θ > 0`, then for every constant `c`
+
+`⨍_s ‖f‖² ≤ 2 (1 + θ⁻¹) ⨍_s ‖f - c‖²`.
+
+Taking for `c` the mean of `f` turns a Poincaré inequality for `f - c` into one for `f` itself,
+as for a Sobolev function vanishing on a part of a ball outside the domain. -/
+theorem setLAverage_enorm_sq_le_of_ae_eq_zero {E : Type*} [NormedAddCommGroup E] {f : X → E}
+    {s S : Set X} {θ : ℝ≥0} (hθ : θ ≠ 0) (hSs : S ⊆ s) (hS : θ * μ s ≤ μ S)
+    (hf : ∀ᵐ x ∂μ.restrict S, f x = 0) (c : E) :
+    ⨍⁻ x in s, ‖f x‖ₑ ^ (2 : ℝ) ∂μ ≤
+      2 * (1 + (θ : ℝ≥0∞)⁻¹) * ⨍⁻ x in s, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ := by
+  -- If `μ s` is `0` or `∞`, the left side vanishes.
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · rw [setLAverage_eq, setLIntegral_measure_zero _ _ hs0, ENNReal.zero_div]
+    exact zero_le
+  rcases eq_or_ne (μ s) ∞ with hst | hst
+  · rw [setLAverage_eq, hst, ENNReal.div_top]
+    exact zero_le
+  set D := ⨍⁻ x in s, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ
+  -- On `S` the deviation from `c` is `‖c‖`, so `θ ‖c‖² ≤ ⨍_s ‖f - c‖²`.
+  have hc : ‖c‖ₑ ^ (2 : ℝ) ≤ (θ : ℝ≥0∞)⁻¹ * D := by
+    have hS' : ‖c‖ₑ ^ (2 : ℝ) * μ S ≤ D * μ s := by
+      calc ‖c‖ₑ ^ (2 : ℝ) * μ S = ∫⁻ x in S, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ := by
+            rw [← setLIntegral_const]
+            exact lintegral_congr_ae (hf.mono fun x hx => by simp [hx])
+        _ ≤ ∫⁻ x in s, ‖f x - c‖ₑ ^ (2 : ℝ) ∂μ := lintegral_mono_set hSs
+        _ = D * μ s := by rw [mul_comm, measure_mul_setLAverage _ hst]
+    have hθc : (θ : ℝ≥0∞) * ‖c‖ₑ ^ (2 : ℝ) ≤ D := by
+      rw [← ENNReal.mul_le_mul_iff_left hs0 hst]
+      calc (θ : ℝ≥0∞) * ‖c‖ₑ ^ (2 : ℝ) * μ s = ‖c‖ₑ ^ (2 : ℝ) * (θ * μ s) := by ring
+        _ ≤ ‖c‖ₑ ^ (2 : ℝ) * μ S := mul_le_mul_right hS _
+        _ ≤ D * μ s := hS'
+    calc ‖c‖ₑ ^ (2 : ℝ) = (θ : ℝ≥0∞)⁻¹ * (θ * ‖c‖ₑ ^ (2 : ℝ)) := by
+          rw [← mul_assoc, ENNReal.inv_mul_cancel (by exact_mod_cast hθ) ENNReal.coe_ne_top,
+            one_mul]
+      _ ≤ _ := by gcongr
+  -- Pointwise `‖f‖² ≤ 2 ‖f - c‖² + 2 ‖c‖²`.
+  have hpt : ∀ x, ‖f x‖ₑ ^ (2 : ℝ) ≤ 2 * ‖f x - c‖ₑ ^ (2 : ℝ) + 2 * ‖c‖ₑ ^ (2 : ℝ) := fun x => by
+    have h1 : ‖f x‖ₑ ≤ ‖f x - c‖ₑ + ‖c‖ₑ := by
+      simpa using eNorm_add_le (f x - c) c
+    calc ‖f x‖ₑ ^ (2 : ℝ) ≤ (‖f x - c‖ₑ + ‖c‖ₑ) ^ (2 : ℝ) := by gcongr
+      _ ≤ 2 ^ ((2 : ℝ) - 1) * (‖f x - c‖ₑ ^ (2 : ℝ) + ‖c‖ₑ ^ (2 : ℝ)) :=
+        ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ one_le_two
+      _ = _ := by rw [show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one]; ring
+  calc ⨍⁻ x in s, ‖f x‖ₑ ^ (2 : ℝ) ∂μ
+      ≤ ⨍⁻ x in s, (2 * ‖f x - c‖ₑ ^ (2 : ℝ) + 2 * ‖c‖ₑ ^ (2 : ℝ)) ∂μ :=
+        setLAverage_mono_ae s (Filter.Eventually.of_forall hpt)
+    _ = 2 * D + 2 * ‖c‖ₑ ^ (2 : ℝ) := by
+        rw [setLAverage_add_const hs0 hst, laverage_const_mul ENNReal.ofNat_ne_top]
+    _ ≤ 2 * D + 2 * ((θ : ℝ≥0∞)⁻¹ * D) := by gcongr
+    _ = 2 * (1 + (θ : ℝ≥0∞)⁻¹) * D := by ring
+
+end VanishingProportion
 
 section Subset
 
@@ -415,12 +704,77 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
   have hfc : IntegrableOn (fun x => f x - c) t μ := hf.sub (integrableOn_const ht)
   have hav : (⨍⁻ x in t, ‖f x - c‖ₑ ∂μ).toReal = ⨍ x in t, ‖f x - c‖ ∂μ := by
-    simpa using toReal_setLAverage hfc.1.enorm (ae_of_all _ fun _ => enorm_ne_top)
-  rw [← toReal_enorm, measureReal_def, measureReal_def, ← ENNReal.toReal_div, ← hav,
+    simpa using toReal_setLAverage hfc.1.eNorm (ae_of_all _ fun _ => eNorm_ne_top)
+  rw [← toReal_eNorm, measureReal_def, measureReal_def, ← ENNReal.toReal_div, ← hav,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono
     (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
     (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst).1 c)
+
+/-- Two constants `c` and `d` approximating `g` on average over `s ⊆ t` and over `t` are close:
+`‖c - d‖` is at most the average of `‖g - c‖` over `s` plus `μ t / μ s` times the average of
+`‖g - d‖` over `t`. Only the real-valued functions `‖g - c‖` and `‖g - d‖` are integrated. -/
+theorem norm_sub_le_setAverage_add_div_mul_setAverage_of_subset {E : Type*}
+    [SeminormedAddCommGroup E] {g : X → E} {c d : E} (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
+    (hc : IntegrableOn (fun x => ‖g x - c‖) s μ) (hd : IntegrableOn (fun x => ‖g x - d‖) t μ) :
+    ‖c - d‖ ≤ ⨍ x in s, ‖g x - c‖ ∂μ + μ.real t / μ.real s * ⨍ x in t, ‖g x - d‖ ∂μ := by
+  have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
+  have hs0 : 0 < μ.real s := ENNReal.toReal_pos hs hs'
+  have ht0 : μ.real t ≠ 0 := (measureReal_ne_zero_iff ht).2 fun h => hs (measure_mono_null hst h)
+  -- Integrate `‖c - d‖ ≤ ‖g - c‖ + ‖g - d‖` over `s`, and enlarge the second integral to `t`.
+  have key : μ.real s * ‖c - d‖ ≤ (∫ x in s, ‖g x - c‖ ∂μ) + ∫ x in t, ‖g x - d‖ ∂μ :=
+    calc μ.real s * ‖c - d‖ = ∫ _ in s, ‖c - d‖ ∂μ := by simp
+      _ ≤ ∫ x in s, (‖g x - c‖ + ‖g x - d‖) ∂μ :=
+          setIntegral_mono (integrableOn_const hs') (hc.add (hd.mono_set hst)) fun x => by
+            rw [← norm_neg (g x - c), neg_sub]
+            exact norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ = (∫ x in s, ‖g x - c‖ ∂μ) + ∫ x in s, ‖g x - d‖ ∂μ := integral_add hc (hd.mono_set hst)
+      _ ≤ _ := add_le_add_right (setIntegral_mono_set hd (.of_forall fun _ => norm_nonneg _)
+          (.of_forall hst)) _
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul,
+    show μ.real t / μ.real s * ((μ.real t)⁻¹ * ∫ x in t, ‖g x - d‖ ∂μ) =
+      (μ.real s)⁻¹ * ∫ x in t, ‖g x - d‖ ∂μ by field_simp, ← mul_add, le_inv_mul_iff₀ hs0]
+  exact key
+
+/-- The mean oscillation of `f` on `s` is at most the average of `‖f x - f y‖ₑ` over pairs of
+points of `s`. No integrability is assumed. -/
+theorem setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
+    (hf : AEStronglyMeasurable f (μ.restrict s)) :
+    ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ ≤ ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ⊤ with htop | htop
+  · simp [setLAverage_eq, htop]
+  refine setLAverage_mono_ae s (ae_of_all _ fun x => ?_)
+  dsimp only
+  rw [eNorm_sub_rev, laverage_congr (ae_of_all _ fun y => eNorm_sub_rev (f x) (f y))]
+  exact enorm_setAverage_sub_le_setLAverage hf h0 htop (f x)
+
+omit [CompleteSpace F] in
+/-- The average of `‖f x - f y‖ₑ` over pairs of points of `s` is at most twice the mean
+oscillation of `f` on `s`. -/
+theorem setLAverage_setLAverage_enorm_sub_le :
+    ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ ≤ 2 * ⨍⁻ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ₑ ∂μ := by
+  set m := ⨍ y in s, f y ∂μ
+  set A := ⨍⁻ x in s, ‖f x - m‖ₑ ∂μ with hA
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  rcases eq_or_ne (μ s) ⊤ with htop | htop
+  · simp [setLAverage_eq, htop]
+  have hadd (c : ℝ≥0∞) : ⨍⁻ x in s, (c + ‖f x - m‖ₑ) ∂μ = c + A := by
+    rw [setLAverage_eq, lintegral_add_left' aemeasurable_const, setLIntegral_const,
+      ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, hA, setLAverage_eq]
+  calc ⨍⁻ x in s, ⨍⁻ y in s, ‖f x - f y‖ₑ ∂μ ∂μ
+      ≤ ⨍⁻ x in s, (‖f x - m‖ₑ + A) ∂μ := by
+        refine setLAverage_mono_ae s (ae_of_all _ fun x => ?_)
+        dsimp only
+        rw [← hadd]
+        refine setLAverage_mono_ae s (ae_of_all _ fun y => ?_)
+        dsimp only
+        rw [← sub_sub_sub_cancel_right (f x) (f y) m]
+        exact eNorm_sub_le
+    _ = A + A := by simp_rw [add_comm _ A, hadd]
+    _ = 2 * A := (two_mul A).symm
 
 /-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
 most four times its square mean oscillation about any constant `c`:
@@ -438,7 +792,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
   have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
     simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
   have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ :=
-    sq_setAverage_norm_le_setAverage_norm_sq h0 hs (hf.sub (integrableOn_const hs)) hfc
+    sq_setAverage_norm_le_setAverage_norm_sq hfc
   have haJ : μ.real s * a ^ 2 ≤ J := by
     calc μ.real s * a ^ 2 ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ := by
           gcongr
@@ -523,7 +877,6 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
     hH.integrableOn_norm_sub_sq_of_subset subset_rfl ht
   have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) t μ :=
     (hf.sub hH).integrable_norm_pow two_ne_zero
-  have hE0 : 0 ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
   -- On `s`, compare `f` with the average of `H`, then split off `f - H`.
   have step1 := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
     (hf.integrableOn_of_subset one_le_two hst hs)
@@ -541,9 +894,36 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
       MeasureTheory.setIntegral_norm_add_sq_le
         (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _) hHf
   have step4 : ∫ x in s, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hst.eventuallySubset
   have := mul_le_mul_of_nonneg_left step3 hK
   linarith
+
+/-- **The best constant on a line.** Among the multiples `t ν` of a vector `ν`, the orthogonal
+projection `(⟪f_s, ν⟫ / ‖ν‖²) ν` of the average `f_s` of `f` over a set `s` of finite measure
+minimizes the square mean distance to `f` on `s`. -/
+theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
+    (hf : MemLp f 2 (μ.restrict s)) (ν : F) (t : ℝ) :
+    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
+      ∫ x in s, ‖f x - t • ν‖ ^ 2 ∂μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : IntegrableOn f s μ := hf.integrable one_le_two
+  have hsq := hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs
+  set m := ⨍ y in s, f y ∂μ
+  rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint
+      (hsq ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)),
+    setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq (t • ν))]
+  refine add_le_add_right (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg) _
+  -- `m - p ⊥ ν` for the projection `p` of `m`, so `‖m - t ν‖² = ‖m - p‖² + ‖p - t ν‖²`.
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp
+  have hν2 : ‖ν‖ ^ 2 ≠ 0 := by positivity
+  have horth : ⟪m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
+    rw [inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq, RCLike.conj_to_real,
+      div_mul_cancel₀ _ hν2, sub_self]
+  have hsplit : m - t • ν = (m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) + (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2 - t) • ν := by
+    rw [sub_smul]; abel
+  rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]
+  exact le_add_of_nonneg_right (sq_nonneg _)
 
 end InnerProduct
 
@@ -625,6 +1005,16 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
   rw [setAverage_eq, setAverage_eq, setIntegral_comp_preimage_of_map_eq_smul he, hmeas,
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
+/-- Mean oscillations are invariant under a measurable equivalence `e` that pushes `μ` forward to
+a positive finite multiple of `ν`: the mean oscillation of `f ∘ e` on `e ⁻¹' s` is that of `f`
+on `s`. -/
+theorem setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν)
+    (ha : a ≠ 0) (ha' : a ≠ ∞) (f : Y → F) (s : Set Y) :
+    ⨍⁻ x in e ⁻¹' s, ‖f (e x) - ⨍ z in e ⁻¹' s, f (e z) ∂μ‖ₑ ∂μ =
+      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂ν‖ₑ ∂ν := by
+  rw [setAverage_comp_preimage_of_map_eq_smul he ha ha' f s]
+  exact setLAverage_comp_preimage_of_map_eq_smul he ha ha' (fun y => ‖f y - ⨍ z in s, f z ∂ν‖ₑ) s
+
 end ChangeOfVariables
 
 section SMulMeasure
@@ -701,15 +1091,52 @@ theorem tendsto_setAverage_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ 
 
 end Exhaustion
 
+section LargeValue
+
+/-- **Large energy on a small set forces a large density.** If a set `S` of measure less than
+`δ / c`, with `c > 0`, carries energy `∫_S f ≥ δ`, then `f` exceeds `c` at some point of `S`. No
+integrability, measurability or sign condition on `f` is needed. -/
+theorem exists_lt_of_measure_lt_of_le_setIntegral {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {f : α → ℝ} {S : Set α} {δ c : ℝ} (hc : 0 < c)
+    (hS : ν S < ENNReal.ofReal (δ / c)) (hδS : δ ≤ ∫ y in S, f y ∂ν) : ∃ y ∈ S, c < f y := by
+  have hδ : 0 < δ := (div_pos_iff_of_pos_right hc).1 (ENNReal.ofReal_pos.1 (pos_of_gt hS))
+  have hint : IntegrableOn f S ν := by
+    by_contra h
+    rw [integral_undef h] at hδS
+    linarith
+  have hν0 : ν S ≠ 0 := fun h ↦ by
+    rw [setIntegral_measure_zero _ h] at hδS
+    linarith
+  have hνS : ν S ≠ ⊤ := (hS.trans ENNReal.ofReal_lt_top).ne
+  obtain ⟨y, hy, hle⟩ := exists_setAverage_le hν0 hνS hint
+  have hpos : 0 < ν.real S := ENNReal.toReal_pos hν0 hνS
+  have hlt : ν.real S * c < δ := by
+    rw [← lt_div_iff₀ hc]
+    exact ENNReal.toReal_lt_of_lt_ofReal hS
+  rw [setAverage_eq, smul_eq_mul, inv_mul_eq_div] at hle
+  refine ⟨y, hy, lt_of_lt_of_le ?_ hle⟩
+  rw [lt_div_iff₀ hpos]
+  linarith
+
+end LargeValue
+
 section Rpow
 
-/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s > 0`, then so is `f^s`, and its
+/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s ≥ 0`, then so is `f^s`, and its
 average is at most that of `(f + δ)^s`. -/
 theorem integrable_and_average_rpow_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 < s) (hδ : 0 ≤ δ)
-    (hf : AEStronglyMeasurable f μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
-    (hint' : Integrable (fun y => (f y + δ) ^ s) μ) :
+    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 ≤ s) (hδ : 0 ≤ δ)
+    (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y) (hint' : Integrable (fun y => (f y + δ) ^ s) μ) :
     Integrable (fun y => f y ^ s) μ ∧ ⨍ y, f y ^ s ∂μ ≤ ⨍ y, (f y + δ) ^ s ∂μ := by
+  -- For `s = 0` both powers are identically `1`.
+  rcases hs.eq_or_lt with rfl | hs
+  · simpa using hint'
+  -- Measurability of `f` is recovered from that of `(f + δ) ^ s` by inverting the power.
+  have hf : AEStronglyMeasurable f μ :=
+    (((hint'.aemeasurable.pow_const s⁻¹).sub_const δ).aestronglyMeasurable).congr <| by
+      filter_upwards [hf0] with y hy
+      rw [Real.rpow_rpow_inv (by linarith) hs.ne']
+      ring
   have hle : ∀ᵐ y ∂μ, f y ^ s ≤ (f y + δ) ^ s :=
     hf0.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
   have hint : Integrable (fun y => f y ^ s) μ := by
@@ -729,12 +1156,8 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
     Filter.Tendsto (fun k : ℕ => ⨍ y, (f y + δ k) ^ p ∂μ)
       Filter.atTop (nhds (⨍ y, f y ^ p ∂μ)) := by
   -- Eventually `0 ≤ δ ≤ 1`, so `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `f ∈ Lᵖ`.
-  have hbound : Integrable (fun y => (f y + 1) ^ p) μ := by
-    have hmem : MemLp (fun y => f y + 1) (ENNReal.ofReal p) μ := hf.add (memLp_const 1)
-    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
-      ENNReal.ofReal_ne_top).congr ?_
-    filter_upwards [hf0] with y hy
-    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
+  have hbound : Integrable (fun y => (f y + 1) ^ p) μ :=
+    (hf.add (memLp_const 1)).integrable_rpow hp
   have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + δ k) ^ p ∂μ)
       Filter.atTop (nhds (∫ y, f y ^ p ∂μ)) := by
     refine tendsto_integral_filter_of_dominated_convergence _
@@ -752,6 +1175,177 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
   simp only [average_eq, smul_eq_mul]
   exact hlim.const_mul _
 
+/-- If a nonnegative function in `Lᵠ` of a set of finite positive measure has vanishing average of
+its `p`-th power, for `0 < p ≤ q`, then it vanishes almost everywhere on the set. -/
+theorem ae_eq_zero_of_setAverage_rpow_eq_zero {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s : Set α} {p : ℝ} {q : ℝ≥0∞} {g : α → ℝ} (hp : 0 < p)
+    (hpq : ENNReal.ofReal p ≤ q) (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
+    (hg : MemLp g q (μ.restrict s)) (hg0 : ∀ᵐ x ∂μ.restrict s, 0 ≤ g x)
+    (havg : ⨍ x in s, g x ^ p ∂μ = 0) : ∀ᵐ x ∂μ.restrict s, g x = 0 := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hint : IntegrableOn (fun x => g x ^ p) s μ := by
+    refine ((hg.mono_exponent hpq).integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
+      ENNReal.ofReal_ne_top).congr ?_
+    filter_upwards [hg0] with x hx
+    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg hx]
+  rw [setAverage_eq, smul_eq_mul, mul_eq_zero, inv_eq_zero] at havg
+  have hzero := (integral_eq_zero_iff_of_nonneg_ae
+    (hg0.mono fun x hx => Real.rpow_nonneg hx _) hint).1
+    (havg.resolve_left (ENNReal.toReal_pos hs0 hs).ne')
+  filter_upwards [hzero, hg0] with x h1 h2
+  exact (Real.rpow_eq_zero h2 hp.ne').1 h1
+
+/-- For `f ≥ 0` in `Lᵖ` on a finite measure space and `p > 0`, the average of `f ^ p` is at most
+that of `(f + δ) ^ p` for `δ ≥ 0`. -/
+theorem average_rpow_le_average_add_const_rpow {α : Type*} [MeasurableSpace α]
+    {m : Measure α} [IsFiniteMeasure m] {f : α → ℝ} {p δ : ℝ} (hp : 0 < p)
+    (hδ : 0 ≤ δ) (hf : MemLp f (ENNReal.ofReal p) m) (hf0 : ∀ᵐ y ∂m, 0 ≤ f y) :
+    ⨍ y, f y ^ p ∂m ≤ ⨍ y, (f y + δ) ^ p ∂m := by
+  exact (integrable_and_average_rpow_le hp.le hδ hf0
+    ((hf.add (memLp_const δ)).integrable_rpow hp)).2
+
 end Rpow
 
+section ContinuousLinearMap
+
+variable {X 𝕜 E F : Type*} [MeasurableSpace X] {μ : Measure X} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedSpace ℝ F]
+
+/-- Applying an average of continuous linear maps to a vector is the average of the
+applications. -/
+theorem _root_.ContinuousLinearMap.average_apply {H : X → E →L[𝕜] F} (hH : Integrable H μ)
+    (v : E) : (⨍ y, H y ∂μ) v = ⨍ y, H y v ∂μ := by
+  rw [average_eq, average_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
+
+end ContinuousLinearMap
+
+section Product
+
+/-- If two almost everywhere nonnegative functions on `B` have a product of integrals at most
+`C μ(B)²`, then the product of their averages over `B` is at most `C`. A function which is not
+almost everywhere strongly measurable on `B` has average zero. -/
+theorem setAverage_mul_setAverage_le_of_setLIntegral_mul_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {f₁ f₂ : α → ℝ} {C : NNReal}
+    (h₁ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₁ x) (h₂ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₂ x)
+    (h : (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) * ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ ≤
+      C * μ B ^ 2) :
+    (⨍ x in B, f₁ x ∂μ) * (⨍ x in B, f₂ x ∂μ) ≤ C := by
+  have havg {f : α → ℝ} (hf : ∀ᵐ x ∂μ.restrict B, 0 ≤ f x)
+      (hm : AEStronglyMeasurable f (μ.restrict B)) :
+      ⨍ x in B, f x ∂μ = (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f x) ∂μ).toReal := by
+    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae hf hm]
+  have hzero {f : α → ℝ} (hm : ¬AEStronglyMeasurable f (μ.restrict B)) : ⨍ x in B, f x ∂μ = 0 := by
+    rw [setAverage_eq, integral_non_aestronglyMeasurable hm, smul_zero]
+  by_cases hm₁ : AEStronglyMeasurable f₁ (μ.restrict B)
+  swap
+  · rw [hzero hm₁, zero_mul]
+    exact C.coe_nonneg
+  by_cases hm₂ : AEStronglyMeasurable f₂ (μ.restrict B)
+  swap
+  · rw [hzero hm₂, mul_zero]
+    exact C.coe_nonneg
+  by_cases hB : μ B = 0 ∨ μ B = ⊤
+  · have hB0 : μ.real B = 0 := by
+      rcases hB with hB | hB <;> simp [measureReal_def, hB]
+    rw [havg h₁ hm₁, havg h₂ hm₂, hB0]
+    simp
+  have hB0 : μ B ≠ 0 := fun h0 => hB (Or.inl h0)
+  have hBt : μ B ≠ ⊤ := fun ht => hB (Or.inr ht)
+  have hBpos : 0 < μ.real B := ENNReal.toReal_pos hB0 hBt
+  rw [havg h₁ hm₁, havg h₂ hm₂]
+  calc (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ).toReal *
+        ((μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ).toReal)
+      = (μ.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) *
+          ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ).toReal := by
+        rw [ENNReal.toReal_mul]
+        ring
+    _ ≤ (μ.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * μ B ^ 2).toReal := by
+        gcongr
+        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top hBt)
+    _ = C := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
+        field_simp
+
+end Product
+
+section Approximation
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {u : X → F}
+
+/-- The deviation of `u` from its mean over `T` on `A ⊆ U` is at most that of an approximation
+`v`, plus `(1 + μ(U) / μ(T))` times the `L¹(U)` distance from `v` to `u`, for `u` and `v`
+integrable on `U`. -/
+theorem setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn {U T A : Set X}
+    (huU : IntegrableOn u U μ) {v : X → F} (hvU : IntegrableOn v U μ) (hT : T ⊆ U) (hA : A ⊆ U) :
+    ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤
+      (∫⁻ x in U, ‖v x - u x‖ₑ ∂μ) +
+        μ U / μ T * ∫⁻ x in U, ‖v x - u x‖ₑ ∂μ +
+        ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
+  set e := ∫⁻ x in U, ‖v x - u x‖ₑ ∂μ
+  -- The means over `T` differ by at most `e / μ(T)`.
+  have hab : ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ ≤ e / μ T := by
+    rw [← setAverage_fun_sub (hvU.mono_set hT) (huU.mono_set hT)]
+    refine (enorm_setAverage_le_setLAverage μ _ T).trans ?_
+    rw [setLAverage_eq]
+    gcongr
+    exact lintegral_mono_set hT
+  -- The triangle inequality through `v` and its mean.
+  have hdist : AEMeasurable (fun x => ‖v x - u x‖ₑ) (μ.restrict A) :=
+    ((hvU.aestronglyMeasurable.sub huU.aestronglyMeasurable).eNorm.mono_measure
+      (Measure.restrict_mono hA le_rfl))
+  calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
+      ≤ ∫⁻ x in A, (‖v x - u x‖ₑ + ‖v x - ⨍ y in T, v y ∂μ‖ₑ +
+          ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
+        refine lintegral_mono fun x => ?_
+        rw [← eNorm_neg (v x - u x)]
+        refine le_of_eq_of_le ?_
+          ((eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _))
+        congr 1
+        abel
+    _ = ∫⁻ x in A, ‖v x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ +
+          ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ * μ A := by
+        rw [lintegral_add_right _ measurable_const, lintegral_add_left' hdist,
+          setLIntegral_const]
+    _ ≤ e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ + e / μ T * μ U := by
+        gcongr
+        exact lintegral_mono_set hA
+    _ = e + μ U / μ T * e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
+        simp only [div_eq_mul_inv]
+        ring
+
+end Approximation
+
+section Subsingleton
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F] {u : X → F} {S : Set X}
+
+/-- On a subsingleton domain a function is constant, so its deviation from its mean over any set
+`S` of finite positive measure vanishes. -/
+theorem enorm_sub_setAverage_eq_zero_of_subsingleton [Subsingleton X] (x : X)
+    (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ∞) : ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := by
+  have hu : u = fun _ => u x := funext fun y => congrArg u (Subsingleton.elim y x)
+  rw [hu, setAverage_const hS₀ hS_top, sub_self, eNorm_zero]
+
+end Subsingleton
+
 end TauCeti
+
+namespace ConvexOn
+
+open MeasureTheory Set Filter Topology
+
+/-- **Jensen's inequality for a monotone function convex on a half-line.** For a finite nonzero
+measure `μ`, an almost everywhere `a ≤ g`, and a function `Φ` that is convex and monotone
+on `[a, ∞)`, if `g` and `Φ ∘ g` are integrable then `Φ` of the average of `g` is at most the
+average of `Φ ∘ g`. -/
+theorem map_average_le_of_monotoneOn_Ici {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [NeZero μ] {a : ℝ} {g : α → ℝ} {Φ : ℝ → ℝ}
+    (hΦ : ConvexOn ℝ (Ici a) Φ) (hΦm : MonotoneOn Φ (Ici a)) (hg : ∀ᵐ x ∂μ, a ≤ g x)
+    (hgi : Integrable g μ) (hΦi : Integrable (fun x ↦ Φ (g x)) μ) :
+    Φ (⨍ x, g x ∂μ) ≤ ⨍ x, Φ (g x) ∂μ :=
+  hΦ.map_average_le (hΦ.continuousOn_Ici_of_monotoneOn hΦm) isClosed_Ici hg hgi hΦi
+
+end ConvexOn

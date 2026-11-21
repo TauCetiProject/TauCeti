@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # A Morse–Smale function on the plane
@@ -215,25 +216,6 @@ theorem hasNondegenerateCriticalPointsOn_cosAddHalfSq :
     HasNondegenerateCriticalPointsOn cosAddHalfSq univ :=
   hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦ isNondegenerateCriticalPoint_cosAddHalfSq hz
 
-/-- At a critical point with `cos x = -1`, the Morse index is `0`. -/
-private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
-    {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = -1) :
-    morseIndex cosAddHalfSq z = 0 := by
-  have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hz
-  refine hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.1 fun u hu ↦ ?_
-  rw [hessianQuadraticForm_cosAddHalfSq, hc]
-  have hne : u 0 ≠ 0 ∨ u 1 ≠ 0 := by
-    by_contra h
-    rw [not_or, not_not, not_not] at h
-    apply hu
-    ext i
-    fin_cases i
-    · simpa using h.1
-    · simpa using h.2
-  rcases hne with h | h
-  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 0), sq_nonneg (u 1)]
-  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 1), sq_nonneg (u 0)]
-
 /-- At a critical point with `cos x = 1`, the Morse index is `1`. -/
 private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
     (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = 1) :
@@ -244,8 +226,8 @@ private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one {z : Euclide
     rw [hessianQuadraticForm_cosAddHalfSq, hc] at this
     norm_num at this
   have h2 : morseIndex cosAddHalfSq z ≠ 2 := fun h ↦ by
-    have := (hnd.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank.2
-      (by rw [h, finrank_euclideanSpace_fin])) e₁ (by simp)
+    have := ((neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
+      (f := cosAddHalfSq) (x := z)).2 (by rw [h, finrank_euclideanSpace_fin])) e₁ (by simp)
     rw [neg_apply, hessianQuadraticForm_cosAddHalfSq, hc] at this
     norm_num at this
   have hle : morseIndex cosAddHalfSq z ≤ 2 := by
@@ -267,17 +249,26 @@ private noncomputable abbrev onAxis (z : EuclideanSpace ℝ (Fin 2)) : Euclidean
   EuclideanSpace.single 0 (z 0)
 
 private theorem fderiv_cosAddHalfSq_onAxis {z : EuclideanSpace ℝ (Fin 2)}
-    (h : Real.cos (z 0) = 1 ∨ Real.cos (z 0) = -1) : fderiv ℝ cosAddHalfSq (onAxis z) = 0 := by
+    (h : Real.cos (z 0) = 1) : fderiv ℝ cosAddHalfSq (onAxis z) = 0 := by
   refine fderiv_cosAddHalfSq_eq_zero_iff.2 ⟨?_, by simp⟩
-  simpa using Real.sin_eq_zero_iff_cos_eq.2 h
+  simpa using Real.sin_eq_zero_iff_cos_eq.2 (Or.inl h)
 
 /-- At a point with `cos x = -1`, a minimum when it is critical, the Morse index is `0`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
     (hc : Real.cos (z 0) = -1) : morseIndex cosAddHalfSq z = 0 := by
-  have hw : Real.cos (onAxis z 0) = -1 := by simpa using hc
-  rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
-    morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
-      (fderiv_cosAddHalfSq_onAxis (Or.inr hc)) hw]
+  refine morseIndex_eq_zero_of_posDef fun u hu ↦ ?_
+  rw [hessianQuadraticForm_cosAddHalfSq, hc]
+  have hne : u 0 ≠ 0 ∨ u 1 ≠ 0 := by
+    by_contra h
+    rw [not_or, not_not, not_not] at h
+    apply hu
+    ext i
+    fin_cases i
+    · simpa using h.1
+    · simpa using h.2
+  rcases hne with h | h
+  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 0), sq_nonneg (u 1)]
+  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 1), sq_nonneg (u 0)]
 
 /-- At a point with `cos x = 1`, a saddle when it is critical, the Morse index is `1`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
@@ -285,29 +276,18 @@ theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
   have hw : Real.cos (onAxis z 0) = 1 := by simpa using hc
   rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
     morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one
-      (fderiv_cosAddHalfSq_onAxis (Or.inl hc)) hw]
+      (fderiv_cosAddHalfSq_onAxis hc) hw]
 
 /-- The negative-gradient flow of `cos x + y² / 2`. -/
 local notation "Φ" => negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq
-
-private theorem hasDerivAt_orbit (z : EuclideanSpace ℝ (Fin 2)) (t : ℝ) :
-    HasDerivAt (fun t ↦ Φ t z) (-gradField (Φ t z)) t := by
-  have := (isNegativeGradient_negativeGradientFlow cosAddHalfSq
-    lipschitzWith_gradient_cosAddHalfSq).isIntegralCurve z t
-  beta_reduce at this
-  rwa [gradient_cosAddHalfSq] at this
-
-private theorem hasDerivAt_orbit_coord (z : EuclideanSpace ℝ (Fin 2)) (i : Fin 2) (t : ℝ) :
-    HasDerivAt (fun t ↦ Φ t z i) (-gradField (Φ t z) i) t := by
-  exact (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt
-    t (hasDerivAt_orbit z t)
 
 /-- Along an orbit, the second coordinate is `y₀ e^{-t}`. -/
 private theorem orbit_apply_one (z : EuclideanSpace ℝ (Fin 2)) (t : ℝ) :
     Φ t z 1 = z 1 * Real.exp (-t) := by
   have hd : ∀ s, HasDerivAt (fun s ↦ Real.exp s * Φ s z 1) 0 s := fun s ↦ by
-    refine ((Real.hasDerivAt_exp s).mul (hasDerivAt_orbit_coord z 1 s)).congr_deriv ?_
-    simp only [gradField_apply_one]
+    refine ((Real.hasDerivAt_exp s).mul
+      (hasDerivAt_negativeGradientFlow_apply _ _ z 1 s)).congr_deriv ?_
+    simp only [gradient_cosAddHalfSq_apply_one]
     ring
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt) (fun s ↦ (hd s).deriv)
     t 0
@@ -361,8 +341,8 @@ private theorem apply_zero_eq_of_mem_stableSet {q z : EuclideanSpace ℝ (Fin 2)
   rw [Flow.mem_stableSet] at hz
   set D : ℝ → ℝ := fun t ↦ Φ t z 0 - q 0 with hDdef
   have hD' : ∀ t, HasDerivAt D (Real.sin (D t)) t := fun t ↦ by
-    refine ((hasDerivAt_orbit_coord z 0 t).sub_const (q 0)).congr_deriv ?_
-    simp only [gradField_apply_zero, neg_neg, hDdef, Real.sin_sub, hs, hc]
+    refine ((hasDerivAt_negativeGradientFlow_apply _ _ z 0 t).sub_const (q 0)).congr_deriv ?_
+    simp only [gradient_cosAddHalfSq_apply_zero, neg_neg, hDdef, Real.sin_sub, hs, hc]
     ring
   have hD : Tendsto D atTop (𝓝 0) := by
     have h1 := ((EuclideanSpace.proj (0 : Fin 2) :

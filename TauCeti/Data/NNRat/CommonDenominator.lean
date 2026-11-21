@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
-import Mathlib.Tactic.FieldSimp
 
 /-!
 # Fractions of nonnegative rationals
@@ -17,42 +16,32 @@ These let a statement phrased through `q.num` and `q.den` be checked on any frac
 
 ## Main results
 
-* `TauCeti.NNRat.num_mul_eq_of_eq_div`: `q = a / b` gives `q.num * b = a * q.den`.
+* `NNRat.eq_div_iff_num_mul_eq_mul_den`: for `b ≠ 0`, `q = a / b` iff `q.num * b = a * q.den`.
 * `NNRat.natCast_mul_eq_div`: `n * q` as the fraction `(n * q.num) / q.den`.
 * `NNRat.eq_div_den_mul_den`: `q` and `q'` as fractions over `q.den * q'.den`.
 -/
 
 public section
 
-namespace TauCeti.NNRat
-
-/-- **Cross-multiplying with the reduced fraction**: if `q = a / b` with `b ≠ 0`, then
-`q.num * b = a * q.den`. -/
-theorem num_mul_eq_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) (hq : q = a / b) :
-    q.num * b = a * q.den := by
-  rw [← NNRat.num_div_den q, div_eq_div_iff (by simp) (by simpa using hb)] at hq
-  exact_mod_cast hq
-
-end TauCeti.NNRat
-
 namespace NNRat
+
+/-- **Cross-multiplying with the reduced fraction**: for `b ≠ 0`, `q = a / b` exactly when
+`q.num * b = a * q.den`. -/
+theorem eq_div_iff_num_mul_eq_mul_den {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) :
+    q = a / b ↔ q.num * b = a * q.den := by
+  rw [← divNat_inj q.den_ne_zero hb, num_divNat_den, divNat_eq_div]
 
 /-- **Scaling the reduced fraction**: `n * q` is the fraction `(n * q.num) / q.den`. -/
 theorem natCast_mul_eq_div (q : ℚ≥0) (n : ℕ) :
     (n : ℚ≥0) * q = ((n * q.num : ℕ) : ℚ≥0) / (q.den : ℚ≥0) := by
-  rw [Nat.cast_mul, mul_div_assoc, NNRat.num_div_den]
+  rw [Nat.cast_mul, mul_div_assoc, num_div_den]
 
 /-- **A common denominator**: two nonnegative rationals `q` and `q'` are the fractions
 `(q.num * q'.den) / (q.den * q'.den)` and `(q'.num * q.den) / (q.den * q'.den)`. -/
 theorem eq_div_den_mul_den (q q' : ℚ≥0) :
     q = ((q.num * q'.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) ∧
       q' = ((q'.num * q.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) := by
-  constructor
-  · conv_lhs => rw [← NNRat.num_div_den q]
-    push_cast
-    field_simp
-  · conv_lhs => rw [← NNRat.num_div_den q']
-    push_cast
-    field_simp
+  constructor <;> rw [eq_div_iff_num_mul_eq_mul_den (mul_ne_zero q.den_ne_zero q'.den_ne_zero)] <;>
+    ac_rfl
 
 end NNRat

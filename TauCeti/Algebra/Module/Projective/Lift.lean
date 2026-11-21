@@ -64,7 +64,7 @@ endomorphism ring is `(r)`-adically complete, every idempotent endomorphism of `
 reduction of an idempotent endomorphism of `N`.
 
 The completeness hypothesis holds when `R` is Noetherian and `(r)`-adically complete and `N` is
-finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherian` and
+finitely generated over `R`, by `TauCeti.isNoetherian_linearMap_of_finite` and
 `IsAdicComplete.of_finite`. -/
 theorem exists_isIdempotentElem_endMapQ_eq
     {e : Module.End A (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))}
@@ -100,7 +100,7 @@ theorem exists_projective_quotient_smul_top_linearEquiv {Y : Type*}
   have hred (x : N) : i (q (Submodule.Quotient.mk x)) = Submodule.Quotient.mk (e x) := by
     rw [← Ideal.endMapQ_mk, hee, LinearMap.comp_apply]
   have hfix (x : LinearMap.range e) : e x = x :=
-    (LinearMap.IsIdempotentElem.mem_range_iff he).mp x.2
+    (LinearMap.IsIdempotentElem.mem_range_iff he).mp x.property
   -- The composite `X → N ⧸ r • N → Y` descends to the required isomorphism `X ⧸ r • X ≃ Y`.
   let φ : LinearMap.range e →ₗ[A] Y :=
     q ∘ₗ (Ideal.span {algebraMap R A r} • (⊤ : Submodule A N)).mkQ ∘ₗ (LinearMap.range e).subtype

@@ -124,8 +124,8 @@ theorem ofSurjective_mem_chart {x : Fin k → M} {φ : M →ₗ[R] Fin k → R}
 
 /-- The linear isomorphism `R^k ≃ M ⧸ N` for `N` in the chart at `x`. -/
 noncomputable def chartQuotEquiv {x : Fin k → M} (N : chart R x) :
-    (Fin k → R) ≃ₗ[R] M ⧸ N.1.toSubmodule :=
-  LinearEquiv.ofBijective (N.1.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R x) N.2
+    (Fin k → R) ≃ₗ[R] M ⧸ N.val.toSubmodule :=
+  LinearEquiv.ofBijective (N.val.toSubmodule.mkQ ∘ₗ Fintype.linearCombination R x) N.property
 
 @[simp]
 theorem chartQuotEquiv_apply {x : Fin k → M} (N : chart R x) (v : Fin k → R) :
@@ -138,10 +138,10 @@ point `N` corresponds to the inverse of `R^k ≃ M ⧸ N` composed with the proj
 corresponds to its kernel. -/
 noncomputable def chartEquiv (x : Fin k → M) :
     chart R x ≃ {φ : M →ₗ[R] Fin k → R // ∀ i, φ (x i) = Pi.single i 1} where
-  toFun N := ⟨(chartQuotEquiv N).symm.toLinearMap ∘ₗ N.1.toSubmodule.mkQ, fun i ↦ by
+  toFun N := ⟨(chartQuotEquiv N).symm.toLinearMap ∘ₗ N.val.toSubmodule.mkQ, fun i ↦ by
     apply (chartQuotEquiv N).injective
     simp⟩
-  invFun φ := ⟨_, ofSurjective_mem_chart φ.2⟩
+  invFun φ := ⟨_, ofSurjective_mem_chart φ.property⟩
   left_inv N := by
     ext : 2
     simp [LinearMap.ker_comp]
@@ -150,28 +150,28 @@ noncomputable def chartEquiv (x : Fin k → M) :
     -- `R^k ≃ M ⧸ ker φ` sends `φ m` to the class of `m`
     refine (LinearEquiv.symm_apply_eq _).2 ((Submodule.Quotient.eq _).2 ?_)
     rw [toSubmodule_ofSurjective, LinearMap.mem_ker, map_sub,
-      TauCeti.leftInverse_fintypeLinearCombination φ.2, sub_self]
+      TauCeti.leftInverse_fintypeLinearCombination φ.property, sub_self]
 
 @[simp]
 theorem toSubmodule_chartEquiv_symm_apply (x : Fin k → M)
     (φ : {φ : M →ₗ[R] Fin k → R // ∀ i, φ (x i) = Pi.single i 1}) :
-    ((chartEquiv R x).symm φ).1.toSubmodule = LinearMap.ker φ.1 :=
+    ((chartEquiv R x).symm φ).val.toSubmodule = LinearMap.ker φ.val :=
   toSubmodule_ofSurjective _ _ _
 
 @[simp]
 theorem chartEquiv_apply_apply_self (x : Fin k → M) (N : chart R x) (i : Fin k) :
-    (chartEquiv R x N).1 (x i) = Pi.single i 1 :=
-  (chartEquiv R x N).2 i
+    (chartEquiv R x N).val (x i) = Pi.single i 1 :=
+  (chartEquiv R x N).property i
 
 /-- The linear map `M → R^k` attached to a point `N` of the chart at `x`, followed by
 `R^k ≃ M ⧸ N`, is the projection `M → M ⧸ N`. -/
 theorem chartQuotEquiv_chartEquiv_apply (x : Fin k → M) (N : chart R x) (m : M) :
-    chartQuotEquiv N ((chartEquiv R x N).1 m) = Submodule.Quotient.mk m := by
+    chartQuotEquiv N ((chartEquiv R x N).val m) = Submodule.Quotient.mk m := by
   simp [chartEquiv]
 
 @[simp]
 theorem ker_chartEquiv_apply (x : Fin k → M) (N : chart R x) :
-    LinearMap.ker (chartEquiv R x N).1 = N.1.toSubmodule := by
+    LinearMap.ker (chartEquiv R x N).val = N.val.toSubmodule := by
   rw [← toSubmodule_chartEquiv_symm_apply, Equiv.symm_apply_apply]
 
 end Chart
@@ -240,26 +240,27 @@ variable {R}
 @[simp]
 theorem chartBaseChangeEquiv_apply_apply (x : Fin k → M)
     (N : chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i)) (m : M) :
-    (chartBaseChangeEquiv R A x N).1 m = (chartEquiv A _ N).1 (1 ⊗ₜ m) := by
+    (chartBaseChangeEquiv R A x N).val m = (chartEquiv A _ N).val (1 ⊗ₜ m) := by
   simp [chartBaseChangeEquiv]
 
 @[simp]
 theorem toSubmodule_chartBaseChangeEquiv_symm_apply (x : Fin k → M)
     (ψ : {ψ : M →ₗ[R] Fin k → A // ∀ i, ψ (x i) = Pi.single i 1}) :
-    ((chartBaseChangeEquiv R A x).symm ψ).1.toSubmodule = LinearMap.ker (ψ.1.liftBaseChange A) :=
+    ((chartBaseChangeEquiv R A x).symm ψ).val.toSubmodule = LinearMap.ker (ψ.val.liftBaseChange A)
+        :=
   toSubmodule_ofSurjective _ _ _
 
 /-- The chart points over `A` and `B` attached to `ψ : M → A^k` and to `f ∘ ψ : M → B^k` correspond
 under base change along `f : A → B`. -/
 theorem map_chartBaseChangeEquiv_symm (f : A →ₐ[R] B) (x : Fin k → M)
     (ψ : {ψ : M →ₗ[R] Fin k → A // ∀ i, ψ (x i) = Pi.single i 1}) :
-    map f ((chartBaseChangeEquiv R A x).symm ψ).1 =
-      ((chartBaseChangeEquiv R B x).symm ⟨f.toLinearMap.compLeft (Fin k) ∘ₗ ψ.1, fun i ↦ by
+    map f ((chartBaseChangeEquiv R A x).symm ψ).val =
+      ((chartBaseChangeEquiv R B x).symm ⟨f.toLinearMap.compLeft (Fin k) ∘ₗ ψ.val, fun i ↦ by
         ext j
-        simp [ψ.2, Pi.single_apply, apply_ite f]⟩).1 :=
-  map_ofSurjective_liftBaseChange f ψ.1
+        simp [ψ.property, Pi.single_apply, apply_ite f]⟩).val :=
+  map_ofSurjective_liftBaseChange f ψ.val
     (TauCeti.leftInverse_fintypeLinearCombination (x := fun i ↦ (1 : A) ⊗ₜ[R] x i)
-      fun i ↦ by simp [ψ.2]).surjective
+      fun i ↦ by simp [ψ.property]).surjective
 
 variable (R) in
 /-- The chart at `x : Fin k → M` as a subfunctor of the Grassmannian functor
@@ -269,9 +270,9 @@ def chartFunctor (x : Fin k → M) : Subfunctor (functor.{u, v, w} (R := R) (M :
   obj A := chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i)
   map {A B} f N hN := by
     obtain ⟨ψ, hψ⟩ := (chartBaseChangeEquiv R A x).symm.surjective ⟨N, hN⟩
-    obtain rfl : ((chartBaseChangeEquiv R A x).symm ψ).1 = N := congrArg Subtype.val hψ
+    obtain rfl : ((chartBaseChangeEquiv R A x).symm ψ).val = N := congrArg Subtype.val hψ
     -- the image of `N` under `(functor k).map f` is `map f.hom N`, a point of the chart over `B`
-    have h : map f.hom ((chartBaseChangeEquiv R A x).symm ψ).1 ∈
+    have h : map f.hom ((chartBaseChangeEquiv R A x).symm ψ).val ∈
         chart B (fun i ↦ (1 : B) ⊗ₜ[R] x i) := by
       rw [map_chartBaseChangeEquiv_symm]
       exact Subtype.prop _
@@ -308,7 +309,7 @@ private theorem chartBasisEquiv_symm_apply_eq (Φ : Matrix ι (Fin k) A) :
 `A ⊗[R] M → A^k` whose kernel it is. -/
 @[simp]
 theorem chartBasisEquiv_apply (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.inr j))) (l : ι) :
-    chartBasisEquiv b A N l = (chartEquiv A _ N).1 (1 ⊗ₜ b (Sum.inl l)) :=
+    chartBasisEquiv b A N l = (chartEquiv A _ N).val (1 ⊗ₜ b (Sum.inl l)) :=
   (b.constrSumInrEquiv_apply _ _ l).trans (chartBaseChangeEquiv_apply_apply _ N _)
 
 /-- The vector `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))` of `A ⊗[R] M`. These vectors span the
@@ -325,7 +326,7 @@ theorem chartGraphVector_def (Φ : Matrix ι (Fin k) A) (l : ι) :
 /-- **The point of the chart with matrix `Φ` is the graph of `-Φ`**: it is spanned by the graph
 vectors `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))`. -/
 theorem toSubmodule_chartBasisEquiv_symm (Φ : Matrix ι (Fin k) A) :
-    ((chartBasisEquiv b A).symm Φ).1.toSubmodule =
+    ((chartBasisEquiv b A).symm Φ).val.toSubmodule =
       Submodule.span A (Set.range (chartGraphVector b Φ)) := by
   rw [chartBasisEquiv_symm_apply_eq, toSubmodule_chartBaseChangeEquiv_symm_apply,
     Basis.coe_constrSumInrEquiv_symm_apply]
@@ -361,10 +362,10 @@ variable {B : Type w} [CommRing B] [Algebra R B]
 
 /-- The chart coordinates are natural: base change along `f : A → B` applies `f` to the matrix. -/
 theorem map_chartBasisEquiv_symm (f : A →ₐ[R] B) (Φ : Matrix ι (Fin k) A) :
-    map f ((chartBasisEquiv b A).symm Φ).1 = ((chartBasisEquiv b B).symm (Φ.map f)).1 := by
+    map f ((chartBasisEquiv b A).symm Φ).val = ((chartBasisEquiv b B).symm (Φ.map f)).val := by
   rw [chartBasisEquiv_symm_apply_eq, chartBasisEquiv_symm_apply_eq]
   refine (map_chartBaseChangeEquiv_symm f _ _).trans
-    (congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B _).symm ψ).1) ?_)
+    (congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B _).symm ψ).val) ?_)
   refine Subtype.ext (b.ext fun i ↦ ?_)
   rcases i with l | j
   · ext j
@@ -419,6 +420,21 @@ theorem universalLinearMap_apply_self (i : Fin k) :
   rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem] at h
   simpa [universalLinearMap, Pi.single_apply, apply_ite (algebraMap R _)] using h
 
+/-- `R`-algebra maps out of `ChartAlgebra R x` are determined by their values on the universal
+point. The target need not be commutative. -/
+theorem hom_ext {A : Type*} [Semiring A] [Algebra R A] {g g' : ChartAlgebra R x →ₐ[R] A}
+    (h : ∀ m j, g (universalLinearMap R x m j) = g' (universalLinearMap R x m j)) : g = g' := by
+  -- `SymmetricAlgebra.algHom_ext` needs a commutative target, so induct on the generators.
+  refine Ideal.Quotient.algHom_ext R (AlgHom.ext fun a ↦ ?_)
+  induction a using SymmetricAlgebra.induction with
+  | algebraMap r => simp
+  | ι v =>
+    rw [← Finset.univ_sum_single v]
+    simp only [map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by simpa [universalLinearMap] using h (v j) j
+  | mul a b ha hb => simp_all
+  | add a b ha hb => simp_all
+
 variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- `R`-algebra maps `ChartAlgebra R x → A` are the linear maps `ψ : M → A^k` with `ψ (x i) = eᵢ`,
@@ -429,15 +445,15 @@ noncomputable def homEquiv :
     ext j
     simp [universalLinearMap_apply_self, Pi.single_apply, apply_ite g]⟩
   invFun ψ := Ideal.Quotient.liftₐ (chartIdeal R x)
-    (SymmetricAlgebra.lift (LinearMap.lsum R (fun _ ↦ M) R fun j ↦ LinearMap.proj j ∘ₗ ψ.1))
+    (SymmetricAlgebra.lift (LinearMap.lsum R (fun _ ↦ M) R fun j ↦ LinearMap.proj j ∘ₗ ψ.val))
     (by
       -- the generators of `chartIdeal R x` are sent to `ψ (x i) j - δᵢⱼ = 0`
       have : chartIdeal R x ≤ RingHom.ker (SymmetricAlgebra.lift
-          (LinearMap.lsum R (fun _ ↦ M) R fun j ↦ LinearMap.proj j ∘ₗ ψ.1) :
+          (LinearMap.lsum R (fun _ ↦ M) R fun j ↦ LinearMap.proj j ∘ₗ ψ.val) :
             SymmetricAlgebra R (Fin k → M) →ₐ[R] A) := by
         rw [chartIdeal, Ideal.span_le, Set.range_subset_iff]
         intro ij
-        simp [-LinearMap.lsum_apply, LinearMap.lsum_piSingle, ψ.2, Pi.single_apply]
+        simp [-LinearMap.lsum_apply, LinearMap.lsum_piSingle, ψ.property, Pi.single_apply]
       exact fun a ha ↦ RingHom.mem_ker.1 (this ha))
   left_inv g := by
     refine Ideal.Quotient.algHom_ext R
@@ -454,20 +470,14 @@ noncomputable def homEquiv :
 
 @[simp]
 theorem homEquiv_apply_apply (g : ChartAlgebra R x →ₐ[R] A) (m : M) (j : Fin k) :
-    (homEquiv R x g).1 m j = g (universalLinearMap R x m j) :=
+    (homEquiv R x g).val m j = g (universalLinearMap R x m j) :=
   (rfl)
 
 @[simp]
 theorem homEquiv_symm_apply_universalLinearMap
     (ψ : {ψ : M →ₗ[R] Fin k → A // ∀ i, ψ (x i) = Pi.single i 1}) (m : M) (j : Fin k) :
-    (homEquiv R x).symm ψ (universalLinearMap R x m j) = ψ.1 m j := by
+    (homEquiv R x).symm ψ (universalLinearMap R x m j) = ψ.val m j := by
   rw [← homEquiv_apply_apply, Equiv.apply_symm_apply]
-
-/-- `R`-algebra maps out of `ChartAlgebra R x` are determined by their values on the universal
-point. -/
-theorem hom_ext {g g' : ChartAlgebra R x →ₐ[R] A}
-    (h : ∀ m j, g (universalLinearMap R x m j) = g' (universalLinearMap R x m j)) : g = g' :=
-  (homEquiv R x).injective <| Subtype.ext <| LinearMap.ext fun m ↦ funext fun j ↦ h m j
 
 end ChartAlgebra
 
@@ -483,7 +493,7 @@ variable {R}
 @[simp]
 theorem toSubmodule_chartHomEquiv_apply (x : Fin k → M) {A : Type w} [CommRing A] [Algebra R A]
     (g : ChartAlgebra R x →ₐ[R] A) :
-    (chartHomEquiv R x A g).1.toSubmodule =
+    (chartHomEquiv R x A g).val.toSubmodule =
       LinearMap.ker ((g.toLinearMap.compLeft (Fin k) ∘ₗ
         ChartAlgebra.universalLinearMap R x).liftBaseChange A) :=
   toSubmodule_ofSurjective _ _ _
@@ -492,7 +502,7 @@ theorem toSubmodule_chartHomEquiv_apply (x : Fin k → M) {A : Type w} [CommRing
 theorem chartHomEquiv_symm_apply_universalLinearMap (x : Fin k → M) {A : Type w} [CommRing A]
     [Algebra R A] (N : chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i)) (m : M) (j : Fin k) :
     (chartHomEquiv R x A).symm N (ChartAlgebra.universalLinearMap R x m j) =
-      (chartEquiv A _ N).1 (1 ⊗ₜ m) j := by
+      (chartEquiv A _ N).val (1 ⊗ₜ m) j := by
   simp [chartHomEquiv]
 
 /-- The linear map `A ⊗[R] M → A^k` attached to the point of the chart at `x` classified by
@@ -501,7 +511,7 @@ theorem chartHomEquiv_symm_apply_universalLinearMap (x : Fin k → M) {A : Type 
 @[simp]
 theorem chartEquiv_chartHomEquiv_apply_tmul (x : Fin k → M) {A : Type w} [CommRing A]
     [Algebra R A] (g : ChartAlgebra R x →ₐ[R] A) (m : M) (j : Fin k) :
-    (chartEquiv A _ (chartHomEquiv R x A g)).1 (1 ⊗ₜ m) j =
+    (chartEquiv A _ (chartHomEquiv R x A g)).val (1 ⊗ₜ m) j =
       g (ChartAlgebra.universalLinearMap R x m j) := by
   rw [← chartHomEquiv_symm_apply_universalLinearMap, Equiv.symm_apply_apply]
 
@@ -509,10 +519,10 @@ theorem chartEquiv_chartHomEquiv_apply_tmul (x : Fin k → M) {A : Type w} [Comm
 along `f`. -/
 theorem chartHomEquiv_comp (x : Fin k → M) {A B : Type w} [CommRing A] [Algebra R A] [CommRing B]
     [Algebra R B] (f : A →ₐ[R] B) (g : ChartAlgebra R x →ₐ[R] A) :
-    (chartHomEquiv R x B (f.comp g)).1 = map f (chartHomEquiv R x A g).1 := by
+    (chartHomEquiv R x B (f.comp g)).val = map f (chartHomEquiv R x A g).val := by
   simp only [chartHomEquiv, Equiv.trans_apply, map_chartBaseChangeEquiv_symm]
   -- both points come from the linear map `m ↦ f ∘ g ∘ (universal point at m)`
-  exact congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B x).symm ψ).1) <|
+  exact congrArg (fun ψ ↦ ((chartBaseChangeEquiv R B x).symm ψ).val) <|
     Subtype.ext <| LinearMap.ext fun m ↦ funext fun j ↦ by simp
 
 /-- The chart subfunctor at `x` is corepresented by `ChartAlgebra R x`. -/

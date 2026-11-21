@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 
 /-!
@@ -61,5 +63,16 @@ theorem mem_orthogonal (N : Subcomodule k H M) (B : LinearMap.BilinForm k M)
     (m : M) : m ∈ N.orthogonal B hB ↔ ∀ n ∈ N, B n m = 0 := by
   rw [← mem_toSubmodule, orthogonal_toSubmodule, LinearMap.BilinForm.mem_orthogonal_iff]
   rfl
+
+/-- If a subrepresentation `N` is isotropic but not equal to its orthogonal complement, then
+the pullback of `N` to the orthogonal subrepresentation `Nᗮ` is a proper subspace. -/
+theorem comap_orthogonal_subtype_toSubmodule_ne_top {B : LinearMap.BilinForm k M}
+    (hB : Representation.IsInvariantForm (Comodule.basePointsRepresentation (H := H) M) B)
+    (N : Subcomodule k H M) (hN : N.toSubmodule ≤ B.orthogonal N.toSubmodule)
+    (heq : N.toSubmodule ≠ B.orthogonal N.toSubmodule) :
+    (N.comap (N.orthogonal B hB).subtype).toSubmodule ≠ ⊤ := by
+  rw [comap_toSubmodule, subtype_toLinearMap]
+  exact fun h ↦ heq <| le_antisymm hN <|
+    orthogonal_toSubmodule N B hB ▸ Submodule.comap_subtype_eq_top.1 h
 
 end TauCeti.Subcomodule

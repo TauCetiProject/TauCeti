@@ -80,7 +80,7 @@ forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_even_and_reverse_eq_neg_an
   have hQ := nondegenerate_realCliffordForm p q
   rcases subsingleton_or_nontrivial (Fin (p + q) → ℝ) with _ | _
   · exact (TauCeti.forall_expUnit_smul_mem_range_iff_eq_zero _ x).trans
-      (mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero _ hQ x).symm
+      (mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero _ x).symm
   · simp only [mem_spinGroup_toUnits_range_iff, TauCeti.expUnit_coe,
       mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem _ hQ hQ.exists_isUnit]
     exact (TauCeti.Lie.forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff
@@ -139,7 +139,7 @@ forall_expUnit_smul_mem_complexSpinGroup_iff_mem_even_and_reverse_eq_neg_and_lie
   simp only [Ring.lie_def]
   rcases subsingleton_or_nontrivial (Fin n → ℂ) with _ | _
   · exact (TauCeti.forall_expUnit_smul_mem_range_iff_eq_zero _ x).trans
-      (mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero Q hQ x).symm
+      (mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero Q x).symm
   · simp only [mem_spinGroup_toUnits_range_iff, TauCeti.expUnit_coe,
       mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem Q hQ hQ.exists_isUnit]
     exact (TauCeti.Lie.forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff

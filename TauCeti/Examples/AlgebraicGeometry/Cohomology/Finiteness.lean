@@ -84,7 +84,8 @@ is not flat. -/
 example (ht : t ∈ nonZeroDivisors A) (ht' : ¬ IsUnit t) :
     ¬ Flat (Spec (.of (A ⧸ Ideal.span {t})) ↘ Spec (.of A)) := by
   rw [specOverSpec_over, Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
-  exact Module.Flat.not_quotient_span_singleton ht ht'
+  exact Module.Flat.not_quotient_of_mem_nonZeroDivisors
+    (by rwa [ne_eq, Ideal.span_singleton_eq_top]) ht (Ideal.mem_span_singleton_self t)
 
 /-- The direct image of the structure sheaf along `Spec (A ⧸ (t)) ⟶ Spec A` is the sheaf
 associated with the `A`-module `A ⧸ (t)`. -/
@@ -134,7 +135,8 @@ example :
 example (ht : t ∈ nonZeroDivisors A) (ht' : ¬ IsUnit t) :
     ¬ Module.Flat A
       (Cohomology (InvertibleSheaf.trivial (Spec (.of (A ⧸ Ideal.span {t})))).obj 0) :=
-  fun _ ↦ Module.Flat.not_quotient_span_singleton ht ht'
+  fun _ ↦ Module.Flat.not_quotient_of_mem_nonZeroDivisors
+    (by rwa [ne_eq, Ideal.span_singleton_eq_top]) ht (Ideal.mem_span_singleton_self t)
     (.of_linearEquiv (cohomologyZeroTrivialSpecLinearEquiv A (.of (A ⧸ Ideal.span {t}))).symm)
 
 end Quotient
@@ -147,8 +149,9 @@ variable (k : Type u) [Field k]
 nonzerodivisor of `k⟦t⟧` and not a unit. -/
 example : ¬ Flat (Spec (.of (k⟦X⟧ ⧸ Ideal.span {(X : k⟦X⟧)})) ↘ Spec (.of k⟦X⟧)) := by
   rw [specOverSpec_over, Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
-  refine Module.Flat.not_quotient_span_singleton (mem_nonZeroDivisors_of_ne_zero X_ne_zero) ?_
-  rw [isUnit_iff_constantCoeff, constantCoeff_X]
+  refine Module.Flat.not_quotient_of_mem_nonZeroDivisors ?_
+    (mem_nonZeroDivisors_of_ne_zero X_ne_zero) (Ideal.mem_span_singleton_self _)
+  rw [ne_eq, Ideal.span_singleton_eq_top, isUnit_iff_constantCoeff, constantCoeff_X]
   exact not_isUnit_zero
 
 end PowerSeries

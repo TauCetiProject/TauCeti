@@ -8,8 +8,9 @@ module
 public import TauCeti.NumberTheory.LocalField.Exponential
 public import TauCeti.NumberTheory.LocalField.Logarithm
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.Algebra.Order.Monoid.Unbundled.Pow
 import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.Valuation.Polynomial
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
 
@@ -80,11 +81,11 @@ private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : �
   · simp
   have hfac : (m.factorial : K) ≠ 0 := Nat.cast_ne_zero.mpr m.factorial_ne_zero
   have hcoeff : PowerSeries.coeff m (PowerSeries.exp K - 1) * x ^ m * m.factorial = x ^ m := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hm]
+    rw [PowerSeries.coeff_exp_sub_one_of_ne_zero hm]
     field_simp
   have hv : valuation K (m.factorial : K) ≠ 0 := by simpa using hfac
   simp only [powValuation_apply]
-  refine le_of_mul_le_mul_right ?_ (pow_pos (zero_lt_iff.mpr hv) (p - 1))
+  refine le_of_mul_le_mul_right ?_ (pow_pos (pos_iff_ne_zero.mpr hv) (p - 1))
   calc valuation K (PowerSeries.coeff m (PowerSeries.exp K - 1) * x ^ m) ^ (p - 1) *
           valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) *
           valuation K (m.factorial : K) ^ (p - 1)
@@ -119,8 +120,8 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
   have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hcoeff :
       valuation K (PowerSeries.coeff n (PowerSeries.log K)) * valuation K (n : K) = 1 := by
-    rw [← map_mul]
-    simp [PowerSeries.coeff_log, hn, hnK]
+    rw [← map_mul, PowerSeries.coeff_log_eq_neg_one_pow_div]
+    simp [hnK]
   have hv : valuation K (n : K) ≠ 0 := by simpa using hnK
   -- `(p - 1) * v_p(n) < n`, since `p ^ v_p(n)` divides `n`.
   have hq : (p - 1) * padicValNat p n < n := by
@@ -131,7 +132,7 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
     · simp [h0, Nat.pos_of_ne_zero hn]
     · omega
   simp only [powValuation_apply]
-  refine le_of_mul_le_mul_right ?_ (pow_pos (zero_lt_iff.mpr hv) (p - 1))
+  refine le_of_mul_le_mul_right ?_ (pow_pos (pos_iff_ne_zero.mpr hv) (p - 1))
   calc valuation K (PowerSeries.coeff n (PowerSeries.log K)) ^ (p - 1) *
           (valuation K x ^ (p - 1)) ^ n *
           valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) *
@@ -160,14 +161,13 @@ private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero K]
       (exp (x : K) - 1) := by
   convert (hasSum_exp_of_mem_maximalIdeal_pow x hi).sub (hasSum_ite_eq 0 (1 : K)) using 1
   funext m
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hm, div_eq_inv_mul]
+  rw [PowerSeries.coeff_exp_sub_one_mul_pow]
+  split_ifs with hm <;> simp [hm]
 
 /-- The valuation of an element of `𝓂[K] ^ i`, for a uniformizer `π`, is at most `v(π) ^ i`. -/
 private theorem valuation_le_pow_of_mem_maximalIdeal_pow {π : 𝒪[K]} (hπ : Irreducible π)
     (x : (𝓂[K] ^ i : Ideal 𝒪[K])) : valuation K (x : K) ≤ valuation K (π : K) ^ i :=
-  (Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) i) x).mp x.2
+  (Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) i) x).mp x.property
 
 /-- On `𝓂[K] ^ i` with `(p - 1) * i > e`, the exponential preserves the valuation of its
 argument: `v(exp x - 1) = v(x)`. -/
@@ -183,7 +183,7 @@ theorem valuation_exp_sub_one (hi : absoluteRamificationIndex K p < (p - 1) * i)
   set f := fun m => PowerSeries.coeff m (PowerSeries.exp K - 1) * (x : K) ^ m with hf_def
   have hf := hasSum_coeff_exp_sub_one_mul_pow hi x
   have hf1 : PowerSeries.coeff 1 (PowerSeries.exp K - 1) * (x : K) ^ 1 = x := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one]
+    simp [PowerSeries.coeff_exp_sub_one_of_ne_zero]
   have hS1 : valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) < 1 :=
     pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hπ) (by omega)
   have hS0 : valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) ≠ 0 :=
@@ -192,18 +192,18 @@ theorem valuation_exp_sub_one (hi : absoluteRamificationIndex K p < (p - 1) * i)
   have hlt : ∀ m, valuation K (Function.update f 1 0 m) < valuation K (x : K) := by
     intro m
     rcases eq_or_ne m 1 with rfl | hm1
-    · simpa [zero_lt_iff] using hvx
+    · simpa [pos_iff_ne_zero] using hvx
     rw [Function.update_of_ne hm1]
     rcases eq_or_ne m 0 with rfl | hm0
-    · simpa [hf_def, zero_lt_iff] using hvx
+    · simpa [hf_def, pos_iff_ne_zero] using hvx
     have hb := powValuation_coeff_exp_sub_one_mul_pow_le hπ hi hxv m
     have hSm : (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ m =
         (valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p)) ^ (m - 1) *
           valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) := by
       rw [← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hm0)]
-    rw [hSm, ← mul_assoc, mul_le_mul_iff_left₀ (zero_lt_iff.mpr hS0)] at hb
+    rw [hSm, ← mul_assoc, mul_le_mul_iff_left₀ (pos_iff_ne_zero.mpr hS0)] at hb
     have hpow : powValuation K p (f m) < powValuation K p (x : K) :=
-      hb.trans_lt (mul_lt_of_lt_one_right (zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hx))
+      hb.trans_lt (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hx))
         (pow_lt_one₀ zero_le hS1 (by omega)))
     rw [powValuation_apply, powValuation_apply] at hpow
     exact lt_of_pow_lt_pow_left₀ (p - 1) zero_le hpow
@@ -276,7 +276,7 @@ private theorem powValuation_eval_trunc_log_eval_trunc_exp_sub_one_sub_le [CharZ
   · have hcomp := Valuation.map_coeff_comp_mul_pow_le hF hQ k
     have hXk := hX k
     rw [Polynomial.coeff_sub, sub_mul]
-    rw [← le_div_iff₀ (zero_lt_iff.mpr hS0)] at hcomp hXk ⊢
+    rw [← le_div_iff₀ (pos_iff_ne_zero.mpr hS0)] at hcomp hXk ⊢
     exact Valuation.map_sub_le _ hcomp hXk
 
 /-- Letting the truncation degree of `exp - 1` tend to infinity in
@@ -295,8 +295,8 @@ private theorem powValuation_eval_trunc_log_exp_sub_one_sub_le [CharZero K] {π 
   -- The truncations of `exp - 1` at `x` converge to `exp x - 1`.
   have hE : Tendsto (fun N => (PowerSeries.trunc N (PowerSeries.exp K - 1)).eval (x : K)) atTop
       (𝓝 (exp (x : K) - 1)) := by
-    refine (hasSum_coeff_exp_sub_one_mul_pow hi x).tendsto_sum_nat.congr fun N => ?_
-    simp only [Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range, RingHom.id_apply]
+    exact (hasSum_coeff_exp_sub_one_mul_pow hi x).tendsto_sum_nat.congr fun N =>
+      (PowerSeries.eval_trunc N _ _).symm
   have hlim : Tendsto (fun N => F.eval ((PowerSeries.trunc N (PowerSeries.exp K - 1)).eval
       (x : K)) - x) atTop (𝓝 (F.eval (exp (x : K) - 1) - x)) :=
     ((F.continuous.tendsto _).comp hE).sub_const _
@@ -327,11 +327,7 @@ theorem log_exp_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p
       (unitFiltration_antitone (Nat.one_le_iff_ne_zero.mpr (by rintro rfl; simp at hi)) hu)
     rw [hux] at h
     refine h.tendsto_sum_nat.congr fun M => ?_
-    simp only [Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range, RingHom.id_apply]
-    refine Finset.sum_congr rfl fun n _ => ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_log, hn]
+    simp only [PowerSeries.eval_trunc, PowerSeries.coeff_log_eq_neg_one_pow_div]
   -- A nonzero `log (exp x) - x` would violate the bound `A * S ^ M` for large `M`.
   by_contra hne
   have hy : log (exp (x : K)) - x ≠ 0 := sub_ne_zero.mpr hne
@@ -346,7 +342,7 @@ theorem log_exp_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p
   have hlt : A * S ^ M < powValuation K p (log (exp (x : K)) - x) * S :=
     calc A * S ^ M ≤ A * S ^ M₀ := mul_le_mul_right (pow_le_pow_right_of_le_one' hS1.le hMM₀) A
       _ < A * (powValuation K p (log (exp (x : K)) - x) * S / A) :=
-        mul_lt_mul_of_pos_left hM₀ (zero_lt_iff.mpr hA0)
+        mul_lt_mul_of_pos_left hM₀ (pos_iff_ne_zero.mpr hA0)
       _ = powValuation K p (log (exp (x : K)) - x) * S := mul_div_cancel₀ _ hA0
   exact (h.trans_lt hlt).false
 

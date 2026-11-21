@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
+public import Mathlib.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Data.Sym.Crosses
@@ -30,6 +31,9 @@ edge cut along `T`; conversely when `T ⊆ S`.
 
 These facts are the interface between cut-based and walk-based descriptions of connectivity,
 used for instance to characterize bridges by deletion.
+
+For a simple graph, an edge of `Graph.ofSimpleGraph G` crosses a vertex set exactly when the
+corresponding unordered pair crosses it.
 
 ## Implementation notes
 
@@ -73,14 +77,14 @@ theorem IsLoopAt.notMem_edgeCut (h : G.IsLoopAt e x) : e ∉ G.edgeCut S := by
 corresponding cut of actual vertices. -/
 theorem edgeEnds_crosses_iff_mem_edgeCut (G : Graph α β) (e : G.edgeSet)
     (S : Set G.vertexSet) :
-    (G.edgeEnds e).Crosses S ↔ e.1 ∈ G.edgeCut (Subtype.val '' S) := by
+    (G.edgeEnds e).Crosses S ↔ e.val ∈ G.edgeCut (Subtype.val '' S) := by
   classical
   obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
   let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
   have hend : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
-  have hx' : x'.1 = x := rfl
-  have hy' : y'.1 = y := rfl
+  have hx' : x'.val = x := rfl
+  have hy' : y'.val = y := rfl
   rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, ← hx', ← hy',
     Subtype.val_injective.mem_set_image, Subtype.val_injective.mem_set_image]
 
@@ -180,3 +184,19 @@ theorem edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty {T : Set α} (hTS : T 
   exact notMem_empty e (h ▸ he)
 
 end Graph
+
+namespace SimpleGraph
+
+variable {V : Type u} {G : SimpleGraph V} {e : Sym2 V} {S : Set V}
+
+/-- An edge of `Graph.ofSimpleGraph G` belongs to the edge cut of `S` exactly when its unordered
+pair of endpoints crosses `S`. -/
+theorem mem_edgeCut_ofSimpleGraph_iff_crosses (he : e ∈ G.edgeSet) :
+    e ∈ (Graph.ofSimpleGraph G).edgeCut S ↔ e.Crosses S := by
+  induction e using Sym2.inductionOn with
+  | _ x y =>
+    have hlink : (Graph.ofSimpleGraph G).IsLink s(x, y) x y := by
+      simpa using he
+    simpa only [Sym2.crosses_mk_iff] using hlink.mem_edgeCut_iff
+
+end SimpleGraph

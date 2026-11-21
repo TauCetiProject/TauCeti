@@ -25,9 +25,13 @@ The argument follows the usual proof in Humphreys, *Introduction to Lie Algebras
 Theory*, §10. A nonzero reflection-invariant subspace contains a root, hence a simple root. Once
 it contains one simple root, connectedness and reflection invariance propagate membership along
 every edge of the Dynkin diagram, so the simple roots span the whole space inside the subspace.
+The argument is stated for any family of roots whose roots and coroots span, not only for the
+simple roots of a base, so that it also applies to a family known to span before a base is built.
 
 ## Main results
 
+* `RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn`: a family of roots whose roots
+  and coroots span, with connected diagram of Cartan integers, makes a root pairing irreducible.
 * `RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix`: a connected base
   diagram makes a root system irreducible.
 * `RootPairing.eq_bot_of_forall_root_not_mem`: a submodule invariant under the simple
@@ -143,33 +147,58 @@ section
 variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic]
 
-omit [P.IsCrystallographic] in
+omit [P.IsCrystallographic] [CharZero K] in
 /-- **A submodule invariant under the simple reflections and containing no simple root is
 trivial.** If `q` is invariant under the reflection at each element of the base's support and
 misses the root there, then `q = ⊥`.
 
 Invariance is asked at the support only, not under every reflection of `P`. -/
 theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem
-    [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
+    [NeZero (2 : K)] [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
     (hinv : ∀ i : b.support, q ∈ Module.End.invtSubmodule (P.reflection i))
-    (h : ∀ i : b.support, P.root i ∉ q) : q = ⊥ := by
-  -- Missing every simple root puts `q` inside all the simple coroot kernels; the coweight basis
-  -- then kills every pairing, and perfection of the pairing forces `q` to vanish.
-  have hle : q ≤ ⨅ i : b.support, LinearMap.ker (P.coroot' i) :=
-    le_iInf fun i ↦ (Submodule.mem_invtSubmodule_reflection_iff (P.flip.root_coroot_two i)
-      (Submodule.disjoint_span_singleton_of_notMem (h i))).mp (hinv i)
-  refine eq_bot_iff.mpr fun x hx => ?_
-  apply P.toPerfPair.injective
-  apply LinearMap.ext
-  intro y
-  rw [map_zero, ← b.toCoweightBasis.sum_repr y, map_sum]
-  apply Finset.sum_eq_zero
-  intro i _
-  have hz : (P.toPerfPair x) (b.toCoweightBasis i) = 0 := by
-    have hallker : ∀ j : b.support, x ∈ LinearMap.ker (P.coroot' j) := by
-      simpa using hle hx
-    simpa using LinearMap.mem_ker.mp (hallker i)
-  rw [map_smul, hz, smul_zero]
+    (h : ∀ i : b.support, P.root i ∉ q) : q = ⊥ :=
+  RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top
+    (e := ((↑) : b.support → ι)) hinv h (by simp [range_comp])
+
+/-- **Over a field of characteristic zero, a crystallographic root pairing is irreducible when a
+family of roots whose roots and coroots both span has connected diagram** of Cartan integers.
+No base is needed: the family need not consist of simple roots. -/
+theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn
+    {J : Type*} (e : J → ι)
+    (hroot : Submodule.span K (range (P.root ∘ e)) = ⊤)
+    (hcoroot : Submodule.span K (range (P.coroot ∘ e)) = ⊤)
+    (hconn : (diagramGraph (Matrix.of fun u v ↦ P.pairingIn ℤ (e u) (e v))).Connected) :
+    P.IsIrreducible := by
+  let _ : Nontrivial M :=
+    ⟨⟨P.root (e hconn.nonempty.some), 0, P.ne_zero _⟩⟩
+  apply RootPairing.IsIrreducible.mk' P
+  intro q hinv hq
+  have hsimple : ∃ j, P.root (e j) ∈ q := by
+    by_contra! h
+    exact hq (RootPairing.eq_bot_of_forall_root_not_mem_of_span_coroot_eq_top
+      (fun j ↦ hinv (e j)) h hcoroot)
+  obtain ⟨i, hi⟩ := hsimple
+  -- adjacency in the diagram is nonvanishing of the Cartan integer, hence of the pairing
+  have propagate {u v : J}
+      (hadj : (diagramGraph (Matrix.of fun u v ↦ P.pairingIn ℤ (e u) (e v))).Adj u v)
+      (hu : P.root (e u) ∈ q) : P.root (e v) ∈ q := by
+    refine RootPairing.root_mem_of_isUnit_pairing (hinv (e v)) (Ne.isUnit fun hp ↦ ?_) hu
+    apply (diagramGraph_adj.mp hadj).2.1
+    apply FaithfulSMul.algebraMap_injective ℤ K
+    rw [Matrix.of_apply, P.algebraMap_pairingIn, map_zero, hp]
+  have hall (j : J) : P.root (e j) ∈ q := by
+    obtain ⟨w⟩ := hconn.preconnected i j
+    let rec along {u v : J}
+        (w : (diagramGraph (Matrix.of fun u v ↦ P.pairingIn ℤ (e u) (e v))).Walk u v)
+        (hu : P.root (e u) ∈ q) : P.root (e v) ∈ q :=
+      match w with
+      | .nil => hu
+      | .cons hadj w => along w (propagate hadj hu)
+    exact along w hi
+  rw [eq_top_iff, ← hroot]
+  refine Submodule.span_le.mpr ?_
+  rintro _ ⟨j, rfl⟩
+  exact hall j
 
 /-- A crystallographic root system with a connected Dynkin diagram is irreducible.
 
@@ -179,34 +208,11 @@ Mathlib's invariant-submodule criterion for a reflection. -/
 theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
     [P.IsRootSystem] (b : P.Base)
     (hconn : (diagramGraph b.cartanMatrix).Connected) : P.IsIrreducible := by
-  let _ : Nontrivial M :=
-    ⟨⟨P.root hconn.nonempty.some, 0, P.ne_zero hconn.nonempty.some⟩⟩
-  apply RootPairing.IsIrreducible.mk' P
-  intro q hinv hq
-  have hsimple : ∃ i : b.support, P.root i ∈ q := by
-    by_contra! h
-    exact hq (RootPairing.eq_bot_of_forall_root_not_mem (b := b) (fun i ↦ hinv i) h)
-  obtain ⟨i, hi⟩ := hsimple
-  -- adjacency in the diagram is exactly nonvanishing of the Cartan entry, hence of the pairing
-  have propagate {u v : b.support} (hadj : (diagramGraph b.cartanMatrix).Adj u v)
-      (hu : P.root u ∈ q) : P.root v ∈ q :=
-    RootPairing.root_mem_of_isUnit_pairing (hinv v)
-      (Ne.isUnit fun hp ↦ (diagramGraph_adj.mp hadj).2.1
-        (b.cartanMatrix_apply_eq_zero_iff_pairing.mpr hp)) hu
-  have hall : ∀ j : b.support, P.root j ∈ q := by
-    intro j
-    obtain ⟨w⟩ := hconn.preconnected i j
-    let rec along {u v : b.support} (w : (diagramGraph b.cartanMatrix).Walk u v)
-        (hu : P.root u ∈ q) : P.root v ∈ q :=
-      match w with
-      | .nil => hu
-      | .cons hadj w => along w (propagate hadj hu)
-    exact along w hi
-  rw [eq_top_iff, ← b.toWeightBasis.span_eq]
-  refine Submodule.span_le.mpr ?_
-  rintro _ ⟨j, rfl⟩
-  rw [b.toWeightBasis_apply]
-  exact hall j
+  have hM : (Matrix.of fun u v : b.support ↦ P.pairingIn ℤ u v) = b.cartanMatrix := by
+    ext u v
+    simp [RootPairing.Base.cartanMatrix, RootPairing.Base.cartanMatrixIn_def]
+  exact RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn ((↑) : b.support → ι)
+    (by simp [range_comp]) (by simp [range_comp]) (by rwa [hM])
 
 end
 

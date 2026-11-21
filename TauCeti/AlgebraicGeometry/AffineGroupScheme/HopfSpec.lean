@@ -10,10 +10,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
-public import Mathlib.RingTheory.Flat.EquationalCriterion
-public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import TauCeti.Algebra.Coalgebra.Convolution
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+public import TauCeti.RingTheory.Flat.Projective
 
 /-!
 # Infrastructure for Hopf spectra
@@ -53,10 +52,9 @@ same-universe restriction is inherited from Mathlib's current `hopfSpec` constru
   morphism.
 * `TauCeti.algebraFinitePresentation_iff_locallyOfFinitePresentation_hopfSpec`: finite
   presentation of an algebra corresponds to local finite presentation of its structural morphism.
-* `TauCeti.moduleProjective_iff_flat_and_finitePresentation`: a finite algebra is projective as a
-  module exactly when it is flat and finitely presented as an algebra.
-* `TauCeti.moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec`: the corresponding
-  characterization in terms of the structural morphism of a Hopf spectrum.
+* `TauCeti.moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec`: a finite Hopf
+  algebra is projective as a module exactly when its Hopf spectrum is flat and locally of finite
+  presentation.
 * `TauCeti.finrank_hopfSpec`: the rank function of a finite flat Hopf spectrum is the local rank
   of its coordinate algebra.
 -/
@@ -135,15 +133,20 @@ lemma hopfSpec_obj_X_hom (H : CommHopfAlgCat.{u} R) :
         exact heq_of_eq (AlgebraicGeometry.algSpec_obj_hom
           (R := CommRingCat.of R) (Opposite.op (CommAlgCat.of R H))))
 
-/-- A morphism property that respects isomorphisms holds for the structural morphism of a Hopf
-spectrum exactly when it holds for the spectrum map induced by the algebra structure map. -/
+/-- A morphism property holds for the structural morphism of a Hopf spectrum exactly when it holds
+for the spectrum map induced by the algebra structure map. -/
 theorem morphismProperty_hopfSpec_obj_X_hom_iff
-    (P : MorphismProperty Scheme.{u}) [P.RespectsIso] (H : CommHopfAlgCat.{u} R) :
+    (P : MorphismProperty Scheme.{u}) (H : CommHopfAlgCat.{u} R) :
     P (((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (op H)).X.hom) ↔
       P (Spec.map (CommRingCat.ofHom (algebraMap R H))) := by
-  rw [hopfSpec_obj_X_hom]
-  rw [MorphismProperty.cancel_left_of_respectsIso
-    (P := P) (eqToHom (hopfSpec_obj_X_left R H))]
+  have h : ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (op H)).X.hom ≍
+      Spec.map (CommRingCat.ofHom (algebraMap R H)) := by
+    rw [hopfSpec_obj_X_hom]
+    exact eqToHom_comp_heq _ _
+  -- The two schemes agree by `hopfSpec_obj_X_left`, so the heterogeneous equality is an equality.
+  cases hopfSpec_obj_X_left R H
+  rw [eq_of_heq h]
+  rfl
 
 /-- The multiplication source of a Hopf spectrum is the standard affine fibre product of two
 copies of its underlying spectrum over the base. -/
@@ -330,20 +333,6 @@ theorem algebraFinitePresentation_iff_locallyOfFinitePresentation_hopfSpec
     (P := @LocallyOfFinitePresentation) R H]
   rw [LocallyOfFinitePresentation.SpecMap_iff]
   exact RingHom.finitePresentation_algebraMap.symm
-
-/-- A finite commutative algebra is projective as a module exactly when it is flat as a module
-and finitely presented as an algebra. -/
-theorem moduleProjective_iff_flat_and_finitePresentation
-    (R A : Type u) [CommRing R] [CommRing A] [Algebra R A] [Module.Finite R A] :
-    Module.Projective R A ↔ Module.Flat R A ∧ Algebra.FinitePresentation R A := by
-  rw [← Module.FinitePresentation.iff_finitePresentation_of_finite]
-  exact ⟨fun h ↦ by
-    let _ : Module.Projective R A := h
-    exact ⟨inferInstance, Module.finitePresentation_of_projective R A⟩,
-    fun h ↦ by
-      let _ : Module.Flat R A := h.1
-      let _ : Module.FinitePresentation R A := h.2
-      exact Module.Flat.projective_of_finitePresentation⟩
 
 /-- For a finite Hopf algebra over a commutative ring, projectivity of the coordinate algebra is
 equivalent to flatness and local finite presentation of its Hopf spectrum over the base. -/

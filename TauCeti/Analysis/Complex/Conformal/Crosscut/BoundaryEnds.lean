@@ -173,7 +173,8 @@ theorem exists_frontier_inter_closure_image_ball_inter_sphere_eq_pair_dist_le_of
       frontier (f '' ball c r) ∩ closure (f '' (ball c r ∩ sphere ζ ρ)) = {u, v} ∧
         dist u v ≤ ε ∧ diam (f '' (ball c r ∩ sphere ζ ρ)) ≤ ε :=
   exists_frontier_inter_closure_image_ball_inter_sphere_eq_pair_dist_le hζ hr hf
-    hinj (lintegral_enorm_deriv_sq_ne_top_of_isBounded isOpen_ball hf
-      measurableSet_ball.nullMeasurableSet subset_rfl hinj hb) hε hR
+    hinj (lintegral_enorm_deriv_sq_ne_top_of_isBounded
+      (fun _ hz => hf.differentiableAt (isOpen_ball.mem_nhds hz))
+      measurableSet_ball.nullMeasurableSet hinj hb) hε hR
 
 end TauCeti

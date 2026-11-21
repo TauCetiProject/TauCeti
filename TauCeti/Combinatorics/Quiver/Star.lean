@@ -30,6 +30,6 @@ variable {V : Type u} [Quiver.{v} V]
 
 /-- The arrows from `i` to `j` form a finite type when the star at `i` is finite. -/
 instance finiteHomOfFiniteStar (i j : V) [Finite (Star i)] : Finite (i ⟶ j) :=
-  Finite.of_injective (fun e : i ⟶ j => (Star.mk e : Star i)) sigma_mk_injective
+  Finite.of_injective Star.mk sigma_mk_injective
 
 end Quiver

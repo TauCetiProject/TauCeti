@@ -73,8 +73,7 @@ private theorem exists_regularSystem_aux (dimension : ℕ) :
     have : IsRegularLocalRing (quotient ⧸ I.map quotientMap) :=
       .of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE hle).symm
     have hdrop : (maximalIdeal quotient).spanFinrank + 1 = (maximalIdeal R).spanFinrank :=
-      TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_quotient_span_singleton_add_one hmax
-        hparameter
+      TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_quotient_span_singleton_add_one hparameter
     obtain ⟨size, count, generators, hcount, hspan, hsize, hideal⟩ :=
       induction (maximalIdeal quotient).spanFinrank (by omega) quotient rfl
         (I.map quotientMap)

@@ -86,18 +86,19 @@ theorem locallyFiniteBoundary_zero_surjective
   rw [mem_locallyFiniteChains] at hc
   -- The singular vertices carrying a nonzero coefficient, and the rays they start.
   let S := {σ : (TopCat.toSSet.obj X) _⦋0⦌ // c σ ≠ 0}
-  have hS : ∀ i : S, simplexMap i.1 (toTopInitialVertex _) = TopCat.toSSetObj₀Equiv i.1 :=
-    fun i ↦ congrArg FundamentalGroupoid.as (initialVertex_zero i.1)
-  have hp : LocallyFinite fun i : S ↦ ({TopCat.toSSetObj₀Equiv i.1} : Set X) := by
+  have hS : ∀ i : S, simplexMap i.val (toTopInitialVertex _) = TopCat.toSSetObj₀Equiv i.val :=
+    fun i ↦ congrArg FundamentalGroupoid.as (initialVertex_zero i.val)
+  have hp : LocallyFinite fun i : S ↦ ({TopCat.toSSetObj₀Equiv i.val} : Set X) := by
     refine ((isLocallyFiniteChain_iff_locallyFinite.1 hc).comp_injective
       Subtype.val_injective).subset fun i ↦ ?_
     rintro _ rfl
-    exact ⟨i.2, _, hS i⟩
+    exact ⟨i.property, _, hS i⟩
   obtain ⟨z, q, hz0, hq⟩ := exists_locallyFinite_range_path hX _ hp
   -- The coefficient of `c` at the start of each ray, transported along the ray.
   let m : ∀ i k, L.obj (FundamentalGroupoid.mk (z i k)) := fun i k ↦
-    (L.map (eqToHom ((initialVertex_zero i.1).trans (congrArg FundamentalGroupoid.mk (hz0 i).symm))
-      ≫ rayTransport (q i) k)).hom (c i.1)
+    (L.map (eqToHom ((initialVertex_zero i.val).trans (congrArg FundamentalGroupoid.mk
+        (hz0 i).symm))
+      ≫ rayTransport (q i) k)).hom (c i.val)
   -- The vertex chains along the rays, and the edge chains whose boundaries are their differences.
   let e : S × ℕ → (twistedChainComplex L).X 0 := fun ik ↦
     (ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm (z ik.1 ik.2))).hom (m ik.1 ik.2)
@@ -111,19 +112,14 @@ theorem locallyFiniteBoundary_zero_surjective
       ((twistedChainComplex L).d 1 0).hom (y ik) = e ik - e (ik.1, ik.2 + 1) := by
     simp only [y, e, map_neg, d_ιTwistedChainComplex_simplex₁_apply, neg_sub, hm]
   have hy (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (y ik) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
-    rintro _ ⟨p, rfl⟩
-    -- `simplexMap` evaluates the singular simplex at the unlifted point.
-    exact ⟨_, (congr($(toSSetObjEquiv_simplex₁ _) p.down)).symm⟩
+      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) :=
+    range_simplexMap_subset_range_of_ne_zero_simplex₁ L _ hσ
   have he (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (e ik) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
-    rintro _ ⟨_, rfl⟩
-    exact ⟨0, (q ik.1 ik.2).source⟩
-  have he0 (i : S) : e (i, 0) = (ιTwistedChainComplex L 0 i.1).hom (c i.1) := by
+      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) :=
+    range_simplexMap_subset_range_of_ne_zero_vertex L (q ik.1 ik.2) hσ
+  have he0 (i : S) : e (i, 0) = (ιTwistedChainComplex L 0 i.val).hom (c i.val) := by
     simp only [e, m, rayTransport, Category.comp_id]
-    rw [ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L i.1 (hz0 i).symm]
+    rw [ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L i.val (hz0 i).symm]
   refine ⟨locallyFiniteSum hq hy, Subtype.ext (funext fun ρ ↦ ?_)⟩
   -- Along each ray the coefficients on `ρ` of the boundaries telescope to that of its start.
   rw [locallyFiniteBoundary_locallyFiniteSum, coe_locallyFiniteSum, locallyFiniteSumFun_apply]
@@ -133,7 +129,7 @@ theorem locallyFiniteBoundary_zero_surjective
   by_cases hρ : c ρ = 0
   · rw [hρ, finsum_eq_zero_of_forall_eq_zero fun i ↦
       twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L
-        (fun h ↦ i.2 (h ▸ hρ)) _]
+        (fun h ↦ i.property (h ▸ hρ)) _]
   · rw [finsum_eq_single _ (⟨ρ, hρ⟩ : S) fun i hi ↦
       twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L
         (fun h ↦ hi (Subtype.ext h)) _]

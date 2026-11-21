@@ -23,10 +23,9 @@ path-connected space onto a simply connected space is injective: a path joining 
 fibre projects to a loop, which is null-homotopic, so its lift is a loop as well. The same
 argument applies within one path component of an arbitrary total space.
 
-It also records the lifting criterion in a subgroup form used by the universal-covers
-roadmap. Mathlib already proves the fundamental result
-`IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`: a map `f : A → X` lifts through
-a covering map `p : E → X`, with prescribed basepoint lift `e₀`, when
+It also records the lifting criterion in a subgroup form. Mathlib already proves the
+fundamental result `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`: a map
+`f : A → X` lifts through a covering map `p : E → X`, with prescribed basepoint lift `e₀`, when
 `f_* π₁(A, a₀)` is contained in `p_* π₁(E, e₀)`. The classification of covers often inserts
 an intermediate subgroup `H ≤ π₁(X, f a₀)`: one first proves `f_* π₁(A, a₀) ≤ H`, and
 separately identifies `H` as a subgroup of the image of `p_*`.
@@ -158,7 +157,7 @@ noncomputable def _root_.IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnect
       FundamentalGroup.fromPath <|
         ((Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (e : E) (e' : E))).map
           ⟨p, hp.continuous⟩).cast
-            (Set.mem_singleton_iff.mp e.2).symm (Set.mem_singleton_iff.mp e'.2).symm
+            (Set.mem_singleton_iff.mp e.property).symm (Set.mem_singleton_iff.mp e'.property).symm
     left_inv γ := by
       refine CategoryTheory.End.ext ?_
       set Γ : Path.Homotopic.Quotient (e : E) (hp.monodromy γ.toPath e : E) :=

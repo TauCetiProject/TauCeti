@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # The idele norm of a number field
@@ -49,6 +50,8 @@ class group.
 * `TauCeti.GlobalNumberFields.coe_ideleNorm_ofAdicCompletion`,
   `TauCeti.GlobalNumberFields.coe_ideleNorm_ofCompletion`: on an idele concentrated at one place
   the idele norm is the normalized absolute value at that place.
+* `TauCeti.GlobalNumberFields.coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one`: an idele
+  concentrated at a finite place `v` with a uniformizer as coordinate has idele norm `N(v)⁻¹`.
 * `TauCeti.GlobalNumberFields.continuous_ideleNorm`: the idele norm is continuous, because the
   finite factors are locally constant on the idele group.
 * `TauCeti.GlobalNumberFields.ideleNorm_ideleNormSection`: the section is right inverse to the
@@ -394,6 +397,15 @@ theorem coe_ideleNorm_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
   rw [coe_ideleNorm, finprod_eq_single _ v fun v' hv' ↦ by
     simp [v'.ideleFiniteCoord_ofAdicCompletion_of_ne hv']]
   simp
+
+/-- An idele concentrated at one finite place `v`, with a uniformizer of `K_v` as `v`-adic
+coordinate, has idele norm `N(v)⁻¹`. -/
+theorem coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one (v : HeightOneSpectrum (𝓞 K))
+    {u : (v.adicCompletion K)ˣ} (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
+    ((ideleNorm (IdeleGroup.ofAdicCompletion (𝓞 K) K v u) : ℝ≥0) : ℝ) =
+      (v.asIdeal.absNorm : ℝ)⁻¹ := by
+  rw [coe_ideleNorm_ofAdicCompletion, FinitePlace.norm_adicCompletion_eq_absNorm_zpow v u.ne_zero,
+    hu, WithZero.log_exp, zpow_neg_one]
 
 /-- On an idele concentrated at one infinite place `w`, the idele norm is the normalized absolute
 value of the `w`-coordinate. -/

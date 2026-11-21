@@ -57,8 +57,8 @@ The steps of that construction are the following statements.
 * `SetRel.isSmallFamily_iUnion`: small families form a σ-ideal.
 * `SetRel.isSmallFamily_univ_iff`: for nonempty `ι`, all assignments form a small family iff `G`
   has a countable Borel coloring.
-* `SetRel.IsSmallFamily.of_exists_range_subset`: smallness transfers back along families whose
-  members take only values of members of the original family.
+* `SetRel.IsSmallFamily.of_exists_range_subset`: smallness transfers back along families each of
+  whose members takes all the values of some member of the original family.
 * `SetRel.not_isSmallFamily_image2`, `SetRel.not_isSmallFamily_comb_cross`: amalgamation keeps
   families from being small.
 * `SetRel.exists_not_isSmallFamily_inter_pi`, `SetRel.exists_subset_not_isSmallFamily_dist_lt`:
@@ -162,7 +162,7 @@ theorem exists_not_isSmallFamily_inter [Countable κ] {Ψ : κ → Set (ι → X
 
 /-- A family that is not small is nonempty. -/
 theorem nonempty_of_not_isSmallFamily (hΦ : ¬ G.IsSmallFamily Φ) : Φ.Nonempty :=
-  nonempty_iff_ne_empty.2 fun h ↦ hΦ (h ▸ isSmallFamily_empty)
+  ne_empty_iff_nonempty.1 fun h ↦ hΦ (h ▸ isSmallFamily_empty)
 
 /-- **The seed of the G₀ construction.** For nonempty `ι`, the family of all assignments is small
 iff the relation has a countable Borel coloring. -/

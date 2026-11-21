@@ -80,6 +80,63 @@ section CosetEnumerators
 
 variable [Fintype ι] {A : Type*} [AddCommGroup A] [DecidableEq A]
 
+/-- Fixing the letter `c` at the new coordinate, the words on `Option α` with sum `a` correspond to
+the words on `α` with sum `a - c`. -/
+private theorem sum_ite_add_sum_eq [Fintype A] {α : Type*} [Fintype α] [DecidableEq α]
+    (a c : A) :
+    (∑ y : α → A, if c + ∑ i, y i = a then
+        (if c = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) *
+          ∏ i, (if y i = 0 then X 0 else X 1) else 0) =
+      (if c = 0 then X 0 else X 1) *
+        ∑ y : α → A, if ∑ i, y i = a - c then ∏ i, (if y i = 0 then X 0 else X 1) else 0 := by
+  rw [mul_sum]
+  refine sum_congr rfl fun y _ ↦ ?_
+  simp only [eq_sub_iff_add_eq', mul_ite, mul_zero]
+
+/-- Only the letter `c = a` contributes the correction term `q (X or Y) (X - Y)^n`. -/
+private theorem letter_mul_coset_eq (n : ℕ) (a c : A) :
+    (if c = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) *
+        ((X 0 + (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ n +
+          (if a - c = 0 then (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) else -1) *
+            (X 0 - X 1) ^ n) =
+      (if c = 0 then X 0 else X 1) *
+          ((X 0 + (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ n -
+            (X 0 - X 1) ^ n) +
+        if a = c then (Nat.card A : MvPolynomial (Fin 2) ℤ) *
+          (if a = 0 then X 0 else X 1) * (X 0 - X 1) ^ n else 0 := by
+  by_cases hac : a = c
+  · subst hac
+    simp only [sub_self, ite_true]
+    ring
+  · simp only [sub_eq_zero, hac, ite_false]
+    ring
+
+/-- The inductive step of `card_mul_sum_ite_sum_eq`: adding one coordinate. -/
+private theorem card_mul_sum_ite_sum_eq_option [Fintype A] {α : Type*} [Fintype α]
+    [DecidableEq α] [DecidableEq (Option α)]
+    (h : ∀ a : A, (Nat.card A : MvPolynomial (Fin 2) ℤ) *
+        ∑ x : α → A, (if ∑ i, x i = a then ∏ i, (if x i = 0 then X 0 else X 1) else 0) =
+      (X 0 + (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ Fintype.card α +
+        (if a = 0 then (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) else -1) *
+          (X 0 - X 1) ^ Fintype.card α) (a : A) :
+    (Nat.card A : MvPolynomial (Fin 2) ℤ) *
+        ∑ x : Option α → A,
+          (if ∑ i, x i = a then ∏ i, (if x i = 0 then X 0 else X 1) else 0) =
+      (X 0 + (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ Fintype.card (Option α) +
+        (if a = 0 then (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) else -1) *
+          (X 0 - X 1) ^ Fintype.card (Option α) := by
+  classical
+  rw [← Fintype.sum_equiv Equiv.piOptionEquivProd.symm _ _ (fun _ ↦ rfl),
+    Fintype.sum_prod_type]
+  simp only [Fintype.sum_option, Fintype.prod_option, Equiv.piOptionEquivProd_symm_apply,
+    Fintype.card_option]
+  rw [sum_congr rfl fun c _ ↦ sum_ite_add_sum_eq a c, mul_sum]
+  simp_rw [mul_left_comm (Nat.card A : MvPolynomial (Fin 2) ℤ), h, letter_mul_coset_eq]
+  simp_rw [sum_add_distrib, ← sum_mul, sum_ite_eq, ite_eq_left (mem_univ _),
+    sum_ite_eq_zero_X_zero_X_one]
+  split_ifs <;> ring
+
+
 /-- The coset enumerator in summed form: over a finite additive group with `q`
 elements, `q` times the sum of the weight monomials `∏ i, (X or Y)` of the words with coordinate
 sum `a` is `(X + (q - 1) Y)^n + (q [a = 0] - 1) (X - Y)^n`. -/
@@ -113,39 +170,7 @@ private theorem card_mul_sum_ite_sum_eq [Fintype A] [DecidableEq ι] (a : A) :
   · -- A word on `Option α` is a letter `c` at `none` and a word on `α` with sum `a - c`.
     intro α _ h _ a
     classical
-    rw [← Fintype.sum_equiv Equiv.piOptionEquivProd.symm _ _ (fun _ ↦ rfl),
-      Fintype.sum_prod_type]
-    simp only [Fintype.sum_option, Fintype.prod_option, Equiv.piOptionEquivProd_symm_apply,
-      Fintype.card_option]
-    have hc (c : A) : (∑ y : α → A, if c + ∑ i, y i = a then
-        (if c = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) *
-          ∏ i, (if y i = 0 then X 0 else X 1) else 0) =
-        (if c = 0 then X 0 else X 1) *
-          ∑ y : α → A, if ∑ i, y i = a - c then ∏ i, (if y i = 0 then X 0 else X 1) else 0 := by
-      rw [mul_sum]
-      refine sum_congr rfl fun y _ ↦ ?_
-      simp only [eq_sub_iff_add_eq', mul_ite, mul_zero]
-    rw [sum_congr rfl fun c _ ↦ hc c, mul_sum]
-    simp_rw [mul_left_comm (Nat.card A : MvPolynomial (Fin 2) ℤ), h]
-    -- Only the letter `c = a` contributes the correction term `q (X or Y) (X - Y)^n`.
-    have hs (c : A) : (if c = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) *
-        ((X 0 + (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ Fintype.card α +
-          (if a - c = 0 then (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) else -1) *
-            (X 0 - X 1) ^ Fintype.card α) =
-        (if c = 0 then X 0 else X 1) *
-            ((X 0 + (Nat.card A - 1 : MvPolynomial (Fin 2) ℤ) * X 1) ^ Fintype.card α -
-              (X 0 - X 1) ^ Fintype.card α) +
-          if a = c then (Nat.card A : MvPolynomial (Fin 2) ℤ) *
-            (if a = 0 then X 0 else X 1) * (X 0 - X 1) ^ Fintype.card α else 0 := by
-      by_cases hac : a = c
-      · subst hac
-        simp only [sub_self, ite_true]
-        ring
-      · simp only [sub_eq_zero, hac, ite_false]
-        ring
-    simp_rw [hs, sum_add_distrib, ← sum_mul, sum_ite_eq, ite_eq_left (mem_univ _),
-      sum_ite_eq_zero_X_zero_X_one]
-    split_ifs <;> ring
+    exact card_mul_sum_ite_sum_eq_option (fun a ↦ h a) a
 
 /-- **The weight enumerator of a coset of the parity-check code.** Over a finite additive group
 with `q` elements, the words of length `n` with coordinate sum `a` have enumerator `W` with

@@ -47,6 +47,16 @@ theorem sameCycle_mul_swap_iff_of_apply_eq_self [DecidableEq β] {τ : Perm β} 
       exact hx'.trans hy'.symm
   · exact fun h => hab.swap_mul_of_sameCycle h
 
+/-- Removing a point `m` from its cycle `σ p = m` by `σ * swap p m` does not change the cycle
+relation between points other than `m`. -/
+theorem sameCycle_mul_swap_iff_of_apply_eq [DecidableEq β] {σ : Perm β} {p m u v : β}
+    (hσp : σ p = m) (hu : u ≠ m) (hv : v ≠ m) :
+    (σ * Equiv.swap p m).SameCycle u v ↔ σ.SameCycle u v := by
+  have hm : (σ * Equiv.swap p m) m = m := by rw [mul_apply, swap_apply_right, hσp]
+  have h := sameCycle_mul_swap_iff_of_apply_eq_self (a := p) hm hu hv
+  rw [mul_assoc, swap_mul_self, mul_one] at h
+  exact h.symm
+
 /-- A permutation extending another across a single missing point fixes that point. -/
 theorem apply_eq_self_of_semiconj {σ : Perm α} {τ : Perm β} {f : α → β} {p : β}
     (hfp : ∀ x, f x ≠ p) (hsurj : ∀ y, y ≠ p → ∃ x, f x = y)

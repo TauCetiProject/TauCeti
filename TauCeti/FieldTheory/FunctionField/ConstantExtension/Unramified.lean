@@ -137,6 +137,7 @@ theorem isUnramifiedAt_of_constantCompositum_eq_top
   exact (differentExponent_eq_zero_iff k F P').mp
     (differentExponent_eq_zero_of_constantCompositum_eq_top hcomp P')
 
+omit [Algebra k F] [Algebra k F'] [IsScalarTower k F F'] [IsScalarTower k k' F'] in
 /-- **A place has ramification index one over a finite part of an algebraic constant
 extension**: if `F' = F · k'` with `k' / k` algebraic, then every place `P'` of `F'` has
 ramification index one over `F · L` for some finite subextension `L / k` of `k' / k`, since a
@@ -155,12 +156,15 @@ theorem exists_finiteDimensional_ramificationIdx_constantCompositum_eq_one
   let E := constantCompositum F L F'
   let : Algebra L E := constantCompositumAlgebra F L F'
   have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
-  let : Algebra.IsAlgebraic F F' := isAlgebraic_of_constantCompositum_eq_top (k := k) hcomp
-  let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
   -- Since `t` belongs to `E` and has order one upstairs, the index over `E` is one.
-  have hord := ord_algebraMap_restrict L E P' (⟨t, htL⟩ : E)
-  rw [IntermediateField.algebraMap_apply, ht] at hord
-  exact_mod_cast Int.eq_one_of_mul_eq_one_right (by positivity) hord.symm
+  have hord : Valuation.ord (P'.valuation.comap (algebraMap E F')) (⟨t, htL⟩ : E) =
+      ((1 : ℕ) : ℤ) := by
+    rw [Valuation.ord_comap]
+    simpa using ht
+  rw [ramificationIdx_def]
+  have h1 := Valuation.ordIndex_le _ one_pos hord
+  have h2 := Valuation.ordIndex_pos _ (f := (⟨t, htL⟩ : E)) (by rw [hord]; simp)
+  exact le_antisymm h1 h2
 
 /-- Every place in an arbitrary separable algebraic constant extension has ramification index
 one. Neither finiteness of the constant extension nor exactness of the constants is required. -/

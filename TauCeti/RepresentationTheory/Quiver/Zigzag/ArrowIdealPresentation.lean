@@ -47,7 +47,11 @@ universe u w
 
 section AtMostOneNeighbour
 
-variable (k : Type w) [CommRing k] {V : Type u} {G : SimpleGraph V}
+variable (k : Type w) {V : Type u} {G : SimpleGraph V}
+
+section Ring
+
+variable [Ring k]
 
 /-- **When every vertex has at most one neighbour, every quadratic zigzag relator is zero.** A
 length-two path through a vertex with a single neighbour returns to its source, and the
@@ -77,6 +81,10 @@ theorem quadraticZigzagIdeal_eq_bot (hG : ∀ i, (G.neighborSet i).Subsingleton)
   intro x hx
   rw [SetLike.mem_coe, TwoSidedIdeal.mem_bot]
   exact hx.eq_zero k hG
+
+end Ring
+
+variable [CommRing k]
 
 /-- **When every vertex has at most one neighbour, the zigzag relation ideal is the cube of the
 arrow ideal**: the uniform relators reduce to the paths of length at least three, which span that

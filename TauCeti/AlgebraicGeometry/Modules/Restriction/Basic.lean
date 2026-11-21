@@ -31,21 +31,56 @@ isomorphism on those sections restricts to an isomorphism
 (`AlgebraicGeometry.Scheme.Modules.isIso_restrictFunctor_map_of_isIso_app`), and over them the
 unit of the restriction--pushforward adjunction is an isomorphism on sections
 (`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`). Restriction along an
-isomorphism of schemes reflects isomorphisms, a submodule containing one that is everything over
-an open is everything over it, and restriction to the slice site over an open preserves
-epimorphisms.
+isomorphism of schemes reflects isomorphisms, a morphism that is an isomorphism over an open is
+one over every smaller open and, along an open immersion, exactly when it is one over the image,
+a submodule containing one that is everything over an open is everything over it, and restriction
+to the slice site over an open preserves epimorphisms.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
+Restriction is the pushforward along the isomorphism of structure sheaves
+`AlgebraicGeometry.Scheme.Modules.restrictRingCatSheafHom`, given on sections by the inverses of
+`Scheme.Hom.appIso`.
 -/
 
 public section
 
 open CategoryTheory
 
-namespace TauCeti
-
 universe u
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+section RingCatSheafHom
+
+variable {U Y : Scheme.{u}} (j : U ⟶ Y) [IsOpenImmersion j]
+
+/-- The morphism of sheaves of rings along `j.opensFunctor`, given on sections by the inverses of
+the isomorphisms `Scheme.Hom.appIso`, along which `Scheme.Modules.restrictFunctor j` is the
+pushforward of sheaves of modules. -/
+-- Exposed because exported statements, such as the instance `restrictFunctorLaxMonoidal` and the
+-- section lemmas of `Scheme.PresheafOfModules.restrictFunctor`, are checked by unfolding
+-- restriction to the pushforward along this morphism.
+@[expose]
+noncomputable def restrictRingCatSheafHom :
+    U.ringCatSheaf ⟶ (j.opensFunctor.sheafPushforwardContinuous _ _ _).obj Y.ringCatSheaf :=
+  letI α : U.presheaf ⟶ j.opensFunctor.op ⋙ Y.presheaf := { app W := (j.appIso W.unop).inv }
+  ⟨Functor.whiskerRight α (forget₂ CommRingCat RingCat)⟩
+
+/-- The coefficient map for restriction along an open immersion is an isomorphism: on
+each open it is the inverse of the structure-sheaf isomorphism. -/
+instance isIso_restrictRingCatSheafHom : IsIso (restrictRingCatSheafHom j) := by
+  have : IsIso ((TopCat.Sheaf.forget RingCat U).map (restrictRingCatSheafHom j)) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro W
+    exact inferInstanceAs (IsIso ((forget₂ CommRingCat RingCat).map (j.appIso W.unop).inv))
+  exact isIso_of_reflects_iso (restrictRingCatSheafHom j) (TopCat.Sheaf.forget RingCat U)
+
+end RingCatSheafHom
+
+end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti
 
 /-- Restriction of module sheaves along an open immersion is a right adjoint, so it preserves
 limits. Its left adjoint is the sheafified presheaf pullback along the open-image functor. -/
@@ -53,15 +88,13 @@ noncomputable instance _root_.AlgebraicGeometry.Scheme.Modules.restrictFunctorIs
     {X Y : AlgebraicGeometry.Scheme.{u}} (f : X ⟶ Y)
     [AlgebraicGeometry.IsOpenImmersion f] :
     (AlgebraicGeometry.Scheme.Modules.restrictFunctor f).IsRightAdjoint := by
-  let α : X.presheaf ⟶ f.opensFunctor.op ⋙ Y.presheaf :=
-    { app U := (f.appIso U.unop).inv }
-  let φ : X.ringCatSheaf ⟶
-      (f.opensFunctor.sheafPushforwardContinuous RingCat _ _).obj Y.ringCatSheaf :=
-    ⟨Functor.whiskerRight α (forget₂ CommRingCat RingCat)⟩
   -- The sheaf-pushforward projection hides its site functor from instance search.
   -- Instantiate the existing presheaf right adjoint with that functor explicitly.
-  have := PresheafOfModules.instIsRightAdjointPushforward (F := f.opensFunctor) φ.hom
-  exact inferInstanceAs (SheafOfModules.pushforward φ).IsRightAdjoint
+  have := PresheafOfModules.instIsRightAdjointPushforward (F := f.opensFunctor)
+    (AlgebraicGeometry.Scheme.Modules.restrictRingCatSheafHom f).hom
+  exact inferInstanceAs
+    (SheafOfModules.pushforward
+      (AlgebraicGeometry.Scheme.Modules.restrictRingCatSheafHom f)).IsRightAdjoint
 
 /-- Restriction along an open immersion is additive. In particular it preserves the zero
 morphisms used in kernel diagrams. -/
@@ -76,6 +109,66 @@ end TauCeti
 namespace AlgebraicGeometry.Scheme.Modules
 
 open CategoryTheory Limits
+
+/-- Restriction acts on the sections over `U` of a morphism `φ` as `φ` on the sections over the
+image `f ''ᵁ U`, under the identifications `Scheme.Modules.restrictAppIso`. -/
+@[reassoc (attr := simp)]
+lemma restrictFunctor_map_app_restrictAppIso_hom {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsOpenImmersion f] {M N : Y.Modules} (φ : M ⟶ N) (U : X.Opens) :
+    ((restrictFunctor f).map φ).app U ≫ (N.restrictAppIso f U).hom =
+      (M.restrictAppIso f U).hom ≫ φ.app (f ''ᵁ U) :=
+  rfl
+
+/-- Restricting along `e.inv` and then along `e.hom` is naturally isomorphic to the identity
+of `X.Modules`. -/
+noncomputable def restrictFunctorInvCompHomIso {X Y : Scheme.{u}} (e : X ≅ Y) :
+    restrictFunctor e.inv ⋙ restrictFunctor e.hom ≅ 𝟭 X.Modules :=
+  (restrictFunctorComp e.hom e.inv).symm ≪≫
+    restrictFunctorCongr e.hom_inv_id ≪≫ restrictFunctorId
+
+-- Explicit open equalities fix the section types before unfolding restriction. In both proofs,
+-- `erw` identifies restricted-section wrappers with the corresponding sections of `M`.
+@[simp]
+lemma restrictFunctorInvCompHomIso_hom_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
+    (M : X.Modules) (U : X.Opens) :
+    ((restrictFunctorInvCompHomIso e).hom.app M).app U =
+      M.presheaf.map (eqToHom (show U = e.inv ''ᵁ (e.hom ''ᵁ U) by simp)).op := by
+  simp only [Functor.comp_obj, Functor.id_obj, restrictFunctorInvCompHomIso, Iso.trans_hom,
+    Iso.symm_hom, NatTrans.comp_app, Hom.comp_app, restrictFunctorComp_inv_app_app,
+    Functor.op_obj, eqToHom_op, restrictFunctorCongr_hom_app_app, restrictFunctorId_hom_app_app]
+  erw [← Functor.map_comp, ← Functor.map_comp]
+  rfl
+
+@[simp]
+lemma restrictFunctorInvCompHomIso_inv_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
+    (M : X.Modules) (U : X.Opens) :
+    ((restrictFunctorInvCompHomIso e).inv.app M).app U =
+      M.presheaf.map (eqToHom (show e.inv ''ᵁ (e.hom ''ᵁ U) = U by simp)).op := by
+  simp only [Functor.id_obj, Functor.comp_obj, restrictFunctorInvCompHomIso, Iso.trans_inv,
+    Iso.symm_inv, Category.assoc, NatTrans.comp_app, Hom.comp_app,
+    restrictFunctorId_inv_app_app, eqToHom_op, restrictFunctorCongr_inv_app_app,
+    restrictFunctorComp_hom_app_app, Functor.op_obj]
+  erw [← Functor.map_comp, ← Functor.map_comp]
+  rfl
+
+/-- Restriction along an isomorphism of schemes `e : X ≅ Y` is an equivalence
+`Y.Modules ≌ X.Modules`, with inverse the restriction along `e.inv` and with unit and counit
+given by `Scheme.Modules.restrictFunctorInvCompHomIso`. -/
+noncomputable def restrictEquivalence {X Y : Scheme.{u}} (e : X ≅ Y) : Y.Modules ≌ X.Modules :=
+  CategoryTheory.Equivalence.mk (restrictFunctor e.hom) (restrictFunctor e.inv)
+    (restrictFunctorInvCompHomIso e.symm).symm (restrictFunctorInvCompHomIso e)
+
+/-- The functor of `restrictEquivalence e` is the restriction along `e.hom`. -/
+@[simp]
+lemma restrictEquivalence_functor {X Y : Scheme.{u}} (e : X ≅ Y) :
+    (restrictEquivalence e).functor = restrictFunctor e.hom :=
+  (rfl)
+
+/-- The inverse of `restrictEquivalence e` is the restriction along `e.inv`. -/
+@[simp]
+lemma restrictEquivalence_inverse {X Y : Scheme.{u}} (e : X ≅ Y) :
+    (restrictEquivalence e).inverse = restrictFunctor e.inv :=
+  (rfl)
 
 /-- Restriction to an open subscheme preserves injective module sheaves. In particular,
 restricting the terms of an injective resolution gives injective terms. -/
@@ -94,14 +187,8 @@ instance (priority := low) restrictFunctorPreservesInjectiveObjects {X Y : Schem
     -- Factor through the open image. Restriction along the intervening isomorphism
     -- is an equivalence, with comparison isomorphisms supplied by functoriality.
     let e := f.isoOpensRange
-    let E : f.opensRange.toScheme.Modules ≌ X.Modules :=
-      CategoryTheory.Equivalence.mk (restrictFunctor e.hom) (restrictFunctor e.inv)
-        ((restrictFunctorId).symm ≪≫ restrictFunctorCongr e.inv_hom_id.symm ≪≫
-          restrictFunctorComp e.inv e.hom)
-        ((restrictFunctorComp e.hom e.inv).symm ≪≫
-          restrictFunctorCongr e.hom_inv_id ≪≫ restrictFunctorId)
     have : (restrictFunctor e.hom).PreservesInjectiveObjects :=
-      inferInstanceAs E.functor.PreservesInjectiveObjects
+      inferInstanceAs (restrictEquivalence e).functor.PreservesInjectiveObjects
     let i : restrictFunctor f ≅ restrictFunctor f.opensRange.ι ⋙ restrictFunctor e.hom :=
       restrictFunctorCongr f.isoOpensRange_hom_ι.symm ≪≫
         restrictFunctorComp e.hom f.opensRange.ι
@@ -163,26 +250,110 @@ theorem isIso_restrictFunctor_map_of_isIso_app {X : Scheme.{u}} {M N : X.Modules
     (U : X.Opens) (h : ∀ V ≤ U, IsIso (φ.app V)) : IsIso ((restrictFunctor U.ι).map φ) :=
   Hom.isIso_iff_isIso_app.2 fun W ↦ h _ (U.ι_image_le W)
 
-/-- Over an open `V` contained in `U`, the unit `M ⟶ U.ι_* (M|_U)` of the restriction-pushforward
-adjunction is an isomorphism on sections. -/
-theorem isIso_restrictAdjunction_unit_app_app {X : Scheme.{u}} (U : X.Opens) (M : X.Modules)
-    {V : X.Opens} (hV : V ≤ U) : IsIso (((restrictAdjunction U.ι).unit.app M).app V) := by
-  have h : U.ι ''ᵁ (U.ι ⁻¹ᵁ V) = V := by
-    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+/-- Over an open contained in the image of an open immersion, the unit of the
+restriction--pushforward adjunction is an isomorphism on sections. -/
+theorem isIso_restrictAdjunction_unit_app_app {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsOpenImmersion f] (M : Y.Modules) {V : Y.Opens} (hV : V ≤ f.opensRange) :
+    IsIso (((restrictAdjunction f).unit.app M).app V) := by
+  have h : f ''ᵁ (f ⁻¹ᵁ V) = V := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf]
     exact inf_eq_right.2 hV
-  -- The component is the restriction of sections along `ι(ι⁻¹ V) ≤ V`, an equality here.
-  have : homOfLE (U.ι.image_preimage_le V) = eqToHom h := Subsingleton.elim _ _
+  -- The component restricts sections along `f(f⁻¹ V) ≤ V`, an equality here.
+  have : homOfLE (f.image_preimage_le V) = eqToHom h := Subsingleton.elim _ _
   rw [restrictAdjunction_unit_app_app, this]
   exact Functor.map_isIso M.presheaf (eqToHom h).op
+
+/-- The transpose of an isomorphism along an open immersion is an isomorphism on sections
+over opens contained in its image. -/
+lemma isIso_pullbackPushforwardAdjunction_homEquiv_app {A B : Scheme.{u}} (a : A ⟶ B)
+    [IsOpenImmersion a]
+    (M : B.Modules) (N : A.Modules) (φ : (Scheme.Modules.pullback a).obj M ⟶ N)
+    [IsIso φ] (V : B.Opens) (hV : V ≤ a.opensRange) :
+    IsIso (((Scheme.Modules.pullbackPushforwardAdjunction a).homEquiv _ _ φ).app V) := by
+  have : IsIso (((Scheme.Modules.restrictAdjunction a).unit.app M).app V) :=
+    isIso_restrictAdjunction_unit_app_app a M hV
+  have hu := Adjunction.unit_leftAdjointUniq_hom_app (Scheme.Modules.restrictAdjunction a)
+    (Scheme.Modules.pullbackPushforwardAdjunction a) M
+  rw [Adjunction.homEquiv_unit, ← hu]
+  simp only [Scheme.Modules.Hom.comp_app]
+  infer_instance
+
+/-- A morphism into the pushforward along an open immersion transposes to an isomorphism
+when it is bijective on sections over every open contained in the image. -/
+lemma isIso_pullbackPushforwardAdjunction_homEquiv_symm_of_bijective {A B : Scheme.{u}}
+    (a : A ⟶ B) [IsOpenImmersion a]
+    (M : B.Modules) (N : A.Modules) (π : M ⟶ (Scheme.Modules.pushforward a).obj N)
+    (hπ : ∀ V : B.Opens, V ≤ a.opensRange → Function.Bijective (π.app V)) :
+    IsIso (((Scheme.Modules.pullbackPushforwardAdjunction a).homEquiv _ _).symm π) := by
+  let ψ : M.restrict a ⟶ N :=
+    ((Scheme.Modules.restrictAdjunction a).homEquiv _ _).symm π
+  have hψ : IsIso ψ := by
+    apply Scheme.Modules.Hom.isIso_iff_isIso_app.mpr
+    intro W
+    -- Restriction sections over W are sections of M over the image a(W).
+    -- The adjunction is read through this native module presentation.
+    change IsIso ((((Scheme.Modules.restrictAdjunction a).homEquiv _ _).symm π).app W)
+    rw [Adjunction.homEquiv_counit, Scheme.Modules.Hom.comp_app,
+      Scheme.Modules.restrictAdjunction_counit_app_app]
+    -- The counit restricts along a⁻¹(a(W)) = W after applying π on a(W).
+    change IsIso (π.app (a ''ᵁ W) ≫
+      N.presheaf.map (eqToHom (a.preimage_image_eq W).symm).op)
+    rw [ConcreteCategory.isIso_iff_bijective]
+    exact (ConcreteCategory.bijective_of_isIso
+      (N.presheaf.map (eqToHom (a.preimage_image_eq W).symm).op)).comp
+        (hπ _ (a.image_le_opensRange W))
+  have hu : (Scheme.Modules.restrictAdjunction a).unit.app M ≫
+      (Scheme.Modules.pushforward a).map
+        ((Scheme.Modules.restrictFunctorIsoPullback a).hom.app M) =
+      (Scheme.Modules.pullbackPushforwardAdjunction a).unit.app M :=
+    Adjunction.unit_leftAdjointUniq_hom_app (Scheme.Modules.restrictAdjunction a)
+      (Scheme.Modules.pullbackPushforwardAdjunction a) M
+  have hu' : (Scheme.Modules.pullbackPushforwardAdjunction a).unit.app M ≫
+      (Scheme.Modules.pushforward a).map
+        ((Scheme.Modules.restrictFunctorIsoPullback a).inv.app M) =
+      (Scheme.Modules.restrictAdjunction a).unit.app M := by
+    rw [← hu, Category.assoc, ← Functor.map_comp, Iso.hom_inv_id_app,
+      CategoryTheory.Functor.map_id]
+    exact Category.comp_id _
+  have h : ((Scheme.Modules.pullbackPushforwardAdjunction a).homEquiv _ _).symm π =
+      (Scheme.Modules.restrictFunctorIsoPullback a).inv.app M ≫ ψ := by
+    apply ((Scheme.Modules.pullbackPushforwardAdjunction a).homEquiv _ _).injective
+    rw [Equiv.apply_symm_apply, Adjunction.homEquiv_unit, Functor.map_comp,
+      ← Category.assoc, hu']
+    exact ((Scheme.Modules.restrictAdjunction a).homEquiv _ _).apply_symm_apply π |>.symm
+  rw [h]
+  infer_instance
 
 /-- Restriction along an isomorphism of schemes reflects isomorphisms of modules. -/
 theorem isIso_of_isIso_restrictFunctor_map {X Y : Scheme.{u}} (j : Y ⟶ X) [IsIso j]
     {M N : X.Modules} (φ : M ⟶ N) [IsIso ((restrictFunctor j).map φ)] : IsIso φ := by
   let e : restrictFunctor j ⋙ restrictFunctor (inv j) ≅ 𝟭 X.Modules :=
-    (restrictFunctorComp (inv j) j).symm ≪≫ restrictFunctorCongr (IsIso.inv_hom_id j) ≪≫
-      restrictFunctorId
+    restrictFunctorInvCompHomIso (asIso j).symm
   exact (NatIso.isIso_map_iff e φ).mp
     (inferInstanceAs (IsIso ((restrictFunctor (inv j)).map ((restrictFunctor j).map φ))))
+
+/-- A morphism that restricts to an isomorphism over an open `W` restricts to an isomorphism over
+every open `V ≤ W`. -/
+theorem isIso_restrictFunctor_map_of_le {X : Scheme.{u}} {M N : X.Modules} (φ : M ⟶ N)
+    {V W : X.Opens} (h : V ≤ W) [IsIso ((restrictFunctor W.ι).map φ)] :
+    IsIso ((restrictFunctor V.ι).map φ) := by
+  let k : V.toScheme ⟶ W.toScheme := X.homOfLE h
+  have : IsIso ((restrictFunctor W.ι ⋙ restrictFunctor k).map φ) :=
+    inferInstanceAs (IsIso ((restrictFunctor k).map ((restrictFunctor W.ι).map φ)))
+  have := (NatIso.isIso_map_iff (restrictFunctorComp k W.ι) φ).mpr this
+  exact (NatIso.isIso_map_iff (restrictFunctorCongr (X.homOfLE_ι h)) φ).mp this
+
+/-- A morphism restricts to an isomorphism along an open immersion `j` if and only if it
+restricts to an isomorphism over the image of `j`. -/
+theorem isIso_restrictFunctor_map_iff_opensRange {X U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] {M N : X.Modules} (φ : M ⟶ N) :
+    IsIso ((restrictFunctor j).map φ) ↔ IsIso ((restrictFunctor j.opensRange.ι).map φ) := by
+  -- `j` is the isomorphism onto its image followed by the inclusion of the image.
+  have e := (NatIso.isIso_map_iff (restrictFunctorCongr j.isoOpensRange_hom_ι) φ).symm.trans
+    (NatIso.isIso_map_iff (restrictFunctorComp j.isoOpensRange.hom j.opensRange.ι) φ)
+  rw [e, CategoryTheory.Functor.comp_map]
+  refine ⟨fun h ↦ isIso_of_isIso_restrictFunctor_map j.isoOpensRange.hom _, fun h ↦ ?_⟩
+  infer_instance
 
 /-- A submodule `i : N' ⟶ N` through which a morphism `i₁ : N₁ ⟶ N` factors restricts to an
 isomorphism over every open over which `i₁` does. -/

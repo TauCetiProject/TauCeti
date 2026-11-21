@@ -437,7 +437,8 @@ rectangles on a concrete grid. -/
 instance : Fintype (GridRectangleBetween x y) :=
   Fintype.ofEquiv {p : Fin n × Fin n // p.1 ≠ p.2 ∧ y p.1 = x p.2 ∧ y p.2 = x p.1 ∧
       ∀ c, c ≠ p.1 → c ≠ p.2 → y c = x c}
-    { toFun p := ⟨p.1.1, p.1.2, p.2.1, p.2.2.1, p.2.2.2.1, p.2.2.2.2⟩
+    { toFun p := ⟨p.val.1, p.val.2, p.property.1, p.property.2.1, p.property.2.2.1,
+        p.property.2.2.2⟩
       invFun R := ⟨(R.left, R.right), R.left_ne_right, R.map_left, R.map_right, R.map_of_ne⟩
       left_inv _ := rfl
       right_inv _ := rfl }
@@ -476,6 +477,27 @@ theorem toGridRectangle_eq :
     R.toGridRectangle =
       { left := R.left, right := R.right, bottom := x R.left, top := x R.right } :=
   rfl
+
+/-- Membership in the covered columns of the rectangle underlying a rectangle between states is
+membership in the half-open cyclic interval between its side columns. -/
+theorem mem_coveredColumns (c : Fin n) :
+    c ∈ R.toGridRectangle.coveredColumns ↔ c ∈ Grid.cIco R.left R.right := by
+  rw [GridRectangle.mem_coveredColumns, toGridRectangle_left, toGridRectangle_right]
+
+/-- A rectangle between states whose terminal column lies strictly inside the cyclic interval from
+its initial column to the rotation of `a` covers only columns of that interval, and misses both
+`a` and its rotation. -/
+theorem coveredColumns_subset_and_notMem_of_right_mem_cIoo {a : Fin n}
+    (hcol : R.right ∈ Grid.cIoo R.left (finRotate n a)) :
+    R.toGridRectangle.coveredColumns ⊆ Grid.cIco R.left (finRotate n a) ∧
+    a ∉ R.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ R.toGridRectangle.coveredColumns := by
+  obtain ⟨ha, hb⟩ := Grid.notMem_cIco_of_mem_cIoo_finRotate hcol
+  refine ⟨fun c hc => ?_, ?_, ?_⟩
+  · rw [mem_coveredColumns] at hc
+    exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hc hcol
+  · rwa [mem_coveredColumns]
+  · rwa [mem_coveredColumns]
 
 /-- Membership in the interior of an oriented rectangle is membership in the open cyclic
 intervals between its side columns and the corresponding source-state rows. -/

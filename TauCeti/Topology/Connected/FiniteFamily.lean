@@ -11,10 +11,10 @@ public import Mathlib.Topology.Separation.Hausdorff
 /-!
 # Continuous choices from a finite family
 
-A continuous function taking its values in a finite family of continuous functions which are
-pointwise distinct must choose the same member throughout a connected parameter space.
-This is useful for comparing different continuous labellings of simple roots: agreement at
-one parameter forces agreement everywhere.
+A continuous function taking its values in a finite family of continuous functions must choose
+the same member throughout a connected parameter space, provided that member is pointwise
+distinct from all the others. This is useful for comparing different continuous labellings of
+simple roots: agreement at one parameter forces agreement everywhere.
 
 Locally, distinctness can be replaced by persistence of collisions: if every family member
 agreeing with the chosen member at the central parameter continues to agree nearby, a
@@ -23,61 +23,40 @@ continuous selection agrees with that member on a neighborhood.
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
 
 /-- A continuous selection from a finite continuous family agrees locally with a chosen
 member if their values agree at the central parameter and collisions with that member
-persist nearby. Members with different central values are separated by continuity. -/
+persist nearby. -/
 theorem eventuallyEq_of_continuousAt_mem_range {B Y ι : Type*} [TopologicalSpace B]
     [TopologicalSpace Y] [T2Space Y] [Finite ι] {r : ι → B → Y} {f : B → Y} {b₀ : B}
     (hr : ∀ j, ContinuousAt (r j) b₀) (hf : ContinuousAt f b₀)
-    (hmem : ∀ᶠ b in nhds b₀, f b ∈ Set.range (fun j ↦ r j b)) {i : ι}
+    (hmem : ∀ᶠ b in 𝓝 b₀, f b ∈ range (fun j ↦ r j b)) {i : ι}
     (h₀ : r i b₀ = f b₀)
-    (hcollision : ∀ j, r j b₀ = r i b₀ → r j =ᶠ[nhds b₀] r i) :
-    r i =ᶠ[nhds b₀] f := by
-  have hsep : ∀ᶠ b in nhds b₀, ∀ j, r j b = f b → r j b = r i b := by
-    rw [Filter.eventually_all]
-    intro j
+    (hcollision : ∀ j, r j b₀ = r i b₀ → r j =ᶠ[𝓝 b₀] r i) :
+    r i =ᶠ[𝓝 b₀] f := by
+  have hsep : ∀ᶠ b in 𝓝 b₀, ∀ j, r j b = f b → r j b = r i b := by
+    refine Filter.eventually_all.2 fun j ↦ ?_
     by_cases hj : r j b₀ = r i b₀
     · exact (hcollision j hj).mono fun _ hb _ ↦ hb
-    · have hne : r j b₀ ≠ f b₀ := by rwa [← h₀]
-      exact ((hr j).ne_iff_eventually_ne hf).mp hne |>.mono fun _ hb heq ↦ (hb heq).elim
-  filter_upwards [hmem, hsep] with b hb hsb
-  obtain ⟨j, hj⟩ := hb
+    · exact ((hr j).ne_iff_eventually_ne hf).1 (h₀ ▸ hj) |>.mono fun _ hb heq ↦ (hb heq).elim
+  filter_upwards [hmem, hsep] with b ⟨j, hj⟩ hsb
   exact (hsb j hj).symm.trans hj
 
-/-- A continuous choice from finitely many pointwise distinct continuous functions on a
-preconnected space agrees everywhere with the member it chooses at one point. -/
+/-- A continuous choice from finitely many continuous functions on a preconnected space agrees
+everywhere with the member it chooses at one point, provided that member is pointwise distinct
+from all the others. -/
 theorem eq_of_continuous_mem_range {B Y ι : Type*} [TopologicalSpace B]
     [PreconnectedSpace B] [TopologicalSpace Y] [T2Space Y] [Finite ι]
-    {r : ι → B → Y} {f : B → Y} (hr : ∀ i, Continuous (r i)) (hf : Continuous f)
-    (hinj : ∀ b, Function.Injective (fun i => r i b))
-    (hmem : ∀ b, f b ∈ range (fun i => r i b)) (b₀ : B) {i : ι}
-    (h₀ : r i b₀ = f b₀) : r i = f := by
-  have heq : {b | r i b = f b} = ⋂ j, {b | j ≠ i → r j b ≠ f b} := by
-    ext b
-    simp only [mem_ofPred_eq, mem_iInter]
-    constructor
-    · intro hb j hji hj
-      exact hji (hinj b (hj.trans hb.symm))
-    · intro hb
-      obtain ⟨j, hj⟩ := hmem b
-      have hji : j = i := by
-        by_contra hne
-        exact hb j hne hj
-      simpa [hji] using hj
-  have hopen : IsOpen {b | r i b = f b} := by
-    rw [heq]
-    refine isOpen_iInter_of_finite fun j => ?_
-    by_cases hji : j = i
-    · simp [hji]
-    · simpa [hji] using isOpen_ne_fun (hr j) hf
-  have hcl : IsClopen {b | r i b = f b} := ⟨isClosed_eq (hr i) hf, hopen⟩
-  have hall := hcl.eq_univ ⟨b₀, h₀⟩
-  exact funext fun b => by
-    have hb : b ∈ {b | r i b = f b} := by rw [hall]; exact mem_univ b
-    exact hb
+    {r : ι → B → Y} {f : B → Y} {i : ι} {b₀ : B} (hr : ∀ j, Continuous (r j))
+    (hf : Continuous f) (hdistinct : ∀ b j, r j b = r i b → j = i)
+    (hmem : ∀ b, f b ∈ range (fun j ↦ r j b)) (h₀ : r i b₀ = f b₀) : r i = f := by
+  have hopen : IsOpen {b | r i b = f b} := isOpen_iff_mem_nhds.2 fun b hb ↦
+    eventuallyEq_of_continuousAt_mem_range (fun j ↦ (hr j).continuousAt) hf.continuousAt
+      (.of_forall hmem) hb fun j hj ↦ by rw [hdistinct b j hj]
+  exact funext <| eq_univ_iff_forall.1 <|
+    IsClopen.eq_univ ⟨isClosed_eq (hr i) hf, hopen⟩ ⟨b₀, h₀⟩
 
 end TauCeti

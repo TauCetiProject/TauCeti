@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
+public import TauCeti.RingTheory.Ideal.IsPrincipal
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.RingTheory.UniqueFactorizationDomain.Basic
 
 /-!
-# Isolating a minimal prime among finitely many
+# Finite minimal primes and principal radical ideals
 
 Let `I` be an ideal in a commutative semiring with finitely many minimal primes over it. For a
 minimal prime `P` over `I`, the intersection of the other minimal primes is not contained in `P`,
@@ -22,7 +24,9 @@ about a localization `A[1/g]`.
 
 In a reduced ring every zero divisor lies in a minimal prime. By prime avoidance, a prime ideal of
 a reduced ring with finitely many minimal primes, such as a reduced Noetherian ring, consists of
-zero divisors exactly when it is minimal.
+zero divisors exactly when it is minimal. A radical ideal in a domain with finitely many
+minimal primes is principal with a nonzero generator when all its minimal primes are generated
+by prime elements.
 
 ## Main results
 
@@ -31,6 +35,10 @@ zero divisors exactly when it is minimal.
   containing `g` contains `P`.
 * `Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors`: in a reduced ring with finitely many
   minimal primes, a prime ideal is minimal if and only if it consists of zero divisors.
+* `Ideal.IsRadical.exists_ne_zero_eq_span_singleton`: finitely many minimal primes generated
+  by prime elements give a nonzero principal generator for a radical ideal in a domain.
+* `Ideal.exists_eq_of_mem_minimalPrimes_of_inf_le`: if finitely many primes over `I` intersect
+  inside the radical of `I`, every minimal prime over `I` is one of them.
 -/
 
 public section
@@ -43,23 +51,18 @@ theorem exists_notMem_forall_le_of_mem_minimalPrimes {A : Type*} [CommSemiring A
     (hfin : I.minimalPrimes.Finite) {P : Ideal A} (hP : P ∈ I.minimalPrimes) :
     ∃ g ∉ P, ∀ q : Ideal A, q.IsPrime → I ≤ q → g ∉ q → P ≤ q := by
   classical
-  have hPp : P.IsPrime := hP.1.1
   -- The intersection of the other minimal primes is not contained in `P`.
-  let s : Finset (Ideal A) := (hfin.sdiff (t := {P})).toFinset
-  have hs : ¬ s.inf id ≤ P := by
-    rw [hPp.inf_le']
-    rintro ⟨Q, hQs, hQP⟩
-    rw [Set.Finite.mem_toFinset, Set.mem_sdiff, Set.mem_singleton_iff] at hQs
-    exact hQs.2 (le_antisymm hQP (hP.2 hQs.1.1 hQP))
-  obtain ⟨g, hg, hgP⟩ := IsConcreteLE.not_le_iff_exists.mp hs
+  obtain ⟨g, hg, hgP⟩ : ∃ g ∈ (hfin.toFinset.erase P).inf id, g ∉ P := by
+    by_contra! hle
+    obtain ⟨Q, hQ, hQP⟩ := hP.1.1.inf_le'.mp hle
+    rw [Finset.mem_erase, Set.Finite.mem_toFinset] at hQ
+    exact hQ.1 (le_antisymm hQP (hP.2 hQ.2.1 hQP))
   refine ⟨g, hgP, fun q hq hIq hgq ↦ ?_⟩
   -- Every prime `q` contains a minimal prime `Q`, and `g ∉ q` forces `Q = P`.
-  obtain ⟨Q, hQ, hQq⟩ := Ideal.exists_minimalPrimes_le hIq
-  by_cases hQP : Q = P
-  · exact hQP ▸ hQq
-  · have hQs : Q ∈ s := by
-      rw [Set.Finite.mem_toFinset, Set.mem_sdiff, Set.mem_singleton_iff]
-      exact ⟨hQ, hQP⟩
+  obtain ⟨Q, hQ, hQq⟩ := exists_minimalPrimes_le hIq
+  obtain rfl | hQP := eq_or_ne Q P
+  · exact hQq
+  · have hQs : Q ∈ hfin.toFinset.erase P := by simpa using ⟨hQP, hQ⟩
     exact absurd (hQq (Finset.inf_le (f := id) hQs hg)) hgq
 
 /-- In a reduced ring with finitely many minimal primes, a prime ideal is minimal if and only if
@@ -67,18 +70,58 @@ it consists of zero divisors. -/
 theorem mem_minimalPrimes_iff_disjoint_nonZeroDivisors {A : Type*} [CommRing A] [IsReduced A]
     (hfin : (minimalPrimes A).Finite) {p : Ideal A} [p.IsPrime] :
     p ∈ minimalPrimes A ↔ Disjoint (p : Set A) (nonZeroDivisors A) := by
-  refine ⟨Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes, fun h ↦ ?_⟩
+  refine ⟨disjoint_nonZeroDivisors_of_mem_minimalPrimes, fun h ↦ ?_⟩
   -- Every zero divisor of the reduced ring `A` lies in a minimal prime.
-  have hsub : (p : Set A) ⊆ ⋃ q ∈ minimalPrimes A, (q : Set A) := by
-    intro x hx
-    have hx' : x ∉ nonZeroDivisors A := Set.disjoint_left.mp h hx
-    rw [mem_nonZeroDivisors_iff_right] at hx'
-    push Not at hx'
-    obtain ⟨y, hxy, hy⟩ := hx'
-    rw [minimalPrimes, Ideal.iUnion_minimalPrimes, Ideal.radical_bot_of_isReduced]
-    exact ⟨y, hy, by rw [mul_comm, hxy]; exact Ideal.zero_mem ⊥⟩
-  obtain ⟨q, hq, hpq⟩ := (Ideal.subset_union_prime_finite hfin (f := id) 0 0
+  have hsub : (p : Set A) ⊆ ⋃ q ∈ minimalPrimes A, (q : Set A) := fun x hx ↦ by
+    obtain ⟨y, hyx, hy⟩ : ∃ y, y * x = 0 ∧ y ≠ 0 := by
+      simpa [mem_nonZeroDivisors_iff_right] using Set.disjoint_left.mp h hx
+    rw [minimalPrimes, iUnion_minimalPrimes, radical_bot_of_isReduced]
+    exact ⟨y, hy, mem_bot.mpr <| by rw [mul_comm, hyx]⟩
+  obtain ⟨q, hq, hpq⟩ := (subset_union_prime_finite hfin (f := id) 0 0
     fun q hq _ _ ↦ hq.isPrime).mp hsub
   rwa [le_antisymm hpq (hq.2 ⟨‹_›, bot_le⟩ hpq)]
+
+/-- In a domain satisfying the ascending chain condition on principal ideals, an ideal has
+finitely many minimal primes if each is generated by a prime element. -/
+theorem finite_minimalPrimes_of_forall_eq_span_singleton
+    {R : Type*} [CommSemiring R] [IsDomain R] [WfDvdMonoid R] (I : Ideal R)
+    (h : ∀ P ∈ I.minimalPrimes, ∃ π : R, Prime π ∧ P = Ideal.span {π}) :
+    I.minimalPrimes.Finite := by
+  classical
+  by_cases hI : I = ⊥
+  · subst I
+    rw [Ideal.minimalPrimes_eq_subsingleton_self]
+    exact Set.finite_singleton _
+  obtain ⟨a, haI, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
+  obtain ⟨f, hf, hfa⟩ := WfDvdMonoid.exists_factors a ha
+  refine (f.toFinset.finite_toSet.image (fun π : R ↦ Ideal.span {π})).subset ?_
+  intro P hP
+  obtain ⟨π, hπ, hgen⟩ := h P hP
+  have hdvd : π ∣ a := Ideal.mem_span_singleton.mp (hgen ▸ hP.1.2 haI)
+  obtain ⟨r, hr, hπr⟩ := hπ.exists_mem_multiset_dvd (hdvd.trans hfa.symm.dvd)
+  exact ⟨r, Multiset.mem_toFinset.mpr hr,
+    (Ideal.span_singleton_eq_span_singleton.mpr
+      (hπ.irreducible.associated_of_dvd (hf r hr) hπr)).symm.trans hgen.symm⟩
+
+/-- A radical ideal in a domain is generated by a nonzero element if it has finitely many
+minimal primes and each is generated by a prime element. -/
+theorem IsRadical.exists_ne_zero_eq_span_singleton
+    {R : Type*} [CommSemiring R] [IsDomain R] {I : Ideal R} (hI : I.IsRadical)
+    (hfin : I.minimalPrimes.Finite)
+    (h : ∀ P ∈ I.minimalPrimes, ∃ π : R, Prime π ∧ P = Ideal.span {π}) :
+    ∃ a : R, a ≠ 0 ∧ I = Ideal.span {a} := by
+  obtain ⟨a, ha, hgen⟩ := exists_ne_zero_finsetInf_eq_span_singleton hfin.toFinset
+    fun P hP ↦ h P (hfin.mem_toFinset.mp hP)
+  refine ⟨a, ha, ?_⟩
+  rw [← hgen, Finset.inf_id_eq_sInf, hfin.coe_toFinset, Ideal.sInf_minimalPrimes, hI.radical]
+
+/-- If finitely many primes `f i` over an ideal `I` intersect inside the radical of `I`, then every
+minimal prime over `I` is one of them. For `I = ⊥` this says that the minimal primes of a ring are
+among any finite family of primes whose elements in common are nilpotent. -/
+theorem exists_eq_of_mem_minimalPrimes_of_inf_le {A ι : Type*} [CommSemiring A] {I : Ideal A}
+    {s : Finset ι} {f : ι → Ideal A} (hf : ∀ i ∈ s, (f i).IsPrime) (hIf : ∀ i ∈ s, I ≤ f i)
+    (hs : s.inf f ≤ I.radical) {P : Ideal A} (hP : P ∈ I.minimalPrimes) : ∃ i ∈ s, P = f i := by
+  obtain ⟨i, hi, hiP⟩ := hP.1.1.inf_le'.mp (hs.trans (hP.1.1.radical_le_iff.2 hP.1.2))
+  exact ⟨i, hi, le_antisymm (hP.2 ⟨hf i hi, hIf i hi⟩ hiP) hiP⟩
 
 end Ideal

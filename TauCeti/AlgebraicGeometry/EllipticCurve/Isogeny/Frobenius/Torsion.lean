@@ -58,7 +58,7 @@ theorem pointMap_ofIsogeny_baseChangeFrobenius (P : (W⁄K).toAffine.Point) :
     (ofIsogeny (baseChangeFrobenius K W)).pointMap P =
       Point.map (FiniteField.frobeniusAlgHom F K) P := by
   rw [pointMap_eq_iff, tautologicalPoint_ofIsogeny,
-    ← reductionOfDegreeEqOne_eq_iff _ (pointEquivDegreeOnePlace _ P).2,
+    ← reductionOfDegreeEqOne_eq_iff _ (pointEquivDegreeOnePlace _ P).property,
     reductionOfDegreeEqOne_tautologicalPoint_baseChangeFrobenius]
 
 variable [Algebra.IsAlgebraic F K]
@@ -78,12 +78,13 @@ theorem torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply (N : ℕ)
 
 end Fintype
 
-variable [Finite F] [IsSepClosed K] {N : ℕ} [NeZero N]
+variable [Finite F] [IsSepClosed K] {N : ℕ}
 
 /-- **The determinant of the action of the Frobenius on `E[N]` is `q = #F` modulo `N`**, over a
 separably closed extension `K` of the finite base `F` in which `N` is invertible. -/
 theorem det_torsionLinearMap_ofIsogeny_baseChangeFrobenius (hN : (N : K) ≠ 0) :
     LinearMap.det ((ofIsogeny (baseChangeFrobenius K W)).torsionLinearMap N) = Nat.card F := by
+  have : NeZero N := ⟨by rintro rfl; exact hN Nat.cast_zero⟩
   rw [det_torsionLinearMap_ofIsogeny hN, baseChangeFrobenius_def]
   exact congrArg Nat.cast ((Isogeny.degree_map _ _).trans (degree_frobeniusIsogeny W))
 

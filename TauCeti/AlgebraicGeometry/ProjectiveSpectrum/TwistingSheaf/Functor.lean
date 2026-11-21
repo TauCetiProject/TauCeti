@@ -92,7 +92,7 @@ def localizationsMap (y : ProjectiveSpectrum ℬ) :
 @[simp]
 theorem localizationsMap_mk (y : ProjectiveSpectrum ℬ) (r : A)
     (s : (ProjectiveSpectrum.comap f hf y).asHomogeneousIdeal.toIdeal.primeCompl) :
-    localizationsMap f hf y (Localization.mk r s) = Localization.mk (f r) ⟨f s, s.2⟩ :=
+    localizationsMap f hf y (Localization.mk r s) = Localization.mk (f r) ⟨f s, s.property⟩ :=
   Localization.localRingHom_mk ..
 
 /-- The maps of localizations `A_{f⁻¹ y} → B_y` restrict to the maps of homogeneous localizations
@@ -120,24 +120,25 @@ theorem localizationsMap_id (x : ProjectiveSpectrum 𝒜)
   | H x => exact localizationsMap_mk ..
 
 variable {U : Opens (ProjectiveSpectrum.top 𝒜)} {V : Opens (ProjectiveSpectrum.top ℬ)}
-  (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1)
+  (hUV : V.carrier ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.carrier)
 
 /-- The pullback of a dependent function on `U` into the localizations along `f`: the value at
 `y ∈ V` is the image of the value at `f⁻¹ y` under `A_{f⁻¹ y} → B_y`. -/
-def comapFun (s : ∀ x : U, Localizations 𝒜 x.1) (y : V) : Localizations ℬ y.1 :=
-  localizationsMap f hf y.1 (s ⟨ProjectiveSpectrum.comap f hf y.1, hUV y.2⟩)
+def comapFun (s : ∀ x : U, Localizations 𝒜 x.val) (y : V) : Localizations ℬ y.val :=
+  localizationsMap f hf y.val (s ⟨ProjectiveSpectrum.comap f hf y.val, hUV y.property⟩)
 
 variable {f hf hUV} in
 /-- The pullback of a local fraction of degree `n` is a local fraction of degree `n`. -/
-theorem isLocallyFraction_comapFun {s : ∀ x : U, Localizations 𝒜 x.1}
+theorem isLocallyFraction_comapFun {s : ∀ x : U, Localizations 𝒜 x.val}
     (hs : (isLocallyFraction 𝒜 n).pred s) :
     (isLocallyFraction ℬ n).pred (comapFun f hf hUV s) := by
   rintro ⟨y, hyV⟩
   obtain ⟨W, m, iWU, i, j, h, r, t, ht, w⟩ := hs ⟨ProjectiveSpectrum.comap f hf y, hUV hyV⟩
   refine ⟨W.comap (ProjectiveSpectrum.comap f hf) ⊓ V, ⟨m, hyV⟩, homOfLE inf_le_right, i, j, h,
-    ⟨f r, Graded.map_mem f r.2⟩, ⟨f t, Graded.map_mem f t.2⟩,
-    fun z ↦ ht ⟨ProjectiveSpectrum.comap f hf z.1, z.2.1⟩, fun z ↦ ?_⟩
-  exact (congrArg (localizationsMap f hf z.1) (w ⟨_, z.2.1⟩)).trans (localizationsMap_mk ..)
+    ⟨f r, Graded.map_mem f r.property⟩, ⟨f t, Graded.map_mem f t.property⟩,
+    fun z ↦ ht ⟨ProjectiveSpectrum.comap f hf z.val, z.property.1⟩, fun z ↦ ?_⟩
+  exact (congrArg (localizationsMap f hf z.val) (w ⟨_, z.property.1⟩)).trans
+      (localizationsMap_mk ..)
 
 end ProjectiveSpectrum.TwistingSheaf
 
@@ -156,21 +157,22 @@ namespace Proj
 namespace twistingSheaf
 
 variable {U : (Proj 𝒜).Opens} {V : (Proj ℬ).Opens}
-  (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1)
+  (hUV : V.carrier ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.carrier)
 
 /-- **Pullback of sections of twisting sheaves** along `Proj.map f hf : Proj ℬ ⟶ Proj 𝒜`: for
 `V` contained in the preimage of `U`, the map `Γ(U, 𝒪_{Proj 𝒜}(n)) → Γ(V, 𝒪_{Proj ℬ}(n))`
 applying the maps of localizations `A_{f⁻¹ y} → B_y` induced by `f` pointwise. -/
 def comap : Γ(twistingSheaf 𝒜 n, U) →+ Γ(twistingSheaf ℬ n, V) where
-  toFun s := ⟨comapFun f hf hUV s.1, isLocallyFraction_comapFun s.2⟩
+  toFun s := ⟨comapFun f hf hUV s.val, isLocallyFraction_comapFun s.property⟩
   map_zero' := ext fun _ ↦ map_zero _
   map_add' _ _ := ext fun _ ↦ map_add _ _ _
 
 /-- The value of a pulled-back section at `y` is the image of the value at `f⁻¹ y`. -/
 @[simp]
 theorem comap_apply (s : Γ(twistingSheaf 𝒜 n, U)) (y : V) :
-    (comap f hf hUV s).1 y =
-      localizationsMap f hf y.1 (s.1 (⟨ProjectiveSpectrum.comap f hf y.1, hUV y.2⟩ : U)) :=
+    (comap f hf hUV s).val y =
+      localizationsMap f hf y.val (s.val (⟨ProjectiveSpectrum.comap f hf y.val,
+          hUV y.property⟩ : U)) :=
   (rfl)
 
 /-- The pullback of sections commutes with restriction. -/
@@ -183,7 +185,8 @@ theorem res_comap {V' : (Proj ℬ).Opens} (i : V' ⟶ V) (s : Γ(twistingSheaf �
 /-- Pulling back the restriction of a section is pulling back the section. -/
 @[simp]
 theorem comap_res {U' : (Proj 𝒜).Opens} (i : U' ⟶ U)
-    (hU'V : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U'.1) (s : Γ(twistingSheaf 𝒜 n, U)) :
+    (hU'V : V.carrier ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U'.carrier) (s : Γ(twistingSheaf 𝒜 n,
+        U)) :
     comap f hf hU'V ((twistingSheaf 𝒜 n).presheaf.map i.op s) =
       comap f hf (fun _ hy ↦ i.le (hU'V hy)) s :=
   (rfl)
@@ -193,8 +196,9 @@ in the localization `B_y`, is the image of the value of `a` at `f⁻¹ y`. This 
 `Proj.map`, whose map of structure sheaves is Mathlib's `Proj.comapStructureSheaf`, applying
 `HomogeneousLocalization.localRingHom` pointwise. -/
 theorem val_map_appLE_apply (a : Γ(Proj 𝒜, U)) (y : V) :
-    (((map f hf).appLE U V hUV a).1 y).val = localizationsMap f hf y.1 (a.1 ⟨_, hUV y.2⟩).val :=
-  val_localRingHom f hf y.1 _
+    (((map f hf).appLE U V hUV a).val y).val = localizationsMap f hf y.val (a.val ⟨_,
+        hUV y.property⟩).val :=
+  val_localRingHom f hf y.val _
 
 /-- **The pullback of sections is linear over the map of structure sheaves.** -/
 theorem comap_smul (a : Γ(Proj 𝒜, U)) (s : Γ(twistingSheaf 𝒜 n, U)) :
@@ -230,9 +234,10 @@ open twistingSheaf
 `A → ⨁ₙ Γ(Proj A, 𝒪(n))` are natural in `f`. -/
 @[simp]
 theorem comap_toTwistingSheaf {U : (Proj 𝒜).Opens} {V : (Proj ℬ).Opens}
-    (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1) {j : ℕ} (h : (j : ℤ) = n) (r : 𝒜 j) :
+    (hUV : V.carrier ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.carrier) {j : ℕ} (h : (j : ℤ) = n)
+        (r : 𝒜 j) :
     comap f hf hUV (toTwistingSheaf 𝒜 h U r) =
-      toTwistingSheaf ℬ h V ⟨f r, Graded.map_mem f r.2⟩ := by
+      toTwistingSheaf ℬ h V ⟨f r, Graded.map_mem f r.property⟩ := by
   rw [toTwistingSheaf_eq_const, comap_const, toTwistingSheaf_eq_const]
   exact const_ext (by rw [map_one])
 
@@ -256,6 +261,14 @@ theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) :
     Scheme.Modules.Hom.app (twistingSheafMap f hf n) U =
       AddCommGrpCat.ofHom (comap f hf (U := U) Set.Subset.rfl) :=
   (rfl)
+
+/-- The morphisms of twisting sheaves send the sections `r / 1` to the sections `f r / 1`. -/
+-- Not a simp lemma: `Scheme.Modules.pushforward_obj_obj` already rewrites its left-hand side.
+theorem twistingSheafMap_app_toTwistingSheaf (U : (Proj 𝒜).Opens) {j : ℕ} (h : (j : ℤ) = n)
+    (r : 𝒜 j) :
+    (twistingSheafMap f hf n).app U (toTwistingSheaf 𝒜 h U r) =
+      toTwistingSheaf ℬ h (map f hf ⁻¹ᵁ U) ⟨f r, Graded.map_mem f r.property⟩ :=
+  comap_toTwistingSheaf f hf Set.Subset.rfl h r
 
 /-- The morphisms of twisting sheaves are multiplicative on sections: they send the product of
 sections of `𝒪(m)` and `𝒪(n)` to the product of their images. -/
@@ -291,7 +304,7 @@ theorem twistingSheafMap_comp (g : ℬ →+*ᵍ 𝒞) (hg : 𝒞₊ ≤ ℬ₊.m
     Scheme.Modules.pushforwardCongr_hom_app_app, Scheme.Modules.pushforwardComp_hom_app_app,
     AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply]
   -- The remaining identity and `eqToHom` restriction maps act trivially on values.
-  exact twistingSheaf.ext fun z ↦ DFunLike.congr_fun (localizationsMap_comp f hf g hg z.1) _
+  exact twistingSheaf.ext fun z ↦ DFunLike.congr_fun (localizationsMap_comp f hf g hg z.val) _
 
 /-- **The morphism of twisting sheaves induced by the identity is the identity**, under
 `Proj.map (GradedRingHom.id 𝒜) = 𝟙 (Proj 𝒜)`. -/
@@ -304,7 +317,7 @@ theorem twistingSheafMap_id (n : ℤ) :
     Scheme.Modules.pushforwardId_hom_app_app, Scheme.Modules.Hom.id_app, AddCommGrpCat.hom_comp,
     AddCommGrpCat.hom_id, AddMonoidHom.comp_apply, AddMonoidHom.id_apply]
   -- The remaining identity and `eqToHom` restriction maps act trivially on values.
-  exact twistingSheaf.ext fun x ↦ localizationsMap_id x.1 _
+  exact twistingSheaf.ext fun x ↦ localizationsMap_id x.val _
 
 /-- **The morphisms of twisting sheaves are compatible with composition, on sections**: for a
 graded ring homomorphism `h` equal to `g.comp f`, the image of a section under the morphism
@@ -355,13 +368,16 @@ theorem res_twistingSheafMap_app_res_of_comp_eq (g : ℬ →+*ᵍ 𝒟) (hg : �
     (twistingSheaf 𝒟 n).presheaf.map i'.op ((twistingSheafMap g' hg' n).app V'
       ((twistingSheaf 𝒞 n).presheaf.map j'.op ((twistingSheafMap f' hf' n).app U s))) := by
   refine twistingSheaf.ext fun z ↦ ?_
-  have k := DFunLike.congr_fun (localizationsMap_comp f hf g hg z.1) (s.1 ⟨_, j.le (i.le z.2)⟩)
-  have k' := DFunLike.congr_fun (localizationsMap_comp f' hf' g' hg' z.1)
-    (s.1 ⟨_, j'.le (i'.le z.2)⟩)
+  have k := DFunLike.congr_fun (localizationsMap_comp f hf g hg z.val) (s.val ⟨_, j.le
+      (i.le z.property)⟩)
+  have k' := DFunLike.congr_fun (localizationsMap_comp f' hf' g' hg' z.val)
+    (s.val ⟨_, j'.le (i'.le z.property)⟩)
   -- the maps of localizations along the two equal composites agree
   have key : ∀ (h h' : 𝒜 →+*ᵍ 𝒟) (_ : h = h') (hh : 𝒟₊ ≤ 𝒜₊.map h) (hh' : 𝒟₊ ≤ 𝒜₊.map h')
-      (p : ProjectiveSpectrum.comap h hh z.1 ∈ U) (p' : ProjectiveSpectrum.comap h' hh' z.1 ∈ U),
-      localizationsMap h hh z.1 (s.1 ⟨_, p⟩) = localizationsMap h' hh' z.1 (s.1 ⟨_, p'⟩) := by
+      (p : ProjectiveSpectrum.comap h hh z.val ∈ U) (p' : ProjectiveSpectrum.comap h' hh' z.val ∈
+          U),
+      localizationsMap h hh z.val (s.val ⟨_, p⟩) = localizationsMap h' hh' z.val (s.val ⟨_, p'⟩)
+          := by
     rintro h _ rfl _ _ _ _
     rfl
   exact (k.symm.trans (key _ _ e _ _ _ _)).trans k'

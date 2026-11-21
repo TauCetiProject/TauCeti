@@ -10,7 +10,12 @@ public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Comap
 public import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 public import TauCeti.NumberTheory.ModularForms.QExpansion.FunctionField
+import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
+import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Degree
+import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 
 /-!
 # The level-one modular function field is `ℚ(j)` over the rationals
@@ -38,6 +43,15 @@ turns it into a relation `F Q'(j) = P'(j)` with `P', Q' ∈ K[X]` and `Q' ≠ 0`
 `⊥` of `ℂ`, this is the identity `F₁ = ℚ(j)` for the field of level-one modular functions with
 rational Fourier coefficients (`TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_bot`).
 
+Finally, for a finite-index subgroup `H` of `SL(2, ℤ)`, a meromorphic function `F` on the
+compactified quotient `X_H` is pulled back from `X(1)` exactly when its value at the orbit of `τ`
+depends only on the `SL(2, ℤ)`-orbit of `τ`
+(`Subgroup.exists_compactifiedQuotientComap_eq_iff`). Composing the map `X_H → X(1)`
+with `j` gives a finite holomorphic map `β : X_H → ℙ¹(ℂ)` whose fibres over the finite points are
+these orbits, so `F` is constant along all but one fibre of `β`, and is therefore the pullback of
+its trace along `β` divided by `deg β`
+(`TauCeti.RiemannSurface.MeromorphicFunction.exists_comap_eq_of_eventually_subsingleton_image`).
+
 ## Main definitions
 
 * `TauCeti.ModularGroup.jMeromorphicFunction`: the modular invariant `j` as a meromorphic function
@@ -54,6 +68,8 @@ rational Fourier coefficients (`TauCeti.ModularGroup.coeffSubfield_cuspDatumInft
 * `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_eq_closure`: the functions with coefficients
   in `K` form the field `K(j)`.
 * `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_bot`: `F₁ = ℚ(j)`.
+* `Subgroup.exists_compactifiedQuotientComap_eq_iff`: the meromorphic functions on
+  `X_H` pulled back from `X(1)` are those invariant under `SL(2, ℤ)`.
 
 ## References
 
@@ -65,7 +81,7 @@ rational Fourier coefficients (`TauCeti.ModularGroup.coeffSubfield_cuspDatumInft
 
 public noncomputable section
 
-open Function OnePoint Polynomial UpperHalfPlane TauCeti.RiemannSurface
+open Function MulAction OnePoint Polynomial UpperHalfPlane TauCeti.RiemannSurface
 open _root_.Subgroup.CompactifiedQuotient
 open scoped MatrixGroups
 
@@ -267,5 +283,55 @@ theorem coeffSubfield_cuspDatumInfty_bot :
       (⊥ : Subfield ℂ).map (algebraMap ℂ _) := ⟨c, hc, rfl⟩
   rw [Subfield.map_bot] at h
   exact (bot_le : ⊥ ≤ Subfield.closure {jMeromorphicFunction}) h
+
+/-! ### Functions pulled back from `X(1)` -/
+
+/-- **The functions pulled back from `X(1)`.** For a finite-index subgroup `H` of `SL(2, ℤ)`, a
+meromorphic function `F` on the compactified quotient `X_H` is the pullback along `X_H → X(1)` of
+a meromorphic function on `X(1)` exactly when its value at the orbit of `τ` depends only on the
+`SL(2, ℤ)`-orbit of `τ`. -/
+theorem _root_.Subgroup.exists_compactifiedQuotientComap_eq_iff (H : _root_.Subgroup SL(2, ℤ))
+    [H.FiniteIndex]
+    {F : MeromorphicFunction (H.map sl2zToPSL2R).CompactifiedQuotient} :
+    (∃ G : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient,
+        _root_.Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R G = F) ↔
+      ∀ (γ : SL(2, ℤ)) (τ : ℍ),
+        F (ofQuotient (Quotient.mk _ (γ • τ))) = F (ofQuotient (Quotient.mk _ τ)) := by
+  set h := H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+  refine ⟨?_, fun hF ↦ ?_⟩
+  · rintro ⟨G, rfl⟩ γ τ
+    simp only [_root_.Subgroup.compactifiedQuotientComap_apply,
+      _root_.Subgroup.compactifiedQuotientMap_ofQuotient]
+    refine congrArg (G ∘ ofQuotient) (Quotient.sound (orbitRel_apply.2 ?_))
+    exact ⟨⟨sl2zToPSL2R γ, γ, psl2zToPSL2R_mk γ⟩, UpperHalfPlane.sl2zToPSL2R_smul γ τ⟩
+  have := (_root_.Subgroup.isCofinite_map_sl2zToPSL2R H).compactSpace_compactifiedQuotient
+  set β := jFiniteHolomorphicMap.comp (Fuchsian.compactifiedQuotientFiniteHolomorphicMap h)
+  -- Over a finite point of the sphere, the fibre of `β` consists of the orbits of the
+  -- `SL(2, ℤ)`-translates of one point of the upper half-plane, where `F` takes one value.
+  have hfib : ∀ᶠ y in Filter.cofinite, (F '' (β ⁻¹' {y})).Subsingleton := by
+    refine (Set.finite_singleton (∞ : OnePoint ℂ)).eventually_cofinite_notMem.mono ?_
+    rintro y hy _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩
+    simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx hx' hy
+    cases x with
+    | ofCusp C => simp [β, ← hx] at hy
+    | ofQuotient p =>
+    cases x' with
+    | ofCusp C => simp [β, ← hx'] at hy
+    | ofQuotient p' =>
+    induction p using Quotient.inductionOn with | h τ =>
+    induction p' using Quotient.inductionOn with | h τ' =>
+    have he := hx.trans hx'.symm
+    simp only [β, FiniteHolomorphicMap.coe_comp, Function.comp_apply,
+      Fuchsian.coe_compactifiedQuotientFiniteHolomorphicMap, coe_jFiniteHolomorphicMap,
+      _root_.Subgroup.compactifiedQuotientMap_ofQuotient, jSphere_ofQuotient,
+      OnePoint.coe_eq_coe] at he
+    obtain ⟨γ, hγ⟩ := (j_eq_j_iff (z := τ') (w := τ)).1
+      (by rw [← jQuotient_mk, ← jQuotient_mk]; exact he.symm)
+    rw [← hγ, hF]
+  obtain ⟨g, hg⟩ := MeromorphicFunction.exists_comap_eq_of_eventually_subsingleton_image β F hfib
+  refine ⟨comap _ jFiniteHolomorphicMap.holomorphic jFiniteHolomorphicMap.nonconstant g,
+    ext fun x ↦ ?_⟩
+  rw [← hg, _root_.Subgroup.compactifiedQuotientComap_apply, comap_apply, comap_apply]
+  simp [β]
 
 end TauCeti.ModularGroup

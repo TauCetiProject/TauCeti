@@ -153,16 +153,48 @@ theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
   simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
     RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
 
+end Involutive
+
+variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
+
 /-- On a field of order `p ^ (2 n)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution. For
 the field with `q²` elements, `q = p ^ n`, this is the involution `x ↦ x ^ q`. -/
 theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     Function.Involutive (iterateFrobenius K p n) := by
+  have : Finite K := Nat.finite_of_card_ne_zero
+    (by rw [hK]; exact (pow_pos (expChar_pos K p) _).ne')
   let := Fintype.ofFinite K
   intro x
   rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,
     Nat.card_eq_fintype_card, FiniteField.pow_card]
 
-end Involutive
+/-- An iterate of Frobenius is not the identity on a domain with more than `p ^ n` elements,
+provided `1 < p ^ n`. -/
+theorem exists_iterateFrobenius_ne {K : Type*} [CommRing K] [IsDomain K] {p n : ℕ}
+    [ExpChar K p] (hq : 1 < p ^ n) (hK : p ^ n < Nat.card K) :
+    ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  classical
+  have : Finite K := Nat.finite_of_card_ne_zero (by omega)
+  let := Fintype.ofFinite K
+  by_contra! h
+  have hcard : Nat.card K ≤ p ^ n := by
+    rw [Nat.card_eq_fintype_card, ← Finset.card_univ]
+    refine (Polynomial.card_le_degree_of_subset_roots
+      (p := Polynomial.X ^ (p ^ n) - Polynomial.X) fun s _ ↦ ?_).trans
+      (Polynomial.natDegree_X_pow_sub_X (R := K) hq).le
+    rw [Polynomial.mem_roots (Polynomial.X_pow_sub_X_ne_zero hq)]
+    simpa [Polynomial.IsRoot, sub_eq_zero, iterateFrobenius_def] using h s
+  exact hK.not_ge hcard
+
+/-- The quadratic finite-field involution is not the identity. -/
+theorem exists_iterateFrobenius_ne_of_card_eq_sq {n : ℕ}
+    (hK : Nat.card K = (p ^ n) ^ 2) : ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  have : Finite K := Nat.finite_of_card_ne_zero
+    (by rw [hK]; exact (pow_pos (pow_pos (expChar_pos K p) n) 2).ne')
+  have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+  apply exists_iterateFrobenius_ne hq
+  rw [hK]
+  nlinarith
 
 end TauCeti.FiniteField
 

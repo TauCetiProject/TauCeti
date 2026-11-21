@@ -9,8 +9,11 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+import TauCeti.AlgebraicGeometry.Morphisms.Epi
 import TauCeti.CategoryTheory.MorphismProperty.Limits
+import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.RingTheory.Unramified.Fiber
 
 /-!
@@ -28,7 +31,9 @@ Dually to Mathlib's `isClosedImmersion_equalizer_ι_left` for separated targets,
 two morphisms over `S` into a scheme formally unramified and locally of finite type over `S` is an
 open subscheme of their source (`isOpenImmersion_equalizer_ι_left`): it is a base change of the
 diagonal, which is an open immersion by Mathlib's `FormallyUnramified.isOpenImmersion_diagonal`.
-In particular two sections of an unramified morphism agree on an open subscheme.
+In particular two sections of an unramified morphism agree on an open subscheme, and two
+morphisms into an unramified scheme that agree after a surjective morphism are equal
+(`ext_of_surjective_of_formallyUnramified`).
 
 If the target is also separated, two morphisms that agree after a dominant morphism are
 equal (`ext_of_isDominant_of_isSeparated_of_formallyUnramified`). Unlike Mathlib's
@@ -39,6 +44,16 @@ For the same reason, a morphism formally unramified and locally of finite type i
 exactly when it is universally injective
 (`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
 immersion, which is an isomorphism exactly when it is surjective.
+
+Formally unramified morphisms respect isomorphisms (`TauCeti.formallyUnramified_respectsIso`).
+
+The residue field extensions of a morphism formally unramified and locally of finite type are
+finite separable, so their embeddings into an extension `Ω'` of a separably closed field `Ω` all
+land in `Ω`. Hence lifts of an `Ω`-valued point along such a morphism do not change under extension
+of `Ω` (`AlgebraicGeometry.Scheme.Hom.bijective_comp_of_formallyUnramified`); this is why stalks of
+étale sheaves at separably closed points do not change under extension of the field. For the same
+reason, a point over a separably closed point of the target has a separably closed residue field
+(`AlgebraicGeometry.Scheme.Hom.isSepClosed_residueField_of_formallyUnramified`).
 
 ## References
 
@@ -52,9 +67,20 @@ public section
 open CategoryTheory Limits
 open scoped TensorProduct
 
-namespace AlgebraicGeometry
-
 universe u
+
+namespace TauCeti
+
+open AlgebraicGeometry
+
+/-- Formally unramified morphisms of schemes respect isomorphisms. -/
+instance formallyUnramified_respectsIso :
+    MorphismProperty.RespectsIso (@FormallyUnramified : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.IsStableUnderBaseChange.respectsIso
+
+end TauCeti
+
+namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
 
@@ -96,9 +122,6 @@ theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_baseChange_field
     ext
     simp [RingHom.algebraMap_toAlgebra]
   rw [hφ, ← pullbackSpecIso_hom_snd R S K] at hK
-  -- Fixing the universe also lets instance search find isomorphism invariance.
-  have : MorphismProperty.RespectsIso @FormallyUnramified.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have hmap := (MorphismProperty.cancel_left_of_respectsIso (P := @FormallyUnramified.{u})
     (pullbackSpecIso R S K).hom _).mp hK
   let : Algebra K (S ⊗[R] K) := Algebra.TensorProduct.rightAlgebra
@@ -169,6 +192,29 @@ theorem ext_of_isDominant_of_isSeparated_of_formallyUnramified {W Z : Scheme.{u}
   rw [← cancel_epi (equalizer.ι f' g').left]
   exact congrArg (fun k ↦ k.left) (equalizer.condition f' g')
 
+/-- Morphisms into an unramified scheme agree if they agree after precomposition with a
+surjective morphism. Neither a reduced source nor a separated target is needed. -/
+theorem ext_of_surjective_of_formallyUnramified {W Z : Scheme.{u}} {f g : X ⟶ Y} (s : Y ⟶ Z)
+    [FormallyUnramified s] [LocallyOfFiniteType s] (h : f ≫ s = g ≫ s)
+    (ι : W ⟶ X) [Surjective ι] (hU : ι ≫ f = ι ≫ g) : f = g := by
+  let X' : Over Z := Over.mk (f ≫ s)
+  let Y' : Over Z := Over.mk s
+  let U' : Over Z := Over.mk (ι ≫ f ≫ s)
+  let f' : X' ⟶ Y' := Over.homMk f
+  let g' : X' ⟶ Y' := Over.homMk g h.symm
+  let ι' : U' ⟶ X' := Over.homMk ι
+  have : FormallyUnramified Y'.hom := ‹FormallyUnramified s›
+  have : LocallyOfFiniteType Y'.hom := ‹LocallyOfFiniteType s›
+  let e := equalizer.lift ι' (f := f') (g := g') (by ext1; exact hU)
+  have : Surjective (e.left ≫ (equalizer.ι f' g').left) := by
+    simpa only [← Over.comp_left, e, equalizer.lift_ι, ι', Over.homMk_left] using
+      (inferInstance : Surjective ι)
+  have : Surjective (equalizer.ι f' g').left := Surjective.of_comp e.left _
+  have : IsIso (equalizer.ι f' g').left :=
+    (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, inferInstance⟩
+  rw [← cancel_epi (equalizer.ι f' g').left]
+  exact congrArg (fun k ↦ k.left) (equalizer.condition f' g')
+
 /-- **An unramified morphism is a monomorphism exactly when it is universally injective.**
 Stacks, Tag 05VH. -/
 theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [FormallyUnramified f]
@@ -177,5 +223,67 @@ theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [Formally
   -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
   rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
   exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
+
+/-- **Lifts of a separably closed point along an unramified morphism do not change under
+extension of the field.** Let `f : X ⟶ Y` be formally unramified and locally of finite type (for
+instance étale), `s : Spec Ω ⟶ Y` with `Ω` separably closed and `φ : Spec Ω' ⟶ Spec Ω` for a field
+`Ω'`. Then `u ↦ φ ≫ u` is a bijection from the lifts of `s` to `X` onto the lifts of `φ ≫ s`. -/
+theorem Scheme.Hom.bijective_comp_of_formallyUnramified (f : X ⟶ Y)
+    [FormallyUnramified f] [LocallyOfFiniteType f] {Ω Ω' : Type u} [Field Ω] [IsSepClosed Ω]
+    [Field Ω'] (φ : Spec (.of Ω') ⟶ Spec (.of Ω)) (s : Spec (.of Ω) ⟶ Y) :
+    Function.Bijective fun u : {u : Spec (.of Ω) ⟶ X // u ≫ f = s} ↦
+      (⟨φ ≫ u.val, by simp [u.property]⟩ : {v : Spec (.of Ω') ⟶ X // v ≫ f = φ ≫ s}) := by
+  refine ⟨fun u v h ↦ Subtype.ext ((cancel_epi φ).mp congr(($h).val)), ?_⟩
+  rintro ⟨v, hv⟩
+  -- Write `s` and `v` through residue fields, and `φ` as `Spec g`.
+  obtain ⟨⟨t, b⟩, rfl⟩ := (Scheme.SpecToEquivOfField Ω Y).symm.surjective s
+  obtain ⟨⟨x, a⟩, rfl⟩ := (Scheme.SpecToEquivOfField Ω' X).symm.surjective v
+  obtain ⟨g, rfl⟩ : ∃ g, Spec.map g = φ := ⟨_, Spec.map_preimage φ⟩
+  have h : (⟨f x, f.residueFieldMap x ≫ a⟩ : Σ y, Y.residueField y ⟶ .of Ω') = ⟨t, b ≫ g⟩ := by
+    apply (Scheme.SpecToEquivOfField Ω' Y).symm.injective
+    simpa [Scheme.SpecToEquivOfField_symm_apply] using hv
+  obtain ⟨e, hab⟩ := Scheme.SpecToEquivOfField_eq_iff.mp h
+  dsimp only at e hab
+  subst e
+  simp only [Scheme.residueFieldCongr_refl, Iso.refl_hom, Category.id_comp] at hab
+  -- `a` is an embedding of `κ(x)` over `κ(f x)`, which lands in `Ω` since `κ(x)` is separable.
+  let := (f.residueFieldMap x).hom.toAlgebra
+  let := b.hom.toAlgebra
+  let := (b ≫ g).hom.toAlgebra
+  let := g.hom.toAlgebra
+  have : IsScalarTower (Y.residueField (f x)) Ω Ω' := .of_algebraMap_eq' rfl
+  let a' : X.residueField x →ₐ[Y.residueField (f x)] Ω' :=
+    { a.hom with commutes' r := congr($hab r) }
+  obtain ⟨a₂, ha₂⟩ := (Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits Ω' Ω fun r ↦
+    IsSepClosed.splits_codomain _ (Algebra.IsSeparable.isSeparable _ r)).surjective a'
+  -- Bundle `a₂` as a morphism out of `κ(x)` itself, so that it composes with `f.residueFieldMap x`.
+  obtain ⟨c, hc⟩ : ∃ c : X.residueField x ⟶ .of Ω, ∀ r, c.hom r = a₂ r :=
+    ⟨CommRingCat.ofHom (a₂ : X.residueField x →+* Ω), fun _ ↦ rfl⟩
+  have hca : c ≫ g = a := by
+    ext r
+    rw [CommRingCat.comp_apply, hc]
+    have := congr($ha₂ r)
+    rw [Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits_apply_apply] at this
+    -- `algebraMap Ω Ω'` is `g` and `a'` is `a`, by construction of the algebra structures.
+    exact this
+  have hcb : f.residueFieldMap x ≫ c = b := by
+    ext r
+    rw [CommRingCat.comp_apply, hc]
+    exact a₂.commutes r
+  refine ⟨⟨(Scheme.SpecToEquivOfField Ω X).symm ⟨x, c⟩, ?_⟩, ?_⟩
+  · simp [Scheme.SpecToEquivOfField_symm_apply, ← hcb, Spec.map_comp]
+  · ext1
+    simp [Scheme.SpecToEquivOfField_symm_apply, ← hca]
+
+/-- **Points over a separably closed point of an unramified morphism.** If `f` is formally
+unramified and locally of finite type and the residue field of `f x` is separably closed, then
+so is the residue field of `x`: the finite separable extension `κ(f x) → κ(x)` is an isomorphism. -/
+theorem Scheme.Hom.isSepClosed_residueField_of_formallyUnramified (f : X ⟶ Y)
+    [FormallyUnramified f] [LocallyOfFiniteType f] (x : X)
+    [IsSepClosed (Y.residueField (f x))] : IsSepClosed (X.residueField x) := by
+  let := (f.residueFieldMap x).hom.toAlgebra
+  exact IsSepClosed.of_ringEquiv
+    (RingEquiv.ofBijective _ (IsSepClosed.algebraMap_bijective (Y.residueField (f x))
+      (X.residueField x)))
 
 end AlgebraicGeometry

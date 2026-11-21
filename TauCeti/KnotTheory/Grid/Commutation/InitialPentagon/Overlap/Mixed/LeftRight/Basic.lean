@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Decomposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Recutting an initial-side pentagon across a mixed common side
@@ -524,14 +525,13 @@ private theorem initialPentagonLeftRightOverlapPartner_injective :
   have hD := G.initialPentagonLeftRightOverlapPartner_isRecut C D
   have hE := G.initialPentagonLeftRightOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ :=
+  obtain ⟨_, hfD, hsD⟩ :=
     G.initialPentagonLeftRightOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ :=
+  obtain ⟨_, hfE, hsE⟩ :=
     G.initialPentagonLeftRightOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -618,12 +618,9 @@ theorem add_sum_rectangleInitialPentagonWeight_eq_add_sum_iff_sdiff_leftRightOve
         B + ∑ E ∈ G.initialPentagonRectangleDecompositions C x z \
             G.initialPentagonLeftRightOverlapPartners C x z,
           G.initialPentagonRectangleWeight C R E := by
-  rw [← Finset.sum_sdiff (G.initialPentagonLeftRightOverlapSources_subset C)
-      (f := G.rectangleInitialPentagonWeight C R),
-    ← Finset.sum_sdiff (G.initialPentagonLeftRightOverlapPartners_subset C)
-      (f := G.initialPentagonRectangleWeight C R),
-    G.sum_rectangleInitialPentagonWeight_leftRightOverlapSources_eq_sum_partners C x z R,
-    ← add_assoc, ← add_assoc]
-  exact add_right_cancel_iff
+  exact Finset.add_sum_eq_add_sum_iff_sdiff
+    (G.initialPentagonLeftRightOverlapSources_subset C)
+    (G.initialPentagonLeftRightOverlapPartners_subset C)
+    (G.sum_rectangleInitialPentagonWeight_leftRightOverlapSources_eq_sum_partners C x z R)
 
 end TauCeti.GridDiagram

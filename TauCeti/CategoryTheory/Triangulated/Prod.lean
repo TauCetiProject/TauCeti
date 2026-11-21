@@ -166,6 +166,14 @@ instance instIsTriangulatedFunctorProd : (F.prod G).IsTriangulated where
         (𝟙 (G.obj T.obj₁.2))⟦(1 : ℤ)⟧' =
           𝟙 _ ≫ G.map (T.mor₃.2 ≫ 𝟙 _) ≫ (G.commShiftIso (1 : ℤ)).hom.app T.obj₁.2)
 
+/-- The product of triangulated equivalences is a triangulated equivalence for the
+componentwise shift and pretriangulated structure. -/
+instance _root_.CategoryTheory.Equivalence.instIsTriangulatedProd
+    (e : C ≌ C') (e' : D ≌ D') [e.functor.CommShift ℤ] [e'.functor.CommShift ℤ]
+    [e.functor.IsTriangulated] [e'.functor.IsTriangulated] :
+    (e.prod e').functor.IsTriangulated :=
+  inferInstanceAs ((e.functor.prod e'.functor).IsTriangulated)
+
 end Functor
 
 section Pairing

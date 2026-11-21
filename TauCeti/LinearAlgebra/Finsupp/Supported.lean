@@ -35,8 +35,15 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
+* `Finsupp.sub_single_mem_supported`: removing the value at one exceptional coordinate leaves a
+  function supported on a prescribed set.
+* `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
+  over `s` into `supported N R t` maps `supported M R s` into it.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
+* `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
+  finitely generated module `M` sends sequences supported in `Finset.range n` into some
+  `Finset.range m`.
 -/
 
 public section
@@ -54,13 +61,13 @@ supported on `t`, where every point of `s` satisfying `p` lies in `t`. -/
 def filterSupported {s t : Set α} (p : α → Prop) [DecidablePred p] (h : ∀ a ∈ s, p a → a ∈ t) :
     supported M R s →ₗ[R] supported M R t :=
   LinearMap.codRestrict _
-    { toFun := fun f ↦ filter p f.1
+    { toFun := fun f ↦ filter p f.val
       map_add' := fun _ _ ↦ filter_add
       map_smul' := fun _ _ ↦ filter_smul }
     fun f ↦ (mem_supported R _).2 fun a ha ↦ by
-      have ha : a ∈ (filter p f.1).support := ha
+      have ha : a ∈ (filter p f.val).support := ha
       rw [support_filter, Finset.mem_filter] at ha
-      exact h a ((mem_supported R f.1).1 f.2 ha.1) ha.2
+      exact h a ((mem_supported R f.val).1 f.property ha.1) ha.2
 
 /-- `TauCeti.Finsupp.filterSupported p h` filters the underlying finitely supported function. -/
 @[simp]
@@ -119,3 +126,44 @@ theorem exists_le_supported_Iio {V : Submodule R (ℕ →₀ M)} (hV : V.FG) :
     (Finsupp.supported_mono fun i hi ↦ Nat.lt_succ_of_le (hb hi))⟩
 
 end Submodule.FG
+
+namespace Finsupp
+
+variable {α β M N : Type*} (R : Type*) [Semiring R]
+
+/-- Removing the value at an exceptional coordinate `k` leaves a function supported on `s`, if
+every other point of the support lies in `s`. -/
+theorem sub_single_mem_supported [AddCommGroup M] [Module R M] {s : Set α} (v : α →₀ M) (k : α)
+    (hv : ∀ j ∈ v.support, j ∈ s ∨ j = k) :
+    v - single k (v k) ∈ supported M R s := by
+  classical
+  rw [← erase_eq_sub_single, mem_supported, support_erase]
+  exact fun j hj ↦ (hv j (Finset.mem_of_mem_erase hj)).resolve_right (Finset.ne_of_mem_erase hj)
+
+/-- A linear map sending every basis vector `single j x` with `j ∈ s` into `supported N R t` maps
+`supported M R s` into `supported N R t`. -/
+theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+    [Module R N] {s : Set α} {t : Set β} (f : (α →₀ M) →ₗ[R] (β →₀ N))
+    (hf : ∀ j ∈ s, ∀ x, f (single j x) ∈ supported N R t) {v : α →₀ M}
+    (hv : v ∈ supported M R s) : f v ∈ supported N R t := by
+  rw [← sum_single v, map_finsuppSum]
+  exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+
+end Finsupp
+
+namespace Finsupp
+
+/-- A linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a finitely generated module `M` sends sequences
+supported in `Finset.range n` into some `Finset.range m`. -/
+theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Module.Finite R M] [AddCommMonoid N] [Module R N] (φ : (ℕ →₀ M) →ₗ[R] (ℕ →₀ N)) (n : ℕ) :
+    ∃ m, ∀ u : ℕ →₀ M, u.support ⊆ Finset.range n → (φ u).support ⊆ Finset.range m := by
+  choose T hT using fun j : ℕ ↦ (φ.comp (lsingle j)).exists_finset_support_subset
+  refine ⟨((Finset.range n).biUnion T).sup id + 1, fun u hu ↦ Finset.coe_subset.1 <|
+    (mem_supported R (φ u)).1 <| map_mem_supported_of_forall_single_mem R φ
+      (fun j hj x ↦ (mem_supported R _).2 fun k hk ↦ ?_) ((mem_supported R u).2
+        (Finset.coe_subset.2 hu))⟩
+  exact Finset.mem_coe.2 <| Finset.mem_range.2 <| Nat.lt_succ_of_le <|
+    Finset.le_sup (f := id) (Finset.mem_biUnion.2 ⟨j, Finset.mem_coe.1 hj, hT j x hk⟩)
+
+end Finsupp

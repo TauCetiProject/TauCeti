@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
+import TauCeti.Data.Rat.EqOneOrNegOnePair
 import Mathlib.Data.Fintype.Card
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
@@ -73,41 +74,45 @@ private theorem isometry_eq_of_basis_images
   rw [hx]
   simp only [map_add, map_smul, h0, h1]
 
+/-- An isometry of the hyperbolic plane sends the two standard basis vectors to vectors with
+integral coordinates. -/
+private theorem isometry_hyperbolicPlane_apply_basis_int
+    (e : Isometry hyperbolicPlane hyperbolicPlane) :
+    (∀ i, ∃ n : ℤ, (n : ℚ) = e (![1, 0] : Fin 2 → ℚ) i) ∧
+      ∀ i, ∃ n : ℤ, (n : ℚ) = e (![0, 1] : Fin 2 → ℚ) i :=
+  ⟨(mem_hyperbolicPlane_carrier_iff _).mp
+      ((e.apply_mem_carrier_iff _).mpr (by simp [Fin.forall_fin_two])),
+    (mem_hyperbolicPlane_carrier_iff _).mp
+      ((e.apply_mem_carrier_iff _).mpr (by simp [Fin.forall_fin_two]))⟩
+
+/-- An isometry of the hyperbolic plane preserves the Gram matrix of the standard basis. -/
+private theorem isometry_hyperbolicPlane_basis_relations
+    (e : Isometry hyperbolicPlane hyperbolicPlane) :
+    e ![1, 0] 0 * e ![1, 0] 1 = 0 ∧ e ![0, 1] 0 * e ![0, 1] 1 = 0 ∧
+      e ![1, 0] 0 * e ![0, 1] 1 + e ![1, 0] 1 * e ![0, 1] 0 = 1 := by
+  refine ⟨?_, ?_, ?_⟩
+  · have h := e.map_app ![1, 0] ![1, 0]
+    simp only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      mul_zero, zero_mul, add_zero] at h
+    linarith
+  · have h := e.map_app ![0, 1] ![0, 1]
+    simp only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      mul_zero, zero_mul, add_zero] at h
+    linarith
+  · have h := e.map_app ![1, 0] ![0, 1]
+    norm_num only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one] at h
+    exact h
+
 /-- The full integral isometry group of the hyperbolic plane consists of the identity,
 negation, coordinate exchange, and their composite. -/
 theorem hyperbolicPlane_isometry_eq (e : Isometry hyperbolicPlane hyperbolicPlane) :
     e = 1 ∨ e = Isometry.neg hyperbolicPlane ∨ e = hyperbolicPlaneSwap ∨
       e = Isometry.neg hyperbolicPlane * hyperbolicPlaneSwap := by
-  have hx : ∀ i, ∃ n : ℤ, (n : ℚ) = e (![1, 0] : Fin 2 → ℚ) i :=
-    (mem_hyperbolicPlane_carrier_iff _).mp
-      ((e.apply_mem_carrier_iff _).mpr (by simp [Fin.forall_fin_two]))
-  have hy : ∀ i, ∃ n : ℤ, (n : ℚ) = e (![0, 1] : Fin 2 → ℚ) i :=
-    (mem_hyperbolicPlane_carrier_iff _).mp
-      ((e.apply_mem_carrier_iff _).mpr (by simp [Fin.forall_fin_two]))
-  have hxx : e ![1, 0] 0 * e ![1, 0] 1 = 0 := by
-    have h := e.map_app ![1, 0] ![1, 0]
-    simp only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-      mul_zero, zero_mul, add_zero] at h
-    linarith
-  have hyy : e ![0, 1] 0 * e ![0, 1] 1 = 0 := by
-    have h := e.map_app ![0, 1] ![0, 1]
-    simp only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-      mul_zero, zero_mul, add_zero] at h
-    linarith
-  have hxy : e ![1, 0] 0 * e ![0, 1] 1 + e ![1, 0] 1 * e ![0, 1] 0 = 1 := by
-    have h := e.map_app ![1, 0] ![0, 1]
-    norm_num only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-    exact h
+  obtain ⟨hx, hy⟩ := isometry_hyperbolicPlane_apply_basis_int e
+  obtain ⟨hxx, hyy, hxy⟩ := isometry_hyperbolicPlane_basis_relations e
   rcases mul_eq_zero.mp hxx with hx0 | hx1
   · have hprod : e ![1, 0] 1 * e ![0, 1] 0 = 1 := by simpa [hx0] using hxy
-    obtain ⟨n, hn⟩ := hx 1
-    obtain ⟨m, hm⟩ := hy 0
-    have hnm : n * m = 1 := by
-      exact_mod_cast (show (n : ℚ) * (m : ℚ) = 1 from by rw [hn, hm]; exact hprod)
-    have hpair : (e ![1, 0] 1 = 1 ∧ e ![0, 1] 0 = 1) ∨
-        (e ![1, 0] 1 = -1 ∧ e ![0, 1] 0 = -1) := by
-      rw [← hn, ← hm]
-      exact_mod_cast Int.eq_one_or_neg_one_of_mul_eq_one' hnm
+    have hpair := Rat.eq_one_or_neg_one_pair_of_mul_eq_one (hx 1) (hy 0) hprod
     rcases hpair with ⟨h, hy0⟩ | ⟨h, hy0⟩
     · have hy1 : e ![0, 1] 1 = 0 := by simpa [hy0] using hyy
       right; right; left
@@ -118,14 +123,7 @@ theorem hyperbolicPlane_isometry_eq (e : Isometry hyperbolicPlane hyperbolicPlan
       apply isometry_eq_of_basis_images <;> ext i <;> fin_cases i <;>
         simp [hx0, h, hy0, hy1]
   · have hprod : e ![1, 0] 0 * e ![0, 1] 1 = 1 := by simpa [hx1] using hxy
-    obtain ⟨n, hn⟩ := hx 0
-    obtain ⟨m, hm⟩ := hy 1
-    have hnm : n * m = 1 := by
-      exact_mod_cast (show (n : ℚ) * (m : ℚ) = 1 from by rw [hn, hm]; exact hprod)
-    have hpair : (e ![1, 0] 0 = 1 ∧ e ![0, 1] 1 = 1) ∨
-        (e ![1, 0] 0 = -1 ∧ e ![0, 1] 1 = -1) := by
-      rw [← hn, ← hm]
-      exact_mod_cast Int.eq_one_or_neg_one_of_mul_eq_one' hnm
+    have hpair := Rat.eq_one_or_neg_one_pair_of_mul_eq_one (hx 0) (hy 1) hprod
     rcases hpair with ⟨h, hy1⟩ | ⟨h, hy1⟩
     · have hy0 : e ![0, 1] 0 = 0 := by simpa [hy1] using hyy
       left

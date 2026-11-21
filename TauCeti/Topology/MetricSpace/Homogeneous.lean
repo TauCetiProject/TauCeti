@@ -39,11 +39,13 @@ variable {G X : Type*} [PseudoEMetricSpace X]
 
 include G
 
-variable (G) in
+variable (G X) in
 /-- In a weakly locally compact space with a transitive isometric action, there is a positive
 radius for which every closed ball is compact. -/
-theorem exists_pos_isCompact_closedEBall_of_isPretransitive (x : X) :
+theorem exists_pos_isCompact_closedEBall_of_isPretransitive :
     ∃ r : ℝ≥0∞, 0 < r ∧ ∀ y : X, IsCompact (closedEBall y r) := by
+  rcases isEmpty_or_nonempty X with _ | ⟨⟨x⟩⟩
+  · exact ⟨1, one_pos, isEmptyElim⟩
   obtain ⟨K, hK, hxK⟩ := exists_compact_mem_nhds x
   obtain ⟨ε, hε, hball⟩ := EMetric.mem_nhds_iff.mp hxK
   obtain ⟨r, hr, hrε⟩ := exists_between hε
@@ -60,9 +62,7 @@ variable (G X) in
 complete. The action need not be jointly continuous. -/
 theorem completeSpace_of_isIsometricSMul_of_isPretransitive : CompleteSpace X where
   complete {f} hf := by
-    -- Obtain a uniform compact-ball radius from any point of this nontrivial filter.
-    obtain ⟨x, -⟩ := hf.1.nonempty_of_mem (univ_mem : (univ : Set X) ∈ f)
-    obtain ⟨r, hr, hcompact⟩ := exists_pos_isCompact_closedEBall_of_isPretransitive G x
+    obtain ⟨r, hr, hcompact⟩ := exists_pos_isCompact_closedEBall_of_isPretransitive G X
     obtain ⟨s, hs, hdiam⟩ := (EMetric.cauchy_iff.mp hf).2 r hr
     obtain ⟨y, hy⟩ := hf.1.nonempty_of_mem hs
     have hball : closedEBall y r ∈ f :=

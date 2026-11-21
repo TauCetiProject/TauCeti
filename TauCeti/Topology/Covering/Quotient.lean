@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Covering.Proper
 
 /-!
 # Intermediate quotients of a quotient covering map
@@ -30,9 +31,10 @@ application is `TauCeti.UniversalCover.isCoveringMap_subgroupQuotientProj`.
 The file also records that a surjective covering map is an open quotient map: the companion,
 for a covering map with no group acting, of Mathlib's `IsQuotientCoveringMap.isOpenQuotientMap`
 that the rest of the file consumes. Finally, the quotient covering map of a finite group has
-finite fibres, which is what makes it a finite covering with a transfer on singular chains. The
-acting group may be replaced by any isomorphic group acting compatibly, which is how an abstract
-group identified with a fundamental group is made to act on a universal cover.
+finite fibres (and hence a compact covering space whenever the base is compact), which is what
+makes it a finite covering with a transfer on singular chains. The acting group may be replaced by
+any isomorphic group acting compatibly, which is how an abstract group identified with a
+fundamental group is made to act on a universal cover.
 
 For a discrete additive subgroup `L` of a topological additive group `E`, the orbit projection
 `E → AddAction.orbitRel.Quotient L E` for translation by `L` is a quotient covering map. Unlike
@@ -53,10 +55,15 @@ Neither normality nor a separation axiom is needed.
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
 * `IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup down to
   the quotient by the whole group is a covering map.
-* `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
-  fibres.
+* `IsQuotientCoveringMap.finite_fiber`, `IsAddQuotientCoveringMap.finite_fiber`: the quotient
+  covering map of a finite group has finite fibres.
+* `IsQuotientCoveringMap.compactSpace`, `IsAddQuotientCoveringMap.compactSpace`: the covering
+  space of a finite-group quotient covering over a compact base is compact.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
+* `IsQuotientCoveringMap.injOn_of_disjoint`, `IsQuotientCoveringMap.injOn_smul`: the quotient
+  covering map is injective on a set disjoint from its nontrivial translates, and injectivity on a
+  set passes to its translates.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
@@ -133,6 +140,70 @@ private theorem image_smul_eq_image_smul_of_inter_nonempty
     rw [mul_smul, mul_smul, hhu, inv_smul_smul]
   simp [hgg', mul_smul, ← Set.image_smul, Set.image_image, hmap]
 
+/-- The quotient covering map has the same image on a set and on each of its translates. -/
+theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap q G) (g : G)
+    (s : Set E) : q '' (g • s) = q '' s := by
+  rw [← Set.image_smul, Set.image_image]
+  simp_rw [hq.map_smul]
+
+/-- A quotient covering map is injective on a set that is disjoint from its nontrivial
+translates. -/
+theorem _root_.IsQuotientCoveringMap.injOn_of_disjoint (hq : IsQuotientCoveringMap q G)
+    {U : Set E} (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) : Set.InjOn q U := by
+  intro a ha b hb hab
+  obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
+  obtain rfl := hU k ⟨_, ⟨b, hb, rfl⟩, ha⟩
+  simp
+
+/-- If a quotient covering map is injective on a set, then it is injective on every translate of
+that set, since `q (g • x) = q x`. -/
+theorem _root_.IsQuotientCoveringMap.injOn_smul (hq : IsQuotientCoveringMap q G) {S : Set E}
+    (hS : Set.InjOn q S) (g : G) : Set.InjOn q (g • S) := by
+  rw [← Set.image_smul]
+  exact Set.InjOn.image_of_comp (by simpa [Function.comp_def, hq.map_smul] using hS)
+
+/-- **Openness in a quotient covering map is detected on a single translate.** A subset `W` of the
+image of `U` is open as soon as the part of its preimage lying in `U` is open, because the whole
+preimage is covered by the translates of that part. -/
+theorem _root_.IsQuotientCoveringMap.isOpen_of_isOpen_preimage_inter
+    (hq : IsQuotientCoveringMap q G) {U : Set E} {W : Set X} (hWU : W ⊆ q '' U)
+    (h : IsOpen (q ⁻¹' W ∩ U)) : IsOpen W := by
+  have : ContinuousConstSMul G E := hq.toContinuousConstSMul
+  rw [← hq.toIsQuotientMap.isOpen_preimage]
+  have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ U) := by
+    refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
+    · obtain ⟨u, hu, hqu⟩ := hWU hw
+      obtain ⟨m, hm⟩ := hq.apply_eq_iff_mem_orbit.mp hqu.symm
+      refine Set.mem_iUnion.mpr ⟨m, Set.mem_smul_set.mpr ⟨u, ⟨?_, hu⟩, hm⟩⟩
+      rw [Set.mem_preimage, hqu]
+      exact hw
+    · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
+      rw [Set.mem_preimage, hq.map_smul]
+      exact hw'
+  rw [hcover]
+  exact isOpen_iUnion fun k => h.smul k
+
+/-- Openness inside the base set `q '' U` is detected on any single sheet `qH '' (g • U)`: a subset
+`W` of `q '' U` is open exactly when its preimage under `r`, cut down to that sheet, is open. -/
+private theorem _root_.IsQuotientCoveringMap.isOpen_iff_isOpen_preimage_inter_image_smul
+    (hq : IsQuotientCoveringMap q G)
+    (hqH : IsQuotientCoveringMap qH H) (hr : r ∘ qH = q) (hrc : Continuous r) {U : Set E}
+    (hUo : IsOpen U) (g : G) {W : Set X} (hWV : W ⊆ q '' U) :
+    IsOpen W ↔ IsOpen (r ⁻¹' W ∩ qH '' (g • U)) := by
+  have hrqH : ∀ y : E, r (qH y) = q y := congrFun hr
+  have hcsG : ContinuousConstSMul G E := hq.toContinuousConstSMul
+  have hsheet_open : IsOpen (qH '' (g • U)) := hqH.isOpenQuotientMap.isOpenMap _ (hUo.smul g)
+  refine ⟨fun hW => (hW.preimage hrc).inter hsheet_open, fun hW => ?_⟩
+  have hSopen : IsOpen (q ⁻¹' W ∩ g • U) := by
+    have hpull : IsOpen (qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U))) := hW.preimage hqH.continuous
+    have hinter : qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U)) ∩ g • U = q ⁻¹' W ∩ g • U := by
+      ext w
+      simp only [Set.mem_inter_iff, Set.mem_preimage, hrqH]
+      exact and_congr_left fun hw => and_iff_left ⟨w, hw, rfl⟩
+    exact hinter ▸ hpull.inter (hUo.smul g)
+  refine hq.isOpen_of_isOpen_preimage_inter (U := g • U) ?_ hSopen
+  rwa [hq.image_smul_set]
+
 /-- The evenly covered neighbourhood of `q e` cut out by a set `U` around `e` whose `G`-translates
 are pairwise disjoint. Its sheets are the images in `Y` of the translates `g • U`. -/
 private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G)
@@ -140,12 +211,9 @@ private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G
     (hdisj : ∀ g : G, (g • U ∩ U).Nonempty → g = 1) {e : E} (heU : e ∈ U) :
     IsEvenlyCovered r (q e) (r ⁻¹' {q e}) := by
   have hrqH : ∀ y : E, r (qH y) = q y := congrFun hr
-  have hcsG : ContinuousConstSMul G E := hq.toContinuousConstSMul
   have hrc : Continuous r := by
     rw [hqH.toIsQuotientMap.continuous_iff, hr]
     exact hq.continuous
-  have hsheet_open : ∀ g : G, IsOpen (qH '' (g • U)) := fun g =>
-    hqH.isOpenQuotientMap.isOpenMap _ (hUo.smul g)
   have hVo : IsOpen (q '' U) := hq.isOpenQuotientMap.isOpenMap _ hUo
   let : TopologicalSpace {S : Set Y // ∃ g : G, S = qH '' (g • U)} := ⊥
   have : DiscreteTopology {S : Set Y // ∃ g : G, S = qH '' (g • U)} := ⟨rfl⟩
@@ -159,30 +227,7 @@ private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G
         ?_ ?_ ?_ ?_ ?_) ⟨e, heU, rfl⟩)
   · -- Openness inside the base set is detected on any single sheet.
     rintro ⟨S, g, rfl⟩ W hWV
-    refine ⟨fun hW => (hW.preimage hrc).inter (hsheet_open g), fun hW => ?_⟩
-    have hSopen : IsOpen (q ⁻¹' W ∩ g • U) := by
-      have hpull : IsOpen (qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U))) := hW.preimage hqH.continuous
-      have hinter : qH ⁻¹' (r ⁻¹' W ∩ qH '' (g • U)) ∩ g • U = q ⁻¹' W ∩ g • U := by
-        ext w
-        simp only [Set.mem_inter_iff, Set.mem_preimage, hrqH]
-        exact and_congr_left fun hw => and_iff_left ⟨w, hw, rfl⟩
-      exact hinter ▸ hpull.inter (hUo.smul g)
-    rw [← hq.toIsQuotientMap.isOpen_preimage]
-    have hcover : q ⁻¹' W = ⋃ k : G, k • (q ⁻¹' W ∩ g • U) := by
-      refine Set.Subset.antisymm (fun w hw => ?_) (Set.iUnion_subset fun k w hw => ?_)
-      · obtain ⟨u, hu, hqu⟩ := hWV hw
-        obtain ⟨m, hm⟩ := hq.apply_eq_iff_mem_orbit.mp hqu.symm
-        refine Set.mem_iUnion.mpr ⟨m * g⁻¹, Set.mem_smul_set.mpr ⟨g • u, ⟨?_, ?_⟩, ?_⟩⟩
-        · rw [Set.mem_preimage, hq.map_smul, hqu]
-          exact hw
-        · exact Set.smul_mem_smul_set hu
-        · rw [mul_smul, inv_smul_smul]
-          exact hm
-      · obtain ⟨w', ⟨hw', -⟩, rfl⟩ := Set.mem_smul_set.mp hw
-        rw [Set.mem_preimage, hq.map_smul]
-        exact hw'
-    rw [hcover]
-    exact isOpen_iUnion fun k => hSopen.smul k
+    exact hq.isOpen_iff_isOpen_preimage_inter_image_smul hqH hr hrc hUo g hWV
   · -- The map is injective on each sheet.
     rintro ⟨S, g, rfl⟩ z hz z' hz' hzz'
     obtain ⟨w, hw, rfl⟩ := hz
@@ -232,16 +277,21 @@ end IsQuotientCoveringMap
 
 /-- The fibres of the quotient covering map of a finite group are finite, each being an orbit of
 the free action. -/
+@[to_additive
+/-- The fibres of the additive quotient covering map of a finite additive group are finite, each
+being an orbit of the free action. -/]
 theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCoveringMap q G)
     (x : X) : Finite ↥(q ⁻¹' {x}) := by
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
 
-/-- The quotient covering map has the same image on a set and on each of its translates. -/
-theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap q G) (g : G)
-    (s : Set E) : q '' (g • s) = q '' s := by
-  rw [← Set.image_smul, Set.image_image]
-  simp_rw [hq.map_smul]
+/-- The covering space of a finite-group quotient covering over a compact base is compact. -/
+@[to_additive
+/-- The covering space of a finite additive group quotient covering over a compact base is
+compact. -/]
+theorem _root_.IsQuotientCoveringMap.compactSpace [CompactSpace X] [Finite G]
+    (hq : IsQuotientCoveringMap q G) : CompactSpace E :=
+  hq.isCoveringMap.compactSpace hq.finite_fiber
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and

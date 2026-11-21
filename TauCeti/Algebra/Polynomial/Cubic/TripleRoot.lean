@@ -69,21 +69,19 @@ theorem exists_cubic_eq_X_sub_C_pow_three_iff {k : Type*} [Field k] [PerfectFiel
   simp only [cubic_eq_X_sub_C_pow_three_iff]
   constructor
   · rintro ⟨ρ, rfl, rfl, rfl⟩
-    refine ⟨?_, ?_, ?_⟩ <;> ring
+    exact ⟨by ring, by ring, by ring⟩
   rintro ⟨hb, hc, hd⟩
   by_cases h3 : (3 : k) = 0
   · -- In characteristic `3` the conditions force `b = c = 0`, and `ρ` is a cube root of `-d`.
     have : CharP k 3 := (CharP.charP_iff_prime_eq_zero Nat.prime_three).2 (by exact_mod_cast h3)
     obtain ⟨ρ, hρ⟩ := surjective_frobenius k 3 (-d)
     rw [frobenius_def] at hρ
-    have hb0 : b = 0 := pow_eq_zero_iff two_ne_zero |>.1 (by rw [hb, h3, zero_mul])
-    have hc0 : c = 0 := pow_eq_zero_iff two_ne_zero |>.1 (by rw [hc, h3, zero_mul, zero_mul])
-    exact ⟨ρ, by simp [hb0, h3], by simp [hc0, h3], by rw [hρ, neg_neg]⟩
+    obtain rfl : b = 0 := by simpa [h3] using hb
+    obtain rfl : c = 0 := by simpa [h3] using hc
+    exact ⟨ρ, by simp [h3], by simp [h3], by simp [hρ]⟩
   · -- Away from characteristic `3`, the root is `-b / 3`.
-    refine ⟨-b / 3, by field_simp, ?_, ?_⟩
-    · field_simp
-      linear_combination -hb
-    · field_simp
-      linear_combination -b * hb - 3 * hd
+    refine ⟨-b / 3, by field_simp, by field_simp; linear_combination -hb, ?_⟩
+    field_simp
+    linear_combination -b * hb - 3 * hd
 
 end TauCeti.Polynomial

@@ -15,9 +15,9 @@ public import TauCeti.LinearAlgebra.UnitaryGroup
 
 A `3 × 3` matrix `M` acts on `R³`, and the cross product is a bilinear map `R³ × R³ → R³`, so one
 may ask how the two compose. The answer is the Cauchy--Binet identity
-`(M u) ⨯₃ (M w) = (adj M)ᵀ (u ⨯₃ w)`. For a rotation `adj M = M⁻¹ = Mᵀ`, so rotations preserve the
-cross product. Replacing `M` by `1 + ε M` and reading off the linear term in `ε` gives the
-infinitesimal form
+`(M u) ⨯₃ (M w) = (adj M)ᵀ (u ⨯₃ w)`. For an orthogonal matrix `adj M = det M • Mᵀ`, so rotations
+preserve the cross product and reflections reverse it. Replacing `M` by `1 + ε M` and reading off
+the linear term in `ε` gives the infinitesimal form
 
 `(M u) ⨯₃ w + u ⨯₃ (M w) = (tr M) • (u ⨯₃ w) - Mᵀ (u ⨯₃ w)`.
 
@@ -35,14 +35,19 @@ matrix of the cross product of their vectors: `[û, v̂] = (u ⨯₃ v)^`.
 ## Main results
 
 * `Matrix.mulVec_cross_mulVec`: the Cauchy--Binet identity.
+* `Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup`: orthogonal matrices preserve the cross
+  product up to their determinant.
 * `Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup`: rotations preserve the cross
   product.
 * `Matrix.mulVec_cross_add_cross_mulVec`: its infinitesimal form.
 * `Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero`: its trace-zero case.
-* `Matrix.det_eq_one_of_mulVec_cross`: a matrix preserving the dot product and the cross product
-  has determinant one.
+* `Matrix.det_eq_one_of_mulVec_cross`: a matrix preserving the cross product with unit
+  determinant has determinant one.
 * `TauCeti.transpose_crossProductMatrix`: the matrix `û` is skew-symmetric.
+* `TauCeti.mul_crossProductMatrix_mul_transpose_of_mem_orthogonalGroup`: `M û Mᵀ = det M • (M u)^`
+  for an orthogonal matrix `M`.
 * `TauCeti.crossProductMatrix_cross`: `(u ⨯₃ v)^ = û v̂ - v̂ û`.
+* `TauCeti.mul_crossProductMatrix_mul_transpose`: a rotation `M` conjugates `û` to `(M u)^`.
 -/
 
 public section
@@ -64,17 +69,24 @@ theorem _root_.Matrix.mulVec_cross_mulVec (M : Matrix (Fin 3) (Fin 3) R) (u w : 
       Matrix.vecHead, Matrix.vecTail] <;>
     ring
 
-/-- **Rotations preserve the cross product**: `(M u) ⨯₃ (M w) = M (u ⨯₃ w)` for `M ∈ SO(3)`. The
-adjugate of a rotation is its inverse, which is its transpose. The converse direction is
+/-- **Orthogonal matrices preserve the cross product up to their determinant**:
+`(M u) ⨯₃ (M w) = det M • M (u ⨯₃ w)` for `M ∈ O(3)`. The adjugate of an orthogonal matrix is its
+determinant times its transpose. A reflection, of determinant `-1`, reverses the cross product. -/
+theorem _root_.Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup
+    {M : Matrix (Fin 3) (Fin 3) R} (hM : M ∈ orthogonalGroup (Fin 3) R) (u w : Fin 3 → R) :
+    (M *ᵥ u) ⨯₃ (M *ᵥ w) = M.det • M *ᵥ (u ⨯₃ w) := by
+  rw [Matrix.mulVec_cross_mulVec,
+    adjugate_eq_det_smul_of_mul_eq_one ((mem_orthogonalGroup_iff _ _).1 hM), transpose_smul,
+    transpose_transpose, smul_mulVec]
+
+/-- **Rotations preserve the cross product**: `(M u) ⨯₃ (M w) = M (u ⨯₃ w)` for `M ∈ SO(3)`, the
+case `det M = 1` of `Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup`. The converse direction is
 `Matrix.det_eq_one_of_mulVec_cross`. -/
 theorem _root_.Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup
     {M : Matrix (Fin 3) (Fin 3) R} (hM : M ∈ specialOrthogonalGroup (Fin 3) R) (u w : Fin 3 → R) :
     (M *ᵥ u) ⨯₃ (M *ᵥ w) = M *ᵥ (u ⨯₃ w) := by
-  -- `specialOrthogonalGroup` is `specialUnitaryGroup` for the trivial star `starRingOfComm`,
-  -- under which `star M` is `Mᵀ` by definition.
-  let : StarRing R := starRingOfComm
-  have hadj : M.adjugate = Mᵀ := (Matrix.specialUnitaryGroup.star_eq_adjugate ⟨M, hM⟩).symm
-  rw [Matrix.mulVec_cross_mulVec, hadj, transpose_transpose]
+  rw [Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup (mem_specialOrthogonalGroup_iff.1 hM).1,
+    (mem_specialOrthogonalGroup_iff.1 hM).2, one_smul]
 
 /-- **A matrix acting on a cross product.** Applying `M` to one factor at a time and adding gives
 the trace of `M` times the cross product, corrected by `-Mᵀ` applied to it. This is the derivative
@@ -95,20 +107,24 @@ theorem _root_.Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
     (M *ᵥ u) ⨯₃ w + u ⨯₃ (M *ᵥ w) = -(Mᵀ *ᵥ (u ⨯₃ w)) := by
   rw [Matrix.mulVec_cross_add_cross_mulVec, hM, zero_smul, zero_sub]
 
-/-- **A matrix preserving the dot product and the cross product has determinant one.** Its
-determinant is the triple product `M e₀ ⬝ᵥ (M e₁ ⨯₃ M e₂)` of its columns, which is
-`e₀ ⬝ᵥ (e₁ ⨯₃ e₂) = 1`. So the orthogonal matrices preserving the cross product are rotations. -/
+/-- **A matrix preserving the cross product with unit determinant has determinant one**: if
+`M (x ⨯₃ y) = (M x) ⨯₃ (M y)` for all `x`, `y` and `det M` is a unit, then `det M = 1`. The unit
+hypothesis cannot be dropped, since the zero matrix preserves the cross product. Orthogonal
+matrices have unit determinant, so an orthogonal matrix preserving the cross product is a rotation;
+this is the converse of `Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup`. -/
 theorem _root_.Matrix.det_eq_one_of_mulVec_cross {M : Matrix (Fin 3) (Fin 3) R}
-    (h : ∀ x y, (M *ᵥ x) ⬝ᵥ (M *ᵥ y) = x ⬝ᵥ y)
-    (h' : ∀ x y, M *ᵥ (x ⨯₃ y) = (M *ᵥ x) ⨯₃ (M *ᵥ y)) : M.det = 1 := by
-  have hcols : ![M *ᵥ Pi.single 0 1, M *ᵥ Pi.single 1 1, M *ᵥ Pi.single 2 1] = Mᵀ := by
-    ext i j
-    fin_cases i <;> simp
-  have h3 := triple_product_eq_det (M *ᵥ Pi.single 0 1) (M *ᵥ Pi.single 1 1)
-    (M *ᵥ Pi.single 2 1)
-  rw [← h', h, hcols, det_transpose] at h3
-  rw [← h3]
-  simp [cross_apply, dotProduct, Fin.sum_univ_three]
+    (hM : IsUnit M.det) (h : ∀ x y, M *ᵥ (x ⨯₃ y) = (M *ᵥ x) ⨯₃ (M *ᵥ y)) : M.det = 1 := by
+  -- By Cauchy--Binet, `M` agrees with `(adj M)ᵀ` on cross products, and each basis vector is a
+  -- cross product of basis vectors, so `M = (adj M)ᵀ`. Taking determinants gives
+  -- `det M = (det M)²`, and cancelling the unit `det M` gives `det M = 1`.
+  have hadj : M = M.adjugateᵀ := by
+    refine ext_of_mulVec_single fun i ↦ ?_
+    have hi : Pi.single i 1 = Pi.single (i + 1) 1 ⨯₃ Pi.single (i + 2) (1 : R) := by
+      fin_cases i <;> ext j <;> fin_cases j <;> simp [cross_apply]
+    rw [hi, h, mulVec_cross_mulVec]
+  refine hM.mul_eq_left.mp ?_
+  conv_rhs => rw [hadj, det_transpose, det_adjugate]
+  simp [sq]
 
 /-! ### The hat map -/
 
@@ -139,6 +155,21 @@ theorem transpose_crossProductMatrix (u : Fin 3 → R) :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- **Conjugating the hat matrix by an orthogonal matrix**: `M û Mᵀ = det M • (M u)^` for
+`M ∈ O(3)`, since `M` preserves the cross product up to its determinant
+(`Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup`) and `det M ^ 2 = 1`. -/
+theorem mul_crossProductMatrix_mul_transpose_of_mem_orthogonalGroup
+    {M : Matrix (Fin 3) (Fin 3) R} (hM : M ∈ orthogonalGroup (Fin 3) R) (u : Fin 3 → R) :
+    M * crossProductMatrix R u * Mᵀ = M.det • crossProductMatrix R (M *ᵥ u) := by
+  have hMMt : M * Mᵀ = 1 := (mem_orthogonalGroup_iff _ _).1 hM
+  have hdet : M.det * M.det = 1 := by
+    simpa [det_transpose] using congrArg det hMMt
+  refine Matrix.toLin'.injective (LinearMap.ext fun v ↦ ?_)
+  have h := Matrix.mulVec_cross_mulVec_of_mem_orthogonalGroup hM u (Mᵀ *ᵥ v)
+  rw [mulVec_mulVec, hMMt, one_mulVec] at h
+  simp only [toLin'_apply, ← mulVec_mulVec, crossProductMatrix_mulVec, smul_mulVec, h, smul_smul,
+    hdet, one_smul]
+
 /-- **The hat map is a Lie algebra homomorphism.** The matrix of `u ⨯₃ v` is the commutator of the
 matrices of `u` and `v`; this is the Jacobi identity of the cross product. -/
 theorem crossProductMatrix_cross (u v : Fin 3 → R) :
@@ -146,5 +177,16 @@ theorem crossProductMatrix_cross (u v : Fin 3 → R) :
       crossProductMatrix R v * crossProductMatrix R u := by
   refine Matrix.toLin'.injective (LinearMap.ext fun w ↦ ?_)
   simp only [toLin'_apply, sub_mulVec, ← mulVec_mulVec, crossProductMatrix_mulVec, cross_cross]
+
+/-- **Rotations act on hat matrices by rotating the vector**: `M û Mᵀ = (M u)^` for `M ∈ SO(3)`.
+This is the adjoint action of `SO(3)` on `so(3)` in the coordinates of the hat map. -/
+theorem mul_crossProductMatrix_mul_transpose {M : Matrix (Fin 3) (Fin 3) R}
+    (hM : M ∈ specialOrthogonalGroup (Fin 3) R) (u : Fin 3 → R) :
+    M * crossProductMatrix R u * Mᵀ = crossProductMatrix R (M *ᵥ u) := by
+  refine ext_of_mulVec_single fun i ↦ ?_
+  have hMMt : M * Mᵀ = 1 := (mem_orthogonalGroup_iff _ _).1 hM.1
+  simp only [← mulVec_mulVec, crossProductMatrix_mulVec]
+  rw [← mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hM]
+  simp only [mulVec_mulVec, hMMt, one_mulVec]
 
 end TauCeti

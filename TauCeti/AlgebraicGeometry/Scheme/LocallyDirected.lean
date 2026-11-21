@@ -25,6 +25,13 @@ the images of the `F j` in the colimit meet.
   the images of the `F k` mapping to both `F i` and `F j`.
 * `AlgebraicGeometry.Scheme.range_pushout_inl_union_range_pushout_inr`: a pushout of two open
   immersions is covered by the images of its two pieces.
+* `AlgebraicGeometry.Scheme.pushoutOpenCover`: the open cover by those two pieces.
+* `AlgebraicGeometry.Scheme.isPullback_pushout_of_isOpenImmersion`: those two pieces intersect
+  in precisely the common open along which they were glued.
+
+## References
+
+* The Stacks Project, Section 26.14, *Gluing schemes* (Tag 01JA).
 -/
 
 public section
@@ -80,5 +87,56 @@ theorem range_pushout_inl_union_range_pushout_inr {W X Z : Scheme.{u}} (g : W �
     rfl
   · exact Or.inl ⟨q, rfl⟩
   · exact Or.inr ⟨q, rfl⟩
+
+/-- The open cover of a pushout of open immersions by its two pieces, indexed by `Bool`,
+with the left piece at `false` and the right piece at `true`. -/
+@[expose]
+noncomputable def pushoutOpenCover {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] : (pushout i j).OpenCover :=
+  Cover.mkOfCovers Bool
+    (fun b ↦ if b then Y else X)
+    (fun b ↦ match b with | false => pushout.inl i j | true => pushout.inr i j)
+    (fun z ↦ by
+      rcases (Set.ext_iff.mp (range_pushout_inl_union_range_pushout_inr i j) z).mpr
+        trivial with ⟨x, rfl⟩ | ⟨y, rfl⟩
+      exacts [⟨false, x, rfl⟩, ⟨true, y, rfl⟩])
+    (fun b ↦ by cases b <;> infer_instance)
+
+/-- The two-piece pushout cover has a finite index type. -/
+instance {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] : Finite (pushoutOpenCover i j).I₀ :=
+  inferInstanceAs (Finite Bool)
+
+/-- The first chart of the pushout cover is its left inclusion. -/
+@[simp]
+theorem pushoutOpenCover_f_false {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] :
+    (pushoutOpenCover i j).f false = pushout.inl i j := rfl
+
+/-- The second chart of the pushout cover is its right inclusion. -/
+@[simp]
+theorem pushoutOpenCover_f_true {W X Y : Scheme.{u}} (i : W ⟶ X) (j : W ⟶ Y)
+    [IsOpenImmersion i] [IsOpenImmersion j] :
+    (pushoutOpenCover i j).f true = pushout.inr i j := rfl
+
+/-- The square defining the pushout of two open immersions is also cartesian: the two
+pieces intersect in precisely the open subscheme along which they were glued. -/
+theorem isPullback_pushout_of_isOpenImmersion {W X Y : Scheme.{u}} (i : W ⟶ X)
+    (j : W ⟶ Y) [IsOpenImmersion i] [IsOpenImmersion j] :
+    IsPullback i j (pushout.inl i j) (pushout.inr i j) := by
+  refine IsOpenImmersion.isPullback _ _ _ _ (pushout.condition (f := i) (g := j)).symm
+    (le_antisymm ?_ ?_)
+  · rintro y ⟨x, hx⟩
+    -- The two legs of the span can only meet through its apex.
+    have hx' : colimit.ι (span i j) WalkingSpan.left x =
+        colimit.ι (span i j) WalkingSpan.right y := hx
+    obtain ⟨k, fx, fy, z, rfl, rfl⟩ := (IsLocallyDirected.ι_eq_ι_iff _).mp hx'
+    rcases k with _ | _ | _
+    · cases fy
+      exact ⟨z, rfl⟩
+    · cases fy
+    · cases fx
+  · rintro _ ⟨w, rfl⟩
+    exact ⟨i w, by rw [← Hom.comp_apply, pushout.condition, Hom.comp_apply]⟩
 
 end AlgebraicGeometry.Scheme

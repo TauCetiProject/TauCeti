@@ -29,6 +29,17 @@ open Set MeasureTheory Complex
 
 namespace TauCeti.Green
 
+/-- Away from the three edges, the principal value of `(w - z)⁻¹` along the triangle curve exists
+on every subinterval of its parameter interval. -/
+private theorem cauchyPVExistsAt_triangleCurve {c p q z : ℂ}
+    (hz : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c) (s t : ℝ)
+    (hs : s ∈ uIcc (0 : ℝ) 3) (ht : t ∈ uIcc (0 : ℝ) 3) :
+    Contour.CauchyPVExistsAt (triangleCurve c p q) s t (fun w ↦ (w - z)⁻¹) z := by
+  have hAC := absolutelyContinuousOnInterval_triangleCurve c p q
+  have havoid : z ∉ triangleCurve c p q '' uIcc 0 3 := by
+    simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hz
+  exact hAC.cauchyPVExistsAt_inv_sub_of_mem_uIcc hs ht havoid
+
 /-- Away from the three edges, the triangle winding number is the sum of the edge windings. -/
 theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
     (hz : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c) :
@@ -36,18 +47,7 @@ theorem windingNumber_triangleCurve_eq_sum {c p q z : ℂ}
       Contour.windingNumber (fun t : ℝ ↦ c + t • (p - c)) 0 1 z +
       Contour.windingNumber (fun t : ℝ ↦ p + t • (q - p)) 0 1 z +
       Contour.windingNumber (fun t : ℝ ↦ q + t • (c - q)) 0 1 z := by
-  have hAC := absolutelyContinuousOnInterval_triangleCurve c p q
-  have havoid : z ∉ triangleCurve c p q '' uIcc 0 3 := by
-    simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hz
-  have hpv (s t : ℝ) (hs : s ∈ uIcc (0 : ℝ) 3) (ht : t ∈ uIcc (0 : ℝ) 3) :
-      Contour.CauchyPVExistsAt (triangleCurve c p q) s t (fun w ↦ (w - z)⁻¹) z := by
-    have hsub := uIcc_subset_uIcc hs ht
-    have hAC' := hAC.mono hsub
-    have havoid' : z ∉ triangleCurve c p q '' uIcc s t :=
-      fun h ↦ havoid (image_mono hsub h)
-    exact Contour.cauchyPVExistsAt_of_avoidance hAC'.continuousOn
-      (fun v hv he ↦ havoid' ⟨v, hv, he⟩)
-      (hAC'.intervalIntegrable_inv_sub_mul_deriv havoid')
+  have hpv := cauchyPVExistsAt_triangleCurve hz
   have h0 : (0 : ℝ) ∈ uIcc 0 3 := left_mem_uIcc
   have h1 : (1 : ℝ) ∈ uIcc 0 3 := by norm_num [uIcc_of_le]
   have h2 : (2 : ℝ) ∈ uIcc 0 3 := by norm_num [uIcc_of_le]
@@ -104,13 +104,11 @@ private theorem interior_edge_heights {c p q z : ℂ} (hdet : 0 < triangleDet c 
     simp only [mem_insert_iff, mem_singleton_iff]
     tauto
   exact ⟨im_div_pos_of_mem_interior_convexHull_triangle
-      (sub_ne_zero_of_triangleDet_pos hdet) (im_div_sub_pos_of_triangleDet_pos hdet).le hz,
+      (im_div_sub_pos_of_triangleDet_pos hdet).le hz,
     im_div_pos_of_mem_interior_convexHull_triangle
-      (sub_ne_zero_of_triangleDet_pos hdet₁) (im_div_sub_pos_of_triangleDet_pos hdet₁).le
-      (hset₁.symm ▸ hz),
+      (im_div_sub_pos_of_triangleDet_pos hdet₁).le (hset₁.symm ▸ hz),
     im_div_pos_of_mem_interior_convexHull_triangle
-      (sub_ne_zero_of_triangleDet_pos hdet₂) (im_div_sub_pos_of_triangleDet_pos hdet₂).le
-      (hset₂.symm ▸ hz)⟩
+      (im_div_sub_pos_of_triangleDet_pos hdet₂).le (hset₂.symm ▸ hz)⟩
 
 /-- A positively oriented triangle winds once around every point in its interior. -/
 theorem windingNumber_triangleCurve_eq_one {c p q z : ℂ} (hdet : 0 < triangleDet c p q)
@@ -119,9 +117,9 @@ theorem windingNumber_triangleCurve_eq_one {c p q z : ℂ} (hdet : 0 < triangleD
   obtain ⟨h₁, h₂, h₃⟩ := interior_edge_heights hdet hz
   have havoid : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c := by
     rintro ((h | h) | h)
-    exacts [TauCeti.notMem_segment_of_im_div_sub_pos h₁ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₂ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₃ h]
+    exacts [TauCeti.notMem_segment_of_im_div_sub_ne_zero h₁.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₂.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₃.ne' h]
   obtain ⟨n, hn⟩ := AbsolutelyContinuousOnInterval.exists_int_windingNumber
     (absolutelyContinuousOnInterval_triangleCurve c p q)
     (by simp) (by simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve]
@@ -170,9 +168,9 @@ theorem windingNumber_triangleCurve_eq_neg_one {c p q z : ℂ} (hdet : triangleD
   obtain ⟨h₁, h₂, h₃⟩ := interior_edge_heights hdet' hz'
   have havoid' : z ∉ segment ℝ c q ∪ segment ℝ q p ∪ segment ℝ p c := by
     rintro ((h | h) | h)
-    exacts [TauCeti.notMem_segment_of_im_div_sub_pos h₁ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₂ h,
-      TauCeti.notMem_segment_of_im_div_sub_pos h₃ h]
+    exacts [TauCeti.notMem_segment_of_im_div_sub_ne_zero h₁.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₂.ne' h,
+      TauCeti.notMem_segment_of_im_div_sub_ne_zero h₃.ne' h]
   have havoid : z ∉ segment ℝ c p ∪ segment ℝ p q ∪ segment ℝ q c := by
     rwa [← triangle_edges_swap]
   rw [windingNumber_triangleCurve_swap havoid, windingNumber_triangleCurve_eq_one hdet' hz']

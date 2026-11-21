@@ -17,7 +17,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 import TauCeti.AlgebraicGeometry.ResidueField
@@ -65,9 +65,9 @@ over every point is the spectrum of an algebra of dimension `n²` over its resid
 * `WeierstrassCurve.comp_projModelMulBy_eq_homMk_zpow_left`: for a section `P` of the projective
   model, `nP` is the `n`-th power of `P` bundled as a morphism of `Over (Spec R)`.
 * `WeierstrassCurve.comp_projModelMulBy_add`, `WeierstrassCurve.comp_projModelMulBy_two` and
-  `WeierstrassCurve.comp_projModelMulBy_add_one_eq_projModelZero_iff`: for a section `P` of the
-  projective model, `(m + n)P` is `mP + nP` through the addition morphism, `2P` is `P + P`, and
-  `(n + 1)P = 0` exactly when `nP = -P`.
+  `WeierstrassCurve.comp_projModelMulBy_add_one_eq_projModelZero_iff`: for a morphism `P` to the
+  projective model, `(m + n)P` is `mP + nP` through the addition morphism and `2P` is `P + P`;
+  for a section `P`, `(n + 1)P = 0` exactly when `nP = -P`.
 * `WeierstrassCurve.projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy`: `[n]` sends the
   point with values in a field `L` of a point `P` of `W` over `L` to that of `n • P`;
   `WeierstrassCurve.projModelPoint_projModelMulBy_of_zsmul_some` and
@@ -185,6 +185,32 @@ instance isFinite_projModelMulBy (n : ℤ) [NeZero n] : IsFinite (W.projModelMul
   rw [projModelMulBy_eq]
   infer_instance
 
+variable {X : Scheme.{u}} {P : X ⟶ W.projModel}
+
+/-- **Multiplication by a sum.** For a morphism `P` to the projective model (for instance a
+section), the `(m + n)`-th multiple of `P` is the sum of its `m`-th and `n`-th multiples, computed
+by the addition morphism. -/
+theorem comp_projModelMulBy_add (m n : ℤ) :
+    P ≫ W.projModelMulBy (m + n) =
+      pullback.lift (P ≫ W.projModelMulBy m) (P ≫ W.projModelMulBy n) (by simp) ≫
+        W.additionMorphism := by
+  have h : W.projModelMulBy (m + n) =
+      pullback.lift (W.projModelMulBy m) (W.projModelMulBy n) (by simp) ≫
+        W.additionMorphism := by
+    simp only [projModelMulBy, zpow_add, Hom.mul_def, Over.comp_left, Over.lift_left,
+      mul_projModelOver_left]
+    rfl
+  rw [h, ← Category.assoc]
+  congr 1
+  ext <;> simp
+
+/-- **Doubling.** For a morphism `P` to the projective model (for instance a section), `2P` is the
+addition morphism at the pair `(P, P)`. -/
+theorem comp_projModelMulBy_two :
+    P ≫ W.projModelMulBy 2 = pullback.lift P P rfl ≫ W.additionMorphism := by
+  rw [show (2 : ℤ) = 1 + 1 by norm_num, comp_projModelMulBy_add]
+  simp [projModelMulBy]
+
 end CommRing
 
 section Sections
@@ -201,25 +227,6 @@ theorem comp_projModelMulBy_eq_homMk_zpow_left (hP : P ≫ W.projModelOver = �
   rw [← comp_projModelMulBy]
   -- the underlying morphism of `Over.homMk P _` is `P` by definition
   rfl
-
-/-- **Multiplication by a sum on a section.** For a section `P` of the projective model, the
-`(m + n)`-th multiple of `P` is the sum of its `m`-th and `n`-th multiples, computed by the
-addition morphism. -/
-theorem comp_projModelMulBy_add (hP : P ≫ W.projModelOver = 𝟙 _) (m n : ℤ) :
-    P ≫ W.projModelMulBy (m + n) =
-      pullback.lift (P ≫ W.projModelMulBy m) (P ≫ W.projModelMulBy n) (by simp) ≫
-        W.additionMorphism := by
-  simp only [comp_projModelMulBy_eq_homMk_zpow_left hP, zpow_add, Hom.mul_def, Over.comp_left,
-    Over.lift_left, mul_projModelOver_left]
-  -- the two sides differ only in the proof of the condition of `pullback.lift`
-  rfl
-
-/-- **Doubling a section.** For a section `P` of the projective model, `2P` is the addition
-morphism at the pair `(P, P)`. -/
-theorem comp_projModelMulBy_two (hP : P ≫ W.projModelOver = 𝟙 _) :
-    P ≫ W.projModelMulBy 2 = pullback.lift P P rfl ≫ W.additionMorphism := by
-  rw [show (2 : ℤ) = 1 + 1 by norm_num, comp_projModelMulBy_add hP]
-  simp only [comp_projModelMulBy_eq_homMk_zpow_left hP, zpow_one, Over.homMk_left]
 
 /-- For a section `P` of the projective model, `(n + 1)P = 0` exactly when `nP = -P`. -/
 theorem comp_projModelMulBy_add_one_eq_projModelZero_iff (hP : P ≫ W.projModelOver = 𝟙 _)
@@ -274,8 +281,8 @@ through the base change morphism `projModelBaseChange`, a point of `projModel W`
 `L`. Multiplication by `n` sends the point of `P` to the point of `n • P`. -/
 theorem projModelPointsEquiv_symm_projModelBaseChange_projModelMulBy [DecidableEq L]
     (P : (W.map g).toAffine.Point) (n : ℤ) :
-    ((W.map g).projModelPointsEquiv.symm P).1 ≫ W.projModelBaseChange g ≫ W.projModelMulBy n =
-      ((W.map g).projModelPointsEquiv.symm (n • P)).1 ≫ W.projModelBaseChange g := by
+    ((W.map g).projModelPointsEquiv.symm P).val ≫ W.projModelBaseChange g ≫ W.projModelMulBy n =
+      ((W.map g).projModelPointsEquiv.symm (n • P)).val ≫ W.projModelBaseChange g := by
   have h := congrArg Over.Hom.left
     (map_zpow (W.baseChangePointsHom g) ((W.map g).projModelPointsMulEquiv.symm (.ofAdd P)) n)
   rw [← comp_projModelMulBy, baseChangePointsHom_left, baseChangePointsHom_left,
@@ -288,7 +295,7 @@ base change morphism `projModelBaseChange`, is the point with homogeneous coordi
 `[x : y : 1]` along `g`. -/
 theorem projModelPointsEquiv_symm_some_projModelBaseChange {x y : L}
     (h : (W.map g).toAffine.Nonsingular x y) :
-    ((W.map g).projModelPointsEquiv.symm (.some x y h)).1 ≫ W.projModelBaseChange g =
+    ((W.map g).projModelPointsEquiv.symm (.some x y h)).val ≫ W.projModelBaseChange g =
       W.projModelPoint g (P := ![x, y, 1]) ((Projective.equation_some _ _).mpr h.1) (i := 2)
         (by simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using
           isUnit_one) := by
@@ -298,7 +305,7 @@ theorem projModelPointsEquiv_symm_some_projModelBaseChange {x y : L}
   have hi : IsUnit (![x, y, 1] 2) := by
     simpa only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] using isUnit_one
   -- the section of the affine point `(x, y)` has homogeneous coordinates `[x : y : 1]`
-  have hsymm : ((W.map g).projModelPointsEquiv.symm (.some x y h)).1 =
+  have hsymm : ((W.map g).projModelPointsEquiv.symm (.some x y h)).val =
       (W.map g).projModelPoint (RingHom.id L) hE hi :=
     congrArg Subtype.val <| (Equiv.symm_apply_eq _).mpr <|
       ((projModelPointsEquiv_projModelPoint _ hE hi).trans

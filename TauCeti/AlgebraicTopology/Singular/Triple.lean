@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Topology.Category.TopTriple
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
@@ -29,7 +30,12 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
-coproducts and homology.
+coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
+propagates projectivity over hereditary coefficient categories
+(`TopTriple.projective_singularHomology_totalPair`). When morphisms into `Hₙ(X, B)` and
+`Hₙ₊₁(X, B)` split `H_*(X, B) ⟶ H_*(X, A)` up to isomorphism, the triple sequence splits as a
+binary biproduct (`TopTriple.isIso_biprod_desc_singularHomology`).
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -141,6 +147,48 @@ instance [CategoryWithHomology C] :
         (congrArg (fun f ↦ f.f 0) (T.singularChainComplexπ_comp_totalToOuter R)))
   exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
 
+/-- In each degree, the map `Cₙ(A, B) ⟶ Cₙ(X, B)` of relative singular chains of a triple
+`(X, A, B)` is a split monomorphism: a retraction of `Cₙ(A) ⟶ Cₙ(X)` is the identity on the chains
+of `B`, so it descends to the quotients by them. -/
+instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
+    IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) := by
+  -- The singular simplicial pair of `(X, A)` has `TopCat.toSSet.map T.outerMap` as its map only
+  -- up to unfolding `TopPair.toSSetPair` and `outerPair`, so its degreewise splitting is
+  -- supplied explicitly. For the same reason, the sources of the quotient maps below agree with
+  -- the singular chains of `X` and `A` only definitionally, so `rw` cannot match the composites
+  -- with them and the equations are composed with `exact` instead.
+  have : IsSplitMono ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n) :=
+    inferInstanceAs (IsSplitMono
+      ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
+  let r := retraction ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n)
+  have hr {Z : C} (h : ((TopCat.toSSet.obj T.snd).chainComplex R).X n ⟶ Z) :
+      (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n ≫ r ≫ h = h :=
+    IsSplitMono.id_assoc _ h
+  -- The chains of `B` map to the chains of `X` through those of `A`, on which `r` is the
+  -- identity; so `r` followed by the quotient map vanishes on them.
+  have e : (SSet.chainComplexMap (TopCat.toSSet.map T.innerMap) R ≫
+      SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n =
+      (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n := by
+    rw [← Functor.map_comp, ← TopCat.toSSet.map_comp, T.innerMap_comp_outerMap]
+  have hB : (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n ≫ r ≫
+      ((innerPair.obj T).singularChainComplexπ R).f n = 0 :=
+    (congrArg (· ≫ r ≫ _) e).symm.trans <| (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (hr _)).trans
+        ((TopPair.toSSetPair.obj (innerPair.obj T)).chainComplex_condition_f R n)
+  let ρ : ((totalPair.obj T).singularChainComplex R).X n ⟶
+      ((innerPair.obj T).singularChainComplex R).X n :=
+    ((TopPair.toSSetPair.obj (totalPair.obj T)).isColimitCokernelCoforkChainComplexX R n).desc
+      (CokernelCofork.ofπ _ hB)
+  have hρ : ((totalPair.obj T).singularChainComplexπ R).f n ≫ ρ =
+      r ≫ ((innerPair.obj T).singularChainComplexπ R).f n :=
+    ((TopPair.toSSetPair.obj (totalPair.obj T)).isColimitCokernelCoforkChainComplexX R n).fac _
+      WalkingParallelPair.one
+  have hπ := congrArg (fun φ ↦ φ.f n) (T.singularChainComplexπ_comp_innerToTotal R)
+  exact ⟨⟨ρ, (cancel_epi (((innerPair.obj T).singularChainComplexπ R).f n)).1 <|
+    (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ ρ) hπ).trans <|
+      (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) hρ).trans <|
+        (hr _).trans (Category.comp_id _).symm⟩⟩
+
 end
 
 section
@@ -221,6 +269,32 @@ theorem isZero_singularHomology_totalPair (n : ℕ)
     IsZero ((totalPair.obj T).singularHomology R n) :=
   (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
 
+/-- **Enlarging the subspace by an acyclic pair**: if `Hₙ(A, B)` vanishes, and so does `Hₘ(A, B)`
+for `m + 1 = n`, then `Hₙ(X, B) ⟶ Hₙ(X, A)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_totalToOuter_of_isZero (n : ℕ)
+    (hn : IsZero ((innerPair.obj T).singularHomology R n))
+    (hm : ∀ m, m + 1 = n → IsZero ((innerPair.obj T).singularHomology R m)) :
+    IsIso (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+  have : Mono (TopPair.singularHomologyMap (totalToOuter.app T) R n) :=
+    (T.singularHomology_exact_total R n).mono_g (hn.eq_of_src _ _)
+  have : Epi (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+    cases n with
+    | zero => infer_instance
+    | succ m => exact (T.singularHomology_exact_outer R (m + 1) m).epi_f ((hm m rfl).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- **Removing an acyclic outer pair**: if `Hₙ(X, A)` and `Hₙ₊₁(X, A)` vanish, then
+`Hₙ(A, B) ⟶ Hₙ(X, B)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_innerToTotal_of_isZero (n : ℕ)
+    (hn : IsZero ((outerPair.obj T).singularHomology R n))
+    (hn' : IsZero ((outerPair.obj T).singularHomology R (n + 1))) :
+    IsIso (TopPair.singularHomologyMap (innerToTotal.app T) R n) := by
+  have : Epi (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_total R n).epi_f (hn.eq_of_tgt _ _)
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_inner R (n + 1) n).mono_g (hn'.eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
+
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
 connecting morphisms of a filtration compose to zero. -/
@@ -250,6 +324,52 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (singularChainComplexShortComplexMap φ R)
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
+
+/-- **Projectivity of top relative homology glues across a triple** in a hereditary abelian
+category: if `H_{d+1}(X, A)` vanishes and both `H_d(A, B)` and `H_d(X, A)` are projective, then
+`0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact with projective image, so `H_d(X, B)` splits as
+a direct sum of two projectives and is projective. -/
+theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimensionLE V 1]
+    (d : ℕ) (h : IsZero ((outerPair.obj T).singularHomology R (d + 1)))
+    [Projective ((innerPair.obj T).singularHomology R d)]
+    [Projective ((outerPair.obj T).singularHomology R d)] :
+    Projective ((totalPair.obj T).singularHomology R d) := by
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
+    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
+  exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
+
+/-- **Splitting the homology sequence of a triple.** In a triple `T = (X, A, B)`, if morphisms
+into `Hₙ(X, B)` and `Hₙ₊₁(X, B)` compose with `H_*(X, B) ⟶ H_*(X, A)` to isomorphisms, then
+`B₀ ⊞ Hₙ(A, B) ⟶ Hₙ(X, B)` is an isomorphism. -/
+theorem isIso_biprod_desc_singularHomology (n : ℕ) {B₀ B₁ : A}
+    (s₀ : B₀ ⟶ (totalPair.obj T).singularHomology R n)
+    (s₁ : B₁ ⟶ (totalPair.obj T).singularHomology R (n + 1))
+    (hs₀ : IsIso (s₀ ≫ TopPair.singularHomologyMap (totalToOuter.app T) R n))
+    (hs₁ : IsIso (s₁ ≫ TopPair.singularHomologyMap (totalToOuter.app T) R (n + 1))) :
+    IsIso (biprod.desc s₀ (TopPair.singularHomologyMap (innerToTotal.app T) R n)) := by
+  let i₀ := TopPair.singularHomologyMap (innerToTotal.app T) R n
+  let q₀ := TopPair.singularHomologyMap (totalToOuter.app T) R n
+  let q₁ := TopPair.singularHomologyMap (totalToOuter.app T) R (n + 1)
+  have hδ : T.singularHomologyδ R (n + 1) n rfl = 0 := by
+    rw [← Category.id_comp (T.singularHomologyδ R (n + 1) n rfl), ← IsIso.inv_hom_id (s₁ ≫ q₁),
+      Category.assoc, Category.assoc, T.comp_singularHomologyδ R (n + 1) n rfl,
+      comp_zero, comp_zero]
+  have hmono : Mono i₀ := (T.singularHomology_exact_inner R (n + 1) n rfl).mono_g hδ
+  let S := ShortComplex.mk i₀ q₀ (T.singularHomologyMap_innerToTotal_comp_totalToOuter R n)
+  let s' : S.X₃ ⟶ S.X₂ := inv (s₀ ≫ q₀) ≫ s₀
+  have hs' : s' ≫ S.g = 𝟙 _ := by
+    dsimp only [S, s']
+    rw [Category.assoc]
+    exact IsIso.inv_hom_id _
+  let spl := ShortComplex.Splitting.ofExactOfSection S (T.singularHomology_exact_total R n)
+    s' hs' hmono
+  have hspl : IsIso (biprod.desc i₀ s') := spl.isoBinaryBiproduct.isIso_inv
+  have hfac : (biprod.braiding' B₀ S.X₁).hom ≫
+      (biprod.mapIso (Iso.refl _) (asIso (s₀ ≫ q₀))).hom ≫ biprod.desc i₀ s' =
+      biprod.desc s₀ i₀ :=
+    biprod.hom_ext' _ _ (by simp [s']) (by simp)
+  rw [← hfac]
+  infer_instance
 
 end
 

@@ -38,6 +38,11 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   of an increasing sequence of open sets with compact closures inside it.
 * `TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`: the same exhaustion of an
   open set `Ω`, as a sequence of `Opens` whose traces on the subspace `Ω` cover it.
+* `TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_iUnion_eq`: an exhaustion of an
+  open set `Ω` by open sets with compact closures, each closure inside the next set.
+* `TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_forall_exists_le`: such a nested
+  exhaustion of `Ω`, every member of which has closure inside `Ω`, eventually containing every open
+  set whose closure is compact and contained in `Ω`.
 
 ## References
 
@@ -151,5 +156,53 @@ theorem _root_.TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_e
   refine ⟨fun n ↦ ⟨V n, hVo n⟩, hVc, hVΩ, fun _ _ h ↦ hVmono h, hVU, ?_⟩
   simp only [← preimage_iUnion, TopologicalSpace.Opens.coe_mk, hVU]
   exact Subtype.coe_preimage_self _
+
+/-- **Nested exhaustion of an open set.** In a proper pseudometric space, an open set `Ω` is the
+union of a sequence of open sets `V n` with compact closures, the closure of each lying in the next.
+It is a subsequence of the exhaustion
+`TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`. -/
+theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_iUnion_eq
+    [ProperSpace α] (Ω : TopologicalSpace.Opens α) :
+    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
+      (∀ n, closure (V n : Set α) ⊆ V (n + 1)) ∧ ⋃ n, (V n : Set α) = Ω := by
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  -- Each closure lies in a strictly later set of the exhaustion.
+  have hg : ∀ m, ∃ N, m < N ∧ closure (V m : Set α) ⊆ V N := fun m => by
+    obtain ⟨N, hN⟩ := (hVc m).elim_directed_cover (fun n => (V n : Set α))
+      (fun n => (V n).isOpen) ((hVΩ m).trans hVU.symm.subset)
+      (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
+    exact ⟨max N (m + 1), by omega, hN.trans (SetLike.coe_subset_coe.2 (hVmono (le_max_left ..)))⟩
+  choose g hgm hgV using hg
+  have hle : ∀ n, n ≤ g^[n] 0 := fun n => by
+    induction n with
+    | zero => exact le_rfl
+    | succ n ih =>
+      rw [Function.iterate_succ_apply']
+      exact ih.trans_lt (hgm _)
+  refine ⟨fun n => V (g^[n] 0), fun n => hVc _, fun n => ?_, subset_antisymm
+    (iUnion_subset fun n => hVU ▸ subset_iUnion (fun n => (V n : Set α)) _)
+    (hVU.symm.subset.trans (iUnion_mono fun n => SetLike.coe_subset_coe.2 (hVmono (hle n))))⟩
+  simpa only [Function.iterate_succ_apply'] using hgV (g^[n] 0)
+
+/-- **Nested exhaustion of an open set absorbing relatively compact opens.** In a proper
+pseudometric space, an open set `Ω` has an exhaustion by open sets `V n` with compact closures
+inside `Ω`, the closure of each lying in the next, such that every open set `W` whose closure is
+compact and contained in `Ω` lies in some `V n`. -/
+theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_forall_exists_le
+    [ProperSpace α] (Ω : TopologicalSpace.Opens α) :
+    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
+      (∀ n, closure (V n : Set α) ⊆ V (n + 1)) ∧ (∀ n, closure (V n : Set α) ⊆ Ω) ∧
+      ∀ W : TopologicalSpace.Opens α, IsCompact (closure (W : Set α)) →
+        closure (W : Set α) ⊆ Ω → ∃ n, W ≤ V n := by
+  obtain ⟨V, hVc, hVsucc, hVU⟩ := Ω.exists_isCompact_closure_subset_succ_iUnion_eq
+  have hVmono : Monotone V := monotone_nat_of_le_succ fun n =>
+    SetLike.coe_subset_coe.1 (subset_closure.trans (hVsucc n))
+  refine ⟨V, hVc, hVsucc, fun n =>
+    (hVsucc n).trans (hVU ▸ subset_iUnion (fun n => (V n : Set α)) (n + 1)),
+    fun W hWc hWΩ => ?_⟩
+  obtain ⟨n, hn⟩ := hWc.elim_directed_cover (fun n => (V n : Set α)) (fun n => (V n).isOpen)
+    (hWΩ.trans hVU.symm.subset)
+    (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
+  exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
 
 end TauCeti

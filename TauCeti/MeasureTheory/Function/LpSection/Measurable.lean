@@ -39,7 +39,7 @@ with measurable `V`-valued functions, isometrically in each fibre; it is how the
 `Lᵖ` sections are compared with Mathlib's `MeasureTheory.Lp`.
 
 The measurability of functions `x ↦ G x (f x)` with `G x` continuous and `G · c` measurable is
-`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`; it is what lets coordinates be
+`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuousAt`; it is what lets coordinates be
 changed without any metrizability or countability assumption on the model fibre.
 
 ## Main definitions
@@ -51,6 +51,7 @@ changed without any metrizability or countability assumption on the model fibre.
 
 ## Main results
 
+* `TauCeti.AEStronglyMeasurableSection.of_continuous`: continuous sections are measurable.
 * `TauCeti.aestronglyMeasurableSection_restrict_iUnion_iff`: measurability is tested on a
   countable measurable partition subordinate to atlas charts.
 * `TauCeti.AEStronglyMeasurableSection.aestronglyMeasurable_norm`,
@@ -177,6 +178,13 @@ theorem AEStronglyMeasurableSection.of_coord
   fun e _ ↦ (h e).congr <| (ae_restrict_mem e.open_baseSet.measurableSet).mono fun _ hx ↦
     (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx _).symm
 
+/-- A continuous section is a.e.-strongly measurable for every measure: its coordinates are
+continuous on the base set of each chart. -/
+theorem AEStronglyMeasurableSection.of_continuous [SecondCountableTopologyEither B F]
+    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) : AEStronglyMeasurableSection 𝕜 F μ s :=
+  .of_coord fun e _ ↦ (continuous_snd.comp_continuousOn (e.continuousOn.comp hs.continuousOn
+    fun _ hx ↦ e.mem_source.2 hx)).aestronglyMeasurable e.open_baseSet.measurableSet
+
 variable [SecondCountableTopology B]
 
 /-- **Independence of the atlas.** Let `A i` be countably many measurable sets, each contained in
@@ -202,8 +210,8 @@ theorem aestronglyMeasurableSection_restrict_iUnion_iff {ι : Type*} [Countable 
   -- On `e'.baseSet ∩ A i`, the coordinates in `e'` are the coordinate change applied to the
   -- coordinates in `e i`; the coordinate change is continuous in the base point.
   refine ((h i).mono_measure (Measure.restrict_mono inter_subset_right le_rfl)
-    |>.apply_of_forall_of_continuous (g := fun x ↦ (e i).coordChangeL 𝕜 e' x) (fun v ↦ ?_)
-      fun x ↦ ((e i).coordChangeL 𝕜 e' x).continuous).congr ?_
+    |>.apply_of_forall_of_continuousAt (g := fun x ↦ (e i).coordChangeL 𝕜 e' x) (fun v ↦ ?_)
+      (ae_of_all _ fun x ↦ ((e i).coordChangeL 𝕜 e' x).continuous.continuousAt)).congr ?_
   · exact (((continuousOn_coordChange 𝕜 (e i) e').clm_apply continuousOn_const).mono
       hsub).aestronglyMeasurable hm
   · filter_upwards [ae_restrict_mem hm] with x hx
@@ -256,9 +264,9 @@ theorem AEStronglyMeasurableSection.aestronglyMeasurable_norm [ContinuousFiberNo
   have hm := e.open_baseSet.measurableSet
   -- On `e.baseSet`, the fibre norm is `‖e.symmL x v‖` at the coordinates `v` of `s`; this is
   -- continuous in `v` and, for fixed `v`, continuous in `x` since the fibre norm is.
-  refine ((hs.aestronglyMeasurable_coord e).apply_of_forall_of_continuous
+  refine ((hs.aestronglyMeasurable_coord e).apply_of_forall_of_continuousAt
     (g := fun x v ↦ ‖e.symmL 𝕜 x v‖) (fun v ↦ ?_)
-      fun x ↦ (e.symmL 𝕜 x).continuous.norm).congr ?_
+      (ae_of_all _ fun x ↦ (e.symmL 𝕜 x).continuous.norm.continuousAt)).congr ?_
   · exact (ContinuousOn.norm_bundle_of_continuousFiberNorm (b := id)
       (v := fun x ↦ e.symmL 𝕜 x v) (e.continuousOn_mk_symmL v)).aestronglyMeasurable hm
   · filter_upwards [ae_restrict_mem hm] with x hx
@@ -353,19 +361,19 @@ private theorem aestronglyMeasurable_coord_iff_orthonormalFrame (e : Trivializat
     rw [hΦ x hx, e.orthonormalFrameAt_of_mem c b (hAe hx)]
   constructor
   · intro h
-    refine (h.apply_of_forall_of_continuous
+    refine (h.apply_of_forall_of_continuousAt
       (g := fun x v ↦ (e.orthonormalFrameAt c b x).symm (e.symmL 𝕜 x v)) (fun v ↦ ?_)
-      (fun x ↦ (e.orthonormalFrameAt c b x).symm.continuous.comp (e.symmL 𝕜 x).continuous)).congr
-      ?_
+      (ae_of_all _ fun x ↦ ((e.orthonormalFrameAt c b x).symm.continuous.comp
+        (e.symmL 𝕜 x).continuous).continuousAt)).congr ?_
     · exact (((e.continuousOn_orthonormalFrameAt_symm c b).comp (e.continuousOn_mk_symmL v)
         fun _ hx ↦ hx).mono hAe).aestronglyMeasurable hA
     · filter_upwards [ae_restrict_mem hA] with x hx
       rw [hΦ' x hx, e.symmL_apply (hAe hx), e.symm_apply_apply_mk (hAe hx)]
   · intro h
-    refine (h.apply_of_forall_of_continuous
+    refine (h.apply_of_forall_of_continuousAt
       (g := fun x w ↦ e.continuousLinearMapAt 𝕜 x (e.orthonormalFrameAt c b x w)) (fun w ↦ ?_)
-      (fun x ↦ (e.continuousLinearMapAt 𝕜 x).continuous.comp
-        (e.orthonormalFrameAt c b x).continuous)).congr ?_
+      (ae_of_all _ fun x ↦ ((e.continuousLinearMapAt 𝕜 x).continuous.comp
+        (e.orthonormalFrameAt c b x).continuous).continuousAt)).congr ?_
     · refine (ContinuousOn.congr ?_ fun x hx ↦
         e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx _).mono hAe |>.aestronglyMeasurable hA
       exact continuous_snd.comp_continuousOn

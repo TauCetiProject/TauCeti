@@ -54,13 +54,10 @@ All three are stated for an arbitrary point: no torsion, ellipticity or minimali
 the Nagell–Lutz argument the polynomial `f` is a division polynomial, whose leading coefficient is
 the order of the torsion point, and `ψ₂` vanishes exactly at the points of order two.
 
-This advances the Nagell–Lutz integrality milestone of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz".
-
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDPrimeOrder.lean`, declarations
 `isInteger_of_root_squarefree_leading_coeff` and `y_isInteger_of_x_isInteger_on_curve`. The latter
 is generalised here from the fraction field to an arbitrary `R`-algebra.
@@ -112,7 +109,7 @@ variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {x y : K}
 
 section UniqueFactorization
 
-variable [IsDomain R] [UniqueFactorizationMonoid R]
+variable [UniqueFactorizationMonoid R]
 
 /-- **The rational-root integrality step.** If the `x`-coordinate of a point of `W` is a root of
 `f ∈ R[X]` and `f.leadingCoeff` is squarefree, then `x` is integral.
@@ -122,8 +119,9 @@ The rational root theorem gives `den x ∣ f.leadingCoeff`; powerfulness of the 
 which squarefreeness forbids. -/
 theorem _root_.WeierstrassCurve.isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff
     (h : (W.baseChange K).toAffine.Equation x y) {f : R[X]} (hroot : aeval x f = 0)
-    (hsf : Squarefree f.leadingCoeff) : IsLocalization.IsInteger R x :=
-  isInteger_of_isUnit_den <|
+    (hsf : Squarefree f.leadingCoeff) : IsLocalization.IsInteger R x := by
+  have := IsDomain.of_faithfulSMul R K
+  exact isInteger_of_isUnit_den <|
     WeierstrassCurve.isUnit_den_of_dvd_squarefree W h hsf (den_dvd_of_is_root hroot)
 
 end UniqueFactorization

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RiemannRoch
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
 import TauCeti.LinearAlgebra.Pi
 
@@ -46,6 +46,13 @@ This is the δ-invariant formula for the genus change under inseparable base ext
 theorem refines it: for a purely inseparable `k' / k` of degree `p`, the drop is divisible by
 `(p - 1) / 2`.
 
+When the genus does not drop, every place has `δ_P = 0`, so the integral-basis argument of the
+separable case applies at every place: `L(Con D) = L(D) · k'` and `ℓ(Con D) = ℓ(D)` for every
+divisor `D` of `F`. With the preservation of degrees, the conorm then carries the canonical class
+to the canonical class and is injective on divisor classes, as for a separable extension of
+constants. This applies to the function field of a smooth curve
+(`TauCeti.AlgebraicGeometry.dim_conorm_of_smooth`).
+
 ## Main definitions
 
 The rings `𝒪_P · k'` and `𝒪'_P` come from
@@ -63,6 +70,15 @@ The rings `𝒪_P · k'` and `𝒪'_P` come from
 * `TauCeti.genus_eq_genus_add_finsum_singularityDegree`: **`g(F / k) = g(F' / k') + ∑_P δ_P`.**
 * `TauCeti.genus_eq_genus_iff_forall_constantSpanIntegers_eq`: the genus is unchanged exactly
   when `𝒪_P · k'` is integrally closed at every place.
+* `TauCeti.riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq` and
+  `TauCeti.Divisor.dim_conorm_of_forall_constantSpanIntegers_eq`: for a finite constant field
+  extension `F' = F · k'` with `[F' : F] = [k' : k]`, if `𝒪_P · k'` is integrally closed at every
+  place, then `L(Con D) = L(D) · k'` and `ℓ(Con D) = ℓ(D)`.
+* `TauCeti.riemannRochSpace_conorm_eq_span_of_genus_eq`, `TauCeti.Divisor.dim_conorm_of_genus_eq`,
+  `TauCeti.conormClassGroup_canonicalClass_of_genus_eq` and
+  `TauCeti.conormClassGroup_injective_of_genus_eq`: when the genus does not drop, the conorm
+  preserves Riemann–Roch spaces and the canonical class and is injective on divisor classes
+  (Stichtenoth, Theorem 3.6.3(d)–(f), without separability of `k' / k`).
 
 ## References
 
@@ -159,7 +175,7 @@ private theorem mem_riemannRochSpace_conorm_iff_forall_smul_mem (hF' : IsFunctio
       Divisor.coeff_conorm, hP', hs]
     omega
   simp only [key, mem_riemannRochSpace_iff]
-  exact ⟨fun hz P P' hP' ↦ hz P', fun hz P' ↦ hz _ P' rfl⟩
+  exact ⟨fun hz P P' _ ↦ hz P', fun hz P' ↦ hz _ P' rfl⟩
 
 variable (hF' : IsFunctionField k' F') {D : Divisor k F} {s : Place k F → F}
   (hs0 : ∀ P, s P ≠ 0) (hs : ∀ P, P.ord (s P) = D.coeff P)
@@ -171,12 +187,12 @@ private noncomputable def localMap (P : Place k F) :
     ((LinearMap.mulLeft k' (algebraMap F F' (s P))).comp
       (riemannRochSpace (Divisor.conorm k' F' D)).subtype).codRestrict _ fun z ↦ by
         simpa [Algebra.smul_def] using
-          (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
+          (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
 
 private theorem localMap_apply (P : Place k F) (z : riemannRochSpace (Divisor.conorm k' F' D)) :
     localMap hF' hs0 hs P z = Submodule.Quotient.mk ⟨algebraMap F F' (s P) * z, by
       simpa [Algebra.smul_def] using
-        (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P⟩ :=
+        (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P⟩ :=
   (rfl)
 
 private theorem localMap_eq_zero_iff (P : Place k F) (z : riemannRochSpace
@@ -238,11 +254,11 @@ private theorem pi_localMap_surjective
     have hle := P.constantSpanIntegers_le_integralClosureSubmodule k' F' (hloc P)
     by_cases hP : P ∈ S
     · rw [dite_eq_left hP] at hle
-      simpa using add_mem hle (y' ⟨P, hP⟩).2
+      simpa using add_mem hle (y' ⟨P, hP⟩).property
     · rwa [dite_eq_right hP, sub_zero] at hle
   refine ⟨⟨z, hzmem⟩, funext fun P ↦ ?_⟩
   have hP := hloc P
-  rw [dite_eq_left P.2] at hP
+  rw [dite_eq_left P.property] at hP
   rw [LinearMap.pi_apply, ← hy' P]
   simp only [localMap, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply]
   rw [Submodule.Quotient.eq]
@@ -258,7 +274,7 @@ private theorem span_le_ker_pi_localMap (S : Finset (Place k F)) :
   funext P
   rw [LinearMap.pi_apply, Pi.zero_apply, localMap_eq_zero_iff]
   have hspan : Submodule.span k' (algebraMap F F' '' riemannRochSpace D) ≤
-      (P.1.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
+      (P.val.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
     refine Submodule.span_le.2 ?_
     rintro _ ⟨f, hf, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulLeft_apply, ← map_mul]
@@ -283,7 +299,7 @@ private theorem ker_pi_localMap_le_span (S : Finset (Place k F))
     · rw [← localMap_eq_zero_iff hF' hs0 hs]
       simpa using congrFun hz ⟨P, hP⟩
     · rw [hreg P hP]
-      exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
+      exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
   -- so the coordinates of `z` lie in `L(D)`
   have hcoord (j) : c.repr z j ∈ riemannRochSpace D := by
     refine mem_riemannRochSpace_iff.2 fun P ↦ (Place.mul_mem_integers_iff (hs0 P) (hs P)).1 ?_
@@ -444,5 +460,96 @@ theorem genus_eq_genus_iff_forall_constantSpanIntegers_eq :
   · simpa using hP
 
 end Genus
+
+/-! ### Constant field extensions without genus drop -/
+
+section NoDrop
+
+variable [FiniteDimensional k k'] [FiniteDimensional F F']
+  (h : constantCompositum F k' F' = ⊤) (hn : finrank F F' = finrank k k')
+
+include h hn
+
+/-- **`L(Con D)` when no place becomes singular**: for a finite constant field extension
+`F' = F · k'` with `[F' : F] = [k' : k]`, if `𝒪_P ⊗_k k'` is integrally closed in `F'` at every
+place `P` of `F / k`, then for every divisor `D` of `F / k` the Riemann–Roch space `L(Con D)` is
+the `k'`-span of the image of `L(D)`. Neither separability of `k' / k` nor exactness of the
+constants is assumed. -/
+theorem riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq
+    (hF' : IsFunctionField k' F')
+    (hreg : ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F')
+    (D : Divisor k F) :
+    riemannRochSpace (Divisor.conorm k' F' D) =
+      Submodule.span k' (algebraMap F F' '' riemannRochSpace D) := by
+  choose s hs0 hs using fun P : Place k F ↦ P.exists_ne_zero_ord_eq (D.coeff P)
+  refine le_antisymm (fun z hz ↦ ?_) (Submodule.span_le.2 ?_)
+  · -- the common kernel of the local maps on the empty set of places is all of `L(Con D)`
+    refine ker_pi_localMap_le_span h hn hF' hs0 hs ∅ (fun P _ ↦ hreg P)
+      (x := ⟨z, hz⟩) (LinearMap.mem_ker.2 ?_)
+    ext ⟨P, hP⟩
+    simp at hP
+  · rintro _ ⟨f, hf, rfl⟩
+    exact (mem_riemannRochSpace_conorm_iff hF' D f).2 hf
+
+/-- **`ℓ(Con D) = ℓ(D)` when no place becomes singular**: for a finite constant field extension
+`F' = F · k'` with `[F' : F] = [k' : k]`, if `𝒪_P ⊗_k k'` is integrally closed in `F'` at every
+place `P` of `F / k`, then the conorm of every divisor `D` of `F / k` has the dimension of `D`.
+Neither separability of `k' / k` nor exactness of the constants is assumed. -/
+theorem Divisor.dim_conorm_of_forall_constantSpanIntegers_eq (hF : IsFunctionField k F)
+    (hreg : ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F')
+    (D : Divisor k F) : (Divisor.conorm k' F' D).dim = D.dim := by
+  rw [Divisor.dim_def, riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq h hn
+    (hF.of_constantCompositum_eq_top h) hreg D]
+  exact finrank_span_image_riemannRochSpace_of_linearDisjoint hF
+    (linearDisjoint_fieldRange_of_finrank_constantCompositum_eq
+      (by rw [h, IntermediateField.finrank_top', hn])) D
+
+variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+  (hex' : IsIntegrallyClosedIn k' F') (hg : genus k' F' = genus k F)
+
+include hF hex hex' hg
+
+/-- **`L(Con D)` when the genus does not drop**: if `k` is the exact constant field of `F`, `k'`
+that of `F' = F · k'`, `[F' : F] = [k' : k]` and `g(F' / k') = g(F / k)`, then for every divisor
+`D` of `F / k` the Riemann–Roch space `L(Con D)` is the `k'`-span of the image of `L(D)`
+(Stichtenoth, Theorem 3.6.3(d), without separability of `k' / k`). -/
+theorem riemannRochSpace_conorm_eq_span_of_genus_eq (D : Divisor k F) :
+    riemannRochSpace (Divisor.conorm k' F' D) =
+      Submodule.span k' (algebraMap F F' '' riemannRochSpace D) :=
+  riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq h hn
+    (hF.of_constantCompositum_eq_top h)
+    ((genus_eq_genus_iff_forall_constantSpanIntegers_eq hF hex h hex' hn).1 hg) D
+
+/-- **`ℓ(Con D) = ℓ(D)` when the genus does not drop**: under a finite constant field extension
+`F' = F · k'` with exact constants on both sides, `[F' : F] = [k' : k]` and
+`g(F' / k') = g(F / k)`, the conorm of every divisor `D` of `F / k` has the dimension of `D`. -/
+theorem Divisor.dim_conorm_of_genus_eq (D : Divisor k F) :
+    (Divisor.conorm k' F' D).dim = D.dim :=
+  Divisor.dim_conorm_of_forall_constantSpanIntegers_eq h hn hF
+    ((genus_eq_genus_iff_forall_constantSpanIntegers_eq hF hex h hex' hn).1 hg) D
+
+/-- **The conorm of the canonical class is the canonical class when the genus does not drop**
+(Stichtenoth, Theorem 3.6.3(e), without separability of `k' / k`): under a finite constant field
+extension `F' = F · k'` with exact constants on both sides, `[F' : F] = [k' : k]` and
+`g(F' / k') = g(F / k)`, the conorm on divisor classes sends the canonical class of `F / k` to the
+canonical class of `F' / k'`. -/
+theorem conormClassGroup_canonicalClass_of_genus_eq :
+    Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h) (canonicalClass hF hex) =
+      canonicalClass (hF.of_constantCompositum_eq_top h) hex' :=
+  conormClassGroup_canonicalClass_of_forall_dim_conorm_eq hF _
+    (Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn)
+    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg) hex hex'
+
+/-- **The conorm is injective on divisor classes when the genus does not drop** (Stichtenoth,
+Theorem 3.6.3(f), without separability of `k' / k`): under a finite constant field extension
+`F' = F · k'` with exact constants on both sides, `[F' : F] = [k' : k]` and
+`g(F' / k') = g(F / k)`, a divisor of `F / k` whose conorm is principal is itself principal. -/
+theorem conormClassGroup_injective_of_genus_eq :
+    Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) :=
+  conormClassGroup_injective_of_forall_dim_conorm_eq hF _
+    (Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn)
+    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg)
+
+end NoDrop
 
 end TauCeti

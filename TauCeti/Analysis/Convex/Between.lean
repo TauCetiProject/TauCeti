@@ -14,9 +14,9 @@ Two sides of a nondegenerate triangle meet only at their common vertex. This is 
 form of Mathlib's `segment_inter_eq_endpoint_of_linearIndependent_sub`, with affine independence
 of the three vertices in place of linear independence of the two edge vectors.
 
-Conversely, over a linearly ordered field, if the segments from `z` to `a` and to `b` meet only at
-`z`, then the directions `a -ᵥ z` and `b -ᵥ z` are nonzero and do not lie on a common ray from the
-origin: `0 ∉ [-(a -ᵥ z), b -ᵥ z]`. This is the form in which a separating functional can be
+Over an ordered domain acting on a torsion-free module, if the segments from `z` to `a` and to `b`
+meet only at `z`, then the nonzero directions `a -ᵥ z` and `b -ᵥ z` do not lie on a common ray
+from the origin: `0 ∉ [-(a -ᵥ z), b -ᵥ z]`. This is the form in which a separating functional can be
 found for the two directions (`TauCeti.exists_strongDual_neg_pos_ne_zero`).
 
 ## Main results
@@ -53,12 +53,14 @@ theorem AffineIndependent.affineSegment_inter_eq_endpoint {a b c : P}
   simp only [AffineMap.lineMap_vsub_right, AffineMap.lineMap_vsub_left] at hst
   obtain ⟨-, h0⟩ := LinearIndependent.pair_iff.1 hli (1 - s) (-t) (by
     rw [neg_smul, ← sub_eq_add_neg, hst, sub_self])
-  rw [← ht, neg_eq_zero.1 h0, AffineMap.lineMap_apply_zero]
-  rfl
+  rw [Set.mem_singleton_iff, ← ht, neg_eq_zero.1 h0, AffineMap.lineMap_apply_zero]
 
 namespace TauCeti
 
-variable {k : Type*} [Field k] [LinearOrder k] [IsStrictOrderedRing k] [Module k V]
+section IsTorsionFree
+
+variable {k : Type*} [Ring k] [PartialOrder k] [IsOrderedRing k] [IsDomain k] [Module k V]
+  [Module.IsTorsionFree k V]
 
 /-- If the segments from `z` to `a` and to `b` meet only at `z`, then `a -ᵥ z` and `b -ᵥ z` are
 nonzero and do not lie on a common ray from `0`: `0 ∉ [-(a -ᵥ z), b -ᵥ z]`. -/
@@ -68,15 +70,19 @@ theorem zero_notMem_segment_of_affineSegment_inter_eq {a b z : P} (ha : a ≠ z)
   rintro ⟨s, t, hs, ht, hst, he⟩
   rw [smul_neg, neg_add_eq_zero] at he
   have hm : t • (b -ᵥ z) +ᵥ z ∈ affineSegment k z a ∩ affineSegment k z b :=
-    ⟨⟨s, ⟨hs, by linarith⟩, by rw [AffineMap.lineMap_apply, he]⟩,
-      ⟨t, ⟨ht, by linarith⟩, by rw [AffineMap.lineMap_apply]⟩⟩
+    ⟨⟨s, ⟨hs, hst ▸ le_add_of_nonneg_right ht⟩, by rw [AffineMap.lineMap_apply, he]⟩,
+      ⟨t, ⟨ht, hst ▸ le_add_of_nonneg_left hs⟩, by rw [AffineMap.lineMap_apply]⟩⟩
   rw [hab, Set.mem_singleton_iff, ← vsub_eq_zero_iff_eq, vadd_vsub, smul_eq_zero] at hm
   rcases hm with rfl | hm
   · rw [zero_smul, smul_eq_zero] at he
     rcases he with rfl | he
-    · linarith
+    · simp at hst
     · exact ha (vsub_eq_zero_iff_eq.1 he)
   · exact hb (vsub_eq_zero_iff_eq.1 hm)
+
+end IsTorsionFree
+
+variable {k : Type*} [Field k] [LinearOrder k] [IsStrictOrderedRing k] [Module k V]
 
 /-- A map of the line that agrees with an affine map on `[a, b]` sends `[a, b]` onto the segment
 between the images of its endpoints. -/

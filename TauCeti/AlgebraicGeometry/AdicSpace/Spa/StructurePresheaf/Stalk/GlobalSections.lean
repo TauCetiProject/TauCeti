@@ -65,7 +65,7 @@ of the original adic spectrum. -/
 -- Use `rw` or `exact` to apply the pullback identity.
 theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
     comap (presentationLimitGlobalGerm P Aplus x) (presentationLimitStalkValuation hAplus hP x) =
-      x.1 := by
+      x.val := by
   -- Use the trivial rational presentation to compute the germ of a global coefficient.
   let p := Presentation.trivial P
   have hp : IsOpen (Ideal.span (p.num : Set A) : Set A) := by
@@ -112,7 +112,7 @@ theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
     -- Generalize the membership proof before transporting its open to the whole space.
     revert hx
     erw [hR]
-    intro hx
+    intro _
     rfl
   rw [e]
   exact comap_presentationLimitStalkValuation hAplus hP p hp x hx

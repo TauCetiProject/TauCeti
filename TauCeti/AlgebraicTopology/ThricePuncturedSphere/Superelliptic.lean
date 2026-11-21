@@ -148,7 +148,7 @@ thrice-punctured sphere. -/
 instance superellipticCurve.instMulAction : MulAction (rootsOfUnity 4 ℂ) superellipticCurve where
   smul ζ q := ⟨((q : ThricePuncturedSphere × ℂ).1, ζ • (q : ThricePuncturedSphere × ℂ).2), by
     rw [mem_superellipticCurve, rootsOfUnity.smul_pow]
-    exact q.2⟩
+    exact q.property⟩
   one_smul q := Subtype.ext (Prod.ext rfl (one_smul _ _))
   mul_smul ζ η q := Subtype.ext (Prod.ext rfl (mul_smul ζ η _))
 
@@ -163,8 +163,8 @@ instance superellipticCurve.instContinuousConstSMul :
     ContinuousConstSMul (rootsOfUnity 4 ℂ) superellipticCurve where
   continuous_const_smul ζ := by
     refine Continuous.subtype_mk ?_ _
-    exact continuous_subtype_val.fst.prodMk ((continuous_const_smul ζ).comp
-      continuous_subtype_val.snd)
+    exact continuous_subtypeVal.fst.prodMk ((continuous_const_smul ζ).comp
+      continuous_subtypeVal.snd)
 
 /-- The fourth roots of unity act freely on the superelliptic curve, whose `y`-coordinates are
 nonzero over the thrice-punctured sphere. -/
@@ -174,7 +174,7 @@ instance superellipticCurve.instIsCancelSMul :
     have h' := congrArg (fun q : superellipticCurve ↦ (q : ThricePuncturedSphere × ℂ).2) h
     simp only [coe_rootsOfUnity_smul_superellipticCurve, rootsOfUnity.smul_eq_mul] at h'
     exact Subtype.ext <| Units.ext <|
-      mul_right_cancel₀ (snd_ne_zero_of_mem_superellipticCurve q.2) h'
+      mul_right_cancel₀ (snd_ne_zero_of_mem_superellipticCurve q.property) h'
 
 /-- **The superelliptic curve is the quotient covering by the fourth roots of unity.** Two points
 lie over the same `t` exactly when their `y`-coordinates have the same fourth power, that is, when
@@ -190,7 +190,7 @@ theorem isQuotientCoveringMap_superellipticProj :
     refine ⟨fun h ↦ ?_, ?_⟩
     · have hpow :
           (q' : ThricePuncturedSphere × ℂ).2 ^ 4 = (q : ThricePuncturedSphere × ℂ).2 ^ 4 := by
-        rw [mem_superellipticCurve.1 q.2, mem_superellipticCurve.1 q'.2, h]
+        rw [mem_superellipticCurve.1 q.property, mem_superellipticCurve.1 q'.property, h]
       obtain ⟨ζ, hζ⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul four_ne_zero).1 hpow
       exact ⟨ζ, Subtype.ext (Prod.ext h.symm hζ)⟩
     · rintro ⟨ζ, rfl⟩
@@ -289,8 +289,8 @@ private theorem exists_eq_localRoot {s y : ℂ} (hs0 : s ≠ 0) (hs : ‖s‖ < 
 
 /-- The point `(w ^ 4 / 2, localRoot w)` of the curve over the punctured disc about `0`. -/
 private def chartZero (w : ↥(ball (0 : ℂ) 1 \ {0})) : superellipticCurve :=
-  ⟨(⟨(w : ℂ) ^ 4 / 2, pow_four_div_two_ne_zero w.2.2,
-      ne_one_of_norm_lt (norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.2.1))⟩,
+  ⟨(⟨(w : ℂ) ^ 4 / 2, pow_four_div_two_ne_zero w.property.2,
+      ne_one_of_norm_lt (norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.property.1))⟩,
     localRoot w), localRoot_pow_four w⟩
 
 /-- The point `(1 - w ^ 4 / 2, localRoot w)` of the curve over the punctured disc about `1`, the
@@ -298,15 +298,16 @@ image of `chartZero w` under `t ↦ 1 - t`, which fixes the radicand `t (t - 1)`
 private def chartOne (w : ↥(ball (0 : ℂ) 1 \ {0})) : superellipticCurve :=
   ⟨(⟨1 - (w : ℂ) ^ 4 / 2,
       sub_ne_zero.2
-        (ne_one_of_norm_lt (norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.2.1))).symm,
-      by simpa using pow_four_div_two_ne_zero w.2.2⟩,
+        (ne_one_of_norm_lt (norm_pow_div_two_lt four_ne_zero
+            (mem_ball_zero_iff.1 w.property.1))).symm,
+      by simpa using pow_four_div_two_ne_zero w.property.2⟩,
     localRoot w), by
       rw [mem_superellipticCurve, localRoot_pow_four]
       ring⟩
 
 private theorem continuous_localRoot_comp :
     Continuous fun w : ↥(ball (0 : ℂ) 1 \ {0}) ↦ localRoot w :=
-  continuousOn_localRoot.comp_continuous continuous_subtype_val fun w ↦ w.2.1
+  continuousOn_localRoot.comp_continuous continuous_subtypeVal fun w ↦ w.property.1
 
 private theorem continuous_chartZero : Continuous chartZero :=
   ((Continuous.subtype_mk (by fun_prop) _).prodMk continuous_localRoot_comp).subtype_mk _
@@ -327,7 +328,7 @@ private theorem range_chartZero :
   refine ⟨?_, fun hq ↦ ?_⟩
   · rintro ⟨w, rfl⟩
     rw [mem_preimage, mem_puncturedNeighborhoodZero]
-    exact norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.2.1)
+    exact norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.property.1)
   · rw [mem_preimage, mem_puncturedNeighborhoodZero] at hq
     obtain ⟨⟨t, y⟩, hq'⟩ := q
     obtain ⟨w, hw, hwt, hwy⟩ := exists_eq_localRoot t.ne_zero hq hq'
@@ -338,7 +339,7 @@ private theorem range_chartOne :
   ext q
   refine ⟨?_, fun hq ↦ ?_⟩
   · rintro ⟨w, rfl⟩
-    have := norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.2.1)
+    have := norm_pow_div_two_lt four_ne_zero (mem_ball_zero_iff.1 w.property.1)
     rw [mem_preimage, mem_puncturedNeighborhoodOne]
     simpa [chartOne, norm_neg] using this
   · rw [mem_preimage, mem_puncturedNeighborhoodOne] at hq
@@ -435,18 +436,20 @@ private theorem chartInfMul_pow_four (b : Bool) : chartInfMul b ^ 4 = 1 := by
 `∞`, for `ζ = 1` or `ζ = i`. -/
 private def chartInf (b : Bool) (v : ↥(ball (0 : ℂ) 1 \ {0})) :
     ↥(superellipticProj ⁻¹' puncturedNeighborhoodInf) :=
-  ⟨⟨(⟨2 / (v : ℂ) ^ 2, div_ne_zero two_ne_zero (pow_ne_zero 2 v.2.2),
-      two_div_sq_ne_one v.2.2 (mem_ball_zero_iff.1 v.2.1)⟩, chartInfMul b * localRootInf v), by
+  ⟨⟨(⟨2 / (v : ℂ) ^ 2, div_ne_zero two_ne_zero (pow_ne_zero 2 v.property.2),
+      two_div_sq_ne_one v.property.2 (mem_ball_zero_iff.1 v.property.1)⟩,
+          chartInfMul b * localRootInf v), by
     rw [mem_superellipticCurve, mul_pow, chartInfMul_pow_four, one_mul,
-      localRootInf_pow_four v.2.2]⟩,
+      localRootInf_pow_four v.property.2]⟩,
     by
       rw [mem_preimage, mem_puncturedNeighborhoodInf]
-      exact two_lt_norm_two_div_sq v.2.2 (mem_ball_zero_iff.1 v.2.1)⟩
+      exact two_lt_norm_two_div_sq v.property.2 (mem_ball_zero_iff.1 v.property.1)⟩
 
 private theorem continuous_chartInf (b : Bool) : Continuous (chartInf b) :=
-  (((Continuous.subtype_mk (continuous_const.div (by fun_prop) fun v ↦ pow_ne_zero 2 v.2.2)
+  (((Continuous.subtype_mk (continuous_const.div (by fun_prop) fun v ↦ pow_ne_zero 2 v.property.2)
     _).prodMk (continuous_const.mul
-    (continuousOn_localRootInf.comp_continuous continuous_subtype_val fun v ↦ v.2))).subtype_mk
+    (continuousOn_localRootInf.comp_continuous continuous_subtypeVal fun v ↦
+        v.property))).subtype_mk
       _).subtype_mk _
 
 /-- Every point `(s, y)` of the curve with `2 < |s|` is `(2 / v ^ 2, ζ localRootInf v)` for some
@@ -555,12 +558,12 @@ instance superellipticCurve.instPathConnectedSpace : PathConnectedSpace superell
 /-- **The deck group of the superelliptic curve is the group of fourth roots of unity**, acting by
 `y ↦ ζ y` (`superellipticDeckMulEquiv_apply`). -/
 def superellipticDeckMulEquiv : rootsOfUnity 4 ℂ ≃* deck superellipticProj :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv isQuotientCoveringMap_superellipticProj
+  isQuotientCoveringMap_superellipticProj.deckMulEquiv
 
 @[simp]
 theorem superellipticDeckMulEquiv_apply (ζ : rootsOfUnity 4 ℂ) (q : superellipticCurve) :
-    (superellipticDeckMulEquiv ζ).1 q = ζ • q :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv_apply _ ζ q
+    (superellipticDeckMulEquiv ζ).val q = ζ • q :=
+  isQuotientCoveringMap_superellipticProj.deckMulEquiv_apply ζ q
 
 /-- The deck group of the superelliptic curve is cyclic. -/
 instance isCyclic_deck_superellipticProj : IsCyclic (deck superellipticProj) :=

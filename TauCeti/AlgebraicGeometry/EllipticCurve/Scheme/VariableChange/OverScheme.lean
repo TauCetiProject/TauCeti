@@ -186,13 +186,13 @@ variable {S X X' : Scheme.{u}} {W W' : WeierstrassCurve Γ(S, ⊤)} {p : X ⟶ S
   {f' : X' ⟶ W'.projModel} (hX' : IsPullback f' p' W'.projModelOver S.toSpecΓ)
 
 -- Restriction of global sections to an affine open `U`.
-private noncomputable def resAffine (U : S.affineOpens) : Γ(S, ⊤) →+* Γ(S, U.1) :=
+private noncomputable def resAffine (U : S.affineOpens) : Γ(S, ⊤) →+* Γ(S, U.val) :=
   (S.presheaf.map (homOfLE le_top).op).hom
 
 private theorem fromSpec_toSpecΓ_eq (U : S.affineOpens) :
-    U.2.fromSpec ≫ S.toSpecΓ = Spec.map (CommRingCat.ofHom (resAffine U)) := by
+    U.property.fromSpec ≫ S.toSpecΓ = Spec.map (CommRingCat.ofHom (resAffine U)) := by
   rw [resAffine, CommRingCat.ofHom_hom]
-  exact U.2.fromSpec_toSpecΓ
+  exact U.property.fromSpec_toSpecΓ
 
 -- A morphism out of `X` is determined by its restrictions to the projective models over the affine
 -- opens of `S`.
@@ -204,10 +204,10 @@ private theorem hom_ext_localι {Y : Scheme.{u}} {m₁ m₂ : X ⟶ Y}
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (p x)) isOpen_univ
   let V : S.affineOpens := ⟨U, hU⟩
   -- the inclusion of `p⁻¹(V)` factors through the projective model over `V`
-  have hfac := (isPullback_localι hX (fromSpec_toSpecΓ_eq V)).lift_fst (p ⁻¹ᵁ V.1).ι
-    (p ∣_ V.1 ≫ V.2.isoSpec.hom)
-    (by rw [Category.assoc, V.2.isoSpec_hom_fromSpec, morphismRestrict_ι])
-  refine ⟨p ⁻¹ᵁ V.1, hxU, ?_⟩
+  have hfac := (isPullback_localι hX (fromSpec_toSpecΓ_eq V)).lift_fst (p ⁻¹ᵁ V.val).ι
+    (p ∣_ V.val ≫ V.property.isoSpec.hom)
+    (by rw [Category.assoc, V.property.isoSpec_hom_fromSpec, morphismRestrict_ι])
+  refine ⟨p ⁻¹ᵁ V.val, hxU, ?_⟩
   rw [← hfac]
   simp only [Category.assoc, h V]
 
@@ -255,80 +255,47 @@ theorem existsUnique_hom_comp_eq_comp_projModelVariableChangeIso_hom (e : X ≅ 
   -- over each affine open `U`, `e` is induced by a unique change of variables `Cs U`
   choose Cs hCs using fun U : S.affineOpens ↦
     local_exists hX (fromSpec_toSpecΓ_eq U) hX' e he hzp hzf hzf'
-  have uniq (U : S.affineOpens) {C : VariableChange Γ(S, U.1)}
+  have uniq (U : S.affineOpens) {C : VariableChange Γ(S, U.val)}
       (hC : ∃ h : C • W'.map (resAffine U) = W.map (resAffine U),
         localι hX (fromSpec_toSpecΓ_eq U) ≫ e.hom = eqToHom (congrArg projModel h.symm) ≫
           ((W'.map (resAffine U)).projModelVariableChangeIso C).hom ≫
             localι hX' (fromSpec_toSpecΓ_eq U)) : C = Cs U :=
     hC.elim fun h hC ↦ (hCs U).elim fun h' hC' ↦ local_unique hX _ hX' e.hom h h' hC hC'
-  -- restriction from an affine open `U` to an affine open `V ⊆ U`
-  have hρ (U V : S.affineOpens) (hVU : V.1 ≤ U.1) :
-      (S.presheaf.map (homOfLE hVU).op).hom.comp (resAffine U) = resAffine V := by
-    rw [resAffine, resAffine, ← CommRingCat.hom_comp, ← Functor.map_comp]
-    rfl
   -- the local changes of variables are compatible with restriction
-  have compat (U V : S.affineOpens) (hVU : V.1 ≤ U.1) :
+  have compat (U V : S.affineOpens) (hVU : V.val ≤ U.val) :
       (Cs U).map (S.presheaf.map (homOfLE hVU).op).hom = Cs V := by
     set ψ := (S.presheaf.map (homOfLE hVU).op).hom
-    have hg : Spec.map (CommRingCat.ofHom ψ) ≫ U.2.fromSpec = V.2.fromSpec := by
+    have hcomp : ψ.comp (resAffine U) = resAffine V :=
+      Scheme.presheaf_map_homOfLE_comp hVU le_top
+    have hg : Spec.map (CommRingCat.ofHom ψ) ≫ U.property.fromSpec = V.property.fromSpec := by
       rw [CommRingCat.ofHom_hom]
-      exact U.2.map_fromSpec V.2 _
-    have hg' : (Spec.map (CommRingCat.ofHom ψ) ≫ U.2.fromSpec) ≫ S.toSpecΓ =
+      exact U.property.map_fromSpec V.property _
+    have hg' : (Spec.map (CommRingCat.ofHom ψ) ≫ U.property.fromSpec) ≫ S.toSpecΓ =
         Spec.map (CommRingCat.ofHom (ψ.comp (resAffine U))) := by
       rw [Category.assoc, fromSpec_toSpecΓ_eq, ← Spec.map_comp]
       rfl
     obtain ⟨h, hC⟩ := hCs U
-    refine uniq V (exists_eq_comp_of_eq (by rw [map_map, hρ U V hVU])
-      (by rw [map_map, hρ U V hVU]) ?_ ?_ (map_of_eq_comp h hC ψ))
-    · rw [← eqToHom_localι hX (hρ U V hVU) hg hg' (fromSpec_toSpecΓ_eq V),
+    refine uniq V (exists_eq_comp_of_eq (by rw [map_map, hcomp])
+      (by rw [map_map, hcomp]) ?_ ?_ (map_of_eq_comp h hC ψ))
+    · rw [← eqToHom_localι hX (hcomp) hg hg' (fromSpec_toSpecΓ_eq V),
         ← projModelBaseChange_localι hX (fromSpec_toSpecΓ_eq U) ψ hg', eqToHom_trans_assoc]
-    · rw [← eqToHom_localι hX' (hρ U V hVU) hg hg' (fromSpec_toSpecΓ_eq V),
+    · rw [← eqToHom_localι hX' (hcomp) hg hg' (fromSpec_toSpecΓ_eq V),
         ← projModelBaseChange_localι hX' (fromSpec_toSpecΓ_eq U) ψ hg', eqToHom_trans_assoc]
-  -- global sections are glued from, and determined by, their restrictions to the affine opens
-  have glue (a : ∀ U : S.affineOpens, Γ(S, U.1))
-      (ha : ∀ U V hVU, (S.presheaf.map (homOfLE hVU).op).hom.comp (resAffine U) = resAffine V →
-        (S.presheaf.map (homOfLE hVU).op).hom (a U) = a V) :
-      ∃ x : Γ(S, ⊤), ∀ U, resAffine U x = a U :=
-    (S.existsUnique_gluing_affineOpens a fun U V hVU ↦ ha U V hVU (hρ U V hVU)).exists
-  have ext (x y : Γ(S, ⊤)) (h : ∀ U, resAffine U x = resAffine U y) : x = y :=
-    (S.existsUnique_gluing_affineOpens (fun U ↦ resAffine U y) fun U V hVU ↦
-      congrArg (· y) (congrArg DFunLike.coe (hρ U V hVU))).unique h fun _ ↦ rfl
-  have hext (C₁ C₂ : VariableChange Γ(S, ⊤))
-      (h : ∀ U, C₁.map (resAffine U) = C₂.map (resAffine U)) : C₁ = C₂ := by
-    ext
-    · exact ext _ _ fun U ↦ congrArg (fun C ↦ (C.u : Γ(S, U.1))) (h U)
-    · exact ext _ _ fun U ↦ congrArg VariableChange.r (h U)
-    · exact ext _ _ fun U ↦ congrArg VariableChange.s (h U)
-    · exact ext _ _ fun U ↦ congrArg VariableChange.t (h U)
-  -- glue the four coefficients of the local changes of variables, and the inverse of `u`
-  obtain ⟨u, hu⟩ := glue (fun U ↦ ((Cs U).u : Γ(S, U.1))) fun U V hVU _ ↦
-    congrArg (fun C ↦ (C.u : Γ(S, V.1))) (compat U V hVU)
-  obtain ⟨v, hv⟩ := glue (fun U ↦ (↑(Cs U).u⁻¹ : Γ(S, U.1))) fun U V hVU _ ↦ by
-    simpa [VariableChange.map] using
-      congrArg (fun C : VariableChange Γ(S, V.1) ↦ ((C.u⁻¹ : Γ(S, V.1)ˣ) : Γ(S, V.1)))
-        (compat U V hVU)
-  obtain ⟨r, hr⟩ := glue (fun U ↦ (Cs U).r) fun U V hVU _ ↦
-    congrArg VariableChange.r (compat U V hVU)
-  obtain ⟨s, hs⟩ := glue (fun U ↦ (Cs U).s) fun U V hVU _ ↦
-    congrArg VariableChange.s (compat U V hVU)
-  obtain ⟨t, ht⟩ := glue (fun U ↦ (Cs U).t) fun U V hVU _ ↦
-    congrArg VariableChange.t (compat U V hVU)
-  let C : VariableChange Γ(S, ⊤) :=
-    ⟨⟨u, v, ext _ _ fun U ↦ by simp [hu, hv], ext _ _ fun U ↦ by simp [hu, hv]⟩, r, s, t⟩
-  have hCU (U : S.affineOpens) : C.map (resAffine U) = Cs U :=
-    VariableChange.ext (Units.ext (hu U)) (hr U) (hs U) (ht U)
+  obtain ⟨C, hCU⟩ := VariableChange.exists_forall_affineOpens_map_eq Cs compat
+  replace hCU : ∀ U, C.map (resAffine U) = Cs U := hCU
   -- `C` carries `W'` to `W`, since it does so over every affine open
   have hW : C • W' = W := by
     have h (U : S.affineOpens) : (C • W').map (resAffine U) = W.map (resAffine U) := by
       rw [← map_variableChange, hCU]
       exact (hCs U).fst
     ext
-    · exact ext _ _ fun U ↦ congrArg WeierstrassCurve.a₁ (h U)
-    · exact ext _ _ fun U ↦ congrArg WeierstrassCurve.a₂ (h U)
-    · exact ext _ _ fun U ↦ congrArg WeierstrassCurve.a₃ (h U)
-    · exact ext _ _ fun U ↦ congrArg WeierstrassCurve.a₄ (h U)
-    · exact ext _ _ fun U ↦ congrArg WeierstrassCurve.a₆ (h U)
-  refine ⟨C, ⟨hW, hom_ext_localι hX fun U ↦ ?_⟩, fun C' ⟨h', hC'⟩ ↦ hext _ _ fun U ↦
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₁ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₂ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₃ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₄ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₆ (h U)
+  refine ⟨C, ⟨hW, hom_ext_localι hX fun U ↦ ?_⟩, fun C' ⟨h', hC'⟩ ↦
+    VariableChange.eq_of_forall_affineOpens_map_eq _ _ fun U ↦
     (uniq U (localι_comp_of_eq hX hX' _ e.hom he h' hC')).trans (hCU U).symm⟩
   -- over every affine open, both sides are induced by the restriction of `C`
   have H := hCs U

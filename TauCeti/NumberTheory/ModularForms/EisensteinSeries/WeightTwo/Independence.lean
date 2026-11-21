@@ -44,7 +44,7 @@ namespace TauCeti.EisensteinSeries
 def correctedE2AtLevel (N : ℕ) (d : {d : ℕ // 1 < d ∧ d ∣ N}) :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) 2 :=
   ModularForm.restrict (Subgroup.map_mono
-    (CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd d.2.2)) (@correctedE2 d.val ⟨by omega⟩)
+    (CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd d.property.2)) (@correctedE2 d.val ⟨by omega⟩)
 
 /-- Evaluating a corrected series after restricting its level gives the original series. -/
 @[simp]
@@ -150,7 +150,7 @@ theorem linearIndependent_correctedE2AtLevel (N : ℕ) :
             g j * (if j.val ∣ m.val then
               24 * (j.val : ℂ) * σ 1 (m.val / j.val) else 0)) := by
           apply Finset.sum_congr rfl
-          intro j hj
+          intro j _
           by_cases hd : j.val ∣ m.val <;> simp [hd] <;> ring
         _ = _ := by rw [Finset.sum_add_distrib, ← Finset.mul_sum]
     rw [hrewrite, hsum_g] at hcoeff_m

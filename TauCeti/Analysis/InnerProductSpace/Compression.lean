@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
 # Compressions of operators
@@ -14,7 +15,12 @@ For bounded operators `A : E → E` and `X : F → E` between Hilbert spaces, th
 `A` along `X` is the operator `X† A X` on `F`, `ContinuousLinearMap.compression A X`. When `X` is
 an isometry it is `A` cut down to the subspace `range X`, read in the coordinates of `F`. This
 file records its basic algebra: it is additive and homogeneous in `A`, commutes with adjoints,
-preserves symmetry, and compressing in two steps is compressing along the composite.
+preserves symmetry, and compressing in two steps is compressing along the composite. Compressing
+to the orthogonal complement of an eigenvector creates no new eigenvalues
+(`ContinuousLinearMap.hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton`), and
+compressing an operator that commutes with linear isometries eventually shifting a dense set into a
+subspace does not decrease its norm
+(`Submodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL`).
 
 Compressions model operators on a trial subspace in the Rayleigh–Ritz procedure, and compress
 representations to invariant subspaces.
@@ -99,4 +105,77 @@ theorem isSymmetric_compression {A : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E
     (A.compression X : F →ₗ[𝕜] F).IsSymmetric :=
   isSelfAdjoint_iff_isSymmetric.1 <| (isSelfAdjoint_iff_isSymmetric.2 hA).adjoint_conj X
 
+/-- If `u` is an eigenvector of `A`, with eigenvalue `λ`, then `A` is block upper triangular along
+`E = 𝕜 u ⊕ u^⊥`, so every eigenvalue of the compression of `A` to `u^⊥` is an eigenvalue of `A`.
+An eigenvector `k ∈ u^⊥` of the compression, with eigenvalue `μ`, gives the eigenvector `u` of `A`
+if `μ = λ`, and the eigenvector `k + ⟪u, A k⟫ / (‖u‖² (μ - λ)) • u` of `A` otherwise. -/
+theorem hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton {A : E →L[𝕜] E}
+    {u : E} {lam μ : 𝕜} (hu : u ≠ 0) (hAu : A u = lam • u)
+    (hμ : Module.End.HasEigenvalue
+      (A.compression (𝕜 ∙ u)ᗮ.subtypeL : Module.End 𝕜 (𝕜 ∙ u)ᗮ) μ) :
+    Module.End.HasEigenvalue (A : Module.End 𝕜 E) μ := by
+  set K := (𝕜 ∙ u)ᗮ
+  obtain ⟨k, hk, hk0⟩ := hμ.exists_hasEigenvector
+  have hQk : K.orthogonalProjectionOnto (A k) = μ • k := by
+    rw [← Module.End.mem_eigenspace_iff.mp hk]
+    simp [K, Submodule.adjoint_subtypeL]
+  -- Splitting `A k` along `𝕜 u ⊕ K`.
+  obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp ((𝕜 ∙ u).starProjection_apply_mem (A k))
+  have hAk : A k = b • u + μ • (k : E) := by
+    conv_lhs => rw [← (𝕜 ∙ u).starProjection_add_starProjection_orthogonal (A k)]
+    rw [← hb, Submodule.starProjection_apply, hQk, Submodule.coe_smul]
+  by_cases hμl : μ = lam
+  · subst hμl
+    exact Module.End.hasEigenvalue_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hAu, hu⟩
+  -- Otherwise `k + b / (μ - λ) • u` is an eigenvector of `A` with eigenvalue `μ`.
+  have hne : μ - lam ≠ 0 := sub_ne_zero.mpr hμl
+  set z : E := (k : E) + (b / (μ - lam)) • u
+  have hAz : A z = μ • z := by
+    simp only [z, map_add, map_smul, hAk, hAu, smul_add, smul_smul]
+    have : b + b / (μ - lam) * lam = μ * (b / (μ - lam)) := by
+      field_simp
+      ring
+    rw [← this, add_smul]
+    abel
+  have hz0 : z ≠ 0 := by
+    intro hz
+    apply hk0
+    have := congrArg K.orthogonalProjectionOnto hz
+    rwa [map_add, map_smul, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self,
+      Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero, smul_zero,
+      add_zero, map_zero] at this
+  exact Module.End.hasEigenvalue_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hAz, hz0⟩
+
 end ContinuousLinearMap
+
+namespace Submodule
+
+/-- If a family of linear isometries `U` commutes with `M : X →L[𝕜] X` and eventually along a
+non-trivial filter `l` shifts every vector of a dense set `s` into `H`, then compressing `M` to `H`
+does not decrease its operator norm: `‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖`. -/
+theorem norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
+    {X ι : Type*} [NormedAddCommGroup X] [InnerProductSpace 𝕜 X]
+    (H : Submodule 𝕜 X) [H.HasOrthogonalProjection] (M : X →L[𝕜] X)
+    {l : Filter ι} [l.NeBot] (U : ι → X →ₗᵢ[𝕜] X) {s : Set X} (hs : Dense s)
+    (hshift : ∀ g ∈ s, ∀ᶠ i in l, U i g ∈ H) (hcomm : ∀ i g, M (U i g) = U i (M g)) :
+    ‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖ := by
+  set T := H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL
+  have hbound : ∀ p : X × X, ‖⟪p.1, M p.2⟫_𝕜‖ ≤ ‖T‖ * ‖p.1‖ * ‖p.2‖ :=
+    (hs.prod hs).induction (fun ⟨f, g⟩ ⟨hf, hg⟩ ↦ by
+      obtain ⟨i, hfi, hgi⟩ := ((hshift f hf).and (hshift g hg)).exists
+      have hinner : ⟪f, M g⟫_𝕜 = ⟪(⟨U i f, hfi⟩ : ↥H), T ⟨U i g, hgi⟩⟫_𝕜 := by
+        rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+          H.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.coe_mk, H.subtypeL_apply,
+          hcomm i g, (U i).inner_map_map]
+      calc ‖⟪f, M g⟫_𝕜‖ ≤ ‖(⟨U i f, hfi⟩ : ↥H)‖ * (‖T‖ * ‖(⟨U i g, hgi⟩ : ↥H)‖) := by
+            rw [hinner]; exact (norm_inner_le_norm _ _).trans (by gcongr; exact T.le_opNorm _)
+        _ = ‖T‖ * ‖f‖ * ‖g‖ := by
+            rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_mk, Submodule.coe_mk,
+              (U i).norm_map, (U i).norm_map]; ring)
+      (isClosed_le (by fun_prop) (by fun_prop))
+  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg T) fun x y hx hy ↦ ?_
+  calc RCLike.re ⟪M x, y⟫_𝕜 ≤ ‖⟪M x, y⟫_𝕜‖ := RCLike.re_le_norm _
+    _ = ‖⟪y, M x⟫_𝕜‖ := norm_inner_symm _ _
+    _ ≤ ‖T‖ := by simpa only [hx, hy, mul_one] using hbound (y, x)
+
+end Submodule

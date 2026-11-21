@@ -61,7 +61,6 @@ Markov exchangeable process, is
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
 Markov exchangeable sequences.
@@ -157,7 +156,7 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
     rw [hfin (t.val + 1) (Nat.succ_lt_succ t.isLt)]
     exact congrArg w (Fin.ext rfl)
   -- The finite path event, read on the reference sequence.
-  rw [prefixLaw_singleton_eq_measure_setOf hX w w' hfin]
+  simp_rw [prefixLaw_singleton_eq_measure_setOf (fun i => hX i.val) w w' hfin, Nat.lt_add_one_iff]
   by_cases hstart : w 0 = a₀
   · -- The initial condition is almost surely automatic, and what is left is an array event.
     exact measure_setOf_forall_le_eq_lintegral_of_start h0 hY hrow hlam w w' hw0 hwc hws hstart

@@ -8,7 +8,9 @@ module
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
 # The number of orbits of a permutation
@@ -48,6 +50,9 @@ permutations of the same type.
   order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
+* `Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one`: if `σ ^ p = 1` for a prime `p`, then
+  `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+  points.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
   orbit more than `σ` — the extra orbit is the fixed point `p`.
@@ -90,6 +95,7 @@ public section
 namespace TauCeti
 
 open Equiv Equiv.Perm
+open scoped Finset
 
 variable {α β : Type*}
 
@@ -121,6 +127,16 @@ theorem orbitCount_eq_one_of_forall_sameCycle [Nonempty α] {σ : Equiv.Perm α}
     ⟨fun q r => Quotient.inductionOn q fun x => Quotient.inductionOn r fun y =>
       Quotient.sound (h x y)⟩
   exact Nat.card_unique
+
+/-- A permutation of a finite type has at most one orbit exactly when any two points lie in the
+same cycle. On a nonempty type this means exactly one orbit, and on the empty type there are
+none. -/
+theorem orbitCount_le_one_iff [Finite α] {σ : Equiv.Perm α} :
+    orbitCount σ ≤ 1 ↔ ∀ x y, σ.SameCycle x y := by
+  rw [orbitCount_def, Finite.card_le_one_iff_subsingleton]
+  refine ⟨fun _ x y ↦ Quotient.exact (Subsingleton.elim (Quotient.mk (SameCycle.setoid σ) x)
+    (Quotient.mk _ y)), fun h ↦ ⟨fun q r ↦ Quotient.inductionOn₂ q r fun x y ↦
+      Quotient.sound (h x y)⟩⟩
 
 /-- If a permutation `σ` with more than one orbit generates, together with a set `S` of
 permutations, a subgroup acting transitively, then some permutation in `S` moves some point to a
@@ -203,18 +219,9 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
 has one copy of each orbit of `τ` over every point of `α`. -/
 theorem orbitCount_prodCongrRight_const (τ : Equiv.Perm β) :
     orbitCount (Equiv.prodCongrRight fun _ : α ↦ τ) = Nat.card α * orbitCount τ := by
-  let f : Equiv.Perm β →* Equiv.Perm (α × β) :=
-    { toFun := fun σ ↦ Equiv.prodCongrRight fun _ ↦ σ
-      map_one' := rfl
-      map_mul' := fun _ _ ↦ rfl }
   have hsc : ∀ x y : α × β, SameCycle (Equiv.prodCongrRight fun _ : α ↦ τ) x y ↔
-      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := by
-    rintro ⟨a, b⟩ ⟨a', b'⟩
-    have hpow (k : ℤ) :
-        (Equiv.prodCongrRight fun _ : α ↦ τ) ^ k = Equiv.prodCongrRight fun _ ↦ τ ^ k :=
-      (map_zpow f τ k).symm
-    simp only [SameCycle, hpow, Equiv.prodCongrRight_apply, Prod.mk.injEq, one_zpow, one_apply]
-    exact ⟨fun ⟨k, ha, hb⟩ ↦ ⟨⟨0, ha⟩, k, hb⟩, fun ⟨⟨_, ha⟩, k, hb⟩ ↦ ⟨k, ha, hb⟩⟩
+      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := fun _ _ ↦
+    (sameCycle_prodCongrRight_iff _).trans (and_congr_left' sameCycle_one.symm)
   rw [orbitCount_def, Nat.card_congr ((Quotient.congr (rb := (SameCycle.setoid 1).prod
     (SameCycle.setoid τ)) (Equiv.refl _) hsc).trans (Setoid.prodQuotientEquiv _ _).symm),
     Nat.card_prod, ← orbitCount_def, ← orbitCount_def, orbitCount_one]
@@ -245,6 +252,22 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
     omega
   rw [h, pow_add, pow_mul]
   simp
+
+/-- If `σ ^ p = 1` for a prime `p`, every orbit of `σ` is a fixed point or has exactly `p` points,
+so `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+points. -/
+theorem _root_.Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one {p : ℕ} [Fact p.Prime]
+    {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
+    p * orbitCount σ = Fintype.card α + (p - 1) * #{x | σ x = x} := by
+  have hfix : #{x | σ x = x} = Fintype.card α - #σ.support := by
+    rw [← count_one_fullCycleType_eq_card_filter, count_one_fullCycleType]
+  have hsum := σ.sum_cycleType
+  rw [cycleType_of_pow_prime_eq_one hσ, Multiset.sum_replicate, smul_eq_mul] at hsum
+  obtain ⟨F, hF⟩ := Nat.exists_eq_add_of_le (Finset.card_le_univ σ.support)
+  obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_lt (Fact.out : p.Prime).pos
+  rw [orbitCount_eq_card_parts_partition, card_parts_partition, hfix, hF, ← hsum]
+  simp only [zero_add, Nat.add_sub_cancel_left, Nat.add_sub_cancel]
+  ring
 
 end Finite
 
@@ -304,7 +327,7 @@ theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Equiv.Perm α}
       apply Quotient.sound
       rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
       obtain ⟨g, rfl⟩ := hab
-      exact (hH g g.2 b).symm
+      exact (hH g g.property b).symm
   have hf : Function.Surjective f := by
     intro q
     induction q using Quotient.inductionOn'

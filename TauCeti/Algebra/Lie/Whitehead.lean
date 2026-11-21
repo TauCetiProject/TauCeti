@@ -79,7 +79,6 @@ namespace LieDerivation.IsKilling
 Lie algebra with nondegenerate Killing form (necessarily finite-dimensional) into a
 finite-dimensional module is inner: it is `x ↦ ⁅x, m⁆` for some `m`. -/
 theorem exists_eq_inner (D : LieDerivation K L M) : ∃ m : M, inner K L M m = D := by
-  have := TauCeti.finite_of_isKilling (R := K) (L := L)
   -- The proper Lie submodule `M × 0` of the module sheared by `D`, into which `L` carries
   -- everything.
   let e := LieDerivation.ShearedModule.ofProd D
@@ -135,7 +134,7 @@ theorem exists_d₁₂_eq (c : twoCocycle K L M) : ∃ f : oneCochain K L M, d�
   ext x y
   have h := congrArg (fun z : S ↦ ((ofProd c).symm (z : ofTwoCocycle c)).2) (e.symm.map_lie x y)
   simp only [LieSubalgebra.coe_bracket, bracket_ofTwoCocycle, Equiv.symm_apply_apply, hfst] at h
-  simp only [d₁₂_apply_coe_apply_apply, LinearMap.neg_apply, hg, h, lie_neg]
+  simp only [twoCochain_val_apply, d₁₂_apply_apply, LinearMap.neg_apply, hg, h, lie_neg]
   abel
 
 /-- **Whitehead's second lemma**, as an equality of submodules: the 2-cocycles of a

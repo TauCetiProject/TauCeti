@@ -123,11 +123,10 @@ theorem bundleDoubleDualEquiv_symm_inCoordinates (a : M) {x : M}
       (fun y ↦ StrongDual 𝕜 (StrongDual 𝕜 (V y))) F V a x a x
       (bundleDoubleDualEquiv (𝕜 := 𝕜) (F := F) V x).symm.toContinuousLinearMap =
         (NormedSpace.inclusionInDoubleDual 𝕜 F).inverse := by
-  have h := ContinuousLinearMap.inCoordinates_inverse (𝕜 := 𝕜)
+  have h := ContinuousLinearMap.inCoordinates_inverse (𝕜 := 𝕜) (F := F) (x₀ := a) (y₀ := a)
     (F' := StrongDual 𝕜 (StrongDual 𝕜 F))
     (W := fun y ↦ StrongDual 𝕜 (StrongDual 𝕜 (V y)))
-    (bundleDoubleDualEquiv (𝕜 := 𝕜) (F := F) V x).toContinuousLinearMap hx
-    (by simpa [hom_trivializationAt_baseSet, Trivial.eq_trivialization] using hx)
+    (bundleDoubleDualEquiv (𝕜 := 𝕜) (F := F) V x).toContinuousLinearMap
   rw [ContinuousLinearMap.inverse_equiv] at h
   simpa only [bundleDoubleDualEquiv_toContinuousLinearMap,
     bundleDoubleDual_inCoordinates V a hx] using h

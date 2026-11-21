@@ -62,7 +62,7 @@ theorem exists_iterate_derivationOfEnd_eq_zero {f : Module.End R M} (hf : IsNilp
     (p : SymmetricAlgebra R M) : ∃ n, (derivationOfEnd R M f)^[n] p = 0 := by
   obtain ⟨n, hn⟩ := hf
   refine (derivationOfEnd R M f).exists_iterate_eq_zero_of_adjoin_eq_top
-    (TauCeti.SymmetricAlgebra.adjoin_range_ι R M) ?_ p
+    (adjoin_range_ι R M) ?_ p
   rintro _ ⟨x, rfl⟩
   exact ⟨n, by rw [iterate_derivationOfEnd_ι, hn, LinearMap.zero_apply, map_zero]⟩
 

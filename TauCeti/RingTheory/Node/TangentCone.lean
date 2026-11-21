@@ -130,7 +130,7 @@ theorem exists_quadratic_relation_of_isUnit_det_hessian
         simpa [show a' * x ^ 2 + b' * x * y + y ^ 2 - x * (a' * x + b' * y) = y ^ 2 by ring]
           using sub_mem hg hx
   refine ⟨π x, π y, π a', π b', hmA,
-    IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span hxm hx2 hg π hπ hker',
+    IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span hx2 hg π hπ hker',
     ?_, ?_, ?_⟩
   · exact IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq hπ
       (hker ▸ (Ideal.span_singleton_le_iff_mem _).2 hf) hne

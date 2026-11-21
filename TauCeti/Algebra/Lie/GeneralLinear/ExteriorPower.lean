@@ -95,17 +95,17 @@ variable {n : Type*} [DecidableEq n] [Fintype n] [LinearOrder n] {N : ℕ}
 
 variable (K) in
 /-- The wedge of the standard basis vectors of `n → K` indexed by a finite set `S` of coordinates,
-an element of the exterior power of degree the size of `S`. The factors are wedged together in the
-order `S` inherits from `n`. -/
+an element of the exterior power of degree the size of `S`: the member indexed by `S` of the
+standard basis `Module.Basis.exteriorPower` of the exterior power. The factors are wedged together
+in the order `S` inherits from `n`. -/
 noncomputable def basisWedge (S : Finset n) (h : S.card = N) : ⋀[K]^N (n → K) :=
-  ιMulti_family K N (Pi.basisFun K n) ⟨S, h⟩
+  (Pi.basisFun K n).exteriorPower N ⟨S, h⟩
 
 omit [DecidableEq n] in
-/-- The wedge of a set of basis vectors is the member of the standard basis of the exterior power
-that the set indexes. -/
+/-- The wedge of a set of basis vectors is the exterior product of the basis vectors it indexes. -/
 theorem basisWedge_eq_ιMulti_family (S : Finset n) (h : S.card = N) :
     basisWedge K S h = ιMulti_family K N (Pi.basisFun K n) ⟨S, h⟩ := by
-  rw [basisWedge]
+  rw [basisWedge, basis_apply]
 
 /-- The wedge of a set of basis vectors, written as an exterior product. -/
 theorem basisWedge_eq_ιMulti (S : Finset n) (h : S.card = N) :
@@ -118,8 +118,8 @@ omit [DecidableEq n] in
 /-- The wedge of a set of basis vectors is nonzero. -/
 theorem basisWedge_ne_zero [Nontrivial K] (S : Finset n) (h : S.card = N) :
     basisWedge K S h ≠ 0 := by
-  rw [basisWedge_eq_ιMulti_family]
-  exact (ιMulti_family_linearIndependent_ofBasis K N (Pi.basisFun K n)).ne_zero _
+  rw [basisWedge]
+  exact Module.Basis.ne_zero _ _
 
 /-- The diagonal matrix unit `Eᵢᵢ` fixes the factors of a wedge of standard basis vectors that lie
 in direction `i` and kills the others, so it scales the wedge by one when `i` is one of its indices
@@ -186,14 +186,16 @@ private theorem mem_firstBasisSet (d n : ℕ) (h : d ≤ n) (k : Fin n) :
 
 /-- The wedge of the first `d` standard basis vectors of `K^n`. -/
 noncomputable def firstBasisWedge (d n : ℕ) (h : d ≤ n) : ⋀[K]^d (Fin n → K) :=
-  ιMulti_family K d (Pi.basisFun K (Fin n)) (firstBasisSet d n h)
+  basisWedge K (firstBasisSet d n h : Finset (Fin n))
+    (Set.powersetCard.card_eq (firstBasisSet d n h))
 
 /-- The first basis wedge written as an exterior product of standard basis vectors. -/
 @[simp]
 theorem firstBasisWedge_eq_ιMulti (d n : ℕ) (h : d ≤ n) :
     firstBasisWedge (K := K) d n h =
       ιMulti K d (fun i => Pi.single (Fin.castLE h i) 1) := by
-  simp only [firstBasisWedge, ιMulti_family, firstBasisSet, Equiv.symm_apply_apply]
+  rw [firstBasisWedge, basisWedge_eq_ιMulti_family]
+  simp only [ιMulti_family, firstBasisSet]
   apply congrArg (ιMulti K d)
   funext i x
   simp [Pi.basisFun_apply, Pi.single_apply]

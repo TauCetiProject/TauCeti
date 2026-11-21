@@ -133,9 +133,10 @@ private theorem isPathConnected_setOf_sum_mul_self_eq_one {n : ℕ} (hn : 2 ≤ 
 form `Q` on a complex vector space of dimension at least two, every level set `{v | Q v = c}` is
 path-connected. -/
 theorem isPathConnected_setOf_apply_eq {V : Type*} [AddCommGroup V] [Module ℂ V]
-    [FiniteDimensional ℂ V] [TopologicalSpace V] [IsModuleTopology ℂ V]
+    [TopologicalSpace V] [IsModuleTopology ℂ V]
     {Q : QuadraticForm ℂ V} (hQ : Q.Nondegenerate) (hV : 2 ≤ finrank ℂ V) (c : ℂ) :
     IsPathConnected {v | Q v = c} := by
+  have : FiniteDimensional ℂ V := Module.finite_of_finrank_pos (by omega)
   have _ := IsModuleTopology.toContinuousAdd ℂ V
   rcases eq_or_ne c 0 with rfl | hc
   · -- The isotropic cone is joined to the origin along rays.

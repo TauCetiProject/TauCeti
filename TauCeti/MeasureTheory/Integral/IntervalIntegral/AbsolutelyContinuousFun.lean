@@ -146,6 +146,22 @@ theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
     IntegrableOn (deriv γ) (Ioc a b) :=
   hγ.intervalIntegrable_deriv_of_finiteDimensional.1
 
+/-- If an interval-integrable function `s` approximates the velocity of `γ` in `L¹` on `(a, b]`
+to within `ε`, then the endpoint defect `γ b - γ a - ∫ s` has norm at most `ε`. For `a < b`, this
+says that the average correction `(γ b - γ a - ∫ s) / (b - a)` to `s` has norm at most
+`ε / (b - a)`. -/
+theorem norm_sub_integral_le [FiniteDimensional ℝ F]
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) {s : ℝ → F}
+    (hsi : IntervalIntegrable s volume a b) {ε : ℝ}
+    (hg : (∫ t in Ioc a b, ‖s t - deriv γ t‖) ≤ ε) :
+    ‖γ b - γ a - ∫ t in a..b, s t‖ ≤ ε := by
+  have hγi := hγ.intervalIntegrable_deriv_of_finiteDimensional
+  have hEq : γ b - γ a - ∫ t in a..b, s t = ∫ t in a..b, deriv γ t - s t := by
+    rw [intervalIntegral.integral_sub hγi hsi, hγ.integral_deriv_eq_sub_of_finiteDimensional]
+  rw [hEq]
+  apply (intervalIntegral.norm_integral_le_integral_norm hab).trans
+  simpa only [intervalIntegral.integral_of_le hab, norm_sub_rev] using hg
+
 end AbsolutelyContinuousOnInterval
 
 namespace AbsolutelyContinuousOnInterval
@@ -260,22 +276,32 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
 /-- A continuous curve with an integrable derivative outside a countable exceptional set is
 absolutely continuous on its parameter interval. -/
 theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {f f' : ℝ → F} {a b : ℝ} {s : Set ℝ} (hf : ContinuousOn f (uIcc a b))
     (hs : s.Countable)
     (hd : ∀ t ∈ Ioo (min a b) (max a b) \ s, HasDerivAt f (f' t) t)
     (hi : IntervalIntegrable f' volume a b) : AbsolutelyContinuousOnInterval f a b := by
+  -- Embed `F` isometrically in its completion, where the fundamental theorem of calculus holds.
+  let L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  have hL : Isometry L := (UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := F)).isometry
+  rw [← hL.absolutelyContinuousOnInterval_comp_iff]
+  have hf : ContinuousOn (L ∘ f) (uIcc a b) := L.continuous.comp_continuousOn hf
+  have hd : ∀ t ∈ Ioo (min a b) (max a b) \ s, HasDerivAt (L ∘ f) (L (f' t)) t :=
+    fun t ht ↦ L.hasFDerivAt.comp_hasDerivAt t (hd t ht)
+  have hi : IntervalIntegrable (L ∘ f') volume a b := by
+    rw [intervalIntegrable_iff] at hi ⊢
+    exact L.integrable_comp hi
   have hbase : min a b ∈ uIcc a b := ⟨le_rfl, min_le_max⟩
   have hI := hi.absolutelyContinuousOnInterval_intervalIntegral' hbase
-  have hc : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ f (min a b)) a b :=
-    (LipschitzWith.const (f (min a b))).lipschitzOnWith.absolutelyContinuousOnInterval
+  have hc : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ L (f (min a b))) a b :=
+    (LipschitzWith.const (L (f (min a b)))).lipschitzOnWith.absolutelyContinuousOnInterval
   apply (hc.add hI).congr
   intro t ht
   have hsub : uIcc (min a b) t ⊆ uIcc a b := uIcc_subset_uIcc hbase ht
-  have hFTC := integral_eq_of_hasDerivAt_off_countable f f' hs (hf.mono hsub)
+  have hFTC := integral_eq_of_hasDerivAt_off_countable (L ∘ f) (L ∘ f') hs (hf.mono hsub)
     (fun u hu ↦ hd u ⟨⟨by simpa only [min_eq_left ht.1] using hu.1.1,
       (by simpa only [max_eq_right ht.1] using hu.1.2 : u < t).trans_le ht.2⟩, hu.2⟩)
     (hi.mono_set hsub)
-  change f (min a b) + (∫ u in min a b..t, f' u) = f t
+  simp only [Pi.add_apply, Function.comp_apply] at hFTC ⊢
   rw [hFTC]
   abel

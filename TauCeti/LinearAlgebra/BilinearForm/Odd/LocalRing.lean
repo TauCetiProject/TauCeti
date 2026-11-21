@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.BilinearForm.Prod
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Odd unimodular forms over local rings
@@ -27,6 +31,8 @@ Induction can therefore continue without assuming that two is invertible.
   least two represents units on two orthogonal vectors.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self`: an odd
   unimodular form has a unit-diagonal orthogonal basis.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_prod_mul`: adding a unit line to a
+  unimodular symmetric form gives a unit-diagonal orthogonal basis.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_orthogonal_span_singleton`: so does
   the orthogonal complement of a unit vector, once that complement represents a unit.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det`: when `2` is a unit,
@@ -65,7 +71,7 @@ theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
   by_cases hTodd : ∃ y : B.orthogonal (R ∙ x), IsUnit (B.restrict _ y y)
   · obtain ⟨y, hy⟩ := hTodd
     refine ⟨x, y, hx, hy, ?_⟩
-    exact y.2 x (Submodule.mem_span_singleton_self x)
+    exact y.property x (Submodule.mem_span_singleton_self x)
   · have hdiag (y : B.orthogonal (R ∙ x)) :
         ¬ IsUnit (B.restrict _ y y) := fun hy ↦ hTodd ⟨y, hy⟩
     obtain ⟨i, -, hi⟩ :=
@@ -73,8 +79,8 @@ theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
         (B.restrict _) t (hdiag (t 0)) hTdet
     let e : M := t 0
     let f : M := t i
-    have hxe : B x e = 0 := (t 0).2 x (Submodule.mem_span_singleton_self x)
-    have hxf : B x f = 0 := (t i).2 x (Submodule.mem_span_singleton_self x)
+    have hxe : B x e = 0 := (t 0).property x (Submodule.mem_span_singleton_self x)
+    have hxf : B x f = 0 := (t i).property x (Submodule.mem_span_singleton_self x)
     have hee : ¬ IsUnit (B e e) := by
       simpa only [e, LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
         hdiag (t 0)
@@ -143,6 +149,22 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self (hB : 
         hB.isRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons hx hd hdu
       exact ⟨c, hc, hcu⟩
 
+/-- Adding the rank-one form `⟨1⟩` to a unimodular symmetric form over a local ring gives a form
+with a unit diagonal orthogonal basis. -/
+theorem IsSymm.exists_orthogonal_basis_isUnit_prod_mul {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (hB : B.IsSymm) (b : Basis ι R M) (hdet : IsUnit (B.toMatrix b).det) :
+    ∃ c : Basis (Fin (Fintype.card (ι ⊕ Unit))) R (M × R),
+      (B.prod (LinearMap.mul R R)).iIsOrtho c ∧
+        ∀ i, IsUnit ((B.prod (LinearMap.mul R R)) (c i) (c i)) := by
+  let D := B.prod (LinearMap.mul R R)
+  let e := (b.prod (Basis.singleton Unit R)).reindex (Fintype.equivFin (ι ⊕ Unit))
+  have hDs : D.IsSymm := isSymm_prod_iff.2
+    ⟨hB, ⟨fun x y ↦ by rw [LinearMap.mul_apply', LinearMap.mul_apply', mul_comm]⟩⟩
+  have hedet : (D.toMatrix e).det = (B.toMatrix b).det := by
+    rw [det_toMatrix_reindex, det_toMatrix_prod_mul]
+  exact hDs.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e
+    (hedet ▸ hdet) ⟨(0, 1), by simp [D, prod_apply]⟩
+
 /-- **The orthogonal complement of a unit vector in an odd unimodular form.** Let `B` be a
 symmetric form whose Gram determinant in a basis of size `n + 1` is a unit over a local ring. If
 `x` has unit self-pairing and is orthogonal to a vector `y` with unit self-pairing, then the
@@ -200,7 +222,7 @@ theorem IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det (hB : B.IsSymm
     simpa only [hw] using hc.toMatrix_eq_diagonal
   refine ⟨w, ?_, (b.toMatrix c).det, ?_⟩
   · simpa only [QuadraticMap.weightedSumSquares_units, hw] using
-      hB.equivalent_weightedSumSquares_of_iIsOrtho c hc
+      hc.equivalent_weightedSumSquares
   · rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
 
 end LinearMap.BilinForm

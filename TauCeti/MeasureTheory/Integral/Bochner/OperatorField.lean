@@ -12,9 +12,15 @@ import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 /-!
 # Convergence of integrals of bounded operator fields
 
-Bounded operator fields converging almost everywhere preserve convergence of integrated
-pairings with velocities converging in `L¹`. Separating the changes of field and velocity
-avoids a pointwise bound on the approximating velocities.
+Pairing integrable functions that converge in `L¹` with a fixed bounded measurable operator
+field gives convergence of the Bochner integrals of the pairings, along an arbitrary filter; the
+case of right multiplication by a fixed bounded measurable function in a normed ring follows.
+Both rest on the fact that pairing integrable functions tending to zero in `L¹` with eventually
+uniformly bounded operator fields gives integrals tending to zero. Pairing `L¹`-convergent
+integrable functions with eventually bounded operator fields that converge almost everywhere
+likewise gives convergence of the Bochner integrals of the pairings, along a countably generated
+filter. Separating the changes of field and function avoids a pointwise bound on the
+approximating functions, and no bound or measurability is assumed of the limit field.
 -/
 
 public section
@@ -24,92 +30,112 @@ open scoped Topology
 
 namespace MeasureTheory
 
-variable {α E F : Type*} [MeasurableSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α}
+variable {α ι 𝕜 E F : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedSpace ℝ F] {μ : Measure α} {l : Filter ι} [l.IsCountablyGenerated]
 
-/-- Bounded operator fields converging almost everywhere can be paired with velocities
-converging in `L¹`. This gives convergence of the actual Bochner integrals. -/
-theorem tendsto_integral_clm_apply_of_integral_norm_sub
-    {ωn : ℕ → α → E →L[ℝ] F} {ω : α → E →L[ℝ] F}
-    {vn : ℕ → α → E} {v : α → E} {C : ℝ}
-    (hωn : ∀ n, AEStronglyMeasurable (ωn n) μ)
-    (hω : AEStronglyMeasurable ω μ)
-    (hboundn : ∀ n, ∀ᵐ x ∂μ, ‖ωn n x‖ ≤ C) (hbound : ∀ᵐ x ∂μ, ‖ω x‖ ≤ C)
-    (hωconv : ∀ᵐ x ∂μ, Tendsto (fun n ↦ ωn n x) atTop (nhds (ω x)))
-    (hvn : ∀ n, Integrable (vn n) μ) (hv : Integrable v μ)
-    (hvconv : Tendsto (fun n ↦ ∫ x, ‖vn n x - v x‖ ∂μ) atTop (nhds 0)) :
-    Tendsto (fun n ↦ ∫ x, ωn n x (vn n x) ∂μ) atTop
-      (nhds (∫ x, ω x (v x) ∂μ)) := by
-  let e : ℕ → α → F := fun n x ↦ (ωn n x - ω x) (v x)
-  let d : ℕ → α → F := fun n x ↦ ωn n x (vn n x - v x)
-  have heint (n) : Integrable (e n) μ := by
-    apply (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left
-      (C + C) ((hωn n).sub hω) _ hv
-    filter_upwards [hboundn n, hbound] with x hx hy
-    exact norm_sub_le _ _ |>.trans (add_le_add hx hy)
-  have hdint (n) : Integrable (d n) μ :=
-    (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left
-      C (hωn n) (hboundn n) ((hvn n).sub hv)
-  have he : Tendsto (fun n ↦ ∫ x, e n x ∂μ) atTop (nhds 0) := by
-    have ht := tendsto_integral_filter_of_dominated_convergence
-      (μ := μ) (l := atTop) (F := e) (f := fun _ ↦ (0 : F))
-      (fun x ↦ (C + C) * ‖v x‖)
-      (Eventually.of_forall fun n ↦ (heint n).1) ?_
-      (hv.norm.const_mul (C + C)) ?_
-    · simpa only [integral_zero] using ht
-    · apply Eventually.of_forall
-      intro n
-      filter_upwards [hboundn n, hbound] with x hx hy
-      exact ((ωn n x - ω x).le_opNorm (v x)).trans
-        (mul_le_mul_of_nonneg_right ((norm_sub_le _ _).trans (add_le_add hx hy))
-          (norm_nonneg _))
-    · filter_upwards [hωconv] with x hx
-      have hxzero : Tendsto (fun n ↦ ωn n x - ω x) atTop (nhds 0) := by
-        simpa only [sub_self] using hx.sub (tendsto_const_nhds (x := ω x))
-      convert ((ContinuousLinearMap.apply ℝ F (v x)).continuous.tendsto 0).comp hxzero using 1
-      · ext n
-        exact (ContinuousLinearMap.apply_apply (v x) (ωn n x - ω x)).symm
-      · simp
-  have hd : Tendsto (fun n ↦ ∫ x, d n x ∂μ) atTop (nhds 0) := by
-    apply squeeze_zero_norm (fun n ↦ ?_) (by simpa using hvconv.const_mul C)
-    calc
-      ‖∫ x, d n x ∂μ‖ ≤ ∫ x, C * ‖vn n x - v x‖ ∂μ :=
-        norm_integral_le_of_norm_le ((hvn n |>.sub hv).norm.const_mul C) (by
-          filter_upwards [hboundn n] with x hx
-          exact ((ωn n x).le_opNorm _).trans
-            (mul_le_mul_of_nonneg_right hx (norm_nonneg _)))
-      _ = C * ∫ x, ‖vn n x - v x‖ ∂μ := integral_const_mul _ _
-  have hpair : Integrable (fun x ↦ ω x (v x)) μ :=
-    (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left C hω hbound hv
-  have heq (n) : (∫ x, ωn n x (vn n x) ∂μ) =
-      (∫ x, ω x (v x) ∂μ) + (∫ x, e n x ∂μ) + ∫ x, d n x ∂μ := by
-    rw [← integral_add hpair (heint n),
-      ← integral_add (f := fun x ↦ ω x (v x) + e n x)
-        (hpair.add (heint n)) (hdint n)]
-    apply integral_congr_ae
-    filter_upwards with x
-    simp only [e, d, sub_apply, map_sub]
-    abel
-  simpa only [heq, add_zero] using (tendsto_const_nhds.add he).add hd
+omit [l.IsCountablyGenerated] in
+/-- Pairing integrable functions tending to zero in `L¹` with operator fields that are eventually
+bounded almost everywhere by a common constant gives Bochner integrals of the pairings tending to
+zero, along any filter. No measurability of the operator fields is needed. -/
+theorem tendsto_integral_clm_apply_of_integral_norm {ωn : ι → α → E →L[𝕜] F}
+    {un : ι → α → E} {C : ℝ} (hboundn : ∀ᶠ n in l, ∀ᵐ x ∂μ, ‖ωn n x‖ ≤ C)
+    (hun : ∀ᶠ n in l, Integrable (un n) μ)
+    (hconv : Tendsto (fun n ↦ ∫ x, ‖un n x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, ωn n x (un n x) ∂μ) l (𝓝 0) := by
+  refine squeeze_zero_norm' ?_ (by simpa using hconv.const_mul C)
+  filter_upwards [hboundn, hun] with n hb hi
+  calc
+    ‖∫ x, ωn n x (un n x) ∂μ‖ ≤ ∫ x, C * ‖un n x‖ ∂μ :=
+      norm_integral_le_of_norm_le (hi.norm.const_mul C) (by
+        filter_upwards [hb] with x hx
+        exact (ωn n x).le_of_opNorm_le hx _)
+    _ = C * ∫ x, ‖un n x‖ ∂μ := integral_const_mul _ _
 
-/-- Multiplying `L¹`-convergent real functions by a fixed bounded measurable function
-preserves convergence of their actual integrals. -/
-theorem tendsto_integral_mul_of_integral_abs_sub
-    {wn : ℕ → α → ℝ} {w R : α → ℝ} {C : ℝ}
-    (hwn : ∀ n, Integrable (wn n) μ) (hw : Integrable w μ)
-    (hR : AEStronglyMeasurable R μ) (hbound : ∀ᵐ x ∂μ, |R x| ≤ C)
-    (hconv : Tendsto (fun n ↦ ∫ x, |wn n x - w x| ∂μ) atTop (nhds 0)) :
-    Tendsto (fun n ↦ ∫ x, wn n x * R x ∂μ) atTop (nhds (∫ x, w x * R x ∂μ)) := by
-  let ω : α → ℝ →L[ℝ] ℝ := fun x ↦ R x • ContinuousLinearMap.id ℝ ℝ
-  have hω : AEStronglyMeasurable ω μ := hR.smul_const _
-  have hb : ∀ᵐ x ∂μ, ‖ω x‖ ≤ C * ‖ContinuousLinearMap.id ℝ ℝ‖ := by
-    filter_upwards [hbound] with x hx
-    simpa only [ω, norm_smul, Real.norm_eq_abs] using
-      mul_le_mul_of_nonneg_right hx (norm_nonneg (ContinuousLinearMap.id ℝ ℝ))
-  have ht := tendsto_integral_clm_apply_of_integral_norm_sub
-    (fun _ ↦ hω) hω (fun _ ↦ hb) hb
-    (Eventually.of_forall fun _ ↦ tendsto_const_nhds) hwn hw
-    (by simpa only [Real.norm_eq_abs] using hconv)
-  simpa only [ω, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_comm] using ht
+omit [l.IsCountablyGenerated] in
+/-- Pairing integrable functions converging in `L¹` with a fixed bounded measurable operator
+field gives convergence of the Bochner integrals of the pairings, along any filter. -/
+theorem tendsto_integral_clm_apply_of_integral_norm_sub {ω : α → E →L[𝕜] F}
+    {vn : ι → α → E} {v : α → E} {C : ℝ}
+    (hω : AEStronglyMeasurable ω μ) (hbound : ∀ᵐ x ∂μ, ‖ω x‖ ≤ C)
+    (hvn : ∀ᶠ n in l, Integrable (vn n) μ) (hv : Integrable v μ)
+    (hvconv : Tendsto (fun n ↦ ∫ x, ‖vn n x - v x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, ω x (vn n x) ∂μ) l (𝓝 (∫ x, ω x (v x) ∂μ)) := by
+  have hint {u : α → E} (hu : Integrable u μ) : Integrable (fun x ↦ ω x (u x)) μ :=
+    (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).integrable_of_bilin_of_bdd_left C hω hbound hu
+  rw [← tendsto_sub_nhds_zero_iff]
+  refine (tendsto_integral_clm_apply_of_integral_norm (ωn := fun _ ↦ ω)
+    (un := fun n x ↦ vn n x - v x) (.of_forall fun _ ↦ hbound)
+    (hvn.mono fun _ hn ↦ hn.sub hv) hvconv).congr' ?_
+  filter_upwards [hvn] with n hn
+  simp only [map_sub, integral_sub (hint hn) (hint hv)]
+
+/-- Eventually bounded operator fields converging almost everywhere, applied to a fixed
+integrable vector field, have convergent integrals. -/
+theorem tendsto_integral_clm_apply_of_ae_tendsto
+    {ωn : ι → α → E →L[𝕜] F} {ω : α → E →L[𝕜] F} {v : α → E} {C : ℝ}
+    (hωn : ∀ᶠ n in l, AEStronglyMeasurable (ωn n) μ)
+    (hboundn : ∀ᶠ n in l, ∀ᵐ x ∂μ, ‖ωn n x‖ ≤ C)
+    (hωconv : ∀ᵐ x ∂μ, Tendsto (fun n ↦ ωn n x) l (𝓝 (ω x)))
+    (hv : Integrable v μ) :
+    Tendsto (fun n ↦ ∫ x, ωn n x (v x) ∂μ) l (𝓝 (∫ x, ω x (v x) ∂μ)) := by
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ C * ‖v x‖) ?_ ?_
+    (hv.norm.const_mul C) ?_
+  · filter_upwards [hωn] with n hn
+    exact (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).aestronglyMeasurable_comp₂ hn hv.1
+  · filter_upwards [hboundn] with n hn
+    filter_upwards [hn] with x hx
+    exact (ωn n x).le_of_opNorm_le hx (v x)
+  · filter_upwards [hωconv] with x hx
+    exact ((continuous_eval_const (v x)).tendsto (ω x)).comp hx
+
+/-- Pairing integrable functions converging in `L¹` with eventually bounded operator fields
+converging almost everywhere gives convergence of the Bochner integrals of the pairings, along a
+countably generated filter. -/
+theorem tendsto_integral_clm_apply_of_ae_tendsto_of_integral_norm_sub
+    {ωn : ι → α → E →L[𝕜] F} {ω : α → E →L[𝕜] F}
+    {vn : ι → α → E} {v : α → E} {C : ℝ}
+    (hωn : ∀ᶠ n in l, AEStronglyMeasurable (ωn n) μ)
+    (hboundn : ∀ᶠ n in l, ∀ᵐ x ∂μ, ‖ωn n x‖ ≤ C)
+    (hωconv : ∀ᵐ x ∂μ, Tendsto (fun n ↦ ωn n x) l (𝓝 (ω x)))
+    (hvn : ∀ᶠ n in l, Integrable (vn n) μ) (hv : Integrable v μ)
+    (hvconv : Tendsto (fun n ↦ ∫ x, ‖vn n x - v x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, ωn n x (vn n x) ∂μ) l (𝓝 (∫ x, ω x (v x) ∂μ)) := by
+  have hd := tendsto_integral_clm_apply_of_integral_norm (un := fun n x ↦ vn n x - v x)
+    hboundn (hvn.mono fun _ hn ↦ hn.sub hv) hvconv
+  have ht := (tendsto_integral_clm_apply_of_ae_tendsto hωn hboundn hωconv hv).add hd
+  rw [add_zero] at ht
+  refine ht.congr' ?_
+  filter_upwards [hωn, hboundn, hvn] with n hm hb hi
+  have hint {u : α → E} (hu : Integrable u μ) : Integrable (fun x ↦ ωn n x (u x)) μ :=
+    (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).integrable_of_bilin_of_bdd_left C hm hb hu
+  simpa using (integral_add (hint hv) (hint (hi.sub hv))).symm
+
+omit [l.IsCountablyGenerated] in
+/-- Multiplying integrable functions converging in `L¹` on the right by a fixed bounded
+measurable function gives convergence of the Bochner integrals of the products, along any
+filter. -/
+theorem tendsto_integral_mul_of_integral_norm_sub {A : Type*} [NonUnitalNormedRing A]
+    [NormedSpace ℝ A] {wn : ι → α → A} {w R : α → A} {C : ℝ}
+    (hwn : ∀ᶠ n in l, Integrable (wn n) μ) (hw : Integrable w μ)
+    (hR : AEStronglyMeasurable R μ) (hbound : ∀ᵐ x ∂μ, ‖R x‖ ≤ C)
+    (hconv : Tendsto (fun n ↦ ∫ x, ‖wn n x - w x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, wn n x * R x ∂μ) l (𝓝 (∫ x, w x * R x ∂μ)) := by
+  -- Multiplication is additive and continuous in each argument, hence automatically
+  -- `ℝ`-bilinear; this makes right multiplication by `R x` a continuous `ℝ`-linear map.
+  have : IsScalarTower ℝ A A := ⟨fun c u r ↦ by
+    simpa only [AddMonoidHom.mulRight_apply, smul_eq_mul] using
+      map_real_smul (AddMonoidHom.mulRight r) (continuous_mul_const r) c u⟩
+  have : SMulCommClass ℝ A A := ⟨fun c u r ↦ by
+    simpa only [AddMonoidHom.coe_mulLeft, smul_eq_mul] using
+      (map_real_smul (AddMonoidHom.mulLeft u) (continuous_const_mul u) c r).symm⟩
+  have hnorm (r : A) : ‖(ContinuousLinearMap.mul ℝ A).flip r‖ ≤ ‖r‖ :=
+    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg r) fun u ↦ by
+      rw [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply', mul_comm ‖r‖]
+      exact norm_mul_le u r
+  simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] using
+    tendsto_integral_clm_apply_of_integral_norm_sub
+      ((ContinuousLinearMap.mul ℝ A).flip.continuous.comp_aestronglyMeasurable hR)
+      (hbound.mono fun x hx ↦ (hnorm (R x)).trans hx) hwn hw hconv
 
 end MeasureTheory

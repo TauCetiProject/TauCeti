@@ -7,13 +7,14 @@ module
 
 public import Mathlib.Order.CompleteLattice.Basic
 public import Mathlib.Algebra.Order.Ring.Int
+public import Mathlib.Data.Finset.Range
 
 import Mathlib.Data.Fin.Basic
 
 /-!
-# Suprema in complete lattices
+# Suprema and infima in complete lattices
 
-This file adds supremum identities for complete lattices that are not in Mathlib.
+This file adds supremum and infimum identities for complete lattices that are not in Mathlib.
 
 ## Main declarations
 
@@ -26,6 +27,8 @@ This file adds supremum identities for complete lattices that are not in Mathlib
   over `k ≤ m - n` into one over `i ∈ [n, m]`.
 * `TauCeti.biSup_Ici_eq_biSup_Icc`: a supremum over `i ≥ k` of a family vanishing above `m` is
   the supremum over `i ∈ [k, m]`.
+* `TauCeti.iInf_mem_range_succ_eq_iInf`: for a family with `S j₀ ≤ S j` for all `j ≥ j₀`, the
+  infimum of the first `j₀ + 1` members is the infimum of all members.
 -/
 
 public section
@@ -76,5 +79,14 @@ theorem biSup_Ici_eq_biSup_Icc {ι α : Type*} [LinearOrder ι] [CompleteLattice
   · exact le_biSup f ⟨hi, him⟩
   · rw [hf i him]
     exact bot_le
+
+/-- If `S j₀ ≤ S j` for all `j ≥ j₀`, then the infimum of the first `j₀ + 1` members of the family
+`S` is the infimum of all members. -/
+theorem iInf_mem_range_succ_eq_iInf {α : Type*} [CompleteLattice α] (S : ℕ → α) (j₀ : ℕ)
+    (hS : ∀ j, j₀ ≤ j → S j₀ ≤ S j) : ⨅ j ∈ Finset.range (j₀ + 1), S j = ⨅ j, S j := by
+  refine le_antisymm (le_iInf fun j ↦ ?_) (le_iInf₂ fun j _ ↦ iInf_le S j)
+  rcases le_total j j₀ with h | h
+  · exact iInf₂_le j (Finset.mem_range.2 (by omega))
+  · exact (iInf₂_le j₀ (Finset.mem_range.2 (by omega))).trans (hS j h)
 
 end TauCeti

@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.Algebra.SMul
-public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import Mathlib.Geometry.Manifold.Notation
 
 /-!
 # Smooth scalar rescaling of vector bundles
@@ -20,7 +18,9 @@ of the total space, with inverse given by reciprocal multiplication. This constr
 the zero section and preserves the projection, without a choice of global trivialization.
 More generally, over a `𝕜`-charted base, scalar multiplication by `𝕜'`-valued maps along a normed
 field extension `𝕜 ⊆ 𝕜'` preserves `C^n` regularity and equips `C^n` sections with compatible
-`Module 𝕜'` and `IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`).
+`Module 𝕜'` and `IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`);
+multiplication by a constant of `𝕜'` also preserves differentiability of sections
+(`MDifferentiableAt.const_smul_section`).
 
 For normal bundles, positive rescaling converts unit-radius fibre coordinates to a radius
 varying over the submanifold. It is the rescaling step in the variable-radius tubular
@@ -52,19 +52,18 @@ theorem ContMDiffWithinAt.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpac
     {s : Set M} {x : M} (ha : ContMDiffWithinAt J 𝓘(𝕜, 𝕜') n a s x)
     (hg : ContMDiffWithinAt J (I.prod 𝓘(𝕜, F)) n g s x) :
     ContMDiffWithinAt J (I.prod 𝓘(𝕜, F)) n
-      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) s x := by
-  obtain ⟨hb, hv⟩ := Bundle.contMDiffWithinAt_totalSpace.mp hg
-  refine Bundle.contMDiffWithinAt_totalSpace.mpr ⟨hb, ?_⟩
+      (fun y => (⟨(g y).proj, a y • (g y).snd⟩ : TotalSpace F V)) s x := by
+  obtain ⟨hb, hv⟩ := Bundle.contMDiffWithinAt_totalSpace_iff.mp hg
+  refine Bundle.contMDiffWithinAt_totalSpace_iff.mpr ⟨hb, ?_⟩
   let e := trivializationAt F V (g x).proj
   have he : ∀ᶠ y in 𝓝[s] x, (g y).proj ∈ e.baseSet :=
     hb.continuousWithinAt.preimage_mem_nhdsWithin
       (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V (g x).proj))
-  refine ((contDiff_smul (𝕜 := 𝕜) (𝕜' := 𝕜') (F := F) (n := n)).comp_contMDiffWithinAt
-    (ha.prodMk_space hv)).congr_of_eventuallyEq ?_ ?_
+  refine (contDiff_smul.comp_contMDiffWithinAt (ha.prodMk_space hv)).congr_of_eventuallyEq ?_ ?_
   · filter_upwards [he] with y hy
-    exact (e.linear 𝕜' hy).map_smul (a y) (g y).2
+    exact (e.linear 𝕜' hy).map_smul (a y) (g y).snd
   · exact (e.linear 𝕜' (mem_baseSet_trivializationAt F V (g x).proj)).map_smul
-      (a x) (g x).2
+      (a x) (g x).snd
 
 /-- Multiplying a bundle-valued map by a scalar-valued map preserves `C^n` regularity at
 a point, with the base point of the vector allowed to vary. -/
@@ -72,26 +71,35 @@ theorem ContMDiffAt.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
     (ha : ContMDiffAt J 𝓘(𝕜, 𝕜') n a x)
     (hg : ContMDiffAt J (I.prod 𝓘(𝕜, F)) n g x) :
     ContMDiffAt J (I.prod 𝓘(𝕜, F)) n
-      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) x := by
-  rw [← contMDiffWithinAt_univ]
-  exact ha.contMDiffWithinAt.smul_totalSpace hg.contMDiffWithinAt
+      (fun y => (⟨(g y).proj, a y • (g y).snd⟩ : TotalSpace F V)) x :=
+  contMDiffWithinAt_univ.mp (ha.contMDiffWithinAt.smul_totalSpace hg.contMDiffWithinAt)
 
 /-- Multiplying a bundle-valued map by a scalar-valued map preserves `C^n` regularity
 on a set. -/
 theorem ContMDiffOn.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V} {s : Set M}
     (ha : ContMDiffOn J 𝓘(𝕜, 𝕜') n a s) (hg : ContMDiffOn J (I.prod 𝓘(𝕜, F)) n g s) :
     ContMDiffOn J (I.prod 𝓘(𝕜, F)) n
-      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) s :=
+      (fun y => (⟨(g y).proj, a y • (g y).snd⟩ : TotalSpace F V)) s :=
   fun x hx => (ha x hx).smul_totalSpace (hg x hx)
 
 /-- Multiplying a bundle-valued map by a scalar-valued map preserves `C^n` regularity. -/
 theorem ContMDiff.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
     (ha : ContMDiff J 𝓘(𝕜, 𝕜') n a) (hg : ContMDiff J (I.prod 𝓘(𝕜, F)) n g) :
     ContMDiff J (I.prod 𝓘(𝕜, F)) n
-      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) := by
-  intro x
-  rw [← contMDiffWithinAt_univ]
-  exact (ha x).contMDiffWithinAt.smul_totalSpace (hg x).contMDiffWithinAt
+      (fun y => (⟨(g y).proj, a y • (g y).snd⟩ : TotalSpace F V)) :=
+  fun x => (ha x).smul_totalSpace (hg x)
+
+/-- Multiplying a section of a `𝕜'`-linear vector bundle by a constant of `𝕜'` preserves
+differentiability at a point, where differentiability is taken over `𝕜`. -/
+theorem MDifferentiableAt.const_smul_section {σ : Π b, V b} {x : B} (hσ : MDiffAt (T% σ) x)
+    (c : 𝕜') : MDiffAt (T% (c • σ)) x := by
+  rw [mdifferentiableAt_section] at hσ ⊢
+  set e := trivializationAt F V x
+  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F V x
+  let L : F →L[𝕜] F := c • ContinuousLinearMap.id 𝕜 F
+  refine (L.mdifferentiableAt.comp x hσ).congr_of_eventuallyEq ?_
+  filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
+  exact (e.linear 𝕜' hy).map_smul c (σ y)
 
 namespace TauCeti
 
@@ -100,8 +108,8 @@ diffeomorphism of the total space. Its inverse multiplies by the reciprocal scal
 def vectorBundleScalarDiffeomorph (a : B → 𝕜') (ha : ContMDiff I 𝓘(𝕜, 𝕜') n a)
     (ha0 : ∀ b, a b ≠ 0) :
     TotalSpace F V ≃ₘ^n⟮I.prod 𝓘(𝕜, F), I.prod 𝓘(𝕜, F)⟯ TotalSpace F V where
-  toFun p := ⟨p.proj, a p.proj • p.2⟩
-  invFun p := ⟨p.proj, (a p.proj)⁻¹ • p.2⟩
+  toFun p := ⟨p.proj, a p.proj • p.snd⟩
+  invFun p := ⟨p.proj, (a p.proj)⁻¹ • p.snd⟩
   left_inv p := by cases p; simp [smul_smul, ha0]
   right_inv p := by cases p; simp [smul_smul, ha0]
   contMDiff_toFun := (ha.comp (Bundle.contMDiff_proj V)).smul_totalSpace contMDiff_id
@@ -113,7 +121,7 @@ def vectorBundleScalarDiffeomorph (a : B → 𝕜') (ha : ContMDiff I 𝓘(𝕜,
 @[simp]
 theorem vectorBundleScalarDiffeomorph_apply (a : B → 𝕜') (ha : ContMDiff I 𝓘(𝕜, 𝕜') n a)
     (ha0 : ∀ b, a b ≠ 0) (p : TotalSpace F V) :
-    vectorBundleScalarDiffeomorph a ha ha0 p = ⟨p.proj, a p.proj • p.2⟩ := (rfl)
+    vectorBundleScalarDiffeomorph a ha ha0 p = ⟨p.proj, a p.proj • p.snd⟩ := (rfl)
 
 /-- Rescaling by the constant one function is the identity diffeomorphism. -/
 @[simp]
@@ -146,8 +154,8 @@ theorem vectorBundleScalarDiffeomorph_symm (a : B → 𝕜')
       vectorBundleScalarDiffeomorph (fun b => (a b)⁻¹)
         (ContMDiff.congr (fun b => (contDiffAt_inv 𝕜 (ha0 b)).comp_contMDiffAt (ha b))
           fun _ => rfl)
-        (fun b => inv_ne_zero (ha0 b)) := by
-  exact Diffeomorph.ext fun _ => rfl
+        (fun b => inv_ne_zero (ha0 b)) :=
+  Diffeomorph.ext fun _ => rfl
 
 section Norm
 
@@ -158,8 +166,8 @@ are multiplied by the norms of the scalars. No positivity assumption on the old 
 theorem vectorBundleScalarDiffeomorph_image_setOf_norm_lt (a : B → 𝕜')
     (ha : ContMDiff I 𝓘(𝕜, 𝕜') n a) (ha0 : ∀ b, a b ≠ 0) (r : B → ℝ) :
     vectorBundleScalarDiffeomorph (F := F) (V := V) a ha ha0 ''
-        {p : TotalSpace F V | ‖p.2‖ < r p.proj} =
-      {p : TotalSpace F V | ‖p.2‖ < ‖a p.proj‖ * r p.proj} := by
+        {p : TotalSpace F V | ‖p.snd‖ < r p.proj} =
+      {p : TotalSpace F V | ‖p.snd‖ < ‖a p.proj‖ * r p.proj} := by
   rw [Diffeomorph.image_eq_preimage_symm]
   ext p
   simp only [Set.mem_preimage, Set.mem_ofPred_eq, vectorBundleScalarDiffeomorph_symm,
@@ -171,8 +179,8 @@ theorem vectorBundleScalarDiffeomorph_image_setOf_norm_lt (a : B → 𝕜')
 theorem vectorBundleScalarDiffeomorph_image_setOf_norm_le (a : B → 𝕜')
     (ha : ContMDiff I 𝓘(𝕜, 𝕜') n a) (ha0 : ∀ b, a b ≠ 0) (r : B → ℝ) :
     vectorBundleScalarDiffeomorph (F := F) (V := V) a ha ha0 ''
-        {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} =
-      {p : TotalSpace F V | ‖p.2‖ ≤ ‖a p.proj‖ * r p.proj} := by
+        {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} =
+      {p : TotalSpace F V | ‖p.snd‖ ≤ ‖a p.proj‖ * r p.proj} := by
   rw [Diffeomorph.image_eq_preimage_symm]
   ext p
   simp only [Set.mem_preimage, Set.mem_ofPred_eq, vectorBundleScalarDiffeomorph_symm,
@@ -184,8 +192,8 @@ theorem vectorBundleScalarDiffeomorph_image_setOf_norm_le (a : B → 𝕜')
 theorem vectorBundleScalarDiffeomorph_image_setOf_norm_eq (a : B → 𝕜')
     (ha : ContMDiff I 𝓘(𝕜, 𝕜') n a) (ha0 : ∀ b, a b ≠ 0) (r : B → ℝ) :
     vectorBundleScalarDiffeomorph (F := F) (V := V) a ha ha0 ''
-        {p : TotalSpace F V | ‖p.2‖ = r p.proj} =
-      {p : TotalSpace F V | ‖p.2‖ = ‖a p.proj‖ * r p.proj} := by
+        {p : TotalSpace F V | ‖p.snd‖ = r p.proj} =
+      {p : TotalSpace F V | ‖p.snd‖ = ‖a p.proj‖ * r p.proj} := by
   rw [Diffeomorph.image_eq_preimage_symm]
   ext p
   simp only [Set.mem_preimage, Set.mem_ofPred_eq, vectorBundleScalarDiffeomorph_symm,

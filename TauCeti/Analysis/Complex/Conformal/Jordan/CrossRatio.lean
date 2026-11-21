@@ -51,7 +51,7 @@ facts say that the prevertices of a polygon are determined up to a real Möbius 
 public section
 
 open Bornology Complex Filter Function Metric Set Topology
-open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
+open UpperHalfPlane (upperHalfPlaneSet)
 
 namespace TauCeti
 
@@ -72,29 +72,23 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
           ∈ ball (0 : ℂ) 1 ∧
         f z = G ((u : ℂ) *
           (((z - I) / (z + I) - c) / (1 - (starRingEnd ℂ) (c : ℂ) * ((z - I) / (z + I))))) := by
-  -- the inverse `K` of the Cayley transform `C`, from the disc onto the upper half-plane
   set C : ℂ → ℂ := fun z => (z - I) / (z + I)
   have hCH : BijOn C upperHalfPlaneSet (ball 0 1) := bijOn_sub_I_div_add_I_upperHalfPlaneSet
-  set K := invFunOn C upperHalfPlaneSet
-  have hKmaps : MapsTo K (ball 0 1) upperHalfPlaneSet := hCH.surjOn.mapsTo_invFunOn
-  have hCK : ∀ w ∈ ball (0 : ℂ) 1, C (K w) = w := hCH.surjOn.rightInvOn_invFunOn
-  have hKC : ∀ z ∈ upperHalfPlaneSet, K (C z) = z := hCH.injOn.leftInvOn_invFunOn
-  have hKi : InjOn K (ball 0 1) := fun w hw w' hw' h => by rw [← hCK w hw, ← hCK w' hw', h]
-  have hKd : DifferentiableOn ℂ K (ball 0 1) := by
-    have hCd : DifferentiableOn ℂ C upperHalfPlaneSet :=
-      differentiableOn_sub_I_div_add_I.mono fun z (hz : 0 < z.im) =>
-        add_I_ne_zero_of_im_nonneg hz.le
-    have h := hCd.invFunOn isOpen_upperHalfPlaneSet hCH.injOn
-    rwa [hCH.image_eq] at h
-  have hKimg : K '' ball 0 1 = upperHalfPlaneSet := by
-    rw [← hCH.image_eq]
-    exact hCH.injOn.invFunOn_image subset_rfl
+  -- the inverse `K` of the Cayley transform `C`, from the disc onto the upper half-plane
+  set K : ℂ → ℂ := fun w => I * (1 + w) / (1 - w)
+  have hKb : BijOn K (ball 0 1) upperHalfPlaneSet := bijOn_I_mul_one_add_div_one_sub_ball
+  have hKC : ∀ z ∈ upperHalfPlaneSet, K (C z) = z := fun z hz =>
+    I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_im_nonneg (le_of_lt hz))
+  have hKd : DifferentiableOn ℂ K (ball 0 1) := fun w hw =>
+    (hasDerivAt_I_mul_one_add_div_one_sub
+      (by rintro rfl; simp at hw)).differentiableAt.differentiableWithinAt
   -- both maps transported to the disc
   have htrans {h : ℂ → ℂ} (hd : DifferentiableOn ℂ h upperHalfPlaneSet)
       (hb : BijOn h upperHalfPlaneSet U) :
       DifferentiableOn ℂ (h ∘ K) (ball 0 1) ∧ InjOn (h ∘ K) (ball 0 1) ∧
         (h ∘ K) '' ball 0 1 = U :=
-    ⟨hd.comp hKd hKmaps, hb.injOn.comp hKi hKmaps, by rw [image_comp, hKimg, hb.image_eq]⟩
+    ⟨hd.comp hKd hKb.mapsTo, hb.injOn.comp hKb.injOn hKb.mapsTo,
+      by rw [image_comp, hKb.image_eq, hb.image_eq]⟩
   obtain ⟨hFd, hFi, hFim⟩ := htrans hf hfU
   obtain ⟨hF'd, hF'i, hF'im⟩ := htrans hg hgU
   have hUo : IsOpen U := hFim ▸ isOpen_image_of_differentiableOn_of_injOn isOpen_ball hFd hFi
@@ -102,9 +96,9 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
   have : LocallyConnectedSpace (frontier ((g ∘ K) '' ball 0 1)) := by
     rw [hF'im]; exact hUJ.locallyConnectedSpace
   obtain ⟨G, hGc, hGF⟩ :=
-    exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier one_pos hF'd hF'i
+    exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier hF'd hF'i
       (by rwa [hF'im])
-  have hGi : InjOn G (closedBall 0 1) := injOn_closedBall_of_isJordanCurve_frontier one_pos hF'd
+  have hGi : InjOn G (closedBall 0 1) := injOn_closedBall_of_isJordanCurve_frontier hF'd
     hF'i (by rwa [hF'im]) (by rwa [hF'im]) hGc hGF
   -- the inverses of `f ∘ K` and `g ∘ K` differ by a disc automorphism
   have hinv {F : ℂ → ℂ} (hd : DifferentiableOn ℂ F (ball 0 1)) (hi : InjOn F (ball 0 1))
@@ -153,10 +147,12 @@ private theorem sub_I_div_add_I_eq_of_factorization {u : Circle} {c : Complex.Un
     continuousAt_const.mul (((continuousAt_sub_I_div_add_I x).sub continuousAt_const).div
       (continuousAt_const.sub (continuousAt_const.mul (continuousAt_sub_I_div_add_I x)))
       (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x))
-  obtain ⟨hxm, hxw⟩ := mem_closedBall_and_eq_of_tendsto hGc hMc (fun z hz => (hf' z hz).1)
+  obtain ⟨hxm, hxw⟩ := mem_closedBall_and_eq_of_tendsto hGc hMc.continuousWithinAt
+    (fun z hz => ball_subset_closedBall (hf' z hz).1)
     (fun z hz => (hf' z hz).2) hx
-  obtain ⟨hym, hyw⟩ := mem_closedBall_and_eq_of_tendsto hGc (continuousAt_sub_I_div_add_I y)
-    (fun z hz => bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz) hg' hy
+  obtain ⟨hym, hyw⟩ := mem_closedBall_and_eq_of_tendsto hGc
+    (continuousAt_sub_I_div_add_I y).continuousWithinAt
+    (fun z hz => ball_subset_closedBall (bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz)) hg' hy
   exact hGi hym hxm (hyw.trans hxw.symm)
 
 /-! ### The boundary correspondence -/
@@ -248,8 +244,7 @@ theorem eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn {U : Set ℂ} (hUb : IsBounde
       (add_I_ne_zero_of_im_nonneg (by simp)) h
     exact_mod_cast this
   obtain ⟨hc, hu⟩ := eq_zero_and_eq_one_of_unitDiscStandardAutomorphismFormula_eq_self
-    (hne h₁₂) (hne h₁₃) (hne h₂₃) (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x₁)
-    (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x₂) (one_sub_conj_mul_sub_I_div_add_I_ne_zero c x₃)
+    (hne h₁₂) (hne h₁₃) (hne h₂₃)
     (hfix x₁ hf₁ hg₁) (hfix x₂ hf₂ hg₂) (hfix x₃ hf₃ hg₃)
   intro z hz
   rw [(hf' z hz).2, hg' z hz, hc, hu]
@@ -265,11 +260,13 @@ theorem eq_of_tendsto_of_bijOn_upperHalfPlaneSet {U : Set ℂ} (hUb : IsBounded 
     (hy : Tendsto g (𝓝[upperHalfPlaneSet] (y : ℂ)) (𝓝 w)) : x = y := by
   obtain ⟨-, -, G, hGc, hGi, hg', -⟩ := exists_disc_factorization hUb hUJ hg hg hgU hgU
   have hmaps := fun z (hz : z ∈ upperHalfPlaneSet) =>
-    bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz
+    ball_subset_closedBall (bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz)
   obtain ⟨hxm, hxw⟩ :=
-    mem_closedBall_and_eq_of_tendsto hGc (continuousAt_sub_I_div_add_I x) hmaps hg' hx
+    mem_closedBall_and_eq_of_tendsto hGc
+      (continuousAt_sub_I_div_add_I x).continuousWithinAt hmaps hg' hx
   obtain ⟨hym, hyw⟩ :=
-    mem_closedBall_and_eq_of_tendsto hGc (continuousAt_sub_I_div_add_I y) hmaps hg' hy
+    mem_closedBall_and_eq_of_tendsto hGc
+      (continuousAt_sub_I_div_add_I y).continuousWithinAt hmaps hg' hy
   have hxy := injOn_sub_I_div_add_I (add_I_ne_zero_of_im_nonneg (by simp))
     (add_I_ne_zero_of_im_nonneg (by simp)) (hGi hxm hym (hxw.trans hyw.symm))
   exact_mod_cast hxy

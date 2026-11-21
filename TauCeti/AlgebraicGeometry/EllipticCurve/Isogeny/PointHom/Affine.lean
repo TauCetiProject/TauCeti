@@ -104,13 +104,8 @@ theorem toPointHom_some_eq_some_of_isEquiv_comap_pointPlace_of_forall_inertiaDeg
   have : FaithfulSMul W₂.CoordinateRing φ.intermediateRing :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr φ.pullbackToIntermediateRing_injective
   -- `φ^* x₂` has no pole at `P`, because `x₂` has none at the affine point `Q`
-  have hxle : (CoordinateRing.pointPlace h.1).valuation W₁.FunctionField
-      (φ.pullback (algebraMap F[X] W₂.CoordinateRing X)) ≤ 1 := by
-    have hQ := (CoordinateRing.pointPlace h'.1).valuation_le_one (K := W₂.FunctionField)
-      (algebraMap F[X] W₂.CoordinateRing X)
-    rw [← Valuation.isEquiv_iff_val_le_one.mp hP, Valuation.comap_apply, RingHom.coe_coe,
-      fieldPullback_algebraMap] at hQ
-    exact hQ
+  have hxle := φ.valuation_pullback_le_one_of_isEquiv_comap_pointPlace h.1 h'.1 hP
+    (algebraMap F[X] W₂.CoordinateRing X)
   -- so the intermediate ring lies in the valuation ring of `P`, and `v_P` is the valuation of a
   -- height one prime `𝔓` of the intermediate ring
   obtain ⟨𝔓, h𝔓, -⟩ := Valuation.existsUnique_heightOneSpectrum_valuation_eq φ.intermediateRing

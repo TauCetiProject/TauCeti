@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Integral.Basic
+public import TauCeti.NumberTheory.ModularForms.Integral.Trace
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Dimension
 
 import TauCeti.Analysis.Fourier.ZMod
@@ -37,9 +37,12 @@ contained in the `ℂ`-span of the forms integral at every cusp
 (`TauCeti.EisensteinSeries.congruenceEisensteinSubspace_le_span_integralAtCusps`). By the
 cusp–Eisenstein decomposition, the forms integral at every cusp then span `M_k(Γ₁(N))` exactly
 when their span contains the cusp forms
-(`TauCeti.ModularForm.span_integralAtCusps_Gamma1_eq_top_iff`). Deligne and Serre need that
-spanning statement to make the forms integral at every cusp a lattice carrying the Hecke
-eigenvalues.
+(`TauCeti.ModularForm.span_integralAtCusps_Gamma1_eq_top_iff`). Since the trace carries spans of
+integral forms from `Γ(N)` to `Γ₁(N)`, it is enough that the cusp forms on `Γ(N)` lie in the span
+of the forms on `Γ(N)` integral at every cusp
+(`TauCeti.ModularForm.span_integralAtCusps_Gamma1_eq_top_of_cuspFormSubmodule_le`). Deligne and
+Serre need that spanning statement to make the forms integral at every cusp a lattice carrying the
+Hecke eigenvalues.
 
 ## Main results
 
@@ -52,6 +55,9 @@ eigenvalues.
   Eisenstein subspace of `M_k(Γ₁(N))` lies in the span of the forms integral at every cusp.
 * `TauCeti.ModularForm.span_integralAtCusps_Gamma1_eq_top_iff`: in weight `k ≥ 3`, the forms
   integral at every cusp span `M_k(Γ₁(N))` exactly when their span contains the cusp forms.
+* `TauCeti.ModularForm.span_integralAtCusps_Gamma1_eq_top_of_cuspFormSubmodule_le`: in weight
+  `k ≥ 3`, they span `M_k(Γ₁(N))` once the integral forms on `Γ(N)` span a space containing
+  `S_k(Γ(N))`.
 
 ## References
 
@@ -214,5 +220,18 @@ theorem span_integralAtCusps_Gamma1_eq_top_iff {k : ℕ} (hk : 3 ≤ (k : ℤ))
   refine ⟨fun h ↦ h ▸ le_top, fun h ↦ eq_top_iff.mpr ?_⟩
   rw [← sup_congruenceEisensteinSubspace_cuspFormSubmodule_eq_top (Gamma_le_Gamma1 N) hk]
   exact sup_le (congruenceEisensteinSubspace_le_span_integralAtCusps hk hR) h
+
+/-- **Spanning on `Γ₁(N)` reduces to the cusp forms on `Γ(N)`.** If the subring `R ⊆ ℂ` contains
+the roots of unity of order dividing `N φ(N)` and `k ≥ 3`, then the forms on `Γ₁(N)` whose
+`q`-expansions at all cusps have coefficients in `R` span `M_k(Γ₁(N))` over `ℂ` as soon as the
+cusp forms on `Γ(N)` lie in the `ℂ`-span of the forms on `Γ(N)` with this property. -/
+theorem span_integralAtCusps_Gamma1_eq_top_of_cuspFormSubmodule_le {k : ℕ} (hk : 3 ≤ (k : ℤ))
+    (hR : ∀ ζ : ℂ, ζ ^ (N * N.totient) = 1 → ζ ∈ R)
+    (h : cuspFormSubmodule Γ(N) k ≤
+      Submodule.span ℂ (integralAtCusps R Γ(N) k : Set (ModularForm Γ(N) k))) :
+    Submodule.span ℂ (integralAtCusps R ((Gamma1 N).map (mapGL ℝ)) k :
+      Set (ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) = ⊤ :=
+  (span_integralAtCusps_Gamma1_eq_top_iff hk hR).mpr
+    (cuspFormSubmodule_le_span_integralAtCusps_of_Gamma (Gamma_le_Gamma1 N) h)
 
 end TauCeti.ModularForm

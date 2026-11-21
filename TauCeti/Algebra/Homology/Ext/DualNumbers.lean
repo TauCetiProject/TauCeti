@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.AlternatingConst
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.DualNumber.Basic
@@ -41,7 +42,7 @@ rings.
   `Hom_A(A, S) ≃ₗ[k] Extⁿ⁺¹(S, S)` read off that resolution.
 * `TauCeti.extDualNumberResidueEquiv`: the `k`-linear equivalence `Extⁿ(S, S) ≃ₗ[k] k`, for
   every `n`.
-* `TauCeti.finrank_ext_dualNumberResidue`: over a field, every `Extⁿ(S, S)` is one-dimensional.
+* `TauCeti.finrank_ext_dualNumberResidue`: over a commutative ring, every `Extⁿ(S, S)` has rank one.
 
 ## References
 
@@ -421,11 +422,14 @@ theorem extDualNumberResidueEquiv_succ (n : ℕ)
       homDualNumberFreeEquiv k ((extDualNumberResidueSuccEquiv k n).symm α) := by
   rw [extDualNumberResidueEquiv, LinearEquiv.trans_apply]
 
-/-- Over a field, every `Extⁿ(S, S)` of the residue field `S` of `k[ε]` is one-dimensional. -/
+/-- Over a commutative ring `k`, every `Extⁿ(S, S)` of the residue module `S = k` of `k[ε]` has
+rank one. -/
 @[simp]
-theorem finrank_ext_dualNumberResidue {k : Type u} [Field k] (n : ℕ) :
+theorem finrank_ext_dualNumberResidue {k : Type u} [CommRing k] (n : ℕ) :
     Module.finrank k (Ext.{u} (dualNumberResidue k) (dualNumberResidue k) n) = 1 := by
-  rw [(extDualNumberResidueEquiv k n).finrank_eq, Module.finrank_self]
+  rcases subsingleton_or_nontrivial k with hk | hk
+  · exact Module.finrank_subsingleton
+  · rw [(extDualNumberResidueEquiv k n).finrank_eq, Module.finrank_self]
 
 end CommRing
 

@@ -153,6 +153,19 @@ theorem reflectionBond_smul [IsDomain R] [P.IsReduced] (c : R) (x y : M) :
     rintro ⟨β, hβ, hxy⟩
     exact h ⟨β, hβ, hinj (by simpa only [map_smul] using hxy)⟩
 
+section IntegerScaling
+
+variable (P : RootPairing ι ℤ M N) (b : P.Base)
+
+/-- Scaling the shape by a natural number multiplies each orbit bond by that number. -/
+theorem reflectionBond_smul_nsmul [P.IsReduced] (n : ℕ) (lam : M) (x y : P.weylGroup) :
+    P.reflectionBond b (x • n • lam) (y • n • lam) =
+      (n : ℤ) * P.reflectionBond b (x • lam) (y • lam) := by
+  simpa only [Nat.cast_smul_eq_nsmul, smul_comm x n lam, smul_comm y n lam] using
+    P.reflectionBond_smul (b := b) (n : ℤ) (x • lam) (y • lam)
+
+end IntegerScaling
+
 /-- **Translating by a weight on every wall leaves bonds unchanged.** If every coroot vanishes on
 `χ`, as for a central weight, every reflection fixes `χ`, so `s_β (x + χ) = y + χ` exactly when
 `s_β x = y`, with the same pairing `⟨y + χ, β^∨⟩ = ⟨y, β^∨⟩`. -/

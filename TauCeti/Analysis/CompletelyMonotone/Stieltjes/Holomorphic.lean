@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.CompleteBernstein
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Complex.Convex
-import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The holomorphic extension of a Stieltjes function
@@ -81,6 +81,25 @@ theorem integrable_inv_add_of_mem_slitPlane (hμ : Integrable stieltjesWeight μ
   rw [norm_inv, stieltjesWeight_apply, ← mul_inv]
   exact inv_anti₀ (by positivity) (hbound z (Metric.mem_ball_self hc) x)
 
+/-- At a point of the slit plane, the complex Stieltjes kernel is integrable exactly when the
+Stieltjes weight is. -/
+theorem integrable_inv_add_iff (hz : z ∈ slitPlane) :
+    Integrable (fun x : ℝ≥0 => (z + ((x : ℝ) : ℂ))⁻¹) μ ↔ Integrable stieltjesWeight μ := by
+  refine ⟨fun h => ?_, fun h => integrable_inv_add_of_mem_slitPlane h hz⟩
+  obtain ⟨c, hc, hbound⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hz
+  refine (h.norm.const_mul (1 + ‖z‖)).mono' measurable_stieltjesWeight.aestronglyMeasurable
+    (ae_of_all _ fun x => ?_)
+  have hpos : 0 < ‖z + ((x : ℝ) : ℂ)‖ :=
+    lt_of_lt_of_le (by positivity) (hbound z (Metric.mem_ball_self hc) x)
+  have hle : ‖z + ((x : ℝ) : ℂ)‖ ≤ (1 + ‖z‖) * (1 + (x : ℝ)) := by
+    calc ‖z + ((x : ℝ) : ℂ)‖ ≤ ‖z‖ + (x : ℝ) := by
+          simpa using norm_add_le z ((x : ℝ) : ℂ)
+      _ ≤ (1 + ‖z‖) * (1 + (x : ℝ)) := by nlinarith [norm_nonneg z, x.coe_nonneg]
+  rw [norm_inv, stieltjesWeight_apply, Real.norm_of_nonneg (by positivity)]
+  calc (1 + (x : ℝ))⁻¹ = (1 + ‖z‖) * ((1 + ‖z‖) * (1 + (x : ℝ)))⁻¹ := by
+        field_simp
+    _ ≤ (1 + ‖z‖) * ‖z + ((x : ℝ) : ℂ)‖⁻¹ := by gcongr
+
 /-- The complex Stieltjes integral is complex differentiable on the slit plane, with derivative
 `-∫ x, (z + x)⁻² ∂μ`. -/
 theorem hasDerivAt_integral_inv_add (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
@@ -127,15 +146,37 @@ theorem hasDerivAt_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz 
   refine hsum.congr_of_eventuallyEq (Eventually.of_forall fun w => ?_)
   rw [stieltjesExtension, Pi.add_apply]
 
+/-- The complex Stieltjes transform of the zero measure is `a / z + b`. -/
+@[simp]
+theorem stieltjesExtension_zero_measure (a b : ℝ≥0) (z : ℂ) :
+    stieltjesExtension 0 a b z = ((a : ℝ) : ℂ) / z + ((b : ℝ) : ℂ) := by
+  rw [stieltjesExtension, integral_zero_measure, add_zero]
+
+/-- On the slit plane, if the Stieltjes weight is not `μ`-integrable then the complex Stieltjes
+transform of `μ` is `a / z + b`, that of the zero measure. -/
+theorem stieltjesExtension_of_not_integrable (hμ : ¬Integrable stieltjesWeight μ)
+    (hz : z ∈ slitPlane) :
+    stieltjesExtension μ a b z = ((a : ℝ) : ℂ) / z + ((b : ℝ) : ℂ) := by
+  rw [← stieltjesExtension_zero_measure, stieltjesExtension, stieltjesExtension,
+    integral_undef fun h => hμ ((integrable_inv_add_iff hz).mp h), integral_zero_measure]
+
 /-- The complex Stieltjes transform is complex differentiable on the slit plane. -/
-theorem differentiableOn_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
-    DifferentiableOn ℂ (stieltjesExtension μ a b) slitPlane := fun _ hz =>
-  (hasDerivAt_stieltjesExtension hμ hz).differentiableAt.differentiableWithinAt
+theorem differentiableOn_stieltjesExtension :
+    DifferentiableOn ℂ (stieltjesExtension μ a b) slitPlane := by
+  by_cases hμ : Integrable stieltjesWeight μ
+  · exact fun _ hz =>
+      (hasDerivAt_stieltjesExtension hμ hz).differentiableAt.differentiableWithinAt
+  · -- Without integrability the transform agrees with that of the zero measure.
+    refine DifferentiableOn.congr (f := stieltjesExtension 0 a b) (fun w hw => ?_)
+      fun w hw => by
+        rw [stieltjesExtension_of_not_integrable hμ hw, stieltjesExtension_zero_measure]
+    exact (hasDerivAt_stieltjesExtension integrable_zero_measure hw).differentiableAt
+      |>.differentiableWithinAt
 
 /-- The complex Stieltjes transform is holomorphic on the slit plane. -/
-theorem analyticOnNhd_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
+theorem analyticOnNhd_stieltjesExtension :
     AnalyticOnNhd ℂ (stieltjesExtension μ a b) slitPlane :=
-  (differentiableOn_stieltjesExtension hμ).analyticOnNhd isOpen_slitPlane
+  differentiableOn_stieltjesExtension.analyticOnNhd isOpen_slitPlane
 
 /-- The complex Stieltjes transform commutes with complex conjugation. -/
 @[simp]
@@ -144,11 +185,23 @@ theorem stieltjesExtension_conj (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ)
   simp only [stieltjesExtension, map_add, map_div₀, conj_ofReal, ← integral_conj,
     map_inv₀]
 
+/-- For real `z` (`z.im = 0`) the transform is real. -/
+theorem im_stieltjesExtension_eq_zero_of_im_eq_zero (him : z.im = 0) :
+    (stieltjesExtension μ a b z).im = 0 :=
+  conj_eq_iff_im.mp (by rw [← stieltjesExtension_conj, conj_eq_iff_im.mpr him])
+
 /-- **The imaginary part of the complex Stieltjes transform**:
-`Im F(z) = -Im z * (a / |z|² + ∫ x, |z + x|⁻² ∂μ)` on the slit plane. -/
-theorem im_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
+`Im F(z) = -Im z * (a / |z|² + ∫ x, |z + x|⁻² ∂μ)` when the Stieltjes weight is
+`μ`-integrable. -/
+theorem im_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
     (stieltjesExtension μ a b z).im =
       -z.im * ((a : ℝ) / normSq z + ∫ x, (normSq (z + ((x : ℝ) : ℂ)))⁻¹ ∂μ) := by
+  by_cases hz : z ∈ slitPlane
+  swap
+  · -- Off the slit plane `z` is real, so is its transform, and both sides vanish.
+    have him := im_eq_zero_of_notMem_slitPlane hz
+    rw [him, neg_zero, zero_mul]
+    exact im_stieltjesExtension_eq_zero_of_im_eq_zero him
   have hint : (∫ x, (z + ((x : ℝ) : ℂ))⁻¹ ∂μ).im =
       -z.im * ∫ x, (normSq (z + ((x : ℝ) : ℂ)))⁻¹ ∂μ := by
     rw [← integral_const_mul, ← RCLike.im_to_complex,
@@ -160,20 +213,35 @@ theorem im_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z ∈ 
   ring
 
 /-- **A Stieltjes transform maps the upper half-plane into the closed lower half-plane**, and the
-lower half-plane into the closed upper one: `Im z * Im F(z) ≤ 0` on the slit plane. -/
-theorem im_mul_im_stieltjesExtension_nonpos (hμ : Integrable stieltjesWeight μ)
-    (hz : z ∈ slitPlane) : z.im * (stieltjesExtension μ a b z).im ≤ 0 := by
-  have hP : 0 ≤ (a : ℝ) / normSq z + ∫ x, (normSq (z + ((x : ℝ) : ℂ)))⁻¹ ∂μ :=
-    add_nonneg (div_nonneg a.coe_nonneg (normSq_nonneg z))
-      (integral_nonneg fun x => inv_nonneg.mpr (normSq_nonneg _))
-  rw [im_stieltjesExtension hμ hz]
-  nlinarith [mul_nonneg (sq_nonneg z.im) hP]
+lower half-plane into the closed upper one: `Im z * Im F(z) ≤ 0`. -/
+theorem im_mul_im_stieltjesExtension_nonpos (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ) :
+    z.im * (stieltjesExtension μ a b z).im ≤ 0 := by
+  by_cases hz : z ∈ slitPlane
+  swap
+  · rw [im_stieltjesExtension_eq_zero_of_im_eq_zero (im_eq_zero_of_notMem_slitPlane hz), mul_zero]
+  have key (ν : Measure ℝ≥0) (hν : Integrable stieltjesWeight ν) :
+      z.im * (stieltjesExtension ν a b z).im ≤ 0 := by
+    have hP : 0 ≤ (a : ℝ) / normSq z + ∫ x, (normSq (z + ((x : ℝ) : ℂ)))⁻¹ ∂ν :=
+      add_nonneg (div_nonneg a.coe_nonneg (normSq_nonneg z))
+        (integral_nonneg fun x => inv_nonneg.mpr (normSq_nonneg _))
+    rw [im_stieltjesExtension hν]
+    nlinarith [mul_nonneg (sq_nonneg z.im) hP]
+  by_cases hμ : Integrable stieltjesWeight μ
+  · exact key μ hμ
+  · rw [stieltjesExtension_of_not_integrable hμ hz, ← stieltjesExtension_zero_measure]
+    exact key 0 integrable_zero_measure
 
 /-- The imaginary part of `z` times the complex Stieltjes transform:
-`Im (z F(z)) = Im z * (b + ∫ x, x / |z + x|² ∂μ)` on the slit plane. -/
-theorem im_mul_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
+`Im (z F(z)) = Im z * (b + ∫ x, x / |z + x|² ∂μ)` when the Stieltjes weight is
+`μ`-integrable. -/
+theorem im_mul_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
     (z * stieltjesExtension μ a b z).im =
       z.im * ((b : ℝ) + ∫ x, (x : ℝ) / normSq (z + ((x : ℝ) : ℂ)) ∂μ) := by
+  by_cases hz : z ∈ slitPlane
+  swap
+  · -- Off the slit plane `z` is real, so `z F(z)` is real and both sides vanish.
+    have him := im_eq_zero_of_notMem_slitPlane hz
+    simp [mul_im, him, im_stieltjesExtension_eq_zero_of_im_eq_zero him]
   have hz0 := slitPlane_ne_zero hz
   obtain ⟨c, hc, hbound⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hz
   have hint : (z * ∫ x, (z + ((x : ℝ) : ℂ))⁻¹ ∂μ).im =
@@ -194,27 +262,30 @@ theorem im_mul_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz : z 
     ofReal_im, mul_comm z, im_ofReal_mul]
   ring
 
-/-- `Im z * Im (z F(z)) ≥ 0` on the slit plane: `z ↦ z F(z)` maps the upper half-plane into the
-closed upper half-plane. -/
-theorem im_mul_im_mul_stieltjesExtension_nonneg (hμ : Integrable stieltjesWeight μ)
-    (hz : z ∈ slitPlane) : 0 ≤ z.im * (z * stieltjesExtension μ a b z).im := by
-  have hP : 0 ≤ (b : ℝ) + ∫ x, (x : ℝ) / normSq (z + ((x : ℝ) : ℂ)) ∂μ :=
-    add_nonneg b.coe_nonneg
-      (integral_nonneg fun x => div_nonneg x.coe_nonneg (normSq_nonneg _))
-  rw [im_mul_stieltjesExtension hμ hz, ← mul_assoc]
-  exact mul_nonneg (mul_self_nonneg _) hP
+/-- `Im z * Im (z F(z)) ≥ 0`: `z ↦ z F(z)` maps the upper half-plane into the closed upper
+half-plane. -/
+theorem im_mul_im_mul_stieltjesExtension_nonneg (μ : Measure ℝ≥0) (a b : ℝ≥0) (z : ℂ) :
+    0 ≤ z.im * (z * stieltjesExtension μ a b z).im := by
+  by_cases hz : z ∈ slitPlane
+  swap
+  · simp [im_eq_zero_of_notMem_slitPlane hz]
+  have key (ν : Measure ℝ≥0) (hν : Integrable stieltjesWeight ν) :
+      0 ≤ z.im * (z * stieltjesExtension ν a b z).im := by
+    have hP : 0 ≤ (b : ℝ) + ∫ x, (x : ℝ) / normSq (z + ((x : ℝ) : ℂ)) ∂ν :=
+      add_nonneg b.coe_nonneg
+        (integral_nonneg fun x => div_nonneg x.coe_nonneg (normSq_nonneg _))
+    rw [im_mul_stieltjesExtension hν, ← mul_assoc]
+    exact mul_nonneg (mul_self_nonneg _) hP
+  by_cases hμ : Integrable stieltjesWeight μ
+  · exact key μ hμ
+  · rw [stieltjesExtension_of_not_integrable hμ hz, ← stieltjesExtension_zero_measure]
+    exact key 0 integrable_zero_measure
 
 /-- **The complex Stieltjes transform vanishes only for zero data.**  At a point of the slit
 plane, `a / z + b + ∫ x, (z + x)⁻¹ ∂μ` is zero exactly when `a`, `b` and `μ` all are. -/
 theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
     stieltjesExtension μ a b z = 0 ↔ a = 0 ∧ b = 0 ∧ μ = 0 := by
   refine ⟨fun h => ?_, fun ⟨ha, hb, hμ0⟩ => by simp [stieltjesExtension, ha, hb, hμ0]⟩
-  -- A measure against which an integrable, everywhere positive function has integral zero is zero.
-  have measure_eq_zero {g : ℝ≥0 → ℝ} (hg : ∀ x, 0 < g x) (hgi : Integrable g μ)
-      (h0 : ∫ x, g x ∂μ = 0) : μ = 0 := by
-    have hsupp : Function.support g = univ := eq_univ_of_forall fun x => (hg x).ne'
-    have := (integral_pos_iff_support_of_nonneg (fun x => (hg x).le) hgi).not.mp h0.not_gt
-    rwa [hsupp, not_lt, nonpos_iff_eq_zero, Measure.measure_univ_eq_zero] at this
   suffices ha : a = 0 ∧ μ = 0 by
     obtain ⟨ha, hμ0⟩ := ha
     simpa [stieltjesExtension, ha, hμ0] using h
@@ -236,7 +307,8 @@ theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz
     have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
     have hat : 0 ≤ (a : ℝ) / t := by positivity
     have hb' := b.coe_nonneg
-    refine ⟨?_, measure_eq_zero hpos (integrable_inv_add hμ ht) (by linarith)⟩
+    refine ⟨?_, MeasureTheory.measure_eq_zero_of_integral_eq_zero_of_ae_pos
+      (Eventually.of_forall hpos) (integrable_inv_add hμ ht) (by linarith)⟩
     have : (a : ℝ) / t = 0 := by linarith
     rw [div_eq_zero_iff, or_iff_left ht.ne'] at this
     exact_mod_cast this
@@ -254,10 +326,11 @@ theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz
       simp only [RCLike.im_to_complex, inv_im, add_im, ofReal_im, add_zero]
       field_simp
     have h0 := congrArg Complex.im h
-    rw [im_stieltjesExtension hμ hz, zero_im, mul_eq_zero, neg_eq_zero, or_iff_right him] at h0
+    rw [im_stieltjesExtension hμ, zero_im, mul_eq_zero, neg_eq_zero, or_iff_right him] at h0
     have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
     have ha : 0 ≤ (a : ℝ) / normSq z := div_nonneg a.coe_nonneg (normSq_nonneg z)
-    refine ⟨?_, measure_eq_zero hpos hint (by linarith)⟩
+    refine ⟨?_, MeasureTheory.measure_eq_zero_of_integral_eq_zero_of_ae_pos
+      (Eventually.of_forall hpos) hint (by linarith)⟩
     have : (a : ℝ) / normSq z = 0 := by linarith
     rw [div_eq_zero_iff, or_iff_left hz0] at this
     exact_mod_cast this
@@ -277,23 +350,9 @@ theorem stieltjesExtension_ofReal (h : RepresentsStieltjes μ a b f) {t : ℝ} (
 agrees on `(0, ∞)` with a represented Stieltjes function is its complex Stieltjes transform. -/
 theorem eqOn_stieltjesExtension (h : RepresentsStieltjes μ a b f) {F : ℂ → ℂ}
     (hF : AnalyticOnNhd ℂ F slitPlane) (hFf : ∀ t : ℝ, 0 < t → F t = f t) :
-    EqOn F (stieltjesExtension μ a b) slitPlane := by
-  have hpre : IsPreconnected slitPlane :=
-    (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-  refine hF.eqOn_of_preconnected_of_frequently_eq
-    (analyticOnNhd_stieltjesExtension h.integrable_weight) hpre one_mem_slitPlane ?_
-  -- The two functions agree at the real points `1 + 1 / (n + 1)`, which tend to `1`.
-  have htend : Tendsto (fun n : ℕ => (((1 : ℝ) + 1 / ((n : ℝ) + 1) : ℝ) : ℂ)) atTop
-      (𝓝[≠] (1 : ℂ)) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, Eventually.of_forall fun n => ?_⟩
-    · have h1 : Tendsto (fun n : ℕ => (1 : ℝ) + 1 / ((n : ℝ) + 1)) atTop (𝓝 1) := by
-        simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_add (1 : ℝ)
-      simpa [Function.comp_def] using (continuous_ofReal.tendsto 1).comp h1
-    · simp only [mem_compl_iff, mem_singleton_iff, ← ofReal_one, ofReal_inj]
-      have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
-      linarith
-  exact htend.frequently (Frequently.of_forall fun n => by
-    rw [hFf _ (by positivity), h.stieltjesExtension_ofReal (by positivity)])
+    EqOn F (stieltjesExtension μ a b) slitPlane :=
+  hF.eqOn_slitPlane_of_ofReal_pos_eq analyticOnNhd_stieltjesExtension
+    fun t ht => (hFf t ht).trans (h.stieltjesExtension_ofReal ht).symm
 
 end RepresentsStieltjes
 
@@ -304,9 +363,9 @@ theorem IsStieltjesFunction.exists_analyticOnNhd_slitPlane (hf : IsStieltjesFunc
     ∃ F : ℂ → ℂ, AnalyticOnNhd ℂ F slitPlane ∧ (∀ t : ℝ, 0 < t → F t = f t) ∧
       ∀ z ∈ slitPlane, z.im * (F z).im ≤ 0 := by
   obtain ⟨a, b, μ, h⟩ := isStieltjesFunction_iff.mp hf
-  exact ⟨stieltjesExtension μ a b, analyticOnNhd_stieltjesExtension h.integrable_weight,
+  exact ⟨stieltjesExtension μ a b, analyticOnNhd_stieltjesExtension,
     fun t ht => h.stieltjesExtension_ofReal ht,
-    fun z hz => im_mul_im_stieltjesExtension_nonpos h.integrable_weight hz⟩
+    fun z _ => im_mul_im_stieltjesExtension_nonpos μ a b z⟩
 
 /-- On `(0, ∞)` a complete Bernstein function is `t` times the complex Stieltjes transform of its
 representing data. -/
@@ -326,9 +385,9 @@ theorem IsCompleteBernsteinFunction.exists_analyticOnNhd_slitPlane
       ∀ z ∈ slitPlane, 0 ≤ z.im * (G z).im := by
   obtain ⟨a, b, μ, h⟩ := isCompleteBernsteinFunction_iff.mp hf
   exact ⟨fun z => z * stieltjesExtension μ a b z,
-    analyticOnNhd_id.mul (analyticOnNhd_stieltjesExtension h.integrable_weight),
+    analyticOnNhd_id.mul analyticOnNhd_stieltjesExtension,
     fun t ht => h.ofReal_mul_stieltjesExtension ht,
-    fun z hz => im_mul_im_mul_stieltjesExtension_nonneg h.integrable_weight hz⟩
+    fun z _ => im_mul_im_mul_stieltjesExtension_nonneg μ a b z⟩
 
 end TauCeti
 

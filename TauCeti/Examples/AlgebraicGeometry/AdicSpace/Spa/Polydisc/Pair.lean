@@ -51,10 +51,10 @@ sends every point of `Spa(ℤ_[p], ℤ_[p]°)` into `torusLocus`. -/
 example (u : ((Pair.powerBounded ℤ_[p]).plus)ˣ)
     (x : spa (Pair.powerBounded ℤ_[p]).plus) :
     (((Pair.polydisc.torusHomEquiv (Pair.Hom.id (Pair.powerBounded ℤ_[p])) 1).symm
-        (fun _ ↦ u)).1.spaComap x).1 ∈
+        (fun _ ↦ u)).val.spaComap x).val ∈
       Pair.torusLocus (Pair.powerBounded ℤ_[p]) 1 :=
   (((Pair.polydisc.torusHomEquiv (Pair.Hom.id (Pair.powerBounded ℤ_[p])) 1).symm
-    (fun _ ↦ u)).2).2 x
+    (fun _ ↦ u)).property).2 x
 
 /-- Negative control: evaluating `(Pair.powerBounded ℚ_[p]).polydisc 1` at `p ∈ ℤ_[p] = ℚ_[p]°`
 does not land in `torusLocus` at any point of `Spa(ℚ_[p], ℚ_[p]°)`, because `‖p‖ < 1`. -/
@@ -63,14 +63,14 @@ example (x : spa (Pair.powerBounded ℚ_[p]).plus) :
       rw [Pair.powerBounded_plus, mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one]
       exact _root_.Padic.norm_p_lt_one.le
     ((Pair.polydisc.evalHom (Pair.Hom.id (Pair.powerBounded ℚ_[p]))
-        (fun _ : Fin 1 ↦ ⟨(p : ℚ_[p]), hp⟩)).spaComap x).1 ∉
+        (fun _ : Fin 1 ↦ ⟨(p : ℚ_[p]), hp⟩)).spaComap x).val ∉
       Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 := by
   intro hp hmem
   have h1 := ((Pair.mem_torusLocus_iff_forall_one_vle (Pair.powerBounded ℚ_[p])).mp hmem).2 0
   rw [Pair.Hom.spaComap_val, comap_vle, map_one,
     Pair.polydisc.toRingHom_evalHom_polydiscVar] at h1
-  have hx : x.1 ∈ spa (powerBoundedSubring ℚ_[p]) := by
-    simpa only [Pair.powerBounded_plus] using x.2
+  have hx : x.val ∈ spa (powerBoundedSubring ℚ_[p]) := by
+    simpa only [Pair.powerBounded_plus] using x.property
   rw [vle_iff_norm_le_of_mem_spa hx, norm_one] at h1
   exact not_lt_of_ge h1 _root_.Padic.norm_p_lt_one
 
@@ -89,18 +89,18 @@ example :
 example (x : spa (Pair.powerBounded ℚ_[p]).plus) :
     let e0 := Pair.polydisc.evalHom (Pair.Hom.id (Pair.powerBounded ℚ_[p]))
       (fun _ : Fin 1 ↦ (0 : (Pair.powerBounded ℚ_[p]).plus))
-    (e0.spaComap x).1 ∉ Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 ∧
-      (e0.spaComap x).1 ∈
+    (e0.spaComap x).val ∉ Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 ∧
+      (e0.spaComap x).val ∈
         comap (Pair.polydisc.taylorHom (Pair.powerBounded ℚ_[p])
             (fun _ : Fin 1 ↦ (1 : (Pair.powerBounded ℚ_[p]).plus))).toRingHom ⁻¹'
           Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 := by
   intro e0
-  have hnot : (e0.spaComap x).1 ∉ Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 := by
+  have hnot : (e0.spaComap x).val ∉ Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 := by
     refine Pair.notMem_torusLocus_of_mem_supp (Pair.powerBounded ℚ_[p]) (i := 0) ?_
     rw [Pair.Hom.spaComap_val, mem_supp_iff, comap_vle]
     simp [e0, Pair.polydisc.toRingHom_evalHom_polydiscVar]
   have hcov := Pair.torusLocus_union_preimage_taylorHom_eq_spa (Pair.powerBounded ℚ_[p])
-  exact ⟨hnot, (hcov.subset (e0.spaComap x).2).resolve_left hnot⟩
+  exact ⟨hnot, (hcov.subset (e0.spaComap x).property).resolve_left hnot⟩
 
 /-- Degenerate `n = 0` check over `ℤ_[p]`: `zeroInvHom` and `weightedCompletionHom` invert one
 another, and `torusLocus` is the full adic spectrum. -/

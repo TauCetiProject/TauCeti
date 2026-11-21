@@ -88,7 +88,8 @@ theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
     (m : _root_.Orientation ℝ E ι) :
     ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
   obtain ⟨l, rfl⟩ := o.exists_lift
-  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m
+    (Nat.card_eq_fintype_card.trans l.card_eq) with h | h
   · exact ⟨l, rfl, h⟩
   · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
       rw [OrientationLift.flip_modelOrientation, h]
@@ -133,6 +134,14 @@ def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι
 @[simp]
 theorem reindex_mk {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
     (mk o).reindex e = mk (o.reindex e) := (rfl)
+
+/-- Reindexing along the identity equivalence does not change an orientation. -/
+@[simp]
+theorem reindex_refl (o : Orientation I M ι) : o.reindex (Equiv.refl ι) = o := by
+  induction o using Orientation.inductionOn with | h l =>
+    rw [reindex_mk]
+    congr 1
+    ext α x <;> simp
 
 variable [IsManifold I 1 M]
 
@@ -219,27 +228,40 @@ theorem eq_or_eq_neg [PreconnectedSpace M] (o o' : Orientation I M ι) :
     rw [orientationAt_neg]
     exact congrArg (fun v ↦ v x) h
 
+omit [IsManifold I 1 M] in
 /-- An orientation differs from its opposite on every nonempty manifold. -/
 theorem neg_ne_self [Nonempty M] (o : Orientation I M ι) : -o ≠ o := by
+  induction o using Orientation.inductionOn with | h l =>
   intro h
-  have hx := congrArg (fun v ↦ orientationAt v (Classical.arbitrary M)) h
-  rw [orientationAt_neg] at hx
-  exact Module.Ray.ne_neg_self _ hx.symm
+  rw [neg_mk, mk_eq_mk_iff] at h
+  rcases h with h | h
+  · exact Module.Ray.ne_neg_self _ (congrArg OrientationLift.modelOrientation h).symm
+  · -- The signs of `-l` are those of `l`, while those of `l.flip` are their negatives.
+    have hs := congrArg (fun l' : OrientationLift I M ι ↦
+      l'.sign (Classical.arbitrary M) ⟨_, mem_chart_source H (Classical.arbitrary M)⟩) h
+    simp only [OrientationLift.neg_sign, OrientationLift.flip_sign] at hs
+    exact units_ne_neg_self _ hs
 
+omit [IsManifold I 1 M] in
 protected theorem neg_neg (o : Orientation I M ι) : - -o = o := by
-  apply ext
-  intro x
-  rw [orientationAt_neg, orientationAt_neg]
-  exact _root_.neg_neg (orientationAt o x)
+  induction o using Orientation.inductionOn with | h l =>
+  rw [neg_mk, neg_mk, OrientationLift.neg_neg]
 
+omit [IsManifold I 1 M] in
 instance : InvolutiveNeg (Orientation I M ι) where
   neg_neg := Orientation.neg_neg
 
+omit [IsManifold I 1 M] in
 @[simp]
 theorem reindex_neg {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι) :
-    (-o).reindex e = -o.reindex e :=
-  ext fun x ↦ by
-    simp only [orientationAt_reindex, orientationAt_neg, _root_.Orientation.reindex_neg]
+    (-o).reindex e = -o.reindex e := by
+  induction o using Orientation.inductionOn with | h l =>
+  rw [neg_mk, reindex_mk, reindex_mk, neg_mk]
+  exact congrArg mk (OrientationLift.ext (by
+    simp only [OrientationLift.reindex_modelOrientation, OrientationLift.neg_modelOrientation,
+      _root_.Orientation.reindex_neg])
+    (funext fun α ↦ funext fun x ↦ by
+      simp only [OrientationLift.reindex_sign, OrientationLift.neg_sign]))
 
 /-- Construct a manifold orientation from a locally constant orientation of its tangent bundle.
 The choice of model orientation affects only its representative lift. -/
@@ -295,6 +317,16 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
 
+/-- Transporting the tangent orientation of the constant model orientation to `E` through
+`NormedSpace.fromTangentSpace` recovers the original orientation. -/
+theorem map_orientationAt_model (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
+    _root_.Orientation.map ι (NormedSpace.fromTangentSpace x).toLinearEquiv
+      ((model (I := 𝓘(ℝ, E)) o hι).orientationAt x) = o := by
+  rw [orientationAt_model]
+  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
+  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
+
 /-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
 def real : Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
   model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
@@ -308,6 +340,15 @@ theorem real_eq_model :
 theorem orientationAt_real (x : ℝ) :
     orientationAt real x = (Module.Basis.singleton (Fin 1) ℝ).orientation := by
   rw [real_eq_model, orientationAt_model]
+
+/-- The basis of the tangent line of `ℝ` at `x` given by the unit vector `1` is positively
+oriented for the standard orientation. -/
+theorem orientation_map_fromTangentSpace_symm_singleton (x : ℝ) :
+    ((Module.Basis.singleton (Fin 1) ℝ).map
+        (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm.toLinearEquiv).orientation =
+      real.orientationAt x := by
+  rw [Module.Basis.orientation_map, ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← _root_.Orientation.map_symm, Equiv.symm_apply_eq, real_eq_model, map_orientationAt_model]
 
 /-- Cast a manifold orientation along an equality of models on the same model vector space and
 chart carrier. -/

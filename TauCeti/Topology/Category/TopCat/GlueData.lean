@@ -43,7 +43,7 @@ open CategoryTheory Set Topology
 
 namespace TopCat.GlueData
 
-universe u
+universe u v
 
 variable (D : TopCat.GlueData.{u})
 
@@ -101,6 +101,15 @@ theorem t2Space_iff_isClosed_chartRel :
 theorem iUnion_range_ι : ⋃ i, range (D.toGlueData.ι i) = univ :=
   iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
 
+/-- Pairs of canonical inclusions jointly cover the product of two glued spaces. -/
+theorem prod_ι_jointly_surjective (D' : TopCat.GlueData.{v})
+    (x : D.toGlueData.glued × D'.toGlueData.glued) :
+    ∃ (ij : D.J × D'.J) (y : D.U ij.1 × D'.U ij.2),
+      Prod.map (D.toGlueData.ι ij.1) (D'.toGlueData.ι ij.2) y = x := by
+  obtain ⟨i, y, hy⟩ := D.ι_jointly_surjective x.1
+  obtain ⟨j, z, hz⟩ := D'.ι_jointly_surjective x.2
+  exact ⟨(i, j), (y, z), Prod.ext hy hz⟩
+
 /-- A glued space with countably many second-countable charts is second countable. -/
 instance secondCountableTopology [Countable D.J]
     [∀ i, SecondCountableTopology (D.U i)] : SecondCountableTopology D.toGlueData.glued := by
@@ -114,12 +123,10 @@ instance secondCountableTopology [Countable D.J]
 /-- A glued space with locally compact charts is locally compact. -/
 instance locallyCompactSpace [∀ i, LocallyCompactSpace (D.U i)] :
     LocallyCompactSpace D.toGlueData.glued := by
-  let U : D.J → Set D.toGlueData.glued := fun i ↦ range (D.toGlueData.ι i)
-  have hU (i : D.J) : IsOpen (U i) := (D.ι_isOpenEmbedding i).isOpen_range
-  have hcover : ⋃ i, U i = univ := D.iUnion_range_ι
-  let hCompact : ∀ i : D.J, LocallyCompactSpace (U i) := fun i ↦
-    (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace
-  exact TauCeti.locallyCompactSpace_of_isOpen_cover hU hcover
+  refine TauCeti.locallyCompactSpace_of_forall_exists_mem_nhds fun x ↦ ?_
+  obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
+  exact ⟨range (D.toGlueData.ι i), (D.ι_isOpenEmbedding i).isOpen_range.mem_nhds ⟨y, rfl⟩,
+    (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace⟩
 
 /-! ### Hausdorffness from the boundaries of the overlaps -/
 

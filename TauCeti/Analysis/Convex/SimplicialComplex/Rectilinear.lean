@@ -298,7 +298,7 @@ private theorem finite_image_apply
   refine ((hSlf.finite_nonempty_inter_compact (isCompact_closedRegionBetween_convexHull
     (a := (a : E →ᵃ[ℝ] ℝ)) (b := b) t.finite_toSet hab)).biUnion
     fun D _ ↦ (show {q : ℝ | (x, q) ∈ (D : Set (E × ℝ))}.Subsingleton from ?_).finite).subset ?_
-  · obtain ⟨⟨u, c⟩, -, hD⟩ := D.2
+  · obtain ⟨⟨u, c⟩, -, hD⟩ := D.property
     intro q₁ hq₁ q₂ hq₂
     simp only [mem_ofPred_eq, ← hD, mem_graphOn] at hq₁ hq₂
     exact hq₁.2.symm.trans hq₂.2
@@ -306,6 +306,20 @@ private theorem finite_image_apply
     exact mem_iUnion₂.2 ⟨⟨_, ⟨(t, c), hc.1, rfl⟩⟩, ⟨(x, c x), mem_graphOn.2 ⟨hx, rfl⟩,
       mem_closedRegionBetween.2 ⟨hx, le_of_forall_le_of_mem_convexHull hc.2.1 hx,
         le_of_forall_le_of_mem_convexHull hc.2.2 hx⟩⟩, mem_graphOn.2 ⟨hx, rfl⟩⟩
+
+/-- A point above the interior of a face `t ⊆ s` that lies on the graph of a section over `t`
+between two sections over `s` is in the intrinsic interior of a cell contained in the band. -/
+private theorem exists_mem_rectilinearCells_of_graph {s t : Finset E} {a b c : E →ᴬ[ℝ] ℝ} {x : E}
+    {y : ℝ} (hts : t ⊆ s)
+    (hc : (t, c) ∈ S) (hac : ∀ v ∈ t, a v ≤ c v) (hcb : ∀ v ∈ t, c v ≤ b v)
+    (hxt : x ∈ intrinsicInterior ℝ (convexHull ℝ (t : Set E))) (hcy : c x = y) :
+    ∃ D ∈ rectilinearCells S, (x, y) ∈ intrinsicInterior ℝ D ∧
+      D ⊆ closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
+  refine ⟨(convexHull ℝ (t : Set E)).graphOn c, .inl ⟨(t, c), hc, rfl⟩, ?_, ?_⟩
+  · rw [ContinuousAffineMap.intrinsicInterior_graphOn]
+    exact mem_graphOn.2 ⟨hxt, hcy⟩
+  · rw [← closedRegionBetween_self]
+    exact closedRegionBetween_convexHull_subset_of_le (d := c) (Finset.coe_subset.2 hts) hac hcb
 
 /-- **Covering a band by smaller cells.** Every point of the closed band between two ordered
 sections over a face lies in the intrinsic interior of a cell contained in that band. -/
@@ -325,19 +339,9 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
     SimplicialComplex.exists_mem_faces_subset_mem_intrinsicInterior (hS _ ha) hx
   have htne := K.nonempty_of_mem_faces ht
   have hxt' : x ∈ convexHull ℝ (t : Set E) := intrinsicInterior_subset hxt
-  have hts' : convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E) :=
-    convexHull_mono (Finset.coe_subset.2 hts)
   have habt : ∀ v ∈ t, a v ≤ b v := fun v hv ↦ hab v (hts hv)
   -- the sections over `t` between `a` and `b`
   set T := {c : E →ᴬ[ℝ] ℝ | (t, c) ∈ S ∧ (∀ v ∈ t, a v ≤ c v) ∧ ∀ v ∈ t, c v ≤ b v}
-  have hsub : ∀ {c d : E →ᴬ[ℝ] ℝ}, c ∈ T → d ∈ T →
-      closedRegionBetween c d (convexHull ℝ (t : Set E)) ⊆
-        closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
-    rintro c d hc hd ⟨p, q⟩ hpq
-    obtain ⟨hp, hcq, hqd⟩ := mem_closedRegionBetween.1 hpq
-    exact mem_closedRegionBetween.2 ⟨hts' hp,
-      (le_of_forall_le_of_mem_convexHull hc.2.1 hp).trans hcq,
-      hqd.trans (le_of_forall_le_of_mem_convexHull hd.2.2 hp)⟩
   -- their values at `x` form a finite set
   have hV : ((fun c : E →ᴬ[ℝ] ℝ ↦ c x) '' T).Finite := finite_image_apply hSlf habt hxt'
   -- the largest value at most `y` and the smallest value at least `y`
@@ -348,18 +352,10 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
   replace h₀ : c₀ x ≤ y := h₀
   replace h₁ : y ≤ c₁ x := h₁
   -- if one of them takes the value `y`, the point lies in the open part of its graph
-  have hgraph : ∀ {c : E →ᴬ[ℝ] ℝ}, c ∈ T → c x = y → ∃ D ∈ rectilinearCells S,
-      (x, y) ∈ intrinsicInterior ℝ D ∧ D ⊆ closedRegionBetween a b (convexHull ℝ (s : Set E)) := by
-    intro c hc hcy
-    refine ⟨(convexHull ℝ (t : Set E)).graphOn c, .inl ⟨(t, c), hc.1, rfl⟩, ?_, ?_⟩
-    · rw [ContinuousAffineMap.intrinsicInterior_graphOn]
-      exact mem_graphOn.2 ⟨hxt, hcy⟩
-    · rw [← closedRegionBetween_self]
-      exact hsub hc hc
   rcases h₀.eq_or_lt with h₀ | h₀
-  · exact hgraph hT₀ h₀
+  · exact exists_mem_rectilinearCells_of_graph hts hT₀.1 hT₀.2.1 hT₀.2.2 hxt h₀
   rcases h₁.eq_or_lt with h₁ | h₁
-  · exact hgraph hT₁ h₁.symm
+  · exact exists_mem_rectilinearCells_of_graph hts hT₁.1 hT₁.2.1 hT₁.2.2 hxt h₁.symm
   -- otherwise the two sections are consecutive and the point lies in the open band between them
   have hle : ∀ v ∈ t, c₀ v ≤ c₁ v := le_of_lt hSle hT₀.1 hT₁.1 hxt' (h₀.trans h₁)
   have hlt : ∃ v ∈ t, c₀ v < c₁ v := by
@@ -378,7 +374,8 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
         (le_of_forall_le_of_mem_convexHull hc₁ hxt').antisymm (hmin (c x) ⟨⟨c, hcT, rfl⟩, hcy⟩)
       exact .inr fun v hv ↦ eq_of_le_of_mem_intrinsicInterior hc₁ hxt hcx (subset_convexHull ℝ _ hv)
   refine ⟨closedRegionBetween c₀ c₁ (convexHull ℝ (t : Set E)),
-    .inr ⟨t, c₀, c₁, hT₀.1, hT₁.1, hcons, rfl⟩, ?_, hsub hT₀ hT₁⟩
+    .inr ⟨t, c₀, c₁, hT₀.1, hT₁.1, hcons, rfl⟩, ?_,
+    closedRegionBetween_convexHull_subset_of_le (Finset.coe_subset.2 hts) hT₀.2.1 hT₁.2.2⟩
   rw [intrinsicInterior_closedRegionBetween (fun v hv ↦ le_of_forall_le_of_mem_convexHull hle hv)
     ⟨x, hxt', h₀.trans h₁⟩]
   exact ⟨hxt, h₀, h₁⟩
@@ -628,20 +625,21 @@ theorem exists_subdivision_rectilinearCells
       (∀ t ∈ L.faces, ∃ C ∈ rectilinearCells S, (t : Set (E × ℝ)) ⊆ C) ∧
       LocallyFinite fun t : L.faces ↦ convexHull ℝ (t : Set (E × ℝ)) := by
   have hne : ∀ C : rectilinearCells S, (intrinsicInterior ℝ (C : Set (E × ℝ))).Nonempty :=
-    fun C ↦ Set.Nonempty.intrinsicInterior (convex_of_mem_rectilinearCells C.2)
-      (nonempty_of_mem_rectilinearCells hS C.2)
+    fun C ↦ Set.Nonempty.intrinsicInterior (convex_of_mem_rectilinearCells C.property)
+      (nonempty_of_mem_rectilinearCells hS C.property)
   obtain ⟨L, hLs, hLP, hLf, hLlf⟩ := SimplicialComplex.exists_subdivision
     (fun C : rectilinearCells S ↦ (C : Set (E × ℝ)))
-    (fun C ↦ isCompact_of_mem_rectilinearCells C.2) (fun C ↦ convex_of_mem_rectilinearCells C.2)
+    (fun C ↦ isCompact_of_mem_rectilinearCells C.property) (fun C ↦ convex_of_mem_rectilinearCells
+        C.property)
     (fun C ↦ (hne C).some) (fun C ↦ (hne C).some_mem)
     (locallyFinite_rectilinearCells hK hS hSle hSlf)
     (fun C D hCD ↦ Set.disjoint_left.2 fun _ hzC hzD ↦ hCD (Subtype.ext
-      (eq_of_mem_intrinsicInterior_rectilinearCells hS hSle C.2 D.2 hzC hzD)))
+      (eq_of_mem_intrinsicInterior_rectilinearCells hS hSle C.property D.property hzC hzD)))
     (fun C z hz ↦ by
       -- a point of the intrinsic frontier lies in the intrinsic interior of a smaller cell
-      obtain ⟨s, a, b, ha, hb, hab, hC⟩ := exists_eq_closedRegionBetween C.2
+      obtain ⟨s, a, b, ha, hb, hab, hC⟩ := exists_eq_closedRegionBetween C.property
       have hzC : z ∈ (C : Set (E × ℝ)) :=
-        intrinsicFrontier_subset (isCompact_of_mem_rectilinearCells C.2).isClosed hz
+        intrinsicFrontier_subset (isCompact_of_mem_rectilinearCells C.property).isClosed hz
       rw [← hC] at hzC
       obtain ⟨D, hD, hzD, hDC⟩ := exists_mem_intrinsicInterior hS hSface hSle hSlf ha hb hab hzC
       have hzi : z ∉ intrinsicInterior ℝ (C : Set (E × ℝ)) := by
@@ -652,7 +650,7 @@ theorem exists_subdivision_rectilinearCells
       exact hzD)
   refine ⟨L, by rw [hLs, sUnion_eq_iUnion], fun C hC ↦ hLP ⟨C, hC⟩, fun t ht ↦ ?_, hLlf⟩
   obtain ⟨C, -, htC⟩ := hLf t ht
-  exact ⟨C, C.2, htC⟩
+  exact ⟨C, C.property, htC⟩
 
 /-- **Triangulating a cylinder over a simplicial complex.** For a locally finite simplicial complex
 `K` in a finite-dimensional real normed space `E`, the cylinder `|K| × ℝ` has a locally finite

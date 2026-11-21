@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 
 /-!
@@ -29,6 +30,9 @@ instance, so they are not restated here.
 
 * `RootPairing.Equiv.autCongr`: conjugation by an equivalence, as a group isomorphism
   `P.Aut ≃* Q.Aut`.
+* `RootPairing.mapDual` and `RootPairing.equivMapDual`: pushforward of `P` along `e : ι ≃ ι₂` and
+  `f : M ≃ₗ[R] M₂` onto `M₂` paired with `Module.Dual R M₂` by evaluation, and the canonical
+  equivalence `P.Equiv (P.mapDual e f)`.
 
 ## Main results
 
@@ -48,6 +52,11 @@ instance, so they are not restated here.
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
   functorial.
+* `RootPairing.Hom.weightMap_comp_of_indexEquiv`,
+  `RootPairing.Hom.indexEquiv_apply_of_weightMap_comp`,
+  `RootPairing.Equiv.weightEquiv_comp_weightMap_of_indexEquiv`, and
+  `RootPairing.Equiv.indexEquiv_apply_of_weightEquiv_comp_weightMap`: intertwining of weight-space
+  endomorphisms and root-index permutations.
 
 ## References
 
@@ -56,7 +65,7 @@ instance, so they are not restated here.
 
 public section
 
-namespace TauCeti
+namespace RootPairing.Equiv
 
 variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -64,33 +73,30 @@ variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
   [AddCommGroup M₃] [Module R M₃] [AddCommGroup N₃] [Module R N₃]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂} {S : RootPairing ι₃ R M₃ N₃}
 
-open RootPairing (Aut)
-open RootPairing.Equiv (weightEquiv)
-
 /-- An equivalence of root pairings composed with its inverse is the identity of the target. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.self_comp_symm (e : P.Equiv Q) :
+theorem self_comp_symm (e : P.Equiv Q) :
     RootPairing.Equiv.comp e (RootPairing.Equiv.symm P Q e) = RootPairing.Equiv.id Q := by
   ext x <;> simp
 
 /-- The inverse of an equivalence of root pairings composed with it is the identity of the
 source. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.symm_comp_self (e : P.Equiv Q) :
+theorem symm_comp_self (e : P.Equiv Q) :
     RootPairing.Equiv.comp (RootPairing.Equiv.symm P Q e) e = RootPairing.Equiv.id P := by
   ext x <;> simp
 
 /-- The weight-space equivalence of a composite is the composite of the weight-space
 equivalences. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.weightEquiv_comp (e : P.Equiv Q) (f : Q.Equiv S) :
+theorem weightEquiv_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     weightEquiv (RootPairing.Equiv.comp f e) = e.weightEquiv ≪≫ₗ f.weightEquiv :=
   LinearEquiv.ext fun _ ↦ rfl
 
 /-- The coweight-space equivalence of a composite is the composite of the coweight-space
 equivalences, in the reverse order. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.coweightEquiv_comp (e : P.Equiv Q) (f : Q.Equiv S) :
+theorem coweightEquiv_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     RootPairing.Equiv.coweightEquiv (RootPairing.Equiv.comp f e) =
       f.coweightEquiv ≪≫ₗ e.coweightEquiv :=
   LinearEquiv.ext fun _ ↦ rfl
@@ -98,7 +104,7 @@ theorem _root_.RootPairing.Equiv.coweightEquiv_comp (e : P.Equiv Q) (f : Q.Equiv
 /-- The inverse of a composite of equivalences is the composite of the inverses, in the reverse
 order. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.symm_comp (e : P.Equiv Q) (f : Q.Equiv S) :
+theorem symm_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     RootPairing.Equiv.symm P S (RootPairing.Equiv.comp f e) =
       RootPairing.Equiv.comp (RootPairing.Equiv.symm P Q e) (RootPairing.Equiv.symm Q S f) := by
   ext x <;> simp
@@ -107,7 +113,7 @@ theorem _root_.RootPairing.Equiv.symm_comp (e : P.Equiv Q) (f : Q.Equiv S) :
 
 Not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
 `RootPairing.Equiv.autCongr_smul_index`, which is stated for the action. -/
-theorem _root_.RootPairing.Equiv.smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
+theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
     g • i = g.indexEquiv i :=
   (rfl)
 
@@ -115,18 +121,18 @@ noncomputable section Conjugation
 
 /-- **Conjugation by an equivalence of root pairings**, as a group isomorphism of automorphism
 groups: an automorphism `g` of `P` is carried to `e ∘ g ∘ e⁻¹`. -/
-def _root_.RootPairing.Equiv.autCongr (e : P.Equiv Q) : Aut P ≃* Aut Q where
+def autCongr (e : P.Equiv Q) : Aut P ≃* Aut Q where
   toFun g := .comp e (.comp g (.symm P Q e))
   invFun h := .comp (.symm P Q e) (.comp h e)
   left_inv g := by ext x <;> simp
   right_inv h := by ext x <;> simp
   map_mul' g₁ g₂ := by ext x <;> simp
 
-theorem _root_.RootPairing.Equiv.autCongr_apply (e : P.Equiv Q) (g : Aut P) :
+theorem autCongr_apply (e : P.Equiv Q) (g : Aut P) :
     e.autCongr g = .comp e (.comp g (.symm P Q e)) :=
   (rfl)
 
-theorem _root_.RootPairing.Equiv.autCongr_symm_apply (e : P.Equiv Q) (h : Aut Q) :
+theorem autCongr_symm_apply (e : P.Equiv Q) (h : Aut Q) :
     e.autCongr.symm h = .comp (.symm P Q e) (.comp h e) :=
   (rfl)
 
@@ -135,7 +141,7 @@ theorem _root_.RootPairing.Equiv.autCongr_symm_apply (e : P.Equiv Q) (h : Aut Q)
 Not a `simp` lemma: `RootPairing.Equiv.weightEquiv_apply` rewrites the left-hand side to the
 underlying `weightMap`, so the statement is not in `simp`-normal form. The intended interface is
 `RootPairing.Equiv.autCongr_smul`, which is stated for the weight-space action. -/
-theorem _root_.RootPairing.Equiv.weightEquiv_autCongr_apply (e : P.Equiv Q) (g : Aut P) (x : M₂) :
+theorem weightEquiv_autCongr_apply (e : P.Equiv Q) (g : Aut P) (x : M₂) :
     weightEquiv (e.autCongr g) x = e.weightEquiv (g.weightEquiv (e.weightEquiv.symm x)) :=
   (rfl)
 
@@ -147,14 +153,14 @@ round than for weight spaces; applying `e.coweightEquiv` to both sides turns thi
 Not a `simp` lemma, for the same reason as
 `RootPairing.Equiv.weightEquiv_autCongr_apply`: `RootPairing.Equiv.coweightEquiv_apply` rewrites
 the left-hand side to the underlying `coweightMap`. -/
-theorem _root_.RootPairing.Equiv.coweightEquiv_autCongr_apply (e : P.Equiv Q) (g : Aut P) (y : N₂) :
+theorem coweightEquiv_autCongr_apply (e : P.Equiv Q) (g : Aut P) (y : N₂) :
     RootPairing.Equiv.coweightEquiv (e.autCongr g) y =
       e.coweightEquiv.symm (g.coweightEquiv (e.coweightEquiv y)) :=
   (rfl)
 
 /-- The index permutation of a conjugated automorphism is the conjugated index permutation. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.indexEquiv_autCongr_apply (e : P.Equiv Q) (g : Aut P) (i : ι₂) :
+theorem indexEquiv_autCongr_apply (e : P.Equiv Q) (g : Aut P) (i : ι₂) :
     (e.autCongr g).indexEquiv i = e.indexEquiv (g.indexEquiv (e.indexEquiv.symm i)) :=
   (rfl)
 
@@ -162,7 +168,7 @@ theorem _root_.RootPairing.Equiv.indexEquiv_autCongr_apply (e : P.Equiv Q) (g : 
 
 Not a `simp` lemma: `RootPairing.Equiv.weightEquiv_apply` rewrites `e.weightEquiv x` in the
 left-hand side to `(↑e).weightMap x`, so the statement is not in `simp`-normal form. -/
-theorem _root_.RootPairing.Equiv.autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : M) :
+theorem autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : M) :
     e.autCongr g • e.weightEquiv x = e.weightEquiv (g • x) := by
   have h : e.autCongr g • e.weightEquiv x = weightEquiv (e.autCongr g) (e.weightEquiv x) := (rfl)
   have h' : g • x = g.weightEquiv x := (rfl)
@@ -170,14 +176,14 @@ theorem _root_.RootPairing.Equiv.autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : 
 
 /-- Conjugation transports the action on root indices along `e.indexEquiv`. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.autCongr_smul_index (e : P.Equiv Q) (g : Aut P) (i : ι) :
+theorem autCongr_smul_index (e : P.Equiv Q) (g : Aut P) (i : ι) :
     e.autCongr g • e.indexEquiv i = e.indexEquiv (g • i) := by
   rw [RootPairing.Equiv.smul_index_eq_indexEquiv, RootPairing.Equiv.smul_index_eq_indexEquiv,
     RootPairing.Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
 
 /-- Conjugation by the identity equivalence is the identity. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.autCongr_id :
+theorem autCongr_id :
     (RootPairing.Equiv.id P).autCongr = MulEquiv.refl (Aut P) :=
   MulEquiv.ext fun g ↦ by
     -- `RootPairing.Equiv.symm P P` and `RootPairing.Equiv.id P` are the inversion and the unit of
@@ -189,7 +195,7 @@ theorem _root_.RootPairing.Equiv.autCongr_id :
 
 /-- Conjugation by a composite is the composite of the conjugations. -/
 @[simp]
-theorem _root_.RootPairing.Equiv.autCongr_comp (e : P.Equiv Q) (f : Q.Equiv S) :
+theorem autCongr_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     (RootPairing.Equiv.comp f e).autCongr = e.autCongr.trans f.autCongr :=
   MulEquiv.ext fun g ↦ by
     simp only [RootPairing.Equiv.autCongr_apply, MulEquiv.trans_apply,
@@ -197,4 +203,94 @@ theorem _root_.RootPairing.Equiv.autCongr_comp (e : P.Equiv Q) (f : Q.Equiv S) :
 
 end Conjugation
 
-end TauCeti
+section Intertwine
+
+/-- When the roots of `P` span, a homomorphism intertwining `σ` and `τ` on root indices intertwines
+their weight-space endomorphisms on all of `M`. -/
+theorem _root_.RootPairing.Hom.weightMap_comp_of_indexEquiv [P.IsRootSystem] (f : P.Hom Q)
+    {σ : Aut P} {τ : Aut Q}
+    (h : ∀ j, f.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (f.indexEquiv j)) :
+    f.weightMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ f.weightMap := by
+  refine LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P)) fun j ↦ ?_
+  simp only [LinearMap.comp_apply, Hom.root_weightMap_apply P P j σ.toHom,
+    Hom.root_weightMap_apply P Q _ f, Hom.root_weightMap_apply Q Q _ τ.toHom, h j]
+
+/-- A homomorphism intertwining the weight-space endomorphisms of `σ` and `τ` intertwines their
+index permutations. No spanning assumption is needed. -/
+theorem _root_.RootPairing.Hom.indexEquiv_apply_of_weightMap_comp (f : P.Hom Q) {σ : Aut P}
+    {τ : Aut Q} (hw : f.weightMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ f.weightMap) (j : ι) :
+    f.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (f.indexEquiv j) := by
+  apply Q.root.injective
+  simpa only [LinearMap.comp_apply, Hom.root_weightMap_apply P P j σ.toHom,
+    Hom.root_weightMap_apply P Q _ f, Hom.root_weightMap_apply Q Q _ τ.toHom] using
+    LinearMap.congr_fun hw (P.root j)
+
+/-- When the roots of `P` span, an equivalence intertwining `σ` and `τ` on root indices intertwines
+their weight-space endomorphisms along `e.weightEquiv`. -/
+theorem weightEquiv_comp_weightMap_of_indexEquiv [P.IsRootSystem] (e : P.Equiv Q)
+    {σ : Aut P} {τ : Aut Q}
+    (h : ∀ j, e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j)) :
+    e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap :=
+  (LinearMap.ext e.weightEquiv_apply : e.weightEquiv.toLinearMap = e.toHom.weightMap) ▸
+    e.toHom.weightMap_comp_of_indexEquiv h
+
+/-- An equivalence intertwining the weight-space endomorphisms of `σ` and `τ` along `e.weightEquiv`
+intertwines their index permutations. No spanning assumption is needed. -/
+theorem indexEquiv_apply_of_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q}
+    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap)
+    (j : ι) : e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j) :=
+  e.toHom.indexEquiv_apply_of_weightMap_comp
+    ((LinearMap.ext e.weightEquiv_apply : e.weightEquiv.toLinearMap = e.toHom.weightMap) ▸ hw) j
+
+end Intertwine
+
+end RootPairing.Equiv
+
+namespace RootPairing
+section MapDual
+
+variable {ι ι₂ R M N M₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup M₂] [Module R M₂]
+  (P : RootPairing ι R M N) (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂)
+
+/-- Transport a root pairing along `e : ι ≃ ι₂` and `f : M ≃ₗ[R] M₂` onto `M₂` paired with its
+linear dual `Module.Dual R M₂` by evaluation. -/
+noncomputable def mapDual : RootPairing ι₂ R M₂ (Module.Dual R M₂) :=
+  P.map e f (P.flip.toPerfPair.trans f.symm.dualMap)
+
+instance [P.IsRootSystem] : (P.mapDual e f).IsRootSystem :=
+  inferInstanceAs (P.map e f (P.flip.toPerfPair.trans f.symm.dualMap)).IsRootSystem
+
+@[simp] theorem mapDual_toLinearMap : (P.mapDual e f).toLinearMap = Module.Dual.eval R M₂ := by
+  ext x φ; simp [mapDual, RootPairing.map]
+theorem mapDual_toLinearMap_apply (x : M₂) (φ : Module.Dual R M₂) :
+    (P.mapDual e f).toLinearMap x φ = φ x := by simp
+@[simp] theorem mapDual_root_apply (i : ι₂) :
+    (P.mapDual e f).root i = f (P.root (e.symm i)) := by rfl
+@[simp] theorem mapDual_coroot (i : ι₂) :
+    (P.mapDual e f).coroot i = (P.coroot' (e.symm i)).comp f.symm.toLinearMap := by
+  ext x; simp [mapDual, RootPairing.map, coroot']
+theorem mapDual_coroot_apply (i : ι₂) (x : M₂) :
+    (P.mapDual e f).coroot i x = P.coroot' (e.symm i) (f.symm x) := by simp
+
+/-- The canonical equivalence of root pairings from `P` to `P.mapDual e f`. -/
+noncomputable def equivMapDual : P.Equiv (P.mapDual e f) where
+  weightMap := f.toLinearMap
+  coweightMap := (P.flip.toPerfPair.trans f.symm.dualMap).symm.toLinearMap
+  indexEquiv := e
+  weight_coweight_transpose := by ext φ x; simp
+  root_weightMap := by ext i; simp
+  coroot_coweightMap := by
+    ext i; exact P.flip.toPerfPair.injective (LinearMap.ext fun y ↦ by simp [coroot'])
+  bijective_weightMap := f.bijective
+  bijective_coweightMap := (P.flip.toPerfPair.trans f.symm.dualMap).symm.bijective
+
+@[simp] theorem equivMapDual_weightMap : (P.equivMapDual e f).weightMap = f.toLinearMap := by rfl
+@[simp] theorem equivMapDual_weightEquiv : (P.equivMapDual e f).weightEquiv = f :=
+  LinearEquiv.ext fun _ ↦ rfl
+@[simp] theorem equivMapDual_coweightMap : (P.equivMapDual e f).coweightMap =
+    (P.flip.toPerfPair.trans f.symm.dualMap).symm.toLinearMap := by rfl
+@[simp] theorem equivMapDual_indexEquiv : (P.equivMapDual e f).indexEquiv = e := by rfl
+
+end MapDual
+end RootPairing

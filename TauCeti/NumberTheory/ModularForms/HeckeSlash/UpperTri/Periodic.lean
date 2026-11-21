@@ -9,6 +9,7 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Sum
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The upper-triangular Hecke slash sum under `T`-invariance
@@ -141,7 +142,7 @@ lemma heckeSlashUpperTri_shift_one (f : ℍ → ℂ) (hf : ∀ τ : ℍ, f ((1 :
     heckeSlashUpperTri k p f ((1 : ℝ) +ᵥ τ) = heckeSlashUpperTri k p f τ := by
   have hfT : f ∣[k] (mapGL ℚ (ModularGroup.T : SL(2, ℤ)) : GL (Fin 2) ℚ) = f := by
     ext x
-    rw [ModularForm.rat_slash, map_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    rw [ModularForm.rat_slash, map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
       ← _root_.ModularForm.SL_slash]
     have ht := TauCeti.ModularForm.slash_T_zpow_apply k 1 f x
     rw [zpow_one, Int.cast_one] at ht
@@ -150,7 +151,7 @@ lemma heckeSlashUpperTri_shift_one (f : ℍ → ℂ) (hf : ∀ τ : ℍ, f ((1 :
   have hT_eval : (heckeSlashUpperTri k p f ∣[k]
       (mapGL ℚ (ModularGroup.T : SL(2, ℤ)) : GL (Fin 2) ℚ)) τ =
         heckeSlashUpperTri k p f ((1 : ℝ) +ᵥ τ) := by
-    rw [ModularForm.rat_slash, map_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    rw [ModularForm.rat_slash, map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
       ← _root_.ModularForm.SL_slash]
     have ht := TauCeti.ModularForm.slash_T_zpow_apply k 1 (heckeSlashUpperTri k p f) τ
     rw [zpow_one, Int.cast_one] at ht
@@ -190,14 +191,18 @@ level and no explicit power enters the statement. A form invariant under a congr
 containing `T` — every `Γ₁(M)` — meets the hypothesis; `HeckeSlash/Degeneracy.lean` is the
 consumer. -/
 @[grind =]
-theorem heckeSlashUpperTri_slash_scaleRep_comm (hd : 0 < d) (hp : 0 < p)
+theorem heckeSlashUpperTri_slash_scaleRep_comm
     (hdp : Nat.Coprime d p) {f : ℍ → ℂ}
     (hT : f ∣[k] (mapGL ℚ ModularGroup.T : GL (Fin 2) ℚ) = f) :
     heckeSlashUpperTri k p (f ∣[k] (scaleRep d : GL (Fin 2) ℚ)) =
       heckeSlashUpperTri k p f ∣[k] (scaleRep d : GL (Fin 2) ℚ) := by
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · simp [scaleRep_zero, SlashAction.slash_one]
   have hTpow (q : ℕ) : f ∣[k] (mapGL ℚ (ModularGroup.T ^ q) : GL (Fin 2) ℚ) = f := by
     rw [ModularForm.rat_slash_mapGL, map_pow, ← zpow_natCast]
     exact slash_zpow_eq_self_of_slash_eq k f (by rwa [ModularForm.rat_slash_mapGL] at hT) q
+  rcases Nat.eq_zero_or_pos p with rfl | hp
+  · simp [heckeSlashUpperTri_def, SlashAction.zero_slash]
   rw [heckeSlashUpperTri_def, heckeSlashUpperTri_def, SlashAction.sum_slash]
   have : NeZero p := ⟨hp.ne'⟩
   rw [← Equiv.sum_comp (TauCeti.mulModEquiv p hdp) fun b ↦ (f ∣[k] upperTriRep p b) ∣[k]

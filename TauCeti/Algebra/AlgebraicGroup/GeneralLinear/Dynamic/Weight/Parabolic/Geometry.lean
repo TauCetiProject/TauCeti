@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.SemidirectProduct
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Geometry
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Unipotent.Geometry
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # Geometry of general-linear weight parabolics
@@ -21,12 +22,14 @@ U(w) ⋊ L(w) ≅ P(w)
 ```
 
 shows that every weight parabolic is smooth over a commutative ring and geometrically connected
-over a field.
+over a field. In particular, its coordinate Hopf algebra is reduced over a reduced ring.
 
 ## Main declarations
 
 * `TauCeti.GeneralLinear.smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra`:
   smoothness of a weight parabolic.
+* `TauCeti.GeneralLinear.isReduced_weightParabolicCoordinateHopfAlgebra`: reducedness of a
+  weight parabolic over a reduced ring.
 * `TauCeti.GeneralLinear.
   geometricallyConnectedCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra`:
   geometric connectedness of a weight parabolic.
@@ -60,6 +63,15 @@ theorem smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra
     infer_instance
   · rw [smoothCommHopfAlgProperty_iff]
     infer_instance
+
+/-- The coordinate Hopf algebra of a weight parabolic over a reduced ring is reduced, since it
+is smooth. -/
+instance isReduced_weightParabolicCoordinateHopfAlgebra
+    (R : Type u) [CommRing R] [IsReduced R] (w : Fin N → ℤ) :
+    IsReduced (weightParabolicCoordinateHopfAlgebra R w) := by
+  have := (smoothCommHopfAlgProperty_iff _).mp
+    (smoothCommHopfAlgProperty_weightParabolicCoordinateHopfAlgebra R w)
+  exact isReduced_of_smooth R _
 
 /-- The coordinate Hopf algebra of a weight parabolic is geometrically connected over every
 field. -/

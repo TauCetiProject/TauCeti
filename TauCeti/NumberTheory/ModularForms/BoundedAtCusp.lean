@@ -34,7 +34,7 @@ The limit-transport lemma records this factor, including the conjugation for neg
 * `OnePoint.IsZeroAt.sum`, `OnePoint.IsBoundedAt.sum`: a finite sum of functions vanishing
   (resp. bounded) at `c` vanishes (resp. is bounded) at `c`.
 * `OnePoint.IsZeroAt.const_smul`, `OnePoint.IsBoundedAt.const_smul`: both properties survive
-  scaling by a constant.
+  scaling by a constant from any scalar type `α` with `IsScalarTower α ℂ ℂ`.
 
 ## Provenance
 
@@ -88,6 +88,7 @@ end UpperHalfPlane
 namespace OnePoint
 
 variable {c : OnePoint ℝ} {k : ℤ} {ι : Type*} {s : Finset ι} {F : ι → ℍ → ℂ}
+variable {α : Type*} [SMul α ℂ] [IsScalarTower α ℂ ℂ]
 
 /-- The zero function vanishes at every point of `OnePoint ℝ`. -/
 @[simp]
@@ -95,8 +96,8 @@ lemma IsZeroAt.zero : IsZeroAt c 0 k := fun _ _ ↦ by simp
 
 /-- The zero function is bounded at every point of `OnePoint ℝ`. -/
 @[simp]
-lemma IsBoundedAt.zero : IsBoundedAt c 0 k := fun _ _ ↦ by
-  simpa using zero_form_isBoundedAtImInfty
+lemma IsBoundedAt.zero : IsBoundedAt c 0 k := fun g hg ↦
+  (IsZeroAt.zero g hg).isBoundedAtImInfty
 
 /-- A finite sum of functions vanishing at `c` vanishes at `c`. -/
 lemma IsZeroAt.sum (h : ∀ i ∈ s, IsZeroAt c (F i) k) : IsZeroAt c (∑ i ∈ s, F i) k :=
@@ -106,20 +107,24 @@ lemma IsZeroAt.sum (h : ∀ i ∈ s, IsZeroAt c (F i) k) : IsZeroAt c (∑ i ∈
 lemma IsBoundedAt.sum (h : ∀ i ∈ s, IsBoundedAt c (F i) k) : IsBoundedAt c (∑ i ∈ s, F i) k :=
   Finset.sum_induction F (IsBoundedAt c · k) (fun _ _ ↦ .add) IsBoundedAt.zero h
 
-/-- Vanishing at `c` survives scaling by a constant. -/
-lemma IsZeroAt.const_smul {f : ℍ → ℂ} (a : ℂ) (hf : IsZeroAt c f k) :
+/-- Vanishing at `c` survives scaling by a constant `a : α`, for any scalar type `α`
+with `IsScalarTower α ℂ ℂ` (such as `ℂ`, `ℝ`, `ℚ`, `ℤ` or `ℕ`). -/
+lemma IsZeroAt.const_smul {f : ℍ → ℂ} (a : α) (hf : IsZeroAt c f k) :
     IsZeroAt c (a • f) k := fun g hg ↦ by
-  -- `ModularForm.smul_slash` twists the scalar to `σ g a` when `g` has negative determinant;
-  -- that twist is immaterial, since vanishing along `atImInfty` is preserved by *any* scalar.
-  rw [ModularForm.smul_slash]
+  -- Once `smul_one_smul` makes the scalar complex, `ModularForm.smul_slash` twists it by `σ g`
+  -- when `g` has negative determinant; that twist is immaterial, since vanishing along
+  -- `atImInfty` is preserved by *any* scalar.
+  rw [← smul_one_smul ℂ a f, ModularForm.smul_slash]
   exact (hf g hg).smul _
 
-/-- Boundedness at `c` survives scaling by a constant. -/
-lemma IsBoundedAt.const_smul {f : ℍ → ℂ} (a : ℂ) (hf : IsBoundedAt c f k) :
+/-- Boundedness at `c` survives scaling by a constant `a : α`, for any scalar type `α`
+with `IsScalarTower α ℂ ℂ` (such as `ℂ`, `ℝ`, `ℚ`, `ℤ` or `ℕ`). -/
+lemma IsBoundedAt.const_smul {f : ℍ → ℂ} (a : α) (hf : IsBoundedAt c f k) :
     IsBoundedAt c (a • f) k := fun g hg ↦ by
-  -- `ModularForm.smul_slash` twists the scalar to `σ g a` when `g` has negative determinant;
-  -- that twist is immaterial, since boundedness along `atImInfty` is preserved by *any* scalar.
-  rw [ModularForm.smul_slash]
+  -- Once `smul_one_smul` makes the scalar complex, `ModularForm.smul_slash` twists it by `σ g`
+  -- when `g` has negative determinant; that twist is immaterial, since boundedness along
+  -- `atImInfty` is preserved by *any* scalar.
+  rw [← smul_one_smul ℂ a f, ModularForm.smul_slash]
   exact (hf g hg).smul _
 
 end OnePoint

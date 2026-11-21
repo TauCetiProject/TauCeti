@@ -110,6 +110,45 @@ theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modu
     id_tensor_pre_app_comp_ev, δ_natural_left_assoc, IsIso.hom_inv_id_assoc,
     Functor.map_comp]
 
+/-- If the evaluation `f* M ⊗ f* D ⟶ 𝟙` of the pulled-back exact pairing is the transported
+evaluation `M ⊗ D ⟶ 𝟙`, then the comparison `f* 𝓗om(M, -) ≅ 𝓗om(f* M, f* -)` built from `D`
+is compatible with evaluation. -/
+private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules) [D.IsQuasicoherent]
+    [ExactPairing D M]
+    [ExactPairing ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M)]
+    (he : ε_ ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M) =
+      inv (δ (Scheme.Modules.pullback f) M D) ≫ (Scheme.Modules.pullback f).map (ε_ D M) ≫
+        η (Scheme.Modules.pullback f))
+    (F : Y.Modules) :
+    (Scheme.Modules.pullback f).obj M ◁
+        (isoWhiskerRight (ihomIsoTensorLeft D M) (Scheme.Modules.pullback f) ≪≫
+          Scheme.Modules.pullbackTensorLeftIso f D ≪≫
+            isoWhiskerLeft (Scheme.Modules.pullback f)
+              (ihomIsoTensorLeft ((Scheme.Modules.pullback f).obj D)
+                ((Scheme.Modules.pullback f).obj M)).symm).hom.app F ≫
+      (ihom.ev ((Scheme.Modules.pullback f).obj M)).app ((Scheme.Modules.pullback f).obj F) =
+    inv (δ (Scheme.Modules.pullback f) M ((ihom M).obj F)) ≫
+      (Scheme.Modules.pullback f).map ((ihom.ev M).app F) := by
+  rw [← cancel_epi (δ (Scheme.Modules.pullback f) M ((ihom M).obj F)), IsIso.hom_inv_id_assoc]
+  dsimp only [Iso.trans_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
+    Iso.symm_hom, NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app]
+  rw [MonoidalCategory.whiskerLeft_comp, MonoidalCategory.whiskerLeft_comp,
+    Category.assoc, Category.assoc,
+    whiskerLeft_ihomIsoTensorLeft_inv_app_comp_ev,
+    Scheme.Modules.pullbackTensorLeftIso_hom_app,
+    Functor.OplaxMonoidal.δ_natural_right_assoc]
+  -- Unfold left tensoring to match the oplax associativity equation.
+  dsimp only [curriedTensor_obj_obj]
+  erw [Functor.OplaxMonoidal.associativity_inv_assoc]
+  rw [he]
+  simp only [MonoidalCategory.comp_whiskerRight, Category.assoc]
+  rw [← MonoidalCategory.comp_whiskerRight_assoc, IsIso.hom_inv_id,
+    MonoidalCategory.id_whiskerRight, Category.id_comp]
+  rw [Functor.OplaxMonoidal.δ_natural_left_assoc,
+    Functor.OplaxMonoidal.left_unitality_hom, ← (Scheme.Modules.pullback f).map_comp,
+    ← (Scheme.Modules.pullback f).map_comp, ← (Scheme.Modules.pullback f).map_comp,
+    whiskerLeft_ihomIsoTensorLeft_hom_app_comp_evaluation]
+
 /-- The canonical internal-Hom base-change comparison is invertible for every scheme morphism
 when its quasicoherent source has a quasicoherent left dual, without any condition on the target. -/
 theorem isIso_pullbackIhomComparison_of_exactPairing
@@ -131,47 +170,27 @@ theorem isIso_pullbackIhomComparison_of_exactPairing
     isoWhiskerRight (ihomIsoTensorLeft D M) P ≪≫
       Scheme.Modules.pullbackTensorLeftIso f D ≪≫
         isoWhiskerLeft P (ihomIsoTensorLeft (P.obj D) (P.obj M)).symm
-  have hi (F : Y.Modules) :
-      P.obj M ◁ i.hom.app F ≫ (ihom.ev (P.obj M)).app (P.obj F) =
-        inv (δ P M ((ihom M).obj F)) ≫ P.map ((ihom.ev M).app F) := by
-    rw [← cancel_epi (δ P M ((ihom M).obj F)), IsIso.hom_inv_id_assoc]
-    dsimp only [i, Iso.trans_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
-      Iso.symm_hom, NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app]
-    rw [MonoidalCategory.whiskerLeft_comp, MonoidalCategory.whiskerLeft_comp,
-      Category.assoc, Category.assoc,
-      whiskerLeft_ihomIsoTensorLeft_inv_app_comp_ev,
-      Scheme.Modules.pullbackTensorLeftIso_hom_app,
-      Functor.OplaxMonoidal.δ_natural_right_assoc]
-    -- Unfold left tensoring to match the oplax associativity equation.
-    dsimp only [curriedTensor_obj_obj]
-    erw [Functor.OplaxMonoidal.associativity_inv_assoc]
-    -- The image pairing comes from strong monoidal pullback on quasicoherent sheaves.
-    have he : ε_ (P.obj D) (P.obj M) =
-        inv (δ P M D) ≫ P.map (ε_ D M) ≫ η P := by
-      have h := Functor.mapExactPairing_evaluation
-        (F := ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ P))
-        QD QM
-      rw [Scheme.Modules.pullbackToModules_η, ← Scheme.Modules.pullback_η] at h
-      -- Read the composite functor on underlying module maps before rewriting the
-      -- full-subcategory evaluation; this avoids mixing the two category instances.
-      change ε_ (P.obj D) (P.obj M) =
-        μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ P)
-          QM QD ≫ P.map ((ε_ QD QM).hom) ≫ η P at h
-      erw [ObjectProperty.exactPairingFullSubcategory_evaluation_hom (C := Y.Modules)] at h
-      rw [← Functor.Monoidal.inv_δ] at h
-      have hd : inv (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ P)
-          QM QD) =
-          inv (δ P M D) :=
-        IsIso.inv_eq_inv.mpr (Scheme.Modules.pullbackToModules_δ f _ _)
-      rw [hd] at h
-      exact h
-    rw [he]
-    simp only [MonoidalCategory.comp_whiskerRight, Category.assoc]
-    rw [← MonoidalCategory.comp_whiskerRight_assoc, IsIso.hom_inv_id,
-      MonoidalCategory.id_whiskerRight, Category.id_comp]
-    rw [Functor.OplaxMonoidal.δ_natural_left_assoc,
-      Functor.OplaxMonoidal.left_unitality_hom, ← P.map_comp, ← P.map_comp,
-      ← P.map_comp, whiskerLeft_ihomIsoTensorLeft_hom_app_comp_evaluation]
+  -- The image pairing comes from strong monoidal pullback on quasicoherent sheaves.
+  have he : ε_ (P.obj D) (P.obj M) =
+      inv (δ P M D) ≫ P.map (ε_ D M) ≫ η P := by
+    have h := Functor.mapExactPairing_evaluation
+      (F := ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ P))
+      QD QM
+    rw [Scheme.Modules.pullbackToModules_η, ← Scheme.Modules.pullback_η] at h
+    -- Read the composite functor on underlying module maps before rewriting the
+    -- full-subcategory evaluation; this avoids mixing the two category instances.
+    change ε_ (P.obj D) (P.obj M) =
+      μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ P)
+        QM QD ≫ P.map ((ε_ QD QM).hom) ≫ η P at h
+    erw [ObjectProperty.exactPairingFullSubcategory_evaluation_hom (C := Y.Modules)] at h
+    rw [← Functor.Monoidal.inv_δ] at h
+    have hd : inv (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ P)
+        QM QD) =
+        inv (δ P M D) :=
+      IsIso.inv_eq_inv.mpr (Scheme.Modules.pullbackToModules_δ f _ _)
+    rw [hd] at h
+    exact h
+  have hi (F : Y.Modules) := ev_comp_pullbackIhomIso_hom_app M f D he F
   -- Evaluation uniquely characterizes the canonical comparison, so the constructed
   -- natural isomorphism has precisely that forward map.
   have h : (pullbackIhomComparison M f) = i.hom := by

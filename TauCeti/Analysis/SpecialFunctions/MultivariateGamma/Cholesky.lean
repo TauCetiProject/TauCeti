@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The multivariate Gamma function in Cholesky coordinates
@@ -63,26 +64,26 @@ variable {p : ℕ} {a : ℝ}
 coordinate contributes a Gamma integrand, restricted to the positive half-line because the
 region constrains it; a strictly lower coordinate contributes a Gaussian integrand. -/
 private def choleskyFactor (a : ℝ) (ij : lowerTriangle p) (t : ℝ) : ℝ :=
-  if ij.1.1 = ij.1.2 then
+  if ij.val.1 = ij.val.2 then
     (Ioi (0 : ℝ)).indicator
-      (fun s ↦ 2 * s ^ (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1) * exp (-s ^ 2)) t
+      (fun s ↦ 2 * s ^ (2 * a - ((ij.val.1 : ℕ) : ℝ) - 1) * exp (-s ^ 2)) t
   else exp (-t ^ 2)
 
 /-- Each one-dimensional factor integrates to a Gamma value on the diagonal and to `√π` off it. -/
 private theorem integral_choleskyFactor (ha : ((p : ℝ) - 1) / 2 < a) (ij : lowerTriangle p) :
     ∫ t, choleskyFactor a ij t =
-      if ij.1.1 = ij.1.2 then Real.Gamma (a - ((ij.1.1 : ℕ) : ℝ) / 2) else √π := by
+      if ij.val.1 = ij.val.2 then Real.Gamma (a - ((ij.val.1 : ℕ) : ℝ) / 2) else √π := by
   simp only [choleskyFactor]
   split_ifs with h
-  · have hlt : ((ij.1.1 : ℕ) : ℝ) < 2 * a := by
-      have : ((ij.1.1 : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast ij.1.1.2
+  · have hlt : ((ij.val.1 : ℕ) : ℝ) < 2 * a := by
+      have : ((ij.val.1 : ℕ) : ℝ) + 1 ≤ (p : ℝ) := by exact_mod_cast ij.val.1.isLt
       linarith
     rw [integral_indicator measurableSet_Ioi,
       setIntegral_congr_fun measurableSet_Ioi (g := fun s ↦
-        2 * (s ^ (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1) * exp (-s ^ (2 : ℝ))))
+        2 * (s ^ (2 * a - ((ij.val.1 : ℕ) : ℝ) - 1) * exp (-s ^ (2 : ℝ))))
         (fun s _ ↦ by simp only [Real.rpow_two]; ring),
       integral_const_mul, integral_rpow_mul_exp_neg_rpow (by norm_num) (by linarith)]
-    have hexp : (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1 + 1) / 2 = a - ((ij.1.1 : ℕ) : ℝ) / 2 := by ring
+    have hexp : (2 * a - ((ij.val.1 : ℕ) : ℝ) - 1 + 1) / 2 = a - ((ij.val.1 : ℕ) : ℝ) / 2 := by ring
     rw [hexp]
     ring
   · simpa using integral_gaussian 1
@@ -101,14 +102,14 @@ private theorem indicator_eq_prod_choleskyFactor (a : ℝ) (x : lowerTriangle p 
   · have hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩ := (mem_posDiagLowerRegion p).mp hx
     -- Split each factor into the part depending on the exponent and a Gaussian part.
     have hfac : ∀ ij : lowerTriangle p, choleskyFactor a ij (x ij) =
-        (if ij.1.1 = ij.1.2 then
-            2 * x ⟨(ij.1.1, ij.1.1), le_rfl⟩ ^ (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1) else 1) *
+        (if ij.val.1 = ij.val.2 then
+            2 * x ⟨(ij.val.1, ij.val.1), le_rfl⟩ ^ (2 * a - ((ij.val.1 : ℕ) : ℝ) - 1) else 1) *
           exp (-x ij ^ 2) := by
       intro ij
       simp only [choleskyFactor]
       split_ifs with h
-      · have hij : ij = ⟨(ij.1.1, ij.1.1), le_rfl⟩ := Subtype.ext (Prod.ext rfl h.symm)
-        rw [Set.indicator_of_mem (by rw [hij]; exact hpos ij.1.1), ← hij]
+      · have hij : ij = ⟨(ij.val.1, ij.val.1), le_rfl⟩ := Subtype.ext (Prod.ext rfl h.symm)
+        rw [Set.indicator_of_mem (by rw [hij]; exact hpos ij.val.1), ← hij]
       · ring
     have hcore := prod_lowerTriangle_diag_rpow_mul_exp_neg_sq x hpos
       (a - ((p : ℝ) + 1) / 2) 1 (fun _ ↦ 2) 1
@@ -144,7 +145,7 @@ theorem integral_lowerTriangle_det_rpow_mul_exp_neg_trace
       multivariateGamma p a := by
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · -- In dimension zero the region is the whole one-point coordinate space.
-    have : IsEmpty (lowerTriangle 0) := ⟨fun ij ↦ ij.1.1.elim0⟩
+    have : IsEmpty (lowerTriangle 0) := ⟨fun ij ↦ ij.val.1.elim0⟩
     rw [show posDiagLowerRegion 0 = Set.univ from
         Set.eq_univ_of_forall fun x ↦ (mem_posDiagLowerRegion 0).2 fun i ↦ i.elim0,
       Measure.restrict_univ, Measure.volume_pi_eq_dirac, integral_dirac, multivariateGamma_zero]
@@ -164,8 +165,7 @@ theorem integral_lowerTriangle_det_rpow_mul_exp_neg_trace
           prod_lowerTriangle_ite (fun i ↦ Real.Gamma (a - ((i : ℕ) : ℝ) / 2)) fun _ ↦ √π,
           multivariateGamma_eq_prod]
         refine Finset.prod_congr rfl fun i _ ↦ ?_
-        rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul pi_pos.le, mul_comm]
-        ring_nf
+        rw [Real.pow_sqrt_eq_rpow pi_pos.le, mul_comm]
 
 /-- For `((p : ℝ) - 1) / 2 < a` (a condition only in positive dimension), the Jacobian-weighted
 Wishart integrand `(det (L * Lᵀ)) ^ (a - (p + 1) / 2) * exp (-trace (L * Lᵀ)) *

@@ -16,15 +16,15 @@ Given open embeddings with pairwise disjoint ranges, ordered tuples mapped point
 embeddings embed openly as unordered tuples. In particular, given pairwise disjoint open
 neighbourhoods `U i` of `n` distinct points, their product is an open subspace of `Sym α n`;
 obtaining such neighbourhoods in a Hausdorff space is a separate step. The proof comes from
-`TauCeti.Sym.ofFn` being continuous and open together with `IsOpenEmbedding.piMap`.
+`Sym.ofFn` being continuous and open together with `IsOpenEmbedding.piMap`.
 
 Splitting over the distinct points of a tuple, with the multiplicities as the degrees, is how the
-symmetric power of a surface is charted: a neighbourhood of a tuple with
-distinct points `z₁, …, z_k` of multiplicities `n₁, …, n_k` is a product of the symmetric powers
-`Sym^{n_j}` of disjoint coordinate discs, each of which is an open subspace of affine space by
-`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`. Lane F4.1 of the analytic Heegaard Floer
-roadmap needs exactly this to give `Sym^g(Σ)` its complex structure, after Ozsváth--Szabó
-([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). The coefficient homeomorphism
+symmetric power of a surface is charted: a neighbourhood of a tuple with distinct points
+`z₁, …, z_k` of multiplicities `n₁, …, n_k` is a product of the symmetric powers `Sym^{n_j}` of
+disjoint coordinate discs, each of which is an open subspace of affine space by
+`Sym.isOpenEmbedding_coeffEquiv_comp_map`. This is how `Sym^g(Σ)` gets its complex structure,
+after Ozsváth--Szabó ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). The
+coefficient homeomorphism
 is in `TauCeti/Analysis/Polynomial/SymmetricPower.lean`, while the charts and charted structure are
 in `TauCeti/Geometry/Manifold/SymmetricPower.lean`. Family-level concatenation along disjoint open
 sets, and the Hausdorff separation producing the family that a given tuple needs, are in
@@ -32,15 +32,13 @@ sets, and the Hausdorff separation producing the family that a given tuple needs
 
 ## Main declaration
 
-* `TauCeti.Sym.isOpenEmbedding_ofFn_map`: open embeddings with pairwise disjoint ranges induce an
+* `Sym.isOpenEmbedding_ofFn_map`: open embeddings with pairwise disjoint ranges induce an
   open embedding from their product into the symmetric power.
 -/
 
 public section
 
 open Topology
-
-namespace TauCeti
 
 namespace Sym
 
@@ -63,5 +61,3 @@ theorem isOpenEmbedding_ofFn_map {X : Fin n → Type*} [∀ i, TopologicalSpace 
   · exact isOpenMap_ofFn.comp (IsOpenEmbedding.piMap hf).isOpenMap
 
 end Sym
-
-end TauCeti

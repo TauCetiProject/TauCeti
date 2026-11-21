@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
+public import TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Cosh
+import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Kernel and cokernel cancellation on a neck
@@ -24,7 +26,15 @@ positive end of `D₁` to the negative end of `D₂` along a neck of length `2R`
 `D_R = d/ds - a_R(s)`, `a_R(s) = 1 - tanh (s + R) + tanh (s - R)`
 
 (`TauCeti.neckCoeff`), which is `D₁` near `s = -R` and `D₂` near `s = R`, and whose coefficient
-tends to `1` at both ends. This file shows that `D_R` is invertible, for every `R`: the kernel of
+tends to `1` at both ends. Both statements hold in every `C^k` norm with exponential rates. The
+`k`-th derivative of `a_R` at `s - R` differs from that of `-tanh` at `s` by at most
+`C exp (2 (s - 2 R))`, and at `s + R` from that of `tanh` at `s` by at most
+`C exp (-2 (s + 2 R))`, so the translated operators converge to `D₁` and `D₂` locally in `C^k`
+as `R → ∞`; for each `R` the `k`-th derivative of `a_R - 1` is at most `C exp (2 (|R| - |s|))`.
+All of this follows from the exponential decay of the derivatives of `tanh`
+(`Real.exists_abs_iteratedDeriv_succ_tanh_le`), since `a_R(s) - 1 = tanh (s - R) - tanh (s + R)`.
+
+This file shows that `D_R` is invertible, for every `R`: the kernel of
 `D₁` cancels against the cokernel of `D₂`, so the index `0 = 1 + (-1)` is additive under gluing
 while the kernel and the cokernel separately are not. It also shows that the inverse is not
 uniformly bounded as the neck grows: its norm is at least `exp (2 R) / 2`. These are the two
@@ -53,13 +63,25 @@ The operator is written in the convention `D_A u = u' + A u` of
 `TauCeti.WeakDerivStep.trajectoryOperator`, with the coefficient `A(s) = -a_R(s) • id` acting on
 a real Banach (for the kernel and the inverse bound) or finite-dimensional inner product (for the
 cokernel) space `E`. The scalar example is `E = ℝ`; `E = ℂ` is its complexification, the zero
-Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`.
+Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`. The other Fourier modes
+`d/ds - (a_R + 2πk)`, `k ≠ 0`, are invertible with inverse of norm at most `1` for every `R ≥ 0`
+(`TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode`, which applies because `|a_R| ≤ 1` and
+`|a_R'| ≤ 1`), so on the cylinder the cancellation and the growth of the inverse are carried by the
+zero mode alone.
 
 ## Main declarations
 
 * `TauCeti.neckCoeff`: the coefficient `a_R(s) = 1 - tanh (s + R) + tanh (s - R)`, with the closed
-  form `TauCeti.neckCoeff_eq`, the bounds `-1 < a_R ≤ 1` for `R ≥ 0`, the limits `1` at both
-  ends, and the exponential comparisons with `-tanh` and `tanh` after translation by `∓R`.
+  form `TauCeti.neckCoeff_eq`, the bounds `-1 < a_R ≤ 1` for `R ≥ 0` and `|a_R'| ≤ 1`, the limits
+  `1` at both ends, and the exponential comparisons with `-tanh` and `tanh` after translation by
+  `∓R`.
+* `TauCeti.exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le` and
+  `TauCeti.exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le`: the exponential
+  `C^k` comparisons of the translated coefficients with `-tanh` and `tanh`, with the resulting
+  local `C^k` convergence `TauCeti.tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub` and
+  `TauCeti.tendstoUniformlyOn_iteratedDeriv_neckCoeff_add` as `R → ∞`.
+* `TauCeti.exists_abs_iteratedDeriv_neckCoeff_sub_one_le`: the exponential `C^k` convergence of
+  the coefficient to `1` at both ends.
 * `TauCeti.neckSolution`: the positive solution `F_R` of `v' = a_R v`, with its asymptotics.
 * `TauCeti.squareIntegrableSolutions_neg_neckCoeff_smul_id` and
   `TauCeti.squareIntegrableSolutions_neckCoeff_smul_id`: neither `v' = a_R v` nor `v' = -a_R v`
@@ -71,6 +93,11 @@ Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`.
   `sech (s + R)` has `‖D_R u‖ ≤ 2 exp (-2 R) ‖u‖`.
 * `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`:
   hence every bound `‖u‖ ≤ C ‖D_R u‖` has `C ≥ exp (2 R) / 2`.
+* `TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`,
+  `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id` and
+  `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`: for
+  `R ≥ 0` and `k ≠ 0`, the `k`-th Fourier mode `d/ds - (a_R + 2πk)` of the cylinder operator has
+  zero kernel, is onto, and satisfies `‖u‖ ≤ ‖D u‖`.
 
 ## References
 
@@ -169,6 +196,27 @@ theorem hasDerivAt_neckCoeff (R s : ℝ) :
   · field_simp
     ring
 
+/-- The derivative of the neck coefficient as a difference of two squared hyperbolic secants,
+`a_R'(s) = sech² (s - R) - sech² (s + R)`, from differentiating `1 - tanh (s + R) + tanh (s - R)`
+term by term. -/
+theorem hasDerivAt_neckCoeff_one_div_cosh_sq (R s : ℝ) :
+    HasDerivAt (neckCoeff R) (1 / cosh (s - R) ^ 2 - 1 / cosh (s + R) ^ 2) s := by
+  have h₁ := (hasDerivAt_tanh (s + R)).comp s ((hasDerivAt_id' s).add_const R)
+  have h₂ := (hasDerivAt_tanh (s - R)).comp s ((hasDerivAt_id' s).sub_const R)
+  convert (h₁.const_sub 1).add h₂ using 1
+  · funext x
+    simp [neckCoeff_def]
+  · ring
+
+/-- The derivative of the neck coefficient, `a_R'(s) = sech² (s - R) - sech² (s + R)`, is a
+difference of two numbers in `(0, 1]`, so `|a_R'| ≤ 1`. -/
+theorem abs_deriv_neckCoeff_le_one (R s : ℝ) : |deriv (neckCoeff R) s| ≤ 1 := by
+  have hb (x : ℝ) : 0 ≤ 1 / cosh x ^ 2 ∧ 1 / cosh x ^ 2 ≤ 1 := by
+    have hx := one_le_cosh x
+    exact ⟨by positivity, div_le_one_of_le₀ (by nlinarith) (by positivity)⟩
+  rw [(hasDerivAt_neckCoeff_one_div_cosh_sq R s).deriv, abs_le]
+  constructor <;> linarith [hb (s + R), hb (s - R)]
+
 /-- The derivative of the neck coefficient is bounded by `4 |sinh (2 R)| / D`. -/
 private theorem norm_deriv_neckCoeff_le (R s : ℝ) :
     ‖deriv (neckCoeff R) s‖ ≤ 4 * |sinh (2 * R)| * (cosh (2 * s) + cosh (2 * R))⁻¹ := by
@@ -222,6 +270,143 @@ theorem abs_neckCoeff_add_sub_tanh_le (R s : ℝ) :
     ring
   rw [h, abs_of_pos (by linarith [tanh_lt_one (s + 2 * R)])]
   exact one_sub_tanh_le _
+
+/-! ### Convergence of the coefficient in every `C^k` norm -/
+
+/-- Every derivative of positive order of the neck coefficient is the difference
+`tanh⁽ⁿ⁺¹⁾ (s - R) - tanh⁽ⁿ⁺¹⁾ (s + R)` of two translated derivatives of `tanh`. -/
+theorem iteratedDeriv_succ_neckCoeff (n : ℕ) (R s : ℝ) :
+    iteratedDeriv (n + 1) (neckCoeff R) s =
+      iteratedDeriv (n + 1) tanh (s - R) - iteratedDeriv (n + 1) tanh (s + R) := by
+  have h₁ : ContDiffAt ℝ ((n + 1 : ℕ) : WithTop ℕ∞) (fun x ↦ 1 - tanh (x + R)) s := by fun_prop
+  have h₂ : ContDiffAt ℝ ((n + 1 : ℕ) : WithTop ℕ∞) (fun x ↦ tanh (x - R)) s := by fun_prop
+  rw [show neckCoeff R = fun x ↦ (1 - tanh (x + R)) + tanh (x - R) from
+      funext (neckCoeff_def R), iteratedDeriv_fun_add h₁ h₂, iteratedDeriv_const_sub n.succ_pos,
+    iteratedDeriv_neg, iteratedDeriv_comp_add_const, iteratedDeriv_comp_sub_const]
+  ring
+
+/-- **The neck near `-R` is `d/ds + tanh s` in every `C^k` norm.** For each order `k` there is a
+constant `C` such that, for every `R` and `s`, the `k`-th derivative of the neck coefficient at
+`s - R` differs from that of `-tanh` at `s` by at most `C exp (2 (s - 2 R))`. So the translated
+coefficients `a_R(· - R)` converge to `-tanh` in `C^k` on every half-line `s ≤ c`,
+exponentially fast as `R → ∞`. At order `0` this is `TauCeti.abs_neckCoeff_sub_add_tanh_le`. -/
+theorem exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ R s, |iteratedDeriv k (neckCoeff R) (s - R) + iteratedDeriv k tanh s| ≤
+      C * exp (2 * (s - 2 * R)) := by
+  cases k with
+  | zero => exact ⟨2, zero_le_two, fun R s ↦ by simpa using abs_neckCoeff_sub_add_tanh_le R s⟩
+  | succ n =>
+    -- `a_R(s - R) = 1 + tanh (s - 2 R) - tanh s`, so only `tanh⁽ⁿ⁺¹⁾ (s - 2 R)` remains.
+    obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨C, hC₀, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_succ_neckCoeff, sub_add_cancel, show s - R - R = s - 2 * R by ring,
+      sub_add_cancel]
+    refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
+    linarith [neg_abs_le (s - 2 * R)]
+
+/-- **The neck near `R` is `d/ds - tanh s` in every `C^k` norm.** For each order `k` there is a
+constant `C` such that, for every `R` and `s`, the `k`-th derivative of the neck coefficient at
+`s + R` differs from that of `tanh` at `s` by at most `C exp (-2 (s + 2 R))`. So the translated
+coefficients `a_R(· + R)` converge to `tanh` in `C^k` on every half-line `s ≥ c`, exponentially
+fast as `R → ∞`. At order `0` this is `TauCeti.abs_neckCoeff_add_sub_tanh_le`. -/
+theorem exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ R s, |iteratedDeriv k (neckCoeff R) (s + R) - iteratedDeriv k tanh s| ≤
+      C * exp (-(2 * (s + 2 * R))) := by
+  cases k with
+  | zero => exact ⟨2, zero_le_two, fun R s ↦ by simpa using abs_neckCoeff_add_sub_tanh_le R s⟩
+  | succ n =>
+    -- `a_R(s + R) = 1 - tanh (s + 2 R) + tanh s`, so only `-tanh⁽ⁿ⁺¹⁾ (s + 2 R)` remains.
+    obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨C, hC₀, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_succ_neckCoeff, add_sub_cancel_right, show s + R + R = s + 2 * R by ring,
+      sub_sub_cancel_left, abs_neg]
+    refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
+    linarith [le_abs_self (s + 2 * R)]
+
+/-- The translated neck coefficients `a_R(· - R)` converge to `-tanh` as `R → ∞` in every `C^k`
+norm, uniformly on every half-line `s ≤ c`: the neck operator `d/ds - a_R`, read near `-R`,
+converges to `d/ds + tanh s`. -/
+theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub (k : ℕ) (c : ℝ) :
+    TendstoUniformlyOn (fun R s ↦ iteratedDeriv k (neckCoeff R) (s - R))
+      (fun s ↦ -iteratedDeriv k tanh s) atTop (Iic c) := by
+  obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le k
+  -- On `s ≤ c` the bound is at most `C exp (2 c - 4 R)`.
+  refine tendstoUniformlyOn_of_dist_le (u := fun R ↦ C * exp (2 * c + -4 * R)) ?_
+    (Eventually.of_forall fun R s hs ↦ ?_)
+  · simpa using (tendsto_exp_comp_nhds_zero.2 <| tendsto_atBot_add_const_left _ _ <|
+      tendsto_id.const_mul_atTop_of_neg (by norm_num : (-4 : ℝ) < 0)).const_mul C
+  rw [Real.dist_eq, sub_neg_eq_add]
+  refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
+  linarith [mem_Iic.1 hs]
+
+/-- The translated neck coefficients `a_R(· + R)` converge to `tanh` as `R → ∞` in every `C^k`
+norm, uniformly on every half-line `s ≥ c`: the neck operator `d/ds - a_R`, read near `R`,
+converges to `d/ds - tanh s`. -/
+theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_add (k : ℕ) (c : ℝ) :
+    TendstoUniformlyOn (fun R s ↦ iteratedDeriv k (neckCoeff R) (s + R))
+      (iteratedDeriv k tanh) atTop (Ici c) := by
+  obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le k
+  -- On `s ≥ c` the bound is at most `C exp (-2 c - 4 R)`.
+  refine tendstoUniformlyOn_of_dist_le (u := fun R ↦ C * exp (-(2 * c) + -4 * R)) ?_
+    (Eventually.of_forall fun R s hs ↦ ?_)
+  · simpa using (tendsto_exp_comp_nhds_zero.2 <| tendsto_atBot_add_const_left _ _ <|
+      tendsto_id.const_mul_atTop_of_neg (by norm_num : (-4 : ℝ) < 0)).const_mul C
+  rw [Real.dist_eq]
+  refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
+  linarith [mem_Ici.1 hs]
+
+/-- `a_R(s) - 1 = tanh (s - R) - tanh (s + R)`. -/
+theorem neckCoeff_sub_one (R s : ℝ) : neckCoeff R s - 1 = tanh (s - R) - tanh (s + R) := by
+  rw [neckCoeff_def]
+  ring
+
+/-- **The neck coefficient converges to `1` at both ends in every `C^k` norm.** For each order `k`
+there is a constant `C` such that, for every `R` and `s`, the `k`-th derivative of `a_R - 1` at
+`s` is at most `C exp (2 (|R| - |s|))` in absolute value. So for each fixed neck length the
+coefficient of `d/ds - a_R` converges to its limit `1` at both ends exponentially in `C^k`, at
+the rate `exp (-2 |s|)` set by the ends of the two pieces `d/ds ± tanh s`. -/
+theorem exists_abs_iteratedDeriv_neckCoeff_sub_one_le (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ R s,
+      |iteratedDeriv k (fun s ↦ neckCoeff R s - 1) s| ≤ C * exp (2 * (|R| - |s|)) := by
+  cases k with
+  | zero =>
+    -- Compare both terms of `tanh (s - R) - tanh (s + R)` with `1` at `+∞` and with `-1` at `-∞`.
+    refine ⟨4, zero_le_four, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_zero, neckCoeff_sub_one, abs_le]
+    have hR₁ := neg_abs_le R
+    have hR₂ := le_abs_self R
+    rcases le_total 0 s with hs | hs
+    · have h₁ := one_sub_tanh_le (s - R)
+      have h₂ := one_sub_tanh_le (s + R)
+      have e₁ : exp (-(2 * (s - R))) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonneg hs]; linarith)
+      have e₂ : exp (-(2 * (s + R))) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonneg hs]; linarith)
+      constructor <;> linarith [tanh_lt_one (s - R), tanh_lt_one (s + R)]
+    · have h₁ := one_add_tanh_le (s - R)
+      have h₂ := one_add_tanh_le (s + R)
+      have e₁ : exp (2 * (s - R)) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonpos hs]; linarith)
+      have e₂ : exp (2 * (s + R)) ≤ exp (2 * (|R| - |s|)) :=
+        exp_le_exp.2 (by rw [abs_of_nonpos hs]; linarith)
+      constructor <;> linarith [neg_one_lt_tanh (s - R), neg_one_lt_tanh (s + R)]
+  | succ n =>
+    obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_succ_tanh_le n
+    refine ⟨2 * C, by positivity, fun R s ↦ ?_⟩
+    rw [iteratedDeriv_fun_sub ((contDiff_neckCoeff R).contDiffAt) contDiffAt_const]
+    simp only [iteratedDeriv_const, Nat.add_one_ne_zero, ↓reduceIte, sub_zero]
+    rw [iteratedDeriv_succ_neckCoeff]
+    -- Each term is at most `C exp (-2 |s ∓ R|) ≤ C exp (2 (|R| - |s|))`.
+    have hb (y : ℝ) (hy : |s| ≤ |y| + |R|) :
+        |iteratedDeriv (n + 1) tanh y| ≤ C * exp (2 * (|R| - |s|)) :=
+      (hC y).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 (by linarith)) hC₀)
+    have hy₁ : |s| ≤ |s - R| + |R| := by
+      simpa using abs_add_le (s - R) R
+    have hy₂ : |s| ≤ |s + R| + |R| := by
+      simpa [abs_neg] using abs_add_le (s + R) (-R)
+    calc _ ≤ |iteratedDeriv (n + 1) tanh (s - R)| + |iteratedDeriv (n + 1) tanh (s + R)| :=
+          abs_sub _ _
+      _ ≤ _ := by linarith [hb _ hy₁, hb _ hy₂]
 
 /-! ### The solution `F_R` of `v' = a_R v` -/
 
@@ -309,7 +494,7 @@ theorem squareIntegrableSolutions_neg_neckCoeff_smul_id (R : ℝ) :
     squareIntegrableSolutions (fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ :=
   squareIntegrableSolutions_neg_smul_id_eq_bot (continuous_neckCoeff R) (hasDerivAt_neckSolution R)
     (neckSolution_zero R) (MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero
-      ENNReal.ofNat_ne_top (tendsto_norm_atTop_atTop.comp (tendsto_neckSolution_atTop R)))
+      (tendsto_norm_atTop_atTop.comp (tendsto_neckSolution_atTop R)))
 
 /-- **The adjoint equation `v' = -a_R v` has no nonzero square-integrable solution.** Every
 solution is `F_R(s)⁻¹ • v 0`, which grows like `exp (-s)` at `-∞`. -/
@@ -317,7 +502,7 @@ theorem squareIntegrableSolutions_neckCoeff_smul_id (R : ℝ) :
     squareIntegrableSolutions (fun s ↦ neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ := by
   simpa using squareIntegrableSolutions_neg_smul_id_eq_bot (F := F) (continuous_neckCoeff R).neg
     (hasDerivAt_inv_neckSolution R) (by simp)
-    (MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero ENNReal.ofNat_ne_top
+    (MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero
       (tendsto_norm_atTop_atTop.comp (tendsto_inv_neckSolution_atBot R)))
 
 end Banach
@@ -360,7 +545,6 @@ private theorem memLp_neckTestPath (R : ℝ) (e : F) : MemLp (neckTestPath R e) 
 private theorem norm_neckTestImage_le (R : ℝ) (e : F) (s : ℝ) :
     ‖neckTestImage R e s‖ ≤ 2 * exp (-(2 * R)) * ‖neckTestPath R e (-s)‖ := by
   have h₁ := cosh_pos (s - R)
-  have h₂ := cosh_pos (s + R)
   have key : exp (s - R) ≤ 2 * exp (-(2 * R)) * cosh (s + R) := by
     rw [cosh_eq]
     have h : exp (-(2 * R)) * exp (s + R) = exp (s - R) := by rw [← exp_add]; ring_nf
@@ -525,6 +709,49 @@ theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
     rw [orthogonal_range_trajectoryOperator_eq_map_ker hALadj, hker, Submodule.map_bot]
   rw [← hclosed.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff]
   exact horth
+
+/-! ### The nonzero Fourier modes of the glued cylinder operator -/
+
+/-- **The nonzero Fourier modes of the glued cylinder operator have uniformly bounded inverses.**
+For `R ≥ 0` and `k ≠ 0`, the `k`-th Fourier mode `D u = u' - (a_R + 2πk) u` of the cylinder
+operator `∂ₛ + i ∂ₜ - a_R(s)` satisfies `‖u‖ ≤ ‖D u‖` on `W^{1,2}(ℝ, E)`, uniformly in `R` and
+`k`. For the zero mode `k = 0` every such bound has constant at least `exp (2 R) / 2`
+(`TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`).
+-/
+theorem norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ}
+    (hR : 0 ≤ R) {k : ℤ} (hk : k ≠ 0)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖u‖ ≤ ‖trajectoryOperator AL u‖ :=
+  norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL u
+
+/-- **The nonzero Fourier modes of the glued cylinder operator have no kernel.** For `R ≥ 0` and
+`k ≠ 0`, the `k`-th Fourier mode `u' - (a_R + 2πk) u` of the cylinder operator
+`∂ₛ + i ∂ₜ - a_R(s)` has zero kernel on `W^{1,2}(ℝ, E)`. -/
+theorem ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ} (hR : 0 ≤ R)
+    {k : ℤ} (hk : k ≠ 0) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).ker = ⊥ :=
+  ker_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL
+
+/-- **The nonzero Fourier modes of the glued cylinder operator are onto.** For `R ≥ 0` and
+`k ≠ 0`, the `k`-th Fourier mode `u' - (a_R + 2πk) u` of the cylinder operator
+`∂ₛ + i ∂ₜ - a_R(s)` maps `W^{1,2}(ℝ, E)` onto `L²(ℝ, E)`; with
+`TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`, it
+is invertible with inverse of norm at most `1`. -/
+theorem range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ} (hR : 0 ≤ R)
+    {k : ℤ} (hk : k ≠ 0) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).range = ⊤ :=
+  range_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL
 
 end InnerProduct
 

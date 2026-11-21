@@ -48,11 +48,11 @@ def singleton (i : ι) : CechIndex ι :=
   OrderDual.toDual ⟨{i}, Finset.singleton_nonempty i⟩
 
 @[simp]
-lemma coe_singleton (i : ι) : (singleton i).1 = {i} := (rfl)
+lemma coe_singleton (i : ι) : (singleton i).val = {i} := (rfl)
 
 /-- The order on Čech indices is reverse inclusion of the underlying finite sets. -/
 @[simp]
-lemma le_iff {s t : CechIndex ι} : s ≤ t ↔ t.1 ⊆ s.1 := Iff.rfl
+lemma le_iff {s t : CechIndex ι} : s ≤ t ↔ t.val ⊆ s.val := Iff.rfl
 
 end CechIndex
 
@@ -60,28 +60,22 @@ variable {X : TopCat.{v}} {ι : Type u} (U : ι → Opens X)
 
 /-- The open set represented by a Čech index: the intersection of its family members. -/
 def cechIntersection (s : CechIndex ι) : Opens X :=
-  s.1.inf U
+  s.val.inf U
 
 @[simp]
 lemma mem_cechIntersection (x : X) (s : CechIndex ι) :
-    x ∈ cechIntersection U s ↔ ∀ i ∈ s.1, x ∈ U i := by
-  classical
-  unfold cechIntersection
-  induction s.1 using Finset.induction with
-  | empty => simp
-  | insert i s _ ih => simp [Finset.inf_insert, ih]
+    x ∈ cechIntersection U s ↔ ∀ i ∈ s.val, x ∈ U i := by
+  simp [← SetLike.mem_coe, cechIntersection, Opens.coe_finset_inf, Finset.inf_set_eq_iInter]
 
 @[simp]
 lemma cechIntersection_singleton (i : ι) :
-    cechIntersection U (CechIndex.singleton i) = U i := by
-  unfold cechIntersection CechIndex.singleton
-  exact Finset.inf_singleton
+    cechIntersection U (CechIndex.singleton i) = U i :=
+  Finset.inf_singleton
 
 /-- Enlarging the finite set of family members shrinks its intersection. -/
 lemma cechIntersection_mono {s t : CechIndex ι} (h : s ≤ t) :
-    cechIntersection U s ≤ cechIntersection U t := by
-  refine Finset.le_inf fun i hi ↦ ?_
-  exact Finset.inf_le (f := U) (h hi)
+    cechIntersection U s ≤ cechIntersection U t :=
+  Finset.inf_mono h
 
 /-- The diagram of nonempty finite intersections of a family of open sets. -/
 def cechOpenDiagram : CechIndex ι ⥤ Opens X where
@@ -114,8 +108,8 @@ lemma cechTopDiagram_map_apply {s t : CechIndex ι} (f : s ⟶ t)
     (x : TopCat.of (cechIntersection U s)) :
     eqToHom (cechTopDiagram_obj U t)
         ((cechTopDiagram U).map f (eqToHom (cechTopDiagram_obj U s).symm x)) =
-      ⟨x.1, cechIntersection_mono U f.le x.2⟩ := by
-  exact Opens.toTopCat_map X (f := (cechOpenDiagram U).map f)
+      ⟨x.val, cechIntersection_mono U f.le x.property⟩ :=
+  Opens.toTopCat_map X (f := (cechOpenDiagram U).map f)
 
 /-- The inclusion of a finite-family intersection into the ambient space. -/
 def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
@@ -123,8 +117,8 @@ def cechInclusion (s : CechIndex ι) : (cechTopDiagram U).obj s ⟶ X :=
 
 @[simp]
 lemma cechInclusion_apply (s : CechIndex ι) (x : TopCat.of (cechIntersection U s)) :
-    cechInclusion U s (eqToHom (cechTopDiagram_obj U s).symm x) = x.1 := by
-  exact congrFun Opens.coe_inclusion' x
+    cechInclusion U s (eqToHom (cechTopDiagram_obj U s).symm x) = x.val :=
+  congrFun Opens.coe_inclusion' x
 
 @[simp, reassoc]
 lemma cechTopDiagram_map_comp_inclusion {s t : CechIndex ι} (f : s ⟶ t) :

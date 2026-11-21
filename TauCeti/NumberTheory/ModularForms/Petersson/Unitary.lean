@@ -120,8 +120,8 @@ sum runs over; an `α` normalising `Γ` normalises `Γ·{±I}` too, by
 `Subgroup.normalizer_le_normalizer_sup_normal`.
 
 The forms `F` and `G` are taken as data with their defining equations, rather than built here,
-because the operators that arise this way — the diamond operators of Layer 0, the Atkin–Lehner
-involutions later — each package the slashed function as a cusp form in their own way. -/
+because the operators that arise this way — the diamond operators, the Atkin–Lehner
+involutions — each package the slashed function as a cusp form in their own way. -/
 theorem peterssonInnerCosets_slash {α : SL(2, ℤ)}
     (hα : α ∈ Subgroup.normalizer (Γ.withCenter : Set SL(2, ℤ)))
     {f g F G : CuspForm (Γ.map (mapGL ℝ)) k} (hF : ⇑F = ⇑f ∣[k] α) (hG : ⇑G = ⇑g ∣[k] α) :
@@ -186,7 +186,7 @@ theorem peterssonInnerCosets_diamondOpCusp (k : ℤ) (d : (ZMod N)ˣ)
   obtain ⟨γ, hγ⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
   have hnorm : (γ : SL(2, ℤ)) ∈ Subgroup.normalizer ((Gamma1 N).withCenter : Set SL(2, ℤ)) := by
     rw [Subgroup.withCenter_def]
-    exact Subgroup.normalizer_le_normalizer_sup_normal (Gamma0_le_normalizer_Gamma1 N γ.2)
+    exact Subgroup.normalizer_le_normalizer_sup_normal (Gamma0_le_normalizer_Gamma1 N γ.property)
   exact peterssonInnerCosets_slash hnorm
     (coe_diamondOpCusp k d γ hγ f) (coe_diamondOpCusp k d γ hγ g)
 

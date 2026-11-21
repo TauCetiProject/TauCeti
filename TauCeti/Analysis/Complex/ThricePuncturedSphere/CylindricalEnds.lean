@@ -59,7 +59,7 @@ def negativeEnd : Iio (0 : ℝ) × AddCircle (1 : ℝ) ≃ₜ inf.neighborhood :
 
 /-- The negative end at infinity is the standard positive radial end with both signs reversed. -/
 theorem negativeEnd_apply (s : Iio (0 : ℝ)) (t : AddCircle (1 : ℝ)) :
-    negativeEnd (s, t) = inf.cylindricalEnd (⟨-(s : ℝ), neg_pos.mpr s.2⟩, -t) := (rfl)
+    negativeEnd (s, t) = inf.cylindricalEnd (⟨-(s : ℝ), neg_pos.mpr s.property⟩, -t) := (rfl)
 
 /-- The complex lifts of the two positive ends and the negative end at infinity.
 The lift at infinity is also `2 / exp (2πz)`. -/
@@ -85,6 +85,24 @@ theorem cylindricalEndLift_inf_eq (z : ℂ) :
     inf.cylindricalEndLift z = inf.coordInv (Complex.exp (2 * (Real.pi : ℂ) * z)) := by
   rw [cylindricalEndLift_inf, coordInv_inf]
   simp only [neg_mul, Complex.exp_neg, div_eq_mul_inv]
+
+/-- The end lifts at `0` and at `∞` are both centred at `0`, so they differ by a translation of the
+cylinder: the end lift at `0` is the end lift at `∞` shifted by `log 4 / (2π)`. -/
+theorem cylindricalEndLift_zero_eq_inf_add (z : ℂ) :
+    zero.cylindricalEndLift z =
+      inf.cylindricalEndLift (z + (Real.log 4 / (2 * Real.pi) : ℝ)) := by
+  -- The shift contributes the factor `exp (-log 4) = 1 / 4`.
+  have h4 :
+      Complex.exp (-(2 * (Real.pi : ℂ)) * ((Real.log 4 / (2 * Real.pi) : ℝ) : ℂ)) = 1 / 4 := by
+    have hr : -(2 * (Real.pi : ℂ)) * ((Real.log 4 / (2 * Real.pi) : ℝ) : ℂ) =
+        ((-Real.log 4 : ℝ) : ℂ) := by
+      push_cast
+      field_simp
+    rw [hr, ← Complex.ofReal_exp, Real.exp_neg, Real.exp_log (by norm_num)]
+    norm_num
+  simp only [cylindricalEndLift_zero, cylindricalEndLift_inf]
+  rw [mul_add, Complex.exp_add, h4]
+  ring
 
 /-- On real angular lifts, the two finite cylindrical ends have their holomorphic lift. -/
 theorem coe_cylindricalEnd_apply_mk (q : Puncture) (hq : q ≠ inf)

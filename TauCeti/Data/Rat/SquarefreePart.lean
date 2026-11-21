@@ -7,13 +7,15 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.Algebra.Squarefree
+import Mathlib.Data.Rat.Squarefree
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The squarefree part of a rational number
 
 Every nonzero rational number `u` can be written uniquely as `u = d * c ^ 2` with `d` a squarefree
 integer and `c` a nonzero rational (`Rat.exists_squarefree_int_mul_sq` and
-`Rat.eq_of_squarefree_of_intCast_mul_sq_eq`). This file names that integer `Rat.squarefreePart u`,
+Mathlib's `Rat.sq_mul_squarefree_unique`). This file names that integer `Rat.squarefreePart u`,
 with the convention `Rat.squarefreePart 0 = 0`. It is the canonical integer representative of the
 square class of `u` in `ℚˣ / (ℚˣ) ^ 2`: it keeps the sign of `u`, it is unchanged by multiplying
 `u` by a nonzero square, and a prime divides it exactly when the `p`-adic valuation of `u` is odd.
@@ -80,7 +82,8 @@ theorem squarefreePart_eq_iff {u : ℚ} {d : ℤ} (hd : Squarefree d) :
   · rintro ⟨c, hc, rfl⟩
     have hu : (d : ℚ) * c ^ 2 ≠ 0 := mul_ne_zero (by exact_mod_cast hd.ne_zero) (by positivity)
     obtain ⟨c', hc', h⟩ := exists_eq_squarefreePart_mul_sq hu
-    exact eq_of_squarefree_of_intCast_mul_sq_eq (squarefree_squarefreePart hu) hd hc' h.symm
+    exact Rat.sq_mul_squarefree_unique (squarefree_squarefreePart hu) hd c' c hc'
+      (by linear_combination -h)
 
 /-- The squarefree part vanishes only at `0`. -/
 @[simp]

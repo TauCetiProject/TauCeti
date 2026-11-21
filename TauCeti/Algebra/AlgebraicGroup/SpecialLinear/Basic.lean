@@ -129,29 +129,14 @@ noncomputable abbrev coordinateMap :
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)
 
-/-- The special-linear coordinate morphism sends an ambient coordinate to its quotient class. -/
-theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
-    (coordinateMap R n).hom h =
-      Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal h :=
-  CommHopfAlgCat.mkQuotient_apply
-    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) h
-
 /-- The localized generic determinant is one in the special-linear coordinate Hopf algebra. -/
 @[simp↓]
 theorem coordinateMap_determinantGroupLike :
     (coordinateMap R n).hom (GeneralLinear.determinantGroupLike R n) = 1 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_eq_one_iff_sub_mem,
+  rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
+    Ideal.Quotient.mk_eq_one_iff_sub_mem,
     definingHopfIdeal_toIdeal]
   exact Ideal.mem_span_singleton_self _
-
-/-- The kernel of the special-linear coordinate morphism is the principal determinant-one
-ideal. -/
-theorem coordinateMap_ker :
-    RingHom.ker (coordinateMap R n).hom.toAlgHom.toRingHom =
-      Ideal.span
-        {(GeneralLinear.determinantGroupLike R n :
-            GeneralLinear.coordinateHopfAlgebra R n) - 1} := by
-  rw [CommHopfAlgCat.mkQuotient_ker, definingHopfIdeal_toIdeal]
 
 /-- The generic matrix of `SLₙ`, the image in `O(SLₙ)` of the generic matrix of `GLₙ`, has
 determinant one. -/
@@ -195,7 +180,7 @@ theorem adjoin_range_map_genericMatrix :
       GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
       GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
     rw [hinv]
-    exact (M.adjugate i j).2
+    exact (M.adjugate i j).property
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -272,6 +257,15 @@ theorem pointsMulEquiv_toGL
     ← Matrix.SpecialLinearGroup.toGLKerEquiv_apply_coe, MulEquiv.apply_symm_apply,
     MulEquiv.subgroupCongr_apply, GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
 
+/-- Companion of `pointsMulEquiv_toGL` in the form consumers hold: the ambient point is the
+composite with `coordinateMap`, the normal form of `quotientPointsHom` under
+`CommHopfAlgCat.quotientPointsHom_apply`. -/
+theorem toGL_pointsMulEquiv
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
+    Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n f) =
+      GeneralLinear.pointsMulEquiv n (toConv (f.ofConv.comp (coordinateMap R n).hom)) := by
+  rw [← pointsMulEquiv_toGL, CommHopfAlgCat.quotientPointsHom_apply]
+
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/
 @[simp↓]
@@ -295,7 +289,7 @@ theorem ofConv_pointsMulEquiv_symm_genericMatrix (M : Matrix.SpecialLinearGroup 
   rw [MulEquiv.apply_symm_apply] at h
   have hij := congrArg (fun g : Matrix.GeneralLinearGroup (Fin n) A ↦ (g : Matrix _ _ A) i j) h
   simp only [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at hij
-  rw [Matrix.map_apply, coordinateMap_apply, GeneralLinear.genericMatrix_apply,
+  rw [Matrix.map_apply, CommHopfAlgCat.mkQuotient_apply, GeneralLinear.genericMatrix_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply_apply, hij,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
@@ -372,12 +366,7 @@ theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
         (AlgHom.mapValue (H := coordinateHopfAlgebra R n) (Algebra.ofId R A) g)) =
       Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ := by
     rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, map_inv, map_inv,
-      AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId]
-    congr 1
-    ext i j
-    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, Matrix.GeneralLinearGroup.map_apply]
-    rfl
+      AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId, Matrix.SpecialLinearGroup.toGL_map]
   calc
     _ = Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ *
         Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n (toConv φ)) *

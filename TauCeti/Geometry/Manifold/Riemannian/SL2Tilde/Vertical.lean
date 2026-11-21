@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Curvature
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Prod
+
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import Mathlib.Topology.Connected.TotallyDisconnected
--- The derivative bridge reads the inherited global model-space atlas.
-import all TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Basic
 
 /-!
 # Vertical fibres under isometries of `SL₂ℝ~`
@@ -43,31 +41,11 @@ namespace TauCeti.SL2Tilde
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
-private def coordinateMap (Φ : Isom J SL2Tilde) : P → P :=
-  toProd ∘ Φ ∘ toProd.symm
-
-private theorem contDiff_coordinateMap (Φ : Isom J SL2Tilde) :
-    ContDiff ℝ ∞ (coordinateMap Φ) := by
-  -- The type synonym has exactly the model-space atlas, and both coordinate
-  -- equivalences are identities in that atlas.
-  exact Φ.contMDiff.contDiff
-
-private theorem coordinate_derivative (Φ : Isom J SL2Tilde) (p : SL2Tilde)
-    (u : TangentSpace J p) :
-    fderiv ℝ (coordinateMap Φ) (toProd p) (tangentSpaceCastModel J p u) =
-      tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u) := by
-  -- The inherited model-space atlas identifies the coordinate derivative and
-  -- tangent casts with Mathlib's canonical normed-space derivative bridge.
-  change fderiv ℝ (coordinateMap Φ) (toProd p) u =
-    mfderiv J J (coordinateMap Φ) (toProd p) u
-  rw [mfderiv_eq_fderiv]
-  rfl
-
 private theorem vertical_derivative_sign (Φ : Isom J SL2Tilde) (p : P) :
-    (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).1 = 0 ∧
-      (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.1 = 0 ∧
-      ((fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2 = 1 ∨
-        (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2 = -1) := by
+    (fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).1 = 0 ∧
+      (fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).2.1 = 0 ∧
+      ((fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).2.2 = 1 ∨
+        (fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).2.2 = -1) := by
   let q := toProd.symm p
   let v := constantField (0, 0, 1) q
   have hv' : tangentSpaceCastModel J q v = (0, 0, 1) := by simp [v]
@@ -78,17 +56,18 @@ private theorem vertical_derivative_sign (Φ : Isom J SL2Tilde) (p : P) :
   rw [inner_def, inner_def] at hi
   have hs : (tangentSpaceCastModel J (Φ q) (mfderiv J J Φ q v)).2.2 ^ 2 = 1 := by
     simpa [h.1, h.2, hv', pow_two] using hi
-  have he := coordinate_derivative Φ q v
+  have he := fderiv_toProd_conj_apply Φ q v
   simp only [hv', q, Equiv.apply_symm_apply] at he
   rw [he]
   exact ⟨h.1, h.2, sq_eq_one_iff.mp hs⟩
 
 private theorem vertical_derivative_sign_constant (Φ : Isom J SL2Tilde) (p : P) :
-    (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2 =
-      (fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2 := by
-  let a : P → ℝ := fun p => (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.2
+    (fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).2.2 =
+      (fderiv ℝ (toProd.conj Φ) 0 (0, 0, 1)).2.2 := by
+  let a : P → ℝ := fun p => (fderiv ℝ (toProd.conj Φ) p (0, 0, 1)).2.2
+  have hΦ : ContDiff ℝ ∞ (toProd.conj Φ) := contMDiff_iff_contDiff_toProd_conj.mp Φ.contMDiff
   have ha : Continuous a :=
-    (((contDiff_coordinateMap Φ).continuous_fderiv_apply (by simp)).comp
+    ((hΦ.continuous_fderiv_apply (by simp)).comp
       (continuous_id.prodMk continuous_const)).snd.snd
   have hfinite : (range a).Finite := by
     apply (toFinite ({1, -1} : Set ℝ)).subset
@@ -103,13 +82,13 @@ theorem exists_mfderiv_vertical_eq (Φ : Isom J SL2Tilde) :
     ∃ ε : ℝ, (ε = 1 ∨ ε = -1) ∧ ∀ (p : SL2Tilde) (r : ℝ),
       tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p (constantField (0, 0, r) p)) =
         (0, 0, ε * r) := by
-  refine ⟨(fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2,
+  refine ⟨(fderiv ℝ (toProd.conj Φ) 0 (0, 0, 1)).2.2,
     (vertical_derivative_sign Φ 0).2.2, ?_⟩
   intro p r
-  rw [← coordinate_derivative]
+  rw [← fderiv_toProd_conj_apply Φ]
   simp only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply]
-  have hunit : fderiv ℝ (coordinateMap Φ) (toProd p) (0, 0, 1) =
-      (0, 0, (fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2) :=
+  have hunit : fderiv ℝ (toProd.conj Φ) (toProd p) (0, 0, 1) =
+      (0, 0, (fderiv ℝ (toProd.conj Φ) 0 (0, 0, 1)).2.2) :=
     Prod.ext (vertical_derivative_sign Φ (toProd p)).1
       (Prod.ext (vertical_derivative_sign Φ (toProd p)).2.1
         (vertical_derivative_sign_constant Φ (toProd p)))
@@ -124,38 +103,20 @@ theorem exists_apply_vertical_eq (Φ : Isom J SL2Tilde) :
     ∃ ε : ℝ, (ε = 1 ∨ ε = -1) ∧ ∀ (p : SL2Tilde) (t : ℝ),
       Φ (mk p.x p.y (p.z + t)) = mk (Φ p).x (Φ p).y ((Φ p).z + ε * t) := by
   obtain ⟨ε, hε, hd⟩ := exists_mfderiv_vertical_eq Φ
-  refine ⟨ε, hε, fun p => ?_⟩
-  let c : ℝ → P := fun t => (p.x, p.y, p.z + t)
-  have hc (t : ℝ) : HasDerivAt c (0, 0, 1) t := by
-    simpa [c] using (hasDerivAt_const t p.x).prodMk
-      ((hasDerivAt_const t p.y).prodMk ((hasDerivAt_id t).const_add p.z))
-  have hf (t : ℝ) : HasDerivAt (coordinateMap Φ ∘ c) (0, 0, ε) t := by
-    have h := hd (toProd.symm (c t)) 1
-    rw [← coordinate_derivative] at h
-    simp only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
-      Equiv.apply_symm_apply, mul_one] at h
-    simpa only [h] using
-      ((contDiff_coordinateMap Φ).differentiable (by simp) (c t)).hasFDerivAt.comp_hasDerivAt
-        t (hc t)
-  let g : ℝ → P := fun t => ((Φ p).x, (Φ p).y, (Φ p).z + ε * t)
-  have hg (t : ℝ) : HasDerivAt g (0, 0, ε) t := by
-    simpa [g] using (hasDerivAt_const t (Φ p).x).prodMk
-      ((hasDerivAt_const t (Φ p).y).prodMk
-        (((hasDerivAt_id t).const_mul ε).const_add (Φ p).z))
-  have heq := eq_of_fderiv_eq (fun t => (hf t).differentiableAt)
-    (fun t => (hg t).differentiableAt)
-    (fun t => (hf t).hasFDerivAt.fderiv.trans (hg t).hasFDerivAt.fderiv.symm)
-    0 (by
-      simp only [coordinateMap, c, g, Function.comp_apply, add_zero, mul_zero]
-      rw [← toProd_mk p.x p.y p.z, mk_x_y_z, Equiv.symm_apply_apply]
-      exact Prod.ext (fst_toProd (Φ p))
-        (Prod.ext (fst_snd_toProd (Φ p)) (snd_snd_toProd (Φ p))))
-  intro t
-  apply toProd.injective
-  have ht := congrFun heq t
-  simp only [coordinateMap, c, g, Function.comp_apply] at ht
-  rw [← toProd_mk p.x p.y (p.z + t), Equiv.symm_apply_apply] at ht
-  simpa only [toProd_mk] using ht
+  refine ⟨ε, hε, fun p t => toProd.injective ?_⟩
+  have hder (q : P) : fderiv ℝ (toProd.conj Φ) q (0, 0, 1) = (0, 0, ε) := by
+    have h := hd (toProd.symm q) 1
+    rw [← fderiv_toProd_conj_apply Φ] at h
+    simpa only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
+      Equiv.apply_symm_apply, mul_one] using h
+  have hΦ : ContDiff ℝ ∞ (toProd.conj Φ) := contMDiff_iff_contDiff_toProd_conj.mp Φ.contMDiff
+  have h := apply_add_smul_eq_of_fderiv_apply_eq (hΦ.differentiable (by simp)) hder (toProd p) t
+  have hq : toProd.symm (toProd p + t • ((0, 0, 1) : P)) = mk p.x p.y (p.z + t) := by
+    rw [Equiv.symm_apply_eq, toProd_mk]
+    ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd]
+  simp only [Equiv.conj_apply, hq, Equiv.symm_apply_apply] at h
+  rw [h]
+  ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd, mul_comm]
 
 /-- The image of a whole vertical fibre is the whole fibre through the image of any
 one of its points, including for isometries that reverse the fibre orientation. -/

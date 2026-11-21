@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.AnalyticSubst
 public import TauCeti.RingTheory.PowerSeries.Taylor
 import TauCeti.RingTheory.PowerSeries.Restricted.Taylor
 
@@ -19,6 +19,10 @@ Its coefficients are the values at `a` of the Hasse derivatives, using the same
 smaller-radius Gauss norms, composes by addition, and has inverse translation by `-a`.
 Evaluation of the translate at `b` is evaluation of the original series at `b + a`.
 
+Combined with rescaling (`PowerSeries.OnOpenDisc.rescale`), translation gives the affine changes
+of coordinates `X ↦ a + uX`: if `‖a‖ < R₀` and `‖u‖ S₀ ≤ R₀`, then `f(a + uX)` lies on the open
+disc of radius `S₀`, and its value at `b` is `f(ub + a)`.
+
 Translation preserves restrictedness on every closed disc containing `a`, by
 `PowerSeries.IsRestricted.taylor`. Applying this at a slightly larger radius inside the open
 disc proves open-disc restrictedness. No radius needs to be realized by a scalar and no
@@ -27,26 +31,44 @@ radius `r` with `‖a‖ ≤ r < R₀`.
 
 ## Main definitions
 
-* `TauCeti.PowerSeries.OnOpenDisc.taylorHom`: translation by an interior point as a ring
+* `TauCeti.PowerSeries.OnOpenDisc.taylorHom`: translation by an interior point as an `R`-algebra
   homomorphism on the open-disc algebra.
-* `TauCeti.PowerSeries.OnOpenDisc.taylorEquiv`: translation as a ring automorphism, with inverse
-  translation by the negative centre.
+* `TauCeti.PowerSeries.OnOpenDisc.taylorEquiv`: translation as an `R`-algebra automorphism, with
+  inverse translation by the negative centre.
 
 ## Main results
 
 * `PowerSeries.OnOpenDisc.taylor`: translation preserves the open-disc radius condition.
+* `PowerSeries.OnOpenDisc.taylor_smul`, `PowerSeries.OnOpenDisc.hasseDeriv_taylor`, and
+  `PowerSeries.OnOpenDisc.taylor_map`: translation commutes with scalar multiplication, Hasse
+  derivatives, and continuous coefficient homomorphisms.
+* `PowerSeries.OnOpenDisc.evalAt_taylor` and `PowerSeries.OnOpenDisc.hasSum_taylor`: the Taylor
+  identity `(taylor a f)(b) = f(b + a)` at points of the base ring and the convergent Taylor
+  expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ` on the open disc.
+* `PowerSeries.OnOpenDisc.rescale_taylor`, `PowerSeries.OnOpenDisc.evalAt_rescale_taylor`, and
+  `PowerSeries.OnOpenDisc.taylor_rescale`: when `‖a‖ < R₀` and `‖u‖ S₀ ≤ R₀`, the affine map
+  `X ↦ a + uX` sends the open disc of radius `S₀` into the open disc of radius `R₀`, so pulling
+  back along it carries series on the open disc of radius `R₀` to series on the open disc of
+  radius `S₀`; the pullback `f(a + uX)` evaluates at `b` as `f(ub + a)`, and translating `f(uX)`
+  by `b` rescales by `u` the translate of `f` by `ub`.
 * `TauCeti.PowerSeries.OnOpenDisc.continuous_taylorHom`: translation is continuous.
 * `TauCeti.PowerSeries.OnOpenDisc.taylorHom_taylorHom`: translations compose by addition.
 * `TauCeti.PowerSeries.OnOpenDisc.taylorHom_polynomialHom`: translation agrees with polynomial
   Taylor translation.
-* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_taylorHom`: translation preserves the Gauss norm
-  on every smaller positive-radius closed disc containing the centre.
+* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_taylorHom` and
+  `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_taylorHom_lt`: translation preserves the Gauss norm
+  on every smaller positive-radius closed disc containing the centre, and preserves strict uniform
+  bounds across all smaller closed discs.
+* `TauCeti.PowerSeries.OnOpenDisc.taylorHom_analyticSubst` and
+  `TauCeti.PowerSeries.OnOpenDisc.taylorHom_eq_analyticSubst`: compatibility and agreement of
+  translation with analytic substitution.
 * `TauCeti.PowerSeries.OnOpenDisc.evalAt_taylorHom`: evaluation at an algebra point `b` after
   translation is evaluation at `b + algebraMap R A a`.
 
 ## References
 
 * P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.4.
+* S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, Grundlehren 261, §5.1.
 * The coefficient construction is `PowerSeries.taylor` in
   `TauCeti.RingTheory.PowerSeries.Taylor`.
 -/
@@ -72,6 +94,13 @@ theorem OnOpenDisc.taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
       (le_max_right r ‖a‖ |>.trans hs.le))).onOpenDisc.isRestricted
         (by rw [abs_of_pos hr]; exact (le_max_left _ _).trans_lt hs)
 
+/-- **Affine changes of coordinates.** If `f` lies on the open disc of radius `R₀`, `‖a‖ < R₀` and
+`‖u‖ S₀ ≤ R₀`, then `f(a + uX)`, the rescaling by `u` of the translate of `f` by `a`, lies on the
+open disc of radius `S₀`. -/
+theorem OnOpenDisc.rescale_taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) {u : R} {S₀ : ℝ}
+    (hu : ‖u‖ * S₀ ≤ R₀) : (PowerSeries.rescale u (PowerSeries.taylor a f)).OnOpenDisc S₀ :=
+  ((hf.taylor ha).mono hu).rescale
+
 variable [CompleteSpace R]
 
 omit [IsUltrametricDist R] in
@@ -90,6 +119,73 @@ theorem OnOpenDisc.taylor_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
   taylor_mul_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow ha)
     (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow ha)
 
+omit [IsUltrametricDist R] in
+/-- Translation by a point of the open disc commutes with scalar multiplication. -/
+theorem OnOpenDisc.taylor_smul (hf : f.OnOpenDisc R₀) (c : R) (ha : ‖a‖ < R₀) :
+    PowerSeries.taylor a (c • f) = c • PowerSeries.taylor a f := by
+  ext n
+  rw [coeff_taylor, map_smul, (hf.hasseDeriv n).evalAt_smul c ha, coeff_smul, coeff_taylor,
+    smul_eq_mul]
+
+omit [IsUltrametricDist R] in
+/-- **Hasse derivatives commute with translation** of series on an open disc. -/
+theorem OnOpenDisc.hasseDeriv_taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) (k : ℕ) :
+    PowerSeries.hasseDeriv k (PowerSeries.taylor a f) =
+      PowerSeries.taylor a (PowerSeries.hasseDeriv k f) := by
+  ext n
+  have h := LinearMap.congr_fun (hasseDeriv_comp (R := R) n k) f
+  rw [LinearMap.comp_apply, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R] at h
+  rw [coeff_hasseDeriv, coeff_taylor, coeff_taylor, h, (hf.hasseDeriv _).evalAt_smul _ ha,
+    smul_eq_mul, Nat.choose_symm_add]
+
+omit [IsUltrametricDist R] in
+/-- Taylor translation on an open disc commutes with continuous coefficient homomorphisms:
+`taylor (φ a) (map φ f) = map φ (taylor a f)`. -/
+theorem OnOpenDisc.taylor_map {S : Type*} [CommSemiring S] [TopologicalSpace S] [T2Space S]
+    (hf : f.OnOpenDisc R₀) (φ : R →+* S) (hφ : Continuous φ) (ha : ‖a‖ < R₀) :
+    PowerSeries.taylor (φ a) (PowerSeries.map φ f) =
+      PowerSeries.map φ (PowerSeries.taylor a f) := by
+  ext n
+  rw [coeff_taylor, hasseDeriv_map, coeff_map, coeff_taylor]
+  exact (hf.hasseDeriv n).evalAt_map φ hφ ha
+
+/-- **The Taylor identity on an open disc** at a point of the base ring: if `f` lies on the open
+disc of radius `R₀` and `‖a‖ < R₀`, `‖b‖ < R₀`, then the expansion of `f` at `a` evaluated at `b`
+is `f(b + a)`. Unlike `TauCeti.PowerSeries.OnOpenDisc.evalAt_taylorHom`, this needs no
+`NormOneClass` hypothesis. -/
+theorem OnOpenDisc.evalAt_taylor {b : R} (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀)
+    (hb : ‖b‖ < R₀) : (PowerSeries.taylor a f).evalAt b = f.evalAt (b + a) :=
+  (hf.isRestricted_max (norm_nonneg a) ha hb).evalAt_taylor (le_max_left _ _) (le_max_right _ _)
+
+/-- **The Taylor expansion on an open disc.** If `f` lies on the open disc of radius `R₀` and
+`‖a‖ < R₀`, `‖b‖ < R₀`, then `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`. -/
+theorem OnOpenDisc.hasSum_taylor {b : R} (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀)
+    (hb : ‖b‖ < R₀) :
+    HasSum (fun k ↦ (PowerSeries.hasseDeriv k f).evalAt a * b ^ k) (f.evalAt (b + a)) :=
+  (hf.isRestricted_max (norm_nonneg a) ha hb).hasSum_taylor (le_max_left _ _) (le_max_right _ _)
+
+/-- **Evaluation after an affine change of coordinates.** If `f` lies on the open disc of radius
+`R₀`, `‖a‖ < R₀` and `‖u‖ ‖b‖ < R₀`, then `f(a + uX)` takes the value `f(ub + a)` at `b`. -/
+theorem OnOpenDisc.evalAt_rescale_taylor {b : R} (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) {u : R}
+    (hub : ‖u‖ * ‖b‖ < R₀) :
+    (PowerSeries.rescale u (PowerSeries.taylor a f)).evalAt b = f.evalAt (u * b + a) := by
+  rw [evalAt_rescale, smul_eq_mul, hf.evalAt_taylor ha ((norm_mul_le u b).trans_lt hub)]
+
+omit [IsUltrametricDist R] in
+/-- **Intertwining of Taylor translation and rescaling** on an open disc: if `f` lies on the open
+disc of radius `R₀` and `‖u * b‖ < R₀`, then translating `f(u X)` by `b` is rescaling by `u` the
+translate of `f` by `u * b`. -/
+theorem OnOpenDisc.taylor_rescale (hf : f.OnOpenDisc R₀) {u b : R} (hub : ‖u * b‖ < R₀) :
+    PowerSeries.taylor b (PowerSeries.rescale u f) =
+      PowerSeries.rescale u (PowerSeries.taylor (u * b) f) := by
+  ext n
+  rw [coeff_taylor, coeff_rescale, coeff_taylor, hasseDeriv_rescale, evalAt_def,
+    ← (((hf.hasseDeriv n).hasSum_evalAt hub).mul_left (u ^ n)).tsum_eq]
+  congr 1
+  ext k
+  simp only [coeff_C_mul, coeff_rescale, smul_eq_mul, mul_pow]
+  ring
+
 end PowerSeries
 
 namespace TauCeti.PowerSeries.OnOpenDisc
@@ -101,15 +197,16 @@ attribute [local instance] radius_pos
 
 /-- Translation `f(X) ↦ f(X + a)` on the open-disc algebra. -/
 noncomputable def taylorHom (ha : ‖a‖ < R₀) :
-    OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R R₀ where
+    OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R R₀ where
   toFun f := ⟨taylor a f, OnOpenDisc.mem_subring.mpr <|
-    (OnOpenDisc.mem_subring.mp f.2).taylor ha⟩
+    (OnOpenDisc.mem_subring.mp f.property).taylor ha⟩
   map_one' := Subtype.ext (taylor_one a)
   map_zero' := Subtype.ext (taylor_zero_right a)
   map_add' f g := Subtype.ext <|
-    (OnOpenDisc.mem_subring.mp f.2).taylor_add (OnOpenDisc.mem_subring.mp g.2) ha
+    (OnOpenDisc.mem_subring.mp f.property).taylor_add (OnOpenDisc.mem_subring.mp g.property) ha
   map_mul' f g := Subtype.ext <|
-    (OnOpenDisc.mem_subring.mp f.2).taylor_mul (OnOpenDisc.mem_subring.mp g.2) ha
+    (OnOpenDisc.mem_subring.mp f.property).taylor_mul (OnOpenDisc.mem_subring.mp g.property) ha
+  commutes' c := Subtype.ext <| by simpa using taylor_coe a (Polynomial.C c)
 
 /-- The underlying formal series is the coefficient-defined Taylor translate. -/
 @[simp]
@@ -128,23 +225,23 @@ its centre. -/
 theorem norm_restrict_taylorHom_le (ha : ‖a‖ < R₀) (r s : Set.Ioo (0 : ℝ) R₀)
     (hrs : (r : ℝ) ≤ s) (has : ‖a‖ ≤ s) (f : OnOpenDisc.subring R R₀) :
     ‖restrict r (taylorHom ha f)‖ ≤ ‖restrict s f‖ := by
-  have hf := hasGaussNorm_of_isRestricted (restrict s f).2
-  have htf := hasGaussNorm_of_isRestricted (restrict s (taylorHom ha f)).2
+  have hf := hasGaussNorm_of_isRestricted (restrict s f).property
+  have htf := hasGaussNorm_of_isRestricted (restrict s (taylorHom ha f)).property
   simp only [coe_restrict, coe_taylorHom] at hf htf
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_taylorHom]
-  exact (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) r.2.1.le hrs htf).trans
-    (gaussNorm_taylor_le s.2.1 hf has)
+  exact (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) r.property.1.le hrs htf).trans
+    (gaussNorm_taylor_le hf has)
 
 /-- Translation is continuous for all smaller-radius Gauss norms. -/
 theorem continuous_taylorHom (ha : ‖a‖ < R₀) : Continuous (taylorHom ha) := by
   refine continuous_iff.2 fun r ↦ ?_
-  obtain ⟨s, hs, hsR⟩ := exists_between (max_lt r.2.2 ha)
+  obtain ⟨s, hs, hsR⟩ := exists_between (max_lt r.property.2 ha)
   let s' : Set.Ioo (0 : ℝ) R₀ :=
-    ⟨s, r.2.1.trans ((le_max_left _ _).trans_lt hs), hsR⟩
-  let φ := (restrict (R := R) r).comp (taylorHom ha)
+    ⟨s, r.property.1.trans ((le_max_left _ _).trans_lt hs), hsR⟩
+  let φ := (restrict (R := R) r).comp (taylorHom ha).toRingHom
   refine continuous_of_continuousAt_zero φ ?_
   rw [ContinuousAt, map_zero]
-  let : Fact (0 < (s' : ℝ)) := ⟨s'.2.1⟩
+  let : Fact (0 < (s' : ℝ)) := ⟨s'.property.1⟩
   have h := (uniformContinuous_restrict (R := R) s').continuous.tendsto 0
   refine squeeze_zero_norm (fun f ↦ norm_restrict_taylorHom_le ha r s'
     ((le_max_left _ _).trans hs.le) ((le_max_right _ _).trans hs.le) f) ?_
@@ -167,31 +264,76 @@ theorem taylorHom_zero [Fact (0 < R₀)] (f : OnOpenDisc.subring R R₀) :
     taylorHom (a := 0) (by simpa using (Fact.out : 0 < R₀)) f = f :=
   Subtype.ext (by simp)
 
-/-- Translation by an interior point, as an automorphism of the open-disc algebra. -/
+/-- Translation by an interior point, as an `R`-algebra automorphism of the open-disc algebra. -/
 noncomputable def taylorEquiv (ha : ‖a‖ < R₀) :
-    OnOpenDisc.subring R R₀ ≃+* OnOpenDisc.subring R R₀ := by
+    OnOpenDisc.subring R R₀ ≃ₐ[R] OnOpenDisc.subring R R₀ := by
   have : Fact (0 < R₀) := ⟨(norm_nonneg a).trans_lt ha⟩
-  exact RingEquiv.ofRingHom (taylorHom ha) (taylorHom (a := -a) (by simpa using ha))
-    (RingHom.ext fun f ↦ by simp [taylorHom_taylorHom])
-    (RingHom.ext fun f ↦ by simp [taylorHom_taylorHom])
+  exact AlgEquiv.ofAlgHom (taylorHom ha) (taylorHom (a := -a) (by simpa using ha))
+    (AlgHom.ext fun f ↦ by simp [taylorHom_taylorHom])
+    (AlgHom.ext fun f ↦ by simp [taylorHom_taylorHom])
 
 /-- The automorphism acts by Taylor translation. -/
 @[simp]
 theorem taylorEquiv_apply (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) :
-    taylorEquiv ha f = taylorHom ha f := (rfl)
+    taylorEquiv ha f = taylorHom ha f :=
+  Subtype.ext (by simp [taylorEquiv])
 
 /-- The inverse automorphism translates by the negative centre. -/
 @[simp]
 theorem taylorEquiv_symm_apply (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) :
-    (taylorEquiv ha).symm f = taylorHom (a := -a) (by simpa using ha) f := (rfl)
+    (taylorEquiv ha).symm f = taylorHom (a := -a) (by simpa using ha) f :=
+  Subtype.ext (by simp [taylorEquiv])
 
 /-- On each smaller closed disc containing the centre, translation preserves the Gauss norm. -/
 theorem norm_restrict_taylorHom (ha : ‖a‖ < R₀) (r : Set.Ioo (0 : ℝ) R₀)
     (har : ‖a‖ ≤ r) (f : OnOpenDisc.subring R R₀) :
     ‖restrict r (taylorHom ha f)‖ = ‖restrict r f‖ := by
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_taylorHom]
-  exact (OnOpenDisc.mem_subring.mp f.2 |>.isRestricted
-    (by simpa only [abs_of_pos r.2.1] using r.2.2)).gaussNorm_taylor r.2.1 har
+  exact (OnOpenDisc.mem_subring.mp f.property |>.isRestricted
+    (by simpa only [abs_of_pos r.property.1] using r.property.2)).gaussNorm_taylor har
+
+/-- If `g` maps smaller closed discs of `S₀` strictly inside `R₀` and `‖b‖ < S₀`, then the
+translate `taylorHom hb g` also maps smaller closed discs of `S₀` strictly inside `R₀`. -/
+theorem norm_restrict_taylorHom_lt {S₀ : ℝ} (hb : ‖b‖ < S₀) (g : OnOpenDisc.subring R S₀)
+    (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
+    (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (taylorHom hb g)‖ < R₀ := by
+  obtain ⟨t, hst, htS⟩ := exists_between (max_lt s.property.2 hb)
+  let t' : Set.Ioo (0 : ℝ) S₀ := ⟨t, s.property.1.trans ((le_max_left _ _).trans_lt hst), htS⟩
+  exact (norm_restrict_taylorHom_le hb s t'
+    ((le_max_left _ _).trans hst.le) ((le_max_right _ _).trans hst.le) g).trans_lt (hg t')
+
+/-- **Translating an analytic substitution** translates the inner series:
+`(f(g))(X + b) = f(g(X + b))`. No `NormOneClass R` hypothesis is needed. -/
+theorem taylorHom_analyticSubst {S₀ : ℝ} [Fact (0 < S₀)] (hb : ‖b‖ < S₀)
+    (g : OnOpenDisc.subring R S₀)
+    (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    taylorHom hb (analyticSubst g hg f) =
+      analyticSubst (taylorHom hb g) (norm_restrict_taylorHom_lt hb g hg) f := by
+  have heq : (taylorHom hb).comp (analyticSubst g hg) =
+      analyticSubst (taylorHom hb g) (norm_restrict_taylorHom_lt hb g hg) :=
+    eq_analyticSubst _ _ _ ((continuous_taylorHom hb).comp (continuous_analyticSubst g hg))
+      (by simp)
+  exact AlgHom.congr_fun heq f
+
+omit [CompleteSpace R] in
+/-- The translated coordinate `a + X` has smaller-disc Gauss norm strictly below `R₀` whenever
+`‖a‖ < R₀`. -/
+theorem norm_restrict_algebraMap_add_X_lt [NormOneClass R] (ha : ‖a‖ < R₀)
+    (s : Set.Ioo (0 : ℝ) R₀) :
+    ‖restrict s (algebraMap R (OnOpenDisc.subring R R₀) a +
+      OnOpenDisc.polynomialHom Polynomial.X)‖ < R₀ := by
+  refine (TauCeti.PowerSeries.norm_le_iff.mpr fun n ↦ ?_).trans_lt (max_lt ha s.property.2)
+  rcases n with _ | _ | n <;> simp [coeff_X]
+
+/-- **Agreement of `taylorHom` with `analyticSubst`.** -/
+theorem taylorHom_eq_analyticSubst [NormOneClass R] [Fact (0 < R₀)] (ha : ‖a‖ < R₀) :
+    taylorHom ha =
+      analyticSubst (algebraMap R _ a + OnOpenDisc.polynomialHom Polynomial.X)
+        (norm_restrict_algebraMap_add_X_lt ha) :=
+  eq_analyticSubst _ _ (taylorHom ha) (continuous_taylorHom ha)
+    (by simp [polynomialHom_C, add_comm])
 
 /-- Evaluating a translate at an algebra point `b` evaluates the original series at
 `b + algebraMap R A a`. -/

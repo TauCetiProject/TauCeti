@@ -26,19 +26,17 @@ variable {X : Type*} [TopologicalSpace X] {s : Set X}
 theorem isNowhereDense_frontier (hs : IsConstructible s) : IsNowhereDense (frontier s) := by
   induction hs using IsConstructible.empty_union_induction with
   | open_retrocompact U hU _ =>
-    rw [IsNowhereDense, isClosed_frontier.closure_eq, ← frontier_compl]
+    rw [isClosed_frontier.isNowhereDense_iff, ← frontier_compl]
     exact interior_frontier hU.isClosed_compl
   | union s _ t _ hs ht =>
-    apply (hs.union ht).mono
-    exact (frontier_union_subset s t).trans (by intro x hx; grind)
-  | compl s _ hs => simpa only [frontier_compl] using hs
+    exact (hs.union ht).mono <| (frontier_union_subset s t).trans <|
+      Set.union_subset_union Set.inter_subset_left Set.inter_subset_right
+  | compl s _ hs => rwa [frontier_compl]
 
 /-- A dense constructible set has dense interior, with no separation hypothesis. -/
 theorem dense_interior (hs : IsConstructible s) (hd : Dense s) : Dense (interior s) := by
-  have h := (isClosed_isNowhereDense_iff_compl.mp
-    ⟨isClosed_frontier, hs.isNowhereDense_frontier⟩).2
-  have hi : (frontier s)ᶜ = interior s := by
-    simpa [hd.closure_eq, Set.sdiff_eq] using closure_sdiff_frontier s
-  exact hi ▸ h
+  have h : Dense (frontier s)ᶜ :=
+    (isClosed_isNowhereDense_iff_compl.mp ⟨isClosed_frontier, hs.isNowhereDense_frontier⟩).2
+  rwa [← closure_sdiff_frontier, hd.closure_eq, ← Set.compl_eq_univ_sdiff]
 
 end Topology.IsConstructible

@@ -56,22 +56,6 @@ reductivity of anything: this file fixes the integral input data those construct
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
 * N. Bourbaki, *Groupes et algèbres de Lie*, Chapters 4--6, Plate IV.
-
-## Roadmap
-
-This is the "concrete split-polarization specialization" left open by the type-`D` spinor-lattice
-construction in `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/KostantLattice.lean`, and it
-serves Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, "The Chevalley--Demazure
-construction", which asks for an explicitly constructed group scheme from a Chevalley basis and the
-Kostant `ℤ`-form rather than for an existence theorem. What remains of that layer on this branch is
-the toral Kostant group-scheme carrier itself, then its base change, root-datum pinning and
-diagram automorphism.
-
-The consumer is milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`, "explicit pinned
-Chevalley--Demazure groups": the `Dₙ(q)` and `²Dₙ(q)` branches of
-`TauCeti.ValidLieTypeIndex.AmbientGroup` need a traceable pinned simply connected type-`D` carrier,
-and such a carrier is built from a Kostant-stable full-weight integral representation, which is
-what the declarations below fix.
 -/
 
 public section

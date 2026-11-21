@@ -73,7 +73,7 @@ theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
   funext z
   ext v
   rw [mpullback_liouvilleForm_apply_of_proj_apply_eq h.cotangent.contMDiff
-    (proj_cotangent h) z (h.mdifferentiable (by simp) z.proj), liouvilleForm_apply]
+    (proj_cotangent h) z, liouvilleForm_apply]
   exact cotangent_snd_apply_mfderiv h z _
 
 end Liouville
@@ -92,20 +92,19 @@ theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
     ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
 
 /-- **Cotangent lifts preserve exact Lagrangian maps.** For a smooth diffeomorphism `h : M → N`
-and a differentiable map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for
+and a map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for
 the Liouville form of `T*N`, with primitive `u`, exactly when `f` is one for the Liouville form of
 `T*M`, with the same primitive. -/
 theorem isExactLagrangianMap_cotangent_comp_iff {E'' H'' : Type*} [NormedAddCommGroup E'']
     [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type*}
     [TopologicalSpace P] [ChartedSpace H'' P] (h : M ≃ₘ⟮I, J⟯ N)
-    {f : P → CotangentBundle I M} (hf : MDifferentiable K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) f)
-    {u : P → ℝ} :
+    {f : P → CotangentBundle I M} {u : P → ℝ} :
     (isSymplectic_symplecticForm (I := J) (M := N)).isNondegenerate.IsExactLagrangianMap K
         (liouvilleForm J N) (h.cotangent ∘ f) u ↔
       (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap K
         (liouvilleForm I M) f u :=
   h.cotangent.isExactLagrangianMap_comp_iff_of_mpullback_eq (mpullback_cotangent_symplecticForm h)
-    (mpullback_cotangent_liouvilleForm h) hf
+    (mpullback_cotangent_liouvilleForm h)
 
 end Symplectic
 

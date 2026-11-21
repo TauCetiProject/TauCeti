@@ -68,8 +68,8 @@ def scalarCyclicRestriction (n : ℕ) :
 theorem scalarCyclicRestriction_apply (n : ℕ) (phi : cyclicCochains R A M n)
     (a : Fin (n + 1) → R) :
     (scalarCyclicRestriction R A M n phi :
-        MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) a =
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+        MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) a =
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
         (fun i ↦ algebraMap R A (a i)) := by
   simp only [scalarCyclicRestriction, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
@@ -90,7 +90,7 @@ scalars. -/
 @[simp]
 theorem mem_reducedCyclicCochains_iff_forall {n : ℕ} {phi : cyclicCochains R A M n} :
     phi ∈ reducedCyclicCochains R A M n ↔ ∀ a : Fin (n + 1) → R,
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
         (fun i ↦ algebraMap R A (a i)) = 0 := by
   rw [mem_reducedCyclicCochains_iff, Subtype.ext_iff, MultilinearMap.ext_iff]
   simp
@@ -277,12 +277,12 @@ private theorem mem_reducedCyclicCoboundaries_iff_complex (n : ℕ)
 
 private abbrev toCycles (n : ℕ) (phi : reducedCyclicCocycles R A M n) :=
   (reducedCyclicCochainComplex R A M).moduleCatCyclesMk
-    ((reducedCyclicCochainComplexXIso R A M n).inv phi.1) (n + 1) (CochainComplex.next ℕ n)
-    ((mem_reducedCyclicCocycles_iff_complex R A M n phi.1).1 phi.2)
+    ((reducedCyclicCochainComplexXIso R A M n).inv phi.val) (n + 1) (CochainComplex.next ℕ n)
+    ((mem_reducedCyclicCocycles_iff_complex R A M n phi.val).1 phi.property)
 
 private theorem iCycles_toCycles (n : ℕ) (phi : reducedCyclicCocycles R A M n) :
     (reducedCyclicCochainComplex R A M).iCycles n (toCycles R A M n phi) =
-      (reducedCyclicCochainComplexXIso R A M n).inv phi.1 :=
+      (reducedCyclicCochainComplexXIso R A M n).inv phi.val :=
   (reducedCyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
 
 namespace reducedCyclicCohomology
@@ -399,7 +399,7 @@ theorem reducedCyclicCochainsMap_mem_reducedCyclicCocycles (f : A →ₐ[R] B) {
     (phi : reducedCyclicCocycles R B M n) :
     reducedCyclicCochainsMap M f n phi ∈ reducedCyclicCocycles R A M n := by
   rw [mem_reducedCyclicCocycles_iff, reducedCyclicHochschildCoboundary_reducedCyclicCochainsMap,
-    phi.2, map_zero]
+    phi.property, map_zero]
 
 end Map
 
@@ -471,8 +471,7 @@ theorem map_mk (f : A →ₐ[R] B) {n : ℕ} (phi : reducedCyclicCocycles R B M 
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply (reducedCyclicCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i,
-    ConcreteCategory.comp_apply, iCycles_toCycles, iCycles_toCycles,
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, iCycles_toCycles, iCycles_toCycles,
     -- Insert a `hom ≫ inv` pair so that the elementwise `reducedCyclicCochainComplexMap_f_apply`,
     -- which is stated through `reducedCyclicCochainComplexXIso`, can fire.
     ← Iso.hom_inv_id_apply (reducedCyclicCochainComplexXIso R A M n)
@@ -544,7 +543,7 @@ variable {R A M}
 theorem toCyclic_mk {n : ℕ} (phi : reducedCyclicCocycles R A M n) :
     toCyclic R A M n (mk R A M n phi) =
       cyclicCohomology.mk R A M n
-        ⟨_, coe_mem_cyclicCocycles_iff_mem_reducedCyclicCocycles.2 phi.2⟩ := by
+        ⟨_, coe_mem_cyclicCocycles_iff_mem_reducedCyclicCocycles.2 phi.property⟩ := by
   rw [toCyclic, mk_apply]
   refine (HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk _ _ _ _ _).trans
     (cyclicCohomology.mk_eq_homologyπ R A M _ _ ?_).symm
@@ -599,7 +598,7 @@ theorem reducedCyclicCochainComplexι_comp_scalarCyclicRestrictionComplexMap :
     ← cancel_mono (cyclicCochainComplexXIso R R M n).hom, Category.assoc,
     scalarCyclicRestrictionComplexMap, cyclicCochainComplexMap_f, zero_comp]
   simp only [reducedCyclicCochainComplexι, Category.assoc, Iso.inv_hom_id_assoc]
-  exact ModuleCat.hom_ext (LinearMap.ext fun phi ↦ phi.2)
+  exact ModuleCat.hom_ext (LinearMap.ext fun phi ↦ phi.property)
 
 /-- The reduced cyclic cochain complex is the kernel of scalar restriction on the full cyclic
 cochain complex. -/

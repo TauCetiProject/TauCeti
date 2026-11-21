@@ -14,11 +14,11 @@ import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
 For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ = X² - 3`, the prime
 `3 ≡ 3 (mod 4)` divides the radicand, so no algebraic integer of `K` has norm `-1`
-(`TauCeti.NumberField.norm_ne_neg_one_of_prime_dvd`). Hence no unit of `𝓞 K` is positive at one
-real place and negative at the other: the signature map on the units is not surjective, although
-every sign pattern is the signature of an element of `Kˣ`. This is the narrow-class obstruction in
-its simplest form: `ℚ(√3)` has class number `1` but narrow class number `2`
-(`TauCeti.Multiquadratic.natCard_narrowClassGroup_eq_two_of_minpoly_eq_X_sq_sub_three`).
+(`TauCeti.NumberField.norm_ne_neg_one_of_mod_four_eq_three_of_dvd`). Hence no unit of `𝓞 K` is
+positive at one real place and negative at the other: the signature map on the units is not
+surjective, although every sign pattern is the signature of an element of `Kˣ`. This is the
+narrow-class obstruction in its simplest form: `ℚ(√3)` has class number `1` but narrow class
+number `2` (`TauCeti.Multiquadratic.natCard_narrowClassGroup_eq_two_of_minpoly_eq_X_sq_sub_three`).
 
 `ℚ(√3)` is the first real quadratic field with this property, since `1 + √2` has norm `-1`.
 
@@ -49,8 +49,8 @@ theorem not_surjective_unitSignature (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ
     ¬ Function.Surjective (unitSignature (K := K)) := by
   rw [unitSignature_surjective_iff_exists_norm_eq_neg_one hmin hgen (by norm_num)]
   rintro ⟨u, hu⟩
-  exact norm_ne_neg_one_of_prime_dvd (p := 3) hmin hgen Int.prime_three.squarefree (by norm_num)
-    dvd_rfl (u : 𝓞 K) hu
+  exact norm_ne_neg_one_of_mod_four_eq_three_of_dvd (p := 3) hmin hgen Int.prime_three.squarefree
+    (by norm_num) dvd_rfl (u : 𝓞 K) hu
 
 /-- **Worked example.** The units of the concrete number field `AdjoinRoot (X² - 3)`, modelling
 `ℚ(√3)`, miss a sign pattern. -/

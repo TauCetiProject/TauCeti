@@ -176,21 +176,8 @@ theorem factorial_mul_sum_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ)
   classical
   -- Multilinearity of the determinant in the rows, used in every row at once: a term of the
   -- expansion is a choice of one summand in each row, so the terms are indexed by the box.
-  have hbox : (Matrix.of fun i j : Fin n =>
-        ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t).det
-      = ∑ y ∈ Fintype.piFinset fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1),
-          (Matrix.of fun i j : Fin n => (descPochhammer ℤ (j : ℕ)).eval (y i)).det := by
-    have key := (Matrix.detRowAlternating (R := ℤ) (n := Fin n)).toMultilinearMap.map_sum_finset
-      (A := fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
-      (g := fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t)
-    have hrow : (fun i : Fin n => ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1),
-          fun j : Fin n => (descPochhammer ℤ (j : ℕ)).eval t)
-        = fun i j : Fin n =>
-          ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t := by
-      funext i j
-      exact Finset.sum_apply j _ _
-    rw [hrow] at key
-    exact key
+  have hbox := Matrix.det_of_sum_rows (fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
+    fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t
   have hsum : (∑ y ∈ Finset.Icc (fun i : Fin n => x i.castSucc) (fun i : Fin n => x i.succ - 1),
       (Matrix.vandermonde y).det)
       = (Matrix.of fun i j : Fin n =>
@@ -329,6 +316,15 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
   apply ((isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)).mul_right_inj.mp
   simpa only [Finset.mul_sum, mul_left_comm] using key
 
+/-- Over a domain, the matrix of falling factorials `(descPochhammer R i).eval (x j)` has nonzero
+determinant at pairwise distinct nodes. -/
+theorem det_descPochhammer_eval_ne_zero {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
+    {x : Fin n → R} (hx : Function.Injective x) :
+    (Matrix.of fun i j : Fin n => (descPochhammer R (i : ℕ)).eval (x j)).det ≠ 0 := by
+  have hv := Matrix.det_vandermonde_ne_zero_iff.mpr hx
+  rw [det_vandermonde_eq_det_descPochhammer, ← Matrix.det_transpose] at hv
+  exact hv
+
 /-! ### Integrality of weighted Vandermonde determinants -/
 
 /-- **Integrality for a weighted Vandermonde determinant.**  Let `p j` be monic of degree `j` and
@@ -366,8 +362,8 @@ theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : �
     (∏ k ∈ Finset.range m, d k)
       ∣ ∏ k ∈ Finset.range m, w k * ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l) := by
   have h := prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i)
-    (fun j => d j) (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
-    fun i j => hdvd i i.2 j j.2
+    (fun j => d j) (fun j => p j) (fun j => hdeg j j.isLt) (fun j => hmonic j j.isLt)
+    fun i j => hdvd i i.isLt j j.isLt
   rw [det_vandermonde_eq_prod_range m u, mul_left_comm] at h
   have hunit := (isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)
   simpa only [Fin.prod_univ_eq_prod_range, Finset.prod_mul_distrib] using hunit.dvd_mul_left.mp h
@@ -493,7 +489,8 @@ theorem exists_lt_card_sum_mul_pow_ne_zero {ι R : Type*} [CommRing R] [IsDomain
   let e := s.equivFin
   have hv := eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j ↦ θ (e.symm j))
     (v := fun j ↦ w (e.symm j))
-    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).2 (e.symm j').2 hj))) fun k ↦ by
+    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).property
+        (e.symm j').property hj))) fun k ↦ by
       rw [← h k k.isLt, ← s.sum_coe_sort]
       exact e.symm.sum_comp fun i : s ↦ w i * θ i ^ (k : ℕ)
   exact hw₀ (by simpa using congrFun hv (e ⟨i₀, hi₀⟩))

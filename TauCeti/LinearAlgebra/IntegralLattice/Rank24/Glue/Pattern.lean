@@ -254,6 +254,11 @@ theorem seed_evenPermutations {n : ℕ} (word : Fin n → ℕ) :
 theorem symmetries_literal (word : List ℕ) : (literal word).symmetries = ⊥ :=
   (rfl)
 
+/-- The symmetry group of a literal pattern is trivial. -/
+instance instSubsingletonSymmetriesLiteral (word : List ℕ) :
+    Subsingleton (literal word).symmetries :=
+  inferInstanceAs (Subsingleton (⊥ : Subgroup (Equiv.Perm (Fin (literal word).length))))
+
 /-- A cyclic pattern indicates the rotations of its marked block. -/
 @[simp]
 theorem symmetries_cyclic (pre block post : List ℕ) :
@@ -304,7 +309,7 @@ theorem mem_expand_iff_exists_mem_symmetries (p : GluePattern) (word : List ℕ)
         (ofFn_seed_cyclic_comp_pow pre block post k).symm⟩
   | evenPermutations w =>
     rw [mem_expand_evenPermutations_iff, symmetries_evenPermutations]
-    exact ⟨fun ⟨σ, h⟩ ↦ ⟨σ.val, σ.2, h⟩, fun ⟨g, hg, h⟩ ↦ ⟨⟨g, hg⟩, h⟩⟩
+    exact ⟨fun ⟨σ, h⟩ ↦ ⟨σ.val, σ.property, h⟩, fun ⟨g, hg, h⟩ ↦ ⟨⟨g, hg⟩, h⟩⟩
 
 /-- **The expansion of a pattern is invariant under its indicated coordinate permutations**:
 permuting the positions of a word by a symmetry of the pattern does not change whether the word
@@ -320,6 +325,14 @@ theorem ofFn_comp_mem_expand_iff (p : GluePattern) (f : Fin p.length → ℕ)
       Equiv.Perm.coe_inv, Equiv.self_comp_symm, Function.comp_id]
   · rintro ⟨h, hh, rfl⟩
     exact ⟨h * g, mul_mem hh hg, rfl⟩
+
+/-- **The expansion of a pattern is invariant under its indicated permutations**, read on words
+indexed by `Fin n` for `n` the length of the pattern. -/
+theorem ofFn_comp_permCongr_mem_expand_iff (p : GluePattern) {n : ℕ} (h : p.length = n)
+    {g : Equiv.Perm (Fin p.length)} (hg : g ∈ p.symmetries) (d : Fin n → ℕ) :
+    List.ofFn (d ∘ (finCongr h).permCongr g) ∈ p.expand ↔ List.ofFn d ∈ p.expand := by
+  subst h
+  exact p.ofFn_comp_mem_expand_iff d hg
 
 end GluePattern
 

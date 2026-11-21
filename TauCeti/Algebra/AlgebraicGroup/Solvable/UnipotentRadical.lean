@@ -97,15 +97,8 @@ theorem torus_coinvariants_unipotentRadical :
     (smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k G.obj)
   have hconnected : geometricallyConnectedCommHopfAlgProperty k G.obj :=
     (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k G.obj).mpr inferInstance
-  -- Rational points and algebraic-closure points agree, since `k` is algebraically closed.
-  let e : k ≃ₐ[k] AlgebraicClosure k :=
-    AlgEquiv.ofBijective (Algebra.ofId k (AlgebraicClosure k))
-      IsAlgClosed.algebraMap_bijective_of_isIntegral
   have hsolv : geometricallySolvablePointsCommHopfAlgProperty k G.obj :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff k G.obj).mpr
-      (Group.isSolvable_of_isSolvable_injective
-        (f := AlgHom.mapValue (H := G) (e.symm : AlgebraicClosure k →ₐ[k] k))
-        (AlgHom.mapValue_injective e.symm.injective))
+    geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed G.obj
   have hQ : geometricallySolvablePointsCommHopfAlgProperty k Q.obj :=
     hsolv.of_faithfullyFlat (CommHopfAlgCat.coinvariantsι hR)
       (AlgHom.FiniteType.of_finitePresentation

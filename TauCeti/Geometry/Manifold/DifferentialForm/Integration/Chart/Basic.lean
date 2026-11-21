@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
@@ -95,7 +95,7 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx),
     signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
 
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The
 compatibility condition is the signed transition Jacobian, not an assumed integral identity.
@@ -117,6 +117,7 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
         (∫ y in (extChartAt I β) '' s, φ.signedInChartAt b β σβ y ∂μ) ∧
       (IntegrableOn (φ.signedInChartAt b α σα) ((extChartAt I α) '' s) μ ↔
         IntegrableOn (φ.signedInChartAt b β σβ) ((extChartAt I β) '' s) μ) := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let A := (extChartAt I α) '' s
   let e := (extChartAt I α).symm ≫ extChartAt I β
   let D := fun y ↦ fderivWithin ℝ
@@ -158,6 +159,7 @@ theorem integrableOn_signedInChartAt_one_changeChart [IsManifold I 1 M]
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     IntegrableOn (φ.signedInChartAt b α (fun _ ↦ 1)) ((extChartAt I α) '' s) μ ↔
       IntegrableOn (φ.signedInChartAt b β (fun _ ↦ 1)) ((extChartAt I β) '' s) μ := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let A := (extChartAt I α) '' s
   let e := (extChartAt I α).symm ≫ extChartAt I β
   let D := fun y ↦ fderivWithin ℝ
@@ -188,7 +190,7 @@ theorem integrableOn_signedInChartAt_one_changeChart [IsManifold I 1 M]
   simpa only [IntegrableOn, smul_eq_mul] using
     MeasureTheory.integrable_smul_iff_abs_smul (F := ℝ) hd
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- A source sign constant on the form's support factors out of the actual chart coefficient. -/
 theorem signedInChartAt_eq_const_mul_unsigned
     (ψ : RoughForm I M ℝ k) (b : Module.Basis (Fin k) ℝ E) (α : M)

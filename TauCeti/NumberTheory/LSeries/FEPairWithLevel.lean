@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.AbstractFuncEq
+public import TauCeti.NumberTheory.LSeries.AbstractFuncEq
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -46,15 +46,21 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
 * `TauCeti.FEPairWithLevel.toWeakFEPair`: its transport to Mathlib's `WeakFEPair`.
 * `WeakFEPair.toFEPairWithLevel`: a weak pair presented at a given level.
 * `TauCeti.FEPairWithLevel.symm`: the pair read backwards at the same level.
-* `WeakFEPair.Λ_congr`: the completed function of a weak pair depends only on `f` on `(0, ∞)` and
-  the constants.
-* `TauCeti.FEPairWithLevel.Λ`: the completed function, the continued Mellin transform of `f - f₀`.
+* `TauCeti.FEPairWithLevel.Λ` and `Λ_congr`: the completed function, the continued Mellin
+  transform of `f - f₀`, and its extensionality in terms of `f` on `(0, ∞)` and the constants.
 * `TauCeti.FEPairWithLevel.hasMellin`, `differentiableAt_Λ`, `Λ_residue_zero`, `Λ_residue_k`:
   its Mellin representation, regularity and residues.
+* `TauCeti.FEPairWithLevel.meromorphic_Λ`, `analyticAt_Λ_iff`, `meromorphicOrderAt_Λ_zero`
+  and `meromorphicOrderAt_Λ_k`: meromorphic continuation with the exact simple poles detected
+  by the constant terms.
+* `TauCeti.FEPairWithLevel.differentiable_Λ_iff` and `hasMellin_of_constants_eq_zero`: the
+  entire case and its globally convergent Mellin integral.
 * `TauCeti.FEPairWithLevel.toWeakFEPair_symm_Λ`: the dual side of the transport is `N ^ s` times
   the completed function of `g`.
 * `TauCeti.FEPairWithLevel.Λ_eq` and `Λ_eventuallyEq`: the functional equation at level `N`, off
   the poles and as an equality of punctured germs at every point.
+* `TauCeti.FEPairWithLevel.entireΛ`, `entireΛ_congr`, and `entireΛ_eq`: the pole-cleared entire
+  completion at level `N`, its extensionality, and its global functional equation on all of `ℂ`.
 
 ## References
 
@@ -186,16 +192,6 @@ variable (Q : WeakFEPair E) (N : ℝ) (hN : 0 < N)
 @[simp] theorem toFEPairWithLevel_g₀ : (Q.toFEPairWithLevel N hN).g₀ = Q.g₀ := (rfl)
 
 @[simp] theorem toFEPairWithLevel_N : (Q.toFEPairWithLevel N hN).N = N := (rfl)
-
-/-- Two weak pairs whose functions `f` agree on `(0, ∞)`, with the same weight, root number and
-constants, have the same completed function: `Λ` sees `f` only through a Mellin transform. -/
-theorem Λ_congr {P P' : WeakFEPair E} (hf : EqOn P.f P'.f (Ioi 0)) (hk : P.k = P'.k)
-    (hε : P.ε = P'.ε) (hf₀ : P.f₀ = P'.f₀) (hg₀ : P.g₀ = P'.g₀) : P.Λ = P'.Λ := by
-  have hmod : EqOn P.f_modif P'.f_modif (Ioi 0) := fun t ht ↦ by
-    simp only [f_modif, Pi.add_apply, indicator_apply, hf ht, hk, hε, hf₀, hg₀]
-  funext s
-  simp only [Λ, Λ₀, mellin, hk, hε, hf₀, hg₀]
-  rw [setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [hmod ht]]
 
 end WeakFEPair
 
@@ -333,6 +329,14 @@ def Λ : ℂ → E := P.toWeakFEPair.Λ
 @[simp]
 theorem toWeakFEPair_Λ : P.toWeakFEPair.Λ = P.Λ := (rfl)
 
+/-- Two level pairs whose functions `f` agree on `(0, ∞)`, with the same weight, constant terms,
+and effective root number `ε N ^ (-k)`, have the same completed function `Λ`. -/
+theorem Λ_congr {P Q : FEPairWithLevel E} (hf : EqOn P.f Q.f (Ioi 0)) (hk : P.k = Q.k)
+    (hε : P.ε * (P.N : ℂ) ^ (-(P.k : ℂ)) = Q.ε * (Q.N : ℂ) ^ (-(Q.k : ℂ)))
+    (hf₀ : P.f₀ = Q.f₀) (hg₀ : P.g₀ = Q.g₀) : P.Λ = Q.Λ := by
+  refine WeakFEPair.Λ_congr hf hk ?_ hf₀ hg₀
+  simpa only [toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_cpow Q.hN.le, ofReal_neg] using hε
+
 /-- A weak pair presented at any level keeps its completed function: presentation followed by
 transport changes both functions only at nonpositive inputs, which the Mellin transform does not
 see. -/
@@ -353,6 +357,37 @@ when `g₀ = 0`. -/
 theorem differentiableAt_Λ {s : ℂ} (hs : s ≠ 0 ∨ P.f₀ = 0) (hs' : s ≠ P.k ∨ P.g₀ = 0) :
     DifferentiableAt ℂ P.Λ s :=
   P.toWeakFEPair.differentiableAt_Λ hs hs'
+
+/-- The continued Mellin transform at a positive level is meromorphic on the plane. -/
+theorem meromorphic_Λ [CompleteSpace E] : Meromorphic P.Λ := P.toWeakFEPair.meromorphic_Λ
+
+/-- Regularity of the continued Mellin transform is determined exactly by the constant terms. -/
+@[simp]
+theorem analyticAt_Λ_iff [CompleteSpace E] (s : ℂ) : AnalyticAt ℂ P.Λ s ↔
+    (s ≠ 0 ∨ P.f₀ = 0) ∧ (s ≠ P.k ∨ P.g₀ = 0) :=
+  P.toWeakFEPair.analyticAt_Λ_iff s
+
+/-- The constant term of the kernel gives a simple pole at zero when it is nonzero. -/
+theorem meromorphicOrderAt_Λ_zero [CompleteSpace E] (hf : P.f₀ ≠ 0) :
+    meromorphicOrderAt P.Λ 0 = (-1 : ℤ) := P.toWeakFEPair.meromorphicOrderAt_Λ_zero hf
+
+/-- The dual constant term gives a simple pole at the weight when it is nonzero.
+The level changes the residue but not the order of this pole. -/
+theorem meromorphicOrderAt_Λ_k [CompleteSpace E] (hg : P.g₀ ≠ 0) :
+    meromorphicOrderAt P.Λ P.k = (-1 : ℤ) := P.toWeakFEPair.meromorphicOrderAt_Λ_k hg
+
+/-- A level pair has an entire completion exactly when both constant terms vanish. -/
+@[simp]
+theorem differentiable_Λ_iff : Differentiable ℂ P.Λ ↔ P.f₀ = 0 ∧ P.g₀ = 0 := by
+  rw [← toWeakFEPair_Λ, WeakFEPair.differentiable_Λ_iff]
+  exact ⟨fun h ↦ ⟨h.hf₀, h.hg₀⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+/-- With zero constant terms the Mellin integral converges at every complex argument,
+not only in the original right half-plane. -/
+theorem hasMellin_of_constants_eq_zero (hf : P.f₀ = 0) (hg : P.g₀ = 0)
+    (s : ℂ) : HasMellin P.f s (P.Λ s) := by
+  have h : IsStrongFEPair P.toWeakFEPair := ⟨hf, hg⟩
+  exact h.hasMellin s
 
 /-- The residue of `Λ` at `s = 0` is `-f₀`. -/
 theorem Λ_residue_zero : Tendsto (fun s ↦ s • P.Λ s) (𝓝[≠] 0) (𝓝 (-P.f₀)) :=
@@ -427,11 +462,101 @@ theorem Λ_eq [CompleteSpace E] {s : ℂ} (h0 : s ≠ 0) (hk : s ≠ P.k) :
 included. -/
 theorem Λ_eventuallyEq [CompleteSpace E] (s : ℂ) :
     P.Λ =ᶠ[𝓝[≠] s] fun z ↦ (P.ε * (P.N : ℂ) ^ (-z)) • P.symm.Λ (P.k - z) := by
-  have hne (a : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ a := by
-    rcases eq_or_ne s a with rfl | h
-    · exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (eventually_ne_nhds h)
-  filter_upwards [hne 0, hne P.k] with z hz0 hzk
+  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
+    (eventually_cofinite_ne (P.k : ℂ)).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hzk
   exact P.Λ_eq hz0 hzk
+
+/-- With zero constant terms, the completed function equals the entire part `Λ₀` of the
+transported pair at every complex argument. -/
+theorem Λ_eq_toWeakFEPair_Λ₀_of_constants_eq_zero (hf : P.f₀ = 0) (hg : P.g₀ = 0) :
+    P.Λ = P.toWeakFEPair.Λ₀ :=
+  IsStrongFEPair.Λ_eq_Λ₀ ⟨hf, hg⟩
+
+/-- **Pole-cleared entire completion** at level `N`: agrees with `(s * (s - k)) • Λ s` away from
+`0` and `k`, and takes the removable values `k • f₀` at `0` and `k • ((ε N ^ (-k)) • g₀)`
+at `k`. -/
+def entireΛ : ℂ → E := P.toWeakFEPair.entireΛ
+
+@[simp]
+theorem toWeakFEPair_entireΛ : P.toWeakFEPair.entireΛ = P.entireΛ := (rfl)
+
+theorem entireΛ_def (s : ℂ) :
+    P.entireΛ s = (s * (s - P.k)) • P.toWeakFEPair.Λ₀ s - (s - P.k) • P.f₀ +
+      s • ((P.ε * (P.N : ℂ) ^ (-(P.k : ℂ))) • P.g₀) := by
+  rw [← toWeakFEPair_entireΛ, WeakFEPair.entireΛ_def, toWeakFEPair_k, toWeakFEPair_f₀,
+    toWeakFEPair_g₀, toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_neg]
+
+/-- Two level pairs whose functions `f` agree on `(0, ∞)`, with the same weight, constant terms,
+and effective root number `ε N ^ (-k)`, have the same pole-cleared entire completion `entireΛ`. -/
+theorem entireΛ_congr {P Q : FEPairWithLevel E} (hf : EqOn P.f Q.f (Ioi 0)) (hk : P.k = Q.k)
+    (hε : P.ε * (P.N : ℂ) ^ (-(P.k : ℂ)) = Q.ε * (Q.N : ℂ) ^ (-(Q.k : ℂ)))
+    (hf₀ : P.f₀ = Q.f₀) (hg₀ : P.g₀ = Q.g₀) : P.entireΛ = Q.entireΛ := by
+  refine WeakFEPair.entireΛ_congr hf hk ?_ hf₀ hg₀
+  simpa only [toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_cpow Q.hN.le, ofReal_neg] using hε
+
+/-- Presenting a weak pair at any positive level preserves its pole-cleared entire completion. -/
+@[simp]
+theorem _root_.WeakFEPair.toFEPairWithLevel_entireΛ (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
+    (Q.toFEPairWithLevel N hN).entireΛ = Q.entireΛ :=
+  WeakFEPair.entireΛ_congr (Q.toWeakFEPair_toFEPairWithLevel_f hN) rfl
+    (Q.toWeakFEPair_toFEPairWithLevel_ε hN) rfl rfl
+
+/-- The pole-cleared completion at level `N` is entire on `ℂ`. -/
+theorem differentiable_entireΛ : Differentiable ℂ P.entireΛ :=
+  P.toWeakFEPair.differentiable_entireΛ
+
+@[simp]
+theorem entireΛ_zero : P.entireΛ 0 = (P.k : ℂ) • P.f₀ :=
+  P.toWeakFEPair.entireΛ_zero
+
+@[simp]
+theorem entireΛ_k :
+    P.entireΛ P.k = (P.k : ℂ) • ((P.ε * (P.N : ℂ) ^ (-(P.k : ℂ))) • P.g₀) := by
+  rw [← toWeakFEPair_entireΛ, ← toWeakFEPair_k, WeakFEPair.entireΛ_k, toWeakFEPair_k,
+    toWeakFEPair_g₀, toWeakFEPair_ε, ofReal_cpow P.hN.le, ofReal_neg]
+
+theorem entireΛ_zero_eq_zero_iff : P.entireΛ 0 = 0 ↔ P.f₀ = 0 :=
+  P.toWeakFEPair.entireΛ_zero_eq_zero_iff
+
+theorem entireΛ_k_eq_zero_iff : P.entireΛ P.k = 0 ↔ P.g₀ = 0 :=
+  P.toWeakFEPair.entireΛ_k_eq_zero_iff
+
+/-- Away from the poles of `Λ` (at `s` unless `s = 0` with `f₀ ≠ 0` or `s = k` with `g₀ ≠ 0`),
+`entireΛ s` equals `(s * (s - k)) • Λ s`. -/
+theorem entireΛ_eq_smul_Λ {s : ℂ} (h0 : s ≠ 0 ∨ P.f₀ = 0) (hk : s ≠ P.k ∨ P.g₀ = 0) :
+    P.entireΛ s = (s * (s - P.k)) • P.Λ s :=
+  P.toWeakFEPair.entireΛ_eq_smul_Λ h0 hk
+
+/-- `entireΛ` agrees with `(z * (z - k)) • Λ z` as a punctured germ at every point. -/
+theorem entireΛ_eventuallyEq (s : ℂ) :
+    P.entireΛ =ᶠ[𝓝[≠] s] fun z ↦ (z * (z - P.k)) • P.Λ z :=
+  P.toWeakFEPair.entireΛ_eventuallyEq s
+
+/-- With zero constant terms, `entireΛ` equals `(s * (s - k)) • Λ s` everywhere on `ℂ`. -/
+theorem entireΛ_eq_smul_Λ_of_constants_eq_zero (hf : P.f₀ = 0) (hg : P.g₀ = 0) (s : ℂ) :
+    P.entireΛ s = (s * (s - P.k)) • P.Λ s :=
+  P.entireΛ_eq_smul_Λ (.inr hf) (.inr hg)
+
+/-- **The Mellin principle for the pole-cleared completion at level `N`**:
+`entireΛ(f, s) = ε N ^ (-s) entireΛ(g, k - s)` at every `s : ℂ`, including `0` and `k`. -/
+theorem entireΛ_eq [CompleteSpace E] (s : ℂ) :
+    P.entireΛ s = (P.ε * (P.N : ℂ) ^ (-s)) • P.symm.entireΛ (P.k - s) := by
+  let R : ℂ → E := fun z ↦ (P.ε * (P.N : ℂ) ^ (-z)) • P.symm.entireΛ (P.k - z)
+  have hN0 : (P.N : ℂ) ≠ 0 := ofReal_ne_zero.mpr P.hN.ne'
+  have hR_cont : Continuous R :=
+    (continuous_const.mul (differentiable_id.neg.const_cpow (.inl hN0)).continuous).smul
+      (P.symm.differentiable_entireΛ.continuous.comp (continuous_const.sub continuous_id))
+  apply Filter.EventuallyEq.eq_of_nhds
+  apply (P.differentiable_entireΛ.continuous.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+    hR_cont.continuousAt).mp
+  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
+    (eventually_cofinite_ne (P.k : ℂ)).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hzk
+  have hmul : ((P.k : ℂ) - z) * (((P.k : ℂ) - z) - P.symm.k) = z * (z - P.k) := by
+    rw [symm_k]; ring
+  dsimp only [R]
+  rw [P.entireΛ_eq_smul_Λ (.inl hz0) (.inl hzk), P.Λ_eq hz0 hzk,
+    P.symm.entireΛ_eq_smul_Λ (.inl (sub_ne_zero.mpr hzk.symm))
+      (.inl (by rw [symm_k]; exact fun h' ↦ hz0 (sub_eq_self.mp h'))),
+    hmul, smul_comm]
 
 end TauCeti.FEPairWithLevel

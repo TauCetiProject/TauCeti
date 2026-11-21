@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
+import TauCeti.Analysis.Convex.EffectiveDomain
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -31,8 +32,10 @@ transfers to an arbitrary one.
 ## Main statements
 
 * `TauCeti.mongeAmpereMeasure_mul_of_pos` gives the homogeneity of the Monge–Ampère measure
-  under positive scaling of an extended-real potential, and
-  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set.
+  under positive scaling of an extended-real potential,
+  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set, and
+  `MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos` is its form for scaling followed
+  by a constant shift.
 * `TauCeti.mongeAmpereMeasure_add_affine` proves invariance of the Aleksandrov Monge–Ampère
   measure under addition of an affine function, and `TauCeti.mongeAmpereMeasure_ite_add_linearMap`
   is its form for a finite convex function on a set and an affine function given by a linear
@@ -145,32 +148,15 @@ theorem mongeAmpereMeasure_mul_of_pos (f : E → EReal) {c : ℝ} (hc : 0 < c) :
       ENNReal.ofReal (c ^ finrank ℝ E) • mongeAmpereMeasure μ f := by
   set g : E → EReal := fun x ↦ (c : EReal) * f x
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
-  have hle (a b : EReal) : (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
-    rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
-      EReal.mul_div_cancel (EReal.coe_ne_bot c) (EReal.coe_ne_top c) hc'.ne']
+  have hle := EReal.coe_mul_le_coe_mul_iff hc
   have heq (a b : EReal) : (c : EReal) * a = (c : EReal) * b ↔ a = b := by
     simp only [le_antisymm_iff, hle]
   have hbot (x : E) : g x ≠ ⊥ ↔ f x ≠ ⊥ := by
     simpa only [g, EReal.coe_mul_bot_of_pos hc] using (heq (f x) ⊥).not
   have htop (x : E) : g x ≠ ⊤ ↔ f x ≠ ⊤ := by
     simpa only [g, EReal.coe_mul_top_of_pos hc] using (heq (f x) ⊤).not
-  -- Scaling the height coordinate carries one real epigraph onto the other.
-  let scaleHeight (a : ℝ) : E × ℝ →ₗ[ℝ] E × ℝ :=
-    LinearMap.prodMap LinearMap.id (a • LinearMap.id)
-  have hheight (x : E) (t : ℝ) : g x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
-    simp only [g, EReal.coe_mul, hle]
-  have hpreimage : scaleHeight c ⁻¹' {p : E × ℝ | g p.1 ≤ p.2} =
-      {p : E × ℝ | f p.1 ≤ p.2} :=
-    Set.ext fun p ↦ hheight p.1 p.2
-  have hpreimageInv : scaleHeight c⁻¹ ⁻¹' {p : E × ℝ | f p.1 ≤ p.2} =
-      {p : E × ℝ | g p.1 ≤ p.2} := by
-    ext p
-    simp only [mem_preimage, mem_ofPred_eq, scaleHeight, LinearMap.prodMap_apply,
-      LinearMap.id_apply, LinearMap.smul_apply, smul_eq_mul]
-    rw [← hheight, mul_inv_cancel_left₀ hc.ne']
   have hconv : Convex ℝ {p : E × ℝ | g p.1 ≤ p.2} ↔ Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} :=
-    ⟨fun h ↦ hpreimage ▸ h.linear_preimage (scaleHeight c),
-      fun h ↦ hpreimageInv ▸ h.linear_preimage (scaleHeight c⁻¹)⟩
+    convex_epigraph_coe_mul_iff hc f
   by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
   swap
   · rw [mongeAmpereMeasure_eq_zero_of_not_convex μ hf,
@@ -213,6 +199,17 @@ theorem mongeAmpereMeasure_ite_mul_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω
     funext x
     split_ifs <;> simp only [EReal.coe_mul, EReal.coe_mul_top_of_pos hc]
   rw [← hscale, mongeAmpereMeasure_mul_of_pos μ _ hc]
+
+/-- Positive scaling and a constant shift of a real potential on a set, extended by `⊤` off that
+set: the Monge–Ampère measure is multiplied by `c ^ finrank ℝ E`. -/
+theorem _root_.MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos {Ω : Set E}
+    [DecidablePred (· ∈ Ω)] {u : E → ℝ} {c : ℝ} (hc : 0 < c) (b : ℝ) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x + b : ℝ) : EReal) else ⊤) =
+      ENNReal.ofReal (c ^ finrank ℝ E) •
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
+  have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω) (fun y => c * u y) 0 b
+  rw [mongeAmpereMeasure_ite_mul_of_pos μ hc] at hshift
+  simpa only [LinearMap.zero_apply, add_zero] using hshift
 
 /-- **Change of variables for the Aleksandrov Monge–Ampère measure.** For an affine equivalence
 `A` of `E` with linear part `L` and a measurable set `s`,

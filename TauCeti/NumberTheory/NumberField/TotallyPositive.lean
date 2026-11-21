@@ -16,12 +16,11 @@ public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 An element `x` of a number field `K` is **totally positive** when it is strictly positive under
 every real embedding `K →+* ℝ` — equivalently, at every real infinite place. This is the archimedean
-positivity condition underlying the *narrow* class group of the multiquadratic roadmap (Layer 3):
-the narrow class group `Cl⁺(K)` is the quotient of the fractional ideals by the principal ideals
-admitting a totally positive generator. It surjects onto the ordinary class group `Cl(K)`
-(forgetting the positivity condition), and the `2`-rank of `Cl⁺(K)` is what the genus-theory
-`t - 1` formula (with `t` the number of ramified primes) computes for a **real quadratic** field
-in the multiquadratic roadmap.
+positivity condition underlying the *narrow* class group: the narrow class group `Cl⁺(K)` is the
+quotient of the fractional ideals by the principal ideals admitting a totally positive generator.
+It surjects onto the ordinary class group `Cl(K)` (forgetting the positivity condition), and the
+`2`-rank of `Cl⁺(K)` is what the genus-theory `t - 1` formula (with `t` the number of ramified
+primes) computes for a **real quadratic** field.
 
 This file introduces the predicate and its multiplicative structure. The totally positive elements
 are closed under multiplication and inversion and contain every nonzero square, so the totally
@@ -206,7 +205,8 @@ theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (
     simpa only [map_pow] using
       isTotallyPositive_sq (K := K) (RingOfIntegers.coe_ne_zero_iff.mpr hq0)
   set B : ℝ := ∑ w : {w : InfinitePlace K // w.IsReal},
-    |embedding_of_isReal w.2 (a : K)| / embedding_of_isReal w.2 ((q ^ 2 : 𝓞 K) : K) with hB
+    |embedding_of_isReal w.property (a : K)| / embedding_of_isReal w.property
+        ((q ^ 2 : 𝓞 K) : K) with hB
   -- Any natural number exceeding `B` clears the negative values of `a` at every real place.
   have key : ∀ m : ℕ, B < m → IsTotallyPositive ((a + (m : 𝓞 K) * q ^ 2 : 𝓞 K) : K) := by
     intro m hm w hw
@@ -215,8 +215,9 @@ theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (
         embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) ≤ B := by
       rw [hB]
       exact Finset.single_le_sum (f := fun v : {w : InfinitePlace K // w.IsReal} =>
-          |embedding_of_isReal v.2 (a : K)| / embedding_of_isReal v.2 ((q ^ 2 : 𝓞 K) : K))
-        (fun v _ => div_nonneg (abs_nonneg _) (hppos v.1 v.2).le)
+          |embedding_of_isReal v.property (a : K)| / embedding_of_isReal v.property
+              ((q ^ 2 : 𝓞 K) : K))
+        (fun v _ => div_nonneg (abs_nonneg _) (hppos v.val v.property).le)
         (a := (⟨w, hw⟩ : {w : InfinitePlace K // w.IsReal})) (Finset.mem_univ _)
     have hlt : |embedding_of_isReal hw (a : K)| <
         m * embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) :=

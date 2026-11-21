@@ -11,15 +11,15 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 /-!
 # Generating an algebra modulo a nilpotent ideal
 
-Let `S` be a subalgebra of `A` and `I` a nilpotent two-sided ideal. If `S` maps onto `A/I`
-and contains representatives spanning `I/I²`, then `S = A`. Thus algebra generators can be
-lifted from the quotient and the first ideal layer. In particular, lifts of vertex idempotents
-and of a basis of the first radical layer generate a finite-dimensional basic algebra over an
+Let `S` be a subalgebra of `A` and `I` a nilpotent ideal. If `S` maps onto `A/I` and contains
+representatives spanning `I/I²`, then `S = A`. Thus algebra generators can be lifted from the
+quotient and the first ideal layer; this is the step showing that lifts of vertex idempotents and
+of a basis of the first radical layer generate a finite-dimensional basic algebra over an
 algebraically closed field.
 
 The intermediate power estimate records that products of these first-layer lifts span every
 successive ideal layer. No commutativity of `A`, field hypothesis, or finite-dimensionality is
-needed for the nilpotent-ideal criterion.
+needed for the nilpotent-ideal criterion, and `I` need only be a left ideal.
 
 `AlgHom.surjective_of_nilpotent_ideal` is the corresponding criterion for an algebra map:
 surjectivity modulo `I` and spanning the first ideal layer imply surjectivity. For the radical
@@ -40,30 +40,29 @@ variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
 /-- If a subalgebra contains representatives of the first ideal layer, it contains
 representatives of every positive ideal layer. -/
 theorem pow_le_toSubmodule_sup_pow_succ (S : Subalgebra R A) (I : Ideal A)
-    [I.IsTwoSided]
     (h : I.restrictScalars R ≤ S.toSubmodule ⊔ (I ^ 2).restrictScalars R)
     (n : ℕ) (hn : n ≠ 0) :
     (I ^ n).restrictScalars R ≤ S.toSubmodule ⊔ (I ^ (n + 1)).restrictScalars R := by
-  let N := I.restrictScalars R
-  let P := S.toSubmodule ⊓ N
-  -- The chosen representatives lie in the ideal, since the error lies in its square.
-  have hNP : N ≤ P ⊔ N ^ 2 := by
-    intro x hx
-    obtain ⟨b, hb, c, hc, hbc⟩ := Submodule.mem_sup.mp (h hx)
-    have hbI : b ∈ I := by
-      have hb' : b = x - c := by rw [← hbc]; abel
-      rw [hb']
-      have hcI : c ∈ I ^ 2 := (Submodule.restrictScalars_mem R (I ^ 2) c).mp hc
-      rw [Submodule.pow_succ, Submodule.pow_one] at hcI
-      exact I.sub_mem hx (Ideal.mul_le_left hcI)
-    exact Submodule.mem_sup.mpr ⟨b, ⟨hb, hbI⟩, c,
-      by simpa only [N, Submodule.restrictScalars_pow (by decide : 2 ≠ 0)] using hc, hbc⟩
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [Submodule.restrictScalars_pow two_ne_zero] at h
+  rw [Submodule.restrictScalars_pow m.succ_ne_zero,
+    Submodule.restrictScalars_pow (m + 1).succ_ne_zero]
+  set N := I.restrictScalars R
+  set P := N ⊓ S.toSubmodule
+  have hsq : N ^ 2 ≤ N := by
+    rw [sq]
+    exact Submodule.mul_le.mpr fun x _ y hy ↦ I.mul_mem_left x hy
+  -- The chosen representatives can be taken inside the ideal, since the error lies in its square.
+  have hNP : N ≤ P ⊔ N ^ 2 := fun x hx ↦ by
+    obtain ⟨b, hb, c, hc, rfl⟩ := Submodule.mem_sup.mp (h hx)
+    exact Submodule.mem_sup.mpr
+      ⟨b, Submodule.mem_inf.mpr ⟨(I.add_mem_iff_left (hsq hc)).mp hx, hb⟩, c, hc, rfl⟩
   have hP (m : ℕ) : P ^ m ≤ S.toSubmodule := by
     induction m with
     | zero => exact Submodule.one_le.mpr S.one_mem
     | succ m ih =>
       rw [pow_succ]
-      exact Submodule.mul_le.mpr fun x hx y hy ↦ S.mul_mem (ih hx) hy.1
+      exact Submodule.mul_le.mpr fun x hx y hy ↦ S.mul_mem (ih hx) hy.2
   -- Replace one factor at a time; every error belongs to the next ideal power.
   have hlayer : ∀ m : ℕ, N ^ (m + 1) ≤ P ^ (m + 1) ⊔ N ^ (m + 2) := by
     intro m
@@ -82,38 +81,30 @@ theorem pow_le_toSubmodule_sup_pow_succ (S : Subalgebra R A) (I : Ideal A)
           rw [Submodule.mul_sup, ← pow_succ]
         _ ≤ P ^ (m + 2) ⊔ N ^ (m + 3) := by
           refine sup_le (sup_le le_sup_left ?_) le_sup_right
-          exact (mul_le_mul_left (pow_le_pow_left' inf_le_right (m + 1)) _).trans
+          exact (mul_le_mul_left (pow_le_pow_left' inf_le_left (m + 1)) _).trans
             (by rw [← pow_add]; exact le_sup_right)
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  simpa only [N, Submodule.restrictScalars_pow (Nat.succ_ne_zero _)] using
-    (hlayer m).trans (sup_le_sup (hP (m + 1)) le_rfl)
+  exact (hlayer m).trans (sup_le_sup_right (hP _) _)
 
 /-- If a subalgebra maps onto the quotient by an ideal and contains representatives of its
 first ideal layer, it maps onto the quotient by every power of that ideal. -/
-theorem toSubmodule_sup_pow_restrictScalars_eq_top_of_le_sup_sq
-    (S : Subalgebra R A) (I : Ideal A) [I.IsTwoSided]
+theorem toSubmodule_sup_restrictScalars_pow_eq_top (S : Subalgebra R A) (I : Ideal A)
     (hquot : S.toSubmodule ⊔ I.restrictScalars R = ⊤)
     (hlayer : I.restrictScalars R ≤ S.toSubmodule ⊔ (I ^ 2).restrictScalars R)
     (n : ℕ) : S.toSubmodule ⊔ (I ^ n).restrictScalars R = ⊤ := by
-  cases n with
+  induction n with
   | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
-  | succ n =>
-    induction n with
-    | zero => simpa only [Nat.zero_add, Submodule.pow_one] using hquot
-    | succ n ih =>
-      apply top_unique
-      rw [← ih]
-      exact sup_le le_sup_left (S.pow_le_toSubmodule_sup_pow_succ I hlayer _
-        (Nat.succ_ne_zero _))
+  | succ n ih =>
+    obtain rfl | hn := eq_or_ne n 0
+    · simpa only [Nat.zero_add, Submodule.pow_one] using hquot
+    · exact top_unique (ih ▸ sup_le le_sup_left (S.pow_le_toSubmodule_sup_pow_succ I hlayer n hn))
 
-/-- A subalgebra is the whole algebra if it maps onto the quotient by a nilpotent two-sided
-ideal and contains representatives spanning the first ideal layer. -/
-theorem eq_top_of_nilpotent_ideal (S : Subalgebra R A) (I : Ideal A) [I.IsTwoSided]
+/-- A subalgebra is the whole algebra if it maps onto the quotient by a nilpotent ideal and
+contains representatives spanning the first ideal layer. -/
+theorem eq_top_of_nilpotent_ideal (S : Subalgebra R A) (I : Ideal A)
     (hI : IsNilpotent I) (hquot : S.toSubmodule ⊔ I.restrictScalars R = ⊤)
     (hlayer : I.restrictScalars R ≤ S.toSubmodule ⊔ (I ^ 2).restrictScalars R) : S = ⊤ := by
   obtain ⟨n, hn⟩ := hI
-  have h := S.toSubmodule_sup_pow_restrictScalars_eq_top_of_le_sup_sq I hquot hlayer n
-  simpa [hn] using h
+  simpa [hn] using S.toSubmodule_sup_restrictScalars_pow_eq_top I hquot hlayer n
 
 end Subalgebra
 

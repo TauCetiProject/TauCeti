@@ -35,7 +35,9 @@ polynomials `W_w = A ∩ B` is its trace on `V_w`. This application is
 The proofs move traces between restrictions with two general lemmas:
 `LinearMap.trace_restrict_congr` (the traces of `f` on equal submodules agree) and
 `LinearMap.trace_restrict_restrict` (for `p ≤ q`, restricting `f` to `q` and then to `p`, viewed
-inside `q`, has the same trace as restricting `f` to `p`).
+inside `q`, has the same trace as restricting `f` to `p`). A third general lemma,
+`LinearMap.trace_restrict_eq_of_linearEquiv`, transports the trace of a restriction along a linear
+equivalence intertwining two endomorphisms; it is used for graded traces of quotient algebras.
 
 ## References
 
@@ -78,6 +80,21 @@ theorem trace_restrict_restrict {p q : Submodule R M} (hpq : p ≤ q) {f : M →
     trace R (p.comap q.subtype) ((f.restrict hq).restrict hpq') = trace R p (f.restrict hp) := by
   have h : (comapSubtypeEquivOfLe hpq).conj ((f.restrict hq).restrict hpq') = f.restrict hp :=
     LinearMap.ext fun x ↦ Subtype.ext <| by simp [LinearEquiv.conj_apply]
+  rw [← h, trace_conj']
+
+/-- **Transport of restricted traces.** If a linear equivalence `e` intertwines `f` and `f'` and
+carries a submodule `p` preserved by `f` onto a submodule `p'` preserved by `f'`, then the traces of
+the two restrictions agree: they are conjugate by `LinearEquiv.submoduleMap`. -/
+theorem trace_restrict_eq_of_linearEquiv {N : Type*} [AddCommGroup N] [Module R N]
+    (e : M ≃ₗ[R] N) {p : Submodule R M} {p' : Submodule R N} (hpp' : p.map (e : M →ₗ[R] N) = p')
+    {f : M →ₗ[R] M} {f' : N →ₗ[R] N} (hf : ∀ x, e (f x) = f' (e x))
+    (hp : ∀ x ∈ p, f x ∈ p) (hp' : ∀ x ∈ p', f' x ∈ p') :
+    trace R p' (f'.restrict hp') = trace R p (f.restrict hp) := by
+  subst hpp'
+  have h : (e.submoduleMap p).conj (f.restrict hp) = f'.restrict hp' :=
+    LinearMap.ext fun x ↦ Subtype.ext <| by
+      obtain ⟨y, rfl⟩ := (e.submoduleMap p).surjective x
+      simp [LinearEquiv.conj_apply, hf]
   rw [← h, trace_conj']
 
 end CommRing

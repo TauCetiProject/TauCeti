@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Schwarz
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.NumberTheory.Padics.MahlerBasis
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RingTheory.PowerSeries.HasseDeriv.Eval
 
 /-!
 # Interpolation on grids of p-adic integers
@@ -33,6 +34,14 @@ This file makes the denominators explicit for the grids of the method.
   contains the `q - 1` progressions `r + q m`, `1 ≤ r < q`, `m < ⌊N / q⌋`, each with unit step
   `q`. Hence the denominator has norm at most `‖⌊N / q⌋!‖ ^ (q - 1)`.
 
+The extrapolation steps of the method also need the Hasse derivatives of `f` at new points. Since
+`D⁽ᵏ⁾ f` vanishes to order `T - k` on the grid and `‖D⁽ᵏ⁾ f‖_c ≤ c⁻ᵏ ‖f‖_c`, each bound holds for
+`D⁽ᵏ⁾ f` with the exponent `T - k` and an extra factor `c⁻ᵏ`:
+
+```text
+‖(D⁽ᵏ⁾ f)(x)‖ ≤ c⁻ᵏ * ‖f‖_c * (‖∏_{b ∈ s} (x - b)‖ / c ^ #s) ^ (T - k).
+```
+
 ## Main results
 
 * `PadicInt.norm_prod_range_sub_add_mul_le`: the factorial bound for a progression with unit step.
@@ -42,6 +51,10 @@ This file makes the denominators explicit for the grids of the method.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_factorial`,
   `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_factorial_pow`: its explicit
   forms on a progression and on the integers not divisible by `q`.
+* `PowerSeries.IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_prod`,
+  `PowerSeries.IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_factorial`,
+  `PowerSeries.IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_factorial_pow`: the same
+  three bounds for the Hasse derivatives `D⁽ᵏ⁾ f`.
 
 ## References
 
@@ -139,14 +152,13 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_prod (hf : f.IsRestricted
   -- the embedding `ℤ_p → K` is isometric and injective
   have hinj : Function.Injective fun b : ℤ_[p] ↦ algebraMap ℚ_[p] K b := fun y z h ↦
     Subtype.ext ((algebraMap ℚ_[p] K).injective h)
-  have hle (y : ℤ_[p]) : ‖algebraMap ℚ_[p] K y‖ ≤ c := by
-    rw [norm_algebraMap', ← PadicInt.norm_def]
-    exact (PadicInt.norm_le_one y).trans hc
   have hdist (b : ℤ_[p]) : ‖algebraMap ℚ_[p] K x - algebraMap ℚ_[p] K b‖ = ‖x - b‖ := by
     rw [← map_sub, ← PadicInt.coe_sub, norm_algebraMap', ← PadicInt.norm_def]
   have h := hf.norm_evalAt_le_gaussNorm_mul_prod_pow (L := K) (zero_lt_one.trans_le hc)
     (s := s.image fun b : ℤ_[p] ↦ algebraMap ℚ_[p] K b) (T := fun _ ↦ T)
-    (by simpa using fun b _ ↦ hle b) (by simpa using hzero) (hle x)
+    (forall_mem_image.mpr fun b _ ↦ (PadicInt.norm_algebraMap_le_one b).trans hc)
+    (by simpa using hzero)
+    ((PadicInt.norm_algebraMap_le_one x).trans hc)
   refine h.trans_eq ?_
   rw [prod_image hinj.injOn]
   simp only [Algebra.algebraMap_self, RingHom.id_apply, hdist]
@@ -205,5 +217,85 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_norm_factorial_pow (hf : f.IsR
   refine h.trans (mul_le_mul_of_nonneg_left ?_ (gaussNorm_nonneg _ _ f fun _ ↦ norm_nonneg _))
   gcongr
   exact PadicInt.norm_prod_filter_not_dvd_sub_le x hq N
+
+/-- **The Schwarz lemma for Hasse derivatives on a grid of `p`-adic integers.** Let `K` be a
+complete normed field extension of `ℚ_p` and `f` a power series over `K` restricted at a radius
+`c ≥ 1`. If the Hasse derivatives `(D⁽ᵗ⁾ f)(b)` vanish for `t < T` at every point `b` of a finite
+set `s` of `p`-adic integers, then for every `k` and every `p`-adic integer `x`
+
+```text
+‖(D⁽ᵏ⁾ f)(x)‖ ≤ c⁻ᵏ * ‖f‖_c * (‖∏_{b ∈ s} (x - b)‖ / c ^ #s) ^ (T - k).
+``` -/
+theorem IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_prod (hf : f.IsRestricted c)
+    (hc : 1 ≤ c) {s : Finset ℤ_[p]} {T : ℕ}
+    (hzero : ∀ b ∈ s, ∀ t < T, (PowerSeries.hasseDeriv t f).evalAt (algebraMap ℚ_[p] K b) = 0)
+    (k : ℕ) (x : ℤ_[p]) :
+    ‖(PowerSeries.hasseDeriv k f).evalAt (algebraMap ℚ_[p] K x)‖ ≤
+      c⁻¹ ^ k * f.gaussNorm norm c * (‖∏ b ∈ s, (x - b)‖ / c ^ s.card) ^ (T - k) := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  -- `D⁽ᵏ⁾ f` vanishes to order `T - k` at each `b ∈ s`
+  have h := (hf.hasseDeriv k).norm_evalAt_le_gaussNorm_mul_norm_prod hc (T := T - k)
+    (fun b hb t ht ↦ by
+      rw [hf.evalAt_hasseDeriv_hasseDeriv ((PadicInt.norm_algebraMap_le_one b).trans hc),
+        hzero b hb _ (by omega), smul_zero]) x
+  have hk := gaussNorm_hasseDeriv_le (R := K) (zero_lt_one.trans_le hc)
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) k
+  exact h.trans <| mul_le_mul_of_nonneg_right hk <|
+    pow_nonneg (div_nonneg (norm_nonneg _) (pow_nonneg (zero_le_one.trans hc) _)) _
+
+/-- **The Schwarz lemma for Hasse derivatives on a progression of `p`-adic integers.** Let `K` be
+a complete normed field extension of `ℚ_p` and `f` a power series over `K` restricted at a radius
+`c ≥ 1`. If the Hasse derivatives `(D⁽ᵗ⁾ f)(a + j d)` vanish for `t < T` and `j < n`, where `d` is
+a unit of `ℤ_p`, then for every `k` and every `p`-adic integer `x`
+
+```text
+‖(D⁽ᵏ⁾ f)(x)‖ ≤ c⁻ᵏ * ‖f‖_c * (‖n!‖ / c ^ n) ^ (T - k).
+``` -/
+theorem IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_factorial
+    (hf : f.IsRestricted c) (hc : 1 ≤ c) (a : ℤ_[p]) {d : ℤ_[p]} (hd : IsUnit d) {n T : ℕ}
+    (hzero : ∀ j < n, ∀ t < T,
+      (PowerSeries.hasseDeriv t f).evalAt (algebraMap ℚ_[p] K ↑(a + j * d)) = 0)
+    (k : ℕ) (x : ℤ_[p]) :
+    ‖(PowerSeries.hasseDeriv k f).evalAt (algebraMap ℚ_[p] K x)‖ ≤
+      c⁻¹ ^ k * f.gaussNorm norm c * (‖(n.factorial : ℤ_[p])‖ / c ^ n) ^ (T - k) := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  -- `D⁽ᵏ⁾ f` vanishes to order `T - k` at each `a + j d`
+  have h := (hf.hasseDeriv k).norm_evalAt_le_gaussNorm_mul_norm_factorial hc a hd (T := T - k)
+    (fun j hj t ht ↦ by
+      rw [hf.evalAt_hasseDeriv_hasseDeriv ((PadicInt.norm_algebraMap_le_one _).trans hc),
+        hzero j hj _ (by omega), smul_zero]) x
+  have hk := gaussNorm_hasseDeriv_le (R := K) (zero_lt_one.trans_le hc)
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) k
+  exact h.trans <| mul_le_mul_of_nonneg_right hk <|
+    pow_nonneg (div_nonneg (norm_nonneg _) (pow_nonneg (zero_le_one.trans hc) _)) _
+
+/-- **The Schwarz lemma for Hasse derivatives on the integers not divisible by `q`.** Let `K` be a
+complete normed field extension of `ℚ_p`, `f` a power series over `K` restricted at a radius
+`c ≥ 1`, and `q` an integer prime to `p`. If the Hasse derivatives `(D⁽ᵗ⁾ f)(j)` vanish for `t < T`
+at every integer `0 ≤ j < N` not divisible by `q`, a grid of `S` points, then for every `k` and
+every `p`-adic integer `x`
+
+```text
+‖(D⁽ᵏ⁾ f)(x)‖ ≤ c⁻ᵏ * ‖f‖_c * (‖⌊N / q⌋!‖ ^ (q - 1) / c ^ S) ^ (T - k).
+``` -/
+theorem IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_factorial_pow
+    (hf : f.IsRestricted c) (hc : 1 ≤ c) {q : ℕ} (hq : p.Coprime q) {N T : ℕ}
+    (hzero : ∀ j < N, ¬q ∣ j → ∀ t < T, (PowerSeries.hasseDeriv t f).evalAt (j : K) = 0)
+    (k : ℕ) (x : ℤ_[p]) :
+    ‖(PowerSeries.hasseDeriv k f).evalAt (algebraMap ℚ_[p] K x)‖ ≤
+      c⁻¹ ^ k * f.gaussNorm norm c *
+        (‖((N / q).factorial : ℤ_[p])‖ ^ (q - 1) / c ^ ((range N).filter (¬q ∣ ·)).card) ^
+          (T - k) := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  -- `D⁽ᵏ⁾ f` vanishes to order `T - k` at each integer `j < N` not divisible by `q`
+  have h := (hf.hasseDeriv k).norm_evalAt_le_gaussNorm_mul_norm_factorial_pow hc hq (N := N)
+    (T := T - k)
+    (fun j hj hqj t ht ↦ by
+      rw [hf.evalAt_hasseDeriv_hasseDeriv ((IsUltrametricDist.norm_natCast_le_one K j).trans hc),
+        hzero j hj hqj _ (by omega), smul_zero]) x
+  have hk := gaussNorm_hasseDeriv_le (R := K) (zero_lt_one.trans_le hc)
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) k
+  exact h.trans <| mul_le_mul_of_nonneg_right hk <|
+    pow_nonneg (div_nonneg (by positivity) (pow_nonneg (zero_le_one.trans hc) _)) _
 
 end PowerSeries

@@ -125,12 +125,14 @@ locally uniformly to `g = 0`, which vanishes at every `z₀`, yet no `F n` has a
 
 Note that the ball is *not* assumed to lie in `Ω`; the zero produced is located in
 `Ω ∩ ball z₀ ε`. -/
-theorem hurwitz_eventually_exists_eq_zero [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+theorem hurwitz_eventually_exists_eq_zero (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
     {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hgz₀ : g z₀ = 0) (hnc : ¬ ∀ z ∈ Ω, g z = 0)
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ i in l, ∃ z ∈ Ω ∩ ball z₀ ε, F i z = 0 := by
+  rcases eq_or_neBot l with rfl | _
+  · exact Filter.eventually_bot
   have hgA : AnalyticOnNhd ℂ g Ω :=
     (_root_.TendstoLocallyUniformlyOn.differentiableOn hconv hF hΩ).analyticOnNhd hΩ
   -- by the identity theorem, `z₀` is an isolated zero of `g`; pick a closed disc about `z₀`
@@ -167,7 +169,7 @@ contains a point where `F i` takes the value `v`, again for all sufficiently lar
 
 This is `TauCeti.hurwitz_eventually_exists_eq_zero` for the translated family `F i - v`, and the
 form the injectivity corollary `TauCeti.hurwitz_injOn` consumes. -/
-theorem hurwitz_eventually_exists_eq [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+theorem hurwitz_eventually_exists_eq (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
     {v z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hgz₀ : g z₀ = v) (hnc : ¬ ∀ z ∈ Ω, g z = v)
@@ -191,7 +193,6 @@ theorem hurwitz_forall_ne (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω) {v : ℂ}
     (hne : ∃ᶠ i in l, ∀ z ∈ Ω, F i z ≠ v) (hnc : ¬ ∀ z ∈ Ω, g z = v) :
     ∀ z ∈ Ω, g z ≠ v := by
-  have : l.NeBot := (frequently_iff_neBot.mp hne).mono inf_le_left
   intro z₀ hz₀ hgz₀
   obtain ⟨i, ⟨z, hz, hzv⟩, hnei⟩ :=
     ((hurwitz_eventually_exists_eq hΩ hconn hF hconv hz₀ hgz₀ hnc one_pos).and_frequently
@@ -237,7 +238,6 @@ theorem hurwitz_injOn (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
     (hinj : ∃ᶠ i in l, Set.InjOn (F i) Ω) :
     Set.InjOn g Ω ∨ ∃ v, ∀ z ∈ Ω, g z = v := by
-  have : l.NeBot := (frequently_iff_neBot.mp hinj).mono inf_le_left
   refine or_iff_not_imp_right.mpr fun hconst a ha b hb hab => ?_
   by_contra hne
   have hd : 0 < dist a b / 2 := half_pos (dist_pos.mpr hne)

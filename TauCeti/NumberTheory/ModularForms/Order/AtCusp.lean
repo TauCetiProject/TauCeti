@@ -90,16 +90,6 @@ lemma qExpansionOrderAtCusp_eq_zero_of_cuspFunction_ne_zero (h0 : cuspFunction h
     simpa [← PowerSeries.coeff_zero_eq_constantCoeff, qExpansion_coeff, iteratedDeriv_zero]
       using PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mp hne)
 
-/-- The cusp order rescales linearly in the width. For a modular form the periodicity,
-boundedness, and holomorphy are `SlashInvariantFormClass.periodic_comp_ofComplex`,
-`ModularFormClass.bdd_at_infty`, and `ModularFormClass.holo`. -/
-lemma qExpansionOrderAtCusp_nat_mul {m : ℕ} (hh : 0 < h) (hm : 0 < m)
-    (hg_per : Periodic (g ∘ ofComplex) h) (hg_bdd : IsBoundedAtImInfty g)
-    (hg_mdiff : MDiff g) : qExpansionOrderAtCusp (m * h) g = m * qExpansionOrderAtCusp h g := by
-  rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def,
-    qExpansion_nat_mul_order hh hm hg_per hg_bdd hg_mdiff, ENat.toNat_mul]
-  simp [mul_comm]
-
 /-- The cusp order is additive on products. The finiteness hypotheses exclude an
 identically vanishing factor, where the junk value `0` would break additivity. -/
 lemma qExpansionOrderAtCusp_mul {f g : ℍ → ℂ} (hf : AnalyticAt ℂ (cuspFunction h f) 0)
@@ -132,6 +122,34 @@ lemma qExpansionOrderAtCusp_const (h : ℝ) (c : ℂ) : qExpansionOrderAtCusp h 
   · exact qExpansionOrderAtCusp_eq_zero_of_cuspFunction_ne_zero (by
       rw [UpperHalfPlane.cuspFunction_const]
       exact hc)
+
+/-- At width `0` the cusp function is constant, so the cusp order is the junk value `0`. -/
+@[simp]
+lemma qExpansionOrderAtCusp_zero_width : qExpansionOrderAtCusp 0 g = 0 := by
+  -- off `q = 0` the inverse `q`-parameter at width `0` is `0`, so `g` and the constant function
+  -- `g (ofComplex 0)` have the same cusp function, and the order of the latter is `0`
+  have hq : qExpansion 0 g = qExpansion 0 (fun _ : ℍ ↦ g (ofComplex 0)) :=
+    UpperHalfPlane.qExpansion_congr <| eventually_nhdsWithin_of_forall fun q hq ↦ by
+      simp [UpperHalfPlane.cuspFunction, Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq,
+        Function.Periodic.invQParam]
+  rw [qExpansionOrderAtCusp_def, hq, ← qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_const]
+
+/-- The cusp order rescales linearly in the width. For a modular form the periodicity,
+boundedness, and holomorphy are `SlashInvariantFormClass.periodic_comp_ofComplex`,
+`ModularFormClass.bdd_at_infty`, and `ModularFormClass.holo`. -/
+lemma qExpansionOrderAtCusp_nat_mul {m : ℕ} (hh : 0 < h)
+    (hg_per : Periodic (g ∘ ofComplex) h) (hg_bdd : IsBoundedAtImInfty g)
+    (hg_mdiff : MDiff g) : qExpansionOrderAtCusp (m * h) g = m * qExpansionOrderAtCusp h g := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simp
+  rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def,
+    qExpansion_nat_mul_order hh hm hg_per hg_bdd hg_mdiff, ENat.toNat_mul]
+  simp [mul_comm]
+
+/-- The zero function has cusp order zero, by the junk value. -/
+@[simp]
+lemma qExpansionOrderAtCusp_zero (h : ℝ) : qExpansionOrderAtCusp h (0 : ℍ → ℂ) = 0 :=
+  qExpansionOrderAtCusp_const h 0
 
 /-- The constant-one function has cusp order zero. -/
 @[simp]
@@ -203,7 +221,7 @@ integral one: the doubled-width exponent doubles. -/
 lemma orderAtCusp_eq_qExpansionOrderAtCusp (hh : 0 < h) (hg_per : Periodic (g ∘ ofComplex) h)
     (hg_bdd : IsBoundedAtImInfty g) (hg_mdiff : MDiff g) :
     orderAtCusp h g = (qExpansionOrderAtCusp h g : ℚ) := by
-  have h2 := qExpansionOrderAtCusp_nat_mul (g := g) (m := 2) hh (by norm_num) hg_per hg_bdd hg_mdiff
+  have h2 := qExpansionOrderAtCusp_nat_mul (g := g) (m := 2) hh hg_per hg_bdd hg_mdiff
   norm_num at h2
   rw [orderAtCusp_def, h2]
   push_cast
@@ -311,10 +329,10 @@ lemma cuspFunction_eventually_ne_zero [ModularFormClass F Γ k] (hh : 0 < h)
 /-- The width rescaling for a modular form, with the periodicity, boundedness, and
 holomorphy supplied by the class machinery. -/
 lemma qExpansionOrderAtCusp_nat_mul_of_mem_strictPeriods [ModularFormClass F Γ k] {m : ℕ}
-    (hh : 0 < h) (hm : 0 < m) (hΓ : h ∈ Γ.strictPeriods) :
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) :
     qExpansionOrderAtCusp (m * h) ⇑f = m * qExpansionOrderAtCusp h ⇑f :=
   have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
-  qExpansionOrderAtCusp_nat_mul hh hm (SlashInvariantFormClass.periodic_comp_ofComplex f hΓ)
+  qExpansionOrderAtCusp_nat_mul hh (SlashInvariantFormClass.periodic_comp_ofComplex f hΓ)
     (ModularFormClass.bdd_at_infty f) (ModularFormClass.holo f)
 
 /-- For a nonzero modular form the cusp function does not vanish identically near `0`,

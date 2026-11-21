@@ -16,7 +16,7 @@ it whose arrows act injectively is a family of subspaces of the vector space at 
 is where the name comes from.
 
 Its underlying graph is the star with `|ι|` leaves. With three leaves this is the Dynkin diagram
-`D₄`, and the quiver is the same as `TauCeti.Quiver.D4`; with four leaves it is the extended
+`D₄`, and the quiver is isomorphic to `TauCeti.Quiver.D4`; with four leaves it is the extended
 Dynkin diagram `D4~`, the graph of the classical four subspace problem, and the quiver has
 infinite representation type (`TauCeti.RepresentationTheory.Quiver.Subspace.FiniteRepType`).
 
@@ -74,11 +74,8 @@ instance (i : ι) : IsEmpty (center ⟶ outer i) := inferInstanceAs (IsEmpty PEm
 instance (i j : ι) : IsEmpty (outer i ⟶ outer j) := inferInstanceAs (IsEmpty PEmpty)
 
 /-- Between any two vertices of the subspace quiver there is at most one arrow. -/
-instance instSubsingletonHom : ∀ a b : Subspace ι, Subsingleton (a ⟶ b)
-  | .outer _, .center => inferInstance
-  | .center, .center => inferInstance
-  | .center, .outer _ => inferInstance
-  | .outer _, .outer _ => inferInstance
+instance instSubsingletonHom (a b : Subspace ι) : Subsingleton (a ⟶ b) := by
+  cases a <;> cases b <;> infer_instance
 
 end Subspace
 

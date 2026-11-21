@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # The opposite-sign Clifford action on the regular module
@@ -24,6 +25,8 @@ This file constructs the second action by Mathlib's Clifford universal property.
 its grading, even-element equivariance and isometry naturality, and proves that its vector
 operators are symmetric for the scalar-trace pairing `τ (star s * t)`. The latter identity
 does not require a definite form or a choice of metric on the Clifford algebra.
+For ordered products it computes the reversal and crossing signs; for orthogonal products
+these cancel, leaving right multiplication preceded by parity in odd length.
 
 ## References
 
@@ -69,6 +72,53 @@ def parityTwistedRightAction :
 theorem parityTwistedRightAction_ι (v : M) :
     parityTwistedRightAction Q (ι (-Q) v) = parityTwistedRight Q v :=
   lift_ι_apply _ _ _
+
+/-- On an ordered product, the external action is reversal followed by right multiplication,
+with the crossing sign and one grade involution for each vector. No orthogonality is needed. -/
+theorem parityTwistedRightAction_prod_map_ι (l : List M) (s : CliffordAlgebra Q) :
+    parityTwistedRightAction Q (l.map (ι (-Q))).prod s =
+      (-1 : R) ^ l.length.choose 2 •
+        ((involute : CliffordAlgebra Q → CliffordAlgebra Q)^[l.length] s *
+          reverse (l.map (ι Q)).prod) := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    rw [List.map_cons, List.prod_cons, map_mul, mul_apply_eq_comp,
+      parityTwistedRightAction_ι, parityTwistedRight_apply, ih]
+    -- The new vector crosses all previous factors, adding their length to the sign exponent.
+    have hchoose : (l.length + 1).choose 2 = l.length + l.length.choose 2 := by
+      simp [Nat.choose_succ_succ]
+    simp only [map_smul, map_mul, ← reverse_involute, involute_prod_map_ι,
+      mul_smul_comm, smul_mul_assoc, smul_smul, List.map_cons, List.prod_cons,
+      reverse.map_mul, reverse_ι, List.length_cons, Function.iterate_succ_apply',
+      hchoose, pow_add, mul_assoc]
+    rw [mul_comm ((-1 : R) ^ l.length.choose 2)]
+
+/-- For an orthogonal ordered product the reversal and crossing signs cancel. -/
+theorem parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho {l : List M}
+    (hl : l.Pairwise Q.IsOrtho) (s : CliffordAlgebra Q) :
+    parityTwistedRightAction Q (l.map (ι (-Q))).prod s =
+      (involute : CliffordAlgebra Q → CliffordAlgebra Q)^[l.length] s *
+        (l.map (ι Q)).prod := by
+  rw [parityTwistedRightAction_prod_map_ι, reverse_prod_map_ι_of_pairwise_isOrtho hl,
+    mul_smul_comm, smul_smul, ← mul_pow]
+  simp
+
+/-- An even orthogonal product in the external algebra acts by right multiplication
+by the same ordered product in the original algebra. -/
+theorem parityTwistedRightAction_prod_map_ι_of_even {l : List M}
+    (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length) (s : CliffordAlgebra Q) :
+    parityTwistedRightAction Q (l.map (ι (-Q))).prod s = s * (l.map (ι Q)).prod := by
+  rw [parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho Q hl,
+    involute_involutive.iterate_even hlen, Function.id_def]
+
+/-- An odd orthogonal product in the external algebra acts by parity followed by right
+multiplication by the same ordered product in the original algebra. -/
+theorem parityTwistedRightAction_prod_map_ι_of_odd {l : List M}
+    (hl : l.Pairwise Q.IsOrtho) (hlen : Odd l.length) (s : CliffordAlgebra Q) :
+    parityTwistedRightAction Q (l.map (ι (-Q))).prod s = involute s * (l.map (ι Q)).prod := by
+  rw [parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho Q hl,
+    involute_involutive.iterate_odd hlen]
 
 /-- The external vector operators are odd for the grade involution of the regular module. -/
 theorem involute_parityTwistedRight (v : M) (s : CliffordAlgebra Q) :

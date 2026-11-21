@@ -81,8 +81,8 @@ private lemma atkinLehnerAntiInvolution_bar_mem_Gamma1 {x : GL (Fin 2) ℚ} (hx 
     (atkinLehnerAntiInvolution N).bar x hx ∈ (Gamma1 N).map (mapGL ℚ) := by
   obtain ⟨γ, hγ, rfl⟩ := h
   obtain ⟨τ, hτ, hτeq⟩ := (atkinLehnerAntiInvolution N).bar_mem_H hx
-    (Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N hγ))
-  obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp (Gamma1_in_Gamma0 N hγ)
+    (Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N hγ))
+  obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp (Gamma1_le_Gamma0 N hγ)
   have hmat : (τ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, c; (N : ℤ) * γ 0 1, γ 1 1] :=
     Matrix.map_injective (Int.cast_injective (α := ℚ)) <|
       (coe_mapGL_int τ).symm.trans <| (congrArg Units.val hτeq).trans <|
@@ -151,7 +151,6 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
     exact hxdet
   obtain ⟨m, hm⟩ : ∃ m : ℕ, A.det = (m : ℤ) :=
     ⟨A.det.natAbs, (Int.natAbs_of_nonneg hA_det_pos.le).symm⟩
-  have hm_pos : 0 < m := by exact_mod_cast hm ▸ hA_det_pos
   have hdet_m : (x : Matrix (Fin 2) (Fin 2) ℚ).det = (m : ℚ) := by
     rw [hA, ← Int.cast_det A, hm]
     norm_cast
@@ -167,29 +166,14 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
     simpa [Gamma0Map_apply] using congrArg Units.val hσlabel
   have hσ00 : (((σ : SL(2, ℤ)) 0 0 : ℤ) : ZMod N) * (A 0 0 : ZMod N) = 1 := by
     rw [← hσ11]
-    exact intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 σ.2
+    exact intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 σ.property
   have hσ₀ : mapGL ℚ (σ : SL(2, ℤ)) ∈ (Gamma0 N).map (mapGL ℚ) :=
-    Subgroup.mem_map_of_mem _ σ.2
+    Subgroup.mem_map_of_mem _ σ.property
   -- left multiplication by `σ` lands both in the `Γ₁(N)` double coset of `diag(1, m)`
-  have hdescend {y : GL (Fin 2) ℚ} {B : Matrix (Fin 2) (Fin 2) ℤ}
-      (hB : (y : Matrix (Fin 2) (Fin 2) ℚ) = B.map (Int.cast : ℤ → ℚ))
-      (hB00 : B 0 0 = A 0 0) (hB10 : (N : ℤ) ∣ B 1 0)
-      (hy : y ∈ doubleCoset (natDiagGL 2 ![1, m]) ((Gamma0 N).map (mapGL ℚ))
-        ((Gamma0 N).map (mapGL ℚ))) :
-      mapGL ℚ (σ : SL(2, ℤ)) * y ∈ doubleCoset (natDiagGL 2 ![1, m])
-        ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
-    have hX := mapGL_mul_coe_eq_intMatrix 2 (σ : SL(2, ℤ)) 1 y B hB
-    rw [map_one, mul_one, SpecialLinearGroup.coe_one, mul_one] at hX
-    refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hX ?_ ?_
-    · obtain ⟨e, he⟩ := hB10
-      simp only [Matrix.mul_apply, Fin.sum_univ_two, he]
-      push_cast
-      rw [hB00, hσ00, ZMod.natCast_self]
-      ring
-    · exact (DoubleCoset.mul_mem_doubleCoset_iff hσ₀).mpr hy
-  have hσx := hdescend hA rfl ⟨c, hc⟩ hx₀
-  have hσbar := hdescend (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp)
-    ⟨A 0 1, by simp⟩ hbar₀
+  have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hσ₀ hσ00 hA rfl
+    ⟨c, hc⟩ hx₀
+  have hσbar := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hσ₀ hσ00
+    (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp) ⟨A 0 1, by simp⟩ hbar₀
   rw [← doubleCoset_eq_of_mem hσx] at hσbar
   -- cancel `σ`, which normalizes `Γ₁(N)`
   obtain ⟨γ₁, hγ₁, γ₂, hγ₂, heq⟩ := mem_doubleCoset.mp hσbar
@@ -222,7 +206,7 @@ theorem atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset (x : GL (Fin 2) ℚ)
   | h g =>
     rw [(atkinLehnerAntiInvolutionGamma1 N).onHeckeCoset_mk]
     exact HeckeCoset.mk_eq_mk_of_mem
-      (atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.2)
+      (atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.property)
 
 /-- **Shimura's Proposition 3.8 for `Γ₁(N)`**: the Hecke ring `R(Γ₁(N), Δ₀(N))` over any
 commutative semiring is commutative. It contains the diamond operators as well as the Hecke

@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Change of chart for rough differential forms
@@ -20,6 +23,11 @@ interior at the point. Consequently, reading `mextDerivWithin` in any preferred 
 flat exterior derivative of the coordinate expression. These identities allow naturality and
 iteration of the exterior derivative to be checked in a fixed chart, including at boundary and
 corner points. The unrestricted results are the specializations to the whole manifold.
+
+On a product `M × N`, the preferred chart is the product of the preferred charts, so the
+coefficient of a form on `M × N` differentiates the two inverse charts componentwise
+(`TauCeti.RoughForm.inChartAt_prod_apply`). On a family `(vᵢ, 0), (0, wⱼ)` the two charts act on
+the two blocks separately (`TauCeti.RoughForm.inChartAt_prod_apply_append`).
 
 The transport uses Mathlib's `extDerivWithin_pullback`, localized to the chart overlap.
 
@@ -178,21 +186,79 @@ theorem extDerivWithin_inChartAt_set_eq [IsManifold I 2 M]
     (by norm_num) ha hac hza hst, hderiv hza hx]
   rfl
 
-/-- The exterior derivative of a rough form's coordinate expression is transported by a change of
-preferred chart.  This is the chart-independence statement behind `mextDerivWithin`. -/
-theorem extDerivWithin_inChartAt_eq [IsManifold I 2 M]
+/-- If the coordinate expression of a rough form in the preferred chart at `x₀` is differentiable
+within the model range at a chart point `z`, then so is its expression in the preferred chart at
+any `x` whose source contains the corresponding point of the manifold: by the change of chart, the
+second expression is the pullback of the first by a `C²` coordinate change. -/
+theorem differentiableWithinAt_inChartAt_of_differentiableWithinAt_inChartAt [IsManifold I 2 M]
     (φ : RoughForm I M F k) {x₀ x : M} {z : E}
     (hz : z ∈ (extChartAt I x₀).target)
     (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source)
-    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) (range I)
-      (extChartAt I x ((extChartAt I x₀).symm z))) :
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x₀) (range I) z) :
+    DifferentiableWithinAt ℝ (φ.inChartAt x) (range I)
+      (extChartAt I x ((extChartAt I x₀).symm z)) := by
+  set p := extChartAt I x ((extChartAt I x₀).symm z)
+  let g : E → E := extChartAt I x₀ ∘ (extChartAt I x).symm
+  have hp : p ∈ (extChartAt I x).target := (extChartAt I x).map_source hx
+  have hy : (extChartAt I x).symm p = (extChartAt I x₀).symm z := (extChartAt I x).left_inv hx
+  have hx' : (extChartAt I x).symm p ∈ (extChartAt I x₀).source := by
+    rw [hy]
+    exact (extChartAt I x₀).map_target hz
+  have hgp : g p = z := by
+    simp only [g, Function.comp_apply, hy]
+    exact (extChartAt I x₀).right_inv hz
+  have hcoord : ContDiffWithinAt ℝ 2 g (range I) p := by
+    apply contDiffWithinAt_ext_coord_change x₀ x
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
+    exact ⟨hp, hx'⟩
+  have hpre : (extChartAt I x).symm ⁻¹' (extChartAt I x₀).source ∈ 𝓝[range I] p :=
+    (continuousAt_extChartAt_symm'' hp).continuousWithinAt.preimage_mem_nhdsWithin
+      (extChartAt_source_mem_nhds' hx')
+  have htarget : (extChartAt I x).target ∈ 𝓝[range I] p :=
+    extChartAt_target_mem_nhdsWithin_of_mem hp
+  have hmaps : g ⁻¹' range I ∈ 𝓝[range I] p := by
+    filter_upwards [hpre] with q hq
+    exact extChartAt_target_subset_range x₀ ((extChartAt I x₀).map_source hq)
+  have hφ' : DifferentiableWithinAt ℝ (φ.inChartAt x₀) (range I) (g p) := by rwa [hgp]
+  have hcomp : DifferentiableWithinAt ℝ (fun q ↦ φ.inChartAt x₀ (g q)) (range I) p :=
+    (DifferentiableWithinAt.comp p hφ'
+      ((hcoord.differentiableWithinAt (by norm_num)).mono inter_subset_left)
+      (fun q hq ↦ hq.2)).mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin hmaps)
+  have hfd : DifferentiableWithinAt ℝ (fderivWithin ℝ g (range I)) (range I) p :=
+    (hcoord.fderivWithin_right I.uniqueDiffOn (m := 1) (by norm_num)
+      (extChartAt_target_subset_range x hp)).differentiableWithinAt (by norm_num)
+  refine (DifferentiableWithinAt.continuousAlternatingMapCompContinuousLinearMap hcomp
+    hfd).congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hpre, htarget] with q hq₁ hq₂
+    exact φ.inChartAt_eq_compContinuousLinearMap hq₂ hq₁
+  · exact φ.inChartAt_eq_compContinuousLinearMap hp hx'
+
+/-- The exterior derivative of a rough form's coordinate expression is transported by a change of
+preferred chart.  This is the chart-independence statement behind `mextDerivWithin`. Where the
+expression is not differentiable in either chart, both sides are zero. -/
+theorem extDerivWithin_inChartAt_eq [IsManifold I 2 M]
+    (φ : RoughForm I M F k) {x₀ x : M} {z : E}
+    (hz : z ∈ (extChartAt I x₀).target)
+    (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source) :
     extDerivWithin (φ.inChartAt x₀) (range I) z =
       (extDerivWithin (φ.inChartAt x) (range I)
         (extChartAt I x ((extChartAt I x₀).symm z))).compContinuousLinearMap
           (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z) := by
-  simpa only [preimage_univ, univ_inter] using
-    φ.extDerivWithin_inChartAt_set_eq (s := univ) (uniqueMDiffOn_univ (I := I)) hz hx
-      (mem_univ _) (by simp) (by simpa only [preimage_univ, univ_inter] using hφ)
+  by_cases hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) (range I)
+      (extChartAt I x ((extChartAt I x₀).symm z))
+  · simpa only [preimage_univ, univ_inter] using
+      φ.extDerivWithin_inChartAt_set_eq (s := univ) (uniqueMDiffOn_univ (I := I)) hz hx
+        (mem_univ _) (by simp) (by simpa only [preimage_univ, univ_inter] using hφ)
+  · have hφ₀ : ¬ DifferentiableWithinAt ℝ (φ.inChartAt x₀) (range I) z := fun h ↦
+      hφ (φ.differentiableWithinAt_inChartAt_of_differentiableWithinAt_inChartAt hz hx h)
+    rw [extDerivWithin, extDerivWithin, fderivWithin_zero_of_not_differentiableWithinAt hφ,
+      fderivWithin_zero_of_not_differentiableWithinAt hφ₀]
+    have h0 : ContinuousAlternatingMap.alternatizeUncurryFin
+        (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) = 0 :=
+      (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F).map_zero
+    rw [h0]
+    ext _
+    simp
 
 /-- Reading the manifold exterior derivative within a subset in any preferred chart gives the
 flat exterior derivative of the coordinate expression within the corresponding coordinate set.
@@ -234,6 +300,62 @@ theorem inChartAt_apply_basis_eq_det_mul [IsManifold I 1 M] (φ : RoughForm I M 
         φ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z)) b := by
   rw [φ.inChartAt_eq_compContinuousLinearMap hz hx,
     ContinuousAlternatingMap.compContinuousLinearMap_apply_basis]
+
+section Prod
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {l p : ℕ}
+
+/-- **A form on a product in the product chart.** In the preferred chart of `M × N` at `(α, β)`,
+the product of the preferred charts at `α` and `β`, the coefficient of a form `φ` on `M × N` on a
+family `u` is the value of `φ` on the family of tangent vectors obtained by differentiating the two
+inverse charts componentwise. -/
+theorem inChartAt_prod_apply [IsManifold I 1 M] [IsManifold J 1 N]
+    (φ : RoughForm (I.prod J) (M × N) F k) (α : M) (β : N) {y : E} {z : E'}
+    (hy : y ∈ (extChartAt I α).target) (hz : z ∈ (extChartAt J β).target) (u : Fin k → E × E') :
+    φ.inChartAt (α, β) (y, z) u =
+      φ ((extChartAt I α).symm y, (extChartAt J β).symm z) (fun r ↦
+        (Manifold.tangentSpaceProdEquiv ((extChartAt I α).symm y, (extChartAt J β).symm z)).symm
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (u r).1,
+            mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z (u r).2)) := by
+  have hyz : (y, z) ∈ (extChartAt (I.prod J) (α, β)).target := by
+    rw [extChartAt_prod]
+    exact ⟨hy, hz⟩
+  rw [inChartAt_apply]
+  simp only [mfderivWithin_extChartAt_symm_prod_apply hyz]
+  rw [extChartAt_prod]
+  congr 1
+  funext r
+  -- `tangentSpaceProdEquiv` is the identity.
+  exact (Manifold.tangentSpaceProdEquiv_symm_apply (I := I) (J := J) _ _).symm
+
+/-- `TauCeti.RoughForm.inChartAt_prod_apply` on the family
+`(v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)`: the two inverse charts differentiate the two blocks
+separately. -/
+theorem inChartAt_prod_apply_append [IsManifold I 1 M] [IsManifold J 1 N]
+    (φ : RoughForm (I.prod J) (M × N) F p) (hp : k + l = p) (α : M) (β : N) {y : E} {z : E'}
+    (hy : y ∈ (extChartAt I α).target) (hz : z ∈ (extChartAt J β).target) (v : Fin k → E)
+    (w : Fin l → E') :
+    φ.inChartAt (α, β) (y, z)
+        (fun r ↦ Fin.append (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) (Fin.cast hp.symm r)) =
+      φ ((extChartAt I α).symm y, (extChartAt J β).symm z) (fun r ↦
+        (Manifold.tangentSpaceProdEquiv ((extChartAt I α).symm y, (extChartAt J β).symm z)).symm
+          (Fin.append (fun i ↦ (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (v i), 0))
+            (fun j ↦ (0, mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z (w j)))
+            (Fin.cast hp.symm r))) := by
+  rw [inChartAt_prod_apply φ α β hy hz]
+  congr 1
+  funext r
+  -- The components of `(vᵢ, 0)` and `(0, wⱼ)` other than `0` are `vᵢ` and `wⱼ` by projection.
+  refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) (Fin.cast hp.symm r)
+  · simp only [Fin.append_left]
+    exact congrArg _ (Prod.ext rfl
+      (map_zero (mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z)))
+  · simp only [Fin.append_right]
+    exact congrArg _ (Prod.ext
+      (map_zero (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y)) rfl)
+
+end Prod
 
 end RoughForm
 

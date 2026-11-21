@@ -58,11 +58,17 @@ computational input to the norm and trace of an unramified extension.
   normalized valuation of `L` restricts to that of `K`.
 * `TauCeti.isUnramified_iff_map_maximalIdeal_eq`: `L/K` is unramified exactly when `𝓂[K]`
   generates `𝓂[L]`.
+* `TauCeti.IsUnramified.exists_associated_algebraMap`: in an unramified extension every integer
+  of `L` is associated to the image of an integer of `K`.
 * `TauCeti.IsUnramified.irreducible_algebraMap`: in an unramified extension a uniformizer of `K`
   stays a uniformizer of `L`.
 * `TauCeti.isUnramified_iff_inertiaDegree_eq_finrank`: `L/K` is unramified exactly when
   `f(L/K) = [L : K]`.
+* `TauCeti.isUnramified_of_finrank_eq_one`: a degree-one extension is unramified.
 * `TauCeti.IsUnramified.isTamelyRamified`: an unramified extension is tamely ramified.
+* `TauCeti.IsUnramified.wildRamificationExponent_eq_zero` and
+  `TauCeti.IsUnramified.tameRamificationIndex_eq_one`: an unramified extension has wild
+  ramification exponent zero and tame index one.
 * `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
   `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
   exactly when both steps of a tower `M/L/K` are.
@@ -71,6 +77,9 @@ computational input to the norm and trace of an unramified extension.
   `TauCeti.IsUnramified.isTotallyRamified_iff_finrank_eq`: over an unramified `L/K`, the top
   step `M/L` has the ramification index of `M/K`, has residue degree `f(M/K) / [L : K]`, and is
   totally ramified exactly when `[L : K] = f(M/K)`.
+* `TauCeti.IsUnramified.wildRamificationExponent_tower_eq` and
+  `TauCeti.IsUnramified.tameRamificationIndex_tower_eq`: over an unramified `L/K`, the top
+  step `M/L` has the wild ramification exponent and tame index of `M/K`.
 * `TauCeti.isUnramified_iff_formallyUnramified`, `TauCeti.isUnramified_iff_isUnramifiedAt` and
   `TauCeti.isUnramified_iff_etale`: the comparison with Mathlib's `Algebra.FormallyUnramified`,
   `Algebra.IsUnramifiedAt` and `Algebra.Etale` for `𝒪[L]` over `𝒪[K]`.
@@ -98,9 +107,10 @@ open ValuativeRel IsLocalRing
 
 namespace TauCeti
 
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+section
+
+variable {K L : Type*} [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
 
 variable (K L) in
 /-- An extension `L/K` of nonarchimedean local fields with compatible valuations is
@@ -123,16 +133,12 @@ class IsUnramified : Prop where
 attribute [simp] IsUnramified.ramificationIndex_eq_one
 
 variable (K L) in
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeExtension K L] in
 /-- **An extension of nonarchimedean local fields is unramified exactly when `e(L/K) = 1`.** -/
 theorem isUnramified_iff_ramificationIndex_eq_one :
     IsUnramified K L ↔ ramificationIndex K L = 1 :=
   ⟨fun _ ↦ IsUnramified.ramificationIndex_eq_one, fun h ↦ ⟨h⟩⟩
 
 variable (K L) in
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeExtension K L] in
 /-- **An extension of nonarchimedean local fields is unramified exactly when the normalized value
 group of `K` is carried onto the normalized value group of `L`.** This is the form the definition
 takes for a general valued field: the map of value groups is injective in any case, so
@@ -143,8 +149,6 @@ theorem isUnramified_iff_normalizedValuation_comp_unitsMap_surjective :
   rw [isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_def, Subgroup.index_eq_one,
     MonoidHom.range_eq_top]
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeExtension K L] in
 /-- Every value in an unramified extension of local fields is attained on the base field. -/
 theorem exists_algebraMap_veq_of_isUnramified [IsUnramified K L] (y : L) :
     ∃ r : K, algebraMap K L r =ᵥ y := by
@@ -157,6 +161,14 @@ theorem exists_algebraMap_veq_of_isUnramified [IsUnramified K L] (y : L) :
   simpa only [Units.coe_map, Units.val_mk0, MonoidHom.coe_ofClass] using
     (toAdd_normalizedValuation_eq_iff_valuation_eq _ _).mp
       (congrArg Multiplicative.toAdd hr)
+
+end
+
+section
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
 variable (K L) in
 /-- **An extension of nonarchimedean local fields is unramified exactly when the normalized
@@ -194,13 +206,53 @@ theorem IsUnramified.map_maximalIdeal [IsUnramified K L] :
     𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] :=
   (isUnramified_iff_map_maximalIdeal_eq K L).1 ‹_›
 
+end
+
+section
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
+  [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+
+/-- In an unramified extension, every integer of `L` is associated to the image of an integer
+of `K`. -/
+theorem IsUnramified.exists_associated_algebraMap [IsUnramified K L] (a : 𝒪[L]) :
+    ∃ s : 𝒪[K], Associated (algebraMap 𝒪[K] 𝒪[L] s) a := by
+  have hintL := Valuation.integer.integers (valuation L)
+  obtain ⟨r, hr⟩ := exists_algebraMap_veq_of_isUnramified (K := K) (L := L) (a : L)
+  have hrle : r ≤ᵥ 1 := by
+    rw [← ValuativeExtension.vle_iff_vle (B := L), map_one]
+    exact hr.1.trans ((valuation L).vle_one_iff.2 a.property)
+  refine ⟨⟨r, (valuation K).vle_one_iff.1 hrle⟩, ?_⟩
+  exact associated_of_dvd_dvd (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.2))
+    (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.1))
+
 /-- **In an unramified extension a uniformizer of `K` stays a uniformizer of `L`.** -/
 theorem IsUnramified.irreducible_algebraMap [IsUnramified K L] {π : 𝒪[K]} (hπ : Irreducible π) :
     Irreducible (algebraMap 𝒪[K] 𝒪[L] π) := by
-  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer,
-    ← IsUnramified.map_maximalIdeal (K := K),
-    (IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ, Ideal.map_span,
-    Set.image_singleton]
+  refine ⟨fun h ↦ hπ.not_isUnit (isUnit_of_map_unit (algebraMap 𝒪[K] 𝒪[L]) _ h), fun a b hab ↦ ?_⟩
+  obtain ⟨s, hs⟩ := IsUnramified.exists_associated_algebraMap (K := K) a
+  obtain ⟨t, ht⟩ := IsUnramified.exists_associated_algebraMap (K := K) b
+  have hπst : Associated π (s * t) := by
+    have h1 : Associated (algebraMap 𝒪[K] 𝒪[L] π) (algebraMap 𝒪[K] 𝒪[L] (s * t)) := by
+      rw [hab, map_mul]
+      exact hs.symm.mul_mul ht.symm
+    exact associated_of_dvd_dvd (algebraMap_integerRing_dvd_iff.1 h1.dvd)
+      (algebraMap_integerRing_dvd_iff.1 h1.symm.dvd)
+  rcases (hπst.irreducible hπ).isUnit_or_isUnit rfl with h | h
+  · exact Or.inl (hs.isUnit_iff.1 (h.map _))
+  · exact Or.inr (ht.isUnit_iff.1 (h.map _))
+
+end
+
+section
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
+
+section
+
+variable [ValuativeExtension K L]
 
 variable (K L) in
 /-- **An extension of nonarchimedean local fields is unramified exactly when its residue degree
@@ -211,27 +263,55 @@ theorem isUnramified_iff_inertiaDegree_eq_finrank :
   refine ⟨fun h ↦ by rw [h, one_mul], fun h ↦ ?_⟩
   exact Nat.eq_of_mul_eq_mul_right inertiaDegree_pos (by rw [← h, one_mul])
 
+/-- A degree-one extension of nonarchimedean local fields is unramified. -/
+theorem isUnramified_of_finrank_eq_one (h : Module.finrank K L = 1) : IsUnramified K L :=
+  ⟨(mul_eq_one.mp ((ramificationIndex_mul_inertiaDegree K L).trans h)).1⟩
+
 /-- In an unramified extension the residue degree is the degree of the extension. -/
 @[simp]
 theorem IsUnramified.inertiaDegree_eq_finrank [IsUnramified K L] :
     inertiaDegree K L = Module.finrank K L :=
   (isUnramified_iff_inertiaDegree_eq_finrank K L).1 ‹_›
 
-variable (K L) in
-omit [ValuativeExtension K L] in
+end
+
+section
+
+variable (K L)
+
 /-- An unramified extension of nonarchimedean local fields is tamely ramified: its ramification
 index `1` is prime to the residue characteristic. -/
 theorem IsUnramified.isTamelyRamified [IsUnramified K L] : IsTamelyRamified K L := by
   rw [isTamelyRamified_iff, IsUnramified.ramificationIndex_eq_one, Nat.dvd_one]
   exact (CharP.prime_ringChar 𝓀[K]).ne_one
 
+/-- An unramified extension has wild ramification exponent zero. -/
+@[simp]
+theorem IsUnramified.wildRamificationExponent_eq_zero [IsUnramified K L] :
+    wildRamificationExponent K L = 0 := by
+  simp only [wildRamificationExponent_def, IsUnramified.ramificationIndex_eq_one,
+    Nat.factorization_one, Finsupp.zero_apply]
+
+/-- An unramified extension has tame ramification index one. -/
+@[simp]
+theorem IsUnramified.tameRamificationIndex_eq_one [IsUnramified K L] :
+    tameRamificationIndex K L = 1 := by
+  rw [tameRamificationIndex_def, IsUnramified.ramificationIndex_eq_one,
+    IsUnramified.wildRamificationExponent_eq_zero, pow_zero, Nat.div_one]
+
+end
+
+end
+
 section Tower
 
-variable (K L) (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
-  [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
-  [ValuativeExtension L M] [ValuativeExtension K M]
+section
 
-omit [ValuativeExtension K M] in
+variable (K L : Type*) [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] (M : Type*) [Field M] [ValuativeRel M]
+  [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M]
+  [IsScalarTower K L M] [ValuativeExtension L M]
+
 /-- **Unramifiedness in a tower** `M/L/K`: the extension `M/K` is unramified exactly when both
 `L/K` and `M/L` are. -/
 theorem isUnramified_tower_iff :
@@ -239,22 +319,14 @@ theorem isUnramified_tower_iff :
   simp only [isUnramified_iff_ramificationIndex_eq_one,
     ramificationIndex_tower (K := K) (L := L) M, mul_eq_one]
 
-omit [ValuativeExtension K M] in
 /-- Unramifiedness is transitive in a tower `M/L/K`. -/
 theorem IsUnramified.trans [IsUnramified K L] [IsUnramified L M] : IsUnramified K M :=
   (isUnramified_tower_iff K L M).2 ⟨‹_›, ‹_›⟩
 
-omit [ValuativeExtension K M] in
 /-- The bottom step of an unramified tower is unramified. -/
 theorem IsUnramified.tower_bot [IsUnramified K M] : IsUnramified K L :=
   ((isUnramified_tower_iff K L M).1 ‹_›).1
 
-omit [ValuativeExtension K M] in
-/-- The top step of an unramified tower is unramified. -/
-theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M :=
-  ((isUnramified_tower_iff K L M).1 ‹_›).2
-
-omit [ValuativeExtension K M] in
 /-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the ramification index of the
 whole extension: `e(M/L) = e(M/K)`. -/
 theorem IsUnramified.ramificationIndex_tower_eq [IsUnramified K L] :
@@ -262,11 +334,63 @@ theorem IsUnramified.ramificationIndex_tower_eq [IsUnramified K L] :
   rw [ramificationIndex_tower (K := K) (L := L) M,
     IsUnramified.ramificationIndex_eq_one (K := K) (L := L), one_mul]
 
+end
+
+section
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L] (M : Type*) [Field M]
+  [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M]
+  [Algebra K M] [IsScalarTower K L M]
+
+/-- The top step of an unramified tower is unramified. -/
+theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M := by
+  have h := normalizedValuation_comp_unitsMap_tower K L M
+  have hs := (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective K M).1 ‹_›
+  rw [h, MonoidHom.coe_comp] at hs
+  exact (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective L M).2 hs.of_comp
+
+end
+
+section
+
+variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] (M : Type*) [Field M] [ValuativeRel M]
+  [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M]
+  [IsScalarTower K L M] [ValuativeExtension L M] [ValuativeExtension K M]
+
 /-- Over an unramified `L/K`, the residue degree of a tower `M/L/K` factors as
 `f(M/K) = [L : K] · f(M/L)`. -/
 theorem IsUnramified.inertiaDegree_tower_eq [IsUnramified K L] :
     inertiaDegree K M = Module.finrank K L * inertiaDegree L M := by
+  have := ValuativeExtension.of_tower_top K L M
   rw [inertiaDegree_tower (K := K) (L := L) M, IsUnramified.inertiaDegree_eq_finrank]
+
+end
+
+section
+
+variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] (M : Type*)
+  [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+  [Algebra L M] [Algebra K M] [IsScalarTower K L M] [ValuativeExtension L M]
+
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the wild ramification
+exponent of the whole extension. -/
+theorem IsUnramified.wildRamificationExponent_tower_eq [IsUnramified K L] :
+    wildRamificationExponent L M = wildRamificationExponent K M := by
+  rw [wildRamificationExponent_tower K L M,
+    IsUnramified.wildRamificationExponent_eq_zero K L, zero_add]
+
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the tame ramification index
+of the whole extension. -/
+theorem IsUnramified.tameRamificationIndex_tower_eq [IsUnramified K L] :
+    tameRamificationIndex L M = tameRamificationIndex K M := by
+  rw [tameRamificationIndex_tower K L M, IsUnramified.tameRamificationIndex_eq_one K L,
+    one_mul]
+
+variable [ValuativeExtension K M]
 
 /-- Over an unramified `L/K`, the top step of a tower `M/L/K` is totally ramified exactly when
 `L/K` already has the full residue degree `f(M/K)`. -/
@@ -278,7 +402,13 @@ theorem IsUnramified.isTotallyRamified_iff_finrank_eq [IsUnramified K L] :
   exact ⟨fun h ↦ by rw [h, mul_one],
     fun h ↦ Nat.eq_of_mul_eq_mul_left hpos (by rw [mul_one]; exact h.symm)⟩
 
+end
+
 end Tower
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
 variable (K L) in
 /-- **An extension of nonarchimedean local fields is unramified exactly when `𝒪[L]` is formally
@@ -394,9 +524,10 @@ end ResidueBasis
 
 /-- **The units of `𝒪[L]` are its primitive vectors.** In an unramified extension, an integer of
 `L` is a unit exactly when one of its coordinates in a basis of `𝒪[L]` over `𝒪[K]` is a unit. -/
-theorem IsUnramified.isUnit_iff_exists_isUnit_repr [IsUnramified K L] {ι : Type*} [Finite ι]
+theorem IsUnramified.isUnit_iff_exists_isUnit_repr [IsUnramified K L] {ι : Type*}
     (B : Module.Basis ι 𝒪[K] 𝒪[L]) (x : 𝒪[L]) :
     IsUnit x ↔ ∃ i, IsUnit (B.repr x i) := by
+  have := Module.Finite.finite_basis B
   let _ := Fintype.ofFinite ι
   rw [← residue_ne_zero_iff_isUnit, ← (IsUnramified.residueBasis B).repr.map_ne_zero_iff,
     Finsupp.ne_iff]

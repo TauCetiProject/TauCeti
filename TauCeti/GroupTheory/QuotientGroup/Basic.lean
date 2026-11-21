@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import TauCeti.Algebra.BigOperators.Group.List
 public import TauCeti.Algebra.Group.Subgroup.Finite
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
@@ -40,6 +41,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `Subgroup.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
   index of `H` in the conjugate of `K` by `s⁻¹`.
+* `Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf`: the same size as the index of `K ⊓ sHs⁻¹`
+  in `K`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
@@ -61,8 +64,12 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
+* `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
+* `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
+  two tail products of a word, modulo a normal subgroup.
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
+* `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
 -/
 
 public section
@@ -124,6 +131,13 @@ theorem _root_.Subgroup.card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
     simp [← stabilizer_quotientGroup_mk]
   rw [← Subgroup.relIndex_pointwise_smul (MulAut.conj s), map_inv, smul_inv_smul,
     Subgroup.relIndex, ← hstab, Nat.card_coe_set_eq, index_stabilizer]
+
+/-- **Orbit-stabilizer for the intersection with a conjugate**: the `K`-orbit of the coset `sH` has
+as many elements as `K ⊓ sHs⁻¹` has index in `K`. -/
+theorem _root_.Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf (K H : Subgroup G) (s : G) :
+    Nat.card (orbit K ((s : G) : G ⧸ H)) = (K ⊓ MulAut.conj s • H).relIndex K := by
+  rw [Subgroup.card_orbit_quotientGroup_mk, Subgroup.inf_relIndex_left]
+  simpa using (Subgroup.relIndex_pointwise_smul (MulAut.conj s) H (MulAut.conj s⁻¹ • K)).symm
 
 /-- The elements `x` of `G` with `x⁻¹ g x ∈ H` are the preimage of the `g`-fixed points of `G ⧸ H`,
 a union of `|(G ⧸ H)^g|` cosets of `H`. -/
@@ -236,6 +250,46 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
   rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
 
+/-- The class modulo a normal subgroup of a list product is the product of the classes. -/
+@[simp]
+theorem _root_.QuotientGroup.mk_list_prod (K : Subgroup G) [K.Normal] (l : List G) :
+    ((l.prod : G) : G ⧸ K) = (l.map ((↑) : G → G ⧸ K)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih => simp [ih]
+
+/-- **Absorbing central corrections into a word.** Let `K` be a normal subgroup of `G` and let
+the classes of the `u_i` modulo `K` be central. If the class of
+`(∏_{l₁} t_i) * w * (∏_{l₂} t_i) * ∏_{l₁ ++ l₂} u_i` modulo `K` is the class of `b`, then
+`b⁻¹ * (∏_{l₁} t_i u_i) * w * (∏_{l₂} t_i u_i)` lies in `K`. -/
+theorem _root_.QuotientGroup.inv_mul_mul_list_prod_map_mul_mem {ι : Type*} (K : Subgroup G)
+    [K.Normal] {t u : ι → G} (hu : ∀ i, (u i : G ⧸ K) ∈ Submonoid.center (G ⧸ K))
+    {l₁ l₂ : List ι} {b w : G}
+    (h : (((l₁.map t).prod * w * (l₂.map t).prod * ((l₁ ++ l₂).map u).prod : G) : G ⧸ K) =
+      (b : G ⧸ K)) :
+    b⁻¹ * ((l₁.map fun i ↦ t i * u i).prod * w * (l₂.map fun i ↦ t i * u i).prod) ∈ K := by
+  refine (QuotientGroup.eq_one_iff _).mp ?_
+  have hprod : ∀ l : List ι, (((l.map fun i ↦ t i * u i).prod : G) : G ⧸ K) =
+      ((l.map t).prod : G ⧸ K) * ((l.map u).prod : G ⧸ K) := fun l ↦ by
+    simpa [Function.comp_def] using
+      List.prod_map_mul_of_mem_center l (fun i ↦ ((t i : G) : G ⧸ K)) _ fun i _ ↦ hu i
+  have hUcen : ∀ l : List ι, (((l.map u).prod : G) : G ⧸ K) ∈ Submonoid.center _ := fun l ↦ by
+    rw [QuotientGroup.mk_list_prod, List.map_map]
+    exact Submonoid.list_prod_mem _ fun x hx ↦ by
+      obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
+      exact hu i
+  simp only [QuotientGroup.mk_mul, List.map_append, List.prod_append] at h
+  set W := (w : G ⧸ K)
+  set P₁ := (((l₁.map t).prod : G) : G ⧸ K)
+  set P₂ := (((l₂.map t).prod : G) : G ⧸ K)
+  set U₁ := (((l₁.map u).prod : G) : G ⧸ K)
+  set U₂ := (((l₂.map u).prod : G) : G ⧸ K)
+  have e₁ : ∀ q, q * U₁ = U₁ * q := Submonoid.mem_center_iff.mp (hUcen l₁)
+  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv, hprod, ← h, inv_mul_eq_one]
+  calc P₁ * W * P₂ * (U₁ * U₂) = P₁ * (W * P₂ * U₁) * U₂ := by simp only [mul_assoc]
+    _ = P₁ * (U₁ * (W * P₂)) * U₂ := by rw [e₁]
+    _ = P₁ * U₁ * W * (P₂ * U₂) := by simp only [mul_assoc]
+
 /-- The class of `s` in `G ⧸ N` is its own inverse when `s ^ 2 ∈ N`. -/
 theorem _root_.QuotientGroup.mk_inv_eq_self_of_sq_mem {N : Subgroup G} [N.Normal] {s : G}
     (hs : s ^ 2 ∈ N) : (s : G ⧸ N)⁻¹ = s :=
@@ -254,7 +308,7 @@ representative of a left coset of `H` and an element of `H`. -/
 theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
   have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
-    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
+    rw [QuotientGroup.mk_mul_of_mem _ h.property, QuotientGroup.out_eq']
   have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
     refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
       ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
@@ -277,5 +331,16 @@ theorem _root_.Subgroup.sum_eq_sum_rightCosets (f : G → M) :
     (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
 
 end Finite
+
+/-- `QuotientAddGroup.congr` sends the class of an element to the class of its image. This is the
+additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups. -/
+@[simp]
+theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
+    (G' : AddSubgroup G) (H' : AddSubgroup H) [G'.Normal] [H'.Normal] (e : G ≃+ H)
+    (he : G'.map (e : G →+ H) = H') (x : G) :
+    QuotientAddGroup.congr G' H' e he (x : G ⧸ G') = (e x : H ⧸ H') :=
+  rfl
+
+attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti

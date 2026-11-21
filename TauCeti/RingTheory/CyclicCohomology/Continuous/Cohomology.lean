@@ -99,10 +99,43 @@ theorem mem_continuousCyclicCocycles_iff_hochschildCoboundary {n : ℕ}
   rw [mem_continuousCyclicCocycles_iff, ← Subtype.val_inj]
   simp [← ContinuousMultilinearMap.toMultilinearMap_injective.eq_iff]
 
+variable {𝕜 A M} in
+/-- Regard an algebraic cyclic cocycle as a continuous one once joint continuity is proved. -/
+def cyclicCocycles.toContinuous {n : ℕ} (φ : cyclicCocycles 𝕜 A M n)
+    (hφ : Continuous (φ.val : MultilinearMap (RingHom.id 𝕜) (fun _ : Fin (n + 1) ↦ A) M)) :
+    continuousCyclicCocycles 𝕜 A M n :=
+  ⟨⟨⟨φ.val.val, hφ⟩, (mem_continuousCyclicCochains_iff 𝕜 A M).2 φ.val.property⟩,
+    (mem_continuousCyclicCocycles_iff_hochschildCoboundary 𝕜 A M).2
+      ((mem_cyclicCocycles_iff 𝕜 A M).1 φ.property)⟩
+
+variable {𝕜 A M} in
+/-- The continuous lift has the original underlying multilinear map. -/
+@[simp]
+theorem cyclicCocycles.toMultilinearMap_toContinuous {n : ℕ} (φ : cyclicCocycles 𝕜 A M n)
+    (hφ : Continuous (φ.val : MultilinearMap (RingHom.id 𝕜) (fun _ : Fin (n + 1) ↦ A) M)) :
+    (cyclicCocycles.toContinuous φ hφ).val.val.toMultilinearMap = φ.val.val := (rfl)
+
+variable {𝕜 A M} in
+/-- Forgetting continuity of the lift recovers the original cyclic cochain. -/
+@[simp]
+theorem cyclicCocycles.toCyclicCochains_toContinuous {n : ℕ} (φ : cyclicCocycles 𝕜 A M n)
+    (hφ : Continuous (φ.val : MultilinearMap (RingHom.id 𝕜) (fun _ : Fin (n + 1) ↦ A) M)) :
+    continuousCyclicCochains.toCyclicCochains 𝕜 A M n
+      (cyclicCocycles.toContinuous φ hφ).val = φ.val := by
+  apply Subtype.ext
+  simp
+
+variable {𝕜 A M} in
+/-- Evaluation of the continuous lift agrees with the original cocycle. -/
+@[simp]
+theorem cyclicCocycles.toContinuous_apply {n : ℕ} (φ : cyclicCocycles 𝕜 A M n)
+    (hφ : Continuous (φ.val : MultilinearMap (RingHom.id 𝕜) (fun _ : Fin (n + 1) ↦ A) M))
+    (a : Fin (n + 1) → A) : (cyclicCocycles.toContinuous φ hφ).val.val a = φ.val.val a := (rfl)
+
 /-- Continuous cyclic zero-cocycles are precisely continuous traces. -/
 theorem mem_continuousCyclicCocycles_zero_iff {φ : continuousCyclicCochains 𝕜 A M 0} :
     φ ∈ continuousCyclicCocycles 𝕜 A M 0 ↔
-      ∀ x y : A, φ.1 (fun _ ↦ x * y) = φ.1 (fun _ ↦ y * x) := by
+      ∀ x y : A, φ.val (fun _ ↦ x * y) = φ.val (fun _ ↦ y * x) := by
   rw [mem_continuousCyclicCocycles_iff, ← Subtype.val_inj]
   simp [← ContinuousMultilinearMap.toMultilinearMap_injective.eq_iff,
     hochschildCoboundary_zero_eq_zero_iff]
@@ -257,14 +290,14 @@ theorem mk_surjective (n : ℕ) : Function.Surjective (mk 𝕜 A M n) :=
 /-- A continuous cocycle represents zero precisely when it is an actual coboundary. -/
 @[simp]
 theorem mk_eq_zero_iff {n : ℕ} (φ : continuousCyclicCocycles 𝕜 A M n) :
-    mk 𝕜 A M n φ = 0 ↔ φ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n :=
+    mk 𝕜 A M n φ = 0 ↔ φ.val ∈ continuousCyclicCoboundaries 𝕜 A M n :=
   Submodule.Quotient.mk_eq_zero _
 
 /-- Two continuous cocycles represent the same class exactly when their difference is a
 continuous cyclic coboundary. -/
 theorem mk_eq_mk_iff {n : ℕ} (φ ψ : continuousCyclicCocycles 𝕜 A M n) :
     mk 𝕜 A M n φ = mk 𝕜 A M n ψ ↔
-      φ.1 - ψ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n := by
+      φ.val - ψ.val ∈ continuousCyclicCoboundaries 𝕜 A M n := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
   simp
 
@@ -273,20 +306,20 @@ variable {𝕜 A M} {N : Type*} [AddCommGroup N] [Module 𝕜 N] [TopologicalSpa
 /-- Descend a continuous linear map on cocycles which vanishes on coboundaries.
 No separation hypothesis is imposed on the target. -/
 def desc {n : ℕ} (f : continuousCyclicCocycles 𝕜 A M n →L[𝕜] N)
-    (hf : ∀ φ, φ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n → f φ = 0) :
+    (hf : ∀ φ, φ.val ∈ continuousCyclicCoboundaries 𝕜 A M n → f φ = 0) :
     continuousCyclicCohomology 𝕜 A M n →L[𝕜] N :=
   Submodule.liftQL _ f hf
 
 @[simp]
 theorem desc_mk {n : ℕ} (f : continuousCyclicCocycles 𝕜 A M n →L[𝕜] N)
-    (hf : ∀ φ, φ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n → f φ = 0)
+    (hf : ∀ φ, φ.val ∈ continuousCyclicCoboundaries 𝕜 A M n → f φ = 0)
     (φ : continuousCyclicCocycles 𝕜 A M n) :
     desc f hf (mk 𝕜 A M n φ) = f φ := (rfl)
 
 /-- Composing the descended map with the class map recovers the given map on cocycles. -/
 @[simp]
 theorem desc_comp_mk {n : ℕ} (f : continuousCyclicCocycles 𝕜 A M n →L[𝕜] N)
-    (hf : ∀ φ, φ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n → f φ = 0) :
+    (hf : ∀ φ, φ.val ∈ continuousCyclicCoboundaries 𝕜 A M n → f φ = 0) :
     (desc f hf).comp (mk 𝕜 A M n) = f := by
   ext φ
   exact desc_mk f hf φ
@@ -334,7 +367,7 @@ private theorem classToHomology_surjective (n : ℕ) :
     (continuousCyclicCochainComplexXIso 𝕜 A M) (mem_cocycles_complex 𝕜 A M) n
 
 private theorem classToHomology_eq_zero_iff (n : ℕ) (φ : continuousCyclicCocycles 𝕜 A M n) :
-    classToHomology 𝕜 A M n φ = 0 ↔ φ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n :=
+    classToHomology 𝕜 A M n φ = 0 ↔ φ.val ∈ continuousCyclicCoboundaries 𝕜 A M n :=
   (continuousCyclicCochainComplex 𝕜 A M).moduleCatCohomologyClassOfIso_eq_zero_iff
     (fun n ↦ continuousCyclicCochains 𝕜 A M n) (continuousCyclicCocycles 𝕜 A M)
     (continuousCyclicCoboundaries 𝕜 A M) (continuousCyclicCochainComplexXIso 𝕜 A M)
@@ -354,7 +387,7 @@ def homologyEquiv (n : ℕ) : continuousCyclicCohomology 𝕜 A M n ≃ₗ[𝕜]
 theorem homologyEquiv_mk_eq_homologyπ {n : ℕ} (φ : continuousCyclicCocycles 𝕜 A M n)
     (z : (continuousCyclicCochainComplex 𝕜 A M).cycles n)
     (hz : (continuousCyclicCochainComplexXIso 𝕜 A M n).hom
-      ((continuousCyclicCochainComplex 𝕜 A M).iCycles n z) = φ.1) :
+      ((continuousCyclicCochainComplex 𝕜 A M).iCycles n z) = φ.val) :
     homologyEquiv 𝕜 A M n (mk 𝕜 A M n φ) =
       (continuousCyclicCochainComplex 𝕜 A M).homologyπ n z := by
   have h : homologyEquiv 𝕜 A M n (mk 𝕜 A M n φ) = classToHomology 𝕜 A M n φ := by
@@ -443,7 +476,7 @@ def map (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (n : ℕ) :
       ⟨(continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n).restrict
         fun _ hφ ↦ continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf hφ,
         ((continuous_continuousCyclicCochainsMap _ n).comp
-          continuous_subtype_val).subtype_mk _⟩)
+          continuous_subtypeVal).subtype_mk _⟩)
     fun _ hφ ↦ (mk_eq_zero_iff 𝕜 A M _).2
       (continuousCyclicCochainsMap_mem_continuousCyclicCoboundaries f hf hφ)
 
@@ -453,26 +486,32 @@ theorem map_mk (f : A →ₙₐ[𝕜] B) (hf : Continuous f) {n : ℕ}
     (φ : continuousCyclicCocycles 𝕜 B M n) :
     map M f hf n (mk 𝕜 B M n φ) =
       mk 𝕜 A M n ⟨continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n φ,
-        continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf φ.2⟩ :=
+        continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf φ.property⟩ :=
   desc_mk _ _ _
 
-/-- The identity homomorphism induces the identity on continuous cyclic cohomology. The
-continuity proof is a hypothesis so that the lemma applies to whichever proof appears. -/
+/-- The identity homomorphism induces the identity on continuous cyclic cohomology. -/
 @[simp]
-theorem map_id (h : Continuous (NonUnitalAlgHom.id 𝕜 A)) (n : ℕ) :
-    map M (NonUnitalAlgHom.id 𝕜 A) h n = ContinuousLinearMap.id 𝕜 _ :=
+theorem map_id (n : ℕ) :
+    -- `continuous_id` is stated for `id`; the `show` fixes the continuity hypothesis at the coerced
+    -- function of the identity homomorphism, which is defeq to `id`, so that the term has exactly
+    -- the type `map` expects and `rw [map_mk]` below matches `map M _ hf n` syntactically.
+    map M (NonUnitalAlgHom.id 𝕜 A) (show Continuous (NonUnitalAlgHom.id 𝕜 A) from continuous_id) n =
+      ContinuousLinearMap.id 𝕜 _ :=
   hom_ext fun φ ↦ by
     rw [map_mk, ContinuousLinearMap.id_apply]
-    exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_id M n) φ.1))
+    exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_id M n) φ.val))
 
 /-- Continuous cyclic cohomology is contravariantly functorial. -/
 theorem map_comp (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (g : B →ₙₐ[𝕜] C) (hg : Continuous g)
-    (hgf : Continuous (g.comp f)) (n : ℕ) :
-    map M (g.comp f) hgf n = (map M f hf n).comp (map M g hg n) :=
+    (n : ℕ) :
+    -- `hg.comp hf` is continuity of `⇑g ∘ ⇑f`; the `show` restates it at `⇑(g.comp f)` (defeq), the
+    -- form `map` expects, so that `rw [map_mk]` matches `map M (g.comp f) _ n` below.
+    map M (g.comp f) (show Continuous (g.comp f) from hg.comp hf) n =
+      (map M f hf n).comp (map M g hg n) :=
   hom_ext fun φ ↦ by
     rw [ContinuousLinearMap.comp_apply, map_mk, map_mk, map_mk]
     exact congrArg _ (Subtype.ext (LinearMap.congr_fun (continuousCyclicCochainsMap_comp M
-      ⟨(f : A →ₗ[𝕜] B), hf⟩ ⟨(g : B →ₗ[𝕜] C), hg⟩ n) φ.1))
+      ⟨(f : A →ₗ[𝕜] B), hf⟩ ⟨(g : B →ₗ[𝕜] C), hg⟩ n) φ.val))
 
 variable (𝕜 A M) in
 /-- The comparison map `HCⁿ_cont(A; M) → HCⁿ(A; M)` from continuous to algebraic cyclic
@@ -492,7 +531,7 @@ theorem toCyclicCohomology_mk {n : ℕ} (φ : continuousCyclicCocycles 𝕜 A M 
     toCyclicCohomology 𝕜 A M n (mk 𝕜 A M n φ) =
       cyclicCohomology.mk 𝕜 A M n
         ⟨continuousCyclicCochains.toCyclicCochains 𝕜 A M n φ,
-          continuousCyclicCochains.toCyclicCochains_mem_cyclicCocycles φ.2⟩ :=
+          continuousCyclicCochains.toCyclicCochains_mem_cyclicCocycles φ.property⟩ :=
   (rfl)
 
 /-- The comparison with algebraic cyclic cohomology is natural for continuous homomorphisms. -/
@@ -503,7 +542,7 @@ theorem toCyclicCohomology_map (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (n 
   obtain ⟨φ, rfl⟩ := mk_surjective 𝕜 B M n z
   rw [map_mk, toCyclicCohomology_mk, toCyclicCohomology_mk, cyclicCohomology.map_mk]
   exact congrArg _ (Subtype.ext
-    (continuousCyclicCochains.toCyclicCochains_continuousCyclicCochainsMap _ φ.1))
+    (continuousCyclicCochains.toCyclicCochains_continuousCyclicCochainsMap _ φ.val))
 
 end continuousCyclicCohomology
 

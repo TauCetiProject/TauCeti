@@ -82,7 +82,6 @@ theorem sigmaF_T (n : ℤ) : sigmaF q (T n) = C (q ^ (2 * n)) * T n := by
   simp
 
 /-- `sigmaF` fixes the constants. -/
-@[simp]
 theorem sigmaF_C (a : ℂ) : sigmaF q (C a) = C a :=
   rescale_C _ a
 
@@ -218,14 +217,14 @@ private def toTower : UqSl2 q →ₐ[ℂ] OreTower q := lift (towerTuple q)
 /-- `F K = q² K F` in `UqSl2 q`. -/
 private theorem f_mul_kUnit :
     f q * (kUnit q : UqSl2 q) = ((Units.mk0 q Fact.out ^ 2 : ℂˣ) : ℂ) • (↑(kUnit q) * f q) := by
-  rw [kUnit_val, k_mul_f, smul_smul, Units.val_pow_eq_pow_val, Units.val_mk0, inv_pow,
+  rw [val_kUnit, k_mul_f, smul_smul, Units.val_pow_eq_pow_val, Units.val_mk0, inv_pow,
     mul_inv_cancel₀ (pow_ne_zero 2 Fact.out), one_smul]
 
 /-- `E K = q⁻² K E` in `UqSl2 q`. -/
 private theorem e_mul_kUnit :
     e q * (kUnit q : UqSl2 q) =
       (((Units.mk0 q Fact.out ^ 2)⁻¹ : ℂˣ) : ℂ) • (↑(kUnit q) * e q) := by
-  rw [kUnit_val, k_mul_e, smul_smul, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val,
+  rw [val_kUnit, k_mul_e, smul_smul, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val,
     Units.val_mk0, inv_mul_cancel₀ (pow_ne_zero 2 Fact.out), one_smul]
 
 /-- The algebra map from the lower Borel part to `UqSl2 q`. -/
@@ -244,7 +243,7 @@ private theorem e_mul_fromLowerBorel (r : LowerBorel q) :
   | X =>
     rw [sigmaE_X, deltaE_X]
     simp only [fromLowerBorel, OreExtension.liftAlgHom_X, OreExtension.liftAlgHom_C, map_smul,
-      map_sub, laurentEval_T, zpow_one, zpow_neg_one, kUnit_val, kUnit_inv]
+      map_sub, laurentEval_T, zpow_one, zpow_neg_one, val_kUnit, val_inv_kUnit]
     exact eq_add_of_sub_eq' e_mul_f_sub_f_mul_e
   | add r s hr hs => simp only [map_add, mul_add, add_mul, hr, hs]; abel
   | mul r s hr hs =>
@@ -258,7 +257,6 @@ private def fromTower : OreTower q →ₐ[ℂ] UqSl2 q :=
 
 private theorem fromTower_comp_toTower : (fromTower q).comp (toTower q) = AlgHom.id ℂ _ :=
   hom_ext (by simp [fromTower, toTower, towerTuple])
-    (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
     (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
     (by simp [fromTower, toTower, towerTuple, fromLowerBorel])
 

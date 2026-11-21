@@ -101,7 +101,7 @@ theorem mem_affinePlaneBlowUpLowerCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → �
   rw [affinePlaneBlowUpLowerCone_def, Submodule.mem_span_pair]
   constructor
   · rintro ⟨a, b, rfl⟩
-    simp [← Nonneg.coe_smul, a.2, b.2]
+    simp [← Nonneg.coe_smul, a.property, b.property]
   · rintro ⟨h0, h1⟩
     refine ⟨⟨x.1 0 - x.2 0, sub_nonneg.2 h1⟩, ⟨x.2 0, h0⟩, ?_⟩
     ext j <;> simp [Nonneg.mk_smul, Subsingleton.elim j 0]
@@ -113,7 +113,7 @@ theorem mem_affinePlaneBlowUpUpperCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → �
   rw [affinePlaneBlowUpUpperCone_def, Submodule.mem_span_pair]
   constructor
   · rintro ⟨a, b, rfl⟩
-    simp [← Nonneg.coe_smul, a.2, b.2]
+    simp [← Nonneg.coe_smul, a.property, b.property]
   · rintro ⟨h0, h1⟩
     refine ⟨⟨x.2 0 - x.1 0, sub_nonneg.2 h1⟩, ⟨x.1 0, h0⟩, ?_⟩
     ext j <;> simp [Nonneg.mk_smul, Subsingleton.elim j 0]
@@ -325,8 +325,8 @@ private theorem snd_eq_zero_of_isFaceOf_affinePlaneBlowUpLowerCone
     (hx : x ∈ σ) : x.2 = 0 := by
   -- The face is spanned by the generators of the lower cone which it contains.
   have hle : σ ≤ PointedCone.hull ℝ {((1 : Fin 1 → ℝ), (0 : Fin 1 → ℝ))} := by
-    refine (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨σ, hσ⟩ _
-      affinePlaneBlowUpLowerCone_def).le.trans (Submodule.span_mono ?_)
+    refine (hσ.eq_hull_inter_of_eq_hull affinePlaneBlowUpLowerCone_def).le.trans
+      (Submodule.span_mono ?_)
     rintro y ⟨rfl | rfl, hy⟩
     exacts [rfl, absurd hy h]
   obtain ⟨r, -, rfl⟩ := PointedCone.mem_hull_singleton.1 (hle hx)
@@ -339,8 +339,8 @@ private theorem fst_eq_zero_of_isFaceOf_affinePlaneBlowUpUpperCone
     (hx : x ∈ σ) : x.1 = 0 := by
   -- The face is spanned by the generators of the upper cone which it contains.
   have hle : σ ≤ PointedCone.hull ℝ {((0 : Fin 1 → ℝ), (1 : Fin 1 → ℝ))} := by
-    refine (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨σ, hσ⟩ _
-      affinePlaneBlowUpUpperCone_def).le.trans (Submodule.span_mono ?_)
+    refine (hσ.eq_hull_inter_of_eq_hull affinePlaneBlowUpUpperCone_def).le.trans
+      (Submodule.span_mono ?_)
     rintro y ⟨rfl | rfl, hy⟩
     exacts [rfl, absurd hy h]
   obtain ⟨r, -, rfl⟩ := PointedCone.mem_hull_singleton.1 (hle hx)

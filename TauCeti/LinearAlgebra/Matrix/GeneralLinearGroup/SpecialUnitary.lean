@@ -22,8 +22,8 @@ Mathlib's unitary elements of a group with involution, and the kernel of the det
 `Matrix.GeneralLinearGroup.det`.  Defining it this way rather than by transporting the submonoid
 is what makes it usable: a property of the special unitary group that is the conjunction of a
 unitary and a determinant property can be proved one factor at a time, each factor being a group
-whose theory is already available.  `TauCeti.GLSpecialUnitary.mem_iff` identifies the carrier with
-Mathlib's submonoid, so nothing is lost.
+whose theory is already available.  `TauCeti.GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup`
+identifies the carrier with Mathlib's submonoid, so nothing is lost.
 
 This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecticGroup`.
 
@@ -35,7 +35,8 @@ This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecti
 
 * `TauCeti.GLSpecialUnitary.eq_unitarySubgroup_inf_ker_det`: the defining decomposition into a
   unitary and a determinant condition.
-* `TauCeti.GLSpecialUnitary.mem_iff`: its elements are the units whose matrix is special unitary.
+* `TauCeti.GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup`: its elements are the units whose
+  matrix is special unitary.
 * `TauCeti.GLSpecialUnitary.le_unitarySubgroup`: it is contained in the unitary subgroup.
 -/
 
@@ -66,7 +67,7 @@ variable {n 𝕜}
 /-- An invertible matrix lies in the special unitary subgroup exactly when its underlying matrix
 lies in Mathlib's `Matrix.specialUnitaryGroup`. -/
 @[simp]
-theorem mem_iff {M : GL n 𝕜} :
+theorem mem_iff_mem_specialUnitaryGroup {M : GL n 𝕜} :
     M ∈ GLSpecialUnitary n 𝕜 ↔ (M : Matrix n n 𝕜) ∈ Matrix.specialUnitaryGroup n 𝕜 := by
   rw [eq_unitarySubgroup_inf_ker_det, Matrix.mem_specialUnitaryGroup_iff]
   -- Both sides are now a conjunction of a unitary and a determinant condition; what remains is
@@ -83,7 +84,7 @@ from. -/
 theorem coe_eq_preimage :
     (GLSpecialUnitary n 𝕜 : Set (GL n 𝕜)) =
       Units.val ⁻¹' (Matrix.specialUnitaryGroup n 𝕜 : Set (Matrix n n 𝕜)) :=
-  Set.ext fun _ => mem_iff
+  Set.ext fun _ => mem_iff_mem_specialUnitaryGroup
 
 end GLSpecialUnitary
 

@@ -136,14 +136,14 @@ theorem mk_quotient_isoSetoidOn_le_continuum [∀ n, Countable (L.Relations n)] 
 square of the model class. -/
 theorem isClosed_setOf_isoSetoidOn {V : Type w} [Finite V] (φ : L.SentenceInf ι) :
     IsClosed {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
-  isClosed_setOf_isoSetoid.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
+  isClosed_setOf_isoSetoid.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 /-- On a finite carrier, in a language with countably many relation symbols of each arity,
 restricted isomorphism on the model class of `φ` has Borel graph. -/
 theorem measurableSet_setOf_isoSetoidOn [∀ n, Countable (L.Relations n)] {V : Type w} [Finite V]
     (φ : L.SentenceInf ι) :
     MeasurableSet {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
-  measurableSet_setOf_isoSetoid.preimage (measurable_subtype_coe.prodMap measurable_subtype_coe)
+  measurableSet_setOf_isoSetoid.preimage (measurable_subtypeVal.prodMap measurable_subtypeVal)
 
 /-- **Finite-carrier dichotomy (Cantor form).** On a finite carrier, in a language with countably
 many relation symbols of each arity, the models of an infinitary sentence with countable branching
@@ -276,8 +276,9 @@ noncomputable def classOf [Countable M] (hM : φ.Realize M) : CountableModelClas
 
 /-- The class of an infinite countable model is that of its transport to `ℕ` along any
 bijection. -/
-theorem classOf_eq_inl [Countable M] [Infinite M] (hM : φ.Realize M) (e : M ≃ ℕ) :
+theorem classOf_eq_inl [Countable M] (hM : φ.Realize M) (e : M ≃ ℕ) :
     classOf φ hM = .inl ⟦⟨e.encodeVia, mem_modelsOf.2 <| (e.realize_encodeVia φ).2 hM⟩⟧ := by
+  have : Infinite M := Infinite.of_injective e.symm e.symm.injective
   unfold classOf
   split_ifs with h
   · exact (not_finite M).elim
@@ -298,9 +299,9 @@ theorem classOf_eq_inr [Countable M] {n : ℕ} (hM : φ.Realize M) (e : M ≃ Fi
 /-- The class of the structure decoded from a model of `φ` on `ℕ` is the class of that model. -/
 @[simp]
 theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
-    letI := c.1.toStructure
-    classOf φ (mem_modelsOf.1 c.2) = .inl ⟦c⟧ := by
-  let := c.1.toStructure
+    letI := c.val.toStructure
+    classOf φ (mem_modelsOf.1 c.property) = .inl ⟦c⟧ := by
+  let := c.val.toStructure
   rw [classOf_eq_inl _ (Equiv.refl ℕ)]
   congr
   simp
@@ -309,9 +310,9 @@ theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
 model. -/
 @[simp]
 theorem classOf_toStructure_fin {n : ℕ} (c : modelsOf (V := Fin n) φ) :
-    letI := c.1.toStructure
-    classOf φ (mem_modelsOf.1 c.2) = .inr ⟨n, ⟦c⟧⟩ := by
-  let := c.1.toStructure
+    letI := c.val.toStructure
+    classOf φ (mem_modelsOf.1 c.property) = .inr ⟨n, ⟦c⟧⟩ := by
+  let := c.val.toStructure
   rw [classOf_eq_inr _ (Equiv.refl (Fin n))]
   congr
   simp
@@ -371,13 +372,13 @@ theorem classOf_surjective (q : CountableModelClasses φ) :
   -- Transport the decoded structure `V` of a representative to `ULift V`, in universe `w`.
   have key {V : Type} [Countable V] (c : modelsOf (V := V) φ) :
       ∃ (M : Type w) (_ : L.Structure M) (_ : Countable M) (hM : φ.Realize M),
-        letI := c.1.toStructure
-        classOf φ hM = classOf φ (mem_modelsOf.1 c.2) := by
-    let := c.1.toStructure
+        letI := c.val.toStructure
+        classOf φ hM = classOf φ (mem_modelsOf.1 c.property) := by
+    let := c.val.toStructure
     let e : V ≃ ULift.{w} V := Equiv.ulift.symm
     let := e.inducedStructure (L := L)
     have hM : φ.Realize (ULift.{w} V) :=
-      (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).1 (mem_modelsOf.1 c.2)
+      (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).1 (mem_modelsOf.1 c.property)
     exact ⟨ULift.{w} V, _, inferInstance, hM, classOf_congr e.inducedStructureEquiv.symm hM _⟩
   rcases q with q | ⟨n, q⟩
   · induction q using Quotient.inductionOn with

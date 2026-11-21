@@ -47,7 +47,7 @@ theorem homologyMap_π_cubicalHurewicz (p : Ω^ (Fin (m + 1)) X x) :
   let K := (normalizedCubicalChainComplex k).obj (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst
   -- The loop as an absolute cycle.
   let z : K.cycles (m + 1) := K.moduleCatCyclesMk
-    (NormalizedCubicalChain.ofCube (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst k p.1) m
+    (NormalizedCubicalChain.ofCube (TopPair.ofSubset ({x} : Set (TopCat.of X))).fst k p.val) m
     (by simp)
     (by rw [normalizedCubicalChainComplex_obj_d_apply]; exact boundary_ofCube_eq_zero k p)
   rw [← homologyπ_eq_cubicalHurewicz k p (z := z)
@@ -60,7 +60,7 @@ theorem homologyMap_π_cubicalHurewicz (p : Ω^ (Fin (m + 1)) X x) :
   simp only [ConcreteCategory.comp_apply] at h
   refine h.trans (congrArg _ ?_)
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   -- Both sides are the image of the chain of `p` in the relative chains.
   refine Eq.trans ?_ ((TopPair.iCycles_cubicalCycleOfCube k _ _).trans
     (TopPair.cubicalChainOfCube_def k _)).symm

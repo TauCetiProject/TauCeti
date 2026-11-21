@@ -25,9 +25,9 @@ is invertible.
 
 public section
 
-open QuadraticMap QuadraticForm
+open QuadraticMap QuadraticForm TauCeti
 
-namespace TauCeti
+namespace QuadraticMap.Nondegenerate
 
 universe u v
 
@@ -36,7 +36,7 @@ variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- Over a field in which two is invertible, a regular isotropic quaternary form with square
 discriminant is isometric to the orthogonal sum of two hyperbolic planes. -/
-theorem _root_.QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self
+theorem equivalent_hyperbolicPlane_prod_self
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hrank : Module.finrank K V = 4)
     (hdiscr : RegularFormClass.discr (formClass Q hQ) = 0) (hiso : ¬ Q.Anisotropic) :
     Q.Equivalent ((hyperbolicPlane K).prod (hyperbolicPlane K)) := by
@@ -69,4 +69,4 @@ theorem _root_.QuadraticMap.Nondegenerate.equivalent_hyperbolicPlane_prod_self
     equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one w hwDiscr
   exact hp.trans (QuadraticMap.Equivalent.prod (QuadraticMap.Equivalent.refl _) hwHyperbolic)
 
-end TauCeti
+end QuadraticMap.Nondegenerate

@@ -52,6 +52,9 @@ is the fibre bound for valuation spectra along finite flat ring maps
   to `A` is continuous is continuous.
 * `TauCeti.ValuationSpectrum.mem_spa_integralClosure_iff`: `w ∈ Spa(B, B⁺)` iff its pullback lies
   in `Spa(A, A⁺)`.
+* `AlgHom.comap_mem_spa_integralClosure`: an `A`-algebra map `B → C` of finite
+  algebras pulls `Spa(C, C⁺)` back into `Spa(B, B⁺)`; in particular the `A`-algebra
+  automorphisms of `B` act on `Spa(B, B⁺)`.
 * `TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_comap_eq`: a point of `Spa(A, A⁺)` lifts to
   `Spa(B, B⁺)` with any prescribed support lying over its own.
 * `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap`: a faithfully flat finite étale
@@ -180,8 +183,8 @@ theorem IsFiniteEtale.surjective_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale
   let := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hφ.finite
   have : IsModuleTopology A B := hφ.isModuleTopology
-  obtain ⟨q, hq⟩ := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.1)
-  obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
+  obtain ⟨q, hq⟩ := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.val)
+  obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.property q.asIdeal
     (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
   exact ⟨⟨w, hφ.plus_eq ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
 
@@ -218,25 +221,47 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
 theorem IsFiniteEtale.finite_fibre {φ : Hom S T} (hφ : φ.IsFiniteEtale) (x : spa S.plus) :
     (φ.spaComap ⁻¹' {x}).Finite ∧
       Nat.card (φ.spaComap ⁻¹' {x}) ≤
-        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.1) := by
+        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.val) := by
   let := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hφ.finite
   have : Module.Flat A B := (RingHom.Etale.iff_flat_and_formallyUnramified.mp hφ.etale).1
   -- the fibre of `Spa` embeds in the fibre of `Spv`
-  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1} :=
-    fun y ↦ ⟨y.1.1, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.2)⟩
+  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.val} :=
+    fun y ↦ ⟨y.val.val, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.property)⟩
   have hι : Function.Injective ι := fun y y' h ↦ by
     have h' := congrArg Subtype.val h
     exact Subtype.ext (Subtype.ext h')
-  have hfin := finite_preimage_comap_singleton (B := B) x.1
+  have hfin := finite_preimage_comap_singleton (B := B) x.val
   have := hfin.to_subtype
   refine ⟨Set.finite_coe_iff.mp (Finite.of_injective ι hι), ?_⟩
   calc Nat.card (φ.spaComap ⁻¹' {x})
-      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1}) :=
+      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.val}) :=
         Nat.card_le_card_of_injective ι hι
-    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.1) :=
-      ncard_preimage_comap_singleton_le_rankAtStalk x.1
+    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.val) :=
+      ncard_preimage_comap_singleton_le_rankAtStalk x.val
 
 end Huber.Pair.Hom
 
 end TauCeti
+
+namespace AlgHom
+
+open TauCeti TauCeti.ValuationSpectrum
+
+variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+  [CommRing B] [TopologicalSpace B] [Algebra A B] [Module.Finite A B] [IsModuleTopology A B]
+  [CommRing C] [TopologicalSpace C] [Algebra A C] [Module.Finite A C] [IsModuleTopology A C]
+  {Aplus : Subring A}
+
+/-- **`A`-algebra maps between finite algebras act on adic spectra.** If `B` and `C` are finite
+`A`-algebras with their natural topologies over a Tate ring, an `A`-algebra map `σ : B → C` pulls
+`Spa(C, C⁺)` back into `Spa(B, B⁺)`, where `B⁺` and `C⁺` are the integral closures of the image of
+`A⁺`. -/
+theorem comap_mem_spa_integralClosure (σ : B →ₐ[A] C) {w : Spv C}
+    (hw : w ∈ spa (integralClosure (Aplus.map (algebraMap A C)) C).toSubring) :
+    ValuationSpectrum.comap (σ : B →+* C) w ∈
+      spa (integralClosure (Aplus.map (algebraMap A B)) B).toSubring := by
+  rw [mem_spa_integralClosure_iff, ValuationSpectrum.comap_comap, σ.comp_algebraMap]
+  exact mem_spa_integralClosure_iff.mp hw
+
+end AlgHom

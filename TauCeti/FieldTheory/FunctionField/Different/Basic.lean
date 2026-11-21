@@ -49,9 +49,10 @@ fields, and nothing needs `k` perfect.
 
 ## Main results
 
-* `TauCeti.Place.center_restrict_asIdeal_eq_maximalIdeal`: the prime of `𝒪_P` below the centre of
-  `P'` on the local model is the maximal ideal of `𝒪_P`, so the residue extension the different
-  exponent reads is the residue-field extension of the two places.
+* `TauCeti.Place.centerIntegralClosure_liesOver_maximalIdeal`: the centre of `P'` on the local
+  model lies over the maximal ideal of `𝒪_P` (identified with the centre of `P` on `𝒪_P` by
+  `TauCeti.Place.center_integers_asIdeal`), so the residue extension the different exponent reads
+  is the residue-field extension of the two places.
 * `TauCeti.Place.pow_dvd_differentIdeal_iff_le_differentExponent`: the characteristic property of
   the different exponent, `𝔓'^n ∣ differentIdeal 𝒪_P 𝒪'_P ↔ n ≤ d(P' ∣ P)`.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_add_one`: **Dedekind's different theorem**
@@ -103,6 +104,7 @@ variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+omit [FiniteDimensional F F'] in
 /-- **A basis integral at `P` with unit discriminant makes the local model self-dual**: if some
 `F`-basis of `F'` has vectors integral over `𝒪_P` and discriminant a unit at `P`, then the trace
 dual of `𝒪'_P` is `𝒪'_P` itself. -/
@@ -111,6 +113,7 @@ theorem traceDual_one_eq_one_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [Dec
     (hd : P.ord (Algebra.discr F b) = 0) :
     Submodule.traceDual (P.integers) F (1 : Submodule (integralClosure (P.integers) F') F')
       = 1 := by
+  have : FiniteDimensional F F' := Module.Finite.of_basis b
   refine le_antisymm (fun x hx ↦ ?_) Submodule.one_le_traceDual_one
   have hd0 : Algebra.discr F b ≠ 0 := Algebra.discr_not_zero_of_basis F b
   have hminv : (Algebra.discr F b)⁻¹ ∈ P.integers :=
@@ -142,7 +145,7 @@ theorem differentIdeal_eq_top_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [De
         Submodule (integralClosure (P.integers) F') F')
       = ((1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') :
         Submodule (integralClosure (P.integers) F') F') := by
-    rw [FractionalIdeal.coe_dual_one, FractionalIdeal.coe_one]
+    rw [FractionalIdeal.coeToSubmodule_dual_one, FractionalIdeal.coeToSubmodule_one]
     exact traceDual_one_eq_one_of_ord_discr_eq_zero F' P hb hd
   have hdual : FractionalIdeal.dual (P.integers) F
       (1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') = 1 :=
@@ -167,28 +170,6 @@ variable (k F) (P' : Place k' F')
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
-elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
-theorem algebraMap_mem_integers_of_mem_integralClosure
-    (b : integralClosure ((P'.restrict k F).integers) F') :
-    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
-  rw [Subalgebra.algebraMap_eq]
-  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
-
-/-- **The prime of `𝒪_P` below the centre of `P'` on the local model is the maximal ideal of
-`𝒪_P`**: the residue extension read on the local model is the residue-field extension of the two
-places. -/
-@[simp]
-theorem center_restrict_asIdeal_eq_maximalIdeal :
-    ((P'.restrict k F).center (algebraMap_mem_integers_restrict
-        (R := ((P'.restrict k F).integers)) k F P'
-        (algebraMap_mem_integers_of_mem_integralClosure k F P'))).asIdeal
-      = IsLocalRing.maximalIdeal ((P'.restrict k F).integers) := by
-  ext f
-  rw [mem_center_asIdeal, mem_maximalIdeal_iff_valuation_lt_one]
-  exact Iff.rfl
-
 variable [Algebra.IsSeparable F F']
 
 /-- **The centre of `P'` on the local model `𝒪'_P`**: the height one prime of the integral closure
@@ -205,7 +186,7 @@ extension of the local model is read at the residue field of `P`. -/
 instance centerIntegralClosure_liesOver_maximalIdeal :
     (centerIntegralClosure k F P').asIdeal.LiesOver
       (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
-  rw [← center_restrict_asIdeal_eq_maximalIdeal k F P', centerIntegralClosure_def]
+  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
   exact center_liesOver k F P' _
 
 /-- **The different exponent `d(P' ∣ P)`** of a place `P'` of `F' / k'` over the place
@@ -229,7 +210,7 @@ theorem differentExponent_def : differentExponent k F P' =
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     (centerIntegralClosure k F P').asIdeal ^ n ∣ differentIdeal ((P'.restrict k F).integers)
         (integralClosure ((P'.restrict k F).integers) F') ↔ n ≤ differentExponent k F P' :=
-  pow_dvd_differentIdeal_iff_le_multiplicity _ (centerIntegralClosure k F P').ne_bot
+  pow_dvd_differentIdeal_iff_le_multiplicity _ (centerIntegralClosure k F P').isPrime.ne_top
 
 /-- **Dedekind's different theorem, first part** (Stichtenoth, Theorem 3.5.1(a)): the different
 exponent of a place is at least one less than its ramification index.  It is stated as
@@ -240,15 +221,13 @@ hypothesis beyond separability of `F' / F`, and in particular none on the residu
 theorem ramificationIdx_le_differentExponent_add_one :
     ramificationIdx F P' ≤ differentExponent k F P' + 1 := by
   have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  have hpbot : IsLocalRing.maximalIdeal ((P'.restrict k F).integers) ≠ ⊥ :=
-    IsDiscreteValuationRing.not_a_field _
   -- the ramification index of `P'` over `P` is the ramification index of the centres
   have hidx : (centerIntegralClosure k F P').asIdeal.ramificationIdx
       ((P'.restrict k F).integers) = ramificationIdx F P' := by
     rw [centerIntegralClosure_def]
     exact (ramificationIdx_eq_ramificationIdx_center
       (R := ((P'.restrict k F).integers)) k F P' hS).symm
-  have := ramificationIdx_sub_one_le_multiplicity_differentIdeal _ hpbot
+  have := ramificationIdx_sub_one_le_multiplicity_differentIdeal (P'.restrict k F).integers
     (centerIntegralClosure k F P').asIdeal
   rw [differentExponent_def, ← hidx]
   have hpos := ramificationIdx_pos F P'

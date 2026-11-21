@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
 public import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 
+import TauCeti.RingTheory.Huber.WeightedEval.Perturbation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
@@ -75,8 +76,9 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   monomials of `f`.
 * `TauCeti.ValuationSpectrum.valuation_taylorHom_le`: a continuous valuation that bounds every
   monomial of `f` by `f`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, bounds `f(T + a)` by `f`.
-* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: if moreover each `Tᵢ - aᵢ` is bounded by
-  `Tᵢ`, the valuation is invariant under translation by `a`.
+* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: a continuous valuation that bounds every
+  monomial of every series `g` by `g`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, is invariant
+  under translation by `a`.
 * `TauCeti.ValuationSpectrum.taylorHom_comp_taylorHom`: translating by `b` and then by `a`
   is translating by `a + b`.
 * `TauCeti.ValuationSpectrum.taylorHom_mem_powerBoundedSubring`: translation preserves
@@ -142,11 +144,12 @@ variable {k A} in
 /-- The pullback of a point of the closed polydisc along the constant embedding `A → A⟨T⟩` is a
 point of `Spa (A, A°)`. -/
 theorem comap_weightedC_mem_spa (v : closedPolydisc k A) :
-    comap (weightedC (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) v.1 ∈
+    comap (weightedC (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) v.val ∈
       spa (powerBoundedSubring A) :=
   comap_mem_spa (continuous_weightedC isWeightFamily_one_weight)
     (fun _ ha ↦ mem_powerBoundedSubring.mpr
-      (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha))) (closedPolydisc_def k A ▸ v.2)
+      (isPowerBounded_weightedC _ (mem_powerBoundedSubring.mp ha)))
+          (closedPolydisc_def k A ▸ v.property)
 
 end Polydisc
 
@@ -255,32 +258,32 @@ elimination rule that rewrites a comparison at a classical point into one after 
 theorem classicalPoint_vle (x : spa (powerBoundedSubring A)) (a : Fin k → A)
     (ha : ∀ i, IsPowerBounded (a i))
     (f g : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    (classicalPoint x a ha).1.toValuativeRel.vle f g ↔
-      x.1.toValuativeRel.vle (evalAtHom a ha f) (evalAtHom a ha g) := by
+    (classicalPoint x a ha).val.toValuativeRel.vle f g ↔
+      x.val.toValuativeRel.vle (evalAtHom a ha f) (evalAtHom a ha g) := by
   rw [classicalPoint, spaComap_val, comap_vle]
 
 /-- **Distinct tuples give distinct classical points** when `x` has trivial support. The
 hypothesis is `ValuativeRel.supp = ⊥` for `x`, written out: the valuative relation here is the
 term `x.1.toValuativeRel`, not an instance, so `ValuativeRel.supp` is not directly available. -/
 theorem classicalPoint_injective (x : spa (powerBoundedSubring A))
-    (hx : ∀ c : A, x.1.toValuativeRel.vle c 0 → c = 0) :
+    (hx : ∀ c : A, x.val.toValuativeRel.vle c 0 → c = 0) :
     Function.Injective fun a : {a : Fin k → A // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2 := by
+      classicalPoint x a.val a.property := by
   rintro ⟨a, ha⟩ ⟨b, hb⟩ h
   -- The witness separating the tuples is `Tᵢ - bᵢ`: it evaluates to `0` at `b`, and to `aᵢ - bᵢ`
   -- at `a`, so equality of the two points forces `aᵢ - bᵢ` into the support.
   refine Subtype.ext (funext fun i ↦ sub_eq_zero.mp (hx _ ?_))
-  have h' := congrArg (fun y : closedPolydisc k A ↦ y.1.toValuativeRel.vle
+  have h' := congrArg (fun y : closedPolydisc k A ↦ y.val.toValuativeRel.vle
     (weightedX _ isWeightFamily_one_weight i - weightedC _ isWeightFamily_one_weight (b i)) 0) h
   simp only [classicalPoint_vle, map_sub, map_zero, evalAtHom_weightedX, evalAtHom_weightedC,
     sub_self] at h'
-  exact h'.mpr (x.1.toValuativeRel.vle_refl 0)
+  exact h'.mpr (x.val.toValuativeRel.vle_refl 0)
 
 /-- Over a field every point of `Spa (A, A°)` has trivial support, so the classical points are
 parametrised faithfully by `(A°)ᵏ`. -/
 theorem classicalPoint_injective_of_isField (hA : IsField A) (x : spa (powerBoundedSubring A)) :
     Function.Injective fun a : {a : Fin k → A // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2 :=
+      classicalPoint x a.val a.property :=
   classicalPoint_injective x fun c hc ↦ by
     -- Mathlib's `ValuativeRel.vle_zero_iff` says exactly this over a division ring, but wants
     -- `[DivisionRing K]` and the relation as an instance. Installing `hA.toField` routes
@@ -289,18 +292,20 @@ theorem classicalPoint_injective_of_isField (hA : IsField A) (x : spa (powerBoun
     -- typechecking against it. Inverting `c` is shorter than transporting across that diamond.
     by_contra hne
     obtain ⟨d, hd⟩ := hA.mul_inv_cancel hne
-    have h := x.1.toValuativeRel.mul_vle_mul_left hc d
+    have h := x.val.toValuativeRel.mul_vle_mul_left hc d
     rw [hd, zero_mul] at h
-    exact x.1.toValuativeRel.not_vle_one_zero h
+    exact x.val.toValuativeRel.not_vle_one_zero h
 
 /-- **A point with trivial support is not classical**: the classical point at `a` kills
 `T₀ - a₀`, which is nonzero. -/
-theorem ne_classicalPoint_of_supp_eq_bot [Nontrivial A] [NeZero k] (p : closedPolydisc k A)
-    (hp : p.1.supp = ⊥) (x : spa (powerBoundedSubring A)) (a : Fin k → A)
+theorem ne_classicalPoint_of_supp_eq_bot [NeZero k] (p : closedPolydisc k A)
+    (hp : p.val.supp = ⊥) (x : spa (powerBoundedSubring A)) (a : Fin k → A)
     (ha : ∀ i, IsPowerBounded (a i)) : p ≠ classicalPoint x a ha := by
+  -- `Spv A` is empty when `A` is trivial, and `x` is a point of it
+  have : Nontrivial A := not_subsingleton_iff_nontrivial.mp fun h ↦ IsEmpty.false x.val
   rintro rfl
   have hmem : weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight (a 0) ∈ (classicalPoint x a ha).1.supp := by
+      weightedC _ isWeightFamily_one_weight (a 0) ∈ (classicalPoint x a ha).val.supp := by
     rw [mem_supp_iff, classicalPoint_vle]
     simp
   rw [hp, Ideal.mem_bot, sub_eq_zero] at hmem
@@ -315,26 +320,16 @@ section Translation
 variable {k : ℕ} {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
   [NonarchimedeanRing A] [CompleteSpace A] [T3Space A]
 
-omit [IsUniformAddGroup A] [CompleteSpace A] [T3Space A] in
-/-- The shifted variables `Tᵢ + aᵢ` are power-bounded in `A⟨T₁, …, Tₖ⟩` when the `aᵢ` are
-power-bounded in `A`. -/
-private theorem isPowerBounded_weightedX_add_weightedC (a : Fin k → A)
-    (ha : ∀ i, IsPowerBounded (a i)) (i : Fin k) :
-    IsPowerBounded (weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i +
-      weightedC _ isWeightFamily_one_weight (a i)) :=
-  (isPowerBounded_weightedX_one_weight i).add (isPowerBounded_weightedC _ (ha i))
-
 /-- **Translation by `a ∈ (A°)ᵏ`**: the substitution `Tᵢ ↦ Tᵢ + aᵢ`, as a ring endomorphism of
 `A⟨T₁, …, Tₖ⟩`. It is Wedhorn's evaluation of restricted power series along the constant
-embedding `A → A⟨T⟩`, at the power-bounded tuple `(Tᵢ + aᵢ)ᵢ`. This is the restricted power
-series analogue of Mathlib's `Polynomial.taylor`. -/
+embedding `A → A⟨T⟩`, at the power-bounded tuple `(Tᵢ + aᵢ)ᵢ`, so it is the perturbation
+`TauCeti.Huber.perturbX` by the constants `aᵢ`. This is the restricted power series analogue of
+Mathlib's `Polynomial.taylor`. -/
 noncomputable def taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=
-  weightedEvalHom isWeightFamily_one_weight
-    (continuous_weightedC isWeightFamily_one_weight).continuousAt
-    ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr
-      (isPowerBounded_weightedX_add_weightedC a ha))
+  (perturbX (fun i ↦ weightedC _ isWeightFamily_one_weight (a i))
+    fun i ↦ isPowerBounded_weightedC _ (ha i)).toRingHom
 
 /-- **The translate of `f` is the sum of its translated monomials**: `f(T + a)` is the sum of the
 terms `fν (T + a)ν`, where `fν` is the coefficient of `Tν` in `f`. -/
@@ -345,18 +340,13 @@ theorem hasSum_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
             (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
           ∏ i, (weightedX _ isWeightFamily_one_weight i +
             weightedC _ isWeightFamily_one_weight (a i)) ^ ν i)
-      (taylorHom a ha f) := by
-  rw [taylorHom, coe_weightedEvalHom]
-  convert hasSum_weightedEval_of_forall_isPowerBounded
-    (continuous_weightedC isWeightFamily_one_weight).continuousAt
-    (isPowerBounded_weightedX_add_weightedC a ha) (mem_weightedRestrictedSubring.mp f.2) using 1
-  exact funext fun ν ↦ (weightedEvalTerm_def _ _ _ ν).symm
+      (taylorHom a ha f) :=
+  hasSum_perturbX _ _ f
 
 /-- Translation is continuous. -/
 theorem continuous_taylorHom (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) :
-    Continuous (taylorHom a ha) := by
-  rw [taylorHom]
-  exact continuous_weightedEvalHom _ _ _
+    Continuous (taylorHom a ha) :=
+  continuous_perturbX _ _
 
 /-- **A continuous valuation bounded on monomials is bounded on translates.** Let `v` be a
 continuous valuation on `A⟨T₁, …, Tₖ⟩` with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` for every `i`. If every
@@ -379,7 +369,7 @@ theorem valuation_taylorHom_le {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
     rcases eq_or_ne (v f) 0 with h0 | h0
     · have hsupp : SetLike.coe (v.leAddSubgroup (v f)) = v.supp :=
         Set.ext fun g ↦ by simp [h0]
-      exact hsupp ▸ isClosed_supp_of_isContinuous hv
+      exact hsupp ▸ hv.isClosed_supp
     · exact AddSubgroup.isClosed_of_isOpen _ (hv.isOpen_le h0)
   refine hclosed.mem_of_tendsto (hasSum_taylorHom a ha f)
     (Filter.Eventually.of_forall fun _ ↦ (v.leAddSubgroup (v f)).sum_mem fun ν _ ↦ ?_)
@@ -392,15 +382,15 @@ theorem valuation_taylorHom_le {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
 @[simp]
 theorem taylorHom_weightedC (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (c : A) :
     taylorHom a ha (weightedC _ isWeightFamily_one_weight c) =
-      weightedC _ isWeightFamily_one_weight c := by
-  rw [taylorHom, weightedEvalHom_weightedC]
+      weightedC _ isWeightFamily_one_weight c :=
+  perturbX_weightedC _ _ c
 
 /-- Translation by `a` sends the variable `Tᵢ` to `Tᵢ + aᵢ`. -/
 @[simp]
 theorem taylorHom_weightedX (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i)) (i : Fin k) :
     taylorHom a ha (weightedX _ isWeightFamily_one_weight i) =
-      weightedX _ isWeightFamily_one_weight i + weightedC _ isWeightFamily_one_weight (a i) := by
-  rw [taylorHom, weightedEvalHom_weightedX]
+      weightedX _ isWeightFamily_one_weight i + weightedC _ isWeightFamily_one_weight (a i) :=
+  perturbX_weightedX _ _ i
 
 /-- Translation by zero is the identity. -/
 @[simp]
@@ -443,22 +433,28 @@ theorem taylorHom_taylorHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a
 
 /-- **A continuous valuation bounded on monomials is invariant under translation.** Let `v` be a
 continuous valuation on `A⟨T₁, …, Tₖ⟩` that bounds every monomial `gν Tν` of every series `g` by
-`v g`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` and `v (Tᵢ - aᵢ) ≤ v (Tᵢ)` for every `i`. Then
-`v (f(T + a)) = v f` for every series `f`. -/
+`v g`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` for every `i`. Then `v (f(T + a)) = v f` for every series `f`. -/
 theorem valuation_taylorHom_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     {v : Valuation (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) Γ₀} (hv : v.IsContinuous)
     (hX : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
       weightedC _ isWeightFamily_one_weight (a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
-    (hX' : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
-      weightedC _ isWeightFamily_one_weight (-a i)) ≤ v (weightedX _ isWeightFamily_one_weight i))
     (hmono : ∀ (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) (ν : Fin k →₀ ℕ), v (weightedC _ isWeightFamily_one_weight
         (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A)) *
       ∏ i, weightedX _ isWeightFamily_one_weight i ^ ν i) ≤ v f)
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
     v (taylorHom a ha f) = v f := by
+  have hX' : ∀ i, v (weightedX _ isWeightFamily_one_weight i +
+      weightedC _ isWeightFamily_one_weight (-a i)) ≤ v (weightedX _ isWeightFamily_one_weight i) :=
+    fun i ↦ by
+      -- the constant term of `Tᵢ + aᵢ` is `aᵢ`, so `v aᵢ ≤ v (Tᵢ + aᵢ) ≤ v Tᵢ`
+      have hC := hmono (weightedX _ isWeightFamily_one_weight i +
+        weightedC _ isWeightFamily_one_weight (a i)) 0
+      simp [coe_weightedX, coe_weightedC] at hC
+      rw [map_neg, ← sub_eq_add_neg]
+      exact (Valuation.map_sub _ _ _).trans (max_le le_rfl (hC.trans (hX i)))
   refine le_antisymm (valuation_taylorHom_le a ha hv hX (hmono f)) ?_
   simpa only [taylorHom_neg_taylorHom] using
     valuation_taylorHom_le (-a) (fun i ↦ (ha i).neg) hv hX' (hmono (taylorHom a ha f))
@@ -524,12 +520,25 @@ theorem evalAtHom_taylorHom (a b : Fin k → A) (ha : ∀ i, IsPowerBounded (a i
 translation `T ↦ T + a` gives the classical point at `b + a`. -/
 theorem comap_taylorHom_classicalPoint (x : spa (powerBoundedSubring A)) (a b : Fin k → A)
     (ha : ∀ i, IsPowerBounded (a i)) (hb : ∀ i, IsPowerBounded (b i)) :
-    comap (taylorHom a ha) (classicalPoint x b hb).1 =
-      (classicalPoint x (b + a) fun i ↦ (hb i).add (ha i)).1 := by
+    comap (taylorHom a ha) (classicalPoint x b hb).val =
+      (classicalPoint x (b + a) fun i ↦ (hb i).add (ha i)).val := by
   rw [classicalPoint, classicalPoint, spaComap_val, spaComap_val,
     ← Function.comp_apply (f := comap _), ← comap_comp, evalAtHom_comp_taylorHom]
 
 end Translation
+
+section FieldConstants
+
+variable {K : Type*} [Field K] [TopologicalSpace K] [NonarchimedeanRing K]
+
+/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+@[simp]
+theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
+    v.val.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
+      x = 0 :=
+  (v.val.valuation.comap (weightedC _ isWeightFamily_one_weight)).zero_iff
+
+end FieldConstants
 
 section NormedField
 
@@ -539,14 +548,14 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K
 the constant embedding `K → K⟨T⟩` is a point of `Spa (K, K°)`. -/
 @[simp]
 theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
-    v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
+    v.val.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
 
 /-- A point of the closed polydisc compares the values of constants by their norms. -/
 theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
-    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
-        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
+    v.val.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
+        v.val.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
 
 /-- The canonical valuation at a point of the closed polydisc strictly compares constants by
@@ -554,32 +563,24 @@ their norms. -/
 -- Not `@[simp]`: `valuation_lt_iff` rewrites the left-hand side.
 @[grind =]
 theorem closedPolydisc_valuation_weightedC_lt_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
-    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) <
-        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ < ‖y‖ := by
+    v.val.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) <
+        v.val.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ < ‖y‖ := by
   simp only [lt_iff_le_not_ge, closedPolydisc_valuation_weightedC_le_iff]
 
 /-- A point of the closed polydisc gives constants of equal norm equal values. -/
 theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPolydisc k K)
     {x y : K} (h : ‖x‖ = ‖y‖) :
-    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) =
-      v.1.valuation (weightedC _ isWeightFamily_one_weight y) :=
+    v.val.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) =
+      v.val.valuation (weightedC _ isWeightFamily_one_weight y) :=
   le_antisymm ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h.le)
     ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
-
-/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
-@[simp]
-theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
-    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
-      x = 0 := by
-  rw [← le_zero_iff, ← map_zero v.1.valuation, ← map_zero (weightedC _ _),
-    closedPolydisc_valuation_weightedC_le_iff, norm_zero, norm_le_zero_iff]
 
 /-- The larger of the values of two constants at a point of the closed polydisc is the value of
 the one of larger norm. -/
 theorem closedPolydisc_max_valuation_weightedC {k : ℕ} (v : closedPolydisc k K) (x y : K) :
-    max (v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x))
-        (v.1.valuation (weightedC _ isWeightFamily_one_weight y)) =
-      v.1.valuation (weightedC _ isWeightFamily_one_weight (if ‖x‖ ≤ ‖y‖ then y else x)) := by
+    max (v.val.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x))
+        (v.val.valuation (weightedC _ isWeightFamily_one_weight y)) =
+      v.val.valuation (weightedC _ isWeightFamily_one_weight (if ‖x‖ ≤ ‖y‖ then y else x)) := by
   split_ifs with h
   · exact max_eq_right ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h)
   · exact max_eq_left ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr (le_of_not_ge h))
@@ -599,25 +600,25 @@ omit [IsUltrametricDist K] in
 value of the constant `b₂ - b₁`. -/
 theorem valuation_weightedX_sub_weightedC_eq_of_lt {k : ℕ} {v : closedPolydisc k K} {i : Fin k}
     {b₁ b₂ : K}
-    (h : v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+    (h : v.val.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
         weightedC _ isWeightFamily_one_weight b₂) <
-      v.1.valuation (weightedX _ isWeightFamily_one_weight i -
+      v.val.valuation (weightedX _ isWeightFamily_one_weight i -
         weightedC _ isWeightFamily_one_weight b₁)) :
-    v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+    v.val.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
         weightedC _ isWeightFamily_one_weight b₁) =
-      v.1.valuation (weightedC _ isWeightFamily_one_weight (b₂ - b₁)) := by
-  rw [weightedC_sub_eq_sub_sub i, v.1.valuation.map_sub_eq_of_lt_left h]
+      v.val.valuation (weightedC _ isWeightFamily_one_weight (b₂ - b₁)) := by
+  rw [weightedC_sub_eq_sub_sub i, v.val.valuation.map_sub_eq_of_lt_left h]
 
 /-- If `v(Tᵢ - b₁) = v(e₁)`, `v(Tᵢ - b₂) = v(e₂)` and `‖e₂‖ ≤ ‖e₁‖` at a point `v` of the closed
 polydisc, then `‖b₂ - b₁‖ ≤ ‖e₁‖`. -/
 theorem norm_sub_le_of_valuation_eq {k : ℕ} {v : closedPolydisc k K} {i : Fin k}
     {b₁ b₂ e₁ e₂ : K}
-    (h₁ : v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+    (h₁ : v.val.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
         weightedC _ isWeightFamily_one_weight b₁) =
-      v.1.valuation (weightedC _ isWeightFamily_one_weight e₁))
-    (h₂ : v.1.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+      v.val.valuation (weightedC _ isWeightFamily_one_weight e₁))
+    (h₂ : v.val.valuation (weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
         weightedC _ isWeightFamily_one_weight b₂) =
-      v.1.valuation (weightedC _ isWeightFamily_one_weight e₂)) (he : ‖e₂‖ ≤ ‖e₁‖) :
+      v.val.valuation (weightedC _ isWeightFamily_one_weight e₂)) (he : ‖e₂‖ ≤ ‖e₁‖) :
     ‖b₂ - b₁‖ ≤ ‖e₁‖ := by
   rw [← closedPolydisc_valuation_weightedC_le_iff v, weightedC_sub_eq_sub_sub i]
   refine (Valuation.map_sub _ _ _).trans (max_le h₁.le ?_)

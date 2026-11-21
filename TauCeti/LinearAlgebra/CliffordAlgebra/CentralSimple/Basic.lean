@@ -100,7 +100,7 @@ variable [NeZero (2 : K)]
 -- algebra with the endomorphism algebra of the spinor module, which is central simple. Mathlib's
 -- `CliffordAlgebra.equivBaseChange` identifies that Clifford algebra with the scalar extension
 -- `Kˢ ⊗[K] CliffordAlgebra Q`, and centrality and simplicity descend along a field extension
--- (`TauCeti.Algebra.IsCentral.of_baseChange`, `IsSimpleRing.of_baseChange`).
+-- (`Algebra.IsCentral.of_baseChange`, `IsSimpleRing.of_baseChange`).
 
 /-- **The Clifford algebra of a nondegenerate form in even dimension is central.** Over a field of
 characteristic different from `2`, if `Q` is nondegenerate on a finite-dimensional space of even
@@ -115,7 +115,7 @@ theorem isCentral_of_even_finrank (hQ : Q.Nondegenerate) (heven : Even (finrank 
       (even_finrank_baseChange_sepClosure heven)
   have : Algebra.IsCentral (SeparableClosure K) (SeparableClosure K ⊗[K] CliffordAlgebra Q) :=
     Algebra.IsCentral.of_algEquiv _ _ _ (equivBaseChange (SeparableClosure K) Q)
-  exact TauCeti.Algebra.IsCentral.of_baseChange (L := SeparableClosure K)
+  exact Algebra.IsCentral.of_baseChange (L := SeparableClosure K)
 
 /-- **The Clifford algebra of a nondegenerate form in even dimension is a simple ring.** Over a
 field of characteristic different from `2`, if `Q` is nondegenerate on a finite-dimensional space of

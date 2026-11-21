@@ -58,13 +58,7 @@ theorem splice_d (n : ℤ) :
     (splice S e).d n (n + 1) = (S n).g ≫ (e n).hom ≫ (S (n + 1)).f := by
   simp [splice]
 
-end CochainComplex
-
-namespace CochainComplex
-
-variable {C : Type u} [Category.{v} C] [Abelian C]
-  (S : ℤ → ShortComplex C) (e : ∀ n, (S n).X₃ ≅ (S (n + 1)).X₁)
-  (hS : ∀ n, (S n).ShortExact)
+variable (hS : ∀ n, (S n).ShortExact)
 
 include hS in
 /-- Splicing short exact sequences produces an acyclic cochain complex. -/
@@ -93,6 +87,14 @@ theorem acyclic_splice : (splice S e).Acyclic := by
   have : Mono φ.τ₃ := by dsimp [φ]; infer_instance
   exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).mpr hT
 
+end CochainComplex
+
+namespace CochainComplex
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
+  (S : ℤ → ShortComplex C) (e : ∀ n, (S n).X₃ ≅ (S (n + 1)).X₁)
+  (hS : ∀ n, (S n).ShortExact)
+
 /-- The cycles of the spliced complex identify with the first term of each short exact sequence.
 The isomorphism is oriented from the prescribed cycle object into the categorical cycles. -/
 noncomputable def spliceCyclesIso (n : ℤ) : (S n).X₁ ≅ (splice S e).cycles n := by
@@ -104,14 +106,13 @@ noncomputable def spliceCyclesIso (n : ℤ) : (S n).X₁ ≅ (splice S e).cycles
 /-- The cycles comparison identifies the given inclusion with the categorical cycle inclusion. -/
 @[reassoc (attr := simp)]
 theorem spliceCyclesIso_hom_iCycles (n : ℤ) :
-    (spliceCyclesIso S e hS n).hom ≫ (splice S e).iCycles n = (S n).f := by
-  exact IsLimit.conePointUniqueUpToIso_hom_comp _ _ WalkingParallelPair.zero
+    (spliceCyclesIso S e hS n).hom ≫ (splice S e).iCycles n = (S n).f :=
+  IsLimit.conePointUniqueUpToIso_hom_comp _ _ WalkingParallelPair.zero
 
 /-- The inverse cycles comparison recovers the categorical cycle inclusion. -/
 @[reassoc (attr := simp)]
 theorem spliceCyclesIso_inv_f (n : ℤ) :
-    (spliceCyclesIso S e hS n).inv ≫ (S n).f = (splice S e).iCycles n := by
-  exact (Iso.inv_comp_eq (spliceCyclesIso S e hS n)).mpr
-    (spliceCyclesIso_hom_iCycles S e hS n).symm
+    (spliceCyclesIso S e hS n).inv ≫ (S n).f = (splice S e).iCycles n :=
+  (Iso.inv_comp_eq _).mpr (spliceCyclesIso_hom_iCycles S e hS n).symm
 
 end CochainComplex

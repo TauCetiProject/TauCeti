@@ -144,7 +144,7 @@ private theorem rpow_neg_le_padicNorm_sub_one (hS : ∀ p ∈ S, p.Prime) {C : �
   rw [← hzw] at h
   refine le_trans (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (neg_nonpos.2 hC)) h
   gcongr
-  exact Finset.sup_le fun q _ ↦ hb q ▸ hN q q.2
+  exact Finset.sup_le fun q _ ↦ hb q ▸ hN q q.property
 
 /-- The key step: if `N` bounds all valuations of `x` and `y` at the primes of `S` and is
 attained by `|v_p(x)|` with `N ≠ 0`, then `(e · max(1, N)) ^ (-C) ≤ p ^ (-N)`. -/
@@ -160,7 +160,7 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
     (hNy : ∀ q ∈ S, (padicValRat q (y : ℚ)).natAbs ≤ N)
     (p : S) (hpN : (padicValRat p (x : ℚ)).natAbs = N) (hN : N ≠ 0) :
     (Real.exp 1 * max 1 (N : ℝ)) ^ (-C) ≤ (p : ℝ) ^ (-(N : ℤ)) := by
-  have : Fact (p : ℕ).Prime := ⟨hS p p.2⟩
+  have : Fact (p : ℕ).Prime := ⟨hS p p.property⟩
   have hx0 : (x : ℚ) ≠ 0 := x.ne_zero
   have hy0 : (y : ℚ) ≠ 0 := y.ne_zero
   have hv0 : padicValRat p (x : ℚ) ≠ 0 := by omega
@@ -187,15 +187,13 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
     have hbound : ∀ q ∈ S, (padicValRat q ((-x / y : ℚˣ) : ℚ)).natAbs ≤ N := by
       intro q hq
       have : Fact q.Prime := ⟨hS q hq⟩
-      have h₁ := padicValRat.eq_zero_of_add_eq_one_of_pos (p := q) hxy
-      have h₂ := padicValRat.eq_of_add_eq_one_of_neg (p := q) hxy
       have h₃ := padicValRat.eq_zero_of_add_eq_one_of_pos (p := q) ((add_comm _ _).trans hxy)
       have h₄ := padicValRat.eq_of_add_eq_one_of_neg (p := q) ((add_comm _ _).trans hxy)
       have := hNx q hq
       have := hNy q hq
       rw [hdiv q (hS q hq)]
       omega
-    have h := rpow_neg_le_padicNorm_sub_one hS hC hLB p hz (by rw [hdiv p (hS p p.2)]; omega)
+    have h := rpow_neg_le_padicNorm_sub_one hS hC hLB p hz (by rw [hdiv p (hS p p.property)]; omega)
       hz1 hbound
     have hsub : ((-x / y : ℚˣ) : ℚ) - 1 = -(y : ℚ)⁻¹ := by
       rw [Units.val_div_eq_div_val, Units.val_neg]
@@ -248,7 +246,7 @@ theorem abs_padicValRat_le_of_add_eq_one (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (
     exact le_max_of_le_left zero_le_one
   -- `N` is attained at some prime `q ∈ S`, by `x` or by `y`
   obtain ⟨q, hqS, hq⟩ := Finset.exists_mem_eq_sup S
-    (Finset.nonempty_iff_ne_empty.2 fun h ↦ by simp [N, h] at hNpos)
+    (Finset.ne_empty_iff_nonempty.1 fun h ↦ by simp [N, h] at hNpos)
     fun q ↦ max (padicValRat q (x : ℚ)).natAbs (padicValRat q (y : ℚ)).natAbs
   have hq2 : (2 : ℝ) ≤ q := by exact_mod_cast (hS q hqS).two_le
   have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hNpos

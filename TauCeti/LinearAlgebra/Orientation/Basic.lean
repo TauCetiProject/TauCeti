@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Orientation
+import TauCeti.LinearAlgebra.Dimension.CardEqFinrank
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Transporting orientations along linear equivalences
@@ -18,16 +20,39 @@ compatibility under linear equivalences.
 ## Main results
 
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
+* `Orientation.map_symm_map`, `Orientation.map_map_symm`: transport along a linear equivalence
+  and back along its inverse is the identity.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
+* `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
+* `Orientation.reindex_finCongr_reindex_finCongr`: two successive casts of the index type compose.
+* `Orientation.map_units_smul`, `Orientation.reindex_units_smul`: transport and reindexing commute
+  with scaling by units.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
 * `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
   determinant transport an orientation to the same orientation.
+* `Orientation.map_eq_det_inv_smul_of_card_eq_finrank`,
+  `Orientation.map_eq_iff_det_pos_of_card_eq_finrank`,
+  `Orientation.eq_or_eq_neg_of_card_eq_finrank`, and
+  `Orientation.ne_iff_eq_neg_of_card_eq_finrank`: the finite-dimensional facts about orientation
+  transport and equality, valid without finite-dimensionality (the index type is then empty).
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
 * `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
+* `Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos`: the same criterion between two
+  spaces, relative to a reference linear equivalence.
+* `Orientation.map_linearEquiv_neg`: transport along the negation of an `n`-dimensional space
+  multiplies an orientation by `(-1) ^ n`.
+* `Orientation.eq_or_eq_neg_of_card_eq_finrank`: any two orientations are equal or opposite when
+  the index type has the dimension of the space, without assuming finite dimension.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
+* `Orientation.exists_eq_neg_one_pow_smul`: every orientation is a signed copy `(-1) ^ i • y` of
+  any other orientation `y`.
+* `Orientation.ite_eq_neg_eq_neg_ite`, `Orientation.ite_neg_eq_eq_neg_ite`: reversing either
+  orientation reverses the sign comparing them.
+* `Orientation.ite_map_mul_ite_map_trans`: the signs comparing transported orientations multiply
+  along a composite.
 -/
 
 public section
@@ -47,6 +72,20 @@ theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orien
     Orientation.map ι (e.trans f) x = Orientation.map ι f (Orientation.map ι e x) := by
   induction x using Module.Ray.ind with | h v hv => rfl
 
+/-- Transporting an orientation along a linear equivalence and then back along its inverse gives
+the original orientation. -/
+@[simp]
+theorem Orientation.map_symm_map (e : M ≃ₗ[R] N) (x : Orientation R M ι) :
+    Orientation.map ι e.symm (Orientation.map ι e x) = x :=
+  (Orientation.map ι e).symm_apply_apply x
+
+/-- Transporting an orientation along the inverse of a linear equivalence and then back along the
+equivalence gives the original orientation. -/
+@[simp]
+theorem Orientation.map_map_symm (e : M ≃ₗ[R] N) (x : Orientation R N ι) :
+    Orientation.map ι e (Orientation.map ι e.symm x) = x :=
+  (Orientation.map ι e).apply_symm_apply x
+
 /-- Transporting an orientation along a linear equivalence commutes with reindexing its index
 type. -/
 theorem Orientation.map_reindex {ι' : Type*} (e : M ≃ₗ[R] N) (f : ι ≃ ι')
@@ -56,6 +95,37 @@ theorem Orientation.map_reindex {ι' : Type*} (e : M ≃ₗ[R] N) (f : ι ≃ ι
   induction x using Module.Ray.ind with | h v hv =>
     simp only [map_apply, reindex_apply]
     congr 1
+
+/-- Reindexing an orientation along a composite of equivalences is the same as reindexing it along
+each in turn. -/
+theorem Orientation.reindex_trans {ι' ι'' : Type*} (e : ι ≃ ι') (e' : ι' ≃ ι'')
+    (x : Orientation R M ι) :
+    Orientation.reindex R M (e.trans e') x =
+      Orientation.reindex R M e' (Orientation.reindex R M e x) := by
+  induction x using Module.Ray.ind with | h v hv =>
+    simp only [reindex_apply, AlternatingMap.domDomCongr_trans]
+
+/-- Reindexing along two casts `Fin m ≃ Fin n ≃ Fin k` is reindexing along their composite cast. -/
+@[simp]
+theorem Orientation.reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) (h' : n = k)
+    (x : Orientation R M (Fin m)) :
+    Orientation.reindex R M (finCongr h') (Orientation.reindex R M (finCongr h) x) =
+      Orientation.reindex R M (finCongr (h.trans h')) x := by
+  subst h h'
+  simp [finCongr_refl, Orientation.reindex_refl]
+
+/-- Transporting an orientation along a linear equivalence commutes with scaling by a unit. -/
+@[simp]
+theorem Orientation.map_units_smul (e : M ≃ₗ[R] N) (u : Rˣ) (x : Orientation R M ι) :
+    Orientation.map ι e (u • x) = u • Orientation.map ι e x :=
+  Module.Ray.map_units_smul _ u x
+
+/-- Reindexing an orientation commutes with scaling by a unit. -/
+@[simp]
+theorem Orientation.reindex_units_smul {ι' : Type*} (e : ι ≃ ι') (u : Rˣ)
+    (x : Orientation R M ι) :
+    Orientation.reindex R M e (u • x) = u • Orientation.reindex R M e x :=
+  Module.Ray.map_units_smul _ u x
 
 end CommSemiring
 
@@ -96,10 +166,57 @@ section Field
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*} [Fintype ι]
 
-/-- When the index type has cardinality equal to the finite dimension, two self-equivalences
-transport an orientation to the same orientation if and only if their determinants have the same
-sign. -/
-theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orientation R M ι)
+/-- When the index type has cardinality equal to the `finrank`, a linear self-equivalence
+transports an orientation to its multiple by the inverse determinant. Unlike
+`Orientation.map_eq_det_inv_smul`, this needs no finite-dimensionality: otherwise `ι` is empty and
+the determinant is `1`. -/
+theorem Orientation.map_eq_det_inv_smul_of_card_eq_finrank (x : Orientation R M ι)
+    (f : M ≃ₗ[R] M) (h : Fintype.card ι = finrank R M) :
+    Orientation.map ι f x = (LinearEquiv.det f)⁻¹ • x := by
+  by_cases hfd : FiniteDimensional R M
+  · exact map_eq_det_inv_smul x f h
+  · have := Module.isEmpty_of_card_eq_finrank_of_not_finite h hfd
+    have hdet : LinearEquiv.det f = 1 :=
+      Units.ext (by rw [LinearEquiv.coe_det]; exact LinearMap.det_eq_one_of_not_module_finite hfd _)
+    rw [map_of_isEmpty, hdet, inv_one, one_smul]
+
+/-- The determinant criterion for a linear self-equivalence to fix an orientation, without
+finite-dimensionality: see `Orientation.map_eq_iff_det_pos`. -/
+theorem Orientation.map_eq_iff_det_pos_of_card_eq_finrank (x : Orientation R M ι)
+    (f : M ≃ₗ[R] M) (h : Fintype.card ι = finrank R M) :
+    Orientation.map ι f x = x ↔ 0 < LinearMap.det (f : M →ₗ[R] M) := by
+  rw [map_eq_det_inv_smul_of_card_eq_finrank x f h, units_inv_smul, units_smul_eq_self_iff,
+    LinearEquiv.coe_det]
+
+/-- If the index type has cardinality equal to the dimension, any two orientations are equal or
+negations. Unlike `Orientation.eq_or_eq_neg`, this needs no `FiniteDimensional` hypothesis: a
+nonempty index type forces positive `finrank`, hence finite dimension, and otherwise
+there are only the two orientations of the zero-dimensional case. -/
+theorem Orientation.eq_or_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : x₁ = x₂ ∨ x₁ = -x₂ := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · -- the two orientations of the empty index type are `±positiveOrientation`
+    rcases Orientation.eq_or_eq_neg_of_isEmpty x₁ with rfl | rfl <;>
+      rcases Orientation.eq_or_eq_neg_of_isEmpty x₂ with rfl | rfl
+    · exact .inl rfl
+    · exact .inr (neg_neg (positiveOrientation : Orientation R M ι)).symm
+    · exact .inr rfl
+    · exact .inl rfl
+  · have : FiniteDimensional R M := Module.finite_of_finrank_pos (h ▸ Fintype.card_pos)
+    exact Orientation.eq_or_eq_neg x₁ x₂ (Nat.card_eq_fintype_card.trans h)
+
+/-- If the index type has cardinality equal to the dimension, an orientation equals the negation of
+another orientation if and only if they are not equal. Unlike `Orientation.ne_iff_eq_neg`, this
+needs no `FiniteDimensional` hypothesis. -/
+theorem Orientation.ne_iff_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : x₁ ≠ x₂ ↔ x₁ = -x₂ :=
+  ⟨fun hn ↦ (eq_or_eq_neg_of_card_eq_finrank x₁ x₂ h).resolve_left hn, fun he ↦
+    he.symm ▸ (Module.Ray.ne_neg_self x₂).symm⟩
+
+/-- When the index type has cardinality equal to the `finrank`, two self-equivalences transport an
+orientation to the same orientation if and only if their determinants have the same sign. No
+finite-dimensionality is needed: otherwise `ι` is empty and both determinants are `1`. -/
+theorem Orientation.map_eq_map_iff_det_mul_pos (x : Orientation R M ι)
     (f g : M ≃ₗ[R] M) (h : Fintype.card ι = finrank R M) :
     Orientation.map ι f x = Orientation.map ι g x ↔
       0 < LinearMap.det (f : M →ₗ[R] M) * LinearMap.det (g : M →ₗ[R] M) := by
@@ -110,25 +227,25 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
       LinearMap.det (f : M →ₗ[R] M) / LinearMap.det (g : M →ₗ[R] M) := by
     simp [← LinearEquiv.coe_det, LinearEquiv.det_trans, LinearEquiv.det_symm,
       div_eq_mul_inv, mul_comm]
-  rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
+  rw [htransport, map_eq_iff_det_pos_of_card_eq_finrank _ _ h, hdet]
   exact div_pos_iff.trans mul_pos_iff.symm
 
 /-- Two linear equivalences `S` and `T` such that `S.trans T.symm` has positive determinant
 transport an orientation to the same orientation. -/
-theorem Orientation.map_eq_map_of_det_pos [FiniteDimensional R M] {N : Type*} [AddCommGroup N]
+theorem Orientation.map_eq_map_of_det_pos {N : Type*} [AddCommGroup N]
     [Module R N] (x : Orientation R M ι) (S T : M ≃ₗ[R] N) (h : Fintype.card ι = finrank R M)
     (hdet : 0 < LinearMap.det ((S.trans T.symm : M ≃ₗ[R] M) : M →ₗ[R] M)) :
     Orientation.map ι S x = Orientation.map ι T x := by
-  have hfix := (map_eq_iff_det_pos x _ h).mpr hdet
+  have hfix := (map_eq_iff_det_pos_of_card_eq_finrank x _ h).mpr hdet
   rwa [map_trans, ← map_symm, Equiv.symm_apply_eq] at hfix
 
 /-- The signed Jacobian criterion for transporting orientations with arbitrary unit scalars. -/
-theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
+theorem Orientation.map_units_smul_eq_iff_det_mul_pos
     (o : Orientation R M ι) (A : M ≃ₗ[R] M) (u v : Rˣ)
     (hι : Fintype.card ι = finrank R M) :
     Orientation.map ι A (u • o) = v • o ↔
       0 < (u : R) * (v : R) * LinearMap.det A.toLinearMap := by
-  rw [map_eq_det_inv_smul _ _ hι, ← inv_smul_eq_iff, ← mul_smul,
+  rw [map_eq_det_inv_smul_of_card_eq_finrank _ _ hι, ← inv_smul_eq_iff, ← mul_smul,
     ← mul_smul, units_smul_eq_self_iff]
   simp only [Units.val_mul, Units.val_inv_eq_inv_val, LinearEquiv.coe_det]
   have h := (div_pos_iff.trans mul_pos_iff.symm :
@@ -136,13 +253,86 @@ theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
       0 < (u : R) * ((v : R) * LinearMap.det A.toLinearMap))
   simpa only [div_eq_mul_inv, mul_inv_rev, mul_comm, mul_left_comm, mul_assoc] using h
 
+/-- The signed Jacobian criterion for transporting orientations between two spaces: a linear
+equivalence `A : M ≃ N` carries `u • o` to `v • C o`, where `C : M ≃ N` is a reference
+equivalence, exactly when `u v det (C⁻¹ ∘ A)` is positive. -/
+theorem Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos
+    {N : Type*} [AddCommGroup N] [Module R N] (o : Orientation R M ι) (A C : M ≃ₗ[R] N)
+    (u v : Rˣ) (hι : Fintype.card ι = finrank R M) :
+    Orientation.map ι A (u • o) = v • Orientation.map ι C o ↔
+      0 < (u : R) * (v : R) * LinearMap.det (A.trans C.symm).toLinearMap := by
+  have hC : v • Orientation.map ι C o = Orientation.map ι C (v • o) := by
+    rw [Orientation.map, Module.Ray.map_units_smul]
+  rw [← map_units_smul_eq_iff_det_mul_pos o _ u v hι, hC, map_trans, ← map_symm,
+    Equiv.symm_apply_eq]
+
+/-- Transport along the negation of a space of dimension `n` multiplies an orientation by
+`(-1) ^ n`. -/
+theorem Orientation.map_linearEquiv_neg (x : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) :
+    Orientation.map ι (LinearEquiv.neg R) x = (-1 : Rˣ) ^ finrank R M • x := by
+  rw [map_eq_det_inv_smul_of_card_eq_finrank _ _ h]
+  congr 1
+  have hneg : ((LinearEquiv.neg R : M ≃ₗ[R] M) : M →ₗ[R] M) = (-1 : R) • LinearMap.id := by
+    ext; simp
+  have hdet : LinearEquiv.det (LinearEquiv.neg R : M ≃ₗ[R] M) = (-1 : Rˣ) ^ finrank R M := by
+    ext
+    rw [LinearEquiv.coe_det, hneg, LinearMap.det_smul]
+    simp
+  rw [hdet]
+  exact inv_eq_of_mul_eq_one_right (by simp [← mul_pow])
+
 open Classical in
 /-- The sign distinguishing two orientations reconstructs the second from the first when
 the index type has the dimension of the space. -/
-theorem Orientation.intCast_units_smul_ite_eq [FiniteDimensional R M]
+theorem Orientation.intCast_units_smul_ite_eq
     (model o : Orientation R M ι) (hι : Fintype.card ι = finrank R M) :
     (Units.map (Int.castRingHom R).toMonoidHom (if o = model then 1 else -1)) • model = o := by
-  rcases eq_or_eq_neg o model hι with h | h <;>
+  rcases eq_or_eq_neg_of_card_eq_finrank o model hι with h | h <;>
     simp [h, (Module.Ray.ne_neg_self model).symm]
+
+/-- Every orientation is a signed copy `(-1) ^ i • y` of any other orientation `y`, when the index
+type has the dimension of the space. -/
+theorem Orientation.exists_eq_neg_one_pow_smul (x y : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : ∃ i : ℕ, x = (-1 : Rˣ) ^ i • y := by
+  rcases eq_or_eq_neg_of_card_eq_finrank x y h with rfl | rfl
+  · exact ⟨0, by rw [pow_zero, one_smul]⟩
+  · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
+
+open Classical in
+/-- Comparing an orientation with the opposite of a reference orientation reverses the sign of the
+comparison, when the index type has the dimension of the space. -/
+theorem Orientation.ite_eq_neg_eq_neg_ite {o τ : Orientation R M ι}
+    (h : Fintype.card ι = finrank R M) :
+    (if o = -τ then (1 : ℤ) else -1) = -(if o = τ then 1 else -1) := by
+  rcases eq_or_eq_neg_of_card_eq_finrank o τ h with rfl | rfl
+  · rw [ite_eq_right (Module.Ray.ne_neg_self o), ite_eq_left rfl]
+  · rw [ite_eq_left rfl, ite_eq_right (Module.Ray.ne_neg_self τ).symm, neg_neg]
+
+open Classical in
+/-- Reversing an orientation reverses the sign of its comparison with a reference orientation, when
+the index type has the dimension of the space. -/
+theorem Orientation.ite_neg_eq_eq_neg_ite {o τ : Orientation R M ι}
+    (h : Fintype.card ι = finrank R M) :
+    (if -o = τ then (1 : ℤ) else -1) = -(if o = τ then 1 else -1) := by
+  rcases eq_or_eq_neg_of_card_eq_finrank o τ h with rfl | rfl
+  · rw [ite_eq_right (Module.Ray.ne_neg_self o).symm, ite_eq_left rfl]
+  · rw [ite_eq_left (neg_neg τ), ite_eq_right (Module.Ray.ne_neg_self τ).symm, neg_neg]
+
+open Classical in
+/-- **Signs of orientations along a composite.** If `F` carries `o` to `oT` up to the sign
+`[F o = oT]`, then the sign `[(A ∘ F) o = τ]` is that sign times `[A oT = τ]`. -/
+theorem Orientation.ite_map_mul_ite_map_trans {T W : Type*} [AddCommGroup T] [Module R T]
+    [AddCommGroup W] [Module R W] (F : M ≃ₗ[R] T) (A : T ≃ₗ[R] W) (o : Orientation R M ι)
+    {oT : Orientation R T ι} {τ : Orientation R W ι} (hT : Fintype.card ι = finrank R T)
+    (hW : Fintype.card ι = finrank R W) :
+    (if Orientation.map ι F o = oT then (1 : ℤ) else -1) *
+        (if Orientation.map ι (F.trans A) o = τ then 1 else -1) =
+      if Orientation.map ι A oT = τ then 1 else -1 := by
+  rw [map_trans]
+  rcases eq_or_eq_neg_of_card_eq_finrank (Orientation.map ι F o) oT hT with h | h
+  · simp only [h, ite_eq_left, one_mul]
+  · rw [h, Orientation.map_neg, ite_eq_right (Module.Ray.ne_neg_self oT).symm,
+      ite_neg_eq_eq_neg_ite hW, neg_one_mul, neg_neg]
 
 end Field

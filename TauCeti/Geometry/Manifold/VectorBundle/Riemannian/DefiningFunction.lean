@@ -44,7 +44,7 @@ variable {B F E H X W G : Type*} [TopologicalSpace B]
   [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
   [TopologicalSpace G] {J : ModelWithCorners ℝ W G}
   [TopologicalSpace X] [ChartedSpace G X] [IsManifold J ∞ X]
-  [T2Space X] [NormalSpace X] [SigmaCompactSpace X]
+  [T2Space X] [SigmaCompactSpace X]
 
 /-- Closed disc images in smooth bundle coordinates admit a global regular defining function.
 The three sign loci are exactly the closed disc, open disc, and sphere images, respectively.
@@ -53,26 +53,26 @@ read through the inverse coordinates. -/
 theorem exists_contMDiffMap_regular_definingFunction_norm_le
     (Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, F)) J (TotalSpace F V) X ∞)
     {r : B → ℝ} (hr : ContMDiff I 𝓘(ℝ) ∞ r) (hrpos : ∀ b, 0 < r b)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ Φ.source)
-    (hclosed : IsClosed (Φ '' {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj})) :
+    (hsource : {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} ⊆ Φ.source)
+    (hclosed : IsClosed (Φ '' {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj})) :
     ∃ g : C^∞⟮J, X; 𝓘(ℝ), ℝ⟯, TauCeti.IsRegularValue J 𝓘(ℝ) g 0 ∧
-      (∀ p : TotalSpace F V, ‖p.2‖ ≤ r p.proj →
+      (∀ p : TotalSpace F V, ‖p.snd‖ ≤ r p.proj →
         (g : X → ℝ) =ᶠ[𝓝 (Φ p)] TauCeti.sphereBundleEquation r ∘ Φ.symm) ∧
-      {y | g y ≤ 0} = Φ '' {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ∧
-      {y | g y < 0} = Φ '' {p : TotalSpace F V | ‖p.2‖ < r p.proj} ∧
-      {y | g y = 0} = Φ '' {p : TotalSpace F V | ‖p.2‖ = r p.proj} := by
+      {y | g y ≤ 0} = Φ '' {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} ∧
+      {y | g y < 0} = Φ '' {p : TotalSpace F V | ‖p.snd‖ < r p.proj} ∧
+      {y | g y = 0} = Φ '' {p : TotalSpace F V | ‖p.snd‖ = r p.proj} := by
   have hle : {p : TotalSpace F V | TauCeti.sphereBundleEquation r p ≤ 0} =
-      {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} := by
+      {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} := by
     ext p
     simp only [TauCeti.sphereBundleEquation_apply, mem_ofPred_eq, sub_nonpos]
     exact sq_le_sq₀ (norm_nonneg _) (hrpos p.proj).le
   have hlt : {p : TotalSpace F V | TauCeti.sphereBundleEquation r p < 0} =
-      {p : TotalSpace F V | ‖p.2‖ < r p.proj} := by
+      {p : TotalSpace F V | ‖p.snd‖ < r p.proj} := by
     ext p
     simp only [TauCeti.sphereBundleEquation_apply, mem_ofPred_eq, sub_neg]
     exact sq_lt_sq₀ (norm_nonneg _) (hrpos p.proj).le
   have heq : {p : TotalSpace F V | TauCeti.sphereBundleEquation r p = 0} =
-      {p : TotalSpace F V | ‖p.2‖ = r p.proj} := by
+      {p : TotalSpace F V | ‖p.snd‖ = r p.proj} := by
     ext p
     exact TauCeti.sphereBundleEquation_eq_zero_iff r p (hrpos p.proj).le
   have hreg := TauCeti.isRegularValue_sphereBundleEquation (F := F) (V := V)

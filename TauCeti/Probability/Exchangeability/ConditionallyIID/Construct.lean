@@ -10,7 +10,7 @@ public import TauCeti.Probability.Process.IIDMixture.Basic
 -- Public: `iIndepFun` appears in the hypothesis of the degeneracy theorem.
 public import Mathlib.Probability.Independence.Basic
 -- Non-public: the mixture representation and its uniqueness are used only inside the
--- degeneracy proof, and the Layer 0 implications only inside the corollaries.
+-- degeneracy proof, and the symmetry implications only inside the corollaries.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 import TauCeti.Probability.Exchangeability.Contractability
 import TauCeti.Probability.Exchangeability.IID

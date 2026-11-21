@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Energy
 public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
+public import TauCeti.Analysis.Fredholm.LevelSet.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
+public import TauCeti.Analysis.ODE.TrajectoryOperator.HalfLine
+public import TauCeti.Analysis.ODE.TrajectoryOperator.Section
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
@@ -41,7 +44,28 @@ When `p ≠ q` the trajectory is not constant, so the kernel is nonzero. Hence i
 surjective, its index is the positive dimension of its kernel, and `ind(q) < ind(p)`: a trajectory
 along which the linearized operator is onto can only lower the Morse index. Surjectivity of `D_γ`
 is the analytic form of the transversality of the unstable set of `p` and the stable set of `q`
-along `γ`; that equivalence is not proved here.
+along `γ`: this equivalence is
+`TauCeti.surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff` in
+`TauCeti.Analysis.Calculus.Morse.LinearizedTransversality`.
+
+At the constant trajectory at a nondegenerate critical point the linearized operator has constant
+invertible coefficient, so it is bijective.
+
+The cokernel of `D_γ` is the kernel of its formal adjoint, so `D_γ` is surjective exactly when its
+kernel has the dimension `ind(p) - ind(q)` of its index. On a one-dimensional space the kernel
+along a nonconstant trajectory is exactly the line of the velocity, since the solutions of the
+linearized equation are determined by one initial value. The linearized operator is then
+surjective exactly when the Morse index drops by one.
+
+The section of Schwarz's construction is the trajectory section
+`TauCeti.WeakDerivStep.trajectorySection` of the field `-∇f` around `γ`,
+`ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)`, whose zeros are the paths `ξ` for which `γ + ξ` is again a negative
+gradient trajectory. When `∇f` is Lipschitz, so that the section is defined on all of
+`W^{1,p}(ℝ, E)`, and `γ` has bounded range, it is strictly differentiable at every `ξ₀` with
+derivative `ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`, since the Hessian is uniformly continuous on bounded sets.
+At `ξ₀ = 0` along a connecting trajectory this derivative is `D_γ`. So if `D_γ` is surjective, the
+implicit function theorem gives a chart of the zero set near `0` onto an open subset of
+`ℝ^(ind p - ind q)`.
 
 ## Main results
 
@@ -53,10 +77,44 @@ along `γ`; that equivalence is not proved here.
   `morseIndex f p - morseIndex f q`.
 * `IsIntegralCurve.exists_trajectoryOperator_hessianOperator_eq_zero`: the gradient along `γ`, that
   is, minus its velocity, is the value of an element of the kernel.
-* `IsIntegralCurve.finrank_ker_trajectoryOperator_hessianOperator_pos`: for `p ≠ q` the kernel is
-  nonzero.
+* `IsIntegralCurve.exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero` and
+  `IsIntegralCurve.finrank_ker_trajectoryOperator_hessianOperator_pos`: for `p ≠ q` this kernel
+  element, and hence the kernel, is nonzero.
+* `IsIntegralCurve.finrank_ker_trajectoryOperator_hessianOperator_eq_one` and
+  `IsIntegralCurve.exists_ker_trajectoryOperator_hessianOperator_eq_span`: in dimension one the
+  kernel is the line spanned by the velocity.
+* `IsIntegralCurve.squareIntegrableSolutions_hessianOperator_eq_top`: in dimension one every
+  solution of the linearized equation along a nonconstant trajectory is square integrable.
+* `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_finrank_ker`: the linearized
+  operator is surjective exactly when its kernel has dimension `morseIndex f p - morseIndex f q`.
+  The `IsIntegralCurve` lemma
+  `surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions` states this
+  for the initial values of the square-integrable linearized solutions.
+* `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff`: in dimension one the
+  linearized operator is surjective exactly when `morseIndex f p = morseIndex f q + 1`.
 * `IsIntegralCurve.morseIndex_lt_morseIndex_of_surjective`: if the linearized operator is
   surjective and `p ≠ q`, then the Morse index of `q` is less than that of `p`.
+* `IsIntegralCurve.finrank_squareIntegrableSolutionsOn_Iio_hessianOperator` and
+  `IsIntegralCurve.finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex`: the
+  solutions of the linearized equation decaying at `-∞` form a space of dimension
+  `morseIndex f p`, and those decaying at `+∞` one of dimension `dim E - morseIndex f q`.
+* `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top`: the linearized
+  operator is surjective exactly when these two spaces span `E`.
+* `TauCeti.IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator`: at the
+  constant trajectory at a nondegenerate critical point the linearized operator is bijective.
+* `TauCeti.IsNondegenerateCriticalPoint.squareIntegrableSolutions_hessianOperator_eq_bot`: there
+  the linearized equation has no nonzero square-integrable solution.
+* `IsIntegralCurve.squareIntegrableSolutions_hessianOperator_eq_bot`: neither does it along a
+  trajectory with the same nondegenerate limit at both ends, which stays at that limit.
+* `ContDiff.hasStrictFDerivAt_trajectorySection_neg_gradient`: along a path with bounded range,
+  the trajectory section of `-∇f` is strictly differentiable at every `ξ₀`, with derivative
+  `ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`.
+* `ContDiff.contDiff_trajectorySection_neg_gradient`: for a `C^{n+1}` function `f` and a
+  continuous path with bounded range, the trajectory section of `-∇f` is `Cⁿ`.
+* `IsIntegralCurve.exists_openPartialHomeomorph_setOf_trajectorySection_neg_gradient_eq_zero`: if
+  the linearized operator is surjective, the zeros of the trajectory section near `0`, that is
+  the negative gradient trajectories `γ + ξ` with `ξ ∈ W^{1,2}(ℝ, E)` near `0`, are parametrized
+  by an open subset of `ℝ^(ind p - ind q)`.
 
 ## References
 
@@ -69,7 +127,7 @@ along `γ`; that equivalence is not proved here.
 public section
 
 open Filter InnerProductSpace MeasureTheory Set TopologicalSpace
-open scoped ENNReal Gradient Topology
+open scoped ENNReal Gradient NNReal Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {γ : ℝ → E} {p q : E}
@@ -93,6 +151,44 @@ theorem memLp_top_hessianOperator_comp (hf : ContDiff ℝ 2 f) (hγ : Continuous
   exact memLp_top_of_bound hcont.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)
 
 end ContDiff
+
+section TrajectorySection
+
+open TauCeti TauCeti.WeakDerivStep
+
+/-- **The derivative of the trajectory section of `-∇f`.** Let `f` be a `C²` function on a
+finite-dimensional real inner product space whose gradient is Lipschitz, and let `γ` be a path
+with bounded range. Then at every `ξ₀` the trajectory section `ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)` of
+`-∇f` around `γ`, from `W^{1,r}(ℝ, E)` to `Lʳ(ℝ, E)`, is strictly differentiable, with
+derivative the trajectory operator `ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`. -/
+theorem ContDiff.hasStrictFDerivAt_trajectorySection_neg_gradient (hf : ContDiff ℝ 2 f) {K : ℝ≥0}
+    (hK : LipschitzWith K (∇ f)) (hγ : AEStronglyMeasurable γ volume)
+    (hb : Bornology.IsBounded (range γ)) {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr : r ≠ ∞)
+    {ξ₀ : WeakDerivStep volume ⊤ r
+      (ContinuousLinearMap.id ℝ (Lp E r (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ hessianOperator f (γ s + toZeroAtInfty (F := E) hr ξ₀ s)) :
+    HasStrictFDerivAt (trajectorySection (-∇ f) γ hK.neg hγ hr)
+      (trajectoryOperator AL) ξ₀ := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  refine hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous hK.neg hγ hb hr
+    (V' := fun x ↦ -hessianOperator f x)
+    (fun x ↦ ContDiffAt.hasFDerivAt_neg_gradient hf.contDiffAt) hH.neg ?_
+  filter_upwards [hAL] with s hs
+  rw [hs, neg_neg]
+
+/-- **The trajectory section of `-∇f` is `Cⁿ`.** Let `f` be a `C^{n+1}` function, `n ≤ ∞`, on a
+finite-dimensional real inner product space whose gradient is Lipschitz, and let `γ` be a
+continuous path with bounded range. Then the trajectory section `ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)` of
+`-∇f` around `γ`, from `W^{1,r}(ℝ, E)` to `Lʳ(ℝ, E)`, is `Cⁿ`. -/
+theorem ContDiff.contDiff_trajectorySection_neg_gradient {n : ℕ∞}
+    (hf : ContDiff ℝ (n + 1) f) {K : ℝ≥0} (hK : LipschitzWith K (∇ f)) (hγ : Continuous γ)
+    (hb : Bornology.IsBounded (range γ)) {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr : r ≠ ∞) :
+    ContDiff ℝ n (trajectorySection (-∇ f) γ hK.neg hγ.aestronglyMeasurable hr) :=
+  contDiff_trajectorySection_of_contDiff hK.neg hγ hb hr (hf.gradient_right le_rfl).neg
+
+end TrajectorySection
 
 namespace IsIntegralCurve
 
@@ -123,6 +219,33 @@ theorem exists_trajectoryOperator_hessianOperator_eq_zero
   exact exists_trajectoryOperator_eq_zero_of_hasDerivAt hAL
     (fun s ↦ by simpa only [map_neg] using hf.contDiffAt.hasDerivAt_gradient_comp (hγ s)) hmem
 
+/-- **Along a nonconstant trajectory the gradient is a nonzero kernel element.** For a `C²`
+function and a negative gradient trajectory from `p` to `q ≠ p`, the kernel element of
+`ξ ↦ ξ' + Hess f(γ) ξ` on `W^{1,2}(ℝ, E)` with value `s ↦ ∇f(γ s)` is nonzero, because the velocity
+of `γ` is not identically zero. -/
+theorem exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    ∃ u : WeakDerivStep volume ⊤ 2
+        (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      u ≠ 0 ∧ trajectoryOperator AL u = 0 ∧
+        ⇑(prev (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+          =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ ∇ f (γ s) := by
+  obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hAL
+  obtain ⟨t, ht⟩ := hγ.exists_gradient_ne_zero hbot htop hpq
+  refine ⟨u, fun hu0 ↦ ht ?_, hu, hux⟩
+  -- The continuous representative `s ↦ ∇f(γ s)` of `u = 0` vanishes everywhere.
+  rw [hu0, prev_zero] at hux
+  have hae : (fun s ↦ ∇ f (γ s)) =ᵐ[volume] (0 : ℝ → E) := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      hux.symm.trans (Lp.coeFn_zero _ _ _)
+  have hzero := (Continuous.ae_eq_iff_eq volume
+    ((hf.gradient_right (m := 1) (by norm_num)).continuous.comp hγ.continuous)
+    continuous_const).1 hae
+  exact congrFun hzero t
+
 /-- **The linearized operator along a nonconstant trajectory has a nonzero kernel.** For a `C²`
 function and a negative gradient trajectory from `p` to `q ≠ p`, the kernel of
 `ξ ↦ ξ' + Hess f(γ) ξ` on `W^{1,2}(ℝ, E)` has positive dimension: it contains the velocity
@@ -136,34 +259,78 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_pos
   have hA : Continuous fun s ↦ hessianOperator f (γ s) :=
     (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous
   have := (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
-  obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hAL
-  obtain ⟨t, ht⟩ := hγ.exists_gradient_ne_zero hbot htop hpq
-  refine Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨u, hu⟩, fun h0 ↦ ht ?_⟩
-  have hu0 : u = 0 := congrArg Subtype.val h0
-  -- The continuous representative `s ↦ ∇f(γ s)` of `u = 0` vanishes everywhere.
-  rw [hu0, prev_zero] at hux
-  have hae : (fun s ↦ ∇ f (γ s)) =ᵐ[volume] (0 : ℝ → E) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using
-      hux.symm.trans (Lp.coeFn_zero _ _ _)
-  have hzero := (Continuous.ae_eq_iff_eq volume
-    ((hf.gradient_right (m := 1) (by norm_num)).continuous.comp hγ.continuous)
-    continuous_const).1 hae
-  exact congrFun hzero t
+  obtain ⟨u, hu0, hu, -⟩ :=
+    exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hpq hAL
+  exact Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨u, hu⟩, fun h0 ↦ hu0 (congrArg Subtype.val h0)⟩
+
+/-- **In dimension one the kernel along a nonconstant trajectory is a line.** On a
+one-dimensional space, for a `C²` function and a negative gradient trajectory from `p` to `q ≠ p`,
+the kernel of `ξ ↦ ξ' + Hess f(γ) ξ` on `W^{1,2}(ℝ, E)` has dimension one: it is nonzero, and it
+is no larger than the space of initial values of solutions. -/
+theorem finrank_ker_trajectoryOperator_hessianOperator_eq_one (hE : Module.finrank ℝ E = 1)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker = 1 := by
+  have hA : Continuous fun s ↦ hessianOperator f (γ s) :=
+    (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous
+  have hle : Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker ≤ 1 := by
+    rw [finrank_ker_trajectoryOperator hA AL hAL, ← hE]
+    exact Submodule.finrank_le _
+  have := finrank_ker_trajectoryOperator_hessianOperator_pos hγ hf hbot htop hpq hAL
+  omega
+
+/-- **In dimension one the kernel along a nonconstant trajectory is spanned by the velocity.** On
+a one-dimensional space, for a `C²` function and a negative gradient trajectory `γ` from `p` to
+`q ≠ p`, the kernel of `ξ ↦ ξ' + Hess f(γ) ξ` on `W^{1,2}(ℝ, E)` is the line through the element
+whose value is the velocity `γ'` of the trajectory. -/
+theorem exists_ker_trajectoryOperator_hessianOperator_eq_span (hE : Module.finrank ℝ E = 1)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    ∃ u : WeakDerivStep volume ⊤ 2
+        (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      ⇑(prev (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+          =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] deriv γ ∧
+        (trajectoryOperator (p := 2) AL).ker = ℝ ∙ u := by
+  obtain ⟨u, hu0, hu, hux⟩ :=
+    exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hpq hAL
+  refine ⟨-u, ?_, eq_span_singleton_of_mem_of_finrank_eq_one
+    (finrank_ker_trajectoryOperator_hessianOperator_eq_one hE hγ hf hbot htop hpq hAL)
+    (by simpa using hu) (neg_ne_zero.2 hu0)⟩
+  have hprev :=
+    map_neg (prevL (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) u
+  simp only [prevL_apply] at hprev
+  filter_upwards [hux, Lp.coeFn_neg (prev _ u)] with s hs hneg
+  rw [hprev, hneg, Pi.neg_apply, hs, (hγ s).deriv]
+
+/-- **In dimension one every linearized solution along a nonconstant trajectory decays.** On a
+one-dimensional space, for a `C²` function and a negative gradient trajectory `γ` from `p` to
+`q ≠ p`, every solution of `v' + Hess f(γ) v = 0` is square integrable: its kernel model
+`TauCeti.squareIntegrableSolutions` is the whole space. -/
+theorem squareIntegrableSolutions_hessianOperator_eq_top (hE : Module.finrank ℝ E = 1)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q) :
+    squareIntegrableSolutions (fun s ↦ hessianOperator f (γ s)) = ⊤ := by
+  have hAL := (hf.memLp_top_hessianOperator_comp hγ.continuous hbot htop
+    (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).coeFn_toLp
+  refine Submodule.eq_top_of_finrank_eq ?_
+  rw [← finrank_ker_trajectoryOperator (A := fun s ↦ hessianOperator f (γ s))
+      ((hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous) _ hAL,
+    finrank_ker_trajectoryOperator_hessianOperator_eq_one hE hγ hf hbot htop hpq hAL, hE]
 
 /-- The Hessians at two nondegenerate critical points are bounded below by a common constant. -/
 private theorem exists_pos_mul_norm_le_hessianOperator (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) :
     ∃ α > 0, (∀ v, α * ‖v‖ ≤ ‖hessianOperator f p v‖) ∧
       ∀ v, α * ‖v‖ ≤ ‖hessianOperator f q v‖ := by
-  obtain ⟨e₁, he₁⟩ := hp.isInvertible_hessianOperator
-  obtain ⟨e₂, he₂⟩ := hq.isInvertible_hessianOperator
-  obtain ⟨c₁, hc₁, h₁⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₁.antilipschitzWith⟩
-  obtain ⟨c₂, hc₂, h₂⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₂.antilipschitzWith⟩
+  obtain ⟨c₁, hc₁, h₁⟩ := hp.exists_pos_mul_norm_le_hessianOperator
+  obtain ⟨c₂, hc₂, h₂⟩ := hq.exists_pos_mul_norm_le_hessianOperator
   refine ⟨min c₁ c₂, lt_min hc₁ hc₂, fun v ↦ ?_, fun v ↦ ?_⟩
-  · rw [← he₁]
-    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
-  · rw [← he₂]
-    exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
+  · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
+  · exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
 
 /-- The coefficient family `s ↦ Hess f(γ s)` of the linearized operator is a continuous family of
 symmetric operators with invertible limits `Hess f(p)` and `Hess f(q)`. -/
@@ -221,6 +388,78 @@ theorem index_trajectoryOperator_hessianOperator
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace,
     hq.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 
+/-- **The linearized operator is onto exactly when its kernel has the expected dimension.** Let `f`
+be a `C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
+trajectory from a nondegenerate critical point `p` at `-∞` to a nondegenerate critical point `q` at
+`+∞`. Then `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective if and only if
+its kernel has dimension `morseIndex f p - morseIndex f q`, its index: the cokernel is the kernel
+of the formal adjoint, whose dimension is the defect. -/
+theorem surjective_trajectoryOperator_hessianOperator_iff_finrank_ker
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      (Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker : ℤ) =
+        morseIndex f p - morseIndex f q := by
+  have hindex := index_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
+  have hclosed := (isFredholm_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop
+    hAL).isClosed_range
+  -- The Hessian is symmetric, so the coefficient is its own pointwise adjoint.
+  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      AL s = ContinuousLinearMap.adjoint (AL s) := by
+    filter_upwards [hAL] with s hs
+    rw [hs]
+    exact hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
+  -- The kernel of the formal adjoint is finite dimensional: it is a space of solutions of a linear
+  -- equation on `E`.
+  have hA : Continuous fun s ↦ -hessianOperator f (γ s) :=
+    ((hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous).neg
+  have := (kerTrajectoryOperatorEquiv hA (-AL) (by
+    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
+    simp only [hs, Pi.neg_apply, hAs])).symm.finiteDimensional
+  rw [index_trajectoryOperator_of_isClosed_range hadj hclosed] at hindex
+  rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed, ← Submodule.finrank_eq_zero]
+  omega
+
+/-- **The linearized operator is onto exactly when its decaying solutions have the expected
+dimension.** Under the hypotheses of
+`IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_finrank_ker`, the operator
+`ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective if and only if the initial
+values `TauCeti.squareIntegrableSolutions` of the square-integrable solutions of
+`v' + Hess f(γ) v = 0` form a space of dimension `morseIndex f p - morseIndex f q`. -/
+theorem surjective_trajectoryOperator_hessianOperator_iff_finrank_squareIntegrableSolutions
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      (Module.finrank ℝ (squareIntegrableSolutions fun s ↦ hessianOperator f (γ s)) : ℤ) =
+        morseIndex f p - morseIndex f q := by
+  rw [surjective_trajectoryOperator_hessianOperator_iff_finrank_ker hγ hf hp hq hbot htop hAL,
+    finrank_ker_trajectoryOperator (A := fun s ↦ hessianOperator f (γ s))
+      ((hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous) _ hAL]
+
+/-- **In dimension one the linearized operator is onto exactly when the index drops by one.** On a
+one-dimensional space, let `f` be a `C²` function and `γ` a negative gradient trajectory from a
+nondegenerate critical point `p` at `-∞` to a different nondegenerate critical point `q` at `+∞`.
+Then `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective if and only if
+`morseIndex f p = morseIndex f q + 1`: its kernel is a line, so its cokernel vanishes exactly when
+its index is one. -/
+theorem surjective_trajectoryOperator_hessianOperator_iff (hE : Module.finrank ℝ E = 1)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      morseIndex f p = morseIndex f q + 1 := by
+  rw [surjective_trajectoryOperator_hessianOperator_iff_finrank_ker hγ hf hp hq hbot htop hAL,
+    finrank_ker_trajectoryOperator_hessianOperator_eq_one hE hγ hf hbot htop hpq hAL]
+  omega
+
 /-- **A surjective linearized operator lowers the Morse index.** Let `f` be a `C²` function on a
 finite-dimensional real inner product space and `γ` a negative gradient trajectory from a
 nondegenerate critical point `p` at `-∞` to a different nondegenerate critical point `q` at `+∞`.
@@ -240,4 +479,147 @@ theorem morseIndex_lt_morseIndex_of_surjective
   have hpos := finrank_ker_trajectoryOperator_hessianOperator_pos hγ hf hbot htop hpq hAL
   omega
 
+/-- **The linearized unstable space has dimension the Morse index of the source.** Let `f` be a
+`C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
+trajectory from a nondegenerate critical point `p` at `-∞`; nothing is assumed at `+∞`. Then the
+initial values of the solutions of `v' + Hess f(γ) v = 0` that are square integrable on `(-∞, 0)`
+form a space of dimension `morseIndex f p`. -/
+theorem finrank_squareIntegrableSolutionsOn_Iio_hessianOperator
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hbot : Tendsto γ atBot (𝓝 p)) :
+    Module.finrank ℝ (squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Iio 0)) =
+      morseIndex f p := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hminus, -⟩ := exists_pos_mul_norm_le_hessianOperator hp hp
+  rw [finrank_squareIntegrableSolutionsOn_Iio (A := fun s ↦ hessianOperator f (γ s))
+      (hH.comp hγ.continuous)
+      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hminus
+      ((hH.tendsto p).comp hbot),
+    hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
+
+/-- **The linearized stable space has the codimension of the Morse index of the target.** Let `f`
+be a `C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
+trajectory to a nondegenerate critical point `q` at `+∞`; nothing is assumed at `-∞`. Then the
+initial values of the solutions of `v' + Hess f(γ) v = 0` that are square integrable on `(0, ∞)`
+form a space of dimension `dim E - morseIndex f q`. -/
+theorem finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hq : IsNondegenerateCriticalPoint f q) (htop : Tendsto γ atTop (𝓝 q)) :
+    Module.finrank ℝ (squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Ioi 0)) +
+      morseIndex f q = Module.finrank ℝ E := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  obtain ⟨α, hα, hplus, -⟩ := exists_pos_mul_norm_le_hessianOperator hq hq
+  rw [finrank_squareIntegrableSolutionsOn_Ioi (A := fun s ↦ hessianOperator f (γ s))
+      (hH.comp hγ.continuous)
+      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hplus
+      ((hH.tendsto q).comp htop),
+    ← hq.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
+  exact hq.finrank_stableLinearSubspace_add_morseIndex
+
+/-- **The linearized operator is onto exactly when the decaying solutions span.** Let `f` be a
+`C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
+trajectory from a nondegenerate critical point `p` at `-∞` to a nondegenerate critical point `q`
+at `+∞`. Then `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective if and only
+if every vector of `E` is the sum of the initial values of a solution of `v' + Hess f(γ) v = 0`
+square integrable on `(-∞, 0)` and of one square integrable on `(0, ∞)`. -/
+theorem surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
+    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Iio 0) ⊔
+        squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Ioi 0) = ⊤ := by
+  obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop⟩ :=
+    trajectory_hypotheses hγ hf hp hq hbot htop
+  exact surjective_trajectoryOperator_iff_sup_eq_top hA hsym hα hminus hplus hAbot hAtop AL hAL
+
+/-- **Near a transverse trajectory, the trajectories are parametrized by `ℝ^(ind p - ind q)`.**
+Let `f` be a `C²` function on a finite-dimensional real inner product space whose
+gradient is Lipschitz, and let `γ` be a negative gradient trajectory from a nondegenerate critical
+point `p` at `-∞` to a nondegenerate critical point `q` at `+∞`, along which the linearized
+operator `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective. Then a
+neighbourhood of `0` in the zero set of the trajectory section of `-∇f` around `γ` is homeomorphic
+to an open subset of `ℝ^(ind p - ind q)`, by a chart sending `0` to `0`. By
+`TauCeti.WeakDerivStep.trajectorySection_eq_zero_iff`, these zeros are the paths `ξ` for which
+`γ + ξ` is again a negative gradient trajectory. -/
+theorem exists_openPartialHomeomorph_setOf_trajectorySection_neg_gradient_eq_zero
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f) {K : ℝ≥0}
+    (hK : LipschitzWith K (∇ f)) (hp : IsNondegenerateCriticalPoint f p)
+    (hq : IsNondegenerateCriticalPoint f q) (hbot : Tendsto γ atBot (𝓝 p))
+    (htop : Tendsto γ atTop (𝓝 q))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s))
+    (hsurj : Function.Surjective (trajectoryOperator (p := 2) AL)) :
+    ∃ e : OpenPartialHomeomorph
+        {ξ | trajectorySection (-∇ f) γ hK.neg hγ.continuous.aestronglyMeasurable (p := 2)
+          ENNReal.ofNat_ne_top ξ = 0}
+        (Fin (morseIndex f p - morseIndex f q) → ℝ),
+      ⟨0, trajectorySection_zero _ _ _⟩ ∈ e.source ∧ e ⟨0, trajectorySection_zero _ _ _⟩ = 0 := by
+  -- The range of `γ` is bounded, and at `ξ₀ = 0` the coefficient is the Hessian along `γ`.
+  have hb : Bornology.IsBounded (range γ) :=
+    hγ.continuous.isBounded_range_iff_isBigO_atTop_atBot.2 ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩
+  have hS := hf.hasStrictFDerivAt_trajectorySection_neg_gradient hK
+    hγ.continuous.aestronglyMeasurable hb (r := 2) ENNReal.ofNat_ne_top (ξ₀ := 0) (by
+      filter_upwards [hAL] with s hs
+      rw [hs, map_zero, zero_apply, add_zero])
+  have hFred := isFredholm_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
+  have hindex := index_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
+  rw [ContinuousLinearMap.index_of_surjective _ hsurj] at hindex
+  have hn : Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
+      morseIndex f p - morseIndex f q := by
+    omega
+  exact ⟨levelSetChartModel hS (LinearMap.range_eq_top.2 hsurj) hFred.closedComplemented_ker
+      hFred.finite_ker hn (trajectorySection_zero _ _ _),
+    mem_levelSetChartModel_source _ _ _ _ _ _, levelSetChartModel_apply_self _ _ _ _ _ _⟩
+
 end IsIntegralCurve
+
+namespace TauCeti.IsNondegenerateCriticalPoint
+
+open TauCeti.WeakDerivStep
+
+/-- **The linearized operator at a constant trajectory is invertible.** At a nondegenerate
+critical point `p` of `f`, the constant path at `p` is a negative gradient trajectory, and its
+linearized operator `ξ ↦ ξ' + Hess f(p) ξ` is a bijection from `W^{1,2}(ℝ, E)` onto `L²(ℝ, E)`. -/
+theorem bijective_trajectoryOperator_hessianOperator (hp : IsNondegenerateCriticalPoint f p)
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ hessianOperator f p) :
+    Function.Bijective (trajectoryOperator (p := 2) AL) := by
+  obtain ⟨α, hα, hgap, -⟩ := IsIntegralCurve.exists_pos_mul_norm_le_hessianOperator hp hp
+  exact bijective_trajectoryOperator_const hp.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+    hα hgap AL hAL
+
+/-- **No linearized solution decays at a constant trajectory.** At a nondegenerate critical point
+`p` of `f`, the constant linearized equation `v' + Hess f(p) v = 0` has no nonzero
+square-integrable solution. -/
+theorem squareIntegrableSolutions_hessianOperator_eq_bot (hp : IsNondegenerateCriticalPoint f p) :
+    squareIntegrableSolutions (fun _ ↦ hessianOperator f p) = ⊥ := by
+  have hAL := (memLp_top_const (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+    (hessianOperator f p)).coeFn_toLp
+  rw [← ker_trajectoryOperator_eq_bot_iff continuous_const _ hAL, LinearMap.ker_eq_bot]
+  exact (hp.bijective_trajectoryOperator_hessianOperator hAL).injective
+
+end TauCeti.IsNondegenerateCriticalPoint
+
+namespace IsIntegralCurve
+
+open TauCeti
+
+/-- **No linearized solution decays along a trajectory with the same limit at both ends.** For a
+differentiable `f`, a negative gradient trajectory `γ` with the same limit `p` at both ends stays
+at `p`. If `p` is a nondegenerate critical point, the linearized equation
+`v' + Hess f(γ) v = 0` has no nonzero square-integrable solution. -/
+theorem squareIntegrableSolutions_hessianOperator_eq_bot
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : Differentiable ℝ f)
+    (hp : IsNondegenerateCriticalPoint f p) (hbot : Tendsto γ atBot (𝓝 p))
+    (htop : Tendsto γ atTop (𝓝 p)) :
+    squareIntegrableSolutions (fun s ↦ hessianOperator f (γ s)) = ⊥ := by
+  have hγp : (fun s ↦ hessianOperator f (γ s)) = fun _ ↦ hessianOperator f p := funext fun s ↦ by
+    rw [hγ.eq_const_of_tendsto (fun _ ↦ hf _) hf.continuous.continuousAt hbot htop]
+  rw [hγp]
+  exact hp.squareIntegrableSolutions_hessianOperator_eq_bot
+
+end IsIntegralCurve
+

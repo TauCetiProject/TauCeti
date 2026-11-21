@@ -145,29 +145,16 @@ theorem map_frobeniusAlgHom_eq_zsmul (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) {K 
       (by rw [degree_quadratic one_ne_zero]; decide)
     replace hα : α ^ 2 + (W⁄L).a₁ * α - (3 * algebraMap F L x₀ + (W⁄L).a₂) = 0 := by
       simpa [sub_eq_add_neg] using hα
-    -- `α` does not come from `F`, since the tangent quadratic has no root there
-    have hαF : α ∉ Set.range (algebraMap F L) := by
-      rintro ⟨t, rfl⟩
-      refine hs (hsplit.2 ⟨t, (algebraMap F L).injective ?_⟩)
-      simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂] at hα
-      simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, _root_.map_neg, map_ofNat,
-        one_mul, _root_.map_zero]
-      linear_combination hα
-    -- `α ^ q` is the other root `-a₁ - α`
     have hαq : α ^ Fintype.card F = -(W⁄L).a₁ - α := by
-      have hroot : (α ^ Fintype.card F) ^ 2 + (W⁄L).a₁ * α ^ Fintype.card F -
-          (3 * algebraMap F L x₀ + (W⁄L).a₂) = 0 := by
-        have ha₁ : (W⁄L).a₁ = algebraMap F L W.a₁ := by simp [WeierstrassCurve.baseChange]
-        have ha₂ : (W⁄L).a₂ = algebraMap F L W.a₂ := by simp [WeierstrassCurve.baseChange]
-        have := congrArg (FiniteField.frobeniusAlgHom F L) hα
-        rw [_root_.map_sub, _root_.map_add, _root_.map_add, _root_.map_mul, _root_.map_mul,
-          _root_.map_pow, map_ofNat, _root_.map_zero] at this
-        simpa only [FiniteField.frobeniusAlgHom_apply, ha₁, ha₂, hK] using this
-      have hne : α ^ Fintype.card F - α ≠ 0 := sub_ne_zero.2 fun h' ↦
-        hαF ((TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap α).1 h')
-      have : (α ^ Fintype.card F - α) * (α ^ Fintype.card F - (-(W⁄L).a₁ - α)) = 0 := by
-        linear_combination hroot - hα
-      exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left hne)
+      have ha₁ : (W⁄L).a₁ = algebraMap F L W.a₁ := by simp [WeierstrassCurve.baseChange]
+      have ha₂ : (W⁄L).a₂ = algebraMap F L W.a₂ := by simp [WeierstrassCurve.baseChange]
+      have := TauCeti.FiniteField.pow_card_eq_neg_sub_of_not_exists_root
+        (b := W.a₁) (c := -(3 * x₀ + W.a₂)) (L := L) (α := α)
+        (fun ⟨t, ht⟩ ↦ hs (hsplit.2 ⟨t, by linear_combination ht⟩))
+        (by
+          simp only [_root_.map_neg, _root_.map_add, _root_.map_mul, map_ofNat, ← ha₁, ← ha₂]
+          linear_combination hα)
+      rwa [← ha₁] at this
     have hL := map_frobeniusAlgHom_eq_zsmul_of_isSingular (hsing L) hα (hnode L hα) (hK x₀) (hK y₀)
       (.inr ⟨rfl, hαq⟩) (map ι P)
     -- `ι` commutes with the `q`-power maps and is injective on points

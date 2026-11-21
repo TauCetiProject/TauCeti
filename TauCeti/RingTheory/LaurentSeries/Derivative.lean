@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.HahnSeries.Derivation
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.LaurentSeries.HasseDeriv
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.Algebra.Lie.TransferInstance
@@ -16,7 +17,7 @@ public import Mathlib.Algebra.Lie.TransferInstance
 # Differentiation of Laurent series
 
 This file bundles the coefficientwise formal derivative `D` of Laurent series as a derivation over
-any commutative ring, using the Leibniz rule from `LaurentSeries.Basic`. The bundle allows the
+any commutative ring, using the Leibniz rule from `LaurentSeries.HasseDeriv`. The bundle allows the
 universal property of Kähler differentials to compare it with differentiation of algebraic
 functions in a local parameter. Laurent derivations carry the commutator Lie algebra structure
 over the coefficient ring, with `[aD, bD] = (a Db - b Da)D` over any commutative ring.
@@ -36,7 +37,10 @@ operation is introduced.
 
 ## Main results
 
-* `TauCeti.laurentSeriesDerivation`: `D` as a derivation.
+* `TauCeti.laurentSeriesDerivation` and `TauCeti.laurentSeriesAlgebraDerivation`: `D` as a
+  derivation for the coefficientwise and `Algebra.toModule` scalar actions.
+* `Derivation.laurentSeries_module_eq_algebraModule`: agreement of the coefficientwise and
+  `Algebra.toModule` scalar actions of `R` on `R⸨X⸩`.
 * `Derivation.laurentSeriesLieRing` and `Derivation.laurentSeriesLieAlgebra`: the commutator
   Lie structures on Laurent derivations.
 * `LaurentSeries.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
@@ -50,12 +54,13 @@ operation is introduced.
 * `LaurentSeries.orderTop_derivative_eq_sub_one`: the order of `D f` is one less than the first
   exponent whose coefficient survives differentiation.
 * `LaurentSeries.orderTop_derivative_eq_order_sub_one_of_cast_ne_zero`: if the order `r` of
-  `f ≠ 0` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
+  `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
+* `LaurentSeries.derivative_expand`: the chain rule for Laurent expansion `X ↦ X ^ d`.
 * `LaurentSeries.ratHahnSeriesDerivation_ramifiedEmbedding`: **the chain rule on ramified
   levels**. Under the level-`n` embedding `u ↦ t ^ (1 / n)` into rational-exponent Hahn series,
   the derivative `d/dt` is `(1 / n) u ^ (1 - n) D`.
@@ -100,12 +105,47 @@ end TauCeti
 
 namespace Derivation
 
-variable {R : Type*} [CommRing R]
-
-private theorem laurentSeries_module_eq_algebraModule : (inferInstance : Module R R⸨X⸩) =
-    (inferInstance : Algebra R R⸨X⸩).toModule :=
+/-- The coefficientwise `R`-module structure on `R⸨X⸩` coincides with `Algebra.toModule`. -/
+theorem laurentSeries_module_eq_algebraModule {R : Type*} [CommRing R] :
+    (inferInstance : Module R R⸨X⸩) = (inferInstance : Algebra R R⸨X⸩).toModule :=
   Module.ext <| funext fun r ↦ funext fun f ↦
     (TauCeti.laurentSeries_algebraMap_mul_eq_smul r f).symm
+
+end Derivation
+
+namespace TauCeti
+
+/-- `TauCeti.laurentSeriesDerivation` transported along
+`Derivation.laurentSeries_module_eq_algebraModule` to the `Algebra.toModule` scalar action on
+`R⸨X⸩`, for APIs (such as `Derivation.liftOfRightInverse`, `Derivation.map_trace`, and
+`Derivation.leibniz_norm`) that synthesize `Algebra.toModule` on the target. -/
+noncomputable def laurentSeriesAlgebraDerivation (R : Type*) [CommRing R] :
+    @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ Algebra.toModule :=
+  Derivation.laurentSeries_module_eq_algebraModule (R := R) ▸ laurentSeriesDerivation R
+
+/-- `TauCeti.laurentSeriesAlgebraDerivation` has the same underlying function as
+`TauCeti.laurentSeriesDerivation`. -/
+@[simp]
+theorem coe_laurentSeriesAlgebraDerivation {R : Type*} [CommRing R] :
+    ⇑(laurentSeriesAlgebraDerivation R) = ⇑(laurentSeriesDerivation R) := by
+  have aux (m : Module R R⸨X⸩) (h : m = Algebra.toModule)
+      (δ : @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m) :
+      ⇑(h ▸ δ : @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ Algebra.toModule) = ⇑δ := by
+    cases h
+    rfl
+  exact aux _ (Derivation.laurentSeries_module_eq_algebraModule (R := R))
+    (laurentSeriesDerivation R)
+
+/-- The `Algebra.toModule`-typed Laurent derivation evaluates as the coefficientwise derivative. -/
+theorem laurentSeriesAlgebraDerivation_apply {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    laurentSeriesAlgebraDerivation R f = _root_.LaurentSeries.derivative R f := by
+  simp
+
+end TauCeti
+
+namespace Derivation
+
+variable {R : Type*} [CommRing R]
 
 /-- The commutator Lie ring on Laurent derivations with their coefficientwise codomain scalars.
 The native derivation Lie ring uses the algebra-induced codomain module; these scalar actions
@@ -246,6 +286,16 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
 
 end Module
 
+/-- Over any ring, the derivative of `X ^ n` vanishes if and only if `n` vanishes in `R`. -/
+theorem derivative_single_one_eq_zero_iff {R : Type*} [Ring R] {n : ℤ} :
+    derivative R (single n (1 : R)) = 0 ↔ (n : R) = 0 := by
+  simp
+
+/-- When `(d : R) ≠ 0`, the derivative of `X ^ d` is nonzero. -/
+theorem derivative_single_natCast_one_ne_zero {R : Type*} [Ring R] {d : ℕ} [NeZero (d : R)] :
+    derivative R (single (d : ℤ) (1 : R)) ≠ 0 := by
+  simpa [derivative_single_one_eq_zero_iff] using NeZero.ne (d : R)
+
 /-- **Vector fields regular at the origin preserve power series**: if `f` and `g` have no
 negative powers of `X`, neither has `f g'`. -/
 theorem zero_le_orderTop_mul_derivative {R : Type*} [Ring R] {f g : R⸨X⸩} (hf : 0 ≤ f.orderTop)
@@ -264,14 +314,17 @@ theorem weightDerivation_intCastAddHom {R : Type*} [CommRing R] (f : R⸨X⸩) :
   ext n
   rw [coeff_weightDerivation, coeff_single_one_mul_derivative, Int.coe_castAddHom, zsmul_eq_mul]
 
-/-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
-a field in which `r` is nonzero, then `f'` has order `r - 1`. -/
+/-- If the order `r` of `f` is nonzero in a ring `R` without zero divisors, for instance a field
+in which `r` is nonzero, then `f'` has order `r - 1`. Nonvanishing of `r` forces `f ≠ 0`, because
+the zero series has order `0`. -/
 theorem orderTop_derivative_eq_order_sub_one_of_cast_ne_zero {R : Type*} [Ring R]
-    [NoZeroDivisors R] {f : R⸨X⸩} (hf : f ≠ 0) (h : (f.order : R) ≠ 0) :
+    [NoZeroDivisors R] {f : R⸨X⸩} (h : (f.order : R) ≠ 0) :
     (derivative R f).orderTop = (f.order - 1 : ℤ) :=
   orderTop_derivative_eq_order_sub_one <| by
     rw [zsmul_eq_mul]
-    exact mul_ne_zero h (leadingCoeff_ne_zero.mpr hf)
+    refine mul_ne_zero h (leadingCoeff_ne_zero.mpr ?_)
+    rintro rfl
+    simp at h
 
 /-- **The kernel of the derivative.** Over a ring without additive torsion, for instance a field
 of characteristic zero, the Laurent series with derivative zero are exactly the constants. -/
@@ -283,6 +336,27 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   simp
 
 section Ramified
+
+/-- **Chain rule for Laurent expansion**: the derivative of `f (X ^ d)` is
+`(Df)(X ^ d) * d X ^ (d - 1)`. -/
+theorem derivative_expand {R : Type*} [CommRing R] (d : ℕ+) (f : R⸨X⸩) :
+    derivative R (expand R d f) =
+      expand R d (derivative R f) * derivative R (single (d : ℤ) 1) := by
+  have hd : derivative R (single (d : ℤ) (1 : R)) = single ((d : ℤ) - 1) (d : R) := by
+    rw [derivative_apply, hasseDeriv_single]
+    simp
+  ext n
+  rw [hd, coeff_derivative, coeff_mul_single]
+  by_cases h : (d : ℤ) ∣ n + 1
+  · obtain ⟨k, hk⟩ := h
+    have hk' : n - ((d : ℤ) - 1) = (d : ℤ) * (k - 1) := by linarith
+    rw [hk, coeff_expand_mul, hk', coeff_expand_mul, coeff_derivative]
+    simp only [sub_add_cancel, zsmul_eq_mul, Int.cast_mul, Int.cast_natCast]
+    ring
+  · have h' : ¬ (d : ℤ) ∣ n - ((d : ℤ) - 1) := by
+      intro ⟨k, hk⟩
+      exact h ⟨k + 1, by linarith⟩
+    rw [coeff_expand_of_not_dvd d f h, coeff_expand_of_not_dvd d _ h', smul_zero, zero_mul]
 
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
@@ -341,7 +415,7 @@ theorem continuous_derivative : Continuous (derivative K : K⸨X⸩ → K⸨X⸩
   rw [ContinuousAt, map_zero]
   intro s hs
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = WithZero.exp k :=
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.val = WithZero.exp k :=
     ⟨_, (WithZero.exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)).symm⟩
   -- Series of valuation below `exp (k - 2)` have derivatives of valuation below `exp k`.
   have hU : {x : K⸨X⸩ | Valued.v x < Valued.v (single (2 - k) (1 : K))} ∈ 𝓝 0 :=

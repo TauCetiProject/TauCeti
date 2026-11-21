@@ -259,19 +259,28 @@ theorem eval₂_prod_prodFamily (σ : SmoothTwoForm I P) (τ : SmoothTwoForm I' 
         (K p (Manifold.tangentSpaceProdEquiv p v).2) := by
   rw [SmoothTwoForm.eval₂_prod, prodFamily_apply, ContinuousLinearEquiv.apply_symm_apply]
 
-/-- A product map intertwines the block structure at a point precisely when its horizontal
-differential intertwines `J` and its vertical differential intertwines the corresponding
-members of `K`. In a suspension the second condition is the seam equation. -/
-theorem mfderiv_prodMap_prodFamily_iff {f : P → P} {g : M → M} (p : P × M)
-    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I' g p.2) :
+/-- A product map `f × g : P × M → P × N` intertwines the block structures with vertical families
+`K` and `K'` at a point precisely when its horizontal differential intertwines `J` and its
+vertical differential intertwines the corresponding members of `K` and `K'`. In a suspension the
+second condition is the seam equation. -/
+theorem mfderiv_prodMap_prodFamily_iff {F' H'' N : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [TopologicalSpace H'']
+    {I'' : ModelWithCorners ℝ F' H''} [TopologicalSpace N] [ChartedSpace H'' N]
+    [IsManifold I'' ∞ N] (K' : ∀ p : P × N, AlmostComplexStructure (TangentSpace I'' p.2))
+    (hK' : ContMDiff (I.prod I'') (I''.prod 𝓘(ℝ, F' →L[ℝ] F')) n
+      (fun p ↦ TotalSpace.mk' (F' →L[ℝ] F')
+        (E := fun y : N ↦ TangentSpace I'' y →L[ℝ] TangentSpace I'' y)
+        p.2 (K' p).toLinearMap.toContinuousLinearMap))
+    {f : P → P} {g : M → N} (p : P × M)
+    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I'' g p.2) :
     (∀ v : TangentSpace (I.prod I') p,
-      mfderiv (I.prod I') (I.prod I') (Prod.map f g) p (prodFamily J K hK p v) =
-        prodFamily J K hK (f p.1, g p.2)
-          (mfderiv (I.prod I') (I.prod I') (Prod.map f g) p v)) ↔
+      mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p (prodFamily J K hK p v) =
+        prodFamily J K' hK' (f p.1, g p.2)
+          (mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p v)) ↔
       (∀ u : TangentSpace I p.1,
         mfderiv I I f p.1 (J p.1 u) = J (f p.1) (mfderiv I I f p.1 u)) ∧
       (∀ w : TangentSpace I' p.2,
-        mfderiv I' I' g p.2 (K p w) = K (f p.1, g p.2) (mfderiv I' I' g p.2 w)) := by
+        mfderiv I' I'' g p.2 (K p w) = K' (f p.1, g p.2) (mfderiv I' I'' g p.2 w)) := by
   constructor
   · intro h
     constructor
@@ -379,20 +388,15 @@ theorem tames_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
   rw [SmoothTwoForm.tames_iff]
   intro p v hv
   -- Vertical tameness at `p` makes the fibre form a linear symplectic form.
-  have hτalt := SmoothForm.isAlt_bilinFormAt τ p.2
-  let ωτ : SymplecticForm (TangentSpace I' p.2) :=
-    { toBilinForm := τ.bilinFormAt p.2
-      isAlt := hτalt
-      nondegenerate := hτalt.isRefl.nondegenerate_iff_separatingLeft.2 fun w hw ↦ by
-        by_contra hw0
-        exact (hτ p w hw0).ne' (by simpa only [SmoothForm.bilinFormAt_apply] using hw (K p w)) }
-  have hωτ : ωτ.Tames (K p) := fun w hw ↦ by
-    simpa only [ωτ, SmoothForm.bilinFormAt_apply] using hτ p w hw
+  have hτK : ∀ w, w ≠ 0 → 0 < τ.bilinFormAt p.2 w (K p w) := fun w hw ↦ by
+    simpa only [SmoothForm.bilinFormAt_apply] using hτ p w hw
+  let ωτ := SymplecticForm.ofTames _ (SmoothForm.isAlt_bilinFormAt τ p.2) hτK
+  have hωτ : ωτ.Tames (K p) := SymplecticForm.tames_ofTames _ hτK
   have h := SymplecticForm.prod_tames (hσ.isNondegenerate.tames_iff.1 hσ p.1) hωτ
     (Manifold.tangentSpaceProdEquiv p v) ((Manifold.tangentSpaceProdEquiv p).map_ne_zero_iff.2 hv)
   rw [SymplecticForm.prod_apply_prod_self] at h
   rw [eval₂_prod_prodFamily]
-  simpa only [ωτ, SmoothForm.bilinFormAt_apply,
+  simpa only [ωτ, SymplecticForm.ofTames_apply, SmoothForm.bilinFormAt_apply,
     SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply,
     SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using h
 
@@ -422,23 +426,32 @@ theorem compatible_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
     simpa only [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply] using
       (hcompat p).tames v hv
 
-/-- A product map intertwines the block structure at a point precisely when its horizontal
-differential intertwines `J` and its vertical differential intertwines the corresponding
-members of `K`. In a suspension the second condition is the seam equation. -/
-theorem mfderiv_prodMap_prodFamily_iff {f : P → P} {g : M → M} (p : P × M)
-    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I' g p.2) :
+/-- A product map `f × g : P × M → P × N` intertwines the block structures with vertical families
+`K` and `K'` at a point precisely when its horizontal differential intertwines `J` and its
+vertical differential intertwines the corresponding members of `K` and `K'`. In a suspension the
+second condition is the seam equation. -/
+theorem mfderiv_prodMap_prodFamily_iff {F' H'' N : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [TopologicalSpace H'']
+    {I'' : ModelWithCorners ℝ F' H''} [TopologicalSpace N] [ChartedSpace H'' N]
+    [IsManifold I'' ∞ N] (K' : ∀ p : P × N, AlmostComplexStructure (TangentSpace I'' p.2))
+    (hK' : ContMDiff (I.prod I'') (I''.prod 𝓘(ℝ, F' →L[ℝ] F')) ∞
+      (fun p ↦ TotalSpace.mk' (F' →L[ℝ] F')
+        (E := fun y : N ↦ TangentSpace I'' y →L[ℝ] TangentSpace I'' y)
+        p.2 (K' p).toLinearMap.toContinuousLinearMap))
+    {f : P → P} {g : M → N} (p : P × M)
+    (hf : MDifferentiableAt I I f p.1) (hg : MDifferentiableAt I' I'' g p.2) :
     (∀ v : TangentSpace (I.prod I') p,
-      mfderiv (I.prod I') (I.prod I') (Prod.map f g) p (prodFamily J K hK p v) =
-        prodFamily J K hK (f p.1, g p.2)
-          (mfderiv (I.prod I') (I.prod I') (Prod.map f g) p v)) ↔
+      mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p (prodFamily J K hK p v) =
+        prodFamily J K' hK' (f p.1, g p.2)
+          (mfderiv (I.prod I') (I.prod I'') (Prod.map f g) p v)) ↔
       (∀ u : TangentSpace I p.1,
         mfderiv I I f p.1 (J p.1 u) = J (f p.1) (mfderiv I I f p.1 u)) ∧
       (∀ w : TangentSpace I' p.2,
-        mfderiv I' I' g p.2 (K p w) = K (f p.1, g p.2) (mfderiv I' I' g p.2 w)) := by
+        mfderiv I' I'' g p.2 (K p w) = K' (f p.1, g p.2) (mfderiv I' I'' g p.2 w)) := by
   simpa only [prodFamily, ContMDiffAlmostComplexStructure.toSmooth_toEndomorphism,
     toContMDiff_toEndomorphism_apply] using
     ContMDiffAlmostComplexStructure.mfderiv_prodMap_prodFamily_iff
-      (J.toContMDiff ⊤) K hK p hf hg
+      (J.toContMDiff ⊤) K hK K' hK' p hf hg
 
 end TauCeti.SmoothAlmostComplexStructure
 
@@ -486,7 +499,7 @@ theorem mfderiv_translation_prodFamily_iff (c : ℝ × ℝ) (g : M ≃ₘ⟮I', 
         mfderiv I' I' g p.2 (K p w) = K (p.1 + c, g p.2) (mfderiv I' I' g p.2 w) := by
   have hf : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (fun q ↦ q + c) p.1 :=
     (differentiableAt_id.add_const c).mdifferentiableAt
-  rw [mfderiv_prodMap_prodFamily_iff _ _ _ _ hf (g.mdifferentiable (by simp) p.2)]
+  rw [mfderiv_prodMap_prodFamily_iff _ _ _ K hK _ hf (g.mdifferentiable (by simp) p.2)]
   have hhorizontal : ∀ u : TangentSpace 𝓘(ℝ, ℝ × ℝ) p.1,
       mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (fun q ↦ q + c) p.1
           ((AlmostComplexStructure.product ℝ).constSmooth p.1 u) =

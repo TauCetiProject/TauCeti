@@ -60,6 +60,8 @@ the plane in `ℚ³` orthogonal to `(1, 2, 2)` has absolute height `3`, the Eucl
 * `Submodule.relativeSubspaceArakelovHeight_euclideanDual` and
   `Submodule.subspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot product
   has the height of `U`, with their logarithmic forms.
+* `Matrix.subspaceHeight_ker_mulVecLin`: Hodge duality for matrices, equating the absolute
+  Euclidean height of `ker A` with that of the row space of `A`.
 * `Submodule.finite_subspaceHeight_le`, `Submodule.instNorthcottSubspaceHeight` and
   `Submodule.instNorthcottSubspaceLogHeight`: Northcott's theorem for the absolute height.
 
@@ -221,11 +223,13 @@ theorem relativeSubspaceArakelovLogHeight_top :
     relativeSubspaceArakelovLogHeight (⊤ : Submodule K (ι → K)) = 0 := by
   simp [relativeSubspaceArakelovLogHeight_eq_log_relativeSubspaceArakelovHeight]
 
-/-- The relative Arakelov height of the line spanned by a nonzero vector is the Arakelov height of
+/-- The relative Arakelov height of the line spanned by a vector is the Arakelov height of
 the vector. -/
 @[simp]
-theorem relativeSubspaceArakelovHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem relativeSubspaceArakelovHeight_span_singleton (x : ι → K) :
     relativeSubspaceArakelovHeight (K ∙ x) = arakelovMulHeight x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
   have h := relativeSubspaceArakelovHeight_span_range (linearIndependent_unique_iff.2 hx :
     LinearIndependent K ![x])
   rw [Matrix.range_cons, Matrix.range_empty, union_empty] at h
@@ -234,13 +238,13 @@ theorem relativeSubspaceArakelovHeight_span_singleton {x : ι → K} (hx : x ≠
   ext i
   simp
 
-/-- The relative logarithmic Arakelov height of the line spanned by a nonzero vector is the
-logarithmic Arakelov height of the vector. -/
+/-- The relative logarithmic Arakelov height of the line spanned by a vector is the logarithmic
+Arakelov height of the vector. -/
 @[simp]
-theorem relativeSubspaceArakelovLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem relativeSubspaceArakelovLogHeight_span_singleton (x : ι → K) :
     relativeSubspaceArakelovLogHeight (K ∙ x) = arakelovLogHeight x := by
   rw [relativeSubspaceArakelovLogHeight_eq_log_relativeSubspaceArakelovHeight,
-    relativeSubspaceArakelovHeight_span_singleton hx, arakelovLogHeight_eq_log_arakelovMulHeight]
+    relativeSubspaceArakelovHeight_span_singleton, arakelovLogHeight_eq_log_arakelovMulHeight]
 
 /-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
 product has the relative Arakelov height of `U`. -/
@@ -252,7 +256,7 @@ theorem relativeSubspaceArakelovHeight_euclideanDual [Fintype ι] :
   obtain ⟨c, hc, h⟩ :=
     exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
     b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
-    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+    fun i j ↦ mem_euclideanDual.1 (b' j).property _ (b i).property
   rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b',
     relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b,
     arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
@@ -370,13 +374,15 @@ of the vector. -/
 theorem subspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     subspaceHeight (K ∙ x) = height2 x := by
   have h := arakelovMulHeight_eq_height2 x
-  rwa [ite_eq_right hx, one_div, ← relativeSubspaceArakelovHeight_span_singleton hx] at h
+  rwa [ite_eq_right hx, one_div, ← relativeSubspaceArakelovHeight_span_singleton] at h
 
-/-- The absolute logarithmic height of the line spanned by a nonzero vector is the logarithm of
-the absolute Euclidean height of the vector. -/
+/-- The absolute logarithmic height of the line spanned by a vector is the logarithm of the
+absolute Euclidean height of the vector. -/
 @[simp]
-theorem subspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem subspaceLogHeight_span_singleton (x : ι → K) :
     subspaceLogHeight (K ∙ x) = Real.log (height2 x) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
   rw [subspaceLogHeight, subspaceHeight_span_singleton hx]
 
 /-- **Duality of heights**, Evertse–Ferretti (6.13). The orthogonal complement of a subspace `U` of
@@ -454,6 +460,25 @@ instance instNorthcottSubspaceLogHeight : Northcott (subspaceLogHeight (ι := ι
     bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
 end Submodule
+
+namespace Matrix
+
+open Submodule
+
+variable {m ι K : Type*} [LinearOrder ι] [Fintype ι] [Field K] [NumberField K]
+
+/-- **Hodge duality for matrix kernels.** The absolute Euclidean height of `ker A` equals the
+absolute Euclidean height of the row space of `A`, without any rank assumption on `A`. -/
+theorem subspaceHeight_ker_mulVecLin (A : Matrix m ι K) :
+    (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (Set.range A.row)).subspaceHeight := by
+  rw [← subspaceHeight_euclideanDual (span K (Set.range A.row))]
+  congr 1
+  ext x
+  rw [LinearMap.mem_ker, mulVecLin_apply, mem_euclideanDual_span]
+  simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+  simp only [funext_iff, mulVec_apply, Pi.zero_apply]
+
+end Matrix
 
 /-! Over `ℚ` there are finitely many subspaces of bounded relative logarithmic Arakelov height. -/
 

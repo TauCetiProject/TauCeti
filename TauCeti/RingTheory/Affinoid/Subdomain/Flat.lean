@@ -40,6 +40,8 @@ completed and algebraic tensor products is used.
 * `TauCeti.IsAffinoidSubdomainMap.flat`: the restriction map of an affinoid subdomain is flat.
 * `TauCeti.IsAffinoidSubdomainMap.faithfullyFlat_pi`: a finite affinoid cover gives a faithfully
   flat map into the product of the coordinate algebras.
+* `TauCeti.IsAffinoidSubdomainMap.prod_injective`: two covering subdomains jointly detect
+  elements of the ambient algebra.
 
 ## References
 
@@ -94,6 +96,37 @@ theorem faithfullyFlat_pi {ι : Type*} [Finite ι] {B : ι → Type u} [∀ i, C
   RingHom.FaithfullyFlat.pi_of_exists_map_ne_top (fun i ↦ (h i).flat hA) fun M hM ↦
     let ⟨i, hi⟩ := hcover ⟨M, hM⟩
     ⟨i, ((h i).isMaximal_map hA hi).ne_top⟩
+
+/-- Two affinoid subdomains covering the classical spectrum jointly detect elements of the
+ambient algebra, including nilpotents. -/
+theorem prod_injective {B C : Type u} [CommRing B] [CommRing C] [Algebra K B] [Algebra K C]
+    {φ : A →ₐ[K] B} {ψ : A →ₐ[K] C} {U V : Set (MaximalSpectrum A)}
+    (hφ : IsAffinoidSubdomainMap φ U) (hψ : IsAffinoidSubdomainMap ψ V)
+    (hA : IsAffinoidAlgebra K A) (hcover : ∀ x : MaximalSpectrum A, x ∈ U ∨ x ∈ V) :
+    Function.Injective (φ.prod ψ) := by
+  let D : Fin 2 → Type u := ![B, C]
+  let : ∀ i, CommRing (D i) := Fin.cons ‹CommRing B› (Fin.cons ‹CommRing C› (fun i ↦ nomatch i))
+  let : ∀ i, Algebra K (D i) := Fin.cons ‹Algebra K B› (Fin.cons ‹Algebra K C› (fun i ↦ nomatch i))
+  let χ : ∀ i, A →ₐ[K] D i := Fin.cons φ (Fin.cons ψ (fun i ↦ nomatch i))
+  have hχ : ∀ i, IsAffinoidSubdomainMap (χ i) (![U, V] i) :=
+    Fin.cons hφ (Fin.cons hψ (fun i ↦ nomatch i))
+  have hD : ∀ x : MaximalSpectrum A, ∃ i, x ∈ ![U, V] i := by
+    intro x
+    rcases hcover x with hx | hx
+    · exact ⟨0, hx⟩
+    · exact ⟨1, hx⟩
+  have hinj := (faithfullyFlat_pi hχ hA hD).injective
+  intro a b hab
+  apply hinj
+  apply (piFinTwoEquiv D).injective
+  have hprod (x : A) :
+      piFinTwoEquiv D ((RingHom.pi fun i ↦ (χ i).toRingHom) x) = (φ.prod ψ) x := by
+    simp only [piFinTwoEquiv_apply, RingHom.pi_apply, AlgHom.prod_apply]
+    -- Naive `Fin.cons_zero`/`Fin.cons_one` rewriting disrupts the dependent `D i` carriers.
+    -- Here `rfl` reduces `Fin.cons` at literal indices `0` and `1`, including the
+    -- corresponding `CommRing` and `Algebra` instance families.
+    rfl
+  exact (hprod a).trans (hab.trans (hprod b).symm)
 
 end IsAffinoidSubdomainMap
 

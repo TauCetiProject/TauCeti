@@ -178,7 +178,7 @@ theorem quaternionClass_comm (a b : Kˣ) : quaternionClass a b = quaternionClass
 theorem quaternionClass_mul_sq_right (a b c : Kˣ) :
     quaternionClass a (b * c ^ 2) = quaternionClass a b := by
   rw [mul_comm b (c ^ 2)]
-  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) (b : K) c)
+  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) 0 (b : K) c)
 
 /-- The quaternion symbol is invariant under multiplying its first argument by a square. -/
 theorem quaternionClass_mul_sq_left (a b c : Kˣ) :

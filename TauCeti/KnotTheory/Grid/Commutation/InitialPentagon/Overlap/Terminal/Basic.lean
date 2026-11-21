@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Decomposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Common-terminal-side recuts of a rectangle followed by an initial-side pentagon
@@ -355,12 +356,11 @@ private theorem initialPentagonTerminalOverlapPartner_injective :
   have hD := G.initialPentagonTerminalOverlapPartner_isRecut C D
   have hE := G.initialPentagonTerminalOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨-, honeD, hfD, hsD⟩ := G.initialPentagonTerminalOverlapSource_data C D.val D.property
-  obtain ⟨-, honeE, hfE, hsE⟩ := G.initialPentagonTerminalOverlapSource_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  obtain ⟨-, _, hfD, hsD⟩ := G.initialPentagonTerminalOverlapSource_data C D.val D.property
+  obtain ⟨-, _, hfE, hsE⟩ := G.initialPentagonTerminalOverlapSource_data C E.val E.property
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -455,13 +455,10 @@ theorem add_sum_rectangleInitialPentagonWeight_eq_add_sum_iff_sdiff_terminalOver
         B + ∑ E ∈ G.initialPentagonRectangleDecompositions C x z \
             G.initialPentagonTerminalOverlapPartners C x z,
           G.initialPentagonRectangleWeight C R E := by
-  rw [← Finset.sum_sdiff (G.initialPentagonTerminalOverlapSources_subset C)
-      (f := G.rectangleInitialPentagonWeight C R),
-    ← Finset.sum_sdiff (G.initialPentagonTerminalOverlapPartners_subset C)
-      (f := G.initialPentagonRectangleWeight C R),
-    G.sum_rectangleInitialPentagonWeight_terminalOverlapSources_eq_sum_partners C x z R,
-    ← add_assoc, ← add_assoc]
-  exact add_right_cancel_iff
+  exact Finset.add_sum_eq_add_sum_iff_sdiff
+    (G.initialPentagonTerminalOverlapSources_subset C)
+    (G.initialPentagonTerminalOverlapPartners_subset C)
+    (G.sum_rectangleInitialPentagonWeight_terminalOverlapSources_eq_sum_partners C x z R)
 
 end GridDiagram
 

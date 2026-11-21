@@ -71,6 +71,26 @@ section Coefficient
 
 variable (R : Type*) [CommSemiring R]
 
+/-- A rectangle counted by the `X`-marking homotopy of the southeast `X`-marking of the new block,
+from the `X`-marking state of the stabilization to a state with the center inserted, forces the
+remaining state to be the `X`-marking state of `G`. -/
+private theorem eq_of_mem_XHomotopyRectangles_stabilizeX_X {x : GridState n}
+    {r : GridRectangleBetween (G.stabilizeX s.castSucc (G.X s).castSucc s).X
+      (x.insertPoint s.succ (G.X s).succ)}
+    (hr : r ∈ (G.stabilizeX s.castSucc (G.X s).castSucc s).XHomotopyRectangles s.succ
+      (G.stabilizeX s.castSucc (G.X s).castSucc s).X (x.insertPoint s.succ (G.X s).succ)) :
+    x = G.X := by
+  have hl := (G.stabilizeX s.castSucc (G.X s).castSucc s).left_eq_of_mem_XHomotopyRectangles_X hr
+  -- The terminal side is the column `s.castSucc` where `G'.X` has the row of the center.
+  have hright : r.right = s.castSucc := by
+    refine (G.stabilizeX s.castSucc (G.X s).castSucc s).X.toPerm.injective ?_
+    have h := r.map_left
+    rw [hl, GridState.insertPoint_apply_newColumn] at h
+    exact h.symm.trans (G.stabilizeX_X_castSucc s).symm
+  have ht := r.target_eq_swapColumns
+  rw [hl, hright, stabilizeX_X_swapColumns] at ht
+  exact GridState.insertPoint_injective _ _ ht
+
 /-- **The component `H_I^N` at the `X`-marking state of a stabilization.** The `X`-marking homotopy
 of the southeast `X`-marking of the new block has coefficient `1` from the `X`-marking state of
 the stabilization to the `X`-marking state of `G` with the center `(s.succ, (G.X s).succ)` of the
@@ -123,17 +143,8 @@ theorem XHomotopyCoefficient_stabilizeX_X_insertPoint (x : GridState n) :
     obtain ⟨h1, h2⟩ := (hcov p).mp hp
     rw [G'.mem_OSet, h2, hG', stabilizeX_O, stabilizeX_O_eq_castSucc_iff] at hO
     exact Grid.right_notMem_cIco _ _ (hO ▸ h1)
-  · refine Finset.sum_eq_zero fun r hr => absurd ?_ hx
-    have hl := G'.left_eq_of_mem_XHomotopyRectangles_X hr
-    -- The terminal side is the column `s.castSucc` where `G'.X` has the row of the center.
-    have hright : r.right = s.castSucc := by
-      refine G'.X.toPerm.injective ?_
-      have h := r.map_left
-      rw [hl, GridState.insertPoint_apply_newColumn] at h
-      exact h.symm.trans (G.stabilizeX_X_castSucc s).symm
-    have ht := r.target_eq_swapColumns
-    rw [hl, hright, hG', stabilizeX_X_swapColumns] at ht
-    exact GridState.insertPoint_injective _ _ ht
+  · exact Finset.sum_eq_zero fun r hr =>
+      absurd (eq_of_mem_XHomotopyRectangles_stabilizeX_X G s hr) hx
 
 /-- **`H_I^N` sends the `X`-marking state of the stabilization to that of `G`.** -/
 theorem stabilizeXOffCenterToCenter_single_X :

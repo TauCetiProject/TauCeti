@@ -59,10 +59,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ConnectedSpace M] [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-omit [I.Boundaryless] [CompactSpace M] [ConnectedSpace M] [MeasurableSpace M] [BorelSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+omit [I.Boundaryless] [CompactSpace M] [ConnectedSpace M] [MeasurableSpace M] [BorelSpace M] in
 /-- Dividing the conformal factor equation by its positive unknown isolates the strictly
 increasing power `u ^ (pₙ - 2)`. -/
 private theorem conformalLaplacian_eq_div {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
@@ -88,10 +86,8 @@ private theorem exists_pos_eq_const_of_conformalLaplacian_eq (hn : 2 < finrank �
     (hc : c ≤ 0) (hScal : ∀ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = c)
     (heq : ∀ x, conformalLaplacian I u x = d * u x ^ (criticalExponent (finrank ℝ E) - 1)) :
     ∃ t > 0, ∀ x, u x = t := by
-  obtain ⟨a, -, ha⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty hu.continuous.continuousOn
-  obtain ⟨b, -, hb⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hu.continuous.continuousOn
-  have hΔa := laplaceBeltrami_nonneg_of_isLocalMin hu.contMDiffAt (ha.isLocalMin Filter.univ_mem)
-  have hΔb := laplaceBeltrami_nonpos_of_isLocalMax hu.contMDiffAt (hb.isLocalMax Filter.univ_mem)
+  obtain ⟨a, ha, hΔa⟩ := exists_forall_le_and_laplaceBeltrami_nonneg hu
+  obtain ⟨b, hb, hΔb⟩ := exists_forall_ge_and_laplaceBeltrami_nonpos hu
   have hA := conformalCoefficient_pos hn
   have hmin : d * u a ^ (criticalExponent (finrank ℝ E) - 2) ≤ c := by
     rw [← conformalLaplacian_eq_div hu_pos hScal heq a]
@@ -119,7 +115,7 @@ private theorem exists_pos_eq_const_of_conformalLaplacian_eq (hn : 2 < finrank �
     have hpow : u b ^ (criticalExponent (finrank ℝ E) - 2) ≤
         u a ^ (criticalExponent (finrank ℝ E) - 2) := by nlinarith
     have hba := (Real.rpow_le_rpow_iff (hu_pos b).le (hu_pos a).le hp).mp hpow
-    exact fun x ↦ le_antisymm ((hb (Set.mem_univ x)).trans hba) (ha (Set.mem_univ x))
+    exact fun x ↦ le_antisymm ((hb x).trans hba) (ha x)
 
 end TauCeti.Yamabe
 
@@ -146,8 +142,6 @@ theorem exists_rescale_const_eq_of_mem_conformalClass_of_scalarCurvature_nonpos
   obtain ⟨u, hu, hu_pos, rfl⟩ := (mem_conformalClass_iff_exists_rpow hp).mp hconf
   borelize M
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
   obtain ⟨t, ht, hut⟩ := exists_pos_eq_const_of_conformalLaplacian_eq hn
     (hu.of_le (by simp)) hu_pos hc
     (fun x ↦ (g.scalarCurvature_def x).symm.trans (hg x))

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
-# Measurability of functions that are lower semicontinuous off a countable set
+# Measurability and measure extensionality on ordered Borel spaces
 
 A lower semicontinuous function into a second-countable linear order is Borel measurable
 (`LowerSemicontinuous.measurable`). The same holds when lower semicontinuity fails at countably
@@ -23,11 +23,14 @@ level set is null, hence off a countable set.
 
 * `TauCeti.measurable_of_countable_not_lowerSemicontinuousAt`: a function that is lower
   semicontinuous at all but countably many points is measurable.
+* `MeasureTheory.Measure.ext_of_Iic'`: measures finite on initial intervals are determined by
+  their masses on those intervals, without a finite-total-mass assumption.
 -/
 
 public section
 
 open Set Topology
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -49,3 +52,29 @@ theorem measurable_of_countable_not_lowerSemicontinuousAt {f : δ → α}
   exact isOpen_interior.measurableSet.union (hf.mono inter_subset_right).measurableSet
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- Two measures finite on initial intervals are equal if they agree on all initial intervals.
+Unlike `Measure.ext_of_Iic`, this does not require finite total mass. -/
+theorem ext_of_Iic' {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [SecondCountableTopology α] [LinearOrder α] [OrderTopology α] [BorelSpace α]
+    (μ ν : Measure α) (hμ : ∀ a, μ (Iic a) ≠ ∞)
+    (h : ∀ a, μ (Iic a) = ν (Iic a)) : μ = ν := by
+  obtain ⟨s, hs, hd, -, htop⟩ := exists_countable_dense_bot_top α
+  apply ext_of_generateFrom_of_cover_subset
+    (S := range (Iic : α → Set α)) (T := Iic '' s)
+    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic (α := α))) isPiSystem_Iic
+  · rintro _ ⟨a, -, rfl⟩
+    exact mem_range_self _
+  · exact hs.image _
+  · apply sUnion_eq_univ_iff.2
+    intro x
+    obtain ⟨a, ha, hxa⟩ := hd.exists_ge' htop x
+    exact ⟨Iic a, mem_image_of_mem _ ha, hxa⟩
+  · rintro _ ⟨a, -, rfl⟩
+    exact hμ a
+  · rintro _ ⟨a, rfl⟩
+    exact h a
+
+end MeasureTheory.Measure

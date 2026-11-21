@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Lagrange
+public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.CharacterTable.Kernel
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
 public import TauCeti.RepresentationTheory.Tensor.Power
+import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.CategoryTheory.Action.Restriction
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Faithful tensor generation
@@ -25,11 +29,34 @@ For an irreducible source such a map is injective, so this is occurrence in an a
 power, not merely membership in a span of characters. The zero-fold tensor power is included;
 no positivity or irreducibility assumption on the faithful representation is needed.
 
+The multiplicities `mₙ = dim Hom_G(X, V^⊗n)` are collected in the formal power series
+`FDRep.tensorMultiplicitySeries V X = ∑ₙ mₙ zⁿ`. Since `mₙ = |G|⁻¹ ∑_g χ_V(g)ⁿ χ_X(g⁻¹)`, it is the
+finite sum of geometric series `|G|⁻¹ ∑_g χ_X(g⁻¹) (1 - χ_V(g) z)⁻¹`
+(`FDRep.tensorMultiplicitySeries_eq_characterFractions`). Consequently it is a rational function:
+multiplied by `Q(z) = ∏_a (1 - a z)`, the product over the distinct character values `a`, it
+becomes a polynomial of degree less than the number of values, and the multiplicities satisfy the
+linear recurrence whose characteristic polynomial is `∏_a (T - a)`. These identities hold over
+every field in which `|G|` is invertible, with the multiplicities read in that field. Grouping the
+group elements by character value writes the numerator as
+`N_X(z) = |G|⁻¹ ∑_a b_a ∏_{b ≠ a} (1 - b z)` with `b_a = ∑_{χ_V(g) = a} χ_X(g⁻¹)`
+(`FDRep.tensorMultiplicityNumerator_eq_sum_characterValues`); its coefficients are the
+convolutions of those of `Q` with the multiplicities. Over any field and for any monoid, the series
+is unchanged by isomorphisms of representations and by restriction along surjective homomorphisms.
+
+For a faithful representation of positive dimension `d`, interpolating the identity fibre after
+multiplying by `Tᴮ` shows that every window `[B, B + r)` of `r` consecutive exponents, `r` the
+number of character values, contains a tensor power into which a given nonzero representation
+maps nontrivially (`FDRep.exists_mem_Ico_pos_finrank_hom_tensorPower`). This gives the sharp
+positive-power bound `1 ≤ n ≤ r` and occurrence in arbitrarily large tensor powers, so that the
+tensor-multiplicity series has infinitely many nonzero coefficients. In the grouped numerator only
+the value `d = χ_V(1)` survives at `z = 1/d`, where `Q` vanishes; so the series is not a polynomial
+(`FDRep.tensorMultiplicitySeries_ne_coe`).
+
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Theorem 4.3.
 * B. Steinberg, *On the Burnside–Brauer–Steinberg theorem*, arXiv:1409.7632,
-  Introduction.
+  Introduction and Remark 1.
 
 The construction uses Mathlib's `Lagrange.basis` and the finite-order trace criterion
 `Representation.char_eq_finrank_iff`.
@@ -41,11 +68,15 @@ open CategoryTheory
 
 namespace FDRep
 
-universe u v
+universe u v w
 
 section Values
 
-variable {k : Type u} {G : Type v} [Field k] [Monoid G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+section
+
+variable [Finite G]
 
 /-- The distinct values of the character, without a choice of conjugacy representatives. -/
 noncomputable def characterValues (V : FDRep k G) : Finset k :=
@@ -56,11 +87,15 @@ theorem mem_characterValues (V : FDRep k G) (z : k) :
     z ∈ V.characterValues ↔ ∃ g, V.character g = z := by
   simp [characterValues]
 
+end
+
 /-- Character values are the image of the character on all group elements. -/
 theorem characterValues_eq_image [Fintype G] [DecidableEq k] (V : FDRep k G) :
     V.characterValues = Finset.univ.image V.character := by
   ext z
   simp only [mem_characterValues, Finset.mem_image, Finset.mem_univ, true_and]
+
+variable [Finite G]
 
 /-- The number of distinct values of a character. -/
 noncomputable def characterValueCount (V : FDRep k G) : ℕ :=
@@ -121,6 +156,44 @@ theorem eval_characterInterpolator [DecidableEq k] (V : FDRep k G) (g : G) :
     exact Lagrange.eval_basis_of_ne (v := id) (Ne.symm h)
       ((mem_characterValues _ _).mpr ⟨g, rfl⟩)
 
+/-- The polynomial `Q(z) = ∏_a (1 - a z)` over the distinct character values `a`. It clears the
+denominators of the tensor-multiplicity series; a zero character value contributes the factor
+`1`. -/
+noncomputable def tensorMultiplicityDenominator (V : FDRep k G) : Polynomial k :=
+  ∏ a ∈ V.characterValues, (1 - Polynomial.C a * Polynomial.X)
+
+theorem tensorMultiplicityDenominator_def (V : FDRep k G) :
+    V.tensorMultiplicityDenominator =
+      ∏ a ∈ V.characterValues, (1 - Polynomial.C a * Polynomial.X) :=
+  (rfl)
+
+/-- The denominator has constant term one. -/
+@[simp]
+theorem coeff_zero_tensorMultiplicityDenominator (V : FDRep k G) :
+    V.tensorMultiplicityDenominator.coeff 0 = 1 := by
+  simp [tensorMultiplicityDenominator_def, Polynomial.coeff_zero_eq_eval_zero,
+    Polynomial.eval_prod]
+
+/-- The denominator has degree at most the number of character values. -/
+theorem natDegree_tensorMultiplicityDenominator_le (V : FDRep k G) :
+    V.tensorMultiplicityDenominator.natDegree ≤ V.characterValueCount :=
+  (Polynomial.natDegree_prod_le _ _).trans <| (Finset.sum_le_card_nsmul _ _ 1 fun a _ ↦
+    Polynomial.natDegree_one_sub_C_mul_X_le a).trans (by simp)
+
+/-- Isomorphic representations have the same denominator. -/
+theorem tensorMultiplicityDenominator_eq_of_iso (V : FDRep k G) {W : FDRep k G} (e : V ≅ W) :
+    V.tensorMultiplicityDenominator = W.tensorMultiplicityDenominator := by
+  rw [tensorMultiplicityDenominator_def, tensorMultiplicityDenominator_def,
+    characterValues_eq_of_iso V e]
+
+/-- The denominator vanishes at the reciprocal of the dimension, which is the inverse of the
+character value at the identity. -/
+theorem eval_inv_finrank_tensorMultiplicityDenominator (V : FDRep k G)
+    (hd : (Module.finrank k V : k) ≠ 0) :
+    V.tensorMultiplicityDenominator.eval (Module.finrank k V : k)⁻¹ = 0 := by
+  rw [tensorMultiplicityDenominator_def, Polynomial.eval_prod]
+  exact Finset.prod_eq_zero ((mem_characterValues _ _).mpr ⟨1, char_one V⟩) (by simp [hd])
+
 end Values
 
 section GroupValues
@@ -156,9 +229,241 @@ theorem characterValueCount_le_card_conjClasses (V : FDRep k G) :
 
 end GroupValues
 
+section MultiplicitySeries
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+/-- The generating series `∑ₙ dim Hom_G(X, V^⊗n) zⁿ` of the multiplicities of `X` in the tensor
+powers of `V`, with the dimensions read in `k`. -/
+noncomputable def tensorMultiplicitySeries (V X : FDRep k G) : PowerSeries k :=
+  PowerSeries.mk fun n ↦ (Module.finrank k (X ⟶ V.tensorPower n) : k)
+
+@[simp]
+theorem coeff_tensorMultiplicitySeries (V X : FDRep k G) (n : ℕ) :
+    PowerSeries.coeff n (V.tensorMultiplicitySeries X) =
+      (Module.finrank k (X ⟶ V.tensorPower n) : k) :=
+  PowerSeries.coeff_mk _ _
+
+/-- The tensor-multiplicity series depends on `V` and `X` only up to isomorphism. -/
+theorem tensorMultiplicitySeries_congr {V V' X X' : FDRep k G} (e : V ≅ V') (f : X ≅ X') :
+    V.tensorMultiplicitySeries X = V'.tensorMultiplicitySeries X' := by
+  ext n
+  rw [coeff_tensorMultiplicitySeries, coeff_tensorMultiplicitySeries, tensorPower_def,
+    tensorPower_def]
+  have h (g : G) : (PiTensorProduct.congr fun _ : Fin n ↦ isoToLinearEquiv e).toLinearMap ∘ₗ
+      Representation.tensorPower V.ρ n g =
+        Representation.tensorPower V'.ρ n g ∘ₗ
+          (PiTensorProduct.congr fun _ ↦ isoToLinearEquiv e).toLinearMap := by
+    ext m
+    simp [Iso.conj_ρ e g, LinearEquiv.conj_apply]
+  let eₙ : FDRep.of (Representation.tensorPower V.ρ n) ≅
+      FDRep.of (Representation.tensorPower V'.ρ n) :=
+    (PiTensorProduct.congr fun _ ↦ isoToLinearEquiv e).toFDRepIso fun g ↦
+      LinearMap.congr_fun (h g)
+  rw [(Linear.homCongr k f eₙ).finrank_eq]
+
+/-- **Invariance under restriction.** Restricting `V` and `X` along a surjective monoid
+homomorphism `φ : H →* G`, for instance an isomorphism of groups, does not change the
+tensor-multiplicity series. -/
+theorem tensorMultiplicitySeries_actionRes_of_surjective {H : Type w} [Monoid H] (φ : H →* G)
+    (hφ : Function.Surjective φ) (V X : FDRep k G) :
+    tensorMultiplicitySeries ((Action.res (FGModuleCat k) φ).obj V)
+        ((Action.res (FGModuleCat k) φ).obj X) = V.tensorMultiplicitySeries X := by
+  ext n
+  rw [coeff_tensorMultiplicitySeries, coeff_tensorMultiplicitySeries, tensorPower_def,
+    tensorPower_def]
+  -- The tensor power of the restriction is the restriction of the tensor power.
+  let eₙ : FDRep.of
+        (Representation.tensorPower (FDRep.ρ ((Action.res (FGModuleCat k) φ).obj V)) n) ≅
+      (Action.res (FGModuleCat k) φ).obj (FDRep.of (Representation.tensorPower V.ρ n)) :=
+    LinearEquiv.toFDRepIso (LinearEquiv.refl k _) fun h x ↦
+      LinearMap.congr_fun ((Representation.tensorPower_apply
+          (FDRep.ρ ((Action.res (FGModuleCat k) φ).obj V)) n h).trans
+        (Representation.tensorPower_apply V.ρ n (φ h)).symm) x
+  rw [(Linear.homCongr k (Iso.refl _) eₙ).finrank_eq,
+    MonoidHom.finrank_hom_actionRes_of_surjective φ hφ]
+
+end MultiplicitySeries
+
+section CharacterFractions
+
+variable {k : Type u} {G : Type v} [Field k] [Group G]
+
+/-- The numerator `N_X(z) = |G|⁻¹ ∑_g χ_X(g⁻¹) ∏_{a ≠ χ_V(g)} (1 - a z)` of the
+tensor-multiplicity series, the products running over the distinct character values of `V`. -/
+noncomputable def tensorMultiplicityNumerator [Fintype G] (V X : FDRep k G) : Polynomial k := by
+  classical
+  exact Polynomial.C (Nat.card G : k)⁻¹ * ∑ g : G, Polynomial.C (X.character g⁻¹) *
+    ∏ a ∈ V.characterValues.erase (V.character g), (1 - Polynomial.C a * Polynomial.X)
+
+theorem tensorMultiplicityNumerator_def [Fintype G] [DecidableEq k] (V X : FDRep k G) :
+    V.tensorMultiplicityNumerator X =
+      Polynomial.C (Nat.card G : k)⁻¹ * ∑ g : G, Polynomial.C (X.character g⁻¹) *
+        ∏ a ∈ V.characterValues.erase (V.character g), (1 - Polynomial.C a * Polynomial.X) := by
+  rw [tensorMultiplicityNumerator]
+  congr!
+
+/-- The numerator has degree less than the number of character values. -/
+theorem natDegree_tensorMultiplicityNumerator_lt [Fintype G] (V X : FDRep k G) :
+    (V.tensorMultiplicityNumerator X).natDegree < V.characterValueCount := by
+  classical
+  rw [tensorMultiplicityNumerator_def]
+  refine (Nat.le_sub_one_iff_lt V.characterValueCount_pos).mp ?_
+  refine (Polynomial.natDegree_C_mul_le _ _).trans <|
+    Polynomial.natDegree_sum_le_of_forall_le _ _ fun g _ ↦ ?_
+  refine (Polynomial.natDegree_C_mul_le _ _).trans <| (Polynomial.natDegree_prod_le _ _).trans <|
+    (Finset.sum_le_card_nsmul _ _ 1 fun a _ ↦ Polynomial.natDegree_one_sub_C_mul_X_le a).trans ?_
+  rw [smul_eq_mul, mul_one, Finset.card_erase_of_mem ((mem_characterValues _ _).mpr ⟨g, rfl⟩),
+    card_characterValues]
+
+/-- Isomorphic representations have the same numerator. -/
+theorem tensorMultiplicityNumerator_congr [Fintype G] {V V' X X' : FDRep k G} (e : V ≅ V')
+    (f : X ≅ X') : V.tensorMultiplicityNumerator X = V'.tensorMultiplicityNumerator X' := by
+  classical
+  simp only [tensorMultiplicityNumerator_def, char_iso e, char_iso f,
+    characterValues_eq_of_iso V e]
+
+/-- The weight `b_a = ∑_{χ_V(g) = a} χ_X(g⁻¹)` with which a character value `a` of `V` enters the
+tensor-multiplicity numerator of `X`: the sum of `χ_X(g⁻¹)` over the fibre of `χ_V` above `a`. -/
+noncomputable def characterFiberSum [Fintype G] (V X : FDRep k G) (a : k) : k := by
+  classical
+  exact ∑ g with V.character g = a, X.character g⁻¹
+
+theorem characterFiberSum_def [Fintype G] [DecidableEq k] (V X : FDRep k G) (a : k) :
+    V.characterFiberSum X a = ∑ g with V.character g = a, X.character g⁻¹ := by
+  rw [characterFiberSum]
+  congr!
+
+/-- **Grouping by character values.** A sum over `G` of terms depending on `g` only through
+`χ_V(g)`, weighted by `χ_X(g⁻¹)`, is the sum over the character values `a` of `V` weighted by the
+fibre sums `b_a`. -/
+theorem sum_characterFiberSum_smul [Fintype G] {M : Type*} [AddCommMonoid M] [Module k M]
+    (V X : FDRep k G) (φ : k → M) :
+    ∑ a ∈ V.characterValues, V.characterFiberSum X a • φ a =
+      ∑ g, X.character g⁻¹ • φ (V.character g) := by
+  classical
+  simp_rw [characterFiberSum_def, Finset.sum_smul]
+  rw [← Finset.sum_fiberwise_of_maps_to (g := V.character) (t := V.characterValues)
+    fun g _ ↦ (mem_characterValues _ _).mpr ⟨g, rfl⟩]
+  refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun g hg ↦ ?_
+  rw [(Finset.mem_filter.mp hg).2]
+
+/-- **The grouped numerator.** `N_X(z) = |G|⁻¹ ∑_a b_a ∏_{b ≠ a} (1 - b z)`, the sum and the
+products running over the distinct character values of `V`, with the weights
+`b_a = ∑_{χ_V(g) = a} χ_X(g⁻¹)`. -/
+theorem tensorMultiplicityNumerator_eq_sum_characterValues [Fintype G] [DecidableEq k]
+    (V X : FDRep k G) :
+    V.tensorMultiplicityNumerator X = Polynomial.C (Nat.card G : k)⁻¹ *
+      ∑ a ∈ V.characterValues, Polynomial.C (V.characterFiberSum X a) *
+        ∏ b ∈ V.characterValues.erase a, (1 - Polynomial.C b * Polynomial.X) := by
+  have h := sum_characterFiberSum_smul V X
+    fun a ↦ ∏ b ∈ V.characterValues.erase a, (1 - Polynomial.C b * Polynomial.X)
+  simp only [Polynomial.smul_eq_C_mul] at h
+  rw [tensorMultiplicityNumerator_def, h]
+
+variable [Fintype G] [Invertible (Nat.card G : k)]
+
+/-- **Coefficient–pairing interchange.** Pairing `χ_Vⁿ · P(χ_V)` against `χ_X` computes the
+combination `∑ⱼ P.coeff j · dim Hom_G(X, V^⊗(n + j))` of tensor multiplicities, for every
+polynomial `P`. -/
+theorem sum_coeff_mul_finrank_hom_tensorPower_add (V X : FDRep k G) (P : Polynomial k) (n : ℕ) :
+    ∑ j ∈ Finset.range (P.natDegree + 1),
+        P.coeff j * (Module.finrank k (X ⟶ V.tensorPower (n + j)) : k) =
+      (Nat.card G : k)⁻¹ *
+        ∑ g : G, V.character g ^ n * P.eval (V.character g) * X.character g⁻¹ := by
+  simp_rw [← scalar_product_char_eq_finrank_equivariant, char_tensorPower,
+    Polynomial.eval_eq_sum_range, Finset.mul_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+/-- **The character-fraction identity.** The tensor-multiplicity series is
+`|G|⁻¹ ∑_g χ_X(g⁻¹) (1 - χ_V(g) z)⁻¹`, each factor inverted as a formal power series with
+constant coefficient one; the `n`-th coefficient is `|G|⁻¹ ∑_g χ_V(g)ⁿ χ_X(g⁻¹)`, with
+`χ_V(g)⁰ = 1` also when `χ_V(g) = 0`. -/
+theorem tensorMultiplicitySeries_eq_characterFractions (V X : FDRep k G) :
+    V.tensorMultiplicitySeries X =
+      PowerSeries.C (Nat.card G : k)⁻¹ * ∑ g : G, PowerSeries.C (X.character g⁻¹) *
+        (1 - PowerSeries.C (V.character g) * PowerSeries.X)⁻¹ := by
+  have hinv (a : k) : (1 - PowerSeries.C a * PowerSeries.X)⁻¹ = PowerSeries.mk (a ^ ·) :=
+    (PowerSeries.inv_eq_iff_mul_eq_one (by simp)).mpr
+      (TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one a)
+  ext n
+  rw [coeff_tensorMultiplicitySeries, ← scalar_product_char_eq_finrank_equivariant]
+  simp only [hinv, char_tensorPower, PowerSeries.coeff_C_mul, map_sum, PowerSeries.coeff_mk,
+    mul_comm (V.character _ ^ n)]
+
+/-- **Rationality of the tensor-multiplicity series.** `Q(z) F_X(z) = N_X(z)`. -/
+theorem tensorMultiplicityDenominator_mul_tensorMultiplicitySeries (V X : FDRep k G) :
+    (V.tensorMultiplicityDenominator : PowerSeries k) * V.tensorMultiplicitySeries X =
+      V.tensorMultiplicityNumerator X := by
+  classical
+  have hcoe (s : Finset k) :
+      ((∏ a ∈ s, (1 - Polynomial.C a * Polynomial.X) : Polynomial k) : PowerSeries k) =
+        ∏ a ∈ s, (1 - PowerSeries.C a * PowerSeries.X) := by
+    rw [← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
+    simp only [map_sub, map_one, map_mul, Polynomial.coeToPowerSeries.ringHom_apply,
+      Polynomial.coe_C, Polynomial.coe_X]
+  rw [tensorMultiplicitySeries_eq_characterFractions, tensorMultiplicityNumerator_def,
+    tensorMultiplicityDenominator_def, hcoe]
+  simp only [← Polynomial.coeToPowerSeries.ringHom_apply, map_mul, map_sum]
+  simp only [Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_C, hcoe]
+  rw [mul_left_comm, Finset.mul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  rw [mul_left_comm, ← Finset.mul_prod_erase _ _ ((mem_characterValues _ _).mpr ⟨g, rfl⟩),
+    mul_right_comm, PowerSeries.mul_inv_cancel _ (by simp), one_mul]
+
+/-- **The coefficients of the numerator.** The `n`-th coefficient of `N_X` is the convolution
+`∑_{i + j = n} Q_i m_j` of the coefficients of the denominator `Q` with the multiplicities
+`m_j = dim Hom_G(X, V^⊗j)`. -/
+theorem coeff_tensorMultiplicityNumerator (V X : FDRep k G) (n : ℕ) :
+    (V.tensorMultiplicityNumerator X).coeff n = ∑ p ∈ Finset.antidiagonal n,
+      V.tensorMultiplicityDenominator.coeff p.1 *
+        (Module.finrank k (X ⟶ V.tensorPower p.2) : k) := by
+  rw [← Polynomial.coeff_coe, ← tensorMultiplicityDenominator_mul_tensorMultiplicitySeries,
+    PowerSeries.coeff_mul]
+  simp only [Polynomial.coeff_coe, coeff_tensorMultiplicitySeries]
+
+/-- **The constant term of the numerator** is the multiplicity `dim Hom_G(X, V^⊗0)` of `X` in the
+zero-fold tensor power, the trivial representation. -/
+@[simp]
+theorem coeff_zero_tensorMultiplicityNumerator (V X : FDRep k G) :
+    (V.tensorMultiplicityNumerator X).coeff 0 =
+      (Module.finrank k (X ⟶ V.tensorPower 0) : k) := by
+  simp [coeff_tensorMultiplicityNumerator]
+
+end CharacterFractions
+
+section FiniteFractions
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [Invertible (Nat.card G : k)]
+
+/-- **The linear recurrence of tensor multiplicities.** If `∏_a (T - a) = ∑ⱼ cⱼ Tʲ`, the product
+running over the distinct character values of `V`, then `∑ⱼ cⱼ m_{n+j} = 0` for every `n`, where
+`mₙ = dim Hom_G(X, V^⊗n)`. -/
+theorem sum_coeff_nodal_mul_finrank_hom_tensorPower_add_eq_zero (V X : FDRep k G) (n : ℕ) :
+    ∑ j ∈ Finset.range (V.characterValueCount + 1),
+        (Lagrange.nodal V.characterValues id).coeff j *
+          (Module.finrank k (X ⟶ V.tensorPower (n + j)) : k) = 0 := by
+  let := Fintype.ofFinite G
+  have h := sum_coeff_mul_finrank_hom_tensorPower_add V X (Lagrange.nodal V.characterValues id) n
+  rw [Lagrange.natDegree_nodal, card_characterValues] at h
+  rw [h, Finset.sum_eq_zero fun g _ ↦ ?_, mul_zero]
+  rw [Lagrange.eval_nodal, Finset.prod_eq_zero ((mem_characterValues _ _).mpr ⟨g, rfl⟩)
+    (by simp), mul_zero, zero_mul]
+
+end FiniteFractions
+
 section Complex
 
-variable {G : Type v} [Group G] [Finite G]
+variable {G : Type v} [Group G]
+
+section
+
+variable [Finite G]
 
 /-- For a faithful complex representation the interpolator is the indicator of the identity. -/
 theorem eval_characterInterpolator_of_injective [DecidableEq G] (V : FDRep ℂ G)
@@ -170,6 +475,24 @@ theorem eval_characterInterpolator_of_injective [DecidableEq G] (V : FDRep ℂ G
     exact ⟨fun hg ↦ hV (hg.trans (map_one V.ρ).symm), fun hg ↦ by simp [hg]⟩
   simp only [eval_characterInterpolator, h]
 
+/-- Interpolating the identity fibre of a faithful character after multiplying by `Tⁿ`: if
+`dim Vⁿ ≠ 0`, some exponent in `[n, n + r)` carries a nonzero map from `X`. -/
+private theorem exists_lt_pos_finrank_hom_tensorPower_add (V X : FDRep ℂ G)
+    (hV : Function.Injective V.ρ) (hX : 0 < Module.finrank ℂ X) (n : ℕ)
+    (hn : (Module.finrank ℂ V : ℂ) ^ n ≠ 0) :
+    ∃ j < V.characterValueCount, 0 < Module.finrank ℂ (X ⟶ V.tensorPower (n + j)) := by
+  classical
+  let := Fintype.ofFinite G
+  by_contra! h
+  have key := sum_coeff_mul_finrank_hom_tensorPower_add V X V.characterInterpolator n
+  rw [natDegree_characterInterpolator, Nat.sub_add_cancel V.characterValueCount_pos,
+    Finset.sum_eq_zero fun j hj ↦ by
+      rw [Nat.eq_zero_of_le_zero (h j (Finset.mem_range.mp hj)), Nat.cast_zero, mul_zero]] at key
+  simp only [eval_characterInterpolator_of_injective V hV, mul_ite, mul_one, mul_zero, ite_mul,
+    zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ite_true, inv_one, char_one] at key
+  exact (mul_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
+    (mul_ne_zero hn (Nat.cast_ne_zero.mpr hX.ne'))) key.symm
+
 /-- **Burnside–Brauer faithful tensor generation.** Every nonzero finite-dimensional complex
 representation has a nonzero map into a tensor power of a faithful representation, with exponent
 strictly smaller than the number of its distinct character values. In particular every
@@ -177,28 +500,9 @@ irreducible occurs among these tensor powers. -/
 theorem exists_pos_finrank_hom_tensorPower (V X : FDRep ℂ G)
     (hV : Function.Injective V.ρ) (hX : 0 < Module.finrank ℂ X) :
     ∃ n < V.characterValueCount, 0 < Module.finrank ℂ (X ⟶ V.tensorPower n) := by
-  classical
-  let := Fintype.ofFinite G
-  let : Invertible (Nat.card G : ℂ) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr (Nat.card_pos.ne'))
-  by_contra! h
-  have hzero (n : ℕ) (hn : n < V.characterValueCount) :
-      ∑ g : G, V.character g ^ n * X.character g⁻¹ = 0 := by
-    have hm := scalar_product_char_eq_finrank_equivariant X (V.tensorPower n)
-    simp only [char_tensorPower, Nat.eq_zero_of_le_zero (h n hn), Nat.cast_zero,
-      mul_eq_zero, inv_eq_zero] at hm
-    exact hm.resolve_left (Invertible.ne_zero _)
-  have heval : ∑ g : G,
-      V.characterInterpolator.eval (V.character g) * X.character g⁻¹ = 0 := by
-    simp_rw [eval_characterInterpolator_eq_sum, Finset.sum_mul]
-    rw [Finset.sum_comm]
-    apply Finset.sum_eq_zero
-    intro n hn
-    simp_rw [mul_assoc, ← Finset.mul_sum]
-    rw [hzero n (Finset.mem_range.mp hn), mul_zero]
-  simp only [eval_characterInterpolator_of_injective V hV, ite_mul, one_mul, zero_mul,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true, inv_one, char_one] at heval
-  exact (Nat.cast_ne_zero.mpr hX.ne') heval
+  obtain ⟨j, hj, hm⟩ := exists_lt_pos_finrank_hom_tensorPower_add V X hV hX 0 (by simp)
+  rw [zero_add] at hm
+  exact ⟨j, hj, hm⟩
 
 /-- **Burnside–Brauer, conjugacy-class bound.** Every nonzero finite-dimensional complex
 representation has a nonzero map into a tensor power of a faithful representation, with exponent
@@ -218,6 +522,95 @@ theorem exists_mono_tensorPower (V X : FDRep ℂ G) [Simple X]
     ((simple_iff_isIrreducible X).mp inferInstance).finrank_pos
   obtain ⟨f, hf⟩ := Module.finrank_pos_iff_exists_ne_zero.mp hm
   exact ⟨n, hn, f, mono_of_ne_zero_from_simple hf⟩
+
+/-- **Tensor generation in every window.** For a faithful complex representation `V` of positive
+dimension, every nonzero `X` has a nonzero map into `V^⊗n` for some `n` in each window
+`[B, B + r)` of `r` consecutive exponents, where `r` is the number of character values of `V`. -/
+theorem exists_mem_Ico_pos_finrank_hom_tensorPower (V X : FDRep ℂ G)
+    (hV : Function.Injective V.ρ) (hd : 0 < Module.finrank ℂ V) (hX : 0 < Module.finrank ℂ X)
+    (B : ℕ) :
+    ∃ n ∈ Set.Ico B (B + V.characterValueCount), 0 < Module.finrank ℂ (X ⟶ V.tensorPower n) := by
+  obtain ⟨j, hj, hm⟩ := exists_lt_pos_finrank_hom_tensorPower_add V X hV hX B
+    (pow_ne_zero _ (Nat.cast_ne_zero.mpr hd.ne'))
+  exact ⟨B + j, ⟨Nat.le_add_right B j, Nat.add_lt_add_left hj B⟩, hm⟩
+
+/-- **The sharp positive-power bound.** For a faithful complex representation `V` of positive
+dimension, every nonzero `X` has a nonzero map into some positive tensor power `V^⊗n` with `n` at
+most the number of character values of `V`. Positivity of `dim V` is necessary: the zero
+representation of the trivial group is faithful, and all its positive tensor powers vanish. -/
+theorem exists_positive_tensorPower_le_valueCount (V X : FDRep ℂ G)
+    (hV : Function.Injective V.ρ) (hd : 0 < Module.finrank ℂ V) (hX : 0 < Module.finrank ℂ X) :
+    ∃ n, 0 < n ∧ n ≤ V.characterValueCount ∧ 0 < Module.finrank ℂ (X ⟶ V.tensorPower n) := by
+  obtain ⟨n, ⟨h₁, h₂⟩, hm⟩ := exists_mem_Ico_pos_finrank_hom_tensorPower V X hV hd hX 1
+  exact ⟨n, h₁, by omega, hm⟩
+
+/-- **Arbitrarily large tensor powers.** For a faithful complex representation `V` of positive
+dimension, every nonzero `X` has nonzero maps into arbitrarily large tensor powers of `V`, so the
+tensor-multiplicity series of `X` has infinitely many nonzero coefficients. -/
+theorem arbitrarily_large_tensorPowers (V X : FDRep ℂ G)
+    (hV : Function.Injective V.ρ) (hd : 0 < Module.finrank ℂ V) (hX : 0 < Module.finrank ℂ X)
+    (B : ℕ) :
+    ∃ n, B ≤ n ∧ 0 < Module.finrank ℂ (X ⟶ V.tensorPower n) := by
+  obtain ⟨n, ⟨h, -⟩, hm⟩ := exists_mem_Ico_pos_finrank_hom_tensorPower V X hV hd hX B
+  exact ⟨n, h, hm⟩
+
+end
+
+/-- For a faithful complex representation `V`, only the identity has character value `dim V`, so
+the weight of that value is `b_{dim V} = dim X`. -/
+theorem characterFiberSum_finrank_of_injective [Fintype G] (V X : FDRep ℂ G)
+    (hV : Function.Injective V.ρ) :
+    V.characterFiberSum X (Module.finrank ℂ V) = Module.finrank ℂ X := by
+  classical
+  have h (g : G) : V.character g = Module.finrank ℂ V ↔ g = 1 := by
+    rw [← char_one, ← V.mem_ker_iff_char_eq (isOfFinOrder_of_finite g), MonoidHom.mem_ker]
+    exact ⟨fun hg ↦ hV (hg.trans (map_one V.ρ).symm), fun hg ↦ by simp [hg]⟩
+  simp [characterFiberSum_def, h, Finset.sum_filter]
+
+/-- **The numerator at the reciprocal of the dimension.** For a faithful complex representation
+`V` of dimension `d`, only the value `a = d` contributes to the grouped numerator at `z = 1/d`, so
+`N_X(1/d) = (dim X / |G|) ∏_{a ≠ d} (1 - a/d)`, the product running over the other character
+values of `V`. -/
+theorem eval_inv_finrank_tensorMultiplicityNumerator [Fintype G] [DecidableEq ℂ]
+    (V X : FDRep ℂ G) (hV : Function.Injective V.ρ) :
+    (V.tensorMultiplicityNumerator X).eval (Module.finrank ℂ V : ℂ)⁻¹ =
+      (Nat.card G : ℂ)⁻¹ * Module.finrank ℂ X *
+        ∏ a ∈ V.characterValues.erase (Module.finrank ℂ V : ℂ), (1 - a / Module.finrank ℂ V) := by
+  have hmem : (Module.finrank ℂ V : ℂ) ∈ V.characterValues :=
+    (mem_characterValues _ _).mpr ⟨1, char_one V⟩
+  rw [tensorMultiplicityNumerator_eq_sum_characterValues, Polynomial.eval_mul,
+    Polynomial.eval_finsetSum, Finset.sum_eq_single_of_mem _ hmem fun a ha hne ↦ ?_]
+  · simp [Polynomial.eval_prod, characterFiberSum_finrank_of_injective V X hV, mul_assoc,
+      div_eq_mul_inv]
+  · obtain ⟨g, rfl⟩ := (mem_characterValues _ _).mp ha
+    have hd' : (Module.finrank ℂ V : ℂ) ≠ 0 := by
+      rintro hd0
+      have : Subsingleton V := Module.finrank_zero_iff.mp (Nat.cast_eq_zero.mp hd0)
+      exact hne ((congrArg V.character (hV (Subsingleton.elim (V.ρ g) (V.ρ 1)))).trans
+        (char_one V))
+    rw [Polynomial.eval_mul, Polynomial.eval_prod,
+      Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨Ne.symm hne, hmem⟩) (by simp [hd']), mul_zero]
+
+/-- **The tensor-multiplicity series is not a polynomial.** For a faithful complex representation
+`V` of positive dimension and a nonzero `X`, no polynomial equals the series
+`∑ₙ dim Hom_G(X, V^⊗n) zⁿ`. Positivity of the dimension is necessary: for the zero representation
+of the trivial group and the trivial `X` the series is the constant `1`. -/
+theorem tensorMultiplicitySeries_ne_coe [Finite G] (V X : FDRep ℂ G) (hV : Function.Injective V.ρ)
+    (hd : 0 < Module.finrank ℂ V) (hX : 0 < Module.finrank ℂ X) (p : Polynomial ℂ) :
+    V.tensorMultiplicitySeries X ≠ p := by
+  classical
+  let := Fintype.ofFinite G
+  intro h
+  have hd' : (Module.finrank ℂ V : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
+  have hQ := tensorMultiplicityDenominator_mul_tensorMultiplicitySeries V X
+  rw [h, ← Polynomial.coe_mul, Polynomial.coe_inj] at hQ
+  have hN := congrArg (Polynomial.eval (Module.finrank ℂ V : ℂ)⁻¹) hQ
+  rw [Polynomial.eval_mul, eval_inv_finrank_tensorMultiplicityDenominator V hd', zero_mul,
+    eval_inv_finrank_tensorMultiplicityNumerator V X hV] at hN
+  refine (mul_ne_zero (mul_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
+    (Nat.cast_ne_zero.mpr hX.ne')) (Finset.prod_ne_zero_iff.mpr fun a ha ↦ ?_)) hN.symm
+  rw [sub_ne_zero, ne_comm, Ne, div_eq_one_iff_eq hd']
+  exact (Finset.mem_erase.mp ha).1
 
 end Complex
 

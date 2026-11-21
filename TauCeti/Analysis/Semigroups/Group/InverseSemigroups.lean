@@ -179,21 +179,14 @@ private theorem continuousAt_inverseGluingFun_apply (x : X) :
     ContinuousAt (fun t : ℝ => inverseGluingFun S T t x) 0 := by
   rw [continuousAt_iff_continuous_left_right]
   constructor
-  · have hneg : ContinuousWithinAt (fun t : ℝ => -t) (Set.Iic 0) 0 :=
-      continuousAt_neg.continuousWithinAt
-    have hT := ContinuousWithinAt.comp_of_eq (f := fun t : ℝ => -t)
-      (g := fun t : ℝ => T.realOperator t x) (s := Set.Iic 0) (t := Set.Ici 0)
-      (x := 0) (y := 0) (T.realOperator_continuousWithinAt_zero x) hneg
-      (fun t ht => by
-        simp only [Set.mem_Iic] at ht
-        simpa only [Set.mem_Ici] using neg_nonneg.mpr ht)
-      neg_zero
+  · have hT := ((T.realOperator_continuousAt_zero x).comp_of_eq continuousAt_neg
+      neg_zero).continuousWithinAt (s := Set.Iic 0)
     apply hT.congr
     · intro t ht
       rw [inverseGluingFun_of_nonpos S T ht]
       rfl
     · simp [inverseGluingFun]
-  · apply (S.realOperator_continuousWithinAt_zero x).congr
+  · apply (S.realOperator_continuousAt_zero x).continuousWithinAt.congr
     · intro t ht
       rw [inverseGluingFun_of_nonneg S T ht]
     · simp [inverseGluingFun]

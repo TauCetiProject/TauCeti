@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -25,8 +25,9 @@ is used, so it is asked for per result rather than up front: the definition itse
 than a topology on `A`, the ratio results need only continuity of right multiplication
 (`[ContinuousConstSMul Aᵐᵒᵖ A]`; `isOpen_le_div` also wants the additive side), the translation
 results need `[SeparatelyContinuousAdd A]` — only translation by a *fixed* element is ever
-used, on either side — and `isContinuous_iff_continuous` needs both. Commutativity is
-never used, so `A` is a `Ring`.
+used, on either side — and `isContinuous_iff_continuous` needs both. `A` is a `Ring`;
+commutativity enters only in `IsContinuous.isClosed_supp`, because Mathlib's `Valuation.supp`
+is an ideal of a commutative ring.
 
 The codomain is treated the same way. Mathlib's `Valuation` is valued in a
 `LinearOrderedCommMonoidWithZero`, and so is most of this file. A `LinearOrderedCommGroupWithZero`
@@ -78,13 +79,18 @@ sets are *literally equal* for equivalent valuations, which is
   case.
 * `Valuation.isContinuous_of_discreteTopology` : **Remark 7.8(2)**, every valuation on
   a discrete ring is continuous.
+* `Valuation.IsContinuous.isClosed_ge` : attained superlevel sets `{a | v b ≤ v a}` are closed,
+  needing only a topology on `A`.
+* `Valuation.IsContinuous.isOpen_gt` and `Valuation.IsContinuous.isClosed_le` : strict superlevel
+  sets `{a | γ < v a}` are open and closed balls `{a | v a ≤ γ}` are closed for arbitrary `γ : Γ₀`
+  under `[SeparatelyContinuousAdd A]`.
 * `Valuation.IsContinuous.comap` : **Remark 7.9**, continuity is inherited along a
   continuous ring homomorphism.
 * `Valuation.IsContinuous.of_lt_imp_lt` : a valuation that preserves the strict comparisons and
   the zeros of a continuous valuation is continuous.
 * `Valuation.IsContinuous.isEquiv_of_dense` : two continuous valuations with the same zeros that
   agree in their comparisons on a dense subset are equivalent.
-* `TauCeti.isClosed_supp_of_isContinuous`: the support of a continuous valuation is closed.
+* `Valuation.IsContinuous.isClosed_supp` : the support of a continuous valuation is closed.
 
 ## References
 
@@ -160,6 +166,16 @@ theorem IsEquiv.isContinuous_iff {v : Valuation A Γ₀} {w : Valuation A Γ₀'
 theorem isContinuous_of_discreteTopology [DiscreteTopology A] (v : Valuation A Γ₀) :
     v.IsContinuous := fun _ ↦ isOpen_discrete _
 
+/-- **Attained superlevel sets of a continuous valuation are closed.** For every `b : A`, the set
+`{a | v b ≤ v a}` is the complement of the defining open `{a | v a < v b}`, so no compatibility
+between the topology and the ring operations is required. -/
+theorem IsContinuous.isClosed_ge {v : Valuation A Γ₀} (hv : v.IsContinuous) (b : A) :
+    IsClosed {a : A | v b ≤ v a} := by
+  have hcompl : ({a : A | v a < v b} : Set A)ᶜ = {a : A | v b ≤ v a} := by
+    ext a
+    simp
+  exact hcompl ▸ (hv b).isClosed_compl
+
 /-- For a continuous valuation `v` on a ring with separately continuous addition, the valuation ball
 `{y | v (y - a) < v b}` is a neighborhood of `a` whenever `v b ≠ 0`. -/
 theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
@@ -167,7 +183,7 @@ theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation 
   have hcont : Continuous fun y : A ↦ y - a := by
     simpa only [sub_eq_add_neg] using continuous_add_const (-a)
   refine ((hv b).preimage hcont).mem_nhds ?_
-  simpa using zero_lt_iff.mpr hb
+  simpa using pos_iff_ne_zero.mpr hb
 
 /-- **Continuity under refinement.** If `w` is continuous, vanishes only where `v` does, and
 `w a < w b` forces `v a < v b`, then `v` is continuous: around each `x` with `v x < v b`, the
@@ -200,6 +216,25 @@ theorem IsContinuous.isOpen_le [SeparatelyContinuousAdd A] {v : Valuation A Γ�
   filter_upwards [hv.sub_lt_mem_nhds a hb] with y hy
   simpa using v.map_add_le hy.le ha
 
+/-- **Strict superlevel sets `{a | γ < v a}` are open for every `γ : Γ₀`**, whether or not `γ` lies
+in the value group: `γ < v x` forces `v x ≠ 0`, and off its support `v` is locally constant
+(`IsContinuous.eventually_eq`). -/
+theorem IsContinuous.isOpen_gt [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (γ : Γ₀) : IsOpen {a : A | γ < v a} := by
+  refine isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  have hx0 : v x ≠ 0 := ne_of_gt (zero_le.trans_lt hx)
+  filter_upwards [hv.eventually_eq hx0] with y hy
+  exact hy.symm ▸ hx
+
+/-- **Closed balls `{a | v a ≤ γ}` are closed for every `γ : Γ₀`.** For `γ = 0` this recovers
+closedness of the support (`IsContinuous.isClosed_supp`, without needing commutativity of `A`). -/
+theorem IsContinuous.isClosed_le [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (γ : Γ₀) : IsClosed {a : A | v a ≤ γ} := by
+  have hcompl : ({a : A | γ < v a} : Set A)ᶜ = {a : A | v a ≤ γ} := by
+    ext a
+    simp
+  exact hcompl ▸ (hv.isOpen_gt γ).isClosed_compl
+
 /-- **Continuous valuations are determined on a dense subset.** Two continuous valuations with
 the same zeros that compare the elements of a dense subset `s` in the same way are equivalent. -/
 theorem IsContinuous.isEquiv_of_dense [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
@@ -231,6 +266,22 @@ theorem IsContinuous.comap {B : Type*} [Ring B] [TopologicalSpace B] {φ : B →
     (hφ : Continuous φ) {v : Valuation A Γ₀} (hv : v.IsContinuous) : (v.comap φ).IsContinuous :=
   fun b ↦ (hv (φ b)).preimage hφ
 
+section CommRing
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] [SeparatelyContinuousAdd R]
+
+/-- **The support of a continuous valuation is closed.** Off the support a continuous valuation is
+locally constant (`IsContinuous.eventually_eq`), so the complement of the support is open. Only
+separate continuity of addition is required, and the value monoid need not be a group. -/
+theorem IsContinuous.isClosed_supp {v : Valuation R Γ₀} (hv : v.IsContinuous) :
+    IsClosed (v.supp : Set R) := by
+  refine isOpen_compl_iff.mp <| isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  rw [mem_compl_iff, SetLike.mem_coe, mem_supp_iff] at hx
+  filter_upwards [hv.eventually_eq hx] with y hy
+  simpa [hy] using hx
+
+end CommRing
+
 /-! ### Results needing a value **group**
 
 Two things need inverses on the codomain: writing a ratio `v b / v c`, which is how Wedhorn's
@@ -250,7 +301,7 @@ theorem IsContinuous.isOpen_lt_div [ContinuousConstSMul Aᵐᵒᵖ A] {v : Valua
     (hv : v.IsContinuous)
     (b : A) {c : A} (hc : v c ≠ 0) : IsOpen {a : A | v a < v b / v c} := by
   -- the set is the preimage of `{x | v x < v b}` under multiplication by `c` on the right
-  simpa [lt_div_iff₀ (zero_lt_iff.mpr hc)] using
+  simpa [lt_div_iff₀ (pos_iff_ne_zero.mpr hc)] using
     (hv b).preimage (continuous_const_smul (MulOpposite.op c))
 
 /-- **Wedhorn's quantifier in full, as an equivalence.** Continuity is exactly openness of
@@ -270,7 +321,7 @@ attained-value one under multiplication by `c`. -/
 theorem IsContinuous.isOpen_le_div [SeparatelyContinuousAdd A] [ContinuousConstSMul Aᵐᵒᵖ A]
     {v : Valuation A Γ₀} (hv : v.IsContinuous) {b c : A} (hb : v b ≠ 0) (hc : v c ≠ 0) :
     IsOpen {a : A | v a ≤ v b / v c} := by
-  simpa [le_div_iff₀ (zero_lt_iff.mpr hc)] using
+  simpa [le_div_iff₀ (pos_iff_ne_zero.mpr hc)] using
     (hv.isOpen_le hb).preimage (continuous_const_smul (MulOpposite.op c))
 
 open scoped WithZeroTopology in
@@ -304,7 +355,7 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
     rw [ContinuousAt, ha, WithZeroTopology.tendsto_zero]
     intro γ hγ
     obtain ⟨b, c, hb, hc, hle⟩ := hΓ γ hγ
-    have hpos : (0 : Γ₀) < v b / v c := zero_lt_iff.mpr (div_ne_zero hb hc)
+    have hpos : (0 : Γ₀) < v b / v c := pos_iff_ne_zero.mpr (div_ne_zero hb hc)
     filter_upwards [(hv.isOpen_lt_div b hc).mem_nhds (by simpa [ha] using hpos)] with x hx
     exact hx.trans_le hle
   · -- off the support `v` is locally constant, by the strict triangle equality
@@ -314,20 +365,3 @@ theorem isContinuous_iff_continuous [SeparatelyContinuousAdd A] [ContinuousConst
 end ValueGroup
 
 end Valuation
-
-namespace TauCeti
-
-open Set Topology
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousAdd A]
-  {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀] {v : Valuation A Γ₀}
-
-/-- The support of a continuous valuation is closed. Only separate continuity of addition is
-required, and the value monoid need not be a group. -/
-theorem isClosed_supp_of_isContinuous (hv : v.IsContinuous) : IsClosed (v.supp : Set A) := by
-  rw [← isOpen_compl_iff]
-  refine isOpen_iff_mem_nhds.mpr fun a ha ↦ ?_
-  have ha' : v a ≠ 0 := ha
-  filter_upwards [hv.eventually_eq ha'] with y hy using fun hyzero ↦ ha' (hy.symm.trans hyzero)
-
-end TauCeti

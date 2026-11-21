@@ -109,6 +109,32 @@ theorem spliceAtMeeting_zero (ω : ℕ → α × α) : spliceAtMeeting ω 0 = (�
   · rw [spliceAtMeeting_of_exists ⟨0, le_rfl, h⟩, h]
   · exact spliceAtMeeting_of_forall_ne fun k hk => by rwa [Nat.le_zero.1 hk]
 
+/-- Having met by time `n`, the event that the splice at time `n + 1` lies in `C` is the event
+that the second coordinate at time `n + 1` does. -/
+theorem inter_preimage_spliceAtMeeting_succ_inter_exists (n : ℕ) (B : Set (ℕ → α × α))
+    (C : Set α) :
+    B ∩ (fun ω => spliceAtMeeting ω (n + 1)) ⁻¹' C ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} =
+      B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} ∩
+        (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) := by
+  rw [inter_right_comm]
+  have hEq : EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).2)
+      (B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) := fun ω hω =>
+    spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hω.2)
+  exact hEq.inter_preimage_eq C
+
+/-- Not having met by time `n`, the event that the splice at time `n + 1` lies in `C` is the event
+that the first coordinate at time `n + 1` does. -/
+theorem inter_preimage_spliceAtMeeting_succ_sdiff_exists (n : ℕ) (B : Set (ℕ → α × α))
+    (C : Set α) :
+    (B ∩ (fun ω => spliceAtMeeting ω (n + 1)) ⁻¹' C) \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} =
+      (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) ∩
+        (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
+  rw [sdiff_eq, inter_right_comm, ← sdiff_eq]
+  have hEq : EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).1)
+      (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) := fun ω hω =>
+    spliceAtMeeting_succ_of_forall_ne fun k hk he => hω.2 ⟨k, hk, he⟩
+  exact hEq.inter_preimage_eq C
+
 variable [MeasurableSpace α] [MeasurableEq α]
 
 /-- Having met by time `n` is an event of the history up to time `n`. -/
@@ -149,7 +175,6 @@ variable {α : Type*} [MeasurableSpace α] {β : Type*} [MeasurableSpace β]
 `κ p.1` and `κ' p.2`, the first coordinates of the chain of `η` form the chain of `κ` started from
 the first marginal of the initial law. -/
 theorem markovChainLaw_map_fst_of_isCoupling [IsMarkovKernel κ] (ρ : Measure (α × β))
-    [IsFiniteMeasure ρ]
     (hη : ∀ p, IsCoupling (η p) (κ p.1) (κ' p.2)) :
     (markovChainLaw ρ η).map (fun ω n => (ω n).1) = markovChainLaw ρ.fst κ :=
   markovChainLaw_map_comp ρ η κ measurable_fst fun p => (hη p).fst_eq
@@ -158,7 +183,6 @@ theorem markovChainLaw_map_fst_of_isCoupling [IsMarkovKernel κ] (ρ : Measure (
 `κ p.1` and `κ' p.2`, the second coordinates of the chain of `η` form the chain of `κ'` started
 from the second marginal of the initial law. -/
 theorem markovChainLaw_map_snd_of_isCoupling [IsMarkovKernel κ'] (ρ : Measure (α × β))
-    [IsFiniteMeasure ρ]
     (hη : ∀ p, IsCoupling (η p) (κ p.1) (κ' p.2)) :
     (markovChainLaw ρ η).map (fun ω n => (ω n).2) = markovChainLaw ρ.snd κ' :=
   markovChainLaw_map_comp ρ η κ' measurable_snd fun p => (hη p).snd_eq
@@ -188,7 +212,7 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
   set B := (fun ω (i : Fin (n + 1)) => Z i ω) ⁻¹' A
   have hpre : Measurable[Filtration.piLE n] fun ω (i : Fin (n + 1)) => Z i ω :=
     @Measurable.of_eval _ _ _ (Filtration.piLE n) _ _ fun i =>
-      (adapted_spliceAtMeeting i.1).mono (Filtration.piLE.mono (Nat.lt_succ_iff.1 i.2)) le_rfl
+      (adapted_spliceAtMeeting i.val).mono (Filtration.piLE.mono (Nat.lt_succ_iff.1 i.isLt)) le_rfl
   have hBn : MeasurableSet[Filtration.piLE n] B := hpre hA
   have hMn : MeasurableSet[Filtration.piLE n] M := measurableSet_piLE_exists_le_fst_eq_snd n
   have hB : MeasurableSet B := Filtration.le _ n _ hBn
@@ -196,32 +220,13 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
   have hfib : (fun ω => ((fun i : Fin (n + 1) => Z i ω), Z (n + 1) ω)) ⁻¹' (A ×ˢ C) =
       B ∩ Z (n + 1) ⁻¹' C := rfl
   have hin : B ∩ Z (n + 1) ⁻¹' C ∩ M =
-      B ∩ M ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) := by
-    ext ω
-    simp only [mem_inter_iff, mem_preimage]
-    constructor
-    · rintro ⟨⟨hb, hc⟩, hm⟩
-      refine ⟨⟨hb, hm⟩, ?_⟩
-      rwa [← spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)]
-    · rintro ⟨⟨hb, hm⟩, hc⟩
-      refine ⟨⟨hb, ?_⟩, hm⟩
-      rwa [← spliceAtMeeting_of_exists
-        (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)] at hc
+      B ∩ M ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) :=
+    inter_preimage_spliceAtMeeting_succ_inter_exists n B C
   have hout : (B ∩ Z (n + 1) ⁻¹' C) \ M =
-      (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
-    ext ω
-    simp only [mem_inter_iff, mem_sdiff, mem_preimage]
-    constructor
-    · rintro ⟨⟨hb, hc⟩, hm⟩
-      have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
-      refine ⟨⟨hb, hm⟩, ?_⟩
-      rwa [← spliceAtMeeting_succ_of_forall_ne hne]
-    · rintro ⟨⟨hb, hm⟩, hc⟩
-      have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
-      refine ⟨⟨hb, ?_⟩, hm⟩
-      rwa [← spliceAtMeeting_succ_of_forall_ne hne] at hc
+      (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) :=
+    inter_preimage_spliceAtMeeting_succ_sdiff_exists n B C
   rw [prefixLaw_compProd_apply_prod κ hZ n hA hC, Measure.map_apply
-    ((measurable_pi_iff.2 fun i => hZ i.1).prodMk (hZ _)) (hA.prod hC), hfib,
+    ((measurable_pi_iff.2 fun i => hZ i.val).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
     markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.inter hMn) (measurable_snd hC),
     markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.diff hMn) (measurable_fst hC),

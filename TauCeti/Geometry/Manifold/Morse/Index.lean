@@ -9,7 +9,9 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Basic
 import TauCeti.Analysis.Calculus.DerivativeTest
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 
 /-!
 # The Morse index on a smooth manifold
@@ -20,7 +22,7 @@ function's coordinate expression in the preferred extended chart.
 Following `TauCeti.IsManifoldNondegenerateCriticalPoint`, the definition itself assumes no
 smoothness and no boundarylessness. The results below prove that it depends only on the germ of
 the function, and that it is unchanged when the model space is transported through a continuous
-linear equivalence, assuming `C²` regularity of the chart expression. The model-space comparison
+linear equivalence. The model-space comparison
 theorem makes the construction reduce exactly to the existing calculus definition. This file does
 not compare the preferred chart with arbitrary manifold charts.
 
@@ -35,14 +37,17 @@ manifold, the index vanishes without a nondegeneracy assumption.
   function.
 * `TauCeti.manifoldMorseIndex_modelSpace`: comparison with `TauCeti.morseIndex` on a normed
   vector space.
-* `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the index vanishes at a local minimum
-  of a `C²` function on a boundaryless manifold.
+* `TauCeti.manifoldMorseIndex_const` and `TauCeti.manifoldMorseIndex_eq_zero_of_isLocalMin`: the
+  index vanishes for a constant function and at a local minimum of a `C²` function on a boundaryless
+  manifold.
 * `TauCeti.manifoldMorseIndex_transContinuousLinearEquiv`: invariance under an equivalent choice
   of model space.
 * `TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`: the complementary-index
   formula under nondegeneracy of the preferred-chart Hessian.
 * `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`:
   the critical-point specialization.
+* `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one`: critical
+  points of consecutive index for `f` have consecutive index for `-f`, in the opposite order.
 
 ## References
 
@@ -106,29 +111,43 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
   simp only [manifoldMorseIndex, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Function.comp_id, id_eq]
 
-/-- The manifold Morse index is at most the dimension of a finite-dimensional model space. -/
-theorem manifoldMorseIndex_le_finrank [FiniteDimensional ℝ E] :
+/-- A constant function has zero Hessian, hence Morse index `0` at every point. -/
+@[simp]
+theorem manifoldMorseIndex_const (c : ℝ) (x : M) : manifoldMorseIndex I (fun _ : M ↦ c) x = 0 := by
+  simp [manifoldMorseIndex_def, Function.comp_def]
+
+/-- The manifold Morse index is at most the dimension of the model space. -/
+theorem manifoldMorseIndex_le_finrank :
     manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
   morseIndex_le_finrank
 
+/-- On a manifold modelled on a zero-dimensional space every Morse index is `0`. -/
+@[simp]
+theorem manifoldMorseIndex_eq_zero_of_subsingleton [Subsingleton E] :
+    manifoldMorseIndex I f x = 0 :=
+  Nat.le_zero.1 (manifoldMorseIndex_le_finrank.trans_eq Module.finrank_zero_of_subsingleton)
+
 /-- At a local minimum of a `C²` function on a boundaryless manifold, the preferred-chart Morse
 index is zero. No nondegeneracy assumption is needed. -/
-theorem manifoldMorseIndex_eq_zero_of_isLocalMin [FiniteDimensional ℝ E] [I.Boundaryless]
+theorem manifoldMorseIndex_eq_zero_of_isLocalMin [I.Boundaryless]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hmin : IsLocalMin f x) :
     manifoldMorseIndex I f x = 0 := by
   have hmin' : IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
     have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmin
     exact hm.comp_continuous (continuousAt_extChartAt_symm x)
-  rw [manifoldMorseIndex_def, morseIndex_def]
+  rw [manifoldMorseIndex_def]
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
+  rw [morseIndex_def]
   exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun v ↦ by
     rw [hessianQuadraticForm_apply]
-    exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
+    exact fderiv_fderiv_self_nonneg_of_isLocalMin
+      (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmin' v
 
 /-- The manifold Morse index is unchanged when the manifold model is transported through a
-continuous linear equivalence, assuming `C²` regularity of the preferred-chart expression. -/
-theorem manifoldMorseIndex_transContinuousLinearEquiv
-    (hreg : ContDiffAt ℝ 2 (f ∘ (extChartAt I x).symm) (extChartAt I x x))
-    (e : E ≃L[ℝ] E') :
+continuous linear equivalence. -/
+theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
     manifoldMorseIndex (I.transContinuousLinearEquiv e) f x = manifoldMorseIndex I f x := by
   let g : E → ℝ := f ∘ (extChartAt I x).symm
   let a : E := extChartAt I x x
@@ -141,12 +160,10 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv
       congrFun (I.coe_extChartAt_transContinuousLinearEquiv e x) x
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hfun, hpoint]
   rw [morseIndex_def, morseIndex_def]
-  have hgreg : ContDiffAt ℝ 2 g (e.symm (e a)) := by
-    simpa only [ContinuousLinearEquiv.symm_apply_apply, g, a] using hreg
   have hquad : hessianQuadraticForm
       (g ∘ (e.symm.toContinuousLinearMap : E' → E)) (e a) =
       (hessianQuadraticForm g (e.symm (e a))).comp e.symm.toLinearMap :=
-    e.symm.toContinuousLinearMap.hessianQuadraticForm_comp hgreg
+    e.symm.hessianQuadraticForm_comp g (e a)
   rw [hquad]
   simpa only [ContinuousLinearEquiv.symm_apply_apply, g, a] using
     (QuadraticMap.Equivalent.sigNeg_eq
@@ -155,7 +172,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv
 
 /-- If the preferred-chart Hessian is nondegenerate, the manifold Morse indices of a function and
 its negation add to the dimension of the model space. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : (hessianQuadraticForm (f ∘ (extChartAt I x).symm)
       (extChartAt I x x)).Nondegenerate) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
@@ -169,11 +186,22 @@ namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
 the dimension of the manifold. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
   exact TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (((isManifoldNondegenerateCriticalPoint_iff I).mp h).hessianQuadraticForm_nondegenerate)
+
+/-- If the Morse index of `f` drops by one from a nondegenerate critical point `x` to another one
+`y`, then the Morse index of `-f` rises by one from `x` to `y`. -/
+theorem manifoldMorseIndex_neg_eq_add_one_of_eq_add_one {y : M}
+    (hx : IsManifoldNondegenerateCriticalPoint I f x)
+    (hy : IsManifoldNondegenerateCriticalPoint I f y)
+    (hxy : manifoldMorseIndex I f x = manifoldMorseIndex I f y + 1) :
+    manifoldMorseIndex I (-f) y = manifoldMorseIndex I (-f) x + 1 := by
+  have := hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  have := hy.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  omega
 
 end IsManifoldNondegenerateCriticalPoint
 

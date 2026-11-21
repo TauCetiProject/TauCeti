@@ -88,18 +88,10 @@ theorem exists_finset_dirichletDomain_eq_iInter_closure_leftHalfPlane {p : ℍ}
       linarith
     exact hlocal hz hzB
   -- Replace distance constraints by bisectors, discarding the tautological fixed-centre ones.
-  refine ⟨s.filter (fun g ↦ p ≠ g • p), fun g hg ↦ (Finset.mem_filter.mp hg).2, ?_⟩
-  ext z
-  simp only [mem_dirichletDomain, mem_iInter, Finset.mem_filter]
-  constructor
-  · intro hz g hg
-    exact (mem_closure_leftHalfPlane_perpBisector_iff hg.2 z).mpr (hz g)
-  · intro hz
-    apply mem_dirichletDomain.mp (hC ?_)
-    refine mem_iInter₂.mpr fun g hg ↦ ?_
-    by_cases hgp : p = g • p
-    · simp [← hgp]
-    · exact (mem_closure_leftHalfPlane_perpBisector_iff hgp z).mp (hz g ⟨hg, hgp⟩)
+  obtain ⟨s', hs', hss'⟩ :=
+    UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane p s
+  refine ⟨s', hs', Set.Subset.antisymm (fun z hz ↦ ?_) hC |>.trans hss'⟩
+  exact mem_iInter₂.mpr fun g _ ↦ mem_dirichletDomain.mp hz g
 
 end
 

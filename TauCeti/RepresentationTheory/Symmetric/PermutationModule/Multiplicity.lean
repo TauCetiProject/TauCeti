@@ -120,25 +120,7 @@ private theorem exists_intertwiningMap_eq_smul_subtype
     simpa only [et] using congrArg
       (fun x : (spechtSubrepresentation (R := ℚ) lam).toSubmodule =>
         κ • (x : (permutationModule (R := ℚ) (shapePartition lam)).V)) hbet.symm
-  have hspan : Submodule.span ℚ
-      (Set.range fun σ : Equiv.Perm (Fin lam.card) =>
-        (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) = ⊤ := by
-    apply Submodule.map_injective_of_injective
-      (spechtSubrepresentation (R := ℚ) lam).toSubmodule.injective_subtype
-    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span]
-    have himage : (spechtSubrepresentation (R := ℚ) lam).toSubmodule.subtype ''
-        Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
-          (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) =
-        Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
-          (permutationModule (R := ℚ) (shapePartition lam)).ρ σ (polytabloid (R := ℚ) t)) := by
-      ext x
-      constructor
-      · rintro ⟨y, ⟨σ, rfl⟩, rfl⟩
-        exact ⟨σ, rfl⟩
-      · rintro ⟨σ, rfl⟩
-        exact ⟨_, ⟨σ, rfl⟩, rfl⟩
-    rw [himage]
-    exact (spechtSubrepresentation_eq_span_orbit t).symm
+  have hspan := spechtSubrepresentation_span_orbit_polytabloid_eq_top (R := ℚ) t
   apply Representation.IntertwiningMap.ext
   refine (Submodule.linearMap_eq_iff_of_span_eq_top _ _ hspan).2 ?_
   rintro ⟨_, ⟨σ, rfl⟩⟩

@@ -37,27 +37,22 @@ namespace Module.End
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
-/-- `f` maps the `μ`-eigenspace of `g ∘ₗ f` into the `μ`-eigenspace of `f ∘ₗ g`. -/
-theorem apply_mem_eigenspace_comp {f : M →ₗ[R] N} {g : N →ₗ[R] M} {μ : R} {x : M}
-    (hx : x ∈ eigenspace (g ∘ₗ f) μ) : f x ∈ eigenspace (f ∘ₗ g) μ := by
-  rw [mem_eigenspace_iff] at hx ⊢
-  simpa using congrArg f hx
-
 /-- For a unit `μ`, `f` restricts to a linear equivalence from the `μ`-eigenspace of `g ∘ₗ f`
 onto the `μ`-eigenspace of `f ∘ₗ g`; the inverse is the restriction of `μ⁻¹ • g`. -/
 noncomputable def eigenspaceCompEquiv (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ) :
     eigenspace (g ∘ₗ f) μ ≃ₗ[R] eigenspace (f ∘ₗ g) μ :=
-  LinearEquiv.ofLinearMap (f.restrict fun _ ↦ apply_mem_eigenspace_comp)
+  LinearEquiv.ofLinearMap
+    (f.restrict fun _ hx ↦ mapsTo_genEigenspace_of_comp f (LinearMap.comp_assoc f g f) μ 1 hx)
     (((↑hμ.unit⁻¹ : R) • g).restrict fun _ hy ↦ Submodule.smul_mem _ _ <|
-      apply_mem_eigenspace_comp hy)
+      mapsTo_genEigenspace_of_comp g (LinearMap.comp_assoc g f g) μ 1 hy)
     (by
       ext ⟨y, hy⟩
-      rw [mem_eigenspace_iff] at hy
-      simpa [smul_smul] using congrArg ((↑hμ.unit⁻¹ : R) • ·) hy)
+      rw [mem_eigenspace_iff, LinearMap.comp_apply] at hy
+      simp [hy, smul_smul])
     (by
       ext ⟨x, hx⟩
-      rw [mem_eigenspace_iff] at hx
-      simpa [smul_smul] using congrArg ((↑hμ.unit⁻¹ : R) • ·) hx)
+      rw [mem_eigenspace_iff, LinearMap.comp_apply] at hx
+      simp [hx, smul_smul])
 
 @[simp]
 theorem coe_eigenspaceCompEquiv_apply (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ)

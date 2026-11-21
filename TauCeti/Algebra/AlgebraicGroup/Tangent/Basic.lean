@@ -68,8 +68,7 @@ namespace TauCeti
 
 section BialgebraPoint
 
-variable (R A B : Type*) [CommSemiring R] [Semiring A] [Bialgebra R A]
-  [Semiring B] [Algebra R B]
+variable (R A B : Type*) [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- Type synonym: `B` as an `A`-algebra through the identity point of the functor of
 points — the counit followed by the structure map, which is the convolution unit
@@ -78,8 +77,8 @@ convolution monoid does not exist and the composite is its generalization.
 Derivations of `A` valued in `Bialgebra.CounitAlgebra R A B` are the tangent vectors
 at the identity. -/
 -- `@[expose]` is mandated by the compiler for a type synonym carrying instances under
--- the module system ("locally inferred compilation type differs from type that would
--- be inferred in other modules ... may need to be `@[expose]`d"); removing it fails
+-- the module system (locally inferred compilation type differs from type that would
+-- be inferred in other modules ... may need to be `@[expose]`d); removing it fails
 -- the build. Consumers should still prefer `algEquivSelf` for transport.
 @[expose]
 def Bialgebra.CounitAlgebra (_R _A : Type*) (B : Type*) : Type _ := B
@@ -90,11 +89,16 @@ instance : Semiring (CounitAlgebra R A B) := inferInstanceAs (Semiring B)
 
 instance : Algebra R (CounitAlgebra R A B) := inferInstanceAs (Algebra R B)
 
+/-- The base `R`-algebra map of the coefficient synonym agrees with that of `B` itself:
+the synonym changes only the `A`-algebra structure. -/
+@[simp]
+lemma algebraMap_base (r : R) :
+    algebraMap R (CounitAlgebra R A B) r = algebraMap R B r := rfl
+
 /-- The canonical `R`-algebra identification of the counit-point coefficient algebra
 with `B` itself. -/
 def algEquivSelf : CounitAlgebra R A B ≃ₐ[R] B := AlgEquiv.refl
 
-omit [Semiring A] [Bialgebra R A] in
 @[simp]
 lemma algEquivSelf_apply (x : CounitAlgebra R A B) : algEquivSelf R A B x = x := by
   -- A direct `rfl` is rejected by the module system's exported-`rfl` validation (the
@@ -104,7 +108,6 @@ lemma algEquivSelf_apply (x : CounitAlgebra R A B) : algEquivSelf R A B x = x :=
   simp only [AlgEquiv.coe_refl]
   rfl
 
-omit [Semiring A] [Bialgebra R A] in
 @[simp]
 lemma algEquivSelf_symm_apply (b : B) : (algEquivSelf R A B).symm b = b := by
   -- Same documented definitional identification as in `algEquivSelf_apply`.
@@ -145,7 +148,6 @@ instance instIsScalarTowerSemiring [Semiring B] :
 end Bialgebra.CounitAlgebra
 
 end SynonymScalars
-
 
 end BialgebraPoint
 
@@ -194,13 +196,6 @@ instance : SMulCommClass B A (CounitAlgebra R A B) where
     -- with the `B`-action: move the central factor across the product.
     rw [Algebra.smul_def, Algebra.smul_def, Algebra.commutes a (b • x), smul_mul_assoc,
       Algebra.commutes a x]
-
-omit [CommSemiring A] [Bialgebra R A] in
-/-- The base `R`-algebra map of the coefficient synonym agrees with that of `B` itself:
-the synonym changes only the `A`-algebra structure. -/
-@[simp]
-lemma algebraMap_base (r : R) :
-    algebraMap R (CounitAlgebra R A B) r = algebraMap R B r := rfl
 
 @[simp]
 lemma algebraMap_apply (a : A) :
@@ -272,11 +267,11 @@ lemma Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul
 
 end DerivationCoefficients
 
-section CounitAlgebraMap
-
 namespace Bialgebra.CounitAlgebra
 
-variable {R A B C : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
+section CounitAlgebraMapAlgHom
+
+variable {R A B C : Type*} [CommSemiring R]
   [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
 
 /-- An algebra homomorphism of coefficients, transported to the counit coefficient
@@ -285,7 +280,6 @@ noncomputable def mapAlgHom (phi : B →ₐ[R] C) :
     CounitAlgebra R A B →ₐ[R] CounitAlgebra R A C :=
   (algEquivSelf R A C).symm.toAlgHom.comp (phi.comp (algEquivSelf R A B).toAlgHom)
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- Identifying counit coefficient algebras with their coefficient rings commutes with
 an algebra homomorphism of coefficients. -/
 @[simp]
@@ -294,7 +288,6 @@ lemma algEquivSelf_map (phi : B →ₐ[R] C) (b : CounitAlgebra R A B) :
   exact (algEquivSelf_apply R A C _).trans
     (congrArg phi (algEquivSelf_apply R A B b).symm)
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- Transport of counit coefficient algebras acts pointwise by the original
 coefficient homomorphism. -/
 @[simp]
@@ -306,7 +299,6 @@ lemma mapAlgHom_apply (phi : B →ₐ[R] C) (b : CounitAlgebra R A B) :
   change (algEquivSelf R A C).symm (phi (algEquivSelf R A B b)) = phi b
   rw [algEquivSelf_apply, algEquivSelf_symm_apply]
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- The identity coefficient homomorphism induces the identity homomorphism of
 counit coefficient algebras. -/
 @[simp]
@@ -322,7 +314,6 @@ lemma mapAlgHom_id :
   change (AlgHom.id R B) (algEquivSelf R A B b) = algEquivSelf R A B b
   rw [AlgHom.id_apply]
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- Homomorphisms of counit coefficient algebras preserve composition. -/
 @[simp]
 lemma mapAlgHom_comp {D : Type*} [Semiring D] [Algebra R D]
@@ -337,6 +328,13 @@ lemma mapAlgHom_comp {D : Type*} [Semiring D] [Algebra R D]
   change (psi.comp phi) (algEquivSelf R A B b) =
     psi (phi (algEquivSelf R A B b))
   rw [AlgHom.comp_apply]
+
+end CounitAlgebraMapAlgHom
+
+section CounitAlgebraMap
+
+variable {R A B C : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
+  [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
 
 /-- An algebra map between coefficient algebras, regarded as a linear map for the
 `A`-module structures induced by the counit. -/
@@ -391,9 +389,9 @@ lemma map_comp {D : Type*} [Semiring D] [Algebra R D]
     psi (phi (algEquivSelf R A B b))
   rw [AlgHom.comp_apply]
 
-end Bialgebra.CounitAlgebra
-
 end CounitAlgebraMap
+
+end Bialgebra.CounitAlgebra
 
 section CommPointScalar
 
@@ -460,6 +458,28 @@ lemma Bialgebra.CounitAlgebra.toAlgHom_eq_one_ofConv :
     (AlgHom.convOne_apply a).symm
 
 end BialgebraCommTargetPoint
+
+section InclusionComponents
+
+variable {R A C : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A] [CommSemiring C]
+  [Algebra R C]
+
+/-- The first component of the inclusion of a point `g` into the dual-number points is `g`. -/
+lemma _root_.WithConv.fstHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.fstHom R C C).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap =
+      g.ofConv.toLinearMap := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+/-- The second component of the inclusion of a point into the dual-number points is `0`. -/
+lemma _root_.WithConv.sndHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.sndHom C C).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap = 0 := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+end InclusionComponents
 
 section Hopf
 
@@ -541,12 +561,12 @@ noncomputable def derivationMulEquivTangentKer :
     Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B)) ≃*
       tangentKer R A B where
   toFun d := ⟨toConv
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).1,
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).val,
     toConv_mem_ker_iff.mpr
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).2⟩
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).property⟩
   invFun ψ := .ofAdd <|
     (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)).symm
-      ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
+      ⟨ψ.val.ofConv, toConv_mem_ker_iff.mp ψ.property⟩
   left_inv d :=
     congrArg Multiplicative.ofAdd <|
       (derivationToTrivSqZeroExtEquivLift R A
@@ -554,17 +574,17 @@ noncomputable def derivationMulEquivTangentKer :
   right_inv ψ := by
     have h :=
       (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)).apply_symm_apply
-        ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
+        ⟨ψ.val.ofConv, toConv_mem_ker_iff.mp ψ.property⟩
     rw [Subtype.ext_iff] at h
-    exact Subtype.ext ((congrArg toConv h).trans (toConv_ofConv ψ.1))
+    exact Subtype.ext ((congrArg toConv h).trans (toConv_ofConv ψ.val))
   map_mul' d₁ d₂ := by
     have h₁ := toConv_mem_ker_iff.mpr
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₁.toAdd).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₁.toAdd).property
     have h₂ := toConv_mem_ker_iff.mpr
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₂.toAdd).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₂.toAdd).property
     have hprod := toConv_mem_ker_iff.mpr
       (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)
-        (d₁.toAdd + d₂.toAdd)).2
+        (d₁.toAdd + d₂.toAdd)).property
     refine Subtype.ext (ofConv_injective (AlgHom.ext fun a => TrivSqZeroExt.ext ?_ ?_))
     · exact (fst_apply_of_mem_tangentKer hprod a).trans
         (fst_apply_of_mem_tangentKer (mul_mem h₁ h₂) a).symm
@@ -613,6 +633,31 @@ lemma derivationMulEquivTangentKer_symm_apply
     ((derivationMulEquivTangentKer R A B).symm ψ).toAdd a = snd (ψ.val.ofConv a) := by
   simp [derivationMulEquivTangentKer,
     derivationToTrivSqZeroExtEquivLift_symm_apply]
+
+/-- The counit coefficient of the dual-number point of a tangent vector `d` is the counit. -/
+@[simp]
+theorem _root_.Derivation.fstHom_comp_derivationMulEquivTangentKer
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (fstHom R (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).toLinearMap ∘ₗ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      (1 : WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)).ofConv := by
+  ext x
+  simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, fstHom_apply,
+    LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_apply,
+    Bialgebra.CounitAlgebra.algebraMap_base] using
+      derivationMulEquivTangentKer_apply_fst (Multiplicative.ofAdd d) x
+
+/-- The infinitesimal coefficient of the dual-number point of a tangent vector `d` is `d`. -/
+@[simp]
+theorem _root_.Derivation.sndHom_comp_derivationMulEquivTangentKer
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    ((sndHom (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).restrictScalars
+        R) ∘ₗ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      d.toLinearMap := by
+  ext x
+  dsimp
+  exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
 
 /-- The tangent subgroup is abelian: first-order infinitesimal points commute, because
 multiplication corresponds to addition of derivations under
@@ -702,6 +747,23 @@ lemma tangentKer_smul_apply_snd
     _ = _ := (Bialgebra.CounitAlgebra.algEquivSelf R A B).apply_symm_apply _ |>.symm
 
 end Hopf
+
+section HopfRing
+
+open WithConv
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [HopfAlgebra R A] [CommRing B]
+  [Algebra R B]
+
+/-- The inverse of the dual-number point of `d` is the dual-number point of `-d`. -/
+theorem _root_.Derivation.derivationMulEquivTangentKer_val_inv
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val⁻¹ =
+      (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd (-d))).val := by
+  simpa only [← Subgroup.coe_inv, ← ofAdd_neg] using congrArg Subtype.val
+    (map_inv (derivationMulEquivTangentKer R A B) (Multiplicative.ofAdd d)).symm
+
+end HopfRing
 
 end TauCeti
 

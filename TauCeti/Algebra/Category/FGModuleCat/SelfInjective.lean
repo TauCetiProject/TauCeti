@@ -36,7 +36,7 @@ exact category of finite-dimensional modules over a self-injective finite-dimens
 
 public section
 
-namespace TauCeti
+namespace FGModuleCat
 
 open CategoryTheory
 
@@ -47,10 +47,10 @@ variable {R : Type u} [Ring R]
 /-- Over a self-injective ring, every projective object among the finitely generated modules is
 injective. The smallness hypothesis holds automatically when the modules live in a universe
 containing `R`. -/
-theorem _root_.FGModuleCat.injective_of_projective_of_moduleInjective_self [Small.{v} R]
+theorem injective_of_projective_of_moduleInjective_self [Small.{v} R]
     (hR : Module.Injective R R) (X : FGModuleCat.{v} R) [Projective X] : Injective X := by
   have := FGModuleCat.moduleProjective_of_projective X
   have := Module.Injective.of_finite_projective (P := X) hR
   exact FGModuleCat.injective_of_moduleInjective X
 
-end TauCeti
+end FGModuleCat

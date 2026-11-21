@@ -22,7 +22,8 @@ Massey, *Singular Homology Theory*, Chapter II.
 
 Degenerate cubes are preserved by composition with a continuous map, so the push-forward descends
 to the quotient and the normalized chains are functorial. An injective continuous map also
-reflects degeneracy, so its push-forward on normalized chains is injective.
+reflects degeneracy, so its push-forward on normalized chains is injective, and even has a left
+inverse.
 
 ## Main definitions
 
@@ -31,6 +32,8 @@ reflects degeneracy, so its push-forward on normalized chains is injective.
 * `TauCeti.NormalizedCubicalChain.boundary X R n`: the induced boundary.
 * `TauCeti.NormalizedCubicalChain.map R f n`: the push-forward along a continuous map.
 * `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
+* `TauCeti.NormalizedCubicalChain.desc g hg`: the linear map determined by its values on cubes,
+  vanishing on the degenerate ones.
 
 ## Main results
 
@@ -39,9 +42,12 @@ reflects degeneracy, so its push-forward on normalized chains is injective.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
-* `TauCeti.NormalizedCubicalChain.map_boundary`: the boundary is natural.
+* `TauCeti.NormalizedCubicalChain.map_boundary` and
+  `TauCeti.NormalizedCubicalChain.map_boundary_apply`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
   push-forwards, including all subspace inclusions.
+* `TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`: the push-forward along an injective
+  continuous map has a left inverse.
 
 ## References
 
@@ -244,10 +250,36 @@ theorem induction_on {n : ℕ} {P : NormalizedCubicalChain X R n → Prop}
       rw [← smul_single_one, Submodule.Quotient.mk_smul]
       exact smul a _ (ofCube c)
 
+/-- A space without points has no nonzero normalized chains. -/
+instance [IsEmpty X] {n : ℕ} : Subsingleton (NormalizedCubicalChain X R n) :=
+  subsingleton_of_forall_eq 0 fun g ↦ by
+    induction g using induction_on with
+    | zero => rfl
+    | add a b ha hb => rw [ha, hb, add_zero]
+    | smul r a ha => rw [ha, smul_zero]
+    | ofCube c => exact isEmptyElim (c 0)
+
 @[simp]
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :
     ofCube X R c = 0 :=
   (Submodule.Quotient.mk_eq_zero _).2 (single_mem_degenerate R hc 1)
+
+variable {R} in
+/-- The linear map out of the normalized `n`-chains determined by its values on cubes, which must
+vanish on the degenerate cubes. -/
+def desc {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (g : SingularCube X n → N)
+    (hg : ∀ c, SingularCube.IsDegenerate c → g c = 0) : NormalizedCubicalChain X R n →ₗ[R] N :=
+  (degenerate X R n).liftQ (Finsupp.linearCombination R g) <| by
+    rw [degenerate_def, Submodule.span_le]
+    rintro _ ⟨c, hc, rfl⟩
+    simp [hg c hc]
+
+variable {R} in
+@[simp]
+theorem desc_ofCube {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (g : SingularCube X n → N)
+    (hg : ∀ c, SingularCube.IsDegenerate c → g c = 0) (c : SingularCube X n) :
+    desc g hg (ofCube X R c) = g c := by
+  simp [desc, ofCube_def]
 
 variable (X) in
 /-- The boundary of normalized cubical chains, induced by the boundary of the unnormalized ones. -/
@@ -301,6 +333,22 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   exact Submodule.mapQ_comp _ _ _ _ _ (degenerate_le_comap_map R f n)
     (degenerate_le_comap_map R g n)
 
+/-- Pushing forward along `f` and then along `g` is pushing forward along `g ∘ f`. -/
+@[simp]
+theorem map_map (g : C(Y, Z)) (f : C(X, Y)) {n : ℕ} (x : NormalizedCubicalChain X R n) :
+    map R g n (map R f n x) = map R (g.comp f) n x := by
+  rw [map_comp, LinearMap.comp_apply]
+
+/-- Pushing chains forward along a homeomorphism and back is the identity. -/
+theorem map_symm_map_apply (e : X ≃ₜ Y) {n : ℕ} (c : NormalizedCubicalChain X R n) :
+    map R (e.symm : C(Y, X)) n (map R (e : C(X, Y)) n c) = c := by
+  simp
+
+/-- Pushing chains forward along the inverse of a homeomorphism and back is the identity. -/
+theorem map_map_symm_apply (e : X ≃ₜ Y) {n : ℕ} (c : NormalizedCubicalChain Y R n) :
+    map R (e : C(X, Y)) n (map R (e.symm : C(Y, X)) n c) = c := by
+  simp
+
 /-- Normalization preserves injectivity of a map of spaces. No embedding hypothesis is needed. -/
 theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
     Function.Injective (map R f n) := by
@@ -317,12 +365,30 @@ theorem ofCube_mem_range_map {f : C(X, Y)} (hf : Topology.IsInducing f) {n : ℕ
     {c : SingularCube Y n} (hc : Set.range c ⊆ Set.range f) :
     ofCube Y R c ∈ LinearMap.range (map R f n) := by
   choose g hg using fun y ↦ hc ⟨y, rfl⟩
-  have hgc : Continuous g := hf.continuous_iff.2 (by simpa [Function.comp_def, hg] using c.2)
+  have hgc : Continuous g := hf.continuous_iff.2 (by simpa [Function.comp_def,
+      hg] using c.continuous_toFun)
   refine ⟨ofCube X R ⟨g, hgc⟩, ?_⟩
   rw [map_ofCube]
   congr 1
   ext y
   exact hg y
+
+/-- The push-forward of normalized chains along an injective continuous map has a left inverse. -/
+theorem exists_comp_map_eq_id {f : C(X, Y)} (hf : Function.Injective f) (n : ℕ) :
+    ∃ r : NormalizedCubicalChain Y R n →ₗ[R] NormalizedCubicalChain X R n,
+      r ∘ₗ map R f n = LinearMap.id := by
+  classical
+  -- A cube of the form `f ∘ c'` goes to the class of a chosen `c'`, and every other cube to `0`.
+  refine ⟨desc (fun c ↦ if hc : ∃ c', f.comp c' = c then ofCube X R hc.choose else 0)
+    fun c hc ↦ ?_, linearMap_ext fun c ↦ ?_⟩
+  · split_ifs with hc'
+    · refine ofCube_eq_zero R ?_
+      rwa [← SingularCube.isDegenerate_comp_iff_of_injective f hf, hc'.choose_spec]
+    · rfl
+  · have hc : ∃ c', f.comp c' = f.comp c := ⟨c, rfl⟩
+    rw [LinearMap.comp_apply, map_ofCube, desc_ofCube, dite_eq_left_of_eq_true (eq_true hc),
+      LinearMap.id_apply]
+    exact congrArg _ (ContinuousMap.ext fun y ↦ hf (DFunLike.congr_fun hc.choose_spec y))
 
 /-- The boundary is natural. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :
@@ -330,6 +396,11 @@ theorem map_boundary (f : C(X, Y)) (n : ℕ) :
   unfold map boundary
   rw [← Submodule.mapQ_comp, ← Submodule.mapQ_comp]
   simp only [CubicalChain.map_boundary]
+
+/-- The boundary is natural, on elements. -/
+theorem map_boundary_apply (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R (n + 1)) :
+    map R f n (boundary X R n c) = boundary Y R n (map R f (n + 1) c) := by
+  rw [← LinearMap.comp_apply, map_boundary, LinearMap.comp_apply]
 
 /-- Reindex normalized chains along an equality of dimensions. -/
 def cast {n m : ℕ} (h : n = m) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain X R m :=
@@ -352,6 +423,12 @@ theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k) (c : NormalizedCubicalC
 theorem cast_rfl {n : ℕ} (c : NormalizedCubicalChain X R n) : cast R rfl c = c := by
   induction c using Submodule.Quotient.induction_on with
   | H c => simp
+
+/-- Reindexing the class of a cube is the class of the reindexed cube. -/
+@[simp]
+theorem cast_ofCube {n m : ℕ} (h : n = m) (c : SingularCube X n) :
+    cast R h (ofCube X R c) = ofCube X R (SingularCube.cast h c) := by
+  rw [ofCube_def, cast_mk, CubicalChain.cast_single, ← ofCube_def]
 
 /-- Reindexing commutes with the push-forward. -/
 theorem map_cast (f : C(X, Y)) {n m : ℕ} (h : n = m) (c : NormalizedCubicalChain X R n) :

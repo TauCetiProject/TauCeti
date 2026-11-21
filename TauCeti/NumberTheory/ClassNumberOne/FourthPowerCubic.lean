@@ -92,8 +92,6 @@ private theorem exists_heegner_of_coeffs {a b c : ℤ} (hc : c ^ 4 = 16)
   obtain ⟨k, rfl⟩ := ha
   -- With `a = 2k`, Newton's identity reads `(a² - b)² = 4(2k⁴ - kc)`, so `a² - b` is even.
   have ht : Even ((k + k) ^ 2 - b) := by
-    have h2 : 2 * (((k + k) ^ 2 - b) ^ 2 - 4 * (2 * k ^ 4 - k * c)) = 0 := by
-      linear_combination -h
     have hsq : Even (((k + k) ^ 2 - b) ^ 2) := ⟨2 * (2 * k ^ 4 - k * c), by linarith⟩
     exact (Int.even_pow.1 hsq).1
   obtain ⟨m, hm⟩ := ht

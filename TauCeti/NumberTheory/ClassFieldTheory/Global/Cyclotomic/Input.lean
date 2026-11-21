@@ -14,7 +14,7 @@ import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 # Characters for the cyclotomic input to global class field theory
 
 Let `q > 1` and `N > 0`, and put `m = q ^ N - 1`. The class of `q` in `(ZMod m)ˣ` has exact
-order `N` (`TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one`). Consequently there is an additive
+order `N` (`ZMod.orderOf_unitOfCoprime_pow_sub_one`). Consequently there is an additive
 character of `(ZMod m)ˣ` taking `q` to `1 / N` in `ℚ / ℤ`. Composing this character with the
 action on a primitive `m`-th root of unity gives a character of a cyclotomic Galois group with the
 same prescribed value.
@@ -49,13 +49,13 @@ namespace CharacterModule
 `q` to `1 / N`. -/
 theorem exists_apply_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
     ∃ χ : CharacterModule (Additive (ZMod (q ^ N - 1))ˣ),
-      χ (.ofMul (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN))) =
+      χ (.ofMul (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN))) =
         ((1 / N : ℚ) : AddCircle (1 : ℚ)) := by
-  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)
+  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)
   have horder : addOrderOf (Additive.ofMul u) = N := by
     rw [addOrderOf_ofMul_eq_orderOf, ZMod.orderOf_unitOfCoprime_pow_sub_one q N hq hN]
   obtain ⟨χ, hχ⟩ :=
-    exists_apply_eq_inv_addOrderOf (Additive.ofMul u) (horder.trans_ne hN)
+    exists_apply_eq_inv_addOrderOf (Additive.ofMul u)
   exact ⟨χ, by simpa only [horder] using hχ⟩
 
 end CharacterModule
@@ -88,8 +88,8 @@ theorem exists_character_autToPow_apply {K E : Type*} [CommRing K] [CommRing E] 
   -- transparency); evaluate it definitionally instead.
   change χ (.ofMul (hζ.autToPow K σ)) = _
   have haut : hζ.autToPow K σ =
-      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN) :=
-    Units.ext ((hζ.coe_autToPow_eq_natCast hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
+      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN) :=
+    Units.ext ((hζ.coe_autToPow_eq_natCast_iff.2 hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
   rw [haut, hχ]
 
 end IsPrimitiveRoot

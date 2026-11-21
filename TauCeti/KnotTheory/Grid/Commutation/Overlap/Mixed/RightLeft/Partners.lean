@@ -91,7 +91,7 @@ private theorem exists_rightLeftInverse_of_left_eq_left
   let D := F.recut hone hf hs
   have hdata := F.isRecutOfLeftEqLeft_recut hc hone hf hs
   obtain ⟨hfr, hsr⟩ := hdata.recut_sides
-  obtain ⟨hm, hfl, hsl⟩ : D.middle = x.swapColumns F.first.left F.second.right ∧
+  obtain ⟨hm, _, hsl⟩ : D.middle = x.swapColumns F.first.left F.second.right ∧
       D.first.left = F.first.left ∧ D.second.left = F.second.right := by
     rcases hdata.recut_branch with ⟨h, -⟩ | ⟨-, hm, hfl, hsl⟩
     · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap F.first.left F.second.right)
@@ -184,7 +184,7 @@ private theorem mem_rightLeftOverlapPartners_of_inverse
       second := GridPentagonBetween.ofRightEq D.second hside hturn }
   have hFrect : F.toRectangleDecomposition = D := by
     apply GridRectangleDecomposition.ext <;>
-      simp [F, GridRectanglePentagonDecomposition.pentagon, hside]
+      simp [F, GridRectanglePentagonDecomposition.pentagon]
   rw [← hFrect] at hrecut
   have hFc : F.rectangle.right = F.pentagon.left := by
     simpa [F, GridRectanglePentagonDecomposition.rectangle,
@@ -198,8 +198,6 @@ private theorem mem_rightLeftOverlapPartners_of_inverse
     (F.rectangle_left_ne_pentagon_right_of_mem_cIco hFt)
   obtain ⟨hP, hR⟩ := (G.mem_pentagonRectangleDecompositions C E).1 hE
   have hback := hrecut.symm
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut
-      (F.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone))
     (E.underlying_first_isEmpty ((G.mem_pentagons _).1 hP).1)
     (E.underlying_second_isEmpty
       (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).1)
@@ -282,13 +280,13 @@ private theorem rightLeftOverlapPartner_sides
     (D.toRectangleDecomposition.isRecut_recut hone hf hs) hrecut
   have hdata := D.toRectangleDecomposition.isRecutOfRightEqLeft_recut hc hone hf hs
   rw [hEq] at hdata
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   -- Distinct outer rows exclude mixed-side partners; inspect the two same-side orientations.
   obtain ⟨hbottom, htop⟩ := D.ne_rows_of_rightLeftRecut E hc hturn hdata
   rcases hback.orientation with h | h | h | h
   · right
     refine ⟨by simpa using h.side_eq, ?_⟩
-    rcases h.recut_branch with ⟨-, -, hfl, hsl⟩ | ⟨hcol, -⟩
+    rcases h.recut_branch with ⟨-, -, _, hsl⟩ | ⟨hcol, -⟩
     · obtain ⟨hfr, -⟩ := h.recut_sides
       exact (E.toRectangleDecomposition.second.left_ne_right
         (h.side_eq.symm.trans (hsl.symm.trans (hc.symm.trans hfr)))).elim

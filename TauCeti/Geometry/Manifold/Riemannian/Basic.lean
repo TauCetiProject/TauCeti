@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
+public import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -14,7 +15,8 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 This file provides conversions between Mathlib's Riemannian bundle classes and bundled
 Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map
-depends continuously on both the base point and the tangent vector.
+depends continuously on both the base point and the tangent vector. It also gives a
+differentiability criterion for maps whose tangent maps preserve inner products.
 
 ## Main definitions
 
@@ -22,20 +24,39 @@ depends continuously on both the base point and the tangent vector.
   `C^n` Riemannian bundle.
 * `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance`: express that a smooth metric
   induces the ambient Riemannian distance.
+* `Bundle.ContMDiffRiemannianMetric.ext`: smooth Riemannian metrics with the same fibrewise inner
+  products are equal.
+* `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance.toIsRiemannianManifold`: a metric
+  that induces the Riemannian distance makes the manifold a Riemannian manifold once its metric
+  bundle is installed.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
+* `Bundle.ContMDiffRiemannianMetric.toRiemannianMetric_ofIsContMDiffRiemannianBundle`: forgetting
+  regularity after packaging recovers the bundle's metric.
 * `Bundle.ContMDiffRiemannianMetric.inner_riemannianBundle`: conversely, installing a metric as the
   `RiemannianBundle` instance makes its inner product the fiber inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
   Riemannian bundle as a continuous Riemannian bundle.
+* `IsContMDiffRiemannianBundle.vectorSpace`: the standard metric of an inner product space is
+  analytic.
+* `TauCeti.mdifferentiableAt_of_inner_mfderiv`: a map whose tangent map preserves the inner
+  products is differentiable.
 * `ContMDiffOn.continuousOn_norm_mfderiv_apply`: the norm `‖df_z ξ‖` is jointly continuous
   in `z` and `ξ` on an open domain.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
   space to a `C^m` Riemannian manifold, `z ↦ ⟪df_z ξ, df_z η⟫` is `C^m`.
+* `TauCeti.inner_tangentSpace_congr` and `TauCeti.norm_tangentSpace_congr`: inner products and
+  norms of vectors in the tangent spaces at two equal points agree.
+* `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
+  preserves the metric there, it maps every ball around the origin of `T_p M` into itself.
+* `TauCeti.Manifold.inner_tangentSpace_vectorSpace` and
+  `TauCeti.Manifold.inner_mfderiv_eq_inner_mvfderiv`: the canonical identification of a tangent
+  space of a real inner-product space with the model space preserves inner products, and rewrites
+  inner products of `mfderiv` into `mvfderiv`.
 -/
 
 public section
@@ -44,6 +65,14 @@ open Bundle Manifold
 open scoped Bundle ContDiff Manifold
 
 noncomputable section
+
+/-- The native tangent-space metric on a real inner product space has the same inner products
+as its standard bundled Riemannian metric. -/
+theorem TauCeti.riemannianBundle_g_inner_vectorSpace
+    (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℝ F] :
+    (RiemannianBundle.g (E := fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)).inner =
+      (riemannianMetricVectorSpace F).inner :=
+  (rfl)
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -97,6 +126,13 @@ theorem ofIsContMDiffRiemannianBundle_inner
       RiemannianBundle.g.inner x v w := by
   rfl
 
+/-- Forgetting regularity after packaging a Riemannian bundle recovers its metric. -/
+@[simp]
+theorem toRiemannianMetric_ofIsContMDiffRiemannianBundle
+    [RiemannianBundle V] [IsContMDiffRiemannianBundle IB n F V] :
+    (ofIsContMDiffRiemannianBundle (IB := IB) (n := n) (F := F) (V := V)).toRiemannianMetric =
+      RiemannianBundle.g := (rfl)
+
 /-- Once a `C^n` Riemannian metric `g` is installed as the `RiemannianBundle` instance, the inner
 product of each fiber is `g.inner`. -/
 theorem inner_riemannianBundle (g : ContMDiffRiemannianMetric IB n F V) (x : B) (v w : V x) :
@@ -146,6 +182,12 @@ theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
     IsContMDiffRiemannianBundle.exists_contMDiff (IB := IB) (n := n) (F := F) (E := V)
   exact ⟨⟨g, hg.continuous, hinner⟩⟩
 
+/-- The standard Riemannian metric of a real inner product space, given by its inner product on
+every tangent space (`riemannianMetricVectorSpace`), is analytic, in particular smooth. -/
+instance vectorSpace {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
+    IsContMDiffRiemannianBundle 𝓘(ℝ, E) ω E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x) :=
+  Bundle.instIsContMDiffRiemannianBundle (riemannianMetricVectorSpace E)
+
 end IsContMDiffRiemannianBundle
 
 namespace Bundle.ContMDiffRiemannianMetric
@@ -171,6 +213,42 @@ theorem InducesRiemannianDistance.toIsRiemannianManifold
   simpa only [InducesRiemannianDistance] using h
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
+
+/-- A map whose tangent map at `x` preserves the Riemannian inner products is differentiable at
+`x`. -/
+theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
+    (hinner : ∀ v : TangentSpace I x, ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x v⟫_ℝ = ⟪v, v⟫_ℝ) :
+    MDifferentiableAt I I' Φ x := by
+  refine mdifferentiableAt_of_mfderiv_injective ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_)
+  have h := hinner v
+  rw [hv, inner_zero_left] at h
+  exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
+
+/-- The standard Riemannian metric of a real inner product space pairs two tangent vectors by the
+inner product of the corresponding vectors of the space. -/
+@[simp]
+theorem riemannianMetricVectorSpace_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (riemannianMetricVectorSpace V).inner x v w =
+      ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ :=
+  -- The metric is `innerSL ℝ` on each fibre, and `TangentSpace` is a type synonym for `V` whose
+  -- identification `fromTangentSpace` with `V` is the identity.
+  rfl
+
+end TauCeti
 
 section NormMFDeriv
 
@@ -223,3 +301,80 @@ theorem ContMDiffOn.contDiffOn_inner_mfderiv {f : F → M} {U : Set F} {m n : �
     (hf.contMDiffOn_totalSpaceMk_mfderiv_apply hmn hU η)
 
 end NormMFDeriv
+
+namespace TauCeti
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- The inner products of two vectors in the tangent spaces at two equal points agree. Both
+tangent spaces are the model space, so the vectors are compared there. -/
+theorem inner_tangentSpace_congr {q p : M} (h : q = p) {u w : TangentSpace I q}
+    {u' w' : TangentSpace I p} (hu : (u : E) = u') (hw : (w : E) = w') :
+    inner ℝ u w = inner ℝ u' w' := by
+  subst h hu hw
+  rfl
+
+/-- The norms of a vector in the tangent spaces at two equal points agree. Both tangent spaces
+are the model space, so the vectors are compared there. -/
+theorem norm_tangentSpace_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) : ‖w‖ = ‖v‖ := by
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_tangentSpace_congr h hw hw]
+
+/-- Normalization of equal model vectors at equal base points gives equal model vectors.
+The metric used to normalize each vector is the metric at its base point. -/
+theorem normalize_tangentSpace_congr {p q : M} (hp : p = q)
+    {v : TangentSpace I p} {w : TangentSpace I q} (hv : (v : E) = w) :
+    (NormedSpace.normalize (V := TangentSpace I p) v : E) =
+      NormedSpace.normalize (V := TangentSpace I q) w := by
+  subst hp hv
+  rfl
+
+/-- **Ball stability at a fixed point.** If `f` fixes `p` and its differential at `p` preserves
+the metric there, that differential maps every ball around the origin of `T_p M` into itself. -/
+theorem mfderiv_mem_ball_of_apply_eq_self {f : M → M} {p : M} (hfp : f p = p)
+    (hf : ∀ u w : TangentSpace I p,
+      inner ℝ (mfderiv I I f p u) (mfderiv I I f p w) = inner ℝ u w)
+    {r : ℝ} {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
+    mfderiv I I f p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
+  -- Read the norm of `mfderiv I I f p w` at `f p` and at `p`.
+  have hn : @norm (TangentSpace I p) _ (mfderiv I I f p w) = ‖w‖ := by
+    rw [← norm_tangentSpace_congr (I := I) hfp (w := mfderiv I I f p w) rfl,
+      norm_eq_sqrt_real_inner, hf w w, ← norm_eq_sqrt_real_inner]
+  refine (mem_ball_zero_iff (E := TangentSpace I p)).2 ?_
+  rw [hn]
+  exact mem_ball_zero_iff.1 hw
+
+end TauCeti
+
+namespace TauCeti.Manifold
+
+/-- The canonical identification of a tangent space of a real inner-product space with the
+model space preserves inner products. -/
+theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {x : F}
+    (v w : TangentSpace 𝓘(ℝ, F) x) :
+    inner ℝ v w = inner ℝ (NormedSpace.fromTangentSpace x v)
+      (NormedSpace.fromTangentSpace x w) := by
+  -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
+  -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
+  -- its inner product. This is the same definitional transport used by
+  -- Mathlib's `norm_tangentSpace_vectorSpace`.
+  rfl
+
+/-- For a map into a real inner product space, the inner product of `mfderiv` values in the target
+tangent space equals the inner product of `mvfderiv` values in the model space. -/
+theorem inner_mfderiv_eq_inner_mvfderiv
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (f : M → F) (x : M) (v w : TangentSpace I x) :
+    inner ℝ (mfderiv I 𝓘(ℝ, F) f x v) (mfderiv I 𝓘(ℝ, F) f x w) =
+      inner ℝ (mvfderiv I f x v) (mvfderiv I f x w) := by
+  simp [inner_tangentSpace_vectorSpace, mvfderiv]
+
+end TauCeti.Manifold

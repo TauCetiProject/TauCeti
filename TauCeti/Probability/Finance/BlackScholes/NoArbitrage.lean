@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.Arbitrage
-public import TauCeti.Probability.BrownianMotion.Geometric
+public import TauCeti.Probability.BrownianMotion.Geometric.Basic
 public import TauCeti.Probability.BrownianMotion.Girsanov
 
 /-!

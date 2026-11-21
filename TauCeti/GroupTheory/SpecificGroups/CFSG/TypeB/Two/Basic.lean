@@ -68,7 +68,7 @@ in `rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
 
 The same carrier-and-Frobenius material on the branches already assembled is in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` and
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6/Basic.lean` and
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Unimodular.lean`.
 
 ## Main declarations
@@ -76,10 +76,11 @@ The same carrier-and-Frobenius material on the branches already assembled is in
 * `TauCeti.RankTwoBLieIndex.carrierNode`: the node correspondence `Fin d.1.rank ≃ Fin 2` between the
   Bourbaki numbering of `B₂` and the numbering of the rank-two type-`C` carrier.
 * `TauCeti.RankTwoBLieIndex.AmbientGroup`: the algebraic-closure-valued points of that carrier.
-* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup`: the positive simple-root subgroup at a Bourbaki
-  node.
+* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup` and
+  `TauCeti.RankTwoBLieIndex.negSimpleRootSubgroup`: the positive and negative simple-root
+  subgroups at a Bourbaki node.
 * `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`: the character of
-  that subgroup is the corresponding simple root of the `B₂` root datum.
+  that positive subgroup is the corresponding simple root of the `B₂` root datum.
 * `TauCeti.RankTwoBLieIndex.frobenius`, `TauCeti.RankTwoBLieIndex.coe_frobenius_apply` and
   `TauCeti.RankTwoBLieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius, its entrywise
   description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
@@ -125,22 +126,22 @@ the inverse equivalence giving the correspondence back. It is the rank equality
 `TauCeti.RankTwoBLieIndex.rank_eq_two` followed by the swap of the two nodes, the swap being what
 `TauCeti.SpStd.rootGeneratorWeight_inl_eq_root_simpleIndex_B_two` shows the two numberings differ
 by. -/
-def carrierNode : Fin d.1.rank ≃ Fin 2 :=
+def carrierNode : Fin d.val.rank ≃ Fin 2 :=
   (finCongr d.rank_eq_two).trans (Equiv.swap 0 1)
 
-@[simp] theorem carrierNode_apply (i : Fin d.1.rank) :
+@[simp] theorem carrierNode_apply (i : Fin d.val.rank) :
     d.carrierNode i = Equiv.swap 0 1 (finCongr d.rank_eq_two i) :=
   (rfl)
 
 /-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
 Bourbaki node zero, and `carrierNode` swaps the two numberings, so the long simple root is the one
 the node correspondence sends to the final node of the rank-two type-`C` carrier. -/
-theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
-    d.carrierNode i = 1 ↔ d.1.dynkinType.IsLongSimpleRoot i := by
+theorem carrierNode_eq_one_iff (i : Fin d.val.rank) :
+    d.carrierNode i = 1 ↔ d.val.dynkinType.IsLongSimpleRoot i := by
   have hcarrier : d.carrierNode i = 1 ↔ (i : ℕ) = 0 := by
     rw [carrierNode_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right]
     simp [Fin.ext_iff]
-  have hlong : d.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
+  have hlong : d.val.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
     rw [DynkinType.isLongSimpleRoot_congr d.dynkinType_eq]
     simp only [DynkinType.isLongSimpleRoot_B, finCongr_apply, Fin.val_cast]
     omega
@@ -156,20 +157,32 @@ it, and it is not claimed to be the points of the pinned simply connected group 
 
 It is the same group for the untwisted and the Suzuki family of a given field order, those two
 differing only in the endomorphism taken of it. -/
-abbrev AmbientGroup : Type := SpStd.points 1 d.1.Closure
+abbrev AmbientGroup : Type := SpStd.points 1 d.val.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `B₂` diagram. It is
 the carrier's numbered raising subgroup at the node that `carrierNode` names. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
 carrier node. This is the equation through which the upstream root-subgroup API reaches
 `simpleRootSubgroup`. It is not a `simp` lemma: `frobenius_simpleRootSubgroup` is the normal form
 the simple-root-subgroup action equations of this file are stated against, and unfolding to
 `TauCeti.SpStd.rootSubgroupPoints` would keep it from firing. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
-    d.simpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.1.Closure :=
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
+    d.simpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.val.Closure :=
+  (rfl)
+
+/-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `B₂` diagram.
+It is the carrier's numbered lowering subgroup at the node that `carrierNode` names. -/
+def negSimpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  SpStd.rootSubgroupPoints 1 (.inr (d.carrierNode i)) d.val.Closure
+
+/-- The negative simple-root subgroup is the carrier's numbered lowering subgroup at the
+corresponding carrier node. This unfolding equation is not a `simp` lemma, so that action
+formulas stated against `negSimpleRootSubgroup` can fire without expanding the node adapter. -/
+theorem negSimpleRootSubgroup_def (i : Fin d.val.rank) :
+    d.negSimpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inr (d.carrierNode i)) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `B₂` root datum.** The character
@@ -178,7 +191,7 @@ same node correspondence, is the `i`-th simple root of
 `TauCeti.DynkinType.simplyConnectedRootDatum` at `B 2`. This is the sense in which the rank-two
 type-`C` carrier serves the diagram that the two rank-two type-`B` families name; it is not a claim
 that the carrier is the pinned group of that diagram, no pinning being constructed for it. -/
-theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
+theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.val.rank) :
     SpStd.rootGeneratorWeight 1 (.inl (d.carrierNode i)) (d.carrierNode j) =
       ((B 2).simplyConnectedRootDatum (valid_B.mpr le_rfl)).root
         ((B 2).simpleIndex (valid_B.mpr le_rfl) (finCongr d.rank_eq_two i))
@@ -196,7 +209,7 @@ untwisted family `B₂(q)` that endomorphism is the `q`-power Frobenius outright
 family it is the odd power `τ ^ (2m+1)` of the special isogeny, the map that odd power squares to
 being the `q`-power Frobenius. Neither is formed here. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  SpStd.frobenius 1 d.1.characteristic d.1.fieldExponent d.1.Closure
+  SpStd.frobenius 1 d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Frobenius of an index on the `B₂` diagram is the carrier's Frobenius at the exponent the
 index records. This is its unfolding lemma; the definition itself stays sealed.
@@ -206,7 +219,7 @@ the normal forms the simple-root-subgroup action equations of this file are stat
 unfolding to
 `TauCeti.SpStd.frobenius` would keep them from firing. -/
 theorem frobenius_def :
-    d.frobenius = SpStd.frobenius 1 d.1.characteristic d.1.fieldExponent d.1.Closure :=
+    d.frobenius = SpStd.frobenius 1 d.val.characteristic d.val.fieldExponent d.val.Closure :=
   (rfl)
 
 /-- The Frobenius acts on the ambient group by raising every matrix entry to the `q`-th power.
@@ -216,11 +229,11 @@ definitionally but not syntactically. Only the binders of `r` and `c` are affect
 coercions elaborate at the carrier's index type either way. -/
 @[simp]
 theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
-    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 4) d.val.Closure) :
+        Matrix (Fin 4) (Fin 4) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 4) d.val.Closure) :
+        Matrix (Fin 4) (Fin 4) d.val.Closure) r c ^ d.val.fieldOrder := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   -- The upstream lemma is instantiated by hand rather than rewritten with: its entry arguments
   -- live in `Fin ((1 + 1) + (1 + 1))`, which is only definitionally the `Fin 4` stated above.
   exact SpStd.coe_frobenius_apply 1 _ _ _ g r c
@@ -229,10 +242,21 @@ theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
 to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This describes an ordinary
 Frobenius factor of a Steinberg map on the numbered simple-root subgroups. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
-      d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+      d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder))
+          := by
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- The Frobenius fixes the Bourbaki numbering of a negative simple-root subgroup and raises
+its parameter to the `q`-th power. -/
+@[simp]
+theorem frobenius_negSimpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
+    d.frobenius (d.negSimpleRootSubgroup i u) =
+      d.negSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
+  rw [frobenius_def, negSimpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
 /-- **The prime-field Frobenius endomorphism of the ambient group of an index on the `B₂`
@@ -242,7 +266,7 @@ happens on an untwisted branch of prime field order and never on a Suzuki index,
 forces `q = 2 ^ (2m+1)` with `1 ≤ m`. It is the map that the half-Frobenius of a Suzuki index
 squares to. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure
+  SpStd.frobenius 1 d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius of an index on the `B₂` diagram is the carrier's Frobenius at
 exponent one. This is its unfolding lemma; the definition itself stays sealed.
@@ -251,28 +275,38 @@ As with `frobenius_def` it is deliberately not a `simp` lemma:
 `primeFrobenius_simpleRootSubgroup` and `coe_primeFrobenius_apply` are the normal forms stated
 against it. -/
 theorem primeFrobenius_def :
-    d.primeFrobenius = SpStd.frobenius 1 d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = SpStd.frobenius 1 d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
 `p`-th power, for `p` the defining characteristic. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 4) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c ^ d.1.characteristic := by
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 4) d.val.Closure) :
+        Matrix (Fin 4) (Fin 4) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 4) d.val.Closure) :
+        Matrix (Fin 4) (Fin 4) d.val.Closure) r c ^ d.val.characteristic := by
   rw [primeFrobenius_def]
-  simpa only [pow_one] using SpStd.coe_frobenius_apply 1 d.1.characteristic 1 d.1.Closure g r c
+  simpa only [pow_one] using SpStd.coe_frobenius_apply 1 d.val.characteristic 1 d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The prime-field Frobenius fixes the Bourbaki numbering of a negative simple-root subgroup
+and raises its parameter to the `p`-th power. -/
+@[simp]
+theorem primeFrobenius_negSimpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure)
+    :
+    d.primeFrobenius (d.negSimpleRootSubgroup i u) =
+      d.negSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
+  rw [primeFrobenius_def, negSimpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
 -- there being no power operation on `MonoidHom` itself; this is the form
@@ -280,7 +314,7 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. On a Suzuki index that exponent is the odd number `2m+1`. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, SpStd.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
@@ -296,11 +330,11 @@ left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `
 rejects the annotation. -/
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 4) d.1.Closure) :
-        Matrix (Fin 4) (Fin 4) d.1.Closure) r c ∈ d.1.fixedField := by
+      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 4) d.val.Closure) :
+        Matrix (Fin 4) (Fin 4) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, frobenius_def, SpStd.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 end
 

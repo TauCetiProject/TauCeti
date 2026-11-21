@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Uniform local properties and norm bounds over compact parameter sets
@@ -21,6 +23,12 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
 * `IsCompact.exists_eventually_norm_le`: a function continuous at every point of a compact fiber
   is uniformly bounded on nearby fibers, which remain in any open set containing the original
   fiber.
+* `IsCompact.exists_pos_forall_norm_sub_le`: a function continuous at the points of the graph of a
+  map over a compact set is uniformly continuous there, in the fibre direction.
+* `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
+  `V`, the coordinates of the points of `U` outside `V` are bounded.
+* `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
+  one point of `S` have norms tending to infinity has images of `S` in no fixed compact set.
 -/
 
 public section
@@ -34,10 +42,8 @@ variable {X P H : Type*} [TopologicalSpace X] [TopologicalSpace P] [SeminormedAd
 the product of a sufficiently small norm-ball about zero with `K`. -/
 theorem IsCompact.exists_pos_forall_norm_lt {K : Set P} (hK : IsCompact K)
     {Q : H → P → Prop} (hQ : ∀ y ∈ K, ∀ᶠ z in 𝓝 ((0 : H), y), Q z.1 z.2) :
-    ∃ r > 0, ∀ {x : H}, ‖x‖ < r → ∀ y ∈ K, Q x y := by
-  obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff.1
-    (hK.eventually_forall_of_forall_eventually hQ)
-  exact ⟨r, hr, fun hx => h (by simpa using hx)⟩
+    ∃ r > 0, ∀ ⦃x : H⦄, ‖x‖ < r → ∀ y ∈ K, Q x y := by
+  simpa using Metric.eventually_nhds_iff.1 (hK.eventually_forall_of_forall_eventually hQ)
 
 /-- A function continuous at every point of `{x₀} × K`, with `K` compact, is uniformly bounded
 on `{x} × K` for `x` near `x₀`. These nearby fibers also lie in any open set `W` containing
@@ -46,12 +52,54 @@ theorem IsCompact.exists_eventually_norm_le {K : Set P} (hK : IsCompact K)
     {W : Set (X × P)} {F : X × P → H} {x₀ : X} (hW : IsOpen W)
     (hF : ∀ y ∈ K, ContinuousAt F (x₀, y)) (hx₀ : ∀ y ∈ K, (x₀, y) ∈ W) :
     ∃ C, ∀ᶠ x in 𝓝 x₀, ∀ y ∈ K, (x, y) ∈ W ∧ ‖F (x, y)‖ ≤ C := by
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (fun y hy ↦
-    (hF y hy).comp_continuousWithinAt
-      (continuous_const.prodMk continuous_id).continuousWithinAt)
-  refine ⟨C + 1, ?_⟩
-  apply hK.eventually_forall_of_forall_eventually
-  intro y hy
-  have hlt : ∀ᶠ z in 𝓝 (x₀, y), ‖F z‖ < C + 1 :=
-    (hF y hy).norm.eventually_lt_const ((hC y hy).trans_lt (lt_add_one C))
-  exact ((hW.eventually_mem (hx₀ y hy)).and hlt).mono fun _ hz ↦ ⟨hz.1, hz.2.le⟩
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn fun y hy ↦
+    ((hF y hy).comp (Continuous.prodMk_right x₀).continuousAt).continuousWithinAt
+  refine ⟨C + 1, hK.eventually_forall_of_forall_eventually fun y hy ↦ ?_⟩
+  filter_upwards [hW.eventually_mem (hx₀ y hy),
+    (hF y hy).norm.eventually_lt_const ((hC y hy).trans_lt (lt_add_one C))] with z hzW hz
+  exact ⟨hzW, hz.le⟩
+
+/-- **Uniform continuity at a compact graph.** Let `x : P → E` be continuous on a compact set `K`,
+and let `Φ : P × E → G` be continuous at the points `(p, x p)`, `p ∈ K`. For every `ε > 0` there is
+`δ > 0` such that `‖Φ (p, y) - Φ (p, x p)‖ ≤ ε` for every `p ∈ K` and every `y` with
+`‖y - x p‖ ≤ δ`. -/
+theorem IsCompact.exists_pos_forall_norm_sub_le {M E G : Type*} [PseudoMetricSpace M]
+    [SeminormedAddCommGroup E] [SeminormedAddCommGroup G] {K : Set M} (hK : IsCompact K)
+    {x : M → E} (hx : ContinuousOn x K) {Φ : M × E → G}
+    (hΦ : ∀ p ∈ K, ContinuousAt Φ (p, x p)) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ p ∈ K, ∀ y : E, ‖y - x p‖ ≤ δ → ‖Φ (p, y) - Φ (p, x p)‖ ≤ ε := by
+  -- `Φ` is uniformly continuous at the compact graph `{(p, x p) | p ∈ K}`.
+  have hQ : IsCompact ((fun p ↦ (p, x p)) '' K) :=
+    hK.image_of_continuousOn (continuousOn_id.prodMk hx)
+  obtain ⟨δ, hδ, h⟩ := Metric.mem_uniformity_dist.1
+    (hQ.uniformContinuousAt_of_continuousAt Φ (by rintro _ ⟨p, hp, rfl⟩; exact hΦ p hp)
+      (Metric.dist_mem_uniformity hε))
+  refine ⟨δ / 2, by positivity, fun p hp y hy ↦ ?_⟩
+  rw [← dist_eq_norm, dist_comm]
+  refine (h (a := (p, x p)) (b := (p, y)) ?_ ⟨p, hp, rfl⟩).le
+  rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg, dist_comm, dist_eq_norm]
+  linarith
+
+namespace TauCeti
+
+/-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
+bounded coordinates in any homeomorphism `eU : U ≃ₜ H` with a seminormed group. -/
+theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] {U V : Set X} (hV : IsOpen V)
+    (hUV : U ∪ V = univ) (eU : U ≃ₜ H) : ∃ R, 0 ≤ R ∧ ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R := by
+  have hK : IsCompact ((↑) ⁻¹' Vᶜ : Set U) := by
+    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
+      inter_eq_right.2 fun x hx ↦ (eq_univ_iff_forall.1 hUV x).resolve_right hx]
+    exact hV.isClosed_compl.isCompact
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
+  exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
+
+/-- **Unbounded values violate every image bound.** If the norms of the values `u i z` at one point
+`z ∈ S` tend to infinity, then no compact set contains the images `u i '' S` for every `i`. -/
+theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {ι α E : Type*}
+    [SeminormedAddCommGroup E] {l : Filter ι} [l.NeBot] {u : ι → α → E} {S : Set α} {z : α}
+    (hz : z ∈ S) (hu : Tendsto (fun i ↦ ‖u i z‖) l atTop) :
+    ¬ ∃ K : Set E, IsCompact K ∧ ∀ i, MapsTo (u i) S K :=
+  not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact hz
+    ((tendsto_norm_atTop_iff_cobounded.1 hu).mono_right Metric.cobounded_le_cocompact)
+
+end TauCeti

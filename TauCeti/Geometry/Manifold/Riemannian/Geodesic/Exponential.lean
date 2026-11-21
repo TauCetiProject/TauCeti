@@ -1,14 +1,16 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The Riemannian exponential map
@@ -38,11 +40,20 @@ defined for all time.
 * `TauCeti.Manifold.expDomain`: the natural domain of the exponential map at `p`.
 * `TauCeti.Manifold.riemannianExp`: the exponential map at `p`.
 * `TauCeti.Manifold.IsGeodesicallyCompleteAt`: every geodesic leaving `p` is defined for all time.
+* `TauCeti.Manifold.IsGeodesicallyCompleteAt.geodesicInterval_eq_univ`: at such a point every
+  maximal geodesic interval is the whole real line.
 * `TauCeti.Manifold.mem_geodesicInterval_iff_smul_mem_expDomain`: the maximal interval of `v` is
   the set of times `t` with `t • v` in the domain.
-* `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`,
-  on and off its natural interval (where both sides take the junk value).
+* `TauCeti.Manifold.riemannianExp_smul`,
+  `TauCeti.Manifold.isGeodesicCurveOnFrom_riemannianExp_smul`, and
+  `TauCeti.Manifold.isGeodesicCurveOn_riemannianExp_smul_Icc`: `exp_p (t • v)` is the maximal
+  geodesic at time `t`, on and off its natural interval (where both sides take the junk value), and
+  therefore satisfies the geodesic equation on `geodesicInterval` and its closed subintervals.
+* `TauCeti.Manifold.mem_expDomain_of_norm_le_dist`: a vector with `‖v‖ ≤ dist p (exp_p v)` lies
+  in the domain, since off it `exp_p v` is the junk value `p`.
 * `TauCeti.Manifold.starConvex_expDomain`: the domain is star-shaped at `0`.
+* `TauCeti.Manifold.mem_expDomain_of_injective_mfderiv_riemannianExp`: an injective differential
+  forces membership in the natural domain.
 * `TauCeti.Manifold.isOpen_setOfPred_mem_expDomain` and
   `TauCeti.Manifold.contMDiffOn_riemannianExp_tangentBundle`: on the tangent bundle, the domain of
   the exponential map is open and the exponential map is smooth there.
@@ -57,12 +68,18 @@ defined for all time.
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
   diffeomorphism at `0`.
+* `TauCeti.Manifold.continuousAt_norm_angular_riemannianExp_zero` and
+  `TauCeti.Manifold.contDiffOn_inner_angular_riemannianExp`: regularity of the differential of the
+  exponential map applied to a fixed tangent vector.
 * `TauCeti.Manifold.radialVariation_eq_maximalGeodesic`,
   `TauCeti.Manifold.contMDiffAt_radialVariation` and
   `TauCeti.Manifold.eventually_acceleration_radialVariation_eq_zero`: the radial variation
   `exp_p (t • (v + u • w))` is a smooth family of geodesics.
 * `TauCeti.Manifold.variationField_radialVariation`: the variation field of the radial variation
   is `t ↦ d(exp_p)_{t v}(t w)`.
+* `TauCeti.Manifold.neg_mfderiv_riemannianExp_radial_mem_expDomain` and
+  `TauCeti.Manifold.riemannianExp_neg_mfderiv_riemannianExp_radial`: reversing a radial geodesic at
+  `exp_p v` lands in the domain of `exp_{exp_p v}` and returns to `p`.
 * `TauCeti.Manifold.expDomain_eq_univ_iff`: the exponential map at `p` is defined on all of
   `T_p M` exactly when `M` is geodesically complete at `p`.
 
@@ -70,9 +87,9 @@ defined for all time.
 
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2, Prop. 2.9.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5, Prop. 5.19.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
-
--- Roadmap: HopfRinow
 
 public section
 
@@ -117,6 +134,14 @@ theorem riemannianExp_def (p : M) (v : TangentSpace I p) :
     riemannianExp I M p v = maximalGeodesic I M p v 1 := by
   rfl
 
+/-- The exponential maps at equal base points agree on equal vectors. Both tangent spaces are the
+model space, so the vectors are compared there. -/
+theorem riemannianExp_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) :
+    riemannianExp I M q w = riemannianExp I M p v := by
+  subst h hw
+  rfl
+
 /-- The zero vector lies in the domain of the exponential map. -/
 theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p := by
   simp only [mem_expDomain_iff, geodesicInterval_zero, mem_univ]
@@ -134,6 +159,22 @@ variable [I.Boundaryless]
 @[simp] theorem riemannianExp_of_notMem_expDomain {p : M} {v : TangentSpace I p}
     (hv : v ∉ expDomain I M p) : riemannianExp I M p v = p :=
   maximalGeodesic_eq_of_not_mem (mt mem_expDomain_iff.2 hv)
+
+section Metric
+
+variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A tangent vector `v` with `‖v‖ ≤ dist p (exp_p v)` lies in the domain of `exp_p`: off the
+domain `exp_p v` is the junk value `p`, which forces `v = 0`. -/
+theorem mem_expDomain_of_norm_le_dist {p : M} {v : TangentSpace I p}
+    (hmin : ‖v‖ ≤ dist p (riemannianExp I M p v)) : v ∈ expDomain I M p := by
+  by_contra hv
+  rw [riemannianExp_of_notMem_expDomain hv, dist_self, norm_le_zero_iff] at hmin
+  exact hv (hmin ▸ zero_mem_expDomain p)
+
+end Metric
 
 /-! ### Homogeneity -/
 
@@ -166,13 +207,89 @@ theorem riemannianExp_smul [T2Space M]
         (mt mem_geodesicInterval_iff_smul_mem_expDomain.mpr ht),
       maximalGeodesic_eq_of_not_mem ht]
 
+/-- The radial exponential curve `t ↦ exp_p (t • v)` is a geodesic from `p` with initial velocity
+`v` on its maximal geodesic interval. -/
+theorem isGeodesicCurveOnFrom_riemannianExp_smul [T2Space M] (p : M) (v : TangentSpace I p) :
+    IsGeodesicCurveOnFrom I (fun t : ℝ ↦ riemannianExp I M p (t • v))
+      (geodesicInterval I M p v) p v := by
+  simpa only [funext (riemannianExp_smul (I := I) (M := M) p v)] using
+    isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
+
+/-- The radial exponential curve `t ↦ exp_p (t • v)` is a geodesic on every nondegenerate closed
+interval `[a, b]` whose endpoints lie in the maximal geodesic interval. -/
+theorem isGeodesicCurveOn_riemannianExp_smul_Icc [T2Space M]
+    {p : M} {v : TangentSpace I p} {a b : ℝ} (hab : a < b)
+    (ha : a ∈ geodesicInterval I M p v) (hb : b ∈ geodesicInterval I M p v) :
+    IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc a b) :=
+  (isGeodesicCurveOnFrom_riemannianExp_smul p v).isGeodesicCurveOn.mono (uniqueDiffOn_Icc hab)
+    (ordConnected_geodesicInterval.out ha hb)
+
+/-- A geodesic is the radial geodesic from any parameter `τ` to any parameter `t` whose
+whole connecting segment lies in the interior of its domain. -/
+theorem IsGeodesicCurveOn.eq_riemannianExp_sub_smul [T2Space M] {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ s) {τ t : ℝ} (hsub : uIcc τ t ⊆ interior s) :
+    γ t = riemannianExp I M (γ τ) ((t - τ) • curveVelocity I γ τ) := by
+  obtain ⟨c, d, hcd, hs⟩ := isOpen_interior.exists_Ioo_subset_of_uIcc_subset hsub
+  rw [riemannianExp_smul,
+    (hγ.mono (uniqueDiffOn_Ioo c d) (hs.trans interior_subset)).maximalGeodesic_sub_eq
+      (hcd left_mem_uIcc) (hcd right_mem_uIcc)]
+
+/-- An all-time geodesic is the radial geodesic from any of its points. -/
+theorem IsGeodesicCurve.eq_riemannianExp_sub_smul [T2Space M] {γ : ℝ → M}
+    (hγ : IsGeodesicCurve I γ) (τ t : ℝ) :
+    γ t = riemannianExp I M (γ τ) ((t - τ) • curveVelocity I γ τ) :=
+  (isGeodesicCurveOn_univ.mpr hγ).eq_riemannianExp_sub_smul (by simp)
+
+omit [I.Boundaryless] in
 /-- The domain of the exponential map is star-shaped at the zero vector. -/
 theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (expDomain I M p) := by
   intro v hv a b _ hb hab
-  rw [smul_zero, zero_add, ← mem_geodesicInterval_iff_smul_mem_expDomain]
-  have hb1 : b ≤ 1 := by linarith
-  exact ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
-    ⟨hb, hb1⟩
+  rw [smul_zero, zero_add]
+  rcases eq_or_ne b 0 with rfl | hb0
+  · rw [zero_smul]
+    exact zero_mem_expDomain p
+  · rw [mem_expDomain_iff, mem_geodesicInterval_smul_iff hb0, mul_one]
+    have hv1 := mem_expDomain_iff.1 hv
+    exact ordConnected_geodesicInterval.out (zero_mem_geodesicInterval_of_mem hv1) hv1
+      ⟨hb, by linarith⟩
+
+/-- An injective differential of the totalized exponential map forces the vector to belong
+to its natural domain. -/
+theorem mem_expDomain_of_injective_mfderiv_riemannianExp {p : M} {v : TangentSpace I p}
+    (hinj : Function.Injective (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v)) :
+    v ∈ expDomain I M p := by
+  by_contra hv
+  let γ : ℝ → M := fun t ↦ riemannianExp I M p (t • v)
+  have hconst : EqOn γ (fun _ ↦ p) (Ici 1) := by
+    intro t ht
+    apply riemannianExp_of_notMem_expDomain
+    intro htv
+    have h := (starConvex_expDomain (I := I) p).smul_mem htv
+      (inv_nonneg.mpr (zero_le_one.trans ht)) (inv_le_one_of_one_le₀ ht)
+    exact hv (by simpa only [smul_smul, inv_mul_cancel₀ (zero_lt_one.trans_le ht).ne',
+      one_smul] using h)
+  have hsmul : HasDerivAt (fun t : ℝ ↦ t • v) v 1 := by
+    simpa using (hasDerivAt_id (1 : ℝ)).smul_const v
+  have hdiff : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p)
+      ((fun t : ℝ ↦ t • v) 1) := by
+    simpa only [one_smul] using mdifferentiableAt_of_mfderiv_injective hinj
+  have hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ 1 :=
+    hdiff.comp 1 hsmul.differentiableAt.mdifferentiableAt
+  have hzero : curveVelocityWithin I γ (Ici 1) 1 = 0 := by
+    rw [curveVelocityWithin_apply, mfderivWithin_congr_of_mem hconst (mem_Ici.mpr le_rfl)]
+    simp only [mfderivWithin_const, ContinuousLinearMap.comp_zero]
+    rfl
+  have hfull : curveVelocity I γ 1 = 0 := by
+    rw [← curveVelocityWithin_univ, ← curveVelocityWithin_subset (subset_univ (Ici 1))
+      (uniqueDiffWithinAt_Ici 1) hγ.mdifferentiableWithinAt]
+    exact hzero
+  have hdv : mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v = 0 := by
+    have hvel := (hdiff.curveVelocity_comp_mfderiv hsmul).symm.trans hfull
+    exact (congrArg (fun z : TangentSpace I p ↦
+      (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z v : E))
+        (one_smul ℝ v)).symm.trans hvel
+  have hvzero : v = 0 := hinj (hdv.trans (map_zero _).symm)
+  exact hv (hvzero ▸ zero_mem_expDomain p)
 
 /-! ### Regularity -/
 
@@ -185,7 +302,7 @@ local instance tangentSpaceChartedSpace (p : M) :
 /-- **The domain of the exponential map in the tangent bundle is open**: the tangent vectors
 `z ∈ T_x M` lying in the natural domain of `exp_x` form an open subset of `TM`. -/
 theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
-    IsOpen {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := by
+    IsOpen {z : TangentBundle I M | z.snd ∈ expDomain I M z.proj} := by
   simp only [mem_expDomain_iff]
   exact isOpen_setOfPred_mem_geodesicInterval.preimage (continuous_id.prodMk continuous_const)
 
@@ -193,16 +310,16 @@ theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
 tangent vector at `x`, is smooth on the open subset of `TM` where it is naturally defined: it is
 the geodesic flow at time `1` followed by the base projection. -/
 theorem contMDiffOn_riemannianExp_tangentBundle [T2Space M] :
-    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   (contMDiffOn_maximalGeodesic.comp (contMDiff_id.prodMk contMDiff_const).contMDiffOn
-    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.2
+    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.snd
 
 /-- The exponential map is continuous on the open subset of the tangent bundle where it is
 naturally defined. -/
 theorem continuousOn_riemannianExp_tangentBundle [T2Space M] :
-    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   contMDiffOn_riemannianExp_tangentBundle.continuousOn
 
 /-- The natural domain of the Riemannian exponential map is open. -/
@@ -483,6 +600,84 @@ theorem variationField_radialVariation
 
 end RadialVariation
 
+/-! ### Regularity of the differential along a fixed direction -/
+
+/-- The Riemannian norm of the differential of the exponential map, applied to a fixed tangent
+vector `w` and evaluated along the line `r ↦ r • v`, is continuous at the centre. The norm is the
+varying Riemannian tangent norm, rather than a fixed model-space norm. -/
+theorem continuousAt_norm_angular_riemannianExp_zero [T2Space M] (p : M)
+    (v w : TangentSpace I p) :
+    ContinuousAt (fun r : ℝ ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖) 0 := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+      (V := fun x : M ↦ TangentSpace I x)
+  have h := (contMDiffOn_riemannianExp (I := I) (M := M) p).continuousOn_norm_mfderiv
+    (by simp) (isOpen_expDomain p) w
+  have hz : (0 : TangentSpace I p) ∈ expDomain I M p := zero_mem_expDomain p
+  have h0 := h.continuousAt ((isOpen_expDomain p).mem_nhds hz)
+  have h0' : ContinuousAt (fun z : TangentSpace I p ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w‖)
+      ((fun r : ℝ ↦ r • v) 0) := by simpa only [zero_smul] using h0
+  exact h0'.comp (f := fun r : ℝ ↦ r • v) (x := 0)
+    ((continuous_id.smul continuous_const :
+    Continuous (fun r : ℝ ↦ r • v)).continuousAt)
+
+/-- The squared Riemannian length of the differential of the exponential map, applied to a fixed
+tangent vector `w`, is smooth on the exponential domain. -/
+theorem contDiffOn_inner_angular_riemannianExp [T2Space M] (p : M) (w : TangentSpace I p) :
+    ContDiffOn ℝ ∞ (fun z : TangentSpace I p ↦
+      inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w))
+      (expDomain I M p) :=
+  (contMDiffOn_riemannianExp p).contDiffOn_inner_mfderiv (by simp)
+    (isOpen_expDomain p) w w
+
+/-! ### Reversing a radial geodesic -/
+
+/-- At time `1`, the velocity of the maximal geodesic from `p` with initial velocity `v ∈ expDomain`
+is the radial differential `d(exp_p)_v v`. -/
+private theorem curveVelocityWithin_maximalGeodesic_one [T2Space M] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) 1 =
+      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
+  have h1 : (1 : ℝ) ∈ geodesicInterval I M p v := mem_expDomain_iff.1 hv
+  have h := curveVelocity_riemannianExp_smul (I := I) (M := M) (v := v) (t := 1)
+    (by simpa only [one_smul] using hv)
+  rw [one_smul, funext (riemannianExp_smul p v)] at h
+  exact (curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds h1)).trans h
+
+/-- **Reversing a radial geodesic stays in the exponential domain.** For `v` in the natural domain
+of `exp_p`, the negated arrival velocity `-d(exp_p)_v v` lies in the natural domain of
+`exp_{exp_p v}`. -/
+theorem neg_mfderiv_riemannianExp_radial_mem_expDomain [T2Space M] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    -mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v ∈
+      expDomain I M (riemannianExp I M p v) := by
+  have h1 : (1 : ℝ) ∈ geodesicInterval I M p v := mem_expDomain_iff.1 hv
+  have hmem : (-1 : ℝ) ∈ geodesicInterval I M (maximalGeodesic I M p v 1)
+      (curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) 1) :=
+    (mem_geodesicInterval_maximalGeodesic_iff h1).2
+      (by rw [add_neg_cancel]; exact zero_mem_geodesicInterval)
+  rw [curveVelocityWithin_maximalGeodesic_one hv, ← riemannianExp_def,
+    mem_geodesicInterval_iff_smul_mem_expDomain, neg_one_smul] at hmem
+  exact hmem
+
+/-- **Reversing a radial geodesic returns to the base point.** For `v` in the natural domain of
+`exp_p`, exponentiating the negated arrival velocity `-d(exp_p)_v v` at `exp_p v` recovers `p`. -/
+@[simp] theorem riemannianExp_neg_mfderiv_riemannianExp_radial [T2Space M] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    riemannianExp I M (riemannianExp I M p v)
+      (-mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v) = p := by
+  have h1 : (1 : ℝ) ∈ geodesicInterval I M p v := mem_expDomain_iff.1 hv
+  have h0 : (1 : ℝ) + (-1 : ℝ) ∈ geodesicInterval I M p v := by
+    rw [add_neg_cancel]
+    exact zero_mem_geodesicInterval
+  have hadd := maximalGeodesic_add (I := I) (M := M) h1 h0
+  rw [add_neg_cancel, maximalGeodesic_zero, curveVelocityWithin_maximalGeodesic_one hv,
+    ← riemannianExp_def, ← riemannianExp_smul, neg_one_smul] at hadd
+  exact hadd.symm
+
 end Boundaryless
 
 /-! ### Completeness at a point -/
@@ -492,6 +687,13 @@ variable (I M) in
 `p` is defined for all time. -/
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
+
+/-- At a point where the manifold is geodesically complete, every maximal geodesic interval is
+the whole real line. -/
+theorem IsGeodesicallyCompleteAt.geodesicInterval_eq_univ {p : M}
+    (hp : IsGeodesicallyCompleteAt I M p) (v : TangentSpace I p) :
+    geodesicInterval I M p v = univ :=
+  hp v
 
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/

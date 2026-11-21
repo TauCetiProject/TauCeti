@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 
 /-!
 # A separable isogeny is unramified
@@ -56,7 +57,7 @@ namespace Isogeny
 
 open AlgebraicGeometry WeierstrassCurve.Affine
 
-variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra W₂.FunctionField W₁.FunctionField]
   (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
   [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
@@ -67,6 +68,7 @@ theorem different_eq_zero :
     haveI := φ.finiteDimensional_functionField h
     haveI := φ.isSeparable_functionField h
     Divisor.different F W₁.FunctionField W₂.isFunctionField = 0 := by
+  have := φ.isElliptic
   have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
   have := φ.finiteDimensional_functionField h
   have := φ.isSeparable_functionField h

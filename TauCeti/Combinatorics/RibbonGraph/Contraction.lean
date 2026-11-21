@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.ChordDiagram
+import TauCeti.GroupTheory.GroupAction.Closure
 
 /-!
 # Spanning-tree contraction of ribbon graphs

@@ -22,10 +22,13 @@ unramified extension of `K` whose degree is `[k : 𝓀[K]]` has residue field is
 `𝓀[K]`. Thus every finite residue-field extension occurs, while the chosen residue isomorphism
 records the noncanonical data needed to compare abstract extensions.
 
-## Main result
+## Main results
 
 * `TauCeti.nonempty_residueFieldAlgEquiv_unramifiedExtension`: every finite extension of the
   residue field is the residue field of the canonical unramified extension of the same degree.
+* `TauCeti.IsUnramified.nonempty_algEquiv_of_finrank_eq` and
+  `TauCeti.IsUnramified.nonempty_algEquiv_iff_finrank_eq`: two unramified extensions of `K` are
+  `K`-isomorphic if and only if they have the same degree over `K`.
 
 ## References
 
@@ -68,7 +71,7 @@ theorem nonempty_residueFieldAlgEquiv_unramifiedExtension
   let _ := finiteIntermediateFieldTopology K Ω L
   have _ := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have _ := finiteIntermediateField_valuativeExtension K Ω L
-  have _ : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have _ : IsUnramified K L := isUnramified_unramifiedExtension
   have hL : Module.finrank 𝓀[K] 𝓀[L] = f := by
     rw [← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank,
       finrank_unramifiedExtension hf]
@@ -78,5 +81,40 @@ theorem nonempty_residueFieldAlgEquiv_unramifiedExtension
   let eL := FiniteField.algEquivExtension 𝓀[K] p f 𝓀[L] hL
   let ek := FiniteField.algEquivExtension 𝓀[K] p f k rfl
   exact ⟨eL.trans ek.symm⟩
+
+section EquivOfFinrankEq
+
+variable {K} {L M : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
+  [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+  [ValuativeExtension K M] [IsUnramified K M]
+
+/-- **Uniqueness of unramified extensions up to `K`-isomorphism.** Two unramified extensions of a
+nonarchimedean local field `K` of the same degree are isomorphic as `K`-algebras. -/
+theorem IsUnramified.nonempty_algEquiv_of_finrank_eq
+    (h : Module.finrank K L = Module.finrank K M) : Nonempty (L ≃ₐ[K] M) := by
+  have := finite_of_valuativeExtension K L
+  have := finite_of_valuativeExtension K M
+  let f := Module.finrank K L
+  have : NeZero f := ⟨Module.finrank_pos.ne'⟩
+  have hL : Module.finrank 𝓀[K] 𝓀[L] = f := by
+    rw [← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank]
+  have hM : Module.finrank 𝓀[K] 𝓀[M] = f := by
+    rw [← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank, ← h]
+  let ⟨p, _⟩ := CharP.exists 𝓀[K]
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[K] p⟩
+  let eL := FiniteField.algEquivExtension 𝓀[K] p f 𝓀[L] hL
+  let eM := FiniteField.algEquivExtension 𝓀[K] p f 𝓀[M] hM
+  obtain ⟨e, -, -⟩ := IsUnramified.existsUnique_algEquiv_residueFieldHom_eq (eL.trans eM.symm)
+  exact ⟨e⟩
+
+variable (K L M) in
+/-- **Classification of unramified extensions by degree.** Two unramified extensions of a
+nonarchimedean local field `K` are `K`-isomorphic if and only if they have the same degree. -/
+theorem IsUnramified.nonempty_algEquiv_iff_finrank_eq :
+    Nonempty (L ≃ₐ[K] M) ↔ Module.finrank K L = Module.finrank K M :=
+  ⟨fun ⟨e⟩ ↦ e.toLinearEquiv.finrank_eq, IsUnramified.nonempty_algEquiv_of_finrank_eq⟩
+
+end EquivOfFinrankEq
 
 end TauCeti

@@ -107,18 +107,25 @@ instance; install it with `letI`. -/
 @[instance_reducible]
 def subbundleTopology {F' : Type*} (V : Π x, Submodule 𝕜 (E x)) :
     TopologicalSpace (TotalSpace F' fun x ↦ V x) :=
-  .induced (fun p ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)) inferInstance
+  .induced (fun p ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E)) inferInstance
+
+omit [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)] in
+/-- The inclusion of the total space of a family of subspaces of the fibres of `E` into the total
+space of `E` is injective. No topology is involved. -/
+theorem injective_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    Injective fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E) := by
+  rintro ⟨x, v⟩ ⟨y, w⟩ h
+  obtain rfl : x = y := congrArg TotalSpace.proj h
+  exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
 
 omit [TopologicalSpace B] in
 /-- The total space of a family of subspaces of the fibres of `E` is embedded in the total space
 of `E`. -/
 theorem isEmbedding_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 (E x)) :
     letI := subbundleTopology F (F' := F') V
-    IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) := by
+    IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E) :=
   let := subbundleTopology F (F' := F') V
-  refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
-  obtain rfl : x = y := congrArg TotalSpace.proj h
-  exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
+  ⟨⟨rfl⟩, injective_totalSpace_subbundle F F' V⟩
 
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
@@ -292,13 +299,28 @@ theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).
   simp only [trivOperator, FunLike.coe_sum, Finset.sum_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, ← h, map_sum, map_smul]
 
-omit [VectorBundle 𝕜 F E] in
-private theorem continuousAt_trivOperator (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen U)
-    {y₀ : B} (hy₀ : y₀ ∈ U) : ContinuousAt (trivOperator 𝕜 F X y₀) y₀ := by
+/-- A functional `c` on the model fibre that kills the frame read in the trivialization at `y₀`
+vanishes on `V y` once pulled back through that trivialization. -/
+theorem apply_continuousLinearMapAt_eq_zero (hX : IsSubbundleFrameOn F V X U) {y₀ y : B}
+    (hyU : y ∈ U) (hy : y ∈ (trivializationAt F E y₀).baseSet) {c : F →L[𝕜] 𝕜}
+    (hc : c ∘L trivOperator 𝕜 F X y₀ y = 0) {v : E y} (hv : v ∈ V y) :
+    c ((trivializationAt F E y₀).continuousLinearMapAt 𝕜 y v) = 0 := by
+  rw [← hX.span_eq hyU] at hv
+  obtain ⟨a, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hv
+  rw [(trivializationAt F E y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy,
+    ← trivOperator_apply hy]
+  exact DFunLike.congr_fun hc a
+
+omit [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] in
+/-- A family of sections `X i` of `E` that are continuous at `y₀`, read in the trivialization of
+`E` at `y₀`, is an operator `c ↦ ∑ i, c i • X i` depending continuously on the base point at
+`y₀`. -/
+theorem continuousAt_trivOperator {y₀ : B}
+    (hX : ∀ i, ContinuousAt (fun x ↦ TotalSpace.mk' F x (X i x)) y₀) :
+    ContinuousAt (trivOperator 𝕜 F X y₀) y₀ := by
   refine tendsto_finsetSum _ fun i _ ↦ ?_
-  have h := ((FiberBundle.continuousAt_totalSpace F _).mp
-    ((hX.continuousOn i).continuousAt (hU.mem_nhds hy₀))).2
-  exact ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F
+  have h := ((FiberBundle.continuousAt_totalSpace F _).mp (hX i)).2
+  exact ((ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (ι → 𝕜) F
     (ContinuousLinearMap.proj i)).continuous.continuousAt).comp h
 
 /-- At a point `y₀` of `U`, the frame read in the trivialization of `E` at `y₀` is injective on
@@ -337,7 +359,8 @@ private theorem exists_coords_eq [IsRCLikeNormedField 𝕜] (hX : IsSubbundleFra
   have : CompleteSpace 𝕜 := by
     let _ := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  obtain ⟨L, hL, hLinv⟩ := (continuousAt_trivOperator hX hU hy₀).exists_continuousAt_leftInverse
+  obtain ⟨L, hL, hLinv⟩ := (continuousAt_trivOperator fun i ↦
+    (hX.continuousOn i).continuousAt (hU.mem_nhds hy₀)).exists_continuousAt_leftInverse
     (.of_injective_of_finiteDimensional_domain (injective_trivOperator hX hy₀))
   refine ⟨L, hL, ?_⟩
   filter_upwards [hLinv, hU.mem_nhds hy₀,
@@ -350,23 +373,23 @@ the total space of `E`. -/
 private theorem continuousAt_coords [IsRCLikeNormedField 𝕜] (hX : IsSubbundleFrameOn F V X U)
     (hU : IsOpen U) {p : TotalSpace (ι → 𝕜) fun x ↦ V x} (hp : p.proj ∈ U) :
     letI := subbundleTopology F (F' := ι → 𝕜) V
-    ContinuousAt (fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦ hX.coords q.proj q.2) p := by
+    ContinuousAt (fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦ hX.coords q.proj q.snd) p := by
   let := subbundleTopology F (F' := ι → 𝕜) V
   let := Fintype.ofFinite ι
   have hproj := (continuous_proj_totalSpace_subbundle F (ι → 𝕜) V).continuousAt (x := p)
   obtain ⟨L, hL, hev⟩ := exists_coords_eq hX hU hp
   -- Read in the trivialization of `E` at `p.proj`, the vector varies continuously.
   have hincl : ContinuousAt
-      (fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) p :=
+      (fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦ (⟨q.proj, q.snd⟩ : TotalSpace F E)) p :=
     (isEmbedding_totalSpace_subbundle F _ V).continuous.continuousAt
-  have htriv : ContinuousAt (trivializationAt F E p.proj) (⟨p.proj, p.2⟩ : TotalSpace F E) :=
+  have htriv : ContinuousAt (trivializationAt F E p.proj) (⟨p.proj, p.snd⟩ : TotalSpace F E) :=
     (trivializationAt F E p.proj).continuousAt
-      (FiberBundle.mem_trivializationAt_proj_source (x := (⟨p.proj, p.2⟩ : TotalSpace F E)))
+      (FiberBundle.mem_trivializationAt_proj_source (x := (⟨p.proj, p.snd⟩ : TotalSpace F E)))
   have hread := (ContinuousAt.comp (f := fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦
-    (⟨q.proj, q.2⟩ : TotalSpace F E)) htriv hincl).snd
+    (⟨q.proj, q.snd⟩ : TotalSpace F E)) htriv hincl).snd
   refine ((hL.comp hproj).clm_apply hread).congr ?_
   filter_upwards [hproj.preimage_mem_nhds hev] with q hq
-  exact (hq.2.2 q.2).symm
+  exact (hq.2.2 q.snd).symm
 
 /-- The vector with given coordinates in the frame depends continuously on the base point and the
 coordinates, in the subspace topology of the total space of `E`. -/
@@ -379,8 +402,9 @@ private theorem continuousAt_vec (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen 
   let := Fintype.ofFinite ι
   rw [(isEmbedding_totalSpace_subbundle F _ V).continuousAt_iff,
     FiberBundle.continuousAt_totalSpace]
-  refine ⟨continuousAt_fst, (((continuousAt_trivOperator hX hU hq).comp continuousAt_fst).clm_apply
-    continuousAt_snd).congr ?_⟩
+  have hA := continuousAt_trivOperator (𝕜 := 𝕜) fun i ↦
+    (hX.continuousOn i).continuousAt (hU.mem_nhds hq)
+  refine ⟨continuousAt_fst, ((hA.comp continuousAt_fst).clm_apply continuousAt_snd).congr ?_⟩
   filter_upwards [continuousAt_fst.preimage_mem_nhds (hU.mem_nhds hq),
     continuousAt_fst.preimage_mem_nhds
       ((trivializationAt F E q.1).open_baseSet.mem_nhds
@@ -402,7 +426,7 @@ def trivialization (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen U) :
     letI := subbundleTopology F (F' := ι → 𝕜) V
     Trivialization (ι → 𝕜) (π (ι → 𝕜) fun x ↦ V x) :=
   letI := subbundleTopology F (F' := ι → 𝕜) V
-  { toFun p := (p.proj, hX.coords p.proj p.2)
+  { toFun p := (p.proj, hX.coords p.proj p.snd)
     invFun q := TotalSpace.mk' (ι → 𝕜) (E := fun x ↦ V x) q.1 (hX.vec q.1 q.2)
     source := π (ι → 𝕜) (fun x ↦ V x) ⁻¹' U
     target := U ×ˢ univ
@@ -437,7 +461,7 @@ theorem trivialization_baseSet :
 
 private theorem trivialization_apply_eq (p : TotalSpace (ι → 𝕜) fun x ↦ V x) :
     letI := subbundleTopology F (F' := ι → 𝕜) V
-    hX.trivialization hU p = (p.proj, hX.coords p.proj p.2) :=
+    hX.trivialization hU p = (p.proj, hX.coords p.proj p.snd) :=
   (rfl)
 
 private theorem trivialization_symm_apply_eq (q : B × (ι → 𝕜)) :
@@ -450,7 +474,7 @@ private theorem trivialization_symm_apply_eq (q : B × (ι → 𝕜)) :
 @[simp]
 theorem trivialization_apply {p : TotalSpace (ι → 𝕜) fun x ↦ V x} (hp : p.proj ∈ U) :
     letI := subbundleTopology F (F' := ι → 𝕜) V
-    hX.trivialization hU p = (p.proj, (hX.basis hp).equivFun p.2) := by
+    hX.trivialization hU p = (p.proj, (hX.basis hp).equivFun p.snd) := by
   rw [trivialization_apply_eq, coords_of_mem hX hp]
 
 /-- Over `U`, the inverse of the frame trivialization sends coordinates to the corresponding
@@ -600,12 +624,12 @@ fibres of `E`, read in a trivialization `g` of `E`, depends continuously on the 
 point of both base sets, provided the total space of `V` maps continuously into that of `E`. -/
 theorem continuousAt_symm_subbundle
     (e' : Trivialization F' (π F' fun x ↦ V x)) (g : Trivialization F (π F E))
-    (hV : Continuous fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))
+    (hV : Continuous fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E))
     {b₀ : B} (he' : b₀ ∈ e'.baseSet) (hg : b₀ ∈ g.baseSet) (v : F') :
     ContinuousAt (fun x ↦ (g ⟨x, (e'.symm x v : E x)⟩).2) b₀ := by
   -- Near `b₀`, the vector is the image of `e'.symm (x, v)` in the total space of `E`.
   have hframe : (fun x ↦ (⟨x, (e'.symm x v : E x)⟩ : TotalSpace F E)) =ᶠ[𝓝 b₀]
-      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)) ∘
+      (fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E)) ∘
         fun x ↦ e'.toOpenPartialHomeomorph.symm (x, v) := by
     filter_upwards [e'.open_baseSet.mem_nhds he'] with x hx
     rw [Function.comp_apply, ← e'.mk_symm hx]

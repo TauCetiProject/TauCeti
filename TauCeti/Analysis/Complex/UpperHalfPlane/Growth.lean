@@ -12,8 +12,9 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 /-!
 # Exponential bounds on the upper half-plane
 
-An exponential growth bound with real rate `k` at `i∞` remains valid after increasing `k`. This
-monotonicity feeds the independence of a cusp Laurent expansion from the chosen growth bound.
+An exponential growth bound with real rate `k` on the upper half-plane (typically at `i∞`)
+remains valid after increasing `k`. This monotonicity feeds the independence of a cusp Laurent
+expansion from the chosen growth bound.
 
 -/
 
@@ -23,14 +24,14 @@ open UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane
 
-/-- An exponential growth bound at `i∞` remains valid after increasing its real rate. -/
-theorem isBigO_exp_of_le {E : Type*} [NormedAddCommGroup E]
-    (w : ℝ) (hw : 0 < w) {k k' : ℝ} (hkk' : k ≤ k') {f : ℍ → E}
-    (hf : f =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * k * z.im / w)) :
-    f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * k' * z.im / w) := by
-  refine hf.trans (Asymptotics.isBigO_of_le _ fun z ↦ ?_)
-  simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-  gcongr
+/-- An exponential growth bound on `ℍ` remains valid after increasing its real rate. Since the
+comparison holds pointwise, this works along any filter, in particular `atImInfty`. -/
+theorem isBigO_exp_of_le {E : Type*} [Norm E] {l : Filter ℍ} {w : ℝ} (hw : 0 ≤ w)
+    {k k' : ℝ} (hkk' : k ≤ k') {f : ℍ → E}
+    (hf : f =O[l] fun z ↦ Real.exp (2 * Real.pi * k * z.im / w)) :
+    f =O[l] fun z ↦ Real.exp (2 * Real.pi * k' * z.im / w) :=
+  hf.trans <| Asymptotics.isBigO_of_le _ fun z ↦ by
+    simp only [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp]
+    gcongr
 
 end TauCeti.UpperHalfPlane

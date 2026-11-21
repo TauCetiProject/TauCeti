@@ -68,14 +68,13 @@ theorem infiniteLayerInv_eq_zero_iff (w : InfinitePlace K)
   map_eq_zero_iff _ (infiniteLayerInv_injective w V)
 
 open scoped Classical in
-/-- At a real place, the finite-layer invariant is zero on the zero class and `1/2` on every
-nonzero class. -/
-theorem infiniteLayerInv_apply_of_isReal (w : InfinitePlace K) (hw : w.IsReal)
+/-- The finite-layer invariant is zero on the zero class and `1/2` on every nonzero class. -/
+theorem infiniteLayerInv_apply_eq_ite (w : InfinitePlace K)
     (V : OpenNormalSubgroup (AbsoluteGaloisGroup w.Completion))
     (x : (NormalLayer.ofOpenNormal V).H (unitsFormation w.Completion) 2) :
     infiniteLayerInv w V x = if x = 0 then 0 else ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   classical
-  rw [infiniteLayerInv_apply, infiniteInvMap_apply_of_isReal w hw,
+  rw [infiniteLayerInv_apply, infiniteInvMap_apply_eq_ite w,
     map_eq_zero_iff _ (brInfl_injective V)]
 
 /-- At a complex place every finite-layer archimedean invariant is zero. -/

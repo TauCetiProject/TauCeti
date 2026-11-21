@@ -49,7 +49,7 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection {
         fun p : M × V => f p.1 + p.2) ∧
       (∀ x v, ‖v‖ ≤ r x → f x + v ∈ O) ∧
       ∀ p : TotalSpace F (fun x => normalSubspace I f x),
-        ‖(p.2 : V)‖ ≤ r p.proj → p ∈ U := by
+        ‖(p.snd : V)‖ ≤ r p.proj → p ∈ U := by
   have : T1Space M := I.t1Space M
   have : T2Space M := hind.isEmbedding.t2Space
   obtain ⟨R, hR, hemb, hambient⟩ :=
@@ -61,14 +61,14 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection {
     have hx := hzero x
     rw [← hWU] at hx
     exact hx
-  obtain ⟨r, hr, hrR, hdisc⟩ := hW.exists_contMDiffMap_closedBall_subset (I := I)
-    hWzero R.contMDiff.continuous hR
+  obtain ⟨r, hr, hrR, hdisc⟩ := exists_contMDiffMap_closedBall_subset (I := I)
+    (fun x => hW.mem_nhds (hWzero x)) R.contMDiff.continuous.lowerSemicontinuous hR
   refine ⟨r, hr, isOpenEmbedding_normalTubeOfRadius_of_le r.contMDiff.continuous
     (fun x => (hrR x).le) hemb, ?_, ?_⟩
   · intro x v hv
     exact hambient x v (hv.trans (hrR x).le)
   · intro p hp
     rw [← hWU]
-    exact hdisc p.proj (p.2 : V) (by simpa using hp)
+    exact hdisc p.proj (p.snd : V) (by simpa using hp)
 
 end TauCeti

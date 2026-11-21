@@ -50,10 +50,6 @@ is already known to determine the measure.
 D. V. Widder, *The Laplace Transform* (Princeton, 1941), Chapter IV, Theorem 12a; see also
 R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012),
 Theorem 1.4 and its remark on the open half-line.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B: the warning attached to the
-  Bernstein milestone asks for the open-half-line representation by a possibly infinite measure,
-  with `1 / t = ∫₀^∞ e^{-tx} dx` as its example.
 -/
 
 public section

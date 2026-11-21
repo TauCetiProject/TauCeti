@@ -16,6 +16,7 @@ import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.Algebraic.LinearIndependent
 import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
@@ -139,11 +140,7 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {t : K} (ht : Transcendental k
   let _ : Algebra k[X] K := (aeval t).toAlgebra
   let _ : Algebra k[X] F := ((algebraMap K F).comp (algebraMap k[X] K)).toAlgebra
   have : IsScalarTower k[X] K F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsFractionRing k[X] K := by
-    let e : RatFunc k ≃ₐ[k] K := (RatFunc.algEquivOfTranscendental t ht).trans
-      ((IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv)
-    refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
-    simp [e, RingHom.algebraMap_toAlgebra]
+  have : IsFractionRing k[X] K := isFractionRing_polynomial_aeval ht htop
   have : IsScalarTower k k[X] K := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
   have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by
@@ -181,13 +178,8 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {t : K} (ht : Transcendental k
       rw [← Algebra.adjoin_image, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
       rfl
   -- `P` is finite on `C`, since `t` is regular at `P` and `C` is integral over `k[t]`.
-  have hR : ∀ r : k[X], algebraMap k[X] F r ∈ P.integers := fun r ↦ by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact add_mem hp hq
-    | monomial n c =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, ← htX, ← Polynomial.algebraMap_eq,
-        ← IsScalarTower.algebraMap_apply]
-      exact mul_mem (P.algebraMap_mem_integers c) (pow_mem htP n)
+  have hR : ∀ r : k[X], algebraMap k[X] F r ∈ P.integers :=
+    P.algebraMap_polynomial_mem_integers htP htX
   have hC : ∀ c : C, algebraMap C F c ∈ P.integers := fun c ↦
     P.mem_integers_of_isIntegral hR (Algebra.IsIntegral.isIntegral c).algebraMap
   rw [differentExponent_eq_ord_aeval_derivative_minpoly_of_isIntegralClosure k K

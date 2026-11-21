@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Infinitary.FirstOrderImage
 public import TauCeti.ModelTheory.ModelExistence.CountableModel
 public import TauCeti.ModelTheory.ModelExistence.Types
 
@@ -42,6 +43,9 @@ type is isolated over the theory of the structure.
 * `FirstOrder.Language.Theoryω.isolatesIn_top_infinitaryType`: if a structure realizes only
   countably many complete `n`-types, the complete type of each of its `n`-tuples is isolated over
   its `L_{ω₁ω}` theory.
+* `FirstOrder.Language.Theoryω.isolatesIn_firstOrder_iff`: in the first-order image fragment,
+  isolation of a first-order partial type over a first-order theory is isolation by a first-order
+  formula in the sense of Mathlib's `Theory.IsSatisfiable` and `Theory.ModelsBoundedFormula`.
 
 ## References
 
@@ -152,6 +156,32 @@ theorem isolatesIn_top_infinitaryType {M : Type w} [L.Structure M] [Nonempty M]
     intro b hb
     rw [← mem_infinitaryType, (hχ b).1 hb]
     exact hψ
+
+/-- **Isolation in the first-order image.** A first-order partial type is isolated over a
+first-order theory in the first-order image fragment exactly when some first-order formula `φ`
+isolates it modulo the theory in Mathlib's sense: the theory together with the existential closure
+of `φ` is satisfiable, and the theory models the universal closure of `φ → ψ` for every `ψ` in the
+type. -/
+theorem isolatesIn_firstOrder_iff {T : L.Theory} {p : Set (L.BoundedFormula Empty n)} :
+    IsolatesIn (Fragment.firstOrder L) (BoundedFormula.toOmega '' T)
+        (BoundedFormula.toOmega '' p) ↔
+      ∃ φ : L.BoundedFormula Empty n,
+        (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
+  simp only [isolatesIn_iff, Set.forall_mem_image]
+  constructor
+  · rintro ⟨_, hφ, hsat, hent⟩
+    obtain ⟨φ, rfl⟩ := Fragment.mem_firstOrder_iff.1 hφ
+    refine ⟨φ, ?_, fun ψ hψ => ?_⟩
+    · rw [← isSatisfiable_image_toOmega_iff, Set.image_insert_eq]
+      simpa only [BoundedFormula.toInf_exs] using hsat
+    · rw [← entails_image_toOmega_iff]
+      simpa only [BoundedFormula.toInf_alls, BoundedFormula.toInf_imp] using hent hψ
+  · rintro ⟨φ, hsat, hent⟩
+    refine ⟨φ.toOmega, Fragment.toOmega_mem_firstOrder φ, ?_, fun ψ hψ => ?_⟩
+    · rw [← isSatisfiable_image_toOmega_iff, Set.image_insert_eq] at hsat
+      simpa only [BoundedFormula.toInf_exs] using hsat
+    · have h := entails_image_toOmega_iff.2 (hent ψ hψ)
+      simpa only [BoundedFormula.toInf_alls, BoundedFormula.toInf_imp] using h
 
 end Theoryω
 

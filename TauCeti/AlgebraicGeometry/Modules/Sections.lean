@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.Topology.Sheaves.Presheaf
@@ -33,10 +34,15 @@ For a family of opens `V i` covering `W`, restriction to the cover
 containing the pairwise intersections (`Scheme.Modules.sectionsDiffPiBaseLinear`) are `R`-linear.
 By the sheaf condition the first is injective and its image is the kernel of the second
 (`Scheme.Modules.sectionsRestrictPiBaseLinear_injective`,
-`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`).
+`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`). In particular, sections are determined by
+their restrictions to affine opens (`Scheme.Modules.sections_ext_of_isAffineOpen`).
 
 Compatible families of sections of `M` are its global sections (`Scheme.Modules.sectionsEquivTop`),
 and so are the morphisms `𝒪_X ⟶ M` out of the structure sheaf (`Scheme.Modules.unitHomEquivTop`).
+The morphism out of a free module defined by a family of global sections sends the generators to
+these sections (`Scheme.Modules.app_freeHomEquiv_symm_freeSection`).
+Over an open `V`, the image of a morphism `φ : F ⟶ M` is closed under taking spans
+(`Scheme.Modules.Hom.exists_app_eq_of_mem_span`).
 -/
 
 public section
@@ -353,6 +359,46 @@ lemma pushforwardSectionsBaseLinearEquiv_symm_apply (M : X.Modules) (U : Y.Opens
 
 end
 
+section AffineExt
+
+variable {X : Scheme.{u}}
+
+/-- Any two sections of a sheaf of modules over an empty open are equal. -/
+lemma section_ext_of_isEmpty {M : X.Modules} {U : X.Opens} [hU : IsEmpty U]
+    (s t : Γ(M, U)) : s = t := by
+  apply TopCat.Presheaf.section_ext
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+  intro x hx
+  exact (hU.false ⟨x, hx⟩).elim
+
+/-- Sections of an `𝒪_X`-module over `V` agree if their restrictions to all affine opens contained
+in `V` agree. -/
+lemma sections_ext_of_isAffineOpen {M : X.Modules} {V : X.Opens} {s t : Γ(M, V)}
+    (h : ∀ (U : X.Opens), IsAffineOpen U → ∀ hUV : U ≤ V,
+      M.presheaf.map (homOfLE hUV).op s = M.presheaf.map (homOfLE hUV).op t) : s = t :=
+  TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    (fun U : {U : X.affineOpens // U.val ≤ V} ↦ U.val.val) V (fun U ↦ homOfLE U.property)
+    (fun x hx ↦ by
+      obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUV⟩ :=
+        X.isBasis_affineOpens.exists_subset_of_mem_open hx V.is_open'
+      exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨⟨U, hU⟩, hUV⟩, hxU⟩)
+    s t fun U ↦ h _ U.val.property U.property
+
+end AffineExt
+
+section Span
+
+variable {X : Scheme.{u}}
+
+/-- Over any open `V`, the image of a morphism `φ : F ⟶ M` of `𝒪_X`-modules is a
+`Γ(V, 𝒪_X)`-submodule: it contains the span of every set of sections over `V` that it contains. -/
+theorem Hom.exists_app_eq_of_mem_span {F M : X.Modules} (φ : F ⟶ M) {V : X.Opens}
+    {s : Set Γ(M, V)} (hs : s ⊆ Set.range (φ.app V)) {y : Γ(M, V)}
+    (hy : y ∈ Submodule.span Γ(X, V) s) : ∃ z, φ.app V z = y :=
+  (Submodule.span_le (p := LinearMap.range (φ.val.app (op V)).hom)).mpr hs hy
+
+end Span
+
 section UnitHom
 
 variable {X : Scheme.{u}} (M : X.Modules)
@@ -381,6 +427,20 @@ lemma sectionsEquivTop_sectionsMap {N : X.Modules} (p : M ⟶ N) (s : M.sections
     N.sectionsEquivTop (SheafOfModules.sectionsMap p s) = p.app ⊤ (M.sectionsEquivTop s) :=
   (rfl)
 
+/-- The morphism `𝒪_X^{(I)} ⟶ M` defined by a family `s` of global sections of `M` sends the `k`-th
+generator of the free module to `s k`. This is Mathlib's
+`SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection`, evaluated at the terminal open `X`. -/
+@[simp]
+lemma app_freeHomEquiv_symm_freeSection {I : Type u} (s : I → Γ(M, ⊤)) (k : I) :
+    Hom.app (M := SheafOfModules.free I) (M.freeHomEquiv.symm fun k ↦ M.sectionsEquivTop.symm (s k))
+        ⊤ (sectionsEquivTop (SheafOfModules.free I) (SheafOfModules.freeSection k)) =
+      s k := by
+  -- `Hom.app ⊤` applies the morphism to the global section of a compatible family
+  -- (`sectionsEquivTop_sectionsMap`, which holds by `rfl`).
+  exact (congrArg M.sectionsEquivTop
+    (SheafOfModules.sectionsMap_freeHomEquiv_symm_freeSection _ k)).trans
+    (Equiv.apply_symm_apply _ _)
+
 /-- Morphisms `𝒪_X ⟶ M` out of the structure sheaf are the global sections of `M`: a morphism
 goes to the image of `1` over `X`. This is Mathlib's `SheafOfModules.unitHomEquiv`, followed by
 the evaluation of a compatible family of sections at the terminal open `X`
@@ -393,9 +453,17 @@ lemma unitHomEquivTop_apply (f : SheafOfModules.unit X.ringCatSheaf ⟶ M) :
     M.unitHomEquivTop f = f.val.app (op ⊤) (1 : X.ringCatSheaf.obj.obj (op ⊤)) :=
   (rfl)
 
+/-- The zero morphism out of the structure sheaf corresponds to the zero global section. -/
+-- Keep the source in `X.Modules` so zero-morphism synthesis uses its abelian structure,
+-- rather than trying to infer it on the underlying sheaf-of-modules wrapper.
 @[simp]
+lemma unitHomEquivTop_zero :
+    M.unitHomEquivTop (0 : (show X.Modules from SheafOfModules.unit X.ringCatSheaf) ⟶ M) = 0 := by
+  exact (unitHomEquivTop_apply M _).trans rfl
+
 lemma unitHomEquivTop_symm_val_app (t : Γ(M, ⊤)) (U : X.Opens) (r : Γ(X, U)) :
-    (M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t) :=
   (rfl)
 
 /-- Composing a morphism `𝒪_X ⟶ M` with `p : M ⟶ N` applies `p` to the corresponding global

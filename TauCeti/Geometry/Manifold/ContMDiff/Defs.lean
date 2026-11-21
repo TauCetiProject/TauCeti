@@ -16,21 +16,21 @@ is `C^n` is open. This file records that openness and that `C¹` regularity at a
 differentiability throughout a neighbourhood.
 
 It also records that the regularity indices `∞` and `ω` are nonzero, as `NeZero` instances, so
-that statements about `C^n` manifolds assuming `[NeZero n]` (that is, `1 ≤ n`) apply to smooth
+that statements about `C^n` manifolds assuming `[NeZero n]` (that is, `n ≠ 0`) apply to smooth
 and analytic manifolds.
 
 ## Main results
 
 * `TauCeti.isOpen_setOfPred_contMDiffAt`: for `n ≠ ∞`, the set of points where a map is `C^n` is
   open.
-* `ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `1 ≤ n`,
+* `ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `n ≠ 0`,
   implies differentiability throughout a neighbourhood.
 * The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
 
 public section
 
-open scoped ContDiff
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -58,14 +58,14 @@ theorem isOpen_setOfPred_contMDiffAt [IsManifold I n M] [IsManifold I' n M'] (hn
     IsOpen {x | ContMDiffAt I I' n f x} :=
   isOpen_iff_mem_nhds.2 fun _ hx ↦ (contMDiffAt_iff_contMDiffAt_nhds hn).1 hx
 
-/-- A map between `C¹` manifolds that is `C^n` at a point, with `1 ≤ n`, is differentiable
+/-- A map between `C¹` manifolds that is `C^n` at a point, with `n ≠ 0`, is differentiable
 throughout a neighbourhood of that point. -/
 theorem _root_.ContMDiffAt.eventually_mdifferentiableAt [IsManifold I 1 M] [IsManifold I' 1 M']
-    {x : M} (hf : ContMDiffAt I I' n f x) (hn : 1 ≤ n) :
-    ∀ᶠ y in nhds x, MDifferentiableAt I I' f y := by
-  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1
-    (hf.of_le hn)] with y hy
-  exact hy.mdifferentiableAt one_ne_zero
+    {x : M} (hf : ContMDiffAt I I' n f x) (hn : n ≠ 0) :
+    ∀ᶠ y in 𝓝 x, MDifferentiableAt I I' f y :=
+  ((contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1
+    (hf.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn))).mono fun _ hy ↦
+      hy.mdifferentiableAt one_ne_zero
 
 end TauCeti
 

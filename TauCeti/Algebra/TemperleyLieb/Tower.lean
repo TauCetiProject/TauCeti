@@ -96,18 +96,15 @@ private theorem span_towerSpanningSet_eq_top_of_sandwich
       exact this ▸ hcap (a * y) 1
   -- Every element `x` lies in `M` because `1 * x` does, by induction on `x` in the generators.
   refine Submodule.eq_top_iff'.2 fun x ↦ ?_
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n + 2))) := by
-    rw [adjoin_range_e]; trivial
   suffices ∀ m ∈ M, m * x ∈ M by simpa using this 1 (by simpa using hincl 1)
-  induction hx using Algebra.adjoin_induction with
-  | mem g hg =>
-    obtain ⟨i, rfl⟩ := hg
+  induction x using TemperleyLieb.induction with
+  | e i =>
     induction i using Fin.lastCases with
     | last => exact hlast
     | cast j => simpa only [strandIncl_e] using hstrand (e δ j)
   | algebraMap r => simpa only [AlgHom.commutes] using hstrand (algebraMap R _ r)
-  | add x z _ _ hx hz => exact fun m hm ↦ by simpa [mul_add] using M.add_mem (hx m hm) (hz m hm)
-  | mul x z _ _ hx hz => exact fun m hm ↦ by simpa [mul_assoc] using hz _ (hx m hm)
+  | add x z hx hz => exact fun m hm ↦ by simpa [mul_add] using M.add_mem (hx m hm) (hz m hm)
+  | mul x z hx hz => exact fun m hm ↦ by simpa [mul_assoc] using hz _ (hx m hm)
 
 /-- The sandwich step: if the tower spanning set spans `TemperleyLieb R δ (n + 2)`, then
 sandwiching `strandIncl x` between two last generators on `n + 3` strands gives an element of the

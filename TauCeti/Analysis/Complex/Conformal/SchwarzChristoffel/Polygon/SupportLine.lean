@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.GlobalTurning
+import TauCeti.Analysis.Complex.Angle
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ClosingSide
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.LongTurn
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.TurningChain
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # Bounded Schwarz--Christoffel sides are supporting lines
@@ -66,6 +68,25 @@ private lemma convex_setOf_im_mul_sub_nonneg (u w : ℂ) :
     sub_im, sub_nonneg] using
     convex_halfSpace_ge (Complex.imLm.comp (LinearMap.mulLeft ℝ u)).isLinear (u * w).im
 
+/-- **The edge angles, indexed by naturals, turn monotonically from above `-2π` up to `0`.**
+For any `φ : ℕ → ℝ` agreeing with `k ↦ schwarzChristoffelEdgeAngle a e (a k)` on `Fin (n + 1)`,
+the sequence is monotone on `0 ≤ l ≤ m ≤ n`, bounded below by `-2π`, and vanishes at `n`. -/
+private theorem schwarzChristoffelEdgeAngle_natIndexed_turning (a e : Fin (n + 1) → ℝ)
+    (ha : StrictMono a) (he : ∀ k, e k < 0) (hsum : ∑ k, e k = -2)
+    (φ : ℕ → ℝ) (hφ : ∀ k : Fin (n + 1), φ k = schwarzChristoffelEdgeAngle a e (a k)) :
+    (∀ l m : ℕ, l ≤ m → m ≤ n → φ l ≤ φ m) ∧ (∀ l : ℕ, l ≤ n → -2 * Real.pi < φ l) ∧
+      φ n = 0 := by
+  have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha he
+  refine ⟨fun l m hlm hm ↦ ?_, fun l hl ↦ ?_, ?_⟩
+  · have := hangle.monotone
+      (Fin.mk_le_mk.mpr hlm : (⟨l, by omega⟩ : Fin (n + 1)) ≤ ⟨m, by omega⟩)
+    simpa only [← hφ] using this
+  · have := (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum ⟨l, by omega⟩).1
+    simpa only [← hφ] using this
+  · have :=
+      schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone (le_refl (a (Fin.last n)))
+    simpa only [← hφ, Fin.val_last] using this
+
 /-- **The finite vertices and the vertex at infinity lie on the interior side of each bounded
 side.**  Under the classical convex-polygon hypotheses, rotate the direction of the bounded side
 from vertex `i` to vertex `i + 1` to the positive real axis; then no vertex lies below the
@@ -78,8 +99,7 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
     0 ≤ (Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) *
       (schwarzChristoffelVertexAtInfinity a e z₀ - schwarzChristoffelVertex a e z₀ i.castSucc)).im
     := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective fun k ↦ (he k).1
   set θ := schwarzChristoffelEdgeAngle a e (a i.castSucc)
   set u := Complex.exp (-θ * Complex.I)
   set w := schwarzChristoffelVertex a e z₀ i.castSucc
@@ -93,18 +113,8 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
     simp only [V, k.isLt, ↓reduceDIte, Fin.eta]
   have hφ (k : Fin (n + 1)) : φ k = schwarzChristoffelEdgeAngle a e (a k) := by
     simp only [φ, k.isLt, ↓reduceDIte, Fin.eta]
-  have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
-  have hmono (l m : ℕ) (hlm : l ≤ m) (hm : m ≤ n) : φ l ≤ φ m := by
-    have := hangle.monotone
-      (Fin.mk_le_mk.mpr hlm : (⟨l, by omega⟩ : Fin (n + 1)) ≤ ⟨m, by omega⟩)
-    simpa only [← hφ] using this
-  have hlow (l : ℕ) (hl : l ≤ n) : -2 * Real.pi < φ l := by
-    have := (schwarzChristoffelEdgeAngle_mem_Ioc a e (fun k ↦ (he k).2) hsum ⟨l, by omega⟩).1
-    simpa only [← hφ] using this
-  have hlast : φ n = 0 := by
-    have :=
-      schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone (le_refl (a (Fin.last n)))
-    simpa only [← hφ, Fin.val_last] using this
+  obtain ⟨hmono, hlow, hlast⟩ :=
+    schwarzChristoffelEdgeAngle_natIndexed_turning a e ha (fun k ↦ (he k).2) hsum φ hφ
   have hθ : φ i = θ := by simpa only [Fin.val_castSucc] using hφ i.castSucc
   -- Each bounded side contributes its length times the sine of its turn from side `i`.
   have hstep (l : ℕ) (hl : l < n) :
@@ -124,13 +134,9 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
       (fun k ↦ (he k).1) hsum
   have hhoriz {x y : ℂ} (hxy : x < y) :
       ∃ r, 0 ≤ r ∧ (u * (y - w)).im - (u * (x - w)).im = r * Real.sin (-φ i) := by
-    refine ⟨(y - x).re, sub_nonneg.mpr (Complex.lt_def.mp hxy).1.le, ?_⟩
-    have hu : u.im = Real.sin (-θ) := by
-      have h := Complex.exp_ofReal_mul_I_im (-θ)
-      push_cast at h
-      exact h
-    rw [← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right, Complex.mul_im, Complex.sub_im,
-      (Complex.lt_def.mp hxy).2, sub_self, mul_zero, zero_add, hu, hθ, mul_comm]
+    obtain ⟨hre, him⟩ := Complex.lt_def.mp hxy
+    rw [hθ, ← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right]
+    exact ⟨(y - x).re, sub_nonneg.mpr hre.le, Complex.im_exp_neg_mul_mul_sub θ him⟩
   have hVn : V n = schwarzChristoffelVertex a e z₀ (Fin.last n) := by
     simpa only [Fin.val_last] using hV (Fin.last n)
   have hV0 : V 0 = schwarzChristoffelVertex a e z₀ 0 := hV 0
@@ -200,8 +206,7 @@ theorem im_exp_neg_mul_schwarzChristoffelPrimitive_sub_pos
     (hz : z ∈ upperHalfPlaneSet) :
     0 < (Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) *
       (schwarzChristoffelPrimitive a e z₀ z - schwarzChristoffelVertex a e z₀ i.castSucc)).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   apply im_exp_neg_mul_sub_schwarzChristoffelVertex_pos_of_mem_interior_closedConvexHull
     a e z₀ ha he hsum i
@@ -219,8 +224,7 @@ theorem disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_edgeSet_cas
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc) := by
   rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc, Set.disjoint_left]
   intro z hz hside
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective fun k ↦ (he k).1
   set u := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
   set w := schwarzChristoffelVertex a e z₀ i.castSucc
   -- Both ends of the side lie on the rotated line, hence so does the whole side.
@@ -245,8 +249,7 @@ theorem disjoint_image_schwarzChristoffelPrimitive_edgeSet_castSucc_castSucc
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc) := by
   apply (disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_edgeSet_castSucc_castSucc
     a e z₀ ha he hsum i).mono_left
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := lt_sum_filter_eq_apply_of_injective ha.injective fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hinfty]
   exact image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull

@@ -188,6 +188,14 @@ theorem inner_map_right (hπ : IsUnitary π) (g : G) (v w : V) :
   simpa only [ContRepresentation.self_inv_apply] using hπ.inner_map_map g (π g⁻¹ v) w
 
 omit [CompleteSpace V] in
+/-- The inner product of two translates of vectors by a unitary group representation depends only
+on the relative position `g⁻¹ * h` of the group elements. -/
+theorem inner_map_inv_mul (hπ : IsUnitary π) (g h : G) (v w : V) :
+    ⟪v, π (g⁻¹ * h) w⟫_𝕜 = ⟪π g v, π h w⟫_𝕜 := by
+  rw [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, hπ.inner_map_right,
+    inv_inv]
+
+omit [CompleteSpace V] in
 /-- An action map of a unitary group representation, as a linear isometric equivalence of the
 representation space. Its inverse is the action of the inverse group element. -/
 noncomputable def toLinearIsometryEquiv (hπ : IsUnitary π) (g : G) : V ≃ₗᵢ[𝕜] V :=
@@ -209,6 +217,11 @@ theorem adjoint_eq_inv (hπ : IsUnitary π) (g : G) :
   rw [eq_comm, ContinuousLinearMap.eq_adjoint_iff]
   intro v w
   simpa using hπ.inner_map_left g⁻¹ v w
+
+/-- The operator `star` of a unitary action operator is the action of the inverse group element. -/
+@[simp]
+theorem star_eq_inv (hπ : IsUnitary π) (g : G) : star (π g) = π g⁻¹ := by
+  rw [ContinuousLinearMap.star_eq_adjoint, hπ.adjoint_eq_inv]
 
 end IsUnitary
 

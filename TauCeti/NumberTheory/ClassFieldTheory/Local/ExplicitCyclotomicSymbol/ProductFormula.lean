@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Basic
 import Mathlib.Data.Nat.Factorization.Induction
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The product formula for the explicit cyclotomic symbols
@@ -57,13 +58,13 @@ variable (T : Finset ℕ) (hT : ∀ ℓ ∈ T, ℓ.Prime)
 private noncomputable def symbolProd : ℚˣ →* (ZMod m)ˣ :=
   (realCyclotomicSymbol m).comp (Units.map (algebraMap ℚ ℝ).toMonoidHom) *
     ∏ ℓ ∈ T.attach,
-      haveI : Fact (ℓ : ℕ).Prime := ⟨hT ℓ ℓ.2⟩
+      haveI : Fact (ℓ : ℕ).Prime := ⟨hT ℓ ℓ.property⟩
       (cyclotomicSymbol m ℓ).comp (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom)
 
 private theorem symbolProd_apply (b : ℚˣ) :
     symbolProd m T hT b = realCyclotomicSymbol m (Units.map (algebraMap ℚ ℝ).toMonoidHom b) *
       (∏ ℓ ∈ T.attach,
-        haveI : Fact (ℓ : ℕ).Prime := ⟨hT ℓ ℓ.2⟩
+        haveI : Fact (ℓ : ℕ).Prime := ⟨hT ℓ ℓ.property⟩
         cyclotomicSymbol m ℓ (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom b)) := by
   simp only [symbolProd, MonoidHom.mul_apply, MonoidHom.finsetProd_apply, MonoidHom.comp_apply]
 
@@ -94,8 +95,7 @@ private theorem symbolProd_of_eq_prime (hm : m.primeFactors ⊆ T) {q : ℕ} (hq
   have : Fact q.Prime := ⟨hq⟩
   -- `q` as an `ℓ`-adic unit, for `ℓ ≠ q`
   let unit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ q) : ℤ_[ℓ]ˣ :=
-    (PadicInt.isUnit_iff.2 (PadicInt.norm_natCast_eq_one_iff.2
-      ((Nat.coprime_primes Fact.out hq).2 hℓ))).unit
+    (PadicInt.isUnit_natCast_of_coprime ((Nat.coprime_primes Fact.out hq).2 hℓ)).unit
   have hunit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ q) : (unit ℓ hℓ : ℤ_[ℓ]) = q :=
     IsUnit.unit_spec _
   rw [symbolProd_apply]
@@ -155,7 +155,7 @@ theorem prod_cyclotomicSymbol_of_subset (hm : m.primeFactors ⊆ T) (a : ℚˣ)
     (hnum : (a : ℚ).num.natAbs.primeFactors ⊆ T) (hden : (a : ℚ).den.primeFactors ⊆ T) :
     realCyclotomicSymbol m (Units.map (algebraMap ℚ ℝ).toMonoidHom a) *
         (∏ ℓ ∈ T.attach,
-          haveI : Fact (ℓ : ℕ).Prime := ⟨hT ℓ ℓ.2⟩
+          haveI : Fact (ℓ : ℕ).Prime := ⟨hT ℓ ℓ.property⟩
           cyclotomicSymbol m ℓ (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a)) = 1 := by
   -- `a · den(a) = ± |num(a)|`, and both `den(a)` and `|num(a)|` are supported on `T`
   have hnum0 : (a : ℚ).num.natAbs ≠ 0 := Int.natAbs_ne_zero.2 (Rat.num_ne_zero.2 a.ne_zero)
@@ -183,7 +183,7 @@ the primes dividing `m · a` is `1`: `prod_cyclotomicSymbol_of_subset` for those
 theorem prod_cyclotomicSymbol (a : ℚˣ) :
     realCyclotomicSymbol m (Units.map (algebraMap ℚ ℝ).toMonoidHom a) *
         (∏ ℓ ∈ (m * (a : ℚ).num.natAbs * (a : ℚ).den).primeFactors.attach,
-          haveI : Fact (ℓ : ℕ).Prime := ⟨Nat.prime_of_mem_primeFactors ℓ.2⟩
+          haveI : Fact (ℓ : ℕ).Prime := ⟨Nat.prime_of_mem_primeFactors ℓ.property⟩
           cyclotomicSymbol m ℓ (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a)) = 1 := by
   have hS : m * (a : ℚ).num.natAbs * (a : ℚ).den ≠ 0 :=
     mul_ne_zero (mul_ne_zero (NeZero.ne m)
@@ -215,10 +215,10 @@ theorem cyclotomicSymbol_mem_of_forall_mem (p : ℕ) [Fact p.Prime] (H : Subgrou
   rw [← Finset.mul_prod_erase _ _ (Finset.mem_attach _ ⟨p, hpP⟩)] at h
   rw [eq_inv_of_mul_eq_one_left h]
   refine inv_mem (prod_mem fun ℓ hℓ ↦ ?_)
-  have : Fact ℓ.1.Prime := ⟨Nat.prime_of_mem_primeFactors ℓ.2⟩
-  have hne : ℓ.1 ≠ p := fun h ↦ Finset.ne_of_mem_erase hℓ (Subtype.ext h)
-  by_cases hℓm : ℓ.1 ∣ m
-  · exact (hdvd ℓ.1 hℓm hne).symm ▸ one_mem H
-  · exact hcop ℓ.1 hℓm
+  have : Fact ℓ.val.Prime := ⟨Nat.prime_of_mem_primeFactors ℓ.property⟩
+  have hne : ℓ.val ≠ p := fun h ↦ Finset.ne_of_mem_erase hℓ (Subtype.ext h)
+  by_cases hℓm : ℓ.val ∣ m
+  · exact (hdvd ℓ.val hℓm hne).symm ▸ one_mem H
+  · exact hcop ℓ.val hℓm
 
 end TauCeti

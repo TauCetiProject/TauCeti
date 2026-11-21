@@ -9,6 +9,9 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Integral.Marginal
+import Mathlib.Probability.HasLaw
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
 # Integrals over finite product measures
@@ -33,14 +36,25 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 
 * `TauCeti.lintegral_fintype_prod_eq_prod`: the product formula, for measurable factors.
 * `TauCeti.lintegral_fintype_prod_eq_prod₀`: the same for almost everywhere measurable factors.
+* `TauCeti.lintegral_pi_update`: refreshing a coordinate preserves lower integrals.
+* `TauCeti.ae_memLp_pi_update`: almost every refreshed coordinate slice is in `Lᵖ`.
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
 * `TauCeti.integral_pi_succ`: splitting off the zeroth coordinate of a finite product measure.
+* `MeasureTheory.Measure.integral_pi_fin_succ_eq_integral_integral_finCons`: the iterated form
+  of `TauCeti.integral_pi_succ` for a constant family, with `Fin.cons` in place of the equivalence.
+* `MeasureTheory.Measure.integrable_comp_finCons_of_abs_le`: a bounded measurable function
+  composed with `Fin.cons` is integrable on the head-tail product.
+* `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
+* `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
   integral of `∏ i, g (x i)` over the half-space `∑ i, x i ≤ s`, by the `card ι`-th power of the
   one-dimensional integral of `exp (-(l * x)) * g x`.
+* `TauCeti.ae_slice_pi_eq_zero`: for a binary kernel whose second-variable slices are a.e.
+  integrable with integral zero, fixing one coordinate and integrating another against
+  `Measure.pi μ` yields an a.e. integrable function with integral zero.
 -/
 
 public section
@@ -53,6 +67,28 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]
+
+/-- Refreshing one coordinate with an independent sample preserves the lower integral over a
+finite product of probability measures. -/
+theorem lintegral_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {g : (∀ i, α i) → ℝ≥0∞} (hg : Measurable g) (i : ι) :
+    (∫⁻ x, ∫⁻ y, g (Function.update x i y) ∂μ i ∂Measure.pi μ) =
+      ∫⁻ x, g x ∂Measure.pi μ := by
+  have hm : Measurable (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2)) :=
+    hg.comp measurable_update'
+  apply lintegral_eq_of_lmarginal_eq (μ := μ) {i} hm.lintegral_prod_right hg
+  simp only [lmarginal_singleton]
+  funext x
+  simp only [Function.update_idem]
+  simp
+
+/-- For an `Lᵖ` function on a finite product of sigma-finite measures, almost every one-coordinate
+slice obtained by an independent refresh at a probability coordinate is again in `Lᵖ`. -/
+theorem ae_memLp_pi_update {E : Type*} [NormedAddCommGroup E] (μ : ∀ i, Measure (α i))
+    [∀ i, SigmaFinite (μ i)] (i : ι) [IsProbabilityMeasure (μ i)] {p : ℝ≥0∞}
+    {g : (∀ i, α i) → E} (hL : MemLp g p (Measure.pi μ)) :
+    ∀ᵐ x ∂Measure.pi μ, MemLp (fun y ↦ g (Function.update x i y)) p (μ i) :=
+  (hL.comp_measurePreserving (measurePreserving_update_prod_pi μ i)).ae_memLp_prod_right
 
 /-- **Fubini after a two-coordinate refresh.** An integral against a finite product of sigma-finite
 measures is an outer integral over the assignment and an inner integral over a fresh independent
@@ -80,6 +116,17 @@ theorem integral_pi_eq_integral_integral_update {E : Type*} [NormedAddCommGroup 
         integral_map hmp.measurable.aemeasurable hae
     _ = ∫ z, (∫ p : α a × α b, f (update (update z a p.1) b p.2) ∂(μ a).prod (μ b))
           ∂(Measure.pi μ) := integral_prod _ hcomp
+
+/-- Averaging an integrable function over a freshly resampled probability coordinate preserves its
+expectation under `Measure.pi`. -/
+theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i : ι) [IsProbabilityMeasure (μ i)]
+    {h : (∀ j, α j) → E} (hh : Integrable h (Measure.pi μ)) :
+    ∫ x, ∫ y, h (Function.update x i y) ∂μ i ∂Measure.pi μ = ∫ x, h x ∂Measure.pi μ := by
+  have hmp := measurePreserving_update_prod_pi μ i
+  have hint := hmp.integrable_comp_of_integrable hh
+  refine (integral_prod _ hint).symm.trans ?_
+  exact hmp.hasLaw.integral_comp hh.aestronglyMeasurable
 
 /-- The product formula for a `Fin n`-indexed product measure, by induction on `n`. -/
 private theorem lintegral_fin_nat_prod_eq_prod {n : ℕ} {α : Fin n → Type*}
@@ -210,5 +257,62 @@ theorem integral_pi_succ {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Measurab
         f ((MeasurableEquiv.piFinSuccAbove α 0).symm p)
           ∂((μ 0).prod (Measure.pi fun i ↦ μ (Fin.succAbove (0 : Fin (n + 1)) i))) := by
   rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).integral_comp']
+
+/-- Integration over the product of `n + 1` copies of a measure splits into the integral over the
+first coordinate inside the integral over the remaining ones. -/
+theorem _root_.MeasureTheory.Measure.integral_pi_fin_succ_eq_integral_integral_finCons
+    {β : Type*} [MeasurableSpace β] (ν : Measure β) [SigmaFinite ν] {n : ℕ} {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (F : (Fin (n + 1) → β) → E)
+    (hF : Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2))
+      (ν.prod (Measure.pi fun _ : Fin n => ν))) :
+    ∫ x, F x ∂Measure.pi (fun _ : Fin (n + 1) => ν) =
+      ∫ w, ∫ a, F (Fin.cons a w) ∂ν ∂Measure.pi (fun _ : Fin n => ν) := by
+  have hF' : Integrable (fun p : β × (Fin n → β) =>
+      F ((MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm p))
+      (ν.prod (Measure.pi fun _ : Fin n => ν)) := by
+    simpa only [fun p : β × (Fin n → β) =>
+      MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons p.1 p.2] using hF
+  rw [integral_pi_succ (fun _ : Fin (n + 1) => ν), integral_prod_symm _ hF']
+  simp only [MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons]
+
+/-- A bounded measurable function on `Fin (n + 1) → β`, composed with `Fin.cons`, is integrable
+on the product of the first coordinate and the remaining ones. -/
+theorem _root_.MeasureTheory.Measure.integrable_comp_finCons_of_abs_le
+    {β : Type*} [MeasurableSpace β] (ν : Measure β) [IsFiniteMeasure ν] {n : ℕ}
+    {F : (Fin (n + 1) → β) → ℝ} {K : ℝ}
+    (hF : Measurable F) (hFb : ∀ x, |F x| ≤ K) :
+    Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2))
+      (ν.prod (Measure.pi fun _ : Fin n => ν)) := by
+  refine (integrable_const K).mono' hF.comp_finCons.aestronglyMeasurable
+    (ae_of_all _ fun p => ?_)
+  simpa using hFb (Fin.cons p.1 p.2)
+
+/-- Integrability under a finite product measure on `Fin (n + 1)` transfers to the product of the
+zeroth marginal with the product measure of the remaining coordinates, the integrability
+counterpart of `integral_pi_succ`. -/
+theorem integrable_pi_succ {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, MeasurableSpace (α i)]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] {E : Type*} [NormedAddCommGroup E]
+    {f : (∀ i, α i) → E} (hf : Integrable f (Measure.pi μ)) :
+    Integrable (fun p : α 0 × (∀ i : Fin n, α (Fin.succAbove (0 : Fin (n + 1)) i)) ↦
+        f ((MeasurableEquiv.piFinSuccAbove α 0).symm p))
+      ((μ 0).prod (Measure.pi fun i ↦ μ (Fin.succAbove (0 : Fin (n + 1)) i))) :=
+  (measurePreserving_piFinSuccAbove μ 0).symm.integrable_comp_of_integrable hf
+
+/-- Given a binary kernel `g : α a → α b → F` whose slices `g x` are integrable with integral zero
+for `μ a`-a.e. `x`, for `Measure.pi μ`-a.e. `z` the map `w ↦ g (z a) (w b)` is
+`Measure.pi μ`-integrable with integral zero. -/
+theorem ae_slice_pi_eq_zero {ι : Type*} [Fintype ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ι} {g : α a → α b → F}
+    (hae_int : ∀ᵐ x ∂μ a, Integrable (g x) (μ b)) (hae_zero : ∀ᵐ x ∂μ a, ∫ y, g x y ∂μ b = 0) :
+    ∀ᵐ z ∂Measure.pi μ, Integrable (fun w : ∀ i, α i ↦ g (z a) (w b)) (Measure.pi μ) ∧
+      ∫ w : ∀ i, α i, g (z a) (w b) ∂Measure.pi μ = 0 := by
+  filter_upwards [(measurePreserving_eval μ a).quasiMeasurePreserving.ae hae_int,
+    (measurePreserving_eval μ a).quasiMeasurePreserving.ae hae_zero] with z hz_int hz_zero
+  have heval := (measurePreserving_eval μ b).map_eq
+  have ha : AEMeasurable (Function.eval b) (Measure.pi μ) := (measurable_pi_apply b).aemeasurable
+  exact ⟨(integrable_map_measure (heval ▸ hz_int.aestronglyMeasurable) ha).mp (heval.symm ▸ hz_int),
+    (heval ▸ integral_map ha (heval ▸ hz_int.aestronglyMeasurable)).symm.trans hz_zero⟩
 
 end TauCeti

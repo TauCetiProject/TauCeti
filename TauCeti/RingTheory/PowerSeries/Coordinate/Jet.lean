@@ -64,7 +64,7 @@ variable {R : Type*} [CommRing R] {n : ℕ}
 theorem X_pow_dvd_mul_sub_mul_left (χ : FormalCoordinate R) {φ ψ : FormalCoordinate R}
     (h : X ^ n ∣ φ.toPowerSeries - ψ.toPowerSeries) :
     X ^ n ∣ (χ * φ).toPowerSeries - (χ * ψ).toPowerSeries :=
-  X_pow_dvd_subst_sub_subst φ.constantCoeff_toPowerSeries ψ.constantCoeff_toPowerSeries h _
+  X_pow_dvd_subst_sub_subst φ.constantCoeff_toPowerSeries h _
 
 /-- Composing on the right with a fixed coordinate preserves congruence modulo `X ^ n`. -/
 theorem X_pow_dvd_mul_sub_mul_right (χ : FormalCoordinate R) {φ ψ : FormalCoordinate R}
@@ -376,13 +376,13 @@ noncomputable def jetLimitEquiv : FormalCoordinate R ≃ₜ* jetLimit R :=
   let e : FormalCoordinate R ≃* jetLimit R :=
     .ofBijective ((jets R).codRestrict _ fun φ ↦ range_jets (R := R) ▸ ⟨φ, rfl⟩)
       ⟨fun _ _ h ↦ jets_injective (congr_arg Subtype.val h), fun x ↦ by
-        obtain ⟨φ, hφ⟩ := (range_jets (R := R)).ge x.2
+        obtain ⟨φ, hφ⟩ := (range_jets (R := R)).ge x.property
         exact ⟨φ, Subtype.ext hφ⟩⟩
   { e with
     continuous_toFun := isInducing_jets.continuous.subtype_mk _
     continuous_invFun := by
       refine isInducing_jets.continuous_iff.mpr ?_
-      convert continuous_subtype_val using 1
+      convert continuous_subtypeVal using 1
       exact funext fun x ↦ congr_arg Subtype.val (e.apply_symm_apply x) }
 
 @[simp]

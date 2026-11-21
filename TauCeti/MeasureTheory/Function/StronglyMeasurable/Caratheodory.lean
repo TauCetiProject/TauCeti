@@ -11,13 +11,14 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasur
 # Measurability of Carathéodory compositions
 
 Let `g : α → X → G` be a *Carathéodory function*: `t ↦ g t x` is almost everywhere strongly
-measurable for each `x` and `x ↦ g t x` is continuous for each `t`. Then `t ↦ g t (u t)` is almost
-everywhere strongly measurable for every almost everywhere strongly measurable `u : α → X`
-(`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`). For a real-valued `g`, as in
-the application below, measurability of each section `t ↦ g t x` already suffices.
+measurable for each `x` and `x ↦ g t x` is continuous for almost every `t`. Then `t ↦ g t (u t)` is
+almost everywhere strongly measurable for every almost everywhere strongly measurable `u : α → X`
+(`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuousAt`); in fact continuity of `g t`
+at the point `u t` suffices. When `G` is second countable, for instance for a real-valued `g`,
+measurability of each section `t ↦ g t x` already implies the measurability hypothesis.
 
-No separability or metrizability is asked of `X`: `u` is approximated by simple functions, on
-whose finitely many fibres `t ↦ g t (u t)` is one of the sections `t ↦ g t x`. This
+No separability or metrizability is asked of `X`: `u` is approximated by simple functions `s`, on
+whose finitely many fibres `t ↦ g t (s t)` is one of the sections `t ↦ g t x`. This
 is what weak measurability of a time-dependent operator `A(t) : V →L[ℝ] V*` in parabolic problems
 needs: `t ↦ A(t) u(t) φ(t)` is measurable as soon as `t ↦ A(t) u v` is for all fixed `u, v`, for
 an arbitrary Hilbert space `V`. Mathlib's
@@ -28,7 +29,6 @@ instead, which needs a second-countable metrizable parameter space.
 public section
 
 open Filter Set
-open scoped Topology
 
 namespace MeasureTheory
 
@@ -36,11 +36,12 @@ variable {α X G : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpa
   [TopologicalSpace G] [TopologicalSpace.PseudoMetrizableSpace G]
 
 /-- **Carathéodory composition.** If `t ↦ g t x` is almost everywhere strongly measurable for every
-`x` and each `g t` is continuous, then `t ↦ g t (u t)` is almost everywhere strongly measurable for
-every almost everywhere strongly measurable `u`. -/
-theorem AEStronglyMeasurable.apply_of_forall_of_continuous {u : α → X}
+`x` and `g t` is continuous at `u t` for almost every `t`, then `t ↦ g t (u t)` is almost everywhere
+strongly measurable for every almost everywhere strongly measurable `u`. -/
+theorem AEStronglyMeasurable.apply_of_forall_of_continuousAt {u : α → X}
     (hu : AEStronglyMeasurable u μ) {g : α → X → G}
-    (hg : ∀ x, AEStronglyMeasurable (fun t => g t x) μ) (hg_cont : ∀ t, Continuous (g t)) :
+    (hg : ∀ x, AEStronglyMeasurable (fun t => g t x) μ)
+    (hg_cont : ∀ᵐ t ∂μ, ContinuousAt (g t) (u t)) :
     AEStronglyMeasurable (fun t => g t (u t)) μ := by
   obtain ⟨v, hv, huv⟩ := hu
   refine aestronglyMeasurable_of_tendsto_ae atTop (f := fun n t => g t (hv.approx n t))
@@ -52,11 +53,10 @@ theorem AEStronglyMeasurable.apply_of_forall_of_continuous {u : α → X}
     rw [← Measure.restrict_univ (μ := μ), ← hcover, aestronglyMeasurable_iUnion_iff]
     intro x
     refine (hg x).restrict.congr ?_
-    filter_upwards [ae_restrict_mem ((hv.approx n).measurableSet_fiber x)] with t ht
-    rw [mem_preimage, mem_singleton_iff] at ht
+    filter_upwards [ae_restrict_mem ((hv.approx n).measurableSet_fiber x)] with t (ht : _ = _)
     rw [ht]
-  · filter_upwards [huv] with t ht
-    rw [ht]
-    exact ((hg_cont t).tendsto _).comp (hv.tendsto_approx t)
+  · filter_upwards [huv, hg_cont] with t ht hct
+    rw [ht] at hct ⊢
+    exact hct.tendsto.comp (hv.tendsto_approx t)
 
 end MeasureTheory

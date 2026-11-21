@@ -92,9 +92,6 @@ theorem coordForms_dotProduct (v : Place K) (i : Fin n) (x : Fin n → K) :
     coordForms K n v i ⬝ᵥ x = x i := by
   simp
 
-theorem linearIndependent_coordForms (v : Place K) : LinearIndependent K (coordForms K n v) :=
-  Pi.linearIndependent_single_one (Fin n) K
-
 variable [NumberField K]
 
 /-! ### Local factors -/

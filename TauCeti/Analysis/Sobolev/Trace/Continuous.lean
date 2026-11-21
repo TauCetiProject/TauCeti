@@ -82,18 +82,7 @@ private theorem hyperplaneTrace_apply_ae_of_hasCompactSupport (hp : p ≠ ∞) (
     tendsto_one_div_add_atTop_nhds_zero_nat
   let conv : ℕ → WithLp 2 (ℝ × E) → ℝ := fun k =>
     (phi k).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] f
-  -- The jet of `u` vanishes off the support of `f`.
-  have hjet : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict
-      ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))),
-      x ∉ tsupport f → (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) x = 0 := by
-    let V : Opens (WithLp 2 (ℝ × E)) := ⟨(tsupport f)ᶜ, (isClosed_tsupport f).isOpen_compl⟩
-    have hV : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict (V : Set _),
-        W1p.value u x = 0 := by
-      filter_upwards [ae_restrict_of_ae hu, ae_restrict_mem V.isOpen.measurableSet] with x hx hxV
-      rw [hx]
-      exact image_eq_zero_of_notMem_tsupport hxV
-    exact ae_restrict_of_ae <| (ae_restrict_iff' V.isOpen.measurableSet).1
-      (W1p.coe_ae_eq_zero_of_value_ae_eq_zero (le_top : V ≤ ⊤) hV)
+  have hjet := W1p.coe_ae_eq_zero_of_not_mem_tsupport (ae_restrict_of_ae hu)
   choose Φ hΦ using fun k => W1p.normedBumpL_mem_range_of_ae_eq_zero hp (phi k)
     hfc hjet
   -- Each mollification is the test function `Φ k`, which is the pointwise convolution.
@@ -238,9 +227,7 @@ theorem W1p.normalEpigraphTrace_apply_ae_of_continuousOn {φ : C(E, ℝ)} {K : N
     refine h2 ?_
     simpa [Φ] using hx
   filter_upwards [W1p.halfSpaceTrace_apply_ae_of_continuousOn hp 0 hg hv] with y hy
-  have hγ : normalGraphEmbedding φ y = WithLp.toLp 2 (φ y, y) :=
-    (WithLp.ext_iff 2).2 (Prod.ext (normalGraphEmbedding_fst φ y) (normalGraphEmbedding_snd φ y))
-  rw [W1p.normalEpigraphTrace_apply, hy, hγ]
+  rw [W1p.normalEpigraphTrace_apply, hy, normalGraphEmbedding_apply]
   simp [Φ]
 
 end TauCeti

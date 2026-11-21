@@ -14,8 +14,8 @@ import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 # Tensor-product basis coordinates
 
 This file records how contractions against one factor of a tensor product detect equality when
-that factor is projective, and how coordinates in a basis of one factor commute with maps of the
-other.
+that factor is projective, how contracting against a basis of one factor extracts coefficients,
+and how coordinates in a basis of one factor commute with maps of the other.
 It also proves that the coordinates in bases obtained by scalar extension commute with a map of
 the scalar-extension algebras, and that over a basis with at most one index a scalar extension
 consists of pure tensors.
@@ -26,11 +26,16 @@ consists of pure tensors.
   factor detect equality.
 * `Submodule.tensor_mem_range_iff_forall_tensorComponent_mem`: contractions against a projective
   right factor detect membership in the tensor product with a submodule of the left factor.
+* `Module.Basis.tensorComponent_coord_sum_tmul`: contracting against a coordinate functional of a
+  basis of the right factor recovers the corresponding coefficient.
 * `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
 * `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
+* `Module.Basis.baseChange_repr_tmul_basis`, `Module.Basis.baseChange_repr_tmul_eq_smul_mapRange`,
+  `Module.Basis.baseChange_repr_one_tmul`, and `Module.Basis.baseChange_repr_symm_single`:
+  coordinates of pure tensors and single-coordinate inverses in a base-changed basis.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
@@ -42,6 +47,8 @@ consists of pure tensors.
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
 * `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended linear maps
   are obtained by mapping entries.
+* `TauCeti.piTensorEquiv`: coordinates of `(Fin m → R) ⊗[R] (Fin n → R)` in the reindexed tensor
+  product of standard bases, storing the `(i, j)` coefficient at `finProdFinEquiv (i, j)`.
 -/
 
 public section
@@ -67,18 +74,18 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
   let b := Finsupp.basisSingleOne (R := R) (ι := N)
-  have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
-    apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
+  have hmap : map LinearMap.id s x = map LinearMap.id s y := by
+    apply (equivFinsuppOfBasisRight b (M := M)).injective
     ext i
     have hcoord :
-        _root_.LinearMap.tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s x) =
-        _root_.LinearMap.tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s y) := by
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s x) =
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s y) := by
       simpa only [_root_.LinearMap.tensorComponent_map, LinearMap.id_apply] using
         h ((b.coord i).comp s)
-    simpa only [TensorProduct.equivFinsuppOfBasisRight_apply,
+    simpa only [equivFinsuppOfBasisRight_apply,
       _root_.LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe] using hcoord
-  have := congrArg (TensorProduct.map LinearMap.id (Finsupp.linearCombination R id)) hmap
-  simpa only [TensorProduct.map_map, LinearMap.id_comp, hs, TensorProduct.map_id,
+  have := congrArg (map LinearMap.id (Finsupp.linearCombination R id)) hmap
+  simpa only [map_map, LinearMap.id_comp, hs, map_id,
     LinearMap.id_apply] using this
 
 end TensorProduct
@@ -104,8 +111,8 @@ theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z :
     rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
     apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
     intro f
-    rw [map_zero, LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id]
-    simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
+    rw [map_zero, LinearMap.tensorComponent_rTensor]
+    simpa only [mkQ_apply, Quotient.mk_eq_zero] using h f
 
 end Submodule
 
@@ -116,6 +123,14 @@ universe u v w
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
+
+/-- Contracting `∑ⱼ xⱼ ⊗ bⱼ` against the `i`-th coordinate functional of a basis `b` of the right
+factor recovers the coefficient `xᵢ`. -/
+theorem tensorComponent_coord_sum_tmul {ι : Type*} [Fintype ι] (b : Module.Basis ι R N)
+    (x : ι → M) (i : ι) :
+    LinearMap.tensorComponent (b.coord i) (∑ j, x j ⊗ₜ[R] b j) = x i := by
+  classical
+  simp [Finsupp.single_apply]
 
 section EquivFinsuppOfBasisLeft
 
@@ -158,6 +173,34 @@ variable {T : Type w} [Semiring T] [Algebra R T]
 theorem baseChange_reindex {ι' : Type*} (b : Basis ι R M) (e : ι ≃ ι') :
     (b.reindex e).baseChange S = (b.baseChange S).reindex e :=
   eq_of_apply_eq fun i => by simp
+
+/-- In a base-changed basis, the coordinate vector of `s ⊗ₜ b i` is `Finsupp.single i s`. -/
+theorem baseChange_repr_tmul_basis (b : Basis ι R M) (s : S) (i : ι) :
+    (b.baseChange S).repr (s ⊗ₜ[R] b i) = Finsupp.single i s := by
+  have h : s ⊗ₜ[R] b i = s • b.baseChange S i := by
+    rw [baseChange_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [h, map_smul, repr_self, Finsupp.smul_single_one]
+
+/-- In a base-changed basis, the coordinate vector of a pure tensor `s ⊗ₜ m` is `s` times the
+scalar extension of `b.repr m` along `algebraMap R S`. -/
+theorem baseChange_repr_tmul_eq_smul_mapRange (b : Basis ι R M) (s : S) (m : M) :
+    (b.baseChange S).repr (s ⊗ₜ[R] m) =
+      s • (b.repr m).mapRange (algebraMap R S) (map_zero _) := by
+  ext i
+  simp [Algebra.smul_def, Algebra.commutes]
+
+/-- In a base-changed basis, the coordinate vector of `1 ⊗ₜ m` is the scalar extension of
+`b.repr m` along `algebraMap R S`. -/
+theorem baseChange_repr_one_tmul (b : Basis ι R M) (m : M) :
+    (b.baseChange S).repr ((1 : S) ⊗ₜ[R] m) =
+      (b.repr m).mapRange (algebraMap R S) (map_zero _) := by
+  rw [b.baseChange_repr_tmul_eq_smul_mapRange, one_smul]
+
+/-- The inverse coordinate equivalence of a base-changed basis sends `Finsupp.single i s` to
+`s ⊗ₜ b i`. -/
+theorem baseChange_repr_symm_single (b : Basis ι R M) (i : ι) (s : S) :
+    (b.baseChange S).repr.symm (Finsupp.single i s) = s ⊗ₜ[R] b i := by
+  rw [repr_symm_single, baseChange_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
 
 /-- Coordinates in a base-changed basis are natural in the scalar-extension algebra. -/
 @[simp] theorem map_baseChange_repr (b : Basis ι R M) (φ : S →ₗ[R] T)
@@ -227,3 +270,64 @@ theorem map_toMatrixAlgEquiv_baseChange (b : Basis ι R M) (φ : S →ₐ[R] T)
 end Matrix
 
 end Module.Basis
+
+namespace TauCeti
+
+section PiTensorEquiv
+
+variable {R : Type*} [CommSemiring R]
+
+variable (R) in
+/-- Coordinates of `(Fin m → R) ⊗[R] (Fin n → R)` in the tensor product of the standard bases,
+reindexed by `finProdFinEquiv` so that the `(i, j)` coefficient sits at `finProdFinEquiv (i, j)`. -/
+noncomputable def piTensorEquiv (m n : ℕ) :
+    (Fin m → R) ⊗[R] (Fin n → R) ≃ₗ[R] (Fin (m * n) → R) :=
+  (((Pi.basisFun R (Fin m)).tensorProduct (Pi.basisFun R (Fin n))).reindex
+    finProdFinEquiv).equivFun
+
+/-- On a pure tensor `u ⊗ₜ v`, the coordinate at `finProdFinEquiv (i, j)` is `u i * v j`. -/
+@[simp] theorem piTensorEquiv_tmul_apply {m n : ℕ} (u : Fin m → R) (v : Fin n → R)
+    (i : Fin m) (j : Fin n) :
+    piTensorEquiv R m n (u ⊗ₜ v) (finProdFinEquiv (i, j)) = u i * v j := by
+  rw [piTensorEquiv, Module.Basis.equivFun_apply, Module.Basis.repr_reindex_apply,
+    Equiv.symm_apply_apply, Module.Basis.tensorProduct_repr_tmul_apply, Pi.basisFun_repr,
+    Pi.basisFun_repr, smul_eq_mul, mul_comm]
+
+/-- A single coordinate at `finProdFinEquiv (i, j)` corresponds to the pure tensor of single
+coordinates `Pi.single i r ⊗ₜ Pi.single j 1`. -/
+@[simp] theorem piTensorEquiv_symm_single {m n : ℕ} (i : Fin m) (j : Fin n) (r : R) :
+    (piTensorEquiv R m n).symm (Pi.single (finProdFinEquiv (i, j)) r) =
+      Pi.single i r ⊗ₜ Pi.single j 1 := by
+  apply (piTensorEquiv R m n).injective
+  rw [LinearEquiv.apply_symm_apply]
+  ext k
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  rw [piTensorEquiv_tmul_apply]
+  by_cases hi : i' = i <;> by_cases hj : j' = j <;> simp [hi, hj]
+
+/-- In `piTensorEquiv` coordinates, `TensorProduct.map f g` acts on rows by `g` and then on
+columns by `f`, matching the Kronecker-product formula on `Fin (m * n) → R`. -/
+theorem piTensorEquiv_map_apply {m n m' n' : ℕ} (f : (Fin m → R) →ₗ[R] (Fin m' → R))
+    (g : (Fin n → R) →ₗ[R] (Fin n' → R)) (z : (Fin m → R) ⊗[R] (Fin n → R))
+    (i : Fin m') (j : Fin n') :
+    piTensorEquiv R m' n' (TensorProduct.map f g z) (finProdFinEquiv (i, j)) =
+      f (fun i' ↦ g (fun j' ↦ piTensorEquiv R m n z (finProdFinEquiv (i', j'))) j) i := by
+  induction z using TensorProduct.inductionOn with
+  | tmul u v =>
+    simp only [TensorProduct.map_tmul, piTensorEquiv_tmul_apply]
+    have hrow : ∀ i', (fun j' ↦ u i' * v j') = u i' • v := fun _ ↦ rfl
+    simp_rw [hrow, map_smul, Pi.smul_apply, smul_eq_mul]
+    have hcol : (fun i' ↦ u i' * g v j) = g v j • u := funext fun _ ↦ mul_comm _ _
+    rw [hcol, map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
+  | add x y hx hy =>
+    simp only [map_add, Pi.add_apply, hx, hy]
+    have hrow : ∀ i', (fun j' ↦ piTensorEquiv R m n x (finProdFinEquiv (i', j')) +
+        piTensorEquiv R m n y (finProdFinEquiv (i', j'))) =
+      (fun j' ↦ piTensorEquiv R m n x (finProdFinEquiv (i', j'))) +
+        (fun j' ↦ piTensorEquiv R m n y (finProdFinEquiv (i', j'))) := fun _ ↦ rfl
+    simp_rw [hrow, map_add, Pi.add_apply]
+    rw [← Pi.add_def, map_add, Pi.add_apply]
+
+end PiTensorEquiv
+
+end TauCeti

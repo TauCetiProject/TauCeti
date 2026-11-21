@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Algebra.MvPolynomial.Variables
+public import Mathlib.RingTheory.Ideal.Defs
 
+import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Tactic.Ring
 
 /-!
-# Clearing denominators in the values of multivariate polynomials
+# Denominators and congruences in the values of multivariate polynomials
 
 Mathlib's `MvPolynomial.eval_mem` says that a polynomial with coefficients in a subsemiring takes
 values in it at points with coordinates in it. If instead only the multiples `c xᵢ` of the
@@ -20,10 +22,25 @@ the denominators of algebraic numbers enter Liouville-type estimates: for a poly
 algebraic-integer coefficients evaluated at algebraic numbers with denominator `c`, the value has
 denominator dividing `c ^ T`.
 
+Over a commutative ring, evaluation also respects congruences modulo an element or an ideal: if
+`xᵢ - tᵢ` lies in an ideal `I` for every variable `Xᵢ` occurring in `p`, then `p(x) - p(t) ∈ I`;
+in particular, coordinatewise divisibility by `d` implies `d ∣ p(x) - p(t)`.
+
+Over an ordered field, evaluating a polynomial at a coordinatewise rational map
+`x ↦ (a ↦ N_a(x) / D_a(x))` on a domain where the denominators appearing in `p` do not vanish can
+be cleared to a single polynomial `A` up to multiplication by a polynomial `B` that is strictly
+positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
+
 ## Main results
 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
+* `MvPolynomial.eval_sub_eval_mem`, `MvPolynomial.eval_sub_eval_mem_of_vars`: values at points
+  whose coordinates everywhere (or on the variables of `p`) are congruent modulo an ideal `I` are
+  congruent modulo `I`.
+* `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
+  value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
 -/
 
 public section
@@ -49,5 +66,80 @@ theorem pow_mul_eval_mem {s : subS} {p : MvPolynomial σ S} (hp : ∀ m, p.coeff
     ring
   rw [h]
   exact mul_mem (mul_mem (pow_mem hc _) (hp m)) (prod_mem fun i _ ↦ pow_mem (hx i) _)
+
+/-- The values of a polynomial at points that agree modulo an ideal `I` agree modulo `I`. -/
+theorem eval_sub_eval_mem {R : Type*} [CommRing R] (p : MvPolynomial σ R) {I : Ideal R}
+    {x t : σ → R} (h : ∀ i, x i - t i ∈ I) : eval x p - eval t p ∈ I := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simpa only [map_add, add_sub_add_comm] using I.add_mem hp hq
+  | mul_X p i hp =>
+    have hlin : eval x (p * X i) - eval t (p * X i) =
+        (eval x p - eval t p) * x i + eval t p * (x i - t i) := by
+      simp only [map_mul, eval_X]
+      ring
+    rw [hlin]
+    exact I.add_mem (I.mul_mem_right _ hp) (I.mul_mem_left _ (h i))
+
+/-- The values of a polynomial at points whose coordinates on `p.vars` agree modulo an ideal `I`
+agree modulo `I`. -/
+theorem eval_sub_eval_mem_of_vars {R : Type*} [CommRing R] (p : MvPolynomial σ R) {I : Ideal R}
+    {x t : σ → R} (h : ∀ i ∈ p.vars, x i - t i ∈ I) : eval x p - eval t p ∈ I := by
+  obtain ⟨q, hq⟩ := exists_rename_coe_vars_eq p
+  rw [← hq, eval_rename, eval_rename]
+  exact eval_sub_eval_mem q fun i ↦ h i i.property
+
+/-- The values of a polynomial at points that agree modulo `d` agree modulo `d`. -/
+theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : R} {x t : σ → R}
+    (h : ∀ i, d ∣ x i - t i) : d ∣ eval x p - eval t p := by
+  rw [← Ideal.mem_span_singleton]
+  exact eval_sub_eval_mem p fun i ↦ Ideal.mem_span_singleton.mpr (h i)
+
+private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}
+    (hD : ∀ x ∈ u, ∀ a, eval x (D a) ≠ 0) (p : MvPolynomial α K) :
+    ∃ A B : MvPolynomial β K, ∀ x ∈ u,
+      0 < eval x B ∧ eval x A = eval x B * eval (fun a ↦ eval x (N a) / eval x (D a)) p := by
+  induction p using MvPolynomial.induction_on with
+  | C c => exact ⟨C c, 1, fun _ _ ↦ ⟨by simp, by simp⟩⟩
+  | add p q ihp ihq =>
+    obtain ⟨A₁, B₁, h₁⟩ := ihp; obtain ⟨A₂, B₂, h₂⟩ := ihq
+    refine ⟨A₁ * B₂ + A₂ * B₁, B₁ * B₂, fun x hx ↦ ?_⟩
+    obtain ⟨hB₁, hA₁⟩ := h₁ x hx; obtain ⟨hB₂, hA₂⟩ := h₂ x hx
+    exact ⟨by simp [mul_pos hB₁ hB₂], by simp only [map_add, map_mul, hA₁, hA₂]; ring⟩
+  | mul_X p a ihp =>
+    obtain ⟨A₁, B₁, h₁⟩ := ihp
+    refine ⟨A₁ * (N a * D a), B₁ * (D a * D a), fun x hx ↦ ?_⟩
+    obtain ⟨hB₁, hA₁⟩ := h₁ x hx
+    have hDa : eval x (D a) ≠ 0 := hD x hx a
+    have hmul : eval x (N a) * eval x (D a) =
+        eval x (D a) * eval x (D a) * (eval x (N a) / eval x (D a)) := by
+      rw [mul_assoc, mul_div_cancel₀ _ hDa, mul_comm]
+    refine ⟨by simp [mul_pos hB₁ (mul_self_pos.2 hDa)], ?_⟩
+    simp only [map_mul, eval_X, hA₁]
+    rw [hmul]
+    ring
+
+/-- **Clearing polynomial denominators by a strictly positive polynomial factor.** Over an ordered
+field, if the denominators `D a` for variables `a ∈ p.vars` do not vanish on `u`, then there exist
+polynomials `A` and `B` with `0 < B(x)` and `A(x) = B(x) * p(N(x) / D(x))` for all `x ∈ u`. -/
+theorem exists_pos_eval_eq_mul_eval_div {α β K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}
+    (p : MvPolynomial α K) (hD : ∀ x ∈ u, ∀ a ∈ p.vars, eval x (D a) ≠ 0) :
+    ∃ A B : MvPolynomial β K, ∀ x ∈ u,
+      0 < eval x B ∧ eval x A = eval x B * eval (fun a ↦ eval x (N a) / eval x (D a)) p := by
+  classical
+  let N' (a : α) : MvPolynomial β K := if a ∈ p.vars then N a else 0
+  let D' (a : α) : MvPolynomial β K := if a ∈ p.vars then D a else 1
+  have hD' : ∀ x ∈ u, ∀ a, eval x (D' a) ≠ 0 := fun x hx a ↦ by
+    by_cases ha : a ∈ p.vars
+    · simpa [D', ha] using hD x hx a ha
+    · simp [D', ha]
+  obtain ⟨A, B, hAB⟩ := exists_pos_eval_eq_mul_eval_div_of_forall hD' p
+  refine ⟨A, B, fun x hx ↦ ?_⟩
+  have heval : eval (fun a ↦ eval x (N' a) / eval x (D' a)) p =
+      eval (fun a ↦ eval x (N a) / eval x (D a)) p :=
+    eval₂Hom_congr' rfl (fun a ha _ ↦ by simp [N', D', ha]) rfl
+  obtain ⟨hB, hEq⟩ := hAB x hx; exact ⟨hB, heval ▸ hEq⟩
 
 end MvPolynomial

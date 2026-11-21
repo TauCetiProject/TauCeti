@@ -185,7 +185,7 @@ theorem finrank_eigenspace_fockAction_complexVolume_one (hn : n ≠ 0)
   have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by
     rw [Fact.out (p := finrank ℝ V = n)]; omega)
   rw [J.eigenspace_fockAction_complexVolume_one hQJ hQnd hQ b hb hbJ,
-    finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
+    finrank_spinPlus _,
     J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = n)]
 
 /-- In positive dimension `n` the negative half-spinors of the Fock module have complex dimension
@@ -254,7 +254,7 @@ theorem finrank_positiveHalfSpinors_realFockAction (b : OrthonormalBasis (Fin 4)
     finrank ℂ (positiveHalfSpinors o (J.realFockAction hQJ hQnd)) = 2 := by
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   rw [J.positiveHalfSpinors_realFockAction hQJ hQnd hQ b hb hb₁ hb₃,
-    finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
+    finrank_spinPlus _,
     J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = 4)]
   norm_num
 

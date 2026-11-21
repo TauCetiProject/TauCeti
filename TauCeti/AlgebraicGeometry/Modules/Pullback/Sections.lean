@@ -21,7 +21,11 @@ image of the tensor product of the pullbacks of `x` and `y`, and the identificat
 `g^* 𝒪_X ≅ 𝒪_Y` sends the pullback of a function `r` to `g^♯ r`. These make pullback of sections
 multiplicative on sections of algebras.
 Along the inclusion `U.ι` of an open, pulling back sections over `U` is a bijection onto the global
-sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`).
+sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`). A morphism out of a
+pullback is determined by its values on pulled-back sections (`Scheme.Modules.pullback_hom_ext`),
+with its adjunction transpose evaluated by
+`Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply` and composite morphisms out of
+iterated pullbacks evaluated by `Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections`.
 -/
 
 public section
@@ -72,7 +76,7 @@ lemma δ_app_pullbackSections_μ (N : X.Modules) (x : Γ(M, U)) (y : Γ(N, U)) :
   have hn := congr($(Functor.LaxMonoidal.μ_natural (Scheme.Modules.sectionsFunctor U)
     ((pullbackPushforwardAdjunction g).unit.app M)
     ((pullbackPushforwardAdjunction g).unit.app N)) (x ⊗ₜ y))
-  have hp := TauCeti.SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
+  have hp := SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
     ((pullback g).obj M) ((pullback g).obj N) (op U) (pullbackSections g M U x)
       (pullbackSections g N U y)
   exact h.trans ((congrArg _ hn.symm).trans hp)
@@ -183,7 +187,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι 
   have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction U.ι)
     (pullbackPushforwardAdjunction U.ι) P
   have h₁ : IsIso (((restrictAdjunction U.ι).unit.app P).app U) :=
-    isIso_restrictAdjunction_unit_app_app U P le_rfl
+    isIso_restrictAdjunction_unit_app_app U.ι P (by simp)
   have h₂ : IsIso (((pullback U.ι).obj P).presheaf.map
       (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op) :=
     have : homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp) = eqToHom (by simp) := Subsingleton.elim _ _
@@ -210,6 +214,23 @@ lemma pullbackSections_comp_of_eq {gf : Z ⟶ X} (h : f ≫ g = gf) (s : Γ(M, �
   subst h
   exact pullbackSections_comp g M ⊤ f s
 
+/-- A morphism out of a pullback `g^* M` is determined by its values on the pullbacks of the
+sections of `M`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullback_hom_ext {g : Y ⟶ X} {M : X.Modules}
+    {N : Y.Modules} {φ ψ : (pullback g).obj M ⟶ N}
+    (h : ∀ (U : X.Opens) (s : Γ(M, U)),
+      φ.app (g ⁻¹ᵁ U) (pullbackSections g M U s) = ψ.app (g ⁻¹ᵁ U) (pullbackSections g M U s)) :
+    φ = ψ := by
+  apply ((pullbackPushforwardAdjunction g).homEquiv _ _).injective
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  ext s
+  simp only [Adjunction.homEquiv_unit, Scheme.Modules.Hom.comp_app,
+    Scheme.Modules.pushforward_map_app]
+  have h' := h U s
+  rw [pullbackSections_apply] at h'
+  exact (ConcreteCategory.comp_apply _ _ s).trans
+    (h'.trans (ConcreteCategory.comp_apply _ _ s).symm)
+
 open MonoidalCategory in
 /-- The pullback of the global section `1` of the structure sheaf is the global section `1`,
 under the identification `g^* 𝒪_X ≅ 𝒪_Y`. -/
@@ -228,5 +249,34 @@ lemma pullbackObjUnitIso_inv_app_one :
   exact (congrArg (fun x ↦ (pullbackObjUnitIso g).inv.app ⊤ x) h').symm.trans
     congr($((pullbackObjUnitIso g).hom_inv_id).app ⊤
       (pullbackSections g (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤))))
+
+/-- Evaluating the pullback–pushforward adjunction transpose of `φ : f^* M ⟶ N` on a section
+`s ∈ Γ(M, V)` agrees with applying `φ` to the pulled-back section `f.pullbackSections M V s`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply
+    {X Y : Scheme.{u}} (f : X ⟶ Y) {M : Y.Modules} {N : X.Modules}
+    (φ : (pullback f).obj M ⟶ N) (V : Y.Opens) (s : Γ(M, V)) :
+    (((pullbackPushforwardAdjunction f).homEquiv M N φ).app V) s =
+      φ.app (f ⁻¹ᵁ V) (f.pullbackSections M V s) := by
+  rw [Adjunction.homEquiv_unit]
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforward_map_app]
+  exact (ConcreteCategory.comp_apply _ _ s).trans
+    (congrArg (φ.app (f ⁻¹ᵁ V)) (f.pullbackSections_apply M V s).symm)
+
+/-- Evaluating a composite morphism `(f ≫ g)^* M ⟶ f^* g^* M ⟶ f^* N ⟶ P` on a pulled-back
+section computes the iterated pullback and application of `α` and `β`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections
+    {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) {M : Z.Modules} {N : Y.Modules} {P : X.Modules}
+    (α : (pullback g).obj M ⟶ N) (β : (pullback f).obj N ⟶ P)
+    (W : Z.Opens) (s : Γ(M, W)) :
+    ((pullbackComp f g).inv.app M ≫ (pullback f).map α ≫ β).app
+        ((f ≫ g) ⁻¹ᵁ W) ((f ≫ g).pullbackSections M W s) =
+      β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W))
+        (f.pullbackSections N (g ⁻¹ᵁ W)
+          (α.app (g ⁻¹ᵁ W) (g.pullbackSections M W s))) := by
+  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
+  rw [Scheme.Hom.pullbackSections_comp]
+  -- `((f ≫ g) ⁻¹ᵁ W)` is definitionally `f ⁻¹ᵁ (g ⁻¹ᵁ W)`.
+  exact congrArg (β.app (f ⁻¹ᵁ (g ⁻¹ᵁ W)))
+    (Scheme.Hom.pullbackSections_naturality f _ (g ⁻¹ᵁ W) α (g.pullbackSections M W s))
 
 end AlgebraicGeometry.Scheme.Hom

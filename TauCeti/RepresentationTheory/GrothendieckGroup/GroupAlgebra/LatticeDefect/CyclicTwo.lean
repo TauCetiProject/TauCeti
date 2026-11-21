@@ -49,7 +49,7 @@ theorem cyclicTwoLattices_nonempty_equiv_rat :
 
 section Nonisomorphism
 
-variable (k : Type*) [CommRing k] [Nontrivial k] [CharP k 2]
+variable (k : Type*) [CommRing k] [CharP k 2]
 
 /-- Despite their isomorphic rationalizations, the regular and trivial-plus-sign
 integral lattices have nonisomorphic reductions in characteristic two. -/
@@ -61,6 +61,7 @@ theorem cyclicTwoLattices_not_equiv_charTwo :
         ((Representation.trivial ℤ (Multiplicative (ZMod 2)) ℤ).prod
           (Representation.ofLinearCharacter (cyclicTwoSign ℤˣ))))) := by
   rintro ⟨e⟩
+  have : Nontrivial k := CharP.nontrivial_of_char_ne_one (v := 2) (by norm_num)
   have h := (baseChangeOfMulActionEquiv ℤ k _ _).symm.trans
     (e.trans (cyclicTwoTrivialSignBaseChangeEquiv ℤ k))
   have htriv : (Representation.trivial k (Multiplicative (ZMod 2)) k).prod

@@ -214,7 +214,7 @@ instance hasBinaryBiproducts : HasBinaryBiproducts (MatrixFactorization S w) :=
 noncomputable def zero : MatrixFactorization S w :=
   let P := FGModuleCat.of S PUnit
   -- The carrier of `FGModuleCat.of S PUnit` is definitionally `PUnit`.
-  let hP : IsZero P := FGModuleCat.isZero_of_subsingleton P (by
+  let hP : IsZero P := FGModuleCat.isZero_iff_subsingleton.mpr (by
     change Subsingleton PUnit
     infer_instance)
   ofCurvedDuplex
@@ -238,7 +238,7 @@ noncomputable def zero : MatrixFactorization S w :=
 theorem isZero_zero : IsZero (zero (S := S) (w := w)) := by
   -- The carrier of `FGModuleCat.of S PUnit` is definitionally `PUnit`.
   have hP : IsZero (FGModuleCat.of S PUnit) :=
-    FGModuleCat.isZero_of_subsingleton _ (by change Subsingleton PUnit; infer_instance)
+    FGModuleCat.isZero_iff_subsingleton.mpr (by change Subsingleton PUnit; infer_instance)
   apply IsZero.of_full_of_faithful_of_isZero (inclusion (S := S) (w := w))
   exact CurvedDuplex.isZero_of_components _ (by simpa using hP) (by simpa using hP)
 

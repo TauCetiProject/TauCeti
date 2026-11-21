@@ -8,8 +8,10 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.Algebra.Ring.NonZeroDivisors
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Isometric endomorphisms of a bilinear form
@@ -17,16 +19,21 @@ import Mathlib.Algebra.Ring.NonZeroDivisors
 This file defines the predicate that an endomorphism preserves a bilinear form and provides its
 elementary API, including the bridge to Mathlib's bundled isometric maps. It also records that
 scaling two forms by the same non-zero-divisor preserves whether they are isometric
-(`LinearMap.BilinForm.equivalent_smul_iff`), and gives the evaluation lemmas
+(`LinearMap.BilinForm.equivalent_smul_iff`), and gives the underlying-equivalence and evaluation
+lemmas `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_refl`,
+`LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm`,
+`LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv`,
+`LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_trans`,
 `LinearMap.BilinForm.IsometryEquiv.trans_apply`,
 `LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
 `LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences, which
 map the kernel of one form onto the kernel of the other
 (`LinearMap.BilinForm.IsometryEquiv.map_ker`).
 Isometric bilinear forms have isometric associated quadratic maps
-(`LinearMap.BilinForm.Equivalent.toQuadraticMap`). The isometry group and the determinant,
-base-change, and orthogonal-complement API are developed in
-`TauCeti.LinearAlgebra.BilinearForm.Isometry`.
+(`LinearMap.BilinForm.Equivalent.toQuadraticMap`); for symmetric forms the converse holds when `2`
+is a non-zero-divisor (`LinearMap.BilinForm.IsSymm.equivalent_iff_toQuadraticMap_equivalent`).
+The isometry group and the determinant, base-change, and orthogonal-complement API are developed
+in `TauCeti.LinearAlgebra.BilinearForm.Isometry`.
 -/
 
 public section
@@ -91,6 +98,46 @@ end IsIsometry
 
 end CommSemiring
 
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  {B : BilinForm R M} {f : M →ₗ[R] M}
+
+/-- **Unipotent isometries of anisotropic forms are trivial.** If `f` preserves a bilinear form
+`B` with `B v v ≠ 0` for every `v ≠ 0`, such as a positive definite real form, and `f - 1` is
+nilpotent, then `f = 1`. A nontrivial transvection such as the shear `(q, p) ↦ (q + p, p)`
+therefore preserves no inner product. -/
+theorem IsIsometry.eq_one_of_isNilpotent_sub_one (hf : IsIsometry B f)
+    (hB : B.toQuadraticMap.Anisotropic) (hN : IsNilpotent (f - 1)) : f = 1 := by
+  -- A vector `f u - u` fixed by `f` vanishes: `B (f u) (f w) = B u w` with `w = f u - u` forces
+  -- `B w w = 0`.
+  have key (u : M) (hfw : f (f u - u) = f u - u) : f u - u = 0 := by
+    refine hB _ ?_
+    have hw := hf.apply u (f u - u)
+    rw [hfw, map_sub, map_sub] at hw
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, map_sub, map_sub, LinearMap.sub_apply,
+      LinearMap.sub_apply]
+    linear_combination hw
+  -- Hence `(f - 1) ^ (k + 2) = 0` implies `(f - 1) ^ (k + 1) = 0`: with `u = (f - 1) ^ k v`,
+  -- the vector `(f - 1) ^ (k + 1) v = f u - u` is fixed by `f`.
+  have step (k : ℕ) (hk : (f - 1) ^ (k + 2) = 0) : (f - 1) ^ (k + 1) = 0 := by
+    refine LinearMap.ext fun v ↦ ?_
+    have hw : ((f - 1) ^ (k + 1)) v = f (((f - 1) ^ k) v) - ((f - 1) ^ k) v := by
+      rw [pow_succ', mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self]
+    have hfw := LinearMap.congr_fun hk v
+    rw [pow_succ', mul_apply_eq_comp, hw, LinearMap.sub_apply, one_apply_eq_self,
+      LinearMap.zero_apply, sub_eq_zero] at hfw
+    rw [hw, key _ hfw, LinearMap.zero_apply]
+  have descend (n : ℕ) : (f - 1) ^ (n + 1) = 0 → (f - 1) ^ 1 = 0 := by
+    induction n with
+    | zero => exact id
+    | succ n ih => exact fun h ↦ ih (step n h)
+  obtain ⟨n, hn⟩ := hN
+  have h1 := descend n (by rw [pow_succ, hn, zero_mul])
+  rwa [pow_one, sub_eq_zero] at h1
+
+end CommRing
+
 end BilinForm
 
 end TauCeti
@@ -99,7 +146,7 @@ namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
 
-variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+variable {R M M' : Type*} [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] {C : BilinForm R M} {C' : BilinForm R M'} {a : R}
 
 /-- Scaling two bilinear forms by the same non-zero-divisor `a` neither creates nor destroys an
@@ -116,6 +163,34 @@ namespace IsometryEquiv
 variable {R M₁ M₂ M₃ : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [AddCommMonoid M₃] [Module R M₁] [Module R M₂] [Module R M₃] {B₁ : BilinForm R M₁}
   {B₂ : BilinForm R M₂} {B₃ : BilinForm R M₃}
+
+/-- The underlying linear equivalence of the identity isometric equivalence is the identity linear
+equivalence. -/
+@[simp]
+theorem toLinearEquiv_refl (B : BilinForm R M₁) :
+    (IsometryEquiv.refl B).toLinearEquiv = LinearEquiv.refl R M₁ :=
+  (rfl)
+
+/-- The underlying linear equivalence of the inverse isometric equivalence is the inverse of the
+underlying linear equivalence. -/
+@[simp]
+theorem toLinearEquiv_symm (f : B₁.IsometryEquiv B₂) :
+    f.symm.toLinearEquiv = f.toLinearEquiv.symm :=
+  (rfl)
+
+/-- Coercing the inverse of the underlying linear equivalence agrees with coercing the inverse
+isometric equivalence. -/
+@[simp]
+theorem coe_symm_toLinearEquiv (f : B₁.IsometryEquiv B₂) :
+    ⇑f.toLinearEquiv.symm = f.symm :=
+  (rfl)
+
+/-- The underlying linear equivalence of a composite of isometric equivalences is the composite of
+their underlying linear equivalences. -/
+@[simp]
+theorem toLinearEquiv_trans (f : B₁.IsometryEquiv B₂) (g : B₂.IsometryEquiv B₃) :
+    (f.trans g).toLinearEquiv = f.toLinearEquiv.trans g.toLinearEquiv :=
+  (rfl)
 
 /-- A composite of isometric equivalences applies the first and then the second. -/
 @[simp]
@@ -151,5 +226,27 @@ theorem Equivalent.toQuadraticMap {R M₁ M₂ : Type*} [CommSemiring R] [AddCom
     [AddCommMonoid M₂] [Module R M₁] [Module R M₂] {B₁ : BilinForm R M₁} {B₂ : BilinForm R M₂}
     (h : B₁.Equivalent B₂) : B₁.toQuadraticMap.Equivalent B₂.toQuadraticMap :=
   h.map fun f ↦ { f.toLinearEquiv with map_app' := fun x ↦ by simp }
+
+/-- When `2` is a non-zero-divisor, symmetric bilinear forms are equivalent exactly when their
+associated quadratic maps are equivalent. The underlying modules need not be finite or free. Some
+hypothesis on `2` is needed: over `ZMod 2`, the identity matrix and the all-ones matrix on
+`Fin 2 → ZMod 2` define symmetric forms with the same quadratic map `x 0 + x 1`, and only the
+first is nondegenerate. -/
+theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
+    {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {B : BilinForm R M} {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
+    (h2 : (2 : R) ∈ nonZeroDivisors R) :
+    B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
+  refine ⟨Equivalent.toQuadraticMap, ?_⟩
+  rintro ⟨f⟩
+  -- Polarization recovers `2 • B` from the quadratic map, and `2` can be cancelled.
+  refine ⟨{ toLinearEquiv := f.toLinearEquiv
+            map_app' := fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors h2).mp ?_ }⟩
+  have h : QuadraticMap.polar C.toQuadraticMap (f x) (f y) =
+      QuadraticMap.polar B.toQuadraticMap x y := by
+    simp only [QuadraticMap.polar, ← map_add, f.map_app]
+  rw [BilinMap.polar_toQuadraticMap, BilinMap.polar_toQuadraticMap, hB.eq y x, hC.eq (f y) (f x),
+    ← two_mul, ← two_mul] at h
+  exact h
 
 end LinearMap.BilinForm

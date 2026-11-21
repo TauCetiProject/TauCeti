@@ -169,14 +169,13 @@ theorem filledHull_eq_self
   exact hu ((mem_filledHull_iff.mp hx).subset
     (h.subset_connectedComponentIn (mem_compl hxK) subset_rfl))
 
-/-- **An open set with preconnected frontier has no holes**, in a preconnected, locally connected
-space: if the complement of `K` is unbounded, filling `K` changes nothing. The complement is then
-preconnected (`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`), so this is
+/-- **An open set with preconnected frontier has no holes**, in a preconnected space: if the
+complement of `K` is unbounded, filling `K` changes nothing. The complement is then preconnected
+(`TauCeti.isPreconnected_compl_of_isPreconnected_frontier`), so this is
 `TauCeti.filledHull_eq_self`. A bounded open set of the plane whose frontier is a Jordan curve is
 the basic example. -/
-theorem filledHull_eq_self_of_isPreconnected_frontier [LocallyConnectedSpace E]
-    [PreconnectedSpace E] (hK : IsOpen K) (hf : IsPreconnected (frontier K))
-    (hu : ¬ IsBounded Kᶜ) : filledHull K = K :=
+theorem filledHull_eq_self_of_isPreconnected_frontier [PreconnectedSpace E] (hK : IsOpen K)
+    (hf : IsPreconnected (frontier K)) (hu : ¬ IsBounded Kᶜ) : filledHull K = K :=
   filledHull_eq_self (isPreconnected_compl_of_isPreconnected_frontier hK hf) hu
 
 /-- **A preconnected set that a set cuts off from infinity lies in its filled hull.** If `S` is
@@ -259,7 +258,7 @@ theorem IsCompact.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
   · -- Otherwise the component lies outside `L`, so it is clopen and contains a component of `X`.
     exfalso
     have hcomp : connectedComponent y ⊆ closure C :=
-      ((TauCeti.isClopen_connectedComponentIn_compl hK.isClosed hL.isClosed hKL hyL
+      ((TauCeti.isClopen_connectedComponentIn_compl hK.isClosed hKL hyL
         hCfr).connectedComponent_subset hyC).trans subset_closure
     exact hX y (hy.of_isClosed_subset isClosed_connectedComponent hcomp)
 
@@ -307,7 +306,7 @@ theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace
   -- In a compact space the whole space works.
   by_cases hc : CompactSpace X
   · refine ⟨univ, isCompact_univ, by simp, ?_, fun x hx ↦ absurd (mem_univ x) hx⟩
-    have : IsEmpty ↥(univ : Set X)ᶜ := ⟨fun x ↦ x.2 (mem_univ _)⟩
+    have : IsEmpty ↥(univ : Set X)ᶜ := ⟨fun x ↦ x.property (mem_univ _)⟩
     exact Finite.of_surjective _ ConnectedComponents.surjective_coe
   have := not_compactSpace_iff.1 hc
   -- Enlarge `K` by a point, so that the neighbourhood `L₀` below is nonempty.
@@ -338,7 +337,7 @@ theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace
       ⟨x₀, interior_subset (hKL₀ (mem_insert x₀ K))⟩ hx)
   classical
   refine Finite.of_surjective
-    (fun z : {z : F // (z : X) ∈ Lᶜ} ↦ ConnectedComponents.mk (⟨z.1, z.2⟩ : ↥Lᶜ)) ?_
+    (fun z : {z : F // (z : X) ∈ Lᶜ} ↦ ConnectedComponents.mk (⟨z.val, z.property⟩ : ↥Lᶜ)) ?_
   rintro ⟨x, hx⟩
   obtain ⟨z, hzF, hzx⟩ := hF x hx
   have hzL : z ∈ Lᶜ := fun h ↦ hx ((congrArg (fun s ↦ IsCompact (closure s)) hzx).mp h)

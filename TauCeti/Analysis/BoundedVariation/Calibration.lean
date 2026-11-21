@@ -47,7 +47,7 @@ noncomputable section
 open MeasureTheory Set Filter TopologicalSpace TestFunction InnerProductSpace TauCeti
 open scoped ENNReal Topology ContDiff Distributions Gradient
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- A smooth function `w` whose derivative does not vanish on its zero level, with `{w ≥ -δ}`
 compact, admits an admissible test vector field equal to `-∇w / ‖∇w‖` near the zero level. Its
@@ -57,6 +57,22 @@ theorem ContDiff.exists_testFunction_fderiv_apply_eq_neg_norm {w : E → ℝ} (h
     (hreg : ∀ x, w x = 0 → fderiv ℝ w x ≠ 0) :
     ∃ η > 0, ∃ ψ : 𝓓(⊤, E), (∀ x, ‖ψ x‖ ≤ 1) ∧
       ∀ x, |w x| ≤ η → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖ := by
+  -- If `w ≤ -δ` everywhere, the band `{|w| ≤ δ / 2}` is empty and `ψ = 0` works.
+  by_cases hex : ∃ x₀, -δ < w x₀
+  swap
+  · push Not at hex
+    refine ⟨δ / 2, half_pos hδ, 0, fun x => by simp, fun x hx => ?_⟩
+    have := (abs_le.1 hx).1
+    linarith [hex x]
+  -- Otherwise `{w ≥ -δ}` contains a closed ball, so `E` is finite-dimensional.
+  obtain ⟨x₀, hx₀⟩ := hex
+  have : FiniteDimensional ℝ E := by
+    have hnhds : {x | -δ ≤ w x} ∈ 𝓝 x₀ :=
+      mem_of_superset ((isOpen_Ioi.preimage hw.continuous).mem_nhds hx₀) fun x hx => le_of_lt hx
+    obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 hnhds
+    exact .of_isCompact_closedBall ℝ (half_pos hr) (c := x₀)
+      (hK.of_isClosed_subset Metric.isClosed_closedBall
+        ((Metric.closedBall_subset_ball (half_lt_self hr)).trans hball))
   obtain ⟨η, hη, hηδ, hηC⟩ := exists_forall_abs_le_notMem hw.continuous hδ hK
     (isClosed_eq (hw.continuous_fderiv (by simp)) continuous_const) fun x hx h0 => hreg x h0 hx
   -- `G` is the gradient of `w`, and `ρ ∘ w` cuts off to `{|w| < η}`.
@@ -101,7 +117,7 @@ theorem ContDiff.exists_testFunction_fderiv_apply_eq_neg_norm {w : E → ℝ} (h
     simp only [coe_mk, ψ, map_neg, map_smul, smul_eq_mul, hGapp, hρ1 hx, one_mul, ← hGnorm]
     field_simp [norm_ne_zero_iff.2 hGx]
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **The calibration estimate.** If a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on the
 shell `S = {0 < w < η}`, as `-∇w / ‖∇w‖` does, then
@@ -133,17 +149,7 @@ theorem ContDiff.setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1
     · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_mem hx, hψ x hx, neg_neg]
     · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_notMem hx]
       simp
-  -- The clamped function agrees with `η 1_F` off `S`, and differs from it by at most `η` on `S`.
-  have hpt (x : E) : ‖D x * (η * F.indicator 1 x - v x)‖ ≤ η * S.indicator (fun x => |D x|) x := by
-    have hcl := abs_mul_indicator_sub_max_min_le (w := w) hη.le x
-    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-    by_cases hxS : x ∈ S
-    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_mem hxS, mul_comm η (|D x|)]
-      exact mul_le_mul_of_nonneg_left hcl (abs_nonneg _)
-    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_notMem hxS, mul_zero]
-      exact (mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _) hcl)
+  have hpt (x : E) := norm_mul_sub_clamp_le_indicator (w := w) hη.le (D x) x
   have hbdd (f : E → ℝ) (hf : Measurable f) (c : ℝ) (hfc : ∀ x, ‖f x‖ ≤ c) :
       Integrable fun x => D x * f x :=
     hD.mul_bdd hf.aestronglyMeasurable (.of_forall hfc)

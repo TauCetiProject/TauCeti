@@ -167,6 +167,32 @@ theorem measurableSet_of_mem_inf {u : Set Ω} {P Q : Finpartition u}
   rw [Finset.mem_product] at hpq
   exact (hP pq.1 hpq.1).inter (hQ pq.2 hpq.2)
 
+/-- Refining a measurable finite partition along two measurable sets produces a measurable
+common refinement of the partition and of both bipartitions, with at most four times as many
+parts. -/
+theorem exists_measurable_le_bipartition_card_le (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p) {S T : Set Ω} (hS : MeasurableSet S)
+    (hT : MeasurableSet T) :
+    ∃ (Q : Finpartition (Set.univ : Set Ω)) (_ : ∀ q ∈ Q.parts, MeasurableSet q),
+      Q ≤ P ∧ Q ≤ bipartition S ∧ Q ≤ bipartition T ∧ Q.parts.card ≤ 4 * P.parts.card := by
+  have hPS : ∀ p ∈ (bipartition S).parts, MeasurableSet p := fun _ hp =>
+    measurableSet_of_mem_bipartition hS hp
+  have hPT : ∀ p ∈ (bipartition T).parts, MeasurableSet p := fun _ hp =>
+    measurableSet_of_mem_bipartition hT hp
+  have hPPS : ∀ q ∈ (P ⊓ bipartition S).parts, MeasurableSet q := fun _ hq =>
+    measurableSet_of_mem_inf hP hPS hq
+  refine ⟨(P ⊓ bipartition S) ⊓ bipartition T, fun _ hq => measurableSet_of_mem_inf hPPS hPT hq,
+    le_trans inf_le_left inf_le_left, le_trans inf_le_left inf_le_right, inf_le_right, ?_⟩
+  calc
+    ((P ⊓ bipartition S) ⊓ bipartition T).parts.card
+        ≤ (P ⊓ bipartition S).parts.card * (bipartition T).parts.card :=
+      card_parts_inf_le_mul _ _
+    _ ≤ (P.parts.card * (bipartition S).parts.card) * (bipartition T).parts.card :=
+      Nat.mul_le_mul_right _ (card_parts_inf_le_mul P _)
+    _ ≤ (P.parts.card * 2) * 2 := Nat.mul_le_mul
+      (Nat.mul_le_mul_left _ (card_parts_bipartition_le S)) (card_parts_bipartition_le T)
+    _ = 4 * P.parts.card := by omega
+
 /-- A part of a finite partition is measurable when it is a union of parts of a measurable
 refinement. -/
 theorem measurableSet_of_mem_of_le {u : Set Ω} {P Q : Finpartition u}

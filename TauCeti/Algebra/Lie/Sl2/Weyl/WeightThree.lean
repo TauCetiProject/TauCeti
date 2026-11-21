@@ -12,9 +12,11 @@ public import TauCeti.Algebra.Lie.Sl2.WeightString
 # Weyl normalization on a four-element root string
 
 For a lowest-weight vector of weight minus three, the pinned Weyl automorphism sends it to
-one sixth of its third raising bracket. This fixes the parameter normalization at a triple
-bond, rather than merely identifying the reflected weight. The corresponding conjugation
-identity applies to nilpotent operators in any rational associative algebra.
+one sixth of its third raising bracket. A highest-weight vector of weight three is sent to
+minus one sixth of its third lowering bracket. This fixes the parameter normalizations of
+both root signs at a triple bond, rather than merely identifying the reflected weights.
+The corresponding conjugation identities apply to nilpotent operators in any rational
+associative algebra.
 
 The construction uses `TauCeti.weylAut` and its alternative lowering–raising–lowering
 factorization. The four string vectors need not be independent or nonzero.
@@ -86,6 +88,20 @@ theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
   simp only [map_add, map_rat_smul, h₀, h₁, h₂, h₃]
   module
 
+/-- On a highest-weight vector of weight three, the pinned Weyl automorphism is minus
+one sixth of its third lowering bracket. The sign is opposite to the lowest-weight formula. -/
+theorem weylAut_apply_of_weight_three (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
+    (hyh : ⁅h, y⁆ = (3 : ℚ) • y) (hye : ⁅e, y⁆ = 0) :
+    TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
+      -(6⁻¹ : ℚ) • ⁅f, ⁅f, ⁅f, y⁆⁆⁆ := by
+  have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
+  have hne : IsNilpotent (ad K L (-e)) := by simpa using he.neg
+  rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
+    hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
+  simpa only [neg_lie, lie_neg, neg_neg, smul_neg, neg_smul] using
+    t.neg_symm.weylAut_apply_of_weight_neg_three hnf hne (by simp [hyh]) (by simp [hye])
+
 section Associative
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -103,6 +119,18 @@ theorem weylUnit_conj_of_weight_neg_three (t : IsSl2Triple H E F)
   rw [← TauCeti.weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact t.weylAut_apply_of_weight_neg_three (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hyh hyf
+
+/-- Conjugation by the pinned Weyl unit sends a highest-weight three operator to minus
+one sixth of its third lowering bracket. Division takes place only in the rational algebra. -/
+theorem weylUnit_conj_of_weight_three (t : IsSl2Triple H E F)
+    (hE : IsNilpotent E) (hF : IsNilpotent F) {y : A}
+    (hyh : ⁅H, y⁆ = (3 : ℚ) • y) (hye : ⁅E, y⁆ = 0) :
+    ((TauCeti.weylUnit hE hF : Aˣ) : A) * y *
+        (((TauCeti.weylUnit hE hF)⁻¹ : Aˣ) : A) =
+      -(6⁻¹ : ℚ) • ⁅F, ⁅F, ⁅F, y⁆⁆⁆ := by
+  rw [← TauCeti.weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
+  exact t.weylAut_apply_of_weight_three (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hyh hye
 
 end Associative
 

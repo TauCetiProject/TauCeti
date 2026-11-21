@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Topology.VectorBundle.Complexification
+import TauCeti.Topology.VectorBundle.RestrictScalars
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
 # `C^n` complex vector bundles over real manifolds and complexification of `C^n` sections
@@ -24,6 +26,9 @@ For any real `C^n` vector bundle `E : B → Type*` with model fibre `F` whose co
 `TauCeti.contMDiff_complexification_section_iff`, `TauCeti.tmulConjDiffeomorph`,
 `TauCeti.complexificationTotalSpaceDiffeomorphProd`, `ContMDiffSection.complexificationEquiv`,
 `ContMDiffSection.complexificationEquivProd`, and `ContMDiffSection.conjEquiv`.
+The canonical complex-linear extension of any smooth real bundle map is smooth on the actual
+complexification total space (`TauCeti.contMDiff_liftBaseChangeComplex_totalSpace`), with no
+injectivity, maximality or finite-rank assumption.
 
 ## References
 
@@ -60,13 +65,13 @@ def smulIDiffeomorph : TotalSpace G W ≃ₘ^n⟮IB.prod 𝓘(ℝ, G), IB.prod �
   vectorBundleScalarDiffeomorph (fun _ ↦ Complex.I) contMDiff_const (fun _ ↦ Complex.I_ne_zero)
 
 @[simp] theorem smulIDiffeomorph_apply (p : TotalSpace G W) :
-    smulIDiffeomorph IB G n W p = ⟨p.proj, Complex.I • p.2⟩ :=
+    smulIDiffeomorph IB G n W p = ⟨p.proj, Complex.I • p.snd⟩ :=
   vectorBundleScalarDiffeomorph_apply _ _ _ p
 @[simp] theorem smulIDiffeomorph_symm_apply (p : TotalSpace G W) :
-    (smulIDiffeomorph IB G n W).symm p = ⟨p.proj, -Complex.I • p.2⟩ := by simp [smulIDiffeomorph]
+    (smulIDiffeomorph IB G n W).symm p = ⟨p.proj, -Complex.I • p.snd⟩ := by simp [smulIDiffeomorph]
 /-- Applying `smulIDiffeomorph` twice negates each fibre vector. -/
 theorem smulIDiffeomorph_smulIDiffeomorph_apply (p : TotalSpace G W) :
-    smulIDiffeomorph IB G n W (smulIDiffeomorph IB G n W p) = ⟨p.proj, -p.2⟩ := by
+    smulIDiffeomorph IB G n W (smulIDiffeomorph IB G n W p) = ⟨p.proj, -p.snd⟩ := by
   rcases p with ⟨x, v⟩; simp [smul_smul]
 @[simp] theorem toHomeomorph_smulIDiffeomorph :
     (smulIDiffeomorph IB G n W).toHomeomorph = smulIHomeomorph G W :=
@@ -75,12 +80,14 @@ theorem smulIDiffeomorph_smulIDiffeomorph_apply (p : TotalSpace G W) :
 variable [∀ x, Module ℝ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousConstSMul ℂ (W x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] [VectorBundle ℝ G W]
 
+omit [IsScalarTower ℝ ℂ G] in
 /-- Fibrewise multiplication by `Complex.I` is a `C^n` section of `fun x ↦ W x →L[ℝ] W x`. -/
 theorem contMDiff_smulIEquiv_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
       (E := fun y ↦ W y →L[ℝ] W y) x (Complex.smulIEquiv (W x) : W x →L[ℝ] W x)) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_smulIEquiv a hx
 
+omit [IsScalarTower ℝ ℂ G] in
 /-- Fibrewise multiplication by `-Complex.I` is a `C^n` section of `fun x ↦ W x →L[ℝ] W x`. -/
 theorem contMDiff_smulIEquiv_symm_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
@@ -130,10 +137,10 @@ theorem contMDiffWithinAt_complexification_totalSpace_iff
     {f : M → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} {s : Set M} {x₀ : M} :
     ContMDiffWithinAt IM (IB.prod 𝓘(ℝ, Complexification F)) n f s x₀ ↔
       ContMDiffWithinAt IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) s x₀ ∧
+        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) s x₀ ∧
       ContMDiffWithinAt IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) s x₀ := by
-  simp only [Bundle.contMDiffWithinAt_totalSpace, ← and_and_left]
+        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) s x₀ := by
+  simp only [Bundle.contMDiffWithinAt_totalSpace_iff, ← and_and_left]
   refine and_congr_right fun hb ↦ ?_
   have hx₀ : (f x₀).proj ∈ (trivializationAt F E (f x₀).proj).baseSet :=
     mem_baseSet_trivializationAt F E (f x₀).proj
@@ -163,9 +170,9 @@ theorem contMDiffAt_complexification_totalSpace_iff
     {f : M → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} {x₀ : M} :
     ContMDiffAt IM (IB.prod 𝓘(ℝ, Complexification F)) n f x₀ ↔
       ContMDiffAt IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) x₀ ∧
+        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) x₀ ∧
       ContMDiffAt IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) x₀ := by
+        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) x₀ := by
   simp_rw [← contMDiffWithinAt_univ, contMDiffWithinAt_complexification_totalSpace_iff]
 
 /-- Domain version of `contMDiffWithinAt_complexification_totalSpace_iff`. -/
@@ -173,9 +180,9 @@ theorem contMDiffOn_complexification_totalSpace_iff
     {f : M → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} {s : Set M} :
     ContMDiffOn IM (IB.prod 𝓘(ℝ, Complexification F)) n f s ↔
       ContMDiffOn IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) s ∧
+        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) s ∧
       ContMDiffOn IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) s := by
+        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) s := by
   simp only [ContMDiffOn, contMDiffWithinAt_complexification_totalSpace_iff, forall_and]
 
 /-- Global version of `contMDiffWithinAt_complexification_totalSpace_iff`. -/
@@ -183,9 +190,9 @@ theorem contMDiff_complexification_totalSpace_iff
     {f : M → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} :
     ContMDiff IM (IB.prod 𝓘(ℝ, Complexification F)) n f ↔
       ContMDiff IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) ∧
+        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) ∧
       ContMDiff IM (IB.prod 𝓘(ℝ, F)) n
-        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) := by
+        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) := by
   simp only [ContMDiff, contMDiffAt_complexification_totalSpace_iff, forall_and]
 
 /-- A section `s : ∀ x, ℂ ⊗[ℝ] E x` is `C^n` if and only if its real and imaginary parts are `C^n`
@@ -209,15 +216,15 @@ def tmulConjDiffeomorph :
       TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) :=
   have hcont : ContMDiff (IB.prod 𝓘(ℝ, Complexification F)) (IB.prod 𝓘(ℝ, Complexification F)) n
       (fun p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) ↦
-        (⟨p.proj, tmulConj (E p.proj) p.2⟩ :
+        (⟨p.proj, tmulConj (E p.proj) p.snd⟩ :
           TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x)) := by
     obtain ⟨hre, him⟩ := (contMDiff_complexification_totalSpace_iff (F := F) (E := E)).mp
       (contMDiff_id (I := IB.prod 𝓘(ℝ, Complexification F)) (n := n))
     refine (contMDiff_complexification_totalSpace_iff (F := F) (E := E)).mpr
       ⟨by simpa using hre, ?_⟩
     simpa [neg_one_smul] using (contMDiff_const (c := (-1 : ℝ))).smul_totalSpace him
-  { toFun p := ⟨p.proj, tmulConj (E p.proj) p.2⟩
-    invFun p := ⟨p.proj, tmulConj (E p.proj) p.2⟩
+  { toFun p := ⟨p.proj, tmulConj (E p.proj) p.snd⟩
+    invFun p := ⟨p.proj, tmulConj (E p.proj) p.snd⟩
     left_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
     right_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
     contMDiff_toFun := hcont, contMDiff_invFun := hcont }
@@ -229,8 +236,8 @@ def complexificationTotalSpaceDiffeomorphProd :
     TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) ≃ₘ^n⟮
       IB.prod 𝓘(ℝ, Complexification F), IB.prod 𝓘(ℝ, F × F)⟯
       TotalSpace (F × F) (E ×ᵇ E) where
-  toFun p := ⟨p.proj, complexificationEquivProd (E p.proj) p.2⟩
-  invFun p := ⟨p.proj, (complexificationEquivProd (E p.proj)).symm p.2⟩
+  toFun p := ⟨p.proj, complexificationEquivProd (E p.proj) p.snd⟩
+  invFun p := ⟨p.proj, (complexificationEquivProd (E p.proj)).symm p.snd⟩
   left_inv := fun ⟨x, u⟩ ↦
     congrArg (TotalSpace.mk x) ((complexificationEquivProd (E x)).symm_apply_apply u)
   right_inv := fun ⟨x, v⟩ ↦
@@ -238,9 +245,9 @@ def complexificationTotalSpaceDiffeomorphProd :
   contMDiff_toFun := by
     rw [Equiv.coe_fn_mk]; intro p₀
     let e₀ := trivializationAt F E p₀.proj
-    obtain ⟨hb, hp₀⟩ := Bundle.contMDiffAt_totalSpace.mp
+    obtain ⟨hb, hp₀⟩ := Bundle.contMDiffAt_totalSpace_iff.mp
       (contMDiffAt_id (I := IB.prod 𝓘(ℝ, Complexification F)) (n := n) (x := p₀))
-    refine Bundle.contMDiffAt_totalSpace.mpr ⟨hb, (((Complexification.equivProd F :
+    refine Bundle.contMDiffAt_totalSpace_iff.mpr ⟨hb, (((Complexification.equivProd F :
       Complexification F →L[ℝ] F × F).contDiff (n := n)).comp_contMDiffAt
         hp₀).congr_of_eventuallyEq ?_⟩
     filter_upwards [hb.continuousAt.preimage_mem_nhds
@@ -254,9 +261,9 @@ def complexificationTotalSpaceDiffeomorphProd :
   contMDiff_invFun := by
     rw [Equiv.coe_fn_symm_mk]; intro p₀
     let e₀ := trivializationAt F E p₀.proj
-    obtain ⟨hb, hp₀⟩ := Bundle.contMDiffAt_totalSpace.mp
+    obtain ⟨hb, hp₀⟩ := Bundle.contMDiffAt_totalSpace_iff.mp
       (contMDiffAt_id (I := IB.prod 𝓘(ℝ, F × F)) (n := n) (x := p₀))
-    refine Bundle.contMDiffAt_totalSpace.mpr ⟨hb, ((((Complexification.equivProd F).symm :
+    refine Bundle.contMDiffAt_totalSpace_iff.mpr ⟨hb, ((((Complexification.equivProd F).symm :
       F × F →L[ℝ] Complexification F).contDiff (n := n)).comp_contMDiffAt
         hp₀).congr_of_eventuallyEq ?_⟩
     filter_upwards [hb.continuousAt.preimage_mem_nhds
@@ -269,7 +276,7 @@ def complexificationTotalSpaceDiffeomorphProd :
 
 @[simp] theorem tmulConjDiffeomorph_apply
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
-    tmulConjDiffeomorph IB F n E p = ⟨p.proj, tmulConj (E p.proj) p.2⟩ := (rfl)
+    tmulConjDiffeomorph IB F n E p = ⟨p.proj, tmulConj (E p.proj) p.snd⟩ := (rfl)
 @[simp] theorem tmulConjDiffeomorph_symm :
     (tmulConjDiffeomorph IB F n E).symm = tmulConjDiffeomorph IB F n E := (rfl)
 @[simp] theorem toHomeomorph_tmulConjDiffeomorph :
@@ -278,13 +285,13 @@ def complexificationTotalSpaceDiffeomorphProd :
 @[simp] theorem complexificationTotalSpaceDiffeomorphProd_apply
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     complexificationTotalSpaceDiffeomorphProd IB F n E p =
-      ⟨p.proj, (realPart (E p.proj) p.2, imaginaryPart (E p.proj) p.2)⟩ :=
-  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_apply p.2)
+      ⟨p.proj, (realPart (E p.proj) p.snd, imaginaryPart (E p.proj) p.snd)⟩ :=
+  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_apply p.snd)
 @[simp] theorem complexificationTotalSpaceDiffeomorphProd_symm_apply
     (p : TotalSpace (F × F) (E ×ᵇ E)) :
     (complexificationTotalSpaceDiffeomorphProd IB F n E).symm p =
-      ⟨p.proj, 1 ⊗ₜ[ℝ] p.2.1 + Complex.I ⊗ₜ[ℝ] p.2.2⟩ :=
-  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_symm_apply p.2)
+      ⟨p.proj, 1 ⊗ₜ[ℝ] p.snd.1 + Complex.I ⊗ₜ[ℝ] p.snd.2⟩ :=
+  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_symm_apply p.snd)
 theorem proj_complexificationTotalSpaceDiffeomorphProd
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     (complexificationTotalSpaceDiffeomorphProd IB F n E p).proj = p.proj := (rfl)
@@ -529,5 +536,50 @@ theorem complexificationEquiv_tmul_eq_smul (z : ℂ) (s : Cₛ^n⟮IB; F, E⟯) 
 end ComplexificationSections
 
 end ContMDiffSection
+
+namespace TauCeti
+
+variable {XB HB B F G : Type*} [NormedAddCommGroup XB] [NormedSpace ℝ XB]
+  [TopologicalSpace HB] {IB : ModelWithCorners ℝ XB HB}
+  [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G]
+  {W V : B → Type*}
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace F W)] [FiberBundle F W] [VectorBundle ℝ F W]
+  [∀ x, TopologicalSpace (ℂ ⊗[ℝ] W x)] [∀ x, IsComplexificationTopology (W x)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace G V)] [FiberBundle G V]
+  [∀ x, IsTopologicalAddGroup (V x)]
+  {n : ℕ∞ω}
+
+section SmoothExtension
+
+variable [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] [VectorBundle ℂ G V]
+  [∀ x, ContinuousConstSMul ℂ (V x)]
+
+local instance : VectorBundle ℝ G V := VectorBundle.restrictScalars ℝ ℂ G V
+
+/-- Complex-linear extension of a smooth real bundle map is smooth on the actual
+complexification total space. It is the canonical native base-change lift in each fiber. -/
+theorem contMDiff_liftBaseChangeComplex_totalSpace (i : ∀ x, W x →L[ℝ] V x)
+    (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V))) :
+    ContMDiff (IB.prod 𝓘(ℝ, Complexification F)) (IB.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x) ↦
+        (⟨p.proj, (i p.proj).liftBaseChangeComplex p.snd⟩ : TotalSpace G V)) := by
+  obtain ⟨hre, him⟩ := (contMDiff_complexification_totalSpace_iff (IB := IB) (F := F)
+    (E := W)).mp (contMDiff_id (I := IB.prod 𝓘(ℝ, Complexification F)) (n := n))
+  have hreal := hi.comp hre
+  have himag := hi.comp him
+  have hI := (contMDiff_const (I := IB.prod 𝓘(ℝ, Complexification F))
+    (c := Complex.I)).smul_totalSpace himag
+  simpa only [ContinuousLinearMap.liftBaseChangeComplex_apply, Function.comp_def, id_eq] using
+    ContMDiff.add_sectionAlong hreal hI
+
+end SmoothExtension
+
+end TauCeti
 
 end

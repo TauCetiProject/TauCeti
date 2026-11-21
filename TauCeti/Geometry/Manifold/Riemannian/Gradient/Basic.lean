@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -34,6 +36,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.inner_mgradient`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
+* `IsMIntegralCurve.comp_neg_neg_mgradient`: reversing time turns a negative gradient
+  trajectory of `f` into one of `-f`.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
   differential does, and `TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv`: it has the same
   length as the differential.
@@ -42,9 +46,13 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
 * `TauCeti.Manifold.continuous_inner_mgradient`: the inner product of the gradients of two `C¹`
-  functions is continuous.
-* `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
-  gradient section.
+  functions is continuous, and so are the length `TauCeti.Manifold.continuous_norm_mgradient` and
+  squared length `TauCeti.Manifold.continuous_norm_sq_mgradient` of the gradient.
+* `TauCeti.Manifold.mdifferentiableAt_mgradient` and
+  `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` germ or function has a differentiable
+  Riemannian gradient section.
+* `TauCeti.Manifold.mgradient_add_eventuallyEq`: the gradient is additive near a point where
+  both functions are `C¹`.
 * `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
   `TauCeti.Manifold.contMDiff_neg_mgradient_one` states its `C¹` case for a `C²` function.
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
@@ -148,6 +156,18 @@ theorem mgradient_add {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   funext x
   simp [mgradient, mvfderiv_add (hf x) (hg x)]
 
+/-- The gradient is additive near a point where both functions are `C¹`. -/
+theorem mgradient_add_eventuallyEq {g : M → ℝ}
+    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hg : ContMDiffAt I 𝓘(ℝ) 1 g x) :
+    ∀ᶠ y in 𝓝 x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
+  filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf,
+    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg] with y hfy hgy
+  apply ext_inner_right ℝ
+  intro v
+  rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
+    mvfderiv_add (hfy.mdifferentiableAt (by simp)) (hgy.mdifferentiableAt (by simp)),
+    add_apply]
+
 /-- The gradient satisfies the scalar product rule for differentiable functions. -/
 theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
     (hg : MDifferentiable I 𝓘(ℝ) g) :
@@ -166,11 +186,34 @@ theorem mgradient_smul (c : ℝ) :
   funext x
   simp [mgradient]
 
+/-- Along the line `f + t g`, the squared length of the gradient is the quadratic polynomial
+`‖grad f‖² + 2 t ⟪grad g, grad f⟫ + t² ‖grad g‖²` in `t`. -/
+theorem norm_sq_mgradient_add_smul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
+    (hg : MDifferentiable I 𝓘(ℝ) g) (t : ℝ) (x : M) :
+    ‖mgradient I (f + t • g) x‖ ^ 2 =
+      ‖mgradient I f x‖ ^ 2 + 2 * t * inner ℝ (mgradient I g x) (mgradient I f x) +
+        t ^ 2 * ‖mgradient I g x‖ ^ 2 := by
+  rw [mgradient_add hf (hg.const_smul t), mgradient_smul t]
+  simp only [Pi.add_apply, Pi.smul_apply, norm_add_sq_real, norm_smul, inner_smul_right,
+    Real.norm_eq_abs, mul_pow, sq_abs, real_inner_comm]
+  ring
+
 /-- The gradient of `-f` is the opposite of the gradient of `f`. -/
 @[simp]
 theorem mgradient_neg : mgradient I (-f) x = -mgradient I f x := by
   rw [mgradient, mgradient, mvfderiv_neg]
   exact (rieszDual (I := I) x).toLinearEquiv.map_neg _
+
+/-- **Reversing time in a negative gradient trajectory.** If `γ` is an integral curve of `-grad f`,
+then `t ↦ γ (-t)` is an integral curve of `-grad (-f)`. -/
+theorem _root_.IsMIntegralCurve.comp_neg_neg_mgradient {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (-mgradient I f)) :
+    IsMIntegralCurve (fun t ↦ γ (-t)) (-mgradient I (-f)) := by
+  convert hγ.comp_mul (-1) using 1
+  · funext t
+    simp only [Function.comp_apply, mul_neg_one]
+  · funext y
+    simp only [Pi.neg_apply, Pi.smul_apply, mgradient_neg, neg_neg, neg_smul, one_smul]
 
 variable {s : Set M}
 
@@ -267,16 +310,25 @@ theorem contMDiff_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     ContMDiff I I.tangent n (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) :=
   fun x ↦ contMDiffAt_mgradient (I := I) (f := f) (x := x) (hf x)
 
+/-- A function that is `C²` at a point has a differentiable Riemannian gradient section
+there. -/
+theorem mdifferentiableAt_mgradient [IsManifold I 2 M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  exact (contMDiffAt_mgradient (I := I) (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp)
+
 /-- A `C²` function has a differentiable Riemannian gradient section. -/
 theorem mdifferentiable_mgradient {f : M → ℝ} [IsManifold I 2 M]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     MDifferentiable I I.tangent
-      (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) := by
-  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  exact (contMDiff_mgradient (I := I) (n := 1)
-    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiable (by simp)
+      (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) :=
+  fun x ↦ mdifferentiableAt_mgradient (hf x)
 
 /-- **The negative gradient is smooth.** For a `C^n` Riemannian metric, the negative gradient of a
 `C^{n+1}` function is a `C^n` vector field. -/
@@ -317,12 +369,28 @@ theorem contMDiff_norm_sq_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
 /-- **The inner product of two gradients is continuous.** For a continuous Riemannian metric, the
 pointwise inner product `⟪grad f, grad g⟫` of two `C¹` functions is a continuous function. -/
 theorem continuous_inner_mgradient
-    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
     (hf : ContMDiff I 𝓘(ℝ) 1 f) (hg : ContMDiff I 𝓘(ℝ) 1 g) :
     Continuous fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x) := by
   have : IsManifold I (0 + 1) M := by rwa [zero_add]
+  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
+    IsContinuousRiemannianBundle.toIsContMDiffZero
   exact (contMDiff_inner_mgradient (n := 0) (by rwa [zero_add])
     (by rwa [zero_add])).continuous
+
+/-- For a continuous Riemannian metric, the squared length `‖grad f‖²` of the gradient of a `C¹`
+function is continuous. -/
+theorem continuous_norm_sq_mgradient
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) : Continuous fun x ↦ ‖mgradient I f x‖ ^ 2 := by
+  simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hf hf
+
+/-- For a continuous Riemannian metric, the length `‖grad f‖` of the gradient of a `C¹` function
+is continuous. -/
+theorem continuous_norm_mgradient
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) : Continuous fun x ↦ ‖mgradient I f x‖ := by
+  simpa only [Real.sqrt_sq (norm_nonneg _)] using (continuous_norm_sq_mgradient hf).sqrt
 
 /-! ### Comparison with the differential in a chart -/
 

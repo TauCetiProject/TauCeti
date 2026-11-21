@@ -124,7 +124,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
     IsZero ((cokernel (F b).arrow).homology m) := by
   -- The quotients `F_j/F_b` form a directed family of subcomplexes of `K/F_b`.
   let φ (j : {j // b ≤ j}) :
-      cokernel (Subobject.ofLE (F b) (F j) (hF j.2)) ⟶ cokernel (F b).arrow :=
+      cokernel (Subobject.ofLE (F b) (F j) (hF j.property)) ⟶ cokernel (F b).arrow :=
     cokernel.map _ _ (𝟙 _) (F j).arrow (by simp)
   have hφ (j : {j // b ≤ j}) : Mono (φ j) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by simp⟩)
@@ -145,7 +145,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
   intro z
   obtain ⟨j, y, rfl⟩ := HomologicalComplex.exists_homologyMap_eq_of_injective m φ
     (fun j ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) hcover z
-  rw [(ModuleCat.isZero_iff_subsingleton.1 (h j j.2)).elim y 0, map_zero]
+  rw [(ModuleCat.isZero_iff_subsingleton.1 (h j j.property)).elim y 0, map_zero]
 
 /-- **The quotient by a stage of an exhaustive filtration.** If every element of `K^m` lies in
 some `F_q` and the graded pieces `F_{i+1}/F_i` have vanishing `H^m` for all `i ≥ b`, then so does
@@ -196,12 +196,12 @@ functors of filtrations `F` of `K` and `G` of `L`, and let `n` be a degree. Supp
 stages `F_i` and `G_i` at all indices `i ≤ a` have vanishing cohomology in degrees `n` and `n + 1`
 (for instance `F_a = G_a = ⊥`), that in degrees `n - 1` and `n` every element of `K` and of `L`
 lies in some stage of the filtration, and that the graded pieces of both filtrations at all
-indices `i ≥ b` have vanishing cohomology. If the morphism of spectral sequences induced by `α`
-is an isomorphism on every object of some page `r ≥ 2`, then `α.app ⊤` induces an isomorphism
-on `H^n`. -/
+indices `i ≥ b` have vanishing cohomology (no inequality between `a` and `b` is needed). If the
+morphism of spectral sequences induced by `α` is an isomorphism on every object of some page
+`r ≥ 2`, then `α.app ⊤` induces an isomorphism on `H^n`. -/
 theorem isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive
     {L : CochainComplex (ModuleCat R) ℤ} (G : ℤ → Subobject L) (hG : Monotone G)
-    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) (n : ℤ) {a b : ℤ} (hab : a ≤ b)
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) (n : ℤ) {a b : ℤ}
     (hFa : ∀ m, n ≤ m → m ≤ n + 1 → ∀ i, i ≤ a →
       IsZero ((F i : CochainComplex (ModuleCat R) ℤ).homology m))
     (hGa : ∀ m, n ≤ m → m ≤ n + 1 → ∀ i, i ≤ a →
@@ -221,9 +221,11 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive
       (spectralObjectMap α)).hom r hr).f pq)) :
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) :=
   isIso_homologyMap_app_top_of_isIso_abutment α n <|
-    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab n
-    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot F hF i m (hFa m hm₀ hm₁ i hi))
-    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot G hG i m (hGa m hm₀ hm₁ i hi))
+    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) n
+    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot F hF i m
+      (hFa m hm₀ hm₁ i hi))
+    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot G hG i m
+      (hGa m hm₀ hm₁ i hi))
     (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_top F hF i m
       (isZero_homology_cokernel_arrow_of_exhaustive F hF (hFex m hm₀ hm₁)
         fun j hj ↦ hFb m hm₀ hm₁ j (hi.trans hj)))

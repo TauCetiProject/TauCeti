@@ -23,9 +23,10 @@ elements exactly when their difference is in the range of the first map
 two finiteness consequences of that description:
 
 * over a ring for which the middle module is noetherian, the homology is finitely generated;
-* over a division ring, when the middle term is finite-dimensional, the dimension of the homology
-  plus the dimension of the range of the first map is the dimension of the kernel of the second,
-  so in particular the homology has dimension at most that of the middle term.
+* over a ring satisfying the strong rank condition, when the middle term is finite, the
+  homology has rank at most that of the middle term; if the ring also satisfies rank-nullity
+  (for instance a division ring or a commutative domain), the rank of the homology plus the rank
+  of the range of the first map is the rank of the kernel of the second.
 
 It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short
 complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
@@ -39,7 +40,7 @@ dual of a short exact sequence is short exact when every functional on `X₁` ex
 
 public section
 
-open CategoryTheory Limits Module
+open CategoryTheory Limits Module Cardinal
 
 universe u v
 
@@ -53,31 +54,36 @@ theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k
     inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
   .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
 
-variable {k : Type u} [DivisionRing k]
+variable {k : Type u} [Ring k] [StrongRankCondition k]
 
-/-- The homology of a short complex `X₁ ⟶ X₂ ⟶ X₃` of vector spaces with `X₂` finite-dimensional
-has dimension `dim ker g - dim im f`. -/
-theorem finrank_homology_add_finrank_range_f (S : ShortComplex (ModuleCat.{v} k))
-    [Module.Finite k S.X₂] :
+/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules with `X₂` finite, over a ring satisfying
+rank-nullity and the strong rank condition (for instance a division ring or a commutative domain),
+the rank of the homology plus the rank of `im f` is the rank of `ker g`. -/
+theorem finrank_homology_add_finrank_range_f [HasRankNullity.{v} k]
+    (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
     finrank k S.homology + finrank k (LinearMap.range S.f.hom) =
       finrank k (LinearMap.ker S.g.hom) := by
+  have hle : LinearMap.range S.f.hom ≤ LinearMap.ker S.g.hom := by
+    rintro _ ⟨y, rfl⟩
+    exact S.moduleCat_zero_apply y
+  -- Rank-nullity for the boundaries inside the cycles, at the level of cardinal ranks: the cycles
+  -- need not be finitely generated, but their rank is finite as a submodule of `X₂`.
+  have h := (LinearMap.range S.moduleCatToCycles).rank_quotient_add_rank
+  have hK : Module.rank k (LinearMap.ker S.g.hom) < ℵ₀ :=
+    (Submodule.rank_le _).trans_lt (Module.rank_lt_aleph0 k S.X₂)
+  rw [← h, add_lt_aleph0_iff] at hK
   rw [S.moduleCatHomologyIso.toLinearEquiv.finrank_eq, moduleCatLeftHomologyData_H,
-    ← Submodule.finrank_quotient_add_finrank (LinearMap.range S.moduleCatToCycles)]
-  congr 1
-  rw [← Submodule.finrank_map_subtype_eq, ← LinearMap.range_comp]
-  -- `S.moduleCatToCycles` is the corestriction of `S.f` to `ker S.g`, so composing it with the
-  -- inclusion of `ker S.g` gives `S.f` back by definition; rewriting with
-  -- `LinearMap.subtype_comp_codRestrict` fails because Mathlib's corestriction proof is only
-  -- well-typed up to unfolding the concrete-category coercions.
-  rfl
+    ← (Submodule.comapSubtypeEquivOfLe hle).finrank_eq,
+    ← LinearMap.range_codRestrict _ _ S.moduleCat_zero_apply]
+  simp only [finrank, ← h, toNat_add hK.1 hK.2]
 
-/-- The homology of a short complex of vector spaces with finite-dimensional middle term has
-dimension at most that of the middle term. -/
+/-- The homology of a short complex of modules with finite middle term, over a ring satisfying
+the strong rank condition, has rank at most that of the middle term. -/
 theorem finrank_homology_le_finrank_X₂ (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
     finrank k S.homology ≤ finrank k S.X₂ := by
-  have := S.finrank_homology_add_finrank_range_f
-  have := (LinearMap.ker S.g.hom).finrank_le
-  omega
+  rw [S.moduleCatHomologyIso.toLinearEquiv.finrank_eq, moduleCatLeftHomologyData_H]
+  exact toNat_le_toNat ((rank_quotient_le _).trans (Submodule.rank_le _))
+    (Module.rank_lt_aleph0 k S.X₂)
 
 section LeftHomologyData
 
@@ -101,13 +107,13 @@ end LeftHomologyData
 
 section OpDual
 
-variable {A : Type u} [Ring A] (S : ShortComplex (ModuleCat.{u} A))
+variable {A : Type u} [Ring A] (S : ShortComplex (ModuleCat.{v} A))
 
 /-- The `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short complex of
 right `A`-modules, that is, of `Aᵐᵒᵖ`-modules. Both maps are precomposition. The body is exposed so
 that the `simps` lemmas for the two maps can be stated between the dual modules. -/
 @[expose, simps X₁ X₂ X₃ f g]
-noncomputable def moduleCatOpDual : ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) where
+noncomputable def moduleCatOpDual : ShortComplex (ModuleCat.{max u v} Aᵐᵒᵖ) where
   X₁ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₃)
   X₂ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₂)
   X₃ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₁)

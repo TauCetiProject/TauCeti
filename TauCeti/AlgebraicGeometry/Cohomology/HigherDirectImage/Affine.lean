@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Flasque
+import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 import TauCeti.Topology.Sheaves.Exact
@@ -85,23 +86,15 @@ theorem isZero_higherDirectImage_succ_of_isBasis (M : X.Modules) (q : ℕ) {B : 
     HomologicalComplex.exactAt_iff' _ q (q + 1) (q + 2) (by simp) (by simp)]
   refine (toSheaf Y).reflects_exact_of_faithful _ (TopCat.Sheaf.exact_of_isBasis hB ?_)
   intro V hV s hs
-  -- the image `K` of the resolution `I^•` under `toSheaf X` resolves the abelian sheaf of `M`,
-  -- and its terms are flasque, hence acyclic on `f⁻¹ V`
-  let K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex
-  have hι : (toSheaf X).map (P.ι.f 0) ≫ K.d 0 1 = 0 := by
-    rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp, P.ι_f_zero_comp_complex_d,
-      Functor.map_zero]
-  have hι' : (ShortComplex.mk _ _ hι).Exact :=
-    (ShortComplex.exact_of_f_is_kernel (S := ShortComplex.mk _ _ P.ι_f_zero_comp_complex_d)
-      P.isLimitKernelFork).map (toSheaf X)
-  have hK (j : ℕ) : K.ExactAt (j + 1) :=
-    (K.exactAt_iff' j (j + 1) (j + 2) (by simp) (by simp)).2 ((P.exact_succ j).map (toSheaf X))
-  have hKV (j k : ℕ) : Subsingleton ((K.X j).H' (k + 1) (f ⁻¹ᵁ V)) :=
-    Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque (P.cocomplex.X j) k (f ⁻¹ᵁ V)
+  -- the image of the resolution `I^•` under `toSheaf X` resolves the abelian sheaf of `M`, and
+  -- its terms are flasque, hence acyclic on `f⁻¹ V`
   have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
   -- the sections over `V` of `f_* I^•` are by definition the sections over `f⁻¹ V` of `I^•`
-  exact Sheaf.H'.exists_d_hom_app_eq_of_resolution (K := K) ((toSheaf X).map (P.ι.f 0)) hι hι' hK
-    (f ⁻¹ᵁ V) hKV q (hM V hV) s hs
+  exact Sheaf.H'.exists_d_hom_app_eq_of_resolution
+    (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
+    (P.map_ι_f_zero_comp_d (toSheaf X)) (P.exact₀_map (toSheaf X)) (P.exactAt_succ_map (toSheaf X))
+    (f ⁻¹ᵁ V) (fun j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
+      (P.cocomplex.X j) k (f ⁻¹ᵁ V)) q (hM V hV) s hs
 
 /-- **Higher direct images along affine morphisms vanish.** For an affine morphism `f : X ⟶ Y`
 and a quasi-coherent sheaf `M` on `X`, every positive higher direct image `R^{q+1} f_* M`

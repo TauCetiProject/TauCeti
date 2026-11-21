@@ -100,7 +100,7 @@ theorem semialgebraicAt_iff_exists_ball [Fintype σ] :
     SemialgebraicAt s x ↔ ∃ ε > 0, IsSemialgebraic (s ∩ ball x ε) := by
   refine ⟨fun hs => ?_, fun ⟨ε, hε, hs⟩ =>
     ⟨ball x ε, isOpen_ball, mem_ball_self hε, isSemialgebraic_ball x ε, hs⟩⟩
-  obtain ⟨U, hUo, hxU, hU, hsU⟩ := hs
+  obtain ⟨U, hUo, hxU, _, hsU⟩ := hs
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hUo x hxU
   refine ⟨ε, hε, ?_⟩
   rw [← inter_eq_right.2 hεU, ← inter_assoc]
@@ -371,7 +371,7 @@ theorem _root_.LocallyFinite.isLocallySemialgebraic_iUnion [Finite σ] {ι : Typ
   obtain ⟨V, hV, hI⟩ := hfin x
   refine (SemialgebraicAt.biUnion hI fun i _ => hs i x).congr ?_
   filter_upwards [hV] with y hy
-  simp only [eq_iff_iff, mem_iUnion, exists_prop]
+  simp only [mem_iUnion, exists_prop]
   exact ⟨fun ⟨i, _, hyi⟩ => ⟨i, hyi⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
 
 /-! ### Bounded locally semialgebraic sets -/
@@ -383,10 +383,10 @@ theorem _root_.IsCompact.exists_isSemialgebraic_inter {s K : Set (σ → ℝ)} (
     ∃ U, IsOpen U ∧ K ⊆ U ∧ IsSemialgebraic U ∧ IsSemialgebraic (s ∩ U) := by
   choose U hUo hxU hU hsU using hs
   obtain ⟨t, hKt⟩ := hK.elim_nhds_subcover' U fun x hx => (hUo x hx).mem_nhds (hxU x hx)
-  refine ⟨⋃ x ∈ t, U x x.2, isOpen_biUnion fun x _ => hUo x x.2, hKt,
-    .biUnion t.finite_toSet fun x _ => hU x x.2, ?_⟩
+  refine ⟨⋃ x ∈ t, U x x.property, isOpen_biUnion fun x _ => hUo x x.property, hKt,
+    .biUnion t.finite_toSet fun x _ => hU x x.property, ?_⟩
   rw [inter_iUnion₂]
-  exact .biUnion t.finite_toSet fun x _ => hsU x x.2
+  exact .biUnion t.finite_toSet fun x _ => hsU x x.property
 
 /-- A bounded set which is semialgebraic at every point of its closure is semialgebraic. -/
 theorem isSemialgebraic_of_isBounded [Finite σ] {s : Set (σ → ℝ)} (hb : Bornology.IsBounded s)

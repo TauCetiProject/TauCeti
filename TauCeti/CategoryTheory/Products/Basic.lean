@@ -10,6 +10,8 @@ public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 
+import Mathlib.CategoryTheory.Adjunction.Limits
+
 /-!
 # Basic structures on product categories
 
@@ -19,7 +21,10 @@ categories. These structures let additive constructions and invariants apply to 
 It also shows that pushout and pullback squares in a product category are detected
 componentwise: a square in `C × D` is a pushout (resp. pullback) exactly when both of its
 projected squares are (`CategoryTheory.IsPushout.fst`, `CategoryTheory.IsPushout.snd`,
-`CategoryTheory.IsPushout.prod`, and their pullback counterparts).
+`CategoryTheory.IsPushout.prod`, and their pullback counterparts). Epimorphisms and monomorphisms
+in `C × D` are likewise characterized componentwise (`CategoryTheory.Prod.epi_iff`,
+`CategoryTheory.Prod.mono_iff`), and the projections `Prod.fst C D` and `Prod.snd C D` preserve
+epimorphisms, monomorphisms, limits of arbitrary size, and colimits of arbitrary size.
 -/
 
 public section
@@ -38,8 +43,8 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 instance instHasZeroMorphismsProd [HasZeroMorphisms C] [HasZeroMorphisms D] :
     HasZeroMorphisms (C × D) where
   zero := fun X Y => ⟨⟨0, 0⟩⟩
-  comp_zero f Z := by ext <;> simp
-  zero_comp := by intros; ext <;> simp
+  comp_zero _ _ := by ext <;> simp
+  zero_comp _ _ _ _ := by ext <;> simp
 
 /-- The product of essentially small categories is essentially small. -/
 noncomputable instance [EssentiallySmall.{w₁} C] [EssentiallySmall.{w₂} D] :
@@ -49,14 +54,10 @@ noncomputable instance [EssentiallySmall.{w₁} C] [EssentiallySmall.{w₂} D] :
 /-- A pair of zero objects is a zero object of the product category. -/
 instance [HasZeroObject C] [HasZeroObject D] : HasZeroObject (C × D) where
   zero := ⟨(0, 0),
-    { unique_to := fun X =>
-        ⟨⟨⟨(isZero_zero C).to_ X.1, (isZero_zero D).to_ X.2⟩, fun f => by
-            exact Prod.hom_ext ((isZero_zero C).eq_of_src _ _)
-              ((isZero_zero D).eq_of_src _ _)⟩⟩
-      unique_from := fun X =>
-        ⟨⟨⟨(isZero_zero C).from_ X.1, (isZero_zero D).from_ X.2⟩, fun f => by
-            exact Prod.hom_ext ((isZero_zero C).eq_of_tgt _ _)
-              ((isZero_zero D).eq_of_tgt _ _)⟩⟩ } ⟩
+    { unique_to _ := ⟨⟨⟨(default, default)⟩, fun _ =>
+        Prod.hom_ext (Subsingleton.elim _ _) (Subsingleton.elim _ _)⟩⟩
+      unique_from _ := ⟨⟨⟨(default, default)⟩, fun _ =>
+        Prod.hom_ext (Subsingleton.elim _ _) (Subsingleton.elim _ _)⟩⟩ }⟩
 
 end TauCeti
 
@@ -83,17 +84,10 @@ theorem fst (sq : IsPushout g f f' g') : IsPushout g.1 f.1 f'.1 g'.1 := by
       congrArg _root_.Prod.fst (sq.inr_desc _ _ hab)⟩
 
 /-- The second projection of a pushout square in a product category is a pushout square. -/
-theorem snd (sq : IsPushout g f f' g') : IsPushout g.2 f.2 f'.2 g'.2 := by
-  refine IsPushout.mk' (congrArg _root_.Prod.snd sq.w) ?_ ?_
-  · intro T φ φ' h₁ h₂
-    have h := sq.hom_ext (k := ((𝟙 B'.1, φ) : B' ⟶ (B'.1, T))) (l := (𝟙 B'.1, φ'))
-      (Prod.hom_ext rfl h₁) (Prod.hom_ext rfl h₂)
-    exact congrArg _root_.Prod.snd h
-  · intro T a b h
-    have hab : g ≫ ((f'.1, a) : B ⟶ (B'.1, T)) = f ≫ ((g'.1, b) : A' ⟶ (B'.1, T)) :=
-      Prod.hom_ext (by simpa using congrArg _root_.Prod.fst sq.w) h
-    exact ⟨(sq.desc _ _ hab).2, congrArg _root_.Prod.snd (sq.inl_desc _ _ hab),
-      congrArg _root_.Prod.snd (sq.inr_desc _ _ hab)⟩
+theorem snd (sq : IsPushout g f f' g') : IsPushout g.2 f.2 f'.2 g'.2 :=
+  -- `Prod.swap C D` sends a morphism `(a, b)` to `(b, a)` by definition, so the first
+  -- projection of the swapped square is the second projection of `sq`.
+  (sq.map (Prod.swap C D)).fst
 
 /-- A square in a product category whose two projections are pushout squares is a pushout
 square. -/
@@ -128,17 +122,10 @@ theorem fst (sq : IsPullback f g g' f') : IsPullback f.1 g.1 g'.1 f'.1 := by
       congrArg _root_.Prod.fst (sq.lift_snd _ _ hab)⟩
 
 /-- The second projection of a pullback square in a product category is a pullback square. -/
-theorem snd (sq : IsPullback f g g' f') : IsPullback f.2 g.2 g'.2 f'.2 := by
-  refine IsPullback.mk' (congrArg _root_.Prod.snd sq.w) ?_ ?_
-  · intro T φ φ' h₁ h₂
-    have h := sq.hom_ext (k := ((𝟙 A.1, φ) : (A.1, T) ⟶ A)) (l := (𝟙 A.1, φ'))
-      (Prod.hom_ext rfl h₁) (Prod.hom_ext rfl h₂)
-    exact congrArg _root_.Prod.snd h
-  · intro T a b h
-    have hab : ((f.1, a) : (A.1, T) ⟶ A') ≫ g' = ((g.1, b) : (A.1, T) ⟶ B) ≫ f' :=
-      Prod.hom_ext (by simpa using congrArg _root_.Prod.fst sq.w) h
-    exact ⟨(sq.lift _ _ hab).2, congrArg _root_.Prod.snd (sq.lift_fst _ _ hab),
-      congrArg _root_.Prod.snd (sq.lift_snd _ _ hab)⟩
+theorem snd (sq : IsPullback f g g' f') : IsPullback f.2 g.2 g'.2 f'.2 :=
+  -- `Prod.swap C D` sends a morphism `(a, b)` to `(b, a)` by definition, so the first
+  -- projection of the swapped square is the second projection of `sq`.
+  (sq.map (Prod.swap C D)).fst
 
 /-- A square in a product category whose two projections are pullback squares is a pullback
 square. -/
@@ -156,5 +143,93 @@ theorem prod (h₁ : IsPullback f.1 g.1 g'.1 f'.1) (h₂ : IsPullback f.2 g.2 g'
       Prod.hom_ext (h₁.lift_snd _ _ _) (h₂.lift_snd _ _ _)⟩
 
 end IsPullback
+
+namespace Prod
+
+universe w w'
+
+/-- A morphism in a Cartesian product of categories is an epimorphism if and only if both of its
+components are epimorphisms. -/
+theorem epi_iff {X Y : C × D} (f : X ⟶ Y) : Epi f ↔ Epi f.1 ∧ Epi f.2 := by
+  refine ⟨fun hf ↦ ⟨⟨fun g₁ g₂ h ↦ ?_⟩, ⟨fun g₁ g₂ h ↦ ?_⟩⟩,
+    fun ⟨h₁, h₂⟩ ↦ ⟨fun g₁ g₂ h ↦ Prod.hom_ext
+      ((cancel_epi f.1).1 (congrArg _root_.Prod.fst h))
+      ((cancel_epi f.2).1 (congrArg _root_.Prod.snd h))⟩⟩
+  · have h' : f ≫ (g₁ ×ₘ 𝟙 Y.2) = f ≫ (g₂ ×ₘ 𝟙 Y.2) := Prod.hom_ext h rfl
+    exact congrArg _root_.Prod.fst ((cancel_epi f).1 h')
+  · have h' : f ≫ (𝟙 Y.1 ×ₘ g₁) = f ≫ (𝟙 Y.1 ×ₘ g₂) := Prod.hom_ext rfl h
+    exact congrArg _root_.Prod.snd ((cancel_epi f).1 h')
+
+/-- A morphism in a Cartesian product of categories is a monomorphism if and only if both of its
+components are monomorphisms. -/
+theorem mono_iff {X Y : C × D} (f : X ⟶ Y) : Mono f ↔ Mono f.1 ∧ Mono f.2 := by
+  refine ⟨fun hf ↦ ⟨⟨fun g₁ g₂ h ↦ ?_⟩, ⟨fun g₁ g₂ h ↦ ?_⟩⟩,
+    fun ⟨h₁, h₂⟩ ↦ ⟨fun g₁ g₂ h ↦ Prod.hom_ext
+      ((cancel_mono f.1).1 (congrArg _root_.Prod.fst h))
+      ((cancel_mono f.2).1 (congrArg _root_.Prod.snd h))⟩⟩
+  · have h' : (g₁ ×ₘ 𝟙 X.2) ≫ f = (g₂ ×ₘ 𝟙 X.2) ≫ f := Prod.hom_ext h rfl
+    exact congrArg _root_.Prod.fst ((cancel_mono f).1 h')
+  · have h' : (𝟙 X.1 ×ₘ g₁) ≫ f = (𝟙 X.1 ×ₘ g₂) ≫ f := Prod.hom_ext rfl h
+    exact congrArg _root_.Prod.snd ((cancel_mono f).1 h')
+
+/-- The first projection `C × D ⥤ C` preserves epimorphisms. -/
+instance preservesEpimorphisms_fst : (Prod.fst C D).PreservesEpimorphisms where
+  preserves f _ := ((epi_iff f).1 ‹_›).1
+
+/-- The second projection `C × D ⥤ D` preserves epimorphisms. -/
+instance preservesEpimorphisms_snd : (Prod.snd C D).PreservesEpimorphisms where
+  preserves f _ := ((epi_iff f).1 ‹_›).2
+
+/-- The first projection `C × D ⥤ C` preserves monomorphisms. -/
+instance preservesMonomorphisms_fst : (Prod.fst C D).PreservesMonomorphisms where
+  preserves f _ := ((mono_iff f).1 ‹_›).1
+
+/-- The second projection `C × D ⥤ D` preserves monomorphisms. -/
+instance preservesMonomorphisms_snd : (Prod.snd C D).PreservesMonomorphisms where
+  preserves f _ := ((mono_iff f).1 ‹_›).2
+
+/-- The first projection `C × D ⥤ C` preserves limits of any size. -/
+instance preservesLimitsOfSize_fst : Limits.PreservesLimitsOfSize.{w', w} (Prod.fst C D) where
+  preservesLimitsOfShape {_} _ :=
+    { preservesLimit {F} := ⟨fun {c} hc ↦
+        let cone (s : Limits.Cone (F ⋙ Prod.fst C D)) : Limits.Cone F :=
+          { pt := (s.pt, c.pt.2)
+            π :=
+              { app k := s.π.app k ×ₘ (c.π.app k).2
+                naturality _ _ u :=
+                  Prod.hom_ext (s.π.naturality u) (((Prod.snd C D).mapCone c).π.naturality u) } }
+        ⟨{ lift s := (hc.lift (cone s)).1
+           fac s k := congrArg _root_.Prod.fst (hc.fac (cone s) k)
+           uniq s m hm := congrArg _root_.Prod.fst <|
+             hc.uniq (cone s) (m ×ₘ 𝟙 c.pt.2) fun k ↦
+               Prod.hom_ext (hm k) (Category.id_comp _) }⟩⟩ }
+
+/-- The second projection `C × D ⥤ D` preserves limits of any size. -/
+instance preservesLimitsOfSize_snd : Limits.PreservesLimitsOfSize.{w', w} (Prod.snd C D) :=
+  Limits.preservesLimits_of_natIso (F := Prod.swap C D ⋙ Prod.fst D C)
+    (NatIso.ofComponents fun _ ↦ Iso.refl _)
+
+/-- The first projection `C × D ⥤ C` preserves colimits of any size. -/
+instance preservesColimitsOfSize_fst : Limits.PreservesColimitsOfSize.{w', w} (Prod.fst C D) where
+  preservesColimitsOfShape {_} _ :=
+    { preservesColimit {F} := ⟨fun {c} hc ↦
+        let cocone (s : Limits.Cocone (F ⋙ Prod.fst C D)) : Limits.Cocone F :=
+          { pt := (s.pt, c.pt.2)
+            ι :=
+              { app k := s.ι.app k ×ₘ (c.ι.app k).2
+                naturality _ _ u :=
+                  Prod.hom_ext (s.ι.naturality u) (((Prod.snd C D).mapCocone c).ι.naturality u) } }
+        ⟨{ desc s := (hc.desc (cocone s)).1
+           fac s k := congrArg _root_.Prod.fst (hc.fac (cocone s) k)
+           uniq s m hm := congrArg _root_.Prod.fst <|
+             hc.uniq (cocone s) (m ×ₘ 𝟙 c.pt.2) fun k ↦
+               Prod.hom_ext (hm k) (Category.comp_id _) }⟩⟩ }
+
+/-- The second projection `C × D ⥤ D` preserves colimits of any size. -/
+instance preservesColimitsOfSize_snd : Limits.PreservesColimitsOfSize.{w', w} (Prod.snd C D) :=
+  Limits.preservesColimits_of_natIso (F := Prod.swap C D ⋙ Prod.fst D C)
+    (NatIso.ofComponents fun _ ↦ Iso.refl _)
+
+end Prod
 
 end CategoryTheory

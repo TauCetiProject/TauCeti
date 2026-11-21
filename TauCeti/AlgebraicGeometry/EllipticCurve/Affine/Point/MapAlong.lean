@@ -7,8 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.Algebra.Module.Torsion.Snake
--- Proof-only: transport of points along an equality of curves keeps their coordinates.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # The point map induced by a ring homomorphism
@@ -23,6 +22,7 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
 
 * `WeierstrassCurve.Affine.Point.mapAlong`: the map `W.Point → (W.map f).Point`, over
   arbitrary commutative rings.
+* `WeierstrassCurve.Affine.Point.xCoord_mapAlong`: the x-coordinate commutes with point transport.
 * `WeierstrassCurve.Affine.Point.mapAlong_neg`, `mapAlong_id`,
   `mapAlong_mapAlong`, `mapAlong_injective` and `mapAlong_surjective` (for bijective `f`): the
   functorial API, over arbitrary commutative rings, mirroring Mathlib's
@@ -41,6 +41,8 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
 * `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
   additive and commutes with integer multiples.
+* `WeierstrassCurve.Affine.Point.mapAlongAddEquiv`: over a bijective homomorphism of fields, the
+  transport as a group isomorphism.
 * `WeierstrassCurve.torsionMapAlong`: over fields, its restriction `E[N] → (W.map f)[N]` to the
   `N`-torsion, injective by `WeierstrassCurve.torsionMapAlong_injective`.
 
@@ -107,6 +109,15 @@ lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_some
     WeierstrassCurve.Affine.Point.mapAlong f hf (.some x y h)
       = .some (f x) (f y) ((Affine.map_nonsingular W.toAffine hf x y).mpr h) := by
   simp [WeierstrassCurve.Affine.Point.mapAlong]
+
+/-- The x-coordinate commutes with point transport, including at infinity. -/
+@[simp]
+lemma _root_.WeierstrassCurve.Affine.Point.xCoord_mapAlong (P : W.toAffine.Point) :
+    (P.mapAlong f hf).xCoord = f P.xCoord := by
+  cases P with
+  | zero => simp only [← Affine.Point.zero_def, Affine.Point.mapAlong_zero,
+      Affine.Point.xCoord_zero, map_zero]
+  | some x y h => simp only [Affine.Point.mapAlong_some, Affine.Point.xCoord_some]
 
 /-- **The point map preserves negation**, over any commutative ring. -/
 @[simp]
@@ -233,6 +244,24 @@ theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_zsmul (n : ℤ) (P : W.toA
       n • WeierstrassCurve.Affine.Point.mapAlong f hf P :=
   map_zsmul (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f hf)
     (WeierstrassCurve.Affine.Point.mapAlong_add f hf)) n P
+
+/-- **Over a bijective homomorphism of fields the point map is a group isomorphism**
+`W.Point ≃+ (W.map f).Point`. -/
+noncomputable def _root_.WeierstrassCurve.Affine.Point.mapAlongAddEquiv
+    (hb : Function.Bijective f) : W.toAffine.Point ≃+ (W.map f).toAffine.Point :=
+  AddEquiv.ofBijective
+    (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f hb.1)
+      (WeierstrassCurve.Affine.Point.mapAlong_add f hb.1))
+    ⟨WeierstrassCurve.Affine.Point.mapAlong_injective f hb.1,
+      WeierstrassCurve.Affine.Point.mapAlong_surjective f hb.1 hb.2⟩
+
+/-- The group isomorphism sends a point to its transport along `f`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.Point.mapAlongAddEquiv_apply (hb : Function.Bijective f)
+    (P : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlongAddEquiv f hb P =
+      WeierstrassCurve.Affine.Point.mapAlong f hb.1 P :=
+  (rfl)
 
 variable (W) in
 /-- **The `N`-torsion carried along a homomorphism of fields**: the point map `P ↦ f P` of

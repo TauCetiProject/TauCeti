@@ -104,6 +104,40 @@ theorem mapValue_comp {D : Type*} [Semiring D] [Algebra R D]
   ext d a
   simp [mapValue]
 
+open TrivSqZeroExt in
+/-- The counit coefficient of the constant dual-number lift of `e` is `e`. -/
+theorem fstHom_comp_mapValue_inlAlgHom (e : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (fstHom R (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).toLinearMap ∘ₗ
+        ((Bialgebra.CounitAlgebra.algEquivSelf R A
+          (DualNumber (Bialgebra.CounitAlgebra R A B))).toAlgHom.toLinearMap ∘ₗ
+          (mapValue ((inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+            (Bialgebra.CounitAlgebra R A B)).comp
+              (Bialgebra.CounitAlgebra.algEquivSelf R A B).symm.toAlgHom) e).toLinearMap) =
+      e.toLinearMap := by
+  ext x
+  dsimp
+  -- The evaluation lemmas identify the exported counit-algebra type synonyms.
+  erw [mapValue_apply, AlgHom.comp_apply, inlAlgHom_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply, fstHom_apply, fst_inl,
+    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
+
+open TrivSqZeroExt in
+/-- The infinitesimal coefficient of the constant dual-number lift of `e` vanishes. -/
+theorem sndHom_comp_mapValue_inlAlgHom (e : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    ((sndHom (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).restrictScalars
+        R) ∘ₗ
+        ((Bialgebra.CounitAlgebra.algEquivSelf R A
+          (DualNumber (Bialgebra.CounitAlgebra R A B))).toAlgHom.toLinearMap ∘ₗ
+          (mapValue ((inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+            (Bialgebra.CounitAlgebra R A B)).comp
+              (Bialgebra.CounitAlgebra.algEquivSelf R A B).symm.toAlgHom) e).toLinearMap) =
+      0 := by
+  ext x
+  dsimp
+  -- As above, evaluate through the counit coefficient identification.
+  erw [mapValue_apply, AlgHom.comp_apply, inlAlgHom_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply, sndHom_apply, snd_inl]
+
 end Bialgebra
 
 section Adjoint

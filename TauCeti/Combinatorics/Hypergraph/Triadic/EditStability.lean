@@ -60,7 +60,7 @@ theorem sum_card_support_not_isTopRegularOverPolyad_le_add_div (C : TriadicCompl
   · simp only [hnew, hold, not_true_eq_false, not_false_eq_true, ↓reduceIte, zero_add]
     apply (le_div_iff₀ hη).2
     have hbad : ¬(#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support :=
-      fun hed ↦ hnew (hold.of_card_editedOn_le hε hη.le hbudget hed)
+      fun hed ↦ hnew (hold.of_card_editedOn_le hε hbudget hed)
     linarith [lt_of_not_ge hbad]
   · simpa only [hnew, hold, not_false_eq_true, ↓reduceIte] using le_add_of_nonneg_right he
 

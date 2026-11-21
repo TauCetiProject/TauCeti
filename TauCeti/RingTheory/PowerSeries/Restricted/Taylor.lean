@@ -74,20 +74,19 @@ open scoped Topology
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {f g : R⟦X⟧} {a b : R}
 
 /-- **Coefficients of the expansion at a point.** Over an ultrametric normed ring, for a series
-with a Gauss norm at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`, the `n`-th coefficient
+with a Gauss norm at a radius `c` and a point `a` with `‖a‖ ≤ c`, the `n`-th coefficient
 `(Δⁿ f)(a)` of the expansion of `f` at `a` satisfies `‖(Δⁿ f)(a)‖ cⁿ ≤ ‖f‖_c`. -/
-theorem norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm (hc : 0 < c) (hf : f.HasGaussNorm norm c)
+theorem norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm (hf : f.HasGaussNorm norm c)
     (ha : ‖a‖ ≤ c) (n : ℕ) : ‖(hasseDeriv n f).evalAt a‖ * c ^ n ≤ f.gaussNorm norm c :=
-  norm_evalAt_hasseDeriv_mul_pow_le_of_forall hc ha
-    (gaussNorm_nonneg _ _ f fun _ ↦ norm_nonneg _) n fun m ↦ le_gaussNorm _ _ f hf (m + n)
+  norm_evalAt_hasseDeriv_mul_pow_le_of_forall ha n fun m ↦ le_gaussNorm _ _ f hf (m + n)
 
 /-- **Translation does not increase the Gauss norm.** Over an ultrametric normed ring, for a
-series with a Gauss norm at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`,
+series with a Gauss norm at a radius `c` and a point `a` with `‖a‖ ≤ c`,
 `‖taylor a f‖_c ≤ ‖f‖_c`. -/
-theorem gaussNorm_taylor_le (hc : 0 < c) (hf : f.HasGaussNorm norm c) (ha : ‖a‖ ≤ c) :
+theorem gaussNorm_taylor_le (hf : f.HasGaussNorm norm c) (ha : ‖a‖ ≤ c) :
     (taylor a f).gaussNorm norm c ≤ f.gaussNorm norm c :=
   (gaussNorm_eq _ _ _).trans_le <| ciSup_le fun n ↦ by
-    simpa only [coeff_taylor] using norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm hc hf ha n
+    simpa only [coeff_taylor] using norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm hf ha n
 
 /-- **Translates of restricted series are restricted.** Over an ultrametric normed ring, if `f` is
 restricted at the radius `c` and `‖a‖ ≤ c`, then the expansion `taylor a f` of `f` at `a` is
@@ -104,7 +103,7 @@ theorem IsRestricted.taylor (hf : f.IsRestricted c) (ha : ‖a‖ ≤ c) :
     (((isRestricted_iff' c f).mp hf).eventually (gt_mem_nhds (half_pos hε)))
   filter_upwards [eventually_ge_atTop N] with n hn
   rw [coeff_taylor]
-  exact (norm_evalAt_hasseDeriv_mul_pow_le_of_forall hc ha (half_pos hε).le n fun m ↦
+  exact (norm_evalAt_hasseDeriv_mul_pow_le_of_forall ha n fun m ↦
     (hN _ (by omega)).le).trans_lt (half_lt_self hε)
 
 variable [CompleteSpace R]
@@ -188,15 +187,15 @@ theorem IsRestricted.taylor_neg_taylor (hf : f.IsRestricted c) (ha : ‖a‖ ≤
   rw [hf.taylor_taylor ha (by rwa [norm_neg]), neg_add_cancel, taylor_zero]
 
 /-- **Translation is an isometry.** Over a complete ultrametric normed ring, for a series `f`
-restricted at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`, `‖taylor a f‖_c = ‖f‖_c`. -/
-theorem IsRestricted.gaussNorm_taylor (hf : f.IsRestricted c) (hc : 0 < c)
-    (ha : ‖a‖ ≤ c) : (PowerSeries.taylor a f).gaussNorm norm c = f.gaussNorm norm c := by
-  refine (gaussNorm_taylor_le hc (hasGaussNorm_of_isRestricted hf) ha).antisymm ?_
+restricted at a radius `c` and a point `a` with `‖a‖ ≤ c`, `‖taylor a f‖_c = ‖f‖_c`. -/
+theorem IsRestricted.gaussNorm_taylor (hf : f.IsRestricted c) (ha : ‖a‖ ≤ c) :
+    (PowerSeries.taylor a f).gaussNorm norm c = f.gaussNorm norm c := by
+  refine (gaussNorm_taylor_le (hasGaussNorm_of_isRestricted hf) ha).antisymm ?_
   conv_lhs => rw [← hf.taylor_neg_taylor ha]
-  exact gaussNorm_taylor_le hc (hasGaussNorm_of_isRestricted (hf.taylor ha)) (by rwa [norm_neg])
+  exact gaussNorm_taylor_le (hasGaussNorm_of_isRestricted (hf.taylor ha)) (by rwa [norm_neg])
 
 /-- **The Taylor remainder estimate.** Over a complete ultrametric normed ring, let `f` be
-restricted at a radius `c > 0` and let `‖a‖ ≤ c`, `‖y‖ ≤ c`. If `ε` bounds the first `T` terms
+restricted at a radius `c` and let `‖a‖ ≤ c`, `‖y‖ ≤ c`. If `ε` bounds the first `T` terms
 `‖(Δᵗ f)(a)‖ ‖y‖ᵗ`, `t < T`, of the expansion of `f` at `a`, then
 
 ```text
@@ -205,10 +204,20 @@ restricted at a radius `c > 0` and let `‖a‖ ≤ c`, `‖y‖ ≤ c`. If `ε`
 
 For `ε = 0` this is the Schwarz lemma at a single zero of order `T`. -/
 theorem IsRestricted.norm_evalAt_add_le_max (hf : f.IsRestricted c)
-    (hc : 0 < c) (ha : ‖a‖ ≤ c) {y : R} (hy : ‖y‖ ≤ c) {T : ℕ} {ε : ℝ}
+    (ha : ‖a‖ ≤ c) {y : R} (hy : ‖y‖ ≤ c) {T : ℕ} {ε : ℝ}
     (h : ∀ t < T, ‖(PowerSeries.hasseDeriv t f).evalAt a‖ * ‖y‖ ^ t ≤ ε) :
     ‖f.evalAt (y + a)‖ ≤ max ε (f.gaussNorm norm c * (‖y‖ / c) ^ T) := by
   have hG : 0 ≤ f.gaussNorm norm c := gaussNorm_nonneg _ _ f fun _ ↦ norm_nonneg _
+  rcases ((norm_nonneg a).trans ha).eq_or_lt with rfl | hc
+  · -- the radius `0` forces `a = y = 0`
+    obtain rfl : a = 0 := norm_le_zero_iff.mp ha
+    obtain rfl : y = 0 := norm_le_zero_iff.mp hy
+    rcases T with _ | T
+    · refine le_max_of_le_right ?_
+      simpa using norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm (hasGaussNorm_of_isRestricted hf)
+        ha 0
+    · refine le_max_of_le_left ?_
+      simpa using h 0 (Nat.succ_pos T)
   have hy₁ : ‖y‖ / c ≤ 1 := (div_le_one hc).mpr hy
   rw [← hf.evalAt_taylor ha hy, evalAt_def]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
@@ -224,7 +233,7 @@ theorem IsRestricted.norm_evalAt_add_le_max (hf : f.IsRestricted c)
           rw [div_pow]
           field_simp
       _ ≤ f.gaussNorm norm c * (‖y‖ / c) ^ T :=
-          mul_le_mul (norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm hc
+          mul_le_mul (norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm
             (hasGaussNorm_of_isRestricted hf) ha t) (pow_le_pow_of_le_one (by positivity) hy₁ hTt)
             (by positivity) hG
 

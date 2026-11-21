@@ -35,6 +35,7 @@ the residue field; this is the character whose powers Stickelberger's congruence
   of unity of `𝓞 K` and those of `𝓞 K ⧸ P`.
 * `Ideal.pow_absNorm_sub_one_div_mem_rootsOfUnity`: `u ^ ((N P - 1) / n)` is an `n`-th root of
   unity for every unit `u` of `𝓞 K ⧸ P`.
+* `Ideal.absNorm_sub_one_div_ne_zero`: the exponent `(N P - 1) / n` is positive.
 * `Ideal.exists_mulChar_mk_eq`: a ring homomorphism from a finite field with `q` elements to
   `𝓞 K ⧸ P` lifts to a multiplicative character with values in `𝓞 K`, the Teichmüller character,
   when `𝓞 K` contains a primitive `(q - 1)`-th root of unity.
@@ -55,9 +56,13 @@ variable {K : Type*} [Field K] [NumberField K]
 `n`-th root of unity and the absolute norm of the prime `P` is prime to `n`, then
 `n ∣ N P - 1`. The proof adapts Mathlib's `NumberField.torsionOrder_dvd_absNorm_sub_one`, with `n`
 in place of the torsion order. -/
-theorem NumberField.dvd_absNorm_sub_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity (𝓞 K) n]
+theorem NumberField.dvd_absNorm_sub_one {n : ℕ} [HasEnoughRootsOfUnity (𝓞 K) n]
     {P : Ideal (𝓞 K)} [P.IsPrime]
     (hP : (Ideal.absNorm P).Coprime n) : n ∣ Ideal.absNorm P - 1 := by
+  obtain rfl | hn := eq_or_ne n 0
+  · rw [Nat.coprime_zero_right, Ideal.absNorm_eq_one_iff] at hP
+    exact absurd hP Ideal.IsPrime.ne_top'
+  have : NeZero n := ⟨hn⟩
   obtain rfl | hP₀ := eq_or_ne P ⊥
   · rw [Ideal.absNorm_bot, Nat.coprime_zero_left] at hP
     subst hP
@@ -72,7 +77,7 @@ theorem NumberField.dvd_absNorm_sub_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUn
 /-- **The norm of an ideal prime to `n` is one modulo `n`.** If `𝓞 K` contains a primitive
 `n`-th root of unity and the absolute norm of the ideal `𝔞` is prime to `n`, then
 `N 𝔞 ≡ 1 (mod n)`. For a prime `𝔞` this is `NumberField.dvd_absNorm_sub_one`. -/
-theorem NumberField.absNorm_modEq_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity (𝓞 K) n]
+theorem NumberField.absNorm_modEq_one {n : ℕ} [HasEnoughRootsOfUnity (𝓞 K) n]
     {𝔞 : Ideal (𝓞 K)} (h𝔞 : (Ideal.absNorm 𝔞).Coprime n) : Ideal.absNorm 𝔞 ≡ 1 [MOD n] := by
   -- Induct on the factorisation of `𝔞` into primes; the norm is multiplicative.
   induction 𝔞 using UniqueFactorizationMonoid.induction_on_prime with
@@ -93,9 +98,13 @@ namespace Ideal
 
 /-- Two `n`-th roots of unity of `𝓞 K` that are congruent modulo a proper ideal `P` with `N P`
 prime to `n` are equal. -/
-theorem eq_of_pow_eq_one_of_mk_eq {n : ℕ} [NeZero n] {P : Ideal (𝓞 K)} (hP₁ : P ≠ ⊤)
+theorem eq_of_pow_eq_one_of_mk_eq {n : ℕ} {P : Ideal (𝓞 K)} (hP₁ : P ≠ ⊤)
     (hP : (absNorm P).Coprime n) {μ ν : 𝓞 K} (hμ : μ ^ n = 1) (hν : ν ^ n = 1)
     (h : Ideal.Quotient.mk P μ = Ideal.Quotient.mk P ν) : μ = ν := by
+  obtain rfl | hn := eq_or_ne n 0
+  · rw [Nat.coprime_zero_right, absNorm_eq_one_iff] at hP
+    exact absurd hP hP₁
+  have : NeZero n := ⟨hn⟩
   have := rootsOfUnityMapQuot_injective (I := P) n (absNorm_eq_one_iff.not.mpr hP₁) hP
     (a₁ := rootsOfUnity.mkOfPowEq μ hμ) (a₂ := rootsOfUnity.mkOfPowEq ν hν) (by ext; simpa)
   simpa using congrArg (fun z : rootsOfUnity n (𝓞 K) ↦ ((z : (𝓞 K)ˣ) : 𝓞 K)) this
@@ -107,6 +116,13 @@ theorem pow_absNorm_sub_one_eq_one (u : (𝓞 K ⧸ P)ˣ) : u ^ (absNorm P - 1) 
   let _ := Ideal.Quotient.field P
   rw [absNorm_eq_natCard, ← Nat.card_units]
   exact pow_card_eq_one'
+
+/-- The absolute norm of a maximal ideal `P` satisfies `N P - 1 ≠ 0`: this is the number of units
+of the residue field `𝓞 K ⧸ P`. -/
+theorem absNorm_sub_one_ne_zero : absNorm P - 1 ≠ 0 := by
+  let _ := Ideal.Quotient.field P
+  rw [absNorm_eq_natCard, ← Nat.card_units]
+  exact Nat.card_pos.ne'
 
 /-- **Reduction of roots of unity modulo a prime not dividing `n`.** If `𝓞 K` contains a
 primitive `n`-th root of unity and `N P` is prime to `n`, then reduction modulo `P` is an
@@ -142,12 +158,24 @@ theorem mk_coe_rootsOfUnityEquivQuot_symm_apply (hP : (absNorm P).Coprime n)
       ((ζ : (𝓞 K ⧸ P)ˣ) : 𝓞 K ⧸ P) := by
   rw [← coe_rootsOfUnityEquivQuot_apply hP, MulEquiv.apply_symm_apply]
 
+omit [NeZero n] in
 /-- If `N P` is prime to `n` and `𝓞 K` contains a primitive `n`-th root of unity, then the
 `(N P - 1) / n`-th power of a unit of the residue field is an `n`-th root of unity. -/
 theorem pow_absNorm_sub_one_div_mem_rootsOfUnity (hP : (absNorm P).Coprime n)
     (u : (𝓞 K ⧸ P)ˣ) : u ^ ((absNorm P - 1) / n) ∈ rootsOfUnity n (𝓞 K ⧸ P) := by
   rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel (dvd_absNorm_sub_one hP),
     pow_absNorm_sub_one_eq_one]
+
+omit [NeZero n] in
+/-- If `N P` is prime to `n` and `𝓞 K` contains a primitive `n`-th root of unity, then the
+exponent `(N P - 1) / n` is positive. Here `n ≠ 0`, since `N P` is prime to `0` only if `N P = 1`,
+which a maximal ideal excludes. -/
+theorem absNorm_sub_one_div_ne_zero (hP : (absNorm P).Coprime n) : (absNorm P - 1) / n ≠ 0 := by
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact absNorm_sub_one_ne_zero P (by rw [(Nat.coprime_zero_right _).mp hP])
+  exact (Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP)).mpr
+    ⟨absNorm_sub_one_ne_zero P, hn⟩
 
 variable (P) in
 /-- **The Teichmüller character.** Let `F` be a finite field with `q` elements and

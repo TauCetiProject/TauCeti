@@ -170,9 +170,8 @@ private theorem mem_initialPentagonLeftRightOverlapPartners_of_recut
   have hrecut : E.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition := by
     rw [hDrect]
     exact E.toGridRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   rw [← hDrect] at hcommon hother
   have hDf : D.first.IsEmpty := hrecut.isEmpty_first
   have hDp : D.pentagon.IsEmpty := by
@@ -262,7 +261,7 @@ private theorem sides_of_mem_initialPentagonLeftRightOverlapPartners
       exact ⟨Grid.ne_left_of_mem_cIoo hrow, (Grid.ne_right_of_mem_cIoo hrow).symm⟩
   have hfirstLeft : E.first.left = D.second.left :=
     E.first_left_eq.trans D.second_left_eq.symm
-  rcases (hrecut.symm hone hf hs).orientation with hdir | hdir | hdir | hdir
+  rcases (hrecut.symm hf hs).orientation with hdir | hdir | hdir | hdir
   · rcases hdir.recut_branch with ⟨hcol, -⟩ | ⟨-, -, hleft, -⟩
     · exact Or.inl ⟨hdir.side_eq, hcol⟩
     · exact (D.second.left_ne_right ((hleft.trans hfirstLeft).symm.trans hcommon)).elim

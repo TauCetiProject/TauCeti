@@ -25,7 +25,9 @@ product in elementary symmetric polynomials.
 
 * `Multiset.esymm_cons`: adjoining an element `a` to a multiset gives
   `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`.
-* `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`.
+* `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
+  `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
+* `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
@@ -34,6 +36,9 @@ product in elementary symmetric polynomials.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
+* `TauCeti.mk_multiset_esymm_eq_prod_one_add_X`: the same for the `eₙ` of a family of elements.
+* `TauCeti.prod_one_add_mul_eq_sum_esymm`: its evaluation at a family `μ`,
+  `∏ᵢ (1 + t μᵢ) = ∑ₖ eₖ(μ) tᵏ`.
 * `TauCeti.mk_neg_one_pow_mul_esymm_eq_prod_one_sub_X`: its signed version
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
@@ -60,6 +65,23 @@ values: `e_{n+1}(0, s) = e_{n+1}(s)`. -/
 theorem Multiset.esymm_cons_zero {R : Type*} [CommSemiring R] (s : Multiset R) (n : ℕ) :
     (0 ::ₘ s).esymm (n + 1) = s.esymm (n + 1) := by
   simp [Multiset.esymm_cons]
+
+/-- Adjoining a zero to a multiset `s` of at most `n` elements appends `0` to its elementary
+symmetric values: `e_{j+1}(0, s)` for `j < n + 1` is `e₁(s), …, eₙ(s), 0`. -/
+theorem Multiset.esymm_cons_zero_eq_snoc {R : Type*} [CommSemiring R] {n : ℕ} (s : Multiset R)
+    (hs : s.card ≤ n) :
+    (fun j : Fin (n + 1) => (0 ::ₘ s).esymm (j + 1)) =
+      Fin.snoc (α := fun _ => R) (fun j : Fin n => s.esymm (j + 1)) 0 := by
+  funext j
+  refine Fin.lastCases ?_ (fun i => ?_) j
+  · rw [Fin.snoc_last, Fin.val_last, Multiset.esymm_cons_zero,
+      Multiset.esymm_of_card_lt (by omega)]
+  · rw [Fin.snoc_castSucc, Fin.val_castSucc, Multiset.esymm_cons_zero]
+
+/-- The first elementary symmetric function of a multiset is its sum: `e₁(s) = ∑_{x ∈ s} x`. This
+is the multiset counterpart of `MvPolynomial.esymm_one`. -/
+theorem Multiset.esymm_one {R : Type*} [CommSemiring R] (s : Multiset R) : s.esymm 1 = s.sum := by
+  simp [Multiset.esymm, Multiset.powersetCard_one]
 
 /-- Removing an element `a` of a multiset `s` from it:
 `e_n(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`. This is the coefficient form of
@@ -148,9 +170,8 @@ end esymmInt
 
 section GeneratingFunction
 
-variable {σ : Type*} [Fintype σ] [DecidableEq σ] (R : Type*) [CommSemiring R]
+variable {σ : Type*} [Fintype σ] (R : Type*) [CommSemiring R]
 
-omit [DecidableEq σ] in
 /-- **The coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`**: the sum, over the `n`-element subsets `s` of
 the variables, of the product of the variables in `s`. -/
 theorem coeff_prod_one_add_C_mul_X (n : ℕ) :
@@ -171,7 +192,6 @@ theorem coeff_prod_one_add_C_mul_X (n : ℕ) :
   · have hnt : n ≠ s.card := fun h => hs h.symm
     simp [hs, hnt]
 
-omit [DecidableEq σ] in
 /-- **The generating function of the elementary symmetric polynomials**:
 `∑ₙ eₙ tⁿ = ∏ᵢ (1 + xᵢ t)`. -/
 theorem mk_esymm_eq_prod_one_add_X :
@@ -180,13 +200,46 @@ theorem mk_esymm_eq_prod_one_add_X :
   refine PowerSeries.ext fun n => ?_
   rw [PowerSeries.coeff_mk, coeff_prod_one_add_C_mul_X, MvPolynomial.esymm]
 
+variable {R}
+
+/-- **The generating function of the elementary symmetric functions of a family**:
+`∑ₙ eₙ(w) tⁿ = ∏ᵢ (1 + wᵢ t)` for a finite family `w` of elements of a commutative semiring. -/
+theorem mk_multiset_esymm_eq_prod_one_add_X (w : σ → R) :
+    PowerSeries.mk (fun n => (Finset.univ.val.map w).esymm n) =
+      ∏ i, (1 + PowerSeries.C (w i) * PowerSeries.X) := by
+  have h := congrArg (PowerSeries.map (MvPolynomial.aeval w).toRingHom)
+    (mk_esymm_eq_prod_one_add_X (σ := σ) R)
+  rw [map_prod] at h
+  simp only [map_add, map_one, map_mul, PowerSeries.map_C, PowerSeries.map_X,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X] at h
+  rw [← h]
+  ext n
+  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, PowerSeries.coeff_mk, RingHom.coe_coe,
+    MvPolynomial.aeval_esymm_eq_multiset_esymm]
+
+/-- **The evaluated generating function of the elementary symmetric polynomials**: for a finite
+family `μ` of elements of a commutative semiring and any `t`,
+`∏ᵢ (1 + t μᵢ) = ∑_{k ≤ |σ|} eₖ(μ) tᵏ`. -/
+theorem prod_one_add_mul_eq_sum_esymm (μ : σ → R) (t : R) :
+    ∏ i, (1 + t * μ i) =
+      ∑ k ∈ Finset.range (Fintype.card σ + 1),
+        MvPolynomial.eval μ (MvPolynomial.esymm σ R k) * t ^ k := by
+  classical
+  rw [Finset.prod_one_add, ← Finset.sum_fiberwise_of_maps_to (g := Finset.card)
+    (t := Finset.range (Fintype.card σ + 1)) fun s _ ↦ by
+      simpa [Nat.lt_succ_iff] using Finset.card_le_univ s]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [← Finset.powersetCard_eq_filter]
+  simp only [MvPolynomial.esymm, map_sum, map_prod, MvPolynomial.eval_X, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  rw [Finset.prod_mul_distrib, Finset.prod_const, (Finset.mem_powersetCard.mp hs).2, mul_comm]
+
 end GeneratingFunction
 
 section SignedGeneratingFunction
 
-variable {σ : Type*} [Fintype σ] [DecidableEq σ] (R : Type*) [CommRing R]
+variable {σ : Type*} [Fintype σ] (R : Type*) [CommRing R]
 
-omit [DecidableEq σ] in
 /-- **The signed generating function of the elementary symmetric polynomials**:
 `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`. -/
 theorem mk_neg_one_pow_mul_esymm_eq_prod_one_sub_X :

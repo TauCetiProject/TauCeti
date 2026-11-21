@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.RingTheory.Flat.Extensions
+import TauCeti.RingTheory.Flat.Pi
 import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
 
 /-!

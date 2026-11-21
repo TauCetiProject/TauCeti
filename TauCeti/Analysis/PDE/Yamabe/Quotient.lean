@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Yamabe.Energy
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Integral.AbsRpow
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # The Yamabe quotient and its Euler–Lagrange equation
@@ -62,6 +63,7 @@ All in the namespace `TauCeti.Yamabe`.
 * `yamabeQuotient_nonneg_of_scalarCurvature_nonneg`: nonnegative scalar curvature gives
   nonnegative quotients, without regularity assumptions on `u`.
 * `yamabeQuotient_smul`: `Q_g(c u) = Q_g(u)` for `c ≠ 0`.
+* `yamabeQuotient_one`: on a compact manifold, `Q_g(1) = (∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`.
 * `hasDerivAt_yamabeQuotient_add_smul`: the first variation of `Q_g`.
 * `forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`: the Euler–Lagrange
   equation `L_g u = λ |u| ^ (pₙ - 2) u` characterizes the critical points of `Q_g`.
@@ -117,14 +119,16 @@ theorem yamabeQuotient_def (u : M → ℝ) :
 
 variable {I}
 
-/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative in dimension
-`n > 2`, even without regularity or integrability assumptions on the function. -/
-theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (hn : 2 < finrank ℝ E) (u : M → ℝ)
+/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative, even without
+regularity or integrability assumptions on the function. In dimension `n = 2` the coefficient and
+exponent are junk values of the real division by zero; for `n = 0, 1` they are the algebraic
+extensions of the formulas `4 (n - 1) / (n - 2)` and `2 n / (n - 2)`. -/
+theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (u : M → ℝ)
     (hS : ∀ x, 0 ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
     0 ≤ yamabeQuotient I u := by
   rw [yamabeQuotient_def]
   exact div_nonneg (integral_nonneg fun x ↦ add_nonneg
-    (mul_nonneg (conformalCoefficient_pos hn).le (sq_nonneg _))
+    (mul_nonneg (conformalCoefficient_nonneg _) (sq_nonneg _))
     (mul_nonneg (hS x) (sq_nonneg _)))
     (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
@@ -153,17 +157,21 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} {c : ℝ} (
       (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), hc2,
     mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
 
+/-- On a compact manifold of dimension `n`, the Yamabe quotient of the constant function `1` is
+the volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
+@[simp]
+theorem yamabeQuotient_one [CompactSpace M] :
+    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+        ∂riemannianVolume I M) /
+        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
+  simp [yamabeQuotient_def, mgradient_const, riemannianTotalVolume_def]
+
 /-! ### The first variation -/
 
 section FirstVariation
 
 variable [CompactSpace M]
-
-omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- A continuous function on a compact Riemannian manifold is integrable. -/
-private theorem integrable_of_continuous {f : M → ℝ} (hf : Continuous f) :
-    Integrable f (riemannianVolume I M) :=
-  hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
 
 /-- The energy `∫ (aₙ |grad (u + t v)|² + Scal_g (u + t v)²) dV` of `u + t v` is a quadratic
 polynomial in `t`, with derivative `2 ∫ (aₙ ⟪grad v, grad u⟫ + Scal_g v u) dV` at `t = 0`. -/
@@ -185,24 +193,21 @@ private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : Cont
   set eu : M → ℝ := fun x ↦ a * ‖mgradient I u x‖ ^ 2 + S x * u x ^ 2
   set b : M → ℝ := fun x ↦ a * inner ℝ (mgradient I v x) (mgradient I u x) + S x * (v x * u x)
   set ev : M → ℝ := fun x ↦ a * ‖mgradient I v x‖ ^ 2 + S x * v x ^ 2
-  have hgrad (t : ℝ) : mgradient I (u + t • v) = mgradient I u + t • mgradient I v := by
-    rw [mgradient_add (hu.mdifferentiable one_ne_zero)
-      ((hv.mdifferentiable one_ne_zero).const_smul t), mgradient_smul t]
   have hpt (t : ℝ) (x : M) : a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2 =
       eu x + 2 * t * b x + t ^ 2 * ev x := by
-    simp only [hgrad, Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev, norm_add_sq_real,
-      norm_smul, inner_smul_right, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_comm]
+    rw [norm_sq_mgradient_add_smul (hu.mdifferentiable one_ne_zero)
+      (hv.mdifferentiable one_ne_zero)]
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev]
     ring
-  have hnorm (w : M → ℝ) (hw : ContMDiff I 𝓘(ℝ) 1 w) :
-      Continuous fun x ↦ ‖mgradient I w x‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hw hw
-  have heu : Integrable eu μ := integrable_of_continuous
-    ((continuous_const.mul (hnorm u hu)).add (hS.mul (hu.continuous.pow 2)))
-  have hb : Integrable b μ := integrable_of_continuous
+  have heu : Integrable eu μ :=
+    ((continuous_const.mul (continuous_norm_sq_mgradient hu)).add
+      (hS.mul (hu.continuous.pow 2))).integrable_of_compactSpace
+  have hb : Integrable b μ :=
     ((continuous_const.mul (continuous_inner_mgradient hv hu)).add
-      (hS.mul (hv.continuous.mul hu.continuous)))
-  have hev : Integrable ev μ := integrable_of_continuous
-    ((continuous_const.mul (hnorm v hv)).add (hS.mul (hv.continuous.pow 2)))
+      (hS.mul (hv.continuous.mul hu.continuous))).integrable_of_compactSpace
+  have hev : Integrable ev μ :=
+    ((continuous_const.mul (continuous_norm_sq_mgradient hv)).add
+      (hS.mul (hv.continuous.pow 2))).integrable_of_compactSpace
   have hEt (t : ℝ) : ∫ x, (a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2) ∂μ =
       (∫ x, eu x ∂μ) + 2 * t * (∫ x, b x ∂μ) + t ^ 2 * ∫ x, ev x ∂μ := by
     simp only [hpt]
@@ -277,7 +282,6 @@ theorem hasDerivAt_yamabeQuotient_add_smul (hn : 2 < finrank ℝ E) {u v : M →
   convert hQ using 1
   have hQu : yamabeQuotient I u = E₀ / N ^ (2 / p) := yamabeQuotient_def I u
   rw [hQu, Real.rpow_sub_one hN0.ne']
-  have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   have hp0 : p ≠ 0 := by linarith
   field_simp
 
@@ -344,11 +348,11 @@ private theorem hasDerivAt_yamabeQuotient_add_smul_eq_integral (hn : 2 < finrank
   set N := ∫ x, |u x| ^ p ∂riemannianVolume I M
   have hN0 : 0 < N := integral_abs_rpow_pos hu.continuous hu0 (by linarith)
   have hL : Integrable (fun x ↦ v x * conformalLaplacian I u x) (riemannianVolume I M) :=
-    integrable_of_continuous (hv.continuous.mul
-      (contMDiff_conformalLaplacian (k := 0) (by simp) (by simpa using hu)).continuous)
+    (hv.continuous.mul (contMDiff_conformalLaplacian (k := 0) (by simp)
+      (by simpa using hu)).continuous).integrable_of_compactSpace
   have hJ : Integrable (fun x ↦ |u x| ^ (p - 2) * u x * v x) (riemannianVolume I M) :=
-    integrable_of_continuous (((hu.continuous.abs.rpow_const fun _ ↦ Or.inr (by linarith)).mul
-      hu.continuous).mul hv.continuous)
+    (((hu.continuous.abs.rpow_const fun _ ↦ Or.inr (by linarith)).mul
+      hu.continuous).mul hv.continuous).integrable_of_compactSpace
   have hsplit : (fun x ↦ v x * (conformalLaplacian I u x -
       yamabeQuotient I u * N ^ (2 / p) / N * (|u x| ^ (p - 2) * u x))) =
       fun x ↦ v x * conformalLaplacian I u x -
@@ -357,7 +361,6 @@ private theorem hasDerivAt_yamabeQuotient_add_smul_eq_integral (hn : 2 < finrank
     ring
   rw [hsplit, integral_sub hL (hJ.const_mul _), integral_const_mul,
     ← integral_mul_conformalLaplacian hv (HasCompactSupport.of_compactSpace v) hu]
-  have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   field_simp
 
 /-- **The Euler–Lagrange equation of the Yamabe quotient.** On a closed manifold of dimension

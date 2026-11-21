@@ -41,7 +41,7 @@ The companion simplicity statement, `IsSimpleRing.tensorProduct`, is in
 multiplication on Brauer classes. Note that the centrality proved here is centrality over the base
 `K`: for a scalar extension `L ⊗[K] A` along a field extension `L / K` the statement wanted is
 centrality over `L`, which is a different statement, proved as
-`TauCeti.Algebra.IsCentral.baseChange` in `TauCeti/Algebra/Central/BaseChange.lean`.
+`Algebra.IsCentral.baseChange` in `TauCeti/Algebra/Central/BaseChange.lean`.
 
 ## References
 
@@ -79,7 +79,7 @@ theorem forall_commute_tmul_one_iff [Module.Free K B] [Algebra.IsCentral K A] {x
     clear h
     induction y using TensorProduct.inductionOn with
     | tmul a b =>
-      obtain ⟨k, hk⟩ := Algebra.mem_bot.mp a.2
+      obtain ⟨k, hk⟩ := Algebra.mem_bot.mp a.property
       exact ⟨k • b, by
         simp [← hk, Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul]⟩
     | add y z hy hz =>

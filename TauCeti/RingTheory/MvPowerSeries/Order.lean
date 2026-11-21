@@ -7,11 +7,14 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPowerSeries.Order
+public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 -- Proof-only: coefficients of a difference of substitutions.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 import Mathlib.Tactic.LinearCombination
+
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -26,9 +29,16 @@ of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
 the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` component is a
-polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
-`f(a)` is that polynomial evaluated at the linear parts of the `a i`
-(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
+polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), total-degree truncations decompose as
+finite sums of these polynomial components
+(`MvPowerSeries.truncTotal_eq_sum_homogeneousComponentPolynomial`) and absorb larger truncations
+(`MvPowerSeries.truncTotal_truncTotal_coe`), and the lowest-degree component of `f(a)` is that
+polynomial evaluated at the linear parts of the `a i`
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). In degree one no order hypothesis is
+needed, since a constant term contributes nothing (`MvPowerSeries.homogeneousComponent_one_subst`).
+Homogeneous components and total-degree truncations also commute with variable renaming
+(`MvPowerSeries.rename_homogeneousComponent`, `MvPowerSeries.rename_homogeneousComponentPolynomial`,
+`MvPowerSeries.rename_truncTotal`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
 those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
@@ -52,12 +62,17 @@ A common lower bound on the orders of two series bounds the orders of their sum 
 `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
 `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
-(`MvPowerSeries.homogeneousComponent_zero`).
+(`MvPowerSeries.homogeneousComponent_zero`), a constant series has no component in positive degree
+(`MvPowerSeries.homogeneousComponent_C_of_ne_zero`), over a nontrivial semiring every coordinate
+variable has order one (`MvPowerSeries.order_X`), and over a nontrivial semiring without zero
+divisors `weightedOrder` and `order` multiply by `n` on `n`-th powers
+(`MvPowerSeries.weightedOrder_pow`, `MvPowerSeries.order_pow`).
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
-`X + Y` in order at least two, and over a commutative ring the linear part of `f(x, y)` is the
-sum of the linear parts of `x` and `y` (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
+`X + Y` in order at least two. Over a commutative ring, whatever the constant coefficient of `f`,
+the linear part of `f(x, y)` is the sum of the linear parts of `x` and `y` whenever `x` and `y`
+have zero constant coefficient (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
 -/
 
 public section
@@ -67,6 +82,12 @@ namespace MvPowerSeries
 section AddSub
 
 variable {σ R : Type*} {n : ℕ∞}
+
+/-- A power series has order at least `n` exactly when all its coefficients in total degree
+less than `n` vanish. -/
+theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
+    n ≤ f.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → coeff d f = 0 :=
+  ⟨fun h _ hd ↦ coeff_of_lt_order (lt_of_lt_of_le hd h), le_order⟩
 
 /-- A lower bound on the orders of two series bounds the order of their sum. -/
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
@@ -99,6 +120,24 @@ end AddSub
 section Powers
 
 variable {σ R : Type*} [Semiring R] {f : MvPowerSeries σ R}
+
+/-- Over a nontrivial semiring, every coordinate indeterminate `X i` has order `1`. -/
+@[simp]
+theorem order_X [Nontrivial R] (i : σ) : (X i : MvPowerSeries σ R).order = 1 := by
+  rw [X_def, order_monomial_of_ne_zero one_ne_zero, Finsupp.degree_single, Nat.cast_one]
+
+/-- Over a nontrivial semiring without zero divisors, `weightedOrder` multiplies by `n` on `n`-th
+powers. -/
+theorem weightedOrder_pow [NoZeroDivisors R] [Nontrivial R] (w : σ → ℕ) (f : MvPowerSeries σ R)
+    (n : ℕ) : (f ^ n).weightedOrder w = n • f.weightedOrder w := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, weightedOrder_mul, ih, add_nsmul, one_nsmul]
+
+/-- Over a nontrivial semiring without zero divisors, `order` multiplies by `n` on `n`-th powers. -/
+theorem order_pow [NoZeroDivisors R] [Nontrivial R] (f : MvPowerSeries σ R) (n : ℕ) :
+    (f ^ n).order = n • f.order :=
+  weightedOrder_pow _ f n
 
 /-- A variable is its own degree-one homogeneous component. -/
 @[simp]
@@ -177,6 +216,15 @@ theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
   split_ifs with h
   · rw [h, coeff_zero_eq_constantCoeff_apply]
   · rfl
+
+/-- A constant series has no homogeneous component in positive degree. -/
+@[simp]
+theorem homogeneousComponent_C_of_ne_zero {p : ℕ} (hp : p ≠ 0) (r : R) :
+    homogeneousComponent p (C r : MvPowerSeries σ R) = 0 := by
+  classical
+  ext d
+  rw [coeff_homogeneousComponent, coeff_C, map_zero]
+  split_ifs with hd h0 <;> simp_all
 
 end Components
 
@@ -266,7 +314,38 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
         ite_eq_right (hd ▸ he), smul_zero]
     · rw [zero_smul]
 
+/-- **The linear part of a substitution.** If the series `a i` have zero constant coefficient, the
+linear part of `f(a)` is the linear part of `f` evaluated at the linear parts of the `a i`; the
+constant term of `f` contributes nothing in degree one. -/
+theorem homogeneousComponent_one_subst (f : MvPowerSeries σ R) {a : σ → MvPowerSeries τ S}
+    (ha : HasSubst a) (ha₀ : ∀ i, constantCoeff (a i) = 0) :
+    homogeneousComponent 1 (f.subst a) =
+      (homogeneousComponent 1 f).subst fun i ↦ homogeneousComponent 1 (a i) := by
+  have hg : 1 ≤ (f - C (constantCoeff f)).order :=
+    one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
+  have hC : (C (constantCoeff f) : MvPowerSeries σ R).subst a =
+      C (algebraMap R S (constantCoeff f)) := by
+    rw [← MvPolynomial.coe_C, subst_coe, MvPolynomial.aeval_C, algebraMap_apply]
+  simpa [subst_sub ha, hC] using homogeneousComponent_subst_of_le_order hg ha ha₀
+
 end Subst
+
+/-- Variable renaming along any finite-fiber map commutes with taking a homogeneous component. -/
+theorem rename_homogeneousComponent {σ τ R : Type*} [CommSemiring R] (e : σ → τ)
+    [Filter.TendstoCofinite e] (m : ℕ) (f : MvPowerSeries σ R) :
+    rename e (homogeneousComponent m f) = homogeneousComponent m (rename e f) := by
+  classical
+  ext d
+  rw [coeff_rename, coeff_homogeneousComponent, coeff_rename]
+  split_ifs with hd
+  · refine Finset.sum_congr rfl fun u hu ↦ ?_
+    have hmap : Finsupp.mapDomain e u = d := by simpa using hu
+    have hdeg : u.degree = m := by rw [← Finsupp.degree_mapDomain e u, hmap, hd]
+    rw [coeff_homogeneousComponent, ite_eq_left hdeg]
+  · refine Finset.sum_eq_zero fun u hu ↦ ?_
+    have hmap : Finsupp.mapDomain e u = d := by simpa using hu
+    have hdeg : u.degree ≠ m := fun h ↦ hd (by rw [← hmap, Finsupp.degree_mapDomain, h])
+    rw [coeff_homogeneousComponent, ite_eq_right hdeg]
 
 section Polynomial
 
@@ -293,6 +372,43 @@ theorem isHomogeneous_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
     (f : MvPowerSeries σ R) :
     (homogeneousComponentPolynomial n f).IsHomogeneous n :=
   MvPolynomial.homogeneousComponent_isHomogeneous _ _
+
+/-- The total-degree truncation `truncTotal N f` decomposes as the sum of the polynomial
+homogeneous components of `f` of degree `< N`. -/
+theorem truncTotal_eq_sum_homogeneousComponentPolynomial [CommSemiring R] (N : ℕ)
+    (f : MvPowerSeries σ R) :
+    truncTotal N f = ∑ m ∈ Finset.range N, homogeneousComponentPolynomial m f := by
+  apply MvPolynomial.coe_inj.mp
+  rw [truncTotal_eq_sum, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply, map_sum]
+  exact Finset.sum_congr rfl fun m _ ↦ by
+    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, coe_homogeneousComponentPolynomial]
+
+/-- Truncating an `n`-truncation at total degree `m ≤ n` recovers the `m`-truncation. -/
+theorem truncTotal_truncTotal_coe [CommSemiring R] {m n : ℕ} (h : m ≤ n)
+    (f : MvPowerSeries σ R) :
+    truncTotal m (truncTotal n f : MvPowerSeries σ R) = truncTotal m f := by
+  ext d
+  by_cases hd : d.degree < m
+  · rw [coeff_truncTotal _ hd, coeff_truncTotal _ hd, MvPolynomial.coeff_coe,
+      coeff_truncTotal _ (hd.trans_le h)]
+  · rw [coeff_truncTotal_eq_zero _ (not_lt.mp hd), coeff_truncTotal_eq_zero _ (not_lt.mp hd)]
+
+/-- Variable renaming commutes with `homogeneousComponentPolynomial`. -/
+theorem rename_homogeneousComponentPolynomial [Finite τ] [CommSemiring R] (e : σ → τ) (m : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial.rename e (homogeneousComponentPolynomial m f) =
+      homogeneousComponentPolynomial m (rename e f) := by
+  apply MvPolynomial.coe_inj.mp
+  rw [← rename_coe, coe_homogeneousComponentPolynomial, coe_homogeneousComponentPolynomial,
+    rename_homogeneousComponent]
+
+/-- Variable renaming commutes with `truncTotal`. -/
+theorem rename_truncTotal [Finite τ] [CommSemiring R] (e : σ → τ) (N : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial.rename e (truncTotal N f) = truncTotal N (rename e f) := by
+  apply MvPolynomial.coe_inj.mp
+  rw [← rename_coe, truncTotal_eq_sum, truncTotal_eq_sum, map_sum]
+  exact Finset.sum_congr rfl fun m _ ↦ rename_homogeneousComponent e m f
 
 /-- If `f` vanishes below degree `n` and the series `a i` have no constant term, the degree-`n`
 part of `f(a)` is the polynomial degree-`n` part of `f` evaluated at polynomials `l i` equal to the
@@ -357,7 +473,7 @@ theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries 
   classical
   induction d using Finsupp.induction with
   | zero => simp
-  | single_add i k f hi hk ih =>
+  | single_add i k f _ _ ih =>
     have hprod (c : ι → MvPowerSeries τ R) : ((Finsupp.single i k + f).prod fun i k ↦ c i ^ k) =
         c i ^ k * f.prod fun i k ↦ c i ^ k := by
       rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
@@ -380,7 +496,7 @@ theorem le_order_subst_sub_subst {H : MvPowerSeries σ R} {k : ℕ}
   refine nat_le_order fun e he ↦ ?_
   rw [coeff_subst_sub_subst ha hb]
   refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
-  rcases eq_or_ne d 0 with rfl | hd
+  rcases eq_or_ne d 0 with rfl | _
   · simp
   by_cases hdk : d.degree < k
   · rw [coeff_of_lt_order (hH.trans_lt' (by exact_mod_cast hdk)), zero_smul]
@@ -392,13 +508,14 @@ constant coefficient and `a i - b i` has order at least `n`, then in degrees at 
 coefficients of `H(a) - H(b)` are those of `∑ᵢ hᵢ (a i - b i)`, where `hᵢ` is the coefficient of
 `Xᵢ` in `H`. -/
 theorem coeff_subst_sub_subst_of_degree_le [Fintype σ] (H : MvPowerSeries σ R)
-    {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    {a b : σ → MvPowerSeries τ R}
     (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
     (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {e : τ →₀ ℕ} (he : e.degree ≤ n) :
     coeff e (H.subst a - H.subst b) =
       ∑ i, coeff (Finsupp.single i 1) H * coeff e (a i - b i) := by
   classical
-  rw [coeff_subst_sub_subst ha hb, finsum_eq_sum_of_support_subset (s := Finset.univ.image
+  rw [coeff_subst_sub_subst (hasSubst_of_constantCoeff_zero ha₀)
+    (hasSubst_of_constantCoeff_zero hb₀), finsum_eq_sum_of_support_subset (s := Finset.univ.image
     fun i ↦ Finsupp.single i 1), Finset.sum_image fun i _ j _ h ↦ by
       simpa using Finsupp.single_left_inj (one_ne_zero (α := ℕ)) |>.mp h]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -436,28 +553,17 @@ section Perturbation
 
 variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- **The lowest-order effect of perturbing a substitution.** Let the series `a t` have zero
-constant coefficient, and perturb the entry `a s` by a series `e` of order at least `n ≥ 1`. Then
-`f(a)` changes by `c e`, where `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater
-than `n`. -/
-theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
-    {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
-    {e : MvPowerSeries τ S} {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
-    ((n + 1 : ℕ) : ℕ∞) ≤ (f.subst (Function.update a s (a s + e)) - f.subst a -
-      algebraMap R S (coeff (Finsupp.single s 1) f) • e).order := by
-  set b := Function.update a s (a s + e) with hb_def
-  have he₀ : constantCoeff e = 0 := one_le_order_iff_constCoeff_eq_zero.mp <|
-    (Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hn)).trans he
-  have hb₀ (t : σ) : constantCoeff (b t) = 0 := by
-    rcases eq_or_ne t s with rfl | ht
-    · simp [b, ha₀, he₀]
-    · simp [b, ht, ha₀]
-  have hb : HasSubst b := by
-    refine ⟨fun t ↦ by simp [hb₀ t], fun d ↦ ((ha.coeff_zero d).union
-      (Set.finite_singleton s)).subset fun t ht ↦ ?_⟩
-    rcases eq_or_ne t s with rfl | hts
-    · exact Or.inr rfl
-    · exact Or.inl (by simpa [b, hts] using ht)
+/-- **Monomials of a perturbed substitution.** If `b` agrees with `a` except that
+`b s = a s + e`, and all the series `a t` and `b t` have zero constant coefficient, then each
+monomial in `b` differs from the same monomial in `a` by `e * Q d`, where the constant coefficient
+of `Q d` is `1` for the monomial `Xₛ` and `0` otherwise. -/
+private theorem exists_prod_pow_eq_add_mul_constantCoeff [DecidableEq σ]
+    {a b : σ → MvPowerSeries τ S} (ha₀ : ∀ t, constantCoeff (a t) = 0) {s : σ}
+    {e : MvPowerSeries τ S} (hbs : b s = a s + e) (hb : ∀ t ≠ s, b t = a t)
+    (hb₀ : ∀ t, constantCoeff (b t) = 0) :
+    ∃ Q : (σ →₀ ℕ) → MvPowerSeries τ S,
+      (∀ d : σ →₀ ℕ, (d.prod fun t k ↦ b t ^ k) = (d.prod fun t k ↦ a t ^ k) + e * Q d) ∧
+      ∀ d : σ →₀ ℕ, constantCoeff (Q d) = if d = Finsupp.single s 1 then 1 else 0 := by
   -- each monomial splits as a power of the perturbed entry times a factor `c d` not involving it
   set c : (σ →₀ ℕ) → MvPowerSeries τ S := fun d ↦ (d.erase s).prod fun t k ↦ a t ^ k
   have hprod (x : σ → MvPowerSeries τ S) (hx : ∀ t ≠ s, x t = a t) (d : σ →₀ ℕ) :
@@ -469,10 +575,10 @@ theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
   set Q : (σ →₀ ℕ) → MvPowerSeries τ S := fun d ↦
     (∑ i ∈ Finset.range (d s), b s ^ i * a s ^ (d s - 1 - i)) * c d
   have hQ (d : σ →₀ ℕ) : (d.prod fun t k ↦ b t ^ k) = (d.prod fun t k ↦ a t ^ k) + e * Q d := by
-    rw [hprod b (fun t ht ↦ Function.update_of_ne ht _ _) d, hprod a (fun _ _ ↦ rfl) d]
-    have hbs : b s - a s = e := by rw [hb_def, Function.update_self, add_sub_cancel_left]
+    rw [hprod b hb d, hprod a (fun _ _ ↦ rfl) d]
+    have hsub : b s - a s = e := by rw [hbs, add_sub_cancel_left]
     have hpow := geom_sum₂_mul (b s) (a s) (d s)
-    rw [hbs] at hpow
+    rw [hsub] at hpow
     linear_combination -(c d) * hpow
   -- only the monomial `Xₛ` contributes a constant coefficient to `Q`
   have hQ₀ (d : σ →₀ ℕ) : constantCoeff (Q d) = if d = Finsupp.single s 1 then 1 else 0 := by
@@ -494,6 +600,32 @@ theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
           simp only [c, Finsupp.prod, map_prod, map_pow, ha₀]
           exact Finset.prod_eq_zero ht (zero_pow (Finsupp.mem_support_iff.mp ht))
         simp [hc]
+  exact ⟨Q, hQ, hQ₀⟩
+
+/-- **The lowest-order effect of perturbing a substitution.** Let the series `a t` have zero
+constant coefficient, and perturb the entry `a s` by a series `e` of order at least `n ≥ 1`. Then
+`f(a)` changes by `c e`, where `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater
+than `n`. -/
+theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
+    {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
+    {e : MvPowerSeries τ S} {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
+    ((n + 1 : ℕ) : ℕ∞) ≤ (f.subst (Function.update a s (a s + e)) - f.subst a -
+      algebraMap R S (coeff (Finsupp.single s 1) f) • e).order := by
+  set b := Function.update a s (a s + e)
+  have he₀ : constantCoeff e = 0 := one_le_order_iff_constCoeff_eq_zero.mp <|
+    (Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hn)).trans he
+  have hb₀ (t : σ) : constantCoeff (b t) = 0 := by
+    rcases eq_or_ne t s with rfl | ht
+    · simp [b, ha₀, he₀]
+    · simp [b, ht, ha₀]
+  have hb : HasSubst b := by
+    refine ⟨fun t ↦ by simp [hb₀ t], fun d ↦ ((ha.coeff_zero d).union
+      (Set.finite_singleton s)).subset fun t ht ↦ ?_⟩
+    rcases eq_or_ne t s with rfl | hts
+    · exact Or.inr rfl
+    · exact Or.inl (by simpa [b, hts] using ht)
+  obtain ⟨Q, hQ, hQ₀⟩ := exists_prod_pow_eq_add_mul_constantCoeff (s := s) (e := e) ha₀
+    (by simp [b]) (fun t ht ↦ by simp [b, ht]) hb₀
   refine nat_le_order fun m hm ↦ ?_
   have hfin := coeff_subst_finite ha f m
   rw [map_sub, map_sub, coeff_subst hb, coeff_subst ha, coeff_smul, sub_eq_zero, sub_eq_iff_eq_add']
@@ -551,9 +683,9 @@ section CommRing
 
 variable {τ S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- If `f` has zero constant coefficient and linear part `X + Y`, the linear part of `f(x, y)` is
-the sum of the linear parts of `x` and `y`, for `x` and `y` without constant coefficient. -/
-theorem homogeneousComponent_one_subst_pair (h₀ : f.constantCoeff = 0)
+/-- If `f` has linear part `X + Y`, the linear part of `f(x, y)` is the sum of the linear parts
+of `x` and `y`, for `x` and `y` without constant coefficient. -/
+theorem homogeneousComponent_one_subst_pair
     (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) {x y : MvPowerSeries τ S}
     (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) :
     homogeneousComponent 1 (f.subst ![x, y]) =
@@ -561,9 +693,7 @@ theorem homogeneousComponent_one_subst_pair (h₀ : f.constantCoeff = 0)
   have hxy : HasSubst ![x, y] := hasSubst_of_constantCoeff_zero fun i ↦ by
     fin_cases i <;> simp [hx, hy]
   have hl := hxy.homogeneousComponent_one
-  rw [homogeneousComponent_subst_of_le_order
-      (by simpa using one_le_order_iff_constCoeff_eq_zero.mpr h₀) hxy
-      (fun i ↦ by fin_cases i <;> simp [hx, hy]),
+  rw [homogeneousComponent_one_subst f hxy (fun i ↦ by fin_cases i <;> simp [hx, hy]),
     homogeneousComponent_one_eq_X_add_X hX hY, subst_add hl, subst_X hl, subst_X hl]
   simp
 

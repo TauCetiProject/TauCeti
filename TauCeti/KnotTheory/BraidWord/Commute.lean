@@ -73,7 +73,7 @@ private theorem map_crossingsAt_swapIndexEquiv (u v : BraidWord n) {a b : Fin (n
       simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, not_or] at hnd
       rcases hx with rfl | rfl <;> rcases hy with hy | hy <;> simp_all
     rw [Fin.lt_def] at hxy ⊢
-    simp only [e, List.val_swapIndexEquiv]
+    simp only [e, List.val_swapIndexEquiv, Equiv.swap_apply_def]
     split_ifs <;> omega
   · simp only [List.mem_map]
     constructor

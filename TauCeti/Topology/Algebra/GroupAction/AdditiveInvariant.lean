@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Module.PUnit
 public import Mathlib.Topology.Algebra.MulAction
+public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 
 /-!
 # Additive invariants of finite discrete monoid actions
@@ -25,6 +26,8 @@ applies, in particular, to natural-number-valued lengths and integer-valued Eule
   object.
 * `TauCeti.invariant_eq_of_equiv`: an additive invariant is constant on equivariant additive
   equivalence classes.
+* `TauCeti.invariant_addSubgroup_eq_of_eq_top`: an additive invariant does not distinguish a
+  `G`-stable additive subgroup equal to `⊤` from the whole object.
 -/
 
 public section
@@ -82,6 +85,26 @@ theorem invariant_eq_of_equiv {A B : Type u}
     (Function.surjective_to_subsingleton _)
     (by rw [AddMonoidHom.range_eq_top.mpr e.surjective, AddMonoidHom.ker_zero])
   exact hid.trans h.symm
+
+include hExact in
+/-- An invariant does not distinguish a `G`-stable additive subgroup equal to `⊤` from the whole
+module. -/
+theorem invariant_addSubgroup_eq_of_eq_top {M : Type u}
+    [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
+    (hM : ∀ a : M, ∃ k : ℕ, p ^ k • a = 0) (N : AddSubgroup M)
+    (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) (htop : N = ⊤) :
+    letI := N.restrictDistribMulAction hN
+    letI := N.restrictDistribMulAction_continuousSMul hN
+    ∀ hN' : ∀ a : N, ∃ k : ℕ, p ^ k • a = 0, I N hN' = I M hM := by
+  let := N.restrictDistribMulAction hN
+  let := N.restrictDistribMulAction_continuousSMul hN
+  intro hN'
+  exact invariant_eq_of_equiv I hExact hN' hM
+    ((AddEquiv.addSubgroupCongr htop).trans AddSubgroup.topEquiv) (by
+      intro g x
+      simp only [AddEquiv.trans_apply, AddSubgroup.topEquiv_apply,
+        AddEquiv.addSubgroupCongr_apply, AddSubgroup.restrictDistribMulAction_coe_smul])
 
 end Add
 

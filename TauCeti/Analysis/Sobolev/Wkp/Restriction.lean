@@ -12,9 +12,9 @@ public import TauCeti.Analysis.Sobolev.W1p.Restriction
 # Restriction of arbitrary-order Sobolev functions
 
 Restriction to an open subdomain is a contraction on `W^{k,p}` for every natural order `k`
-and every `1 ≤ p ≤ ∞`. It commutes with the value, lower-order, and highest weak derivative
-projections. This supplies localization for smooth approximation and interior estimates without
-any boundary regularity assumption.
+and every `1 ≤ p ≤ ∞`. It commutes with the value, lower-order, order-truncation, and highest weak
+derivative projections. This supplies localization for smooth approximation and interior estimates
+without any boundary regularity assumption.
 
 The construction uses `W1p.restrictL` at first order and restricts the successive weak derivative
 fields through Mathlib's `Lp.LpToLpOfMeasureLeSMul`.
@@ -164,6 +164,22 @@ theorem value_restrictL_ae (hU : U ≤ Omega) (k : ℕ) (u : Wkp mu Omega p k) :
     value k (restrictL hU k u) =ᵐ[mu.restrict U] value k u :=
   value_restrictAux_ae hU k u
 
+/-- A Sobolev function on `Omega` whose value agrees almost everywhere on the smaller open set `U`
+with the value of `u` restricts to `u` on `U`. -/
+theorem restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) (k : ℕ) {u : Wkp mu U p k}
+    {w : Wkp mu Omega p k} (hvalw : value k w =ᵐ[mu.restrict U] value k u) :
+    restrictL hU k w = u :=
+  ext k (Lp.ext ((value_restrictL_ae hU k w).trans hvalw))
+
+/-- A Sobolev function on `Omega` with value `g` almost everywhere on `Omega` restricts, on the
+smaller open set `U`, to every `u` with value `g` almost everywhere on `U`. -/
+theorem restrictL_eq_of_value_ae_eq_restrict (hU : U ≤ Omega) (k : ℕ) {u : Wkp mu U p k}
+    {w : Wkp mu Omega p k} {g : E → ℝ} (hw : value k w =ᵐ[mu.restrict Omega] g)
+    (hu : value k u =ᵐ[mu.restrict U] g) : restrictL hU k w = u :=
+  restrictL_eq_of_value_ae_eq hU k
+    (Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset
+      (SetLike.coe_subset_coe.2 hU) hw) hu.symm)
+
 /-- Restriction keeps the same highest weak derivative on the smaller domain. -/
 theorem iteratedGradient_restrictL_ae (hU : U ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p (k + 1)) :
@@ -239,5 +255,37 @@ theorem restrictL_one (hU : U ≤ Omega) :
   -- `Wkp … 1` goal; the equation is chained on instead.
   refine Eq.trans ?_ (W1p.value_restrictL hU u).symm
   simpa only [value_one] using value_restrictL hU 1 u
+
+/-- Order truncation commutes with restriction to an open subdomain. -/
+theorem toOrderL_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    toOrderL h (restrictL hU k u) = restrictL hU j (toOrderL h u) := by
+  apply ext j
+  rw [value_toOrderL, value_restrictL, value_restrictL, value_toOrderL]
+
+/-- Subdomain restriction and order truncation commute as continuous linear maps. -/
+theorem restrictL_comp_toOrderL (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) :
+    (restrictL (mu := mu) (p := p) hU j).comp (toOrderL h) =
+      (toOrderL h).comp (restrictL hU k) :=
+  ContinuousLinearMap.ext fun u => (toOrderL_restrictL hU h u).symm
+
+/-- Restricting to an open subdomain restricts each intermediate weak derivative via
+`MeasureTheory.Lp.LpToLpOfMeasureLeSMul`. -/
+theorem iteratedGradient_toOrderL_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p k) :
+    iteratedGradient j (toOrderL h (restrictL hU k u)) =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
+        simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
+        (iteratedGradient j (toOrderL h u)) := by
+  rw [toOrderL_restrictL, iteratedGradient_restrictL]
+
+/-- Restricting to an open subdomain preserves each intermediate weak derivative almost everywhere
+on the subdomain. -/
+theorem iteratedGradient_toOrderL_restrictL_ae (hU : U ≤ Omega) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p k) :
+    iteratedGradient j (toOrderL h (restrictL hU k u)) =ᵐ[mu.restrict U]
+      iteratedGradient j (toOrderL h u) := by
+  rw [toOrderL_restrictL]
+  exact iteratedGradient_restrictL_ae hU j (toOrderL h u)
 
 end TauCeti.Wkp

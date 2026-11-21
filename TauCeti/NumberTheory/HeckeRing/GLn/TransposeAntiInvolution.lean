@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.Commutativity
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 
 /-!
@@ -92,8 +92,6 @@ noncomputable def transposeAntiInvolution :
     (transposeAntiInvolution n).bar x hx =
       (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) x).unop :=
   HeckeAntiInvolution.ofAmbient_bar _ _ _ _ x hx
-
-variable [NeZero n]
 
 /-- Transposition fixes every double coset: each one has a diagonal representative, and
 transposition fixes diagonal matrices. -/

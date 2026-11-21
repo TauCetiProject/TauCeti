@@ -7,16 +7,16 @@ module
 
 public import Mathlib.Algebra.Module.Basic
 public import Mathlib.Data.Fin.VecNotation
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 
 /-!
 # Shared Alexander clasp algebra
 
 The slot assignment `TauCeti.claspValue` and cancellation lemma `TauCeti.clasp_relations`
 supply the same local algebra for the two-arc and two-circle second Reidemeister moves,
-over any commutative ring and module, independently of PD codes or Laurent coefficients.
+over any ring and module, independently of PD codes or Laurent coefficients.
 The hypotheses of `clasp_relations` say that each second-crossing weight inverts the
 first-crossing weight at the slot joined to it by a clasp arc, and that the same strand
 is over at both crossings (with weight `1`).
@@ -26,7 +26,7 @@ public section
 
 namespace TauCeti
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 
 /-- The values at the slots of a clasp. The scalars `w₀`, `w₁` are the first crossing's
 weights at slots `0`, `1`, whose values are `x`, `y`. The index `i` selects one of the two
@@ -90,17 +90,15 @@ theorem clasp_relations {a₀ a₁ c₀ c₁ : R} {x₀ x₁ x₂ x₃ : M}
     (hx₃ : x₃ = a₁ • x₁ + (1 - a₁) • x₂) :
     c₀ • x₃ + (1 - c₀) • x₂ = x₁ ∧
       c₁ • x₂ + (1 - c₁) • x₁ = x₀ := by
-  rcases hover with ⟨hA, hB⟩ | ⟨hA, hB⟩
-  · rw [hA, one_smul, sub_self, zero_smul, add_zero] at hx₂
-    rw [hx₃, hx₂, hB]
-    constructor
-    · linear_combination (norm := module) h₀ • x₁ - h₀ • x₀
-    · simp
-  · rw [hA, one_smul, sub_self, zero_smul, add_zero] at hx₃
-    rw [hx₃, hx₂, hB]
-    constructor
-    · simp
-    · linear_combination (norm := module) h₁ • x₀ - h₁ • x₁
+  subst hx₂ hx₃
+  rcases hover with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · refine ⟨?_, by simp⟩
+    simp only [one_smul, sub_self, zero_smul, add_zero, smul_add, smul_sub, smul_smul, h₀,
+      sub_smul]
+    abel
+  · refine ⟨by simp, ?_⟩
+    simp only [one_smul, smul_add, smul_sub, smul_smul, h₁, sub_smul]
+    abel
 
 /-- The second crossing's relations hold for the prescribed clasp values when its weights
 invert the weights at the first-crossing slots joined by arcs and the same strand is over. -/
@@ -111,10 +109,8 @@ theorem claspValue_relations {a₀ a₁ c₀ c₁ : R}
         c₀ • claspValue a₀ a₁ x y 1 0 + (1 - c₀) • claspValue a₀ a₁ x y 1 1 ∧
       claspValue a₀ a₁ x y 1 3 =
         c₁ • claspValue a₀ a₁ x y 1 1 + (1 - c₁) • claspValue a₀ a₁ x y 1 2 := by
-  obtain ⟨h₂, h₃⟩ := clasp_relations h₀ h₁ hover (x₀ := x) (x₁ := y)
-    (x₂ := claspValue a₀ a₁ x y 0 2) (x₃ := claspValue a₀ a₁ x y 0 3)
-    (by simp) (by simp)
-  exact ⟨by simpa only [claspValue_one_two, claspValue_one_zero, claspValue_one_one] using h₂.symm,
-    by simpa only [claspValue_one_three, claspValue_one_one, claspValue_one_two] using h₃.symm⟩
+  simp only [claspValue_one_zero, claspValue_one_one, claspValue_one_two, claspValue_one_three]
+  exact (clasp_relations h₀ h₁ hover (claspValue_zero_two a₀ a₁ x y)
+    (claspValue_zero_three a₀ a₁ x y)).imp Eq.symm Eq.symm
 
 end TauCeti

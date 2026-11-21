@@ -51,7 +51,9 @@ by `YoungDiagram.mem_iff_of_colLen_le_one` and counted by
 `YoungDiagram.card_eq_rowLen_of_colLen_le_one`.
 
 Finally, `YoungDiagram.cellContent` is the *content* `j - i` of the cell `(i, j)`, its column index
-minus its row index; transposition negates it (`YoungDiagram.cellContent_swap`).
+minus its row index; transposition negates it (`YoungDiagram.cellContent_swap`), and
+`YoungDiagram.transposeCellsEquiv` identifies the cells of the transpose `μᵗ` with those of `μ` by
+the same swap of coordinates.
 -/
 
 public section
@@ -110,7 +112,7 @@ theorem getD_rowLens (μ : YoungDiagram) (i : ℕ) : μ.rowLens.getD i 0 = μ.ro
 decreasing. This is stated for `List.mergeSort` in the shape `simp` produces from
 `Multiset.sort` on a coerced list (via `Multiset.coe_sort` and `ge_iff_le`), making it the
 `simp` normal form for sorted row-length expressions; the public statement is
-`TauCeti.YoungDiagram.sort_coe_rowLens`. -/
+`YoungDiagram.sort_coe_rowLens`. -/
 @[simp]
 private theorem mergeSort_rowLens (μ : YoungDiagram) :
     μ.rowLens.mergeSort (fun a b => decide (b ≤ a)) = μ.rowLens :=
@@ -386,6 +388,21 @@ theorem cellContent_mk (i j : ℕ) : cellContent (i, j) = j - i := (rfl)
 @[simp]
 theorem cellContent_swap (c : ℕ × ℕ) : cellContent c.swap = -cellContent c := by
   simp [cellContent_def]
+
+/-- Swapping the two coordinates identifies the cells of the transpose `μᵗ` with the cells
+of `μ`. -/
+def transposeCellsEquiv (μ : YoungDiagram) : ↥μ.transpose.cells ≃ ↥μ.cells :=
+  (Equiv.prodComm ℕ ℕ).subtypeEquiv fun _ => mem_transpose
+
+@[simp]
+theorem transposeCellsEquiv_apply (μ : YoungDiagram) (c : ↥μ.transpose.cells) :
+    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem transposeCellsEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
+    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.property⟩ :=
+  (rfl)
 
 end YoungDiagram
 

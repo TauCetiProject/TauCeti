@@ -12,7 +12,8 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.FiniteEtale
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.RingTheory.Node.TangentCone
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Blowup.Pullback
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.RingTheory.LocalRing.Localization
 
@@ -61,6 +62,8 @@ identification is not used here.
   subscheme.
 * `AlgebraicGeometry.Scheme.finrank_branchSchemeToSingularLocus`: it has rank two over every point
   of the singular subscheme.
+* `AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`: the branch scheme
+  commutes with flat base change of the base ring.
 
 ## References
 
@@ -113,7 +116,7 @@ private theorem exists_etale_tensor_affineBlowup_singularLocus_ideal
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
   -- `Γ(X, W)` is a standard syntomic `K`-algebra of relative dimension one, presented by `c + 1`
   -- generators and `c` relations.
-  let : Algebra K Γ(X, W) := ((X.baseRingToStructurePresheaf K).app (op W.1)).hom.toAlgebra
+  let : Algebra K Γ(X, W) := ((X.baseRingToStructurePresheaf K).app (op W.val)).hom.toAlgebra
   have : Algebra.IsStandardSyntomicOfRelativeDimension 1 K Γ(X, W) := by
     refine (isStandardSyntomicOfRelativeDimension_iff 1 _).mp ?_
     rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
@@ -168,7 +171,8 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
       (X ↘ Spec (.of K)) ((t ≫ (X.singularLocus K).subschemeι) pt)
   -- The point `t` is the spectrum of a homomorphism `ψ₀ : Γ(X, W) → L`, whose kernel `q` contains
   -- the ideal of the singular subscheme.
-  obtain ⟨ψ₀, hψ₀⟩ := W.2.exists_SpecMap_comp_fromSpec_eq (t ≫ (X.singularLocus K).subschemeι)
+  obtain ⟨ψ₀, hψ₀⟩ := W.property.exists_SpecMap_comp_fromSpec_eq (t ≫
+      (X.singularLocus K).subschemeι)
     (by rintro _ ⟨y, rfl⟩; simpa [Subsingleton.elim y pt] using hxW)
   let q := RingHom.ker ψ₀.hom
   have : q.IsPrime := RingHom.ker_isPrime _
@@ -178,7 +182,7 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
   let A := Localization.AtPrime q
   let := ψ₀.hom.toAlgebra
   have hunit (y : q.primeCompl) : IsUnit (algebraMap Γ(X, W) L y) :=
-    isUnit_iff_ne_zero.mpr fun hy ↦ y.2 (RingHom.mem_ker.mpr hy)
+    isUnit_iff_ne_zero.mpr fun hy ↦ y.property (RingHom.mem_ker.mpr hy)
   let := (IsLocalization.lift (M := q.primeCompl) (S := A) hunit).toAlgebra
   have : IsScalarTower Γ(X, W) A L :=
     .of_algebraMap_eq fun r ↦ (IsLocalization.lift_eq (M := q.primeCompl) (S := A) hunit r).symm
@@ -187,14 +191,14 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
   -- Blowing up commutes with the flat base change to `Spec A`, so the base change of the blowup
   -- to `t` is that of the blowup of `Spec A` along the maximal ideal.
   have hbot : Spec.map (CommRingCat.ofHom (algebraMap A L)) ≫
-      Spec.map (CommRingCat.ofHom (algebraMap Γ(X, W) A)) ≫ W.2.fromSpec =
+      Spec.map (CommRingCat.ofHom (algebraMap Γ(X, W) A)) ≫ W.property.fromSpec =
         t ≫ (X.singularLocus K).subschemeι := by
     rw [← hψ₀, ← Category.assoc, ← Spec.map_comp]
     congr 2
     ext r
     exact (IsScalarTower.algebraMap_apply Γ(X, W) A L r).symm
   have hsq := (isPullback_affineBlowup_of_flat ((X.singularLocus K).ideal W) A).paste_horiz
-    ((X.singularLocus K).isPullback_blowupChart_fromSpec W.2).flip
+    ((X.singularLocus K).isPullback_blowupChart_fromSpec W.property).flip
   obtain ⟨a, b, hm, hb, hrank, het⟩ :=
     exists_etale_tensor_affineBlowup_singularLocus_ideal hnodal W hstd q hq
   have : Module.Finite (ResidueField A) (ResidueField A ⊗[A]
@@ -249,6 +253,47 @@ theorem isPullback_branchScheme :
   IsPullback.of_hasPullback _ _
 
 end BranchScheme
+
+section BaseChange
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] [Module.Flat R R']
+  {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of R'))] {g : X' ⟶ X}
+  [Flat (X ↘ Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
+  [PureRelativeDimension 1 (X ↘ Spec (.of R))]
+  [Flat (X' ↘ Spec (.of R'))] [LocallyOfFinitePresentation (X' ↘ Spec (.of R'))]
+  [PureRelativeDimension 1 (X' ↘ Spec (.of R'))]
+
+/-- **The branch scheme commutes with flat base change.** If `X'` is the base change of `X` along
+a flat morphism `Spec R' → Spec R`, then the branch scheme of `X'` over its singular subscheme is
+the base change of the branch scheme of `X` along the morphism `Sing(X'/R') ⟶ Sing(X/R)` of
+singular subschemes (`AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`). -/
+theorem exists_isPullback_branchSchemeToSingularLocus
+    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) :
+    ∃ f : X'.branchScheme R' ⟶ X.branchScheme R,
+      IsPullback f (X'.branchSchemeToSingularLocus R') (X.branchSchemeToSingularLocus R)
+        ((X'.singularLocus R').subschemeMap (X.singularLocus R) g
+          (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+            (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) := by
+  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
+    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
+    infer_instance
+  have : Flat g := MorphismProperty.of_isPullback H.flip ‹_›
+  -- The singular locus `J` of `X'` is the inverse image of that of `X`, and blowing up commutes
+  -- with the flat base change `g`, so the inverse image of `V(J)` in the blowup of `X'` along `J`
+  -- is the base change of the inverse image of `Sing(X/R)` in the blowup of `X`.
+  suffices key : ∀ (J : X'.IdealSheafData) (_ : J = (X.singularLocus R).comap g) {P : Scheme.{u}}
+      (a : P ⟶ J.subscheme) (b : P ⟶ J.blowup) (_ : IsPullback a b J.subschemeι J.blowupToBase)
+      (hle : X.singularLocus R ≤ J.map g), ∃ f : P ⟶ X.branchScheme R,
+        IsPullback f a (X.branchSchemeToSingularLocus R)
+          (J.subschemeMap (X.singularLocus R) g hle) from
+    key _ (Scheme.singularLocus_eq_comap_of_isPullback H) _ _ (X'.isPullback_branchScheme R') _
+  rintro J rfl P a b hP hle
+  have h := hP.flip.paste_horiz ((X.singularLocus R).isPullback_blowupMap_of_flat g).flip
+  rw [← Scheme.IdealSheafData.subschemeMap_subschemeι _ _ _ hle] at h
+  exact ⟨_, .of_right' h (X.isPullback_branchScheme R).flip⟩
+
+end BaseChange
 
 variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
 

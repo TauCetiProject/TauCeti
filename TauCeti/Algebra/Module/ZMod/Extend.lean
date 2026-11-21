@@ -36,8 +36,9 @@ For arbitrary `n` the extension property holds for the targets `W` that are inje
 
 Both extension statements make `Hom(-, W)` exact on the groups killed by `n`
 (`Function.Exact.compHom'` and `Function.Exact.compHom'_of_baer`, through the common
-`Function.Exact.compHom'_of_forall_exists_comp_eq`). These are the algebraic inputs to the duality
-statements for the finite `𝔽_p[G]`-modules and the finite `ℤ/pⁱ[G]`-modules of a profinite group.
+`Function.Exact.exact_compHom'_iff_forall_exists_comp_eq`). These are the algebraic inputs to the
+duality statements for the finite `𝔽_p[G]`-modules and the finite `ℤ/pⁱ[G]`-modules of a profinite
+group.
 
 ## Main results
 
@@ -100,7 +101,7 @@ theorem Function.Exact.compHom' {X Y Z W : Type*} [AddZeroClass X] [AddCommGroup
     [AddCommGroup Z] [AddCommMonoid W] {f : X →+ Y} {g : Y →+ Z} (h : Function.Exact f g)
     (hZ : ∀ z : Z, p • z = 0) :
     Function.Exact (g.compHom' (P := W)) (f.compHom') :=
-  h.compHom'_of_forall_exists_comp_eq fun φ =>
+  (h.exact_compHom'_iff_forall_exists_comp_eq).2 fun φ =>
     AddMonoidHom.exists_comp_eq_of_injective hZ (QuotientAddGroup.kerLift_injective g) φ
 
 /-- **`Hom(-, W)` is exact on groups killed by `n`, for a Baer target.** If `X → Y → Z` is an
@@ -113,5 +114,5 @@ theorem Function.Exact.compHom'_of_baer {n : ℕ} {X Y Z W : Type*} [AddZeroClas
     (hW : Module.Baer (ZMod n) W) {f : X →+ Y} {g : Y →+ Z} (h : Function.Exact f g)
     (hZ : ∀ z : Z, n • z = 0) :
     Function.Exact (g.compHom' (P := W)) (f.compHom') :=
-  h.compHom'_of_forall_exists_comp_eq fun φ =>
+  (h.exact_compHom'_iff_forall_exists_comp_eq).2 fun φ =>
     AddMonoidHom.exists_comp_eq_of_injective_of_baer hW hZ (QuotientAddGroup.kerLift_injective g) φ

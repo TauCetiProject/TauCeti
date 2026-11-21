@@ -69,7 +69,11 @@ namespace TauCeti.LieModule.Cohomology
 
 variable (R : Type*) [CommRing R]
 variable (L : Type*) [LieRing L] [LieAlgebra R L]
-variable (M : Type*) [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+variable (M : Type*) [AddCommGroup M] [Module R M]
+
+section Differential
+
+variable [LieRingModule L M] [LieModule R L M]
 
 /-- The Lie derivatives `x ↦ ⁅x, ω⁆` of a cochain, as a linear map. -/
 private def lieFamily {n : ℕ} (ω : L [⋀^Fin n]→ₗ[R] M) : L →ₗ[R] L [⋀^Fin n]→ₗ[R] M :=
@@ -81,7 +85,7 @@ private theorem lieFamily_apply {n : ℕ} (ω : L [⋀^Fin n]→ₗ[R] M) (x : L
 /-- The differential with values in multilinear maps, defined by Cartan's formula
 `ι_x d ω = ⁅x, ω⁆ - d ι_x ω` before alternation is known. -/
 private def dAux :
-    (n : ℕ) → (L [⋀^Fin n]→ₗ[R] M) →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ L) M
+    (n : ℕ) → (L [⋀^Fin n]→ₗ[R] M) →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ L) M
   | 0 =>
     { toFun ω := (toMultilinearMapLM ∘ₗ lieFamily R L M ω).uncurryLeft
       map_add' ω ω' := by ext v; simp [lieFamily_apply]
@@ -198,9 +202,13 @@ theorem d_d (n : ℕ) (ω : L [⋀^Fin n]→ₗ[R] M) : d R L M (n + 1) (d R L M
 theorem d_comp_d (n : ℕ) : d R L M (n + 1) ∘ₗ d R L M n = 0 :=
   LinearMap.ext (d_d n)
 
+end Differential
+
 /-! ### The explicit formula -/
 
-omit [LieModule R L M] in
+variable {R L M}
+
+variable [LieRingModule L M] in
 /-- Splitting off the first argument in the sum of Lie actions of the Chevalley–Eilenberg
 formula. -/
 private theorem sum_lie_vecCons {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[R] M) (x : L)
@@ -211,7 +219,6 @@ private theorem sum_lie_vecCons {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[R] M) 
   rw [Fin.sum_univ_succ]
   simp [Matrix.vecCons, removeNth_succ_cons, pow_succ, curryLeft_apply_apply, sub_eq_add_neg]
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- The pairs of the Chevalley–Eilenberg formula containing the first argument `x` give the
 action of `x` on the remaining arguments. -/
 private theorem sum_pair_vecCons_zero {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[R] M) (x : L)
@@ -223,7 +230,6 @@ private theorem sum_pair_vecCons_zero {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[
   simp only [← insertNth_removeNth, map_insertNth]
   simp [Matrix.vecCons, pow_succ, Finset.sum_neg_distrib]
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- Splitting off the first argument in the sum over pairs of the Chevalley–Eilenberg formula:
 the pairs containing it give the action of `x` on the remaining arguments, and the others the
 corresponding sum for the interior product `ω.curryLeft x`. -/
@@ -251,6 +257,7 @@ private theorem sum_pair_vecCons {n : ℕ} (ω : L [⋀^Fin (n + 2)]→ₗ[R] M)
   simp only [← succ_castSucc, Matrix.vecCons, cons_succ, removeNth_succ_cons, val_succ, hsign,
     hω, smul_neg]
 
+variable [LieRingModule L M] [LieModule R L M] in
 /-- **The Chevalley–Eilenberg formula** for the differential of a cochain of positive degree:
 `(d ω)(x₀, …, xₙ₊₁) = ∑ i, (-1)^i ⁅xᵢ, ω(…, x̂ᵢ, …)⁆ + ∑_{i < j} (-1)^(i + j) ω(⁅xᵢ, xⱼ⁆, …)`,
 where the pairs `i < j` are written as `(i.castSucc, j.succ)` with `i ≤ j`. -/
@@ -278,6 +285,10 @@ theorem d_succ_apply {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[R] M) (v : Fin (n
 
 variable (R L M)
 
+section Complex
+
+variable [LieRingModule L M] [LieModule R L M]
+
 /-- The Chevalley–Eilenberg cochain complex of `L` with coefficients in `M`, whose degree `n`
 term is the module of alternating maps `L [⋀^Fin n]→ₗ[R] M`. -/
 @[expose] noncomputable def cochainComplex : CochainComplex (ModuleCat R) ℕ :=
@@ -301,9 +312,10 @@ Chevalley–Eilenberg complex in degree `n`. -/
 noncomputable abbrev cohomology (n : ℕ) : ModuleCat R :=
   (cochainComplex R L M).homology n
 
+end Complex
+
 /-! ### Comparison with the low-degree cochains -/
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- One-cochains are linear maps. -/
 def oneCochainEquiv : (L [⋀^Fin 1]→ₗ[R] M) ≃ₗ[R] oneCochain R L M :=
   { (ofSubsingleton R L M 0).symm with
@@ -312,14 +324,12 @@ def oneCochainEquiv : (L [⋀^Fin 1]→ₗ[R] M) ≃ₗ[R] oneCochain R L M :=
 
 variable {R L M}
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- The linear map attached to a one-cochain is its value on one-element tuples. -/
 @[simp]
 theorem oneCochainEquiv_apply (ω : L [⋀^Fin 1]→ₗ[R] M) (x : L) :
     oneCochainEquiv R L M ω x = ω ![x] :=
   congrArg ω (funext fun i ↦ by fin_cases i; rfl)
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- The one-cochain attached to a linear map evaluates it on the unique entry. -/
 @[simp]
 theorem oneCochainEquiv_symm_apply (f : oneCochain R L M) (v : Fin 1 → L) :
@@ -327,14 +337,13 @@ theorem oneCochainEquiv_symm_apply (f : oneCochain R L M) (v : Fin 1 → L) :
 
 variable (R L M)
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- Two-cochains are alternating bilinear maps. -/
 def twoCochainEquiv : (L [⋀^Fin 2]→ₗ[R] M) ≃ₗ[R] twoCochain R L M where
   toFun ω := ⟨(oneCochainEquiv R L M).toLinearMap ∘ₗ ω.curryLeft, fun x ↦ by
     simpa using ω.map_eq_zero_of_eq ![x, x] (i := 0) (j := 1) rfl (by decide)⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
-  invFun c := uncurryLeft ((oneCochainEquiv R L M).symm.toLinearMap ∘ₗ c.1) fun x ↦ by
+  invFun c := uncurryLeft ((oneCochainEquiv R L M).symm.toLinearMap ∘ₗ c.val) fun x ↦ by
     ext r
     simp
   left_inv ω := by
@@ -347,19 +356,19 @@ def twoCochainEquiv : (L [⋀^Fin 2]→ₗ[R] M) ≃ₗ[R] twoCochain R L M wher
 
 variable {R L M}
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- The bilinear map attached to a two-cochain is its value on pairs. -/
 @[simp]
 theorem twoCochainEquiv_apply (ω : L [⋀^Fin 2]→ₗ[R] M) (x y : L) :
     twoCochainEquiv R L M ω x y = ω ![x, y] :=
   (oneCochainEquiv_apply (ω.curryLeft x) y).trans (curryLeft_apply_apply ω x ![y])
 
-omit [LieRingModule L M] [LieModule R L M] in
 /-- The two-cochain attached to an alternating bilinear map evaluates it on the two entries. -/
 @[simp]
 theorem twoCochainEquiv_symm_apply (c : twoCochain R L M) (v : Fin 2 → L) :
     (twoCochainEquiv R L M).symm c v = c (v 0) (v 1) := by
   simp [twoCochainEquiv, tail]
+
+variable [LieRingModule L M] [LieModule R L M]
 
 /-- In degree zero, the differential is the differential `d₀₁` from the module to
 one-cochains. -/

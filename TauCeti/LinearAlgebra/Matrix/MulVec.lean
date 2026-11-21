@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
-import TauCeti.Algebra.Ring.Hom
+import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Matrix-vector multiplication
@@ -31,12 +32,17 @@ eigenvector of each of its powers.
 The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
 line.
 
+A matrix invariant under row and column reindexing sends vectors invariant under the column
+permutation to vectors invariant under the row map.
+
 ## Main results
 
 * `TauCeti.mulVec_mulVec_eq_zero_of_pow_two_eq_zero`: a square-zero matrix annihilates every
   vector in two multiplications.
 * `Matrix.mulVec_apply_eq_mul_of_forall_ne_eq_zero`: if row `i` of `A` vanishes off the diagonal,
   then `(A *ᵥ v) i = A i i * v i`.
+* `Matrix.mulVec_comp_of_submatrix_eq`: multiplying an `e₂`-invariant vector by an
+  `(e₁, e₂)`-invariant matrix yields an `e₁`-invariant vector.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
   is the eigenvector equation `A v = a • v`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
@@ -44,7 +50,11 @@ line.
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
   positive one.
+* `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
+  coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.star_mulVec_eq_map_star_mulVec`: `star (M *ᵥ v) = M.map star *ᵥ star v`.
+* `Matrix.map_star_mulVec_of_star_eq`: if `star v = v`, then `M.map star *ᵥ v = star (M *ᵥ v)`.
 -/
 
 public section
@@ -76,6 +86,14 @@ theorem mulVec_apply_eq_mul_of_forall_ne_eq_zero {A : Matrix n n R} {i : n}
     (h : ∀ j ≠ i, A i j = 0) (v : n → R) : (A *ᵥ v) i = A i i * v i := by
   simp only [mulVec, dotProduct]
   exact Finset.sum_eq_single i (fun j _ hj ↦ by rw [h j hj, zero_mul]) (by simp)
+
+/-- Multiplying an `e₂`-invariant vector by an `(e₁, e₂)`-invariant matrix yields an `e₁`-invariant
+vector. -/
+theorem mulVec_comp_of_submatrix_eq {M : Matrix m n R} {e₁ : m → m} {e₂ : n ≃ n}
+    (hM : M.submatrix e₁ e₂ = M) {v : n → R} (hv : v ∘ e₂ = v) :
+    (M *ᵥ v) ∘ e₁ = M *ᵥ v := by
+  conv_rhs => rw [← hM, ← hv]
+  rw [submatrix_mulVec_equiv, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
 
 end NonUnitalNonAssocSemiring
 
@@ -114,8 +132,21 @@ end CommSemiring
 theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matrix n n R)
     (σ : R →+* R) (c : R) (v : n → R) :
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  rw [RingHom.comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul,
-    mul_assoc]
+  rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
+    smul_eq_mul, mul_assoc]
+
+/-- Conjugating a matrix-vector product conjugates the matrix entrywise and the vector:
+`star (M *ᵥ v) = M.map star *ᵥ star v`. -/
+theorem star_mulVec_eq_map_star_mulVec {R : Type*} [CommSemiring R] [StarRing R]
+    (M : Matrix m n R) (v : n → R) : star (M *ᵥ v) = M.map star *ᵥ star v := by
+  ext i
+  simp [mulVec, dotProduct]
+
+/-- On a vector fixed by `star`, such as a real vector of `ℂⁿ`, the matrix `M.map star` with
+conjugated entries takes the conjugate value `star (M v)`. -/
+theorem map_star_mulVec_of_star_eq {R : Type*} [CommSemiring R] [StarRing R] (M : Matrix m n R)
+    {v : n → R} (hv : star v = v) : M.map star *ᵥ v = star (M *ᵥ v) := by
+  rw [star_mulVec_eq_map_star_mulVec, hv]
 
 section OrderedSemiring
 
@@ -146,5 +177,32 @@ theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i :
     ⟨j, Finset.mem_univ j, mul_pos (hA i j) ((hy j).lt_of_ne' hj)⟩
 
 end StrictOrderedSemiring
+
+section Ring
+
+variable {n : ℕ} {R : Type*} [Ring R]
+
+/-- If `A *ᵥ u = 0` and `u (Fin.last n)` is a unit, then the submatrix of `A` omitting its last
+column sends `fun i => x i.castSucc - u i.castSucc * (u (last))⁻¹ * x (last)` to `A *ᵥ x`. -/
+theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
+    (A : Matrix m (Fin (n + 1)) R) {u : Fin (n + 1) → R} (hu : A *ᵥ u = 0)
+    (huunit : IsUnit (u (Fin.last n))) (x : Fin (n + 1) → R) :
+    (A.submatrix id Fin.castSucc) *ᵥ (fun i => x i.castSucc -
+      u i.castSucc * ((huunit.unit⁻¹ : Rˣ) : R) * x (Fin.last n)) = A *ᵥ x := by
+  have hcol (i : m) : A i (Fin.last n) =
+      -(∑ j : Fin n, A i j.castSucc * u j.castSucc) * ((huunit.unit⁻¹ : Rˣ) : R) := by
+    have h := congrFun hu i
+    simp only [mulVec, dotProduct, Pi.zero_apply, Fin.sum_univ_castSucc] at h
+    calc A i (Fin.last n) = A i (Fin.last n) * u (Fin.last n) * ((huunit.unit⁻¹ : Rˣ) : R) := by
+          rw [mul_assoc, huunit.mul_val_inv, mul_one]
+      _ = _ := by rw [eq_neg_of_add_eq_zero_right h]
+  ext i
+  simp only [mulVec, dotProduct, submatrix_apply, id_eq, Fin.sum_univ_castSucc, hcol, mul_sub,
+    Finset.sum_sub_distrib, neg_mul, ← sub_eq_add_neg]
+  congr 1
+  rw [Finset.sum_mul, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun _ _ => by simp only [mul_assoc]
+
+end Ring
 
 end Matrix

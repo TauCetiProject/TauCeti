@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
--- Private: the trace of a restriction is used only inside a proof.
+-- Private: the trace of a restriction and the orthogonality criterion for `Q` are used only
+-- inside proofs.
 import Mathlib.LinearAlgebra.PID
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Clifford map from self-dual two-forms to trace-free endomorphisms of `W⁺`
@@ -58,6 +60,8 @@ operator norm of `C` is `‖C(iα)‖ = √2 ‖α‖` on self-dual forms.
   trace free.
 * `TauCeti.SeibergWitten.cliffordRestriction_eq_zero_of_hodgeStar_eq_neg`: anti-self-dual forms
   act by zero on `W⁺`.
+* `TauCeti.SeibergWitten.coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero`:
+  `C(i (a ∧ b)) = i c(a) c(b)` on `W⁺` for orthogonal `a` and `b`.
 * `TauCeti.SeibergWitten.cliffordRestriction_mul_add_swap`: the Clifford relation of `C`.
 * `TauCeti.SeibergWitten.trace_cliffordRestriction_mul`:
   `tr (C(iα) C(iβ)) = (⟪α, β⟫ + ⟪⋆α, β⟫) dim W⁺`, and
@@ -159,13 +163,22 @@ section Form
 
 include hQ
 
+/-- On the wedge of two orthogonal vectors the Clifford map is a product of Clifford
+multiplications: `C(i (a ∧ b)) ψ = i c(a) c(b) ψ` when `⟪a, b⟫ = 0`. -/
+theorem coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero {a b : V} (h : ⟪a, b⟫ = 0)
+    (ψ : positiveHalfSpinors o ρ) :
+    (cliffordRestriction o ρ (exteriorPower.ιMulti ℝ 2 ![a, b]) ψ : W) =
+      Complex.I • ρ (ι Q a * ι Q b) ψ := by
+  rw [coe_cliffordRestriction_apply, bivectorExterior_apply_ιMulti,
+    bivector_eq_ι_mul_ι_of_isOrtho Q ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h)]
+
 /-- **The Clifford relation of `C`**: `C(iα) C(iβ) + C(iβ) C(iα) = 2 (⟪α, β⟫ + ⟪⋆α, β⟫)`. -/
 theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :
     cliffordRestriction o ρ x * cliffordRestriction o ρ y +
         cliffordRestriction o ρ y * cliffordRestriction o ρ x =
       ((2 * (⟪x, y⟫ + ⟪o.hodgeStar hkl x, y⟫) : ℝ) : ℂ) • 1 := by
   ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
   have h := congrArg (fun a ↦ ρ a (ψ : W))
     (bivectorExterior_mul_bivectorExterior_add_swap o hQ hkl x y)
   simp only [map_add, map_mul, map_sub, map_smul, AlgHom.commutes, LinearMap.add_apply,
@@ -192,7 +205,7 @@ private theorem trace_restrictBivector (x : ⋀[ℝ]^2 V) :
     rw [mem_positiveHalfSpinors, ← mul_apply_eq_comp, ← map_mul, hΓ]
   have hres : restrictBivector o ρ x = (ρ a).restrict (fun w _ ↦ hmem w) := by
     ext ψ
-    have hψ := mem_positiveHalfSpinors.1 ψ.2
+    have hψ := mem_positiveHalfSpinors.1 ψ.property
     simp [coe_restrictBivector_apply, ha, add_mul,
       (commute_chirality_bivectorExterior (Q := Q) o x).eq, hψ]
     module
@@ -225,7 +238,7 @@ theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[�
 theorem cliffordRestriction_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) : cliffordRestriction o ρ x = 0 := by
   ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
   have h : ρ (bivectorExterior Q x) ψ = -ρ (bivectorExterior Q x) ψ := by
     conv_lhs => rw [← hψ, ← mul_apply_eq_comp, ← map_mul,
       bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx, map_neg, LinearMap.neg_apply]

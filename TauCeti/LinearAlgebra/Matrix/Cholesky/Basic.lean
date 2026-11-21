@@ -37,9 +37,6 @@ triangular and positive on the diagonal.
   2013, Section 7.2.
 -/
 
--- The declaration names and signatures of the Cholesky API below follow the skeleton pinned in
--- `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Cholesky coordinates".
-
 public section
 
 noncomputable section
@@ -93,47 +90,47 @@ end Matrix
 
 /-- The lower-triangular Cholesky factor of a positive-definite real symmetric matrix. -/
 noncomputable def cholesky {p : ℕ} (A : PosDefMatrix p) : PosDiagLowerTriangular p :=
-  ⟨Matrix.choleskyFactor A.2,
-    Matrix.choleskyFactor_isLowerTriangular A.2,
-    Matrix.choleskyFactor_diag_pos A.2⟩
+  ⟨Matrix.choleskyFactor A.property,
+    Matrix.choleskyFactor_isLowerTriangular A.property,
+    Matrix.choleskyFactor_diag_pos A.property⟩
 
 /-- The Cholesky factor of `A` in closed form: Mathlib's LDL lower factor of `A`, with the
 square roots of the LDL diagonal entries absorbed into its columns. -/
 theorem cholesky_coe {p : ℕ} (A : PosDefMatrix p) :
-    (cholesky A).1 =
-      LDL.lower A.2 * Matrix.diagonal fun i ↦ Real.sqrt (LDL.diagEntries A.2 i) :=
+    (cholesky A).val =
+      LDL.lower A.property * Matrix.diagonal fun i ↦ Real.sqrt (LDL.diagEntries A.property i) :=
   (rfl)
 
 /-- A positive-definite matrix is the product of its Cholesky factor and its transpose. -/
 @[simp]
 theorem cholesky_mul_transpose {p : ℕ} (A : PosDefMatrix p) :
-    (cholesky A).1 * ((cholesky A).1)ᵀ =
-      (A.1 : Matrix (Fin p) (Fin p) ℝ) :=
-  Matrix.choleskyFactor_mul_transpose A.2
+    (cholesky A).val * ((cholesky A).val)ᵀ =
+      (A.val : Matrix (Fin p) (Fin p) ℝ) :=
+  Matrix.choleskyFactor_mul_transpose A.property
 
 /-- A lower-triangular matrix with positive diagonal has linearly independent rows. -/
 theorem PosDiagLowerTriangular.vecMul_injective {p : ℕ} (L : PosDiagLowerTriangular p) :
-    Function.Injective L.1.vecMul := by
+    Function.Injective L.val.vecMul := by
   apply Matrix.vecMul_injective_of_isUnit
   rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero,
-    Matrix.det_of_isLowerTriangular L.1 L.2.1]
-  exact Finset.prod_ne_zero_iff.2 fun i _ ↦ (L.2.2 i).ne'
+    Matrix.det_of_isLowerTriangular L.val L.property.1]
+  exact Finset.prod_ne_zero_iff.2 fun i _ ↦ (L.property.2 i).ne'
 
 /-- Reconstruct a positive-definite symmetric matrix from a lower-triangular matrix with positive
 diagonal. -/
 noncomputable def choleskyReconstruction {p : ℕ} (L : PosDiagLowerTriangular p) :
     PosDefMatrix p := by
-  refine ⟨⟨L.1 * L.1ᵀ, ?_⟩, ?_⟩
-  · have h := Matrix.isHermitian_mul_conjTranspose_self L.1
+  refine ⟨⟨L.val * L.valᵀ, ?_⟩, ?_⟩
+  · have h := Matrix.isHermitian_mul_conjTranspose_self L.val
     rw [Matrix.conjTranspose_eq_transpose_of_trivial] at h
     exact Matrix.isHermitian_iff_isSelfAdjoint.mp h
-  · have h := Matrix.PosDef.mul_conjTranspose_self L.1 L.vecMul_injective
+  · have h := Matrix.PosDef.mul_conjTranspose_self L.val L.vecMul_injective
     simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using h
 
 /-- The matrix underlying `choleskyReconstruction L` is `L * Lᵀ`. -/
 @[simp]
 theorem choleskyReconstruction_coe {p : ℕ} (L : PosDiagLowerTriangular p) :
-    ((choleskyReconstruction L).1 : Matrix (Fin p) (Fin p) ℝ) = L.1 * L.1ᵀ := by
+    ((choleskyReconstruction L).val : Matrix (Fin p) (Fin p) ℝ) = L.val * L.valᵀ := by
   rw [choleskyReconstruction]
 
 /-- Reconstructing a matrix from its Cholesky factor returns the original matrix. -/
@@ -174,7 +171,7 @@ theorem exists_generalLinearGroup_mul_transpose_eq_and_apply_eq_zero (hS : S.Pos
       hS.mul_mul_conjTranspose_same
         (Matrix.vecMul_injective_iff_isUnit.2 ⟨⟨P, P, hPP, hPP⟩, rfl⟩)
   let A : PosDefMatrix p := ⟨⟨P * S * P, Matrix.isHermitian_iff_isSelfAdjoint.1 hPS.1⟩, hPS⟩
-  set L : Matrix (Fin p) (Fin p) ℝ := (cholesky A).1
+  set L : Matrix (Fin p) (Fin p) ℝ := (cholesky A).val
   have hL : L * Lᵀ = P * S * P := cholesky_mul_transpose A
   have hC : P * L * (P * L)ᵀ = S := by
     calc P * L * (P * L)ᵀ = P * (L * Lᵀ) * P := by
@@ -192,6 +189,6 @@ theorem exists_generalLinearGroup_mul_transpose_eq_and_apply_eq_zero (hS : S.Pos
   -- the `i`-th row of `P * L` is the first row of the lower-triangular `L`
   have hja : j < a := Fin.lt_def.2 (Nat.pos_of_ne_zero fun h ↦ ha (Fin.ext h))
   rw [hcoe, hPdef, Matrix.swap_mul_apply_left]
-  exact (cholesky A).2.1 (by simpa using hja)
+  exact (cholesky A).property.1 (by simpa using hja)
 
 end Matrix.PosDef

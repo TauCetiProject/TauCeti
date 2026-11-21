@@ -68,10 +68,15 @@ private theorem lintegral_exp_mul_noncentralChiSquaredMeasure (hk : 0 ≤ k)
     lintegral_ofReal_poissonMeasure (by intro n; positivity) (l / 2)
       (hasSum_pow_poissonMeasure (l / 2) ((1 - 2 * t)⁻¹)), hparam]
 
-/-- Every exponential moment below `1 / 2` exists, including at the double-zero Dirac boundary. -/
-theorem integrable_exp_mul_noncentralChiSquaredMeasure (hk : 0 ≤ k)
+/-- Every exponential moment below `1 / 2` exists, including at the double-zero Dirac boundary
+and at negative degrees, where the law is zero. -/
+theorem integrable_exp_mul_noncentralChiSquaredMeasure
     (l : ℝ≥0) (ht : t < 2⁻¹) :
     Integrable (fun x : ℝ ↦ exp (t * x)) (noncentralChiSquaredMeasure k l) := by
+  by_cases hk : 0 ≤ k
+  swap
+  · rw [noncentralChiSquaredMeasure_of_neg (not_le.1 hk)]
+    exact integrable_zero_measure
   refine ⟨by fun_prop, ?_⟩
   rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ ↦ (exp_pos _).le),
     lintegral_exp_mul_noncentralChiSquaredMeasure hk l ht]
@@ -84,7 +89,7 @@ theorem mgf_id_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) (ht : t 
       (1 - 2 * t) ^ (-(k / 2)) * exp (l * t / (1 - 2 * t)) := by
   have h := lintegral_exp_mul_noncentralChiSquaredMeasure hk l ht
   rw [← ofReal_integral_eq_lintegral_ofReal
-    (integrable_exp_mul_noncentralChiSquaredMeasure hk l ht)
+    (integrable_exp_mul_noncentralChiSquaredMeasure l ht)
     (ae_of_all _ fun _ ↦ (exp_pos _).le)] at h
   have hreal := congrArg ENNReal.toReal h
   have hb : 0 < 1 - 2 * t := by linarith
@@ -133,7 +138,7 @@ theorem integrableExpSet_id_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ�
         not_integrable_exp_mul_noncentralChiSquaredMeasure hk (not_and_or.mp hzero)
           (by simpa only [one_div] using ht') ht
     · intro ht
-      exact integrable_exp_mul_noncentralChiSquaredMeasure hk l
+      exact integrable_exp_mul_noncentralChiSquaredMeasure l
         (by simpa only [mem_Iio, one_div] using ht)
 
 end TauCeti.Probability

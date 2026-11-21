@@ -276,7 +276,7 @@ private theorem outerApp_root_mul (e : subspaceJordanRep k n ⟶ subspaceJordanR
 `TauCeti.AdjoinRoot.eq_mulRight_of_root_mul`. -/
 private theorem outerApp_eq_mulRight (e : subspaceJordanRep k n ⟶ subspaceJordanRep k n) :
     outerApp e 0 = LinearMap.mulRight k (outerApp e 0 1) :=
-  AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (R := k) (n + 1)) (outerApp_root_mul e)
+  AdjoinRoot.eq_mulRight_of_root_mul (outerApp_root_mul e)
 
 /-- **An endomorphism is determined by its component at the first outer vertex.** -/
 private theorem hom_ext_of_outerApp {e e' : subspaceJordanRep k n ⟶ subspaceJordanRep k n}

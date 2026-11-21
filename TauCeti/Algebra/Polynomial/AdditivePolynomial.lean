@@ -93,8 +93,9 @@ theorem degree_additivePolynomial [Nontrivial R] :
     V.additivePolynomial.degree = Fintype.card V := by
   rw [additivePolynomial, Lagrange.degree_nodal, Finset.card_univ]
 
-theorem monic_additivePolynomial_sub_C [Nontrivial R] (u : R) :
+theorem monic_additivePolynomial_sub_C (u : R) :
     (V.additivePolynomial - C u).Monic := by
+  nontriviality R using Polynomial.monic_of_subsingleton _
   refine V.monic_additivePolynomial.sub_of_left (degree_C_le.trans_lt ?_)
   rw [degree_additivePolynomial]
   exact_mod_cast Fintype.card_pos
@@ -177,8 +178,8 @@ theorem aeval_additivePolynomial_add (x y : A) :
       (v := fun c : V ↦ algebraMap K K[X][X] c)
       ((algebraMap K K[X][X]).injective.comp Subtype.val_injective).injOn hlt fun c _ ↦ by
         simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap]
-        rw [add_comm, aeval_additivePolynomial_add_algebraMap _ _ c.2,
-          aeval_additivePolynomial_algebraMap _ c.2, sub_zero, sub_self]
+        rw [add_comm, aeval_additivePolynomial_add_algebraMap _ _ c.property,
+          aeval_additivePolynomial_algebraMap _ c.property, sub_zero, sub_self]
     have := congrArg (eval s) hzero
     simp only [eval_sub, taylor_eval, eval_C, f, eval_map_algebraMap, eval_zero] at this
     rw [← sub_eq_zero, ← sub_sub, this]

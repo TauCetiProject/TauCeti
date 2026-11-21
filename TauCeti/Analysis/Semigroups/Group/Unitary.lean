@@ -84,8 +84,6 @@ generator rather than the donor's separate one-parameter group representation.
   Theorem VIII.8.
 * K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
   Section II.3.11.
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part A (C₀-groups and Stone's
-  theorem stretch target).
 -/
 
 public section
@@ -211,9 +209,9 @@ theorem isUnitary_toGroupOfInverse (S T : ContractionSemigroup H)
     exact hS
   · rcases le_or_gt 0 t with ht | ht
     · rw [StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonneg _ _ _ _ ht]
-      exact S.contracting_real t ht
+      exact S.contracting_real t
     · rw [StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonpos _ _ _ _ ht.le]
-      exact T.contracting_real (-t) (neg_nonneg.mpr ht.le)
+      exact T.contracting_real (-t)
 
 /-- The generator domain of a unitary strongly continuous group, regarded as a complex submodule:
 the complex generator domain of its forward semigroup. Its carrier is the real generator domain. -/
@@ -258,6 +256,12 @@ theorem complexGenerator_def (U : StronglyContinuousGroup H) (hU : U.IsUnitary) 
 theorem complexGenerator_domain (U : StronglyContinuousGroup H) (hU : U.IsUnitary) :
     (U.complexGenerator hU).domain = U.complexDomain hU := by
   rw [complexGenerator, complexDomain, U.toSemigroup.complexGenerator_domain]
+
+/-- Membership in the domain of the complex generator of a unitary group is membership in the
+domain of its real generator. -/
+theorem mem_complexGenerator_domain_iff (U : StronglyContinuousGroup H) (hU : U.IsUnitary)
+    (x : H) : x ∈ (U.complexGenerator hU).domain ↔ x ∈ U.domain := by
+  rw [U.complexGenerator_domain hU, U.mem_complexDomain_iff hU]
 
 @[simp]
 theorem complexGenerator_apply (U : StronglyContinuousGroup H) (hU : U.IsUnitary)
@@ -464,50 +468,12 @@ private theorem one_add_complexGenerator_surjective (hU : U.IsUnitary) :
   simpa only [one_smul, LinearPMap.neg_apply, sub_neg_eq_add] using hx
 
 /-- **The infinitesimal generator of a unitary strongly continuous group is skew-adjoint.**
-Its Hilbert-space adjoint is its negative. The reverse inclusion of adjoint domains uses the
-surjectivity of both `1 - A` and `1 + A`, supplied by the resolvents of the forward and reversed
-contraction semigroups. -/
+Its Hilbert-space adjoint is its negative. -/
 @[simp]
 theorem complexGenerator_adjoint_eq_neg (hU : U.IsUnitary) :
-    (U.complexGenerator hU).adjoint = -U.complexGenerator hU := by
-  have hdense : Dense ((U.complexGenerator hU).domain : Set H) := by
-    rw [U.complexGenerator_domain]
-    exact U.dense_complexDomain hU
-  have hformal := hU.complexGenerator_isFormalAdjoint_neg
-  have hle : -U.complexGenerator hU ≤ (U.complexGenerator hU).adjoint :=
-    hformal.le_adjoint hdense
-  have hdom_le : (U.complexGenerator hU).adjoint.domain ≤
-      (-U.complexGenerator hU).domain := by
-    intro y hy
-    let ya : (U.complexGenerator hU).adjoint.domain := ⟨y, hy⟩
-    obtain ⟨x, hx⟩ := hU.one_add_complexGenerator_surjective
-      ((y : H) - (U.complexGenerator hU).adjoint ya)
-    have hyx : (y : H) = (x : H) := by
-      apply ext_inner_left ℂ
-      intro w
-      obtain ⟨v, hv⟩ := hU.one_sub_complexGenerator_surjective w
-      rw [← hv]
-      calc
-        ⟪(v : H) - U.complexGenerator hU v, (y : H)⟫_ℂ =
-            ⟪(v : H), (y : H)⟫_ℂ - ⟪U.complexGenerator hU v, (y : H)⟫_ℂ :=
-          inner_sub_left _ _ _
-        _ = ⟪(v : H), (y : H)⟫_ℂ -
-            ⟪(v : H), (U.complexGenerator hU).adjoint ya⟫_ℂ := by
-          rw [(LinearPMap.adjoint_isFormalAdjoint hdense).symm v ya]
-        _ = ⟪(v : H), (y : H) - (U.complexGenerator hU).adjoint ya⟫_ℂ := by
-          rw [inner_sub_right]
-        _ = ⟪(v : H), (x : H) + U.complexGenerator hU x⟫_ℂ := by
-          exact congrArg (fun z : H => ⟪(v : H), z⟫_ℂ) hx.symm
-        _ = ⟪(v : H), (x : H)⟫_ℂ + ⟪(v : H), U.complexGenerator hU x⟫_ℂ :=
-          inner_add_right _ _ _
-        _ = ⟪(v : H), (x : H)⟫_ℂ - ⟪U.complexGenerator hU v, (x : H)⟫_ℂ := by
-          rw [hU.inner_complexGenerator_eq_neg]
-          simp
-        _ = ⟪(v : H) - U.complexGenerator hU v, (x : H)⟫_ℂ := by
-          rw [inner_sub_left]
-    rw [LinearPMap.neg_domain]
-    simpa only [hyx] using x.property
-  exact (LinearPMap.eq_of_le_of_domain_eq hle (le_antisymm hle.1 hdom_le)).symm
+    (U.complexGenerator hU).adjoint = -U.complexGenerator hU :=
+  hU.complexGenerator_isFormalAdjoint_neg.adjoint_eq_neg_of_surjective_sub_add
+    hU.one_sub_complexGenerator_surjective hU.one_add_complexGenerator_surjective
 
 end IsUnitary
 

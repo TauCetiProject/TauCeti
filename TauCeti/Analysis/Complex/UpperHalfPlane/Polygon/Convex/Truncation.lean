@@ -38,7 +38,7 @@ semicircle of centre `m` and radius `ρ` (`ConvexPolygon.exists_carrier_inter_st
 a semicircle, between its centre and a finite endpoint `p`, the height is at least `Im p`. Between
 its centre and a real endpoint `x` it satisfies `ρ |Re z - x| ≤ (Im z)²`, so that a point outside a
 horodisc at `x`, where `Im z ≤ K |z - x|²`, has height at least `min ρ (1 / (2K))`. These two
-estimates are `im_le_im_of_normSq_sub_eq` and `min_le_im_of_sq_sub_eq`.
+estimates are `im_le_im_of_normSq_sub_le` and `min_le_im_of_sq_sub_eq`.
 Every truncated triangle therefore lies in a compact rectangle of `ℍ`.
 
 ## Main result
@@ -93,16 +93,15 @@ private theorem exists_pos_le_im_of_vertex (h₀ : P.vertex 0 = .inr ∞) {g : F
   cases hv : P.vertex k with
   | inl p =>
     rw [hv, toComplex_inl] at hkm
-    refine ⟨p.im, p.im_pos, fun z _ hz hre ↦ im_le_im_of_normSq_sub_eq hkm hz ?_⟩
+    refine ⟨p.im, p.im_pos, fun z _ hz hre ↦ im_le_im_of_normSq_sub_le (hkm.trans_le hz) ?_⟩
     rwa [toComplex_inl, coe_re] at hre
   | inr ξ =>
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦
       P.vertex_ne_inr_infty_of_vertex_zero h₀ hk (hv.trans (congrArg _ h))
     rw [hv, toComplex_inr_coe, ← Complex.ofReal_sub, Complex.normSq_ofReal, ← sq] at hkm
     obtain ⟨c, hc, hgc⟩ := exists_im_smul_eq_div_of_smul_coe_eq_infty (hg k x hv)
-    have hK : 0 < max (A k) 1 * c := mul_pos (lt_max_of_lt_right one_pos) hc
     refine ⟨min ρ (1 / (2 * (max (A k) 1 * c))), lt_min hρ (by positivity),
-      fun z htr hz hre ↦ min_le_im_of_sq_sub_eq hρ hK hkm hz ?_ ?_⟩
+      fun z htr hz hre ↦ min_le_im_of_sq_sub_eq hkm hz ?_ ?_⟩
     · rwa [toComplex_inr_coe, Complex.ofReal_re] at hre
     · -- outside the horodisc at `x`: `Im z = Im (g • z) · c |z - x|² ≤ A c |z - x|²`
       have hN : 0 < c * Complex.normSq ((z : ℂ) - x) :=

@@ -129,10 +129,14 @@ theorem image_mem_cotangentMomentumChart_target :
 
 /-- The inverse momentum chart has the regularity of the first derivatives of `S`. -/
 theorem contDiffAt_cotangentMomentumChart_symm {n : WithTop ℕ∞}
-    (hSn : ContDiffAt ℝ (n + 1) S x₀) (hn : n ≠ 0) :
-    ContDiffAt ℝ n (cotangentMomentumChart hS hH).symm (cotangentMomentumProjection S x₀) :=
-  (contDiffAt_cotangentMomentumProjection hSn).to_localInverse
-    (hasStrictFDerivAt_momentumDerivEquiv hS hH).hasFDerivAt hn
+    (hSn : ContDiffAt ℝ (n + 1) S x₀) :
+    ContDiffAt ℝ n (cotangentMomentumChart hS hH).symm (cotangentMomentumProjection S x₀) := by
+  have hb : (cotangentMomentumChart hS hH).symm (cotangentMomentumProjection S x₀) = x₀ :=
+    (hasStrictFDerivAt_momentumDerivEquiv hS hH).localInverse_apply_image
+  exact (cotangentMomentumChart hS hH).contDiffAt_symm
+    (image_mem_cotangentMomentumChart_target hS hH)
+    (by rw [hb]; exact (hasStrictFDerivAt_momentumDerivEquiv hS hH).hasFDerivAt)
+    (by rw [hb]; exact contDiffAt_cotangentMomentumProjection hSn)
 
 /-- Any local inverse of the momentum projection agrees with this branch as a germ. -/
 theorem eventuallyEq_cotangentMomentumChart_symm
@@ -169,9 +173,9 @@ theorem cotangentFourthKind_cotangentMomentumProjection {x : V × W}
 
 /-- The fourth-kind transform has the regularity of the first derivatives of `S`. -/
 theorem contDiffAt_cotangentFourthKind {n : WithTop ℕ∞}
-    (hSn : ContDiffAt ℝ (n + 1) S x₀) (hn : n ≠ 0) :
+    (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentFourthKind hS hH) (cotangentMomentumProjection S x₀) := by
-  have hb := contDiffAt_cotangentMomentumChart_symm hS hH hSn hn
+  have hb := contDiffAt_cotangentMomentumChart_symm hS hH hSn
   have hx : (cotangentMomentumChart hS hH).symm (cotangentMomentumProjection S x₀) = x₀ :=
     (hasStrictFDerivAt_momentumDerivEquiv hS hH).localInverse_apply_image
   exact (((hx ▸ hSn.of_le (by simp)).comp _ hb).sub
@@ -185,7 +189,7 @@ theorem eventually_fderiv_cotangentFourthKind :
         -u.1 ((cotangentMomentumChart hS hH).symm y).1 +
           u.2 ((cotangentMomentumChart hS hH).symm y).2 := by
   let b := (cotangentMomentumChart hS hH).symm
-  have hb := contDiffAt_cotangentMomentumChart_symm hS hH hS one_ne_zero
+  have hb := contDiffAt_cotangentMomentumChart_symm hS hH hS (n := 1)
   have hi : ∀ᶠ y in 𝓝 (cotangentMomentumProjection S x₀),
       cotangentMomentumProjection S (b y) = y :=
     (hasStrictFDerivAt_momentumDerivEquiv hS hH).eventually_right_inverse

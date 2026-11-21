@@ -136,26 +136,30 @@ theorem norm_integratedStarAlgHom_le_fullSeminorm {H : Type w} [NormedAddCommGro
   rw [← CovariantRepresentation.restrict_integratedOperator_apply hπ hU, V.norm_map, V.norm_map]
   exact ((P.restrict hπ hU).integratedOperator μ f.ofConv).le_of_opNorm_le hK η
 
-/-- The full seminorm is the least nonnegative bound for the integrated forms of covariant
+/-- The full seminorm is the least bound for the integrated forms of covariant
 representations on Hilbert spaces in the universe `max u v`. -/
-theorem fullSeminorm_le_iff {f : ConvolutionAlgebra α μ} {c : ℝ} (hc : 0 ≤ c) :
+theorem fullSeminorm_le_iff {f : ConvolutionAlgebra α μ} {c : ℝ} :
     fullSeminorm α μ f ≤ c ↔
       ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
         (P : CovariantRepresentation α H), ‖P.integratedStarAlgHom μ f‖ ≤ c :=
   ⟨fun h _ _ _ _ P => (norm_integratedStarAlgHom_le_fullSeminorm P f).trans h,
     fun h => by
       rw [fullSeminorm, Seminorm.sSup_apply bddAbove_integratedSeminorms]
+      have hc : 0 ≤ c := by
+        let H := EuclideanSpace ℂ PEmpty.{max u v + 1}
+        exact (norm_nonneg _).trans (h H
+          ⟨0, ContRepresentation.trivial ℂ G H, ContRepresentation.isUnitary_trivial,
+            fun _ => by simpa using continuous_const, fun _ _ _ => by simp⟩)
       exact Real.iSup_le (fun ⟨_, H, _, _, _, P, hp⟩ => hp ▸ h H P) hc⟩
 
 /-- The full seminorm is bounded by the L¹ norm. -/
 theorem fullSeminorm_le_norm (f : ConvolutionAlgebra α μ) : fullSeminorm α μ f ≤ ‖f‖ :=
-  (fullSeminorm_le_iff (norm_nonneg f)).2 fun _ _ _ _ P => P.norm_integratedStarAlgHom_le_norm μ f
+  fullSeminorm_le_iff.2 fun _ _ _ _ P => P.norm_integratedStarAlgHom_le_norm μ f
 
 /-- The full seminorm is submultiplicative for twisted convolution. -/
 theorem fullSeminorm_mul_le (f g : ConvolutionAlgebra α μ) :
     fullSeminorm α μ (f * g) ≤ fullSeminorm α μ f * fullSeminorm α μ g := by
-  refine (fullSeminorm_le_iff (mul_nonneg (apply_nonneg _ f) (apply_nonneg _ g))).2
-    fun _ _ _ _ P => ?_
+  refine fullSeminorm_le_iff.2 fun _ _ _ _ P => ?_
   rw [map_mul]
   exact (norm_mul_le _ _).trans (mul_le_mul (norm_integratedStarAlgHom_le_fullSeminorm P f)
     (norm_integratedStarAlgHom_le_fullSeminorm P g) (norm_nonneg _) (apply_nonneg _ f))
@@ -165,7 +169,7 @@ theorem fullSeminorm_mul_le (f g : ConvolutionAlgebra α μ) :
 theorem fullSeminorm_star (f : ConvolutionAlgebra α μ) :
     fullSeminorm α μ (star f) = fullSeminorm α μ f := by
   have key (g : ConvolutionAlgebra α μ) : fullSeminorm α μ (star g) ≤ fullSeminorm α μ g := by
-    refine (fullSeminorm_le_iff (apply_nonneg _ g)).2 fun _ _ _ _ P => ?_
+    refine fullSeminorm_le_iff.2 fun _ _ _ _ P => ?_
     rw [map_star, _root_.norm_star]
     exact norm_integratedStarAlgHom_le_fullSeminorm P g
   exact le_antisymm (key f) (by simpa using key (star f))
@@ -176,7 +180,7 @@ theorem fullSeminorm_star_mul_self (f : ConvolutionAlgebra α μ) :
   refine le_antisymm ((fullSeminorm_mul_le _ _).trans_eq (by rw [fullSeminorm_star])) ?_
   -- Each `‖(π ⋊ U)(f)‖` is the square root of `‖(π ⋊ U)(f⋆ * f)‖ ≤ ‖f⋆ * f‖ᵤ`.
   have hsqrt : fullSeminorm α μ f ≤ √(fullSeminorm α μ (star f * f)) := by
-    refine (fullSeminorm_le_iff (Real.sqrt_nonneg _)).2 fun _ _ _ _ P => ?_
+    refine fullSeminorm_le_iff.2 fun _ _ _ _ P => ?_
     refine Real.le_sqrt_of_sq_le ?_
     rw [sq, ← CStarRing.norm_star_mul_self, ← map_star, ← map_mul]
     exact norm_integratedStarAlgHom_le_fullSeminorm P _
@@ -201,8 +205,7 @@ theorem fullSeminorm_eq_zero_iff [μ.InnerRegularCompactLTTop] {H : Type w} [Nor
 /-- The canonical coefficient multiplier has bound `‖a‖` for the full C⋆-seminorm. -/
 theorem fullSeminorm_coefficientMul_le (a : A) (f : ConvolutionAlgebra α μ) :
     fullSeminorm α μ (coefficientMul a f) ≤ ‖a‖ * fullSeminorm α μ f := by
-  refine (fullSeminorm_le_iff (mul_nonneg (norm_nonneg _) (apply_nonneg _ _))).2
-    fun H _ _ _ P => ?_
+  refine fullSeminorm_le_iff.2 fun H _ _ _ P => ?_
   rw [CovariantRepresentation.integratedStarAlgHom_apply, ofConv_coefficientMul,
     P.integratedOperator_smul, ← P.integratedStarAlgHom_apply]
   exact (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le _ _)
@@ -214,7 +217,7 @@ theorem fullSeminorm_translateLIE (r : G) (f : ConvolutionAlgebra α μ) :
     fullSeminorm α μ (translateLIE r f) = fullSeminorm α μ f := by
   have h (t : G) (g : ConvolutionAlgebra α μ) :
       fullSeminorm α μ (translateLIE t g) ≤ fullSeminorm α μ g := by
-    refine (fullSeminorm_le_iff (apply_nonneg _ _)).2 fun H _ _ _ P => ?_
+    refine fullSeminorm_le_iff.2 fun H _ _ _ P => ?_
     rw [CovariantRepresentation.integratedStarAlgHom_apply, ofConv_translateLIE,
       P.integratedOperator_translate,
       CStarRing.norm_mem_unitary_mul _ (P.isUnitary.mem_unitary t),

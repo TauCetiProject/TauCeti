@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -55,7 +56,9 @@ the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
 `ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
-`ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, and the locality
+`ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, the commutation
+`ContDiffAt.laplacian_fderiv` of the Laplacian with the derivative and its iterate
+`ContDiff.laplacian_iteratedFDeriv`, and the locality
 statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes identically.
 
 ## Main declarations
@@ -69,6 +72,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_toEuclideanCLE_apply`: for an invertible matrix `T`, the Laplacian of
   `u ∘ T` is the constant-coefficient operator with matrix `T Tᵀ` applied to `u`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
+* `TauCeti.laplacian_comp_sub_left`: invariance of `Δ` under the point reflection `y ↦ a - y`.
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
@@ -83,6 +87,10 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
   directional derivatives along an orthonormal basis.
+* `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
+  the orthonormal directions `1` and `I`.
+* `ContDiffAt.laplacian_fderiv`, `ContDiff.laplacian_iteratedFDeriv`: `Δ (Df) = D (Δ f)` and
+  `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -97,6 +105,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
+* `TauCeti.laplacian_of_notMem_tsupport`: the Laplacian vanishes off the topological support.
 * `HasCompactSupport.laplacian`: the Laplacian of a compactly supported function is compactly
   supported.
 -/
@@ -105,7 +114,7 @@ public section
 
 namespace TauCeti
 
-open InnerProductSpace Laplacian
+open Filter InnerProductSpace Laplacian Topology
 
 variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -124,6 +133,21 @@ basis. -/
 theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
   simp [traceL]
+
+/-- Transposing the arguments of a bilinear map preserves its trace. -/
+@[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
+  simp [traceL_apply]
+
+/-- The trace of the real inner product is the dimension of the space. -/
+@[simp] theorem traceL_innerSL :
+    traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
+  rw [traceL_apply]
+  have hterm (i : Fin (Module.finrank ℝ E)) :
+      (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
+    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
+      (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
+  simp_rw [hterm]
+  simp
 
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
@@ -190,6 +214,64 @@ theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
   simp
+
+open Complex in
+/-- The Laplacian on the complex plane is the sum of the second directional derivatives in the
+orthonormal directions `1` and `I`, when `fderiv ℝ f` is differentiable at the point. -/
+theorem laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I {f : ℂ → F} {z : ℂ}
+    (hf : DifferentiableAt ℝ (fderiv ℝ f) z) :
+    Δ f z = fderiv ℝ (fun w ↦ fderiv ℝ f w 1) z 1 + fderiv ℝ (fun w ↦ fderiv ℝ f w I) z I := by
+  rw [laplacian_eq_sum_fderiv_fderiv_apply orthonormalBasisOneI hf]
+  simp [Fin.sum_univ_two]
+
+/-- **The Laplacian commutes with the derivative.** For a map of class `C³` at `x`,
+`Δ (Df) x = D (Δ f) x`: both sides are traces of the third derivative, which is symmetric. -/
+theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffAt ℝ 3 f x) :
+    Δ (fderiv ℝ f) x = fderiv ℝ (Δ f) x := by
+  let b := stdOrthonormalBasis ℝ E
+  have hDf : ContDiffAt ℝ 2 (fderiv ℝ f) x := hf.fderiv_right (m := 2) (by norm_num)
+  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ f)) x :=
+    (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  -- The Laplacian of `f` is the trace of the second derivative.
+  have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ f) y (b i) (b i) :=
+    .of_forall fun y ↦ by rw [laplacian_eq_traceL, traceL_apply]
+  ext v
+  have hl : Δ (fderiv ℝ f) x v = Δ (fun y ↦ fderiv ℝ f y v) x :=
+    (hDf.laplacian_CLM_comp_left (l := ContinuousLinearMap.apply ℝ F v)).symm
+  rw [hl, laplacian_eq_traceL, traceL_apply, hΔ.fderiv_eq,
+    fderiv_fun_sum fun i _ ↦ (hD2.clm_apply (differentiableAt_const _)).clm_apply
+      (differentiableAt_const _)]
+  simp only [FunLike.coe_sum, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  -- Both summands are values of the symmetric third derivative.
+  have hsymm := (hDf.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])) (b i) v
+  rw [fderiv_fderiv_fderiv_apply hf, fderiv_fderiv_fderiv_apply_comm hf (by simp), hsymm,
+    fderiv_clm_apply (hD2.clm_apply (differentiableAt_const _)) (differentiableAt_const _),
+    fderiv_clm_apply hD2 (differentiableAt_const _)]
+  simp [b]
+
+/-- **The Laplacian commutes with iterated derivatives.** For a map of class `C^(n+2)`,
+`Δ (Dⁿ f) = Dⁿ (Δ f)`. -/
+theorem _root_.ContDiff.laplacian_iteratedFDeriv {f : E → F} {n : ℕ}
+    (hf : ContDiff ℝ (n + 2) f) : Δ (iteratedFDeriv ℝ n f) = iteratedFDeriv ℝ n (Δ f) := by
+  induction n with
+  | zero =>
+    rw [iteratedFDeriv_zero_eq_comp, iteratedFDeriv_zero_eq_comp]
+    exact laplacian_CLE_comp_left
+      (l := (continuousMultilinearCurryFin0 ℝ E F).symm.toContinuousLinearEquiv)
+  | succ n ih =>
+    have hf' : ContDiff ℝ (n + 2) f := hf.of_le (by norm_cast; omega)
+    have h3 : ContDiff ℝ 3 (iteratedFDeriv ℝ n f) :=
+      hf.iteratedFDeriv_right (by norm_cast; omega)
+    rw [iteratedFDeriv_succ_eq_comp_left, iteratedFDeriv_succ_eq_comp_left]
+    let Ψ := (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F).symm
+    have hΨ := laplacian_CLE_comp_left (f := fderiv ℝ (iteratedFDeriv ℝ n f))
+      (F := E →L[ℝ] E [×n]→L[ℝ] F) (G := E [×n + 1]→L[ℝ] F) (l := Ψ.toContinuousLinearEquiv)
+    rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hΨ
+    rw [hΨ]
+    ext1 x
+    simp only [Function.comp_apply]
+    rw [h3.contDiffAt.laplacian_fderiv, ih hf']
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/
@@ -285,6 +367,13 @@ theorem laplacian_comp_affineIsometryEquiv_right (e : E ≃ᵃⁱ[ℝ] E') (f : 
   have hx : e x = e.linearIsometryEquiv x + e 0 := by
     simpa using e.map_vadd (0 : E) x
   simp [Function.comp_apply, hx]
+
+/-- **Invariance of the Laplacian under point reflections.** Reflecting the argument through a
+point, `y ↦ a - y`, commutes with the Laplacian:
+`Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y)`. No differentiability hypothesis is needed. -/
+theorem laplacian_comp_sub_left (f : E → F) (a : E) :
+    Δ (fun y ↦ f (a - y)) = fun y ↦ (Δ f) (a - y) :=
+  laplacian_comp_affineIsometryEquiv_right (AffineIsometryEquiv.constVSub ℝ a) f
 
 /-- **Scaling law for the Laplacian under origin-centered dilation.**
 
@@ -582,6 +671,11 @@ theorem tsupport_laplacian_subset (f : E → F) : tsupport (Δ f) ⊆ tsupport f
   have h0 : Δ f =ᶠ[𝓝 x] Δ (fun _ : E => (0 : F)) :=
     laplacian_congr_nhds (notMem_tsupport_iff_eventuallyEq.mp hxf)
   exact hx (by simpa using h0.eq_of_nhds)
+
+/-- The Laplacian vanishes off the topological support of the function. -/
+@[simp]
+theorem laplacian_of_notMem_tsupport {f : E → F} {x : E} (h : x ∉ tsupport f) : Δ f x = 0 :=
+  image_eq_zero_of_notMem_tsupport fun h' ↦ h (tsupport_laplacian_subset f h')
 
 /-- The Laplacian of a function with compact support has compact support. -/
 theorem _root_.HasCompactSupport.laplacian {f : E → F} (hf : HasCompactSupport f) :

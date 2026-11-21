@@ -93,8 +93,7 @@ theorem gromovWassersteinEDist_point (K : GromovWassersteinPresentation.{u} p Z)
     gromovWassersteinEDist p K.measure K.kernel (point (p := p) z).measure
       (point (p := p) z).kernel =
       eLpNorm (fun q ↦ edist (K.kernel q) z) p (K.measure.prod K.measure) :=
-  gromovWassersteinEDist_dirac_right (ULift.up ()) (fun _ ↦ z)
-    K.aestronglyMeasurable_kernel p
+  gromovWassersteinEDist_dirac_right (ULift.up ()) (fun _ ↦ z) p
 
 /-- Between constant one-point kernels, GW recovers the target metric at nonzero exponents. -/
 theorem gromovWassersteinEDist_point_point (hp : p ≠ 0) (z w : Z) :
@@ -272,15 +271,17 @@ theorem tendsto_mk_of_tendsto_eLpNorm_of_hasLaw {ι Ω : Type*} {l : Filter ι} 
 
 /-- **Convergence in GW space from measure-preserving common parametrizations.** -/
 theorem tendsto_mk_of_tendsto_eLpNorm {ι Ω : Type*} {l : Filter ι} [MeasurableSpace Ω]
-    {γ : Measure Ω} [SFinite γ] {Ks : ι → GromovWassersteinPresentation.{u} p Z}
+    {γ : Measure Ω} {Ks : ι → GromovWassersteinPresentation.{u} p Z}
     {L : GromovWassersteinPresentation.{u} p Z} {f : (i : ι) → Ω → (Ks i).Carrier}
     {g : Ω → L.Carrier} (hf : ∀ᶠ i in l, MeasurePreserving (f i) γ (Ks i).measure)
     (hg : MeasurePreserving g γ L.measure)
     (hlim : Tendsto (fun i ↦ eLpNorm
       (fun q : Ω × Ω ↦ edist ((Ks i).kernel (f i q.1, f i q.2)) (L.kernel (g q.1, g q.2)))
       p (γ.prod γ)) l (𝓝 0)) :
-    Tendsto (fun i ↦ mk (Ks i)) l (𝓝 (mk L)) :=
-  (isometry_mk.continuous.tendsto L).comp
+    Tendsto (fun i ↦ mk (Ks i)) l (𝓝 (mk L)) := by
+  have : IsProbabilityMeasure γ := ⟨by
+    simpa using hg.measure_preimage (MeasurableSet.univ.nullMeasurableSet)⟩
+  exact (isometry_mk.continuous.tendsto L).comp
     (GromovWassersteinPresentation.tendsto_of_tendsto_eLpNorm hf hg hlim)
 
 /-- Descend any weak-isomorphism-invariant function on presentations to GW classes. -/

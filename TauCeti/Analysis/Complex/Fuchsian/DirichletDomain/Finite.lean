@@ -118,17 +118,8 @@ theorem exists_finset_dirichletDomain_eq_iInter_closure_leftHalfPlane_of_isBound
           rw [ht i (B i) (le_max_right _ _)]
           exact ⟨hzi, hi⟩
         exact hzD.1
-  -- Remove inequalities from the centre stabilizer and express the others as half-planes.
-  refine ⟨s.filter (fun g ↦ p ≠ g • p), fun g hg ↦ (Finset.mem_filter.mp hg).2, ?_⟩
-  rw [heq]
-  ext z
-  simp only [mem_iInter, Finset.mem_filter]
-  constructor
-  · intro hz g hg
-    exact (mem_closure_leftHalfPlane_perpBisector_iff hg.2 z).mpr (hz g hg.1)
-  · intro hz g hg
-    by_cases hgp : p = g • p
-    · simp [← hgp]
-    · exact (mem_closure_leftHalfPlane_perpBisector_iff hgp z).mp (hz g ⟨hg, hgp⟩)
+  obtain ⟨s', hs', hss'⟩ :=
+    UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane p s
+  exact ⟨s', hs', heq.trans hss'⟩
 
 end Subgroup

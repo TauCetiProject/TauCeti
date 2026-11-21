@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Tower
+public import Mathlib.Data.Set.Countable
 public import Mathlib.LinearAlgebra.Span.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Algebra.Basic
@@ -18,7 +19,8 @@ import Mathlib.Data.Fintype.BigOperators
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
-used to recover the generator's membership in any submodule. Acting on a line gives the line
+used to recover the generator's membership in any submodule. A vector outside an integer line is
+not cancelled by adding an integer multiple of the generator. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
 exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
@@ -26,6 +28,9 @@ subspace over the larger field as the family `y`. A unitriangular change of a fa
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
 the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
 as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
+Over a scalar extension, the image span of a semilinear map is spanned by its values on any
+spanning family of the domain. The span of any countable set admits a spanning sequence indexed
+by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
 -/
 
 public section
@@ -55,6 +60,11 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
 end TauCeti.Submodule
 
 namespace Submodule
+
+/-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
+theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}
+    (hy : y ∉ ℤ ∙ v) (k : ℤ) : y + k • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
+  ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
 
 variable {K V : Type*} [DivisionSemiring K] [AddCommMonoid V] [Module K V]
 
@@ -178,4 +188,36 @@ theorem map_mem_span_of_forall_exists {A B R S : Type*} [CommSemiring A] [CommSe
 
 end RingHom
 
+section SpanningFamily
+
+/-- Over a scalar extension, the image of a semilinear map is spanned by its values on any
+spanning family. The ring homomorphism defining semilinearity need not be surjective. -/
+theorem span_range_eq_span_range_comp_of_span_eq_top
+    {R R' S M N ι : Type*} [Semiring R] [Semiring R'] [Semiring S] [SMul R' S]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N]
+    [Module S N] [IsScalarTower R' S N] {σ : R →+* R'} {v : ι → M}
+    (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ] N) :
+    span S (Set.range f) = span S (Set.range (f ∘ v)) := by
+  refine le_antisymm (span_le.mpr ?_) (span_mono (Set.range_comp_subset_range _ _))
+  rintro _ ⟨x, rfl⟩
+  exact (image_span_subset f _ ((span S (Set.range (f ∘ v))).restrictScalars R')).mpr
+    (Set.forall_mem_range.mpr fun i ↦ subset_span ⟨i, rfl⟩) ⟨x, hv ▸ mem_top, rfl⟩
+
+end SpanningFamily
+
 end Submodule
+
+section Countable
+
+/-- The `R`-span of a countable set `s` admits a spanning sequence `v : ℕ → Submodule.span R s`
+with `Submodule.span R (Set.range v) = ⊤`. -/
+theorem Set.Countable.exists_span_range_eq_top (R : Type*) {M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] {s : Set M} (hs : s.Countable) :
+    ∃ v : ℕ → Submodule.span R s, Submodule.span R (Set.range v) = ⊤ := by
+  obtain ⟨f, hf⟩ := (hs.insert 0).exists_eq_range (Set.insert_nonempty 0 s)
+  have hfs (n : ℕ) : f n ∈ Submodule.span R s :=
+    Set.insert_subset (Submodule.zero_mem _) Submodule.subset_span (hf ▸ Set.mem_range_self n)
+  exact ⟨fun n ↦ ⟨f n, hfs n⟩, (Submodule.span_range_subtype_eq_top_iff _ hfs).2 <| by
+    rw [← hf, Submodule.span_insert_zero]⟩
+
+end Countable

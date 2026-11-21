@@ -13,6 +13,7 @@ import Mathlib.RingTheory.RingHom.StandardSmooth
 import Mathlib.RingTheory.TensorProduct.Pi
 import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.RingTheory.Unramified.Field
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 
 /-!
 # Reducedness of smooth algebras
@@ -70,11 +71,11 @@ private theorem isReduced_of_smooth_of_isDomain
     [Algebra.Smooth R A] : IsReduced A := by
   obtain ⟨s, hs, hsmooth⟩ := Algebra.Smooth.exists_span_eq_top_isStandardSmooth R A
   refine ⟨fun x hx ↦ Module.eq_zero_of_isLocalized_span s hs
-    (fun r : s ↦ Localization.Away r.1)
-    (fun r : s ↦ Algebra.linearMap A (Localization.Away r.1)) x fun r ↦ ?_⟩
-  have := hsmooth r.1 r.2
-  have := isReduced_of_standardSmooth_of_isDomain R (Localization.Away r.1)
-  exact (hx.map (algebraMap A (Localization.Away r.1))).eq_zero
+    (fun r : s ↦ Localization.Away r.val)
+    (fun r : s ↦ Algebra.linearMap A (Localization.Away r.val)) x fun r ↦ ?_⟩
+  have := hsmooth r.val r.property
+  have := isReduced_of_standardSmooth_of_isDomain R (Localization.Away r.val)
+  exact (hx.map (algebraMap A (Localization.Away r.val))).eq_zero
 
 private theorem isReduced_of_smooth_of_finite_minimalPrimes
     (R : Type u) (A : Type v) [CommRing R] [IsReduced R] (hR : (minimalPrimes R).Finite)
@@ -82,15 +83,11 @@ private theorem isReduced_of_smooth_of_finite_minimalPrimes
   classical
   let P := minimalPrimes R
   let : Fintype P := hR.fintype
-  have (p : P) : p.1.IsPrime := p.2.1.1
-  let Q (p : P) := R ⧸ p.1
+  have (p : P) : p.val.IsPrime := p.property.1.1
+  let Q (p : P) := R ⧸ p.val
   -- A reduced ring embeds into the product of its minimal-prime quotients.
-  have hinj : Function.Injective (algebraMap R (∀ p : P, Q p)) := by
-    have hker : RingHom.ker (algebraMap R (∀ p : P, Q p)) = ⨅ p : P, p.1 :=
-      Ideal.ker_Pi_Quotient_mk (fun p : P ↦ p.1)
-    rw [RingHom.injective_iff_ker_eq_bot, hker]
-    simp only [P, minimalPrimes, iInf_subtype, ← sInf_eq_iInf, Ideal.sInf_minimalPrimes,
-      Ideal.radical_bot_of_isReduced]
+  have hinj : Function.Injective (algebraMap R (∀ p : P, Q p)) :=
+    Ideal.injective_pi_quotient_mk_minimalPrimes R
   -- Flatness preserves the embedding after tensoring with the smooth algebra.
   have (p : P) : IsReduced (A ⊗[R] Q p) :=
     have := isReduced_of_smooth_of_isDomain (Q p) (Q p ⊗[R] A)

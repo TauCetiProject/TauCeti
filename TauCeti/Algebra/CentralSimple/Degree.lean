@@ -51,8 +51,9 @@ columns; that is recorded as
 
 ## Main results
 
-* `IsSimpleRing.isSquare_finrank`: **the dimension of a finite-dimensional central simple
-  algebra is a perfect square**.
+* `IsSimpleRing.isSquare_finrank`: **the dimension of a finite-dimensional central simple algebra
+  is a perfect square** (stated without a finiteness hypothesis, since `Module.finrank` is `0`
+  otherwise).
 * `TauCeti.Algebra.deg`: the degree of a central simple algebra, with
   `TauCeti.Algebra.deg_sq : deg K A ^ 2 = Module.finrank K A`, its multiplicativity
   `TauCeti.Algebra.deg_tensorProduct` and `TauCeti.Algebra.deg_matrix`, the reading
@@ -80,18 +81,13 @@ need never unfold the definition. The two exceptions do not compute a degree and
 (and from which `TauCeti.Algebra.deg_eq_of_algEquiv` is read off), and
 `TauCeti.Algebra.deg_pos`, which only needs `Module.finrank_pos`.
 
-`IsSimpleRing.isSquare_finrank` covers every base field, so the finite-base-field
-square-dimension statement that used to sit in `TauCeti/Algebra/CentralSimple/Wedderburn.lean` is
-gone, in favour of this one; that file keeps the matrix presentation
-`IsSimpleRing.exists_algEquiv_matrix_of_finite`, which is genuinely special to a finite base
-field and from which the square dimension used to be read off.
+`IsSimpleRing.isSquare_finrank` covers every base field, finite ones included.
+`TauCeti/Algebra/CentralSimple/Wedderburn.lean` has the matrix presentation
+`IsSimpleRing.exists_algEquiv_matrix_of_finite`, which is genuinely special to a finite base field.
 
 ## References
 
-This implements the third bullet of Layer 4 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md)
-(square dimension by base change to the algebraic closure, and the degree defined as its square
-root). See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 
@@ -128,14 +124,19 @@ private theorem exists_algEquiv_matrix_baseChange_of_isSepClosed [IsSepClosed L]
   obtain ⟨n, hn, -, ⟨e⟩⟩ := exists_algEquiv_matrix_of_isSepClosed L (L ⊗[K] A)
   exact ⟨n, hn, TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix K A L e, ⟨e⟩⟩
 
+omit [FiniteDimensional K A] in
 /-- **The dimension of a finite-dimensional central simple algebra is a perfect square.**
 
-Base change to an algebraic closure of `K` splits `A`, and a full matrix algebra has square
-dimension. Centrality cannot be dropped: `Module.finrank ℝ ℂ = 2`. -/
+No finiteness hypothesis is needed: for an infinite-dimensional algebra `Module.finrank` is the
+junk value `0 = 0 * 0`. For a finite-dimensional one, base change to an algebraic closure of `K`
+splits `A`, and a full matrix algebra has square dimension. Centrality cannot be dropped:
+`Module.finrank ℝ ℂ = 2`. -/
 theorem isSquare_finrank : IsSquare (Module.finrank K A) := by
-  obtain ⟨n, -, hrank, -⟩ :=
-    exists_algEquiv_matrix_baseChange_of_isSepClosed K (AlgebraicClosure K) A
-  exact ⟨n, by rw [hrank, sq]⟩
+  by_cases h : FiniteDimensional K A
+  · obtain ⟨n, -, hrank, -⟩ :=
+      exists_algEquiv_matrix_baseChange_of_isSepClosed K (AlgebraicClosure K) A
+    exact ⟨n, by rw [hrank, sq]⟩
+  · exact ⟨0, by simp [Module.finrank_of_not_finite h]⟩
 
 end IsSimpleRing
 
@@ -228,9 +229,10 @@ end Nontrivial
 
 section CentralSimple
 
-variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A]
+variable [Algebra.IsCentral K A] [IsSimpleRing A]
 
-/-- The dimension of a central simple algebra is the square of its degree. -/
+/-- The dimension of a central simple algebra is the square of its degree. For an
+infinite-dimensional algebra both sides are `0`, so no finiteness hypothesis is needed. -/
 @[simp]
 theorem deg_sq : deg K A ^ 2 = Module.finrank K A := by
   obtain ⟨n, hn⟩ := IsSimpleRing.isSquare_finrank K A
@@ -240,7 +242,7 @@ theorem deg_sq : deg K A ^ 2 = Module.finrank K A := by
 that central simple `K`-algebras are closed under `⊗[K]`. -/
 @[simp]
 theorem deg_tensorProduct (B : Type*) [Ring B] [Algebra K B] [Algebra.IsCentral K B]
-    [IsSimpleRing B] [FiniteDimensional K B] :
+    [IsSimpleRing B] :
     deg K (A ⊗[K] B) = deg K A * deg K B :=
   deg_eq_of_finrank_eq_sq <| by
     rw [Module.finrank_tensorProduct, ← deg_sq K A, ← deg_sq K B]; ring
@@ -261,7 +263,7 @@ variable {K A}
 Wedderburn presentation; note that `A` itself carries no hypotheses here, since they are inherited
 through the isomorphism. -/
 theorem deg_eq_mul_deg_of_algEquiv_matrix {n : ℕ} {D : Type*} [Ring D] [Algebra K D]
-    [Algebra.IsCentral K D] [IsSimpleRing D] [FiniteDimensional K D]
+    [Algebra.IsCentral K D] [IsSimpleRing D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : deg K A = n * deg K D := by
   rw [deg_eq_of_algEquiv e, deg_matrix]
 
@@ -305,8 +307,8 @@ example : Algebra.deg K (Matrix (Fin n) (Fin n) K) = n := by
 example : Algebra.deg ℝ ℍ[ℝ] = 2 :=
   Algebra.deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
 
-/-- The perfect-square theorem applies to the real quaternions: all three of `Algebra.IsCentral`,
-`IsSimpleRing` and `FiniteDimensional` are found by instance search. -/
+/-- The perfect-square theorem applies to the real quaternions: both `Algebra.IsCentral` and
+`IsSimpleRing` are found by instance search. -/
 example : IsSquare (Module.finrank ℝ ℍ[ℝ]) := IsSimpleRing.isSquare_finrank ℝ ℍ[ℝ]
 
 /-- The negative control for `IsSimpleRing.isSquare_finrank`: `ℂ` is a simple,

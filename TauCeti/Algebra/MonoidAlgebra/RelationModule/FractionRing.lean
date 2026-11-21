@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.FractionRing
+public import Mathlib.RingTheory.Localization.FractionRing
+public import TauCeti.Algebra.MonoidAlgebra.Maschke
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Prod
+import TauCeti.RingTheory.Flat.FractionRing
 import TauCeti.RingTheory.KrullSchmidt.Localization
 
 /-!
@@ -20,7 +22,7 @@ in `R`, and let `g : ι → G` be a generating family with `n + 1` members. The 
 `0 → relationModule R G g → R[G]^ι → I_G → 0`.
 
 After tensoring with `Q` this sequence and the augmentation sequence `0 → I_G → R[G] → R → 0`
-split (Maschke's theorem, `TauCeti.IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact`), and
+split (Maschke's theorem, `TauCeti.MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact`), and
 cancelling the rational regular representation gives
 
 `relationModule R G g ⊗ Q ≃ (R[G]^n ⊕ R) ⊗ Q`,
@@ -81,9 +83,10 @@ theorem nonempty_relationModule_tensor_linearEquiv [NeZero (Nat.card G : R)] {g 
     rw [← LinearMap.range_eq_top, LinearMap.range_codRestrict,
       range_linearCombination_eq_ker_augmentation hg, Submodule.comap_subtype_self]
   -- Rationally, `R[G]^ι ≃ relationModule R G g ⊕ I_G` and `R[G] ≃ I_G ⊕ R[G] ⧸ I_G`.
-  obtain ⟨e₁⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact Q hc'
+  have : NeZero (Nat.card G : Q) := NeZero.nat_of_injective (IsFractionRing.injective R Q)
+  obtain ⟨e₁⟩ := nonempty_tensor_linearEquiv_prod_of_exact Q hc'
     (Submodule.injective_subtype _) hc''
-  obtain ⟨e₂⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact Q
+  obtain ⟨e₂⟩ := nonempty_tensor_linearEquiv_prod_of_exact Q
     (LinearMap.exact_subtype_mkQ I) (Submodule.injective_subtype _) (Submodule.mkQ_surjective _)
   -- Integrally, `R[G]^ι × R[G] ⧸ I_G ≃ (R[G]^n × R[G] ⧸ I_G) × R[G]`, splitting off one
   -- coordinate of `R[G]^ι`.

@@ -21,8 +21,9 @@ l|       |r
  P₃  ⟶  P₄
      b
 ```
-whose square of subobjects and square of ambient simplicial sets are both pushouts with
-monomorphic top maps, and let `R` be an object of an abelian category with coproducts. The
+whose square of subobjects and square of ambient simplicial sets are both pushouts, with
+monomorphic top map of ambient simplicial sets (then the top map of subobjects is a
+monomorphism too), and let `R` be an object of an abelian category with coproducts. The
 relative Mayer–Vietoris short complex `C(P₁; R) ⟶ C(P₂; R) ⊞ C(P₃; R) ⟶ C(P₄; R)` of relative
 chain complexes, with first map `(t, -l)` and second map `r + b`, is then short exact
 (`SSetPair.shortExact_mayerVietoris`). Its homology sequence is the relative Mayer–Vietoris long
@@ -85,13 +86,16 @@ lemma mayerVietoris_chainComplex_zero (w : t ≫ r = l ≫ b) :
   simp [← Functor.map_comp, w]
 
 /-- **The relative Mayer–Vietoris short exact sequence.** For a commutative square of pairs of
-simplicial sets whose squares of subobjects and of ambient simplicial sets are pushouts with
-monomorphic top maps, the relative chain complexes form a short exact sequence
-`C(P₁) ⟶ C(P₂) ⊞ C(P₃) ⟶ C(P₄)` with first map `(t, -l)` and second map `r + b`. -/
-theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left) [Mono t.left]
+simplicial sets whose squares of subobjects and of ambient simplicial sets are pushouts and whose
+top map of ambient simplicial sets is a monomorphism (then so is the top map of subobjects), the
+relative chain complexes form a short exact sequence `C(P₁) ⟶ C(P₂) ⊞ C(P₃) ⟶ C(P₄)` with first
+map `(t, -l)` and second map `r + b`. -/
+theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left)
     (sqR : IsPushout t.right l.right r.right b.right) [Mono t.right] :
     (ShortComplex.mk _ _ (mayerVietoris_chainComplex_zero R t l r b
       (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w))).ShortExact := by
+  -- `t.left` is mono since `t.left ≫ P₂.hom = P₁.hom ≫ t.right` is.
+  have : Mono t.left := mono_of_mono_fac (h := P₁.hom ≫ t.right) t.w
   -- The absolute Mayer–Vietoris short exact sequences of the subobjects and of the ambient
   -- simplicial sets.
   let L₁ := ShortComplex.mk (biprod.lift (SSet.chainComplexMap t.left R)
@@ -135,11 +139,34 @@ theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left) [
   refine (SSet.shortExact_mayerVietoris R sqR).of_isColimit_cokernelCofork
     (SSet.shortExact_mayerVietoris R sqL).exact v π hw ?_
   apply ShortComplex.isColimitOfIsColimitπ <;>
-    apply (CokernelCofork.isColimitMapCoconeEquiv _ _).2
+    apply (CokernelCofork.isColimitMapCoconeEquiv _ _).invFun
   · exact P₁.isColimitCokernelCoforkChainComplex R
   · exact CokernelCofork.isColimitBiprod (P₂.isColimitCokernelCoforkChainComplex R)
       (P₃.isColimitCokernelCoforkChainComplex R)
   · exact P₄.isColimitCokernelCoforkChainComplex R
+
+/-- The quotient maps to relative chains carry the last map of the absolute Mayer–Vietoris
+sequence of the ambient simplicial sets to that of the relative one. -/
+private lemma biprod_map_chainComplexπ_comp_desc :
+    biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R) =
+        biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R) ≫
+          P₄.chainComplexπ R := by
+  apply biprod.hom_ext' <;> simp [chainComplexπ_naturality]
+
+/-- The last map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)` of the relative Mayer–Vietoris sequence of a square of
+pairs of simplicial sets is an epimorphism when the square of ambient simplicial sets is a
+pushout; no monomorphism hypothesis is needed. -/
+lemma epi_biprod_desc_chainComplexMap (sqR : IsPushout t.right l.right r.right b.right) :
+    Epi (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) := by
+  have : Epi (biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R)) :=
+    (sqR.map ((SSet.chainComplexFunctor C).obj R)).epi_shortComplex_g
+  have : Epi (P₄.chainComplexπ R) := (P₄.shortExact_chainComplexShortComplex R).epi_g
+  have : Epi (biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R)) := by
+    rw [biprod_map_chainComplexπ_comp_desc]
+    infer_instance
+  exact epi_of_epi (biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R)) _
 
 /-- In each degree, the last map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)` of the relative Mayer–Vietoris sequence of
 a square of pairs of simplicial sets is a split epimorphism, when the square of ambient simplicial
@@ -156,13 +183,7 @@ lemma isSplitEpi_mayerVietoris_g_f (sqR : IsPushout t.right l.right r.right b.ri
       ((biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R)).f i) :=
     hamb.isSplitMono_f_iff_isSplitEpi_g.1
       (SSet.isSplitMono_biprod_lift_chainComplexMap_f R (i := i))
-  -- The quotient maps to relative chains carry the last map of the absolute sequence to that of
-  -- the relative one.
-  have hπ : biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
-      biprod.desc (chainComplexMap r R) (chainComplexMap b R) =
-        biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R) ≫
-          P₄.chainComplexπ R := by
-    apply biprod.hom_ext' <;> simp [chainComplexπ_naturality]
+  have hπ := biprod_map_chainComplexπ_comp_desc R (r := r) (b := b)
   have : IsSplitEpi ((P₄.chainComplexπ R).f i) :=
     ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
       (P₄.shortExact_chainComplexShortComplex R) i).isSplitMono_f_iff_isSplitEpi_g.1
@@ -246,7 +267,7 @@ private lemma mayerVietorisToBiprod_eq (n : ℕ) :
         (HomologicalComplex.homologyMap (-chainComplexMap l R) n) := by
   rw [mayerVietorisToBiprod, HomologicalComplex.homologyMap_neg]
 
-variable (sqL : IsPushout t.left l.left r.left b.left) [Mono t.left]
+variable (sqL : IsPushout t.left l.left r.left b.left)
   (sqR : IsPushout t.right l.right r.right b.right) [Mono t.right]
 
 /-- The relative Mayer–Vietoris connecting morphism `Hₙ(P₄) ⟶ Hₘ(P₁)`, where `m + 1 = n`: the
@@ -288,22 +309,22 @@ lemma mayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (mayerVietorisFromBiprod_δ R sqL sqR n m h)).Exact :=
   (shortExact_mayerVietoris R sqL sqR).biprod_homology_exact₃ n m (by simpa)
 
-include sqL sqR in
+include sqR in
+omit [Mono t.right] in
 /-- The map `H₀(P₂) ⊞ H₀(P₃) ⟶ H₀(P₄)` at the end of the relative Mayer–Vietoris sequence is an
-epimorphism. -/
+epimorphism when the square of ambient simplicial sets is a pushout; no monomorphism hypothesis
+is needed. -/
 lemma epi_mayerVietorisFromBiprod_zero : Epi (mayerVietorisFromBiprod R r b 0) := by
-  have : Epi ((biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f 0) :=
-    ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
-      (shortExact_mayerVietoris R sqL sqR) 0).epi_g
+  have := epi_biprod_desc_chainComplexMap R sqR
   have : Epi (HomologicalComplex.homologyMap
       (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) 0) :=
     HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
-  exact HomologicalComplex.epi_biprod_desc_homologyMap 0
+  exact (HomologicalComplex.epi_biprod_desc_homologyMap_iff 0).2 inferInstance
 
 /-- **Naturality of the relative Mayer–Vietoris connecting morphism** in maps of squares of
 pairs. -/
 @[reassoc]
-lemma mayerVietorisδ_naturality (sqL' : IsPushout t'.left l'.left r'.left b'.left) [Mono t'.left]
+lemma mayerVietorisδ_naturality (sqL' : IsPushout t'.left l'.left r'.left b'.left)
     (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
     (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
     (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : m + 1 = n := by lia) :

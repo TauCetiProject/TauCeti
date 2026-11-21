@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Unitization
+public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!

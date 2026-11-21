@@ -6,10 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
-public import Mathlib.Topology.UniformSpace.CompactConvergence
+public import Mathlib.Topology.CompactOpen
 public import TauCeti.Topology.LocallyConstant.Compact
 import Mathlib.Topology.Separation.Connected
-import Mathlib.Topology.Separation.DisjointCover
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # Locally constant functions on topological groups
@@ -39,8 +39,6 @@ The uniformity statement itself needs only a compact *set* `K ⊆ G` and continu
 chosen point; no associativity, identity or inverse is needed.
 
 `IsLocallyConstant.exists_isOpen_forall_mul_right_eq` specializes to a compact space.
-`IsLocallyConstant.exists_isOpen_translate₂` and `IsLocallyConstant.exists_isOpen_translate₃` give
-uniformity for the families `(y, y * g)` and `(y, y * g, y * g * h)` used in cochain constructions.
 -/
 
 public section
@@ -94,27 +92,6 @@ theorem exists_isOpen_forall_mul_right_eq [CompactSpace G]
     (p₀ : P) (hσ : ContinuousAt σ p₀) :
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
   simpa using exists_isOpen_forall_mem_mul_right_eq hf isCompact_univ p₀ hσ
-
-/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
-constant in `g`, uniformly in `y`, on a compact space with continuous multiplication. -/
-theorem exists_isOpen_translate₂ [CompactSpace G]
-    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
-    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
-  simpa using (hN.comp_continuous
-    (continuous_fst.prodMk (continuous_fst.mul continuous_snd))).exists_isOpen_forall_mem_eq
-    isCompact_univ g₀
-
-/-- A locally constant function `Q : G × G × G → A`, evaluated along
-`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`, on a compact space
-with continuous multiplication. -/
-theorem exists_isOpen_translate₃ [CompactSpace G]
-    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
-    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
-      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-  simpa using (hQ.comp_continuous (continuous_fst.prodMk
-    ((continuous_fst.mul (continuous_fst.comp continuous_snd)).prodMk
-      ((continuous_fst.mul (continuous_fst.comp continuous_snd)).mul
-        (continuous_snd.comp continuous_snd))))).exists_isOpen_forall_mem_eq isCompact_univ q₀
 
 end IsLocallyConstant
 
@@ -187,19 +164,15 @@ theorem isLocallyConstant_iff_exists_comp_quotientMk_eq {A : Type*} {f : G → A
 variable [TotallyDisconnectedSpace G]
 
 /-- **Density of cylinder functions.** On a profinite group, the continuous functions that factor
-through the quotient by some open normal subgroup are dense in `C(G, R)` for every uniform
-space `R`. -/
-theorem dense_setOf_comp_quotientMk (R : Type*) [UniformSpace R] :
+through the quotient by some open normal subgroup are dense in `C(G, R)` for every topological
+space `R`, with the compact-open topology. When `R` is a uniform space, this is the topology of
+uniform convergence. -/
+theorem dense_setOf_comp_quotientMk (R : Type*) [TopologicalSpace R] :
     Dense {F : C(G, R) |
       ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
-  refine fun f ↦ (mem_closure_iff_nhds_basis
-    (nhds_basis_uniformity' ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
-    fun V hV ↦ ?_
-  -- Approximate `f` within `V` by a function factoring through a finite discrete space.
-  obtain ⟨N, c, h, hc, hch⟩ := ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
-    (nhdsSet_diagonal_le_uniformity hV)
-  have hloc : IsLocallyConstant (h ∘ c) :=
-    (IsLocallyConstant.of_discrete h).comp_continuous hc
-  exact ⟨⟨h ∘ c, hloc.continuous⟩, hloc.exists_comp_quotientMk_eq, fun x ↦ hch x⟩
+  -- Locally constant functions are dense, and each one factors through a finite quotient.
+  refine LocallyConstant.denseRange_toContinuousMap.mono <| Set.range_subset_iff.mpr fun f ↦ ?_
+  rw [Set.mem_ofPred_eq, LocallyConstant.coe_continuousMap]
+  exact f.isLocallyConstant.exists_comp_quotientMk_eq
 
 end TauCeti

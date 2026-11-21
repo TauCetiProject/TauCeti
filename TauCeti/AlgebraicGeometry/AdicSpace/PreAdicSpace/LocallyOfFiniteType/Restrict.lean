@@ -138,15 +138,13 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
   refine Hom.prop_restrictPreimage_of_forall_exists_le f (@LocallyOfFiniteType.{u})
     (fun _ ↦ LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage) W fun y ↦ ?_
   -- every point of `W` lies in a rational subset `R(T/s)` contained in `W`
-  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U.plus) y.2
+  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U.plus) y.property
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hR
   refine ⟨_, hyR, hRW, ?_⟩
   have hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
   refine locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap_spaBasicOpen P P'
     hP hP' φ hφ hsheaf hT _ hden ?_
-  rw [rationalLocalizationPair_plus]
-  exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
-    U.isRingOfIntegralElements.isPowerBounded_of_mem hP _ _ _ hden hT hsheafA
+  exact isSheaf_presentationLimitPresheaf_rationalLocalizationPair P U hP _ _ _ hden hT hsheafA
 
 end ValuationSpectrum
 

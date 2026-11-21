@@ -21,6 +21,9 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
 (`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`.
+
+Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
+occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
 -/
 
 public section
@@ -83,5 +86,20 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
           Multiset.mem_toFinset.mpr (Multiset.count_pos.mp (Nat.pos_of_ne_zero ha))
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
+
+/-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
+`r i`. -/
+theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l ≠ 0)
+    (r : ι → R) (z : R) : (C l * ∏ i, (X - C (r i))).IsRoot z ↔ ∃ i, r i = z := by
+  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
+  simp [sub_eq_zero, eq_comm]
+
+/-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
+at least `k` times in `E`. -/
+theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} {a c : R}
+    (hc : c ≠ 0) {k : ℕ} :
+    (X - C a) ^ k ∣ c • (E.map fun b ↦ X - C b).prod ↔ k ≤ E.count a := by
+  rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
+    ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
 
 end Polynomial

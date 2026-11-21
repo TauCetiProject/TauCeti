@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Poisson.Characterization
+public import TauCeti.Probability.Distributions.Poisson.SmallRate
 public import Mathlib.Probability.Independence.Integration
 
 /-!
@@ -18,6 +19,9 @@ without a canonical sample space, moment assumptions, or sample-path continuity.
 does not by itself assert independence of arbitrary collections of increments or simplicity
 of paths; those need the corresponding process hypotheses.
 
+Conversely, Poisson marginals give the microscopic limits, and Poisson increment laws give
+stationarity when compared with the corresponding marginal laws.
+
 ## References
 
 * Vincent Tassion, *Applied Stochastic Processes*, ETH Zürich, Spring 2025, Chapter 6,
@@ -26,7 +30,7 @@ of paths; those need the corresponding process hypotheses.
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Topology
+open Filter MeasureTheory ProbabilityTheory Topology Asymptotics
 open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
@@ -70,5 +74,46 @@ theorem hasLaw_poissonMeasure_of_small_time {Ω : Type*} [MeasurableSpace Ω]
     (by simpa only [map_measureReal_apply_of_aemeasurable (hN _) measurableSet_Ici,
       Set.preimage, Set.mem_Ici] using h2) t
   exact ⟨hN t, hlaw⟩
+
+/-- Poisson marginals imply the microscopic one- and multiple-occurrence limits at zero,
+including at rate zero. No independence or path regularity is required. -/
+theorem tendsto_small_time_of_hasLaw_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ} (r : ℝ≥0)
+    (hlaw : ∀ t, HasLaw (N t) (poissonMeasure (r * t)) P) :
+    Tendsto (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} / h) (𝓝[>] 0) (𝓝 (r : ℝ)) ∧
+      Tendsto (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω} / h) (𝓝[>] 0) (𝓝 0) := by
+  have hrate : Tendsto (fun h : ℝ≥0 ↦ r * h) (𝓝[>] 0) (𝓝 0) := by
+    simpa only [mul_zero, id_eq] using
+      (tendsto_id.mono_left (nhdsWithin_le_nhds (a := (0 : ℝ≥0)))).const_mul r
+  have hO : (fun h : ℝ≥0 ↦ ((r * h : ℝ≥0) : ℝ)) =O[𝓝[>] 0] (fun h ↦ (h : ℝ)) := by
+    simpa using isBigO_const_mul_self (r : ℝ) (fun h : ℝ≥0 ↦ (h : ℝ)) (𝓝[>] 0)
+  have h1 := ((isLittleO_poissonMeasure_real_singleton_one_sub.comp_tendsto hrate).trans_isBigO
+    hO).tendsto_div_nhds_zero
+  have h2 := ((isLittleO_poissonMeasure_real_Ici_two.comp_tendsto hrate).trans_isBigO
+    hO).tendsto_div_nhds_zero
+  constructor
+  · have hlim := h1.add_const (r : ℝ)
+    simp only [zero_add] at hlim
+    apply hlim.congr' _
+    filter_upwards [self_mem_nhdsWithin] with h hh
+    have hh' : 0 < (h : ℝ) := NNReal.coe_pos.mpr hh
+    rw [(hlaw h).measureReal_eq (p := fun n ↦ n = 1) (.of_discrete)]
+    simp only [Function.comp_apply, NNReal.coe_mul, Set.ofPred_eq_eq_singleton]
+    field_simp
+    ring
+  · simpa only [Function.comp_apply,
+      (hlaw _).measureReal_eq (p := fun n ↦ 2 ≤ n) (.of_discrete), Set.Ici_def] using h2
+
+/-- Poisson increment laws identify each shifted increment with any marginal having the
+corresponding Poisson law. In particular, this gives stationarity without independence. -/
+theorem identDistrib_sub_of_hasLaw_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {N M : ℝ≥0 → Ω → ℕ} {r : ℝ≥0}
+    (hlaw : ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
+      (poissonMeasure (r * (t - s))) P)
+    (hmarg : ∀ t, HasLaw (M t) (poissonMeasure (r * t)) P) (s t : ℝ≥0) :
+    IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (M t) P P := by
+  have h := hlaw s (s + t) le_self_add
+  rw [add_tsub_cancel_left] at h
+  exact h.identDistrib (hmarg t)
 
 end TauCeti.Probability

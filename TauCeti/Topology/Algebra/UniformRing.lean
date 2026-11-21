@@ -162,12 +162,14 @@ variable {α β : Type*} [Ring α] [UniformSpace α] [IsTopologicalRing α] [IsU
 
 /-- The ring isomorphism of completions induced by a topological ring isomorphism is continuous:
 its underlying map is `UniformSpace.Completion.map`. -/
+@[fun_prop, continuity]
 theorem continuous_mapRingEquiv (f : α ≃+* β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Continuous (mapRingEquiv f hf hf') :=
   continuous_map.congr fun x ↦ (mapRingEquiv_apply f hf hf' x).symm
 
 /-- The inverse of the ring isomorphism of completions induced by a topological ring isomorphism
 is continuous. -/
+@[fun_prop, continuity]
 theorem continuous_mapRingEquiv_symm (f : α ≃+* β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Continuous (mapRingEquiv f hf hf').symm :=
   continuous_map.congr fun x ↦ (mapRingEquiv_symm_apply f hf hf' x).symm
@@ -308,10 +310,10 @@ instance instNonUnitalNonAssocRing : NonUnitalNonAssocRing (Completion α) where
       fun a => by rw [← coe_zero, ← coe_mul', mul_zero]
   left_distrib a b c :=
     Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a b c => by rw [← coe_add, ← coe_mul', ← coe_mul', ← coe_mul', ← coe_add, mul_add]
+      fun a b c => by simp only [← coe_add, ← coe_mul', mul_add]
   right_distrib a b c :=
     Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a b c => by rw [← coe_add, ← coe_mul', ← coe_mul', ← coe_mul', ← coe_add, add_mul]
+      fun a b c => by simp only [← coe_add, ← coe_mul', add_mul]
 
 /-- The completion of a nonunital topological ring is a topological ring. -/
 instance instIsTopologicalRing : IsTopologicalRing (Completion α) where
@@ -322,9 +324,7 @@ instance instIsScalarTowerMul {R : Type*} [Monoid R] [DistribMulAction R α]
     IsScalarTower R (Completion α) (Completion α) where
   smul_assoc r a b :=
     Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a b => by
-        simp only [smul_eq_mul]
-        rw [← coe_smul, ← coe_mul', ← coe_mul', ← coe_smul, smul_mul_assoc]
+      fun a b => by simp only [smul_eq_mul, ← coe_smul, ← coe_mul', smul_mul_assoc]
 
 /-- Scalars that commute with multiplication on `α` commute with it on the completion. -/
 instance instSMulCommClassMul {R : Type*} [Monoid R] [DistribMulAction R α]
@@ -332,9 +332,7 @@ instance instSMulCommClassMul {R : Type*} [Monoid R] [DistribMulAction R α]
     SMulCommClass R (Completion α) (Completion α) where
   smul_comm r a b :=
     Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a b => by
-        simp only [smul_eq_mul]
-        rw [← coe_smul, ← coe_mul', ← coe_mul', ← coe_smul, mul_smul_comm]
+      fun a b => by simp only [smul_eq_mul, ← coe_smul, ← coe_mul', mul_smul_comm]
 
 end Mul
 
@@ -348,7 +346,7 @@ instance instNonUnitalRing : NonUnitalRing (Completion α) where
   __ : NonUnitalNonAssocRing (Completion α) := inferInstance
   mul_assoc a b c :=
     Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a b c => by rw [← coe_mul', ← coe_mul', ← coe_mul', ← coe_mul', mul_assoc]
+      fun a b c => by simp only [← coe_mul', mul_assoc]
 
 end NonUnitalRing
 
@@ -364,7 +362,7 @@ instance instStarRing : StarRing (Completion α) where
   star_add := star_add
   star_mul a b :=
     Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
-      fun a b => by rw [← coe_mul', ← coe_star, ← coe_star, ← coe_star, ← coe_mul', star_mul]
+      fun a b => by simp only [← coe_mul', ← coe_star, star_mul]
 
 end StarRing
 

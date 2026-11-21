@@ -48,8 +48,9 @@ those coefficients — a single `b₂` above `3`, where completing the square is
   `ofCInvariants c₄ c₆` integral. Each triple specialises the general prescription
   `(b₂/12, a₁/2, a₃/2)`: the three-witness sets `a₁ = a₃ = 0`, while the two-witness sets
   `a₂ = 0`, so `b₂ = a₁²`.
-* `TauCeti.KrausLocalCondition`: integrality of `c₄`, `c₆` and `Δ`, nonvanishing of `Δ`, and the
-  two witness conditions, each imposed only when the corresponding numeral is a nonunit.
+* `TauCeti.KrausLocalCondition`: integrality of `c₄` and `c₆`, nonvanishing of `Δ`, and the two
+  witness conditions, each imposed only when the corresponding numeral is a nonunit. Integrality
+  of `Δ` follows (`TauCeti.KrausLocalCondition.exists_Δ`).
 * `TauCeti.KrausGlobalCondition`: Kraus's local condition at the localisation of a Dedekind
   domain at every height-one prime.
 
@@ -114,12 +115,15 @@ def HasKrausTwoWitness : Prop :=
   ∃ a₁ a₃ : R, ((⟨1, algebraMap R K a₁ ^ 2 / 12, algebraMap R K a₁ / 2,
     algebraMap R K a₃ / 2⟩ : VariableChange K) • ofCInvariants c₄ c₆).IsIntegral R
 
-/-- **Kraus's local condition on a pair of invariants.** The first four fields ask that `c₄`, `c₆`
-and the discriminant of the canonical equation lie in `R` and that this discriminant is nonzero;
-the last two are the auxiliary data, each demanded only at the residue characteristic it concerns.
+/-- **Kraus's local condition on a pair of invariants.** The first three fields ask that `c₄` and
+`c₆` lie in `R` and that the discriminant of the canonical equation is nonzero; the last two are
+the auxiliary data, each demanded only at the residue characteristic it concerns. Integrality of
+the discriminant is a consequence (`TauCeti.KrausLocalCondition.exists_Δ`): where `2` and `3`
+are units so is `1728`, and otherwise a witness is an integral equation with the same
+discriminant.
 
 The structure is stated over any `R` and `K`. Where `2` and `3` are invertible in `K` the first
-four fields are exactly what an integral equation with these invariants forces: that is how the
+three fields are exactly what an integral equation with these invariants forces: that is how the
 `←` direction of `TauCeti.krausLocalCondition_iff_exists_integralModel` obtains them, and it is
 why that direction needs the hypothesis, since without it a pair of `c`-invariants need not
 determine the discriminant (`WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq` asks for `1728` to be
@@ -130,8 +134,6 @@ structure KrausLocalCondition : Prop where
   exists_c₄ : ∃ x : R, algebraMap R K x = c₄
   /-- `c₆` lies in `R`. -/
   exists_c₆ : ∃ x : R, algebraMap R K x = c₆
-  /-- the discriminant `(c₄³ - c₆²)/1728` lies in `R`. -/
-  exists_Δ : ∃ x : R, algebraMap R K x = (ofCInvariants c₄ c₆).Δ
   /-- the pair is nonsingular. -/
   Δ_ne_zero : (ofCInvariants c₄ c₆).Δ ≠ 0
   /-- above `2`, a witness. -/
@@ -155,6 +157,26 @@ theorem isIntegral_ofCInvariants (h6 : IsUnit (6 : R)) (h₄ : ∃ x : R, algebr
   · rw [ofCInvariants_a₄, map_mul, map_neg, hx₄, map_units_inv, hu₄, map_ofNat, div_eq_mul_inv]
   · rw [ofCInvariants_a₆, map_mul, map_neg, hx₆, map_units_inv, hu₆, map_ofNat, div_eq_mul_inv]
 
+/-- **The discriminant `(c₄³ - c₆²)/1728` lies in `R` under Kraus's condition.** Where `2` and
+`3` are units of `R` so is `1728` and the canonical equation is integral; otherwise a witness is
+an integral equation with the same discriminant, its change of variables having `u = 1`. -/
+theorem KrausLocalCondition.exists_Δ (h : KrausLocalCondition R c₄ c₆) :
+    ∃ x : R, algebraMap R K x = (ofCInvariants c₄ c₆).Δ := by
+  by_cases h2 : IsUnit (2 : R)
+  · by_cases h3 : IsUnit (3 : R)
+    · have h6 : IsUnit (6 : R) :=
+        isUnit_of_eq_two_pow_mul_three_pow h2 h3 (m := 1) (n := 1) (by norm_num)
+      have := isIntegral_ofCInvariants h6 h.exists_c₄ h.exists_c₆
+      exact Δ_integral_of_isIntegral R _
+    · obtain ⟨b₂, hb₂⟩ := h.hasKrausThreeWitness h3
+      obtain ⟨x, hx⟩ := Δ_integral_of_isIntegral R
+        ((⟨1, algebraMap R K b₂ / 12, 0, 0⟩ : VariableChange K) • ofCInvariants c₄ c₆)
+      exact ⟨x, by simpa [variableChange_Δ] using hx⟩
+  · obtain ⟨a₁, a₃, ha⟩ := h.hasKrausTwoWitness h2
+    obtain ⟨x, hx⟩ := Δ_integral_of_isIntegral R ((⟨1, algebraMap R K a₁ ^ 2 / 12,
+      algebraMap R K a₁ / 2, algebraMap R K a₃ / 2⟩ : VariableChange K) • ofCInvariants c₄ c₆)
+    exact ⟨x, by simpa [variableChange_Δ] using hx⟩
+
 /-- **Away from the residue characteristics `2` and `3` Kraus's condition carries no auxiliary
 content**: an integral, nonsingular pair of invariants satisfies it outright, because the
 canonical equation is then already integral and both witness fields are vacuous. -/
@@ -163,8 +185,7 @@ theorem krausLocalCondition_of_isUnit_six (h6 : IsUnit (6 : R))
     (hΔ : (ofCInvariants c₄ c₆).Δ ≠ 0) : KrausLocalCondition R c₄ c₆ := by
   have h2 : IsUnit (2 : R) := isUnit_of_dvd_unit ⟨3, by norm_num⟩ h6
   have h3 : IsUnit (3 : R) := isUnit_of_dvd_unit ⟨2, by norm_num⟩ h6
-  have := isIntegral_ofCInvariants h6 h₄ h₆
-  exact ⟨h₄, h₆, Δ_integral_of_isIntegral R _, hΔ, fun h ↦ absurd h2 h, fun h ↦ absurd h3 h⟩
+  exact ⟨h₄, h₆, hΔ, fun h ↦ absurd h2 h, fun h ↦ absurd h3 h⟩
 
 /-! ### Kraus's global condition over a Dedekind domain -/
 
@@ -258,7 +279,7 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
     have hΔ' : (ofCInvariants (V⁄K).c₄ (V⁄K).c₆).Δ = (V⁄K).Δ :=
       Δ_eq_of_c₄_eq_of_c₆_eq (isUnit_of_eq_two_pow_mul_three_pow (isUnit_of_invertible 2)
         (isUnit_of_invertible 3) (m := 6) (n := 3) (by norm_num)).isRegular (by simp) (by simp)
-    refine ⟨hc₄, hc₆, ⟨V.Δ, by rw [hΔ', baseChange, map_Δ]⟩, hΔ' ▸ hΔ, ?_, ?_⟩
+    refine ⟨hc₄, hc₆, hΔ' ▸ hΔ, ?_, ?_⟩
     · intro h2
       have hsum : IsUnit ((-2 : R) + 3) := by norm_num
       have h3 : IsUnit (3 : R) :=

@@ -28,24 +28,21 @@ most the extended norm of the sum. -/
 theorem Set.Subsingleton.enorm_sum_sub_tsum_le {κ E : Type*} [SeminormedAddCommGroup E]
     {u : κ → E} (hu : (Function.support u).Subsingleton) (s : Finset κ) :
     ‖∑ i ∈ s, u i - ∑' i, u i‖ₑ ≤ ‖∑' i, u i‖ₑ := by
+  classical
   rcases hu.eq_empty_or_singleton with h | ⟨i, h⟩
   · simp [Function.support_eq_empty_iff.1 h]
-  · have hi (j : κ) (hj : j ≠ i) : u j = 0 :=
-      Function.notMem_support.1 fun h' => hj (by simpa [h] using h')
-    rw [tsum_eq_single i hi]
-    by_cases his : i ∈ s
-    · simp [Finset.sum_eq_single_of_mem i his fun j _ => hi j, enorm_eq_nnnorm]
-    · rw [Finset.sum_eq_zero fun j hj => hi j fun h => his (h ▸ hj), zero_sub, enorm_neg]
+  have hi : ∀ j ≠ i, u j = 0 := Function.support_subset_iff'.1 h.subset
+  rw [tsum_eq_single i hi, Finset.sum_eq_ite i fun j _ => hi j]
+  split_ifs <;> simp
 
 namespace TauCeti
 
 /-- If `∑ i, ‖f i‖ * ‖y i‖` is summable, the extended sum `∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is its real sum
 viewed as an extended real. -/
-theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddCommGroup G]
-    [SeminormedAddCommGroup H] {f : ι → G} {y : ι → H}
+theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddGroup G]
+    [SeminormedAddGroup H] {f : ι → G} {y : ι → H}
     (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖) :
     ∑' i, ‖f i‖ₑ * ‖y i‖ₑ = ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
-  rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy]
-  simp [ENNReal.ofReal_mul]
+  simp [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy, ENNReal.ofReal_mul]
 
 end TauCeti

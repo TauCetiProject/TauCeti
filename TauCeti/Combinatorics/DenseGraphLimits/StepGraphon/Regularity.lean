@@ -78,32 +78,10 @@ theorem exists_refinement_energy_add_sq_lt (P : Finpartition (Set.univ : Set Ω)
     subst T
     simp only [SymmKernel.rectIntegral_empty_right, abs_zero] at hrect
     linarith
-  let PS := Finpartition.bipartition S
-  let PT := Finpartition.bipartition T
-  let Q := (P ⊓ PS) ⊓ PT
-  have hPS : ∀ p ∈ PS.parts, MeasurableSet p := fun _ hp =>
-    Finpartition.measurableSet_of_mem_bipartition hS hp
-  have hPT : ∀ p ∈ PT.parts, MeasurableSet p := fun _ hp =>
-    Finpartition.measurableSet_of_mem_bipartition hT hp
-  have hPPS : ∀ q ∈ (P ⊓ PS).parts, MeasurableSet q := fun _ hq =>
-    Finpartition.measurableSet_of_mem_inf hP hPS hq
-  have hQ : ∀ q ∈ Q.parts, MeasurableSet q := fun _ hq =>
-    Finpartition.measurableSet_of_mem_inf hPPS hPT hq
-  have hQP : Q ≤ P := le_trans inf_le_left inf_le_left
-  have hQS : Q ≤ PS := le_trans inf_le_left inf_le_right
-  have hQT : Q ≤ PT := inf_le_right
-  have hcard : Q.parts.card ≤ 4 * P.parts.card := by
-    calc
-      Q.parts.card ≤ (P ⊓ PS).parts.card * PT.parts.card :=
-        Finpartition.card_parts_inf_le_mul _ _
-      _ ≤ (P.parts.card * PS.parts.card) * PT.parts.card :=
-        Nat.mul_le_mul_right _ (Finpartition.card_parts_inf_le_mul P PS)
-      _ ≤ (P.parts.card * 2) * 2 := Nat.mul_le_mul
-        (Nat.mul_le_mul_left _ (Finpartition.card_parts_bipartition_le S))
-        (Finpartition.card_parts_bipartition_le T)
-      _ = 4 * P.parts.card := by omega
-  let pS : PS.parts := ⟨S, Finpartition.mem_bipartition_of_ne_bot hS_ne⟩
-  let pT : PT.parts := ⟨T, Finpartition.mem_bipartition_of_ne_bot hT_ne⟩
+  obtain ⟨Q, hQ, hQP, hQS, hQT, hcard⟩ :=
+    Finpartition.exists_measurable_le_bipartition_card_le P hP hS hT
+  let pS : (Finpartition.bipartition S).parts := ⟨S, Finpartition.mem_bipartition_of_ne_bot hS_ne⟩
+  let pT : (Finpartition.bipartition T).parts := ⟨T, Finpartition.mem_bipartition_of_ne_bot hT_ne⟩
   have havg :
       (stepGraphonAvg (μ := μ) Q hQ W).toSymmKernel.rectIntegral μ S T =
         W.toSymmKernel.rectIntegral μ S T := by

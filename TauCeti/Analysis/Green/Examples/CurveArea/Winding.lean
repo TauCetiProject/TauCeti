@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
 public import TauCeti.Analysis.Green.Winding
 
+import TauCeti.Analysis.Contour.Winding.Number.Reverse
+
 /-!
 # Signed area and winding number
 
@@ -41,19 +43,38 @@ variable {γ : ℝ → ℂ} {a b : ℝ}
 /-- The signed boundary area of a closed absolutely continuous plane curve equals the integral
 of its winding weight over the plane. The winding weight is zero on the trace, so no boundary
 nullity hypothesis is needed. -/
-theorem signedArea_eq_integral_windingWeight (hab : a < b)
+theorem signedArea_eq_integral_windingWeight
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
     signedArea γ a b = ∫ z : ℂ, Green.windingWeight γ a b z := by
-  rw [signedArea_eq_integral_circulationFun]
-  simpa only [Green.Examples.curl_area, mul_one] using
-    (Green.green_ac hab hγ hclosed (Green.Examples.contDiff_areaP (n := 1))
-      (Green.Examples.contDiff_areaQ (n := 1))).2.2
+  have key : ∀ {c d : ℝ}, c < d → AbsolutelyContinuousOnInterval γ c d → γ c = γ d →
+      signedArea γ c d = ∫ z : ℂ, Green.windingWeight γ c d z := by
+    intro c d hcd hγ hclosed
+    rw [signedArea_eq_integral_circulationFun]
+    simpa only [Green.Examples.curl_area, mul_one] using
+      (Green.green_ac hcd hγ hclosed (Green.Examples.contDiff_areaP (n := 1))
+        (Green.Examples.contDiff_areaQ (n := 1))).2.2
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · exact key hab hγ hclosed
+  · rw [signedArea_self]
+    simp [Green.windingWeight_def, Contour.windingNumber_same]
+  · -- Reversing the interval negates the signed area and, off the trace, the winding number.
+    have hrev : ∀ z, Green.windingWeight γ b a z = -Green.windingWeight γ a b z := by
+      intro z
+      rw [Green.windingWeight_def, Green.windingWeight_def, uIcc_comm b a]
+      split_ifs with hz
+      · simp
+      · rw [Contour.windingNumber_symm (Contour.cauchyPVExistsAt_of_avoidance hγ.continuousOn
+          (fun t ht heq ↦ hz ⟨t, ht, heq⟩) (hγ.intervalIntegrable_inv_sub_mul_deriv hz)),
+          Complex.neg_re]
+    have h := key hba hγ.symm hclosed.symm
+    rw [signedArea_symm] at h
+    simpa only [hrev, integral_neg, neg_neg] using congrArg Neg.neg h
 
 /-- If a closed absolutely continuous curve has constant integer winding number `n` throughout
 the filled hull away from its trace, then its signed area is `n` times the Lebesgue area of that
 region. In particular, `n = 1` and `n = -1` give the two orientations of a Jordan curve once its
 index theorem is known. -/
-theorem signedArea_eq_intCast_mul_volume_real_of_windingNumber_eq (hab : a < b)
+theorem signedArea_eq_intCast_mul_volume_real_of_windingNumber_eq
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (n : ℤ)
     (hindex : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b),
       Contour.windingNumber γ a b z = n) :
@@ -64,7 +85,7 @@ theorem signedArea_eq_intCast_mul_volume_real_of_windingNumber_eq (hab : a < b)
     isCompact_uIcc.image_of_continuousOn hγ.continuousOn
   have hD : MeasurableSet D :=
     (IsClosed.isOpen_filledHull_sdiff hK.isClosed).measurableSet
-  rw [signedArea_eq_integral_windingWeight hab hγ hclosed,
+  rw [signedArea_eq_integral_windingWeight hγ hclosed,
     hγ.windingWeight_eq_indicator_of_index hclosed n hindex,
     integral_indicator_const (n : ℝ) hD]
   simp only [Measure.real, smul_eq_mul, D]

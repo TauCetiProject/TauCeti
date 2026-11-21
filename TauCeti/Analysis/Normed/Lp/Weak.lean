@@ -114,7 +114,7 @@ theorem weakLpNorm_le_norm (x : ι → E) :
   apply (weakLpNorm_le_iff p x (norm_nonneg _)).2
   intro f
   rw [mul_comm]
-  exact PiLp.norm_toLp_comp_le (norm_nonneg f) f.le_opNorm x
+  exact PiLp.norm_toLp_comp_le f.le_opNorm x
 
 /-- Applying a bounded operator to a family multiplies its weak norm by at most the
 operator norm. -/

@@ -82,8 +82,8 @@ theorem mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero
     let G := translate g (mapGL ℝ γ)
     -- `G = O(‖q_N‖ ^ N) = O(‖q‖)` at `i∞`, and `‖q‖ = O(Δ)`.
     have hG : ⇑G =O[atImInfty] fun τ : ℍ ↦ ‖Function.Periodic.qParam N τ‖ ^ N :=
-      ((TauCeti.ModularFormClass.cuspFunction_isBigO_pow_of_qExpansion_coeff_eq_zero G hN hNγ N
-        (hg γ)).comp_tendsto (qParam_tendsto_atImInfty hN)).congr_left fun τ ↦
+      (((TauCeti.ModularFormClass.cuspFunction_isBigO_pow_iff_qExpansion_coeff_eq_zero G hN
+        hNγ).mpr (hg γ)).comp_tendsto (qParam_tendsto_atImInfty hN)).congr_left fun τ ↦
           eq_cuspFunction τ hN.ne' (SlashInvariantFormClass.periodic_comp_ofComplex G hNγ)
     have hq : (fun τ : ℍ ↦ ‖Function.Periodic.qParam N τ‖ ^ N) =
         fun τ ↦ Real.exp (-2 * Real.pi * τ.im) := by

@@ -46,7 +46,7 @@ theorem integrableExpSet_id_generalizedParetoMeasure {s ξ : ℝ} (hs : 0 < s) :
           (μ := generalizedParetoMeasure s ξ) (a := s / ξ) (b := 1)).symm
   · simp only [hξ, ↓reduceIte]
     by_cases hzero : ξ = 0
-    · simp [hzero, generalizedParetoMeasure_zero hs,
+    · simp [hzero, generalizedParetoMeasure_zero,
         integrableExpSet_id_expMeasure (inv_pos.mpr hs)]
     · simp only [hzero, ↓reduceIte]
       have hneg : ξ < 0 := lt_of_le_of_ne (le_of_not_gt hξ) hzero

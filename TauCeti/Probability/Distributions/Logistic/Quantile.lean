@@ -38,7 +38,7 @@ theorem strictMonoOn_quantile_logisticMeasure (hs : 0 < s) :
 /-- The logistic quantile is continuous on the interior probability levels. -/
 theorem continuousOn_quantile_logisticMeasure (hs : 0 < s) :
     ContinuousOn (logisticMeasure m s).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_logisticMeasure hs m)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_logisticMeasure hs m).strictMonoOn _)
 
 /-- Logistic quantiles tend to minus infinity as the level decreases to zero. -/

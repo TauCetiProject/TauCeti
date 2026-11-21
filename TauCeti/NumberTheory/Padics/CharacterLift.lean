@@ -164,7 +164,7 @@ theorem exists_castHom_toAdd_ne_toAdd_piProdQuotientSpanToZMod
     rfl
   have hp : (p : ZMod (p ^ 2)) * Multiplicative.toAdd (φ t) = 0 := by
     rw [← nsmul_eq_mul, ← toAdd_pow, ← map_pow, hsq, map_one, toAdd_one]
-  rw [ZMod.castHom_apply, ZMod.cast_eq_zero_of_natCast_mul_eq_zero hp] at h
+  rw [ZMod.castHom_apply, ZMod.cast_eq_zero_iff_natCast_mul_eq_zero.2 hp] at h
   exact zero_ne_one h
 
 end PadicInt

@@ -12,7 +12,7 @@ public import TauCeti.Probability.DeFinetti.Theorem
 /-!
 # De Finetti's theorem for exchangeable arrays
 
-The consequences of de Finetti's theorem for the array symmetries: over a nonempty standard Borel
+The consequences of de Finetti's theorem for the array symmetries: over a standard Borel
 state space, the rows and columns of a separately exchangeable array are conditionally i.i.d., as
 are the rows of a block of a jointly exchangeable one, and the directing measures produced this way
 inherit the symmetry of the array.
@@ -55,21 +55,21 @@ namespace Probability
 variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω] {μ : Measure Ω}
   {X : ℕ × ℕ → Ω → α} {e f : ℕ → ℕ}
 
-/-- **De Finetti's theorem for the rows of a separately exchangeable array.** Over a nonempty
+/-- **De Finetti's theorem for the rows of a separately exchangeable array.** Over a
 standard Borel state space `α`, the rows of a separately exchangeable array are conditionally
 i.i.d. as random elements of path space `ℕ → α`.
 
 This is the first step of the standard route to the Aldous–Hoover representation. Path space is
 standard Borel because `α` is (`StandardBorelSpace.pi_countable`), so the hypotheses are exactly
 de Finetti's. -/
-theorem SeparatelyExchangeable.conditionallyIID_arrayRow [StandardBorelSpace α] [Nonempty α]
+theorem SeparatelyExchangeable.conditionallyIID_arrayRow [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ConditionallyIID μ (arrayRow X) :=
   deFinetti (aemeasurable_arrayRow hX) (h.exchangeable_arrayRow hX)
 
 /-- **De Finetti's theorem for the columns of a separately exchangeable array.** -/
-theorem SeparatelyExchangeable.conditionallyIID_arrayCol [StandardBorelSpace α] [Nonempty α]
+theorem SeparatelyExchangeable.conditionallyIID_arrayCol [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ConditionallyIID μ (arrayCol X) :=
@@ -77,9 +77,9 @@ theorem SeparatelyExchangeable.conditionallyIID_arrayCol [StandardBorelSpace α]
 
 
 /-- **De Finetti's theorem for the rows of a block of a jointly exchangeable array.** Over a
-nonempty standard Borel state space, the rows of a block along injections with disjoint ranges are
+standard Borel state space, the rows of a block along injections with disjoint ranges are
 conditionally i.i.d. as random elements of path space. -/
-theorem JointlyExchangeable.conditionallyIID_arrayRow_arrayBlock [StandardBorelSpace α] [Nonempty α]
+theorem JointlyExchangeable.conditionallyIID_arrayRow_arrayBlock [StandardBorelSpace α]
     [IsFiniteMeasure μ] (h : JointlyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ)
     (he : Function.Injective e) (hf : Function.Injective f)
     (hd : Disjoint (Set.range e) (Set.range f)) :
@@ -90,7 +90,7 @@ theorem JointlyExchangeable.conditionallyIID_arrayRow_arrayBlock [StandardBorelS
 /-- **De Finetti's theorem for the rows of a block of pairs.** The conclusion simultaneously
 describes both orientations of the selected rectangular cross-block. -/
 theorem JointlyExchangeable.conditionallyIID_arrayRow_arrayBlockPair [StandardBorelSpace α]
-    [Nonempty α] [IsFiniteMeasure μ] (h : JointlyExchangeable μ X)
+    [IsFiniteMeasure μ] (h : JointlyExchangeable μ X)
     (hX : ∀ p, AEMeasurable (X p) μ) (he : Function.Injective e) (hf : Function.Injective f)
     (hd : Disjoint (Set.range e) (Set.range f)) :
     ConditionallyIID μ (arrayRow (arrayBlockPair X e f)) :=
@@ -102,7 +102,7 @@ theorem JointlyExchangeable.conditionallyIID_arrayRow_arrayBlockPair [StandardBo
 exchangeable array has a directing measure for its row process whose law is invariant under every
 permutation of the path coordinates. -/
 theorem SeparatelyExchangeable.exists_directing_arrayRow_mixingLaw_invariant
-    [StandardBorelSpace α] [Nonempty α]
+    [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α), ConditionallyIIDWith μ (arrayRow X) ν ∧
@@ -114,7 +114,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_mixingLaw_invariant
 
 /-- **De Finetti for the columns, with the inherited mixing-law symmetry.** -/
 theorem SeparatelyExchangeable.exists_directing_arrayCol_mixingLaw_invariant
-    [StandardBorelSpace α] [Nonempty α]
+    [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α), ConditionallyIIDWith μ (arrayCol X) ν ∧

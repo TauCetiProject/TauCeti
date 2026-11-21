@@ -26,7 +26,7 @@ public section
 
 namespace FiniteGaloisIntermediateField
 
-/-- **A finite Galois subextension of a number field is a number field.** -/
+/-- **A finite Galois subextension of an extension of a number field is a number field.** -/
 instance instNumberField {K L : Type*} [Field K] [NumberField K] [Field L] [Algebra K L]
     (E : FiniteGaloisIntermediateField K L) : NumberField E :=
   .of_module_finite K E

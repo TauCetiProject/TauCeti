@@ -11,8 +11,8 @@ public import TauCeti.Topology.ContinuousMap.Ascoli
 /-!
 # Equicontinuous curves in `ℓ²` without compact closure
 
-The Arzelà–Ascoli theorem `ArzelaAscoli.isCompact_closure_of_equicontinuous` asks that the values
-of the maps at each point lie in a common compact set. This hypothesis cannot be replaced by
+The Arzelà–Ascoli theorem `ArzelaAscoli.isCompact_closure_range_of_equicontinuous` asks that the
+values of the maps at each point lie in a common compact set. This hypothesis cannot be replaced by
 equicontinuity and a common starting point when the target is not proper. The curves
 `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of `ℓ²` are `1`-Lipschitz and all
 start at `0`, but no subsequence converges uniformly, because the endpoints `eₙ` stay at distance
@@ -33,7 +33,7 @@ namespace TauCeti
 `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors `eₙ` of `ℓ²` are `1`-Lipschitz and
 all start at `0`, but they form a set without compact closure in `C([0, 1], ℓ²)`, because their
 endpoints are at distance at least `1` from each other. The pointwise compactness hypothesis of
-`ArzelaAscoli.isCompact_closure_of_equicontinuous` therefore cannot be dropped. -/
+`ArzelaAscoli.isCompact_closure_range_of_equicontinuous` therefore cannot be dropped. -/
 theorem exists_lipschitzWith_one_not_isCompact_closure_range :
     ∃ γ : ℕ → C(Icc (0 : ℝ) 1, lp (fun _ : ℕ ↦ ℝ) 2),
       (∀ n, LipschitzWith 1 (γ n)) ∧ (∀ n, γ n ⟨0, left_mem_Icc.mpr zero_le_one⟩ = 0) ∧

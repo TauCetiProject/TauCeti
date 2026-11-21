@@ -126,7 +126,7 @@ def closedSubgroup : ClosedSubgroupScheme PrimeField.groupScheme :=
 
 /-- The positive closed subgroup is represented by its named inclusion. -/
 @[simp]
-theorem coe_closedSubgroup : closedSubgroup.1 = Subobject.mk inclusion :=
+theorem coe_closedSubgroup : closedSubgroup.val = Subobject.mk inclusion :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- A positive simple-root subgroup factored through the positive subgroup. -/
@@ -225,9 +225,7 @@ theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} (ZMod 3)}
 /-- The positive subgroup is smooth over its prime field. -/
 instance algebraSmooth_coordinateHopfAlgebra : Algebra.Smooth (ZMod 3) coordinateHopfAlgebra := by
   let : ∀ j, IsReduced (generatorCodomain j) := by
-    rintro (_ | ⟨⟩)
-    · exact AdditiveGroup.isReduced_coordinateHopfAlgebra (ZMod 3)
-    · exact inferInstance
+    rintro (_ | ⟨⟩) <;> exact inferInstance
   exact (smoothCommHopfAlgProperty_iff _).mp
     (CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField
       generator)
@@ -243,7 +241,7 @@ theorem geometricallyConnected_coordinateHopfAlgebra :
     geometricallyConnectedCommHopfAlgProperty (ZMod 3) coordinateHopfAlgebra := by
   apply geometricallyConnectedCommHopfAlgProperty_commonKernelQuotient_of_geometricallyConnected
     generator
-  rintro (i | ⟨⟩)
+  rintro (_ | ⟨⟩)
   · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra (ZMod 3)
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing (ZMod 3)
       (SplitTorus.characterGroup (Fin 2))

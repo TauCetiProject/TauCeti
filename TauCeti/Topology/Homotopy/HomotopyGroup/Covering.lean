@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Topology.Homotopy.Cube.Basic
+public import TauCeti.Topology.Homotopy.GenLoop.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
@@ -24,12 +24,9 @@ Both halves are consequences of Mathlib's covering-space lifting toolkit.
   `IsCoveringMap.homotopicRel_iff_comp`, whose hypothesis "the two maps agree at a point of
   the relative set" is supplied by the corner `0` of the cube, where both generalized loops
   take the value `e`.
-* **Surjectivity** needs dimension `≥ 2`. Splitting off one cube coordinate turns a
-  generalized loop `f : I^N → X` into a homotopy `I × I^{j ≠ i} → X` starting at the constant
-  map `p e`. Mathlib's `IsCoveringMap.liftHomotopyRel` lifts it relative to the boundary of the
-  remaining coordinates, so the lift is constant there and at both ends of the split
-  coordinate. A second coordinate, supplied by `Nontrivial N`, ensures that every boundary face
-  is of one of these forms.
+* **Surjectivity** needs dimension `≥ 2`. There postcomposition with `p` is a homeomorphism
+  `IsCoveringMap.genLoopHomeomorph : Ω^ N E e ≃ₜ Ω^ N X (p e)` of spaces of generalized loops,
+  whose inverse lifts each generalized loop in `X` to one in `E` based at `e`.
 
 The conclusion is packaged as a multiplicative equivalence `π_n(E, e) ≃* π_n(X, p e)` for
 `n ≥ 2`, in the general indexed form and in the `Fin (n + 2)` form.
@@ -48,8 +45,8 @@ The conclusion is packaged as a multiplicative equivalence `π_n(E, e) ≃* π_n
 
 ## References
 
-The lifting machinery consumed here (`IsCoveringMap.liftHomotopyRel`,
-`IsCoveringMap.homotopicRel_iff_comp`) is Junyan Xu's
+The lifting machinery consumed here and in `TauCeti.Topology.Homotopy.GenLoop.Covering`
+(`IsCoveringMap.liftHomotopy`, `IsCoveringMap.homotopicRel_iff_comp`) is Junyan Xu's
 covering-space API in `Mathlib.Topology.Homotopy.Lifting` and
 `Mathlib.Topology.Covering.Basic`. Compare Proposition 4.1 of [hatcher02].
 -/
@@ -83,50 +80,14 @@ theorem map_homotopic_iff [Nonempty N] (hp : IsCoveringMap p) {F G : Ω^ N E e} 
 /-- Every generalized loop in the base of a covering map lifts, in dimensions `≥ 2`, to a
 generalized loop in the total space based at any prescribed point `e` of the fibre.
 
-The index type is assumed nontrivial (equivalently: the dimension is at least `2`), so after
-splitting off one coordinate there is another coordinate whose boundary can be held fixed by a
-relative homotopy lift. In dimension `1` the statement is false: a loop in the base lifts to a
-*path* in the total space, whose endpoint need not return to `e`. -/
+The index type is assumed nontrivial (equivalently: the dimension is at least `2`); the lift is
+the inverse of the homeomorphism `IsCoveringMap.genLoopHomeomorph`. In dimension `1` the
+statement is false: a loop in the base lifts to a *path* in the total space, whose endpoint need
+not return to `e`. -/
 theorem map_surjective [Nontrivial N] (hp : IsCoveringMap p) (f : Ω^ N X (p e)) :
-    ∃ F : Ω^ N E e, map ⟨p, hp.continuous⟩ rfl F = f := by
-  classical
-  -- Read `f` as a homotopy in the `i`-th cube coordinate; it starts at the constant map `p e`.
-  let i := Classical.arbitrary N
-  let : Nonempty { j // j ≠ i } := ⟨⟨(exists_ne i).choose, (exists_ne i).choose_spec⟩⟩
-  let q : C(I × I^{ j // j ≠ i }, X) := (f : C(I^N, X)).comp (Cube.insertAt i)
-  let cX : C(I^{ j // j ≠ i }, X) := .const _ (p e)
-  let cE : C(I^{ j // j ≠ i }, E) := .const _ e
-  let qRel : cX.HomotopyRel cX (Cube.boundary { j // j ≠ i }) :=
-    { toContinuousMap := q
-      map_zero_left := fun a =>
-        _root_.GenLoop.boundary f _ (Cube.insertAt_boundary i (Or.inl (Or.inl rfl)))
-      map_one_left := fun a =>
-        _root_.GenLoop.boundary f _ (Cube.insertAt_boundary i (Or.inl (Or.inr rfl)))
-      prop' := fun t a ha =>
-        _root_.GenLoop.boundary f _ (Cube.insertAt_boundary i (Or.inr ha)) }
-  let QRel : cE.HomotopyRel cE (Cube.boundary { j // j ≠ i }) :=
-    hp.liftHomotopyRel qRel ⟨0, TauCeti.zero_mem_cubeBoundary, rfl⟩
-      (funext fun _ => rfl) (funext fun _ => rfl)
-  let P : Ω (Ω^ { j // j ≠ i } E e) _root_.GenLoop.const :=
-    { toContinuousMap :=
-        ⟨fun t => ⟨QRel.toContinuousMap.curry t, fun y hy => QRel.prop t y hy⟩,
-          QRel.toContinuousMap.curry.continuous.subtype_mk _⟩
-      source' := by ext y; exact QRel.apply_zero y
-      target' := by ext y; exact QRel.apply_one y }
-  let F : Ω^ N E e := _root_.GenLoop.fromLoop i P
-  have hQ : p ∘ QRel.toContinuousMap = q := by
-    simp only [QRel, IsCoveringMap.liftHomotopyRel]
-    exact hp.liftHomotopy_lifts _ _ _
-  -- This records the reduction through the `P` wrapper used to assemble `F`.
-  have hF_apply (y : I^N) : F y = QRel (Cube.splitAt i y) := by
-    rw [_root_.GenLoop.fromLoop_apply]
-    rfl
-  have hpF : ∀ y, p (F y) = f y := fun y => by
-    calc
-      p (F y) = p (QRel (Cube.splitAt i y)) := congr_arg p (hF_apply y)
-      _ = q (Cube.splitAt i y) := congrFun hQ (Cube.splitAt i y)
-      _ = f y := congr_arg f (Homeomorph.symm_apply_apply (Cube.splitAt i) y)
-  exact ⟨F, _root_.GenLoop.ext _ _ fun y => (_root_.GenLoop.map_apply _ _ F y).trans (hpF y)⟩
+    ∃ F : Ω^ N E e, map ⟨p, hp.continuous⟩ rfl F = f :=
+  ⟨(hp.genLoopHomeomorph e).symm f, _root_.GenLoop.ext _ _ fun y =>
+    (_root_.GenLoop.map_apply _ _ _ y).trans (hp.apply_genLoopHomeomorph_symm_apply e f y)⟩
 
 end GenLoop
 

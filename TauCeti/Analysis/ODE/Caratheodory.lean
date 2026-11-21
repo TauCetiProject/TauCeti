@@ -29,7 +29,9 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) a x₀ x` on `[a, b]`, for `x`
 (`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`) and that the solution is unique
 (`TauCeti.eqOn_of_forall_mem_Icc_eq_picard`). For continuous coefficients and classical
 solutions on the whole line, `Continuous.eq_of_hasDerivAt_clm_apply` deduces uniqueness for
-`v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`.
+`v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`, and
+`Continuous.eqOn_Ici_of_hasDerivAt_clm_apply` does the same in forward time on a half-line
+`[a, ∞)` from `ODE_solution_unique_of_mem_Icc_right`.
 
 Linear equations with merely measurable, bounded coefficients arise as the Galerkin
 approximations of linear parabolic equations, whose coefficients are only measurable in time.
@@ -91,7 +93,7 @@ private noncomputable def next (hab : a ≤ b)
       exact integrableOn_Icc hab hM hK hF y
     have h := continuousOn_primitive_interval hI
     rw [uIcc_of_le hab] at h
-    exact (continuousOn_const.add h).comp_continuous continuous_subtype_val Subtype.prop
+    exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
 
 private theorem next_apply (hab : a ≤ b)
     (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
@@ -117,21 +119,21 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
     set Z := (next hab hM hK hF x₀)^[n] z
     have hint : ∀ W : C(Icc a b, E), IntervalIntegrable
         (fun s ↦ M s (IccExtend hab W s) + F s) volume a t := fun W ↦
-      (intervalIntegrable_iff_integrableOn_Icc_of_le t.2.1).2
-        ((integrableOn_Icc hab hM hK hF W).mono_set (Icc_subset_Icc_right t.2.2))
+      (intervalIntegrable_iff_integrableOn_Icc_of_le t.property.1).2
+        ((integrableOn_Icc hab hM hK hF W).mono_set (Icc_subset_Icc_right t.property.2))
     have hLae : ∀ᵐ s, s ∈ Ioc a b → ‖M s‖ ≤ L := by
       rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     rw [iterate_succ_apply', iterate_succ_apply', dist_eq_norm, next_apply, next_apply,
       ODE.picard_apply, ODE.picard_apply, add_sub_add_left_eq_sub,
       ← intervalIntegral.integral_sub (hint Y) (hint Z)]
     calc _ ≤ ∫ s in a..t, L * ((L * (s - a)) ^ n / n ! * dist y z) := by
-          refine norm_integral_le_of_norm_le t.2.1 ?_
+          refine norm_integral_le_of_norm_le t.property.1 ?_
             (Continuous.intervalIntegrable (by fun_prop) _ _)
           filter_upwards [hLae] with s hs hst
-          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.2.2⟩
+          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.property.2⟩
           rw [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs',
             IccExtend_of_mem hab _ hs']
-          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.2.2⟩) ?_
+          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩) ?_
             (norm_nonneg _) hL₀)
           simpa [dist_eq_norm] using ih ⟨s, hs'⟩
       _ = (L * (t - a)) ^ (n + 1) / (n + 1)! * dist y z := by
@@ -165,9 +167,9 @@ private theorem exists_contractingWith_iterate_next :
   rw [Real.coe_toNNReal _ h₀, ContinuousMap.dist_le (by positivity)]
   intro t
   refine (dist_iterate_next_apply_le hab hM hK hF hK' (le_max_right _ _) n y z t).trans ?_
-  have h₁ : 0 ≤ K' * (t - a) := mul_nonneg (le_max_right _ _) (sub_nonneg.2 t.2.1)
+  have h₁ : 0 ≤ K' * (t - a) := mul_nonneg (le_max_right _ _) (sub_nonneg.2 t.property.1)
   have h₂ : K' * (t - a) ≤ K' * (b - a) :=
-    mul_le_mul_of_nonneg_left (sub_le_sub_right t.2.2 a) (le_max_right _ _)
+    mul_le_mul_of_nonneg_left (sub_le_sub_right t.property.2 a) (le_max_right _ _)
   gcongr
 
 include hab hM hK hF in
@@ -177,11 +179,11 @@ private theorem isFixedPt_next {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t) :
     IsFixedPt (next hab hM hK hF x₀) ⟨(Icc a b).domRestrict x, hx.domRestrict⟩ := by
   ext t
-  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.2, ODE.picard_apply,
+  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.property, ODE.picard_apply,
     ODE.picard_apply]
   congr 1
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
-  have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.2 hs
+  have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.property hs
   simp [IccExtend_of_mem hab _ hs']
 
 end CaratheodoryLinear
@@ -249,3 +251,21 @@ theorem Continuous.eq_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
   exact ODE_solution_unique_of_mem_Ioo (v := fun s ↦ B s) (s := fun _ ↦ univ) hLip
     (t₀ := t₀) ⟨by grind, by grind⟩ (fun s _ ↦ ⟨hv s, mem_univ _⟩)
     (fun s _ ↦ ⟨hw s, mem_univ _⟩) h ⟨by grind, by grind⟩
+
+/-- **Forward uniqueness for time-dependent linear equations.** Two solutions of `v' = B(t) v` on
+the half-line `[a, ∞)`, for a continuous family `B` of bounded operators, that agree at time `a`
+agree on `[a, ∞)`. The equation is only required at times `t ≥ a` (with a two-sided derivative at
+`a`), so the two solutions may come from equations that only agree on `[a, ∞)`. -/
+theorem Continuous.eqOn_Ici_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {v w : ℝ → X} {a : ℝ}
+    (hv : ∀ t, a ≤ t → HasDerivAt v (B t (v t)) t) (hw : ∀ t, a ≤ t → HasDerivAt w (B t (w t)) t)
+    (h : v a = w a) : EqOn v w (Ici a) := by
+  intro t (ht : a ≤ t)
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hB.continuousOn (s := Icc a t))
+  have hLip (s : ℝ) (hs : s ∈ Ico a t) : LipschitzOnWith (Real.toNNReal C) (B s) univ :=
+    ((B s).lipschitzWith.weaken (NNReal.le_toNNReal_of_coe_le (by
+      simpa using hC s (Ico_subset_Icc_self hs)))).lipschitzOnWith
+  exact ODE_solution_unique_of_mem_Icc_right (v := fun s ↦ B s) (s := fun _ ↦ univ) hLip
+    (HasDerivAt.continuousOn fun s hs ↦ hv s hs.1) (fun s hs ↦ (hv s hs.1).hasDerivWithinAt)
+    (fun _ _ ↦ mem_univ _) (HasDerivAt.continuousOn fun s hs ↦ hw s hs.1)
+    (fun s hs ↦ (hw s hs.1).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) h ⟨ht, le_rfl⟩

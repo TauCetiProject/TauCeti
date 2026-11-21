@@ -120,15 +120,9 @@ theorem isCharacterMap_geckGraphAutPoints (A : Type v) [CommRing A] :
     IsCharacterMap (t.geckWeightTorusPoints ht A) (t.geckGraphAutPoints ht hsigma A).toMonoidHom
       (diagramAut ht hsigma)⁻¹.toHom.weightMap :=
   isCharacterMap_iff.mpr fun s => by
-    have hsingle (j : Fin t.rank) : LinearMap.funLeft ℤ ℤ sigma (Pi.single j 1) =
-        (Pi.single (sigma⁻¹ j) 1 : Fin t.rank → ℤ) := by
-      ext i
-      simp [LinearMap.funLeft_apply, Pi.single_apply, Equiv.Perm.inv_def, Equiv.eq_symm_apply]
-    rw [MulEquiv.coe_toMonoidHom, geckGraphAutPoints_geckWeightTorusPoints]
-    congr 1
-    funext j
-    rw [torusPointMap_apply, diagramAut_inv_weightMap, LinearEquiv.coe_coe,
-      LinearEquiv.funCongrLeft_apply, hsingle, torusCharacter_single, zpow_one]
+    rw [MulEquiv.coe_toMonoidHom, geckGraphAutPoints_geckWeightTorusPoints,
+      diagramAut_inv_weightMap, torusPointMap_funCongrLeft]
+    simp only [Equiv.Perm.inv_def]
 
 /-- **The graph-twisted Frobenius acts on the weight torus of the Geck carrier through
 `p ^ k • (diagramAut σ)⁻¹.weightMap`**, the composite of the character maps of its two factors. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Block.Independence
 public import TauCeti.Probability.Kernel.Randomization
+import TauCeti.Probability.Independence.Conditional
 
 /-!
 # The local conditional law of a block of array entries
@@ -50,10 +51,9 @@ statement is stated for a whole block at once.
 
 In the namespace `TauCeti.Probability.SeparatelyExchangeable`:
 
-* `condDistrib_subblock_rest_ae_eq_local`: the conditional law of `B` given the
-  reservoir and the entries outside the hidden block is the kernel given the reservoir;
 * `jointLaw_subblock_rest_eq_compProd_local`: the joint law of the reservoir, the
-  entries outside the hidden block and `B` factors through that kernel;
+  entries outside the hidden block and `B` factors through the conditional kernel of `B` given
+  the reservoir alone;
 * `exists_local_subblock_coding`: one fresh uniform variable generates `B` from the reservoir,
   with the joint law of the reservoir, the entries outside the hidden block and `B` intact.
 
@@ -75,31 +75,6 @@ namespace TauCeti.Probability
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
   {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
 
-/-- **Conditional on the reservoir and the entries outside the hidden block, the law of a
-sub-block of the hidden block is the law given the reservoir alone.** The equality is almost
-everywhere for the joint law of the two observations, the reservoir and the complement of the
-hidden block; the ungenerated remainder of the hidden block is not observed. -/
-theorem SeparatelyExchangeable.condDistrib_subblock_rest_ae_eq_local
-    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p)
-    {S T : Set ℕ} (hS : S.Infinite) (hT : T.Infinite)
-    {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C) (hCsub : C ⊆ S ×ˢ T) :
-    let R : Set (ℕ × ℕ) := S ×ˢ T \ C
-    let D : Set (ℕ × ℕ) := Cᶜ
-    condDistrib (fun x : ℕ × ℕ → α ↦ B.domRestrict x)
-        (fun x ↦ (R.domRestrict x, D.domRestrict x)) ρ
-      =ᵐ[ρ.map fun x ↦ (R.domRestrict x, D.domRestrict x)]
-        (condDistrib (fun x : ℕ × ℕ → α ↦ B.domRestrict x) R.domRestrict ρ).prodMkRight _ := by
-  dsimp
-  have hk : Measurable fun x : ℕ × ℕ → α ↦ (S ×ˢ T \ C).domRestrict x :=
-    Set.measurable_restrict _
-  have hg : Measurable fun x : ℕ × ℕ → α ↦ (Cᶜ : Set (ℕ × ℕ)).domRestrict x :=
-    Set.measurable_restrict _
-  have hf : Measurable fun x : ℕ × ℕ → α ↦ B.domRestrict x :=
-    Set.measurable_restrict _
-  exact (condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight hf hg hk).mp
-    (hρ.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset hS hT hC hBsub
-      hCsub).symm
-
 /-- **The joint law of the reservoir, the entries outside the hidden block and a sub-block of
 the hidden block factors through the conditional kernel given the reservoir.** -/
 theorem SeparatelyExchangeable.jointLaw_subblock_rest_eq_compProd_local
@@ -112,14 +87,10 @@ theorem SeparatelyExchangeable.jointLaw_subblock_rest_eq_compProd_local
       (ρ.map fun x ↦ (R.domRestrict x, D.domRestrict x)) ⊗ₘ
         (condDistrib (fun x : ℕ × ℕ → α ↦ B.domRestrict x) R.domRestrict ρ).prodMkRight _ := by
   dsimp
-  have hk : AEMeasurable
-      (fun x : ℕ × ℕ → α ↦ ((S ×ˢ T \ C).domRestrict x,
-        (Cᶜ : Set (ℕ × ℕ)).domRestrict x)) ρ :=
-    ((Set.measurable_restrict _).prodMk (Set.measurable_restrict _)).aemeasurable
-  have hf : AEMeasurable (fun x : ℕ × ℕ → α ↦ B.domRestrict x) ρ :=
-    (Set.measurable_restrict _).aemeasurable
-  exact (condDistrib_ae_eq_iff_measure_eq_compProd hk hf _).mp
-    (hρ.condDistrib_subblock_rest_ae_eq_local hS hT hC hBsub hCsub)
+  exact CondIndepFun.map_prod_eq_compProd_prodMkRight (Set.measurable_restrict _)
+    (Set.measurable_restrict _) (Set.measurable_restrict _)
+    (hρ.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset hS hT hC hBsub
+      hCsub).symm
 
 /-- **One fresh uniform variable can generate a sub-block of the hidden block while preserving
 its joint law with every entry outside the hidden block.** The coding function uses only the

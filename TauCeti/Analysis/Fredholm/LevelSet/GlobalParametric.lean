@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Parametric
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 
 /-!
 # Global parametric transversality for Fredholm equations
@@ -14,7 +15,8 @@ Let `f : E × Λ → F` be a parametrized equation. A parameter `l` is regular a
 `c` when the fixed-parameter linearization of `x ↦ f (x, l)` is surjective at every solution.
 This file proves that the regular parameters form a residual, and hence dense, subset of `Λ`
 provided the universal linearization is surjective and the fixed-parameter linearization is
-Fredholm at every solution.
+Fredholm at every solution, and `f` is smooth enough there: of class `C^k` for Smale's
+threshold `k > max (i, 0)`, where `i` is the index of the fixed-parameter linearization.
 
 The file also introduces regularity on a subset `U ⊆ E × Λ`, which asks for surjectivity only at
 the solutions lying in `U`. It reduces to regularity for `U = univ` and is monotone in `U`. The
@@ -34,10 +36,15 @@ of Banach bundles require a separate bundle-level extension.
 ## Main results
 
 * `TauCeti.IsRegularParameter`: every solution at a parameter has surjective fixed-parameter
-  linearization.
-* `TauCeti.IsRegularParameterOn`: the variant restricted to the solutions in a set `U`; it is
-  `TauCeti.IsRegularParameter` for `U = univ` (`TauCeti.isRegularParameterOn_univ`) and is
-  monotone in `U` (`TauCeti.IsRegularParameterOn.mono`).
+  linearization, which implies differentiability there
+  (`TauCeti.IsRegularParameter.differentiableAt`).
+* `TauCeti.IsRegularParameterOn`: the variant restricted to the solutions in a set `U`
+  (`TauCeti.IsRegularParameterOn.differentiableAt`); it is
+  `TauCeti.IsRegularParameter` for `U = univ` (`TauCeti.isRegularParameterOn_univ`), holds vacuously
+  on `∅` (`TauCeti.isRegularParameterOn_empty`), distributes over binary and indexed unions
+  (`TauCeti.isRegularParameterOn_union`, `TauCeti.isRegularParameterOn_iUnion`), is monotone in `U`
+  (`TauCeti.IsRegularParameterOn.mono`), and depends only on the restriction to `U` when `U` is open
+  (`IsOpen.isRegularParameterOn_congr`).
 * `TauCeti.isMeagre_setOf_not_isRegularParameter`: the non-regular parameters of a universal
   Fredholm equation form a meagre set.
 * `TauCeti.mem_residual_setOf_isRegularParameter`: the regular parameters form a residual set.
@@ -118,14 +125,65 @@ theorem IsRegularParameter.isRegularParameterOn {f : E × Λ → F} {U : Set (E 
     {l : Λ} (h : IsRegularParameter f c l) : IsRegularParameterOn f U c l :=
   (isRegularParameterOn_univ.2 h).mono (subset_univ U)
 
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- Every parameter is vacuously regular on the empty set. -/
+@[simp]
+theorem isRegularParameterOn_empty (f : E × Λ → F) (c : F) (l : Λ) :
+    IsRegularParameterOn f ∅ c l :=
+  fun _ h ↦ False.elim h
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- Regularity on a binary union holds if and only if it holds on each piece. -/
+@[simp]
+theorem isRegularParameterOn_union {f : E × Λ → F} {U V : Set (E × Λ)} {c : F} {l : Λ} :
+    IsRegularParameterOn f (U ∪ V) c l ↔
+      IsRegularParameterOn f U c l ∧ IsRegularParameterOn f V c l := by
+  simp only [isRegularParameterOn_iff, mem_union]
+  exact ⟨fun h ↦ ⟨fun x hU ↦ h x (.inl hU), fun x hV ↦ h x (.inr hV)⟩,
+    fun ⟨hU, hV⟩ x hUV ↦ hUV.elim (hU x) (hV x)⟩
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- Regularity on an indexed union holds if and only if it holds on each member. -/
+@[simp]
+theorem isRegularParameterOn_iUnion {ι : Sort*} {f : E × Λ → F} {U : ι → Set (E × Λ)}
+    {c : F} {l : Λ} :
+    IsRegularParameterOn f (⋃ i, U i) c l ↔ ∀ i, IsRegularParameterOn f (U i) c l := by
+  simp only [isRegularParameterOn_iff, mem_iUnion, forall_exists_index]
+  exact ⟨fun h i x hU ↦ h x i hU, fun h x i hU ↦ h i x hU⟩
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- On an open set `U`, `TauCeti.IsRegularParameterOn` depends only on the values of `f` on `U`. -/
+theorem _root_.IsOpen.isRegularParameterOn_congr {f g : E × Λ → F} {U : Set (E × Λ)}
+    (hU : IsOpen U) {c : F} {l : Λ} (hEq : EqOn f g U) :
+    IsRegularParameterOn f U c l ↔ IsRegularParameterOn g U c l := by
+  rw [isRegularParameterOn_iff, isRegularParameterOn_iff]
+  refine forall_congr' fun x ↦ imp_congr_right fun hxU ↦ ?_
+  have hev : f =ᶠ[𝓝 (x, l)] g := hEq.eventuallyEq_of_mem (hU.mem_nhds hxU)
+  rw [hEq hxU, hev.fderiv_eq]
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter equation is differentiable at each solution in its specified set. -/
+theorem IsRegularParameterOn.differentiableAt {f : E × Λ → F} {U : Set (E × Λ)}
+    {c : F} {l : Λ} {x : E} (h : IsRegularParameterOn f U c l)
+    (hxU : (x, l) ∈ U) (hx : f (x, l) = c) : DifferentiableAt ℝ f (x, l) := by
+  have hs := isRegularParameterOn_iff.1 h x hxU hx
+  rw [ContinuousLinearMap.coe_comp] at hs
+  exact differentiableAt_of_fderiv_surjective hs.of_comp
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter equation is differentiable at each solution. -/
+theorem IsRegularParameter.differentiableAt {f : E × Λ → F} {c : F} {l : Λ} {x : E}
+    (h : IsRegularParameter f c l) (hx : f (x, l) = c) : DifferentiableAt ℝ f (x, l) :=
+  h.isRegularParameterOn.differentiableAt (mem_univ _) hx
+
 /-- **Global parametric transversality.** The non-regular parameters of a sufficiently smooth
 universal Fredholm equation form a meagre set.
 
 The hypotheses are imposed only along the level set `f⁻¹(c)`. There the fixed-parameter
 linearization must be Fredholm, the total linearization must be surjective, and the smoothness
-order must meet the current Sard--Smale threshold `(dim ker)² + 1`. Second countability of the
-universal source makes the level set second countable and hence allows the local nowhere dense
-exceptional sets to be reduced to a countable family. -/
+order must meet Smale's threshold `n > max (index, 0)` for the index of the fixed-parameter
+linearization. Second countability of the universal source makes the level set second countable
+and hence allows the local nowhere dense exceptional sets to be reduced to a countable family. -/
 theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)]
     {f : E × Λ → F} {c : F} {n : ℕ∞ω}
     (hcont : ∀ z, f z = c → ContDiffAt ℝ n f z)
@@ -134,60 +192,14 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+      ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     IsMeagre {l | ¬ IsRegularParameter f c l} := by
   let S := {z : E × Λ | f z = c}
-  let fixedDeriv (z : S) : E →L[ℝ] F :=
-    (fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)
-  let parameterDeriv (z : S) : Λ →L[ℝ] F :=
-    (fderiv ℝ f z).comp (ContinuousLinearMap.inr ℝ E Λ)
   -- Package the coordinate-level local theorem as a neighbourhood of each solution together
   -- with one nowhere dense exceptional set in the common parameter space.
-  have hlocal : ∀ z : S, ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
-      ∀ w : S, w ∈ Q → ¬ Surjective (fixedDeriv w) → (w : E × Λ).2 ∈ B := by
-    intro z
-    have hn0 : n ≠ 0 := by
-      intro hnzero
-      have hpos : (0 : ℕ∞ω) <
-          ((finrank ℝ (fixedDeriv z).ker * finrank ℝ (fixedDeriv z).ker + 1 : ℕ) :
-            ℕ∞ω) := by
-        simp
-      exact (not_lt_of_ge ((hn z z.2).trans_eq hnzero) hpos)
-    have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
-      simpa only [fixedDeriv, parameterDeriv,
-        ContinuousLinearMap.coprod_comp_inl_inr] using
-        (hcont z z.2).hasStrictFDerivAt_fderiv hn0
-    have hfixed : ContinuousLinearMap.IsFredholm (fixedDeriv z) := hFred z z.2
-    have hsurj : Surjective ((fixedDeriv z).coprod (parameterDeriv z)) := by
-      simpa only [fixedDeriv, parameterDeriv,
-        ContinuousLinearMap.coprod_comp_inl_inr] using htotal z z.2
-    obtain ⟨N, hNnhds, -, -, hNnowhere⟩ :=
-      exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
-        hstrict (hcont z z.2) hfixed hsurj z.2 (hn z z.2) (U := univ) univ_mem
-    let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    let g := levelSetParameterMap hstrict hsurj
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
-      hstrict hsurj (hfixed.closedComplemented_ker_coprod hsurj) z.2 hNnhds
-    let Q : Set S := Subtype.val ⁻¹' Q₀
-    let B : Set Λ := g ''
-      (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : S) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ))})
-    have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
-    refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
-    intro w hwQ hwbad
-    obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ
-    have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
-    have hwbad' : ¬ Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : S) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ)) := by
-      rw [hwback]
-      exact hwbad
-    refine ⟨Φ w, ⟨hwN, hwbad'⟩, ?_⟩
-    exact levelSetParameterMap_levelSetChart hstrict hsurj
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2 hwsource
+  have hlocal := fun z : S => exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl z
+    (hcont z z.property) (hFred z z.property) (htotal z z.property) (hn z z.property)
   -- Second countability reduces this neighbourhood cover of the universal level set to a
   -- countable subcover.
   choose! Q hQnhds B hBnowhere hQB using hlocal
@@ -218,8 +230,7 @@ theorem mem_residual_setOf_isRegularParameter [SecondCountableTopology (E × Λ)
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+      ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     {l | IsRegularParameter f c l} ∈ residual Λ := by
   simpa only [IsMeagre, Set.compl_ofPred, Classical.not_not] using
@@ -237,8 +248,7 @@ theorem dense_setOf_isRegularParameter [SecondCountableTopology (E × Λ)]
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+      ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     Dense {l | IsRegularParameter f c l} := by
   exact dense_of_mem_residual

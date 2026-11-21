@@ -77,7 +77,7 @@ theorem exists_norm_bounds_of_module_finite (e : M ≃ₗ[R] N) :
     ∃ C > 0, ∀ x, ‖e x‖ ≤ C * ‖x‖ ∧ ‖x‖ ≤ C * ‖e x‖ := by
   have : Module.Finite R N := Module.Finite.of_surjective e.toLinearMap e.surjective
   obtain ⟨A, hA, hforward⟩ := e.toLinearMap.exists_bound_of_module_finite
-  obtain ⟨B, hB, hbackward⟩ := e.symm.toLinearMap.exists_bound_of_module_finite
+  obtain ⟨B, _, hbackward⟩ := e.symm.toLinearMap.exists_bound_of_module_finite
   refine ⟨max A B, lt_max_of_lt_left hA, fun x ↦ ⟨?_, ?_⟩⟩
   · exact (hforward x).trans (mul_le_mul_of_nonneg_right (le_max_left A B) (norm_nonneg x))
   · have hx : ‖x‖ ≤ B * ‖e x‖ := by simpa using hbackward (e x)

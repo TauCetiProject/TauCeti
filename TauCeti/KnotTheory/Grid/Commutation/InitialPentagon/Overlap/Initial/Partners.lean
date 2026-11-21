@@ -117,15 +117,14 @@ private theorem mem_initialPentagonInitialCrossOverlapPartners_of_right_eq_left
   have hrecut : E.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition := by
     rw [hDrect]
     exact E.toGridRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hleft, hsecondLeft, -, -⟩ :=
     E.initialCrossInverse_geometry hcommon hone hf hs hrow
   rw [← hDrect] at hleft hsecondLeft
   have hDcommon : D.first.left = D.second.left := hleft.trans hsecondLeft.symm
   have hDcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right := by
-    have hdata := hback.isRecutOfLeftEqLeft hDone hDcommon
+    have hdata := hback.isRecutOfLeftEqLeft hDcommon
     rcases hdata.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
     · exact (D.first.left_ne_right (hleft.trans hright)).elim
     · exact hcol
@@ -180,7 +179,7 @@ theorem mem_initialPentagonInitialCrossOverlapPartners_iff_sides
     rw [← hDrect] at hright hleft hbottom htop
     have hsecondTop : E.second.top = D.first.top := by
       rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def]
-      have hdata := hrecut.isRecutOfLeftEqLeft hone hcommon
+      have hdata := hrecut.isRecutOfLeftEqLeft hcommon
       rcases hdata.recut_branch with ⟨hcol', -⟩ | ⟨-, hmiddle, -, -⟩
       · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hcol
           (Grid.mem_cIoo_cyclic_left hcol')).elim

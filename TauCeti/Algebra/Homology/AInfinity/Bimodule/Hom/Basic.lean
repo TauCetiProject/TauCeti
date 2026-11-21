@@ -99,15 +99,8 @@ theorem barDifferential_barMap (f : AInfinityBimoduleHom MM NN)
 /-- The Taylor map of a bimodule morphism preserves suspended degree. -/
 theorem isHomogeneous_taylor (f : AInfinityBimoduleHom MM NN) :
     LinearMap.IsHomogeneous f.taylor (barGrading AA BB MM.grading).piece
-      (NN.grading.shift 1).piece 0 := by
-  have hbar := f.isHomogeneous_barMap
-  simp only [barGrading_def] at hbar ⊢
-  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  simpa only [LinearMap.comp_assoc, add_zero] using
-    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-      (NN.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (NN.grading.shift 1))
-        (BB.grading.shift 1))).comp hbar
+      (NN.grading.shift 1).piece 0 :=
+  isHomogeneous_taylorProj_comp f.isHomogeneous_barMap
 
 /-- The bar map is recovered by extending the Taylor map to the cofree bicomodule. -/
 theorem barMap_eq_bicofreeLift (f : AInfinityBimoduleHom MM NN) :
@@ -155,41 +148,14 @@ private theorem leftCoact_comp_commutator
       TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) K ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-  let _ : AddCommGroup ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) :=
-    Module.addCommMonoidToAddCommGroup R
-  let _ : AddCommGroup
-      (TensorWords R A ⊗[R] ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)) :=
-    Module.addCommMonoidToAddCommGroup R
-  let δM := Comodule.leftCoactRTensor (TensorWords R B)
-    (Comodule.leftCofreeCoact R (TensorWords R A) M)
-  let δN := Comodule.leftCoactRTensor (TensorWords R B)
-    (Comodule.leftCofreeCoact R (TensorWords R A) N)
-  let τ := (TensorWords.grading (AA.grading.shift 1)).koszulTwist 1
-  have hDN : δN ∘ₗ NN.barDifferential =
-      AA.coaugmentedBarDifferential.rTensor _ ∘ₗ δN +
-        TensorProduct.map τ NN.barDifferential ∘ₗ δN := by
-    apply LinearMap.ext
-    intro x
-    exact NN.isLeftGradedCoderivation_barDifferential.coact_apply x
-  have hDM : δM ∘ₗ MM.barDifferential =
-      AA.coaugmentedBarDifferential.rTensor _ ∘ₗ δM +
-        TensorProduct.map τ MM.barDifferential ∘ₗ δM := by
-    apply LinearMap.ext
-    intro x
-    exact MM.isLeftGradedCoderivation_barDifferential.coact_apply x
-  dsimp only [δM, δN, τ] at hDN hDM
-  obtain rfl : K = NN.barDifferential ∘ₗ F.toLinearMap - F.toLinearMap ∘ₗ MM.barDifferential :=
-    eq_sub_of_add_eq hK
-  rw [← TensorProduct.mapBilinear_apply, map_sub]
-  simp only [TensorProduct.mapBilinear_apply, LinearMap.comp_sub, LinearMap.sub_comp]
-  simp only [← LinearMap.comp_assoc, hDN, LinearMap.add_comp]
-  simp only [LinearMap.comp_assoc, hleft]
-  simp only [← LinearMap.comp_assoc]
-  simp only [LinearMap.comp_assoc, hDM, LinearMap.comp_add]
-  simp only [← LinearMap.comp_assoc, LinearMap.rTensor_comp_lTensor,
-    LinearMap.map_comp_lTensor, LinearMap.lTensor_comp_rTensor,
-    LinearMap.lTensor_comp_map]
-  abel
+  have hb := AA.isHomogeneous_coaugmentedBarDifferential
+  simp only [← TensorWords.grading_piece] at hb
+  rw [eq_sub_of_add_eq hK]
+  simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def,
+    zero_mul, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, zero_add] using
+    MM.isLeftGradedCoderivation_barDifferential.commutator_coact (p := 0)
+      NN.isLeftGradedCoderivation_barDifferential hb F.toLinearMap
+      (by simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def] using hleft)
 
 /-- For a degree-zero bicomodule map, commutation with the differentials can be checked on
 its two-counit component. -/
@@ -211,13 +177,6 @@ theorem barDifferential_comp_iff
   · intro h
     simp only [AInfinityBimodule.taylor_def, LinearMap.comp_assoc, h]
   · intro h
-    -- The bar carriers only carry additive-monoid instances; the ground ring supplies
-    -- the additive inverses needed for the commutator.
-    let _ : AddCommGroup ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) :=
-      Module.addCommMonoidToAddCommGroup R
-    let _ : AddCommGroup
-        (TensorWords R A ⊗[R] ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)) :=
-      Module.addCommMonoidToAddCommGroup R
     let K : Comodule.Hom R (TensorWords R B)
         ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
         ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) :=
@@ -255,17 +214,9 @@ theorem isHomogeneous_bicofreeLift
   simp only [barGrading_def] at hφ ⊢
   let W := TensorWords.grading (AA.grading.shift 1)
   let V := TensorWords.grading (BB.grading.shift 1)
-  let Y := W.tensorProduct (MM.grading.shift 1)
   have hL := isHomogeneous_leftCoact AA BB MM.grading
-  simp only [barGrading_def] at hL
-  have hR : LinearMap.IsHomogeneous (Comodule.cofreeCoact R (TensorWords R B)
-      (TensorWords R A ⊗[R] M)) (Y.tensorProduct V).piece
-      ((Y.tensorProduct V).tensorProduct V).piece 0 := by
-    rw [Comodule.cofreeCoact_def, LinearMap.lTensor_def,
-      TensorWords.comul_eq_deconcatenation]
-    simpa only [zero_add] using (InternalGrading.isHomogeneous_assoc_symm Y V V).comp
-      ((LinearMap.isHomogeneous_id Y.piece).tensorProduct
-        (TensorWords.isHomogeneous_deconcatenation (BB.grading.shift 1)))
+  have hR := isHomogeneous_rightCoact AA BB MM.grading
+  simp only [barGrading_def] at hL hR
   have h := ((((LinearMap.isHomogeneous_id W.piece).tensorProduct hφ).comp hL).tensorProduct
     (LinearMap.isHomogeneous_id V.piece)).comp hR
   simpa only [Comodule.bicofreeLift_toLinearMap, LinearMap.lTensor_def,

@@ -111,7 +111,7 @@ theorem conreyGenerator_three : conreyGenerator 3 = 2 := by
   rw [htot] at h
   -- Neither `0` nor `1` has order `6` modulo `9`.
   by_contra hlt
-  interval_cases hg : conreyGenerator 3
+  interval_cases _ : conreyGenerator 3
   · rw [Nat.cast_zero, orderOf_eq_zero_iff'.mpr fun n hn ↦ by rw [zero_pow hn.ne']; decide] at h
     exact absurd h (by norm_num)
   · rw [Nat.cast_one, orderOf_one] at h
@@ -306,7 +306,7 @@ theorem conreyPairing_eq_one_iff {N : ℕ} [NeZero N] (m : (ZMod N)ˣ) :
   apply (ZMod.unitsEquivPi hN).injective
   ext1 p
   rw [map_one, Pi.one_apply, ZMod.unitsEquivPi_apply,
-    ← conreyLocal_eq_one_iff (Nat.prime_of_mem_primeFactors p.2)]
+    ← conreyLocal_eq_one_iff (Nat.prime_of_mem_primeFactors p.property)]
   ext u : 1
   -- Pair `m` with the unit that is `u` modulo `p ^ v` and `1` modulo the other prime powers.
   let v : Π q : N.primeFactors, (ZMod (q ^ N.factorization q))ˣ := Pi.mulSingle p u

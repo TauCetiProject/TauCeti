@@ -6,18 +6,36 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Measure
+public import Mathlib.MeasureTheory.Measure.WithDensity
 
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Convex.Topology
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Normed.Module.Convex
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Measure of convex sets
 
+In a Hausdorff finite-dimensional real topological vector space carrying a measure positive on
+nonempty open sets, an open set contained almost everywhere in a convex set lies in its interior
+(`IsOpen.subset_interior_of_ae_le`): positivity on open sets puts the open set in the closure of
+the convex set, and in finite dimension `interior (closure s) = interior s`.
+
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
-interior (`Convex.ae_mem_interior`), so the interior meets every set that the convex set meets in
-positive measure (`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A convex set has
-positive Haar measure exactly when its interior is nonempty, equivalently when its affine span is
-the whole space
+interior (`Convex.ae_mem_interior`), so a subset of the convex set agrees almost everywhere with
+its intersection with the interior (`Convex.inter_interior_ae_eq`), and the interior meets every
+set that the convex set meets in positive measure
+(`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). Restricting Haar measure to a convex
+set agrees with restricting to its interior (`Convex.restrict_eq_restrict_interior`), so weighting
+`μ.restrict s` by `g` agrees with weighting `μ` by `(interior s).indicator g`
+(`Convex.withDensity_restrict_eq_withDensity_indicator_interior`), is carried by `interior s`
+(`Convex.ae_withDensity_restrict_mem_interior`), and has `(interior s).indicator g` nonzero almost
+everywhere on `closure s` exactly when `g` is nonzero almost everywhere for `μ.restrict s`
+(`Convex.ae_mem_closure_imp_indicator_interior_ne_zero_iff`). A convex set has positive Haar
+measure exactly when its interior is nonempty, equivalently when its affine span is the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
 For the same reason, convex sets with disjoint interiors are almost everywhere disjoint
@@ -36,6 +54,12 @@ volume of the cone spanned by the ball and the point
 (`Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`). This is the volume estimate behind the
 Aleksandrov maximum principle for the Monge–Ampère equation.
 
+A convex set containing a ball of radius `ρ > 0` has the **measure density property**: it fills at
+least the fraction `(ρ / R) ^ n` of every closed ball centred in its closure of radius at most `R`,
+for `R` at least the distance from the centre to the far side of the ball
+(`Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter`). This is the geometric
+input of estimates up to the boundary of a convex domain, such as Morrey's inequality.
+
 A convex set with nonempty interior in a finite-dimensional real normed space has finite
 Haar measure exactly when it is bounded. Consequently, a set of positive finite measure
 which agrees almost everywhere with a convex set has a compact convex representative
@@ -49,15 +73,74 @@ Mathlib's `Convex.addHaar_frontier` ensures that taking this closure changes onl
 
 public section
 
-open MeasureTheory MeasureTheory.Measure Set Metric Module
+open MeasureTheory MeasureTheory.Measure Set Metric Module Filter
+open scoped ENNReal
+
+/-- In a Hausdorff finite-dimensional real topological vector space, an open set contained almost
+everywhere in a convex set for a measure positive on nonempty open sets lies in its interior.
+Neither set need be measurable. -/
+theorem IsOpen.subset_interior_of_ae_le {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure]
+    {U s : Set E} (hU : IsOpen U) (hs : Convex ℝ s) (hUs : U ≤ᵐ[μ] s) :
+    U ⊆ interior s :=
+  hs.interior_closure ▸ interior_maximal (hU.subset_closure_of_ae_le hUs) hU
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsAddHaarMeasure μ] {s : Set E}
+  [MeasurableSpace E] [BorelSpace E] {s : Set E}
+
+/-- Restricting an additive Haar measure on a finite-dimensional real normed space to a convex set
+`s` agrees with restricting it to `interior s`. The set `s` need not be Borel measurable. -/
+theorem Convex.restrict_eq_restrict_interior (hs : Convex ℝ s) (μ : Measure E)
+    [IsAddHaarMeasure μ] : μ.restrict s = μ.restrict (interior s) :=
+  Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm
+
+/-- Weighting the restriction of an additive Haar measure on a finite-dimensional real normed space
+to a convex set `s` by `g` agrees with weighting the ambient measure by `(interior s).indicator g`.
+Neither `s` nor `g` need be measurable. -/
+theorem Convex.withDensity_restrict_eq_withDensity_indicator_interior (hs : Convex ℝ s)
+    (μ : Measure E) [IsAddHaarMeasure μ] (g : E → ℝ≥0∞) :
+    (μ.restrict s).withDensity g = μ.withDensity ((interior s).indicator g) := by
+  rw [hs.restrict_eq_restrict_interior μ, ← withDensity_indicator isOpen_interior.measurableSet]
+
+/-- Weighting the restriction of an additive Haar measure on a finite-dimensional real normed space
+to a convex set `s` by `g` gives a measure carried by `interior s`. Neither `s` nor `g` need be
+measurable. -/
+theorem Convex.ae_withDensity_restrict_mem_interior (hs : Convex ℝ s) (μ : Measure E)
+    [IsAddHaarMeasure μ] (g : E → ℝ≥0∞) :
+    ∀ᵐ x ∂(μ.restrict s).withDensity g, x ∈ interior s := by
+  rw [hs.restrict_eq_restrict_interior μ]
+  exact (withDensity_absolutelyContinuous _ g).ae_le (ae_restrict_mem isOpen_interior.measurableSet)
+
+variable {μ : Measure E} [IsAddHaarMeasure μ]
 
 /-- Almost every point of a convex set in a finite-dimensional real normed space is an interior
 point, since the frontier of the set is null for every additive Haar measure. -/
 theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s :=
-  (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.le
+  (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm.subset
+
+/-- A subset of a convex set `s` in a finite-dimensional real normed space differs from its
+intersection with `interior s` by a null set, since the frontier of `s` is null for every additive
+Haar measure. -/
+theorem Convex.inter_interior_ae_eq (hs : Convex ℝ s) {t : Set E} (ht : t ⊆ s) :
+    t ∩ interior s =ᵐ[μ] t := by
+  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (EventuallyEqSet.rfl : t =ᵐ[μ] t)
+    (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ))
+
+/-- For a convex set `s` and an additive Haar measure `μ` on a finite-dimensional real normed space,
+`(interior s).indicator g` is nonzero `μ`-almost everywhere on `closure s` if and only if `g` is
+nonzero almost everywhere for `μ.restrict s`. Neither `s` nor `g` need be measurable. -/
+theorem Convex.ae_mem_closure_imp_indicator_interior_ne_zero_iff {α : Type*} [Zero α]
+    (hs : Convex ℝ s) {g : E → α} :
+    (∀ᵐ x ∂μ, x ∈ closure s → (interior s).indicator g x ≠ 0) ↔
+      ∀ᵐ x ∂μ.restrict s, g x ≠ 0 := by
+  rw [ae_restrict_iff'₀ (hs.nullMeasurableSet μ)]
+  refine eventually_congr ?_
+  filter_upwards [interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ),
+    closure_ae_eq_of_null_frontier (hs.addHaar_frontier μ)] with x hxi hxc
+  by_cases hx : x ∈ s
+  · simp [hx, hxc.mpr hx, hxi.mpr hx]
+  · simp [hx, mt hxc.mp hx]
 
 /-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive
 Haar measure, then its interior meets `t`, since almost every point of the convex set is
@@ -81,7 +164,7 @@ theorem Convex.addHaar_eq_zero_iff_interior_eq_empty (hs : Convex ℝ s) :
 exactly when its interior is nonempty. -/
 theorem Convex.addHaar_pos_iff_interior_nonempty (hs : Convex ℝ s) :
     0 < μ s ↔ (interior s).Nonempty := by
-  simpa only [pos_iff_ne_zero, Set.nonempty_iff_ne_empty] using
+  simpa only [pos_iff_ne_zero, ← Set.ne_empty_iff_nonempty] using
     not_congr hs.addHaar_eq_zero_iff_interior_eq_empty
 
 /-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
@@ -110,13 +193,7 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
   -- `m + 1 > L / (2 * r)` balls about them are pairwise disjoint.
   set m := ⌊L / (2 * r)⌋₊
   set c : ℕ → E := fun j => x + ((j : ℝ) * r / L) • (y - x)
-  have hyx : ‖y - x‖ = L := (dist_eq_norm y x).symm
-  have hdist : ∀ i j : ℕ, dist (c i) (c j) = |(i : ℝ) - j| * r := fun i j => by
-    simp only [c, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, hyx,
-      Real.norm_eq_abs, ← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos hr]
-    rw [abs_of_pos hL]
-    field_simp
-  have hsub : ∀ j ∈ Finset.range (m + 1), ball (c j) (r / 2) ⊆ s := fun j hj z hz => by
+  have hsub : ∀ j ∈ Finset.range (m + 1), ball (c j) (r / 2) ⊆ s := fun j hj => by
     set t := (j : ℝ) * r / L
     have ht₀ : 0 ≤ t := by positivity
     have ht : t ≤ 1 / 2 := by
@@ -126,40 +203,22 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
       rw [div_le_iff₀ hL]
       rw [le_div_iff₀ (by positivity)] at hj
       linarith
-    -- `z = (1 - t) • b + t • y` with `b = x + (1 - t)⁻¹ • (z - c j)` in `ball x r`.
-    have hb : x + (1 - t)⁻¹ • (z - c j) ∈ ball x r := by
-      rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, norm_inv, Real.norm_eq_abs,
-        abs_of_pos (by linarith), ← dist_eq_norm, inv_mul_lt_iff₀ (by linarith)]
-      rw [mem_ball] at hz
-      nlinarith
-    convert hs (hball hb) hy (by linarith : (0 : ℝ) ≤ 1 - t) ht₀ (by ring) using 1
-    have hc : c j = x + t • (y - x) := rfl
-    rw [smul_add, smul_smul, mul_inv_cancel₀ (by linarith : (1 - t) ≠ 0), one_smul, hc]
-    module
-  have hdisj : (Finset.range (m + 1) : Set ℕ).PairwiseDisjoint fun j => ball (c j) (r / 2) :=
-    fun i _ j _ hij => ball_disjoint_ball <| by
-      rw [hdist, add_halves]
-      have : (1 : ℝ) ≤ |(i : ℝ) - j| := by
-        rcases lt_or_gt_of_ne hij with h | h
-        · have : (i : ℝ) + 1 ≤ j := by exact_mod_cast h
-          exact le_abs.2 (Or.inr (by linarith))
-        · have : (j : ℝ) + 1 ≤ i := by exact_mod_cast h
-          exact le_abs.2 (Or.inl (by linarith))
-      nlinarith
-  have hn : 1 ≤ n := finrank_pos
+    exact (ball_subset_ball (by nlinarith)).trans
+      (hs.ball_add_smul_sub_subset hball hy ht₀ (by linarith))
+  -- The centres are `x + j • v` with `v = (r / L) • (y - x)` of norm `r`.
+  have hv : ‖(r / L) • (y - x)‖ = r := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity), ← dist_eq_norm]
+    exact div_mul_cancel₀ r hL.ne'
+  have hdisj : (Finset.range (m + 1) : Set ℕ).PairwiseDisjoint fun j => ball (c j) (r / 2) := by
+    have h := (TauCeti.pairwise_disjoint_ball_add_natCast_smul x ((r / L) • (y - x))).set_pairwise
+      (Finset.range (m + 1) : Set ℕ)
+    intro i hi j hj hij
+    simpa only [hv, c, smul_smul, mul_div_assoc] using h hi hj hij
   have hm : L / (2 * r) < m + 1 := Nat.lt_floor_add_one _
   calc ENNReal.ofReal (L * r ^ (n - 1)) * μ (ball 0 1)
       ≤ ENNReal.ofReal (2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)) * μ (ball 0 1) := by
         gcongr ENNReal.ofReal ?_ * _
-        have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
-        have h2 : (2 : ℝ) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
-          rw [div_pow, pow_succ]
-          field_simp
-        rw [div_lt_iff₀ (by positivity)] at hm
-        calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
-          _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
-            rw [mul_left_comm (2 ^ (n + 1) : ℝ), h2, hrn]
-            ring
+        exact TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow hr finrank_pos hm
     _ = 2 ^ (n + 1) * ∑ j ∈ Finset.range (m + 1), μ (ball (c j) (r / 2)) := by
         simp only [addHaar_ball μ _ (by positivity : 0 ≤ r / 2), Finset.sum_const,
           Finset.card_range, nsmul_eq_mul]
@@ -173,6 +232,43 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
     _ ≤ 2 ^ (n + 1) * μ s := by
         gcongr
         exact iUnion₂_subset hsub
+
+/-- **The measure density property of a convex set.** In a finite-dimensional real normed space
+`E` of dimension `n`, let the convex set `s` contain the ball of radius `ρ > 0` about `z`, and let
+`x` lie in the closure of `s`. If `0 < r ≤ R` and `dist x z + ρ ≤ R`, then `s` fills at least the
+fraction `(ρ / R) ^ n` of `closedBall x r`, for every additive Haar measure `μ`: the closed ball
+contains the ball of radius `(r / R) ρ` about `x + (r / R) • (z - x)`, which lies in `s`. -/
+theorem Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter
+    (hs : Convex ℝ s) {x z : E} {ρ r R : ℝ} (hρ : 0 < ρ) (hball : ball z ρ ⊆ s)
+    (hx : x ∈ closure s) (hr : 0 < r) (hrR : r ≤ R) (hR : dist x z + ρ ≤ R) :
+    ENNReal.ofReal ((ρ / R) ^ finrank ℝ E) * μ (closedBall x r) ≤ μ (closedBall x r ∩ s) := by
+  have hR₀ : 0 < R := hr.trans_le hrR
+  set t := r / R
+  have ht₀ : 0 < t := div_pos hr hR₀
+  have ht₁ : t ≤ 1 := (div_le_one hR₀).2 hrR
+  have hsub : ball (x + t • (z - x)) (t * ρ) ⊆ closedBall x r ∩ s := by
+    intro w hw
+    refine ⟨?_, ?_⟩
+    · have hc : dist (x + t • (z - x)) x = t * dist x z := by
+        simp [dist_eq_norm, norm_smul, abs_of_pos ht₀, norm_sub_rev]
+      rw [mem_closedBall]
+      calc dist w x ≤ dist w (x + t • (z - x)) + dist (x + t • (z - x)) x := dist_triangle _ _ _
+        _ ≤ t * ρ + t * dist x z := by rw [hc]; exact add_le_add (mem_ball.1 hw).le le_rfl
+        _ = t * (dist x z + ρ) := by ring
+        _ ≤ t * R := by gcongr
+        _ = r := div_mul_cancel₀ r hR₀.ne'
+    · have h := TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
+        (fun w hw ↦ hs.starConvex (hball hw)) hx (t := 1 - t) (by linarith) (by linarith)
+      have hc : z + (1 - t) • (x - z) = x + t • (z - x) := by module
+      rw [hc, sub_sub_cancel] at h
+      exact interior_subset (h hw)
+  have hscale : ρ / R * r = t * ρ := by simp only [t]; ring
+  calc ENNReal.ofReal ((ρ / R) ^ finrank ℝ E) * μ (closedBall x r)
+      = μ (ball (x + t • (z - x)) (t * ρ)) := by
+        rw [Measure.addHaar_closedBall μ x hr.le,
+          Measure.addHaar_ball_of_pos μ _ (mul_pos ht₀ hρ), ← mul_assoc,
+          ← ENNReal.ofReal_mul (by positivity), ← mul_pow, hscale]
+    _ ≤ μ (closedBall x r ∩ s) := measure_mono hsub
 
 open Function
 open scoped Pointwise
@@ -222,7 +318,6 @@ theorem Convex.addHaar_iUnion_vadd {K : Set E} (hK : Convex ℝ K) {ι : Type*} 
   simp
 
 open Bornology
-open scoped ENNReal
 
 namespace MeasureTheory.Measure
 

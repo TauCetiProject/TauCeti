@@ -26,9 +26,11 @@ For the residue `a = 𝔑𝔭` of a prime `𝔭 ∤ ℓ` of a number field, this
 of `𝔭` in the cyclotomic extension of level `ℓ ^ r`, so the statement says that these residue
 degrees become divisible by any given power of `ℓ` along the cyclotomic tower.
 
-A residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root modulo `n` is
-one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo `p ²` is one
-modulo every power of `p`.
+Unless `n` is `1` or `2`, the residue `-1` has order `2`, so `2` divides the exponent of `(ℤ/n)ˣ`.
+
+For `n ≠ 0`, a residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root
+modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo
+`p ²` is one modulo every power of `p`.
 
 The order of `q` modulo `n` decides which of the numbers `q ^ k - 1` are divisible by `n`: those
 with `k` a multiple of the order. Modulo a prime `p`, an element of even order `2 * m` has `m`-th
@@ -37,14 +39,19 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
 
 ## Main results
 
+* `ZMod.orderOf_natCast_pos_iff`, `ZMod.orderOf_natCast_pos_of_not_dvd`: `(a : ZMod n)` has
+  positive multiplicative order iff `a.Coprime n`, and in particular whenever `a` is a prime not
+  dividing `n`.
 * `ZMod.orderOf_natCast_dvd_orderOf_natCast`: for `m ∣ n`, the order of `a` modulo `m` divides its
   order modulo `n`.
 * `ZMod.eventually_pow_dvd_orderOf_natCast`: for every `j`, `ℓ ^ j` divides the order of `a`
   modulo `ℓ ^ r` for all large `r`.
+* `ZMod.two_dvd_exponent_units`: for `n ≠ 1, 2`, `2` divides the exponent of `(ℤ/n)ˣ`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
-* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number is a
-  primitive root modulo `n`.
+* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number has order
+  `φ(n)` modulo `n`, that is, is a primitive root modulo `n` when `n ≠ 0`; for `n = 0` the
+  witness is the junk value `0`.
 * `ZMod.orderOf_natCast_eq_totient_of_dvd`: a primitive root modulo `n` is a primitive root
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
@@ -65,6 +72,22 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
 public section
 
 namespace ZMod
+
+/-- For any natural numbers `a` and `n` (including `n = 0`), the residue of `a` modulo `n` has
+positive multiplicative order if and only if `a` and `n` are coprime. -/
+theorem orderOf_natCast_pos_iff {n a : ℕ} :
+    0 < orderOf (a : ZMod n) ↔ a.Coprime n := by
+  have : Finite (ZMod n)ˣ := by
+    obtain rfl | _ := eq_zero_or_neZero n
+    · exact inferInstanceAs (Finite ℤˣ)
+    · infer_instance
+  rw [orderOf_pos_iff, isOfFinOrder_iff_isUnit, isUnit_iff_coprime]
+
+/-- If a prime `p` does not divide `m`, then the residue of `p` modulo `m` has positive
+multiplicative order. -/
+theorem orderOf_natCast_pos_of_not_dvd {m p : ℕ} (hp : p.Prime) (hm : ¬ p ∣ m) :
+    0 < orderOf (p : ZMod m) :=
+  orderOf_natCast_pos_iff.mpr (hp.coprime_iff_not_dvd.mpr hm)
 
 /-- For `m ∣ n`, the order of a natural number `a` modulo `m` divides its order modulo `n`, since
 reduction modulo `m` is a ring homomorphism `ZMod n →+* ZMod m`. -/
@@ -93,7 +116,7 @@ theorem eventually_pow_dvd_orderOf_natCast {ℓ : ℕ} (hℓ : ℓ.Prime) {a : �
   set B := ℓ ^ (j - 1) * (ℓ - 1) with hB_def
   have hB : 0 < B := Nat.mul_pos (pow_pos hℓ.pos _) (Nat.sub_pos_of_lt hℓ.one_lt)
   have haB : 0 < a ^ B - 1 := Nat.sub_pos_of_lt (Nat.one_lt_pow hB.ne' ha)
-  set r := a ^ B with hr_def
+  set r := a ^ B
   have hr : 0 < r := pow_pos (by omega) B
   refine ⟨r, ?_⟩
   have : NeZero (ℓ ^ r) := ⟨pow_ne_zero r hℓ.ne_zero⟩
@@ -130,6 +153,13 @@ theorem eventually_pow_dvd_orderOf_natCast {ℓ : ℕ} (hℓ : ℓ.Prime) {a : �
   have := Nat.le_of_dvd haB hdvd'
   omega
 
+/-- Unless `n` is `1` or `2`, the residue `-1` has order `2` in `(ℤ/n)ˣ` (for `n = 0` this is
+`ℤˣ = {±1}`), so `2` divides the exponent of the unit group. -/
+theorem two_dvd_exponent_units {n : ℕ} (h1 : n ≠ 1) (h2 : n ≠ 2) :
+    2 ∣ Monoid.exponent (ZMod n)ˣ := by
+  have : Nontrivial (ZMod n) := nontrivial_iff.2 h1
+  simpa [ringChar_zmod_n, h2] using Monoid.order_dvd_exponent (-1 : (ZMod n)ˣ)
+
 /-! ### Primitive roots -/
 
 /-- A residue modulo `n` whose order is `φ(n)` is a unit. -/
@@ -138,14 +168,25 @@ theorem isUnit_of_orderOf_eq_totient {n : ℕ} [NeZero n] {x : ZMod n}
   (orderOf_pos_iff.mp (h ▸ Nat.totient_pos.mpr (NeZero.pos n))).isUnit
 
 /-- A unit modulo `n` whose order is `φ(n)` generates `(ℤ/n)ˣ`. -/
-theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} [NeZero n] {u : (ZMod n)ˣ}
-    (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ :=
-  (Subgroup.card_eq_iff_eq_top _).mp <| by
-    rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
+theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} {u : (ZMod n)ˣ}
+    (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `ℤˣ` is finite, so the order of `u` is positive, while `φ 0 = 0`.
+    have : Finite (ZMod 0)ˣ := inferInstanceAs (Finite ℤˣ)
+    exact absurd (h.trans Nat.totient_zero) (orderOf_pos u).ne'
+  · have : NeZero n := ⟨hn.ne'⟩
+    exact (Subgroup.card_eq_iff_eq_top _).mp <| by
+      rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
 
-/-- If `(ℤ/n)ˣ` is cyclic, some natural number is a primitive root modulo `n`. -/
-theorem exists_orderOf_natCast_eq_totient {n : ℕ} [NeZero n] [IsCyclic (ZMod n)ˣ] :
+/-- If `(ℤ/n)ˣ` is cyclic, some natural number has order `φ(n)` modulo `n`, that is, is a primitive
+root modulo `n` when `n ≠ 0`. For `n = 0` the statement holds with the junk witness `g = 0`, since
+`φ 0 = 0`; it says nothing about generators of `ℤˣ`. -/
+theorem exists_orderOf_natCast_eq_totient {n : ℕ} [IsCyclic (ZMod n)ˣ] :
     ∃ g : ℕ, orderOf (g : ZMod n) = n.totient := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `φ 0 = 0` and `0 : ℤ` has order `0`.
+    exact ⟨0, by simp [Nat.totient_zero]⟩
+  have : NeZero n := ⟨hn.ne'⟩
   obtain ⟨u, hu⟩ := isCyclic_iff_exists_orderOf_eq_natCard.mp ‹IsCyclic (ZMod n)ˣ›
   refine ⟨(u : ZMod n).val, ?_⟩
   rw [natCast_zmod_val, orderOf_units, hu, Nat.card_eq_fintype_card, card_units_eq_totient]

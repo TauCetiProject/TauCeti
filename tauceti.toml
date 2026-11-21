@@ -59,27 +59,30 @@ url = "https://bors.taucetiproject.org"
 repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
 deployment = "cloudflare"
 
-# Registered runners advertise each machine's slots and CI classes. The Namespace ceiling
+# Registered runners in the approved group define live fleet membership and CI classes.
+# Adding, replacing or draining hosts needs no project machine-ID list. The Namespace ceiling
 # counts queued/running builds; simultaneous picker decisions can exceed it briefly.
 [services.fleet]
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
-namespace_build_cap = 20
-pr_order = ["github", "chris", "tauchonki", "yael", "brett", "namespace"]
-staging_order = ["tauchonki", "chris", "yael", "brett", "namespace", "github"]
+# Defaults only: NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables
+# control live routing without a source PR; zero cap disables new Namespace work.
+# Priority maintenance builds read only the variables; see scripts/namespace-controls.md.
+namespace_enabled = true
+namespace_build_cap = 8
+pr_order = ["fleet", "namespace", "github"]
+# Prefer filling the Fleet PR pool (with a small bounded waiting queue) before spilling
+# onto Namespace or GitHub-hosted capacity. This observational limit can briefly
+# overshoot under simultaneous pickers.
+pr_queue_limit = 10
+staging_order = ["tauchonki2"]
 
-# Slot counts and CI classes come from the runners each host registers.
-[services.fleet.machines.chris]
-enrollment_name = "chris-server"
+# Staging is reserved for these hosts; other membership comes from the registered runners.
+[services.fleet.machines.chungus2]
+machine_id = "2ef87dd35cf74820a7a3b26e8820dcc5"
 
-[services.fleet.machines.tauchonki]
-machine_id = "11e2756fc11042d798f759410573a935"
-
-[services.fleet.machines.yael]
-enrollment_name = "yael-server"
-
-[services.fleet.machines.brett]
-enrollment_name = "brett-server"
+[services.fleet.machines.tauchonki2]
+machine_id = "74773fc7f54d4877add11d80113fe340"
 
 [services.cache]
 mode = "hosted"
@@ -109,10 +112,10 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="d288926c619a7247c92a1000d44ff9157220ff54"
+ref="main"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
-ref="7fd3a39e02c5a16cf7be65508a7ffb2c336dcada"
+ref="b242725b755cb8fa6669ee84359fa235b7d6bf8c"
 [tools.progress]
 repo="TauCetiProject/TauCetiProgress"
 ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"

@@ -10,28 +10,26 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
-# Maps induced on presented quotients in `ModuleCat`
+# Quotient modules in `ModuleCat`
 
 An object `A` of `ModuleCat R` is frequently *presented* as a quotient `X ⧸ p`, by an isomorphism
 `e : A ≅ ModuleCat.of R (X ⧸ p)` together with a projection `π : ModuleCat.of R X ⟶ A` playing
 the role of `Submodule.mkQ`, in the sense that `π ≫ e.hom = ModuleCat.ofHom p.mkQ`. A linear map
 `f : X₁ →ₗ[R] X₂` carrying `p₁` into `p₂` then induces a map `A₁ ⟶ A₂`, namely `Submodule.mapQ`
-conjugated by the two presentations.
+conjugated by the two presentations. Since the presentations are only given up to isomorphism,
+such an induced map is computed through its effect on representatives: it sends the class `π₁ x`
+to the class `π₂ (f x)`, which is Mathlib's `Submodule.mapQ_mkQ` transported along the two
+presentations.
 
-This file records the one fact such an induced map is used through: it sends the class `π₁ x` of a
-representative to the class `π₂ (f x)`, which is Mathlib's `Submodule.mapQ_mkQ` transported along
-the two presentations. Since the presentations are only given up to isomorphism, this
-characterisation — rather than a definitional unfolding — is how the induced map is computed.
-
-The canonical short complex `S → M → M / S` and its short exactness are also
-packaged here. Its extension class computes degree-one extensions when `M` is
-projective. The abbreviation keeps the three modules and the two linear maps
-available to the categorical exactness and extension APIs.
+The canonical short complex `S → M → M ⧸ S` of a submodule is packaged as an abbreviation, so
+that the categorical exactness and extension APIs apply to it directly, together with the
+Mayer–Vietoris short complex of two submodules.
 
 ## Main statements
 
 * `ModuleCat.comp_conj_mapQ`: the map induced by `f` on two presented quotients composed with the
   projection of the source is the projection of the target composed with `f`.
+* `Submodule.shortExact_quotientShortComplex`: `0 → S → M → M ⧸ S → 0` is short exact.
 * `Submodule.shortExact_quotientInfSupShortComplex`: for submodules `S` and `T`, the Mayer–Vietoris
   sequence `0 → M ⧸ (S ⊓ T) → M ⧸ S × M ⧸ T → M ⧸ (S ⊔ T) → 0` is short exact.
 -/
@@ -48,14 +46,15 @@ variable {R : Type v} [Ring R]
 
 /-- A map conjugated from `Submodule.mapQ p₁ p₂ f` along presentations `e₁`, `e₂` of two objects
 as the quotients sends the class `π₁ x` of a representative to the class `π₂ (f x)`. This is
-`Submodule.mapQ_mkQ` transported along the two presentations. -/
+`Submodule.mapQ_mkQ` transported along the two presentations. On the source side only the
+identity `π₁ ≫ e₁ = ofHom p₁.mkQ` is used, so `e₁` need not be an isomorphism. -/
 theorem comp_conj_mapQ {X₁ X₂ : Type u} [AddCommGroup X₁] [Module R X₁] [AddCommGroup X₂]
     [Module R X₂] {p₁ : Submodule R X₁} {p₂ : Submodule R X₂} {A₁ A₂ : ModuleCat.{u} R}
-    (e₁ : A₁ ≅ ModuleCat.of R (X₁ ⧸ p₁)) (e₂ : A₂ ≅ ModuleCat.of R (X₂ ⧸ p₂))
+    (e₁ : A₁ ⟶ ModuleCat.of R (X₁ ⧸ p₁)) (e₂ : A₂ ≅ ModuleCat.of R (X₂ ⧸ p₂))
     {π₁ : ModuleCat.of R X₁ ⟶ A₁} {π₂ : ModuleCat.of R X₂ ⟶ A₂}
-    (hπ₁ : π₁ ≫ e₁.hom = ModuleCat.ofHom p₁.mkQ) (hπ₂ : π₂ ≫ e₂.hom = ModuleCat.ofHom p₂.mkQ)
+    (hπ₁ : π₁ ≫ e₁ = ModuleCat.ofHom p₁.mkQ) (hπ₂ : π₂ ≫ e₂.hom = ModuleCat.ofHom p₂.mkQ)
     (f : X₁ →ₗ[R] X₂) (hf : p₁ ≤ p₂.comap f) :
-    π₁ ≫ e₁.hom ≫ ModuleCat.ofHom (p₁.mapQ p₂ f hf) ≫ e₂.inv = ModuleCat.ofHom f ≫ π₂ := by
+    π₁ ≫ e₁ ≫ ModuleCat.ofHom (p₁.mapQ p₂ f hf) ≫ e₂.inv = ModuleCat.ofHom f ≫ π₂ := by
   rw [← cancel_mono e₂.hom]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, reassoc_of% hπ₁, hπ₂,
     ← ModuleCat.ofHom_comp, Submodule.mapQ_mkQ]

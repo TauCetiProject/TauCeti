@@ -38,8 +38,6 @@ integrability hypothesis in `RepresentsStieltjes` suffices at every derivative o
 
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*,
   2nd ed., Theorem 2.2.
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B, the
-  Stieltjes/Bernstein-function relationships target.
 -/
 
 public section
@@ -93,7 +91,7 @@ theorem integrable_zpow_neg_one_sub_add (hμ : Integrable stieltjesWeight μ) (n
     {t : ℝ} (ht : 0 < t) :
     Integrable (fun x : ℝ≥0 => (t + (x : ℝ)) ^ (-1 - (n : ℤ))) μ := by
   refine ((integrable_inv_add hμ ht).const_mul (t ^ (-(n : ℤ)))).mono' ?_ ?_
-  · exact (((continuous_const.add continuous_subtype_val).zpow₀ _ fun (x : ℝ≥0) =>
+  · exact (((continuous_const.add continuous_subtypeVal).zpow₀ _ fun (x : ℝ≥0) =>
       Or.inl (add_pos_of_pos_of_nonneg ht x.coe_nonneg).ne')).aestronglyMeasurable
   filter_upwards [] with x
   have hpos : 0 < t + (x : ℝ) := add_pos_of_pos_of_nonneg ht x.coe_nonneg

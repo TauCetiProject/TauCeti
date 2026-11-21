@@ -13,6 +13,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # Integral measures from finite coordinates on the p-adic units
@@ -228,14 +229,9 @@ private abbrev unitTests := (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
 
 private theorem dense_unitTests :
     DenseRange ((unitTests (p := p)).subtype : unitTests →ₗ[ℤ_[p]] C(ℤ_[p]ˣ, ℤ_[p])) := by
-  apply denseRange_subtype_val.mpr
-  apply (dense_setOf_comp_unitsToZModPow ℤ_[p]).mono
-  rintro f ⟨n, g, hg⟩
-  have hloc : IsLocallyConstant (f : ℤ_[p]ˣ → ℤ_[p]) := by
-    rw [← hg]
-    exact (IsLocallyConstant.of_discrete g).comp_continuous
-      (PadicInt.unitsToZModPow n).continuous
-  exact ⟨⟨f, hloc⟩, rfl⟩
+  apply denseRange_subtypeVal.mpr
+  rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
+  exact LocallyConstant.denseRange_toContinuousMap
 
 private def integralOnUnitTests : unitTests (p := p) →L[ℤ_[p]] ℤ_[p] :=
   let e := LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
@@ -273,7 +269,7 @@ theorem ofUnitCoordinates_apply_locallyConstant (f : LocallyConstant ℤ_[p]ˣ �
     ofUnitCoordinates c hc f.toContinuousMap = unitCoordinateIntegral c hc f := by
   have he := (integralOnUnitTests c hc).extend_eq
     (e := (unitTests (p := p)).subtypeL) dense_unitTests
-    isUniformEmbedding_subtype_val.isUniformInducing
+    isUniformEmbedding_subtypeVal.isUniformInducing
     ⟨f.toContinuousMap, ⟨f, rfl⟩⟩
   rw [ofUnitCoordinates, coe_symm_toCLMEquiv]
   exact he.trans (integralOnUnitTests_apply c hc f)

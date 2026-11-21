@@ -42,7 +42,7 @@ with a polynomial ring.
 * `Representation.primesOver_under_irrelevant_eq_singleton`: over a domain, `S₊` is the only
   prime of `Sym M` lying over `A₊`.
 * `Representation.height_under_symmetricAlgebraInvariants`: over a field, contraction to the
-  invariants preserves the heights of primes.
+  invariants preserves the heights of ideals.
 * `Representation.height_under_irrelevant` and
   `Representation.ringKrullDim_atPrime_under_irrelevant`: over a field, `A₊` has height
   `finrank k M`, so `A_{A₊}` has Krull dimension `finrank k M`.
@@ -113,9 +113,9 @@ section Field
 variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M] [FiniteDimensional k M]
 variable (ρ : Representation k G M)
 
-/-- Over a field, for a finite group acting on a finite-dimensional space `M`, contracting a prime
+/-- Over a field, for a finite group acting on a finite-dimensional space `M`, contracting an ideal
 of `Sym M` to the invariant subalgebra preserves its height. -/
-theorem height_under_symmetricAlgebraInvariants (P : Ideal (SymmetricAlgebra k M)) [P.IsPrime] :
+theorem height_under_symmetricAlgebraInvariants (P : Ideal (SymmetricAlgebra k M)) :
     (P.under ρ.symmetricAlgebraInvariants).height = P.height :=
   (Ideal.height_eq_height_under_of_isIntegral_of_finiteType k P).symm
 

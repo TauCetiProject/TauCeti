@@ -78,9 +78,9 @@ theorem nonempty_addEquiv_pi_zmod_primePow {p k r : ℕ} (hp : p.Prime)
         intro i _hi
         rw [ha i]
         obtain ⟨j, hj⟩ := Nat.exists_eq_succ_of_ne_zero (ha_pos i).ne'
-        rw [hj]
+        rw [hj, pow_succ']
         simpa only [Nat.card_zmod] using
-          Nat.card_congr (TauCeti.zmodTorsionByEquiv p j).symm.toEquiv
+          Nat.card_congr (TauCeti.zmodTorsionByEquiv p (p ^ j)).symm.toEquiv
       _ = p ^ Fintype.card ι := by simp
   have hιcard : Fintype.card ι = r := by
     have ht : p ^ Fintype.card ι = p ^ r := by

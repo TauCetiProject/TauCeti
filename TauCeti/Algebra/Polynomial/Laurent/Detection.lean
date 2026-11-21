@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent.Roots
 public import Mathlib.RingTheory.Algebraic.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
+
+import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
+import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
 # Detecting Laurent polynomials by evaluations
@@ -20,6 +24,11 @@ Laurent polynomials over a commutative ring.
 As a consequence, an endomorphism of a field that fixes infinitely many elements and agrees with a
 Laurent polynomial at every unit is the identity (`RingHom.eq_id_of_forall_eval₂_eq`). For
 instance complex conjugation is not a Laurent polynomial function on `ℂˣ`.
+
+Evaluation at the generic point of the fraction field of `ℤ[v, v⁻¹]` is injective, so an
+identity in `ℤ[v, v⁻¹]` holds as soon as it holds at every unit `q` with `q - q⁻¹ ≠ 0` of every
+field (`TauCeti.eq_of_forall_laurentEval_eq`). This transports identities of field-valued
+quantum numbers to their Laurent forms.
 -/
 
 public section
@@ -96,3 +105,28 @@ theorem laurent_eval₂_injective_of_transcendental (u : Sˣ)
   exact (transcendental_iff_injective.mp hu).eq_iff.symm
 
 end Units
+
+namespace TauCeti
+
+open LaurentPolynomial
+
+/-- **Identities of integral Laurent polynomials can be checked at generic parameters**: two
+elements of `ℤ[v, v⁻¹]` are equal as soon as their values agree at every unit `q` with
+`q - q⁻¹ ≠ 0` of every field. Indeed evaluation at the generic point `v` of the fraction field
+`ℚ(v)` of `ℤ[v, v⁻¹]` is injective, and `v - v⁻¹ ≠ 0` there. This transports identities between
+the field quantum integers to their Laurent forms. -/
+theorem eq_of_forall_laurentEval_eq {p p' : ℤ[T;T⁻¹]}
+    (h : ∀ (K : Type) [Field K] (u : Kˣ), (u : K) - (u : K)⁻¹ ≠ 0 →
+      laurentEval u p = laurentEval u p') :
+    p = p' := by
+  obtain ⟨K, _, f, hf⟩ : ∃ (K : Type) (_ : Field K) (f : ℤ[T;T⁻¹] →+* K), Function.Injective f :=
+    ⟨FractionRing ℤ[T;T⁻¹], inferInstance, algebraMap _ _, IsFractionRing.injective _ _⟩
+  let v : Kˣ := Units.map f.toMonoidHom (genericUnit ℤ)
+  have hinj : Function.Injective (laurentEval (R := ℤ) v) := by
+    rwa [← laurentEval_unique v { f with commutes' := fun c => by simp } (by simp [v])]
+  refine hinj (h K v ?_)
+  -- `v - v⁻¹` is the image of `T - T⁻¹`, which is nonzero.
+  have hT := T_sub_T_ne_zero (R := ℤ) (by decide : (1 : ℤ) ≠ -1)
+  simpa [Units.val_inv_eq_inv_val] using hinj.ne hT
+
+end TauCeti

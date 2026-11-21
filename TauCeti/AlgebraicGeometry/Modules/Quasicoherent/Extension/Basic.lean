@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+public import TauCeti.AlgebraicGeometry.Modules.Biprod
 
 /-!
 # Extending quasi-coherent modules along quasi-compact open immersions
@@ -21,6 +22,11 @@ submodule of `G`: the kernel of `G ⟶ j_* j^* G ⟶ j_* (j^* G / F)`. This exte
 nothing away from where `F` is a proper submodule: on an open `V ⊆ X` over whose preimage `F` is
 all of `j^* G`, the extension is all of `G`, because `j_* (j^* G / F)` vanishes on `V`.
 
+More generally, every morphism `q : Q ⟶ j^* H` from a quasi-coherent `𝒪_U`-module to the
+restriction of a quasi-coherent `H` is the restriction of a morphism to `H` from a quasi-coherent
+`𝒪_X`-module, namely of the projection from the fibre product `H ×_{j_* j^* H} j_* Q`. Over an
+open `V ⊆ X` over whose preimage `q` is an isomorphism, so is this projection.
+
 Submodules are monomorphisms in the abelian category of `𝒪_X`-modules.
 
 ## Main declarations
@@ -29,6 +35,9 @@ Submodules are monomorphisms in the abelian category of `𝒪_X`-modules.
   module on `U` is the restriction of a quasi-coherent module on `X`.
 * `AlgebraicGeometry.Scheme.Modules.exists_mono_restrict_iso_of_isQuasicoherent`: every
   quasi-coherent submodule of `j^* G` is the restriction of a quasi-coherent submodule of `G`.
+* `AlgebraicGeometry.Scheme.Modules.exists_isQuasicoherent_restrictFunctor_map_eq`: every
+  morphism from a quasi-coherent module on `U` to `j^* H` is the restriction of a morphism to `H`
+  from a quasi-coherent module on `X`.
 
 ## References
 
@@ -94,5 +103,59 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_mono_restrict_iso_of_isQu
   have := kernel.ι_of_zero (hP.eq_of_tgt (RV.map φ) 0)
   rw [← kernelComparison_comp_ι φ RV, ← PreservesKernel.iso_hom]
   infer_instance
+
+/-- **Extension of maps into a restriction.** Along a quasi-compact open immersion
+`j : U ⟶ X`, let `H` be a quasi-coherent `𝒪_X`-module and `q : Q ⟶ j^* H` a morphism from a
+quasi-coherent `𝒪_U`-module. Then `q` is the restriction of a morphism `p : P ⟶ H` from a
+quasi-coherent `𝒪_X`-module: there is an isomorphism `j^* P ≅ Q` carrying `j^* p` to `q`. The
+module `P` is the fibre product `H ×_{j_* j^* H} j_* Q`. Moreover `p` is an isomorphism over
+every open `V ⊆ X` such that `q` is an isomorphism over `j⁻¹ V`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_isQuasicoherent_restrictFunctor_map_eq
+    [QuasiCompact j] {H : X.Modules} [H.IsQuasicoherent] {Q : U.Modules} [Q.IsQuasicoherent]
+    (q : Q ⟶ H.restrict j) :
+    ∃ (P : X.Modules) (_ : P.IsQuasicoherent) (p : P ⟶ H) (e : P.restrict j ≅ Q),
+      (Scheme.Modules.restrictFunctor j).map p = e.hom ≫ q ∧
+        ∀ V : X.Opens, IsIso ((Scheme.Modules.restrictFunctor (j ⁻¹ᵁ V).ι).map q) →
+          IsIso ((Scheme.Modules.restrictFunctor V.ι).map p) := by
+  let R := Scheme.Modules.restrictFunctor j
+  let adj := Scheme.Modules.restrictAdjunction j
+  let φ : H ⟶ (Scheme.Modules.pushforward j).obj (H.restrict j) := adj.unit.app H
+  let ψ := (Scheme.Modules.pushforward j).map q
+  have : ((Scheme.Modules.pushforward j).obj Q).IsQuasicoherent := inferInstance
+  have : ((Scheme.Modules.pushforward j).obj (H.restrict j)).IsQuasicoherent := inferInstance
+  have : (H ⊞ (Scheme.Modules.pushforward j).obj Q).IsQuasicoherent := inferInstance
+  have : (kernel (biprod.desc φ (-ψ))).IsQuasicoherent := inferInstance
+  have hP : (pullback φ ψ).IsQuasicoherent :=
+    (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
+      ((Abelian.PullbackToBiproductIsKernel.isLimitPullbackToBiproduct φ ψ).conePointUniqueUpToIso
+        (kernelIsKernel _)).symm this
+  -- Over `U` the unit is an isomorphism, by the triangle identity.
+  have hφ : R.map φ = inv (adj.counit.app (R.obj H)) :=
+    IsIso.eq_inv_of_inv_hom_id (adj.left_triangle_components H)
+  have : IsIso (R.map φ) := by rw [hφ]; infer_instance
+  have : IsIso (R.map (pullback.snd φ ψ)) := by
+    rw [← PreservesPullback.iso_hom_snd R φ ψ]
+    infer_instance
+  let e : (pullback φ ψ).restrict j ≅ Q :=
+    asIso (R.map (pullback.snd φ ψ)) ≪≫ asIso (adj.counit.app Q)
+  refine ⟨pullback φ ψ, hP, pullback.fst φ ψ, e, ?_, fun V hV ↦ ?_⟩
+  · have tri : R.map φ ≫ adj.counit.app (H.restrict j) = 𝟙 _ := adj.left_triangle_components H
+    have nat : R.map ψ ≫ adj.counit.app (H.restrict j) = adj.counit.app Q ≫ q :=
+      adj.counit.naturality q
+    calc R.map (pullback.fst φ ψ)
+        = R.map (pullback.fst φ ψ) ≫ R.map φ ≫ adj.counit.app (H.restrict j) := by
+          rw [tri, Category.comp_id]
+      _ = R.map (pullback.snd φ ψ) ≫ R.map ψ ≫ adj.counit.app (H.restrict j) := by
+          rw [← Category.assoc, ← Category.assoc, ← R.map_comp, ← R.map_comp, pullback.condition]
+      _ = e.hom ≫ q := by simp [e, nat]
+  · -- Over `V` the pushforward of `q` is the pushforward of its restriction to `j⁻¹ V`.
+    let RV := Scheme.Modules.restrictFunctor V.ι
+    have : IsIso ((Scheme.Modules.pushforward j ⋙ RV).map q) :=
+      (NatIso.isIso_map_iff (restrictPushforwardIso j V) q).mpr
+        (inferInstanceAs (IsIso ((Scheme.Modules.pushforward (j ∣_ V)).map
+          ((Scheme.Modules.restrictFunctor (j ⁻¹ᵁ V).ι).map q))))
+    have : IsIso (RV.map ψ) := this
+    rw [← PreservesPullback.iso_hom_fst RV φ ψ]
+    infer_instance
 
 end TauCeti.AlgebraicGeometry

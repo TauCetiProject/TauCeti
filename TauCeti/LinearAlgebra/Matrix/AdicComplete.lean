@@ -75,6 +75,34 @@ private theorem sub_transpose_one_add_mul_mul_one_add_eq (π : R) (j k : ℕ) {G
   rw [hDHD]
   module
 
+omit [DecidableEq n] in
+/-- **Limit of the Newton iterates.** If `U` agrees with `X m` modulo `π ^ m` for every `m`, and
+the error `G - (X m)ᵀ A (X m)` is `π ^ (j + m + 1) • (Y m + (Y m)ᵀ)`, then `Uᵀ * A * U = G` in a
+`π`-adically separated ring. -/
+private theorem transpose_mul_mul_eq_of_forall_pow_dvd_sub (π : R) [IsHausdorff (Ideal.span {π}) R]
+    {j : ℕ} {G A U : Matrix n n R} {X Y : ℕ → Matrix n n R}
+    (hU : ∀ m i i', π ^ m ∣ U i i' - X m i i')
+    (hinv : ∀ m, G - (X m)ᵀ * A * X m = π ^ (j + m + 1) • (Y m + (Y m)ᵀ)) :
+    Uᵀ * A * U = G := by
+  suffices h : (fun p : n × n ↦ (G - Uᵀ * A * U) p.1 p.2) = 0 by
+    ext i i'
+    simpa [sub_eq_zero, eq_comm] using congrFun h (i, i')
+  refine TauCeti.eq_zero_of_forall_pow_dvd π fun m p ↦ ?_
+  choose W hW using hU m
+  have hUW : U = X m + π ^ m • Matrix.of W := by
+    ext i i'
+    simp [← hW i i']
+  have hdiff : G - Uᵀ * A * U = π ^ m • (π ^ (j + 1) • (Y m + (Y m)ᵀ) -
+      ((Matrix.of W)ᵀ * A * X m + (X m)ᵀ * A * Matrix.of W +
+        π ^ m • ((Matrix.of W)ᵀ * A * Matrix.of W))) := by
+    rw [hUW, ← sub_add_cancel G ((X m)ᵀ * A * X m), hinv m]
+    simp only [transpose_add, transpose_smul, Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul,
+      Matrix.mul_smul]
+    rw [show j + m + 1 = m + (j + 1) by omega, pow_add]
+    module
+  rw [hdiff]
+  exact ⟨_, rfl⟩
+
 /-- **Newton's method for Gram matrices.** Let `R` be `π`-adically complete, let `G` be symmetric,
 and let `H₀` satisfy `G * (H₀ + H₀ᵀ) = π ^ j • 1`. If `G - A = π ^ (j + 1) • (D + Dᵀ)`, then
 `Uᵀ * A * U = G` for some `U ≡ 1` modulo `π`. -/
@@ -123,24 +151,7 @@ theorem exists_transpose_mul_mul_eq_of_sub_eq (π : R) [IsAdicComplete (Ideal.sp
     linear_combination this
   refine ⟨V, ?_⟩
   rw [← hV]
-  -- `G - Uᵀ A U` vanishes modulo every power of `π`.
-  suffices h : (fun p : n × n ↦ (G - Uᵀ * A * U) p.1 p.2) = 0 by
-    ext i i'
-    simpa [sub_eq_zero, eq_comm] using congrFun h (i, i')
-  refine TauCeti.eq_zero_of_forall_pow_dvd π fun m p ↦ ?_
-  choose W hW using hU m
-  have hUW : U = (s m).1 + π ^ m • Matrix.of W := by
-    ext i i'
-    simp [← hW i i']
-  have hdiff : G - Uᵀ * A * U = π ^ m • (π ^ (j + 1) • ((s m).2 + (s m).2ᵀ) -
-      ((Matrix.of W)ᵀ * A * (s m).1 + (s m).1ᵀ * A * Matrix.of W +
-        π ^ m • ((Matrix.of W)ᵀ * A * Matrix.of W))) := by
-    rw [hUW, ← sub_add_cancel G ((s m).1ᵀ * A * (s m).1), hinv m]
-    simp only [transpose_add, transpose_smul, Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul,
-      Matrix.mul_smul]
-    rw [show j + m + 1 = m + (j + 1) by omega, pow_add]
-    module
-  rw [hdiff]
-  exact ⟨_, rfl⟩
+  exact transpose_mul_mul_eq_of_forall_pow_dvd_sub π (X := fun m ↦ (s m).1)
+    (Y := fun m ↦ (s m).2) hU hinv
 
 end Matrix

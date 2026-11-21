@@ -393,6 +393,15 @@ theorem relationsInSigned_constantsVarsEquiv {γ : Type uγ} (s : Bool)
   exact ((Function.injective_id.sigma_map fun _ =>
     (L.lhomWithConstants_injective γ).onRelation).preimage_image _).symm
 
+/-- Abstracting one constant preserves each relation polarity exactly. -/
+@[simp]
+theorem relationsInSigned_abstractConst {γ : Type uγ} [DecidableEq γ] (s : Bool)
+    (c : γ) (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    (abstractConst c φ).relationsInSigned s = φ.relationsInSigned s := by
+  rw [abstractConst_def, relationsInSigned_constantsVarsEquiv_symm, relationsInSigned_mapBound,
+    relationsInSigned_relabel, ← relationsInSigned_constantsVarsEquiv_symm s (constantsVarsEquiv φ),
+    constantsVarsEquiv.symm_apply_apply]
+
 /-! ### Polarity monotonicity of realization -/
 
 /-- **Polarity monotonicity of realization.** On a single carrier `M`, if two `L`-structures `S`
@@ -662,7 +671,7 @@ theorem relationsInSigned_restrictSymbols {F : Set (Σ k, L.Functions k)}
     {R : Set (Σ k, L.Relations k)} (s : Bool) (φ : L.BoundedFormulaInf ι α n)
     (hF : φ.functionsIn ⊆ F) (hR : φ.relationsIn ⊆ R) :
     (φ.restrictSymbols hF hR).relationsInSigned s =
-      (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.1⟩ : Σ k, L.Relations k)) ⁻¹'
+      (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.val⟩ : Σ k, L.Relations k)) ⁻¹'
         φ.relationsInSigned s := by
   have h := (symbSublangIncl F R).preimage_relationsInSigned_onBoundedFormulaInf
     (fun _ => (symbSublangIncl_injective F R).onRelation) s (φ.restrictSymbols hF hR)

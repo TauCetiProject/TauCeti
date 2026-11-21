@@ -98,13 +98,6 @@ noncomputable abbrev coordinateMap :
     SpecialLinear.coordinateHopfAlgebra R 2 ⟶ coordinateHopfAlgebra R :=
   SpecialLinear.UpperTriangular.coordinateMap R 2
 
-/-- The upper-triangular quotient coordinate morphism sends an ambient coordinate to its quotient
-class. -/
-theorem coordinateMap_apply (h : SpecialLinear.coordinateHopfAlgebra R 2) :
-    (coordinateMap R).hom h = Ideal.Quotient.mkₐ R (definingHopfIdeal R).toIdeal h :=
-  CommHopfAlgCat.mkQuotient_apply
-    (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R) h
-
 /-- The kernel of the upper-triangular quotient coordinate morphism is the principal
 lower-left-coordinate ideal. -/
 theorem coordinateMap_ker :
@@ -116,7 +109,7 @@ theorem coordinateMap_ker :
 @[simp↓]
 theorem coordinateMap_lowerLeftCoordinate :
     (coordinateMap R).hom (lowerLeftCoordinate R) = 0 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]
   exact Ideal.Quotient.eq_zero_iff_mem.mpr
     (definingHopfIdeal_toIdeal R ▸ Ideal.mem_span_singleton_self _)
 
@@ -166,7 +159,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : SL2Borel A) :
     CommHopfAlgCat.quotientPointsHom
         (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
         (CommAlgCat.of R A) ((pointsMulEquiv (R := R) (A := A)).symm g) =
-      (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g.1 := by
+      (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g.val := by
   apply (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).injective
   rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 

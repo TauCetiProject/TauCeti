@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Topology.Sets.Opens
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DifferentialForm.Support
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -44,6 +46,10 @@ extension by zero is discontinuous at the other origin.
   de Rham cohomology, computed on classes by `extendByZero_mk`.
 * `TauCeti.compactlySupportedDeRhamCohomology.exists_sum_extendByZero`: in degree at least the
   model dimension, every class is a finite sum of extensions by zero from an open cover.
+* `TauCeti.compactlySupportedDeRhamCohomology.extendByZeroTop`: extension by zero from an open
+  subset into the whole manifold on compactly supported cohomology. A class of a form supported in
+  `U` comes from `U` (`mk_mem_range_extendByZeroTop`), and in the top degree the classes from the
+  members of an open cover span (`eq_top_of_forall_range_extendByZeroTop_le`).
 * `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForms` and
   `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedForms`: let `η` be a
   smooth form on `W`, exact on an open subset `U ≤ W`, and let a smooth function on `W` vanish near
@@ -81,42 +87,43 @@ subsets of a Hausdorff manifold. -/
 def extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ) :
     compactlySupportedForms I U k →ₗ[ℝ] compactlySupportedForms I W k where
   toFun φ :=
-    ⟨⟨RoughForm.extendByZero W φ.1.1,
-        (φ.1.isSmoothForm.extendByZero h fun _ hx ↦
-          RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp φ.2)
+    ⟨⟨RoughForm.extendByZero W φ.val.val,
+        (φ.val.isSmoothForm.extendByZero h fun _ hx ↦
+          RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp
+              φ.property)
             hx).mem_smoothBundleForms⟩,
       (mem_compactlySupportedForms I).mpr <|
-        RoughForm.isCompact_tsupport_extendByZero h ((mem_compactlySupportedForms I).mp φ.2)⟩
-  map_add' φ ψ := Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_add W φ.1.1 ψ.1.1
-  map_smul' c φ := Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_smul W c φ.1.1
+        RoughForm.isCompact_tsupport_extendByZero h ((mem_compactlySupportedForms I).mp φ.property)⟩
+  map_add' φ ψ := Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_add W φ.val.val ψ.val.val
+  map_smul' c φ := Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_smul W c φ.val.val
 
 /-- The extension by zero of a compactly supported form is its extension by zero as a rough
 form. -/
 @[simp]
 theorem coe_extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ) (φ : compactlySupportedForms I U k) :
     ((extendByZero h k φ : SmoothForm I W ℝ k) : RoughForm I W ℝ k) =
-      RoughForm.extendByZero W (φ : SmoothForm I U ℝ k).1 :=
+      RoughForm.extendByZero W (φ : SmoothForm I U ℝ k).val :=
   (rfl)
 
 /-- Extension by zero from an open subset to itself is the identity. -/
 @[simp]
 theorem extendByZero_self (U : Opens M) (k : ℕ) :
     extendByZero (I := I) (le_refl U) k = LinearMap.id :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_self φ.1.1
+  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_self φ.val.val
 
 /-- Extending by zero in two steps along `U ≤ V ≤ W` is extending by zero from `U` to `W`. -/
 @[simp]
 theorem extendByZero_extendByZero {U V W : Opens M} (h₁ : U ≤ V) (h₂ : V ≤ W) (k : ℕ)
     (φ : compactlySupportedForms I U k) :
     extendByZero h₂ k (extendByZero h₁ k φ) = extendByZero (h₁.trans h₂) k φ :=
-  Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_extendByZero h₁ W φ.1.1
+  Subtype.ext <| Subtype.ext <| RoughForm.extendByZero_extendByZero h₁ W φ.val.val
 
 /-- Extension by zero of compactly supported forms is injective: restricting the extension back to
 the smaller open subset recovers the form. -/
 theorem extendByZero_injective {U W : Opens M} (h : U ≤ W) (k : ℕ) :
     Function.Injective (extendByZero (I := I) h k) := fun φ ψ hφψ ↦ by
   have := congrArg (fun χ : compactlySupportedForms I W k ↦
-    TauCeti.mpullback I I (Opens.inclusion h) (χ : SmoothForm I W ℝ k).1) hφψ
+    TauCeti.mpullback I I (Opens.inclusion h) (χ : SmoothForm I W ℝ k).val) hφψ
   simp only [coe_extendByZero, RoughForm.mpullback_inclusion_extendByZero] at this
   exact Subtype.ext (Subtype.ext this)
 
@@ -125,22 +132,23 @@ open subset `U ≤ W` exactly when its support lies in `U`. -/
 theorem mem_range_extendByZero_iff {U W : Opens M} (h : U ≤ W) {k : ℕ}
     {φ : compactlySupportedForms I W k} :
     φ ∈ LinearMap.range (extendByZero h k) ↔
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (φ : SmoothForm I W ℝ k).1 ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (φ : SmoothForm I W ℝ k).val ⊆
         {x | (x : M) ∈ U} := by
   refine ⟨?_, fun hφ ↦ ?_⟩
   · rintro ⟨ψ, rfl⟩
     refine (RoughForm.tsupport_extendByZero_subset h
-      ((mem_compactlySupportedForms I).mp ψ.2)).trans ?_
+      ((mem_compactlySupportedForms I).mp ψ.property)).trans ?_
     rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   -- The restriction of `φ` to `U` is compactly supported, since the support of `φ` is a compact
   -- subset of the image of the embedding of `U` in `W`.
   let ψ : SmoothForm I U ℝ k :=
     SmoothForm.mpullback (I := I) (I' := I) (Opens.inclusion h) (contMDiff_inclusion _) φ
-  have hψ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ.1) := by
+  have hψ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ.val) := by
     rw [SmoothForm.coe_mpullback]
     exact (Topology.IsInducing.isCompact_preimage' (f := Opens.inclusion h)
-        (Topology.IsEmbedding.inclusion h).isInducing ((mem_compactlySupportedForms I).mp φ.2)
+        (Topology.IsEmbedding.inclusion h).isInducing ((mem_compactlySupportedForms I).mp
+            φ.property)
         fun x hx ↦ ⟨⟨x, hφ hx⟩, rfl⟩).of_isClosed_subset (_root_.isClosed_tsupport _)
         (RoughForm.tsupport_mpullback_subset_preimage (f := Opens.inclusion h)
           (continuous_inclusion h) _)
@@ -173,24 +181,24 @@ theorem exists_sum_extendByZero [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   have : LocallyCompactSpace W := ChartedSpace.locallyCompactSpace H W
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
     (fun i ↦ {x : W | (x : M) ∈ U i})
-    (fun i ↦ (U i).isOpen.preimage continuous_subtype_val) (fun x _ ↦ by
-      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover x.2)
+    (fun i ↦ (U i).isOpen.preimage continuous_subtypeVal) (fun x _ ↦ by
+      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover x.property)
       exact Set.mem_iUnion.mpr ⟨i, hi⟩)
   -- Use the model-fibre view for function-support lemmas, whose codomain is nondependent.
   let θ (i : ι) : compactlySupportedForms I W k :=
-    ⟨⟨fun x ↦ ρ i x • φ.1.1 x,
-        (φ.1.isSmoothForm.fun_smul (ρ i).contMDiff).mem_smoothBundleForms⟩,
+    ⟨⟨fun x ↦ ρ i x • φ.val.val x,
+        (φ.val.isSmoothForm.fun_smul (ρ i).contMDiff).mem_smoothBundleForms⟩,
       (mem_compactlySupportedForms I).mpr <|
-        ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (isClosed_tsupport _)
+        ((mem_compactlySupportedForms I).mp φ.property).of_isClosed_subset (isClosed_tsupport _)
           (_root_.tsupport_smul_subset_right (ρ i)
-            (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1))⟩
+            (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.val.val))⟩
   have hθ (i : ι) : θ i ∈ LinearMap.range (extendByZero (hU i) k) :=
     (mem_range_extendByZero_iff (hU i)).mpr <|
       (_root_.tsupport_smul_subset_left (ρ i)
-        (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1)).trans (hρ i)
+        (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.val.val)).trans (hρ i)
   choose ψ hψ using hθ
-  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.1.1
-    ((mem_compactlySupportedForms I).mp φ.2) ρ.toPartitionOfUnity
+  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.val.val
+    ((mem_compactlySupportedForms I).mp φ.property) ρ.toPartitionOfUnity
   refine ⟨s, ψ, ?_⟩
   simp_rw [hψ]
   refine Subtype.ext <| Subtype.ext ?_
@@ -203,9 +211,11 @@ theorem mextDerivₗ_extendByZero [IsManifold I 2 M] {U W : Opens M} (h : U ≤ 
   Subtype.ext <| Subtype.ext <| by
     simp only [coe_mextDerivₗ, mextDerivₗ_apply, coe_extendByZero]
     exact RoughForm.mextDeriv_extendByZero h fun _ hx ↦
-      RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp φ.2) hx
+      RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp φ.property) hx
 
 end compactlySupportedForms
+
+section ClosedForms
 
 variable [IsManifold I 2 M]
 
@@ -219,16 +229,16 @@ def extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ) :
     ((compactlySupportedForms I W k).subtype ∘ₗ compactlySupportedForms.extendByZero h k ∘ₗ
       Submodule.inclusion (compactlySupportedClosedForms_le_compactlySupportedForms I k))
     fun φ ↦ by
-      have hcs := compactlySupportedClosedForms_le_compactlySupportedForms I k φ.2
-      have hφ : compactlySupportedForms.mextDerivₗ I U k ⟨φ.1, hcs⟩ = 0 := Subtype.ext <| by
+      have hcs := compactlySupportedClosedForms_le_compactlySupportedForms I k φ.property
+      have hφ : compactlySupportedForms.mextDerivₗ I U k ⟨φ.val, hcs⟩ = 0 := Subtype.ext <| by
         rw [compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero]
-        exact (mem_closedForms_iff_mextDerivₗ_eq_zero I φ.1).mp
-          (compactlySupportedClosedForms_le_closedForms I k φ.2)
+        exact (mem_closedForms_iff_mextDerivₗ_eq_zero I φ.val).mp
+          (compactlySupportedClosedForms_le_closedForms I k φ.property)
       have h0 := congrArg Subtype.val
-        (compactlySupportedForms.mextDerivₗ_extendByZero h k ⟨φ.1, hcs⟩)
+        (compactlySupportedForms.mextDerivₗ_extendByZero h k ⟨φ.val, hcs⟩)
       rw [hφ, map_zero, compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero] at h0
       exact (mem_compactlySupportedClosedForms I).mpr
-        ⟨(compactlySupportedForms.extendByZero h k ⟨φ.1, hcs⟩).2,
+        ⟨(compactlySupportedForms.extendByZero h k ⟨φ.val, hcs⟩).property,
           (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr h0⟩
 
 /-- The extension by zero of a compactly supported closed form is its extension by zero as a
@@ -237,7 +247,7 @@ rough form. -/
 theorem coe_extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ)
     (φ : compactlySupportedClosedForms I U k) :
     ((extendByZero h k φ : SmoothForm I W ℝ k) : RoughForm I W ℝ k) =
-      RoughForm.extendByZero W (φ : SmoothForm I U ℝ k).1 :=
+      RoughForm.extendByZero W (φ : SmoothForm I U ℝ k).val :=
   (rfl)
 
 end compactlySupportedClosedForms
@@ -279,6 +289,16 @@ theorem extendByZero_f {U W : Opens M} (h : U ≤ W) (k : ℕ) :
       (compactlySupportedDeRhamComplexXIso I (M := U) k).hom ≫
         ModuleCat.ofHom (compactlySupportedForms.extendByZero h k) := by
   simp [extendByZero]
+
+/-- The cochain map of extension by zero, on a form read through the canonical identification of
+the degree-`k` object, is extension by zero of that form. -/
+theorem extendByZero_f_inv_apply {U W : Opens M} (h : U ≤ W) (k : ℕ)
+    (φ : compactlySupportedForms I U k) :
+    (extendByZero (I := I) h).f k ((compactlySupportedDeRhamComplexXIso I k).inv φ) =
+      (compactlySupportedDeRhamComplexXIso I k).inv
+        (compactlySupportedForms.extendByZero h k φ) := by
+  rw [(Iso.eq_comp_inv _).mpr (extendByZero_f h k)]
+  simp
 
 /-- Extension by zero from an open subset to itself is the identity cochain map. -/
 @[simp]
@@ -359,7 +379,7 @@ theorem exists_sum_extendByZero [FiniteDimensional ℝ E] {M : Type*}
   classical
   obtain ⟨φ, rfl⟩ := mk_surjective I n c
   let φc : compactlySupportedForms I W n :=
-    ⟨φ.1, (compactlySupportedClosedForms_le_compactlySupportedForms I n) φ.2⟩
+    ⟨φ.val, (compactlySupportedClosedForms_le_compactlySupportedForms I n) φ.property⟩
   obtain ⟨s, ψ, hψ⟩ := compactlySupportedForms.exists_sum_extendByZero U hU hcover n φc
   refine ⟨s, fun i ↦ mk I n (compactlySupportedForms.toClosedOfFinrankLe I hn (ψ i)), ?_⟩
   have hφ := congrArg (compactlySupportedForms.toClosedOfFinrankLe I hn) hψ
@@ -398,6 +418,34 @@ open Topology
 
 variable {U W : Opens M} (h : U ≤ W)
 
+/-- **The exterior derivative of a cut-off primitive.** Let `θ` be a smooth form on an open
+subset `U ≤ W` with `dθ = η` on `U`, for a smooth form `η` on `W`, and let `ρ` be a function on `W`
+vanishing near every point of `W` outside `U`. At a point near which `ρ` is identically one, the
+exterior derivative of the cut-off primitive `ρ θ`, extended by zero to `W`, is `η`. -/
+theorem mextDeriv_extendByZero_smul_apply_of_eventuallyEq_one {ρ : W → ℝ}
+    (hρU : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, ρ y = 0) {k : ℕ} {η : SmoothForm I W ℝ (k + 1)}
+    {θ : SmoothForm I U ℝ k}
+    (hθ : mextDerivₗ I k θ = SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion h) η)
+    {x : W} (hx : ρ =ᶠ[𝓝 x] 1) :
+    mextDeriv (RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y) x =
+      η.val x := by
+  -- Near `x` the function `ρ` is identically one, so `x` lies in `U`.
+  have hxU : (x : M) ∈ U := by
+    by_contra hxU
+    obtain ⟨y, hy₀, hy₁⟩ := ((hρU x hxU).and hx).exists
+    exact zero_ne_one (hy₀.symm.trans hy₁)
+  obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
+  -- On `U` near `x` the cut-off primitive is `θ`, so its exterior derivative is `dθ = η` at `x`.
+  have hμ : ∀ᶠ y in 𝓝 x, (fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y) y = θ.val y := by
+    filter_upwards [(continuous_inclusion h).continuousAt.eventually hx] with y hy
+    rw [hy, Pi.one_apply, one_smul]
+  have hdθ : mextDeriv θ.val x = η.val (Opens.inclusion h x) := by
+    rw [← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply]
+  rw [← mpullback_inclusion_apply h
+      (mextDeriv (RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y)),
+    mpullback_inclusion_mextDeriv,
+    RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ, hdθ]
+
 /-- Let `ρ` be a smooth function on `W` that vanishes near every point of `W` outside `U` and
 such that `1 - ρ` has compact support. If a smooth form `η` on `W` is exact on `U`, then `dη` is
 the exterior derivative of a compactly supported form on `W`. -/
@@ -411,32 +459,19 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForm
   obtain ⟨θ, hθ⟩ := hη
   -- The cut-off primitive `ρ θ`, extended by zero from `U` to `W`.
   let μ : SmoothForm I W ℝ k :=
-    ⟨RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.1 y,
+    ⟨RoughForm.extendByZero W fun y : U ↦ ρ (Opens.inclusion h y) • θ.val y,
       (θ.isSmoothForm.extendByZero_smul h hρ hρU).mem_smoothBundleForms⟩
   rw [exactCompactlySupportedForms_succ]
   refine ⟨η - mextDerivₗ I k μ, (mem_compactlySupportedForms I).mpr ?_, ?_⟩
   · refine hρc.of_isClosed_subset (_root_.isClosed_tsupport _) <| closure_minimal (fun x hx ↦ ?_)
       (isClosed_tsupport _)
     by_contra hxρ
-    -- Near `x` the function `ρ` is identically one, so `x` lies in `U`.
-    have hρ1 : ∀ᶠ y in 𝓝 x, ρ y = 1 :=
+    -- Near `x` the function `ρ` is identically one, so there `dμ = η`.
+    have hρ1 : ρ =ᶠ[𝓝 x] 1 :=
       (notMem_tsupport_iff_eventuallyEq.mp hxρ).mono fun y hy ↦ (sub_eq_zero.mp hy).symm
-    have hxU : (x : M) ∈ U := by
-      by_contra hxU
-      obtain ⟨y, hy₀, hy₁⟩ := ((hρU x hxU).and hρ1).exists
-      exact zero_ne_one (hy₀.symm.trans hy₁)
-    obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
-    -- On `U` near `x` the cut-off primitive is `θ`, so `dμ` agrees with `dθ = η` at `x`.
-    have hμ : ∀ᶠ y in 𝓝 x, (fun y : U ↦ ρ (Opens.inclusion h y) • θ.1 y) y = θ.1 y := by
-      filter_upwards [(continuous_inclusion h).continuousAt.eventually hρ1] with y hy
-      rw [hy, one_smul]
-    have hdμ : mextDeriv μ.1 (Opens.inclusion h x) = mextDeriv θ.1 x := by
-      rw [← mpullback_inclusion_apply h (mextDeriv μ.1), mpullback_inclusion_mextDeriv,
-        RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ]
-    have hdθ : mextDeriv θ.1 x = η.1 (Opens.inclusion h x) := by
-      rw [← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply]
     apply hx
-    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply, hdμ, hdθ, sub_self]
+    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply,
+      mextDeriv_extendByZero_smul_apply_of_eventuallyEq_one h hρU hθ hρ1, sub_self]
     -- The two zeros are the zero of the fibre and the value of the zero form at `x`.
     rfl
   · rw [map_sub, ← LinearMap.comp_apply (mextDerivₗ I (k + 1)), mextDerivₗ_comp_mextDerivₗ,
@@ -454,15 +489,15 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedFor
   -- The constant function `c` on `W`, a closed `0`-form.
   let γ := (closedFormsZeroEquiv I W).symm (LocallyConstant.const W c)
   rw [exactCompactlySupportedForms_succ]
-  refine ⟨η - γ.1, (mem_compactlySupportedForms I).mpr ?_, ?_⟩
+  refine ⟨η - γ.val, (mem_compactlySupportedForms I).mpr ?_, ?_⟩
   · refine hU.of_isClosed_subset (isClosed_tsupport _) <| closure_minimal (fun x hx ↦ ?_)
-      (U.isOpen.preimage continuous_subtype_val).isClosed_compl
+      (U.isOpen.preimage continuous_subtypeVal).isClosed_compl
     intro hxU
     obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
     -- At points of `U`, both `η` and the constant form `γ` take the value `c`.
-    have hγ : γ.1.1 = RoughForm.ofFunction I fun _ ↦ c :=
+    have hγ : γ.val.val = RoughForm.ofFunction I fun _ ↦ c :=
       coe_closedFormsZeroEquiv_symm_apply I (LocallyConstant.const W c)
-    have hηx : η.1 (Opens.inclusion h x) 0 = c := by
+    have hηx : η.val (Opens.inclusion h x) 0 = c := by
       have hcx := congrFun hc x
       simp only [SmoothForm.coe_mpullback, mpullback_inclusion_apply, Function.const_apply] at hcx
       exact hcx
@@ -471,8 +506,111 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedFor
       hγ, RoughForm.ofFunction_apply, hηx, sub_self]
     -- The right-hand side is the zero alternating map evaluated at the empty tuple.
     rfl
-  · rw [map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I γ.1).mp γ.2, sub_zero]
+  · rw [map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I γ.val).mp γ.property, sub_zero]
 
 end ExactNearInfinity
+
+end ClosedForms
+
+/-! ### Extension by zero into the whole manifold
+
+Extension by zero is defined between open subsets of `M`. To extend from an open subset `U` into
+`M` itself, extend to the open subset `⊤` and identify `⊤` with `M` through its inclusion
+`Diffeomorph.ofTop`. -/
+
+section Top
+
+namespace compactlySupportedDeRhamCohomology
+
+section
+
+variable [IsManifold I 2 M]
+
+/-- Extension by zero from an open subset `U` of a Hausdorff manifold `M` into `M` itself, on
+compactly supported cohomology: extension by zero to the open subset `⊤`, identified with `M`
+through its inclusion. -/
+def extendByZeroTop (U : Opens M) (k : ℕ) :
+    compactlySupportedDeRhamCohomology I U k →ₗ[ℝ] compactlySupportedDeRhamCohomology I M k :=
+  (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) k).symm.toLinearMap ∘ₗ extendByZero le_top k
+
+/-- Under the identification of the open subset `⊤` with `M`, extension by zero into `M` is
+extension by zero into `⊤`. -/
+theorem equivOfDiffeomorph_extendByZeroTop (U : Opens M) (k : ℕ)
+    (x : compactlySupportedDeRhamCohomology I U k) :
+    equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) k (extendByZeroTop U k x) =
+      extendByZero le_top k x := by
+  rw [extendByZeroTop, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+
+/-- Extension by zero into `M` sends the class of a compactly supported closed form on `U` to the
+class of the pullback, along the identification of `M` with the open subset `⊤`, of its extension
+by zero to `⊤`. -/
+@[simp]
+theorem extendByZeroTop_mk (U : Opens M) (k : ℕ) (φ : compactlySupportedClosedForms I U k) :
+    extendByZeroTop U k (mk I k φ) =
+      mk I k (compactlySupportedClosedForms.mpullback (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm
+        (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm.contMDiff
+        (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm.toHomeomorph.isProperMap k
+        (compactlySupportedClosedForms.extendByZero le_top k φ)) := by
+  rw [extendByZeroTop, LinearMap.comp_apply, extendByZero_mk, LinearEquiv.coe_coe,
+    equivOfDiffeomorph_symm_apply]
+  exact map_mk _ _ _ k _
+
+/-- The class of a compactly supported closed form on `M` supported in an open subset `U` comes from
+`H^k_c(U)` by extension by zero. -/
+theorem mk_mem_range_extendByZeroTop (U : Opens M) {k : ℕ}
+    (φ : compactlySupportedClosedForms I M k)
+    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.val.val ⊆ U) :
+    mk I k φ ∈ LinearMap.range (extendByZeroTop U k) := by
+  let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
+  let ψ := compactlySupportedClosedForms.mpullback Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k φ
+  have hψ : (ψ : SmoothForm I (⊤ : Opens M) ℝ k).val = mpullback I I Φ φ.val.val :=
+    compactlySupportedClosedForms.coe_coe_mpullback _ _ _ k φ
+  have hψc := compactlySupportedClosedForms_le_compactlySupportedForms I k ψ.property
+  -- The pullback of `φ` to `⊤` is supported in `U`, so it is an extension by zero from `U`.
+  obtain ⟨χ, hχ⟩ := (compactlySupportedForms.mem_range_extendByZero_iff (le_top : U ≤ ⊤)
+    (φ := ⟨ψ.val, hψc⟩)).mpr <| by
+    dsimp only
+    rw [hψ]
+    refine (RoughForm.tsupport_mpullback_subset_preimage Φ.continuous _).trans fun x hx ↦ ?_
+    simpa [Φ, Diffeomorph.coe_ofTop] using hφ hx
+  -- The form `χ` is closed, since its extension by zero is.
+  have hdχ : compactlySupportedForms.mextDerivₗ I U k χ = 0 :=
+    compactlySupportedForms.extendByZero_injective (le_top : U ≤ ⊤) (k + 1) <| by
+      rw [map_zero, ← compactlySupportedForms.mextDerivₗ_extendByZero, hχ]
+      refine Subtype.ext ?_
+      rw [compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero]
+      exact (mem_closedForms_iff_mextDerivₗ_eq_zero I ψ.val).mp
+        (compactlySupportedClosedForms_le_closedForms I k ψ.property)
+  refine ⟨mk I k ⟨χ.val, (mem_compactlySupportedClosedForms I).mpr
+    ⟨χ.property, (mem_closedForms_iff_mextDerivₗ_eq_zero I χ.val).mpr
+      (by simpa using congrArg Subtype.val hdχ)⟩⟩, ?_⟩
+  rw [← (equivOfDiffeomorph Φ k).injective.eq_iff, equivOfDiffeomorph_extendByZeroTop,
+    extendByZero_mk, equivOfDiffeomorph_mk]
+  refine congrArg (mk I k) (Subtype.ext (Subtype.ext ?_))
+  rw [compactlySupportedClosedForms.coe_extendByZero,
+    ← compactlySupportedForms.coe_extendByZero (le_top : U ≤ ⊤), hχ]
+
+end
+
+/-- In the top degree, a submodule of `H^n_c(M)` containing the classes from every member of a
+family of open subsets covering `M` is everything: every class is a finite sum of extensions by zero
+from members of the family (`exists_sum_extendByZero`). -/
+theorem eq_top_of_forall_range_extendByZeroTop_le [IsManifold I ∞ M] [FiniteDimensional ℝ E]
+    [SigmaCompactSpace M] {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
+    {K : Submodule ℝ (compactlySupportedDeRhamCohomology I M n)} (V : M → Opens M)
+    (hxV : ∀ x, x ∈ V x) (hK : ∀ x, LinearMap.range (extendByZeroTop (V x) n) ≤ K) : K = ⊤ := by
+  refine eq_top_iff.mpr fun y _ ↦ ?_
+  obtain ⟨s, d, hd⟩ := exists_sum_extendByZero V (fun _ ↦ le_top)
+    (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxV x⟩) hn
+    (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) n y)
+  have hy : y = ∑ i ∈ s, extendByZeroTop (V i) n (d i) :=
+    (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) n).injective <| by
+      rw [hd, map_sum]
+      simp only [equivOfDiffeomorph_extendByZeroTop]
+  exact hy ▸ K.sum_mem fun i _ ↦ hK i ⟨d i, rfl⟩
+
+end compactlySupportedDeRhamCohomology
+
+end Top
 
 end TauCeti

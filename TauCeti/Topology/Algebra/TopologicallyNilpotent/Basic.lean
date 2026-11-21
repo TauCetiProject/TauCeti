@@ -201,7 +201,7 @@ end Jacobson
 
 section MultisetProd
 
-variable {S : Type*} [CommRing S] [TopologicalSpace S] [IsLinearTopology S S] [ContinuousNeg S]
+variable {S : Type*} [CommRing S] [TopologicalSpace S] [IsLinearTopology S S]
 
 /-- For a multiset `s` of scalars and a topologically nilpotent `a`, `∏_{μ ∈ s} (1 - μ a) - 1` is
 topologically nilpotent. -/
@@ -217,7 +217,7 @@ theorem IsTopologicallyNilpotent.prod_one_sub_sub_one {K : Type*} [CommRing K] [
       show (1 - algebraMap K S μ * a) * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1 =
         ((s.map fun μ ↦ 1 - algebraMap K S μ * a).prod - 1) +
           -(algebraMap K S μ * a * (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) by ring]
-    exact ih.add ((ha.mul_left _).mul_right _).neg
+    simpa only [neg_one_mul] using ih.add (((ha.mul_left _).mul_right _).mul_left (-1))
 
 end MultisetProd
 

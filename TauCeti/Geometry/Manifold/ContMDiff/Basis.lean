@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousLinearEquiv
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -78,14 +78,8 @@ operator norm. -/
 theorem contMDiffAt_equivFunL_of_contMDiffAt
     (h : ∀ i, ContMDiffAt I 𝓘(𝕜, F) n (fun y ↦ B y i) y) :
     ContMDiffAt I 𝓘(𝕜, F →L[𝕜] ι → 𝕜) n (fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜)) y := by
-  -- The coordinate map is the inverse of the frame, and inversion is smooth.
-  have hinv : (fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜)) =
-      ContinuousLinearMap.inverse ∘ fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F) := by
-    ext1 y
-    rw [Function.comp_apply, ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm]
-  rw [hinv]
-  exact ContDiffAt.comp_contMDiffAt (contDiffAt_map_inverse (B y).equivFunL.symm)
-    (contMDiffAt_equivFunL_symm_of_contMDiffAt h)
+  simpa only [ContinuousLinearEquiv.symm_symm] using
+    (contMDiffAt_equivFunL_symm_of_contMDiffAt h).continuousLinearEquiv_symm
 
 /-- **Smoothness of a family of coordinate maps.** If every vector of a family of bases depends
 `C^n` on the parameter, then so does the coordinate map `F → ι → 𝕜`, in the operator norm. -/

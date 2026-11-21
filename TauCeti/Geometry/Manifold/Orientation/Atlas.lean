@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
@@ -116,7 +116,7 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
     let : ChartedSpace H M := enlarged
     have : IsManifold I 1 M := enlargedManifold
     exact (Manifold.mfderiv_eq_of_chartAt_eq (I := I)
-      (c := cM) (c' := enlarged) rfl e x).trans
+      (c := cM) (c' := enlarged) e x rfl).trans
       (Manifold.mfderiv_atlas_eq_continuousLinearMapAt (I := I) j hxj)
   have hlin : L.toLinearEquiv = (Z.localTriv j).linearEquivAt ℝ x hxj := by
     ext v

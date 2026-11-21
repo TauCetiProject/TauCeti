@@ -9,7 +9,8 @@ public import TauCeti.NumberTheory.ModularForms.EichlerIntegral.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Complex.Periodic
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.Complex.UpperHalfPlane.ResToImagAxis
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The Eichler integral as an integral
@@ -157,16 +158,16 @@ theorem integrableOn_eichlerIntegrand (hh : 0 < h) (hfper : Periodic (f ∘ ofCo
     exact (UpperHalfPlane.mdifferentiable_iff.mp hfhol).continuousOn.comp (f := fun t : ℝ ↦
       (τ : ℂ) + t * I) (by fun_prop) fun t ht ↦ by simpa using add_pos τ.im_pos ht
   refine ⟨hcont.aestronglyMeasurable measurableSet_Ioi, ?_⟩
-  rw [hasFiniteIntegral_iff_enorm]
+  rw [hasFiniteIntegral_iff_eNorm]
   calc ∫⁻ t in Ioi (0 : ℝ), ‖f (ofComplex (τ + t * I)) * (t * I) ^ n * I‖ₑ
       ≤ ∫⁻ t in Ioi 0, ∑' m, ‖F m t‖ₑ :=
         setLIntegral_mono' measurableSet_Ioi fun t ht ↦
-          (congrArg enorm (heq ht)).trans_le enorm_tsum_le_tsum_enorm
+          (congrArg eNorm (heq ht)).trans_le eNorm_tsum_le_tsum_eNorm
     _ = ∑' m, ∫⁻ t in Ioi 0, ‖F m t‖ₑ :=
-        lintegral_tsum fun m ↦ (hint m).aestronglyMeasurable.enorm
+        lintegral_tsum fun m ↦ (hint m).aestronglyMeasurable.eNorm
     _ = ENNReal.ofReal (∑' m, ∫ t in Ioi (0 : ℝ), ‖F m t‖) := by
         rw [ENNReal.ofReal_tsum_of_nonneg (fun m ↦ integral_nonneg fun t ↦ norm_nonneg _) hsum]
-        simp only [ofReal_integral_norm_eq_lintegral_enorm (hint _)]
+        simp only [ofReal_integral_norm_eq_lintegral_eNorm (hint _)]
     _ < ⊤ := ENNReal.ofReal_lt_top
 
 /-- **The Eichler integral as an integral**: if `f` is holomorphic, `h`-periodic and bounded at
@@ -216,5 +217,27 @@ theorem CuspFormClass.eichlerIntegral_eq_integral {F : Type*} [FunLike F ℍ ℂ
   exact TauCeti.eichlerIntegral_eq_integral hh
     (SlashInvariantFormClass.periodic_comp_ofComplex f hΓ) (ModularFormClass.holo f)
     (ModularFormClass.bdd_at_infty f) (_root_.CuspFormClass.qExpansion_coeff_zero f hh hΓ) n τ
+
+/-- The integral of `c • f(z) (z - τ)ⁿ dz` along the vertical ray from `τ` is `c` times the integral
+of `f(τ + i t) (i t)ⁿ i dt`. -/
+lemma integral_ray_smul_eichlerIntegrand (f : ℍ → ℂ) (n : ℕ) (τ : ℍ) (c : ℂ) :
+    ∫ t in Ioi (0 : ℝ), (c • fun z : ℍ ↦ f z * ((z : ℂ) - τ) ^ n) (ofComplex (τ + t * I)) * I =
+      c * ∫ t in Ioi (0 : ℝ), f (ofComplex (τ + t * I)) * (t * I) ^ n * I := by
+  rw [← integral_const_mul]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+  simp only [Pi.smul_apply, smul_eq_mul, coe_ofComplex_add_mul_I_sub τ ht]
+  ring
+
+/-- The vertical ray integrand `c • f(z) (z - τ)ⁿ` of a cusp form `f` is integrable along the ray
+from `τ`. -/
+lemma CuspFormClass.integrableOn_ray_smul_eichlerIntegrand {F : Type*} [FunLike F ℍ ℂ]
+    {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} [CuspFormClass F Γ k] (f : F) (hh : 0 < h)
+    (hΓ : h ∈ Γ.strictPeriods) (n : ℕ) (τ : ℍ) (c : ℂ) :
+    IntegrableOn (fun t : ℝ ↦ (c • fun z : ℍ ↦ f z * ((z : ℂ) - τ) ^ n) (ofComplex (τ + t * I)))
+      (Ioi 0) := by
+  refine IntegrableOn.congr_fun ((CuspFormClass.integrableOn_eichlerIntegrand f hh hΓ n
+    τ).const_mul (c * I⁻¹)) (fun t ht ↦ ?_) measurableSet_Ioi
+  simp only [Pi.smul_apply, smul_eq_mul, coe_ofComplex_add_mul_I_sub τ ht]
+  field_simp
 
 end TauCeti

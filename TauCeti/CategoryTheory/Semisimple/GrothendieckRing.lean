@@ -171,7 +171,10 @@ generated. -/
 instance [Finite (SimpleClasses C)] : Module.Finite ℤ (SplitK0 C) :=
   .of_basis (simpleBasis C)
 
-/-- Split `K₀` of a finite semisimple category has rank the number of simple classes. -/
+/-- Split `K₀` of a finite semisimple category has rank the number of simple classes.
+
+This is the statement for `Module.finrank`, so with infinitely many simple classes both sides are
+`0`; the cardinal form `Module.Basis.mk_eq_rank''` applied to `simpleBasis C` holds in general. -/
 theorem finrank_eq_card : Module.finrank ℤ (SplitK0 C) = Nat.card (SimpleClasses C) :=
   Module.finrank_eq_nat_card_basis (simpleBasis C)
 

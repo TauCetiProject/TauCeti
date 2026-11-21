@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Etale.PuncturedFiniteness
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
 
 /-!
@@ -44,6 +44,8 @@ sections are finite étale over `A`. Applied to the restriction of `Spec B` for 
 * `TauCeti.IsLocalRing.extends_iff_sections_finiteEtale`: a finite étale cover of the punctured
   spectrum extends exactly when its sections are finite étale over `A` (Stacks, Lemma 58.20.2
   (0BLK)).
+* `TauCeti.IsLocalRing.extends_iff_sections_etale`: over a local domain, finiteness of the
+  sections is automatic, so the cover extends exactly when its sections are étale over `A`.
 * `TauCeti.IsLocalRing.isTorsionFree_sections`: the sections of a finite étale cover of the
   punctured spectrum are torsion free.
 * `TauCeti.IsLocalRing.finiteEtale_tensorProduct_sections`: their base change to `A_𝔭` is finite
@@ -203,7 +205,7 @@ theorem finiteEtale_tensorProduct_sections (hdepth : 2 ≤ depth (ModuleCat.of A
     refine (mem_puncturedSpectrum_iff A _).2 fun hx ↦ hp ?_
     have hle : x.asIdeal.comap (algebraMap A Ap) ≤ p :=
       calc x.asIdeal.comap (algebraMap A Ap) ≤ (maximalIdeal Ap).comap (algebraMap A Ap) :=
-            Ideal.comap_mono (IsLocalRing.le_maximalIdeal x.2.ne_top)
+            Ideal.comap_mono (IsLocalRing.le_maximalIdeal x.isPrime.ne_top)
         _ = p := Localization.AtPrime.under_maximalIdeal
     have hx' : x.asIdeal.comap (algebraMap A Ap) = maximalIdeal A :=
       congrArg PrimeSpectrum.asIdeal hx
@@ -245,6 +247,20 @@ theorem finite_sections [IsDomain A] (hdepth : 2 ≤ depth (ModuleCat.of A A))
   have := isTorsionFree_sections A V
   finite_of_finiteEtale_localization hdepth _ fun p _ hp ↦
     finiteEtale_tensorProduct_sections A hdepth V p hp
+
+/-- Let `A` be a Noetherian local domain of depth at least two. A finite étale cover `V` of the
+punctured spectrum of `A` extends to a finite étale scheme over `Spec A` if and only if its ring of
+sections is étale over `A`; finiteness of the sections is automatic. The algebra structure is
+induced by the cover's structure morphism followed by the punctured-spectrum inclusion. -/
+@[stacks 0BM9 "last assertion"]
+theorem extends_iff_sections_etale [IsDomain A] (hdepth : 2 ≤ depth (ModuleCat.of A A))
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    (∃ Y : FiniteEtaleScheme (Spec (.of A)),
+      Nonempty ((restrictPunctured A).obj Y ≅ V)) ↔
+    letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
+      (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
+    Algebra.Etale A Γ(V.obj.left, ⊤) :=
+  (extends_iff_sections_finiteEtale A hdepth V).trans (and_iff_right (finite_sections A hdepth V))
 
 end TauCeti.IsLocalRing
 

@@ -61,8 +61,6 @@ namespace HeckeRing.GLn
 
 variable {n : ℕ}
 
-variable [NeZero n]
-
 attribute [local instance] commSemiringIntegralHeckeRingLocal
 
 /-- `x` is triangular with leading coset `T(p ^ a)`: that coset occurs with coefficient `1`, and
@@ -71,7 +69,6 @@ private def IsTriangular (p : ℕ) (a : Fin n → ℕ) (x : IntegralHeckeRing n)
   x (diagCoset (primePowDiag n p a)) = 1 ∧
     ∀ D, x D ≠ 0 → ∃ g, Monotone g ∧ D = diagCoset (primePowDiag n p g) ∧ Dominates a g
 
-omit [NeZero n] in
 private lemma isTriangular_one (p : ℕ) : IsTriangular p 0 (1 : IntegralHeckeRing n) := by
   classical
   have h0 : diagCoset (primePowDiag n p 0) = 1 := by
@@ -109,7 +106,7 @@ private lemma IsTriangular.mul_diagElem {p : ℕ} (hp : p.Prime) {a f : Fin n �
       diagElem_primePowDiag_mul_apply_diagCoset_add hp.pos ha hf]
     intro D hD hne
     by_contra hDE
-    obtain ⟨g, hg, rfl, hag, h, hh, hE, hgh⟩ :=
+    obtain ⟨g, _, rfl, hag, h, hh, hE, hgh⟩ :=
       key (HeckeCosetModule.mem_support_iff.1 hD) (right_ne_zero_of_mul hDE)
     -- the occurring coset is the leading one, so `g + f` dominates `a + f`; as `a` dominates
     -- `g`, this forces `g = a`

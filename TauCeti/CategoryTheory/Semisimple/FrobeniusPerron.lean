@@ -93,7 +93,7 @@ namespace SplitK0
 section Fusion
 
 variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
-  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C] [MonoidalLinear k C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
   [EssentiallySmall.{w} C]
 
@@ -189,7 +189,7 @@ end SplitK0
 section Dim
 
 variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
-  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C] [MonoidalLinear k C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
   [EssentiallySmall.{w} C] [Finite (SimpleClasses C)]
 
@@ -242,7 +242,7 @@ theorem frobeniusPerronDim_zero : frobeniusPerronDim k (0 : C) = 0 :=
 
 /-- A right dual has the same Frobenius–Perron dimension as the object. -/
 @[simp]
-theorem frobeniusPerronDim_rightDual (X : C) :
+theorem frobeniusPerronDim_rightDual [MonoidalLinear k C] (X : C) :
     frobeniusPerronDim k Xᘁ = frobeniusPerronDim k X := by
   rw [← SplitK0.frobeniusPerronChar_of, ← SplitK0.dual_of,
     SplitK0.ringHom_apply_dual k (SplitK0.frobeniusPerronChar k C), RCLike.conj_to_real,
@@ -250,7 +250,7 @@ theorem frobeniusPerronDim_rightDual (X : C) :
 
 /-- A left dual has the same Frobenius–Perron dimension as the object. -/
 @[simp]
-theorem frobeniusPerronDim_leftDual (X : C) :
+theorem frobeniusPerronDim_leftDual [MonoidalLinear k C] (X : C) :
     frobeniusPerronDim k (ᘁX) = frobeniusPerronDim k X := by
   -- `X` and the chosen right dual of `ᘁX` are both right duals of `ᘁX`, hence isomorphic.
   rw [← frobeniusPerronDim_rightDual k (ᘁX)]
@@ -334,7 +334,8 @@ theorem frobeniusPerronDim_le_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
     fun g h hgh ↦ (cancel_epi f).1 hgh
 
 /-- A nonzero object has Frobenius–Perron dimension at least one. -/
-theorem one_le_frobeniusPerronDim {X : C} (hX : ¬IsZero X) : 1 ≤ frobeniusPerronDim k X := by
+theorem one_le_frobeniusPerronDim [MonoidalLinear k C] {X : C} (hX : ¬IsZero X) :
+    1 ≤ frobeniusPerronDim k X := by
   -- The coevaluation is a nonzero morphism out of the simple unit, hence a monomorphism.
   have : Mono (η_ X Xᘁ) := CategoryTheory.mono_of_ne_zero_from_simple (coevaluation_ne_zero hX)
   have h := frobeniusPerronDim_le_of_mono k (η_ X Xᘁ)
@@ -344,34 +345,45 @@ theorem one_le_frobeniusPerronDim {X : C} (hX : ¬IsZero X) : 1 ≤ frobeniusPer
 
 /-- An object has Frobenius–Perron dimension zero exactly when it is a zero object. -/
 @[simp]
-theorem frobeniusPerronDim_eq_zero_iff (X : C) : frobeniusPerronDim k X = 0 ↔ IsZero X :=
+theorem frobeniusPerronDim_eq_zero_iff [MonoidalLinear k C] (X : C) :
+    frobeniusPerronDim k X = 0 ↔ IsZero X :=
   ⟨fun h ↦ by_contra fun hX ↦ by linarith [one_le_frobeniusPerronDim k hX],
     frobeniusPerronDim_eq_zero_of_isZero k⟩
 
 /-- An object has positive Frobenius–Perron dimension exactly when it is nonzero. -/
-theorem frobeniusPerronDim_pos_iff (X : C) : 0 < frobeniusPerronDim k X ↔ ¬IsZero X := by
+theorem frobeniusPerronDim_pos_iff [MonoidalLinear k C] (X : C) :
+    0 < frobeniusPerronDim k X ↔ ¬IsZero X := by
   rw [(frobeniusPerronDim_nonneg k X).lt_iff_ne', Ne, frobeniusPerronDim_eq_zero_iff]
+
+end Dim
+
+section GlobalDim
+
+variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
+  [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
+  [EssentiallySmall.{w} C] [Fintype (SimpleClasses C)]
 
 variable (C) in
 /-- The **Frobenius–Perron dimension of a fusion category**: the sum, over the simple classes, of
 the squared Frobenius–Perron dimensions of their chosen representatives. -/
-def frobeniusPerronGlobalDim [Fintype (SimpleClasses C)] : ℝ :=
+def frobeniusPerronGlobalDim : ℝ :=
   ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2
 
 /-- The defining formula of the Frobenius–Perron dimension of a fusion category. -/
-theorem frobeniusPerronGlobalDim_def [Fintype (SimpleClasses C)] :
+theorem frobeniusPerronGlobalDim_def :
     frobeniusPerronGlobalDim k C = ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2 :=
   (rfl)
 
 /-- The Frobenius–Perron dimension of a fusion category is at least one: the class of the tensor
 unit contributes `1`. -/
-theorem one_le_frobeniusPerronGlobalDim [Fintype (SimpleClasses C)] :
+theorem one_le_frobeniusPerronGlobalDim :
     1 ≤ frobeniusPerronGlobalDim k C := by
   have h := Finset.single_le_sum (f := fun S : SimpleClasses C ↦ frobeniusPerronDim k S.repr ^ 2)
     (fun S _ ↦ sq_nonneg _) (Finset.mem_univ (SimpleClasses.classOf (𝟙_ C)))
   rwa [frobeniusPerronDim_eq_of_iso k (SimpleClasses.classOfReprIso (𝟙_ C)),
     frobeniusPerronDim_tensorUnit, one_pow] at h
 
-end Dim
+end GlobalDim
 
 end TauCeti

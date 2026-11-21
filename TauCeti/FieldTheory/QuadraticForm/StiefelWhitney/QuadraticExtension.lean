@@ -186,15 +186,15 @@ theorem sw2Class_formClass_traceTransfer_smul_sq_of_trace_eq_zero
     formClass_hyperbolicPlane, sw2Class_hyperbolicClass]
 
 /-- **The cross term of the relative Stiefel–Whitney formula vanishes for a quadratic
-extension**: if `L` is generated over `K` by a square root `x ∉ K` of `d`, then
-`w₁(Tr_*⟨1⟩) ∪ cor (a) = (d) ∪ (N a) = 0` for every `a ∈ Lˣ`, with corestriction taken along any
-`K`-embedding `σ` of `L` into a separable closure of `K`. -/
+extension**: if `L` is generated over `K` by a square root `x ∉ K` of `d`, as every quadratic
+extension is, then `w₁(Tr_*⟨1⟩) ∪ cor (a) = (d) ∪ (N a) = 0` for every `a ∈ Lˣ`, with
+corestriction taken along any `K`-embedding `σ` of `L` into a separable closure of `K`. -/
 theorem cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero [Invertible (2 : L)]
-    (σ : L →ₐ[K] SeparableClosure K) (hfin : Module.finrank K L = 2) {x : L} {d : Kˣ}
-    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L (d : K))
+    (σ : L →ₐ[K] SeparableClosure K) (hfin : Module.finrank K L = 2)
     (h1 : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate) (a : Lˣ) :
     (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class (formClass _ h1))
       (galoisCor K L σ 1 (kummerClass a)) = 0 := by
+  obtain ⟨x, d, hx, hx2⟩ := exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
   rw [sw1Class_formClass_traceTransfer_sq_of_sq hfin hx hx2 h1, galoisCor_kummerClass,
     cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one]
   exact hilbertSymbol_normUnits_eq_one ⟨x, by rw [← hx2, _root_.sq]⟩ a
@@ -254,9 +254,7 @@ theorem sw2Class_formClass_traceTransfer_smul_sq [Invertible (2 : L)]
       sw2Class (formClass _ h1) + galoisEvens K L σ hfin (kummerClass a) +
         (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1Class (formClass _ h1))
           (galoisCor K L σ 1 (kummerClass a)) := by
-  obtain ⟨x, d, hx, hx2⟩ :=
-    exists_sq_eq_algebraMap_units_of_finrank_eq_two hfin
-  rw [cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero σ hfin hx hx2 h1, add_zero,
+  rw [cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero σ hfin h1, add_zero,
     sw2Class_formClass_traceTransfer_smul_sq_eq_add_galoisEvens σ hfin a ha h1]
 
 /-- **The relative Stiefel–Whitney formula in degree two, on diagonal presentations of the trace

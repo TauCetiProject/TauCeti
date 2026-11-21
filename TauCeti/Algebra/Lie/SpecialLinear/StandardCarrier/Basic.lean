@@ -183,12 +183,12 @@ enveloping algebra. -/
 noncomputable def rep :
     _root_.UniversalEnvelopingAlgebra ℚ (sl (Fin (r + 1)) ℚ) →ₐ[ℚ]
       Module.End ℚ (Fin (r + 1) → ℚ) :=
-  LieSubalgebra.matrixRepresentation (sl (Fin (r + 1)) ℚ)
+  TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sl (Fin (r + 1)) ℚ) (Fin (r + 1) → ℚ)
 
 theorem rep_ι_apply (x : sl (Fin (r + 1)) ℚ) (v : Fin (r + 1) → ℚ) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply x v
+  TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
 /-- A numbered root generator reads off one coordinate and writes it into another. -/
 theorem rep_rootGenerator_apply (k : Fin r ⊕ Fin r) (v : Fin (r + 1) → ℚ) :
@@ -633,8 +633,9 @@ weights. -/
 @[simp]
 theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin r → Aˣ) :
     (weightTorusPoints r A s : Matrix.GeneralLinearGroup (Fin (r + 1)) A) =
-      TauCeti.UniversalEnvelopingAlgebra.kostantTorusMatrix
-        (lattice r).toAddSubgroup (latticeBasis r) (weight r) s := by
+      TauCeti.diagGL fun k => TauCeti.torusCharacter s (weight r k) := by
+  rw [← TauCeti.UniversalEnvelopingAlgebra.kostantTorusMatrix_apply (lattice r).toAddSubgroup
+    (latticeBasis r) (weight r) s]
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints
     _ _ _ _ _ _ _ _ A s
 
@@ -720,6 +721,23 @@ noncomputable def torusPoints (A : CommAlgCat ℤ) :
     (Fin r → Aˣ) →* LinearMap.GeneralLinearGroup A (A ⊗[ℤ] (lattice r).toAddSubgroup) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints (lattice r).toAddSubgroup
     (latticeBasis r) (weight r) A
+
+/-- The parametrized root subgroup on points is the one supplied by the generic Kostant
+construction. -/
+theorem rootSubgroupParam_def (k : Fin r ⊕ Fin r) (A : CommAlgCat ℤ) :
+    rootSubgroupParam r k A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupParam (rootGenerator r)
+        (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
+        (rep_kostantForm_mem_lattice r) k
+        (isNilpotent_rep_rootGenerator r k) A := by
+  rw [rootSubgroupParam]
+
+/-- The split weight torus on points is the one supplied by the generic Kostant construction. -/
+theorem torusPoints_def (A : CommAlgCat ℤ) :
+    torusPoints r A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints (lattice r).toAddSubgroup
+        (latticeBasis r) (weight r) A := by
+  rw [torusPoints]
 
 /-- **The pinning equation on the base-changed lattice.** In the linear automorphisms of
 `A ⊗[ℤ] lattice r`, a torus point `s` conjugates the root-subgroup element of parameter `u` into the

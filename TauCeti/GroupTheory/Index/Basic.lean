@@ -13,7 +13,7 @@ import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Group
 
 /-!
-# Consequences of the index formula
+# Subgroup index: composition, transversals and adjoining the centre
 
 Adjoining the centre to a finite-index subgroup keeps the index finite, since it only enlarges
 the subgroup.
@@ -26,37 +26,56 @@ Adjoining a two-element subgroup `N ⊄ Γ` normalised by `Γ` is also quantifie
 relative index exactly `2` in `Γ ⊔ N`, so `Γ.index = 2 * (Γ ⊔ N).index`. Taking `N` to be the
 centre gives the `Γ.withCenter` readings.
 
+## Main definitions
+
+* `Subgroup.withCenter`: the subgroup `Γ·Z(G)` obtained by adjoining the centre to `Γ`.
+* `Subgroup.compositeTransversal`: representatives for `G/V` obtained by composing
+  representatives for `G/U` and `U/V`, for `V ≤ U ≤ G`.
+* `MonoidHom.rangeCompHom`: the homomorphism from the range of `φ₁` to the range of `φ₂.comp φ₁`
+  induced by `φ₂`.
+
 ## Main results
 
 * `Subgroup.mem_withCenter_iff`: an element of `Γ·Z(G)` is one of `Γ` times a central one.
 * `TauCeti.index_eq_of_natCard_eq_mul`: cancel a known nonzero subgroup order from the
   order-index formula.
+* `TauCeti.isUnit_natCard_subgroup`: if the order of a finite group is a unit in a semiring, so is
+  the order of every subgroup, because the two differ by the index.
 * `Subgroup.withCenter_le_iff`: the universal property — containing `Γ·Z(G)` is containing both.
 * `Subgroup.withCenter_eq_self_iff`: adjoining the centre changes nothing exactly when the
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
-* `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
-  and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
+* `Subgroup.le_of_coprime_index`: if `H` normalises `N` and `[G : H]` is coprime to `Nat.card N`,
+  then `N ≤ H`.
+* `Subgroup.finiteIndex_of_index_coprime`: an index prime to some `p ≠ 1` is finite.
+* `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: `Γ` has relative index
+  `2` in `Γ ⊔ N`, and the index of `Γ` is twice the index of `Γ ⊔ N`, for an `N` normalised by `Γ`
+  whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
-* `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
+* `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along a chain: if `K` has
+  finite index in `G` and `H.subgroupOf K` has finite index in `K`, then `H` has finite index in
+  `G`, without assuming `H ≤ K`.
 * `Subgroup.compositeTransversal`: representatives for `G/V` obtained by composing
   representatives for `G/U` and `U/V`.
+* `Subgroup.compositeTransversal_spec`: the composite transversal represents every coset of `V`.
+* `Subgroup.exists_mul_out_eq`: a chosen representative of a right coset `S x` differs from `x` by
+  an element of `S`.
 * `Subgroup.sum_compositeTransversal`: the sum of the action along a composite transversal is
   the iterated sum along its two constituent transversals.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
 * `Subgroup.infinite_of_finiteIndex`: a finite-index subgroup of an infinite group is infinite.
-* `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
-  homomorphism has finite index.
 * `Subgroup.finiteIndex_map_mk'`: the instance making the image of a finite-index subgroup in a
   quotient group finite-index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
+* `MonoidHom.finiteIndex_range_of_injective_comp`: if the range of `φ₂.comp φ₁` has finite index
+  and `φ₂` is injective, then the range of `φ₁` has finite index.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
-  two facts on `Γ.withCenter`, when the centre is `{1, a}`.
+  two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
 -/
 
 
@@ -211,6 +230,15 @@ theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.rang
     (Subgroup.finiteIndex_of_le hle).index_ne_zero
     Subgroup.FiniteIndex.index_ne_zero
 
+/-- If the range of `φ₂.comp φ₁` has finite index and `φ₂` is injective, then the range of `φ₁`
+has finite index. -/
+@[to_additive /-- If the range of `φ₂.comp φ₁` has finite index and `φ₂` is injective, then the
+range of `φ₁` has finite index. -/]
+theorem finiteIndex_range_of_injective_comp (φ₁ : A →* B) (φ₂ : B →* C)
+    (hφ₂ : Function.Injective φ₂) [(φ₂.comp φ₁).range.FiniteIndex] : φ₁.range.FiniteIndex := by
+  simpa only [MonoidHom.range_comp, Subgroup.comap_map_eq_self_of_injective hφ₂] using
+    (inferInstance : ((φ₂.comp φ₁).range.comap φ₂).FiniteIndex)
+
 end MonoidHom
 
 namespace Subgroup
@@ -228,14 +256,17 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
   -- instance synthesis does not unfold: without this, `Countable (G ⧸ H)` is not found.
   inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
 
-/-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and `H`
-has finite index in `K` -- that is, the copy `H.subgroupOf K` of `H` inside `K` has finite index --
-then `H` has finite index in `G`. This is the converse of `Subgroup.instFiniteIndex_subgroupOf`,
-which restricts a finite index in `G` to one in `K`; neither direction is an instance, because the
-intermediate subgroup `K` cannot be recovered from the goal `H.FiniteIndex`. -/
+/-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and
+`H.subgroupOf K`, the part of `H` inside `K` (the elements of `K` lying in `H`, as a subgroup of
+`K`), has finite index in `K`, then `H` has finite index in `G`. The subgroup `H` need not lie in
+`K`; when it does, the hypothesis says that `H` has finite index in `K`. This is the converse of
+`Subgroup.instFiniteIndex_subgroupOf`, the instance which restricts a finite index in `G` to one of
+`H.subgroupOf K` in `K`. The converse is not an instance, because the intermediate subgroup `K`
+cannot be recovered from the goal `H.FiniteIndex`. -/
 @[to_additive /-- **Finite index composes along a chain of additive subgroups.** If `K` has finite
-index in `G` and `H` has finite index in `K` -- that is, the copy `H.addSubgroupOf K` of `H` inside
-`K` has finite index -- then `H` has finite index in `G`. -/]
+index in `G` and `H.addSubgroupOf K`, the part of `H` inside `K` (the elements of `K` lying in `H`,
+as an additive subgroup of `K`), has finite index in `K`, then `H` has finite index in `G`. The
+additive subgroup `H` need not lie in `K`. -/]
 theorem finiteIndex_of_finiteIndex_subgroupOf {G : Type*} [Group G] (H K : Subgroup G)
     [K.FiniteIndex] [(H.subgroupOf K).FiniteIndex] : H.FiniteIndex :=
   isFiniteRelIndex_top_iff.mp <|
@@ -262,13 +293,12 @@ theorem infinite_of_finiteIndex {G : Type*} [Group G] [Infinite G] (H : Subgroup
   have := (finite_iff_finite_and_finiteIndex H).mpr ⟨not_infinite_iff_finite.mp h, ‹_›⟩
   exact not_finite G
 
-/-- The image of a finite-index subgroup under a surjective homomorphism has finite index. -/
-@[to_additive /-- The image of a finite-index additive subgroup under a surjective homomorphism
-has finite index. -/]
-theorem finiteIndex_of_map_eq {G N : Type*} [Group G] [Group N] (H : Subgroup G) [H.FiniteIndex]
-    (f : G →* N) (hf : Function.Surjective f) {K : Subgroup N} (h : H.map f = K) :
-    K.FiniteIndex :=
-  ⟨h ▸ ne_zero_of_dvd_ne_zero FiniteIndex.index_ne_zero (H.index_map_dvd hf)⟩
+/-- A subgroup whose index is prime to some `p ≠ 1` has finite index: `0` is prime to `1` only. -/
+@[to_additive /-- An additive subgroup whose index is prime to some `p ≠ 1` has finite index: `0`
+is prime to `1` only. -/]
+theorem finiteIndex_of_index_coprime {G : Type*} [Group G] (H : Subgroup G) {p : ℕ} (hp : p ≠ 1)
+    (hcop : H.index.Coprime p) : H.FiniteIndex :=
+  ⟨fun h => hp ((Nat.coprime_zero_left p).1 (h ▸ hcop))⟩
 
 /-- The image of a finite-index subgroup in a quotient group has finite index. -/
 @[to_additive /-- The image of a finite-index additive subgroup in a quotient additive group has
@@ -326,6 +356,7 @@ theorem withCenter_eq_self_iff {G : Type*} [Group G] {Γ : Subgroup G} :
     Γ.withCenter = Γ ↔ Subgroup.center G ≤ Γ :=
   sup_eq_left
 
+/-- Adjoining the centre to a finite-index subgroup keeps the index finite. -/
 instance instFiniteIndexWithCenter {G : Type*} [Group G] (Γ : Subgroup G)
     [Γ.FiniteIndex] : Γ.withCenter.FiniteIndex :=
   Subgroup.finiteIndex_of_le Γ.le_withCenter
@@ -337,7 +368,7 @@ has the same relative index in `H ⊔ N` as in `N`, that is `[H ⊔ N : H] = [N 
 
 This is the counterpart of Mathlib's `Subgroup.relIndex_sup_right`, which measures the index of the
 normal factor instead. -/
-@[to_additive TauCeti.relIndex_sup_of_le_normalizer
+@[to_additive
   /-- If an additive subgroup `H` normalises `N`, then `H` has the same relative index in
   `H ⊔ N` as in `N`: `[H ⊔ N : H] = [N : H ⊓ N]`. -/]
 theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
@@ -360,6 +391,18 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
     rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
     simpa [mul_assoc] using hh
 
+/-- If `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then `N ≤ H`. Neither
+`H.index` nor `N` need be finite (`H.index = 0` forces `Nat.card N = 1`, while `Nat.card N = 0`
+forces `H.index = 1`). -/
+@[to_additive
+  /-- If an additive subgroup `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then
+  `N ≤ H`. Neither `H.index` nor `N` need be finite. -/]
+theorem le_of_coprime_index {H N : Subgroup G} (hH : H ≤ normalizer N)
+    (hcop : Nat.Coprime H.index (Nat.card N)) : N ≤ H :=
+  le_sup_right.trans <| relIndex_eq_one.mp <| Nat.eq_one_of_dvd_coprimes hcop
+    (relIndex_dvd_index_of_le le_sup_left)
+    ((relIndex_sup_of_le_normalizer hH).symm ▸ relIndex_dvd_card H N)
+
 /-- **A two-element subgroup normalised by `Γ` and not already inside it has relative index
 `2`.** If every element of `N` is `1` or `a`, and `a ∉ Γ`, then `Γ ⊔ N` splits into the two
 cosets `Γ` and `Γ * a`.
@@ -374,8 +417,9 @@ wants there is `Subgroup.zpowers (-1)`. A caller supplies whichever `N` is in ha
 
 `a` is not assumed to be an involution; it follows from the hypotheses that it is one.
 
-Generalises Mathlib's `Subgroup.relindex_adjoinNegOne_eq_two`
-(`Mathlib/NumberTheory/ModularForms/ArithmeticSubgroups.lean`) from `𝒢 ≤ GL n R` with `a = -1` to
+Generalises Mathlib's `Subgroup.relIndex_adjoinNegOne_eq_two`
+(`Mathlib/NumberTheory/ModularForms/ArithmeticSubgroups.lean`), which is stated for a subgroup of a
+group with a distributive negation and the element `a = -1`, to
 an arbitrary group. -/
 theorem relIndex_sup_eq_two (N : Subgroup G) (hnorm : Γ ≤ Subgroup.normalizer N) (ha : a ∈ N)
     (haΓ : a ∉ Γ) (hN : ∀ c ∈ N, c = 1 ∨ c = a) : Γ.relIndex (Γ ⊔ N) = 2 := by
@@ -391,8 +435,9 @@ theorem relIndex_sup_eq_two (N : Subgroup G) (hnorm : Γ ≤ Subgroup.normalizer
   · exact Or.inr (by simpa using hg)
   · exact Or.inl (by simpa [mul_assoc, ha2] using hg)
 
-/-- **The index doubles on adjoining a two-element subgroup normalised by `Γ` and not inside
-it.** The counting form of `Subgroup.relIndex_sup_eq_two`. -/
+/-- **The index of `Γ` is twice the index of `Γ ⊔ N`, for a two-element subgroup `N` normalised
+by `Γ` and not inside `Γ`.** The counting form of `Subgroup.relIndex_sup_eq_two`: both indices are
+taken in `G`, and `Γ` has relative index `2` in `Γ ⊔ N`. -/
 theorem index_eq_two_mul_index_sup (N : Subgroup G) (hnorm : Γ ≤ Subgroup.normalizer N)
     (ha : a ∈ N) (haΓ : a ∉ Γ) (hN : ∀ c ∈ N, c = 1 ∨ c = a) :
     Γ.index = 2 * (Γ ⊔ N).index := by

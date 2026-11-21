@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.Independence
-public import TauCeti.Analysis.CStarAlgebra.GNS
+public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import Mathlib.Algebra.Star.Subalgebra
 import TauCeti.Algebra.Star.BigOperators
 

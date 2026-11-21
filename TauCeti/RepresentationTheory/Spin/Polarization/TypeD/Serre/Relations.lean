@@ -479,9 +479,9 @@ private theorem lie_typeDRootProduct_of_not_adjacent
   have hyx (k l : Fin n) :
       polar Q (y k) (x l) = if l = k then 1 else 0 := by
     rw [polar_comm, hxy]
-  have hx_mul_eq_zero (k l : Fin n) (hkl : k = l) :
+  have hx_mul_eq_zero (k l : Fin n) (hkl : (k : ℕ) = l) :
       ι Q (x k) * ι Q (x l) = 0 := by
-    subst l
+    obtain rfl : k = l := Fin.ext hkl
     exact hxSq k
   have hn1 : n - 1 + 1 = n := by omega
   have hn2 : n - 2 + 2 = n := by omega
@@ -494,26 +494,19 @@ private theorem lie_typeDRootProduct_of_not_adjacent
       have hindices := not_typeDAdjacent_index_cases i j hij
       rw [ite_eq_left hi, ite_eq_left hj] at hindices
       simp only [hxx, hyy, hxy, zero_smul, add_zero, sub_zero]
-      split_ifs with hforward hbackward
-      · simp only [Fin.ext_iff] at *
-        omega
-      · simp only [Fin.ext_iff] at *
-        omega
-      · simp only [Fin.ext_iff] at *
-        omega
-      · simp only [zero_smul, sub_self]
+      split_ifs <;> first
+        | (simp only [zero_smul, sub_self]; done)
+        | (simp only [Fin.ext_iff] at *; omega)
     · rename_i hj
       rw [lie_ι_mul_ι_ι_mul_ι]
       have hindices := not_typeDAdjacent_index_cases i j hij
       rw [ite_eq_left hi, ite_eq_right hj] at hindices
       simp only [hxx, hxy, zero_smul, sub_zero, Fin.mk.injEq]
-      split_ifs with hnextLast hnextPenultimate
-      · omega
-      · omega
-      · simp only [one_smul, zero_smul, zero_add]
-        apply hx_mul_eq_zero
-        exact Fin.ext_iff.mpr (by simp only; omega)
-      · simp only [zero_smul, add_zero]
+      split_ifs <;> first
+        | omega
+        | (simp only [zero_smul, add_zero]; done)
+        | (simp only [one_smul, zero_smul, zero_add]
+           exact hx_mul_eq_zero _ _ (by simp only; omega))
   · rename_i hi
     split
     · rename_i hj
@@ -522,13 +515,11 @@ private theorem lie_typeDRootProduct_of_not_adjacent
       rw [ite_eq_right hi, ite_eq_left hj] at hindices
       simp only [hxx, hxy, hyx,
         zero_smul, sub_zero, Fin.mk.injEq]
-      split_ifs with hnextLast hnextPenultimate
-      · omega
-      · simp only [one_smul, zero_smul, zero_add, sub_zero]
-        apply hx_mul_eq_zero
-        exact Fin.ext_iff.mpr (by simp only; omega)
-      · omega
-      · simp only [zero_smul, add_zero, sub_self]
+      split_ifs <;> first
+        | omega
+        | (simp only [zero_smul, add_zero, sub_self]; done)
+        | (simp only [one_smul, zero_smul, zero_add, sub_zero]
+           exact hx_mul_eq_zero _ _ (by simp only; omega))
     · rename_i hj
       rw [lie_ι_mul_ι_ι_mul_ι]
       simp only [hxx, zero_smul, add_zero, sub_self]

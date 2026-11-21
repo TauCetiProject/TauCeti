@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 public import TauCeti.Geometry.Toric.Delzant.Torus
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.Fredholm.Basic
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 
 /-!
 # The level set of the Delzant construction
@@ -33,8 +36,9 @@ by restriction to `𝔫`, and its zero level is
 
 `Z = {z | ⟨μ(z), t⟩ = 0 for every t ∈ 𝔫}`
 
-(`TauCeti.Toric.delzantLevel i u c`). The symplectic toric manifold of `Δ` is the quotient
-`Z / N_Δ`. This file proves the properties of `Z` that this reduction needs.
+(`TauCeti.Toric.delzantLevel i u c`, `TauCeti.Toric.mem_delzantLevel`). The symplectic toric
+manifold of `Δ` is the quotient `Z / N_Δ`. This file proves the properties of `Z` that this
+reduction needs.
 
 * **Moment values.** A functional vanishing on `𝔫 = ker β_ℝ` factors through `β_ℝ`. So `z ∈ Z`
   exactly when `μ(z) = β_ℝ^* y` for some `y ∈ V*`, that is `½ |z_j|² + c_j = ⟨y, u_j⟩` for all `j`
@@ -54,12 +58,20 @@ by restriction to `𝔫`, and its zero level is
   the dimension of the orbit through `z`. As the infinitesimal action is free, the derivative of
   the moment map of `N_Δ` is surjective at every point of `Z`, so `0` is a regular value
   (`TauCeti.Toric.IsDelzant.surjective_fderiv_delzantMomentMap_comp`).
+* **Smoothness.** Hence `Z` is a regular level set, and a smooth manifold of dimension
+  `2d - (d - n) = d + n`, where `n = dim V`, for the implicit-function atlas of
+  `TauCeti.levelSetChartedSpace` (`TauCeti.Toric.IsDelzant.isManifold_delzantLevel`).
 
 ## Main definitions
 
 * `TauCeti.Toric.delzantMomentMap c`: the moment map `Σ_j (½ |z_j|² + c_j) e_j^*` of the action of
   `(ℝ / 2πℤ)^ι` on `ℂ^ι` by `z_j ↦ exp(-i θ_j) z_j`.
-* `TauCeti.Toric.delzantLevel i u c`: the zero level `Z` of the moment map of the kernel torus.
+* `TauCeti.Toric.delzantLevel i u c`: the zero level `Z` of the moment map of the kernel torus,
+  with the action `z_j ↦ exp(-i θ_j) z_j` of `(ℝ / 2πℤ)^ι` by `TauCeti.torusRotation`.
+* `TauCeti.Toric.delzantLevelCongr e`: the relabelling `z ↦ z ∘ e.symm` of coordinates, as a
+  homeomorphism between levels which correspond along `e : ι' ≃ ι`.
+* `TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`: the implicit-function atlas of `Z`, modelled
+  on `Fin (d + n) → ℝ`.
 
 ## Main results
 
@@ -69,9 +81,18 @@ by restriction to `𝔫`, and its zero level is
 * `TauCeti.Toric.mem_delzantLevel_iff`: `z ∈ Z` exactly when `μ(z) = β_ℝ^* y` for some `y ∈ V*`.
 * `TauCeti.Toric.setOf_exists_mem_delzantLevel`: these values `y` form the polytope `Δ`.
 * `TauCeti.Toric.isCompact_delzantLevel`: `Z` is compact when `Δ` is bounded.
+* `TauCeti.Toric.prodMap_piLpCongrLeft_mem_delzantLevel_iff`, `TauCeti.Toric.delzantLevel_add`,
+  `TauCeti.Toric.delzantLevel_comp_left`: relabelling the facets relabels the coordinates of `Z`,
+  while translating `Δ` or changing the lattice compatibly does not change `Z`.
 * `TauCeti.Toric.IsDelzant.weightRotation_neg_eq_self_iff`: the kernel torus acts freely on `Z`.
 * `TauCeti.Toric.IsDelzant.surjective_fderiv_delzantMomentMap_comp`: `0` is a regular value of the
   moment map of the kernel torus.
+* `TauCeti.Toric.index_fderiv_delzantMomentMap_comp`: when the real normals span `V`, the
+  derivative of the moment map of the kernel torus has index `d + n`.
+* `TauCeti.Toric.IsDelzant.isManifold_delzantLevel`: `Z` is a smooth manifold of dimension `d + n`.
+* `TauCeti.Toric.IsDelzant.contMDiff_coe_delzantLevel`: the inclusion of `Z` into `ℂ^ι` is smooth.
+* `TauCeti.Toric.IsDelzant.contMDiff_codRestrict_delzantLevel`: a smooth map into `ℂ^ι` with
+  values in `Z` is smooth into `Z`.
 
 ## References
 
@@ -87,7 +108,8 @@ public section
 
 noncomputable section
 
-open Set Real
+open Module Set Real
+open scoped Manifold
 
 namespace TauCeti.Toric
 
@@ -158,6 +180,14 @@ theorem delzantMomentMap_weightRotation (θ : ι → ℝ)
     delzantMomentMap c (weightRotation θ x) = delzantMomentMap c x := by
   simp [delzantMomentMap]
 
+/-- The moment map is invariant under the rotation torus. -/
+@[simp]
+theorem delzantMomentMap_torusRotation (θ : ι → AddCircle (2 * π))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    delzantMomentMap c (torusRotation θ x) = delzantMomentMap c x := by
+  ext t
+  simp only [delzantMomentMap_apply, torusRotation_apply_normSq]
+
 /-- **The moment map equation.** The Hamiltonian vector field of the component `⟨μ, t⟩` is the
 generator of the rotation `z_j ↦ exp(-i t_j) z_j`. -/
 theorem hamiltonianVectorField_delzantMomentMap (t : ι → ℝ)
@@ -175,17 +205,18 @@ theorem hamiltonianVectorField_delzantMomentMap (t : ι → ℝ)
 /-! ### The level set -/
 
 variable (i u c) in
-/-- The zero level `Z` of the moment map of the kernel torus `N_Δ`: the points at which
-`⟨μ, t⟩` vanishes for every `t` in the Lie algebra `𝔫 = ker β_ℝ` of `N_Δ`, where
-`β_ℝ t = Σ_j t_j i(u_j)`. -/
+/-- The zero level `Z` of the moment map `z ↦ μ(z)|_𝔫` of the kernel torus `N_Δ`, whose Lie
+algebra is `𝔫 = ker β_ℝ`, where `β_ℝ t = Σ_j t_j i(u_j)`: the points at which `⟨μ, t⟩` vanishes for
+every `t ∈ 𝔫` (`TauCeti.Toric.mem_delzantLevel`). -/
 def delzantLevel : Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
-  {x | ∀ t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)),
-    delzantMomentMap c x t = 0}
+  {x | (delzantMomentMap c x).comp
+    (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL = 0}
 
 theorem mem_delzantLevel {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι} :
     x ∈ delzantLevel i u c ↔ ∀ t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)),
       delzantMomentMap c x t = 0 :=
-  Iff.rfl
+  ⟨fun h t ht ↦ by simpa using DFunLike.congr_fun h ⟨t, ht⟩,
+    fun h ↦ ContinuousLinearMap.ext fun t ↦ h t t.property⟩
 
 /-- The level is invariant under the action of the torus. -/
 @[simp]
@@ -194,11 +225,36 @@ theorem weightRotation_mem_delzantLevel_iff (θ : ι → ℝ)
     weightRotation θ x ∈ delzantLevel i u c ↔ x ∈ delzantLevel i u c := by
   simp [mem_delzantLevel]
 
+/-- The level is invariant under the rotation torus. -/
+@[simp]
+theorem torusRotation_mem_delzantLevel_iff (θ : ι → AddCircle (2 * π))
+    {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι} :
+    torusRotation θ x ∈ delzantLevel i u c ↔ x ∈ delzantLevel i u c := by
+  simp [mem_delzantLevel]
+
+/-- The action `z_j ↦ exp(-i θ_j) z_j` of the torus `(ℝ / 2πℤ)^ι` on the level `Z`. -/
+instance : AddAction (ι → AddCircle (2 * π)) (delzantLevel i u c) where
+  -- The underlying point of `θ +ᵥ x` is `torusRotation θ x` by definition, so the action laws
+  -- are those of `torusRotation` evaluated at `x`.
+  vadd θ x := ⟨torusRotation θ x, (torusRotation_mem_delzantLevel_iff θ).2 x.property⟩
+  zero_vadd x := Subtype.ext (DFunLike.congr_fun torusRotation_zero x.val)
+  add_vadd θ θ' x := Subtype.ext (DFunLike.congr_fun (torusRotation_add θ θ') x.val)
+
+@[simp]
+theorem coe_vadd_delzantLevel (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
+    ((θ +ᵥ x : delzantLevel i u c) : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
+      torusRotation θ x :=
+  (rfl)
+
+instance : ContinuousVAdd (ι → AddCircle (2 * π)) (delzantLevel i u c) :=
+  ⟨continuous_induced_rng.2 (continuous_torusRotation.comp
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))⟩
+
 /-- A point at which `μ = β_ℝ^* y` for some `y ∈ V*` lies on the level. -/
 theorem mem_delzantLevel_of_forall_eq {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι}
     {y : StrongDual ℝ V} (hy : ∀ j, (x.1 j ^ 2 + x.2 j ^ 2) / 2 + c j = y (i (u j))) :
     x ∈ delzantLevel i u c := by
-  intro t ht
+  refine mem_delzantLevel.2 fun t ht ↦ ?_
   rw [LinearMap.mem_ker, Fintype.linearCombination_apply] at ht
   simpa [hy, map_sum, map_smul, smul_eq_mul] using congrArg y ht
 
@@ -213,7 +269,7 @@ theorem mem_delzantLevel_iff [FiniteDimensional ℝ V]
   -- The functional `μ(x)` vanishes on `ker β_ℝ`, so it factors through `β_ℝ`.
   have hmem : (delzantMomentMap c x : Module.Dual ℝ (ι → ℝ)) ∈
       (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).dualAnnihilator :=
-    (Submodule.mem_dualAnnihilator _).2 hx
+    (Submodule.mem_dualAnnihilator _).2 (mem_delzantLevel.1 hx)
   rw [← LinearMap.range_dualMap_eq_dualAnnihilator_ker] at hmem
   obtain ⟨y, hy⟩ := hmem
   refine ⟨LinearMap.toContinuousLinearMap y, fun j ↦ ?_⟩
@@ -269,15 +325,8 @@ theorem setOf_exists_mem_delzantLevel :
 particular for a Delzant polytope. -/
 theorem isCompact_delzantLevel [FiniteDimensional ℝ V]
     (hb : Bornology.IsBounded (facetPolyhedron i u c)) : IsCompact (delzantLevel i u c) := by
-  have hclosed : IsClosed (delzantLevel i u c) := by
-    have : delzantLevel i u c = ⋂ t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)),
-        {x | delzantMomentMap c x t = 0} := by
-      ext x
-      simp [mem_delzantLevel]
-    rw [this]
-    exact isClosed_biInter fun t _ ↦
-      isClosed_eq ((ContinuousLinearMap.apply ℝ ℝ t).continuous.comp
-        (continuous_delzantMomentMap c)) continuous_const
+  have hclosed : IsClosed (delzantLevel i u c) :=
+    isClosed_eq ((continuous_delzantMomentMap c).clm_comp continuous_const) continuous_const
   -- Bound `|z_j|² = 2 (⟨y, u_j⟩ - c_j)` using a bound `R` on the polytope.
   obtain ⟨R, hR⟩ := hb.subset_closedBall 0
   set M : ι → ℝ := fun j ↦ 2 * (R * ‖i (u j)‖ + |c j|)
@@ -304,6 +353,119 @@ theorem isCompact_delzantLevel [FiniteDimensional ℝ V]
     ((Metric.isBounded_iff_subset_closedBall 0).2 ⟨√(∑ j, M j), fun x hx ↦ ?_⟩)
   rw [mem_closedBall_zero_iff, Prod.norm_def]
   exact max_le (hnorm x hx _ (mem_insert _ _)) (hnorm x hx _ (mem_insert_of_mem _ rfl))
+
+/-- The derivative of the moment map `z ↦ μ(z)|_𝔫` of the kernel torus has index `d + n`, where
+`d` is the number of facets and `n = dim V`, as soon as the real normals span `V`. -/
+theorem index_fderiv_delzantMomentMap_comp
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ContinuousLinearMap.index (𝕜 := ℝ) (fderiv ℝ (fun y ↦ (delzantMomentMap c y).comp
+      (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) x) =
+        (Fintype.card ι + finrank ℝ V : ℕ) := by
+  have h := LinearMap.finrank_range_add_finrank_ker
+    (Fintype.linearCombination ℝ fun j ↦ i (u j))
+  rw [LinearMap.range_eq_top.2 hβ, finrank_top, finrank_fintype_fun_eq_card] at h
+  rw [ContinuousLinearMap.index_eq_of_finiteDimensional, finrank_prod, finrank_euclideanSpace,
+    ← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
+  push_cast
+  omega
+
+/-! ### Changes of presentation -/
+
+section Presentation
+
+variable {ι' N' V' : Type*} [Fintype ι'] [AddCommGroup N'] [NormedAddCommGroup V']
+  [NormedSpace ℝ V'] {i' : N' →+ V'}
+
+/-- **Relabelling the facets.** Listing the facets along a bijection `e : ι' ≃ ι` relabels the
+coordinates of the level: `z ∈ ℂ^ι'` lies on the level of `(u ∘ e, c ∘ e)` exactly when
+`z ∘ e.symm` lies on the level of `(u, c)`. -/
+theorem prodMap_piLpCongrLeft_mem_delzantLevel_iff (e : ι' ≃ ι)
+    {x : EuclideanSpace ℝ ι' × EuclideanSpace ℝ ι'} :
+    Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) x ∈ delzantLevel i u c ↔
+      x ∈ delzantLevel i (u ∘ e) (c ∘ e) := by
+  simp only [mem_delzantLevel, LinearMap.mem_ker, Fintype.linearCombination_apply,
+    delzantMomentMap_apply]
+  -- Transport the Lie algebra elements `t : ι → ℝ` along `e`.
+  rw [(Equiv.arrowCongr e (Equiv.refl ℝ)).symm.forall_congr_left]
+  refine forall_congr' fun t ↦ imp_congr ?_ ?_ <;>
+    · refine Eq.congr_left (Fintype.sum_equiv e.symm _ _ fun j ↦ ?_)
+      simp [LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply]
+
+/-- **Translating the polytope.** Adding `⟨y, u_j⟩` to the support constants does not change the
+level, since it changes the moment map by `β_ℝ^* y`, which vanishes on the Lie algebra `ker β_ℝ`
+of the kernel torus. -/
+theorem delzantLevel_add (y : StrongDual ℝ V) :
+    delzantLevel i u (fun j ↦ c j + y (i (u j))) = delzantLevel i u c := by
+  ext x
+  simp only [mem_delzantLevel]
+  refine forall₂_congr fun t ht ↦ ?_
+  rw [LinearMap.mem_ker, Fintype.linearCombination_apply] at ht
+  have hy : ∑ j, t j * y (i (u j)) = 0 := by simpa [map_sum, smul_eq_mul] using congrArg y ht
+  simp only [delzantMomentMap_apply, ← add_assoc, mul_add, Finset.sum_add_distrib, hy, add_zero]
+
+/-- **Changing the lattice.** For a map of lattices `f` and an injective linear map `g` with
+`g ∘ i = i' ∘ f`, the mapped normals `f ∘ u` have the same level as `u`, since `β_ℝ` and its
+composite with `g` have the same kernel. -/
+theorem delzantLevel_comp_left {f : N → N'} {g : V →ₗ[ℝ] V'} (hg : Function.Injective g)
+    (hfg : ∀ n, g (i n) = i' (f n)) :
+    delzantLevel i' (fun j ↦ f (u j)) c = delzantLevel i u c := by
+  have h : LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i' (f (u j))) =
+      LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)) := by
+    ext t
+    simp only [LinearMap.mem_ker, Fintype.linearCombination_apply, ← hfg, ← map_smul, ← map_sum]
+    exact map_eq_zero_iff g hg
+  ext x
+  simp only [mem_delzantLevel, h]
+
+section Congr
+
+variable (e : ι' ≃ ι) {u' : ι' → N'} {c' : ι' → ℝ}
+  (hZ : ∀ x, Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)
+    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) x ∈ delzantLevel i u c ↔ x ∈ delzantLevel i' u' c')
+
+/-- The relabelling `z ↦ z ∘ e.symm` of coordinates along `e`, as a homeomorphism between the
+levels of two presentations whose levels correspond along it. -/
+def delzantLevelCongr : delzantLevel i' u' c' ≃ₜ delzantLevel i u c :=
+  ((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e).toHomeomorph.prodCongr
+    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e).toHomeomorph).subtype fun x ↦ (hZ x).symm
+
+@[simp]
+theorem coe_delzantLevelCongr (x : delzantLevel i' u' c') :
+    (delzantLevelCongr e hZ x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
+      Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) x :=
+  (rfl)
+
+@[simp]
+theorem coe_delzantLevelCongr_symm (x : delzantLevel i u c) :
+    ((delzantLevelCongr e hZ).symm x : EuclideanSpace ℝ ι' × EuclideanSpace ℝ ι') =
+      Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm) x := by
+  rw [← LinearIsometryEquiv.piLpCongrLeft_symm]
+  rfl
+
+/-- The relabelling of coordinates intertwines the torus actions on the levels, relabelling the
+angles along `e`. -/
+@[simp]
+theorem delzantLevelCongr_vadd (θ : ι' → AddCircle (2 * π)) (x : delzantLevel i' u' c') :
+    delzantLevelCongr e hZ (θ +ᵥ x) = (θ ∘ e.symm) +ᵥ delzantLevelCongr e hZ x :=
+  Subtype.ext (by
+    rw [coe_delzantLevelCongr, coe_vadd_delzantLevel, coe_vadd_delzantLevel, coe_delzantLevelCongr,
+      prodMap_piLpCongrLeft_torusRotation])
+
+/-- The inverse relabelling of coordinates intertwines the torus actions on the levels. -/
+@[simp]
+theorem delzantLevelCongr_symm_vadd (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
+    (delzantLevelCongr e hZ).symm (θ +ᵥ x) = (θ ∘ e) +ᵥ (delzantLevelCongr e hZ).symm x := by
+  refine (delzantLevelCongr e hZ).injective ?_
+  rw [Homeomorph.apply_symm_apply, delzantLevelCongr_vadd, Homeomorph.apply_symm_apply,
+    Function.comp_assoc, e.self_comp_symm, Function.comp_id]
+
+end Congr
+
+end Presentation
 
 /-! ### Delzant polytopes -/
 
@@ -334,21 +496,13 @@ theorem weightRotation_neg_eq_self_iff {x : EuclideanSpace ℝ ι × EuclideanSp
     (hx : x ∈ delzantLevel i u c) {t : ι → ℝ}
     (ht : (fun j ↦ (t j : AddCircle (2 * π))) ∈ (facetTorusHom i u (2 * π)).ker) :
     weightRotation (-t) x = x ↔ (fun j ↦ (t j : AddCircle (2 * π))) = 0 := by
-  rw [weightRotation_apply_eq_self_iff]
+  rw [weightRotation_neg_apply_eq_self_iff]
   constructor
   · intro h
     obtain ⟨v, hv, hvx⟩ := hΔ.exists_isSmoothVertex_of_mem_delzantLevel hx
-    refine eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) ht fun j hj ↦ ?_
-    obtain ⟨k, hk⟩ := h j (hvx j hj)
-    rw [AddCircle.coe_eq_zero_iff]
-    refine ⟨-k, ?_⟩
-    rw [zsmul_eq_mul]
-    simp only [Pi.neg_apply] at hk
-    push_cast
-    linarith
-  · intro h j _
-    obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (2 * π)).1 (congrFun h j)
-    exact ⟨-k, by simp only [Pi.neg_apply, ← hk, zsmul_eq_mul]; push_cast; ring⟩
+    exact eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) ht fun j hj ↦
+      h j (hvx j hj)
+  · exact fun h j _ ↦ congrFun h j
 
 include hi in
 /-- **The infinitesimal action of the kernel torus is free on the level.** For `t` in the Lie
@@ -394,7 +548,7 @@ theorem surjective_fderiv_delzantMomentMap_comp {x : EuclideanSpace ℝ ι × Eu
     intro t ht
     have h : weightGenerator (-(t : ι → ℝ)) x = 0 := by
       simpa [α, Pi.neg_def] using ht
-    exact Subtype.ext ((hΔ.weightGenerator_neg_eq_zero_iff hi hx t.2).1 h)
+    exact Subtype.ext ((hΔ.weightGenerator_neg_eq_zero_iff hi hx t.property).1 h)
   suffices h : LinearMap.range (fderiv ℝ (fun y ↦ (delzantMomentMap c y).comp 𝔫.subtypeL)
       x).toLinearMap = ⊤ from LinearMap.range_eq_top.1 h
   have hd : HasFDerivAt (fun y ↦ (delzantMomentMap c y).comp 𝔫.subtypeL)
@@ -405,6 +559,73 @@ theorem surjective_fderiv_delzantMomentMap_comp {x : EuclideanSpace ℝ ι × Eu
   refine Submodule.eq_top_of_finrank_eq ?_
   rw [← finrank_range_weightInfinitesimalAction, LinearMap.finrank_range_of_inj hinj,
     ← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
+
+include hi in
+/-- The derivative of the moment map `z ↦ μ(z)|_𝔫` of the kernel torus has index `d + n`, where
+`d` is the number of facets and `n = dim V`, for a Delzant polytope. -/
+theorem index_fderiv_delzantMomentMap_comp (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ContinuousLinearMap.index (𝕜 := ℝ) (fderiv ℝ (fun y ↦ (delzantMomentMap c y).comp
+      (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) x) =
+        (Fintype.card ι + finrank ℝ V : ℕ) :=
+  Toric.index_fderiv_delzantMomentMap_comp
+    (surjective_linearCombination_real hi.span_range_eq_top hΔ.surjective_linearCombination) x
+
+include hi in
+/-- The atlas of the level `Z`, by the implicit-function charts of the regular level set of the
+moment map of the kernel torus. It is modelled on `Fin (d + n) → ℝ`, where `d` is the number of
+facets and `n = dim V`. -/
+@[instance_reducible]
+def delzantLevelChartedSpace :
+    ChartedSpace (Fin (Fintype.card ι + finrank ℝ V) → ℝ) (delzantLevel i u c) :=
+  levelSetChartedSpace
+    (f := fun y ↦ (delzantMomentMap c y).comp
+      (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL)
+    (fun _ _ ↦ ((contDiff_delzantMomentMap c).clm_comp contDiff_const).hasStrictFDerivAt
+      one_ne_zero)
+    (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _)
+    (fun _ hx ↦ hΔ.surjective_fderiv_delzantMomentMap_comp hi hx)
+    (fun _ _ ↦ hΔ.index_fderiv_delzantMomentMap_comp hi _)
+
+include hi in
+/-- **The level is a smooth manifold** of dimension `d + n`, indeed a `C^m` manifold for every `m`,
+including the analytic case `m = ω`, for the atlas
+`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`. -/
+theorem isManifold_delzantLevel (m : WithTop ℕ∞) :
+    letI := hΔ.delzantLevelChartedSpace hi
+    IsManifold 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) m (delzantLevel i u c) :=
+  isManifold_levelSet _ _ _ _ fun _ _ ↦
+    ((contDiff_delzantMomentMap c).clm_comp contDiff_const).contDiffAt
+
+include hi in
+/-- The inclusion of the level `Z` into `ℂ^ι` is smooth for the atlas
+`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`. -/
+theorem contMDiff_coe_delzantLevel {m : WithTop ℕ∞} :
+    letI := hΔ.delzantLevelChartedSpace hi
+    ContMDiff 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) m
+      ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
+  contMDiff_coe_levelSet _ _ _ _ fun _ _ ↦
+    ((contDiff_delzantMomentMap c).clm_comp contDiff_const).contDiffAt
+
+include hi in
+/-- **Maps into the level.** A `C^m` map into `ℂ^ι` with values in the level `Z` is a `C^m` map
+into `Z`, for the atlas `TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`. -/
+theorem contMDiff_codRestrict_delzantLevel {E' H M : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H] {I : ModelWithCorners ℝ E' H} [TopologicalSpace M]
+    [ChartedSpace H M] {m : WithTop ℕ∞} {g : M → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι}
+    (hg : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) m g)
+    (hgZ : ∀ x, g x ∈ delzantLevel i u c) :
+    letI := hΔ.delzantLevelChartedSpace hi
+    ContMDiff I 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) m
+      (fun x ↦ (⟨g x, hgZ x⟩ : delzantLevel i u c)) :=
+  ContMDiff.codRestrict_levelSet
+    (f := fun y ↦ (delzantMomentMap c y).comp
+      (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) (c := 0)
+    (fun _ _ ↦ ((contDiff_delzantMomentMap c).clm_comp contDiff_const).hasStrictFDerivAt
+      one_ne_zero)
+    (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _)
+    (fun _ hx ↦ hΔ.surjective_fderiv_delzantMomentMap_comp hi hx)
+    (fun _ _ ↦ hΔ.index_fderiv_delzantMomentMap_comp hi _) hg hgZ
 
 end IsDelzant
 

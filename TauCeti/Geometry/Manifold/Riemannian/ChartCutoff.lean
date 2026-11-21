@@ -32,7 +32,10 @@ needs:
   (`ContDiffBump.eLpNorm_fderiv_mul_comp_extChartAt_symm_le`);
 * where the bump is `1` and the chart density is at most `m`, an integral of `F ∘ u` over the
   chart preimage of a ball is bounded by `m` times the integral of `F (b · u)` over the ball
-  (`ContDiffBump.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm`).
+  (`ContDiffBump.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm`), so
+  the `L^{p'}` norm of `u` over that chart preimage is at most `m ^ (1 / p')` times the flat
+  `L^{p'}` norm of `b · u ∘ φ.symm`
+  (`ContDiffBump.eLpNorm_restrict_inter_preimage_ball_le_mul_eLpNorm_mul_comp_extChartAt_symm`).
 
 They are used for the Trudinger and Sobolev inequalities on a closed Riemannian manifold.
 -/
@@ -104,7 +107,7 @@ theorem lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le [LindelofSpace M
     (b : ContDiffBump (extChartAt I c c)) {r : ℝ}
     (hbr : closedBall (extChartAt I c c) b.rOut ⊆ ball (extChartAt I c c) r)
     (hrt : ball (extChartAt I c c) r ⊆ (extChartAt I c).target) {C₁ : ℝ}
-    (hC₁ : 0 ≤ C₁) (hcmp : ∀ y ∈ ball (extChartAt I c c) r, ∀ f : M → ℝ,
+    (hcmp : ∀ y ∈ ball (extChartAt I c c) r, ∀ f : M → ℝ,
       ‖fderiv ℝ (f ∘ (extChartAt I c).symm) y‖ ≤ C₁ * ‖mgradient I f ((extChartAt I c).symm y)‖)
     {m : ℝ} (hm : 0 < m) (hρ : ∀ y ∈ ball (extChartAt I c c) r,
       m ≤ chartVolumeDensity (I := I) c ((extChartAt I c).symm y))
@@ -129,14 +132,13 @@ theorem lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le [LindelofSpace M
     rw [← ENNReal.mul_rpow_of_nonneg _ _ hp0, ← ENNReal.mul_rpow_of_nonneg _ _ hp0]
     refine (ENNReal.rpow_le_rpow ?_ hp0).trans (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hp)
     have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
-    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC₁,
-      ← ENNReal.ofReal_mul hG0, ← ENNReal.ofReal_add (by positivity) (by positivity),
-      Real.norm_eq_abs (u _)]
-    exact ENNReal.ofReal_le_ofReal hbd
+    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul' (norm_nonneg _),
+      ← ENNReal.ofReal_mul hG0, Real.norm_eq_abs (u _)]
+    exact (ENNReal.ofReal_le_ofReal hbd).trans ENNReal.ofReal_add_le
   have hmeas : AEMeasurable
       (fun y ↦ ENNReal.ofReal G ^ p * ‖u ((extChartAt I c).symm y)‖ₑ ^ p) (μ.restrict B) :=
     ((((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.continuousOn.mono
-      hrt).aemeasurable measurableSet_ball).enorm.pow_const p).const_mul _
+      hrt).aemeasurable measurableSet_ball).eNorm.pow_const p).const_mul _
   calc ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ p ∂μ
       = ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ p ∂μ := by
         -- The integrand vanishes off the support of the bump, which lies in `B`.
@@ -195,13 +197,13 @@ theorem eLpNorm_fderiv_mul_comp_extChartAt_symm_le [LindelofSpace M] {c : M}
   have hw := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hgrad := lintegral_rpow_enorm_le_rpow_eLpNorm (μ := riemannianVolume I M) hp0
     fun x ↦ ‖mgradient I u x‖
-  simp only [enorm_norm] at hgrad
+  simp only [eNorm_norm] at hgrad
   rw [← ENNReal.rpow_le_rpow_iff hpR,
     eLpNorm_nnreal_pow_eq_lintegral hp0 (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable]
   calc _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal m⁻¹ *
           (ENNReal.ofReal C₁ ^ (p : ℝ) * ∫⁻ x, ‖mgradient I u x‖ₑ ^ (p : ℝ) ∂riemannianVolume I M +
             ENNReal.ofReal G ^ (p : ℝ) * ∫⁻ x, ‖u x‖ₑ ^ (p : ℝ) ∂riemannianVolume I M) :=
-        b.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le hbr hrt hC₁ hcmp hm hρ hG hu
+        b.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le hbr hrt hcmp hm hρ hG hu
           (by exact_mod_cast hp)
     _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal m⁻¹ *
           (ENNReal.ofReal (C₁ + G) ^ (p : ℝ) * X ^ (p : ℝ) +
@@ -243,5 +245,33 @@ theorem setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm
   rw [b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
   gcongr
   exact hρ y hy
+
+omit [I.Boundaryless] in
+/-- The `L^{p'}` norm of `u` over the chart preimage of the ball of radius `b.rIn` is at most
+`m ^ (1 / p')` times the flat `L^{p'}` norm of the cut-off function `b * (u ∘ φ.symm)`, where `m`
+bounds the chart volume density on that ball. -/
+theorem eLpNorm_restrict_inter_preimage_ball_le_mul_eLpNorm_mul_comp_extChartAt_symm
+    [LindelofSpace M] {c : M} (b : ContDiffBump (extChartAt I c c))
+    (hbt : ball (extChartAt I c c) b.rIn ⊆ (extChartAt I c).target) {m : ℝ}
+    (hρ : ∀ y ∈ ball (extChartAt I c c) b.rIn,
+      chartVolumeDensity (I := I) c ((extChartAt I c).symm y) ≤ m)
+    {p' : ℝ≥0} {u : M → ℝ}
+    (hu : AEStronglyMeasurable u ((riemannianVolume I M).restrict
+      ((extChartAt I c).source ∩ extChartAt I c ⁻¹' ball (extChartAt I c c) b.rIn)))
+    (hw : AEStronglyMeasurable (fun y ↦ b y * u ((extChartAt I c).symm y))
+      (Module.finBasis ℝ E).addHaar) :
+    eLpNorm u p' ((riemannianVolume I M).restrict
+        ((extChartAt I c).source ∩ extChartAt I c ⁻¹' ball (extChartAt I c c) b.rIn)) ≤
+      ENNReal.ofReal m ^ (p' : ℝ)⁻¹ * eLpNorm (fun y ↦ b y * u ((extChartAt I c).symm y)) p'
+        (Module.finBasis ℝ E).addHaar := by
+  rcases eq_or_ne p' 0 with hp'0 | hp'0
+  · rw [hp'0, ENNReal.coe_zero, eLpNorm_exponent_zero hu]
+    exact zero_le
+  have hp'R : 0 < (p' : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hp'0)
+  rw [← ENNReal.rpow_le_rpow_iff hp'R, eLpNorm_nnreal_pow_eq_lintegral hp'0 hu,
+    ENNReal.mul_rpow_of_nonneg _ _ hp'R.le, ENNReal.rpow_inv_rpow hp'R.ne',
+    eLpNorm_nnreal_pow_eq_lintegral hp'0 hw]
+  exact (b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm hbt hρ u
+    fun t ↦ ‖t‖ₑ ^ (p' : ℝ)).trans (by gcongr; exact Measure.restrict_le_self)
 
 end ContDiffBump

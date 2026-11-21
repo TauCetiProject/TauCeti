@@ -122,11 +122,11 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
   [ContinuousSMul Gᵐᵒᵖ Y] [MulAction Gᵐᵒᵖ Y'] [ContinuousSMul Gᵐᵒᵖ Y'] in
 /-- The chain homotopy `g ∘ f ≃ 1` on the module: `g (f x) = x + d (K x) + K (d x)`. -/
 theorem cubicalChainModuleHomotopy_spec (e : Y ≃ₕ Y') (x : cubicalChainModule Y G R) :
-    cubicalChainModuleLinearMap R e.invFun (cubicalChainModuleLinearMap R e.toFun x) =
+    cubicalChainModuleLinearMap (G' := G) R e.invFun
+        (cubicalChainModuleLinearMap (G' := G) R e.toFun x) =
       x + cubicalChainModuleDifferential Y G R (cubicalChainModuleHomotopy R e x) +
         cubicalChainModuleHomotopy R e (cubicalChainModuleDifferential Y G R x) := by
   induction x using cubicalChainModule.induction_on with
-  | zero => simp only [map_zero, add_zero]
   | add x x' hx hx' =>
     rw [map_add, map_add, hx, hx', map_add, map_add, map_add, map_add]
     abel

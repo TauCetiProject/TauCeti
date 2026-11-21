@@ -24,6 +24,7 @@ isomorphism classes of such pairs: isomorphisms of polynomial pairs are affine c
 
 * `TauCeti.AlgebraicBelyiPair.ofPolynomial`: the polynomial Belyi pair `x ↦ q(x)`.
 * `TauCeti.AlgebraicBelyiPair.ofPolynomialGen`: its coordinate `x`.
+* `TauCeti.AlgebraicBelyiPair.ofPolynomialEquiv`: its function field is `k(x)`.
 
 ## Main results
 
@@ -91,6 +92,24 @@ theorem algebraMap_ofPolynomial_X :
       aeval (ofPolynomialGen q hq hcrit) q :=
   -- The `k(t)`-algebra structure of `ofPolynomial q` is the one sending `t` to `q(X)`.
   algebraMap_ratFuncAlgebraOfTranscendental_X _
+
+/-- The function field of the polynomial Belyi pair `ofPolynomial q` is the rational function
+field `k(x)` in its coordinate `x`: as a `k`-algebra it is `k(X)`, with `x` corresponding to the
+variable `X` (`TauCeti.AlgebraicBelyiPair.ofPolynomialEquiv_ofPolynomialGen`). This forgets the
+`k(t)`-algebra structure. -/
+noncomputable def ofPolynomialEquiv : ofPolynomial q hq hcrit ≃ₐ[k] RatFunc k :=
+  -- The function field of `ofPolynomial q` is `k(X)`, with its usual `k`-algebra structure.
+  AlgEquiv.refl
+
+@[simp]
+theorem ofPolynomialEquiv_ofPolynomialGen :
+    ofPolynomialEquiv q hq hcrit (ofPolynomialGen q hq hcrit) = RatFunc.X :=
+  (rfl)
+
+@[simp]
+theorem ofPolynomialEquiv_symm_X :
+    (ofPolynomialEquiv q hq hcrit).symm RatFunc.X = ofPolynomialGen q hq hcrit :=
+  (rfl)
 
 namespace IsoClass
 

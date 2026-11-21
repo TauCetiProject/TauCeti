@@ -35,8 +35,8 @@ Degree zero needs no hypothesis beyond the ones that make the two sides exist. I
 needs neither profiniteness of `G` nor continuity of the action `G × M → M`: a `0`-cochain is a
 single element of `M`, so no continuity condition constrains it, and `ContinuousCohomology.zeroIso`
 holds for every object of `TopRep ℤ G`. The comparison is nevertheless stated only for objects in
-the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a general object of
-`TopRep ℤ G` need not be discrete, and the explicit complex is not a description of its cohomology.
+the image of `TauCeti.ofDiscreteModule`: a general object of `TopRep ℤ G` need not be discrete, and
+the explicit complex is not a description of its cohomology.
 
 ## Main definitions
 
@@ -62,20 +62,18 @@ the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a g
 * `TauCeti.coeffMap_zero_injective`: the coefficient map of an injective equivariant map is
   injective on `H⁰`.
 
-## Roadmap
+## Implementation notes
 
-This implements the degree-zero part of the "comparison isomorphisms" milestone of Layer 3 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean`
-fixes the name `explicitH0IsoContinuousCohomology`, together with the degree-zero rows of the
-transport table in its §2. The names of the three transports carry the degree explicitly, because
-`Suggested.lean` pins the unsuffixed `explicitIso_map`, `explicitIso_res` and `explicitIso_coeffMap`
-to degree one. Degrees one and two of the comparison need the passage between the canonical
-homogeneous cochains `C(G, C(G, …))` and functions on `Gⁿ`, hence the compact-open exponential law
-and profiniteness of `G`, and are not in this file.
+The names of the three transports carry the degree explicitly, because the unsuffixed
+`TauCeti.ContCohomology.explicitIso_map`, `explicitIso_res` and `explicitIso_coeffMap` are the
+degree-one transports. Degrees one and two of the comparison need the passage between the
+canonical homogeneous cochains `C(G, C(G, …))` and functions on `Gⁿ`, and are not in this file:
+they are `TauCeti.ContCohomology.explicitH1IsoContinuousCohomology` and
+`explicitH2IsoContinuousCohomology` in `CohomologyComparison.lean`.
 
 The sibling file `GroupCohomologyIso/Basic.lean` compares the same explicit model with Mathlib's
 *discrete* `groupCohomology`; this file compares it with the *continuous* carrier, which is the
-canonical object the roadmap fixes.
+canonical object.
 
 ## References
 
@@ -99,8 +97,7 @@ section Carriers
 topology on it. -/
 
 variable (G : Type u) [Monoid G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
 /-- An element of a discrete `G`-module is invariant for the canonical object it names exactly
 when it lies in the explicit `H⁰(G, M) = M^G`. -/
@@ -121,14 +118,14 @@ def H0ContinuousLinearEquivInvariants :
 /-- `H0ContinuousLinearEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
-    (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
+    (H0ContinuousLinearEquivInvariants G M m).val = m.val := by
   -- The goal is an equality in the semireducibly bundled carrier
   -- `(ofDiscreteModule ℤ G M).V`, whereas the evaluation lemma is an equality in `M`.
   -- `change` crosses only that carrier wrapper before applying the public evaluation API.
   change
     ((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
       (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
-      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).1) = m.1
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).val) = m.val
   exact @AddSubgroup.continuousLinearEquivInvariants_val G M _ _ _
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
@@ -137,12 +134,12 @@ theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :
-    ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 := by
+    ((H0ContinuousLinearEquivInvariants G M).symm m).val = m.val := by
   -- As above, expose only the bundled carrier so the public inverse evaluation lemma applies.
   change
     (((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
       (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
-      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).1) = m.1
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).val) = m.val
   exact @AddSubgroup.continuousLinearEquivInvariants_symm_val G M _ _ _
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
@@ -152,14 +149,13 @@ end Carriers
 section Comparison
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
-/-- **Layer 3, degree zero against the canonical object.** The explicit `H⁰(G, M)` is Mathlib's
+/-- **Degree zero against the canonical object.** The explicit `H⁰(G, M)` is Mathlib's
 `continuousCohomology 0` of the canonical object attached to `M`, as an isomorphism in
 `TopModuleCat ℤ`.
 
-Unlike the comparisons in degrees one and two this needs no profiniteness: it is
+Unlike the comparisons in degrees one and two this needs no compactness of `G`: it is
 `ContinuousCohomology.zeroIso`, which holds over an arbitrary topological group, composed with the
 identification of the invariants above. -/
 noncomputable def explicitH0IsoContinuousCohomology :
@@ -180,15 +176,15 @@ theorem explicitH0IsoContinuousCohomology_hom_apply (m : H0 G M) :
 `TauCeti.ContinuousCohomology.degreeZeroClass`. -/
 theorem explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass (m : H0 G M) :
     (explicitH0IsoContinuousCohomology G M).hom m =
-      TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.1
-        (fun g => (FixedPoints.mem_addSubgroup G M m.1).1 m.2 g) := by
+      TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.val
+        (fun g => (FixedPoints.mem_addSubgroup G M m.val).1 m.property g) := by
   have hval : (ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom
-      (TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.1
-        (fun g => (FixedPoints.mem_addSubgroup G M m.1).1 m.2 g)) =
+      (TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.val
+        (fun g => (FixedPoints.mem_addSubgroup G M m.val).1 m.property g)) =
       H0ContinuousLinearEquivInvariants G M m :=
     Subtype.ext ((TauCeti.ContinuousCohomology.coe_zeroIso_hom_degreeZeroClass
-      (X := ofDiscreteModule ℤ G M) m.1
-      (fun g => (FixedPoints.mem_addSubgroup G M m.1).1 m.2 g)).trans
+      (X := ofDiscreteModule ℤ G M) m.val
+      (fun g => (FixedPoints.mem_addSubgroup G M m.val).1 m.property g)).trans
       (H0ContinuousLinearEquivInvariants_val G M m).symm)
   rw [explicitH0IsoContinuousCohomology_hom_apply, ← hval, Iso.hom_inv_id_apply]
 
@@ -201,7 +197,7 @@ theorem explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass (m : H0 G M) :
 theorem coe_explicitH0IsoContinuousCohomology_inv_apply
     (y : continuousCohomology 0 (ofDiscreteModule ℤ G M)) :
     (dsimp% only (((explicitH0IsoContinuousCohomology G M).inv y : H0 G M) : M)) =
-      ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).1 :=
+      ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).val :=
   H0ContinuousLinearEquivInvariants_symm_val G M
     ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
 
@@ -237,16 +233,15 @@ end Cocycle
 section Transport
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
-/-- **Layer 3, transport of the compatible-pair pullback in degree zero.** The comparison carries
-the explicit pullback `TauCeti.ContCohomology.explicitMap0` along a compatible pair to Mathlib's
+/-- **Transport of the compatible-pair pullback in degree zero.** The comparison carries the
+explicit pullback `TauCeti.ContCohomology.explicitMap0` along a compatible pair to Mathlib's
 `ContinuousCohomology.map` along the same pair. The two transports below are its instances at the
 inclusion of a subgroup and at the identity of the group. -/
 theorem explicitH0Iso_map (H : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DiscreteTopology N] [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
+    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction H N] (φ : H →ₜ* G) (f : M →+ N)
     (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (x : H0 G M) :
     _root_.ContinuousCohomology.map φ
         (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m => hf h m) 0
@@ -263,10 +258,10 @@ theorem explicitH0Iso_map (H : Type u) [Group H] [TopologicalSpace H] [IsTopolog
   simp only [TopRep.invariantsResMap, TopModuleCat.hom_ofHom,
     ContIntertwiningMap.mapInvariantsOfRes_apply, H0ContinuousLinearEquivInvariants_val]
   exact (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
-      (fun h m => hf h m) x.1).trans (coe_explicitMap0 G M (φ : H →* G) f hf x).symm
+      (fun h m => hf h m) x.val).trans (coe_explicitMap0 G M (φ : H →* G) f hf x).symm
 
-/-- **Layer 3, transport of restriction in degree zero.** The comparison carries the explicit
-inclusion `M^G ⊆ M^S` to the canonical restriction. The two sides land in the same object because
+/-- **Transport of restriction in degree zero.** The comparison carries the explicit inclusion
+`M^G ⊆ M^S` to the canonical restriction. The two sides land in the same object because
 `TauCeti.res_ofDiscreteModule` identifies the restriction of the canonical object of `M` with the
 canonical object of `M` over the subgroup. -/
 theorem explicitH0Iso_res (S : Subgroup G) (x : H0 G M) :
@@ -283,23 +278,22 @@ theorem explicitH0Iso_res (S : Subgroup G) (x : H0 G M) :
   exact explicitH0Iso_map G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
     (fun _ _ => rfl) x
 
-/-- **Layer 3, transport of coefficient maps in degree zero.** The comparison carries the explicit
+/-- **Transport of coefficient maps in degree zero.** The comparison carries the explicit
 coefficient map to the canonical one attached to the same equivariant homomorphism; the canonical
 coefficient morphism is the compatible pair at the identity, by
 `TauCeti.ofDiscreteModulePair_id`. -/
 theorem explicitH0Iso_coeffMap (N : Type u) [AddCommGroup N] [TopologicalSpace N]
-    [IsTopologicalAddGroup N] [DiscreteTopology N] [DistribMulAction G N] (f : M →+[G] N)
-    (x : H0 G M) :
+    [DiscreteTopology N] [DistribMulAction G N] (f : M →+[G] N) (x : H0 G M) :
     TauCeti.ContinuousCohomology.coeffMap
         (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m => map_smul f g m) 0
         ((explicitH0IsoContinuousCohomology G M).hom x) =
       (explicitH0IsoContinuousCohomology G N).hom (explicitCoeff0 G M f x) := by
-  -- At the identity homomorphism the compatible pair is the coefficient morphism itself; this is
-  -- `TauCeti.ofDiscreteModulePair_id`, restated at the coerced identity `ContinuousMonoidHom`.
+  -- At the identity homomorphism the compatible pair is the coefficient morphism itself; the
+  -- coerced identity `ContinuousMonoidHom` unfolds to `MonoidHom.id` for unification.
   have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
       f.toAddMonoidHom.toIntLinearMap (fun g m => map_smul f g m) =
       ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m => map_smul f g m :=
-    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ => rfl
+    ofDiscreteModulePair_id _ _
   rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff0_eq_explicitMap0, ← hpair]
   exact explicitH0Iso_map G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
     (fun g m => map_smul f g m) x
@@ -337,7 +331,7 @@ theorem exists_coeffMap_ker_nsmul_eq (M : Type u) [AddCommGroup M] [TopologicalS
     { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
   let mK : H0 G K := ⟨⟨m, hm⟩, (FixedPoints.mem_addSubgroup G K _).2 fun g ↦ Subtype.ext <|
     (K.restrictDistribMulAction_coe_smul hK g _).trans
-      ((FixedPoints.mem_addSubgroup G M _).1 m.2 g)⟩
+      ((FixedPoints.mem_addSubgroup G M _).1 m.property g)⟩
   refine ⟨(explicitH0IsoContinuousCohomology G K).hom mK, ?_⟩
   have hmK : explicitCoeff0 G K ι mK = m := Subtype.ext (coe_explicitCoeff0 G K ι mK)
   rw [explicitH0Iso_coeffMap G K M ι mK, hmK]

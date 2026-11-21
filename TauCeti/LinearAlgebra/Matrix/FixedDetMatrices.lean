@@ -5,9 +5,12 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Rat
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import TauCeti.Algebra.Module.Primitive
 
 /-!
 # Upper-triangular representatives of integral matrices of fixed determinant
@@ -18,7 +21,9 @@ Mathlib's `FixedDetMatrices.reps n` is the set of integral matrices `(a b; 0 d)`
 that to the statement that `FixedDetMatrices.reps n` is a set of representatives for the action of
 `SL(2, ℤ)` by left multiplication on the determinant-`n` matrices, `n ≠ 0`, and counts it.
 It also records that only finitely many integral matrices of a given determinant have entries
-bounded by a given constant.
+bounded by a given constant. Restricted to the primitive matrices, those whose entries have greatest
+common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are the
+`(a b; 0 d)` with `gcd(a, b, d) = 1`.
 
 ## Main results
 
@@ -37,7 +42,12 @@ bounded by a given constant.
   determinant `n` whose entries are at most `B` in absolute value.
 * `FixedDetMatrices.toGL`: for `n ≠ 0`, an integral matrix of determinant `n` as an element of
   `GL(m, ℚ)`, on which left multiplication by `SL(m, ℤ)` is multiplication by its image
-  (`FixedDetMatrices.toGL_smul`).
+  (`FixedDetMatrices.toGL_smul`), and `FixedDetMatrices.toGLReal`, its image in `GL(m, ℝ)`.
+* `FixedDetMatrices.isPrimitive_smul_iff`: left multiplication by `SL(m, ℤ)` preserves
+  primitivity.
+* `FixedDetMatrices.primitiveReps`: the primitive matrices of `FixedDetMatrices.reps n`, and
+  `FixedDetMatrices.exists_smul_mem_primitiveReps`: for `n ≠ 0` every primitive matrix of
+  determinant `n` can be moved into them by `SL(2, ℤ)`.
 
 ## References
 
@@ -68,7 +78,7 @@ theorem exists_smul_mem_reps (hn : n ≠ 0) (A : FixedDetMatrix (Fin 2) ℤ n) :
 /-- The entries of `g • A` for `g ∈ SL(2, R)` and a `2 × 2` matrix `A` of fixed determinant. -/
 theorem smul_coe_apply {R : Type*} [CommRing R] {m : R} (g : SpecialLinearGroup (Fin 2) R)
     (A : FixedDetMatrix (Fin 2) R m) (i j : Fin 2) :
-    (g • A).1 i j = g i 0 * A.1 0 j + g i 1 * A.1 1 j := by
+    (g • A).val i j = g i 0 * A.val 0 j + g i 1 * A.val 1 j := by
   rw [smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- No nontrivial element of `SL(2, ℤ)` moves a representative to a representative: if `A` and
@@ -85,7 +95,7 @@ theorem eq_one_of_smul_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, �
   rw [hg₀₀, one_mul] at hdet
   simp only [smul_coe_apply, hg₀₀, hg₁₀, hdet, one_mul, zero_mul, zero_add] at h₀₁ h₁₁
   -- `g 0 1 * A 1 1` is a multiple of `|A 1 1|` of absolute value less than `|A 1 1|`
-  have hg₀₁ : g 0 1 * A.1 1 1 = 0 :=
+  have hg₀₁ : g 0 1 * A.val 1 1 = 0 :=
     Int.eq_zero_of_abs_lt_dvd ((abs_dvd _ _).2 (dvd_mul_left _ _)) <| by
       simpa only [add_sub_cancel_left] using abs_sub_lt_of_nonneg_of_lt h₀₁
         ((le_abs_self _).trans_lt h₁₁) hA₀₁ ((le_abs_self _).trans_lt hA₁₁)
@@ -102,8 +112,8 @@ theorem eq_of_smul_eq_of_mem_reps {A B : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2
 /-- The diagonal entries of an upper-triangular `2 × 2` matrix of determinant `m` multiply to
 `m`. -/
 lemma apply_zero_zero_mul_apply_one_one {R : Type*} [CommRing R] {m : R}
-    {A : FixedDetMatrix (Fin 2) R m} (h : A.1 1 0 = 0) : A.1 0 0 * A.1 1 1 = m := by
-  simpa only [det_fin_two, h, mul_zero, sub_zero] using A.2
+    {A : FixedDetMatrix (Fin 2) R m} (h : A.val 1 0 = 0) : A.val 0 0 * A.val 1 1 = m := by
+  simpa only [det_fin_two, h, mul_zero, sub_zero] using A.property
 
 /-- **The upper-triangular representatives, explicitly parametrized.** For `n ≠ 0`, a
 representative `(a b; 0 d)` is recorded by the positive factor pair `(|a|, |d|)` of `|n|`
@@ -112,33 +122,33 @@ and the residue `b ∈ Fin |d|`. The inverse gives `d` the sign of `n`.
 This is the summation interface for the representatives: an invariant may be summed first over
 factor pairs and then over the upper-right entry. -/
 def repsEquiv (hn : n ≠ 0) :
-    reps n ≃ Σ p : ↥n.natAbs.divisorsAntidiagonal, Fin p.1.2 where
+    reps n ≃ Σ p : ↥n.natAbs.divisorsAntidiagonal, Fin p.val.2 where
   toFun A :=
-    ⟨⟨((A.1.1 0 0).natAbs, (A.1.1 1 1).natAbs), by
+    ⟨⟨((A.val.val 0 0).natAbs, (A.val.val 1 1).natAbs), by
       rw [Nat.mem_divisorsAntidiagonal]
-      exact ⟨by rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one A.2.1],
+      exact ⟨by rw [← Int.natAbs_mul, apply_zero_zero_mul_apply_one_one A.property.1],
         Int.natAbs_ne_zero.mpr hn⟩⟩,
-      ⟨(A.1.1 0 1).natAbs, by
+      ⟨(A.val.val 0 1).natAbs, by
         zify
-        exact A.2.2.2.2⟩⟩
+        exact A.property.2.2.2⟩⟩
   invFun x :=
-    ⟨⟨!![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, n.sign * x.1.1.2], by
-        calc _ = n.sign * ((x.1.1.1 * x.1.1.2 : ℕ) : ℤ) := by simp [mul_left_comm]
+    ⟨⟨!![(x.1.val.1 : ℤ), (x.2 : ℕ); 0, n.sign * x.1.val.2], by
+        calc _ = n.sign * ((x.1.val.1 * x.1.val.2 : ℕ) : ℤ) := by simp [mul_left_comm]
           _ = n := by
-            rw [(Nat.mem_divisorsAntidiagonal.mp x.1.2).1, Int.sign_mul_natAbs]⟩,
+            rw [(Nat.mem_divisorsAntidiagonal.mp x.1.property).1, Int.sign_mul_natAbs]⟩,
       by
         refine ⟨rfl, Nat.cast_pos.mpr (Nat.pos_of_ne_zero
-          (Nat.left_ne_zero_of_mem_divisorsAntidiagonal x.1.2)), Int.natCast_nonneg _, ?_⟩
-        simp [abs_mul, Int.abs_sign_of_ne_zero hn, x.2.2]⟩
+          (Nat.left_ne_zero_of_mem_divisorsAntidiagonal x.1.property)), Int.natCast_nonneg _, ?_⟩
+        simp [abs_mul, Int.abs_sign_of_ne_zero hn, x.2.isLt]⟩
   left_inv A := by
     apply Subtype.ext
     ext i j
     fin_cases i <;> fin_cases j
     -- the lower-right entry has the sign of `n`, since `n = a * d` with `0 < a`
-    exacts [Int.natAbs_of_nonneg A.2.2.1.le, Int.natAbs_of_nonneg A.2.2.2.1,
-      A.2.1.symm, by
-        simp [← apply_zero_zero_mul_apply_one_one A.2.1,
-          Int.sign_eq_one_of_pos A.2.2.1, Int.sign_mul_abs]]
+    exacts [Int.natAbs_of_nonneg A.property.2.1.le, Int.natAbs_of_nonneg A.property.2.2.1,
+      A.property.1.symm, by
+        simp [← apply_zero_zero_mul_apply_one_one A.property.1,
+          Int.sign_eq_one_of_pos A.property.2.1, Int.sign_mul_abs]]
   right_inv x := by
     refine Sigma.ext ?_ ?_
     · apply Subtype.ext
@@ -149,20 +159,20 @@ def repsEquiv (hn : n ≠ 0) :
 /-- The factor pair recording a representative `(a b; 0 d)` is `(|a|, |d|)`. -/
 @[simp]
 theorem coe_repsEquiv_apply_fst (hn : n ≠ 0) (A : reps n) :
-    ((repsEquiv hn A).1 : ℕ × ℕ) = ((A.1.1 0 0).natAbs, (A.1.1 1 1).natAbs) := (rfl)
+    ((repsEquiv hn A).1 : ℕ × ℕ) = ((A.val.val 0 0).natAbs, (A.val.val 1 1).natAbs) := (rfl)
 
 /-- The residue recording a representative `(a b; 0 d)` is `|b|`. -/
 @[simp]
 theorem coe_repsEquiv_apply_snd (hn : n ≠ 0) (A : reps n) :
-    ((repsEquiv hn A).2 : ℕ) = (A.1.1 0 1).natAbs := (rfl)
+    ((repsEquiv hn A).2 : ℕ) = (A.val.val 0 1).natAbs := (rfl)
 
 /-- The matrix represented by a factor pair `(a, d)` and a residue `b` is
 `(a b; 0, sign(n)d)`. -/
 @[simp]
 theorem coe_repsEquiv_symm_apply (hn : n ≠ 0)
-    (x : Σ p : ↥n.natAbs.divisorsAntidiagonal, Fin p.1.2) :
-    ((repsEquiv hn).symm x : FixedDetMatrix (Fin 2) ℤ n).1 =
-      !![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, n.sign * x.1.1.2] := (rfl)
+    (x : Σ p : ↥n.natAbs.divisorsAntidiagonal, Fin p.val.2) :
+    ((repsEquiv hn).symm x : FixedDetMatrix (Fin 2) ℤ n).val =
+      !![(x.1.val.1 : ℤ), (x.2 : ℕ); 0, n.sign * x.1.val.2] := (rfl)
 
 /-- **The number of upper-triangular representatives**: the set `reps n` has `σ₁(|n|)`
 elements, one for each divisor `d` of `|n|` and each `0 ≤ b < d`. -/
@@ -176,12 +186,14 @@ theorem ncard_reps (n : ℤ) : (reps n).ncard = ArithmeticFunction.sigma 1 n.nat
   simp only [Nat.card_fin]
   rw [Finset.sum_coe_sort]
 
-/-- **The divisor sum over the upper-triangular representatives**: for even `w` and `n ≠ 0`, the
+/-- **The divisor sum over the upper-triangular representatives**: for even `w`, the
 sum of `dʷ` over the representatives `(a b; 0 d)` in `reps n` is `σ_{w+1}(|n|)`, since each factor
 pair `(a, d)` of `|n|` carries `|d|` representatives. -/
-theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hn : n ≠ 0) (hw : Even w) :
-    ∑ A : reps n, ((A.1.1 1 1 : ℤ) : R) ^ w =
+theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hw : Even w) :
+    ∑ A : reps n, ((A.val.val 1 1 : ℤ) : R) ^ w =
       (ArithmeticFunction.sigma (w + 1) n.natAbs : R) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   have hsign : (n.sign : R) ^ w = 1 := by
     rw [← Int.cast_pow, ← hw.pow_abs, Int.abs_sign_of_ne_zero hn, one_pow, Int.cast_one]
   rw [← (repsEquiv hn).symm.sum_comp, Fintype.sum_sigma]
@@ -199,9 +211,9 @@ theorem sum_reps_pow {R : Type*} [CommRing R] {w : ℕ} (hn : n ≠ 0) (hw : Eve
 /-- **Finiteness of bounded matrices**: there are only finitely many integral matrices of
 determinant `n` whose entries are at most `B` in absolute value. -/
 theorem finite_setOf_abs_le {m : Type*} [Fintype m] [DecidableEq m] (n B : ℤ) :
-    {A : FixedDetMatrix m ℤ n | ∀ i j, |A.1 i j| ≤ B}.Finite :=
+    {A : FixedDetMatrix m ℤ n | ∀ i j, |A.val i j| ≤ B}.Finite :=
   ((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦ Set.finite_Icc (-B) B).preimage
-    (f := fun A : FixedDetMatrix m ℤ n ↦ (A.1 : m → m → ℤ))
+    (f := fun A : FixedDetMatrix m ℤ n ↦ (A.val : m → m → ℤ))
     Subtype.val_injective.injOn).subset fun _ hA i j ↦ abs_le.mp (hA i j)
 
 /-! ### Integral matrices of nonzero determinant as rational invertible matrices -/
@@ -213,17 +225,18 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 /-- For `n ≠ 0`, an integral matrix of determinant `n` as an invertible rational matrix, the form
 in which it acts on the upper half-plane and on the cusps `ℙ¹(ℚ)`. -/
 noncomputable def toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) : GL m ℚ :=
-  .mkOfDetNeZero (A.1.map (Int.cast : ℤ → ℚ)) (by rw [← Int.cast_det, A.2]; exact_mod_cast hn)
+  .mkOfDetNeZero (A.val.map (Int.cast : ℤ → ℚ))
+      (by rw [← Int.cast_det, A.property]; exact_mod_cast hn)
 
 /-- The underlying matrix of `toGL hn A` is the entrywise cast of `A`. -/
 @[simp]
 theorem coe_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
-    (toGL hn A : Matrix m m ℚ) = A.1.map (Int.cast : ℤ → ℚ) := (rfl)
+    (toGL hn A : Matrix m m ℚ) = A.val.map (Int.cast : ℤ → ℚ) := (rfl)
 
 /-- The determinant of `toGL hn A` is `n`. -/
 theorem det_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
     (toGL hn A : Matrix m m ℚ).det = n := by
-  rw [coe_toGL, ← Int.cast_det, A.2]
+  rw [coe_toGL, ← Int.cast_det, A.property]
 
 /-- `toGL hn` is injective: the cast `ℤ → ℚ` is. -/
 theorem toGL_injective (hn : n ≠ 0) : Function.Injective (toGL (m := m) hn) := fun A B h ↦
@@ -235,8 +248,72 @@ theorem toGL_smul (hn : n ≠ 0) (g : SpecialLinearGroup m ℤ) (A : FixedDetMat
     toGL hn (g • A) = SpecialLinearGroup.mapGL ℚ g * toGL hn A := by
   ext : 1
   simpa [smul_coe] using
-    Matrix.map_mul (f := Int.castRingHom ℚ) (L := (g : Matrix m m ℤ)) (M := A.1)
+    Matrix.map_mul (f := Int.castRingHom ℚ) (L := (g : Matrix m m ℤ)) (M := A.val)
+
+/-! ### Integral matrices of nonzero determinant as real invertible matrices -/
+
+/-- For `n ≠ 0`, an integral matrix of determinant `n` as an invertible real matrix. For `2 × 2`
+matrices and `0 < n` this is the form in which it acts on the upper half-plane, by the Möbius
+transformation `τ ↦ (a τ + b) / (c τ + d)`. -/
+noncomputable def toGLReal (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) : GL m ℝ :=
+  GeneralLinearGroup.map (algebraMap ℚ ℝ) (toGL hn A)
+
+/-- `toGLReal hn A` is the image of `toGL hn A` under `ℚ → ℝ`. -/
+theorem toGLReal_eq_map_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    toGLReal hn A = GeneralLinearGroup.map (algebraMap ℚ ℝ) (toGL hn A) := (rfl)
+
+/-- The underlying matrix of `toGLReal hn A` is the entrywise cast of `A`. -/
+@[simp]
+theorem coe_toGLReal (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    (toGLReal hn A : Matrix m m ℝ) = A.val.map (Int.cast : ℤ → ℝ) := by
+  ext i j
+  simp [toGLReal_eq_map_toGL]
+
+/-- The entries of `toGLReal hn A` are the casts of the entries of `A`. -/
+theorem toGLReal_apply (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) (i j : m) :
+    (toGLReal hn A : Matrix m m ℝ) i j = A.val i j := by
+  rw [coe_toGLReal, map_apply]
+
+/-- The determinant of `toGLReal hn A` is `n`. -/
+theorem det_toGLReal (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    ((toGLReal hn A).det : ℝ) = n := by
+  rw [GeneralLinearGroup.val_det_apply, coe_toGLReal, ← Int.cast_det, A.property]
+
+/-- Left multiplication by `g ∈ SL(m, ℤ)` becomes multiplication by its image in `GL(m, ℝ)`. -/
+theorem toGLReal_smul (hn : n ≠ 0) (g : SpecialLinearGroup m ℤ) (A : FixedDetMatrix m ℤ n) :
+    toGLReal hn (g • A) = SpecialLinearGroup.mapGL ℝ g * toGLReal hn A := by
+  rw [toGLReal_eq_map_toGL, toGL_smul, map_mul, SpecialLinearGroup.map_mapGL,
+    toGLReal_eq_map_toGL]
+
+/-- Left multiplication by `SL(m, ℤ)` preserves and reflects primitivity: the greatest common
+divisor of the entries is unchanged. -/
+@[simp]
+theorem isPrimitive_smul_iff (g : SpecialLinearGroup m ℤ) (A : FixedDetMatrix m ℤ n) :
+    TauCeti.IsPrimitive (g • A).val ↔ TauCeti.IsPrimitive A.val := by
+  rw [smul_coe, ← SpecialLinearGroup.coe_GL_coe_matrix, Units.isPrimitive_units_mul_iff]
 
 end ToGL
+
+/-! ### Primitive representatives -/
+
+open scoped Classical in
+/-- The primitive matrices among the upper-triangular representatives `reps n`: the matrices
+`(a b; 0 d)` with `ad = n`, `0 < a`, `0 ≤ b < |d|` and `gcd(a, b, d) = 1`. For `n ≠ 0` they
+represent the orbits of `SL(2, ℤ)` on the primitive integral matrices of determinant `n`. -/
+noncomputable def primitiveReps (n : ℤ) : Finset (FixedDetMatrix (Fin 2) ℤ n) :=
+  {A ∈ (reps n).toFinset | TauCeti.IsPrimitive A.val}
+
+/-- A matrix lies in `primitiveReps n` exactly when it is a primitive matrix of `reps n`. -/
+@[simp]
+theorem mem_primitiveReps {A : FixedDetMatrix (Fin 2) ℤ n} :
+    A ∈ primitiveReps n ↔ A ∈ reps n ∧ TauCeti.IsPrimitive A.val := by
+  simp [primitiveReps]
+
+/-- For `n ≠ 0`, every primitive matrix of determinant `n` can be moved into
+`primitiveReps n` by left multiplication by `SL(2, ℤ)`. -/
+theorem exists_smul_mem_primitiveReps (hn : n ≠ 0) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : TauCeti.IsPrimitive A.val) : ∃ g : SL(2, ℤ), g • A ∈ primitiveReps n := by
+  obtain ⟨g, hg⟩ := exists_smul_mem_reps hn A
+  exact ⟨g, mem_primitiveReps.2 ⟨hg, (isPrimitive_smul_iff g A).2 hA⟩⟩
 
 end FixedDetMatrices

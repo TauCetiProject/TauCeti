@@ -211,6 +211,12 @@ noncomputable instance instCommShiftFunctorProd : (F.prod G).CommShift A where
   commShiftIso_zero := by ext <;> simp [Functor.commShiftIso_zero]
   commShiftIso_add a b := by ext <;> simp [Functor.commShiftIso_add]
 
+/-- The product of shift-compatible equivalences commutes with componentwise shifts. -/
+noncomputable instance _root_.CategoryTheory.Equivalence.instCommShiftProd
+    (e : C ≌ C') (e' : D ≌ D') [e.functor.CommShift A] [e'.functor.CommShift A] :
+    (e.prod e').functor.CommShift A :=
+  inferInstanceAs ((e.functor.prod e'.functor).CommShift A)
+
 /-- The first coordinate of the commutation isomorphism of `F.prod G` is that of `F`. -/
 @[simp]
 lemma commShiftIso_prod_hom_app_fst (a : A) (X : C × D) :

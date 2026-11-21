@@ -118,12 +118,16 @@ theorem integral_normDet_fderiv_mul_eq_integral_tsum
 
 /-- If the Jacobian is integrable, then almost every fiber of the Lipschitz map over the
 parameter set is finite. -/
-theorem ae_finite_fiber (hf : LipschitzWith K f) (hs : NullMeasurableSet s volume)
+theorem ae_finite_fiber (hf : LipschitzWith K f)
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).normDet) s) :
     ∀ᵐ y ∂μHE[finrank ℝ U], (s ∩ f ⁻¹' {y}).Finite := by
-  have hsum := hf.ae_summable_fiber hs (g := fun _ ↦ 1) measurable_const (by simpa using hint)
+  have hint' : IntegrableOn (fun x ↦ (fderiv ℝ f x).normDet) (toMeasurable volume s) := by
+    rwa [IntegrableOn, Measure.restrict_toMeasurable_of_sfinite]
+  have hsum := hf.ae_summable_fiber (measurableSet_toMeasurable volume s).nullMeasurableSet
+    (g := fun _ ↦ 1) measurable_const (by simpa using hint')
   filter_upwards [hsum] with y hy
-  exact Set.finite_coe_iff.mp (Finite.of_summable_const zero_lt_one hy)
+  exact (Set.finite_coe_iff.mp (Finite.of_summable_const zero_lt_one hy)).subset
+    (Set.inter_subset_inter_left _ (subset_toMeasurable volume s))
 
 /-- If the Jacobian is integrable, then the real-valued cardinality of the fiber is
 integrable with respect to normalized Hausdorff measure. -/
@@ -132,7 +136,7 @@ theorem integrable_ncard_fiber (hf : LipschitzWith K f) (hs : NullMeasurableSet 
     Integrable (fun y ↦ ((s ∩ f ⁻¹' {y}).ncard : ℝ)) μHE[finrank ℝ U] := by
   have h := hf.integrable_tsum_fiber hs (g := fun _ ↦ 1) measurable_const (by simpa using hint)
   refine h.congr ?_
-  filter_upwards [hf.ae_finite_fiber hs hint] with y hy
+  filter_upwards [hf.ae_finite_fiber hint] with y hy
   let _ : Finite ↥(s ∩ f ⁻¹' {y}) := Set.finite_coe_iff.mpr hy
   simp
 
@@ -151,7 +155,7 @@ theorem integral_normDet_fderiv_eq_integral_ncard
       simpa using h
     _ = ∫ y, ((s ∩ f ⁻¹' {y}).ncard : ℝ) ∂μHE[finrank ℝ U] := by
       apply integral_congr_ae
-      filter_upwards [hf.ae_finite_fiber hs hint] with y hy
+      filter_upwards [hf.ae_finite_fiber hint] with y hy
       let _ : Finite ↥(s ∩ f ⁻¹' {y}) := Set.finite_coe_iff.mpr hy
       simp
 

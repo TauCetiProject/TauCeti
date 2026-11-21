@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.ZMod
+public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -27,6 +29,11 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 ## Main results
 
+* `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
+  additive character modulo `m` at `x`.
+* `ZMod.fourier_val_div_eq_stdAddChar`: the Fourier mode `n` at `j.val / N` on the circle is the
+  standard additive character at `j * n`, and `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in
+  `[0, 1]`.
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
 * `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
   the `N`-th roots of unity.
@@ -37,6 +44,33 @@ public section
 namespace ZMod
 
 variable {v N : ℕ} [NeZero v] [NeZero N] {E : Type*} [AddCommGroup E] [Module ℂ E]
+
+/-- **The standard additive character at a multiple.** The standard additive character modulo
+`m n` at `n x` is the standard additive character modulo `m` at `x`: both are `e^(2π i x / m)`. -/
+theorem stdAddChar_intCast_natCast_mul {m n : ℕ} [NeZero m] [NeZero n] (x : ℤ) :
+    stdAddChar (((n * x : ℤ) : ZMod (m * n))) = stdAddChar (x : ZMod m) := by
+  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [stdAddChar_coe, stdAddChar_coe]
+  congr 1
+  push_cast
+  field_simp
+
+/-- The Fourier mode `n` at the residue representative `j.val / N` of the circle is the standard
+additive character at `j * n`. -/
+theorem fourier_val_div_eq_stdAddChar (j : ZMod N) (n : ℤ) :
+    fourier n ((j.val / (N : ℝ) : ℝ) : UnitAddCircle) = stdAddChar (j * (n : ZMod N)) := by
+  rw [fourier_coe_apply, stdAddChar_apply]
+  have h := toCircle_intCast (N := N) (n * j.val)
+  rw [Int.cast_mul, Int.cast_natCast, natCast_zmod_val, mul_comm] at h
+  rw [h]
+  push_cast
+  congr 1
+  ring
+
+/-- The residue representative `j.val / N` lies in the unit interval. -/
+theorem val_div_natCast_mem_Icc (j : ZMod N) : (j.val / (N : ℝ) : ℝ) ∈ Set.Icc 0 1 :=
+  ⟨div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _),
+    (div_le_one (Nat.cast_pos.mpr (NeZero.pos N))).mpr (by exact_mod_cast (val_lt j).le)⟩
 
 /-- **The Fourier transform of a function of the reduction modulo a divisor.** For `v ∣ N` and
 `L = N / v`, the discrete Fourier transform modulo `N` of `j ↦ f (j mod v)` is `L • 𝓕 f m` at

@@ -56,15 +56,15 @@ noncomputable def algebraicAnalyticBoundaryHomeomorph :
 @[simp]
 theorem coe_algebraicAnalyticBoundaryHomeomorph_apply
     (x : AlgebraicComplexPoint.boundaryComponent Φ ρ) :
-    (algebraicAnalyticBoundaryHomeomorph hΦ ρ x).1 = algebraicAnalyticEquiv hΦ x.1 := by
+    (algebraicAnalyticBoundaryHomeomorph hΦ ρ x).val = algebraicAnalyticEquiv hΦ x.val := by
   simp [algebraicAnalyticBoundaryHomeomorph]
 
 /-- The inverse restricted comparison is the restriction of the inverse ambient comparison. -/
 @[simp]
 theorem coe_algebraicAnalyticBoundaryHomeomorph_symm_apply
     (x : Φ.analyticBoundaryComponent hΦ ρ) :
-    ((algebraicAnalyticBoundaryHomeomorph hΦ ρ).symm x).1 =
-      (algebraicAnalyticEquiv hΦ).symm x.1 := by
+    ((algebraicAnalyticBoundaryHomeomorph hΦ ρ).symm x).val =
+      (algebraicAnalyticEquiv hΦ).symm x.val := by
   simp [algebraicAnalyticBoundaryHomeomorph]
 
 section ComponentAtlas
@@ -109,8 +109,8 @@ inclusions. -/
 theorem coe_algebraicAnalyticBoundaryDiffeomorph_apply (n : ℕ∞ω)
     (x : AlgebraicComplexPoint.boundaryComponent Φ ρ) :
     letI := algebraicBoundaryComponentChartedSpace hΦ ρ
-    (algebraicAnalyticBoundaryDiffeomorph hΦ ρ n x).1 = algebraicAnalyticEquiv hΦ x.1 := by
-  simp only [algebraicAnalyticBoundaryDiffeomorph, coe_diffeomorphOfBijective,
+    (algebraicAnalyticBoundaryDiffeomorph hΦ ρ n x).val = algebraicAnalyticEquiv hΦ x.val := by
+  simp only [algebraicAnalyticBoundaryDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
     coe_algebraicAnalyticBoundaryHomeomorph_apply]
 
 /-- The inverse component complex diffeomorphism of order `n` commutes with the inverse ambient
@@ -119,8 +119,8 @@ comparison. -/
 theorem coe_algebraicAnalyticBoundaryDiffeomorph_symm_apply (n : ℕ∞ω)
     (x : Φ.analyticBoundaryComponent hΦ ρ) :
     letI := algebraicBoundaryComponentChartedSpace hΦ ρ
-    ((algebraicAnalyticBoundaryDiffeomorph hΦ ρ n).symm x).1 =
-      (algebraicAnalyticEquiv hΦ).symm x.1 := by
+    ((algebraicAnalyticBoundaryDiffeomorph hΦ ρ n).symm x).val =
+      (algebraicAnalyticEquiv hΦ).symm x.val := by
   let := algebraicBoundaryComponentChartedSpace hΦ ρ
   apply (algebraicAnalyticEquiv hΦ).injective
   rw [← coe_algebraicAnalyticBoundaryDiffeomorph_apply hΦ ρ n,

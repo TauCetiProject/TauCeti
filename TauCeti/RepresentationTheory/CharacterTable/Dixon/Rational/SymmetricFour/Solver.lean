@@ -62,8 +62,7 @@ theorem symmetricGroupFour_centralCharacterSearch :
     symmetricGroupFourClassData.centralCharacterSearch (F := ZMod 37) =
       symmetricGroupFourClassData.rowsOfMap (fun x : ℤ => (x : ZMod 37))
         symmetricGroupFourCentralCharacterTable := by
-  apply symmetricGroupFourClassData.centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_symmetricGroup_four_thirtySeven
+  apply symmetricGroupFourClassData.centralCharacterSearch_eq_rowsOfMap
   · intro i
     rw [isIntegerCharacterTableSpec_symmetricGroupFour.central_one, Int.cast_one]
   · intro i

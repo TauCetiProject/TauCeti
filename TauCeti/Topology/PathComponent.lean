@@ -25,13 +25,11 @@ gives local path connectedness of the subspace.
 * `Joined.eq_of_totallyDisconnectedSpace` and
   `ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace`: in a totally disconnected space,
   the path components are the points.
+* `Homeomorph.joined_iff` and `Homeomorph.zerothHomotopyCongr`: a homeomorphism preserves and
+  reflects being joined by a path, so it induces a bijection of path components.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
-  `TauCeti.PathComponentBasepoints.choose` giving one.
-
-## References
-
-This supplies point-set prerequisites for the "or one builds the cover of `pathComponent x₀`"
-clause in `TauCetiRoadmap/UniversalCovers/README.md`.
+  `TauCeti.PathComponentBasepoints.choose` giving one. Each chosen basepoint is joined to the
+  points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
 -/
 
 public section
@@ -47,12 +45,12 @@ variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 homotopic in the path component. -/
 theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
     {a b : pathComponent x₀} {γ δ : Path a b}
-    (h : (γ.map continuous_subtype_val).Homotopic
-      (δ.map continuous_subtype_val)) :
+    (h : (γ.map continuous_subtypeVal).Homotopic
+      (δ.map continuous_subtypeVal)) :
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
-  have hγmem : ∀ t, (γ.map continuous_subtype_val) t ∈ pathComponent x₀ := fun t =>
-    (γ t).2
+  have hγmem : ∀ t, (γ.map continuous_subtypeVal) t ∈ pathComponent x₀ := fun t =>
+    (γ t).property
   have hmem : ∀ p : I × I, H p ∈ pathComponent x₀ := fun p =>
     Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)
@@ -89,6 +87,33 @@ theorem _root_.ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace
     [TotallyDisconnectedSpace X] : Function.Injective (ZerothHomotopy.mk (X := X)) :=
   fun _ _ h ↦ Joined.eq_of_totallyDisconnectedSpace (Quotient.exact h)
 
+section Homeomorph
+
+variable {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y)
+
+/-- Two points are joined by a path exactly when their images under a homeomorphism are. -/
+@[simp]
+theorem _root_.Homeomorph.joined_iff {a b : X} : Joined (e a) (e b) ↔ Joined a b :=
+  ⟨fun h ↦ by simpa using h.map e.symm.continuous, fun h ↦ h.map e.continuous⟩
+
+/-- A homeomorphism induces a bijection of the sets of path components. -/
+def _root_.Homeomorph.zerothHomotopyCongr : ZerothHomotopy X ≃ ZerothHomotopy Y :=
+  Quotient.congr e.toEquiv fun _ _ ↦ e.joined_iff.symm
+
+@[simp]
+theorem _root_.Homeomorph.zerothHomotopyCongr_mk (a : X) :
+    e.zerothHomotopyCongr (.mk a) = .mk (e a) := by
+  rw [Homeomorph.zerothHomotopyCongr.eq_1]
+  -- `Quotient.congr` computes on the class `ZerothHomotopy.mk a = Quotient.mk _ a`
+  rfl
+
+@[simp]
+theorem _root_.Homeomorph.zerothHomotopyCongr_symm_mk (b : Y) :
+    e.zerothHomotopyCongr.symm (.mk b) = .mk (e.symm b) := by
+  rw [Equiv.symm_apply_eq, Homeomorph.zerothHomotopyCongr_mk, Homeomorph.apply_symm_apply]
+
+end Homeomorph
+
 /-- A choice of a basepoint in each path component of a space: a section of the projection
 `ZerothHomotopy.mk` to the set of path components. -/
 @[ext]
@@ -108,5 +133,17 @@ noncomputable def PathComponentBasepoints.choose (X : Type*) [TopologicalSpace X
 
 instance (X : Type*) [TopologicalSpace X] : Nonempty (PathComponentBasepoints X) :=
   ⟨PathComponentBasepoints.choose X⟩
+
+/-- The chosen basepoint of the path component of `x` is joined to `x`. -/
+theorem PathComponentBasepoints.joined_point_mk (β : PathComponentBasepoints X) (x : X) :
+    Joined (β.point (ZerothHomotopy.mk x)) x :=
+  Quotient.exact (β.mk_point (ZerothHomotopy.mk x))
+
+/-- A continuous map `f` sends the chosen basepoint of the path component of `y` into the path
+component of `f y`. -/
+theorem PathComponentBasepoints.mk_apply_point_mk {Y : Type*} [TopologicalSpace Y]
+    (β : PathComponentBasepoints Y) {f : Y → X} (hf : Continuous f) (y : Y) :
+    ZerothHomotopy.mk (f (β.point (ZerothHomotopy.mk y))) = ZerothHomotopy.mk (f y) :=
+  Quotient.sound ((β.joined_point_mk y).map hf)
 
 end TauCeti

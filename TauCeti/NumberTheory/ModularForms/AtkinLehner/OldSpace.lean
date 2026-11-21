@@ -96,6 +96,47 @@ private lemma restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld [NeZe
   rw [← CuspForm.restrictₗ_apply k ℂ, map_smul, CuspForm.restrictₗ_apply, hof]
   exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOld heM hMN k _)
 
+/-- The prime-step of `Nat.IsExactDivisor.restrict_atkinLehnerOperatorCusp_mem_cuspFormsOld`:
+`W_Q` carries `V₁ g₀` or `V_p g₀`, for a cusp form `g₀` on `Γ₀(L)` with `p * L = N`, to an old
+form, whether or not `p` divides `Q`. -/
+private lemma restrict_atkinLehnerOperatorCusp_levelRaise_prime_mem_cuspFormsOld {L : ℕ}
+    [NeZero N] [NeZero d] {p R : ℕ} (h : Q ∥ N) (hp : p.Prime) (hpL : p * L = N)
+    (hR : N = Q * R) (hQR : Nat.Coprime Q R) (hLN' : L ≠ N) (hd : d = 1 ∨ d = p)
+    (hdvd : d * L ∣ N) (g₀ : CuspForm ((Gamma0 L).map (mapGL ℝ)) k) :
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N)
+        (h.atkinLehnerOperatorCusp k
+          (CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd hdvd) g₀)) ∈
+      cuspFormsOld N k := by
+  by_cases hpQ : p ∣ Q
+  · -- `p ∣ Q`: the level-raise trades `V₁` and `V_p`, and `W_Q` becomes `W_{Q / p}`
+    obtain ⟨Q₁, hQ₁⟩ := hpQ
+    have hL : L = Q₁ * R := Nat.eq_of_mul_eq_mul_left hp.pos (by rw [hpL, hR, hQ₁]; ring)
+    have hQ₁0 : 0 < Q₁ := Nat.pos_of_ne_zero fun h0 ↦ h.ne_zero (by rw [hQ₁, h0, mul_zero])
+    have h₁ : Q₁ ∥ L := ⟨⟨R, hL⟩, by
+      rw [hL, Nat.mul_div_cancel_left R hQ₁0]
+      exact Nat.Coprime.coprime_dvd_left ⟨p, by rw [hQ₁, mul_comm]⟩ hQR⟩
+    rcases hd with hd | hd
+    · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := p)
+        (d₂ := 1) (e₂ := 1) h h₁ (by rw [hQ₁]; ring) (by rw [hR]; ring) hL (by rw [hd])
+        hLN' hdvd g₀
+    · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := p) (e₁ := 1)
+        (d₂ := 1) (e₂ := 1) h h₁ (by rw [hQ₁]; ring) (by rw [hR]; ring) hL (by rw [hd, mul_one])
+        hLN' hdvd g₀
+  · -- `p ∤ Q`: `W_Q` commutes with both `V₁` and `V_p`
+    obtain ⟨R', hR'⟩ : Q ∣ L := Nat.Coprime.dvd_of_dvd_mul_left
+      ((Nat.Prime.coprime_iff_not_dvd hp).2 hpQ).symm (hpL ▸ h.dvd)
+    have hN' : N = Q * (p * R') := by rw [← hpL, hR']; ring
+    have h₁ : Q ∥ L := ⟨⟨R', hR'⟩, by
+      rw [hR', Nat.mul_div_cancel_left R' h.pos]
+      refine Nat.Coprime.coprime_dvd_right (Dvd.intro_left p rfl) ?_
+      simpa [hN', Nat.mul_div_cancel_left _ h.pos] using h.coprime⟩
+    rcases hd with hd | hd
+    · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
+        (d₂ := 1) (e₂ := p) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd]) hLN' hdvd g₀
+    · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
+        (d₂ := p) (e₂ := 1) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd, one_mul])
+        hLN' hdvd g₀
+
 /-- **The Atkin–Lehner operator preserves the old subspace at trivial nebentypus.** For a cusp
 form `f` on `Γ₀(N)` whose restriction to `Γ₁(N)` is old, the restriction of `W_Q f` is again
 old, for every exact divisor `Q ∥ N`. -/
@@ -131,35 +172,8 @@ theorem Nat.IsExactDivisor.restrict_atkinLehnerOperatorCusp_mem_cuspFormsOld [Ne
     change CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g ∈ _
     rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply, hsum,
       CuspForm.restrictₗ_apply]
-    by_cases hpQ : p ∣ Q
-    · -- `p ∣ Q`: the level-raise trades `V₁` and `V_p`, and `W_Q` becomes `W_{Q / p}`
-      obtain ⟨Q₁, hQ₁⟩ := hpQ
-      have hL : L = Q₁ * R := Nat.eq_of_mul_eq_mul_left hp.pos (by rw [hpL, hR, hQ₁]; ring)
-      have hQ₁0 : 0 < Q₁ := Nat.pos_of_ne_zero fun h0 ↦ h.ne_zero (by rw [hQ₁, h0, mul_zero])
-      have h₁ : Q₁ ∥ L := ⟨⟨R, hL⟩, by
-        rw [hL, Nat.mul_div_cancel_left R hQ₁0]
-        exact Nat.Coprime.coprime_dvd_left ⟨p, by rw [hQ₁, mul_comm]⟩ hQR⟩
-      rcases hd with hd | hd
-      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := p)
-          (d₂ := 1) (e₂ := 1) h h₁ (by rw [hQ₁]; ring) (by rw [hR]; ring) hL (by rw [hd])
-          hLN' hdvd g₀
-      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := p) (e₁ := 1)
-          (d₂ := 1) (e₂ := 1) h h₁ (by rw [hQ₁]; ring) (by rw [hR]; ring) hL (by rw [hd, mul_one])
-          hLN' hdvd g₀
-    · -- `p ∤ Q`: `W_Q` commutes with both `V₁` and `V_p`
-      obtain ⟨R', hR'⟩ : Q ∣ L := Nat.Coprime.dvd_of_dvd_mul_left
-        ((Nat.Prime.coprime_iff_not_dvd hp).2 hpQ).symm (hpL ▸ h.dvd)
-      have hN' : N = Q * (p * R') := by rw [← hpL, hR']; ring
-      have h₁ : Q ∥ L := ⟨⟨R', hR'⟩, by
-        rw [hR', Nat.mul_div_cancel_left R' h.pos]
-        refine Nat.Coprime.coprime_dvd_right (Dvd.intro_left p rfl) ?_
-        simpa [hN', Nat.mul_div_cancel_left _ h.pos] using h.coprime⟩
-      rcases hd with hd | hd
-      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
-          (d₂ := 1) (e₂ := p) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd]) hLN' hdvd g₀
-      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
-          (d₂ := p) (e₂ := 1) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd, one_mul])
-          hLN' hdvd g₀
+    exact restrict_atkinLehnerOperatorCusp_levelRaise_prime_mem_cuspFormsOld h hp hpL hR hQR hLN'
+      hd hdvd g₀
   -- on the restriction of `f`, the diamond sum is multiplication by `#(ZMod N)ˣ`
   have := hT hf
   rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply,

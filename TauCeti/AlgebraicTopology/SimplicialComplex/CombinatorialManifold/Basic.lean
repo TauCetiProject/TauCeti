@@ -17,10 +17,8 @@ A simplicial complex is a **combinatorial `n`-ball** when it is stellar equivale
 `n`-simplex, and a **combinatorial `n`-sphere** when it is stellar equivalent to the boundary of
 the standard `(n+1)`-simplex. A complex is a **combinatorial `n`-manifold** when the link of each
 of its vertices is a combinatorial `(n-1)`-sphere — an interior vertex — or a combinatorial
-`(n-1)`-ball — a boundary vertex. This is the simplicial side of piecewise-linear topology asked
-for by layer 11 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), the definition that "has the correct links to be
-a manifold".
+`(n-1)`-ball — a boundary vertex. This is the simplicial side of piecewise-linear topology: the
+definition of a complex that has the correct links to be a manifold.
 
 The models are the complexes of `Simplex.Basic`: `simplex V` for a vertex set of `n + 1`
 elements, and `simplexBoundary V` for one of `n + 2` elements, so that both models have dimension
@@ -144,20 +142,42 @@ theorem IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling
   obtain ⟨V, hV, hLV⟩ := hL
   exact ⟨V, hV, h.trans hLV⟩
 
+/-- Intrinsic stellar equivalence preserves and reflects combinatorial balls. -/
+theorem StellarEquivalentUpToRelabeling.isCombinatorialBall_iff
+    (h : StellarEquivalentUpToRelabeling K L) :
+    IsCombinatorialBall K n ↔ IsCombinatorialBall L n :=
+  ⟨IsCombinatorialBall.of_stellarEquivalentUpToRelabeling h.symm,
+    IsCombinatorialBall.of_stellarEquivalentUpToRelabeling h⟩
+
+/-- Intrinsic stellar equivalence preserves and reflects combinatorial spheres. -/
+theorem StellarEquivalentUpToRelabeling.isCombinatorialSphere_iff
+    (h : StellarEquivalentUpToRelabeling K L) :
+    IsCombinatorialSphere K n ↔ IsCombinatorialSphere L n :=
+  ⟨IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling h.symm,
+    IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling h⟩
+
+/-- Stellar equivalence preserves and reflects combinatorial balls. -/
+theorem StellarEquivalent.isCombinatorialBall_iff (h : StellarEquivalent K L) :
+    IsCombinatorialBall K n ↔ IsCombinatorialBall L n :=
+  h.stellarEquivalentUpToRelabeling.isCombinatorialBall_iff
+
+/-- Stellar equivalence preserves and reflects combinatorial spheres. -/
+theorem StellarEquivalent.isCombinatorialSphere_iff (h : StellarEquivalent K L) :
+    IsCombinatorialSphere K n ↔ IsCombinatorialSphere L n :=
+  h.stellarEquivalentUpToRelabeling.isCombinatorialSphere_iff
+
 /-- Starring a face of a combinatorial ball at a fresh vertex gives another combinatorial ball. -/
 theorem IsCombinatorialBall.stellarSubdivision (h : IsCombinatorialBall K n) (hσ : σ ∈ K)
     (hv : ({v} : Finset ι) ∉ K) :
     IsCombinatorialBall (stellarSubdivision K σ v) n :=
-  IsCombinatorialBall.of_stellarEquivalentUpToRelabeling
-    (stellarEquivalent_stellarSubdivision hσ hv).symm.stellarEquivalentUpToRelabeling h
+  (stellarEquivalent_stellarSubdivision hσ hv).isCombinatorialBall_iff.mp h
 
 /-- Starring a face of a combinatorial sphere at a fresh vertex gives another combinatorial
 sphere. -/
 theorem IsCombinatorialSphere.stellarSubdivision (h : IsCombinatorialSphere K n) (hσ : σ ∈ K)
     (hv : ({v} : Finset ι) ∉ K) :
     IsCombinatorialSphere (stellarSubdivision K σ v) n :=
-  IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling
-    (stellarEquivalent_stellarSubdivision hσ hv).symm.stellarEquivalentUpToRelabeling h
+  (stellarEquivalent_stellarSubdivision hσ hv).isCombinatorialSphere_iff.mp h
 
 /-- A combinatorial `n`-ball has dimension `n`. -/
 theorem IsCombinatorialBall.dimension_eq (h : IsCombinatorialBall K n) :
@@ -202,6 +222,36 @@ theorem IsCombinatorialSphere.ne_bot (h : IsCombinatorialSphere K n) : K ≠ ⊥
   rw [dimension_simplexBoundary (by omega), hV] at hdim
   norm_num at hdim
 
+/-- Starring a nonempty finset at a fresh vertex preserves and reflects combinatorial balls. -/
+theorem IsCombinatorialBall.stellarSubdivision_iff {σ : Finset ι} (hσne : σ.Nonempty)
+    (hv : ({v} : Finset ι) ∉ K) :
+    IsCombinatorialBall (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n ↔
+      IsCombinatorialBall K n :=
+  (stellarEquivalent_stellarSubdivision_of_nonempty hσne hv).symm.isCombinatorialBall_iff
+
+/-- Starring a nonempty finset at a fresh vertex preserves and reflects combinatorial spheres. -/
+theorem IsCombinatorialSphere.stellarSubdivision_iff {σ : Finset ι} (hσne : σ.Nonempty)
+    (hv : ({v} : Finset ι) ∉ K) :
+    IsCombinatorialSphere (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n ↔
+      IsCombinatorialSphere K n :=
+  (stellarEquivalent_stellarSubdivision_of_nonempty hσne hv).symm.isCombinatorialSphere_iff
+
+/-- If starring `σ` at a fresh vertex `v` yields a combinatorial ball, the original precomplex was
+already a combinatorial ball. -/
+theorem IsCombinatorialBall.of_stellarSubdivision {σ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
+    (h : IsCombinatorialBall (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n) :
+    IsCombinatorialBall K n :=
+  σ.eq_empty_or_nonempty.elim (fun h0 => (h.ne_bot (h0 ▸ stellarSubdivision_empty K v)).elim)
+    fun hσne => (IsCombinatorialBall.stellarSubdivision_iff hσne hv).mp h
+
+/-- If starring `σ` at a fresh vertex `v` yields a combinatorial sphere, the original precomplex
+was already a combinatorial sphere. -/
+theorem IsCombinatorialSphere.of_stellarSubdivision {σ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
+    (h : IsCombinatorialSphere (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n) :
+    IsCombinatorialSphere K n :=
+  σ.eq_empty_or_nonempty.elim (fun h0 => (h.ne_bot (h0 ▸ stellarSubdivision_empty K v)).elim)
+    fun hσne => (IsCombinatorialSphere.stellarSubdivision_iff hσne hv).mp h
+
 /-! ### Combinatorial manifolds -/
 
 /-- `K` is a **combinatorial `n`-manifold** when the link of each of its vertices is a
@@ -227,6 +277,14 @@ theorem isCombinatorialManifold_succ_iff :
     IsCombinatorialManifold K (n + 1) ↔ ∀ ⦃v : ι⦄, ({v} : Finset ι) ∈ K →
       IsCombinatorialSphere (link K {v}) n ∨ IsCombinatorialBall (link K {v}) n :=
   Iff.rfl
+
+/-- The void precomplex is vacuously a combinatorial `n`-manifold in every dimension. -/
+@[simp]
+theorem isCombinatorialManifold_bot :
+    IsCombinatorialManifold (⊥ : PreAbstractSimplicialComplex ι) n := by
+  cases n with
+  | zero => exact isCombinatorialManifold_zero_iff.mpr fun _ hv => hv.elim
+  | succ _ => exact isCombinatorialManifold_succ_iff.mpr fun _ hv => hv.elim
 
 /-- The standard `n`-simplex is a combinatorial `n`-manifold. -/
 theorem isCombinatorialManifold_simplex (hV : V.card = n + 1) :
@@ -277,11 +335,8 @@ theorem IsCombinatorialManifold.dimension_le (h : IsCombinatorialManifold K n) :
         rw [← Finset.insert_erase hv, herase, Finset.insert_empty]
       rw [this, Finset.card_singleton]
       omega
-    · have hne : (σ.erase v).Nonempty := Finset.nonempty_of_ne_empty herase
-      have hmem : σ.erase v ∈ link K {v} := by
-        refine mem_link.mpr ⟨?_, Finset.disjoint_singleton_right.mpr (Finset.notMem_erase v σ), ?_⟩
-        · exact (K.isRelLowerSet_faces hσ).2 (fun _ hx => Finset.mem_of_mem_erase hx) hne
-        · rwa [Finset.union_comm, Finset.singleton_union, Finset.insert_erase hv]
+    · have hmem : σ.erase v ∈ link K {v} :=
+        erase_mem_link_singleton hσ hv (Finset.nonempty_of_ne_empty herase)
       have hcard : (σ.erase v).card = σ.card - 1 := Finset.card_erase_of_mem hv
       cases n with
       | zero =>

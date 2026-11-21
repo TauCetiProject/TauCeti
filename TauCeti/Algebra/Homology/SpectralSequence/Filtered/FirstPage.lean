@@ -32,10 +32,13 @@ connecting maps of the short exact sequences of graded pieces
 
 ## Main results
 
-* `CochainComplex.spectralObject_δ_comp_spectralObjectHIsoCokernel_hom`: the connecting maps of the
+* `CochainComplex.spectralObject_δ_comp_spectralObjectHIsoCokernel_hom`,
+  `CochainComplex.spectralObjectHIsoCokernel_inv_comp_spectralObject_δ`: the connecting maps of the
   spectral object, for monomorphic transition maps.
 * `CochainComplex.spectralSequence_first_page_d_eq`: the first differential of the spectral
   sequence of a filtered complex.
+* `CochainComplex.spectralSequence_first_page_d_eq_cokernelMap`: the same, with the filtration
+  indices given by equations.
 
 ## References
 
@@ -73,6 +76,20 @@ lemma spectralObject_δ_comp_spectralObjectHIsoCokernel_hom {i j k : ι} (f : i 
     (congrArg (fun t => A ≫ t)
       (mappingCone.shiftMap_mappingConeCompTriangle_mor₃ (F.map f) (F.map g) n₀ n₁
         (by lia))).trans (Category.assoc _ _ _).symm
+
+/-- The form of `spectralObject_δ_comp_spectralObjectHIsoCokernel_hom` with the identification of
+`H^{n₀}(g)` with the cohomology of `cokernel (F.map g)` moved to the source: on the cohomology of
+the cokernels, the connecting maps of the spectral object of `F` are the connecting maps of the
+short exact sequences of cokernels. -/
+@[reassoc]
+lemma spectralObjectHIsoCokernel_inv_comp_spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k)
+    [Mono (F.map f)] [Mono (F.map g)] (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
+    (spectralObjectHIsoCokernel F g n₀).inv ≫ (spectralObject F).δ f g n₀ n₁ h =
+      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (F.map f) (F.map g)).δ
+          n₀ n₁ (by simp [← h]) ≫ (spectralObjectHIsoCokernel F f n₁).inv :=
+  (Iso.inv_comp_eq _).2 (((Iso.eq_comp_inv _).2
+    (spectralObject_δ_comp_spectralObjectHIsoCokernel_hom F f g n₀ n₁ h)).trans
+      (Category.assoc _ _ _))
 
 end SpectralObject
 
@@ -112,6 +129,38 @@ theorem spectralSequence_first_page_d_eq (p q : ℤ)
     Iso.trans_hom, Iso.trans_inv, Category.assoc]
   congr 1
   exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
+
+/-- **The first differential of the spectral sequence of a filtered complex**, with the
+filtration indices given by equations. When `F_{q₀} ⟶ F_{q₁}` and `F_{q₁} ⟶ F_{q₂}` are
+monomorphisms, with `q₀ + 1 = q₁` and `q₁ + 1 = q₂`, the differential of the first page from
+`(p, q₁)` to `(p + 2, q₀)` is the connecting map of `F_{q₁}/F_{q₀} ⟶ F_{q₂}/F_{q₀} ⟶ F_{q₂}/F_{q₁}`,
+followed by the identification of `F_{q₁}/F_{q₀}` with `F_{q₁'}/F_{q₀}` for an index `q₁'` equal
+to `q₁`. This is `CochainComplex.spectralSequence_first_page_d_eq`, in a form that applies when
+the indices are not syntactically of the form `q - 1`, `q`, `q + 1`. -/
+theorem spectralSequence_first_page_d_eq_cokernelMap (p p' q₀ q₁ q₁' q₂ n₀ n₁ : ℤ)
+    (hp : p + 2 = p') (h₀ : q₀ + 1 = q₁) (h₁ : q₁ + 1 = q₂) (h' : q₁ = q₁')
+    (hn₀ : n₀ = p + q₁) (hn₁ : n₀ + 1 = n₁)
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₁ = q₁) h₁.symm)))]
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₀ = q₀) (h₀ ▸ h').symm)))] :
+    (spectralSequenceFirstPageXIsoCokernel F (p, q₁) q₁ q₂ rfl h₁.symm n₀ hn₀).inv ≫
+      ((spectralSequence F).page 2).d (p, q₁) (p', q₀) ≫
+      (spectralSequenceFirstPageXIsoCokernel F (p', q₀) q₀ q₁' rfl (h₀ ▸ h').symm n₁
+        (by dsimp; lia)).hom =
+    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₀ = q₀) h₀.symm)))
+        (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₁ = q₁) h₁.symm)))).δ
+        n₀ n₁ (by simp [← hn₁]) ≫
+      HomologicalComplex.homologyMap (cokernel.map _ _ (𝟙 _)
+        (F.map (homOfLE (by simp [h'] : (q₁ : EInt) ≤ q₁')))
+        (by rw [Category.id_comp, ← F.map_comp]; exact congrArg F.map (Subsingleton.elim _ _)))
+        n₁ := by
+  subst hp h' h₁ hn₀ hn₁
+  obtain rfl : q₀ = q₁ - 1 := by lia
+  rw [spectralSequence_first_page_d_eq]
+  simp only [homOfLE_leOfHom, Category.assoc, Iso.inv_hom_id_assoc, homOfLE_refl,
+    CategoryTheory.Functor.map_id, cokernel.map_id, HomologicalComplex.homologyMap_id]
+  -- What remains is `(δ ≫ e.inv) ≫ e.hom = δ ≫ 𝟙 _`, up to the types of the homology objects.
+  exact (Category.assoc _ _ _).trans (congrArg _ (Iso.inv_hom_id _))
 
 end SpectralSequence
 

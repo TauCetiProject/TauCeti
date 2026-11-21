@@ -9,26 +9,30 @@ public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.Topology.Constructions.SumProd
 
 /-!
-# Continuity of flipped biadditive pairings
+# Continuity of flipped bimultiplicative pairings
 
-Mathlib's `AddMonoidHom.flip` swaps the arguments of a biadditive pairing. Joint continuity
-is preserved by composition with the continuous coordinate swap `continuous_swap`.
+Mathlib's `MonoidHom.flip` (additively, `AddMonoidHom.flip`) swaps the arguments of a
+bimultiplicative (biadditive) pairing. Joint continuity is preserved by composition with the
+continuous coordinate swap `continuous_swap`.
 
 ## Main results
 
-* `AddMonoidHom.continuous_flip`: flipping a jointly continuous biadditive pairing preserves
-  joint continuity.
+* `MonoidHom.continuous_flip`: flipping a jointly continuous bimultiplicative pairing
+  preserves joint continuity.
+* `AddMonoidHom.continuous_flip`: the additive version, for biadditive pairings.
 -/
 
 public section
 
-namespace AddMonoidHom
+namespace MonoidHom
 
-/-- Flipping a jointly continuous biadditive pairing preserves joint continuity. -/
-theorem continuous_flip {M N P : Type*} [AddZeroClass M] [AddZeroClass N] [AddCommMonoid P]
-    [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P] (μ : M →+ N →+ P)
-    (hμ : Continuous fun p : M × N => μ p.1 p.2) :
-    Continuous fun p : N × M => μ.flip p.1 p.2 :=
+/-- Flipping a jointly continuous bimultiplicative pairing preserves joint continuity. -/
+@[to_additive /-- Flipping a jointly continuous biadditive pairing preserves joint
+continuity. -/]
+theorem continuous_flip {M N P : Type*} [MulOneClass M] [MulOneClass N] [CommMonoid P]
+    [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P] (μ : M →* N →* P)
+    (hμ : Continuous fun p : M × N ↦ μ p.1 p.2) :
+    Continuous fun p : N × M ↦ μ.flip p.1 p.2 :=
   hμ.comp continuous_swap
 
-end AddMonoidHom
+end MonoidHom

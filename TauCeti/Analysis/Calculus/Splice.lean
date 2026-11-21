@@ -122,9 +122,12 @@ theorem spliceAlong_of_le_abs (hδ : 0 < δ) (hx : 2 * δ ≤ |π x|) : spliceAl
 
 /-- Where `|π x| ≤ δ`, the spliced map is `l`. -/
 @[simp]
-theorem spliceAlong_of_abs_le (hδ : 0 < δ) (hx : |π x| ≤ δ) : spliceAlong π k l δ x = l x := by
+theorem spliceAlong_of_abs_le (hx : |π x| ≤ δ) : spliceAlong π k l δ x = l x := by
   rw [spliceAlong, spliceCutoff_eq_one, one_smul, add_sub_cancel]
-  rwa [abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ, mul_one]
+  rcases ((abs_nonneg _).trans hx).eq_or_lt with h0 | hδ
+  · subst h0
+    simp
+  · rwa [abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ, mul_one]
 
 /-- Where `k` and `l` agree, the spliced map is their common value. -/
 @[simp]
@@ -160,10 +163,10 @@ theorem hasFDerivAt_spliceAlong {k' l' : X →L[ℝ] Y} (hk : HasFDerivAt k k' x
 
 /-- **The derivative of a spliced map.** If the derivatives of `k` and `l` at `x` are within `ε` of
 a linear map `A`, `‖l x - k x‖ ≤ 2 ε |π x|` and `B` bounds the derivative of the cutoff, then at
-every scale `δ > 0` the spliced map has derivative within `(3 + 4 B) ε` of `A` at `x`, for a
+every scale `δ` the spliced map has derivative within `(3 + 4 B) ε` of `A` at `x`, for a
 functional `π` of norm at most `1`. The derivative `δ⁻¹ χ' (δ⁻¹ π x) • π` of the cutoff only
-meets `l x - k x` where `|π x| ≤ 2 δ`. -/
-theorem exists_hasFDerivAt_spliceAlong_sub_le {k' l' A : X →L[ℝ] Y} {ε B : ℝ} (hδ : 0 < δ)
+meets `l x - k x` where `|π x| ≤ 2 |δ|`. -/
+theorem exists_hasFDerivAt_spliceAlong_sub_le {k' l' A : X →L[ℝ] Y} {ε B : ℝ}
     (hπ : ‖π‖ ≤ 1) (hB : ∀ x, |deriv spliceCutoff x| ≤ B) (hk : HasFDerivAt k k' x)
     (hl : HasFDerivAt l l' x) (hk' : ‖k' - A‖ ≤ ε) (hl' : ‖l' - A‖ ≤ ε)
     (hlk : ‖l x - k x‖ ≤ 2 * ε * |π x|) :
@@ -176,14 +179,18 @@ theorem exists_hasFDerivAt_spliceAlong_sub_le {k' l' A : X →L[ℝ] Y} {ε B : 
   -- The term from the derivative of the cutoff is at most `4 B ε`.
   have hcorr : ‖c'.smulRight (l x - k x)‖ ≤ 4 * B * ε := by
     rw [ContinuousLinearMap.norm_smulRight_apply]
-    have hc'n : ‖c'‖ ≤ δ⁻¹ * |deriv spliceCutoff (δ⁻¹ * π x)| := by
-      rw [hc'_def, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hδ]
+    have hc'n : ‖c'‖ ≤ |δ|⁻¹ * |deriv spliceCutoff (δ⁻¹ * π x)| := by
+      rw [hc'_def, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv]
       exact mul_le_of_le_one_right (by positivity) hπ
+    rcases eq_or_ne δ 0 with h0 | hδ0
+    · rw [h0, abs_zero, inv_zero, zero_mul] at hc'n
+      rw [le_antisymm hc'n (norm_nonneg _), zero_mul]; positivity
+    have hδ : 0 < |δ| := abs_pos.2 hδ0
     by_cases h2 : 2 < |δ⁻¹ * π x|
     · rw [deriv_spliceCutoff_eq_zero h2, abs_zero, mul_zero] at hc'n
       rw [le_antisymm hc'n (norm_nonneg _), zero_mul]; positivity
-    · rw [not_lt, abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ] at h2
-      calc ‖c'‖ * ‖l x - k x‖ ≤ (δ⁻¹ * B) * (2 * ε * (δ * 2)) := by
+    · rw [not_lt, abs_mul, abs_inv, inv_mul_le_iff₀ hδ] at h2
+      calc ‖c'‖ * ‖l x - k x‖ ≤ (|δ|⁻¹ * B) * (2 * ε * (|δ| * 2)) := by
             gcongr
             · exact hc'n.trans (by gcongr; exact hB _)
             · exact hlk.trans (by gcongr)
@@ -208,7 +215,6 @@ central line and their derivatives stay close to a linear map with a left invers
 `ε` makes the splice composed with that left inverse approximate the identity. -/
 theorem injOn_and_injective_fderiv_spliceAlong_fst {k l : ℝ × ℝ → Y}
     {ρ δ ε B : ℝ} {A : ℝ × ℝ →L[ℝ] Y} {P : Y →L[ℝ] ℝ × ℝ}
-    (hρ : 0 < ρ) (hδ : 0 < δ)
     (hkC : ContDiffOn ℝ 1 k {u | |u.1| < ρ})
     (hlC : ContDiffOn ℝ 1 l {u | |u.1| < ρ})
     (hkl0 : ∀ t, k (0, t) = l (0, t))
@@ -230,7 +236,7 @@ theorem injOn_and_injective_fderiv_spliceAlong_fst {k l : ℝ × ℝ → Y}
       ∃ h' : ℝ × ℝ →L[ℝ] Y, HasFDerivAt h h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε := by
     -- `l - k` vanishes on the line `u.1 = 0`, so it is at most `2 ε |u.1|` on the strip.
     have hzero : ((0 : ℝ), u.2) ∈ {v : ℝ × ℝ | |v.1| < ρ} := by
-      simpa using hρ
+      simpa using (abs_nonneg u.1).trans_lt hu
     have hdist : ‖u - ((0 : ℝ), u.2)‖ = |u.1| := by
       simp [Prod.norm_def, Real.norm_eq_abs]
     have hlk := (convex_setOf_abs_fst_lt (W := ℝ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
@@ -238,11 +244,12 @@ theorem injOn_and_injective_fderiv_spliceAlong_fst {k l : ℝ × ℝ → Y}
       (fun v hv => (hbound v hv).1.le) (fun v hv => (hbound v hv).2.le) hu
       hzero (hkl0 u.2)
     rw [hdist] at hlk
-    exact exists_hasFDerivAt_spliceAlong_sub_le hδ (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ) hB
+    exact exists_hasFDerivAt_spliceAlong_sub_le (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ) hB
       (hdk u hu) (hdl u hu) (hbound u hu).1.le (hbound u hu).2.le hlk
   choose! h' hh' hh'A using hderiv
   obtain ⟨hinj, hinj'⟩ :=
-    (convex_setOf_abs_fst_lt (W := ℝ) ρ).injOn_and_injective_of_norm_hasFDerivAt_sub_le hP hh'
+    (convex_setOf_abs_fst_lt (W := ℝ) ρ).injOn_and_injective_of_norm_hasFDerivWithin_sub_le hP
+      (fun u hu => (hh' u hu).hasFDerivWithinAt)
       fun u hu => (mul_le_mul_of_nonneg_left (hh'A u hu) (norm_nonneg P)).trans hPε
   exact ⟨hinj, fun u hu => (hh' u hu).fderiv ▸ hinj' u hu⟩
 

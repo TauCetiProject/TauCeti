@@ -154,18 +154,18 @@ theorem macbeath_of_mul_of {s t u : macbeathGenerators G U} (hu : (u : G) = s * 
 theorem macbeath_of_eq_one {s : macbeathGenerators G U} (hs : (s : G) = 1) :
     (PresentedGroup.of s : PresentedGroup (macbeathRels G U)) = 1 := by
   have h := macbeath_of_mul_of (s := s) (t := s) (u := s) (by rw [hs, mul_one])
-    (by simpa [hs] using s.2)
+    (by simpa [hs] using s.property)
   simpa using h
 
 /-- The Macbeath generator `s⁻¹` is the inverse of the generator `s` in the presented group. -/
 @[simp]
 theorem macbeath_of_inv (s : macbeathGenerators G U) :
-    (PresentedGroup.of ⟨(s : G)⁻¹, inv_mem_macbeathGenerators s.2⟩ :
+    (PresentedGroup.of ⟨(s : G)⁻¹, inv_mem_macbeathGenerators s.property⟩ :
       PresentedGroup (macbeathRels G U)) = (PresentedGroup.of s)⁻¹ := by
   rw [eq_inv_iff_mul_eq_one, macbeath_of_mul_of (u := ⟨1, ?_⟩) (inv_mul_cancel _).symm ?_,
     macbeath_of_eq_one rfl]
-  · exact one_mem_macbeathGenerators (s.2.mono inter_subset_left)
-  · obtain ⟨x, hx⟩ := inv_mem_macbeathGenerators s.2
+  · exact one_mem_macbeathGenerators (s.property.mono inter_subset_left)
+  · obtain ⟨x, hx⟩ := inv_mem_macbeathGenerators s.property
     exact ⟨x, hx, by simpa using hx.1⟩
 
 /-- If a translate of `U` by an element of the image of `macbeathHom` meets the translate by
@@ -186,18 +186,18 @@ private def macbeathSetoid : Setoid (Σ _ : PresentedGroup (macbeathRels G U), U
   r y z := ∃ s : macbeathGenerators G U,
     z.1 = y.1 * PresentedGroup.of s ∧ (y.2 : X) = (s : G) • (z.2 : X)
   iseqv :=
-    { refl y := ⟨⟨1, one_mem_macbeathGenerators ⟨_, y.2.2⟩⟩,
+    { refl y := ⟨⟨1, one_mem_macbeathGenerators ⟨_, y.2.property⟩⟩,
         by rw [macbeath_of_eq_one rfl, mul_one], (one_smul _ _).symm⟩
       symm := by
         rintro y z ⟨s, h₁, h₂⟩
-        refine ⟨⟨_, inv_mem_macbeathGenerators s.2⟩, ?_, by simp [h₂]⟩
+        refine ⟨⟨_, inv_mem_macbeathGenerators s.property⟩, ?_, by simp [h₂]⟩
         rw [macbeath_of_inv, h₁, mul_inv_cancel_right]
       trans := by
         rintro x y z ⟨s, h₁, h₂⟩ ⟨t, h₃, h₄⟩
         have hst : (U ∩ (s : G) • U ∩ ((s : G) * t) • U).Nonempty := by
-          refine ⟨x.2, ⟨x.2.2, ?_⟩, ?_⟩
-          · rw [h₂]; exact smul_mem_smul_set y.2.2
-          · rw [h₂, h₄, mul_smul]; exact smul_mem_smul_set (smul_mem_smul_set z.2.2)
+          refine ⟨x.2, ⟨x.2.property, ?_⟩, ?_⟩
+          · rw [h₂]; exact smul_mem_smul_set y.2.property
+          · rw [h₂, h₄, mul_smul]; exact smul_mem_smul_set (smul_mem_smul_set z.2.property)
         have hmem : (s : G) * t ∈ macbeathGenerators G U :=
           hst.mono fun w (hw : w ∈ U ∩ (s : G) • U ∩ ((s : G) * t) • U) ↦ ⟨hw.1.1, hw.2⟩
         refine ⟨⟨_, hmem⟩, ?_, by simp [h₂, h₄, mul_smul]⟩
@@ -247,7 +247,7 @@ private theorem pathConnectedSpace_macbeath (hUc : IsPathConnected U) :
   have hstep (a : PresentedGroup (macbeathRels G U)) (s : macbeathGenerators G U)
       (ha : range (macbeathSheet a) ⊆ pathComponent y₀) :
       range (macbeathSheet (a * PresentedGroup.of s)) ⊆ pathComponent y₀ := by
-    obtain ⟨x, hxU, hxs⟩ := s.2
+    obtain ⟨x, hxU, hxs⟩ := s.property
     obtain ⟨v, hv, rfl⟩ := mem_smul_set.1 hxs
     refine hsheet _ ⟨v, hv⟩ ?_
     rw [← (macbeathSheet_eq_iff (a := a) (v := ⟨_, hxU⟩)).2 ⟨s, rfl, rfl⟩]
@@ -303,7 +303,7 @@ private theorem continuous_macbeathProj : Continuous (macbeathProj G U) :=
   Continuous.quotient_lift
     (f := fun y : Σ _ : PresentedGroup (macbeathRels G U), U ↦ macbeathHom G U y.1 • (y.2 : X))
     (continuous_sigma fun a ↦
-      (continuous_const_smul (macbeathHom G U a)).comp continuous_subtype_val) _
+      (continuous_const_smul (macbeathHom G U a)).comp continuous_subtypeVal) _
 
 private theorem isOpen_range_macbeathSheet (hUo : IsOpen U)
     (c : PresentedGroup (macbeathRels G U)) : IsOpen (range (macbeathSheet c)) := by
@@ -318,11 +318,46 @@ private theorem isOpen_range_macbeathSheet (hUo : IsOpen U)
     constructor
     · rintro ⟨v, hv⟩
       obtain ⟨s, h₁, h₂⟩ := (macbeathSheet_eq_iff (b := b) (w := w)).1 hv
-      exact ⟨⟨s, h₁⟩, h₂ ▸ v.2⟩
+      exact ⟨⟨s, h₁⟩, h₂ ▸ v.property⟩
     · rintro ⟨⟨s, h₁⟩, hw⟩
       exact ⟨⟨_, hw⟩, (macbeathSheet_eq_iff (b := b) (w := w)).2 ⟨s, h₁, rfl⟩⟩
   rw [this]
-  exact isOpen_iUnion fun _ ↦ hUo.preimage ((continuous_const_smul _).comp continuous_subtype_val)
+  exact isOpen_iUnion fun _ ↦ hUo.preimage ((continuous_const_smul _).comp continuous_subtypeVal)
+
+/-- A subset of `g • U` is open as soon as its preimage under the sheet indexed by `c`, where `c`
+maps to `g`, is open in `U`. -/
+private theorem isOpen_of_preimage_macbeathSheet (hUo : IsOpen U)
+    {g : G} {c : PresentedGroup (macbeathRels G U)} (hc : macbeathHom G U c = g) {W : Set X}
+    (hW : W ⊆ g • U)
+    (hO : IsOpen (macbeathSheet c ⁻¹' (macbeathProj G U ⁻¹' W ∩ range (macbeathSheet c)))) :
+    IsOpen W := by
+  have hW' : W = g • ((↑) '' (macbeathSheet c ⁻¹'
+      (macbeathProj G U ⁻¹' W ∩ range (macbeathSheet c)))) := by
+    ext y
+    constructor
+    · intro hy
+      obtain ⟨v, hv, rfl⟩ := mem_smul_set.1 (hW hy)
+      refine smul_mem_smul_set ⟨⟨v, hv⟩, ⟨?_, mem_range_self _⟩, rfl⟩
+      rwa [mem_preimage, macbeathProj_sheet, hc]
+    · intro hy
+      obtain ⟨_, ⟨v, ⟨hv, -⟩, rfl⟩, rfl⟩ := mem_smul_set.1 hy
+      rwa [mem_preimage, macbeathProj_sheet, hc] at hv
+  rw [hW']
+  exact (hUo.isOpenMap_subtypeVal _ hO).smul g
+
+omit [TopologicalSpace X] [ContinuousConstSMul G X] in
+/-- Every point over `g • U` of the glued space lies in one of the sheets indexed by the preimages
+of `g`. -/
+private theorem mem_iUnion_range_macbeathSheet {g : G} {y : Quotient (macbeathSetoid G U)}
+    (hy : y ∈ macbeathProj G U ⁻¹' (g • U)) :
+    y ∈ ⋃ c : macbeathHom G U ⁻¹' {g}, range (macbeathSheet (c : PresentedGroup _)) := by
+  obtain ⟨⟨b, w⟩, rfl⟩ := Quotient.exists_rep y
+  have hv : g⁻¹ • macbeathHom G U b • (w : X) ∈ U := mem_smul_set_iff_inv_smul_mem.1 hy
+  have ht : (macbeathHom G U b)⁻¹ * g ∈ macbeathGenerators G U :=
+    ⟨w, w.property, mem_smul_set_iff_inv_smul_mem.2 (by simpa [mul_smul] using hv)⟩
+  have hc : b * PresentedGroup.of ⟨_, ht⟩ ∈ macbeathHom G U ⁻¹' {g} := by simp
+  refine mem_iUnion.2 ⟨⟨_, hc⟩, ⟨_, hv⟩, ((macbeathSheet_eq_iff (a := b)).2
+    ⟨⟨_, ht⟩, rfl, by simp [mul_smul]⟩).symm⟩
 
 /-- Over each translate `g • U`, the glued space is the disjoint union of the copies of `U`
 indexed by the preimages of `g`; hence its projection to `X` is a covering map. -/
@@ -347,20 +382,7 @@ private theorem isCoveringMap_macbeathProj (hUo : IsOpen U)
     have hc : macbeathHom G U c = g := hc
     refine ⟨fun h ↦ (h.preimage continuous_macbeathProj).inter (isOpen_range_macbeathSheet hUo c),
       fun h ↦ ?_⟩
-    have hO := h.preimage (continuous_macbeathSheet c)
-    have hW' : W = g • ((↑) '' (macbeathSheet c ⁻¹'
-        (macbeathProj G U ⁻¹' W ∩ range (macbeathSheet c)))) := by
-      ext y
-      constructor
-      · intro hy
-        obtain ⟨v, hv, rfl⟩ := mem_smul_set.1 (hW hy)
-        refine smul_mem_smul_set ⟨⟨v, hv⟩, ⟨?_, mem_range_self _⟩, rfl⟩
-        rwa [mem_preimage, macbeathProj_sheet, hc]
-      · intro hy
-        obtain ⟨_, ⟨v, ⟨hv, -⟩, rfl⟩, rfl⟩ := mem_smul_set.1 hy
-        rwa [mem_preimage, macbeathProj_sheet, hc] at hv
-    rw [hW']
-    exact (hUo.isOpenMap_subtype_val _ hO).smul g
+    exact isOpen_of_preimage_macbeathSheet hUo hc hW (h.preimage (continuous_macbeathSheet c))
   · -- the projection is injective on each sheet
     rintro ⟨c, hc⟩ _ ⟨v, rfl⟩ _ ⟨w, rfl⟩ h
     rw [macbeathProj_sheet, macbeathProj_sheet, smul_left_cancel_iff] at h
@@ -380,14 +402,7 @@ private theorem isCoveringMap_macbeathProj (hUo : IsOpen U)
     have hs : (s : G) = 1 := by simpa [hc, hc'] using congrArg (macbeathHom G U) h₁
     exact hne (Subtype.ext (by rw [h₁, macbeath_of_eq_one hs, mul_one]))
   · -- the sheets exhaust the preimage of `g • U`
-    intro y hy
-    obtain ⟨⟨b, w⟩, rfl⟩ := Quotient.exists_rep y
-    have hv : g⁻¹ • macbeathHom G U b • (w : X) ∈ U := mem_smul_set_iff_inv_smul_mem.1 hy
-    have ht : (macbeathHom G U b)⁻¹ * g ∈ macbeathGenerators G U :=
-      ⟨w, w.2, mem_smul_set_iff_inv_smul_mem.2 (by simpa [mul_smul] using hv)⟩
-    have hc : b * PresentedGroup.of ⟨_, ht⟩ ∈ macbeathHom G U ⁻¹' {g} := by simp
-    refine mem_iUnion.2 ⟨⟨_, hc⟩, ⟨_, hv⟩, ((macbeathSheet_eq_iff (a := b)).2
-      ⟨⟨_, ht⟩, rfl, by simp [mul_smul]⟩).symm⟩
+    exact fun y hy ↦ mem_iUnion_range_macbeathSheet hy
 
 /-- **The Macbeath relations are complete.** If the translates of a path-connected open set `U`
 cover a simply connected space, then every relation among the Macbeath generators of `U` is a

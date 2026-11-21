@@ -93,7 +93,7 @@ private noncomputable def extendSnakeInputHom :
       comm₁₂ := (extendHomologyIso_hom_naturality S.f e hj').symm
       comm₂₃ := (extendHomologyIso_hom_naturality S.g e hj').symm }
   comm₀₁ := by ext <;> exact extendHomologyIso_hom_homologyι _ e hi'
-  comm₁₂ := by ext <;> exact (extend_opcyclesToCycles_comp_extendCyclesIso_hom _ e hi' hj').symm
+  comm₁₂ := by ext <;> exact (opcyclesToCycles_extendCyclesIso_hom _ e hi' hj').symm
   comm₂₃ := by ext <;> exact (homologyπ_extendHomologyIso_hom _ e hj').symm
 
 /-- **The connecting maps of an extended short exact sequence.** Under the identifications

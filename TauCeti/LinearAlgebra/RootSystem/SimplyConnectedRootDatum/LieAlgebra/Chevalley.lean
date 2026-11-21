@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.Weights.Chevalley.BaseSquare
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
+import TauCeti.Algebra.Lie.Sl2.RangeKer
 
 /-!
 # Chevalley systems for the pinned rational Lie algebra
@@ -23,6 +25,8 @@ by the imported Killing-form module.
   triangularizably on the pinned rational Lie algebra.
 * `TauCeti.DynkinType.exists_isChevalleySystem`: the signed Geck involution admits a compatible
   Chevalley system over `ℚ` whose simple root vectors are the numbered generators `eᵢ` and `fᵢ`.
+* `TauCeti.DynkinType.isNilpotent_representation_rootGenerator`: the numbered raising and
+  lowering generators act nilpotently on every finite-dimensional rational module.
 
 ## References
 
@@ -62,6 +66,21 @@ theorem exists_isChevalleySystem :
       (t.chevalleyInvolution_lieBasis_e ht)).elim fun _ hy =>
     hy.exists_isChevalleySystem_simple_eq_lieBasis (t.lieBasis ht)
       (t.chevalleyInvolution_lieBasis_e ht)
+
+open _root_.TauCeti.UniversalEnvelopingAlgebra in
+/-- The numbered root generators act nilpotently on every finite-dimensional rational
+module of the pinned Lie algebra. -/
+theorem isNilpotent_representation_rootGenerator
+    {V : Type*} [AddCommGroup V] [Module ℚ V]
+    [LieRingModule (t.lieAlgebra ht) V] [LieModule ℚ (t.lieAlgebra ht) V]
+    [FiniteDimensional ℚ V] (i : Fin t.rank ⊕ Fin t.rank) :
+    IsNilpotent (representation ℚ (t.lieAlgebra ht) V
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
+  rcases i with i | i
+  · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl] using
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
+  · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr] using
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
 
 end
 

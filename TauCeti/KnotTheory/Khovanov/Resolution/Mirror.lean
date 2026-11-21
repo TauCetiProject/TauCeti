@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Cube.Dual
+public import TauCeti.Algebra.Homology.Cube.Dual.Basic
 public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
 
 /-!
@@ -128,7 +128,7 @@ private theorem mirrorResolutionCubeLinearEquiv_naturality {S T : Finset (Fin n)
     (D.mirror.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD' R j haS)) x
   have hy (y) := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
     (D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R (n - j)
-      (by simp : a ∉ (insert a S)ᶜ) (insert_compl_insert haS)
+      (insert_compl_insert haS)
       (compl_subset_compl.2 (subset_insert a S)) hst' hc' hsad')) y
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply] at hx hy
   -- Transport the saddle map of the mirror to the reversed saddle map of `D`.

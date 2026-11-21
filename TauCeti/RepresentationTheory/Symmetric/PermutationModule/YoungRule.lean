@@ -38,7 +38,7 @@ They also have the same Gram matrix. Expanding `ψ^ν` and `ψ^ξ` in the Specht
 coefficient at the monomial of `ξ` is `n! ⟨ψ^ν, ψ^ξ⟩` on the left and, by
 `h_ν = ∑_μ K_{μν} s_μ`, `n! ∑_μ K_{μν} K_{μξ}` on the right
 (`TauCeti.sum_char_permutationModule_mul_char_permutationModule`). A unitriangular matrix is
-determined by its Gram matrix (`TauCeti.eq_of_transpose_mul_self_eq`), so `m = K`.
+determined by its Gram matrix (`Matrix.transpose_mul_self_inj`), so `m = K`.
 
 ## Main results
 
@@ -82,8 +82,8 @@ theorem sum_char_permutationModule_mul_char_permutationModule (ν ξ : n.Partiti
     exact ξ.card_parts_le
   have key := congrArg (fun p : MvPolynomial (Fin n) ℚ => p.coeff (partWeight (Fin n) ξ))
     (sum_card_fixedPoints_smul_psumPart_partition (σ := Fin n) ℚ ν)
-  simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, coeff_smul, smul_eq_mul,
-    coeff_partWeight_psumPart_partition ℚ _ ξ hξ,
+  simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, AddMonoidAlgebra.coeff_smul_apply,
+    smul_eq_mul, coeff_partWeight_psumPart_partition ℚ _ ξ hξ,
     coeff_hsymmPart_partWeight ν ξ (by rwa [YoungDiagram.colLen_zero_ofPartition])] at key
   rw [← key]
   exact Finset.sum_congr rfl fun π _ => by rw [char_permutationModule, char_permutationModule]
@@ -145,8 +145,8 @@ theorem sum_spechtChar_mul_char_permutationModule (l ν : n.Partition) :
       n.factorial * U l ν := fun l ν => by
     simp only [U, Matrix.of_apply, mul_inv_cancel_left₀ hfac, mul_comm]
   have hUV : U = V := by
-    refine eq_of_transpose_mul_self_eq (fun l ν h => ?_) (fun l ν h => ?_) (fun l => ?_)
-      (fun l => ?_) ?_
+    refine (Matrix.transpose_mul_self_inj (fun l ν h => ?_) (fun l ν h => ?_) (fun l => ?_)
+      (fun l => ?_)).1 ?_
     · rw [DominanceOrder.partition_le_iff]
       by_contra hd
       exact h (by rw [← mul_right_inj' hfac, ← hU, mul_zero,

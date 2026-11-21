@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.Isomorphisms
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Finiteness.Finsupp
 import TauCeti.RingTheory.Localization.Module
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # Pseudo-isomorphisms
@@ -225,7 +225,7 @@ theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {
     rw [Submodule.mkQ_apply, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero] at hx
     rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
     obtain ⟨m, hm⟩ := hx
-    obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).mp t.2
+    obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).mp t.property
     obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨a • m, by
       rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, hm]
       exact congr(($ha : N))⟩)
@@ -313,7 +313,7 @@ theorem IsPseudoIsomorphism.exists_reverse [IsNoetherianRing A] [Module.Finite A
     ∃ g : N →ₗ[A] M, IsPseudoIsomorphism g := by
   have := hf.finite_iff.mpr ‹Module.Finite A N›
   obtain ⟨γ, hker, hcoker, hγ⟩ := hf.exists_mem_annihilator_notMem hN
-  obtain ⟨g, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
+  obtain ⟨g, -, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
   refine ⟨g, .of_bijective_localizedModule_map fun 𝔭 h𝔭 ↦ ?_⟩
   have hfloc := hf.bijective_localizedModule_map 𝔭 h𝔭
   by_cases hmem : 𝔭 ∈ Module.support A N
@@ -346,7 +346,8 @@ is a pseudo-isomorphism iff its kernel and cokernel are finite. -/
 theorem isPseudoIsomorphism_iff_finite [IsLocalRing A] [IsNoetherianRing A]
     [Finite (IsLocalRing.ResidueField A)] (hdim : ringKrullDim A = 2) {f : M →ₗ[A] N} :
     IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) :=
-  ⟨fun hf ↦ ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩,
+  ⟨fun hf ↦ ⟨(isPseudoNull_iff_finite hdim).mp hf.isPseudoNull_ker,
+      (isPseudoNull_iff_finite hdim).mp hf.isPseudoNull_coker⟩,
     fun ⟨h₁, h₂⟩ ↦ ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩⟩
 
 section EulerQuotient
@@ -451,7 +452,7 @@ example (p : ℕ) [Fact p.Prime] :
   · -- Otherwise a height-one prime `𝔭` minimal over `(m)` lies in the support of `coker g`.
     have hmu : Ideal.span {m} ≠ ⊤ := by
       rw [Ne, Ideal.span_singleton_eq_top]
-      exact (mem_maximalIdeal _).mp (g 1).2
+      exact (mem_maximalIdeal _).mp (g 1).property
     obtain ⟨𝔭, h𝔭⟩ := Ideal.nonempty_minimalPrimes hmu
     have := h𝔭.1.1
     have hht := Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ _ h𝔭

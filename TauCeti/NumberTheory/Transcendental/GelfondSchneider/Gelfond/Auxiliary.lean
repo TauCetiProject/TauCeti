@@ -53,8 +53,6 @@ indices `a, b` run over `Fin q`, and the frequencies are written `(a + 1) + (b +
 
 ## Main results
 
-* `TauCeti.exists_intCast_pow_mul_gelfond_term`: a common denominator `c₀` and house bounds for
-  the terms `(u + v β) ^ k α ^ (u j) γ ^ (v j)` of the values `y_k(t)`.
 * `TauCeti.exists_gelfond_auxiliary_algebraic`: algebraic integers `η_{ab}`, not all zero, with
   `house η_{ab} ≤ c ^ n n ^ ((n + 1) / 2)`, such that `y_k(t) = 0` for `k < n` and `1 ≤ t ≤ m`.
 * `RingHom.exists_gelfond_auxiliary`: the same coefficients make `R` vanish to order `n` at
@@ -202,59 +200,6 @@ private theorem gelfond_siegel_bound_le {C H : ℝ} {m n q : ℕ} (hm : 1 ≤ m)
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- A common denominator for the terms of Gelfond's values: there are a nonzero integer `c₀` and
-`H ≥ 1` with `|c₀| ≤ H` such that for `u, v ≤ B` (`B ≥ 1`) and `k + u j + v j ≤ N` the multiple
-`c₀ ^ N ((u + v β) ^ k α ^ (u j) γ ^ (v j))` is an algebraic integer of house at most
-`B ^ k H ^ N`. -/
-theorem exists_intCast_pow_mul_gelfond_term (α β γ : K) :
-    ∃ c₀ : ℤ, c₀ ≠ 0 ∧ ∃ H : ℝ, 1 ≤ H ∧ |(c₀ : ℝ)| ≤ H ∧
-      ∀ k u v j N B : ℕ, 1 ≤ B → u ≤ B → v ≤ B → k + u * j + v * j ≤ N →
-        IsIntegral ℤ ((c₀ : K) ^ N * (((u : K) + v * β) ^ k * (α ^ (u * j) * γ ^ (v * j)))) ∧
-        house ((c₀ : K) ^ N * (((u : K) + v * β) ^ k * (α ^ (u * j) * γ ^ (v * j)))) ≤
-          (B : ℝ) ^ k * H ^ N := by
-  classical
-  -- A nonzero integer `c₀` such that `c₀ α`, `c₀ β` and `c₀ γ` are algebraic integers.
-  obtain ⟨c₀, hc₀, hc₀S⟩ := exists_integral_multiples ℤ ℚ ({α, β, γ} : Finset K)
-  have hint (x) (hx : x ∈ ({α, β, γ} : Finset K)) : IsIntegral ℤ ((c₀ : K) * x) := by
-    simpa only [zsmul_eq_mul] using hc₀S x hx
-  obtain ⟨H, hHdef⟩ : ∃ H : ℝ,
-      H = |(c₀ : ℝ)| + house ((c₀ : K) * α) + house ((c₀ : K) * β) + house ((c₀ : K) * γ) :=
-    ⟨_, rfl⟩
-  have h₀ := abs_nonneg (c₀ : ℝ)
-  have h₁ := house_nonneg ((c₀ : K) * α)
-  have h₂ := house_nonneg ((c₀ : K) * β)
-  have h₃ := house_nonneg ((c₀ : K) * γ)
-  have hc₀H : |(c₀ : ℝ)| ≤ H := by linarith
-  have hH : 1 ≤ H := le_trans (by exact_mod_cast Int.one_le_abs hc₀) hc₀H
-  refine ⟨c₀, hc₀, H, hH, hc₀H, fun k u v j N B hB hu hv hN ↦ ⟨?_, ?_⟩⟩
-  · exact isIntegral_intCast_pow_mul_schneider_term (hint α (by simp)) (hint β (by simp))
-      (hint γ (by simp)) hN
-  -- `c₀ (u + v β) = u c₀ + v (c₀ β)` has house at most `B H`.
-  have hwH : house ((c₀ : K) * ((u : K) + v * β)) ≤ B * H := by
-    have hu' : (u : ℝ) ≤ B := by exact_mod_cast hu
-    have hv' : (v : ℝ) ≤ B := by exact_mod_cast hv
-    have hcw : (c₀ : K) * ((u : K) + v * β) = ((u * c₀ : ℤ) : K) + (v : K) * ((c₀ : K) * β) := by
-      push_cast
-      ring
-    rw [hcw]
-    refine (house_add_le _ _).trans ?_
-    rw [house_intCast, house_nat_mul]
-    push_cast
-    rw [abs_mul, Nat.abs_cast]
-    have hβH : |(c₀ : ℝ)| + house ((c₀ : K) * β) ≤ H := by linarith
-    nlinarith
-  have hc₀H' : house (c₀ : K) ≤ H := by rwa [house_intCast, Int.cast_abs]
-  have hαH : house ((c₀ : K) * α) ≤ H := by linarith
-  have hγH : house ((c₀ : K) * γ) ≤ H := by linarith
-  have h := house_schneider_entry_le (s := u * j) (t := v * j) (n := N) hc₀H' hwH hαH hγH
-    (by exact_mod_cast hB) (by linarith) (le_refl k) hN
-  refine le_of_eq_of_le ?_ h
-  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hN
-  rw [Nat.add_sub_cancel_left]
-  congr 1
-  simp only [mul_pow]
-  ring
-
 variable (K) in
 /-- Siegel's lemma for Gelfond's system: there is `C` such that whenever `q ^ 2 = 2 m n` with
 `m, n ≥ 1`, every `m n × q ^ 2` matrix over `𝓞 K` with entries of house at most `A` has a nonzero
@@ -310,7 +255,7 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
           ∑ a, ∑ b, (η a b : K) * (((a + 1 : ℕ) : K) + (b + 1 : ℕ) * β) ^ k *
             (α ^ ((a + 1 : ℕ) * t) * γ ^ ((b + 1 : ℕ) * t)) = 0 := by
   classical
-  obtain ⟨c₀, hc₀, H, hH, -, hterm⟩ := exists_intCast_pow_mul_gelfond_term α β γ
+  obtain ⟨c₀, hc₀, H, hH, -, hterm⟩ := exists_intCast_pow_mul_schneider_term α β γ
   obtain ⟨C, hC⟩ := exists_ne_zero_mulVec_eq_zero_house_le K m
   set c := max 1 (C ^ 2) * (2 * m) * H ^ (1 + 4 * m ^ 2)
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
@@ -395,14 +340,13 @@ theorem iteratedDeriv_gelfond_auxiliary_natCast {R : Type*} [Ring R] (σ : R →
   ring
 
 /-- **The first nonvanishing derivative of Gelfond's auxiliary function.** Let `K` be a field with
-an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `α, β, γ ∈ K` with `β` irrational,
-`σ α = exp λ` and `σ γ = exp (σ β λ)`. Let `η : Fin q → Fin q → K` be nonzero, and suppose that
+an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `β ∈ K` be irrational. Let `η : Fin q → Fin q → K`
+be nonzero, and suppose that
 `R(z) = ∑_{a, b} σ η_{ab} exp (((a + 1) + (b + 1) σ β) λ z)` vanishes to order `n` at every point
 of a nonempty finite set `T` of natural numbers. Then there are `r` with `n ≤ r < q ^ 2` and
 `t₀ ∈ T` such that `R` vanishes to order `r` at every point of `T` and `R⁽ʳ⁾(t₀) ≠ 0`. -/
 theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ : K →+* ℂ)
-    {l : ℂ} (hl : l ≠ 0) {α β γ : K} (hα : σ α = Complex.exp l)
-    (hγ : σ γ = Complex.exp (σ β * l)) (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
+    {l : ℂ} (hl : l ≠ 0) {β : K} (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
     {η : Fin q → Fin q → K} (hη : η ≠ 0) {T : Finset ℕ} (hT : T.Nonempty) {n : ℕ}
     (hn : ∀ k < n, ∀ t ∈ T, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
       Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0) :
@@ -412,17 +356,26 @@ theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ
       iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
   have := σ.charZero
-  have hα₀ : α ≠ 0 := fun h ↦ Complex.exp_ne_zero l (by rw [← hα, h, map_zero])
-  have hγ₀ : γ ≠ 0 := fun h ↦ Complex.exp_ne_zero (σ β * l) (by rw [← hγ, h, map_zero])
-  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero hα₀ hγ₀ hβ hη hT
-  have hr' : iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
-      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
-    rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ]
-    exact mul_ne_zero (pow_ne_zero _ hl) ((map_ne_zero σ).2 hr)
-  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ ?_, hr'⟩
-  · by_contra! h
-    exact hr' (hn r h t₀ ht₀)
-  · rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ, hzero k hk t ht, map_zero, mul_zero]
+  have hβ' : ∀ r : ℚ, (r : ℂ) ≠ σ β := fun r h ↦ hβ r (σ.injective (by rw [map_ratCast, h]))
+  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero (K := ℂ)
+    (Complex.exp_ne_zero l) (Complex.exp_ne_zero (σ β * l)) hβ' (η := fun a b ↦ σ (η a b))
+    (fun h ↦ hη (by
+      ext a b
+      exact σ.injective (by simpa using congrFun (congrFun h a) b))) hT
+  have key : ∀ k t : ℕ, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
+      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0 ↔
+      ∑ a, ∑ b, σ (η a b) * (((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) ^ k *
+        (Complex.exp l ^ ((a + 1 : ℕ) * t) * Complex.exp (σ β * l) ^ ((b + 1 : ℕ) * t)) = 0 := by
+    intro k t
+    have h := (RingHom.id ℂ).iteratedDeriv_gelfond_auxiliary_natCast (l := l)
+      (α := Complex.exp l) (β := σ β) (γ := Complex.exp (σ β * l)) rfl rfl
+      (fun a b ↦ σ (η a b)) k t
+    simp only [RingHom.id_apply] at h
+    rw [h, mul_eq_zero, or_iff_right (pow_ne_zero _ hl)]
+  have hr' := (key r t₀).not.2 hr
+  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ (key k t).2 (hzero k hk t ht), hr'⟩
+  by_contra! h
+  exact hr' (hn r h t₀ ht₀)
 
 open NumberField in
 /-- **Gelfond's auxiliary function** (Karatarakis–Wiedijk, §3). Let `K` be a number field with an

@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Height
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
-public import Mathlib.RingTheory.KrullDimension.Basic
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
-import Mathlib.RingTheory.Ideal.GoingDown
+public import Mathlib.RingTheory.MvPowerSeries.Restricted
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.KrullDimension.Quotient
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
-import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 
 /-!
@@ -76,8 +73,7 @@ local notation "Tate " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ 1
 
 /-- Without variables, the Tate algebra is the coefficient field, of Krull dimension zero. -/
 private theorem ringKrullDim_isRestricted_subring_pEmpty : ringKrullDim (Tate PEmpty) = 0 := by
-  rw [← ringKrullDim_eq_of_ringEquiv (RingEquiv.ofBijective _
-    ⟨(algebraMap K (Tate PEmpty)).injective, algebraMap_isRestrictedSubring_surjective⟩)]
+  rw [ringKrullDim_eq_of_ringEquiv (IsRestricted.isEmptyEquiv (R := K) (σ := PEmpty) _).toRingEquiv]
   exact ringKrullDim_eq_zero_of_field K
 
 variable [CompleteSpace K]
@@ -119,7 +115,8 @@ theorem ringKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
       exact PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring 1
 
 /-- The Tate algebra in finitely many variables has finite Krull dimension. -/
-instance finiteRingKrullDim {σ : Type*} [Finite σ] : FiniteRingKrullDim (Tate σ) :=
+instance finiteRingKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
+    FiniteRingKrullDim (Tate σ) :=
   .of_ringKrullDim_eq_natCast ringKrullDim_isRestricted_subring
 
 /-- **The degree of a normalisation is the Krull dimension.** A ring that is integral over an

@@ -80,7 +80,7 @@ theorem finite_preimage_left_singleton_inter
     (hf : ∀ ⦃K : Set C⦄, IsCompact K →
       IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport f))
     (x : C) : (Quiver.Total.left ⁻¹' {x} ∩ Quiver.Total.right ⁻¹' tsupport f).Finite := by
-  simpa only [inter_assoc] using hs.finite_preimage_singleton_inter
+  simpa only [inter_assoc] using hs.isLocallyInjective.finite_preimage_singleton_inter
     (by simpa only [inter_assoc] using hf isCompact_singleton)
 
 /-- If the arrows with source in a compact set `K` and target in the support of `f` form a compact
@@ -136,7 +136,7 @@ theorem isProperMap_left [T2Space C] [CompactlyCoherentSpace C] (hc : IsCutoff c
     (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) :
     IsProperMap fun a : tsupport (c ∘ Quiver.Total.right) ↦ (a : Quiver.Total C).left := by
   rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨hs.comp continuous_subtype_val, fun K hK ↦ ?_⟩
+  refine ⟨hs.comp continuous_subtypeVal, fun K hK ↦ ?_⟩
   have hpre : (fun a : tsupport (c ∘ Quiver.Total.right) ↦ (a : Quiver.Total C).left) ⁻¹' K =
       Subtype.val ⁻¹' (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport c) := by
     ext ⟨a, ha⟩

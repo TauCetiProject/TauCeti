@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
+import Mathlib.RingTheory.IntegralClosure.GoingDown
 
 /-!
 # The polynomial `(1 + X) ^ n - 1`
@@ -27,7 +28,8 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 `(1 + X) ^ (p ^ m) - 1` vanishes at `X = σ - 1`.
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
-`F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`.
+`F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
+polynomials at `I` are closed under finite products, including the empty product `1`.
 
 ## Main results
 
@@ -38,6 +40,11 @@ For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`,
   distinguished at every ideal containing `p`.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
+* `Polynomial.IsDistinguishedAt.of_dvd`: a monic divisor of a polynomial distinguished at a radical
+  ideal is distinguished at that ideal.
+* `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
+  `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
+  polynomials are distinguished.
 -/
 
 public section
@@ -67,7 +74,7 @@ theorem natDegree_one_add_X_pow_sub_one [Nontrivial R] (n : ℕ) :
 theorem monic_one_add_X_pow_sub_one {n : ℕ} (hn : n ≠ 0) : ((1 + X) ^ n - 1 : R[X]).Monic := by
   nontriviality R
   rw [Monic, leadingCoeff, natDegree_one_add_X_pow_sub_one]
-  simp [coeff_sub, coeff_one_add_X_pow, coeff_one, hn]
+  simp [coeff_one_add_X_pow, coeff_one, hn]
 
 end Ring
 
@@ -91,6 +98,29 @@ end Polynomial
 
 end TauCeti
 
+namespace Polynomial
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+
+/-- The constant polynomial `1` is distinguished at every ideal. -/
+theorem isDistinguishedAt_one : (1 : R[X]).IsDistinguishedAt I :=
+  ⟨⟨fun hn ↦ by simp at hn⟩, monic_one⟩
+
+/-- A power of a distinguished polynomial is distinguished. -/
+theorem IsDistinguishedAt.pow {f : R[X]} (hf : f.IsDistinguishedAt I) (n : ℕ) :
+    (f ^ n).IsDistinguishedAt I := by
+  induction n with
+  | zero => exact pow_zero f ▸ isDistinguishedAt_one
+  | succ n ih => exact pow_succ f n ▸ ih.mul hf
+
+/-- A finite product of distinguished polynomials is distinguished. -/
+theorem isDistinguishedAt_prod {ι : Type*} {s : Finset ι} {f : ι → R[X]}
+    (hf : ∀ i ∈ s, (f i).IsDistinguishedAt I) : (∏ i ∈ s, f i).IsDistinguishedAt I :=
+  Finset.prod_induction f (·.IsDistinguishedAt I) (fun _ _ ↦ IsDistinguishedAt.mul)
+    isDistinguishedAt_one hf
+
+end Polynomial
+
 namespace Polynomial.IsDistinguishedAt
 
 variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ}
@@ -106,5 +136,14 @@ theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
     rw [pow_mul]
     exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
   rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
+
+/-- A monic divisor of a polynomial distinguished at a radical ideal is distinguished at that
+ideal. Follows from Mathlib's `Polynomial.coeff_mem_radical_span_coeff_of_dvd`. -/
+theorem of_dvd {P : Ideal O} (hP : P.IsRadical) {f g : O[X]} (hg : g.IsDistinguishedAt P)
+    (hf : f.Monic) (hfg : f ∣ g) : f.IsDistinguishedAt P := by
+  refine ⟨⟨fun {i} hi ↦ ?_⟩, hf⟩
+  have hle : (Ideal.span { g.coeff j | j < g.natDegree }).radical ≤ P :=
+    hP.radical_le_iff.2 (Ideal.span_le.2 (by rintro _ ⟨_, hj, rfl⟩; exact hg.mem hj))
+  exact hle (coeff_mem_radical_span_coeff_of_dvd g f hg.monic hf hfg i hi.ne)
 
 end Polynomial.IsDistinguishedAt

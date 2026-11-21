@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.Algebra.Squarefree
 import TauCeti.FieldTheory.Galois.FixedField
@@ -140,8 +141,8 @@ theorem exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three [IsGalois �
   have : Q.LiesOver (span {((2 : ℕ) : ℤ)}) := by rwa [Nat.cast_ofNat]
   obtain ⟨τ, hτ, hτx⟩ :=
     TauCeti.NumberField.exists_mem_inertia_apply_eq_neg (c := s) (by rw [hx']; simp) h2 Q
-  exact ⟨τ, hτ, AlgEquiv.apply_eq_neg_of_apply_div_eq_neg τ he'
-    (map_intCast τ e) hτx⟩
+  exact ⟨τ, hτ, (AlgEquiv.apply_div_eq_neg_iff τ he'
+    (map_intCast τ e)).mp hτx⟩
 
 /-! ### Inertia elements fixing products of roots -/
 
@@ -150,21 +151,26 @@ section Fixing
 variable (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (hd : ∀ i, ¬ (4 : ℤ) ∣ d i)
   (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(2 : ℤ)})] {τ : K ≃ₐ[ℚ] K}
   (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K))
-include hr hd hτ
 
-omit hr hd in
+section MemInertia
+
+include hτ
+
 /-- Inertia above `2` fixes `w` when `w / 2` squares to an integer that is `1` modulo `4`. -/
 private theorem apply_eq_self_of_div_two {w : K} {c : ℤ} (hw : (w / 2) ^ 2 = algebraMap ℤ K c)
     (hc : c % 4 = 1) : τ w = w := by
   have h := apply_eq_self_of_mem_inertia_of_mod_four_eq_one hw hc Q hτ
-  rwa [map_div₀, map_ofNat, div_left_inj' two_ne_zero] at h
+  rwa [map_div₀, map_ofNat, div_left_inj₀ two_ne_zero] at h
 
-omit hd in
+include hr
+
 /-- Inertia above `2` fixes `rᵢ rⱼ` when `dᵢ` and `dⱼ` are both `3` modulo `4`. -/
 private theorem apply_mul_eq_mul_of_mod_four_eq_three {i j : ι} (hi : d i % 4 = 3)
     (hj : d j % 4 = 3) : τ (r i * r j) = r i * r j :=
   apply_eq_self_of_mem_inertia_of_mod_four_eq_one (c := d i * d j)
     (by rw [mul_pow, hr i, hr j, map_mul]) (by rw [Int.mul_emod, hi, hj]; norm_num) Q hτ
+
+include hd
 
 /-- Inertia above `2` fixes `rᵢ rⱼ` when `dᵢ` and `dⱼ` are even and congruent modulo `8`: then
 `rᵢ rⱼ / 2` squares to the product of two odd integers congruent modulo `4`. -/
@@ -192,9 +198,11 @@ private theorem apply_mul_mul_eq_mul_mul {b c i : ι} (hb : d b % 4 = 3) (hc : 2
   · rcases (by omega : d c / 2 % 4 = 1 ∧ d i / 2 % 4 = 3 ∨ d c / 2 % 4 = 3 ∧ d i / 2 % 4 = 1) with
       ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [Int.mul_emod, Int.mul_emod (d c / 2), hb, h, h'] <;> norm_num
 
-omit hτ in
+end MemInertia
+
+include hr hd in
 private theorem root_ne_zero (i : ι) : r i ≠ 0 :=
-  ne_zero_of_sq_eq_intCast (hr i) fun h => hd i (h ▸ dvd_zero 4)
+  ne_zero_of_pow_eq_intCast two_ne_zero (hr i) fun h => hd i (h ▸ dvd_zero 4)
 
 end Fixing
 
@@ -206,11 +214,12 @@ section Inertia
 
 variable (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
   (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hd : ∀ i, ¬ (4 : ℤ) ∣ d i)
-  (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(2 : ℤ)})]
-include hr htop hd
 
-omit hd in
-omit [Q.IsPrime] in
+section UpperBound
+
+variable (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(2 : ℤ)})]
+include hr htop
+
 /-- An inertia element above `2` that fixes the roots of all radicands `3` modulo `4` and of all
 even radicands is the identity, since it fixes the roots of the radicands `1` modulo `4` anyway. -/
 private theorem eq_one_of_mem_inertia {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.inertia (K ≃ₐ[ℚ] K))
@@ -222,7 +231,8 @@ private theorem eq_one_of_mem_inertia {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.ine
   · exact hB i h
   · exact hC i h
 
-omit [Q.IsPrime] in
+include hd
+
 /-- The inertia group above `2` has at most four elements when some radicand is `3` modulo `4` and
 another is even: an inertia element is determined by its signs on their roots. -/
 private theorem card_inertia_le_four_of_mod_four_eq_three {b c : ι} (hb : d b % 4 = 3)
@@ -233,19 +243,18 @@ private theorem card_inertia_le_four_of_mod_four_eq_three {b c : ι} (hb : d b %
   have hτb : τ (r b) = r b := hfix 0
   have hτc : τ (r c) = r c := hfix 1
   refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => ?_) fun i hi => ?_
-  · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-      (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb
+  · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+      (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb).mp
       (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi)
   · by_cases hci : d c % 8 = d i % 8
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc).mp
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi hci)
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
         (IsRegular.of_ne_zero (mul_ne_zero (root_ne_zero hr hd b) (root_ne_zero hr hd c))).left
-        (by rw [map_mul, hτb, hτc])
+        (by rw [map_mul, hτb, hτc])).mp
         (apply_mul_mul_eq_mul_mul hr hd Q hτ hb hc hi hci)
 
-omit [Q.IsPrime] in
 /-- The inertia group above `2` has at most four elements when two radicands are `2` and `6`
 modulo `8`: an inertia element is determined by its signs on their roots. -/
 private theorem card_inertia_le_four_of_mod_eight {c₂ c₆ : ι} (h₂ : d c₂ % 8 = 2)
@@ -260,19 +269,18 @@ private theorem card_inertia_le_four_of_mod_eight {c₂ c₆ : ι} (h₂ : d c�
   refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => ?_) fun i hi => ?_
   · have h := apply_mul_mul_eq_mul_mul hr hd Q hτ hi hd₂ hd₆ (by omega)
     rw [show r i * r c₂ * r c₆ = r c₂ * r c₆ * r i by ring] at h
-    exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
+    exact (AlgEquiv.apply_mul_eq_mul_iff τ
       (IsRegular.of_ne_zero (mul_ne_zero (root_ne_zero hr hd c₂) (root_ne_zero hr hd c₆))).left
-      (by rw [map_mul, hτ₂, hτ₆]) h
+      (by rw [map_mul, hτ₂, hτ₆])).mp h
   · have h4 := hd i
     by_cases hi₂ : d i % 8 = 2
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd c₂)).left hτ₂
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd c₂)).left hτ₂).mp
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hd₂ hi (by omega))
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd c₆)).left hτ₆
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd c₆)).left hτ₆).mp
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hd₆ hi (by omega))
 
-omit [Q.IsPrime] in
 /-- Outside the cases of ramification index `4`, the inertia group above `2` has at most two
 elements: an inertia element is determined by its sign on a single root. -/
 private theorem card_inertia_le_two
@@ -284,8 +292,8 @@ private theorem card_inertia_le_two
       (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτb : τ (r b) = r b := hfix 0
     exact eq_one_of_mem_inertia hr htop Q hτ
-      (fun i hi => AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb
+      (fun i hi => (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb).mp
         (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi))
       fun i hi => absurd (Or.inl ⟨b, i, hb, hi⟩) hcond
   by_cases hC : ∃ c, 2 ∣ d c
@@ -294,8 +302,8 @@ private theorem card_inertia_le_two
       (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτc : τ (r c) = r c := hfix 0
     refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => absurd ⟨i, hi⟩ hB) fun i hi => ?_
-    refine AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-      (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc
+    refine (AlgEquiv.apply_mul_eq_mul_iff τ
+      (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc).mp
       (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi ?_)
     have hc4 := hd c
     have hi4 := hd i
@@ -310,10 +318,26 @@ private theorem card_inertia_le_two
     Subgroup.card_bot]
   norm_num
 
+/-- **The inertia group above `2` has at most four elements.** Let `K` be generated over `ℚ` by
+square roots `r i` of integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above
+`2`. Then the inertia group of `Q` in `Gal(K/ℚ)` has at most four elements, however many radicands
+there are. -/
+theorem card_inertia_le_four : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 4 := by
+  by_cases hcond : (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6
+  · rcases hcond with ⟨b, c, hb, hc⟩ | ⟨c₂, c₆, h₂, h₆⟩
+    · exact card_inertia_le_four_of_mod_four_eq_three hr htop hd Q hb hc
+    · exact card_inertia_le_four_of_mod_eight hr htop hd Q h₂ h₆
+  · exact (card_inertia_le_two hr htop hd Q hcond).trans (by norm_num)
+
+end UpperBound
+
+variable (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(2 : ℤ)})]
+include hr htop hd
+
 /-- In the cases of ramification index `4`, the inertia group above `2` has exactly four
 elements: it negates the roots `y`, `z` tested in the upper bound, and `y z`, each of which
 generates a quadratic field ramified at `2`. -/
-private theorem card_inertia_eq_four [Finite ι]
+private theorem card_inertia_eq_four
     (hcond : (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6) :
     Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) = 4 := by
   have := isGalois_rat hr htop
@@ -349,25 +373,13 @@ private theorem card_inertia_eq_four [Finite ι]
       (Or.inr (by
         rw [Int.mul_emod, (by omega : d c₂ / 2 % 4 = 1), (by omega : d c₆ / 2 % 4 = 3)]
         norm_num)) Q
-    exact ⟨τ, hτ, AlgEquiv.apply_eq_neg_of_apply_div_eq_neg τ two_ne_zero
-      (map_ofNat τ 2) hτx⟩
-
-omit [Q.IsPrime] in
-/-- **The inertia group above `2` has at most four elements.** Let `K` be generated over `ℚ` by
-square roots `r i` of integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above
-`2`. Then the inertia group of `Q` in `Gal(K/ℚ)` has at most four elements, however many radicands
-there are. -/
-theorem card_inertia_le_four : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 4 := by
-  by_cases hcond : (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6
-  · rcases hcond with ⟨b, c, hb, hc⟩ | ⟨c₂, c₆, h₂, h₆⟩
-    · exact card_inertia_le_four_of_mod_four_eq_three hr htop hd Q hb hc
-    · exact card_inertia_le_four_of_mod_eight hr htop hd Q h₂ h₆
-  · exact (card_inertia_le_two hr htop hd Q hcond).trans (by norm_num)
+    exact ⟨τ, hτ, (AlgEquiv.apply_div_eq_neg_iff τ two_ne_zero
+      (map_ofNat τ 2)).mp hτx⟩
 
 /-- **The ramification index above `2` is at most `4`.** Let `K` be generated over `ℚ` by square
 roots of integers not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the
 ramification index of `Q` over `2` is at most `4`. -/
-theorem ramificationIdx_le_four [Finite ι] : Q.ramificationIdx ℤ ≤ 4 := by
+theorem ramificationIdx_le_four : Q.ramificationIdx ℤ ≤ 4 := by
   have := isGalois_rat hr htop
   rw [← Ideal.card_inertia_eq_ramificationIdx ℤ (K ≃ₐ[ℚ] K) Q]
   exact card_inertia_le_four hr htop hd Q
@@ -376,7 +388,7 @@ theorem ramificationIdx_le_four [Finite ι] : Q.ramificationIdx ℤ ≤ 4 := by
 integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the
 ramification index of `Q` over `2` is `4` exactly when some `d i` is `3` modulo `4` and some
 `d j` is even, or some `d i` is `2` and some `d j` is `6` modulo `8`. -/
-theorem ramificationIdx_eq_four_iff [Finite ι] :
+theorem ramificationIdx_eq_four_iff :
     Q.ramificationIdx ℤ = 4 ↔
       (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6 := by
   have := isGalois_rat hr htop
@@ -389,7 +401,7 @@ theorem ramificationIdx_eq_four_iff [Finite ι] :
 /-- **Trivial inertia above `2`.** Let `K` be generated over `ℚ` by square roots of integers
 `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the inertia group of
 `Q` is trivial exactly when every `d i` is `1` modulo `4`. -/
-theorem inertia_eq_bot_iff_forall_mod_four_eq_one [Finite ι] :
+theorem inertia_eq_bot_iff_forall_mod_four_eq_one :
     Q.inertia (K ≃ₐ[ℚ] K) = ⊥ ↔ ∀ i, d i % 4 = 1 := by
   have := isGalois_rat hr htop
   constructor
@@ -409,7 +421,7 @@ integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2
 ramification index of `Q` over `2` is `2` exactly when some `d i` is not `1` modulo `4` (so
 that `2` ramifies) but the criterion of `TauCeti.Multiquadratic.ramificationIdx_eq_four_iff`
 fails. -/
-theorem ramificationIdx_eq_two_iff_of_liesOver_two [Finite ι] :
+theorem ramificationIdx_eq_two_iff_of_liesOver_two :
     Q.ramificationIdx ℤ = 2 ↔ (∃ i, d i % 4 ≠ 1) ∧
       ¬ ((∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6) := by
   have := isGalois_rat hr htop
@@ -473,7 +485,7 @@ theorem inertiaDeg_eq_two_iff_exists_sq_eq_mod_eight_eq_five [IsGalois ℚ K]
       rw [hydef, map_mul, AlgEquiv.commutes, hfix σ hσ]
     have hφy : φ y = -y := by
       rw [hydef, map_mul, AlgEquiv.commutes, hφx, mul_neg]
-    have hy0 : y ≠ 0 := ne_zero_of_sq_eq_intCast hy hs.ne_zero
+    have hy0 : y ≠ 0 := ne_zero_of_pow_eq_intCast two_ne_zero hy hs.ne_zero
     -- Inertia fixes `y`; hence `s ≡ 1 (mod 4)`.
     have hs4 : s % 4 = 1 := by
       have h4 := TauCeti.Int.not_four_dvd_of_squarefree hs

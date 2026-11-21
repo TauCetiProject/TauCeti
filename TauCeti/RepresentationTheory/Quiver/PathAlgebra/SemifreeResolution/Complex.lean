@@ -27,7 +27,7 @@ cofibrancy, or Hochschild comparison is asserted here.
 ## References
 
 * B. Keller, *Deformed Calabi--Yau completions*, Section 6.
-* Y. Liu and W. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   for the small resolution in the Hochschild calculation.
 -/
 
@@ -98,7 +98,9 @@ noncomputable def arrowTensorDifferentialComplexHom :
   gradedCochainComplexHom ((arrowTensorDifferential k Q).restrictScalars k)
     (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦
       (isHomogeneous_arrowTensorDifferential k Q wt).map_mem hx)
-    (LinearMap.ext fun x ↦ (arrowTensorDifferential_arrowTensorBimoduleDifferential hd hdε x).symm)
+    (by
+      intro _ x
+      exact (arrowTensorDifferential_arrowTensorBimoduleDifferential hd hdε x).symm)
 
 /-- Multiplication, identifying the diagonal bimodule with the original path algebra,
 as a map of cochain complexes. -/
@@ -114,7 +116,7 @@ noncomputable def vertexTensorComplexAugmentation :
       simpa only [add_zero, InternalGrading.mem_map_piece_iff, LinearMap.comp_apply,
         LinearEquiv.coe_coe, LinearMap.restrictScalars_apply] using h)
     (by
-      ext x
+      intro _ x
       simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
         LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
         congrArg (Bimodule.of (AlgHom.id k A)).symm
@@ -128,8 +130,8 @@ theorem arrowTensorDifferentialComplexHom_f_apply (n : ℤ)
       (((arrowTensorDifferentialComplexHom k Q wt d hd hdε).f n).hom x) :
         vertexTensorBimodule k Q) =
       arrowTensorDifferential k Q (gradedCochainComplexXEquiv n x) := by
-  simp only [arrowTensorDifferentialComplexHom,
-    gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.restrictScalars_apply]
+  unfold arrowTensorDifferentialComplexHom
+  exact gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
 
 omit [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)] in
 /-- The augmentation multiplies the two tensor factors on every homogeneous piece. -/
@@ -143,6 +145,27 @@ theorem vertexTensorComplexAugmentation_f_apply (n : ℤ)
   simp only [vertexTensorComplexAugmentation,
     gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.comp_apply,
     LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
+
+/-- The universal derivation relative to the vertex subalgebra, as a map of cochain complexes.
+It has degree zero before suspending the arrow term in the small resolution. -/
+noncomputable def arrowTensorDerivationComplexHom :
+    K ⟶ arrowTensorComplex k Q wt d hd hdε :=
+  gradedCochainComplexHom (arrowTensorDerivation k Q)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦
+      (isHomogeneous_arrowTensorDerivation k Q wt).map_mem hx)
+    (by
+      intro _ x
+      exact arrowTensorBimoduleDifferential_arrowTensorDerivation hd hdε x)
+
+/-- On each homogeneous piece the complex-level derivation is the universal derivation. -/
+@[simp]
+theorem arrowTensorDerivationComplexHom_f_apply (n : ℤ) (x : (K).X n) :
+    (gradedCochainComplexXEquiv n
+      (((arrowTensorDerivationComplexHom k Q wt d hd hdε).f n).hom x) :
+        arrowTensorBimodule k Q) =
+      arrowTensorDerivation k Q (gradedCochainComplexXEquiv n x) := by
+  simp only [arrowTensorDerivationComplexHom,
+    gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply]
 
 /-- The standard path-algebra bimodule sequence, viewed as scalar cochain complexes. -/
 noncomputable def standardResolutionSequence :
@@ -160,6 +183,13 @@ noncomputable def standardResolutionSequence :
       vertexTensorComplexAugmentation_f_apply, arrowTensorDifferentialComplexHom_f_apply,
       vertexTensorMul_arrowTensorDifferential, ModuleCat.hom_zero, LinearMap.zero_apply,
       map_zero, ZeroMemClass.coe_zero]
+
+/-- The arrow-to-vertex boundary followed by multiplication is zero as a complex map. -/
+@[reassoc (attr := simp)]
+theorem arrowTensorDifferentialComplexHom_comp_vertexTensorComplexAugmentation :
+    arrowTensorDifferentialComplexHom k Q wt d hd hdε ≫
+      vertexTensorComplexAugmentation k Q wt d hd hdε = 0 :=
+  (standardResolutionSequence k Q wt d hd hdε).zero
 
 @[simp]
 theorem standardResolutionSequence_X₁ :
@@ -216,7 +246,7 @@ theorem shortExact_standardResolutionSequence :
       have hxdeg : x ∈ (arrowTensorGrading k Q wt).piece n := by
         rw [mem_arrowTensorGrading_piece_iff, hx]
         exact (mem_vertexTensorGrading_piece_iff k Q wt).mp
-          (gradedCochainComplexXEquiv n y).2
+          (gradedCochainComplexXEquiv n y).property
       refine ⟨(gradedCochainComplexXEquiv n).symm ⟨x, hxdeg⟩, ?_⟩
       apply (gradedCochainComplexXEquiv n).injective
       apply Subtype.ext
@@ -231,17 +261,10 @@ theorem shortExact_standardResolutionSequence :
     apply arrowTensorDifferential_injective
     simpa only [arrowTensorDifferentialComplexHom_f_apply] using congrArg
       (fun z ↦ (gradedCochainComplexXEquiv n z : vertexTensorBimodule k Q)) h
-  · -- Multiplication is onto in each degree by taking the degree component of an ungraded lift.
+  · -- Multiplication is onto in each degree.
     intro x
-    obtain ⟨y, hy⟩ := vertexTensorMul_surjective (k := k) (Q := Q)
-      (Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x))
-    let z := DirectSum.decompose (vertexTensorGrading k Q wt).piece y n
-    have hz : vertexTensorMul k Q z =
-        Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x) := by
-      rw [(isHomogeneous_vertexTensorMul k Q wt).map_decompose, hy, add_zero,
-        DirectSum.decompose_of_mem_same]
-      exact ((InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)).apply_mem_map_piece_iff
-        (Bimodule.of (AlgHom.id k A)) _ _).mpr (gradedCochainComplexXEquiv n x).2
+    obtain ⟨z, hz⟩ := exists_vertexTensorMul_eq_of_mem k Q wt (gradedCochainComplexXEquiv n
+        x).property
     refine ⟨(gradedCochainComplexXEquiv n).symm z, ?_⟩
     apply (gradedCochainComplexXEquiv n).injective
     apply Subtype.ext

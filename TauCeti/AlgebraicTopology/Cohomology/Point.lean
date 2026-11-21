@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.SingleHomology
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Point
 
 /-!
@@ -185,7 +186,7 @@ lemma singularCohomologyPointZeroIso_hom_naturality_right {M' : C} (g : M ⟶ M'
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
     singularCohomologyPointZeroIso_hom_homologyπ_apply R k M' X σ,
     singularCohomologyPointZeroIso_hom_homologyπ_apply R k M X σ]
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   -- The cochain map postcomposes with `g` (`ChainComplex.linearYonedaObjMap_f_hom_apply`), and
   -- so does `Linear.rightComp`; its statement is typed in the cochain module, so it is applied
   -- as a term.
@@ -233,13 +234,13 @@ theorem singularCohomologyMap_eq_zero_of_nullhomotopic {X Y : TopCat.{w}} {f : X
     (hf : f.hom.Nullhomotopic) {n : ℕ} (hn : n ≠ 0) :
     TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f n = 0 := by
   obtain ⟨y, ⟨H⟩⟩ := hf
-  let p : X ⟶ TopCat.of PUnit.{w + 1} := TopCat.ofHom (ContinuousMap.const X PUnit.unit)
-  let s : TopCat.of PUnit.{w + 1} ⟶ Y := TopCat.ofHom (ContinuousMap.const _ y)
+  let p : X ⟶ of PUnit.{w + 1} := ofHom (ContinuousMap.const X PUnit.unit)
+  let s : of PUnit.{w + 1} ⟶ Y := ofHom (ContinuousMap.const _ y)
   -- The underlying continuous map of `p ≫ s` is `ContinuousMap.const X y` by definition, so `H`
   -- is a homotopy from `f` to `p ≫ s`.
-  rw [TopCat.Homotopy.congr_singularCohomologyMap (f := f) (g := p ≫ s) H R k M n,
+  rw [Homotopy.congr_singularCohomologyMap (f := f) (g := p ≫ s) H R k M n,
     singularCohomologyMap_comp,
-    (TauCeti.isZero_singularCohomology_point R k M (TopCat.of PUnit.{w + 1}) hn).eq_of_tgt
+    (TauCeti.isZero_singularCohomology_point R k M (of PUnit.{w + 1}) hn).eq_of_tgt
       (TopCat.singularCohomologyMap s n) 0, zero_comp]
 
 end TopCat
@@ -275,12 +276,9 @@ theorem isZero_singularCohomology_of_contractibleSpace (X : TopCat.{w}) [Contrac
 /-- **The singular cohomology of the empty space vanishes** in every degree, for arbitrary
 coefficients: there are no singular simplices, so the singular cochain complex is zero. -/
 theorem isZero_singularCohomology_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
-    IsZero (X.singularCohomology R k M n) := by
-  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
-    ((TauCeti.ChainComplex.linearYonedaFunctor k M).map_isZero
+    IsZero (X.singularCohomology R k M n) :=
+  (HomologicalComplex.homologyFunctor _ _ n).map_isZero
+    ((ChainComplex.linearYonedaFunctor k M).map_isZero
       ((TopCat.toSSet.obj X).isZero_chainComplex R).op)
 
 end TauCeti

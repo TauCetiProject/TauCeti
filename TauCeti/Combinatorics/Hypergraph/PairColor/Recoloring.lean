@@ -6,6 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
+import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
 import TauCeti.Combinatorics.Enumerative.RandomColoring
 
 /-!
@@ -23,10 +29,13 @@ of `p`.
 Thus any prescribed color densities are realized up to `ε` by a regular pair. This is the step
 of a regular approximation in which the coloring of an irregular pair of cells, or of a pair of
 cells whose densities must be adjusted, is replaced by a quasi-random coloring with the required
-densities, while the rest of the coloring is kept.
+densities, while the rest of the coloring is kept. When `(s, t)` is already `η`-regular for `S`,
+coupled low-discrepancy recoloring (`TauCeti.exists_recoloring_abs_card_filter_sub_mul_card_le`)
+achieves small rectangle discrepancy toward `p` while editing at most half the `L¹` density shift
+plus `card κ * η * (#s * #t)` pairs on `s ×ˢ t`.
 
-The coloring is a random coloring of `s ×ˢ t` with distribution `p`, whose color counts on all
-rectangles are simultaneously close to their means
+The uncoupled coloring is a random coloring of `s ×ˢ t` with distribution `p`, whose color counts
+on all rectangles are simultaneously close to their means
 (`TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`). The size condition
 `card κ + 1 ≤ ε ^ 6 * #s` and `card κ + 1 ≤ ε ^ 6 * #t` makes the union bound over the
 `2 ^ (#s + #t)` rectangles and the palette succeed.
@@ -37,11 +46,16 @@ rectangles are simultaneously close to their means
   `s` and `t` in which every large rectangle has color densities within `ε` of `p`.
 * `TauCeti.PairColorSystem.exists_recoloring_isRegularPair`: a recoloring between `s` and `t`
   that makes `(s, t)` a `2ε`-regular pair with color densities within `ε` of `p`.
+* `TauCeti.PairColorSystem.exists_coupled_recoloring_abs_card_filter_sub_le`: a recoloring between
+  `s` and `t` with small rectangle discrepancy toward `p` and, when `S.IsRegularPair η s t`,
+  total-variation edit bound on `s ×ˢ t`.
 
 ## References
 
 * V. Rödl and M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*,
   Combin. Probab. Comput. 16 (2007), the regular approximation lemma.
+* N. Alon, E. Fischer, M. Krivelevich and M. Szegedy, *Efficient testing of large graphs*,
+  Combinatorica 20 (2000), coupled edge modification.
 * N. Alon and J. H. Spencer, *The Probabilistic Method*, 4th ed., Wiley (2016), §9.3
   (quasi-random graphs).
 -/
@@ -62,7 +76,8 @@ and keep all other colors of `S`. -/
 private noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finset V}
     (hst : Disjoint s t) (x : V × V → κ) : PairColorSystem κ V where
   color q :=
-    if q.1 ∈ s ×ˢ t then x q.1 else if q.1.swap ∈ s ×ˢ t then S.rev (x q.1.swap) else S.color q
+    if q.val ∈ s ×ˢ t then x q.val else if q.val.swap ∈ s ×ˢ t then S.rev
+        (x q.val.swap) else S.color q
   rev := S.rev
   rev_involutive := S.rev_involutive
   color_rev q := by
@@ -100,46 +115,6 @@ private theorem cast_card_pos_of_add_one_le [Fintype κ] {ε : ℝ} {u : Finset 
   have : ε ^ 6 * #u ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (by positivity) h'
   linarith [(Nat.cast_nonneg (Fintype.card κ) : (0 : ℝ) ≤ _)]
 
-/-- The union bound succeeds: for `card κ + 1 ≤ ε ^ 6 * #s` and `card κ + 1 ≤ ε ^ 6 * #t`, twice
-the number of rectangles times the palette size times `exp (-2 (ε³ #s #t)² / (#s #t))` is less
-than one. -/
-private theorem two_mul_two_pow_mul_two_pow_mul_exp_lt [Fintype κ] [Nonempty κ] {ε : ℝ}
-    (hs : Fintype.card κ + 1 ≤ ε ^ 6 * #s) (ht : Fintype.card κ + 1 ≤ ε ^ 6 * #t) :
-    2 * (2 ^ #s * 2 ^ #t : ℕ) * Fintype.card κ *
-      exp (-2 * (ε ^ 3 * #s * #t) ^ 2 / (#s * #t : ℕ)) < 1 := by
-  have hK : (1 : ℝ) ≤ Fintype.card κ := Nat.one_le_cast.2 Fintype.card_pos
-  have hm := cast_card_pos_of_add_one_le hs
-  have hn := cast_card_pos_of_add_one_le ht
-  -- Bound each factor by an exponential, using `x + 1 ≤ exp x`.
-  have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
-  have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
-    calc (2 : ℝ) ^ k ≤ exp 1 ^ k := pow_le_pow_left₀ (by norm_num) h2 k
-      _ = exp k := by rw [← exp_nat_mul, mul_one]
-  have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ - 1) := by
-    linarith [add_one_le_exp ((Fintype.card κ : ℝ) - 1)]
-  have hexp : -2 * (ε ^ 3 * #s * #t) ^ 2 / ((#s * #t : ℕ) : ℝ) = -2 * (ε ^ 6 * #s) * #t := by
-    push_cast
-    field_simp
-  calc 2 * ((2 ^ #s * 2 ^ #t : ℕ) : ℝ) * Fintype.card κ *
-        exp (-2 * (ε ^ 3 * #s * #t) ^ 2 / (#s * #t : ℕ))
-      ≤ exp 1 * (exp #s * exp #t) * exp (Fintype.card κ - 1) *
-          exp (-2 * (ε ^ 6 * #s) * #t) := by
-        rw [hexp]
-        push_cast
-        gcongr
-        all_goals exact hpow _
-    _ = exp (#s + #t + Fintype.card κ - 2 * (ε ^ 6 * #s) * #t) := by
-        simp only [← exp_add]
-        ring_nf
-    _ < 1 := by
-        rw [exp_lt_one_iff, sub_neg]
-        -- `2 ε⁶ #s #t ≥ (card κ + 1) (#s + #t) > #s + #t + card κ`.
-        have hm1 : (1 : ℝ) ≤ #s := Nat.one_le_cast.2 (Nat.cast_pos.1 hm)
-        have hn1 : (1 : ℝ) ≤ #t := Nat.one_le_cast.2 (Nat.cast_pos.1 hn)
-        nlinarith [mul_le_mul_of_nonneg_right hs hn.le, mul_le_mul_of_nonneg_right ht hm.le,
-          le_mul_of_one_le_right (by linarith : (0 : ℝ) ≤ Fintype.card κ) hm1,
-          le_mul_of_one_le_right (by linarith : (0 : ℝ) ≤ Fintype.card κ) hn1]
-
 /-- **Regular recoloring with prescribed densities.** Let `S` be a pair-color system with a
 finite palette `κ`, let `s` and `t` be disjoint vertex sets with `card κ + 1 ≤ ε ^ 6 * #s` and
 `card κ + 1 ≤ ε ^ 6 * #t`, and let `p` be a probability distribution on `κ`. Then there is a
@@ -159,16 +134,18 @@ theorem exists_recoloring_abs_pairColorDensity_sub_le [Fintype κ] (S : PairColo
     simp at hp1
   have hs0 := cast_card_pos_of_add_one_le hs
   have ht0 := cast_card_pos_of_add_one_le ht
+  have hε6 : (ε ^ 3) ^ 2 = ε ^ 6 := by ring
   -- A coloring of `s ×ˢ t` with small deviations on all rectangles `s' ×ˢ t'`.
   obtain ⟨x, hx⟩ := exists_forall_abs_card_filter_sub_mul_card_lt hp hp1
-    (I := ↥(s.powerset ×ˢ t.powerset)) (fun i ↦ i.1.1 ×ˢ i.1.2) (N := #s * #t)
+    (I := ↥(s.powerset ×ˢ t.powerset)) (fun i ↦ i.val.1 ×ˢ i.val.2) (N := #s * #t)
     (fun i ↦ by
-      obtain ⟨hs', ht'⟩ := mem_product.1 i.2
+      obtain ⟨hs', ht'⟩ := mem_product.1 i.property
       rw [card_product]
       exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs')) (card_le_card (mem_powerset.1 ht')))
     (a := ε ^ 3 * #s * #t)
     (mul_pos (mul_pos (pow_pos hε 3) hs0) ht0)
-    (by simpa using two_mul_two_pow_mul_two_pow_mul_exp_lt hs ht)
+    (by simpa [mul_assoc] using
+      two_mul_two_pow_mul_two_pow_mul_exp_lt (η := ε ^ 3) (hε6.symm ▸ hs) (hε6.symm ▸ ht))
   refine ⟨S.recolorProduct hst x, rfl, fun u v ↦ colorOfPair_recolorProduct_of_not_mem hst x, ?_⟩
   intro c s' hs' t' ht' hs's ht't
   have hpos : (0 : ℝ) < #s' * #t' :=
@@ -215,7 +192,7 @@ theorem exists_recoloring_isRegularPair [Fintype κ] (S : PairColorSystem κ V)
     have hpc : p c ≤ 1 := hp1 ▸ single_le_sum (fun c _ ↦ hp c) (mem_univ c)
     exact (abs_sub_le_iff.2 ⟨by linarith [hp c], by linarith [hp c]⟩).trans hε1.le
   refine ⟨S', hrev, hagree, ?_, hfull⟩
-  obtain hε2 | hε2 := le_or_gt 1 (2 * ε)
+  obtain hε2 | _ := le_or_gt 1 (2 * ε)
   · exact isRegularPair_of_one_le hε2
   rw [isRegularPair_iff]
   intro c s' hs' t' ht' hs's ht't
@@ -226,6 +203,145 @@ theorem exists_recoloring_isRegularPair [Fintype κ] (S : PairColorSystem κ V)
   calc _ ≤ |(pairColorDensity S' c s' t' : ℝ) - p c| + |p c - pairColorDensity S' c s t| :=
         abs_sub_le _ _ _
     _ ≤ 2 * ε := by rw [abs_sub_comm (p c)]; linarith
+
+open Classical in
+/-- **Coupled regular recoloring with rectangle discrepancy and edit bound.** Let `S` be a
+pair-color system on a finite palette `κ`, let `s` and `t` be disjoint vertex sets with
+`card κ + 3 ≤ η ^ 2 * #s` and `card κ + 3 ≤ η ^ 2 * #t`, and let `p` be a probability
+distribution on `κ`. Then there is a pair-color system `S'` with `S'.rev = S.rev` agreeing with
+`S` outside pairs joining `s` and `t`, whose rectangle counts on `s' ×ˢ t'` lie within
+`2 * max (card κ) 1 * η * (#s * #t)` of `p d * (#s' * #t')`, and which—whenever
+`S.IsRegularPair η s t`—edits at most
+`(∑ c, |d_c(s, t) - p c| * (#s * #t)) / 2 + card κ * η * (#s * #t)` pairs of `s ×ˢ t`. -/
+theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairColorSystem κ V)
+    (hst : Disjoint s t) {p : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (hp1 : ∑ c, p c = 1) {η : ℝ}
+    (hη : 0 < η) (hs : Fintype.card κ + 3 ≤ η ^ 2 * #s)
+    (ht : Fintype.card κ + 3 ≤ η ^ 2 * #t) :
+    ∃ S' : PairColorSystem κ V, S'.rev = S.rev ∧
+      (∀ u v, (u ∈ s → v ∉ t) → (u ∈ t → v ∉ s) →
+        S'.colorOfPair u v = S.colorOfPair u v) ∧
+      (∀ s' ⊆ s, ∀ t' ⊆ t, ∀ d : κ,
+        |(#{q ∈ s' ×ˢ t' | S'.colorOfPair q.1 q.2 = some d} : ℝ) - p d * (#s' * #t')| ≤
+          2 * (max (Fintype.card κ) 1 : ℕ) * η * (#s * #t)) ∧
+      (S.IsRegularPair η s t →
+        (#{q ∈ s ×ˢ t | S'.colorOfPair q.1 q.2 ≠ S.colorOfPair q.1 q.2} : ℝ) ≤
+          (∑ c : κ, |(pairColorDensity S c s t : ℝ) - p c| * (#s * #t)) / 2 +
+            Fintype.card κ * η * (#s * #t)) := by
+  classical
+  have : Nonempty κ := by by_contra! h; simp at hp1
+  have hs0 : (0 : ℝ) < #s := by
+    by_contra! h; nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h,
+      (Nat.cast_nonneg (Fintype.card κ) : (0 : ℝ) ≤ _)]
+  have ht0 : (0 : ℝ) < #t := by
+    by_contra! h; nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h,
+      (Nat.cast_nonneg (Fintype.card κ) : (0 : ℝ) ≤ _)]
+  set I := ↥(s.powerset ×ˢ t.powerset)
+  set Trect : I → Finset (V × V) := fun i ↦ i.val.1 ×ˢ i.val.2
+  have hcardI : Fintype.card I = 2 ^ #s * 2 ^ #t := by
+    simp [I, card_product, card_powerset]
+  have hub : 2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) * Fintype.card κ *
+      exp (-2 * (η * #s * #t) ^ 2 / (#s * #t : ℕ)) < 1 := by
+    simpa [mul_assoc] using two_mul_two_pow_mul_two_pow_add_mul_exp_lt (κ := κ) (r := 1)
+      (by push_cast; linarith) (by push_cast; linarith)
+  have ha : 0 < η * #s * #t := mul_pos (mul_pos hη hs0) ht0
+  have hqle : (Fintype.card κ : ℝ) ≤ (max (Fintype.card κ) 1 : ℕ) := by
+    exact_mod_cast le_max_left _ _
+  have hq1 : (1 : ℝ) ≤ (max (Fintype.card κ) 1 : ℕ) := by
+    exact_mod_cast le_max_right _ _
+  by_cases hreg : S.IsRegularPair η s t
+  · -- Coupled recoloring on an `η`-regular block preserves most existing colors.
+    let c₀ : κ := Classical.arbitrary κ
+    let x₀ : V × V → κ := fun q ↦ if h : q.1 ≠ q.2 then S.color ⟨q, h⟩ else c₀
+    have hx₀_eq {q : V × V} (hq : q ∈ s ×ˢ t) (c : κ) :
+        (x₀ q = c) ↔ (S.colorOfPair q.1 q.2 = some c) := by
+      have hne : q.1 ≠ q.2 := hst.forall_ne_finset (mem_product.1 hq).1 (mem_product.1 hq).2
+      simp [x₀, hne]
+    have hx₀_dens (c : κ) :
+        (#{q ∈ s ×ˢ t | x₀ q = c} : ℝ) / #(s ×ˢ t) = pairColorDensity S c s t := by
+      have hf : {q ∈ s ×ˢ t | x₀ q = c} = {q ∈ s ×ˢ t | S.colorOfPair q.1 q.2 = some c} :=
+        filter_congr fun q hq ↦ hx₀_eq hq c
+      have hmul : (#{q ∈ s ×ˢ t | S.colorOfPair q.1 q.2 = some c} : ℝ) =
+          (pairColorDensity S c s t : ℝ) * (#s * #t) :=
+        mod_cast (pairColorDensity_mul_card_of_disjoint S c hst).symm
+      rw [hf, hmul, card_product, Nat.cast_mul, mul_div_cancel_right₀ _ (mul_pos hs0 ht0).ne']
+    obtain ⟨x, _, hedit, hdisc⟩ := exists_recoloring_abs_card_filter_sub_mul_card_le
+      (s ×ˢ t) x₀ hp hp1 Trect
+      (fun i ↦ product_subset_product (mem_powerset.1 (mem_product.1 i.property).1)
+        (mem_powerset.1 (mem_product.1 i.property).2))
+      ha (fun i c ↦ by
+        obtain ⟨hs', ht'⟩ := mem_product.1 i.property
+        have hs's := mem_powerset.1 hs'
+        have ht't := mem_powerset.1 ht'
+        have hf : {q ∈ i.val.1 ×ˢ i.val.2 | x₀ q = c} =
+            {q ∈ i.val.1 ×ˢ i.val.2 | S.colorOfPair q.1 q.2 = some c} :=
+          filter_congr fun q hq ↦ hx₀_eq (product_subset_product hs's ht't hq) c
+        dsimp only [Trect]
+        rw [hf, hx₀_dens, card_product, Nat.cast_mul, ← mul_assoc]
+        exact hreg.abs_card_filter_colorOfPair_sub_le hst hs's ht't)
+      (by simpa [hcardI, card_product] using hub)
+    refine ⟨S.recolorProduct hst x, rfl, fun u v ↦ colorOfPair_recolorProduct_of_not_mem hst x,
+      fun s' hs' t' ht' d ↦ ?_, fun _ ↦ ?_⟩
+    · have hf : {q ∈ s' ×ˢ t' | (S.recolorProduct hst x).colorOfPair q.1 q.2 = some d} =
+          {q ∈ s' ×ˢ t' | x q = d} := filter_congr fun q hq ↦ by
+        rw [colorOfPair_recolorProduct_of_mem hst x (product_subset_product hs' ht' hq),
+          Option.some_inj]
+      have hd := hdisc ⟨(s', t'), mem_product.2 ⟨mem_powerset.2 hs', mem_powerset.2 ht'⟩⟩ d
+      simp only [Trect, card_product, Nat.cast_mul] at hd
+      rw [hf]
+      calc |(#{q ∈ s' ×ˢ t' | x q = d} : ℝ) - p d * (#s' * #t')|
+          ≤ Fintype.card κ * (η * #s * #t + η * #s * #t) := hd
+        _ ≤ (max (Fintype.card κ) 1 : ℕ) * (2 * η * (#s * #t)) := by
+            nlinarith [mul_pos hs0 ht0]
+        _ = 2 * (max (Fintype.card κ) 1 : ℕ) * η * (#s * #t) := by ring
+    · have hf_ed : {q ∈ s ×ˢ t | (S.recolorProduct hst x).colorOfPair q.1 q.2 ≠
+          S.colorOfPair q.1 q.2} = {q ∈ s ×ˢ t | x q ≠ x₀ q} :=
+        filter_congr fun q hq ↦ by
+          have hne : q.1 ≠ q.2 := hst.forall_ne_finset (mem_product.1 hq).1 (mem_product.1 hq).2
+          rw [colorOfPair_recolorProduct_of_mem hst x hq]
+          simp [x₀, hne]
+      have hL1 (c : κ) :
+          |(#{q ∈ s ×ˢ t | x₀ q = c} : ℝ) - p c * #(s ×ˢ t)| =
+            |(pairColorDensity S c s t : ℝ) - p c| * (#s * #t) := by
+        have hf : {q ∈ s ×ˢ t | x₀ q = c} =
+            {q ∈ s ×ˢ t | S.colorOfPair q.1 q.2 = some c} :=
+          filter_congr fun q hq ↦ hx₀_eq hq c
+        have hmul : (#{q ∈ s ×ˢ t | S.colorOfPair q.1 q.2 = some c} : ℝ) =
+            (pairColorDensity S c s t : ℝ) * (#s * #t) :=
+          mod_cast (pairColorDensity_mul_card_of_disjoint S c hst).symm
+        rw [hf, hmul, card_product, Nat.cast_mul, ← sub_mul, abs_mul,
+          abs_of_pos (mul_pos hs0 ht0)]
+      rw [hf_ed]
+      refine hedit.trans_eq ?_
+      simp only [hL1]; ring
+  · -- Fresh quasi-random coloring on an irregular block.
+    have hub' : 2 * (Fintype.card I : ℝ) * Fintype.card κ *
+        exp (-2 * (η * #s * #t) ^ 2 / (#s * #t : ℕ)) < 1 := by
+      refine lt_of_le_of_lt ?_ hub
+      rw [hcardI]
+      have : (2 * (2 ^ #s * 2 ^ #t : ℕ) : ℝ) ≤ 2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) := by
+        exact_mod_cast Nat.mul_le_mul_left 2 (Nat.le_succ _)
+      gcongr
+    obtain ⟨x, hx⟩ := exists_forall_abs_card_filter_sub_mul_card_lt hp hp1 Trect
+      (N := #s * #t) (fun i ↦ by
+        obtain ⟨hs', ht'⟩ := mem_product.1 i.property
+        dsimp only [Trect]
+        rw [card_product]
+        exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs'))
+          (card_le_card (mem_powerset.1 ht')))
+      ha hub'
+    refine ⟨S.recolorProduct hst x, rfl, fun u v ↦ colorOfPair_recolorProduct_of_not_mem hst x,
+      fun s' hs' t' ht' d ↦ ?_, fun h ↦ absurd h hreg⟩
+    have hf : {q ∈ s' ×ˢ t' | (S.recolorProduct hst x).colorOfPair q.1 q.2 = some d} =
+        {q ∈ s' ×ˢ t' | x q = d} := filter_congr fun q hq ↦ by
+      rw [colorOfPair_recolorProduct_of_mem hst x (product_subset_product hs' ht' hq),
+        Option.some_inj]
+    have hd := (hx ⟨(s', t'), mem_product.2 ⟨mem_powerset.2 hs', mem_powerset.2 ht'⟩⟩ d).le
+    simp only [Trect, card_product, Nat.cast_mul] at hd
+    rw [hf]
+    calc |(#{q ∈ s' ×ˢ t' | x q = d} : ℝ) - p d * (#s' * #t')|
+        ≤ η * #s * #t := hd
+      _ ≤ 2 * (max (Fintype.card κ) 1 : ℕ) * η * (#s * #t) := by
+          nlinarith [mul_pos hs0 ht0]
 
 end PairColorSystem
 

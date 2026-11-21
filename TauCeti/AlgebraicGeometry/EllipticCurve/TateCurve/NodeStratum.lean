@@ -296,10 +296,10 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   set S : Set K := {u | ‖u‖ = ‖s‖}
   have : CompleteSpace S := (isClosed_eq continuous_norm continuous_const).completeSpace_coe
   have : Nonempty S := ⟨⟨s, rfl⟩⟩
-  have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.2]; exact hs0.ne')
+  have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.property]; exact hs0.ne')
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
   have hUv (v : S) : ((U v : Kˣ) : K) = v := Units.val_mk0 _
-  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := by rw [hUv]; exact v.2
+  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := by rw [hUv]; exact v.property
   have hU₁ (v : S) : ‖1 - ((U v : Kˣ) : K)‖ = 1 :=
     norm_one_sub_of_norm_lt_one ((hU v).trans_lt hs)
   have hqU (v : S) : ‖(q : K)‖ ≤ ‖((U v : Kˣ) : K)‖ ^ 2 := by rw [hU v]; exact hqs
@@ -323,7 +323,7 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   have hlip (v w : S) : ‖tateNodeStep q (U v) s - tateNodeStep q (U w) s‖ ≤
       ‖s‖ * ‖((U v : Kˣ) : K) - (U w : Kˣ)‖ := by
     have h := norm_prod_sub_prod_le (s := .univ) (f := fun _ : Fin 3 ↦ 1 - ((U v : Kˣ) : K))
-      (g := fun _ ↦ 1 - ((U w : Kˣ) : K)) zero_le_one (norm_nonneg _) (fun _ _ ↦ (hU₁ v).le)
+      (g := fun _ ↦ 1 - ((U w : Kˣ) : K)) (norm_nonneg _) (fun _ _ ↦ (hU₁ v).le)
       (fun _ _ ↦ (hU₁ w).le) fun _ _ ↦ by rw [sub_sub_sub_cancel_left, norm_sub_rev]
     simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, one_pow, mul_one] at h
     have hrw (c d E F : K) :
@@ -338,9 +338,9 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
       exact norm_tateNodeErr_sub_le q (U v) (U w) hq (hqU v) ((hU v).trans_lt hs)
         ((hU w).trans (hU v).symm)
   have hF : ContractingWith ‖s‖₊ (fun v : S ↦ (⟨tateNodeStep q (U v) s, hmem v⟩ : S)) := by
-    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
+    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm, ← hUv v, ← hUv w]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnNorm, ← hUv v, ← hUv w]
     exact hlip v w
   exact ⟨U _, hU _, tateUniformizationX_add_tateUniformizationY_of_tateNodeStep_eq q (U _)
     (norm_ne_zero_iff.mp (by rw [hU₁]; exact one_ne_zero))

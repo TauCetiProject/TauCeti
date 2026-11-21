@@ -74,10 +74,10 @@ theorem singularValue_le_of_pairwise_inner_eq_zero
   have hV : Module.rank 𝕜 V ≤ n :=
     (rank_span_finset_le _).trans (by exact_mod_cast Finset.card_image_le.trans hs)
   refine (T.singularValue_le_nnnorm_comp_orthogonal hV).trans ?_
-  refine NNReal.coe_le_coe.mp (ContinuousLinearMap.opNorm_le_bound _ c.2 fun x ↦ ?_)
+  refine NNReal.coe_le_coe.mp (ContinuousLinearMap.opNorm_le_bound _ c.property fun x ↦ ?_)
   -- The coordinates of `x ∈ (span {bᵢ | i ∈ s})ᗮ` vanish on `s`.
   have hx : ∀ i ∈ (s : Set ι), ⟪b i, (x : E)⟫_𝕜 = 0 := fun i hi ↦
-    (Submodule.mem_orthogonal _ _).mp x.2 _
+    (Submodule.mem_orthogonal _ _).mp x.property _
       (Submodule.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem b hi)))
   simpa using b.norm_apply_le_of_forall_inner_eq_zero hT hc hx
 
@@ -101,7 +101,7 @@ theorem le_singularValue_of_pairwise_inner_eq_zero
     have hle : V ≤ LinearMap.ker (innerₛₗ 𝕜 (b j)) := Submodule.span_le.mpr <| by
       rintro _ ⟨i, rfl⟩
       rw [SetLike.mem_coe, LinearMap.mem_ker, innerₛₗ_apply_apply]
-      exact b.orthonormal.inner_eq_zero fun h ↦ hj (h ▸ i.2)
+      exact b.orthonormal.inner_eq_zero fun h ↦ hj (h ▸ i.property)
     simpa only [LinearMap.mem_ker, innerₛₗ_apply_apply] using hle hx
   exact b.mul_norm_le_norm_apply_of_forall_inner_eq_zero hT hc hx'
 
@@ -117,7 +117,7 @@ theorem singularValue_eq_decreasingRearrangement
   have hbdd : BddAbove (Set.range fun i ↦ ‖T (b i)‖) := ⟨‖T‖, by
     rintro _ ⟨i, rfl⟩
     simpa [b.orthonormal.1 i] using T.le_opNorm (b i)⟩
-  have hr0 : 0 ≤ r n := TauCeti.decreasingRearrangement_nonneg hbdd n
+  have hr0 : 0 ≤ r n := TauCeti.decreasingRearrangement_nonneg n
   refine le_antisymm ?_ (le_of_forall_lt_imp_le_of_dense fun a ha ↦ ?_)
   · -- At most `n` indices have `‖T bᵢ‖ > rₙ`, and `T` is bounded by `rₙ` on the others.
     have hfin := TauCeti.finite_setOf_decreasingRearrangement_lt hbdd n
@@ -165,17 +165,17 @@ theorem IsCompactOperator.exists_orthonormal_hasSum_rankOne {T : E →L[𝕜] F}
   refine ⟨J, fun i ↦ b i, fun i ↦ ((‖T (b i)‖⁻¹ : ℝ) : 𝕜) • T (b i), fun i ↦ ‖T (b i)‖,
     hJ.to_subtype, b.orthonormal.comp _ Subtype.val_injective,
     TauCeti.orthonormal_inv_norm_smul_of_pairwise_inner_eq_zero (v := T ∘ b) hT,
-    fun i ↦ norm_pos_iff.mpr i.2,
+    fun i ↦ norm_pos_iff.mpr i.property,
     hnull.comp Subtype.val_injective.tendsto_cofinite, ?_, fun n ↦ ?_⟩
   · have hterm (i : J) : ((‖T (b i)‖ : ℝ) : 𝕜) • rankOne 𝕜 (((‖T (b i)‖⁻¹ : ℝ) : 𝕜) • T (b i))
         (b i) = rankOne 𝕜 (T (b i)) (b i) := by
-      have hσ : ‖T (b i)‖ ≠ 0 := norm_ne_zero_iff.mpr i.2
+      have hσ : ‖T (b i)‖ ≠ 0 := norm_ne_zero_iff.mpr i.property
       ext x
       simp [smul_smul, hσ]
     simp_rw [hterm]
     exact (hasSum_subtype_iff_of_support_subset hsupp).mpr (b.hasSum_rankOne hTc hT)
   · rw [b.singularValue_eq_decreasingRearrangement hT n]
-    exact (TauCeti.decreasingRearrangement_comp_subtypeVal hnull.bddAbove_range_of_cofinite
+    exact (TauCeti.decreasingRearrangement_comp_subtypeVal
       (fun i hi ↦ norm_pos_iff.mp hi) n).symm
 
 end SingularValueDecomposition

@@ -37,6 +37,10 @@ Since `x` stays regular on `M_p`, the module `M_p` is Cohen–Macaulay.
 
 * `Module.IsCohenMacaulay.localizedModule`: the localization of a finite Cohen–Macaulay module
   over a Noetherian local ring at a prime is Cohen–Macaulay.
+* `Module.isCohenMacaulay_localizedModule_of_mem_minimalPrimes`: the localization of a finite
+  module at a minimal prime of its support is Cohen–Macaulay.
+* `Module.isCohenMacaulay_iff_of_isLocalizedModule`: whether `M_p` is Cohen–Macaulay can be
+  tested on any localization map `M → N` at `p`, over any localization of the ring at `p`.
 
 ## References
 
@@ -46,13 +50,57 @@ Since `x` stays regular on `M_p`, the module `M_p` is Cohen–Macaulay.
 
 public section
 
-universe u v
+universe u v w w'
 
 open IsLocalRing
 
 namespace Module
 
-variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R]
+section NoetherianRing
+
+variable {R : Type u} [CommRing R] [IsNoetherianRing R]
+
+/-- Let `M` be a finite module over a Noetherian ring and `p` a minimal prime of the support of `M`.
+Then `M_p` is a Cohen–Macaulay module over `R_p`: its support is the closed point alone. -/
+theorem isCohenMacaulay_localizedModule_of_mem_minimalPrimes {M : Type v} [AddCommGroup M]
+    [Module R M] [Module.Finite R M] {p : Ideal R} [p.IsPrime]
+    (hp : p ∈ (annihilator R M).minimalPrimes) :
+    IsCohenMacaulay (Localization.AtPrime p) (LocalizedModule p.primeCompl M) := by
+  rcases subsingleton_or_nontrivial (LocalizedModule p.primeCompl M) with _ | _
+  · exact isCohenMacaulay_of_subsingleton
+  rw [isCohenMacaulay_iff_supportDim_le_depth]
+  exact ((supportDim_localizedModule_nonpos_iff hp.1.2).2 hp).trans (by exact_mod_cast zero_le)
+
+end NoetherianRing
+
+section IsLocalizedModule
+
+variable {R : Type u} [CommRing R] (p : Ideal R) [p.IsPrime] {B : Type v} [CommRing B]
+  [IsLocalRing B] [Algebra R B] [IsLocalization.AtPrime B p] {M : Type w'} [AddCommGroup M]
+  [Module R M] {N : Type w} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
+  [Small.{w} B]
+
+/-- Being Cohen–Macaulay at a prime `p` does not depend on how the localization is presented. Let
+`B` be a localization of a commutative ring `R` at `p`, and let `f : M → N` exhibit the `B`-module
+`N` as the localization of an `R`-module `M` at `p`. Then `N` is Cohen–Macaulay over `B`
+exactly when `LocalizedModule p.primeCompl M` is Cohen–Macaulay over `Localization.AtPrime p`. For
+instance, this applies to the stalks of a quasi-coherent module on a scheme. -/
+theorem isCohenMacaulay_iff_of_isLocalizedModule (f : M →ₗ[R] N)
+    [IsLocalizedModule p.primeCompl f] :
+    IsCohenMacaulay B N ↔
+      IsCohenMacaulay (Localization.AtPrime p) (LocalizedModule p.primeCompl M) := by
+  rw [isCohenMacaulay_iff, isCohenMacaulay_iff,
+    ← (IsLocalizedModule.iso p.primeCompl f).toEquiv.subsingleton_congr,
+    depth_eq_of_isLocalizedModule p B f,
+    supportDim_eq_of_isLocalizedModule p.primeCompl B f]
+
+end IsLocalizedModule
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+
+section LocalizedModule
+
+variable [Small.{v} R]
 
 /-- The induction behind `Module.IsCohenMacaulay.localizedModule`, on the depth `n` of `M_p`. -/
 private theorem IsCohenMacaulay.localizedModule_of_depth_eq {p : Ideal R} [p.IsPrime] (n : ℕ)
@@ -66,8 +114,7 @@ private theorem IsCohenMacaulay.localizedModule_of_depth_eq {p : Ideal R} [p.IsP
     -- `p` is associated to `M`, hence minimal in its support, so `dim Supp M_p = 0`.
     have hp := TauCeti.depth_localizedModule_eq_zero_iff.1 hn
     rw [h.associatedPrimes_eq_minimalPrimes] at hp
-    rw [isCohenMacaulay_iff_supportDim_le_depth, hn]
-    exact_mod_cast (supportDim_localizedModule_nonpos_iff hp.1.2).2 hp
+    exact isCohenMacaulay_localizedModule_of_mem_minimalPrimes hp
   | succ n ih =>
     -- `M_p ≠ 0`, since its depth is finite, so `p` lies in the support of `M`.
     have : Nontrivial (LocalizedModule p.primeCompl M) := not_subsingleton_iff_nontrivial.1 fun _ ↦
@@ -109,7 +156,8 @@ theorem IsCohenMacaulay.localizedModule {M : Type v} [AddCommGroup M] [Module R 
     (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M))).1 (not_subsingleton _)
   exact h.localizedModule_of_depth_eq n hn.symm
 
-omit [Small.{v} R] in
+end LocalizedModule
+
 /-- A localization of a Cohen–Macaulay Noetherian local ring is Cohen–Macaulay as a ring. -/
 theorem IsCohenMacaulay.localization_atPrime (h : IsCohenMacaulay R R)
     (p : Ideal R) [p.IsPrime] :

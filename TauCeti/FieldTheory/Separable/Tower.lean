@@ -29,8 +29,6 @@ division algebras.
 
 public section
 
-open scoped IsMulCommutative
-
 namespace IsSeparable
 
 variable {K L A : Type*} [Field K] [Field L] [Ring A] [IsDomain A]
@@ -46,7 +44,8 @@ theorem restrictScalars {x : A} (hx : IsSeparable L x) : IsSeparable K x := by
   let y : M := ⟨x, Algebra.subset_adjoin (Set.mem_singleton x)⟩
   have hy : IsSeparable L y :=
     (isSeparable_map_iff M.val Subtype.val_injective).mp hx
-  exact (IsSeparable.of_algebra_isSeparable_of_isSeparable K hy).map
+  have h := (IsSeparable.of_algebra_isSeparable_of_isSeparable K hy).map
     (M.val.restrictScalars K) Subtype.val_injective
+  rwa [AlgHom.restrictScalars_apply, Subalgebra.coe_val] at h
 
 end IsSeparable

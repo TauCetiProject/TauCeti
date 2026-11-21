@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Flow
+public import TauCeti.Combinatorics.Network.Shift
 
 /-!
 # Replacing network bounds
 
 A network's arrow family is independent of its lower and upper bounds.  This file provides the
 same-arrow constructions that replace either or both bounds, and transports bounded terminal
-assignments and ordinary flows when the feasible interval is enlarged.  In particular, increasing
+assignments, ordinary flows, and prescribed- and interval-excess assignments when the feasible
+interval is enlarged.  In particular, increasing
 ordinary capacities preserves every existing flow; this is the comparison used when capacities
 are capped or otherwise changed.
 
@@ -25,6 +27,9 @@ change only feasibility, never conservation, excess, or flow value.
 * `TauCeti.Network.replaceLower` and `TauCeti.Network.replaceUpper` replace one bound function.
 * `TauCeti.BoundedFlow.mono` regards a bounded terminal assignment as one with weaker bounds.
 * `TauCeti.Flow.mono` regards an ordinary flow as one with larger capacities.
+* `TauCeti.ExcessFlow.mono` regards a prescribed-excess assignment as one with weaker bounds.
+* `TauCeti.ExcessIntervalFlow.mono` regards an interval-excess assignment as one with weaker arrow
+  bounds and wider vertex bounds.
 -/
 
 public section
@@ -244,5 +249,68 @@ theorem mono_mono (f : Flow cap s t) {cap'' : Assignment Q K}
 end Flow
 
 end BoundedFlow
+
+section ExcessFlow
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K] [Preorder K]
+variable {lo hi lo' hi' lo'' hi'' : Assignment Q K}
+
+namespace ExcessFlow
+
+variable {b : V → K}
+
+/-- A prescribed-excess assignment remains feasible after decreasing its lower bounds and
+increasing its upper bounds.  Its arrow assignment and excess are unchanged. -/
+def mono (f : ExcessFlow lo hi b) (hlo : lo' ≤ lo) (hhi : hi ≤ hi') : ExcessFlow lo' hi' b :=
+  ⟨f.val, Set.Icc_subset_Icc hlo hhi f.mem_Icc, f.property.2⟩
+
+@[simp]
+theorem mono_val (f : ExcessFlow lo hi b) (hlo : lo' ≤ lo) (hhi : hi ≤ hi') :
+    (f.mono hlo hhi).val = f.val :=
+  (rfl)
+
+@[simp]
+theorem mono_refl (f : ExcessFlow lo hi b) : f.mono le_rfl le_rfl = f :=
+  (rfl)
+
+/-- Weakening bounds twice is the same as weakening them once by the composite inequalities. -/
+theorem mono_mono (f : ExcessFlow lo hi b) (hlo : lo' ≤ lo) (hhi : hi ≤ hi') (hlo' : lo'' ≤ lo')
+    (hhi' : hi' ≤ hi'') :
+    (f.mono hlo hhi).mono hlo' hhi' = f.mono (hlo'.trans hlo) (hhi.trans hhi') :=
+  (rfl)
+
+end ExcessFlow
+
+namespace ExcessIntervalFlow
+
+variable {a b a' b' a'' b'' : V → K}
+
+/-- An interval-excess assignment remains feasible after decreasing its lower arrow bounds,
+increasing its upper arrow bounds, and widening its vertex bounds.  Its arrow assignment and
+excess are unchanged. -/
+def mono (f : ExcessIntervalFlow lo hi a b) (hlo : lo' ≤ lo) (hhi : hi ≤ hi') (ha : a' ≤ a)
+    (hb : b ≤ b') : ExcessIntervalFlow lo' hi' a' b' :=
+  ⟨f.val, Set.Icc_subset_Icc hlo hhi f.mem_Icc, Set.Icc_subset_Icc ha hb f.excessAt_mem_Icc⟩
+
+@[simp]
+theorem mono_val (f : ExcessIntervalFlow lo hi a b) (hlo : lo' ≤ lo) (hhi : hi ≤ hi')
+    (ha : a' ≤ a) (hb : b ≤ b') : (f.mono hlo hhi ha hb).val = f.val :=
+  (rfl)
+
+@[simp]
+theorem mono_refl (f : ExcessIntervalFlow lo hi a b) : f.mono le_rfl le_rfl le_rfl le_rfl = f :=
+  (rfl)
+
+/-- Weakening bounds twice is the same as weakening them once by the composite inequalities. -/
+theorem mono_mono (f : ExcessIntervalFlow lo hi a b) (hlo : lo' ≤ lo) (hhi : hi ≤ hi')
+    (ha : a' ≤ a) (hb : b ≤ b') (hlo' : lo'' ≤ lo') (hhi' : hi' ≤ hi'') (ha' : a'' ≤ a')
+    (hb' : b' ≤ b'') :
+    (f.mono hlo hhi ha hb).mono hlo' hhi' ha' hb' =
+      f.mono (hlo'.trans hlo) (hhi.trans hhi') (ha'.trans ha) (hb.trans hb') :=
+  (rfl)
+
+end ExcessIntervalFlow
+
+end ExcessFlow
 
 end TauCeti

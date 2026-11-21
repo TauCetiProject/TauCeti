@@ -148,7 +148,7 @@ variable (p : ℕ) {G H : Type u} [Group G] [Monoid H]
 @[simp]
 theorem res_trivialFp_hom (φ : H →* G) :
     TopRep.res φ (trivialFp p G) = trivialFp p H :=
-  res_trivial (ZMod p) G (ULift.{u} (ZMod p)) φ
+  congrArg TopRep.of (ContRepresentation.restrict_trivial (ZMod p) G (ULift.{u} (ZMod p)) φ)
 
 /-- The transport to trivial coefficients along a homomorphism leaves coefficient values
 unchanged. -/
@@ -199,7 +199,7 @@ noncomputable def trivialFpQuotientToInvariantsContinuousLinearEquiv :
       ((trivialFp p G).ρ.restrict N.subtype).invariants where
   toFun x := ⟨(trivialFpEquiv p G).symm (trivialFpEquiv p (G ⧸ N) x),
     fun n ↦ trivialFp_ρ_apply_apply p G n _⟩
-  invFun x := (trivialFpEquiv p (G ⧸ N)).symm (trivialFpEquiv p G x.1)
+  invFun x := (trivialFpEquiv p (G ⧸ N)).symm (trivialFpEquiv p G x.val)
   left_inv x := (trivialFpEquiv p (G ⧸ N)).injective <| by simp
   right_inv x := Subtype.ext <| (trivialFpEquiv p G).injective <| by simp
   map_add' x y := Subtype.ext <| (trivialFpEquiv p G).injective <| by simp
@@ -233,7 +233,7 @@ noncomputable def trivialFpQuotientToInvariantsIso :
       inv_hom_id := by
         ext x
         -- The target is a subtype, and `TopRep.ext` has exposed its underlying value.
-        change (ρe (ρe.symm x)).1 = x.1
+        change (ρe (ρe.symm x)).val = x.val
         exact congrArg Subtype.val (ρe.apply_symm_apply x) }
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] in
@@ -241,11 +241,11 @@ omit [TopologicalSpace G] [IsTopologicalGroup G] in
 @[simp]
 theorem trivialFpEquiv_trivialFpQuotientToInvariantsIso_hom_apply
     (x : (trivialFp p (G ⧸ N)).V) :
-    trivialFpEquiv p G ((trivialFpQuotientToInvariantsIso p G N).hom x).1 =
+    trivialFpEquiv p G ((trivialFpQuotientToInvariantsIso p G N).hom x).val =
       trivialFpEquiv p (G ⧸ N) x := by
   -- Expose the bundled representation isomorphism to read its underlying coefficient map.
   change trivialFpEquiv p G
-    ((trivialFpQuotientToInvariantsContinuousLinearEquiv p G N x).1) = _
+    ((trivialFpQuotientToInvariantsContinuousLinearEquiv p G N x).val) = _
   simp [trivialFpQuotientToInvariantsContinuousLinearEquiv]
 
 /-- Continuous cohomology with trivial `ZMod p` coefficients. -/

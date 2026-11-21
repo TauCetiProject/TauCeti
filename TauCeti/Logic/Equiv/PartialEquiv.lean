@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Lattice.Indexed
 public import Mathlib.Logic.Equiv.PartialEquiv
 
 /-!
-# Image transport for compositions and restrictions of partial equivalences
+# Image transport and intertwining for partial equivalences
 
 This file supplements `PartialEquiv.image_source_inter_eq'` and `PartialEquiv.image_trans_source` in
 `Mathlib.Logic.Equiv.PartialEquiv` with equational formulas for source-restricted images under
 compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate transitions
-`e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space).
+`e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space). It also
+shows that if `e` intertwines a self-map of its source with a map `A`, then `e.symm` intertwines
+them in the other direction.
 
 ## Main declarations
 
@@ -24,6 +27,14 @@ compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate trans
 * `PartialEquiv.image_symm_trans_source_inter` and
   `PartialEquiv.image_restr_symm_trans_source_inter`: transport of `e '' (e.source ∩ s)` onto
   `e' '' (e'.source ∩ s)` intersected with the transition target.
+* `PartialEquiv.preimage_eq_iUnion_symm_image`: if every point of `f ⁻¹' P` lies in the source of
+  one of a family of partial equivalences `e x`, the preimage is the union of the images under
+  `(e x).symm` of the sets of coordinates which `f ∘ (e x).symm` carries into `P`.
+* `PartialEquiv.preimage_singleton_inter_symm_image_eq_singleton`: the fibre of `f` over `f x`
+  inside `e.symm '' s` is `{x}` when `e x` is the only point of `s` that `f ∘ e.symm` carries to
+  `f x`.
+* `PartialEquiv.symm_map_of_intertwines`: if `e` intertwines a self-map `f` of its source with a
+  map `A`, then `A` preserves the target and `e.symm` intertwines `A` with `f`.
 -/
 
 public section
@@ -70,5 +81,45 @@ theorem image_restr_symm_trans_source_inter (e : PartialEquiv α β) (e' : Parti
     Set.inter_subset_left
   rw [(e.symm.trans e').image_restr_source_inter u, e.image_symm_trans_source_inter e',
     ← Set.inter_assoc, Set.inter_eq_self_of_subset_left hsub]
+
+/-- **A preimage as a union of chart images.** Let `e x` be partial equivalences with
+`T x ⊆ (e x).target` such that a coordinate `w ∈ (e x).target` lies in `T x` exactly when its
+image under `f ∘ (e x).symm` lies in `P`. If every point of `f ⁻¹' P` lies in some source
+`(e x).source`, then `f ⁻¹' P` is the union of the sets `(e x).symm '' T x`. -/
+theorem preimage_eq_iUnion_symm_image {ι δ : Type*} {f : α → δ}
+    {e : ι → PartialEquiv α β} {P : Set δ} {T : ι → Set β} (hT : ∀ x, T x ⊆ (e x).target)
+    (hiff : ∀ x, ∀ w ∈ (e x).target, w ∈ T x ↔ f ((e x).symm w) ∈ P)
+    (hfull : ∀ z, f z ∈ P → z ∈ ⋃ x, (e x).source) :
+    f ⁻¹' P = ⋃ x, (e x).symm '' T x := by
+  ext z
+  constructor
+  · intro hz
+    obtain ⟨x, hx⟩ := Set.mem_iUnion.mp (hfull z hz)
+    refine Set.mem_iUnion.mpr
+      ⟨x, e x z, (hiff x _ ((e x).map_source hx)).2 ?_, (e x).left_inv hx⟩
+    rwa [(e x).left_inv hx]
+  · intro hz
+    obtain ⟨x, w, hw, rfl⟩ := Set.mem_iUnion.mp hz
+    exact (hiff x w (hT x hw)).1 hw
+
+/-- If `e x` lies in a set `s` of coordinates and is the only point of `s` that `f ∘ e.symm`
+carries to `f x`, then the fibre of `f` over `f x` inside `e.symm '' s` is `{x}`. -/
+theorem preimage_singleton_inter_symm_image_eq_singleton {δ : Type*} {f : α → δ} {x : α}
+    (e : PartialEquiv α β) (hx : x ∈ e.source) {s : Set β} (hxs : e x ∈ s)
+    (hisol : ∀ z ∈ s, z ≠ e x → f (e.symm z) ≠ f x) :
+    f ⁻¹' {f x} ∩ e.symm '' s = {x} := by
+  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨rfl, e x, hxs, e.left_inv hx⟩, ?_⟩
+  rintro _ ⟨hz, z, hzs, rfl⟩
+  rw [not_imp_not.1 (hisol z hzs) hz, e.left_inv hx]
+
+/-- If a partial equivalence `e` intertwines a map `f` of its source into itself with a map `A`,
+then `A` maps the target of `e` into itself and `e.symm` intertwines `A` with `f` there. -/
+theorem symm_map_of_intertwines (e : PartialEquiv α β) {f : α → α} {A : β → β}
+    (hA : ∀ x ∈ e.source, f x ∈ e.source ∧ e (f x) = A (e x)) {z : β} (hz : z ∈ e.target) :
+    A z ∈ e.target ∧ e.symm (A z) = f (e.symm z) := by
+  obtain ⟨hfs, hfe⟩ := hA (e.symm z) (e.map_target hz)
+  rw [e.right_inv hz] at hfe
+  rw [← hfe]
+  exact ⟨e.map_source hfs, e.left_inv hfs⟩
 
 end PartialEquiv

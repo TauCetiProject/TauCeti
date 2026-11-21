@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Convex.Cone.Relations
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 import Mathlib.GroupTheory.Finiteness
 
@@ -141,7 +141,7 @@ theorem mem_hull_natCast_relations_iff_of_liftBaseChange_injective
     obtain ⟨g, hg, j₀, hj₀⟩ := Fintype.not_linearIndependent_iff.1 hli
     let k : ι → ℤ := fun j ↦ if h : c j ≠ 0 then g ⟨j, h⟩ else 0
     have hk : ∀ j, c j = 0 → k j = 0 := fun j h ↦ by simp [k, h]
-    have hkg : ∀ j : {j // c j ≠ 0}, k j = g j := fun j ↦ by simp [k, j.2]
+    have hkg : ∀ j : {j // c j ≠ 0}, k j = g j := fun j ↦ by simp [k, j.property]
     have hkv : ∑ j, k j • v j = 0 := by
       rw [← Fintype.sum_of_injective Subtype.val Subtype.val_injective
         (fun j : {j // c j ≠ 0} ↦ g j • v j) (fun j ↦ k j • v j)
@@ -207,19 +207,8 @@ theorem IsLatticeRational.inf {σ τ : PointedCone ℝ V}
       simp [hL, p, ← Nat.cast_smul_eq_nsmul ℝ]
     rw [← hL]
     exact hmap hcG
-  · refine Submodule.span_le.2 ?_
-    rintro _ ⟨_, hu, rfl⟩
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_image.1 hu
-    rw [hGfin.mem_toFinset] at hk
-    refine ⟨?_, ?_⟩
-    · rw [SetLike.mem_coe, map_sum]
-      exact Submodule.sum_mem _ fun a _ ↦ by
-        rw [map_nsmul]
-        exact Submodule.smul_of_tower_mem _ _ (PointedCone.subset_hull ⟨a, a.2, rfl⟩)
-    · rw [SetLike.mem_coe, hrel k hk, map_sum]
-      exact Submodule.sum_mem _ fun b _ ↦ by
-        rw [map_nsmul]
-        exact Submodule.smul_of_tower_mem _ _ (PointedCone.subset_hull ⟨b, b.2, rfl⟩)
+  · exact PointedCone.hull_image_image_le_inf i s t hGfin.toFinset fun k hk ↦
+      hrel k (hGfin.mem_toFinset.1 hk)
 
 /-- **Intersections of toric cones.** When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i`
 is injective, the intersection of two toric cones is a toric cone. For an integral lattice `hi`,

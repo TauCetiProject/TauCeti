@@ -54,7 +54,7 @@ theorem of_surjective_of_ringKrullDim_add_length_eq {S : Type*} [CommRing S] [Is
   have hquot := (Module.isCohenMacaulay_quotient_ofList_smul_iff rs hreg).2 h
   rw [e'.isCohenMacaulay_iff] at hquot
   exact e.toRingEquiv.isCohenMacaulay_self_iff.mp
-    ((Module.isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective
+    ((Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective
       Ideal.Quotient.mk_surjective).1 hquot)
 
 end Module.IsCohenMacaulay

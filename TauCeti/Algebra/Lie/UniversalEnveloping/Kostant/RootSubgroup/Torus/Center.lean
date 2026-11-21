@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
 
 /-!
@@ -108,11 +108,11 @@ theorem kostantTorusPoints_mem_centralizer_kostantTorusSubsystemSubgroup {s : κ
       (Subgroup.mem_centralizer_iff.1 (hle hg) _ rfl).symm
   refine (kostantTorusSubsystemSubgroup_le_iff e h ρ M hM hnil b wt).2
     ⟨fun i hi u => ?_, fun r => ?_⟩
-  · rw [Subgroup.mem_centralizer_singleton_iff, eq_comm, ← mul_inv_eq_iff_eq_mul,
+  · rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, eq_comm, ← mul_inv_eq_iff_eq_mul,
       kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt (hα i hi) (hnil i),
       hs i hi]
     simp
-  · rw [Subgroup.mem_centralizer_singleton_iff, ← map_mul, ← map_mul, mul_comm]
+  · rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, ← map_mul, ← map_mul, mul_comm]
 
 include hwt hα in
 /-- **The central torus points of `B_S(A)`.** When every root subgroup indexed by `S` is a faithful

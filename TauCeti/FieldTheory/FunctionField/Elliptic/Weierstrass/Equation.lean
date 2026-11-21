@@ -126,14 +126,13 @@ theorem poles_y (hF : IsFunctionField k F) :
 /-- `[F : k(x)] = 2` at a place of degree one: the degree of the pole divisor of `x`. -/
 theorem finrank_adjoin_x_eq_two (hF : IsFunctionField k F) (hP : P.degree = 1) :
     Module.finrank k⟮x⟯ F = 2 := by
-  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 2) two_ne_zero h.ord_x h.ord_x_nonneg,
+  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 2) h.ord_x h.ord_x_nonneg,
     hP, mul_one]
 
 /-- `[F : k(y)] = 3` at a place of degree one: the degree of the pole divisor of `y`. -/
 theorem finrank_adjoin_y_eq_three (hF : IsFunctionField k F) (hP : P.degree = 1) :
     Module.finrank k⟮y⟯ F = 3 := by
-  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 3) three_ne_zero h.ord_y
-    h.ord_y_nonneg, hP, mul_one]
+  rw [finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF (n := 3) h.ord_y h.ord_y_nonneg, hP, mul_one]
 
 /-- **Weierstrass coordinates generate the function field**: `F = k(x, y)`, because
 `[F : k(x, y)]` divides both `[F : k(x)] = 2` and `[F : k(y)] = 3`. -/
@@ -270,6 +269,33 @@ end TwoNeZero
 
 end IsWeierstrassCoordinates
 
+/-- Six nonzero functions of pairwise distinct orders at a place `P` of degree one on a genus-one
+function field, all lying in `L(6P)`, span `L(6P)`: every element of `L(6P)` is a `k`-linear
+combination of them. -/
+private theorem exists_sum_smul_eq_of_mem_riemannRochSpace_six (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) {P : Place k F} (hP : P.degree = 1)
+    {v : Fin 6 → F} (hv0 : ∀ i, v i ≠ 0) (hinj : Function.Injective fun i ↦ P.ord (v i))
+    (hmem : ∀ i, v i ∈ riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P))
+    {z : F} (hz : z ∈ riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P)) :
+    ∃ c : Fin 6 → k, ∑ i, c i • v i = z := by
+  have hdim : Module.finrank k (riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P)) = 6 := by
+    have := Divisor.dim_natCast_zsmul_ofPoint_of_genus_eq_one hF hex hg (P := P) (n := 6)
+      (by norm_num)
+    rw [hP, mul_one] at this
+    simpa [Divisor.dim_def] using this
+  have hli : LinearIndependent k v := P.linearIndependent_of_injective_ord hv0 hinj
+  set v' : Fin 6 → riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P) := fun i ↦ ⟨v i, hmem i⟩
+    with hv'
+  have hli' : LinearIndependent k v' :=
+    LinearIndependent.of_comp (riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P)).subtype hli
+  have _ := finiteDimensional_riemannRochSpace hF ((6 : ℤ) • WeilDivisor.ofPoint P)
+  have hspan : Submodule.span k (Set.range v') = ⊤ :=
+    hli'.span_eq_top_of_card_eq_finrank' (by simp [hdim])
+  have hz' : (⟨z, hz⟩ : riemannRochSpace _) ∈ Submodule.span k (Set.range v') :=
+    hspan ▸ Submodule.mem_top
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp hz'
+  exact ⟨c, by simpa [hv'] using congrArg Subtype.val hc⟩
+
 /-- **The relation in `L(6P)`**: for `x` and `y` with pole divisors `2P` and `3P` at a place `P` of
 degree one on a genus-one function field, `y²` is a `k`-linear combination of the six monomials
 `1, x, y, x², xy, x³`, and the coefficient of `x³` is nonzero. -/
@@ -298,21 +324,6 @@ private theorem exists_sq_eq_sum_smul_of_genus_eq_one (hF : IsFunctionField k F)
   have hmem5 : ∀ i, i ≠ 5 → v i ∈ riemannRochSpace ((5 : ℤ) • WeilDivisor.ofPoint P) :=
     fun i hi ↦ (mem_riemannRochSpace_zsmul_ofPoint_iff (hv0 i)).mpr
       ⟨by rw [hvP i]; fin_cases i <;> simp_all, fun Q hQ ↦ hvQ Q hQ i⟩
-  -- Being linearly independent in the six-dimensional `L(6P)`, the monomials span it.
-  have hdim : Module.finrank k (riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P)) = 6 := by
-    have := Divisor.dim_natCast_zsmul_ofPoint_of_genus_eq_one hF hex hg (P := P) (n := 6)
-      (by norm_num)
-    rw [hP, mul_one] at this
-    simpa [Divisor.dim_def] using this
-  have hli : LinearIndependent k v :=
-    P.linearIndependent_of_injective_ord hv0 (by rw [funext hvP]; decide)
-  set v' : Fin 6 → riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P) := fun i ↦ ⟨v i, hmem i⟩
-    with hv'
-  have hli' : LinearIndependent k v' :=
-    LinearIndependent.of_comp (riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P)).subtype hli
-  have _ := finiteDimensional_riemannRochSpace hF ((6 : ℤ) • WeilDivisor.ofPoint P)
-  have hspan : Submodule.span k (Set.range v') = ⊤ :=
-    hli'.span_eq_top_of_card_eq_finrank' (by simp [hdim])
   -- Hence `y²`, which also lies in `L(6P)`, is a linear combination of the six monomials.
   have hy2 : y ^ 2 ∈ riemannRochSpace ((6 : ℤ) • WeilDivisor.ofPoint P) :=
     (mem_riemannRochSpace_zsmul_ofPoint_iff (pow_ne_zero 2 hy0)).mpr
@@ -320,12 +331,8 @@ private theorem exists_sq_eq_sum_smul_of_genus_eq_one (hF : IsFunctionField k F)
         rw [Q.ord_pow]
         have := hyQ Q hQ
         omega⟩
-  have hy2' : (⟨y ^ 2, hy2⟩ : riemannRochSpace _) ∈ Submodule.span k (Set.range v') :=
-    hspan ▸ Submodule.mem_top
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp hy2'
-  have hrel : ∑ i, c i • v i = y ^ 2 := by
-    have := congrArg Subtype.val hc
-    simpa [hv'] using this
+  obtain ⟨c, hrel⟩ := exists_sum_smul_eq_of_mem_riemannRochSpace_six hF hex hg hP hv0
+    (by rw [funext hvP]; decide) hmem hy2
   -- The coefficient of `x³` is nonzero: otherwise `y²` would lie in `L(5P)`.
   refine ⟨c, fun h5 ↦ ?_, hrel⟩
   have hmem' : y ^ 2 ∈ riemannRochSpace ((5 : ℤ) • WeilDivisor.ofPoint P) := by

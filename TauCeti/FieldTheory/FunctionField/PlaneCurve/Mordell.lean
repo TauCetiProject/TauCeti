@@ -78,8 +78,7 @@ theorem finrank_adjoin_eq_three_of_sq_eq_pow_three_add : Module.finrank k⟮y⟯
   have := isScalarTower_ratFuncAlgebraOfTranscendental hy
   rw [← algebraMap_ratFuncAlgebraOfTranscendental_X hy, finrank_adjoin_algebraMap_X]
   refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-    (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top hy hgen) (pow_three_eq_algebraMap hy heq)
-    three_ne_zero ?_
+    (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top hy hgen) (pow_three_eq_algebraMap hy heq) ?_
   rw [Valuation.ord_def, ← Place.ord_def]
   exact gcd_ord_infty
 
@@ -92,8 +91,7 @@ theorem isSeparable_adjoin_of_sq_eq_pow_three_add : Algebra.IsSeparable k⟮y⟯
   have := isScalarTower_ratFuncAlgebraOfTranscendental hy
   rw [← algebraMap_ratFuncAlgebraOfTranscendental_X hy, isSeparable_adjoin_algebraMap_X_iff]
   exact isSeparable_of_pow_eq_of_adjoin_eq_top (by rwa [Nat.cast_ofNat, ← map_ofNat
-      (algebraMap k (RatFunc k)), ne_eq, map_eq_zero])
-    (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero two_pos a)) (pow_three_eq_algebraMap hy heq)
+      (algebraMap k (RatFunc k)), ne_eq, map_eq_zero]) (pow_three_eq_algebraMap hy heq)
     (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top hy hgen)
 
 /-- **`y ^ 2 = x ^ 3 + a` has exact constants** when `3` is invertible in `k`: `k` is
@@ -103,8 +101,7 @@ theorem isIntegrallyClosedIn_of_sq_eq_pow_three_add : IsIntegrallyClosedIn k F :
   have := isScalarTower_ratFuncAlgebraOfTranscendental hy
   exact isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc k)
     inferInstance (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top hy hgen)
-    (pow_three_eq_algebraMap hy heq) (by rwa [Nat.cast_ofNat])
-    (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero two_pos a)) (Place.infty k) gcd_ord_infty
+    (pow_three_eq_algebraMap hy heq) (by rwa [Nat.cast_ofNat]) (Place.infty k) gcd_ord_infty
 
 /-- **`y ^ 2 = x ^ 3 + a` has genus one** when `3` is invertible in `k` and `Y ^ 2 - a` is
 squarefree. -/

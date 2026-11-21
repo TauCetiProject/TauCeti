@@ -32,8 +32,10 @@ The same chart describes the function field of the base change `Y = X ×_k Spec 
 extension `K / k`. The function field of `Y` is the fraction field of `Γ(X, U) ⊗[k] K`, and so is
 the constant field extension `k(X) · K`, because `k(X) ⊗[k] K` is a field
 (`TauCeti.isFractionRing_tensorProduct_of_constantCompositum_eq_top`). Hence `K(Y) ≃ k(X) · K`
-as `K`-algebras, also when `K / k` is inseparable. This is how invariants of the function field of
-a geometrically integral curve, such as its genus, are compared with those of its base change.
+as `K`-algebras, also when `K / k` is inseparable. In particular `K` is the exact constant field
+of `k(X) · K`, the base change being geometrically integral over `K`. This is how invariants of
+the function field of a geometrically integral curve, such as its genus, are compared with those
+of its base change.
 
 The constant-field hypothesis `IsIntegrallyClosedIn k X.functionField` is how the function-field
 theory of curves (Weil differentials, the genus of the function field, Serre duality for divisor
@@ -52,7 +54,9 @@ which supplies the integrality of the base change `X ×_k Spec L`.
 * `TauCeti.AlgebraicGeometry.isIntegrallyClosedIn_functionField_of_geometricallyIntegral`:
   `k` is algebraically closed in `k(X)`;
 * `TauCeti.AlgebraicGeometry.nonempty_functionField_algEquiv_of_isPullback`: the function field of
-  the base change of `X` to an algebraic extension `K / k` is the compositum `k(X) · K`.
+  the base change of `X` to an algebraic extension `K / k` is the compositum `k(X) · K`;
+* `TauCeti.AlgebraicGeometry.isIntegrallyClosedIn_of_constantCompositum_eq_top`: `K` is
+  algebraically closed in `k(X) · K`.
 
 The chart arguments use `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing` and
 `AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion` (the function
@@ -132,6 +136,27 @@ theorem nonempty_functionField_algEquiv_of_isPullback {K : Type u} [Field K] [Al
   have : IsScalarTower K (Γ(X, U) ⊗[k] K) F' := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
   exact ι.nonempty_functionField_algEquiv_of_isOpenImmersion hι F'
+
+/-- **The constants of a constant field extension.** Let `X` be a geometrically integral scheme
+over `k` and `F' = k(X) · K` for an algebraic extension `K / k`, separable or not. Then `K` is
+algebraically closed in `F'`: it is the exact constant field of `F'`. -/
+theorem isIntegrallyClosedIn_of_constantCompositum_eq_top {K : Type u} [Field K]
+    [Algebra k K] [Algebra.IsAlgebraic k K] {F' : Type*} [Field F'] [Algebra K F']
+    [Algebra X.functionField F'] [Algebra k F'] [IsScalarTower k K F']
+    [IsScalarTower k X.functionField F'] (h : constantCompositum X.functionField K F' = ⊤) :
+    IsIntegrallyClosedIn K F' := by
+  -- `F'` is the function field of the base change `X ×_k Spec K`, geometrically integral over `K`
+  let s := Spec.map (CommRingCat.ofHom (algebraMap k K))
+  let _ : (pullback (X ↘ Spec (.of k)) s).Over (Spec (.of K)) := ⟨pullback.snd _ _⟩
+  have H : IsPullback (pullback.fst _ _) (pullback (X ↘ Spec (.of k)) s ↘ Spec (.of K))
+      (X ↘ Spec (.of k)) s :=
+    IsPullback.of_hasPullback _ _
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  have : GeometricallyIntegral (pullback (X ↘ Spec (.of k)) s ↘ Spec (.of K)) :=
+    MorphismProperty.of_isPullback (P := @GeometricallyIntegral) H inferInstance
+  obtain ⟨e⟩ := nonempty_functionField_algEquiv_of_isPullback H h
+  exact isIntegrallyClosedIn_functionField_of_geometricallyIntegral.of_ringEquiv
+    (RingEquiv.refl K) e.toRingEquiv e.commutes
 
 end AlgebraicGeometry
 

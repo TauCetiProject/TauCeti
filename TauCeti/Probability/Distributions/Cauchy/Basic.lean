@@ -8,7 +8,7 @@ module
 import Mathlib.Analysis.Fourier.Inversion
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Probability.HasLaw
@@ -69,6 +69,7 @@ a common location and scale has exactly the parent law.
   `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — the zero-scale exponential moments;
 * `TauCeti.Probability.cauchyPDFReal_zero_loc_isBigO_rpow_neg_two` — centred Cauchy density
   has quadratic decay at infinity;
+* `TauCeti.Probability.contDiff_cauchyPDFReal` — the Cauchy density is smooth;
 * `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
   `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
   transform;
@@ -129,6 +130,18 @@ theorem cauchyPDFReal_zero_loc_isBigO_rpow_neg_two (γ : ℝ≥0) :
         (by nlinarith [sq_nonneg (γ : ℝ)])
     _ = ((γ : ℝ) / Real.pi) * (x ^ 2)⁻¹ := div_eq_mul_inv _ _
 
+/-- The Cauchy density is smooth, including at zero scale, where it vanishes identically. -/
+theorem contDiff_cauchyPDFReal (x₀ : ℝ) (γ : ℝ≥0) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (cauchyPDFReal x₀ γ) := by
+  rcases eq_or_ne γ 0 with rfl | hγ
+  · rw [cauchyPDFReal_scale_zero]
+    exact contDiff_const
+  · have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
+      funext (cauchyPDFReal_def x₀ γ)
+    rw [h]
+    exact contDiff_const.mul ((((contDiff_id.sub contDiff_const).pow 2).add contDiff_const).inv
+      fun x ↦ by positivity)
+
 /-- The scaled arctangent has the Cauchy density as its derivative. -/
 theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :
     HasDerivAt (fun z => Real.arctan ((z - x₀) / (γ : ℝ)) / Real.pi)
@@ -172,8 +185,8 @@ theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ
     cdf (cauchyMeasure x₀ γ) x =
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
   rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
-  rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
-    measurableSet_Iic (integrable_cauchyPDFReal x₀).integrableOn]
+  rw [MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
+    nullMeasurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family
@@ -217,7 +230,7 @@ theorem integrable_cauchyMeasure_iff {E : Type*} [NormedAddCommGroup E] [NormedS
     (x₀ : ℝ) (hγ : γ ≠ 0) {g : ℝ → E} :
     Integrable g (cauchyMeasure x₀ γ) ↔ Integrable fun x ↦ cauchyPDFReal x₀ γ x • g x := by
   rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
-  exact Probability.integrable_withDensity_ofReal_iff (measurable_cauchyPDFReal x₀ γ).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_cauchyPDFReal x₀ γ).aemeasurable
     (ae_of_all _ fun x ↦ (cauchyPDF_pos x₀ hγ x).le)
 
 /-- **Integral transfer at nonzero scale.** An integral against a nondegenerate Cauchy law is the
@@ -226,7 +239,7 @@ theorem integral_cauchyMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpac
     (x₀ : ℝ) (hγ : γ ≠ 0) (g : ℝ → E) :
     ∫ x, g x ∂cauchyMeasure x₀ γ = ∫ x, cauchyPDFReal x₀ γ x • g x := by
   rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
-  exact Probability.integral_withDensity_ofReal (measurable_cauchyPDFReal x₀ γ).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_cauchyPDFReal x₀ γ).aemeasurable
     (ae_of_all _ fun x ↦ (cauchyPDF_pos x₀ hγ x).le) g
 
 private lemma eventually_cauchyPDFReal_ge (x₀ : ℝ) (hγ : γ ≠ 0) :
@@ -474,7 +487,7 @@ theorem iIndepFun.hasLaw_average_cauchyMeasure {Ω ι : Type*} [MeasurableSpace 
   rw [charFun_map_mul_comp hmeas,
     hindep.charFun_map_fun_sum_eq_prod (fun i ↦ (hlaw i).aemeasurable)]
   simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
-    Finset.card_univ, ← Complex.exp_nat_mul]
+    Finset.card_univ, ← Complex.exp_natCast_mul]
   congr 1
   have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
     rw [abs_mul, abs_of_pos (by positivity)]

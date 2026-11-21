@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Normalize
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cotangent
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
 # The unit codisc and cosphere bundles of a Riemannian manifold
@@ -38,10 +40,15 @@ regular levels, for which it is a smooth manifold of dimension `dim T*M - 1`
 the kernels of the differential of the norm
 (`TauCeti.CotangentBundle.range_mfderiv_coe_cosphereBundle`).
 
+Dividing a nonzero covector by its norm (`TauCeti.CotangentBundle.normalize`) lands in `S*M`, and
+normalizing a smooth family of nonzero covectors gives a smooth map into `S*M`
+(`TauCeti.CotangentBundle.contMDiff_normalize_cosphereBundle`).
+
 ## Main definitions
 
 * `TauCeti.CotangentBundle.codiscBundle`: the unit codisc bundle `D*M`.
 * `TauCeti.CotangentBundle.cosphereBundle`: the unit cosphere bundle `S*M`.
+* `TauCeti.CotangentBundle.normalize`: the covector of norm one on the ray of a covector.
 
 ## Main results
 
@@ -51,6 +58,8 @@ the kernels of the differential of the norm
 * `TauCeti.CotangentBundle.instIsManifoldCosphereBundle`: `S*M` is a smooth manifold.
 * `TauCeti.CotangentBundle.isSmoothEmbedding_coe_cosphereBundle`: its inclusion into `T*M` is a
   smooth embedding.
+* `TauCeti.CotangentBundle.contMDiff_normalize_cosphereBundle`: normalizing a smooth family of
+  nonzero covectors is smooth into `S*M`.
 
 ## References
 
@@ -80,21 +89,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable (I M) in
 /-- The **unit codisc bundle** `D*M` of a Riemannian manifold: the covectors of norm at most one. -/
 def codiscBundle : Set (CotangentBundle I M) :=
-  {z | ‖z.2‖ ≤ 1}
+  {z | ‖z.snd‖ ≤ 1}
 
 variable (I M) in
 /-- The **unit cosphere bundle** `S*M` of a Riemannian manifold: the covectors of norm one. Its
 body is exposed because the manifold structure on `S*M` is that of the regular level
 `{z // ‖z.2‖ = 1}`, read through this definition. -/
 @[expose] def cosphereBundle : Set (CotangentBundle I M) :=
-  {z | ‖z.2‖ = 1}
+  {z | ‖z.snd‖ = 1}
 
 @[simp]
-theorem mem_codiscBundle {z : CotangentBundle I M} : z ∈ codiscBundle I M ↔ ‖z.2‖ ≤ 1 :=
+theorem mem_codiscBundle {z : CotangentBundle I M} : z ∈ codiscBundle I M ↔ ‖z.snd‖ ≤ 1 :=
   Iff.rfl
 
 @[simp]
-theorem mem_cosphereBundle {z : CotangentBundle I M} : z ∈ cosphereBundle I M ↔ ‖z.2‖ = 1 :=
+theorem mem_cosphereBundle {z : CotangentBundle I M} : z ∈ cosphereBundle I M ↔ ‖z.snd‖ = 1 :=
   Iff.rfl
 
 theorem cosphereBundle_subset_codiscBundle : cosphereBundle I M ⊆ codiscBundle I M :=
@@ -102,15 +111,54 @@ theorem cosphereBundle_subset_codiscBundle : cosphereBundle I M ⊆ codiscBundle
 
 /-- A covector of the unit cosphere bundle is not zero. -/
 theorem snd_ne_zero_of_mem_cosphereBundle {z : CotangentBundle I M}
-    (hz : z ∈ cosphereBundle I M) : z.2 ≠ 0 := fun h ↦ by
+    (hz : z ∈ cosphereBundle I M) : z.snd ≠ 0 := fun h ↦ by
   rw [mem_cosphereBundle, h, (ContinuousLinearMap.opNorm_zero_iff _).2 rfl] at hz
   exact zero_ne_one hz
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
+/-! ### Normalization of covectors -/
+
+/-- The covector of norm one on the ray of a covector `q`, over the same base point
+(`NormedSpace.normalize` on fibres). -/
+def normalize (q : CotangentBundle I M) : CotangentBundle I M :=
+  TotalSpace.mk' (E →L[ℝ] ℝ) q.proj (NormedSpace.normalize q.snd)
+
+@[simp]
+theorem proj_normalize (q : CotangentBundle I M) : (normalize q).proj = q.proj :=
+  (rfl)
+
+@[simp]
+theorem snd_normalize (q : CotangentBundle I M) : (normalize q).snd = NormedSpace.normalize q.snd :=
+  (rfl)
+
+/-- Normalization divides a covector by its norm (the definition of `NormedSpace.normalize`). -/
+theorem normalize_eq_mk_smul (q : CotangentBundle I M) :
+    normalize q = TotalSpace.mk' (E →L[ℝ] ℝ) q.proj (‖q.snd‖⁻¹ • q.snd) := by
+  rw [normalize, NormedSpace.normalize]
+
+/-- The normalization of a covector other than zero has norm one. -/
+theorem norm_snd_normalize {q : CotangentBundle I M} (hq : q.snd ≠ 0) : ‖(normalize q).snd‖ = 1 :=
+  NormedSpace.norm_normalize (V := TangentSpace I q.proj →L[ℝ] ℝ) hq
+
+/-- The normalization of a covector other than zero lies in the unit cosphere bundle. -/
+theorem normalize_mem_cosphereBundle {q : CotangentBundle I M} (hq : q.snd ≠ 0) :
+    normalize q ∈ cosphereBundle I M :=
+  norm_snd_normalize hq
+
+/-- Normalization only depends on the ray of a covector. -/
+theorem normalize_mk_smul_of_pos (q : CotangentBundle I M) {c : ℝ} (hc : 0 < c) :
+    normalize (TotalSpace.mk' (E →L[ℝ] ℝ) q.proj (c • q.snd)) = normalize q := by
+  simp only [normalize, NormedSpace.normalize_smul_of_pos hc]
+
+/-- A covector of norm one is its own normalization. -/
+theorem normalize_eq_self_of_norm_eq_one {q : CotangentBundle I M} (hq : ‖q.snd‖ = 1) :
+    normalize q = q := by
+  rw [normalize, NormedSpace.normalize_eq_self_of_norm_eq_one hq]
+
+variable [FiniteDimensional ℝ E]
 
 section Topology
 
-variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+variable [IsManifold I 1 M] [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
 theorem isClosed_codiscBundle : IsClosed (codiscBundle I M) :=
   isClosed_le continuous_norm_snd continuous_const
@@ -157,7 +205,7 @@ variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M �
 /-- The norm of covectors is smooth at the points of the unit cosphere bundle. -/
 theorem contMDiffAt_norm_snd_of_mem_cosphereBundle (z : CotangentBundle I M)
     (hz : z ∈ cosphereBundle I M) :
-    ContMDiffAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) ∞ (fun z : CotangentBundle I M ↦ ‖z.2‖) z := by
+    ContMDiffAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) ∞ (fun z : CotangentBundle I M ↦ ‖z.snd‖) z := by
   have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   exact contMDiffAt_norm_snd (snd_ne_zero_of_mem_cosphereBundle hz)
 
@@ -190,8 +238,28 @@ differential of the norm of covectors there. -/
 theorem range_mfderiv_coe_cosphereBundle (z : cosphereBundle I M) :
     (mfderiv 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
         (Subtype.val : cosphereBundle I M → CotangentBundle I M) z).range =
-      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z).ker :=
+      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.snd‖) z).ker :=
   range_mfderiv_coe_regularLevel _ _ (by rw [Module.finrank_self]) z
+
+/-- **Normalizing a smooth family of nonzero covectors is smooth into the unit cosphere
+bundle.** -/
+theorem contMDiff_normalize_cosphereBundle {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace G N] {f : N → CotangentBundle I M}
+    (hf : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ f) (hf0 : ∀ y, (f y).snd ≠ 0) :
+    ContMDiff J 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) ∞
+      (fun y ↦ (⟨normalize (f y), normalize_mem_cosphereBundle (hf0 y)⟩ : cosphereBundle I M)) := by
+  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  -- The inverse norm of the family is smooth, since the norm is smooth away from zero.
+  have hc : ContMDiff J 𝓘(ℝ) ∞ fun y ↦ ‖(f y).snd‖⁻¹ := fun y ↦
+    ((contMDiffAt_norm_snd (n := ∞) (hf0 y)).comp y (hf y)).inv₀
+      ((norm_ne_zero_iff (a := (f y).snd)).2 (hf0 y))
+  -- Read in the cotangent bundle, the normalized family is `y ↦ ‖(f y).snd‖⁻¹ • f y`.
+  have hval : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ fun y ↦ normalize (f y) := by
+    simp only [normalize_eq_mk_smul]
+    exact hc.smul_totalSpace hf
+  exact (ContMDiff.iff_comp_isImmersion isSmoothEmbedding_coe_cosphereBundle.isImmersion).2
+    ⟨hval.continuous.subtype_mk _, hval⟩
 
 end Manifold
 

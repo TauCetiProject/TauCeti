@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProC
 public import TauCeti.Topology.Algebra.Group.Profinite.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
@@ -85,11 +86,11 @@ def IsAdmissible (U : OpenNormalSubgroup (freeProC C X)) : Prop :=
     freeProC.of x₀ ∈ U.toSubgroup
 
 /-- The whole group is admissible. -/
-private theorem isAdmissible_top : IsAdmissible C x₀ (openNormalSubgroupTop (freeProC C X)) := by
-  have : Subsingleton (freeProC C X ⧸ (openNormalSubgroupTop (freeProC C X)).toSubgroup) :=
-    QuotientGroup.subsingleton_iff.mpr (openNormalSubgroupTop_toSubgroup _)
+private theorem isAdmissible_top : IsAdmissible C x₀ ⊤ := by
+  have : Subsingleton (freeProC C X ⧸ (⊤ : OpenNormalSubgroup (freeProC C X)).toSubgroup) :=
+    QuotientGroup.subsingleton_iff.mpr OpenNormalSubgroup.toSubgroup_top
   refine ⟨(continuous_const (y := (1 : freeProC C X ⧸ _))).congr fun _ ↦ Subsingleton.elim _ _, ?_⟩
-  rw [openNormalSubgroupTop_toSubgroup]
+  rw [OpenNormalSubgroup.toSubgroup_top]
   exact Subgroup.mem_top _
 
 variable {C x₀}
@@ -97,31 +98,32 @@ variable {C x₀}
 /-- The intersection of two admissible open normal subgroups is admissible. -/
 private theorem IsAdmissible.inf {U V : OpenNormalSubgroup (freeProC C X)}
     (hU : IsAdmissible C x₀ U) (hV : IsAdmissible C x₀ V) : IsAdmissible C x₀ (U ⊓ V) :=
-  ⟨OpenNormalSubgroup.continuous_mk_inf hU.1 hV.1, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
+  ⟨(OpenSubgroup.continuous_mk_inf_iff (U := U.toOpenSubgroup) (V := V.toOpenSubgroup)).mpr
+    ⟨hU.1, hV.1⟩, Subgroup.mem_inf.mpr ⟨hU.2, hV.2⟩⟩
 
 variable (C x₀)
 
 /-- The kernel of the free pro-`C` group on the pointed space `(X, x₀)`: the intersection of the
 admissible open normal subgroups of the free pro-`C` group on the type `X`. -/
 noncomputable def kernel : Subgroup (freeProC C X) :=
-  ⨅ U : {U : OpenNormalSubgroup (freeProC C X) // IsAdmissible C x₀ U}, U.1.toSubgroup
+  ⨅ U : {U : OpenNormalSubgroup (freeProC C X) // IsAdmissible C x₀ U}, U.val.toSubgroup
 
 /-- Membership in the kernel, unfolded over the admissible subgroups. -/
 theorem mem_kernel_iff {y : freeProC C X} :
     y ∈ kernel C x₀ ↔
       ∀ U : OpenNormalSubgroup (freeProC C X), IsAdmissible C x₀ U → y ∈ U.toSubgroup := by
   rw [kernel, Subgroup.mem_iInf]
-  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.val U.property⟩
 
 /-- The kernel is a normal subgroup. -/
 instance kernel_normal : (kernel C x₀).Normal :=
-  Subgroup.normal_iInf_normal fun U ↦ U.1.isNormal'
+  Subgroup.normal_iInf_normal fun U ↦ U.val.isNormal'
 
 /-- The kernel is closed, so its quotient is profinite. -/
 instance isClosed_kernel :
     IsClosed ((kernel C x₀ : Subgroup (freeProC C X)) : Set (freeProC C X)) := by
   rw [kernel, Subgroup.coe_iInf]
-  exact isClosed_iInter fun U ↦ U.1.toOpenSubgroup.isClosed
+  exact isClosed_iInter fun U ↦ U.val.toOpenSubgroup.isClosed
 
 /-- **Compactness for the admissible subgroups.** An open subgroup of the free pro-`C` group on
 the type `X` containing the kernel contains an admissible open normal subgroup. -/
@@ -131,10 +133,10 @@ private theorem exists_isAdmissible_le {M : Subgroup (freeProC C X)}
   have : Nonempty {U : OpenNormalSubgroup (freeProC C X) // IsAdmissible C x₀ U} :=
     ⟨⟨_, isAdmissible_top C x₀⟩⟩
   obtain ⟨U, hU⟩ := Subgroup.exists_le_of_iInf_le_of_directed
-    (U := fun U : {U : OpenNormalSubgroup (freeProC C X) // IsAdmissible C x₀ U} ↦ U.1.toSubgroup)
-    (fun U ↦ U.1.toOpenSubgroup.isClosed)
-    (fun U V ↦ ⟨⟨U.1 ⊓ V.1, U.2.inf V.2⟩, inf_le_left, inf_le_right⟩) hM hKM
-  exact ⟨U.1, U.2, hU⟩
+    (U := fun U : {U : OpenNormalSubgroup (freeProC C X) // IsAdmissible C x₀ U} ↦ U.val.toSubgroup)
+    (fun U ↦ U.val.toOpenSubgroup.isClosed)
+    (fun U V ↦ ⟨⟨U.val ⊓ V.val, U.property.inf V.property⟩, inf_le_left, inf_le_right⟩) hM hKM
+  exact ⟨U.val, U.property, hU⟩
 
 end freeProCPointed
 
@@ -268,7 +270,8 @@ private theorem isAdmissible_comap_lift (hP : IsProC C P) {f : X → P} (hf : Co
     (hf₀ : f x₀ = 1) (V : OpenNormalSubgroup P) :
     IsAdmissible C x₀ (V.comap (freeProC.lift hP f : freeProC C X →* P)
       (freeProC.lift hP f).continuous) := by
-  refine ⟨OpenNormalSubgroup.continuous_mk_comap V _ _ (by
+  refine ⟨(OpenSubgroup.continuous_mk_comap_iff V.toOpenSubgroup
+    (freeProC.lift hP f : freeProC C X →* P) (freeProC.lift hP f).continuous).mpr (by
     simpa only [Function.comp_def, MonoidHom.coe_ofClass, freeProC.lift_of] using
       QuotientGroup.continuous_mk.comp hf), ?_⟩
   refine OpenNormalSubgroup.mem_comap.mpr ?_
@@ -424,10 +427,10 @@ generator. -/
 noncomputable def equivFreeProC : freeProCPointed C x₀ ≃ₜ* freeProC C {x : X // x ≠ x₀} where
   toFun := lift (isProC_freeProC C _) (fun x ↦ if h : x = x₀ then 1 else freeProC.of ⟨x, h⟩)
     continuous_of_discreteTopology (by simp)
-  invFun := freeProC.lift (isProC_freeProCPointed C x₀) fun y ↦ of C x₀ y.1
+  invFun := freeProC.lift (isProC_freeProCPointed C x₀) fun y ↦ of C x₀ y.val
   left_inv y := by
     have h : (freeProC.lift (isProC_freeProCPointed C x₀)
-          fun y : {x : X // x ≠ x₀} ↦ of C x₀ y.1).comp
+          fun y : {x : X // x ≠ x₀} ↦ of C x₀ y.val).comp
         (lift (isProC_freeProC C _) (fun x ↦ if h : x = x₀ then 1 else freeProC.of ⟨x, h⟩)
           continuous_of_discreteTopology (by simp)) =
         ContinuousMonoidHom.id (freeProCPointed C x₀) :=
@@ -440,9 +443,9 @@ noncomputable def equivFreeProC : freeProCPointed C x₀ ≃ₜ* freeProC C {x :
   right_inv y := by
     have h : (lift (isProC_freeProC C _) (fun x ↦ if h : x = x₀ then 1 else freeProC.of ⟨x, h⟩)
         continuous_of_discreteTopology (by simp)).comp
-          (freeProC.lift (isProC_freeProCPointed C x₀) fun y : {x : X // x ≠ x₀} ↦ of C x₀ y.1) =
+          (freeProC.lift (isProC_freeProCPointed C x₀) fun y : {x : X // x ≠ x₀} ↦ of C x₀ y.val) =
         ContinuousMonoidHom.id (freeProC C {x : X // x ≠ x₀}) :=
-      freeProC.hom_ext fun y ↦ by simp [y.2]
+      freeProC.hom_ext fun y ↦ by simp [y.property]
     exact DFunLike.congr_fun h y
   map_mul' := map_mul _
   continuous_toFun := map_continuous _
@@ -452,14 +455,14 @@ noncomputable def equivFreeProC : freeProCPointed C x₀ ≃ₜ* freeProC C {x :
 pro-`C` lift of the canonical map. -/
 theorem equivFreeProC_symm_apply (y : freeProC C {x : X // x ≠ x₀}) :
     (equivFreeProC C x₀).symm y =
-      freeProC.lift (isProC_freeProCPointed C x₀) (fun y : {x : X // x ≠ x₀} ↦ of C x₀ y.1) y :=
+      freeProC.lift (isProC_freeProCPointed C x₀) (fun y : {x : X // x ≠ x₀} ↦ of C x₀ y.val) y :=
   (rfl)
 
 /-- The inverse of the identification with the free pro-`C` group on `X ∖ {x₀}` sends a generator
 to the image of the corresponding point. -/
 @[simp]
 theorem equivFreeProC_symm_of (y : {x : X // x ≠ x₀}) :
-    (equivFreeProC C x₀).symm (freeProC.of y) = of C x₀ y.1 := by
+    (equivFreeProC C x₀).symm (freeProC.of y) = of C x₀ y.val := by
   rw [equivFreeProC_symm_apply, freeProC.lift_of]
 
 /-- The identification with the free pro-`C` group on `X ∖ {x₀}` sends the image of a point other

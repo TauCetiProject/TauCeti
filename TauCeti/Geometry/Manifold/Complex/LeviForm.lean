@@ -197,8 +197,8 @@ theorem manifoldLeviForm_mul_apply {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E
               (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w) := by
   have h := leviForm_mul_apply hf.contDiffAt_comp_chartAt_symm
     hg.contDiffAt_comp_chartAt_symm v w
-  rwa [(hf.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm,
-    (hg.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm, comp_apply, comp_apply,
+  rwa [TauCeti.fderiv_comp_chartAt_symm (g := f),
+    TauCeti.fderiv_comp_chartAt_symm (g := g), comp_apply, comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **The composition rule** for the Levi form on a complex manifold, for post-composition with a
@@ -215,7 +215,7 @@ theorem manifoldLeviForm_scalar_comp_apply {φ : ℝ → ℝ} (hφ : ContDiffAt 
   have hφ' : ContDiffAt ℝ 2 φ ((f ∘ (chartAt E x).symm) (chartAt E x x)) := by
     rwa [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
   have h := leviForm_scalar_comp_apply hφ' hf.contDiffAt_comp_chartAt_symm v w
-  rwa [(hf.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm, comp_apply,
+  rwa [TauCeti.fderiv_comp_chartAt_symm (g := f), comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **Post-composition with a convex function** on a complex manifold. If `φ'' ≥ 0` at `f x`, then
@@ -248,11 +248,7 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
   let G : E → F := chartAt F (g x) ∘ g ∘ (chartAt E x).symm
   have hx' : (chartAt E x).symm (chartAt E x x) = x :=
     (chartAt E x).left_inv (mem_chart_source E x)
-  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := by
-    rw [← contDiffWithinAt_univ]
-    simpa only [G, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, id_comp, comp_id, Set.range_id] using
-      (contMDiffAt_iff.mp hg).2
+  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := hg.contDiffAt_writtenInExtChartAt
   have hGx : G (chartAt E x x) = chartAt F (g x) (g x) := by
     simp only [G, Function.comp_apply, hx']
   have hD : fderiv ℂ G (chartAt E x x) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x := by
@@ -260,8 +256,8 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
     have hcoord : writtenInExtChartAt 𝓘(ℂ, E) 𝓘(ℂ, F) x g = G := by
       ext z
       rfl
-    have hpoint : extChartAt 𝓘(ℂ, E) x x = chartAt E x x := by rfl
-    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ, hpoint]
+    rw [hcoord, modelWithCornersSelf_coe, Set.range_id, fderivWithin_univ,
+      TauCeti.extChartAt_model_apply_eq_chartAt_apply]
   have hcomp : (u ∘ g) ∘ (chartAt E x).symm =ᶠ[𝓝 (chartAt E x x)]
       (u ∘ (chartAt F (g x)).symm) ∘ G := by
     have hcont : Tendsto (g ∘ (chartAt E x).symm) (𝓝 (chartAt E x x)) (𝓝 (g x)) := by
@@ -284,7 +280,7 @@ end Pullback
 
 section Chart
 
-variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+variable {e : OpenPartialHomeomorph M E}
 
 /-- **The Levi form in an arbitrary holomorphic chart.** Let `e` be a chart of the `C²` maximal
 atlas of the complex manifold `M`, with `x` in its source, and let `f` be `C²` at `x`. The Levi
@@ -302,11 +298,8 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
   -- The holomorphic transition map from the preferred chart to `e`.
   set φ : E → E := e ∘ (chartAt E x).symm
   have hφy : φ y = e x := by simp only [φ, comp_apply, hy]
-  have hφ : ContDiffAt ℂ 2 φ y := by
-    have h := (contMDiffAt_of_mem_maximalAtlas he hx).comp_of_eq
-      (contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x)
-        (mem_chart_target E x)) hy
-    exact contMDiffAt_iff_contDiffAt.mp h
+  have hφ : ContDiffAt ℂ 2 φ y :=
+    (contMDiffAt_of_mem_maximalAtlas he hx).contDiffAt_comp_chartAt_symm
   have hDφ : fderiv ℂ φ y = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x := by
     rw [(mdifferentiableAt_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mfderiv_abuse]
@@ -495,7 +488,7 @@ theorem IsManifoldStronglyPseudoconvexAt.comp [FiniteDimensional ℂ E] [FiniteD
 
 end Pullback
 
-variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+variable {e : OpenPartialHomeomorph M E}
 
 /-- **Strict plurisubharmonicity in an arbitrary holomorphic chart.** For `f` real `C²` at `x` and
 a chart `e` at `x` of the holomorphic `C²` maximal atlas, `f` is strictly plurisubharmonic at `x`
@@ -648,14 +641,20 @@ theorem IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le_of_mem_criticalPo
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E + q :=
   h.manifoldMorseIndex_le (hf.of_le hr) (mem_criticalPoints.1 hx)
 
+omit [FiniteDimensional ℂ E] in
 /-- **The index bound for strictly plurisubharmonic functions on a complex manifold.** At a
 critical point `x` of a function `f` which is `C²` at `x` and strictly plurisubharmonic at `x`, the
-Morse index of `f` is at most `dim_ℂ E`. -/
+Morse index of `f` is at most `dim_ℂ E`. In infinite dimensions the index is `0` and
+`finrank ℂ E = 0` by convention. -/
 theorem IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le [IsManifold 𝓘(ℂ, E) 2 M]
     (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
     (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E := by
-  simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
+  by_cases hE : FiniteDimensional ℂ E
+  · simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
+  · rw [manifoldMorseIndex_def, morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hE (Module.Finite.of_restrictScalars_finite ℝ ℂ E)]
+    exact Nat.zero_le _
 
 end Critical
 

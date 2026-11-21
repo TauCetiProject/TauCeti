@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Scheme.SectionsBaseChange
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeRightExact
@@ -147,6 +147,36 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pullbackSections_mayerVietorisSections
     (g.pullbackSections_restrict M U (homOfLE inf_le_left) s).symm
     (g.pullbackSections_restrict M V (homOfLE inf_le_right) t).symm
 
+section Aux
+
+variable (M : X.Modules) (U V : X.Opens) [Algebra R Γ(X, ⊤)] [Algebra R' Γ(Y, ⊤)]
+  [∀ W : X.Opens, Module R Γ(M, W)] [∀ W : X.Opens, IsScalarTower R Γ(X, ⊤) Γ(M, W)]
+  [∀ W' : Y.Opens, Module R' Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, IsScalarTower R' Γ(Y, ⊤) Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, Module R Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, IsScalarTower R R' Γ((Scheme.Modules.pullback g).obj M, W')]
+
+omit [X.Over (Spec (.of R))] [Y.Over (Spec (.of R'))] in
+/-- Pulling back sections commutes with the Mayer–Vietoris difference of restrictions. -/
+lemma mayerVietorisSectionsDifferenceLinear_comm_pullbackSections
+    (σU : Γ(M, U) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U))
+    (σV : Γ(M, V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ V))
+    (σUV : Γ(M, U ⊓ V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V))
+    (hσU : ∀ s, σU s = g.pullbackSections M U s) (hσV : ∀ s, σV s = g.pullbackSections M V s)
+    (hσUV : ∀ s, σUV s = g.pullbackSections M (U ⊓ V) s) :
+    σUV.comp ((mayerVietorisSectionsDifferenceLinear M U V).restrictScalars R) =
+      (((mayerVietorisSectionsDifferenceLinear ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U)
+        (g ⁻¹ᵁ V)).restrictScalars R').restrictScalars R).comp (σU.prodMap σV) :=
+  LinearMap.ext fun ⟨s, t⟩ ↦
+    (congrArg σUV (mayerVietorisSectionsDifferenceLinear_apply M U V s t)).trans <|
+    (hσUV _).trans <|
+    (g.pullbackSections_mayerVietorisSectionsDifference M U V s t).trans <|
+    (congrArg (mayerVietorisSectionsDifference _ _ _)
+      (Prod.ext (hσU s).symm (hσV t).symm)).trans
+    (mayerVietorisSectionsDifferenceLinear_apply _ _ _ _ _).symm
+
+end Aux
+
 section CohomologyOne
 
 variable (U V : X.Opens) (hUV : U ⊔ V = ⊤)
@@ -225,7 +255,7 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
     fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hUV' : g ⁻¹ᵁ U ⊔ g ⁻¹ᵁ V = ⊤ := by
     rw [← Scheme.Hom.preimage_sup, hUV, Scheme.Hom.preimage_top]
-  have hUVc : IsCompact ((U ⊓ V : X.Opens) : Set X) := hUc.inter_of_isOpen hVc U.2 V.2
+  have hUVc : IsCompact ((U ⊓ V : X.Opens) : Set X) := hUc.inter_of_isOpen hVc U.is_open' V.is_open'
   -- The vertical maps pull back sections along `g`.
   let σU : Γ(structureModule X, U) →ₗ[R] Γ(structureModule Y, g ⁻¹ᵁ U) :=
     sectionsBaseChange H (W := U) (W' := g ⁻¹ᵁ U) le_rfl

@@ -7,14 +7,15 @@ module
 
 public import TauCeti.Algebra.CrossedProduct.Noncommutative.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Restriction of noncommutative crossed systems
 
 Pulling a crossed system back along a monoid homomorphism induces an algebra map on its
 crossed products. This map fixes the coefficient algebra and sends `[h]` to `[f h]`.
-In coordinates it is `Finsupp.mapDomain f`, so it is injective when `f` is injective.
-Its image then consists exactly of the elements supported on the image of `f`.
+In coordinates it is `Finsupp.mapDomain f`, so it is injective when `f` is injective. Its image
+consists exactly of the elements supported on the image of `f`, injective or not.
 
 For a subgroup inclusion this realizes the restricted crossed product as the actual
 subalgebra supported on that subgroup. It supplies the algebra inclusion along which
@@ -40,9 +41,7 @@ variable {k D G H : Type*} [CommSemiring k] [Semiring D] [_root_.Algebra k D]
 def comap (c : CrossedSystem k D G) (f : H →* G) : CrossedSystem k D H where
   action h := c.action (f h)
   factor h j := c.factor (f h) (f j)
-  action_one := by simp
   factor_one_left h := by simp
-  factor_one_right h := by simp
   action_mul h j d := by simpa only [map_mul] using c.action_mul (f h) (f j) d
   factor_assoc h j l := by simpa only [map_mul] using c.factor_assoc (f h) (f j) (f l)
 
@@ -105,9 +104,9 @@ theorem comapHom_injective (hf : Function.Injective f) :
   apply Finsupp.mapDomain_injective hf
   simpa only [repr_comapHom] using congrArg (basis c).repr hab
 
-/-- The restricted crossed product is precisely the subalgebra with coefficients vanishing
-outside the image of the injective index homomorphism. -/
-theorem mem_range_comapHom_iff (hf : Function.Injective f) (a : Algebra c) :
+/-- The image of the restricted crossed-product map is precisely the subalgebra with coefficients
+vanishing outside the image of the index homomorphism. -/
+theorem mem_range_comapHom_iff (a : Algebra c) :
     a ∈ (comapHom c f).range ↔ ∀ g ∉ Set.range f, (basis c).repr a g = 0 := by
   have hr : a ∈ (comapHom c f).range ↔
       (basis c).repr a ∈ Set.range (Finsupp.mapDomain f) := by
@@ -119,7 +118,7 @@ theorem mem_range_comapHom_iff (hf : Function.Injective f) (a : Algebra c) :
       apply (basis c).repr.injective
       exact (repr_comapHom c f ((basis (c.comap f)).repr.symm b)).trans
         (by rw [LinearEquiv.apply_symm_apply, hb])
-  exact hr.trans (Finsupp.mem_range_mapDomain_iff f hf _)
+  rw [hr, Finsupp.mem_range_mapDomain_iff']
 
 end Algebra
 

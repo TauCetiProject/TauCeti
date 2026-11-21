@@ -16,14 +16,28 @@ starts such a system, and more generally every coordinate map `Perfection M p �
 Mathlib proves this for rings of characteristic `p` with surjective Frobenius
 (`Perfection.coeff_surjective`); the statement here needs no ring structure, and applies for
 instance to the multiplicative monoid of an algebraically closed field of any characteristic.
+Each coordinate map also detects units: a compatible system is invertible as soon as one of its
+terms is, since the inverses of its terms are again compatible.
+
+## Main definitions
+
+* `PreTilt.equivPerfection`: the ring isomorphism `PreTilt O p ≃+* Perfection (ModP O p) p`.
 
 ## Main results
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.isLocalHom_coeffMonoidHom`, `Perfection.isLocalHom_coeff`,
+  `PreTilt.isLocalHom_coeff`: an element of a perfection, or of a tilt, is a unit as soon as one
+  of its coordinates is.
+* `Perfection.coeff_lift_apply`: the coordinates of `Perfection.lift p k R φ x` are the values of
+  `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
-* `PreTilt.coeff_eq_zero_iff`: the same for the tilt `PreTilt O p` when `O ⧸ p` is reduced.
+* `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
+  extensionality and coordinate formulas for `PreTilt.equivPerfection`.
+* `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
+  reduced.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -48,6 +62,39 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
 
+/-- **An element of the perfection is a unit as soon as one of its coordinates is.** Every
+coordinate of `x` is a `p`-power root of its zeroth coordinate, hence a unit, and the inverses of
+the coordinates form a compatible system, which is the inverse of `x`. -/
+instance isLocalHom_coeffMonoidHom (n : ℕ) : IsLocalHom (coeffMonoidHom M p n) := by
+  refine ⟨fun x hx ↦ ?_⟩
+  have h0 : IsUnit (coeffMonoidHom M p 0 x) := by
+    rw [← coeffMonoidHom_pow_p_pow_self x n]
+    exact hx.pow _
+  have hu (m : ℕ) : IsUnit (coeffMonoidHom M p m x) := by
+    rcases eq_or_ne p 0 with rfl | hp
+    · -- for `p = 0` every coordinate is a `0`-th power, hence `1`
+      rw [← coeffMonoidHom_pow_p' x m, pow_zero]
+      exact isUnit_one
+    · rw [← coeffMonoidHom_pow_p_pow_self x m] at h0
+      exact (isUnit_pow_iff (pow_ne_zero m hp)).mp h0
+  let u (m : ℕ) : Mˣ := (hu m).unit
+  have hpow (m : ℕ) : u (m + 1) ^ p = u m := by
+    apply Units.ext
+    simpa only [Units.val_pow_eq_pow_val, u, IsUnit.unit_spec] using coeffMonoidHom_pow_p' x m
+  let y : Perfection M p := ⟨fun m ↦ ↑((u m)⁻¹), fun m ↦ by
+    rw [← Units.val_pow_eq_pow_val, inv_pow, hpow]⟩
+  refine isUnit_iff_exists_inv.mpr ⟨y, extMonoid fun m ↦ ?_⟩
+  rw [map_mul, coeffMonoidHom_mk, map_one]
+  exact (hu m).mul_val_inv
+
+/-- The `n`-th coordinate of `Perfection.lift p k R φ x` is `φ` applied to the `p ^ n`-th root of
+`x` in the perfect ring `k`. -/
+theorem coeff_lift_apply [Fact p.Prime] {k R : Type*} [CommSemiring k] [CharP k p]
+    [PerfectRing k p] [CommSemiring R] [CharP R p] (φ : k →+* R) (n : ℕ) (x : k) :
+    coeff R p n (lift p k R φ x) = φ ((iterateFrobeniusEquiv k p n).symm x) := by
+  rw [iterateFrobeniusEquiv_symm, RingAut.coe_pow]
+  rfl
+
 section Reduced
 
 variable {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] [IsReduced R]
@@ -67,19 +114,52 @@ theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔
 
 end Reduced
 
+/-- **An element of the perfection of a ring is a unit as soon as one of its coordinates is.** -/
+instance isLocalHom_coeff {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] (n : ℕ) :
+    IsLocalHom (coeff R p n) :=
+  ⟨fun x hx ↦ isUnit_of_map_unit (coeffMonoidHom R p n) x hx⟩
+
 end Perfection
 
 namespace PreTilt
 
 variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
-  [IsReduced (ModP O p)]
+
+/-- Two elements of `PreTilt O p` are equal if all of their `ModP O p` coordinates agree. -/
+@[ext]
+theorem ext {f g : PreTilt O p} (h : ∀ n, coeff n f = coeff n g) : f = g :=
+  Perfection.ext h
+
+/-- The ring isomorphism `PreTilt O p ≃+* Perfection (ModP O p) p`. -/
+def equivPerfection : PreTilt O p ≃+* Perfection (ModP O p) p :=
+  RingEquiv.refl (Perfection (ModP O p) p)
+
+/-- `PreTilt.equivPerfection` preserves coordinates in `ModP O p`. -/
+@[simp]
+theorem coeff_equivPerfection (x : PreTilt O p) (n : ℕ) :
+    Perfection.coeff (ModP O p) p n (equivPerfection x) = coeff n x := by
+  rw [equivPerfection, coeff_def]
+  rfl
+
+/-- `PreTilt.equivPerfection.symm` preserves coordinates in `ModP O p`. -/
+@[simp]
+theorem coeff_equivPerfection_symm (x : Perfection (ModP O p) p) (n : ℕ) :
+    coeff n (equivPerfection.symm x) = Perfection.coeff (ModP O p) p n x := by
+  rw [equivPerfection, coeff_def]
+  rfl
 
 /-- **If `O ⧸ p` is reduced, each coordinate of the tilt detects zero.** For `f` in
 `PreTilt O p`, `coeff n f = 0` if and only if `f = 0`. -/
 @[simp]
-theorem coeff_eq_zero_iff (n : ℕ) {f : PreTilt O p} : coeff n f = 0 ↔ f = 0 :=
+theorem coeff_eq_zero_iff [IsReduced (ModP O p)] (n : ℕ) {f : PreTilt O p} :
+    coeff n f = 0 ↔ f = 0 :=
   -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
   Perfection.coeff_eq_zero_iff (R := ModP O p) n
+
+/-- **An element of the tilt is a unit as soon as one of its coordinates in `O ⧸ p` is.** -/
+instance isLocalHom_coeff (n : ℕ) : IsLocalHom (coeff (O := O) (p := p) n) :=
+  ⟨fun x hx ↦ (isUnit_map_iff equivPerfection x).mp <|
+    isUnit_of_map_unit (Perfection.coeff (ModP O p) p n) _ (by rwa [coeff_equivPerfection])⟩
 
 end PreTilt
 

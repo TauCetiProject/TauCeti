@@ -5,18 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Smeval
 public import Mathlib.Data.Int.Interval
-public import Mathlib.Data.Nat.Factorial.BigOperators
+public import Mathlib.Combinatorics.Enumerative.Stirling
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Binomial
 
 /-!
-# Descending Pochhammer polynomials
+# Pochhammer polynomials
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
-over general rings, together with their sums over integer intervals.
+over general rings, together with their sums over integer intervals and their forward
+differences, evaluation identities for ascending Pochhammer polynomials `ascPochhammer R n`
+over general rings, the Chu–Vandermonde identity over commutative rings, and the nonvanishing of
+ascending Pochhammer polynomials off the nonpositive integers.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -30,6 +35,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   `x + 1` times the one of degree `m` at `x`.
 * `TauCeti.descPochhammer_succ_smeval_of_sq_eq_zero`: at a square-zero element `ε`, the falling
   factorial of degree `n + 1` is `(-1) ^ n n! ε`.
+* `TauCeti.factorial_dvd_descPochhammer_eval`: the values of the falling factorial of degree `n`
+  at the integers are divisible by `n!`.
 * `TauCeti.sum_Ico_descPochhammer_eval`: its sum over a half-open integer interval is the endpoint
   difference of the next falling factorial, after clearing the denominator.
 * `TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`: the odd polynomial
@@ -47,6 +54,21 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   of the falling factorials of degree `2k + 1` at `x + k + 1` and at `x + k`.
 * `TauCeti.factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one`: the values of the weighted
   polynomial at the integers are divisible by `(2k + 1)!`.
+* `TauCeti.fwdDiff_descPochhammer_succ_eval`: the forward difference of the falling factorial of
+  degree `n + 1` is `n + 1` times the one of degree `n`.
+* `TauCeti.fwdDiff_iter_descPochhammer_eval`: the `k`-th forward difference of the falling
+  factorial of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling factorial of degree
+  `j - k`.
+* `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
+  the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
+  second kind `S(m, j)`.
+* `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
+* `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
+* `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
+* `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
+  `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`, from Mathlib's `Ring.descPochhammer_smeval_add`.
+* `TauCeti.ascPochhammer_eval_ne_zero`: over a domain, the rising factorial `(c)ₖ` does not
+  vanish when `c` is not a nonpositive integer.
 -/
 
 public section
@@ -55,15 +77,15 @@ namespace TauCeti
 
 open Polynomial
 
-/-- Unlike `monic_descPochhammer`, this drops `[Nontrivial R]` and `[NoZeroDivisors R]`
-and holds over any ring. -/
+/-- The descending Pochhammer polynomial is monic over any ring. Unlike
+`_root_.monic_descPochhammer`, this needs neither `[Nontrivial R]` nor `[NoZeroDivisors R]`. -/
 theorem monic_descPochhammer {R : Type*} [Ring R] (n : ℕ) :
     Monic (descPochhammer R n) := by
   rw [← descPochhammer_map (Int.castRingHom R)]
   exact (_root_.monic_descPochhammer ℤ n).map (Int.castRingHom R)
 
-/-- Unlike `descPochhammer_natDegree`, this drops `[NoZeroDivisors R]` and holds over any
-nontrivial ring. -/
+/-- The degree of the descending Pochhammer polynomial over any nontrivial ring is `n`. Unlike
+`_root_.descPochhammer_natDegree`, this does not need `[NoZeroDivisors R]`. -/
 @[simp]
 theorem descPochhammer_natDegree {R : Type*} [Ring R] [Nontrivial R] (n : ℕ) :
     (descPochhammer R n).natDegree = n := by
@@ -98,6 +120,13 @@ theorem descPochhammer_succ_smeval_of_sq_eq_zero {R : Type*} [Ring R] {ε : R} (
     simp [Polynomial.smeval_X, Polynomial.smeval_natCast, -zsmul_eq_mul, mul_sub, ← sq, hε,
       Nat.factorial_succ, mul_add_one, -nsmul_eq_mul, ← nsmul_eq_mul' ε n]
     module
+
+/-- The falling factorial of degree `n` at an integer is divisible by `n!`: it is `n!` times the
+binomial coefficient (`Ring.descPochhammer_eq_factorial_smul_choose`). -/
+theorem factorial_dvd_descPochhammer_eval (n : ℕ) (y : ℤ) :
+    (n.factorial : ℤ) ∣ (descPochhammer ℤ n).eval y :=
+  ⟨Ring.choose y n, by
+    rw [eval_eq_smeval, Ring.descPochhammer_eq_factorial_smul_choose, nsmul_eq_mul]⟩
 
 /-! ### Sums over integer intervals -/
 
@@ -139,31 +168,18 @@ theorem mul_prod_sq_sub_sq_eq_descPochhammer_eval {R : Type*} [CommRing R] (k : 
   induction k with
   | zero => simp
   | succ k ih =>
-    have h1 : (descPochhammer R (2 * k + 1 + 1 + 1)).eval (x + k + 1)
-        = (x + k + 1) * (descPochhammer R (2 * k + 1 + 1)).eval (x + k) :=
-      descPochhammer_succ_eval_add_one _ _
-    have h2 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k)
-        = (descPochhammer R (2 * k + 1)).eval (x + k) * (x + k - ((2 * k + 1 : ℕ) : R)) :=
-      descPochhammer_succ_eval _ _
-    have hdeg : 2 * (k + 1) + 1 = 2 * k + 1 + 1 + 1 := by ring
-    rw [Finset.prod_range_succ, ← mul_assoc, ih, hdeg, Nat.cast_succ, ← add_assoc, h1, h2]
+    rw [Finset.prod_range_succ, ← mul_assoc, ih, Nat.cast_succ, ← add_assoc, Nat.mul_succ,
+      descPochhammer_succ_eval_add_one (2 * k + 2), descPochhammer_succ_eval (2 * k + 1)]
     push_cast
     ring
 
 /-- The product `x · (x² - 1²) ⋯ (x² - k²)` is divisible by `(2k + 1)!` at every integer `x`,
 being the product `(x - k) (x - k + 1) ⋯ (x + k)` of `2k + 1` consecutive integers
-(`Nat.factorial_coe_dvd_prod`). -/
+(`TauCeti.factorial_dvd_descPochhammer_eval`). -/
 theorem factorial_dvd_mul_prod_sq_sub_sq (k : ℕ) (x : ℤ) :
     ((2 * k + 1).factorial : ℤ) ∣ x * ∏ m ∈ Finset.range k, (x ^ 2 - ((m : ℤ) + 1) ^ 2) := by
-  have hprod : (descPochhammer ℤ (2 * k + 1)).eval (x + k)
-      = ∏ i ∈ Finset.range (2 * k + 1), (x - k + i) := by
-    rw [descPochhammer_eval_eq_prod_range, ← Finset.prod_range_reflect]
-    refine Finset.prod_congr rfl fun i hi => ?_
-    rw [Nat.cast_sub (by have := Finset.mem_range.1 hi; omega)]
-    push_cast
-    ring
-  rw [mul_prod_sq_sub_sq_eq_descPochhammer_eval, hprod]
-  exact Nat.factorial_coe_dvd_prod _ _
+  rw [mul_prod_sq_sub_sq_eq_descPochhammer_eval]
+  exact factorial_dvd_descPochhammer_eval _ _
 
 /-! ### An even polynomial as two falling factorials -/
 
@@ -175,35 +191,23 @@ theorem two_mul_prod_sq_sub_sq_eq {R : Type*} [CommRing R] (k : ℕ) (x : R) :
     2 * ∏ m ∈ Finset.range (k + 1), (x ^ 2 - (m : R) ^ 2)
       = (descPochhammer R (2 * k + 2)).eval (x + k + 1)
         + (descPochhammer R (2 * k + 2)).eval (x + k) := by
-  have h0 : ∏ m ∈ Finset.range (k + 1), (x ^ 2 - (m : R) ^ 2)
-      = x * (x * ∏ m ∈ Finset.range k, (x ^ 2 - ((m : R) + 1) ^ 2)) := by
-    rw [Finset.prod_range_succ']
-    push_cast
-    ring
-  have h1 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k + 1)
-      = (x + k + 1) * (descPochhammer R (2 * k + 1)).eval (x + k) :=
-    descPochhammer_succ_eval_add_one _ _
-  have h2 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k)
-      = (descPochhammer R (2 * k + 1)).eval (x + k) * (x + k - ((2 * k + 1 : ℕ) : R)) :=
-    descPochhammer_succ_eval _ _
-  rw [h0, mul_prod_sq_sub_sq_eq_descPochhammer_eval, h1, h2]
+  rw [descPochhammer_succ_eval_add_one (2 * k + 1), descPochhammer_succ_eval (2 * k + 1),
+    Finset.prod_range_succ', ← mul_prod_sq_sub_sq_eq_descPochhammer_eval]
   push_cast
   ring
 
 /-- The product `(x² - 0²) (x² - 1²) ⋯ (x² - k²)` is divisible by
 `(k + 1) (2k + 1)! = (2k + 2)! / 2` at every integer `x`: twice it is a sum of two falling
 factorials of degree `2k + 2` (`TauCeti.two_mul_prod_sq_sub_sq_eq`), each a multiple of
-`(2k + 2)!` (`Ring.descPochhammer_eq_factorial_smul_choose`). -/
+`(2k + 2)!` (`TauCeti.factorial_dvd_descPochhammer_eval`). -/
 theorem mul_factorial_dvd_prod_sq_sub_sq (k : ℕ) (x : ℤ) :
     ((k + 1) * (2 * k + 1).factorial : ℤ) ∣ ∏ m ∈ Finset.range (k + 1), (x ^ 2 - (m : ℤ) ^ 2) := by
-  have hdvd : ∀ y : ℤ, ((2 * k + 2).factorial : ℤ) ∣ (descPochhammer ℤ (2 * k + 2)).eval y :=
-    fun y => ⟨Ring.choose y (2 * k + 2), by
-      rw [eval_eq_smeval, Ring.descPochhammer_eq_factorial_smul_choose, nsmul_eq_mul]⟩
   have hfac : ((2 * k + 2).factorial : ℤ) = 2 * ((k + 1) * (2 * k + 1).factorial) := by
     rw [Nat.factorial_succ]
     push_cast
     ring
-  have h := dvd_add (hdvd (x + k + 1)) (hdvd (x + k))
+  have h := dvd_add (factorial_dvd_descPochhammer_eval (2 * k + 2) (x + k + 1))
+    (factorial_dvd_descPochhammer_eval (2 * k + 2) (x + k))
   rw [← two_mul_prod_sq_sub_sq_eq, hfac] at h
   exact (mul_dvd_mul_iff_left two_ne_zero).1 h
 
@@ -222,9 +226,7 @@ theorem prod_sq_sub_sq_eq_mul_factorial {R : Type*} [CommRing R] (k : ℕ) :
       Nat.factorial_succ] at h
     push_cast at h ⊢
     linarith
-  have := congrArg (Int.cast : ℤ → R) hZ
-  push_cast at this ⊢
-  exact this
+  simpa using congr(($hZ : R))
 
 /-! ### A polynomial in `x (x + 1)` as a falling factorial -/
 
@@ -238,14 +240,8 @@ theorem prod_sub_mul_add_add_one_eq_descPochhammer_eval {R : Type*} [CommRing R]
   induction k with
   | zero => simp
   | succ k ih =>
-    have h1 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k + 1)
-        = (x + k + 1) * (descPochhammer R (2 * k + 1)).eval (x + k) :=
-      descPochhammer_succ_eval_add_one _ _
-    have h2 : (descPochhammer R (2 * k + 1)).eval (x + k)
-        = (descPochhammer R (2 * k)).eval (x + k) * (x + k - ((2 * k : ℕ) : R)) :=
-      descPochhammer_succ_eval _ _
-    have hdeg : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
-    rw [Finset.prod_range_succ, ih, hdeg, Nat.cast_succ, ← add_assoc, h1, h2]
+    rw [Finset.prod_range_succ, ih, Nat.cast_succ, ← add_assoc, Nat.mul_succ,
+      descPochhammer_succ_eval_add_one (2 * k + 1), descPochhammer_succ_eval (2 * k)]
     push_cast
     ring
 
@@ -257,26 +253,133 @@ theorem two_mul_add_one_mul_prod_sub_mul_add_add_one_eq {R : Type*} [CommRing R]
     (2 * x + 1) * ∏ m ∈ Finset.range k, (x - m) * (x + m + 1)
       = (descPochhammer R (2 * k + 1)).eval (x + k + 1)
         + (descPochhammer R (2 * k + 1)).eval (x + k) := by
-  have h1 : (descPochhammer R (2 * k + 1)).eval (x + k + 1)
-      = (x + k + 1) * (descPochhammer R (2 * k)).eval (x + k) :=
-    descPochhammer_succ_eval_add_one _ _
-  have h2 : (descPochhammer R (2 * k + 1)).eval (x + k)
-      = (descPochhammer R (2 * k)).eval (x + k) * (x + k - ((2 * k : ℕ) : R)) :=
-    descPochhammer_succ_eval _ _
-  rw [prod_sub_mul_add_add_one_eq_descPochhammer_eval, h1, h2]
+  rw [descPochhammer_succ_eval_add_one (2 * k), descPochhammer_succ_eval (2 * k),
+    prod_sub_mul_add_add_one_eq_descPochhammer_eval]
   push_cast
   ring
 
 /-- The weighted product `(2x + 1) ∏_{m < k} (x - m) (x + m + 1)` is divisible by `(2k + 1)!` at
 every integer `x`, being a sum of two falling factorials of degree `2k + 1`
-(`Ring.descPochhammer_eq_factorial_smul_choose`). -/
+(`TauCeti.factorial_dvd_descPochhammer_eval`). -/
 theorem factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one (k : ℕ) (x : ℤ) :
     ((2 * k + 1).factorial : ℤ)
       ∣ (2 * x + 1) * ∏ m ∈ Finset.range k, (x - m) * (x + m + 1) := by
-  have hdvd : ∀ y : ℤ, ((2 * k + 1).factorial : ℤ) ∣ (descPochhammer ℤ (2 * k + 1)).eval y :=
-    fun y => ⟨Ring.choose y (2 * k + 1), by
-      rw [eval_eq_smeval, Ring.descPochhammer_eq_factorial_smul_choose, nsmul_eq_mul]⟩
   rw [two_mul_add_one_mul_prod_sub_mul_add_add_one_eq]
-  exact dvd_add (hdvd _) (hdvd _)
+  exact dvd_add (factorial_dvd_descPochhammer_eval _ _) (factorial_dvd_descPochhammer_eval _ _)
+
+/-! ### Forward differences -/
+
+open scoped fwdDiff
+
+/-- **One forward difference of a falling factorial.** The forward difference of the falling
+factorial of degree `n + 1` is `n + 1` times the falling factorial of degree `n`. -/
+theorem fwdDiff_descPochhammer_succ_eval {R : Type*} [Ring R] (n : ℕ) :
+    Δ_[1] (fun x : R ↦ (descPochhammer R (n + 1)).eval x) =
+      fun x ↦ ((n + 1 : ℕ) : R) * (descPochhammer R n).eval x := by
+  funext x
+  -- the falling factorial at `x` commutes with `x`, as it is an integral polynomial in `x`
+  have hx : Commute ((descPochhammer R n).eval x) x := by
+    rw [← descPochhammer_map (Int.castRingHom R), eval_map, ← algebraMap_int_eq, ← aeval_def]
+    simpa using (commute_X (descPochhammer ℤ n)).symm.map (aeval x)
+  rw [fwdDiff, descPochhammer_succ_eval_add_one, descPochhammer_succ_eval,
+    (hx.sub_right (Nat.cast_commute n _).symm).eq, ← sub_mul, add_sub_sub_cancel,
+    Nat.cast_add_one, add_comm (1 : R)]
+
+/-- **Forward differences of falling factorials.** The `k`-th forward difference of the falling
+factorial `x (x - 1) ⋯ (x - j + 1)` of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling
+factorial of degree `j - k`. In particular it vanishes for `k > j`. -/
+theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [Ring R] (j k : ℕ) :
+    Δ_[1]^[k] (fun x : R ↦ (descPochhammer R j).eval x) =
+      fun x ↦ (j.descFactorial k : R) * (descPochhammer R (j - k)).eval x := by
+  induction k generalizing j with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply]
+    cases j with
+    | zero => simp [Function.iterate_fixed]
+    | succ i =>
+      simp_rw [fwdDiff_descPochhammer_succ_eval, ← smul_eq_mul, ← Pi.smul_def]
+      rw [fwdDiff_iter_const_smul, ih, Nat.succ_descFactorial_succ, Nat.add_sub_add_right]
+      funext x
+      simp [mul_assoc]
+
+/-- **Powers in the falling-factorial basis.** In any ring, `x ^ m` is the sum of the
+falling factorials of degree `j ≤ m` at `x`, weighted by the Stirling numbers of the second kind
+`S(m, j)`. This is the ring version of `Nat.pow_eq_sum_stirlingSecond_mul_descFactorial`. -/
+theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ)
+    (x : R) :
+    x ^ m = ∑ j ∈ Finset.range (m + 1),
+      (m.stirlingSecond j : R) * (descPochhammer R j).eval x := by
+  -- the identity holds in `ℤ[X]`, since both sides agree at every natural number
+  have hP : (X ^ m : ℤ[X]) =
+      ∑ j ∈ Finset.range (m + 1), (m.stirlingSecond j : ℤ[X]) * descPochhammer ℤ j := by
+    refine eq_of_infinite_eval_eq _ _ (Set.infinite_of_injective_forall_mem
+      (f := (Nat.cast : ℕ → ℤ)) Nat.cast_injective fun n ↦ ?_)
+    simp only [Set.mem_ofPred_eq, eval_pow, eval_X, eval_finsetSum, eval_mul, eval_natCast,
+      descPochhammer_eval_eq_descFactorial]
+    exact_mod_cast Nat.pow_eq_sum_stirlingSecond_mul_descFactorial n m
+  have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
+    rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
+  simpa [hD] using congrArg (aeval x) hP
+
+/-- The Pochhammer symbol `(c)ₖ` does not vanish when `c` is not a nonpositive integer. -/
+theorem ascPochhammer_eval_ne_zero {R : Type*} [Ring R] [IsDomain R] {c : R}
+    (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) : (ascPochhammer R k).eval c ≠ 0 := by
+  rw [Ne, ascPochhammer_eval_eq_zero_iff]
+  rintro ⟨m, -, hm⟩
+  exact hc m (by rw [hm, neg_neg])
+
+section Ascending
+
+variable {R : Type*}
+
+/-- `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`. -/
+theorem ascPochhammer_add_eval [Semiring R] (x : R) (k m : ℕ) :
+    (ascPochhammer R (k + m)).eval x =
+      (ascPochhammer R k).eval x * (ascPochhammer R m).eval (x + k) := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
+      Nat.cast_add, add_assoc]
+
+/-- `(−n)ₖ = (−1)ᵏ k! C(n, k)`. -/
+theorem ascPochhammer_eval_neg_natCast [Ring R] (n k : ℕ) :
+    (ascPochhammer R k).eval (-(n : R)) = (-1) ^ k * k.factorial * n.choose k := by
+  rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
+    Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, mul_assoc]
+
+/-- `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`. -/
+theorem ascPochhammer_eval_neg_sub_add_one [Ring R] (b : R) (k : ℕ) :
+    (ascPochhammer R k).eval (-b - k + 1) = (-1) ^ k * (ascPochhammer R k).eval b := by
+  -- `-b - k + 1` is `-r` for `r = b + k - 1`, and the falling factorial of `r` of length `k`
+  -- is the rising factorial from `r - k + 1 = b`.
+  have hneg : -b - k + 1 = -(b + k - 1) := by abel
+  have hshift : b + k - 1 - k + 1 = b := by abel
+  rw [hneg, ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_ascPochhammer,
+    hshift]
+
+/-- **The Chu–Vandermonde identity** in Pochhammer form:
+`∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`. It is Mathlib's `Ring.descPochhammer_smeval_add`
+at `r = −b`, `s = c + n − 1`, rewritten with ascending Pochhammer symbols. -/
+theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R) :
+    ∑ k ∈ Finset.range (n + 1), (-1 : R) ^ k * n.choose k * (ascPochhammer R k).eval b *
+      (ascPochhammer R (n - k)).eval (c + k) = (ascPochhammer R n).eval (c - b) := by
+  have hD (r : R) (m : ℕ) :
+      (descPochhammer ℤ m).smeval r = (ascPochhammer R m).eval (r - m + 1) := by
+    rw [descPochhammer_smeval_eq_ascPochhammer, ascPochhammer_smeval_eq_eval]
+  have h := Ring.descPochhammer_smeval_add (r := -b) (s := c + n - 1) n (Commute.all _ _)
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk] at h
+  simp only [hD] at h
+  have hcb : -b + (c + n - 1) - n + 1 = c - b := by ring
+  rw [hcb] at h
+  rw [h]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk' : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+  have hck : c + (n : R) - 1 - ((n : R) - k) + 1 = c + k := by ring
+  rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
+  ring
+
+end Ascending
 
 end TauCeti

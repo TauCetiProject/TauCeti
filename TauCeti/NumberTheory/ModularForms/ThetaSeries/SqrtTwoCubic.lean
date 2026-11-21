@@ -126,7 +126,7 @@ theorem gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero [Nonempty ι] {a : 
       gaussTerm _ hL (2 * p + 1) (2 * (2 * q + 1)) 0 (y + Submodule.Quotient.mk w) =
         -gaussTerm _ hL (2 * p + 1) (2 * (2 * q + 1)) 0 y := by
     induction y using Submodule.Quotient.induction_on with | H v
-    obtain ⟨u, hu, hv⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp v.2
+    obtain ⟨u, hu, hv⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp v.property
     obtain ⟨m, hm⟩ := isIntegral_iff.mp (isUnimodular_span_orthonormalBasis b).isIntegral u hu _ hbi
     -- `‖u + c' b i‖² = ‖u‖² + 2 c' ⟪u, b i⟫ + c'²`, so the argument of `e` moves by
     -- `a ⟪u, b i⟫ + a c' / 2 ∈ ℤ + 1/2`.
@@ -200,11 +200,11 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis {t : ℤ} {a : ℕ}
   have hlevel : level (√2 • span ℤ (Set.range b)) ∣ 4 := by
     rcases isEmpty_or_nonempty ι with hι | hι
     · exact level_dvd_iff.mpr fun x _ ↦ ⟨0, by rw [← b.sum_repr x]; simp⟩
-    · exact dvd_of_eq (by simpa using level_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero)
+    · exact dvd_of_eq (by simpa using level_sqrt_smul_span_orthonormalBasis b (m := 2))
   have hdvd : (a * level (√2 • span ℤ (Set.range b)) : ℤ) ∣ t :=
     (mul_dvd_mul_left (a : ℤ) (Int.natCast_dvd_natCast.mpr hlevel)).trans (by rwa [mul_comm])
   have hcard : Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ finrank ℝ E := by
-    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
+    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2)
   rw [dualGaussSum_eq_pow_mul_card_of_dvd _ hdvd, hcard, finrank_eq_card_basis b.toBasis]
   push_cast
   ring
@@ -223,7 +223,7 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_ne_jacobiSym (hι : Fin
       Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) *
         jacobiSym (-Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b)))) 3 * 3 := by
   have hcard : Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ finrank ℝ E := by
-    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
+    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2)
   rw [dualGaussSum_sqrt_two_smul_span_orthonormalBasis b (by norm_num), hcard,
     finrank_eq_card_basis b.toBasis, hι]
   norm_num
@@ -356,7 +356,7 @@ theorem sq_sum_range_cexp_two_pi_I_mul_sq_div (a c : ℕ) [NeZero a] :
   have := Fintype.ofFinite (dual (√2 • span ℤ (Set.range b)) ⧸
       ((a : ℝ) • (√2 • span ℤ (Set.range b))).submoduleOf (dual (√2 • span ℤ (Set.range b))))
   have hcov : covolume (√2 • span ℤ (Set.range b)) = 2 := by
-    rw [covolume_smul _ (NeZero.ne _) MeasureTheory.volume,
+    rw [covolume_smul _ MeasureTheory.volume,
       (isUnimodular_span_orthonormalBasis b).covolume_eq_one, finrank_euclideanSpace_fin,
       abs_of_pos (Real.sqrt_pos.mpr two_pos), Real.sq_sqrt zero_le_two, mul_one]
   have h := hL.gaussSum_eq_mul_dualGaussSum (k := 1) (by simp) a c

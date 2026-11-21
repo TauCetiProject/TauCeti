@@ -180,7 +180,7 @@ theorem isClosed_val_preimage_cont (P : PairOfDefinition A) :
     ext v
     simp
   rw [h]
-  exact (isClosed_setOfPred_forall_vlt_one _).preimage continuous_subtype_val
+  exact (isClosed_setOfPred_forall_vlt_one _).preimage continuous_subtypeVal
 
 end TauCeti.ValuationSpectrum
 

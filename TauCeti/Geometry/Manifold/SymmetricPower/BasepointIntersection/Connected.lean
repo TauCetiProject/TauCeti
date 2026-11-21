@@ -139,10 +139,10 @@ theorem basepointIntersectionOrder_ne_top_of_isPreconnected {z : α} {w : ℂ}
   obtain ⟨t, htU, htD⟩ := houtside
   exact htD (mapsTo_basepointDivisor_of_isPreconnected_of_eventually_mem z hU hf ha hw hev htU)
 
-omit [ChartedSpace ℂ α] in
+omit [T2Space α] [ChartedSpace ℂ α] in
 /-- A curve continuous on the closure of a nonempty bounded set `U ⊆ ℂ`, sending its frontier off
 the basepoint divisor, leaves the divisor at some parameter of `U`. -/
-theorem exists_mem_notMem_basepointDivisor_of_frontier {z : α} (hU₀ : U.Nonempty)
+theorem exists_mem_notMem_basepointDivisor_of_frontier [T1Space α] {z : α} (hU₀ : U.Nonempty)
     (hUc : IsCompact (closure U)) (hf : ContinuousOn f (closure U))
     (hfr : ∀ w ∈ frontier U, f w ∉ Sym.basepointDivisor z) :
     ∃ t ∈ U, f t ∉ Sym.basepointDivisor z := by

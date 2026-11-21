@@ -82,8 +82,6 @@ side condition.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 0, item 3 — the uniform family:
-  its measure, density, cdf, moments, and transforms — together with the uniform case of item 4.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
   Wiley (1995), ch. 26.
 -/
@@ -120,10 +118,11 @@ theorem uniformMeasure_eq_smul {a b : ℝ} :
     uniformMeasure a b = (ENNReal.ofReal (b - a))⁻¹ • volume.restrict (Set.Ioc a b) := by
   rw [uniformMeasure, ProbabilityTheory.cond, Real.volume_Ioc]
 
-/-- Evaluation of the uniform measure on a measurable set. -/
-theorem uniformMeasure_apply {a b : ℝ} {s : Set ℝ} (hs : MeasurableSet s) :
+/-- Evaluation of the uniform measure on a set. -/
+theorem uniformMeasure_apply {a b : ℝ} {s : Set ℝ} :
     uniformMeasure a b s = (ENNReal.ofReal (b - a))⁻¹ * volume (s ∩ Set.Ioc a b) := by
-  rw [uniformMeasure_eq_smul, _root_.smul_apply, smul_eq_mul, Measure.restrict_apply hs]
+  rw [uniformMeasure_eq_smul, _root_.smul_apply, smul_eq_mul,
+    Measure.restrict_apply' measurableSet_Ioc]
 
 /-- On a nondegenerate interval the uniform measure is a probability measure. -/
 theorem isProbabilityMeasure_uniformMeasure {a b : ℝ} (hab : a < b) :
@@ -153,7 +152,7 @@ theorem uniformMeasure_Iio {a b t : ℝ} (hab : a < b) (ht : t ≤ b) :
       exact ⟨ha, hs⟩
     · rintro ⟨ha, hs⟩
       exact ⟨hs, ha, hs.le.trans ht⟩
-  rw [uniformMeasure_apply measurableSet_Iio, hinter, Real.volume_Ioo,
+  rw [uniformMeasure_apply, hinter, Real.volume_Ioo,
     ENNReal.ofReal_div_of_pos (by linarith), ENNReal.div_eq_inv_mul]
 
 /-- The uniform measure of an upper tail `Set.Ici t` is the complementary linear fall. Only
@@ -168,7 +167,7 @@ theorem uniformMeasure_Ici {a b t : ℝ} (hab : a < b) (ht : a ≤ t) :
     · calc ENNReal.ofReal (b - t) = volume (Set.Ioc t b) := Real.volume_Ioc.symm
         _ ≤ volume (Set.Ici t ∩ Set.Ioc a b) :=
           measure_mono fun s hs => ⟨hs.1.le, ht.trans_lt hs.1, hs.2⟩
-  rw [uniformMeasure_apply measurableSet_Ici, hinter, ENNReal.ofReal_div_of_pos (by linarith),
+  rw [uniformMeasure_apply, hinter, ENNReal.ofReal_div_of_pos (by linarith),
     ENNReal.div_eq_inv_mul]
 
 /-- A random variable with the uniform law is uniform in Mathlib's sense.
@@ -182,9 +181,9 @@ theorem isUniform_of_hasLaw_uniformMeasure {Ω : Type*} [MeasurableSpace Ω] {P 
 /-! ### The probability density function
 
 Mathlib already supplies the `ℝ≥0∞`-valued density of a uniform law as
-`MeasureTheory.pdf.uniformPDF s x μ = s.indicator ((μ s)⁻¹ • 1) x`, so none is introduced here —
-the roadmap is explicit that no second pdf abstraction should enter the library. What is missing is
-the real-valued form and the interval-specific identifications, which is what this section adds. -/
+`MeasureTheory.pdf.uniformPDF s x μ = s.indicator ((μ s)⁻¹ • 1) x`, so none is introduced here.
+What is missing is the real-valued form and the interval-specific identifications, which is what
+this section adds. -/
 
 /-- The real-valued density of the uniform distribution on `Set.Ioc a b`.
 
@@ -268,7 +267,7 @@ theorem cdf_uniformMeasure {a b : ℝ} (hab : a < b) (x : ℝ) :
   have htop : ENNReal.ofReal (b - a) ≠ ⊤ := by simp
   have hset : Set.Iic x ∩ Set.Ioc a b = Set.Ioc a (min b x) := by
     ext y; simp [Set.mem_Iic, Set.mem_Ioc, and_comm]; tauto
-  rw [cdf_eq_real, Measure.real, uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc]
+  rw [cdf_eq_real, Measure.real, uniformMeasure_apply, hset, Real.volume_Ioc]
   split_ifs with h1 h2
   · -- below the interval: the truncated interval is empty
     have hxb : x ≤ b := le_trans h1 hab.le

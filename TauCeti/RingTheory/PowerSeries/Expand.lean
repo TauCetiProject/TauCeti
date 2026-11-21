@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Finsupp
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
@@ -37,6 +38,10 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
   `1` does not change the `n`-th coefficient.
 * `PowerSeries.X_pow_dvd_expand_sub_C_constantCoeff`: an expanded series agrees with its
   constant coefficient modulo the corresponding power of `X`.
+* `PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero`,
+  `PowerSeries.linearIndependent_expand_iff`: over a commutative ring without zero divisors, the
+  expansions `f (X ^ d)` over `d : ℕ+` are linearly independent when `f` has a nonzero coefficient
+  of positive degree, and conversely over an integral domain.
 * `PowerSeries.hasProd_expand`, `PowerSeries.multipliable_expand`,
   `PowerSeries.coeff_tprod_expand`: the infinite product of the expanded series and its
   coefficients, when `{c | m c ≤ n}` is finite for every `n`.
@@ -74,9 +79,12 @@ theorem mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ} 
 
 /-- Every summand `m c * l c` of an element `l` of the weighted antidiagonal is at most `n`. -/
 theorem mul_le_of_mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ}
-    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) {c : ι} (hc : c ∈ s) :
-    (m c : ℕ) * l c ≤ n :=
-  mul_le_of_sum_mul_eq (mem_weightedFinsuppAntidiag.1 hl).2 hc
+    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) (c : ι) :
+    (m c : ℕ) * l c ≤ n := by
+  obtain ⟨hsupp, hsum⟩ := mem_weightedFinsuppAntidiag.1 hl
+  by_cases hc : c ∈ s
+  · exact mul_le_of_sum_mul_eq hsum hc
+  · simp [Finsupp.notMem_support_iff.1 fun h ↦ hc (hsupp h)]
 
 end Finset
 
@@ -178,7 +186,7 @@ theorem coeff_prod_expand_of_subset {s t : Finset ι} (hst : s ⊆ t) {m : ι �
   -- An element of the weighted antidiagonal over `t` vanishes at every adjoined index.
   have hzero : ∀ l ∈ t.weightedFinsuppAntidiag m n, ∀ c ∈ t, c ∉ s → l c = 0 := by
     intro l hl c hct hcs
-    have hle := Finset.mul_le_of_mem_weightedFinsuppAntidiag hl hct
+    have hle := Finset.mul_le_of_mem_weightedFinsuppAntidiag hl c
     have := h c hct hcs
     by_contra hlc
     have := Nat.le_mul_of_pos_right (m c : ℕ) (Nat.pos_of_ne_zero hlc)
@@ -210,6 +218,59 @@ theorem X_pow_dvd_expand_sub_C_constantCoeff (p : ℕ) (hp : p ≠ 0) (f : R⟦X
   obtain ⟨g, hg⟩ := X_dvd_iff.2 (by simp : constantCoeff (f - C (constantCoeff f)) = 0)
   refine ⟨expand p hp g, ?_⟩
   rw [← expand_C p hp, ← map_sub, hg, map_mul, expand_X]
+
+/-- **Linear independence of expanded power series.** Over a commutative ring without zero divisors,
+if `f` has a nonzero coefficient of positive degree, then the expanded series `f (X ^ d)` for
+`d : ℕ+` are `R`-linearly independent. -/
+theorem linearIndependent_expand_of_exists_coeff_ne_zero [NoZeroDivisors R] {f : R⟦X⟧}
+    (hf : ∃ n ≠ 0, coeff n f ≠ 0) :
+    LinearIndependent R (fun d : ℕ+ ↦ expand d d.ne_zero f) := by
+  -- At the product `d₀ * n₀` of the least index in a nontrivial relation and the least positive
+  -- degree of `f`, only `f (X ^ d₀)` contributes.
+  classical
+  let n₀ := Nat.find hf
+  obtain ⟨hn₀, hfn₀⟩ := Nat.find_spec hf
+  rw [linearIndependent_iff]
+  intro c hc
+  by_contra hc0
+  let d₀ := c.support.min' (Finsupp.support_nonempty_iff.mpr hc0)
+  have hd₀ : d₀ ∈ c.support := Finset.min'_mem _ _
+  have hsum : ∑ d ∈ c.support, c d * coeff ((d₀ : ℕ) * n₀) (expand d d.ne_zero f) = 0 := by
+    simpa [Finsupp.linearCombination_apply, Finsupp.sum] using
+      congrArg (coeff ((d₀ : ℕ) * n₀)) hc
+  rw [Finset.sum_eq_single d₀] at hsum
+  · rw [coeff_expand_mul] at hsum
+    exact Finsupp.mem_support_iff.mp hd₀ ((mul_eq_zero.mp hsum).resolve_right hfn₀)
+  · intro d hd hne
+    have hlt : (d₀ : ℕ) < d :=
+      lt_of_le_of_ne (Finset.min'_le _ d hd) (PNat.coe_inj.not.mpr hne.symm)
+    rw [coeff_expand]
+    split_ifs with hdvd
+    · have hm0 : (d₀ : ℕ) * n₀ / d ≠ 0 := by
+        intro hm
+        exact mul_ne_zero d₀.ne_zero hn₀ (by rw [← Nat.mul_div_cancel' hdvd, hm, mul_zero])
+      have hmlt : (d₀ : ℕ) * n₀ / d < n₀ :=
+        Nat.lt_of_mul_lt_mul_left
+          ((Nat.mul_lt_mul_of_pos_right hlt (Nat.pos_of_ne_zero hm0)).trans_eq
+            (Nat.mul_div_cancel' hdvd))
+      have hmin : coeff ((d₀ : ℕ) * n₀ / d) f = 0 :=
+        not_not.mp (not_and.mp (Nat.find_min hf hmlt) hm0)
+      rw [hmin, mul_zero]
+    · rw [mul_zero]
+  · exact fun h ↦ absurd hd₀ h
+
+/-- Over an integral domain, the expanded series `f (X ^ d)` for `d : ℕ+` are `R`-linearly
+independent if and only if `f` has a nonzero coefficient of positive degree. -/
+theorem linearIndependent_expand_iff [IsDomain R] {f : R⟦X⟧} :
+    LinearIndependent R (fun d : ℕ+ ↦ expand d d.ne_zero f) ↔ ∃ n ≠ 0, coeff n f ≠ 0 := by
+  refine ⟨fun hli ↦ ?_, linearIndependent_expand_of_exists_coeff_ne_zero⟩
+  by_contra! hf
+  have hfC : f = C (constantCoeff f) := by
+    ext n
+    rcases eq_or_ne n 0 with rfl | hn <;> simp [coeff_C, *]
+  have heq : expand (1 : ℕ+) (1 : ℕ+).ne_zero f = expand (2 : ℕ+) (2 : ℕ+).ne_zero f := by
+    rw [hfC, expand_C, expand_C]
+  exact absurd (hli.injective heq) (by decide)
 
 
 open scoped PowerSeries.WithPiTopology

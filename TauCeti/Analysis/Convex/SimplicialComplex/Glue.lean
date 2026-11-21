@@ -29,7 +29,11 @@ extreme subset of both `|K i|` and `|K j|`, and such that every face of `K i` wi
 Then a face of `K i` and a face of `K j` meet properly
 (`convexHull_inter_convexHull_subset_of_isExtreme`): the point of intersection is carried by
 faces with all vertices in `F`, which are then faces of `K j`. Gluing retains the triangulation
-of each piece on its convex subsets (`restrict_glue`).
+of each piece on its convex subsets (`restrict_glue`). Two complexes `K` and `L` also meet
+properly as soon as `|K| ∩ |L|` is the underlying space of their common subcomplex `K ⊓ L`
+(`inter_convexHull_subset_convexHull_of_space_inter_subset`), since a point of a subcomplex lying
+in a simplex of the complex lies in a face of that simplex belonging to the subcomplex
+(`exists_subset_mem_faces_of_le`).
 
 This is the common-face agreement and coverage step in subdividing a locally finite family of
 compact convex polytopes, meeting in common faces, into a single simplicial complex compatible
@@ -51,6 +55,10 @@ coning a triangulation of its boundary, and the pieces are glued.
 * `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`: a complex whose
   simplices lie in a locally finite complex or in the cells of a locally finite family of convex
   sets, finitely many in each cell, is locally finite.
+* `Geometry.SimplicialComplex.exists_subset_mem_faces_of_le`: a point of a subcomplex lying in a
+  simplex of the complex lies in a face of that simplex belonging to the subcomplex.
+* `Geometry.SimplicialComplex.inter_convexHull_subset_convexHull_of_space_inter_subset`: two
+  complexes meeting in the underlying space of their common subcomplex have compatible faces.
 * `Geometry.SimplicialComplex.convexHull_inter_convexHull_subset_of_isExtreme`: complexes
   agreeing on common extreme subsets covering the intersection of their spaces meet properly.
 * `Geometry.SimplicialComplex.restrict_glue`: gluing along common faces does not change the
@@ -121,14 +129,76 @@ theorem vertices_glue : (glue K h).vertices = ⋃ i, (K i).vertices := by
 locally finite family. -/
 theorem locallyFinite_convexHull_glue [TopologicalSpace E] (hfin : ∀ i, (K i).faces.Finite)
     (hlf : LocallyFinite fun i => (K i).space) :
-    LocallyFinite fun σ : (glue K h).faces => convexHull 𝕜 (σ.1 : Set E) := by
+    LocallyFinite fun σ : (glue K h).faces => convexHull 𝕜 (σ.val : Set E) := by
   intro x
   obtain ⟨U, hU, hfinU⟩ := hlf x
   refine ⟨U, hU, Finite.of_finite_image ((hfinU.biUnion fun i _ => hfin i).subset ?_)
     Subtype.val_injective.injOn⟩
   rintro _ ⟨σ, ⟨y, hyσ, hyU⟩, rfl⟩
-  obtain ⟨i, hi⟩ := (mem_glue_faces h).1 σ.2
+  obtain ⟨i, hi⟩ := (mem_glue_faces h).1 σ.property
   exact mem_biUnion (x := i) ⟨y, convexHull_subset_space hi hyσ, hyU⟩ hi
+
+/-- The faces of the pieces `L` and `T j` of a glued family meet compatibly, provided distinct
+pieces `T j`, `T k` meet inside `|L|` and a point of `|L|` carried by a face of a piece is carried
+by a subface which is a face of `L`. -/
+theorem inter_convexHull_subset_convexHull_option {J : Type*} (L : SimplicialComplex 𝕜 E)
+    (T : J → SimplicialComplex 𝕜 E) (C : J → Set E) (hT : ∀ j, (T j).space = C j)
+    (hCC : Pairwise fun j k => C j ∩ C k ⊆ L.space)
+    (hdesc : ∀ j ⦃s : Finset E⦄ ⦃x : E⦄, s ∈ (T j).faces → x ∈ convexHull 𝕜 (s : Set E) →
+      x ∈ L.space → ∃ t ⊆ s, t ∈ L.faces ∧ x ∈ convexHull 𝕜 (t : Set E))
+    (a b : Option J) ⦃s t : Finset E⦄ (hs : s ∈ ((a.elim L T : SimplicialComplex 𝕜 E)).faces)
+    (ht : t ∈ ((b.elim L T : SimplicialComplex 𝕜 E)).faces) :
+    convexHull 𝕜 ↑s ∩ convexHull 𝕜 ↑t ⊆ convexHull 𝕜 (s ∩ t : Set E) := by
+  have hdesc' : ∀ a : Option J, ∀ ⦃s : Finset E⦄ ⦃x : E⦄,
+      s ∈ (a.elim L T : SimplicialComplex 𝕜 E).faces →
+      x ∈ convexHull 𝕜 (s : Set E) → x ∈ L.space →
+      ∃ t ⊆ s, t ∈ L.faces ∧ x ∈ convexHull 𝕜 (t : Set E) := by
+    rintro (_ | j) s x hs hx hxL
+    · exact ⟨s, Finset.Subset.rfl, hs, hx⟩
+    · exact hdesc j hs hx hxL
+  rintro x ⟨hxs, hxt⟩
+  rcases eq_or_ne a b with rfl | hab
+  · exact (a.elim L T : SimplicialComplex 𝕜 E).inter_subset_convexHull hs ht ⟨hxs, hxt⟩
+  -- two distinct pieces meet inside `|L|`
+  have hxL : x ∈ L.space := by
+    rcases a with _ | j
+    · exact convexHull_subset_space hs hxs
+    rcases b with _ | k
+    · exact convexHull_subset_space ht hxt
+    exact hCC (fun hjk => hab (congrArg some hjk))
+      ⟨hT j ▸ convexHull_subset_space hs hxs, hT k ▸ convexHull_subset_space ht hxt⟩
+  obtain ⟨s', hss', hs', hxs'⟩ := hdesc' a hs hxs hxL
+  obtain ⟨t', htt', ht', hxt'⟩ := hdesc' b ht hxt hxL
+  exact convexHull_mono (Set.inter_subset_inter (coe_subset.2 hss') (coe_subset.2 htt'))
+    (L.inter_subset_convexHull hs' ht' ⟨hxs', hxt'⟩)
+
+/-- A point of a subcomplex `A` of `K` lying in a simplex `s` of `K` lies in the simplex of a
+face of `A` contained in `s`. -/
+theorem exists_subset_mem_faces_of_le {K A : SimplicialComplex 𝕜 E} {s : Finset E} (hAK : A ≤ K)
+    (hs : s ∈ K.faces) (hxs : x ∈ convexHull 𝕜 (s : Set E)) (hxA : x ∈ A.space) :
+    ∃ t ⊆ s, t ∈ A.faces ∧ x ∈ convexHull 𝕜 (t : Set E) := by
+  classical
+  obtain ⟨u, hu, hxu⟩ := mem_space_iff.1 hxA
+  have hx : x ∈ convexHull 𝕜 ((s ∩ u : Finset E) : Set E) := by
+    rw [Finset.coe_inter]
+    exact K.inter_subset_convexHull hs (hAK hu) ⟨hxs, hxu⟩
+  refine ⟨s ∩ u, Finset.inter_subset_left, A.down_closed hu Finset.inter_subset_right ?_, hx⟩
+  rw [← Finset.coe_nonempty, ← convexHull_nonempty_iff (𝕜 := 𝕜)]
+  exact ⟨x, hx⟩
+
+/-- If two complexes meet in the underlying space of their common subcomplex, then a simplex of
+one meets a simplex of the other in the convex hull of their common vertices, so their faces
+together form a simplicial complex. -/
+theorem inter_convexHull_subset_convexHull_of_space_inter_subset {K L : SimplicialComplex 𝕜 E}
+    {s t : Finset E} (hKL : K.space ∩ L.space ⊆ (K ⊓ L).space) (hs : s ∈ K.faces)
+    (ht : t ∈ L.faces) :
+    convexHull 𝕜 ↑s ∩ convexHull 𝕜 ↑t ⊆ convexHull 𝕜 (s ∩ t : Set E) := by
+  rintro x ⟨hxs, hxt⟩
+  have hx := hKL ⟨convexHull_subset_space hs hxs, convexHull_subset_space ht hxt⟩
+  obtain ⟨s', hss', hs', hxs'⟩ := exists_subset_mem_faces_of_le inf_le_left hs hxs hx
+  obtain ⟨t', htt', ht', hxt'⟩ := exists_subset_mem_faces_of_le inf_le_right ht hxt hx
+  exact convexHull_mono (Set.inter_subset_inter (Finset.coe_subset.2 hss')
+    (Finset.coe_subset.2 htt')) ((K ⊓ L).inter_subset_convexHull hs' ht' ⟨hxs', hxt'⟩)
 
 end OrderedRing
 
@@ -153,10 +223,33 @@ theorem locallyFinite_convexHull_of_finite_restrict {K L : SimplicialComplex �
     (((hUf.image Subtype.val).union (hVf.biUnion fun i _ => hfin i)).subset ?_)
     Subtype.val_injective.injOn⟩
   rintro _ ⟨σ, ⟨y, hyσ, hyU, hyV⟩, rfl⟩
-  rcases hK σ.1 σ.2 with hσ | ⟨i, hσi⟩
-  · exact .inl ⟨⟨σ.1, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
+  rcases hK σ.val σ.property with hσ | ⟨i, hσi⟩
+  · exact .inl ⟨⟨σ.val, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
   · exact .inr (Set.mem_biUnion (x := i) ⟨y, (hPv i).convexHull_subset_iff.2 hσi hyσ, hyV⟩
-      (mem_restrict_faces.2 ⟨σ.2, hσi⟩))
+      (mem_restrict_faces.2 ⟨σ.property, hσi⟩))
+
+/-- The restriction of `K` to a cell `P k` has finitely many faces, if `P k` is compact, the cells
+are locally finite, the restriction of `L` to `P k` has finitely many faces, the restriction of
+`K` to every cell `P m` with `d m < n` has finitely many faces, and every face of `K` is a face of
+`L` or lies in such a cell. -/
+theorem finite_faces_restrict_of_forall_lt {L K : SimplicialComplex 𝕜 E} {P : ι → Set E}
+    (d : ι → ℕ) {n : ℕ} (k : ι) (hPc : IsCompact (P k)) (hPlf : LocallyFinite P)
+    (hLfin : (L.restrict (P k)).faces.Finite)
+    (hKP : ∀ k, d k < n → (K.restrict (P k)).faces.Finite)
+    (hKf : ∀ s ∈ K.faces, s ∈ L.faces ∨
+      ∃ k, d k < n ∧ (s : Set E) ⊆ P k) :
+    (K.restrict (P k)).faces.Finite := by
+  refine (hLfin.union (((hPlf.finite_nonempty_inter_compact
+    hPc).inter_of_left {m | d m < n}).biUnion
+      fun m hm => hKP m hm.2)).subset ?_
+  -- a face of `K` in `P k` is a face of `L` or lies in a smaller cell meeting `P k`
+  intro s hs
+  obtain ⟨hs, hsP⟩ := mem_restrict_faces.1 hs
+  rcases hKf s hs with hsL | ⟨m, hm, hsm⟩
+  · exact .inl (mem_restrict_faces.2 ⟨hsL, hsP⟩)
+  · obtain ⟨y, hy⟩ := K.nonempty_of_mem_faces hs
+    exact .inr (Set.mem_biUnion (x := m) ⟨⟨y, hsm hy, hsP hy⟩, hm⟩
+      (mem_restrict_faces.2 ⟨hs, hsm⟩))
 
 end LocallyFinite
 

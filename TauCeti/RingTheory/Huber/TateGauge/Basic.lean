@@ -74,7 +74,8 @@ namespace TauCeti.Huber
 variable {A : Type*} [CommRing A]
 
 /-- The *Tate gauge* of a subring `A₀`, a unit `ϖ` and a base `a`: the infimum of `a ^ (-n)` over
-the integers `n` with `ϖ ^ (-n) * x ∈ A₀`, that is with `x ∈ ϖ ^ n A₀`. -/
+the integers `n` with `ϖ ^ (-n) * x ∈ A₀`, that is with `x ∈ ϖ ^ n A₀`. If no such `n` exists, the
+set is empty and the gauge takes the junk value `sInf ∅ = 0`. -/
 noncomputable def tateGauge (A₀ : Subring A) (ϖ : Aˣ) (a : ℝ) (x : A) : ℝ :=
   sInf ((fun n : ℤ ↦ a ^ (-n)) '' {n | ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀})
 
@@ -105,8 +106,11 @@ theorem tateGauge_le_zpow (ha : 0 ≤ a) {x : A} {n : ℤ}
   csInf_le (bddBelow_tateGauge_radii ha _ _) ⟨n, hn, rfl⟩
 
 /-- An element of `A₀` has Tate gauge at most one. -/
-theorem tateGauge_le_one (ha : 0 ≤ a) {x : A} (hx : x ∈ A₀) : tateGauge A₀ ϖ a x ≤ 1 := by
-  simpa using tateGauge_le_zpow (A₀ := A₀) (ϖ := ϖ) ha (n := 0) (by simpa using hx)
+theorem tateGauge_le_one {x : A} (hx : x ∈ A₀) : tateGauge A₀ ϖ a x ≤ 1 := by
+  by_cases hb : BddBelow ((fun n : ℤ ↦ a ^ (-n)) '' {n | ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀})
+  · exact (csInf_le hb ⟨0, by simpa using hx, rfl⟩).trans_eq (zpow_zero _)
+  · rw [tateGauge_def, Real.sInf_of_not_bddBelow hb]
+    exact zero_le_one
 
 /-- The Tate gauge is below `r` exactly when `x ∈ ϖ ^ n A₀` for some `n` with `a ^ (-n) < r`,
 provided some power of `ϖ` moves `x` into `A₀`. -/
@@ -326,6 +330,13 @@ include hb
 private theorem mem_nhds_zero_of_hasBasis : (A₀ : Set A) ∈ 𝓝 (0 : A) := by
   simpa using hb.mem_of_mem (i := 0) trivial
 
+/-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in an `R₀` space, then the
+closure of zero consists of the elements lying in every `ϖ ^ n A₀`. -/
+private theorem mem_closure_zero_iff_forall [R0Space A] {x : A} :
+    x ∈ closure ({0} : Set A) ↔ ∀ n : ℕ, ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ A₀ := by
+  rw [R0Space.closure_singleton, hb.ker]
+  simp
+
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and multiplication is
 separately continuous, then every element of `A` is moved into `A₀` by some power of `ϖ`. -/
 theorem exists_zpow_mul_mem_of_hasBasis [SeparatelyContinuousMul A] (x : A) :
@@ -391,8 +402,7 @@ theorem tateGauge_eq_zero_iff [SeparatelyContinuousMul A] [R0Space A] (ha : 1 < 
     (hϖ : (ϖ : A) ∈ A₀) {x : A} :
     tateGauge A₀ ϖ a x = 0 ↔ x ∈ closure ({0} : Set A) := by
   rw [tateGauge_eq_zero_iff_forall hϖ (exists_zpow_mul_mem_of_hasBasis hb x) ha,
-    R0Space.closure_singleton, hb.ker]
-  simp
+    mem_closure_zero_iff_forall hb]
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero and `ϖ ∈ A₀`, then the
 Tate gauge separates points exactly when `A` is Hausdorff. -/
@@ -404,18 +414,18 @@ theorem t2Space_iff_forall_tateGauge_eq_zero_iff [SeparatelyContinuousMul A]
   exact ⟨fun h x ↦ ⟨h x, fun hx ↦ hx ▸ subset_closure rfl⟩, fun h x ↦ (h x).1⟩
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in a nonzero T₁ ring
-with separately continuous multiplication and `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
-theorem tateGauge_one [SeparatelyContinuousMul A] [T1Space A] [Nontrivial A] (ha : 1 < a)
+with `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
+theorem tateGauge_one [T1Space A] [Nontrivial A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : tateGauge A₀ ϖ a 1 = 1 := by
-  have hA := exists_zpow_mul_mem_of_hasBasis hb
-  have ha₀ : 0 ≤ a := zero_le_one.trans ha.le
-  rw [← coe_tateSeminorm hϖ hA ha]
-  apply (RingSeminorm.seminorm_one_eq_one_iff_ne_zero _
-    (tateGauge_le_one ha₀ A₀.one_mem)).2
-  intro h
-  have h1 : tateGauge A₀ ϖ a 1 = 0 := by
-    simpa using RingSeminorm.eq_zero_iff.1 h 1
-  simpa using (tateGauge_eq_zero_iff hb ha hϖ).1 h1
+  have h1 : ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * 1 ∈ A₀ := ⟨0, by simp⟩
+  -- `1 ∉ closure {0}` makes the gauge of `1` positive; submultiplicativity then forces it to be `1`
+  have hpos : 0 < tateGauge A₀ ϖ a 1 :=
+    (tateGauge_nonneg (zero_le_one.trans ha.le) 1).lt_of_ne' fun h ↦ one_ne_zero <| by
+      have := (mem_closure_zero_iff_forall hb).2 ((tateGauge_eq_zero_iff_forall hϖ h1 ha).1 h)
+      rwa [closure_singleton, Set.mem_singleton_iff] at this
+  have hle := tateGauge_mul_le 1 1 h1 h1 (zero_lt_one.trans ha)
+  rw [one_mul] at hle
+  exact le_antisymm (tateGauge_le_one A₀.one_mem) (by nlinarith)
 
 end Topology
 

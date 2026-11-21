@@ -144,8 +144,8 @@ theorem quaternionGroupTwo_centralCharacterSearch :
     (quaternionClassData 2).centralCharacterSearch (F := ZMod 5) =
       quaternionGroupTwoModularCentralRows := by
   rw [quaternionGroupTwoModularCentralRows]
-  apply (quaternionClassData 2).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_quaternionGroup_two_five (fun x : ℤ => (x : ZMod 5))
+  apply (quaternionClassData 2).centralCharacterSearch_eq_rowsOfMap
+    (fun x : ℤ => (x : ZMod 5))
     quaternionGroupTwoCentralCharacterTable
   · intro i
     fin_cases i <;> decide

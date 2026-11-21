@@ -65,6 +65,11 @@ theorem quotientSheaf_square_nonzero :
     Ideal.Quotient.eq_zero_iff_mem.mp (h.symm.trans hzero)
   exact (by decide : (2 : ZMod 4) ≠ 0) hmem
 
+-- The square-zero thickening is a homeomorphism, but not an isomorphism of locally ringed spaces.
+example : ¬ IsIso (fromSpecQuotient isAdic_span_two) := by
+  rw [fromSpecQuotient_isIso_iff, Ideal.span_singleton_eq_bot]
+  decide
+
 -- The transition from level one to level zero agrees with the actual quotient map of schemes.
 example :
     Spec.locallyRingedSpaceMap (CommRingCat.ofHom
@@ -100,11 +105,6 @@ end Zero
 section Padic
 
 variable (p : ℕ) [Fact p.Prime]
-
-local instance : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
 
 -- The maps of all infinitesimal neighbourhoods of `Spf ℤ_p` are surjective on stalks.
 example (n : ℕ) (q : PrimeSpectrum (ℤ_[p] ⧸ IsLocalRing.maximalIdeal ℤ_[p] ^ (n + 1))) :

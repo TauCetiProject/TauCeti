@@ -397,11 +397,8 @@ theorem card_roots_toFinset_map_eq_of_collinsProjection_of_splits [CharZero K] [
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F)
     (hφ : (p.map φ).Splits) (hψ : (p.map ψ).Splits) :
     (p.map φ).roots.toFinset.card = (p.map ψ).roots.toFinset.card := by
-  rcases eq_or_ne (p.map ψ) 0 with h0 | h0
-  · simp [h0, (map_eq_zero_iff_of_collinsProjection h hp).2 h0]
-  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits h0 hψ,
-    ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits
-      ((map_eq_zero_iff_of_collinsProjection h hp).not.2 h0) hφ,
+  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hψ,
+    ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hφ,
     natDegree_map_eq_of_collinsProjection h hp,
     natDegree_gcd_map_derivative_eq_of_collinsProjection h hp]
 

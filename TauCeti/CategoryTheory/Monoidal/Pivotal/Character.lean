@@ -196,11 +196,13 @@ theorem SplitK0.rightDimChar_apply_eq_conj (x : SplitK0 C) :
     SplitK0.rightDimChar ℂ C x = conj (SplitK0.leftDimChar ℂ C x) := by
   rw [← SplitK0.leftDimChar_dual, SplitK0.ringHom_apply_dual ℂ]
 
+omit [EssentiallySmall.{w} C] in
 /-- In a complex pivotal fusion category, the left and right categorical dimensions of an object
 have the same absolute value. -/
 theorem norm_rightDim_eq_norm_leftDim (X : C) :
     ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (rightDim X))‖ =
       ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (leftDim X))‖ := by
+  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
   rw [← SplitK0.rightDimChar_of, ← SplitK0.leftDimChar_of, SplitK0.rightDimChar_apply_eq_conj,
     RCLike.norm_conj]
 

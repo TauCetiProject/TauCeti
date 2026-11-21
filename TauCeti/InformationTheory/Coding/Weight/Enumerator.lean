@@ -84,20 +84,20 @@ theorem weightDistribution_eq_card_filter (hC : C.Finite) (w : ℕ) :
 theorem weightDistribution_eq_zero_of_card_lt {w : ℕ} (hw : Fintype.card ι < w) :
     C.weightDistribution w = 0 := by
   rw [weightDistribution_def, Nat.card_eq_zero]
-  exact .inl ⟨fun x ↦ (hammingNorm_le_card_fintype.trans_lt hw).ne x.2.2⟩
+  exact .inl ⟨fun x ↦ (hammingNorm_le_card_fintype.trans_lt hw).ne x.property.2⟩
 
 /-- A set of words containing the zero word has exactly one word of weight zero. -/
 @[simp]
 theorem weightDistribution_zero (h : 0 ∈ C) : C.weightDistribution 0 = 1 := by
   rw [weightDistribution_def, Nat.card_eq_one_iff_exists]
   refine ⟨⟨0, h, hammingNorm_zero⟩, fun x ↦ Subtype.ext ?_⟩
-  exact hammingNorm_eq_zero.mp x.2.2
+  exact hammingNorm_eq_zero.mp x.property.2
 
 /-- In a finite set of words, a weight occurs exactly when some word has that weight. -/
 theorem weightDistribution_ne_zero_iff (hC : C.Finite) {w : ℕ} :
     C.weightDistribution w ≠ 0 ↔ ∃ x ∈ C, hammingNorm x = w := by
   rw [weightDistribution_eq_card_filter hC, Ne, Finset.card_eq_zero, ← Ne,
-    ← Finset.nonempty_iff_ne_empty]
+    Finset.ne_empty_iff_nonempty]
   simp [Finset.Nonempty]
 
 /-- The weight distribution of a finite set of words sums to its cardinality. -/
@@ -201,7 +201,7 @@ theorem weightPolynomial_def (C : Set (∀ i, β i)) :
 theorem coeff_weightPolynomial (C : Set (∀ i, β i)) (w : ℕ) :
     C.weightPolynomial.coeff w = C.weightDistribution w := by
   rw [weightPolynomial_def, Polynomial.finsetSum_coeff]
-  simp_rw [Polynomial.coeff_monomial]
+  simp_rw [Polynomial.coeff_monomial_apply]
   rw [sum_ite_eq', ite_eq_left_iff]
   intro hw
   rw [weightDistribution_eq_zero_of_card_lt (by simpa [Nat.lt_succ_iff] using hw),
@@ -264,11 +264,12 @@ theorem weightDistribution_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ 
 
 end WeightPreservingEquivalence
 
-/-- A finite set containing zero whose nonzero words all have weight `d ≠ 0` has one word of
-weight zero, `Nat.card C - 1` words of weight `d`, and no words of any other weight. -/
+/-- A finite set containing zero whose nonzero words all have weight `d` has one word of
+weight zero and no words of any weight other than zero and `d`. For `d ≠ 0` it has `Nat.card C - 1`
+words of weight `d`. For `d = 0` the set is the singleton `{0}`, whose one word has weight zero. -/
 theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*} [Fintype ι]
     [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] {C : Set (∀ i, β i)} {d : ℕ}
-    (hC : C.Finite) (h0 : 0 ∈ C) (hd : d ≠ 0)
+    (hC : C.Finite) (h0 : 0 ∈ C)
     (hweight : ∀ x ∈ C, x ≠ 0 → hammingNorm x = d) (w : ℕ) :
     C.weightDistribution w = if w = 0 then 1 else if w = d then Nat.card C - 1 else 0 := by
   have hvanish : ∀ w, w ≠ 0 → w ≠ d → C.weightDistribution w = 0 := by
@@ -280,6 +281,11 @@ theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*
       simp [hx0] at hxw
       exact hw0 hxw.symm
     exact hwd (hxw.symm.trans (hweight x hx hx0))
+  rcases eq_or_ne d 0 with rfl | hd
+  · by_cases hw0 : w = 0
+    · subst w
+      simp [Set.weightDistribution_zero h0]
+    · simp [hw0, hvanish w hw0 hw0]
   have hshape (w : ℕ) : C.weightDistribution w =
       (if w = 0 then 1 else 0) + (if w = d then C.weightDistribution d else 0) := by
     by_cases hw0 : w = 0

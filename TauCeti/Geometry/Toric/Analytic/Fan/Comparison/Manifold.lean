@@ -73,7 +73,7 @@ theorem coe_algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     letI := Φ.analyticChartedSpace hΦ
     ⇑(algebraicAnalyticDiffeomorph hΦ n) = algebraicAnalyticEquiv hΦ := by
-  simp only [algebraicAnalyticDiffeomorph, coe_diffeomorphOfBijective,
+  simp only [algebraicAnalyticDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
     coe_algebraicAnalyticHomeomorph]
 
 /-- The inverse biholomorphism is the inverse chartwise comparison. -/
@@ -94,16 +94,16 @@ defined regular-cone structure of any extending basis and finite generating fami
 its local inverse is holomorphic, so these chart inclusions, which cover all algebraic complex
 points, characterize the pulled-back complex structure in both directions. -/
 theorem isLocalDiffeomorph_ofAffinePoint (σ : Φ.cones) {k l s : ℕ}
-    {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.1 ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) s) (n : ℕ∞ω) :
+    {B : Module.Basis (ToricRay σ.val ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.val ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.val) s) (n : ℕ∞ω) :
     letI := affinePointTopology g
-    letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ g
     letI := algebraicComplexPointChartedSpace hΦ
     IsLocalDiffeomorph 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
       𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (AlgebraicComplexPoint.ofAffinePoint σ) := by
   let := affinePointTopology g
-  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone hB κ g
   let := Φ.analyticChartedSpace hΦ
   let := algebraicComplexPointChartedSpace hΦ
   let e := Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n

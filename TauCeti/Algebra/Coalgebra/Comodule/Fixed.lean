@@ -150,21 +150,21 @@ theorem decompose_mem_fixedSubcomodule {ι : Type*} [DecidableEq ι] (𝒜 : ι 
     | zero => simp
     | add y y' hy hy' => simp only [map_add, hy, hy']
     | @homogeneous j y =>
-      obtain ⟨z, hz⟩ := DirectSum.decomposeTensor_apply (ℳ := 𝒜) (N := C) ▸ h𝒜 j y y.2
+      obtain ⟨z, hz⟩ := DirectSum.decomposeTensor_apply (ℳ := 𝒜) (N := C) ▸ h𝒜 j y y.property
       rw [← hz, ← LinearMap.rTensor_comp_apply]
       by_cases hji : j = i
       · subst hji
         have hpj : p ∘ₗ (𝒜 j).subtype = (𝒜 j).subtype :=
           LinearMap.ext fun y ↦ by
             rw [LinearMap.comp_apply, Submodule.subtype_apply, hp,
-              DirectSum.decompose_of_mem_same 𝒜 y.2]
-        rw [hpj, hz, hp, DirectSum.decompose_of_mem_same 𝒜 y.2]
+              DirectSum.decompose_of_mem_same 𝒜 y.property]
+        rw [hpj, hz, hp, DirectSum.decompose_of_mem_same 𝒜 y.property]
       · have hpj : p ∘ₗ (𝒜 j).subtype = 0 :=
           LinearMap.ext fun y ↦ by
             rw [LinearMap.comp_apply, Submodule.subtype_apply, hp,
-              DirectSum.decompose_of_mem_ne 𝒜 y.2 hji, LinearMap.zero_apply]
+              DirectSum.decompose_of_mem_ne 𝒜 y.property hji, LinearMap.zero_apply]
         rw [hpj, LinearMap.rTensor_zero, LinearMap.zero_apply, hp,
-          DirectSum.decompose_of_mem_ne 𝒜 y.2 hji, map_zero]
+          DirectSum.decompose_of_mem_ne 𝒜 y.property hji, map_zero]
   rw [mem_fixedSubcomodule, ← hp, hcomm, mem_fixedSubcomodule.1 hx, LinearMap.rTensor_tmul]
 
 end TauCeti.Comodule
@@ -174,7 +174,7 @@ namespace TauCeti.Comodule.Hom
 universe u v w x
 
 variable {R : Type u} {C : Type v} {M : Type w} {N : Type x}
-variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C] [One C]
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C] [One C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 variable [AddCommMonoid N] [Module R N] [Comodule R C N] [Module.Flat R C]
 
@@ -182,8 +182,6 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N] [Module.Flat R C]
 theorem mem_fixedSubcomodule_iff_of_injective (f : Hom R C M N)
     (hf : Function.Injective f) (m : M) :
     f m ∈ fixedSubcomodule R C N ↔ m ∈ fixedSubcomodule R C M := by
-  let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R
-  let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
   refine ⟨fun hm ↦ ?_, f.mem_fixedSubcomodule⟩
   rw [Comodule.mem_fixedSubcomodule] at hm ⊢
   apply Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf

@@ -97,7 +97,7 @@ private noncomputable def adicCompletionPkg (hI : IsAdic I) (hfg : I.FG) :
       ((isAdic_map_algebraMap.hasBasis_nhds_zero.comap (algebraMap R (AdicCompletion I R))).congr
         (fun _ ↦ Iff.rfl) fun n _ ↦ ?_)
     ext x
-    simp [← Ideal.map_pow, AdicCompletion.algebraMap_mem_map_pow_iff hfg]
+    simp [← Ideal.map_pow, AdicCompletion.algebraMap_mem_map_pow_iff]
   dense x := by
     refine (mem_closure_iff_nhds_basis (isAdic_map_algebraMap.hasBasis_nhds x)).mpr fun n _ ↦ ?_
     obtain ⟨y, hy⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow hfg n x

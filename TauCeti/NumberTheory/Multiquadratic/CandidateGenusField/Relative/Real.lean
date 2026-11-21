@@ -187,12 +187,8 @@ private theorem candidateGenusFieldRelativeSignPattern_mem_negativeSpan_iff
   have hvspan : v ∈ ZMod 2 ∙ z ↔
       (v : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) ∈
         ZMod 2 ∙ (z : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) := by
-    simp only [Submodule.mem_span_singleton]
-    constructor
-    · rintro ⟨a, ha⟩
-      exact ⟨a, congrArg Subtype.val ha⟩
-    · rintro ⟨a, ha⟩
-      exact ⟨a, Subtype.ext ha⟩
+    simpa using (Submodule.apply_mem_span_image_iff_mem_span (R := ZMod 2) (s := {z}) (x := v)
+      (candidateGenusFieldRelativeSignSubmodule hd).injective_subtype).symm
   rw [hvspan]
   -- The cyclic subgroup lives on the multiplicative form of the ambient coordinate space.
   change (v : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) ∈
@@ -216,7 +212,7 @@ noncomputable def candidateGenusFieldOrdinaryClassGroupHom (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) →*
       Multiplicative
-        (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) :=
+        (ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) :=
   (candidateGenusFieldOrdinaryClassGroupSignMap hd hnsq).toAddMonoidHom.toMultiplicative.comp
     (galoisGroupEquivCandidateGenusFieldRelative hd).toMonoidHom
 
@@ -279,7 +275,7 @@ noncomputable def autCandidateGenusFieldRealEquivElementaryTwoQuotient
     (candidateGenusFieldReal hd ≃ₐ[candidateGenusFieldBase hd]
       candidateGenusFieldReal hd) ≃*
         Multiplicative
-          (TauCeti.ClassGroup.ElementaryTwoQuotient
+          (ClassGroup.ElementaryTwoQuotient
             (𝓞 (candidateGenusFieldBase hd))) := by
   letI := candidateGenusFieldRealAlgebra hd hpos
   exact

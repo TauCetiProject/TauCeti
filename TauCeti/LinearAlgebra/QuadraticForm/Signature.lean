@@ -38,6 +38,11 @@ of positive (negative) square has at most as many members as the positive (negat
   vanishing negative index of inertia.
 * `QuadraticForm.forall_nonpos_iff_sigPos_eq_zero`: nonpositivity is characterized by
   vanishing positive index of inertia.
+* `QuadraticForm.exists_submodule_finrank_eq_sigPos_and_posDef` and
+  `QuadraticForm.exists_submodule_finrank_eq_sigNeg_and_negDef`: a definite subspace of dimension
+  the corresponding index of inertia exists, without finite-dimensionality.
+* `QuadraticForm.sigPos_eq_zero_of_not_finite` and `QuadraticForm.sigNeg_eq_zero_of_not_finite`:
+  both indices of inertia vanish when the space is not finite.
 * `QuadraticForm.sigPos_restrict_le`: restriction to a subspace cannot increase the
   positive index of inertia.
 * `QuadraticForm.sigNeg_restrict_le`: restriction to a subspace cannot increase the
@@ -59,6 +64,8 @@ of positive (negative) square has at most as many members as the positive (negat
   index of inertia.
 * `QuadraticForm.sigPos_lift` and `QuadraticForm.sigNeg_lift`: more generally, quotienting by any
   subspace of the radical preserves both indices of inertia.
+* `QuadraticForm.sigPos_comp_of_surjective` and `QuadraticForm.sigNeg_comp_of_surjective`: pulling
+  a form back along a surjective linear map preserves both indices of inertia.
 * `QuadraticForm.sigPos_prod` and `QuadraticForm.sigNeg_prod`: the indices of
   inertia are additive under orthogonal products.
 * `QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot`: positive-definiteness
@@ -68,6 +75,13 @@ of positive (negative) square has at most as many members as the positive (negat
 * `QuadraticForm.sigPos_eq_finrank_of_isCompl` and `QuadraticForm.sigNeg_eq_finrank_of_isCompl`:
   a nondegenerate form vanishing on two complementary subspaces `A` and `B` has both indices of
   inertia equal to `dim A`.
+* `QuadraticForm.sigPos_eq_finrank_of_isCompl_of_posDef` and
+  `QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef`: a form which is positive (negative)
+  definite on `A` and negative (positive) semidefinite on a complement of `A` has positive
+  (negative) index of inertia `dim A`.
+* `QuadraticForm.sigNeg_eq_finrank_of_injective`: the same for a form which is negative definite
+  and nonnegative on the preimages, under an injective map, of two independent subspaces of its
+  range whose dimensions add up to `dim M`.
 * `LinearMap.BilinForm.card_le_sigPos_toQuadraticMap_of_iIsOrtho` and
   `LinearMap.BilinForm.card_le_sigNeg_toQuadraticMap_of_iIsOrtho`: an orthogonal family of
   vectors of positive (negative) square has at most `sigPos` (`sigNeg`) members.
@@ -108,7 +122,21 @@ theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submod
   simp only [e, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
     LinearEquiv.neg_apply, Submodule.coe_prodEquivOfIsCompl', Submodule.coe_neg]
   rw [QuadraticMap.map_add Q, QuadraticMap.map_add Q, QuadraticMap.map_neg, polar_neg_right]
-  simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
+  simp [hA.apply_eq_zero a.property, hB.apply_eq_zero b.property]
+
+/-- **A positive-definite subspace of dimension the positive index of inertia exists.** This is
+Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption. -/
+theorem exists_submodule_finrank_eq_sigPos_and_posDef (Q : _root_.QuadraticForm R M) :
+    ∃ V : Submodule R M, Module.finrank R V = sigPos Q ∧ (Q.restrict V).PosDef := by
+  classical
+  unfold sigPos
+  generalize_proofs h
+  exact (Finset.mem_filter.mp (Finset.max'_mem _ h)).2
+
+/-- **A negative-definite subspace of dimension the negative index of inertia exists.** -/
+theorem exists_submodule_finrank_eq_sigNeg_and_negDef (Q : _root_.QuadraticForm R M) :
+    ∃ V : Submodule R M, Module.finrank R V = sigNeg Q ∧ ((-Q).restrict V).PosDef :=
+  exists_submodule_finrank_eq_sigPos_and_posDef (-Q)
 
 variable [IsStrictOrderedRing R]
 
@@ -157,6 +185,24 @@ theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm R M) {a : R} (ha : a < 0) :
 
 end CommRing
 
+section Field
+
+variable {K M : Type*} [Field K] [LinearOrder K] [AddCommGroup M] [Module K M]
+
+/-- In a space that is not finite, the positive index of inertia is `0`, since it is at most the
+dimension, which is `0` by convention. -/
+theorem sigPos_eq_zero_of_not_finite (Q : _root_.QuadraticForm K M)
+    (h : ¬Module.Finite K M) : sigPos Q = 0 :=
+  Nat.le_zero.mp ((sigPos_le_finrank Q).trans_eq (Module.finrank_of_not_finite h))
+
+/-- In a space that is not finite, the negative index of inertia is `0`. -/
+theorem sigNeg_eq_zero_of_not_finite (Q : _root_.QuadraticForm K M)
+    (h : ¬Module.Finite K M) : sigNeg Q = 0 :=
+  sigPos_eq_zero_of_not_finite (-Q) h
+
+end Field
+
+
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
@@ -177,16 +223,8 @@ theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
       rintro rfl
       rw [map_zero, neg_zero] at hQx
       exact lt_irrefl 0 hQx
-    have hpos : ((-Q).restrict (Submodule.span K {x})).PosDef := by
-      rintro ⟨v, hv⟩ hv0
-      obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hv
-      have hc0 : c ≠ 0 := by
-        rintro rfl
-        exact hv0 (by simp)
-      rw [restrict_apply, neg_apply, Q.map_smul, smul_eq_mul]
-      have : -(c * c * Q x) = (c * c) * -Q x := by ring
-      rw [this]
-      exact mul_pos (mul_self_pos.mpr hc0) hQx
+    have hpos : ((-Q).restrict (Submodule.span K {x})).PosDef :=
+      QuadraticMap.posDef_restrict_span_singleton (Q := -Q) hQx
     have hrank : Module.finrank K (Submodule.span K {x}) = 1 := finrank_span_singleton hx0
     have hle := le_sigNeg_of_negDef (Q := Q) hpos
     rw [hrank, hsig] at hle
@@ -196,6 +234,22 @@ theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
 theorem forall_nonpos_iff_sigPos_eq_zero (Q : _root_.QuadraticForm K M) :
     (∀ x, Q x ≤ 0) ↔ sigPos Q = 0 := by
   simpa only [neg_apply, neg_nonneg, sigNeg_neg] using forall_nonneg_iff_sigNeg_eq_zero (-Q)
+
+omit [FiniteDimensional K M] in
+/-- The zero quadratic form has positive index of inertia zero. -/
+@[simp]
+theorem sigPos_zero : sigPos (0 : _root_.QuadraticForm K M) = 0 := by
+  by_cases hM : Module.Finite K M
+  · exact (forall_nonpos_iff_sigPos_eq_zero 0).mp fun _ ↦ le_rfl
+  · exact sigPos_eq_zero_of_not_finite 0 hM
+
+omit [FiniteDimensional K M] in
+/-- The zero quadratic form has negative index of inertia zero. -/
+@[simp]
+theorem sigNeg_zero : sigNeg (0 : _root_.QuadraticForm K M) = 0 := by
+  by_cases hM : Module.Finite K M
+  · exact (forall_nonneg_iff_sigNeg_eq_zero 0).mp fun _ ↦ le_rfl
+  · exact sigNeg_eq_zero_of_not_finite 0 hM
 
 omit [IsStrictOrderedRing K] in
 /-- Restricting a quadratic form to a subspace cannot increase its positive index. -/
@@ -367,6 +421,36 @@ theorem sigNeg_lift_radical (Q : _root_.QuadraticForm K M) :
     sigNeg (Q.lift Q.radical le_rfl) = sigNeg Q :=
   sigNeg_lift Q Q.radical le_rfl
 
+section Comp
+
+variable {N : Type*} [AddCommGroup N] [Module K N]
+
+/-- Pulling a quadratic form back along a surjective linear map preserves its positive index of
+inertia: the kernel of the map lies in the radical of the pullback, and the quotient by the kernel
+is isometric to the original form. -/
+theorem sigPos_comp_of_surjective (Q : _root_.QuadraticForm K N) {f : M →ₗ[K] N}
+    (hf : Function.Surjective f) : sigPos (Q.comp f) = sigPos Q := by
+  have hker : LinearMap.ker f ≤ (Q.comp f).radical := fun v hv ↦ by
+    rw [LinearMap.mem_ker] at hv
+    simp [QuadraticMap.mem_radical_iff', hv]
+  have hequiv : ((Q.comp f).lift (LinearMap.ker f) hker).Equivalent Q :=
+    ⟨{ f.quotKerEquivOfSurjective hf with
+      map_app' := fun x ↦ by
+        induction x using Submodule.Quotient.induction_on with
+        | H x => simp }⟩
+  rw [← sigPos_lift _ _ hker, hequiv.sigPos_eq]
+
+/-- Pulling a quadratic form back along a surjective linear map preserves its negative index of
+inertia. -/
+theorem sigNeg_comp_of_surjective (Q : _root_.QuadraticForm K N) {f : M →ₗ[K] N}
+    (hf : Function.Surjective f) : sigNeg (Q.comp f) = sigNeg Q := by
+  have hneg : (-Q).comp f = -(Q.comp f) := by
+    ext v
+    simp
+  rw [← sigPos_neg, ← sigPos_neg, ← hneg, sigPos_comp_of_surjective _ hf]
+
+end Comp
+
 /-- A quadratic form is positive-definite exactly when its negative index vanishes and its
 radical is trivial. -/
 @[grind =]
@@ -387,10 +471,16 @@ theorem posDef_iff_sigNeg_eq_zero_and_radical_eq_bot (Q : _root_.QuadraticForm K
     have hxW : x ∈ W := hWtop.symm ▸ Submodule.mem_top
     exact hWpos ⟨x, hxW⟩ (by simpa only [ne_eq, Submodule.mk_eq_zero])
 
+omit [FiniteDimensional K M] in
 /-- The positive and negative indices of inertia of a nondegenerate quadratic form add up to the
-dimension of the space. -/
+dimension of the space. For a space that is not finite both sides are `0` by convention. -/
 theorem sigPos_add_sigNeg_of_nondegenerate (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate) :
     sigPos Q + sigNeg Q = Module.finrank K M := by
+  by_cases hM : Module.Finite K M
+  swap
+  · rw [sigPos_eq_zero_of_not_finite Q hM, sigNeg_eq_zero_of_not_finite Q hM,
+      Module.finrank_of_not_finite hM]
+  have := hM
   have hsig := sigPos_add_sigNeg_add_radical (Q := Q)
   rw [hQ.radical_eq_bot] at hsig
   simpa only [finrank_bot, add_zero] using hsig
@@ -420,24 +510,95 @@ theorem sigNeg_eq_finrank_of_isCompl (Q : _root_.QuadraticForm K M) (hQ : Q.Nond
     sigNeg Q = Module.finrank K A := by
   rw [sigNeg_eq_sigPos_of_isCompl Q hAB hA hB, sigPos_eq_finrank_of_isCompl Q hQ hAB hA hB]
 
+omit [IsStrictOrderedRing K] in
+/-- **Sylvester's law of inertia for a definite splitting.** If a quadratic form is positive
+definite on a subspace `A` and negative semidefinite on a complement `B`, its positive index of
+inertia is `dim A`. -/
+theorem sigPos_eq_finrank_of_isCompl_of_posDef (Q : _root_.QuadraticForm K M)
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : (Q.restrict A).PosDef)
+    (hB : ∀ x ∈ B, Q x ≤ 0) :
+    sigPos Q = Module.finrank K A := by
+  have hdim := Submodule.finrank_add_eq_of_isCompl hAB
+  have hle := le_sigPos_of_posDef Q hA
+  have hleB := sigPos_add_finrank_le_of_nonpos hB
+  omega
+
+/-- **Sylvester's law of inertia for a definite splitting.** If a quadratic form is negative
+definite on a subspace `A` and positive semidefinite on a complement `B`, its negative index of
+inertia is `dim A`. -/
+theorem sigNeg_eq_finrank_of_isCompl_of_negDef (Q : _root_.QuadraticForm K M)
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : ((-Q).restrict A).PosDef)
+    (hB : ∀ x ∈ B, 0 ≤ Q x) :
+    sigNeg Q = Module.finrank K A := by
+  rw [← sigPos_neg]
+  exact sigPos_eq_finrank_of_isCompl_of_posDef (-Q) hAB hA fun x hx ↦
+    neg_nonpos.mpr (hB x hx)
+
+/-- **Sylvester's law of inertia through an embedding.** Let `U : M → N` be injective and let
+`R₋`, `R₊` be independent subspaces of its range whose dimensions add up to that of `M`. If a
+quadratic form on `M` is negative definite on the vectors sent into `R₋` and nonnegative on those
+sent into `R₊`, its negative index is the dimension of `R₋`. -/
+theorem sigNeg_eq_finrank_of_injective {N : Type*} [AddCommGroup N] [Module K N]
+    (Q : _root_.QuadraticForm K M) {U : M →ₗ[K] N} (hU : Function.Injective U)
+    {Rm Rp : Submodule K N} [FiniteDimensional K Rm] [FiniteDimensional K Rp]
+    (hm : Rm ≤ U.range) (hp : Rp ≤ U.range) (hd : Rm ⊓ Rp = ⊥)
+    (hdim : Module.finrank K M = Module.finrank K Rm + Module.finrank K Rp)
+    (hneg : ∀ v, U v ∈ Rm → v ≠ 0 → Q v < 0) (hpos : ∀ v, U v ∈ Rp → 0 ≤ Q v) :
+    sigNeg Q = Module.finrank K Rm := by
+  set A := Rm.comap U
+  set B := Rp.comap U
+  have hfA : Module.finrank K A = Module.finrank K Rm := by
+    have h := (Submodule.equivMapOfInjective _ hU A).finrank_eq
+    rwa [Submodule.map_comap_eq_of_le hm] at h
+  have hfB : Module.finrank K B = Module.finrank K Rp := by
+    have h := (Submodule.equivMapOfInjective _ hU B).finrank_eq
+    rwa [Submodule.map_comap_eq_of_le hp] at h
+  have hcompl : IsCompl A B := by
+    have hAB : Disjoint A B := by
+      rw [disjoint_iff, ← Submodule.comap_inf, hd, Submodule.comap_bot]
+      exact LinearMap.ker_eq_bot.2 hU
+    refine ⟨hAB, codisjoint_iff.2 (Submodule.eq_top_of_finrank_eq ?_)⟩
+    have h := Submodule.finrank_sup_add_finrank_inf_eq A B
+    rw [disjoint_iff.1 hAB, finrank_bot, add_zero, hfA, hfB] at h
+    rw [h, hdim]
+  have hnegA : ((-Q).restrict A).PosDef := fun v hv0 ↦ by
+    have := hneg v v.property fun h ↦ hv0 (Subtype.ext h)
+    rw [QuadraticMap.restrict_apply, _root_.neg_apply]
+    linarith
+  rw [sigNeg_eq_finrank_of_isCompl_of_negDef Q hcompl hnegA hpos, hfA]
+
 end QuadraticForm
 
 namespace LinearMap.BilinForm
 
 open _root_.QuadraticForm
 
+/-- The quadratic form of the Gram matrix of a bilinear form in a basis is equivalent to the
+quadratic form of the bilinear form, through the coordinates of the basis. -/
+theorem equivalent_toQuadraticForm'_toMatrix {R M I : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
+    (B : LinearMap.BilinForm R M) :
+    (B.toMatrix b).toQuadraticForm'.Equivalent B.toQuadraticMap :=
+  ⟨{ toLinearEquiv := b.equivFun.symm
+     map_app' := fun v ↦ by
+       rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+       exact (B.dotProduct_toMatrix_mulVec b v v).symm }⟩
+
+/-- The positive index of a bilinear form agrees with that of its Gram matrix in any basis. -/
+@[simp]
+theorem sigPos_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
+    [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
+    (B : LinearMap.BilinForm R M) :
+    _root_.sigPos ((B.toMatrix b).toQuadraticForm') = _root_.sigPos B.toQuadraticMap :=
+  (equivalent_toQuadraticForm'_toMatrix b B).sigPos_eq
+
 /-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
 @[simp]
 theorem sigNeg_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
     [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
     (B : LinearMap.BilinForm R M) :
-    _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap := by
-  apply QuadraticMap.Equivalent.sigNeg_eq
-  refine ⟨{
-    toLinearEquiv := b.equivFun.symm
-    map_app' := fun v ↦ ?_ }⟩
-  rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
-  exact (B.dotProduct_toMatrix_mulVec b v v).symm
+    _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap :=
+  (equivalent_toQuadraticForm'_toMatrix b B).sigNeg_eq
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
@@ -484,18 +645,6 @@ theorem card_le_sigNeg_toQuadraticMap_of_iIsOrtho {ι : Type*} [Fintype ι]
     (iIsOrtho_def.mpr fun i j hij ↦ by simp [iIsOrtho_def.mp hv i j hij])
     fun i ↦ by simpa using hneg i
   rwa [LinearMap.BilinMap.toQuadraticMap_neg, sigPos_neg] at h
-
-/-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
-bilinear form is positive-semidefinite and nondegenerate. -/
-@[grind =]
-theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate (B : LinearMap.BilinForm K M)
-    (hB : B.IsSymm) :
-    B.toQuadraticMap.PosDef ↔ B.IsPosSemidef ∧ B.Nondegenerate := by
-  have _ : Invertible (2 : K) := invertibleOfNonzero (by norm_num)
-  rw [isPosSemidef_iff_sigNeg_eq_zero B hB,
-    QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot,
-    LinearMap.BilinForm.nondegenerate_iff_ker_eq_bot,
-    _root_.LinearMap.BilinForm.radical_toQuadraticMap B hB]
 
 /-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
 kernel of the bilinear form and the negative index of the quadratic form both vanish. -/

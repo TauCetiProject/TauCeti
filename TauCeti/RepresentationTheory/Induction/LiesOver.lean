@@ -32,6 +32,8 @@ the given intertwiner with the unit `FDRep.indFDRepUnit`, which is injective.
 * `FDRep.LiesOver.of_res_iso`: transport across isomorphisms of restrictions.
 * `FDRep.liesOver_of_ne_bot`: a representation lies over each nonzero subrepresentation of its
   restriction.
+* `FDRep.liesOver_of_intertwiningMap`: a nonzero intertwiner into a restriction witnesses lying
+  over.
 * `FDRep.LiesOver.indFDRep`: induction preserves lying over along the composite homomorphism.
 
 ## References
@@ -94,22 +96,33 @@ theorem LiesOver.of_iso_right {V' : FDRep k N} (h : U.LiesOver φ V) (e : V ≅ 
   intro hzero
   exact hf ((cancel_epi e.inv).mp (hzero.trans Limits.comp_zero.symm))
 
+/-- **A nonzero intertwiner into a restriction witnesses lying over.**  If `f` is a nonzero
+intertwiner from a finite-dimensional representation `ρ` of `N` to the restriction of `U` along
+`φ`, then `U` lies over `ρ` regarded as an object of `FDRep k N`. -/
+theorem liesOver_of_intertwiningMap (U : FDRep k H) (φ : N →* H) {V : Type u} [AddCommGroup V]
+    [Module k V] [Module.Finite k V] {ρ : _root_.Representation k N V}
+    (f : ρ.IntertwiningMap (U.ρ.comp φ)) (hf : f ≠ 0) : U.LiesOver φ (FDRep.of ρ) := by
+  -- Both forgetful images carry the actions `ρ` and `U.ρ.comp φ` by definition, so `f` is an
+  -- intertwiner between them on the nose.
+  let i : _root_.Representation.IntertwiningMap
+      ((forget₂ (FDRep k N) (Rep k N)).obj (FDRep.of ρ)).ρ
+      ((forget₂ (FDRep k N) (Rep k N)).obj ((Action.res (FGModuleCat k) φ).obj U)).ρ :=
+    ⟨f.toLinearMap, f.isIntertwining'⟩
+  refine ⟨FDRep.forget₂HomLinearEquiv _ _ (Rep.ofHom i), fun h => hf ?_⟩
+  -- Evaluating `h` at `v` gives `f v = 0`, since neither `Rep.ofHom` nor
+  -- `FDRep.forget₂HomLinearEquiv` changes the underlying function.
+  ext v
+  exact ConcreteCategory.congr_hom h v
+
 /-- **A representation lies over each of its nonzero subrepresentations.**  If `σ` is a nonzero
 subrepresentation of the restriction of `U` along `φ`, then `U` lies over `σ` regarded as a
 representation, the witness being the inclusion of `σ`. -/
 theorem liesOver_of_ne_bot (U : FDRep k H) (φ : N →* H) {σ : Subrepresentation (U.ρ.comp φ)}
     (hσ : σ ≠ ⊥) : U.LiesOver φ (FDRep.of σ.toRepresentation) := by
-  -- Both forgetful images carry the actions `σ.toRepresentation` and `U.ρ.comp φ` by definition,
-  -- so the inclusion of `σ` intertwines them on the nose.
-  let i : _root_.Representation.IntertwiningMap
-      ((forget₂ (FDRep k N) (Rep k N)).obj (FDRep.of σ.toRepresentation)).ρ
-      ((forget₂ (FDRep k N) (Rep k N)).obj ((Action.res (FGModuleCat k) φ).obj U)).ρ :=
-    ⟨σ.toSubmodule.subtype, fun _ => rfl⟩
-  refine ⟨FDRep.forget₂HomLinearEquiv _ _ (Rep.ofHom i), fun h => hσ ?_⟩
+  refine liesOver_of_intertwiningMap U φ ⟨σ.toSubmodule.subtype, fun _ => rfl⟩ fun h => hσ ?_
   refine Subrepresentation.toSubmodule_injective <| (Submodule.eq_bot_iff _).mpr fun v hv => ?_
-  -- Evaluating `h` at `⟨v, hv⟩` gives `v = 0`: the morphism is the inclusion of `σ`, and neither
-  -- `Rep.ofHom` nor `FDRep.forget₂HomLinearEquiv` changes the underlying function.
-  exact ConcreteCategory.congr_hom h ⟨v, hv⟩
+  -- Evaluating `h` at `⟨v, hv⟩` gives `v = 0`, the intertwiner being the inclusion of `σ`.
+  exact DFunLike.congr_fun h ⟨v, hv⟩
 
 end Defs
 

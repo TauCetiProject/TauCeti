@@ -260,6 +260,32 @@ theorem toInf_all (φ : L.BoundedFormula α (n + 1)) :
     φ.all.toInf = (φ.toInf.all : L.BoundedFormulaInf ι α n) :=
   (rfl)
 
+/-- The embedding commutes with negation. -/
+@[simp]
+theorem toInf_not (φ : L.BoundedFormula α n) :
+    φ.not.toInf = (φ.toInf.not : L.BoundedFormulaInf ι α n) :=
+  (rfl)
+
+/-- The embedding commutes with existential quantification. -/
+@[simp]
+theorem toInf_ex (φ : L.BoundedFormula α (n + 1)) :
+    φ.ex.toInf = (φ.toInf.ex : L.BoundedFormulaInf ι α n) :=
+  (rfl)
+
+/-- The embedding commutes with the universal closure of all bound-variable slots. -/
+@[simp]
+theorem toInf_alls : ∀ {n} (φ : L.BoundedFormula α n),
+    φ.alls.toInf = ((φ.toInf : L.BoundedFormulaInf ι α n).alls)
+  | 0, _ => (rfl)
+  | _ + 1, φ => toInf_alls φ.all
+
+/-- The embedding commutes with the existential closure of all bound-variable slots. -/
+@[simp]
+theorem toInf_exs : ∀ {n} (φ : L.BoundedFormula α n),
+    φ.exs.toInf = ((φ.toInf : L.BoundedFormulaInf ι α n).exs)
+  | 0, _ => (rfl)
+  | _ + 1, φ => toInf_exs φ.ex
+
 /-- The embedding of finitary bounded formulas into `L_{ω₁ω}`. -/
 abbrev toOmega (φ : L.BoundedFormula α n) : L.BoundedFormulaω α n :=
   toInf φ

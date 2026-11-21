@@ -32,7 +32,7 @@ variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
 /-- Uniformly bounded, strongly null operators converge in norm after precomposition
 with a compact operator. No completeness assumption is needed. -/
 theorem tendsto_comp_zero_of_isCompactOperator {l : Filter ι} {A : ι → F →L[𝕜] G} {C : ℝ}
-    (hC : 0 ≤ C) (hA : ∀ i, ‖A i‖ ≤ C)
+    (hA : ∀ i, ‖A i‖ ≤ C)
     (hlim : ∀ x, Tendsto (fun i ↦ A i x) l (𝓝 0))
     (K : E →L[𝕜] F) (hK : IsCompactOperator K) :
     Tendsto (fun i ↦ A i ∘L K) l (𝓝 0) := by
@@ -40,12 +40,12 @@ theorem tendsto_comp_zero_of_isCompactOperator {l : Filter ι} {A : ι → F →
   have : CompactSpace s := isCompact_iff_compactSpace.mp hs
   have hequi : Equicontinuous (fun i (x : s) ↦ A i x) := by
     apply UniformEquicontinuous.equicontinuous
-    apply LipschitzWith.uniformEquicontinuous _ ⟨C, hC⟩
+    apply LipschitzWith.uniformEquicontinuous _ C.toNNReal
     intro i
     apply LipschitzWith.of_dist_le_mul
     intro x y
     exact ((A i).lipschitzWith.dist_le_mul (x : F) (y : F)).trans
-      (mul_le_mul_of_nonneg_right (hA i) dist_nonneg)
+      (mul_le_mul_of_nonneg_right ((hA i).trans (Real.le_coe_toNNReal C)) dist_nonneg)
   have hu := (hequi.tendsto_uniformFun_iff_pi l (fun _ ↦ (0 : G))).mpr
     (tendsto_pi_nhds.mpr fun x ↦ hlim x)
   have hunif : TendstoUniformly (fun i (x : s) ↦ A i x) (fun _ ↦ (0 : G)) l :=

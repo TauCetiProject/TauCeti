@@ -37,7 +37,7 @@ universe u
 
 namespace TauCeti
 
-variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [NormedRing.IsTate R]
   {M N P : Type*} [SeminormedAddCommGroup M] [Module R M]
   [SeminormedAddCommGroup N] [Module R N] [SeminormedAddCommGroup P] [Module R P]

@@ -46,6 +46,8 @@ become a contour cycle.
 * `TauCeti.Contour.Cycle.exists_windingNumber_integral_eq_sum_segments`: a balanced finite family
   of oriented segments is a contour cycle, with the sums of the segment winding numbers and
   segment integrals as its winding numbers and integrals.
+* `TauCeti.Contour.Cycle.integral_eq_sum_segments_complex`: lowers the universe level of a
+  segment-sum integration formula from `Type u`-valued continuous functions to `ℂ`-valued ones.
 
 ## References
 
@@ -108,14 +110,15 @@ private theorem hasDerivAt_boundaryParam (i : Fin n) {t : ℝ}
   rw [boundaryParam_eq_edgePath_sub poly i hu, Polygon.edgePath, AffineMap.lineMap_apply_module']
 
 /-- The boundary parametrization is polygonal on `[0, n]`, with the integers as vertices. -/
-private theorem isPolygonalOnInterval_boundaryParam :
+theorem _root_.Polygon.isPolygonalOnInterval_boundaryParam :
     IsPolygonalOnInterval poly.boundaryParam 0 n :=
   ⟨n, Nat.pos_of_ne_zero (NeZero.ne n), fun j ↦ ((j : ℕ) : ℝ), fun _ _ hjk ↦ Nat.cast_lt.2 hjk,
     by simp, by simp, boundaryParam_eq_of_mem_cell poly⟩
 
 /-- The image of the parameter interval under the boundary parametrization is the boundary of the
 polygon. -/
-private theorem image_boundaryParam : poly.boundaryParam '' uIcc 0 n = poly.boundary ℝ := by
+theorem _root_.Polygon.image_boundaryParam :
+    poly.boundaryParam '' uIcc 0 n = poly.boundary ℝ := by
   refine ((image_subset_range _ _).trans poly.range_boundaryParam.subset).antisymm fun z hz ↦ ?_
   obtain ⟨t, ht, rfl⟩ := poly.exists_mem_Ico_boundaryParam_eq hz
   rw [uIcc_of_le (Nat.cast_nonneg n)]
@@ -127,8 +130,14 @@ the last edge returns to vertex `0`. It is the boundary parametrization `poly.bo
 restricted to `[0, n]`. -/
 def _root_.Polygon.contourCurve : PiecewiseC1ClosedCurve :=
   PiecewiseC1ClosedCurve.of poly.boundaryParam
-    (isPolygonalOnInterval_boundaryParam poly).isPiecewiseC1On
+    poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
     (by simpa using (poly.periodic_boundaryParam 0).symm)
+
+/-- The polygonal curve of a polygon is its boundary parametrization, bundled on `[0, n]`. -/
+theorem _root_.Polygon.contourCurve_def :
+    poly.contourCurve = PiecewiseC1ClosedCurve.of poly.boundaryParam
+      poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
+      (by simpa using (poly.periodic_boundaryParam 0).symm) := (rfl)
 
 /-- The polygonal curve starts at the parameter `0`. -/
 @[simp]
@@ -149,16 +158,16 @@ theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n)
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
 contour cycle. -/
 def _root_.Polygon.contourCycle : Cycle :=
-  FreeAbelianGroup.of poly.contourCurve
+  FreeAddCommGroup.of poly.contourCurve
 
 /-- The cycle of a polygon is the single generator given by its polygonal curve. -/
 theorem _root_.Polygon.contourCycle_def :
-    poly.contourCycle = FreeAbelianGroup.of poly.contourCurve := (rfl)
+    poly.contourCycle = FreeAddCommGroup.of poly.contourCurve := (rfl)
 
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]
 theorem _root_.Polygon.trace_contourCycle : Cycle.trace poly.contourCycle = poly.boundary ℝ := by
-  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, image_boundaryParam]
+  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, Polygon.image_boundaryParam]
 
 /-- **The integral over a polygon** of a function continuous on its boundary is the sum over the
 edges `[v, w]` of `(w - v) • ∫ t in 0..1, f (v + t (w - v))`. -/
@@ -166,9 +175,9 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
     {f : ℂ → E} (hf : ContinuousOn f (poly.boundary ℝ)) :
     Cycle.integral f poly.contourCycle =
       ∑ i, (poly (finRotate n i) - poly i) • ∫ t in (0 : ℝ)..1, f (poly.edgePath ℝ i t) := by
-  have hγ := (isPolygonalOnInterval_boundaryParam poly).isPiecewiseC1On
+  have hγ := poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
   have hint := hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
-    (mapsTo_iff_image_subset.2 (image_boundaryParam poly).subset)
+    (mapsTo_iff_image_subset.2 poly.image_boundaryParam.subset)
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
   -- Split the integral over `[0, n]` into the integrals over the cells `[i, i + 1]`.
   have hsplit := intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ ↦ (k : ℝ))
@@ -198,7 +207,7 @@ theorem _root_.Polygon.windingNumber_contourCycle {z : ℂ} (hz : z ∉ poly.bou
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.windingNumber_of_raw]
   rw [TauCeti.Green.windingNumber_eq_sum_polygon_segments
     (s := fun j : Fin (n + 1) ↦ ((j : ℕ) : ℝ)) (fun _ _ hjk ↦ Nat.cast_lt.2 hjk)
-    (by simp) (by simp) (boundaryParam_eq_of_mem_cell poly) (by rwa [image_boundaryParam])]
+    (by simp) (by simp) (boundaryParam_eq_of_mem_cell poly) (by rwa [Polygon.image_boundaryParam])]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp only [Fin.val_castSucc, Fin.val_succ, Nat.cast_succ]
   rw [poly.boundaryParam_natCast, boundaryParam_natCast_add_one]
@@ -249,7 +258,7 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     intro z hz
     obtain ⟨i, hi⟩ := mem_iUnion.1 hz
     rw [Polygon.edgeSet_eq_image_edgePath, hedge, ← segment_eq_image_lineMap] at hi
-    exact mem_biUnion (σ^[i] e).2 hi
+    exact mem_biUnion (σ^[i] e).property hi
   -- The cycle is the sum of the polygons of the orbits; sums over the segments are computed orbit
   -- by orbit.
   refine ⟨∑ q : Quotient (Equiv.Perm.SameCycle.setoid σ), (P q.out).contourCycle,
@@ -266,6 +275,26 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     rw [Polygon.integral_contourCycle _ (hf.mono (hbd _)), ← Fin.sum_univ_eq_sum_range]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hedge, hPsucc, hP]
+
+/-- Lowering the universe level of the segment-sum integration formula of a cycle to scalar
+`ℂ`-valued integrands: if `Γ` integrates every continuous function into a `Type u` complex normed
+space as the sum of its segment integrals over `E`, the same formula holds for `ℂ`-valued
+functions. -/
+theorem integral_eq_sum_segments_complex {E : Finset (ℂ × ℂ)} {Γ : Cycle}
+    (hint : ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+      ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → integral f Γ =
+        ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t))
+    {g : ℂ → ℂ} (hg : ContinuousOn g (⋃ e ∈ E, segment ℝ e.1 e.2)) :
+    integral g Γ = ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, g (AffineMap.lineMap e.1 e.2 t) := by
+  let v : PUnit.{u + 1} → ℂ := fun _ ↦ 1
+  have h := hint (F := PUnit.{u + 1} → ℂ) (f := fun z ↦ g z • v) (hg.smul continuousOn_const)
+  rw [integral_smul_const] at h
+  have h0 := congr_fun h PUnit.unit
+  simp only [Pi.smul_apply, smul_eq_mul, mul_one, Finset.sum_apply, v] at h0
+  rw [h0]
+  refine Finset.sum_congr rfl fun e _ ↦ ?_
+  rw [intervalIntegral.integral_smul_const]
+  simp
 
 end Cycle
 

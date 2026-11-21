@@ -26,13 +26,9 @@ namespace TauCeti
 algebraically closed field is an `n`-th power, so `Fˣ ⧸ (Fˣ)ⁿ` is trivial. -/
 theorem card_powerClasses_of_isAlgClosed {F : Type*} [Field F] [IsAlgClosed F] {n : ℕ}
     (hn : n ≠ 0) : Nat.card (Fˣ ⧸ (powMonoidHom n : Fˣ →* Fˣ).range) = 1 := by
-  suffices h : (powMonoidHom n : Fˣ →* Fˣ).range = ⊤ by
-    rw [← Subgroup.index_eq_card, h, Subgroup.index_top]
-  refine MonoidHom.range_eq_top.2 fun x ↦ ?_
+  rw [← Subgroup.index_eq_card, Subgroup.index_eq_one, MonoidHom.range_eq_top]
+  intro x
   obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (x : F) (Nat.pos_of_ne_zero hn)
-  have hy0 : y ≠ 0 := by
-    rintro rfl
-    exact x.ne_zero (by simpa [zero_pow hn] using hy.symm)
-  exact ⟨Units.mk0 y hy0, Units.ext (by simpa using hy)⟩
+  exact ⟨Units.mk0 y <| (pow_ne_zero_iff hn).1 <| hy ▸ x.ne_zero, Units.ext hy⟩
 
 end TauCeti

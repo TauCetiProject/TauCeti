@@ -47,12 +47,6 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 
 attribute [local instance] Comodule.cofree
 
-/-- The ground ring supplies additive inverses on the bar bicomodule, whose tensor
-construction initially exposes only an additive monoid. -/
-local instance {X : Type*} [AddCommMonoid X] [Module R X] :
-    AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
-  Module.addCommMonoidToAddCommGroup R
-
 open AInfinityBimodule
 
 /-- A homotopy of bimodule morphisms is a degree-minus-one bar bicomodule map whose
@@ -120,15 +114,8 @@ theorem ext {h h' : Homotopy f g} (e : h.taylor = h'.taylor) : h = h' := by
 /-- The Taylor map lowers suspended degree by one. -/
 theorem isHomogeneous_taylor (h : Homotopy f g) :
     LinearMap.IsHomogeneous h.taylor (barGrading AA BB MM.grading).piece
-      (NN.grading.shift 1).piece (-1) := by
-  have hbar := h.isHomogeneous_barHomotopy
-  simp only [barGrading_def] at hbar ⊢
-  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  simpa only [LinearMap.comp_assoc, add_zero] using
-    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-      (NN.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (NN.grading.shift 1))
-        (BB.grading.shift 1))).comp hbar
+      (NN.grading.shift 1).piece (-1) :=
+  isHomogeneous_taylorProj_comp h.isHomogeneous_barHomotopy
 
 /-- The homotopy equation projected to the two cogenerators. -/
 theorem taylor_sub_taylor (h : Homotopy f g) :
@@ -182,7 +169,7 @@ theorem cohomologyMap_eq (h : Homotopy f g) : f.cohomologyMap = g.cohomologyMap 
   obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective MM.differential.boundariesInKer c
   rw [Submodule.mkQ_apply, cohomologyMap_mk, cohomologyMap_mk, Submodule.Quotient.eq]
   exact ⟨h.linearHomotopy x, by
-    simpa only [Submodule.subtype_apply, Submodule.coe_sub, LinearMap.mem_ker.mp x.2,
+    simpa only [Submodule.subtype_apply, Submodule.coe_sub, LinearMap.mem_ker.mp x.property,
       map_zero, add_zero] using (h.linearPart_sub_linearPart x).symm⟩
 
 /-- Homotopic bimodule morphisms are quasi-isomorphisms together. -/

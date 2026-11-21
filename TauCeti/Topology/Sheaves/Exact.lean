@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Colimits
 import Mathlib.Algebra.Category.Grp.FilteredColimits
+import Mathlib.CategoryTheory.Sites.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
+public import Mathlib.CategoryTheory.Functor.EpiMono
+public import Mathlib.CategoryTheory.Sites.Over
 public import Mathlib.Topology.Sheaves.Abelian
 
 /-!
@@ -24,6 +27,13 @@ This is how a sheaf defined as the homology of a complex of sheaves is shown to 
 instance a higher direct image computed from an injective resolution: it suffices that the
 complexes of sections are exact over a basis, where they compute sheaf cohomology.
 
+In the other direction, an epimorphism of sheaves is only locally surjective on sections: a section
+of the target lifts near every point, on a member of any set of opens which contains a basis inside
+each of its members (`TopCat.Sheaf.exists_mem_lift_of_epi`). For sheaves valued in any category
+with zero morphisms, whenever restriction to the over site of `V` preserves epimorphisms, any
+morphism intertwined under an epimorphism with a morphism vanishing on all opens inside `V` also
+vanishes on all opens inside `V` (`TopCat.Sheaf.app_eq_zero_of_epi_comp`).
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Exercise II.1.2.
@@ -36,6 +46,8 @@ open CategoryTheory Limits Opposite TopologicalSpace
 universe u
 
 namespace TopCat.Sheaf
+
+section Abelian
 
 variable {X : TopCat.{u}}
   {S : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
@@ -55,7 +67,7 @@ theorem exact_of_isBasis (hB : Opens.IsBasis B)
   change ∀ y, (Presheaf.stalkFunctor _ x).map S.g.hom y = 0 →
     ∃ z, (Presheaf.stalkFunctor _ x).map S.f.hom z = y
   intro y hy
-  obtain ⟨U, hxU, hU, s, rfl⟩ := Presheaf.exists_mem_germ_eq_of_isBasis hB S.X₂.obj x y
+  obtain ⟨U, hxU, _, s, rfl⟩ := Presheaf.exists_mem_germ_eq_of_isBasis hB S.X₂.obj x y
   -- the image of `s` in `F₃` has zero germ at `x`, so it vanishes on a basic neighbourhood `W`
   have hgs : Presheaf.germ S.X₃.obj U x hxU (S.g.hom.app (op U) s) =
       Presheaf.germ S.X₃.obj U x hxU 0 := by
@@ -68,5 +80,50 @@ theorem exact_of_isBasis (hB : Opens.IsBasis B)
       map_zero]
   refine ⟨Presheaf.germ S.X₁.obj W x hxW t, ?_⟩
   rw [Presheaf.stalkFunctor_map_germ_apply, ht, Presheaf.germ_res_apply]
+
+/-- Let `B` be a set of opens containing, inside each of its members, a basis of the topology of
+that member. Along an epimorphism of sheaves `π : F ⟶ G`, a section of `G` over a member `Y` of `B`
+lifts, near every point of `Y`, on a member of `B` contained in `Y`. -/
+theorem exists_mem_lift_of_epi
+    (hbasis : ∀ U ∈ B, ∀ V : Opens X, V ≤ U → ∀ x ∈ V, ∃ W ∈ B, x ∈ W ∧ W ≤ V)
+    {F G : CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (π : F ⟶ G)
+    [Epi π]
+    {Y : Opens X} (hY : Y ∈ B) (s : G.obj.obj (op Y)) (x : X) (hx : x ∈ Y) :
+    ∃ V ∈ B, x ∈ V ∧ ∃ h : V ≤ Y, ∃ t : F.obj.obj (op V),
+      π.hom.app (op V) t = G.obj.map (homOfLE h).op s := by
+  have : CategoryTheory.Sheaf.IsLocallySurjective π :=
+    (CategoryTheory.Sheaf.isLocallySurjective_iff_epi' _ π).2 inferInstance
+  obtain ⟨V, f, ⟨t, ht⟩, hxV⟩ :=
+    CategoryTheory.Presheaf.imageSieve_mem (Opens.grothendieckTopology X) π.hom s x hx
+  obtain ⟨W, hW, hxW, hWV⟩ := hbasis Y hY V f.le x hxV
+  refine ⟨W, hW, hxW, hWV.trans f.le, F.obj.map (homOfLE hWV).op t, ?_⟩
+  rw [← ConcreteCategory.comp_apply, π.hom.naturality, ConcreteCategory.comp_apply, ht,
+    ← ConcreteCategory.comp_apply, ← G.obj.map_comp]
+  rfl
+
+end Abelian
+
+section ZeroMorphisms
+
+/-- If `π₁ : G₁ ⟶ Z₁` is an epimorphism of sheaves valued in a category with zero morphisms,
+restriction to the over site of `V` preserves epimorphisms, and `π₁ ≫ ζ = φ ≫ π₂`, where
+`φ : G₁ ⟶ G₂` vanishes on all opens inside `V`, then `ζ : Z₁ ⟶ Z₂` also vanishes on all opens
+inside `V`. -/
+theorem app_eq_zero_of_epi_comp {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {X : TopCat} {G₁ G₂ Z₁ Z₂ : X.Sheaf C}
+    (π₁ : G₁ ⟶ Z₁) [Epi π₁] (π₂ : G₂ ⟶ Z₂) (φ : G₁ ⟶ G₂) (ζ : Z₁ ⟶ Z₂)
+    (hcomm : π₁ ≫ ζ = φ ≫ π₂) {V : Opens X}
+    [((Opens.grothendieckTopology X).overPullback C V).PreservesEpimorphisms]
+    (hφ : ∀ ⦃W : Opens X⦄, W ≤ V → φ.hom.app (op W) = 0) ⦃W : Opens X⦄ (hW : W ≤ V) :
+    ζ.hom.app (op W) = 0 := by
+  let P := (Opens.grothendieckTopology X).overPullback C V
+  have hPφ : P.map φ = 0 := by
+    ext U
+    exact hφ (leOfHom U.unop.hom)
+  have hPζ : P.map ζ = 0 := by
+    rw [← cancel_epi (P.map π₁), ← P.map_comp, hcomm, P.map_comp, hPφ, zero_comp, comp_zero]
+  exact congrArg (fun α : P.obj Z₁ ⟶ P.obj Z₂ ↦ α.hom.app (op (Over.mk (homOfLE hW)))) hPζ
+
+end ZeroMorphisms
 
 end TopCat.Sheaf

@@ -64,7 +64,7 @@ theorem IsPrimeDiscriminant.mod_four_eq_one {P : ℤ} (hP : IsPrimeDiscriminant 
     (hne : ¬ IsEvenPrimeDiscriminant P) : P % 4 = 1 := by
   rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨_p, _hp, hodd, rfl⟩
   · exact absurd hev hne
-  · exact oddPrimeDiscriminant_mod_four_eq_one hodd
+  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
 
 /-- A product of odd prime discriminants is congruent to `1` modulo `4`. -/
 theorem prod_primeDiscriminant_mod_four_eq_one {s : Finset ℤ}
@@ -222,7 +222,7 @@ theorem subset_of_forall_prime_dvd_fundamentalDiscriminant {a d c e : ℤ} {s u 
   have hPd : IsPrimeDiscriminant P := hu P hP
   have hpprime : (primeDiscriminantPrime P).Prime := prime_primeDiscriminantPrime hPd
   have hpa : ((primeDiscriminantPrime P : ℕ) : ℤ) ∣ fundamentalDiscriminant a :=
-    huprod ▸ (primeDiscriminantPrime_dvd hPd).trans (Finset.dvd_prod_of_mem _ hP)
+    huprod ▸ (primeDiscriminantPrime_dvd P).trans (Finset.dvd_prod_of_mem _ hP)
   have hpd : ((primeDiscriminantPrime P : ℕ) : ℤ) ∣ ∏ P ∈ s, P := by
     rw [hsprod]; exact hdvd _ hpprime hpa
   have hpZ : Prime ((primeDiscriminantPrime P : ℕ) : ℤ) :=

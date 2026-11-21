@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.Skyscraper
 
@@ -14,14 +15,17 @@ public import TauCeti.AlgebraicGeometry.Modules.Skyscraper
 For a point `x` of a scheme `X` over a field `k`, the zeroth cohomology of the skyscraper sheaf
 `κ(x)ₓ` is its residue field `κ(x)`. Its dimension over `k` is therefore the residue degree
 `[κ(x) : k]`. Since `κ(x)ₓ` is flasque, its higher cohomology vanishes. Consequently all of its
-cohomology is finite-dimensional when `κ(x)` is finite over `k`.
+cohomology is finite-dimensional when `κ(x)` is finite over `k`, and its Euler characteristic is
+`[κ(x) : k]`.
 
 ## Main declarations
 
 * `Scheme.finrank_cohomology_zero_skyscraperResidueField`: the dimension of
   `H⁰(X, κ(x)ₓ)` is the residue degree `[κ(x) : k]`;
 * `Scheme.finiteDimensional_cohomology_skyscraperResidueField`: if the residue degree is
-  nonzero, the cohomology of `κ(x)ₓ` is finite-dimensional in every degree.
+  nonzero, the cohomology of `κ(x)ₓ` is finite-dimensional in every degree;
+* `Scheme.eulerCharBelow_skyscraperResidueField`: the Euler characteristic `χ(X, κ(x)ₓ)` is the
+  residue degree `[κ(x) : k]`.
 -/
 
 public section
@@ -76,6 +80,18 @@ theorem _root_.AlgebraicGeometry.Scheme.finiteDimensional_cohomology_skyscraperR
       finrank_cohomology_zero_skyscraperResidueField]
     exact Nat.pos_of_ne_zero hx
   | succ i => infer_instance
+
+/-- **The Euler characteristic of a skyscraper sheaf.** Over a field `k`, the Euler characteristic
+`χ(X, κ(x)ₓ) = dim H⁰ - dim H¹` of the skyscraper sheaf of the residue field at `x` is the residue
+degree `[κ(x) : k]`. -/
+@[simp high]
+theorem _root_.AlgebraicGeometry.Scheme.eulerCharBelow_skyscraperResidueField (x : X) :
+    Scheme.Modules.eulerCharBelow k X (skyscraperResidueField x) 2 =
+      (X ↘ Spec (.of k)).residueDegree x := by
+  rw [Scheme.Modules.eulerCharBelow_two,
+    Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections,
+    finrank_cohomology_zero_skyscraperResidueField, Module.finrank_zero_of_subsingleton,
+    Nat.cast_zero, sub_zero]
 
 end Base
 

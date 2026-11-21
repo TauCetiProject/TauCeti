@@ -191,19 +191,9 @@ of `G^{ab}` is trivial exactly when `u` is a `ℤ_p`-multiple of `exponentSum r`
 theorem abelianizationHom_ofAdd_eq_one_iff (u : X → ℤ_[p]) :
     abelianizationHom {r} (ofAdd u) = 1 ↔
       u ∈ Submodule.span ℤ_[p] {(freeProP.exponentSum p X r).toAdd} := by
-  set v := (freeProP.exponentSum p X r).toAdd with hv
   have hF := (isProP_freeProP p X).topologicalAbelianization_self
   have hG := (isProP p X {r}).topologicalAbelianization_self
-  set ρ : TopologicalAbelianization (freeProP p X) := (r : TopologicalAbelianization (freeProP p X))
-    with hρ
-  have hερ : freeProP.abelianizationEquiv p X ρ = ofAdd v := by
-    rw [hρ, freeProP.abelianizationEquiv_mk, hv, ofAdd_toAdd]
-  -- The abelianization isomorphism carries the `p`-adic powers of `ρ` to the multiples of `v`.
-  have hpow : ∀ l : ℤ_[p], freeProP.abelianizationEquiv p X (hF.padicPow ρ l) = ofAdd (l • v) := by
-    intro l
-    have h := hF.map_padicPow_pi (freeProP.abelianizationEquiv p X : TopologicalAbelianization
-      (freeProP p X) →ₜ* Multiplicative (X → ℤ_[p])) ρ l
-    rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
+  have hpow := freeProP.abelianizationEquiv_padicPow_class p X r
   constructor
   · intro h
     -- The image of `u` in `F^{ab}` lies in the kernel of `F^{ab} → G^{ab}`, which is the image of
@@ -220,19 +210,8 @@ theorem abelianizationHom_ofAdd_eq_one_iff (u : X → ℤ_[p]) :
         (mk p {r}).continuous)
       (mk_surjective p {r}), ker_mk] at hmem
     obtain ⟨y, hy, hyu⟩ := hmem
-    -- `R` lies in the preimage of the closed subgroup of `p`-adic powers of `ρ`.
-    have hK : (Subgroup.normalClosure {r}).topologicalClosure ≤
-        ((hF.padicPowHom ρ :
-          Multiplicative ℤ_[p] →* TopologicalAbelianization (freeProP p X)).range).comap
-            (QuotientGroup.mk' (commutator (freeProP p X)).topologicalClosure) := by
-      refine Subgroup.topologicalClosure_minimal _ (Subgroup.normalClosure_le_normal ?_) ?_
-      · rw [Set.singleton_subset_iff, SetLike.mem_coe, Subgroup.mem_comap, MonoidHom.mem_range]
-        exact ⟨ofAdd 1, by
-          rw [MonoidHom.coe_ofClass, hF.padicPowHom_ofAdd_one, QuotientGroup.mk'_apply, hρ]⟩
-      · rw [Subgroup.coe_comap, MonoidHom.coe_range, MonoidHom.coe_ofClass]
-        exact ((isCompact_range (hF.padicPowHom ρ).continuous).isClosed).preimage
-          continuous_quot_mk
-    obtain ⟨l, hl⟩ := MonoidHom.mem_range.mp (Subgroup.mem_comap.mp (hK hy))
+    obtain ⟨l, hl⟩ := MonoidHom.mem_range.mp (Subgroup.mem_comap.mp
+      ((isProP_freeProP p X).normalClosure_topologicalClosure_le_comap_range_padicPowHom r hy))
     refine Submodule.mem_span_singleton.mpr ⟨l.toAdd, ?_⟩
     have h' := congrArg (freeProP.abelianizationEquiv p X) hyu
     rw [ContinuousMulEquiv.apply_symm_apply, ← hl, MonoidHom.coe_ofClass, hF.padicPowHom_apply,

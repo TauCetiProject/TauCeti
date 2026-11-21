@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Data.ZMod.QuotientGroup
 
 /-!
 # Transitive actions
@@ -42,6 +44,10 @@ assumed.
   transitive action of a group with as many elements as the finite set acted on is regular, so
   only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
+* `TauCeti.isPretransitive_of_prime_natCard_of_smul_ne`: an action on a set with a prime number
+  `p` of points is transitive as soon as some element `g` moves a point fixed by `g ^ p`.
+* `MonoidHom.isPretransitive_range_iff`: the image of a permutation representation is
+  transitive exactly when every point is reached from a fixed base point.
 * `MonoidHom.isCycleOn_apply_of_zpowers_eq_top`: the image of a generator under a transitive
   permutation representation of a cyclic group is one cycle on the whole set.
 
@@ -73,11 +79,27 @@ value Burnside's lemma takes on it -- needs more than this: a genuine `MulAction
 `Nonempty` to rule the empty case back out. -/
 theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
     IsPretransitive G (X × Y) :=
-  ⟨fun p q => by
-    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G p.1 q.1
-    exact ⟨g, Prod.fst_injective hg⟩⟩
+  ⟨fun p q => (exists_smul_eq G p.1 q.1).imp fun _ hg => Prod.fst_injective hg⟩
 
 end SMul
+
+/-- **An element moving a point of prime period acts transitively in prime degree.** If a group
+acts on a set with a prime number `p` of points, and some element `g` moves a point `x` that
+`g ^ p` fixes, then the action is transitive. -/
+theorem isPretransitive_of_prime_natCard_of_smul_ne {G X : Type*} [Group G] [MulAction G X]
+    (hp : (Nat.card X).Prime) {g : G} {x : X} (hg : g ^ Nat.card X • x = x) (hx : g • x ≠ x) :
+    IsPretransitive G X := by
+  have : Finite X := Nat.finite_of_card_ne_zero hp.ne_zero
+  -- The period of `x` under `g` divides the prime `p` and is not `1`, so the orbit of `x` under
+  -- the powers of `g` has `p` points: it is the whole set.
+  have hper : Function.minimalPeriod (g • ·) x = Nat.card X :=
+    ((Nat.dvd_prime hp).mp (pow_smul_eq_iff_minimalPeriod_dvd.mp hg)).resolve_left fun h ↦
+      hx (Function.minimalPeriod_eq_one_iff_isFixedPt.mp h).eq
+  have huniv : orbit (Subgroup.zpowers g) x = Set.univ := by
+    rw [Set.eq_univ_iff_ncard, ← Nat.card_coe_set_eq, Nat.card_congr (orbitZPowersEquiv g x),
+      Nat.card_zmod, hper]
+  rw [isPretransitive_iff_orbit_eq_univ x]
+  exact Set.eq_univ_of_univ_subset (huniv ▸ orbit_subgroup_subset (Subgroup.zpowers g) x)
 
 variable (G : Type*) {X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
 
@@ -86,9 +108,8 @@ the set acted on, the coset of `g` corresponding to `g • b`.  This is
 `MulAction.ofQuotientStabilizer`, which transitivity makes surjective. -/
 noncomputable def quotientStabilizerEquiv (b : X) : G ⧸ stabilizer G b ≃ X :=
   Equiv.ofBijective (ofQuotientStabilizer G b)
-    ⟨injective_ofQuotientStabilizer G b, fun x => by
-      obtain ⟨g, hg⟩ := exists_smul_eq G b x
-      exact ⟨QuotientGroup.mk g, (ofQuotientStabilizer_mk G b g).trans hg⟩⟩
+    ⟨injective_ofQuotientStabilizer G b, fun x => (exists_smul_eq G b x).imp' QuotientGroup.mk
+      fun g hg => (ofQuotientStabilizer_mk G b g).trans hg⟩
 
 /-- The computation rule for `TauCeti.quotientStabilizerEquiv`: on the coset represented by `g` it
 takes the value `g • b`. -/
@@ -117,10 +138,9 @@ points, by `MulAction.index_stabilizer_of_transitive`, so the stabiliser has one
 theorem stabilizer_eq_bot_of_natCard_eq [Finite X] (h : Nat.card G = Nat.card X) (x : X) :
     stabilizer G x = ⊥ := by
   have : Nonempty X := ⟨x⟩
-  have hmul := (stabilizer G x).index_mul_card
+  have hmul := (stabilizer G x).card_mul_index
   rw [index_stabilizer_of_transitive G x, h] at hmul
-  exact Subgroup.card_eq_one.mp
-    (Nat.eq_of_mul_eq_mul_left Nat.card_pos (by rw [hmul, mul_one]))
+  exact Subgroup.eq_bot_of_card_eq _ ((mul_eq_right₀ Nat.card_pos.ne').mp hmul)
 
 variable {G} in
 /-- In a transitive action of a group with as many elements as the finite set acted on, an
@@ -137,18 +157,28 @@ open Equiv
 
 variable {G X : Type*} [Group G]
 
+/-- The image of a permutation representation is transitive exactly when every point is
+reached from a fixed base point. -/
+theorem isPretransitive_range_iff (ρ : G →* Perm X) (a : X) :
+    IsPretransitive ρ.range X ↔ ∀ x, ∃ g, ρ g a = x := by
+  rw [isPretransitive_iff_base a]
+  refine forall_congr' fun x => ⟨?_, ?_⟩
+  · rintro ⟨⟨_, g, rfl⟩, hg⟩
+    exact ⟨g, hg⟩
+  · rintro ⟨g, hg⟩
+    exact ⟨⟨ρ g, g, rfl⟩, hg⟩
+
 /-- **A generator of a cyclic group acts as one cycle in every transitive permutation
 representation.** If `g` generates `G` and the image of `ρ : G →* Perm X` acts transitively,
-then `ρ g` is a cycle on all of `X`. This includes singleton `X`, where `ρ g` is the identity
-and `IsCycleOn univ` is the appropriate nondegenerate-free formulation. -/
+then `ρ g` is a cycle on all of `X`. Stating this with `Equiv.Perm.IsCycleOn` rather than
+`Equiv.Perm.IsCycle` keeps it true when `X` has at most one point, where `ρ g` is the identity. -/
 theorem isCycleOn_apply_of_zpowers_eq_top (ρ : G →* Perm X)
     (hρ : IsPretransitive ρ.range X) {g : G} (hg : Subgroup.zpowers g = ⊤) :
     (ρ g).IsCycleOn Set.univ := by
   refine ⟨(ρ g).bijective.bijOn_univ, fun x _ y _ => ?_⟩
   obtain ⟨⟨_, a, rfl⟩, ha⟩ := hρ.exists_smul_eq x y
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg.symm ▸ Subgroup.mem_top a)
-  have ha' : ρ a x = y := by simpa [Subgroup.smul_def] using ha
-  exact ⟨k, by simpa [← map_zpow, hk] using ha'⟩
+  obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp ((Subgroup.eq_top_iff' _).mp hg a)
+  exact ⟨k, by simpa [Subgroup.smul_def] using ha⟩
 
 /-- **Orbit-stabiliser for a transitive permutation representation** `ρ : G →* Perm X`: the coset
 space of the point stabiliser `ρ⁻¹ (stabilizer x)` is `X`, the coset of `g` corresponding to

@@ -162,13 +162,11 @@ theorem rankOnePoints_diag2nUnit (u : Kˣ) :
     rankOnePoints K i (Matrix.SpecialLinearGroup.diag2nUnit
       (by decide : (0 : Fin 2) ≠ 1) u) = weightTorusPoints K (Pi.mulSingle i u) := by
   apply Subtype.ext
-  apply Units.ext
-  rw [coe_rankOnePoints, weightTable.coe_sl2BlockSL,
-    Matrix.SpecialLinearGroup.diag2nUnit_coe, weightTable.sl2BlockMatrix_diagonal_unit,
-    coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  rw [coe_rankOnePoints, weightTable.sl2BlockSL_diag2nUnit,
+    coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
   congr 1
   funext a
-  simp [torusCharacter_mulSingle, weightTable_weight]
+  rw [torusCharacter_mulSingle, weightTable_weight]
 
 /-- The integral rank-one map commutes with homomorphisms of value rings. -/
 @[simp↓]

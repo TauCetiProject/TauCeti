@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Data.Finsupp.Multiset
+import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Monomials in multivariate polynomial rings
@@ -26,10 +27,14 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   coefficient `1` at the multiplicity function of the multiset.
 * `TauCeti.prod_X_pow_eq_monomial_equivFunOnFinite_symm`: `(X₁ ⋯ Xₙ) ^ k` is the
   monomial with all exponents `k`.
+* `MvPolynomial.C_mul_X_add_C_mul_X_pow`: the binomial theorem for a linear form `x Xᵢ + y Xⱼ`,
+  as a sum of monomials.
 * `MvPolynomial.coeff_prod_univ_X_pow`: the coefficients of the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely
   many variables.
 * `MvPolynomial.coeff_prod_X_pow_mul_prod_X_pow`: the coefficients of a product `Xᵃ Yᵇ` of
   monomials in two disjoint groups of variables.
+* `MvPolynomial.coeff_prod_X_mul_X_pow_eq_zero`: the monomials `∏_{(i, j)} (XᵢYⱼ) ^ lᵢⱼ` with
+  `∑ l = d` have no coefficient outside bidegree `(d, d)` in the two groups of variables.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
@@ -64,6 +69,17 @@ namespace MvPolynomial
 
 variable {ι A : Type*} [CommSemiring A]
 
+/-- The binomial theorem for a linear form in two variables, as a sum of monomials:
+`(x Xᵢ + y Xⱼ)ⁿ = ∑ₗ C(n, l) xˡ yⁿ⁻ˡ Xᵢˡ Xⱼⁿ⁻ˡ`. -/
+theorem C_mul_X_add_C_mul_X_pow (x y : A) (i j : ι) (n : ℕ) :
+    (C x * X i + C y * X j) ^ n = ∑ l ∈ Finset.range (n + 1),
+      monomial (Finsupp.single i l + Finsupp.single j (n - l))
+        (x ^ l * y ^ (n - l) * n.choose l) := by
+  rw [add_pow]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  rw [mul_pow, mul_pow, ← map_pow, ← map_pow, C_mul_X_pow_eq_monomial, C_mul_X_pow_eq_monomial,
+    monomial_mul_monomial, ← map_natCast C, mul_comm, C_mul_monomial, mul_comm]
+
 /-- The coefficient of `Xᴷ` in the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely many variables is `1` when
 the exponents agree and `0` otherwise. -/
 theorem coeff_prod_univ_X_pow [Fintype ι] (L : ι → ℕ) (K : ι →₀ ℕ) :
@@ -83,6 +99,24 @@ theorem coeff_prod_X_pow_mul_prod_X_pow {κ : Type*} [Fintype ι] [Fintype κ] (
   simp only [Sum.elim_inl, Sum.elim_inr] at h
   rw [← h, coeff_prod_univ_X_pow]
   simp [Sum.forall]
+
+/-- The monomials `∏_{(i, j)} (XᵢYⱼ) ^ lᵢⱼ` with `∑ l = d` have weight `d` in each group of
+variables, so they have no coefficient outside bidegree `(d, d)`. -/
+theorem coeff_prod_X_mul_X_pow_eq_zero {d : ℕ} {κ : Type*} [Fintype ι] [Fintype κ]
+    {l : ι × κ →₀ ℕ} (hl : ∑ p, l p = d) {e : ι ⊕ κ →₀ ℕ}
+    (h : ¬((∑ i, e (Sum.inl i) = d) ∧ ∑ j, e (Sum.inr j) = d)) :
+    (∏ p, (X (Sum.inl p.1) * X (Sum.inr p.2) : MvPolynomial (ι ⊕ κ) A) ^ l p).coeff e = 0 := by
+  have hw (w : ι ⊕ κ → ℕ) : IsWeightedHomogeneous w
+      (∏ p, (X (Sum.inl p.1) * X (Sum.inr p.2) : MvPolynomial (ι ⊕ κ) A) ^ l p)
+      (∑ p, l p • (w (Sum.inl p.1) + w (Sum.inr p.2))) :=
+    IsWeightedHomogeneous.prod _ _ _ fun p _ ↦
+      ((isWeightedHomogeneous_X A w _).mul (isWeightedHomogeneous_X A w _)).pow (l p)
+  have hweight (w : ι ⊕ κ → ℕ) : Finsupp.weight w e =
+      ∑ i, e (Sum.inl i) * w (Sum.inl i) + ∑ j, e (Sum.inr j) * w (Sum.inr j) := by
+    simp [Finsupp.weight_apply, Finsupp.sum_fintype, Fintype.sum_sum_type]
+  rcases not_and_or.mp h with h | h
+  · exact (hw (Sum.elim 1 0)).coeff_eq_zero e (by simpa [hweight, hl] using h)
+  · exact (hw (Sum.elim 0 1)).coeff_eq_zero e (by simpa [hweight, hl] using h)
 
 /-- Evaluating the monomial `c X^a Y^e` in the variables `τ ⊕ σ` at a point whose `.inl`
 coordinates are all `1` gives the value of `c Y^e` at the `.inr` coordinates. -/

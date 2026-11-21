@@ -31,6 +31,9 @@ the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a
 * `AlgebraicGeometry.Scheme.Hom.isIso_normalizationDesc_iff`: `f.normalizationDesc f₁ f₂ H` is an
   isomorphism if and only if, over every affine open of `Y`, the sections of `T` map injectively
   onto the integral closure.
+* `AlgebraicGeometry.Scheme.Hom.isIso_fromNormalization_iff`: the normalization of `Y` in `X` is
+  `Y` itself if and only if, over every affine open of `Y`, the sections of `Y` map injectively
+  onto the integral closure.
 * `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
   scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
   function field.
@@ -103,7 +106,7 @@ theorem isIso_normalizationDesc_app_iff (H : f = f₁ ≫ f₂) {U : Y.Opens} (h
         ((congrArg Subtype.val hab).trans (hψ b))), fun t ↦ ?_⟩⟩
   · obtain ⟨b, hb⟩ := h.2 ⟨s, hs⟩
     exact ⟨b, (hψ b).symm.trans (congrArg Subtype.val hb)⟩
-  · obtain ⟨b, hb⟩ := h.2 t.1 t.2
+  · obtain ⟨b, hb⟩ := h.2 t.val t.property
     exact ⟨b, Subtype.ext ((hψ b).trans hb)⟩
 
 /-- **Recognizing the relative normalization.** For `f = f₁ ≫ f₂` with `f₂` integral, the morphism
@@ -116,7 +119,7 @@ theorem isIso_normalizationDesc_iff (H : f = f₁ ≫ f₂) :
       Function.Injective (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])) ∧
       ∀ s, (f.app U).hom.IsIntegralElem s →
         s ∈ (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])).hom.range := by
-  have hcover : ⨆ U : Y.affineOpens, f₂ ⁻¹ᵁ U.1 = ⊤ := by
+  have hcover : ⨆ U : Y.affineOpens, f₂ ⁻¹ᵁ U.val = ⊤ := by
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
   rw [← MorphismProperty.isomorphisms.iff,
     IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := .isomorphisms _) _ hcover]
@@ -126,8 +129,24 @@ theorem isIso_normalizationDesc_iff (H : f = f₁ ≫ f₂) :
       isIso_morphismRestrict_iff_isIso_app _ (hU.preimage f₂)] at this
     exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H hU).1 this
   · rw [MorphismProperty.isomorphisms.iff,
-      isIso_morphismRestrict_iff_isIso_app _ (U.2.preimage f₂)]
-    exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H U.2).2 (h U U.2)
+      isIso_morphismRestrict_iff_isIso_app _ (U.property.preimage f₂)]
+    exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H U.property).2 (h U U.property)
+
+/-- The relative normalization `f.normalization ⟶ Y` is an isomorphism if and only if, for every
+affine open `U ⊆ Y`, the map `Γ(Y, U) → Γ(X, f ⁻¹ U)` is injective and its image contains every
+element integral over `Γ(Y, U)`: that is, `Y` is already the normalization of itself in `X`. -/
+theorem isIso_fromNormalization_iff :
+    IsIso f.fromNormalization ↔ ∀ U : Y.Opens, IsAffineOpen U →
+      Function.Injective (f.app U) ∧
+      ∀ s, (f.app U).hom.IsIntegralElem s → s ∈ (f.app U).hom.range := by
+  have H : f = f ≫ 𝟙 Y := (Category.comp_id f).symm
+  have h : f.normalizationDesc f (𝟙 Y) H = f.fromNormalization := by
+    simpa using f.normalizationDesc_comp f (𝟙 Y) H
+  rw [← h, isIso_normalizationDesc_iff]
+  simp only [Scheme.Hom.app_eq_appLE]
+  -- The preimage `𝟙 Y ⁻¹ᵁ U` is `U` by definition; it occurs inside the dependent `appLE`, where
+  -- rewriting with `TopologicalSpace.Opens.map_id_obj` is not possible.
+  rfl
 
 end AlgebraicGeometry.Scheme.Hom
 
@@ -191,16 +210,10 @@ theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed [IsIntegr
         (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U)))) :=
       (ConcreteCategory.isIso_iff_bijective _).mpr h
     infer_instance
-  by_cases hη : genericPoint Y ∈ U
-  · have : Nonempty U := ⟨⟨_, hη⟩⟩
-    have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
-    refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
-      fun ⟨x, hx⟩ ↦ ?_⟩
-    obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
-    exact ⟨a, Subtype.ext (IsScalarTower.algebraMap_apply _ _ _ a).symm⟩
-  · -- Otherwise `U` is empty and all the rings involved are zero.
-    have := Scheme.subsingleton_of_genericPoint_notMem hη
-    have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
-    exact Function.bijective_of_subsingleton' _
+  have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
+  refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
+    fun ⟨x, hx⟩ ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
+  exact ⟨a, Subtype.ext (IsScalarTower.algebraMap_apply _ _ _ a).symm⟩
 
 end TauCeti.AlgebraicGeometry

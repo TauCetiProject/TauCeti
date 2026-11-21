@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
+import TauCeti.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.RemovableSingularity
@@ -92,7 +93,8 @@ private theorem
       simp only [slope, hq0, sub_zero, smul_eq_mul, inv_neg, inv_inv, vsub_eq_sub]
       field_simp
       ring
-  obtain ⟨H, hH, heq⟩ := exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hds hderiv
+  obtain ⟨H, hH, heq⟩ := hds.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
+    fun z hz ↦ (hderiv z hz).hasDerivWithinAt
   -- The derivative at zero records the first correction to the logarithmic leading term.
   have hq' : HasDerivAt q (∑ i, (e i : ℂ) * (a i : ℂ)) 0 := by
     simpa [q] using hasDerivAt_prod_one_sub_mul_cpow

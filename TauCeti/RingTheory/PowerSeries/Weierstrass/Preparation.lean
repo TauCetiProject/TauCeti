@@ -77,6 +77,8 @@ degree `s`. This is the route to noetherianity of the Tate algebra.
 * `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul` and
   `TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul`: multiplying by such a unit leaves the
   distinguished degree unchanged, so any polynomial factor of degree at most `s` has degree `s`.
+* `TauCeti.PowerSeries.IsLowestDominant.of_isUnit_mul`: multiplying by such a unit leaves the
+  lowest dominant degree unchanged.
 
 ## References
 
@@ -120,8 +122,8 @@ theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
     intro h
     rw [h, mul_zero] at hxy'
     exact zero_ne_one hxy'
-  obtain ⟨i, hi⟩ := exists_isDistinguished hc x.2 hx0
-  obtain ⟨j, hj⟩ := exists_isDistinguished hc y.2 hy0
+  obtain ⟨i, hi⟩ := exists_isDistinguished hc x.property hx0
+  obtain ⟨j, hj⟩ := exists_isDistinguished hc y.property hy0
   -- The dominant coefficient of the product `x * y = 1` sits in degree `i + j`.
   have hdom := hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc (norm_mul _ _)
   rw [hxy'] at hdom
@@ -132,24 +134,38 @@ theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
   have hi0 : i = 0 := by omega
   rwa [hi0] at hi
 
+omit [NormMulClass R] in
+/-- Multiplication by a unit `u` of the ring of restricted power series is undone by multiplication
+by another such unit. -/
+private theorem exists_isUnit_mul_mul_eq {u : PowerSeries.IsRestricted.subring (R := R) c}
+    {g : PowerSeries R} (hu : IsUnit u) :
+    ∃ v : PowerSeries.IsRestricted.subring (R := R) c, IsUnit v ∧
+      (v : PowerSeries R) * ((u : PowerSeries R) * g) = g := by
+  obtain ⟨w, rfl⟩ := hu
+  refine ⟨(w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ),
+    Units.isUnit (w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ), ?_⟩
+  rw [← mul_assoc, ← Subring.coe_mul, w.inv_mul, Subring.coe_one, one_mul]
+
 /-- Multiplying by a unit of the ring of restricted power series leaves the distinguished degree
 unchanged. -/
 theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R := R) c}
     {g : PowerSeries R} (h : IsDistinguished c s ((u : PowerSeries R) * g)) (hc : 0 < c)
     (hu : IsUnit u) : IsDistinguished c s g := by
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
-  obtain ⟨w, rfl⟩ := hu
-  obtain ⟨v, hv, hvu⟩ : ∃ v : PowerSeries.IsRestricted.subring (R := R) c, IsUnit v ∧
-      (v : PowerSeries R) * ((w : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
-        = 1 :=
-    ⟨(w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ),
-      Units.isUnit (w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ),
-      by rw [← Subring.coe_mul, w.inv_mul, Subring.coe_one]⟩
-  have hvg : (v : PowerSeries R)
-      * (((w : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) * g) = g := by
-    rw [← mul_assoc, hvu, one_mul]
+  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq (g := g) hu
   have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hd
+
+/-- Multiplying by a unit of the ring of restricted power series leaves the lowest dominant degree
+unchanged. -/
+theorem IsLowestDominant.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R := R) c}
+    {g : PowerSeries R} (h : IsLowestDominant c s ((u : PowerSeries R) * g)) (hc : 0 < c)
+    (hu : IsUnit u) : IsLowestDominant c s g := by
+  let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
+  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq (g := g) hu
+  have hv0 := isDistinguished_zero_of_isUnit hc hv
+  have hl := hv0.isLowestDominant_zero.mul h hc (norm_mul _ _)
+  rwa [zero_add, hvg] at hl
 
 /-- If `f` is distinguished of degree `s` at a positive radius `c`, `u` is a unit of the ring of
 series restricted at `c`, and `u * P = f` for a polynomial `P` of degree at most `s`, then `P` has
@@ -183,8 +199,8 @@ theorem IsMulDistinguished.isNormMulUnit_of_mul_eq [Fact (0 < c)] (hg : IsMulDis
   -- `‖ω‖ * ‖e * x‖ = ‖g‖ * ‖x‖` for every restricted `x`.
   have key : ∀ x : PowerSeries.IsRestricted.subring (R := R) c,
       ω.gaussNorm norm c * ‖e * x‖ = g.gaussNorm norm c * ‖x‖ := fun x ↦ by
-    rw [norm_eq_gaussNorm, norm_eq_gaussNorm, ← hω.gaussNorm_mul hc (e * x).2,
-      ← hg.gaussNorm_mul hc x.2, ← h, Subring.coe_mul, mul_left_comm, mul_assoc]
+    rw [norm_eq_gaussNorm, norm_eq_gaussNorm, ← hω.gaussNorm_mul hc (e * x).property,
+      ← hg.gaussNorm_mul hc x.property, ← h, Subring.coe_mul, mul_left_comm, mul_assoc]
   have hω0 : ω.gaussNorm norm c ≠ 0 := hω.gaussNorm_pos.ne'
   have he1 := key 1
   rw [mul_one, norm_one, mul_one] at he1
@@ -322,7 +338,7 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_mul {ω ω' : Polynomial R}
   obtain ⟨hq1, hr1⟩ := hω.eq_and_eq_of_mul_add_eq_mul_add hc
     (q := ((v * e : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)) (r := 0)
     (q' := 1) (r' := (ω' : PowerSeries R) - (ω : PowerSeries R))
-    (v * e).2 (PowerSeries.isRestricted_one c)
+    (v * e).property (PowerSeries.isRestricted_one c)
     (fun m _ ↦ by simp) hdiff (by rw [hquot]; ring)
   refine ⟨?_, (Polynomial.coe_inj.mp (sub_eq_zero.mp hr1.symm)).symm⟩
   -- The quotient `v * e` is `1`, so `e` and `e'` are the same inverse of `v`.
@@ -360,7 +376,8 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_eq_of_mul_eq (hg : IsMulDistinguishe
       linear_combination (ω : PowerSeries R) * hv'
   obtain ⟨v, hv, hr, hdiv⟩ := key e ω he hω h
   obtain ⟨v', hv', hr', hdiv'⟩ := key e' ω' he' hω' h'
-  obtain ⟨hvv, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc v.2 v'.2 hr hr' (hdiv.trans hdiv'.symm)
+  obtain ⟨hvv, hrr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc v.property v'.property hr hr'
+      (hdiv.trans hdiv'.symm)
   obtain rfl : v = v' := Subtype.ext hvv
   refine ⟨?_, sub_right_injective (Polynomial.coe_inj.mp hrr)⟩
   calc e = e * (e' * v) := by rw [hv', mul_one]
@@ -404,7 +421,7 @@ theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] 
     exact (hx.map (PowerSeries.IsRestricted.subring (R := R) c).subtype).map _
   -- Dividing `1` by `x` leaves a remainder vanishing in every degree.
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    (isMulDistinguished_iff_isUnit.mpr ⟨hx, hu⟩).exists_mul_add_eq hc x.2
+    (isMulDistinguished_iff_isUnit.mpr ⟨hx, hu⟩).exists_mul_add_eq hc x.property
       (PowerSeries.isRestricted_one c)
   rw [mul_comm] at hqr
   have hr0 : r = 0 := PowerSeries.ext fun m ↦ by rw [hr m (Nat.zero_le m), map_zero]
@@ -423,7 +440,7 @@ theorem isUnit_iff_gaussNorm_sub_one_lt_one [CompleteSpace R] [NormOneClass R] (
   have : Nontrivial R := NormOneClass.nontrivial
   rw [isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero hc,
     PowerSeries.coeff_zero_eq_constantCoeff_apply, h0, and_iff_left isUnit_one,
-    gaussNorm_sub_one_lt_one_iff hc U.2 h0]
+    gaussNorm_sub_one_lt_one_iff hc U.property h0]
 
 /-- **Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1). Over a complete
 ultrametric normed commutative ring with multiplicative norm, a restricted series `f`

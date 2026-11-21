@@ -318,30 +318,25 @@ theorem quasiIso_cechAugmentation_of_resolution {P : Cᵒᵖ ⥤ A} {K : Cᵒᵖ
           (cechAugmentation U hT (K ⋙ HomologicalComplex.cyclesFunctor A _ (k + 1))) 0) := by
         have h := mono_homologyMap_cechAugmentation_X₁_zero U hT (hcT (k + 1))
           (hcU (k + 1)) ((hKC (k + 1)).quasiIsoAt 0)
-        rw [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
-        exact h
+        rwa [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
       constructor
       · have h := quasiIsoAt_cechAugmentation_X₁_zero U hT haT haU (hKA.quasiIsoAt 0)
           (by rw [NatTrans.augmentationShortComplex_X₃]; exact hmono 0)
-        rw [NatTrans.augmentationShortComplex_X₁] at h
-        exact h
+        rwa [NatTrans.augmentationShortComplex_X₁] at h
       · intro k
         have h := quasiIsoAt_cechAugmentation_X₁_zero U hT (hcT (k + 1)) (hcU (k + 1))
           ((hKC (k + 1)).quasiIsoAt 0)
           (by rw [CategoryTheory.Functor.cyclesShortComplex_X₃]; exact hmono (k + 1))
-        rw [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
-        exact h
+        rwa [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
     | succ n ih =>
       constructor
       · have h := quasiIsoAt_cechAugmentation_X₁_succ U hT haT haU hKA
           (by rw [NatTrans.augmentationShortComplex_X₃]; exact ih.2 0)
-        rw [NatTrans.augmentationShortComplex_X₁] at h
-        exact h
+        rwa [NatTrans.augmentationShortComplex_X₁] at h
       · intro k
         have h := quasiIsoAt_cechAugmentation_X₁_succ U hT (hcT (k + 1)) (hcU (k + 1)) (hKC (k + 1))
           (by rw [CategoryTheory.Functor.cyclesShortComplex_X₃]; exact ih.2 (k + 1))
-        rw [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
-        exact h
+        rwa [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
   rw [quasiIso_iff]
   exact fun n ↦ (key n).1
 

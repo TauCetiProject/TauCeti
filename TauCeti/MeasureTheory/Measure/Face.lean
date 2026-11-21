@@ -23,7 +23,7 @@ reduces to extremality among all of `C`. When `C` is convex so is the face.
   are a face of `C`.
 * `TauCeti.MeasureTheory.extremePoints_setOf_measure_eq_zero` — their extreme points are the
   extreme points of `C` vanishing on `t`.
-* `TauCeti.MeasureTheory.Convex.setOf_measure_eq_zero` — the face of a convex set is convex.
+* `Convex.setOf_measure_eq_zero` — the face of a convex set is convex.
 -/
 
 public section
@@ -39,12 +39,9 @@ variable {α : Type*} [MeasurableSpace α]
 combination with positive weights can charge `t` when the combination does not. -/
 theorem isExtreme_setOf_measure_eq_zero (C : Set (Measure α)) (t : Set α) :
     IsExtreme ℝ≥0∞ C {μ ∈ C | μ t = 0} := by
-  refine ⟨fun μ hμ => hμ.1, ?_⟩
-  rintro μ₁ hμ₁ μ₂ _ μ ⟨-, hμ0⟩ ⟨a, b, ha, _, -, rfl⟩
-  have h : a * μ₁ t + b * μ₂ t = 0 := by
-    simpa [_root_.add_apply, _root_.smul_apply] using hμ0
-  rw [add_eq_zero, mul_eq_zero, mul_eq_zero] at h
-  exact ⟨hμ₁, h.1.resolve_left ha.ne'⟩
+  refine ⟨fun _ hμ ↦ hμ.1, ?_⟩
+  rintro μ₁ hμ₁ μ₂ - μ ⟨-, hμ0⟩ ⟨a, b, ha, -, -, rfl⟩
+  exact ⟨hμ₁, by simp_all [ha.ne']⟩
 
 /-- The extreme points of the measures in `C` vanishing on `t` are the extreme points of `C`
 vanishing on `t`. -/
@@ -54,8 +51,7 @@ theorem extremePoints_setOf_measure_eq_zero (C : Set (Measure α)) (t : Set α) 
 
 /-- The measures in a convex set vanishing on `t` form a convex set. -/
 theorem _root_.Convex.setOf_measure_eq_zero {C : Set (Measure α)} (hC : Convex ℝ≥0∞ C)
-    (t : Set α) : Convex ℝ≥0∞ {μ ∈ C | μ t = 0} := by
-  rintro μ₁ ⟨hμ₁, h₁⟩ μ₂ ⟨hμ₂, h₂⟩ a b ha hb hab
-  exact ⟨hC hμ₁ hμ₂ ha hb hab, by simp [_root_.add_apply, _root_.smul_apply, h₁, h₂]⟩
+    (t : Set α) : Convex ℝ≥0∞ {μ ∈ C | μ t = 0} :=
+  fun _ h₁ _ h₂ _ _ ha hb hab ↦ ⟨hC h₁.1 h₂.1 ha hb hab, by simp [h₁.2, h₂.2]⟩
 
 end TauCeti.MeasureTheory

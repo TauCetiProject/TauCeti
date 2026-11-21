@@ -63,7 +63,7 @@ theorem quantile_noncentralBetaMeasure_lt_one (ha : 0 ≤ a) (hb : 0 < b) (l : �
     (hu : u ∈ Ioo 0 1) : (noncentralBetaMeasure a b l).quantile u < 1 := by
   have := isProbabilityMeasure_noncentralBetaMeasure ha hb l
   refine (quantile_noncentralBetaMeasure_mem_Icc ha hb l hu).2.lt_of_ne fun h ↦ ?_
-  have hle := Measure.measureReal_Iio_quantile_le (noncentralBetaMeasure a b l) hu.1 hu.2
+  have hle := Measure.measureReal_Iio_quantile_le (noncentralBetaMeasure a b l) hu.1
   rw [h, measureReal_congr (Iio_ae_eq_Iic'
       (noncentralBetaMeasure_singleton_of_ne_zero one_ne_zero a b l)), ← cdf_eq_real,
     cdf_noncentralBetaMeasure_of_one_le ha hb l le_rfl] at hle

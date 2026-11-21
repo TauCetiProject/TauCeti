@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
@@ -44,6 +45,10 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
   form on the quotient by its kernel.
 * `TauCeti.SymplecticForm.ReducedSpace ω U`: the reduced space `U ⧸ (U ∩ U^ω)`.
 * `TauCeti.SymplecticForm.reduction ω U`: its symplectic form `[u], [v] ↦ ω(u, v)`.
+* `TauCeti.SymplecticForm.reducedSpaceTopEquiv ω`: the identification of `V` with the reduced
+  space of `⊤`, a symplectomorphism.
+* `TauCeti.SymplecticForm.reducedQuadraticForm ω U Q hQ`: the quadratic form `[u] ↦ Q u` on the
+  reduced space, for a quadratic form `Q` whose polar form vanishes on `(U ∩ U^ω) × U`.
 * `TauCeti.SymplecticForm.reducedSpaceCongr`: the symplectomorphism of reduced spaces induced by a
   linear symplectomorphism.
 * `TauCeti.SymplecticForm.reducedSpaceRepresentation`: the induced symplectic representation of a
@@ -125,7 +130,7 @@ the symplectic complement `U^ω`. -/
 theorem mem_ker_restrict_iff {u : U} :
     u ∈ LinearMap.ker (ω.toBilinForm.restrict U) ↔ (u : V) ∈ ω.orthogonal U := by
   rw [LinearMap.mem_ker, mem_orthogonal_iff']
-  refine ⟨fun h y hy => ?_, fun h => LinearMap.ext fun y => h y y.2⟩
+  refine ⟨fun h y hy => ?_, fun h => LinearMap.ext fun y => h y y.property⟩
   simpa using LinearMap.congr_fun h ⟨y, hy⟩
 
 /-- The kernel of the restriction of `ω` to `U`, viewed in `V`, is `U ∩ U^ω`. -/
@@ -133,7 +138,7 @@ theorem map_subtype_ker_restrict :
     (LinearMap.ker (ω.toBilinForm.restrict U)).map U.subtype = U ⊓ ω.orthogonal U := by
   ext v
   simp only [Submodule.mem_map, Submodule.mem_inf, mem_ker_restrict_iff, Submodule.subtype_apply]
-  exact ⟨fun ⟨u, hu, hv⟩ => hv ▸ ⟨u.2, hu⟩, fun ⟨hv, hv'⟩ => ⟨⟨v, hv⟩, hv', rfl⟩⟩
+  exact ⟨fun ⟨u, hu, hv⟩ => hv ▸ ⟨u.property, hu⟩, fun ⟨hv, hv'⟩ => ⟨⟨v, hv⟩, hv', rfl⟩⟩
 
 /-- The **reduced space** `U ⧸ (U ∩ U^ω)` of a subspace `U` of a symplectic vector space: the
 quotient of `U` by the kernel of the restriction of `ω`. -/
@@ -161,12 +166,18 @@ theorem ReducedSpace.mk_eq_mk_iff {u v : U} :
       (u : V) - v ∈ ω.orthogonal U := by
   rw [Submodule.Quotient.eq, mem_ker_restrict_iff, Submodule.coe_sub]
 
+variable {ω U} in
+/-- A vector of `U` has zero class in the reduced space exactly when it lies in `U^ω`. -/
+theorem ReducedSpace.mk_eq_zero_iff {u : U} :
+    (Submodule.Quotient.mk u : ω.ReducedSpace U) = 0 ↔ (u : V) ∈ ω.orthogonal U := by
+  rw [Submodule.Quotient.mk_eq_zero, mem_ker_restrict_iff]
+
 /-- The reduced space is trivial exactly when `U` is isotropic. -/
 theorem subsingleton_reducedSpace_iff :
     Subsingleton (ω.ReducedSpace U) ↔ ω.IsIsotropic U := by
   rw [Submodule.Quotient.subsingleton_iff, Submodule.eq_top_iff', isIsotropic_iff_le]
   exact ⟨fun h u hu => (mem_ker_restrict_iff ω U).1 (h ⟨u, hu⟩),
-    fun h u => (mem_ker_restrict_iff ω U).2 (h u.2)⟩
+    fun h u => (mem_ker_restrict_iff ω U).2 (h u.property)⟩
 
 /-- The kernel of the restriction of `ω` to `U` is trivial exactly when `U` is a symplectic
 subspace. -/
@@ -174,7 +185,7 @@ theorem ker_restrict_eq_bot_iff :
     LinearMap.ker (ω.toBilinForm.restrict U) = ⊥ ↔ ω.IsSymplectic U := by
   rw [isSymplectic_iff_disjoint, Submodule.disjoint_def, Submodule.eq_bot_iff]
   refine ⟨fun h v hv hv' => ?_,
-    fun h u hu => Subtype.ext <| h u u.2 ((mem_ker_restrict_iff ω U).1 hu)⟩
+    fun h u hu => Subtype.ext <| h u u.property ((mem_ker_restrict_iff ω U).1 hu)⟩
   simpa using h ⟨v, hv⟩ ((mem_ker_restrict_iff ω U).2 hv')
 
 /-- For a symplectic subspace `U`, there is nothing to divide out: the identification of the
@@ -189,7 +200,58 @@ theorem isSymplectomorphism_quotEquivOfEqBot (h : ω.IsSymplectic U) :
   induction y using Submodule.Quotient.induction_on with
   | H v => simp
 
+/-- The reduced space of the whole space is `V` itself: the linear equivalence `v ↦ [v]`, a
+symplectomorphism by `TauCeti.SymplecticForm.isSymplectomorphism_reducedSpaceTopEquiv`. -/
+noncomputable def reducedSpaceTopEquiv : V ≃ₗ[ℝ] ω.ReducedSpace (⊤ : Submodule ℝ V) :=
+  Submodule.topEquiv.symm.trans
+    (Submodule.quotEquivOfEqBot _ ((ker_restrict_eq_bot_iff ω ⊤).2 isSymplectic_top)).symm
+
+/-- The defining formula `v ↦ [v]` of the identification of `V` with the reduced space of `⊤`. -/
+@[simp]
+theorem reducedSpaceTopEquiv_apply (v : V) :
+    ω.reducedSpaceTopEquiv v = Submodule.Quotient.mk ⟨v, Submodule.mem_top⟩ :=
+  (rfl)
+
+/-- The identification of `V` with the reduced space of `⊤` is a symplectomorphism. -/
+theorem isSymplectomorphism_reducedSpaceTopEquiv :
+    IsSymplectomorphism ω (ω.reduction ⊤) ω.reducedSpaceTopEquiv := by
+  rw [isSymplectomorphism_iff]
+  intro v w
+  rw [reducedSpaceTopEquiv_apply, reducedSpaceTopEquiv_apply, reduction_mk]
+
 end Basic
+
+section QuadraticForm
+
+variable (ω : SymplecticForm V) (U : Submodule ℝ V)
+
+/-- The polar form of `Q` restricted to `U`, as a bilinear form on `U`, kills the kernel of the
+restriction of `ω` to `U` on either side when the polar form of `Q` vanishes on
+`(U ∩ U^ω) × U`. -/
+private theorem polar_comp_subtype_eq_zero {Q : QuadraticForm ℝ V}
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) {w : U}
+    (hw : w ∈ LinearMap.ker (ω.toBilinForm.restrict U)) (u : U) :
+    QuadraticMap.polar (Q.comp U.subtype) w u = 0 := by
+  rw [mem_ker_restrict_iff] at hw
+  simpa [QuadraticMap.polar] using hQ w ⟨w.property, hw⟩ u u.property
+
+/-- The **quadratic form induced on the reduced space** `U ⧸ (U ∩ U^ω)` by a quadratic form `Q` on
+`V` whose polar form vanishes on `(U ∩ U^ω) × U`: the form `[u] ↦ Q u`. -/
+noncomputable def reducedQuadraticForm (Q : QuadraticForm ℝ V)
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) :
+    QuadraticForm ℝ (ω.ReducedSpace U) :=
+  (Q.comp U.subtype).lift _ fun _ hw ↦ by
+    rw [QuadraticMap.radical_eq_ker_polarBilin]
+    exact LinearMap.ext fun u ↦ polar_comp_subtype_eq_zero ω U hQ hw u
+
+/-- The defining formula `Q_red [u] = Q u` of the induced quadratic form on the reduced space. -/
+@[simp]
+theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) (u : U) :
+    ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
+  QuadraticMap.lift_mk _ u
+
+end QuadraticForm
 
 section Finrank
 
@@ -264,7 +326,7 @@ noncomputable def reducedSpaceCongr (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorp
 theorem reducedSpaceCongr_mk (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorphism ω ω' e)
     {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U') (u : U) :
     reducedSpaceCongr ω ω' e he hU (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk ⟨e u, hU ▸ Submodule.mem_map_of_mem u.2⟩ :=
+      Submodule.Quotient.mk ⟨e u, hU ▸ Submodule.mem_map_of_mem u.property⟩ :=
   (rfl)
 
 /-- The map of reduced spaces induced by a linear symplectomorphism is a symplectomorphism. -/
@@ -341,7 +403,7 @@ theorem reducedSpaceRepresentation_apply_mk {G : Type*} [Group G] (ρ : G →* V
     (hρ : ∀ g, IsSymplectomorphism ω ω (ρ g)) (U : Submodule ℝ V) (hU : ∀ g, ∀ u ∈ U, ρ g u ∈ U)
     (g : G) (u : U) :
     ω.reducedSpaceRepresentation ρ hρ U hU g (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk ⟨ρ g u, hU g u u.2⟩ :=
+      Submodule.Quotient.mk ⟨ρ g u, hU g u u.property⟩ :=
   (rfl)
 
 /-- A group acting by linear symplectomorphisms preserving `U` acts by symplectomorphisms of the
@@ -390,7 +452,7 @@ theorem IsLagrangian.reduction_map [FiniteDimensional ℝ V] (hL : ω.IsLagrangi
   -- Since `U^ω ⊆ U`, the `L`-component `l = u - c` lies in `L ∩ U` and has the class of `u`.
   have hlU : l ∈ U := by
     have : l = u - c := by rw [← hlc]; abel
-    exact this ▸ U.sub_mem u.2 (isCoisotropic_iff_le.1 hU hc)
+    exact this ▸ U.sub_mem u.property (isCoisotropic_iff_le.1 hU hc)
   refine ⟨⟨l, hlU⟩, hl, ReducedSpace.mk_eq_mk_iff.2 ?_⟩
   have : l - (u : V) = -c := by rw [← hlc]; abel
   exact this ▸ (ω.orthogonal U).neg_mem hc

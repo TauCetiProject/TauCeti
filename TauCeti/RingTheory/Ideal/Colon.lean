@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.RingTheory.Ideal.Colon
 
 /-!
-# Colon ideals by one element
+# Colon ideals and quotient annihilators
 
 For an `R`-algebra `S`, the ideal `(N : x)` of a submodule `N` of an `S`-module commutes with
 restricting scalars to `R`.
@@ -20,11 +20,14 @@ supplies, divided by `f` generate `(I : f)`.
 
 ## Main results
 
+* `Submodule.le_annihilator_quotient_iff`: an ideal annihilates a quotient exactly when its
+  multiples of the ambient module lie in the submodule.
 * `Submodule.comap_colon_singleton`: the ideal `(N : x)` of `R` is the preimage of the ideal
   `(N : x)` of `S`.
 * `Ideal.inf_span_singleton_eq_span_singleton_mul_colon`: `I ∩ (f) = f · (I : f)`.
 * `Ideal.colon_singleton_eq_of_inf_span_singleton_eq`: for regular `f`, if `I ∩ (f) = f · J`
   then `(I : f) = J`.
+* `Ideal.span_singleton_mul_colon_singleton`: a regular principal factor cancels from colon.
 * `Ideal.exists_eq_span_pow_mul_colon_not_le`: an ideal not contained in every power of `(f)` is
   `(f ^ k) · (I : f ^ k)` with `(I : f ^ k)` not contained in `(f)`.
 
@@ -35,6 +38,17 @@ supplies, divided by `f` generate `(I : f)`.
 -/
 
 public section
+
+open scoped Pointwise
+
+/-- An ideal annihilates a quotient exactly when its multiples of the ambient module lie in
+the submodule being quotiented out. -/
+theorem Submodule.le_annihilator_quotient_iff {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {I : Ideal R} {N : Submodule R M} :
+    I ≤ Module.annihilator R (M ⧸ N) ↔ I • (⊤ : Submodule R M) ≤ N := by
+  rw [Submodule.annihilator_quotient, Submodule.smul_le]
+  simp only [IsConcreteLE.le_iff, Submodule.mem_colon, Submodule.mem_top, Set.mem_univ,
+    forall_true_left]
 
 variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [AddCommMonoid M]
   [Module R M] [Module S M] [IsScalarTower R S M]
@@ -49,6 +63,15 @@ theorem Submodule.comap_colon_singleton (N : Submodule S M) (x : M) :
 namespace Ideal
 
 variable {R : Type*} [CommSemiring R] {I J : Ideal R} {f : R}
+
+/-- An ideal is contained in a colon ideal exactly when its product with the denominator
+is contained in the numerator. -/
+theorem le_colon_iff {I J K : Ideal R} : I ≤ J.colon (K : Set R) ↔ I * K ≤ J := by
+  constructor
+  · intro h
+    exact Ideal.mul_le.mpr fun a ha b hb ↦ Submodule.mem_colon.mp (h ha) b hb
+  · intro h a ha
+    exact Submodule.mem_colon.mpr fun b hb ↦ h (Ideal.mul_mem_mul ha hb)
 
 /-- The intersection of an ideal `I` with the principal ideal `(f)` is `f` times the colon ideal
 `(I : f)`. -/
@@ -74,6 +97,17 @@ theorem colon_singleton_eq_of_inf_span_singleton_eq (hf : IsLeftRegular f)
     exact hf hxy ▸ hy
   · obtain ⟨x, hx, hxy⟩ := h.2 y hy
     exact hf hxy ▸ hx
+
+/-- A regular principal factor cancels from the corresponding colon ideal. -/
+theorem span_singleton_mul_colon_singleton (hf : IsLeftRegular f) (J : Ideal R) :
+    (span {f} * J).colon {f} = J :=
+  colon_singleton_eq_of_inf_span_singleton_eq hf (inf_eq_left.mpr mul_le_left)
+
+/-- Dividing a principal product by its regular first factor leaves the second factor. -/
+theorem span_mul_colon_singleton (hf : IsLeftRegular f) (g : R) :
+    (span {f * g}).colon {f} = span {g} := by
+  rw [← span_singleton_mul_span_singleton]
+  exact span_singleton_mul_colon_singleton hf _
 
 /-- **Extracting a power of a principal ideal.** If an ideal `I` does not lie in every power of
 `(f)`, then `I = (f ^ k) · (I : f ^ k)` for some `k`, where the colon ideal `(I : f ^ k)` does not

@@ -39,12 +39,12 @@ variable {B F : Type*} {E : B → Type*}
 
 /-- The vectors whose radial segment from the zero vector stays in `U`. -/
 def radialCore (U : Set (TotalSpace F E)) : Set (TotalSpace F E) :=
-  {p | ∀ t ∈ Icc (0 : ℝ) 1, (⟨p.proj, t • p.2⟩ : TotalSpace F E) ∈ U}
+  {p | ∀ t ∈ Icc (0 : ℝ) 1, (⟨p.proj, t • p.snd⟩ : TotalSpace F E) ∈ U}
 
 /-- Membership in the radial core is tested along the whole closed radial segment. -/
 theorem mem_radialCore {U : Set (TotalSpace F E)} {p : TotalSpace F E} :
     p ∈ radialCore U ↔
-      ∀ t ∈ Icc (0 : ℝ) 1, (⟨p.proj, t • p.2⟩ : TotalSpace F E) ∈ U := Iff.rfl
+      ∀ t ∈ Icc (0 : ℝ) 1, (⟨p.proj, t • p.snd⟩ : TotalSpace F E) ∈ U := Iff.rfl
 
 /-- The radial core is contained in the original set. -/
 theorem radialCore_subset (U : Set (TotalSpace F E)) : radialCore U ⊆ U := by
@@ -61,7 +61,7 @@ theorem radialCore_mono {U W : Set (TotalSpace F E)} (h : U ⊆ W) :
   constructor
   · intro hx
     exact radialCore_subset U hx
-  · intro hx t ht
+  · intro hx t _
     have ht0 : t • (0 : E x) = 0 := smul_zero t
     exact (congrArg (fun v : E x => (⟨x, v⟩ : TotalSpace F E) ∈ U) ht0).mpr hx
 
@@ -98,9 +98,9 @@ neighbourhood on which all the radial segments remain in the original set. -/
 theorem isOpen_radialCore {U : Set (TotalSpace F E)} (hU : IsOpen U) :
     IsOpen (radialCore U) := by
   let R : Icc (0 : ℝ) 1 × TotalSpace F E → TotalSpace F E :=
-    fun p => ⟨p.2.proj, (p.1 : ℝ) • p.2.2⟩
+    fun p => ⟨p.2.proj, (p.1 : ℝ) • p.2.snd⟩
   have hR : Continuous R :=
-    (continuous_subtype_val.comp continuous_fst).smul_totalSpace continuous_snd
+    (continuous_subtypeVal.comp continuous_fst).smul_totalSpace continuous_snd
   have hclosed : IsClosed (Prod.snd '' (R ⁻¹' Uᶜ)) :=
     isClosedMap_snd_of_compactSpace _ (hU.isClosed_compl.preimage hR)
   convert hclosed.isOpen_compl using 1

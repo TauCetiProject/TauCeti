@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedCom
 public import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Contour.Winding.Continuity
 import TauCeti.Analysis.Complex.CauchyKernel
-import TauCeti.MeasureTheory.Integral.KernelPotential
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -69,14 +69,14 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eventuallyEq_of_notM
   have hc := AbsolutelyContinuousOnInterval.isLocallyConstant_windingNumber
     hγ hclosed
   have hopen : IsOpen ((Subtype.val : ↥((γ '' uIcc a b)ᶜ) → ℂ) ''
-      {w | Contour.windingNumber γ a b w.1 = Contour.windingNumber γ a b z}) :=
-    hK.isClosed.isOpen_compl.isOpenMap_subtype_val _ (hc.isOpen_fiber _)
+      {w | Contour.windingNumber γ a b w.val = Contour.windingNumber γ a b z}) :=
+    hK.isClosed.isOpen_compl.isOpenMap_subtypeVal _ (hc.isOpen_fiber _)
   have hmem : z ∈ (Subtype.val : ↥((γ '' uIcc a b)ᶜ) → ℂ) ''
-      {w | Contour.windingNumber γ a b w.1 = Contour.windingNumber γ a b z} :=
+      {w | Contour.windingNumber γ a b w.val = Contour.windingNumber γ a b z} :=
     ⟨⟨z, hz⟩, rfl, rfl⟩
   filter_upwards [hopen.mem_nhds hmem] with w hw
   obtain ⟨w, hw, rfl⟩ := hw
-  rw [windingWeight_eq_of_notMem w.2, hw, windingWeight_eq_of_notMem hz]
+  rw [windingWeight_eq_of_notMem w.property, hw, windingWeight_eq_of_notMem hz]
 
 /-- The winding weight of an absolutely continuous curve is measurable. -/
 theorem _root_.AbsolutelyContinuousOnInterval.measurable_windingWeight

@@ -55,7 +55,9 @@ theorem AnalyticAt.exists_analyticAt_eventually_sub_eq {f : E → F} {c : E}
   have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := fun t ht ↦
     (L t).opNorm_le_bound zero_le_one fun w ↦ by simpa [hLapply] using hsmul t ht w
   refine ⟨fun z ↦ ∫ t in (0 : ℝ)..1, fderiv 𝕜 f (c + L t (z - c)),
-    hf.fderiv.intervalIntegral_comp hLc.continuousOn hL1, by simp [hLapply], ?_⟩
+    hf.fderiv.intervalIntegral_comp hLc.aestronglyMeasurable (.of_forall fun t ht ↦
+      hL1 t <| Ioc_subset_Icc_self <| by rwa [uIoc_of_le zero_le_one] at ht),
+    by simp [hLapply], ?_⟩
   -- On a ball about `c` where `f` is analytic, apply the fundamental theorem of calculus to
   -- `s ↦ f (c + s • (z - c))` on the unit interval.
   obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff_ball.1 hf.eventually_analyticAt

@@ -60,7 +60,9 @@ theorem restriction_apply (x : ProjectiveGeneralLinear.coordinateHopfAlgebra n k
       (GeneralLinear.UpperTriangular.definingHopfIdeal k n).toIdeal
       ((ProjectiveGeneralLinear.conjugationMap n k).hom x) := by
   rw [restriction_def, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-  exact GeneralLinear.UpperTriangular.coordinateMap_apply k n _
+  rw [GeneralLinear.UpperTriangular.coordinateMap_def]
+  exact CommHopfAlgCat.mkQuotient_apply (GeneralLinear.coordinateHopfAlgebra k n)
+    (GeneralLinear.UpperTriangular.definingHopfIdeal k n) _
 
 variable {A : Type w} [CommRing A] [Algebra k A]
 

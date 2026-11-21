@@ -31,6 +31,18 @@ theorem _root_.AbsolutelyContinuousOnInterval.intervalIntegrable_inv_sub_mul_der
   exact TauCeti.Contour.intervalIntegrable_inv_sub_mul_deriv hγ.continuousOn
     (fun t ht htz ↦ hz ⟨t, ht, htz⟩) hγ.intervalIntegrable_deriv_of_finiteDimensional
 
+/-- The Cauchy principal value of `(w - z)⁻¹` along an absolutely continuous curve exists on any
+sub-interval of `[a, b]` when `z` avoids the trace of the whole curve. -/
+theorem _root_.AbsolutelyContinuousOnInterval.cauchyPVExistsAt_inv_sub_of_mem_uIcc
+    {γ : ℝ → ℂ} {a b p q : ℝ} {z : ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hp : p ∈ uIcc a b) (hq : q ∈ uIcc a b) (hz : z ∉ γ '' uIcc a b) :
+    CauchyPVExistsAt γ p q (fun w ↦ (w - z)⁻¹) z := by
+  have hsub := uIcc_subset_uIcc hp hq
+  have hcell := hγ.mono hsub
+  have hzcell : z ∉ γ '' uIcc p q := fun h ↦ hz (image_mono hsub h)
+  exact cauchyPVExistsAt_of_avoidance hcell.continuousOn
+    (fun t ht he ↦ hzcell ⟨t, ht, he⟩) (hcell.intervalIntegrable_inv_sub_mul_deriv hzcell)
+
 /-- The existing winding number agrees with the ordinary winding integral for an absolutely
 continuous curve away from its trace, in either orientation of the parameter interval. -/
 theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_integral

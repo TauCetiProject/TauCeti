@@ -32,9 +32,11 @@ injective at every `q : Q`, the conormal spaces admit `C^n` local frames
 (`TauCeti.CotangentBundle.exists_isConormalFrameOn`): near `q₀ : Q`, for a fixed complement
 `B : (Fin k → 𝕜) →L[𝕜] E` to the coordinate differential `A q₀`, the projections
 `(A q).quotientRangeCoordinate B` vanish on `range (A q)` and pull back through the tangent chart at
-`i q₀` to a `C^n` local basis of `conormalSpace J I i`. Via `TauCeti.IsSubbundleFrameOn`, this makes
-`conormalSpace J I i` a `C^n` vector bundle of rank `k` over `Q` (`conormalFiberBundle`,
-`conormalVectorBundle`, `conormalContMDiffVectorBundle`) with `C^n` canonical inclusion into `T*M`
+`i q₀` to a `C^n` local basis of `conormalSpace J I i`. By the smooth local frame criterion
+`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`
+(`hasLocalContMDiffSubbundleFrames_conormalSpace`), this makes `conormalSpace J I i` a `C^n` vector
+bundle of rank `k` over `Q` (`conormalFiberBundle`, `conormalVectorBundle`,
+`conormalContMDiffVectorBundle`) with `C^n` canonical inclusion into `T*M`
 (`contMDiff_conormalInclusion`) and model dimension `dim M` (`finrank_conormalBundleModel`), without
 assuming `Q` or `M` boundaryless. When `Q` is boundaryless and `i` is a `C^m` smooth embedding
 (`n + 1 ≤ m`), `TauCeti.isSmoothEmbedding_lift_totalSpace_subbundle` shows `conormalInclusion` is a
@@ -51,6 +53,8 @@ slice examples are in `Conormal.Basic` and `Conormal.Prod`.
 * `TauCeti.CotangentBundle.IsConormalFrameOn`, `exists_isConormalFrameOn`: `C^n` local frames of
   `conormalSpace J I i`, their pointwise `basis` and `trivialization`, and local existence without
   shrinking across finite orders.
+* `TauCeti.CotangentBundle.hasLocalContMDiffSubbundleFrames_conormalSpace`: the conormal spaces
+  have `C^n` local frames of size `k` near every point.
 * `TauCeti.CotangentBundle.conormalFiberBundle`, `conormalVectorBundle`,
   `conormalContMDiffVectorBundle`, `contMDiff_conormalInclusion`,
   `isSmoothEmbedding_conormalInclusion`: `C^n` vector subbundle structure and `C^n` smooth embedding
@@ -91,7 +95,7 @@ sending `(q, p)` with `p ∈ conormalSpace J I i q` to `(i q, p)`. The model-fib
 `Bundle.TotalSpace` plays no role. -/
 def conormalInclusion (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
     CotangentBundle I M :=
-  ⟨i z.proj, z.2⟩
+  ⟨i z.proj, z.snd⟩
 
 @[simp]
 theorem conormalInclusion_proj (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
@@ -99,10 +103,10 @@ theorem conormalInclusion_proj (i : Q → M) (z : TotalSpace P fun q ↦ conorma
 
 @[simp]
 theorem conormalInclusion_snd (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
-    (conormalInclusion P J I i z).2 = (z.2 : TangentSpace I (i z.proj) →L[𝕜] 𝕜) := (rfl)
+    (conormalInclusion P J I i z).snd = (z.snd : TangentSpace I (i z.proj) →L[𝕜] 𝕜) := (rfl)
 
 theorem conormalInclusion_apply (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
-    conormalInclusion P J I i z = ⟨i z.proj, z.2⟩ := (rfl)
+    conormalInclusion P J I i z = ⟨i z.proj, z.snd⟩ := (rfl)
 
 @[simp]
 theorem conormalInclusion_mk' (i : Q → M) (q : Q) (p : conormalSpace J I i q) :
@@ -120,8 +124,8 @@ theorem conormalInclusion_zeroSection (i : Q → M) (q : Q) :
 base point in `Q`. -/
 theorem conormalInclusion_snd_comp_mfderiv (i : Q → M)
     (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
-    (conormalInclusion P J I i z).2 ∘L mfderiv J I i z.proj = 0 :=
-  mem_conormalSpace_iff.mp z.2.2
+    (conormalInclusion P J I i z).snd ∘L mfderiv J I i z.proj = 0 :=
+  mem_conormalSpace_iff.mp z.snd.property
 
 /-- The image of `conormalInclusion` in `T*M` is the conormal set `conormal J I i`. -/
 @[simp]
@@ -160,7 +164,7 @@ instance instTopologicalSpaceTotalSpaceConormalSpace (i : Q → M) :
 
 private theorem isEmbedding_toPullback (P : Type*) (i : Q → M) :
     IsEmbedding (fun z : TotalSpace P (fun q ↦ conormalSpace J I i q) ↦
-      (⟨z.proj, (z.2 : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ :
+      (⟨z.proj, (z.snd : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ :
         TotalSpace (E →L[𝕜] 𝕜) (i *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜))) :=
   isEmbedding_totalSpace_subbundle (E →L[𝕜] 𝕜) P
     (E := i *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (conormalSpace J I i)
@@ -310,7 +314,7 @@ theorem trivialization_baseSet (hX : IsConormalFrameOn J I n (ic : Q → M) X U)
 @[simp]
 theorem trivialization_apply (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U)
     {p : TotalSpace (ι → 𝕜) fun q ↦ conormalSpace J I (ic : Q → M) q} (hp : p.proj ∈ U) :
-    hX.trivialization ic hU p = (p.proj, (hX.basis hp).equivFun p.2) :=
+    hX.trivialization ic hU p = (p.proj, (hX.basis hp).equivFun p.snd) :=
   hX.isSubbundleFrameOn.trivialization_apply hU hp
 
 /-- Over `U`, the partial-homeomorphism inverse of the conormal frame trivialization sends
@@ -376,9 +380,9 @@ private theorem contMDiffOn_lift_chartConormalFrame [IsManifold I 1 M] [IsManifo
   have : IsManifold I (n + 1) M := .of_le hmn
   have : IsManifold J (n + 1) Q := .of_le hmn
   have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have : FiniteDimensional 𝕜 F := .of_injective (mfderiv J I i q₀).toLinearMap hinj
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
   have hAW₀ := (hi.of_le hmn).mfderiv_inTangentCoordinates le_rfl q₀
   have hT : ContMDiffOn J 𝓘(𝕜, E →L[𝕜] Fin k → 𝕜) n
@@ -426,7 +430,7 @@ private theorem isConormalFrameOn_chartConormalFrame [IsManifold I 1 M] [IsManif
         (trivializationAt E (TangentSpace I) (i q₀)).symmL_continuousLinearMapAt hqM]
     simp only [chartConormalFrame, ContinuousLinearMap.comp_apply, zero_apply, hu,
       (trivializationAt E (TangentSpace I) (i q₀)).continuousLinearMapAt_symmL hqM,
-      ContinuousLinearMap.quotientRangeCoordinate_apply_left (hB q hq), map_zero]
+      ContinuousLinearMap.quotientRangeCoordinate_apply_left, map_zero]
   have hX_lin {q : Q} (hq : q ∈ U) :
       LinearIndependent 𝕜 (chartConormalFrame (J := J) (I := I) i q₀ B · q) := by
     have hqM : i q ∈ (trivializationAt E (TangentSpace I) (i q₀)).baseSet := by
@@ -458,7 +462,7 @@ theorem exists_isConormalFrameOn {i : Q → M} (hi : ContMDiff J I m i) (hmn : n
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : IsManifold J 1 Q := .of_le (n := n + 1) le_add_self
   have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have : FiniteDimensional 𝕜 F := .of_injective (mfderiv J I i q₀).toLinearMap (hinj q₀)
   -- Read `mfderiv J I i` in fixed tangent charts at `q₀` and `i q₀`; it is `C^n` on their overlap.
   let W₀ : Set Q := (chartAt H' q₀).source ∩ i ⁻¹' (chartAt H (i q₀)).source
@@ -494,9 +498,30 @@ theorem exists_isConormalFrameOn {i : Q → M} (hi : ContMDiff J I m i) (hmn : n
       simpa [ContinuousLinearEquiv.trans_apply, B] using DFunLike.congr_fun heq (u, cEquiv w)⟩
 
 /-- For a `C^m` map `i : Q → M` with `n + 1 ≤ m`, injective differentials, and ambient dimension
+`finrank 𝕜 F + k = finrank 𝕜 E`, the conormal spaces `conormalSpace J I i` have `C^n` local frames
+of size `k` near every point, as a family of subspaces of the pulled-back cotangent bundle
+`i *ᵖ T*M`. -/
+theorem hasLocalContMDiffSubbundleFrames_conormalSpace {i : Q → M} (hi : ContMDiff J I m i)
+    (hmn : n + 1 ≤ m) (hinj : ∀ q, Injective (mfderiv J I i q))
+    (hk : finrank 𝕜 F + k = finrank 𝕜 E) :
+    haveI : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
+    let ic : C^n⟮J, Q; I, M⟯ := ⟨i, hi.of_le (le_self_add.trans hmn)⟩
+    letI := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+    HasLocalContMDiffSubbundleFrames J n (E →L[𝕜] 𝕜) (Fin k)
+      (E := (ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
+      (conormalSpace J I (ic : Q → M)) :=
+  haveI : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
+  let ic : C^n⟮J, Q; I, M⟯ := ⟨i, hi.of_le (le_self_add.trans hmn)⟩
+  letI := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  hasLocalContMDiffSubbundleFrames_iff.mpr fun q ↦ by
+    obtain ⟨U, hU, hq, X, hX⟩ := exists_isConormalFrameOn hi hmn hinj hk q
+    exact ⟨U, hU, hq, X, hX.isSubbundleFrameOn, hX.contMDiffOn_pullback ic hU⟩
+
+/-- For a `C^m` map `i : Q → M` with `n + 1 ≤ m`, injective differentials, and ambient dimension
 `finrank 𝕜 F + k = finrank 𝕜 E`, the conormal spaces `conormalSpace J I i` form a fibre bundle over
-`Q` with model fibre `Fin k → 𝕜`, carrying the subspace topology from `i *ᵖ T*M`. Install this
-definition locally with `letI`. -/
+`Q` with model fibre `Fin k → 𝕜`, carrying the subspace topology from `i *ᵖ T*M`
+(`TauCeti.HasLocalContMDiffSubbundleFrames.fiberBundle`). Install this definition locally with
+`letI`. -/
 @[instance_reducible]
 def conormalFiberBundle {i : Q → M} (hi : ContMDiff J I m i) (hmn : n + 1 ≤ m)
     (hinj : ∀ q, Injective (mfderiv J I i q)) (hk : finrank 𝕜 F + k = finrank 𝕜 E) :
@@ -505,20 +530,9 @@ def conormalFiberBundle {i : Q → M} (hi : ContMDiff J I m i) (hmn : n + 1 ≤ 
   haveI : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
   let ic : C^n⟮J, Q; I, M⟯ := ⟨i, hi.of_le (le_self_add.trans hmn)⟩
   letI := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
-  let hEx := exists_isConormalFrameOn hi hmn hinj hk
-  let U := fun q ↦ (hEx q).choose
-  have hU := fun q ↦ (hEx q).choose_spec
-  let X := fun q ↦ (hU q).2.2.choose
-  have hX := fun q ↦ (hU q).2.2.choose_spec
-  { totalSpaceMk_isInducing' := isInducing_totalSpaceMk_subbundle (E →L[𝕜] 𝕜) (Fin k → 𝕜)
-      (E := i *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (conormalSpace J I i)
-    trivializationAtlas' :=
-      {e | ∃ (V : Set Q) (hV : IsOpen V) (Y : Fin k → Π q : Q, TangentSpace I (i q) →L[𝕜] 𝕜)
-        (hY : IsConormalFrameOn J I n i Y V), hY.trivialization ic hV = e}
-    trivializationAt' := fun q ↦ (hX q).trivialization ic (hU q).1
-    mem_baseSet_trivializationAt' := fun q ↦ by
-      rw [IsConormalFrameOn.trivialization_baseSet]; exact (hU q).2.1
-    trivialization_mem_atlas' := fun q ↦ ⟨U q, (hU q).1, X q, hX q, rfl⟩ }
+  letI := VectorBundle.pullback (𝕜 := 𝕜) (F := E →L[𝕜] 𝕜)
+    (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  (hasLocalContMDiffSubbundleFrames_conormalSpace hi hmn hinj hk).fiberBundle
 
 /-- The trivializations of `conormalFiberBundle` are the trivializations associated with `C^n` local
 conormal frames on open subsets of `Q`. -/
@@ -531,8 +545,20 @@ theorem mem_trivializationAtlas_conormalFiberBundle_iff {i : Q → M} (hi : Cont
       e ∈ trivializationAtlas (Fin k → 𝕜) (fun q ↦ conormalSpace J I i q) ↔
         ∃ (V : Set Q) (hV : IsOpen V) (Y : Fin k → Π q : Q, TangentSpace I (i q) →L[𝕜] 𝕜)
           (hY : IsConormalFrameOn J I n i Y V),
-            hY.trivialization ⟨i, hi.of_le (le_self_add.trans hmn)⟩ hV = e :=
-  fun _ ↦ Iff.rfl
+            hY.trivialization ⟨i, hi.of_le (le_self_add.trans hmn)⟩ hV = e := fun e ↦ by
+  have : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
+  let ic : C^n⟮J, Q; I, M⟯ := ⟨i, hi.of_le (le_self_add.trans hmn)⟩
+  let T' : M → Type _ := fun x ↦ TangentSpace I x →L[𝕜] 𝕜
+  let := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := T') ic
+  let := VectorBundle.pullback (𝕜 := 𝕜) (F := E →L[𝕜] 𝕜) (E := T') ic
+  refine ((hasLocalContMDiffSubbundleFrames_conormalSpace hi hmn hinj hk
+    ).mem_trivializationAtlas_fiberBundle_iff e).trans
+      ⟨fun ⟨V, hV, Y, hY, hYn, he⟩ ↦
+        ⟨V, hV, Y, ⟨fun j ↦ ?_, hY.linearIndependent, hY.span_eq⟩, he⟩,
+        fun ⟨V, hV, Y, hY, he⟩ ↦
+          ⟨V, hV, Y, hY.isSubbundleFrameOn, hY.contMDiffOn_pullback ic hV, he⟩⟩
+  exact fun q hq ↦ (((Bundle.Pullback.contMDiffAt_iff ic ic.contMDiff.contMDiffAt).mp
+    ((hYn j).contMDiffAt (hV.mem_nhds hq))).2).contMDiffWithinAt
 
 /-- **The conormal bundle is a topological vector bundle.** Its local frame trivializations are
 linear with continuous coordinate changes. -/
@@ -546,18 +572,11 @@ theorem conormalVectorBundle {i : Q → M} (hi : ContMDiff J I m i) (hmn : n + 1
   let T' : M → Type _ := fun x ↦ TangentSpace I x →L[𝕜] 𝕜
   let := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := T') ic
   let := VectorBundle.pullback (𝕜 := 𝕜) (F := E →L[𝕜] 𝕜) (E := T') ic
-  let := conormalFiberBundle hi hmn hinj hk
-  refine { trivialization_linear' := fun e he ↦ ?_
-           continuousOn_coordChange' := fun e e' he he' ↦ ?_ }
-  · obtain ⟨V, hV, Y, hY, rfl⟩ := he.out
-    exact hY.isSubbundleFrameOn.isLinear_trivialization hV
-  · obtain ⟨V, hV, Y, hY, rfl⟩ := he.out
-    obtain ⟨V', hV', Y', hY', rfl⟩ := he'.out
-    rw [hY.trivialization_baseSet ic hV, hY'.trivialization_baseSet ic hV']
-    exact hY.isSubbundleFrameOn.continuousOn_coordChangeL hV hY'.isSubbundleFrameOn hV'
+  exact (hasLocalContMDiffSubbundleFrames_conormalSpace hi hmn hinj hk).vectorBundle
 
 /-- **The conormal bundle is a `C^n` vector bundle.** On `C^m` manifolds with `n + 1 ≤ m`, the
-coordinate changes between local conormal frames are `C^n`. -/
+conormal spaces have `C^n` local frames, so the smooth local frame criterion
+`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` applies. -/
 theorem conormalContMDiffVectorBundle {i : Q → M} (hi : ContMDiff J I m i) (hmn : n + 1 ≤ m)
     (hinj : ∀ q, Injective (mfderiv J I i q)) (hk : finrank 𝕜 F + k = finrank 𝕜 E) :
     haveI : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
@@ -573,14 +592,9 @@ theorem conormalContMDiffVectorBundle {i : Q → M} (hi : ContMDiff J I m i) (hm
   let := FiberBundle.pullback (F := E →L[𝕜] 𝕜) (E := T') ic
   let := VectorBundle.pullback (𝕜 := 𝕜) (F := E →L[𝕜] 𝕜) (E := T') ic
   let := ContMDiffVectorBundle.pullback (E →L[𝕜] 𝕜) T' J ic
-  let := conormalFiberBundle hi hmn hinj hk
-  let := conormalVectorBundle hi hmn hinj hk
-  refine ⟨fun e e' he he' ↦ ?_⟩
-  obtain ⟨V, hV, Y, hY, rfl⟩ := he.out
-  obtain ⟨V', hV', Y', hY', rfl⟩ := he'.out
-  rw [hY.trivialization_baseSet ic hV, hY'.trivialization_baseSet ic hV']
-  exact hY.isSubbundleFrameOn.contMDiffOn_coordChangeL hV (hY.contMDiffOn_pullback ic hV)
-    hY'.isSubbundleFrameOn hV' (hY'.contMDiffOn_pullback ic hV')
+  -- The frame criterion allows a scalar extension; here it is the trivial one over `𝕜`.
+  have : ∀ q, IsScalarTower 𝕜 𝕜 ((ic *ᵖ T') q) := fun _ ↦ IsScalarTower.left 𝕜
+  exact (hasLocalContMDiffSubbundleFrames_conormalSpace hi hmn hinj hk).contMDiffVectorBundle
 
 /-- **The canonical inclusion `conormalInclusion` of the conormal bundle into `T*M` is `C^n`.** -/
 theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn : n + 1 ≤ m)
@@ -605,10 +619,11 @@ theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn 
       (Pullback.lift (F := E →L[𝕜] 𝕜) (E := T') ic) :=
     ((Bundle.Pullback.contMDiff_iff ic ic.contMDiff (E := T')).mp contMDiff_id).2
   refine hlift.comp (f := fun z : TotalSpace (Fin k → 𝕜) (fun q ↦ conormalSpace J I i q) ↦
-    (⟨z.proj, (z.2 : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ : TotalSpace (E →L[𝕜] 𝕜) (i *ᵖ T')))
+    (⟨z.proj, (z.snd : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ : TotalSpace (E →L[𝕜] 𝕜) (i *ᵖ T')))
     fun z ↦ ?_
   have he := FiberBundle.trivialization_mem_atlas (Fin k → 𝕜) (fun q ↦ conormalSpace J I i q) z.proj
-  have ⟨U, hU, X, hX, htriv⟩ := he
+  have ⟨U, hU, X, hX, htriv⟩ :=
+    (mem_trivializationAtlas_conormalFiberBundle_iff hi hmn hinj hk _).mp he
   have hzU : z.proj ∈ U := by
     have hz := mem_baseSet_trivializationAt (Fin k → 𝕜) (fun q ↦ conormalSpace J I i q) z.proj
     rwa [← htriv, hX.trivialization_baseSet ic hU] at hz
@@ -623,7 +638,7 @@ theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn 
     ⟨(htriv ▸ he : hX.trivialization ic hU ∈ _)⟩
   have : ∀ q, IsScalarTower 𝕜 𝕜 ((i *ᵖ T') q) := fun _ ↦ ⟨mul_smul⟩
   exact hX.isSubbundleFrameOn.contMDiffAt_totalSpace_subbundle hU (hX.contMDiffOn_pullback ic hU)
-    (p := ⟨z.proj, z.2⟩) hzU
+    (p := ⟨z.proj, z.snd⟩) hzU
 
 omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] in
 /-- **Dimension of the conormal bundle model.** When `finrank 𝕜 F + k = finrank 𝕜 E`, the model

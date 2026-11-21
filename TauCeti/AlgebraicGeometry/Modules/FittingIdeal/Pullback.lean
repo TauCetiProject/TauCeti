@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
@@ -71,25 +71,17 @@ theorem _root_.AlgebraicGeometry.Scheme.fittingIdeal_kaehlerDifferential_preimag
   let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
   let : Algebra R' Γ(X', g ⁻¹ᵁ U) :=
     ((X'.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra Γ(X, U) Γ(X', g ⁻¹ᵁ U) := (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom.toAlgebra
+  let : Algebra Γ(X, U) Γ(X', g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
+  let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
+    ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
   have := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
   have := finiteType_sections_of_locallyOfFiniteType R' X' ⟨g ⁻¹ᵁ U, hU.preimage g⟩
-  -- Sections over affine opens of a fibre product of schemes form the pushout of rings; replace
-  -- `Γ(Spec R, ⊤)` and `Γ(Spec R', ⊤)` by `R` and `R'`.
-  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R R'))
-      (CommRingCat.ofHom (algebraMap R Γ(X, U))) (CommRingCat.ofHom (algebraMap R' Γ(X', g ⁻¹ᵁ U)))
-      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(X', g ⁻¹ᵁ U))) := by
-    simpa only [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom,
-      Scheme.Hom.appLE_eq_app] using
-      Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
-  let : Algebra R Γ(X', g ⁻¹ᵁ U) :=
-    ((algebraMap R' Γ(X', g ⁻¹ᵁ U)).comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have hw := congrArg CommRingCat.Hom.hom hpush.w
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
-  have : IsScalarTower R Γ(X, U) Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+  have : IsScalarTower R Γ(X, U) Γ(X', g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R R' Γ(X', g ⁻¹ᵁ U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
   have : Algebra.IsPushout R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) :=
-    CommRingCat.isPushout_iff_isPushout.mp hpush
+    Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
+  rw [Scheme.Hom.appLE_eq_app]
   exact fittingIdeal_kaehlerDifferential_eq_map R R' Γ(X, U) Γ(X', g ⁻¹ᵁ U) k
 
 end Differentials
@@ -99,9 +91,9 @@ private theorem fittingIdeal_pullback_SpecMap
     {R S : CommRingCat.{u}} (φ : R ⟶ S) (M : (Spec R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (k : ℕ) :
     ((Scheme.Modules.pullback (Spec.map φ)).obj M).fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k =
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k =
       (M.fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k).comap
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k).comap
           (Spec.map φ) := by
   let N := (Scheme.Modules.pullback (Spec.map φ)).obj M
   have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
@@ -130,9 +122,9 @@ private theorem fittingIdeal_pullback_fromSpec
     {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType]
     {U : X.Opens} (hU : IsAffineOpen U) (k : ℕ) :
     ((Scheme.Modules.pullback hU.fromSpec).obj M).fittingIdeal
-        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2) k =
+        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.val V.property) k =
       (M.fittingIdeal
-        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2) k).comap
+        (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.val V.property) k).comap
           hU.fromSpec := by
   let P := (Scheme.Modules.pullback hU.fromSpec).obj M
   have : P.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
@@ -156,54 +148,29 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_pullback
     {X Y : Scheme.{u}} (f : X ⟶ Y) (M : Y.Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (k : ℕ) :
     ((Scheme.Modules.pullback f).obj M).fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k =
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k =
       (M.fittingIdeal
-        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k).comap f := by
-  have charts (x : X) : ∃ (U : X.Opens) (V : Y.Opens), IsAffineOpen U ∧ IsAffineOpen V ∧
-      x ∈ U ∧ U ≤ f ⁻¹ᵁ V := by
-    obtain ⟨V, hV, hxV, -⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens
-        (U := ⊤) (x := f x) (by simp)
-    obtain ⟨U, hU, hxU, hUV⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
-        (U := f ⁻¹ᵁ V) (x := x) hxV
-    exact ⟨U, V, hU, hV, hxU, hUV⟩
-  choose U V hU hV hx hUV using charts
-  let 𝒰 : X.OpenCover := Scheme.Cover.mkOfCovers X (fun x ↦ Spec Γ(X, U x))
-    (fun x ↦ (hU x).fromSpec) (fun x ↦ ⟨x, by
-      have hmem : x ∈ Set.range (hU x).fromSpec := (hU x).range_fromSpec.symm ▸ hx x
-      simpa only [Set.mem_range] using hmem⟩)
-  apply Scheme.IdealSheafData.ext_of_comap_openCover 𝒰
-  intro x
+        (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.val U.property) k).comap f := by
+  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over f fun V U hUV ↦ ?_
   let N := (Scheme.Modules.pullback f).obj M
-  let P := (Scheme.Modules.pullback (hV x).fromSpec).obj M
+  let P := (Scheme.Modules.pullback V.property.fromSpec).obj M
   have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
   have : N.IsFiniteType := Scheme.Modules.isFiniteType_pullback _ M
   have : P.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M
   have : P.IsFiniteType := Scheme.Modules.isFiniteType_pullback _ M
-  let ψ := Spec.map (f.appLE (V x) (U x) (hUV x))
-  have hcomm : ψ ≫ (hV x).fromSpec = (hU x).fromSpec ≫ f :=
-    IsAffineOpen.SpecMap_appLE_fromSpec f (hV x) (hU x) (hUV x)
-  let e : (Scheme.Modules.pullback (hU x).fromSpec).obj N ≅
+  let ψ := Spec.map (f.appLE V U hUV)
+  have hcomm : ψ ≫ V.property.fromSpec = U.property.fromSpec ≫ f :=
+    IsAffineOpen.SpecMap_appLE_fromSpec f V.property U.property hUV
+  let e : (Scheme.Modules.pullback U.property.fromSpec).obj N ≅
       (Scheme.Modules.pullback ψ).obj P :=
-    (Scheme.Modules.pullbackComp (hU x).fromSpec f).app M ≪≫
+    (Scheme.Modules.pullbackComp U.property.fromSpec f).app M ≪≫
       (Scheme.Modules.pullbackCongr hcomm.symm).app M ≪≫
-        ((Scheme.Modules.pullbackComp ψ (hV x).fromSpec).app M).symm
+        ((Scheme.Modules.pullbackComp ψ V.property.fromSpec).app M).symm
   have he := Scheme.Modules.fittingIdeal_congr
-    (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.1 W.2)
+    (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.val W.property)
     e k
-  -- The cover maps are the chosen affine charts. The pullback-composition isomorphism
-  -- compares the two actual sheaves, rather than identifying chosen pullbacks by equality.
-  -- `rw` cannot reduce the cover's dependent index and object projections together.
-  -- Restate the goal using its specified chart maps before applying the comparisons.
-  change (N.fittingIdeal
-      (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.1 W.2) k).comap
-        (hU x).fromSpec =
-    ((M.fittingIdeal
-      (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.1 W.2) k).comap f).comap
-        (hU x).fromSpec
-  rw [← fittingIdeal_pullback_fromSpec N (hU x), he,
-    fittingIdeal_pullback_SpecMap, fittingIdeal_pullback_fromSpec,
+  rw [← fittingIdeal_pullback_fromSpec N U.property, he,
+    fittingIdeal_pullback_SpecMap, fittingIdeal_pullback_fromSpec M V.property,
     ← Scheme.IdealSheafData.comap_comp, hcomm, Scheme.IdealSheafData.comap_comp]
 
 end TauCeti

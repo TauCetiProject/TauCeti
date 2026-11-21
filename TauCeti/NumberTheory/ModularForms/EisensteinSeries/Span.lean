@@ -120,7 +120,7 @@ private lemma raisedCharWeight_intCast (htuv : t * (u * v) ∣ N) (x : Fin 2 →
   rw [h1]
   simp only [hdvd]
   split_ifs with h
-  · rw [ZMod.natCast_val_div_eq_intCast_div hud h]
+  · rw [ZMod.natCast_val_div_eq_intCast_div hud _]
   · rfl
 
 /-- **The raised character Eisenstein series as a weighted series.** Restricted to `Γ(N)`, the
@@ -254,7 +254,7 @@ theorem constantTermsOnEisensteinSubspace_injective (hk : 3 ≤ (k : ℤ)) :
     exact hfg
   rw [← range_cuspToModFormCharSpace_eq_ker_constantTerms] at hker
   have hfE : (f : modFormCharSpace (k : ℤ) χ) - g ∈ eisensteinSubspace χ hk :=
-    Submodule.sub_mem _ f.2 g.2
+    Submodule.sub_mem _ f.property g.property
   exact sub_eq_zero.mp ((Submodule.disjoint_def.mp
     (disjoint_eisensteinSubspace_range_cuspToModFormCharSpace χ hk)) _ hfE hker)
 

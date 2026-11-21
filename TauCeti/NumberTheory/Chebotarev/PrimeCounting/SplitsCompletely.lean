@@ -50,7 +50,7 @@ theorem hasNaturalDensity_frobeniusPrimeSet_one :
     NumberField.Set.HasNaturalDensity (frobeniusPrimeSet K L 1)
       (1 / (Module.finrank K L : ℝ)) := by
   simpa only [ConjClasses.one_eq_mk_one, Nat.card_coe_set_eq,
-    ConjClasses.ncard_carrier_mk_of_mem_center (Subgroup.one_mem _), Nat.cast_one,
+    ConjClasses.ncard_carrier_mk_of_mem_center (one_mem _), Nat.cast_one,
     IsGalois.card_aut_eq_finrank] using
     hasNaturalDensity_frobeniusPrimeSet K L 1
 

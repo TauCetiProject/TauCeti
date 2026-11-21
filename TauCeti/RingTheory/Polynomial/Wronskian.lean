@@ -6,23 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Wronskian
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # Further properties of the Wronskian of two polynomials
 
-This file adds three facts about Mathlib's Wronskian `W(a, b) = a b' - a' b` of two polynomials:
+This file adds four facts about Mathlib's Wronskian `W(a, b) = a b' - a' b` of two polynomials:
 it commutes with coefficient ring maps, it is unchanged when a constant multiple of `a` is
-subtracted from `b`, and a root of multiplicity `n` of `b` is a root of multiplicity at least
-`n - 1` of `W(a, b)`.
+subtracted from `b`, a root of multiplicity `n` of `b` is a root of multiplicity at least
+`n - 1` of `W(a, b)`, and its coefficient in degree `deg a + deg b - 1` is
+`(deg b - deg a) · leadingCoeff a · leadingCoeff b`.
 
-These are the steps of Thue's argument that transport vanishing of a polynomial pair at a point
-to its Wronskian.
+The first three are the steps of Thue's argument that transport vanishing of a polynomial pair
+at a point to its Wronskian.
 
 ## Main results
 
 * `Polynomial.map_wronskian`: `W(a, b)` commutes with coefficient ring maps.
 * `Polynomial.wronskian_sub_C_mul_right`: `W(a, b - c a) = W(a, b)` for a constant `c`.
 * `Polynomial.pow_sub_one_dvd_wronskian_right`: if `q ^ n ∣ b`, then `q ^ (n - 1) ∣ W(a, b)`.
+* `Polynomial.coeff_wronskian_natDegree_add_natDegree_sub_one`: the coefficient of `W(a, b)` in
+  degree `deg a + deg b - 1` is `(deg b - deg a) · leadingCoeff a · leadingCoeff b`.
 -/
 
 public section
@@ -50,5 +54,18 @@ theorem pow_sub_one_dvd_wronskian_right {a b q : R[X]} {n : ℕ} (h : q ^ n ∣ 
     q ^ (n - 1) ∣ wronskian a b :=
   dvd_sub (dvd_mul_of_dvd_right (pow_sub_one_dvd_derivative_of_pow_dvd h) _)
     (dvd_mul_of_dvd_right ((pow_dvd_pow q (Nat.sub_le n 1)).trans h) _)
+
+/-- The coefficient of the Wronskian `W(a, b) = a b' - a' b` in degree `deg a + deg b - 1` is
+`(deg b - deg a) · leadingCoeff a · leadingCoeff b`: in that degree, `a b'` and `a' b` have
+coefficients `deg b` and `deg a` times `leadingCoeff a · leadingCoeff b`. For example, if
+`deg b = deg a + 1`, then the coefficient of `W(a, b)` in degree `2 deg a` is
+`leadingCoeff a · leadingCoeff b`. -/
+theorem coeff_wronskian_natDegree_add_natDegree_sub_one (a b : R[X]) :
+    (wronskian a b).coeff (a.natDegree + b.natDegree - 1) =
+      ((b.natDegree : R) - a.natDegree) * (a.leadingCoeff * b.leadingCoeff) := by
+  rw [wronskian, coeff_sub, coeff_mul_derivative_natDegree_add_natDegree_sub_one,
+    mul_comm (derivative a), add_comm a.natDegree,
+    coeff_mul_derivative_natDegree_add_natDegree_sub_one]
+  ring
 
 end Polynomial

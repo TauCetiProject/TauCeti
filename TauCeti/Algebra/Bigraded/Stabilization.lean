@@ -72,12 +72,9 @@ only after that factor is divided out.
 
 ## References
 
-This supplies the stabilization convention of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane ALG, which asks for the "graded
-vector space up to `⊗W`-stabilization" quotient "as API, not ad hoc", and which Lane G.5 needs to
-state which of the blocked grid homologies is a link invariant. The bigraded conventions follow
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 4 and 5, where
-`W` is the bigraded vector space with generators in bidegrees `(0, 0)` and `(-1, -1)`.
+The bigraded conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapters 4 and 5, where `W` is the bigraded vector space with generators in bidegrees `(0, 0)` and
+`(-1, -1)`.
 -/
 
 public section
@@ -386,9 +383,9 @@ theorem reducedRep_W_pow (k : ℕ) : reducedRep (W ^ k) = 1 := by
 `W`-indivisible ones: reduction and inclusion are mutually inverse. -/
 noncomputable def stableEquivReduced : StableSeries ≃ {P : Series // IsReduced P} where
   toFun S := ⟨reduce S, isReduced_reduce S⟩
-  invFun P := stableMk P.1
+  invFun P := stableMk P.val
   left_inv S := by simp
-  right_inv P := Subtype.ext (by simpa using reducedRep_eq_self P.2)
+  right_inv P := Subtype.ext (by simpa using reducedRep_eq_self P.property)
 
 end Reduced
 

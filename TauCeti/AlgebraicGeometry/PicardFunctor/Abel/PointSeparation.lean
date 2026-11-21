@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
-public import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Jacobi
 public import TauCeti.AlgebraicGeometry.RationalPoint.PointSeparation
@@ -100,8 +99,7 @@ theorem abelJacobiMap_app_injective_of_nontrivial_cohomology {K : Type u} [Field
     rw [Scheme.genus_def]
     exact Module.finrank_pos
   -- The divisor class only depends on the ideal sheaf, here the ideal sheaf of the graph.
-  have hst := Scheme.Hom.eq_of_mk_toInvertibleSheaf_eq_of_genus_pos
-    (isIntegrallyClosedIn_functionField_of_geometricallyIntegral (k := K)) hpos
+  have hst := Scheme.Hom.eq_of_mk_toInvertibleSheaf_eq_of_genus_pos hpos
     (graphSection_fst x) (graphSection_fst y)
     ((LineBundleClass.mk_toInvertibleSheaf_congr _ _ (graphDivisor_app_apply_val x).symm).trans
       (hc.trans (LineBundleClass.mk_toInvertibleSheaf_congr _ _ (graphDivisor_app_apply_val y))))

@@ -118,6 +118,7 @@ private theorem exists_isUnit_trace :
     rw [Algebra.trace_quotient_mk, h] at hw
     exact zero_ne_one hw
 
+omit [FiniteDimensional K L] in
 variable (K L) in
 /-- **The norm is surjective on every step of the unit filtration in an unramified extension.** If
 `L/K` is unramified, the norm maps `U(L,i)` onto `U(K,i)` for every `i : ℕ`:
@@ -125,6 +126,7 @@ variable (K L) in
 @[simp]
 theorem map_normUnits_unitFiltration (i : ℕ) :
     (unitFiltration L i).map (Algebra.normUnits K) = unitFiltration K i := by
+  have := finite_of_valuativeExtension K L
   refine le_antisymm ?_ fun x hx ↦ ?_
   · have h := map_normUnits_unitFiltration_le K L i
     rwa [IsUnramified.ramificationIndex_eq_one, one_mul] at h

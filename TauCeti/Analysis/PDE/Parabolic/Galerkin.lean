@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -98,11 +99,11 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
     (hf : Continuous f) (x : F) (t₀ : ℝ) :
     ∃! c : ℝ → F, c t₀ = x ∧ ContDiff ℝ 1 c ∧ ∀ t v,
       ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + A (e (c t)) (e v) = f t (e v) := by
-  have := FiniteDimensional.complete ℝ F
+  have := FiniteDimensional.completeSpace ℝ F
   -- The Gram map into the coordinate dual is invertible, independently of the energy form.
   let j := ι.comp e
   obtain ⟨Q, hQ⟩ := ContinuousLinearMap.isInvertible_of_injective
-    (j.gelfandDual_comp_injective he)
+    (j.gelfandDual_comp_injective_iff.2 he)
   replace hQ : ∀ z v, Q z v = ⟪ι (e z), ι (e v)⟫_ℝ := by
     intro z v
     simpa [j] using congr($hQ z v)
@@ -129,13 +130,8 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
       simpa [hQ, R, D, inner_add_left] using (eq_sub_iff_add_eq).1 hv
   -- Solve the reduced ODE, then transfer both its equation and its uniqueness back.
   obtain ⟨c, hc, huniq⟩ := B.existsUnique_hasDerivAt_add hg x t₀
-  have hderiv : deriv c = fun t ↦ B (c t) + g t := by
-    funext t
-    exact (hc.2 t).deriv
-  have hc1 : ContDiff ℝ 1 c := contDiff_one_iff_deriv.2
-    ⟨fun t ↦ (hc.2 t).differentiableAt,
-      hderiv ▸ (B.continuous.comp
-        (continuous_iff_continuousAt.2 fun t ↦ (hc.2 t).continuousAt)).add hg⟩
+  have hc1 : ContDiff ℝ 1 c := contDiff_one_of_hasDerivAt (X := fun t z ↦ B z + g t)
+    ((B.continuous.comp continuous_snd).add (hg.comp continuous_fst)) hc.2
   refine ⟨c, ⟨hc.1, hc1, fun t ↦ (hEq _ _ t).2 ((hc.2 t).deriv)⟩, ?_⟩
   intro d hd
   apply huniq d
@@ -169,9 +165,10 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
     ∃ u : ℝ → V, ContinuousOn u (Icc a b) ∧ u a = u₀ ∧
       HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t)))
         (fun t ↦ f t - A t (u t)) 1 := by
-  have := FiniteDimensional.complete ℝ V
+  have := FiniteDimensional.completeSpace ℝ V
   -- The Gram operator `G = ι.gelfandDual ∘ ι` is an isomorphism `V ≃L[ℝ] V*`.
-  obtain ⟨G, hG⟩ := ContinuousLinearMap.isInvertible_of_injective (ι.gelfandDual_comp_injective hι)
+  obtain ⟨G, hG⟩ := ContinuousLinearMap.isInvertible_of_injective
+    (ι.gelfandDual_comp_injective_iff.2 hι)
   replace hG : ∀ v, G v = ι.gelfandDual (ι v) := fun v ↦ congr($hG v)
   set Ginv : StrongDual ℝ V →L[ℝ] V := (G.symm : StrongDual ℝ V →L[ℝ] V)
   -- The equation is `x' = M(t) x + F(t)` with `M(t) = -G⁻¹ A(t)` and `F(t) = G⁻¹ f(t)`.

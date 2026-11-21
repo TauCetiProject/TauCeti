@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -69,8 +69,6 @@ theorem intervalIntegrable_schwarzChristoffelDensity {ι : Type*} [Fintype ι]
     (hright : -1 < ∑ k with a k = q, e k) :
     IntervalIntegrable (schwarzChristoffelDensity a e) volume p q := by
   classical
-  let L := q - p
-  have hL : 0 < L := sub_pos.mpr hpq
   let g : ℝ → ℝ := fun x ↦
     ∏ k ∈ Finset.univ.filter (fun k ↦ a k ≠ p ∧ a k ≠ q), |x - a k| ^ e k
   have hg : ContinuousOn g (Icc p q) := by
@@ -85,40 +83,7 @@ theorem intervalIntegrable_schwarzChristoffelDensity {ι : Type*} [Fintype ι]
         exact ⟨lt_of_le_of_ne hx.1 hk'.1.symm, lt_of_le_of_ne hx.2 hk'.2⟩
       exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
         (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hxne)))).continuousWithinAt
-  have hbeta : IntervalIntegrable
-      (fun t : ℝ ↦ t ^ (∑ k with a k = p, e k) *
-        (1 - t) ^ (∑ k with a k = q, e k)) volume 0 1 := by
-    simpa only [add_sub_cancel_right] using
-      intervalIntegrable_rpow_mul_one_sub_rpow
-        (a := (∑ k with a k = p, e k) + 1)
-        (b := (∑ k with a k = q, e k) + 1) (by linarith) (by linarith)
-        (u := 0) (v := 1) (by simp) (by simp)
-  have hscaled : IntervalIntegrable
-      (fun x : ℝ ↦ (x / L) ^ (∑ k with a k = p, e k) *
-        (1 - x / L) ^ (∑ k with a k = q, e k))
-      volume 0 L := by
-    have h := hbeta.comp_mul_right (c := L⁻¹)
-    simpa [div_eq_mul_inv, hL.ne'] using h
-  have hshifted : IntervalIntegrable
-      (fun x : ℝ ↦ ((x - p) / L) ^ (∑ k with a k = p, e k) *
-        (1 - (x - p) / L) ^ (∑ k with a k = q, e k)) volume p q := by
-    have h := hscaled.comp_sub_right p
-    simpa [L] using h
-  have hkernel : IntervalIntegrable
-      (fun x : ℝ ↦ |x - p| ^ (∑ k with a k = p, e k) *
-        |x - q| ^ (∑ k with a k = q, e k)) volume p q := by
-    refine (hshifted.const_mul
-      (L ^ ((∑ k with a k = p, e k) + ∑ k with a k = q, e k))).congr fun x hx ↦ ?_
-    rw [uIoc_of_le hpq.le] at hx
-    have hxp : 0 < x - p := sub_pos.mpr hx.1
-    have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
-    have hone : 1 - (x - p) / L = (q - x) / L := by
-      field_simp [hL.ne']
-      ring
-    rw [abs_of_pos hxp, abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub, hone,
-      Real.div_rpow hxp.le hL.le, Real.div_rpow hqx hL.le, div_eq_mul_inv]
-    rw [Real.rpow_add hL]
-    field_simp [(Real.rpow_pos_of_pos hL _).ne']
+  have hkernel := intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow (p := p) (q := q) hleft hright
   have hg' : ContinuousOn g (uIcc p q) := by simpa [uIcc_of_le hpq.le] using hg
   refine (hkernel.mul_continuousOn hg').congr_ae ?_
   filter_upwards [MeasureTheory.ae_restrict_of_ae (volume.ae_ne p),
@@ -157,7 +122,7 @@ theorem intervalIntegrable_schwarzChristoffelDensity_succ (a e : Fin (n + 1) →
     IntervalIntegrable (schwarzChristoffelDensity a e) volume
       (a i.castSucc) (a i.succ) := by
   apply intervalIntegrable_schwarzChristoffelDensity a e (ha i.castSucc_lt_succ)
-    (fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k)
+    (fun k _ ↦ notMem_Ioo_castSucc_succ a ha.monotone i k)
   · simpa [ha.injective.eq_iff, Finset.filter_eq'] using hleft
   · simpa [ha.injective.eq_iff, Finset.filter_eq'] using hright
 
@@ -176,7 +141,7 @@ theorem schwarzChristoffelVertex_succ_sub_eq_sideIntegral_mul (a e : Fin (n + 1)
   let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   have hpq : p < q := ha i.castSucc_lt_succ
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo p q := by
-    exact fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
+    exact fun k _ ↦ notMem_Ioo_castSucc_succ a ha.monotone i k
   have hsum (k : Fin (n + 1)) : ∑ l with a l = a k, e l = e k := by
     simp [ha.injective.eq_iff, Finset.filter_eq']
   have hleftsum : -1 < ∑ k with a k = p, e k := by
@@ -211,7 +176,7 @@ theorem schwarzChristoffelSideIntegral_pos (a e : Fin (n + 1) → ℝ) (ha : Str
     (ha i.castSucc_lt_succ)
   intro x hx
   exact schwarzChristoffelDensity_pos a e fun k _ hxk ↦
-    not_mem_Ioo_castSucc_succ a ha.monotone i k (hxk ▸ hx)
+    notMem_Ioo_castSucc_succ a ha.monotone i k (hxk ▸ hx)
 
 /-- The side-length integral is the Euclidean distance between the corresponding consecutive
 Schwarz--Christoffel vertices. -/

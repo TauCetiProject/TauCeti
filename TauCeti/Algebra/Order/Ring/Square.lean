@@ -18,5 +18,5 @@ public section
 /-- A square in a linearly ordered ring has a nonnegative square root. -/
 theorem IsSquare.exists_nonneg_sq {R : Type*} [Ring R] [LinearOrder R]
     [IsOrderedAddMonoid R] {a : R} (ha : IsSquare a) : ∃ r : R, 0 ≤ r ∧ r ^ 2 = a := by
-  obtain ⟨r, hr⟩ := ha.exists_sq
-  exact ⟨|r|, abs_nonneg r, by simpa using hr.symm⟩
+  obtain ⟨r, rfl⟩ := ha.exists_sq
+  exact ⟨|r|, abs_nonneg r, sq_abs r⟩

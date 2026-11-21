@@ -52,6 +52,10 @@ coordinate `±1`.
 * `TauCeti.Montgomery.diffAdd_cross_eq_zero_of_cross_eq_zero` and
   `TauCeti.Montgomery.diffAdd_ne_zero_iff_of_cross_eq_zero`: the same for arbitrary
   representatives of the coordinate pairs.
+* `TauCeti.Montgomery.diffAdd_zero_left`, `TauCeti.Montgomery.diffAdd_zero_right`,
+  `TauCeti.Montgomery.diffAdd_zero_diff`, `TauCeti.Montgomery.diffAdd_eq_zero_of_z_eq_zero`, and
+  `TauCeti.Montgomery.diffAdd_eq_zero_of_x_eq_zero_of_z_eq_zero`: vanishing on zero and
+  coordinate-degenerate raw pairs over any commutative ring.
 
 ## References
 
@@ -136,6 +140,32 @@ theorem diffAdd_one_zero (P : Pair R) : diffAdd P ⟨1, 0⟩ P = (4 * P.x * P.z)
 theorem map_diffAdd (f : R →+* S) (P Q D : Pair R) :
     (diffAdd P Q D).map f = diffAdd (P.map f) (Q.map f) (D.map f) := by
   ext <;> simp [diffAdd]
+
+/-- Differential addition vanishes when its first argument is the zero raw pair. -/
+@[simp]
+theorem diffAdd_zero_left (Q D : Pair R) : diffAdd 0 Q D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z]
+
+/-- Differential addition vanishes when its second argument is the zero raw pair. -/
+@[simp]
+theorem diffAdd_zero_right (P D : Pair R) : diffAdd P 0 D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z]
+
+/-- Differential addition vanishes when its difference argument is the zero raw pair. -/
+@[simp]
+theorem diffAdd_zero_diff (P Q : Pair R) : diffAdd P Q 0 = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z]
+
+/-- Differential addition vanishes when all three arguments have vanishing second field. -/
+theorem diffAdd_eq_zero_of_z_eq_zero {P Q D : Pair R} (hP : P.z = 0) (hQ : Q.z = 0)
+    (hD : D.z = 0) : diffAdd P Q D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z, Pair.cross_def, hP, hQ, hD]
+
+/-- Differential addition vanishes when the first and difference arguments have vanishing first
+field and the second argument has vanishing second field. -/
+theorem diffAdd_eq_zero_of_x_eq_zero_of_z_eq_zero {P Q D : Pair R} (hP : P.x = 0)
+    (hQ : Q.z = 0) (hD : D.x = 0) : diffAdd P Q D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z, Pair.cross_def, hP, hQ, hD]
 
 end CommRing
 
@@ -270,15 +300,40 @@ theorem diffAdd_coordinates (h₂ : (2 : K) ≠ 0) (hB : B ≠ 0) (P Q : (model 
       rw [show x₁ * B - x₂ * B = (x₁ - x₂) * B by ring]
       exact mul_ne_zero (mul_ne_zero h₄ h₄') (pow_ne_zero 2 (mul_ne_zero (sub_ne_zero.mpr hx) hB))
 
-/-- **Differential addition of arbitrary representatives.** Over a field and for `B ≠ 0`, if the
+/-- **Differential addition of arbitrary representatives.** Over a field, if the
 pairs `SP`, `SQ` and `SD` have vanishing cross difference with the coordinate pairs of `P`, `Q` and
 `P - Q`, then their differential addition has vanishing cross difference with the coordinate pair
 of `P + Q`. In characteristic two this holds because the output is always `(0, 0)`. -/
-theorem diffAdd_cross_eq_zero_of_cross_eq_zero (hB : B ≠ 0)
+theorem diffAdd_cross_eq_zero_of_cross_eq_zero
     {P Q : (model A B).toAffine.Point} {SP SQ SD : Pair K}
     (hP : SP.cross (coordinates A B P) = 0) (hQ : SQ.cross (coordinates A B Q) = 0)
     (hD : SD.cross (coordinates A B (P - Q)) = 0) :
     (diffAdd SP SQ SD).cross (coordinates A B (P + Q)) = 0 := by
+  by_cases hB : B = 0
+  · -- for `B = 0` the model is the cuspidal cubic `y² = x³`: every coordinate pair has `z = 0` and
+    -- `x ≠ 0` (the point with `x = 0` is singular), so both `SP` and `SQ` have `z = 0`
+    subst hB
+    have hz (R : (model A 0).toAffine.Point) : (coordinates A 0 R).z = 0 := by
+      rcases R with _ | ⟨x, y, h⟩
+      · simp [← Affine.Point.zero_def]
+      · rw [coordinates_some A 0 h]
+    have hx (R : (model A 0).toAffine.Point) : (coordinates A 0 R).x ≠ 0 := by
+      rcases R with _ | ⟨x, y, h⟩
+      · simp [← Affine.Point.zero_def]
+      · rw [coordinates_some A 0 h]
+        rintro rfl
+        have hy : y = 0 := by
+          simpa using (Affine.equation_iff _ _).1 h.1
+        subst hy
+        exact (nonsingular_model_zero_zero A 0).1 h (by simp)
+    have hSP : SP.z = 0 := by
+      rw [Pair.cross_def, hz, mul_zero, zero_sub, neg_eq_zero] at hP
+      exact (mul_eq_zero.1 hP).resolve_left (hx P)
+    have hSQ : SQ.z = 0 := by
+      rw [Pair.cross_def, hz, mul_zero, zero_sub, neg_eq_zero] at hQ
+      exact (mul_eq_zero.1 hQ).resolve_left (hx Q)
+    rw [Pair.cross_def, hz, mul_zero, zero_sub, diffAdd_z, Pair.cross_def, hSP, hSQ]
+    simp
   by_cases h₂ : (2 : K) = 0
   · have h₄ : (4 : K) = 0 := by
       rw [show (4 : K) = 2 * 2 by norm_num, h₂, zero_mul]

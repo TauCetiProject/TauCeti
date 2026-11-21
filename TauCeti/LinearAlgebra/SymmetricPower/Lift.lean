@@ -24,7 +24,6 @@ permutation-invariant multilinear maps `Mⁱ → N`, for every `N`.
 
 As a first use, prepending a fixed factor to a pure tensor is permutation-invariant in the remaining
 factors, so it lifts to `SymmetricPower.consMul : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M`.
-Since `Sym[R]^k M` is indexed by `Fin k`, this part takes the scalars in `Type`.
 
 ## Main definitions
 
@@ -44,9 +43,9 @@ public section
 
 open scoped TensorProduct
 
-universe u v w
+universe u v w x
 
-variable {R ι : Type u} {M : Type v} {N : Type w}
+variable {R : Type u} {ι : Type x} {M : Type v} {N : Type w}
 
 namespace SymmetricPower
 
@@ -54,7 +53,7 @@ section Lift
 
 variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-variable (f : MultilinearMap R (fun _ : ι ↦ M) N)
+variable (f : MultilinearMap (RingHom.id R) (fun _ : ι ↦ M) N)
 
 /-- A permutation-invariant multilinear map takes the same value on a pure tensor and on each of
 its reorderings, so it is constant on the classes of the defining relation of the symmetric
@@ -94,7 +93,7 @@ end Lift
 
 section ConsMul
 
-variable {R : Type} {M : Type v} [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- Prepending a fixed factor to a pure tensor is invariant under permutations of the remaining
 factors. -/

@@ -40,6 +40,8 @@ in the same universe, which is reflected in all scheme-level declarations in thi
   `quotientSpecι` is a closed immersion.
 * `TauCeti.CommHopfAlgCat.quotientSpecMapOfLe`: the closed subgroup morphism induced by
   `I ≤ J`.
+* `CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec`: for `I ≤ J`, the subgroup scheme of
+  `Spec (H ⧸ I)` cut out by the image of `J` is that of `J`.
 * `CommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type commutative Hopf algebra has
   quotient group schemes locally of finite type over `Spec R`.
 
@@ -170,6 +172,55 @@ lemma quotientSpecMapOfLe_comp (H : _root_.CommHopfAlgCat.{u} R)
   rw [quotientSpecMapOfLe_def, quotientSpecMapOfLe_def, quotientSpecMapOfLe_def,
     ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp,
     ← op_comp, quotientMapOfLe_comp]
+
+section RelativeQuotient
+
+/-! ### Quotients of quotients
+
+For Hopf ideals `I ≤ J` of `H`, the closed subgroup scheme cut out by the image of `J` in
+`Spec (H ⧸ I)` is the one cut out by `J` in `Spec H`. As for
+`CommHopfAlgCat.Hom.quotientIsoQuotientQuotient`, the statements take the quotient morphism
+`q : H ⟶ H ⧸ I` together with `hq : q = mkQuotient H I`, so that they apply verbatim to a
+coordinate map that is only propositionally the quotient morphism. -/
+
+variable {H : _root_.CommHopfAlgCat.{u} R} {I J : HopfIdeal R H}
+
+/-- The closed subgroup scheme of `Spec (H ⧸ I)` cut out by the image of `J` is the one cut out by
+`J` in `Spec H`. -/
+noncomputable def _root_.CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec
+    (q : H ⟶ CommHopfAlgCat.quotient H I) (hq : q = CommHopfAlgCat.mkQuotient H I)
+    (hIJ : I ≤ J) :
+    quotientSpec (CommHopfAlgCat.quotient H I) (J.map q.hom) ≅ quotientSpec H J :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso (q.quotientIsoQuotientQuotient hq hIJ).op
+
+/-- `CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec` is the image under `hopfSpec` of the
+opposite of the third isomorphism `CommHopfAlgCat.Hom.quotientIsoQuotientQuotient`. -/
+lemma _root_.CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_def
+    (q : H ⟶ CommHopfAlgCat.quotient H I) (hq : q = CommHopfAlgCat.mkQuotient H I)
+    (hIJ : I ≤ J) :
+    q.quotientSpecQuotientIsoQuotientSpec hq hIJ =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+        (q.quotientIsoQuotientQuotient hq hIJ).op :=
+  (rfl)
+
+/-- Under `CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec`, the inclusion of the subgroup
+scheme of `J` into that of `I` is the inclusion of the subgroup scheme of the image of `J` into
+`Spec (H ⧸ I)`. -/
+@[reassoc (attr := simp)]
+theorem _root_.CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_hom_comp_quotientSpecMapOfLe
+    (q : H ⟶ CommHopfAlgCat.quotient H I) (hq : q = CommHopfAlgCat.mkQuotient H I)
+    (hIJ : I ≤ J) :
+    (q.quotientSpecQuotientIsoQuotientSpec hq hIJ).hom ≫ quotientSpecMapOfLe H hIJ =
+      quotientSpecι (CommHopfAlgCat.quotient H I) (J.map q.hom) := by
+  rw [CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_def, quotientSpecMapOfLe_def,
+    quotientSpecι_def, Functor.mapIso_hom, Iso.op_hom,
+    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp, ← op_comp]
+  congr 2
+  rw [← cancel_epi (CommHopfAlgCat.mkQuotient H I),
+    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc,
+    CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom, hq]
+
+end RelativeQuotient
 
 end CommHopfAlgCat
 

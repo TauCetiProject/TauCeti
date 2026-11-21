@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.FiberProduct.Local
 import TauCeti.Geometry.Manifold.Gluing.Basic
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Transverse fibre products of manifolds
@@ -22,7 +23,11 @@ equal images under the differentials of `f` and `g`.
 `PartialDiffeomorph.exists_isManifold_localFiberProduct_isSmoothEmbedding`. It is a named,
 non-instance atlas, characterized by `TauCeti.isManifold_transverseFiberProduct`,
 `TauCeti.isSmoothEmbedding_coe_transverseFiberProduct`, and
-`TauCeti.mem_range_mfderiv_coe_transverseFiberProduct_iff`. The existence-only form is
+`TauCeti.mem_range_mfderiv_coe_transverseFiberProduct_iff`. In terms of the two projections, a
+tangent vector of the fibre product is determined by its two components
+(`TauCeti.eq_zero_of_mfderiv_transverseFiberProduct`), and every pair `(u, w)` with
+`df u = dg w` arises (`TauCeti.exists_mfderiv_eq_of_transverseFiberProduct`).
+The existence-only form is
 `TauCeti.exists_isManifold_transverseFiberProduct_isSmoothEmbedding`.
 The embedding gives the smooth universal property via
 `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: a map into the fibre product is smooth
@@ -59,20 +64,20 @@ private abbrev fiberProductPatch (a : N) :=
 private def fiberProductPatchInclusion (a : N) :
     fiberProductPatch (IN := IN) (n := n) (f := f) (g := g) a →
       {p : X × Y // f p.1 = g p.2} :=
-  fun p ↦ ⟨p.1, p.2.1⟩
+  fun p ↦ ⟨p.val, p.property.1⟩
 
 private theorem isOpenEmbedding_fiberProductPatchInclusion (hf : Continuous f) (a : N) :
     IsOpenEmbedding (fiberProductPatchInclusion (IN := IN) (n := n) (f := f) (g := g) a) := by
   let U : Set {p : X × Y // f p.1 = g p.2} :=
-    {p | f p.1.1 ∈ (extChartPartialDiffeomorph IN n a).source}
+    {p | f p.val.1 ∈ (extChartPartialDiffeomorph IN n a).source}
   have hU : IsOpen U := (extChartPartialDiffeomorph IN n a).open_source.preimage
-    (hf.comp (continuous_fst.comp continuous_subtype_val))
+    (hf.comp (continuous_fst.comp continuous_subtypeVal))
   let e : fiberProductPatch (IN := IN) (n := n) (f := f) (g := g) a ≃ₜ U :=
     { toEquiv := (Equiv.subtypeSubtypeEquivSubtypeInter
         (fun p : X × Y ↦ f p.1 = g p.2)
         (fun p ↦ f p.1 ∈ (extChartPartialDiffeomorph IN n a).source)).symm
-      continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
   exact hU.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding
 
 variable [IsManifold IX n X] [IsManifold IY n Y]
@@ -98,12 +103,12 @@ theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding (hn : 1 ≤ n
       Manifold.IsSmoothEmbedding
         𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY) n
         (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) ∧
-      ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.1),
+      ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.val),
         v ∈ (mfderiv
           𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY)
           (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) p).range ↔
-        mfderiv IX IN f p.1.1 v.1 =
-          tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) := by
+        mfderiv IX IN f p.val.1 v.1 =
+          tangentSpaceCast IN (g p.val.2) (f p.val.1) (mfderiv IY IN g p.val.2 v.2) := by
   classical
   let d := finrank ℝ EX + finrank ℝ EY - finrank ℝ EN
   let K := 𝓘(ℝ, Fin d → ℝ)
@@ -121,7 +126,7 @@ theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding (hn : 1 ≤ n
   have hopen (a : N) : IsOpenEmbedding (ι a) :=
     isOpenEmbedding_fiberProductPatchInclusion hf.continuous a
   have hcover (p : P) : ∃ a q, ι a q = p := by
-    refine ⟨f p.1.1, ⟨p.1, p.2, ?_⟩, rfl⟩
+    refine ⟨f p.val.1, ⟨p.val, p.property, ?_⟩, rfl⟩
     exact (mem_extChartPartialDiffeomorph_source IN n _).2 BoundarylessManifold.isInteriorPoint
   have hdeck := exists_contMDiffAt_transition_of_isImmersion hopen
     (g := (Subtype.val : P → X × Y)) (fun a ↦ (hemb a).isImmersion)
@@ -143,8 +148,8 @@ theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding (hn : 1 ≤ n
   obtain ⟨a, q, rfl⟩ := hcover p
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
   have hinc : (Subtype.val : P → X × Y) ∘ ι a = (Subtype.val : U a → X × Y) := rfl
-  have hrange := (hlocal a q).range_mfderiv_comp hn0
-    (hi.contMDiff _ |>.mdifferentiableAt hn0)
+  have hrange := (hlocal a q).range_mfderiv_comp (K := IX.prod IY)
+    (g := (Subtype.val : P → X × Y)) hn0
   rw [hinc] at hrange
   rw [← hrange]
   exact (localData a).choose_spec.2.2 q v
@@ -183,12 +188,55 @@ theorem isSmoothEmbedding_coe_transverseFiberProduct :
 components have equal images under the differentials of the defining maps. -/
 theorem mem_range_mfderiv_coe_transverseFiberProduct_iff :
     letI := transverseFiberProductChartedSpace hn hf hg htrans
-    ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.1),
+    ∀ (p : {p : X × Y // f p.1 = g p.2}) (v : TangentSpace (IX.prod IY) p.val),
       v ∈ (mfderiv
         𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) (IX.prod IY)
         (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y) p).range ↔
-      mfderiv IX IN f p.1.1 v.1 =
-        tangentSpaceCast IN (g p.1.2) (f p.1.1) (mfderiv IY IN g p.1.2 v.2) :=
+      mfderiv IX IN f p.val.1 v.1 =
+        tangentSpaceCast IN (g p.val.2) (f p.val.1) (mfderiv IY IN g p.val.2 v.2) :=
   (exists_isManifold_transverseFiberProduct_isSmoothEmbedding hn hf hg htrans).choose_spec.2.2
+
+
+/-- A pair `(u, w)` of tangent vectors with `df u = dg w` is the pair of differentials of the two
+projections of the transverse fibre product at some tangent vector `ξ`. -/
+theorem exists_mfderiv_eq_of_transverseFiberProduct :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    ∀ (p : {p : X × Y // f p.1 = g p.2}) (u : TangentSpace IX p.val.1)
+      (w : TangentSpace IY p.val.2),
+      mfderiv IX IN f p.val.1 u = tangentSpaceCast IN (g p.val.2) (f p.val.1)
+          (mfderiv IY IN g p.val.2 w) →
+      ∃ ξ, mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IX
+          (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.1) p ξ = u ∧
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY
+          (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) p ξ = w := by
+  let := transverseFiberProductChartedSpace hn hf hg htrans
+  intro p u w h
+  have hval := ((isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans).contMDiff
+    p).mdifferentiableAt (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))
+  obtain ⟨ξ, hξ⟩ := (mem_range_mfderiv_coe_transverseFiberProduct_iff hn hf hg htrans p
+    (u, w)).2 h
+  exact ⟨ξ, by rw [hval.mfderiv_fst_apply]; exact congrArg Prod.fst hξ,
+    by rw [hval.mfderiv_snd_apply]; exact congrArg Prod.snd hξ⟩
+
+/-- A tangent vector of the transverse fibre product is zero when the differentials of both
+projections vanish on it. -/
+theorem eq_zero_of_mfderiv_transverseFiberProduct :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    ∀ (p : {p : X × Y // f p.1 = g p.2})
+      (ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) p),
+      mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IX
+          (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.1) p ξ = 0 →
+        mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY
+          (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) p ξ = 0 → ξ = 0 := by
+  let := transverseFiberProductChartedSpace hn hf hg htrans
+  intro p ξ h₁ h₂
+  have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
+  have hi := isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans
+  have hval := (hi.contMDiff p).mdifferentiableAt hn0
+  refine (injective_iff_map_eq_zero _).1 ((hi.isImmersion.isImmersionAt p).mfderiv_injective hn0)
+    ξ ?_
+  rw [hval.mfderiv_fst_apply] at h₁
+  rw [hval.mfderiv_snd_apply] at h₂
+  exact Prod.ext h₁ h₂
 
 end TauCeti

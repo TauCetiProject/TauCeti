@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.Carrier
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
-public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
+public import TauCeti.RepresentationTheory.ClassicalGroups.Differential.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
@@ -190,10 +190,10 @@ dominant weight `λ` (a nonzero vector of weight `λ` fixed by every transvectio
 `i < j`), then `W` with the action of `𝔤𝔩ₙ(ℂ)` through `dρ` is isomorphic to
 `glIrreducible n λ`. -/
 theorem nonempty_lieModuleEquiv_glIrreducible (hρ : IsRationalRep ρ) [ρ.IsIrreducible]
-    {l : DominantWeight n} {w : W} (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l.1)
+    {l : DominantWeight n} {w : W} (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l.val)
     (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w) :
     letI := LieRingModule.compLieHom W hρ.differential
-    Nonempty (W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ glIrreducible n fun i ↦ (l.1 i : ℂ)) := by
+    Nonempty (W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ glIrreducible n fun i ↦ (l.val i : ℂ)) := by
   let _ := LieRingModule.compLieHom W hρ.differential
   have _ := LieModule.compLieHom W hρ.differential
   have _ := hρ.isIrreducible_differential

@@ -64,7 +64,7 @@ theorem isStableSequence_iff_exists_forall_norm_le [∀ n, FiniteDimensional �
   obtain ⟨e', he'⟩ := ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le
     (LinearMap.injective_iff_surjective.mp hinj) h'
   have hunit : IsUnit (A n) := ⟨(ContinuousLinearEquiv.unitsEquiv 𝕜 (E n)).symm e', he'⟩
-  exact ⟨hunit, ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le hunit
+  exact ⟨hunit, ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le
     (le_max_right _ _) h'⟩
 
 end Operator

@@ -116,7 +116,7 @@ is open of index dividing `[L : K]`, and the cyclotomic orientation of `G_K(2)`,
 through `m_K`, takes the value `-(1 + α)⁻¹` on `φ(x₂)`, the value `(1 - 2^f)⁻¹` on `φ(x₄)`, and the
 value `1` on the image of every other marked generator. -/
 theorem absoluteGaloisGroupProP_two_marked_of_degree_even_plusMinus_finiteExtension
-    [FiniteDimensional ℚ_[2] L] (σ : L →ₐ[K] SeparableClosure K)
+    (σ : L →ₐ[K] SeparableClosure K)
     (hmuK : ∃ ζ : K, IsPrimitiveRoot ζ 2) (heven : Even (Module.finrank ℚ_[2] L)) {a f : ℕ}
     (hf : 2 ≤ f) (ha : 2 ^ f ∣ a)
     (hrange : (localCyclotomicCharacter 2 L).range = unitsPlusMinus f)
@@ -163,8 +163,8 @@ is open of index dividing `[L : K]`, and the cyclotomic orientation of `G_K(2)`,
 through `m_K`, takes the value `-(1 + α)⁻¹` on `φ(x₂)`, the value `(1 - 2^f)⁻¹` on `φ(x₄)`, and the
 value `1` on the image of every other marked generator. -/
 theorem absoluteGaloisGroupProP_two_marked_of_degree_even_principal_finiteExtension
-    [FiniteDimensional ℚ_[2] L] (σ : L →ₐ[K] SeparableClosure K)
-    (hmuK : ∃ ζ : K, IsPrimitiveRoot ζ 2) (heven : Even (Module.finrank ℚ_[2] L)) {a k f : ℕ}
+    (σ : L →ₐ[K] SeparableClosure K)
+    (hmuK : ∃ ζ : K, IsPrimitiveRoot ζ 2) {a k f : ℕ}
     (hk : 2 ≤ k) (hak : 2 ^ k ∣ a) (hak' : ¬ 2 ^ (k + 1) ∣ a) (hkf : k < f) {u : ℤ_[2]ˣ}
     (hu : (u : ℤ_[2]) = -1 + 2 ^ k)
     (hrange : (localCyclotomicCharacter 2 L).range = (Subgroup.zpowers u).topologicalClosure)
@@ -187,8 +187,8 @@ theorem absoluteGaloisGroupProP_two_marked_of_degree_even_principal_finiteExtens
           cyclotomicOrientation 2 K hmuK
             (mK.symm (φ (presentedProPGen 2 (Module.finrank ℚ_[2] L + 2) _ i))) = 1 := by
   obtain ⟨e, h₁, h₃, h⟩ := absoluteGaloisGroupProP_two_marked_of_degree_even_principal L
-    (hmuK.elim fun _ hζ ↦ ⟨_, hζ.map_of_injective (algebraMap K L).injective⟩) heven hk hak hak'
-    hkf hu hrange
+    (hmuK.elim fun _ hζ ↦ ⟨_, hζ.map_of_injective (algebraMap K L).injective⟩) hk hak hak' hkf hu
+    hrange
   obtain ⟨φ, hsq, hopen, hdvd, hχ⟩ :=
     exists_continuousMonoidHom_absoluteGaloisGroupExtend 2 K L σ hmuK mK e
   refine ⟨e, φ, hsq, hopen, hdvd, ?_, ?_, fun i hi₁ hi₃ hi ↦ ?_⟩

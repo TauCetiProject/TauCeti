@@ -8,25 +8,57 @@ module
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
-# Locally finite measures of closed half-infinite intervals
+# Criteria and interval bounds for locally finite measures
 
 In an order with a least element whose closed intervals are compact, such as `ℝ≥0` or `ℕ`, a
 locally finite measure gives finite mass to each interval `Iic a = Icc ⊥ a`. Dually, with a
 greatest element, it gives finite mass to each `Ici a`. These complement Mathlib's
 `MeasureTheory.measure_Icc_lt_top`.
 
+A compact exhaustion also gives a countable criterion for local finiteness and for finiteness
+on compact sets. This criterion is useful when checking these properties simultaneously
+almost surely for a random measure.
+
 ## Main results
 
 * `MeasureTheory.measure_Iic_lt_top`
 * `MeasureTheory.measure_Ici_lt_top`
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top`
 -/
 
 public section
 
 open Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory
+
+/-- A measure on a linearly ordered space is locally finite if every closed initial interval
+has finite mass and strict lower rays are open. -/
+theorem Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] [MeasurableSpace α] (μ : Measure α)
+    (hfin : ∀ t : α, μ (Iic t) < ∞) : IsLocallyFiniteMeasure μ := by
+  refine ⟨fun t ↦ ?_⟩
+  by_cases ht : ∃ u, t < u
+  · obtain ⟨u, hu⟩ := ht
+    exact ⟨Iic u, Iic_mem_nhds hu, hfin u⟩
+  · exact ⟨Iic t, Filter.mem_of_superset Filter.univ_mem
+      (fun u _ ↦ le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)), hfin t⟩
+
+/-- A measure on a linearly ordered space is locally finite if every closed final interval
+has finite mass and strict upper rays are open. -/
+theorem Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIicTopology α] [MeasurableSpace α] (μ : Measure α)
+    (hfin : ∀ t : α, μ (Ici t) < ∞) : IsLocallyFiniteMeasure μ :=
+  μ.isLocallyFiniteMeasure_of_measure_Iic_lt_top (α := αᵒᵈ) hfin
+
+/-- Scaling a locally finite measure by a finite extended nonnegative scalar preserves
+local finiteness. -/
+instance isLocallyFiniteMeasureSMulCoeNNReal {α : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] (μ : Measure α) [IsLocallyFiniteMeasure μ] (c : ℝ≥0) :
+    IsLocallyFiniteMeasure ((c : ℝ≥0∞) • μ) :=
+  μ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
 
 variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
   {m : MeasurableSpace α} {μ : Measure α} [IsLocallyFiniteMeasure μ] {a : α}
@@ -44,3 +76,25 @@ theorem measure_Ici_lt_top [OrderTop α] : μ (Ici a) < ∞ := by
   exact measure_Icc_lt_top
 
 end MeasureTheory
+
+namespace CompactExhaustion
+
+open MeasureTheory
+
+variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+
+/-- Local finiteness can be tested on the countably many sets of a compact exhaustion. -/
+theorem isLocallyFiniteMeasure_iff (K : CompactExhaustion X) (μ : Measure X) :
+    IsLocallyFiniteMeasure μ ↔ ∀ n, μ (K n) < ∞ := by
+  refine ⟨fun _ n => (K.isCompact n).measure_lt_top, fun h => ⟨fun x => ?_⟩⟩
+  obtain ⟨n, hn⟩ := K.exists_mem_nhds x
+  exact ⟨K n, hn, h n⟩
+
+/-- Finiteness on compact sets can be tested on any compact exhaustion. -/
+theorem isFiniteMeasureOnCompacts_iff (K : CompactExhaustion X) (μ : Measure X) :
+    IsFiniteMeasureOnCompacts μ ↔ ∀ n, μ (K n) < ∞ := by
+  refine ⟨fun _ n => (K.isCompact n).measure_lt_top, fun h => ⟨fun s hs => ?_⟩⟩
+  obtain ⟨n, hn⟩ := K.exists_superset_of_isCompact hs
+  exact (measure_mono hn).trans_lt (h n)
+
+end CompactExhaustion

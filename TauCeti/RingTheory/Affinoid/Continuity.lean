@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Affinoid.FiniteQuotient
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import Mathlib.Topology.Algebra.Algebra.Equiv
+public import TauCeti.RingTheory.Affinoid.FiniteQuotient
 public import TauCeti.RingTheory.Huber.PowerBounded
 
 import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity.Basic
@@ -23,7 +24,9 @@ Every algebra homomorphism from a noetherian ultrametric Banach algebra into an 
 algebra carrying a complete compatible ultrametric algebra norm is continuous. No continuity
 of a Tate presentation is assumed. Finite quotients by powers of all maximal ideals separate
 the target, including its nilpotents; continuity into these quotients closes the graph.
-Consequently such homomorphisms also preserve power-boundedness.
+Consequently such homomorphisms also preserve power-boundedness, and every `K`-algebra
+isomorphism between completely normed affinoid algebras is a homeomorphism
+(`TauCeti.IsAffinoidAlgebra.toContinuousAlgEquiv`).
 
 ## References
 
@@ -41,23 +44,29 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
     [CompleteSpace A]
 
+/-- Every ideal of an affinoid algebra carrying a complete compatible ultrametric algebra norm
+is closed. -/
+theorem isClosed_ideal (hA : IsAffinoidAlgebra K A) (I : Ideal A) : IsClosed (I : Set A) := by
+  have := hA.isNoetherianRing
+  have := Huber.IsTateRing.of_normedAlgebra K A
+  exact Huber.isClosed_of_isNoetherian I
+
 /-- Every homomorphism from a noetherian ultrametric Banach algebra to a completely normed
 affinoid algebra is continuous. The affinoid presentation is purely algebraic. -/
 theorem continuous_algHom (hA : IsAffinoidAlgebra K A)
     {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B]
     [CompleteSpace B] [IsNoetherianRing B] (f : B →ₐ[K] A) : Continuous f := by
   have := hA.isNoetherianRing
-  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
   apply f.toLinearMap.continuous_of_seq_closed_graph
   intro u x y hu huy
   suffices y - f x ∈ (⊥ : Ideal A) by
     exact sub_eq_zero.mp this
   rw [← Ideal.iInf_isMaximal_pow_eq_bot]
   simp only [Ideal.mem_iInf]
-  intro m hm n hn
+  intro m hm n _
   let := hm
   let I := m ^ n
-  have : IsClosed (I : Set A) := Huber.isClosed_of_isNoetherian I
+  have : IsClosed (I : Set A) := hA.isClosed_ideal I
   have : Module.Finite K (A ⧸ I) := hA.finite_quotient_pow m n
   let q := Ideal.Quotient.mkₐ K I
   have hq : Continuous q := continuous_quot_mk
@@ -76,5 +85,39 @@ theorem isPowerBounded_map (hA : IsAffinoidAlgebra K A)
   have := Huber.IsTateRing.of_normedAlgebra K B
   have := Huber.IsTateRing.of_normedAlgebra K A
   hb.map_of_isTateRing (f := (f : B →+* A)) (hA.continuous_algHom f).continuousAt
+
+/-- **Equivalence of complete affinoid norms.** An algebra isomorphism between completely normed
+affinoid algebras is a homeomorphism, whatever complete ultrametric algebra norms they carry.
+Applied to two such norms on one algebra, this says that they define the same topology. -/
+noncomputable def toContinuousAlgEquiv {B : Type*} [NormedCommRing B] [NormedAlgebra K B]
+    [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
+    A ≃A[K] B :=
+  have hA : IsAffinoidAlgebra K A := hB.of_surjective e.symm.toAlgHom e.symm.surjective
+  have := hA.isNoetherianRing
+  have := hB.isNoetherianRing
+  { e with
+    continuous_toFun := hB.continuous_algHom e.toAlgHom
+    continuous_invFun := hA.continuous_algHom e.symm.toAlgHom }
+
+/-- The homeomorphism attached to an algebra isomorphism has the same underlying function. -/
+@[simp]
+theorem coe_toContinuousAlgEquiv {B : Type*} [NormedCommRing B] [NormedAlgebra K B]
+    [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
+    ⇑(hB.toContinuousAlgEquiv e) = e := (rfl)
+
+/-- The homeomorphism attached to an algebra isomorphism has that isomorphism as its underlying
+algebra isomorphism. -/
+@[simp]
+theorem toAlgEquiv_toContinuousAlgEquiv {B : Type*} [NormedCommRing B] [NormedAlgebra K B]
+    [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
+    (hB.toContinuousAlgEquiv e).toAlgEquiv = e := (rfl)
+
+/-- The inverse of the homeomorphism attached to an algebra isomorphism is attached to the
+inverse isomorphism. -/
+@[simp]
+theorem symm_toContinuousAlgEquiv {B : Type*} [NormedCommRing B] [NormedAlgebra K B]
+    [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B) (e : A ≃ₐ[K] B) :
+    (hB.toContinuousAlgEquiv e).symm =
+      (hB.of_surjective e.symm.toAlgHom e.symm.surjective).toContinuousAlgEquiv e.symm := (rfl)
 
 end TauCeti.IsAffinoidAlgebra

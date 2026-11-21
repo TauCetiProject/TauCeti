@@ -152,11 +152,11 @@ private lemma bdry_bdry (n : ℕ) (x : Chain ι (n + 2)) : bdry n (bdry (n + 1) 
     rw [← mul_one k, ← smul_eq_mul, ← Finsupp.smul_single, map_zsmul, map_zsmul,
       bdry_bdry_single, smul_zero]
 
-section LinearOrder
+/-! ### Alternation -/
+
+section Alternation
 
 variable [LinearOrder ι]
-
-/-! ### Alternation -/
 
 /-- The alternation of chains on tuples: an injective tuple goes to its increasing rearrangement
 times the sign of the rearrangement, and a tuple with a repeated entry goes to zero. -/
@@ -193,7 +193,7 @@ private lemma alt_bdry_single_of_injective {b : Fin (n + 2) → ι} (hb : Functi
     exact fun i _ ⟨hi, h⟩ ↦ hi.ne (hb h)
   have h := neg_one_pow_card_univ_inversions_comp_succAbove (R := ℤ) b k
   rw [hE, pow_zero, mul_one, pow_add] at h
-  rw [map_zsmul, alt_single_of_injective hb', Tuple.comp_succAbove_comp_sort hb k, smul_smul,
+  rw [map_zsmul, alt_single_of_injective hb', Tuple.comp_succAbove_comp_sort k, smul_smul,
     smul_smul]
   congr 1
   have hL : ((-1 : ℤ) ^ #{i | b i < b k}) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul]; simp
@@ -236,14 +236,14 @@ private lemma alt_bdry_single_of_not_injective {b : Fin (n + 2) → ι}
   rw [bdry_single, map_sum, Fintype.sum_eq_add p q hpq fun k hk ↦ ?_]
   · simp only [map_zsmul]
     by_cases hp : Function.Injective (b ∘ p.succAbove)
-    · have hq := Fin.injective_comp_succAbove_of_eq hpq h hp
+    · have hq := Fin.injective_comp_succAbove_of_eq h hp
       rw [alt_single_of_injective hp, alt_single_of_injective hq,
-        Tuple.comp_sort_eq_comp_sort_of_range_eq hq hp
+        Tuple.comp_sort_eq_comp_sort_of_range_eq hq
           ((Fin.range_comp_succAbove_of_eq hpq.symm h.symm).trans
             (Fin.range_comp_succAbove_of_eq hpq h).symm), smul_smul, smul_smul, ← add_smul,
         neg_one_pow_mul_neg_one_pow_card_inversions_add hlt h hq, zero_smul]
     · have hq : ¬Function.Injective (b ∘ q.succAbove) := fun hq ↦
-        hp (Fin.injective_comp_succAbove_of_eq hpq.symm h.symm hq)
+        hp (Fin.injective_comp_succAbove_of_eq h.symm hq)
       rw [alt_single_of_not_injective hp, alt_single_of_not_injective hq, smul_zero, smul_zero,
         add_zero]
   · rw [map_zsmul, alt_single_of_not_injective, smul_zero]
@@ -274,18 +274,18 @@ private lemma alt_zero (x : Chain ι 0) : alt 0 x = x := by
     have hb : StrictMono b := fun i j h ↦ absurd (Fin.ext (by omega)) h.ne
     rw [← mul_one k, ← smul_eq_mul, ← Finsupp.smul_single, map_zsmul, alt_single_of_strictMono hb]
 
+end Alternation
+
 /-! ### The cone and the homotopy -/
 
 /-- The cone on a vertex `v`: prepend `v` to every tuple. -/
 private def cone (v : ι) (n : ℕ) : Chain ι n →ₗ[ℤ] Chain ι (n + 1) :=
   Finsupp.lmapDomain ℤ ℤ fun a ↦ (Fin.cons v a : Fin (n + 2) → ι)
 
-omit [LinearOrder ι] in
 private lemma cone_single (v : ι) (a : Fin (n + 1) → ι) (k : ℤ) :
     cone v n (Finsupp.single a k) = Finsupp.single (Fin.cons v a) k := by
   simp [cone]
 
-omit [LinearOrder ι] in
 /-- The cone is a contracting homotopy in positive degrees. -/
 private lemma bdry_cone (v : ι) (x : Chain ι (n + 1)) :
     bdry (n + 1) (cone v (n + 1) x) = x - cone v n (bdry n x) := by
@@ -304,6 +304,10 @@ private lemma bdry_cone (v : ι) (x : Chain ι (n + 1)) :
       Finset.sum_neg_distrib, map_zsmul, cone_single, Fin.cons_comp_succ_succAbove, sub_eq_add_neg]
     -- `Fin.removeNth j a` is `a ∘ j.succAbove` by definition
     rfl
+
+section Homotopy
+
+variable [LinearOrder ι]
 
 /-- The homotopy between the identity and alternation: a tuple `b` of length `n + 2` goes to the
 cone with vertex `b 0` on `b - alt b - homotopy (bdry b)`. -/
@@ -361,6 +365,8 @@ private lemma bdry_homotopy_succ (n : ℕ) :
       LinearMap.id - alt (n + 1) :=
   LinearMap.ext (bdry_homotopy_add (bdry_homotopy_bdry n))
 
+end Homotopy
+
 /-! ### Entries of tuples -/
 
 /-- A linear map of chains which sends every tuple `b` to a chain on tuples whose entries are
@@ -369,7 +375,6 @@ private def RangeRespecting {m k : ℕ} (L : Chain ι m →ₗ[ℤ] Chain ι k) 
   ∀ b : Fin (m + 1) → ι,
     L (Finsupp.single b 1) ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ Set.range b}
 
-omit [LinearOrder ι] in
 private lemma RangeRespecting.map_mem {m k : ℕ} {L : Chain ι m →ₗ[ℤ] Chain ι k}
     (hL : RangeRespecting L) {s : Set ι} {x : Chain ι m}
     (hx : x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}) :
@@ -380,12 +385,12 @@ private lemma RangeRespecting.map_mem {m k : ℕ} {L : Chain ι m →ₗ[ℤ] Ch
       exact Finsupp.supported_mono (fun _ hc ↦ Set.Subset.trans hc ha) (hL a))
     (Finsupp.supported_eq_span_single ℤ _ ▸ hx)
 
-omit [LinearOrder ι] in
 private lemma rangeRespecting_bdry (n : ℕ) : RangeRespecting (bdry (ι := ι) n) := fun b ↦ by
   rw [bdry_single]
   exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _
     (Finsupp.single_mem_supported ℤ 1 (Set.range_comp_subset_range _ _))
 
+variable [LinearOrder ι] in
 private lemma rangeRespecting_alt (n : ℕ) : RangeRespecting (alt (ι := ι) n) := fun b ↦ by
   by_cases hb : Function.Injective b
   · rw [alt_single_of_injective hb]
@@ -393,7 +398,6 @@ private lemma rangeRespecting_alt (n : ℕ) : RangeRespecting (alt (ι := ι) n)
   · rw [alt_single_of_not_injective hb]
     exact zero_mem _
 
-omit [LinearOrder ι] in
 private lemma cone_mem_supported {v : ι} {s : Set ι} (hv : v ∈ s) {x : Chain ι n}
     (hx : x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s}) :
     cone v n x ∈ Finsupp.supported ℤ ℤ {a | Set.range a ⊆ s} :=
@@ -401,6 +405,7 @@ private lemma cone_mem_supported {v : ι} {s : Set ι} (hv : v ∈ s) {x : Chain
     simpa only [Set.mem_preimage, Set.mem_ofPred_eq, Fin.range_cons] using Set.insert_subset hv ha)
     hx
 
+variable [LinearOrder ι] in
 private lemma rangeRespecting_homotopy : ∀ n, RangeRespecting (homotopy (ι := ι) n)
   | 0 => fun _ ↦ by simp [homotopy]
   | n + 1 => fun b ↦ by
@@ -409,13 +414,11 @@ private lemma rangeRespecting_homotopy : ∀ n, RangeRespecting (homotopy (ι :=
       (Finsupp.single_mem_supported ℤ 1 (Set.Subset.refl _)) (rangeRespecting_alt _ b))
       ((rangeRespecting_homotopy n).map_mem (rangeRespecting_bdry n b)))
 
-end LinearOrder
-
 /-! ### Chains on tuples acting on Čech cochains -/
 
 section Dual
 
-variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] [Quiver.IsThin C]
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Preadditive A] [HasProducts.{w} A] (U : ι → C)
   (P : Cᵒᵖ ⥤ A)
 
@@ -444,7 +447,6 @@ private def evalChain {n : ℕ} (b : Fin (n + 1) → ι) (m : ℕ) :
     Pi.π (fun a : Fin (m + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a ≫
       P.map (tupleRestrict U h).op else 0)
 
-omit [Quiver.IsThin C] in
 private lemma evalChain_single {n m : ℕ} {b : Fin (n + 1) → ι} {a : Fin (m + 1) → ι}
     (h : Set.range a ⊆ Set.range b) (k : ℤ) :
     evalChain U P b m (Finsupp.single a k) =
@@ -452,6 +454,7 @@ private lemma evalChain_single {n m : ℕ} {b : Fin (n + 1) → ι} {a : Fin (m 
         P.map (tupleRestrict U h).op) := by
   simp [evalChain, h]
 
+variable [Quiver.IsThin C] in
 /-- Restriction of the factor of `b` to a tuple `c` whose entries are entries of `b`. -/
 private lemma evalChain_eq_comp {n n' m : ℕ} {b : Fin (n + 1) → ι} {c : Fin (n' + 1) → ι}
     (hcb : Set.range c ⊆ Set.range b) {y : Chain ι m}
@@ -473,11 +476,14 @@ private def dualMap {m k : ℕ} (L : Chain ι m →ₗ[ℤ] Chain ι k) :
     cechX U P k ⟶ cechX U P m :=
   Pi.lift fun b ↦ evalChain U P b k (L (Finsupp.single b 1))
 
-omit [Quiver.IsThin C] in
 @[reassoc]
 private lemma dualMap_π {m k : ℕ} (L : Chain ι m →ₗ[ℤ] Chain ι k) (b : Fin (m + 1) → ι) :
     dualMap U P L ≫ Pi.π _ b = evalChain U P b k (L (Finsupp.single b 1)) :=
   Pi.lift_comp_π _ _
+
+section Composition
+
+variable [Quiver.IsThin C]
 
 private lemma dualMap_comp_evalChain {m k n : ℕ} {L : Chain ι m →ₗ[ℤ] Chain ι k}
     (hL : RangeRespecting L) {b : Fin (n + 1) → ι} {y : Chain ι m}
@@ -499,17 +505,19 @@ private lemma dualMap_comp {m k n : ℕ} {L : Chain ι k →ₗ[ℤ] Chain ι n}
     rw [Category.assoc, dualMap_π, dualMap_π, dualMap_comp_evalChain U P hL (hM b),
       LinearMap.comp_apply]
 
-omit [Quiver.IsThin C] in
+end Composition
+
 private lemma dualMap_add {m k : ℕ} (L M : Chain ι m →ₗ[ℤ] Chain ι k) :
     dualMap U P (L + M) = dualMap U P L + dualMap U P M :=
   Pi.hom_ext _ _ fun b ↦ by
     rw [Preadditive.add_comp, dualMap_π, dualMap_π, dualMap_π, LinearMap.add_apply, map_add]
 
-omit [Quiver.IsThin C] in
 private lemma dualMap_sub {m k : ℕ} (L M : Chain ι m →ₗ[ℤ] Chain ι k) :
     dualMap U P (L - M) = dualMap U P L - dualMap U P M :=
   Pi.hom_ext _ _ fun b ↦ by
     rw [Preadditive.sub_comp, dualMap_π, dualMap_π, dualMap_π, LinearMap.sub_apply, map_sub]
+
+variable [Quiver.IsThin C]
 
 private lemma dualMap_id (m : ℕ) : dualMap U P (LinearMap.id : Chain ι m →ₗ[ℤ] Chain ι m) = 𝟙 _ :=
   Pi.hom_ext _ _ fun b ↦ by
@@ -564,6 +572,8 @@ private abbrev toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     cechX U P n ⟶ ((strictMonoCechComplexFunctor U).obj P).X n :=
   ((toStrictMonoCechComplex U).app P).f n
 
+section Thin
+
 variable [Quiver.IsThin C]
 
 /-- Restricting a Čech cochain to the strictly increasing tuples and extending it alternatingly is
@@ -599,12 +609,13 @@ private lemma fromStrictMonoCechX_comm (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     ← dualMap_comp U P (rangeRespecting_bdry n) (rangeRespecting_alt (n + 1))]
   exact congrArg _ (LinearMap.ext alt_bdry)
 
+end Thin
+
 /-- The action of a morphism of presheaves on the Čech complexes, between the products which
 define their terms. -/
 private abbrev cechMapX {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) : cechX U P n ⟶ cechX U Q n :=
   ((cechComplexFunctor U).map α).f n
 
-omit [Quiver.IsThin C] in
 private lemma fromStrictMonoCechX_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
     ((strictMonoCechComplexFunctor U).map α).f n ≫ fromStrictMonoCechX U Q n =
       fromStrictMonoCechX U P n ≫ cechMapX U α n :=
@@ -621,6 +632,8 @@ private lemma fromStrictMonoCechX_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q
     · simp [hb]
     · simp [hb]
 
+variable [Quiver.IsThin C]
+
 private lemma fromStrictMonoCechX_comp_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     fromStrictMonoCechX U P n ≫ toStrictMonoCechX U P n = 𝟙 _ := by
   have : Epi (toStrictMonoCechX U P n) :=
@@ -632,9 +645,9 @@ private lemma fromStrictMonoCechX_comp_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
   -- `toStrictMonoCechComplex_app_f_π` through the local abbreviations `toStrictMonoCechX` and
   -- `cechX` of the goal, which `rw` does not unfold
   rw [Category.assoc, show toStrictMonoCechX U P n ≫ _ =
-      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.1 from
+      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.val from
       toStrictMonoCechComplex_app_f_π U P n a,
-    dualMap_π, alt_single_of_strictMono a.2, evalChain_single U P subset_rfl, one_smul,
+    dualMap_π, alt_single_of_strictMono a.property, evalChain_single U P subset_rfl, one_smul,
     Subsingleton.elim (tupleRestrict U _) (𝟙 _), op_id, P.map_id, Category.comp_id]
 
 /-- The alternating extension `Čₒ(U, P) ⟶ Č(U, P)` of ordered Čech cochains, natural in the

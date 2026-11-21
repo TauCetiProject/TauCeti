@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Finiteness.Descent
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.Extension.Cotangent.Rank
+import TauCeti.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Extension.Presentation.Basic
 import TauCeti.RingTheory.Extension.Presentation.LocalizationAway
 import TauCeti.RingTheory.Finiteness.Nakayama
@@ -131,17 +132,12 @@ private theorem exists_finrank_tensor_ker_add_le {ι σ : Type} [Finite ι] [Fin
     exact hr
   · obtain ⟨ι', σ', _, _, P', hP'⟩ := hT.exists_presentation
     -- The kernel of `K[ι] → K ⊗[k] A` is the extension of the kernel of `k[ι] → A`.
-    have hker : PK.ker = P.ker.map (algebraMap P.Ring PK.Ring) := by
-      rw [← P.span_range_relation_eq_ker, Ideal.map_span, ← Set.range_comp]
-      exact PK.ker_eq_ker_aeval_val.trans (P.span_range_relation_eq_ker_baseChange K).symm
+    have hker := P.ker_baseChange_eq_map K
     have : Module.Flat P.Ring PK.Ring :=
       Module.Flat.isBaseChange (R := k) (M := K) _ _ (Algebra.IsPushout.out (R := k) (S := P.Ring)
         (R' := K) (S' := PK.Ring))
-    have hfg : PK.ker.FG := by
-      rw [← PK.span_range_relation_eq_ker]
-      exact Submodule.fg_span (Set.finite_range _)
     have : Module.Finite (K ⊗[k] A) PK.toExtension.Cotangent :=
-      Algebra.Extension.Cotangent.finite hfg
+      Algebra.Extension.Cotangent.finite PK.fg_ker
     have h1 := ((Algebra.Generators.localizationAway T t).comp
       PK.toGenerators).finrank_tensor_cotangent_add_card_le F P'
     rw [Algebra.Generators.finrank_tensor_cotangent_comp_localizationAway,
@@ -170,15 +166,15 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
     Module.exists_finset_card_le_finrank_and_smul_mem_span (R := P.Ring) (M := P.ker) (F := F)
   let ϕ : P.Ring →ₐ[k] A := MvPolynomial.aeval P.val
   have hker : RingHom.ker ϕ = P.ker := P.ker_eq_ker_aeval_val.symm
-  have hk : ∀ l : s, (l : P.ker).1 ∈ RingHom.ker ϕ := fun l ↦ by
+  have hk : ∀ l : s, (l : P.ker).val ∈ RingHom.ker ϕ := fun l ↦ by
     rw [hker]
-    exact (l : P.ker).2
-  have hg : ∀ x ∈ RingHom.ker ϕ, r * x ∈ Ideal.span (Set.range fun l : s ↦ (l : P.ker).1) := by
+    exact (l : P.ker).property
+  have hg : ∀ x ∈ RingHom.ker ϕ, r * x ∈ Ideal.span (Set.range fun l : s ↦ (l : P.ker).val) := by
     intro x hx
     rw [hker] at hx
     have := Submodule.mem_map_of_mem (f := P.ker.subtype) (hrs ⟨x, hx⟩)
     rw [Submodule.map_span] at this
-    have hrange : (Set.range fun l : s ↦ (l : P.ker).1) = P.ker.subtype '' s := by
+    have hrange : (Set.range fun l : s ↦ (l : P.ker).val) = P.ker.subtype '' s := by
       ext
       simp
     rw [hrange]

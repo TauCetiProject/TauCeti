@@ -58,7 +58,7 @@ section Powers
 
 variable {k M : Type*} [Semiring k]
   [AddCommMonoid M] [Module k M] [MulAction k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- If `X` lowers degree by `d`, then `X ^ n` lowers degree by `n * d`. -/
 theorem X_pow_smul_mem_piece
@@ -76,7 +76,7 @@ end Powers
 
 variable {k M : Type*} [CommSemiring k]
   [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- A finitely generated graded `k[X]`-module on which `X` lowers degree has no nonzero homogeneous
 elements above some degree: every element is a `k[X]`-combination of the finitely many homogeneous
@@ -114,7 +114,8 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
     have hsL : Submodule.span k[X] (s : Set M) ≤ L' := by
       refine Submodule.span_le.mpr fun g hg ↦ ?_
       rw [← DirectSum.sum_support_decompose G.piece g]
-      refine L.sum_mem fun q hq ↦ Submodule.mem_iSup_of_mem ⟨q, ?_⟩ (DirectSum.decompose _ g q).2
+      refine L.sum_mem fun q hq ↦ Submodule.mem_iSup_of_mem ⟨q, ?_⟩
+          (DirectSum.decompose _ g q).property
       exact hD (Set.mem_biUnion hg hq)
     exact fun y ↦ hsL (hs ▸ Submodule.mem_top)
   refine ⟨D, fun p hp ↦ ?_⟩
@@ -122,7 +123,7 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
   refine hp (eq_bot_iff.mpr fun x hx ↦ ?_)
   refine Submodule.disjoint_def.mp (G.isInternal.submodule_iSupIndep p) x hx ?_
   refine (iSup_le fun q ↦ ?_ : L ≤ ⨆ j, ⨆ (_ : j ≠ p), G.piece j) (hL x)
-  exact le_iSup₂_of_le (q : ℤ) (q.2.trans_lt hDp).ne le_rfl
+  exact le_iSup₂_of_le (q : ℤ) (q.property.trans_lt hDp).ne le_rfl
 
 /-- If `X` lowers degree by `d ≠ 0`, the terms `a.coeff n • X ^ n • x` of `a • x`, for `x`
 homogeneous of degree `p`, lie in the pairwise distinct degrees `p - n * d`; so the component of
@@ -199,7 +200,7 @@ section HomogeneousParts
 variable {k M N : Type*} [CommSemiring k] [AddCommMonoid M] [AddCommMonoid N]
   [Module k M] [Module k N] [Module k[X] M] [Module k[X] N]
   [IsScalarTower k k[X] M] [IsScalarTower k k[X] N]
-  (G : InternalGrading k M) (H : InternalGrading k N) {δ : ℤ}
+  (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ) {δ : ℤ}
   (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p + δ))
   (hY : ∀ ⦃p : ℤ⦄ ⦃y : N⦄, y ∈ H.piece p → (X : k[X]) • y ∈ H.piece (p + δ))
 
@@ -298,7 +299,7 @@ end InternalGrading
 namespace InternalGrading
 
 variable {k M : Type*} [Semiring k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- **Graded Nakayama for an action lowering degree.** Let the degrees of `M` be bounded above,
 and let `L` be a homogeneous `k[X]`-submodule. Suppose each homogeneous element of `L` of
@@ -334,9 +335,9 @@ theorem le_of_forall_mem_piece_exists_sub_X_smul_mem (hd : d ≠ 0)
   refine N.sum_mem fun p _ ↦ ?_
   by_cases hp : p ≤ B
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, p = B - n := ⟨(B - p).toNat, by omega⟩
-    exact hN n _ (DirectSum.decompose G.piece x _).2 (hL _ hx)
+    exact hN n _ (DirectSum.decompose G.piece x _).property (hL _ hx)
   · rw [(Submodule.eq_bot_iff _).mp (hpiece (not_le.mp hp)) _
-      (DirectSum.decompose G.piece x p).2]
+      (DirectSum.decompose G.piece x p).property]
     exact N.zero_mem
 
 end InternalGrading
@@ -345,7 +346,7 @@ namespace InternalGrading
 
 variable {k M : Type*} [CommSemiring k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- A polynomial acts injectively on a graded module if its constant coefficient does and `X`
 strictly lowers degree. The coefficients may have zero divisors, and the module may have torsion. -/
@@ -356,7 +357,7 @@ theorem isSMulRegular_of_coeff_zero (hd : d ≠ 0)
   refine IsSMulRegular.of_right_eq_zero_of_smul fun x hax ↦ ?_
   by_contra hx
   have hs : (DirectSum.decompose G.piece x).support.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     intro hs
     have hz := DFinsupp.support_eq_empty.mp hs
     exact hx ((DirectSum.decompose G.piece).injective
@@ -384,10 +385,8 @@ variable (k : Type*) [CommSemiring k]
 
 /-- The grading of the polynomial ring `k[X]` placing the monomial `X ^ n` in degree `-n`, so that
 multiplication by `X` lowers degree by one. -/
-noncomputable def negDegreeGrading : InternalGrading k k[X] :=
-  InternalGrading.map
-    ⟨AddMonoidAlgebra.gradeBy k ⇑(-Nat.castAddMonoidHom ℤ), AddMonoidAlgebra.gradeBy.isInternal _⟩
-    (toFinsuppIsoLinear k).symm
+noncomputable def negDegreeGrading : InternalGrading k k[X] ℤ :=
+  ⟨AddMonoidAlgebra.gradeBy k ⇑(-Nat.castAddMonoidHom ℤ), AddMonoidAlgebra.gradeBy.isInternal _⟩
 
 variable {k}
 
@@ -396,8 +395,8 @@ has `-n = p`. -/
 @[simp]
 theorem mem_negDegreeGrading_piece {p : ℤ} {x : k[X]} :
     x ∈ (negDegreeGrading k).piece p ↔ ∀ n, x.coeff n ≠ 0 → -(n : ℤ) = p := by
-  rw [negDegreeGrading, InternalGrading.mem_map_piece_iff]
-  simp [toFinsupp_apply]
+  rw [negDegreeGrading]
+  simp
 
 /-- Multiplication by `X` lowers the degree of `negDegreeGrading` by one. -/
 theorem X_smul_mem_negDegreeGrading_piece {p : ℤ} {x : k[X]}

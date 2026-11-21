@@ -55,27 +55,15 @@ theorem existsUnique_descend (f : M ≃ₘ^n⟮I, I'⟯ M')
     (hps : RightInverse s p) (hps' : RightInverse s' p')
     (hf : ∀ x y, p' (f x) = p' (f y) ↔ p x = p y) :
     ∃! g : N ≃ₘ^n⟮J, J'⟯ N', ∀ x, g (p x) = p' (f x) := by
-  have hforward (x : M) : p' (f (s (p x))) = p' (f x) :=
-    (hf _ _).mpr (hps _)
-  have hbackward (x : M') : p (f.symm (s' (p' x))) = p (f.symm x) := by
-    apply (hf _ _).mp
-    simpa only [f.apply_symm_apply] using hps' (p' x)
+  have hforward (x : M) : p' (f (s (p x))) = p' (f x) := (hf _ _).mpr (hps _)
   let g : N ≃ₘ^n⟮J, J'⟯ N' :=
-    { toFun := p' ∘ f ∘ s
-      invFun := p ∘ f.symm ∘ s'
-      left_inv := fun y => by
-        simpa only [Function.comp_apply, f.symm_apply_apply] using
-          (hbackward (f (s y))).trans (by rw [f.symm_apply_apply]; exact hps y)
-      right_inv := fun y => by
-        simpa only [Function.comp_apply, f.apply_symm_apply] using
-          (hforward (f.symm (s' y))).trans (by rw [f.apply_symm_apply]; exact hps' y)
+    { toFun y := p' (f (s y))
+      invFun y := p (f.symm (s' y))
+      left_inv y := ((hf _ _).mp <| by rw [f.apply_symm_apply, hps']).trans (hps y)
+      right_inv y := (hforward _).trans <| by rw [f.apply_symm_apply, hps']
       contMDiff_toFun := hp'.comp (f.contMDiff.comp hs)
       contMDiff_invFun := hp.comp (f.symm.contMDiff.comp hs') }
-  refine ⟨g, hforward, ?_⟩
-  intro g' hg'
-  apply Diffeomorph.ext
-  intro y
-  rw [← hps y]
-  exact (hg' (s y)).trans (hforward (s y)).symm
+  exact ⟨g, hforward, fun g' hg' => Diffeomorph.ext <|
+    hps.surjective.forall.mpr fun x => (hg' x).trans (hforward x).symm⟩
 
 end Diffeomorph

@@ -148,7 +148,7 @@ theorem finrank_adjoin_ofIsogeny_frobeniusIsogeny_baseChange_curveX3SubX (hK : N
 integer `-3`, and supersingularity is invariant under base change. -/
 theorem isSupersingular_curveX3SubX : (CurveX3SubX.curve (ZMod 3)).IsSupersingular 3 := by
   have hK : Nat.card (GaloisField 3 2) = 9 := GaloisField.card 3 2 two_ne_zero
-  refine (isSupersingular_baseChange_iff three_ne_zero (GaloisField 3 2)).1 <|
+  refine (isSupersingular_baseChange_iff (GaloisField 3 2)).1 <|
     isSupersingular_of_ofIsogeny_frobeniusIsogeny_mem_range_intCast 3 _ ⟨-3, ?_⟩
   rw [ofIsogeny_frobeniusIsogeny_baseChange_curveX3SubX _ hK, Int.cast_neg, Int.cast_ofNat]
 

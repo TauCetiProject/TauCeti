@@ -39,7 +39,7 @@ variable {V E H M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ V]
   [I.Boundaryless] [IsManifold I 2 M]
 
 /-- **Noncompact Euclidean tubular neighbourhood theorem.** A `C²` immersion inducing
@@ -78,8 +78,8 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius {f : M → V}
   have hrad : IsOpen {p : M × V | ‖p.2‖ < r p.1} :=
     isOpen_lt (continuous_norm.comp continuous_snd) (r.continuous.comp continuous_fst)
   refine ⟨r, hr, .of_continuous_injective_isOpenMap ?_
-    (fun p q h => Subtype.ext (hinjT p.2 q.2 h)) ?_⟩
-  · exact ((hf.continuous.comp continuous_fst).add continuous_snd).comp continuous_subtype_val
+    (fun p q h => Subtype.ext (hinjT p.property q.property h)) ?_⟩
+  · exact ((hf.continuous.comp continuous_fst).add continuous_snd).comp continuous_subtypeVal
   -- Openness follows by covering the variable tube by the local normal tubes.
   · intro U hU
     obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU

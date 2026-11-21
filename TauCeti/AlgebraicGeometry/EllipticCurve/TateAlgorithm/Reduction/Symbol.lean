@@ -98,22 +98,23 @@ def algorithmicOggExponent (symbol : ReductionSymbol) (vΔ : ℕ) : ℤ :=
   (vΔ : ℤ) - (symbol.componentCount : ℤ) + 1
 
 /-- The exponent is the discriminant valuation minus the component count plus one. -/
-theorem algorithmicOggExponent_eq (symbol : ReductionSymbol) (vΔ : ℕ) :
+theorem algorithmicOggExponent_def (symbol : ReductionSymbol) (vΔ : ℕ) :
     symbol.algorithmicOggExponent vΔ =
       (vΔ : ℤ) - (symbol.componentCount : ℤ) + 1 := (rfl)
 
-/-- For the good reduction symbol `I₀`, the algorithmic Ogg exponent is zero at valuation zero. -/
+/-- The good reduction symbol `I₀` has Ogg exponent `vΔ`; in particular it is zero at
+valuation zero. -/
 @[simp]
-theorem algorithmicOggExponent_I_zero :
-    (I 0).algorithmicOggExponent 0 = 0 := by
+theorem algorithmicOggExponent_I_zero (vΔ : ℕ) :
+    (I 0).algorithmicOggExponent vΔ = vΔ := by
   simp [algorithmicOggExponent]
 
-/-- For a multiplicative symbol `Iₙ`, `n > 0`, the algorithmic Ogg exponent is one when the
-minimal discriminant valuation is `n`. -/
-theorem algorithmicOggExponent_I (n : ℕ) (hn : 0 < n) :
-    (I n).algorithmicOggExponent n = 1 := by
-  have hmax : max 1 n = n := max_eq_right (Nat.succ_le_of_lt hn)
-  simp [algorithmicOggExponent, hmax]
+/-- A multiplicative symbol `Iₙ`, `n ≠ 0`, has Ogg exponent `vΔ - n + 1`; in particular it is
+one when the minimal discriminant valuation is `n`. -/
+@[simp]
+theorem algorithmicOggExponent_I {n : ℕ} (hn : n ≠ 0) (vΔ : ℕ) :
+    (I n).algorithmicOggExponent vΔ = (vΔ : ℤ) - n + 1 := by
+  simp [algorithmicOggExponent, Nat.one_le_iff_ne_zero.2 hn]
 
 /-- The additive symbol `II` has Ogg exponent `vΔ`. -/
 @[simp]
@@ -125,15 +126,13 @@ theorem algorithmicOggExponent_II (vΔ : ℕ) :
 @[simp]
 theorem algorithmicOggExponent_III (vΔ : ℕ) :
     III.algorithmicOggExponent vΔ = (vΔ : ℤ) - 1 := by
-  simp [algorithmicOggExponent]
-  ring
+  simp [algorithmicOggExponent, sub_add]
 
 /-- The additive symbol `IV` has Ogg exponent `vΔ - 2`. -/
 @[simp]
 theorem algorithmicOggExponent_IV (vΔ : ℕ) :
     IV.algorithmicOggExponent vΔ = (vΔ : ℤ) - 2 := by
-  simp [algorithmicOggExponent]
-  ring
+  simp [algorithmicOggExponent, sub_add]
 
 /-- The additive symbol `Iₙ*` has Ogg exponent `vΔ - n - 4`. -/
 @[simp]
@@ -146,22 +145,19 @@ theorem algorithmicOggExponent_IStar (n vΔ : ℕ) :
 @[simp]
 theorem algorithmicOggExponent_IVStar (vΔ : ℕ) :
     IVStar.algorithmicOggExponent vΔ = (vΔ : ℤ) - 6 := by
-  simp [algorithmicOggExponent]
-  ring
+  simp [algorithmicOggExponent, sub_add]
 
 /-- The additive symbol `III*` has Ogg exponent `vΔ - 7`. -/
 @[simp]
 theorem algorithmicOggExponent_IIIStar (vΔ : ℕ) :
     IIIStar.algorithmicOggExponent vΔ = (vΔ : ℤ) - 7 := by
-  simp [algorithmicOggExponent]
-  ring
+  simp [algorithmicOggExponent, sub_add]
 
 /-- The additive symbol `II*` has Ogg exponent `vΔ - 8`. -/
 @[simp]
 theorem algorithmicOggExponent_IIStar (vΔ : ℕ) :
     IIStar.algorithmicOggExponent vΔ = (vΔ : ℤ) - 8 := by
-  simp [algorithmicOggExponent]
-  ring
+  simp [algorithmicOggExponent, sub_add]
 
 end ReductionSymbol
 end TauCeti

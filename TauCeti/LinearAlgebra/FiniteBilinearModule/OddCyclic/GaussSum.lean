@@ -87,7 +87,7 @@ theorem gaussSign_oddCyclic_pow_add_two {p : ℕ} (hp : Odd p) (k : ℕ) {θ : �
   have hiso (x : ZMod (p ^ (k + 2))) (hx : (p : ℤ) • x = 0) :
       (oddCyclic (p ^ (k + 2)) hoddA θ).quadratic x = 0 := by
     obtain ⟨t, rfl⟩ :=
-      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := p) (n := k + 1) (by simpa using hx)
+      (ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul (p := p) (n := k + 1)).1 (by simpa using hx)
     rw [oddCyclic_quadratic_intCast]
     obtain ⟨s, hs⟩ := hoddA
     rw [hs]

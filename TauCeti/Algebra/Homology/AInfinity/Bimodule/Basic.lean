@@ -76,17 +76,22 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM}
 
 namespace AInfinityBimodule
 
+/-- Additive inverses on the two-sided bar carrier, supplied by the ground ring. -/
+noncomputable instance barCarrierAddCommGroup {X : Type*} [AddCommMonoid X] [Module R X] :
+    AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
+  Module.addCommMonoidToAddCommGroup R
+
 /-- The total suspended grading on the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)`. -/
 noncomputable def barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
-    (G : InternalGrading R M) :
-    InternalGrading R ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) :=
+    (G : InternalGrading R M ℤ) :
+    InternalGrading R ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) ℤ :=
   ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)).tensorProduct
     (TensorWords.grading (BB.grading.shift 1))
 
 /-- The bicomodule grading is the total grading of the suspended left words, the suspended module
 grading, and the suspended right words. -/
 theorem barGrading_def (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
-    (G : InternalGrading R M) :
+    (G : InternalGrading R M ℤ) :
     barGrading AA BB G =
       ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)).tensorProduct
         (TensorWords.grading (BB.grading.shift 1)) :=
@@ -96,7 +101,7 @@ theorem barGrading_def (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
 words, the suspended module grading, and the suspended right words. -/
 @[simp]
 theorem barGrading_piece (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
-    (G : InternalGrading R M) (p : ℤ) :
+    (G : InternalGrading R M ℤ) (p : ℤ) :
     (barGrading AA BB G).piece p =
       (((TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)).tensorProduct
         (TensorWords.grading (BB.grading.shift 1))).piece p :=
@@ -105,7 +110,7 @@ theorem barGrading_piece (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
 /-- A pure word on each side of a homogeneous module element has the sum of their
 suspended degrees in the bar bicomodule grading. -/
 theorem tmul_of_tprod_mem_barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
-    (G : InternalGrading R M) (i j : ℕ)
+    (G : InternalGrading R M ℤ) (i j : ℕ)
     (a : Fin i → A) (d : Fin i → ℤ)
     (ha : ∀ k, a k ∈ (AA.grading.shift 1).piece (d k))
     {x : M} {p : ℤ} (hx : x ∈ (G.shift 1).piece p)
@@ -124,7 +129,7 @@ theorem tmul_of_tprod_mem_barGrading (AA : AInfinityAlgebra R A) (BB : AInfinity
 
 /-- The left coaction on the bar bicomodule preserves total suspended degree. -/
 theorem isHomogeneous_leftCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
-    (G : InternalGrading R M) :
+    (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous
       (Comodule.leftCoactRTensor (TensorWords R B)
         (Comodule.leftCofreeCoact R (TensorWords R A) M))
@@ -141,6 +146,22 @@ theorem isHomogeneous_leftCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgeb
       ((TensorWords.isHomogeneous_deconcatenation (AA.grading.shift 1)).tensorProduct
         (LinearMap.isHomogeneous_id (G.shift 1).piece))).tensorProduct
           (LinearMap.isHomogeneous_id V.piece)))
+
+/-- The right coaction on the bar bicomodule preserves total suspended degree. -/
+theorem isHomogeneous_rightCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
+    (G : InternalGrading R M ℤ) :
+    LinearMap.IsHomogeneous
+      (Comodule.cofreeCoact R (TensorWords R B) (TensorWords R A ⊗[R] M))
+      (barGrading AA BB G).piece
+      ((barGrading AA BB G).tensorProduct (TensorWords.grading (BB.grading.shift 1))).piece
+      0 := by
+  let Y := (TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)
+  let V := TensorWords.grading (BB.grading.shift 1)
+  rw [barGrading_def, Comodule.cofreeCoact_def, LinearMap.lTensor_def,
+    TensorWords.comul_eq_deconcatenation]
+  simpa only [zero_add] using (InternalGrading.isHomogeneous_assoc_symm Y V V).comp
+    ((LinearMap.isHomogeneous_id Y.piece).tensorProduct
+      (TensorWords.isHomogeneous_deconcatenation (BB.grading.shift 1)))
 
 variable (R A B M) in
 /-- The two-sided counit projection of the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)` onto
@@ -168,6 +189,24 @@ theorem taylorProj_tmul (w : TensorWords R A) (m : M) (v : TensorWords R B) :
       Coalgebra.counit (R := R) v • Coalgebra.counit (R := R) w • m := by
   simp [taylorProj_def]
 
+/-- Applying both output counits preserves the degree of a homogeneous bar map. -/
+theorem isHomogeneous_taylorProj_comp {N : Type*} [AddCommGroup N] [Module R N]
+    {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {p : ℤ}
+    {F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
+      (TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B}
+    (hF : LinearMap.IsHomogeneous F (barGrading AA BB G).piece
+      (barGrading AA BB H).piece p) :
+    LinearMap.IsHomogeneous (taylorProj R A B N ∘ₗ F)
+      (barGrading AA BB G).piece (H.shift 1).piece p := by
+  simp only [barGrading_def] at hF ⊢
+  rw [taylorProj_def, Comodule.leftCofreeCounit_def]
+  simpa only [LinearMap.comp_assoc, add_zero] using
+    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
+      (H.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
+        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (H.shift 1))
+        (BB.grading.shift 1))).comp hF
+
 end AInfinityBimodule
 
 attribute [local instance] Comodule.cofree
@@ -183,7 +222,7 @@ that carrier as `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)`. -/
 structure AInfinityBimodule (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
     (M : Type uM) [AddCommGroup M] [Module R M] where
   /-- The internal cohomological grading of the bimodule carrier. -/
-  grading : InternalGrading R M
+  grading : InternalGrading R M ℤ
   /-- The suspended bimodule bar differential on the cofree bar bicomodule. -/
   barDifferential :
     (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
@@ -236,15 +275,8 @@ theorem taylor_apply (MM : AInfinityBimodule AA BB M)
 module grading. -/
 theorem isHomogeneous_taylor (MM : AInfinityBimodule AA BB M) :
     LinearMap.IsHomogeneous MM.taylor (barGrading AA BB MM.grading).piece
-      (MM.grading.shift 1).piece 1 := by
-  have hD := MM.isHomogeneous_barDifferential
-  rw [barGrading_def] at hD ⊢
-  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  simpa only [LinearMap.comp_assoc, add_zero] using
-    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-      (MM.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (MM.grading.shift 1))
-        (BB.grading.shift 1))).comp hD
+      (MM.grading.shift 1).piece 1 :=
+  isHomogeneous_taylorProj_comp MM.isHomogeneous_barDifferential
 
 /-- The stored bimodule bar differential squares to zero. -/
 @[simp]
@@ -261,7 +293,7 @@ theorem taylor_comp_barDifferential (MM : AInfinityBimodule AA BB M) :
 
 /-- A degree-one bicomodule coderivation over the bar differentials of `AA` and `BB` squares to
 zero if and only if its Taylor component after one further application vanishes. -/
-theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
+theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M ℤ)
     (D : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
     (hD : LinearMap.IsHomogeneous D (barGrading AA BB G).piece (barGrading AA BB G).piece 1)
@@ -289,7 +321,7 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M)
 /-- Construct an `A∞` bimodule from a homogeneous bicomodule coderivation over the bar
 differentials of `AA` and `BB`.  By cofreeness, it suffices to check the square-zero law on the
 Taylor component. -/
-noncomputable def ofBarDifferential (G : InternalGrading R M)
+noncomputable def ofBarDifferential (G : InternalGrading R M ℤ)
     (D : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
     (hD : LinearMap.IsHomogeneous D (barGrading AA BB G).piece (barGrading AA BB G).piece 1)
@@ -309,21 +341,21 @@ noncomputable def ofBarDifferential (G : InternalGrading R M)
   bar_square_zero := (barDifferential_sq_iff_taylor_comp_eq_zero G D hD hleft hright).2 hsq
 
 @[simp]
-theorem ofBarDifferential_grading (G : InternalGrading R M)
+theorem ofBarDifferential_grading (G : InternalGrading R M ℤ)
     (D : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) (hD hleft hright hsq) :
     (ofBarDifferential (AA := AA) (BB := BB) G D hD hleft hright hsq).grading = G :=
   (rfl)
 
 @[simp]
-theorem ofBarDifferential_barDifferential (G : InternalGrading R M)
+theorem ofBarDifferential_barDifferential (G : InternalGrading R M ℤ)
     (D : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) (hD hleft hright hsq) :
     (ofBarDifferential (AA := AA) (BB := BB) G D hD hleft hright hsq).barDifferential = D :=
   (rfl)
 
 @[simp]
-theorem ofBarDifferential_taylor (G : InternalGrading R M)
+theorem ofBarDifferential_taylor (G : InternalGrading R M ℤ)
     (D : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) (hD hleft hright hsq) :
     (ofBarDifferential (AA := AA) (BB := BB) G D hD hleft hright hsq).taylor =
@@ -333,7 +365,7 @@ theorem ofBarDifferential_taylor (G : InternalGrading R M)
 /-- Two degree-one bicomodule coderivations over the bar differentials of `AA` and `BB` agree as
 soon as their two-sided counit components agree: by cofreeness on both sides, such a coderivation
 is determined by its Taylor component. -/
-theorem eq_of_taylorProj_comp_eq {G : InternalGrading R M}
+theorem eq_of_taylorProj_comp_eq {G : InternalGrading R M ℤ}
     {D E : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
       (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B}
     (hDl : Comodule.IsLeftGradedCoderivationOver

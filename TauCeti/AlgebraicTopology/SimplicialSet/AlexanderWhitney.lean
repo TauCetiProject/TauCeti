@@ -169,15 +169,14 @@ lemma alexanderWhitney_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S 
           ((chainComplexFunctor C).map g).app L) := by
   ext n x
   simp only [HomologicalComplex.comp_f]
-  rw [← Category.assoc, TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
-    Category.assoc,
+  rw [← Category.assoc, SSet.ιChainComplex_chainComplexFunctor_map_app_f, Category.assoc,
     ιChainComplex_alexanderWhitney_f, ιChainComplex_alexanderWhitney_f_assoc,
     Preadditive.comp_sum, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
   rw [tensorHom_eq_mapBifunctorMap, ← Category.assoc, tensorHom_comp_tensorHom, Category.assoc,
     ι_tensorHom, ← Category.assoc, tensorHom_comp_tensorHom,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f]
 
 section Coassoc
 

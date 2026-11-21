@@ -24,7 +24,10 @@ from `U` to `V ≤ U` is moreover an isomorphism when `V` contains the point whe
 
 The unit of Mathlib's adjunction `stalkSkyscraperSheafAdjunction x` between the stalk at `x` and
 the skyscraper sheaf at `x` sends a section over an open containing `x` to its germ at `x`
-(`TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app`).
+(`TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app`), and on an open containing
+`p₀`, `skyscraperSheafFunctor p₀` acts on a morphism by conjugating it with the canonical
+identifications of the section objects
+(`TauCeti.Topology.skyscraperSheafFunctor_map_hom_app_of_mem`).
 -/
 
 public section
@@ -34,6 +37,36 @@ open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
 universe u
 
 namespace TauCeti.Topology
+
+/-- Global sections of the skyscraper sheaf at `p₀` are its coefficient object. -/
+noncomputable def skyscraperSheafGlobalSectionsIso {X : TopCat} (p₀ : X)
+    [∀ U : Opens X, Decidable (p₀ ∈ U)] {C : Type*} [Category* C] [HasTerminal C] (A : C) :
+    (skyscraperSheaf p₀ A).obj.obj (op ⊤) ≅ A :=
+  eqToIso ((skyscraperSheaf_obj_obj p₀ A (op ⊤)).trans
+    (ite_eq_left (show p₀ ∈ (⊤ : Opens X) from trivial)))
+
+/-- The global-section identification is the canonical transport from the value on `⊤`. -/
+@[simp]
+theorem skyscraperSheafGlobalSectionsIso_hom {X : TopCat} (p₀ : X)
+    [∀ U : Opens X, Decidable (p₀ ∈ U)] {C : Type*} [Category* C] [HasTerminal C] (A : C) :
+    (skyscraperSheafGlobalSectionsIso p₀ A).hom =
+      eqToHom ((skyscraperSheaf_obj_obj p₀ A (op ⊤)).trans
+        (ite_eq_left (show p₀ ∈ (⊤ : Opens X) from trivial))) := by rfl
+
+/-- On an open set `U` containing `p₀`, the skyscraper sheaf functor acts on a morphism `f : A ⟶ B`
+by `f` conjugated by the canonical identifications with `A` and `B`. -/
+@[simp]
+theorem skyscraperSheafFunctor_map_hom_app_of_mem {X : TopCat} (p₀ : X)
+    [∀ U : Opens X, Decidable (p₀ ∈ U)] {C : Type*} [Category* C] [HasTerminal C]
+    {A B : C} (f : A ⟶ B) {U : Opens X} (hU : p₀ ∈ U) :
+    ((skyscraperSheafFunctor p₀).map f).hom.app (op U) =
+      eqToHom (show ((skyscraperSheafFunctor p₀).obj A).obj.obj (op U) = A from ite_eq_left hU) ≫
+        f ≫
+        eqToHom (show B = ((skyscraperSheafFunctor p₀).obj B).obj.obj (op U)
+          from (ite_eq_left hU).symm) :=
+  -- By definition `((skyscraperSheafFunctor p₀).map f).hom` is
+  -- `SkyscraperPresheafFunctor.map' p₀ f`.
+  (SkyscraperPresheafFunctor.map'_app p₀ f (op U)).trans (dite_eq_left hU)
 
 /-- If the unique morphism `A ⟶ ⊤_ C` is a split epimorphism, then the restriction maps of a
 skyscraper presheaf with value `A` are split epimorphisms: each is an identity or a morphism to a

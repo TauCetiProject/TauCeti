@@ -126,6 +126,62 @@ theorem linearIndependent_of_wronskian_ne_zero [CommSemiring k] [CommRing F]
     {n : ℕ} {f : Fin n → F} (hw : D.wronskian f ≠ 0) : LinearIndependent k f :=
   D.linearIndependent_of_wronskian_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hw)
 
+/-- If the Wronskian matrix of `f` is singular while that of its first `n` members is not, and
+every constant of the derivation comes from the scalars, then there is a `k`-linear relation
+among the `f j` whose last coefficient maps to `1`. -/
+private theorem exists_smul_eq_zero_of_wronskian_eq_zero [CommSemiring k] [Field F] [Algebra k F]
+    (D : Derivation k F F) (hconst : ∀ y : F, D y = 0 → ∃ a : k, algebraMap k F a = y) {n : ℕ}
+    {f : Fin (n + 1) → F}
+    (hN : (Matrix.of fun i j : Fin n ↦ (D : F → F)^[i.val] (f j.castSucc)).det ≠ 0)
+    (hdet : (Matrix.of fun i j : Fin (n + 1) ↦ (D : F → F)^[i.val] (f j)).det = 0) :
+    ∃ a : Fin (n + 1) → k, ∑ j, a j • f j = 0 ∧ algebraMap k F (a (Fin.last n)) = 1 := by
+  classical
+  let M : Matrix (Fin (n + 1)) (Fin (n + 1)) F :=
+    Matrix.of fun i j ↦ (D : F → F)^[i.val] (f j)
+  let N : Matrix (Fin n) (Fin n) F :=
+    Matrix.of fun i j ↦ (D : F → F)^[i.val] (f j.castSucc)
+  obtain ⟨c, hc, hMc⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
+  have hrow (i : Fin (n + 1)) : ∑ j, M i j * c j = 0 :=
+    congrFun hMc i
+  -- The independent initial family makes the last kernel coefficient nonzero.
+  have hlast : c (Fin.last n) ≠ 0 := by
+    intro hz
+    have hNc : N *ᵥ (fun j ↦ c j.castSucc) = 0 := by
+      ext i
+      have h := hrow i.castSucc
+      simpa [Fin.sum_univ_castSucc, hz, M, N, Matrix.mulVec, dotProduct] using h
+    have hzero := Matrix.eq_zero_of_mulVec_eq_zero hN hNc
+    apply hc
+    ext j
+    refine Fin.lastCases ?_ (fun i ↦ ?_) j
+    · exact hz
+    · exact congrFun hzero i
+  let b : Fin (n + 1) → F := fun j ↦ c j / c (Fin.last n)
+  have hb : b (Fin.last n) = 1 := div_self hlast
+  have hMb (i : Fin (n + 1)) : ∑ j, M i j * b j = 0 := by
+    simp only [b, ← mul_div_assoc, ← Finset.sum_div, hrow, zero_div]
+  -- Normalize that coefficient to one, then differentiate and subtract the next row.
+  have hDb : N *ᵥ (fun j ↦ D (b j.castSucc)) = 0 := by
+    ext i
+    have hd := congrArg D (hMb i.castSucc)
+    have hnext := hMb i.succ
+    have hshift (j : Fin (n + 1)) : D (M i.castSucc j) = M i.succ j := by
+      simp [M, Function.iterate_succ_apply']
+    have hsum : ∑ j, M i.castSucc j * D (b j) = 0 := by
+      simpa only [map_sum, D.leibniz, smul_eq_mul, hshift, mul_comm (b _),
+        Finset.sum_add_distrib, hnext, zero_add, add_zero, D.map_zero] using hd
+    simpa [Fin.sum_univ_castSucc, hb, M, N, Matrix.mulVec, dotProduct] using hsum
+  have hDbzero := Matrix.eq_zero_of_mulVec_eq_zero hN hDb
+  -- The resulting kernel vector vanishes, so the original relation has constant coefficients.
+  have hkill (j : Fin (n + 1)) : D (b j) = 0 := by
+    refine Fin.lastCases ?_ (fun i ↦ ?_) j
+    · simp [hb]
+    · exact congrFun hDbzero i
+  choose a ha using fun j ↦ hconst (b j) (hkill j)
+  have hrel : ∑ j, a j • f j = 0 := by
+    simpa [M, ← ha, Algebra.smul_def, mul_comm] using hMb 0
+  exact ⟨a, hrel, by rw [ha, hb]⟩
+
 /-- A linearly independent family has nonzero Wronskian if every constant of the
 derivation comes from the scalars. -/
 theorem wronskian_ne_zero_of_linearIndependent [CommSemiring k] [Field F] [Algebra k F]
@@ -136,58 +192,14 @@ theorem wronskian_ne_zero_of_linearIndependent [CommSemiring k] [Field F] [Algeb
   induction n with
   | zero => simp
   | succ n ih =>
-    let M : Matrix (Fin (n + 1)) (Fin (n + 1)) F :=
-      Matrix.of fun i j ↦ (D : F → F)^[i.val] (f j)
-    let N : Matrix (Fin n) (Fin n) F :=
-      Matrix.of fun i j ↦ (D : F → F)^[i.val] (f j.castSucc)
-    have hN : N.det ≠ 0 := by
-      simpa only [wronskian_def, Function.comp_def] using
-        ih (hf.comp Fin.castSucc (Fin.castSucc_injective n))
     intro hdet
     rw [wronskian_def] at hdet
-    obtain ⟨c, hc, hMc⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-    have hrow (i : Fin (n + 1)) : ∑ j, M i j * c j = 0 :=
-      congrFun hMc i
-    -- The independent initial family makes the last kernel coefficient nonzero.
-    have hlast : c (Fin.last n) ≠ 0 := by
-      intro hz
-      have hNc : N *ᵥ (fun j ↦ c j.castSucc) = 0 := by
-        ext i
-        have h := hrow i.castSucc
-        simpa [Fin.sum_univ_castSucc, hz, M, N, Matrix.mulVec, dotProduct] using h
-      have hzero := Matrix.eq_zero_of_mulVec_eq_zero hN hNc
-      apply hc
-      ext j
-      refine Fin.lastCases ?_ (fun i ↦ ?_) j
-      · exact hz
-      · exact congrFun hzero i
-    let b : Fin (n + 1) → F := fun j ↦ c j / c (Fin.last n)
-    have hb : b (Fin.last n) = 1 := div_self hlast
-    have hMb (i : Fin (n + 1)) : ∑ j, M i j * b j = 0 := by
-      simp only [b, ← mul_div_assoc, ← Finset.sum_div, hrow, zero_div]
-    -- Normalize that coefficient to one, then differentiate and subtract the next row.
-    have hDb : N *ᵥ (fun j ↦ D (b j.castSucc)) = 0 := by
-      ext i
-      have hd := congrArg D (hMb i.castSucc)
-      have hnext := hMb i.succ
-      have hshift (j : Fin (n + 1)) : D (M i.castSucc j) = M i.succ j := by
-        simp [M, Function.iterate_succ_apply']
-      have hsum : ∑ j, M i.castSucc j * D (b j) = 0 := by
-        simpa only [map_sum, D.leibniz, smul_eq_mul, hshift, mul_comm (b _),
-          Finset.sum_add_distrib, hnext, zero_add, add_zero, D.map_zero] using hd
-      simpa [Fin.sum_univ_castSucc, hb, M, N, Matrix.mulVec, dotProduct] using hsum
-    have hDbzero := Matrix.eq_zero_of_mulVec_eq_zero hN hDb
-    -- The resulting kernel vector vanishes, so the original relation has constant coefficients.
-    have hkill (j : Fin (n + 1)) : D (b j) = 0 := by
-      refine Fin.lastCases ?_ (fun i ↦ ?_) j
-      · simp [hb]
-      · exact congrFun hDbzero i
-    choose a ha using fun j ↦ hconst (b j) (hkill j)
-    have hrel : ∑ j, a j • f j = 0 := by
-      simpa [M, ← ha, Algebra.smul_def, mul_comm] using hMb 0
+    obtain ⟨a, hrel, hlast⟩ := exists_smul_eq_zero_of_wronskian_eq_zero D hconst
+      (by
+        simpa only [wronskian_def, Function.comp_def] using
+          ih (hf.comp Fin.castSucc (Fin.castSucc_injective n))) hdet
     have hazero := Fintype.linearIndependent_iffₛ.mp hf a 0 (by simpa using hrel) (Fin.last n)
-    have := ha (Fin.last n)
-    simp [hazero, hb] at this
+    simp [hazero] at hlast
 
 /-- The Wronskian detects linear independence when the scalars embed faithfully and
 contain every constant of the derivation. -/

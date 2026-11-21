@@ -404,7 +404,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_I_of_not_hasTateTangentRoo
   -- `ϖ` is prime, so if `ϖ ^ (2m + 1)` divides a square `z²` then so does `ϖ ^ (2m + 2)`
   have hp : Prime ϖ := (Ideal.span_singleton_prime (h.ne_zero (by simp))).1
     (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
-  refine nonsingularReduction_eq_top_of_not_splits v hc₄ hn fun z hz ↦ hΔ' ?_
+  refine nonsingularReduction_eq_top_of_not_splits v hn fun z hz ↦ hΔ' ?_
   have hz' := hp.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := m)
     (hz.dvd_iff_dvd_right.2 hΔ)
   rw [← hz.dvd_iff_dvd_right, show 2 * m + 2 = (m + 1) * 2 by ring, pow_mul]

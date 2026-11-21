@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import TauCeti.Data.Matrix.Basis
 
 /-!
 # Trace duality for square matrices
@@ -32,13 +32,11 @@ theorem existsUnique_trace_mul_eq (f : Matrix n n R →ₗ[R] R) :
     ∃! ρ : Matrix n n R, ∀ x, f x = (ρ * x).trace := by
   classical
   refine ⟨Matrix.of fun i j => f (Matrix.single j i 1), fun x => ?_, fun ρ hρ => ?_⟩
-  · have hf (i j : n) (a : R) : f (Matrix.single i j a) = a * f (Matrix.single i j 1) := by
-      rw [← smul_eq_mul, ← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
-    conv_lhs => rw [Matrix.matrix_eq_sum_single x]
-    simp only [map_sum, Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.of_apply]
+  · rw [LinearMap.apply_eq_sum_sum_smul_single f x]
+    simp only [smul_eq_mul, Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.of_apply]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-    rw [hf, mul_comm]
+    rw [mul_comm]
   · ext i j
     simp [hρ, Matrix.trace_mul_single]
 

@@ -48,16 +48,17 @@ lying over a prime `P` of `R` equals the rank of `S` over `R`, then each such pr
 over `P` and has trivial inertia degree. No Galois hypothesis is needed. -/
 theorem ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank
     {R S : Type*} [CommRing R] [IsDomain R] [CommRing S] [Algebra R S] [Module.Finite R S]
-    [Module.Flat R S] (P : Ideal R) [P.IsPrime] (Q : Ideal S)
+    [Module.Flat R S] (P : Ideal R) (Q : Ideal S)
     [Q.IsPrime] [Q.LiesOver P] (hsplit : (P.primesOver S).ncard = finrank R S) :
     Q.ramificationIdx R = 1 ∧ Q.inertiaDeg R = 1 := by
+  have := Ideal.isPrime_of_liesOver Q P
   have := (Algebra.QuasiFinite.finite_primesOver (S := S) P).fintype
   have h := Ideal.sum_ramification_inertia_eq_finrank (S := S) P
   rw [← hsplit, Set.ncard_eq_toFinset_card', Set.toFinset_card, Fintype.card_eq_sum_ones] at h
   -- the fundamental identity writes the rank as `∑ e * f` over the primes above `P`; each
   -- summand is at least `1`, and their number already accounts for the whole rank
   exact mul_eq_one.mp ((Finset.sum_eq_sum_iff_of_le fun q _ ↦
-    Nat.one_le_of_lt (Nat.mul_pos (ramificationIdx_pos R q.1) (inertiaDeg_pos q.1 R))).mp h.symm
+    Nat.one_le_of_lt (Nat.mul_pos (ramificationIdx_pos R q.val) (inertiaDeg_pos q.val R))).mp h.symm
     ⟨Q, ‹_›, ‹_›⟩ (Finset.mem_univ _)).symm
 
 /-- **The count criterion for complete splitting.** The number of primes of `S` lying over a
@@ -74,7 +75,7 @@ theorem ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inerti
     fun h ↦ ?_⟩
   have := (Algebra.QuasiFinite.finite_primesOver (S := S) P).fintype
   rw [← Ideal.sum_ramification_inertia_eq_finrank (p := P),
-    Finset.sum_congr rfl fun q _ ↦ by rw [(h q.1 q.2).1, (h q.1 q.2).2, mul_one]]
+    Finset.sum_congr rfl fun q _ ↦ by rw [(h q.val q.property).1, (h q.val q.property).2, mul_one]]
   simp
 
 /-- **A maximal count of primes above `P` makes the residue extension trivial.** If `P` is maximal

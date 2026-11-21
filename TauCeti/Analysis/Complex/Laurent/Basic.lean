@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
@@ -85,6 +85,20 @@ theorem circleLaurentCoeff_congr {f g : ℂ → E} {c : ℂ} {R : ℝ} (hR : 0 �
 @[simp] theorem circleLaurentCoeff_smul (a : ℂ) (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℤ) :
     circleLaurentCoeff (fun z => a • f z) c R n = a • circleLaurentCoeff f c R n := by
   simp only [circleLaurentCoeff_def, smul_comm _ a, circleIntegral.integral_smul]
+
+/-- Multiplying a function by `(z - c) ^ m` shifts its coefficients by `m`: the coefficient of
+degree `n` of `(z - c) ^ m • f z` is the coefficient of degree `n - m` of `f`. -/
+theorem circleLaurentCoeff_sub_zpow_smul_apply (f : ℂ → E) (c : ℂ) (R : ℝ) (m n : ℤ) :
+    circleLaurentCoeff (fun z => (z - c) ^ m • f z) c R n = circleLaurentCoeff f c R (n - m) := by
+  rcases eq_or_ne R 0 with (rfl | hR)
+  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero]
+  simp only [circleLaurentCoeff_def, circleIntegral]
+  congr 1
+  refine intervalIntegral.integral_congr fun θ _ => ?_
+  have hz : circleMap c R θ - c ≠ 0 := sub_ne_zero.2 (circleMap_ne_center hR)
+  simp only [smul_smul, ← zpow_add₀ hz]
+  congr 3
+  ring
 
 /-- Extracting coefficients is additive for functions integrable on the circle. -/
 theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}
@@ -191,6 +205,24 @@ variable [CompleteSpace E]
       inv_smul_smul₀ (by simp [Real.pi_ne_zero])]
   · rw [circleIntegral.integral_sub_zpow_of_ne (by omega), zero_smul, smul_zero]
 
+/-- The circle integral of the divided difference `dslope f w` around a circle avoiding `w` is
+the difference of the Cauchy integral of `f` and the circle integral of `(z - w)⁻¹` times `f w`.
+Only integrability of `f` on the circle is needed. -/
+theorem circleIntegral_dslope_eq {f : ℂ → E} {c w : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ)
+    (hf : CircleIntegrable f c ρ) (hw : w ∉ sphere c ρ) :
+    (∮ z in C(c, ρ), dslope f w z) =
+      (∮ z in C(c, ρ), (z - w)⁻¹ • f z) - (∮ z in C(c, ρ), (z - w)⁻¹) • f w := by
+  have hne : ∀ z ∈ sphere c ρ, z ≠ w := fun _ hz => ne_of_mem_of_not_mem hz hw
+  have hw' : w ∉ sphere c |ρ| := by rwa [abs_of_nonneg hρ]
+  have hi₁ : CircleIntegrable (fun z => (z - w)⁻¹ • f z) c ρ := by
+    simpa only [zpow_neg_one] using hf.sub_zpow_smul (-1) hw'
+  have hi₂ : CircleIntegrable (fun z => (z - w)⁻¹ • f w) c ρ := by
+    simpa only [zpow_neg_one] using (circleIntegrable_const (f w) c ρ).sub_zpow_smul (-1) hw'
+  rw [← circleIntegral.integral_smul_const, ← circleIntegral.integral_sub hi₁ hi₂]
+  apply circleIntegral.integral_congr hρ
+  intro z hz
+  simp only [dslope_of_ne _ (hne z hz), slope, vsub_eq_sub, smul_sub]
+
 /-- The two-circle Cauchy formula on an annulus. The function is continuous on the closed
 annulus and complex differentiable outside a countable exceptional set in the open annulus.
 The evaluation point may belong to the exceptional set. -/
@@ -235,25 +267,8 @@ theorem
       fun h => (ne_of_lt h) (mem_sphere.mp hz)⟩
   have hwR : w ∉ sphere c R := fun h => (ne_of_lt hw.1) (mem_sphere.mp h)
   have hwr : w ∉ sphere c r := fun h => hw.2 (sphere_subset_closedBall h)
-  have hdslope (ρ : ℝ) (hρ : 0 ≤ ρ)
-      (hρA : sphere c ρ ⊆ closedBall c R \ ball c r) (hwρ : w ∉ sphere c ρ) :
-      (∮ z in C(c, ρ), dslope f w z) =
-        (∮ z in C(c, ρ), (z - w)⁻¹ • f z) -
-          (∮ z in C(c, ρ), (z - w)⁻¹) • f w := by
-    have hne : ∀ z ∈ sphere c ρ, z ≠ w :=
-      fun _ hz => ne_of_mem_of_not_mem hz hwρ
-    have hwρ' : w ∉ sphere c |ρ| := by rwa [abs_of_nonneg hρ]
-    have hi₁ : CircleIntegrable (fun z => (z - w)⁻¹ • f z) c ρ := by
-      simpa only [zpow_neg_one] using
-        ((hc.mono hρA).circleIntegrable hρ).sub_zpow_smul (-1) hwρ'
-    have hi₂ : CircleIntegrable (fun z => (z - w)⁻¹ • f w) c ρ := by
-      simpa only [zpow_neg_one] using
-        (circleIntegrable_const (f w) c ρ).sub_zpow_smul (-1) hwρ'
-    rw [← circleIntegral.integral_smul_const, ← circleIntegral.integral_sub hi₁ hi₂]
-    apply circleIntegral.integral_congr hρ
-    intro z hz
-    simp only [dslope_of_ne _ (hne z hz), slope, vsub_eq_sub, smul_sub]
-  rw [hdslope R hR.le hRA hwR, hdslope r hr.le hrA hwr,
+  rw [circleIntegral_dslope_eq hR.le ((hc.mono hRA).circleIntegrable hR.le) hwR,
+    circleIntegral_dslope_eq hr.le ((hc.mono hrA).circleIntegrable hr.le) hwr,
     circleIntegral.integral_sub_inv_of_mem_ball hw.1,
     Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le hrw, zero_smul, sub_zero] at hid
   have hdiff : (∮ z in C(c, R), (z - w)⁻¹ • f z) -

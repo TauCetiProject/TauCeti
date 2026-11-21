@@ -70,16 +70,15 @@ variable (H : FiniteTypeCommHopfAlgCat.{u, u} k)
 variable [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
 variable [Group.IsSolvable (WithConv (H →ₐ[k] k))]
 
-open torusCommHopfAlgProperty
-
 /-- A reduced connected solvable linearly reductive affine group of finite type over an
 algebraically closed field is a torus. Smoothness follows from the conclusion. -/
 theorem torusCommHopfAlgProperty_of_isLinearlyReductive_of_isSolvable
     (hlr : linearlyReductiveCommHopfAlgProperty k H.obj) :
     torusCommHopfAlgProperty k H :=
-  of_groupLikeSetSpan_eq_top H
-    (HopfAlgebra.groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable k H
-      ((linearlyReductiveCommHopfAlgProperty_iff k H.obj).mp hlr))
+  splitTorusCommHopfAlgProperty.torus k H
+    (splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top H
+      (HopfAlgebra.groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable k H
+        ((linearlyReductiveCommHopfAlgProperty_iff k H.obj).mp hlr)))
 
 /-- Among reduced connected solvable affine groups of finite type over an algebraically closed
 field, linear reductivity is equivalent to being a torus, in every characteristic. -/

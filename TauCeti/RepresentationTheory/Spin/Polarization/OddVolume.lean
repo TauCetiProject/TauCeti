@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RepresentationTheory.Spin.LineSign
 -- Private: orthonormal-basis orthogonality and list products of endomorphisms are used only
@@ -107,13 +108,17 @@ private theorem spinAction_ι_mul_ι_apply_one {e f : V}
     zero_add, sub_zero, P.pairingEquiv_apply, hpolar,
     Algebra.algebraMap_eq_smul_one, smul_smul]
 
+-- The index bounds are terms rather than `by omega`: a tactic block in a `variable` binder is
+-- elaborated to a private auxiliary proof, which other modules could not typecheck against.
 variable [FiniteDimensional ℝ V] {ℓ : ℕ} [Fact (finrank ℝ V = 2 * ℓ + 1)]
   {o : Orientation ℝ V (Fin (2 * ℓ + 1))} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (b : OrthonormalBasis (Fin (2 * ℓ + 1)) ℝ V) (hb : b.toBasis.orientation = o)
   (hbW : ∀ k : Fin ℓ,
-    1 ⊗ₜ b ⟨2 * k, by omega⟩ - Complex.I ⊗ₜ b ⟨2 * k + 1, by omega⟩ ∈ P.W)
+    1 ⊗ₜ b ⟨2 * k, k.two_mul_val_lt_two_mul_add_one⟩ -
+      Complex.I ⊗ₜ b ⟨2 * k + 1, k.two_mul_val_add_one_lt_two_mul_add_one⟩ ∈ P.W)
   (hbW' : ∀ k : Fin ℓ,
-    1 ⊗ₜ b ⟨2 * k, by omega⟩ + Complex.I ⊗ₜ b ⟨2 * k + 1, by omega⟩ ∈ P.W')
+    1 ⊗ₜ b ⟨2 * k, k.two_mul_val_lt_two_mul_add_one⟩ +
+      Complex.I ⊗ₜ b ⟨2 * k + 1, k.two_mul_val_add_one_lt_two_mul_add_one⟩ ∈ P.W')
   (hline : 1 ⊗ₜ b (Fin.last (2 * ℓ)) ∈ P.line)
 include hQ hb hbW hbW'
 

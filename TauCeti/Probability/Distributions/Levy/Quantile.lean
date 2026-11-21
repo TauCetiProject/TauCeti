@@ -27,6 +27,7 @@ to `1`; these one-sided limits are stated in `EReal`.
 * `TauCeti.Probability.quantile_levyMeasure` — the quantile through the inverse error function;
 * `TauCeti.Probability.quantile_levyMeasure_eq_quantile_gaussianReal` — the same quantile through
   the standard Gaussian quantile;
+* `TauCeti.Probability.continuousOn_quantile_levyMeasure` — continuity in the level;
 * `TauCeti.Probability.tendsto_quantile_levyMeasure_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_levyMeasure_nhdsLT_one` — the one-sided endpoint limits.
 -/
@@ -75,6 +76,20 @@ theorem quantile_levyMeasure_eq_quantile_gaussianReal (hc : 0 < c) (m : ℝ) (hu
   rw [quantile_levyMeasure hc m hu, quantile_gaussianReal_zero_one hp, mul_pow,
     Real.sq_sqrt zero_le_two]
   ring_nf
+
+/-- Lévy quantiles vary continuously with the probability level on the open unit interval. -/
+theorem continuousOn_quantile_levyMeasure (hc : 0 < c) (m : ℝ) :
+    ContinuousOn (levyMeasure m c).quantile (Ioo 0 1) := by
+  have hcont : ContinuousOn (fun v : ℝ ↦ m + c / (2 * Real.erfInv (1 - v) ^ 2)) (Ioo 0 1) := by
+    refine continuousOn_of_forall_continuousAt fun v hv ↦ ?_
+    have hy : 1 - v ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith [hv.2], by linarith [hv.1]⟩
+    have he : Real.erfInv (1 - v) ≠ 0 :=
+      (Real.erfInv_pos_iff.2 ⟨by linarith [hv.2], by linarith [hv.1]⟩).ne'
+    have herf : ContinuousAt (fun w : ℝ ↦ Real.erfInv (1 - w)) v :=
+      (Real.continuousAt_erfInv hy).comp_of_eq (by fun_prop) rfl
+    exact continuousAt_const.add (continuousAt_const.div (continuousAt_const.mul (herf.pow 2))
+      (mul_ne_zero two_ne_zero (pow_ne_zero 2 he)))
+  exact hcont.congr fun v hv ↦ quantile_levyMeasure hc m hv
 
 /-- The Lévy quantile tends to the location `m` as the level tends to `0` from above. -/
 theorem tendsto_quantile_levyMeasure_nhdsGT_zero (hc : 0 < c) (m : ℝ) :

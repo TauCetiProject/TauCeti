@@ -11,8 +11,9 @@ public import Mathlib.Topology.FiberBundle.Constructions
 # The fibrewise product as a closed relation
 
 The total space of a fibrewise product has the topology induced from the product of total
-spaces. Its image consists exactly of pairs with equal base points. Over a Hausdorff base
-this gives a closed embedding, useful for properness of bundle actions.
+spaces, so each of its two components depends continuously on a vector. Its image consists
+exactly of pairs with equal base points. Over a Hausdorff base this gives a closed embedding,
+useful for properness of bundle actions.
 -/
 
 public section
@@ -36,6 +37,18 @@ theorem isEmbedding_diag :
   simp only [Prod.mk.injEq, TotalSpace.mk_inj] at h
   rcases h with ⟨rfl, rfl⟩
   rfl
+
+/-- The first component of a vector of a fibrewise product, as a point of the first bundle,
+depends continuously on the vector. -/
+theorem continuous_totalSpaceFst :
+    Continuous fun p : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂) ↦ (⟨p.proj, p.snd.1⟩ : TotalSpace F₁ E₁) :=
+  (isInducing_diag F₁ E₁ F₂ E₂).continuous.fst
+
+/-- The second component of a vector of a fibrewise product, as a point of the second bundle,
+depends continuously on the vector. -/
+theorem continuous_totalSpaceSnd :
+    Continuous fun p : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂) ↦ (⟨p.proj, p.snd.2⟩ : TotalSpace F₂ E₂) :=
+  (isInducing_diag F₁ E₁ F₂ E₂).continuous.snd
 
 omit [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)] in
 /-- The image of the fibrewise product is exactly the same-base relation. -/

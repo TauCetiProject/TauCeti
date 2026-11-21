@@ -110,19 +110,19 @@ noncomputable abbrev generatorCoordinateAlgebra :
 noncomputable def generatorCoordinateMap (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
     GeneralLinear.coordinateHopfAlgebra A 24 ⟶ generatorCoordinateAlgebra A j :=
   match j with
-  | .inl i => kostantRootSubgroupBaseChangePresentationCoordinateMap
+  | .inl i => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-      rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i
+      rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) latticeBasis A
   | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A d4TripledWeight
 
 /-- The numbered branches of the generator family are the transported root maps. -/
 @[simp] theorem generatorCoordinateMap_inl (i : Fin 4 ⊕ Fin 4) :
     generatorCoordinateMap A (.inl i) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i := (rfl)
+        rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) latticeBasis A := (rfl)
 
 /-- The final branch of the generator family is the transported weight torus. -/
 @[simp] theorem generatorCoordinateMap_inr :
@@ -410,10 +410,10 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 4 ⊕ Fin
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 24)
           (baseChangeDefiningIdeal A) ≫
         rootSubgroupToBaseChangeCoordinateMap A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
+        rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) latticeBasis A := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
@@ -426,10 +426,10 @@ ambient transported coordinate map. -/
 @[reassoc (attr := simp)]
 theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 4 ⊕ Fin 4) :
     coordinateMap A ≫ rootSubgroupToBaseChangeCoordinateMap A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
+        rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) latticeBasis A := by
   rw [coordinateMap]
   exact mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap A k
 
@@ -474,7 +474,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
-    d4TripledWeight A definingIdeal_def k B q
+    d4TripledWeight A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h
@@ -594,7 +594,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap weightTorusIntegralCoordinateMap ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin 4))))) =
       weightTorusToBaseChangeCoordinateMap A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

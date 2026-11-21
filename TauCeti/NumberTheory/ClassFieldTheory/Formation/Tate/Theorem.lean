@@ -32,8 +32,8 @@ is Tate cohomology of `H` with coefficients in the restricted module
 (`TauCeti.ClassFieldTheory.NormalLayer.subgroupLayerTateIso`), and the generation hypothesis
 together with the order of `H²(U/V, A^V)` gives the degree-zero bijection on the whole Galois
 group. The generic theorem needs the vanishing and order hypotheses only on subgroups of
-prime-power order, and `cupClass_bijective` is stated in that form; `tateTheorem` is the roadmap's
-statement with all three hypotheses over every subgroup.
+prime-power order, and `cupClass_bijective` is stated in that form; `tateTheorem` is the statement
+above, with all three hypotheses over every subgroup.
 
 ## Main definitions
 

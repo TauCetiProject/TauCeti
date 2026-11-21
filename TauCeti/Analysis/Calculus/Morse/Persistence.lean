@@ -131,7 +131,7 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
     (h.contDiffAt.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
   obtain ⟨ρ, hρ, hρf⟩ := Metric.eventually_nhds_iff.1
     (hcont.eventually_mem (Metric.ball_mem_nhds (fderiv ℝ (fderiv ℝ f) x) (half_pos hκ)))
-  let K : ℝ := 2 * C + 8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2
+  let K : ℝ := 2 * C + 2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2
   refine ⟨K, ?_⟩
   filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
   refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgx hgf ↦ ?_⟩
@@ -146,10 +146,10 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   have hεr : 2 * C * n ≤ r := by
     have : n ≤ r / (2 * C) := hgx.trans (min_le_right _ _)
     rwa [le_div_iff₀ (by positivity), mul_comm] at this
-  obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hC hLsymm hκC hεr
+  obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hεr
   have hsub : closedBall x (2 * C * n) ⊆ closedBall x r := closedBall_subset_closedBall hεr
   have hKC : 2 * C ≤ K := by
-    have : 0 ≤ 8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2 := by positivity
+    have : 0 ≤ 2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2 := by positivity
     linarith
   refine ⟨y, hsub hyε, ⟨hg y (hsub hyε), hy0, hinv ?_⟩, ?_, ?_, huniq⟩
   · -- Nondegeneracy: the Hessian of `g` at `y` is within `κ < ε₀` of `L`.
@@ -159,10 +159,13 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   · calc dist y x ≤ 2 * C * n := mem_closedBall.1 hyε
       _ ≤ K * n := by gcongr
   · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
-    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * (2 * (2 * C * n)) * (2 * C * n) :=
-        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero
-          (fun w hw ↦ (hg w (hsub hw)).differentiableAt (by norm_num)) hsub hyε hy0
-      _ = (8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
+    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * ‖y - x‖ ^ 2 :=
+        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero (convex_closedBall x r)
+          (fun w hw ↦ (hg w hw).differentiableAt (by norm_num)) (mem_closedBall_self hr.1.le)
+          (hsub hyε) hy0
+      _ ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * (2 * C * n) ^ 2 := by
+        gcongr; exact mem_closedBall_iff_norm.1 hyε
+      _ = (2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
       _ ≤ K * n ^ 2 := by gcongr; linarith
 
 /-- **The Morse index is stable under small changes of the Hessian.**
@@ -184,12 +187,12 @@ theorem exists_pos_forall_morseIndex_eq [FiniteDimensional ℝ E]
   -- The negative index is locally constant on the space of symmetric forms.
   let a : {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm} :=
     ⟨fderiv ℝ (fderiv ℝ f) x, hsymm h.contDiffAt⟩
-  have hnd : a.1.toBilinForm.Nondegenerate :=
+  have hnd : a.val.toBilinForm.Nondegenerate :=
     LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft h.separatingLeft
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff
     (α := {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm}) |>.1
     (ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := Subtype.val)
-      (Eventually.of_forall fun B ↦ B.2) continuous_subtype_val.continuousAt hnd)
+      a.property continuous_subtypeVal.continuousAt hnd)
   refine ⟨ε, hε, fun g y hg hlt ↦ ?_⟩
   rw [hmorse, hmorse f x]
   refine hball (y := ⟨_, hsymm hg⟩) ?_

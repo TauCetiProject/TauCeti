@@ -55,7 +55,7 @@ theorem isOpen_normalExpDomain_fiber
       (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
         f.normalExpDomain hn} := by
   rw [normalExpDomain_fiber_eq_preimage]
-  exact (Manifold.isOpen_expDomain (I := J) (f x)).preimage continuous_subtype_val
+  exact (Manifold.isOpen_expDomain (I := J) (f x)).preimage continuous_subtypeVal
 
 /-- The normal exponential is smooth in the normal vector at each fixed base point throughout
 its natural domain. No smoothness of a choice of normal representatives in the base is assumed. -/
@@ -71,6 +71,26 @@ theorem contMDiffOn_normalExp_fiber
   exact (Manifold.contMDiffOn_riemannianExp (I := J) (f x)).comp
     ((f.tangentRange x hn)ᗮ.subtypeL.contDiff.contMDiff.contMDiffOn)
     (fun _ hv ↦ hv)
+
+/-- The normal exponential sends the zero orthogonal normal vector at `x` to `f x`. -/
+theorem normalExp_fiber_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
+    f.normalExp (P := P) hn ⟨x, f.normalClass x hn ((0 : (f.tangentRange x hn)ᗮ) :
+      TangentSpace J (f x))⟩ = f x := by
+  rw [Submodule.coe_zero, map_zero]
+  exact f.normalExp_zeroSection (P := P) hn x
+
+/-- The normal exponential is smooth in the normal vector at zero, at each fixed base point. -/
+theorem contMDiffAt_normalExp_fiber_zero
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
+    ContMDiffAt 𝓘(ℝ, (f.tangentRange x hn)ᗮ) J ∞
+      (fun v : (f.tangentRange x hn)ᗮ ↦ f.normalExp (P := P) hn ⟨x, f.normalClass x hn v⟩) 0 := by
+  have hmem : (0 : (f.tangentRange x hn)ᗮ) ∈
+      {v : (f.tangentRange x hn)ᗮ |
+        (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+          f.normalExpDomain hn} := by
+    simp
+  exact (f.contMDiffOn_normalExp_fiber (P := P) hn x).contMDiffAt
+    ((f.isOpen_normalExpDomain_fiber (P := P) hn x).mem_nhds hmem)
 
 /-- The vertical differential of the normal exponential along its zero section is the
 inclusion of the orthogonal normal space into the ambient tangent space. -/
@@ -116,12 +136,12 @@ theorem exists_isEmbedding_normalExp_fiber
     ((Manifold.continuousOn_riemannianExp (I := J) (f x)).isOpen_inter_preimage
       (Manifold.isOpen_expDomain (I := J) (f x)) hd.localInverse.open_source)
   let U : TopologicalSpace.Opens ((f.tangentRange x hn)ᗮ) :=
-    ⟨Subtype.val ⁻¹' S, hS.preimage continuous_subtype_val⟩
+    ⟨Subtype.val ⁻¹' S, hS.preimage continuous_subtypeVal⟩
   let F : U → hd.localInverse.source := fun v ↦
     ⟨Manifold.riemannianExp J N (f x) (v.val : TangentSpace J (f x)), v.property.2.2⟩
   have hF : Continuous F :=
     ((Manifold.continuousOn_riemannianExp (I := J) (f x)).comp_continuous
-      (continuous_subtype_val.comp continuous_subtype_val) (fun v ↦ v.property.2.1)).subtype_mk _
+      (continuous_subtypeVal.comp continuous_subtypeVal) (fun v ↦ v.property.2.1)).subtype_mk _
   have hcomp : hd.localInverse.source.domRestrict hd.localInverse ∘ F =
       (fun v : U ↦ (v.val : TangentSpace J (f x))) := by
     funext v

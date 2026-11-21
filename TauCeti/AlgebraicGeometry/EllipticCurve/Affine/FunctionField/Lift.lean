@@ -188,7 +188,6 @@ noncomputable def functionFieldRatFuncEquivOfAdjoinEqTop
     commutes' r := by
       have hcomm := map_algebraMap_ratFuncAlgebraOfTranscendental
         (W.functionFieldEquivOfAdjoinEqTop h hx hxy)
-        (W.functionFieldEquivOfAdjoinEqTop h hx hxy).injective
         (transcendental_genericX W) r
       rw [ratFuncAlgebraOfTranscendental_eq_liftAlgebra
           (transcendental_genericX W)

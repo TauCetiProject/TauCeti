@@ -58,17 +58,19 @@ together with the rank, that classify Demushkin groups with `q ≠ 2`.
   `TauCeti.demushkinQ_eq_zero_of_mulEquiv`, `TauCeti.demushkinQ_eq_pow_valuation_of_mulEquiv`:
   the torsion of `G^{ab}` read off a model `G^{ab} ≅ ℤ_p^ι × ℤ_p ⧸ (q)` with `p ∣ q`: `G^{ab}` is
   torsion-free and `q(G) = 0` when `q = 0`, and `q(G) = p^{v_p(q)}` otherwise.
+* `TauCeti.IsDemushkin.dvd_of_presentedProP_singleton`: for a Demushkin group given by a
+  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w` and `w x₀ = 1`, `p ∣ q`.
 * `TauCeti.demushkinQ_presentedProP_eq_zero_iff`,
   `TauCeti.demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator`,
   `TauCeti.demushkinQ_presentedProP_eq_pow_valuation`: for a Demushkin group given by a
-  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w`, `w x₀ = 1` and `p ∣ q`, the
+  one-relator presentation `⟨X ∣ r⟩` with `exponentSum r = q • w` and `w x₀ = 1`, the
   `q`-invariant is `0` exactly when `q = 0`, that is when `r` lies in the closed commutator
-  subgroup, and is `p^{v_p(q)}` otherwise.
+  subgroup, and is `p^{v_p(q)}` otherwise; `p ∣ q` holds automatically.
 * `TauCeti.demushkinQ_presentedProP_eq_iff_exists_not_dvd`,
   `TauCeti.demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero`: for a relator
-  `r ∈ Φ(F)` presenting a Demushkin group, `q = p` exactly when some exponent sum of `r` is not
-  divisible by `p ^ 2`, that is, when the class of `r` in `gr_1(F)` has a nonzero `p`-power
-  coordinate.
+  `r` presenting a Demushkin group (which lies in `Φ(F)`), `q = p` exactly when some exponent sum
+  of `r` is not divisible by `p ^ 2`, that is, when the class of `r` in `gr_1(F)` has a nonzero
+  `p`-power coordinate.
 
 ## References
 
@@ -247,7 +249,7 @@ private theorem torsion_spec :
     have := PadicInt.finite_quotient_span hq
     have := PadicInt.isAddCyclic_quotient_span hq
     have hQ := demushkinQ_eq_pow_valuation_of_mulEquiv hG e.toMulEquiv hpq hq
-    refine ⟨isCyclic_torsion_of_mulEquiv isAddTorsion_of_finite e.toMulEquiv, ?_, ?_⟩
+    refine ⟨isCyclic_torsion_of_mulEquiv e.toMulEquiv, ?_, ?_⟩
     · rw [hQ]
       exact dvd_pow_self p (Nat.one_le_iff_ne_zero.1 (PadicInt.one_le_valuation_of_dvd hq hpq))
     · rw [hQ, Nat.cast_pow, ← PadicInt.span_singleton_eq_span_pow_valuation hq]
@@ -309,9 +311,12 @@ For a Demushkin group given by a one-relator presentation `⟨X ∣ r⟩`, the `
 the exponent vector `exponentSum r = q • w`, `w x₀ = 1`, of the relator, through the one-relator
 abelianization structure theorem `TauCeti.presentedProP.oneRelatorAbelianizationEquiv`: it is `0`
 when `q = 0`, that is when `r` lies in the closed commutator subgroup, and `p^{v_p(q)}` otherwise.
-The hypothesis `p ∣ q` is not decoration: the presentation need not be minimal, and a relator with
-a unit coordinate, such as `x₃ (x₁, x₂)` presenting `ℤ_p × ℤ_p`, has `q(G) = 0` while `ℤ_p ⧸ (q)`
-is trivial. -/
+The divisibility `p ∣ q` follows from the Demushkin hypothesis, since the relator of a minimal
+presentation lies in the Frattini subgroup; without it the presentation need not be minimal, and a
+relator with a unit coordinate, such as `x₃ (x₁, x₂)` presenting the free pro-`p` group on
+`x₁, x₂`, gives a quotient `ℤ_p ⧸ (q)` that is trivial. That group has torsion-free abelianization
+`ℤ_p × ℤ_p` and is not a Demushkin group, so this example lies outside the Demushkin hypothesis
+and no `q`-invariant is attached to it. -/
 
 section OneRelator
 
@@ -319,40 +324,54 @@ variable {X : Type u} [Finite X] {r : freeProP p X} {x₀ : X} {w : X → ℤ_[p
   (hw : w x₀ = 1) (hr : (freeProP.exponentSum p X r).toAdd = q • w)
 
 include hw hr in
+/-- **The exponent coordinate `q` of the relator of a one-relator Demushkin group is divisible by
+`p`**, because the relator lies in the Frattini subgroup. -/
+theorem IsDemushkin.dvd_of_presentedProP_singleton (hG : IsDemushkin p (presentedProP p X {r})) :
+    (p : ℤ_[p]) ∣ q := by
+  have := freeProP.dvd_exponentSum_of_mem_proPFrattini p X
+    hG.mem_proPFrattini_of_presentedProP_singleton x₀
+  rwa [hr, Pi.smul_apply, hw, smul_eq_mul, mul_one] at this
+
+include hw hr in
 /-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the exponent
-coordinate `q` of its relator does**, for `p ∣ q`. -/
-theorem demushkinQ_presentedProP_eq_zero_iff (hG : IsDemushkin p (presentedProP p X {r}))
-    (hpq : (p : ℤ_[p]) ∣ q) : demushkinQ hG = 0 ↔ q = 0 := by
+coordinate `q` of its relator does.** -/
+theorem demushkinQ_presentedProP_eq_zero_iff (hG : IsDemushkin p (presentedProP p X {r})) :
+    demushkinQ hG = 0 ↔ q = 0 := by
+  have hpq := hG.dvd_of_presentedProP_singleton hw hr
   refine ⟨fun h ↦ by_contra fun hq ↦ ?_, demushkinQ_eq_zero_of_mulEquiv hG
     (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv⟩
   rw [demushkinQ_eq_pow_valuation_of_mulEquiv hG
     (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv hpq hq] at h
   exact pow_ne_zero _ (Fact.out : p.Prime).ne_zero h
 
-include hw hr in
 /-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the relator lies in
-the closed commutator subgroup** of the free pro-`p` group, for `p ∣ q`. -/
+the closed commutator subgroup** of the free pro-`p` group. No normalization of the exponent vector
+of the relator is required. -/
 theorem demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator
-    (hG : IsDemushkin p (presentedProP p X {r})) (hpq : (p : ℤ_[p]) ∣ q) :
+    (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = 0 ↔ r ∈ (commutator (freeProP p X)).topologicalClosure := by
-  rw [demushkinQ_presentedProP_eq_zero_iff hw hr hG hpq,
+  have : Nonempty X := (Nat.card_pos_iff.1 hG.card_pos_presentedProP).1
+  obtain ⟨x₀, q, w, hw, hr⟩ :=
+    PadicInt.exists_apply_eq_one_and_eq_smul (freeProP.exponentSum p X r).toAdd
+  rw [demushkinQ_presentedProP_eq_zero_iff hw hr hG,
     presentedProP.oneRelator_q_eq_zero_iff_mem_topologicalClosure_commutator r x₀ w hw q hr]
 
 include hw hr in
 /-- **The `q`-invariant of a one-relator Demushkin group is `p^{v_p(q)}`** for the exponent
-coordinate `q ≠ 0` of its relator, `p ∣ q`: the torsion subgroup of `G^{ab}` is `ℤ_p ⧸ (q)`. -/
+coordinate `q ≠ 0` of its relator: the torsion subgroup of `G^{ab}` is `ℤ_p ⧸ (q)`. -/
 theorem demushkinQ_presentedProP_eq_pow_valuation (hG : IsDemushkin p (presentedProP p X {r}))
-    (hpq : (p : ℤ_[p]) ∣ q) (hq : q ≠ 0) : demushkinQ hG = p ^ q.valuation :=
+    (hq : q ≠ 0) : demushkinQ hG = p ^ q.valuation :=
   demushkinQ_eq_pow_valuation_of_mulEquiv hG
-    (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv hpq hq
+    (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv
+    (hG.dvd_of_presentedProP_singleton hw hr) hq
 
 /-- **The `q`-invariant of a one-relator Demushkin group is `p` exactly when some exponent sum of
-the relator is not divisible by `p ^ 2`**, for a relator all of whose exponent sums are divisible
-by `p`, as they are for a relator in `Φ(F)`. Writing the exponent vector as `q • w` with a
+the relator is not divisible by `p ^ 2`**. All exponent sums of the relator are divisible by `p`,
+as it lies in `Φ(F)`. Writing the exponent vector as `q • w` with a
 coordinate `w x₀ = 1`, the `q`-invariant is `p^{v_p(q)}`, and it is `p` exactly when
 `v_p(q) = 1`. -/
-theorem demushkinQ_presentedProP_eq_iff_exists_not_dvd (hG : IsDemushkin p (presentedProP p X {r}))
-    (hpr : ∀ x, (p : ℤ_[p]) ∣ (freeProP.exponentSum p X r).toAdd x) :
+theorem demushkinQ_presentedProP_eq_iff_exists_not_dvd
+    (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = p ↔ ∃ x, ¬ (p : ℤ_[p]) ^ 2 ∣ (freeProP.exponentSum p X r).toAdd x := by
   have hp : p.Prime := Fact.out
   have : Nonempty X := (Nat.card_pos_iff.1 hG.card_pos_presentedProP).1
@@ -360,7 +379,7 @@ theorem demushkinQ_presentedProP_eq_iff_exists_not_dvd (hG : IsDemushkin p (pres
     PadicInt.exists_apply_eq_one_and_eq_smul (freeProP.exponentSum p X r).toAdd
   have hqx₀ : (freeProP.exponentSum p X r).toAdd x₀ = q := by
     rw [hv, Pi.smul_apply, hw, smul_eq_mul, mul_one]
-  have hq : (p : ℤ_[p]) ∣ q := hqx₀ ▸ hpr x₀
+  have hq : (p : ℤ_[p]) ∣ q := hG.dvd_of_presentedProP_singleton hw hv
   -- Some exponent sum escapes `p ^ 2` exactly when `q` does.
   have hiff : (∃ x, ¬ (p : ℤ_[p]) ^ 2 ∣ (freeProP.exponentSum p X r).toAdd x) ↔
       ¬ (p : ℤ_[p]) ^ 2 ∣ q := by
@@ -369,9 +388,9 @@ theorem demushkinQ_presentedProP_eq_iff_exists_not_dvd (hG : IsDemushkin p (pres
     exact h.mul_right _
   rw [hiff]
   by_cases hq0 : q = 0
-  · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG hq).2 hq0, hq0]
+  · rw [(demushkinQ_presentedProP_eq_zero_iff hw hv hG).2 hq0, hq0]
     exact ⟨fun h ↦ absurd h.symm hp.ne_zero, fun h ↦ absurd (dvd_zero _) h⟩
-  rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG hq hq0, ← Ideal.mem_span_singleton,
+  rw [demushkinQ_presentedProP_eq_pow_valuation hw hv hG hq0, ← Ideal.mem_span_singleton,
     PadicInt.mem_span_pow_iff_le_valuation q hq0, not_le]
   have h1 : 1 ≤ q.valuation := by
     rw [← PadicInt.mem_span_pow_iff_le_valuation q hq0, Ideal.mem_span_singleton, pow_one]
@@ -394,15 +413,15 @@ attribute [local instance 2000] Ring.toAddCommGroup
 variable [LinearOrder X]
 
 /-- **The `q`-invariant is `p` exactly when the relator has a `p`-power part.** For a relator
-`r ∈ Φ(F)` presenting a Demushkin group, the `q`-invariant of the group is `p` exactly when the
-class of `r` in `gr_1(F)` has a nonzero `p`-power coordinate, that is, when some exponent sum of
-`r` is not divisible by `p ^ 2`. -/
+`r` presenting a Demushkin group (which lies in `Φ(F)`), the `q`-invariant of the group is `p`
+exactly when the class of `r` in `gr_1(F)` has a nonzero `p`-power coordinate, that is, when some
+exponent sum of `r` is not divisible by `p ^ 2`. -/
 theorem demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero
-    (hr : r ∈ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X {r})) :
+    (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = p ↔ ∃ i, (freeProP.degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1
-      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩) (Sum.inl i) ≠ 0 := by
-  rw [demushkinQ_presentedProP_eq_iff_exists_not_dvd hG
-    (freeProP.dvd_exponentSum_of_mem_proPFrattini p X hr)]
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le
+        hG.mem_proPFrattini_of_presentedProP_singleton⟩) (Sum.inl i) ≠ 0 := by
+  rw [demushkinQ_presentedProP_eq_iff_exists_not_dvd hG]
   simp only [ne_eq, freeProP.degreeOneBasis_repr_gradedMk_inl_eq_zero_iff]
 
 end DegreeOne

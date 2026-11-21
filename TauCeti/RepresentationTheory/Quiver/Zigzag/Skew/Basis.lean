@@ -88,7 +88,7 @@ private theorem dartBacktrack_injective : Function.Injective (dartBacktrack G) :
 
 /-- The dart chosen at a vertex by a choice of incident edges. -/
 private def baseDart (t : ∀ i : V, {j : V // G.Adj i j}) (i : V) : G.Dart :=
-  ⟨(i, (t i).1), (t i).2⟩
+  ⟨(i, (t i).val), (t i).property⟩
 
 /-! ### The rescaling of the path basis -/
 
@@ -106,7 +106,7 @@ private noncomputable def defaultIncidentChoice : IncidentChoice G :=
 /-- The scalar by which the rescaling multiplies the backtrack along a dart: the ratio from that
 backtrack to the one chosen at its base vertex. -/
 private def dartScale (s : IncidentChoice G) (d : G.Dart) : kˣ :=
-  c.ratio d.adj (s d.fst ⟨d.snd, d.adj⟩).2
+  c.ratio d.adj (s d.fst ⟨d.snd, d.adj⟩).property
 
 open scoped Classical in
 /-- The scalar by which the rescaling multiplies a path of the doubled quiver: the dart scale on
@@ -129,6 +129,8 @@ private theorem dartScale_baseDart (t : ∀ i : V, {j : V // G.Adj i j}) (i : V)
 private theorem pathScale_eq_one (s : IncidentChoice G) (x : Quiver.TotalPath (DoubledQuiver G))
     (hx : ∀ d : G.Dart, x ≠ dartBacktrack G d) : pathScale k G c s x = 1 := by
   rw [pathScale, dite_eq_right (not_exists.mpr hx)]
+
+section Basis
 
 variable [hV : Finite V]
 
@@ -174,7 +176,7 @@ private theorem skewRescale_ofPath_of_ne (s : IncidentChoice G) {a b : DoubledQu
 
 private theorem skewRescale_backtrackPath (s : IncidentChoice G) {i j : V} (h : G.Adj i j) :
     skewRescale k G c s (ofPath ⟨vertex G i, vertex G i, backtrackPath G h⟩)
-      = (c.ratio h (s i ⟨j, h⟩).2 : k) •
+      = (c.ratio h (s i ⟨j, h⟩).property : k) •
         (ofPath ⟨vertex G i, vertex G i, backtrackPath G h⟩ : pathAlgebra k (DoubledQuiver G)) := by
   have hx : (⟨vertex G i, vertex G i, backtrackPath G h⟩ :
       Quiver.TotalPath (DoubledQuiver G)) = dartBacktrack G ⟨(i, j), h⟩ := rfl
@@ -346,12 +348,12 @@ edge: the class of the backtrack along that edge. For a general skew parameter t
 depend on the choice, since the backtracks at a vertex are unit multiples of one another. -/
 noncomputable def skewZigzagVolume {i : V} (e : {j : V // G.Adj i j}) :
     skewZigzagQuotient k G c :=
-  skewZigzagMk k G c (backtrackElem G k e.2)
+  skewZigzagMk k G c (backtrackElem G k e.property)
 
 /-- The chosen skew-zigzag volume is represented by the backtrack along its chosen incident
 edge. -/
 theorem skewZigzagVolume_def {i : V} (e : {j : V // G.Adj i j}) :
-    skewZigzagVolume k G c e = skewZigzagMk k G c (backtrackElem G k e.2) := (rfl)
+    skewZigzagVolume k G c e = skewZigzagMk k G c (backtrackElem G k e.property) := (rfl)
 
 /-- The class of any backtrack is the prescribed unit multiple of the volume class of its base
 vertex. The reference edge `e` must be supplied explicitly: it cannot be inferred from the
@@ -359,8 +361,8 @@ backtrack on the left-hand side, so this is intentionally not a global simp lemm
 theorem skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume {i j : V}
     (e : {j' : V // G.Adj i j'}) (h : G.Adj i j) :
     skewZigzagMk k G c (backtrackElem G k h)
-      = (c.ratio h e.2 : k) • skewZigzagVolume k G c e :=
-  skewZigzagMk_backtrackElem_eq_smul k G c h e.2
+      = (c.ratio h e.property : k) • skewZigzagVolume k G c e :=
+  skewZigzagMk_backtrackElem_eq_smul k G c h e.property
 
 /-! ### The basis -/
 
@@ -444,7 +446,7 @@ theorem linearIndependent_skewZigzagBasisFun :
       (funext fun b => skewRescale_ofPath_skewBasisPath k G c t b)
   rw [hfix] at hzz
   refine linearIndependent_iff.mp
-    (linearIndependent_zigzagBasisFun k G fun i => ⟨(t i).1, (t i).2⟩) l ?_
+    (linearIndependent_zigzagBasisFun k G fun i => ⟨(t i).val, (t i).property⟩) l ?_
   have hcomp' : zigzagBasisFun k G = ⇑(zigzagMk k G).toLinearMap ∘
       fun b : ZigzagBasisIndex G => (ofPath (skewBasisPath G t b)) := by
     funext b
@@ -543,7 +545,7 @@ theorem skewZigzagMk_backtrackElem_ne_zero [Nontrivial k] {i j : V} (hij : G.Adj
   have hrescale := skewRescale_mem_zigzagIdeal k G c s hmem
   rw [backtrackElem_eq_ofPath, skewRescale_backtrackPath, ← backtrackElem_eq_ofPath] at hrescale
   have hzero' := (zigzagMk_eq_zero_iff k G).mpr hrescale
-  rw [map_smul, (c.ratio hij (s i ⟨j, hij⟩).2).isUnit.smul_eq_zero] at hzero'
+  rw [map_smul, (c.ratio hij (s i ⟨j, hij⟩).property).isUnit.smul_eq_zero] at hzero'
   have hne := zigzagVolume_ne_zero k G hij
   rw [zigzagVolume_eq_zigzagMk_backtrackElem k G hij] at hne
   exact hne hzero'
@@ -551,7 +553,7 @@ theorem skewZigzagMk_backtrackElem_ne_zero [Nontrivial k] {i j : V} (hij : G.Adj
 /-- The volume class of a vertex relative to a chosen incident edge is nonzero. -/
 theorem skewZigzagVolume_ne_zero [Nontrivial k] {i : V} (e : {j : V // G.Adj i j}) :
     skewZigzagVolume k G c e ≠ 0 := by
-  simpa only [skewZigzagVolume] using skewZigzagMk_backtrackElem_ne_zero k G c e.2
+  simpa only [skewZigzagVolume] using skewZigzagMk_backtrackElem_ne_zero k G c e.property
 
 /-- **No arrow dies in a skew-zigzag relation quotient**: followed by its reverse it gives a
 backtrack class, which is nonzero. -/
@@ -583,7 +585,7 @@ theorem skewZigzagMk_backtrackElem_smul_left_injective {i j : V} (hij : G.Adj i 
   rw [map_sub, map_smul, map_smul, zigzagMk_backtrackElem_eq_zigzagVolume, sub_eq_zero]
     at hzero
   have hcoeff := zigzagVolume_smul_left_injective k G hij hzero
-  exact (c.ratio hij (s i ⟨j, hij⟩).2).isUnit.mul_right_cancel hcoeff
+  exact (c.ratio hij (s i ⟨j, hij⟩).property).isUnit.mul_right_cancel hcoeff
 
 /-- **Scalar coefficients of an arrow are unique**: scalar multiplication of an arrow class of a
 skew-zigzag relation quotient is injective, even over a commutative ring with zero divisors. -/
@@ -688,6 +690,8 @@ theorem skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_eq_zero {i j : V}
     k G c (fun p => (Submodule.mem_bot k).mpr
       (skewZigzagMk_ofPath_eq_zero_of_not_adj k G c hij h p)) z
 
+end Basis
+
 /-! ### The dimension and the comparison with the ordinary quotient -/
 
 /-- **The dimension of a skew-zigzag relation quotient.** A finite simple graph with no isolated
@@ -710,12 +714,17 @@ theorem finrank_skewZigzagQuotient_of_preconnected [Nontrivial k] [Fintype V] [N
   finrank_skewZigzagQuotient k G c fun i =>
     SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
 
+section Equiv
+
+variable [Finite V] (t : ∀ i : V, {j : V // G.Adj i j})
+
 /-- **A skew-zigzag relation quotient is a linear twist of the ordinary one**: the linear
 isomorphism matching the two vertex, arrow and volume bases. This constructs an isomorphism of the
 underlying modules only; no algebra equivalence is constructed here. -/
 noncomputable def skewZigzagQuotientLinearEquiv :
     skewZigzagQuotient k G c ≃ₗ[k] nonisolatedZigzagQuotient k G :=
-  (skewZigzagBasis k G c t).equiv (zigzagBasis k G fun i => ⟨(t i).1, (t i).2⟩) (Equiv.refl _)
+  (skewZigzagBasis k G c t).equiv (zigzagBasis k G fun i => ⟨(t i).val, (t i).property⟩)
+      (Equiv.refl _)
 
 @[simp]
 theorem skewZigzagQuotientLinearEquiv_skewZigzagBasisFun (b : ZigzagBasisIndex G) :
@@ -723,5 +732,7 @@ theorem skewZigzagQuotientLinearEquiv_skewZigzagBasisFun (b : ZigzagBasisIndex G
       = zigzagBasisFun k G b := by
   rw [← skewZigzagBasis_apply, skewZigzagQuotientLinearEquiv, Module.Basis.equiv_apply,
     Equiv.refl_apply, zigzagBasis_apply]
+
+end Equiv
 
 end TauCeti

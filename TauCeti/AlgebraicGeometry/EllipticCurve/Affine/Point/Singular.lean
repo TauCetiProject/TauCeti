@@ -55,6 +55,11 @@ holds for every Weierstrass curve with vanishing discriminant over any field
 (`WeierstrassCurve.Affine.Point.natCard_torsionBy_dvd_of_Δ_eq_zero`). In the proof of the criterion
 of Néron, Ogg and Shafarevich (Silverman VII.7.1) this bound, applied to the reduced curve,
 excludes bad reduction when the torsion of order prime to the residue characteristic is unramified.
+When moreover `c₄ = 0`, the singular point is a cusp, since `c₄ = (2 α + a₁) ^ 4` for a tangent
+slope `α` (`WeierstrassCurve.Affine.c₄_eq_of_isSingular`), and there is no such torsion at all
+(`WeierstrassCurve.Affine.Point.torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero`). Applied to the
+reduced curve, this is what makes the points with nonsingular reduction at additive reduction free
+of torsion prime to the residue characteristic.
 
 ## Main definitions
 
@@ -74,6 +79,8 @@ excludes bad reduction when the torsion of order prime to the residue characteri
   `F`.
 * `WeierstrassCurve.Affine.Point.natCard_torsionBy_dvd_of_Δ_eq_zero`: the same divisibility over
   any field whenever `Δ = 0`.
+* `WeierstrassCurve.Affine.Point.torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero`: over any field, if
+  `Δ = 0` and `c₄ = 0` then the `n`-torsion is trivial, for `n` invertible in `F`.
 
 ## References
 
@@ -83,8 +90,6 @@ excludes bad reduction when the torsion of order prime to the residue characteri
 public section
 
 namespace WeierstrassCurve.Affine
-
-open Polynomial
 
 variable {F : Type*} [Field F] {W : WeierstrassCurve F} {α : F}
 
@@ -654,17 +659,39 @@ theorem natCard_torsionBy_dvd_of_isSingular (h : W.toAffine.IsSingular x₀ y₀
 theorem natCard_torsionBy_dvd_of_Δ_eq_zero (hΔ : W.Δ = 0) {n : ℕ} (hn : (n : F) ≠ 0) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ∣ n := by
   classical
-  -- over an algebraic closure the curve has a singular point with rational tangent slopes
   let f := algebraMap F (AlgebraicClosure F)
-  obtain ⟨x₀, y₀, h⟩ := exists_isSingular_of_Δ_eq_zero (W.map f).toAffine
-    (by rw [map_Δ, hΔ, _root_.map_zero])
-  obtain ⟨α, hα⟩ := IsAlgClosed.exists_root
-    (C 1 * X ^ 2 + C (W.map f).a₁ * X + C (-(3 * x₀ + (W.map f).a₂)))
-    (by rw [degree_quadratic one_ne_zero]; decide)
-  have hK := natCard_torsionBy_dvd_of_isSingular h (α := α) (by simpa [sub_eq_add_neg] using hα)
-    (n := n) (by rwa [← map_natCast f, _root_.map_ne_zero])
+  -- over an algebraic closure the curve has a singular point with rational tangent slopes
+  obtain ⟨x₀, y₀, α, h, hα⟩ :=
+    (W.map f).toAffine.exists_isSingular_and_tangent_root_of_Δ_eq_zero
+      (by rw [map_Δ, hΔ, _root_.map_zero])
+  have hK := natCard_torsionBy_dvd_of_isSingular h hα (n := n)
+    (by rwa [← map_natCast f, _root_.map_ne_zero])
   exact (AddSubgroup.card_dvd_of_injective (W.torsionMapAlong f n)
     (W.torsionMapAlong_injective f n)).trans hK
+
+/-- **A cuspidal cubic has no torsion prime to the characteristic.** If `Δ = 0` and `c₄ = 0`, the
+singular point is a cusp, and for `n` invertible in `F` the only nonsingular point killed by `n` is
+the point at infinity. Over an algebraic closure the nonsingular points of a cusp form the
+additive group of the field (Silverman III.2.5), which has no `n`-torsion. -/
+theorem torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero (hΔ : W.Δ = 0) (hc₄ : W.c₄ = 0) {n : ℕ}
+    (hn : (n : F) ≠ 0) : AddSubgroup.torsionBy W.toAffine.Point n = ⊥ := by
+  classical
+  let f := algebraMap F (AlgebraicClosure F)
+  obtain ⟨x₀, y₀, α, h, hα⟩ :=
+    (W.map f).toAffine.exists_isSingular_and_tangent_root_of_Δ_eq_zero
+      (by rw [map_Δ, hΔ, _root_.map_zero])
+  -- `c₄ = (2 α + a₁) ^ 4` vanishes, so the singular point is a cusp
+  have hc : 2 * α + (W.map f).a₁ = 0 := by
+    refine (pow_eq_zero_iff (n := 4) (by norm_num)).1 ?_
+    rw [← c₄_eq_of_isSingular h hα, map_c₄, hc₄, _root_.map_zero]
+  -- the cusp is the additive group of the algebraic closure, which has no `n`-torsion
+  have hn' : (n : AlgebraicClosure F) ≠ 0 := by rwa [← map_natCast f, _root_.map_ne_zero]
+  have : Subsingleton (AddSubgroup.torsionBy (W.map f).toAffine.Point n) := by
+    have := TauCeti.subsingleton_torsionBy_of_injective_zsmul (V := AlgebraicClosure F) n
+      fun a b hab ↦ by simpa [hn'] using hab
+    exact ((cuspAddEquiv h hα hc).torsionByCongr n).toEquiv.subsingleton
+  have := (W.torsionMapAlong_injective f n).subsingleton
+  exact AddSubgroup.eq_bot_of_subsingleton _
 
 end Point
 

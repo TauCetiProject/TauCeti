@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Gamma
 
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
 /-!
 # Parameter measurability for the Gamma distribution

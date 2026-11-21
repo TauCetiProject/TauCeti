@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Jensen
+import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 
 /-!
 # Mollification of weakly differentiable functions
@@ -42,6 +44,8 @@ pass to mollifications.
   corresponding classical directional derivative.
 * `TauCeti.HasWeakFDerivOn.hasFDerivAt_convolution_right`: the Fréchet form, identifying the
   derivative with the convolution of the weak derivative field.
+* `TauCeti.HasWeakLineDerivOn.convolution_eq_apply_fderiv_convolution`: mollification commutes
+  with a weak derivative taken through a continuous linear map.
 * `TauCeti.HasWeakLineDerivOn.lineDeriv_convolution_right` and
   `TauCeti.HasWeakFDerivOn.fderiv_convolution_right`: the corresponding derivative equations.
 * `TauCeti.HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le`: for a whole-space
@@ -76,16 +80,10 @@ theorem HasWeakLineDerivOn.hasLineDerivAt_convolution_right {u u' : E → F} {v 
     (hrho_cpt : HasCompactSupport rho) (x : E)
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     HasLineDerivAt ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) ((u' ⋆[(lsmul ℝ ℝ).flip, mu] rho) x) x v := by
-  have hsmooth : ContDiff ℝ ∞ fun t ↦ rho (x - t) := by fun_prop
-  have hcpt : HasCompactSupport fun t ↦ rho (x - t) :=
-    hrho_cpt.comp_homeomorph (Homeomorph.subLeft x)
-  have hsupp : tsupport (fun t ↦ rho (x - t)) ⊆ Omega := fun t ht ↦ by
-    simpa using hx _ (tsupport_comp_subset_preimage rho (f := (x - ·)) (by fun_prop) ht)
-  have hline (t : E) : lineDeriv ℝ (fun s ↦ rho (x - s)) t v = -fderiv ℝ rho (x - t) v := by
-    simpa [Function.comp_def] using ((hrho.differentiable (by simp) (x - t)).hasFDerivAt.comp t
-      ((hasFDerivAt_id t).const_sub x)).hasLineDerivAt v |>.lineDeriv
-  have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul ⟨_, hsmooth, hcpt, hsupp⟩
-  simp only [TestFunction.coe_mk, hline, neg_smul, integral_neg, neg_inj] at hweak
+  have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul
+    (reflectTranslateTestFunction rho x hrho hrho_cpt hx)
+  simp only [lineDeriv_reflectTranslateTestFunction, reflectTranslateTestFunction_apply, neg_smul,
+    integral_neg, neg_inj] at hweak
   convert (hrho_cpt.hasFDerivAt_convolution_right (lsmul ℝ ℝ).flip hu
     (hrho.of_le (by simp)) x).hasLineDerivAt v using 1
   rw [convolution_precompR_apply (lsmul ℝ ℝ).flip hu (hrho_cpt.fderiv ℝ)
@@ -101,6 +99,33 @@ theorem HasWeakLineDerivOn.lineDeriv_convolution_right {u u' : E → F} {v : E}
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     lineDeriv ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) x v = (u' ⋆[(lsmul ℝ ℝ).flip, mu] rho) x :=
   (h.hasLineDerivAt_convolution_right hu rho hrho hrho_cpt x hx).lineDeriv
+
+/-- **Mollification commutes with a weak derivative taken through a continuous linear map.** Let
+`U` be locally integrable, let `y ↦ L (U y)` have weak derivative `U'` on `Omega`, and let `rho` be
+a smooth compactly supported kernel with `x - tsupport rho ⊆ Omega`. Then the mollification
+`g = rho ⋆ U` satisfies `(rho ⋆ U') x = L (∂_v g x)`. -/
+theorem HasWeakLineDerivOn.convolution_eq_apply_fderiv_convolution [mu.IsNegInvariant]
+    [CompleteSpace F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {L : F →L[ℝ] G} {U : E → F} {U' : E → G} {v : E}
+    (hind : HasWeakLineDerivOn mu Omega (fun y ↦ L (U y)) U' v) (hU : LocallyIntegrable U mu)
+    {rho : E → ℝ} (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho) {x : E}
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
+    (rho ⋆[lsmul ℝ ℝ, mu] U') x = L (fderiv ℝ (rho ⋆[lsmul ℝ ℝ, mu] U) x v) := by
+  set g := rho ⋆[lsmul ℝ ℝ, mu] U with hg_def
+  have hgd : HasFDerivAt g (fderiv ℝ g x) x :=
+    ((hrho_cpt.contDiff_convolution_left _ (hrho.of_le (by simp)) hU :
+      ContDiff ℝ 1 g).differentiable one_ne_zero x).hasFDerivAt
+  -- `L ∘ g` is the mollification of `L ∘ U`, so its derivative is the mollification of `U'`.
+  have hLg : (fun y ↦ L (g y)) = (fun y ↦ L (U y)) ⋆[(lsmul ℝ ℝ).flip, mu] rho := by
+    ext1 y
+    rw [convolution_flip, hg_def,
+      L.convolution_lsmul_comp_comm (hrho_cpt.convolutionExists_left _ hrho.continuous hU y)]
+  have h₁ : HasLineDerivAt ℝ (fun y ↦ L (g y)) ((U' ⋆[(lsmul ℝ ℝ).flip, mu] rho) x) x v := by
+    rw [hLg]
+    exact hind.hasLineDerivAt_convolution_right
+      (fun y ↦ L.integrableAtFilter_comp (hU y)) rho hrho hrho_cpt x hx
+  rw [← convolution_flip]
+  exact h₁.unique ((L.hasFDerivAt.comp x hgd).hasLineDerivAt v)
 
 /-- **The Fréchet derivative of a mollification is the mollification of the weak derivative.**
 If `U` is a weak derivative field of `u` on `Omega` and both are locally integrable on the whole

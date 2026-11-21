@@ -16,7 +16,8 @@ This file adds suprema to the lightweight `Subcoalgebra` structure. The supremum
 of subcoalgebras has underlying submodule the supremum of the underlying submodules; the
 comultiplication is stable because each summand lies in the inverse image under `Δ` of the
 larger submodule's tensor square. The universal property of the submodule supremum then gives
-the same containment for the join.
+the same containment for the join. These constructions use only `CoalgebraStruct`, without
+the coalgebra axioms.
 
 ## Main declarations
 
@@ -41,7 +42,7 @@ namespace TauCeti
 universe u v
 
 variable {R : Type u} {C : Type v}
-variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
 
 namespace Subcoalgebra
 
@@ -70,7 +71,7 @@ instance instSupSet : SupSet (Subcoalgebra R C) where
         change (⨆ D : S, (D : Subcoalgebra R C).toSubmodule) ≤
           (LinearMap.range (TensorProduct.map _ _)).comap Coalgebra.comul
         exact iSup_le fun D _ hc ↦
-          TensorProduct.range_mapIncl_mono (le_iSup _ D) (le_iSup _ D) (D.1.comul_mem hc) }
+          TensorProduct.range_mapIncl_mono (le_iSup _ D) (le_iSup _ D) (D.val.comul_mem hc) }
 
 /-- The underlying submodule of the join is the join of the underlying submodules. -/
 @[simp]
@@ -171,7 +172,7 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (Subcoalgebra R C) 
     · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
       exact le_iSup (fun E : S ↦ (E : Subcoalgebra R C).toSubmodule) ⟨D, hD⟩
     · rw [← toSubmodule_le_toSubmodule, sSup_toSubmodule]
-      exact iSup_le fun E ↦ toSubmodule_le_toSubmodule.2 (hD E.2)
+      exact iSup_le fun E ↦ toSubmodule_le_toSubmodule.2 (hD E.property)
 
 /-- The join of finitely generated subcoalgebras is finitely generated as an `R`-module. -/
 theorem sup_finite (D E : Subcoalgebra R C)

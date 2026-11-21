@@ -10,9 +10,10 @@ public import TauCeti.Analysis.Complex.Conformal.Removability.Basic
 /-!
 # Painlevé removability across a circle
 
-A circle is a removable set for continuous holomorphic functions: if `F` is continuous on an open
-set `Ω ⊆ ℂ` and holomorphic on `Ω` off a positive-radius circle, then `F` is holomorphic on all of
-`Ω`.
+A circle is a removable set for continuous holomorphic functions: if `F`, with values in a complex
+Banach space, is continuous on an open set `Ω ⊆ ℂ` and holomorphic on `Ω` off a circle, then `F` is
+holomorphic on all of `Ω`. A circle of non-positive radius is empty or a point, handled by line
+removability.
 
 The proof reduces to Painlevé removability of the real axis from
 `Conformal/Removability/Basic.lean`. Two fractional-linear charts cover the circle, with each
@@ -24,6 +25,8 @@ public section
 namespace TauCeti
 
 open Complex Metric Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
 /-- A fractional-linear parametrisation of the circle centred at `c` through `c + a`.
 It maps the real axis to that circle and omits `c + a`. -/
@@ -126,7 +129,7 @@ private lemma circleLineMap_mem_sphere_iff {c a w : ℂ}
     rw [hquot, mul_one]
 
 private theorem differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere_omit
-    {Ω : Set ℂ} {F : ℂ → ℂ} {c a : ℂ} (ha : a ≠ 0)
+    {Ω : Set ℂ} {F : ℂ → E} {c a : ℂ} (ha : a ≠ 0)
     (hΩ : IsOpen Ω) (hcont : ContinuousOn F Ω)
     (hdiff : DifferentiableOn ℂ F (Ω \ sphere c ‖a‖)) :
     DifferentiableOn ℂ F (Ω \ {c + a}) := by
@@ -162,13 +165,20 @@ private theorem differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere
     dsimp only [φ, ψ]
     rw [circleLineMap_circleLineMapInv ha (by simpa using hz.2)]
 
-/-- **Painlevé removability across a circle.** A function continuous on an open set `Ω ⊆ ℂ`
-and holomorphic off a positive-radius circle is holomorphic throughout `Ω`. -/
+/-- **Painlevé removability across a circle.** A function from `ℂ` to a complex Banach space,
+continuous on an open set `Ω ⊆ ℂ` and holomorphic off a circle, is holomorphic throughout `Ω`. For
+a negative radius the circle is empty, and for radius `0` it is a single point. -/
 theorem differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere
-    {Ω : Set ℂ} {F : ℂ → ℂ} {c : ℂ} {r : ℝ} (hr : 0 < r)
+    {Ω : Set ℂ} {F : ℂ → E} {c : ℂ} {r : ℝ}
     (hΩ : IsOpen Ω) (hcont : ContinuousOn F Ω)
     (hdiff : DifferentiableOn ℂ F (Ω \ sphere c r)) :
     DifferentiableOn ℂ F Ω := by
+  by_cases hr : r ≤ 0
+  · refine differentiableOn_of_continuousOn_of_differentiableOn_diff_of_subset_range_lineMap
+      (p := c) (q := c) (fun z hz => ?_) hΩ hcont hdiff
+    have hzc : z = c := dist_le_zero.mp (by rwa [mem_sphere.mp hz])
+    exact ⟨0, by simp [hzc]⟩
+  rw [not_le] at hr
   have hr0 : (r : ℂ) ≠ 0 := ofReal_ne_zero.mpr hr.ne'
   have hpos :=
     differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere_omit

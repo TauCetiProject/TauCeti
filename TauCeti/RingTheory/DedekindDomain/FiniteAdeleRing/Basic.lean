@@ -306,7 +306,8 @@ would say that the whole finite adele ring carries the product topology. -/
 theorem isEmbedding_coe_sIntegralAdeles {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     Topology.IsEmbedding fun a : sIntegralAdeles R K S ↦ ⇑(a : FiniteAdeleRing R K) :=
   TauCeti.isEmbedding_restrictedProduct_coe_comp
-    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦ a.2
+    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦
+        a.property
 
 /-- The diagonal image of an element of `K` in the finite adele ring is `S`-integral exactly when
 the element is an `S`-integer: the `S`-integral finite adeles meet `K` in `S.integer K`. It takes
@@ -325,6 +326,14 @@ theorem algebraMap_mem_integralAdeles_iff (x : K) :
     algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K ↔ x ∈ (algebraMap R K).range := by
   rw [← sIntegralAdeles_empty, algebraMap_mem_sIntegralAdeles_iff, Set.mem_integer_empty_iff,
     RingHom.mem_range]
+
+/-- Subtracting the diagonal image of `x + y`, for `y ∈ R`, from a finite adele that is integral
+after subtracting the diagonal image of `x` keeps it integral. -/
+theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R K} {x : K}
+    (hx : f - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K) (y : R) :
+    f - algebraMap K (FiniteAdeleRing R K) (x + algebraMap R K y) ∈ integralAdeles R K := by
+  rw [map_add, ← IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), sub_add_eq_sub_sub]
+  exact sub_mem hx ((integralAdeles R K).algebraMap_mem y)
 
 end IsDedekindDomain.FiniteAdeleRing
 
@@ -345,7 +354,8 @@ theorem mul_nonZeroDivisor_mem_integralAdeles (a : FiniteAdeleRing R K) :
     ∃ b ∈ nonZeroDivisors R, a * algebraMap R (FiniteAdeleRing R K) b ∈ integralAdeles R K := by
   classical
   -- `a` is integral outside a finite set of places, and each of those has its own denominator
-  have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp a.2
+  have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp
+      a.property
   choose b hb0 hb using fun v ↦
     adicCompletion.mul_nonZeroDivisor_mem_adicCompletionIntegers v (a v)
   refine ⟨∏ v ∈ hT.toFinset, b v, prod_mem fun v _ ↦ hb0 v, mem_integralAdeles.mpr fun v ↦ ?_⟩

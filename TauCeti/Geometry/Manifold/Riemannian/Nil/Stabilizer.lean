@@ -154,8 +154,8 @@ private theorem differential_inner (Φ : Isom J Nil) (hΦ : Φ 1 = 1) (u v : P) 
 private theorem exists_differential_orthogonal (Φ : Isom J Nil) (hΦ : Φ 1 = 1) :
     ∃ g : Matrix.orthogonalGroup (Fin 2) ℝ, ∀ u : P,
       differential Φ u =
-        (g.1 0 0 * u.1 + g.1 0 1 * u.2.1,
-          g.1 1 0 * u.1 + g.1 1 1 * u.2.1, g.1.det * u.2.2) := by
+        (g.val 0 0 * u.1 + g.val 0 1 * u.2.1,
+          g.val 1 0 * u.1 + g.val 1 1 * u.2.1, g.val.det * u.2.2) := by
   -- Ricci preservation splits off the central line; metric preservation makes
   -- the remaining two columns orthonormal.
   obtain ⟨c, hc, hz, hr⟩ := differential_rotation Φ hΦ
@@ -185,8 +185,6 @@ private theorem exists_differential_orthogonal (Φ : Isom J Nil) (hΦ : Φ 1 = 1
   have hx := congrArg Prod.fst hrot
   have hy := congrArg (fun v : P => v.2.1) hrot
   simp only [rotation, Prod.smul_fst, Prod.smul_snd, smul_eq_mul] at hx hy
-  have hcx : c * (L e₂).1 = -(L e₁).2.1 := by linarith
-  have hcy : c * (L e₂).2.1 = (L e₁).1 := by linarith
   let A : Matrix (Fin 2) (Fin 2) ℝ :=
     !![(L e₁).1, (L e₂).1; (L e₁).2.1, (L e₂).2.1]
   have hA : A ∈ Matrix.orthogonalGroup (Fin 2) ℝ := by

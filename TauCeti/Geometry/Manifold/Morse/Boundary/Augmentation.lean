@@ -26,14 +26,9 @@ boundary `∂` in its lowest and highest degrees.
   of index `n`, is a cycle: `∂ [M] = 0`. Dually, the stable manifold of a critical point of index
   `n - 1` consists of two trajectories, each starting at a critical point of index `n`.
 
-When `f` has a single critical point of index `0`, it follows that `∂` has no coefficient into
-index `0`, and when `f` has a single critical point of index `n`, that `∂` has no coefficient out of
-index `n`. On a closed surface, where `∂` only lowers the index from `2` to `1` or from `1` to `0`,
-a Morse function with a single minimum and a single maximum therefore has zero mod-two Morse
-boundary for every Morse–Smale pseudo-gradient. For instance, the sum of the two height functions
-on the torus `S¹ × S¹` has one critical point of index `0`, two of index `1` and one of index `2`,
-so for such a function the mod-two Morse complex is `𝔽₂`, `𝔽₂²` and `𝔽₂` in degrees `2`, `1` and
-`0` with zero differential, which is the mod-two homology of the torus.
+The special case of a single critical point of index `0` or of index `n`, and the resulting
+vanishing of the mod-two Morse boundary on a closed surface with one minimum and one maximum, is
+in `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two`.
 
 These identities do not use `∂ ∘ ∂ = 0`, which needs the gluing of index-two trajectories.
 
@@ -41,12 +36,15 @@ These identities do not use `∂ ∘ ∂ = 0`, which needs the gluing of index-t
 
 * `TauCeti.morseAugmentation`: the augmentation of the mod-two Morse chains.
 * `TauCeti.morseFundamentalChain`: the sum of the critical points of top index.
+* In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`,
+  `exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one`: the trajectories leaving a critical
+  point of index `1` are the crossings of two orbits, and dually
+  `exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank` for the trajectories reaching a
+  critical point of index `n - 1`.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseAugmentation_comp_morseBoundary`:
   `ε ∘ ∂ = 0`.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_morseFundamentalChain`:
   `∂ [M] = 0`.
-* `IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two_of_subsingleton`:
-  on a surface, a Morse function with one minimum and one maximum has zero mod-two Morse boundary.
 
 ## References
 
@@ -95,7 +93,7 @@ private theorem mem_map_filter_manifoldMorseIndex_iff [Fintype (criticalPoints �
   simp only [Finset.mem_map, Finset.mem_filter, Finset.mem_univ, true_and, Embedding.coe_subtype]
   refine ⟨?_, fun ⟨hx, hxk⟩ ↦ ⟨⟨x, mem_criticalPoints_iff_mfderiv_eq_zero.2 hx⟩, hxk, rfl⟩⟩
   rintro ⟨p, hp, rfl⟩
-  exact ⟨mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2, hp⟩
+  exact ⟨mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property, hp⟩
 
 /-- A sum of mod-two coefficients over a finite set `S` of critical points vanishes when each
 coefficient counts a set `s p` and these counts add up to `2`. -/
@@ -108,6 +106,22 @@ private theorem sum_eq_zero_of_sum_ncard_eq_two {S : Finset (criticalPoints 𝓘
   simp only [Embedding.coe_subtype] at hcount
   rw [Finset.sum_congr rfl hc, ← Nat.cast_sum, hcount]
   exact ZMod.natCast_self 2
+
+/-- If the sets `s x` for `x ∈ T` are the images under an injective `w : Fin 2 → β` of the
+fibres of a labelling `a : Fin 2 → α` with values in `T`, their sizes add up to `2`. -/
+private theorem sum_ncard_eq_two_of_eq_image {α β : Type*} {T : Finset α} {s : α → Set β}
+    {w : Fin 2 → β} {a : Fin 2 → α}
+    (hwinj : Injective w) (ha : ∀ i, a i ∈ T) (hs : ∀ x ∈ T, s x = w '' {i | a i = x}) :
+    ∑ x ∈ T, (s x).ncard = 2 := by
+  classical
+  calc ∑ x ∈ T, (s x).ncard
+      = ∑ x ∈ T, (Finset.univ.filter fun i ↦ a i = x).card :=
+        Finset.sum_congr rfl fun x hx ↦ by
+          rw [hs x hx, ncard_image_of_injective _ hwinj, ← ncard_coe_finset, Finset.coe_filter]
+          simp
+    _ = (Finset.univ : Finset (Fin 2)).card :=
+        (Finset.card_eq_sum_card_fiberwise fun i _ ↦ ha i).symm
+    _ = 2 := by simp
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M]
 
@@ -135,18 +149,20 @@ namespace IsMorseSmale
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
 include h hf
 
-/-- **Two trajectories reach a critical point of index `n - 1`.** Summed over the critical points
-`p` of index `n`, the numbers of trajectories from `p` to a critical point `q` of index `n - 1` add
-up to `2`. Here `T` is the finite set of critical points of index `n`. -/
-private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
+/-- **The trajectories reaching a critical point of index `n - 1`.** If `q` is a critical point of
+index `n - 1`, there are two points `w 0` and `w 1` on different orbits, on trajectories to `q` from
+critical points `a 0` and `a 1` of index `n`, such that for every point `p ≠ q` the trajectories
+from `p` to `q` are the points `w i` with `a i = p`. -/
+theorem exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank {q : M}
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E) {T : Finset M}
-    (hT : ∀ p, p ∈ T ↔
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
-    ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard = 2 := by
-  classical
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  obtain ⟨y₁, y₂, hy₁, hy₂, hdisj, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hfd hq hind
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E) :
+    ∃ w a : Fin 2 → M,
+      (∀ i, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (a i) = 0 ∧
+        manifoldMorseIndex 𝓘(ℝ, E) f (a i) = finrank ℝ E) ∧
+      (∀ i, w i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q) ∧
+      w 1 ∉ hX.flow.orbit (w 0) ∧ Injective w ∧
+      ∀ p, p ≠ q → hX.morseTrajectorySlice p q = w '' {i | a i = p} := by
+  obtain ⟨y₁, y₂, hy₁, hy₂, hdisj, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hq hind
   set y : Fin 2 → M := ![y₁, y₂] with hy
   have hW' : hX.flow.stableSet q = insert q (⋃ i, hX.flow.orbit (y i)) := by
     ext w
@@ -158,35 +174,70 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
     ⟨Flow.mem_unstableSet.2 (hlim i),
       hW' ▸ mem_insert_of_mem _ (mem_iUnion.2 ⟨i, Flow.mem_orbit_self _ _⟩)⟩
   have haq (i : Fin 2) : a i ≠ q := fun he ↦
-    hyq i (hX.eq_of_mem_unstableSet_inter_stableSet hfd (he ▸ hmem i))
-  have hTa (i : Fin 2) : a i ∈ T := by
-    refine (hT _).2 ⟨ha i, le_antisymm manifoldMorseIndex_le_finrank ?_⟩
-    have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (ha i) hq (haq i)
-      (hmem i) (h.span_mtangentConeAt_sup_eq_top (ha i) hq (hmem i))
+    hyq i (hX.eq_of_mem_unstableSet_inter_stableSet (he ▸ hmem i))
+  have hind' (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ, E) f (a i) = finrank ℝ E := by
+    refine le_antisymm manifoldMorseIndex_le_finrank ?_
+    have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (haq i)
+      (hmem i) (h.span_mtangentConeAt_sup_eq_top (hmem i))
     omega
   -- The `i`-th orbit crosses the middle level between `a i` and `q` at the time `τ i`.
-  have hcross (i : Fin 2) : ∃ t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 :=
-    (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hfd (haq i)
-      (hmem i)).exists
-  choose τ hτ using hcross
-  -- The crossings are distinct, since they lie on the disjoint orbits of `y₁` and `y₂`.
-  have hz : Injective fun i ↦ hX.flow (τ i) (y i) := by
+  choose τ hτ using fun i ↦
+    (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (haq i) (hmem i)).exists
+  -- The crossings lie on the disjoint orbits of `y₁` and `y₂`.
+  have hw1 : hX.flow (τ 1) (y 1) ∉ hX.flow.orbit (hX.flow (τ 0) (y 0)) := by
+    rw [Flow.orbit_apply]
+    exact fun hw ↦ hdisj.ne_of_mem hw (hX.flow.mem_orbit _ (τ 1)) rfl
+  have hwinj : Injective fun i ↦ hX.flow (τ i) (y i) := by
     have hne := hdisj.ne_of_mem (hX.flow.mem_orbit _ (τ 0)) (hX.flow.mem_orbit _ (τ 1))
     intro i j hij
     fin_cases i <;> fin_cases j
     exacts [rfl, (hne hij).elim, (hne hij.symm).elim, rfl]
+  refine ⟨_, a, fun i ↦ ⟨ha i, hind' i⟩,
+    fun i ↦ ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hmem i).1,
+      (Flow.apply_mem_stableSet_iff _ _).2 (hmem i).2⟩, hw1, hwinj, fun p hpq ↦ ?_⟩
   -- The trajectories from `p` to `q` are the crossings of the orbits starting at `p`.
-  calc ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard
-      = ∑ p ∈ T, (Finset.univ.filter fun i ↦ a i = p).card :=
-        Finset.sum_congr rfl fun p hp ↦ by
-          have hpq : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f)
-            (by have := ((hT p).1 hp).2; omega)
-          rw [hX.morseTrajectorySlice_eq_image_of_stableSet_subset hfd hq hpq hW'.subset hmem haq
-            hτ, ncard_image_of_injective _ hz, ← ncard_coe_finset, Finset.coe_filter]
-          simp
-    _ = (Finset.univ : Finset (Fin 2)).card :=
-        (Finset.card_eq_sum_card_fiberwise (by intro i _; simpa using hTa i)).symm
-    _ = 2 := by simp
+  exact hX.morseTrajectorySlice_eq_image_of_stableSet_subset hpq hW'.subset hmem hτ
+
+/-- **The trajectories leaving a critical point of index `1`.** If `p` is a critical point of index
+`1`, there are two points `w 0` and `w 1` on different orbits, on trajectories from `p` to critical
+points `b 0` and `b 1` of index `0`, such that for every point `q ≠ p` the trajectories from `p`
+to `q` are the points `w i` with `b i = q`. -/
+theorem exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one {p : M}
+    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = 1) :
+    ∃ w b : Fin 2 → M,
+      (∀ i, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (b i) = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f (b i) = 0) ∧
+      (∀ i, w i ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet (b i)) ∧
+      w 1 ∉ hX.flow.orbit (w 0) ∧ Injective w ∧
+      ∀ q, p ≠ q → hX.morseTrajectorySlice p q = w '' {i | b i = q} := by
+  -- Reversing the flow turns the trajectories leaving `p` into those of `-X` reaching `p`.
+  have hsum (x : M) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :=
+    (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+      ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  obtain ⟨w, b, hb, hmem, hw1, hwinj, hslice⟩ :=
+    exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank (h.neg hf) hf.neg
+      (mfderiv_neg_eq_zero_iff.2 hp) (by have := hsum p hp; omega)
+  refine ⟨w, b, fun i ↦ ?_, fun i ↦ ?_, ?_, hwinj, fun q hpq ↦ ?_⟩
+  · have hbi := mfderiv_neg_eq_zero_iff.1 (hb i).1
+    have := hsum _ hbi
+    exact ⟨hbi, by have := (hb i).2; omega⟩
+  · simpa only [hX.neg_flow hf, Flow.unstableSet_reverse, Flow.stableSet_reverse,
+      inter_comm] using hmem i
+  · simpa only [hX.neg_flow hf, Flow.orbit_reverse] using hw1
+  · rw [← hX.neg_morseTrajectorySlice hf, hslice q hpq.symm]
+
+/-- **Two trajectories reach a critical point of index `n - 1`.** Summed over the critical points
+`p` of index `n`, the numbers of trajectories from `p` to a critical point `q` of index `n - 1` add
+up to `2`. Here `T` is the finite set of critical points of index `n`. -/
+private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E) {T : Finset M}
+    (hT : ∀ p, p ∈ T ↔
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    ∑ p ∈ T, (hX.morseTrajectorySlice p q).ncard = 2 := by
+  obtain ⟨w, a, ha, -, -, hwinj, hslice⟩ :=
+    exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank h hf hq hind
+  refine sum_ncard_eq_two_of_eq_image hwinj (fun i ↦ (hT _).2 (ha i)) fun p hp ↦ hslice p ?_
+  exact ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by have := ((hT p).1 hp).2; omega)
 
 /-- **Two trajectories leave a critical point of index `1`.** Summed over the critical points `q`
 of index `0`, the numbers of trajectories from a critical point `p` of index `1` to `q` add up to
@@ -196,17 +247,10 @@ private theorem sum_ncard_morseTrajectorySlice_of_eq_one {p : M}
     {T : Finset M}
     (hT : ∀ q, q ∈ T ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f q = 0) :
     ∑ q ∈ T, (hX.morseTrajectorySlice p q).ncard = 2 := by
-  -- Reversing the flow turns this into the count of trajectories reaching `p` for `-X`.
-  have hsum (x : M) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :=
-    (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
-      ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-  simp_rw [← hX.neg_morseTrajectorySlice hf]
-  refine sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank (h.neg hf) hf.neg
-    (mfderiv_neg_eq_zero_iff.2 hp) (by have := hsum p hp; omega) fun q ↦ ?_
-  rw [hT q, mfderiv_neg_eq_zero_iff]
-  refine and_congr_right fun hq ↦ ?_
-  have := hsum q hq
-  constructor <;> intro <;> omega
+  obtain ⟨w, b, hb, -, -, hwinj, hslice⟩ :=
+    exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one h hf hp hind
+  refine sum_ncard_eq_two_of_eq_image hwinj (fun i ↦ (hT _).2 (hb i)) fun q hq ↦ hslice q ?_
+  exact ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by rw [hind, ((hT q).1 hq).2]; omega)
 
 /-- The coefficients of the boundary of the critical points of index `n` at a critical point `q`
 add up to zero. -/
@@ -219,7 +263,7 @@ private theorem sum_morseBoundaryCoeff_of_eq_finrank [Fintype (criticalPoints �
   · exact sum_eq_zero_of_sum_ncard_eq_two (s := fun x ↦ hX.morseTrajectorySlice x q)
       (fun p hp ↦ h.morseBoundaryCoeff_eq_ncard hf ((Finset.mem_filter.1 hp).2.trans hq.symm))
       (sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank h hf
-        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hq
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) hq
         fun _ ↦ mem_map_filter_manifoldMorseIndex_iff)
   · exact Finset.sum_eq_zero fun p hp ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf
       (by rw [(Finset.mem_filter.1 hp).2]; omega)
@@ -235,7 +279,7 @@ private theorem sum_morseBoundaryCoeff_of_eq_zero [Fintype (criticalPoints 𝓘(
   · exact sum_eq_zero_of_sum_ncard_eq_two (s := hX.morseTrajectorySlice p)
       (fun q hq ↦ h.morseBoundaryCoeff_eq_ncard hf (by rw [hp, (Finset.mem_filter.1 hq).2]))
       (sum_ncard_morseTrajectorySlice_of_eq_one h hf
-        (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) hp
         fun _ ↦ mem_map_filter_manifoldMorseIndex_iff)
   · exact Finset.sum_eq_zero fun q hq ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf
       (by rw [(Finset.mem_filter.1 hq).2]; exact hp)
@@ -269,52 +313,6 @@ theorem morseBoundary_morseFundamentalChain :
   rw [morseBoundary_apply, Finsupp.zero_apply, Finsupp.sum_fintype _ _ (by simp)]
   simp only [morseFundamentalChain_apply, ite_mul, one_mul, zero_mul, ← Finset.sum_filter,
     sum_morseBoundaryCoeff_of_eq_finrank h hf q]
-
-/-- **No boundary into a unique minimum.** If `f` has a single critical point of index `0`, the
-mod-two Morse boundary has no coefficient at it. -/
-theorem morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_zero
-    (hmin : {q : criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f q = 0}.Subsingleton)
-    (p : criticalPoints 𝓘(ℝ, E) f) {q : criticalPoints 𝓘(ℝ, E) f}
-    (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) : h.morseBoundaryCoeff hf p q = 0 := by
-  classical
-  have := hf.finite_criticalPoints.fintype
-  have hsum := sum_morseBoundaryCoeff_of_eq_zero h hf p
-  rwa [Finset.sum_eq_single_of_mem q (by simpa using hq)
-    fun q' hq' hne ↦ (hne (hmin (by simpa using hq') hq)).elim] at hsum
-
-/-- **No boundary out of a unique maximum.** If `f` has a single critical point of index `n`, the
-mod-two Morse boundary of that point is zero. -/
-theorem morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_finrank
-    (hmax : {p : criticalPoints 𝓘(ℝ, E) f |
-      manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E}.Subsingleton)
-    {p : criticalPoints 𝓘(ℝ, E) f} (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E)
-    (q : criticalPoints 𝓘(ℝ, E) f) : h.morseBoundaryCoeff hf p q = 0 := by
-  classical
-  have := hf.finite_criticalPoints.fintype
-  have hsum := sum_morseBoundaryCoeff_of_eq_finrank h hf q
-  rwa [Finset.sum_eq_single_of_mem p (by simpa using hp)
-    fun p' hp' hne ↦ (hne (hmax (by simpa using hp') hp)).elim] at hsum
-
-/-- **The mod-two Morse boundary on a surface with one minimum and one maximum vanishes.** On a
-compact surface, if `f` has a single critical point of index `0` and a single critical point of
-index `2`, then the mod-two Morse boundary of every Morse–Smale pseudo-gradient adapted to `f` is
-zero, so the mod-two Morse complex has zero differential. -/
-theorem morseBoundary_eq_zero_of_finrank_eq_two_of_subsingleton (hE : finrank ℝ E = 2)
-    (hmin : {q : criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f q = 0}.Subsingleton)
-    (hmax : {p : criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f p = 2}.Subsingleton) :
-    h.morseBoundary hf = 0 := by
-  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
-  rw [morseBoundary_single_apply, LinearMap.zero_apply, Finsupp.zero_apply]
-  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
-  · -- The boundary lowers the index from `1` to `0` or from `2` to `1`.
-    have hp2 : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ finrank ℝ E := manifoldMorseIndex_le_finrank
-    rcases (by omega : manifoldMorseIndex 𝓘(ℝ, E) f q = 0 ∨
-        manifoldMorseIndex 𝓘(ℝ, E) f p = 2) with hq | hp
-    · rw [h.morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_zero hf hmin p hq,
-        mul_zero]
-    · rw [h.morseBoundaryCoeff_eq_zero_of_subsingleton_of_morseIndex_eq_finrank hf (by rwa [hE])
-        (hp.trans hE.symm) q, mul_zero]
-  · rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hpq, mul_zero]
 
 end IsMorseSmale
 

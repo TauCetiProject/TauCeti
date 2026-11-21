@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.PiTensorProduct.ZMod
+import TauCeti.Algebra.Algebra.ULift
+public import TauCeti.RingTheory.PiTensorProduct.Surjective
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
 /-!
@@ -45,23 +46,23 @@ noncomputable def tensorInducedTrivialZModEquiv (U : Subgroup G) (s : U.LeftTran
     (U.tensorInducedRepresentation s
       (Representation.trivial ℤ U (ULift.{v} (ZMod n)))).Equiv
       (Representation.trivial ℤ G (ULift.{v} (ZMod n))) :=
-  Representation.Equiv.mk (PiTensorProduct.uliftZModEquiv n) fun g ↦ by
+  Representation.Equiv.mk (PiTensorProduct.constantAlgEquivOfSurjective
+      (ULift.algebraMap_surjective (ZMod.ringHom_surjective _))).toLinearEquiv fun g ↦ by
     apply PiTensorProduct.ext
     apply MultilinearMap.ext
     intro x
     simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply,
       tensorInducedRepresentation_apply_tprod, Representation.trivial_apply,
-      LinearEquiv.coe_coe, PiTensorProduct.uliftZModEquiv_tprod]
-    apply ULift.ext
-    exact (Equiv.prod_comp (MulAction.toPerm g⁻¹) fun i ↦ (x i).down)
+      LinearEquiv.coe_coe, AlgEquiv.coe_toLinearEquiv,
+      PiTensorProduct.constantAlgEquivOfSurjective_tprod]
+    exact Equiv.prod_comp (MulAction.toPerm g⁻¹) x
 
 /-- On a pure tensor, the equivalence from the tensor-induced trivial representation multiplies
-the underlying `ZMod n` values. -/
+the tensor factors. -/
 @[simp]
 theorem tensorInducedTrivialZModEquiv_apply_tprod (U : Subgroup G) (s : U.LeftTransversal)
     [Fintype (G ⧸ U)] (x : G ⧸ U → ULift.{v} (ZMod n)) :
-    U.tensorInducedTrivialZModEquiv n s (PiTensorProduct.tprod ℤ x) =
-      ULift.up (∏ i, (x i).down) := by
+    U.tensorInducedTrivialZModEquiv n s (PiTensorProduct.tprod ℤ x) = ∏ i, x i := by
   simp [tensorInducedTrivialZModEquiv]
 
 /-- Tensor induction sends the trivial `ZMod n`-representation of a finite-index subgroup to the

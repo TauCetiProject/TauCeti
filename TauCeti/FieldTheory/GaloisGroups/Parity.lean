@@ -29,9 +29,7 @@ of the splitting extension uses `Polynomial.Gal.galActionHom_eq_permCongr`.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial.Gal
 
 universe u v
 
@@ -40,7 +38,7 @@ variable {F : Type u} [Field F]
 open scoped Classical in
 /-- The parity character of the action of `p.Gal` on the distinct roots of `p` in its splitting
 field. It takes values in `ℤˣ`, independently of the characteristic of the base field. -/
-noncomputable def _root_.Polynomial.Gal.sign (p : F[X]) : p.Gal →* ℤˣ :=
+noncomputable def sign (p : F[X]) : p.Gal →* ℤˣ :=
   letI : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
   Equiv.Perm.sign.comp (Gal.galActionHom p p.SplittingField)
@@ -50,7 +48,7 @@ variable (p : F[X]) (E : Type v) [Field E] [Algebra F E]
 
 open scoped Classical in
 /-- The parity character is the sign composed with the root action in the splitting field. -/
-theorem _root_.Polynomial.Gal.sign_def :
+theorem sign_def :
     Gal.sign p = Equiv.Perm.sign.comp
       (letI : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
         ⟨IsSplittingField.splits p.SplittingField p⟩
@@ -60,7 +58,7 @@ open scoped Classical in
 /-- The sign of a Galois automorphism can be read in any extension in which the polynomial
 splits. Thus the character does not depend on the choice of splitting extension. -/
 @[simp]
-theorem _root_.Polynomial.Gal.sign_galActionHom (g : p.Gal) :
+theorem sign_galActionHom (g : p.Gal) :
     Equiv.Perm.sign (Gal.galActionHom p E g) = Gal.sign p g := by
   let : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
@@ -71,7 +69,7 @@ open scoped Classical in
 /-- Composing the root action in any splitting extension with the permutation sign gives the
 intrinsic parity character. -/
 @[simp]
-theorem _root_.Polynomial.Gal.sign_comp_galActionHom :
+theorem sign_comp_galActionHom :
     Equiv.Perm.sign.comp (Gal.galActionHom p E) = Gal.sign p := by
   apply MonoidHom.ext
   intro g
@@ -80,7 +78,7 @@ theorem _root_.Polynomial.Gal.sign_comp_galActionHom :
 open scoped Classical in
 /-- The kernel of the parity character consists of the automorphisms whose root permutations
 are even, computed in any splitting extension. -/
-theorem _root_.Polynomial.Gal.ker_sign :
+theorem ker_sign :
     (Gal.sign p).ker = (alternatingGroup (p.rootSet E)).comap (Gal.galActionHom p E) := by
   rw [alternatingGroup_eq_sign_ker, MonoidHom.comap_ker,
     Gal.sign_comp_galActionHom]
@@ -88,7 +86,7 @@ theorem _root_.Polynomial.Gal.ker_sign :
 open scoped Classical in
 /-- The parity character is trivial exactly when the Galois image consists of even permutations
 of the roots. No separability or characteristic restriction is needed for this characterization. -/
-theorem _root_.Polynomial.Gal.sign_eq_one_iff_range_le_alternatingGroup :
+theorem sign_eq_one_iff_range_le_alternatingGroup :
     Gal.sign p = 1 ↔ (Gal.galActionHom p E).range ≤ alternatingGroup (p.rootSet E) := by
   rw [alternatingGroup_eq_sign_ker, MonoidHom.range_le_ker_iff,
     Gal.sign_comp_galActionHom]
@@ -106,7 +104,7 @@ discriminant test `Polynomial.Separable.isSquare_discr_iff_range_le_alternatingG
 independently of the root-difference product. In characteristic `2` the separable quadratic
 `X ^ 2 + X + 1` over `ZMod 2` has no root, so its image is odd, while its discriminant is a square
 by `Polynomial.isSquare_discr_of_char_two`. -/
-theorem _root_.Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two
+theorem range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two
     (hsep : p.Separable) (hdeg : p.natDegree = 2) :
     (Gal.galActionHom p E).range ≤ alternatingGroup (p.rootSet E) ↔ ∃ x, p.IsRoot x := by
   rw [alternatingGroup.eq_bot_of_card_le_two (by
@@ -130,11 +128,11 @@ theorem _root_.Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_nat
 root in the base field**, in every characteristic. This is
 `Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two`
 read in the splitting field. -/
-theorem _root_.Polynomial.Gal.sign_eq_one_iff_exists_isRoot_of_natDegree_eq_two
+theorem sign_eq_one_iff_exists_isRoot_of_natDegree_eq_two
     (hsep : p.Separable) (hdeg : p.natDegree = 2) : Gal.sign p = 1 ↔ ∃ x, p.IsRoot x := by
   let _ : Fact ((p.map (algebraMap F p.SplittingField)).Splits) := ⟨SplittingField.splits p⟩
   rw [Gal.sign_eq_one_iff_range_le_alternatingGroup p p.SplittingField]
   exact Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two p p.SplittingField
     hsep hdeg
 
-end TauCeti
+end Polynomial.Gal

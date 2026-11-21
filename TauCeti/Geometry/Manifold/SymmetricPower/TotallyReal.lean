@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Chart
 import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
@@ -29,16 +31,18 @@ is an immersion at `(t₁, …, tₙ)` in every chart of `Sym α n`, and its tan
 *maximal totally real* subspace of the complex coordinate space: it meets its image under
 multiplication by `i` only in `0`, and spans with it. When `γᵢ` locally parametrizes the `i`-th
 attaching curve `αᵢ` of a Heegaard diagram, `Γ` locally parametrizes the torus `T_α = α₁ × ⋯ × αₙ`
-(`TauCeti.Sym.pi`, `TauCeti.Sym.ofFn_mem_pi`), whose points are always such tuples of distinct
+(`Sym.pi`, `Sym.ofFn_mem_pi`), whose points are always such tuples of distinct
 points because attaching curves are pairwise disjoint. Thus, after supplying those local
 parametrizations, the result gives the tangent-space criterion needed for the tori in the
-holomorphic-disk boundary conditions of Ozsváth–Szabó. Their embedded, closed-torus result is
-`TauCeti.Sym.piHomeomorph`.
+holomorphic-disk boundary conditions of Ozsváth–Szabó. The global statement, that the product of
+pairwise disjoint embedded circles is a totally real embedding of the torus, is
+`Sym.isTotallyRealEmbedding_ofFn_map`.
 
 ## Main declarations
 
 * `TauCeti.differentiableAt_symChartAt_ofFn`: the product of the curves, read in a chart of the
   symmetric power, is real-differentiable.
+* `TauCeti.contDiffAt_symChartAt_ofFn`: it is as smooth as the curves.
 * `TauCeti.fderiv_symChartAt_ofFn_injective`: it is an immersion.
 * `TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`: its tangent space is maximal
   totally real.
@@ -53,7 +57,7 @@ holomorphic-disk boundary conditions of Ozsváth–Szabó. Their embedded, close
 public section
 
 open Filter Topology
-open scoped Manifold
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
@@ -80,40 +84,26 @@ private theorem coe_diagonalSmulRight (v : Fin n → ℂ) :
 
 /-- Near a tuple `p` of pairwise distinct points, every chart of the symmetric power is a function
 of the product coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is the chart of `α` at `p i`, and this function
-is complex-differentiable at `p` with injective derivative. -/
+is complex analytic at `p`, with injective derivative. -/
 private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
     (hinj : Function.Injective p) (s : Sym α n)
     (hs : Sym.ofFn p ∈ (symChartAt (K := ℂ) s).source) :
     ∃ (T : (Fin n → ℂ) → Fin n → ℂ) (T' : (Fin n → ℂ) →L[ℂ] Fin n → ℂ),
+      AnalyticAt ℂ T (fun j => chartAt ℂ (p j) (p j)) ∧
       Function.Injective T' ∧ HasFDerivAt T T' (fun j => chartAt ℂ (p j) (p j)) ∧
       ∀ᶠ w in 𝓝 p, symChartAt (K := ℂ) s (Sym.ofFn w) = T fun j => chartAt ℂ (p j) (w j) := by
   -- disjoint coordinate patches around the distinct points `p i`
-  obtain ⟨U, hU, hUdisj⟩ := (Set.finite_range p).t2_separation
-  set V : Fin n → Set α := fun i => U (p i) ∩ (chartAt ℂ (p i)).source
-  have hVo : ∀ i, IsOpen (V i) := fun i => (hU (p i)).2.inter (chartAt ℂ (p i)).open_source
-  have hVsub : ∀ i, V i ⊆ (chartAt ℂ (p i)).source := fun i => Set.inter_subset_right
-  have hpV : ∀ i, p i ∈ V i := fun i => ⟨(hU (p i)).1, mem_chart_source ℂ (p i)⟩
-  have hVdisj : Pairwise (Function.onFun Disjoint V) := fun i j hij =>
-    (hUdisj (Set.mem_range_self i) (Set.mem_range_self j) (hinj.ne hij)).mono
-      Set.inter_subset_left Set.inter_subset_left
+  obtain ⟨V, hVo, hVsub, hpV, hVdisj⟩ :=
+    exists_pairwise_disjoint_isOpen_subset_chartAt_source (H := ℂ) hinj
   have hm : ∑ _i : Fin n, 1 = n := by simp
   set e : (Σ _i : Fin n, Fin 1) ≃ Fin n := Equiv.sigmaUnique (Fin n) fun _ => Fin 1
   have hq : Nonempty (∀ i, Sym ↥(V i) 1) := ⟨fun i => Sym.ofFn fun _ => ⟨p i, hpV i⟩⟩
   -- the chart `C` with one block per point reads a nearby tuple as its negated coordinates
   set C := symOpenPartialHomeomorph (fun i => chartAt ℂ (p i)) V (fun _ => 1) hm hVo hVsub
-    hVdisj e hq with hC
+    hVdisj e hq
   have hC_apply : ∀ᶠ w in 𝓝 p, Sym.ofFn w ∈ C.source ∧
-      C (Sym.ofFn w) = -fun j => chartAt ℂ (p j) (w j) := by
-    filter_upwards [isOpen_set_pi Set.finite_univ (fun i _ => hVo i) |>.mem_nhds
-      fun i _ => hpV i] with w hw
-    have hsum : Sym.ofFn w =
-        Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i trivial⟩ := by
-      rw [Sym.sumSubtype_ofFn hm e]
-      rfl
-    rw [hsum, hC, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
-    refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
-    rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]
-    exact Sym.coeffEquiv_one_apply (by simp [Sym.map_ofFn])
+      C (Sym.ofFn w) = -fun j => chartAt ℂ (p j) (w j) :=
+    eventually_mem_source_symOpenPartialHomeomorph_ofFn (K := ℂ) hVo hpV hVsub hVdisj hm hq
   obtain ⟨hpC, hCp⟩ := hC_apply.self_of_nhds
   -- the given chart `D` is also elementary-symmetric, so both transitions are analytic
   obtain ⟨W, r, hr, hWo, hWsub, hWdisj, e', hr', hs'⟩ := symChartAt_spec (K := ℂ) s
@@ -145,16 +135,14 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
           (D.open_source.mem_nhds (by rwa [C.left_inv hpC]))
       filter_upwards [h₁, h₂] with c hc₁ hc₂
       simp only [Function.comp_apply, hT₀, D.left_inv hc₂, C.right_inv hc₁, id]
-    have hS' : HasFDerivAt (fun c => C (D.symm c))
-        (fderiv ℂ (fun c => C (D.symm c)) (T₀ (C (Sym.ofFn p))))
-        (T₀ (C (Sym.ofFn p))) := by
-      simpa only [hT₀, C.left_inv hpC] using hS.differentiableAt.hasFDerivAt
-    have hcomp := ((hS'.comp _ hT₀').congr_of_eventuallyEq hST.symm).unique (hasFDerivAt_id _)
-    exact Function.LeftInverse.injective fun a => by
-      simpa using congrArg (fun L : (Fin n → ℂ) →L[ℂ] (Fin n → ℂ) => L a) hcomp
+    refine hT₀'.injective_of_eventuallyEq_id
+      (g' := fderiv ℂ (fun c => C (D.symm c)) (T₀ (C (Sym.ofFn p)))) ?_ hST
+    simpa only [hT₀, C.left_inv hpC] using hS.differentiableAt.hasFDerivAt
   -- compose with the negation, which turns the coordinates of `C` into the product coordinates
   refine ⟨fun c => T₀ (-c), (fderiv ℂ T₀ (C (Sym.ofFn p))).comp (-ContinuousLinearMap.id ℂ _),
-    hinjT₀.comp neg_injective, ?_, ?_⟩
+    ?_, hinjT₀.comp neg_injective, ?_, ?_⟩
+  · refine AnalyticAt.comp (g := T₀) ?_ analyticAt_id.neg
+    simpa [hCp] using hT
   · refine HasFDerivAt.comp (g := T₀) _ ?_ (hasFDerivAt_id _).neg
     simpa [hCp] using hT₀'
   · filter_upwards [hC_apply] with w ⟨hw, hCw⟩
@@ -171,7 +159,7 @@ private theorem exists_hasFDerivAt_symChartAt_ofFn {γ : Fin n → ℝ → α} {
     ∃ T' : (Fin n → ℂ) →L[ℂ] Fin n → ℂ, Function.Injective T' ∧
       HasFDerivAt (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i)))
         ((T'.restrictScalars ℝ).comp (diagonalSmulRight v)) t₀ := by
-  obtain ⟨T, T', hT'inj, hT', hT⟩ := exists_injective_hasFDerivAt_symChartAt_ofFn hinj s hs
+  obtain ⟨T, T', -, hT'inj, hT', hT⟩ := exists_injective_hasFDerivAt_symChartAt_ofFn hinj s hs
   refine ⟨T', hT'inj, ?_⟩
   -- the product coordinates of the curves, with the diagonal derivative of the velocities
   have hG : HasFDerivAt (fun t : Fin n → ℝ => fun j => chartAt ℂ (γ j (t₀ j)) (γ j (t j)))
@@ -215,6 +203,25 @@ theorem differentiableAt_symChartAt_ofFn (hinj : Function.Injective fun i => γ 
     DifferentiableAt ℝ (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i))) t₀ :=
   let ⟨_, _, hD⟩ := exists_hasFDerivAt_symChartAt_ofFn hinj hγ hv s hs
   hD.differentiableAt
+
+/-- The product of real curves in a complex curve, read in a chart of the symmetric power, is `C^k`
+at a parameter where the curves, read in charts of `α`, are `C^k` and pass through pairwise
+distinct points: near such a tuple the chart is an analytic function of the coordinates of the
+points. -/
+theorem contDiffAt_symChartAt_ofFn {k : ℕ∞ω} (hinj : Function.Injective fun i => γ i (t₀ i))
+    (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
+    (hk : ∀ i, ContDiffAt ℝ k (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (t₀ i)) (s : Sym α n)
+    (hs : Sym.ofFn (fun i => γ i (t₀ i)) ∈ (symChartAt (K := ℂ) s).source) :
+    ContDiffAt ℝ k (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i))) t₀ := by
+  obtain ⟨T, -, hTa, -, -, hT⟩ := exists_injective_hasFDerivAt_symChartAt_ofFn hinj s hs
+  -- the product coordinates of the curves are `C^k`, and the chart is analytic in them
+  have hG : ContDiffAt ℝ k (fun t : Fin n → ℝ => fun j => chartAt ℂ (γ j (t₀ j)) (γ j (t j)))
+      t₀ :=
+    contDiffAt_pi.2 fun j => ContDiffAt.comp (g := fun t => chartAt ℂ (γ j (t₀ j)) (γ j t)) t₀
+      (hk j) (contDiffAt_apply ℝ (fun _ : Fin n => ℝ) j t₀)
+  refine ((hTa.contDiffAt.restrict_scalars ℝ).comp t₀ hG).congr_of_eventuallyEq ?_
+  exact Tendsto.eventually (continuousAt_pi.2 fun i =>
+    ContinuousAt.comp (f := fun t : Fin n → ℝ => t i) (hγ i) (continuous_apply i).continuousAt) hT
 
 /-- **The product of immersed curves is an immersion into the symmetric power.** If real curves
 `γ i` in a complex curve have nonzero velocity at `t₀ i` and pass there through pairwise distinct

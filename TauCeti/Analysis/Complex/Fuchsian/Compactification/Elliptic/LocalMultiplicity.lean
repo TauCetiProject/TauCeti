@@ -72,7 +72,6 @@ theorem localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamifica
       ofQuotientChart_ofQuotient, TauCeti.Setoid.map_of_le_mk]
     rw [stabilizerBallQuotientChart_mk hε hopenΓ (by simpa using hε),
       discCoordinate_self, zero_pow Nat.card_pos.ne']
-  have hn : 0 < ellipticRamificationIndex h z := ellipticRamificationIndex_pos h z
   have hpow :
       (fun u ↦ c' (compactifiedQuotientMap h (c.symm u))) =ᶠ[𝓝 0]
         fun u : ℂ ↦ u ^ ellipticRamificationIndex h z := by
@@ -80,6 +79,6 @@ theorem localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamifica
     have hu' : u ∈ e.target := by simpa [c] using hu
     exact compactifiedQuotientMap_ellipticChart h z hε hopenΔ hopenΓ hu'
   exact localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
-    hc hc' hxc hfxc hf hn hcx hcfx hpow
+    hc hc' hxc hfxc hf hcx hcfx hpow
 
 end Subgroup.CompactifiedQuotient

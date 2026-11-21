@@ -43,7 +43,7 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
 @[simp] theorem reverse_eq_star_of_mem_even (x : ↥(even Q)) :
     reverse (x : CliffordAlgebra Q) = star (x : CliffordAlgebra Q) := by
   rw [star_def,
-    involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact x.2)]
+    involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact x.property)]
 
 /-- Reversal restricted to the even subalgebra fixes its unit. -/
 @[simp] theorem reverseEven_map_one : reverseEven Q 1 = 1 := by
@@ -67,6 +67,14 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
     reverseEven Q ((even.ι Q).bilin m₁ m₂) = (even.ι Q).bilin m₂ m₁ := by
   apply Subtype.ext
   simp [even.ι]
+
+/-- Clifford reversal negates the even bivector of two orthogonal vectors. -/
+theorem reverseEven_even_ι_bilin_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
+    reverseEven Q ((even.ι Q).bilin x y) = -(even.ι Q).bilin x y := by
+  rw [reverseEven_ι]
+  apply Subtype.ext
+  simp only [even.ι, NegMemClass.coe_neg]
+  exact ι_mul_ι_comm_of_isOrtho h.symm
 
 /-- Reversal restricted to the even subalgebra is an involution. -/
 @[simp] theorem reverseEven_reverseEven (x : ↥(even Q)) :
@@ -114,7 +122,7 @@ theorem evenEquivOfIsometry_reverseEven {N : Type*} [AddCommGroup N] [Module R N
   simp only [equivOfIsometry_apply]
   rw [reverse_eq_star_of_mem_even x,
     reverse_eq_star_of_mem_even
-      ⟨map e.toIsometry (x : CliffordAlgebra Q), map_mem_even e.toIsometry x.2⟩]
+      ⟨map e.toIsometry (x : CliffordAlgebra Q), map_mem_even e.toIsometry x.property⟩]
   exact map_star e.toIsometry (x : CliffordAlgebra Q)
 
 /-- The even-algebra equivalence associated to negating a form commutes with reversal on the

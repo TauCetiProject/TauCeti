@@ -40,8 +40,8 @@ Dirichlet domain is compact. The action need not be properly discontinuous. -/
 theorem isCompact_dirichletDomain_of_compactSpace
     [CompactSpace (orbitRel.Quotient G X)] (p : X) : IsCompact (dirichletDomain G p) := by
   obtain ⟨K, hK, hcover⟩ := isOpenMap_quotient_mk'_mul.exists_isCompact_subset_image
-    (Quotient.mk''_surjective : Function.Surjective (Quotient.mk'' : X → orbitRel.Quotient G X))
-    isCompact_univ
+    (isCompact_univ : IsCompact (univ : Set (orbitRel.Quotient G X)))
+    fun q _ ↦ Quotient.mk''_surjective q
   obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall p
   refine (isCompact_closedBall p r).of_isClosed_subset (isClosed_dirichletDomain G p) ?_
   intro x hx

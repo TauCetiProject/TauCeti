@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Bilinear
 public import TauCeti.RingTheory.NovikovSeries.Grading
+public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Homogeneous completed combinations and supported products
@@ -17,6 +18,11 @@ completion. In torsor coordinates the degree of a coefficient is the total degre
 degree of the reference lift. Consequently changing reference lifts preserves total degree,
 and homogeneous Novikov scalars act by adding their degree.
 
+The homogeneous component `TauCeti.NovikovModule.homogeneousComponent R F d k` keeps the
+coefficients at generators of degree `k`; it is a linear projection onto the piece of degree `k`
+that vanishes on the pieces of every other degree. It is the analogue for completed combinations
+of Mathlib's `MvPowerSeries.homogeneousComponent`.
+
 A supported kernel with a fixed degree shift extends to a map with that same shift on
 homogeneous completed combinations, and likewise a supported bilinear kernel extends to a
 product with that shift. On a homogeneous first input of degree `k` the product only depends on
@@ -25,6 +31,10 @@ corresponding reference-degree shifts. These results apply to the supported kern
 `TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
 discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
 acts on each homogeneous piece as a scalar.
+
+If degrees change by even amounts within each orbit of a finite union of torsors, then a
+combination of degree `e` has nonzero coordinates only in orbits whose reference generator has the
+parity of `e`, so on its coordinates the sign of a reference degree is the sign `(-1)^e`.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
@@ -95,6 +105,101 @@ theorem gradeBy_le_gradeBy_comp {D' : Type*} {d : S → D} (f : D → D') (k : D
     gradeBy R F d k ≤ gradeBy R F (f ∘ d) (f k) :=
   fun _ ha => mem_gradeBy_iff.2 fun s hs => congrArg f (mem_gradeBy_iff.1 ha s hs)
 
+section HomogeneousComponent
+
+open Set
+
+variable {d : S → D} {k : D} {a : NovikovModule R F}
+
+variable (R F) in
+/-- The homogeneous component of degree `k` of a completed combination: it keeps the coefficients
+at the generators of degree `k` and replaces every other coefficient by `0`. -/
+def homogeneousComponent (d : S → D) (k : D) : NovikovModule R F →ₗ[R] NovikovModule R F where
+  toFun a := ⟨(d ⁻¹' {k}).indicator a.val, mem_iff.2 fun C =>
+    (finite_gt a C).subset fun _ hs => ⟨(indicator_apply_ne_zero.1 hs.1).2, hs.2⟩⟩
+  map_add' _ _ := Subtype.ext (indicator_add' _ _ _)
+  map_smul' c _ := Subtype.ext (indicator_const_smul _ c _)
+
+/-- At a generator of degree `k` the component of degree `k` keeps the coefficient. -/
+theorem homogeneousComponent_apply_val_of_eq {s : S} (hs : d s = k) :
+    (homogeneousComponent R F d k a).val s = a.val s :=
+  indicator_of_mem hs _
+
+/-- At a generator of another degree the component of degree `k` vanishes. -/
+theorem homogeneousComponent_apply_val_of_ne {s : S} (hs : d s ≠ k) :
+    (homogeneousComponent R F d k a).val s = 0 :=
+  indicator_of_notMem hs _
+
+/-- The coefficients of a homogeneous component. -/
+@[simp]
+theorem homogeneousComponent_apply_val [DecidableEq D] (d : S → D) (k : D)
+    (a : NovikovModule R F) (s : S) :
+    (homogeneousComponent R F d k a).val s = if d s = k then a.val s else 0 := by
+  split_ifs with hs
+  · exact homogeneousComponent_apply_val_of_eq hs
+  · exact homogeneousComponent_apply_val_of_ne hs
+
+/-- A homogeneous component of degree `k` is homogeneous of degree `k`. -/
+theorem homogeneousComponent_mem_gradeBy (d : S → D) (k : D) (a : NovikovModule R F) :
+    homogeneousComponent R F d k a ∈ gradeBy R F d k :=
+  mem_gradeBy_iff.2 fun _ hs => by_contra fun h => hs (homogeneousComponent_apply_val_of_ne h)
+
+/-- A homogeneous combination of degree `k` is its own component of degree `k`. -/
+theorem homogeneousComponent_of_mem_gradeBy (ha : a ∈ gradeBy R F d k) :
+    homogeneousComponent R F d k a = a := by
+  refine Subtype.ext (funext fun s => ?_)
+  by_cases hs : d s = k
+  · exact homogeneousComponent_apply_val_of_eq hs
+  · rw [homogeneousComponent_apply_val_of_ne hs, val_eq_zero_of_mem_gradeBy ha hs]
+
+/-- A homogeneous combination has no component in any other degree. -/
+theorem homogeneousComponent_eq_zero_of_mem_gradeBy {j : D} (ha : a ∈ gradeBy R F d j)
+    (hjk : j ≠ k) : homogeneousComponent R F d k a = 0 := by
+  refine Subtype.ext (funext fun s => ?_)
+  by_cases hs : d s = k
+  · simp [homogeneousComponent_apply_val_of_eq hs, val_eq_zero_of_mem_gradeBy ha (hs ▸ hjk.symm)]
+  · exact homogeneousComponent_apply_val_of_ne hs
+
+/-- A combination is homogeneous of degree `k` exactly when it equals its component of
+degree `k`. -/
+theorem mem_gradeBy_iff_homogeneousComponent_eq :
+    a ∈ gradeBy R F d k ↔ homogeneousComponent R F d k a = a :=
+  ⟨homogeneousComponent_of_mem_gradeBy, fun h => h ▸ homogeneousComponent_mem_gradeBy d k a⟩
+
+/-- The component of degree `k` is a projection onto the homogeneous piece of degree `k`. -/
+@[simp]
+theorem range_homogeneousComponent (d : S → D) (k : D) :
+    LinearMap.range (homogeneousComponent R F d k) = gradeBy R F d k :=
+  le_antisymm (LinearMap.range_le_iff_comap.2 (eq_top_iff.2 fun a _ =>
+      homogeneousComponent_mem_gradeBy d k a))
+    fun _ ha => ⟨_, homogeneousComponent_of_mem_gradeBy ha⟩
+
+/-- Taking the component of degree `k` twice is the same as taking it once. -/
+@[simp]
+theorem homogeneousComponent_homogeneousComponent (d : S → D) (k : D) (a : NovikovModule R F) :
+    homogeneousComponent R F d k (homogeneousComponent R F d k a) =
+      homogeneousComponent R F d k a :=
+  homogeneousComponent_of_mem_gradeBy (homogeneousComponent_mem_gradeBy d k a)
+
+/-- The coefficients of a finite sum of homogeneous components. -/
+theorem sum_homogeneousComponent_apply_val [DecidableEq D] (d : S → D) (T : Finset D)
+    (a : NovikovModule R F) (s : S) :
+    (∑ k ∈ T, homogeneousComponent R F d k a).val s = if d s ∈ T then a.val s else 0 := by
+  simp [Finset.sum_apply, Finset.sum_ite_eq]
+
+/-- A combination is the sum of its components over any finite set of degrees containing the
+degrees of all of its nonzero coefficients. -/
+theorem sum_homogeneousComponent {T : Finset D} (hT : ∀ s, a.val s ≠ 0 → d s ∈ T) :
+    ∑ k ∈ T, homogeneousComponent R F d k a = a := by
+  classical
+  refine Subtype.ext (funext fun s => ?_)
+  rw [sum_homogeneousComponent_apply_val]
+  split_ifs with hs
+  · rfl
+  · exact (not_not.1 (mt (hT s) hs)).symm
+
+end HomogeneousComponent
+
 section Coordinates
 
 variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*}
@@ -160,6 +265,42 @@ theorem smul_mem_gradeBy {j k : D} {b : NovikovSeries R H N} {a : NovikovModule 
 end Coordinates
 
 end Semiring
+
+section Sign
+
+variable {H ι₁ : Type*} [AddGroup H] [Finite ι₁] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} [∀ i, AddTorsor H (P₁ i)] {F₁ : (Σ i, P₁ i) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h) (r₁ : ∀ i, P₁ i)
+
+/-- If degrees change by even amounts within each orbit, then a combination of degree `e` has
+nonzero coordinates only in orbits whose reference generator has the parity of `e`: the
+coordinate in an orbit vanishes unless the orbit has generators of degree `e`. -/
+theorem even_sub_of_coordinates_ne_zero [Semiring R] {d : (Σ i, P₁ i) → ℤ}
+    (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d e) {i : ι₁} (h₀ : coordinates hF₁ r₁ a i ≠ 0) :
+    Even (d ⟨i, r₁ i⟩ - e) := by
+  obtain ⟨h, hh⟩ : ∃ h, (coordinates hF₁ r₁ a i).coeff h ≠ 0 := by
+    by_contra! hc
+    exact h₀ (NovikovSeries.ext hc)
+  rw [coordinates_coeff] at hh
+  rw [← mem_gradeBy_iff.1 ha _ hh]
+  simpa only [neg_sub] using (hd i h (r₁ i)).neg
+
+/-- If degrees change by even amounts within each orbit, then on the coordinates of a combination
+of degree `e` the sign of the degree of a reference generator is the sign `(-1)^e`: the
+coordinate in an orbit vanishes unless the orbit has generators of degree `e`, which all have the
+parity of its reference generator. -/
+theorem negOnePowCast_smul_coordinates_of_mem_gradeBy [Ring R] {d : (Σ i, P₁ i) → ℤ}
+    (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d e) (i : ι₁) :
+    negOnePowCast R (d ⟨i, r₁ i⟩) • coordinates hF₁ r₁ a i =
+      negOnePowCast R e • coordinates hF₁ r₁ a i := by
+  by_cases h₀ : coordinates hF₁ r₁ a i = 0
+  · rw [h₀, smul_zero, smul_zero]
+  rw [← sub_add_cancel (d ⟨i, r₁ i⟩) e, negOnePowCast_add,
+    negOnePowCast_even (even_sub_of_coordinates_ne_zero hF₁ r₁ hd ha h₀), one_mul]
+
+end Sign
 
 section Map
 

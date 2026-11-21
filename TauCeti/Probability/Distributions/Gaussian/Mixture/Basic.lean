@@ -9,7 +9,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Density
 import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
@@ -56,7 +56,7 @@ theorem gaussianMixtureMeasure_def (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) 
 /-- Every Gaussian mixture is a probability measure, including zero-variance components. -/
 instance isProbabilityMeasure_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ)
     (v : ι → ℝ≥0) : IsProbabilityMeasure (gaussianMixtureMeasure p m v) := by
-  exact isProbabilityMeasure_finiteMixtureMeasure fun _ ↦ inferInstance
+  exact isProbabilityMeasure_finiteMixtureMeasure
 
 /-- The Gaussian mixture is the categorical mixture of its Gaussian components. -/
 theorem gaussianMixtureMeasure_eq_bind [MeasurableSpace ι] [MeasurableSingletonClass ι]
@@ -79,6 +79,21 @@ theorem gaussianMixtureMeasure_congr {m' : ι → ℝ} {v' : ι → ℝ≥0}
   intro i hi
   obtain ⟨hm, hv⟩ := h i hi
   rw [hm, hv]
+
+/-- If every positive-weight component has zero variance, the Gaussian mixture is the
+categorical law of its means. Zero-weight components may have arbitrary variances. -/
+theorem gaussianMixtureMeasure_eq_map_categoricalMeasure [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] (hv : ∀ i, 0 < p.weights i → v i = 0) :
+    gaussianMixtureMeasure p m v = (categoricalMeasure p).map m := by
+  have hm : Measurable m := measurable_of_finite m
+  calc
+    gaussianMixtureMeasure p m v = gaussianMixtureMeasure p m (fun _ ↦ 0) :=
+      gaussianMixtureMeasure_congr fun i hi ↦ ⟨rfl, hv i hi⟩
+    _ = (categoricalMeasure p).map m := by
+      rw [gaussianMixtureMeasure_def, categoricalMeasure_def,
+        Measure.map_finset_sum' hm.aemeasurable]
+      simp only [gaussianReal_zero_var, Measure.map_smul _ hm.aemeasurable,
+        Measure.map_dirac' hm]
 
 /-- Gaussian mixtures are measurable in their weights, means, and variances. -/
 @[fun_prop]

@@ -17,7 +17,6 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import Mathlib.RingTheory.SimpleModule.Rank
 
 /-!
 # Compactly supported de Rham cohomology of `ℝⁿ`
@@ -41,14 +40,13 @@ supported primitive of `ω`
 degree-zero form).
 
 In the top degree `H^n_c(E)` is a line
-(`TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`), and for every orientation of
-`E` integration `H^n_c(E) → ℝ` is an isomorphism
-(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`,
-`TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`). Equivalently, a compactly supported
-top form is the exterior derivative of a compactly supported form exactly when its integral
-vanishes (`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_normedSpace`).
-A normalized bump function times a determinant form has integral one, so integration is onto and it
-remains to bound the dimension.
+(`TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`). Integration
+`H^n_c(E) → ℝ` is onto, since a normalized bump function times a determinant form has integral one,
+so it remains to bound the dimension. That integration is an isomorphism, and that a compactly
+supported top form is compactly supported exact exactly when its integral vanishes, are the special
+cases `E` of the results for connected manifolds
+(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral`,
+`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`).
 For `n ≥ 2` the same argument applies in degree `n`: if `ω₁ = dη₁` and `ω₂ = dη₂` are compactly
 supported closed `n`-forms, then `η₁` and `η₂` are closed on the complement of a large closed ball,
 whose `(n - 1)`-st cohomology is that of `Sⁿ⁻¹`, a line. A nontrivial combination
@@ -66,14 +64,8 @@ duality on oriented manifolds, which proceed by Mayer–Vietoris arguments over 
   `k ≠ dim E`.
 * `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`: `H^n_c(E)` is one-dimensional
   for `n = dim E`.
-* `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite`: `H^k_c(E)` is
-  one-dimensional for `k = dim E` and zero otherwise.
-* `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`: for an
-  orientation of `E`, integration `H^n_c(E) → ℝ` is bijective.
-* `TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`: the resulting isomorphism
-  `H^n_c(E) ≃ₗ[ℝ] ℝ`.
-* `TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_normedSpace`: a compactly
-  supported top form is compactly supported exact if and only if its integral vanishes.
+* `TauCeti.rank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite`: `H^k_c(E)` has rank one
+  for `k = dim E` and rank zero, so vanishes, otherwise.
 
 ## References
 
@@ -113,13 +105,13 @@ private theorem exists_cutoff_compl_closedBall (R : ℝ) :
         ∀ᶠ y in 𝓝 x, ρ y = 0) ∧
       HasCompactSupport fun x ↦ 1 - ρ x := by
   let b : ContDiffBump (0 : E) := ⟨max R 0 + 1, max R 0 + 2, by positivity, by linarith⟩
-  refine ⟨fun x ↦ 1 - b x, contMDiff_const.sub (b.contDiff.contMDiff.comp contMDiff_subtype_val),
+  refine ⟨fun x ↦ 1 - b x, contMDiff_const.sub (b.contDiff.contMDiff.comp contMDiff_subtypeVal),
     fun x hx ↦ ?_, ?_⟩
   · have hxb : (x : E) ∈ ball (0 : E) (max R 0 + 1) := by
       simp only [Opens.mem_mk, mem_compl_iff, not_not, mem_closedBall_zero_iff] at hx
       rw [mem_ball_zero_iff]
       linarith [le_max_left R 0]
-    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+    filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (isOpen_ball.mem_nhds hxb)] with y hy
     simp [b.one_of_mem_closedBall (ball_subset_closedBall hy)]
   · simpa [Function.comp_def] using b.hasCompactSupport.comp_homeomorph
@@ -144,7 +136,7 @@ radius `R ≥ r`. -/
 private theorem mpullback_mem_closedForms_compl_closedBall {k : ℕ} {r R : ℝ} (hrR : r ≤ R)
     {η : SmoothForm 𝓘(ℝ, E) (⊤ : Opens E) ℝ k}
     (hr : Subtype.val '' _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] ℝ)
-      (mextDerivₗ 𝓘(ℝ, E) k η).1 ⊆ closedBall 0 r) :
+      (mextDerivₗ 𝓘(ℝ, E) k η).val ⊆ closedBall 0 r) :
     SmoothForm.mpullback (Opens.inclusion (le_top : (⟨(closedBall (0 : E) R)ᶜ,
         isClosed_closedBall.isOpen_compl⟩ : Opens E) ≤ ⊤)) (contMDiff_inclusion le_top) η ∈
       closedForms 𝓘(ℝ, E)
@@ -154,7 +146,7 @@ private theorem mpullback_mem_closedForms_compl_closedBall {k : ℕ} {r R : ℝ}
   rw [SmoothForm.coe_mpullback, mpullback_inclusion_apply]
   -- The value of `dη` vanishes off its support; the two zeros differ only through the
   -- identification of the fibre at `x` with the model fibre.
-  refine (image_eq_zero_of_notMem_tsupport fun hx ↦ x.2 ?_).trans rfl
+  refine (image_eq_zero_of_notMem_tsupport fun hx ↦ x.property ?_).trans rfl
   exact closedBall_subset_closedBall hrR (hr ⟨_, hx, rfl⟩)
 
 /-- On a finite-dimensional real inner product space `E`, read as the open subset `⊤` of itself,
@@ -174,7 +166,7 @@ private theorem mem_exactCompactlySupportedForms_top {k : ℕ} (hk : 0 < k)
   obtain ⟨η, rfl⟩ := hφe
   -- `dη` is supported in a closed ball of radius `R ≥ 0`; let `U` be its complement.
   obtain ⟨r, hr⟩ := (((mem_compactlySupportedForms _).mp hφc).image
-    continuous_subtype_val).isBounded.subset_closedBall 0
+    continuous_subtypeVal).isBounded.subset_closedBall 0
   set R := max r 0
   have hR : 0 ≤ R := le_max_right r 0
   let U : Opens E := ⟨(closedBall (0 : E) R)ᶜ, isClosed_closedBall.isOpen_compl⟩
@@ -184,8 +176,8 @@ private theorem mem_exactCompactlySupportedForms_top {k : ℕ} (hk : 0 < k)
   obtain ⟨ρ, hρ, hρU, hρc⟩ := exists_cutoff_compl_closedBall (E := E) R
   rcases j with _ | j
   · -- In degree one, `η` is a function, constant on the connected set `U`.
-    have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp <|
-      isPreconnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
+    have : PathConnectedSpace U := isPathConnected_iff_pathConnectedSpace.mp <|
+      isPathConnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
     have hUc : IsCompact {x : (⊤ : Opens E) | (x : E) ∉ U} := by
       let Φ : (⊤ : Opens E) ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E := Diffeomorph.ofTop _ rfl
       have : {x : (⊤ : Opens E) | (x : E) ∉ U} = Φ ⁻¹' closedBall 0 R := by
@@ -210,7 +202,7 @@ private theorem subsingleton_compactlySupportedDeRhamCohomology_innerProductSpac
     refine subsingleton_of_forall_eq 0 fun c ↦ ?_
     obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ k c
     exact (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ k φ).mpr
-      (mem_exactCompactlySupportedForms_top hk hkE φ.2)
+      (mem_exactCompactlySupportedForms_top hk hkE φ.property)
   exact (compactlySupportedDeRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop (⊤ : Opens E) rfl) k).toEquiv.subsingleton
 
@@ -234,9 +226,9 @@ private theorem exists_smul_add_smul_mem_exactCompactlySupportedForms_top {n : �
   obtain ⟨θ, rfl⟩ := hψe
   -- Both supports lie in a closed ball of radius `R ≥ 0`; let `U` be its complement.
   obtain ⟨r₁, hr₁⟩ := (((mem_compactlySupportedForms _).mp hφc).image
-    continuous_subtype_val).isBounded.subset_closedBall 0
+    continuous_subtypeVal).isBounded.subset_closedBall 0
   obtain ⟨r₂, hr₂⟩ := (((mem_compactlySupportedForms _).mp hψc).image
-    continuous_subtype_val).isBounded.subset_closedBall 0
+    continuous_subtypeVal).isBounded.subset_closedBall 0
   set R := max (max r₁ r₂) 0
   have hR : 0 ≤ R := le_max_right _ 0
   let U : Opens E := ⟨(closedBall (0 : E) R)ᶜ, isClosed_closedBall.isOpen_compl⟩
@@ -280,7 +272,8 @@ private theorem finrank_compactlySupportedDeRhamCohomology_innerProductSpace {n 
     (Diffeomorph.ofTop (I := 𝓘(ℝ, E)) (n := ∞) (⊤ : Opens E) rfl) (n + 2)
   obtain ⟨φ, hφ⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ (n + 2) (e w)
   obtain ⟨ψ, hψ⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ (n + 2) (e v₀)
-  obtain ⟨a, b, hab, h⟩ := exists_smul_add_smul_mem_exactCompactlySupportedForms_top hE φ.2 ψ.2
+  obtain ⟨a, b, hab, h⟩ := exists_smul_add_smul_mem_exactCompactlySupportedForms_top hE φ.property
+      ψ.property
   have h0 : a • w + b • v₀ = 0 := e.injective <| by
     simpa [← hφ, ← hψ] using
       (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ _ (a • φ + b • ψ)).mpr h
@@ -334,70 +327,15 @@ theorem finrank_compactlySupportedDeRhamCohomology_normedSpace {k : ℕ} (hk : f
       (by rw [finrank_euclideanSpace_fin, hk])
 
 /-- **The compactly supported de Rham cohomology of `ℝⁿ`.** On a finite-dimensional real normed
-space `E`, `H^k_c(E)` is one-dimensional in degree `k = dim E` and zero in every other degree. -/
-theorem finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite (k : ℕ) :
-    finrank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E k) =
+space `E`, `H^k_c(E)` has rank one in degree `k = dim E` and rank zero in every other degree: it is
+a line in degree `dim E` and vanishes in every other degree. -/
+theorem rank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite (k : ℕ) :
+    Module.rank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E k) =
       if k = finrank ℝ E then 1 else 0 := by
   split_ifs with h
-  · exact finrank_compactlySupportedDeRhamCohomology_normedSpace E h.symm
+  · exact rank_eq_one_iff_finrank_eq_one.mpr
+      (finrank_compactlySupportedDeRhamCohomology_normedSpace E h.symm)
   · have := subsingleton_compactlySupportedDeRhamCohomology_normedSpace E h
-    exact finrank_zero_of_subsingleton
-
-variable {E}
-
-/-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For every orientation `o` of a
-finite-dimensional real normed space `E` of dimension `n`, integration `H^n_c(E) → ℝ` is
-bijective. -/
-theorem compactlySupportedDeRhamCohomology.bijective_integral_normedSpace {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
-    Function.Bijective (compactlySupportedDeRhamCohomology.integral o) := by
-  have : IsSimpleModule ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n) :=
-    isSimpleModule_iff_finrank_eq_one.mpr
-      (finrank_compactlySupportedDeRhamCohomology_normedSpace E (by simpa using o.card_eq.symm))
-  obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace o
-  exact LinearMap.bijective_of_ne_zero fun h ↦ hv (by rw [h, LinearMap.zero_apply])
-
-/-- **The compactly supported Poincaré lemma in top degree** [Lee, Lemma 17.27]. On an oriented
-finite-dimensional real normed space `E` of dimension `n`, a compactly supported smooth `n`-form
-whose integral vanishes is the exterior derivative of a compactly supported form. -/
-theorem mem_exactCompactlySupportedForms_of_integralTopForm_eq_zero_normedSpace {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) {φ : SmoothForm 𝓘(ℝ, E) E ℝ n}
-    (hφ : φ ∈ compactlySupportedForms 𝓘(ℝ, E) E n) (h : integralTopForm o φ.1 = 0) :
-    φ ∈ exactCompactlySupportedForms 𝓘(ℝ, E) E n := by
-  let ψ : compactlySupportedClosedForms 𝓘(ℝ, E) E n :=
-    ⟨φ, (mem_compactlySupportedClosedForms _).mpr
-      ⟨hφ, mem_closedForms_of_finrank_le 𝓘(ℝ, E) (by simpa using o.card_eq.symm.le) φ⟩⟩
-  refine (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ n ψ).mp
-    ((injective_iff_map_eq_zero _).mp
-      (compactlySupportedDeRhamCohomology.bijective_integral_normedSpace o).1 _ ?_)
-  rw [compactlySupportedDeRhamCohomology.integral_mk]
-  exact h
-
-/-- **The compactly supported Poincaré lemma in top degree**, as a characterization. On an oriented
-finite-dimensional real normed space `E` of dimension `n`, a compactly supported smooth `n`-form is
-the exterior derivative of a compactly supported form if and only if its integral vanishes. -/
-theorem mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_normedSpace {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) {φ : SmoothForm 𝓘(ℝ, E) E ℝ n}
-    (hφ : φ ∈ compactlySupportedForms 𝓘(ℝ, E) E n) :
-    φ ∈ exactCompactlySupportedForms 𝓘(ℝ, E) E n ↔ integralTopForm o φ.1 = 0 :=
-  ⟨integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o,
-    mem_exactCompactlySupportedForms_of_integralTopForm_eq_zero_normedSpace o hφ⟩
-
-/-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For an orientation `o` of a
-finite-dimensional real normed space `E` of dimension `n`, integration is a linear isomorphism
-`H^n_c(E) ≃ₗ[ℝ] ℝ`. -/
-def compactlySupportedDeRhamCohomologyNormedSpaceEquiv {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
-    compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n ≃ₗ[ℝ] ℝ :=
-  LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_normedSpace o)
-
-/-- The isomorphism `H^n_c(E) ≃ₗ[ℝ] ℝ` is integration. -/
-@[simp]
-theorem compactlySupportedDeRhamCohomologyNormedSpaceEquiv_apply {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n))
-    (x : compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n) :
-    compactlySupportedDeRhamCohomologyNormedSpaceEquiv o x =
-      compactlySupportedDeRhamCohomology.integral o x :=
-  LinearEquiv.ofBijective_apply _ _
+    exact rank_subsingleton' ℝ _
 
 end TauCeti

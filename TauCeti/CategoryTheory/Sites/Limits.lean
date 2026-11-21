@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.BinaryProducts
 public import Mathlib.CategoryTheory.Limits.Types.Products
 public import Mathlib.CategoryTheory.Sites.Limits
+public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 public import Mathlib.CategoryTheory.Sites.Whiskering
 
 /-!
@@ -18,6 +19,9 @@ If a functor `F : A ⥤ B` preserves limits of shape `K`, then so does the induc
 `sheafCompose J F : Sheaf J A ⥤ Sheaf J B`
 (`CategoryTheory.Sheaf.preservesLimitsOfShape_sheafCompose`), since limits of sheaves are computed
 on the underlying presheaves (Mathlib's `CategoryTheory.Sites.Limits`).
+
+Sheafifying sectionwise composition also preserves finite limits when the coefficient functor
+does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`).
 
 For sheaves of types, the sections of a binary product `F ⨯ G` over `W` are pairs of sections:
 any sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`
@@ -48,6 +52,15 @@ instance preservesLimitsOfShape_sheafCompose {A B : Type*} [Category* A] [Catego
     inferInstanceAs
       (PreservesLimitsOfShape K (sheafToPresheaf J A ⋙ (Functor.whiskeringRight _ _ _).obj F))
   exact preservesLimitsOfShape_of_reflects_of_preserves _ (sheafToPresheaf J B)
+
+/-- Sheafifying sectionwise composition with a finite-limit-preserving coefficient functor
+preserves finite limits. -/
+instance preservesFiniteLimits_composeAndSheafify {A B : Type*} [Category* A] [Category* B]
+    [HasFiniteLimits A] (F : A ⥤ B) [PreservesFiniteLimits F] [HasSheafify J B] :
+    PreservesFiniteLimits (composeAndSheafify J F) where
+  preservesFiniteLimits K _ _ :=
+    inferInstanceAs (PreservesLimitsOfShape K
+      (sheafToPresheaf J A ⋙ (Functor.whiskeringRight _ _ _).obj F ⋙ presheafToSheaf J B))
 
 variable {J} in
 /-- Sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`. -/

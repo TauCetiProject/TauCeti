@@ -124,7 +124,7 @@ theorem tangentMatrix_apply
         (d ((coordinateMap R n).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
           (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))))) := by
   rw [tangentMatrix_apply_coe, GeneralLinear.tangentMatrix_apply,
-    HopfIdeal.quotientLieHom_apply_apply, coordinateMap_apply]
+    HopfIdeal.quotientLieHom_apply_apply, CommHopfAlgCat.mkQuotient_apply]
   exact Bialgebra.CounitAlgebra.algEquivSelf_apply R _ B _
 
 private theorem tangentMatrix_injective :

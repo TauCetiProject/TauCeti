@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Singular values and two-sided unitary matrix orbits
@@ -15,6 +15,8 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 Rectangular matrices lie in the same two-sided unitary orbit exactly when their singular values
 agree. The singular values are Mathlib's `LinearMap.singularValues`, applied through
 `Matrix.toEuclideanLin`; no second enumeration is introduced.
+The estimate `Matrix.abs_sq_singularValues_sub_le` controls squared singular values by the
+operator-norm distance of the source Gram matrix from a scalar matrix.
 
 `Matrix.exists_unitary_mul_diagonal_mul_unitary` reads the operator singular value decomposition
 in the standard orthonormal basis. The orbit characterization then identifies the diagonal
@@ -160,8 +162,8 @@ private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
           (UnitaryGroup.det_isUnit Q).ne_zero] using hdet
       exact ⟨i, by rw [hi, mul_zero, zero_mul]⟩
     · exact ⟨0, by rw [mul_right_comm, h, one_mul]⟩
-  let D₁ : unitaryGroup (Fin n) 𝕜 := ⟨_, diagonal_update_one_mem_unitaryGroup ha i⟩
-  let D₂ : unitaryGroup (Fin n) 𝕜 := ⟨_, diagonal_update_one_mem_unitaryGroup hb i⟩
+  let D₁ : unitaryGroup (Fin n) 𝕜 := ⟨_, (diagonal_update_one_mem_unitary_iff (i := i)).mpr ha⟩
+  let D₂ : unitaryGroup (Fin n) 𝕜 := ⟨_, (diagonal_update_one_mem_unitary_iff (i := i)).mpr hb⟩
   have hD : (D₁ : Matrix (Fin n) (Fin n) 𝕜) * diagonal σ * D₂ = diagonal σ := by
     simp only [D₁, D₂, diagonal_mul_diagonal]
     congr 1
@@ -172,13 +174,13 @@ private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
   -- Conjugation by a unitary matrix preserves the determinant.
   refine ⟨P * D₁ * star P, star Q * D₂ * Q, ?_, ?_, ?_⟩
   · rw [Submonoid.coe_mul, Submonoid.coe_mul, Unitary.coe_star,
-      det_conj_of_mul_eq_one (Unitary.mul_star_self_of_mem P.2)
-        (Unitary.star_mul_self_of_mem P.2),
+      det_conj_of_mul_eq_one (Unitary.mul_star_self_of_mem P.property)
+        (Unitary.star_mul_self_of_mem P.property),
       det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
     simp
   · rw [Submonoid.coe_mul, Submonoid.coe_mul, Unitary.coe_star,
-      det_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem Q.2)
-        (Unitary.mul_star_self_of_mem Q.2),
+      det_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem Q.property)
+        (Unitary.mul_star_self_of_mem Q.property),
       det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
     simp
   · simp only [Submonoid.coe_mul]
@@ -202,8 +204,8 @@ theorem exists_unitary_mul_mul_unitary_eq_self [Nonempty ι] (A : Matrix ι ι �
   have : NeZero (Fintype.card ι) := ⟨Fintype.card_ne_zero⟩
   obtain ⟨X, Y, hX, hY, hXY⟩ := exists_unitary_mul_mul_unitary_eq_self_fin
     (A.submatrix e.symm e.symm) ha hb (by rwa [det_submatrix_equiv_self])
-  refine ⟨⟨(X : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr X.2⟩,
-    ⟨(Y : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr Y.2⟩,
+  refine ⟨⟨(X : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr X.property⟩,
+    ⟨(Y : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr Y.property⟩,
     (det_submatrix_equiv_self e _).trans hX, (det_submatrix_equiv_self e _).trans hY, ?_⟩
   have hA : (A.submatrix e.symm e.symm).submatrix e e = A := by simp
   calc (X : Matrix _ _ 𝕜).submatrix e e * A * (Y : Matrix _ _ 𝕜).submatrix e e
@@ -223,16 +225,16 @@ theorem exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_d
   constructor
   · rintro ⟨U, V, rfl⟩
     refine ⟨(exists_unitary_mul_mul_unitary_iff_singularValues_eq A _).mp
-      ⟨⟨U, U.2.1⟩, ⟨V, V.2.1⟩, rfl⟩, ?_⟩
-    rw [det_mul, det_mul, (mem_specialUnitaryGroup_iff.mp U.2).2,
-      (mem_specialUnitaryGroup_iff.mp V.2).2, one_mul, mul_one]
+      ⟨⟨U, U.property.1⟩, ⟨V, V.property.1⟩, rfl⟩, ?_⟩
+    rw [det_mul, det_mul, (mem_specialUnitaryGroup_iff.mp U.property).2,
+      (mem_specialUnitaryGroup_iff.mp V.property).2, one_mul, mul_one]
   · rintro ⟨hσ, hdet⟩
     obtain ⟨U, V, hUV⟩ := (exists_unitary_mul_mul_unitary_iff_singularValues_eq A B).mpr hσ
-    have hU := det_of_mem_unitary U.2
-    have hV := det_of_mem_unitary V.2
+    have hU := det_of_mem_unitary U.property
+    have hV := det_of_mem_unitary V.property
     cases isEmpty_or_nonempty ι
-    · exact ⟨⟨U, mem_specialUnitaryGroup_iff.mpr ⟨U.2, det_isEmpty⟩⟩,
-        ⟨V, mem_specialUnitaryGroup_iff.mpr ⟨V.2, det_isEmpty⟩⟩, hUV⟩
+    · exact ⟨⟨U, mem_specialUnitaryGroup_iff.mpr ⟨U.property, det_isEmpty⟩⟩,
+        ⟨V, mem_specialUnitaryGroup_iff.mpr ⟨V.property, det_isEmpty⟩⟩, hUV⟩
     -- Correct the determinants of `U` and `V` by an element of the stabilizer of `A`.
     obtain ⟨X, Y, hX, hY, hXY⟩ := exists_unitary_mul_mul_unitary_eq_self A
       (Unitary.star_mem hU) (Unitary.star_mem hV) <| by
@@ -243,11 +245,45 @@ theorem exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_d
           apply mul_left_cancel₀ h
           linear_combination -hB
         rw [← star_mul', this, star_one]
-    refine ⟨⟨U * X, mem_specialUnitaryGroup_iff.mpr ⟨(U * X).2, ?_⟩⟩,
-      ⟨Y * V, mem_specialUnitaryGroup_iff.mpr ⟨(Y * V).2, ?_⟩⟩, ?_⟩
+    refine ⟨⟨U * X, mem_specialUnitaryGroup_iff.mpr ⟨(U * X).property, ?_⟩⟩,
+      ⟨Y * V, mem_specialUnitaryGroup_iff.mpr ⟨(Y * V).property, ?_⟩⟩, ?_⟩
     · rw [det_mul, hX, Unitary.mul_star_self_of_mem hU]
     · rw [det_mul, hY, Unitary.star_mul_self_of_mem hV]
     · conv_lhs => rw [hUV, ← hXY]
       simp only [Matrix.mul_assoc]
+
+end Matrix
+
+namespace Matrix
+
+open scoped Matrix.Norms.L2Operator
+
+/-- The squared singular values stay within the operator-norm distance of the source Gram
+matrix from a scalar matrix. Only source indices are included, so this applies to rectangular
+matrices without interpreting the infinite zero tail as additional singular values. -/
+theorem abs_sq_singularValues_sub_le {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
+    [DecidableEq n] (A : Matrix m n 𝕜) (a : ℝ) (i : Fin (Fintype.card n)) :
+    |(toEuclideanLin A).singularValues i ^ 2 - a| ≤ ‖Aᴴ * A - a • 1‖ := by
+  classical
+  let T := toEuclideanLin A
+  let j : Fin (Module.finrank 𝕜 (EuclideanSpace 𝕜 n)) :=
+    ⟨i, by simpa only [finrank_euclideanSpace] using i.isLt⟩
+  let v := T.rightSingularBasis j
+  have hv : ‖v‖ = 1 := T.rightSingularBasis.norm_eq_one j
+  have hD : toEuclideanLin (Aᴴ * A - a • 1) =
+      (LinearMap.adjoint T ∘ₗ T) - a • LinearMap.id := by
+    rw [map_sub, LinearMapClass.map_smul_of_tower,
+      ← toEuclideanLin_conjTranspose_eq_adjoint A]
+    simp only [T, toEuclideanLin, toLpLin_mul_same, toLpLin_one]
+  have hDv : toEuclideanLin (Aᴴ * A - a • 1) v =
+      (((T.singularValues i ^ 2 - a : ℝ) : 𝕜)) • v := by
+    rw [hD, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply]
+    have hTv : (LinearMap.adjoint T ∘ₗ T) v = ((T.singularValues i ^ 2 : ℝ) : 𝕜) • v :=
+      T.adjoint_comp_self_rightSingularBasis j
+    rw [hTv]
+    simp [sub_smul]
+  have hb : ‖toEuclideanLin (Aᴴ * A - a • 1) v‖ ≤ ‖Aᴴ * A - a • 1‖ * ‖v‖ :=
+    l2_opNorm_mulVec (Aᴴ * A - a • 1) v
+  simpa only [hDv, norm_smul, RCLike.norm_ofReal, hv, mul_one] using hb
 
 end Matrix

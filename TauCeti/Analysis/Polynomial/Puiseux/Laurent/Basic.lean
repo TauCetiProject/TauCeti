@@ -95,7 +95,7 @@ private theorem eventually_prod_normalized_roots_eq {d a c : ℕ} (hd : 0 < d)
   exact Filter.mem_of_superset (hU.mem_nhds hpU) heqU
 
 /-- **Laurent unit forms of nonmonic roots.** Suppose the leading and constant coefficients
-of a positive-degree family are centered powers times analytic units. Given an analytic
+of a family are centered powers times analytic units. Given an analytic
 extension `s` of the leading-coefficient multiples of a complete list `r` of roots, expressed
 by a splitting of the integral normalization off the hyperplane, each `r i` is locally
 `(y - y₀) ^ (m i - c) * w i`, where `m i` is natural and `w i` is an analytic unit.
@@ -104,7 +104,7 @@ The exponent `c` is that of the leading coefficient. The Laurent equality holds 
 hyperplane, on one common neighborhood for every label. The units are nonzero on that
 neighborhood, including on the hyperplane. No analyticity of the original roots at a pole
 is assumed, and no simplicity assumption is imposed. -/
-theorem exists_root_eq_zpow_mul_unit {d a c : ℕ} (hd : 0 < d)
+theorem exists_root_eq_zpow_mul_unit {d a c : ℕ}
     {P : E × 𝕜 → Polynomial 𝕜} {r s : Fin d → E × 𝕜 → 𝕜} {x₀ : E} {y₀ : 𝕜}
     {u v : E × 𝕜 → 𝕜} (hs : ∀ i, AnalyticAt 𝕜 (s i) (x₀, y₀))
     (hu : AnalyticAt 𝕜 u (x₀, y₀)) (hu0 : u (x₀, y₀) ≠ 0)
@@ -121,6 +121,9 @@ theorem exists_root_eq_zpow_mul_unit {d a c : ℕ} (hd : 0 < d)
       ∀ᶠ p in 𝓝 (x₀, y₀), (∀ i, w i p ≠ 0) ∧
         (p.2 ≠ y₀ → ∀ i, r i p = (p.2 - y₀) ^ ((m i : ℤ) - c) * w i p) := by
   classical
+  obtain rfl | hd := d.eq_zero_or_pos
+  · exact ⟨fun _ ↦ 0, fun _ _ ↦ 1, fun i ↦ i.elim0, fun i ↦ i.elim0,
+      Filter.Eventually.of_forall fun _ ↦ ⟨fun i ↦ i.elim0, fun _ i ↦ i.elim0⟩⟩
   let U : E × 𝕜 → 𝕜 := fun p ↦ (-1 : 𝕜) ^ d * u p * v p ^ (d - 1)
   have hU : AnalyticAt 𝕜 U (x₀, y₀) := (analyticAt_const.mul hu).mul (hv.fun_pow _)
   have hU0 : U (x₀, y₀) ≠ 0 := mul_ne_zero (mul_ne_zero (by simp) hu0) (pow_ne_zero _ hv0)

@@ -326,7 +326,6 @@ theorem cdf_map_inner_vonMisesFisherMeasure_lt_one_iff (hd : 2 ≤ Module.finran
       (fun y : sphere (0 : E) 1 ↦ ⟪(m : E), (y : E)⟫)) x < 1 ↔ x < 1 := by
   have := isProbabilityMeasure_vonMisesFisherMeasure m hκ
   exact Measure.cdf_lt_one_iff_of_support_eq_Icc _
-    (ae_mem_Ioo_map_inner_vonMisesFisherMeasure hd m)
     (support_map_inner_vonMisesFisherMeasure hd m hκ)
 
 /-- Interior projection quantiles lie in the open unit interval. -/
@@ -418,6 +417,19 @@ theorem HasLaw.hasPDF_inner_vonMisesFisherMeasure
     (hd : 2 ≤ Module.finrank ℝ E) :
     HasPDF (fun ω ↦ ⟪(m : E), (X ω : E)⟫) P := by
   apply hasPDF_of_hasLaw_withDensity (measurable_vonMisesFisherProjectionPDF _ _).aemeasurable
+  rw [← map_inner_vonMisesFisherMeasure_eq_withDensity hd m κ]
+  exact (hasLaw_map (X := fun x : sphere (0 : E) 1 ↦ ⟪(m : E), (x : E)⟫)
+    (by fun_prop)).comp hX
+
+/-- The canonical Lebesgue density of the mean-direction projection of a von Mises–Fisher
+random point agrees almost everywhere with `vonMisesFisherProjectionPDF`. -/
+theorem HasLaw.pdf_eq_vonMisesFisherProjectionPDF
+    (hX : HasLaw X (vonMisesFisherMeasure m κ) P)
+    (hd : 2 ≤ Module.finrank ℝ E) :
+    pdf (fun ω ↦ ⟪(m : E), (X ω : E)⟫) P volume =ᵐ[volume]
+      vonMisesFisherProjectionPDF (Module.finrank ℝ E) κ := by
+  apply pdf_eq_of_hasLaw_withDensity
+    (measurable_vonMisesFisherProjectionPDF _ _).aemeasurable
   rw [← map_inner_vonMisesFisherMeasure_eq_withDensity hd m κ]
   exact (hasLaw_map (X := fun x : sphere (0 : E) 1 ↦ ⟪(m : E), (x : E)⟫)
     (by fun_prop)).comp hX

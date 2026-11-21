@@ -128,7 +128,7 @@ private theorem map_adjacent_chainMeasure_of_map_eval
   have htraj : (chainMeasure pi).map (fun x ↦ (frestrictLe n x, x (n + 1))) =
       (chainMeasure pi).map (frestrictLe n) ⊗ₘ chainKernel pi n := by
     simpa only [chainMeasure] using
-      (Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite
+      (Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite
         (μ₀ := (pi 0).fst) (κ := chainKernel pi) n).symm
   have hmarginal : ((chainMeasure pi).map (frestrictLe n)).map last = (pi n).fst := by
     simpa only [MeasureTheory.Measure.map_map hlast (measurable_frestrictLe n), heval] using hn
@@ -364,7 +364,8 @@ theorem map_prodMk_starMeasure (μ₀ : Measure X₀)
       Prod.map first id ∘ (fun x ↦ (frestrictLe n x, x (n + 1))) := rfl
   have htraj : Q.map (fun x ↦ (frestrictLe n x, x (n + 1))) =
       Q.map (frestrictLe n) ⊗ₘ starKernel pi n :=
-    (Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite (μ₀ := μ₀) (κ := starKernel pi) n).symm
+    (Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite
+      (μ₀ := μ₀) (κ := starKernel pi) n).symm
   have hmarginal : (Q.map (frestrictLe n)).map first = (pi n).fst := by
     rw [MeasureTheory.Measure.map_map hfirst (measurable_frestrictLe n)]
     exact (map_eval_zero_trajMeasure_starKernel μ₀ pi).trans hn.symm

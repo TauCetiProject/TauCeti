@@ -153,8 +153,9 @@ theorem exists_isJordanCurve_superset_closure_image_ball_inter_sphere_diam_le_of
         J ⊆ closure (f '' (ball c r ∩ sphere ζ ρ)) ∪ frontier (f '' ball c r) ∧
         J ⊆ closure (f '' ball c r) ∧ diam J ≤ ε :=
   exists_isJordanCurve_superset_closure_image_ball_inter_sphere_diam_le hζ hr hf hinj
-    (lintegral_enorm_deriv_sq_ne_top_of_isBounded isOpen_ball hf
-      measurableSet_ball.nullMeasurableSet subset_rfl hinj hb)
+    (lintegral_enorm_deriv_sq_ne_top_of_isBounded
+      (fun _ hz => hf.differentiableAt (isOpen_ball.mem_nhds hz))
+      measurableSet_ball.nullMeasurableSet hinj hb)
     hfrontier hε hR
 
 end TauCeti

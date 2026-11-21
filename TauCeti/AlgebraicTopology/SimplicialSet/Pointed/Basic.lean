@@ -67,6 +67,29 @@ lemma comp_right_app_apply {X Y Z : PointedSSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (n : SimplexCategoryᵒᵖ) (x : X.right.obj n) :
     (f ≫ g).right.app n x = g.right.app n (f.right.app n x) := (rfl)
 
+/-- The pointing map `Δ[0] ⟶ X.right` of any pointed simplicial set is a monomorphism. -/
+instance mono_hom (X : PointedSSet.{u}) : Mono X.hom :=
+  ⟨fun _ _ _ ↦ by ext; exact SSet.stdSimplex.objEquiv.injective (Subsingleton.elim _ _)⟩
+
+/-- The canonical map from `Under.mk (𝟙 Δ[0])` to any pointed simplicial set is a monomorphism on
+underlying simplicial sets. -/
+instance mono_mkIdInitial_to_right (X : PointedSSet.{u}) :
+    Mono (Under.mkIdInitial.to X).right := by
+  rw [Under.mkIdInitial_to_right]
+  infer_instance
+
+/-- The unique based map from an initial pointed simplicial set to `X` is a monomorphism on
+underlying simplicial sets. -/
+instance mono_initial_to_right [Limits.HasInitial PointedSSet.{u}] (X : PointedSSet.{u}) :
+    Mono (Limits.initial.to X).right := by
+  let e : Limits.initial PointedSSet.{u} ≅ Under.mk (𝟙 (Δ[0] : SSet.{u})) :=
+    Limits.initialIsInitial.uniqueUpToIso Under.mkIdInitial
+  rw [Limits.initialIsInitial.hom_ext (Limits.initial.to X) (e.hom ≫ Under.mkIdInitial.to X),
+    Under.comp_right]
+  have : Mono e.hom.right :=
+    inferInstanceAs (Mono ((Under.forget (Δ[0] : SSet.{u})).map e.hom))
+  exact mono_comp _ _
+
 /-- Evaluate a pointed simplicial set as a simplicial object in pointed types. -/
 def toSimplicialPointed : PointedSSet.{u} ⥤ SimplicialObject Pointed.{u} where
   obj X :=
@@ -88,10 +111,10 @@ def fromSimplicialPointed : SimplicialObject Pointed.{u} ⥤ PointedSSet.{u} whe
   obj X := Under.mk (show Δ[0] ⟶ X ⋙ forget Pointed from
     { app n := ↾(fun _ ↦ (X.obj n).point)
       naturality n m f := by
-        ext x
+        ext _
         exact ((X.map f).map_point).symm })
   map f := Under.homMk (CategoryTheory.Functor.whiskerRight f (forget Pointed)) (by
-    ext n x
+    ext n _
     exact (f.app n).map_point)
 
 @[simp]

@@ -106,6 +106,53 @@ private lemma multinomialWeight_add_apply (w : ι → NNReal) (i : ι) (m q : �
   ring
 
 open Classical in
+/-- The inner sum over the other cells vanishes unless the count at `i` is `m`. -/
+private lemma sum_piAntidiag_ite_eq_zero (w : ι → NNReal) (i : ι) (m a b : ℕ) (ha : a ≠ m) :
+    (∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) b,
+        if (addRightEmbedding fun j ↦ if j = i then a else 0) g i = m then
+          multinomialWeight w ((addRightEmbedding fun j ↦ if j = i then a else 0) g)
+        else 0) = 0 := by
+  have hi : i ∉ Finset.univ.erase i := Finset.notMem_erase i Finset.univ
+  apply Finset.sum_eq_zero
+  intro g hg
+  have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
+  simp [addRightEmbedding_apply, hgi, ha]
+
+open Classical in
+/-- The inner sum over the other cells, when the count at `i` is `m` and the rest sum to
+`n - m`, is the binomial term. -/
+private lemma sum_piAntidiag_ite_eq_binomial (w : ι → NNReal) (i : ι) (n m : ℕ) (hmn : m ≤ n) :
+    (∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
+        if (addRightEmbedding fun j ↦ if j = i then m else 0) g i = m then
+          multinomialWeight w ((addRightEmbedding fun j ↦ if j = i then m else 0) g)
+        else 0) =
+      (n.choose m : ℝ≥0∞) * (w i : ℝ≥0∞) ^ m *
+        (∑ j ∈ Finset.univ.erase i, (w j : ℝ≥0∞)) ^ (n - m) := by
+  have hi : i ∉ Finset.univ.erase i := Finset.notMem_erase i Finset.univ
+  calc
+    (∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
+        if (addRightEmbedding fun j ↦ if j = i then m else 0) g i = m then
+          multinomialWeight w ((addRightEmbedding fun j ↦ if j = i then m else 0) g)
+        else 0) =
+        ∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
+          multinomialWeight w
+            ((addRightEmbedding fun j ↦ if j = i then m else 0) g) := by
+      apply Finset.sum_congr rfl
+      intro g hg
+      have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
+      simp [addRightEmbedding_apply, hgi]
+    _ = (n.choose m : ℝ≥0∞) * (w i : ℝ≥0∞) ^ m *
+        ∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
+          (Nat.multinomial (Finset.univ.erase i) g : ℝ≥0∞) *
+            ∏ j ∈ Finset.univ.erase i, (w j : ℝ≥0∞) ^ g j := by
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro g hg
+      rw [multinomialWeight_add_apply w i m (n - m) g hg, Nat.add_sub_of_le hmn]
+    _ = _ := by
+      rw [← Finset.sum_pow_eq_sum_piAntidiag]
+
+open Classical in
 private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i : ι) :
     (∑ k ∈ Finset.piAntidiag Finset.univ n,
         if k i = m then multinomialWeight w k else 0) =
@@ -118,29 +165,7 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
   simp only [Finset.sum_map]
   by_cases hmn : m ≤ n
   · rw [Finset.sum_eq_single (m, n - m)]
-    · calc
-        (∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
-            if (addRightEmbedding fun j ↦ if j = i then m else 0) g i = m then
-              multinomialWeight w ((addRightEmbedding fun j ↦ if j = i then m else 0) g)
-            else 0) =
-            ∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
-              multinomialWeight w
-                ((addRightEmbedding fun j ↦ if j = i then m else 0) g) := by
-          apply Finset.sum_congr rfl
-          intro g hg
-          have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
-          simp [addRightEmbedding_apply, hgi]
-        _ = (n.choose m : ℝ≥0∞) * (w i : ℝ≥0∞) ^ m *
-            ∑ g ∈ Finset.piAntidiag (Finset.univ.erase i) (n - m),
-              (Nat.multinomial (Finset.univ.erase i) g : ℝ≥0∞) *
-                ∏ j ∈ Finset.univ.erase i, (w j : ℝ≥0∞) ^ g j := by
-          rw [Finset.mul_sum]
-          apply Finset.sum_congr rfl
-          intro g hg
-          rw [multinomialWeight_add_apply w i m (n - m) g hg,
-            Nat.add_sub_of_le hmn]
-        _ = _ := by
-          rw [← Finset.sum_pow_eq_sum_piAntidiag]
+    · exact sum_piAntidiag_ite_eq_binomial w i n m hmn
     · rintro ⟨a, b⟩ hab hpne
       have ha : a ≠ m := by
         intro ham
@@ -149,25 +174,19 @@ private lemma sum_multinomialWeight_eq_apply (w : ι → NNReal) (n m : ℕ) (i 
         · exact ham
         · have hab' := Finset.mem_antidiagonal.mp hab
           omega
-      apply Finset.sum_eq_zero
-      intro g hg
-      have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
-      simp [addRightEmbedding_apply, hgi, ha]
+      exact sum_piAntidiag_ite_eq_zero w i m a b ha
     · intro hnot
       exact (hnot (by simp [Finset.mem_antidiagonal, Nat.add_sub_of_le hmn])).elim
   · have hnm : n < m := Nat.lt_of_not_ge hmn
     rw [Finset.sum_eq_zero]
     · simp [Nat.choose_eq_zero_of_lt hnm]
     · rintro ⟨a, b⟩ hab
-      apply Finset.sum_eq_zero
-      intro g hg
       have ha : a ≠ m := by
         have han : a ≤ n := by
           have := Finset.mem_antidiagonal.mp hab
           omega
         omega
-      have hgi := Finset.eq_zero_of_notMem_of_mem_piAntidiag hi hg
-      simp [addRightEmbedding_apply, hgi, ha]
+      exact sum_piAntidiag_ite_eq_zero w i m a b ha
 
 /-- The count in a fixed cell of a multinomial random vector is binomial, with success probability
 equal to that cell's weight. -/

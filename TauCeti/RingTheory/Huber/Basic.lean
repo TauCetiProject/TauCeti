@@ -8,11 +8,13 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
+import Mathlib.RingTheory.FiniteType
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.Algebra.Group.Pow
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
@@ -49,6 +51,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 
 * `TauCeti.Huber.PairOfDefinition.mem_idealImage` and
   `TauCeti.Huber.PairOfDefinition.coe_idealImage`: membership in the image of `Iⁿ`.
+* `TauCeti.Huber.PairOfDefinition.finiteType_map`: finite generation over a ring of definition
+  descends along an open quotient map.
 * `TauCeti.Huber.PairOfDefinition.span_image_eq_extendedIdealOfDefinition`: generators of `I`
   continue to generate its extension to `A`.
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero`: the images of `Iⁿ` are a neighbourhood
@@ -59,6 +63,10 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   multiplies a given element into a given open subring.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
+* `TauCeti.Huber.IsBounded.image_of_isPseudoUniformizer` and
+  `TauCeti.Huber.IsPowerBounded.map_of_isPseudoUniformizer`: out of a topological monoid with zero
+  admitting a pseudouniformiser, any morphism continuous at zero preserves boundedness and
+  power-boundedness.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
@@ -90,8 +98,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   `TauCeti.Huber.isTateRing_iff_exists_isOpen_isBounded`: conversely, a topological ring with an
   open bounded subring and a pseudouniformiser is a Tate ring. This is how Tate rings given by a
   norm, such as nonarchimedean normed fields, are recognised.
-* `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the first of the
-  roadmap's Layer-0 examples.
+* `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the simplest
+  example.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_eq_bot`: every ideal
   of definition of a discrete ring is nilpotent.
 * `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`: pure algebra, stated here because it is what
@@ -103,8 +111,7 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 `PairOfDefinition` and `IsHuberRing` follow the shape of sfingali's mathlib4#42312, which bundles
 the same five fields; the name `PairOfDefinition` is used rather than that PR's `RingOfDefinition`
 because the structure carries the pair `(A₀, I)`, which is what Wedhorn calls a pair of
-definition — a ring of definition is the `A₀` alone. Everything else here is new. The selection
-of results follows `AdicSpaces/Suggested.lean` in the roadmap.
+definition — a ring of definition is the `A₀` alone. Everything else here is new.
 
 ## Implementation notes
 
@@ -153,7 +160,7 @@ theorem exists_sum_eq_of_mem_span_mul (G : Finset R) (K : Ideal R) {b : R}
     exacts [ha _, K.zero_mem]
   · rw [Finsupp.sum_fintype _ _ (by simp),
       ← Finset.sum_finset_coe (fun z ↦ z * if h : z ∈ G then a ⟨z, h⟩ else 0) G]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [Finset.mem_coe.mp i.2, mul_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [Finset.mem_coe.mp i.property, mul_comm]
 
 end SpanMul
 
@@ -209,6 +216,39 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     {φ : F} (hφ : Continuous φ) {a : A} (ha : IsPseudoUniformizer a) :
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
+
+/-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
+at zero sends bounded sets to bounded sets.** -/
+theorem IsBounded.image_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [MonoidWithZero B] [TopologicalSpace B] [ContinuousMul B]
+    [FunLike F A B] [MonoidWithZeroHomClass F A B] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : F} (hφ : ContinuousAt φ 0) {S : Set A} (hS : IsBounded S) :
+    IsBounded (φ '' S) := by
+  refine isBounded_iff.mpr fun U hU ↦ ?_
+  obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp
+    ((by simpa [nhds_prod_eq] using (continuous_mul (M := B)).tendsto ((0 : B), (0 : B)) :
+      Filter.Tendsto (fun p : B × B ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0)) hU)
+  obtain ⟨m, hm⟩ := hS.exists_pow_mul_subset hϖ.isTopologicallyNilpotent (hφ (map_zero φ ▸ hW₂))
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
+  let v : Bˣ := Units.map (MonoidHom.ofClass φ) u
+  refine ⟨(· * (↑v⁻¹ : B)) ⁻¹' W₁,
+    (continuous_id.mul continuous_const).continuousAt.preimage_mem_nhds (by simpa using hW₁), ?_⟩
+  rintro _ ⟨b, hb, _, ⟨s, hs, rfl⟩, rfl⟩
+  have hmem₂ : (v : B) * φ s ∈ W₂ := by
+    simpa [v, hu, ← map_pow, ← map_mul] using hm (Set.mul_mem_mul (Set.mem_singleton _) hs)
+  simpa [mul_assoc] using hW (Set.mk_mem_prod hb hmem₂)
+
+/-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
+at zero preserves power-boundedness.** -/
+theorem IsPowerBounded.map_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [MonoidWithZero B] [TopologicalSpace B] [ContinuousMul B]
+    [FunLike F A B] [MonoidWithZeroHomClass F A B] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : F} (hφ : ContinuousAt φ 0) {a : A} (ha : IsPowerBounded a) :
+    IsPowerBounded (φ a) := by
+  refine isPowerBounded_iff.mpr
+    (((isPowerBounded_iff.mp ha).image_of_isPseudoUniformizer hϖ hφ).subset ?_)
+  rintro _ ⟨n, rfl⟩
+  exact ⟨a ^ n, ⟨n, rfl⟩, map_pow φ a n⟩
 
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/
@@ -270,7 +310,7 @@ theorem idealImage_le_ringOfDefinition (P : PairOfDefinition A) (n : ℕ) :
     P.idealImage n ≤ P.ringOfDefinition.toAddSubgroup := by
   intro x hx
   obtain ⟨y, -, rfl⟩ := (P.mem_idealImage n).mp hx
-  exact y.2
+  exact y.property
 
 /-- `Iⁿ ⊆ A` absorbs multiplication by an element of the ring of definition. -/
 theorem mul_mem_idealImage (P : PairOfDefinition A) {n : ℕ} {a x : A}
@@ -477,15 +517,34 @@ theorem le_powerBoundedSubring [NonarchimedeanRing A] (P : PairOfDefinition A) :
     P.ringOfDefinition ≤ powerBoundedSubring A := fun _ ha ↦
   mem_powerBoundedSubring.mpr (P.isBounded_ringOfDefinition.isPowerBounded_of_mem ha)
 
+/-- A ring of definition is closed, being an open additive subgroup. -/
+theorem isClosed_ringOfDefinition [IsTopologicalAddGroup A] (P : PairOfDefinition A) :
+    IsClosed (P.ringOfDefinition : Set A) :=
+  P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
+
+/-- A sum of elements of `c A₀` lies in `c A₀`, for `c` a unit: the set is closed, being the
+image of the closed subring `A₀` under multiplication by a unit. -/
+theorem mem_smul_of_hasSum [IsTopologicalRing A] (P : PairOfDefinition A) {c : A} (hc : IsUnit c)
+    {ι : Type*} {f : ι → A} {s : A} (hs : HasSum f s)
+    (hf : ∀ i, f i ∈ c • (P.ringOfDefinition : Set A)) :
+    s ∈ c • (P.ringOfDefinition : Set A) := by
+  obtain ⟨u, rfl⟩ := hc
+  simp only [Set.mem_smul_set, SetLike.mem_coe] at hf ⊢
+  refine ⟨↑u⁻¹ * s, (hs.mul_left _).mem (s := P.ringOfDefinition) P.isClosed_ringOfDefinition
+    fun i ↦ ?_, ?_⟩
+  · obtain ⟨r, hr, hfi⟩ := hf i
+    rwa [← hfi, smul_eq_mul, Units.inv_mul_cancel_left]
+  · rw [smul_eq_mul, Units.mul_inv_cancel_left]
+
 /-- The image of a pair of definition along an open quotient map `f : A →+* B`: its ring of
 definition is the image of `A₀` and its ideal of definition is the image of `I`. -/
-def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+def map {B : Type*} [CommRing B] [TopologicalSpace B]
     (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) : PairOfDefinition B := by
   let A₀ : Subring B := P.ringOfDefinition.map f
   let f₀ : P.ringOfDefinition →+* A₀ :=
     (f.comp P.ringOfDefinition.subtype).codRestrict A₀ fun a ↦
-      Subring.mem_map.mpr ⟨a, a.2, rfl⟩
-  have hf₀_cont : Continuous f₀ := (hf.continuous.comp continuous_subtype_val).subtype_mk _
+      Subring.mem_map.mpr ⟨a, a.property, rfl⟩
+  have hf₀_cont : Continuous f₀ := (hf.continuous.comp continuous_subtypeVal).subtype_mk _
   have hf₀_open : IsOpenMap f₀ :=
     hf.isOpenMap.subtype_map P.isOpen_ringOfDefinition
       (fun a ha ↦ Subring.mem_map.mpr ⟨a, ha, rfl⟩)
@@ -507,7 +566,7 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 image of the original one. -/
 @[simp]
 theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f) :
     (P.map f hf).ringOfDefinition = P.ringOfDefinition.map f :=
   (rfl)
 
@@ -515,12 +574,12 @@ theorem map_ringOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
 under the map `A₀ → f(A₀)` induced by `f`. -/
 @[simp]
 theorem map_idealOfDefinition {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B)
+    [TopologicalSpace B] (P : PairOfDefinition A) (f : A →+* B)
     (hf : IsOpenQuotientMap f) :
     (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
       ((f.comp P.ringOfDefinition.subtype).codRestrict
         (P.map f hf).ringOfDefinition fun a ↦
-          P.map_ringOfDefinition f hf ▸ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
+          P.map_ringOfDefinition f hf ▸ Subring.mem_map.mpr ⟨a, a.property, rfl⟩) :=
   (rfl)
 
 /-- **The neighbourhood basis of the image pair is the image of the original one**: the image in
@@ -528,12 +587,12 @@ theorem map_idealOfDefinition {B : Type*} [CommRing B]
 `P.idealImage n` under `f`. -/
 @[simp]
 theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
+    (P : PairOfDefinition A) (f : A →+* B) (hf : IsOpenQuotientMap f)
     (n : ℕ) :
     (P.map f hf).idealImage n = (P.idealImage n).map (f : A →+ B) := by
   set f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
     (f.comp P.ringOfDefinition.subtype).codRestrict
-      (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+      (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.property, rfl⟩
   have hf₀ : Function.Surjective f₀ := by
     rintro ⟨x, hx⟩
     obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
@@ -547,6 +606,20 @@ theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
     exact ⟨a, ⟨a, ha, rfl⟩, rfl⟩
   · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
     exact ⟨f₀ a, Ideal.mem_map_of_mem f₀ ha, rfl⟩
+
+/-- **Finite generation over a ring of definition descends along an open quotient map**: if `A` is
+finite type over `P.ringOfDefinition` and `f : A →+* B` is an open quotient map, then `B` is
+finite type over the image ring of definition `(P.map f hf).ringOfDefinition`. -/
+instance finiteType_map {B : Type*} [CommRing B] [TopologicalSpace B]
+    (P : PairOfDefinition A) [hfg : Algebra.FiniteType P.ringOfDefinition A]
+    (f : A →+* B) (hf : IsOpenQuotientMap f) :
+    Algebra.FiniteType (P.map f hf).ringOfDefinition B := by
+  let f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
+    (f.comp P.ringOfDefinition.subtype).codRestrict _ fun a ↦
+      Subring.mem_map.mpr ⟨a, a.property, rfl⟩
+  have hcomp : ((algebraMap (P.map f hf).ringOfDefinition B).comp f₀).FiniteType :=
+    (RingHom.finiteType_algebraMap.mpr hfg).comp_surjective hf.surjective
+  exact RingHom.finiteType_algebraMap.mp (RingHom.FiniteType.of_comp_finiteType hcomp)
 
 /-- The image of a pair of definition in a quotient ring `A ⧸ J`, with the quotient topology: its
 ring of definition is the image of `A₀` (`TauCeti.Huber.PairOfDefinition.quotient_ringOfDefinition`)
@@ -594,7 +667,7 @@ noncomputable def comap {B : Type*} [CommRing B] [TopologicalSpace B]
     (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
   let e := P.comapRingOfDefinitionEquiv f hf.injective hP
   have he : IsInducing e :=
-    (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.2
+    (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.property
   { ringOfDefinition := P.ringOfDefinition.comap f
     isOpen_ringOfDefinition := P.isOpen_ringOfDefinition.preimage hf.continuous
     idealOfDefinition := P.idealOfDefinition.comap e
@@ -620,7 +693,7 @@ theorem mem_comap_idealOfDefinition {B : Type*} [CommRing B]
     (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range)
     {b : (P.comap f hf hP).ringOfDefinition} :
     b ∈ (P.comap f hf hP).idealOfDefinition ↔
-      (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.2)⟩ :
+      (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.property)⟩ :
         P.ringOfDefinition) ∈ P.idealOfDefinition :=
   Ideal.mem_comap.trans <| Iff.of_eq <| congrArg (· ∈ P.idealOfDefinition) <| Subtype.ext <|
     P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP b
@@ -644,7 +717,7 @@ theorem comap_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
   · rintro ⟨y, hy, rfl⟩
     exact ⟨e y, hy, P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP y⟩
   · rintro ⟨z, hz, hzx⟩
-    have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.2
+    have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.property
     have hez : e ⟨x, hx⟩ = z := Subtype.ext <|
       (P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP ⟨x, hx⟩).trans hzx.symm
     exact ⟨⟨x, hx⟩, by rwa [Ideal.mem_comap, hez], rfl⟩
@@ -663,9 +736,7 @@ complete: being an open subgroup it is closed, hence complete, and its topology 
 instance PairOfDefinition.isAdicComplete_idealOfDefinition (P : PairOfDefinition A) :
     IsAdicComplete P.idealOfDefinition P.ringOfDefinition := by
   have : IsUniformAddGroup P.ringOfDefinition := P.ringOfDefinition.toAddSubgroup.isUniformAddGroup
-  have hclosed : IsClosed (P.ringOfDefinition : Set A) :=
-    P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
-  have : CompleteSpace P.ringOfDefinition := hclosed.completeSpace_coe
+  have : CompleteSpace P.ringOfDefinition := P.isClosed_ringOfDefinition.completeSpace_coe
   exact P.isAdic_idealOfDefinition.isAdicComplete_iff.mpr ⟨inferInstance, inferInstance⟩
 
 end Complete
@@ -765,8 +836,8 @@ theorem PairOfDefinition.exists_pow_idealOfDefinition_eq_bot (P : PairOfDefiniti
   refine ⟨n, (Submodule.eq_bot_iff _).mpr fun x hx ↦ Subtype.ext ?_⟩
   simpa using hn ((P.mem_idealImage n).mpr ⟨x, hx, rfl⟩)
 
-/-- A discrete ring is Huber, with `(A, 0)` as a pair of definition. This is the first of the
-roadmap's Layer-0 examples, and the witness that `IsHuberRing` is not vacuous. -/
+/-- A discrete ring is Huber, with `(A, 0)` as a pair of definition. This is the simplest example,
+and the witness that `IsHuberRing` is not vacuous. -/
 instance (priority := 100) IsHuberRing.of_discreteTopology [IsTopologicalRing A] :
     IsHuberRing A :=
   ⟨⟨PairOfDefinition.discrete A⟩⟩
@@ -890,13 +961,13 @@ theorem _root_.Subring.isAdic_span_singleton_of_isOpen_of_isBounded :
     IsAdic (Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)}) := by
   rw [isAdic_iff]
   refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [A₀.coe_span_singleton_pow hϖA₀]
-    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
+  · rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
+    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtypeVal
   · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht
     refine ⟨n, ?_⟩
-    rw [A₀.coe_span_singleton_pow hϖA₀]
+    rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
     refine fun x hx ↦ hts (hn ?_)
     rw [Set.singleton_mul]
     exact hx
@@ -926,7 +997,7 @@ theorem mem_ofIsPseudoUniformizer_idealOfDefinition
     x ∈ (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).idealOfDefinition ↔
       ∃ y ∈ A₀, ϖ * y = x := by
   -- the ideal of definition is `Ideal.span {ϖ}` by construction, and `x` is an element of `A₀`
-  exact A₀.mem_span_singleton_iff hϖA₀
+  exact SubsemiringClass.mem_span_singleton_iff A₀ hϖA₀
 
 end PairOfDefinition
 
@@ -960,7 +1031,7 @@ theorem PairOfDefinition.isAdicComplete_span_singleton {A : Type*} [CommRing A]
     ext x
     rw [← Ideal.comap_symm, Ideal.mem_comap,
       PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition,
-      P.ringOfDefinition.mem_span_singleton_iff ϖ.property]
+      SubsemiringClass.mem_span_singleton_iff _ ϖ.property]
     simp only [e, RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply]
   rw [← hI]
   exact (IsAdicComplete.congr_ringEquiv Q.idealOfDefinition e).mpr

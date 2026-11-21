@@ -35,12 +35,13 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- For an integral generator `x`, the different exponent is the additive valuation of the
 derivative of its minimal polynomial at `x`. -/
-theorem natCast_differentExponent_eq_addVal_aeval_derivative_minpoly [Module.Finite K L]
+theorem natCast_differentExponent_eq_addVal_aeval_derivative_minpoly
     {x : 𝒪[L]}
     (hx : Algebra.adjoin 𝒪[K] {x} = ⊤) :
     (differentExponent K L : ℕ∞) =
       IsDiscreteValuationRing.addVal 𝒪[L]
         (Polynomial.aeval x (Polynomial.derivative (minpoly 𝒪[K] x))) := by
+  have := finite_of_valuativeExtension K L
   have hdifferent := differentIdeal_eq_span_aeval_derivative_minpoly 𝒪[K] K L 𝒪[L] x hx
   have hderiv0 : Polynomial.aeval x (Polynomial.derivative (minpoly 𝒪[K] x)) ≠ 0 := by
     intro h

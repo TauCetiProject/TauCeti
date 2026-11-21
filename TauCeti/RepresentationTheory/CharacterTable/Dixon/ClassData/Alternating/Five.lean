@@ -362,7 +362,7 @@ private theorem card_classFinset_zero_alternatingGroupFiveClassData :
   rw [alternatingGroupFiveClassData.card_classFinset,
     alternatingGroupFiveClassData.classOf_eq_mk]
   rw [show alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 by simp]
-  exact ConjClasses.ncard_carrier_mk_of_mem_center (Subgroup.one_mem _)
+  exact ConjClasses.ncard_carrier_mk_of_mem_center (one_mem _)
 
 /-- A class whose representative has cycle type `c`, and which contains every element of cycle
 type `c`, is the finset of elements of cycle type `c`. -/

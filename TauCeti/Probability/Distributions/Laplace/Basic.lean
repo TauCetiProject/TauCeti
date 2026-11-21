@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The Laplace distribution
@@ -75,8 +76,6 @@ moment.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, the **Laplace** target.
-* Formal declaration scaffold: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, Layer 3.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
   Wiley (1995), ch. 24.
 -/
@@ -301,7 +300,7 @@ theorem integrable_laplaceMeasure_iff (μ b : ℝ) {g : ℝ → E} :
     Integrable g (laplaceMeasure μ b) ↔
       Integrable fun y ↦ laplacePDFReal μ b y • g y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact integrable_withDensity_ofReal_iff (measurable_laplacePDFReal μ b).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_laplacePDFReal μ b).aemeasurable
     (ae_of_all _ (laplacePDFReal_nonneg μ b))
 
 /-- **Integral transfer.** An integral against a Laplace measure is the density-weighted Lebesgue
@@ -309,7 +308,7 @@ integral. This holds at every scale, the zero measure included. -/
 theorem integral_laplaceMeasure_eq (μ b : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂laplaceMeasure μ b = ∫ y, laplacePDFReal μ b y • g y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact integral_withDensity_ofReal (measurable_laplacePDFReal μ b).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_laplacePDFReal μ b).aemeasurable
     (ae_of_all _ (laplacePDFReal_nonneg μ b)) g
 
 end Transfer
@@ -335,23 +334,23 @@ theorem rnDeriv_laplaceMeasure (μ b : ℝ) :
 
 /-! ### The cumulative distribution function -/
 
-/-- The mass a Laplace law assigns to a measurable set on which its density is integrable. -/
-private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s)
-    (hint : IntegrableOn (laplacePDFReal μ b) s) :
+/-- The mass a Laplace law assigns to a measurable set is the integral of its density there. -/
+private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (laplaceMeasure μ b).real s = ∫ y in s, laplacePDFReal μ b y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs hint
+  exact MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b))
+    hs.nullMeasurableSet (measurable_laplacePDFReal μ b).aemeasurable
 
 /-- The upper tail of a Laplace law above its location. -/
 theorem measureReal_Ioi_laplaceMeasure (hb : 0 < b) (hx : μ ≤ x) :
     (laplaceMeasure μ b).real (Ioi x) = Real.exp (-(x - μ) / b) / 2 := by
-  rw [measureReal_laplaceMeasure measurableSet_Ioi integrableOn_laplacePDFReal_Ioi,
+  rw [measureReal_laplaceMeasure measurableSet_Ioi,
     integral_laplacePDFReal_Ioi hb hx]
 
 /-- The lower tail of a Laplace law below its location. -/
 theorem measureReal_Iic_laplaceMeasure_of_le (hb : 0 < b) (hx : x ≤ μ) :
     (laplaceMeasure μ b).real (Iic x) = Real.exp ((x - μ) / b) / 2 := by
-  rw [measureReal_laplaceMeasure measurableSet_Iic integrableOn_laplacePDFReal_Iic,
+  rw [measureReal_laplaceMeasure measurableSet_Iic,
     integral_laplacePDFReal_Iic hb hx]
 
 /-- **The cumulative distribution function of the Laplace law.** -/
@@ -584,9 +583,10 @@ theorem integrableExpSet_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
 /-- **The moment-generating function of a Laplace law** with location `μ` and positive scale `b`,
 on its exact finiteness domain. -/
 @[simp]
-theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
+theorem mgf_id_laplaceMeasure (μ : ℝ) {t : ℝ}
     (ht : t ∈ Set.Ioo (-b⁻¹) b⁻¹) :
     mgf id (laplaceMeasure μ b) t = Real.exp (μ * t) / (1 - b ^ 2 * t ^ 2) := by
+  have hb : 0 < b := inv_pos.mp (by linarith [ht.1, ht.2])
   have hmeasure : Integrable (fun y : ℝ => Real.exp (t * y)) (laplaceMeasure μ b) :=
     (integrable_exp_mul_laplaceMeasure_iff hb μ t).2 ht
   have hint : Integrable
@@ -633,11 +633,11 @@ theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
 /-- **The cumulant-generating function of a Laplace law** is the real logarithm of its mgf on
 the exact finiteness domain. -/
 @[simp]
-theorem cgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
+theorem cgf_id_laplaceMeasure (μ : ℝ) {t : ℝ}
     (ht : t ∈ Set.Ioo (-b⁻¹) b⁻¹) :
     cgf id (laplaceMeasure μ b) t =
       Real.log (Real.exp (μ * t) / (1 - b ^ 2 * t ^ 2)) := by
-  rw [cgf, mgf_id_laplaceMeasure hb μ ht]
+  rw [cgf, mgf_id_laplaceMeasure μ ht]
 
 private theorem charFun_laplaceMeasure_zero_loc (hb : 0 < b) (t : ℝ) :
     charFun (laplaceMeasure 0 b) t = ((1 / (1 + b ^ 2 * t ^ 2) : ℝ) : ℂ) := by

@@ -107,24 +107,24 @@ def cyclicTwoSignEquivAugmentation :
         rw [toSubmodule_augmentationSubrepresentation, LinearMap.mem_ker, map_sub]
         simp only [Module.Basis.coe_sumCoords, MonoidAlgebra.basis_repr,
           MonoidAlgebra.coeff_single, Finsupp.sum_single_index, id_eq, sub_self]⟩
-      invFun := fun v ↦ v.1.coeff 1
+      invFun := fun v ↦ v.val.coeff 1
       left_inv := fun r ↦ by
         simp [MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_single, one_ne_ofAdd_one.symm]
       right_inv := fun v ↦ by
         apply Subtype.ext
-        have hv := mem_augmentationSubrepresentation_iff.mp v.2
-        rw [MonoidAlgebra.eq_single_one_add_single_ofAdd_one v.1] at hv
-        have hc : v.1.coeff 1 + v.1.coeff (Multiplicative.ofAdd 1) = 0 := by
+        have hv := mem_augmentationSubrepresentation_iff.mp v.property
+        rw [MonoidAlgebra.eq_single_one_add_single_ofAdd_one v.val] at hv
+        have hc : v.val.coeff 1 + v.val.coeff (Multiplicative.ofAdd 1) = 0 := by
           simpa [MonoidAlgebra.coeff_add, MonoidAlgebra.coeff_single,
             Finsupp.single_apply, Finset.sum_add_distrib] using hv
-        have hc' : v.1.coeff (Multiplicative.ofAdd 1) = -v.1.coeff 1 :=
+        have hc' : v.val.coeff (Multiplicative.ofAdd 1) = -v.val.coeff 1 :=
           eq_neg_iff_add_eq_zero.mpr (by simpa [add_comm] using hc)
         calc
-          _ = MonoidAlgebra.single 1 (v.1.coeff 1) +
+          _ = MonoidAlgebra.single 1 (v.val.coeff 1) +
               MonoidAlgebra.single (Multiplicative.ofAdd 1)
-                (v.1.coeff (Multiplicative.ofAdd 1)) := by
+                (v.val.coeff (Multiplicative.ofAdd 1)) := by
             simp only [hc', MonoidAlgebra.single_neg, sub_eq_add_neg]
-          _ = v.1 := (MonoidAlgebra.eq_single_one_add_single_ofAdd_one v.1).symm
+          _ = v.val := (MonoidAlgebra.eq_single_one_add_single_ofAdd_one v.val).symm
       map_add' := fun x y ↦ by ext g; simp [MonoidAlgebra.single_add]; abel
       map_smul' := fun a r ↦ by ext g; simp [smul_sub, MonoidAlgebra.smul_single] }
     fun g ↦ by
@@ -140,14 +140,14 @@ def cyclicTwoSignEquivAugmentation :
 
 @[simp]
 theorem cyclicTwoSignEquivAugmentation_apply (r : R) :
-    (cyclicTwoSignEquivAugmentation r).1 = MonoidAlgebra.single 1 r -
+    (cyclicTwoSignEquivAugmentation r).val = MonoidAlgebra.single 1 r -
       MonoidAlgebra.single (Multiplicative.ofAdd 1) r := (rfl)
 
 @[simp]
 theorem cyclicTwoSignEquivAugmentation_symm_apply
     (v : (augmentationSubrepresentation R (Multiplicative (ZMod 2))
       (Multiplicative (ZMod 2))).toSubmodule) :
-    cyclicTwoSignEquivAugmentation.symm v = v.1.coeff 1 := (rfl)
+    cyclicTwoSignEquivAugmentation.symm v = v.val.coeff 1 := (rfl)
 
 /-- In characteristic two the sign representation is trivial. -/
 @[simp]
@@ -179,11 +179,12 @@ variable {k : Type} [Ring k]
 
 /-- In characteristic two, augmentation of the regular representation of `C₂` has no
 equivariant right inverse. -/
-theorem cyclicTwoPermutationAugmentation_no_section [Nontrivial k] [CharP k 2] :
+theorem cyclicTwoPermutationAugmentation_no_section [CharP k 2] :
     ¬ ∃ s : Rep.trivial k (Multiplicative (ZMod 2)) k ⟶
         Rep.ofMulAction k (Multiplicative (ZMod 2)) (Multiplicative (ZMod 2)),
       s ≫ permutationAugmentation k (Multiplicative (ZMod 2)) (Multiplicative (ZMod 2)) = 𝟙 _ := by
   rintro ⟨s, hs⟩
+  have : Nontrivial k := CharP.nontrivial_of_char_ne_one (v := 2) (by norm_num)
   let v := s.hom (1 : k)
   have hv : Representation.ofMulAction k (Multiplicative (ZMod 2))
       (Multiplicative (ZMod 2)) (Multiplicative.ofAdd 1) v = v := by

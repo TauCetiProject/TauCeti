@@ -78,11 +78,9 @@ q + 1`, the number of points of the projective line.
 
 ## Implementation notes
 
-The name follows the `GL2` prefix that
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` uses for this family of objects
-(`GL2Borel`, `GL2PrincipalSeries`, `GL2Steinberg`, `GL2NonSplitTorus`), rather than being placed in
-the `Matrix.GeneralLinearGroup` namespace; the statements are the roadmap's, with `[Field F]
-[Fintype F]` weakened to `[CommRing R]` wherever the result does not count.
+The name follows the `GL2` prefix shared by this family of objects (`TauCeti.GL2Borel`,
+`TauCeti.GL2PrincipalSeries`, `TauCeti.GL2Steinberg`, `TauCeti.GL2NonSplitTorus`), rather than being
+placed in the `Matrix.GeneralLinearGroup` namespace.
 
 The subgroup is the `Fin 2` specialization of `TauCeti.upperTriangularGroup`. Its public membership
 lemma is nevertheless stated as the concrete condition `g 1 0 = 0`, because that is what the
@@ -91,10 +89,7 @@ general upper-triangular predicate.
 
 ## References
 
-This supplies the Borel subgroup of Layer 9 ("the representation theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`, whose `GL2Borel` is the subgroup
-defined here, together with the index `q + 1` that its principal-series dimension count needs. See
-also W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
 -/
 
 public section
@@ -139,6 +134,26 @@ theorem coe_mk (a d : Rˣ) (b : R) :
     ((mk a d b : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, (d : R)] :=
   (rfl)
 
+/-- Upper-triangular matrices multiply diagonal entry by diagonal entry, and the upper-right entry
+of the product is `a b' + b d'`. -/
+@[simp]
+theorem mk_mul_mk (a d a' d' : Rˣ) (b b' : R) :
+    (mk a d b * mk a' d' b' : GL (Fin 2) R) = mk (a * a') (d * d') (a * b' + b * d') := by
+  refine Units.ext (Matrix.ext fun i j => ?_)
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The identity matrix is `!![1, 0; 0, 1]`. -/
+@[simp]
+theorem mk_one_one_zero : (mk 1 1 0 : GL (Fin 2) R) = 1 := by
+  refine Units.ext (Matrix.ext fun i j => ?_)
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- The inverse of `!![a, b; 0, d]` is `!![a⁻¹, -a⁻¹ b d⁻¹; 0, d⁻¹]`. -/
+@[simp]
+theorem inv_mk (a d : Rˣ) (b : R) :
+    (mk a d b : GL (Fin 2) R)⁻¹ = mk a⁻¹ d⁻¹ (-((a⁻¹ : Rˣ) * b * (d⁻¹ : Rˣ))) :=
+  inv_eq_of_mul_eq_one_right <| by simp [← mul_assoc]
+
 end Ring
 
 end GL2Borel
@@ -163,7 +178,7 @@ theorem mem_iff {g : GL (Fin 2) R} :
 @[simp]
 theorem apply_one_zero (g : GL2Borel R) :
     ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
-  mem_iff.mp g.2
+  mem_iff.mp g.property
 
 variable (R)
 

@@ -8,11 +8,15 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Directional differentiation and linear maps on Schwartz space
 
-Directional derivatives of a Schwartz function commute, since its second derivative is symmetric.
+Directional derivatives of a Schwartz function commute, since its second derivative is symmetric,
+and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`).
+Near a point where a Schwartz function is constant, its line derivatives vanish
+(`SchwartzMap.lineDerivOp_eventuallyEq_zero`).
 The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
 the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
@@ -25,9 +29,12 @@ differentiation.
 Multiplication by a function `g` of temperate growth satisfies the Leibniz rule
 `∂_v (g f) = (∂_v g) f + g ∂_v f`. For a continuous linear functional `L` it reads
 `∂_v (L f) = L ∂_v f + L v f`, with iterate
-`∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`. On the Fourier side, multiplying a symbol
-by `⟪h, ξ⟫` differentiates its kernel along `h`, so these identities control the derivatives of
-the symbol of a differentiated kernel.
+`∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`; when `f` vanishes outside
+`closedBall 0 t`, this bounds `‖∂_v^(k+1) (L f)‖` by
+`t ‖L‖ ‖∂_v^(k+1) f‖ + (k + 1) ‖L‖ ‖v‖ ‖∂_v^k f‖`
+(`SchwartzMap.norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall`). On the
+Fourier side, multiplying a symbol by `⟪h, ξ⟫` differentiates its kernel along `h`, so these
+identities control the derivatives of the symbol of a differentiated kernel.
 
 Integrating by parts along an orthonormal basis gives Green's identity
 `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
@@ -89,6 +96,23 @@ theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_
     fderiv_clm_apply hd (differentiableAt_const _), fderiv_clm_apply hd (differentiableAt_const _)]
   simpa using ((f.smooth 2).contDiffAt.isSymmSndFDerivAt (by simp)).eq v w
 
+/-- Directional differentiation commutes with translation. -/
+@[simp]
+theorem lineDerivOp_compSubConstCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] (f : 𝓢(V, F))
+    (a v : V) : ∂_{v} (f.compSubConstCLM 𝕜 a) = (∂_{v} f).compSubConstCLM 𝕜 a := by
+  ext x
+  rw [lineDerivOp_apply_eq_fderiv, funext (compSubConstCLM_apply f a), fderiv_comp_sub,
+    compSubConstCLM_apply, lineDerivOp_apply_eq_fderiv]
+
+open scoped Topology in
+/-- A Schwartz function that is constant near a point has line derivatives vanishing near that
+point. -/
+theorem lineDerivOp_eventuallyEq_zero {f : 𝓢(V, F)} {x : V} {c : F}
+    (hf : ⇑f =ᶠ[𝓝 x] fun _ ↦ c) (v : V) : ⇑(∂_{v} f : 𝓢(V, F)) =ᶠ[𝓝 x] fun _ ↦ 0 := by
+  filter_upwards [hf.eventually_nhds] with y hy
+  rw [lineDerivOp_apply_eq_fderiv, Filter.EventuallyEq.fderiv_eq (f := fun _ ↦ c) hy,
+    fderiv_const_apply, zero_apply]
+
 /-- A coordinate partial derivative of a Schwartz function with values in Euclidean space is a
 coordinate of its line derivative. -/
 theorem fderiv_apply_eq_lineDerivOp_apply {ι : Type*} [Fintype ι]
@@ -137,6 +161,28 @@ theorem iterate_lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F
     congr 2
     push_cast
     ring
+
+/-- For `f` supported in `Metric.closedBall 0 t`, the iterated Leibniz rule bounds the
+`(k + 1)`-st directional derivative of `L f` along `v` by
+`t * ‖L‖ * ‖∂_v^(k+1) f‖ + (k + 1) * ‖L‖ * ‖v‖ * ‖∂_v^k f‖`. -/
+theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall (L : V →L[ℝ] ℝ)
+    (f : 𝓢(V, F)) {t : ℝ} (hf : Function.support f ⊆ Metric.closedBall 0 t) (v : V) (k : ℕ)
+    (x : V) :
+    ‖(∂_{v})^[k + 1] (smulLeftCLM F L f) x‖ ≤
+      t * ‖L‖ * ‖(∂_{v})^[k + 1] f x‖ + (k + 1) * ‖L‖ * ‖v‖ * ‖(∂_{v})^[k] f x‖ := by
+  have hsupp : Function.support ((∂_{v})^[k + 1] f : 𝓢(V, F)) ⊆ Metric.closedBall 0 t :=
+    (subset_tsupport _).trans <|
+      (LineDeriv.iteratedLineDerivOp_const_eq_iter_lineDerivOp (k + 1) v f ▸
+        tsupport_iteratedLineDerivOp_subset _ f).trans <|
+        closure_minimal hf Metric.isClosed_closedBall
+  rw [iterate_lineDerivOp_smulLeftCLM_clm, add_apply, smul_apply,
+    smulLeftCLM_apply_apply L.hasTemperateGrowth]
+  refine (norm_add_le _ _).trans
+    (add_le_add (L.norm_apply_smul_le_of_support_subset_closedBall hsupp x) ?_)
+  rw [norm_smul, norm_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity),
+    mul_assoc ((k : ℝ) + 1) ‖L‖ ‖v‖]
+  gcongr
+  exact L.le_opNorm v
 
 open MeasureTheory LineDeriv Laplacian in
 /-- **Green's identity on Schwartz space**: for a continuous bilinear map `B` and an orthonormal

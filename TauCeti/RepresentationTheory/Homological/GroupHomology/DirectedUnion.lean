@@ -46,6 +46,9 @@ by `Rep.resInclusionHom`.
   union of subgroups vanishes in a larger member.
 * `TauCeti.groupHomology.isZero_groupHomology_of_directed`: group homology of a directed union of
   subgroups with vanishing homology vanishes.
+* `TauCeti.groupHomology.subsingleton_groupHomology_of_forall_span`: a module is the directed
+  union of its finitely generated submodules, so its group homology with trivial coefficients
+  vanishes once that of each such submodule does.
 
 ## References
 
@@ -121,7 +124,7 @@ theorem exists_le_chainsMap_subtype_f_eq_of_directed {ι : Type*} {S : ι → Su
   have : Nonempty { i // S i₀ ≤ S i } := ⟨⟨i₀, le_rfl⟩⟩
   obtain ⟨⟨i, hi⟩, y, hy⟩ := exists_chainsMap_subtype_f_eq_of_directed (A := A)
     (S := fun i : { i // S i₀ ≤ S i } ↦ S i)
-    (fun i j ↦ (hS i j).elim fun l hl ↦ ⟨⟨l, i.2.trans hl.1⟩, hl⟩)
+    (fun i j ↦ (hS i j).elim fun l hl ↦ ⟨⟨l, i.property.trans hl.1⟩, hl⟩)
     (eq_top_iff.2 <| hG ▸ iSup_le fun i ↦ by
       obtain ⟨j, hij, hi₀j⟩ := hS i i₀
       exact hij.trans (le_iSup (fun j : { i // S i₀ ≤ S i } ↦ S j) ⟨j, hi₀j⟩)) x
@@ -180,5 +183,35 @@ theorem isZero_groupHomology_of_directed {ι : Type*} [Nonempty ι] {S : ι → 
   obtain ⟨i, y, rfl⟩ := exists_map_subtype_eq hS hG x
   have := ModuleCat.isZero_iff_subsingleton.1 (h i)
   rw [Subsingleton.elim y 0, map_zero]
+
+/-- A module is the directed union of the submodules spanned by its finite subsets, so the group
+homology of its additive group with trivial coefficients vanishes in a given degree as soon as that
+of each of these submodules does. -/
+theorem subsingleton_groupHomology_of_forall_span {R : Type*} [Ring R] {M : Type u}
+    [AddCommGroup M] [Module R M] {n : ℕ}
+    (h : ∀ s : Finset M, Subsingleton
+      (groupHomology (Rep.trivial k (Multiplicative (Submodule.span R (s : Set M))) k) n)) :
+    Subsingleton (groupHomology (Rep.trivial k (Multiplicative M) k) n) := by
+  let S (s : Finset M) : Subgroup (Multiplicative M) :=
+    AddSubgroup.toSubgroup (Submodule.span R (s : Set M)).toAddSubgroup
+  have hS : Directed (· ≤ ·) S := Monotone.directed_le fun s t hst ↦
+    AddSubgroup.toSubgroup.monotone (Submodule.toAddSubgroup_mono
+      (Submodule.span_mono (Finset.coe_subset.2 hst)))
+  have hG : ⨆ s, S s = ⊤ := eq_top_iff.2 fun a _ ↦ Subgroup.mem_iSup_of_mem {a.toAdd} <|
+    (Multiplicative.mem_toSubgroup _ _).2 <|
+      Submodule.subset_span (Finset.mem_coe.2 (Finset.mem_singleton_self _))
+  refine ModuleCat.subsingleton_of_isZero (isZero_groupHomology_of_directed hS hG fun s ↦ ?_)
+  let e : S s ≃* Multiplicative (Submodule.span R (s : Set M)) :=
+    { toFun x := Multiplicative.ofAdd ⟨x.val.toAdd, (Multiplicative.mem_toSubgroup _ _).1
+        x.property⟩
+      invFun y := ⟨Multiplicative.ofAdd y.toAdd.val, (Multiplicative.mem_toSubgroup _ _).2
+          y.toAdd.property⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_mul' _ _ := rfl }
+  have := h s
+  rw [ModuleCat.isZero_iff_subsingleton]
+  -- restricting trivial coefficients to a subgroup gives the trivial representation of it
+  exact e.subsingleton_groupHomology
 
 end TauCeti.groupHomology

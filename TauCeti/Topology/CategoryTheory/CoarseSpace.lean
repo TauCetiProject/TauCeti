@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.ComposableArrows.Basic
+public import TauCeti.Topology.CategoryTheory.ComposableArrows
 public import TauCeti.Topology.CategoryTheory.Nerve
 
 /-!
@@ -14,8 +15,9 @@ public import TauCeti.Topology.CategoryTheory.Nerve
 For a native groupoid `C`, its coarse space is the quotient of its objects by isomorphism,
 with the quotient topology. All vertices of a composable string have the same class. When
 source is continuous on total arrows, these classes give a continuous augmentation of the
-actual topological nerve and hence a map from its fat classifying space to the coarse space.
-No arrows are removed, even when distinct isotropy arrows induce the same object map.
+actual topological nerve (`TauCeti.topologicalNerve.coarseAugmentation`) and hence a map from
+its fat classifying space to the coarse space. No arrows are removed, even when distinct
+isotropy arrows induce the same object map.
 
 If units are also continuous, `TauCeti.fatClassifyingSpace.isQuotientMap_coarseMap` proves
 that the coarse projection is a quotient map. In particular the coarse topology is detected
@@ -36,7 +38,7 @@ public noncomputable section
 
 open CategoryTheory Opposite Topology
 
-namespace TauCeti.fatClassifyingSpace
+namespace TauCeti
 
 universe u
 
@@ -44,32 +46,39 @@ variable {C : Type u} [Category.{u} C] [IsGroupoid C] [TopologicalSpace C]
   [TopologicalSpace (Quiver.Total C)]
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
 
-/-- The augmentation of the topological nerve by the isomorphism class of a vertex.
-Its continuity uses only continuity of source on total arrows. -/
-def coarseAugmentation :
-    SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C ⟶
+/-- The augmentation of the full simplicial topological nerve by the isomorphism class of a
+vertex. Its continuity uses only continuity of source on total arrows. -/
+def topologicalNerve.coarseAugmentation :
+    topologicalNerve C ⟶
       (Functor.const _).obj (TopCat.of (Quotient (isIsomorphicSetoid C))) where
-  app _ := TopCat.ofHom ⟨fun F ↦ Quotient.mk _ (F.obj 0), by
-    apply continuous_quot_mk.comp
-    simpa only [Function.comp_def, ComposableArrows.totalArrow_left] using
-      hs.comp (ComposableArrows.continuous_totalArrow 0 0 le_rfl)⟩
+  app _ := TopCat.ofHom ⟨fun F ↦ Quotient.mk _ (F.obj 0),
+    continuous_quot_mk.comp (ComposableArrows.continuous_obj hs 0)⟩
   naturality _ _ f := by
     ext F
     -- The nerve operator reindexes vertices; every vertex has the same isomorphism class.
-    exact F.quotient_mk_obj
-      ((SimplexCategory.toCat.map (SemiSimplexCategory.toSimplexCategory.map f.unop)).toFunctor.obj
-        (0 : Fin (_ + 1)))
+    exact F.quotient_mk_obj ((SimplexCategory.toCat.map f.unop).toFunctor.obj (0 : Fin (_ + 1)))
 
 /-- The coarse augmentation reads the class of the first vertex. -/
 @[simp↓]
-theorem coarseAugmentation_app_apply (m : SemiSimplexCategoryᵒᵖ)
-    (F : (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj m) :
-    (coarseAugmentation hs).app m F = Quotient.mk (isIsomorphicSetoid C) (F.obj 0) := (rfl)
+theorem topologicalNerve.coarseAugmentation_app_apply (Δ : SimplexCategoryᵒᵖ)
+    (F : (topologicalNerve C).obj Δ) :
+    (topologicalNerve.coarseAugmentation hs).app Δ F =
+      Quotient.mk (isIsomorphicSetoid C) (F.obj 0) := (rfl)
+
+namespace fatClassifyingSpace
 
 /-- The coarse projection from the fat classifying space to the actual orbit quotient
 of objects, with its quotient topology. -/
 def coarseMap : fatClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
-  fatRealization.augment (coarseAugmentation hs)
+  fatRealization.augment
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+      (topologicalNerve.coarseAugmentation hs))
+
+/-- The coarse projection is induced by the coarse augmentation of the topological nerve. -/
+theorem coarseMap_eq_augment :
+    coarseMap hs = fatRealization.augment
+      (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+        (topologicalNerve.coarseAugmentation hs)) := (rfl)
 
 /-- A point of a simplex projects to the class of its first vertex. By
 `ComposableArrows.quotient_mk_obj`, this is also the class of every other vertex. -/
@@ -80,8 +89,10 @@ theorem coarseMap_ι (m : SemiSimplexCategory)
     (t : SemiSimplexCategory.toTop.obj m) :
     coarseMap hs (fatRealization.ι _ m (F, t)) =
       Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
-  (fatRealization.augment_ι (coarseAugmentation hs) m F t).trans
-    (coarseAugmentation_app_apply hs (op m) F)
+  (fatRealization.augment_ι
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+      (topologicalNerve.coarseAugmentation hs)) m F t).trans
+    (topologicalNerve.coarseAugmentation_app_apply hs _ F)
 
 /-- Every orbit occurs as the projection of a vertex in the fat classifying space. -/
 theorem coarseMap_surjective : Function.Surjective (coarseMap hs) := by
@@ -101,11 +112,14 @@ theorem isQuotientMap_coarseMap
     intro i j hij
     -- A zero-string has only one vertex and one arrow, namely its unit.
     simpa [ComposableArrows.totalArrow_def, ComposableArrows.mk₀] using hu
-  apply fatRealization.isQuotientMap_augment (coarseAugmentation hs) (SemiSimplexCategory.mk 0)
-  have heq : ((coarseAugmentation hs).app (op (SemiSimplexCategory.mk 0))) ∘
+  let ε := Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+    (topologicalNerve.coarseAugmentation hs)
+  apply fatRealization.isQuotientMap_augment ε (SemiSimplexCategory.mk 0)
+  have heq : (ε.app (op (SemiSimplexCategory.mk 0))) ∘
       ComposableArrows.mk₀ = Quotient.mk (isIsomorphicSetoid C) :=
-    funext fun x ↦ coarseAugmentation_app_apply hs _ _
-  exact IsQuotientMap.of_comp h₀ ((coarseAugmentation hs).app _).hom.continuous
-    (heq.symm ▸ isQuotientMap_quot_mk)
+    funext fun x ↦ topologicalNerve.coarseAugmentation_app_apply hs _ _
+  exact IsQuotientMap.of_comp h₀ (ε.app _).hom.continuous (heq.symm ▸ isQuotientMap_quot_mk)
 
-end TauCeti.fatClassifyingSpace
+end fatClassifyingSpace
+
+end TauCeti

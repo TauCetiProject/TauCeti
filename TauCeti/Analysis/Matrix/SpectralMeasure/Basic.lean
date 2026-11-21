@@ -77,8 +77,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
-* `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
-  normalized trace of `A ^ k`;
+* `Matrix.integral_pow_spectralMeasure`, `Matrix.ofReal_integral_pow_spectralMeasure` — the `k`-th
+  moment of the spectral measure is the normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
   the normalized trace of the resolvent `(A - z • 1)⁻¹`;
 * `Matrix.spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul`,
@@ -126,11 +126,50 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
 
+/-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
+Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when
+viewed as complex Hermitian matrices. -/
+@[simp]
+theorem spectralMeasure_map {𝕜' : Type*} [RCLike 𝕜'] (A : Matrix n n 𝕜)
+    (f : 𝕜 →⋆ₐ[ℝ] 𝕜') (hAf : (A.map f).IsHermitian) :
+    (A.map f).spectralMeasure hAf =
+      A.spectralMeasure ((isHermitian_map_iff (map_star f) f.toRingHom.injective).mp hAf) := by
+  have hA := (isHermitian_map_iff (map_star f) f.toRingHom.injective).mp hAf
+  rw [spectralMeasure_def, spectralMeasure_def]
+  apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+  have h := congrArg (Multiset.map RCLike.re)
+    (hA.splits_charpoly.roots_map f.toRingHom)
+  have hchar : (A.map f).charpoly = A.charpoly.map f.toRingHom := charpoly_map A _
+  rw [← hchar, hAf.roots_charpoly_eq_eigenvalues,
+    hA.roots_charpoly_eq_eigenvalues] at h
+  have hf (r : ℝ) : f (r : 𝕜) = (r : 𝕜') := f.commutes r
+  simpa [Multiset.map_map, Function.comp_def, hf] using h
+
+/-- Viewing a real symmetric matrix over an `RCLike` field preserves its spectral measure. -/
+@[simp]
+theorem spectralMeasure_map_algebraMap (A : Matrix n n ℝ)
+    (hA : (A.map (algebraMap ℝ 𝕜)).IsHermitian) :
+    (A.map (algebraMap ℝ 𝕜)).spectralMeasure hA =
+      A.spectralMeasure ((isHermitian_map_iff (map_star (RCLike.ofRealStarAlgHom 𝕜))
+        (algebraMap ℝ 𝕜).injective).mp hA) :=
+  spectralMeasure_map A (RCLike.ofRealStarAlgHom 𝕜) hA
+
+/-- Viewing a real symmetric matrix as a complex Hermitian matrix preserves its spectral
+measure. -/
+@[simp]
+theorem spectralMeasure_map_ofReal (A : Matrix n n ℝ)
+    (hA : (A.map ((↑) : ℝ → ℂ)).IsHermitian) :
+    (A.map ((↑) : ℝ → ℂ)).spectralMeasure hA =
+      A.spectralMeasure ((isHermitian_map_iff (map_star (RCLike.ofRealStarAlgHom ℂ))
+        Complex.ofReal_injective).mp hA) :=
+  spectralMeasure_map A (RCLike.ofRealStarAlgHom ℂ) hA
+
 /-- The empirical spectral measure depends continuously on the Hermitian matrix for the weak
 topology on probability measures. -/
 @[fun_prop]
 theorem continuous_spectralMeasure :
-    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact continuous_empiricalMeasureOfFintype.comp continuous_eigenvalues
 
@@ -138,7 +177,8 @@ theorem continuous_spectralMeasure :
 matrices and the evaluation σ-algebra on probability measures. -/
 @[fun_prop]
 theorem measurable_spectralMeasure [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact measurable_empiricalMeasureOfFintype.comp measurable_eigenvalues
 
@@ -193,7 +233,7 @@ theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n 𝕜} (hA : A.PosS
   have hsum :
       ∑ i, (Set.Iio 0).indicator (1 : ℝ → ℝ≥0∞) (hA.isHermitian.eigenvalues i) = 0 := by
     apply Finset.sum_eq_zero
-    intro i hi
+    intro i _
     simp [not_lt.mpr (hA.eigenvalues_nonneg i)]
   rw [hsum]
   simp
@@ -218,12 +258,37 @@ theorem integral_spectralMeasure_eq_sum_eigenvalues₀ {E : Type*} [NormedAddCom
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass, Fintype.card_fin]
 
+/-- Integrating a continuous function against a Hermitian spectral measure depends
+continuously on the matrix. The test function need not be bounded. -/
+@[fun_prop] theorem continuous_integral_spectralMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) :
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} ↦
+      ∫ x, f x ∂(A.val.spectralMeasure A.property : Measure ℝ)) := by
+  simp_rw [integral_spectralMeasure_eq_sum_eigenvalues₀]
+  exact (continuous_finsetSum _ fun i _ ↦
+    hf.comp ((continuous_apply i).comp continuous_eigenvalues₀)).const_smul _
+
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/
 theorem spectralMeasure_eq_of_charpoly_eq {A B : Matrix n n 𝕜} (hA : A.IsHermitian)
     (hB : B.IsHermitian) (h : A.charpoly = B.charpoly) :
     A.spectralMeasure hA = B.spectralMeasure hB := by
   rw [spectralMeasure_def, spectralMeasure_def, (hA.eigenvalues_eq_eigenvalues_iff hB).2 h]
+
+/-- The spectral measure of a real diagonal is the empirical measure of its diagonal entries,
+including repetitions. -/
+@[simp]
+theorem spectralMeasure_diagonal (d : n → ℝ) :
+    (diagonal (fun i ↦ (d i : 𝕜))).spectralMeasure
+      (isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)) =
+        empiricalMeasureOfFintype d := by
+  rw [spectralMeasure_def]
+  apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+  apply Multiset.map_injective (RCLike.ofReal_injective (K := 𝕜))
+  rw [Multiset.map_map, ← IsHermitian.roots_charpoly_eq_eigenvalues]
+  rw [charpoly_diagonal, Polynomial.roots_prod]
+  · simp
+  · simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero]
 
 /-- Conjugating a Hermitian matrix by an invertible matrix does not change its spectral measure,
 provided the conjugate is again Hermitian. -/
@@ -238,6 +303,36 @@ theorem lintegral_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f 
     ∫⁻ x, f x ∂(A.spectralMeasure hA : Measure ℝ) =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (hA.eigenvalues i) := by
   simp [spectralMeasure_def, lintegral_finsetSum_measure, lintegral_dirac, Finset.mul_sum]
+
+/-- The Lebesgue integral of `‖x ^ k‖` against the spectral measure of a Hermitian matrix `A` is
+at most `((card n) * ∑ i, ∑ j, ‖A i j‖) ^ k`. -/
+theorem lintegral_ofReal_norm_pow_spectralMeasure_le (A : Matrix n n 𝕜) (hA : A.IsHermitian)
+    (k : ℕ) :
+    ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂(A.spectralMeasure hA : Measure ℝ) ≤
+      ENNReal.ofReal (((Fintype.card n : ℝ) * ∑ i, ∑ j, ‖A i j‖) ^ k) := by
+  set S : ℝ := ∑ i, ∑ j, ‖A i j‖
+  set M : ℝ := (Fintype.card n : ℝ) * S
+  have hentry (i j : n) : ‖A i j‖ ≤ S :=
+    (Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ j)).trans
+      (Finset.single_le_sum (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+        (Finset.mem_univ i))
+  have heig (r : Fin (Fintype.card n)) : ‖hA.eigenvalues₀ r ^ k‖ ≤ M ^ k := by
+    have habs : |hA.eigenvalues₀ r| ≤ M := hA.abs_eigenvalues₀_le_of_entry_le hentry r
+    rw [norm_pow, Real.norm_eq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) habs k
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    lintegral_empiricalMeasureOfFintype (by fun_prop), Fintype.card_fin]
+  calc ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ r : Fin (Fintype.card n), ENNReal.ofReal ‖hA.eigenvalues₀ r ^ k‖
+      ≤ ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ _r : Fin (Fintype.card n), ENNReal.ofReal (M ^ k) := by
+        gcongr with r
+        exact heig r
+    _ = ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ *
+          (((Fintype.card n : ℕ) : ℝ≥0∞) * ENNReal.ofReal (M ^ k)) := by
+        simp [Fintype.card_fin]
+    _ = ENNReal.ofReal (M ^ k) :=
+        ENNReal.inv_mul_cancel_left (by simp) (by simp)
 
 /-- The empirical measure `(card n)⁻¹ ∑ δ_z` of a complex square matrix of positive size, the
 sum running over the roots `z` of its characteristic polynomial with algebraic multiplicity. -/
@@ -261,8 +356,7 @@ theorem eigenvalueMeasure_toMeasure (A : Matrix n n ℂ) :
 
 /-- The eigenvalue measure of a set is the proportion of characteristic roots in it, counted with
 algebraic multiplicity. -/
-theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePred (· ∈ s)]
-    (hs : MeasurableSet s) :
+theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePred (· ∈ s)] :
     (A.eigenvalueMeasure : Measure ℂ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * Multiset.card (A.charpoly.roots.filter (· ∈ s)) := by
   rw [eigenvalueMeasure_toMeasure, _root_.smul_apply, smul_eq_mul]
@@ -270,7 +364,7 @@ theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePre
   induction A.charpoly.roots using Multiset.induction_on with
   | empty => simp
   | cons z m ih =>
-    by_cases hz : z ∈ s <;> simp [Measure.dirac_apply' _ hs, hz, ih, add_comm]
+    by_cases hz : z ∈ s <;> simp [Measure.dirac_apply, hz, ih, add_comm]
 
 /-- Integrating against the eigenvalue measure is averaging over the characteristic roots,
 counted with algebraic multiplicity. -/
@@ -318,6 +412,13 @@ theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) 
       ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
   rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
   simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- Cast into `𝕜`, the `k`-th moment of the spectral measure of a Hermitian matrix is the
+normalized trace of `A ^ k` without taking a real part, since `A ^ k` is Hermitian. -/
+theorem ofReal_integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    ((∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) : ℝ) : 𝕜) =
+      ((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace := by
+  simp [integral_spectralMeasure, hA.trace_pow_eq_sum_eigenvalues_pow]
 
 /-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
 dimensions of their respective matrices, over any `RCLike` field and finite nonempty index types. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # Torsion and reduction of abelian groups
@@ -18,12 +19,16 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 
 ## Main results
 
+* `TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy`: the kernel of multiplication
+  by `n` has the same order as the `n`-torsion submodule.
 * `TauCeti.subsingleton_torsionBy_int`: the `n`-torsion of a torsion-free abelian group is zero for
   `n ≠ 0`.
 * `TauCeti.finite_quotSMulTop_int`: `M ⧸ nM` is finite for `n ≠ 0` and `M` finitely generated.
 * `TauCeti.subsingleton_quotSMulTop_of_surjective_zsmul`,
   `TauCeti.subsingleton_torsionBy_of_injective_zsmul`: if multiplication by `ℓ` on `V` is
   surjective, respectively injective, then `V ⧸ ℓV`, respectively `V[ℓ]`, is zero.
+* `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
+  additive equivalences.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
@@ -34,6 +39,16 @@ open Function
 open scoped Pointwise
 
 namespace TauCeti
+
+/-- The kernel of multiplication by `n` on an abelian group has the same order as its
+`n`-torsion submodule. No finiteness or nonzero hypothesis is needed. -/
+theorem natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy (M : Type*) [AddCommGroup M]
+    (n : ℕ) :
+    Nat.card (nsmulAddMonoidHom (α := M) n).ker =
+      Nat.card (Submodule.torsionBy ℤ M n) :=
+  Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by
+    rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
+      natCast_zsmul])
 
 variable (n : ℕ) [NeZero n] (M : Type*) [AddCommGroup M]
 
@@ -100,5 +115,12 @@ theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι →
   rw [hspan, Submodule.map_mkQ_eq_top, sup_comm, ← Subgroup.toAddSubgroup.injective.eq_iff,
     map_sup, map_top, hclosure, htors, ← Submodule.toAddSubgroup_inj, Submodule.sup_toAddSubgroup,
     Submodule.top_toAddSubgroup]
+
+/-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
+invariant under additive equivalences of abelian groups, for the canonical action of `ℤ`. This is
+`LinearEquiv.isTorsion'_iff` for the induced `ℤ`-linear equivalence. -/
+theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGroup H]
+    (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
+  e.toIntLinearEquiv.isTorsion'_iff
 
 end TauCeti

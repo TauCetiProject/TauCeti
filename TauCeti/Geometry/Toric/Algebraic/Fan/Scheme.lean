@@ -79,7 +79,8 @@ variable {N : Type u} {V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ 
 inclusion `τ ≤ σ` acts by the face morphism from the chart of `τ` to the chart of `σ`. -/
 @[expose] noncomputable def affineToricDiagram : Φ.cones ⥤ Scheme where
   obj σ := Φ.affineToricChart σ
-  map {τ σ} f := faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))
+  map {τ σ} f := faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property
+      (leOfHom f))
   map_id _ := faceAffineToricSchemeMap_id _
   map_comp _ _ := (faceAffineToricSchemeMap_comp ..).symm
 
@@ -93,7 +94,7 @@ theorem affineToricDiagram_obj (σ : Φ.cones) :
 @[simp]
 theorem affineToricDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
     Φ.affineToricDiagram.map f =
-      faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) :=
+      faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f)) :=
   (rfl)
 
 variable {Φ}
@@ -102,7 +103,7 @@ variable {Φ}
 theorem isOpenImmersion_affineToricDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ) :
     IsOpenImmersion (Φ.affineToricDiagram.map f) := by
   rw [affineToricDiagram_map]
-  exact (Φ.isToricCone σ.2).rational.isOpenImmersion_faceAffineToricSchemeMap _ _
+  exact (Φ.isToricCone σ.property).rational.isOpenImmersion_faceAffineToricSchemeMap _ _
 
 /-- The diagram of affine toric charts of a fan is locally directed: if points of the
 charts of two faces `τ` and `υ` of a cone `σ` have the same image in the chart of `σ`, they come
@@ -110,12 +111,12 @@ from a common point of the chart of `τ ⊓ υ`. -/
 theorem isLocallyDirected_affineToricDiagram :
     (Φ.affineToricDiagram ⋙ Scheme.forget).IsLocallyDirected := by
   refine ⟨fun {τ υ σ} fτ fυ xτ xυ h ↦ ?_⟩
-  have hτσ := Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom fτ)
-  have hυσ := Φ.isFaceOf_of_le σ.2 υ.2 (leOfHom fυ)
+  have hτσ := Φ.isFaceOf_of_le σ.property τ.property (leOfHom fτ)
+  have hυσ := Φ.isFaceOf_of_le σ.property υ.property (leOfHom fυ)
   -- On points, the functor `Φ.affineToricDiagram ⋙ Scheme.forget` applies the face morphisms.
   have h' : faceAffineToricSchemeMap Φ.lattice hτσ xτ =
       faceAffineToricSchemeMap Φ.lattice hυσ xυ := h
-  have hσ := Φ.isToricCone σ.2
+  have hσ := Φ.isToricCone σ.property
   have := hσ.rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hτσ
   have := hσ.rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hυσ
   -- The common image lies in the image of the chart of `τ ⊓ υ`.
@@ -123,11 +124,13 @@ theorem isLocallyDirected_affineToricDiagram :
       Set.range (faceAffineToricSchemeMap Φ.lattice (hτσ.inf_left hυσ)) := by
     rw [hσ.rational.range_faceAffineToricSchemeMap_inf Φ.lattice hτσ hυσ]
     exact ⟨⟨xτ, rfl⟩, ⟨xυ, h'.symm⟩⟩
-  have hτ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le τ.2 (Φ.inf_mem τ.2 υ.2)
+  have hτ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le τ.property
+      (Φ.inf_mem τ.property υ.property)
       inf_le_left) x = xτ := by
     apply (faceAffineToricSchemeMap Φ.lattice hτσ).isOpenEmbedding.injective
     rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp, hx]
-  have hυ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le υ.2 (Φ.inf_mem τ.2 υ.2)
+  have hυ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le υ.property
+      (Φ.inf_mem τ.property υ.property)
       inf_le_right) x = xυ := by
     apply (faceAffineToricSchemeMap Φ.lattice hυσ).isOpenEmbedding.injective
     rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp, hx, h']
@@ -217,7 +220,7 @@ instance isOpenImmersion_affineToricChartι (σ : Φ.cones) :
 ambient cone. -/
 @[reassoc (attr := simp)]
 theorem faceAffineToricSchemeMap_comp_affineToricChartι {τ σ : Φ.cones}
-    (h : τ.1.IsFaceOf σ.1) :
+    (h : τ.val.IsFaceOf σ.val) :
     faceAffineToricSchemeMap Φ.lattice h ≫ Φ.affineToricChartι σ =
       Φ.affineToricChartι τ :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
@@ -240,7 +243,7 @@ theorem affineToricOverlapLeft_comp_affineToricChartι (σ τ : Φ.cones) :
   simpa only [affineToricOverlapLeft_def] using
     faceAffineToricSchemeMap_comp_affineToricChartι
       (τ := σ ⊓ τ) (σ := σ)
-      (Φ.inf_isFaceOf_left σ.2 τ.2)
+      (Φ.inf_isFaceOf_left σ.property τ.property)
 
 /-- The right overlap map followed by its chart inclusion is the inclusion of the overlap chart. -/
 @[reassoc]
@@ -250,7 +253,7 @@ theorem affineToricOverlapRight_comp_affineToricChartι (σ τ : Φ.cones) :
   simpa only [affineToricOverlapRight_def] using
     faceAffineToricSchemeMap_comp_affineToricChartι
       (τ := σ ⊓ τ) (σ := τ)
-      (Φ.inf_isFaceOf_right σ.2 τ.2)
+      (Φ.inf_isFaceOf_right σ.property τ.property)
 
 /-- The two inclusions of a pairwise overlap into the toric scheme agree. -/
 theorem affineToricOverlap_comp_affineToricChartι (σ τ : Φ.cones) :
@@ -281,7 +284,8 @@ theorem affineToricChartι_eq_affineToricChartι_iff
   refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
   · obtain ⟨κ, fσ, fτ, (w : Φ.affineToricChart κ), hwx, hwy⟩ :=
       (Scheme.IsLocallyDirected.ι_eq_ι_iff Φ.affineToricDiagram).1 h
-    have hκ : κ.1.IsFaceOf στ.1 := Φ.isFaceOf_of_le στ.2 κ.2 (le_inf (leOfHom fσ) (leOfHom fτ))
+    have hκ : κ.val.IsFaceOf στ.val := Φ.isFaceOf_of_le στ.property κ.property (le_inf (leOfHom fσ)
+        (leOfHom fτ))
     refine ⟨faceAffineToricSchemeMap Φ.lattice hκ w, ?_, ?_⟩
     -- `hwx` and `hwy` are stated with the diagram maps, which are the face morphisms.
     · rw [affineToricOverlapLeft_def, ← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp]
@@ -315,7 +319,7 @@ theorem affineToricChartι_surjective_of_forall_le {σ : Φ.cones} (h : ∀ τ :
     Function.Surjective (Φ.affineToricChartι σ) := by
   intro x
   obtain ⟨τ, y, rfl⟩ := Φ.exists_affineToricChartι_apply_eq x
-  exact ⟨faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (h τ)) y, by
+  exact ⟨faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property (h τ)) y, by
     rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp_affineToricChartι]⟩
 
 /-- If every cone of a fan is a face of `σ`, the toric scheme of the fan is the affine toric
@@ -330,7 +334,7 @@ theorem isIso_affineToricChartι_of_forall_le {σ : Φ.cones} (h : ∀ τ : Φ.c
 instance isIso_affineToricChartι_ofCone {σ : PointedCone ℝ V} (hi : IsIntegralLattice i)
     (hσ : IsToricCone i σ) :
     IsIso ((ofCone hi hσ).affineToricChartι ⟨σ, (mem_ofCone_cones hi hσ).2 (.refl σ)⟩) :=
-  isIso_affineToricChartι_of_forall_le _ fun τ ↦ ((mem_ofCone_cones hi hσ).1 τ.2).le
+  isIso_affineToricChartι_of_forall_le _ fun τ ↦ ((mem_ofCone_cones hi hσ).1 τ.property).le
 
 /-- The canonical affine open cover of the scheme of a finite fan, indexed by its cones. -/
 -- Expose the cover so that its index type is the cone type in importing modules.
@@ -358,7 +362,7 @@ noncomputable instance : Φ.affineToricOpenCover.LocallyDirected where
   trans_comp f g := Φ.affineToricDiagram.map_comp f g
   w {τ σ} f :=
     faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ) (τ := τ) (σ := σ)
-      (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))
+      (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f))
   directed {σ τ : Φ.cones} x := by
     obtain ⟨z, hzσ, -⟩ := (Φ.affineToricChartι_eq_affineToricChartι_iff
       (pullback.fst (Φ.affineToricChartι σ) (Φ.affineToricChartι τ) x)
@@ -381,7 +385,7 @@ noncomputable instance : Φ.affineToricOpenCover.LocallyDirected where
 @[simp]
 theorem affineToricOpenCover_trans {τ σ : Φ.cones} (f : τ ⟶ σ) :
     Φ.affineToricOpenCover.trans f =
-      faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) :=
+      faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f)) :=
   (rfl)
 
 end TauCeti.Toric.Fan
@@ -398,29 +402,29 @@ variable {N N' : Type u} {V V' : Type*} [AddCommGroup N] [AddCommGroup N']
 image. -/
 noncomputable def affineToricChartMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
     Φ.affineToricChart σ ⟶
-      Ψ.affineToricChart ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ :=
-  affineToricSchemeMap (σ := σ.1) (τ := f.leastCone σ.2)
+      Ψ.affineToricChart ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ :=
+  affineToricSchemeMap (σ := σ.val) (τ := f.leastCone σ.property)
     Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
     -- Pin the source and target cone coercions at this polymorphic MapsTo argument.
-    (show Set.MapsTo f.realMap (σ.1 : Set V) (f.leastCone σ.2 : Set V') from
-      fun x hx ↦ f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩)
+    (show Set.MapsTo f.realMap (σ.val : Set V) (f.leastCone σ.property : Set V') from
+      fun x hx ↦ f.map_le_leastCone σ.property ⟨x, hx, rfl⟩)
 
 /-- The affine chart map is induced by the fan morphism's lattice and real maps. -/
 theorem affineToricChartMap_def (f : FanHom Φ Ψ) (σ : Φ.cones) :
     f.affineToricChartMap σ =
-      affineToricSchemeMap (σ := σ.1) (τ := f.leastCone σ.2)
+      affineToricSchemeMap (σ := σ.val) (τ := f.leastCone σ.property)
         Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-        (show Set.MapsTo f.realMap (σ.1 : Set V) (f.leastCone σ.2 : Set V') from
-          fun x hx ↦ f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩) := by
+        (show Set.MapsTo f.realMap (σ.val : Set V) (f.leastCone σ.property : Set V') from
+          fun x hx ↦ f.map_le_leastCone σ.property ⟨x, hx, rfl⟩) := by
   rfl
 
 /-- The affine chart maps induced by a fan morphism commute with face inclusions. -/
 @[reassoc (attr := simp)]
 theorem faceAffineToricSchemeMap_comp_affineToricChartMap (f : FanHom Φ Ψ)
-    {τ σ : Φ.cones} (h : τ.1.IsFaceOf σ.1) :
+    {τ σ : Φ.cones} (h : τ.val.IsFaceOf σ.val) :
     faceAffineToricSchemeMap Φ.lattice h ≫ f.affineToricChartMap σ =
       f.affineToricChartMap τ ≫ faceAffineToricSchemeMap Ψ.lattice
-        (f.leastCone_isFaceOf (τ := τ.1) (σ := σ.1) σ.2 h) := by
+        (f.leastCone_isFaceOf (τ := τ.val) (σ := σ.val) σ.property h) := by
   rw [affineToricChartMap_def, affineToricChartMap_def]
   rw [faceAffineToricSchemeMap_eq_affineToricSchemeMap,
     faceAffineToricSchemeMap_eq_affineToricSchemeMap]
@@ -434,17 +438,17 @@ private noncomputable def algebraicMapCocone (f : FanHom Φ Ψ) :
   pt := Ψ.algebraicRealization
   ι :=
     { app := fun σ ↦ f.affineToricChartMap σ ≫
-        Ψ.affineToricChartι ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
+        Ψ.affineToricChartι ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
       naturality := by
         intro τ σ h
         dsimp [Fan.affineToricDiagram]
         simp only [Category.comp_id]
         rw [faceAffineToricSchemeMap_comp_affineToricChartMap_assoc]
         have hface := Fan.faceAffineToricSchemeMap_comp_affineToricChartι
-          (τ := ⟨f.leastCone τ.2, f.leastCone_mem τ.2⟩)
-          (σ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩)
-          (f.leastCone_isFaceOf (τ := τ.1) (σ := σ.1) σ.2
-            (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h)))
+          (τ := ⟨f.leastCone τ.property, f.leastCone_mem τ.property⟩)
+          (σ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩)
+          (f.leastCone_isFaceOf (τ := τ.val) (σ := σ.val) σ.property
+            (Φ.isFaceOf_of_le σ.property τ.property (leOfHom h)))
         simpa only [Category.assoc] using
           congrArg (fun g ↦ f.affineToricChartMap τ ≫ g) hface }
 
@@ -459,22 +463,28 @@ chart, followed by that chart's inclusion. -/
 theorem affineToricChartι_comp_algebraicMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
     Φ.affineToricChartι σ ≫ f.algebraicMap =
       f.affineToricChartMap σ ≫
-        Ψ.affineToricChartι ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ := (by
+        Ψ.affineToricChartι ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ := (by
   rw [← Fan.affineToricCocone_ι_app]
   exact Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ)
 
-/-- If the least target cone containing the image of `σ` is `τ`, then on the chart of `σ` the
+/-- If the cone `τ` of the target fan contains the image of `σ`, then on the chart of `σ` the
 global algebraic map is the affine toric map into the chart of `τ`, followed by that chart's
 inclusion. -/
-theorem affineToricChartι_comp_algebraicMap_of_leastCone_eq (f : FanHom Φ Ψ) (σ : Φ.cones)
-    (τ : Ψ.cones) (h : f.leastCone σ.2 = τ.1)
-    (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
+theorem affineToricChartι_comp_algebraicMap_of_mapsTo (f : FanHom Φ Ψ) (σ : Φ.cones)
+    (τ : Ψ.cones) (hmaps : Set.MapsTo f.realMap (σ.val : Set V) (τ.val : Set V')) :
     Φ.affineToricChartι σ ≫ f.algebraicMap =
       affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps ≫
         Ψ.affineToricChartι τ := by
-  obtain ⟨τ, hτ⟩ := τ
-  subst h
-  rw [affineToricChartι_comp_algebraicMap, affineToricChartMap_def]
+  have hface : (f.leastCone σ.property).IsFaceOf τ.val :=
+    Ψ.isFaceOf_of_le τ.property (f.leastCone_mem σ.property)
+      (f.leastCone_le σ.property τ.property fun x ⟨y, hy, hyx⟩ ↦ hyx ▸ hmaps hy)
+  rw [affineToricChartι_comp_algebraicMap,
+    ← Fan.faceAffineToricSchemeMap_comp_affineToricChartι
+      (τ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩)
+      (σ := τ) hface,
+    ← Category.assoc, affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap,
+    affineToricSchemeMap_comp]
+  rfl
 
 /-- The algebraic map induced by the identity fan morphism is the identity. -/
 @[simp]
@@ -483,16 +493,16 @@ theorem algebraicMap_id (Φ : Fan i) :
   apply Fan.algebraicRealization_hom_ext Φ
   intro σ
   rw [affineToricChartι_comp_algebraicMap]
-  have hσleast : σ.1.IsFaceOf ((FanHom.id Φ).leastCone σ.2) :=
-    Φ.isFaceOf_of_le ((FanHom.id Φ).leastCone_mem σ.2) σ.2
+  have hσleast : σ.val.IsFaceOf ((FanHom.id Φ).leastCone σ.property) :=
+    Φ.isFaceOf_of_le ((FanHom.id Φ).leastCone_mem σ.property) σ.property
       (by simpa only [FanHom.id_realMap, PointedCone.map_id] using
-        (FanHom.id Φ).map_le_leastCone σ.2)
+        (FanHom.id Φ).map_le_leastCone σ.property)
   have hmap : (FanHom.id Φ).affineToricChartMap σ =
       faceAffineToricSchemeMap Φ.lattice hσleast := by
     rw [affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     simp only [FanHom.id_latticeMap, FanHom.id_realMap]
   rw [hmap, Fan.faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ)
-    (τ := σ) (σ := ⟨(FanHom.id Φ).leastCone σ.2, (FanHom.id Φ).leastCone_mem σ.2⟩)
+    (τ := σ) (σ := ⟨(FanHom.id Φ).leastCone σ.property, (FanHom.id Φ).leastCone_mem σ.property⟩)
     hσleast]
   simp
 
@@ -507,14 +517,14 @@ theorem algebraicMap_comp (g : FanHom Ψ Ω) (f : FanHom Φ Ψ) :
     (g.comp f).algebraicMap = f.algebraicMap ≫ g.algebraicMap := by
   apply Fan.algebraicRealization_hom_ext Φ
   intro σ
-  let τ : Ψ.cones := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
-  let υ : Ω.cones := ⟨g.leastCone τ.2, g.leastCone_mem τ.2⟩
-  let κ : Ω.cones := ⟨(g.comp f).leastCone σ.2, (g.comp f).leastCone_mem σ.2⟩
-  have hκ_le_υ : κ.1 ≤ υ.1 := by
-    apply (g.comp f).leastCone_le σ.2 (g.leastCone_mem τ.2)
+  let τ : Ψ.cones := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
+  let υ : Ω.cones := ⟨g.leastCone τ.property, g.leastCone_mem τ.property⟩
+  let κ : Ω.cones := ⟨(g.comp f).leastCone σ.property, (g.comp f).leastCone_mem σ.property⟩
+  have hκ_le_υ : κ.val ≤ υ.val := by
+    apply (g.comp f).leastCone_le σ.property (g.leastCone_mem τ.property)
     rw [FanHom.comp_realMap, ← PointedCone.map_map]
-    exact (Submodule.map_mono (f.map_le_leastCone σ.2)).trans (g.map_le_leastCone τ.2)
-  have hκυ : κ.1.IsFaceOf υ.1 := Ω.isFaceOf_of_le υ.2 κ.2 hκ_le_υ
+    exact (Submodule.map_mono (f.map_le_leastCone σ.property)).trans (g.map_le_leastCone τ.property)
+  have hκυ : κ.val.IsFaceOf υ.val := Ω.isFaceOf_of_le υ.property κ.property hκ_le_υ
   have hchart :
       (g.comp f).affineToricChartMap σ ≫ faceAffineToricSchemeMap Ω.lattice hκυ =
         f.affineToricChartMap σ ≫ g.affineToricChartMap τ := by

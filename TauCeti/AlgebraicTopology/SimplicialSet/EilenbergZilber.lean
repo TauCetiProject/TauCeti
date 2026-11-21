@@ -59,7 +59,8 @@ from the contracting homotopy `c ⊗ 1 + e ⊗ c` of `C(Δ[p]; R') ⊗ C(Δ[q]; 
 * `SSet.shuffle_alexanderWhitney_f_zero`: the shuffle map followed by the Alexander–Whitney map is
   the identity in degree zero.
 * `SSet.shuffleAlexanderWhitneyHomotopy`: the shuffle map followed by the Alexander–Whitney map is
-  chain homotopic to the identity.
+  chain homotopic to the identity, and `SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality`: the
+  homotopy is natural.
 * `SSet.eilenbergZilberHomotopyEquiv`: the Alexander–Whitney map is a chain homotopy equivalence
   with homotopy inverse the shuffle map.
 
@@ -75,7 +76,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial HomologicalComplex
-open TauCeti.SSet (chainComplexMap_f_comp chainComplexMap_f_comp_assoc)
 
 universe w v u
 
@@ -754,6 +754,17 @@ def shuffleAlexanderWhitneyHomotopy :
       rw [shuffle_naturality_assoc, alexanderWhitney_naturality, Category.assoc])
     (fun _ _ _ _ _ _ ↦ by rw [Category.comp_id, Category.id_comp])
     (fun _ _ ↦ by simp) K L
+
+variable {K L} in
+/-- The homotopy `SSet.shuffleAlexanderWhitneyHomotopy` is natural in both simplicial sets. -/
+@[reassoc]
+lemma shuffleAlexanderWhitneyHomotopy_hom_naturality {K' L' : SSet.{w}} (f : K ⟶ K')
+    (g : L ⟶ L') (i j : ℕ) :
+    (chainComplexMap f R ⊗ₘ chainComplexMap g S).f i ≫
+        (shuffleAlexanderWhitneyHomotopy K' L' R S).hom i j =
+      (shuffleAlexanderWhitneyHomotopy K L R S).hom i j ≫
+        (chainComplexMap f R ⊗ₘ chainComplexMap g S).f j :=
+  tensorChainComplexHomotopy_hom_naturality _ _ _ _ _ f g i j
 
 /-- **The Eilenberg–Zilber theorem**: the Alexander–Whitney map
 `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)` is a chain homotopy equivalence, with homotopy inverse the

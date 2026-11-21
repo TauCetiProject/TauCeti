@@ -43,26 +43,23 @@ presheaf of sets exactly when, for every abelian group `E`, the presheaf of homo
 theorem isSheafFor_comp_forget_addCommGrpCat_iff (R : Presieve X) (P : Cᵒᵖ ⥤ AddCommGrpCat.{w}) :
     R.IsSheafFor (P ⋙ forget AddCommGrpCat) ↔
       ∀ E : AddCommGrpCat.{w}ᵒᵖ, R.IsSheafFor (P ⋙ coyoneda.obj E) := by
-  refine ⟨fun h E x hx ↦ ?_, fun h ↦ (Presieve.isSheafFor_iff_of_iso
+  refine ⟨fun h E x hx ↦ ?_, fun h ↦ (isSheafFor_iff_of_iso
     (Functor.isoWhiskerLeft P AddCommGrpCat.coyonedaObjIsoForget)).1 (h _)⟩
-  -- restriction to the members of `R` is jointly injective on underlying sets
-  have hsep {s t : P.obj (op X)} (hst : ∀ ⦃Y : C⦄ ⦃g : Y ⟶ X⦄ (hg : R g),
-      P.map g.op s = P.map g.op t) : s = t :=
-    h.isSeparatedFor.ext hst
   -- glue the values of the family at each `e : E`
-  let y (e : E.unop) : Presieve.FamilyOfElements (P ⋙ forget _) R := fun _ g hg ↦ (x g hg).hom e
+  let y (e : E.unop) : FamilyOfElements (P ⋙ forget _) R := fun _ g hg ↦ (x g hg).hom e
   have hy (e : E.unop) : (y e).Compatible := fun _ _ _ g₁ g₂ f₁ f₂ hf₁ hf₂ hw ↦
     ConcreteCategory.congr_hom (hx g₁ g₂ hf₁ hf₂ hw) e
-  let t (e : E.unop) : P.obj (op X) := h.amalgamate (y e) (hy e)
-  have ht (e : E.unop) ⦃Y : C⦄ ⦃g : Y ⟶ X⦄ (hg : R g) : P.map g.op (t e) = (x g hg).hom e :=
+  have ht (e : E.unop) ⦃Y : C⦄ ⦃g : Y ⟶ X⦄ (hg : R g) :
+      P.map g.op (h.amalgamate (y e) (hy e)) = (x g hg).hom e :=
     h.valid_glue (hy e) g hg
+  -- the glued map is additive since restriction to the members of `R` is jointly injective
   let φ : E.unop →+ P.obj (op X) :=
-    { toFun := t
-      map_zero' := hsep fun _ g hg ↦ by simp [ht _ hg]
-      map_add' e e' := hsep fun _ g hg ↦ by simp [ht _ hg] }
-  refine ⟨AddCommGrpCat.ofHom φ, fun _ g hg ↦ ConcreteCategory.ext_apply (ht · hg),
-    fun ψ hψ ↦ ConcreteCategory.ext_apply fun e ↦ hsep fun _ g hg ↦ ?_⟩
-  -- `ψ` and the glued map have the same restrictions at each `e`
-  exact (ConcreteCategory.congr_hom (hψ g hg) e).trans (ht e hg).symm
+    { toFun e := h.amalgamate (y e) (hy e)
+      map_zero' := h.isSeparatedFor.ext fun _ g hg ↦ by simp [ht _ hg]
+      map_add' e e' := h.isSeparatedFor.ext fun _ g hg ↦ by simp [ht _ hg] }
+  -- `φ` glues `x`, and any other gluing `ψ` has the same restrictions at each `e`
+  exact ⟨AddCommGrpCat.ofHom φ, fun _ g hg ↦ ConcreteCategory.ext_apply (ht · hg),
+    fun ψ hψ ↦ ConcreteCategory.ext_apply fun e ↦ h.isSeparatedFor.ext fun _ g hg ↦
+      (ConcreteCategory.congr_hom (hψ g hg) e).trans (ht e hg).symm⟩
 
 end CategoryTheory.Presieve

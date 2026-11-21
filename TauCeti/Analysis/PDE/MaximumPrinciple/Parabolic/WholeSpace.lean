@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.NonDivergence
+
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.InnerProductSpace.Young
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # The comparison principle for parabolic equations on the whole space
@@ -21,7 +25,7 @@ with time-dependent coefficients `a : ℝ → ℝⁿ → Matrix ι ι ℝ`, `b :
 for `0 < t < T`. In Lean `∂ᵢ∂ⱼu` at `(t, x)` is
 `fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)`, `bⁱ ∂ᵢu` is
 `fderiv ℝ (u t) x (b t x)` and `∂ₜu` is `deriv (fun s ↦ u s x) t`, as in
-`TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence` and
+`TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic` and
 `TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic`.
 
 The coefficients are only required to satisfy, for `0 < t < T`,
@@ -42,8 +46,9 @@ classical solution `u`, bounded above, satisfies `P u ≤ F` and `u(·, 0) ≤ M
 Taking `γ = C₊ = max (0, sup c)`, `M = sup u(·, 0)⁺` and `F = sup (P u)⁺` gives
 `sup u⁺ ≤ exp (C₊ T) (sup u(·, 0)⁺ + T sup (P u)⁺)`. The comparison principle and uniqueness for
 the Cauchy problem among classical solutions with bounded difference follow. These are the
-whole-space analogues of the maximum principle on bounded cylinders; on `ℝⁿ` the parabolic
-boundary is the initial slice alone, and the boundedness hypothesis replaces the lateral boundary
+whole-space analogues of the maximum principle on bounded cylinders
+(`TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.NonDivergence`); on `ℝⁿ` the parabolic boundary
+is the initial slice alone, and the boundedness hypothesis replaces the lateral boundary
 condition.
 
 ## The argument
@@ -81,13 +86,11 @@ All declarations are in the `TauCeti.PDE` namespace.
 
 public section
 
-noncomputable section
-
 namespace TauCeti
 
 namespace PDE
 
-open Matrix RealInnerProductSpace Set
+open RealInnerProductSpace Set
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -136,14 +139,8 @@ private theorem not_forall_sub_mul_exp_mul_le
     sum_mul_fderiv_fderiv_add_fderiv_norm_sq] at hLf
   -- In time, `t₀` maximizes `s ↦ u s x₀ - ε exp (K s) (1 + q²)` from the left, so its derivative
   -- `∂ₜu - ε K e (1 + q²)` is nonnegative.
-  have hg : HasDerivAt (fun s ↦ u s x₀ - ε * (Real.exp (K * s) * (1 + q ^ 2)))
-      (deriv (fun s ↦ u s x₀) t₀ - ε * (K * e * (1 + q ^ 2))) t₀ := by
-    have hexp : HasDerivAt (fun s ↦ Real.exp (K * s)) (K * e) t₀ := by
-      have := ((hasDerivAt_id t₀).const_mul K).exp
-      simp only [id, mul_one] at this
-      rw [mul_comm]
-      exact this
-    exact (hdiff ht₀ x₀).hasDerivAt.sub ((hexp.mul_const (1 + q ^ 2)).const_mul ε)
+  have hg := (hdiff ht₀ x₀).hasDerivAt.sub
+    (((Real.hasDerivAt_exp_mul K t₀).mul_const (1 + q ^ 2)).const_mul ε)
   have hleft : IsLocalMaxOn (fun s ↦ u s x₀ - ε * (Real.exp (K * s) * (1 + q ^ 2))) (Iic t₀) t₀ :=
     Filter.mem_of_superset (Icc_mem_nhdsLE ht₀.1) fun s hs ↦ hglob s hs x₀
   have htime := hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt
@@ -153,11 +150,8 @@ private theorem not_forall_sub_mul_exp_mul_le
   have htr' : (a t₀ x₀).trace ≤ |Lam| * (1 + q ^ 2) :=
     (htr ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self Lam) (by positivity))
   have hinner : 2 * ⟪x₀, b t₀ x₀⟫ ≤ 3 * |β| * (1 + q ^ 2) := by
-    have hb' : ‖b t₀ x₀‖ ≤ |β| * (1 + q) :=
-      (hb ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self β) (by positivity))
-    have h1 : ⟪x₀, b t₀ x₀⟫ ≤ q * (|β| * (1 + q)) :=
-      (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left hb' (norm_nonneg _))
-    nlinarith [sq_nonneg (q - 1), abs_nonneg β, mul_nonneg (abs_nonneg β) (sq_nonneg (q - 1))]
+    simpa using two_mul_re_inner_le_of_norm_le_mul_add_norm (𝕜 := ℝ)
+      ((hb ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self β) (by positivity)))
   -- Hence `ε e K (1 + q²) ≤ ∂ₜu ≤ ε e (2 |Λ| + 3 |β|) (1 + q²)`, contradicting the choice of `K`.
   have hεe : 0 < ε * e := mul_pos hε he
   have hkey := hsub ht₀ x₀
@@ -190,20 +184,10 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
   have hsub' : Icc 0 t₁ ⊆ Icc 0 T := Icc_subset_Icc_right ht₁.2.le
   -- Outside the ball of radius `R`, the perturbation dominates the bound on `u`, so `w < 0`.
   set R := |Mu| / ε + 1
-  have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := by
-    intro s hs y hy
-    have h1 : 1 ≤ Real.exp (K * s) := Real.one_le_exp (mul_nonneg hK.le hs.1)
-    have h2 : |Mu| < ε * ‖y‖ := by
-      rw [← div_lt_iff₀' hε]
-      linarith
-    have h3 : ‖y‖ ≤ ‖y‖ ^ 2 := by
-      have : 0 ≤ |Mu| / ε := by positivity
-      nlinarith
-    have h4 : ε * (1 + ‖y‖ ^ 2) ≤ ε * (Real.exp (K * s) * (1 + ‖y‖ ^ 2)) :=
-      mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) h1) hε.le
-    have h5 : u s y ≤ Mu := hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩
-    simp only [w]
-    nlinarith [le_abs_self Mu]
+  have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := fun s hs y hy ↦
+    sub_mul_mul_one_add_sq_neg_of_lt (Real.one_le_exp (mul_nonneg hK.le hs.1)) hε
+      (hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩)
+      ((div_le_div_of_nonneg_right (le_abs_self _) hε.le).trans_lt ((lt_add_one _).trans hy))
   by_contra hlt
   have hw₁ : 0 < w (t₁, x₁) := by simp only [w]; linarith
   have hx₁ : x₁ ∈ Metric.closedBall 0 R := by
@@ -259,55 +243,12 @@ private theorem nonpos_of_deriv_le_of_nonpos
     (hinit : ∀ x, u 0 x ≤ 0) :
     ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ x, u t x ≤ 0 := by
   intro t ht x
+  refine le_of_continuousOn_of_forall_mem_Ico_le hcont (mem_univ x) (hinit x) (fun s hs ↦ ?_) ht
   -- Below the top, let `ε → 0` in the perturbed bound.
-  have hlt : ∀ s ∈ Ico 0 T, u s x ≤ 0 := fun s hs ↦
-    le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + 3 * |β| + 1) * s) * (1 + ‖x‖ ^ 2))
-      fun ε hε ↦ by
-      rw [zero_add]
-      exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit
-        hε hs x
-  rcases ht.2.lt_or_eq with htT | rfl
-  · exact hlt t ⟨ht.1, htT⟩
-  rcases ht.1.eq_or_lt with h0 | hpos
-  · exact h0 ▸ hinit x
-  -- At the top `t = T > 0`, pass to the limit from below by continuity.
-  have hcw : ContinuousWithinAt (fun s ↦ u s x) (Ico 0 t) t :=
-    ((hcont.comp (continuousOn_id.prodMk continuousOn_const) fun s hs ↦ ⟨hs, mem_univ x⟩) t
-      ht).mono Ico_subset_Icc_self
-  exact hcw.closure_le (by rw [closure_Ico hpos.ne]; exact ht) continuousWithinAt_const hlt
-
-/-- The exponential change of variables: if `P u ≤ F` at `(t, x)` with `c ≤ γ` there, then
-`w = exp (-γ t) u - (M + t F)` satisfies `P w ≤ 0` at `(t, x)` for the zeroth-order coefficient
-`c - γ`, provided `0 ≤ γ t`, `0 ≤ M + t F` and `0 ≤ F`. -/
-private theorem deriv_le_of_eq_exp_neg_mul_mul_sub {A : Matrix ι ι ℝ}
-    {u w : ℝ → EuclideanSpace ℝ ι → ℝ} {c γ M F t : ℝ} {x v : EuclideanSpace ℝ ι}
-    (hw : ∀ s y, w s y = Real.exp (-(γ * s)) * u s y - (M + s * F))
-    (hc : c ≤ γ) (hγt : 0 ≤ γ * t) (hMF : 0 ≤ M + t * F) (hF : 0 ≤ F)
-    (hcd : ContDiffAt ℝ 2 (u t) x) (hdiff : DifferentiableAt ℝ (fun s ↦ u s x) t)
-    (hsub : deriv (fun s ↦ u s x) t ≤
-      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (u t)) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1) + fderiv ℝ (u t) x v + c * u t x + F) :
-    deriv (fun s ↦ w s x) t ≤
-      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (w t)) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1) + fderiv ℝ (w t) x v + (c - γ) * w t x := by
-  set e := Real.exp (-(γ * t))
-  have he : 0 < e := Real.exp_pos _
-  have he1 : e ≤ 1 := Real.exp_le_one_iff.mpr (by linarith)
-  have hwt : w t = (fun _ ↦ -(M + t * F)) + e • u t := funext fun y ↦ by
-    simp only [hw, Pi.add_apply, Pi.smul_apply, smul_eq_mul, e]
-    ring
-  have hexp : HasDerivAt (fun s ↦ Real.exp (-(γ * s))) (-γ * e) t := by
-    simpa [e, mul_comm] using ((hasDerivAt_id t).const_mul γ).neg.exp
-  have hderiv : deriv (fun s ↦ w s x) t = -γ * e * u t x + e * deriv (fun s ↦ u s x) t - F := by
-    simp only [hw]
-    rw [((hexp.fun_mul hdiff.hasDerivAt).fun_sub
-      (((hasDerivAt_id' t).mul_const F).const_add M)).deriv]
-    ring
-  rw [hderiv, hwt, sum_mul_fderiv_fderiv_add_fderiv_add_smul contDiffAt_const hcd]
-  simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply, _root_.zero_apply, mul_zero,
-    Finset.sum_const_zero, zero_add, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-  have hcγ : (c - γ) * (M + t * F) ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr hc) hMF
-  nlinarith [mul_le_mul_of_nonneg_left hsub he.le, mul_le_mul_of_nonneg_right he1 hF]
+  refine le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + 3 * |β| + 1) * s) * (1 + ‖x‖ ^ 2))
+    fun ε hε ↦ ?_
+  rw [zero_add]
+  exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit hε hs x
 
 /-- **The a priori bound for parabolic equations on the whole space.** Let
 `P u = ∂ₜu - ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` where, for `0 < t < T`, the matrix `a(t, x)` has
@@ -342,24 +283,23 @@ theorem le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_
       Real.exp (-(γ * p.1))).continuousOn.mul hcont).sub
       (by fun_prop : Continuous fun p : ℝ × EuclideanSpace ℝ ι ↦ M + p.1 * F).continuousOn)
   have hwbdd : BddAbove (Function.uncurry w '' Icc 0 T ×ˢ univ) := by
-    obtain ⟨Mu, hMu⟩ := hbdd
-    refine ⟨max Mu 0, ?_⟩
+    obtain ⟨Mu, hMu0, hMu⟩ := hbdd.exists_ge 0
+    refine ⟨Mu, ?_⟩
     rintro _ ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
     have h1 : Real.exp (-(γ * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
-    have h2 : u t x ≤ max Mu 0 := (hMu ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩).trans (le_max_left _ _)
-    have h3 : 0 ≤ M + t * F := by nlinarith [ht.1]
+    have h2 : u t x ≤ Mu := hMu _ ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩
     simp only [Function.uncurry_apply_pair, hw]
-    nlinarith [Real.exp_pos (-(γ * t)), le_max_right Mu 0,
-      mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
-      mul_le_mul_of_nonneg_right h1 (le_max_right Mu 0)]
+    nlinarith [ht.1, mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
+      mul_le_mul_of_nonneg_right h1 hMu0]
   have hwle := nonpos_of_deriv_le_of_nonpos (u := w) (c := fun t x ↦ c t x - γ) ha htr hb
     (fun t ht x ↦ sub_nonpos.mpr (hc ht x)) hwcont hwbdd
     (fun t ht x ↦ contDiffAt_const.add ((hcd ht x).const_smul (Real.exp (-(γ * t)))))
     (fun t ht x ↦ by
       simp only [hw]
       fun_prop (disch := exact hdiff ht x))
-    (fun t ht x ↦ deriv_le_of_eq_exp_neg_mul_mul_sub hw (hc ht x) (mul_nonneg hγ ht.1.le)
-      (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht x) (hdiff ht x) (hsub ht x))
+    (fun t ht x ↦ deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_of_eq_exp_neg_mul_mul_sub hw
+      (hc ht x) (mul_nonneg hγ ht.1.le) (add_nonneg hM (mul_nonneg ht.1.le hF)) hF (hcd ht x)
+      (hdiff ht x) (hsub ht x))
     (fun x ↦ by simpa [hw] using hinit x)
   intro t ht x
   have h := hwle ht x
@@ -516,5 +456,3 @@ theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_in
 end PDE
 
 end TauCeti
-
-end

@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.AllDegreeTransitivity
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Mackey.Basic
+import TauCeti.Algebra.BigOperators.RightInverse
 import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
@@ -179,8 +180,8 @@ private theorem shapiroMap_comp_mackeyTerm (s : G) (n : ℕ) :
   -- trace from the Mackey subgroup to `V`.
   rw [mackeyTerm_def, hpair]
   simp only [← Category.assoc]
-  rw [shapiroMap_comp_map_of_conj U (mackeySubgroup s U V) M s κ (fun w => hκ w) f hf
-    mackeySubgroup_le_conj n, Category.assoc (coeffMap _ n),
+  rw [shapiroMap_comp_map_of_conj U (mackeySubgroup s U V) M s κ (fun w => hκ w) f hf n,
+    Category.assoc (coeffMap _ n),
     ← shapiroMap_trans V (mackeySubgroup s U V) hWV M n]
   simp only [Category.assoc, shapiroMap_comp_corestriction]
   rw [← shapiroMap_naturality V (DiscreteCoind V ((mackeySubgroup s U V).subgroupOf V) M)
@@ -289,7 +290,7 @@ every degree. -/
 theorem mackeyTerm_eq_of_mk_eq {s s' : G} (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s')
     (n : ℕ) : mackeyTerm U V M hU hV s n = mackeyTerm U V M hU hV s' n := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  exact eq_of_sum_doubleCoset_rep_eq V U (fun s => mackeyTerm U V M hU hV s n)
+  exact Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq' (fun s => mackeyTerm U V M hU hV s n)
     (fun r hr => (corestriction_mackey U V M hU hV r hr n).symm.trans
       (corestriction_mackey U V M hU hV Quotient.out DoubleCoset.out_eq' n)) h
 

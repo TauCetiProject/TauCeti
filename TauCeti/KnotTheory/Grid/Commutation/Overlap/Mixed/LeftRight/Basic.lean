@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Weight
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Recutting a rectangle that starts on the replaced line before a pentagon
@@ -220,8 +221,6 @@ theorem recutLeftEqRight_toRectangleDecomposition
     exact (D.leftRightRecut_first_right hcommon hrectangle hpentagon hturn).symm
   · simp only [recutLeftEqRight,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, leftRightRecut]
-  · simp only [recutLeftEqRight,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, leftRightRecut]
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_recutLeftEqRight (D : GridRectanglePentagonDecomposition a s x z)
@@ -452,12 +451,11 @@ private theorem leftRightOverlapPartner_injective :
   have hD := G.leftRightOverlapPartner_isRecut C D
   have hE := G.leftRightOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ := G.leftRightOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ := G.leftRightOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  obtain ⟨_, hfD, hsD⟩ := G.leftRightOverlapSource_recut_data C D.val D.property
+  obtain ⟨_, hfE, hsE⟩ := G.leftRightOverlapSource_recut_data C E.val E.property
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -534,12 +532,9 @@ theorem add_sum_rectanglePentagonWeight_eq_add_sum_iff_sdiff_leftRightOverlap
           G.rectanglePentagonWeight C R D =
         B + ∑ E ∈ G.pentagonRectangleDecompositions C x z \ G.leftRightOverlapPartners C x z,
           G.pentagonRectangleWeight C R E := by
-  rw [← Finset.sum_sdiff (G.leftRightOverlapSources_subset C)
-      (f := G.rectanglePentagonWeight C R),
-    ← Finset.sum_sdiff (G.leftRightOverlapPartners_subset C)
-      (f := G.pentagonRectangleWeight C R),
-    G.sum_rectanglePentagonWeight_leftRightOverlapSources_eq_sum_partners C x z R,
-    ← add_assoc, ← add_assoc]
-  exact add_right_cancel_iff
+  exact Finset.add_sum_eq_add_sum_iff_sdiff
+    (G.leftRightOverlapSources_subset C)
+    (G.leftRightOverlapPartners_subset C)
+    (G.sum_rectanglePentagonWeight_leftRightOverlapSources_eq_sum_partners C x z R)
 
 end TauCeti.GridDiagram

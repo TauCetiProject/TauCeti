@@ -45,7 +45,7 @@ abelian group `M`, and we classify their solutions there.
 ## Main definitions
 
 * `TauCeti.IsSymmetricCocycleCoeff n b`: the coefficient equations in degree `n` on a sequence
-  `b` in an abelian group.
+  `b` in an additive commutative monoid.
 
 ## Main results
 
@@ -74,12 +74,16 @@ namespace TauCeti
 
 section CoeffEquations
 
-/-! ### The coefficient equations, with coefficients in an abelian group -/
+/-! ### The coefficient equations, with coefficients in an additive commutative monoid -/
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] {n : ℕ}
+section Monoid
+
+variable {M N : Type*} [AddCommMonoid M] [AddCommMonoid N] {n : ℕ}
 
 /-- The linear equations satisfied by the coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive
-2-cocycle of degree `n`, with coefficients in an abelian group. -/
+2-cocycle of degree `n`, with coefficients in an additive commutative monoid. Only `ℕ`-multiples
+and equalities enter, so the equations make sense before any subtraction is available; the
+classification below needs an abelian group. -/
 structure IsSymmetricCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
   /-- Symmetry: `b_{n - i} = bᵢ`. -/
   symm : ∀ i ≤ n, b (n - i) = b i
@@ -90,13 +94,25 @@ structure IsSymmetricCocycleCoeff (n : ℕ) (b : ℕ → M) : Prop where
 
 namespace IsSymmetricCocycleCoeff
 
-variable {b b' : ℕ → M}
+variable {b : ℕ → M}
 
-/-- Solutions of the coefficient equations are preserved by additive group homomorphisms. -/
+/-- Solutions of the coefficient equations are preserved by additive monoid homomorphisms. -/
 theorem map (h : IsSymmetricCocycleCoeff n b) (φ : M →+ N) :
     IsSymmetricCocycleCoeff n fun i => φ (b i) where
   symm i hi := by rw [h.symm i hi]
   rel i j k hi hj hk hn := by rw [← map_nsmul, ← map_nsmul, h.rel i j k hi hj hk hn]
+
+end IsSymmetricCocycleCoeff
+
+end Monoid
+
+/-! ### Solutions in an abelian group -/
+
+variable {M : Type*} [AddCommGroup M] {n : ℕ}
+
+namespace IsSymmetricCocycleCoeff
+
+variable {b b' : ℕ → M}
 
 /-- The difference of two solutions of the coefficient equations is a solution. -/
 theorem sub (h : IsSymmetricCocycleCoeff n b) (h' : IsSymmetricCocycleCoeff n b') :
@@ -256,6 +272,32 @@ private theorem isSymmetricCocycleCoeff_lazardCoeff (n : ℕ) :
     IsSymmetricCocycleCoeff n (lazardCoeff n) :=
   isSymmetricCocycleCoeff_coeff (isSymmetric_lazardCocycle n) (isAddCocycle₂_lazardCocycle n) n
 
+/-- If `m` determines the `p`-torsion solutions of the coefficient equations in degree `n ≥ 2` over
+`M × ZMod p`, then the coefficient `c m` of `C_n` is nonzero modulo `p`, since the `c i` have no
+common factor. -/
+private theorem natCast_choose_div_lazardGcd_ne_zero {p n m : ℕ} (hp : p.Prime) (hm0 : 0 < m)
+    (hmn : m < n)
+    (hm : ∀ b : ℕ → M × ZMod p, (∀ i, 0 < i → i < n → p • b i = 0) →
+      IsSymmetricCocycleCoeff n b → b m = 0 → ∀ i, 0 < i → i < n → b i = 0) :
+    ((n.choose m / lazardGcd n : ℕ) : ZMod p) ≠ 0 := by
+  have := Fact.mk hp
+  intro hcm
+  set c : ℕ → ℕ := fun i => n.choose i / lazardGcd n
+  have hcZ : ∀ i, 0 < i → i < n → lazardCoeff n i = c i := fun i hi hin =>
+    coeff_single_add_single_lazardCocycle hi hin
+  have hcm' : ((c m : ℕ) : ZMod p) = 0 := hcm
+  set φ : ℤ →+ M × ZMod p := (AddMonoidHom.inr _ _).comp (Int.castAddHom (ZMod p))
+  have hzero := hm (fun i => φ (lazardCoeff n i)) (fun i _ _ => by ext <;> simp [φ])
+    ((isSymmetricCocycleCoeff_lazardCoeff n).map φ) (by rw [hcZ m hm0 hmn]; ext <;> simp [φ, hcm'])
+  have hdvd : p ∣ (Icc 1 (n - 1)).gcd c := Finset.dvd_gcd fun i hi => by
+    rw [mem_Icc] at hi
+    have := congrArg Prod.snd (hzero i (by omega) (by omega))
+    simp only [φ, hcZ i (by omega) (by omega), AddMonoidHom.comp_apply, Int.coe_castAddHom,
+      Int.cast_natCast, AddMonoidHom.inr_apply, Prod.snd_zero] at this
+    exact (ZMod.natCast_eq_zero_iff _ _).1 this
+  rw [gcd_choose_div_lazardGcd_eq_one (by omega)] at hdvd
+  exact hp.one_lt.ne' (Nat.dvd_one.1 hdvd)
+
 /-- Over a group killed by a prime `p`, every solution of the coefficient equations in degree
 `n ≥ 2` is, at the indices `0 < i < n`, a multiple of the coefficients of `C_n`. -/
 private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 ≤ n) {b : ℕ → M}
@@ -268,19 +310,7 @@ private theorem exists_eq_nsmul_of_torsion {p n : ℕ} (hp : p.Prime) (hn : 2 �
   have hcZ : ∀ i, 0 < i → i < n → lazardCoeff n i = c i := fun i hi hin =>
     coeff_single_add_single_lazardCocycle hi hin
   -- The coefficient `c m` of `C_n` is a unit modulo `p`, since the `c i` have no common factor.
-  have hcm : ((c m : ℕ) : ZMod p) ≠ 0 := by
-    intro hcm
-    set φ : ℤ →+ M × ZMod p := (AddMonoidHom.inr _ _).comp (Int.castAddHom (ZMod p))
-    have hzero := hm (fun i => φ (lazardCoeff n i)) (fun i _ _ => by ext <;> simp [φ])
-      ((isSymmetricCocycleCoeff_lazardCoeff n).map φ) (by rw [hcZ m hm0 hmn]; ext <;> simp [φ, hcm])
-    have hdvd : p ∣ (Icc 1 (n - 1)).gcd c := Finset.dvd_gcd fun i hi => by
-      rw [mem_Icc] at hi
-      have := congrArg Prod.snd (hzero i (by omega) (by omega))
-      simp only [φ, hcZ i (by omega) (by omega), AddMonoidHom.comp_apply, Int.coe_castAddHom,
-        Int.cast_natCast, AddMonoidHom.inr_apply, Prod.snd_zero] at this
-      exact (ZMod.natCast_eq_zero_iff _ _).1 this
-    rw [gcd_choose_div_lazardGcd_eq_one hn] at hdvd
-    exact hp.one_lt.ne' (Nat.dvd_one.1 hdvd)
+  have hcm : ((c m : ℕ) : ZMod p) ≠ 0 := natCast_choose_div_lazardGcd_ne_zero hp hm0 hmn hm
   set u : ℕ := (((c m : ℕ) : ZMod p)⁻¹).val
   have hu : c m * u ≡ 1 [MOD p] := by
     rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, ZMod.natCast_zmod_val, Nat.cast_one,
@@ -352,7 +382,7 @@ theorem IsSymmetricCocycleCoeff.exists_eq_nsmul {n : ℕ} {b : ℕ → M}
       rw [mem_Icc] at hi
       exact coeff_single_add_single_lazardCocycle (by omega) (by omega)
   obtain ⟨l, hl⟩ :=
-    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
   have hl' : ∑ i ∈ Icc 1 (n - 1), l i * (n.choose i / lazardGcd n : ℕ) = 1 := by
     rw [← hl]
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _
@@ -383,7 +413,7 @@ theorem exists_eq_smul_lazardCocycle {n : ℕ} (hn : n ≠ 0) {f : MvPolynomial 
     ∃ r : R, f = r • lazardCocycle n R := by
   obtain ⟨r, hr⟩ := (isSymmetricCocycleCoeff_coeff hs hf n).exists_eq_nsmul
   refine ⟨r, MvPolynomial.ext _ _ fun d => ?_⟩
-  rw [coeff_smul, coeff_lazardCocycle, smul_eq_mul]
+  rw [AddMonoidAlgebra.coeff_smul_apply, coeff_lazardCocycle, smul_eq_mul]
   by_cases hd : d 0 + d 1 = n
   · have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (n - d 0) := by
       ext x

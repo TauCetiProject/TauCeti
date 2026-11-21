@@ -26,7 +26,8 @@ is the Cauchy potential of `Δg`, also at the initial time `t = 0` when `a = 0`.
 bounds then follow from the maximum principle `TauCeti.norm_heatCauchyPotential_le`, and the
 parabolic Hölder seminorms of the two top-order fields from the parabolic Hölder estimate
 `TauCeti.holderWith_heatCauchyPotential` applied to `D²g` and `Δg`. In particular `u` solves the
-heat equation `∂ₜu = Δu` on the closed slab, and when `a = 0` its initial trace is `g`.
+heat equation `∂ₜu = Δu` on the closed slab, and when `a = 0` and `F` is complete its initial trace
+is `g`.
 
 This is the initial-data part of the solution operator of the Cauchy problem
 `∂ₜu - Δu = f`, `u(·, 0) = g` in parabolic Hölder spaces, whose solution is the sum of the Cauchy
@@ -39,7 +40,8 @@ potential of `g` and the Duhamel potential of `f`.
 * `TauCeti.heatCauchyPotentialL_apply` and its companions: the four fields of the potential.
 * `TauCeti.timeDerivL_heatCauchyPotentialL_eq_laplacian`: the heat equation `∂ₜu = Δu`.
 * `TauCeti.norm_heatCauchyPotentialL_le`: the operator-norm bound `(1 + dim E) (1 + M_α)`.
-* `TauCeti.spatialTrace_heatCauchyPotentialL_left`: the initial trace of the potential is `g`.
+* `TauCeti.spatialTrace_heatCauchyPotentialL_left`: for complete `F`, the initial trace of the
+  potential is `g`.
 
 ## References
 
@@ -76,8 +78,8 @@ private def slabPotential (h : E → G) (hc : Continuous h) (hM : ∀ y, ‖h y�
     (fun p ↦ heatCauchyPotential h (p : ParabolicSpaceTime E).time
       (p : ParabolicSpaceTime E).space)
     ((continuous_heatCauchyPotential hc hM).comp
-      ((continuous_time.comp continuous_subtype_val).prodMk
-        (continuous_space.comp continuous_subtype_val)))
+      ((continuous_time.comp continuous_subtypeVal).prodMk
+        (continuous_space.comp continuous_subtypeVal)))
     M fun _ ↦ norm_heatCauchyPotential_le hM _ _
 
 private theorem slabPotential_apply (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
@@ -123,8 +125,6 @@ end SlabPotential
 
 /-! ### The potential as an order-two parabolic Hölder map -/
 
-variable [CompleteSpace F]
-
 variable (hab : a < b) (ha : 0 ≤ a)
 
 /-- The Cauchy potential of a `C_b^{2,α}` datum, as an element of the order-two parabolic Hölder
@@ -154,8 +154,8 @@ private def potential (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E
       rw [slabPotentialHolder_apply, space_slabMk, time_slabMk]
       refine ((hasDerivWithinAt_heatCauchyPotential g.contDiff
         g.norm_apply_le_iteratedFDeriv_zero g.norm_fderiv_le_iteratedFDeriv_one
-        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.2.1) x).mono
-          (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.2
+        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.property.1) x).mono
+          (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.property
       simp [timeExtension_def, projIcc_of_mem hab.le hs, slabPotential_apply])
 
 private theorem potential_apply (g : CkHolderSpace 2 α E F) (p : slab (E := E) a b) :
@@ -277,7 +277,8 @@ theorem norm_heatCauchyPotentialL_le :
 
 /-- **Attainment of the initial datum.** On the slab `E × [0, b]`, the initial trace of the Cauchy
 potential of `g` is `g`. -/
-theorem spatialTrace_heatCauchyPotentialL_left (hb : 0 < b) (g : CkHolderSpace 2 α E F) :
+theorem spatialTrace_heatCauchyPotentialL_left [CompleteSpace F] (hb : 0 < b)
+    (g : CkHolderSpace 2 α E F) :
     (heatCauchyPotentialL hb le_rfl g).spatialTrace ⟨0, left_mem_Icc.2 hb.le⟩ = g := by
   ext x
   simp
@@ -290,10 +291,7 @@ theorem ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatCauchyPotentialL
     euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
       (heatCauchyPotentialL hab ha g) = 0 := by
   ext p
-  rw [euclideanParabolicOperatorL_apply,
-    timeDerivL_heatCauchyPotentialL_eq_laplacian,
-    laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
-  simp only [(heatCauchyPotentialL hab ha g).iteratedFDeriv_two_apply, slabMk_space_slabTime]
-  simp [Matrix.one_apply]
+  rw [euclideanParabolicOperatorL_one_apply, timeDerivL_heatCauchyPotentialL_eq_laplacian, sub_self,
+    HolderSpace.zero_apply]
 
 end TauCeti

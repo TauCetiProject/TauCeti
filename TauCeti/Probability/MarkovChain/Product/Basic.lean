@@ -9,16 +9,18 @@ public import TauCeti.Probability.MarkovChain.Period
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.Kernel.Composition.ParallelComp
 public import TauCeti.Probability.Process.MarkovChain
+import TauCeti.Probability.MarkovChain.MarkovProperty
 
 /-!
 # Independent product chains
 
 The independent product of two chains uses Mathlib's parallel composition `κ ∥ₖ η`.
-Its path law is obtained by pairing independent coordinate paths. On spaces with measurable
-singletons, products of aperiodic kernels are aperiodic; if both factors are also irreducible,
-the product is irreducible. The key point is that aperiodicity synchronizes the positive
-transition times of the two coordinates. Irreducibility alone does not do so (two deterministic
-two-cycles give a reducible product).
+Pushing its path law from any initial measure `ρ` forward along either coordinate projection yields
+the coordinate chain started from the corresponding marginal of `ρ`, and for a product initial law
+its path law is obtained by pairing independent coordinate paths. Products of aperiodic
+kernels are aperiodic; if both factors are also irreducible, the product is irreducible. The key
+point is that aperiodicity synchronizes the positive transition times of the two coordinates.
+Irreducibility alone does not do so (two deterministic two-cycles give a reducible product).
 
 Together with `Kernel.Invariant.parallelComp`, these results provide the independent product
 chain used in meeting-time coupling arguments for convergence to equilibrium.
@@ -36,7 +38,6 @@ namespace ProbabilityTheory.Kernel
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {κ : Kernel α α} {η : Kernel β β} [IsSFiniteKernel κ] [IsSFiniteKernel η]
-  [MeasurableSingletonClass α] [MeasurableSingletonClass β]
 
 /-- Independent products of aperiodic kernels are aperiodic, even without irreducibility. -/
 theorem IsAperiodic.parallelComp (hκ : κ.IsAperiodic) (hη : η.IsAperiodic) :
@@ -85,7 +86,28 @@ namespace MeasureTheory.Measure
 open TauCeti.Probability
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-  [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
+
+/-- The first coordinate of a chain driven by `κ ∥ₖ η` from any initial joint measure `ρ` has path
+law `markovChainLaw ρ.fst κ`. Neither finiteness nor independence of `ρ` nor countability is
+required. -/
+@[simp]
+theorem markovChainLaw_parallelComp_map_fst (ρ : Measure (α × β))
+    (κ : Kernel α α) (η : Kernel β β) [IsMarkovKernel κ] [IsMarkovKernel η] :
+    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).1) = markovChainLaw ρ.fst κ :=
+  markovChainLaw_map_comp ρ (κ ∥ₖ η) κ measurable_fst fun p => by
+    simp [Kernel.parallelComp_apply]
+
+/-- The second coordinate of a chain driven by `κ ∥ₖ η` from any initial joint measure `ρ` has path
+law `markovChainLaw ρ.snd η`. Neither finiteness nor independence of `ρ` nor countability is
+required. -/
+@[simp]
+theorem markovChainLaw_parallelComp_map_snd (ρ : Measure (α × β))
+    (κ : Kernel α α) (η : Kernel β β) [IsMarkovKernel κ] [IsMarkovKernel η] :
+    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).2) = markovChainLaw ρ.snd η :=
+  markovChainLaw_map_comp ρ (κ ∥ₖ η) η measurable_snd fun p => by
+    simp [Kernel.parallelComp_apply]
+
+variable [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
 
 /-- The law of the independent product chain is obtained by pairing independent coordinate
 paths. The identity holds for finite initial measures, not only probability laws. -/
@@ -107,8 +129,10 @@ theorem markovChainLaw_parallelComp (μ : Measure α) (ν : Measure β)
     ext z
     simp only [Set.mem_ofPred_eq, Set.mem_prod, Prod.ext_iff, forall_and]
   rw [hevent, Measure.prod_prod]
-  rw [← prefixLaw_singleton_eq_measure (fun i => (measurable_pi_apply i).aemeasurable),
-    ← prefixLaw_singleton_eq_measure (fun i => (measurable_pi_apply i).aemeasurable),
+  rw [← prefixLaw_singleton_eq_measure (X := fun i (z : ℕ → α) => z i)
+      (fun i => (measurable_pi_apply i.val).aemeasurable),
+    ← prefixLaw_singleton_eq_measure (X := fun i (z : ℕ → β) => z i)
+      (fun i => (measurable_pi_apply i.val).aemeasurable),
     markovChainLaw_prefixLaw_singleton, markovChainLaw_prefixLaw_singleton]
   simp only [Kernel.parallelComp_apply]
   rw [← Set.singleton_prod_singleton, Measure.prod_prod, mul_mul_mul_comm,
@@ -129,14 +153,19 @@ theorem prodMk_markovChainLaw
     {α β Ω : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace Ω]
     [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
     {P : Measure Ω} {μ : Measure α} {ν : Measure β}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [IsFiniteMeasure ν]
     {κ : Kernel α α} {η : Kernel β β} [IsMarkovKernel κ] [IsMarkovKernel η]
     {X : ℕ → Ω → α} {Y : ℕ → Ω → β}
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw μ κ) P)
     (hY : HasLaw (fun ω n => Y n ω) (markovChainLaw ν η) P)
     (hindep : IndepFun (fun ω n => X n ω) (fun ω n => Y n ω) P) :
     HasLaw (fun ω n => (X n ω, Y n ω)) (markovChainLaw (μ.prod ν) (κ ∥ₖ η)) P := by
-  have := hX.isFiniteMeasure
+  -- finiteness of `μ` follows from that of `ν` through the shared sample space
+  have : IsFiniteMeasure P := hY.isFiniteMeasure
+  have : IsFiniteMeasure (markovChainLaw μ κ) := hX.isFiniteMeasure_iff.mp inferInstance
+  have : IsFiniteMeasure μ := by
+    rw [← markovChainLaw_map_eval_zero μ κ]
+    infer_instance
   have hzip : HasLaw (fun w n => (w.1 n, w.2 n))
       (markovChainLaw (μ.prod ν) (κ ∥ₖ η))
       ((markovChainLaw μ κ).prod (markovChainLaw ν η)) :=

@@ -13,6 +13,7 @@ public import Mathlib.Algebra.FiniteSupport.Defs
 public import Mathlib.Data.Matrix.Composition
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.LinearAlgebra.Basis.SmulTower
@@ -22,7 +23,14 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 # Dimensions of boundaries of complexes of vector spaces
 
 In a homological complex of vector spaces, a homology group has dimension at most that of the
-finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`).
+finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
+with equality, even for complexes of modules over any ring, when the differentials into and out of
+that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
+For a based homological complex over a nontrivial ring whose chain bases have finitely supported
+ranks, the homology bases also have finitely supported ranks
+(`HomologicalComplex.finite_homology_of_finite`).
+Bases of two terms of a complex joined by a bijective differential have the same size
+(`HomologicalComplex.card_eq_card_of_bijective_d`).
 
 Let `C` be a homological complex of vector spaces over a field `F`. If `C.X j` is
 finite-dimensional, `C` is exact in degree `j` exactly when the dimensions of the images of the
@@ -65,6 +73,30 @@ theorem finrank_homology_le_finrank_X {k : Type*} [DivisionRing k] {ι : Type*}
   have : Module.Finite k (K.sc i).X₂ := ‹Module.Finite k (K.X i)›
   (K.sc i).finrank_homology_le_finrank_X₂
 
+/-- In a homological complex of modules, if the differentials into and out of degree `i`
+vanish, the homology in degree `i` has the rank of the term in degree `i`. -/
+theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat R) c) (i : ι)
+    (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
+    finrank R (K.homology i) = finrank R (K.X i) :=
+  (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
+
+/-- For a bounded based homological complex of modules over a nontrivial ring, only finitely many
+homology bases are nonempty: homology vanishes in every degree where the complex vanishes. -/
+theorem finite_homology_of_finite {R : Type*} [Ring R] [Nontrivial R] {ι : Type*}
+    {s : ComplexShape ι} {C : HomologicalComplex (ModuleCat R) s} {n m : ι → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) R (C.X i))
+    (h : ∀ i, Basis (Fin (m i)) R (C.homology i)) (hn : {i | n i ≠ 0}.Finite) :
+    {i | m i ≠ 0}.Finite :=
+  hn.subset fun i hi ↦ by
+    by_contra hn₀
+    simp only [Set.mem_ofPred_eq, not_not] at hn₀
+    have : IsEmpty (Fin (n i)) := by rw [hn₀]; infer_instance
+    have := (c i).repr.toEquiv.subsingleton
+    have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+    have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+    exact hi (Nat.eq_zero_of_not_pos fun hm ↦ (h i).ne_zero ⟨0, hm⟩ (Subsingleton.elim _ _))
+
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 
 /-- A complex of vector spaces with finite-dimensional term in degree `j` is exact in degree `j`
@@ -93,6 +125,14 @@ theorem finrank_range_d_eq_zero (C : ChainComplex (ModuleCat F) ℤ) {n : ℤ �
   have : Module.Finite F (C.X j) := .of_basis (c j)
   have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
   rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
+
+/-- Bases `e` of `Cᵢ` and `e'` of `Cⱼ`, two terms of a complex joined by a bijective
+differential, have the same size. -/
+theorem card_eq_card_of_bijective_d {C : HomologicalComplex (ModuleCat F) s} {i j : ι} {p q : ℕ}
+    (e : Basis (Fin p) F (C.X i)) (e' : Basis (Fin q) F (C.X j))
+    (h : Function.Bijective (C.d i j).hom) : p = q := by
+  simpa using (finrank_eq_card_basis (e.map (LinearEquiv.ofBijective _ h))).symm.trans
+    (finrank_eq_card_basis e')
 
 /-- The signs `(-1) ^ (dim Bⱼ · f j)`, where `Bⱼ` is the space of boundaries of a bounded based
 complex `C` in degree `j`, have finite multiplicative support. -/

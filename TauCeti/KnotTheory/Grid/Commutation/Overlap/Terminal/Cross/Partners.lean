@@ -105,8 +105,7 @@ private theorem crossRecut_toRectangleDecomposition
     (E.crossRecut hcommon hone hf hs hrow hturn).toRectangleDecomposition =
       E.toRectangleDecomposition.recut hone hf hs := by
   apply GridRectangleDecomposition.ext <;>
-    simp [crossRecut, GridRectanglePentagonDecomposition.pentagon,
-      (E.crossRecut_geometry hcommon hone hf hs hrow).2.1]
+    simp [crossRecut, GridRectanglePentagonDecomposition.pentagon]
 
 /-- The inverse cross-recut shares its terminal side, with the pentagon starting inside the
 rectangle's column interval. -/
@@ -126,9 +125,8 @@ private theorem crossRecut_terminal_overlap
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hDrect]
     exact E.toRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hfr, hsr, -, -, -, -⟩ := E.crossRecut_geometry hcommon hone hf hs hrow
   rw [← hDrect] at hfr hsr
   have hDcommon : D.rectangle.right = D.pentagon.right := by
@@ -180,13 +178,9 @@ private theorem crossRecut_mem_rectanglePentagonDecompositions
   -- The first promotion of the inverse domain is `E`; check its corrected square multiset.
   obtain ⟨hfirst, hpromote⟩ :=
     D.exists_recutRightEqRightFirst_eq_of_isRecut E hDcommon hDone hr hp hback
-  obtain ⟨-, -, -, -, hcols, ha, -⟩ :=
+  obtain ⟨-, -, -, -, -, ha, -, hb⟩ :=
     D.recutRightEqRightFirst_rectangle_geometry hDcommon hDone hr hp hfirst
-  rw [hpromote] at hcols ha
-  have hb : finRotate n C.column ∉ E.rectangle.toGridRectangle.coveredColumns := fun hb =>
-    Grid.right_notMem_cIco D.rectangle.left (finRotate n C.column) (by
-      simpa only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-        GridRectangleBetween.toGridRectangle_right, hDcommon, D.pentagon.right_eq] using hcols hb)
+  rw [hpromote] at ha hb
   have hbottom : D.pentagon.bottom = E.pentagon.bottom := by
     have h := (E.crossRecut_geometry hcommon hone hf hs hrow).2.2.2.2.1
     rw [← hDrect] at h
@@ -238,9 +232,8 @@ theorem mem_terminalCrossOverlapPartners_of_right_eq_left
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hDrect]
     exact E.toRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hDcommon, hDcol⟩ := E.crossRecut_terminal_overlap hcommon hone hf hs hrow hturn
   have hr := D.isEmpty_rectangle_of_isRecut hrecut
   have hp := D.isEmpty_pentagon_of_isRecut hrecut

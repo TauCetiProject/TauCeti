@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Basic
 public import Mathlib.RingTheory.Adjoin.Basic
+import Mathlib.Algebra.Algebra.Subalgebra.Tower
 
 /-!
 # Generators and vector subspaces of generated algebras
@@ -25,6 +27,8 @@ to noncommutative ambient algebras, using the same span calculation.
   unit multiplier generates the same subalgebra.
 * `TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top`: `2x - 1` generates the whole algebra when
   `x` does and `2` is a unit.
+* `TauCeti.rank_adjoin_eq_rank_adjoin_range`: adjoining a set to `F` or to the image of `F` in a
+  larger field gives the same rank.
 * `NonUnitalSubalgebra.adjoin_eq_span_one_sup`: adjoining the identity adds the scalar line
   to the underlying submodule.
 -/
@@ -76,3 +80,28 @@ theorem adjoin_eq_span_one_sup (B : NonUnitalSubalgebra R A) :
     ← NonUnitalAlgebra.adjoin_eq_span, NonUnitalAlgebra.adjoin_eq]
 
 end NonUnitalSubalgebra
+
+namespace TauCeti
+
+variable {k F F' : Type*} [CommSemiring k] [Field F] [Field F'] [Algebra k F] [Algebra k F']
+  [Algebra F F'] [IsScalarTower k F F']
+
+/-- Adjoining a set `s` to `F` has the same rank over `F` as adjoining it to the image of `F` in
+`F'` has over that image, because the two subalgebras are equal as subsemirings. -/
+theorem rank_adjoin_eq_rank_adjoin_range (s : Set F') :
+    Module.rank F (Algebra.adjoin F s) =
+      Module.rank (IsScalarTower.toAlgHom k F F').range
+        (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s) := by
+  have heq : (Algebra.adjoin F s).toSubsemiring =
+      (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s).toSubsemiring :=
+    congrArg Subalgebra.toSubsemiring
+      (IsScalarTower.adjoin_range_toAlgHom (R := k) (S := F) (A := F') s).symm
+  let i : F ≃ₐ[k] (IsScalarTower.toAlgHom k F F').range :=
+    AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k F F')
+  exact rank_eq_of_equiv_equiv i (RingEquiv.subsemiringCongr heq).toAddEquiv
+    i.bijective fun a ⟨x, hx⟩ ↦ by
+      ext
+      simp_rw [Algebra.smul_def]
+      rfl
+
+end TauCeti

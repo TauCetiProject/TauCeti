@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
-public import TauCeti.GroupTheory.Coxeter.Geometric
+public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import Mathlib.Data.Set.List
 
 /-!
@@ -43,11 +44,18 @@ of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
   subgroup of `J` exactly when its index lies in `J`.
 * `CoxeterSystem.parabolicHom_wordProd`: the homomorphism sends the product of a word to the
   product of its image.
+* `CoxeterSystem.parabolicHom_id`, `CoxeterSystem.parabolicHom_comp`: the homomorphisms are
+  functorial in the map of index types.
+* `CoxeterSystem.parabolicHom_reindex`, `CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex`: along
+  a bijection they are the identity of a reindexed system and the inverse of
+  `CoxeterMatrix.reindexGroupEquiv` on the presented groups.
 * `CoxeterSystem.range_parabolicHom`: its image is the standard parabolic subgroup of
   `Set.range f`.
 * `CoxeterSystem.length_parabolicHom`: **it preserves lengths.**
 * `CoxeterSystem.parabolicHom_injective`: **it is injective.**
 * `CoxeterSystem.isReduced_map_iff`: a word is reduced exactly when its image is.
+* `CoxeterSystem.bruhatLE_parabolicHom_iff`: **it embeds the Bruhat order as an induced
+  suborder.**
 
 ## References
 
@@ -100,6 +108,38 @@ theorem parabolicHom_wordProd (ω : List B) :
   induction ω with
   | nil => simp
   | cons i ω ih => simp [wordProd_cons, ih]
+
+/-- **The identity of index types induces the identity of `W`.** -/
+@[simp]
+theorem parabolicHom_id (hid : ∀ i j, M i j = M (id i) (id j)) :
+    cs.parabolicHom cs hid = MonoidHom.id W :=
+  cs.ext_simple fun i ↦ parabolicHom_simple cs hid i
+
+/-- **The homomorphisms `CoxeterSystem.parabolicHom` compose** along composites of maps of index
+types: extending along `f` and then along `g` is extending along `g ∘ f`. -/
+theorem parabolicHom_comp {B'' W'' : Type*} [Group W''] {M'' : CoxeterMatrix B''}
+    {cs'' : CoxeterSystem M'' W''} {g : B' → B''} (hg : ∀ i j, M' i j = M'' (g i) (g j))
+    (hgf : ∀ i j, M i j = M'' ((g ∘ f) i) ((g ∘ f) j)) :
+    (cs'.parabolicHom cs'' hg).comp (cs.parabolicHom cs' hf) = cs.parabolicHom cs'' hgf :=
+  cs.ext_simple fun i ↦ by simp
+
+/-- **Reindexing a Coxeter system along `e` does not change the group**: the homomorphism of
+`CoxeterSystem.parabolicHom` from `cs` to `cs.reindex e` along `e` is the identity of `W`. -/
+@[simp]
+theorem parabolicHom_reindex (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
+    cs.parabolicHom (cs.reindex e) he = MonoidHom.id W :=
+  cs.ext_simple fun i ↦ by simp
+
+/-- On the presented Coxeter groups, the homomorphism of `CoxeterSystem.parabolicHom` along a
+bijection `e` is the inverse of Mathlib's isomorphism `CoxeterMatrix.reindexGroupEquiv`. -/
+@[simp]
+theorem _root_.CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex (M : CoxeterMatrix B)
+    (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
+    M.toCoxeterSystem.parabolicHom (M.reindex e).toCoxeterSystem he =
+      (M.reindexGroupEquiv e).symm.toMonoidHom :=
+  M.toCoxeterSystem.ext_simple fun i ↦ by
+    rw [parabolicHom_simple]
+    simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple]
 
 /-- The image of `CoxeterSystem.parabolicHom` is the standard parabolic subgroup of
 `Set.range f`. -/
@@ -174,5 +214,21 @@ include hf in
 /-- A word in `B` is reduced exactly when its image under `f` is reduced in `W'`. -/
 theorem isReduced_map_iff {ω : List B} : cs'.IsReduced (ω.map f) ↔ cs.IsReduced ω := by
   rw [IsReduced, IsReduced, ← parabolicHom_wordProd cs hf, length_parabolicHom, List.length_map]
+
+/-- **The homomorphism `CoxeterSystem.parabolicHom` preserves and reflects the Bruhat order.** -/
+@[simp]
+theorem bruhatLE_parabolicHom_iff {u w : W} :
+    cs'.BruhatLE (cs.parabolicHom cs' hf u) (cs.parabolicHom cs' hf w) ↔ cs.BruhatLE u w := by
+  -- `f` carries subwords of a reduced word bijectively onto subwords of the mapped reduced word.
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
+  rw [parabolicHom_wordProd, cs'.bruhatLE_iff_exists_sublist_wordProd_eq
+    ((isReduced_map_iff cs hf).mpr hω), cs.bruhatLE_iff_exists_sublist_wordProd_eq hω]
+  constructor
+  · rintro ⟨τ, hτ, hprod⟩
+    obtain ⟨σ, hσ, rfl⟩ := List.sublist_map_iff.mp hτ
+    rw [← parabolicHom_wordProd cs hf] at hprod
+    exact ⟨σ, hσ, parabolicHom_injective cs hf hprod⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    exact ⟨σ.map f, hσ.map f, (parabolicHom_wordProd cs hf σ).symm⟩
 
 end CoxeterSystem

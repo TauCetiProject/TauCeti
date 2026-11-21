@@ -82,8 +82,7 @@ private lemma exists_path_seq (hX : ∀ x : X, ¬IsCompact (connectedComponent x
     (K := fun k ↦ K (m + k)) (fun k ↦ K.isCompact _) hy
   refine ⟨z, hz0, fun k ↦ ?_⟩
   have hjoin : JoinedIn (connectedComponentIn (K (m + k))ᶜ (z k)) (z k) (z (k + 1)) :=
-    (K.isCompact _).isClosed.isOpen_compl.joinedIn_of_mem_connectedComponentIn
-      (notMem_of_not_isCompact_closure_connectedComponentIn_compl (hz k).1) (hz k).2
+    (K.isCompact _).isClosed.isOpen_compl.joinedIn_of_mem_connectedComponentIn (hz k).2
   exact ⟨hjoin.somePath, range_subset_iff.2 fun t ↦
     connectedComponentIn_subset _ _ (hjoin.somePath_mem t)⟩
 

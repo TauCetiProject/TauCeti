@@ -90,7 +90,7 @@ theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
       mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p w := by
   have hexp (s : TangentSpace 𝓘(ℝ) p.1) :
       mvfderiv 𝓘(ℝ) Real.exp p.1 s = NormedSpace.fromTangentSpace p.1 s * Real.exp p.1 := by
-    rw [mvfderiv_eq_fderiv, (Real.hasDerivAt_exp p.1).hasFDerivAt.fderiv]
+    rw [TauCeti.mvfderiv_eq_fderiv_apply, (Real.hasDerivAt_exp p.1).hasFDerivAt.fderiv]
     -- `ContinuousLinearMap.toSpanSingleton ℝ (eᵗ)` sends `s` to `s • eᵗ`, read through
     -- `NormedSpace.fromTangentSpace`.
     rfl
@@ -163,7 +163,7 @@ theorem poissonBracket_symplectization_exp_mul {p : ℝ × M} (hf : MDifferentia
     (hg : MDifferentiableAt I 𝓘(ℝ) g p.2) :
     SmoothTwoForm.poissonBracket (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
         (fun q ↦ Real.exp q.1 * f q.2) (fun q ↦ Real.exp q.1 * g q.2) p =
-      Real.exp p.1 * (mextDeriv α.1 p.2 ![α.contactHamiltonianVectorField f p.2,
+      Real.exp p.1 * (mextDeriv α.val p.2 ![α.contactHamiltonianVectorField f p.2,
           α.contactHamiltonianVectorField g p.2] +
         f p.2 * mvfderiv I g p.2 (α.reebVectorField p.2) -
         g p.2 * mvfderiv I f p.2 (α.reebVectorField p.2)) := by

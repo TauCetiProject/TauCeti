@@ -37,6 +37,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   commute.
 * `TauCeti.UniversalEnvelopingAlgebra.zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a scaled
   Lie-bracket relation gives the corresponding scaled ring-commutator relation.
+* `TauCeti.UniversalEnvelopingAlgebra.mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a Lie-bracket
+  relation with a scaled right-hand generator gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_eq_mul_add_zsmul_of_lie_eq`: an integral Lie-bracket
   structure constant gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: a ring homomorphism maps the bracket of
@@ -120,6 +122,12 @@ is the adjoint action, since `LieAlgebra.ad R L` is `LieModule.toEnd R L L`. -/
 noncomputable def representation : U →ₐ[R] Module.End R M :=
   _root_.UniversalEnvelopingAlgebra.lift R (LieModule.toEnd R L M)
 
+/-- The representation of `U(L)` on a Lie module is the lift of `LieModule.toEnd`. -/
+theorem representation_def :
+    representation R L M = _root_.UniversalEnvelopingAlgebra.lift R (LieModule.toEnd R L M) := by
+  unfold representation
+  rfl
+
 -- Neither this lemma nor its pointwise form below is a `simp` lemma: `simp` unfolds `ι` through
 -- Mathlib's `UniversalEnvelopingAlgebra.ι_apply`, so a left-hand side mentioning `ι` is not in
 -- simp-normal form. This is why Mathlib's own `lift_ι_apply` is not a `simp` lemma either;
@@ -134,6 +142,14 @@ action. -/
 theorem representation_ι_ad (x : L) :
     representation R L L (_root_.UniversalEnvelopingAlgebra.ι R x) = LieAlgebra.ad R L x :=
   representation_ι R L L x
+
+/-- The representation of `U(L)` on a faithful Lie module is injective on the canonical Lie
+generators. -/
+theorem representation_ι_injective [LieModule.IsFaithful R L M] :
+    Function.Injective fun x : L =>
+      representation R L M (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+  simpa only [representation_ι] using
+    LieModule.IsFaithful.injective_toEnd (R := R) (L := L) (M := M)
 
 /-- The `simp`-normal form of `TauCeti.UniversalEnvelopingAlgebra.representation_ι`, stated for
 the canonical generators as `simp` writes them. -/
@@ -199,6 +215,18 @@ theorem zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {p q 
   rw [← map_zsmul, ← map_zsmul, hab, map_zsmul, map_zsmul] at hbracket
   rw [← sub_eq_iff_eq_add', ← natCast_zsmul, ← mul_zsmul, ← hbracket]
   simp only [smul_sub, mul_smul_comm, smul_mul_assoc, mul_zsmul, smul_comm p q]
+
+/-- A Lie-bracket relation with a scaled right-hand generator becomes the corresponding
+ring-commutator relation under every ring homomorphism from the universal enveloping algebra. -/
+theorem mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {q r : ℤ} {n : ℕ}
+    (hab : q • ⁅a, b⁆ = ((n : ℤ) * r) • b') :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι R a) *
+        (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) =
+      (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) *
+          ρ (_root_.UniversalEnvelopingAlgebra.ι R a) +
+        n • (r • ρ (_root_.UniversalEnvelopingAlgebra.ι R b')) := by
+  simpa only [one_zsmul] using
+    zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ (p := 1) (by simpa only [one_mul] using hab)
 
 /-- A bracket relation with an integral structure constant becomes the corresponding commutator
 relation under every ring homomorphism from the universal enveloping algebra. -/

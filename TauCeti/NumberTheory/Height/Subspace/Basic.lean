@@ -23,7 +23,7 @@ subspace `U` of `K^ι` is the multiplicative height of its Plücker point, that 
 height `Height.mulHeight` of the Plücker coordinates of any basis of `U`. Its logarithm is the
 relative logarithmic height. Neither needs a number field or characteristic zero.
 
-The zero subspace and the whole space have height `1`, and a line has the height of any nonzero
+The zero subspace and the whole space have height `1`, and a line has the height of any
 vector spanning it. The height of a subspace does not depend on the spanning vectors: over `ℚ`
 the line spanned by `(2, 2)` has height `1`, so no primitive spanning vector is needed.
 
@@ -50,10 +50,12 @@ has finitely many points of bounded height.
   independent family is the height of its Plücker coordinates.
 * `Submodule.relativeSubspaceHeight_bot`, `Submodule.relativeSubspaceHeight_top`: the zero
   subspace and the whole space have height `1`.
-* `Submodule.relativeSubspaceHeight_span_singleton`: the line spanned by a nonzero vector has the
+* `Submodule.relativeSubspaceHeight_span_singleton`: the line spanned by a vector has the
   height of that vector.
-* `Submodule.relativeSubspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot
-  product has the height of `U`.
+* `Submodule.relativeSubspaceHeight_euclideanDual`,
+  `Submodule.relativeSubspaceHeight_eq_mulHeight_of_forall_dotProduct_eq_zero`: the orthogonal
+  complement of `U` for the dot product has the height of `U`; in particular, a hyperplane has the
+  height of any nonzero vector orthogonal to it.
 * `Submodule.instNorthcottRelativeSubspaceHeight` and
   `Submodule.instNorthcottRelativeSubspaceLogHeight`: the Northcott property for the relative
   height and the relative logarithmic height.
@@ -73,6 +75,8 @@ public section
 namespace Submodule
 
 open Height TauCeti Set Module
+
+section Finite
 
 variable {ι K : Type*} [LinearOrder ι] [Finite ι] [Field K] [AdmissibleAbsValues K]
   (U : Submodule K (ι → K))
@@ -145,7 +149,7 @@ theorem relativeSubspaceHeight_bot : relativeSubspaceHeight (⊥ : Submodule K (
   have h := relativeSubspaceHeight_span_range (linearIndependent_empty_type (ι := Fin 0)
     (R := K) (v := fun _ ↦ (0 : ι → K)))
   rw [range_eq_empty, span_empty] at h
-  rw [h, funext (plucker_of_isEmpty _), ← Pi.one_def, mulHeight_one]
+  rw [h, funext (plucker_fin_zero _), ← Pi.one_def, mulHeight_one]
 
 /-- The whole space has relative height `1`. -/
 @[simp]
@@ -172,10 +176,12 @@ theorem relativeSubspaceLogHeight_top :
     relativeSubspaceLogHeight (⊤ : Submodule K (ι → K)) = 0 := by
   simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
 
-/-- The relative height of the line spanned by a nonzero vector is the height of the vector. -/
+/-- The relative height of the line spanned by a vector is the height of the vector. -/
 @[simp]
-theorem relativeSubspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem relativeSubspaceHeight_span_singleton {x : ι → K} :
     relativeSubspaceHeight (K ∙ x) = mulHeight x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [mulHeight_zero]
   have h := relativeSubspaceHeight_span_range (linearIndependent_unique_iff.2 hx :
     LinearIndependent K ![x])
   rw [Matrix.range_cons, Matrix.range_empty, union_empty] at h
@@ -184,37 +190,14 @@ theorem relativeSubspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
   ext i
   simp
 
-/-- The relative logarithmic height of the line spanned by a nonzero vector is the logarithmic
+/-- The relative logarithmic height of the line spanned by a vector is the logarithmic
 height of the vector. -/
 @[simp]
-theorem relativeSubspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem relativeSubspaceLogHeight_span_singleton {x : ι → K} :
     relativeSubspaceLogHeight (K ∙ x) = logHeight x := by
   rw [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight,
-    relativeSubspaceHeight_span_singleton hx,
+    relativeSubspaceHeight_span_singleton,
     logHeight_eq_log_mulHeight]
-
-/-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
-product has the relative height of `U`. -/
-@[simp]
-theorem relativeSubspaceHeight_euclideanDual [Fintype ι] :
-    relativeSubspaceHeight U.euclideanDual = relativeSubspaceHeight U := by
-  let b := finBasis K U
-  let b' := finBasis K U.euclideanDual
-  obtain ⟨c, hc, h⟩ :=
-    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
-    b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
-    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
-  rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
-    mulHeight_eq_of_forall_eq_or_eq_neg h]
-  -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.
-  exact (mulHeight_smul_eq_mulHeight _ hc).trans (mulHeight_comp_equiv _ _)
-
-/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the relative
-logarithmic height of `U`. -/
-@[simp]
-theorem relativeSubspaceLogHeight_euclideanDual [Fintype ι] :
-    relativeSubspaceLogHeight U.euclideanDual = relativeSubspaceLogHeight U := by
-  simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
 
 /-- The relative height of subspaces has the Northcott property whenever the scalar height does,
 for instance over a number field: for every `B` there are finitely many subspaces of `ι → K` of
@@ -244,20 +227,72 @@ instance instNorthcottRelativeSubspaceLogHeight
   exact Northcott.comp_of_bddAbove _ _ fun B ↦
     bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
+end Finite
+
+section Fintype
+
+variable {ι K : Type*} [LinearOrder ι] [Fintype ι] [Field K] [AdmissibleAbsValues K]
+  (U : Submodule K (ι → K))
+
+/-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
+product has the relative height of `U`. -/
+@[simp]
+theorem relativeSubspaceHeight_euclideanDual :
+    relativeSubspaceHeight U.euclideanDual = relativeSubspaceHeight U := by
+  let b := finBasis K U
+  let b' := finBasis K U.euclideanDual
+  obtain ⟨c, hc, h⟩ :=
+    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
+    b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
+    fun i j ↦ mem_euclideanDual.1 (b' j).property _ (b i).property
+  rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
+    mulHeight_eq_of_forall_eq_or_eq_neg h]
+  -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.
+  exact (mulHeight_smul_eq_mulHeight _ hc).trans (mulHeight_comp_equiv _ _)
+
+/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the relative
+logarithmic height of `U`. -/
+@[simp]
+theorem relativeSubspaceLogHeight_euclideanDual :
+    relativeSubspaceLogHeight U.euclideanDual = relativeSubspaceLogHeight U := by
+  simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
+
+variable {U} in
+/-- The relative height of a hyperplane in `ι → K` equals the projective height of any nonzero
+vector orthogonal to it. -/
+theorem relativeSubspaceHeight_eq_mulHeight_of_forall_dotProduct_eq_zero
+    (hU : finrank K U + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hUa : ∀ x ∈ U, x ⬝ᵥ a = 0) :
+    relativeSubspaceHeight U = mulHeight a := by
+  rw [← relativeSubspaceHeight_euclideanDual,
+    euclideanDual_eq_span_singleton hU ha hUa, relativeSubspaceHeight_span_singleton]
+
+variable {U} in
+/-- The relative logarithmic height of a hyperplane in `ι → K` equals the logarithmic height of
+any nonzero vector orthogonal to it. -/
+theorem relativeSubspaceLogHeight_eq_logHeight_of_forall_dotProduct_eq_zero
+    (hU : finrank K U + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hUa : ∀ x ∈ U, x ⬝ᵥ a = 0) :
+    relativeSubspaceLogHeight U = logHeight a := by
+  rw [← relativeSubspaceLogHeight_euclideanDual,
+    euclideanDual_eq_span_singleton hU ha hUa, relativeSubspaceLogHeight_span_singleton]
+
+end Fintype
+
 end Submodule
 
 /-! The line spanned by `(2, 2)` has height `1`: no primitive spanning vector is needed. The line
 spanned by `(1, 2)` has height `2`. -/
 
 example : (ℚ ∙ ![(2 : ℚ), 2]).relativeSubspaceHeight = 1 := by
-  rw [Submodule.relativeSubspaceHeight_span_singleton (by simp)]
+  rw [Submodule.relativeSubspaceHeight_span_singleton]
   calc Height.mulHeight ![(2 : ℚ), 2]
       _ = Height.mulHeight ((2 : ℚ) • (1 : Fin 2 → ℚ)) := by
         congr 1; ext i; fin_cases i <;> simp
       _ = 1 := by rw [Height.mulHeight_smul_eq_mulHeight _ two_ne_zero, Height.mulHeight_one]
 
 example : (ℚ ∙ ![(1 : ℚ), 2]).relativeSubspaceHeight = 2 := by
-  rw [Submodule.relativeSubspaceHeight_span_singleton (by simp)]
+  rw [Submodule.relativeSubspaceHeight_span_singleton]
   calc Height.mulHeight ![(1 : ℚ), 2]
       _ = Height.mulHeight (![(1 : ℚ), 2] ∘ Equiv.swap 0 1) :=
         (Height.mulHeight_comp_equiv (Equiv.swap 0 1) _).symm

@@ -80,6 +80,12 @@ def kFlatTensorModelIso (K : CochainComplex C ℤ) [K.IsKFlat] :
         DerivedCategory.Q :=
   Localization.Lifting.iso _ (quasiIso C (.up ℤ)) _ _
 
+/-- The model comparison is the canonical factorization isomorphism of the localization. -/
+theorem kFlatTensorModelIso_eq_liftingIso (K : CochainComplex C ℤ) [K.IsKFlat] :
+    K.kFlatTensorModelIso = Localization.Lifting.iso DerivedCategory.Q (quasiIso C (.up ℤ))
+      (((CategoryTheory.MonoidalCategory.curriedTensor C).map₂CochainComplex.obj K) ⋙
+        DerivedCategory.Q) K.kFlatTensor := (rfl)
+
 /-- A map between K-flat complexes induces a transformation of their derived tensor functors. -/
 def kFlatTensorMap {K L : CochainComplex C ℤ} [K.IsKFlat] [L.IsKFlat] (f : K ⟶ L) :
     K.kFlatTensor ⟶ L.kFlatTensor :=

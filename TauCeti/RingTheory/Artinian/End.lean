@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.HopkinsLevitzki
-import TauCeti.Algebra.Module.LinearMap.Finite
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Endomorphism rings of modules over Artin algebras
@@ -36,7 +36,6 @@ include R in
 finitely generated over `R`. Then `Module.End A M` is an Artinian ring. -/
 theorem isArtinianRing : IsArtinianRing (Module.End A M) := by
   have : Module.Finite A M := .of_restrictScalars_finite R A M
-  have : Module.Finite R (Module.End A M) := .linearMap_of_isNoetherian
   exact IsArtinianRing.of_finite R (Module.End A M)
 
 end Module.End

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
 
 /-!
 # The PBW symbols of central elements
@@ -174,7 +174,7 @@ noncomputable def centerPBWGradedToPBWGraded (n : ℕ) :
 theorem centerPBWGradedToPBWGraded_mk {n : ℕ} (z : centerPBWFiltration R L n) :
     centerPBWGradedToPBWGraded R L n (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨((z : Subalgebra.center R U) : U),
-        coe_mem_wordFiltration_of_mem_centerPBWFiltration z.2⟩ :=
+        coe_mem_wordFiltration_of_mem_centerPBWFiltration z.property⟩ :=
   (rfl)
 
 /-- **The PBW symbol of the centre is injective**: a central element of degree at most `n` whose
@@ -194,8 +194,7 @@ end Filtration
 
 section Symbol
 
--- Symmetrization is only available for scalar rings in `Type`.
-variable {R : Type} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)
@@ -216,7 +215,7 @@ theorem mem_lieInvariants_of_pbwHomogeneousComponentMap_eq_mk [Module.Free R L] 
     have h := (mk_pbwHomogeneousSymmetrization R L n hn p).trans hp
     rwa [Submodule.Quotient.eq, mem_previousRestricted_iff, ← pbwFiltrationPrevious_def] at h
   let q : homogeneousSubmodule R L n :=
-    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.2⟩
+    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.property⟩
   -- The symmetrization of `x • p` is `⁅ι x, s p - z⁆`, again of lower degree.
   have hq : s q ∈ pbwFiltrationPrevious R L n := by
     have hzx : ⁅ι x, z⁆ = 0 := by
@@ -241,7 +240,7 @@ private noncomputable def invariantToPBWGraded (n : ℕ) :
 private theorem invariantToPBWGraded_apply {n : ℕ}
     (p : homogeneousLieInvariant R L L n) :
     invariantToPBWGraded n p =
-      pbwHomogeneousComponentMap R L n ⟨p, (mem_homogeneousLieInvariant.mp p.2).2⟩ :=
+      pbwHomogeneousComponentMap R L n ⟨p, (mem_homogeneousLieInvariant.mp p.property).2⟩ :=
   (rfl)
 
 private theorem invariantToPBWGraded_injective [Module.Free R L] (n : ℕ) :
@@ -252,8 +251,9 @@ private theorem invariantToPBWGraded_injective [Module.Free R L] (n : ℕ) :
 private noncomputable def symmetrizationCenter {n : ℕ} (hn : IsUnit (n.factorial : R))
     (p : homogeneousLieInvariant R L L n) :
     centerPBWFiltration R L n :=
-  ⟨⟨pbwHomogeneousSymmetrization R L n hn ⟨p, (mem_homogeneousLieInvariant.mp p.2).2⟩,
-      pbwHomogeneousSymmetrization_mem_center R L n hn (mem_homogeneousLieInvariant.mp p.2).1⟩,
+  ⟨⟨pbwHomogeneousSymmetrization R L n hn ⟨p, (mem_homogeneousLieInvariant.mp p.property).2⟩,
+      pbwHomogeneousSymmetrization_mem_center R L n hn (mem_homogeneousLieInvariant.mp
+          p.property).1⟩,
     mem_centerPBWFiltration.mpr (pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn _)⟩
 
 private theorem centerPBWGradedToPBWGraded_symmetrizationCenter {n : ℕ}
@@ -274,10 +274,10 @@ private theorem range_centerPBWGradedToPBWGraded [Module.Free R L] {n : ℕ}
     | _ z =>
         obtain ⟨p, hp⟩ := pbwHomogeneousComponentMap_surjective R L n
           (Submodule.Quotient.mk ⟨((z : Subalgebra.center R U) : U),
-            coe_mem_wordFiltration_of_mem_centerPBWFiltration z.2⟩)
+            coe_mem_wordFiltration_of_mem_centerPBWFiltration z.property⟩)
         have hinv := mem_lieInvariants_of_pbwHomogeneousComponentMap_eq_mk hn
-          (z : Subalgebra.center R U).2 _ hp
-        exact ⟨⟨p, mem_homogeneousLieInvariant.mpr ⟨hinv, p.2⟩⟩,
+          (z : Subalgebra.center R U).property _ hp
+        exact ⟨⟨p, mem_homogeneousLieInvariant.mpr ⟨hinv, p.property⟩⟩,
           hp.trans (centerPBWGradedToPBWGraded_mk ..).symm⟩
   · rintro _ ⟨p, rfl⟩
     exact ⟨_, centerPBWGradedToPBWGraded_symmetrizationCenter hn p⟩
@@ -301,7 +301,8 @@ theorem centerPBWGradedInvariantIso_symbol [Module.Free R L] (n : ℕ)
     centerPBWGradedToPBWGraded R L n z =
       pbwHomogeneousComponentMap R L n
         ⟨(centerPBWGradedInvariantIso R L n hn z : SymmetricAlgebra R L),
-          (mem_homogeneousLieInvariant.mp (centerPBWGradedInvariantIso R L n hn z).2).2⟩ := by
+          (mem_homogeneousLieInvariant.mp (centerPBWGradedInvariantIso R L n hn z).property).2⟩
+              := by
   rw [← invariantToPBWGraded_apply,
     ← LinearEquiv.ofInjective_apply _ (h := invariantToPBWGraded_injective n)]
   simp only [centerPBWGradedInvariantIso, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
@@ -314,9 +315,9 @@ theorem centerPBWGradedInvariantIso_symm_apply [Module.Free R L] (n : ℕ)
     (p : homogeneousLieInvariant R L L n) :
     (centerPBWGradedInvariantIso R L n hn).symm p =
       Submodule.Quotient.mk
-        ⟨⟨pbwHomogeneousSymmetrization R L n hn ⟨p, (mem_homogeneousLieInvariant.mp p.2).2⟩,
+        ⟨⟨pbwHomogeneousSymmetrization R L n hn ⟨p, (mem_homogeneousLieInvariant.mp p.property).2⟩,
             pbwHomogeneousSymmetrization_mem_center R L n hn
-              (mem_homogeneousLieInvariant.mp p.2).1⟩,
+              (mem_homogeneousLieInvariant.mp p.property).1⟩,
           mem_centerPBWFiltration.mpr
             (pbwHomogeneousSymmetrization_mem_pbwFiltration R L n hn _)⟩ := by
   rw [LinearEquiv.symm_apply_eq]

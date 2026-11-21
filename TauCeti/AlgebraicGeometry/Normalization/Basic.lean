@@ -16,6 +16,11 @@ For quasi-compact quasi-separated morphisms `f : Y ⟶ J` and `g : Y' ⟶ J`, a 
 `f.normalizationMap g φ hφ : f.normalization ⟶ g.normalization` of relative normalizations over
 `J`, compatible with the canonical morphisms from `Y` and `Y'`.
 
+When `f` is an open immersion, the normalization of `J` in `Y` does not change `Y`: since
+normalization commutes with smooth base change (Mathlib's `Scheme.Hom.normalizationPullback`), the
+part of `f.normalization` over the open image of `f` is the normalization of `Y` in itself, which is
+`Y`. This is how normalizing a scheme in a dense open subscheme leaves that open alone.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Hom.normalizationMap`: the morphism of relative normalizations
@@ -32,17 +37,24 @@ For quasi-compact quasi-separated morphisms `f : Y ⟶ J` and `g : Y' ⟶ J`, a 
   composition.
 * `AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromNormalization`: relative
   normalization of a scheme-theoretically dominant morphism is scheme-theoretically dominant.
+* `AlgebraicGeometry.Scheme.Hom.isPullback_toNormalization`: over the image of an open immersion
+  `f : Y ⟶ J`, the normalization of `J` in `Y` is `Y`.
+* `AlgebraicGeometry.Scheme.Hom.canonicallyOverNormalization`: the relative normalization of
+  `f : Y ⟶ J` lies canonically over `J` through `f.fromNormalization`.
+* `AlgebraicGeometry.Scheme.Hom.isDominant_fromNormalization`: relative normalization of a dominant
+  morphism is dominant, hence surjective.
 
 ## References
 
-* The Stacks Project, Tag 035H (relative normalization).
+* The Stacks Project, Tag 035H (relative normalization) and Lemma 29.53.5 (03GV) (normalization
+  commutes with smooth base change).
 -/
 
 public section
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-open CategoryTheory
+open CategoryTheory Limits
 
 universe u
 
@@ -84,6 +96,53 @@ theorem normalizationMap_comp {Y'' : Scheme.{u}} (h : Y'' ⟶ J) [QuasiCompact h
       f.normalizationMap h (φ ≫ ψ) (by rw [Category.assoc, hψ, hφ]) :=
   normalization.hom_ext f _ _ h.fromNormalization (by simp) (by simp) (by simp)
 
+/-- The relative normalization of `f : Y ⟶ J` lies canonically over `J` through
+`f.fromNormalization`, hence over every `S` that `J` lies over. -/
+@[simps! over]
+noncomputable instance canonicallyOverNormalization : f.normalization.CanonicallyOver J where
+  hom := f.fromNormalization
+
+/-- The normalization morphism lies over the target. -/
+instance isOver_fromNormalization : f.fromNormalization.IsOver J where
+  comp_over := Category.comp_id _
+
+/-- The morphism of relative normalizations induced by `φ` lies over `J`. -/
+instance isOver_normalizationMap (φ : Y ⟶ Y') (hφ : φ ≫ g = f) :
+    (f.normalizationMap g φ hφ).IsOver J where
+  comp_over := f.normalizationMap_fromNormalization g φ hφ
+
+/-- The canonical morphism from `Y` to its relative normalization is scheme-theoretically
+dominant. -/
+instance isSchemeTheoreticallyDominant_toNormalization :
+    IsSchemeTheoreticallyDominant f.toNormalization :=
+  ⟨f.ker_toNormalization⟩
+
+/-- Over the image of an open immersion `f : Y ⟶ J`, the relative normalization of `J` in `Y` is
+`Y` itself: the square formed by `f.toNormalization`, `f.fromNormalization` and `f` is a pullback.
+This is normalization commuting with the smooth base change along `f`, together with the fact that
+the normalization of `Y` in itself, along the isomorphism `pullback.snd f f`, is trivial. -/
+theorem isPullback_toNormalization [IsOpenImmersion f] :
+    IsPullback f.toNormalization (𝟙 Y) f.fromNormalization f := by
+  -- `f.normalizationPullback f` identifies `pullback f.fromNormalization f` with the normalization
+  -- of `Y` along the isomorphism `pullback.snd f f`, which is an isomorphism onto `Y`.
+  have : IsIso ((pullback.snd f f).toNormalization ≫ (pullback.snd f f).fromNormalization) := by
+    rw [toNormalization_fromNormalization]
+    infer_instance
+  have := IsIso.of_isIso_comp_left (pullback.snd f f).toNormalization
+    (pullback.snd f f).fromNormalization
+  have : IsIso (f.normalizationPullback f ≫ pullback.snd f.fromNormalization f) := by
+    rw [normalizationPullback_snd]
+    infer_instance
+  have := IsIso.of_isIso_comp_left (f.normalizationPullback f) (pullback.snd f.fromNormalization f)
+  have h : inv (pullback.snd f.fromNormalization f) =
+      pullback.lift f.toNormalization (𝟙 Y) (by simp) :=
+    IsIso.inv_eq_of_inv_hom_id (pullback.lift_snd _ _ _)
+  refine (IsPullback.of_hasPullback f.fromNormalization f).of_iso
+    (asIso (pullback.snd f.fromNormalization f)) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ?_ (by simp) (by simp) (by simp)
+  rw [asIso_hom, Iso.refl_hom, Category.comp_id, ← cancel_epi (inv (pullback.snd _ _)),
+    IsIso.inv_hom_id_assoc, h, pullback.lift_fst]
+
 end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti
@@ -101,5 +160,15 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromN
     rw [f.toNormalization_fromNormalization]
     infer_instance
   exact IsSchemeTheoreticallyDominant.of_comp f.toNormalization f.fromNormalization
+
+/-- Relative normalization of a dominant morphism is dominant over the target. Being integral,
+hence universally closed, the normalization morphism is then surjective. -/
+instance _root_.AlgebraicGeometry.Scheme.Hom.isDominant_fromNormalization {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [QuasiCompact f] [QuasiSeparated f] [IsDominant f] :
+    IsDominant f.fromNormalization := by
+  have : IsDominant (f.toNormalization ≫ f.fromNormalization) := by
+    rw [f.toNormalization_fromNormalization]
+    infer_instance
+  exact IsDominant.of_comp f.toNormalization f.fromNormalization
 
 end TauCeti

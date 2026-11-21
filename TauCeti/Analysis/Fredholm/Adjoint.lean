@@ -29,6 +29,8 @@ surjective, which removes the closure from Mathlib's general identity
   operator to the orthogonal complement of its kernel.
 * `ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range`: the
   closed-range theorem for adjoints.
+* `ContinuousLinearMap.range_eq_orthogonal_ker_adjoint_of_isClosed_range`: a closed range is the
+  orthogonal complement of the adjoint kernel.
 * `ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
   only if its adjoint does.
 * `ContinuousLinearMap.rank_adjoint_le_iff`: an operator has rank at most `n` if and only if
@@ -71,7 +73,7 @@ noncomputable def _root_.ContinuousLinearMap.orthogonalKerEquivRange (T : E →L
   letI : CompleteSpace R := hT.completeSpace_coe
   exact (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
     K.isCompl_orthogonal.symm).toContinuousLinearEquivOfContinuous
-      ((T.continuous.comp continuous_subtype_val).subtype_mk _)
+      ((T.continuous.comp continuous_subtypeVal).subtype_mk _)
 
 /-- The closed-range restriction equivalence acts by the original operator. -/
 @[simp]
@@ -86,7 +88,7 @@ theorem _root_.ContinuousLinearMap.orthogonalKerEquivRange_apply (T : E →L[�
   let e := LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
     (LinearMap.ker (T : E →ₗ[𝕜] F)).isCompl_orthogonal.symm
   let he : Continuous e :=
-    (T.continuous.comp continuous_subtype_val).subtype_mk _
+    (T.continuous.comp continuous_subtypeVal).subtype_mk _
   -- Expose the `LinearEquiv` underlying the continuous wrapper so its application lemma applies.
   change ((e.toContinuousLinearEquivOfContinuous he x :
     LinearMap.range (T : E →ₗ[𝕜] F)) : F) = T x
@@ -155,6 +157,14 @@ theorem _root_.ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_r
   · obtain ⟨y, hy⟩ := ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
     exact ⟨(y : F), congr_arg Subtype.val hy⟩
 
+/-- A continuous linear map with closed range has range equal to the orthogonal complement of
+the kernel of its adjoint. -/
+theorem _root_.ContinuousLinearMap.range_eq_orthogonal_ker_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range (T : E →ₗ[𝕜] F) = (LinearMap.ker (T† : F →ₗ[𝕜] E))ᗮ := by
+  have : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) := hT.completeSpace_coe
+  rw [← T.orthogonal_range, Submodule.orthogonal_orthogonal]
+
 /-- If a continuous linear map between Hilbert spaces has closed range, then so does its
 adjoint. -/
 theorem _root_.ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range (T : E →L[𝕜] F)
@@ -180,7 +190,7 @@ private theorem _root_.ContinuousLinearMap.rank_adjoint_le_of_rank_le {T : E →
     (hT : (T : E →ₗ[𝕜] F).rank ≤ n) : (T† : F →ₗ[𝕜] E).rank ≤ n := by
   have : FiniteDimensional 𝕜 (LinearMap.range (T : E →ₗ[𝕜] F)) :=
     Module.rank_lt_aleph0_iff.mp (hT.trans_lt (Cardinal.natCast_lt_aleph0))
-  have hT' := Submodule.closed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
+  have hT' := Submodule.isClosed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
   rw [LinearMap.rank, T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT',
     ← Cardinal.lift_le_nat_iff, (T.orthogonalKerEquivRange hT').toLinearEquiv.lift_rank_eq,
     Cardinal.lift_le_nat_iff]
@@ -297,21 +307,19 @@ theorem _root_.ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero {T :
     (hT : ContinuousLinearMap.IsFredholm T) (h0 : ContinuousLinearMap.index T = 0)
     (hker : LinearMap.ker (T : E →ₗ[𝕜] F) = ⊥ ∨ LinearMap.ker (T† : F →ₗ[𝕜] E) = ⊥) :
     T.IsInvertible := by
+  rcases hker with hker | hker
+  · exact hT.isInvertible_of_injective_of_index_eq_zero (LinearMap.ker_eq_bot.mp hker) h0
   have := hT.finite_coker
-  -- In either case the cokernel `F ⧸ range T` has dimension zero.
+  refine ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT, ?_⟩
+  -- A trivial adjoint kernel means that the cokernel `F ⧸ range T` has dimension zero.
   have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 := by
-    rcases hker with hker | hker
-    · have hindex := ContinuousLinearMap.index_eq_finrank_sub T
-      rw [hker, finrank_bot] at hindex
-      omega
-    · rw [LinearEquiv.finrank_eq
-        (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv, hker,
-        finrank_bot]
+    rw [LinearEquiv.finrank_eq
+      (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv, hker,
+      finrank_bot]
   have hrange : LinearMap.range (T : E →ₗ[𝕜] F) = ⊤ :=
     Submodule.Quotient.subsingleton_iff.mp (finrank_zero_iff.mp hcoker)
-  exact ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT,
-    T.bijective_of_surjective_of_index_eq_zero hT.finite_ker (LinearMap.range_eq_top.mp hrange)
-      h0⟩
+  exact T.bijective_of_surjective_of_index_eq_zero hT.finite_ker (LinearMap.range_eq_top.mp hrange)
+    h0
 
 end HilbertCodomain
 

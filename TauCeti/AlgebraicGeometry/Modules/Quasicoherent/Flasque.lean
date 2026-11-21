@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Algebra.Module.Injective.Noetherian
-public import TauCeti.Algebra.Module.LocalizedModule.Away
+public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 
 /-!
 # The sheaf of an injective module over a Noetherian ring is flasque
@@ -116,7 +116,7 @@ private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
       res[(le_top : V ≤ ⊤)] (tilde.toOpen M ⊤ u) = tilde.toOpen M V u :=
     congr($(tilde.toOpen_res M _ _ (homOfLE le_top)) u)
   refine ⟨tilde.toOpen M ⊤ u,
-    TopCat.Presheaf.IsSheaf.section_ext (modulesSpecToSheaf.obj (tilde M)).2 fun p hp ↦ ?_⟩
+    TopCat.Presheaf.IsSheaf.section_ext (modulesSpecToSheaf.obj (tilde M)).property fun p hp ↦ ?_⟩
   rw [unop_op, hU] at hp
   obtain hp | hp := Opens.mem_sup.mp hp
   · exact ⟨basicOpen f, hDf, hp,
@@ -139,7 +139,7 @@ private theorem exists_restrict_eq_of_eq_iSup (G : Finset R) :
   induction G using Finset.induction_on with
   | empty =>
     intro U hU s
-    refine ⟨0, TopCat.Presheaf.IsSheaf.section_ext (modulesSpecToSheaf.obj (tilde M)).2
+    refine ⟨0, TopCat.Presheaf.IsSheaf.section_ext (modulesSpecToSheaf.obj (tilde M)).property
       fun p hp ↦ ?_⟩
     rw [unop_op, hU] at hp
     obtain ⟨g, hp⟩ := Opens.mem_iSup.mp hp

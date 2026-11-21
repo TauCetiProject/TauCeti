@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Algebra.Order.Field.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MaximumPrinciple
+public import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
 # The weak maximum principle for subharmonic functions
@@ -31,6 +32,9 @@ actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the
   functions (`Δ f ≤ 0`).
 * `TauCeti.ge_of_laplacian_nonpos_of_lt_ge_frontier`: the dual of the bound above a level, for
   `f` only known to be `C²` and superharmonic at the interior points where it is below the bound.
+* `TauCeti.le_of_laplacian_nonneg_of_lt_le_strip`: the bound above a level on the closed strip
+  `ℝ × [0, 1]` of the complex plane, for a function bounded on the two boundary lines and on the
+  two ends of the strip.
 * `TauCeti.exists_mem_frontier_isMaxOn_of_laplacian_nonneg` /
   `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: on a nonempty compact set in a
   nontrivial finite-dimensional real inner product space, a subharmonic (resp. superharmonic)
@@ -290,6 +294,40 @@ theorem eq_zero_of_tendsto_cocompact_of_mul_laplacian_nonneg {f : E → ℝ} (hf
   simpa using hneg
 
 end Nontrivial
+
+open Complex Set in
+/-- **The weak maximum principle on a strip, above a level.** Let `f` be continuous on the closed
+strip `ℝ × [0, 1]` of the complex plane and `C²` and subharmonic at the points of the open strip
+where it exceeds `m`. If `f ≤ m` on the two boundary lines `ℑ z = 0` and `ℑ z = 1`, and also on
+the two ends `|ℜ z| ≥ T` of the strip, then `f ≤ m` on the whole closed strip. The proof applies
+`TauCeti.le_of_laplacian_nonneg_of_lt_le_frontier` on rectangles `[-S, S] × [0, 1]`. -/
+theorem le_of_laplacian_nonneg_of_lt_le_strip {f : ℂ → ℝ} {m T : ℝ}
+    (hcont : ContinuousOn f (univ ×ℂ Icc 0 1))
+    (hcd : ∀ ⦃z : ℂ⦄, 0 < z.im → z.im < 1 → m < f z → ContDiffAt ℝ 2 f z)
+    (hlap : ∀ ⦃z : ℂ⦄, 0 < z.im → z.im < 1 → m < f z → 0 ≤ Δ f z)
+    (h₀ : ∀ z : ℂ, z.im = 0 → f z ≤ m) (h₁ : ∀ z : ℂ, z.im = 1 → f z ≤ m)
+    (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → f z ≤ m) {z : ℂ} (hz₀ : 0 ≤ z.im)
+    (hz₁ : z.im ≤ 1) : f z ≤ m := by
+  -- Apply the maximum principle on a rectangle `[-S, S] × [0, 1]` containing `z`, with `S ≥ T`.
+  set S := max T |z.re|
+  have hS : 0 ≤ S := (abs_nonneg _).trans (le_max_right _ _)
+  have hsub : Icc (-S) S ×ℂ Icc 0 1 ⊆ univ ×ℂ Icc 0 1 := fun w hw ↦ ⟨mem_univ _, hw.2⟩
+  have hint : interior (Icc (-S) S ×ℂ Icc (0 : ℝ) 1) = Ioo (-S) S ×ℂ Ioo 0 1 := by
+    rw [interior_reProdIm, interior_Icc, interior_Icc]
+  refine le_of_laplacian_nonneg_of_lt_le_frontier (isCompact_Icc.reProdIm isCompact_Icc)
+    (hcont.mono hsub) (fun w hw ↦ ?_) (fun w hw ↦ ?_) (fun w hw ↦ ?_)
+    ⟨abs_le.mp (le_max_right _ _), hz₀, hz₁⟩
+  · rw [hint] at hw
+    exact hcd hw.2.1 hw.2.2
+  · rw [hint] at hw
+    exact hlap hw.2.1 hw.2.2
+  · rw [frontier_reProdIm, closure_Icc, closure_Icc, frontier_Icc zero_le_one,
+      frontier_Icc (by linarith)] at hw
+    rcases hw with ⟨-, hw | hw⟩ | ⟨hw, hw₀, hw₁⟩
+    · exact h₀ w hw
+    · exact h₁ w hw
+    · refine hends w ?_ hw₀ hw₁
+      rcases hw with hw | hw <;> rw [hw] <;> simp [S, abs_of_nonneg hS]
 
 end TauCeti
 

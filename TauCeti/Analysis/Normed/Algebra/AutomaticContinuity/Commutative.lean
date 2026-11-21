@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Character
+public import TauCeti.Analysis.Normed.Algebra.Character.Basic
 public import TauCeti.Analysis.Normed.Operator.SeparatingSpace
 
 /-!
@@ -46,8 +46,7 @@ namespace NonUnitalAlgHom
 
 open TauCeti
 
-variable {A B : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A] [IsScalarTower ℂ A A]
-  [SMulCommClass ℂ A A] [CompleteSpace A]
+variable {A B : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A] [CompleteSpace A]
 
 section NonUnital
 

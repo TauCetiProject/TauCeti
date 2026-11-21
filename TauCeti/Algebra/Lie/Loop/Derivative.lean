@@ -27,6 +27,11 @@ the residue pairing `(x, y) ↦ Res Φ(x, D y) dt` of formal loops restricts alo
 Mathlib's residue pairing `LieAlgebra.LoopAlgebra.residuePairing` on `loopAlgebra R ℤ L`. In
 particular a mode `x t ^ (-n)` pairs with a mode `y t ^ n` to `n Φ(x, y)`.
 
+Both are natural in `L`: the morphism of formal loop algebras induced by a morphism of Lie
+algebras `f : L → L'` is the coefficientwise extension of the underlying linear map, so it
+commutes with `D`, and the residue pairing of a form on `L'` pulls back along it to the residue
+pairing of the pulled-back form (`HahnModule.residuePairing_hahnModuleMap`).
+
 ## Main definitions
 
 * `HahnModule.lieDerivation R L`: the derivative of `L((t))` as a Lie derivation.
@@ -38,6 +43,9 @@ particular a mode `x t ^ (-n)` pairs with a mode `y t ^ n` to `n Φ(x, y)`.
   loop `t ^ n ⊗ x` is the image of `t ^ (n - 1) ⊗ n x`.
 * `LieAlgebra.LoopAlgebra.residuePairing_toHahnModule`: the residue pairing of formal loops
   restricts to Mathlib's residue pairing of polynomial loops.
+* `LieHom.hahnModuleMap_int_apply`: on formal loops, the morphism induced by a morphism of Lie
+  algebras is the coefficientwise linear map `LinearMap.hahnModuleMap`.
+* `LieHom.derivative_hahnModuleMap`: the induced morphism commutes with the derivative.
 
 ## References
 
@@ -78,6 +86,28 @@ theorem lieDerivation_apply (x : HahnModule ℤ R L) :
   (rfl)
 
 end HahnModule
+
+namespace LieHom
+
+open HahnModule
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- On formal loops, the morphism induced by `f` is the coefficientwise extension
+`LinearMap.hahnModuleMap` of the underlying linear map, so the continuity and lattice estimates
+of the latter apply to it. -/
+theorem hahnModuleMap_int_apply (f : L →ₗ⁅R⁆ L') (x : HahnModule ℤ R L) :
+    f.hahnModuleMap ℤ x = (f : L →ₗ[R] L').hahnModuleMap x := by
+  ext n
+  simp
+
+/-- The morphism of formal loop algebras induced by `f` commutes with the derivative `d/dt`. -/
+theorem derivative_hahnModuleMap (f : L →ₗ⁅R⁆ L') (x : HahnModule ℤ R L) :
+    derivative R (f.hahnModuleMap ℤ x) = f.hahnModuleMap ℤ (derivative R x) := by
+  ext n
+  simp
+
+end LieHom
 
 namespace LieAlgebra.LoopAlgebra
 

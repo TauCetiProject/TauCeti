@@ -89,7 +89,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTGeneratorGamma0_of_not_dvd 
   have : NeZero p := ⟨hp.ne_zero⟩
   rw [coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp G, heckeTNat_def,
     qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp
-      hpN χ G.2, ite_eq_right hpm, add_zero]
+      hpN χ G.property, ite_eq_right hpm, add_zero]
 
 /-- **`Tₚ` at an index divisible by `p`**: `a_{p^{j+1} m}(Tₚ G) = a_{p^{j+2} m}(G) +
 χ(p) p^{k−1} a_{p^j m}(G)`, the recurrence with both terms present. -/
@@ -106,7 +106,7 @@ theorem qExpansion_coeff_prime_pow_succ_mul_heckeRingHomCharSpace_heckeTGenerato
     rw [pow_succ', mul_assoc, Nat.mul_div_cancel_left _ hp.pos]
   rw [coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp G, heckeTNat_def,
     qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp
-      hpN χ G.2, ite_eq_left hdvd, hdiv, ← mul_assoc, ← pow_succ']
+      hpN χ G.property, ite_eq_left hdvd, hdiv, ← mul_assoc, ← pow_succ']
 
 /-- The formula at `r = 1`, where the ring element is the generator `Tₚ` itself: one term at an
 index prime to `p`, two at a multiple of `p`. -/
@@ -154,7 +154,7 @@ theorem qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorRecG
     rw [heckeTGeneratorRecGamma0_one]
     exact qExpansion_coeff_prime_pow_mul_heckeRingHomCharSpace_heckeTGeneratorGamma0 hp hpN F hpm j
   | more r ih1 ih2 =>
-    rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hp.pos hpN F r,
+    rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k χ hpN F r,
       Submodule.coe_sub, Submodule.coe_smul,
       ← TauCeti.ModularForm.qExpansionLinearMap_apply one_pos
         (TauCeti.one_mem_strictPeriods_Gamma1_map _), map_sub, map_smul,

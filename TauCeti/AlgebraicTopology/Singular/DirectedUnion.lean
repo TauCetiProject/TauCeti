@@ -118,7 +118,7 @@ end Homology
 section Module
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {Y : TopCat.{w}} {J : Type}
-  [Preorder J] [IsDirected J (· ≤ ·)] [Nonempty J] {U : J → Set Y} (hU : Monotone U)
+  [Preorder J] [IsDirected J (· ≤ ·)] {U : J → Set Y} (hU : Monotone U)
   {V : Set Y} (hUV : ∀ j, U j ⊆ V) (hopen : ∀ j, IsOpen (Subtype.val ⁻¹' U j : Set V))
   (hcover : V ⊆ ⋃ j, U j)
 
@@ -133,6 +133,7 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
     ∃ j, ∃ hij : i ≤ j,
       ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.inclusion (hU hij))) x =
         0 := by
+  have : Nonempty J := ⟨i⟩
   have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
     preservesSmallestFilteredColimits_of_preservesFilteredColimits _
   -- The subspaces `U j` and their inclusions into `V` form a cocone of embeddings.
@@ -142,9 +143,9 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
   -- A compact subset of `V` is covered by finitely many of the `U j`, hence by one.
   have hK (K : Set c.pt) (hK : IsCompact K) : ∃ j, K ⊆ Set.range (c.ι.app j) := by
     obtain ⟨j, hj⟩ := hK.elim_directed_cover (fun j ↦ (Subtype.val ⁻¹' U j : Set V)) hopen
-      (fun x _ ↦ Set.mem_iUnion.2 (Set.mem_iUnion.1 (hcover x.2) : ∃ j, x.1 ∈ U j))
+      (fun x _ ↦ Set.mem_iUnion.2 (Set.mem_iUnion.1 (hcover x.property) : ∃ j, x.val ∈ U j))
       (Monotone.directed_le fun _ _ h ↦ Set.preimage_mono (hU h))
-    exact ⟨j, fun x hx ↦ ⟨⟨x.1, hj hx⟩, rfl⟩⟩
+    exact ⟨j, fun x hx ↦ ⟨⟨x.val, hj hx⟩, rfl⟩⟩
   obtain ⟨j, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (j := i) _
     (isColimitMapCoconeSingularHomology M n c (fun j ↦ IsEmbedding.inclusion (hUV j)) hK) x 0
     (by rw [map_zero]; exact hx)

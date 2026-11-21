@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Types.Pushouts
 public import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Separation.Regular
+public import TauCeti.Topology.Homotopy.Extension.Basic
 
 /-!
 # Extending disjoint open sets along maps of `TopCat`
@@ -23,13 +24,16 @@ property with respect to the map from that space to a point, and the general the
 properties shows that they are stable under cobase change, coproducts and transfinite composition.
 In particular a relative cell complex in `TopCat` whose cells extend disjoint open sets extends
 disjoint open sets. A map with a continuous retraction on a neighbourhood of its range extends
-disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`).
+disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`), and so does an
+inducing map whose range has the homotopy extension property
+(`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`).
 
 The application is to Hausdorffness of cell complexes: two points separated by open sets stay
 separated after a map which extends disjoint open sets.
 
-* `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a directed diagram of Hausdorff spaces is
-  Hausdorff if the maps to the colimit extend disjoint open sets.
+* `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a filtered diagram of Hausdorff spaces is
+  Hausdorff if the maps to the colimit extend disjoint open sets. For a sequence it suffices that
+  the bonding maps extend disjoint open sets (`TauCeti.TopCat.t2Space_of_isColimit_nat`).
 * `TauCeti.TopCat.t2Space_of_isPushout`: attaching a regular Hausdorff space `B` to a Hausdorff
   space along a map `m : A ⟶ B` with closed range which extends disjoint open sets gives a
   Hausdorff space.
@@ -96,41 +100,41 @@ private def classify {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) (h : Disjoint
       ((continuous_Prop.2 hU).prodMk (continuous_Prop.2 hV)).subtype_mk _⟩
 
 private lemma setOf_classify_fst {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
-    (h : Disjoint U V) : {x | (classify hU hV h x).down.1.1} = U :=
+    (h : Disjoint U V) : {x | (classify hU hV h x).down.val.1} = U :=
   rfl
 
 private lemma setOf_classify_snd {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
-    (h : Disjoint U V) : {x | (classify hU hV h x).down.1.2} = V :=
+    (h : Disjoint U V) : {x | (classify hU hV h x).down.val.2} = V :=
   rfl
 
 private lemma preimage_setOf_fst {Y : TopCat.{u}} (f : X ⟶ Y)
     (σ : Y ⟶ disjointOpensClassifier.{u}) :
-    f ⁻¹' {y | (σ y).down.1.1} = {x | ((f ≫ σ) x).down.1.1} :=
+    f ⁻¹' {y | (σ y).down.val.1} = {x | ((f ≫ σ) x).down.val.1} :=
   rfl
 
 private lemma preimage_setOf_snd {Y : TopCat.{u}} (f : X ⟶ Y)
     (σ : Y ⟶ disjointOpensClassifier.{u}) :
-    f ⁻¹' {y | (σ y).down.1.2} = {x | ((f ≫ σ) x).down.1.2} :=
+    f ⁻¹' {y | (σ y).down.val.2} = {x | ((f ≫ σ) x).down.val.2} :=
   rfl
 
 private lemma isOpen_setOf_fst (σ : X ⟶ disjointOpensClassifier.{u}) :
-    IsOpen {x | (σ x).down.1.1} :=
-  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtype_val.comp <|
+    IsOpen {x | (σ x).down.val.1} :=
+  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma isOpen_setOf_snd (σ : X ⟶ disjointOpensClassifier.{u}) :
-    IsOpen {x | (σ x).down.1.2} :=
-  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtype_val.comp <|
+    IsOpen {x | (σ x).down.val.2} :=
+  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma disjoint_setOf (σ : X ⟶ disjointOpensClassifier.{u}) :
-    Disjoint {x | (σ x).down.1.1} {x | (σ x).down.1.2} :=
-  Set.disjoint_left.2 fun x h₁ h₂ ↦ (σ x).down.2 ⟨h₁, h₂⟩
+    Disjoint {x | (σ x).down.val.1} {x | (σ x).down.val.2} :=
+  Set.disjoint_left.2 fun x h₁ h₂ ↦ (σ x).down.property ⟨h₁, h₂⟩
 
 /-- Two maps to `disjointOpensClassifier` agree if they classify the same pair of open sets. -/
 private lemma hom_ext_classifier {σ τ : X ⟶ disjointOpensClassifier.{u}}
-    (h₁ : {x | (σ x).down.1.1} = {x | (τ x).down.1.1})
-    (h₂ : {x | (σ x).down.1.2} = {x | (τ x).down.1.2}) : σ = τ := by
+    (h₁ : {x | (σ x).down.val.1} = {x | (τ x).down.val.1})
+    (h₂ : {x | (σ x).down.val.2} = {x | (τ x).down.val.2}) : σ = τ := by
   ext x
   exacts [Set.ext_iff.1 h₁ x, Set.ext_iff.1 h₂ x]
 
@@ -171,42 +175,76 @@ theorem extendsDisjointOpens_of_continuousOn {X Y : TopCat.{u}} {Z : Type*} [Top
   obtain ⟨W, hW, rfl⟩ := hμ.isOpen_iff.1 hU
   obtain ⟨W', hW', rfl⟩ := hμ.isOpen_iff.1 hV
   refine ⟨N ∩ ρ ⁻¹' W, N ∩ ρ ⁻¹' W', hρ.isOpen_inter_preimage hN hW,
-    hρ.isOpen_inter_preimage hN hW', Set.disjoint_left.2 fun y hy hy' ↦ ?_, ?_, ?_⟩
-  · obtain ⟨x, hx⟩ := hρN hy.1
-    exact Set.disjoint_left.1 hUV (show μ x ∈ W from hx ▸ hy.2) (show μ x ∈ W' from hx ▸ hy'.2)
+    hρ.isOpen_inter_preimage hN hW', Set.disjoint_left.2 ?_, ?_, ?_⟩
+  · rintro y ⟨hyN, hyW⟩ ⟨-, hyW'⟩
+    obtain ⟨x, hx⟩ := hρN hyN
+    rw [Set.mem_preimage, ← hx] at hyW hyW'
+    exact Set.disjoint_left.1 hUV hyW hyW'
   · ext x
     simp [hmN, hρm]
   · ext x
     simp [hmN, hρm]
+
+/-- **An inducing map whose image has the homotopy extension property extends disjoint open
+sets.** If `m : X ⟶ Y` is inducing and `range m` has the homotopy extension property in `Y`, then
+any two disjoint open subsets of `X` are the preimages under `m` of two disjoint open subsets
+of `Y`. -/
+theorem extendsDisjointOpens_of_hasHomotopyExtensionProperty {X Y : TopCat.{u}}
+    (m : X ⟶ Y) (hm : IsInducing m) (h : HasHomotopyExtensionProperty (Set.range m)) :
+    extendsDisjointOpens m := by
+  -- A retraction `r` of `[0, 1] × Y` onto `{0} × Y ∪ [0, 1] × range m` sends the open
+  -- neighbourhood `{y | 0 < (r (1, y)).1}` of `range m` into `[0, 1] × range m`, so
+  -- `y ↦ (r (1, y)).2` is a continuous retraction of that neighbourhood onto `range m`.
+  obtain ⟨r, hr, hr'⟩ := h.exists_retraction
+  have hrm (x : X) : r (1, m x) = (1, m x) := hr' _ (mem_cylinderExtensionDomain_of_mem ⟨x, rfl⟩)
+  refine extendsDisjointOpens_of_continuousOn m hm (N := {y | 0 < (r (1, y)).1})
+    (isOpen_lt continuous_const (by fun_prop)) (ρ := fun y ↦ (r (1, y)).2)
+    (by fun_prop : Continuous fun y ↦ (r (1, y)).2).continuousOn (fun x ↦ ?_) (fun y hy ↦ ?_)
+    (fun x ↦ by simp [hrm])
+  · simp [hrm]
+  · exact (mem_cylinderExtensionDomain_iff.1 (hr (1, y))).resolve_left (ne_of_gt hy)
 
 /-- If two points of a Hausdorff space `X` are mapped by `f : X ⟶ Y` to distinct points and `f`
 extends disjoint open sets, then their images are separated by disjoint open sets of `Y`. -/
 private lemma exists_disjoint_isOpen_apply {X Y : TopCat.{u}} [T2Space X] {f : X ⟶ Y}
     (hf : extendsDisjointOpens f) {x x' : X} (h : f x ≠ f x') :
-    ∃ U V : Set Y, IsOpen U ∧ IsOpen V ∧ Disjoint U V ∧ f x ∈ U ∧ f x' ∈ V := by
+    ∃ U V : Set Y, IsOpen U ∧ IsOpen V ∧ f x ∈ U ∧ f x' ∈ V ∧ Disjoint U V := by
   obtain ⟨U, V, hU, hV, hx, hx', hUV⟩ := t2_separation (ne_of_apply_ne f h)
   obtain ⟨U', V', hU', hV', hUV', rfl, rfl⟩ := (extendsDisjointOpens_iff f).1 hf U V hU hV hUV
-  exact ⟨U', V', hU', hV', hUV', hx, hx'⟩
+  exact ⟨U', V', hU', hV', hx, hx', hUV'⟩
 
-/-- The colimit of a directed diagram of Hausdorff spaces is Hausdorff if the maps from the
+/-- The colimit of a filtered diagram of Hausdorff spaces is Hausdorff if the maps from the
 spaces of the diagram to the colimit extend disjoint open sets. -/
-theorem t2Space_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J] {F : J ⥤ TopCat.{u}}
+theorem t2Space_of_isColimit {J : Type*} [Category J] [IsFilteredOrEmpty J] {F : J ⥤ TopCat.{u}}
     [∀ j, T2Space (F.obj j)] {c : Cocone F} (hc : IsColimit c)
     (h : ∀ j, extendsDisjointOpens (c.ι.app j)) : T2Space c.pt := by
   have hc' := isColimitOfPreserves (forget TopCat) hc
-  refine t2Space_iff_disjoint_nhds.2 fun y y' hyy' ↦ ?_
+  refine ⟨fun y y' hyy' ↦ ?_⟩
   obtain ⟨i, x, hx⟩ := Types.jointly_surjective_of_isColimit hc' y
   obtain ⟨i', x', hx'⟩ := Types.jointly_surjective_of_isColimit hc' y'
-  obtain ⟨k, hik, hi'k⟩ := exists_ge_ge i i'
-  have hy : c.ι.app k (F.map (homOfLE hik) x) = y := by
+  have hy : c.ι.app _ (F.map (IsFiltered.leftToMax i i') x) = y := by
     rw [← ConcreteCategory.comp_apply, c.w]
     exact hx
-  have hy' : c.ι.app k (F.map (homOfLE hi'k) x') = y' := by
+  have hy' : c.ι.app _ (F.map (IsFiltered.rightToMax i i') x') = y' := by
     rw [← ConcreteCategory.comp_apply, c.w]
     exact hx'
   rw [← hy, ← hy'] at hyy' ⊢
-  obtain ⟨U, V, hU, hV, hUV, hxU, hxV⟩ := exists_disjoint_isOpen_apply (h k) hyy'
-  exact Filter.disjoint_of_disjoint_of_mem hUV (hU.mem_nhds hxU) (hV.mem_nhds hxV)
+  exact exists_disjoint_isOpen_apply (h _) hyy'
+
+/-- The colimit of a sequence of Hausdorff spaces in `TopCat` is Hausdorff if the bonding maps
+extend disjoint open sets, for instance if they are embeddings whose images have the homotopy
+extension property (`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`). -/
+theorem t2Space_of_isColimit_nat {F : ℕ ⥤ TopCat.{u}} [∀ n, T2Space (F.obj n)]
+    (hF : ∀ n : ℕ, extendsDisjointOpens (F.map (homOfLE n.le_succ))) {c : Cocone F}
+    (hc : IsColimit c) : T2Space c.pt :=
+  -- Each map `F.obj n ⟶ c.pt` is a transfinite composition of the bonding maps from `n` on.
+  let h : extendsDisjointOpens.TransfiniteCompositionOfShape ℕ (c.ι.app 0) :=
+    { F := F
+      isoBot := Iso.refl _
+      incl := c.ι
+      isColimit := hc
+      map_mem n _ := hF n }
+  t2Space_of_isColimit hc h.mem_incl_app
 
 section Pushout
 
@@ -238,7 +276,7 @@ a point coming from `B` but not from `A` is separated from every point coming fr
 side. -/
 private lemma exists_disjoint_isOpen_of_isPushout_of_notMem [RegularSpace B]
     (sq : IsPushout g m f g₂) (hm : IsClosed (Set.range m)) {b : B} (hb : b ∉ Set.range m)
-    (x : X) : ∃ W W' : Set P, IsOpen W ∧ IsOpen W' ∧ Disjoint W W' ∧ g₂ b ∈ W ∧ f x ∈ W' := by
+    (x : X) : ∃ W W' : Set P, IsOpen W ∧ IsOpen W' ∧ g₂ b ∈ W ∧ f x ∈ W' ∧ Disjoint W W' := by
   obtain ⟨t, ht, htc, htm⟩ := exists_mem_nhds_isClosed_subset (hm.isOpen_compl.mem_nhds hb)
   have hint : Disjoint (interior t) tᶜ := disjoint_compl_right.mono_left interior_subset
   obtain ⟨W, W', hW, hW', hWW', -, hfW', hg₂W, -⟩ := exists_disjoint_isOpen_of_isPushout sq
@@ -249,7 +287,7 @@ private lemma exists_disjoint_isOpen_of_isPushout_of_notMem [RegularSpace B]
     (by
       ext a
       simpa using fun h ↦ htm h ⟨a, rfl⟩)
-  refine ⟨W, W', hW, hW', hWW', ?_, ?_⟩
+  refine ⟨W, W', hW, hW', ?_, ?_, hWW'⟩
   · rw [← Set.mem_preimage, hg₂W]
     exact mem_interior_iff_mem_nhds.2 ht
   · rw [← Set.mem_preimage, hfW']
@@ -262,24 +300,21 @@ theorem t2Space_of_isPushout (sq : IsPushout g m f g₂) [T2Space X] [T2Space B]
     (hm : extendsDisjointOpens m) (hm' : IsClosed (Set.range m)) : T2Space P := by
   have hf : extendsDisjointOpens f := MorphismProperty.of_isPushout sq hm
   have sq' := (forget TopCat).map_isPushout sq
-  refine t2Space_iff_disjoint_nhds.2 fun p q hpq ↦ ?_
-  suffices ∃ W W' : Set P, IsOpen W ∧ IsOpen W' ∧ Disjoint W W' ∧ p ∈ W ∧ q ∈ W' by
-    obtain ⟨W, W', hW, hW', hWW', hp, hq⟩ := this
-    exact Filter.disjoint_of_disjoint_of_mem hWW' (hW.mem_nhds hp) (hW'.mem_nhds hq)
+  refine ⟨fun p q hpq ↦ ?_⟩
   obtain ⟨x, rfl⟩ | ⟨b, rfl, hb⟩ := Types.eq_or_eq_of_isPushout' sq' p <;>
     obtain ⟨x', rfl⟩ | ⟨b', rfl, hb'⟩ := Types.eq_or_eq_of_isPushout' sq' q
   · exact exists_disjoint_isOpen_apply hf hpq
-  · obtain ⟨W, W', hW, hW', hWW', hb', hx⟩ :=
+  · obtain ⟨W, W', hW, hW', hb', hx, hWW'⟩ :=
       exists_disjoint_isOpen_of_isPushout_of_notMem sq hm' hb' x
-    exact ⟨W', W, hW', hW, hWW'.symm, hx, hb'⟩
+    exact ⟨W', W, hW', hW, hx, hb', hWW'.symm⟩
   · exact exists_disjoint_isOpen_of_isPushout_of_notMem sq hm' hb x'
   · obtain ⟨U, U', hU, hU', hbU, hbU', hUU'⟩ := t2_separation (ne_of_apply_ne g₂ hpq)
     obtain ⟨W, W', hW, hW', hWW', -, -, hg₂W, hg₂W'⟩ := exists_disjoint_isOpen_of_isPushout sq
       isOpen_empty isOpen_empty (Set.empty_disjoint _) (hU.inter hm'.isOpen_compl)
       (hU'.inter hm'.isOpen_compl) (hUU'.mono Set.inter_subset_left Set.inter_subset_left)
       (by ext a; simp) (by ext a; simp)
-    exact ⟨W, W', hW, hW', hWW', (Set.ext_iff.1 hg₂W b).2 ⟨hbU, hb⟩,
-      (Set.ext_iff.1 hg₂W' b').2 ⟨hbU', hb'⟩⟩
+    exact ⟨W, W', hW, hW', (Set.ext_iff.1 hg₂W b).2 ⟨hbU, hb⟩,
+      (Set.ext_iff.1 hg₂W' b').2 ⟨hbU', hb'⟩, hWW'⟩
 
 end Pushout
 

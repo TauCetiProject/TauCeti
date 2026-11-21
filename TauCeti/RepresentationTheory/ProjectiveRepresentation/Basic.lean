@@ -137,8 +137,7 @@ theorem rescale (h : IsProjectiveRep ρ α) (c : G → kˣ) (hc : c 1 = 1) :
     { cocycle g₁ g₂ g₃ := by
         rw [← mul_assoc g₁ g₂ g₃]
         exact rescale_cocycle_aux (h.isFactorSet.cocycle g₁ g₂ g₃)
-      one_left g := by simp [hc, h.isFactorSet.one_left]
-      one_right g := by simp [hc, h.isFactorSet.one_right] }
+      one_left g := by simp [hc, h.isFactorSet.one_left] }
   map_one := by
     refine LinearEquiv.ext fun x ↦ ?_
     rw [LinearEquiv.trans_apply, LinearEquiv.smulOfUnit_apply, h.map_one, hc]
@@ -253,12 +252,6 @@ theorem of_map_one_mul_apply (h₁ : ρ 1 = 1)
         obtain ⟨y, rfl⟩ := (ρ g).surjective x
         have hy := h₂ 1 g y
         rw [h₁, one_mul] at hy
-        simpa [Units.smul_def] using hy.symm
-      one_right g := by
-        refine FaithfulSMul.eq_of_smul_eq_smul fun x : V ↦ ?_
-        obtain ⟨y, rfl⟩ := (ρ g).surjective x
-        have hy := h₂ g 1 y
-        rw [h₁, mul_one] at hy
         simpa [Units.smul_def] using hy.symm }
   map_one := h₁
   mul_apply := h₂
@@ -372,16 +365,16 @@ variable (k V α)
 noncomputable def isProjectiveRepEquivAlgHom :
     {ρ : G → V ≃ₗ[k] V // IsProjectiveRep ρ α} ≃
       (twistedMonoidAlgebra k G α →ₐ[k] Module.End k V) where
-  toFun ρ := ρ.2.toAlgHom
+  toFun ρ := ρ.property.toAlgHom
   invFun φ := ⟨projectiveRepOfAlgHom φ, isProjectiveRep_projectiveRepOfAlgHom φ⟩
-  left_inv ρ := Subtype.ext (projectiveRepOfAlgHom_toAlgHom ρ.2)
+  left_inv ρ := Subtype.ext (projectiveRepOfAlgHom_toAlgHom ρ.property)
   right_inv _ := toAlgHom_projectiveRepOfAlgHom
 
 /-- The bijection sends a projective representation to the `k_α[G]`-module structure it
 determines. -/
 @[simp]
 theorem isProjectiveRepEquivAlgHom_apply (ρ : {ρ : G → V ≃ₗ[k] V // IsProjectiveRep ρ α}) :
-    isProjectiveRepEquivAlgHom k V α ρ = ρ.2.toAlgHom :=
+    isProjectiveRepEquivAlgHom k V α ρ = ρ.property.toAlgHom :=
   (rfl)
 
 /-- The inverse bijection sends a `k_α[G]`-module structure to the action of the basis elements. -/

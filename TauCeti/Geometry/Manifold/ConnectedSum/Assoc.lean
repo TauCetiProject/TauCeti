@@ -98,14 +98,14 @@ private theorem leftIncl_inl (x : puncture a) :
   simp [leftIncl]
 
 private theorem leftIncl_inr (y : puncture (punctureBall b' b hbb')) :
-    leftIncl hbb' (a := a) (inr a _ y) = inr a b ⟨y.1.1, mem_puncture.2 fun h ↦
-      mem_puncture.1 y.2 (Subtype.ext (by simpa using h))⟩ := by
+    leftIncl hbb' (a := a) (inr a _ y) = inr a b ⟨y.val.val, mem_puncture.2 fun h ↦
+      mem_puncture.1 y.property (Subtype.ext (by simpa using h))⟩ := by
   simp only [leftIncl, map_inr]
   exact congrArg _ (Subtype.ext (coe_punctureMap _ _ _))
 
 private theorem rightIncl_inl (x : puncture (punctureBall b b' hb'b)) :
-    rightIncl hb'b (c := c) (inl _ c x) = inl b' c ⟨x.1.1, mem_puncture.2 fun h ↦
-      mem_puncture.1 x.2 (Subtype.ext (by simpa using h))⟩ := by
+    rightIncl hb'b (c := c) (inl _ c x) = inl b' c ⟨x.val.val, mem_puncture.2 fun h ↦
+      mem_puncture.1 x.property (Subtype.ext (by simpa using h))⟩ := by
   simp only [rightIncl, map_inl]
   exact congrArg _ (Subtype.ext (coe_punctureMap _ _ _))
 
@@ -117,15 +117,17 @@ private theorem rightIncl_inr (y : puncture c) :
 as a point of the punctured first summand of `(N ∖ {b 0}) # P`. -/
 private def leftToRight (y : puncture (punctureBall b' b hbb')) :
     puncture (punctureBall b b' hb'b) :=
-  ⟨⟨y.1.1, mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (Subtype.ext (by rwa [coe_punctureBall]))⟩,
-    mem_puncture.2 fun h ↦ mem_puncture.1 y.1.2 (by simpa using congrArg Subtype.val h)⟩
+  ⟨⟨y.val.val, mem_puncture.2 fun h ↦ mem_puncture.1 y.property (Subtype.ext (by rwa
+      [coe_punctureBall]))⟩,
+    mem_puncture.2 fun h ↦ mem_puncture.1 y.val.property (by simpa using congrArg Subtype.val h)⟩
 
 /-- A point of `N ∖ {b 0, b' 0}`, read in the punctured first summand of `(N ∖ {b 0}) # P`, as a
 point of the punctured second summand of `M # (N ∖ {b' 0})`. -/
 private def rightToLeft (x : puncture (punctureBall b b' hb'b)) :
     puncture (punctureBall b' b hbb') :=
-  ⟨⟨x.1.1, mem_puncture.2 fun h ↦ mem_puncture.1 x.2 (Subtype.ext (by rwa [coe_punctureBall]))⟩,
-    mem_puncture.2 fun h ↦ mem_puncture.1 x.1.2 (by simpa using congrArg Subtype.val h)⟩
+  ⟨⟨x.val.val, mem_puncture.2 fun h ↦ mem_puncture.1 x.property (Subtype.ext (by rwa
+      [coe_punctureBall]))⟩,
+    mem_puncture.2 fun h ↦ mem_puncture.1 x.val.property (by simpa using congrArg Subtype.val h)⟩
 
 variable (ha : IsOpenEmbedding a) (hb : IsOpenEmbedding b) (hb' : IsOpenEmbedding b')
   (hc : IsOpenEmbedding c)
@@ -239,14 +241,14 @@ private def assocInr (y : puncture c) :
     haveI := t1Space hb' hc
     puncture (inlBall b' c b hbb') :=
   haveI := t1Space hb' hc
-  ⟨inr b' c y, mem_puncture.2 (inr_ne_inlBall_zero hb'.injective hc.injective hbb' hb'b y)⟩
+  ⟨inr b' c y, mem_puncture.2 (inr_ne_inlBall_zero hbb' hb'b y)⟩
 
 /-- The first summand `M ∖ {a 0}`, as a subspace of the punctured summand of `M # N`. -/
 private def assocInl (x : puncture a) :
     haveI := t1Space ha hb
     puncture (inrBall a b b' hb'b) :=
   haveI := t1Space ha hb
-  ⟨inl a b x, mem_puncture.2 (inl_ne_inrBall_zero ha.injective hb.injective hb'b hbb' x)⟩
+  ⟨inl a b x, mem_puncture.2 (inl_ne_inrBall_zero hb'b hbb' x)⟩
 
 /-- `M # (N ∖ {b' 0})` maps to `M # (N # P)`, by the identity on `M ∖ {a 0}` and on
 `N ∖ {b 0, b' 0}`. -/
@@ -334,7 +336,7 @@ private def assocFun :
     (inr a (inlBall b' c b hbb') ∘ assocInr hbb' hb'b hb' hc) fun v hv hx hy ↦ by
       simp only [comp_apply, leftHomeomorph_symm_inrBall hbb' hb'b ha hb hb' hv hx, leftMap_inr,
         assocInr]
-      exact congrArg _ (Subtype.ext (inl_eq_inr v hv _ hy))
+      exact congrArg _ (Subtype.ext (inl_eq_inr v _ hy))
 
 /-- The map `M # (N # P) → (M # N) # P`: the identity on `M ∖ {a 0}`, `N ∖ {b 0, b' 0}` and
 `P ∖ {c 0}`. -/
@@ -348,7 +350,7 @@ private def assocInvFun :
     (rightMap hb'b ha hb ∘ (rightHomeomorph hbb' hb'b hb' hc).symm) fun v hv hx hy ↦ by
       simp only [comp_apply, rightHomeomorph_symm_inlBall hbb' hb'b hb hb' hc
         (by simpa [inversion_eq_center one_ne_zero] using hv) hy, rightMap_inl, assocInl]
-      exact congrArg _ (Subtype.ext (inl_eq_inr v hv hx _))
+      exact congrArg _ (Subtype.ext (inl_eq_inr v hx _))
 
 private theorem assocFun_inl (x : haveI := t1Space ha hb; puncture (inrBall a b b' hb'b)) :
     haveI := t1Space ha hb
@@ -488,7 +490,7 @@ theorem assocHomeomorph_inl_inr (y : puncture b)
     assocHomeomorph hbb' hb'b ha hb hb' hc (inl _ c ⟨inr a b y, hy⟩) =
       inr a _ ⟨inl b' c ⟨y, mem_puncture.2 fun h ↦ mem_puncture.1 hy
         (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
-        mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (by
+        mem_puncture.2 fun h ↦ mem_puncture.1 y.property (by
           simpa using congrArg Subtype.val
             (inl_injective hb'.injective hc.injective (h.trans (inlBall_apply b' c hbb' 0))))⟩ := by
   have := t1Space ha hb
@@ -497,7 +499,7 @@ theorem assocHomeomorph_inl_inr (y : puncture b)
   have hy' : (y : N) ∈ puncture b' := mem_puncture.2 fun h ↦ mem_puncture.1 hy
     (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))
   rw [assocFun_inl, leftHomeomorph_symm_apply hbb' hb'b ha hb
-    (inr a _ ⟨⟨y, hy'⟩, mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (by
+    (inr a _ ⟨⟨y, hy'⟩, mem_puncture.2 fun h ↦ mem_puncture.1 y.property (by
       simpa using congrArg Subtype.val h)⟩) _ (by rw [leftIncl_inr]), leftMap_inr]
 
 /-- On the third summand `P ∖ {c 0}`, the associativity homeomorphism is the identity. -/
@@ -507,7 +509,7 @@ theorem assocHomeomorph_inr (y : puncture c) :
     haveI := t1Space hb' hc
     assocHomeomorph hbb' hb'b ha hb hb' hc (inr _ c y) =
       inr a _ ⟨inr b' c y,
-        mem_puncture.2 (inr_ne_inlBall_zero hb'.injective hc.injective hbb' hb'b y)⟩ :=
+        mem_puncture.2 (inr_ne_inlBall_zero hbb' hb'b y)⟩ :=
   haveI := t1Space ha hb
   haveI := t1Space hb' hc
   assocFun_inr hbb' hb'b ha hb hb' hc y
@@ -518,7 +520,7 @@ theorem assocHomeomorph_symm_inl (x : puncture a) :
     haveI := t1Space hb' hc
     (assocHomeomorph hbb' hb'b ha hb hb' hc).symm (inl a _ x) =
       inl _ c ⟨inl a b x,
-        mem_puncture.2 (inl_ne_inrBall_zero ha.injective hb.injective hb'b hbb' x)⟩ := by
+        mem_puncture.2 (inl_ne_inrBall_zero hb'b hbb' x)⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [Homeomorph.symm_apply_eq, assocHomeomorph_inl_inl]
@@ -531,7 +533,7 @@ theorem assocHomeomorph_symm_inr_inl (x : puncture b')
     (assocHomeomorph hbb' hb'b ha hb hb' hc).symm (inr a _ ⟨inl b' c x, hx⟩) =
       inl _ c ⟨inr a b ⟨x, mem_puncture.2 fun h ↦ mem_puncture.1 hx
         (by rw [inlBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
-        mem_puncture.2 fun h ↦ mem_puncture.1 x.2 (by
+        mem_puncture.2 fun h ↦ mem_puncture.1 x.property (by
           simpa using congrArg Subtype.val
             (inr_injective ha.injective hb.injective (h.trans (inrBall_apply a b hb'b 0))))⟩ := by
   have := t1Space ha hb
@@ -654,7 +656,7 @@ theorem coe_assocDiffeomorph :
   letI := chartedSpace (H := H) hb' hc
   letI := chartedSpace (H := H) (isOpenEmbedding_inrBall ha hb hb'b hb') hc
   letI := chartedSpace (H := H) ha (isOpenEmbedding_inlBall hb' hc hbb' hb)
-  coe_diffeomorphOfBijective
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
 @[simp]
 theorem coe_assocDiffeomorph_symm :

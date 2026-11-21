@@ -126,7 +126,7 @@ variable {G : Type u} {A : Type v} {B : Type w} [Group G] [TopologicalSpace G]
 theorem fullSeminorm_convolutionMap_le (f : ConvolutionAlgebra α μ) :
     ConvolutionAlgebra.fullSeminorm β μ (φ.convolutionMap μ f) ≤
       ConvolutionAlgebra.fullSeminorm α μ f := by
-  refine (ConvolutionAlgebra.fullSeminorm_le_iff (apply_nonneg _ f)).2 fun H _ _ _ P => ?_
+  refine ConvolutionAlgebra.fullSeminorm_le_iff.2 fun H _ _ _ P => ?_
   simpa only [CovariantRepresentation.integratedStarAlgHom_apply,
     ← CovariantRepresentation.integratedOperator_comap] using
     ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm (P.comap φ) f

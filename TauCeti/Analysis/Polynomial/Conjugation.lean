@@ -93,7 +93,7 @@ theorem existsUnique_root_conj_perm
   choose p hp using fun i => hmem i b₀
   have hall (i : ι) (b : B) : r (p i) b = conj (r i (τ b)) :=
     congrFun (eq_of_continuous_mem_range hr ((Complex.continuous_conj.comp (hr i)).comp hτ)
-      hinj (hmem i) b₀ (hp i)) b
+      (fun b _ h ↦ hinj b h) (hmem i) (hp i)) b
   have hpp : Function.Involutive p := by
     intro i
     apply hinj b₀

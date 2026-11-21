@@ -84,7 +84,7 @@ theorem ae_mem_affineRange_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matri
   let A : Set (EuclideanSpace ℝ (κ × ι)) :=
     AffineSubspace.mk' (WithLp.toLp 2 M.vec)
       (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U)))
-  have hA : MeasurableSet A := AffineSubspace.closed_of_finiteDimensional _ |>.measurableSet
+  have hA : MeasurableSet A := AffineSubspace.isClosed_of_finiteDimensional _ |>.measurableSet
   have hp : Measurable fun X : Matrix ι κ ℝ ↦ WithLp.toLp 2 X.vec ∈ A := by
     simpa only [matrixVecMeasurableEquiv_apply] using measurableSet_setOfPred.mp
       (hA.preimage (matrixVecMeasurableEquiv 2).measurable)
@@ -164,7 +164,7 @@ theorem HasLaw.ae_mem_affineRange_matrixNormalMeasure
   let A : Set (EuclideanSpace ℝ (κ × ι)) :=
     AffineSubspace.mk' (WithLp.toLp 2 M.vec)
       (LinearMap.range (Matrix.toEuclideanLin (V ⊗ₖ U)))
-  have hA : MeasurableSet A := AffineSubspace.closed_of_finiteDimensional _ |>.measurableSet
+  have hA : MeasurableSet A := AffineSubspace.isClosed_of_finiteDimensional _ |>.measurableSet
   have hp : Measurable fun Y : Matrix ι κ ℝ ↦ WithLp.toLp 2 Y.vec ∈ A := by
     simpa only [matrixVecMeasurableEquiv_apply] using measurableSet_setOfPred.mp
       (hA.preimage (matrixVecMeasurableEquiv 2).measurable)

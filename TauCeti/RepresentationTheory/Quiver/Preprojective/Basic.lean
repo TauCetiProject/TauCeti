@@ -353,21 +353,13 @@ theorem linearIndependent_backtrackElem (v : Q) :
     · -- Two tail backtracks end in the formal reverse of the arrow.
       rw [Sum.inr.inj harr]
       rfl
-  have hfam : (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)
-      (fun x : Σ j : Q, (v ⟶ j) => tailBacktrackElem k x.2))
-      = fun x => (pathAlgebraBasis k (Symmetrify Q)) (F x) := by
-    funext x
-    cases x with
-    -- The formal reverse of `Sum.inl a` in the doubled quiver is `Sum.inr a`, since the reversal
-    -- of `Quiver.Symmetrify` is `Sum.swap`.
-    | inl x =>
-      simp only [hF, Sum.elim_inl, coe_pathAlgebraBasis]
-      exact (ofPath_headBacktrack_eq_headBacktrackElem k x.2).symm
-    | inr x =>
-      simp only [hF, Sum.elim_inr, coe_pathAlgebraBasis]
-      exact (ofPath_tailBacktrack_eq_tailBacktrackElem k x.2).symm
-  rw [hfam]
-  exact (pathAlgebraBasis k (Symmetrify Q)).linearIndependent.comp F hinj
+  convert (linearIndependent_ofPath k (Symmetrify Q)).comp F hinj using 1
+  funext x
+  cases x with
+  -- The formal reverse of `Sum.inl a` in the doubled quiver is `Sum.inr a`, since the reversal
+  -- of `Quiver.Symmetrify` is `Sum.swap`.
+  | inl x => exact (ofPath_headBacktrack_eq_headBacktrackElem k x.2).symm
+  | inr x => exact (ofPath_tailBacktrack_eq_tailBacktrackElem k x.2).symm
 
 end BacktrackIndependence
 
@@ -732,6 +724,66 @@ theorem preprojectiveMk_localPreprojectiveRelator (v : Q) :
     preprojectiveMk k Q (localPreprojectiveRelator k v) = 0 :=
   (preprojectiveMk_eq_zero_iff k Q).2 (localPreprojectiveRelator_mem_preprojectiveIdeal k v)
 
+section LeftIdeal
+
+local notation "Π" => preprojectiveAlgebra k Q
+local notation "π" => preprojectiveMk k Q
+
+/-- A left ideal containing the classes of all arrows leaving `v` contains the class of every path
+of positive length leaving `v`. -/
+theorem preprojective_ofPath_mem_of_forall_ofArrow_mem {v : Q} (S : Submodule Π Π)
+    (harr : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) ∈ S)
+    {w : Symmetrify Q} (p : Path (Symmetrify.of.obj v) w) (hp : 0 < p.length) :
+    π (ofPath ⟨_, _, p⟩) ∈ S := by
+  induction p with
+  | nil => exact absurd hp (lt_irrefl 0)
+  | cons p' c ih =>
+    rcases Nat.eq_zero_or_pos p'.length with h0 | hpos
+    · obtain rfl := Path.eq_of_length_zero p' h0
+      obtain rfl := Path.eq_nil_of_length_zero p' h0
+      rw [← Path.comp_toPath_eq_cons, Path.nil_comp, ← ofArrow_eq_ofPath]
+      exact harr _ c
+    · rw [← ofArrow_mul_ofPath, map_mul]
+      exact S.smul_mem _ (ih hpos)
+
+/-- A left ideal containing the classes of all arrows leaving `v` contains, for every `a`, the
+difference of `a e_v` and a scalar multiple of `e_v`. -/
+theorem exists_sub_smul_vertexIdempotent_mem_of_forall_ofArrow_mem {v : Q}
+    (S : Submodule Π Π)
+    (harr : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) ∈ S) (a : Π) :
+    ∃ t : k, a * π (doubledVertexIdempotent k v) - t • π (doubledVertexIdempotent k v) ∈ S := by
+  obtain ⟨f, rfl⟩ := preprojectiveMk_surjective k Q a
+  induction f using PathAlgebra.induction_linear with
+  | zero => exact ⟨0, by simp only [map_zero, zero_mul, zero_smul, sub_zero, S.zero_mem]⟩
+  | add f f' hf hf' =>
+    obtain ⟨t, ht⟩ := hf
+    obtain ⟨t', ht'⟩ := hf'
+    refine ⟨t + t', ?_⟩
+    convert S.add_mem ht ht' using 1
+    rw [map_add, add_mul, add_smul]
+    abel
+  | single x c =>
+    obtain ⟨u, w, p⟩ := x
+    rw [single_eq_smul_ofPath, map_smul, smul_mul_assoc, ← map_mul,
+      doubledVertexIdempotent_def]
+    by_cases hu : u = Symmetrify.of.obj v
+    · subst u
+      rw [ofPath_mul_vertexIdempotent]
+      rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+      · obtain rfl := Path.eq_of_length_zero p h0
+        obtain rfl := Path.eq_nil_of_length_zero p h0
+        exact ⟨c, by rw [← vertexIdempotent_eq_ofPath, sub_self]; exact S.zero_mem⟩
+      · exact ⟨0, by
+          rw [zero_smul, sub_zero]
+          exact S.smul_of_tower_mem c
+            (preprojective_ofPath_mem_of_forall_ofArrow_mem k S harr p hpos)⟩
+    · refine ⟨0, ?_⟩
+      rw [ofPath_mul_vertexIdempotent_of_ne _ (Ne.symm hu), map_zero, smul_zero, zero_smul,
+        sub_zero]
+      exact S.zero_mem
+
+end LeftIdeal
+
 /-- **The defining relation of the preprojective algebra**, read at a vertex `v` of `Q`: the head
 backtracks of the arrows into `v` sum to the tail backtracks of the arrows out of `v`. -/
 theorem sum_preprojectiveMk_headBacktrackElem_eq_sum_preprojectiveMk_tailBacktrackElem
@@ -787,9 +839,8 @@ theorem gaugedPreprojectiveLift_unique
     (g : gaugedPreprojectiveAlgebra k ε →ₐ[k] B)
     (hg : g.comp (gaugedPreprojectiveMk k ε) = f) :
     g = gaugedPreprojectiveLift k ε f hf := by
-  refine AlgHom.ext fun y => ?_
-  obtain ⟨x, rfl⟩ := gaugedPreprojectiveMk_surjective k ε y
-  rw [gaugedPreprojectiveLift_gaugedPreprojectiveMk, ← hg, AlgHom.comp_apply]
+  apply Ideal.Quotient.algHom_ext
+  exact hg.trans (gaugedPreprojectiveLift_comp_gaugedPreprojectiveMk k ε f hf).symm
 
 end GaugedLift
 
@@ -839,9 +890,8 @@ determined by its composite with it. -/
 theorem preprojectiveLift_unique (hf : f (preprojectiveRelator k Q) = 0)
     (g : preprojectiveAlgebra k Q →ₐ[k] B) (hg : g.comp (preprojectiveMk k Q) = f) :
     g = preprojectiveLift f hf := by
-  refine AlgHom.ext fun y => ?_
-  obtain ⟨x, rfl⟩ := preprojectiveMk_surjective k Q y
-  rw [preprojectiveLift_preprojectiveMk, ← hg, AlgHom.comp_apply]
+  apply Ideal.Quotient.algHom_ext
+  exact hg.trans (preprojectiveLift_comp_preprojectiveMk f hf).symm
 
 /-- The local-relations form of the universal property: a map killing every vertex-corner relator
 descends to the preprojective algebra. -/

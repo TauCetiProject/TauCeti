@@ -23,7 +23,7 @@ exactly when `A → A'` kills `N.minorsIdeal 1` (`IsBaseChange.minorsIdeal_one_l
 content itself commutes with base change (`IsBaseChange.minorsIdeal_one_span_image`), and for an
 ideal `J` of an `A`-algebra `B` which is projective as an `A`-module, the content of the extension
 of `J` to a pushout `A' ⊗[A] B` is the extension of the content of `J`
-(`Ideal.minorsIdeal_one_restrictScalars_map`). For finite free `M`, the base change of
+(`Ideal.minorsIdeal_one_restrictScalars_map`). For finite projective `M`, the base change of
 the minors ideals of every size is `IsBaseChange.minorsIdeal_span_image`.
 
 Geometrically, if `Spec B → Spec A` is finite locally free and `J ⊆ B` cuts out a closed subscheme

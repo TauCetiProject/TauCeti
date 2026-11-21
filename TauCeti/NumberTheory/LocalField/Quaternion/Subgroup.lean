@@ -76,7 +76,7 @@ theorem mem_quaternionSubgroup_iff_of_hilbertSymbol_eq_neg_one {a b : Kˣ}
 @[simp]
 theorem mem_quaternionSubgroup_iff (x : BrauerGroup K) :
     x ∈ quaternionSubgroup K ↔ ∃ a b : Kˣ, quaternionClass a b = x := by
-  obtain ⟨⟨a, b⟩, hab⟩ := uncurry_hilbertSymbol_surjective (Invertible.ne_zero (2 : K)) (-1)
+  obtain ⟨⟨a, b⟩, hab⟩ := uncurry_hilbertSymbol_surjective (K := K) (-1)
   rw [mem_quaternionSubgroup_iff_of_hilbertSymbol_eq_neg_one hab]
   constructor
   · rintro (rfl | rfl)
@@ -88,7 +88,7 @@ theorem mem_quaternionSubgroup_iff (x : BrauerGroup K) :
 
 /-- The quaternion subgroup of a local field has exactly two elements. -/
 theorem natCard_quaternionSubgroup : Nat.card (quaternionSubgroup K) = 2 := by
-  obtain ⟨⟨a, b⟩, hab⟩ := uncurry_hilbertSymbol_surjective (Invertible.ne_zero (2 : K)) (-1)
+  obtain ⟨⟨a, b⟩, hab⟩ := uncurry_hilbertSymbol_surjective (K := K) (-1)
   simp only [Function.uncurry_apply_pair] at hab
   let d : quaternionSubgroup K := ⟨quaternionClass a b,
     quaternionClass_mem_quaternionSubgroup K a b⟩

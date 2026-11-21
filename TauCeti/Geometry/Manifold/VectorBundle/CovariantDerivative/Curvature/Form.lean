@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Curvature
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
-import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -70,31 +70,9 @@ private theorem curvatureAlternatingMap_apply (x : M) (v : Fin 2 → TangentSpac
 private theorem contMDiff_curvatureAlternatingMap :
     ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] (F →L[ℝ] F))) ∞
       (fun x ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] (F →L[ℝ] F)) x
-        (cov.curvatureAlternatingMap x)) := by
-  intro x
-  rw [contMDiffAt_continuousAlternatingMap_bundle]
-  refine ⟨contMDiffAt_id, TauCeti.contMDiffAt_continuousAlternatingMap_apply.2 fun v ↦ ?_⟩
-  let e := trivializationAt E (TangentSpace I : M → Type _) x
-  have he : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  have hs (i : Fin 2) : ContMDiffAt I (I.prod 𝓘(ℝ, E)) ∞
-      (fun y ↦ TotalSpace.mk' E y (e.symm y (v i))) x := by
-    rw [contMDiffAt_section]
-    refine (contMDiffAt_const (c := v i)).congr_of_eventuallyEq ?_
-    filter_upwards [e.open_baseSet.mem_nhds he] with y hy
-    exact congr(Prod.snd $(e.apply_mk_symm hy (v i)))
-  have h := ((cov.contMDiff_curvatureTensorCLM x).clm_bundle_apply (hs 0)).clm_bundle_apply
-    (hs 1)
-  have hc := (contMDiffAt_totalSpace.1 h).2
-  refine hc.congr_of_eventuallyEq ?_
-  let e' := trivializationAt (F →L[ℝ] F) (fun y ↦ V y →L[ℝ] V y) x
-  have he' : x ∈ e'.baseSet := mem_baseSet_trivializationAt _ _ x
-  filter_upwards [e.open_baseSet.mem_nhds he, e'.open_baseSet.mem_nhds he'] with y hy hy'
-  simp only [ContinuousAlternatingMap.inCoordinates,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    curvatureAlternatingMap_apply, Function.comp_apply]
-  rw [Trivialization.symmL_apply _ hy, Trivialization.symmL_apply _ hy]
-  exact e'.continuousLinearMapAt_apply_of_mem ℝ hy' _
+        (cov.curvatureAlternatingMap x)) :=
+  fun x ↦ TauCeti.contMDiffAt_continuousAlternatingMap_bundle_of_bilinear
+    (cov.contMDiff_curvatureTensorCLM x) cov.curvatureAlternatingMap_apply
 
 /-- The curvature of a smooth connection as a smooth endomorphism-valued two-form.
 Its evaluation is `R(X,Y)`, with no additional factor of two. -/

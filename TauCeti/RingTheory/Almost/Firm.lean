@@ -46,6 +46,7 @@ is used for the closure of firm modules under kernels and extensions.
 
 * `TauCeti.Almost.BasicSetup.isFirm_tilde` and `TauCeti.Almost.BasicSetup.isFirm_tilde_tensor`:
   `m~` and every module `m~ ⊗[V] M` are firm.
+* `TauCeti.Almost.BasicSetup.IsFirm.tensorProduct`: a tensor product with a firm module is firm.
 * `TauCeti.Almost.BasicSetup.isFirm_classical`, `TauCeti.Almost.BasicSetup.isFirm_zero_iff` and
   `TauCeti.Almost.BasicSetup.isFirm_self_iff`: every module is firm for the classical setup, only
   the zero module is firm for the zero setup, and `V` is firm only if `m = V`.
@@ -177,6 +178,14 @@ theorem isFirm_tilde_tensor : S.IsFirm (S.tilde ⊗[V] M) := by
   -- `LinearEquiv.ofBijective` and `LinearEquiv.rTensor` have the expected underlying maps.
   exact ((LinearEquiv.ofBijective _ S.isFirm_tilde).rTensor M).bijective.comp
     (LinearEquiv.bijective _)
+
+variable {S M} in
+/-- A tensor product with a firm module is firm: `P ⊗[V] M ≅ P ⊗[V] (m~ ⊗[V] M)` is of the form
+`m~ ⊗[V] (P ⊗[V] M)`. -/
+theorem IsFirm.tensorProduct (P : Type*) [AddCommGroup P] [Module V P] (hM : S.IsFirm M) :
+    S.IsFirm (P ⊗[V] M) :=
+  (LinearEquiv.isFirm_iff S ((LinearEquiv.ofBijective _ hM).symm.lTensor P ≪≫ₗ
+    TensorProduct.leftComm V P S.tilde M)).mpr (S.isFirm_tilde_tensor _)
 
 variable {S M} in
 /-- A firm module that is almost zero is zero: its action map is a surjection from
@@ -436,13 +445,11 @@ theorem isAlmostIso_ihom_ev_app (N : ModuleCat.{u} V) :
   -- Every `ε ∈ m` kills the kernel and the cokernel of `ev`.
   refine isAlmostIso_iff.mpr ⟨isAlmostZero_iff.mpr fun ε hε x ↦ ?_,
     isAlmostZero_iff.mpr fun ε hε y ↦ ?_⟩
-  all_goals
-    rw [← range_tildeMul] at hε
-    obtain ⟨s, rfl⟩ := hε
+  all_goals obtain ⟨s, rfl⟩ := S.exists_tildeMul_eq hε
   · apply Subtype.ext
     -- The source of `ev` is `m~ ⊗[V] Hom(m~, N)` as a `ModuleCat`, so `key` applies up to defeq.
     refine (Submodule.coe_smul _ x).trans ((key s x).trans ?_)
-    rw [LinearMap.mem_ker.mp x.2, map_zero, tmul_zero]
+    rw [LinearMap.mem_ker.mp x.property, map_zero, tmul_zero]
     rfl
   · induction y using Submodule.Quotient.induction_on with | _ n
     rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
@@ -595,7 +602,7 @@ noncomputable instance hasLocalization :
   L := S.firm
 
 /-- The action map `m~ ⊗ M → M` is an almost isomorphism. -/
-theorem isAlmostIso_tildeAct (M : ModuleCat.{u} V) :
+theorem isAlmostIso_tildeAct (M : Type*) [AddCommGroup M] [Module V M] :
     S.IsAlmostIso (M := S.tilde ⊗[V] M) (S.tildeAct M) := by
   apply S.isAlmostIso_iff_lTensor_bijective.mpr
   rw [S.lTensor_tildeAct]

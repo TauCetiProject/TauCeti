@@ -154,14 +154,9 @@ theorem hasGaloisLabel_comp_X_add_C_iff {f : F[X]} {t : F} {n : ℕ}
     (Gal.rootsEquivRoots g g.SplittingField L).trans (rootSetCompXAddCEquiv f t L)
   have hε : (Gal.galActionHom g g.SplittingField).range.map ε.permCongrHom.toMonoidHom =
       (Gal.galActionHom f L).range := by
-    rw [← map_range_galActionHom_comp_X_add_C (E := L) f t]
-    simp only [MonoidHom.map_range]
+    rw [← map_range_galActionHom_comp_X_add_C (E := L) f t,
+      ← Gal.map_range_galActionHom g g.SplittingField L, Subgroup.map_map]
     congr 1
-    ext σ x
-    rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
-      Gal.galActionHom_eq_permCongr g g.SplittingField L σ]
-    simp only [ε, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe, Equiv.permCongr_apply,
-      Equiv.trans_apply, Equiv.symm_trans_apply]
   have key : ∀ e : f.rootSet L ≃ Fin n,
       (Gal.galActionHom g g.SplittingField).range.map (ε.trans e).permCongrHom.toMonoidHom =
         (Gal.galActionHom f L).range.map e.permCongrHom.toMonoidHom := by
@@ -174,15 +169,15 @@ theorem hasGaloisLabel_comp_X_add_C_iff {f : F[X]} {t : F} {n : ℕ}
     have hsep := separable_comp_X_add_C_iff.mp h.separable
     have hn : f.natDegree = n := hdeg ▸ h.natDegree_eq
     subst hn
-    obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
-    refine HasGaloisLabel.mk hsep rfl e ?_
+    obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
+    refine HasGaloisLabel.mk hsep e ?_
     rw [← key]
     exact h.transitiveGroupLabel _
   · intro h
     have hn := h.natDegree_eq
     subst hn
-    obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
-    refine HasGaloisLabel.mk (separable_comp_X_add_C_iff.mpr h.separable) hdeg (ε.trans e) ?_
+    obtain ⟨e⟩ := nonempty_rootSet_equiv_fin h.separable (SplittingField.splits f)
+    refine HasGaloisLabel.mk (separable_comp_X_add_C_iff.mpr h.separable) (ε.trans e) ?_
     rw [key]
     exact h.transitiveGroupLabel e
 

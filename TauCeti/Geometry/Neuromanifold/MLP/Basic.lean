@@ -83,6 +83,12 @@ def zeroBias [Zero K] (A : MLPSpec K L) (w : A.Weights) : A.Parameters :=
 theorem zeroBias_apply [Zero K] (A : MLPSpec K L) (w : A.Weights) (i : Fin L) :
     A.zeroBias w i = (w i, 0) := (rfl)
 
+/-- The zero-bias embedding commutes with transport along equality of specifications. -/
+@[simp] theorem zeroBias_cast [Zero K] {A B : MLPSpec K L} (h : A = B) (w : A.Weights) :
+    B.zeroBias (cast (congrArg Weights h) w) = cast (congrArg Parameters h) (A.zeroBias w) := by
+  subst B
+  rfl
+
 /-- Distinct bias-free parameters have distinct zero-bias embeddings. -/
 theorem zeroBias_injective [Zero K] (A : MLPSpec K L) : Function.Injective A.zeroBias :=
   fun _ _ h => funext fun i => congrArg Prod.fst (congrFun h i)

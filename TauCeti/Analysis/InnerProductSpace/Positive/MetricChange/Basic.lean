@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Dual
 
+import Mathlib.Analysis.InnerProductSpace.LaxMilgram
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
@@ -26,8 +27,8 @@ of the continuous functional calculus is an isometry from `(E, ⟪·, ·⟫)` to
 carries orthonormal frames for the original inner product to orthonormal frames for `h`, and its
 inverse, the square root `CFC.sqrt H`, carries `h`-orthonormal frames back.
 
-Unlike the eigenbasis construction of `TauCeti.exists_continuousLinearEquiv_inner_map_map`, this
-transport involves no choice. It is characterized as the unique positive operator `S` with
+Unlike `TauCeti.exists_continuousLinearEquiv_inner_map_map`, which only asserts existence, this
+transport is a specific operator. It is characterized as the unique positive operator `S` with
 `S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry equivalence `e`
 conjugates the transport by `e`, and likewise its inverse. The transport and its inverse depend
 continuously on `h`, because the real continuous functional calculus is isometric. When `E` is
@@ -41,7 +42,10 @@ relative to the fixed inner product of `E`.
 
 * `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_iff`: in finite dimension,
   the Riesz operator of `h` is strictly positive exactly when `h` is symmetric and positive
-  definite.
+  definite; `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_of_injective`: in
+  particular for an inner product pulled back along an injective linear map.
+* `IsCoercive.isStrictlyPositive_continuousLinearMapOfBilin`: in any dimension, the Riesz
+  operator of a symmetric coercive form is strictly positive.
 * `ContinuousLinearMap.metricChangeTransport`: the inverse square root of the Riesz operator.
 * `ContinuousLinearMap.metricChangeEquiv`: the same transport as a continuous linear equivalence,
   with the positive square root as inverse.
@@ -111,6 +115,14 @@ theorem metricChangeTransport_mul_mul_self (hH : IsStrictlyPositive h♯) :
     norm_num
   rw [hTH, metricChangeTransport_def, CFC.rpow_mul_rpow_neg]
 
+/-- The square of the metric change transport `T` is a left inverse of the Riesz operator `H` of
+`h`: `T * T * H = 1`. -/
+theorem metricChangeTransport_mul_self_mul (hH : IsStrictlyPositive h♯) :
+    h.metricChangeTransport * h.metricChangeTransport * h♯ = 1 := by
+  conv_lhs => rhs; rw [← CFC.rpow_one h♯ hH.nonneg]
+  rw [metricChangeTransport_def, ← CFC.rpow_add hH.isUnit, ← CFC.rpow_add hH.isUnit]
+  norm_num [CFC.rpow_zero h♯ hH.nonneg]
+
 /-- The metric change transport is the unique positive operator `S` with `S * H * S = 1`, for the
 Riesz operator `H` of `h`. -/
 theorem metricChangeTransport_eq_iff (hH : IsStrictlyPositive h♯) {S : E →L[ℝ] E} :
@@ -120,13 +132,10 @@ theorem metricChangeTransport_eq_iff (hH : IsStrictlyPositive h♯) {S : E →L[
   -- `S * h♯` is a left and `h♯ * S` a right inverse of `S`, so they agree, and then `S * S` is
   -- a right inverse of `h♯`; the square of the transport is its left inverse `h♯ ^ (-1)`.
   have hcomm : S * h♯ = h♯ * S := left_inv_eq_right_inv hSHS (by rw [← mul_assoc, hSHS])
-  have hTT : h.metricChangeTransport * h.metricChangeTransport * h♯ = 1 := by
-    conv_lhs => rhs; rw [← CFC.rpow_one h♯ hH.nonneg]
-    rw [metricChangeTransport_def, ← CFC.rpow_add hH.isUnit, ← CFC.rpow_add hH.isUnit]
-    norm_num [CFC.rpow_zero h♯ hH.nonneg]
   refine (CFC.mul_self_eq_mul_self_iff _ _
     (isStrictlyPositive_metricChangeTransport hH).nonneg hS).mp ?_
-  exact left_inv_eq_right_inv hTT (by rw [← mul_assoc, ← hcomm, hSHS])
+  exact left_inv_eq_right_inv (metricChangeTransport_mul_self_mul hH)
+    (by rw [← mul_assoc, ← hcomm, hSHS])
 
 /-- The metric change transport is an isometry from the original inner product to `h`. -/
 @[simp]
@@ -250,17 +259,24 @@ theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[
     metricChangeTransport_mul_mul_self hK, map_one]
   exact ⟨map_nonneg _ (isStrictlyPositive_metricChangeTransport hK).nonneg, rfl⟩
 
-/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` with positive Riesz
-operator back along a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of
-its Riesz operator by `e`. -/
+/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` back along a linear
+isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of its Riesz operator by `e`. This
+holds for every `k`; when the Riesz operator `k♯` is not nonnegative both sides are `0`, as
+`CFC.sqrt` is `0` there. -/
 theorem sqrt_continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
-    (hK : 0 ≤ k♯) (x : E) :
+    (x : E) :
     CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ x =
       e.symm (CFC.sqrt k♯ (e x)) := by
   suffices CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ =
       e.symm.conjStarAlgEquiv (CFC.sqrt k♯) from congr($this x)
-  rw [continuousLinearMapOfBilin_bilinearComp, CFC.sqrt_eq_iff _ _ (map_nonneg _ hK)
-    (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul, CFC.sqrt_mul_sqrt_self _ hK]
+  rw [continuousLinearMapOfBilin_bilinearComp]
+  by_cases hK : 0 ≤ k♯
+  · rw [CFC.sqrt_eq_iff _ _ (map_nonneg _ hK) (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul,
+      CFC.sqrt_mul_sqrt_self _ hK]
+  · have hK' : ¬ 0 ≤ e.symm.conjStarAlgEquiv k♯ := fun h ↦ hK <| by
+      have h' := map_nonneg e.conjStarAlgEquiv h
+      rwa [show e.conjStarAlgEquiv (e.symm.conjStarAlgEquiv k♯) = k♯ by ext; simp] at h'
+    rw [CFC.sqrt_of_not_nonneg hK, CFC.sqrt_of_not_nonneg hK', map_zero]
 
 /-- **Isometries onto a second inner product.** On a finite-dimensional space, the linear maps
 `S` that are isometries from the original inner product to `h` are exactly the composites of the
@@ -292,7 +308,7 @@ inner product. -/
 theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ E]
     {h : E →L[ℝ] E →L[ℝ] ℝ} :
     IsStrictlyPositive h♯ ↔ (∀ u v, h u v = h v u) ∧ ∀ v, v ≠ 0 → 0 < h v v := by
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   have hinner : ∀ u v, ⟪u, h♯ v⟫_ℝ = h v u := fun u v ↦ by
     rw [real_inner_comm, continuousLinearMapOfBilin_apply]
   rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,
@@ -322,9 +338,112 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ
       rw [← continuousLinearMapOfBilin_apply (𝕜 := ℝ) h, hv, inner_zero_left]
     exact ⟨hinj, (LinearMap.injective_iff_surjective (f := (h♯ : E →ₗ[ℝ] E))).mp hinj⟩
 
+/-- The inner product of `F` pulled back along an injective linear map `K : E → F` has strictly
+positive Riesz operator. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_of_injective [FiniteDimensional ℝ E]
+    {K : E →ₗ[ℝ] F} (hK : Function.Injective K) {h : E →L[ℝ] E →L[ℝ] ℝ}
+    (hh : ∀ u v, h u v = ⟪K u, K v⟫_ℝ) : IsStrictlyPositive h♯ :=
+  isStrictlyPositive_continuousLinearMapOfBilin_iff.2
+    ⟨fun u v ↦ by rw [hh, hh, real_inner_comm], fun v hv ↦ by
+      rw [hh]
+      exact real_inner_self_pos.2 fun h0 ↦ hv (hK (h0.trans K.map_zero.symm))⟩
+
+/-- The Riesz operator of a symmetric coercive bilinear form on a real Hilbert space, of any
+dimension, is strictly positive: it is positive, and invertible by the Lax–Milgram theorem. So
+`h` is an inner product equivalent to the original one, and `ContinuousLinearMap.metricChangeEquiv`
+applies to it. -/
+theorem _root_.IsCoercive.isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpace E]
+    {h : E →L[ℝ] E →L[ℝ] ℝ} (hh : IsCoercive h) (hsymm : ∀ u v, h u v = h v u) :
+    IsStrictlyPositive h♯ := by
+  refine IsStrictlyPositive.iff_of_unital.2 ⟨ContinuousLinearMap.nonneg_iff_isPositive.2
+    ((ContinuousLinearMap.isPositive_iff _).2 ⟨fun u v ↦ ?_, fun v ↦ ?_⟩), ?_⟩
+  · simp only [ContinuousLinearMap.coe_coe, continuousLinearMapOfBilin_apply, hsymm u v]
+    rw [real_inner_comm, continuousLinearMapOfBilin_apply]
+  · obtain ⟨C, hC, hCv⟩ := hh
+    rw [continuousLinearMapOfBilin_apply]
+    exact (by positivity : 0 ≤ C * ‖v‖ * ‖v‖).trans (hCv v)
+  · exact ((ContinuousLinearEquiv.unitsEquiv ℝ E).symm
+      (IsCoercive.continuousLinearEquivOfBilin hh)).isUnit
+
 end InnerProductSpace
 
 namespace ContinuousLinearMap
+
+/-- Real bilinear forms with strictly positive Riesz operators form a convex set. -/
+theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpace E] :
+    Convex ℝ {h : E →L[ℝ] E →L[ℝ] ℝ | IsStrictlyPositive h♯} := by
+  intro h hh k hk a b ha hb hab
+  have heq : (a • h + b • k)♯ = a • h♯ + b • k♯ := by
+    ext u
+    apply ext_inner_right ℝ
+    intro v
+    simp [inner_add_left, inner_smul_left, continuousLinearMapOfBilin_apply]
+  rw [Set.mem_ofPred_eq, heq]
+  exact convex_setOf_isStrictlyPositive hh hk ha hb hab
+
+/-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_lineMap [CompleteSpace E]
+    (h k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯)
+    (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    IsStrictlyPositive (AffineMap.lineMap h k t)♯ := by
+  rw [AffineMap.lineMap_apply_module]
+  exact convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin hH hK
+    (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
+
+/-- Pullback of a positive metric by a continuous linear equivalence of real Hilbert spaces
+is positive. No preservation of the reference inner products is needed. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv
+    [CompleteSpace E] [CompleteSpace F]
+    (h : F →L[ℝ] F →L[ℝ] ℝ) (e : E ≃L[ℝ] F) (hH : IsStrictlyPositive h♯) :
+    IsStrictlyPositive (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ := by
+  have heq : (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ =
+      (e : E →L[ℝ] F).adjoint ∘L h♯ ∘L (e : E →L[ℝ] F) := by
+    ext u
+    apply ext_inner_right ℝ
+    intro v
+    rw [continuousLinearMapOfBilin_apply, bilinearComp_apply, comp_apply, comp_apply,
+      adjoint_inner_left, continuousLinearMapOfBilin_apply]
+  have hleft (x : E) :
+      (e : E →L[ℝ] F).adjoint ((e.symm : F →L[ℝ] E).adjoint x) = x := by
+    rw [← comp_apply, ← adjoint_comp]
+    simp [adjoint_id]
+  have hright (x : F) :
+      (e.symm : F →L[ℝ] E).adjoint ((e : E →L[ℝ] F).adjoint x) = x := by
+    rw [← comp_apply, ← adjoint_comp]
+    simp [adjoint_id]
+  obtain ⟨u, hu⟩ := hH.isUnit
+  rw [heq, IsStrictlyPositive.iff_of_unital]
+  refine ⟨nonneg_iff_isPositive.mpr ((nonneg_iff_isPositive.mp hH.nonneg).adjoint_conj _), ?_⟩
+  refine ⟨⟨(e : E →L[ℝ] F).adjoint ∘L h♯ ∘L (e : E →L[ℝ] F),
+    (e.symm : F →L[ℝ] E) ∘L (↑u⁻¹ : F →L[ℝ] F) ∘L
+      (e.symm : F →L[ℝ] E).adjoint, ?_, ?_⟩, rfl⟩
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply, ← hu]
+    simp only [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self, hleft]
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, ← hu, hright]
+    simp only [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Pullback of a positive metric on a real Hilbert space by an injective linear map from a
+finite-dimensional space is positive. No preservation of the reference inner products is needed. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp
+    [FiniteDimensional ℝ E] [CompleteSpace F]
+    (h : F →L[ℝ] F →L[ℝ] ℝ) (f : E →L[ℝ] F) (hH : IsStrictlyPositive h♯)
+    (hf : Function.Injective f) : IsStrictlyPositive (h.bilinearComp f f)♯ := by
+  have hP := nonneg_iff_isPositive.mp hH.nonneg
+  refine isStrictlyPositive_continuousLinearMapOfBilin_iff.2 ⟨fun u v ↦ ?_, fun u hu ↦ ?_⟩
+  · simp only [bilinearComp_apply]
+    rw [← continuousLinearMapOfBilin_apply (𝕜 := ℝ) h, hP.inner_left_eq_inner_right,
+      real_inner_comm, continuousLinearMapOfBilin_apply]
+  · rw [bilinearComp_apply, ← inner_sqrt_apply_sqrt_apply hH.nonneg]
+    apply real_inner_self_pos.mpr
+    intro hzero
+    apply (hf.ne hu : f u ≠ f 0)
+    have hinv := metricChangeTransport_apply_sqrt_apply hH (f u)
+    simpa only [hzero, map_zero] using hinv.symm
 
 variable [CompleteSpace E]
 

@@ -83,11 +83,11 @@ def IsProC : Prop :=
 subgroups of `G` whose quotient lies in `C`. For profinite `G` it is the kernel of the
 universal continuous homomorphism from `G` to a pro-`C` group. -/
 def proCKernel : Subgroup G :=
-  ⨅ U : {U : OpenNormalSubgroup G // C.MemFinite (G ⧸ U.toSubgroup)}, U.1.toSubgroup
+  ⨅ U : {U : OpenNormalSubgroup G // C.MemFinite (G ⧸ U.toSubgroup)}, U.val.toSubgroup
 
 /-- The `C`-kernel is a normal subgroup. -/
 instance proCKernel_normal : (proCKernel C G).Normal :=
-  Subgroup.normal_iInf_normal fun U ↦ U.1.isNormal'
+  Subgroup.normal_iInf_normal fun U ↦ U.val.isNormal'
 
 /-- The **pro-`C` completion** `G ⧸ proCKernel C G`. -/
 abbrev proCCompletion : Type v := G ⧸ proCKernel C G
@@ -141,7 +141,7 @@ theorem mem_proCKernel_iff {x : G} :
     x ∈ proCKernel C G ↔
       ∀ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) → x ∈ U.toSubgroup := by
   rw [proCKernel, Subgroup.mem_iInf]
-  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.val U.property⟩
 
 /-- The `C`-kernel is contained in every open normal subgroup whose quotient lies in `C`. -/
 theorem proCKernel_le {U : OpenNormalSubgroup G} (hU : C.MemFinite (G ⧸ U.toSubgroup)) :
@@ -152,7 +152,7 @@ theorem proCKernel_le {U : OpenNormalSubgroup G} (hU : C.MemFinite (G ⧸ U.toSu
 instance isClosed_proCKernel [IsTopologicalGroup G] :
     IsClosed ((proCKernel C G : Subgroup G) : Set G) := by
   rw [proCKernel, Subgroup.coe_iInf]
-  exact isClosed_iInter fun U ↦ U.1.toOpenSubgroup.isClosed
+  exact isClosed_iInter fun U ↦ U.val.toOpenSubgroup.isClosed
 
 /-! ### Trivial completions -/
 
@@ -161,7 +161,7 @@ instance isClosed_proCKernel [IsTopologicalGroup G] :
 theorem proCKernel_eq_top_iff : proCKernel C G = ⊤ ↔
     ∀ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) → U.toSubgroup = ⊤ := by
   rw [proCKernel, iInf_eq_top]
-  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.val U.property⟩
 
 /-- The pro-`C` completion is trivial exactly when the `C`-kernel is the whole group. -/
 theorem proCCompletion.subsingleton_iff :
@@ -241,23 +241,23 @@ theorem exists_openNormalSubgroup_memFinite_le {M : Subgroup G} (hM : IsOpen (M 
     ∃ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) ∧ U.toSubgroup ≤ M := by
   -- The defining family, and the closed sets it cuts out outside `M`.
   let S : Type v := {U : OpenNormalSubgroup G // C.MemFinite (G ⧸ U.toSubgroup)}
-  let t : S → Set G := fun U ↦ (U.1 : Set G) \ (M : Set G)
+  let t : S → Set G := fun U ↦ (U.val : Set G) \ (M : Set G)
   -- The family contains the whole group, so it is nonempty.
-  have _ : Subsingleton (G ⧸ (openNormalSubgroupTop G).toSubgroup) :=
-    QuotientGroup.subsingleton_iff.mpr (openNormalSubgroupTop_toSubgroup G)
-  have htop : S := ⟨openNormalSubgroupTop G, FiniteGroupClass.memFinite_of_subsingleton⟩
+  have _ : Subsingleton (G ⧸ (⊤ : OpenNormalSubgroup G).toSubgroup) :=
+    QuotientGroup.subsingleton_iff.mpr OpenNormalSubgroup.toSubgroup_top
+  have htop : S := ⟨⊤, FiniteGroupClass.memFinite_of_subsingleton⟩
   have hne : Nonempty S := ⟨htop⟩
   suffices h : ∃ U : S, t U = ∅ by
     obtain ⟨U, hU⟩ := h
-    exact ⟨U.1, U.2, fun _ hx ↦ Set.sdiff_eq_empty.mp hU hx⟩
+    exact ⟨U.val, U.property, fun _ hx ↦ Set.sdiff_eq_empty.mp hU hx⟩
   by_contra hcon
   have hnonempty : ∀ U : S, (t U).Nonempty := fun U ↦ by
-    rw [Set.nonempty_iff_ne_empty]
+    rw [← Set.ne_empty_iff_nonempty]
     exact fun h ↦ hcon ⟨U, h⟩
-  have hclosed : ∀ U : S, IsClosed (t U) := fun U ↦ (U.1.toOpenSubgroup.isClosed).sdiff hM
+  have hclosed : ∀ U : S, IsClosed (t U) := fun U ↦ (U.val.toOpenSubgroup.isClosed).sdiff hM
   -- The family is closed under intersection, so the sets `t U` are downward directed.
   have hdirected : Directed (· ⊇ ·) t := fun U V ↦
-    ⟨⟨U.1 ⊓ V.1, U.2.quotient_inf V.2⟩,
+    ⟨⟨U.val ⊓ V.val, U.property.quotient_inf V.property⟩,
       Set.sdiff_subset_sdiff_left (SetLike.coe_subset_coe.mpr inf_le_left),
       Set.sdiff_subset_sdiff_left (SetLike.coe_subset_coe.mpr inf_le_right)⟩
   -- Cantor: their intersection is nonempty, yet it lies in `proCKernel C G \ M = ∅`.

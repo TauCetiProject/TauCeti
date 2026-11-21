@@ -59,6 +59,7 @@ theorem finrank_le_complexFinrank_of_add_comp_posDef
   rw [J.finrank_real_eq_two_mul_complexFinrank] at hdim
   omega
 
+omit [FiniteDimensional ℝ E] in
 /-- If `Q(v) + Q(Jv)` is positive for every nonzero `v`, then the negative index of inertia of
 `Q` is at most the complex dimension defined by `J`. -/
 theorem sigNeg_le_complexFinrank_of_add_comp_posDef

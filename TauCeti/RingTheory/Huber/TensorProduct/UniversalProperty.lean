@@ -82,8 +82,8 @@ theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
   obtain ⟨y, hy, rfl⟩ := D.mem_idealImage.mp hx
   have haux := D.idealOfDefinition_pow_induction
     (p := fun y ↦ ∀ r ∈ D.ringOfDefinition, f (r * (y : B ⊗[A] C)) ∈ H)
-    (by simp) (fun y z hy hz r hr ↦ by simpa [mul_add] using H.add_mem (hy r hr) (hz r hr))
-    (fun s y hy r hr ↦ by simpa [mul_assoc] using hy (r * s) (mul_mem hr s.2))
+    (fun y z hy hz r hr ↦ by simpa [mul_add] using H.add_mem (hy r hr) (hz r hr))
+    (fun s y hy r hr ↦ by simpa [mul_assoc] using hy (r * s) (mul_mem hr s.property))
     (fun a ha r hr ↦ by simpa [mul_comm] using hbase a ha r hr) hy
   simpa using haux 1 (one_mem _)
 

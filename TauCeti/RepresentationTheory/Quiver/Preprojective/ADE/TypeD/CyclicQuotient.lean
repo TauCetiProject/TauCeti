@@ -85,7 +85,7 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs with a long arm and two leaves at its end -/
 
@@ -103,9 +103,9 @@ local notation "π" => signlessPreprojectiveMk k (DoubledQuiver G)
 omit hn in
 /-- The backtrack from the branch node into a leaf rotates into the backtrack at the leaf, which
 vanishes. -/
-private theorem forkTurn_mem_commutatorSubmodule {l : ℕ} (hl : c < l) (hln : l < n) :
+private theorem forkTurn_mem_commutatorSubmodule {l : ℕ} (hl : c < l) :
     forkTurn k G c l ∈ commutatorSubmodule k Π := by
-  rw [forkTurn, mul_mem_commutatorSubmodule_comm, signlessArrow_mul_signlessArrow_leaf k hG hl hln]
+  rw [forkTurn, mul_mem_commutatorSubmodule_comm, signlessArrow_mul_signlessArrow_leaf k hG hl]
   exact zero_mem _
 
 /-- The positive powers of the sum of the two leaf backtracks, which is minus the backtrack into
@@ -114,17 +114,17 @@ private theorem forkTurn_add_pow_succ_mem_commutatorSubmodule (t : ℕ) :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (t + 1) ∈ commutatorSubmodule k Π := by
   rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow]
   exact neg_one_pow_mul_mem_commutatorSubmodule (pow_d_mul_u_mem_commutatorSubmodule k
-    (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG) t.succ_pos) (t + 1)
+    (forkDown_mul_forkUp_add k hG) (forkUp_self_eq_zero k hG) t.succ_pos) (t + 1)
 
 /-- If `2` is a unit, every element of a positive power of the span of the two leaf backtracks
 is a sum of commutators. -/
 private theorem mem_commutatorSubmodule_of_mem_forkSpan_pow (h2 : IsUnit (2 : k)) {t : ℕ}
     (ht : 0 < t) {w : Π} (hw : w ∈ forkSpan k G c ^ t) : w ∈ commutatorSubmodule k Π := by
   obtain ⟨t, rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
-  have hx := forkTurn_mul_self k hG (l := c + 1) (by omega) (by omega)
-  have hy := forkTurn_mul_self k hG (l := c + 2) (by omega) (by omega)
-  have hx₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 1) (by omega) (by omega)
-  have hy₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 2) (by omega) (by omega)
+  have hx := forkTurn_mul_self k hG (l := c + 1) (by omega)
+  have hy := forkTurn_mul_self k hG (l := c + 2) (by omega)
+  have hx₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 1) (by omega)
+  have hy₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 2) (by omega)
   have hs := forkTurn_add_pow_succ_mem_commutatorSubmodule k hn hG
   obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp ((span_pair_pow_succ (R := ℤ) hx hy t).le hw)
   refine add_mem (zsmul_mem ?_ α) (zsmul_mem ?_ β)
@@ -164,7 +164,7 @@ private theorem ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule (h2 : IsU
       ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
         ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1))) •
           (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) := by
-    rw [ladderValley_mul_ladderValley_zero_eq_pow (forkDown_mul_forkUp_add k hn hG),
+    rw [ladderValley_mul_ladderValley_zero_eq_pow (forkDown_mul_forkUp_add k hG),
       eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG),
       neg_pow (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)), ← mul_assoc, ← pow_add]
     simp [zsmul_eq_mul]
@@ -178,6 +178,71 @@ private theorem ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule (h2 : IsU
   rw [mul_assoc, mul_mem_commutatorSubmodule_comm, mul_assoc, mul_assoc, heX, hYX, mul_smul_comm]
   exact zsmul_mem hlow _
 
+/-- A path through the branch node from a vertex of the long arm is a sum of commutators, when `2`
+is a unit. -/
+private theorem ofPath_mem_commutatorSubmodule_of_branch_of_le
+    (h2 : IsUnit (2 : k)) {a : Fin n} (p : Path (vertex G a) (vertex G a)) (hp : 0 < p.length)
+    {t : ℕ} {w D : Π} (hw : w ∈ forkSpan k G c ^ t) (hj : (a : ℕ) ≤ c) {ε : ℤ}
+    (hz : π (ofPath ⟨_, _, p⟩) =
+      ladderValley (forkUp k G c) (forkDown k G c) 0 0 (c - a) * w * D)
+    (hD : D = ε • forkEntry k G c a (π (vertexIdempotent k (vertex G a)))) :
+    π (ofPath ⟨_, _, p⟩) ∈ commutatorSubmodule k Π := by
+  have hspan {t : ℕ} (ht : 0 < t) {w : Π} (hw : w ∈ forkSpan k G c ^ t) :
+      w ∈ commutatorSubmodule k Π :=
+    mem_commutatorSubmodule_of_mem_forkSpan_pow k hn hG h2 ht hw
+  rw [forkEntry, ite_eq_left hj] at hD
+  rcases Nat.eq_zero_or_pos (c - a) with h0 | hpos
+  · -- At the branch node itself the path is the word `w`.
+    rw [h0, ladderValley_zero_zero, one_mul] at hz hD
+    rw [hz, hD, mul_smul_comm]
+    cases t with
+    | succ t =>
+      rw [forkSpan_pow_succ_mul_vertexIdempotent k hw (by omega)]
+      exact zsmul_mem (hspan t.succ_pos hw) ε
+    | zero =>
+      -- A word without backtracks is an integer, which vanishes by the augmentation.
+      rw [pow_zero] at hw
+      obtain ⟨y, rfl⟩ := Submodule.mem_one.1 hw
+      have hform : ε • (algebraMap ℤ Π y * π (vertexIdempotent k (vertex G a))) =
+          algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
+        simp [zsmul_eq_mul, mul_assoc]
+      have hpath : π (ofPath ⟨_, _, p⟩) =
+          algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
+        rw [hz, hD, mul_smul_comm, hform]
+      rw [hform, ← hpath,
+        signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul k p hp hpath]
+      exact zero_mem _
+  · -- Rotating the climb out of the branch node to the end leaves `w` times a power of `q`.
+    obtain ⟨h, hh⟩ : ∃ h, c - (a : ℕ) = h + 1 := ⟨c - a - 1, by omega⟩
+    rw [hz, hD, hh, mul_smul_comm]
+    exact zsmul_mem (ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule k hn hG h2 hh hw) ε
+
+/-- A path through the branch node from a leaf is a sum of commutators, when `2` is a unit. -/
+private theorem ofPath_mem_commutatorSubmodule_of_branch_of_gt
+    (h2 : IsUnit (2 : k)) {a : Fin n} (p : Path (vertex G a) (vertex G a))
+    {t : ℕ} {w D : Π} (hw : w ∈ forkSpan k G c ^ t) (hj : c < (a : ℕ)) {ε : ℤ}
+    (hz : π (ofPath ⟨_, _, p⟩) = signlessArrow k G c a * w * D)
+    (hD : D = ε • forkEntry k G c a (π (vertexIdempotent k (vertex G a)))) :
+    π (ofPath ⟨_, _, p⟩) ∈ commutatorSubmodule k Π := by
+  have hspan {t : ℕ} (ht : 0 < t) {w : Π} (hw : w ∈ forkSpan k G c ^ t) :
+      w ∈ commutatorSubmodule k Π :=
+    mem_commutatorSubmodule_of_mem_forkSpan_pow k hn hG h2 ht hw
+  rw [forkEntry, ite_eq_right (by omega)] at hD
+  have heX : π (vertexIdempotent k (vertex G a)) * signlessArrow k G c a =
+      signlessArrow k G c a := by
+    rw [vertexIdempotent_mul_signlessArrow, ite_eq_left rfl]
+  have hWX : w * D * signlessArrow k G c a = ε • (w * forkTurn k G c a) := by
+    rw [hD, mul_smul_comm, smul_mul_assoc, mul_assoc, mul_assoc, heX, ← forkTurn]
+  have hturn : forkTurn k G c a ∈ forkSpan k G c := by
+    obtain hl | hl : (a : ℕ) = c + 1 ∨ (a : ℕ) = c + 2 := by omega
+    all_goals exact Submodule.subset_span (by simp [hl])
+  have hlow : w * forkTurn k G c a ∈ commutatorSubmodule k Π := by
+    refine hspan (t := t + 1) t.succ_pos ?_
+    rw [pow_succ]
+    exact Submodule.mul_mem_mul hw hturn
+  rw [hz, mul_assoc, mul_mem_commutatorSubmodule_comm, hWX]
+  exact zsmul_mem hlow ε
+
 /-- **Every closed path of positive length is a sum of commutators**, when `2` is a unit. -/
 private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
     (h2 : IsUnit (2 : k)) {a : Fin n} (p : Path (vertex G a) (vertex G a)) (hp : 0 < p.length) :
@@ -187,9 +252,6 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
   -- final step comes first, leaving a nonempty word in the leaf backtracks. A path at the branch
   -- node whose word is empty is an integer multiple of its idempotent, and it vanishes since its
   -- augmentation does.
-  have hspan {t : ℕ} (ht : 0 < t) {w : Π} (hw : w ∈ forkSpan k G c ^ t) :
-      w ∈ commutatorSubmodule k Π :=
-    mem_commutatorSubmodule_of_mem_forkSpan_pow k hn hG h2 ht hw
   have hnf := forkNormalForm_ofPath k hn hG p
   rw [ForkNormalForm] at hnf
   simp only [vertexEquiv_symm_vertex, ← vertexIdempotent_eq_ofPath] at hnf
@@ -204,50 +266,9 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
       rw [forkDown, signlessArrow_mul_vertexIdempotent, ite_eq_left (by omega)]
     rw [hz, ← ladderValley_mul_d, mul_assoc, hd, ladderValley_mul_d]
     exact zsmul_mem (ladderValley_mem_commutatorSubmodule_of_u_eq_zero k
-      (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG) m s.succ_pos) ε
-  · -- A path through the branch node from a vertex of the long arm.
-    rw [forkEntry, ite_eq_left hj] at hD
-    rcases Nat.eq_zero_or_pos (c - a) with h0 | hpos
-    · -- At the branch node itself the path is the word `w`.
-      rw [h0, ladderValley_zero_zero, one_mul] at hz hD
-      rw [hz, hD, mul_smul_comm]
-      cases t with
-      | succ t =>
-        rw [forkSpan_pow_succ_mul_vertexIdempotent k hw (by omega)]
-        exact zsmul_mem (hspan t.succ_pos hw) ε
-      | zero =>
-        -- A word without backtracks is an integer, which vanishes by the augmentation.
-        rw [pow_zero] at hw
-        obtain ⟨y, rfl⟩ := Submodule.mem_one.1 hw
-        have hform : ε • (algebraMap ℤ Π y * π (vertexIdempotent k (vertex G a))) =
-            algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
-          simp [zsmul_eq_mul, mul_assoc]
-        have hpath : π (ofPath ⟨_, _, p⟩) =
-            algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
-          rw [hz, hD, mul_smul_comm, hform]
-        rw [hform, ← hpath,
-          signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul k p hp hpath]
-        exact zero_mem _
-    · -- Rotating the climb out of the branch node to the end leaves `w` times a power of `q`.
-      obtain ⟨h, hh⟩ : ∃ h, c - (a : ℕ) = h + 1 := ⟨c - a - 1, by omega⟩
-      rw [hz, hD, hh, mul_smul_comm]
-      exact zsmul_mem (ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule k hn hG h2 hh hw) ε
-  · -- A path through the branch node from a leaf.
-    rw [forkEntry, ite_eq_right (by omega)] at hD
-    have heX : π (vertexIdempotent k (vertex G a)) * signlessArrow k G c a =
-        signlessArrow k G c a := by
-      rw [vertexIdempotent_mul_signlessArrow, ite_eq_left rfl]
-    have hWX : w * D * signlessArrow k G c a = ε • (w * forkTurn k G c a) := by
-      rw [hD, mul_smul_comm, smul_mul_assoc, mul_assoc, mul_assoc, heX, ← forkTurn]
-    have hturn : forkTurn k G c a ∈ forkSpan k G c := by
-      obtain hl | hl : (a : ℕ) = c + 1 ∨ (a : ℕ) = c + 2 := by omega
-      all_goals exact Submodule.subset_span (by simp [hl])
-    have hlow : w * forkTurn k G c a ∈ commutatorSubmodule k Π := by
-      refine hspan (t := t + 1) t.succ_pos ?_
-      rw [pow_succ]
-      exact Submodule.mul_mem_mul hw hturn
-    rw [hz, mul_assoc, mul_mem_commutatorSubmodule_comm, hWX]
-    exact zsmul_mem hlow ε
+      (forkDown_mul_forkUp_add k hG) (forkUp_self_eq_zero k hG) m s.succ_pos) ε
+  · exact ofPath_mem_commutatorSubmodule_of_branch_of_le k hn hG h2 p hp hw hj hz hD
+  · exact ofPath_mem_commutatorSubmodule_of_branch_of_gt k hn hG h2 p hw hj hz hD
   · -- The empty path at a leaf has length zero.
     omega
 

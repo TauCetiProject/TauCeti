@@ -130,15 +130,15 @@ theorem not_isTorsion_swapColumns_of_homotopy
   intro hT hT'
   refine hT fun y => (Submodule.mem_torsion_iff y).mp ?_
   exact
-    Submodule.comap_torsion_le_of_comp_eq_smul (pow_mem Polynomial.X_mem_nonZeroDivisors k)
+    (Submodule.comap_torsion_of_comp_eq_smul (pow_mem Polynomial.X_mem_nonZeroDivisors k)
       (f := hG.unblockedHomologyCommutationLinearMap K C) (g := hG.returnLinearMap K C t)
-      (hG.returnLinearMap_unblockedHomologyCommutationMap hp hH)
+      (hG.returnLinearMap_unblockedHomologyCommutationMap hp hH)).le
       (Submodule.mem_comap.mpr ((Submodule.mem_torsion_iff _).mpr (@hT' _)))
 
 /-- **Comparison of `τ` along a column turn with a homotopy inverse up to `U ^ k`.** If `ΨΦ` is
 chain homotopic to multiplication by a polynomial `p` with `p(U, …, U) = U ^ k` and `GH⁻(G)` is not
 torsion, then `τ(G')` is at most `τ(G)` minus the Alexander degree of the commutation map `Φ`. -/
-theorem tau_swapColumns_le_of_homotopy [IsNoetherianRing K]
+theorem tau_swapColumns_le_of_homotopy
     (H : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n)
     {p : MvPolynomial (Fin n) K} {k : ℕ}
     (hp : aeval (fun _ => (Polynomial.X : Polynomial K)) p = Polynomial.X ^ k)

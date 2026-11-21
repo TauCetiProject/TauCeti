@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Bernoulli
 public import TauCeti.Algebra.Algebra.NatCast
-public import TauCeti.RingTheory.PowerSeries.Exp
+public import TauCeti.RingTheory.PowerSeries.Exp.Basic
 
 /-!
 # The characteristic power series of the Todd, Â and L genera
@@ -40,9 +40,9 @@ Both series are even, and `Td(X) = e^{X/2} Â(X)`.
 
 The low-order coefficients are computed explicitly: the Todd series is
 `1 + X/2 + X²/12 + 0·X³ - X⁴/720 + …`, the Â series is `1 - X²/24 + 7X⁴/5760 + …` and the L
-series is `1 + X²/3 - X⁴/45 + …`. The Todd series is applied to the Chern roots. The even series
-Â and L are applied to one degree-two root `xⱼ` for each oriented real 2-plane, and the products
-are expressed in the elementary symmetric polynomials `pᵢ` of the `xⱼ²`. These are the
+series is `1 + X²/3 - X⁴/45 + 2X⁶/945 + …`. The Todd series is applied to the Chern roots. The
+even series Â and L are applied to one degree-two root `xⱼ` for each oriented real 2-plane, and the
+products are expressed in the elementary symmetric polynomials `pᵢ` of the `xⱼ²`. These are the
 coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/12 + …`,
 `Â = 1 - p₁/24 + …` and `L = 1 + p₁/3 + …`.
 
@@ -54,7 +54,8 @@ coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/
 ## Main results
 
 * `TauCeti.bernoulli'PowerSeries_mul_one_sub_exp_neg`: `Td(X) · (1 - e^{-X}) = X`.
-* `TauCeti.aHatSeries_mul_sub`: `Â(X) · (e^{X/2} - e^{-X/2}) = X`.
+* `TauCeti.aHatSeries_mul_sub`, `TauCeti.rescale_two_aHatSeries_mul_sub`:
+  `Â(X) · (e^{X/2} - e^{-X/2}) = X` and `Â(2X) · (e^X - e^{-X}) = 2X`.
 * `TauCeti.hirzebruchLSeries_mul_sub`: `L(X) · (e^X - e^{-X}) = X (e^X + e^{-X})`.
 * `TauCeti.eq_aHatSeries_iff`, `TauCeti.eq_hirzebruchLSeries_iff`,
   `TauCeti.eq_bernoulli'PowerSeries_iff`: these identities characterize the series.
@@ -62,7 +63,12 @@ coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/
   of Bernoulli numbers.
 * `TauCeti.rescale_neg_one_aHatSeries`, `TauCeti.rescale_neg_one_hirzebruchLSeries`: the Â
   and L series are even.
-* `TauCeti.bernoulli'PowerSeries_eq_rescale_exp_mul_aHatSeries`: `Td(X) = e^{X/2} Â(X)`.
+* `TauCeti.bernoulli'PowerSeries_eq_rescale_exp_mul_aHatSeries`,
+  `TauCeti.bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries`,
+  `TauCeti.rescale_two_bernoulliPowerSeries_mul_exp`: `Td(X) = e^{X/2} Â(X)`,
+  `B(X) e^{X/2} = Â(X)` and `B(2X) e^X = Â(2X)`.
+* `TauCeti.map_aHatSeries`, `TauCeti.map_hirzebruchLSeries`: `Â` and `L` commute with ring
+  homomorphisms between `ℚ`-algebras.
 
 ## References
 
@@ -236,6 +242,45 @@ theorem bernoulli'PowerSeries_eq_rescale_exp_mul_aHatSeries :
   linear_combination aHatSeries_mul_sub A - aHatSeries A * rescale (-c) (exp A) * hk +
     rescale c (exp A) * aHatSeries A * hkk
 
+/-- **The Bernoulli series times `e^{X/2}` is the Â series**: `B(X) e^{X/2} = Â(X)`. -/
+theorem bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries :
+    bernoulliPowerSeries A * rescale (algebraMap ℚ A 2⁻¹) (exp A) = aHatSeries A := by
+  set c := algebraMap ℚ A 2⁻¹
+  rw [eq_aHatSeries_iff]
+  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
+  have hk := rescale_exp_mul_rescale_neg_exp c
+  have hh : rescale c (exp A) * rescale c (exp A) = exp A := by
+    rw [rescale_exp_mul_self, h2, rescale_one, RingHom.id_apply]
+  linear_combination bernoulliPowerSeries_mul_exp_sub_one A +
+    bernoulliPowerSeries A * hh - bernoulliPowerSeries A * hk
+
+/-- **Rescaling `B(X) e^{X/2} = Â(X)` by `2`**: `B(2X) e^X = Â(2X)`. -/
+theorem rescale_two_bernoulliPowerSeries_mul_exp :
+    rescale 2 (bernoulliPowerSeries A) * exp A = rescale 2 (aHatSeries A) := by
+  have h := congrArg (rescale (2 : A)) (bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries A)
+  have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 := by
+    rw [mul_comm]
+    exact_mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
+  simpa [map_mul, rescale_rescale, h2] using h
+
+/-- **The rescaled Â series is `X / sinh X`**: `Â(2X) · (e^X - e^{-X}) = 2X`. -/
+theorem rescale_two_aHatSeries_mul_sub :
+    rescale 2 (aHatSeries A) * (exp A - rescale (-1) (exp A)) = 2 * X := by
+  have h := congrArg (rescale (2 : A)) (aHatSeries_mul_sub A)
+  have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 := by
+    rw [mul_comm]
+    exact_mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
+  have hn2 : -algebraMap ℚ A 2⁻¹ * 2 = -1 := by linear_combination -h2
+  simpa [map_mul, map_sub, rescale_rescale, rescale_X, map_ofNat, h2, hn2] using h
+
+/-- The Â series commutes with ring homomorphisms between `ℚ`-algebras. -/
+@[simp]
+theorem map_aHatSeries {R S : Type*} [CommRing R] [Algebra ℚ R]
+    [CommRing S] [Algebra ℚ S] (f : R →+* S) :
+    PowerSeries.map f (aHatSeries R) = aHatSeries S := by
+  ext n
+  simp [coeff_aHatSeries]
+
 /-! ### The L series -/
 
 /-- **Hirzebruch's L series** `X / tanh X = X (e^X + e^{-X}) / (e^X - e^{-X})`, the characteristic
@@ -326,5 +371,26 @@ theorem coeff_four_hirzebruchLSeries :
   rw [coeff_hirzebruchLSeries A (by decide), bernoulli_eq_bernoulli'_of_ne_one (by decide),
     bernoulli'_four]
   norm_num [Nat.factorial]
+
+/-- `L(X) = 1 + X²/3 - X⁴/45 + 2X⁶/945 + …`. -/
+@[simp]
+theorem coeff_six_hirzebruchLSeries :
+    coeff 6 (hirzebruchLSeries A) = algebraMap ℚ A (2 / 945) := by
+  have h : bernoulli 6 = 1 / 42 := by
+    rw [bernoulli_eq_bernoulli'_of_ne_one (by decide), bernoulli'_def]
+    norm_num [Finset.sum_range_succ, Nat.choose, bernoulli'_eq_zero_of_odd (n := 5) (by decide)]
+  rw [coeff_hirzebruchLSeries A (by decide), h]
+  norm_num [Nat.factorial]
+
+/-- Hirzebruch's L series commutes with ring homomorphisms between `ℚ`-algebras. -/
+@[simp]
+theorem map_hirzebruchLSeries {R S : Type*} [CommRing R] [Algebra ℚ R]
+    [CommRing S] [Algebra ℚ S] (f : R →+* S) :
+    PowerSeries.map f (hirzebruchLSeries R) = hirzebruchLSeries S := by
+  ext n
+  by_cases hn : n = 1
+  · subst hn
+    simp [coeff_hirzebruchLSeries_of_odd _ odd_one]
+  · simp [coeff_hirzebruchLSeries _ hn]
 
 end TauCeti

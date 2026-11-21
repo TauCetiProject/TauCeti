@@ -36,7 +36,8 @@ section ring.
 
 ## Main declarations
 
-* `TauCeti.DescentDatum.IsStable D U`: the open `U` is stable under `D`.
+* `TauCeti.DescentDatum.IsStable D U`: the open `U` is stable under `D`; for instance the preimage
+  in `X` of an open of `S` is stable (`TauCeti.DescentDatum.isStable_comp_preimage`).
 * `TauCeti.DescentDatum.restrict D U hU`: the descent datum induced on a stable open `U`, with the
   inclusion `TauCeti.DescentDatum.restrictHom D U hU` and the factorization
   `TauCeti.DescentDatum.Hom.codRestrict`.
@@ -44,6 +45,9 @@ section ring.
   stable opens of `X₀ ×_S S'` are exactly the preimages of opens of `X₀`.
 * `TauCeti.DescentDatum.exists_baseChange_hom_isIso_restrict`: for such `p`, the restriction of an
   effective descent datum to a stable open is effective.
+* `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong`: effectivity
+  of the base change of a descent datum to an open of the base gives effectivity of its restriction
+  to the preimage of that open.
 
 ## References
 
@@ -97,6 +101,13 @@ theorem IsStable.preimage {Y : Over S'} {E : DescentDatum p Y} (f : Hom D E) {U 
   unfold IsStable at hU ⊢
   rw [← Scheme.Hom.comp_preimage, ← f.map_act, Scheme.Hom.comp_preimage, hU]
   simp only [← Scheme.Hom.comp_preimage, pullback.lift_snd]
+
+/-- The preimage in `X` of an open of `S` is stable: the action `(s, x) ↦ s · x` does not change
+the image of a point in `S`. -/
+theorem isStable_comp_preimage (U : S.Opens) : D.IsStable ((X.hom ≫ p) ⁻¹ᵁ U) := by
+  refine isStable_iff.mpr fun z ↦ ?_
+  rw [Scheme.Hom.mem_preimage, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply,
+    ← Scheme.Hom.comp_apply, act_comp_hom_comp]
 
 section Restrict
 
@@ -258,15 +269,6 @@ end BaseChange
 
 section Effective
 
-/-- The base change `U₀ ×_S S' ⟶ X₀ ×_S S'` of the inclusion of an open `U₀` of `X₀` exhibits
-`U₀ ×_S S'` as the preimage of `U₀`. -/
-private theorem isPullback_baseChangeHom_homMk_ι {X₀ : Over S} (U₀ : X₀.left.Opens) :
-    IsPullback (pullback.fst (U₀.ι ≫ X₀.hom) p)
-      (baseChangeHom p (Over.homMk U₀.ι : Over.mk (U₀.ι ≫ X₀.hom) ⟶ X₀)).hom.left U₀.ι
-      (pullback.fst X₀.hom p) :=
-  IsPullback.of_bot (by simpa using IsPullback.of_hasPullback (U₀.ι ≫ X₀.hom) p) (by simp)
-    (IsPullback.of_hasPullback X₀.hom p)
-
 variable [Surjective p] [Flat p] [QuasiCompact p]
 
 variable {D} in
@@ -281,7 +283,9 @@ theorem exists_baseChange_hom_isIso_restrict {X₀ : Over S} (f : Hom (baseChang
         (D.restrictHom U hU).comp g = f.comp (baseChangeHom p (Over.homMk U₀.ι)) := by
   obtain ⟨U₀, hU₀⟩ := (isStable_baseChange_iff p).mp (hU.preimage f)
   let m := baseChangeHom p (Over.homMk U₀.ι : Over.mk (U₀.ι ≫ X₀.hom) ⟶ X₀)
-  have hm := isPullback_baseChangeHom_homMk_ι (p := p) U₀
+  -- `U₀ ×_S S'` is the preimage of `U₀` in `X₀ ×_S S'`.
+  have hm : IsPullback (pullback.fst (U₀.ι ≫ X₀.hom) p) m.hom.left U₀.ι (pullback.fst X₀.hom p) :=
+    (isPullback_baseChangeHom p (Over.homMk U₀.ι : Over.mk (U₀.ι ≫ X₀.hom) ⟶ X₀)).flip
   -- The image of `U₀ ×_S S'` in `X₀ ×_S S'` is the preimage of `U₀`, which `f` maps onto `U`.
   have hrange : Set.range m.hom.left = SetLike.coe (pullback.fst X₀.hom p ⁻¹ᵁ U₀) := by
     have := Scheme.image_preimage_eq_of_isPullback hm Set.univ
@@ -312,5 +316,52 @@ theorem exists_baseChange_hom_isIso_restrict_of_isAffineHom [IsAffineHom p] [Fla
       IsIso g.hom := by
   obtain ⟨U₀, g, hg, -⟩ := exists_baseChange_hom_isIso_restrict D.toBaseChangeDescended.inv hU
   exact ⟨U₀, g, hg⟩
+
+section PullbackAlong
+
+variable {D} {U : S.Opens} {Y₀ : Over U.toScheme}
+  (f : Hom (baseChange (pullback.fst U.ι p) Y₀) (D.pullbackAlong U.ι)) [IsIso f.hom]
+
+/-- An isomorphism from a canonical descent datum to the base change of `D` to an open `U` of `S`
+gives an open immersion `Y₀ ×_S S' ⟶ X`. -/
+instance Hom.isOpenImmersion_ofPullbackAlong_hom_left :
+    IsOpenImmersion f.ofPullbackAlong.hom.left := by
+  have : IsIso f.hom.left := (Over.forget _).map_isIso f.hom
+  rw [Hom.ofPullbackAlong_hom_left]
+  infer_instance
+
+/-- The open immersion `Y₀ ×_S S' ⟶ X` given by an isomorphism onto the base change of `D` to an
+open `U` of `S` has image the preimage of `U` in `X`. -/
+theorem Hom.opensRange_ofPullbackAlong_hom_left :
+    f.ofPullbackAlong.hom.left.opensRange = (X.hom ≫ p) ⁻¹ᵁ U := by
+  have : IsIso f.hom.left := (Over.forget _).map_isIso f.hom
+  simp only [Hom.ofPullbackAlong_hom_left]
+  rw [Scheme.Hom.opensRange_comp_of_isIso, Scheme.Hom.opensRange_comp_of_isIso,
+    Scheme.Hom.opensRange_pullbackFst, Scheme.Hom.opensRange_pullbackSnd,
+    Scheme.Opens.opensRange_ι, Scheme.Hom.comp_preimage]
+
+/-- **Effectivity after base change to an open gives effectivity of the restriction.** If the base
+change `D.pullbackAlong U.ι` of `D` to an open `U` of `S` is isomorphic to the canonical descent
+datum on `Y₀ ×_U (U ×_S S')`, then the restriction of `D` to the preimage of `U` in `X` is
+isomorphic to the canonical descent datum on `Y₀ ×_S S'`, with `Y₀` viewed over `S`, compatibly
+with `Hom.ofPullbackAlong`. -/
+theorem Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong :
+    ∃ g : Hom (baseChange p ((Over.map U.ι).obj Y₀)) (D.restrict _ (D.isStable_comp_preimage U)),
+      IsIso g.hom ∧ (D.restrictHom _ _).comp g = f.ofPullbackAlong := by
+  have hrange : Set.range f.ofPullbackAlong.hom.left = Set.range ((X.hom ≫ p) ⁻¹ᵁ U).ι := by
+    rw [← Scheme.Hom.coe_opensRange, f.opensRange_ofPullbackAlong_hom_left,
+      Scheme.Opens.range_ι]
+  let g := f.ofPullbackAlong.codRestrict (D.isStable_comp_preimage U)
+    (hrange.trans (Scheme.Opens.range_ι _)).subset
+  refine ⟨g, ?_, Hom.restrictHom_comp_codRestrict _ _ _⟩
+  suffices IsIso ((Over.forget S').map g.hom) from isIso_of_reflects_iso _ (Over.forget S')
+  -- `g.hom.left` is the isomorphism between two open immersions with the same range.
+  have : g.hom.left = (IsOpenImmersion.isoOfRangeEq _ _ hrange).hom := by
+    rw [← cancel_mono ((X.hom ≫ p) ⁻¹ᵁ U).ι, Hom.codRestrict_hom_left_ι,
+      IsOpenImmersion.isoOfRangeEq_hom_fac]
+  rw [Over.forget_map, this]
+  infer_instance
+
+end PullbackAlong
 
 end TauCeti.DescentDatum

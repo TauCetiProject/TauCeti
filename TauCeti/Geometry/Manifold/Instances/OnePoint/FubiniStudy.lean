@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
 
 /-!
@@ -45,7 +45,9 @@ sphere, multiplication by `i` on each tangent space
 integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
 `π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
-comparison with the integral of the form over the oriented sphere is not carried out here.
+integral of the form itself over the sphere with its complex orientation is then `1`
+(`OnePoint.integralTopForm_fubiniStudyForm`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`).
 
 This is the area form with which symplectic and holomorphic-curve arguments on the sphere are
 normalized; other areas are obtained by scaling it.
@@ -259,9 +261,9 @@ theorem eval₂_fubiniStudyForm_I_mul (x : OnePoint ℂ) (v w : ℂ) :
   simp
 
 /-- The Fubini–Study form vanishes at no point. -/
-theorem fubiniStudyForm_apply_ne_zero (x : OnePoint ℂ) : fubiniStudyForm.1 x ≠ 0 := by
+theorem fubiniStudyForm_apply_ne_zero (x : OnePoint ℂ) : fubiniStudyForm.val x ≠ 0 := by
   intro h
-  have h1 : fubiniStudyForm.1 x (![1, Complex.I] : Fin 2 → ℂ) =
+  have h1 : fubiniStudyForm.val x (![1, Complex.I] : Fin 2 → ℂ) =
       fubiniStudyDensity (chartAt ℂ x x) :=
     (fubiniStudyRough_apply x _).trans (by simp)
   rw [h] at h1

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -81,47 +82,33 @@ theorem LinearMap.sq_norm_apply_eq_sum_of_eigenbasis
     (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → 𝕜}
     (hw : ∀ i, S (w i) = μ i • w i) (x : E) :
     ‖S x‖ ^ 2 = ∑ i : Fin n, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2 := by
-  have hrepr : ∀ i, w.repr (S x) i = μ i * w.repr x i := by
-    intro i
-    conv_lhs => rw [← w.sum_repr x]
-    simp [map_sum, hw, smul_smul, mul_comm, Pi.single_apply]
   rw [← sum_sq_norm_repr_eq_sq_norm w (S x)]
-  simp_rw [hrepr, norm_mul, mul_pow]
+  simp_rw [w.repr_apply_of_eigenbasis S hw, norm_mul, mul_pow]
 
-namespace LinearMap.IsSymmetric
-
-variable [FiniteDimensional 𝕜 E] {T S : E →ₗ[𝕜] E}
-
-omit [FiniteDimensional 𝕜 E] in
 /-- Diagonalization of the quadratic form in any orthonormal eigenbasis: if
 `S (w i) = μ i • w i` for all `i`, then
 `re ⟪S x, x⟫ = ∑ i, μ i * ‖w.repr x i‖ ^ 2`. -/
-theorem re_inner_apply_self_eq_sum_of_eigenbasis
-    (hS : S.IsSymmetric) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
+theorem LinearMap.re_inner_apply_self_eq_sum_of_eigenbasis
+    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
     (hw : ∀ i, S (w i) = (μ i : 𝕜) • w i) (x : E) :
     RCLike.re ⟪S x, x⟫_𝕜 = ∑ i : Fin n, μ i * ‖w.repr x i‖ ^ 2 := by
-  have hrepr : ∀ i, w.repr (S x) i = (μ i : 𝕜) * w.repr x i := by
-    intro i
-    rw [w.repr_apply_apply, w.repr_apply_apply, ← hS (w i) x, hw i, inner_smul_left,
-      RCLike.conj_ofReal]
   have key : ⟪S x, x⟫_𝕜 = ((∑ i : Fin n, μ i * ‖w.repr x i‖ ^ 2 : ℝ) : 𝕜) := by
     rw [← w.repr.inner_map_map (S x) x, PiLp.inner_apply]
     push_cast
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [RCLike.inner_apply, hrepr i, map_mul, RCLike.conj_ofReal, mul_left_comm,
-      RCLike.mul_conj]
+    rw [RCLike.inner_apply, w.repr_apply_of_eigenbasis S (μ := fun i => (μ i : 𝕜)) hw x i,
+      map_mul, RCLike.conj_ofReal, mul_left_comm, RCLike.mul_conj]
   rw [key, RCLike.ofReal_re]
 
-omit [FiniteDimensional 𝕜 E] in
 /-- On the span of the eigenvectors selected by `s`, the quadratic form is
 bounded below by any lower bound on the selected values (general-eigenbasis
 version of `le_re_inner_apply_self_of_mem_spanIndices`). -/
-theorem le_re_inner_of_eigenbasis
-    (hS : S.IsSymmetric) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
+theorem LinearMap.le_re_inner_of_eigenbasis
+    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
     (hw : ∀ i, S (w i) = (μ i : 𝕜) • w i) {s : Set (Fin n)} {c : ℝ}
     (hc : ∀ i ∈ s, c ≤ μ i) {x : E} (hx : x ∈ w.spanIndices s) :
     c * ‖x‖ ^ 2 ≤ RCLike.re ⟪S x, x⟫_𝕜 := by
-  rw [hS.re_inner_apply_self_eq_sum_of_eigenbasis w hw x,
+  rw [LinearMap.re_inner_apply_self_eq_sum_of_eigenbasis S w hw x,
     -- names the application so the norm bound applies to it directly.
     show c * ‖x‖ ^ 2 = ∑ i : Fin n, c * ‖w.repr x i‖ ^ 2 by
       rw [← Finset.mul_sum, sum_sq_norm_repr_eq_sq_norm]]
@@ -130,14 +117,13 @@ theorem le_re_inner_of_eigenbasis
   · exact mul_le_mul_of_nonneg_right (hc i hp) (sq_nonneg _)
   · rw [w.repr_eq_zero_of_mem_spanIndices hx hp]; simp
 
-omit [FiniteDimensional 𝕜 E] in
 /-- Dual of `le_re_inner_of_eigenbasis`. -/
-theorem re_inner_le_of_eigenbasis
-    (hS : S.IsSymmetric) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
+theorem LinearMap.re_inner_le_of_eigenbasis
+    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
     (hw : ∀ i, S (w i) = (μ i : 𝕜) • w i) {s : Set (Fin n)} {c : ℝ}
     (hc : ∀ i ∈ s, μ i ≤ c) {x : E} (hx : x ∈ w.spanIndices s) :
     RCLike.re ⟪S x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2 := by
-  rw [hS.re_inner_apply_self_eq_sum_of_eigenbasis w hw x,
+  rw [LinearMap.re_inner_apply_self_eq_sum_of_eigenbasis S w hw x,
     -- names the application so the norm bound applies to it directly.
     show c * ‖x‖ ^ 2 = ∑ i : Fin n, c * ‖w.repr x i‖ ^ 2 by
       rw [← Finset.mul_sum, sum_sq_norm_repr_eq_sq_norm]]
@@ -146,6 +132,9 @@ theorem re_inner_le_of_eigenbasis
   · exact mul_le_mul_of_nonneg_right (hc i hp) (sq_nonneg _)
   · rw [w.repr_eq_zero_of_mem_spanIndices hx hp]; simp
 
+namespace LinearMap.IsSymmetric
+
+variable [FiniteDimensional 𝕜 E] {T S : E →ₗ[𝕜] E}
 
 /-! ### The quadratic form in the eigenbasis -/
 
@@ -158,7 +147,7 @@ theorem re_inner_apply_self_eq_sum_eigenvalues_mul_sq
     (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (x : E) :
     RCLike.re ⟪T x, x⟫_𝕜
       = ∑ i : Fin n, hT.eigenvalues hn i * ‖(hT.eigenvectorBasis hn).repr x i‖ ^ 2 := by
-  exact hT.re_inner_apply_self_eq_sum_of_eigenbasis
+  exact re_inner_apply_self_eq_sum_of_eigenbasis T
     (hT.eigenvectorBasis hn) (hT.apply_eigenvectorBasis hn) x
 
 /-- On the span of a selected subfamily of the eigenbasis, the quadratic form
@@ -170,7 +159,7 @@ theorem re_inner_apply_self_le_of_mem_spanIndices
     (hc : ∀ i ∈ s, hT.eigenvalues hn i ≤ c)
     {x : E} (hx : x ∈ (hT.eigenvectorBasis hn).spanIndices s) :
     RCLike.re ⟪T x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2 := by
-  exact hT.re_inner_le_of_eigenbasis
+  exact re_inner_le_of_eigenbasis T
     (hT.eigenvectorBasis hn) (hT.apply_eigenvectorBasis hn) hc hx
 
 /-- Dual of `re_inner_apply_self_le_of_mem_spanIndices`: if
@@ -181,7 +170,7 @@ theorem le_re_inner_apply_self_of_mem_spanIndices
     (hc : ∀ i ∈ s, c ≤ hT.eigenvalues hn i)
     {x : E} (hx : x ∈ (hT.eigenvectorBasis hn).spanIndices s) :
     c * ‖x‖ ^ 2 ≤ RCLike.re ⟪T x, x⟫_𝕜 := by
-  exact hT.le_re_inner_of_eigenbasis
+  exact le_re_inner_of_eigenbasis T
     (hT.eigenvectorBasis hn) (hT.apply_eigenvectorBasis hn) hc hx
 
 /-! ### Discrete Courant–Fischer directional bounds -/
@@ -201,7 +190,6 @@ theorem exists_unit_vector_re_inner_le_eigenvalue
   -- Dimension counting: `finrank V + finrank W > finrank E`, so `V ⊓ W ≠ ⊥`.
   have hsum : finrank 𝕜 V + finrank 𝕜 W = n + 1 := by
     rw [hV, hWdim]
-    have hk : (k : ℕ) < n := k.2
     omega
   have hinf : V ⊓ W ≠ ⊥ :=
     Submodule.inf_ne_bot_of_finrank_lt (by omega)
@@ -230,7 +218,7 @@ theorem exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank
   obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_finrank hV
   have hv' := hv.map' V.subtype (Submodule.ker_subtype _)
   have hsub : Submodule.span 𝕜 (Set.range (V.subtype ∘ v)) ≤ V :=
-    Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact (v j).2)
+    Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact (v j).property)
   obtain ⟨x, hxW, hx1, hxle⟩ := hT.exists_unit_vector_re_inner_le_eigenvalue hn k
     (Submodule.span 𝕜 (Set.range (V.subtype ∘ v)))
     (by rw [finrank_span_eq_card hv']; simp)
@@ -277,7 +265,7 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
   have hn0 : 0 < n := k.pos
   -- Uniform Rayleigh lower bound: every unit vector has quadratic form at least
   -- the smallest eigenvalue; this bounds every inner infimum below.
-  set m : Fin n := ⟨n - 1, by omega⟩ with hm
+  set m : Fin n := ⟨n - 1, by omega⟩
   have hray : ∀ x : E, ‖x‖ = 1 →
       hT.eigenvalues hn m ≤ RCLike.re ⟪T x, x⟫_𝕜 := by
     intro x hx
@@ -294,20 +282,20 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
     -- states the goal with the definition unfolded, in the shape the next step needs;
     -- there is no `_apply` lemma to rewrite with here.
     change (i : ℕ) ≤ n - 1
-    have := i.2
+    have := i.isLt
     omega
   have hbddB : ∀ V : {V : Submodule 𝕜 E // finrank 𝕜 V = (k : ℕ) + 1},
       BddBelow (Set.range fun x : {x : E // x ∈ (V : Submodule 𝕜 E) ∧ ‖x‖ = 1} =>
         RCLike.re ⟪T (x : E), (x : E)⟫_𝕜) := by
     intro V
-    exact ⟨hT.eigenvalues hn m, by rintro _ ⟨x, rfl⟩; exact hray _ x.2.2⟩
+    exact ⟨hT.eigenvalues hn m, by rintro _ ⟨x, rfl⟩; exact hray _ x.property.2⟩
   -- Every inner infimum is at most `λₖ` (upper direction).
   have hupper : ∀ V : {V : Submodule 𝕜 E // finrank 𝕜 V = (k : ℕ) + 1},
       (⨅ x : {x : E // x ∈ (V : Submodule 𝕜 E) ∧ ‖x‖ = 1},
         RCLike.re ⟪T (x : E), (x : E)⟫_𝕜) ≤ hT.eigenvalues hn k := by
     intro V
     obtain ⟨x, hxV, hx1, hxle⟩ :=
-      hT.exists_unit_vector_re_inner_le_eigenvalue hn k V.1 V.2
+      hT.exists_unit_vector_re_inner_le_eigenvalue hn k V.val V.property
     exact (ciInf_le (hbddB V) ⟨x, hxV, hx1⟩).trans hxle
   -- The lower-direction witness subspace attains `λₖ` from below.
   obtain ⟨V₀, hV₀dim, hV₀low⟩ :=
@@ -323,7 +311,7 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
             Submodule 𝕜 E) ∧ ‖x‖ = 1},
         RCLike.re ⟪T (x : E), (x : E)⟫_𝕜 := by
     have : Nonempty {x : E // x ∈ V₀ ∧ ‖x‖ = 1} := ⟨⟨x₀, hx₀V, hx₀1⟩⟩
-    exact le_ciInf fun x => hV₀low _ x.2.1 x.2.2
+    exact le_ciInf fun x => hV₀low _ x.property.1 x.property.2
   have hbddA : BddAbove (Set.range
       fun V : {V : Submodule 𝕜 E // finrank 𝕜 V = (k : ℕ) + 1} =>
         ⨅ x : {x : E // x ∈ (V : Submodule 𝕜 E) ∧ ‖x‖ = 1},
@@ -355,7 +343,7 @@ theorem eigenvalues_eq_of_eigenbasis
     have hWdim : finrank 𝕜 W = n - (k : ℕ) := by
       rw [hW, w.finrank_spanIndices, Fin.card_Ici]
     have hinf : V ⊓ W ≠ ⊥ :=
-      Submodule.inf_ne_bot_of_finrank_lt (by have hk : (k : ℕ) < n := k.2; omega)
+      Submodule.inf_ne_bot_of_finrank_lt (by have _ : (k : ℕ) < n := k.isLt; omega)
     obtain ⟨z, hz, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hinf
     obtain ⟨hzV, hzW⟩ := Submodule.mem_inf.mp hz
     have hz0' : ‖z‖ ≠ 0 := norm_ne_zero_iff.mpr hz0
@@ -365,7 +353,7 @@ theorem eigenvalues_eq_of_eigenbasis
     have hxW : x ∈ W := W.smul_mem _ hzW
     calc hS.eigenvalues hn k ≤ RCLike.re ⟪S x, x⟫_𝕜 := hVlow x (V.smul_mem _ hzV) hnx
       _ ≤ μ k * ‖x‖ ^ 2 :=
-          re_inner_le_of_eigenbasis hS w hw (fun _ hik => hμ (by simpa using hik)) hxW
+          re_inner_le_of_eigenbasis S w hw (fun _ hik => hμ (by simpa using hik)) hxW
       _ = μ k := by rw [hnx]; ring
   · -- `μₖ ≤ λₖ`: test the CF-upper bound on the `w`-head span.
     set V := w.spanIndices ↑(Finset.Iic k) with hV
@@ -375,7 +363,7 @@ theorem eigenvalues_eq_of_eigenbasis
       hS.exists_unit_vector_re_inner_le_eigenvalue hn k V hVdim
     calc μ k = μ k * ‖x‖ ^ 2 := by rw [hnx]; ring
       _ ≤ RCLike.re ⟪S x, x⟫_𝕜 :=
-          le_re_inner_of_eigenbasis hS w hw (fun _ hik => hμ (by simpa using hik)) hxV
+          le_re_inner_of_eigenbasis S w hw (fun _ hik => hμ (by simpa using hik)) hxV
       _ ≤ hS.eigenvalues hn k := hup
 
 /-- **Loewner monotonicity of the sorted eigenvalues.**  If the quadratic form

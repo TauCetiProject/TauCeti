@@ -32,8 +32,8 @@ groups: `D(G × H)(A) ≅ D(G)(A) × D(H)(A)`.
 
 * `TauCeti.MonoidAlgebra.prodPointsMulEquiv`: on convolution points,
   `Spec R[G × H](A) ≃* Spec R[G](A) × Spec R[H](A)`.
-* `TauCeti.DiagonalizableGroup.prodPointsMulEquiv`: for commutative groups, on points,
-  `D(G × H)(A) ≃* D(G)(A) × D(H)(A)`.
+* `TauCeti.DiagonalizableGroup.pointsMulEquiv_prodPointsMulEquiv`: for commutative groups, the
+  character of a point of `D(G × H)` is the coproduct of the characters of its two restrictions.
 
 ## References
 
@@ -140,63 +140,21 @@ namespace DiagonalizableGroup
 
 variable {G' : Type v} {H' : Type w} [CommGroup G'] [CommGroup H']
 
-/-- **The diagonalizable group of a product is the product of diagonalizable groups, on points.**
-For commutative groups `G` and `H` and every commutative `R`-algebra `A`, the convolution group
-of `A`-points of `D(G × H)` is the product of the convolution groups of `A`-points of `D(G)` and
-`D(H)`. -/
-noncomputable def prodPointsMulEquiv :
-    WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A) ≃*
-      WithConv (MonoidAlgebra R G' →ₐ[R] A) × WithConv (MonoidAlgebra R H' →ₐ[R] A) :=
-  MonoidAlgebra.prodPointsMulEquiv (G := G') (H := H')
-
-/-- On generators, the first component of the diagonalizable product-points equivalence restricts
-along `g ↦ (g, 1)`. -/
-@[simp]
-theorem prodPointsMulEquiv_fst_ofConv_single
-    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) (g : G') :
-    (prodPointsMulEquiv f).1.ofConv (single g (1 : R)) =
-      f.ofConv (single (g, (1 : H')) 1) :=
-  MonoidAlgebra.prodPointsMulEquiv_fst_ofConv_single (H := H') f g
-
-/-- On generators, the second component of the diagonalizable product-points equivalence restricts
-along `h ↦ (1, h)`. -/
-@[simp]
-theorem prodPointsMulEquiv_snd_ofConv_single
-    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) (h : H') :
-    (prodPointsMulEquiv f).2.ofConv (single h (1 : R)) =
-      f.ofConv (single ((1 : G'), h) 1) :=
-  MonoidAlgebra.prodPointsMulEquiv_snd_ofConv_single (G := G') f h
-
-/-- On generators, the inverse diagonalizable product-points equivalence multiplies the two
-factor-point values. -/
-@[simp]
-theorem prodPointsMulEquiv_symm_ofConv_single
-    (f₁ : WithConv (MonoidAlgebra R G' →ₐ[R] A)) (f₂ : WithConv (MonoidAlgebra R H' →ₐ[R] A))
-    (g : G') (h : H') :
-    (prodPointsMulEquiv.symm (f₁, f₂)).ofConv (single (g, h) (1 : R)) =
-      f₁.ofConv (single g 1) * f₂.ofConv (single h 1) :=
-  MonoidAlgebra.prodPointsMulEquiv_symm_ofConv_single f₁ f₂ g h
-
-/-- The diagonalizable product-points equivalence is natural in the value algebra. -/
-theorem prodPointsMulEquiv_mapValue {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
-    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) :
-    prodPointsMulEquiv (A := B) (AlgHom.mapValue (H := MonoidAlgebra R (G' × H')) φ f) =
-      (AlgHom.mapValue (H := MonoidAlgebra R G') φ (prodPointsMulEquiv f).1,
-        AlgHom.mapValue (H := MonoidAlgebra R H') φ (prodPointsMulEquiv f).2) :=
-  MonoidAlgebra.prodPointsMulEquiv_mapValue φ f
-
-/-- The diagonalizable product-points equivalence agrees with the existing character
-description of diagonalizable-group points: reading the character of a product point is the
-coproduct of the characters read from its two restrictions. -/
+/-- **The diagonalizable group of a product is the product of diagonalizable groups, on
+points.** For commutative groups `G` and `H`, the points equivalence
+`TauCeti.MonoidAlgebra.prodPointsMulEquiv : D(G × H)(A) ≃* D(G)(A) × D(H)(A)` agrees with the
+character description of diagonalizable-group points: the character of a product point is the
+coproduct of the characters of its two restrictions. -/
 theorem pointsMulEquiv_prodPointsMulEquiv
     (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) (G := G' × H') f =
-      (pointsMulEquiv (R := R) (A := A) (G := G') (prodPointsMulEquiv f).1).coprod
-        (pointsMulEquiv (R := R) (A := A) (G := H') (prodPointsMulEquiv f).2) := by
+      (pointsMulEquiv (R := R) (A := A) (G := G') (MonoidAlgebra.prodPointsMulEquiv f).1).coprod
+        (pointsMulEquiv (R := R) (A := A) (G := H') (MonoidAlgebra.prodPointsMulEquiv f).2) := by
   ext p
   simp only [pointsMulEquiv_apply, MonoidHom.coprod_apply, Units.val_mul]
   rw [charOfPoint_apply_coe, charOfPoint_apply_coe, charOfPoint_apply_coe,
-    prodPointsMulEquiv_fst_ofConv_single, prodPointsMulEquiv_snd_ofConv_single]
+    MonoidAlgebra.prodPointsMulEquiv_fst_ofConv_single,
+    MonoidAlgebra.prodPointsMulEquiv_snd_ofConv_single]
   rw [← map_mul, single_mul_single, Prod.mk_mul_mk, mul_one, one_mul]
   simp
 

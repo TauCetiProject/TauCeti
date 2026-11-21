@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
-public import Mathlib.RingTheory.Polynomial.Quotient
+public import TauCeti.RingTheory.MvPolynomial.Quotient
+public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
@@ -129,7 +130,7 @@ theorem mem_intWashnitzerAlgebra_iff {f : MvPowerSeries σ R} :
   refine Subring.mem_inf.trans (and_congr Iff.rfl ⟨?_, fun h ↦ ?_⟩)
   · rintro ⟨g, rfl⟩ t
     rw [coeff_map]
-    exact Subring.mem_unitClosedBall.1 (coeff t g).2
+    exact Subring.mem_unitClosedBall.1 (coeff t g).property
   · let g : MvPowerSeries σ (Subring.unitClosedBall R) := fun t ↦
       ⟨coeff t f, Subring.mem_unitClosedBall.2 (h t)⟩
     -- `MvPowerSeries` is a function type, and `coeff t` evaluates at `t`.
@@ -146,7 +147,7 @@ namespace intWashnitzerAlgebra
 /-- The coefficients of a series in `R°⟨X⟩†` have norm at most one. -/
 theorem norm_coeff_le_one (f : intWashnitzerAlgebra σ R) (t : σ →₀ ℕ) :
     ‖coeff t (f : MvPowerSeries σ R)‖ ≤ 1 :=
-  (mem_intWashnitzerAlgebra_iff.1 f.2).2 t
+  (mem_intWashnitzerAlgebra_iff.1 f.property).2 t
 
 /-- The constant coefficient of a series in `R°⟨X⟩†` has norm at most one. -/
 theorem norm_constantCoeff_le_one (f : intWashnitzerAlgebra σ R) :
@@ -177,7 +178,8 @@ theorem coe_mem_intWashnitzerAlgebra_iff {p : MvPolynomial σ R} :
 theorem X_mem_intWashnitzerAlgebra (i : σ) :
     (MvPowerSeries.X i : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R := by
   classical
-  refine mem_intWashnitzerAlgebra_iff.2 ⟨by simpa using (washnitzerAlgebra.X σ R i).2, fun t ↦ ?_⟩
+  refine mem_intWashnitzerAlgebra_iff.2 ⟨by simpa using (washnitzerAlgebra.X σ R i).property,
+      fun t ↦ ?_⟩
   rw [coeff_X]
   split_ifs <;> simp
 
@@ -193,8 +195,8 @@ theorem mem_intWashnitzerAlgebra_iff_of_isEmpty [IsEmpty σ] {f : MvPowerSeries 
 Gauss norm is at most one. -/
 theorem mem_intWashnitzerAlgebra_iff_norm_le_one {f : washnitzerAlgebra σ R} :
     (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R ↔ ‖f‖ ≤ 1 := by
-  rw [mem_intWashnitzerAlgebra_iff, washnitzerAlgebra.norm_le_iff zero_le_one]
-  exact and_iff_right f.2
+  rw [mem_intWashnitzerAlgebra_iff, washnitzerAlgebra.norm_le_iff]
+  exact and_iff_right f.property
 
 namespace intWashnitzerAlgebra
 
@@ -203,7 +205,7 @@ variable (σ R) in
 algebra. -/
 noncomputable def toWashnitzerAlgebra : intWashnitzerAlgebra σ R →+* washnitzerAlgebra σ R :=
   (intWashnitzerAlgebra σ R).subtype.codRestrict (washnitzerAlgebra σ R) fun f ↦
-    intWashnitzerAlgebra_le f.2
+    intWashnitzerAlgebra_le f.property
 
 /-- The inclusion into `R⟨X⟩†` does not change the underlying series. -/
 @[simp]
@@ -235,7 +237,20 @@ theorem toWashnitzerAlgebra_injective : Function.Injective (toWashnitzerAlgebra 
 /-- An element of `R°⟨X⟩†` has Gauss norm at most one in `R⟨X⟩†`. -/
 theorem norm_toWashnitzerAlgebra_le_one (f : intWashnitzerAlgebra σ R) :
     ‖toWashnitzerAlgebra σ R f‖ ≤ 1 :=
-  mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.2)
+  mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.property)
+
+/-- If every coefficient of `f ∈ R°⟨X⟩†` has norm less than one, then so does every product
+`f y` with `y ∈ R°⟨X⟩†`. -/
+theorem norm_coeff_mul_lt_one {f : intWashnitzerAlgebra σ R}
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ < 1) (y : intWashnitzerAlgebra σ R) :
+    ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ R) : MvPowerSeries σ R)‖ < 1 := by
+  have hf : ‖toWashnitzerAlgebra σ R f‖ < 1 := by
+    rw [washnitzerAlgebra.norm_lt_iff, coe_toWashnitzerAlgebra]
+    exact h
+  have hlt := (norm_mul_le _ _).trans_lt
+    ((mul_le_of_le_one_right (norm_nonneg _) (norm_toWashnitzerAlgebra_le_one y)).trans_lt hf)
+  rw [← map_mul, washnitzerAlgebra.norm_lt_iff, coe_toWashnitzerAlgebra] at hlt
+  exact hlt
 
 /-- A Gauss-norm-preserving ring isomorphism of Monsky–Washnitzer algebras restricts to their
 integral subrings. -/
@@ -266,7 +281,7 @@ theorem toWashnitzerAlgebra_restrictRingEquiv {τ : Type*}
 noncomputable instance : Algebra (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) :=
   RingHom.toAlgebra <| ((C : R →+* MvPowerSeries σ R).comp
     (Subring.unitClosedBall R).subtype).codRestrict _ fun a ↦
-      C_mem_intWashnitzerAlgebra_iff.2 (Subring.mem_unitClosedBall.1 a.2)
+      C_mem_intWashnitzerAlgebra_iff.2 (Subring.mem_unitClosedBall.1 a.property)
 
 /-- The structure map `R° → R°⟨X⟩†` sends `a` to the constant series `a`. -/
 @[simp]
@@ -360,22 +375,8 @@ theorem mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow [Finite σ] {q : �
       _ ≤ q ^ j := mul_le_of_le_one_right (by positivity)
           ((div_le_one (by positivity)).2 (le_self_pow₀ hM hj.ne'))
   · rintro ⟨c, hc, h⟩
-    -- At the radius `ρ = q^{-1/c} > 1`, `‖aᵥ‖ ρ^{|ν|} ≤ q ^ j q ^ {-(j+1)} = q⁻¹`.
-    have hq : 1 < q⁻¹ := one_lt_inv_iff₀.2 ⟨hq0, hq1⟩
-    set ρ := q⁻¹ ^ ((c : ℝ)⁻¹)
-    have hρc : ρ ^ c = q⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hq0.le) hc.ne'
-    have hρ : 1 < ρ := Real.one_lt_rpow hq (by positivity)
-    refine ⟨⟨ρ, hρ, q⁻¹, fun t ↦ ?_⟩, fun t ↦ (h t).trans (pow_le_one₀ hq0.le hq1.le)⟩
-    rw [le_mul_inv_iff₀ (by positivity)]
-    calc ‖coeff t f‖ * ρ ^ t.degree ≤ q ^ (t.degree / c) * (ρ ^ c) ^ (t.degree / c + 1) := by
-          rw [← pow_mul]
-          gcongr
-          · exact h t
-          · exact hρ.le
-          · exact (Nat.lt_mul_div_succ _ hc).le
-      _ = q⁻¹ := by
-          rw [hρc, inv_pow, pow_succ]
-          field_simp
+    exact ⟨exists_norm_coeff_le_mul_inv_pow_of_le_pow hq0 hq1 hc h,
+      fun t ↦ (h t).trans (pow_le_one₀ hq0.le hq1.le)⟩
 
 end Defs
 
@@ -501,7 +502,7 @@ theorem isUnit_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
     IsUnit f ↔ ‖constantCoeff (f : MvPowerSeries σ K)‖ = 1 ∧
       ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ K)‖ < 1 := by
   set F := intWashnitzerAlgebra.toWashnitzerAlgebra σ K f
-  have hF1 : ‖F‖ ≤ 1 := mem_intWashnitzerAlgebra_iff_norm_le_one.1 f.2
+  have hF1 : ‖F‖ ≤ 1 := mem_intWashnitzerAlgebra_iff_norm_le_one.1 f.property
   refine ⟨fun hf ↦ ?_, fun ⟨h0, hlt⟩ ↦ ?_⟩
   · -- The constant coefficients of `f` and of its inverse have norm at most one and multiply to
     -- one, so both have norm one; the other coefficients are then controlled by the unit
@@ -567,15 +568,7 @@ theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K
       simp [a, ha] at this
   · intro h y
     -- The coefficients of `f y` have norm less than one, so `f y + 1` passes the unit test.
-    have hfy : ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ K) : MvPowerSeries σ K)‖ < 1 := by
-      have hf : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K f‖ < 1 :=
-        washnitzerAlgebra.norm_lt_iff.2 h
-      have hy : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K y‖ ≤ 1 :=
-        mem_intWashnitzerAlgebra_iff_norm_le_one.1 y.2
-      have hlt := (norm_mul_le _ _).trans_lt
-        ((mul_le_of_le_one_right (norm_nonneg _) hy).trans_lt hf)
-      rw [← map_mul] at hlt
-      exact washnitzerAlgebra.norm_lt_iff.1 hlt
+    have hfy := intWashnitzerAlgebra.norm_coeff_mul_lt_one h y
     refine isUnit_intWashnitzerAlgebra_iff.2 ⟨?_, fun t ht ↦ ?_⟩
     · have h0 := hfy 0
       rw [coeff_zero_eq_constantCoeff_apply] at h0
@@ -639,7 +632,8 @@ theorem exists_ofMvPolynomial_add_algebraMap_mul_eq {ϖ : K°} (hϖ : ϖ ≠ 0)
   have hf : Filter.Tendsto (fun t ↦ ‖coeff t (f : MvPowerSeries σ K)‖) Filter.cofinite
       (nhds 0) :=
     isRestricted_one_iff.1
-      (isRestricted_of_mem_washnitzerAlgebra (intWashnitzerAlgebra_le f.2) zero_le_one le_rfl)
+      (isRestricted_of_mem_washnitzerAlgebra (intWashnitzerAlgebra_le f.property) zero_le_one
+          le_rfl)
   have hS : {t | ¬ ‖coeff t (f : MvPowerSeries σ K)‖ < ‖(ϖ : K)‖}.Finite :=
     Filter.eventually_cofinite.1 (hf.eventually (gt_mem_nhds hϖ0))
   -- `p` is the part of `f` made of these coefficients.
@@ -663,7 +657,7 @@ theorem exists_ofMvPolynomial_add_algebraMap_mul_eq {ϖ : K°} (hϖ : ϖ ≠ 0)
     · simpa using ht.le
     · simp
   refine ⟨p, ⟨C (ϖ : K)⁻¹ * (h : MvPowerSeries σ K), mem_intWashnitzerAlgebra_iff.2
-    ⟨mul_mem (C_mem_washnitzerAlgebra _) (intWashnitzerAlgebra_le h.2), fun t ↦ ?_⟩⟩,
+    ⟨mul_mem (C_mem_washnitzerAlgebra _) (intWashnitzerAlgebra_le h.property), fun t ↦ ?_⟩⟩,
     Subtype.ext ?_⟩
   · simpa [coeff_C_mul] using hh t
   · simp [h, ← mul_assoc, ← map_mul, mul_inv_cancel₀ (show (ϖ : K) ≠ 0 by simpa using hϖ)]
@@ -702,13 +696,7 @@ theorem quotientSpanEquivMvPolynomial_mk_ofMvPolynomial {ϖ : K°} (hϖ : ϖ ≠
     rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
   rw [quotientSpanEquivMvPolynomial, AlgEquiv.trans_apply, AlgEquiv.trans_apply, h,
     Ideal.quotientKerAlgEquivOfSurjective_symm_apply, Ideal.quotientEquivAlgOfEq_mk,
-    AlgEquiv.symm_apply_eq]
-  clear h
-  -- It remains to evaluate Mathlib's `(K° ⧸ ϖ)[X] ≃ K°[X] ⧸ ϖ` on a reduced polynomial.
-  induction p using MvPolynomial.induction_on with
-  | C a => simp [MvPolynomial.quotientEquivQuotientMvPolynomial]
-  | add p q hp hq => simp only [map_add, hp, hq]
-  | mul_X p i hp => simp [hp, MvPolynomial.quotientEquivQuotientMvPolynomial]
+    MvPolynomial.quotientEquivQuotientMvPolynomial_symm_mk]
 
 end intWashnitzerAlgebra
 
@@ -735,7 +723,7 @@ ball `T°` of the unit-radius Tate algebra `T = R⟨X⟩`. The ring `T°` consis
 series with coefficients in `R°`. -/
 noncomputable def toTate : intWashnitzerAlgebra σ R →+* Subring.unitClosedBall T :=
   ((washnitzerAlgebra.toTate σ R).toRingHom.comp (toWashnitzerAlgebra σ R)).codRestrict _
-    fun f ↦ Subring.mem_unitClosedBall.2 (mem_intWashnitzerAlgebra_iff_norm_le_one.1 f.2)
+    fun f ↦ Subring.mem_unitClosedBall.2 (mem_intWashnitzerAlgebra_iff_norm_le_one.1 f.property)
 
 /-- The inclusion into `T°` does not change the underlying series. -/
 @[simp]
@@ -769,10 +757,16 @@ namespace intWashnitzerAlgebra
 
 /-- **The powers of `ϖ K°⟨X⟩†`**: a series in `K°⟨X⟩†` lies in `(ϖ) ^ n` iff all its coefficients
 have norm at most `‖ϖ‖ ^ n`. -/
-theorem mem_span_algebraMap_pow_iff {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ)
+theorem mem_span_algebraMap_pow_iff {ϖ : K°} (n : ℕ)
     {f : intWashnitzerAlgebra σ K} :
     f ∈ Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ^ n ↔
       ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ ≤ ‖(ϖ : K)‖ ^ n := by
+  rcases eq_or_ne ϖ 0 with rfl | hϖ
+  · rcases n with _ | n
+    · simpa using norm_coeff_le_one f
+    · rw [map_zero, Ideal.span_singleton_zero, Ideal.bot_pow n.succ_ne_zero, Ideal.mem_bot,
+        ← ZeroMemClass.coe_eq_zero, MvPowerSeries.ext_iff]
+      simp
   have hϖ0 : (ϖ : K) ≠ 0 := by simpa using hϖ
   rw [Ideal.span_singleton_pow, ← map_pow, Ideal.mem_span_singleton']
   constructor
@@ -782,7 +776,7 @@ theorem mem_span_algebraMap_pow_iff {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ)
   · intro h
     -- `ϖ⁻ⁿ f` is overconvergent with coefficients of norm at most one.
     refine ⟨⟨C ((ϖ : K) ^ n)⁻¹ * (f : MvPowerSeries σ K), mem_intWashnitzerAlgebra_iff.2
-      ⟨mul_mem (C_mem_washnitzerAlgebra _) (intWashnitzerAlgebra_le f.2), fun t ↦ ?_⟩⟩,
+      ⟨mul_mem (C_mem_washnitzerAlgebra _) (intWashnitzerAlgebra_le f.property), fun t ↦ ?_⟩⟩,
       Subtype.ext ?_⟩
     · rw [coeff_C_mul, norm_mul, norm_inv, norm_pow]
       exact inv_mul_le_one_of_le₀ (h t) (by positivity)
@@ -815,34 +809,49 @@ theorem span_algebraMap_le_comap_toTate {ϖ : K°} :
 algebra with the closed unit ball `T°` of the Tate algebra: the overconvergent series are dense
 in `T°`, and an overconvergent series divisible by `ϖⁿ` in `T°` is divisible by `ϖⁿ` in
 `K°⟨X⟩†`. -/
-theorem quotientMap_toTate_bijective {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) (n : ℕ) :
+theorem quotientMap_toTate_bijective {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ) :
     Function.Bijective (Ideal.quotientMap (Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n)
       (toTate σ K) ((Ideal.pow_right_mono span_algebraMap_le_comap_toTate n).trans
         (Ideal.le_comap_pow _ n))) := by
-  have hr : 0 < ‖(ϖ : K)‖ ^ n := pow_pos (norm_pos_iff.2 (by simpa using hϖ)) n
-  refine ⟨Ideal.quotientMap_injective' fun f hf ↦ ?_, fun y ↦ ?_⟩
-  · rw [Ideal.mem_comap, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1] at hf
-    exact (mem_span_algebraMap_pow_iff hϖ n).2 fun t ↦
-      (washnitzerAlgebra.norm_coeff_le (toWashnitzerAlgebra σ K f) t).trans hf
-  · -- Approximate a representative `s ∈ T°` by an overconvergent series to within `‖ϖ‖ ^ n`.
-    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-    obtain ⟨w, hw⟩ := Metric.denseRange_iff.1 washnitzerAlgebra.denseRange_toTate (s : T) _ hr
-    rw [dist_eq_norm'] at hw
-    have hw1 : ‖w‖ ≤ 1 := by
-      have h := IsUltrametricDist.norm_add_le_max (s : T) (washnitzerAlgebra.toTate σ K w - s)
-      rw [add_sub_cancel] at h
-      exact h.trans (max_le (Subring.mem_unitClosedBall.1 s.2)
-        (hw.le.trans (pow_le_one₀ (norm_nonneg _) hϖ1.le)))
-    refine ⟨Ideal.Quotient.mk _ ⟨w, mem_intWashnitzerAlgebra_iff_norm_le_one.2 hw1⟩, ?_⟩
-    rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1]
-    exact hw.le
+  rcases (Subring.mem_unitClosedBall.1 ϖ.property).lt_or_eq with hϖ1 | hϖ1
+  · have hr : 0 < ‖(ϖ : K)‖ ^ n := pow_pos (norm_pos_iff.2 (by simpa using hϖ)) n
+    refine ⟨Ideal.quotientMap_injective' fun f hf ↦ ?_, fun y ↦ ?_⟩
+    · rw [Ideal.mem_comap, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1] at hf
+      exact (mem_span_algebraMap_pow_iff n).2 fun t ↦
+        (washnitzerAlgebra.norm_coeff_le (toWashnitzerAlgebra σ K f) t).trans hf
+    · -- Approximate a representative `s ∈ T°` by an overconvergent series to within `‖ϖ‖ ^ n`.
+      obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
+      obtain ⟨w, hw⟩ := Metric.denseRange_iff.1 washnitzerAlgebra.denseRange_toTate (s : T) _ hr
+      rw [dist_eq_norm'] at hw
+      have hw1 : ‖w‖ ≤ 1 := by
+        have h := IsUltrametricDist.norm_add_le_max (s : T) (washnitzerAlgebra.toTate σ K w - s)
+        rw [add_sub_cancel] at h
+        exact h.trans (max_le (Subring.mem_unitClosedBall.1 s.property)
+          (hw.le.trans (pow_le_one₀ (norm_nonneg _) hϖ1.le)))
+      refine ⟨Ideal.Quotient.mk _ ⟨w, mem_intWashnitzerAlgebra_iff_norm_le_one.2 hw1⟩, ?_⟩
+      rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1]
+      exact hw.le
+  · -- If `‖ϖ‖ = 1` then `ϖ` is a unit, so both quotients are trivial.
+    have hu : IsUnit ϖ := isUnit_unitClosedBall_iff_norm_eq_one.2 hϖ1
+    have hJ : Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ^ n = ⊤ := by
+      rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_top]
+      exact (hu.map _).pow n
+    have hI : Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n = ⊤ := by
+      rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_top]
+      exact ((hu.map _).map _).pow n
+    have := Ideal.Quotient.subsingleton_iff.2 hJ
+    have := Ideal.Quotient.subsingleton_iff.2 hI
+    exact Function.bijective_of_subsingleton' _
 
 variable [CompleteSpace K]
 
 /-- **`K°⟨X⟩` is `ϖ`-adically complete**: over a complete field, the closed unit ball `T°` of the
 Tate algebra is complete for the `ϖ`-adic topology. -/
-theorem isAdicComplete_span_toTate_algebraMap {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
+theorem isAdicComplete_span_toTate_algebraMap {ϖ : K°} (hϖ1 : ‖(ϖ : K)‖ < 1) :
     IsAdicComplete (Ideal.span {toTate σ K (algebraMap K° _ ϖ)}) (Subring.unitClosedBall T) := by
+  rcases eq_or_ne ϖ 0 with rfl | hϖ
+  · rw [map_zero, map_zero, Ideal.span_singleton_zero]
+    infer_instance
   rw [← toUnitClosedBall_tatePseudoUniformizer hϖ hϖ1]
   exact NormedRing.PseudoUniformizer.isAdicComplete_span_toUnitClosedBall _
 
@@ -854,9 +863,9 @@ is the closed unit ball `T°` of the Tate algebra, the restricted series with co
 noncomputable def adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
     AdicCompletion (Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ})
       (intWashnitzerAlgebra σ K) ≃+* Subring.unitClosedBall T :=
-  haveI := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  haveI := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ1
   (RingEquiv.ofBijective _ (AdicCompletion.mapₐ_bijective (toTate σ K).toIntAlgHom
-    span_algebraMap_le_comap_toTate (quotientMap_toTate_bijective hϖ hϖ1))).trans
+    span_algebraMap_le_comap_toTate (quotientMap_toTate_bijective hϖ))).trans
     (AdicCompletion.ofAlgEquiv _).symm.toRingEquiv
 
 /-- The completion comparison extends the inclusion `K°⟨X⟩† → T°`. -/
@@ -864,10 +873,26 @@ noncomputable def adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ
 theorem adicCompletionEquiv_of {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1)
     (f : intWashnitzerAlgebra σ K) :
     adicCompletionEquiv σ hϖ hϖ1 (AdicCompletion.of _ _ f) = toTate σ K f := by
-  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ1
   rw [adicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply]
   exact (congrArg (AdicCompletion.ofAlgEquiv _).symm (AdicCompletion.mapₐ_of _ _ f)).trans
     (AdicCompletion.ofAlgEquiv_symm_of _ _)
+
+/-- Reduction of the completion comparison agrees with the map induced by the inclusion
+of integral overconvergent series into integral restricted series. -/
+theorem mk_adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1)
+    (n : ℕ) (z : AdicCompletion
+      (Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ}) (intWashnitzerAlgebra σ K)) :
+    Ideal.Quotient.mk (Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n)
+        (adicCompletionEquiv σ hϖ hϖ1 z) =
+      Ideal.quotientMap _ (toTate σ K)
+        ((Ideal.pow_right_mono span_algebraMap_le_comap_toTate n).trans
+          (Ideal.le_comap_pow _ n)) (AdicCompletion.evalₐ _ n z) := by
+  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ1
+  simp only [adicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply,
+    AlgEquiv.coe_toRingEquiv, AdicCompletion.mk_ofAlgEquiv_symm]
+  exact AdicCompletion.evalₐ_mapₐ (toTate σ K).toIntAlgHom
+    span_algebraMap_le_comap_toTate n z
 
 end intWashnitzerAlgebra
 

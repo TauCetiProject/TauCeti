@@ -61,10 +61,6 @@ and Mathlib establishes that instance only for `[Ring A] [AddCommGroup M]`, its 
 
 ## References
 
-This implements the "existence of a decomposition" bullet of Layer 2 ("the Krull-Schmidt theorem")
-of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, pinned as
-`exists_indecomposable_decomposition` in its `Suggested.lean`.
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.
 -/
@@ -164,7 +160,7 @@ theorem exists_isCompl_isIndecomposableModule [IsArtinian A M] [Nontrivial M] :
   obtain ⟨s, hs, hsi, hss⟩ :=
     exists_finset_isIndecomposableModule_supIndep_sup_eq (⊤ : Submodule A M)
   obtain ⟨N, hN⟩ : s.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro rfl
     exact top_ne_bot (α := Submodule A M) (by simpa using hss.symm)
   exact ⟨N, (s.erase N).sup id, hsi.isCompl_sup_erase hss hN, hs N hN⟩

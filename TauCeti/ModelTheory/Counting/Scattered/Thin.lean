@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Counting.Scattered.Basic
+public import TauCeti.ModelTheory.Counting.Morley
 public import TauCeti.ModelTheory.RelationalConfiguration.Separation
 
 /-!
@@ -29,6 +29,8 @@ thin (`TauCeti.BFScattered.isThinOn`).
   for isomorphism, unconditionally on the language and the set.
 * `TauCeti.BFScattered.isThinOn`: in a countable relational vocabulary, every scattered set on `ℕ`
   is thin for isomorphism.
+* `TauCeti.bfScattered_modelsOf_iff_isThinOnNatModels`: a sentence with countable branching is
+  thin on `ℕ` exactly when its model class on `ℕ` is back-and-forth scattered.
 
 ## References
 
@@ -66,5 +68,15 @@ invariance hypothesis on `K`. -/
 theorem BFScattered.isThinOn [∀ n, Countable (L.Relations n)] (hK : BFScattered K) :
     (isoSetoid L ℕ).IsThinOn K :=
   isThinOn_of_countable_bfEquivSetoid (bfScattered_iff.mp hK)
+
+/-- **Thin sentences are exactly the scattered ones.** For an infinitary sentence with countable
+branching in a countable relational vocabulary, absence of a perfect set of pairwise
+non-isomorphic models on `ℕ` is equivalent to countability of every countable back-and-forth
+level quotient on its models on `ℕ`. -/
+theorem bfScattered_modelsOf_iff_isThinOnNatModels {ι : Type*} [Countable ι]
+    [∀ n, Countable (L.Relations n)] {φ : L.SentenceInf ι} :
+    BFScattered (modelsOf (V := ℕ) φ) ↔ IsThinOnNatModels φ :=
+  ⟨fun h => isThinOnNatModels_iff_isThinOn.2 h.isThinOn,
+    IsThinOnNatModels.bfScattered_modelsOf⟩
 
 end TauCeti

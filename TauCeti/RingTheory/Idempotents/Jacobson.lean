@@ -27,6 +27,8 @@ lies in the Jacobson radical.
 
 * `IsIdempotentElem.eq_zero_of_mem_jacobson_bot`: an idempotent in the Jacobson radical
   `Ideal.jacobson ⊥` of a not necessarily commutative ring is zero.
+* `IsIdempotentElem.mem_jacobson_iff`: an idempotent lies in `Ring.jacobson R` if and only if it is
+  zero.
 * `Ideal.Quotient.isIdempotentElem_mk_iff`: `a` is idempotent modulo `I` if and only if
   `a * a - a ∈ I`.
 * `IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot`: idempotents congruent modulo an ideal in
@@ -62,6 +64,12 @@ theorem IsIdempotentElem.eq_zero_of_mem_jacobson_bot {R : Type*} [Ring R] {e : R
     exact sub_eq_zero.mp ((Submodule.mem_bot R).mp hz)
   calc e = z * (1 - e) * e := by rw [hz', one_mul]
     _ = 0 := by rw [mul_assoc, he.one_sub_mul_self, mul_zero]
+
+/-- An idempotent lies in the Jacobson radical `Ring.jacobson R` if and only if it is zero. -/
+theorem IsIdempotentElem.mem_jacobson_iff {R : Type*} [Ring R] {e : R}
+    (he : IsIdempotentElem e) : e ∈ Ring.jacobson R ↔ e = 0 :=
+  ⟨fun h ↦ he.eq_zero_of_mem_jacobson_bot (Ideal.jacobson_bot (R := R) ▸ h),
+    fun h ↦ h ▸ zero_mem _⟩
 
 /-- An element is idempotent modulo a two-sided ideal `I` if and only if `a * a - a ∈ I`. -/
 theorem Ideal.Quotient.isIdempotentElem_mk_iff {R : Type*} [Ring R] {I : Ideal R} [I.IsTwoSided]

@@ -26,6 +26,8 @@ constructions on Laurent series are natural.
 ## Main definitions
 
 * `HahnSeries.mapRingHom f`: the coefficientwise ring homomorphism `R⟦Γ⟧ →+* S⟦Γ⟧`.
+* `HahnSeries.mapAlgHom f`: the coefficientwise algebra homomorphism `A⟦Γ⟧ →ₐ[R] B⟦Γ⟧`, for the
+  coefficientwise algebra structures.
 
 ## Main results
 
@@ -165,6 +167,48 @@ theorem mem_map_rangeS {f : R →+* S} {x : S⟦Γ⟧} :
 
 end Semiring
 
+section Algebra
+
+variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommSemiring R]
+  {A B D : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B] [Semiring D] [Algebra R D]
+
+/-- The `R`-algebra homomorphism `A⟦Γ⟧ →ₐ[R] B⟦Γ⟧` applying an `R`-algebra homomorphism
+`f : A →ₐ[R] B` to every coefficient, for the coefficientwise algebra structures
+`HahnSeries.instAlgebra`. -/
+def mapAlgHom (f : A →ₐ[R] B) : A⟦Γ⟧ →ₐ[R] B⟦Γ⟧ where
+  __ := mapRingHom (f : A →+* B)
+  commutes' r := by
+    rw [algebraMap_apply, algebraMap_apply, ← f.commutes r]
+    exact map_C _ (f : A →+* B)
+
+theorem mapAlgHom_apply (f : A →ₐ[R] B) (x : A⟦Γ⟧) : mapAlgHom f x = x.map f :=
+  (rfl)
+
+@[simp]
+theorem coeff_mapAlgHom (f : A →ₐ[R] B) (x : A⟦Γ⟧) (g : Γ) :
+    (mapAlgHom f x).coeff g = f (x.coeff g) :=
+  (rfl)
+
+/-- The ring homomorphism underlying `mapAlgHom f` is `mapRingHom f`. -/
+@[simp]
+theorem coe_mapAlgHom (f : A →ₐ[R] B) :
+    ((mapAlgHom f : A⟦Γ⟧ →ₐ[R] B⟦Γ⟧) : A⟦Γ⟧ →+* B⟦Γ⟧) = mapRingHom (f : A →+* B) :=
+  (rfl)
+
+@[simp]
+theorem mapAlgHom_id : mapAlgHom (AlgHom.id R A) = AlgHom.id R A⟦Γ⟧ :=
+  AlgHom.ext fun _ ↦ HahnSeries.ext rfl
+
+theorem mapAlgHom_comp (f : A →ₐ[R] B) (g : B →ₐ[R] D) :
+    mapAlgHom (g.comp f) = (mapAlgHom g).comp (mapAlgHom f : A⟦Γ⟧ →ₐ[R] B⟦Γ⟧) :=
+  AlgHom.ext fun _ ↦ HahnSeries.ext rfl
+
+theorem mapAlgHom_injective {f : A →ₐ[R] B} (hf : Function.Injective f) :
+    Function.Injective (mapAlgHom f : A⟦Γ⟧ →ₐ[R] B⟦Γ⟧) :=
+  mapRingHom_injective (f := (f : A →+* B)) hf
+
+end Algebra
+
 section PowerSeries
 
 variable [Semiring Γ] [PartialOrder Γ] [IsStrictOrderedRing Γ] [Semiring R] [Semiring S]
@@ -221,8 +265,8 @@ theorem exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom {φ ℓ : K⟦Γ⟧} {P 
     rw [← map_pow, mul_left_comm, ← map_mul, C_mul_eq_smul, C_mul_eq_smul, mul_smul_comm]
     exact map_smul_mapRingHom_algebraMap f _ _
   refine ⟨lin P, lin Q, fun h0 ↦ ?_, ?_⟩
-  · have := Polynomial.ext_iff.mp h0 Q.natDegree
-    simp [lin, finsetSum_coeff, coeff_monomial, hf] at this
+  · have := congrArg (fun p : K[X] ↦ p.coeff Q.natDegree) h0
+    simp [lin, coeff_monomial, Finsupp.single_apply, hf] at this
   · rw [← one_mul ((lin P).eval₂ C ℓ), ← hlin, ← hlin, map_one, one_mul, h]
 
 end Descent

@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The conorm of a divisor along an extension of function fields
@@ -67,6 +68,8 @@ extension.
 * `TauCeti.Divisor.degree_conorm`: the same identity divided through by `[k' : k]`, for `F` and
   `k'` linearly disjoint over `k`: `deg (Con D) = n(F'/F) · deg D` (Stichtenoth,
   Corollary 3.6.4).
+* `TauCeti.Divisor.degree_conorm_of_finrank_eq_finrank`: `deg (Con D) = deg D` when `F' = F · k'`
+  and `[F' : F] = [k' : k]`.
 * `TauCeti.Divisor.degree_conorm_of_finrank_eq_one`: `deg (Con D) = [F' : F] · deg D` when the
   constant field does not grow, read straight off the cross-multiplied identity.
 
@@ -110,13 +113,14 @@ universe u u' v v'
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 variable (k' F')
 
 section FiniteFibres
 
-variable [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+variable [Algebra.IsIntegral F F']
+  [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-- The candidate coefficient family of the conorm is finitely supported: a place contributing to
 it lies over a place in the support of `D`, and each of those has only finitely many places above
@@ -338,6 +342,7 @@ private theorem degree_conorm_of_cross_mul
   push_cast
   ring
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The degree of a conorm, divided through**: when adjoining the constant field `k'` to `F`
 costs exactly `[k' : k]` — the degree form of linear disjointness of `F` and `k'` over `k` — so
 that `[k' : k]` divides `[F' : F]` with quotient the geometric degree `n(F'/F)`, the conorm
@@ -358,14 +363,26 @@ finiteness assumption on `k' / k` is needed. -/
 theorem degree_conorm (hF : IsFunctionField k F)
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
     degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Module.finrank_pos)
   degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm k' F' hF D)
 
+omit [Algebra.IsIntegral k k'] in
+/-- **The conorm preserves degrees when `F' = F · k'` and `[F' : F] = [k' : k]`**: the geometric
+degree is then one, so `deg (Con D) = deg D`. No separability of `k' / k` is assumed. -/
+theorem degree_conorm_of_finrank_eq_finrank (hF : IsFunctionField k F)
+    (h : constantCompositum F k' F' = ⊤) (hn : Module.finrank F F' = Module.finrank k k')
+    (D : Divisor k F) : degree (conorm k' F' D) = degree D := by
+  rw [degree_conorm k' F' hF (by rw [h, IntermediateField.finrank_top', hn]) D,
+    (geometricDegree_eq_one_iff F k' F').2 h, Nat.cast_one, one_mul]
+
+omit [Algebra.IsIntegral k k'] in
 /-- **The degree of a conorm for a separable extension, divided through**: the version of
 `TauCeti.Divisor.degree_conorm` which requires no function-field hypothesis on `F / k`, but
 instead assumes that `F' / F` is separable. -/
 theorem degree_conorm_of_isSeparable [Algebra.IsSeparable F F']
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
     degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Module.finrank_pos)
   degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm_of_isSeparable k' F' D)
 
 omit [Algebra.IsIntegral k k'] in
@@ -377,6 +394,7 @@ private theorem degree_conorm_of_finrank_eq_one_of_cross_mul
   rw [h] at hmul
   simpa using hmul
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The conorm multiplies degrees by `[F' : F]` when the constant field does not grow**, i.e.
 when `[k' : k] = 1`. No hypothesis on where the constants sit is needed: the cross-multiplied
 identity `finrank_mul_degree_conorm` already has `[k' : k]` as its left factor, so setting it to
@@ -386,15 +404,18 @@ where `k' = k` is that base field. -/
 theorem degree_conorm_of_finrank_eq_one (hF : IsFunctionField k F)
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
     degree (conorm k' F' D) = Module.finrank F F' * degree D :=
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Nat.one_pos)
   degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
     (finrank_mul_degree_conorm k' F' hF D)
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The conorm multiplies degrees by `[F' : F]` for a separable extension with unchanged
 constants**, without requiring a function-field hypothesis on `F / k`. -/
 @[simp]
 theorem degree_conorm_of_isSeparable_of_finrank_eq_one [Algebra.IsSeparable F F']
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
     degree (conorm k' F' D) = Module.finrank F F' * degree D :=
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Nat.one_pos)
   degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
     (finrank_mul_degree_conorm_of_isSeparable k' F' D)
 
@@ -402,7 +423,8 @@ end Degree
 
 section FiniteFibres
 
-variable [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+variable [Algebra.IsIntegral F F']
+  [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-! ### Principal divisors and divisor classes -/
 

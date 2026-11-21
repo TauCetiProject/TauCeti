@@ -27,6 +27,8 @@ computed with the valuation-theoretic API for places, and conversely.
 
 * `Scheme.toPlace`: the normalized place attached to a point with discrete valuation ring stalk.
 * `Scheme.stalkToPlaceIntegersAlgEquiv`: the stalk at `x` is the valuation ring of that place.
+* `Scheme.exists_stalkRingEquiv_of_toPlace_eq`: points with the same place have isomorphic stalks,
+  compatibly with the maps to the function field.
 * `Scheme.toPlaceResidueFieldAlgEquiv`: the residue field of the scheme point is the residue
   field of its place.
 * `Scheme.toPlace_degree_eq_residueDegree`: the degree of the place is the scheme-theoretic
@@ -136,6 +138,28 @@ theorem _root_.AlgebraicGeometry.Scheme.coe_stalkToPlaceIntegersAlgEquiv (X : Sc
     RingEquiv.trans_apply, IsDiscreteValuationRing.equivValuationSubring]
   rw [RingEquiv.coe_subringCongr_apply, RingEquiv.coe_subringCongr_apply,
     Subring.coe_equivMapOfInjective_apply, Subring.topEquiv_symm_apply_coe]
+
+/-- Two points with discrete valuation ring stalks and the same function-field place have
+isomorphic stalks, by an isomorphism compatible with the maps to the function field. -/
+theorem _root_.AlgebraicGeometry.Scheme.exists_stalkRingEquiv_of_toPlace_eq (X : Scheme.{u})
+    [IsIntegral X] [X.Over (Spec (.of k))] {x y : X}
+    [IsDiscreteValuationRing (X.presheaf.stalk x)]
+    [IsDiscreteValuationRing (X.presheaf.stalk y)]
+    (h : X.toPlace (k := k) x = X.toPlace (k := k) y) :
+    ∃ e : X.presheaf.stalk y ≃+* X.presheaf.stalk x, ∀ a : X.presheaf.stalk y,
+      algebraMap (X.presheaf.stalk x) X.functionField (e a) =
+        algebraMap (X.presheaf.stalk y) X.functionField a := by
+  -- Identify the two stalks through their common valuation subring.
+  let ex := X.stalkToPlaceIntegersAlgEquiv (k := k) x
+  let ey := X.stalkToPlaceIntegersAlgEquiv (k := k) y
+  refine ⟨ey.toRingEquiv.trans ((RingEquiv.subringCongr
+    (congrArg (fun p : Place k X.functionField ↦ p.integers.toSubring) h.symm)).trans
+      ex.symm.toRingEquiv), fun a ↦ ?_⟩
+  rw [← X.coe_stalkToPlaceIntegersAlgEquiv (k := k) x,
+    ← X.coe_stalkToPlaceIntegersAlgEquiv (k := k) y]
+  simp only [ex, ey, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
+    AlgEquiv.apply_symm_apply]
+  exact RingEquiv.coe_subringCongr_apply _ _
 
 /-- The residue field of a point with discrete valuation ring stalk is canonically the residue
 field of its place. Both are the stalk modulo its maximal ideal; the right-hand description is

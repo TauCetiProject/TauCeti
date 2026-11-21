@@ -60,6 +60,54 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [NormedSpace ℝ E] [Fact (1 ≤ p)] in
+/-- If `π k` are `Lᵖ`-optimal couplings of consecutive laws `ν k`, `ν (k + 1)`, then in the glued
+chain law the `p`-th moment of the `k`-th jump is the `p`-th power of the Wasserstein distance
+between `ν k` and `ν (k + 1)`. -/
+private theorem lintegral_edist_rpow_chainMeasure_eq_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    {ν : ℕ → Measure E} {π : ℕ → Measure (E × E)} [∀ k, IsFiniteMeasure (π k)]
+    (hπ : ∀ k, IsCoupling (π k) (ν k) (ν (k + 1)))
+    (hπW : ∀ k, eLpNorm (fun z : E × E ↦ edist z.1 z.2) p (π k) =
+      wassersteinEDist p (ν k) (ν (k + 1))) (k : ℕ) :
+    ∫⁻ x : ℕ → E, edist (x k) (x (k + 1)) ^ p.toReal ∂Measure.chainMeasure (X := fun _ ↦ E) π =
+      wassersteinEDist p (ν k) (ν (k + 1)) ^ p.toReal := by
+  have hk : Measurable fun x : ℕ → E ↦ (x k, x (k + 1)) :=
+    (measurable_pi_apply k).prodMk (measurable_pi_apply (k + 1))
+  rw [← hπW k, eLpNorm_rpow_eq_lintegral hp0 hp measurable_edist.aemeasurable,
+    ← Measure.map_adjacent_chainMeasure_of_isCoupling hπ k,
+    lintegral_map (measurable_edist.pow_const _) hk]
+
+/-- If the chain law `P` has jump moments given by the distances along `μ`, and `Φ` maps sequences
+to the polygonal paths through them, the expected `p`-action of those paths is at most the
+`p`-action of `μ` (Hölder, cell by cell). -/
+private theorem lintegral_curveAction_map_le {μ : ℝ → WassersteinSpace p E} {a b h : ℝ}
+    (hab : a < b) {N : ℕ} (hh : 0 < h) (hNh : a + N * h = b) (hr : 1 ≤ p.toReal)
+    (hμ : AbsolutelyContinuousOnInterval μ a b) {P : Measure (ℕ → E)}
+    {Φ : C(ℕ → E, C(Icc a b, E))}
+    (hΦeq : ∀ x : ℕ → E, EqOn (IccExtend hab.le (Φ x)) (polygonalInterpolation a h N x)
+      (Icc a (a + N * h)))
+    (hjump : ∀ k : ℕ, ∫⁻ x : ℕ → E, edist (x k) (x (k + 1)) ^ p.toReal ∂P =
+      edist (μ (a + k * h)) (μ (a + (k + 1) * h)) ^ p.toReal) :
+    ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂P.map Φ ≤ curveAction p.toReal μ a b := by
+  calc ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂P.map Φ
+      = ∫⁻ x, ∑ k ∈ Finset.range N,
+          edist (x k) (x (k + 1)) ^ p.toReal * ENNReal.ofReal h ^ (1 - p.toReal) ∂P := by
+        rw [lintegral_map (measurable_curveAction_IccExtend hab.le _ _ _) Φ.continuous.measurable]
+        refine lintegral_congr fun x ↦ ?_
+        rw [← curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpolation hh
+          (hΦeq x), hNh]
+    _ = ∑ k ∈ Finset.range N,
+          edist (μ (a + k * h)) (μ (a + (k + 1) * h)) ^ p.toReal *
+            ENNReal.ofReal h ^ (1 - p.toReal) := by
+        have hm (k : ℕ) : Measurable fun x : ℕ → E ↦ edist (x k) (x (k + 1)) ^ p.toReal :=
+          ((measurable_pi_apply k).edist (measurable_pi_apply (k + 1))).pow_const _
+        rw [lintegral_finsetSum _ fun k _ ↦ (hm k).mul_const _]
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        rw [lintegral_mul_const _ (hm k), hjump]
+    _ ≤ curveAction p.toReal μ a b := by
+        rw [← hNh] at hμ ⊢
+        exact sum_edist_rpow_mul_rpow_one_sub_le_curveAction hh hr hμ
+
 /-- **Polygonal laws on paths through an absolutely continuous curve of laws.** Let `E` be a
 separable Banach space, `1 ≤ p < ∞`, and let `μ` be a curve in `P_p(E)` absolutely continuous on
 `[a, b]`, with `a < b`. For every `N ≠ 0` there is a probability measure `η` on `C([a, b], E)`,
@@ -92,17 +140,9 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
   have hmatch (j : ℕ) : (π j).snd = (π (j + 1)).fst := by
     rw [(hπ j).snd_eq, (hπ (j + 1)).fst_eq, Nat.cast_succ]
   set P := Measure.chainMeasure (X := fun _ ↦ E) π
-  -- The polygonal path through a sequence of points.
-  let Φ : C(ℕ → E, C(Icc a b, E)) := ContinuousMap.curry
-    ⟨fun q : (ℕ → E) × Icc a b ↦ polygonalInterpolation a h N q.1 q.2,
-      (continuous_polygonalInterpolation a h N).comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))⟩
+  obtain ⟨Φ, hΦeq⟩ :=
+    exists_continuousMap_IccExtend_eqOn_polygonalInterpolation (E := E) hab.le N hNh
   have hΦ : Measurable Φ := Φ.continuous.measurable
-  have hΦeq (x : ℕ → E) :
-      EqOn (IccExtend hab.le (Φ x)) (polygonalInterpolation a h N x) (Icc a (a + N * h)) := by
-    intro t ht
-    rw [hNh] at ht
-    rw [IccExtend_of_mem hab.le _ ht, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
   refine ⟨P.map Φ, (Measure.isProbabilityMeasure_map_iff hΦ.aemeasurable).2 inferInstance, ?_,
     fun k hk ↦ ?_, ?_⟩
   · -- Polygonal paths are absolutely continuous.
@@ -121,30 +161,11 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
     rw [Measure.map_map (measurable_IccExtend_apply hab.le _) hΦ, heval,
       Measure.map_eval_chainMeasure π k fun j _ ↦ hmatch j, (hπ k).fst_eq]
   · -- The expected action is the expected discrete action, bounded cell by cell by Hölder.
-    have hjump (k : ℕ) : ∫⁻ x, edist (x k) (x (k + 1)) ^ p.toReal ∂P =
-        edist (μ (a + k * h)) (μ (a + (k + 1) * h)) ^ p.toReal := by
-      have hk : Measurable fun x : ℕ → E ↦ (x k, x (k + 1)) :=
-        (measurable_pi_apply k).prodMk (measurable_pi_apply (k + 1))
-      rw [WassersteinSpace.edist_def, ← hπW k, eLpNorm_rpow_eq_lintegral hp0 hp
-        measurable_edist.aemeasurable, ← Measure.map_adjacent_chainMeasure π k fun j _ ↦ hmatch j,
-        lintegral_map (measurable_edist.pow_const _) hk]
-    calc ∫⁻ γ, curveAction p.toReal (IccExtend hab.le γ) a b ∂P.map Φ
-        = ∫⁻ x, ∑ k ∈ Finset.range N,
-            edist (x k) (x (k + 1)) ^ p.toReal * ENNReal.ofReal h ^ (1 - p.toReal) ∂P := by
-          rw [lintegral_map (measurable_curveAction_IccExtend hab.le _ _ _) hΦ]
-          refine lintegral_congr fun x ↦ ?_
-          rw [← curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpolation hh
-            (hΦeq x), hNh]
-      _ = ∑ k ∈ Finset.range N,
-            edist (μ (a + k * h)) (μ (a + (k + 1) * h)) ^ p.toReal *
-              ENNReal.ofReal h ^ (1 - p.toReal) := by
-          have hm (k : ℕ) : Measurable fun x : ℕ → E ↦ edist (x k) (x (k + 1)) ^ p.toReal :=
-            ((measurable_pi_apply k).edist (measurable_pi_apply (k + 1))).pow_const _
-          rw [lintegral_finsetSum _ fun k _ ↦ (hm k).mul_const _]
-          refine Finset.sum_congr rfl fun k _ ↦ ?_
-          rw [lintegral_mul_const _ (hm k), hjump]
-      _ ≤ curveAction p.toReal μ a b := by
-          rw [← hNh] at hμ ⊢
-          exact sum_edist_rpow_mul_rpow_one_sub_le_curveAction hh hr hμ
+    refine lintegral_curveAction_map_le hab hh hNh hr hμ hΦeq fun k ↦ ?_
+    rw [lintegral_edist_rpow_chainMeasure_eq_rpow hp0 hp
+      (ν := fun k ↦ ((μ (a + k * h) : ProbabilityMeasure E) : Measure E))
+      (fun k ↦ by simpa only [Nat.cast_succ] using hπ k)
+      (fun k ↦ by simpa only [Nat.cast_succ] using hπW k) k,
+      WassersteinSpace.edist_def, Nat.cast_succ]
 
 end TauCeti

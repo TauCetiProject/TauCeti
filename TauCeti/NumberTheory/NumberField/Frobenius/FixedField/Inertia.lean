@@ -210,7 +210,7 @@ omit [IsGalois K L] in
 degree of `Q ∩ 𝓞 E` over `𝓞 K` times the size of the intersection of `H` with the decomposition
 group is the residue degree of `Q` itself.  Stated as a product, so no natural-number division is
 truncated. -/
-theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K)
         * Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L)))
@@ -222,7 +222,7 @@ theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime
   have htower : Q.inertiaDeg (𝓞 K)
       = (Q.under (𝓞 ↥E)).inertiaDeg (𝓞 K) * Q.inertiaDeg (𝓞 ↥E) :=
     inertiaDeg_tower (Q.under (𝓞 ↥E)) Q
-  rw [htower, ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ,
+  rw [htower, ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q,
     card_stabilizer_fixedField_eq_card_inf Q H]
 
 /-- **The residue degree is a relative index.**  For any subgroup `H` and `φ` a Frobenius at an
@@ -232,7 +232,7 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) = H.relIndex (Subgroup.zpowers φ) := by
-  have hmul := inertiaDeg_under_fixedField_mul_card_inf Q hφ.ne_bot H
+  have hmul := inertiaDeg_under_fixedField_mul_card_inf Q H
   rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hφ,
     ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hφ] at hmul
   have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Subgroup.zpowers φ)

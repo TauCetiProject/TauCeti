@@ -40,6 +40,9 @@ the remaining step before 5.50 can be stated as a universal property.
   summable term families, with no weights, completeness or restrictedness in sight.
   `TauCeti.Huber.weightedEval_add` and its corollaries are that composed with a way of producing
   summability.
+* `TauCeti.Huber.weightedEval_mem`: a series with coefficients in a closed subsemiring takes
+  values in it at points of it, because the subsemiring contains every term of the evaluation. A
+  ring of definition is open, hence closed, so this applies to it.
 
 ## References
 
@@ -191,6 +194,23 @@ theorem weightedEval_add_of_forall_isPowerBounded (hφ : ContinuousAt φ 0)
   weightedEval_add hφ ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb) hf hg
 
 end Sums
+
+section Closed
+
+variable {k : ℕ} {A B S : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace B]
+  [SetLike S B] [SubsemiringClass S B]
+
+/-- **Evaluation stays in a closed subsemiring.** If the coefficients of `f`, mapped along `φ`,
+and the entries of `b` lie in a closed subsemiring `s`, then so does `weightedEval φ b f`. When the
+term family is not summable the evaluation is the junk value `0`, which also lies in `s`. -/
+theorem weightedEval_mem {s : S} (hs : IsClosed (s : Set B)) {φ : A →+* B} {b : Fin k → B}
+    {f : MvPowerSeries (Fin k) A} (hf : ∀ ν, φ (MvPowerSeries.coeff ν f) ∈ s)
+    (hb : ∀ i, b i ∈ s) : weightedEval φ b f ∈ s := by
+  rw [weightedEval_def]
+  exact tsum_mem hs fun ν ↦ by
+    simpa [weightedEvalTerm_def] using mul_mem (hf ν) (prod_mem fun i _ ↦ pow_mem (hb i) (ν i))
+
+end Closed
 
 end TauCeti.Huber
 

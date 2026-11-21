@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Module.Defs
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Algebra.Module.BigOperators
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 
 /-!
@@ -23,19 +26,20 @@ mean is the unique minimizer of `a ↦ ∑ i, w i * (a - b i) ^ 2`. Applied poin
 functions, the identity describes quadratic Wasserstein barycenters on the real line.
 
 The same weights also express the defect of a quadratic form from the weighted average of its
-diagonal through second differences: for any matrix `B`,
+diagonal through second differences: for any family `B i j` in a module over the ring `R` of
+weights,
 
-`∑ i, ∑ j, w i * w j * (B i i - B i j - B j i + B j j)`
-`  = 2 * (∑ i, w i * B i i - ∑ i, ∑ j, w i * w j * B i j)`.
+`∑ i, ∑ j, (w i * w j) • (B i i - B i j - B j i + B j j)`
+`  = (2 : R) • (∑ i, w i • B i i - ∑ i, ∑ j, (w i * w j) • B i j)`.
 
-For `B i j = b i * b j` it says that `∑ i, ∑ j, w i * w j * (b i - b j) ^ 2` is twice the weighted
-variance `∑ i, w i * b i ^ 2 - m ^ 2`.
+For `B i j = b i * b j` in `R` it says that `∑ i, ∑ j, w i * w j * (b i - b j) ^ 2` is twice the
+weighted variance `∑ i, w i * b i ^ 2 - m ^ 2`.
 
 ## Main results
 
 * `Finset.sum_mul_sub_sq_eq`: the weighted variance decomposition.
-* `Finset.sum_sum_mul_sub_sub_add_eq`: the second-difference form of the defect of a quadratic
-  form from the average of its diagonal.
+* `Finset.sum_sum_mul_smul_sub_sub_add_eq`: the second-difference form of the defect of a
+  quadratic form from the average of its diagonal.
 -/
 
 public section
@@ -59,24 +63,25 @@ theorem sum_mul_sub_sq_eq {ι R : Type*} [CommRing R] (s : Finset ι) {w : ι �
   ring
 
 /-- **Second differences of a weighted quadratic form.** If the weights `w i` sum to `1` over `s`,
-then for every matrix `B` the weighted sum of the second differences
-`B i i - B i j - B j i + B j j` is twice the defect `∑ i, w i * B i i - ∑ i, ∑ j, w i * w j * B i j`
-of the quadratic form from the weighted average of its diagonal. -/
-theorem sum_sum_mul_sub_sub_add_eq {ι R : Type*} [CommRing R] (s : Finset ι) {w : ι → R}
-    (hw : ∑ i ∈ s, w i = 1) (B : ι → ι → R) :
-    ∑ i ∈ s, ∑ j ∈ s, w i * w j * (B i i - B i j - B j i + B j j) =
-      2 * (∑ i ∈ s, w i * B i i - ∑ i ∈ s, ∑ j ∈ s, w i * w j * B i j) := by
+then for every family `B i j` in an `R`-module the weighted sum of the second differences
+`B i i - B i j - B j i + B j j` is twice the defect
+`∑ i, w i • B i i - ∑ i, ∑ j, (w i * w j) • B i j` of the quadratic form from the weighted average
+of its diagonal. -/
+theorem sum_sum_mul_smul_sub_sub_add_eq {ι R M : Type*} [CommSemiring R] [AddCommGroup M]
+    [Module R M] (s : Finset ι) {w : ι → R} (hw : ∑ i ∈ s, w i = 1) (B : ι → ι → M) :
+    ∑ i ∈ s, ∑ j ∈ s, (w i * w j) • (B i i - B i j - B j i + B j j) =
+      (2 : R) • (∑ i ∈ s, w i • B i i - ∑ i ∈ s, ∑ j ∈ s, (w i * w j) • B i j) := by
   -- The two diagonal terms are each the weighted average of the diagonal.
-  have h₁ : ∑ i ∈ s, ∑ j ∈ s, w i * w j * B i i = ∑ i ∈ s, w i * B i i :=
-    sum_congr rfl fun i _ ↦ by rw [← sum_mul, ← mul_sum, hw, mul_one]
-  have h₂ : ∑ i ∈ s, ∑ j ∈ s, w i * w j * B j j = ∑ i ∈ s, w i * B i i := by
+  have h₁ : ∑ i ∈ s, ∑ j ∈ s, (w i * w j) • B i i = ∑ i ∈ s, w i • B i i :=
+    sum_congr rfl fun i _ ↦ by rw [← sum_smul, ← mul_sum, hw, mul_one]
+  have h₂ : ∑ i ∈ s, ∑ j ∈ s, (w i * w j) • B j j = ∑ i ∈ s, w i • B i i := by
     rw [sum_comm]
-    exact sum_congr rfl fun j _ ↦ by rw [← sum_mul, ← sum_mul, hw, one_mul]
+    exact sum_congr rfl fun j _ ↦ by rw [← sum_smul, ← sum_mul, hw, one_mul]
   -- The two off-diagonal terms agree after exchanging the order of summation.
-  have h₃ : ∑ i ∈ s, ∑ j ∈ s, w i * w j * B j i = ∑ i ∈ s, ∑ j ∈ s, w i * w j * B i j := by
+  have h₃ : ∑ i ∈ s, ∑ j ∈ s, (w i * w j) • B j i = ∑ i ∈ s, ∑ j ∈ s, (w i * w j) • B i j := by
     rw [sum_comm]
-    exact sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ by ring
-  simp only [mul_add, mul_sub, sum_add_distrib, sum_sub_distrib, h₁, h₂, h₃]
-  ring
+    exact sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ by rw [mul_comm]
+  simp only [smul_add, smul_sub, sum_add_distrib, sum_sub_distrib, h₁, h₂, h₃, two_smul]
+  abel
 
 end Finset

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.Norm.Defs
 
 /-!

@@ -42,7 +42,7 @@ variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 base exponent to be constant near the parameter within `U`. The evaluator must separate the
 removed exponents within `U` near that parameter. Ordinary fibers may be nullified. -/
 theorem eventually_lazardExponent_eq_of_laurent
-    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜))
     (φ : E → Fin n → 𝕜) (c : Fin n → ℕ) {U : Set E} {x : E} (hx : x ∈ U)
     (hc : ∀ᶠ y in 𝓝[U] x, TauCeti.IsLazardEvaluator
       {p.lazardExponent (Polynomial.C ∘ φ y), p.lazardExponent (Polynomial.C ∘ φ x)} c)
@@ -79,7 +79,7 @@ theorem eventually_lazardExponent_eq_of_laurent
       (huy : u (y, 0) ≠ 0) (hwy : ∀ i, e i < 0 → w i (y, 0) ≠ 0) :
       (weight c (p.lazardExponent (Polynomial.C ∘ φ y)) : ℤ) =
         a + ∑ i, min (e i) 0 := by
-    apply p.weight_lazardExponent_eq_of_laurent hp (φ y) c
+    apply p.weight_lazardExponent_eq_of_laurent (φ y) c
       (hcy.mono (by simp)) hy.self_of_nhds.1.curry_right huy
       (fun i ↦ (hy.self_of_nhds.2.1 i).curry_right) hwy
     filter_upwards [hy.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t ht ht0
@@ -98,7 +98,7 @@ and branch exponents give one removed Lazard base-exponent vector, provided a co
 separates all removed exponents on `U`. The local units and integer exponents may differ from
 one neighborhood to another. -/
 theorem lazardExponent_eq_of_locally_laurent
-    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜))
     (φ : E → Fin n → 𝕜) (c : Fin n → ℕ) {U : Set E} (hU : IsPreconnected U)
     (hc : TauCeti.IsLazardEvaluator ((fun y ↦
       p.lazardExponent (Polynomial.C ∘ φ y)) '' U) c)
@@ -121,6 +121,6 @@ theorem lazardExponent_eq_of_locally_laurent
     refine hc.mono ?_
     simp only [Set.insert_subset_iff, Set.singleton_subset_iff]
     exact ⟨Set.mem_image_of_mem _ hy, Set.mem_image_of_mem _ hz⟩
-  exact p.eventually_lazardExponent_eq_of_laurent hp φ c hz hc' hu hu0 hw hw0 hfac
+  exact p.eventually_lazardExponent_eq_of_laurent φ c hz hc' hu hu0 hw hw0 hfac
 
 end MvPolynomial

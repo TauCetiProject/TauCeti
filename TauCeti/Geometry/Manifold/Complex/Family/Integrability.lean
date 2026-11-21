@@ -547,6 +547,24 @@ private theorem lieDerivEndomorphism_verticalLieDeriv_complex_apply {i : B →L[
     lieDerivEndomorphism_comp (differentiableAt_blockEndomorphism i hα1 hj1) hE_diff]
   simp only [add_apply, ContinuousLinearMap.comp_apply, hDE_eq_EE]
 
+/-- Restricting a vanishing block Lie derivative along `Z q = (0, -horizontalTerm i α j q a b)` to a
+vertical vector `(0, v)` shows that the fibrewise Lie derivative of `j` along `horizontalTerm`
+vanishes at `v`. -/
+private theorem lieDerivEndomorphism_horizontalTerm_apply_eq_zero_of_block (i : B →L[ℝ] B)
+    {α : B × V → B →L[ℝ] V} {j : B × V → V →L[ℝ] V} {p : B × V} {a b : B} {v : V}
+    (hZ : DifferentiableAt ℝ (fun q ↦ ((0 : B), -horizontalTerm i α j q a b)) p)
+    (hα : DifferentiableAt ℝ α p) (hj : DifferentiableAt ℝ j p)
+    (hZv : lieDerivEndomorphism (fun q ↦ ((0 : B), -horizontalTerm i α j q a b))
+      (blockEndomorphism i α j) p (0, v) = 0) :
+    lieDerivEndomorphism (fun y ↦ horizontalTerm i α j (p.1, y) a b)
+      (fun y ↦ j (p.1, y)) p.2 v = 0 := by
+  have hL_vert := lieDerivEndomorphism_vertical_apply i hZ (fun _ ↦ rfl) hα hj v
+  have hsnd : lieDerivEndomorphism (fun y ↦ -horizontalTerm i α j (p.1, y) a b)
+      (fun y ↦ j (p.1, y)) p.2 v = 0 := by
+    simpa using congrArg Prod.snd (hL_vert.symm.trans hZv)
+  rw [← Pi.neg_def, lieDerivEndomorphism_neg_left, neg_apply, neg_eq_zero] at hsnd
+  simpa using hsnd
+
 /-- **Robbin–Salamon Corrigendum Lemma B** (on arbitrary real normed spaces under `C²` regularity):
 if `i² = -1`, `j(q)² = -1`, `α(q)(i a) + j(q)(α(q) a) = 0`, `mixedTerm i α j q = 0`, and
 `verticalTerm j q = 0` on a neighborhood of `p`, then the fibre vector field
@@ -614,12 +632,7 @@ theorem lieDerivEndomorphism_horizontalTerm_eq_zero {i : B →L[ℝ] B} (hi : �
       (verticalLieDeriv_complex_eventuallyEq hi hα hj hj_sq hαj hmix hvert c).self_of_nhds
     simp only [A, hE_i a, hE_i b, map_add, map_sub, hAsqp]; abel
   -- Step 3: Restrict `L_Z A (p) (0, v) = 0` to `{p.1} × V` to obtain `L_{ζ(a, b)} j = 0`.
-  have hL_vert := lieDerivEndomorphism_vertical_apply i hZ_diff (fun _ ↦ rfl) hα1 hj1 v
-  have hsnd : lieDerivEndomorphism (fun y ↦ -horizontalTerm i α j (p.1, y) a b)
-      (fun y ↦ j (p.1, y)) p.2 v = 0 := by
-    simpa [Z] using congrArg Prod.snd (hL_vert.symm.trans hLZ_zero)
-  rw [← Pi.neg_def, lieDerivEndomorphism_neg_left, neg_apply, neg_eq_zero] at hsnd
-  simpa using hsnd
+  exact lieDerivEndomorphism_horizontalTerm_apply_eq_zero_of_block i hZ_diff hα1 hj1 hLZ_zero
 
 /-- Surface-fibre (`Module.finrank ℝ V ≤ 2`) version of
 `lieDerivEndomorphism_horizontalTerm_eq_zero`: the `verticalTerm` hypothesis is discharged

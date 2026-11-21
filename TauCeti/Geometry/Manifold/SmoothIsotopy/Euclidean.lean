@@ -159,13 +159,17 @@ theorem exists_smoothIsotopy_of_det_mul_pos
 /-- **The disc theorem in a ball.** Smooth self-embeddings with values in a Euclidean ball, centred
 at its centre, with the same derivative orientation there, are smoothly isotopic relative to the
 centre through embeddings with values in the ball. -/
-theorem exists_smoothIsotopy_mapsTo_ball {c : E} {r : ℝ} (hr : 0 < r)
+theorem exists_smoothIsotopy_mapsTo_ball {c : E} {r : ℝ}
     (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E E) (hf0 : f 0 = c) (hg0 : g 0 = c)
     (hf : ∀ x, f x ∈ Euclidean.ball c r) (hg : ∀ x, g x ∈ Euclidean.ball c r)
     (hdet : 0 < (fderiv ℝ f 0).det * (fderiv ℝ g 0).det) :
     ∃ L : SmoothIsotopy f.toContMDiffMap g.toContMDiffMap,
       (∀ q, L q ∈ Euclidean.ball c r) ∧ ∀ t : unitInterval, L (t, 0) = c := by
   obtain ⟨K, hK⟩ := f.exists_smoothIsotopy_of_det_mul_pos g (hf0.trans hg0.symm) hdet
+  have hr : 0 < r := by
+    have h0 := hf 0
+    rw [hf0, Euclidean.ball_eq_preimage] at h0
+    exact Metric.pos_of_mem_ball h0
   -- Follow `K` by the radial contraction onto the ball, and join its ends to `f` and `g` by
   -- radial contractions, which keep the ball in place.
   have hκ : (0 : ℝ) ≤ r⁻¹ ^ 2 := sq_nonneg _

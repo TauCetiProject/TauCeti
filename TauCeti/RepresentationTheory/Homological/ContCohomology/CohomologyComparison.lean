@@ -368,13 +368,16 @@ theorem explicitH1IsoContinuousCohomology_inv_apply
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 1 c)) = _
   rw [explicitH1AddEquivContinuousCohomology_symm_apply]
 
+omit [CompactSpace G] in
 /-- **Vanishing in degree one transfers to the canonical theory.** If the explicit `H¹(G, M)` is
 trivial, then Mathlib's canonical degree-one continuous cohomology of `M` is zero. -/
 theorem isZero_continuousCohomology_one_of_subsingleton [Subsingleton (H1 G M)] :
     Limits.IsZero (continuousCohomology 1 (ofDiscreteModule ℤ G M)) := by
   have : Subsingleton (DiscreteH1 G M) :=
     (discreteH1Equiv G M).toEquiv.subsingleton_congr.mpr inferInstance
-  rw [← (explicitH1IsoContinuousCohomology G M).isZero_iff, Limits.IsZero.iff_id_eq_zero]
+  have : Subsingleton (continuousCohomology 1 (ofDiscreteModule ℤ G M)) :=
+    (explicitH1AddEquivContinuousCohomology G M).symm.subsingleton
+  rw [Limits.IsZero.iff_id_eq_zero]
   ext x
   exact Subsingleton.elim _ _
 
@@ -553,28 +556,6 @@ theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply
       ofDiscreteModuleRestrictScalarsIntEquiv X 2
         (explicitH2AddEquivContinuousCohomology G X.V x) :=
   (rfl)
-
-omit [ContinuousSMul G X.V] in
-/-- In degree two, `ofDiscreteModuleCocyclesRestrictScalarsIntIso` does not change the values of
-a homogeneous cocycle. -/
--- Not a `simp` lemma, for the same reason as `iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`.
-theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply
-    (w : _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G X.V) 2) (g₀ g₁ g₂ : G) :
-    ((TopRep.homogeneousCochains X).iCycles 2
-        ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).hom w)).val g₀ g₁ g₂ =
-      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂ := by
-  rw [ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
-  refine (iCycles_cocyclesRestrictScalarsIntEquiv_two_apply X _ g₀ g₁ g₂).trans ?_
-  -- The transport along the equality of objects is a `cast` of values once that equality has a
-  -- variable side; here both carriers are `X.V`, so the `cast` is the identity.
-  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G X.V = B),
-      ((TopRep.homogeneousCochains B).iCycles 2
-          (eqToHom (congrArg (_root_.ContinuousCohomology.cocycles · 2) h) w)).val g₀ g₁ g₂ =
-        cast (congrArg TopRep.V h)
-          (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂) := by
-    rintro B rfl
-    simp only [eqToHom_refl, CategoryTheory.id_apply, cast_eq]
-  exact (hev _ (ofDiscreteModule_eq_restrictScalarsInt_obj X)).trans (cast_eq _ _)
 
 /-- The degree-two comparison for discrete representations is natural in compatible pairs: it
 carries the explicit pullback along `φ` and the underlying additive map `f` of a morphism

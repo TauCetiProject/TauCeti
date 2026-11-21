@@ -22,6 +22,8 @@ the identity on them and turns direct sums into direct sums.
 ## Main definitions
 
 * `TauCeti.GLSymplectic.polarUnitary`: the orthogonal polar factor of a symplectic matrix.
+* `TauCeti.GLSymplectic.polarHomotopy`: the polar deformation, as a homotopy through symplectic
+  matrices from the identity to the orthogonal polar factor.
 
 ## Main results
 
@@ -64,7 +66,7 @@ noncomputable def polarUnitary (A : GLSymplectic n ℝ) :
     ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
   ⟨Unitary.toUnits (Units.polarUnitary (A : GL (n ⊕ n) ℝ)),
     mem_iff_mem_symplecticGroup.2 (SymplecticGroup.polarUnitary_mem
-      (mem_iff_mem_symplecticGroup.1 A.2)), by simp [Units.unitary_eq]⟩
+      (mem_iff_mem_symplecticGroup.1 A.property)), by simp [Units.unitary_eq]⟩
 
 /-- The orthogonal polar factor, as a matrix, is the unitary polar factor `Units.polarUnitary`. -/
 @[simp]
@@ -79,7 +81,7 @@ theorem polarUnitary_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (
     polarUnitary (Subgroup.inclusion inf_le_left U) = U := by
   have hU : ((U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
       unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
-    simpa [mem_unitarySubgroup_iff, Units.unitary_eq] using (Subgroup.mem_inf.1 U.2).2
+    simpa [mem_unitarySubgroup_iff, Units.unitary_eq] using (Subgroup.mem_inf.1 U.property).2
   have h := Units.polarUnitary_eq_of_mul_eq (U : GL (n ⊕ n) ℝ) zero_le_one
     (v := ⟨_, hU⟩) (one_mul _)
   refine Subtype.ext (Units.ext ?_)
@@ -91,14 +93,38 @@ theorem continuous_polarUnitary :
   have h := (polarHomotopy (n ⊕ n) ℝ).continuous.comp
     (continuous_const.prodMk continuous_id : Continuous fun A : GL (n ⊕ n) ℝ ↦ ((1 : I), A))
   simp only [Function.comp_def, polarHomotopy_apply, Set.Icc.coe_one, polarDeformation_one] at h
-  exact (h.comp continuous_subtype_val).subtype_mk _
+  exact (h.comp continuous_subtypeVal).subtype_mk _
 
 /-- The orthogonal polar factor of a symplectic matrix depends continuously on it, as a
 symplectic matrix. -/
 theorem continuous_inclusion_polarUnitary :
     Continuous fun A : GLSymplectic n ℝ ↦ Subgroup.inclusion inf_le_left (polarUnitary A) :=
-  continuous_induced_rng.2 ((continuous_subtype_val.comp continuous_polarUnitary).congr fun _ ↦
+  continuous_induced_rng.2 ((continuous_subtypeVal.comp continuous_polarUnitary).congr fun _ ↦
     (Subgroup.coe_inclusion _ _).symm)
+
+/-- The **symplectic polar homotopy** `(t, A) ↦ P ^ (1 - t) U` of a symplectic matrix `A = P U`:
+it contracts the positive factor through symplectic matrices, from the identity to the orthogonal
+polar factor. -/
+noncomputable def polarHomotopy :
+    ContinuousMap.Homotopy (ContinuousMap.id (GLSymplectic n ℝ))
+      ⟨fun A ↦ Subgroup.inclusion inf_le_left (polarUnitary A),
+        continuous_inclusion_polarUnitary⟩ where
+  toFun p := ⟨polarDeformation (p.2 : GL (n ⊕ n) ℝ) p.1, polarDeformation_mem p.2.property _⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    have h := (Matrix.GeneralLinearGroup.polarHomotopy (n ⊕ n) ℝ).continuous.comp
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd) :
+        Continuous fun p : I × GLSymplectic n ℝ ↦ (p.1, (p.2 : GL (n ⊕ n) ℝ)))
+    simpa only [Function.comp_def, polarHomotopy_apply] using h
+  map_zero_left A := Subtype.ext (by simp)
+  map_one_left A := Subtype.ext (Units.ext (by simp))
+
+/-- The symplectic polar homotopy evaluates to the polar deformation. -/
+@[simp]
+theorem coe_polarHomotopy_apply (p : I × GLSymplectic n ℝ) :
+    ((polarHomotopy p : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) =
+      polarDeformation (p.2 : GL (n ⊕ n) ℝ) p.1 := by
+  rfl
 
 /-- The orthogonal polar factor of a direct sum is the direct sum of the orthogonal polar
 factors. -/
@@ -111,7 +137,7 @@ theorem coe_polarUnitary_sum {m : Type*} [Fintype m] [DecidableEq m] (A : GLSymp
   have hU : symplecticSum ((Units.polarUnitary (A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) _ ℝ))
       (Units.polarUnitary (B : GL (m ⊕ m) ℝ) : Matrix (m ⊕ m) _ ℝ) ∈
         unitary (Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) :=
-    symplecticSum_mem_unitaryGroup (Units.polarUnitary _).2 (Units.polarUnitary _).2
+    symplecticSum_mem_unitaryGroup (Units.polarUnitary _).property (Units.polarUnitary _).property
   have hP : 0 ≤ symplecticSum
       (CFC.sqrt (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
         star ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)))

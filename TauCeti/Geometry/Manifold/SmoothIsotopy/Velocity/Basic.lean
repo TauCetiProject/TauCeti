@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Topology.Compactness.LocallyCompact
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.Instances.Icc
 
@@ -114,7 +114,7 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
     (fun q _ => isImmersionAt_comp_isLocalDiffeomorphAt
       (isLocalDiffeomorph_subtype_val q) (hΓimm q))
     (himage.symm ▸ hK.isClosed) hU (himage.symm ▸ hKU)
-    (fun q : W => v q) (hv.comp contMDiff_subtype_val)
+    (fun q : W => v q) (hv.comp contMDiff_subtypeVal)
   refine ⟨Y, U, hcU, hYU, fun t ht x hx => ?_⟩
   -- The spatial part of the track velocity is the time derivative of the motion.
   have hGd : MDifferentiable (𝓘(ℝ, ℝ).prod I) J G := hG.mdifferentiable hn0

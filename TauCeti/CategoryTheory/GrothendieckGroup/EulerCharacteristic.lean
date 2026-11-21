@@ -435,7 +435,7 @@ private lemma kernelLift_d_eq (i j k : ℤ) :
 /-- The cokernel of the inclusion of the boundaries into the cocycles is the cohomology. -/
 private noncomputable def cokernelBoundariesToCyclesIso (i j k : ℤ) (hij : i + 1 = j)
     (hjk : j + 1 = k) : cokernel (boundariesToCycles K i j k) ≅ K.homology j :=
-  (cokernelEpiComp (Abelian.factorThruImage (K.d i j)) (boundariesToCycles K i j k)).symm ≪≫
+  (cokernelEpiComp (boundariesToCycles K i j k) (Abelian.factorThruImage (K.d i j))).symm ≪≫
     cokernelIsoOfEq (kernelLift_d_eq K i j k).symm ≪≫
     (K.sc' i j k).homologyIsoCokernelLift.symm ≪≫
     (K.homologyIsoSc' i j k ((ComplexShape.up ℤ).prev_eq' hij)
@@ -475,7 +475,7 @@ theorem prop_X (hB : ∀ n, P (Abelian.image (K.d n (n + 1))))
     (hH : ∀ n, P (K.homology n)) (n : ℤ) : P (K.X n) :=
   have := hP.isClosedUnderIsomorphisms
   hP.prop_X₂ (ExactStructure.abelian_conflation_of_epi (Abelian.factorThruImage (K.d n (n + 1))))
-    (P.prop_of_iso (Abelian.kernelFactorThruImageIso (K.d n (n + 1)))
+    (P.prop_of_iso ((Abelian.kernelFactorThruImage (K.d n (n + 1))).symm)
       (hP.prop_kernel_d hB hH n)) (hB n)
 
 end ExactStructure.IsExtensionClosed
@@ -547,10 +547,10 @@ private lemma extend_kernel_d_add_extend_kernel_d (hB : ∀ n, P (Abelian.image 
   have h₂ := extend_X₂ v
     ((ExactStructure.abelian_conflation _).mp
       (ExactStructure.abelian_conflation_of_epi (Abelian.factorThruImage (K.d i (i + 1)))))
-    (P.prop_of_iso (Abelian.kernelFactorThruImageIso (K.d i (i + 1))) hZ) (hB i)
+    (P.prop_of_iso ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ) (hB i)
   dsimp only at h₁ h₂
   rw [h₁, h₂, extend_congr v (cokernelBoundariesToCyclesIso K _ _ _ rfl rfl) hC,
-    ← extend_congr v (Abelian.kernelFactorThruImageIso (K.d i (i + 1))) hZ]
+    ← extend_congr v ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ]
   abel
 
 /-- **The Euler–Poincaré theorem in an extension-closed subcategory.** Let `P` be an

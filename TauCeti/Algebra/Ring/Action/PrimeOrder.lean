@@ -79,16 +79,13 @@ theorem exists_prod_one_add_smul_eq_of_prime_card [Fintype G] (hG : (Nat.card G)
   have hBstab : ∀ S ∈ B, MulAction.stabilizer G S = ⊥ := fun S hS ↦ by
     rw [hmemB] at hS
     exact stabilizer_finset_eq_bot_of_prime_card hG (card_pos.1 (by omega)) hS.2
-  obtain ⟨y, hy, hsumB⟩ := TauCeti.MulAction.exists_sum_eq_sum_smul_of_stabilizer_eq_bot hBsmul
+  obtain ⟨T, hT, hsumB⟩ := TauCeti.MulAction.exists_sum_eq_sum_smul_of_stabilizer_eq_bot hBsmul
     hBstab (f := fun S : Finset G ↦ ∏ h ∈ S, h • x) fun g S _ ↦ by
       rw [Finset.smul_finset_def, prod_image (MulAction.injective g).injOn, Finset.smul_prod']
       simp only [smul_eq_mul, mul_smul]
-  refine ⟨y, ?_, ?_⟩
+  refine ⟨∑ S ∈ T, ∏ h ∈ S, h • x, sum_mem fun S hS ↦ ?_, ?_⟩
   · -- Each product indexed by a subset with two distinct elements lies in the square of the ideal.
-    refine (AddSubmonoid.closure_le (S := (Ideal.span (MulAction.orbit G x) ^ 2).toAddSubmonoid)).2
-      ?_ hy
-    rintro _ ⟨S, hS, rfl⟩
-    rw [mem_coe, hmemB] at hS
+    have hS := (hmemB S).1 (hT hS)
     apply Ideal.pow_le_pow_right (by omega : 2 ≤ S.card)
     simpa only [prod_const] using Ideal.prod_mem_prod
       (I := fun _ : G ↦ Ideal.span (MulAction.orbit G x))

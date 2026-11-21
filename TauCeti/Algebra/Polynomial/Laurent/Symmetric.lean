@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.RingTheory.Polynomial.Chebyshev
+public import Mathlib.RingTheory.PowerSeries.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
 # Symmetric Laurent polynomials
@@ -21,6 +22,10 @@ Alexander polynomial to the square of the Conway variable.
 
 The rescaled Chebyshev polynomials of the second kind give the companion identity
 `(T - T⁻¹) Sₙ(T + T⁻¹) = Tⁿ⁺¹ - T⁻ⁿ⁻¹` for the antisymmetric Laurent polynomials.
+
+Finally, a family of symmetric Laurent polynomials whose coefficients are read off a nested power
+series that is symmetric in its two variables consists of constants
+(`LaurentPolynomial.eq_C_coeff_zero_of_coeff_swap`).
 -/
 
 public section
@@ -35,64 +40,48 @@ namespace Polynomial.Chebyshev
 variable {R : Type*} [CommRing R]
 
 /-- The rescaled Chebyshev polynomial expresses a pair of opposite Laurent powers. -/
-@[simp] theorem eval₂_C_add_T_neg (n : ℕ) :
+@[simp] theorem eval₂_C_add_T_neg (n : ℤ) :
     Polynomial.eval₂ LaurentPolynomial.C
       (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1) : R[T;T⁻¹]) (C R n) =
-      LaurentPolynomial.T (n : ℤ) + LaurentPolynomial.T (-(n : ℤ)) := by
-  induction n using Nat.twoStepInduction with
-  | zero => simp; ring
+      LaurentPolynomial.T n + LaurentPolynomial.T (-n) := by
+  induction n using Polynomial.Chebyshev.induct with
+  | zero => simp [one_add_one_eq_two]
   | one => simp
-  | more n h₀ h₁ =>
-    have hrec := C_add_two R (n : ℤ)
-    push_cast
-    push_cast at h₁
-    rw [hrec, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X, h₁, h₀]
+  | add_two n h₁ h₀ =>
+    rw [C_add_two, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X, h₁, h₀]
     simp only [mul_add, add_mul, ← T_add]
-    have hpos : (1 : ℤ) + (n + 1) = n + 2 := by omega
-    have hneg : (-1 : ℤ) + -(n + 1) = -(n + 2) := by omega
-    have hleft : (1 : ℤ) + -(n + 1) = -n := by omega
-    have hright : (-1 : ℤ) + (n + 1) = n := by omega
-    rw [hpos, hneg, hleft, hright]
-    ring
+    ring_nf
+  | neg_add_one n h₀ h₁ =>
+    rw [C_sub_one, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X, h₁, h₀]
+    simp only [mul_add, add_mul, ← T_add]
+    ring_nf
 
 /-- The rescaled Chebyshev polynomial of the second kind expresses a difference of opposite
 Laurent powers, once multiplied by `T - T⁻¹`. -/
-@[simp] theorem T_sub_T_neg_mul_eval₂_S_add_T_neg (n : ℕ) :
+@[simp] theorem T_sub_T_neg_mul_eval₂_S_add_T_neg (n : ℤ) :
     (LaurentPolynomial.T 1 - LaurentPolynomial.T (-1) : R[T;T⁻¹]) *
         Polynomial.eval₂ LaurentPolynomial.C (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1))
           (S R n) =
-      LaurentPolynomial.T ((n : ℤ) + 1) - LaurentPolynomial.T (-((n : ℤ) + 1)) := by
-  induction n using Nat.twoStepInduction with
+      LaurentPolynomial.T (n + 1) - LaurentPolynomial.T (-(n + 1)) := by
+  induction n using Polynomial.Chebyshev.induct with
   | zero => simp
   | one =>
-    simp only [Nat.cast_one, S_one, Polynomial.eval₂_X, mul_add, sub_mul, ← T_add]
-    norm_num
-  | more n h₀ h₁ =>
-    have hrec := S_add_two R (n : ℤ)
-    push_cast
-    push_cast at h₁
-    rw [hrec, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X]
-    have e₁ : (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1) : R[T;T⁻¹]) *
-        (LaurentPolynomial.T ((n : ℤ) + 1 + 1) - LaurentPolynomial.T (-((n : ℤ) + 1 + 1))) =
-        LaurentPolynomial.T ((n : ℤ) + 2 + 1) - LaurentPolynomial.T (-((n : ℤ) + 2 + 1)) +
-          (LaurentPolynomial.T ((n : ℤ) + 1) - LaurentPolynomial.T (-((n : ℤ) + 1))) := by
-      simp only [add_mul, mul_sub, ← T_add]
-      have h₁ : (1 : ℤ) + (n + 1 + 1) = n + 2 + 1 := by omega
-      have h₂ : (1 : ℤ) + -(n + 1 + 1) = -(n + 1) := by omega
-      have h₃ : (-1 : ℤ) + (n + 1 + 1) = n + 1 := by omega
-      have h₄ : (-1 : ℤ) + -(n + 1 + 1) = -(n + 2 + 1) := by omega
-      rw [h₁, h₂, h₃, h₄]
-      ring
-    linear_combination
-      (LaurentPolynomial.T 1 + LaurentPolynomial.T (-1) : R[T;T⁻¹]) * h₁ - h₀ + e₁
+    simp only [S_one, Polynomial.eval₂_X, mul_add, sub_mul, ← T_add]
+    ring_nf
+  | add_two n h₁ h₀ =>
+    rw [S_add_two, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X, mul_sub,
+      mul_left_comm, h₁, h₀]
+    simp only [mul_sub, add_mul, ← T_add]
+    ring_nf
+  | neg_add_one n h₀ h₁ =>
+    rw [S_sub_one, Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X, mul_sub,
+      mul_left_comm, h₁, h₀]
+    simp only [mul_sub, add_mul, ← T_add]
+    ring_nf
 
 end Polynomial.Chebyshev
 
 namespace LaurentPolynomial
-
-/-- Truncation retains every coefficient of nonnegative exponent. -/
-@[simp] theorem coeff_trunc [Semiring R] (p : R[T;T⁻¹]) (n : ℕ) :
-    (trunc p).coeff n = p.coeff (n : ℤ) := (rfl)
 
 variable {R : Type*} [CommRing R]
 
@@ -106,17 +95,14 @@ the double-counted constant term. -/
     linear_combination hp + hq
   | C_mul_T n r =>
     have hc : (C r * T n).coeff 0 = if n = 0 then r else 0 := by
-      rw [← single_eq_C_mul_T]
-      simp only [AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
+      simp [← single_eq_C_mul_T, Finsupp.single_apply]
     rw [hc]
     simp only [map_mul, invert_C, invert_T, trunc_C_mul_T]
     rcases lt_trichotomy n 0 with hn | rfl | hn
-    · have hn' : n ≤ 0 := hn.le
-      simp [hn.not_ge, hn', hn.ne]
+    · simp [hn.not_ge, hn.le, hn.ne]
     · simp
-    · have hn' : ¬ n ≤ 0 := by omega
-      have he : ((n.toNat : ℕ) : ℤ) = n := by omega
-      simp [hn.le, hn', he, ← single_eq_C_mul_T, hn.ne']
+    · have he : ((n.toNat : ℕ) : ℤ) = n := by omega
+      simp [hn.le, hn.not_ge, he, ← single_eq_C_mul_T, hn.ne']
 
 end LaurentPolynomial
 
@@ -132,16 +118,13 @@ theorem eval₂_comp_X_sq_eq_laurent_eval₂ {S : Type*} [CommRing S]
       LaurentPolynomial.eval₂ f (s ^ 2)
         (Polynomial.eval₂ LaurentPolynomial.C (T 1 + T (-1) - 2) q) := by
   rw [Polynomial.hom_eval₂, Polynomial.eval₂_comp]
-  have hc : (LaurentPolynomial.eval₂ f (s ^ 2)).comp LaurentPolynomial.C = f := by
-    ext r
-    simp
-  rw [hc]
   congr 1
-  simp only [Polynomial.eval₂_pow, Polynomial.eval₂_X, map_sub, map_add, map_ofNat,
-    LaurentPolynomial.eval₂_T, zpow_one, zpow_neg_one, Units.inv_pow_eq_pow_inv,
-    Units.val_pow_eq_pow_val]
-  have hs := s.inv_mul
-  linear_combination -2 * hs
+  · ext r
+    simp
+  · simp only [Polynomial.eval₂_pow, Polynomial.eval₂_X, map_sub, map_add, map_ofNat,
+      LaurentPolynomial.eval₂_T, zpow_one, zpow_neg_one, Units.inv_pow_eq_pow_inv,
+      Units.val_pow_eq_pow_val]
+    linear_combination -2 * s.inv_mul
 
 /-- The positive and reflected negative parts of an ordinary polynomial, with the
 constant counted once, are a polynomial in `T + T⁻¹`. -/
@@ -162,9 +145,6 @@ theorem exists_eval₂_add_T_neg (p : R[X]) :
       exact ⟨Polynomial.C r, by simp⟩
     | succ n =>
       refine ⟨Polynomial.C r * Polynomial.Chebyshev.C R (n + 1), ?_⟩
-      have hc := Polynomial.Chebyshev.eval₂_C_add_T_neg (R := R) (n + 1)
-      push_cast at hc
-      rw [Polynomial.eval₂_mul, Polynomial.eval₂_C, hc]
       simp [mul_add, add_comm]
 
 end Polynomial
@@ -188,13 +168,55 @@ theorem invert_eq_self_iff_exists_eval₂ (p : R[T;T⁻¹]) :
     | add p q hp hq => simp [Polynomial.eval₂_add, hp, hq]
     | monomial n r => simp [Polynomial.eval₂_monomial, add_comm]
 
-/-- A symmetric Laurent polynomial can also be expressed in the shifted generator
-`T + T⁻¹ - 2`, the square of the Conway variable after doubling exponents. -/
-theorem exists_eval₂_add_T_neg_sub_two {p : R[T;T⁻¹]} (hp : invert p = p) :
-    ∃ q : R[X], Polynomial.eval₂ C (T 1 + T (-1) - 2) q = p := by
-  obtain ⟨q, hq⟩ := (invert_eq_self_iff_exists_eval₂ p).mp hp
-  refine ⟨q.comp (Polynomial.X + 2), ?_⟩
-  rw [Polynomial.eval₂_comp]
-  simpa using hq
+/-- A Laurent polynomial is fixed by inversion exactly when it is an ordinary polynomial in the
+shifted generator `T + T⁻¹ - 2`, the square of the Conway variable after doubling exponents. -/
+theorem invert_eq_self_iff_exists_eval₂_sub_two (p : R[T;T⁻¹]) :
+    invert p = p ↔ ∃ q : R[X], Polynomial.eval₂ C (T 1 + T (-1) - 2) q = p := by
+  rw [invert_eq_self_iff_exists_eval₂]
+  constructor
+  · rintro ⟨q, rfl⟩
+    exact ⟨q.comp (Polynomial.X + 2), by simp [Polynomial.eval₂_comp]⟩
+  · rintro ⟨q, rfl⟩
+    exact ⟨q.comp (Polynomial.X - 2), by simp [Polynomial.eval₂_comp]⟩
+
+section Semiring
+
+variable {R : Type*} [Semiring R]
+
+/-- If the Laurent polynomials `L N` are symmetric, and the coefficient of `uᵏ` in `L N` is the
+coefficient of `vᵏ⁺ᴺ` read off a series `G` that is symmetric in its two variables, then each
+`L N` is constant. This is the induction in the formal Liouville theorem for the Tate curve. -/
+theorem eq_C_coeff_zero_of_coeff_swap {G : PowerSeries (PowerSeries R)} {L : ℕ → R[T;T⁻¹]}
+    (hcoe : ∀ (N : ℕ) (k : ℤ),
+      (L N).coeff k = if k + N < 0 then 0 else
+        PowerSeries.coeff (k + N).natAbs (PowerSeries.coeff N G))
+    (hsymm : ∀ (N : ℕ) (k : ℤ), (L N).coeff (-k) = (L N).coeff k)
+    (hswap : ∀ a b : ℕ,
+      PowerSeries.coeff a (PowerSeries.coeff b G) = PowerSeries.coeff b (PowerSeries.coeff a G))
+    (N : ℕ) :
+    L N = C ((L N).coeff 0) := by
+  have key (N : ℕ) : ∀ m : ℕ, 0 < m → (L N).coeff m = 0 := by
+    induction N using Nat.strong_induction_on with
+    | _ N ih =>
+      intro m hm
+      rw [← hsymm, hcoe]
+      split_ifs with h
+      · rfl
+      · have h' := ih (N - m) (by omega) m hm
+        rw [hcoe, ite_eq_right (by omega)] at h'
+        have e₁ : (-(m : ℤ) + N).natAbs = N - m := by omega
+        have e₂ : ((m : ℤ) + (N - m : ℕ)).natAbs = N := by omega
+        rw [e₁, hswap]
+        rwa [e₂] at h'
+  refine LaurentPolynomial.ext fun k ↦ ?_
+  rw [LaurentPolynomial.C_apply]
+  rcases lt_trichotomy k 0 with hk | rfl | hk
+  · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨k.natAbs, by omega⟩
+    rw [hsymm, key N m (by omega), ite_eq_right (by omega)]
+  · simp
+  · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = m := ⟨k.natAbs, by omega⟩
+    rw [key N m (by omega), ite_eq_right (by omega)]
+
+end Semiring
 
 end LaurentPolynomial

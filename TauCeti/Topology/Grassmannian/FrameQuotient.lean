@@ -36,6 +36,15 @@ This gives `SO(N) ⧸ Stab(e) ≃ₜ V_r(ℝ^N)`
 `diag(1_r, SO(m))` when `N = r + m`. In particular the ordered orthonormal two-frames of `ℝⁿ`,
 `n ≥ 3`, are `SO(n) / SO(n - 2)`, and those of `ℂⁿ`, `n ≥ 2`, are `U(n) / U(n - 2)`.
 
+For full frames, `r = N`, the stabilizer is trivial: an orthonormal `N`-frame is a basis, so
+`U(N)` acts freely on these frames (`TauCeti.finiteOrthonormalFrame.unitaryMap_left_injective`)
+and the orbit map of the standard frame is a homeomorphism `U(N) ≃ₜ V_N(𝕜^N)`
+(`TauCeti.finiteOrthonormalFrame.unitaryHomeomorph`). The determinant classifies the orbits of
+the special unitary group `SU(N)`, acting through `unitaryMap`: two frames `unitaryMap A f` and
+`unitaryMap A' f` lie in the same `SU(N)`-orbit exactly when `det A = det A'`
+(`TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`).
+Over `ℝ` the special unitary group is, by definition, the special orthogonal group `SO(N)`.
+
 The action `TauCeti.finiteOrthonormalFrame.unitaryMulAction` and the standard frame
 `TauCeti.finiteOrthonormalFrame.standard` are defined with the orthonormal frames in
 `TauCeti.Topology.Grassmannian.Orthonormal`; the action is a definition rather than an instance.
@@ -50,6 +59,7 @@ The homeomorphisms are the topological orbit-stabilizer theorem
 * `TauCeti.finiteOrthonormalFrame.unitaryQuotientHomeomorph`,
   `TauCeti.finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph`: the frames as quotients
   of the unitary and special orthogonal groups.
+* `TauCeti.finiteOrthonormalFrame.unitaryHomeomorph`: the full frames as the unitary group.
 
 ## Main results
 
@@ -58,6 +68,9 @@ The homeomorphisms are the topological orbit-stabilizer theorem
 * `TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_unitaryStabilizer`,
   `TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_specialOrthogonalStabilizer`: the
   stabilizers are the block-diagonal subgroups.
+* `TauCeti.finiteOrthonormalFrame.unitaryMap_left_injective`: the action on full frames is free.
+* `TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`: the determinant
+  classifies the `SU(N)`-orbits of full frames.
 
 ## References
 
@@ -85,18 +98,18 @@ theorem unitaryMap_standard_surjective (h : r ≤ N) :
   -- Extend the frame to an orthonormal basis `b` indexed by `Fin N`; its vectors are the columns
   -- of a unitary matrix.
   let v : Fin N → EuclideanSpace 𝕜 (Fin N) := fun k ↦
-    if hk : (k : ℕ) < r then WithLp.toLp 2 (f.1 ⟨k, hk⟩) else 0
-  have hv_castLE : ∀ i, v (Fin.castLE h i) = WithLp.toLp 2 (f.1 i) := fun i ↦ by
+    if hk : (k : ℕ) < r then WithLp.toLp 2 (f.val ⟨k, hk⟩) else 0
+  have hv_castLE : ∀ i, v (Fin.castLE h i) = WithLp.toLp 2 (f.val i) := fun i ↦ by
     simp [v, i.isLt]
   have hv : Orthonormal 𝕜 ((Set.range (Fin.castLE h)).domRestrict v) := by
     rw [orthonormal_iff_ite]
     rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩
     by_cases hij : i = j
     · subst hij
-      simp [Set.domRestrict, hv_castLE, f.2.1 i]
+      simp [Set.domRestrict, hv_castLE, f.property.1 i]
     · have hne : (⟨Fin.castLE h i, i, rfl⟩ : Set.range (Fin.castLE h)) ≠ ⟨Fin.castLE h j, j, rfl⟩ :=
         fun e ↦ hij (Fin.castLE_injective h (congrArg Subtype.val e))
-      simp [Set.domRestrict, hv_castLE, orthonormal_iff_ite.1 f.2 i j, hij, hne]
+      simp [Set.domRestrict, hv_castLE, orthonormal_iff_ite.1 f.property i j, hij, hne]
   obtain ⟨b, hb⟩ := hv.exists_orthonormalBasis_extension_of_card_eq (by simp)
   refine ⟨⟨(EuclideanSpace.basisFun (Fin N) 𝕜).toBasis.toMatrix b,
     (EuclideanSpace.basisFun (Fin N) 𝕜).toMatrix_orthonormalBasis_mem_unitary b⟩, ?_⟩
@@ -160,6 +173,22 @@ theorem range_fromBlocksOne_eq_unitaryStabilizer (m : ℕ) :
     funext_iff, coe_unitaryMap, coe_standard]
   rfl
 
+variable (𝕜 r) in
+/-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `U(m)` onto the stabilizer of the
+standard `r`-frame in `U(r + m)`. -/
+def unitaryStabilizerHomeomorph (m : ℕ) :
+    unitaryGroup (Fin m) 𝕜 ≃ₜ unitaryStabilizer 𝕜 (Nat.le_add_right r m) :=
+  ((UnitaryGroup.continuous_fromBlocksOne m).rangeFactorization.homeoOfEquivCompactToT2
+    (f := Equiv.ofInjective _ (UnitaryGroup.fromBlocksOne_injective 𝕜 r))).trans
+    (Homeomorph.setCongr <| by
+      rw [← range_fromBlocksOne_eq_unitaryStabilizer, MonoidHom.coe_range])
+
+@[simp]
+theorem coe_unitaryStabilizerHomeomorph_apply (m : ℕ) (B : unitaryGroup (Fin m) 𝕜) :
+    (unitaryStabilizerHomeomorph 𝕜 r m B : unitaryGroup (Fin (r + m)) 𝕜) =
+      UnitaryGroup.fromBlocksOne 𝕜 r m B :=
+  (rfl)
+
 /-! ### Real frames and the special orthogonal group -/
 
 /-- The **stabilizer of the standard real frame** in the special orthogonal group `SO(N)`. -/
@@ -168,7 +197,8 @@ def specialOrthogonalStabilizer (h : r ≤ N) : Subgroup (specialOrthogonalGroup
   MulAction.stabilizer _ (standard ℝ h)
 
 theorem mem_specialOrthogonalStabilizer_iff {h : r ≤ N} {A : specialOrthogonalGroup (Fin N) ℝ} :
-    A ∈ specialOrthogonalStabilizer h ↔ unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h) = standard ℝ h :=
+    A ∈ specialOrthogonalStabilizer h ↔ unitaryMap ⟨A.val, A.property.1⟩
+        (standard ℝ h) = standard ℝ h :=
   Iff.rfl
 
 /-- **The special orthogonal group acts transitively on orthonormal real frames** of fewer than
@@ -177,11 +207,11 @@ under a special orthogonal matrix. An orthogonal matrix of determinant `-1` is c
 reflection in the last coordinate, which fixes the standard frame. -/
 theorem specialOrthogonal_unitaryMap_standard_surjective (h : r < N) :
     Surjective fun A : specialOrthogonalGroup (Fin N) ℝ ↦
-      unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h.le) := by
+      unitaryMap ⟨A.val, A.property.1⟩ (standard ℝ h.le) := by
   intro f
   obtain ⟨A, rfl⟩ := unitaryMap_standard_surjective h.le f
-  rcases mul_self_eq_one_iff.1 (by simpa using (det_of_mem_unitary A.2).2) with hA | hA
-  · exact ⟨⟨A.1, A.2, hA⟩, rfl⟩
+  rcases mul_self_eq_one_iff.1 (by simpa using (det_of_mem_unitary A.property).2) with hA | hA
+  · exact ⟨⟨A.val, A.property, hA⟩, rfl⟩
   -- The reflection `D` in the last coordinate `j`, which is not used by the standard frame.
   let j : Fin N := ⟨N - 1, by omega⟩
   let D : unitaryGroup (Fin N) ℝ := ⟨diagonal (Function.update 1 j (-1)),
@@ -195,9 +225,9 @@ theorem specialOrthogonal_unitaryMap_standard_surjective (h : r < N) :
       simp only [Fin.val_castLE, j] at this
       omega
     simp [D, hij]
-  have hdet : (A * D).1.det = 1 := by
+  have hdet : (A * D).val.det = 1 := by
     simp [D, hA, det_diagonal, Finset.prod_update_of_mem]
-  exact ⟨⟨(A * D).1, (A * D).2, hdet⟩, (unitaryMap_mul A D _).trans (congrArg _ hD)⟩
+  exact ⟨⟨(A * D).val, (A * D).property, hdet⟩, (unitaryMap_mul A D _).trans (congrArg _ hD)⟩
 
 /-- **Orthonormal real frames form a homogeneous space of the special orthogonal group**: for
 `r < N`, the map `A ↦ A • e` sending a special orthogonal matrix to the image of the standard frame
@@ -210,13 +240,13 @@ def specialOrthogonalQuotientHomeomorph (h : r < N) :
       (finiteOrthonormalFrame ℝ r N) :=
     .of_orbit (specialOrthogonal_unitaryMap_standard_surjective h)
   quotientStabilizerHomeomorph _ (standard ℝ h.le)
-    (continuous_unitaryMap.comp ((continuous_subtype_val.subtype_mk _).prodMk continuous_const))
+    (continuous_unitaryMap.comp ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const))
 
 @[simp]
 theorem specialOrthogonalQuotientHomeomorph_mk (h : r < N)
     (A : specialOrthogonalGroup (Fin N) ℝ) :
     specialOrthogonalQuotientHomeomorph h (QuotientGroup.mk A) =
-      unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h.le) :=
+      unitaryMap ⟨A.val, A.property.1⟩ (standard ℝ h.le) :=
   letI := specialOrthogonalMulAction r N
   haveI : MulAction.IsPretransitive (specialOrthogonalGroup (Fin N) ℝ)
       (finiteOrthonormalFrame ℝ r N) :=
@@ -229,7 +259,7 @@ theorem specialOrthogonalQuotientHomeomorph_smul (h : r < N)
     (A : specialOrthogonalGroup (Fin N) ℝ)
     (q : specialOrthogonalGroup (Fin N) ℝ ⧸ specialOrthogonalStabilizer h.le) :
     specialOrthogonalQuotientHomeomorph h (A • q) =
-      unitaryMap ⟨A.1, A.2.1⟩ (specialOrthogonalQuotientHomeomorph h q) :=
+      unitaryMap ⟨A.val, A.property.1⟩ (specialOrthogonalQuotientHomeomorph h q) :=
   letI := specialOrthogonalMulAction r N
   haveI : MulAction.IsPretransitive (specialOrthogonalGroup (Fin N) ℝ)
       (finiteOrthonormalFrame ℝ r N) :=
@@ -240,7 +270,7 @@ theorem specialOrthogonalQuotientHomeomorph_smul (h : r < N)
 orthonormal frames, for `r < N`. -/
 theorem isQuotientMap_specialOrthogonal_unitaryMap_standard (h : r < N) :
     IsQuotientMap fun A : specialOrthogonalGroup (Fin N) ℝ ↦
-      unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h.le) :=
+      unitaryMap ⟨A.val, A.property.1⟩ (standard ℝ h.le) :=
   funext (specialOrthogonalQuotientHomeomorph_mk h) ▸
     (specialOrthogonalQuotientHomeomorph h).isQuotientMap.comp (QuotientGroup.isQuotientMap_mk _)
 
@@ -255,6 +285,94 @@ theorem range_fromBlocksOne_eq_specialOrthogonalStabilizer (m : ℕ) :
   rw [SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, mem_specialOrthogonalStabilizer_iff,
     Subtype.ext_iff, funext_iff, coe_unitaryMap, coe_standard]
   rfl
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `SO(m)` in `SO(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, SpecialOrthogonalGroup.coe_fromBlocksOne]
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtypeVal).matrix_reindex _ _
+
+variable (r) in
+/-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `SO(m)` onto the stabilizer of
+the standard real `r`-frame in `SO(r + m)`. -/
+def specialOrthogonalStabilizerHomeomorph (m : ℕ) :
+    specialOrthogonalGroup (Fin m) ℝ ≃ₜ specialOrthogonalStabilizer (Nat.le_add_right r m) :=
+  ((continuous_fromBlocksOne m).rangeFactorization.homeoOfEquivCompactToT2
+    (f := Equiv.ofInjective _ (SpecialOrthogonalGroup.fromBlocksOne_injective ℝ r))).trans
+    (Homeomorph.setCongr <| by
+      rw [← range_fromBlocksOne_eq_specialOrthogonalStabilizer, MonoidHom.coe_range])
+
+@[simp]
+theorem coe_specialOrthogonalStabilizerHomeomorph_apply (m : ℕ)
+    (B : specialOrthogonalGroup (Fin m) ℝ) :
+    (specialOrthogonalStabilizerHomeomorph r m B : specialOrthogonalGroup (Fin (r + m)) ℝ) =
+      SpecialOrthogonalGroup.fromBlocksOne ℝ r m B :=
+  (rfl)
+
+/-! ### Full frames -/
+
+/-- **`U(N)` acts freely on orthonormal `N`-frames of `𝕜^N`**: such a frame is an orthonormal basis,
+and a matrix is determined by its values on a basis. -/
+theorem unitaryMap_left_injective (f : finiteOrthonormalFrame 𝕜 N N) :
+    Injective fun A : unitaryGroup (Fin N) 𝕜 ↦ unitaryMap A f := by
+  obtain ⟨B, rfl⟩ := unitaryMap_standard_surjective le_rfl f
+  intro A A' h
+  simp only [← unitaryMap_mul] at h
+  -- The images of the standard frame are the columns of `A * B` and `A' * B`.
+  have hcol : ((A * B : unitaryGroup (Fin N) 𝕜) : Matrix (Fin N) (Fin N) 𝕜) =
+      (A' * B : unitaryGroup (Fin N) 𝕜) := by
+    ext i j
+    simpa [mulVec_single_one] using congrFun (congrFun (congrArg Subtype.val h) j) i
+  exact mul_right_cancel (Subtype.ext hcol)
+
+variable (𝕜 N) in
+/-- **The orthonormal `N`-frames of `𝕜^N` are `U(N)`**: `A ↦ unitaryMap A e`, sending a unitary
+matrix to the image of the standard frame `e`, the frame of its columns, is a homeomorphism. -/
+def unitaryHomeomorph : unitaryGroup (Fin N) 𝕜 ≃ₜ finiteOrthonormalFrame 𝕜 N N :=
+  (continuous_unitaryMap.comp (continuous_id.prodMk continuous_const)).homeoOfEquivCompactToT2
+    (f := Equiv.ofBijective (fun A : unitaryGroup (Fin N) 𝕜 ↦ unitaryMap A (standard 𝕜 le_rfl))
+      ⟨unitaryMap_left_injective _, unitaryMap_standard_surjective le_rfl⟩)
+
+@[simp]
+theorem unitaryHomeomorph_apply (A : unitaryGroup (Fin N) 𝕜) :
+    unitaryHomeomorph 𝕜 N A = unitaryMap A (standard 𝕜 le_rfl) :=
+  (rfl)
+
+/-- The unitary matrix of a full frame is the matrix whose columns are the vectors of the
+frame. -/
+@[simp]
+theorem coe_unitaryHomeomorph_symm_apply (f : finiteOrthonormalFrame 𝕜 N N) (i j : Fin N) :
+    ((unitaryHomeomorph 𝕜 N).symm f : Matrix (Fin N) (Fin N) 𝕜) i j = f.val j i := by
+  obtain ⟨A, rfl⟩ := (unitaryHomeomorph 𝕜 N).surjective f
+  rw [Homeomorph.symm_apply_apply]
+  simp
+
+/-- **The determinant classifies the `SU(N)`-orbits of orthonormal `N`-frames of `𝕜^N`**: the
+frames `unitaryMap A f` and `unitaryMap A' f` lie in the same orbit of `SU(N)`, acting through
+`unitaryMap`, exactly when the unitary matrices `A` and `A'` have the same determinant. Over `ℝ`
+the special unitary group is, by definition, `SO(N)`. -/
+theorem exists_specialUnitary_unitaryMap_eq_iff (f : finiteOrthonormalFrame 𝕜 N N)
+    (A A' : unitaryGroup (Fin N) 𝕜) :
+    (∃ S : specialUnitaryGroup (Fin N) 𝕜,
+        unitaryMap (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup S) (unitaryMap A f) =
+          unitaryMap A' f) ↔
+      (A : Matrix (Fin N) (Fin N) 𝕜).det = (A' : Matrix (Fin N) (Fin N) 𝕜).det := by
+  constructor
+  · rintro ⟨S, hS⟩
+    rw [← unitaryMap_mul] at hS
+    rw [← unitaryMap_left_injective f hS, Submonoid.coe_mul, det_mul]
+    simp [(mem_specialUnitaryGroup_iff.1 S.property).2]
+  · intro h
+    -- `A' A⁻¹ = A' Aᴴ` is special unitary, since `det A' = det A` is a unit scalar.
+    have hdet : ((A' * A⁻¹ : unitaryGroup (Fin N) 𝕜) : Matrix (Fin N) (Fin N) 𝕜).det = 1 := by
+      simpa [← h, star_eq_conjTranspose, det_conjTranspose] using (det_of_mem_unitary A.property).2
+    refine ⟨⟨(A' * A⁻¹ : unitaryGroup (Fin N) 𝕜), mem_specialUnitaryGroup_iff.2
+      ⟨(A' * A⁻¹).property, hdet⟩⟩, ?_⟩
+    -- The unitary matrix underlying this element of `SU(N)` is `A' * A⁻¹`.
+    exact (unitaryMap_mul _ _ _).symm.trans
+      (congrArg (unitaryMap · f) (inv_mul_cancel_right A' A))
 
 end finiteOrthonormalFrame
 

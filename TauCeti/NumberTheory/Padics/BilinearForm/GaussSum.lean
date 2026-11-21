@@ -13,13 +13,14 @@ public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import TauCeti.Algebra.Group.AddChar
 import TauCeti.Data.ZMod.MulCastHom.Sum
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.GaussSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
+import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -47,6 +48,8 @@ the constituents.
 
 ## Main results
 
+* `PadicInt.sum_stdAddChar_dotProduct_map_pow_smul_mulVec`: over `ℤ_[p]`, the Gauss sum of `p^i A`
+  modulo `p^(i + m)` is `p^{i n}` times the Gauss sum of `A` modulo `p^m`.
 * `PadicInt.sum_stdAddChar_toZModPow_mul_sq_eq_χ₈`: for a unit `u` of `ℤ_[2]`,
   `∑_{y ∈ ℤ/2^k} e(u y² / 2^k) = √2^{k + 1} · χ₈(u)^{k + 1} · e(u / 8)`.
 * `LinearMap.BilinForm.IsSymm.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_χ₈`: the Gauss
@@ -80,6 +83,56 @@ open TauCeti TauCeti.FiniteQuadraticModule
 open scoped Matrix
 
 namespace PadicInt
+
+section Scaling
+
+variable {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Gauss sums of a scaled matrix.** For a matrix `A` over `ℤ_[p]` and `i + m = k`, with
+`e(t) = exp (2πi t)`, the Gauss sum `∑_{x ∈ (ℤ/p^k)^n} e(p^i xᵀ A x / p^k)` is `p^{i n}` times the
+Gauss sum `∑_{y ∈ (ℤ/p^m)^n} e(yᵀ A y / p^m)`: the summand depends only on `x` modulo `p^m`. This
+reduces the Gauss sum of a `p^i`-modular Jordan constituent to that of its unimodular rescaling. -/
+theorem sum_stdAddChar_dotProduct_map_pow_smul_mulVec (A : Matrix ι ι ℤ_[p]) {i m k : ℕ}
+    (h : i + m = k) :
+    ∑ x : ι → ZMod (p ^ k), stdAddChar (x ⬝ᵥ ((p : ℤ_[p]) ^ i • A).map (toZModPow k) *ᵥ x) =
+      (p : ℂ) ^ (i * Fintype.card ι) *
+        ∑ x : ι → ZMod (p ^ m), stdAddChar (x ⬝ᵥ A.map (toZModPow m) *ᵥ x) := by
+  subst h
+  have hpow : p ^ i * p ^ m = p ^ (i + m) := (pow_add p i m).symm
+  -- On the multiples of `p ^ i`, the character of `ℤ/p^(i+m)` is that of `ℤ/p^m`.
+  have hchar (t : ZMod (p ^ (i + m))) : stdAddChar ((p ^ i : ZMod (p ^ (i + m))) * t) =
+      stdAddChar (castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) t) := by
+    obtain ⟨n, rfl⟩ := ZMod.intCast_surjective t
+    have hp : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+    rw [map_intCast, ← Int.cast_natCast, ← Int.cast_pow, ← Int.cast_mul, stdAddChar_coe,
+      stdAddChar_coe]
+    congr 1
+    push_cast
+    field_simp
+    ring
+  have hmap : (castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m))).comp (toZModPow (i + m)) =
+      toZModPow (p := p) m := zmod_cast_comp_toZModPow m (i + m) (by omega)
+  have hmap_smul : ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) =
+      (p ^ i : ZMod (p ^ (i + m))) • A.map (toZModPow (i + m)) := by
+    ext
+    simp
+  have hx (x : ι → ZMod (p ^ (i + m))) :
+      x ⬝ᵥ ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) *ᵥ x =
+        (p ^ i : ZMod (p ^ (i + m))) * (x ⬝ᵥ A.map (toZModPow (i + m)) *ᵥ x) := by
+    rw [hmap_smul, Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
+  have hy (x : ι → ZMod (p ^ (i + m))) :
+      castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x ⬝ᵥ A.map (toZModPow (i + m)) *ᵥ x) =
+        (fun a ↦ castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x a)) ⬝ᵥ
+          A.map (toZModPow m) *ᵥ fun a ↦ castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x a) := by
+    rw [RingHom.map_dotProduct, ← hmap, RingHom.coe_comp, ← Matrix.map_map]
+    congr 1
+    exact funext fun a ↦ RingHom.map_mulVec _ _ _ a
+  simp_rw [hx, hchar, hy]
+  rw [ZMod.sum_comp_castHom (p ^ m) hpow
+    fun y : ι → ZMod (p ^ m) ↦ stdAddChar (y ⬝ᵥ A.map (toZModPow m) *ᵥ y)]
+  simp [← pow_mul]
+
+end Scaling
 
 /-- For `j ≥ 1`, the Gauss sum `∑_{y ∈ ℤ/2^{j+1}} e(θy² / 2^{j+1})` is twice the Gauss sum of
 `q_θ^{(2)}(2^j)`: the summand depends only on `y` modulo `2^j`. -/
@@ -146,7 +199,7 @@ theorem sum_stdAddChar_toZModPow_mul_sq_eq_χ₈ {k : ℕ} (hk : 2 ≤ k) {u : �
   -- `e((θ + 4jω) / 8) = e(θ / 8) (-1)^{jω}` and `2 √(2^j) = √2^{j + 2}`, with `((-1)^ω)² = 1`.
   have hexp : exp (2 * pi * I * (((θ + 4 * (j : ℤ) * ω : ℤ) : ℚ) / ((8 : ℕ) : ℚ) : ℚ)) =
       exp (2 * pi * I * θ / ((2 ^ 3 : ℕ) : ℂ)) * (-1 : ℂ) ^ (ω * j) := by
-    rw [← Complex.exp_pi_mul_I, ← exp_int_mul, ← Complex.exp_add]
+    rw [← Complex.exp_pi_mul_I, ← exp_intCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -210,14 +263,15 @@ private theorem iIsOrtho.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq {N : T
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq B c e, hcsum,
     det_toMatrix_eq_det_sq_mul_det e c]
   -- The sign: the determinants differ by the square of a unit.
-  have hP : IsUnit (e.toMatrix c).det :=
-    Matrix.isUnit_det_of_right_inverse (e.toMatrix_mul_toMatrix_flip c)
-  have h1 : ∀ x : ZMod (2 ^ 3), x * x = 1 → χ₈ x ^ 2 = 1 := by decide
-  rw [map_mul, map_mul, map_pow, map_pow,
-    h1 _ (PadicInt.isUnit_iff_toZModPow_three_mul_self.mp hP), one_mul]
+  have hP : IsUnit (e.toMatrix c).det := by
+    simpa only [Basis.det_apply] using e.isUnit_det c
+  have h1 : χ₈ (PadicInt.toZModPow 3 (e.toMatrix c).det) ^ 2 = 1 := by
+    rw [← MulChar.pow_apply' _ two_ne_zero, isQuadratic_χ₈.sq_eq_one,
+      MulChar.one_apply (hP.map _)]
+  rw [map_mul, map_mul, map_pow, map_pow, h1, one_mul]
   -- The oddity: characteristic vectors have the same self-pairing modulo `8`.
   have : Module.Free ℤ_[2] N := .of_basis c
-  have : B.IsPerfPair := c.isPerfPair_of_isUnit_det B (hc.isUnit_det_toMatrix hcu)
+  have : B.IsPerfPair := c.isPerfPair_of_isUnit_det c B (hc.isUnit_det_toMatrix hcu)
   have h8 := hw.eight_dvd_apply_self_sub_apply_self hc.isSymm
     (hc.isCharacteristic_sum PadicInt.two_dvd_sq_sub_self)
   rw [(PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mp h8).symm]
@@ -241,29 +295,20 @@ theorem IsSymm.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_χ₈ {C : Bilin
   set f := PadicInt.toZModPow (p := 2) k
   set D : BilinForm ℤ_[2] (M × ℤ_[2]) := C.prod (LinearMap.mul ℤ_[2] ℤ_[2])
   set d := b.prod (Basis.singleton Unit ℤ_[2])
-  have hDd : D.toMatrix d = Matrix.fromBlocks (C.toMatrix b) 0 0 1 := by
-    ext (i | i) (j | j) <;> simp [D, d, toMatrix_apply, prod_apply, Basis.prod_apply]
-  have hDs : D.IsSymm := isSymm_prod_iff.2
-    ⟨hC, ⟨fun x y ↦ by rw [LinearMap.mul_apply', LinearMap.mul_apply', mul_comm]⟩⟩
-  -- `D` represents the unit `1`, so it has an orthogonal basis with unit self-pairings.
+  have hDd := toMatrix_prod_mul C b
   set e := d.reindex (Fintype.equivFin (ι ⊕ Unit))
   have hedet : (D.toMatrix e).det = (C.toMatrix b).det := by
-    rw [det_toMatrix_reindex, hDd, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
-  obtain ⟨c, hc, hcu⟩ := hDs.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e
-    (hedet ▸ hdet) ⟨(0, 1), by simp [D, prod_apply]⟩
-  -- `(w, 1)` is a characteristic vector of `D`, with self-pairing `C w w + 1`.
-  have hw' : D.IsCharacteristic (w, 1) := isCharacteristic_iff.mpr fun x ↦ by
-    have h := dvd_sub (isCharacteristic_iff.mp hw x.1) (PadicInt.two_dvd_sq_sub_self x.2)
-    simp only [D, prod_apply, LinearMap.mul_apply']
-    convert h using 1
-    ring
+    rw [det_toMatrix_reindex, det_toMatrix_prod_mul]
+  obtain ⟨c, hc, hcu⟩ := hC.exists_orthogonal_basis_isUnit_prod_mul b hdet
+  have hw' : D.IsCharacteristic (w, 1) := hw.prod (isCharacteristic_mul_one
+    PadicInt.two_dvd_sq_sub_self)
   have hD := hc.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq hcu e hw' hk
   -- In the basis `d`, the Gauss sum of `D` is that of `C` times that of `⟨1⟩`.
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq D d e, hDd, Matrix.fromBlocks_map,
     Matrix.map_zero _ (map_zero f), Matrix.map_zero _ (map_zero f),
     Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec, ← Matrix.diagonal_one,
     sum_stdAddChar_dotProduct_diagonal_map_mulVec_eq hk fun _ ↦ isUnit_one, hedet] at hD
-  simp only [D, prod_apply, LinearMap.mul_apply', mul_one, map_add, AddChar.map_add_eq_mul,
+  simp only [prod_apply, LinearMap.mul_apply', mul_one, map_add, AddChar.map_add_eq_mul,
     Fintype.card_unit, one_mul, Finset.prod_const_one, map_one, Int.cast_one, one_pow,
     Fintype.sum_unique, Fintype.card_sum] at hD
   -- Cancel the Gauss sum `√2^{k + 1} e(1 / 8)` of `⟨1⟩`.

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.RingTheory.Finiteness.Defs
 -- Non-public: the finiteness transfer for linear maps is used only inside the proof.
-import TauCeti.Algebra.Module.LinearMap.Finite
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Finitely generated morphism modules over a finite algebra
@@ -24,7 +24,11 @@ the Hom-finiteness that dimension and length counts in the module category of su
 on.
 
 The morphism space is identified with the `A`-linear maps by `ModuleCat.homLinearEquiv`, and
-those embed in maps into a power of the target by `Module.Finite.linearMap_of_isNoetherian`.
+those embed in maps into a power of the target by `TauCeti.isNoetherian_linearMap_of_finite`.
+
+A module bundled in `ModuleCat A` remembers only the action of `A`. `ModuleCat.moduleOfAlgebra`
+recovers its `R`-action through the algebra map, for any commutative base ring `R`; Mathlib records
+this for algebras over a field in `ModuleCat.moduleOfAlgebraModule`.
 -/
 
 public section
@@ -37,6 +41,18 @@ universe u v w
 
 namespace ModuleCat
 
+/-- A module over an `R`-algebra, as a module over `R`. Mathlib records this for algebras over a
+field in `ModuleCat.moduleOfAlgebraModule`. -/
+abbrev moduleOfAlgebra (R : Type u) [CommRing R] {B : Type v} [Ring B] [Algebra R B]
+    (M : ModuleCat.{w} B) : Module R M :=
+  Module.restrictScalars R B M
+
+attribute [local instance] moduleOfAlgebra in
+/-- The action of `R` given by `ModuleCat.moduleOfAlgebra` is the action through the algebra map. -/
+theorem isScalarTower_moduleOfAlgebra (R : Type u) [CommRing R] {B : Type v} [Ring B] [Algebra R B]
+    (M : ModuleCat.{w} B) : IsScalarTower R B M :=
+  IsScalarTower.restrictScalars R B M
+
 variable {R : Type u} {A : Type v} [CommRing R] [IsNoetherianRing R] [Ring A] [Algebra R A]
   [Module.Finite R A]
 
@@ -45,7 +61,6 @@ finitely generated module over the base ring. -/
 instance finite_hom_of_finite (M N : ModuleCat.{w} A) [Module.Finite A M]
     [Module.Finite A N] : Module.Finite R (M ⟶ N) := by
   have : Module.Finite R N := Module.Finite.trans A N
-  have : Module.Finite R (M →ₗ[A] N) := Module.Finite.linearMap_of_isNoetherian
   exact Module.Finite.equiv (ModuleCat.homLinearEquiv (S := R)).symm
 
 end ModuleCat

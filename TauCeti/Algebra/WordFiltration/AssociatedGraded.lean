@@ -178,7 +178,7 @@ private theorem gradedMul_mk_eq_cast (f : M →ₗ[R] A) {i j k : ℕ}
   rw [gradedMul_apply_mk, gradedPiece_cast_mk f h]
   apply congrArg Submodule.Quotient.mk
   apply Subtype.ext
-  rw [wordFiltration_coe_cast f h]
+  rw [coe_cast f h]
   exact hz
 
 private theorem gradedMul_mk_eq_cast_rev (f : M →ₗ[R] A) {i j k : ℕ}

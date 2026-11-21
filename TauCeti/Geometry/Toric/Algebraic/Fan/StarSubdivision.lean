@@ -161,7 +161,7 @@ theorem starSubdivisionCone_mono {S T : Set (Option (ToricRay τ))} (h : S ⊆ T
 theorem starSubdivisionGenerator_mem (k : Option (ToricRay τ)) :
     i (starSubdivisionGenerator hi A hτ k) ∈ τ := by
   have hu (ρ : ToricRay τ) : i (primitiveGenerator hi hτ ρ) ∈ τ :=
-    ρ.1.isFaceOf.le (primitiveGenerator_mem hi hτ ρ)
+    ρ.val.isFaceOf.le (primitiveGenerator_mem hi hτ ρ)
   cases k with
   | none =>
     rw [starSubdivisionGenerator_none, map_sum]
@@ -394,7 +394,7 @@ noncomputable def starSubdivision : Fan i where
         (hτ.linearIndependent_primitiveGenerator hi) hS)
       (C := PointedCone.hull ℝ
         ((fun k ↦ i (starSubdivisionGenerator hi A hτ.toIsToricCone k)) '' S))
-      (by rw [image_eq_range]) {k : S | k.1 ∈ T}
+      (by rw [image_eq_range]) {k : S | k.val ∈ T}
     convert h using 2
     ext x
     simp only [mem_image, mem_inter_iff, mem_ofPred_eq, Subtype.exists, exists_and_right,
@@ -490,7 +490,7 @@ theorem inf_mem_starSubdivision_cones {τ₀ C : PointedCone ℝ V} (h : τ₀.I
   have hface : (C ⊓ τ₀).IsFaceOf C := h.inf_of_le (starSubdivisionCone_le hi _ hτ.toIsToricCone S)
   have hhull : C ⊓ τ₀ = PointedCone.hull ℝ
       (i '' (starSubdivisionGenerator hi (B.map e) hτ.toIsToricCone '' S) ∩ τ₀) := by
-    refine (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨_, hface⟩ _
+    refine (hface.eq_hull_inter_of_eq_hull
       (starSubdivisionCone_def hi _ hτ.toIsToricCone S)).trans (congrArg _ ?_)
     ext x
     exact and_congr_right fun hx ↦ ⟨fun hx' ↦ hx'.2, fun hx' ↦ ⟨PointedCone.subset_hull hx, hx'⟩⟩
@@ -790,7 +790,7 @@ theorem starSubdivisionAlongRay_le_starSubdivisionCone (hσ0 : σ ≠ ⊥) {τ :
 theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
     (C : (Φ.starSubdivisionAlong hΦ hσ).cones) :
     (Φ.starSubdivisionAlongRay hΦ hσ hσ0).toCone ≤ C ↔
-      σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone C.2 := by
+      σ ≤ (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.leastCone C.property := by
   have hsub := Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0
   have hσt := Φ.isToricCone hσ
   constructor
@@ -799,8 +799,8 @@ theorem starSubdivisionAlongRay_le_iff_le_leastCone (hσ0 : σ ≠ ⊥)
       Submodule.span_singleton_le_iff_mem] at hu
     -- The face `σ ⊓ L` of `σ` contains `u_σ`, hence contains `σ`.
     exact (hσt.le_of_isFaceOf_of_sum_primitiveGenerator_mem Φ.lattice
-      (Φ.inf_isFaceOf_left hσ (hsub.toFanHom.leastCone_mem C.2))
-      ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hsub.le_leastCone C.2 hu⟩).trans
+      (Φ.inf_isFaceOf_left hσ (hsub.toFanHom.leastCone_mem C.property))
+      ⟨starSubdivisionGenerator_mem Φ.lattice _ hσt none, hsub.le_leastCone C.property hu⟩).trans
         inf_le_right
   · intro hσL
     obtain ⟨C, hC⟩ := C

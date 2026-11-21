@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -75,29 +76,24 @@ theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : I
     {v : ι → A} : v ∈ range e.vecMulLinear ↔ v ᵥ* e = v :=
   he.vecMulLinear.mem_range_iff
 
-/-- Each row of an idempotent matrix lies in its range. -/
-theorem IsIdempotentElem.row_mem_range_vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentElem e)
-    (i : ι) : e i ∈ range e.vecMulLinear := by
-  rw [he.mem_range_vecMulLinear_iff, ← Matrix.mul_apply_eq_vecMul, he.eq]
-
 /-- A vector `v` in the range of an idempotent matrix `e` is the combination `∑ i, vᵢ • eᵢ` of
 the rows `eᵢ` of `e`. -/
 theorem IsIdempotentElem.eq_sum_smul_row {e : Matrix ι ι A} (he : IsIdempotentElem e)
     (v : range e.vecMulLinear) :
-    v = ∑ i, (v : ι → A) i • (⟨e i, he.row_mem_range_vecMulLinear i⟩ : range e.vecMulLinear) := by
+    v = ∑ i, (v : ι → A) i • (⟨e i, e.row_mem_range_vecMulLinear i⟩ : range e.vecMulLinear) := by
   ext1
   rw [Submodule.coe_sum]
   simp only [Submodule.coe_smul, ← vecMul_eq_sum]
-  exact (he.mem_range_vecMulLinear_iff.1 v.2).symm
+  exact (he.mem_range_vecMulLinear_iff.1 v.property).symm
 
 omit [Fintype ι] in
 /-- A linear map from the range of an idempotent matrix `f` to row vectors is right multiplication
 by the matrix of its values on the rows of `f`. -/
 theorem IsIdempotentElem.linearMap_apply_eq_vecMul {f : Matrix κ κ A} (hf : IsIdempotentElem f)
     (g : range f.vecMulLinear →ₗ[A] (ι → A)) {w : κ → A} (hw : w ∈ range f.vecMulLinear) :
-    g ⟨w, hw⟩ = w ᵥ* .of fun j ↦ g ⟨f j, hf.row_mem_range_vecMulLinear j⟩ := by
+    g ⟨w, hw⟩ = w ᵥ* .of fun j ↦ g ⟨f j, f.row_mem_range_vecMulLinear j⟩ := by
   have hsum : (⟨w, hw⟩ : range f.vecMulLinear) =
-      ∑ j, w j • ⟨f j, hf.row_mem_range_vecMulLinear j⟩ := by
+      ∑ j, w j • ⟨f j, f.row_mem_range_vecMulLinear j⟩ := by
     ext1
     rw [Submodule.coe_sum]
     simp only [Submodule.coe_smul, ← vecMul_eq_sum]
@@ -111,18 +107,17 @@ namespace Matrix
 
 /-- The matrix whose rows are the images of the rows of an idempotent matrix `e` under an
 isomorphism of ranges. -/
-private def rowImage {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
+private def rowImage {e : Matrix ι ι A} {f : Matrix κ κ A}
     (ψ : range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear) : Matrix ι κ A :=
-  .of fun i ↦ ψ ⟨e i, he.row_mem_range_vecMulLinear i⟩
+  .of fun i ↦ ψ ⟨e i, e.row_mem_range_vecMulLinear i⟩
 
 private theorem rowImage_mul_rowImage_symm {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
-    (ψ : range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear) :
-    rowImage he ψ * rowImage hf ψ.symm = e := by
+    (hf : IsIdempotentElem f) (ψ : range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear) :
+    rowImage ψ * rowImage ψ.symm = e := by
   ext i j
   rw [mul_apply_eq_vecMul]
   have h := hf.linearMap_apply_eq_vecMul ((range e.vecMulLinear).subtype ∘ₗ ψ.symm.toLinearMap)
-    (ψ ⟨e i, he.row_mem_range_vecMulLinear i⟩).2
+    (ψ ⟨e i, e.row_mem_range_vecMulLinear i⟩).property
   simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe, Subtype.coe_eta,
     LinearEquiv.symm_apply_apply] at h
   exact congrFun h.symm j
@@ -136,8 +131,8 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
       ∃ (x : Matrix ι κ A) (y : Matrix κ ι A), x * y = e ∧ y * x = f := by
   constructor
   · rintro ⟨ψ⟩
-    refine ⟨rowImage he ψ, rowImage hf ψ.symm, rowImage_mul_rowImage_symm he hf ψ, ?_⟩
-    simpa using rowImage_mul_rowImage_symm hf he ψ.symm
+    refine ⟨rowImage ψ, rowImage ψ.symm, rowImage_mul_rowImage_symm hf ψ, ?_⟩
+    simpa using rowImage_mul_rowImage_symm he ψ.symm
   · rintro ⟨x, y, hxy, hyx⟩
     -- Right multiplication by `x` and by `y` restrict to mutually inverse maps of the ranges.
     have hx : ∀ v ∈ range e.vecMulLinear, v ᵥ* x ∈ range f.vecMulLinear := fun v hv ↦ by
@@ -147,14 +142,14 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
       rw [he.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hxy, ← Matrix.mul_assoc, hyx,
         ← vecMul_vecMul, (hf.mem_range_vecMulLinear_iff).1 hw]
     exact ⟨{
-      toFun v := ⟨v ᵥ* x, hx v v.2⟩
-      invFun w := ⟨w ᵥ* y, hy w w.2⟩
+      toFun v := ⟨v ᵥ* x, hx v v.property⟩
+      invFun w := ⟨w ᵥ* y, hy w w.property⟩
       map_add' v v' := Subtype.ext (add_vecMul _ _ _)
       map_smul' a v := Subtype.ext (smul_vecMul _ _ _)
       left_inv v := Subtype.ext <| by
-        simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.2]
+        simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.property]
       right_inv w := Subtype.ext <| by
-        simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.2] }⟩
+        simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.property] }⟩
 
 variable {ι' κ' : Type*}
 
@@ -164,7 +159,7 @@ coordinate. For an idempotent `e` this is the map `Aⁿ e → Bⁿ f(e)`. -/
 def rangeVecMulLinearMap {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B) :
     range e.vecMulLinear →ₛₗ[f] range (e.map f).vecMulLinear where
   toFun v := ⟨f ∘ v, by
-    obtain ⟨u, hu⟩ := v.2
+    obtain ⟨u, hu⟩ := v.property
     exact ⟨f ∘ u, funext fun i ↦ by simp [← hu, RingHom.map_vecMul]⟩⟩
   map_add' v w := Subtype.ext <| funext fun i ↦ by simp
   map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
@@ -195,9 +190,10 @@ theorem mem_range_vecMulLinear_fromBlocks_iff {e : Matrix ι ι' A} {f : Matrix 
 def rangeVecMulLinearFromBlocksEquiv (e : Matrix ι ι' A) (f : Matrix κ κ' A) :
     range (fromBlocks e 0 0 f).vecMulLinear ≃ₗ[A]
       range e.vecMulLinear × range f.vecMulLinear where
-  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.2).1⟩,
-    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.2).2⟩)
-  invFun p := ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.2, p.2.2⟩⟩
+  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).1⟩,
+    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).2⟩)
+  invFun p := ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.property,
+      p.2.property⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := Subtype.ext (Sum.elim_comp_inl_inr _)

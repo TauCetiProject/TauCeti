@@ -100,9 +100,9 @@ once one is proved.
   `Bₙ` diagram that the root subgroups below are indexed by.
 -/
 
--- Adapted from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD`, which attaches the type-`D` spin
--- carrier the same way, and from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic` for the rank
--- offset of the carrier.
+-- Adapted from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD.Basic`, which attaches the type-`D`
+-- spin carrier the same way, and from `TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic`
+-- for the rank offset of the carrier.
 
 public section
 
@@ -121,13 +121,13 @@ noncomputable section
 serving an index of rank `r` is the one at `r - 1`. The subtraction never truncates, `r` being at
 least two by `TauCeti.TypeBLieIndex.two_le_rank`; `TauCeti.TypeBLieIndex.carrierRank_add_one` is
 the identification that recovers `r`. -/
-def carrierRank : ℕ := d.1.rank - 1
+def carrierRank : ℕ := d.val.rank - 1
 
 /-- The carrier rank of a validated type-`B` index is one less than its rank. -/
 -- Oriented towards `TauCeti.ValidLieTypeIndex.rank`, so that the successor of the carrier rank
 -- normalizes to the rank the index's own Bourbaki index type is built on.
 @[simp]
-theorem carrierRank_add_one : d.carrierRank + 1 = d.1.rank := by
+theorem carrierRank_add_one : d.carrierRank + 1 = d.val.rank := by
   have := d.two_le_rank
   -- The body is unexposed, so the subtraction has to be unfolded before `omega` sees it.
   rw [carrierRank]
@@ -137,17 +137,17 @@ theorem carrierRank_add_one : d.carrierRank + 1 = d.1.rank := by
 identification and nothing else: the spin carrier at `TauCeti.TypeBLieIndex.carrierRank` numbers
 its generators by the Bourbaki numbering of the type-`B` diagram that the index names, node for
 node. -/
-abbrev carrierNode (i : Fin d.1.rank) : Fin (d.carrierRank + 1) :=
+abbrev carrierNode (i : Fin d.val.rank) : Fin (d.carrierRank + 1) :=
   Fin.cast d.carrierRank_add_one.symm i
 
 /-- **The node correspondence transports the type-`B` Cartan matrix.** The entry at a pair of
 carrier nodes is the entry at the pair of Bourbaki nodes they number: `carrierNode` moves no node
 value, only the rank its index type is built on, and `TauCeti.TypeBLieIndex.carrierRank_add_one`
 identifies the two ranks. -/
-theorem cartanMatrix_B_carrierNode (i j : Fin d.1.rank) :
+theorem cartanMatrix_B_carrierNode (i j : Fin d.val.rank) :
     CartanMatrix.B (d.carrierRank + 1) (d.carrierNode i) (d.carrierNode j) =
-      CartanMatrix.B d.1.rank i j := by
-  have hrank : d.1.rank - 1 = d.carrierRank := by
+      CartanMatrix.B d.val.rank i j := by
+  have hrank : d.val.rank - 1 = d.carrierRank := by
     have := d.carrierRank_add_one
     omega
   -- Both sides are the same table of conditions on the two node values, which `carrierNode` leaves
@@ -164,7 +164,7 @@ statement is attached to it. In rank two, `TauCeti.TypeB2LieIndex.spinEquivPinne
 with the points of the pinned `Sp₄/ℤ` group scheme; in higher rank it is not claimed to be the
 points of the pinned simply connected group scheme of type `Bₙ`, no such identification being
 proved. -/
-abbrev AmbientGroup : Type := TypeBSpinCarrier.points d.carrierRank d.1.Closure
+abbrev AmbientGroup : Type := TypeBSpinCarrier.points d.carrierRank d.val.Closure
 
 /-- The ambient group carries a group structure; the carrier being a subgroup of a general linear
 group supplies it. -/
@@ -172,17 +172,17 @@ example : Group d.AmbientGroup := inferInstance
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the type-`B` diagram. It
 is the carrier's numbered raising subgroup at the node that `carrierNode` names. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  TypeBSpinCarrier.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  TypeBSpinCarrier.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
 carrier node. -/
 -- Not a `simp` lemma: `frobenius_simpleRootSubgroup` is the form the simple-root-subgroup action
 -- equations below are stated against, and unfolding to
 -- `TauCeti.TypeBSpinCarrier.rootSubgroupPoints` would keep it from firing.
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      TypeBSpinCarrier.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure :=
+      TypeBSpinCarrier.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the type-`B` root datum.** The character
@@ -195,10 +195,10 @@ group of the diagram, no pinning being constructed for it.
 The character itself is `TauCeti.TypeBSpinCarrier.rootGeneratorWeight`, which
 `TauCeti.TypeBSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints` exhibits as the one
 conjugation by the carrier's split torus rescales the parameter by. -/
-theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
+theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.val.rank) :
     TypeBSpinCarrier.rootGeneratorWeight d.carrierRank (.inl (d.carrierNode i)) (d.carrierNode j) =
-      (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-        (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) j := by
+      (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+        (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) j := by
   -- The carrier reads its raising-generator weight as a simple root of the pinned datum at
   -- `B (carrierRank + 1)`, which is a valid type since the rank is at least two. Both sides are
   -- then entries of the type-`B` Cartan matrix, by the uniform `DynkinType.root_simpleIndex`, and
@@ -222,7 +222,7 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
 every matrix entry to the `q`-th power, and it is the Steinberg endomorphism of the family, by
 `TauCeti.TypeBLieIndex.steinberg_def`. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
+  TypeBSpinCarrier.frobenius d.carrierRank d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Frobenius is the spin carrier's Frobenius at the characteristic and field exponent
 recorded by the index. -/
@@ -231,8 +231,8 @@ recorded by the index. -/
 -- keep them from firing.
 theorem frobenius_def :
     d.frobenius =
-      TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent
-        d.1.Closure :=
+      TypeBSpinCarrier.frobenius d.carrierRank d.val.characteristic d.val.fieldExponent
+        d.val.Closure :=
   (rfl)
 
 /-- The Frobenius acts on the ambient group by raising every matrix entry to the `q`-th power. -/
@@ -240,23 +240,24 @@ theorem frobenius_def :
 theorem coe_frobenius_apply (g : d.AmbientGroup)
     (r c : Fin (TypeBSpinCarrier.dimension d.carrierRank)) :
     ((d.frobenius g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c =
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) r c ^ d.val.fieldOrder
+              := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   exact TypeBSpinCarrier.coe_frobenius_apply _ _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
 to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -264,12 +265,13 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
 `p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its `e`-th power, for
 `e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure
+  TypeBSpinCarrier.frobenius d.carrierRank d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius is the spin carrier's Frobenius at exponent one. -/
 -- Not a `simp` lemma, for the reason `frobenius_def` is not.
 theorem primeFrobenius_def :
-    d.primeFrobenius = TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = TypeBSpinCarrier.frobenius d.carrierRank d.val.characteristic 1 d.val.Closure
+        :=
   (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
@@ -278,25 +280,25 @@ theorem primeFrobenius_def :
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
     (r c : Fin (TypeBSpinCarrier.dimension d.carrierRank)) :
     ((d.primeFrobenius g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c =
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ^
-            d.1.characteristic := by
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) r c ^
+            d.val.characteristic := by
   rw [primeFrobenius_def]
   simpa only [pow_one] using TypeBSpinCarrier.coe_frobenius_apply d.carrierRank
-    d.1.characteristic 1 d.1.Closure g r c
+    d.val.characteristic 1 d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
     pow_one]
 
@@ -306,23 +308,24 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, TypeBSpinCarrier.frobenius_pow, Nat.one_mul]
 
 /-- **The prime-field Frobenius raises every coordinate of the split spin weight torus to the
 `p`-th power.** -/
 @[simp]
-theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
-    d.primeFrobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure s) =
-      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.characteristic) := by
+theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.val.Closureˣ) :
+    d.primeFrobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.val.Closure s) =
+      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.val.Closure (s ^ d.val.characteristic)
+          := by
   rw [primeFrobenius_def, TypeBSpinCarrier.frobenius_weightTorusPoints, pow_one]
 
 /-- **The Frobenius raises every coordinate of the split spin weight torus to the `q`-th
 power.** -/
 @[simp]
-theorem frobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
-    d.frobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure s) =
-      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.fieldOrder) := by
+theorem frobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.val.Closureˣ) :
+    d.frobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.val.Closure s) =
+      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.val.Closure (s ^ d.val.fieldOrder) := by
   rw [frobenius_def, TypeBSpinCarrier.frobenius_weightTorusPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -337,12 +340,13 @@ of the spin carrier whose entries lie in `𝔽_q`. -/
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ∈ d.1.fixedField := by
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) r c ∈ d.val.fixedField
+              := by
   rw [mem_fixedSubgroup, frobenius_def, TypeBSpinCarrier.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-! ## The Steinberg endomorphism -/
 
@@ -366,10 +370,10 @@ theorem steinberg_def : d.steinberg = d.frobenius := (rfl)
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`, the simple-root-subgroup
 action formula of an untwisted Steinberg endomorphism. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def]
   exact d.frobenius_simpleRootSubgroup i u
 
@@ -380,9 +384,10 @@ points of the spin carrier whose entries lie in `𝔽_q`. -/
 theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) :
         Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
-          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ∈ d.1.fixedField := by
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.val.Closure) r c ∈ d.val.fixedField
+              := by
   rw [steinberg_def]
   exact d.mem_fixedSubgroup_frobenius_iff g
 

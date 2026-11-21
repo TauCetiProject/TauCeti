@@ -240,6 +240,16 @@ theorem isCoupling_of_tendsto [l.NeBot]
     refine tendsto_nhds_unique h₂ (hν.congr' ?_)
     exact hπs.mono fun i hi ↦ (isCoupling_toMeasure_iff.mp hi).2.symm
 
+end MovingMarginals
+
+section MovingMarginalsBorel
+
+variable {ι X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [T2Space (ProbabilityMeasure X)] [TopologicalSpace Y] [MeasurableSpace Y]
+  [OpensMeasurableSpace Y] [T2Space (ProbabilityMeasure Y)] {l : Filter ι}
+  {μs : ι → ProbabilityMeasure X} {νs : ι → ProbabilityMeasure Y} {μ : ProbabilityMeasure X}
+  {ν : ProbabilityMeasure Y} {πs : ι → ProbabilityMeasure (X × Y)}
+
 /-- **Relative compactness of a family of transport plans with moving marginals.** If a tail of
 each marginal family is tight, then any eventually feasible family of plans has a weakly convergent
 refinement whose limit is a coupling of the limiting marginals. Prokhorov's theorem needs
@@ -272,7 +282,7 @@ theorem exists_isCoupling_tendsto_of_isTightMeasureSet [T2Space (X × Y)]
   exact ⟨U, π, U.neBot, hUle, hUtend, isCoupling_of_tendsto
     (hπs.filter_mono hUle) hUtend (hμ.mono_left hUle) (hν.mono_left hUle)⟩
 
-end MovingMarginals
+end MovingMarginalsBorel
 
 section CompactMetrizable
 
