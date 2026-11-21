@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Counting.Scattered.Concentration
 public import TauCeti.ModelTheory.RelationalConfiguration.Separation
 public import TauCeti.ModelTheory.Counting.Classes
+import TauCeti.ModelTheory.RelationalConfiguration.Saturation
 
 /-!
 # Analytic splits of concentrated classes
@@ -17,10 +18,12 @@ isomorphism classes, provided both sides are analytic. Uniform back-and-forth se
 the split saturated at one countable level, where concentration supplies the countable side.
 The ambient class need not be invariant under isomorphism.
 
-We also give the relative Borel form and the sentence-cut form. In particular, for a sentence
-whose models on `ℕ` are concentrated, every strengthening by another sentence or its negation
-has a side with countably many models up to isomorphism. This is the splitting property used in
-the characterization of minimally uncountable sentences.
+We also give the relative Borel form and the sentence-cut form. A sentence with countable
+branching is saturated from its countable quantifier rank on, so the sentence-cut form needs no
+analyticity of the ambient class and no countability of the vocabulary. In particular, for a
+sentence whose models on `ℕ` are concentrated, every strengthening by another sentence or its
+negation has a side with countably many models up to isomorphism. This is the splitting property
+used in the characterization of minimally uncountable sentences.
 
 ## References
 
@@ -69,28 +72,25 @@ theorem countable_isoClasses_inter_or_sdiff_of_measurableSet [∀ n, Countable (
   exact hC.countable_isoClasses_inter_or_sdiff_of_analyticSet
     (hCan.inter_measurableSet hB) (sdiff_eq C B ▸ hCan.inter_measurableSet hB.compl) hinv
 
-/-- Every sentence cut of an analytic concentrated class has a side meeting countably many
-isomorphism classes. The class itself need not be invariant under isomorphism. -/
-theorem countable_isoClasses_inter_modelsOf_or_sdiff [∀ n, Countable (L.Relations n)]
-    {ι : Type uι} [Countable ι] (hC : ConcentratedAtBFLevels C) (hCan : AnalyticSet C)
-    (θ : L.SentenceInf ι) :
+/-- Every sentence cut of a concentrated class has a side meeting countably many isomorphism
+classes. The class itself need not be analytic or invariant under isomorphism. -/
+theorem countable_isoClasses_inter_modelsOf_or_sdiff {ι : Type uι} [Countable ι]
+    (hC : ConcentratedAtBFLevels C) (θ : L.SentenceInf ι) :
     Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(C ∩ modelsOf θ) → _))) ∨
       Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(C \ modelsOf θ) → _))) := by
-  refine hC.countable_isoClasses_inter_or_sdiff_of_measurableSet hCan
-    (measurableSet_modelsOf θ) ?_
-  intro c _ d _ hcd hc
-  obtain ⟨e⟩ := isoSetoid_apply.mp hcd
-  exact (e.mem_modelsOf_iff θ).mp hc
+  obtain ⟨α, hα, hsat⟩ := exists_bfLevel_saturated_modelsOf.{u, v, 0, uι, 0} (V := ℕ) θ
+  have h := hC.countable_isoClasses_or_of_saturated inter_subset_left hα
+    fun b hb c hc hbc => ⟨hc, (hsat α le_rfl b c hbc).1 hb.2⟩
+  simpa only [Setoid.countable_quotient_comap_val_iff, sdiff_self_inter] using h
 
 /-- If the models of `φ` on `ℕ` are concentrated, then either `φ ∧ θ` or `φ ∧ ¬θ` has only
 countably many models on `ℕ` up to isomorphism. -/
-theorem countable_quotient_isoSetoidOn_inf_or_inf_not [∀ n, Countable (L.Relations n)]
-    {ι : Type uι} [Countable ι] {φ : L.SentenceInf ι}
+theorem countable_quotient_isoSetoidOn_inf_or_inf_not {ι : Type uι} [Countable ι]
+    {φ : L.SentenceInf ι}
     (hφ : ConcentratedAtBFLevels (modelsOf (V := ℕ) φ)) (θ : L.SentenceInf ι) :
     Countable (Quotient (isoSetoidOn ℕ (φ ⊓ θ))) ∨
       Countable (Quotient (isoSetoidOn ℕ (φ ⊓ θ.not))) := by
-  have h := hφ.countable_isoClasses_inter_modelsOf_or_sdiff
-    (measurableSet_modelsOf φ).analyticSet θ
+  have h := hφ.countable_isoClasses_inter_modelsOf_or_sdiff θ
   simp only [isoSetoidOn, Setoid.countable_quotient_comap_val_iff] at h ⊢
   simpa only [modelsOf_inf, modelsOf_not, sdiff_eq] using h
 

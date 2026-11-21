@@ -156,8 +156,8 @@ theorem IsFreelyIndependent.law_sum {φ : A →ₚ[ℂ] ℂ} {B : ι → Subalge
     (hB : IsFreelyIndependent φ.toLinearMap B) (hφ : φ 1 = 1) (s : Finset ι) {a : ι → A}
     (haB : ∀ i ∈ s, a i ∈ B i) (hasa : ∀ i ∈ s, IsSelfAdjoint (a i)) :
     φ.law (∑ i ∈ s, a i) = s.fold Measure.freeConv (Measure.dirac 0) (fun i => φ.law (a i)) := by
-  have h := ((hB.comp Subtype.val_injective).isFreelyIndependentElements fun i : s => haB i.1 i.2
-    ).law_sum hφ univ fun i _ => hasa i.1 i.2
+  have h := ((hB.comp Subtype.val_injective).isFreelyIndependentElements fun i : s =>
+      haB i.val i.property).law_sum hφ univ fun i _ => hasa i.val i.property
   rw [Finset.univ_eq_attach, Finset.sum_attach] at h
   exact h.trans <| (Finset.fold_map (f := fun i => φ.law (a i))
     (g := Function.Embedding.subtype _)).symm.trans (by rw [Finset.attach_map_val])

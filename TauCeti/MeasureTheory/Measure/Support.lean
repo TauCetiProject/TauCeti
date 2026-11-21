@@ -146,7 +146,7 @@ instance isProbabilityMeasure_comap_support {X : Type*} [TopologicalSpace X]
     [HereditarilyLindelofSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     (μ : Measure X) [IsProbabilityMeasure μ] :
     IsProbabilityMeasure (μ.comap ((↑) : μ.support → X)) :=
-  (MeasurableEmbedding.subtype_coe
+  (MeasurableEmbedding.subtypeVal
     (Measure.isClosed_support (μ := μ)).measurableSet).isProbabilityMeasure_comap
       (by simpa using Measure.support_mem_ae (μ := μ))
 

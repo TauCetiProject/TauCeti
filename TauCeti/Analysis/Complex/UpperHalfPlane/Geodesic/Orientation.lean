@@ -128,7 +128,7 @@ theorem orientedAngle_smul (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hAC 
     geodesicBetween_smul h hAC, velocity_mul, velocity_mul, geodesicLine_geodesicBetween_zero,
     geodesicLine_geodesicBetween_zero, Complex.oangle, Complex.oangle, map_mul, mul_mul_mul_comm,
     Complex.conj_mul', ← Complex.ofReal_pow,
-    Complex.arg_real_mul _ (by positivity [smulDeriv_ne_zero h A])]
+    Complex.arg_ofReal_mul (by positivity [smulDeriv_ne_zero h A])]
 
 /-! ### The normal form: rotations of the imaginary axis -/
 

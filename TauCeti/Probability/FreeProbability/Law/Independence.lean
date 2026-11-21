@@ -83,15 +83,15 @@ theorem law_sum_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ]
     (hlaw : ∀ i ∈ s, φ.law (a i) = ψ.law (b i)) :
     φ.law (∑ i ∈ s, a i) = ψ.law (∑ i ∈ s, b i) := by
   let P : FreeAlgebra ℂ s := ∑ i : s, FreeAlgebra.ι ℂ i
-  have hPa : FreeAlgebra.lift ℂ (fun i : s => a i.1) P = ∑ i ∈ s, a i := by
+  have hPa : FreeAlgebra.lift ℂ (fun i : s => a i.val) P = ∑ i ∈ s, a i := by
     simp [P, Finset.univ_eq_attach, Finset.sum_attach]
-  have hPb : FreeAlgebra.lift ℂ (fun i : s => b i.1) P = ∑ i ∈ s, b i := by
+  have hPb : FreeAlgebra.lift ℂ (fun i : s => b i.val) P = ∑ i ∈ s, b i := by
     simp [P, Finset.univ_eq_attach, Finset.sum_attach]
   rw [← hPa, ← hPb]
   exact (ha.comp Subtype.val_injective).law_lift_eq_of_forall_law_eq
-    (hb.comp Subtype.val_injective) hφ hψ (fun i => hasa i.1 i.2) (fun i => hbsa i.1 i.2)
-    (fun i => hlaw i.1 i.2) P (hPa.symm ▸ isSelfAdjoint_sum s hasa)
-    (hPb.symm ▸ isSelfAdjoint_sum s hbsa)
+    (hb.comp Subtype.val_injective) hφ hψ (fun i => hasa i.val i.property)
+    (fun i => hbsa i.val i.property) (fun i => hlaw i.val i.property) P
+    (hPa.symm ▸ isSelfAdjoint_sum s hasa) (hPb.symm ▸ isSelfAdjoint_sum s hbsa)
 
 /-- Binary sums of distinct freely independent selfadjoint elements depend in law only on the two
 individual laws. -/
@@ -125,10 +125,13 @@ theorem law_sum_eq_of_forall_law_eq {φ : A →ₚ[ℂ] ℂ} {ψ : B →ₚ[ℂ]
     (hlaw : ∀ i ∈ s, φ.law (a i) = ψ.law (b i)) :
     φ.law (∑ i ∈ s, a i) = ψ.law (∑ i ∈ s, b i) := by
   simpa only [Finset.univ_eq_attach, Finset.sum_attach] using
-    ((hA.comp Subtype.val_injective).isFreelyIndependentElements fun i : s => haS i.1 i.2)
+    ((hA.comp Subtype.val_injective).isFreelyIndependentElements
+        fun i : s => haS i.val i.property)
       |>.law_sum_eq_of_forall_law_eq
-      ((hB.comp Subtype.val_injective).isFreelyIndependentElements fun i : s => hbS i.1 i.2)
-      hφ hψ univ (fun i _ => hasa i.1 i.2) (fun i _ => hbsa i.1 i.2) (fun i _ => hlaw i.1 i.2)
+      ((hB.comp Subtype.val_injective).isFreelyIndependentElements
+        fun i : s => hbS i.val i.property)
+      hφ hψ univ (fun i _ => hasa i.val i.property) (fun i _ => hbsa i.val i.property)
+      (fun i _ => hlaw i.val i.property)
 
 end IsFreelyIndependent
 

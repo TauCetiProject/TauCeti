@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.Analysis.LocallyConvex.WeakSpace
+public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Function.L2Space

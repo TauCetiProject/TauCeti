@@ -111,7 +111,7 @@ theorem exists_lift_finBasis_cotangentSpace (hfg : (maximalIdeal Q).FG) {π : Q 
   choose y hy using fun j ↦ hπ (m j : A)
   have hy𝔪 (j : Fin e) : y j ∈ maximalIdeal Q := by
     rw [← maximalIdeal_comap π, Ideal.mem_comap, hy]
-    exact (m j).2
+    exact (m j).property
   have hsum𝔪 (c : Fin e → Q) : π (∑ j, c j * y j) ∈ maximalIdeal A :=
     hπ𝔪 ▸ Ideal.mem_map_of_mem π (Ideal.sum_mem _ fun j _ ↦ Ideal.mul_mem_left _ _ (hy𝔪 j))
   have hcot (c : Fin e → Q) : (maximalIdeal A).toCotangent ⟨_, hsum𝔪 c⟩ =

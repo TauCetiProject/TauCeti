@@ -60,7 +60,7 @@ theorem IsJordanSplitting.forall_pow_succ_dvd_self_iff (h : B.IsJordanSplitting 
     obtain ⟨f, _, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
     simpa using (hf x x hx hx).add (hself (f x))
   · intro hself x
-    exact hself x (h.pow_dvd_apply x.2)
+    exact hself x (h.pow_dvd_apply x.property)
 
 /-- A free Jordan constituent is even at its own scale `π ^ j` exactly when every one of its
 vectors has self-pairing divisible by `π ^ (j + 1)`. -/
@@ -89,7 +89,7 @@ theorem IsJordanSplitting.even_finrank_of_isScaleEven [IsLocalRing R] [Module.Fr
   have hCsymm : C.IsSymm := isSymm_def.mpr fun x y ↦
     (mul_cancel_left_mem_nonZeroDivisors hpow).mp (by rw [← hBC, ← hBC, hB.eq])
   have hdiag : ∀ x, ¬IsUnit (C x x) := fun x hx ↦ by
-    obtain ⟨c, hc⟩ := (h.isScaleEven_restrict_iff j).mp he x x.2
+    obtain ⟨c, hc⟩ := (h.isScaleEven_restrict_iff j).mp he x x.property
     rw [hBC, pow_succ, mul_assoc] at hc
     exact hπ' (isUnit_of_dvd_unit ⟨c, (mul_cancel_left_mem_nonZeroDivisors hpow).mp hc⟩ hx)
   have : C.IsPerfPair := hCp
@@ -142,7 +142,7 @@ theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff (h : B.IsJordanSplitting π
   refine ⟨fun heven x hx ↦ ?_, fun H w hw ↦ H w (h.pow_dvd_apply hw)⟩
   obtain ⟨f, -, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
   have := ((mul_dvd_mul_right h2 _).trans (by rw [← pow_succ'])).trans (hf x x hx hx)
-  simpa using dvd_add this (heven _ (f x).2)
+  simpa using dvd_add this (heven _ (f x).property)
 
 /-- Parity of the constituent of index `j` at its own scale, in the sense of `2 * π ^ j`
 dividing the self-pairings, is an isometry invariant when `2 ∣ π`. -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
 public import TauCeti.LinearAlgebra.Orientation.Prod
+import TauCeti.Analysis.Normed.Module.Orientation
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
 
@@ -57,6 +59,16 @@ The sign does not change when the point moves along the flow
 trajectory: along the flow, the unstable frame and the normal coordinates are rescaled by positive
 factors, and the velocity is carried to the velocity.
 
+The comparison map depends continuously on `y` along `W^u(p) ∩ W^s(q)`
+(`TauCeti.IsAdaptedPseudoGradient.continuousWithinAt_trajectoryComparison`), whatever the indices
+of `p` and `q`: near a point `y₀`, the unstable frame and the normal coordinates are both read at
+fixed times of linear flow, in the charts `φp ∘ Φ_{-T}` and `φq ∘ Φ_{T'}`. Consequently, near
+every point where the comparison map is an isomorphism, the sign is locally constant on
+`W^u(p) ∩ W^s(q)`, not only along each trajectory
+(`TauCeti.IsAdaptedPseudoGradient.eventually_trajectorySign_eq`). For critical points whose indices
+differ by more than one, the comparison maps are not isomorphisms, and their continuity is the
+input for orienting the spaces of trajectories coherently through them.
+
 Reversing either orientation reverses every sign
 (`TauCeti.IsAdaptedPseudoGradient.trajectorySign_neg_left`,
 `TauCeti.IsAdaptedPseudoGradient.trajectorySign_neg_right`). The **signed count**
@@ -80,7 +92,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `bijective_trajectoryComparison`: the comparison map is an isomorphism at the points of
   trajectories between critical points of consecutive index.
 * `trajectorySign_eq_one_or_eq_neg_one`: so the sign of such a trajectory is `±1`.
+* `exists_trajectorySign_eq_and_map_eq`, `trajectorySign_eq_of_map_eq`: where the comparison map
+  is an isomorphism, the sign is the unit by which it scales the target orientation; the second
+  reads it off any linear equivalence agreeing with the comparison map.
 * `trajectorySign_flow`: the sign is constant along each trajectory.
+* `continuousWithinAt_trajectoryComparison`, `continuousOn_trajectoryComparison`: the comparison
+  map depends continuously on the point of `W^u(p) ∩ W^s(q)`.
+* `eventually_trajectorySign_eq`: so the sign is locally constant on `W^u(p) ∩ W^s(q)` where the
+  comparison map is an isomorphism.
 * `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
   signs.
 * `signBasis_mul_trajectorySign`: changing the orientation at the target to that of a basis
@@ -106,7 +125,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 public section
 
 open Function Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -117,6 +136,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace MorseChart
 
 variable {x : M} (φ : MorseChart E f x)
+
+/-- An orientation of the space of coordinates of negative weight of a Morse chart, indexed by the
+Morse index: the orientation of a basis. It serves wherever some orientation is needed and the
+result does not depend on which. -/
+noncomputable def negativeOrientation :
+    Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) :=
+  (Module.finBasisOfFinrankEq ℝ _ φ.finrank_negativeWeight_fun).orientation
 
 /-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
 chart at `q`, against which the signs of the trajectories from a critical point `p` of index
@@ -155,7 +181,7 @@ theorem eq_or_eq_neg_trajectoryTargetOrientation
     (o : Orientation ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :
     o = φ.trajectoryTargetOrientation oq hpq ∨ o = -φ.trajectoryTargetOrientation oq hpq :=
   o.eq_or_eq_neg _ (by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+    rw [Nat.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
     omega)
 
 /-- Transporting the orientation `oq` of the coordinates of negative weight of `φ` to those of
@@ -255,6 +281,39 @@ theorem trajectorySign_eq_one_or_eq_neg_one_of_bijective {y : M}
     hX.trajectorySign φp φq op oq hpq y = 1 ∨ hX.trajectorySign φp φq op oq hpq y = -1 := by
   rw [trajectorySign_of_bijective h]
   split_ifs <;> simp
+
+/-- **The sign as a unit.** Where the comparison map is an isomorphism, it carries `op` to the
+target orientation scaled by a unit sign `u`, and the sign of the trajectory is `u`. -/
+theorem exists_trajectorySign_eq_and_map_eq {y : M}
+    (h : Bijective (hX.trajectoryComparison φp φq y)) :
+    ∃ u : ℤˣ, hX.trajectorySign φp φq op oq hpq y = u ∧
+      Orientation.map _ (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap h)
+          op =
+        Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq := by
+  classical
+  refine ⟨if Orientation.map _ (LinearEquiv.ofBijective _ h) op =
+      φq.trajectoryTargetOrientation oq hpq then 1 else -1, ?_,
+    (Orientation.intCast_units_smul_ite_eq _ _ ?_).symm⟩
+  · rw [trajectorySign_of_bijective h]
+    split_ifs <;> simp
+  · rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
+    omega
+
+/-- **Reading off the sign.** If a linear equivalence `L` agrees with the comparison map and
+carries `op` to the target orientation scaled by a unit sign `u`, the sign of the trajectory is
+`u`. -/
+theorem trajectorySign_eq_of_map_eq {y : M}
+    (L : ({i // φp.weight i < 0} → ℝ) ≃ₗ[ℝ] ℝ × ({i // φq.weight i < 0} → ℝ))
+    (hL : ∀ v, L v = hX.trajectoryComparison φp φq y v) {u : ℤˣ}
+    (hu : Orientation.map _ L op =
+      Units.map (Int.castRingHom ℝ).toMonoidHom u • φq.trajectoryTargetOrientation oq hpq) :
+    hX.trajectorySign φp φq op oq hpq y = u := by
+  have h : Bijective (hX.trajectoryComparison φp φq y) := by
+    rw [← funext hL]
+    exact L.bijective
+  obtain ⟨v, hv, hmap⟩ := exists_trajectorySign_eq_and_map_eq (op := op) (oq := oq) (hpq := hpq) h
+  rw [show LinearEquiv.ofBijective _ h = L from LinearEquiv.ext fun v ↦ (hL v).symm] at hmap
+  rw [hv, Orientation.intCast_units_smul_injective _ (hmap.symm.trans hu)]
 
 /-- **Reversing the orientation at the source reverses the sign.** -/
 @[simp]
@@ -358,7 +417,6 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
     Bijective (hX.trajectoryComparison φp φq y) := by
   have hne : p ≠ q := by rintro rfl; omega
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
   have hcrit := hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy
   have hinj : Injective (hX.trajectoryComparison φp φq y) := by
     refine (injective_iff_map_eq_zero (hX.trajectoryComparison φp φq y)).2 fun v hv ↦ ?_
@@ -371,7 +429,7 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
       rw [hc, map_smul, smul_eq_mul] at h
       exact (mul_eq_zero.1 h).resolve_right (hX.mvfderiv_apply_lt_zero y hcrit).ne
     rw [hc0, zero_smul] at hc
-    exact hX.injective_unstableFrame hφp hT (hc.trans (map_zero _).symm)
+    exact hX.injective_unstableFrame_of_mem hφp hf hy.1 (hc.trans (map_zero _).symm)
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rw [Module.finrank_prod, Module.finrank_self, φp.finrank_negativeWeight_fun,
     φq.finrank_negativeWeight_fun]
@@ -451,6 +509,94 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
     omega
   rw [hmap, ((Orientation.map _ e op).map_eq_iff_det_pos B hcard).2
     (by rw [LinearMap.det_eq_fst_of_snd_eq _ hB]; exact h1)]
+
+/-- **The comparison maps vary continuously on `W^u(p) ∩ W^s(q)`.** The comparison map at `y`
+is continuous at every point of `W^u(p) ∩ W^s(q)` within that set, as a function of `y` with values
+in the fixed space of linear maps from the coordinates of negative weight of `φp` to `ℝ` times those
+of `φq`. No index or transversality condition is needed. -/
+theorem continuousWithinAt_trajectoryComparison (hf : IsMorse 𝓘(ℝ, E) f) {y₀ : M}
+    (hy₀ : y₀ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    ContinuousWithinAt (hX.trajectoryComparison φp φq)
+      (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y₀ := by
+  -- The derivative of `f` along the unstable frame.
+  have h₁ := (hX.continuousWithinAt_mvfderiv_comp_unstableFrame hφp hf
+    (hf.contMDiff.contMDiffAt.of_le (by norm_cast)) hy₀.1).mono
+    (inter_subset_left (t := hX.flow.stableSet q))
+  -- Near `y₀` on `W^s(q)`, the normal coordinates are, at one time `T` of linear forward flow,
+  -- `e^{-T}` times the coordinates of negative weight of the derivative of `h = φq ∘ Φ_T`.
+  obtain ⟨T, hT⟩ := hX.exists_eventually_mem_linearForwardTimes hφq hy₀.2
+  have hT₀ : T ∈ hX.linearForwardTimes φq y₀ := hT.self_of_nhds hy₀.2
+  set h : M → E := φq.toChart ∘ hX.flow T
+  have hh : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 h y₀ :=
+    ((contMDiffAt_of_mem_maximalAtlas φq.mem_maximalAtlas
+      ((hX.mem_linearForwardTimes φq).1 hT₀).1).comp _
+        (hX.contMDiff_flow_apply T).contMDiffAt).of_le (by norm_cast)
+  set C : E →L[ℝ] ({i // φq.weight i < 0} → ℝ) :=
+    Real.exp (-T) • LinearMap.toContinuousLinearMap φq.negativeCoord
+  have hCh : ContinuousWithinAt
+      (fun y ↦ C.comp ((mvfderiv 𝓘(ℝ, E) h y).comp (hX.unstableFrame φp y)))
+      (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y₀ :=
+    continuousWithinAt_const.clm_comp
+      ((hX.continuousWithinAt_mvfderiv_comp_unstableFrame hφp hf hh hy₀.1).mono
+        (inter_subset_left (t := hX.flow.stableSet q)))
+  have h₂ : ContinuousWithinAt (fun y ↦ (hX.stableNormal φq y).comp (hX.unstableFrame φp y))
+      (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y₀ := by
+    refine hCh.congr_of_eventuallyEq_of_mem ?_ hy₀
+    filter_upwards [nhdsWithin_le_nhds hT, self_mem_nhdsWithin] with y hyT hy
+    ext v : 1
+    simp only [C, ContinuousLinearMap.comp_apply, smul_apply,
+      LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq (hyT hy.2)]
+    rw [mvfderiv_apply_eq_mfderiv_apply]
+  -- The comparison map is the pairing of its two components by `ContinuousLinearMap.prodₗᵢ`.
+  -- Mathlib has no apply lemma for `prodₗᵢ`; this holds by `rfl` because `prodₗᵢ ℝ (A, B)` is
+  -- `A.prod B` by definition, and `trajectoryComparison` is defined as exactly this `prod`.
+  have hprod : hX.trajectoryComparison φp φq = fun y ↦ ContinuousLinearMap.prodₗᵢ ℝ
+      ((mvfderiv 𝓘(ℝ, E) f y).comp (hX.unstableFrame φp y),
+        (hX.stableNormal φq y).comp (hX.unstableFrame φp y)) :=
+    rfl
+  rw [hprod]
+  exact (ContinuousLinearMap.prodₗᵢ ℝ).continuous.continuousAt.comp_continuousWithinAt
+    (h₁.prodMk h₂)
+
+/-- **The comparison maps vary continuously on all of `W^u(p) ∩ W^s(q)`.** -/
+theorem continuousOn_trajectoryComparison (hf : IsMorse 𝓘(ℝ, E) f) :
+    ContinuousOn (hX.trajectoryComparison φp φq) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) :=
+  fun _ hy ↦ continuousWithinAt_trajectoryComparison hφp hφq hf hy
+
+/-- **The sign of a trajectory is locally constant.** Near a point `y₀` of `W^u(p) ∩ W^s(q)` at
+which the comparison map is an isomorphism, the trajectories have the sign of the trajectory
+through `y₀`. -/
+theorem eventually_trajectorySign_eq (hf : IsMorse 𝓘(ℝ, E) f) {y₀ : M}
+    (hy₀ : y₀ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (hC : Bijective (hX.trajectoryComparison φp φq y₀)) :
+    ∀ᶠ y in 𝓝[hX.flow.unstableSet p ∩ hX.flow.stableSet q] y₀,
+      hX.trajectorySign φp φq op oq hpq y = hX.trajectorySign φp φq op oq hpq y₀ := by
+  set f₀ := (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y₀).toLinearMap
+    hC).toContinuousLinearEquiv
+  have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
+      Module.finrank ℝ ({i // φp.weight i < 0} → ℝ) := by
+    rw [Fintype.card_fin, φp.finrank_negativeWeight_fun]
+  -- On the subtype `W^u(p) ∩ W^s(q)`, the comparison maps form a family continuous at `y₀`.
+  have hL := (continuousWithinAt_iff_continuousAt_domRestrict _ hy₀).1
+    (continuousWithinAt_trajectoryComparison hφp hφq hf hy₀)
+  -- Both sides are the comparison map at `y₀`: `domRestrict` evaluates at `y₀`, and `f₀` is
+  -- that map, made an equivalence.
+  have hL₀ : (hX.flow.unstableSet p ∩ hX.flow.stableSet q).domRestrict
+      (hX.trajectoryComparison φp φq) ⟨y₀, hy₀⟩ = f₀ :=
+    ContinuousLinearMap.ext fun v ↦ by simp [f₀, Set.domRestrict_apply]
+  rw [← eventually_nhds_subtype_iff _ ⟨y₀, hy₀⟩]
+  -- Near `y₀` the comparison maps stay isomorphisms, and transport `op` as at `y₀`.
+  filter_upwards [op.eventually_map_eq_map_of_continuousAt hcard (fun _ ↦ hL) hL₀,
+    hL.preimage_mem_nhds (hL₀ ▸ ContinuousLinearEquiv.nhds f₀)] with y hy ⟨g, hg⟩
+  have hgy : (g : _ →L[ℝ] _) = hX.trajectoryComparison φp φq y := by
+    rw [hg, Set.domRestrict_apply]
+  have hCb : Bijective (hX.trajectoryComparison φp φq y) := by
+    rw [← hgy, ContinuousLinearEquiv.coe_coe]
+    exact g.bijective
+  have hge : LinearEquiv.ofBijective _ hCb = g.toLinearEquiv :=
+    LinearEquiv.ext fun v ↦ by simp [← hgy]
+  rw [trajectorySign_of_bijective hCb, trajectorySign_of_bijective hC, hge, hy g hg,
+    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv]
 
 /-- **The signed count reduces to the trajectory count modulo two.** -/
 theorem intCast_signedTrajectoryCount (hMS : hX.IsMorseSmale)

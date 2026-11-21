@@ -89,14 +89,14 @@ private theorem nsmul_H0_internalHom_eq_zero [NeZero n] (he : ∀ ζ : Kˣ, ζ ^
       (InternalHom (AbsoluteGaloisGroup K) (ZMod n) (KummerCoeff K n))) :
     e • φ = 0 := by
   -- the value `z = φ 1` is fixed by `G_K`, so its image in `(Kˢ)ˣ` comes from a unit `a` of `K`
-  set z := φ.1.toAddMonoidHom 1
+  set z := φ.val.toAddMonoidHom 1
   have hz : kummerCoeffIncl K n z ∈ H0 (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
     (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦ by
       rw [← kummerCoeffIncl_equivariant, ← InternalHom.smul_eq_self_iff.1
-        ((FixedPoints.mem_addSubgroup _ _ _).1 φ.2 g) 1, htriv]
+        ((FixedPoints.mem_addSubgroup _ _ _).1 φ.property g) 1, htriv]
   obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.1 hz
   have hzn : ((z.toMul : rootsOfUnity n (SeparableClosure K)) : (SeparableClosure K)ˣ) ^ n = 1 :=
-    (mem_rootsOfUnity _ _).1 z.toMul.2
+    (mem_rootsOfUnity _ _).1 z.toMul.property
   have han : a ^ n = 1 := by
     refine Units.map_injective (algebraMap K (SeparableClosure K)).injective ?_
     rw [map_pow, map_one, ha, toMul_kummerCoeffIncl, hzn]

@@ -86,7 +86,7 @@ private theorem isSelfAdjoint_factorCoordinate (i : ι) : IsSelfAdjoint (factorC
 private theorem spectrum_factorCoordinate_subset_support (i : ι) :
     spectrum ℝ (factorCoordinate μ i) ⊆ (μ i).support := by
   rintro r hr; rw [ContinuousMap.spectrum_eq_preimage_range] at hr
-  rcases hr with ⟨x, hx⟩; exact (Complex.ofReal_injective hx : x.1 = r) ▸ x.2
+  rcases hr with ⟨x, hx⟩; exact (Complex.ofReal_injective hx : x.val = r) ▸ x.property
 
 variable [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
@@ -321,7 +321,7 @@ theorem vonNeumannState_mul_comm (x y : vonNeumannAlgebra μ) :
       ContinuousLinearMapWOT.ofCLM (z : HilbertSpace μ →L[ℂ] HilbertSpace μ) ∈ closure s := by
     dsimp only [s]
     rw [← StarAlgebra.adjoin_eq (algebra μ), ← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
-    exact ⟨z, z.2, rfl⟩
+    exact ⟨z, z.property, rfl⟩
   have hc := continuous_wot_vectorState μ
   simpa only [vonNeumannState_apply, MulMemClass.coe_mul, hmul] using
     eqOn_closure₂' hs
