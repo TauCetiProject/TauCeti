@@ -148,12 +148,16 @@ theorem tendsto_log_norm_siegelFunction_div_log_norm_q {r : Fin 2 → ℝ}
   field_simp [Real.log_ne_zero_of_pos_of_ne_one hq hq1]
   ring
 
+/-- The decomposition `r = ({r₁}, r₂) + (⌊r₁⌋, 0)` into a parameter with first coordinate in
+`[0, 1)` and an integral translation. -/
+private theorem eq_fract_add_floor (r : Fin 2 → ℝ) :
+    r = ![Int.fract (r 0), r 1] + fun i ↦ ((![⌊r 0⌋, 0] : Fin 2 → ℤ) i : ℝ) := by
+  ext i; fin_cases i <;> simp [Int.fract_add_floor]
+
 /-- Moving `r₁` into `[0, 1)` by an integral translation does not change `‖g_r‖`. -/
 private theorem norm_siegelFunction_fract (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0 < τ.im) :
     ‖siegelFunction r τ‖ = ‖siegelFunction ![Int.fract (r 0), r 1] τ‖ := by
-  have hr : r = ![Int.fract (r 0), r 1] + fun i ↦ ((![⌊r 0⌋, 0] : Fin 2 → ℤ) i : ℝ) := by
-    ext i; fin_cases i <;> simp [Int.fract_add_floor]
-  conv_lhs => rw [hr, siegelFunction_add_intCast _ _ hτ]
+  conv_lhs => rw [eq_fract_add_floor r, siegelFunction_add_intCast _ _ hτ]
   simp [Complex.norm_exp]
 
 /-- **Exponential growth of integral powers of a Siegel function.** For `r ∉ ℤ²` and every
@@ -164,13 +168,12 @@ theorem isBigO_siegelFunction_zpow {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → �
     (fun τ : ℍ ↦ siegelFunction r τ ^ m) =O[atImInfty]
       fun τ ↦ Real.exp (-(π * m * bernoulliFun 2 (Int.fract (r 0))) * τ.im) := by
   set r' : Fin 2 → ℝ := ![Int.fract (r 0), r 1]
-  have hr' : ∀ s : Fin 2 → ℤ, r' ≠ fun i ↦ (s i : ℝ) := fun s h ↦ by
-    refine hr (s + ![⌊r 0⌋, 0]) (funext fun i ↦ ?_)
-    have := congrFun h i
-    fin_cases i
-    · have h0 : Int.fract (r 0) = s 0 := this
-      simp [← h0, Int.fract_add_floor]
-    · simpa [r'] using this
+  have hr' : ∀ s : Fin 2 → ℤ, r' ≠ fun i ↦ (s i : ℝ) := fun s h ↦
+    hr (s + ![⌊r 0⌋, 0]) <| (eq_fract_add_floor r).trans <| by
+      change r' + _ = _
+      rw [h]
+      ext i
+      simp
   have hlim := tendsto_norm_siegelFunction_div_rpow (r := r') (Int.fract_nonneg _)
     (Int.fract_lt_one _)
   -- The limit is nonzero because `r' ∉ ℤ²`.
@@ -180,7 +183,7 @@ theorem isBigO_siegelFunction_zpow {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → �
       simpa only [ofReal_zero, zero_mul, zero_add] using
         UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero (x := 0) (y := r' 1)
           (τ := Complex.I) (by simp)
-          (fun k _ hk ↦ hr' ![0, k] (by ext i; fin_cases i <;> simp_all))
+          (fun k _ hk ↦ hr' ![0, k] (by ext i; fin_cases i <;> simp [hz, hk]))
     · exact one_ne_zero
   have hbdd := ((hlim.zpow₀ m (Or.inl hL)).isBigO_one ℝ).mul
     (Asymptotics.isBigO_refl (fun τ : ℍ ↦
