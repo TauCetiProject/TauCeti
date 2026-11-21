@@ -47,9 +47,11 @@ root of unity of order prime to `p`.
 * `TauCeti.isTamelyRamified_of_finrank_eq_one`: a degree-one extension is tamely ramified.
 * `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_one`: for `L/K` Galois, the
   order of `G_1` is the residue-characteristic part of the ramification index.
-* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero_quotient_one` and
-  `TauCeti.LocalFieldsRamification.relIndex_lowerRamificationGroup_one_zero`: for `L/K` Galois,
-  the order of `G_0 / G_1` and the relative index of wild inertia are the tame index.
+* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero_quotient_one`,
+  `TauCeti.LocalFieldsRamification.relIndex_lowerRamificationGroup_one_zero`, and
+  `TauCeti.LocalFieldsRamification.index_lowerRamificationGroup_one`: for `L/K` Galois,
+  the order of `G_0 / G_1` and the relative index of wild inertia are the tame index, and the
+  index `[Gal(L/K) : G_1]` is `f(L/K) · ε(L/K)`.
 * `TauCeti.tameRamificationIndex_dvd_card_residueField_sub_one` and
   `TauCeti.tameRamificationIndex_dvd_natCard_pow_inertiaDegree_sub_one`: for `L/K` Galois, the tame
   index divides `#𝓀[L] - 1 = #𝓀[K] ^ f(L/K) - 1`.
@@ -150,6 +152,15 @@ theorem relIndex_lowerRamificationGroup_one_zero [Module.Finite K L] :
       tameRamificationIndex K L := by
   rw [Subgroup.relIndex, Subgroup.index_eq_card,
     natCard_lowerRamificationGroup_zero_quotient_one]
+
+/-- In a finite Galois local-field extension, the index of wild inertia `G_1` is
+`inertiaDegree K L * tameRamificationIndex K L`. -/
+@[simp]
+theorem index_lowerRamificationGroup_one [Module.Finite K L] :
+    (lowerRamificationGroup K L 1).index = inertiaDegree K L * tameRamificationIndex K L := by
+  rw [← Subgroup.relIndex_mul_index
+      (lowerRamificationGroup_antitone K L (by omega : (0 : ℤ) ≤ 1)),
+    relIndex_lowerRamificationGroup_one_zero K L, index_lowerRamificationGroup_zero K L, mul_comm]
 
 end Indices
 
@@ -287,9 +298,9 @@ theorem exists_pow_tameRamificationIndex_eq_mul {π : Kˣ} (hπ : IsUniformizer 
   have hunit : IsUnit ((e / p ^ k : ℕ) : 𝒪[L]) := by
     rw [IsLocalRing.isUnit_natCast_iff_not_dvd, ← Algebra.ringChar_eq 𝓀[K] 𝓀[L]]
     exact Nat.not_dvd_ordCompl (CharP.prime_ringChar 𝓀[K]) ramificationIndex_pos.ne'
-  obtain ⟨γ, hγ⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hunit y.2.2
+  obtain ⟨γ, hγ⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hunit y.2.property
   rw [powMonoidHom_apply] at hγ
-  refine ⟨β * γ⁻¹, y.1, y.1.2, ?_⟩
+  refine ⟨β * γ⁻¹, y.1, y.1.property, ?_⟩
   have hβ : β ^ (e / p ^ k) = x * Units.map (algebraMap K L : K →* L) π := by simp [x]
   rw [mul_pow, inv_pow, hγ, hβ, hy, mul_right_comm, mul_inv_cancel_right]
 

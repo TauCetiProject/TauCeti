@@ -237,7 +237,8 @@ instance isGalois_maximalTameExtension [IsSepClosed Ω] :
   have (i : {m : ℕ // ¬ ringChar 𝓀[K] ∣ m} × Kˣ) :
       IsGalois K (adjoin K ((X ^ (i.1 : ℕ) - C (i.2 : K)).rootSet Ω)) := by
     have hsep : (X ^ (i.1 : ℕ) - C (i.2 : K)).Separable := separable_X_pow_sub_C _
-      (natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 i.1.2)) i.2.ne_zero
+      (natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 i.1.property))
+          i.2.ne_zero
     have := adjoin_rootSet_isSplittingField
       (IsSepClosed.splits_codomain (f := algebraMap K Ω) _ hsep)
     exact IsGalois.of_separable_splitting_field hsep
@@ -282,7 +283,8 @@ theorem maximalTameExtension_eq_sup_adjoin [IsSepClosed Ω] {π : Kˣ} (hπ : Is
     _ = A ((u : Kˣ) : K) := by
       rw [map_zpow₀]
       field_simp
-  have hzE : z ∈ E := (le_sup_left : _ ≤ E) (mem_maximalUnramifiedExtension_of_pow_eq hm u.2 hzm)
+  have hzE : z ∈ E := (le_sup_left : _ ≤ E) (mem_maximalUnramifiedExtension_of_pow_eq hm u.property
+      hzm)
   have hxz : x = z * y ^ k := by
     simp only [z]
     field_simp
@@ -592,9 +594,9 @@ theorem isProPSylow_wildInertiaSubgroup :
   refine isProPSylow_of_maximal ((Subgroup.isProP_subgroupOf_iff
     (wildInertiaSubgroup_le_inertiaSubgroup K)).2 (isProP_wildInertiaSubgroup K p))
     fun R hR _ σ hσ ↦ Subgroup.mem_subgroupOf.2
-      (mem_wildInertiaSubgroup_of_forall_exists_pow_mem p σ.2 fun U ↦ ?_)
+      (mem_wildInertiaSubgroup_of_forall_exists_pow_mem p σ.property fun U ↦ ?_)
   -- A `p`-power of `σ` lies in the trace of `U` on `I_K`, since `R` is pro-`p`.
-  set V := U.comap (inertiaSubgroup K).subtype continuous_subtype_val
+  set V := U.comap (inertiaSubgroup K).subtype continuous_subtypeVal
   obtain ⟨n, hn⟩ := hR.isPGroup_map_mk' V ⟨_, σ, hσ, rfl⟩
   have hmem : σ ^ p ^ n ∈ V.toSubgroup := by
     rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
@@ -693,7 +695,7 @@ theorem map_wildInertiaSubgroup_restrictNormalHom :
       (map_inertiaSubgroup_restrictNormalHom L).ge
   have hf : Continuous (f.subgroupMap I) :=
     continuous_induced_rng.2 ((InfiniteGalois.restrictNormalHom_continuous L).comp
-      continuous_subtype_val)
+      continuous_subtypeVal)
   -- The image of the Sylow pro-`p` subgroup `P_K` of `I_K` is Sylow in `A`, and it lies in the
   -- `p`-group `G_1(L/K)`, so the two agree.
   have hS := (isProPSylow_wildInertiaSubgroup K p).map_of_surjective _ hf
@@ -713,7 +715,7 @@ theorem map_wildInertiaSubgroup_restrictNormalHom :
   have hτA : (⟨τ, h1A hτ⟩ : A) ∈ (lowerRamificationGroup K L 1).subgroupOf A :=
     Subgroup.mem_subgroupOf.2 hτ
   obtain ⟨σ, hσ, hστ⟩ := (hS.eq_of_le hG1 hle).ge hτA
-  exact ⟨σ.1, Subgroup.mem_subgroupOf.1 hσ, congrArg Subtype.val hστ⟩
+  exact ⟨σ.val, Subgroup.mem_subgroupOf.1 hσ, congrArg Subtype.val hστ⟩
 
 /-- Every element of finite wild inertia lifts to an element of absolute wild inertia. -/
 theorem exists_mem_wildInertiaSubgroup_restrictNormal_eq {τ : Gal(L/K)}

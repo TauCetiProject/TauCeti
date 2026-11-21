@@ -65,7 +65,7 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ
       Submodule.Quotient.mk
         ⟨((unitFiltrationEquivInteger (n + 1) x : 𝒪[K]ˣ) : 𝒪[K]) - 1,
           TauCeti.IsLocalRing.mem_unitFiltration_iff.mp
-            (unitFiltrationEquivInteger (n + 1) x).2⟩ := by
+            (unitFiltrationEquivInteger (n + 1) x).property⟩ := by
   simp [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer]
 
 /-- If `u - 1 = y * π^(n+1)`, then the uniformizer coordinate of the class of `u` is the

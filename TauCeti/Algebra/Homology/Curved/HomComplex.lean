@@ -114,27 +114,27 @@ def homEquivCycles : (X ⟶ Y) ≃ₗ[R] (evenDifferential X Y).ker where
     rw [LinearMap.mem_ker]
     exact evenDifferential_eq_zero X Y f⟩
   invFun f :=
-    { f₀ := f.1.1
-      f₁ := f.1.2
-      comm₀ := ((evenDifferential_eq_zero_iff X Y f.1).1
-        ((LinearMap.mem_ker).1 f.2)).1
-      comm₁ := ((evenDifferential_eq_zero_iff X Y f.1).1
-        ((LinearMap.mem_ker).1 f.2)).2 }
+    { f₀ := f.val.1
+      f₁ := f.val.2
+      comm₀ := ((evenDifferential_eq_zero_iff X Y f.val).1
+        ((LinearMap.mem_ker).1 f.property)).1
+      comm₁ := ((evenDifferential_eq_zero_iff X Y f.val).1
+        ((LinearMap.mem_ker).1 f.property)).2 }
   left_inv f := by ext <;> rfl
   right_inv f := by ext <;> rfl
   map_add' f g := by ext <;> rfl
   map_smul' r f := by ext <;> rfl
 
 @[simp] theorem homEquivCycles_apply_val (f : X ⟶ Y) :
-    (homEquivCycles X Y f).1 = (f.f₀, f.f₁) := by
+    (homEquivCycles X Y f).val = (f.f₀, f.f₁) := by
   simp [homEquivCycles]
 
 @[simp] theorem homEquivCycles_symm_f₀ (z : (evenDifferential X Y).ker) :
-    ((homEquivCycles X Y).symm z).f₀ = z.1.1 := by
+    ((homEquivCycles X Y).symm z).f₀ = z.val.1 := by
   simp [homEquivCycles]
 
 @[simp] theorem homEquivCycles_symm_f₁ (z : (evenDifferential X Y).ker) :
-    ((homEquivCycles X Y).symm z).f₁ = z.1.2 := by
+    ((homEquivCycles X Y).symm z).f₁ = z.val.2 := by
   simp [homEquivCycles]
 
 /-- An odd boundary is the pair of components of the null-homotopic map it defines. -/

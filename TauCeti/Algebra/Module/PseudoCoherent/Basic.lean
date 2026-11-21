@@ -325,8 +325,8 @@ theorem top_iff : IsPseudoCoherentOver R M ⊤ ↔ ∀ m : ℕ, IsPseudoCoherent
   obtain ⟨a, f₀, hf₀⟩ := Module.Finite.exists_fin' R M
   -- The stages: submodules of finite free modules, pseudocoherent in every finite degree.
   let S := {s : Σ k : ℕ, Submodule R (Fin k → R) // ∀ n : ℕ, IsPseudoCoherentOver R s.2 n}
-  have hstep (s : S) : ∃ (b : ℕ) (d : (Fin b → R) →ₗ[R] (Fin s.1.1 → R)),
-      range d = s.1.2 ∧ ∀ n : ℕ, IsPseudoCoherentOver R (ker d) n := by
+  have hstep (s : S) : ∃ (b : ℕ) (d : (Fin b → R) →ₗ[R] (Fin s.val.1 → R)),
+      range d = s.val.2 ∧ ∀ n : ℕ, IsPseudoCoherentOver R (ker d) n := by
     obtain ⟨⟨k, K⟩, hK⟩ := s
     have := (hK 0).finite
     obtain ⟨b, π, hπ⟩ := Module.Finite.exists_fin' R K
@@ -339,7 +339,7 @@ theorem top_iff : IsPseudoCoherentOver R M ⊤ ↔ ∀ m : ℕ, IsPseudoCoherent
   -- chosen surjection onto it.
   let stage : ℕ → S := fun i ↦ Nat.rec ⟨⟨a, ker f₀⟩, fun n ↦ ker_nat (h (n + 1)) hf₀⟩
     (fun _ s ↦ ⟨⟨b s, ker (d s)⟩, hker s⟩) i
-  exact ⟨fun i ↦ (stage i).1.1, fun i ↦ d (stage i), f₀, hf₀,
+  exact ⟨fun i ↦ (stage i).val.1, fun i ↦ d (stage i), f₀, hf₀,
     fun _ ↦ exact_iff.mpr (hrange (stage 0)).symm,
     fun i _ ↦ exact_iff.mpr (hrange (stage (i + 1))).symm⟩
 

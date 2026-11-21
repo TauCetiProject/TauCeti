@@ -49,7 +49,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 theorem mem_totallyRamifiedOfDegree_of_algEquiv {n : ℕ}
     {L M : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n)
     (e : L ≃ₐ[K] M) : M ∈ totallyRamifiedOfDegree K n :=
-  ((IntermediateField.algHomFieldRangeEquiv M).symm e).2 ▸
+  ((IntermediateField.algHomFieldRangeEquiv M).symm e).property ▸
     AlgHom.fieldRange_mem_totallyRamifiedOfDegree _ hL
 
 /-- The members of `σ_K(n)` that are `K`-isomorphic to a member `L` are all the subextensions of

@@ -242,7 +242,7 @@ theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hπ0 : 0 < valuation K (π : K) := by
-    rw [zero_lt_iff, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    rw [pos_iff_ne_zero, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
     exact hπ.ne_zero
   have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
     rw [map_pow]
@@ -307,14 +307,14 @@ theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
 def unitFiltrationEquivInteger (i : ℕ) :
     unitFiltration K i ≃* TauCeti.IsLocalRing.unitFiltration 𝒪[K] i where
   toFun x := ⟨unitFiltrationToIntegerUnits i x, by
-    obtain ⟨u, hu, hux⟩ := Subgroup.mem_map.mp x.2
+    obtain ⟨u, hu, hux⟩ := Subgroup.mem_map.mp x.property
     have hEq : unitFiltrationToIntegerUnits i x = u :=
       Units.map_injective Subtype.val_injective <| by
         rw [hux]
         exact unitsMap_subtype_unitFiltrationToIntegerUnits i x
     exact hEq ▸ hu⟩
   invFun u := ⟨Units.map (Subring.subtype 𝒪[K]).toMonoidHom (u : 𝒪[K]ˣ),
-    Subgroup.mem_map_of_mem _ u.2⟩
+    Subgroup.mem_map_of_mem _ u.property⟩
   left_inv x := Subtype.ext (unitsMap_subtype_unitFiltrationToIntegerUnits i x)
   right_inv u := Subtype.ext (Units.ext (Subtype.ext rfl))
   map_mul' x y := Subtype.ext (map_mul (unitFiltrationToIntegerUnits i) x y)
@@ -369,7 +369,7 @@ theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 
   refine Units.ext ?_
   rw [Units.coe_map]
   exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
-    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
+    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.property)
 
 /-! ### Graded pieces and the depth-zero quotient
 

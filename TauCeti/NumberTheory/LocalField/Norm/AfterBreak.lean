@@ -111,7 +111,7 @@ private theorem normGradedMap_surjective_after_break (hℓ : (finrank K L).Prime
     Function.Surjective (normGradedMap K L v) := by
   intro c
   induction c using QuotientGroup.induction_on with | H u => ?_
-  obtain ⟨a, ha, hau⟩ := mem_unitFiltration_iff_exists.1 u.2
+  obtain ⟨a, ha, hau⟩ := mem_unitFiltration_iff_exists.1 u.property
   have hmap := map_intTrace_maximalIdeal_pow K L (psiNat K L v)
   rw [hdiv] at hmap
   obtain ⟨x, hx, hxa⟩ := Submodule.mem_map.1 (hmap.symm ▸ ha)

@@ -6,20 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
-# Eigenvectors of matrices and the spectrum
+# Eigenvectors of matrices, the spectrum and conjugation
 
 Mathlib identifies the spectrum of a square matrix with that of the endomorphism `Matrix.toLin'`
 it defines (`Matrix.spectrum_toLin'`), and the spectrum of an endomorphism of a finite-dimensional
 vector space with its eigenvalues (`Module.End.hasEigenvalue_iff_mem_spectrum`). This file records
 the composite in matrix language: a scalar lies in the spectrum of a matrix over a field exactly
-when the matrix has a nonzero eigenvector for it.
+when the matrix has a nonzero eigenvector for it. It also records that conjugate matrices have
+eigenspaces of the same dimension.
 
 ## Main results
 
 * `Matrix.mem_spectrum_iff_exists_mulVec_eq_smul`: `μ ∈ spectrum K A` if and only if
   `A *ᵥ v = μ • v` for some nonzero vector `v`.
+* `Matrix.finrank_eigenspace_toLin'_conj`: the eigenspaces of `P X P⁻¹` and of `X` have the same
+  dimension.
 -/
 
 public section
@@ -40,5 +45,24 @@ theorem mem_spectrum_iff_exists_mulVec_eq_smul {A : Matrix n n K} {μ : K} :
     exact ⟨v, hv.2, by simpa using Module.End.mem_eigenspace_iff.1 hv.1⟩
   · exact Module.End.hasEigenvalue_of_hasEigenvector
       ⟨Module.End.mem_eigenspace_iff.2 (by simpa using hAv), hv⟩
+
+section Conj
+
+variable {R : Type*} [CommRing R]
+
+/-- **Conjugate matrices have eigenspaces of the same dimension**: `P` maps the eigenspace of `X`
+at `μ` onto that of `P X P⁻¹`. -/
+theorem finrank_eigenspace_toLin'_conj (P : GL n R) (X : Matrix n n R) (μ : R) :
+    Module.finrank R
+        (Module.End.eigenspace (toLin' ((P : Matrix n n R) * X * ((P⁻¹ : GL n R) : Matrix n n R)))
+          μ) =
+      Module.finrank R (Module.End.eigenspace (toLin' X) μ) := by
+  let e := LinearMap.GeneralLinearGroup.toLinearEquiv (GeneralLinearGroup.toLin P)
+  have h := TauCeti.eigenspace_eq_comap_of_intertwine (e := e)
+    (f := toLin' X) (g := toLin' ((P : Matrix n n R) * X * ((P⁻¹ : GL n R) : Matrix n n R)))
+    (fun x ↦ by simp [e, mulVec_mulVec, Matrix.mul_assoc]) μ
+  rw [h, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+
+end Conj
 
 end Matrix

@@ -104,7 +104,7 @@ private theorem exists_separableBaseRing.{u, v} (G : Type v) [Group G] (L : Type
       have hmul : (u : 𝒪[L]) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) = 1 := by
         calc
           (u : 𝒪[L]) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]))
-              = (σ • (u : 𝒪[L])) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) := by rw [hu, x.2 σ]
+              = (σ • (u : 𝒪[L])) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) := by rw [hu, x.property σ]
           _ = σ • ((u : 𝒪[L]) * ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) := (smul_mul' ..).symm
           _ = 1 := by rw [Units.mul_inv, smul_one]
       calc
@@ -121,7 +121,7 @@ private theorem exists_separableBaseRing.{u, v} (G : Type v) [Group G] (L : Type
   have : SMulCommClass G A 𝒪[L] :=
     ⟨fun σ a b ↦ by
       change σ • ((a : 𝒪[L]) * b) = (a : 𝒪[L]) * (σ • b)
-      rw [smul_mul', a.2 σ]⟩
+      rw [smul_mul', a.property σ]⟩
   have : Finite (ResidueField A) :=
     Finite.of_injective _ (algebraMap (ResidueField A) 𝓀[L]).injective
   have : PerfectField (ResidueField A) := PerfectField.ofFinite
@@ -172,7 +172,7 @@ theorem mem_unitFiltration_succ_of_val_eq_smul_div
     have hu : ((u : 𝒪[L]) : L) = (x : L) := coe_unitFiltrationToIntegerUnits 0 ⟨x, hx⟩
     simp [w, hy, div_eq_mul_inv, coe_smul_integer, hu]
   simpa [← hw] using ((unitFiltrationEquivInteger (K := L) (i + 1)).symm
-    ⟨w, unitsMap_div_mem_unitFiltration_succ hσ u⟩).2
+    ⟨w, unitsMap_div_mem_unitFiltration_succ hσ u⟩).property
 
 variable (i) in
 /-- The ratio `σ ϖ / ϖ` of a uniformizer `ϖ` and its image under an element `σ` of the `i`-th
@@ -200,7 +200,7 @@ theorem mem_unitFiltration_of_val_eq_smul_div (hϖ : Irreducible ϖ)
     (hy : (y : L) = σ • (ϖ : L) / (ϖ : L)) : y ∈ unitFiltration L i := by
   have hy' : y = uniformizerRatio i hϖ ⟨σ, hσ⟩ :=
     Units.ext (by rw [hy, coe_uniformizerRatio])
-  exact hy' ▸ (uniformizerRatio i hϖ ⟨σ, hσ⟩).2
+  exact hy' ▸ (uniformizerRatio i hϖ ⟨σ, hσ⟩).property
 
 /-- For `σ` in the `i`-th ramification group, the ratio `σ y / y` of any nonzero `y` lies in the
 `i`-th step `U(L,i)` of the unit filtration. For a uniformizer this is
@@ -219,7 +219,7 @@ theorem smul_div_mem_unitFiltration (hσ : σ ∈ ramificationGroup G 𝒪[L] (i
   have h₁ : f (Units.mk0 _ hϖ0) ∈ unitFiltration L i :=
     mem_unitFiltration_of_val_eq_smul_div hϖ hσ (hf _)
   have h₂ : f u ∈ unitFiltration L i := unitFiltration_antitone (Nat.le_succ i)
-    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.2 (hf _))
+    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.property (hf _))
   rw [show z = f (Units.mk0 _ hϖ0 ^ k * u) from Units.ext (by rw [hz, hf]), map_mul, map_zpow]
   exact mul_mem (zpow_mem h₁ k) h₂
 

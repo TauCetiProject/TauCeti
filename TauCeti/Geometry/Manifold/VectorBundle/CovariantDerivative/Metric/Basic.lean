@@ -144,11 +144,11 @@ theorem IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero
     inner ℝ (σ x) (τ x) = inner ℝ (σ y) (τ y) := by
   let Uo : TopologicalSpace.Opens M := ⟨U, hU⟩
   have : PreconnectedSpace Uo := isPreconnected_iff_preconnectedSpace.mp hUconn
-  let φ : Uo → ℝ := fun z ↦ inner ℝ (σ z.1) (τ z.1)
+  let φ : Uo → ℝ := fun z ↦ inner ℝ (σ z.val) (τ z.val)
   have hloc : IsLocallyConstant φ :=
     (IsLocallyConstant.iff_eventually_eq φ).mpr fun z ↦ by
-      have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.2
-      exact continuous_subtype_val.continuousAt.eventually hev
+      have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.property
+      exact continuous_subtypeVal.continuousAt.eventually hev
   exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 variable {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]

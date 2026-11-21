@@ -86,7 +86,7 @@ theorem unitFiltrationGradedSuccEquivResidueField_ofMul_mk (n : ℕ) (π : S)
     residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)
         (unitFiltrationGradedSuccEquivResidueField n π hπ
           (Additive.ofMul (QuotientGroup.mk u))) =
-      Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, mem_unitFiltration_iff.mp u.2⟩ := by
+      Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, mem_unitFiltration_iff.mp u.property⟩ := by
   rw [unitFiltrationGradedSuccEquivResidueField]
   simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]

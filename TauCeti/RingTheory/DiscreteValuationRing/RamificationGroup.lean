@@ -129,7 +129,7 @@ noncomputable def uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
   have hσϖ : Irreducible ((σ : G) • ϖ) :=
     hϖ.map (MulSemiringAction.toRingEquiv G B (σ : G)).toMulEquiv
   ⟨uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ hσϖ,
-    uniformizerChangeUnit_smul_mem_unitFiltration hϖ hσϖ σ.2⟩
+    uniformizerChangeUnit_smul_mem_unitFiltration hϖ hσϖ σ.property⟩
 
 /-- Multiplying `ϖ` on the right by `uniformizerRatio i hϖ σ` gives `(σ : G) • ϖ`. -/
 @[simp]
@@ -192,7 +192,7 @@ noncomputable def ramificationGroupToUnitFiltrationGraded (i : ℕ) {ϖ : B} (h�
       rw [mul_inv_rev, inv_inv, mul_inv_rev, coe_uniformizerRatio_mul_apply,
         mul_assoc, inv_mul_cancel_left, mul_comm, ← div_eq_mul_inv]
     rw [hcocycle]
-    exact unitsMap_div_mem_unitFiltration_succ σ.2 _
+    exact unitsMap_div_mem_unitFiltration_succ σ.property _
 
 /-- Evaluates `ramificationGroupToUnitFiltrationGraded i hϖ` at `σ` as the quotient class of
 `uniformizerRatio i hϖ σ`. -/
@@ -237,14 +237,14 @@ theorem ramificationGroupToUnitFiltrationGraded_eq_of_irreducible (i : ℕ) {ϖ 
   rw [Subgroup.mem_subgroupOf]
   set a := uniformizerChangeUnit ϖ ϖ' hϖ hϖ'
   have hrel :
-      ((uniformizerRatio i hϖ σ)⁻¹ * uniformizerRatio i hϖ' σ : unitFiltration B i).1 =
+      ((uniformizerRatio i hϖ σ)⁻¹ * uniformizerRatio i hϖ' σ : unitFiltration B i).val =
         Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom a / a := by
     apply mul_left_cancel (a := a)
     rw [Subgroup.coe_mul, InvMemClass.coe_inv, mul_left_comm,
       coe_uniformizerRatio_change i hϖ hϖ' σ, inv_mul_cancel_left, div_eq_mul_inv,
       mul_comm _ a⁻¹, mul_inv_cancel_left]
   rw [hrel]
-  exact unitsMap_div_mem_unitFiltration_succ σ.2 a
+  exact unitsMap_div_mem_unitFiltration_succ σ.property a
 
 /-- An element `σ ∈ G_i` lies in the kernel of `ramificationGroupToUnitFiltrationGraded i hϖ`
 if and only if `(σ : G) • ϖ - ϖ ∈ 𝔪 ^ (i + 2)`. -/
@@ -491,7 +491,7 @@ theorem ker_ramificationGroupToUnitFiltrationGraded
   refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_succ_subgroupOf_le_ker i hϖ)
   rw [mem_ker_ramificationGroupToUnitFiltrationGraded_iff hϖ] at hσ
   have hσ₀ : (σ : G) ∈ ramificationGroup G B 0 :=
-    ramificationGroup_antitone G B (Int.natCast_nonneg i) σ.2
+    ramificationGroup_antitone G B (Int.natCast_nonneg i) σ.property
   rw [Subgroup.mem_subgroupOf, ← Nat.cast_succ,
     mem_ramificationGroup_natCast_iff_smul_sub_mem A hϖ hσ₀]
   exact hσ
@@ -514,7 +514,7 @@ theorem ker_tameCharacter [Algebra.IsSeparable (ResidueField A) (ResidueField B)
       (ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0) := by
   ext σ
   rw [MonoidHom.mem_ker, tameCharacter_eq_one_iff, Subgroup.mem_subgroupOf,
-    ← Nat.cast_one, mem_ramificationGroup_natCast_iff_smul_sub_mem A hϖ σ.2]
+    ← Nat.cast_one, mem_ramificationGroup_natCast_iff_smul_sub_mem A hϖ σ.property]
 
 include A in
 /-- **The graded tame character `G_0 / G_1 →* (ResidueField B)ˣ` is injective** when the residue
@@ -708,6 +708,22 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card (p : ℕ)
   rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G A B p,
     pow_eq_one_iff_right hp.ne_one, Nat.factorization_eq_zero_iff]
   simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+
+/-- **Wild inertia is trivial if and only if `p` does not divide `#G_0`** when `ResidueField B` is
+finite (the tamely ramified case), without assuming `G_0` is finite. -/
+theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_of_finite_residueField (p : ℕ)
+    [Fact p.Prime] [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ResidueField B)] :
+    ramificationGroup G B 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G B 0) := by
+  by_cases hfin : Finite (ramificationGroup G B 0)
+  · exact ramificationGroup_one_eq_bot_iff_not_dvd_card G A B p
+  · have hinf := not_finite_iff_infinite.mp hfin
+    rw [Nat.card_eq_zero_of_infinite]
+    simp only [dvd_zero, not_true_eq_false, iff_false]
+    intro h
+    obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible B
+    have hker := ker_tameCharacter A (G := G) hϖ
+    rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
+    exact hfin (Finite.of_injective _ hker)
 
 /-- When `p` does not divide `#G_0`, every positive-depth ramification group `G_i` (`i > 0`) is
 trivial. -/

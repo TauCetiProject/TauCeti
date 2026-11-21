@@ -62,7 +62,7 @@ private theorem exists_mul_X_sub_algebraMap_eq (hM : Monotone M) {a : R} (ha : I
   have hmem : q ∈ coeffSubalgebra M := by
     rw [mem_coeffSubalgebra_iff]
     intro n
-    have hp' := mem_coeffSubalgebra_iff.mp p.2
+    have hp' := mem_coeffSubalgebra_iff.mp p.property
     have hsmul {n : ℕ} {b : B} (hb : a • b ∈ M n) : b ∈ M n := by
       simpa [smul_smul] using Submodule.smul_mem _ ha.unit⁻¹.val hb
     induction n with

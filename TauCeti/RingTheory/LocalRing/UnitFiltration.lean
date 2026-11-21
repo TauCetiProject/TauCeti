@@ -186,7 +186,7 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
     (u : unitFiltration S (n + 1)) :
     unitFiltrationGradedSuccEquivMaximalIdealGraded S n (QuotientGroup.mk u) =
       Multiplicative.ofAdd
-        (Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, mem_unitFiltration_iff.mp u.2⟩) :=
+        (Submodule.Quotient.mk ⟨((u : Sˣ) : S) - 1, mem_unitFiltration_iff.mp u.property⟩) :=
   (MulEquiv.trans_apply ..).trans <|
     (congrArg _ (Ideal.principalUnitGroupPowQuotientEquiv_mk ..)).trans <|
       congrArg Multiplicative.ofAdd

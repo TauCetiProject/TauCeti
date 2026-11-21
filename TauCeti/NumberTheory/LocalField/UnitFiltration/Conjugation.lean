@@ -135,7 +135,7 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
     let π' : 𝒪[L] := g⁻¹ • π
     have hπ' : Irreducible π' := hπ.map (MulSemiringAction.toRingAut G 𝒪[L] g⁻¹)
     have hmove : (τ : G) • π' - π' ∈ maximalIdeal 𝒪[L] ^ (n + 2) :=
-      (mem_ramificationGroup_natCast_iff.mp τ.2) π'
+      (mem_ramificationGroup_natCast_iff.mp τ.property) π'
     rw [hπ'.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton'] at hmove
     obtain ⟨y, hy⟩ := hmove
     -- First compute the coordinate of `τ` using the moved uniformizer `π' = g⁻¹ • π`.
@@ -145,7 +145,7 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
       exact ramificationGroupGradedToResidueField_of_smul_sub_eq n π' hπ' τ y hy.symm
     have hconjCoord := ramificationGroupGradedToResidueField_conjNormal n π hπ g τ y hy.symm
     have hresidue : residue 𝒪[L] (g • y) = residue 𝒪[L] y :=
-      residue_smul_eq_of_mem_ramificationGroup_zero G 𝒪[L] σ.2 y
+      residue_smul_eq_of_mem_ramificationGroup_zero G 𝒪[L] σ.property y
     -- Changing back from `π'` to `π` contributes the inverse tame-character factor.
     have haResidue :
         residue 𝒪[L] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L]) =
