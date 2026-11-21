@@ -333,3 +333,26 @@ theorem smul_function_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯
   · simp [s.eq_zero_of_notMem_tsupport hx]
 
 end ContMDiffSection
+
+namespace ContMDiffSection
+
+variable {𝕜 E H M F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, NormedAddCommGroup (V x)] [FiberBundle F V]
+
+/-- With normed fibres, the support of the fibre norm of a section is its closed support. -/
+@[simp]
+theorem tsupport_norm (s : Cₛ^n⟮I; F, V⟯) :
+    _root_.tsupport (fun x ↦ ‖s x‖) = s.tsupport := by
+  simp [_root_.tsupport, Function.support, tsupport_def]
+
+/-- With normed fibres, the fibre norm of a compactly supported section has compact support. -/
+theorem hasCompactSupport_norm [∀ x, NormedSpace 𝕜 (V x)] [VectorBundle 𝕜 F V]
+    (s : compactlySupported I F n V) :
+    HasCompactSupport fun x ↦ ‖(s : Cₛ^n⟮I; F, V⟯) x‖ := by
+  rw [HasCompactSupport, tsupport_norm]
+  exact s.property
+
+end ContMDiffSection

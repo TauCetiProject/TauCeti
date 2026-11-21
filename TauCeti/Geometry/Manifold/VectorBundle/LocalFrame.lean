@@ -63,7 +63,8 @@ trivialization.
 * `Bundle.Trivialization.span_range_localFrame_map`: the image of a local frame under a linear
   map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
-  the local frame of a trivialization agrees with a family of globally smooth sections.
+  the local frame of a trivialization agrees with a family of globally smooth sections with
+  compact closed supports.
 * `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
   section, multiplied by a `C^n` function supported in the base set, are globally `C^n`.
 * `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
@@ -271,7 +272,7 @@ namespace Bundle.Trivialization
 
 /-- Near a point `x` of the base set of a trivialization `e` of a smooth real vector bundle over a
 finite-dimensional Hausdorff manifold, the local frame `e.localFrame b` agrees with a family of
-globally smooth sections. -/
+globally smooth sections with compact closed supports. -/
 theorem exists_contMDiff_eventuallyEq_localFrame
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -283,15 +284,18 @@ theorem exists_contMDiff_eventuallyEq_localFrame
     {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
     {x : M} (hx : x ∈ e.baseSet) :
     ∃ F : ι → Π y : M, W y, (∀ i, CMDiff ∞ (T% (F i))) ∧
-      ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
+      (∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y) ∧
+        ∀ i, IsCompact (closure {y | F i y ≠ 0}) := by
   -- Cut the frame off by a smooth bump function equal to one near `x`, supported in `e.baseSet`.
   have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
-  refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
+  refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_, fun i ↦ ?_⟩
   · exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
+  · refine ρ.hasCompactSupport.of_isClosed_subset isClosed_closure (closure_mono fun y hy ↦ ?_)
+    exact left_ne_zero_of_smul hy
 
 /-- The coefficients of a `C^n` section in the local frame of a trivialization `e`, multiplied by a
 `C^n` function `ρ` supported in `e.baseSet`, are globally `C^n`. Only regularity on `e.baseSet`

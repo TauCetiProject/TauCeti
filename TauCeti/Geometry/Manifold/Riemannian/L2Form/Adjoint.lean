@@ -14,11 +14,12 @@ import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 
 Through the embedding `TauCeti.compactlySupportedForms.toL2Form` of compactly supported smooth
 forms into `L²Ωᵏ(M)`, the integral identities for the codifferential on an oriented boundaryless
-Riemannian manifold become identities in `L²`: the codifferential `d*` is formally adjoint in
-`L²` to the exterior derivative `d` on compactly supported smooth forms, and the Hodge Laplacian
-`Δ = d*d + dd*` is symmetric and nonnegative there. These describe `d`, `d*` and `Δ` as unbounded
-operators on `L²Ωᵏ(M)` with the compactly supported smooth forms as domain, the starting point
-for their closed and self-adjoint extensions.
+Riemannian manifold become identities in `L²`: the exterior derivative
+`d : L²Ωᵏ(M) → L²Ωᵏ⁺¹(M)` and the codifferential `d* : L²Ωᵏ⁺¹(M) → L²Ωᵏ(M)` form a formally
+adjoint pair between adjacent degrees on compactly supported smooth forms, and the Hodge
+Laplacian `Δ = d*d + dd*`, which preserves degree, is symmetric and nonnegative on the compactly
+supported smooth forms in `L²Ωᵏ(M)`. The latter is the starting point for the self-adjoint
+extensions of `Δ`.
 
 ## Main results
 

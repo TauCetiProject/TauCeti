@@ -103,7 +103,7 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
   have he : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀)
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
   let c := e.cutoffLocalFrameCoeff b ⟨ρ, ρ.contMDiff⟩ hρ
-  obtain ⟨fr', hfr', hfreq⟩ :=
+  obtain ⟨fr', hfr', hfreq, -⟩ :=
     e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x₀)
   let fr (i : Fin (finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
   -- Near `x₀`, `ρ = 1` and the global sections `fr i` agree with the local frame of `e`.

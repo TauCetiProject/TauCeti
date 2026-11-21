@@ -36,16 +36,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContinuousFiberNorm F V]
   {μ : Measure M} [IsFiniteMeasureOnCompacts μ] {n : ℕ∞ω}
 
-omit [MeasurableSpace M] [OpensMeasurableSpace M] [SecondCountableTopology M]
-  [ContinuousFiberNorm F V] in
-/-- The fibre norm of a compactly supported section has compact support. -/
-private theorem hasCompactSupport_norm (s : compactlySupported I F n V) :
-    HasCompactSupport fun x ↦ ‖(s : Cₛ^n⟮I; F, V⟯) x‖ := by
-  refine (mem_compactlySupported.1 s.property).of_isClosed_subset
-    (_root_.isClosed_tsupport _) ?_
-  rw [tsupport_def]
-  exact closure_mono fun x hx ↦ norm_ne_zero_iff.1 hx
-
 /-- A compactly supported `C^n` section defines a geometric L² class, with the given fibre
 inner products and measure. -/
 def toL2 (μ : Measure M) [IsFiniteMeasureOnCompacts μ] :

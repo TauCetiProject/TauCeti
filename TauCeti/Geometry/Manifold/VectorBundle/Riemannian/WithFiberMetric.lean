@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Riemannian.WithFiberMetric
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 
 /-!
 # Smooth sections of the fibre copy carrying a metric
@@ -14,7 +14,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 The copy `TauCeti.WithFiberMetric g` of a vector bundle `E` has the same total-space topology and
 bundle structure as `E`, so a `C^n` vector-bundle structure on `E` is one on the copy. Fibrewise
 transport `TauCeti.WithFiberMetric.toWithFiberMetric` then identifies the `C^n` sections of `E`
-with those of the copy (`TauCeti.WithFiberMetric.contMDiffSectionEquiv`), preserving supports.
+with those of the copy (`TauCeti.WithFiberMetric.contMDiffSectionEquiv`), preserving closed
+supports (`TauCeti.WithFiberMetric.tsupport_contMDiffSectionEquiv`).
 -/
 
 public section
@@ -64,6 +65,20 @@ omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
 theorem contMDiffSectionEquiv_symm_apply (s : Cₛ^n⟮IB; F, WithFiberMetric g⟯) (b : B) :
     (contMDiffSectionEquiv g).symm s b = (toWithFiberMetric g b).symm (s b) :=
   (toWithFiberMetric_symm_apply g b (s b)).symm
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Transport of a section preserves its closed support. -/
+@[simp]
+theorem tsupport_contMDiffSectionEquiv (s : Cₛ^n⟮IB; F, E⟯) :
+    (contMDiffSectionEquiv g s).tsupport = s.tsupport :=
+  (rfl)
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Inverse transport of a section preserves its closed support. -/
+@[simp]
+theorem tsupport_contMDiffSectionEquiv_symm (s : Cₛ^n⟮IB; F, WithFiberMetric g⟯) :
+    ((contMDiffSectionEquiv g).symm s).tsupport = s.tsupport :=
+  (rfl)
 
 end WithFiberMetric
 

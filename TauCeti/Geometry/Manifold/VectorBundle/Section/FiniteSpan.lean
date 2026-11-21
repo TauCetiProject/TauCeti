@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import Mathlib.Geometry.Manifold.BumpFunction
 
 /-!
 # Finite smooth spanning families
@@ -54,20 +52,14 @@ theorem exists_compactlySupported_spanning_nhds (x : M) :
   let b := Module.finBasis ℝ F
   let e := trivializationAt F V x
   have hx := mem_baseSet_trivializationAt F V x
-  obtain ⟨f, hf, heq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
-  -- Cut the frame off a second time, now by a compactly supported bump equal to one near `x`.
-  let ρ : SmoothBumpFunction I x := Classical.arbitrary _
-  let ψ : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
-  refine ⟨fun i ↦ ψ • ⟨f i, hf i⟩, fun i ↦
-    ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport ψ
-      ρ.hasCompactSupport _, ?_⟩
-  filter_upwards [Filter.eventually_all.mpr heq, ρ.eventuallyEq_one,
-    e.open_baseSet.mem_nhds hx] with y hy hρ hye
-  have hfun : (fun i ↦ (ψ • ⟨f i, hf i⟩ : ContMDiffSection I F ∞ V) y) =
-      e.basisAt b hye := by
+  obtain ⟨f, hf, heq, hc⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  refine ⟨fun i ↦ ⟨f i, hf i⟩, fun i ↦ ?_, ?_⟩
+  · rw [ContMDiffSection.mem_compactlySupported, ContMDiffSection.tsupport_def]
+    exact hc i
+  filter_upwards [Filter.eventually_all.mpr heq, e.open_baseSet.mem_nhds hx] with y hy hye
+  have hfun : (fun i ↦ (⟨f i, hf i⟩ : ContMDiffSection I F ∞ V) y) = e.basisAt b hye := by
     funext i
-    rw [ContMDiffSection.smul_apply]
-    simp [ψ, show (ρ : M → ℝ) y = 1 from hρ, hy i, e.localFrame_apply_of_mem_baseSet b hye]
+    simp [hy i, e.localFrame_apply_of_mem_baseSet b hye]
   exact hfun ▸ (e.basisAt b hye).span_eq
 
 variable [CompactSpace M]

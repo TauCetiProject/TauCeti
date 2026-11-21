@@ -247,7 +247,7 @@ theorem mdifferentiableAt_deriv_difference_of_hasDerivAt_difference
   set e := trivializationAt E (TangentSpace I) x
   set b := Module.finBasis ℝ E
   have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  obtain ⟨F, hF, hFe⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  obtain ⟨F, hF, hFe, -⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
   -- Near `x`, `Γ'(Fⱼ, Fₖ)` is the parameter derivative of `∇ˢ_{Fₖ} Fⱼ`, a `C¹` vector field.
   have hV (j k : Fin (Module.finrank ℝ E)) : ∀ᶠ y in 𝓝 x,
       ContMDiffAt I (I.prod 𝓘(ℝ, E)) 1
