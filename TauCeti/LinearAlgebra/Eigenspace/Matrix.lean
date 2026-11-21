@@ -16,13 +16,16 @@ Mathlib identifies the spectrum of a square matrix with that of the endomorphism
 it defines (`Matrix.spectrum_toLin'`), and the spectrum of an endomorphism of a finite-dimensional
 vector space with its eigenvalues (`Module.End.hasEigenvalue_iff_mem_spectrum`). This file records
 the composite in matrix language: a scalar lies in the spectrum of a matrix over a field exactly
-when the matrix has a nonzero eigenvector for it. It also records that conjugate matrices have
-eigenspaces of the same dimension, and so do an endomorphism and its matrix in a basis.
+when the matrix has a nonzero eigenvector for it, and the eigenspace at `μ` is trivial when
+`A - μ • 1` is invertible. It also records that conjugate matrices have eigenspaces of the same
+dimension, and so do an endomorphism and its matrix in a basis.
 
 ## Main results
 
 * `Matrix.mem_spectrum_iff_exists_mulVec_eq_smul`: `μ ∈ spectrum K A` if and only if
   `A *ᵥ v = μ • v` for some nonzero vector `v`.
+* `Matrix.finrank_eigenspace_toLin'_eq_zero`: if `A - μ • 1` is invertible, the eigenspace of `A`
+  at `μ` is zero-dimensional.
 * `Matrix.finrank_eigenspace_toLin'_conj`: the eigenspaces of `P X P⁻¹` and of `X` have the same
   dimension.
 * `LinearMap.finrank_eigenspace_toLin'_toMatrix`: the eigenspaces of an endomorphism and of its
@@ -47,6 +50,14 @@ theorem mem_spectrum_iff_exists_mulVec_eq_smul {A : Matrix n n K} {μ : K} :
     exact ⟨v, hv.2, by simpa using Module.End.mem_eigenspace_iff.1 hv.1⟩
   · exact Module.End.hasEigenvalue_of_hasEigenvector
       ⟨Module.End.mem_eigenspace_iff.2 (by simpa using hAv), hv⟩
+
+/-- If `A - μ • 1` is invertible, the eigenspace of the square matrix `A` at `μ` is trivial. -/
+theorem finrank_eigenspace_toLin'_eq_zero {A : Matrix n n K} {μ : K} (h : IsUnit (A - μ • 1)) :
+    Module.finrank K (Module.End.eigenspace (toLin' A) μ) = 0 := by
+  refine Submodule.finrank_eq_zero.2 ((Submodule.eq_bot_iff _).2 fun v hv ↦ ?_)
+  rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hv
+  refine mulVec_injective_iff_isUnit.2 h ?_
+  rw [sub_mulVec, hv, smul_mulVec, one_mulVec, sub_self, mulVec_zero]
 
 section Conj
 
