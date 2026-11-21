@@ -304,7 +304,7 @@ private theorem absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ :
       ((hS.map_of_exact (forgetDifferential (h := h))).hasInjectiveDimensionLT_X₃_iff m
         (inferInstanceAs (Injective (toGradedModuleCat (coinducedObj h I))))).2 hM
     have hI₀ : IsZero (DGHomotopyCategory.of R (coinducedObj h I)) :=
-      isZero_homotopy_coinducedObj h I
+      isZero_homotopy_freeObj h (I.shiftObj (-1))
     have hCc : coacyclic R h (DGHomotopyCategory.of R (ForgetEnrichment.to _ S.X₃)) :=
       prop_X₃_of_shortExact (coacyclic R h) (totalizations_le_coacyclic R h) hS hMc
         ((coacyclic R h).prop_of_isZero hI₀)

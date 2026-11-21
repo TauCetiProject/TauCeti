@@ -249,9 +249,8 @@ a graded module over `(𝒜 · |>.restrictScalars k₀)` with the same underlyin
 def restrictBase (𝒜 : ℤ → Submodule k A) :
     GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) where
   obj M :=
-    letI : Module k₀ M := Module.compHom M (algebraMap k₀ k)
-    haveI : IsScalarTower k₀ k M :=
-      ⟨fun c₀ c m ↦ (congrArg (· • m) (Algebra.smul_def c₀ c)).trans (mul_smul _ c m)⟩
+    letI : Module k₀ M := Module.restrictScalars k₀ k M
+    haveI : IsScalarTower k₀ k M := IsScalarTower.restrictScalars k₀ k M
     haveI : IsScalarTower k₀ A M :=
       ⟨fun c₀ a m ↦ by rw [← IsScalarTower.algebraMap_smul k c₀ a, smul_assoc]; rfl⟩
     { carrier := M
@@ -300,9 +299,8 @@ instance (𝒜 : ℤ → Submodule k A) : (restrictBase.{v} k₀ 𝒜).Additive 
 def extendBase (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
     GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) ⥤ GradedModuleCat.{v} 𝒜 where
   obj N :=
-    letI : Module k N := Module.compHom N (algebraMap k A)
-    haveI : IsScalarTower k A N :=
-      ⟨fun c a x ↦ (congrArg (· • x) (Algebra.smul_def c a)).trans (mul_smul _ a x)⟩
+    letI : Module k N := Module.restrictScalars k A N
+    haveI : IsScalarTower k A N := IsScalarTower.restrictScalars k A N
     { carrier := N
       grading :=
         { piece := fun p ↦

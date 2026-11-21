@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.Injective
 public import TauCeti.Algebra.Category.GradedModuleCat.Products
 public import TauCeti.Algebra.Category.GradedModuleCat.RestrictScalars
+import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # Graded coinduced modules and enough injectives
@@ -30,8 +31,10 @@ universe `max uA v` at least that of `A`, embedding each homogeneous piece into 
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.coinducedSingle` and `TauCeti.GradedModuleCat.coinducedSingleApply`:
-  the degree-zero coinduced graded `A`-module and its underlying `k`-linear evaluation map.
+* `TauCeti.GradedModuleCat.coinducedSingle`, `TauCeti.GradedModuleCat.coinducedSingleApply`, and
+  `TauCeti.GradedModuleCat.coinducedSinglePieceEquiv`: the degree-zero coinduced graded
+  `A`-module, its underlying `k`-linear evaluation map, and the `k`-linear identification of its
+  degree-`p` piece with `𝒜 (-p) →ₗ[k] V`.
 * `TauCeti.GradedModuleCat.coinducedSingleShiftLift`,
   `TauCeti.GradedModuleCat.coinducedSingleShiftHomEquiv`,
   `TauCeti.GradedModuleCat.coinducedSingleHomEquiv`, `TauCeti.GradedModuleCat.coinduced`, and
@@ -52,6 +55,9 @@ universe `max uA v` at least that of `A`, embedding each homogeneous piece into 
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Lecture Notes in Mathematics
   1836, Springer (2004), Sections 2.2 and 2.3.
+* Wentao Li, `TauCeti.Algebra.Module.GradedModule.Product`: the finite-degree-support carrier,
+  internal-grading transport, scalar-stability, and homogeneous-lift construction are adapted
+  from this file.
 -/
 
 public section
@@ -169,46 +175,120 @@ private theorem coinducedActionLinear_mem_carrier (a : A) {ψ : A →ₗ[k] V}
     exact (coinducedSingleCarrier 𝒜 V).sum_mem fun r _ ↦ coinducedSinglePiece_le_carrier 𝒜 V (r + p)
       (coinducedActionLinear_mem_piece 𝒜 V (DirectSum.decompose 𝒜 a r).property y.property)
 
+private def coextendScalarsEquiv :
+    let M := (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)
+    letI : Module k M := Module.restrictScalars k A M
+    M ≃ₗ[k] (A →ₗ[k] V) :=
+  let M := (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)
+  letI : Module k M := Module.restrictScalars k A M
+  { toFun := fun ψ ↦
+      { toFun := fun b ↦ ψ b
+        map_add' := fun _ _ ↦ map_add _ _ _
+        map_smul' := fun c b ↦ by
+          rw [RingHom.id_apply, Algebra.smul_def]
+          exact (ModuleCat.CoextendScalars.equiv (algebraMap k A) (ModuleCat.of k V) ψ).map_smul
+            c b }
+    invFun := fun φ ↦ (ModuleCat.CoextendScalars.equiv (algebraMap k A) (ModuleCat.of k V)).symm
+      { toFun := φ
+        map_add' := φ.map_add
+        map_smul' := fun c b ↦ by
+          let b' : A := b
+          change φ (algebraMap k A c * b') = c • φ b'
+          rw [← Algebra.smul_def, φ.map_smul] }
+    left_inv := fun _ ↦ ModuleCat.CoextendScalars.ext (LinearMap.ext fun _ ↦ rfl)
+    right_inv := fun _ ↦ LinearMap.ext fun _ ↦ rfl
+    map_add' := fun _ _ ↦ LinearMap.ext fun _ ↦ rfl
+    map_smul' := fun c ψ ↦ LinearMap.ext fun b ↦ by
+      change (algebraMap k A c • ψ) b = c • ψ b
+      rw [ModuleCat.CoextendScalars.smul_apply, ← Algebra.commutes]
+      exact (ModuleCat.CoextendScalars.equiv (algebraMap k A) (ModuleCat.of k V) ψ).map_smul c b }
+
+private theorem coextendScalarsEquiv_algebraMap_smul (c : k)
+    (ψ : (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)) :
+    coextendScalarsEquiv V (algebraMap k A c • ψ) = c • coextendScalarsEquiv V ψ :=
+  LinearMap.ext fun b ↦ by
+    change (algebraMap k A c • ψ) b = c • ψ b
+    rw [ModuleCat.CoextendScalars.smul_apply, ← Algebra.commutes]
+    exact (ModuleCat.CoextendScalars.equiv (algebraMap k A) (ModuleCat.of k V) ψ).map_smul c b
+
+private theorem coextendScalarsEquiv_symm_smul (c : k) (φ : A →ₗ[k] V) :
+    (coextendScalarsEquiv V).symm (c • φ) = algebraMap k A c • (coextendScalarsEquiv V).symm φ :=
+  (coextendScalarsEquiv V).injective (by
+    rw [(coextendScalarsEquiv V).apply_symm_apply, coextendScalarsEquiv_algebraMap_smul,
+      (coextendScalarsEquiv V).apply_symm_apply])
+
+private def coinducedSingleSubmodule :
+    Submodule A ((ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)) where
+  carrier := {ψ | coextendScalarsEquiv V ψ ∈ coinducedSingleCarrier 𝒜 V}
+  zero_mem' := by simp
+  add_mem' {ψ₁ ψ₂} h₁ h₂ := by
+    simpa [map_add] using (coinducedSingleCarrier 𝒜 V).add_mem h₁ h₂
+  smul_mem' a ψ hψ := by
+    have h : coextendScalarsEquiv V (a • ψ) =
+        coinducedActionLinear V (coextendScalarsEquiv V ψ) a :=
+      LinearMap.ext fun b ↦ ModuleCat.CoextendScalars.smul_apply _ _ _ _ _
+    rw [Set.mem_ofPred_eq, h]
+    exact coinducedActionLinear_mem_carrier 𝒜 V a hψ
+
+private def coinducedSingleCarrierEquiv :
+    let C := coinducedSingleSubmodule 𝒜 V
+    letI : Module k C := Module.restrictScalars k A C
+    C ≃ₗ[k] coinducedSingleCarrier 𝒜 V :=
+  let C := coinducedSingleSubmodule 𝒜 V
+  letI : Module k C := Module.restrictScalars k A C
+  { toFun := fun ψ ↦ ⟨coextendScalarsEquiv V ψ.val, ψ.property⟩
+    invFun := fun φ ↦ ⟨(coextendScalarsEquiv V).symm φ.val, by
+      change coextendScalarsEquiv V ((coextendScalarsEquiv V).symm φ.val) ∈
+        coinducedSingleCarrier 𝒜 V
+      rw [(coextendScalarsEquiv V).apply_symm_apply]
+      exact φ.property⟩
+    left_inv := fun ψ ↦ Subtype.ext ((coextendScalarsEquiv V).symm_apply_apply ψ.val)
+    right_inv := fun φ ↦ Subtype.ext ((coextendScalarsEquiv V).apply_symm_apply φ.val)
+    map_add' := fun _ _ ↦ Subtype.ext rfl
+    map_smul' := fun c ψ ↦ Subtype.ext (coextendScalarsEquiv_algebraMap_smul V c ψ.val) }
+
 /-- The graded `𝒜`-module coinduced from a `k`-module `V` placed in degree zero. -/
-def coinducedSingle : GradedModuleCat.{max uA v} 𝒜 := by
-  let C := coinducedSingleCarrier 𝒜 V
-  letI : SMul A C :=
-    ⟨fun a ψ ↦ ⟨coinducedActionLinear V ψ.val a,
-      coinducedActionLinear_mem_carrier 𝒜 V a ψ.property⟩⟩
-  have hsmul (a : A) (ψ : C) : (a • ψ).val = coinducedActionLinear V ψ.val a := rfl
-  let extC {x y : C} (h : ∀ b, x.val b = y.val b) : x = y := Subtype.ext (LinearMap.ext h)
-  letI : Module A C :=
-    { one_smul := fun _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear]
-      mul_smul := fun _ _ _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear, mul_assoc]
-      smul_zero := fun _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear]
-      smul_add := fun _ _ _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear]
-      add_smul := fun _ _ _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear, mul_add]
-      zero_smul := fun _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear] }
-  letI : IsScalarTower k A C := ⟨fun _ _ _ ↦ extC fun _ ↦ by simp [hsmul, coinducedActionLinear]⟩
-  let G := coinducedSingleGrading 𝒜 V
+def coinducedSingle : GradedModuleCat.{max uA v} 𝒜 :=
+  let C := coinducedSingleSubmodule 𝒜 V
+  letI : Module k C := Module.restrictScalars k A C
+  letI : IsScalarTower k A C := IsScalarTower.restrictScalars k A C
+  let G : InternalGrading k C ℤ :=
+    (coinducedSingleGrading 𝒜 V).map (coinducedSingleCarrierEquiv 𝒜 V).symm
   letI : SetLike.GradedSMul 𝒜 G.piece :=
-    ⟨fun {r p} a ψ ha hψ ↦ (mem_coinducedSingleGrading_piece_iff 𝒜 V (r + p) (a • ψ)).mpr
-      (coinducedActionLinear_mem_piece 𝒜 V ha
-        ((mem_coinducedSingleGrading_piece_iff 𝒜 V p ψ).mp hψ))⟩
-  exact { carrier := C, grading := G }
+    ⟨fun {r p} a ψ ha hψ ↦ by
+      rw [InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm,
+        mem_coinducedSingleGrading_piece_iff] at hψ ⊢
+      exact coinducedActionLinear_mem_piece 𝒜 V ha hψ⟩
+  { carrier := C, grading := G }
 
 variable {𝒜 V}
 
+/-- Internal carrier comparison keeping `coinducedSingle` sealed in public signatures. -/
+private def toCoinducedSingle : coinducedSingleCarrier 𝒜 V ≃ₗ[k] coinducedSingle 𝒜 V where
+  toFun φ := ⟨(coextendScalarsEquiv V).symm φ.val, by
+    change coextendScalarsEquiv V ((coextendScalarsEquiv V).symm φ.val) ∈
+      coinducedSingleCarrier 𝒜 V
+    rw [(coextendScalarsEquiv V).apply_symm_apply]
+    exact φ.property⟩
+  invFun ψ := ⟨coextendScalarsEquiv V ψ.val, ψ.property⟩
+  left_inv φ := Subtype.ext ((coextendScalarsEquiv V).apply_symm_apply φ.val)
+  right_inv ψ := Subtype.ext ((coextendScalarsEquiv V).symm_apply_apply ψ.val)
+  map_add' _ _ := Subtype.ext rfl
+  map_smul' c φ := Subtype.ext (coextendScalarsEquiv_symm_smul V c φ.val)
+
 /-- The underlying `k`-linear functional `A →ₗ[k] V` of an element of `coinducedSingle`. -/
 def coinducedSingleApply : coinducedSingle 𝒜 V →ₗ[k] (A →ₗ[k] V) :=
-  (coinducedSingleCarrier 𝒜 V).subtype
-
-/-- Internal carrier comparison keeping `coinducedSingle` sealed in public signatures. -/
-private def toCoinducedSingle : coinducedSingleCarrier 𝒜 V ≃ₗ[k] coinducedSingle 𝒜 V :=
-  LinearEquiv.refl k (coinducedSingleCarrier 𝒜 V)
+  (coinducedSingleCarrier 𝒜 V).subtype.comp toCoinducedSingle.symm.toLinearMap
 
 @[simp]
 private theorem coinducedSingleApply_toCoinducedSingle (y : coinducedSingleCarrier 𝒜 V) :
-    coinducedSingleApply (toCoinducedSingle y) = y.val := rfl
+    coinducedSingleApply (toCoinducedSingle y) = y.val := by
+  simp [coinducedSingleApply]
 
 /-- Elements of `coinducedSingle` are determined by their underlying `k`-linear maps. -/
 theorem coinducedSingleApply_injective :
-    Function.Injective (coinducedSingleApply (𝒜 := 𝒜) (V := V)) := Submodule.subtype_injective _
+    Function.Injective (coinducedSingleApply (𝒜 := 𝒜) (V := V)) :=
+  (Submodule.subtype_injective _).comp toCoinducedSingle.symm.injective
 
 /-- Two elements of `coinducedSingle` agree when they agree on every element of `A`. -/
 @[ext]
@@ -226,8 +306,73 @@ theorem coinducedSingleApply_smul (a : A) (x : coinducedSingle 𝒜 V) (b : A) :
 @[simp]
 theorem mem_coinducedSingle_piece_iff (p : ℤ) (x : coinducedSingle 𝒜 V) :
     x ∈ (coinducedSingle 𝒜 V).grading.piece p ↔
-      ∀ q : ℤ, ∀ b ∈ 𝒜 q, q ≠ -p → coinducedSingleApply x b = 0 :=
-  mem_coinducedSingleGrading_piece_iff 𝒜 V p x
+      ∀ q : ℤ, ∀ b ∈ 𝒜 q, q ≠ -p → coinducedSingleApply x b = 0 := by
+  let _ : Module k (coinducedSingleSubmodule 𝒜 V) :=
+    Module.restrictScalars k A (coinducedSingleSubmodule 𝒜 V)
+  let y : coinducedSingleSubmodule 𝒜 V := x
+  have h1 : y ∈ ((coinducedSingleGrading 𝒜 V).map
+        (coinducedSingleCarrierEquiv 𝒜 V).symm).piece p ↔
+      coinducedSingleCarrierEquiv 𝒜 V y ∈ (coinducedSingleGrading 𝒜 V).piece p := by
+    rw [InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm]
+  exact Iff.trans Iff.rfl (h1.trans (mem_coinducedSingleGrading_piece_iff 𝒜 V p _))
+
+variable (𝒜 V) in
+/-- The degree-`p` piece of `coinducedSingle 𝒜 V` is `k`-linearly equivalent to `𝒜 (-p) →ₗ[k] V`,
+via restricting the underlying functional to `𝒜 (-p)` and extending by zero on other degrees. -/
+def coinducedSinglePieceEquiv (p : ℤ) :
+    (coinducedSingle 𝒜 V).grading.piece p ≃ₗ[k] (𝒜 (-p) →ₗ[k] V) where
+  toFun x := (coinducedSingleApply x.val).comp (𝒜 (-p)).subtype
+  invFun φ :=
+    let ψ : A →ₗ[k] V :=
+      φ.comp ((DirectSum.component k ℤ (fun q ↦ 𝒜 q) (-p)).comp
+        (DirectSum.decomposeLinearEquiv 𝒜).toLinearMap)
+    have hψ : ψ ∈ coinducedSinglePiece 𝒜 V p := fun q b hb hq ↦ by
+      have hdec : DirectSum.decompose 𝒜 b (-p) = 0 :=
+        Subtype.ext (DirectSum.decompose_of_mem_ne 𝒜 hb hq)
+      change φ (DirectSum.decompose 𝒜 b (-p)) = 0
+      rw [hdec, map_zero]
+    ⟨toCoinducedSingle ⟨ψ, coinducedSinglePiece_le_carrier 𝒜 V p hψ⟩,
+      (mem_coinducedSingle_piece_iff p _).2 fun q b hb hq ↦ by
+        rw [coinducedSingleApply_toCoinducedSingle]
+        exact hψ q b hb hq⟩
+  left_inv x := Subtype.ext <| coinducedSingleApply_injective <|
+    (InternalGrading.ofDecomposition 𝒜).linearMap_ext fun q b hb ↦ by
+      rw [InternalGrading.ofDecomposition_piece] at hb
+      rw [coinducedSingleApply_toCoinducedSingle]
+      change _ = coinducedSingleApply x.val b
+      by_cases hqp : q = -p
+      · subst hqp
+        change coinducedSingleApply x.val (DirectSum.decompose 𝒜 b (-p) : A) =
+          coinducedSingleApply x.val b
+        rw [DirectSum.decompose_of_mem_same 𝒜 hb]
+      · have hdec : DirectSum.decompose 𝒜 b (-p) = 0 :=
+          Subtype.ext (DirectSum.decompose_of_mem_ne 𝒜 hb hqp)
+        have hx := (mem_coinducedSingle_piece_iff p x.val).1 x.property q b hb hqp
+        change coinducedSingleApply x.val (DirectSum.decompose 𝒜 b (-p) : A) =
+          coinducedSingleApply x.val b
+        rw [hdec, Submodule.coe_zero, map_zero, hx]
+  right_inv φ := LinearMap.ext fun b ↦ by
+    change φ (DirectSum.decompose 𝒜 (b : A) (-p)) = φ b
+    exact congrArg φ (Subtype.ext (DirectSum.decompose_of_mem_same 𝒜 b.property))
+  map_add' _ _ := LinearMap.ext fun _ ↦ rfl
+  map_smul' _ _ := LinearMap.ext fun _ ↦ by simp
+
+/-- Evaluating `coinducedSinglePieceEquiv` on an element of degree `p` restricts its underlying
+functional to `𝒜 (-p)`. -/
+@[simp]
+theorem coinducedSinglePieceEquiv_apply (p : ℤ) (x : (coinducedSingle 𝒜 V).grading.piece p)
+    (b : 𝒜 (-p)) :
+    coinducedSinglePieceEquiv 𝒜 V p x b = coinducedSingleApply x.val b := by
+  rw [coinducedSinglePieceEquiv]; rfl
+
+/-- Evaluating the inverse of `coinducedSinglePieceEquiv` at `b : A` applies the linear map to
+the degree-`(-p)` homogeneous component of `b`. -/
+@[simp]
+theorem coinducedSingleApply_coinducedSinglePieceEquiv_symm (p : ℤ) (φ : 𝒜 (-p) →ₗ[k] V)
+    (b : A) :
+    coinducedSingleApply ((coinducedSinglePieceEquiv 𝒜 V p).symm φ : coinducedSingle 𝒜 V) b =
+      φ (DirectSum.decompose 𝒜 b (-p)) := by
+  rw [coinducedSinglePieceEquiv]; rfl
 
 omit [GradedAlgebra 𝒜] in
 private def coinducedSingleShiftLiftLinear {M : GradedModuleCat.{max uA v} 𝒜} (n : ℤ)
@@ -292,11 +437,9 @@ def coinducedSingleShiftLift {M : GradedModuleCat.{max uA v} 𝒜} (n : ℤ)
         (mem_coinducedSinglePiece_iff 𝒜 V (p - n) _).mp
           (coinducedSingleShiftLiftLinear_mem_piece n f hx))
 
-/-- Evaluating `coinducedSingleShiftLift n f` applies `f` to the degree-`n` part of `b • x`. -/
-@[simp]
-theorem coinducedSingleApply_coinducedSingleShiftLift {M : GradedModuleCat.{max uA v} 𝒜} (n : ℤ)
-    (f : M.grading.piece n →ₗ[k] V) (x : M) (b : A) :
-    (dsimp% only (coinducedSingleApply ((coinducedSingleShiftLift n f).hom x) b)) =
+private theorem coinducedSingleApply_coinducedSingleShiftLift
+    {M : GradedModuleCat.{max uA v} 𝒜} (n : ℤ) (f : M.grading.piece n →ₗ[k] V) (x : M) (b : A) :
+    coinducedSingleApply ((coinducedSingleShiftLift n f).hom x) b =
       f (DirectSum.decompose M.grading.piece (b • x) n) := by
   rw [coinducedSingleShiftLift]
   simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply, LinearEquiv.coe_coe,
@@ -348,26 +491,51 @@ theorem coinducedSingleShiftHomEquiv_apply (M : GradedModuleCat.{max uA v} 𝒜)
   rw [coinducedSingleShiftHomEquiv]; rfl
 
 /-- The inverse universal-property map is `coinducedSingleShiftLift`. -/
-@[simp]
 theorem coinducedSingleShiftHomEquiv_symm_apply (M : GradedModuleCat.{max uA v} 𝒜)
     (V : Type v) [AddCommGroup V] [Module k V] (n : ℤ) (f : M.grading.piece n →ₗ[k] V) :
     (coinducedSingleShiftHomEquiv M V n).symm f = coinducedSingleShiftLift n f := by
   rw [coinducedSingleShiftHomEquiv]; rfl
 
-/-- Applying `coinducedSingleShiftHomEquiv` to `coinducedSingleShiftLift n f` recovers `f`. -/
+/-- `coinducedSingleShiftLift` is the inverse of `coinducedSingleShiftHomEquiv`. -/
 @[simp]
-theorem coinducedSingleShiftHomEquiv_coinducedSingleShiftLift (M : GradedModuleCat.{max uA v} 𝒜)
+theorem coinducedSingleShiftLift_eq_symm (M : GradedModuleCat.{max uA v} 𝒜)
     (V : Type v) [AddCommGroup V] [Module k V] (n : ℤ) (f : M.grading.piece n →ₗ[k] V) :
-    coinducedSingleShiftHomEquiv M V n (coinducedSingleShiftLift n f) = f :=
-  (coinducedSingleShiftHomEquiv M V n).apply_symm_apply f
+    coinducedSingleShiftLift (M := M) n f = (coinducedSingleShiftHomEquiv M V n).symm f :=
+  (coinducedSingleShiftHomEquiv_symm_apply M V n f).symm
 
-/-- Lifting `coinducedSingleShiftHomEquiv M V n Ψ` recovers `Ψ`. -/
+/-- Evaluating `(coinducedSingleShiftHomEquiv M V n).symm f` applies `f` to the degree-`n` part
+of `b • x`. -/
 @[simp]
-theorem coinducedSingleShiftLift_coinducedSingleShiftHomEquiv (M : GradedModuleCat.{max uA v} 𝒜)
+theorem coinducedSingleApply_coinducedSingleShiftHomEquiv_symm (M : GradedModuleCat.{max uA v} 𝒜)
     (V : Type v) [AddCommGroup V] [Module k V] (n : ℤ)
-    (Ψ : M ⟶ (coinducedSingle 𝒜 V).shiftObj n) :
-    coinducedSingleShiftLift n (coinducedSingleShiftHomEquiv M V n Ψ) = Ψ :=
-  (coinducedSingleShiftHomEquiv M V n).symm_apply_apply Ψ
+    (f : M.grading.piece n →ₗ[k] V) (x : M) (b : A) :
+    (dsimp% only (coinducedSingleApply (((coinducedSingleShiftHomEquiv M V n).symm f).hom x) b)) =
+      f (DirectSum.decompose M.grading.piece (b • x) n) :=
+  coinducedSingleApply_coinducedSingleShiftLift n f x b
+
+/-- Precomposing a morphism into `(coinducedSingle 𝒜 V).shiftObj n` restricts the degree-`n`
+map. -/
+theorem coinducedSingleShiftHomEquiv_comp {X Y : GradedModuleCat.{max uA v} 𝒜} (n : ℤ)
+    (f : X ⟶ Y) (Ψ : Y ⟶ (coinducedSingle 𝒜 V).shiftObj n) (x : X.grading.piece n) :
+    coinducedSingleShiftHomEquiv X V n (f ≫ Ψ) x =
+      coinducedSingleShiftHomEquiv Y V n Ψ ⟨f.hom x, map_mem f x.property⟩ := by simp
+
+/-- Precomposing the lifted morphism `(coinducedSingleShiftHomEquiv Y V n).symm f` with `g`
+lifts the restriction of `f` along `g` in degree `n`. -/
+@[reassoc (attr := simp)]
+theorem comp_coinducedSingleShiftHomEquiv_symm {X Y : GradedModuleCat.{max uA v} 𝒜} (n : ℤ)
+    (g : X ⟶ Y) (f : Y.grading.piece n →ₗ[k] V) :
+    g ≫ (coinducedSingleShiftHomEquiv Y V n).symm f =
+      (coinducedSingleShiftHomEquiv X V n).symm
+        (f.comp ((g.hom.restrictScalars k).restrict fun _ hx ↦ map_mem g hx)) := by
+  apply (coinducedSingleShiftHomEquiv X V n).injective
+  ext x
+  simp only [coinducedSingleShiftHomEquiv_apply, GradedModuleCat.hom_comp, LinearMap.comp_apply,
+    coinducedSingleApply_coinducedSingleShiftHomEquiv_symm, one_smul]
+  congr 1
+  ext
+  rw [DirectSum.decompose_of_mem_same Y.grading.piece (map_mem g x.property)]
+  exact congrArg g.hom (DirectSum.decompose_of_mem_same X.grading.piece x.property).symm
 
 /-- **Universal property of degree-zero coinduced modules.** Morphisms `M ⟶ coinducedSingle 𝒜 V`
 correspond `k`-linearly to `k`-linear maps `M_0 →ₗ[k] V`. -/
@@ -466,9 +634,10 @@ theorem coinducedHomEquiv_apply (M : GradedModuleCat.{max uA v} 𝒜)
 @[reassoc (attr := simp)]
 theorem coinducedHomEquiv_symm_π (M : GradedModuleCat.{max uA v} 𝒜)
     (f : ∀ i, M.grading.piece (d i) →ₗ[k] V i) (i : I) :
-    (coinducedHomEquiv M).symm f ≫ productπ _ i = coinducedSingleShiftLift (d i) (f i) := by
+    (coinducedHomEquiv M).symm f ≫ productπ _ i =
+      (coinducedSingleShiftHomEquiv M (V i) (d i)).symm (f i) := by
   rw [coinducedHomEquiv]; dsimp only [LinearEquiv.coe_symm_mk]
-  rw [productLift_π, coinducedSingleShiftHomEquiv_symm_apply]
+  rw [productLift_π]
 
 /-- If every `V i` satisfies Baer's criterion over `k`, `coinduced 𝒜 d V` is injective. -/
 theorem injective_coinduced_of_baer (hV : ∀ i, Module.Baer k (V i)) :
@@ -506,7 +675,8 @@ private theorem enoughInjectives_of_small [Small.{max uA v} k] :
       apply (DirectSum.decompose M.grading.piece).injective
       rw [DirectSum.decompose_zero]
       refine DirectSum.ext fun s ↦ ((ModuleCat.mono_iff_injective (ι s)).mp inferInstance) ?_
-      have hfac : f ≫ productπ _ (ULift.up s) = coinducedSingleShiftLift s (ι s).hom :=
+      have hfac : f ≫ productπ _ (ULift.up s) =
+          (coinducedSingleShiftHomEquiv M (P s) s).symm (ι s).hom :=
         coinducedHomEquiv_symm_π M _ (ULift.up s)
       have heval := congrArg
         (fun g : M ⟶ (coinducedSingle 𝒜 (P s)).shiftObj s ↦ coinducedSingleApply (g.hom z) 1) hfac
