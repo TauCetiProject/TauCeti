@@ -212,10 +212,11 @@ theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp (k : ℕ)
   have hstep (j : ℕ) (hj : j ≤ k)
       (hYj : (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields j) :
       (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (j + 1) := by
-    have hG := mulVec_mem_sobolevFields_natCast j (contDiff_weightCoeff c)
+    have hG := mulVec_mem_sobolevFields_natCast j
+      (fun i' j' ↦ (contDiff_weightCoeff c i' j').of_le (by simp))
       (fun i' j' ↦ exists_norm_iteratedFDeriv_weightCoeff_le c i' j' j) hYj
-    exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq j hx
-      (fun i n hn ↦ hbound i n (hn.trans hj)) hwy
+    exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq j
+      (hx.of_le (by simp)) (fun i n hn ↦ hbound i n (hn.trans hj)) hwy
       (add_mem (sobolevFields_mono (by exact_mod_cast hj) hwf) hG) hweakY
   have hall (j : ℕ) (hj : j ≤ k) :
       (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) ∈ sobolevFields (j + 1) := by
@@ -326,7 +327,8 @@ private theorem memLp_and_lpNorm_gaugeFixedOperatorSymbol_le {c : ℝ}
         |c| * lpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 volume := by
   have hGL : MemLp (fun z ↦ gaugeFixedOperatorSymbol
       (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z) (y z)) 2 volume := by
-    have h := mulVec_mem_sobolevFields_natCast 0 (contDiff_weightCoeff c)
+    have h := mulVec_mem_sobolevFields_natCast 0
+      (fun i j ↦ (contDiff_weightCoeff c i j).of_le (by simp))
       (fun i j ↦ exists_norm_iteratedFDeriv_weightCoeff_le c i j 0) (by simpa using hy)
     simpa only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt] using memLp_of_mem_sobolevFields h
   exact ⟨hGL, lpNorm_le_mul_lpNorm_of_ae_le_mul hGL.aestronglyMeasurable hy

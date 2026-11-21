@@ -13,13 +13,13 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 
 /-!
-# Smooth coefficient multiplication on plane-vortex Sobolev fields
+# `Cᵏ` coefficient multiplication on plane-vortex Sobolev fields
 
 The direction space of the affine vortex field space is defined using real `L²` representatives
-and Mathlib's Bessel-potential regularity, coordinate by coordinate. Smooth bounded coefficients
+and Mathlib's Bessel-potential regularity, coordinate by coordinate. `Cᵏ` bounded coefficients
 with bounded derivatives through order `k` preserve this space at integer order `k`. The
 coefficient need not have a Sobolev tail: this is the form needed for the linear terms produced
-by expanding the equation and gauge action about a nondecaying reference field.
+by expanding the equation and gauge action about a finite-order or nondecaying reference field.
 
 The matrix version allows mixing the connection and section coordinates and permits different
 bounds for each coefficient. In particular a smooth gauge with bounded derivatives through order
@@ -43,11 +43,11 @@ namespace TauCeti.Vortex
 open MeasureTheory TemperedDistribution
 open scoped ContDiff
 
-/-- Smooth matrix coefficients act on integer-order plane-vortex Sobolev fields whenever
+/-- `Cᵏ` matrix coefficients act on integer-order plane-vortex Sobolev fields whenever
 each entry and its derivatives through order `k` are bounded. This includes coordinate changes
 which mix connection and section variations. -/
 theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
-    {A : Fin 4 → Fin 4 → ℂ → ℝ} (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
+    {A : Fin 4 → Fin 4 → ℂ → ℝ} (hA : ∀ i j, ContDiff ℝ k (A i j))
     (hbound : ∀ i j, ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (A i j) z‖ ≤ M)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
     (fun z ↦ WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j)) ∈
@@ -61,15 +61,15 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
   ext z
   simp
 
-/-- Multiplication by a smooth real coefficient with bounded derivatives through order `k`
+/-- Multiplication by a `Cᵏ` real coefficient with bounded derivatives through order `k`
 preserves the integer-order Sobolev direction space of plane-vortex fields. No decay of the
 coefficient is required. -/
 theorem smul_mem_sobolevFields_natCast (k : ℕ) {ψ : ℂ → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    (hψ : ContDiff ℝ k ψ) {M : ℝ} (hM : 0 ≤ M)
     (hbound : ∀ j ≤ k, ∀ z, ‖iteratedFDeriv ℝ j ψ z‖ ≤ M)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
     (fun z ↦ ψ z • y z) ∈ sobolevFields k := by
-  have hdiag : ∀ i j : Fin 4, ContDiff ℝ ∞ (fun z ↦ if i = j then ψ z else 0) := by
+  have hdiag : ∀ i j : Fin 4, ContDiff ℝ k (fun z ↦ if i = j then ψ z else 0) := by
     intro i j
     split_ifs
     · exact hψ
@@ -122,8 +122,10 @@ theorem gaugeLinearAction_mem_sobolevFields_natCast {k : ℕ} {u : ℂ → Circl
   obtain ⟨Mr, hMr, hre⟩ := hL Complex.reCLM
   obtain ⟨Mi, hMi, him⟩ := hL Complex.imCLM
   convert add_mem (add_mem hP
-    (smul_mem_sobolevFields_natCast k (Complex.reCLM.contDiff.comp hu) hMr hre hQ))
-    (smul_mem_sobolevFields_natCast k (Complex.imCLM.contDiff.comp hu) hMi him hR) using 1
+    (smul_mem_sobolevFields_natCast k ((Complex.reCLM.contDiff.comp hu).of_le (by simp))
+      hMr hre hQ))
+    (smul_mem_sobolevFields_natCast k ((Complex.imCLM.contDiff.comp hu).of_le (by simp))
+      hMi him hR) using 1
   ext z i
   fin_cases i <;>
     simp only [gaugeLinearAction_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
@@ -142,7 +144,7 @@ theorem mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {f : ContDiffBump (
   have hw : (fun z ↦ (x - referenceField f m) z i) ∈ realSobolevFunctions ℂ n 2 :=
     mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i
   have href := mul_mem_realSobolevFunctions_of_bounded_derivatives (p := 2) (by norm_num)
-    (by norm_num) n (contDiff_euclidean.1 (contDiff_referenceField f m) i)
+    (by norm_num) n ((contDiff_euclidean.1 (contDiff_referenceField f m) i).of_le (by simp))
     (fun j _ ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i j) hg
   have hprod := mul_mem_realSobolevFunctions
     (finrank_real_complex_lt_two_mul (by exact_mod_cast hn)) hw hg
