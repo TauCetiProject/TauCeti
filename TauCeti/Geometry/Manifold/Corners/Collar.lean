@@ -20,9 +20,9 @@ of a compact manifold relative to its boundary consumes
 (`TauCeti.HomologicalOrientation.fundamentalClassRel`, which asks the complement of the interior to
 be the image of a collared map). The half-space case is `TauCeti.isCollared_subtypeVal_boundary`.
 
-At a corner the boundary is not a manifold, but it still has a collar. In the model, moving along
-the diagonal `(1, …, 1)` identifies the product of the boundary of the quadrant, its points with a
-vanishing coordinate, and the half-line `[0, ∞)` with the whole quadrant
+At a corner the boundary is not a smooth manifold, but it still has a collar. In the model, moving
+along the diagonal `(1, …, 1)` identifies the product of the boundary of the quadrant, its points
+with a vanishing coordinate, and the half-line `[0, ∞)` with the whole quadrant
 (`TauCeti.euclideanQuadrantBoundaryProdHomeomorph`):
 
 `(z, t) ↦ z + t • (1, …, 1)`,

@@ -19,8 +19,9 @@ without boundary, oriented by `o`. Suppose that the complement of `ι(M)` is the
 collared map `f : N → X` (`TauCeti.IsCollared`): there is an open embedding
 `c : N × [0, 1) → X` with `c (y, 0) = f y`. This is the situation of a compact topological
 manifold `X` with boundary `∂X = f(N)` and interior `M`. For a compact manifold with boundary the
-half-space charts collar the boundary locally (`TauCeti.isCollared_subtypeVal_boundary`), and for
-a compact manifold with corners the quadrant charts do
+half-space charts collar the boundary locally (`TauCeti.isLocallyCollared_subtypeVal_boundary`,
+`TauCeti.isCollared_subtypeVal_boundary`), and for a compact manifold with corners the quadrant
+charts do
 (`TauCeti.isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`,
 `TauCeti.isCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`). In both cases Brown's
 collaring theorem (`TauCeti.IsLocallyCollared.isCollared`) assembles local collars of a compact
