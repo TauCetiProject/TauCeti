@@ -10,8 +10,6 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -26,11 +24,12 @@ derivative. These results apply to Banach-space-valued integrands and support di
 closure arguments for improper integrals.
 
 For a real function `g` integrable on `(x, ∞)`, with tail integral
-`Ψ v = ∫ u in Ioi v, g u`, the product `g * Ψ ^ k` is integrable on `(x, ∞)`
-(`MeasureTheory.IntegrableOn.mul_pow_integral_Ioi`) with integral
-`Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`);
-summing over `k`, the product `g * exp Ψ` is integrable with integral `exp (Ψ x) - 1`
-(`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
+`Ψ v = ∫ u in Ioi v, g u`, and `F` differentiable with continuous derivative `f`, the product
+`g * f ∘ Ψ` is integrable on `(x, ∞)` (`MeasureTheory.IntegrableOn.mul_comp_integral_Ioi`) with
+integral `F (Ψ x) - F 0` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_comp_integral_Ioi`). In
+particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
+(`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`) and that of `g * exp Ψ` is
+`exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
 The tail integral of a function nonnegative on `(a, ∞)` is antitone there
 (`MeasureTheory.antitoneOn_integral_Ioi`).
 
@@ -116,45 +115,71 @@ section Real
 
 variable {g : ℝ → ℝ} {x : ℝ}
 
+/-- For `g` integrable on `(x, ∞)` and `v ≥ x`, the tail integral `∫ u in Ioi v, g u` lies in
+`[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`. -/
+private lemma integral_Ioi_mem_Icc (hint : IntegrableOn g (Ioi x)) {v : ℝ} (hv : x ≤ v) :
+    ∫ u in Ioi v, g u ∈ Icc (-∫ u in Ioi x, ‖g u‖) (∫ u in Ioi x, ‖g u‖) :=
+  abs_le.1 ((norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
+    (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi hv).eventuallySubset))
+
+/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, and `f` is
+continuous on `[-A, A]` for `A = ∫ u in Ioi x, ‖g u‖`, an interval containing the values of `Ψ`
+on `(x, ∞)`, then `v ↦ g v * f (Ψ v)` is integrable on `(x, ∞)`. -/
+theorem mul_comp_integral_Ioi (hint : IntegrableOn g (Ioi x)) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc (-∫ u in Ioi x, ‖g u‖) (∫ u in Ioi x, ‖g u‖))) :
+    IntegrableOn (fun v ↦ g v * f (∫ u in Ioi v, g u)) (Ioi x) := by
+  have hΨ : ContinuousOn (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) :=
+    hint.continuousOn_Ici_primitive_Ioi.mono Ioi_subset_Ici_self
+  have hmaps : MapsTo (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) _ := fun v (hv : x < v) ↦
+    hint.integral_Ioi_mem_Icc hv.le
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hf
+  refine Integrable.mono' (hint.norm.mul_const M)
+    (hint.aestronglyMeasurable.mul ((hf.comp hΨ hmaps).aestronglyMeasurable measurableSet_Ioi)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_left (hM _ (hmaps hv)) (norm_nonneg _)
+
 /-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, then
 `v ↦ g v * Ψ v ^ k` is integrable on `(x, ∞)`. -/
 theorem mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
-    IntegrableOn (fun v ↦ g v * (∫ u in Ioi v, g u) ^ k) (Ioi x) := by
-  have hΨ : ContinuousOn (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) :=
-    hint.continuousOn_Ici_primitive_Ioi.mono Ioi_subset_Ici_self
-  refine Integrable.mono' (hint.norm.mul_const ((∫ u in Ioi x, ‖g u‖) ^ k))
-    (hint.aestronglyMeasurable.mul ((hΨ.pow k).aestronglyMeasurable measurableSet_Ioi)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
-  rw [norm_mul, norm_pow]
-  gcongr
-  exact (norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
-    (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi hv.le).eventuallySubset)
+    IntegrableOn (fun v ↦ g v * (∫ u in Ioi v, g u) ^ k) (Ioi x) :=
+  hint.mul_comp_integral_Ioi (f := (· ^ k)) (continuous_pow k).continuousOn
 
-/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, the integral
-of `g * Ψ ^ k` over `(x, ∞)` is `Ψ x ^ (k + 1) / (k + 1)`. This identity is behind the factorial
-decay of the Picard increments of Volterra integral equations on a half-line. -/
-theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
-    ∫ v in Ioi x, g v * (∫ u in Ioi v, g u) ^ k = (∫ u in Ioi x, g u) ^ (k + 1) / (k + 1) := by
+/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, then
+`v ↦ g v * exp (Ψ v)` is integrable on `(x, ∞)`. -/
+theorem mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
+    IntegrableOn (fun v ↦ g v * Real.exp (∫ u in Ioi v, g u)) (Ioi x) :=
+  hint.mul_comp_integral_Ioi Real.continuous_exp.continuousOn
+
+/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, and `F`
+differentiable with continuous derivative `f`, the integral of `g * f ∘ Ψ` over `(x, ∞)` is
+`F (Ψ x) - F 0`: on bounded intervals `-g * f ∘ Ψ` is the derivative of the absolutely continuous
+function `F ∘ Ψ`, and `Ψ` tends to `0` at infinity. -/
+theorem integral_Ioi_mul_comp_integral_Ioi (hint : IntegrableOn g (Ioi x)) {F f : ℝ → ℝ}
+    (hF : ∀ t, HasDerivAt F (f t) t) (hf : Continuous f) :
+    ∫ v in Ioi x, g v * f (∫ u in Ioi v, g u) = F (∫ u in Ioi x, g u) - F 0 := by
   set Ψ : ℝ → ℝ := fun v ↦ ∫ u in Ioi v, g u
   -- on `[x, y]`, `Ψ` is `Ψ x` minus a primitive of `g`
   have hΨeq {y : ℝ} (hy : x ≤ y) : Ψ y = Ψ x - ∫ u in x..y, g u := by
     simp only [Ψ, ← intervalIntegral.integral_interval_add_Ioi hint
       (hint.mono_set (Ioi_subset_Ioi hy)), add_sub_cancel_left]
+  -- `F` is Lipschitz on the interval containing the values of `Ψ`
+  have hFC : ContDiff ℝ 1 F := contDiff_one_iff_deriv.2
+    ⟨fun t ↦ (hF t).differentiableAt, by simpa only [funext fun t ↦ (hF t).deriv] using hf⟩
+  obtain ⟨C, hC⟩ := hFC.contDiffOn.exists_lipschitzOnWith (s := Icc (-∫ u in Ioi x, ‖g u‖)
+    (∫ u in Ioi x, ‖g u‖)) one_ne_zero (convex_Icc _ _) isCompact_Icc
   have hfin {y : ℝ} (hy : x ≤ y) :
-      ∫ v in x..y, g v * Ψ v ^ k = (Ψ x ^ (k + 1) - Ψ y ^ (k + 1)) / (k + 1) := by
+      ∫ v in x..y, g v * f (Ψ v) = F (Ψ x) - F (Ψ y) := by
     have hgi : IntervalIntegrable g volume x y :=
       (intervalIntegrable_iff_integrableOn_Ioc_of_le hy).2 (hint.mono_set Ioc_subset_Ioi_self)
     have hΨac : AbsolutelyContinuousOnInterval Ψ x y :=
       ((LipschitzWith.const (Ψ x)).lipschitzOnWith.absolutelyContinuousOnInterval.sub
         (hgi.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)).congr
         fun v hv ↦ (hΨeq (uIcc_of_le hy ▸ hv).1).symm
-    have hpow (n : ℕ) : AbsolutelyContinuousOnInterval (fun v ↦ Ψ v ^ n) x y := by
-      induction n with
-      | zero =>
-        simpa using (LipschitzWith.const (1 : ℝ)).lipschitzOnWith.absolutelyContinuousOnInterval
-      | succ n ih => simpa only [pow_succ] using ih.fun_mul hΨac
-    have hderiv : ∀ᵐ v, v ∈ uIoc x y →
-        deriv (fun v ↦ Ψ v ^ (k + 1)) v = -((k + 1) * (g v * Ψ v ^ k)) := by
+    have hFac : AbsolutelyContinuousOnInterval (F ∘ Ψ) x y :=
+      hC.comp_absolutelyContinuousOnInterval
+        (fun v hv ↦ hint.integral_Ioi_mem_Icc (uIcc_of_le hy ▸ hv).1) hΨac
+    have hderiv : ∀ᵐ v, v ∈ uIoc x y → deriv (F ∘ Ψ) v = -(g v * f (Ψ v)) := by
       filter_upwards [hgi.ae_hasDerivAt_integral, Measure.ae_ne volume y] with v hv hvy hvI
       rw [uIoc_of_le hy] at hvI
       have hvI' : v ∈ Ioo x y := ⟨hvI.1, hvI.2.lt_of_ne hvy⟩
@@ -164,74 +189,37 @@ theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : �
           (uIcc_of_le hy).symm.subset hvI) x left_mem_uIcc)).congr_of_eventuallyEq ?_
         filter_upwards [Ioo_mem_nhds hvI'.1 hvI'.2] with w hw
         exact hΨeq hw.1.le
-      rw [(hΨv.fun_pow (k + 1)).deriv]
-      push_cast
+      rw [((hF (Ψ v)).comp v hΨv).deriv]
       ring
-    have := hpow (k + 1) |>.integral_deriv_eq_sub
-    rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_neg,
-      intervalIntegral.integral_const_mul] at this
-    field_simp
+    have := hFac.integral_deriv_eq_sub
+    rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_neg] at this
+    simp only [Function.comp_apply] at this
     linarith
   refine tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi x
-    (hint.mul_pow_integral_Ioi k) tendsto_id) ?_
+    (hint.mul_comp_integral_Ioi hf.continuousOn) tendsto_id) ?_
   have htend : Tendsto Ψ atTop (𝓝 0) := tendsto_integral_Ioi_zero tendsto_id
-  have hlim := ((htend.pow (k + 1)).const_sub (Ψ x ^ (k + 1))).div_const ((k : ℝ) + 1)
-  rw [zero_pow k.succ_ne_zero, sub_zero] at hlim
-  exact hlim.congr' ((eventually_ge_atTop x).mono fun y hy ↦ (hfin hy).symm)
+  exact (((hFC.continuous.tendsto 0).comp htend).const_sub (F (Ψ x))).congr'
+    ((eventually_ge_atTop x).mono fun y hy ↦ (hfin hy).symm)
 
-/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, then
-`v ↦ g v * exp (Ψ v)` is integrable on `(x, ∞)`. -/
-theorem mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
-    IntegrableOn (fun v ↦ g v * Real.exp (∫ u in Ioi v, g u)) (Ioi x) := by
-  have hΨ : ContinuousOn (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) :=
-    hint.continuousOn_Ici_primitive_Ioi.mono Ioi_subset_Ici_self
-  refine Integrable.mono' (hint.norm.mul_const (Real.exp (∫ u in Ioi x, ‖g u‖)))
-    (hint.aestronglyMeasurable.mul (hΨ.rexp.aestronglyMeasurable measurableSet_Ioi)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
-  rw [norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
-  gcongr
-  exact (Real.le_norm_self _).trans ((norm_integral_le_integral_norm _).trans
-    (setIntegral_mono_set hint.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
-      (Ioi_subset_Ioi (le_of_lt hv)).eventuallySubset))
-
-open scoped Nat in
 /-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, the integral
-of `g * exp Ψ` over `(x, ∞)` is `exp (Ψ x) - 1`. This is the sum over `k` of the identities
-`integral_Ioi_mul_pow_integral_Ioi`, divided by `k!`; it gives the derivative bounds for
-solutions of Volterra integral equations on a half-line. -/
+of `g * Ψ ^ k` over `(x, ∞)` is `Ψ x ^ (k + 1) / (k + 1)`. This identity is behind the factorial
+decay of the Picard increments of Volterra integral equations on a half-line. -/
+theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
+    ∫ v in Ioi x, g v * (∫ u in Ioi v, g u) ^ k = (∫ u in Ioi x, g u) ^ (k + 1) / (k + 1) := by
+  have hF (t : ℝ) : HasDerivAt (fun t : ℝ ↦ t ^ (k + 1) / (k + 1)) (t ^ k) t := by
+    convert (hasDerivAt_pow (k + 1) t).div_const ((k : ℝ) + 1) using 1
+    rw [Nat.add_sub_cancel]
+    push_cast
+    field_simp
+  exact (hint.integral_Ioi_mul_comp_integral_Ioi hF (continuous_pow k)).trans (by simp)
+
+/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, the integral
+of `g * exp Ψ` over `(x, ∞)` is `exp (Ψ x) - 1`. This gives the derivative bounds for solutions
+of Volterra integral equations on a half-line. -/
 theorem integral_Ioi_mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
     ∫ v in Ioi x, g v * Real.exp (∫ u in Ioi v, g u) = Real.exp (∫ u in Ioi x, g u) - 1 := by
-  set Ψ : ℝ → ℝ := fun v ↦ ∫ u in Ioi v, g u
-  set A := ∫ u in Ioi x, ‖g u‖
-  have hF (k : ℕ) : IntegrableOn (fun v ↦ g v * Ψ v ^ k / k !) (Ioi x) :=
-    (hint.mul_pow_integral_Ioi k).div_const _
-  -- the series of the integrals of the norms is dominated by `A * exp A`
-  have hsum : Summable fun k : ℕ ↦ ∫ v in Ioi x, ‖g v * Ψ v ^ k / (k !)‖ := by
-    refine Summable.of_nonneg_of_le (fun k ↦ integral_nonneg fun _ ↦ norm_nonneg _) (fun k ↦ ?_)
-      ((Real.summable_pow_div_factorial A).mul_left A)
-    refine (setIntegral_mono_on (hF k).norm (hint.norm.mul_const (A ^ k / k !))
-      measurableSet_Ioi fun v hv ↦ ?_).trans_eq (integral_mul_const _ _)
-    rw [norm_div, norm_mul, norm_pow, Real.norm_natCast, mul_div_assoc]
-    gcongr
-    exact (norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
-      (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi (le_of_lt hv)).eventuallySubset)
-  have h₁ := hasSum_integral_of_summable_integral_norm hF hsum
-  have hpt (v : ℝ) : ∑' k : ℕ, g v * Ψ v ^ k / k ! = g v * Real.exp (Ψ v) := by
-    simp_rw [mul_div_assoc]
-    rw [tsum_mul_left, Real.exp_eq_exp_ℝ, (NormedSpace.expSeries_div_hasSum_exp (Ψ v)).tsum_eq]
-  simp only [hpt] at h₁
-  -- the integrals themselves sum to `exp (Ψ x) - 1`
-  have h₂ : HasSum (fun k : ℕ ↦ ∫ v in Ioi x, g v * Ψ v ^ k / k !) (Real.exp (Ψ x) - 1) := by
-    have he := NormedSpace.expSeries_div_hasSum_exp (Ψ x)
-    rw [← Real.exp_eq_exp_ℝ] at he
-    convert (hasSum_nat_add_iff' 1).2 he using 1
-    · funext k
-      rw [integral_div, hint.integral_Ioi_mul_pow_integral_Ioi k, Nat.factorial_succ]
-      push_cast
-      field_simp
-      rfl
-    · simp
-  exact h₁.unique h₂
+  rw [hint.integral_Ioi_mul_comp_integral_Ioi Real.hasDerivAt_exp Real.continuous_exp,
+    Real.exp_zero]
 
 end Real
 

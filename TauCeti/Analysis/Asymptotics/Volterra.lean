@@ -36,8 +36,9 @@ This is Olver's theorem on Volterra integral equations (Chapter 6, Theorem 10.1)
 among continuous solutions that are `O(P)` at infinity. If `K` vanishes on the diagonal and has
 a partial derivative `K₁` in its first variable, continuous with `‖K₁ x v‖ ≤ P₁ x * Q v` for a
 continuous `P₁ ≥ 0`, then the solution is `C¹` with `‖h' x‖ ≤ P₁ x * Φ x * exp (Ψ x)`. If `P` is
-a constant `P₀` and `‖J‖ ≤ ‖ψ‖`, the bound sharpens to
-`‖h x‖ ≤ exp (P₀ * ∫ v in Ioi x, Q v * ‖ψ v‖) - 1`. The existence and error-bound theorems for
+a constant `P₀` and `‖J‖ ≤ ‖ψ‖`, every continuous solution bounded at infinity satisfies
+`‖h x‖ ≤ exp (P₀ * ∫ v in Ioi x, Q v * ‖ψ v‖) - 1`, which sharpens the bound
+`P x * Φ x * exp (Ψ x)` when `J = ψ`. The existence and error-bound theorems for
 the Liouville–Green approximation and for the solutions of linear differential equations at an
 irregular singularity of rank one (DLMF §§2.7, 2.8) reduce to equations of this form.
 
@@ -53,8 +54,9 @@ in addition that `𝕜` be a normed `ℝ`-algebra compatible with `E`, as `ℝ` 
 * `TauCeti.volterra_solution_unique`: two continuous solutions that are `O(P)` at infinity agree
   on `(a, ∞)`; consequently every such solution satisfies the bound
   (`TauCeti.norm_volterra_solution_le`).
-* `TauCeti.norm_volterra_solution_le_exp_sub_one`: the sharper bound `exp (P₀ Φ x) - 1` for a
-  constant `P = P₀` and `‖J‖ ≤ ‖ψ‖`.
+* `TauCeti.norm_volterra_solution_le_exp_sub_one`: the bound
+  `‖h x‖ ≤ exp (P₀ * ∫ v in Ioi x, Q v * ‖ψ v‖) - 1` for a constant `P = P₀`, `‖J‖ ≤ ‖ψ‖` and
+  `h` bounded at infinity, which sharpens the general bound when `J = ψ`.
 * `TauCeti.hasDerivAt_volterra_solution`, `TauCeti.contDiffOn_volterra_solution` and
   `TauCeti.norm_deriv_volterra_solution_le`: the derivative
   `h' x = ∫ v in Ioi x, K₁ x v • (J v + ψ v • h v)`, the `C¹` regularity of `h`, and the bound
@@ -598,12 +600,12 @@ section ConstantBound
 
 variable {P₀ : ℝ}
 
-/-- When `P` is a constant `P₀ ≥ 0` and `‖J‖ ≤ ‖ψ‖`, the `k`-th Picard increment is at most
+/-- When `P` is a constant `P₀ > 0` and `‖J‖ ≤ ‖ψ‖`, the `k`-th Picard increment is at most
 `Ψ x ^ (k + 1) / (k + 1)!`, where `Ψ x = ∫ v in Ioi x, P₀ * Q v * ‖ψ v‖`. -/
 private lemma norm_picardTerm_le_pow_succ
     (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
     (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
-    (hP₀ : 0 ≤ P₀) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
+    (hP₀ : 0 < P₀) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
     (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P₀ * Q v) (hJψ : ∀ v ∈ Ioi a, ‖J v‖ ≤ ‖ψ v‖)
     (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
     (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P₀ * Q v * ‖ψ v‖) (Ioi x)) (k : ℕ) {x : ℝ}
@@ -618,33 +620,17 @@ private lemma norm_picardTerm_le_pow_succ
       fun v (hv : x < v) ↦ ?_
     rw [mul_assoc]
     exact mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left (hJψ v (hx.trans hv)) (hQ0 v (hx.trans hv))) hP₀
+      (mul_le_mul_of_nonneg_left (hJψ v (hx.trans hv)) (hQ0 v (hx.trans hv))) hP₀.le
   | succ k ih =>
     have hFint := integrableOn_weight_smul_picardTerm (P := fun _ ↦ P₀) hK hJ hψ
-      continuousOn_const hQ (fun _ _ ↦ hP₀) hQ0 hKle hΦ hΨ k hx
+      continuousOn_const hQ (fun _ _ ↦ hP₀.le) hQ0 hKle hΦ hΨ k hx
+    -- the weighted-integral estimate with `P = P₀` and `C = P₀⁻¹`
+    have hint := integral_weight_smul_le (P := fun _ ↦ P₀) hQ0 hΨ (C := P₀⁻¹) (k + 1) hx hFint
+      fun v (hv : x < v) ↦ (ih (hx.trans hv)).trans_eq (by field_simp)
     rw [picardTerm]
-    refine (norm_integral_kernel_smul_le (P := fun _ ↦ P₀) hKle hx hFint).trans ?_
-    rw [← integral_const_mul]
-    calc ∫ v in Ioi x, P₀ * (Q v * ‖ψ v • picardTerm K J ψ k v‖)
-        ≤ ∫ v in Ioi x, ((k + 1)! : ℝ)⁻¹ *
-            (P₀ * Q v * ‖ψ v‖ * (∫ u in Ioi v, P₀ * Q u * ‖ψ u‖) ^ (k + 1)) := by
-          refine setIntegral_mono_on (hFint.const_mul P₀)
-            (((hΨ x hx).mul_pow_integral_Ioi (k + 1)).const_mul _) measurableSet_Ioi
-            fun v (hv : x < v) ↦ ?_
-          have hg : 0 ≤ P₀ * Q v * ‖ψ v‖ :=
-            mul_nonneg (mul_nonneg hP₀ (hQ0 v (hx.trans hv))) (norm_nonneg _)
-          rw [norm_smul]
-          calc P₀ * (Q v * (‖ψ v‖ * ‖picardTerm K J ψ k v‖))
-              = P₀ * Q v * ‖ψ v‖ * ‖picardTerm K J ψ k v‖ := by ring
-            _ ≤ P₀ * Q v * ‖ψ v‖ *
-                ((∫ u in Ioi v, P₀ * Q u * ‖ψ u‖) ^ (k + 1) / (k + 1)!) :=
-              mul_le_mul_of_nonneg_left (ih (hx.trans hv)) hg
-            _ = _ := by ring
-      _ = (∫ u in Ioi x, P₀ * Q u * ‖ψ u‖) ^ (k + 1 + 1) / (k + 1 + 1)! := by
-          rw [integral_const_mul, (hΨ x hx).integral_Ioi_mul_pow_integral_Ioi (k + 1),
-            Nat.factorial_succ (k + 1)]
-          push_cast
-          field_simp
+    refine (norm_integral_kernel_smul_le (P := fun _ ↦ P₀) hKle hx hFint).trans
+      ((mul_le_mul_of_nonneg_left hint hP₀.le).trans_eq ?_)
+    field_simp
 
 /-- **Volterra integral equations, sharper bound.** If the kernel bound is
 `‖K x v‖ ≤ P₀ * Q v` with a constant `P₀ ≥ 0`, and the forcing is dominated by the coefficient,
@@ -701,7 +687,7 @@ theorem norm_volterra_solution_le_exp_sub_one [CompleteSpace E]
   simp only [Finset.sum_range_one, pow_zero, Nat.factorial_zero, Nat.cast_one, div_one] at he'
   refine tsum_of_norm_bounded he' fun k ↦ ?_
   rw [← hΨx]
-  exact norm_picardTerm_le_pow_succ hK hJ hψ hQ hP₀ hQ0 hKle hJψ hΦ hΨ k hx
+  exact norm_picardTerm_le_pow_succ hK hJ hψ hQ hP₀pos hQ0 hKle hJψ hΦ hΨ k hx
 
 end ConstantBound
 
