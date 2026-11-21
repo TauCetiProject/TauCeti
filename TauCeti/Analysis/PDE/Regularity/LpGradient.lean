@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Fourier.MihlinHormander
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
-import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
