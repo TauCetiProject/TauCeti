@@ -22,12 +22,6 @@ adjunction, and shows that this identification is multiplicative. On underlying 
 identity, product and inverse of points of the base change project to those of `G`. Base change
 of group schemes preserves finite limits.
 
-More generally, let `g : G' ⟶ G` be a morphism of monoid schemes lying over `f : S' ⟶ S`, not
-necessarily exhibiting `G'` as a base change of `G`. If `g` is compatible with multiplication, it
-carries products of points of `G'` to products of points of `G`; that is, composition with `g` is
-multiplicative on points. If `G` is a group scheme, `g` hence also preserves the identity, and if
-both are group schemes, inversion.
-
 ## Main declarations
 
 * `TauCeti.GroupScheme.baseChangePointMulEquiv`: the multiplicative point-group identification
@@ -38,12 +32,6 @@ both are group schemes, inversion.
   law of a base change projects to the group law of the original group scheme.
 * `TauCeti.GroupScheme.pullbackMapGrp_preservesFiniteLimits`: base change of group schemes
   preserves finite limits.
-* `TauCeti.GroupScheme.mul_left_comp_of_mul_left_comp`,
-  `TauCeti.GroupScheme.homMk_mul_left_comp_of_mul_left_comp`,
-  `TauCeti.GroupScheme.one_left_comp_of_mul_left_comp` and
-  `TauCeti.GroupScheme.inv_left_comp_of_mul_left_comp`: a morphism `g : G' ⟶ G` of monoid or
-  group schemes over a morphism of bases which is compatible with multiplication preserves
-  products of points, the identity and inversion.
 
 The naturality lemma in the test scheme is adapted from Axel Delaval, Jie Xu, and Shitan Xu's
 Jacobian library, release `baef7723da528551b7d2f93bd9a9a53303b04dbc`,
@@ -236,70 +224,5 @@ noncomputable instance pullbackMapGrp_preservesFiniteLimits (s : Y ⟶ X) :
       (Limits.PreservesLimitsOfShape J (Grp.forget (Over X) ⋙ Over.pullback s))⟩
   have : Limits.ReflectsFiniteLimits (Grp.forget (Over Y)) := ⟨fun _ _ _ ↦ inferInstance⟩
   Limits.preservesFiniteLimits_of_reflects_of_preserves _ (Grp.forget (Over Y))
-
-/-! ### Multiplicative morphisms of group schemes over different bases -/
-
-section MulLeftComp
-
-open MonoidalCategory
-
-variable {S S' : Scheme.{u}} {f : S' ⟶ S} {G : Over S} {G' : Over S'} {g : G'.left ⟶ G.left}
-  (w : g ≫ G.hom = G'.hom ≫ f)
-
-/-- **A multiplicative morphism of monoid schemes preserves products of points.** If
-`g : G' ⟶ G` lies over `f : S' ⟶ S` and is compatible with multiplication, then it carries the
-product of two points of `G'` with values in an `S'`-scheme `T` to the product of their images,
-as points of `G` with values in `T` over `f`. -/
-theorem mul_left_comp_of_mul_left_comp [MonObj G] [MonObj G']
-    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left)
-    {T : Over S'} (a b : T ⟶ G') :
-    (a * b).left ≫ g =
-      Limits.pullback.lift (a.left ≫ g) (b.left ≫ g) (by simp [w]) ≫ μ[G].left := by
-  rw [Hom.mul_def, Over.comp_left, Category.assoc, hμ, ← Category.assoc]
-  congr 1
-  apply Limits.pullback.hom_ext <;> simp
-
-/-- **A multiplicative morphism of monoid schemes is multiplicative on points.** If
-`g : G' ⟶ G` lies over `f : S' ⟶ S` and is compatible with multiplication, then composing with
-`g` carries points of `G'` with values in an `S'`-scheme `T` to points of `G` with values in `T`
-over `f`, and this map preserves products. -/
-theorem homMk_mul_left_comp_of_mul_left_comp [MonObj G] [MonObj G']
-    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left)
-    {T : Over S'} (a b : T ⟶ G') :
-    (Over.homMk ((a * b).left ≫ g) (by simp [w]) : Over.mk (T.hom ≫ f) ⟶ G) =
-      (Over.homMk (a.left ≫ g) (by simp [w]) : Over.mk (T.hom ≫ f) ⟶ G) *
-        (Over.homMk (b.left ≫ g) (by simp [w]) : Over.mk (T.hom ≫ f) ⟶ G) := by
-  ext
-  simp only [Over.homMk_left]
-  rw [mul_left_comp_of_mul_left_comp w hμ, Hom.mul_def, Over.comp_left, Over.lift_left]
-  rfl
-
-/-- **A multiplicative morphism of group schemes preserves the identity.** If `g : G' ⟶ G` lies
-over `f : S' ⟶ S` and is compatible with multiplication, then it carries the identity section of
-`G'` to the base change along `f` of that of `G`. -/
-theorem one_left_comp_of_mul_left_comp [GrpObj G] [MonObj G']
-    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left) :
-    η[G'].left ≫ g = f ≫ η[G].left := by
-  -- the image of the identity is an idempotent in the group of points of `G` over `f`
-  have h := homMk_mul_left_comp_of_mul_left_comp w hμ (1 : 𝟙_ (Over S') ⟶ G') 1
-  simp only [mul_one] at h
-  simpa [Hom.one_def] using congr($(mul_eq_left.mp h.symm).left)
-
-/-- **A multiplicative morphism of group schemes preserves inversion.** If `g : G' ⟶ G` lies over
-`f : S' ⟶ S` and is compatible with multiplication, then it intertwines the inversions of `G'` and
-`G`. -/
-theorem inv_left_comp_of_mul_left_comp [GrpObj G] [GrpObj G']
-    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left) :
-    ι[G'].left ≫ g = g ≫ ι[G].left := by
-  -- `g` and `ι ≫ g` are mutually inverse points of `G` with values in `G'` over `G'.hom ≫ f`
-  have h := homMk_mul_left_comp_of_mul_left_comp w hμ (𝟙 G') (𝟙 G')⁻¹
-  simp only [mul_inv_cancel] at h
-  have h1 :
-      (Over.homMk ((1 : G' ⟶ G').left ≫ g) (by simp [w]) : Over.mk (G'.hom ≫ f) ⟶ G) = 1 := by
-    ext
-    simp [Hom.one_def, one_left_comp_of_mul_left_comp w hμ]
-  simpa [Hom.inv_def] using congr($(eq_inv_of_mul_eq_one_right (h.symm.trans h1)).left)
-
-end MulLeftComp
 
 end TauCeti.GroupScheme

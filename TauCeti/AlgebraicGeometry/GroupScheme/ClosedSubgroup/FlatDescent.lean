@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.BaseChange
 public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
+import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 
 /-!

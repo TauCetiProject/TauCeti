@@ -106,9 +106,8 @@ theorem flat_stalkMap_of_comp {X X' Y : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y)
     exact h
   algebraize [(f.stalkMap (g x')).hom, (g.stalkMap x').hom,
     (g.stalkMap x').hom.comp (f.stalkMap (g x')).hom]
-  have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') := by
-    rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
-    exact g.faithfullyFlat_stalkMap x' hg
+  have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') :=
+    g.faithfullyFlat_stalkMap x' hg
   exact Module.Flat.of_faithfullyFlat_of_flat _ _ (X'.presheaf.stalk x')
 
 end AlgebraicGeometry.Scheme.Hom

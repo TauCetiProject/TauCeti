@@ -76,9 +76,8 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_etale (f : X ⟶ Y) [Etale 
       ⟨inferInstance, inferInstance⟩
   · rintro ⟨_, _⟩
     let := (f.stalkMap x).hom.toAlgebra
-    have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-      rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
-      exact f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
+    have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
+      f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
     exact ⟨IsDomain.of_faithfulSMul _ (X.presheaf.stalk x),
       TauCeti.IsIntegrallyClosed.of_faithfullyFlat _ (X.presheaf.stalk x)⟩
 

@@ -8,9 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
-public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.CategoryTheory.Comma.Over
-import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 
 /-!
@@ -132,8 +132,9 @@ theorem exists_grpObj_isMonHom_comap_iff_le :
   -- `D.comap g` lies in the kernel of `φ'` exactly when `D` lies in that of `φ' ≫ g`, and `g`
   -- carries the identity, products and inverses of points of `V(D.comap g)` to those of `V(D)`.
   rw [exists_grpObj_isMonHom_iff_le]
-  simp only [← le_map_iff_comap_le, map_ker, Category.assoc, one_left_comp_of_mul_left_comp w hμ,
-    inv_left_comp_of_mul_left_comp w hμ, subschemeMap_subschemeι_assoc, hμ,
+  simp only [← le_map_iff_comap_le, map_ker, Category.assoc,
+    Over.one_left_comp_of_mul_left_comp w hμ,
+    Over.inv_left_comp_of_mul_left_comp w hμ, subschemeMap_subschemeι_assoc, hμ,
     pullback.map_comp_assoc, subschemeMap_subschemeι, Category.id_comp, Category.comp_id]
 
 /-- **Closed subgroup schemes are stable under inverse image.** Let `g : G' ⟶ G` be a morphism of

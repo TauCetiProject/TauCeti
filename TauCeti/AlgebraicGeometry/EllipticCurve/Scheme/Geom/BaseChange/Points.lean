@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
-import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -111,7 +111,7 @@ theorem mul_left_comp_of_isPullback {Z : Over S'} (x y : Z ⟶ Over.mk E'.struct
     (x * y).left ≫ g = pullback.lift (x.left ≫ g) (y.left ≫ g)
       (by have hx := Over.w x; have hy := Over.w y; dsimp at hx hy
           simp [hg.w, reassoc_of% hx, reassoc_of% hy]) ≫ E.addition :=
-  GroupScheme.mul_left_comp_of_mul_left_comp (G := Over.mk E.structureMap)
+  Over.mul_left_comp_of_mul_left_comp (G := Over.mk E.structureMap)
     (G' := Over.mk E'.structureMap) hg.w
     (by simpa only [mul_left, Over.mk_hom] using addition_comp_of_isPullback hg h0) x y
 

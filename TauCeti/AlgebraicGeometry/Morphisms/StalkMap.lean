@@ -515,9 +515,8 @@ theorem isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType [Flat f]
     Algebra.EssFiniteType.isNoetherianRing (Y.presheaf.stalk (f x)) (X.presheaf.stalk x),
     fun _ ↦ ?_⟩
   -- a flat local homomorphism is faithfully flat, and Noetherianity descends along it
-  have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
-    exact f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
+  have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
+    f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
   exact .of_faithfullyFlat (X.presheaf.stalk x)
 
 /-- The stalk map at `x` of a formally unramified morphism `f : X ⟶ Y`, as an algebra, is formally

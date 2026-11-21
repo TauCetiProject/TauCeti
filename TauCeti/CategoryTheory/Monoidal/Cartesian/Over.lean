@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
@@ -15,6 +15,10 @@ The pullback of two sections over the same base has equal projections to that ba
 Consequently a product chart followed by multiplication in a monoid object evaluates as the
 product of its two sections. This is useful for restricting group operations to a subscheme
 covered by sections.
+
+Multiplicative morphisms between slices over different bases preserve products of points; when
+the target is a group object they preserve identities, and between group objects they preserve
+inversion. These statements require only a category with pullbacks.
 
 This file also records `CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullback`: if
 the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
@@ -60,6 +64,70 @@ end TauCeti.CategoryTheory.Over
 namespace CategoryTheory.Over
 
 variable {C : Type*} [Category* C] [HasPullbacks C] {S : C}
+
+/-! ### Multiplicative morphisms between slices over different bases -/
+
+section MulLeftComp
+
+open MonoidalCategory
+
+variable {S' : C} {f : S' ⟶ S} {G : Over S} {G' : Over S'} {g : G'.left ⟶ G.left}
+  (w : g ≫ G.hom = G'.hom ≫ f)
+
+/-- **A multiplicative morphism of monoid objects preserves products of points.** If
+`g : G' ⟶ G` lies over `f : S' ⟶ S` and is compatible with multiplication, then it carries the
+product of two points of `G'` with values in an object `T` over `S'` to the product of their images,
+as points of `G` with values in `T` over `f`. -/
+theorem mul_left_comp_of_mul_left_comp [MonObj G] [MonObj G']
+    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left)
+    {T : Over S'} (a b : T ⟶ G') :
+    (a * b).left ≫ g =
+      Limits.pullback.lift (a.left ≫ g) (b.left ≫ g) (by simp [w]) ≫ μ[G].left := by
+  rw [Hom.mul_def, Over.comp_left, Category.assoc, hμ, ← Category.assoc]
+  congr 1
+  apply Limits.pullback.hom_ext <;> simp
+
+/-- **A multiplicative morphism of monoid objects is multiplicative on points.** If
+`g : G' ⟶ G` lies over `f : S' ⟶ S` and is compatible with multiplication, then composing with
+`g` carries points of `G'` with values in an object `T` over `S'` to points of `G`
+with values in `T` over `f`, and this map preserves products. -/
+theorem homMk_mul_left_comp_of_mul_left_comp [MonObj G] [MonObj G']
+    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left)
+    {T : Over S'} (a b : T ⟶ G') :
+    (Over.homMk ((a * b).left ≫ g) (by simp [w]) : Over.mk (T.hom ≫ f) ⟶ G) =
+      (Over.homMk (a.left ≫ g) (by simp [w]) : Over.mk (T.hom ≫ f) ⟶ G) *
+        (Over.homMk (b.left ≫ g) (by simp [w]) : Over.mk (T.hom ≫ f) ⟶ G) := by
+  apply Over.OverMorphism.ext
+  simp only [Over.homMk_left, Hom.mul_def, Over.comp_left, Over.lift_left]
+  exact mul_left_comp_of_mul_left_comp w hμ a b
+
+/-- **A multiplicative morphism of group objects preserves the identity.** If `g : G' ⟶ G` lies
+over `f : S' ⟶ S` and is compatible with multiplication, then it carries the identity section of
+`G'` to the base change along `f` of that of `G`. -/
+theorem one_left_comp_of_mul_left_comp [GrpObj G] [MonObj G']
+    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left) :
+    η[G'].left ≫ g = f ≫ η[G].left := by
+  -- the image of the identity is an idempotent in the group of points of `G` over `f`
+  have h := homMk_mul_left_comp_of_mul_left_comp w hμ (1 : 𝟙_ (Over S') ⟶ G') 1
+  simp only [_root_.mul_one] at h
+  simpa [Hom.one_def] using congr($(mul_eq_left.mp h.symm).left)
+
+/-- **A multiplicative morphism of group objects preserves inversion.** If `g : G' ⟶ G` lies over
+`f : S' ⟶ S` and is compatible with multiplication, then it intertwines the inversions of `G'` and
+`G`. -/
+theorem inv_left_comp_of_mul_left_comp [GrpObj G] [GrpObj G']
+    (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left) :
+    ι[G'].left ≫ g = g ≫ ι[G].left := by
+  -- `g` and `ι ≫ g` are mutually inverse points of `G` with values in `G'` over `G'.hom ≫ f`
+  have h := homMk_mul_left_comp_of_mul_left_comp w hμ (𝟙 G') (𝟙 G')⁻¹
+  simp only [_root_.mul_inv_cancel] at h
+  have h1 :
+      (Over.homMk ((1 : G' ⟶ G').left ≫ g) (by simp [w]) : Over.mk (G'.hom ≫ f) ⟶ G) = 1 := by
+    ext
+    simp [Hom.one_def, one_left_comp_of_mul_left_comp w hμ]
+  simpa [Hom.inv_def] using congr($(eq_inv_of_mul_eq_one_right (h.symm.trans h1)).left)
+
+end MulLeftComp
 
 /-- If the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the pullback of

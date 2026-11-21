@@ -30,9 +30,8 @@ theorem isReduced_stalk_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
     (x : X) [_root_.IsReduced (X.presheaf.stalk x)] :
     _root_.IsReduced (Y.presheaf.stalk (f x)) := by
   algebraize [(f.stalkMap x).hom]
-  have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
-    exact f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
+  have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
+    f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
   exact isReduced_of_injective (algebraMap _ (X.presheaf.stalk x))
     (FaithfulSMul.algebraMap_injective _ _)
 

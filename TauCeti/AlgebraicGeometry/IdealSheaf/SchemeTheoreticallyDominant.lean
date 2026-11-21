@@ -75,8 +75,8 @@ theorem comap_le_comap_iff_of_universally_isSchemeTheoreticallyDominant
     (g : X ⟶ Y) (hg : MorphismProperty.universally @IsSchemeTheoreticallyDominant g)
     {I J : Y.IdealSheafData} : I.comap g ≤ J.comap g ↔ I ≤ J := by
   refine ⟨fun h ↦ ?_, fun h ↦ comap_mono g h⟩
-  -- The base change of `g` to `V(J)` is scheme-theoretically dominant, and its composite with `g`
-  -- factors through `V(J.comap g)`, hence through `V(I.comap g)`.
+  -- The projection to `V(J)` is scheme-theoretically dominant. The projection to `X` factors
+  -- through `V(J.comap g)`, hence through `V(I.comap g)`.
   have hJ := IsPullback.of_hasPullback g J.subschemeι
   have : IsSchemeTheoreticallyDominant (pullback.snd g J.subschemeι) := hg _ _ _ hJ.flip
   have := (comap_le_ker_iff_of_isSchemeTheoreticallyDominant I _ pullback.condition).mp

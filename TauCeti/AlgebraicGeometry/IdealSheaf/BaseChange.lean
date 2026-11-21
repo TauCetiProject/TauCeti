@@ -178,16 +178,6 @@ theorem ker_eq_comap_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} {f : 
   ext W : 2
   rw [ideal_comap_of_isOpenImmersion, ker_ideal_of_isPullback_of_isOpenImmersion f f' iU iV H]
 
-/-- **The inclusion of an inverse image lies over the inclusion of the closed subscheme.** For a
-commutative square `g ≫ q = q' ≫ f`, the closed subscheme of the inverse image `I.comap g`, as a
-scheme over `S'` through `q'`, maps to the closed subscheme of `I`, as a scheme over `S` through
-`q`, over `f`. The square need not be a pullback square. -/
-theorem comap_subschemeι_comp_comp {X' S' : Scheme.{u}} (I : X.IdealSheafData) {g : X' ⟶ X}
-    {q : X ⟶ S} {q' : X' ⟶ S'} {f : S' ⟶ S} (w : g ≫ q = q' ≫ f) :
-    ((I.comap g).subschemeι ≫ q') ≫ f =
-      subschemeMap (I.comap g) I g (I.le_map_comap g) ≫ I.subschemeι ≫ q := by
-  rw [subschemeMap_subschemeι_assoc, w, Category.assoc]
-
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme
 over `S'`, is the base change along `S' ⟶ S` of the closed subscheme of `I`, as a scheme over

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
@@ -41,9 +40,8 @@ instance IsSchemeTheoreticallyDominant.of_flat_of_surjective (f : X ⟶ Y) [Flat
     refine le_bot_iff.mp (Scheme.IdealSheafData.le_iff_forall_stalkIdeal_le.mpr fun x ↦ ?_)
     obtain ⟨y, rfl⟩ := f.surjective x
     let _ := (f.stalkMap y).hom.toAlgebra
-    have : Module.FaithfullyFlat (Y.presheaf.stalk (f y)) (X.presheaf.stalk y) := by
-      rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
-      exact f.faithfullyFlat_stalkMap y (Flat.stalkMap f y)
+    have : Module.FaithfullyFlat (Y.presheaf.stalk (f y)) (X.presheaf.stalk y) :=
+      f.faithfullyFlat_stalkMap y (Flat.stalkMap f y)
     have hy := congr(Scheme.IdealSheafData.stalkIdeal
       $(f.comap_ker_self.trans (Scheme.IdealSheafData.comap_bot f).symm) y)
     rw [Scheme.IdealSheafData.stalkIdeal_comap, Scheme.IdealSheafData.stalkIdeal_comap] at hy
