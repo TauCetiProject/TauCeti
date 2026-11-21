@@ -30,6 +30,9 @@ import TauCeti.Data.Nat.Periodic.Basic
   `a * h ^ m = b * h ^ n`.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
+* `TauCeti.bijective_zpow_iff_natAbs` and `TauCeti.bijective_zsmul_iff_natAbs`: raising to the
+  `m`-th power (multiplying by `m`) is bijective on a group if and only if raising to the
+  `m.natAbs`-th power is.
 -/
 
 public section
@@ -112,5 +115,20 @@ theorem mul_pow_four_eq_one_of_sq_eq_sq {G : Type*} [Monoid G] {a b : G}
     _ = (b * a) ^ 2 * (a * b) ^ 2 := by rw [hab]
     _ = 1 := pow_mul_pow_eq_one 2 (by
       simp only [mul_assoc, ← mul_assoc a a, ha, one_mul, hb])
+
+/-- Raising to the `m`-th power is bijective on a group if and only if raising to the
+`m.natAbs`-th power is. -/
+@[to_additive /-- Multiplication by `m : ℤ` is bijective on an additive group if and only if
+multiplication by `m.natAbs` is. -/]
+theorem bijective_zpow_iff_natAbs {G : Type*} [Group G] (m : ℤ) :
+    (Function.Bijective fun x : G ↦ x ^ m) ↔
+      Function.Bijective fun x : G ↦ x ^ (m.natAbs : ℤ) := by
+  rcases Int.natAbs_eq m with h | h
+  · rw [← h]
+  · have hfun : (fun x : G ↦ x ^ m) = (fun x : G ↦ x⁻¹) ∘ (fun x : G ↦ x ^ (m.natAbs : ℤ)) := by
+      funext x
+      conv_lhs => rw [h]
+      rw [Function.comp_apply, zpow_neg]
+    rw [hfun, Function.Bijective.of_comp_iff' inv_involutive.bijective]
 
 end TauCeti

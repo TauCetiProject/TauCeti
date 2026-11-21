@@ -14,7 +14,7 @@ import TauCeti.Topology.Homotopy.MappingPath.PathFibration
 /-!
 # Acyclic Eilenberg--Mac Lane spaces through the path fibration
 
-Let `k` be a commutative ring. A Serre fibration whose fibres are `K(G, n)` spaces induces
+Let `k` be a ring. A Serre fibration whose fibres are `K(G, n)` spaces induces
 isomorphisms on `k`-homology as soon as `K(G, n)` spaces have the `k`-homology of a point
 (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`). This is the case of
 `TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber` where the fibres are
@@ -50,7 +50,7 @@ open CategoryTheory Limits AlgebraicTopology
 
 namespace TauCeti
 
-variable (k : Type) [CommRing k]
+variable (k : Type) [Ring k]
 
 /-- **A Serre fibration with acyclic Eilenberg--Mac Lane fibres is a homology isomorphism.** A
 Serre fibration whose fibres are `K(G, n)` spaces induces isomorphisms on `k`-homology, as soon as
@@ -102,9 +102,9 @@ private theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ
     infer_instance
 
 /-- **`K(A, n)` spaces are acyclic as soon as `K(A, 1)` spaces are.** If every `K(A, 1)` space
-has no homology in positive degrees with coefficients in a commutative ring `k`, then neither has
-any `K(A, n)` space, `n ≥ 1`. The induction goes through the based path fibration of a
-`K(A, n + 1)` space, whose total space is contractible and whose fibres are `K(A, n)` spaces. -/
+has no homology in positive degrees with coefficients in a ring `k`, then neither has any `K(A, n)`
+space, `n ≥ 1`. The induction goes through the based path fibration of a `K(A, n + 1)` space,
+whose total space is contractible and whose fibres are `K(A, n)` spaces. -/
 theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne {A : Type} [AddCommGroup A]
     (hA : ∀ {X : Type} [TopologicalSpace X] {x : X},
       IsEilenbergMacLaneSpaceOne (Multiplicative A) X x →

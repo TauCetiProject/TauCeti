@@ -30,8 +30,9 @@ whose maps between homology groups of the same degree are induced by the coeffic
 Bockstein homomorphism is natural in continuous maps and in morphisms of short exact sequences of
 coefficients.
 
-For `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, with first map multiplication by two, this is the sequence relating
-integral and mod-two homology; see `TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo`.
+For `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/m ⟶ 0`, with first map multiplication by `m`, this is the sequence relating
+integral and mod-`m` homology; see
+`TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence`.
 The cohomological counterpart is `TopCat.singularCohomologyBockstein`.
 
 ## Main declarations

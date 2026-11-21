@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Isomorphism
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.ULift
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.AlgebraicTopology.Singular.Homotopy.CWApproximation
 
 /-!
 # The cubical Hurewicz equivalence in singular homology
@@ -38,10 +39,12 @@ theorem for `hurewiczHom` (`HomotopyGroup.hurewiczAddEquiv`,
 
 The inductive Hurewicz criteria
 `TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`,
-`TauCeti.subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift_of_le`, and
-`TauCeti.subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift` show that a simply
-connected space in any universe whose integral singular homology vanishes in degrees at least two
-(up to `k`, or in every degree) has trivial homotopy groups in that range.
+`TauCeti.subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift_of_le`,
+`TauCeti.subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift`, and (for arbitrary
+pointed spaces in `Type 0` via CW approximation)
+`TauCeti.subsingleton_homotopyGroup_of_isZero_singularHomology_int` show that a simply connected
+space (or pointed space with trivial fundamental group) whose integral singular homology vanishes in
+degrees at least two (up to `k`, or in every degree) has trivial homotopy groups in that range.
 
 ## References
 
@@ -300,5 +303,28 @@ theorem subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)))
     (k : ℕ) : Subsingleton (π_ k X x) :=
   subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift_of_le x fun n _ ↦ hH n
+
+/-- **Sharp finite-range integral Hurewicz vanishing.** If `π₁(Y, y)` is trivial and the integral
+singular homology `H_q(Y; ℤ)` vanishes for `2 ≤ q ≤ n + 2`, then `π_{n + 2}(Y, y)` is trivial.
+No connectedness, separation, or CW assumption is needed on `Y`. -/
+theorem subsingleton_homotopyGroup_of_isZero_singularHomology_int {Y : Type} [TopologicalSpace Y]
+    {y : Y} [Subsingleton (π_ 1 Y y)] {n : ℕ}
+    (hY : ∀ q, 2 ≤ q → q ≤ n + 2 →
+      IsZero (((singularChains ℤ).obj (TopCat.of Y)).homology q)) :
+    Subsingleton (π_ (n + 2) Y y) := by
+  let Z := cwApproximation (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y))
+  let z := cwApproximationBasepoint (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y))
+  have hZ1 : Subsingleton (π_ 1 Z z) :=
+    (cwApproximationHomotopyGroupMulEquiv y 0).toEquiv.subsingleton
+  have hH : ∀ j, j + 2 ≤ n + 2 →
+      IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (j + 2)).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).obj Z) := fun j hj ↦ by
+    have hz := isZero_singularHomology_cwApproximation_of_isZero y ℤ (j + 2)
+      (hY (j + 2) (by omega) hj)
+    exact hz.of_iso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (j + 2)).mapIso
+      (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso).app Z)
+  have : Subsingleton (π_ (n + 2) Z z) :=
+    subsingleton_homotopyGroup_of_isZero_singularHomologyFunctor_ulift_of_le (X := Z) z hH
+  exact (cwApproximationHomotopyGroupMulEquiv y (n + 1)).symm.toEquiv.subsingleton
 
 end TauCeti

@@ -28,9 +28,9 @@ that `F` commutes with singular homology
 The main example is restriction of scalars `ModuleCat S ⥤ ModuleCat R` along a ring homomorphism
 `R →+* S`: it preserves all colimits, being left adjoint to coextension of scalars, and it is exact.
 So the homology with coefficients in an `S`-module `M`, regarded as an `R`-module, is the homology
-with coefficients in `M` regarded as an `R`-module. Along `ℤ →+* ℤ/2` this compares integral chains
-reduced modulo two with mod-two chains; see
-`TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo`.
+with coefficients in `M` regarded as an `R`-module. Along `ℤ →+* ℤ/m` this compares integral chains
+reduced modulo `m` with `ZMod m` chains; see
+`TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence`.
 Extension of scalars is another example of the chain-level statement, since it preserves colimits.
 
 ## Main declarations

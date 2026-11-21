@@ -35,7 +35,7 @@ hypothesis says that `Y` has the homology of a point with coefficients in the lo
 `TauCeti.isTorsion'_homotopyGroup_of_subsingleton_singularHomology`. The proof climbs the
 Whitehead tower (`TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`), exactly as the
 mod-two vanishing theorem
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`), with two inputs.
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo`), with two inputs.
 
 * **First homotopy group.** If `Z` is `(n + 1)`-connected, the Hurewicz isomorphism
   `πₙ₊₂(Z) ≅ Hₙ₊₂(Z; ℤ)` makes `πₙ₊₂(Z)` an `S`-torsion group as soon as `Hₙ₊₂(Z; S⁻¹ℤ)` vanishes,
@@ -82,13 +82,15 @@ Hurewicz isomorphism it is `Hₙ₊₂(Z; ℤ)`, which is `S`-torsion since `H�
 private theorem isTorsion'_homotopyGroup_of_connected (k : Type) [CommRing k] [Algebra ℤ k]
     [IsLocalization S k] {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ)
     (hZ : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z))
-    (hZk : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (i + 1))) :
+    (hZk : ∀ q, n + 2 ≤ q → q ≤ n + 2 + 0 →
+      Subsingleton (((singularChains k).obj (TopCat.of Z)).homology q)) :
     Module.IsTorsion' (Additive (π_ (n + 2) Z z)) S := by
   have hZ' (j : ℕ) (hj : j < n + 2) : Subsingleton (HomotopyGroup (Fin j) Z z) := by
     rcases eq_or_ne j 0 with rfl | hj0
     · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
     · exact hZ j hj0 hj
-  have hH := (isTorsion'_singularChains_int_homology_iff S k (TopCat.of Z) (n + 2)).2 (hZk (n + 1))
+  have hH := (isTorsion'_singularChains_int_homology_iff S k (TopCat.of Z) (n + 2)).2
+    (hZk (n + 2) le_rfl le_rfl)
   exact (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv hZ').isTorsion'_iff.2 hH
 
 /-- **Serre's theorem modulo `S`-torsion, with localized coefficients.** Let `S` be a submonoid of
@@ -100,13 +102,16 @@ theorem isTorsion'_homotopyGroup_of_subsingleton_singularHomology (k : Type) [Co
     [Algebra ℤ k] [IsLocalization S k] {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y]
     (hY : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
     (y : Y) (n : ℕ) : Module.IsTorsion' (Additive (π_ (n + 2) Y y)) S :=
-  prop_homotopyGroup_of_subsingleton_singularHomology k (fun G _ ↦ Module.IsTorsion' G S)
+  have : Subsingleton (π_ 1 Y y) := HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
+  prop_homotopyGroup_of_subsingleton_singularHomology k (fun G _ ↦ Module.IsTorsion' G S) 0
     (fun e ↦ e.isTorsion'_iff.1)
     (isTorsion'_homotopyGroup_of_connected S k)
     (fun hA _ _ _ _ _ hX ↦
       IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf k
         (hA.isUnit_addOrderOf fun s hs ↦ by simpa using IsLocalization.map_units k ⟨s, hs⟩) hX)
-    hY y n
+    y n fun q hq _ ↦ by
+      obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
+      exact hY q'
 
 /-- **Serre's theorem modulo `S`-torsion.** Let `S` be a submonoid of `ℤ`. If every class of the
 positive-degree integral homology of a simply connected space `Y` is killed by an element of `S`,

@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.SerreClass
 public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.ObjectProperty
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Singular.Contractible
-import TauCeti.AlgebraicTopology.Singular.Fibration.FiberInclusion
+import TauCeti.AlgebraicTopology.Singular.Fibration.SerreLocalSystem
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.CategoryTheory.ObjectProperty.ArrowIso
 import TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape
@@ -604,30 +604,29 @@ theorem isIso_singularHomologyMap_fiber_to_point_iff_of_joined (hp : serreFibrat
       IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₁))) := by
   let γ : Path b₀ b₁ := h.somePath
-  let γ' : _root_.TopCat.of (ULift.{u} unitInterval) ⟶ B :=
-    _root_.TopCat.ofHom ⟨fun t ↦ γ t.down, γ.continuous.comp continuous_uliftDown⟩
-  let q_f := _root_.TopCat.pullbackFst γ' p
-  have hq : serreFibrations q_f := mem_serreFibrations_pullbackFst hp γ'
-  have : ContractibleSpace unitInterval :=
-    (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, Set.left_mem_Icc.2 zero_le_one⟩
-  have : ContractibleSpace (ULift.{u} unitInterval) :=
-    (Homeomorph.ulift : ULift.{u} unitInterval ≃ₜ unitInterval).contractibleSpace
   let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
-  -- Over the contractible interval, each fibre inclusion is a homology isomorphism.
-  have hpt (t : ULift.{u} unitInterval) {b : B} (ht : γ' t = b) :
-      IsIso (H.map (_root_.TopCat.isTerminalPUnit.from (p.fiber b))) ↔
-        IsIso (H.map (_root_.TopCat.isTerminalPUnit.from
-          (_root_.TopCat.of { x : _root_.TopCat.of (ULift.{u} unitInterval) × E //
-            γ' x.fst = p x.snd }))) := by
-    subst ht
-    have hι : IsIso (H.map (q_f.fiberι t)) :=
-      isIso_singularHomologyMap_fiberι R hq (fun _ _ ↦ inferInstance) (Nat.lt_succ_self q)
-    let e := p.fiberPullbackFstIso γ' t
-    have hfac : e.inv ≫ q_f.fiberι t ≫ _root_.TopCat.isTerminalPUnit.from _ =
-        _root_.TopCat.isTerminalPUnit.from (p.fiber (γ' t)) :=
+  have htr : IsIso (fiberHomologyTransport hp (ModuleCat.of R R) q γ) := by
+    have hmap : IsIso ((serreFiberLocalSystem hp (ModuleCat.of R R) q).map
+        (Path.Homotopic.Quotient.mk γ : (⟨b₀⟩ : FundamentalGroupoid B) ⟶ ⟨b₁⟩)) := inferInstance
+    rw [serreFiberLocalSystem_map_mk] at hmap
+    have hcomp : IsIso (fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫
+        (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q ⟨b₁⟩).inv) :=
+      IsIso.of_isIso_comp_left (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q ⟨b₀⟩).hom _
+    exact IsIso.of_isIso_comp_right _
+      (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q ⟨b₁⟩).inv
+  have hfac : fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫
+      H.map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₁)) =
+      H.map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₀)) := by
+    have h₁ : p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1)
+        (TopCat.pathEquiv.symm γ).hom₁ ≫ _root_.TopCat.isTerminalPUnit.from _ =
+        _root_.TopCat.isTerminalPUnit.from (p.fiber b₁) :=
       _root_.TopCat.isTerminalPUnit.hom_ext _ _
-    rw [← hfac, H.map_comp, H.map_comp, isIso_comp_left_iff, isIso_comp_left_iff]
-  exact (hpt (ULift.up 0) γ.source).trans (hpt (ULift.up 1) γ.target).symm
+    have h₀ : p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
+        (TopCat.pathEquiv.symm γ).hom₀ ≫ _root_.TopCat.isTerminalPUnit.from _ =
+        _root_.TopCat.isTerminalPUnit.from (p.fiber b₀) :=
+      _root_.TopCat.isTerminalPUnit.hom_ext _ _
+    rw [← h₁, H.map_comp, fiberHomologyTransport_comp_map_pullbackFiberι_assoc, ← H.map_comp, h₀]
+  rw [← hfac, isIso_comp_left_iff]
 
 /-- **A Serre fibration over a path-connected base whose fibre over one point has the homology of
 a point is a homology isomorphism.** Let `p : E ⟶ B` be a Serre fibration over a path-connected
