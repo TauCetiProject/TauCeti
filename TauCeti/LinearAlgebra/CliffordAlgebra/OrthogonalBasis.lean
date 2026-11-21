@@ -74,6 +74,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   generators square to `±1`.
 * `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
   orthogonal basis.
+* `CliffordAlgebra.commute_basis_iff`: two basis vectors commute exactly when the two sign
+  exponents of `CliffordAlgebra.basis_mul_basis` have the same parity, under unit-square
+  hypotheses.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
@@ -412,6 +415,30 @@ theorem basis_commuteOrNeg
     rw [basis_mul_basis hb, basis_mul_basis hb]
     rw [hs, ht, symmDiff_comm]
     simp [Finset.inter_comm]
+
+/-- **Two basis vectors commute exactly when the two sign exponents of
+`CliffordAlgebra.basis_mul_basis` have the same parity**, for an orthogonal basis whose vectors
+have unit squares, over a nontrivial commutative ring in which `2` is invertible. -/
+theorem commute_basis_iff [Nontrivial R] (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, IsUnit (Q (b i))) (s t : Finset I) :
+    Commute (basis Q b s) (basis Q b t) ↔
+      (∑ i ∈ s, (t.filter (· < i)).card) % 2 = (∑ i ∈ t, (s.filter (· < i)).card) % 2 := by
+  rw [Commute, SemiconjBy, basis_mul_basis hb, basis_mul_basis hb, symmDiff_comm t s,
+    Finset.inter_comm t s, neg_one_pow_eq_pow_mod_two,
+    neg_one_pow_eq_pow_mod_two (n := ∑ i ∈ t, _)]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  -- Compare the coefficients of `e_{s ∆ t}` on both sides and cancel the unit `∏ Q (b i)`.
+  have hc := congrArg (fun z ↦ (basis Q b).repr z (s ∆ t)) h
+  simp only [map_smul, Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_eq_same,
+    smul_eq_mul, mul_one] at hc
+  have hc' := (IsUnit.mul_left_inj (IsUnit.prod_iff.mpr fun i _ ↦ hQ i)).mp hc
+  have h1 : (-1 : R) ≠ 1 := fun h ↦ Nat.not_even_one
+    (TauCeti.even_of_neg_one_pow_smul_eq_self (isUnit_of_invertible (2 : R))
+      (one_ne_zero (α := R)) (by rw [pow_one, h, one_smul]))
+  rcases Nat.mod_two_eq_zero_or_one (∑ i ∈ s, (t.filter (· < i)).card) with h₁ | h₁ <;>
+    rcases Nat.mod_two_eq_zero_or_one (∑ i ∈ t, (s.filter (· < i)).card) with h₂ | h₂ <;>
+    simp only [h₁, h₂, pow_zero, pow_one] at hc' ⊢ <;>
+    first | exact absurd hc' h1 | exact absurd hc'.symm h1
 
 /-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
 theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)

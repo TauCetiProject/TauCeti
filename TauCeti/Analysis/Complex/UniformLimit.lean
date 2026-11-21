@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Topology.UniformSpace.UniformConvergence
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Analysis.Normed.Group.FunctionSeries
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Topology.Compactness.LocallyCompact
 import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
@@ -21,7 +23,11 @@ holomorphic functions on an open subset of `ℂ` is holomorphic; its proof uses 
 formula on circles. This file proves the corresponding statement for uniform limits on an open
 subset of an arbitrary complex normed space `V`, with values in a complex Banach space `E`
 (`TendstoUniformlyOn.differentiableOn`). It is the input needed to see that bounded holomorphic
-functions form a closed subspace of the bounded continuous functions.
+functions form a closed subspace of the bounded continuous functions. On a locally compact, that is
+finite-dimensional, domain such as `ℂⁿ`, locally uniform convergence is uniform on compact
+neighbourhoods, so locally uniform limits of holomorphic maps are holomorphic as well
+(`TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`); this identifies the limits
+produced by Montel's theorem in several variables.
 
 ## Main results
 
@@ -29,6 +35,8 @@ functions form a closed subspace of the bounded continuous functions.
   `‖fderiv ℂ f c‖ ≤ 2 * M / r`.
 * `TendstoUniformlyOn.differentiableOn`: a uniform limit of holomorphic maps on an open set is
   holomorphic.
+* `TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`: on a locally compact
+  complex normed space, a locally uniform limit of holomorphic maps on an open set is holomorphic.
 * `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the telescoping step in exhaustion proofs of
   the `\bar∂`-lemma. On any open set `U` in a complex normed space, if each `P k` is holomorphic on
   `U` and for `k ≥ m` the consecutive differences `h (k + 1) - h k` are holomorphic on `U` and
@@ -107,6 +115,26 @@ theorem TendstoUniformlyOn.differentiableOn [CompleteSpace E] {l : Filter ι} [l
       (hn.1.differentiableAt (hU.mem_nhds hn.2)).hasFDerivAt)
     (eventually_of_mem (hU.mem_nhds hx) fun y hy => hf.tendsto_at hy)).differentiableAt
     |>.differentiableWithinAt
+
+/-- **A locally uniform limit of holomorphic maps is holomorphic.** If holomorphic maps `F n` on an
+open subset `U` of a locally compact complex normed space, such as `ℂⁿ`, converge locally uniformly
+on `U` to `f`, with values in a complex Banach space, then `f` is holomorphic on `U`.
+
+This is the analogue, for domains in a finite-dimensional complex normed space, of Mathlib's
+`TendstoLocallyUniformlyOn.differentiableOn` for domains in `ℂ`. -/
+theorem TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace [LocallyCompactSpace V]
+    [CompleteSpace E] {l : Filter ι} [l.NeBot] {F : ι → V → E} {f : V → E} {U : Set V}
+    (hf : TendstoLocallyUniformlyOn F f l U) (hF : ∀ᶠ n in l, DifferentiableOn ℂ (F n) U)
+    (hU : IsOpen U) : DifferentiableOn ℂ f U := by
+  intro x hx
+  -- On a compact neighbourhood `K ⊆ U` of `x` the convergence is uniform, so `f` is holomorphic
+  -- on the interior of `K`, which contains `x`.
+  obtain ⟨K, ⟨hKx, hK⟩, hKU⟩ := (compact_basis_nhds x).mem_iff.mp (hU.mem_nhds hx)
+  have hT : TendstoUniformlyOn F f l (interior K) :=
+    ((tendstoLocallyUniformlyOn_iff_forall_isCompact hU).mp hf K hKU hK).mono interior_subset
+  have hd : DifferentiableOn ℂ f (interior K) :=
+    hT.differentiableOn (hF.mono fun _ hn => hn.mono (interior_subset.trans hKU)) isOpen_interior
+  exact (hd.differentiableAt (interior_mem_nhds.mpr hKx)).differentiableWithinAt
 
 namespace TauCeti
 
