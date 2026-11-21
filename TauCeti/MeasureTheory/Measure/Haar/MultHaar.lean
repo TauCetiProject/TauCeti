@@ -19,7 +19,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
 (`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
 (`TauCeti.map_multHaar_mul_left`, `TauCeti.eLpNorm_comp_mul_left_multHaar`), is invariant under
-inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one.
+inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one. The power map
+`t ↦ t ^ γ`, `γ ≠ 0`, sends it to `|γ|⁻¹ dt / t` (`TauCeti.map_multHaar_rpow`), so it multiplies
+`L^q(dt / t)` seminorms by `|γ| ^ (-1 / q)` (`TauCeti.eLpNorm_comp_rpow_multHaar`).
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -164,6 +166,30 @@ theorem eLpNorm_comp_mul_left_multHaar {ε : Type*} [TopologicalSpace ε] [Conti
     eLpNorm (fun t ↦ f (c * t)) q multHaar = eLpNorm f q multHaar := by
   rw [← Function.comp_def, ← (measurableEmbedding_mulLeft₀ hc.ne').eLpNorm_map_measure,
     map_multHaar_mul_left hc]
+
+/-- The image of `dt / t` under the power map `t ↦ t ^ γ`, `γ ≠ 0`, is `|γ|⁻¹ dt / t`. -/
+theorem map_multHaar_rpow {γ : ℝ} (hγ : γ ≠ 0) :
+    multHaar.map (· ^ γ) = ENNReal.ofReal |γ⁻¹| • multHaar := by
+  have hcomp : (· ^ γ) ∘ Real.exp = Real.exp ∘ (γ * ·) := by
+    ext u
+    simp [← Real.exp_mul, mul_comm]
+  rw [← map_volume_exp, map_map (measurable_id'.pow_const γ) Real.measurable_exp, hcomp,
+    ← map_map Real.measurable_exp (measurable_const_mul γ), Real.map_volume_mul_left hγ,
+    Measure.map_smul]
+  exact Real.measurable_exp.aemeasurable
+
+/-- Under the power map `t ↦ t ^ γ`, `γ ≠ 0`, the `L^q(dt / t)` seminorm is multiplied by
+`|γ| ^ (-1 / q)`: `‖g (t ^ γ)‖_{L^q(dt / t)} = |γ| ^ (-1 / q) ‖g‖_{L^q(dt / t)}`, read in `[0, ∞]`
+as `|γ⁻¹| ^ (1 / q)`. -/
+theorem eLpNorm_comp_rpow_multHaar {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε]
+    {g : ℝ → ε} (hg : AEStronglyMeasurable g multHaar) {γ : ℝ} (hγ : γ ≠ 0) (q : ℝ≥0∞) :
+    eLpNorm (fun t ↦ g (t ^ γ)) q multHaar =
+      ENNReal.ofReal |γ⁻¹| ^ (1 / q).toReal * eLpNorm g q multHaar := by
+  have hc : ENNReal.ofReal |γ⁻¹| ≠ 0 := by simpa using hγ
+  have hmap := map_multHaar_rpow hγ
+  rw [← Function.comp_def, ← eLpNorm_map_measure (hmap ▸ hg.smul_measure _)
+    (measurable_id'.pow_const γ).aemeasurable, hmap, eLpNorm_smul_measure_of_ne_zero hc,
+    smul_eq_mul]
 
 /-- `dt / t` is invariant under inversion on `(0, ∞)`. -/
 theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by

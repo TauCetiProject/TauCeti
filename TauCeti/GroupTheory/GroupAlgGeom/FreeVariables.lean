@@ -93,6 +93,12 @@ theorem inclFreeVars_injective : Function.Injective (inclFreeVars G X Y) :=
   Function.LeftInverse.injective (g := eval inl (Sum.elim (fun x => inr (FreeGroup.of x)) 1))
     fun _ => by simp
 
+/-- The inclusion `G[Y] → G[X ⊕ Y]`, renaming the variables along `Sum.inr`, is injective. -/
+theorem map_inr_injective :
+    Function.Injective (Monoid.Coprod.map (.id G) (FreeGroup.map (Sum.inr : Y → X ⊕ Y))) :=
+  Function.LeftInverse.injective (g := eval inl (Sum.elim 1 fun y => inr (FreeGroup.of y)))
+    fun _ => by simp [eval_map]
+
 /-- A system of equations in the variables `X`, regarded as a system in the variables `X` and
 `Y`. -/
 def addFreeVars (Y : Type*) (S : Set (GX G X)) : Set (GX G (X ⊕ Y)) :=

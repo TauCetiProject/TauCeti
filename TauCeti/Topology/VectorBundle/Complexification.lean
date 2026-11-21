@@ -207,6 +207,16 @@ theorem complexification_apply (p : TotalSpace (Complexification F) fun x ↦ �
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     (e.complexification p).2.im = e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd) := (rfl)
 
+open scoped TauCeti.Complexification in
+/-- The complexification of a real fibre frame is the scalar extension of that frame,
+followed by the canonical tensor-to-model equivalence. -/
+theorem continuousLinearEquivAt_complexification {x : B} (hx : x ∈ e.baseSet) :
+    e.complexification.continuousLinearEquivAt ℂ x (by simpa using hx) =
+      (e.continuousLinearEquivAt ℝ x hx).baseChangeComplex.trans
+        (tensorContinuousLinearEquivComplexification F) := by
+  ext u <;> simp [Trivialization.continuousLinearEquivAt_apply,
+    Trivialization.complexification_apply, e.coe_linearMapAt_of_mem hx]
+
 theorem complexification_symm_apply {b : B} (hb : b ∈ e.baseSet) (z : Complexification F) :
     e.complexification.symm b z = 1 ⊗ₜ[ℝ] e.symm b z.re + Complex.I ⊗ₜ[ℝ] e.symm b z.im :=
   Pretrivialization.complexification_symm_apply hb z
