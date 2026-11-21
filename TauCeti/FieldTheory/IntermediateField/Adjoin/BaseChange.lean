@@ -22,9 +22,9 @@ if a surjective `K₁`-algebra homomorphism `K₁ ⊗[K] L →ₐ[K₁] E` restr
 (`TauCeti.IntermediateField.adjoin_image_eq_top_of_surjective_tensorProduct`).
 
 In particular, for fields `K ⊆ L ⊆ Ω`, the canonical inclusion `K(α) → L(α)` makes `L(α)` a field
-quotient of `K(α) ⊗[K] L` whenever `α` is algebraic over `L` or `L / K` is finite
+quotient of `K(α) ⊗[K] L` whenever `α` is algebraic over `L` or `L / K` is algebraic
 (`TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct` and
-`TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct_of_finiteDimensional`).
+`TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct_of_isAlgebraic`).
 Regardless of whether `α` is algebraic over `L`, `L(α)` is generated as a field over `K(α)` by
 the image of `L`, the inclusion is compatible with any base ring `A` forming scalar towers
 `A → K → Ω` and `A → L → Ω`, and finiteness of `L / K` passes to `L(α) / K(α)`.
@@ -185,34 +185,43 @@ theorem adjoin_range_algebraMap_adjoinBaseChange_eq_top (α : Ω) :
     _ = ⊤ := by rw [hE, IntermediateField.top_toSubfield]
     _ = (⊤ : IntermediateField K⟮α⟯ L⟮α⟯).toSubfield := IntermediateField.top_toSubfield.symm
 
-/-- If `L / K` is finite, multiplication maps `K(α) ⊗[K] L` onto `L(α)` for any `α` in an
+/-- If `L / K` is algebraic, multiplication maps `K(α) ⊗[K] L` onto `L(α)` for any `α` in an
 overfield `Ω` of `L`. -/
-theorem surjective_adjoinBaseChange_tensorProduct_of_finiteDimensional
-    [FiniteDimensional K L] (α : Ω) :
+theorem surjective_adjoinBaseChange_tensorProduct_of_isAlgebraic
+    [Algebra.IsAlgebraic K L] (α : Ω) :
     Function.Surjective (adjoinBaseChangeTensorLift K L α) := by
   let := (adjoinBaseChange K L α).toAlgebra
   let φ := adjoinBaseChangeTensorLift K L α
-  have : Module.Finite K⟮α⟯ φ.range :=
-    Module.Finite.of_surjective φ.rangeRestrict.toLinearMap φ.rangeRestrict_surjective
-  let E := φ.range.toIntermediateField'
+  let S : Subalgebra K⟮α⟯ L⟮α⟯ := Algebra.adjoin K⟮α⟯ (Set.range (algebraMap L L⟮α⟯))
+  have : IsScalarTower K K⟮α⟯ L⟮α⟯ := IsScalarTower.of_algHom (adjoinBaseChange K L α)
+  have hS_int : Algebra.IsIntegral K⟮α⟯ S := by
+    refine Algebra.IsIntegral.adjoin ?_
+    rintro _ ⟨l, rfl⟩
+    exact ((Algebra.IsAlgebraic.isAlgebraic (R := K) l).isIntegral.map
+      (IsScalarTower.toAlgHom K L L⟮α⟯)).tower_top
+  let E := S.toIntermediateField'
     (isField_of_isIntegral_of_isField' (Field.toIsField K⟮α⟯))
   have htop : E = ⊤ :=
     top_unique <| adjoin_range_algebraMap_adjoinBaseChange_eq_top K L α ▸ adjoin_le_iff.mpr (by
       rintro _ ⟨l, rfl⟩
       rw [SetLike.mem_coe, ← IntermediateField.mem_toSubalgebra, toSubalgebra_toIntermediateField']
-      exact (AlgHom.mem_range φ).mpr ⟨1 ⊗ₜ[K] l, by simp [φ]⟩)
+      exact Algebra.subset_adjoin ⟨l, rfl⟩)
+  have hS_le : S ≤ φ.range := Algebra.adjoin_le (by
+    rintro _ ⟨l, rfl⟩
+    exact (AlgHom.mem_range φ).mpr ⟨1 ⊗ₜ[K] l, by simp [φ]⟩)
   intro x
   have hx : x ∈ E := htop ▸ mem_top
   rw [← IntermediateField.mem_toSubalgebra, toSubalgebra_toIntermediateField'] at hx
-  exact (AlgHom.mem_range φ).mp hx
+  exact (AlgHom.mem_range φ).mp (hS_le hx)
 
 /-- If `L / K` is finite, then `L(α) / K(α)` is finite for any `α` in an overfield `Ω` of `L`. -/
 theorem finiteDimensional_adjoinBaseChange [FiniteDimensional K L] (α : Ω) :
     letI := (adjoinBaseChange K L α).toAlgebra
     FiniteDimensional K⟮α⟯ L⟮α⟯ :=
   let := (adjoinBaseChange K L α).toAlgebra
+  have : Algebra.IsAlgebraic K L := Algebra.IsAlgebraic.of_finite K L
   Module.Finite.of_surjective (adjoinBaseChangeTensorLift K L α).toLinearMap
-    (surjective_adjoinBaseChange_tensorProduct_of_finiteDimensional K L α)
+    (surjective_adjoinBaseChange_tensorProduct_of_isAlgebraic K L α)
 
 end AdjoinBaseChange
 

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Separable
-public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 import Mathlib.FieldTheory.SeparableClosure
 import TauCeti.FieldTheory.Separable.Adjoin

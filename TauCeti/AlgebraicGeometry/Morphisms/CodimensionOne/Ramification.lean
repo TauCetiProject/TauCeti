@@ -62,9 +62,12 @@ For `f : Y ⟶ U` formally unramified and locally of finite type and `g : X' ⟶
 codimension-one points `ξ' ∉ g⁻¹ U` to codimension-one points `g ξ'` of `X` with `𝒪_{X,g ξ'}` and
 `𝒪_{X',ξ'}` regular local rings:
 
-* `AlgebraicGeometry.Scheme.Hom.baseChange_inCodimOne_of_stalk_baseChange`: any predicate on a
-  local ring and an overfield that is stable under base change of discrete valuation rings along
-  surjective maps `K' ⊗[K] L → L'` is preserved in codimension one under base change along `g`.
+* `AlgebraicGeometry.Scheme.Hom.baseChange_inCodimOne_of_stalk_baseChange`: if a predicate `P` on
+  a local ring and an overfield is stable under local base change `A → A'` of discrete valuation
+  rings for finite separable extensions `L / K` along surjective maps `K' ⊗[K] L → L'`, and
+  `P 𝒪_{X,ξ} κ(y)` holds for every codimension-one point `ξ ∉ U` of `X` and every point `y : Y`
+  whose image in `X` generizes `ξ`, then `P 𝒪_{X',ξ'} κ(y')` holds for every codimension-one point
+  `ξ' ∉ g⁻¹ U` of `X'` and every point `y'` of `Y ×_U g⁻¹ U` whose image in `X'` generizes `ξ'`.
 * `AlgebraicGeometry.Scheme.Hom.IsUnramifiedInCodimOne.baseChange`: being unramified in
   codimension one is stable under base change along `g` (Stacks, Lemma 58.31.1 (0EYD), the
   unramified case).
@@ -197,11 +200,15 @@ private lemma residueFieldMap_fst_comp_eq {X' : Scheme.{u}} {g : X' ⟶ X}
   -- The two sides differ only by associativity of composition, which holds definitionally.
   rfl
 
-/-- Any predicate `P` on a local ring and an overfield that is stable under base change of discrete
-valuation rings along surjective maps `K' ⊗[K] L → L'` is preserved in codimension one under base
-change of `f : Y ⟶ U` along `g : X' ⟶ X`, provided `f` is formally unramified and locally of finite
-type, `g` maps the codimension-one points of `X'` outside `g⁻¹ U` to codimension-one points of `X`,
-and the local rings at these points are regular (hence discrete valuation rings). -/
+/-- If a predicate `P` on a local ring and an overfield is stable under local base change
+`A → A'` of discrete valuation rings (`IsLocalHom (algebraMap A A')`) for finite separable
+extensions `L / K` along surjective maps `K' ⊗[K] L → L'`, and if `P 𝒪_{X,ξ} κ(y)` holds for
+every codimension-one point `ξ ∉ U` of `X` and every point `y : Y` whose image in `X` generizes
+`ξ`, then `P 𝒪_{X',ξ'} κ(y')` holds for every codimension-one point `ξ' ∉ g⁻¹ U` of `X'` and
+every point `y'` of `Y ×_U g⁻¹ U` whose image in `X'` generizes `ξ'`, provided `f : Y ⟶ U` is
+formally unramified and locally of finite type, `g : X' ⟶ X` maps codimension-one points
+`ξ' ∉ g⁻¹ U` to codimension-one points of `X`, and the local rings at these points are regular
+(hence discrete valuation rings). -/
 theorem baseChange_inCodimOne_of_stalk_baseChange
     (P : ∀ (A L : Type u) [CommRing A] [IsLocalRing A] [Field L] [Algebra A L], Prop)
     (hP : ∀ {A K L A' K' L' : Type u}
@@ -209,7 +216,8 @@ theorem baseChange_inCodimOne_of_stalk_baseChange
       [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
       [FiniteDimensional K L] [Algebra.IsSeparable K L]
       [CommRing A'] [IsDomain A'] [IsDiscreteValuationRing A'] [Field K'] [Algebra A' K']
-      [IsFractionRing A' K'] [Algebra A A'] [Algebra A K'] [Algebra K K'] [IsScalarTower A A' K']
+      [IsFractionRing A' K'] [Algebra A A'] [IsLocalHom (algebraMap A A')]
+      [Algebra A K'] [Algebra K K'] [IsScalarTower A A' K']
       [IsScalarTower A K K'] [Field L'] [Algebra K' L'] [Algebra A' L'] [IsScalarTower A' K' L'],
       P A L → ∀ (φ : K' ⊗[K] L →ₐ[K'] L'), Function.Surjective φ → P A' L')
     [FormallyUnramified f] [LocallyOfFiniteType f]
@@ -270,6 +278,8 @@ theorem baseChange_inCodimOne_of_stalk_baseChange
     (fun e ↦ hξ' (e ▸ (pullback.snd f (g ∣_ U) y').property) : x' ≠ ξ')
   -- The maps `A ⟶ A'` and `K ⟶ K'` induced by `g`, and their compatibility.
   let : Algebra (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ') := (g.stalkMap ξ').hom.toAlgebra
+  have : IsLocalHom (algebraMap (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ')) :=
+    inferInstanceAs (IsLocalHom (g.stalkMap ξ').hom)
   let : Algebra (X.presheaf.stalk ξ) K' :=
     (g.stalkMap ξ' ≫ X'.presheaf.stalkSpecializes h' ≫ X'.residue _).hom.toAlgebra
   let : Algebra K K' := ((X.residueFieldCongr hx).hom ≫ g.residueFieldMap x').hom.toAlgebra

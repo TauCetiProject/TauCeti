@@ -117,7 +117,11 @@ theorem IsUnramifiedWRT.baseChange (h : IsUnramifiedWRT A L) (φ : K' ⊗[K] L �
   -- `χ` is surjective: every element of `L` is an element of `B` divided by an element of `A`.
   have hχ : Function.Surjective χ := by
     refine (LinearMap.range_eq_top (f := χ.toLinearMap)).mp ?_
-    have hspan := span_map_one_tmul_integralClosure_eq_top (A := A) φ.toLinearMap hφ
+    have hspan : Submodule.span K' (Set.range fun b : B => φ ((1 : K') ⊗ₜ[K] (b : L))) = ⊤ := by
+      have h := congrArg (Submodule.map φ.toLinearMap)
+        (span_one_tmul_integralClosure_eq_top (A := A) (K := K) (L := L) (K' := K'))
+      rw [Submodule.map_span, Submodule.map_top, LinearMap.range_eq_top.mpr hφ] at h
+      rwa [← Set.range_comp] at h
     rw [eq_top_iff, ← hspan, Submodule.span_le]
     rintro _ ⟨b, rfl⟩
     exact ⟨1 ⊗ₜ (1 ⊗ₜ b), by simp [χ, hψ]⟩
