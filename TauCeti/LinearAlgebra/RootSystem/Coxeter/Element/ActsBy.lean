@@ -91,9 +91,8 @@ theorem ActsBy.baseChange_weylGroupRootRep_sum_tmul_root {S : Type*} [Ring S] [A
     (P.weylGroupRootRep w).baseChange S (∑ i : b.support, y i ⊗ₜ[R] P.root i) =
       ∑ i : b.support, ((W.map (Int.castRingHom S)) *ᵥ y) i ⊗ₜ[R] P.root i := by
   rw [map_sum]
-  simp only [LinearMap.baseChange_tmul, RootPairing.weylGroupRootRep,
-    Representation.ofDistribMulAction_apply_apply, actsBy_iff.mp hW, tmul_sum, mulVec, dotProduct,
-    map_apply, Int.coe_castRingHom, sum_tmul]
+  simp only [LinearMap.baseChange_tmul, RootPairing.weylGroupRootRep_apply,
+    actsBy_iff.mp hW, tmul_sum, mulVec, dotProduct, map_apply, Int.coe_castRingHom, sum_tmul]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Int.cast_smul_eq_zsmul R (W i j), tmul_smul, smul_tmul', Algebra.smul_def, map_intCast]

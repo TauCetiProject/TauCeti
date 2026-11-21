@@ -219,9 +219,8 @@ theorem toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
   have hβ_lt : β < Real.pi / 2 := by
     by_contra! hge; linarith [Real.cos_nonpos_of_pi_div_two_le_of_le hge (by linarith [hmem.2])]
   refine ⟨?_, hβ_lt⟩; by_contra! hlt
-  have hca : Real.cos (β + δ) = Real.cos (α + δ) := by
-    rw [hshift, show α - m * (2 * Real.pi) + δ = α + δ - m * (2 * Real.pi) by ring,
-      Real.cos_sub_int_mul_two_pi]
+  have hadd : β + δ = α + δ - m * (2 * Real.pi) := by rw [hshift]; ring
+  have hca : Real.cos (β + δ) = Real.cos (α + δ) := by rw [hadd, Real.cos_sub_int_mul_two_pi]
   linarith [Real.cos_pos_of_mem_Ioo (x := β + δ) ⟨by linarith, by linarith⟩]
 
 /-- A sampled sinusoid `cos (α₀ + 2π k / h)` passes from strictly positive at `k` to nonpositive at
@@ -233,19 +232,22 @@ theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ :
     (hneg₂ : Real.cos (α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h) ≤ 0) : k₁ = k₂ := by
   have hh_pos : (0 : ℝ) < h := Nat.cast_pos.mpr k₁.pos
   set δ : ℝ := 2 * Real.pi / h; have hδ0 : 0 < δ := div_pos Real.two_pi_pos hh_pos
-  set α₁ := α₀ + 2 * Real.pi * (k₁ : ℝ) / h; set α₂ := α₀ + 2 * Real.pi * (k₂ : ℝ) / h
-  obtain ⟨hlo₁, hhi₁⟩ := toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos hδ0.le hpos₁
-    (by rwa [show α₁ + δ = α₀ + 2 * Real.pi * ((k₁ : ℝ) + 1) / h by simp only [α₁, δ]; ring])
-  obtain ⟨hlo₂, hhi₂⟩ := toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos hδ0.le hpos₂
-    (by rwa [show α₂ + δ = α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h by simp only [α₂, δ]; ring])
-  set m₁ := toIcoDiv Real.two_pi_pos (-Real.pi) α₁; set m₂ := toIcoDiv Real.two_pi_pos (-Real.pi) α₂
+  let α : Fin h → ℝ := fun k ↦ α₀ + 2 * Real.pi * (k : ℝ) / h
+  have hmem (k : Fin h) (hpos : 0 < Real.cos (α k))
+      (hneg : Real.cos (α₀ + 2 * Real.pi * ((k : ℝ) + 1) / h) ≤ 0) :
+      toIcoMod Real.two_pi_pos (-Real.pi) (α k) ∈ Set.Ico (Real.pi / 2 - δ) (Real.pi / 2) := by
+    have hstep : α k + δ = α₀ + 2 * Real.pi * ((k : ℝ) + 1) / h := by simp only [α, δ]; ring
+    exact toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos hδ0.le hpos (hstep ▸ hneg)
+  obtain ⟨hlo₁, hhi₁⟩ := hmem k₁ hpos₁ hneg₁
+  obtain ⟨hlo₂, hhi₂⟩ := hmem k₂ hpos₂ hneg₂
+  set m₁ := toIcoDiv Real.two_pi_pos (-Real.pi) (α k₁)
+  set m₂ := toIcoDiv Real.two_pi_pos (-Real.pi) (α k₂)
   rw [← self_sub_toIcoDiv_mul Real.two_pi_pos (-Real.pi)] at hlo₁ hhi₁ hlo₂ hhi₂
   set n : ℤ := (k₂ : ℤ) - (k₁ : ℤ) - (m₂ - m₁) * (h : ℤ)
-  have hdiff : (n : ℝ) * δ = (α₂ - m₂ * (2 * Real.pi)) - (α₁ - m₁ * (2 * Real.pi)) := by
-    simp only [n, α₁, α₂, δ]; push_cast; field_simp; ring
-  have h0 : (-1 : ℤ) < n ∧ n < 1 := ⟨(Int.cast_lt (R := ℝ)).mp (lt_of_mul_lt_mul_right
-      (a := δ) (by push_cast; linarith) hδ0.le),
-    (Int.cast_lt (R := ℝ)).mp (lt_of_mul_lt_mul_right (a := δ) (by push_cast; linarith) hδ0.le)⟩
+  have hdiff : (n : ℝ) * δ = (α k₂ - m₂ * (2 * Real.pi)) - (α k₁ - m₁ * (2 * Real.pi)) := by
+    simp only [n, α, δ]; push_cast; field_simp; ring
+  have h0 : (-1 : ℤ) < n ∧ n < 1 := by
+    simp only [← Int.cast_lt (R := ℝ)]; push_cast; exact ⟨by nlinarith, by nlinarith⟩
   have := Nat.eq_zero_of_dvd_of_lt (by
     simpa using Int.natAbs_dvd_natAbs.mpr
       (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ (k₂ : ℤ) - k₁)) (by omega)

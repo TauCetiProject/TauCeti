@@ -82,18 +82,17 @@ theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e�
     (he₁ : A *ᵥ e₁ = Real.cos α • e₁ - Real.sin α • e₂)
     (he₂ : A *ᵥ e₂ = Real.sin α • e₁ + Real.cos α • e₂) :
     (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
-      Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := funext
-    fun i ↦ by
-  have hcast (u : n → ℝ) : ∑ j, (A i j : ℂ) * (u j : ℂ) = ((A *ᵥ u) i : ℂ) := by
-    simp [mulVec, dotProduct]
-  have hsplit : ((A.map ((↑) : ℝ → ℂ)) *ᵥ (fun j ↦ (e₁ j : ℂ) + Complex.I * (e₂ j : ℂ))) i =
-      (∑ j, (A i j : ℂ) * (e₁ j : ℂ)) + Complex.I * ∑ j, (A i j : ℂ) * (e₂ j : ℂ) := by
-    simp only [mulVec, dotProduct, map_apply, mul_add, Finset.sum_add_distrib, Finset.mul_sum]
-    exact congrArg (_ + ·) (Finset.sum_congr rfl fun _ _ ↦ by ring)
-  rw [hsplit, hcast e₁, hcast e₂, he₁, he₂, Complex.exp_mul_I, ← Complex.ofReal_cos,
-    ← Complex.ofReal_sin]
-  simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Complex.ofReal_sub,
-    Complex.ofReal_add, Complex.ofReal_mul]
+      Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := by
+  change (A.map Complex.ofRealHom) *ᵥ
+      (Complex.ofRealHom ∘ e₁ + Complex.I • (Complex.ofRealHom ∘ e₂)) = _
+  have hcast (u : n → ℝ) :
+      (A.map Complex.ofRealHom) *ᵥ (Complex.ofRealHom ∘ u) = Complex.ofRealHom ∘ (A *ᵥ u) :=
+    funext fun i ↦ (Complex.ofRealHom.map_mulVec A u i).symm
+  rw [mulVec_add, mulVec_smul, hcast e₁, hcast e₂, he₁, he₂, Complex.exp_mul_I]
+  ext i
+  simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, Function.comp_apply,
+    Complex.ofRealHom_eq_coe, smul_eq_mul, Complex.ofReal_sub, Complex.ofReal_add,
+    Complex.ofReal_mul, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq
 
 /-- The determinant of the complex image of a real matrix is the image of its determinant. -/

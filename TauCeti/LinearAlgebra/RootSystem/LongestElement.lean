@@ -370,12 +370,13 @@ theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self {O : Finse
   have hnot_all_pos {S : Finset ι} (hSne : S.Nonempty)
       (hS : w₀ • ∑ y ∈ S, P.root y = ∑ y ∈ S, P.root y) : ∃ y ∈ S, ¬ b.IsPos y := by
     by_contra! hall_pos
-    have hns_cone : -(∑ y ∈ S, P.root y) ∈ posRootCone P b := by
-      rw [← hS, show -(w₀ • ∑ y ∈ S, P.root y) = ∑ y ∈ S, P.root
-          (P.reflectionPerm (P.weylGroupToPerm w₀ y) (P.weylGroupToPerm w₀ y)) by
-        simp only [Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib,
-          P.root_reflectionPerm, P.reflection_apply_self]]
-      exact AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
+    have hneg_sum : -(∑ y ∈ S, P.root y) =
+        ∑ y ∈ S, P.root (P.reflectionPerm (P.weylGroupToPerm w₀ y) (P.weylGroupToPerm w₀ y)) := by
+      rw [← hS]
+      simp only [Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib,
+        P.root_reflectionPerm, P.reflection_apply_self]
+    have hns_cone : -(∑ y ∈ S, P.root y) ∈ posRootCone P b :=
+      hneg_sum ▸ AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
         ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b _).mpr
           (mapsTo_posRoots_negRoots_longestElement P b ((mem_posRoots P b y).mpr (hall_pos y hy))))
     exact sum_root_ne_zero_of_mem_posRoots P b hSne (f := id)
