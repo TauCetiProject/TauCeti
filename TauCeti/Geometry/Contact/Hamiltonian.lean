@@ -53,7 +53,9 @@ Unlike a symplectic Hamiltonian, a contact Hamiltonian need not be conserved: al
 changes by `df(X_f) = (R_α f) f`, so it is conserved exactly where `(R_α f) f = 0`
 (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mvfderiv_apply_self`).
 Since `α(X) = f`, a contact Hamiltonian vector field `X` of `f` is tangent to `ξ` exactly where `f`
-vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistribution_iff`).
+vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistribution_iff`). For a
+contact form, `X_f` vanishes exactly where `f` vanishes and `df` vanishes on `ξ`
+(`TauCeti.SmoothForm.IsContactForm.contactHamiltonianVectorField_eq_zero_iff`).
 
 ## Main declarations
 
@@ -61,6 +63,7 @@ vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistributio
 * `TauCeti.SmoothForm.contactHamiltonianVectorField`: the contact Hamiltonian vector field `X_f`.
 * `TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_iff_eq`: existence and
   uniqueness.
+* `TauCeti.SmoothForm.IsContactForm.contactHamiltonianVectorField_eq_zero_iff`: the zeros of `X_f`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.contMDiff`: a contact Hamiltonian vector
   field of a `C^(n+1)` function is `C^n`.
 * `TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieDerivForm_eq`: `L_X α = (R_α f) α`.
@@ -328,16 +331,40 @@ theorem isContactHamiltonianVectorField_iff_kerDistribution :
   · intro hX x
     refine ⟨(hX x).1, fun v ↦ ?_⟩
     -- Subtract the Reeb component to test the equation on a vector in the contact plane.
-    have hv : v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
-      rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
-      simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField,
-        smul_eq_mul, mul_one, sub_self]
-    have h := (hX x).2 _ hv
+    have h := (hX x).2 _ (hα.sub_smul_reebVectorField_mem_kerDistribution v)
     have hR := hα.mextDeriv_reebVectorField_right x (X x)
     rw [mextDeriv_eq_bilinFormAt] at hR
     simp only [mextDeriv_eq_bilinFormAt, map_sub, map_smul, hR,
       smul_eq_mul] at h ⊢
     linarith
+
+/-- **Zeros of a contact Hamiltonian vector field.** For a contact form `α`, the contact
+Hamiltonian vector field of `f` vanishes at `x` exactly when `f` vanishes at `x` and `df_x`
+vanishes on the contact hyperplane `ξ_x = ker α_x`. -/
+theorem contactHamiltonianVectorField_eq_zero_iff {x : M} :
+    α.contactHamiltonianVectorField f x = 0 ↔
+      f x = 0 ∧ ∀ v ∈ α.kerDistribution x, mvfderiv I f x v = 0 := by
+  constructor
+  · intro h
+    have h1 := hα.apply_contactHamiltonianVectorField f x
+    rw [h, (α.val x).map_coord_zero (m := ![0]) 0 rfl] at h1
+    refine ⟨h1.symm, fun v hv ↦ ?_⟩
+    have h2 := hα.mextDeriv_contactHamiltonianVectorField_left f x v
+    rw [h, (mextDeriv α.val x).map_coord_zero (m := ![0, v]) 0 rfl, mem_kerDistribution.1 hv,
+      mul_zero, zero_sub] at h2
+    linarith
+  · rintro ⟨h0, hξ⟩
+    -- The covector `(f + R_α f) α - df` vanishes at `x`: on `v`, its value is the value of `df`
+    -- on `v - α(v) R_α ∈ ξ_x`, up to sign.
+    have hcov : (f x + mvfderiv I f x (α.reebVectorField x)) • degreeOneEquiv α x -
+        mvfderiv I f x = 0 := by
+      ext v
+      have hv := hξ _ (hα.sub_smul_reebVectorField_mem_kerDistribution v)
+      rw [map_sub, map_smul, smul_eq_mul] at hv
+      simp only [_root_.sub_apply, _root_.smul_apply, degreeOneEquiv_apply_apply_vec, h0,
+        smul_eq_mul, _root_.zero_apply]
+      linear_combination -hv
+    rw [contactHamiltonianVectorField_def, hcov, map_zero]
 
 /-- The contact Hamiltonian vector field of a constant `c` is `c R_α`. -/
 @[simp]
