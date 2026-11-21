@@ -5,86 +5,92 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Localization
-public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.CategoryTheory.Localization.Monoidal.Functor
 public import Mathlib.RingTheory.Localization.Algebra
+public import TauCeti.Algebra.Category.CommAlgCat.Localization
+public import TauCeti.Algebra.Category.ModuleCat.Localization
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
+public import TauCeti.CategoryTheory.Localization.Monoidal.Functor
 public import TauCeti.RingTheory.Almost.Algebra
-
-import Mathlib.CategoryTheory.Adjunction.Unique
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
+public import TauCeti.RingTheory.Localization.Module
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
-import TauCeti.RingTheory.Localization.Module
 
 /-!
-# Inverting an element of the setup ideal
+# Inverting an element of `m` on almost modules and almost algebras
 
-Let `S = (V, m)` be a basic setup and `ϖ ∈ m`; `ϖ` need not be a nonzerodivisor (for instance,
-`0 ∈ m` is always allowed). Because `ϖ` annihilates every almost zero `V`-module, localizing at
-the powers of `ϖ` kills almost zero modules and turns almost isomorphisms into honest
-isomorphisms. Since module localization is exact, the localization functor
-`ModuleCat V ⥤ ModuleCat (Localization.Away ϖ)` factors uniquely up to unique isomorphism through
-an exact functor `TauCeti.Almost.invert S hϖ : Almost.Module S ⥤ ModuleCat (Localization.Away ϖ)`.
+Let `S = (V, m)` be a basic setup and `ϖ ∈ m` (`ϖ` need not be a nonzerodivisor; in particular
+`ϖ = 0` is allowed). Because `ϖ` annihilates every almost zero `V`-module, localizing `V`-modules
+away from `ϖ` sends almost zero modules to zero modules and almost isomorphisms to isomorphisms.
+Being exact, `ModuleCat.localizedModuleFunctor (Submonoid.powers ϖ)` therefore factors uniquely (up
+to canonical isomorphism) through an exact functor
+`TauCeti.Almost.invert S hϖ : Almost.Module S ⥤ ModuleCat (Localization.Away ϖ)`.
 
-Evaluating `invert` on an almostification `N^a` recovers `N[1/ϖ]`, and evaluating it on an
-arbitrary almost module `M` recovers both `(M_*)[1/ϖ]` and `(M_!)[1/ϖ]`, because `M ≅ (M_*)^a`
-and `M ≅ (M_!)^a`. Base-changing `S` to `V[1/ϖ]` makes the setup classical
-(`TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`), so almost modules over `V[1/ϖ]`
-identify with honest `V[1/ϖ]`-modules (`TauCeti.Almost.Module.baseChangeAwayEquiv`). Moreover,
-`invert` inherits a braided monoidal structure from extension of scalars `M ↦ V[1/ϖ] ⊗[V] M`, and
-on almost algebras `A` localization of almost elements defines a functor
-`TauCeti.Almost.Algebra.invert S ϖ : Algebra S ⥤ CommAlgCat V[1/ϖ]` sending `A` to `A_*[1/ϖ]`,
-which for `ϖ ∈ m` is naturally isomorphic to the functor induced by `Almost.invert S hϖ` on
-commutative monoid objects. Finally, any complex of `V`-modules with almost zero homology becomes
-exact after inverting `ϖ`.
+Along almostification `M ↦ M^a`, `invert S hϖ` recovers module localization `M ↦ M[1/ϖ]`, and
+likewise extension of scalars `M ↦ V[1/ϖ] ⊗[V] M` (`TauCeti.Almost.toAlmostCompInvertIso`,
+`TauCeti.Almost.toAlmostCompInvertExtendScalarsIso`). Using the counit isomorphism `(M_*)^a ≅ M`
+and the unit isomorphism `M ≅ (M_!)^a`, every almost module `M` satisfies
+`(invert S hϖ).obj M ≅ M_*[1/ϖ] ≅ M_![1/ϖ]` (`TauCeti.Almost.invertElementsIso`,
+`TauCeti.Almost.invertShriekIso`). Base-changing `S` to a localization `W` away from `ϖ ∈ m` makes
+the setup classical (`TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`), so almost modules
+and almost algebras over `W` identify with honest `W`-modules and `W`-algebras
+(`TauCeti.Almost.Module.baseChangeAwayEquiv`, `TauCeti.Almost.Algebra.baseChangeAwayEquiv`). Since
+extension of scalars to `Localization.Away ϖ` is braided monoidal, `invert S hϖ` inherits a braided
+strong monoidal structure (`TauCeti.Almost.invertMonoidal`, `TauCeti.Almost.invertBraided`).
+
+On almost algebras, `TauCeti.Almost.Algebra.invert S ϖ` sends `A` to the localized algebra
+`A_*[1/ϖ]` in `CommAlgCat (Localization.Away ϖ)` and acts via `(Algebra.elements S).map` on
+canonical numerators. When `ϖ ∈ m`, the unit `R → (R^a)_*` is an almost isomorphism, so
+precomposing with almostification recovers ordinary algebra localization
+(`TauCeti.Almost.Algebra.toAlmostCompInvertIso`, `TauCeti.Almost.Algebra.invertToAlmostObjEquiv`),
+and `Algebra.invert S ϖ` is naturally isomorphic to the functor induced on commutative monoid
+objects by `Almost.invert S hϖ` (`TauCeti.Almost.Algebra.invertIsoMapCommMon`).
+
+Finally, combining `TauCeti.Almost.Module.exact_map_toAlmost_iff` with exactness of `invert S hϖ`,
+any short complex or homological complex of `V`-modules whose homology is almost zero becomes
+honestly exact (and acyclic) over `Localization.Away ϖ` after inverting `ϖ ∈ m`.
 
 ## Main definitions
 
-* `TauCeti.Almost.invert`: the exact symmetric monoidal functor
-  `Almost.Module S ⥤ ModuleCat (Localization.Away ϖ)` for `ϖ ∈ S.ideal`.
-* `TauCeti.Almost.toAlmostCompInvertIso` and
-  `TauCeti.Almost.toAlmostCompInvertIsoExtendScalars`: the natural isomorphisms identifying
-  `toAlmost S ⋙ invert S hϖ` with `ModuleCat.localizedModuleFunctor (Submonoid.powers ϖ)` and
-  with `ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))`.
-* `TauCeti.Almost.invertElementsIso` and `TauCeti.Almost.invertShriekIso`: the canonical
-  isomorphisms `(invert S hϖ).obj M ≅ LocalizedModule (Submonoid.powers ϖ) ((elements S).obj M)`
-  and `(invert S hϖ).obj M ≅ LocalizedModule (Submonoid.powers ϖ) ((shriek S).obj M)`.
-* `TauCeti.Almost.Module.baseChangeAwayEquiv` and
-  `TauCeti.Almost.Algebra.baseChangeAwayEquiv`: the equivalences identifying almost modules and
-  almost algebras over `S.baseChange W` with honest `W`-modules and `W`-algebras when `W` is a
-  localization away from `ϖ ∈ S.ideal`.
-* `TauCeti.Almost.invertMonoidal` and `TauCeti.Almost.invertBraided`: the braided monoidal
-  structure on `invert S hϖ`.
-* `TauCeti.Almost.Algebra.invert`: the functor `Algebra S ⥤ CommAlgCat (Localization.Away ϖ)`
-  sending an almost algebra `A` to `A_*[1/ϖ]`, with comparison
-  `TauCeti.Almost.Algebra.invertIsoMapCommMon` for `ϖ ∈ S.ideal`.
+* `TauCeti.Almost.invert`: the exact braided monoidal functor
+  `Almost.Module S ⥤ ModuleCat (Localization.Away ϖ)` for `hϖ : ϖ ∈ S.ideal`.
+* `TauCeti.Almost.toAlmostCompInvertIso` and `TauCeti.Almost.toAlmostCompInvertExtendScalarsIso`:
+  natural isomorphisms identifying `Module.toAlmost S ⋙ invert S hϖ` with module localization and
+  with extension of scalars to `Localization.Away ϖ`.
+* `TauCeti.Almost.invertElementsIso` and `TauCeti.Almost.invertShriekIso`: the identifications
+  `(invert S hϖ).obj M ≅ M_*[1/ϖ]` and `(invert S hϖ).obj M ≅ M_![1/ϖ]`.
+* `TauCeti.Almost.Module.baseChangeAwayEquiv` and `TauCeti.Almost.Algebra.baseChangeAwayEquiv`:
+  equivalences identifying almost modules and almost algebras over `S.baseChange W` with honest
+  `W`-modules and `W`-algebras when `W` is a localization away from `ϖ ∈ S.ideal`.
+* `TauCeti.Almost.Algebra.invert`: the functor `Almost.Algebra S ⥤ CommAlgCat (Localization.Away ϖ)`
+  sending `A` to `A_*[1/ϖ]`, with comparisons `TauCeti.Almost.Algebra.toAlmostCompInvertIso`,
+  `TauCeti.Almost.Algebra.invertToAlmostObjEquiv`, and
+  `TauCeti.Almost.Algebra.invertIsoMapCommMon`.
 
 ## Main results
 
-* `TauCeti.Almost.BasicSetup.IsAlmostZero.subsingleton_localizedModule` and
-  `TauCeti.Almost.BasicSetup.IsAlmostIso.bijective_localizedModule_map`: localizing at `ϖ ∈ m`
-  annihilates almost zero modules and turns almost isomorphisms into bijections.
-* `TauCeti.Almost.isZero_invert_toAlmost_obj_iff` and `TauCeti.Almost.isZero_invert_obj_iff`:
-  vanishing after `invert S hϖ` means power-of-`ϖ` torsion.
-* `TauCeti.Almost.invertCompRestrictScalarsIsoElements` and
-  `TauCeti.Almost.isEquivalence_invert_of_isUnit`: when `ϖ ∈ m` is a unit of `V`, `invert S hϖ`
-  identifies with `Almost.Module.elements S` along `V ≃+* V[1/ϖ]`, and is an equivalence.
-* `TauCeti.Almost.BasicSetup.IsAlmostZero.exactAt_localizedModuleFunctor` and
-  `TauCeti.Almost.BasicSetup.IsAlmostZero.exactAt_extendScalars`: a complex of `V`-modules whose
-  homology at degree `i` is almost zero becomes exact at `i` after inverting `ϖ`.
-* `TauCeti.Almost.Algebra.subsingleton_invert_obj_iff`,
-  `TauCeti.Almost.Algebra.subsingleton_invert_toAlmost_obj_iff`, and
-  `TauCeti.Almost.Algebra.invertObjEquivElementsOfIsUnit`: characterizations of vanishing and
-  unit inversion for `Almost.Algebra.invert`.
+* `TauCeti.Almost.BasicSetup.IsAlmostZero.subsingleton_of_isLocalizedModule` and
+  `TauCeti.Almost.BasicSetup.IsAlmostIso.bijective_isLocalizedModule_map`: localizing at a
+  submonoid meeting `m` kills almost zero modules and turns almost isomorphisms into bijections.
+* `TauCeti.Almost.isZero_invert_toAlmost_obj_iff`, `TauCeti.Almost.isZero_invert_obj_iff`,
+  `TauCeti.Almost.Algebra.subsingleton_invert_obj_iff`, and
+  `TauCeti.Almost.Algebra.subsingleton_invert_toAlmost_obj_iff`: power-of-`ϖ` torsion
+  characterizations of vanishing after inversion.
+* `TauCeti.Almost.invertMonoidal` and `TauCeti.Almost.invertBraided`: `invert S hϖ` is braided
+  strong monoidal.
+* `TauCeti.Almost.not_faithful_invert_of_not_isAlmostZero_quotient`: `invert S hϖ` is not faithful
+  whenever `V ⧸ (ϖ)` is not almost zero (in particular for valuation setups at any `ϖ ∈ m`).
+* `TauCeti.Almost.exactAt_localizedModuleFunctor_of_isAlmostZero_homology`,
+  `TauCeti.Almost.exactAt_extendScalars_away_of_isAlmostZero_homology`,
+  `TauCeti.Almost.acyclic_localizedModuleFunctor_of_isAlmostZero_homology`, and
+  `TauCeti.Almost.acyclic_extendScalars_away_of_isAlmostZero_homology`: complexes with almost zero
+  homology become exact and acyclic after inverting `ϖ ∈ m`.
 
 ## References
 
-* O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §5.2, proof of
-  Corollary 5.2.15.
+* O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.2 and §5.2,
+  proof of Corollary 5.2.15.
 * B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1, Exercise 4.1.9.
-* P. Scholze, J. Weinstein, *Berkeley lectures on p-adic geometry*, Lecture 8, proof of
+* P. Scholze, J. Weinstein, *Berkeley lectures on `p`-adic geometry*, Lecture 8, proof of
   Proposition 8.2.8.
 -/
 
@@ -97,72 +103,114 @@ open scoped ChangeOfRings MonObj
 
 namespace TauCeti.Almost
 
+/-! ### Module-level localization at a submonoid meeting `m` -/
+
 namespace BasicSetup
 
-variable {V : Type*} [CommRing V] {S : BasicSetup V} {ϖ : V}
+variable {V : Type*} [CommRing V] {S : BasicSetup V}
 
-/-- Localizing an almost zero `V`-module at the powers of `ϖ ∈ m` produces the zero module. -/
-theorem IsAlmostZero.subsingleton_of_isLocalizedModule {M M' : Type*} [AddCommGroup M]
-    [_root_.Module V M] [AddCommMonoid M'] [_root_.Module V M'] (hM : S.IsAlmostZero M)
-    (hϖ : ϖ ∈ S.ideal) (g : M →ₗ[V] M') [IsLocalizedModule (Submonoid.powers ϖ) g] :
+/-- Localizing an almost zero `V`-module at any submonoid `P` containing an element `ϖ ∈ m` yields a
+subsingleton module. -/
+theorem IsAlmostZero.subsingleton_of_isLocalizedModule {M M' : Type*}
+    [AddCommGroup M] [_root_.Module V M] [AddCommGroup M'] [_root_.Module V M']
+    (hM : S.IsAlmostZero M) {P : Submonoid V} {f : M →ₗ[V] M'} [IsLocalizedModule P f]
+    {ϖ : V} (hϖP : ϖ ∈ P) (hϖ : ϖ ∈ S.ideal) :
     Subsingleton M' :=
-  (IsLocalizedModule.subsingleton_iff (Submonoid.powers ϖ) g).mpr fun x ↦
-    ⟨ϖ, Submonoid.mem_powers ϖ, hM.smul_eq_zero hϖ x⟩
+  (IsLocalizedModule.subsingleton_iff P f).mpr fun m ↦ ⟨ϖ, hϖP, hM.smul_eq_zero hϖ m⟩
 
-/-- For `ϖ ∈ m`, `LocalizedModule (Submonoid.powers ϖ) M` is trivial whenever `M` is almost
-zero. -/
-theorem IsAlmostZero.subsingleton_localizedModule {M : Type*} [AddCommGroup M] [_root_.Module V M]
-    (hM : S.IsAlmostZero M) (hϖ : ϖ ∈ S.ideal) :
-    Subsingleton (LocalizedModule (Submonoid.powers ϖ) M) :=
-  hM.subsingleton_of_isLocalizedModule hϖ (LocalizedModule.mkLinearMap (Submonoid.powers ϖ) M)
+/-- Localizing an almost zero `V`-module away from `ϖ ∈ m` yields a subsingleton module. -/
+theorem IsAlmostZero.subsingleton_of_isLocalizedModule_away {M M' : Type*}
+    [AddCommGroup M] [_root_.Module V M] [AddCommGroup M'] [_root_.Module V M']
+    (hM : S.IsAlmostZero M) {ϖ : V} (hϖ : ϖ ∈ S.ideal) {f : M →ₗ[V] M'}
+    [IsLocalizedModule.Away ϖ f] :
+    Subsingleton M' :=
+  hM.subsingleton_of_isLocalizedModule (f := f) (Submonoid.mem_powers ϖ) hϖ
+
+/-- For an almost zero `V`-module `M` and `ϖ ∈ m`, `LocalizedModule.Away ϖ M` is subsingleton. -/
+theorem IsAlmostZero.subsingleton_localizedModule_away {M : Type*}
+    [AddCommGroup M] [_root_.Module V M] (hM : S.IsAlmostZero M) {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    Subsingleton (LocalizedModule.Away ϖ M) :=
+  hM.subsingleton_of_isLocalizedModule_away hϖ (f := LocalizedModule.mkLinearMap _ M)
 
 /-- Base-changing an almost zero `V`-module to a localization `W` of `V` away from `ϖ ∈ m` gives a
 zero module. -/
 theorem IsAlmostZero.subsingleton_tensorProduct {M : Type*} [AddCommGroup M] [_root_.Module V M]
-    (hM : S.IsAlmostZero M) (hϖ : ϖ ∈ S.ideal) (W : Type*) [CommRing W] [_root_.Algebra V W]
-    [IsLocalization.Away ϖ W] : Subsingleton (W ⊗[V] M) :=
-  hM.subsingleton_of_isLocalizedModule hϖ (TensorProduct.mk V W M 1)
+    (hM : S.IsAlmostZero M) {ϖ : V} (hϖ : ϖ ∈ S.ideal) (W : Type*) [CommRing W]
+    [_root_.Algebra V W] [IsLocalization.Away ϖ W] : Subsingleton (W ⊗[V] M) :=
+  hM.subsingleton_of_isLocalizedModule_away hϖ (f := TensorProduct.mk V W M 1)
 
-/-- Localizing at `ϖ ∈ m` makes a linear map with almost zero kernel injective. -/
+/-- Localizing at a submonoid `P` containing `ϖ ∈ m` makes a linear map with almost zero kernel
+injective. -/
 theorem IsAlmostZero.injective_localizedModule_map {M N : Type*} [AddCommGroup M]
-    [_root_.Module V M] [AddCommGroup N] [_root_.Module V N] {f : M →ₗ[V] N}
-    (h : S.IsAlmostZero (LinearMap.ker f)) (hϖ : ϖ ∈ S.ideal) :
-    Function.Injective (LocalizedModule.map (Submonoid.powers ϖ) f) :=
-  (LinearMap.localizedMap_injective_iff_subsingleton_localized_ker (Submonoid.powers ϖ) f).mpr
-    (h.subsingleton_localizedModule hϖ)
+    [_root_.Module V M] [AddCommGroup N] [_root_.Module V N] {P : Submonoid V} {f : M →ₗ[V] N}
+    (h : S.IsAlmostZero (LinearMap.ker f)) {ϖ : V} (hϖP : ϖ ∈ P) (hϖ : ϖ ∈ S.ideal) :
+    Function.Injective (LocalizedModule.map P f) :=
+  (LinearMap.localizedMap_injective_iff_subsingleton_localized_ker P f).mpr
+    (h.subsingleton_of_isLocalizedModule (f := LocalizedModule.mkLinearMap P _) hϖP hϖ)
 
-/-- Localizing at `ϖ ∈ m` makes a linear map with almost zero cokernel surjective. -/
+/-- Localizing at a submonoid `P` containing `ϖ ∈ m` makes a linear map with almost zero cokernel
+surjective. -/
 theorem IsAlmostZero.surjective_localizedModule_map {M N : Type*} [AddCommGroup M]
-    [_root_.Module V M] [AddCommGroup N] [_root_.Module V N] {f : M →ₗ[V] N}
-    (h : S.IsAlmostZero (N ⧸ LinearMap.range f)) (hϖ : ϖ ∈ S.ideal) :
-    Function.Surjective (LocalizedModule.map (Submonoid.powers ϖ) f) :=
-  (LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker (Submonoid.powers ϖ) f).mpr
-    (h.subsingleton_localizedModule hϖ)
+    [_root_.Module V M] [AddCommGroup N] [_root_.Module V N] {P : Submonoid V} {f : M →ₗ[V] N}
+    (h : S.IsAlmostZero (N ⧸ LinearMap.range f)) {ϖ : V} (hϖP : ϖ ∈ P) (hϖ : ϖ ∈ S.ideal) :
+    Function.Surjective (LocalizedModule.map P f) :=
+  (LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker P f).mpr
+    (h.subsingleton_of_isLocalizedModule (f := LocalizedModule.mkLinearMap P _) hϖP hϖ)
 
-/-- Localizing at the powers of `ϖ ∈ m` turns an almost isomorphism into a bijection. -/
-theorem IsAlmostIso.bijective_localizedModule_map {M N : Type*} [AddCommGroup M]
-    [_root_.Module V M] [AddCommGroup N] [_root_.Module V N] {f : M →ₗ[V] N}
-    (hf : S.IsAlmostIso f) (hϖ : ϖ ∈ S.ideal) :
-    Function.Bijective (LocalizedModule.map (Submonoid.powers ϖ) f) := by
-  rcases S.isAlmostIso_iff.mp hf with ⟨hker, hcoker⟩
-  exact ⟨hker.injective_localizedModule_map hϖ, hcoker.surjective_localizedModule_map hϖ⟩
-
-/-- Any module localization at the powers of `ϖ ∈ m` turns an almost isomorphism into a
+/-- Localizing an almost isomorphism at any submonoid `P` containing an element `ϖ ∈ m` produces a
 bijection. -/
-theorem IsAlmostIso.bijective_isLocalizedModule_map {M N M' N' : Type*} [AddCommGroup M]
-    [_root_.Module V M] [AddCommGroup N] [_root_.Module V N] [AddCommGroup M'] [_root_.Module V M']
-    [AddCommGroup N'] [_root_.Module V N'] {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
-    (hϖ : ϖ ∈ S.ideal) (g₁ : M →ₗ[V] M') (g₂ : N →ₗ[V] N')
-    [IsLocalizedModule (Submonoid.powers ϖ) g₁] [IsLocalizedModule (Submonoid.powers ϖ) g₂] :
-    Function.Bijective (IsLocalizedModule.map (Submonoid.powers ϖ) g₁ g₂ f) :=
-  (IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective g₁ g₂).mpr
-    (hf.bijective_localizedModule_map hϖ)
+theorem IsAlmostIso.bijective_isLocalizedModule_map {M M' N N' : Type*}
+    [AddCommGroup M] [_root_.Module V M] [AddCommGroup M'] [_root_.Module V M']
+    [AddCommGroup N] [_root_.Module V N] [AddCommGroup N'] [_root_.Module V N']
+    {P : Submonoid V} (fM : M →ₗ[V] M') (fN : N →ₗ[V] N')
+    [IsLocalizedModule P fM] [IsLocalizedModule P fN]
+    {g : M →ₗ[V] N} (hg : S.IsAlmostIso g) {ϖ : V} (hϖP : ϖ ∈ P) (hϖ : ϖ ∈ S.ideal) :
+    Function.Bijective (IsLocalizedModule.map P fM fN g) := by
+  obtain ⟨h, hgh, hhg⟩ := hg.exists_comp_eq_smul_id hϖ
+  have hleft :
+      IsLocalizedModule.map P fN fM h ∘ₗ IsLocalizedModule.map P fM fN g =
+        algebraMap V (_root_.Module.End V M') ϖ := by
+    rw [← IsLocalizedModule.map_comp', hhg, map_smul, IsLocalizedModule.map_id]
+    ext
+    rfl
+  have hright :
+      IsLocalizedModule.map P fM fN g ∘ₗ IsLocalizedModule.map P fN fM h =
+        algebraMap V (_root_.Module.End V N') ϖ := by
+    rw [← IsLocalizedModule.map_comp', hgh, map_smul, IsLocalizedModule.map_id]
+    ext
+    rfl
+  have hbijM := (_root_.Module.End.isUnit_iff _).mp (IsLocalizedModule.map_units fM ⟨ϖ, hϖP⟩)
+  have hbijN := (_root_.Module.End.isUnit_iff _).mp (IsLocalizedModule.map_units fN ⟨ϖ, hϖP⟩)
+  exact ⟨Function.Injective.of_comp (f := IsLocalizedModule.map P fN fM h)
+      (by simpa [← LinearMap.coe_comp, hleft] using hbijM.1),
+    Function.Surjective.of_comp (g := IsLocalizedModule.map P fN fM h)
+      (by simpa [← LinearMap.coe_comp, hright] using hbijN.2)⟩
+
+/-- Localizing an almost isomorphism away from `ϖ ∈ m` produces a bijection. -/
+theorem IsAlmostIso.bijective_isLocalizedModule_map_away {M M' N N' : Type*}
+    [AddCommGroup M] [_root_.Module V M] [AddCommGroup M'] [_root_.Module V M']
+    [AddCommGroup N] [_root_.Module V N] [AddCommGroup N'] [_root_.Module V N']
+    {ϖ : V} (fM : M →ₗ[V] M') (fN : N →ₗ[V] N')
+    [IsLocalizedModule.Away ϖ fM] [IsLocalizedModule.Away ϖ fN]
+    {g : M →ₗ[V] N} (hg : S.IsAlmostIso g) (hϖ : ϖ ∈ S.ideal) :
+    Function.Bijective (IsLocalizedModule.map (Submonoid.powers ϖ) fM fN g) :=
+  hg.bijective_isLocalizedModule_map fM fN (Submonoid.mem_powers ϖ) hϖ
+
+/-- For an almost isomorphism `g : M →ₗ[V] N` and `ϖ ∈ m`, `LocalizedModule.map` at the powers of
+`ϖ` is bijective. -/
+theorem IsAlmostIso.bijective_localizedModule_map_powers {M N : Type*}
+    [AddCommGroup M] [_root_.Module V M] [AddCommGroup N] [_root_.Module V N]
+    {g : M →ₗ[V] N} (hg : S.IsAlmostIso g) {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    Function.Bijective (LocalizedModule.map (Submonoid.powers ϖ) g) :=
+  hg.bijective_isLocalizedModule_map_away (LocalizedModule.mkLinearMap _ M)
+    (LocalizedModule.mkLinearMap _ N) hϖ
 
 /-- Base-changing along a localization `W` of `V` away from `ϖ ∈ m` turns an almost isomorphism
 into a bijection. -/
 theorem IsAlmostIso.bijective_lTensor {M N : Type*} [AddCommGroup M] [_root_.Module V M]
     [AddCommGroup N] [_root_.Module V N] {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
-    (hϖ : ϖ ∈ S.ideal) (W : Type*) [CommRing W] [_root_.Algebra V W] [IsLocalization.Away ϖ W] :
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) (W : Type*) [CommRing W] [_root_.Algebra V W]
+    [IsLocalization.Away ϖ W] :
     Function.Bijective (f.lTensor W) := by
   have hmap : f.lTensor W = IsLocalizedModule.map (Submonoid.powers ϖ)
       (TensorProduct.mk V W M 1) (TensorProduct.mk V W N 1) f := by
@@ -172,183 +220,452 @@ theorem IsAlmostIso.bijective_lTensor {M N : Type*} [AddCommGroup M] [_root_.Mod
     exact (IsLocalizedModule.map_apply (Submonoid.powers ϖ) (TensorProduct.mk V W M 1)
       (TensorProduct.mk V W N 1) f x).symm
   rw [hmap]
-  exact hf.bijective_isLocalizedModule_map hϖ _ _
+  exact hf.bijective_isLocalizedModule_map_away (TensorProduct.mk V W M 1)
+    (TensorProduct.mk V W N 1) hϖ
+
+/-- A composable pair `L → M → N` of `V`-linear maps that is almost exact at `M` becomes exact
+after localizing at any submonoid `P` containing an element `ϖ ∈ m`. -/
+theorem exact_isLocalizedModule_map (S : BasicSetup V) {L L' M M' N N' : Type*}
+    [AddCommGroup L] [_root_.Module V L] [AddCommGroup L'] [_root_.Module V L']
+    [AddCommGroup M] [_root_.Module V M] [AddCommGroup M'] [_root_.Module V M']
+    [AddCommGroup N] [_root_.Module V N] [AddCommGroup N'] [_root_.Module V N']
+    {P : Submonoid V} (fL : L →ₗ[V] L') (fM : M →ₗ[V] M') (fN : N →ₗ[V] N')
+    [IsLocalizedModule P fL] [IsLocalizedModule P fM] [IsLocalizedModule P fN]
+    {f : L →ₗ[V] M} {g : M →ₗ[V] N} (hgf : g ∘ₗ f = 0)
+    (hexact : ∀ ε ∈ S.ideal, ∀ y ∈ LinearMap.ker g, ε • y ∈ LinearMap.range f)
+    {ϖ : V} (hϖP : ϖ ∈ P) (hϖ : ϖ ∈ S.ideal) :
+    Function.Exact (IsLocalizedModule.map P fL fM f) (IsLocalizedModule.map P fM fN g) := by
+  intro y'
+  refine ⟨fun hy ↦ ?_, ?_⟩
+  · obtain ⟨⟨y, s⟩, rfl⟩ := IsLocalizedModule.mk'_surjective P fM y'
+    rw [Function.uncurry_apply_pair, IsLocalizedModule.map_mk',
+      IsLocalizedModule.mk'_eq_zero'] at hy
+    obtain ⟨t, ht⟩ := hy
+    have hker : (t : V) • y ∈ LinearMap.ker g := by
+      simpa [Submonoid.smul_def] using ht
+    obtain ⟨x, hx⟩ := hexact ϖ hϖ _ hker
+    refine ⟨IsLocalizedModule.mk' fL x ((⟨ϖ, hϖP⟩ * t) * s), ?_⟩
+    have hsmul : ϖ • (t : V) • y = (⟨ϖ, hϖP⟩ * t : P) • y := by
+      rw [Submonoid.smul_def, Submonoid.coe_mul, mul_smul]
+    rw [Function.uncurry_apply_pair, IsLocalizedModule.map_mk', hx, hsmul,
+      IsLocalizedModule.mk'_cancel_left]
+  · rintro ⟨x', rfl⟩
+    obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective P fL x'
+    have hgf_apply : g (f x) = 0 := congr($hgf x)
+    simp [IsLocalizedModule.map_mk', hgf_apply]
+
+/-- A composable pair `L → M → N` of `V`-linear maps that is almost exact at `M` becomes exact
+after localizing away from `ϖ ∈ m`. -/
+theorem exact_localizedModule_map_powers (S : BasicSetup V) {L M N : Type*}
+    [AddCommGroup L] [_root_.Module V L] [AddCommGroup M] [_root_.Module V M]
+    [AddCommGroup N] [_root_.Module V N]
+    {f : L →ₗ[V] M} {g : M →ₗ[V] N} (hgf : g ∘ₗ f = 0)
+    (hexact : ∀ ε ∈ S.ideal, ∀ y ∈ LinearMap.ker g, ε • y ∈ LinearMap.range f)
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    Function.Exact (LocalizedModule.map (Submonoid.powers ϖ) f)
+      (LocalizedModule.map (Submonoid.powers ϖ) g) :=
+  exact_isLocalizedModule_map S (LocalizedModule.mkLinearMap _ L)
+    (LocalizedModule.mkLinearMap _ M) (LocalizedModule.mkLinearMap _ N) hgf hexact
+    (Submonoid.mem_powers ϖ) hϖ
 
 end BasicSetup
 
-/-! ### The exact functor `Almost.invert` -/
+/-! ### The inversion functor `Almost.invert` on almost modules -/
 
-section InvertFunctor
+section ModuleInvert
 
-variable {V : Type u} [CommRing V]
+variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
-/-- `ModuleCat.localizedModuleFunctor` kills almost zero `V`-modules when localizing at `ϖ ∈ m`. -/
-private theorem isZero_localizedModuleFunctor_obj (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+/-- Localizing away from `ϖ ∈ m` in `ModuleCat` sends almost zero modules to zero objects. -/
+theorem isZero_localizedModuleFunctor_obj_of_isAlmostZero {ϖ : V} (hϖ : ϖ ∈ S.ideal)
     (M : ModuleCat.{u} V) (hM : S.IsAlmostZero M) :
     IsZero ((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).obj M) := by
   have : Subsingleton (LocalizedModule (Submonoid.powers ϖ) M) :=
-    hM.subsingleton_localizedModule hϖ
-  have : Subsingleton (Shrink.{u} (LocalizedModule (Submonoid.powers ϖ) M)) :=
-    (equivShrink _).symm.subsingleton
-  rw [ModuleCat.localizedModuleFunctor_obj, ModuleCat.localizedModule]
-  exact ModuleCat.isZero_of_subsingleton _
+    hM.subsingleton_of_isLocalizedModule_away hϖ (f := LocalizedModule.mkLinearMap _ _)
+  exact (ModuleCat.isZero_of_subsingleton _).of_iso
+    (M.localizedModuleIso (Submonoid.powers ϖ))
 
-/-- **Inverting an element `ϖ ∈ m` on almost modules**: the exact functor
-`Almost.Module S ⥤ ModuleCat (Localization.Away ϖ)` obtained by factoring module localization at
-the powers of `ϖ` through almostification (Gabber–Ramero, §5.2, Corollary 5.2.15; Bhatt,
-Exercise 4.1.9). -/
-noncomputable def invert (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+/-- **Inverting an element `ϖ ∈ m` on almost modules** (Gabber–Ramero §5.2, proof of Corollary
+5.2.15; Bhatt §4.1, Exercise 4.1.9): the exact functor `ModuleCat.localizedModuleFunctor` at the
+powers of `ϖ` kills almost zero modules, hence factors through the Serre quotient
+`Almost.Module S`. -/
+noncomputable def invert {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
     Module S ⥤ ModuleCat.{u} (Localization.Away ϖ) :=
   Module.lift S (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ))
-    (isZero_localizedModuleFunctor_obj S hϖ)
+    (isZero_localizedModuleFunctor_obj_of_isAlmostZero S hϖ)
 
-variable (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal)
-
-/-- Composing almostification with `invert S hϖ` recovers `ModuleCat.localizedModuleFunctor` at the
-powers of `ϖ`. -/
-noncomputable def toAlmostCompInvertIso :
+/-- Precomposing `invert S hϖ` with almostification recovers `ModuleCat.localizedModuleFunctor` at
+the powers of `ϖ`. -/
+noncomputable def toAlmostCompInvertIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
     Module.toAlmost S ⋙ invert S hϖ ≅
       ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ) :=
   Module.fac S (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ))
-    (isZero_localizedModuleFunctor_obj S hϖ)
+    (isZero_localizedModuleFunctor_obj_of_isAlmostZero S hϖ)
 
-/-- `invert S hϖ` is a localization lifting of `ModuleCat.localizedModuleFunctor` along
-almostification. -/
-noncomputable instance :
+/-- `invert S hϖ` lifts `ModuleCat.localizedModuleFunctor (Submonoid.powers ϖ)` along
+`Module.toAlmost S`. -/
+noncomputable instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
     Localization.Lifting (Module.toAlmost S) S.almostZero.isoModSerre
       (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)) (invert S hϖ) :=
   ⟨toAlmostCompInvertIso S hϖ⟩
 
+/-- Precomposing `invert S hϖ` with almostification is naturally isomorphic to extension of scalars
+along `V → Localization.Away ϖ`. -/
+noncomputable def toAlmostCompInvertExtendScalarsIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    Module.toAlmost S ⋙ invert S hϖ ≅
+      ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ)) :=
+  toAlmostCompInvertIso S hϖ ≪≫
+    ModuleCat.localizedModuleFunctorIsoExtendScalars (Submonoid.powers ϖ)
+
+/-- `invert S hϖ` lifts `ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))` along
+`Module.toAlmost S`. -/
+noncomputable instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    Localization.Lifting (Module.toAlmost S) S.almostZero.isoModSerre
+      (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))) (invert S hϖ) :=
+  ⟨toAlmostCompInvertExtendScalarsIso S hϖ⟩
+
 /-- `invert S hϖ` preserves finite limits. -/
-instance : PreservesFiniteLimits (invert S hϖ) :=
-  inferInstanceAs (PreservesFiniteLimits (Module.lift S _ _))
+instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) : PreservesFiniteLimits (invert S hϖ) := by
+  dsimp only [invert]
+  infer_instance
 
 /-- `invert S hϖ` preserves finite colimits. -/
-instance : PreservesFiniteColimits (invert S hϖ) :=
-  inferInstanceAs (PreservesFiniteColimits (Module.lift S _ _))
+instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) : PreservesFiniteColimits (invert S hϖ) := by
+  dsimp only [invert]
+  infer_instance
 
 /-- `invert S hϖ` is an additive functor. -/
-instance : (invert S hϖ).Additive :=
+instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) : (invert S hϖ).Additive :=
   Functor.additive_of_preserves_binary_products _
 
-/-- Uniqueness of `invert S hϖ`: any functor `G : Module S ⥤ ModuleCat (Localization.Away ϖ)`
-whose composition with `toAlmost S` is isomorphic to `ModuleCat.localizedModuleFunctor` at the
-powers of `ϖ` is canonically isomorphic to `invert S hϖ`. -/
-noncomputable def invertUniq (G : Module S ⥤ ModuleCat.{u} (Localization.Away ϖ))
+/-- Uniqueness of `invert S hϖ`: any functor `G` whose precomposition with `Module.toAlmost S` is
+isomorphic to `ModuleCat.localizedModuleFunctor (Submonoid.powers ϖ)` is canonically isomorphic to
+`invert S hϖ`. -/
+noncomputable def invertUniq {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (G : Module S ⥤ ModuleCat.{u} (Localization.Away ϖ))
     (e : Module.toAlmost S ⋙ G ≅ ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)) :
     G ≅ invert S hϖ :=
   Module.liftUniq S (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ))
-    (isZero_localizedModuleFunctor_obj S hϖ) G e
+    (isZero_localizedModuleFunctor_obj_of_isAlmostZero S hϖ) G e
 
-/-- Composing almostification with `invert S hϖ` is naturally isomorphic to extension of scalars
-`M ↦ Localization.Away ϖ ⊗[V] M`. -/
-noncomputable def toAlmostCompInvertIsoExtendScalars :
-    Module.toAlmost S ⋙ invert S hϖ ≅
-      ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)) :=
-  toAlmostCompInvertIso S hϖ ≪≫
-    (ModuleCat.extendScalarsIsoLocalizedModuleFunctor (Submonoid.powers ϖ)).symm
+/-- On an almostification `M^a`, `(invert S hϖ).obj (M^a)` is canonically isomorphic to
+`LocalizedModule.Away ϖ M`. -/
+noncomputable def invertToAlmostObjIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) (M : ModuleCat.{u} V) :
+    (invert S hϖ).obj ((Module.toAlmost S).obj M) ≅
+      ModuleCat.of (Localization.Away ϖ) (LocalizedModule.Away ϖ M) :=
+  (toAlmostCompInvertIso S hϖ).app M ≪≫ M.localizedModuleIso (Submonoid.powers ϖ)
 
-/-- Evaluating `invert S hϖ` on an almostification `N^a` recovers
-`LocalizedModule (Submonoid.powers ϖ) N`. -/
-noncomputable def invertToAlmostObjIso (N : ModuleCat.{u} V) :
-    (invert S hϖ).obj ((Module.toAlmost S).obj N) ≅
-      ModuleCat.of (Localization.Away ϖ) (LocalizedModule (Submonoid.powers ϖ) N) :=
-  (toAlmostCompInvertIso S hϖ).app N ≪≫ N.localizedModuleObjIso (Submonoid.powers ϖ)
+/-- `invert S hϖ` is naturally isomorphic to almost elements followed by module localization away
+from `ϖ`. -/
+noncomputable def invertIsoElementsLocalized {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    invert S hϖ ≅
+      Module.elements S ⋙ ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ) :=
+  (Functor.leftUnitor (invert S hϖ)).symm ≪≫
+    Functor.isoWhiskerRight (asIso (Module.adjElements S).counit).symm (invert S hϖ) ≪≫
+    Functor.associator (Module.elements S) (Module.toAlmost S) (invert S hϖ) ≪≫
+    Functor.isoWhiskerLeft (Module.elements S) (toAlmostCompInvertIso S hϖ)
 
-/-- Naturality of `invertToAlmostObjIso`: `(invert S hϖ).map (f^a)` acts as
-`LocalizedModule.map` on `LocalizedModule (Submonoid.powers ϖ)`. -/
-@[reassoc]
-theorem invert_map_toAlmost_comp_invertToAlmostObjIso_hom {N₁ N₂ : ModuleCat.{u} V}
-    (f : N₁ ⟶ N₂) :
-    (invert S hϖ).map ((Module.toAlmost S).map f) ≫ (invertToAlmostObjIso S hϖ N₂).hom =
-      (invertToAlmostObjIso S hϖ N₁).hom ≫
-        ModuleCat.ofHom (LocalizedModule.map (Submonoid.powers ϖ) f.hom) := by
-  simp only [invertToAlmostObjIso, Iso.trans_hom, Iso.app_hom]
-  rw [← Category.assoc, ← Functor.comp_map (Module.toAlmost S) (invert S hϖ),
-    (toAlmostCompInvertIso S hϖ).hom.naturality, Category.assoc,
-    ModuleCat.localizedModuleObjIso_naturality, Category.assoc]
-
-/-- Inverting `ϖ ∈ m` sends `V^a` to the free rank-one module `Localization.Away ϖ`. -/
-noncomputable def invertToAlmostRingIso :
-    (invert S hϖ).obj ((Module.toAlmost S).obj (ModuleCat.of V V)) ≅
-      ModuleCat.of (Localization.Away ϖ) (Localization.Away ϖ) :=
-  invertToAlmostObjIso S hϖ (ModuleCat.of V V) ≪≫
-    (LocalizedModule.equivLocalization (Submonoid.powers ϖ)).toModuleIso
-
-/-- **Evaluating `invert S hϖ` through almost elements**: `(invert S hϖ).obj M` is canonically
-isomorphic to `LocalizedModule (Submonoid.powers ϖ) ((Module.elements S).obj M)`. -/
-noncomputable def invertElementsIso (M : Module S) :
+/-- For every almost module `M`, `(invert S hϖ).obj M` is canonically isomorphic to
+`LocalizedModule.Away ϖ ((Module.elements S).obj M)` (`M_*[1/ϖ]`). -/
+noncomputable def invertElementsIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) (M : Module S) :
     (invert S hϖ).obj M ≅
       ModuleCat.of (Localization.Away ϖ)
-        (LocalizedModule (Submonoid.powers ϖ) ((Module.elements S).obj M)) :=
-  (invert S hϖ).mapIso (asIso ((Module.adjElements S).counit.app M)).symm ≪≫
-    invertToAlmostObjIso S hϖ ((Module.elements S).obj M)
+        (LocalizedModule.Away ϖ ((Module.elements S).obj M)) :=
+  (invertIsoElementsLocalized S hϖ).app M ≪≫
+    ((Module.elements S).obj M).localizedModuleIso (Submonoid.powers ϖ)
+
+/-- `invert S hϖ` is naturally isomorphic to `Module.shriek S` followed by module localization away
+from `ϖ`. -/
+noncomputable def invertIsoShriekLocalized {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    invert S hϖ ≅
+      Module.shriek S ⋙ ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ) :=
+  (Functor.leftUnitor (invert S hϖ)).symm ≪≫
+    Functor.isoWhiskerRight (asIso (Module.adjShriek S).unit) (invert S hϖ) ≪≫
+    Functor.associator (Module.shriek S) (Module.toAlmost S) (invert S hϖ) ≪≫
+    Functor.isoWhiskerLeft (Module.shriek S) (toAlmostCompInvertIso S hϖ)
+
+/-- For every almost module `M`, `(invert S hϖ).obj M` is canonically isomorphic to
+`LocalizedModule.Away ϖ ((Module.shriek S).obj M)` (`M_![1/ϖ]`). -/
+noncomputable def invertShriekIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) (M : Module S) :
+    (invert S hϖ).obj M ≅
+      ModuleCat.of (Localization.Away ϖ)
+        (LocalizedModule.Away ϖ ((Module.shriek S).obj M)) :=
+  (invertIsoShriekLocalized S hϖ).app M ≪≫
+    ((Module.shriek S).obj M).localizedModuleIso (Submonoid.powers ϖ)
+
+/-- The canonical comparison `M_! → M_*` induces the transition between `invertIsoShriekLocalized`
+and `invertIsoElementsLocalized` after inverting `ϖ`. -/
+theorem invertIsoShriekLocalized_hom_comp_whiskerRight {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    (invertIsoShriekLocalized S hϖ).hom ≫
+        Functor.whiskerRight (Module.shriekToElements S)
+          (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)) =
+      (invertIsoElementsLocalized S hϖ).hom := by
+  ext1
+  funext M
+  have key := ((Module.adjElements S).homEquiv _ _).symm_apply_apply
+    (inv ((Module.adjShriek S).unit.app M))
+  rw [Adjunction.homEquiv_counit, ← Module.shriekToElements_app] at key
+  dsimp only [Functor.id_obj] at key
+  have hnat := (toAlmostCompInvertIso S hϖ).hom.naturality ((Module.shriekToElements S).app M)
+  dsimp [invertIsoShriekLocalized, invertIsoElementsLocalized] at hnat ⊢
+  simp only [Category.id_comp, Category.assoc]
+  rw [← hnat, ← Category.assoc, ← (invert S hϖ).map_comp]
+  congr 1
+  apply congrArg (invert S hϖ).map
+  apply (cancel_mono ((Module.adjElements S).counit.app M)).mp
+  rw [Category.assoc, key, IsIso.hom_inv_id, ← NatTrans.comp_app, IsIso.inv_hom_id,
+    NatTrans.id_app]
+  rfl
+
+/-- Naturality of `ModuleCat.localizedModuleIso`: `(localizedModuleFunctor T).map f` corresponds to
+`LocalizedModule.map T f.hom`. -/
+private theorem localizedModuleIso_naturality {T : Submonoid V} {M₁ M₂ : ModuleCat.{u} V}
+    (f : M₁ ⟶ M₂) :
+    (ModuleCat.localizedModuleFunctor.{u} T).map f ≫ (M₂.localizedModuleIso T).hom =
+      (M₁.localizedModuleIso T).hom ≫ ModuleCat.ofHom (LocalizedModule.map T f.hom) := by
+  rw [ModuleCat.localizedModuleFunctor_map]
+  change ModuleCat.localizedModuleMap T f ≫ (M₂.localizedModuleIso T).hom =
+    (M₁.localizedModuleIso T).hom ≫ ModuleCat.ofHom (LocalizedModule.map T f.hom)
+  apply ModuleCat.hom_ext
+  apply LinearMap.restrictScalars_injective V
+  apply IsLocalizedModule.linearMap_ext T (M₁.localizedModuleMkLinearMap T)
+    (LocalizedModule.mkLinearMap T M₂)
+  ext x
+  change (M₂.localizedModuleIso T).hom
+      ((IsLocalizedModule.mapExtendScalars T (M₁.localizedModuleMkLinearMap T)
+        (M₂.localizedModuleMkLinearMap T) (Localization T) f.hom)
+        (M₁.localizedModuleMkLinearMap T x)) =
+    LocalizedModule.map T f.hom
+      ((M₁.localizedModuleIso T).hom (M₁.localizedModuleMkLinearMap T x))
+  calc (M₂.localizedModuleIso T).hom
+        ((IsLocalizedModule.mapExtendScalars T (M₁.localizedModuleMkLinearMap T)
+          (M₂.localizedModuleMkLinearMap T) (Localization T) f.hom)
+          (M₁.localizedModuleMkLinearMap T x))
+      = (M₂.localizedModuleIso T).hom (M₂.localizedModuleMkLinearMap T (f.hom x)) :=
+        congrArg (M₂.localizedModuleIso T).hom
+          (IsLocalizedModule.map_apply T (M₁.localizedModuleMkLinearMap T)
+            (M₂.localizedModuleMkLinearMap T) f.hom x)
+    _ = LocalizedModule.mk (f.hom x) 1 :=
+        M₂.localizedModuleIso_hom_mkLinearMap T (f.hom x)
+    _ = LocalizedModule.map T f.hom (LocalizedModule.mk x 1) :=
+        (LocalizedModule.map_mk T f.hom x 1).symm
+    _ = LocalizedModule.map T f.hom
+          ((M₁.localizedModuleIso T).hom (M₁.localizedModuleMkLinearMap T x)) :=
+        congrArg (LocalizedModule.map T f.hom)
+          (M₁.localizedModuleIso_hom_mkLinearMap T x).symm
+
+/-- Naturality of `invertToAlmostObjIso`: `(invert S hϖ).map (f^a)` acts as
+`LocalizedModule.map` on `LocalizedModule.Away ϖ`. -/
+@[reassoc]
+theorem invert_map_toAlmost_comp_invertToAlmostObjIso_hom {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    {M₁ M₂ : ModuleCat.{u} V} (f : M₁ ⟶ M₂) :
+    (invert S hϖ).map ((Module.toAlmost S).map f) ≫ (invertToAlmostObjIso S hϖ M₂).hom =
+      (invertToAlmostObjIso S hϖ M₁).hom ≫
+        ModuleCat.ofHom (LocalizedModule.map (Submonoid.powers ϖ) f.hom) := by
+  calc (invert S hϖ).map ((Module.toAlmost S).map f) ≫ (invertToAlmostObjIso S hϖ M₂).hom
+      = ((Module.toAlmost S ⋙ invert S hϖ).map f ≫ (toAlmostCompInvertIso S hϖ).hom.app M₂) ≫
+          (M₂.localizedModuleIso (Submonoid.powers ϖ)).hom :=
+        (Category.assoc _ _ _).symm
+    _ = ((toAlmostCompInvertIso S hϖ).hom.app M₁ ≫
+          (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).map f) ≫
+          (M₂.localizedModuleIso (Submonoid.powers ϖ)).hom :=
+        congrArg (· ≫ _) ((toAlmostCompInvertIso S hϖ).hom.naturality f)
+    _ = (toAlmostCompInvertIso S hϖ).hom.app M₁ ≫
+          ((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).map f ≫
+            (M₂.localizedModuleIso (Submonoid.powers ϖ)).hom) :=
+        Category.assoc _ _ _
+    _ = (toAlmostCompInvertIso S hϖ).hom.app M₁ ≫
+          ((M₁.localizedModuleIso (Submonoid.powers ϖ)).hom ≫
+            ModuleCat.ofHom (LocalizedModule.map (Submonoid.powers ϖ) f.hom)) :=
+        congrArg (_ ≫ ·) (localizedModuleIso_naturality f)
+    _ = (invertToAlmostObjIso S hϖ M₁).hom ≫
+          ModuleCat.ofHom (LocalizedModule.map (Submonoid.powers ϖ) f.hom) :=
+        (Category.assoc _ _ _).symm
 
 /-- Naturality of `invertElementsIso`: `(invert S hϖ).map f` corresponds to localizing
 `(Module.elements S).map f` at the powers of `ϖ`. -/
 @[reassoc]
-theorem invert_map_comp_invertElementsIso_hom {M₁ M₂ : Module S} (f : M₁ ⟶ M₂) :
+theorem invert_map_comp_invertElementsIso_hom {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    {M₁ M₂ : Module S} (f : M₁ ⟶ M₂) :
     (invert S hϖ).map f ≫ (invertElementsIso S hϖ M₂).hom =
       (invertElementsIso S hϖ M₁).hom ≫
         ModuleCat.ofHom
           (LocalizedModule.map (Submonoid.powers ϖ) ((Module.elements S).map f).hom) := by
-  simp only [invertElementsIso, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom, asIso_inv]
-  have hnat : f ≫ inv ((Module.adjElements S).counit.app M₂) =
-      inv ((Module.adjElements S).counit.app M₁) ≫
-        (Module.toAlmost S).map ((Module.elements S).map f) := by
-    rw [IsIso.comp_inv_eq, Category.assoc, IsIso.eq_inv_comp]
-    exact ((Module.adjElements S).counit_naturality f).symm
-  rw [← Category.assoc, ← Functor.map_comp, hnat, Functor.map_comp, Category.assoc,
-    invert_map_toAlmost_comp_invertToAlmostObjIso_hom, Category.assoc]
-
-/-- **Evaluating `invert S hϖ` through `M_!`**: `(invert S hϖ).obj M` is canonically isomorphic to
-`LocalizedModule (Submonoid.powers ϖ) ((Module.shriek S).obj M)`. -/
-noncomputable def invertShriekIso (M : Module S) :
-    (invert S hϖ).obj M ≅
-      ModuleCat.of (Localization.Away ϖ)
-        (LocalizedModule (Submonoid.powers ϖ) ((Module.shriek S).obj M)) :=
-  (invert S hϖ).mapIso (asIso ((Module.adjShriek S).unit.app M)) ≪≫
-    invertToAlmostObjIso S hϖ ((Module.shriek S).obj M)
+  calc (invert S hϖ).map f ≫ (invertElementsIso S hϖ M₂).hom
+      = ((invert S hϖ).map f ≫ (invertIsoElementsLocalized S hϖ).hom.app M₂) ≫
+          (((Module.elements S).obj M₂).localizedModuleIso (Submonoid.powers ϖ)).hom :=
+        (Category.assoc _ _ _).symm
+    _ = ((invertIsoElementsLocalized S hϖ).hom.app M₁ ≫
+          (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).map
+            ((Module.elements S).map f)) ≫
+          (((Module.elements S).obj M₂).localizedModuleIso (Submonoid.powers ϖ)).hom :=
+        congrArg (· ≫ _) ((invertIsoElementsLocalized S hϖ).hom.naturality f)
+    _ = (invertIsoElementsLocalized S hϖ).hom.app M₁ ≫
+          ((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).map
+              ((Module.elements S).map f) ≫
+            (((Module.elements S).obj M₂).localizedModuleIso (Submonoid.powers ϖ)).hom) :=
+        Category.assoc _ _ _
+    _ = (invertIsoElementsLocalized S hϖ).hom.app M₁ ≫
+          ((((Module.elements S).obj M₁).localizedModuleIso (Submonoid.powers ϖ)).hom ≫
+            ModuleCat.ofHom
+              (LocalizedModule.map (Submonoid.powers ϖ) ((Module.elements S).map f).hom)) :=
+        congrArg (_ ≫ ·) (localizedModuleIso_naturality ((Module.elements S).map f))
+    _ = (invertElementsIso S hϖ M₁).hom ≫
+          ModuleCat.ofHom
+            (LocalizedModule.map (Submonoid.powers ϖ) ((Module.elements S).map f).hom) :=
+        (Category.assoc _ _ _).symm
 
 /-- Naturality of `invertShriekIso`: `(invert S hϖ).map f` corresponds to localizing
 `(Module.shriek S).map f` at the powers of `ϖ`. -/
 @[reassoc]
-theorem invert_map_comp_invertShriekIso_hom {M₁ M₂ : Module S} (f : M₁ ⟶ M₂) :
+theorem invert_map_comp_invertShriekIso_hom {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    {M₁ M₂ : Module S} (f : M₁ ⟶ M₂) :
     (invert S hϖ).map f ≫ (invertShriekIso S hϖ M₂).hom =
       (invertShriekIso S hϖ M₁).hom ≫
         ModuleCat.ofHom
           (LocalizedModule.map (Submonoid.powers ϖ) ((Module.shriek S).map f).hom) := by
-  simp only [invertShriekIso, Iso.trans_hom, Functor.mapIso_hom, asIso_hom]
-  rw [← Category.assoc, ← Functor.map_comp, ← (Module.adjShriek S).unit_naturality f,
-    Functor.map_comp, Category.assoc, invert_map_toAlmost_comp_invertToAlmostObjIso_hom,
-    Category.assoc]
+  calc (invert S hϖ).map f ≫ (invertShriekIso S hϖ M₂).hom
+      = ((invert S hϖ).map f ≫ (invertIsoShriekLocalized S hϖ).hom.app M₂) ≫
+          (((Module.shriek S).obj M₂).localizedModuleIso (Submonoid.powers ϖ)).hom :=
+        (Category.assoc _ _ _).symm
+    _ = ((invertIsoShriekLocalized S hϖ).hom.app M₁ ≫
+          (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).map
+            ((Module.shriek S).map f)) ≫
+          (((Module.shriek S).obj M₂).localizedModuleIso (Submonoid.powers ϖ)).hom :=
+        congrArg (· ≫ _) ((invertIsoShriekLocalized S hϖ).hom.naturality f)
+    _ = (invertIsoShriekLocalized S hϖ).hom.app M₁ ≫
+          ((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).map
+              ((Module.shriek S).map f) ≫
+            (((Module.shriek S).obj M₂).localizedModuleIso (Submonoid.powers ϖ)).hom) :=
+        Category.assoc _ _ _
+    _ = (invertIsoShriekLocalized S hϖ).hom.app M₁ ≫
+          ((((Module.shriek S).obj M₁).localizedModuleIso (Submonoid.powers ϖ)).hom ≫
+            ModuleCat.ofHom
+              (LocalizedModule.map (Submonoid.powers ϖ) ((Module.shriek S).map f).hom)) :=
+        congrArg (_ ≫ ·) (localizedModuleIso_naturality ((Module.shriek S).map f))
+    _ = (invertShriekIso S hϖ M₁).hom ≫
+          ModuleCat.ofHom
+            (LocalizedModule.map (Submonoid.powers ϖ) ((Module.shriek S).map f).hom) :=
+        (Category.assoc _ _ _).symm
 
-/-- `(invert S hϖ).obj (N^a)` is zero iff every element of `N` is annihilated by a power of `ϖ`. -/
-theorem isZero_invert_toAlmost_obj_iff (N : ModuleCat.{u} V) :
-    IsZero ((invert S hϖ).obj ((Module.toAlmost S).obj N)) ↔
-      ∀ x : N, ∃ n : ℕ, (ϖ ^ n) • x = 0 := by
-  rw [(invertToAlmostObjIso S hϖ N).isZero_iff, ModuleCat.isZero_of_iff_subsingleton,
+/-! ### Degenerate cases, basic computations, and non-faithfulness -/
+
+/-- `(invert S hϖ).obj (M^a)` is zero iff every element of `M` is annihilated by a power of `ϖ`. -/
+theorem isZero_invert_toAlmost_obj_iff {ϖ : V} (hϖ : ϖ ∈ S.ideal) (M : ModuleCat.{u} V) :
+    IsZero ((invert S hϖ).obj ((Module.toAlmost S).obj M)) ↔
+      ∀ x : M, ∃ n : ℕ, (ϖ ^ n) • x = 0 := by
+  rw [(invertToAlmostObjIso S hϖ M).isZero_iff, ModuleCat.isZero_of_iff_subsingleton,
     LocalizedModule.subsingleton_iff]
   simp [Submonoid.mem_powers_iff]
 
 /-- `(invert S hϖ).obj M` is zero iff every almost element of `M` is annihilated by a power of
 `ϖ`. -/
-theorem isZero_invert_obj_iff (M : Module S) :
+theorem isZero_invert_obj_iff {ϖ : V} (hϖ : ϖ ∈ S.ideal) (M : Module S) :
     IsZero ((invert S hϖ).obj M) ↔
       ∀ x : (Module.elements S).obj M, ∃ n : ℕ, (ϖ ^ n) • x = 0 := by
   rw [(invertElementsIso S hϖ M).isZero_iff, ModuleCat.isZero_of_iff_subsingleton,
     LocalizedModule.subsingleton_iff]
   simp [Submonoid.mem_powers_iff]
 
-/-- Inverting `0 ∈ m` sends every almost module to zero, since `V[1/0] = 0`. -/
-theorem isZero_invert_zero_obj (h0 : (0 : V) ∈ S.ideal) (M : Module S) :
-    IsZero ((invert S h0).obj M) :=
-  (isZero_invert_obj_iff S h0 M).mpr fun _ ↦ ⟨1, by simp⟩
+/-- Inverting `0 ∈ m` sends every almost module to a zero object. -/
+theorem isZero_invert_obj_zero (M : Module S) :
+    IsZero ((invert S S.ideal.zero_mem).obj M) := by
+  have : Subsingleton (LocalizedModule.Away (0 : V) ((Module.elements S).obj M)) :=
+    LocalizedModule.subsingleton_iff.mpr fun m ↦ ⟨0, ⟨1, pow_one 0⟩, zero_smul V m⟩
+  exact (ModuleCat.isZero_of_subsingleton _).of_iso (invertElementsIso S S.ideal.zero_mem M)
+
+/-- Inverting `ϖ ∈ m` kills the almostification of any `V`-module in which every element is
+annihilated by a power of `ϖ`. -/
+theorem isZero_invert_toAlmost_of_pow_smul_eq_zero {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (M : ModuleCat.{u} V) (hM : ∀ m : M, ∃ n : ℕ, ϖ ^ n • m = 0) :
+    IsZero ((invert S hϖ).obj ((Module.toAlmost S).obj M)) := by
+  have : Subsingleton (LocalizedModule.Away ϖ M) :=
+    LocalizedModule.subsingleton_iff.mpr fun m ↦
+      let ⟨n, hn⟩ := hM m
+      ⟨ϖ ^ n, ⟨n, rfl⟩, hn⟩
+  exact (ModuleCat.isZero_of_subsingleton _).of_iso (invertToAlmostObjIso S hϖ M)
+
+/-- Inverting `ϖ ∈ m` sends `(V ⧸ (ϖ))^a` to a zero object. -/
+theorem isZero_invert_toAlmost_quotient_span_singleton {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    IsZero ((invert S hϖ).obj ((Module.toAlmost S).obj (ModuleCat.of V (V ⧸ Ideal.span {ϖ})))) := by
+  refine isZero_invert_toAlmost_of_pow_smul_eq_zero S hϖ _ fun x ↦ ⟨1, ?_⟩
+  obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  rw [pow_one, ← Submodule.Quotient.mk_smul, smul_eq_mul, Submodule.Quotient.mk_eq_zero]
+  exact Ideal.mem_span_singleton.mpr (dvd_mul_right ϖ v)
+
+/-- Inverting `ϖ ∈ m` sends `V^a` to the free rank-one `Localization.Away ϖ`-module
+`Localization.Away ϖ`. -/
+noncomputable def invertToAlmostRingIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    (invert S hϖ).obj ((Module.toAlmost S).obj (ModuleCat.of V V)) ≅
+      ModuleCat.of (Localization.Away ϖ) (Localization.Away ϖ) :=
+  invertToAlmostObjIso S hϖ (ModuleCat.of V V) ≪≫
+    (LocalizedModule.equivLocalization (Submonoid.powers ϖ)).toModuleIso
+
+/-- Whenever `V ⧸ (ϖ)` is not almost zero (for example for `BasicSetup.ofValuationRing` and any
+`ϖ ∈ m`), `(V ⧸ (ϖ))^a` is nonzero in `Almost.Module S` while `invert S hϖ` kills it, so
+`invert S hϖ` is not faithful (Bhatt §4.1, Exercise 4.1.9). -/
+theorem not_faithful_invert_of_not_isAlmostZero_quotient {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (hquot : ¬ S.IsAlmostZero (V ⧸ Ideal.span {ϖ})) :
+    ¬ (invert S hϖ).Faithful := by
+  intro hfaith
+  let X := (Module.toAlmost S).obj (ModuleCat.of V (V ⧸ Ideal.span {ϖ}))
+  have hX : ¬ IsZero X := by
+    rwa [Module.isZero_toAlmost_obj_iff]
+  apply hX
+  rw [IsZero.iff_id_eq_zero]
+  exact hfaith.map_injective
+    ((isZero_invert_toAlmost_quotient_span_singleton S hϖ).eq_of_src _ _)
+
+/-- When `ϖ ∈ m` is a unit of `V`, `S` is the classical setup and `V → Localization.Away ϖ` is a
+ring isomorphism, so `invert S hϖ` is an equivalence of categories. -/
+theorem isEquivalence_invert_of_isUnit {ϖ : V} (hϖ : ϖ ∈ S.ideal) (hu : IsUnit ϖ) :
+    (invert S hϖ).IsEquivalence := by
+  have hS : S = BasicSetup.classical V := by
+    ext1
+    rw [BasicSetup.classical_ideal]
+    exact S.ideal.eq_top_of_isUnit_mem hϖ hu
+  subst hS
+  let eR : V ≃+* Localization.Away ϖ :=
+    (IsLocalization.atUnits V (Submonoid.powers ϖ) (S := Localization.Away ϖ)
+      (by rintro _ ⟨n, rfl⟩; exact hu.pow n)).toRingEquiv
+  have hext : (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence := by
+    have : (ModuleCat.restrictScalars eR.toRingHom).IsEquivalence := inferInstance
+    exact (ModuleCat.extendRestrictScalarsAdj
+      eR.toRingHom).isEquivalence_left_of_isEquivalence_right
+  have hcomp : (Module.toAlmost (BasicSetup.classical V) ⋙
+      invert (BasicSetup.classical V) hϖ).IsEquivalence :=
+    Functor.isEquivalence_of_iso (toAlmostCompInvertExtendScalarsIso _ hϖ).symm
+  exact Functor.isEquivalence_of_comp_left (Module.toAlmost (BasicSetup.classical V))
+    (invert (BasicSetup.classical V) hϖ)
+
+/-- When `ϖ ∈ m` is a unit of `V`, restricting scalars along `V ≃ Localization.Away ϖ` after
+`invert S hϖ` recovers `Module.elements S`. -/
+noncomputable def invertCompRestrictScalarsIsoElementsOfIsUnit {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (hu : IsUnit ϖ) :
+    invert S hϖ ⋙ ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ)) ≅
+      Module.elements S := by
+  let eR : V ≃+* Localization.Away ϖ :=
+    (IsLocalization.atUnits V (Submonoid.powers ϖ) (S := Localization.Away ϖ)
+      (by rintro _ ⟨n, rfl⟩; exact hu.pow n)).toRingEquiv
+  have : IsIso (ModuleCat.extendRestrictScalarsAdj eR.toRingHom).unit := by
+    have : (ModuleCat.extendScalars eR.toRingHom).IsEquivalence :=
+      (ModuleCat.extendRestrictScalarsAdj eR.toRingHom).isEquivalence_left_of_isEquivalence_right
+    infer_instance
+  let eId : ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ) ⋙
+      ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ)) ≅ 𝟭 (ModuleCat.{u} V) :=
+    Functor.isoWhiskerRight (ModuleCat.localizedModuleFunctorIsoExtendScalars (Submonoid.powers ϖ))
+      (ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))) ≪≫
+      (asIso (ModuleCat.extendRestrictScalarsAdj eR.toRingHom).unit).symm
+  exact Functor.isoWhiskerRight (invertIsoElementsLocalized S hϖ)
+      (ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))) ≪≫
+    Functor.associator (Module.elements S) _ _ ≪≫
+    Functor.isoWhiskerLeft (Module.elements S) eId ≪≫
+    Functor.rightUnitor (Module.elements S)
 
 /-- After base-changing `S` to a localization `W` away from `ϖ ∈ m`, the setup becomes classical,
 so almostification `ModuleCat W ⥤ Module (S.baseChange W)` is an equivalence of categories. -/
 theorem Module.isEquivalence_toAlmost_baseChange_away (W : Type u) [CommRing W]
-    [_root_.Algebra V W] [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
+    [_root_.Algebra V W] {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
     (Module.toAlmost (S.baseChange W)).IsEquivalence := by
   rw [S.baseChange_away_eq_classical W hϖ]
   infer_instance
@@ -356,215 +673,43 @@ theorem Module.isEquivalence_toAlmost_baseChange_away (W : Type u) [CommRing W]
 /-- Base-changing `S` to a localization `W` away from `ϖ ∈ m` identifies almost `W`-modules with
 honest `W`-modules via `Module.toAlmost (S.baseChange W)`. -/
 noncomputable def Module.baseChangeAwayEquiv (W : Type u) [CommRing W] [_root_.Algebra V W]
-    [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
+    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
     ModuleCat.{u} W ≌ Module (S.baseChange W) :=
   have := Module.isEquivalence_toAlmost_baseChange_away S W hϖ
   (Module.toAlmost (S.baseChange W)).asEquivalence
 
-section IsUnit
+end ModuleInvert
 
-/-- When `S.ideal` contains a unit `ϖ`, `Module.toAlmost S` is an equivalence of categories. -/
-private theorem isEquivalence_toAlmost_of_isUnit (hϖ : ϖ ∈ S.ideal) (hu : IsUnit ϖ) :
-    (Module.toAlmost S).IsEquivalence := by
-  rw [S.eq_classical_of_isUnit_mem hϖ hu]
-  infer_instance
-
-/-- When `ϖ ∈ m` is a unit of `V` (so `S` is classical and `V ≃+* V[1/ϖ]`), `invert S hϖ`
-followed by restriction of scalars along `V → V[1/ϖ]` is naturally isomorphic to
-`Almost.Module.elements S`. -/
-noncomputable def invertCompRestrictScalarsIsoElements (hu : IsUnit ϖ) :
-    invert S hϖ ⋙ ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ)) ≅
-      Module.elements S := by
-  have := isEquivalence_toAlmost_of_isUnit S hϖ hu
-  let Q := (Module.toAlmost S).asEquivalence
-  let eElem : Module.elements S ≅ Q.inverse :=
-    (Module.adjElements S).rightAdjointUniq Q.toAdjunction
-  let E := ModuleCat.restrictScalarsEquivalenceOfRingEquiv
-    (IsLocalization.atUnit V (Localization.Away ϖ) ϖ hu).toRingEquiv
-  let eExt : ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)) ≅ E.inverse :=
-    (ModuleCat.extendRestrictScalarsAdj (algebraMap V (Localization.Away ϖ))).leftAdjointUniq
-      E.symm.toAdjunction
-  let F := invert S hϖ ⋙ ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))
-  let eComp : Q.functor ⋙ F ≅ 𝟭 (ModuleCat.{u} V) :=
-    (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (toAlmostCompInvertIsoExtendScalars S hϖ ≪≫ eExt) E.functor ≪≫
-      E.counitIso
-  exact (Functor.leftUnitor F).symm ≪≫
-    Functor.isoWhiskerRight Q.counitIso.symm F ≪≫
-    Functor.associator Q.inverse Q.functor F ≪≫
-    Functor.isoWhiskerLeft Q.inverse eComp ≪≫
-    Functor.rightUnitor Q.inverse ≪≫
-    eElem.symm
-
-/-- When `ϖ ∈ m` is a unit of `V`, `invert S hϖ` is an equivalence of categories. -/
-theorem isEquivalence_invert_of_isUnit (hu : IsUnit ϖ) : (invert S hϖ).IsEquivalence := by
-  have := isEquivalence_toAlmost_of_isUnit S hϖ hu
-  have : (Module.elements S).IsEquivalence :=
-    Functor.isEquivalence_of_iso
-      ((Module.adjElements S).rightAdjointUniq (Module.toAlmost S).asEquivalence.toAdjunction).symm
-  have : (ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence :=
-    inferInstanceAs
-      (ModuleCat.restrictScalars
-        (IsLocalization.atUnit V (Localization.Away ϖ) ϖ hu).toRingEquiv.toRingHom).IsEquivalence
-  have : (invert S hϖ ⋙
-      ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence :=
-    Functor.isEquivalence_of_iso (invertCompRestrictScalarsIsoElements S hϖ hu).symm
-  exact Functor.isEquivalence_of_comp_right (invert S hϖ)
-    (ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ)))
-
-end IsUnit
-
-end InvertFunctor
-
-/-! ### The symmetric monoidal structure on `Almost.invert` -/
+/-! ### Symmetric monoidal structure on `Almost.invert` -/
 
 section Monoidal
 
-variable {V : Type u} [CommRing V] (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
-/-- `invert S hϖ` is a localization lifting of extension of scalars along almostification. -/
-noncomputable instance :
-    Localization.Lifting (Module.toAlmost S) S.almostZero.isoModSerre
-      (ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)))
-      (invert S hϖ) :=
-  ⟨toAlmostCompInvertIsoExtendScalars S hϖ⟩
-
-/-- **Inverting `ϖ ∈ m` is a monoidal functor**: `invert S hϖ` inherits a strong monoidal
-structure from extension of scalars `M ↦ Localization.Away ϖ ⊗[V] M` along almostification. -/
-noncomputable instance invertMonoidal : (invert S hϖ).Monoidal :=
+/-- **Inverting `ϖ ∈ m` is a strong monoidal functor**, lifting the monoidal structure of
+`ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))` along almostification. -/
+noncomputable instance invertMonoidal {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    (invert S hϖ).Monoidal :=
   Localization.Monoidal.functorMonoidalOfComp (Module.toAlmost S) S.almostZero.isoModSerre
-    (invert S hϖ) (ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)))
+    (invert S hϖ) (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ)))
 
-/-- The comparison `toAlmost S ⋙ invert S hϖ ≅ extendScalars (algebraMap V (Localization.Away ϖ))`
-is a monoidal natural isomorphism. -/
-instance isMonoidal_toAlmostCompInvertIsoExtendScalars_hom :
-    (toAlmostCompInvertIsoExtendScalars S hϖ).hom.IsMonoidal :=
+/-- **Inverting `ϖ ∈ m` is a braided monoidal functor**, compatible with the symmetric braidings on
+`Almost.Module S` and `ModuleCat (Localization.Away ϖ)`. -/
+noncomputable instance invertBraided {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    (invert S hϖ).Braided :=
+  Localization.Monoidal.functorBraidedOfComp (Module.toAlmost S) S.almostZero.isoModSerre
+    (invert S hϖ) (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ)))
+
+/-- The comparison `Module.toAlmost S ⋙ invert S hϖ ≅ ModuleCat.extendScalars ...` is monoidal. -/
+instance isMonoidal_toAlmostCompInvertExtendScalarsIso_hom {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    (toAlmostCompInvertExtendScalarsIso S hϖ).hom.IsMonoidal :=
+  -- `toAlmostCompInvertExtendScalarsIso S hϖ` is the registered `Lifting.iso` for `extendScalars`.
   Localization.Monoidal.lifting_isMonoidal (Module.toAlmost S) S.almostZero.isoModSerre
-    (invert S hϖ) (ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)))
-
-/-- Braiding compatibility of `invert S hϖ` on objects in the image of `Module.toAlmost S`. -/
-private theorem invert_braided_toAlmost_obj (X₀ Y₀ : ModuleCat.{u} V) :
-    Functor.LaxMonoidal.μ (invert S hϖ) ((Module.toAlmost S).obj X₀)
-        ((Module.toAlmost S).obj Y₀) ≫
-      (invert S hϖ).map (β_ ((Module.toAlmost S).obj X₀) ((Module.toAlmost S).obj Y₀)).hom =
-    (β_ ((invert S hϖ).obj ((Module.toAlmost S).obj X₀))
-        ((invert S hϖ).obj ((Module.toAlmost S).obj Y₀))).hom ≫
-      Functor.LaxMonoidal.μ (invert S hϖ) ((Module.toAlmost S).obj Y₀)
-        ((Module.toAlmost S).obj X₀) := by
-  let F := invert S hϖ
-  let Q := Module.toAlmost S
-  let G := ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ))
-  let α := toAlmostCompInvertIsoExtendScalars S hϖ
-  let X := Q.obj X₀
-  let Y := Q.obj Y₀
-  have hμ (A₀ B₀ : ModuleCat.{u} V) :
-      Functor.LaxMonoidal.μ F (Q.obj A₀) (Q.obj B₀) ≫
-        F.map (Functor.LaxMonoidal.μ Q A₀ B₀) ≫ α.hom.app (A₀ ⊗ B₀) =
-      (α.hom.app A₀ ⊗ₘ α.hom.app B₀) ≫ Functor.LaxMonoidal.μ G A₀ B₀ := by
-    simpa only [Functor.comp_obj, Functor.LaxMonoidal.comp_μ, Category.assoc] using
-      NatTrans.IsMonoidal.tensor (τ := α.hom) A₀ B₀
-  rw [← cancel_mono (F.map (Functor.LaxMonoidal.μ Q Y₀ X₀)), ← cancel_mono (α.hom.app (Y₀ ⊗ X₀))]
-  simp only [Category.assoc]
-  calc Functor.LaxMonoidal.μ F X Y ≫ F.map (β_ X Y).hom ≫
-        F.map (Functor.LaxMonoidal.μ Q Y₀ X₀) ≫ α.hom.app (Y₀ ⊗ X₀)
-      = Functor.LaxMonoidal.μ F X Y ≫ F.map (Functor.LaxMonoidal.μ Q X₀ Y₀) ≫
-          ((Q ⋙ F).map (β_ X₀ Y₀).hom ≫ α.hom.app (Y₀ ⊗ X₀)) := by
-        rw [← Functor.map_comp_assoc, ← Functor.LaxBraided.braided X₀ Y₀, Functor.map_comp,
-          Functor.comp_map, Category.assoc]
-    _ = (Functor.LaxMonoidal.μ F X Y ≫ F.map (Functor.LaxMonoidal.μ Q X₀ Y₀) ≫
-          α.hom.app (X₀ ⊗ Y₀)) ≫ G.map (β_ X₀ Y₀).hom := by
-        rw [α.hom.naturality (β_ X₀ Y₀).hom, Category.assoc, Category.assoc]
-    _ = (α.hom.app X₀ ⊗ₘ α.hom.app Y₀) ≫
-          (Functor.LaxMonoidal.μ G X₀ Y₀ ≫ G.map (β_ X₀ Y₀).hom) := by
-        rw [hμ X₀ Y₀, Category.assoc]
-    _ = ((α.hom.app X₀ ⊗ₘ α.hom.app Y₀) ≫ (β_ (G.obj X₀) (G.obj Y₀)).hom) ≫
-          Functor.LaxMonoidal.μ G Y₀ X₀ := by
-        rw [Functor.LaxBraided.braided X₀ Y₀, Category.assoc]
-    _ = (β_ (F.obj X) (F.obj Y)).hom ≫
-          ((α.hom.app Y₀ ⊗ₘ α.hom.app X₀) ≫ Functor.LaxMonoidal.μ G Y₀ X₀) := by
-        rw [BraidedCategory.braiding_naturality, Category.assoc]; rfl
-    _ = (β_ (F.obj X) (F.obj Y)).hom ≫ Functor.LaxMonoidal.μ F Y X ≫
-          F.map (Functor.LaxMonoidal.μ Q Y₀ X₀) ≫ α.hom.app (Y₀ ⊗ X₀) := by
-        rw [← hμ Y₀ X₀]
-
-/-- **Inverting `ϖ ∈ m` is a braided (symmetric) monoidal functor.** -/
-noncomputable instance invertBraided : (invert S hϖ).Braided where
-  braided X Y := by
-    let eX := (Module.toAlmost S).objObjPreimageIso X
-    let eY := (Module.toAlmost S).objObjPreimageIso Y
-    rw [← cancel_epi ((invert S hϖ).map eX.hom ⊗ₘ (invert S hϖ).map eY.hom),
-      Functor.LaxMonoidal.μ_natural_assoc, ← Functor.map_comp,
-      BraidedCategory.braiding_naturality, Functor.map_comp,
-      BraidedCategory.braiding_naturality_assoc, Functor.LaxMonoidal.μ_natural,
-      ← Category.assoc, ← Category.assoc, invert_braided_toAlmost_obj]
+    (invert S hϖ) (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ)))
 
 end Monoidal
 
-/-! ### Exactness of complexes after inverting `ϖ` -/
-
-section Complexes
-
-variable {V : Type u} [CommRing V]
-variable {I : Type*} {c : ComplexShape I}
-
-/-- `invert S hϖ` preserves exactness of complexes of almost modules at each degree. -/
-theorem exactAt_mapHomologicalComplex_invert (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal)
-    (C : HomologicalComplex (Module S) c) {i : I} (hC : C.ExactAt i) :
-    (((invert S hϖ).mapHomologicalComplex c).obj C).ExactAt i := by
-  rw [HomologicalComplex.exactAt_iff] at hC ⊢
-  exact hC.map (invert S hϖ)
-
-/-- `invert S hϖ` sends acyclic complexes of almost modules to acyclic complexes of
-`V[1/ϖ]`-modules. -/
-theorem acyclic_mapHomologicalComplex_invert (S : BasicSetup V) {ϖ : V} (hϖ : ϖ ∈ S.ideal)
-    (C : HomologicalComplex (Module S) c) (hC : C.Acyclic) :
-    (((invert S hϖ).mapHomologicalComplex c).obj C).Acyclic :=
-  fun i ↦ exactAt_mapHomologicalComplex_invert S hϖ C (hC i)
-
-/-- **A complex of `V`-modules with almost zero homology at degree `i` becomes exact at `i` after
-inverting `ϖ ∈ m`** via `ModuleCat.localizedModuleFunctor`. -/
-theorem BasicSetup.IsAlmostZero.exactAt_localizedModuleFunctor {S : BasicSetup V} {ϖ : V}
-    {K : HomologicalComplex (ModuleCat.{u} V) c} {i : I} (hK : S.IsAlmostZero (K.homology i))
-    (hϖ : ϖ ∈ S.ideal) :
-    (((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).mapHomologicalComplex c).obj
-      K).ExactAt i := by
-  rw [HomologicalComplex.exactAt_iff_isZero_homology]
-  exact (((K.sc i).mapHomologyIso
-    (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)))).isZero_iff.mpr
-      (isZero_localizedModuleFunctor_obj S hϖ (K.homology i) hK)
-
-/-- A complex of `V`-modules whose homology is almost zero in every degree becomes acyclic after
-inverting `ϖ ∈ m`. -/
-theorem BasicSetup.IsAlmostZero.acyclic_localizedModuleFunctor {S : BasicSetup V} {ϖ : V}
-    {K : HomologicalComplex (ModuleCat.{u} V) c} (hK : ∀ i : I, S.IsAlmostZero (K.homology i))
-    (hϖ : ϖ ∈ S.ideal) :
-    (((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).mapHomologicalComplex c).obj
-      K).Acyclic :=
-  fun i ↦ (hK i).exactAt_localizedModuleFunctor hϖ
-
-/-- **A complex of `V`-modules with almost zero homology at degree `i` becomes exact at `i` after
-base-changing to `Localization.Away ϖ`** for `ϖ ∈ m`. -/
-theorem BasicSetup.IsAlmostZero.exactAt_extendScalars {S : BasicSetup V} {ϖ : V}
-    {K : HomologicalComplex (ModuleCat.{u} V) c} {i : I} (hK : S.IsAlmostZero (K.homology i))
-    (hϖ : ϖ ∈ S.ideal) :
-    (((ModuleCat.extendScalars.{u, u, u}
-      (algebraMap V (Localization.Away ϖ))).mapHomologicalComplex c).obj K).ExactAt i :=
-  (hK.exactAt_localizedModuleFunctor hϖ).of_iso
-    ((NatIso.mapHomologicalComplex
-      (ModuleCat.extendScalarsIsoLocalizedModuleFunctor (Submonoid.powers ϖ)).symm c).app K)
-
-/-- A complex of `V`-modules whose homology is almost zero in every degree becomes acyclic after
-base-changing to `Localization.Away ϖ` for `ϖ ∈ m`. -/
-theorem BasicSetup.IsAlmostZero.acyclic_extendScalars {S : BasicSetup V} {ϖ : V}
-    {K : HomologicalComplex (ModuleCat.{u} V) c} (hK : ∀ i : I, S.IsAlmostZero (K.homology i))
-    (hϖ : ϖ ∈ S.ideal) :
-    (((ModuleCat.extendScalars.{u, u, u}
-      (algebraMap V (Localization.Away ϖ))).mapHomologicalComplex c).obj K).Acyclic :=
-  fun i ↦ (hK i).exactAt_extendScalars hϖ
-
-end Complexes
-
-/-! ### Inverting scalars on almost algebras -/
+/-! ### Inverting a scalar on almost algebras -/
 
 namespace Algebra
 
@@ -574,78 +719,205 @@ attribute [local instance] ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toCommRi
 
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
-/-- **Inverting a scalar `ϖ : V` on almost algebras**: sends an almost algebra `A` to `A_*[1/ϖ]`,
-the localization of its algebra of almost elements at the powers of `ϖ`, viewed as a commutative
-`Localization.Away ϖ`-algebra. On canonical numerators its action on morphisms is induced by
-`(Algebra.elements S).map` (`invert_map_algebraMap`). When `ϖ ∈ S.ideal`, it agrees with the
-functor induced on commutative monoid objects by `Almost.invert S hϖ`
-(`invertIsoMapCommMon`). -/
-noncomputable def invert (ϖ : V) : Algebra S ⥤ CommAlgCat.{u} (Localization.Away ϖ) where
-  obj A :=
-    CommAlgCat.of (Localization.Away ϖ)
-      (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ)))
-  map {A B} f :=
-    CommAlgCat.ofHom (IsLocalization.mapₐ (Submonoid.powers ϖ) (Localization.Away ϖ)
-      (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ)))
-      (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj B) (Submonoid.powers ϖ)))
-      ((elements S).map f).hom)
-  map_id A := by
-    ext z
-    simp
-  map_comp {A B C} f g := by
-    ext z
-    simp [Functor.map_comp, IsLocalization.map_map, AlgHom.comp_toRingHom]
+/-- **Inverting a scalar `ϖ : V` on almost algebras**: sends an almost `V`-algebra `A` to the
+localized `Localization.Away ϖ`-algebra `A_*[1/ϖ]`, and a morphism `f : A ⟶ B` to the localized map
+induced by `(Algebra.elements S).map f`. -/
+noncomputable def invert (ϖ : V) :
+    Algebra S ⥤ CommAlgCat.{u} (Localization.Away ϖ) :=
+  Algebra.elements S ⋙ CommAlgCat.localizationFunctor (Submonoid.powers ϖ)
 
-/-- `(Algebra.invert S ϖ).obj A` is an algebra over `(Algebra.elements S).obj A` via the
-localization map `A_* → A_*[1/ϖ]`. -/
-noncomputable instance (ϖ : V) (A : Algebra S) :
-    _root_.Algebra ((elements S).obj A) ((invert S ϖ).obj A) :=
-  inferInstanceAs (_root_.Algebra ((elements S).obj A)
-    (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))))
+/-- Object value of `Algebra.invert S ϖ` on `A`. -/
+@[simp]
+theorem invert_obj (ϖ : V) (A : Algebra S) :
+    (invert S ϖ).obj A =
+      (CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A) :=
+  (rfl)
 
-/-- `(Algebra.invert S ϖ).obj A` is a `V`-algebra. -/
+/-- `V`-algebra structure on `(Algebra.invert S ϖ).obj A`. -/
 noncomputable instance (ϖ : V) (A : Algebra S) :
     _root_.Algebra V ((invert S ϖ).obj A) :=
-  inferInstanceAs (_root_.Algebra V
-    (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))))
+  inferInstanceAs
+    (_root_.Algebra V
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
+/-- `(Algebra.elements S).obj A`-algebra structure on `(Algebra.invert S ϖ).obj A`. -/
+noncomputable instance (ϖ : V) (A : Algebra S) :
+    _root_.Algebra ((Algebra.elements S).obj A) ((invert S ϖ).obj A) :=
+  inferInstanceAs
+    (_root_.Algebra ((Algebra.elements S).obj A)
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
+
+/-- Compatibility of the `V`- and `(Algebra.elements S).obj A`-algebra structures on
+`(Algebra.invert S ϖ).obj A`. -/
 instance (ϖ : V) (A : Algebra S) :
-    IsScalarTower V ((elements S).obj A) ((invert S ϖ).obj A) :=
-  inferInstanceAs (IsScalarTower V ((elements S).obj A)
-    (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))))
+    IsScalarTower V ((Algebra.elements S).obj A) ((invert S ϖ).obj A) :=
+  inferInstanceAs
+    (IsScalarTower V ((Algebra.elements S).obj A)
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
+/-- Compatibility of the `V`- and `Localization.Away ϖ`-algebra structures on
+`(Algebra.invert S ϖ).obj A`. -/
 instance (ϖ : V) (A : Algebra S) :
     IsScalarTower V (Localization.Away ϖ) ((invert S ϖ).obj A) :=
-  inferInstanceAs (IsScalarTower V (Localization.Away ϖ)
-    (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))))
+  inferInstanceAs
+    (IsScalarTower V (Localization.Away ϖ)
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
 /-- `(Algebra.invert S ϖ).obj A` is a localization of `(Algebra.elements S).obj A` at the image of
-the powers of `ϖ`. -/
-instance isLocalization_invert_obj (ϖ : V) (A : Algebra S) :
-    IsLocalization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))
+`Submonoid.powers ϖ`. -/
+instance (ϖ : V) (A : Algebra S) :
+    IsLocalization
+      (_root_.Algebra.algebraMapSubmonoid ((Algebra.elements S).obj A) (Submonoid.powers ϖ))
       ((invert S ϖ).obj A) :=
-  inferInstanceAs (IsLocalization
-    (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))
-    (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A) (Submonoid.powers ϖ))))
+  inferInstanceAs
+    (IsLocalization
+      (_root_.Algebra.algebraMapSubmonoid ((Algebra.elements S).obj A) (Submonoid.powers ϖ))
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
+
+/-- On canonical numerators `algebraMap A_* (A_*[1/ϖ]) a`, `(Algebra.invert S ϖ).map f` is induced
+by `(Algebra.elements S).map f`. -/
+@[simp]
+theorem invert_map_hom_algebraMap (ϖ : V) {A B : Algebra S}
+    (f : A ⟶ B) (a : (Algebra.elements S).obj A) :
+    ((invert S ϖ).map f).hom (algebraMap ((Algebra.elements S).obj A) ((invert S ϖ).obj A) a) =
+      algebraMap ((Algebra.elements S).obj B) ((invert S ϖ).obj B)
+        (((Algebra.elements S).map f).hom a) :=
+  CommAlgCat.localizationFunctor_map_hom_algebraMap (Submonoid.powers ϖ)
+    ((Algebra.elements S).map f) a
+
+/-- On fractions `a / ϖ^n`, `(Algebra.invert S ϖ).map f` applies `(Algebra.elements S).map f` to
+the numerator. -/
+@[simp]
+theorem invert_map_hom_mk' (ϖ : V) {A B : Algebra S}
+    (f : A ⟶ B) (a : (Algebra.elements S).obj A) (m : Submonoid.powers ϖ) :
+    ((invert S ϖ).map f).hom
+        (IsLocalization.mk' ((invert S ϖ).obj A) a
+          ⟨algebraMap V ((Algebra.elements S).obj A) m,
+            _root_.Algebra.mem_algebraMapSubmonoid_of_mem m⟩) =
+      IsLocalization.mk' ((invert S ϖ).obj B) (((Algebra.elements S).map f).hom a)
+        ⟨algebraMap V ((Algebra.elements S).obj B) m,
+          _root_.Algebra.mem_algebraMapSubmonoid_of_mem m⟩ :=
+  CommAlgCat.localizationFunctor_map_hom_mk' (Submonoid.powers ϖ)
+    ((Algebra.elements S).map f) a m
+
+private theorem isIso_localizationFunctor_map_adj_unit_app {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (R : CommAlgCat.{u} V) :
+    IsIso ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).map
+      ((Algebra.adj S).unit.app R)) := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  have hbij := (Algebra.isAlmostIso_adj_unit_app S R).bijective_isLocalizedModule_map_away
+    (IsScalarTower.toAlgHom V R
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj R)).toLinearMap
+    (IsScalarTower.toAlgHom V ((Algebra.elements S).obj ((Algebra.toAlmost S).obj R))
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj
+        ((Algebra.elements S).obj ((Algebra.toAlmost S).obj R)))).toLinearMap hϖ
+  have heq := CommAlgCat.localizationFunctor_map_toLinearMap (Submonoid.powers ϖ)
+    ((Algebra.adj S).unit.app R)
+  have hlin :
+      Function.Bijective
+        (((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).map
+          ((Algebra.adj S).unit.app R)).hom.toLinearMap.restrictScalars V) :=
+    heq ▸ hbij
+  exact hlin
+
+/-- When `ϖ ∈ m`, precomposing `Algebra.invert S ϖ` with `Algebra.toAlmost S` recovers ordinary
+localization of commutative `V`-algebras away from `ϖ`, because the unit `R → (R^a)_*` is an
+almost isomorphism. -/
+noncomputable def toAlmostCompInvertIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
+    Algebra.toAlmost S ⋙ invert S ϖ ≅
+      CommAlgCat.localizationFunctor (Submonoid.powers ϖ) :=
+  have := isIso_localizationFunctor_map_adj_unit_app S hϖ
+  NatIso.ofComponents
+    (fun R ↦
+      (asIso ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).map
+        ((Algebra.adj S).unit.app R))).symm)
+    fun {R R'} f ↦ by
+      dsimp [invert]
+      rw [IsIso.comp_inv_eq, Category.assoc, IsIso.eq_inv_comp,
+        ← Functor.map_comp, ← Functor.map_comp]
+      congr 1
+      exact ((Algebra.adj S).unit.naturality f).symm
+
+/-- Inverse component of `Algebra.toAlmostCompInvertIso` on canonical numerators
+`algebraMap R _ r`. -/
+theorem toAlmostCompInvertIso_inv_app_hom_algebraMap {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (R : CommAlgCat.{u} V) (r : R) :
+    ((toAlmostCompInvertIso S hϖ).inv.app R).hom
+        (algebraMap R ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj R) r) =
+      algebraMap ((Algebra.elements S).obj ((Algebra.toAlmost S).obj R))
+        ((invert S ϖ).obj ((Algebra.toAlmost S).obj R)) (((Algebra.adj S).unit.app R).hom r) :=
+  CommAlgCat.localizationFunctor_map_hom_algebraMap (Submonoid.powers ϖ)
+    ((Algebra.adj S).unit.app R) r
+
+/-- Forward component of `Algebra.toAlmostCompInvertIso` on images of the unit `R → (R^a)_*`. -/
+theorem toAlmostCompInvertIso_hom_app_hom_algebraMap_unit {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    (R : CommAlgCat.{u} V) (r : R) :
+    ((toAlmostCompInvertIso S hϖ).hom.app R).hom
+        (algebraMap ((Algebra.elements S).obj ((Algebra.toAlmost S).obj R))
+          ((invert S ϖ).obj ((Algebra.toAlmost S).obj R))
+          (((Algebra.adj S).unit.app R).hom r)) =
+      algebraMap R ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj R) r := by
+  have h := congrArg
+    (fun f ↦ f.hom (algebraMap R ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj R) r))
+    ((toAlmostCompInvertIso S hϖ).inv_hom_id_app R)
+  rwa [CommAlgCat.hom_comp, AlgHom.comp_apply, toAlmostCompInvertIso_inv_app_hom_algebraMap,
+    CommAlgCat.hom_id, AlgHom.id_apply] at h
+
+/-- Inverting `0 : V` sends every almost algebra to the zero algebra. -/
+instance subsingleton_invert_obj_zero (A : Algebra S) :
+    Subsingleton ((invert S (0 : V)).obj A) :=
+  CommAlgCat.subsingleton_localizationFunctor_obj_of_smul_one_eq_zero
+    (A := (Algebra.elements S).obj A) (⟨1, pow_one 0⟩ : (0 : V) ∈ Submonoid.powers 0)
+    (zero_smul V (1 : (Algebra.elements S).obj A))
+
+/-- An almost algebra whose unit element (equivalently every almost element) is annihilated by a
+power of `ϖ` becomes the zero algebra after inverting `ϖ`. -/
+theorem subsingleton_invert_obj_of_pow_smul_one_eq_zero {ϖ : V}
+    {A : Algebra S} {n : ℕ} (h : ϖ ^ n • (1 : (Algebra.elements S).obj A) = 0) :
+    Subsingleton ((invert S ϖ).obj A) :=
+  CommAlgCat.subsingleton_localizationFunctor_obj_of_smul_one_eq_zero
+    (A := (Algebra.elements S).obj A) ⟨n, rfl⟩ h
+
+/-- When `ϖ` maps to a unit in `A_*`, inverting `ϖ` preserves the `V`-algebra `A_*` of almost
+elements. -/
+noncomputable def invertObjAlgEquivOfIsUnitAlgebraMap {ϖ : V} (A : Algebra S)
+    (hu : IsUnit (algebraMap V ((Algebra.elements S).obj A) ϖ)) :
+    (Algebra.elements S).obj A ≃ₐ[V] (invert S ϖ).obj A :=
+  CommAlgCat.localizationFunctorObjAlgEquivOfIsUnit ((Algebra.elements S).obj A) <| by
+    rintro _ ⟨n, rfl⟩
+    rw [map_pow]
+    exact hu.pow n
+
+/-- `invertObjAlgEquivOfIsUnitAlgebraMap` acts as `algebraMap A_* _`. -/
+@[simp]
+theorem invertObjAlgEquivOfIsUnitAlgebraMap_apply {ϖ : V} (A : Algebra S)
+    (hu : IsUnit (algebraMap V ((Algebra.elements S).obj A) ϖ))
+    (a : (Algebra.elements S).obj A) :
+    invertObjAlgEquivOfIsUnitAlgebraMap S A hu a =
+      algebraMap ((Algebra.elements S).obj A) ((invert S ϖ).obj A) a :=
+  CommAlgCat.localizationFunctorObjAlgEquivOfIsUnit_apply ((Algebra.elements S).obj A) _ a
+
+/-- Inverting a unit `ϖ` of `V` preserves the `V`-algebra `A_*` of almost elements. -/
+noncomputable def invertObjAlgEquivOfIsUnit {ϖ : V} (A : Algebra S) (hu : IsUnit ϖ) :
+    (Algebra.elements S).obj A ≃ₐ[V] (invert S ϖ).obj A :=
+  invertObjAlgEquivOfIsUnitAlgebraMap S A (hu.map _)
+
+/-- `invertObjAlgEquivOfIsUnit` acts as `algebraMap A_* _`. -/
+@[simp]
+theorem invertObjAlgEquivOfIsUnit_apply {ϖ : V} (A : Algebra S) (hu : IsUnit ϖ)
+    (a : (Algebra.elements S).obj A) :
+    invertObjAlgEquivOfIsUnit S A hu a =
+      algebraMap ((Algebra.elements S).obj A) ((invert S ϖ).obj A) a :=
+  invertObjAlgEquivOfIsUnitAlgebraMap_apply S A (hu.map _) a
 
 /-- `(Algebra.invert S ϖ).obj A` is a localization of `(Algebra.elements S).obj A` away from
 `algebraMap V A_* ϖ`. -/
 instance isLocalizationAway_invert_obj (ϖ : V) (A : Algebra S) :
     IsLocalization.Away (algebraMap V ((elements S).obj A) ϖ) ((invert S ϖ).obj A) := by
-  -- Unfold `IsLocalization.Away` to rewrite `Submonoid.powers` via `algebraMapSubmonoid_powers`.
   change IsLocalization (Submonoid.powers (algebraMap V ((elements S).obj A) ϖ))
     ((invert S ϖ).obj A)
   rw [← _root_.Algebra.algebraMapSubmonoid_powers]
   infer_instance
-
-/-- On canonical numerators from `A_*`, `(Algebra.invert S ϖ).map f` acts via
-`(Algebra.elements S).map f`. -/
-@[simp]
-theorem invert_map_algebraMap (ϖ : V) {A B : Algebra S} (f : A ⟶ B) (x : (elements S).obj A) :
-    (invert S ϖ).map f (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x) =
-      algebraMap ((elements S).obj B) ((invert S ϖ).obj B) ((elements S).map f x) :=
-  IsLocalization.map_eq (S := (invert S ϖ).obj A) (Q := (invert S ϖ).obj B)
-    (_root_.Algebra.algebraMapSubmonoid_le_comap (Submonoid.powers ϖ) ((elements S).map f).hom) x
 
 /-- `(Algebra.invert S ϖ).obj A` is the zero ring iff a power of `ϖ` maps to `0` in `A_*`. -/
 theorem subsingleton_invert_obj_iff (ϖ : V) (A : Algebra S) :
@@ -654,25 +926,6 @@ theorem subsingleton_invert_obj_iff (ϖ : V) (A : Algebra S) :
   rw [IsLocalization.subsingleton_iff (M := Submonoid.powers (algebraMap V ((elements S).obj A) ϖ))
     (S := (invert S ϖ).obj A)]
   simp [Submonoid.mem_powers_iff, map_pow]
-
-/-- Inverting `0` sends every almost algebra to the zero algebra. -/
-instance subsingleton_invert_zero_obj (A : Algebra S) :
-    Subsingleton ((invert S (0 : V)).obj A) :=
-  (subsingleton_invert_obj_iff S 0 A).mpr ⟨1, by simp⟩
-
-/-- Inverting a unit `ϖ : V` preserves the algebra `A_*` of almost elements: the canonical map
-`A_* → (Algebra.invert S ϖ).obj A` is an `A_*`-algebra (hence `V`-algebra) isomorphism. -/
-noncomputable def invertObjEquivElementsOfIsUnit {ϖ : V} (hu : IsUnit ϖ) (A : Algebra S) :
-    ((invert S ϖ).obj A) ≃ₐ[(elements S).obj A] (elements S).obj A :=
-  (IsLocalization.atUnit _ _ _ (hu.map (algebraMap V ((elements S).obj A)))).symm
-
-/-- Under `invertObjEquivElementsOfIsUnit`, a canonical numerator `algebraMap A_* _ x` maps back
-to `x`. -/
-theorem invertObjEquivElementsOfIsUnit_algebraMap {ϖ : V} (hu : IsUnit ϖ) (A : Algebra S)
-    (x : (elements S).obj A) :
-    invertObjEquivElementsOfIsUnit S hu A
-      (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x) = x :=
-  (invertObjEquivElementsOfIsUnit S hu A).commutes x
 
 /-- After base-changing `S` to a localization `W` away from `ϖ ∈ m`, the setup becomes classical,
 so almostification `CommAlgCat W ⥤ Algebra (S.baseChange W)` is an equivalence of categories. -/
@@ -698,9 +951,72 @@ private noncomputable def extendScalarsElementsToInvertCommMon {ϖ : V} (hϖ : �
         (ModuleCat.CommMonModuleEquivalenceCommAlgebra.inverse.obj ((elements S).obj A)) ⟶
       (Almost.invert S hϖ).mapCommMon.obj A :=
   (Functor.mapCommMonCompIso.symm ≪≫
-      Functor.mapCommMonNatIso (toAlmostCompInvertIsoExtendScalars S hϖ)).inv.app
+      Functor.mapCommMonNatIso (toAlmostCompInvertExtendScalarsIso S hϖ)).inv.app
     (ModuleCat.CommMonModuleEquivalenceCommAlgebra.inverse.obj ((elements S).obj A)) ≫
     (Almost.invert S hϖ).mapCommMon.map ((counitIso S).app A).hom
+
+/-- Canonical `Localization M`-algebra equivalence between
+`(CommAlgCat.localizationFunctor M).obj A` and `Localization (_root_.Algebra.algebraMapSubmonoid
+A M)`, acting as the identity on canonical numerators from `A`. -/
+private noncomputable def localizationFunctorObjAlgEquiv (M : Submonoid V)
+    (A : CommAlgCat.{u} V) :
+    ((CommAlgCat.localizationFunctor M).obj A) ≃ₐ[Localization M]
+      Localization (_root_.Algebra.algebraMapSubmonoid A M) :=
+  let e : ((CommAlgCat.localizationFunctor M).obj A) ≃ₐ[A]
+      Localization (_root_.Algebra.algebraMapSubmonoid A M) :=
+    IsLocalization.algEquiv (_root_.Algebra.algebraMapSubmonoid A M)
+      ((CommAlgCat.localizationFunctor M).obj A)
+      (Localization (_root_.Algebra.algebraMapSubmonoid A M))
+  { e.toRingEquiv with
+    commutes' := fun z ↦ by
+      have h : e.toRingHom.comp
+          (algebraMap (Localization M) ((CommAlgCat.localizationFunctor M).obj A)) =
+          algebraMap (Localization M)
+            (Localization (_root_.Algebra.algebraMapSubmonoid A M)) := by
+        apply IsLocalization.ringHom_ext M
+        ext v
+        change e (algebraMap (Localization M) ((CommAlgCat.localizationFunctor M).obj A)
+            (algebraMap V (Localization M) v)) =
+          algebraMap (Localization M) (Localization (_root_.Algebra.algebraMapSubmonoid A M))
+            (algebraMap V (Localization M) v)
+        rw [← IsScalarTower.algebraMap_apply V (Localization M)
+            ((CommAlgCat.localizationFunctor M).obj A) v,
+          ← IsScalarTower.algebraMap_apply V (Localization M)
+            (Localization (_root_.Algebra.algebraMapSubmonoid A M)) v,
+          IsScalarTower.algebraMap_apply V A ((CommAlgCat.localizationFunctor M).obj A) v,
+          IsScalarTower.algebraMap_apply V A
+            (Localization (_root_.Algebra.algebraMapSubmonoid A M)) v,
+          e.commutes]
+      exact congr($h z) }
+
+private noncomputable def localizationFunctorObjIso (M : Submonoid V) (A : CommAlgCat.{u} V) :
+    (CommAlgCat.localizationFunctor M).obj A ≅ CommAlgCat.localizationObj M A :=
+  CommAlgCat.isoMk (localizationFunctorObjAlgEquiv M A)
+
+private theorem localizationFunctorObjAlgEquiv_algebraMap (M : Submonoid V) (A : CommAlgCat.{u} V)
+    (a : A) :
+    localizationFunctorObjAlgEquiv M A
+        (algebraMap A ((CommAlgCat.localizationFunctor M).obj A) a) =
+      algebraMap A (Localization (_root_.Algebra.algebraMapSubmonoid A M)) a :=
+  (IsLocalization.algEquiv (_root_.Algebra.algebraMapSubmonoid A M)
+    ((CommAlgCat.localizationFunctor M).obj A)
+    (Localization (_root_.Algebra.algebraMapSubmonoid A M))).commutes a
+
+private theorem localizationFunctorObjAlgEquiv_symm_algebraMap (M : Submonoid V)
+    (A : CommAlgCat.{u} V) (a : A) :
+    (localizationFunctorObjAlgEquiv M A).symm
+        (algebraMap A (Localization (_root_.Algebra.algebraMapSubmonoid A M)) a) =
+      algebraMap A ((CommAlgCat.localizationFunctor M).obj A) a :=
+  (IsLocalization.algEquiv (_root_.Algebra.algebraMapSubmonoid A M)
+    ((CommAlgCat.localizationFunctor M).obj A)
+    (Localization (_root_.Algebra.algebraMapSubmonoid A M))).symm.commutes a
+
+private theorem localizationFunctorObjIso_hom_algebraMap (M : Submonoid V) (A : CommAlgCat.{u} V)
+    (a : A) :
+    (localizationFunctorObjIso M A).hom.hom
+        (algebraMap A ((CommAlgCat.localizationFunctor M).obj A) a) =
+      algebraMap A (Localization (_root_.Algebra.algebraMapSubmonoid A M)) a :=
+  localizationFunctorObjAlgEquiv_algebraMap M A a
 
 /-- Component isomorphism identifying `(Algebra.invert S ϖ).obj A` with the commutative algebra
 corresponding to `(Almost.invert S hϖ).mapCommMon.obj A`. -/
@@ -708,12 +1024,13 @@ private noncomputable def invertObjIsoMapCommMonObj {ϖ : V} (hϖ : ϖ ∈ S.ide
     (invert S ϖ).obj A ≅
       ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.obj
         ((Almost.invert S hϖ).mapCommMon.obj A) :=
-  CommAlgCat.isoMk
+  localizationFunctorObjIso (Submonoid.powers ϖ) ((elements S).obj A) ≪≫
+    CommAlgCat.isoMk
       (Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)).symm ≪≫
     ModuleCat.extendScalarsCommAlgIso (Localization.Away ϖ) ((elements S).obj A) ≪≫
     ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.mapIso
       (((Functor.mapCommMonCompIso.symm ≪≫
-          Functor.mapCommMonNatIso (toAlmostCompInvertIsoExtendScalars S hϖ)).app
+          Functor.mapCommMonNatIso (toAlmostCompInvertExtendScalarsIso S hϖ)).app
         (ModuleCat.CommMonModuleEquivalenceCommAlgebra.inverse.obj ((elements S).obj A))).symm ≪≫
         (Almost.invert S hϖ).mapCommMon.mapIso ((counitIso S).app A))
 
@@ -723,20 +1040,25 @@ private theorem invertObjIsoMapCommMonObj_hom_algebraMap {ϖ : V} (hϖ : ϖ ∈ 
         (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x) =
       (extendScalarsElementsToInvertCommMon S hϖ A).hom.hom
         ((1 : Localization.Away ϖ) ⊗ₜ[V, algebraMap V (Localization.Away ϖ)] x) := by
-  have hx : algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x =
+  have h1 : (localizationFunctorObjIso (Submonoid.powers ϖ) ((elements S).obj A)).hom.hom
+      (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x) =
+      algebraMap ((elements S).obj A)
+        (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A)
+          (Submonoid.powers ϖ))) x :=
+    localizationFunctorObjIso_hom_algebraMap (Submonoid.powers ϖ) ((elements S).obj A) x
+  have h2 : algebraMap ((elements S).obj A)
+        (Localization (_root_.Algebra.algebraMapSubmonoid ((elements S).obj A)
+          (Submonoid.powers ϖ))) x =
       Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)
         ((1 : Localization.Away ϖ) ⊗ₜ[V] x) :=
     (Localization.tensorRightAlgEquiv_apply_one_tmul (Submonoid.powers ϖ) x).symm
-  rw [hx]
-  -- Unfold `invertObjIsoMapCommMonObj` as `tensorRightAlgEquiv.symm` followed by
-  -- `extendScalarsCommAlgIso` and `extendScalarsElementsToInvertCommMon`.
   change (ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.map
       (extendScalarsElementsToInvertCommMon S hϖ A))
     ((ModuleCat.extendScalarsCommAlgIso (Localization.Away ϖ) ((elements S).obj A)).hom
       ((Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)).symm
-        (Localization.tensorRightAlgEquiv (Submonoid.powers ϖ) ((elements S).obj A)
-          ((1 : Localization.Away ϖ) ⊗ₜ[V] x)))) = _
-  rw [AlgEquiv.symm_apply_apply, ModuleCat.extendScalarsCommAlgIso_hom_tmul]
+        ((localizationFunctorObjIso (Submonoid.powers ϖ) ((elements S).obj A)).hom.hom
+          (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x)))) = _
+  rw [h1, h2, AlgEquiv.symm_apply_apply, ModuleCat.extendScalarsCommAlgIso_hom_tmul]
   exact ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor_map_apply _ _
 
 /-- For `ϖ ∈ m`, `Algebra.invert S ϖ` is naturally isomorphic to the functor induced on
@@ -765,16 +1087,15 @@ noncomputable def invertIsoMapCommMon {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
         extendScalarsElementsToInvertCommMon S hϖ B =
       extendScalarsElementsToInvertCommMon S hϖ A ≫ (Almost.invert S hϖ).mapCommMon.map f :=
     ((Functor.mapCommMonCompIso.symm ≪≫
-        Functor.mapCommMonNatIso (toAlmostCompInvertIsoExtendScalars S hϖ)).inv.naturality_assoc
+        Functor.mapCommMonNatIso (toAlmostCompInvertExtendScalarsIso S hϖ)).inv.naturality_assoc
       _ _).trans ((congrArg (_ ≫ ·) hcounit).trans (Category.assoc _ _ _).symm)
-  -- Evaluate both sides of the naturality square at `algebraMap A_* A_*[1/ϖ] x`.
   change (invertObjIsoMapCommMonObj S hϖ B).hom ((invert S ϖ).map f
       (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x)) =
     (ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor.map
       ((Almost.invert S hϖ).mapCommMon.map f))
       ((invertObjIsoMapCommMonObj S hϖ A).hom
         (algebraMap ((elements S).obj A) ((invert S ϖ).obj A) x))
-  rw [invert_map_algebraMap, invertObjIsoMapCommMonObj_hom_algebraMap,
+  rw [invert_map_hom_algebraMap, invertObjIsoMapCommMonObj_hom_algebraMap,
     invertObjIsoMapCommMonObj_hom_algebraMap]
   exact congrArg
     (fun m ↦ m.hom.hom ((1 : Localization.Away ϖ) ⊗ₜ[V, algebraMap V (Localization.Away ϖ)] x)) hk
@@ -783,29 +1104,16 @@ noncomputable def invertIsoMapCommMon {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
 canonically isomorphic as a `Localization.Away ϖ`-algebra to `R[1/ϖ]`. -/
 noncomputable def invertToAlmostObjEquiv {ϖ : V} (hϖ : ϖ ∈ S.ideal) (R : CommAlgCat.{u} V) :
     ((invert S ϖ).obj ((toAlmost S).obj R)) ≃ₐ[Localization.Away ϖ]
-      Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)) := by
-  let u : R ⟶ (elements S).obj ((toAlmost S).obj R) := (adj S).unit.app R
-  let Rₚ := Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ))
-  let Aₚ := (invert S ϖ).obj ((toAlmost S).obj R)
-  let φ := IsLocalization.mapₐ (Submonoid.powers ϖ) (Localization.Away ϖ) Rₚ Aₚ u.hom
-  have : IsLocalizedModule (Submonoid.powers ϖ)
-      (IsScalarTower.toAlgHom V R Rₚ).toLinearMap :=
-    isLocalizedModule_iff_isLocalization.mpr inferInstance
-  have : IsLocalizedModule (Submonoid.powers ϖ)
-      (IsScalarTower.toAlgHom V ((elements S).obj ((toAlmost S).obj R)) Aₚ).toLinearMap :=
-    isLocalizedModule_iff_isLocalization.mpr inferInstance
-  have hcoe : (φ : Rₚ → Aₚ) =
-      IsLocalizedModule.map (Submonoid.powers ϖ)
-        (IsScalarTower.toAlgHom V R Rₚ).toLinearMap
-        (IsScalarTower.toAlgHom V ((elements S).obj ((toAlmost S).obj R)) Aₚ).toLinearMap
-        u.hom.toLinearMap := by
-    ext z
-    exact (congrFun (congrArg DFunLike.coe (IsLocalization.map_eq_toLinearMap_mapₐ
-      (Submonoid.powers ϖ) (Localization.Away ϖ) Rₚ Aₚ u.hom)) z).symm
-  have hbij : Function.Bijective φ := by
-    rw [hcoe]
-    exact (isAlmostIso_adj_unit_app S R).bijective_isLocalizedModule_map hϖ _ _
-  exact (AlgEquiv.ofBijective φ hbij).symm
+      Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)) :=
+  let e₁ : ((invert S ϖ).obj ((toAlmost S).obj R)) ≃ₐ[Localization.Away ϖ]
+      ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj R) :=
+    { ((toAlmostCompInvertIso S hϖ).hom.app R).hom with
+      invFun := ((toAlmostCompInvertIso S hϖ).inv.app R).hom
+      left_inv := fun x ↦
+        ConcreteCategory.congr_hom ((toAlmostCompInvertIso S hϖ).hom_inv_id_app R) x
+      right_inv := fun y ↦
+        ConcreteCategory.congr_hom ((toAlmostCompInvertIso S hϖ).inv_hom_id_app R) y }
+  e₁.trans (localizationFunctorObjAlgEquiv (Submonoid.powers ϖ) R)
 
 /-- The inverse of `invertToAlmostObjEquiv` sends a canonical numerator `algebraMap R R[1/ϖ] r` to
 the canonical numerator of `(adj S).unit.app R r` in `(R^a)_*[1/ϖ]`. -/
@@ -816,14 +1124,12 @@ theorem invertToAlmostObjEquiv_symm_algebraMap {ϖ : V} (hϖ : ϖ ∈ S.ideal)
         (algebraMap R (Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)))
           r) =
       algebraMap ((elements S).obj ((toAlmost S).obj R))
-        ((invert S ϖ).obj ((toAlmost S).obj R)) ((adj S).unit.app R r) := by
-  rw [invertToAlmostObjEquiv, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply]
-  let u : R ⟶ (elements S).obj ((toAlmost S).obj R) := (adj S).unit.app R
-  exact IsLocalization.map_eq
-    (S := Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)))
-    (Q := (invert S ϖ).obj ((toAlmost S).obj R))
-    (g := u.hom.toRingHom)
-    (_root_.Algebra.algebraMapSubmonoid_le_comap (Submonoid.powers ϖ) u.hom) r
+        ((invert S ϖ).obj ((toAlmost S).obj R)) (((adj S).unit.app R).hom r) := by
+  change ((toAlmostCompInvertIso S hϖ).inv.app R).hom
+      ((localizationFunctorObjAlgEquiv (Submonoid.powers ϖ) R).symm
+        (algebraMap R (Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ)))
+          r)) = _
+  rw [localizationFunctorObjAlgEquiv_symm_algebraMap, toAlmostCompInvertIso_inv_app_hom_algebraMap]
 
 -- Simplify top-down before `adj_unit_app_apply` expands `(adj S).unit.app R r` into a
 -- `toSpanSingleton` morphism.
@@ -834,10 +1140,15 @@ theorem invertToAlmostObjEquiv_algebraMap_unit_app {ϖ : V} (hϖ : ϖ ∈ S.idea
     (R : CommAlgCat.{u} V) (r : R) :
     invertToAlmostObjEquiv S hϖ R
         (algebraMap ((elements S).obj ((toAlmost S).obj R))
-          ((invert S ϖ).obj ((toAlmost S).obj R)) ((adj S).unit.app R r)) =
+          ((invert S ϖ).obj ((toAlmost S).obj R)) (((adj S).unit.app R).hom r)) =
       algebraMap R
         (Localization (_root_.Algebra.algebraMapSubmonoid R (Submonoid.powers ϖ))) r := by
-  rw [← invertToAlmostObjEquiv_symm_algebraMap S hϖ R r, AlgEquiv.apply_symm_apply]
+  change localizationFunctorObjAlgEquiv (Submonoid.powers ϖ) R
+      (((toAlmostCompInvertIso S hϖ).hom.app R).hom
+        (algebraMap ((elements S).obj ((toAlmost S).obj R))
+          ((invert S ϖ).obj ((toAlmost S).obj R)) (((adj S).unit.app R).hom r))) = _
+  rw [toAlmostCompInvertIso_hom_app_hom_algebraMap_unit,
+    localizationFunctorObjAlgEquiv_algebraMap]
 
 /-- For `ϖ ∈ m`, `(Algebra.invert S ϖ).obj (R^a)` is the zero ring iff a power of `ϖ` maps to `0`
 in `R`. -/
@@ -850,5 +1161,84 @@ theorem subsingleton_invert_toAlmost_obj_iff {ϖ : V} (hϖ : ϖ ∈ S.ideal) (R 
   simp [_root_.Algebra.algebraMapSubmonoid_powers, Submonoid.mem_powers_iff, map_pow]
 
 end Algebra
+
+/-! ### Complexes with almost zero homology become exact after inverting `ϖ` -/
+
+section Complexes
+
+variable {V : Type u} [CommRing V] (S : BasicSetup V)
+
+/-- `invert S hϖ` preserves exactness of complexes of almost modules at each degree. -/
+theorem exactAt_mapHomologicalComplex_invert {I : Type*} {c : ComplexShape I}
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) (C : HomologicalComplex (Module S) c) {i : I}
+    (hC : C.ExactAt i) :
+    (((invert S hϖ).mapHomologicalComplex c).obj C).ExactAt i := by
+  rw [HomologicalComplex.exactAt_iff] at hC ⊢
+  exact hC.map (invert S hϖ)
+
+/-- `invert S hϖ` sends acyclic complexes of almost modules to acyclic complexes of
+`V[1/ϖ]`-modules. -/
+theorem acyclic_mapHomologicalComplex_invert {I : Type*} {c : ComplexShape I}
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) (C : HomologicalComplex (Module S) c) (hC : C.Acyclic) :
+    (((invert S hϖ).mapHomologicalComplex c).obj C).Acyclic :=
+  fun i ↦ exactAt_mapHomologicalComplex_invert S hϖ C (hC i)
+
+/-- A short complex of `V`-modules with almost zero homology becomes exact after localizing away
+from `ϖ ∈ m` (Scholze–Weinstein, *Berkeley lectures*, Lecture 8, proof of Proposition 8.2.8). -/
+theorem exact_localizedModuleFunctor_of_isAlmostZero_homology {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    {C : ShortComplex (ModuleCat.{u} V)} (hC : S.IsAlmostZero C.homology) :
+    (C.map (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ))).Exact := by
+  have hex : ((C.map (Module.toAlmost S)).map (invert S hϖ)).Exact :=
+    ((Module.exact_map_toAlmost_iff S C).mpr hC).map (invert S hϖ)
+  exact ShortComplex.exact_of_iso (C.mapNatIso (toAlmostCompInvertIso S hϖ)) hex
+
+/-- A short complex of `V`-modules with almost zero homology becomes exact after extending scalars
+to `Localization.Away ϖ` for any `ϖ ∈ m`. -/
+theorem exact_extendScalars_away_of_isAlmostZero_homology {ϖ : V} (hϖ : ϖ ∈ S.ideal)
+    {C : ShortComplex (ModuleCat.{u} V)} (hC : S.IsAlmostZero C.homology) :
+    (C.map (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ)))).Exact :=
+  ShortComplex.exact_of_iso
+    (C.mapNatIso (ModuleCat.localizedModuleFunctorIsoExtendScalars (Submonoid.powers ϖ)))
+    (exact_localizedModuleFunctor_of_isAlmostZero_homology S hϖ hC)
+
+/-- A homological complex of `V`-modules whose `i`-th homology is almost zero becomes exact at `i`
+after localizing away from `ϖ ∈ m`. -/
+theorem exactAt_localizedModuleFunctor_of_isAlmostZero_homology {I : Type*} {c : ComplexShape I}
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) {K : HomologicalComplex (ModuleCat.{u} V) c} {i : I}
+    (hK : S.IsAlmostZero (K.homology i)) :
+    (((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).mapHomologicalComplex c).obj
+      K).ExactAt i := by
+  rw [Functor.mapHomologicalComplex_obj_exactAt_iff]
+  exact exact_localizedModuleFunctor_of_isAlmostZero_homology S hϖ hK
+
+/-- A homological complex of `V`-modules whose `i`-th homology is almost zero becomes exact at `i`
+after extending scalars to `Localization.Away ϖ` for any `ϖ ∈ m`. -/
+theorem exactAt_extendScalars_away_of_isAlmostZero_homology {I : Type*} {c : ComplexShape I}
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) {K : HomologicalComplex (ModuleCat.{u} V) c} {i : I}
+    (hK : S.IsAlmostZero (K.homology i)) :
+    (((ModuleCat.extendScalars
+      (algebraMap V (Localization.Away ϖ))).mapHomologicalComplex c).obj K).ExactAt i := by
+  rw [Functor.mapHomologicalComplex_obj_exactAt_iff]
+  exact exact_extendScalars_away_of_isAlmostZero_homology S hϖ hK
+
+/-- A homological complex of `V`-modules whose homology is almost zero in every degree becomes
+acyclic after localizing away from `ϖ ∈ m`. -/
+theorem acyclic_localizedModuleFunctor_of_isAlmostZero_homology {I : Type*} {c : ComplexShape I}
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) {K : HomologicalComplex (ModuleCat.{u} V) c}
+    (hK : ∀ i : I, S.IsAlmostZero (K.homology i)) :
+    (((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).mapHomologicalComplex c).obj
+      K).Acyclic :=
+  fun i ↦ exactAt_localizedModuleFunctor_of_isAlmostZero_homology S hϖ (hK i)
+
+/-- A homological complex of `V`-modules whose homology is almost zero in every degree becomes
+acyclic after extending scalars to `Localization.Away ϖ` for any `ϖ ∈ m`. -/
+theorem acyclic_extendScalars_away_of_isAlmostZero_homology {I : Type*} {c : ComplexShape I}
+    {ϖ : V} (hϖ : ϖ ∈ S.ideal) {K : HomologicalComplex (ModuleCat.{u} V) c}
+    (hK : ∀ i : I, S.IsAlmostZero (K.homology i)) :
+    (((ModuleCat.extendScalars
+      (algebraMap V (Localization.Away ϖ))).mapHomologicalComplex c).obj K).Acyclic :=
+  fun i ↦ exactAt_extendScalars_away_of_isAlmostZero_homology S hϖ (hK i)
+
+end Complexes
 
 end TauCeti.Almost

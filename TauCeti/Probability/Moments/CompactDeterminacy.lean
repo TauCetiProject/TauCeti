@@ -61,7 +61,7 @@ variable {ι : Type*} {K : Set (ι → ℝ)}
 
 /-- The `i`-th coordinate, as a continuous function on a subset of `ι → ℝ`. -/
 private def coordFun (K : Set (ι → ℝ)) (i : ι) : C(K, ℝ) :=
-  ⟨fun x => (x : ι → ℝ) i, (continuous_apply i).comp continuous_subtype_val⟩
+  ⟨fun x => (x : ι → ℝ) i, (continuous_apply i).comp continuous_subtypeVal⟩
 
 /-- The `i`-th coordinate as a bounded continuous function, using compactness of `K`. -/
 private def coordBCF (K : Set (ι → ℝ)) [CompactSpace K] (i : ι) : K →ᵇ ℝ :=
@@ -137,7 +137,7 @@ theorem Measure.ext_of_forall_integral_monomial_eq_of_support [Fintype ι] (hK :
       IsFiniteMeasure (Measure.comap Subtype.val ρ : Measure K) := by
     intro ρ _
     constructor
-    rw [comap_subtype_coe_apply hKm]
+    rw [comap_subtypeVal_apply hKm]
     exact measure_lt_top ρ _
   have := hfin μ
   have := hfin ν
@@ -150,7 +150,7 @@ theorem Measure.ext_of_forall_integral_monomial_eq_of_support [Fintype ι] (hK :
     exact hmom n
   have hmap := congrArg (Measure.map (Subtype.val : K → (ι → ℝ)))
     (Measure.ext_of_forall_integral_monomial_eq hmom')
-  rwa [map_comap_subtype_coe hKm, map_comap_subtype_coe hKm, hμr, hνr] at hmap
+  rwa [map_comap_subtypeVal hKm, map_comap_subtypeVal hKm, hμr, hνr] at hmap
 
 /-- **Univariate moment determinacy on a compact set.** Two finite Borel measures on `ℝ` that are
 both supported on a common compact set `K` and have the same moments `∫ xⁿ` are equal.
@@ -196,7 +196,7 @@ theorem Measure.ext_of_forall_lt_card_integral_pow_eq_of_support {𝕜 : Type*} 
     have hv := Matrix.eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j => (e j : 𝕜))
       (v := fun j => (μ.real {(e j : 𝕜)} : 𝕜) - ν.real {(e j : 𝕜)})
       (fun a b hab => e.injective (Subtype.ext hab)) fun i => by
-        have hi := h i i.2
+        have hi := h i i.isLt
         rw [hsum μ hμ, hsum ν hν, ← sub_eq_zero, ← Finset.sum_sub_distrib,
           ← Finset.sum_coe_sort Z, ← e.sum_comp] at hi
         simpa [sub_mul] using hi
