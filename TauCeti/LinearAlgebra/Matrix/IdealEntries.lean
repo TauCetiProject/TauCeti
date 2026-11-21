@@ -101,9 +101,9 @@ theorem natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring S] [Fintype n] 
   let e : RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S) ≃
       Matrix n n (RingHom.ker f) :=
     { toFun M := of fun i j ↦
-        ⟨M.1 i j, forall_mem_ker_iff_map_eq_zero.mpr (RingHom.mem_ker.mp M.2) i j⟩
-      invFun M := ⟨of fun i j ↦ (M i j).1,
-        RingHom.mem_ker.mpr (forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ (M i j).2)⟩
+        ⟨M.val i j, forall_mem_ker_iff_map_eq_zero.mpr (RingHom.mem_ker.mp M.property) i j⟩
+      invFun M := ⟨of fun i j ↦ (M i j).val,
+        RingHom.mem_ker.mpr (forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ (M i j).property)⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   rw [Nat.card_congr e, card_matrix, Nat.card_eq_fintype_card (α := n)]
