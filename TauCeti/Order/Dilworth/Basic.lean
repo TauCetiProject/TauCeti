@@ -528,7 +528,10 @@ theorem antichainWidth_eq_one_iff {s : Finset α} {r : α → α → Prop} :
     by_contra hnot
     push Not at hnot
     have hA : IsAntichain r (({a, b} : Finset α) : Set α) := by
-      simpa [isAntichain_insert] using fun _ ↦ hnot
+      rw [coe_insert, coe_singleton]
+      exact IsAntichain.singleton.insert
+        (fun _ hx _ ↦ Set.mem_singleton_iff.mp hx ▸ hnot.2)
+        (fun _ hx _ ↦ Set.mem_singleton_iff.mp hx ▸ hnot.1)
     have h2 : 2 ≤ s.antichainWidth r := by
       rw [← card_pair hne]
       exact card_le_antichainWidth (insert_subset_iff.mpr ⟨ha, singleton_subset_iff.mpr hb⟩) hA

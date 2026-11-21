@@ -500,10 +500,16 @@ theorem exists_isOrderMatching_of_chainPartition {α : Type*} {r : α → α →
     fun c hc ↦ by
       simpa only [edgeOf, hc, ↓reduceDIte] using
         ((hC c hc).2.exists_isOrderMatching_card_add_one (hC c hc).1).choose_spec
+  have hsame_part : ∀ {c₁ c₂}, c₁ ∈ C → c₂ ∈ C → ∀ {e₁ e₂ : α × α},
+      e₁ ∈ edgeOf c₁ → e₂ ∈ edgeOf c₂ → (e₁.1 = e₂.1 ∨ e₁.2 = e₂.2) → c₁ = c₂ := by
+    intro c₁ c₂ hc₁ hc₂ e₁ e₂ h₁ h₂ hshare
+    by_contra hne
+    have hdisj' := Finset.disjoint_left.mp (hdisj hc₁ hc₂ hne)
+    rcases hshare with heq | heq
+    · exact hdisj' ((hedge c₁ hc₁).1.fst_mem h₁) (heq ▸ (hedge c₂ hc₂).1.fst_mem h₂)
+    · exact hdisj' ((hedge c₁ hc₁).1.snd_mem h₁) (heq ▸ (hedge c₂ hc₂).1.snd_mem h₂)
   have hdisjE : (C : Set (Finset α)).PairwiseDisjoint edgeOf := fun c₁ hc₁ c₂ hc₂ hne ↦
-    Finset.disjoint_left.mpr fun _ he₁ he₂ ↦
-      Finset.disjoint_left.mp (hdisj hc₁ hc₂ hne)
-        ((hedge c₁ hc₁).1.fst_mem he₁) ((hedge c₂ hc₂).1.fst_mem he₂)
+    Finset.disjoint_left.mpr fun _ he₁ he₂ ↦ hne (hsame_part hc₁ hc₂ he₁ he₂ (Or.inl rfl))
   refine ⟨C.biUnion edgeOf, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · intro _ he
     obtain ⟨c, hc, hec⟩ := mem_biUnion.mp he
@@ -517,20 +523,12 @@ theorem exists_isOrderMatching_of_chainPartition {α : Type*} {r : α → α →
   · intro _ he₁ _ he₂ heq
     obtain ⟨c₁, hc₁, h₁⟩ := mem_biUnion.mp (mem_coe.mp he₁)
     obtain ⟨c₂, hc₂, h₂⟩ := mem_biUnion.mp (mem_coe.mp he₂)
-    have hc : c₁ = c₂ := by
-      by_contra hne
-      exact Finset.disjoint_left.mp (hdisj hc₁ hc₂ hne)
-        ((hedge c₁ hc₁).1.fst_mem h₁) (heq ▸ (hedge c₂ hc₂).1.fst_mem h₂)
-    subst hc
+    obtain rfl := hsame_part hc₁ hc₂ h₁ h₂ (Or.inl heq)
     exact (hedge c₁ hc₁).1.injOn_fst h₁ h₂ heq
   · intro _ he₁ _ he₂ heq
     obtain ⟨c₁, hc₁, h₁⟩ := mem_biUnion.mp (mem_coe.mp he₁)
     obtain ⟨c₂, hc₂, h₂⟩ := mem_biUnion.mp (mem_coe.mp he₂)
-    have hc : c₁ = c₂ := by
-      by_contra hne
-      exact Finset.disjoint_left.mp (hdisj hc₁ hc₂ hne)
-        ((hedge c₁ hc₁).1.snd_mem h₁) (heq ▸ (hedge c₂ hc₂).1.snd_mem h₂)
-    subst hc
+    obtain rfl := hsame_part hc₁ hc₂ h₁ h₂ (Or.inr heq)
     exact (hedge c₁ hc₁).1.injOn_snd h₁ h₂ heq
   · have hdisjId : (C : Set (Finset α)).PairwiseDisjoint id := hdisj
     rw [card_biUnion hdisjE, ← hcov, card_biUnion hdisjId]
@@ -587,8 +585,7 @@ private theorem merge_strictChain_step {α : Type*} {r : α → α → Prop} [Is
     (hmax : ∀ c ∈ C, ∀ x ∈ c, (∀ e ∈ E, e.1 ≠ x) → ∀ u ∈ c, u ≠ x → r u x)
     (hmin : ∀ c ∈ C, ∀ x ∈ c, (∀ e ∈ E, e.2 ≠ x) → ∀ v ∈ c, v ≠ x → r x v)
     (hcₐ : cₐ ∈ C) (ha : a ∈ cₐ) (ha_out : ∀ e ∈ E, e.1 ≠ a)
-    (hc_b : c_b ∈ C) (hb : b ∈ c_b) (hb_in : ∀ e ∈ E, e.2 ≠ b)
-    (hab_notMem : (a, b) ∉ E) :
+    (hc_b : c_b ∈ C) (hb : b ∈ c_b) (hb_in : ∀ e ∈ E, e.2 ≠ b) :
     ∃ C' : Finset (Finset α),
       (∀ c ∈ C', c.Nonempty ∧ IsChain r (c : Set α)) ∧
       (C' : Set (Finset α)).Pairwise Disjoint ∧
@@ -633,6 +630,7 @@ private theorem merge_strictChain_step {α : Type*} {r : α → α → Prop} [Is
       rw [card_erase_of_mem (mem_erase.mpr ⟨hne_c.symm, hc_b⟩), card_erase_of_mem hcₐ]
       have : 2 ≤ C.card := Finset.one_lt_card.mpr ⟨cₐ, hcₐ, c_b, hc_b, hne_c⟩
       omega
+    have hab_notMem : (a, b) ∉ E := fun he ↦ ha_out (a, b) he rfl
     rw [card_insert_of_notMem hab_notMem, card_insert_of_notMem hunion_notMem]
     omega
 
@@ -680,7 +678,6 @@ theorem IsOrderMatching.exists_chainPartition {α : Type*} {r : α → α → Pr
     have ha_out : ∀ e ∈ E', e.1 ≠ a := fun e he h ↦ henot (hfst e he h ▸ he)
     have hb_in : ∀ e ∈ E', e.2 ≠ b := fun e he h ↦ henot (hsnd e he h ▸ he)
     exact merge_strictChain_step hab hC hdisj hcov hcard hmax hmin hcₐ ha ha_out hc_b hb hb_in
-      henot
 
 /-- Weak duality between order matchings and antichains: in a strict order `r`,
 `E.card + A.card ≤ s.card` whenever `E` is an `r`-order matching on `s` and `A ⊆ s` is an
