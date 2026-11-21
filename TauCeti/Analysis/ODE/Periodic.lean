@@ -12,9 +12,9 @@ public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.ODE.BoundaryValue
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Data.SignType.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
@@ -320,24 +320,17 @@ theorem exists_forall_norm_le_mul_integral_norm (hM : Continuous M) (hd : 0 ≤ 
     (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
     ∃ C, 0 ≤ C ∧ ∀ {f w : ℝ → X}, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       w d = ε • w 0 → ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
-  obtain ⟨C, hC, hdev⟩ := exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm hM d
-  obtain ⟨B, hB, hle⟩ := exists_forall_norm_le_mul_norm_add_integral_norm hM d
   set N := ‖(↑hP.unit⁻¹ : X →L[ℝ] X)‖
-  refine ⟨B * (N * C + 1), mul_nonneg hB (add_nonneg (mul_nonneg (norm_nonneg _) hC) zero_le_one),
-    fun {f w} hf hw hwd t ht => ?_⟩
+  obtain ⟨C, hC, h⟩ := exists_forall_norm_le_mul_integral_norm_of_norm_le hM hd
+    (norm_nonneg (↑hP.unit⁻¹ : X →L[ℝ] X))
+  refine ⟨C, hC, fun {f w} hf hw hwd => h hf hw ?_⟩
   -- Solving `(ε - Ψ(d)) (w 0) = w d - Ψ(d) (w 0)` for `w 0`.
-  have h0 : ‖w 0‖ ≤ N * (C * ∫ s in 0..d, ‖f s‖) := by
-    have heq : (↑hP.unit : X →L[ℝ] X) (w 0) = w d - dysonSeriesLeft M d (w 0) := by
-      rw [hP.unit_spec, sub_apply, smul_apply, one_apply_eq_self, hwd]
-    have hw0 : w 0 = (↑hP.unit⁻¹ : X →L[ℝ] X) (w d - dysonSeriesLeft M d (w 0)) := by
-      rw [← heq, ← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
-    calc ‖w 0‖ = ‖(↑hP.unit⁻¹ : X →L[ℝ] X) (w d - dysonSeriesLeft M d (w 0))‖ := congrArg _ hw0
-      _ ≤ N * ‖w d - dysonSeriesLeft M d (w 0)‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ N * (C * ∫ s in 0..d, ‖f s‖) :=
-          mul_le_mul_of_nonneg_left (hdev hf hw d ⟨hd, le_rfl⟩) (norm_nonneg _)
-  calc ‖w t‖ ≤ B * (‖w 0‖ + ∫ s in 0..d, ‖f s‖) := hle hf hw t ht
-    _ ≤ B * (N * (C * ∫ s in 0..d, ‖f s‖) + ∫ s in 0..d, ‖f s‖) := by gcongr
-    _ = B * (N * C + 1) * ∫ s in 0..d, ‖f s‖ := by ring
+  have heq : (↑hP.unit : X →L[ℝ] X) (w 0) = w d - dysonSeriesLeft M d (w 0) := by
+    rw [hP.unit_spec, sub_apply, smul_apply, one_apply_eq_self, hwd]
+  have hw0 : w 0 = (↑hP.unit⁻¹ : X →L[ℝ] X) (w d - dysonSeriesLeft M d (w 0)) := by
+    rw [← heq, ← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+  calc ‖w 0‖ = ‖(↑hP.unit⁻¹ : X →L[ℝ] X) (w d - dysonSeriesLeft M d (w 0))‖ := congrArg _ hw0
+    _ ≤ N * ‖w d - dysonSeriesLeft M d (w 0)‖ := ContinuousLinearMap.le_opNorm _ _
 
 /-- **The `L²` estimate for twisted solutions.** If `ε - Ψ(d)` is invertible for the propagator
 `Ψ = dysonSeriesLeft M` and `d ≥ 0`, there is a constant `C ≥ 0` such that every solution of

@@ -166,6 +166,28 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral (hJ : ∀ t, 
   exact ⟨C, hC, fun ζ f hf hζ hζ1 ↦ hg (continuous_iff_continuousAt.2 fun t ↦ (hζ t).continuousAt)
     hf (hle hf hζ (by rw [hζ1, one_smul]))⟩
 
+omit [FiniteDimensional ℝ V] in
+/-- The asymptotic-operator form of a path estimate. Let `P` be a boundary condition on paths
+`[0, 1] → V` for which every solution of `ζ' = S_t ζ + f` satisfying `P` has
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(f, f)`. Then every `C¹` path `ζ` satisfying `P` has
+`∫₀¹ g_t(ζ, ζ) ≤ C ∫₀¹ g_t(A ζ, A ζ)` for the asymptotic operator `A ζ = J_t (ζ' - S_t ζ)`,
+taking `f = ζ' - S_t ζ`. -/
+private theorem integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_path
+    (hSc : Continuous S) {P : (ℝ → V) → Prop} {C : ℝ}
+    (hpath : ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) → P ζ →
+      ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+        C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t))
+    {ζ : ℝ → V} (hζ : ContDiff ℝ 1 ζ) (hP : P ζ) :
+    ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
+      C * ∫ t in 0..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
+        (asymptoticOperator J S ζ t) := by
+  have hd (t : ℝ) : HasDerivAt ζ (S t (ζ t) + (deriv ζ t - S t (ζ t))) t := by
+    rw [add_sub_cancel]
+    exact (hζ.differentiable one_ne_zero t).hasDerivAt
+  simpa only [asymptoticOperator_def, SymplecticForm.associatedBilinForm_apply_apply_self_eq]
+    using hpath (f := fun t ↦ deriv ζ t - S t (ζ t))
+      ((hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)) hd hP
+
 /-- **The `L²` lower bound of the asymptotic operator at a nondegenerate orbit.** Under the
 hypotheses of `exists_forall_integral_associatedBilinForm_le_mul_integral`, there is a constant
 `C ≥ 0` such that every `C¹` loop `ζ` with `ζ 1 = ζ 0` satisfies
@@ -178,13 +200,9 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOpe
         C * ∫ t in 0..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t)
           (asymptoticOperator J S ζ t) := by
   obtain ⟨C, hC, h⟩ := exists_forall_integral_associatedBilinForm_le_mul_integral hJ hJc hSc hdet
-  refine ⟨C, hC, fun ζ hζ hζ1 ↦ ?_⟩
-  have hd (t : ℝ) : HasDerivAt ζ (S t (ζ t) + (deriv ζ t - S t (ζ t))) t := by
-    rw [add_sub_cancel]
-    exact (hζ.differentiable one_ne_zero t).hasDerivAt
-  simpa only [asymptoticOperator_def, SymplecticForm.associatedBilinForm_apply_apply_self_eq]
-    using h (f := fun t ↦ deriv ζ t - S t (ζ t))
-      ((hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)) hd hζ1
+  exact ⟨C, hC, fun ζ hζ hζ1 ↦
+    integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_path hSc
+      (P := fun ζ ↦ ζ 1 = ζ 0) h hζ hζ1⟩
 
 /-- The cylinder and strip estimates from a slice estimate. Let `P` be a boundary condition on
 paths `[0, 1] → V` for which every solution of `ζ' = S_t ζ + f` satisfying `P` has
@@ -320,13 +338,9 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOpe
           (asymptoticOperator J S ζ t) := by
   obtain ⟨C, hC, h⟩ :=
     exists_forall_integral_associatedBilinForm_le_mul_integral_of_disjoint hJ hJc hSc hP
-  refine ⟨C, hC, fun ζ hζ h₀ h₁ ↦ ?_⟩
-  have hd (t : ℝ) : HasDerivAt ζ (S t (ζ t) + (deriv ζ t - S t (ζ t))) t := by
-    rw [add_sub_cancel]
-    exact (hζ.differentiable one_ne_zero t).hasDerivAt
-  simpa only [asymptoticOperator_def, SymplecticForm.associatedBilinForm_apply_apply_self_eq]
-    using h (f := fun t ↦ deriv ζ t - S t (ζ t))
-      ((hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)) hd h₀ h₁
+  exact ⟨C, hC, fun ζ hζ h₀ h₁ ↦
+    integral_associatedBilinForm_le_mul_integral_asymptoticOperator_of_path hSc
+      (P := fun ζ ↦ ζ 0 ∈ F₀ ∧ ζ 1 ∈ F₁) (fun ζ f hf hζ h' ↦ h hf hζ h'.1 h'.2) hζ ⟨h₀, h₁⟩⟩
 
 /-- **The strip estimate at a nondegenerate chord.** Let each `J_t` be `ω`-compatible and depend
 continuously on `t`, let each `S_t` be infinitesimally symplectic and `S` continuous, let `F₀` and
