@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy.FourTorsion
 import TauCeti.AlgebraicGeometry.ModularCurve.Rigidifier.LevelThree
-import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Descent
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.RelativeDimension
+import TauCeti.AlgebraicGeometry.ModularCurve.YOne.LevelFour
 
 /-!
 # Relative dimension of the fine modular curve `Y₁(N)`
@@ -23,44 +21,23 @@ have relative dimension `1`, that argument does not determine the dimension of t
 `Y₁(N)`.
 
 This file proves that `Y₁(N)` is smooth of relative dimension `1` over `B`
-(`EllObj.smoothOfRelativeDimension_one_yOne_structureMap`), by comparing `[Γ₁(N)]` with explicit
-one-dimensional rigidifiers over open subsets covering `B`:
+(`EllObj.smoothOfRelativeDimension_one_yOne_structureMap`), by transferring smooth relative
+dimension along étale surjective rigidifiers
+(`ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy`) over open subsets
+covering `B`:
 
-1. **Transfer along a rigidifier.** If `𝒫` and `𝒬` are representable, relatively representable,
-   étale moduli problems over `Ell/B`, with `𝒬` surjective over `Ell/B`, then the simultaneous
-   moduli scheme `𝕄(𝒬, 𝒫)` is étale and surjective over `𝕄(𝒫)` and étale over `𝕄(𝒬)`. Once `𝕄(𝒫)`
-   is smooth over `B` and `𝕄(𝒬)` is smooth of relative dimension `n` over `B`, descent of smooth
-   relative dimension along étale surjective morphisms on the source
-   (`AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_of_etale_of_surjective`) shows that `𝕄(𝒫)`
-   is smooth of relative dimension `n` over `B`
-   (`ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy`).
-2. **Explicit presentation of `Y₁(4)`.** On an elliptic Tate normal form `Y² + AXY + BY = X³ + BX²`
-   over an arbitrary commutative ring, `4 • (0, 0) = 0` holds if and only if `A = 1`
-   (`WeierstrassCurve.tateNormalForm_projModelMulBy_four_eq_projModelZero_iff`), while `(0, 0)`,
-   `2 • (0, 0)` and `3 • (0, 0)` miss the zero section everywhere. Consequently `Y₁(4)` over `ℤ` is
-   isomorphic to `Spec ℤ[B, (B(1 - 16B))⁻¹]` (`UniversalTate.yOneFourIso`), and `EllObj.yOne B 4` is
-   smooth of relative dimension `1` over every scheme `B` without any invertibility assumption
-   (`EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`).
-3. **Covering `B` by `B[1/2]` and `B[1/3]`.** At every point of `B`, either `2` (and hence `4`) or
-   `3` is invertible in the residue field. Over `B[1/2]`, comparing `[Γ₁(N)]` with the étale
-   surjective rigidifier `[Γ₁(4)]` transfers relative dimension `1` from `Y₁(4)` to `Y₁(N)`. Over
-   `B[1/3]`, comparing `[Γ₁(N)]` with `[Γ(3)]`, represented by `EllObj.universalLevelThree` of
-   relative dimension `1` (`EllObj.smoothOfRelativeDimension_universalLevelThree_structureMap`),
-   transfers relative dimension `1` to `Y₁(N)`. Since `EllObj.yOne B N` commutes with base change
-   in `B` (`EllObj.isPullback_yOneBaseMap`), target-locality concludes the proof.
-
-## Main definitions
-
-* `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso`: the isomorphism
-  `UniversalTate.yOne 4 ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]` identifying `Y₁(4)` over `ℤ`.
+* At every point of `B`, either `2` (and hence `4`) or `3` is invertible in the residue field.
+* Over `B[1/2]`, comparing `[Γ₁(N)]` with the étale surjective rigidifier `[Γ₁(4)]` transfers
+  relative dimension `1` from `Y₁(4)`
+  (`EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`) to `Y₁(N)`.
+* Over `B[1/3]`, comparing `[Γ₁(N)]` with `[Γ(3)]`, represented by `EllObj.universalLevelThree` of
+  relative dimension `1` (`EllObj.smoothOfRelativeDimension_universalLevelThree_structureMap`),
+  transfers relative dimension `1` to `Y₁(N)`.
+* Since `EllObj.yOne B N` commutes with base change in `B` (`EllObj.isPullback_yOneBaseMap`),
+  target-locality concludes the proof.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy`:
-  smooth relative dimension transfers from an étale surjective rigidifier to any smooth
-  representable étale moduli problem.
-* `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`: `Y₁(4)`
-  is smooth of relative dimension `1` over every base scheme `B`.
 * `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_structureMap`: for `N ≥ 4`
   invertible on `B`, `Y₁(N)` is smooth of relative dimension `1` over `B`.
 
@@ -77,315 +54,9 @@ public section
 
 universe u
 
-open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory Opposite AlgebraicGeometry
-  MonObj WeierstrassCurve
+open CategoryTheory Limits AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
-
-/-! ### Rigidifier transfer of smooth relative dimension -/
-
-namespace ModuliProblem.RelRepData
-
-variable {B : Scheme.{u}} {n : ℕ}
-
-/-- **Transfer of smooth relative dimension along a rigidifier.** Let `𝒫` and `𝒬` be moduli
-problems over `Ell/B` represented by `U` and `V`, both relatively representable and étale over
-`Ell/B`, with `𝒬` also surjective over `Ell/B`. If the base of `U` is smooth over `B` and the base
-of `V` is smooth of relative dimension `n` over `B`, then the base of `U` is smooth of relative
-dimension `n` over `B`: the simultaneous moduli scheme `𝕄(𝒬, 𝒫)` maps étale-surjectively to `U`
-and étale to `V`. -/
-theorem smoothOfRelativeDimension_of_representableBy {P Q : ModuliProblem B} {U V : EllObj B}
-    (RP : P.RepresentableBy U) (RQ : Q.RepresentableBy V)
-    (DP : P.RelRepData) (DQ : Q.RelRepData)
-    (heP : DP.HasProperty @Etale) (heQ : DQ.HasProperty @Etale)
-    (hsQ : DQ.HasProperty @Surjective)
-    [Smooth U.structureMap] [SmoothOfRelativeDimension n V.structureMap] :
-    SmoothOfRelativeDimension n U.structureMap := by
-  let S := DQ.tensorRepresentableBy RP
-  let a₁ := U.baseChangeFunctorHom (DQ.rep U)
-  let a₂ := RQ.homEquiv.symm (S.homEquiv (𝟙 _)).1
-  have : Etale a₁.base := by
-    rw [EllObj.baseChangeFunctorHom_base]
-    exact DQ.hasProperty_iff.mp heQ U
-  have : Surjective a₁.base := by
-    rw [EllObj.baseChangeFunctorHom_base]
-    exact DQ.hasProperty_iff.mp hsQ U
-  have ha₂ : RQ.homEquiv a₂ = (S.homEquiv (𝟙 _)).1 := RQ.homEquiv.apply_symm_apply _
-  have : MorphismProperty.RespectsIso @Etale.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
-  have : Etale a₂.base := DP.mem_base_of_forget_snd RQ S a₂ ha₂ (DP.hasProperty_iff.mp heP V)
-  have hW : SmoothOfRelativeDimension (0 + n) (a₂.base ≫ V.structureMap) := inferInstance
-  have : SmoothOfRelativeDimension n (a₁.base ≫ U.structureMap) := by
-    rw [a₁.base_structureMap, ← a₂.base_structureMap]
-    simpa only [Nat.zero_add] using hW
-  exact SmoothOfRelativeDimension.of_comp_of_etale_of_surjective a₁.base U.structureMap
-
-/-- Two representable, relatively representable, étale and surjective moduli problems over `Ell/B`
-whose bases are smooth over `B` have bases of the same smooth relative dimension over `B`. -/
-theorem smoothOfRelativeDimension_iff_of_representableBy {P Q : ModuliProblem B} {U V : EllObj B}
-    (RP : P.RepresentableBy U) (RQ : Q.RepresentableBy V)
-    (DP : P.RelRepData) (DQ : Q.RelRepData)
-    (heP : DP.HasProperty @Etale) (hsP : DP.HasProperty @Surjective)
-    (heQ : DQ.HasProperty @Etale) (hsQ : DQ.HasProperty @Surjective)
-    [Smooth U.structureMap] [Smooth V.structureMap] :
-    SmoothOfRelativeDimension n U.structureMap ↔ SmoothOfRelativeDimension n V.structureMap :=
-  ⟨fun _ ↦ smoothOfRelativeDimension_of_representableBy RQ RP DQ DP heQ heP hsP,
-    fun _ ↦ smoothOfRelativeDimension_of_representableBy RP RQ DP DQ heP heQ hsQ⟩
-
-end ModuliProblem.RelRepData
-
-/-! ### Explicit presentation of `Y₁(4)` -/
-
-namespace UniversalTate
-
-open UniversalTate
-
-private theorem pointHom_pow_left (k : ℕ) :
-    (pointHom.{u} ^ k).left =
-      UniversalTate.point ≫ curveULift.projModelMulBy k ≫
-        (toEllipticCurveGeomIso curveULift).inv := by
-  have hk : (pointHom.{u} ^ k).left = pointHom.{u}.left ≫ (curveGeom.mulBy k).left := by
-    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast]
-  rw [hk, pointHom_left, Category.assoc, projModelMulBy_eq]
-  simp
-
-/-- On the universal Tate normal form, `(0, 0)`, `2 • (0, 0)` and `3 • (0, 0)` miss the zero
-section at every point of the base, so `exactOrderOpens 4` is the whole base. -/
-@[simp]
-theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
-  rw [eq_top_iff]
-  intro t _
-  rw [mem_exactOrderOpens_iff]
-  intro k hk0 hk4 heq
-  rw [pointHom_pow_left] at heq
-  have hzero : curveGeom.{u}.zero =
-      curveULift.projModelZero ≫ (toEllipticCurveGeomIso curveULift).inv := by
-    simp [← zero_toEllipticCurveGeomIso_hom]
-  rw [hzero, ← Category.assoc, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply] at heq
-  have heq' : (UniversalTate.point ≫ curveULift.projModelMulBy k) t =
-      curveULift.projModelZero t := by
-    have h := congrArg (toEllipticCurveGeomIso curveULift.{u}).hom heq
-    rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Iso.inv_hom_id] at h
-    simpa using h
-  interval_cases k <;> simp only [Nat.cast_one, Nat.cast_ofNat] at heq'
-  · rw [projModelMulBy_one, Category.comp_id] at heq'
-    exact UniversalTate.point_ne_projModelZero t heq'
-  · exact UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq'
-  · exact UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq'
-
-/-- The open subset `yOneOpens 4` cutting `Y₁(4)` out of the `4`-torsion locus is the whole
-`4`-torsion locus. -/
-@[simp]
-theorem yOneOpens_four : yOneOpens.{u} 4 = ⊤ := by
-  ext z
-  simp
-
-/-- The open immersion `Y₁(4) ⟶ torsionLocus 4` is an isomorphism. -/
-instance isIso_yOneOpens_four_ι : IsIso (yOneOpens.{u} 4).ι := by
-  rw [yOneOpens_four, ← Scheme.topIso_hom]
-  infer_instance
-
-/-- Over `ℤ`, the immersion `Y₁(4) ⟶ Spec ℤ[A, B][Δ⁻¹]` is a closed immersion. -/
-instance isClosedImmersion_yOneι_four : IsClosedImmersion (yOneι.{u} 4) := by
-  rw [yOneι_def]
-  infer_instance
-
-/-- The scheme `Y₁(4)` over `ℤ` is affine. -/
-instance isAffine_yOne_four : IsAffine (yOne.{u} 4) :=
-  isAffine_of_isAffineHom (yOneι.{u} 4)
-
--- Along `Spec φ`, the `4`-th multiple of `(0, 0)` vanishes if and only if `φ` maps `A` to `1`.
-private theorem specMap_comp_pointHom_pow_four_eq_zero_iff {R : Type u} [CommRing R]
-    (φ : ULift.{u} UniversalTate.Ring →+* R) :
-    Spec.map (CommRingCat.ofHom φ) ≫ (pointHom.{u} ^ 4).left =
-        Spec.map (CommRingCat.ofHom φ) ≫ curveGeom.zero ↔
-      φ curveULift.a₁ = 1 := by
-  have hzero : curveGeom.{u}.zero =
-      curveULift.projModelZero ≫ (toEllipticCurveGeomIso curveULift).inv := by
-    simp [← zero_toEllipticCurveGeomIso_hom]
-  rw [pointHom_pow_left, Nat.cast_ofNat, hzero]
-  simp only [← Category.assoc, cancel_mono (toEllipticCurveGeomIso curveULift).inv]
-  have hbc := curveULift.isPullback_projModelBaseChange φ
-  rw [point_def, ← curveULift.projModelAffinePoint_projModelBaseChange φ, Category.assoc,
-    ← curveULift.projModelMulBy_projModelBaseChange φ 4, ← Category.assoc,
-    ← curveULift.projModelZero_projModelBaseChange φ]
-  have hext : ((curveULift.map φ).projModelAffinePoint (equation_curveULift_zero.map φ) ≫
-        (curveULift.map φ).projModelMulBy 4) ≫ curveULift.projModelBaseChange φ =
-      (curveULift.map φ).projModelZero ≫ curveULift.projModelBaseChange φ ↔
-      (curveULift.map φ).projModelAffinePoint (equation_curveULift_zero.map φ) ≫
-        (curveULift.map φ).projModelMulBy 4 = (curveULift.map φ).projModelZero :=
-    ⟨fun h ↦ hbc.hom_ext h (by simp), fun h ↦ by rw [h]⟩
-  rw [hext]
-  -- Rewrite `curveULift.map φ` to `tateNormalForm (φ a₁) (φ a₃)` so the 4-torsion criterion applies
-  have key {W : WeierstrassCurve R} [W.IsElliptic]
-      (hW : W = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃))
-      (h₀ : W.toAffine.Equation (φ 0) (φ 0)) :
-      W.projModelAffinePoint h₀ ≫ W.projModelMulBy 4 = W.projModelZero ↔ φ curveULift.a₁ = 1 := by
-    subst hW
-    have hpt : (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).projModelAffinePoint h₀ =
-        (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).projModelAffinePoint
-          (equation_tateNormalForm_zero _ _) :=
-      (projModelAffinePoint_inj h₀).mpr ⟨map_zero φ, map_zero φ⟩
-    rw [hpt]
-    exact tateNormalForm_projModelMulBy_four_eq_projModelZero_iff
-  exact key (map_curveULift φ) (equation_curveULift_zero.map φ)
-
-/-- The ring homomorphism `ULift ℤ[A, B][Δ⁻¹] →+* ULift ℤ[B, (B(1 - 16B))⁻¹]` specializing `A` to
-`1` and `B` to `param`. -/
-noncomputable def toUniversalGammaOneFourULift :
-    ULift.{u} UniversalTate.Ring →+* ULift.{u} UniversalGammaOneFour.Ring :=
-  ULift.ringEquiv.symm.toRingHom.comp
-    (UniversalGammaOneFour.toUniversalTate.comp ULift.ringEquiv.toRingHom)
-
-/-- `toUniversalGammaOneFourULift` applies `UniversalGammaOneFour.toUniversalTate` to the
-underlying element. -/
-@[simp]
-theorem toUniversalGammaOneFourULift_apply (x : ULift.{u} UniversalTate.Ring) :
-    toUniversalGammaOneFourULift.{u} x = .up (UniversalGammaOneFour.toUniversalTate x.down) := by
-  simp [toUniversalGammaOneFourULift, ULift.ringEquiv]
-
-/-- `toUniversalGammaOneFourULift` maps the coefficient `a₁` of `curveULift` to `1`. -/
-theorem toUniversalGammaOneFourULift_a₁ :
-    toUniversalGammaOneFourULift.{u} curveULift.a₁ = 1 := by
-  rw [toUniversalGammaOneFourULift_apply, curveULift_a₁]
-  ext
-  simp [WeierstrassCurve.baseChange]
-
-/-- `toUniversalGammaOneFourULift` maps the coefficient `a₃` of `curveULift` to `param`. -/
-theorem toUniversalGammaOneFourULift_a₃ :
-    toUniversalGammaOneFourULift.{u} curveULift.a₃ = .up UniversalGammaOneFour.param := by
-  rw [toUniversalGammaOneFourULift_apply, curveULift_a₃]
-  ext
-  simp [WeierstrassCurve.baseChange]
-
--- Any morphism from an affine scheme `X` to `Spec ℤ[A, B][Δ⁻¹]` killing `4 • (0, 0)` factors
--- through `Spec ℤ[B, (B(1 - 16B))⁻¹]`.
-private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
-    (f : X ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)))
-    (hf : f ≫ (pointHom.{u} ^ 4).left = f ≫ curveGeom.zero) :
-    ∃ hom : X ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
-      hom ≫ Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) = f := by
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (X.isoSpec.inv ≫ f)
-  have hN : Spec.map φ ≫ (pointHom.{u} ^ 4).left = Spec.map φ ≫ curveGeom.zero := by
-    rw [hφ, Category.assoc, hf, Category.assoc]
-  have ha₁ : φ.hom curveULift.a₁ = 1 :=
-    (specMap_comp_pointHom_pow_four_eq_zero_iff φ.hom).mp hN
-  have hmap : curveULift.map φ.hom = tateNormalForm 1 (φ.hom curveULift.a₃) := by
-    rw [map_curveULift, ha₁]
-  have hΔ : IsUnit (tateNormalForm 1 (φ.hom curveULift.a₃)).Δ :=
-    hmap ▸ (curveULift.map φ.hom).isUnit_Δ
-  let ψ : CommRingCat.of (ULift.{u} UniversalGammaOneFour.Ring) ⟶ Γ(X, ⊤) :=
-    CommRingCat.ofHom ((UniversalGammaOneFour.lift hΔ).comp ULift.ringEquiv.toRingHom)
-  have hφlift : φ.hom.comp (ULift.ringEquiv.symm : _ ≃+* ULift.{u} _).toRingHom =
-      UniversalTate.lift hΔ :=
-    UniversalTate.eq_lift hΔ (by rw [← map_map, ← curveULift_eq, hmap])
-  have hcomp : CommRingCat.ofHom toUniversalGammaOneFourULift ≫ ψ = φ := by
-    refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
-    have h₁ : (CommRingCat.ofHom toUniversalGammaOneFourULift ≫ ψ).hom x =
-        (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down) := by
-      simp [ψ, toUniversalGammaOneFourULift_apply, ULift.ringEquiv]
-    rw [h₁]
-    calc (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down)
-        = (UniversalTate.lift hΔ) x.down :=
-          RingHom.congr_fun (UniversalGammaOneFour.lift_comp_toUniversalTate hΔ) x.down
-      _ = φ.hom x := by
-          simpa [ULift.ringEquiv] using (RingHom.congr_fun hφlift x.down).symm
-  refine ⟨X.isoSpec.hom ≫ Spec.map ψ, ?_⟩
-  rw [Category.assoc, ← Spec.map_comp, hcomp, hφ, Iso.hom_inv_id_assoc]
-
-private theorem exists_yOneFourToSpec :
-    ∃ hom : yOne.{u} 4 ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
-      hom ≫ Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) = yOneι.{u} 4 :=
-  exists_toSpec_of_isAffine (yOneι.{u} 4)
-    (((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1)
-
-private theorem exists_specToYOneFour :
-    ∃ inv : Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) ⟶ yOne.{u} 4,
-      inv ≫ yOneι 4 = Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) :=
-  (exists_comp_yOneι_eq_iff _ 4).mpr
-    ⟨(specMap_comp_pointHom_pow_four_eq_zero_iff _).mpr toUniversalGammaOneFourULift_a₁,
-      fun _ ↦ by simp⟩
-
-/-- **`Y₁(4)` over `ℤ` is `Spec ℤ[B, (B(1 - 16B))⁻¹]`.** -/
-noncomputable def yOneFourIso :
-    yOne.{u} 4 ≅ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) where
-  hom := exists_yOneFourToSpec.choose
-  inv := exists_specToYOneFour.choose
-  hom_inv_id := by
-    refine (cancel_mono (yOneι.{u} 4)).mp ?_
-    rw [Category.assoc, exists_specToYOneFour.choose_spec, exists_yOneFourToSpec.choose_spec,
-      Category.id_comp]
-  inv_hom_id := by
-    obtain ⟨χ, hχ⟩ := Spec.map_surjective
-      (exists_specToYOneFour.{u}.choose ≫ exists_yOneFourToSpec.choose)
-    have hχj : Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift ≫ χ) =
-        Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) := by
-      rw [Spec.map_comp, hχ, Category.assoc, exists_yOneFourToSpec.choose_spec,
-        exists_specToYOneFour.choose_spec]
-    have hχπ : χ.hom.comp toUniversalGammaOneFourULift = toUniversalGammaOneFourULift :=
-      congrArg CommRingCat.Hom.hom (Spec.map_injective hχj)
-    have hparam : χ.hom (.up UniversalGammaOneFour.param) = .up UniversalGammaOneFour.param := by
-      have h := RingHom.congr_fun hχπ curveULift.a₃
-      rwa [RingHom.comp_apply, toUniversalGammaOneFourULift_a₃] at h
-    have hχid : χ = 𝟙 _ := by
-      refine CommRingCat.hom_ext ?_
-      have h₀ : (ULift.ringEquiv.toRingHom.comp χ.hom).comp ULift.ringEquiv.symm.toRingHom =
-          RingHom.id UniversalGammaOneFour.Ring := by
-        ext
-        exact congrArg ULift.down hparam
-      ext x
-      simpa [ULift.ringEquiv] using RingHom.congr_fun h₀ x.down
-    rw [← hχ, hχid, Spec.map_id]
-
-/-- Under `yOneFourIso.hom`, the specialization map `A = 1` recovers the closed immersion
-`yOneι 4 : Y₁(4) ⟶ Spec ℤ[A, B][Δ⁻¹]`. -/
-@[reassoc (attr := simp)]
-theorem yOneFourIso_hom_SpecMap :
-    yOneFourIso.{u}.hom ≫ Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) =
-      yOneι.{u} 4 :=
-  exists_yOneFourToSpec.choose_spec
-
-/-- Under `yOneFourIso.inv`, the closed immersion `yOneι 4` is the spectrum of the specialization
-map `A = 1`. -/
-@[reassoc (attr := simp)]
-theorem yOneFourIso_inv_yOneι :
-    yOneFourIso.{u}.inv ≫ yOneι.{u} 4 =
-      Spec.map (CommRingCat.ofHom toUniversalGammaOneFourULift) :=
-  exists_specToYOneFour.choose_spec
-
-/-- The base `Spec ℤ[B, (B(1 - 16B))⁻¹]` is smooth of relative dimension `1` over `Spec ℤ`. -/
-instance smoothOfRelativeDimension_one_terminal_from_universalGammaOneFour :
-    SmoothOfRelativeDimension 1
-      (terminal.from (Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)))) :=
-  SmoothOfRelativeDimension.terminal_from_Spec_ulift 1
-
-/-- `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
-instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
-    SmoothOfRelativeDimension 1 (terminal.from (yOne.{u} 4)) := by
-  have h : SmoothOfRelativeDimension (0 + 1)
-      (yOneFourIso.{u}.hom ≫
-        terminal.from (Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)))) :=
-    inferInstance
-  rw [terminal.hom_ext (terminal.from (yOne.{u} 4))
-    (yOneFourIso.{u}.hom ≫ terminal.from _)]
-  simpa only [Nat.zero_add] using h
-
-end UniversalTate
-
-/-! ### Relative dimension of `Y₁(N)` for `N ≥ 4` -/
-
-namespace EllObj
-
-/-- **`Y₁(4)` is smooth of relative dimension `1` over every base scheme `B`.** -/
-instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
-    SmoothOfRelativeDimension 1 (yOne B 4).structureMap := by
-  have hfst : SmoothOfRelativeDimension 1 (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
-  have h : SmoothOfRelativeDimension (0 + 1)
-      ((yOneBaseIsoProd B 4).hom ≫ (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B)) :=
-    inferInstance
-  rw [← yOneBaseIsoProd_hom_fst]
-  simpa only [Nat.zero_add] using h
+namespace TauCeti.AlgebraicGeometry.EllObj
 
 private theorem smoothOfRelativeDimension_restrict_yOne_of_open (B : Scheme.{u}) (U : B.Opens)
     (N : ℕ) [NeZero N] (hU : SmoothOfRelativeDimension 1 (yOne U.toScheme N).structureMap) :
@@ -464,6 +135,4 @@ theorem smoothOfRelativeDimension_one_yOne_structureMap
         (by simpa only [map_ofNat] using h2),
       smoothOfRelativeDimension_one_yOne_restrict_basicOpen_two B N hN h4⟩
 
-end EllObj
-
-end TauCeti.AlgebraicGeometry
+end TauCeti.AlgebraicGeometry.EllObj

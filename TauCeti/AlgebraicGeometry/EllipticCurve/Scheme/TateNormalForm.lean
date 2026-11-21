@@ -45,12 +45,17 @@ sections is a change of variables
 * `WeierstrassCurve.tateNormalForm_iso_ext`: such an isomorphism is unique.
 * `WeierstrassCurve.exists_iso_tateNormalForm_iff`: such an isomorphism exists exactly when `P`,
   `2P` and `3P` miss the zero section everywhere.
+* `WeierstrassCurve.tateNormalForm_projModelMulBy_two_zero`: on an elliptic Tate normal form
+  `Y² + aXY + bY = X³ + bX²`, doubling `[0 : 0 : 1]` gives `[-b : b(a - 1) : 1]`.
+* `WeierstrassCurve.tateNormalForm_projModelMulBy_four_eq_projModelZero_iff`: on an elliptic Tate
+  normal form, `[0 : 0 : 1]` is killed by `4` if and only if `a = 1`.
 
 ## References
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], Exercise 8.13.
 * D. S. Kubert, *Universal bounds on the torsion of elliptic curves*, Proc. London Math. Soc. (3)
-  33 (1976), 193–237.
+  33 (1976), 193–237, Table 3 (`X₁(4)`).
+* D. Loeffler, *Modular Curves*, lecture notes, §3.3.
 -/
 
 public section
@@ -186,5 +191,52 @@ theorem tateNormalForm_iso_ext {a b : R} {e e' : (tateNormalForm a b).projModel 
     (eq_toTateNormalForm hψ₂ hΨ₃ hee'.1.symm hee'.2.symm hC').symm
   subst hCC'
   exact Iso.ext (heC.trans heC'.symm)
+
+section FourTorsion
+
+variable {a b : R} [(tateNormalForm a b).IsElliptic]
+
+/-- **Doubling `(0, 0)` on an elliptic Tate normal form.** On `Y² + aXY + bY = X³ + bX²`, doubling
+the section `[0 : 0 : 1]` of the projective model yields `[-b : b(a - 1) : 1]`. -/
+theorem tateNormalForm_projModelMulBy_two_zero :
+    (tateNormalForm a b).projModelAffinePoint (equation_tateNormalForm_zero a b) ≫
+        (tateNormalForm a b).projModelMulBy 2 =
+      (tateNormalForm a b).projModelAffinePoint (equation_tateNormalForm_neg_mul_sub_one a b) := by
+  set W := tateNormalForm a b
+  have hb : IsUnit b := isUnit_of_isUnit_tateNormalForm_Δ W.isUnit_Δ
+  have h₀ : W.toAffine.Equation 0 0 := equation_tateNormalForm_zero a b
+  have hW : W.toProjective.map (RingHom.id R) = W.toProjective := W.map_id
+  have hE : W.toProjective.Equation ![0, 0, 1] := (Projective.equation_some _ _).mpr h₀
+  have hdbl : (W.toProjective.map (RingHom.id R)).dblAddXYZ ![0, 0, 1] ![0, 0, 1] =
+      W.toProjective.dblXYZ ![0, 0, 1] := by
+    rw [Projective.dblAddXYZ_self (hW ▸ hE), hW]
+  have hm : IsUnit ((W.toProjective.map (RingHom.id R)).dblAddXYZ ![0, 0, 1] ![0, 0, 1] 2) := by
+    rw [hdbl, Projective.dblXYZ_some h₀]
+    simpa [W] using hb.pow 3
+  rw [comp_projModelMulBy_two, projModelAffinePoint_def, projModelAffinePoint_def,
+    lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
+    projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h₀]
+  refine ⟨rfl, (hb.pow 3).unit, ?_⟩
+  ext i
+  fin_cases i <;>
+    simp [W, Affine.negY, Affine.evalEval_polynomialX, Units.smul_def]
+  ring
+
+/-- **The `4`-torsion locus of `(0, 0)` on an elliptic Tate normal form.** Over any commutative
+ring `R`, the point `[0 : 0 : 1]` of an elliptic Tate normal form `Y² + aXY + bY = X³ + bX²` is
+killed by multiplication by `4` if and only if `a = 1`. -/
+theorem tateNormalForm_projModelMulBy_four_eq_projModelZero_iff :
+    (tateNormalForm a b).projModelAffinePoint (equation_tateNormalForm_zero a b) ≫
+        (tateNormalForm a b).projModelMulBy 4 = (tateNormalForm a b).projModelZero ↔
+      a = 1 := by
+  have hb : IsUnit b := isUnit_of_isUnit_tateNormalForm_Δ (tateNormalForm a b).isUnit_Δ
+  have h4 : (tateNormalForm a b).projModelMulBy 4 =
+      (tateNormalForm a b).projModelMulBy 2 ≫ (tateNormalForm a b).projModelMulBy 2 := by
+    simpa using projModelMulBy_mul (tateNormalForm a b) 2 2
+  rw [h4, ← Category.assoc, tateNormalForm_projModelMulBy_two_zero,
+    projModelAffinePoint_projModelMulBy_two_eq_projModelZero_iff,
+    evalEval_ψ₂_tateNormalForm_neg_mul_sub_one, hb.mul_right_eq_zero, sub_eq_zero]
+
+end FourTorsion
 
 end WeierstrassCurve
