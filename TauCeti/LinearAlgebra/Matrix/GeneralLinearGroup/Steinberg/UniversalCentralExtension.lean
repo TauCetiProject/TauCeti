@@ -40,6 +40,8 @@ For an associative unital ring `R`, the canonical homomorphism
 * `TauCeti.IndexedSteinbergGroup.liftCentralExtension`: the canonical lift `St_ι(R) →* E` of
   `φ : St_ι(R) →* G` along any homomorphism `q : E →* G` with `φ.range ≤ q.range` and central
   kernel, whenever any four indices in `ι` admit a fifth distinct index.
+* `TauCeti.AlgebraicK2`: Milnor's algebraic `K₂(R) := ker (St(R) →* GL_∞(R))`, together with its
+  `CommGroup` instance and functoriality `TauCeti.AlgebraicK2.map`.
 
 ## Main results
 
@@ -59,6 +61,8 @@ For an associative unital ring `R`, the canonical homomorphism
   `St(R)` along any `q : E →* GL_∞(R)` with `E_∞(R) ≤ q.range` and central kernel.
 * `TauCeti.SteinbergGroup.isUniversalCentralExtension_toElementarySubgroup`:
   `toElementarySubgroup R` satisfies `MonoidHom.IsUniversalCentralExtension`.
+* `TauCeti.SteinbergGroup.range_toStableGL_eq_ker_abelianizationOf`: exactness at `GL_∞(R)` of
+  `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`.
 * `TauCeti.steinberg_universalCentralExtension`: the packaged Kervaire–Steinberg universal central
   extension theorem over `GL_∞(R)`.
 
@@ -604,6 +608,14 @@ theorem isUniversalCentralExtension_toElementarySubgroup :
     IndexedSteinbergGroup.forall_exists_ne_four_of_infinite
     isCentralExtension_toElementarySubgroup
 
+variable (R) in
+/-- Exactness at `GL_∞(R)` of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`: the image of
+`St(R) →* GL_∞(R)` equals the kernel of the abelianization projection `GL_∞(R) →* K₁(R)`. -/
+theorem range_toStableGL_eq_ker_abelianizationOf :
+    (toStableGL R).range =
+      (Group.Abelianization.of : StableGeneralLinearGroup R →* AlgebraicK1 R).ker :=
+  range_toStableGL.trans AlgebraicK1.ker_of.symm
+
 end Universal
 
 end SteinbergGroup
@@ -625,5 +637,63 @@ theorem steinberg_universalCentralExtension (R : Type u) [Ring R] :
   ⟨SteinbergGroup.toStableGL R, SteinbergGroup.toStableGL_of, SteinbergGroup.range_toStableGL,
     SteinbergGroup.ker_toStableGL_le_center,
     fun _ _ q hq_range hq_ker ↦ SteinbergGroup.existsUnique_comp_eq_toStableGL q hq_range.ge hq_ker⟩
+
+/-! ## Algebraic `K₂` -/
+
+variable (R : Type u) [Ring R]
+
+/-- **Algebraic `K₂`** of a ring `R`: the kernel of the canonical homomorphism
+`St(R) →* GL_∞(R)`. By `TauCeti.SteinbergGroup.ker_toStableGL_le_center`, `K₂(R)` is central in
+`St(R)` and hence a commutative group. -/
+abbrev AlgebraicK2 : Type u :=
+  (SteinbergGroup.toStableGL R).ker
+
+namespace AlgebraicK2
+
+/-- Algebraic `K₂(R)` is a commutative group, because `ker (St(R) →* GL_∞(R))` is central in
+`St(R)`. -/
+instance instCommGroup : CommGroup (AlgebraicK2 R) :=
+  { (inferInstance : Group (SteinbergGroup.toStableGL R).ker) with
+    mul_comm := fun a b ↦ Subtype.ext <|
+      (Subgroup.mem_center_iff.mp (SteinbergGroup.ker_toStableGL_le_center (R := R) b.property)
+        a.val) }
+
+variable {R} {S T : Type*} [Ring S] [Ring T]
+
+/-- The homomorphism `K₂(R) →* K₂(S)` induced by a ring homomorphism `f : R →+* S`, restricting
+`IndexedSteinbergGroup.map f` to the kernels. -/
+def map (f : R →+* S) : AlgebraicK2 R →* AlgebraicK2 S :=
+  ((IndexedSteinbergGroup.map f).comp (SteinbergGroup.toStableGL R).ker.subtype).codRestrict _
+    fun x ↦ by
+      rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype,
+        SteinbergGroup.toStableGL_map, MonoidHom.mem_ker.mp x.property, map_one]
+
+/-- The underlying element in `St(S)` of `AlgebraicK2.map f x` is
+`IndexedSteinbergGroup.map f x`. -/
+@[simp]
+theorem coe_map_apply (f : R →+* S) (x : AlgebraicK2 R) :
+    (map f x : SteinbergGroup S) = IndexedSteinbergGroup.map f x :=
+  (rfl)
+
+/-- The identity ring homomorphism induces the identity of algebraic `K₂`. -/
+@[simp]
+theorem map_id : map (RingHom.id R) = MonoidHom.id (AlgebraicK2 R) := by
+  ext x
+  simp
+
+/-- Algebraic `K₂` is functorial in ring homomorphisms. -/
+theorem map_comp (f : R →+* S) (g : S →+* T) :
+    map (g.comp f) = (map g).comp (map f) := by
+  ext x
+  simp
+
+/-- Applying `AlgebraicK2.map f` followed by `AlgebraicK2.map g` equals
+`AlgebraicK2.map (g.comp f)`. -/
+@[simp]
+theorem map_map (f : R →+* S) (g : S →+* T) (x : AlgebraicK2 R) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, MonoidHom.comp_apply]
+
+end AlgebraicK2
 
 end TauCeti

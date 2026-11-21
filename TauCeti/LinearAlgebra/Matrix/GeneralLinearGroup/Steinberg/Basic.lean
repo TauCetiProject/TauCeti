@@ -353,6 +353,14 @@ theorem map_map (g : S →+* T) (f : R →+* S) (z : IndexedSteinbergGroup ι R)
     map g (map f z) = map (g.comp f) z :=
   DFunLike.congr_fun (map_comp g f).symm z
 
+/-- A surjective ring homomorphism induces a surjective homomorphism of Steinberg groups. -/
+theorem map_surjective {f : R →+* S} (hf : Function.Surjective f) :
+    Function.Surjective (map (ι := ι) f) := by
+  rw [← MonoidHom.range_eq_top, subgroup_eq_top_iff]
+  intro i j hij b
+  obtain ⟨a, rfl⟩ := hf b
+  exact ⟨x hij a, map_x f hij a⟩
+
 /-- A ring isomorphism induces an isomorphism of Steinberg groups. -/
 def mapEquiv (e : R ≃+* S) : IndexedSteinbergGroup ι R ≃* IndexedSteinbergGroup ι S :=
   MonoidHom.toMulEquiv (map e.toRingHom) (map e.symm.toRingHom)
@@ -631,6 +639,15 @@ theorem ker_toElementarySubgroup :
   ext z
   simp [MonoidHom.mem_ker, Subtype.ext_iff]
 
+/-- The projection `St_ι(R) →* GL ι R` is natural in ring homomorphisms. -/
+theorem toGL_map (f : R →+* S) (z : IndexedSteinbergGroup ι R) :
+    toGL (map f z) = Units.map (f.mapMatrix (m := ι)).toMonoidHom (toGL z) := by
+  have hhom : (toGL (ι := ι) (R := S)).comp (map f) =
+      (Units.map (f.mapMatrix (m := ι)).toMonoidHom).comp toGL := by
+    ext i j hij a
+    simp [coe_transvectionUnit_eq_one_add_single, Matrix.one_apply, Matrix.single_apply]
+  exact DFunLike.congr_fun hhom z
+
 /-- Reindexing the Steinberg group along `e : ι ≃ κ` corresponds under `toGL` to `e.reindexGL R`. -/
 theorem toGL_congrIndex [Fintype κ] [DecidableEq κ] (e : ι ≃ κ)
     (z : IndexedSteinbergGroup ι R) :
@@ -905,6 +922,16 @@ theorem range_toStableGL :
     rw [← IndexedSteinbergGroup.range_toGL] at hu
     obtain ⟨z, rfl⟩ := hu
     exact ⟨ofFin R n z, toStableGL_ofFin n z⟩
+
+/-- The projection `St(R) →* GL_∞(R)` is natural in ring homomorphisms. -/
+theorem toStableGL_map (f : R →+* S) (z : SteinbergGroup R) :
+    toStableGL S (IndexedSteinbergGroup.map f z) =
+      StableGeneralLinearGroup.map f (toStableGL R z) := by
+  have hhom : (toStableGL S).comp (IndexedSteinbergGroup.map f) =
+      (StableGeneralLinearGroup.map f).comp (toStableGL R) := by
+    ext i j hij a
+    simp
+  exact DFunLike.congr_fun hhom z
 
 variable (R) in
 /-- The canonical projection `St(R) →* E_∞(R)` onto the stable elementary subgroup. -/
