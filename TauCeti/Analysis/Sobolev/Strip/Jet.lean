@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # The strip measure and jets of sections over the strip
@@ -128,6 +129,17 @@ theorem jet_add (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
 theorem jet_smul (c : ℝ) (ξ : ℝ × ℝ → V) : jet (c • ξ) = c • jet ξ := by
   funext z
   simp [jet, fderiv_const_smul_field]
+
+/-- **The jet of a section cut off in `s`.** If `β` has derivative `β'` at `z.1` and `ξ` is
+differentiable at `z`, then the jet of `w ↦ β(w.1) ξ w` at `z` is `β(z.1) (ξ, ∂s ξ, ∂t ξ)` plus
+`(0, β' ξ z, 0)`: the factor only differentiates in the `s` direction. -/
+theorem jet_smul_fst {β : ℝ → ℝ} {β' : ℝ} {z : ℝ × ℝ} (hβ : HasDerivAt β β' z.1)
+    (hξ : DifferentiableAt ℝ ξ z) :
+    jet (fun w ↦ β w.1 • ξ w) z = β z.1 • jet ξ z + (0, β' • ξ z, 0) := by
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
+    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
+  simp only [jet_apply, hd.fderiv]
+  ext <;> simp [add_comm]
 
 /-- The jet of a section vanishing for `|s| ≥ R` vanishes for `|s| > R`. -/
 theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) {z : ℝ × ℝ}
