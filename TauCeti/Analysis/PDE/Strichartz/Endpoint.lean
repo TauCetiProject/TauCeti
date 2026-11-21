@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Strichartz.TimeShell
 public import TauCeti.MeasureTheory.Function.Lp.DyadicLayer
+import TauCeti.MeasureTheory.Function.Lorentz
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -63,6 +64,10 @@ transfers the bound from the finite sums of atoms to `F`.
 
 ## Main declarations
 
+* `TauCeti.exists_min_exponent_le`: the exponent bookkeeping of Keel and Tao.
+* `TauCeti.levelNorm`: the `L²` norm in time of the level `f*(2ᵏ)` of `F(t)`.
+* `TauCeti.tsum_enorm_setIntegral_timeShell_dyadicLayer_le`: the pairings of two atoms summed over
+  the dyadic time shells.
 * `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`: the endpoint dual estimate.
 
 ## References
@@ -125,7 +130,7 @@ private theorem min_le_neg_mul_abs_add_abs {γ η κ : ℝ} (hγ : 0 < γ) (hη 
 put `π = 1 + σ / 2 - σ β`. There is `δ > 0` such that for all `j, k, l`, the smallest of the
 dispersive exponent `(1 - σ) j + k + l` and the two energy exponents `π j + k / 2 + β l`,
 `π j + β k + l / 2` is at most `(σ + 1) / (2σ) (k + l) - δ (|k - σ j| + |l - σ j|)`. -/
-private theorem exists_min_exponent_le {σ β : ℝ} (hσ : 1 < σ) (hβ : 2⁻¹ < β)
+theorem exists_min_exponent_le {σ β : ℝ} (hσ : 1 < σ) (hβ : 2⁻¹ < β)
     (hβσ : β < (σ + 1) / (2 * σ)) :
     ∃ δ > 0, ∀ j k l : ℝ,
       min ((1 - σ) * j + k + l) (min ((1 + σ / 2 - σ * β) * j + k / 2 + β * l)
@@ -205,29 +210,6 @@ private theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) 
         congr 1
         exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
 
-/-- Schur's test (`TauCeti.lintegral_lintegral_mul_mul_le`) for a convolution kernel on `ℤ`:
-`∑_{k, l} w(k - l) yₖ yₗ ≤ (∑ₘ w(m)) ∑ₖ yₖ²`. -/
-private theorem tsum_tsum_mul_mul_le (w y : ℤ → ℝ≥0∞) :
-    ∑' k, ∑' l, w (k - l) * (y k * y l) ≤ (∑' m, w m) * ∑' k, y k ^ 2 := by
-  set W := ∑' m, w m
-  have hrow (k : ℤ) : ∫⁻ l, w (k - l) ∂Measure.count ≤ W := by
-    rw [lintegral_count]; exact ((Equiv.subLeft k).tsum_eq w).le
-  have hcol (l : ℤ) : ∫⁻ k, w (k - l) ∂Measure.count ≤ W := by
-    rw [lintegral_count]; exact ((Equiv.subRight l).tsum_eq w).le
-  have hnorm : eLpNorm y 2 Measure.count = (∑' k, y k ^ 2) ^ (2⁻¹ : ℝ) := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-      (measurable_of_countable y).aestronglyMeasurable, lintegral_count]
-    simp
-  have h := lintegral_lintegral_mul_mul_le (μ := Measure.count) (ν := Measure.count)
-    (k := fun k l : ℤ ↦ w (k - l)) (measurable_of_countable _).aemeasurable
-    (measurable_of_countable y).aemeasurable (measurable_of_countable y).aemeasurable
-    (p := 2) (q := 2) (ae_of_all _ hrow) (ae_of_all _ hcol)
-  simp only [lintegral_count] at h
-  refine (h.trans_eq ?_).trans_eq' (tsum_congr fun k ↦ tsum_congr fun l ↦ by ring)
-  rw [hnorm, mul_assoc, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num),
-    ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
-  norm_num
-
 /-! ### Hilbert space bookkeeping -/
 
 variable {𝕜 : Type*} [RCLike 𝕜]
@@ -263,8 +245,13 @@ variable {X E H : Type*} {mX : MeasurableSpace X} {μ : Measure X}
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
 /-- The `L²` norm in time of the level `f*(2ᵏ)` of the decreasing rearrangement of `‖F(t)‖`. -/
-private noncomputable def levelNorm (μ : Measure X) (F : ℝ → Lp E 2 μ) (k : ℤ) : ℝ≥0∞ :=
+noncomputable def levelNorm (μ : Measure X) (F : ℝ → Lp E 2 μ) (k : ℤ) : ℝ≥0∞ :=
   eLpNorm (fun t ↦ μ.decreasingRearrangement (fun x ↦ ‖F t x‖ₑ) ((2 : ℝ) ^ k)) 2
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+theorem levelNorm_def (μ : Measure X) (F : ℝ → Lp E 2 μ) (k : ℤ) :
+    levelNorm μ F k =
+      eLpNorm (fun t ↦ μ.decreasingRearrangement (fun x ↦ ‖F t x‖ₑ) ((2 : ℝ) ^ k)) 2 := (rfl)
 
 private theorem ofReal_two_zpow (m : ℤ) : ENNReal.ofReal ((2 : ℝ) ^ m) = (2 : ℝ≥0∞) ^ (m : ℝ) := by
   rw [← Real.rpow_intCast, ← ENNReal.ofReal_rpow_of_pos two_pos, ENNReal.ofReal_ofNat]
@@ -279,20 +266,18 @@ private theorem eLpNorm_eLpNorm_dyadicLayer_le {F : ℝ → Lp E 2 μ} (hF : AES
     (k : ℤ) (s : ℝ≥0∞) :
     eLpNorm (fun t ↦ eLpNorm (Lp.dyadicLayer k (F t)) s μ) 2 ≤
       2 ^ (((k : ℝ) + 1) * s.toReal⁻¹) * levelNorm μ F k := by
-  rw [levelNorm, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2)]
+  rw [levelNorm_def, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2)]
   refine eLpNorm_mono_eNorm ((hF.dyadicLayer k).aemeasurable_eLpNorm_Lp .rfl s).aestronglyMeasurable
     fun t ↦ ?_
   simp only [eNorm_eq_self]
   refine (Lp.eLpNorm_dyadicLayer_le two_ne_zero ENNReal.ofNat_ne_top k (F t) s).trans_eq ?_
-  rw [ofReal_two_zpow, ← ENNReal.rpow_mul]
-  push_cast
-  rfl
+  rw [ofReal_two_zpow, ← ENNReal.rpow_mul, Int.cast_add, Int.cast_one]
 
 section Shell
 
 private theorem ofReal_two_mul_two_zpow (j : ℤ) :
     ENNReal.ofReal (2 * (2 : ℝ) ^ j) = 2 ^ ((1 : ℝ) + j) := by
-  rw [← zpow_one_add₀ two_ne_zero, ofReal_two_zpow]; push_cast; rfl
+  rw [← zpow_one_add₀ two_ne_zero, ofReal_two_zpow, Int.cast_add, Int.cast_one]
 
 /-- The dispersive bound for two atoms on a dyadic time shell, in `L²_t L¹_x`. -/
 private theorem enorm_setIntegral_timeShell_dyadicLayer_le_dispersive {σ : ℝ} (hσ : 1 < σ)
@@ -362,20 +347,11 @@ private theorem enorm_setIntegral_timeShell_dyadicLayer_le_energy' {p b : ℝ≥
         ((U z.2)†) (Lp.dyadicLayer l (F z.2))⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
       2 ^ (p.toReal⁻¹ + 2⁻¹ + b.toReal⁻¹) * M * K *
         2 ^ (p.toReal⁻¹ * j + b.toReal⁻¹ * k + l / 2) * (levelNorm μ F k * levelNorm μ F l) := by
-  refine (enorm_setIntegral_timeShell_inner_adjoint_le' hp2 _ hM hK (hF.dyadicLayer k)
-    (hF.dyadicLayer l) (hUF k) (hUF l)).trans ?_
-  have he : (2 : ℝ≥0∞) ^ (((1 : ℝ) + j) * p.toReal⁻¹) * 2 ^ (((k : ℝ) + 1) * b.toReal⁻¹) *
-      2 ^ (((l : ℝ) + 1) * 2⁻¹) =
-        2 ^ (p.toReal⁻¹ + 2⁻¹ + b.toReal⁻¹) * 2 ^ (p.toReal⁻¹ * j + b.toReal⁻¹ * k + l / 2) := by
-    simp only [two_rpow_mul_two_rpow]; congr 1; ring
-  calc _ ≤ M * K * ENNReal.ofReal (2 * (2 : ℝ) ^ j) ^ p.toReal⁻¹ *
-        (2 ^ (((k : ℝ) + 1) * b.toReal⁻¹) * levelNorm μ F k) *
-        (2 ^ (((l : ℝ) + 1) * (2 : ℝ≥0∞).toReal⁻¹) * levelNorm μ F l) := by
-        gcongr <;> exact eLpNorm_eLpNorm_dyadicLayer_le hF _ _
-    _ = M * K * (levelNorm μ F k * levelNorm μ F l) * (2 ^ (((1 : ℝ) + j) * p.toReal⁻¹) *
-        2 ^ (((k : ℝ) + 1) * b.toReal⁻¹) * 2 ^ (((l : ℝ) + 1) * 2⁻¹)) := by
-        rw [ofReal_two_mul_two_zpow, ← ENNReal.rpow_mul, ENNReal.toReal_ofNat]; ring
-    _ = _ := by rw [he]; ring
+  -- Exchanging the two atoms conjugates the pairing.
+  rw [setIntegral_timeShell_inner_eq_conj _ (fun s ↦ ((U s)†) (Lp.dyadicLayer k (F s)))
+    fun t ↦ ((U t)†) (Lp.dyadicLayer l (F t)), RCLike.eNorm_conj]
+  refine (enorm_setIntegral_timeShell_dyadicLayer_le_energy hp2 hM hK hF hUF j l k).trans_eq ?_
+  rw [add_right_comm _ ((l : ℝ) / 2), mul_comm (levelNorm μ F l)]
 
 /-- **The pairing of two atoms on a dyadic time shell.** On the shell `2ʲ ≤ |s - t| < 2ʲ⁺¹`, the
 pairing of the dyadic layers `Fₖ` and `Fₗ` is at most `c 2^e Xₖ Xₗ`, where `e` is the smallest of
@@ -408,7 +384,7 @@ private theorem enorm_setIntegral_timeShell_dyadicLayer_le {σ : ℝ} (hσ : 1 <
 /-- **Summing the atom pairings over the time shells.** If the smallest exponent is at most
 `ω (k + l) - δ (|k - σ j| + |l - σ j|)`, the pairings of `Fₖ` and `Fₗ` on all the shells add up to
 at most `c W 2^{-δ |k - l| / 2} (2^{ω k} Xₖ) (2^{ω l} Xₗ)`, with `W` independent of `k` and `l`. -/
-private theorem tsum_enorm_setIntegral_timeShell_dyadicLayer_le {σ : ℝ} (hσ : 1 < σ)
+theorem tsum_enorm_setIntegral_timeShell_dyadicLayer_le {σ : ℝ} (hσ : 1 < σ)
     {p b : ℝ≥0∞} (hp2 : p ≤ 2) {ω δ : ℝ} (hδ : 0 < δ)
     (hexp : ∀ j k l : ℝ, min ((1 - σ) * j + k + l) (min (p.toReal⁻¹ * j + k / 2 + b.toReal⁻¹ * l)
         (p.toReal⁻¹ * j + b.toReal⁻¹ * k + l / 2)) ≤
@@ -478,7 +454,7 @@ private theorem tsum_sq_two_rpow_mul_levelNorm_le {r' : ℝ≥0∞} (hr'0 : r' �
     simp only [eNorm_eq_self]
   have hsq (k : ℤ) : (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 =
       ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) := by
-    rw [levelNorm, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2),
+    rw [levelNorm_def, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2),
       hL2 ((ha k).const_mul _), ofReal_two_zpow, ← ENNReal.rpow_mul]
   calc _ = ∑' k : ℤ, ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
         tsum_congr hsq

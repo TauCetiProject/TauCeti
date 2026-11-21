@@ -46,6 +46,12 @@ at `q = ∞` (`TauCeti.exists_lt_eLorentzNorm_add_top`). On `(0, ∞)`, `t ↦ t
   `TauCeti.measure_gt_le_eLorentzNorm_top_div_rpow`: weak-`L^p` formulas and Chebyshev's bound.
 * `TauCeti.eLorentzNorm_le_of_exponent_le`, `TauCeti.MemLorentz.mono_exponent`: secondary-exponent
   embeddings `L^{p, q₀} ⊆ L^{p, q₁}`.
+* `TauCeti.rpow_mul_decreasingRearrangement_le_eLpNorm`,
+  `MeasureTheory.MemLp.decreasingRearrangement_lt_top`,
+  `MeasureTheory.MemLp.tendsto_decreasingRearrangement_atTop_nhds_zero`: size of the decreasing
+  rearrangement of an `Lᵖ` function.
+* `TauCeti.tsum_rpow_mul_decreasingRearrangement_sq_le`: the dyadic form of `L^q ⊆ L^{q, 2}` for
+  `q ≤ 2`, square summability of the normalized levels `2^{k/q} f*(2ᵏ)`.
 * `TauCeti.eLorentzNorm_add_le`, `TauCeti.eLorentzNorm_add_le'`, `TauCeti.MemLorentz.add`:
   quasi-triangle inequalities and closure under addition.
 * `TauCeti.eLorentzNorm_rpow_neg_inv_Ioi`, `TauCeti.eLpNorm_rpow_neg_inv_Ioi`,
@@ -518,6 +524,137 @@ theorem MemLorentz.mono_exponent (hp0 : p ≠ 0) (hptop : p ≠ ∞) {q₀ q₁ 
     (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hf)
 
 end Defs
+
+/-! ### Size of the decreasing rearrangement of an `Lᵖ` function -/
+
+section Lp
+
+variable {α ε : Type*} {mα : MeasurableSpace α} [TopologicalSpace ε] [ContinuousENorm ε]
+  {μ : Measure α} {f : α → ε} {p : ℝ≥0∞}
+
+/-- **Chebyshev's inequality for the decreasing rearrangement**: for `0 < p < ∞` and `t > 0`,
+`t ^ (1 / p) f*(t) ≤ ‖f‖_p`. This is `TauCeti.rpow_mul_decreasingRearrangement_le_eLorentzNorm` at
+the secondary exponent `p`, where the Lorentz gauge is the `Lᵖ` norm. -/
+theorem rpow_mul_decreasingRearrangement_le_eLpNorm (hf : AEStronglyMeasurable f μ) (hp0 : p ≠ 0)
+    (hptop : p ≠ ∞) {t : ℝ} (ht : 0 < t) :
+    ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t ≤ eLpNorm f p μ := by
+  have h := rpow_mul_decreasingRearrangement_le_eLorentzNorm hf hp0 hptop hp0 ht
+  rwa [div_self (ENNReal.toReal_pos hp0 hptop).ne', Real.one_rpow, ENNReal.ofReal_one, one_mul,
+    eLorentzNorm_self] at h
+
+/-- The decreasing rearrangement of a function in `Lᵖ`, `0 < p < ∞`, is finite at positive
+arguments. -/
+theorem _root_.MeasureTheory.MemLp.decreasingRearrangement_lt_top (hf : MemLp f p μ)
+    (hp0 : p ≠ 0) (hptop : p ≠ ∞) {t : ℝ} (ht : 0 < t) :
+    μ.decreasingRearrangement (‖f ·‖ₑ) t < ∞ :=
+  ENNReal.lt_top_of_mul_ne_top_right
+    ((rpow_mul_decreasingRearrangement_le_eLpNorm hf.aestronglyMeasurable hp0 hptop ht).trans_lt
+      hf.eLpNorm_lt_top).ne
+    (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht _)).ne'
+
+/-- The decreasing rearrangement of a function in `Lᵖ`, `0 < p < ∞`, tends to zero at infinity. -/
+theorem _root_.MeasureTheory.MemLp.tendsto_decreasingRearrangement_atTop_nhds_zero
+    (hf : MemLp f p μ) (hp0 : p ≠ 0) (hptop : p ≠ ∞) :
+    Tendsto (μ.decreasingRearrangement (‖f ·‖ₑ)) atTop (𝓝 0) := by
+  have hp : 0 < (p⁻¹).toReal :=
+    ENNReal.toReal_pos (ENNReal.inv_ne_zero.2 hptop) (ENNReal.inv_ne_top.2 hp0)
+  -- `f*(t) ≤ ‖f‖_p / t ^ (1 / p)`, which tends to `0`.
+  have hlim : Tendsto (fun t : ℝ ↦ eLpNorm f p μ / ENNReal.ofReal (t ^ (p⁻¹).toReal)) atTop
+      (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_div
+      (ENNReal.tendsto_ofReal_atTop.comp (tendsto_rpow_atTop hp)) (Or.inr hf.eLpNorm_ne_top)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun _ ↦ bot_le) ?_
+  filter_upwards [eventually_gt_atTop 0] with t ht
+  rw [ENNReal.le_div_iff_mul_le (Or.inl (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht _)).ne')
+    (Or.inl ENNReal.ofReal_ne_top), mul_comm]
+  exact rpow_mul_decreasingRearrangement_le_eLpNorm hf.aestronglyMeasurable hp0 hptop ht
+
+/-! ### Square summability of the dyadic levels -/
+
+/-- Dyadic sum and Lorentz gauge: with `φ(t) = t^{1/q} f*(t)`, the shifted levels
+`2^{(k-1)/q} f*(2ᵏ)` have squared sum at most `(log 2)⁻¹ ∫ φ² dt / t`. -/
+private theorem ofReal_log_two_mul_tsum_le_eLpNorm_multHaar {f : α → ε} {q : ℝ≥0∞}
+    (hq : 0 < q.toReal) :
+    ENNReal.ofReal (Real.log 2) * ∑' k : ℤ, (ENNReal.ofReal ((2 : ℝ) ^ (k - 1)) ^ q.toReal⁻¹ *
+        μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) ((2 : ℝ) ^ k)) ^ (2 : ℝ) ≤
+      eLpNorm (fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
+        μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t) 2 multHaar ^ (2 : ℝ) := by
+  set φ : ℝ → ℝ≥0∞ := fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
+    μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t
+  have hφ2 : ∫⁻ t, φ t ^ (2 : ℝ) ∂multHaar = eLpNorm φ 2 multHaar ^ (2 : ℝ) := by
+    rw [eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top
+      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
+    simpa using lintegral_rpow_eNorm_eq_rpow_eLpNorm' (f := φ) (μ := multHaar) two_pos
+  -- On `[2ᵏ⁻¹, 2ᵏ)` the `k`-th term is at most `φ²`.
+  have hcmp := ofReal_mul_tsum_int_le_lintegral_multHaar (b := 2) (c := 2⁻¹) (μ := 1)
+    one_le_two (by norm_num) (f := fun t ↦ φ t ^ (2 : ℝ))
+    (g := fun k ↦ (ENNReal.ofReal ((2 : ℝ) ^ (k - 1)) ^ q.toReal⁻¹ *
+      μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) ((2 : ℝ) ^ k)) ^ (2 : ℝ)) fun k r hr ↦ by
+      have hk : (2 : ℝ)⁻¹ * 2 ^ ((1 : ℝ) * k) = 2 ^ (k - 1) := by
+        rw [one_mul, Real.rpow_intCast, zpow_sub₀ two_ne_zero, zpow_one, mul_comm, div_eq_mul_inv]
+      have hk' : (2 : ℝ)⁻¹ * 2 ^ ((1 : ℝ) * k + |1|) = 2 ^ k := by
+        rw [abs_one, one_mul, Real.rpow_add two_pos, Real.rpow_intCast, Real.rpow_one]
+        field_simp
+      rw [hk, hk'] at hr
+      simp only [φ]
+      rw [ENNReal.ofReal_rpow_of_nonneg (zpow_pos two_pos _).le (inv_nonneg.2 hq.le)]
+      gcongr ?_ ^ _
+      exact mul_le_mul' (ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow (zpow_pos two_pos _).le hr.1
+        (inv_nonneg.2 hq.le))) (μ.antitone_decreasingRearrangement _ hr.2.le)
+  rwa [abs_one, one_mul, hφ2] at hcmp
+
+/-- `(2^{k/q} a)² = 2^{2/q} (2^{(k-1)/q} a)²`. -/
+private theorem ofReal_two_zpow_rpow_mul_rpow_two {q : ℝ} (hq : 0 < q) (k : ℤ) (a : ℝ≥0∞) :
+    (ENNReal.ofReal ((2 : ℝ) ^ k) ^ q⁻¹ * a) ^ (2 : ℝ) =
+      ENNReal.ofReal (2 ^ (2 / q)) * (ENNReal.ofReal ((2 : ℝ) ^ (k - 1)) ^ q⁻¹ * a) ^ (2 : ℝ) := by
+  have h2k : (2 : ℝ) ^ k = 2 * 2 ^ (k - 1) := by
+    rw [zpow_sub₀ two_ne_zero, zpow_one]
+    field_simp
+  rw [h2k, ENNReal.ofReal_mul zero_le_two, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hq.le),
+    mul_assoc, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ← ENNReal.rpow_mul,
+    ENNReal.ofReal_rpow_of_nonneg zero_le_two (by positivity), inv_mul_eq_div]
+
+/-- **Square summability of the normalized dyadic levels.** For `0 < q ≤ 2` and an almost
+everywhere strongly measurable `f`, the levels `f*(2ᵏ)` of the decreasing rearrangement of `‖f‖ₑ`
+satisfy
+
+`∑ₖ (2^{k/q} f*(2ᵏ))² ≤ 2^{2/q} (log 2)⁻¹ ‖f‖_q²`.
+
+The left side is a dyadic discretization of the square of the Lorentz gauge `‖f‖_{q,2}`, which is
+at most `‖f‖_q` since `q ≤ 2`. -/
+theorem tsum_rpow_mul_decreasingRearrangement_sq_le {f : α → ε} (hf : AEStronglyMeasurable f μ)
+    {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq2 : q ≤ 2) :
+    ∑' k : ℤ, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ q.toReal⁻¹ *
+        μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) ((2 : ℝ) ^ k)) ^ (2 : ℝ) ≤
+      ENNReal.ofReal (2 ^ (2 / q.toReal) / Real.log 2) * eLpNorm f q μ ^ (2 : ℝ) := by
+  have hqtop : q ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofNat_ne_top hq2
+  have hq : 0 < q.toReal := ENNReal.toReal_pos hq0 hqtop
+  have hlog : 0 < Real.log 2 := Real.log_pos one_lt_two
+  -- The Lorentz gauge `‖f‖_{q,2}` is at most `‖f‖_q`.
+  have hlor : eLpNorm (fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
+      μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t) 2 multHaar ≤ eLpNorm f q μ := by
+    have h := eLorentzNorm_le_of_exponent_le (f := f) (μ := μ) hq0 hqtop hq0 hq2
+    rw [eLorentzNorm_self, div_self hq.ne', Real.one_rpow, ENNReal.ofReal_one, one_mul,
+      eLorentzNorm_eq_eLpNorm hf hq0] at h
+    simpa [ENNReal.toReal_inv] using h
+  rw [tsum_congr fun k ↦ ofReal_two_zpow_rpow_mul_rpow_two hq k
+    (μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) ((2 : ℝ) ^ k)), ENNReal.tsum_mul_left]
+  calc _ ≤ ENNReal.ofReal (2 ^ (2 / q.toReal)) * ((ENNReal.ofReal (Real.log 2))⁻¹ *
+        eLpNorm (fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
+          μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t) 2 multHaar ^ (2 : ℝ)) := by
+        gcongr
+        rw [← ENNReal.div_eq_inv_mul, ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hlog))
+          (Or.inl ENNReal.ofReal_ne_top), mul_comm]
+        exact ofReal_log_two_mul_tsum_le_eLpNorm_multHaar hq
+    _ ≤ ENNReal.ofReal (2 ^ (2 / q.toReal)) *
+          ((ENNReal.ofReal (Real.log 2))⁻¹ * eLpNorm f q μ ^ (2 : ℝ)) := by
+        gcongr
+    _ = _ := by
+        rw [← mul_assoc, ← ENNReal.ofReal_inv_of_pos hlog, ← ENNReal.ofReal_mul (by positivity),
+          ← div_eq_mul_inv]
+
+end Lp
 
 /-! ### Zero, indicators, scalar multiplication, and quasi-triangle inequality -/
 

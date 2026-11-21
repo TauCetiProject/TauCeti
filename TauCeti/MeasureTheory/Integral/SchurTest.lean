@@ -61,6 +61,7 @@ and column integrals are only required almost everywhere.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
 * `TauCeti.lintegral_lintegral_mul_mul_le`: Schur's test for the bilinear form
   `∫∫ f(x) k(x, y) g(y)`, bounded by `‖f‖_p ‖g‖_q` for Hölder conjugate `p` and `q`.
+* `TauCeti.tsum_tsum_mul_mul_le`: the bilinear form of a convolution kernel on a countable group.
 * `TauCeti.lintegral_lintegral_mul_indicator_ball_mul_le`: the bilinear form for the kernel
   `1_{|x - y| < R}` on the real line, whose rows and columns have length `2R`.
 
@@ -332,6 +333,31 @@ theorem measurable_uncurry_indicator_ball {γ : Type*} [PseudoMetricSpace γ] [M
   rw [this]
   exact measurable_one.indicator
     (measurableSet_lt (measurable_snd.dist measurable_fst) measurable_const)
+
+/-- **Schur's test for a convolution kernel on a countable group**: for `w, y : G → ℝ≥0∞`,
+`∑_{k, l} w(k - l) yₖ yₗ ≤ (∑ₘ w(m)) ∑ₖ yₖ²`. This is `TauCeti.lintegral_lintegral_mul_mul_le`
+for the counting measure, whose rows and columns all have sum `∑ₘ w(m)`. -/
+theorem tsum_tsum_mul_mul_le {G : Type*} [AddGroup G] [Countable G] (w y : G → ℝ≥0∞) :
+    ∑' k, ∑' l, w (k - l) * (y k * y l) ≤ (∑' m, w m) * ∑' k, y k ^ 2 := by
+  let _ : MeasurableSpace G := ⊤
+  set W := ∑' m, w m
+  have hrow (k : G) : ∫⁻ l, w (k - l) ∂Measure.count ≤ W := by
+    rw [lintegral_count]; exact ((Equiv.subLeft k).tsum_eq w).le
+  have hcol (l : G) : ∫⁻ k, w (k - l) ∂Measure.count ≤ W := by
+    rw [lintegral_count]; exact ((Equiv.subRight l).tsum_eq w).le
+  have hnorm : eLpNorm y 2 Measure.count = (∑' k, y k ^ 2) ^ (2⁻¹ : ℝ) := by
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+      (measurable_of_countable y).aestronglyMeasurable, lintegral_count]
+    simp
+  have h := lintegral_lintegral_mul_mul_le (μ := Measure.count) (ν := Measure.count)
+    (k := fun k l : G ↦ w (k - l)) (measurable_of_countable _).aemeasurable
+    (measurable_of_countable y).aemeasurable (measurable_of_countable y).aemeasurable
+    (p := 2) (q := 2) (ae_of_all _ hrow) (ae_of_all _ hcol)
+  simp only [lintegral_count] at h
+  refine (h.trans_eq ?_).trans_eq' (tsum_congr fun k ↦ tsum_congr fun l ↦ by ring)
+  rw [hnorm, mul_assoc, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num),
+    ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+  norm_num
 
 /-- **Schur's test** for the kernel `1_{|x - y| < R}` on the real line: its rows and columns have
 length `2R`, so for Hölder conjugate `p` and `q`,

@@ -48,8 +48,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
   identity.
 * `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
-* `Continuous.radialRetraction`: it depends jointly continuously on a nonnegative radius and the
-  point.
+* `Continuous.radialRetraction`, `Filter.Tendsto.radialRetraction`: it depends jointly
+  continuously on a nonnegative radius and the point.
 * `TauCeti.dist_centeredRadialRetraction`: for `0 ≤ r`, the distance from the centre is
   `min (dist x x₀) r`.
 * `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
@@ -70,7 +70,7 @@ constant never matters for cutting off, where one is free to shrink the radius i
 
 public section
 
-open Filter Metric Set
+open Filter Metric Set Topology
 
 open scoped NNReal
 
@@ -235,8 +235,9 @@ theorem radialRetraction_eq_smul_radialRetraction_one (hr : 0 ≤ r) (x : E) :
   rcases hr.eq_or_lt with rfl | hr
   · simp [radialRetraction_def]
   rw [radialRetraction_def, radialRetraction_def, norm_smul,
-    Real.norm_of_nonneg (inv_nonneg.2 hr.le), smul_smul, smul_smul, one_div, mul_inv, inv_inv,
-    ← div_eq_mul_inv, mul_comm r, mul_div_assoc, div_self hr.ne', mul_one, div_eq_mul_inv]
+    Real.norm_of_nonneg (inv_nonneg.2 hr.le), smul_smul, smul_smul]
+  congr 1
+  field_simp
 
 /-- Two radial retractions at radii `s ≤ r` agree at a vector of norm at most `s`. -/
 theorem radialRetraction_eq_radialRetraction_of_norm_le {s : ℝ} (hs : ‖x‖ ≤ s) (hsr : s ≤ r) :
@@ -245,6 +246,13 @@ theorem radialRetraction_eq_radialRetraction_of_norm_le {s : ℝ} (hs : ‖x‖ 
   · rw [radialRetraction_of_norm_eq_zero h.symm, radialRetraction_of_norm_eq_zero h.symm]
   · rw [radialRetraction_of_norm_pos_of_norm_le h (hs.trans hsr),
       radialRetraction_of_norm_pos_of_norm_le h hs]
+
+/-- Truncating the radius at `‖x‖` does not change the radial retraction of `x`. -/
+theorem radialRetraction_min_norm (r : ℝ) (x : E) :
+    radialRetraction (min r ‖x‖) x = radialRetraction r x := by
+  rcases le_total r ‖x‖ with h | h
+  · rw [min_eq_left h]
+  · rw [min_eq_right h, radialRetraction_eq_radialRetraction_of_norm_le le_rfl h]
 
 /-- For nonnegative radii `s ≤ r`, the radial retractions of `x` at `r` and at `s` differ by a
 vector of norm at most `min ‖x‖ r`: the difference is the part of `x` between the heights `s`
@@ -424,6 +432,22 @@ theorem Continuous.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [No
   · simp only [TauCeti.radialRetraction_def]
     exact (continuousAt_const.min (hr.continuousAt.div hf.continuousAt.norm
       hx)).smul hf.continuousAt
+
+/-- If the radii `r a` are eventually nonnegative and converge to `r₀ ≥ 0`, and the points `f a`
+converge to `x`, then the radial retractions `R_{r a} (f a)` converge to `R_{r₀} x`. -/
+theorem Filter.Tendsto.radialRetraction {E α : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {l : Filter α} {r : α → ℝ} {r₀ : ℝ} {f : α → E} {x : E}
+    (hr : Tendsto r l (𝓝 r₀)) (hr0 : ∀ᶠ a in l, 0 ≤ r a) (hr₀ : 0 ≤ r₀)
+    (hf : Tendsto f l (𝓝 x)) :
+    Tendsto (fun a ↦ TauCeti.radialRetraction (r a) (f a)) l
+      (𝓝 (TauCeti.radialRetraction r₀ x)) := by
+  -- Cut the radius at `0` to apply the joint continuity on `ℝ × E`.
+  have hc := ((continuous_fst.max continuous_const).radialRetraction
+    (fun _ ↦ le_max_right _ 0) continuous_snd).tendsto (r₀, x)
+  simp only [max_eq_left hr₀] at hc
+  refine (hc.comp (hr.prodMk_nhds hf)).congr' ?_
+  filter_upwards [hr0] with a ha
+  simp [max_eq_left ha]
 
 /-- Precomposing with the centred radial retraction turns a map that is Lipschitz on a closed ball
 into a globally Lipschitz map, at the cost of doubling the constant. -/
