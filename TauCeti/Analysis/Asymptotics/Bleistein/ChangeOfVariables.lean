@@ -10,12 +10,15 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Calculus.LHopital
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Bleistein's change of variables for coalescing critical points
@@ -31,11 +34,12 @@ mapped to `w = 0` and `t = α` maps to `w = a(α) = bleisteinA (p α) α`.
 This file defines `bleisteinA`, `bleisteinW`, and the transformed amplitude `bleisteinAmplitude`
 taking values in a real normed space `E` (including `ℝ` and `ℂ`). It establishes the exact quadratic
 phase identity, continuity and strict monotonicity of `bleisteinW`, `C¹` regularity across the
-critical point `t = α`, strict differentiability of the inverse map, continuity of the transformed
-amplitude, characterizations of the upper integration limit `κ(α) = lim_{t → k} w(α, t)` (together
-with an explicit bounded-phase example on `(0, ∞)` showing that `k = ∞` alone does not force
-`κ = ∞`), and the one-dimensional change-of-variables formulas for both integrability and the
-Bochner integral.
+critical point `t = α`, strict differentiability and `C^n` regularity of the inverse map,
+continuity of the transformed amplitude, characterizations of the upper integration limit
+`κ(α) = lim_{t → k} w(α, t)` (together with an explicit bounded-phase example on `(0, ∞)` showing
+that `k = ∞` alone does not force `κ = ∞`), and the one-dimensional change-of-variables formulas
+for both integrability and the Bochner integral, both for a unique nondegenerate critical point and
+under pointwise hypotheses on the coordinate (positivity, injectivity, and positive derivative).
 
 ## Main definitions
 
@@ -51,18 +55,24 @@ Bochner integral.
 
 * `TauCeti.bleistein_phase_eq`: `bleisteinW p α t ^ 2 / 2 - bleisteinA p α * bleisteinW p α t + p 0
   = p t` whenever `p α ≤ p 0` and `p α ≤ p t`.
-* `TauCeti.continuousOn_bleisteinW`, `TauCeti.strictMonoOn_bleisteinW`, and
+* `TauCeti.continuousWithinAt_bleisteinW`, `TauCeti.strictMonoOn_bleisteinW`, and
   `TauCeti.contDiffOn_bleisteinW`: `bleisteinW p α` is continuous wherever `p` is continuous,
-  strictly increasing under strict monotonicity away from `α`, and `C¹` across `t = α` for `C²`
-  phases, with positive derivative `√(deriv (deriv p) α)` at `t = α`
-  (`TauCeti.hasDerivAt_bleisteinW_self`) and derivative `(deriv p t) / (w - a)` away from `α`
-  (`TauCeti.hasDerivAt_bleisteinW_of_ne`, DLMF 2.3.28).
-* `TauCeti.hasStrictDerivAt_invFunOn_bleisteinW` and `TauCeti.continuousOn_bleisteinAmplitude`:
-  strict differentiability of the inverse coordinate and continuity of the transformed amplitude
-  when `deriv p` vanishes only at `α`.
-* `TauCeti.integrableOn_bleistein_iff` and `TauCeti.integral_bleistein_eq`: equivalence of
-  integrability and equality of the original and transformed integrals (DLMF 2.3.24, 2.3.29),
-  together with interval specializations on `(0, k)` and `(0, ∞)`.
+  strictly increasing under strict monotonicity away from `α`, and `C¹` across `t = α` for `C¹`
+  phases with a strict minimum at `α` and `0 < deriv (deriv p) α`, with derivative
+  `√(deriv (deriv p) α)` at `t = α` (`TauCeti.hasDerivAt_bleisteinW_self`) and derivative
+  `(deriv p t) / (w - a)` away from `α` (`TauCeti.deriv_bleisteinW_of_ne`, DLMF 2.3.28).
+* `TauCeti.deriv_bleisteinW_pos`, `TauCeti.deriv_bleisteinW_pos_of_differentiableOn`: positivity
+  of `w'` when `α` is the only critical point of `p`.
+* `TauCeti.hasStrictDerivAt_invFunOn_bleisteinW`, `TauCeti.deriv_invFunOn_bleisteinW`,
+  `TauCeti.contDiffOn_invFunOn_bleisteinW`, `TauCeti.bleisteinAmplitude_eq_mul_deriv_invFunOn_smul`,
+  `TauCeti.continuousOn_bleisteinAmplitude`, and `TauCeti.continuousOn_bleisteinAmplitude_of_injOn`:
+  differentiability and `C^n` regularity of the inverse coordinate, the DLMF 2.3.30 form of the
+  transformed amplitude, and its continuity.
+* `TauCeti.integrableOn_bleistein_iff_of_deriv_pos`, `TauCeti.exp_smul_integral_bleistein_eq`,
+  `TauCeti.integral_bleistein_eq_of_deriv_pos`, `TauCeti.integrableOn_bleistein_iff`, and
+  `TauCeti.integral_bleistein_eq`: equivalence of integrability and equality of the original and
+  transformed integrals (DLMF 2.3.24, 2.3.29), together with interval specializations on `(0, k)`
+  and `(0, ∞)`.
 
 ## References
 
@@ -71,12 +81,14 @@ Bochner integral.
 * N. Bleistein, *Uniform asymptotic expansions of integrals with stationary point near algebraic
   singularity*, Comm. Pure Appl. Math. 19 (1966), 353–370.
 * F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 9, §9.
+* R. Wong, *Asymptotic Approximations of Integrals*, Academic Press, 1989; reprinted SIAM, 2001.
+  Chapter 7, §2.
 -/
 
 public section
 
 open Filter Function MeasureTheory Set
-open scoped Topology
+open scoped Topology ContDiff
 
 namespace TauCeti
 
@@ -129,6 +141,16 @@ theorem abs_bleisteinA (p : ℝ → ℝ) (α : ℝ) :
   · simp [bleisteinA]
   · simp [bleisteinA, sign_pos hα, abs_of_nonneg (Real.sqrt_nonneg _)]
 
+/-- Formula for `bleisteinA p α` when `0 < α`. -/
+theorem bleisteinA_of_pos {p : ℝ → ℝ} {α : ℝ} (hα : 0 < α) :
+    bleisteinA p α = Real.sqrt (2 * (p 0 - p α)) := by
+  rw [bleisteinA, sign_pos hα, SignType.coe_one, one_mul]
+
+/-- Formula for `bleisteinA p α` when `α < 0`. -/
+theorem bleisteinA_of_neg {p : ℝ → ℝ} {α : ℝ} (hα : α < 0) :
+    bleisteinA p α = -Real.sqrt (2 * (p 0 - p α)) := by
+  rw [bleisteinA, sign_neg hα, SignType.coe_neg_one, neg_one_mul]
+
 /-- When `0 < α` and `p α < p 0`, `bleisteinA p α` is strictly positive. -/
 theorem bleisteinA_pos {p : ℝ → ℝ} {α : ℝ} (hα : 0 < α) (hp : p α < p 0) :
     0 < bleisteinA p α := by
@@ -159,6 +181,16 @@ theorem bleisteinW_sub_bleisteinA (p : ℝ → ℝ) (α t : ℝ) :
     bleisteinW p α t - bleisteinA p α =
       SignType.sign (t - α) * Real.sqrt (2 * (p t - p α)) :=
   add_sub_cancel_left _ _
+
+/-- Displacement `bleisteinW p α t - bleisteinA p α = √(2 * (p t - p α))` when `α < t`. -/
+theorem bleisteinW_sub_bleisteinA_of_gt {p : ℝ → ℝ} {α t : ℝ} (ht : α < t) :
+    bleisteinW p α t - bleisteinA p α = Real.sqrt (2 * (p t - p α)) := by
+  rw [bleisteinW_sub_bleisteinA, sign_pos (sub_pos.mpr ht), SignType.coe_one, one_mul]
+
+/-- Displacement `bleisteinW p α t - bleisteinA p α = -√(2 * (p t - p α))` when `t < α`. -/
+theorem bleisteinW_sub_bleisteinA_of_lt {p : ℝ → ℝ} {α t : ℝ} (ht : t < α) :
+    bleisteinW p α t - bleisteinA p α = -Real.sqrt (2 * (p t - p α)) := by
+  rw [bleisteinW_sub_bleisteinA, sign_neg (sub_neg.mpr ht), SignType.coe_neg_one, neg_one_mul]
 
 /-- Square of `bleisteinA p α` when `p α ≤ p 0` (DLMF 2.3.26). -/
 theorem sq_bleisteinA {p : ℝ → ℝ} {α : ℝ} (h0 : p α ≤ p 0) :
@@ -204,11 +236,10 @@ theorem bleisteinW_sub_bleisteinA_ne_zero {p : ℝ → ℝ} {α t : ℝ} (ht : p
 
 /-! ### Continuity and strict monotonicity -/
 
-/-- Bleistein's coordinate `bleisteinW p α` is continuous on any set `s` where `p` is
-continuous. -/
-theorem continuousOn_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} (hp : ContinuousOn p s) (α : ℝ) :
-    ContinuousOn (bleisteinW p α) s := by
-  intro t ht
+/-- Bleistein's coordinate `bleisteinW p α` is continuous within `s` at `t` whenever `p` is. -/
+theorem continuousWithinAt_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} {t : ℝ}
+    (hp : ContinuousWithinAt p s t) (α : ℝ) :
+    ContinuousWithinAt (bleisteinW p α) s t := by
   rcases eq_or_ne t α with rfl | hne
   · rw [ContinuousWithinAt, bleisteinW_self]
     have h0 : Tendsto (fun u => (SignType.sign (u - t) : ℝ) * Real.sqrt (2 * (p u - p t)))
@@ -222,7 +253,7 @@ theorem continuousOn_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} (hp : Continuous
           · simp [sign_pos h]
         exact mul_le_of_le_one_left (Real.sqrt_nonneg _) hs
       · have hp0 : Tendsto (fun u => 2 * (p u - p t)) (𝓝[s] t) (𝓝 0) := by
-          simpa using ((hp t ht).tendsto.sub_const (p t)).const_mul 2
+          simpa using (hp.tendsto.sub_const (p t)).const_mul 2
         have hsq := (Real.continuous_sqrt.tendsto 0).comp hp0
         rwa [Real.sqrt_zero] at hsq
     have hsum := (tendsto_const_nhds (x := bleisteinA p t)).add h0
@@ -239,9 +270,15 @@ theorem continuousOn_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} (hp : Continuous
       (eventually_nhdsWithin_of_eventually_nhds hs_ev).mono fun u hu => by rw [bleisteinW, hu]
     have hsqrt : ContinuousWithinAt (fun u => Real.sqrt (2 * (p u - p α))) s t :=
       Real.continuous_sqrt.continuousAt.comp_continuousWithinAt
-        (((hp t ht).sub continuousWithinAt_const).const_mul 2)
+        ((hp.sub continuousWithinAt_const).const_mul 2)
     exact (continuousWithinAt_const.add (hsqrt.const_mul c)).congr_of_eventuallyEq
       hc_ev.symm (by simp [bleisteinW, c])
+
+/-- Bleistein's coordinate `bleisteinW p α` is continuous on any set `s` where `p` is
+continuous. -/
+theorem continuousOn_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} (hp : ContinuousOn p s) (α : ℝ) :
+    ContinuousOn (bleisteinW p α) s :=
+  fun t ht => continuousWithinAt_bleisteinW (hp t ht) α
 
 /-- Bleistein's coordinate `bleisteinW p α` is strictly increasing on `I` whenever `p` is strictly
 decreasing on `I ∩ (-∞, α]` and strictly increasing on `I ∩ [α, ∞)`. -/
@@ -276,6 +313,14 @@ theorem strictMonoOn_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α : ℝ} (hα 
     have hp₁ : 0 < 2 * (p t₁ - p α) := by linarith [hmono ⟨hα, le_rfl⟩ ⟨ht₁, h₁.le⟩ h₁]
     have h12 : p t₁ < p t₂ := hmono ⟨ht₁, h₁.le⟩ ⟨ht₂, h₂.le⟩ hlt
     exact Real.sqrt_lt_sqrt hp₁.le (by linarith)
+
+/-- Positivity of `bleisteinW p α t` for `0 < t` under the monotonicity hypotheses of
+`TauCeti.strictMonoOn_bleisteinW` when `0 ∈ I`. -/
+theorem bleisteinW_pos {p : ℝ → ℝ} {I : Set ℝ} {α t : ℝ} (hα : α ∈ I) (h0 : 0 ∈ I)
+    (hanti : StrictAntiOn p (I ∩ Iic α)) (hmono : StrictMonoOn p (I ∩ Ici α)) (ht : t ∈ I)
+    (ht0 : 0 < t) :
+    0 < bleisteinW p α t := by
+  simpa [bleisteinW_zero] using strictMonoOn_bleisteinW hα hanti hmono h0 ht ht0
 
 /-! ### Differentiability, `C¹` smoothness across the critical point, and positivity of `w'` -/
 
@@ -315,17 +360,47 @@ theorem hasDerivAt_bleisteinW_of_ne {p : ℝ → ℝ} {α t p' : ℝ} (hpt : p �
       = (s * s) * p' / (s * Real.sqrt (2 * (p t - p α))) := by field_simp [hs_ne, hr_ne]
     _ = p' / (s * Real.sqrt (2 * (p t - p α))) := by rw [hs_sq, one_mul]
 
-/-- Value of `deriv (bleisteinW p α) t` away from `t = α` where `p α < p t` (DLMF 2.3.28). -/
-theorem deriv_bleisteinW_of_ne {p : ℝ → ℝ} {α t : ℝ} (hpt : p α < p t)
-    (hp : DifferentiableAt ℝ p t) :
-    deriv (bleisteinW p α) t = deriv p t / (bleisteinW p α t - bleisteinA p α) :=
-  (hasDerivAt_bleisteinW_of_ne hpt hp.hasDerivAt).deriv
+/-- Value of `deriv (bleisteinW p α) t` away from `t = α` where `p α < p t` (DLMF 2.3.28). Both
+sides vanish when `p` is not differentiable at `t`. -/
+theorem deriv_bleisteinW_of_ne {p : ℝ → ℝ} {α t : ℝ} (hpt : p α < p t) :
+    deriv (bleisteinW p α) t = deriv p t / (bleisteinW p α t - bleisteinA p α) := by
+  by_cases hd : DifferentiableAt ℝ p t
+  · exact (hasDerivAt_bleisteinW_of_ne hpt hd.hasDerivAt).deriv
+  · rw [deriv_zero_of_not_differentiableAt hd, zero_div]
+    refine deriv_zero_of_not_differentiableAt fun hw => hd ?_
+    have hev : ∀ᶠ u in 𝓝 t, bleisteinW p α u - bleisteinA p α ≠ 0 :=
+      (hw.continuousAt.sub continuousAt_const).eventually_ne
+        (bleisteinW_sub_bleisteinA_ne_zero hpt)
+    have hp_eq :
+        (fun u => (bleisteinW p α u - bleisteinA p α) ^ 2 / 2 + p α) =ᶠ[𝓝 t] p := by
+      filter_upwards [hev] with u hu
+      have hpu : p α ≤ p u := by
+        by_contra! hlt
+        apply hu
+        rw [bleisteinW_sub_bleisteinA, Real.sqrt_eq_zero_of_nonpos (by linarith), mul_zero]
+      linarith [sq_bleisteinW_sub_bleisteinA hpu]
+    exact (((hw.sub (differentiableAt_const _)).pow 2).div_const 2 |>.add
+      (differentiableAt_const _)).congr_of_eventuallyEq hp_eq.symm
 
-/-- At the critical point `t = α`, `bleisteinW p α` is differentiable with positive derivative
-`√(p'')` whenever `deriv p α = 0` and `HasDerivAt (deriv p) p'' α` with `0 < p''`. -/
+/-- Strict positivity of `deriv (bleisteinW p α) t` away from `t = α` when `p α < p t` and
+`deriv p t` has the sign of `t - α`. -/
+theorem deriv_bleisteinW_pos_of_lt {p : ℝ → ℝ} {α t : ℝ}
+    (hpt : p α < p t) (hsign : 0 < (t - α) * deriv p t) :
+    0 < deriv (bleisteinW p α) t := by
+  rw [deriv_bleisteinW_of_ne hpt]
+  have hsqrt : 0 < Real.sqrt (2 * (p t - p α)) := Real.sqrt_pos.mpr (by linarith)
+  rcases (ne_of_apply_ne p hpt.ne').lt_or_gt with hlt | hgt
+  · rw [bleisteinW_sub_bleisteinA_of_lt hlt]
+    exact div_pos_of_neg_of_neg (neg_of_mul_pos_right hsign (sub_neg.mpr hlt).le)
+      (neg_neg_of_pos hsqrt)
+  · rw [bleisteinW_sub_bleisteinA_of_gt hgt]
+    exact div_pos (pos_of_mul_pos_right hsign (sub_pos.mpr hgt).le) hsqrt
+
+/-- At the critical point `t = α`, `bleisteinW p α` is differentiable with derivative `√(p'')`
+whenever `deriv p α = 0` and `HasDerivAt (deriv p) p'' α`. -/
 theorem hasDerivAt_bleisteinW_self {p : ℝ → ℝ} {α p'' : ℝ}
     (hp_diff : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t) (hpα : deriv p α = 0)
-    (hp'' : HasDerivAt (deriv p) p'' α) (hp''_pos : 0 < p'') :
+    (hp'' : HasDerivAt (deriv p) p'' α) :
     HasDerivAt (bleisteinW p α) (Real.sqrt p'') α := by
   rw [hasDerivAt_iff_tendsto_slope]
   have hlim : Tendsto (fun t => 2 * (p t - p α) / (t - α) ^ 2) (𝓝[≠] α) (𝓝 p'') := by
@@ -358,90 +433,102 @@ theorem hasDerivAt_bleisteinW_self {p : ℝ → ℝ} {α p'' : ℝ}
       (𝓝[≠] α) (𝓝 (Real.sqrt p'')) :=
     (Real.continuous_sqrt.continuousAt).tendsto.comp hlim
   refine hsqrt_lim.congr' ?_
-  filter_upwards [eventually_mem_nhdsWithin, hlim.eventually (eventually_gt_nhds hp''_pos)]
-    with t ht hpos
+  filter_upwards [eventually_mem_nhdsWithin] with t ht
   have hne : t - α ≠ 0 := sub_ne_zero.mpr (mem_compl_singleton_iff.mp ht)
-  have hnum_nonneg : 0 ≤ 2 * (p t - p α) :=
-    le_of_lt ((div_pos_iff_of_pos_right (sq_pos_of_ne_zero hne)).mp hpos)
   rw [slope_def_field, bleisteinW_self, bleisteinW_sub_bleisteinA,
-    Real.sqrt_div hnum_nonneg, Real.sqrt_sq_eq_abs]
+    Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq_eq_abs]
   have habs_ne : |t - α| ≠ 0 := abs_ne_zero.mpr hne
   field_simp [habs_ne, hne]
   linear_combination -Real.sqrt (2 * (p t - p α)) * sign_mul_abs (t - α)
 
-/-- Value of `deriv (bleisteinW p α) α` at a nondegenerate minimum `α` of `p`. -/
+/-- Value of `deriv (bleisteinW p α) α` at a critical point `α` of `p`. -/
 theorem deriv_bleisteinW_self {p : ℝ → ℝ} {α p'' : ℝ}
     (hp_diff : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t) (hpα : deriv p α = 0)
-    (hp'' : HasDerivAt (deriv p) p'' α) (hp''_pos : 0 < p'') :
+    (hp'' : HasDerivAt (deriv p) p'' α) :
     deriv (bleisteinW p α) α = Real.sqrt p'' :=
-  (hasDerivAt_bleisteinW_self hp_diff hpα hp'' hp''_pos).deriv
+  (hasDerivAt_bleisteinW_self hp_diff hpα hp'').deriv
+
+/-- Strict positivity of `deriv (bleisteinW p α)` at a nondegenerate critical point `t = α`. -/
+theorem deriv_bleisteinW_self_pos {p : ℝ → ℝ} {α p'' : ℝ}
+    (hp_diff : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t) (hpα : deriv p α = 0)
+    (hp'' : HasDerivAt (deriv p) p'' α) (hp''_pos : 0 < p'') :
+    0 < deriv (bleisteinW p α) α := by
+  rw [deriv_bleisteinW_self hp_diff hpα hp'']
+  exact Real.sqrt_pos.mpr hp''_pos
+
+/-- Continuity of `deriv (bleisteinW p α)` at a nondegenerate critical point `t = α`. -/
+theorem continuousAt_deriv_bleisteinW_self {p : ℝ → ℝ} {α p'' : ℝ}
+    (hp_diff : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t) (hpα : deriv p α = 0)
+    (hp'' : HasDerivAt (deriv p) p'' α) (hp''_pos : 0 < p'') :
+    ContinuousAt (deriv (bleisteinW p α)) α := by
+  rw [continuousAt_iff_punctured_nhds, deriv_bleisteinW_self hp_diff hpα hp'']
+  have hslope1 : Tendsto (fun t => deriv p t / (t - α)) (𝓝[≠] α) (𝓝 p'') := by
+    simpa [slope_fun_def_field, hpα] using hasDerivAt_iff_tendsto_slope.mp hp''
+  have hslope2 : Tendsto (fun t => (bleisteinW p α t - bleisteinW p α α) / (t - α))
+      (𝓝[≠] α) (𝓝 (Real.sqrt p'')) := by
+    have h := hasDerivAt_iff_tendsto_slope.mp (hasDerivAt_bleisteinW_self hp_diff hpα hp'')
+    rwa [slope_fun_def_field] at h
+  have hsqrt_pos : 0 < Real.sqrt p'' := Real.sqrt_pos.mpr hp''_pos
+  have hquot : Tendsto (fun t => (deriv p t / (t - α)) /
+      ((bleisteinW p α t - bleisteinW p α α) / (t - α))) (𝓝[≠] α) (𝓝 (Real.sqrt p'')) := by
+    rw [← Real.div_sqrt (x := p'')]
+    exact hslope1.div hslope2 hsqrt_pos.ne'
+  refine hquot.congr' ?_
+  filter_upwards [self_mem_nhdsWithin, hslope2.eventually (lt_mem_nhds hsqrt_pos)] with
+    t (ht : t ≠ α) hpos
+  have hsub : t - α ≠ 0 := sub_ne_zero.mpr ht
+  have hw_ne : bleisteinW p α t - bleisteinA p α ≠ 0 := fun h => by
+    rw [bleisteinW_self, h, zero_div] at hpos
+    exact lt_irrefl 0 hpos
+  have hpt : p α < p t := by
+    contrapose! hw_ne
+    rw [bleisteinW_sub_bleisteinA, Real.sqrt_eq_zero_of_nonpos (by linarith), mul_zero]
+  rw [deriv_bleisteinW_of_ne hpt, bleisteinW_self, div_div_div_cancel_right₀ hsub]
 
 /-- Bleistein's coordinate `bleisteinW p α` is `C¹` across the critical point `t = α` on an open
-set `I` when `p` is `C²` on `I` with `deriv p α = 0`, `0 < deriv (deriv p) α`, and strict
-monotonicity away from `α`. -/
+set `I` when `p` is `C¹` on `I`, attains its strict minimum on `I` at `α`, and satisfies
+`0 < deriv (deriv p) α`. -/
 theorem contDiffOn_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α : ℝ} (hI : IsOpen I) (hα : α ∈ I)
-    (hp : ContDiffOn ℝ 2 p I) (hpα : deriv p α = 0) (hp''_pos : 0 < deriv (deriv p) α)
-    (hanti : StrictAntiOn p (I ∩ Iic α)) (hmono : StrictMonoOn p (I ∩ Ici α)) :
+    (hp : ContDiffOn ℝ 1 p I) (hmin : ∀ t ∈ I, t ≠ α → p α < p t)
+    (hp''_pos : 0 < deriv (deriv p) α) :
     ContDiffOn ℝ 1 (bleisteinW p α) I := by
-  have hlt_of_ne : ∀ u ∈ I, u ≠ α → p α < p u := fun u hu hne =>
-    hne.lt_or_gt.elim (fun h => hanti ⟨hu, h.le⟩ ⟨hα, le_rfl⟩ h)
-      fun h => hmono ⟨hα, le_rfl⟩ ⟨hu, h.le⟩ h
-  have hp_diff : ∀ t ∈ I, DifferentiableAt ℝ p t := fun t ht =>
-    (hp.contDiffAt (hI.mem_nhds ht)).differentiableAt (by decide)
-  have hp'_cd : ContDiffOn ℝ 1 (deriv p) I := hp.deriv_of_isOpen hI (by decide)
+  have hdiff : ∀ t ∈ I, DifferentiableAt ℝ p t :=
+    fun t ht => (hp.differentiableOn one_ne_zero).differentiableAt (hI.mem_nhds ht)
+  have hp'_cont : ContinuousOn (deriv p) I := hp.continuousOn_deriv_of_isOpen hI le_rfl
+  have hdiff_nhds : ∀ᶠ t in 𝓝 α, DifferentiableAt ℝ p t :=
+    Filter.Eventually.mono (hI.mem_nhds hα) hdiff
+  have hpα : deriv p α = 0 :=
+    ((isMinOn_iff.mpr fun t ht => (eq_or_ne t α).elim (fun h => h ▸ le_rfl)
+      (fun hne => (hmin t ht hne).le)).isLocalMin (hI.mem_nhds hα)).deriv_eq_zero
   have hp''_at : HasDerivAt (deriv p) (deriv (deriv p) α) α :=
-    ((hp'_cd.contDiffAt (hI.mem_nhds hα)).differentiableAt one_ne_zero).hasDerivAt
-  have hw_self : HasDerivAt (bleisteinW p α) (Real.sqrt (deriv (deriv p) α)) α :=
-    hasDerivAt_bleisteinW_self (Filter.eventually_of_mem (hI.mem_nhds hα) hp_diff)
-      hpα hp''_at hp''_pos
-  have hw_diff : DifferentiableOn ℝ (bleisteinW p α) I := fun t ht => by
-    rcases eq_or_ne α t with rfl | hne
-    · exact hw_self.differentiableAt.differentiableWithinAt
-    · exact (hasDerivAt_bleisteinW_of_ne (hlt_of_ne t ht hne.symm)
-        (hp_diff t ht).hasDerivAt).differentiableAt.differentiableWithinAt
-  have h1 : (1 : WithTop ℕ∞) = (0 : WithTop ℕ∞) + 1 := rfl
-  rw [h1, contDiffOn_succ_iff_deriv_of_isOpen hI]
-  refine ⟨hw_diff, by simp, contDiffOn_zero.mpr fun t ht => ContinuousAt.continuousWithinAt ?_⟩
-  rcases eq_or_ne α t with rfl | hne_at
-  · rw [continuousAt_iff_punctured_nhds, hw_self.deriv]
-    have hnum : Tendsto (fun u => (u - α)⁻¹ * (deriv p u - deriv p α))
-        (𝓝[≠] α) (𝓝 (deriv (deriv p) α)) :=
-      hasDerivAt_iff_tendsto_slope.mp hp''_at
-    have hden : Tendsto (fun u => (u - α)⁻¹ * (bleisteinW p α u - bleisteinW p α α))
-        (𝓝[≠] α) (𝓝 (Real.sqrt (deriv (deriv p) α))) :=
-      hasDerivAt_iff_tendsto_slope.mp hw_self
-    have hquot := hnum.div hden (Real.sqrt_pos.mpr hp''_pos).ne'
-    rw [Real.div_sqrt] at hquot
-    refine hquot.congr' ?_
-    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (hI.mem_nhds hα),
-        eventually_mem_nhdsWithin] with u huI hu_ne
-    have hne' : u ≠ α := mem_compl_singleton_iff.mp hu_ne
-    have hpu : p α < p u := hlt_of_ne u huI hne'
-    have hw_ne := bleisteinW_sub_bleisteinA_ne_zero hpu
-    have hsub_ne : u - α ≠ 0 := sub_ne_zero.mpr hne'
-    rw [Pi.div_apply, deriv_bleisteinW_of_ne hpu (hp_diff u huI), hpα, sub_zero,
-      bleisteinW_self]
-    field_simp [hsub_ne, hw_ne]
-  · have hne : t ≠ α := hne_at.symm
-    have hpt : p α < p t := hlt_of_ne t ht hne
-    have hw_cont : ContinuousAt (bleisteinW p α) t :=
-      (continuousOn_bleisteinW hp.continuousOn α).continuousAt (hI.mem_nhds ht)
-    have hp'_cont : ContinuousAt (deriv p) t :=
-      (hp'_cd.continuousOn t ht).continuousAt (hI.mem_nhds ht)
-    have hquot : ContinuousAt (fun u => deriv p u / (bleisteinW p α u - bleisteinA p α)) t :=
-      hp'_cont.div (hw_cont.sub continuousAt_const) (bleisteinW_sub_bleisteinA_ne_zero hpt)
-    refine hquot.congr (Filter.eventually_of_mem
-      (inter_mem (hI.mem_nhds ht) (isOpen_ne.mem_nhds hne)) fun u ⟨huI, hu_ne⟩ => ?_)
-    exact (deriv_bleisteinW_of_ne (hlt_of_ne u huI hu_ne) (hp_diff u huI)).symm
+    (differentiableAt_of_deriv_ne_zero hp''_pos.ne').hasDerivAt
+  rw [contDiffOn_one_iff_derivWithin hI.uniqueDiffOn]
+  refine ⟨fun t ht => ?_, ContinuousOn.congr ?_ fun _ hx => derivWithin_of_isOpen hI hx⟩
+  · rcases eq_or_ne t α with rfl | hne
+    · exact (hasDerivAt_bleisteinW_self hdiff_nhds hpα hp''_at).differentiableAt
+        |>.differentiableWithinAt
+    · exact (hasDerivAt_bleisteinW_of_ne (hmin t ht hne)
+        (hdiff t ht).hasDerivAt).differentiableAt.differentiableWithinAt
+  · intro t ht
+    rcases eq_or_ne t α with rfl | hne
+    · exact (continuousAt_deriv_bleisteinW_self hdiff_nhds hpα hp''_at
+        hp''_pos).continuousWithinAt
+    · have hw_cont : ContinuousAt (bleisteinW p α) t :=
+        (continuousOn_bleisteinW hp.continuousOn α).continuousAt (hI.mem_nhds ht)
+      have hquot : ContinuousAt (fun u => deriv p u / (bleisteinW p α u - bleisteinA p α)) t :=
+        (hp'_cont.continuousAt (hI.mem_nhds ht)).div (hw_cont.sub continuousAt_const)
+          (bleisteinW_sub_bleisteinA_ne_zero (hmin t ht hne))
+      refine (hquot.congr ?_).continuousWithinAt
+      filter_upwards [hI.mem_nhds ht, isOpen_ne.mem_nhds hne] with u hu hune
+      exact (deriv_bleisteinW_of_ne (hmin u hu hune)).symm
 
 /-- Strict differentiability of `bleisteinW p α` at every point of an open set `I` under the
 hypotheses of `TauCeti.contDiffOn_bleisteinW`. -/
 theorem hasStrictDerivAt_bleisteinW {p : ℝ → ℝ} {I : Set ℝ} {α t : ℝ}
-    (hI : IsOpen I) (hα : α ∈ I) (hp : ContDiffOn ℝ 2 p I) (hpα : deriv p α = 0)
-    (hp''_pos : 0 < deriv (deriv p) α) (hanti : StrictAntiOn p (I ∩ Iic α))
-    (hmono : StrictMonoOn p (I ∩ Ici α)) (ht : t ∈ I) :
+    (hI : IsOpen I) (hα : α ∈ I) (hp : ContDiffOn ℝ 1 p I)
+    (hmin : ∀ u ∈ I, u ≠ α → p α < p u) (hp''_pos : 0 < deriv (deriv p) α) (ht : t ∈ I) :
     HasStrictDerivAt (bleisteinW p α) (deriv (bleisteinW p α) t) t :=
-  ((contDiffOn_bleisteinW hI hα hp hpα hp''_pos hanti hmono).contDiffAt
+  ((contDiffOn_bleisteinW hI hα hp hmin hp''_pos).contDiffAt
     (hI.mem_nhds ht)).hasStrictDerivAt_deriv one_ne_zero
 
 /-- When `α` is the unique critical point of `p` on an open order-connected set `I`,
@@ -460,23 +547,60 @@ theorem deriv_bleisteinW_pos {p : ℝ → ℝ} {I : Set ℝ} {α t : ℝ}
   · have hpt : p α < p t := hanti ⟨ht, hlt.le⟩ ⟨hα, le_rfl⟩ hlt
     have hsign := sign_deriv_eq_sign_sub hord hα hp'_cont hpα hp''_pos hp' ht
     rw [sign_neg (sub_neg.mpr hlt), sign_eq_neg_one_iff] at hsign
-    rw [deriv_bleisteinW_of_ne hpt (hp_diff t ht), bleisteinW_sub_bleisteinA,
+    rw [deriv_bleisteinW_of_ne hpt, bleisteinW_sub_bleisteinA,
       sign_neg (sub_neg.mpr hlt), SignType.coe_neg_one, neg_one_mul]
     exact div_pos_of_neg_of_neg hsign (neg_lt_zero.mpr (Real.sqrt_pos.mpr (by linarith)))
   · have hp''_at : HasDerivAt (deriv p) (deriv (deriv p) t) t :=
       (((hp.deriv_of_isOpen hI (by decide)).contDiffAt (hI.mem_nhds hα)).differentiableAt
         one_ne_zero).hasDerivAt
-    rw [deriv_bleisteinW_self (Filter.eventually_of_mem (hI.mem_nhds hα) hp_diff)
-      hpα hp''_at hp''_pos]
-    exact Real.sqrt_pos.mpr hp''_pos
+    exact deriv_bleisteinW_self_pos (Filter.eventually_of_mem (hI.mem_nhds hα) hp_diff)
+      hpα hp''_at hp''_pos
   · have hpt : p α < p t := hmono ⟨hα, le_rfl⟩ ⟨ht, hgt.le⟩ hgt
     have hsign := sign_deriv_eq_sign_sub hord hα hp'_cont hpα hp''_pos hp' ht
     rw [sign_pos (sub_pos.mpr hgt), sign_eq_one_iff] at hsign
-    rw [deriv_bleisteinW_of_ne hpt (hp_diff t ht), bleisteinW_sub_bleisteinA,
+    rw [deriv_bleisteinW_of_ne hpt, bleisteinW_sub_bleisteinA,
       sign_pos (sub_pos.mpr hgt), SignType.coe_one, one_mul]
     exact div_pos hsign (Real.sqrt_pos.mpr (by linarith))
 
+/-- Strict positivity of `deriv (bleisteinW p α)` at `t ∈ I` when `p` is differentiable on an open
+set `I ∋ α`, strictly decreasing on `I ∩ (-∞, α]`, strictly increasing on `I ∩ [α, ∞)`, satisfies
+`0 < deriv (deriv p) α`, and has no stationary point at `t` other than `α`. -/
+theorem deriv_bleisteinW_pos_of_differentiableOn {p : ℝ → ℝ} {I : Set ℝ} {α t : ℝ}
+    (hI : IsOpen I) (hα : α ∈ I) (hp : DifferentiableOn ℝ p I)
+    (hanti : StrictAntiOn p (I ∩ Iic α)) (hmono : StrictMonoOn p (I ∩ Ici α))
+    (hp''_pos : 0 < deriv (deriv p) α) (ht : t ∈ I) (hreg : t ≠ α → deriv p t ≠ 0) :
+    0 < deriv (bleisteinW p α) t := by
+  rcases eq_or_ne t α with rfl | hne
+  · have hdiff_nhds : ∀ᶠ u in 𝓝 t, DifferentiableAt ℝ p u :=
+      Filter.Eventually.mono (hI.mem_nhds hα) fun _ hu => hp.differentiableAt (hI.mem_nhds hu)
+    have hpα : deriv p t = 0 :=
+      ((isMinOn_iff.mpr fun _ hu =>
+        le_of_antitoneOn_monotoneOn hα hanti.antitoneOn hmono.monotoneOn hu).isLocalMin
+        (hI.mem_nhds hα)).deriv_eq_zero
+    exact deriv_bleisteinW_self_pos hdiff_nhds hpα
+      (differentiableAt_of_deriv_ne_zero hp''_pos.ne').hasDerivAt hp''_pos
+  · have hsign : 0 < (t - α) * deriv p t := by
+      rcases hne.lt_or_gt with hlt | hgt
+      · have hle : deriv p t ≤ 0 := by
+          rw [← derivWithin_of_isOpen (hI.inter isOpen_Iio) ⟨ht, hlt⟩]
+          exact (hanti.antitoneOn.mono (inter_subset_inter_right I Iio_subset_Iic_self))
+            |>.derivWithin_nonpos
+        exact mul_pos_of_neg_of_neg (sub_neg.mpr hlt) (lt_of_le_of_ne hle (hreg hne))
+      · have hge : 0 ≤ deriv p t := by
+          rw [← derivWithin_of_isOpen (hI.inter isOpen_Ioi) ⟨ht, hgt⟩]
+          exact (hmono.monotoneOn.mono (inter_subset_inter_right I Ioi_subset_Ici_self))
+            |>.derivWithin_nonneg
+        exact mul_pos (sub_pos.mpr hgt) (lt_of_le_of_ne' hge (hreg hne))
+    exact deriv_bleisteinW_pos_of_lt
+      (lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht hne) hsign
+
 /-! ### Upper integration limit `κ` and interval images -/
+
+/-- Right-hand limit `bleisteinW p α t → 0` as `t → 0⁺` when `p` is right-continuous at `0`. -/
+theorem tendsto_bleisteinW_nhdsGT_zero {p : ℝ → ℝ} (α : ℝ)
+    (hp : ContinuousWithinAt p (Ioi 0) 0) :
+    Tendsto (bleisteinW p α) (𝓝[>] 0) (𝓝 0) := by
+  simpa only [ContinuousWithinAt, bleisteinW_zero] using continuousWithinAt_bleisteinW hp α
 
 /-- If `p t → +∞` along a filter `l` on which eventually `α < t`, then `bleisteinW p α t → +∞`. -/
 theorem tendsto_bleisteinW_atTop_of_tendsto_atTop {p : ℝ → ℝ} {α : ℝ} {l : Filter ℝ}
@@ -503,6 +627,23 @@ theorem tendsto_bleisteinW_nhdsLT_atTop {p : ℝ → ℝ} {I : Set ℝ} {α k : 
     exact not_tendsto_nhds_of_tendsto_atTop hlim (p k) hp_cont
   exact tendsto_bleisteinW_atTop_of_tendsto_atTop
     (eventually_nhdsWithin_of_eventually_nhds (Ioi_mem_nhds hαk)) hlim
+
+/-- If `p` is strictly decreasing on `I ∩ (-∞, α]` for a set `I ⊇ [0, k)` and `p t → +∞` as
+`t → k⁻`, then `bleisteinW p α t → +∞` as `t → k⁻`. -/
+theorem tendsto_bleisteinW_nhdsLT_atTop_of_strictAntiOn {p : ℝ → ℝ} {I : Set ℝ} {α k : ℝ}
+    (hk : 0 < k) (hsub : Ico 0 k ⊆ I) (hanti : StrictAntiOn p (I ∩ Iic α))
+    (hlim : Tendsto p (𝓝[<] k) atTop) :
+    Tendsto (bleisteinW p α) (𝓝[<] k) atTop := by
+  have hαk : α < k := by
+    by_contra! hle
+    have hev : ∀ᶠ t in 𝓝[<] k, t ∈ Ioo 0 k ∧ p 0 < p t :=
+      Filter.inter_mem (Ioo_mem_nhdsLT hk) (hlim.eventually_gt_atTop (p 0))
+    obtain ⟨t, ht, hpt⟩ := hev.exists
+    have hlt : p t < p 0 := hanti ⟨hsub ⟨le_rfl, hk⟩, hk.le.trans hle⟩
+      ⟨hsub ⟨ht.1.le, ht.2⟩, ht.2.le.trans hle⟩ ht.1
+    exact hlt.not_gt hpt
+  exact tendsto_bleisteinW_atTop_of_tendsto_atTop
+    (Filter.mem_of_superset (Ioo_mem_nhdsLT hαk) fun _ h => h.1) hlim
 
 /-- Image of `(0, k)` under `bleisteinW p α` when `bleisteinW p α` approaches a finite limit `κ`
 as `t → k⁻`. -/
@@ -677,7 +818,7 @@ theorem bleisteinAmplitude_self {p : ℝ → ℝ} {q : ℝ → E} {I s : Set ℝ
     (((hp.deriv_of_isOpen hI (by decide)).contDiffAt (hI.mem_nhds hα)).differentiableAt
       one_ne_zero).hasDerivAt
   rw [← bleisteinW_self p α, bleisteinAmplitude_bleisteinW hinj hαs, bleisteinW_self,
-    deriv_bleisteinW_self (Filter.eventually_of_mem (hI.mem_nhds hα) hp_diff) hpα hp''_at hp''_pos]
+    deriv_bleisteinW_self (Filter.eventually_of_mem (hI.mem_nhds hα) hp_diff) hpα hp''_at]
 
 /-- When `0 < α`, `α ∈ s`, `0 ∈ I`, and `q α ≠ 0`, the transformed amplitude is nonzero at
 `w = bleisteinA p α`. -/
@@ -712,7 +853,8 @@ theorem hasStrictDerivAt_invFunOn_bleisteinW {p : ℝ → ℝ} {I s : Set ℝ} {
   have hts : t ∈ s := Function.invFunOn_mem hw
   have htw : bleisteinW p α t = w := Function.invFunOn_eq hw
   have hstrict : HasStrictDerivAt (bleisteinW p α) (deriv (bleisteinW p α) t) t :=
-    hasStrictDerivAt_bleisteinW hI hα hp hpα hp''_pos hanti hmono (hs hts)
+    hasStrictDerivAt_bleisteinW hI hα (hp.of_le one_le_two)
+      (fun u hu hne => lt_of_strictAntiOn_strictMonoOn hα hanti hmono hu hne) hp''_pos (hs hts)
   have hpos : 0 < deriv (bleisteinW p α) t :=
     deriv_bleisteinW_pos hI hord hα hp hpα hp''_pos hp' (hs hts)
   have hleft : ∀ᶠ u in 𝓝 t, invFunOn (bleisteinW p α) s (bleisteinW p α u) = u :=
@@ -732,7 +874,8 @@ theorem continuousOn_bleisteinAmplitude {p : ℝ → ℝ} {q : ℝ → E} {I s :
   have hanti := strictAntiOn_Iic_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
   have hmono := strictMonoOn_Ici_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
   have hw_mono := strictMonoOn_bleisteinW hα hanti hmono
-  have hw_cd := contDiffOn_bleisteinW hI hα hp hpα hp''_pos hanti hmono
+  have hw_cd := contDiffOn_bleisteinW hI hα (hp.of_le one_le_two)
+    (fun u hu hne => lt_of_strictAntiOn_strictMonoOn hα hanti hmono hu hne) hp''_pos
   have hw'_cont : ContinuousOn (deriv (bleisteinW p α)) I :=
     hw_cd.continuousOn_deriv_of_isOpen hI le_rfl
   have hinv_cont : ContinuousOn (invFunOn (bleisteinW p α) s) (bleisteinW p α '' s) := fun w hw =>
@@ -759,46 +902,188 @@ theorem continuousOn_bleisteinAmplitude {p : ℝ → ℝ} {q : ℝ → E} {I s :
       (deriv_bleisteinW_pos hI hord hα hp hpα hp''_pos hp' (hmapsI hw)).ne'
   exact hcoef_cont.smul (hq.comp hinv_cont hmaps)
 
-/-- Pointwise Jacobian identity relating the transformed integrand pulled back along
-`bleisteinW p α` to the original integrand on `s ⊆ I ∩ (0, ∞)`. -/
-private theorem bleistein_pullback_eq {p : ℝ → ℝ} {q : ℝ → E} {I s : Set ℝ} {lam α x t : ℝ}
-    (hI : IsOpen I) (hord : OrdConnected I) (h0I : 0 ∈ I) (hs : s ⊆ I ∩ Ioi 0) (hα : α ∈ I)
-    (hp : ContDiffOn ℝ 2 p I) (hpα : deriv p α = 0) (hp''_pos : 0 < deriv (deriv p) α)
-    (hp' : ∀ u ∈ I, u ≠ α → deriv p u ≠ 0) (ht : t ∈ s) :
-    deriv (bleisteinW p α) t •
+/-! ### Change of variables under pointwise hypotheses on the coordinate -/
+
+/-- Strict differentiability of `invFunOn (bleisteinW p α) s` at `bleisteinW p α t` whenever
+`bleisteinW p α` is injective on a neighborhood `s` of `t` with nonzero strict derivative `w'` at
+`t`. -/
+theorem hasStrictDerivAt_invFunOn_bleisteinW_of_injOn {p : ℝ → ℝ} {s : Set ℝ} {α t w' : ℝ}
+    (hs : s ∈ 𝓝 t) (hw : HasStrictDerivAt (bleisteinW p α) w' t)
+    (hinj : InjOn (bleisteinW p α) s) (hd : w' ≠ 0) :
+    HasStrictDerivAt (invFunOn (bleisteinW p α) s) w'⁻¹ (bleisteinW p α t) :=
+  hw.to_local_left_inverse hd (Filter.Eventually.mono hs fun _ hu => hinj.leftInvOn_invFunOn hu)
+
+/-- Derivative `dt / dw = (w'(t(w)))⁻¹` of the inverse coordinate `invFunOn (bleisteinW p α) s` at
+a point `w ∈ bleisteinW p α '' s`. -/
+theorem deriv_invFunOn_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} {α w w' : ℝ}
+    (hw_mem : w ∈ bleisteinW p α '' s) (hs : s ∈ 𝓝 (invFunOn (bleisteinW p α) s w))
+    (hw : HasStrictDerivAt (bleisteinW p α) w' (invFunOn (bleisteinW p α) s w))
+    (hinj : InjOn (bleisteinW p α) s) (hd : w' ≠ 0) :
+    deriv (invFunOn (bleisteinW p α) s) w =
+      (deriv (bleisteinW p α) (invFunOn (bleisteinW p α) s w))⁻¹ := by
+  have h := hasStrictDerivAt_invFunOn_bleisteinW_of_injOn hs hw hinj hd
+  rw [invFunOn_eq hw_mem] at h
+  rw [h.hasDerivAt.deriv, hw.hasDerivAt.deriv]
+
+/-- DLMF 2.3.30 form of the transformed amplitude in terms of the inverse derivative `dt / dw`:
+`f(α, w) = ((t(w) / w) ^ (λ - 1) * t'(w)) • q(t(w))`. -/
+theorem bleisteinAmplitude_eq_mul_deriv_invFunOn_smul {p : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ}
+    {lam α w w' : ℝ} (hw_mem : w ∈ bleisteinW p α '' s)
+    (hs : s ∈ 𝓝 (invFunOn (bleisteinW p α) s w))
+    (hw : HasStrictDerivAt (bleisteinW p α) w' (invFunOn (bleisteinW p α) s w))
+    (hinj : InjOn (bleisteinW p α) s) (hd : w' ≠ 0) :
+    bleisteinAmplitude p q lam α s w =
+      ((invFunOn (bleisteinW p α) s w / w) ^ (lam - 1) *
+        deriv (invFunOn (bleisteinW p α) s) w) • q (invFunOn (bleisteinW p α) s w) := by
+  rw [bleisteinAmplitude_def, deriv_invFunOn_bleisteinW hw_mem hs hw hinj hd, div_eq_mul_inv]
+
+/-- Openness of the image `bleisteinW p α '' s` of an open set `s` on which `bleisteinW p α` has a
+nonzero strict derivative at every point. -/
+theorem isOpen_image_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} {α : ℝ} {w' : ℝ → ℝ}
+    (hs : IsOpen s) (hw : ∀ t ∈ s, HasStrictDerivAt (bleisteinW p α) (w' t) t)
+    (hd : ∀ t ∈ s, w' t ≠ 0) :
+    IsOpen (bleisteinW p α '' s) := by
+  rw [isOpen_iff_mem_nhds]
+  rintro _ ⟨t, ht, rfl⟩
+  rw [← (hw t ht).map_nhds_eq (hd t ht)]
+  exact image_mem_map (hs.mem_nhds ht)
+
+/-- `C^n` regularity of the inverse coordinate `invFunOn (bleisteinW p α) s` on
+`bleisteinW p α '' s` for an open set `s` and any smoothness order `n ≠ 0` (including `C^1`,
+`C^∞`, and analytic `C^ω`). -/
+theorem contDiffOn_invFunOn_bleisteinW {p : ℝ → ℝ} {s : Set ℝ} {α : ℝ} {n : ℕ∞ω}
+    (hn : n ≠ 0) (hs : IsOpen s) (hw : ContDiffOn ℝ n (bleisteinW p α) s)
+    (hinj : InjOn (bleisteinW p α) s) (hd : ∀ t ∈ s, deriv (bleisteinW p α) t ≠ 0) :
+    ContDiffOn ℝ n (invFunOn (bleisteinW p α) s) (bleisteinW p α '' s) := by
+  rintro _ ⟨t, ht, rfl⟩
+  have hca : ContDiffAt ℝ n (bleisteinW p α) t := hw.contDiffAt (hs.mem_nhds ht)
+  have hsd : HasStrictDerivAt (bleisteinW p α) (deriv (bleisteinW p α) t) t :=
+    hca.hasStrictDerivAt_deriv hn
+  have hfd := (hsd.hasStrictFDerivAt_equiv (hd t ht)).hasFDerivAt
+  have hloc : ContDiffAt ℝ n (hca.localInverse hfd hn) (bleisteinW p α t) :=
+    hca.to_localInverse hfd hn
+  have hmem : ∀ᶠ w in 𝓝 (bleisteinW p α t), hca.localInverse hfd hn w ∈ s :=
+    hloc.continuousAt.preimage_mem_nhds
+      (by rw [hca.localInverse_apply_image hfd hn]; exact hs.mem_nhds ht)
+  have hright : ∀ᶠ w in 𝓝 (bleisteinW p α t),
+      bleisteinW p α (hca.localInverse hfd hn w) = w :=
+    (hca.hasStrictFDerivAt hfd hn).eventually_right_inverse
+  have heq : invFunOn (bleisteinW p α) s =ᶠ[𝓝 (bleisteinW p α t)] hca.localInverse hfd hn := by
+    filter_upwards [hmem, hright] with w hws hwr
+    simpa only [hwr] using hinj.leftInvOn_invFunOn hws
+  exact (hloc.congr_of_eventuallyEq heq).contDiffWithinAt
+
+/-- Continuity of `bleisteinAmplitude p q lam α s` on `bleisteinW p α '' s` for an open set
+`s ⊆ (0, ∞)` on which `bleisteinW p α` is `C¹`, injective, and positive with nonvanishing
+derivative, when `q` is continuous on `s`. -/
+theorem continuousOn_bleisteinAmplitude_of_injOn {p : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ}
+    {lam α : ℝ} (hs : IsOpen s) (hs0 : s ⊆ Ioi 0) (hw : ContDiffOn ℝ 1 (bleisteinW p α) s)
+    (hinj : InjOn (bleisteinW p α) s) (hw_pos : ∀ t ∈ s, 0 < bleisteinW p α t)
+    (hd : ∀ t ∈ s, deriv (bleisteinW p α) t ≠ 0) (hq : ContinuousOn q s) :
+    ContinuousOn (bleisteinAmplitude p q lam α s) (bleisteinW p α '' s) := by
+  have hinv_cont : ContinuousOn (invFunOn (bleisteinW p α) s) (bleisteinW p α '' s) :=
+    (contDiffOn_invFunOn_bleisteinW one_ne_zero hs hw hinj hd).continuousOn
+  have hmaps : MapsTo (invFunOn (bleisteinW p α) s) (bleisteinW p α '' s) s :=
+    fun _ hw => invFunOn_mem hw
+  have hw_deriv_cont : ContinuousOn (deriv (bleisteinW p α)) s :=
+    hw.continuousOn_deriv_of_isOpen hs le_rfl
+  have hrat : ContinuousOn (fun w => (invFunOn (bleisteinW p α) s w / w) ^ (lam - 1))
+      (bleisteinW p α '' s) := by
+    refine ContinuousOn.rpow_const (hinv_cont.div continuousOn_id ?_) ?_
+    · rintro _ ⟨t, ht, rfl⟩
+      exact (hw_pos t ht).ne'
+    · rintro _ ⟨t, ht, rfl⟩
+      exact Or.inl (div_pos (hs0 (hmaps ⟨t, ht, rfl⟩)) (hw_pos t ht)).ne'
+  have hden : ContinuousOn (fun w => deriv (bleisteinW p α) (invFunOn (bleisteinW p α) s w))
+      (bleisteinW p α '' s) :=
+    hw_deriv_cont.comp hinv_cont hmaps
+  have hcoef : ContinuousOn (fun w => (invFunOn (bleisteinW p α) s w / w) ^ (lam - 1) /
+      deriv (bleisteinW p α) (invFunOn (bleisteinW p α) s w)) (bleisteinW p α '' s) := by
+    refine hrat.div hden ?_
+    rintro _ ⟨t, ht, rfl⟩
+    rw [hinj.leftInvOn_invFunOn ht]
+    exact hd t ht
+  exact hcoef.smul (hq.comp hinv_cont hmaps)
+
+/-- Pointwise Jacobian cancellation between the transformed integrand at `w = bleisteinW p α t`
+and the original integrand at `t`. -/
+private theorem abs_deriv_smul_bleistein_integrand {p : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ}
+    {lam α x t : ℝ} (ht : t ∈ s) (ht0 : 0 < t) (h0 : p α ≤ p 0) (hmin : p α ≤ p t)
+    (hw_pos : 0 < bleisteinW p α t) (hinj : InjOn (bleisteinW p α) s)
+    (hdpos : 0 < deriv (bleisteinW p α) t) :
+    |deriv (bleisteinW p α) t| •
         ((Real.exp (-x * (bleisteinW p α t ^ 2 / 2 - bleisteinA p α * bleisteinW p α t)) *
-          bleisteinW p α t ^ (lam - 1)) •
-          bleisteinAmplitude p q lam α s (bleisteinW p α t)) =
+          bleisteinW p α t ^ (lam - 1)) • bleisteinAmplitude p q lam α s (bleisteinW p α t)) =
       Real.exp (x * p 0) • ((Real.exp (-x * p t) * t ^ (lam - 1)) • q t) := by
-  have htI : t ∈ I := (hs ht).1
-  have ht_pos : 0 < t := (hs ht).2
-  have hp'_cont : ContinuousOn (deriv p) I := hp.continuousOn_deriv_of_isOpen hI (by decide)
-  have hanti := strictAntiOn_Iic_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
-  have hmono := strictMonoOn_Ici_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
-  have hle : ∀ u ∈ I, p α ≤ p u := fun u hu => by
-    rcases lt_trichotomy u α with h | rfl | h
-    · exact (hanti ⟨hu, h.le⟩ ⟨hα, le_rfl⟩ h).le
-    · exact le_rfl
-    · exact (hmono ⟨hα, le_rfl⟩ ⟨hu, h.le⟩ h).le
-  have hw_mono := strictMonoOn_bleisteinW hα hanti hmono
-  have hinj : InjOn (bleisteinW p α) s := (hw_mono.mono fun u hu => (hs hu).1).injOn
-  have hw_pos : 0 < bleisteinW p α t := by
-    simpa [bleisteinW_zero] using hw_mono h0I htI ht_pos
-  have hw'_ne : deriv (bleisteinW p α) t ≠ 0 :=
-    (deriv_bleisteinW_pos hI hord hα hp hpα hp''_pos hp' htI).ne'
-  have hphase := bleistein_phase_sub_eq (hle 0 h0I) (hle t htI)
-  rw [bleisteinAmplitude_bleisteinW hinj ht, hphase, smul_smul, smul_smul, smul_smul]
-  congr 1
   have hrpow : bleisteinW p α t ^ (lam - 1) * (t / bleisteinW p α t) ^ (lam - 1) =
       t ^ (lam - 1) := by
-    rw [← Real.mul_rpow hw_pos.le (div_nonneg ht_pos.le hw_pos.le),
-      mul_div_cancel₀ _ hw_pos.ne']
-  have hexp : Real.exp (-x * (p t - p 0)) = Real.exp (x * p 0) * Real.exp (-x * p t) := by
-    rw [← Real.exp_add]
+    rw [← Real.mul_rpow hw_pos.le (div_nonneg ht0.le hw_pos.le), mul_div_cancel₀ _ hw_pos.ne']
+  have hexp : Real.exp (-x * (bleisteinW p α t ^ 2 / 2 - bleisteinA p α * bleisteinW p α t)) =
+      Real.exp (x * p 0) * Real.exp (-x * p t) := by
+    rw [bleistein_phase_sub_eq h0 hmin, ← Real.exp_add]
     congr 1
     ring
-  rw [hexp, ← hrpow]
-  field_simp [hw'_ne]
+  rw [bleisteinAmplitude_bleisteinW hinj ht, abs_of_pos hdpos, smul_smul, smul_smul, smul_smul,
+    hexp]
+  congr 1
+  calc deriv (bleisteinW p α) t *
+        (Real.exp (x * p 0) * Real.exp (-x * p t) * bleisteinW p α t ^ (lam - 1)) *
+        ((t / bleisteinW p α t) ^ (lam - 1) / deriv (bleisteinW p α) t)
+      = Real.exp (x * p 0) * Real.exp (-x * p t) *
+          (bleisteinW p α t ^ (lam - 1) * (t / bleisteinW p α t) ^ (lam - 1)) *
+          (deriv (bleisteinW p α) t / deriv (bleisteinW p α) t) := by ring
+    _ = Real.exp (x * p 0) * (Real.exp (-x * p t) * t ^ (lam - 1)) := by
+          rw [hrpow, div_self hdpos.ne', mul_one, mul_assoc]
+
+/-- Equivalence of integrability of the original Laplace-type integral (DLMF 2.3.24) on a
+measurable set `s ⊆ (0, ∞)` and of Bleistein's transformed integral (DLMF 2.3.29) on
+`bleisteinW p α '' s`, assuming only that `p α` bounds `p` from below on `s ∪ {0}` and that
+`bleisteinW p α` is positive, injective, and has positive derivative on `s`. -/
+theorem integrableOn_bleistein_iff_of_deriv_pos {p : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ}
+    {lam α x : ℝ} (hs : MeasurableSet s) (hs0 : s ⊆ Ioi 0) (h0 : p α ≤ p 0)
+    (hmin : ∀ t ∈ s, p α ≤ p t) (hw_pos : ∀ t ∈ s, 0 < bleisteinW p α t)
+    (hinj : InjOn (bleisteinW p α) s) (hdpos : ∀ t ∈ s, 0 < deriv (bleisteinW p α) t) :
+    IntegrableOn (fun w =>
+      (Real.exp (-x * (w ^ 2 / 2 - bleisteinA p α * w)) * w ^ (lam - 1)) •
+        bleisteinAmplitude p q lam α s w) (bleisteinW p α '' s) ↔
+      IntegrableOn (fun t => (Real.exp (-x * p t) * t ^ (lam - 1)) • q t) s := by
+  have hderiv : ∀ t ∈ s, HasDerivWithinAt (bleisteinW p α) (deriv (bleisteinW p α) t) s t :=
+    fun t ht => (differentiableAt_of_deriv_ne_zero (hdpos t ht).ne').hasDerivAt.hasDerivWithinAt
+  rw [integrableOn_image_iff_integrableOn_abs_deriv_smul hs hderiv hinj,
+    integrableOn_congr_fun (fun t ht => abs_deriv_smul_bleistein_integrand ht (hs0 ht) h0
+      (hmin t ht) (hw_pos t ht) hinj (hdpos t ht)) hs]
+  exact integrable_smul_iff (Real.exp_ne_zero (x * p 0)) _
+
+/-- Bleistein's change of variables (DLMF 2.3.24, 2.3.29–2.3.30) scaled by `exp (x * p 0)`, under
+the pointwise hypotheses of `TauCeti.integrableOn_bleistein_iff_of_deriv_pos`. -/
+theorem exp_smul_integral_bleistein_eq {p : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ} {lam α x : ℝ}
+    (hs : MeasurableSet s) (hs0 : s ⊆ Ioi 0) (h0 : p α ≤ p 0)
+    (hmin : ∀ t ∈ s, p α ≤ p t) (hw_pos : ∀ t ∈ s, 0 < bleisteinW p α t)
+    (hinj : InjOn (bleisteinW p α) s) (hdpos : ∀ t ∈ s, 0 < deriv (bleisteinW p α) t) :
+    Real.exp (x * p 0) • (∫ t in s, (Real.exp (-x * p t) * t ^ (lam - 1)) • q t) =
+      ∫ w in bleisteinW p α '' s,
+        (Real.exp (-x * (w ^ 2 / 2 - bleisteinA p α * w)) * w ^ (lam - 1)) •
+          bleisteinAmplitude p q lam α s w := by
+  have hderiv : ∀ t ∈ s, HasDerivWithinAt (bleisteinW p α) (deriv (bleisteinW p α) t) s t :=
+    fun t ht => (differentiableAt_of_deriv_ne_zero (hdpos t ht).ne').hasDerivAt.hasDerivWithinAt
+  rw [integral_image_eq_integral_abs_deriv_smul hs hderiv hinj,
+    setIntegral_congr_fun hs (fun t ht => abs_deriv_smul_bleistein_integrand ht (hs0 ht) h0
+      (hmin t ht) (hw_pos t ht) hinj (hdpos t ht)),
+    integral_smul]
+
+/-- Unscaled form of `TauCeti.exp_smul_integral_bleistein_eq` (DLMF 2.3.29). -/
+theorem integral_bleistein_eq_of_deriv_pos {p : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ} {lam α x : ℝ}
+    (hs : MeasurableSet s) (hs0 : s ⊆ Ioi 0) (h0 : p α ≤ p 0)
+    (hmin : ∀ t ∈ s, p α ≤ p t) (hw_pos : ∀ t ∈ s, 0 < bleisteinW p α t)
+    (hinj : InjOn (bleisteinW p α) s) (hdpos : ∀ t ∈ s, 0 < deriv (bleisteinW p α) t) :
+    ∫ t in s, (Real.exp (-x * p t) * t ^ (lam - 1)) • q t =
+      Real.exp (-x * p 0) • ∫ w in bleisteinW p α '' s,
+        (Real.exp (-x * (w ^ 2 / 2 - bleisteinA p α * w)) * w ^ (lam - 1)) •
+          bleisteinAmplitude p q lam α s w := by
+  rw [← exp_smul_integral_bleistein_eq hs hs0 h0 hmin hw_pos hinj hdpos, smul_smul,
+    ← Real.exp_add, (by ring : -x * p 0 + x * p 0 = 0), Real.exp_zero, one_smul]
+
+/-! ### Change of variables for a unique nondegenerate critical point -/
 
 /-- Equivalence of integrability between the original Laplace-type integral (DLMF 2.3.24) on a
 measurable set `s ⊆ I ∩ (0, ∞)` and the Bleistein-transformed integral (DLMF 2.3.29) on
@@ -814,21 +1099,13 @@ theorem integrableOn_bleistein_iff {p : ℝ → ℝ} {q : ℝ → E} {I s : Set 
   have hp'_cont : ContinuousOn (deriv p) I := hp.continuousOn_deriv_of_isOpen hI (by decide)
   have hanti := strictAntiOn_Iic_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
   have hmono := strictMonoOn_Ici_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
-  have hw_cd := contDiffOn_bleisteinW hI hα hp hpα hp''_pos hanti hmono
-  have hw_deriv : ∀ t ∈ s, HasDerivWithinAt (bleisteinW p α) (deriv (bleisteinW p α) t) s t :=
-    fun t ht => ((hw_cd.contDiffAt (hI.mem_nhds (hs ht).1)).differentiableAt
-      one_ne_zero).hasDerivAt.hasDerivWithinAt
-  have hw_mono : MonotoneOn (bleisteinW p α) s :=
-    (strictMonoOn_bleisteinW hα hanti hmono).monotoneOn.mono fun u hu => (hs hu).1
-  rw [integrableOn_image_iff_integrableOn_deriv_smul_of_monotoneOn hs_meas hw_deriv hw_mono,
-    integrableOn_congr_fun
-      (fun t ht => bleistein_pullback_eq hI hord h0I hs hα hp hpα hp''_pos hp' ht) hs_meas]
-  constructor
-  · intro hint
-    refine IntegrableOn.congr_fun (hint.smul (Real.exp (-x * p 0))) (fun t _ => ?_) hs_meas
-    have hzero : -x * p 0 + x * p 0 = 0 := by ring
-    rw [Pi.smul_apply, smul_smul, ← Real.exp_add, hzero, Real.exp_zero, one_smul]
-  · exact fun hint => hint.smul (Real.exp (x * p 0))
+  have hle : ∀ u ∈ I, p α ≤ p u :=
+    fun u hu => le_of_antitoneOn_monotoneOn hα hanti.antitoneOn hmono.monotoneOn hu
+  exact integrableOn_bleistein_iff_of_deriv_pos hs_meas (fun u hu => (hs hu).2) (hle 0 h0I)
+    (fun t ht => hle t (hs ht).1)
+    (fun t ht => bleisteinW_pos hα h0I hanti hmono (hs ht).1 (hs ht).2)
+    ((strictMonoOn_bleisteinW hα hanti hmono).injOn.mono fun u hu => (hs hu).1)
+    (fun t ht => deriv_bleisteinW_pos hI hord hα hp hpα hp''_pos hp' (hs ht).1)
 
 /-- Bleistein's change-of-variables formula (DLMF 2.3.24, 2.3.29–2.3.30) on a measurable set
 `s ⊆ I ∩ (0, ∞)` when `α` is the unique critical point of `p` on `I`. -/
@@ -843,17 +1120,13 @@ theorem integral_bleistein_eq {p : ℝ → ℝ} {q : ℝ → E} {I s : Set ℝ} 
   have hp'_cont : ContinuousOn (deriv p) I := hp.continuousOn_deriv_of_isOpen hI (by decide)
   have hanti := strictAntiOn_Iic_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
   have hmono := strictMonoOn_Ici_of_deriv_ne_zero hord hα hp.continuousOn hp'_cont hpα hp''_pos hp'
-  have hw_cd := contDiffOn_bleisteinW hI hα hp hpα hp''_pos hanti hmono
-  have hw_deriv : ∀ t ∈ s, HasDerivWithinAt (bleisteinW p α) (deriv (bleisteinW p α) t) s t :=
-    fun t ht => ((hw_cd.contDiffAt (hI.mem_nhds (hs ht).1)).differentiableAt
-      one_ne_zero).hasDerivAt.hasDerivWithinAt
-  have hw_mono : MonotoneOn (bleisteinW p α) s :=
-    (strictMonoOn_bleisteinW hα hanti hmono).monotoneOn.mono fun u hu => (hs hu).1
-  rw [integral_image_eq_integral_deriv_smul_of_monotoneOn hs_meas hw_deriv hw_mono,
-    setIntegral_congr_fun hs_meas
-      (fun t ht => bleistein_pullback_eq hI hord h0I hs hα hp hpα hp''_pos hp' ht)]
-  have hzero : -x * p 0 + x * p 0 = 0 := by ring
-  rw [integral_smul, smul_smul, ← Real.exp_add, hzero, Real.exp_zero, one_smul]
+  have hle : ∀ u ∈ I, p α ≤ p u :=
+    fun u hu => le_of_antitoneOn_monotoneOn hα hanti.antitoneOn hmono.monotoneOn hu
+  exact integral_bleistein_eq_of_deriv_pos hs_meas (fun u hu => (hs hu).2) (hle 0 h0I)
+    (fun t ht => hle t (hs ht).1)
+    (fun t ht => bleisteinW_pos hα h0I hanti hmono (hs ht).1 (hs ht).2)
+    ((strictMonoOn_bleisteinW hα hanti hmono).injOn.mono fun u hu => (hs hu).1)
+    (fun t ht => deriv_bleisteinW_pos hI hord hα hp hpα hp''_pos hp' (hs ht).1)
 
 /-- Bleistein's change of variables on a finite interval `(0, k)` with finite upper limit
 `κ = lim_{t → k⁻} bleisteinW p α t` (DLMF 2.3.29). -/

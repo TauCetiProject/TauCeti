@@ -80,8 +80,8 @@ def slabHeatCauchyPotential (h : E → G) (hc : Continuous h) (hM : ∀ y, ‖h 
     (fun p ↦ heatCauchyPotential h (p : ParabolicSpaceTime E).time
       (p : ParabolicSpaceTime E).space)
     ((continuous_heatCauchyPotential hc hM).comp
-      ((continuous_time.comp continuous_subtype_val).prodMk
-        (continuous_space.comp continuous_subtype_val)))
+      ((continuous_time.comp continuous_subtypeVal).prodMk
+        (continuous_space.comp continuous_subtypeVal)))
     M fun _ ↦ norm_heatCauchyPotential_le hM _ _
 
 /-- The value of `TauCeti.slabHeatCauchyPotential` at a point of the slab. -/
@@ -163,8 +163,8 @@ private def potential (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E
       rw [slabPotentialHolder_apply, space_slabMk, time_slabMk]
       refine ((hasDerivWithinAt_heatCauchyPotential g.contDiff
         g.norm_apply_le_iteratedFDeriv_zero g.norm_fderiv_le_iteratedFDeriv_one
-        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.2.1) x).mono
-          (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.2
+        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.property.1) x).mono
+          (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.property
       simp [timeExtension_def, projIcc_of_mem hab.le hs, slabHeatCauchyPotential_apply])
 
 private theorem potential_apply (g : CkHolderSpace 2 α E F) (p : slab (E := E) a b) :

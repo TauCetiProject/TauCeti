@@ -124,8 +124,8 @@ theorem torusFamilyRemarkCommSq_fiberMap_fiberHomeomorph [ContinuousAdd E]
   -- Align `Subtype.val` on `(TopCat.ofHom _).fiber _` with `{w | torusFamilyProjection _ w = y}`.
   change torusFamilyRemarkHomeomorph P α
       (torusFamilyFiberHomeomorph (fun y ↦ (P y).comp α.toLinearMap) y
-        (fun l' ↦ hcont (α l')) (Quotient.mk _ v)).1 =
-    (torusFamilyFiberHomeomorph P y hcont _).1
+        (fun l' ↦ hcont (α l')) (Quotient.mk _ v)).val =
+    (torusFamilyFiberHomeomorph P y hcont _).val
   simp
 
 /-- Read through `TauCeti.torusFamilyFiberHomeomorph`, the fiber map of `torusFamilyRemarkCommSq`
