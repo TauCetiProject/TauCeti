@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Comparison
-import TauCeti.Analysis.Complex.Conformal.Montel.Basic
+import TauCeti.Analysis.Complex.HolomorphicFunctions.Montel.Basic
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.Complex.Wirtinger.Weyl
 

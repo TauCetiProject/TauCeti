@@ -431,14 +431,8 @@ section variation is `δα = α (c / (w - a)^(j+1) + ξ)` off `a`, for a continu
 private theorem exists_mem_smoothGaugeFixedKernel_sectionValue_eq (i : D.ToType) (c : ℂ) :
     ∃ y ∈ smoothGaugeFixedKernel x, ∃ ξ : ℂ → ℂ, Continuous ξ ∧ ∀ w, w ≠ i.1 →
       sectionValue y w = sectionValue x w * (c / (w - i.1) ^ ((i.2 : ℕ) + 1) + ξ w) := by
-  have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
-  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
-    (hxi 0) (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol
-    (isZeroMultiplicity_iff.1 hD i.1)
-  obtain ⟨y, hy, hy₂, hker, ξ, hξ, hyξ⟩ :=
-    exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hv hvf
-      i.2.isLt c
-  exact ⟨y, ⟨hy, hy₂, hker⟩, ξ, hξ.continuous, hyξ⟩
+  obtain ⟨y, hy, hys, ξ, hξ, hyξ⟩ := exists_mem_gaugeFixedKernel_sectionValue_eq hx hhol hlim hD i c
+  exact ⟨y, ⟨hys, (mem_gaugeFixedKernel.1 hy).2⟩, ξ, hξ, hyξ⟩
 
 /-- **Smooth kernel elements with independent principal parts.** Choose, for each point `⟨a, j⟩` of
 `D` and each `c ∈ {1, i}`, a smooth kernel element of `L_x` with

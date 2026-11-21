@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Set.PowersetCard
 import Mathlib.Data.Fintype.CardEmbedding
+
+import TauCeti.Algebra.BigOperators.Finset.Powerset
 
 /-!
 # Maps, coercions and enumerations of fixed-cardinality subsets
@@ -26,8 +29,15 @@ of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with t
 For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
 `p`-element subset `Finset.univ.erase a` omitting `a`.
 
+`Set.powersetCard.val_ofFinEmb_fin_three` lists the three elements of the subset enumerated by an
+embedding of `Fin 3`.
+
+`Set.powersetCard.fintypeCard` counts the `n`-element subsets of a finite type, and
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
+
+`Set.powersetCard.prod_prod` and `Set.powersetCard.sum_sum` count over the `n`-element subsets of
+a finite type: each element lies in `(card α - 1).choose (n - 1)` of them.
 
 When the source is `Fin r`, the embeddings `Fin r ↪ β` whose unordered image
 `Set.powersetCard.ofFinEmb r β` equals a prescribed `r`-element subset `t` correspond to the
@@ -197,11 +207,33 @@ theorem omitOne_symm_notMem (hm : p + 1 = Fintype.card α) (s : powersetCard α 
 
 end OmitOne
 
+/-- The three-element subset enumerated by an embedding `f : Fin 3 ↪ α` is `{f 0, f 1, f 2}`. -/
+theorem val_ofFinEmb_fin_three {α : Type*} [DecidableEq α] (f : Fin 3 ↪ α) :
+    (ofFinEmb 3 α f : Finset α) = {f 0, f 1, f 2} := by
+  ext v
+  simp [val_ofFinEmb, Fin.exists_fin_succ, eq_comm]
+
+/-- The number of `n`-element subsets of a finite type `α` is `(card α).choose n`. -/
+theorem fintypeCard {α : Type*} [Fintype α] (n : ℕ) :
+    Fintype.card (powersetCard α n) = (Fintype.card α).choose n := by
+  rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card]
+
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
-  Fintype.equivFinOfCardEq <| by
-    rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card,
-      Fintype.card_fin]
+  Fintype.equivFinOfCardEq <| by rw [fintypeCard, Fintype.card_fin]
+
+/-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`, the product
+over the `n`-element subsets of the products over their elements is
+`(∏ i, f i) ^ (card α - 1).choose (n - 1)`. -/
+@[to_additive /-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`,
+the sum over the `n`-element subsets of the sums over their elements is
+`(card α - 1).choose (n - 1) • ∑ i, f i`. -/]
+theorem prod_prod {α β : Type*} [CommMonoid β] [Fintype α] {n : ℕ} (hn : 0 < n) (f : α → β) :
+    ∏ t : powersetCard α n, ∏ i ∈ (t : Finset α), f i =
+      (∏ i, f i) ^ (Fintype.card α - 1).choose (n - 1) := by
+  rw [← Finset.card_univ, ← Finset.prod_powersetCard_prod hn]
+  exact (Finset.prod_subtype (Finset.univ.powersetCard n)
+    (fun _ ↦ Finset.mem_powersetCard_univ.trans mem_iff.symm) fun t ↦ ∏ i ∈ t, f i).symm
 
 variable {β : Type*} {r : ℕ}
 

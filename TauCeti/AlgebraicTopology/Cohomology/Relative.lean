@@ -41,6 +41,8 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   (`SSetPair.quasiIso_cochainComplexMap_restrictι`). A map of pairs bijecting the simplices
   outside the subspaces induces an isomorphism of relative cochain complexes
   (`SSetPair.isIso_cochainComplexMap_of_relativeSimplex_equiv`).
+* `SSetPair.cochainComplexπ`: the map from relative to ambient cochains of a pair of simplicial
+  sets, natural in maps of pairs (`SSetPair.cochainComplexπ_naturality`).
 * `TopPair.singularCochainComplex`, `TopPair.singularCohomology`, and the maps
   `TopPair.singularCochainComplexMap` and `TopPair.singularCohomologyMap` induced by maps of
   pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`;
@@ -157,6 +159,24 @@ lemma quasiIso_cochainComplexMap_restrictι {P : SSetPair.{w}} (S : P.right.Subc
   have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S).right) := by
     rwa [restrictι_right]
   exact quasiIso_cochainComplexMap _
+
+variable (R k M) in
+/-- The map `Hom(C(P), M) ⟶ Hom(C(P.right), M)` from relative to ambient cochains of a pair of
+simplicial sets: precomposition with the quotient map from ambient to relative chains. -/
+abbrev cochainComplexπ (P : SSetPair.{w}) :
+    (P.chainComplex R).linearYonedaObj k M ⟶ (P.right.chainComplex R).linearYonedaObj k M :=
+  (linearYonedaFunctor k M).map (P.chainComplexπ R).op
+
+variable (R k M) in
+/-- The maps `cochainComplexπ` from relative to ambient cochains are natural in maps of pairs of
+simplicial sets. -/
+@[reassoc]
+lemma cochainComplexπ_naturality {P Q : SSetPair.{w}} (f : P ⟶ Q) :
+    cochainComplexπ R k M Q ≫ SSet.cochainComplexMap f.right =
+      cochainComplexMap f ≫ cochainComplexπ R k M P := by
+  have h := congrArg (fun φ ↦ (linearYonedaFunctor k M).map φ.op) (chainComplexπ_naturality R f)
+  simp only [op_comp, Functor.map_comp] at h
+  exact h
 
 end SSetPair
 
@@ -373,16 +393,25 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.snd.singularCohomology R k M n ⟶ P.singularCohomology R k M m :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyπ_comp_singularCohomologyMap (n : ℕ) :
     P.singularCohomologyπ R k M n ≫ TopCat.singularCohomologyMap P.map n = 0 := by
   rw [← HomologicalComplex.homologyMap_comp, (P.singularCochainComplexShortComplex R k M).zero,
     HomologicalComplex.homologyMap_zero]
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyMap_comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     TopCat.singularCohomologyMap P.map n ≫ P.singularCohomologyδ R k M n m h = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
+
+@[reassoc, elementwise]
+lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
+    P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
+  (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
+-- Only the element-wise form is `simp`: the parent is already proved by simp through Mathlib's
+-- `ShortComplex.ShortExact.δ_comp`, so `elementwise (attr := simp)` would fail simpNF.
+attribute [simp] singularCohomologyδ_comp_singularCohomologyπ_apply
 
 /-- Exactness at relative cohomology: `Hⁿ(A) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X)` is exact for `n + 1 = m`. -/
 lemma singularCohomology_exact_relative (n m : ℕ) (h : n + 1 = m := by lia) :
@@ -432,12 +461,9 @@ def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
   τ₂ := TopCat.singularCochainComplexMap (Hom.fst f)
   τ₃ := TopCat.singularCochainComplexMap (Hom.snd f)
   comm₁₂ := by
-    have h := congrArg (fun φ ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map φ.op)
-      (((SSetPair.chainComplexFunctorπ C).app R).naturality (toSSetPair.map f))
-    simp only [op_comp, Functor.map_comp] at h
     rw [singularCochainComplexMap_eq, singularCochainComplexMap_fst_eq,
       singularCochainComplexShortComplex_f_eq]
-    exact h.symm
+    exact (SSetPair.cochainComplexπ_naturality _ k M (toSSetPair.map f)).symm
   comm₂₃ := by
     rw [← TopCat.singularCochainComplexMap_comp, ← TopCat.singularCochainComplexMap_comp, Hom.w]
 
