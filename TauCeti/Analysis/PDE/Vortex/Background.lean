@@ -156,6 +156,13 @@ theorem backgroundWeight_lt_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f
   rw [backgroundWeight_def, div_lt_one (by positivity)]
   exact lt_one_add _
 
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is `1` minus its defect `(1 + ‖f‖²)⁻¹`. -/
+theorem backgroundWeight_eq_one_sub_inv (f : ℂ → ℂ) (z : ℂ) :
+    backgroundWeight f z = 1 - (1 + ‖f z‖ ^ 2)⁻¹ := by
+  rw [backgroundWeight_def]
+  field_simp
+  ring
+
 theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
   have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
     funext (backgroundWeight_def f)
