@@ -228,7 +228,7 @@ private theorem traceCLM_inverse_deriv_ricciTensor_eq_laplaceBeltrami
     -- The tangent fibre and model give the same fixed-space contraction.
     _ = traceCLM ℝ (TangentSpace I x) ((g.metric t x).inverse ∘L Kx) := rfl
     _ = LinearMap.BilinMap.metricTrace Kx.toBilinForm :=
-      TauCeti.traceCLM_inverse_comp_eq_metricTrace (g.metric t x)
+      ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t x)
         (fun u v ↦ by simpa only [metric_apply] using hg x u v) Kx
     _ = ∑ j, Kx (e j) (e j) := LinearMap.BilinMap.metricTrace_eq_sum _ e
     _ = ∑ j, ∑ i, inner ℝ (e i)
@@ -333,7 +333,7 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
     -- Trace is independent of reading the fixed tangent fibre as its model space.
     change traceCLM ℝ (TangentSpace I y)
       ((g.metric t y).inverse ∘L ((cov t).ricciTensor y).toContinuousBilinearMap) = _
-    rw [TauCeti.traceCLM_inverse_comp_eq_metricTrace (g.metric t y)
+    rw [ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t y)
       (fun u v ↦ by simpa only [metric_apply] using hg y u v),
       CovariantDerivative.scalarCurvature_apply]
     rfl
@@ -357,7 +357,7 @@ theorem hasDerivAt_scalarCurvature_sum_of_ricciFlow
         2 * ∑ i, ∑ j, ((cov t).ricciTensor x (b i) (b j)) ^ 2) t := by
   have hLC := ((g.metric t).isLeviCivitaConnection_iff_of_apply_eq_inner
       (fun y u v ↦ by simpa only [metric_apply] using hg y u v)).mp (hcov t)
-  have hsq := TauCeti.traceCLM_inverse_comp_self_eq_sum_sq (g.metric t x)
+  have hsq := ContinuousLinearMap.traceCLM_inverse_comp_self_eq_sum_sq (g.metric t x)
         (fun u v ↦ by simpa only [metric_apply] using hg x u v)
     ((cov t).ricciTensor x).toContinuousBilinearMap
     (fun u v ↦ CovariantDerivative.IsMetricCompatible.ricciTensor_comm (cov := cov t)

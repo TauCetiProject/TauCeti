@@ -129,8 +129,8 @@ theorem metricTrace_compl₁₂_linearIsometryEquiv {W' : Type*} [NormedAddCommG
       metricTrace B := by
   let b := stdOrthonormalBasis ℝ W
   rw [metricTrace_eq_sum _ b, metricTrace_eq_sum B (b.map e)]
-  simp only [LinearMap.compl₁₂_apply, OrthonormalBasis.map_apply]
-  rfl
+  simp only [LinearMap.compl₁₂_apply, OrthonormalBasis.map_apply, LinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toLinearEquiv]
 
 /-- The metric trace of the inner product is the real dimension. -/
 @[simp]

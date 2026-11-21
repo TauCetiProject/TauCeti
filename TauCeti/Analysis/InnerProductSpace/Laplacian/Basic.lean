@@ -12,6 +12,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -79,9 +80,11 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 * `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous
   linear functional.
-* `TauCeti.traceL_apply_eq_metricTrace`: it is the metric trace
+* `ContinuousLinearMap.traceL_apply_eq_metricTrace`: it is the metric trace
   `LinearMap.BilinMap.metricTrace` of the underlying bilinear map.
-* `TauCeti.norm_traceL_apply_le`: `‖traceL H‖ ≤ dim E * ‖H‖`.
+* `ContinuousLinearMap.norm_traceL_apply_le`: `‖traceL H‖ ≤ dim E * ‖H‖`.
+* `ContinuousLinearMap.traceL_smulRight`: the trace of the rank-one map `f.smulRight A` is `A`
+  evaluated at the Riesz representative of `f`.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
@@ -129,7 +132,7 @@ section traceL
 variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The metric trace of a continuous bilinear map is bounded by the dimension times its norm. This
-is the bound making `TauCeti.traceL` continuous; use `TauCeti.norm_traceL_apply_le`. -/
+is the bound making `TauCeti.traceL` continuous; use `ContinuousLinearMap.norm_traceL_apply_le`. -/
 private theorem norm_metricTrace_toLinearMap₁₂_le (H : E →L[ℝ] E →L[ℝ] F) :
     ‖LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H)‖ ≤
       Module.finrank ℝ E * ‖H‖ := by
@@ -145,7 +148,7 @@ noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
     (Module.finrank ℝ E) fun H : E →L[ℝ] E →L[ℝ] F ↦ norm_metricTrace_toLinearMap₁₂_le H
 
 /-- The continuous trace of a bilinear map is the metric trace of the underlying bilinear map. -/
-theorem traceL_apply_eq_metricTrace (H : E →L[ℝ] E →L[ℝ] F) :
+theorem _root_.ContinuousLinearMap.traceL_apply_eq_metricTrace (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H) := by
   rw [traceL, LinearMap.mkContinuous_apply, LinearMap.comp_apply]
 
@@ -153,22 +156,22 @@ theorem traceL_apply_eq_metricTrace (H : E →L[ℝ] E →L[ℝ] F) :
 basis. -/
 theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
-  rw [traceL_apply_eq_metricTrace,
+  rw [H.traceL_apply_eq_metricTrace,
     LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)]
   simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- The trace of a continuous bilinear map is bounded by the dimension of `E` times its norm:
 `‖traceL H‖ ≤ dim E * ‖H‖`. -/
-theorem norm_traceL_apply_le (H : E →L[ℝ] E →L[ℝ] F) :
+theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[ℝ] F) :
     ‖traceL H‖ ≤ Module.finrank ℝ E * ‖H‖ := by
-  rw [traceL_apply_eq_metricTrace]
+  rw [H.traceL_apply_eq_metricTrace]
   exact norm_metricTrace_toLinearMap₁₂_le H
 
 /-- Transposing the arguments of a bilinear map preserves its trace. -/
 @[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
   have h : ContinuousLinearMap.toLinearMap₁₂ B.flip = (ContinuousLinearMap.toLinearMap₁₂ B).flip :=
     LinearMap.ext₂ fun _ _ ↦ by simp
-  rw [traceL_apply_eq_metricTrace, traceL_apply_eq_metricTrace, h,
+  rw [B.flip.traceL_apply_eq_metricTrace, B.traceL_apply_eq_metricTrace, h,
     LinearMap.BilinMap.metricTrace_flip]
 
 /-- The trace of the real inner product is the dimension of the space. -/
@@ -178,7 +181,17 @@ theorem norm_traceL_apply_le (H : E →L[ℝ] E →L[ℝ] F) :
     LinearMap.ext₂ fun v w ↦ by
       rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, innerSL_apply_apply,
         innerₗ_apply_apply]
-  rw [traceL_apply_eq_metricTrace, h, LinearMap.BilinMap.metricTrace_inner]
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, h, LinearMap.BilinMap.metricTrace_inner]
+
+/-- The trace of the rank-one bilinear map `(v, w) ↦ f v • A w` is `A` evaluated at the Riesz
+representative of `f`. -/
+@[simp] theorem _root_.ContinuousLinearMap.traceL_smulRight (f : E →L[ℝ] ℝ) (A : E →L[ℝ] F) :
+    traceL (f.smulRight A) = A ((InnerProductSpace.toDual ℝ E).symm f) := by
+  rw [traceL_apply, ← (stdOrthonormalBasis ℝ E).sum_repr' ((InnerProductSpace.toDual ℝ E).symm f),
+    map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [ContinuousLinearMap.smulRight_apply, smul_apply, map_smul,
+    real_inner_comm, InnerProductSpace.toDual_symm_apply]
 
 end traceL
 
@@ -202,7 +215,7 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
 theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
   rw [laplacian_eq_traceL]
-  exact norm_traceL_apply_le _
+  exact ContinuousLinearMap.norm_traceL_apply_le _
 
 /-- Differences of the Laplacian are bounded by the dimension times the differences of the second
 Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. -/
@@ -210,7 +223,7 @@ theorem norm_laplacian_sub_laplacian_le (f : E → F) (x y : E) :
     ‖Δ f x - Δ f y‖ ≤
       Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y‖ := by
   rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub]
-  exact norm_traceL_apply_le _
+  exact ContinuousLinearMap.norm_traceL_apply_le _
 
 /-- The Laplacian of a function of class `C²` on an open set is continuous there. -/
 theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf : ContDiffOn ℝ 2 f s)
@@ -477,49 +490,6 @@ theorem laplacian_norm_sq (x : E) :
     exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
   rw [laplacian_eq_traceL, hsnd, map_nsmul, traceL_innerSL, nsmul_eq_mul, Nat.cast_ofNat]
 
-/-- **The Laplacian of a radial function.** For a `C²` function `ρ : ℝ → ℝ`, the Laplacian of
-`x ↦ ρ (‖x‖ ^ 2)` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. -/
-@[simp]
-theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDiff ℝ 2 ρ) (x : E) :
-    Δ (fun y : E => ρ (‖y‖ ^ 2)) x =
-      4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
-        2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
-  have hρ1 : ContDiff ℝ 1 (deriv ρ) := hρ.deriv'
-  have hρd : Differentiable ℝ ρ := hρ.differentiable (by norm_num)
-  have hρ'd : Differentiable ℝ (deriv ρ) := hρ1.differentiable one_ne_zero
-  -- The first derivative, by the chain rule through the squared norm.
-  have hfst : fderiv ℝ (fun y : E => ρ (‖y‖ ^ 2)) =
-      fun y => deriv ρ (‖y‖ ^ 2) • (2 • innerSL ℝ y) := by
-    funext y
-    exact ((hρd _).hasDerivAt.comp_hasFDerivAt y
-      (hasStrictFDerivAt_norm_sq y).hasFDerivAt).fderiv
-  -- The second derivative, by the product rule for `c • f` with `c = ρ' ∘ ‖·‖²`.
-  have hc : DifferentiableAt ℝ (fun y : E => deriv ρ (‖y‖ ^ 2)) x :=
-    ((hρ'd _).hasDerivAt.comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt)
-      |>.differentiableAt
-  have hcd : fderiv ℝ (fun y : E => deriv ρ (‖y‖ ^ 2)) x =
-      deriv (deriv ρ) (‖x‖ ^ 2) • (2 • innerSL ℝ x) :=
-    ((hρ'd _).hasDerivAt.comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt).fderiv
-  have hi : DifferentiableAt ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x :=
-    (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).differentiableAt
-  have hid : fderiv ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x =
-      (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) :=
-    (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  -- The inner-product term of the second derivative has trace `2 dim E`; the rank-one term is
-  -- evaluated in the standard orthonormal basis.
-  rw [laplacian_eq_traceL, hfst, fderiv_fun_smul hc hi, hcd, hid, map_add, map_smul, map_nsmul,
-    traceL_innerSL, traceL_apply]
-  set b := stdOrthonormalBasis ℝ E
-  have hterm (i) : ((deriv (deriv ρ) (‖x‖ ^ 2) • (2 • innerSL ℝ x)).smulRight
-      (2 • innerSL ℝ x : E →L[ℝ] ℝ) (b i)) (b i) =
-        4 * deriv (deriv ρ) (‖x‖ ^ 2) * ⟪x, b i⟫_ℝ ^ 2 := by
-    simp only [ContinuousLinearMap.smulRight_apply, FunLike.coe_smul, Pi.smul_apply,
-      innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul, Pi.mul_apply, Nat.cast_ofNat, Pi.ofNat_apply]
-    ring
-  rw [Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.mul_sum, b.sum_sq_inner_left x,
-    smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
-  ring
-
 open Filter Gradient Topology in
 /-- **The Leibniz rule for the Laplacian.** For scalar functions twice differentiable at `x`,
 `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf` at `x`. -/
@@ -618,6 +588,21 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+open Gradient in
+/-- **The Laplacian of a radial function.** For a `C²` function `ρ : ℝ → ℝ`, the Laplacian of
+`x ↦ ρ (‖x‖ ^ 2)` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. -/
+@[simp]
+theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDiff ℝ 2 ρ) (x : E) :
+    Δ (fun y : E => ρ (‖y‖ ^ 2)) x =
+      4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
+        2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
+  have hgrad : ∇ (fun y : E => ‖y‖ ^ 2) x = (2 : ℝ) • x := by
+    simpa only [sub_zero] using gradient_norm_sq_sub (0 : E) x
+  change Δ (ρ ∘ fun y : E => ‖y‖ ^ 2) x = _
+  rw [hρ.contDiffAt.laplacian_comp (contDiff_norm_sq ℝ).contDiffAt, hgrad, laplacian_norm_sq,
+    norm_smul, Real.norm_two]
+  ring
 
 open Gradient in
 /-- **The Leibniz rule for the Laplacian**, vector-valued form.  For a scalar function `f` and a

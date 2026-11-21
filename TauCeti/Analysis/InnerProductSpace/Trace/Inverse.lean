@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
+import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 import TauCeti.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.Trace
 
@@ -38,38 +39,43 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 local instance traceInverseCompleteSpace : CompleteSpace F :=
   FiniteDimensional.completeSpace ℝ F
 
-/-- If `g` is the inner product, raising one index of a bilinear form and taking
-the endomorphism trace gives its metric trace. -/
-theorem traceCLM_inverse_comp_eq_metricTrace
+/-- If `g` is the inner product, raising the first index of `B` with `g` is metric index raising
+`TauCeti.bilinFormToEnd` of `B`. -/
+private theorem toLinearMap_inverse_comp_eq_bilinFormToEnd
     (g : F →L[ℝ] F →L[ℝ] ℝ) (hg : ∀ v w, g v w = inner ℝ v w)
     (B : F →L[ℝ] F →L[ℝ] ℝ) :
-    traceCLM ℝ F (g.inverse ∘L B) = LinearMap.BilinMap.metricTrace B.toBilinForm := by
+    ((g.inverse ∘L B : F →L[ℝ] F) : F →ₗ[ℝ] F) = bilinFormToEnd B.toBilinForm := by
   have hinv : g.IsInvertible :=
     InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner (c := 1) one_ne_zero
       (by simpa only [one_mul] using hg)
-  let b := stdOrthonormalBasis ℝ F
-  rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ b, LinearMap.BilinMap.metricTrace_eq_sum _ b]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  -- The composed endomorphism evaluates by raising the first index with `g`.
-  change inner ℝ (b i) (g.inverse (B (b i))) = B (b i) (b i)
-  rw [real_inner_comm, ← hg]
-  exact congrArg (fun φ ↦ φ (b i)) (hinv.self_apply_inverse (B (b i)))
+  rw [← LinearMap.bilinFormToEnd_innerₗ_comp ((g.inverse ∘L B : F →L[ℝ] F) : F →ₗ[ℝ] F)]
+  refine congrArg bilinFormToEnd (LinearMap.ext₂ fun v w ↦ ?_)
+  rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+    innerₗ_apply_apply, ← hg, ContinuousLinearMap.toBilinForm_apply]
+  exact congrArg (fun φ ↦ φ w) (hinv.self_apply_inverse (B v))
+
+/-- If `g` is the inner product, raising one index of a bilinear form and taking
+the endomorphism trace gives its metric trace. -/
+theorem _root_.ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace
+    (g : F →L[ℝ] F →L[ℝ] ℝ) (hg : ∀ v w, g v w = inner ℝ v w)
+    (B : F →L[ℝ] F →L[ℝ] ℝ) :
+    traceCLM ℝ F (g.inverse ∘L B) = LinearMap.BilinMap.metricTrace B.toBilinForm := by
+  rw [traceCLM_apply, toLinearMap_inverse_comp_eq_bilinFormToEnd g hg B,
+    LinearMap.BilinForm.trace_bilinFormToEnd]
 
 /-- The trace of the square of a symmetric bilinear form with one index raised
 is its squared coefficient sum in every orthonormal basis. -/
-theorem traceCLM_inverse_comp_self_eq_sum_sq
+theorem _root_.ContinuousLinearMap.traceCLM_inverse_comp_self_eq_sum_sq
     (g : F →L[ℝ] F →L[ℝ] ℝ) (hg : ∀ v w, g v w = inner ℝ v w)
     (B : F →L[ℝ] F →L[ℝ] ℝ) (hB : ∀ v w, B v w = B w v)
     {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ F) :
     traceCLM ℝ F ((g.inverse ∘L B) ∘L (g.inverse ∘L B)) =
       ∑ i, ∑ j, B (b i) (b j) ^ 2 := by
-  have hinv : g.IsInvertible :=
-    InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner (c := 1) one_ne_zero
-      (by simpa only [one_mul] using hg)
   let A : F →L[ℝ] F := g.inverse ∘L B
   have hpair (v w : F) : inner ℝ v (A w) = B w v := by
-    rw [real_inner_comm, ← hg]
-    exact congrArg (fun φ ↦ φ v) (hinv.self_apply_inverse (B w))
+    rw [real_inner_comm, ← ContinuousLinearMap.coe_coe A,
+      toLinearMap_inverse_comp_eq_bilinFormToEnd g hg B,
+      LinearMap.BilinForm.inner_bilinFormToEnd_left, ContinuousLinearMap.toBilinForm_apply]
   rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- Expand the square of the raised-index endomorphism.
