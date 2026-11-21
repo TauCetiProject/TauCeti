@@ -62,7 +62,7 @@ def holomorphicLinearCoordinateSection (ℓ : StrongDual ℂ E) (z : E) :
     (holomorphicStructureSheaf 𝓘(ℂ, E) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
   ofContMDiff (fun y ↦ ℓ (e y - z)) fun y ↦
     ℓ.contMDiffAt.comp y ((((contMDiffOn_of_mem_maximalAtlas he).contMDiffAt
-      (e.open_source.mem_nhds y.2)).comp y contMDiff_subtype_val.contMDiffAt).sub
+      (e.open_source.mem_nhds y.property)).comp y contMDiff_subtypeVal.contMDiffAt).sub
         contMDiffAt_const)
 
 /-- The translated linear coordinate section evaluates at `y` to `ℓ (e y - z)`. -/

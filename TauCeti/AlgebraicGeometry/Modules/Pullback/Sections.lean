@@ -191,7 +191,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι 
   have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction U.ι)
     (pullbackPushforwardAdjunction U.ι) P
   have h₁ : IsIso (((restrictAdjunction U.ι).unit.app P).app U) :=
-    isIso_restrictAdjunction_unit_app_app U P le_rfl
+    isIso_restrictAdjunction_unit_app_app U.ι P (by simp)
   have h₂ : IsIso (((pullback U.ι).obj P).presheaf.map
       (homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp)).op) :=
     have : homOfLE (show ⊤ ≤ U.ι ⁻¹ᵁ U by simp) = eqToHom (by simp) := Subsingleton.elim _ _

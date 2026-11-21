@@ -7,8 +7,11 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
-import TauCeti.Topology.Category.TopCat.Pushout
+public import TauCeti.Topology.Category.TopCat.Pushout
+import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # The negative disc bundle is attached along its sphere bundle
@@ -49,6 +52,17 @@ theorem, for `0 < ε < ε₀` with `f⁻¹[c - ε, c + ε]` compact and its crit
 negative disc bundle along its sphere bundle. For an isolated nondegenerate critical point the
 base is a point, `D_ε` is a closed ellipsoid of dimension the index and `S_ε` its boundary sphere.
 
+A level may carry several critical submanifolds `i a`, of different dimensions and indices, whose
+negative disc bundles `D a` are then attached at once. If their images `Θ a (D a)` meet only inside
+the lower sublevel, for instance if they are disjoint, the space `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a)` is
+the pushout of the coproduct of the disc bundles along the coproduct of their sphere bundles
+(`isPushout_iUnion_negativeDiscBundle`). For a Morse–Bott function on a compact manifold the
+images are disjoint for small `ε`, and the deformation theorem
+(`IsMorseBottFamily.exists_sublevel_union_iUnion_negativeDiscBundle_deformation`) makes the
+inclusion of this adjunction space into `{f ≤ c + ε}` a homotopy equivalence relative to
+`{f ≤ c - ε}`, whose homotopy inverse is a retraction
+(`TauCeti.IsMorseBottFamily.exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv`).
+
 ## Main results
 
 In the namespace `TauCeti.SmoothEmbedding`:
@@ -57,6 +71,14 @@ In the namespace `TauCeti.SmoothEmbedding`:
   bundle is carried into the lower sublevel exactly when it lies in the negative sphere bundle.
 * `IsCriticalSubmanifold.isPushout_negativeDiscBundle`: the lower sublevel together with the image
   of the negative disc bundle is the adjunction space `{f ≤ c - ε} ∪_{Θ|S_ε} D_ε`.
+* `isPushout_iUnion_negativeDiscBundle`: the same for finitely many critical submanifolds, with the
+  coproduct of their negative disc bundles attached along the coproduct of their sphere bundles.
+
+In the namespace `TauCeti.IsMorseBottFamily`:
+
+* `exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv`: crossing a critical level of a
+  Morse–Bott function on a compact manifold attaches the negative disc bundles of its critical
+  submanifolds on that level, up to a homotopy equivalence relative to the lower sublevel.
 
 ## References
 
@@ -70,7 +92,7 @@ public section
 noncomputable section
 
 open Bundle Function Set Topology CategoryTheory
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold ContinuousMap
 
 namespace TauCeti
 
@@ -97,7 +119,7 @@ is at most `c` on `Θ(D_ε)`, since the normal Hessian is negative semidefinite 
 normal spaces. -/
 theorem apply_le_of_mem_negativeDiscBundle
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2)
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd)
     {x : TotalSpace P fun s ↦ i.NormalSpace s hn} (hx : x ∈ h.negativeDiscBundle hn P g ε) :
     f (Θ x) ≤ c := by
   rw [hΘ x hx]
@@ -110,7 +132,7 @@ theorem apply_le_of_mem_negativeDiscBundle
 lies in the negative sphere bundle `S_ε`. -/
 theorem mem_negativeSphereBundle_iff_apply_le
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2)
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd)
     {x : TotalSpace P fun s ↦ i.NormalSpace s hn} (hx : x ∈ h.negativeDiscBundle hn P g ε) :
     x ∈ h.negativeSphereBundle hn P g ε ↔ f (Θ x) ≤ c - ε := by
   rw [mem_negativeSphereBundle, hΘ x hx]
@@ -121,7 +143,7 @@ theorem mem_negativeSphereBundle_iff_apply_le
 sublevel `{f ≤ c - ε}` exactly in the image of the negative sphere bundle. -/
 theorem image_negativeDiscBundle_inter_sublevel
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) :
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) :
     Θ '' h.negativeDiscBundle hn P g ε ∩ {y | f y ≤ c - ε} =
       Θ '' h.negativeSphereBundle hn P g ε := by
   ext y
@@ -166,7 +188,7 @@ theorem isPushout_negativeDiscBundle (hf : Continuous f)
     (hΘc : ContinuousOn Θ (h.negativeDiscBundle hn P g ε))
     (hΘi : InjOn Θ (h.negativeDiscBundle hn P g ε))
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) :
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) :
     ∃ (α : C(h.negativeSphereBundle hn P g ε, {y | f y ≤ c - ε}))
       (χ : C(h.negativeDiscBundle hn P g ε,
         ({y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g ε : Set M))),
@@ -184,7 +206,7 @@ theorem isPushout_negativeDiscBundle (hf : Continuous f)
   refine ⟨⟨hα.restrict, (hΘc.mono hSD).mapsToRestrict hα⟩, ⟨hχ.restrict, hΘc.mapsToRestrict hχ⟩,
     fun _ ↦ rfl, fun _ ↦ rfl, IsPushout.of_isClosedEmbedding_of_range_union_range rfl ?_ ?_ ?_ ?_⟩
   · exact IsClosedEmbedding.inclusion subset_union_left
-      ((isClosed_le hf continuous_const).preimage continuous_subtype_val)
+      ((isClosed_le hf continuous_const).preimage continuous_subtypeVal)
   · have := isCompact_iff_compactSpace.1 hD
     exact (hΘc.mapsToRestrict hχ).isClosedEmbedding fun x y hxy ↦
       hΘi.injective (congrArg Subtype.val hxy)
@@ -201,6 +223,218 @@ end IsCriticalSubmanifold
 
 end Pushout
 
+section FamilyPushout
+
+universe u
+
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 2 M] [T2Space M] {ι : Type u} [Finite ι] {E' H' : ι → Type*}
+  {S : ι → Type u} [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)]
+  [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)}
+  [∀ a, TopologicalSpace (S a)] [∀ a, ChartedSpace (H' a) (S a)] {f : M → ℝ} {n : ℕ∞ω}
+  {i : ∀ a, SmoothEmbedding (J a) I n (S a) M} {hn : n ≠ 0} {P : ι → Type*}
+  {h : ∀ a, (i a).IsCriticalSubmanifold f}
+  {g : ∀ a, RiemannianMetric fun s ↦ (i a).NormalSpace s hn}
+  {Θ : ∀ a, TotalSpace (P a) (fun s ↦ (i a).NormalSpace s hn) → M} {c ε : ℝ}
+
+/-- **The lower sublevel with the images of several negative disc bundles is an adjunction
+space.** Let `i a : S a → M`, for `a` in a finite index type, be critical submanifolds of a
+continuous function `f` on a Hausdorff manifold, each with its own model and a fibre metric `g a`
+on its normal bundle, and suppose that each negative disc bundle `D a = D_ε(i a)` is compact. Let
+`Θ a` be continuous and injective on `D a` and put `f` there in the Morse–Bott normal form
+`f (Θ a v) = c + ½ Hessₛ (v, v)`, and suppose that two different images `Θ a (D a)` and
+`Θ b (D b)` meet only inside the lower sublevel `{f ≤ c - ε}`, as they do when they are disjoint.
+
+Then the maps `Θ a` restrict to attaching maps `α a : S_ε(i a) → {f ≤ c - ε}` on the negative
+sphere bundles and to maps `χ a : D a → {f ≤ c - ε} ∪ ⋃ a, Θ a (D a)`, and these form a pushout
+square in `TopCat`: the space `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a)` is the adjunction space
+`{f ≤ c - ε} ∪_α ⨆ a, D a` of the coproduct of the disc bundles along the coproduct of their sphere
+bundles. -/
+theorem isPushout_iUnion_negativeDiscBundle (hf : Continuous f)
+    (hD : ∀ a, IsCompact ((h a).negativeDiscBundle hn (P a) (g a) ε))
+    (hΘc : ∀ a, ContinuousOn (Θ a) ((h a).negativeDiscBundle hn (P a) (g a) ε))
+    (hΘi : ∀ a, InjOn (Θ a) ((h a).negativeDiscBundle hn (P a) (g a) ε))
+    (hΘ : ∀ a, ∀ x ∈ (h a).negativeDiscBundle hn (P a) (g a) ε,
+      f (Θ a x) = c + 2⁻¹ * (h a).normalHessian hn x.proj x.snd x.snd)
+    (hd : Pairwise fun a b ↦ Θ a '' (h a).negativeDiscBundle hn (P a) (g a) ε ∩
+      Θ b '' (h b).negativeDiscBundle hn (P b) (g b) ε ⊆ {y | f y ≤ c - ε}) :
+    ∃ (α : ∀ a, C((h a).negativeSphereBundle hn (P a) (g a) ε, {y | f y ≤ c - ε}))
+      (χ : ∀ a, C((h a).negativeDiscBundle hn (P a) (g a) ε,
+        ({y | f y ≤ c - ε} ∪ ⋃ a, Θ a '' (h a).negativeDiscBundle hn (P a) (g a) ε : Set M))),
+      (∀ a x, (α a x : M) = Θ a x) ∧ (∀ a x, (χ a x : M) = Θ a x) ∧
+      IsPushout (Limits.Sigma.desc fun a ↦ TopCat.ofHom (α a))
+        (Limits.Sigma.map fun a ↦ TopCat.ofHom (ContinuousMap.inclusion
+          ((h a).negativeSphereBundle_subset_negativeDiscBundle hn (P a) (g a) ε)))
+        (TopCat.ofHom (ContinuousMap.inclusion subset_union_left))
+        (Limits.Sigma.desc fun a ↦ TopCat.ofHom (χ a)) := by
+  set D := fun a ↦ (h a).negativeDiscBundle hn (P a) (g a) ε
+  set L : Set M := {y | f y ≤ c - ε}
+  have hSD (a : ι) := (h a).negativeSphereBundle_subset_negativeDiscBundle hn (P a) (g a) ε
+  have hα (a : ι) : MapsTo (Θ a) ((h a).negativeSphereBundle hn (P a) (g a) ε) L := fun x hx ↦
+    (IsCriticalSubmanifold.mem_negativeSphereBundle_iff_apply_le (hΘ a) (hSD a hx)).1 hx
+  have hχ (a : ι) : MapsTo (Θ a) (D a) (L ∪ ⋃ a, Θ a '' D a) := fun x hx ↦
+    Or.inr (mem_iUnion.2 ⟨a, mem_image_of_mem (Θ a) hx⟩)
+  refine ⟨fun a ↦ ⟨(hα a).restrict, ((hΘc a).mono (hSD a)).mapsToRestrict (hα a)⟩,
+    fun a ↦ ⟨(hχ a).restrict, (hΘc a).mapsToRestrict (hχ a)⟩, fun _ _ ↦ rfl, fun _ _ ↦ rfl,
+    IsPushout.of_isClosedEmbedding (fun _ ↦ rfl) ?_ (fun a ↦ ?_) ?_ ?_ ?_⟩
+  · exact IsClosedEmbedding.inclusion subset_union_left
+      ((isClosed_le hf continuous_const).preimage continuous_subtypeVal)
+  · have := isCompact_iff_compactSpace.1 (hD a)
+    exact ((hΘc a).mapsToRestrict (hχ a)).isClosedEmbedding fun x y hxy ↦
+      (hΘi a).injective (congrArg Subtype.val hxy)
+  · refine eq_univ_of_forall fun ⟨y, hy⟩ ↦ ?_
+    rcases hy with hy | hy
+    · exact Or.inl ⟨⟨y, hy⟩, rfl⟩
+    · obtain ⟨a, x, hx, rfl⟩ := mem_iUnion.1 hy
+      exact Or.inr (mem_iUnion.2 ⟨a, ⟨x, hx⟩, rfl⟩)
+  · -- Two different discs meet only inside the lower sublevel.
+    rintro a b hab _ ⟨⟨x, rfl⟩, ⟨x', hxx'⟩⟩
+    have hL : Θ a x ∈ L := hd hab ⟨mem_image_of_mem (Θ a) x.property,
+      ⟨x', x'.property, congrArg Subtype.val hxx'⟩⟩
+    exact ⟨⟨Θ a x, hL⟩, rfl⟩
+  · -- A point of the lower sublevel on a disc lies on its sphere bundle.
+    rintro a ⟨y, hy⟩ ⟨x, hx⟩ hxy
+    have hxy : y = Θ a x := congrArg Subtype.val hxy
+    subst hxy
+    exact ⟨⟨x, (IsCriticalSubmanifold.mem_negativeSphereBundle_iff_apply_le (hΘ a) hx).2 hy⟩,
+      rfl, rfl⟩
+
+end FamilyPushout
+
 end SmoothEmbedding
+
+namespace IsMorseBottFamily
+
+universe u
+
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type u} {E' H' P : ι → Type*}
+  {S : ι → Type u} [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)]
+  [∀ a, FiniteDimensional ℝ (E' a)] [∀ a, TopologicalSpace (H' a)]
+  {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)} [∀ a, TopologicalSpace (S a)]
+  [∀ a, ChartedSpace (H' a) (S a)] [∀ a, IsManifold (J a) ∞ (S a)]
+  [∀ a, NormedAddCommGroup (P a)] [∀ a, NormedSpace ℝ (P a)] [∀ a, FiniteDimensional ℝ (P a)]
+  {f : M → ℝ} {i : ∀ a, SmoothEmbedding (J a) I ∞ (S a) M} (hn : (∞ : ℕ∞ω) ≠ 0)
+
+/-- **Crossing a critical level of a Morse–Bott function attaches the negative disc bundles of its
+critical submanifolds on that level, up to a homotopy equivalence relative to the lower
+sublevel.** Let the family `i a : S a → M` exhibit `f` as a Morse–Bott function
+(`TauCeti.IsMorseBottFamily`) on a compact Hausdorff second-countable boundaryless manifold, with
+pieces modelled on boundaryless models, and let `g a` be a smooth fibre metric on the normal bundle
+of `i a`. Fix `c : ℝ`, and index the pieces on the level `f = c` by `{a // ∀ s, f (i a s) = c}`.
+
+Then there are smooth partial diffeomorphisms `Θ a` from the total spaces of the normal bundles of
+these pieces to `M`, each defined on a neighbourhood of the zero section and sending it to `i a`,
+which put `f` in the Morse–Bott normal form `f (Θ a v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` with
+the following property for `0 < ε < ε₀`. Write `D a` and `S_ε(a)` for the negative disc and sphere
+bundles of size `ε` relative to `g a`, and `X = {f ≤ c - ε} ∪ ⋃ a, Θ a (D a)`.
+
+* `X` is the adjunction space `{f ≤ c - ε} ∪_α ⨆ a, D a`: the restrictions `α a` of `Θ a` to the
+  sphere bundles, with values in `{f ≤ c - ε}`, and `χ a` to the disc bundles, with values in `X`,
+  form a pushout square in `TopCat` with the inclusions `S_ε(a) ⊆ D a` and `{f ≤ c - ε} ⊆ X`.
+* The inclusion `e : X → {f ≤ c + ε}` is a homotopy equivalence relative to `{f ≤ c - ε}`: it has
+  a homotopy inverse which is a retraction, `e⁻¹ ∘ e = id`, and `e ∘ e⁻¹` is homotopic to the
+  identity relative to `{f ≤ c - ε}`.
+
+For an isolated nondegenerate critical point the disc bundle is a cell of dimension the index, and
+this is Milnor's cell attachment. -/
+theorem exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv [T2Space M]
+    [SecondCountableTopology M] [CompactSpace M] [∀ a, (J a).Boundaryless]
+    (h : IsMorseBottFamily i f) (c : ℝ)
+    (hdim : ∀ a, Module.finrank ℝ (P a) = Module.finrank ℝ E - Module.finrank ℝ (E' a))
+    (g : letI : ∀ a, FiberBundle (P a) fun s ↦ (i a).NormalSpace s hn :=
+        fun a ↦ (i a).normalSpaceFiberBundle hn (hdim a)
+      letI : ∀ a, VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
+        fun a ↦ (i a).normalSpaceVectorBundle hn (hdim a)
+      ∀ a, ContMDiffRiemannianMetric (J a) ∞ (P a) fun s ↦ (i a).NormalSpace s hn) :
+    letI : ∀ a, FiberBundle (P a) fun s ↦ (i a).NormalSpace s hn :=
+      fun a ↦ (i a).normalSpaceFiberBundle hn (hdim a)
+    letI : ∀ a, VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
+      fun a ↦ (i a).normalSpaceVectorBundle hn (hdim a)
+    ∃ Θ : ∀ a : {a // ∀ s, f (i a s) = c}, PartialDiffeomorph ((J a).prod 𝓘(ℝ, P a)) I
+        (TotalSpace (P a) fun s ↦ (i a).NormalSpace s hn) M ∞,
+      (∀ (a : {a // ∀ s, f (i a s) = c}) s,
+        zeroSection (P a) (fun s ↦ (i a).NormalSpace s hn) s ∈ (Θ a).source) ∧
+      (∀ (a : {a // ∀ s, f (i a s) = c}) s,
+        Θ a (zeroSection (P a) (fun s ↦ (i a).NormalSpace s hn) s) = i a s) ∧
+      (∀ a : {a // ∀ s, f (i a s) = c}, ∀ x ∈ (Θ a).source, f (Θ a x) =
+        c + 2⁻¹ * (h.isNondegenerateCriticalSubmanifold a).normalHessian hn x.proj x.snd x.snd) ∧
+      ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
+        ∃ (α : ∀ a : {a // ∀ s, f (i a s) = c},
+            C((h.isNondegenerateCriticalSubmanifold a).negativeSphereBundle hn (P a)
+              (g a).toRiemannianMetric ε, {y | f y ≤ c - ε}))
+          (χ : ∀ a : {a // ∀ s, f (i a s) = c},
+            C((h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
+              (g a).toRiemannianMetric ε,
+              ({y | f y ≤ c - ε} ∪ ⋃ a : {a // ∀ s, f (i a s) = c},
+                Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
+                  (g a).toRiemannianMetric ε : Set M))),
+          (∀ a x, (α a x : M) = Θ a x) ∧ (∀ a x, (χ a x : M) = Θ a x) ∧
+          IsPushout (Limits.Sigma.desc fun a ↦ TopCat.ofHom (α a))
+            (Limits.Sigma.map fun a ↦ TopCat.ofHom <| ContinuousMap.inclusion <|
+            (h.isNondegenerateCriticalSubmanifold a).negativeSphereBundle_subset_negativeDiscBundle
+              hn (P a) (g a).toRiemannianMetric ε)
+            (TopCat.ofHom (ContinuousMap.inclusion subset_union_left))
+            (Limits.Sigma.desc fun a ↦ TopCat.ofHom (χ a)) ∧
+          ∃ e : ↥({y | f y ≤ c - ε} ∪ ⋃ a : {a // ∀ s, f (i a s) = c},
+                Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
+                  (g a).toRiemannianMetric ε) ≃ₕ {y | f y ≤ c + ε},
+            (∀ x, (e x : M) = x) ∧ (∀ x, e.invFun (e x) = x) ∧
+            (e.toFun.comp e.invFun).HomotopicRel (ContinuousMap.id _)
+              {y | f y ≤ c - ε} := by
+  let : ∀ a, FiberBundle (P a) fun s ↦ (i a).NormalSpace s hn :=
+    fun a ↦ (i a).normalSpaceFiberBundle hn (hdim a)
+  let : ∀ a, VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
+    fun a ↦ (i a).normalSpaceVectorBundle hn (hdim a)
+  have := h.finite
+  have (a : ι) : T2Space (S a) := (i a).isEmbedding.t2Space
+  have (a : ι) : CompactSpace (S a) :=
+    (Topology.IsClosedEmbedding.mk (i a).isEmbedding (h.isClosed_range a)).compactSpace
+  obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
+    h.exists_sublevel_union_iUnion_negativeDiscBundle_deformation hn c hdim g
+  refine ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, fun ε hε ↦ ?_⟩
+  obtain ⟨hsrc, hdisj, r, hr, ⟨G⟩⟩ := hmain ε hε
+  set D := fun a : {a // ∀ s, f (i a s) = c} ↦
+    (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a) (g a).toRiemannianMetric ε
+  obtain ⟨α, χ, hα, hχ, hP⟩ := SmoothEmbedding.isPushout_iUnion_negativeDiscBundle
+    (ι := {a // ∀ s, f (i a s) = c}) (S := fun a ↦ S a) (P := fun a ↦ P a) (J := fun a ↦ J a)
+    (i := fun a ↦ i a) (Θ := fun a ↦ Θ a) (c := c)
+    (h := fun a ↦ (h.isNondegenerateCriticalSubmanifold a).toIsCriticalSubmanifold)
+    h.contMDiff.continuous
+    (fun a ↦ (h.isNondegenerateCriticalSubmanifold a).isCompact_negativeDiscBundle hn h.contMDiff
+      (hdim a) (g a) ε)
+    (fun a ↦ (Θ a).contMDiffOn.continuousOn.mono (hsrc a)) (fun a ↦ (Θ a).injOn.mono (hsrc a))
+    (fun a x hx ↦ hΘf a x (hsrc a hx))
+    (fun a b hab _ hx ↦ (Set.disjoint_iff.1 (hdisj hab) hx).elim)
+  refine ⟨α, χ, hα, hχ, hP, ?_⟩
+  -- The lower sublevel and the discs lie in `{f ≤ c + ε}`, since `f ≤ c` on the discs.
+  have hX : {y | f y ≤ c - ε} ∪ ⋃ a, Θ a '' D a ⊆ {y | f y ≤ c + ε} := by
+    refine union_subset (fun y hy ↦ ?_) (iUnion_subset fun a ↦ ?_)
+    · simp only [mem_ofPred_eq] at hy ⊢
+      linarith [hε.1]
+    · rintro _ ⟨x, hx, rfl⟩
+      exact (SmoothEmbedding.IsCriticalSubmanifold.apply_le_of_mem_negativeDiscBundle
+        (fun x hx ↦ hΘf a x (hsrc a hx)) hx).trans (by linarith [hε.1])
+  -- The retraction `r`, read as a map onto `X`, is a left inverse of the inclusion of `X`. Both
+  -- `ContinuousMap.inclusion hX x` and `ContinuousMap.inclusion inter_subset_left ⟨x, _⟩` are the
+  -- point `x` of `M` with a membership proof, so `hr` applies to `x` as it stands.
+  set ρ := (ContinuousMap.inclusion inter_subset_right).comp r
+  have hρ (x) : ρ (ContinuousMap.inclusion hX x) = x :=
+    Subtype.ext (congrArg Subtype.val (hr ⟨x.val, hX x.property, x.property⟩) :)
+  have hρ' : (ContinuousMap.inclusion hX).comp ρ =
+      (ContinuousMap.inclusion inter_subset_left).comp r :=
+    ContinuousMap.ext fun _ ↦ rfl
+  set e := ContinuousMap.HomotopyEquiv.ofRetraction hX ρ hρ (G.toHomotopy.cast hρ'.symm rfl)
+  have he₁ (x) : (e x : M) = x := ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ x
+  have he : e.toFun = ContinuousMap.inclusion hX := ContinuousMap.ext fun x ↦ Subtype.ext (he₁ x)
+  have he' : e.invFun = ρ :=
+    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ _ _ _)
+  refine ⟨e, he₁, fun x ↦ ?_, ?_⟩
+  · simpa only [← he, ← he'] using hρ x
+  · rw [he, he', hρ']; exact ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy
+
+end IsMorseBottFamily
 
 end TauCeti

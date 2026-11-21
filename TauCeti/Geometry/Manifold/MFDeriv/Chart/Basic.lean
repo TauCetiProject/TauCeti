@@ -9,8 +9,10 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
@@ -149,6 +151,11 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   same identity near a point, in the preferred chart at that point.
 * `ContMDiff.contMDiff_deriv_prodMk` and `ContMDiff.continuous_deriv_prodMk`: the derivative along
   `𝕜` of a `C^(n + 1)` function on `M × 𝕜` is `C^n`, and that of a `C¹` function is continuous.
+* `ModelWithCorners.det_fderiv_extendCoordChange_ne_zero`,
+  `OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior`,
+  `OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior`, and
+  `OpenPartialHomeomorph.contDiffOn_extend_comp`: Jacobian determinant, interior differentiability,
+  and `C^n` coordinate-expression regularity for charts of the maximal atlas.
 -/
 
 public section
@@ -346,10 +353,13 @@ theorem mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E �
   rfl
 
 open Filter in
-/-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
-of a family with differentiable slices is, near `(p, extChartAt I x x)`, uniquely `η q.1`, then the
-zero of the manifold derivative of `fun y ↦ f (q.1, y)` near `(p, x)` is uniquely
-`(extChartAt I x).symm (η q.1)`. -/
+/-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
+the target of the extended chart at `x` for `q.1` near `p`, and that near `(p, extChartAt I x x)`
+the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)` is differentiable in `v` and
+its Fréchet derivative at `q.2` vanishes exactly when `η q.1 = q.2`. Then near `(p, x)` the manifold
+derivative of `fun y ↦ f (q.1, y)` at `q.2` vanishes exactly when
+`(extChartAt I x).symm (η q.1) = q.2`. This transfers the equivalence only: it does not assert that
+a critical point exists. -/
 theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [TopologicalSpace P]
     {f : P × M → F} {p : P} {x : M} {η : P → E}
     (hslice : ∀ᶠ q in 𝓝 (p, extChartAt I x x),
@@ -1216,3 +1226,62 @@ theorem _root_.ContMDiff.continuous_deriv_prodMk (hf : ContMDiff (I.prod 𝓘(�
 end TimeDerivative
 
 end TauCeti
+
+section MaximalAtlasExtend
+
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- Nonvanishing Jacobian `det` of `φ.extend I ∘ (φ'.extend I).symm` on the overlap interior. -/
+theorem ModelWithCorners.det_fderiv_extendCoordChange_ne_zero (I : ModelWithCorners 𝕜 E H)
+    {n : ℕ∞ω} (hn : n ≠ 0) {φ' φ : OpenPartialHomeomorph M H}
+    (hφ' : φ' ∈ IsManifold.maximalAtlas I n M) (hφ : φ ∈ IsManifold.maximalAtlas I n M)
+    {w : E} (hw : w ∈ interior ((φ'.extend I).target ∩ (φ'.extend I).symm ⁻¹' φ.source)) :
+    (fderiv 𝕜 (φ.extend I ∘ (φ'.extend I).symm) w).det ≠ 0 := by
+  have hsrc : (I.extendCoordChange φ' φ).source =
+      (φ'.extend I).target ∩ (φ'.extend I).symm ⁻¹' φ.source := by
+    rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_source, PartialEquiv.symm_source,
+      φ.extend_source]
+  rcases I.isInvertible_fderivWithin_extendCoordChange hn hφ' hφ (hsrc ▸ interior_subset hw) with
+    ⟨L, hL⟩
+  rw [fderivWithin_of_mem_nhds (hsrc ▸ Filter.mem_of_superset (isOpen_interior.mem_nhds hw)
+    interior_subset)] at hL
+  rw [← PartialEquiv.coe_trans, ← hL]
+  exact L.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- Differentiability of `(φ.extend I).symm` on `interior (φ.extend I).target` for `C^n` `φ`
+(`n ≠ 0`). -/
+theorem OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior {n : ℕ∞ω} (hn : n ≠ 0)
+    {φ : OpenPartialHomeomorph M H} (hφ : φ ∈ IsManifold.maximalAtlas I n M) {z : E}
+    (hz : z ∈ interior (φ.extend I).target) :
+    MDifferentiableAt 𝓘(𝕜, E) I (φ.extend I).symm z :=
+  (((φ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hφ) z (interior_subset hz)).contMDiffAt
+    (mem_interior_iff_mem_nhds.1 hz)).mdifferentiableAt hn
+
+/-- On `interior (φ.extend I).target`, `mfderivWithin` of `(φ.extend I).symm` equals `mfderiv`. -/
+theorem OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior
+    (φ : OpenPartialHomeomorph M H) {z : E} (hz : z ∈ interior (φ.extend I).target) :
+    mfderivWithin 𝓘(𝕜, E) I (φ.extend I).symm (range I) z =
+      mfderiv 𝓘(𝕜, E) I (φ.extend I).symm z :=
+  mfderivWithin_of_mem_nhds
+    (Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 hz) φ.extend_target_subset_range)
+
+/-- `C^n` regularity of `ψ'.extend I' ∘ f ∘ (ψ.extend I).symm` on the chart overlap domain. -/
+theorem OpenPartialHomeomorph.contDiffOn_extend_comp {n : ℕ∞ω}
+    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I n M)
+    {ψ' : OpenPartialHomeomorph M' H'} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' n M')
+    {f : M → M'} {t : Set M} (hf : ContMDiffOn I I' n f t) :
+    ContDiffOn 𝕜 n (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
+      ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
+  contMDiffOn_iff_contDiffOn.1 ((ψ'.contMDiffOn_extend hψ').comp
+    (hf.comp ((ψ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hψ).mono inter_subset_left)
+      fun _ hw ↦ hw.2.1) fun _ hw ↦ hw.2.2)
+
+end MaximalAtlasExtend

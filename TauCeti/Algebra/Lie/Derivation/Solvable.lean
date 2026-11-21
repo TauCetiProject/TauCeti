@@ -85,13 +85,14 @@ theorem _root_.LieIdeal.nilradical_le_restrict_nilradical_of_forall [IsNoetheria
         exact LieSubmodule.coe_bracket _ x z }
   -- It is the image of the nilpotent Lie algebra `nilradical R I`, so it is nilpotent.
   let f : LieAlgebra.nilradical R I →ₗ⁅R⁆ N :=
-    { toFun := fun z ↦ ⟨(z : I), z, z.2, rfl⟩
+    { toFun := fun z ↦ ⟨(z : I), z, z.property, rfl⟩
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl
       map_lie' := fun {y z} ↦ Subtype.ext <|
         (congrArg _ ((LieAlgebra.nilradical R I : LieSubalgebra R I).coe_bracket y z)).trans <|
           ((I : LieSubalgebra R M).coe_bracket _ _).trans
-            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.2, rfl⟩ : N) ⟨_, z, z.2, rfl⟩).symm }
+            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.property, rfl⟩ : N) ⟨_, z, z.property,
+                rfl⟩).symm }
   have hf : Function.Surjective f := by
     rintro ⟨_, z, hz, rfl⟩
     exact ⟨⟨z, hz⟩, rfl⟩
@@ -165,7 +166,7 @@ theorem mem_nilradical_of_mem_radical_of_isNilpotent_ad {x : L} (hx : x ∈ radi
     rw [LieAlgebra.isNilpotent_iff_forall (R := K)]
     intro z
     exact (J : LieSubalgebra K L).isNilpotent_ad_of_isNilpotent_ad (x := z)
-      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.2)
+      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.property)
   exact J.le_nilradical K L hJ (Submodule.mem_sup_left (Submodule.mem_span_singleton_self x))
 
 end LieAlgebra
