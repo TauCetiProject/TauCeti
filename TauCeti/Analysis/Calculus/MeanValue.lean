@@ -67,6 +67,14 @@ A function of time and space with derivative bounded by `C` that vanishes outsid
 interval `(a, b)` is bounded by `C (b - a)`, by the mean value inequality from its value at the
 time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
 
+## A uniform first-order remainder estimate
+
+If `G` is differentiable on `s` with a derivative `G'` uniformly continuous there, one radius
+`η` serves at every centre: on each ball of radius at most `η` inside `s`, the first-order
+remainder of `G` against its derivative at the centre is at most `c` times the increment
+(`UniformContinuousOn.exists_pos_norm_image_sub_sub_le_of_hasFDerivAt`). This is the pointwise
+estimate behind the differentiability of superposition operators.
+
 ## Comparing maps with nearby derivatives
 
 If two maps on a convex set have derivatives within `ε` of a common linear map and agree at a
@@ -98,6 +106,20 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+
+## Second differences of maps with Lipschitz derivative
+
+Let `f` be differentiable on a convex set `s`, with derivative of norm at most `C` and
+`L`-Lipschitz on `s`. Then the second difference of `f` satisfies
+
+`‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
+
+whenever `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`
+(`Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le`). The first term changes the increment `b`
+into `b'` at the base point `a`; the second moves the base point of `y ↦ f (y + b') - f y`, whose
+derivative `Df(y + b') - Df(y)` is at most `L ‖b'‖`, from `a'` to `a`. Both steps are Mathlib's
+mean value inequality `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le`. This is the estimate
+that makes a nonlinear coefficient `x ↦ J(u(x))` Lipschitz in the map `u` for Hölder norms.
 -/
 
 public section
@@ -204,6 +226,37 @@ theorem norm_image_sub_le_of_norm_hasFDerivWithin_apply_le
   simpa [γ] using norm_image_sub_le_of_norm_deriv_le_segment_01' hd hb
 
 end Convex
+
+namespace UniformContinuousOn
+
+open Metric
+
+/-- **A uniform first-order remainder estimate.** Let `G` have derivative `G' x` at every point
+`x` of `s`, with `G'` uniformly continuous on `s`. Then for every `c > 0` there is `η > 0` such
+that on every ball of radius `r ≤ η` contained in `s`, with centre `x₀`, the first-order remainder
+of `G` against `G' x₀` is at most `c` times the increment: `‖G x₁ - G x₂ - G' x₀ (x₁ - x₂)‖ ≤
+c ‖x₁ - x₂‖`. The radius `η` does not depend on `x₀`. Derivatives may be taken over a real or
+complex scalar field. -/
+theorem exists_pos_norm_image_sub_sub_le_of_hasFDerivAt {𝕜 X Y : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y} {G' : X → X →L[𝕜] Y} {s : Set X}
+    (hG' : UniformContinuousOn G' s) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x) {c : ℝ}
+    (hc : 0 < c) :
+    ∃ η > 0, ∀ x₀ r, r ≤ η → ball x₀ r ⊆ s → ∀ x₁ ∈ ball x₀ r, ∀ x₂ ∈ ball x₀ r,
+      ‖G x₁ - G x₂ - G' x₀ (x₁ - x₂)‖ ≤ c * ‖x₁ - x₂‖ := by
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
+  obtain ⟨η, hη, hG'η⟩ := Metric.uniformContinuousOn_iff_le.1 hG' c hc
+  refine ⟨η, hη, fun x₀ r hr hs x₁ h₁ x₂ h₂ ↦ ?_⟩
+  have hx₀ : x₀ ∈ s := hs (mem_ball_self (dist_nonneg.trans_lt h₁))
+  exact (convex_ball x₀ r).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (fun x hx ↦ (hGs x (hs hx)).hasFDerivWithinAt)
+    (fun x hx ↦ by
+      rw [← dist_eq_norm]
+      exact hG'η x (hs hx) x₀ hx₀ ((mem_ball.1 hx).le.trans hr))
+    h₂ h₁
+
+end UniformContinuousOn
 
 namespace TauCeti
 
@@ -541,3 +594,43 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+section SecondDifference
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {f : E → G} {s : Set E} {C L : ℝ}
+
+/-- **Second-difference estimate.** If `f` is differentiable on the convex set `s`, with
+`‖Df‖ ≤ C` and `Df` `L`-Lipschitz there, then
+`‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
+when `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`. -/
+theorem Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le (hs : Convex ℝ s)
+    (hd : ∀ x ∈ s, DifferentiableAt ℝ f x) (hC : ∀ x ∈ s, ‖fderiv ℝ f x‖ ≤ C)
+    (hL : ∀ x ∈ s, ∀ y ∈ s, ‖fderiv ℝ f x - fderiv ℝ f y‖ ≤ L * ‖x - y‖)
+    {a a' b b' : E} (ha : a ∈ s) (ha' : a' ∈ s) (hab : a + b ∈ s) (hab' : a + b' ∈ s)
+    (ha'b' : a' + b' ∈ s) :
+    ‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C * ‖b - b'‖ + L * ‖b'‖ * ‖a - a'‖ := by
+  -- The first step changes `b` into `b'` at the base point `a`.
+  have hfirst : ‖f (a + b) - f (a + b')‖ ≤ C * ‖b - b'‖ := by
+    simpa using hs.norm_image_sub_le_of_norm_fderiv_le hd hC hab' hab
+  -- The second step moves the base point of `y ↦ f (y + b') - f y` from `a'` to `a`.
+  have hseg : ∀ y ∈ segment ℝ a' a, y ∈ s ∧ y + b' ∈ s := fun y hy ↦ by
+    refine ⟨hs.segment_subset ha' ha hy, hs.segment_subset ha'b' hab' ?_⟩
+    have h : b' + y ∈ segment ℝ (b' + a') (b' + a) := by
+      rw [← segment_translate_image]
+      exact ⟨y, hy, rfl⟩
+    simpa only [add_comm b'] using h
+  have hsecond : ‖(f (a + b') - f a) - (f (a' + b') - f a')‖ ≤ L * ‖b'‖ * ‖a - a'‖ := by
+    have hφd : ∀ y ∈ segment ℝ a' a, HasFDerivWithinAt (fun y ↦ f (y + b') - f y)
+        (fderiv ℝ f (y + b') - fderiv ℝ f y) (segment ℝ a' a) y := fun y hy ↦ by
+      have hshift := (hd _ (hseg y hy).2).hasFDerivAt.comp y ((hasFDerivAt_id y).add_const b')
+      rw [ContinuousLinearMap.comp_id] at hshift
+      exact (hshift.sub (hd y (hseg y hy).1).hasFDerivAt).hasFDerivWithinAt
+    refine (convex_segment a' a).norm_image_sub_le_of_norm_hasFDerivWithin_le hφd
+      (fun y hy ↦ ?_) (left_mem_segment ℝ a' a) (right_mem_segment ℝ a' a)
+    simpa using hL _ (hseg y hy).2 y (hseg y hy).1
+  calc _ = ‖(f (a + b) - f (a + b')) + ((f (a + b') - f a) - (f (a' + b') - f a'))‖ := by
+        congr 1; abel
+    _ ≤ _ := (norm_add_le _ _).trans (add_le_add hfirst hsecond)
+
+end SecondDifference

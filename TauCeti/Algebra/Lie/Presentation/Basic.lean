@@ -69,7 +69,7 @@ theorem lieSpan_range_of_eq_top :
   refine eq_top_iff.2 fun y _ => ?_
   have hy : K.incl (g y) = y :=
     congrArg (fun F : FreeLieAlgebra R X →ₗ⁅R⁆ FreeLieAlgebra R X => F y) hid
-  exact hy ▸ (g y).2
+  exact hy ▸ (g y).property
 
 end
 

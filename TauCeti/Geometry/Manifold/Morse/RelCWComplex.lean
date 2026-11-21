@@ -208,8 +208,8 @@ def morseRelCWComplex (hfc : Continuous f)
       ⋃ i, (φ i).source ∩ φ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0})
       {x | f x ≤ c - ε} :=
   RelCWComplex.mkFinite _ _ (fun m ↦ {i // k i = m})
-    (fun _ i ↦ morseCellPartialEquiv (φ i) (hball i) hε (i.2 ▸ hk i))
-    (eventually_atTop.2 ⟨n + 1, fun m hm ↦ ⟨fun i ↦ by have := hk i; have := i.2; omega⟩⟩)
+    (fun _ i ↦ morseCellPartialEquiv (φ i) (hball i) hε (i.property ▸ hk i))
+    (eventually_atTop.2 ⟨n + 1, fun m hm ↦ ⟨fun i ↦ by have := hk i; have := i.property; omega⟩⟩)
     (fun _ ↦ inferInstance) (fun _ _ ↦ rfl)
     (fun _ i ↦ continuousOn_morseCellPartialEquiv (hball i) hε _)
     (fun _ i ↦ continuousOn_morseCellPartialEquiv_symm (hball i) hε _)
@@ -261,7 +261,7 @@ instance finite_morseRelCWComplex :
   let := morseRelCWComplex hfc φ hφ k hk hε hball hf
   { eventually_isEmpty_cell :=
       eventually_atTop.2 ⟨n + 1, fun m hm ↦
-        ⟨fun i : {i // k i = m} ↦ by have := hk i.1; have := i.2; omega⟩⟩
+        ⟨fun i : {i // k i = m} ↦ by have := hk i.val; have := i.property; omega⟩⟩
     finite_cell := fun m ↦ inferInstanceAs (Finite {i // k i = m}) }
 
 /-- The characteristic map of the `m`-cell of `TauCeti.morseRelCWComplex` at the chart `φ i` is
@@ -272,8 +272,8 @@ theorem coe_map_morseRelCWComplex (m : ℕ)
     (j : @cell M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m) :
     ⇑(@map M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m j) =
       OpenPartialHomeomorph.morseCellMap
-          (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).1)
-          ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).2 ▸ hk _) ε ∘
+          (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).val)
+          ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).property ▸ hk _) ε ∘
         (EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm :=
   (rfl)
 
@@ -285,8 +285,8 @@ theorem coe_cellDiskHom_morseRelCWComplex [T2Space M] (m : ℕ)
     (j : @cell M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m) (z : TopCat.disk.{u} m) :
     (@cellDiskHom M _ _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m j z : M) =
       OpenPartialHomeomorph.morseCellMap
-        (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).1)
-        ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).2 ▸ hk _) ε
+        (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).val)
+        ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).property ▸ hk _) ε
         (z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin m)) 1)).down := by
   let := morseRelCWComplex hfc φ hφ k hk hε hball hf
   rw [coe_cellDiskHom_apply, coe_map_morseRelCWComplex, comp_apply,
@@ -357,7 +357,7 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation (hf : IsMorse I f) (hδ
     cellFrontier_morseRelCWComplex_subset _ _ _ _ _ _ _ _,
     (ContinuousMap.inclusion inter_subset_right).comp r, fun x ↦ ?_,
     ⟨G.cast (by ext; rfl) rfl⟩⟩
-  exact congrArg (ContinuousMap.inclusion inter_subset_right) (hr ⟨x, hS x.2, x.2⟩)
+  exact congrArg (ContinuousMap.inclusion inter_subset_right) (hr ⟨x, hS x.property, x.property⟩)
 
 end IsMorse
 

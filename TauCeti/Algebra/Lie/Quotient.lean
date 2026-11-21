@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Quotient
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.Algebra.Lie.Abelian
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Homomorphisms from quotients by Lie ideals
@@ -20,7 +21,9 @@ surjective homomorphism, the induced map from the quotient by its kernel is an i
 is the first isomorphism theorem.
 
 These declarations live in the root `LieIdeal` and `LieHom` namespaces, extending Mathlib's API
-and supporting receiver notation on the ideal and the homomorphism.
+and supporting receiver notation on the ideal and the homomorphism. For quotients of Lie modules,
+`LieSubmodule.Quotient.coe_mk'` identifies the underlying linear map of the quotient map with the
+quotient map of submodules.
 
 The functorial quotient-map and central-kernel API is adapted from
 `Mei/Algebra/Lie/Quotient/Map.lean`, copyright (c) 2026 Mei contributors,
@@ -44,9 +47,9 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
 * `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
-* `LieIdeal.liftQ_injective_iff`, `LieIdeal.liftQ_surjective`, and `LieIdeal.range_liftQ`: the
-  lifted homomorphism is injective exactly when the ideal exhausts the kernel, surjective when the
-  original homomorphism is, and has the same range as the original homomorphism.
+* `LieIdeal.liftQ_injective_iff`, `LieIdeal.liftQ_surjective_iff`, and `LieIdeal.range_liftQ`:
+  the lifted homomorphism is injective exactly when the ideal exhausts the kernel, surjective
+  exactly when the original homomorphism is, and has the same range as the original homomorphism.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
@@ -54,6 +57,7 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.factor_refl`, `LieIdeal.factor_comp` and `LieIdeal.factor_surjective`: the transitions
   between nested quotients are the identity at equal ideals, compose, and are surjective.
 * `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
+* `LieSubmodule.Quotient.coe_mk'`: the same for the quotient map of a Lie module.
 * `LieIdeal.mkQ_comp_incl_surjective_iff`: a Lie subalgebra `P` maps onto `L ⧸ I` exactly when
   `I + P = L`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
@@ -129,12 +133,13 @@ theorem liftQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
   exact Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') _ <| by
     rw [← LieHom.ker_toSubmodule, LieSubmodule.toSubmodule_le_toSubmodule]; exact h'
 
-/-- The homomorphism induced on the quotient by a surjective homomorphism is surjective. -/
-theorem liftQ_surjective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : Function.Surjective f) :
-    Function.Surjective (I.liftQ f h) := by
+/-- The homomorphism induced on the quotient is surjective exactly when the original homomorphism
+is. -/
+@[simp]
+theorem liftQ_surjective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
+    Function.Surjective (I.liftQ f h) ↔ Function.Surjective f := by
   rw [← LieHom.coe_toLinearMap, ← LinearMap.range_eq_top, coe_liftQ, Submodule.range_liftQ,
     LinearMap.range_eq_top, LieHom.coe_toLinearMap]
-  exact h'
 
 /-- The induced homomorphism on the quotient composed with the quotient map is the original
 homomorphism. -/
@@ -209,7 +214,7 @@ theorem factor_comp {I J K : LieIdeal R L} (hIJ : I ≤ J) (hJK : J ≤ K) :
 
 /-- Quotient transitions are surjective. -/
 theorem factor_surjective {I J : LieIdeal R L} (h : I ≤ J) : Function.Surjective (factor h) :=
-  liftQ_surjective _ _ _ J.surjective_mkQ
+  (liftQ_surjective_iff _ _ _).2 J.surjective_mkQ
 
 section Supplement
 
@@ -287,7 +292,7 @@ by its kernel is isomorphic to the target. -/
 noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) :
     (L ⧸ f.ker) ≃ₗ⁅R⁆ L' :=
   LieEquiv.ofBijective (f.ker.liftQ f le_rfl)
-    ⟨(f.ker.liftQ_injective_iff f le_rfl).2 le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
+    ⟨(f.ker.liftQ_injective_iff f le_rfl).2 le_rfl, (f.ker.liftQ_surjective_iff f le_rfl).2 hf⟩
 
 /-- The first isomorphism theorem sends the class of `x` to `f x`. -/
 @[simp]
@@ -415,7 +420,7 @@ theorem mapQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ J.comap f) :
 /-- Surjectivity of the original map implies surjectivity on quotients. -/
 theorem mapQ_surjective (f : L →ₗ⁅R⁆ L') (h : I ≤ J.comap f)
     (hf : Function.Surjective f) : Function.Surjective (I.mapQ J f h) :=
-  I.liftQ_surjective _ _ (J.surjective_mkQ.comp hf)
+  (I.liftQ_surjective_iff _ _).2 (J.surjective_mkQ.comp hf)
 
 section Nested
 
@@ -461,3 +466,14 @@ theorem factor_comp_mapQ (I' : LieIdeal R L) (J' : LieIdeal R L')
   simp [mkQ_apply]
 
 end LieIdeal
+
+namespace LieSubmodule.Quotient
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M] (N : LieSubmodule R L M)
+
+/-- The linear map underlying the quotient map of a Lie module is the quotient map of
+submodules. -/
+theorem coe_mk' : (mk' N : M →ₗ[R] M ⧸ N) = N.toSubmodule.mkQ := (rfl)
+
+end LieSubmodule.Quotient

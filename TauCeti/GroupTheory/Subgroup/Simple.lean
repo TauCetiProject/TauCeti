@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Subgroup.Simple
 public import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Simplicity from normal generation by elements of prime order
@@ -33,6 +34,9 @@ groups given by presentations or by permutation and matrix generators.
   subgroup.
 * `IsMulTorsion.isSimpleGroup_of_isConj_of_normalClosure_eq_top`: the certificate form, where the
   elements of prime order are covered up to conjugacy by a set of normal generators.
+* `TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard`: a single normal
+  generator `a` with `a ^ p = 1` suffices when the prime `p` divides the order of every nontrivial
+  normal subgroup and `p ^ 2` does not divide the group order.
 
 A finite group is torsion by `isMulTorsion_of_finite`. The prime-order element of a nontrivial
 normal subgroup comes from `IsMulTorsion.exists_prime_orderOf_mem` in
@@ -84,3 +88,20 @@ theorem IsMulTorsion.isSimpleGroup_of_isConj_of_normalClosure_eq_top (hG : IsMul
   refine top_le_iff.mp (hs x hxs ▸ normalClosure_le_normal (Set.singleton_subset_iff.mpr ?_))
   simpa [mul_assoc] using
     (normalClosure_normal (s := {c * x * c⁻¹})).conj_mem _ (subset_normalClosure rfl) c⁻¹
+
+namespace TauCeti
+
+/-- **Simplicity from one normal generator of prime order.** Let `G` be a nontrivial group and `p`
+a prime whose square does not divide the order of `G`, and suppose that `p` divides the order of
+every nontrivial normal subgroup of `G`. If an element `a` with `a ^ p = 1` generates `G` as a
+normal subgroup, then `G` is simple. -/
+theorem isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard [Nontrivial G]
+    {p : ℕ} (hp : p.Prime) (hcard : ¬ p ^ 2 ∣ Nat.card G)
+    (hdvd : ∀ (N : Subgroup G) [N.Normal], N ≠ ⊥ → p ∣ Nat.card N)
+    (a : G) (ha : a ^ p = 1) (hgen : normalClosure ({a} : Set G) = ⊤) : IsSimpleGroup G := by
+  refine ⟨fun N _ ↦ or_iff_not_imp_left.mpr fun hN ↦ ?_⟩
+  -- The order of `N` is divisible by `p`, so its index is not, and `a` lies in `N`.
+  exact top_unique (hgen ▸ normalClosure_le_normal (Set.singleton_subset_iff.mpr
+    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hp ha (hdvd N hN) hcard)))
+
+end TauCeti

@@ -209,7 +209,7 @@ private theorem exists_comp_subtype_eq_id_of_section {n : ℕ} {L : Submodule A 
     rintro _ ⟨i, rfl⟩
     have := congrArg Subtype.val (congrFun hy i)
     simpa [φ, Fintype.linearCombination_apply, Φ] using this
-  exact LinearMap.eqOn_span hEq (hr ▸ x.2)
+  exact LinearMap.eqOn_span hEq (hr ▸ x.property)
 
 /-- **A finitely presented module with injective character module is projective.** -/
 theorem projective_of_injective [Small.{v} A] [Module.FinitePresentation A M]

@@ -35,12 +35,20 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 ## Main definitions
 
 * `VertexOperator.IsLocalOfOrder`: mutual locality of order at most `N`.
+* `VertexOperator.idField`: the identity field, with `id₍₋₁₎ = 1` and all other modes zero.
 
 ## Main results
 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
 * `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
   monotone in the order and symmetric.
+* `VertexOperator.IsLocalOfOrder.add_left`, `VertexOperator.IsLocalOfOrder.smul_left` and
+  `VertexOperator.exists_isLocalOfOrder_of_mem_span`: locality is compatible with the linear
+  structure, so it passes from generating families to their spans.
+* `VertexOperator.IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero`: if all modes of `A` kill
+  `v` and `A` is local with `B`, then they kill every `B₍ₘ₎ v`.
+* `VertexOperator.isLocalOfOrder_idField`: the identity field is local of order `0` with every
+  field.
 
 ## References
 
@@ -144,6 +152,107 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
     module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
 
+/-- The zero field is local of every order with every field. -/
+theorem zero_left (B : VertexOperator R V) (N : ℕ) : (0 : VertexOperator R V).IsLocalOfOrder B N :=
+  fun m n ↦ by simp
+
+/-- The zero field is local of every order with every field. -/
+theorem zero_right (A : VertexOperator R V) (N : ℕ) : A.IsLocalOfOrder 0 N :=
+  (zero_left A N).symm
+
+/-- Locality of a given order is preserved by sums in the first field. -/
+theorem add_left {A' : VertexOperator R V} (h : A.IsLocalOfOrder B N)
+    (h' : A'.IsLocalOfOrder B N) : (A + A').IsLocalOfOrder B N := by
+  intro m n
+  have hsum := congrArg₂ (· + ·) (h m n) (h' m n)
+  rw [add_zero, ← sum_add_distrib] at hsum
+  rw [← hsum]
+  refine sum_congr rfl fun ij _ ↦ ?_
+  simp only [map_add, Pi.add_apply, add_mul, mul_add]
+  module
+
+/-- Locality of a given order is preserved by sums in the second field. -/
+theorem add_right {B' : VertexOperator R V} (h : A.IsLocalOfOrder B N)
+    (h' : A.IsLocalOfOrder B' N) : A.IsLocalOfOrder (B + B') N :=
+  (h.symm.add_left h'.symm).symm
+
+/-- Locality of a given order is preserved by scalar multiples of the first field. -/
+theorem smul_left (h : A.IsLocalOfOrder B N) (r : R) : (r • A).IsLocalOfOrder B N := by
+  intro m n
+  rw [← smul_zero r, ← h m n, smul_sum]
+  refine sum_congr rfl fun ij _ ↦ ?_
+  simp only [map_smul, Pi.smul_apply, smul_mul_assoc, mul_smul_comm, ← smul_sub]
+  rw [smul_comm r, smul_comm r]
+
+/-- Locality of a given order is preserved by scalar multiples of the second field. -/
+theorem smul_right (h : A.IsLocalOfOrder B N) (r : R) : A.IsLocalOfOrder (r • B) N :=
+  (h.symm.smul_left r).symm
+
+/-- If all modes of `A` kill `v` and `A` is local with `B`, then all modes of `A` kill every
+`B₍ₘ₎ v`. This is the step behind Goddard's uniqueness theorem: the vectors killed by every mode
+of `A` form a subspace stable under the modes of every field local with `A`. -/
+theorem ncoeff_apply_ncoeff_apply_eq_zero (h : A.IsLocalOfOrder B N) {v : V}
+    (hv : ∀ n : ℤ, (A[[n]]) v = 0) (n m : ℤ) : (A[[n]]) ((B[[m]]) v) = 0 := by
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  -- Descend from the truncation `B₍ₘ₎ v = 0` for `m ≥ P`: in locality at `(n - N, m)` applied
+  -- to `v`, every term other than `A₍ₙ₎ B₍ₘ₎ v` involves some `B₍ₘ₊ⱼ₎ v` with `j > 0`.
+  suffices hd : ∀ d : ℕ, ∀ m : ℤ, (P : ℤ) - d ≤ m → ∀ n : ℤ, (A[[n]]) ((B[[m]]) v) = 0 from
+    hd (P - m).toNat m (by omega) n
+  intro d
+  induction d with
+  | zero => exact fun m hm n ↦ by rw [hP m (by omega), map_zero]
+  | succ d ih =>
+    intro m hm n
+    have h₀ := LinearMap.congr_fun (h (n - N) m) v
+    simp only [LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp,
+      hv, map_zero, sub_zero, LinearMap.zero_apply] at h₀
+    rw [sum_eq_single (N, 0) (fun ij hij hne ↦ ?_) (by simp)] at h₀
+    · simpa using h₀
+    · have hj : ij.2 ≠ 0 := fun hj ↦ hne (Prod.ext (by simpa [hj] using mem_antidiagonal.1 hij) hj)
+      rw [ih (m + ij.2) (by omega), smul_zero, smul_zero]
+
 end IsLocalOfOrder
+
+/-- Locality of order `0` says that all modes of the two fields commute. -/
+theorem isLocalOfOrder_zero_iff {A B : VertexOperator R V} :
+    A.IsLocalOfOrder B 0 ↔ ∀ m n : ℤ, Commute (A[[m]]) (B[[n]]) := by
+  simp [isLocalOfOrder_iff, commute_iff_eq, sub_eq_zero]
+
+/-- The identity field `Y(|0⟩, z) = id`, with `id₍₋₁₎ = 1` and all other modes zero. -/
+def idField : VertexOperator R V :=
+  of_coeff (fun m ↦ if m = 0 then 1 else 0) fun _ ↦
+    ((Set.finite_singleton (0 : ℤ)).subset fun m hm ↦ by
+      by_contra h
+      exact hm (by simp_all)).bddBelow
+
+/-- The only nonzero mode of the identity field is `id₍₋₁₎ = 1`. -/
+@[simp]
+theorem ncoeff_idField (n : ℤ) :
+    (idField : VertexOperator R V)[[n]] = if n = -1 then 1 else 0 := by
+  rw [idField, ncoeff_of_coeff]
+  exact if_congr (by omega) rfl rfl
+
+/-- The identity field is local of order `0` with every field. -/
+theorem isLocalOfOrder_idField (B : VertexOperator R V) :
+    (idField : VertexOperator R V).IsLocalOfOrder B 0 :=
+  isLocalOfOrder_zero_iff.2 fun m n ↦ by
+    rw [ncoeff_idField]
+    split_ifs
+    exacts [Commute.one_left _, Commute.zero_left _]
+
+/-- If every field of `s` is local, of some order, with every field of `t`, then so is every field
+in the span of `s` with every field in the span of `t`. -/
+theorem exists_isLocalOfOrder_of_mem_span {s t : Set (VertexOperator R V)}
+    (h : ∀ A ∈ s, ∀ B ∈ t, ∃ N, A.IsLocalOfOrder B N) {A B : VertexOperator R V}
+    (hA : A ∈ Submodule.span R s) (hB : B ∈ Submodule.span R t) : ∃ N, A.IsLocalOfOrder B N :=
+  Submodule.span_induction₂ (p := fun A B _ _ ↦ ∃ N, A.IsLocalOfOrder B N)
+    (fun A B hA hB ↦ h A hA B hB)
+    (fun B _ ↦ ⟨0, .zero_left B 0⟩) (fun A _ ↦ ⟨0, .zero_right A 0⟩)
+    (fun _ _ _ _ _ _ ⟨N, hN⟩ ⟨N', hN'⟩ ↦
+      ⟨max N N', (hN.mono (le_max_left N N')).add_left (hN'.mono (le_max_right N N'))⟩)
+    (fun _ _ _ _ _ _ ⟨N, hN⟩ ⟨N', hN'⟩ ↦
+      ⟨max N N', (hN.mono (le_max_left N N')).add_right (hN'.mono (le_max_right N N'))⟩)
+    (fun r _ _ _ _ ⟨N, hN⟩ ↦ ⟨N, hN.smul_left r⟩) (fun r _ _ _ _ ⟨N, hN⟩ ↦ ⟨N, hN.smul_right r⟩)
+    hA hB
 
 end VertexOperator
