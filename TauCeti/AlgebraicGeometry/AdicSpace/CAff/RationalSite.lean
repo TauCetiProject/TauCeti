@@ -18,6 +18,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.OpenMapping
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Transport
 import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 
 /-!
@@ -322,12 +323,37 @@ theorem IsRationalCovering.pullback {X Y : CAff.{u}} (ψ : X ⟶ Y) [IsAdicHom �
 
 /-- The presieve on `op X` in `CAff.{u}ᵒᵖ` formed by the canonical rational localizations
 `op (X.rationalLocalization (T i) (s i) (hT i)) ⟶ op X`. -/
-@[expose]
 def rationalCoverPresieve (X : CAff.{u}) {ι : Type u} (T : ι → Finset X.ring)
     (s : ι → X.ring) (hT : ∀ i, IsOpen (Ideal.span (T i : Set X.ring) : Set X.ring)) :
     Presieve (op X) :=
   Presieve.ofArrows (fun i ↦ op (X.rationalLocalization (T i) (s i) (hT i)))
     (fun i ↦ (X.rationalLocalizationHom (T i) (s i) (hT i)).op)
+
+/-- Defining equation of `CAff.rationalCoverPresieve`. -/
+theorem rationalCoverPresieve_eq_ofArrows (X : CAff.{u}) {ι : Type u} (T : ι → Finset X.ring)
+    (s : ι → X.ring) (hT : ∀ i, IsOpen (Ideal.span (T i : Set X.ring) : Set X.ring)) :
+    X.rationalCoverPresieve T s hT =
+      Presieve.ofArrows (fun i ↦ op (X.rationalLocalization (T i) (s i) (hT i)))
+        (fun i ↦ (X.rationalLocalizationHom (T i) (s i) (hT i)).op) := by
+  rfl
+
+/-- Each canonical rational localization morphism belongs to `X.rationalCoverPresieve T s hT`. -/
+theorem rationalCoverPresieve_mk {X : CAff.{u}} {ι : Type u} {T : ι → Finset X.ring}
+    {s : ι → X.ring} {hT : ∀ i, IsOpen (Ideal.span (T i : Set X.ring) : Set X.ring)} (i : ι) :
+    X.rationalCoverPresieve T s hT (X.rationalLocalizationHom (T i) (s i) (hT i)).op := by
+  exact Presieve.ofArrows.mk i
+
+/-- Membership characterization for `X.rationalCoverPresieve T s hT`. -/
+theorem mem_rationalCoverPresieve_iff {X : CAff.{u}} {ι : Type u} {T : ι → Finset X.ring}
+    {s : ι → X.ring} {hT : ∀ i, IsOpen (Ideal.span (T i : Set X.ring) : Set X.ring)}
+    {Z : CAff.{u}ᵒᵖ} {g : Z ⟶ op X} :
+    X.rationalCoverPresieve T s hT g ↔
+      ∃ (i : ι) (h : op (X.rationalLocalization (T i) (s i) (hT i)) = Z),
+        g = eqToHom h.symm ≫ (X.rationalLocalizationHom (T i) (s i) (hT i)).op := by
+  rw [rationalCoverPresieve_eq_ofArrows]
+  refine ⟨fun hg ↦ Presieve.ofArrows_surj _ _ hg, ?_⟩
+  rintro ⟨i, rfl, rfl⟩
+  simpa using Presieve.ofArrows.mk i
 
 /-- **The rational coverage on `CAffᵒᵖ`.** Covering presieves of `op X` are the presieves
 `X.rationalCoverPresieve T s` attached to finite rational coverings `(T, s)` of `X`. Pullback
@@ -370,7 +396,8 @@ def rationalCoverage : Coverage (CAff.{u}ᵒᵖ) where
           obtain ⟨y, hy, hwy⟩ := Set.mem_iUnion₂.mp (hF (Set.mem_univ w))
           exact Set.mem_iUnion.mpr ⟨⟨y, hy⟩, hwy⟩ }
     refine ⟨Y₀.rationalCoverPresieve (fun k : ↥F ↦ T' k.1) (fun k : ↥F ↦ s' k.1)
-      hcovY.isOpen_span, ⟨↥F, inferInstance, _, _, hcovY, rfl⟩, fun Z g ⟨k⟩ ↦ ?_⟩
+      hcovY.isOpen_span, ⟨↥F, inferInstance, _, _, hcovY, rfl⟩, fun Z g hg ↦ ?_⟩
+    obtain ⟨k, rfl, rfl⟩ := mem_rationalCoverPresieve_iff.mp hg
     let φX := X₀.rationalLocalizationHom (T (idx k.1)) (s (idx k.1)) (hcov.isOpen_span (idx k.1))
     let φY := Y₀.rationalLocalizationHom (T' k.1) (s' k.1) (hcovY.isOpen_span k)
     obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom X₀ (T (idx k.1))
@@ -379,7 +406,8 @@ def rationalCoverage : Coverage (CAff.{u}ᵒᵖ) where
       exact hsub k.1
         ((isRationalLocalization_rationalLocalizationHom Y₀ _ _
           (hcovY.isOpen_span k)).mapsTo_spaComap u)
-    exact ⟨_, χ.op, φX.op, Presieve.ofArrows.mk (idx k.1), by rw [← op_comp, hχ, op_comp]; rfl⟩
+    exact ⟨_, χ.op, φX.op, rationalCoverPresieve_mk (idx k.1), by
+      rw [eqToHom_refl, Category.id_comp, ← op_comp, hχ, op_comp]; rfl⟩
 
 /-- Membership in `CAff.rationalCoverage (op X)`: a presieve belongs to the rational coverage on
 `op X` if and only if it is `X.rationalCoverPresieve T s` for a finite rational covering `(T, s)`.
@@ -404,7 +432,7 @@ private theorem exists_mem_range_spaComap_of_saturate {U : CAff.{u}ᵒᵖ} {S : 
     obtain ⟨ι, _, T, s, hcov, rfl⟩ := hR
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hcov.iUnion_eq_univ ▸ Set.mem_univ v)
     let φ := (unop U).rationalLocalizationHom (T i) (s i) (hcov.isOpen_span i)
-    refine ⟨_, φ, ⟨_, 𝟙 _, φ.op, Presieve.ofArrows.mk i, Category.id_comp _⟩, ?_⟩
+    refine ⟨_, φ, ⟨_, 𝟙 _, φ.op, rationalCoverPresieve_mk i, Category.id_comp _⟩, ?_⟩
     rwa [(isRationalLocalization_rationalLocalizationHom (unop U) _ _ _).range_spaComap]
   | top U => exact ⟨unop U, 𝟙 _, trivial, v, by rw [id_spaComap]; rfl⟩
   | transitive U R S _ _ ihR ihS =>
@@ -434,7 +462,8 @@ theorem bot_mem_ratTopology_iff (X : CAff.{u}) :
     (isRationalCovering_empty_iff X _ _).mpr hsub
   have hgen : Sieve.generate (X.rationalCoverPresieve
       (fun _ : PEmpty.{u + 1} ↦ ∅) (fun _ ↦ 0) hcov.isOpen_span) = ⊥ :=
-    Sieve.ext fun _ _ ↦ ⟨fun ⟨_, _, _, ⟨i⟩, _⟩ ↦ PEmpty.elim i, False.elim⟩
+    Sieve.ext fun _ _ ↦
+      ⟨fun ⟨_, _, _, hg, _⟩ ↦ PEmpty.elim (mem_rationalCoverPresieve_iff.mp hg).choose, False.elim⟩
   exact hgen ▸ Coverage.Saturate.of (op X) _ ⟨PEmpty.{u + 1}, inferInstance, _, _, hcov, rfl⟩
 
 /-- A `Type*`-valued presheaf on `CAff.{u}ᵒᵖ` is a sheaf for `CAff.ratTopology` if and only if it
@@ -647,7 +676,7 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
       -- (`globalSections_map_apply`).
       exact heq
   -- Assemble the `IsSheafFor` equivalence using `eTop` and `ePiece`.
-  rw [rationalCoverPresieve, Presieve.isSheafFor_arrows_iff,
+  rw [rationalCoverPresieve_eq_ofArrows, Presieve.isSheafFor_arrows_iff,
     isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P (fun i ↦ (le_top : U i ≤ ⊤))]
   refine ⟨fun hO x hx ↦ ?_, fun hLim y hy ↦ ?_⟩
   · obtain ⟨b, hb, hbu⟩ := hO (fun i ↦ ePiece i (x i)) ((hcompat_iff x).mpr hx)
@@ -752,31 +781,6 @@ theorem IsRationalSheafy.of_isSheafyForEveryPresentation {X : CAff.{u}}
   exact ⟨spaBasicOpen Y.pair.plus (T i) (s i), homOfLE le_top,
     Sieve.ofArrows_mk _ _ i, mem_spaBasicOpen.mpr hxi⟩
 
-/-- On a fixed Huber ring `B`, switching the pair of definition preserves `Presieve.IsSheafFor`
-for the underlying presheaf of sets of `presentationLimitPresheaf`. -/
-private theorem isSheafFor_presentationLimitPresheaf_forget_iff_of_pairOfDefinition
-    {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-    (Q₁ Q₂ : PairOfDefinition B) (Bplus : Subring B) {W : Opens ↥(ValuationSpectrum.spa Bplus)}
-    (R : Presieve W) :
-    R.IsSheafFor (presentationLimitPresheaf Q₁ Bplus ⋙
-        TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) ↔
-      R.IsSheafFor (presentationLimitPresheaf Q₂ Bplus ⋙
-        TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) := by
-  have hid : spaComapTopHom (RingHom.id B) continuous_id (fun (_ : B) (ha : _ ∈ Bplus) ↦ ha) =
-      𝟙 (TopCat.of ↥(ValuationSpectrum.spa Bplus)) :=
-    TopCat.ext fun v ↦ congrFun (spaComap_id Bplus) v
-  let eForget := Functor.isoWhiskerRight
-    (presentationLimitPresheafIsoPushforward (P := Q₁) (P' := Q₂) (Aplus := Bplus) (Bplus := Bplus)
-      (RingHom.id B) continuous_id (fun _ ha ↦ ha) (RingHom.id B) continuous_id
-      (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ha ↦ ha) ≪≫
-    NatIso.ofComponents
-      (fun U ↦ (presentationLimitPresheaf Q₂ Bplus).mapIso (eqToIso (by rw [hid]; rfl)))
-      (fun {U₁ U₂} g ↦ by
-        dsimp [TopCat.Presheaf.pushforward]
-        rw [← Functor.map_comp, ← Functor.map_comp]; congr 1))
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat)
-  exact ⟨Presieve.isSheafFor_iso eForget, Presieve.isSheafFor_iso eForget.symm⟩
-
 /-- **Equivalence of site-theoretic and topological sheafiness for complete Tate Huber pairs.**
 For a complete Hausdorff Tate Huber pair `X : CAff.{u}`, `X.IsRationalSheafy` holds if and only if
 `X.pair.plus` satisfies `IsSheafyForEveryPresentation` (the structure presheaf of `Spa(X)` is a
@@ -817,8 +821,9 @@ theorem isRationalSheafy_iff_isSheafyForEveryPresentation (X : CAff.{u}) [IsTate
         exact Set.mem_iUnion.mpr ⟨k, mem_spaBasicOpen.mp <| hU'_eq k ▸
           (mem_locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (V k) w).mpr hwk⟩ }
   -- Apply `hrat` to the rational localization `X ⟶ Y` and the rational cover `(T', s')`.
-  have hLim_Q₀ := (isSheafFor_presentationLimitPresheaf_forget_iff_of_pairOfDefinition
-    Y.pairOfDefinition Q₀ Bplus _).mp <|
+  have hLim_Q₀ := (isSheafFor_presentationLimitPresheaf_comp_iff_of_pairOfDefinition
+    Y.pairOfDefinition Q₀ Bplus
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) _).mp <|
     (isSheafFor_globalSections_rationalCoverPresieve_iff Y T' s' hcovY.isOpen_span).mp <|
       hrat (X.rationalLocalizationHom T₀ s₀ hT₀) T₀ s₀
         (isRationalLocalization_rationalLocalizationHom X T₀ s₀ hT₀) _

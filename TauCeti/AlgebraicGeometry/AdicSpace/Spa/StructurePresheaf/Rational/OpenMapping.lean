@@ -70,7 +70,7 @@ universe v
 
 namespace TauCeti.ValuationSpectrum
 
-variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
+variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
 
 /-- Helper packaging a rational open `U ∈ spaRationalOpens Aplus` with a concrete admissible
@@ -221,20 +221,6 @@ theorem isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens
   exact ePi.isInducing.of_comp_iff.mp <|
     (funext hcomm : (L : B → N) ∘ eW = ePi ∘ r) ▸ hL_emb.isInducing.comp eW.isInducing
 
-include P in
-omit [IsTateRing A] in
-/-- Quasi-compactness of rational opens extracts a finite subcover from any open cover. -/
-private theorem exists_finite_subcover_spaRationalOpens {W : Opens ↥(spa Aplus)}
-    (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} {U : ι → Opens ↥(spa Aplus)}
-    (hcov : ⨆ i, U i = W) : ∃ I : Finset ι, (⨆ k : ↥I, U k.1) = W := by
-  have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  obtain ⟨I, hIW⟩ := (isCompact_of_mem_spaRationalFamily
-      (mem_spaRationalOpens.mp hW)).elim_finite_subcover (fun i ↦ (U i : Set ↥(spa Aplus)))
-    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
-  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.1).trans_eq hcov) fun x hx ↦ ?_⟩
-  obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
-  exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
-
 omit [IsTateRing A] in
 /-- Compactness of rational opens upgrades set-level gluing from finite rational covers of rational
 opens to arbitrary rational covers of rational opens. -/
@@ -252,7 +238,7 @@ private theorem isSheafFor_spaRationalOpens_of_finite
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat) := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens P hW hcov
+  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens hW hcov
   have hcovUi (i : ι) : (⨆ k : ↥I, U i ⊓ U k.1) = U i := by
     refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
     obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp (hcovI ▸ ((le_iSup U i).trans_eq hcov) hx)
@@ -292,7 +278,7 @@ theorem isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens
   refine isSheaf_rational_comp_of_isSheafFor_ofArrows P
     (TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)) fun {W} {ι} {U} hW hU hcov ↦ ?_
   have hSet := isSheafFor_spaRationalOpens_of_finite P hfin hW hU hcov
-  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens P hW hcov
+  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens hW hcov
   have hIndI := (isInducing_restrictionMap_iff_isInducing_presentationLimitMap P
     (fun k : ↥I ↦ (le_iSup (fun k : ↥I ↦ U k.1) k).trans_eq hcovI)).mpr
       (isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens P hAplus hW

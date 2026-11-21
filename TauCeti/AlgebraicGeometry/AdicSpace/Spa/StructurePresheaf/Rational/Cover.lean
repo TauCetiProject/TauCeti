@@ -83,6 +83,8 @@ universe v w
 
 namespace TauCeti.ValuationSpectrum
 
+section
+
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
   {C : ∀ (A : Type v) [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A], Prop}
@@ -187,7 +189,14 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing
     rw [← hcov]
     exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
 
+end
+
 /-! ### The sheaf condition on all opens -/
+
+section BasisSheaf
+
+variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  (P : PairOfDefinition A) {Aplus : Subring A}
 
 /-- **The sheaf condition on the rational basis.** Let `G` be a functor from complete separated
 topological rings into types. If the presentation-limit presheaf followed by `G` satisfies the
@@ -204,6 +213,7 @@ theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
     Presieve.IsSheaf
       ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
       ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) := by
+  have : IsHuberRing A := ⟨⟨P⟩⟩
   intro W S hS
   obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
   rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
@@ -237,6 +247,14 @@ theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
   · intro b hb
     exact hu b fun i ↦ by
       simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using hb i
+
+end BasisSheaf
+
+section
+
+variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
+  (P : PairOfDefinition A) {Aplus : Subring A}
+  {C : ∀ (A : Type v) [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A], Prop}
 
 /-- **The structure presheaf of sets is a sheaf under Laurent gluing.** Let `C` be a predicate on
 Tate rings satisfying `LaurentGluing`, and `A` a Tate ring satisfying `C`. If the ring of
@@ -282,5 +300,7 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq [IsStronglyNoetherian A]
   isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P
     laurentGluing_isStronglyNoetherian (inferInstanceAs (IsStronglyNoetherian A)) hP hAplus hW hU
     hcov
+
+end
 
 end TauCeti.ValuationSpectrum

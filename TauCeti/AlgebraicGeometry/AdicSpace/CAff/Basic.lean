@@ -380,11 +380,7 @@ noncomputable def globalSectionsRepresentableBy :
 the evaluation morphism `CAff.eval (A, A⁺) a : (ℤ[T], ℤ) ⟶ (A, A⁺)` defines a natural isomorphism
 `CAff.globalSections ≅ yoneda.obj (op CAff.affineLine)`. -/
 noncomputable def globalSectionsIsoYoneda : globalSections.{u} ≅ yoneda.obj (op affineLine.{u}) :=
-  NatIso.ofComponents
-    (fun W ↦ (evalEquiv (unop (unop W))).trans Quiver.Hom.opEquiv |>.toIso)
-    (fun {W₁ W₂} g ↦ by
-      ext a
-      exact congrArg Quiver.Hom.op (eval_comp a g.unop.unop).symm)
+  globalSectionsRepresentableBy.toIso.symm
 
 @[simp]
 theorem globalSectionsIsoYoneda_hom_app (X : CAff.{u}) (a : X.ring) :
