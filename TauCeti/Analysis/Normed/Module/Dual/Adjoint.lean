@@ -40,6 +40,8 @@ The reverse implication only needs the domain to be complete. It goes through th
 that a map whose adjoint is bounded below is surjective: geometric Hahn–Banach shows that the
 closure of the image of a ball contains a ball, and Banach's lemma
 `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure` upgrades this to surjectivity.
+The same geometric Hahn–Banach separation also characterizes `closure (T '' closedBall 0 r)` by
+dual norm inequalities (`ContinuousLinearMap.mem_closure_image_closedBall_iff`).
 Completeness of the domain cannot be dropped: the inclusion of finitely supported sequences
 into `ℓ²` has dense proper range, while its adjoint is surjective.
 
@@ -51,6 +53,8 @@ into `ℓ²` has dense proper range, while its adjoint is surjective.
 * `ContinuousLinearMap.ker_eq_orthogonalBilin_range_precomp`: `ker T = (range T*)_⊥`.
 * `ContinuousLinearMap.range_precomp_eq_orthogonalBilin_ker`: if `range T` is closed, then
   `range T* = (ker T)ᗮ`.
+* `ContinuousLinearMap.mem_closure_image_closedBall_iff`: bipolar criterion for membership in
+  `closure (T '' closedBall 0 r)`.
 * `ContinuousLinearMap.surjective_of_norm_le_norm_comp`: a map whose adjoint is bounded below
   is surjective.
 * `ContinuousLinearMap.isClosed_range_precomp_iff`: the closed-range theorem.
@@ -159,34 +163,49 @@ section RCLike
 
 variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- **Bipolar criterion for images of closed balls.** For a bounded operator `T : E →L[𝕜] F` and
+`0 ≤ r`, a vector `y` lies in `closure (T '' closedBall 0 r)` if and only if
+`‖g y‖ ≤ r * ‖g.comp T‖` for every continuous linear functional `g` on `F`. -/
+theorem mem_closure_image_closedBall_iff [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) {r : ℝ} (hr : 0 ≤ r) {y : F} :
+    y ∈ closure (T '' closedBall 0 r) ↔ ∀ g : StrongDual 𝕜 F, ‖g y‖ ≤ r * ‖g.comp T‖ := by
+  constructor
+  · intro hy g
+    refine isClosed_le g.continuous.norm continuous_const |>.closure_subset_iff.mpr ?_ hy
+    rintro _ ⟨x, hx, rfl⟩
+    calc ‖g (T x)‖ = ‖(g.comp T) x‖ := rfl
+      _ ≤ ‖g.comp T‖ * ‖x‖ := (g.comp T).le_opNorm x
+      _ ≤ ‖g.comp T‖ * r := by gcongr; exact mem_closedBall_zero_iff.1 hx
+      _ = r * ‖g.comp T‖ := mul_comm _ _
+  · intro h
+    by_contra hy
+    -- Separate `y` from the closed real-convex set `closure (T '' closedBall 0 r)`.
+    obtain ⟨f, u, hfK, hfy⟩ : ∃ (f : StrongDual 𝕜 F) (u : ℝ),
+        (∀ a ∈ closure (T '' closedBall (0 : E) r), RCLike.re (f a) < u) ∧
+          u < RCLike.re (f y) := by
+      let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+      let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
+      have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
+      have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
+      have hconv : Convex ℝ (T '' closedBall (0 : E) r) :=
+        (convex_closedBall 0 r).linear_image ((T : E →ₗ[𝕜] F).restrictScalars ℝ)
+      exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
+    have hfT := StrongDual.re_apply_add_mul_norm_le (f := f.comp T) (x := 0) hr fun x hx ↦
+      (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
+    rw [map_zero, map_zero, zero_add] at hfT
+    have hfy' := (RCLike.re_le_norm (f y)).trans (h f)
+    linarith
+
 /-- If the adjoint of `S` is bounded below with constant `K`, then every `y` lies in the closure
 of the image of the closed ball of radius `K * ‖y‖`. -/
 theorem mem_closure_image_closedBall_of_norm_le_norm_comp
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (S : E →L[𝕜] F) {K : ℝ≥0}
     (hK : ∀ g : StrongDual 𝕜 F, ‖g‖ ≤ K * ‖g.comp S‖) (y : F) :
-    y ∈ closure (S '' closedBall 0 (K * ‖y‖)) := by
-  set r : ℝ := K * ‖y‖ with hr_def
-  have hr : 0 ≤ r := by positivity
-  by_contra hy
-  -- Separate `y` from the closed real-convex hull of the image of the ball.
-  obtain ⟨f, u, hfK, hfy⟩ : ∃ (f : StrongDual 𝕜 F) (u : ℝ),
-      (∀ a ∈ closure (S '' closedBall (0 : E) r), RCLike.re (f a) < u) ∧
-        u < RCLike.re (f y) := by
-    let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-    let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-    have : IsScalarTower ℝ 𝕜 E := .restrictScalars ℝ 𝕜 E
-    have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
-    have hconv : Convex ℝ (S '' closedBall (0 : E) r) :=
-      (convex_closedBall 0 r).linear_image ((S : E →ₗ[𝕜] F).restrictScalars ℝ)
-    exact RCLike.geometric_hahn_banach_closed_point hconv.closure isClosed_closure hy
-  have hfS := StrongDual.re_apply_add_mul_norm_le (f := f.comp S) (x := 0) hr fun x hx ↦
-    (hfK _ (subset_closure ⟨x, hx, rfl⟩)).le
-  rw [map_zero, map_zero, zero_add] at hfS
-  have hfy' := (RCLike.re_le_norm (f y)).trans (f.le_opNorm y)
-  have : ‖f‖ * ‖y‖ ≤ r * ‖f.comp S‖ :=
-    calc ‖f‖ * ‖y‖ ≤ K * ‖f.comp S‖ * ‖y‖ := by gcongr; exact hK f
-      _ = r * ‖f.comp S‖ := by rw [hr_def]; ring
-  linarith
+    y ∈ closure (S '' closedBall 0 (K * ‖y‖)) :=
+  (S.mem_closure_image_closedBall_iff (by positivity)).2 fun g ↦
+    calc ‖g y‖ ≤ ‖g‖ * ‖y‖ := g.le_opNorm y
+      _ ≤ K * ‖g.comp S‖ * ‖y‖ := by gcongr; exact hK g
+      _ = K * ‖y‖ * ‖g.comp S‖ := by ring
 
 /-- A bounded operator on a complete seminormed space whose adjoint is bounded below is
 surjective. -/

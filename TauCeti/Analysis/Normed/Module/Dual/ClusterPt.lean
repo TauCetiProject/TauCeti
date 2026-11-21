@@ -8,12 +8,15 @@ module
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 
 /-!
-# Weak-star cluster points in the bidual
+# Weak-star cluster points and limits in dual spaces
 
-Banach–Alaoglu gives a weak-star cluster point in the bidual for any eventually bounded
-proper filter on a seminormed space. Evaluation of such a cluster point agrees with any
-limit of the corresponding continuous linear functional. These facts let one transfer
-approximate identity laws to identities for the Arens products.
+Banach–Alaoglu gives a weak-star cluster point in the dual space (and in particular a weak-star
+limit along any ultrafilter) for any eventually norm-bounded family of continuous linear
+functionals, retaining the norm bound. Applied to `NormedSpace.inclusionInDoubleDual`, this yields
+weak-star cluster points in the bidual for any eventually bounded proper filter on a seminormed
+space. Evaluation of such a cluster point agrees with any limit of the corresponding continuous
+linear functional. These facts let one transfer approximate identity laws to identities for the
+Arens products and to innerness reductions for derivations.
 -/
 
 public section
@@ -34,18 +37,45 @@ theorem MapClusterPt.apply_eq_of_tendsto_inclusionInDoubleDual
   simp only [Function.comp_def, StrongDual.toWeakDual_apply, dual_def] at hc
   exact eq_of_nhds_neBot (hc.clusterPt.mono hg).neBot
 
+/-- An eventually norm-bounded proper filter of continuous linear functionals has a weak-star
+cluster point with the same norm bound. No completeness of the space is required. -/
+theorem Filter.Eventually.exists_mapClusterPt_toWeakDual [ProperSpace 𝕜]
+    {α : Type*} {l : Filter α} [l.NeBot] {u : α → StrongDual 𝕜 X} {C : ℝ}
+    (hC : ∀ᶠ a in l, ‖u a‖ ≤ C) :
+    ∃ φ : StrongDual 𝕜 X, ‖φ‖ ≤ C ∧
+      MapClusterPt (StrongDual.toWeakDual φ) l (fun a ↦ StrongDual.toWeakDual (u a)) := by
+  obtain ⟨φ, hφC, hφ⟩ :=
+    (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 X) C).exists_mapClusterPt
+      (u := fun a ↦ StrongDual.toWeakDual (u a))
+      (Filter.tendsto_principal.mpr <| hC.mono fun a ha ↦ by
+        simpa only [Set.mem_preimage, StrongDual.toStrongDual_toWeakDual,
+          mem_closedBall_zero_iff] using ha)
+  refine ⟨φ.toStrongDual, mem_closedBall_zero_iff.mp hφC, ?_⟩
+  simpa only [WeakDual.toWeakDual_toStrongDual] using hφ
+
+/-- An eventually norm-bounded family of continuous linear functionals converges in the weak-star
+topology along any ultrafilter, with the same norm bound. No completeness of the space is
+required. -/
+theorem Ultrafilter.exists_tendsto_toWeakDual [ProperSpace 𝕜]
+    {α : Type*} (U : Ultrafilter α) (u : α → StrongDual 𝕜 X) {C : ℝ}
+    (hC : ∀ᶠ a in U, ‖u a‖ ≤ C) :
+    ∃ φ : StrongDual 𝕜 X, ‖φ‖ ≤ C ∧
+      Tendsto (fun a ↦ StrongDual.toWeakDual (u a)) U (𝓝 (StrongDual.toWeakDual φ)) := by
+  obtain ⟨φ, hφC, hφ⟩ :=
+    (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 X) C).ultrafilter_le_nhds'
+      (U.map (StrongDual.toWeakDual ∘ u))
+      (Ultrafilter.mem_map.2 <| hC.mono fun a ha ↦ by
+        simpa only [Set.mem_preimage, Function.comp_apply, StrongDual.toStrongDual_toWeakDual,
+          mem_closedBall_zero_iff] using ha)
+  refine ⟨φ.toStrongDual, mem_closedBall_zero_iff.mp hφC, ?_⟩
+  rw [WeakDual.toWeakDual_toStrongDual]
+  exact hφ
+
 /-- An eventually bounded proper filter has a weak-star bidual cluster point with the
 same norm bound. No completeness of the space is required. -/
 theorem Filter.Eventually.exists_mapClusterPt_inclusionInDoubleDual [ProperSpace 𝕜] [l.NeBot]
     {C : ℝ} (hC : ∀ᶠ x in l, ‖x‖ ≤ C) :
     ∃ E : StrongDual 𝕜 (StrongDual 𝕜 X), ‖E‖ ≤ C ∧
       MapClusterPt (StrongDual.toWeakDual E) l
-        (fun x ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x)) := by
-  obtain ⟨E, hEC, hE⟩ :=
-    (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 (StrongDual 𝕜 X)) C).exists_mapClusterPt
-      (u := fun x : X ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x))
-      (Filter.tendsto_principal.mpr <| hC.mono fun x hx ↦ by
-        simpa only [Set.mem_preimage, StrongDual.toStrongDual_toWeakDual,
-          mem_closedBall_zero_iff] using (double_dual_bound 𝕜 X x).trans hx)
-  refine ⟨E.toStrongDual, mem_closedBall_zero_iff.mp hEC, ?_⟩
-  simpa only [WeakDual.toWeakDual_toStrongDual] using hE
+        (fun x ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x)) :=
+  (hC.mono fun x hx ↦ (double_dual_bound 𝕜 X x).trans hx).exists_mapClusterPt_toWeakDual
