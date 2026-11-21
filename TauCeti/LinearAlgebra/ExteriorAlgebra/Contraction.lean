@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
+import TauCeti.Data.Finset.Card
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Order.Hom.PowersetCard
@@ -28,6 +29,8 @@ the wrong side of that move. Creation after contraction at distinct coordinates 
 replaces an occupied coordinate with an unoccupied one, with the product of their shuffle signs.
 Two creations after contractions at distinct coordinates, in reverse order, project onto the
 exterior basis vectors containing both coordinates.
+Removing two distinct coordinates from an index set in the two possible orders gives opposite
+products of shuffle signs (`TauCeti.ExteriorAlgebra.basisEraseSign_mul_basisEraseSign_erase`).
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
@@ -200,6 +203,27 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
     rw [← hsign, ← hfilter]
     exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i (insert i s)
       (Finset.mem_insert_self i s)
+
+/-- The two orders of removing distinct indices `j` and `k` from `J` carry opposite products of
+shuffle signs. -/
+theorem basisEraseSign_mul_basisEraseSign_erase {I : Type w} [LinearOrder I] {J : Finset I}
+    {j k : I} (hj : j ∈ J) (hk : k ∈ J) (hjk : j ≠ k) :
+    basisEraseSign j J * basisEraseSign k (J.erase j) =
+      -(basisEraseSign k J * basisEraseSign j (J.erase k)) := by
+  have h₁ := Finset.card_filter_lt_erase_add hj k
+  have h₂ := Finset.card_filter_lt_erase_add hk j
+  simp only [basisEraseSign_eq_neg_one_pow_card_filter_lt]
+  rcases hjk.lt_or_gt with h | h
+  · simp only [h, h.not_gt, ite_true, ite_false, add_zero] at h₁ h₂
+    rw [← h₁, h₂]
+    ext
+    push_cast
+    ring
+  · simp only [h, h.not_gt, ite_true, ite_false, add_zero] at h₁ h₂
+    rw [← h₂, h₁]
+    ext
+    push_cast
+    ring
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/

@@ -119,36 +119,6 @@ theorem koszulCochainDifferential_mem_koszulCochains {q : ℕ} {ω : Finset ι �
   have := card_pos.mpr ⟨j, hj⟩
   rw [hω (J.erase j) (by rw [card_erase_of_mem hj]; omega), map_zero, smul_zero]
 
-/-- Removing `j` from `J` removes it from the indices below `k` exactly when `j < k`. -/
-private theorem card_filter_lt_erase_add {J : Finset ι} {j : ι} (hj : j ∈ J) (k : ι) :
-    #{i ∈ J.erase j | i < k} + (if j < k then 1 else 0) = #{i ∈ J | i < k} := by
-  rw [filter_erase]
-  split_ifs with hjk
-  · exact card_erase_add_one (mem_filter.mpr ⟨hj, hjk⟩)
-  · rw [add_zero, erase_eq_of_notMem]
-    simp [hjk]
-
-/-- The two orders of removing distinct indices `j` and `k` from `J` carry opposite products of
-shuffle signs. -/
-private theorem basisEraseSign_mul_basisEraseSign_erase {J : Finset ι} {j k : ι} (hj : j ∈ J)
-    (hk : k ∈ J) (hjk : j ≠ k) :
-    basisEraseSign j J * basisEraseSign k (J.erase j) =
-      -(basisEraseSign k J * basisEraseSign j (J.erase k)) := by
-  have h₁ := card_filter_lt_erase_add hj k
-  have h₂ := card_filter_lt_erase_add hk j
-  simp only [basisEraseSign_eq_neg_one_pow_card_filter_lt]
-  rcases hjk.lt_or_gt with h | h
-  · simp only [h, h.not_gt, ite_true, ite_false, add_zero] at h₁ h₂
-    rw [← h₁, h₂]
-    ext
-    push_cast
-    ring
-  · simp only [h, h.not_gt, ite_true, ite_false, add_zero] at h₁ h₂
-    rw [← h₂, h₁]
-    ext
-    push_cast
-    ring
-
 /-- **The Koszul differential of a commuting family squares to zero.** Only distinct members of
 the family need to commute. -/
 theorem koszulCochainDifferential_koszulCochainDifferential

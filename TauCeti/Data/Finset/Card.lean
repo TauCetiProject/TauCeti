@@ -16,6 +16,8 @@ import Mathlib.Data.Finset.Basic
   at most half as many image elements as domain elements.
 * `Finset.card_sdiff_insert_add_one`: adding an element `a ∈ T \ S` to `S` lowers the number of
   elements of `T` outside `S` by one.
+* `Finset.card_filter_lt_erase_add`: removing `j ∈ J` lowers the number of elements of `J` below
+  `k` by one exactly when `j < k`.
 * `Finset.subset_induction`: downward induction on `S ⊆ T`, from `T` itself and steps from
   `S ∪ {a}` to `S`. Mathlib's `Finset.induction_on'` is the upward analogue.
 * `Finset.card_sdiff_lt_of_card_eq_min`: if `F ⊆ U` has `min k #U` elements of a nonempty `U`
@@ -60,6 +62,15 @@ theorem card_sdiff_lt_of_card_eq_min {F T U : Finset ι} {k : ℕ}
   · exact (card_le_card sdiff_subset).trans_lt (by omega)
   · rw [eq_of_subset_of_card_le hFU (by omega), sdiff_eq_empty_iff_subset.2 hTU, card_empty]
     exact hU.card_pos
+
+/-- Removing `j` from `J` removes it from the elements below `k` exactly when `j < k`. -/
+theorem card_filter_lt_erase_add {α : Type*} [LinearOrder α] {J : Finset α} {j : α} (hj : j ∈ J)
+    (k : α) : #{i ∈ J.erase j | i < k} + (if j < k then 1 else 0) = #{i ∈ J | i < k} := by
+  rw [filter_erase]
+  split_ifs with hjk
+  · exact card_erase_add_one (mem_filter.mpr ⟨hj, hjk⟩)
+  · rw [add_zero, erase_eq_of_notMem]
+    simp [hjk]
 
 end Finset
 

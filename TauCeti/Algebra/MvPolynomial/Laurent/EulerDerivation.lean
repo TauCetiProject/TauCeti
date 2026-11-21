@@ -40,7 +40,8 @@ For one variable and `φ = x` over a field of characteristic zero this cokernel 
 spanned by the class of `1` (`TauCeti.LaurentRing.finrank_quotient_iSup_range_twistedEuler_X`):
 `x^{m+1} ≡ -m x^m` modulo the image of `θ + x`, and the functional `x^{-k} ↦ 1 / k!`,
 `x^k ↦ 0` for `k > 0`, vanishes on that image. Hence the twisted de Rham cohomology
-`H¹_dR(G_m, E^x)` has dimension one (`TauCeti.LaurentRing.finrank_koszulTopCohomology_X`).
+`H¹_dR(G_m, E^x)` has dimension one
+(`TauCeti.LaurentRing.finrank_quotient_koszulCoboundaries_twistedEuler_X`).
 
 ## Main definitions
 
@@ -51,7 +52,8 @@ spanned by the class of `1` (`TauCeti.LaurentRing.finrank_quotient_iSup_range_tw
 
 * `TauCeti.LaurentRing.commute_eulerDerivation` and `TauCeti.LaurentRing.commute_twistedEuler`:
   the Euler derivations, and the twisted Euler operators of a fixed `φ`, commute.
-* `TauCeti.LaurentRing.finrank_koszulTopCohomology_X`: `H¹_dR(G_m, E^x)` is one-dimensional.
+* `TauCeti.LaurentRing.finrank_quotient_koszulCoboundaries_twistedEuler_X`: `H¹_dR(G_m, E^x)` is
+  one-dimensional.
 
 ## References
 
@@ -291,7 +293,7 @@ theorem finrank_quotient_iSup_range_twistedEuler_X [CharZero k] :
 /-- **`H¹_dR(G_m, E^x)` is one-dimensional**: over a field of characteristic zero, the top
 cohomology of the twisted de Rham complex of the one-dimensional torus twisted by `φ = x` is a
 line. -/
-theorem finrank_koszulTopCohomology_X [CharZero k] [LinearOrder K] :
+theorem finrank_quotient_koszulCoboundaries_twistedEuler_X [CharZero k] [LinearOrder K] :
     Module.finrank k (koszulCocycles (twistedEuler (X default : LaurentRing k K))
         (Fintype.card K) ⧸
       (koszulCoboundaries (twistedEuler (X default : LaurentRing k K)) (Fintype.card K)).comap
