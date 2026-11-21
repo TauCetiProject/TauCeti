@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors, Codex
 -/
 module
 
-public import TauCeti.Probability.Moments.SubGaussian
+public import TauCeti.Probability.Moments.SubGaussian.ExponentialMoments
 import TauCeti.Probability.Moments.SubGaussian.SquaredSum
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Probability.Independence.Matrix

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Moments.SubGaussian
 import TauCeti.Probability.Concentration.SubgaussianTail
+import TauCeti.Probability.Moments.SubGaussian.Basic
 
 /-!
 # Maximal inequality for finitely many sub-Gaussian variables
@@ -53,9 +54,8 @@ theorem measure_max_abs_gt_le {s : Finset ι} (hs : s.Nonempty) {Z : ι → Ω �
   have hN : (0 : ℝ) < s.card := by exact_mod_cast hs.card_pos
   have hL : 0 ≤ L := Real.log_nonneg (by exact_mod_cast hs.card_pos)
   obtain ⟨j₀, hj₀⟩ := hs
-  have huniv : μ Set.univ ≤ 1 := by
-    simpa using (HasSubgaussianMGF_iff_kernel.1 (hZ j₀ hj₀)).measure_univ_le_one
-  have : IsFiniteMeasure μ := ⟨huniv.trans_lt ENNReal.one_lt_top⟩
+  have huniv : μ Set.univ ≤ 1 := (hZ j₀ hj₀).measure_univ_le_one
+  have : IsFiniteMeasure μ := (hZ j₀ hj₀).isFiniteMeasure
   rcases lt_or_ge t 0 with ht | ht
   · have hexp : 1 ≤ exp (-t) := Real.one_le_exp (by linarith)
     have hreal : μ.real Set.univ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa)

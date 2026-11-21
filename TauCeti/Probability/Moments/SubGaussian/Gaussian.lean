@@ -8,17 +8,19 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Moments.SubGaussian.Vector
 import TauCeti.Probability.Distributions.Gaussian.Transforms
-import TauCeti.Probability.Moments.SubGaussian
 
 /-!
 # Centred Gaussian vectors are sub-Gaussian vectors
 
-A random vector with law `multivariateGaussian 0 S` is a sub-Gaussian vector
+A real random variable with law `gaussianReal 0 v` is sub-Gaussian with variance proxy `v`. A
+random vector with law `multivariateGaussian 0 S` is a sub-Gaussian vector
 (`TauCeti.IsSubgaussianVector`) whose variance proxy is the Euclidean operator norm `‖S‖₊` of the
-covariance matrix.
+matrix parameter `S`. When `S` is positive semidefinite it is the covariance matrix; otherwise
+Mathlib's `multivariateGaussian 0 S` is the Dirac mass at `0`.
 
-## Main result
+## Main results
 
+* `ProbabilityTheory.HasLaw.hasSubgaussianMGF`
 * `ProbabilityTheory.HasLaw.isSubgaussianVector`
 
 ## References
@@ -33,12 +35,16 @@ open scoped NNReal RealInnerProductSpace Matrix.Norms.L2Operator
 
 namespace ProbabilityTheory
 
-/-- A centred Gaussian vector with covariance matrix `S` is a sub-Gaussian vector whose variance
-proxy is the Euclidean operator norm `‖S‖₊`. Each linear form `⟪u, x⟫` has the law
-`gaussianReal 0 ⟪u, S u⟫` by `TauCeti.Probability.map_inner_multivariateGaussian`, hence proxy
-`⟪u, S u⟫ ≤ ‖S‖ ‖u‖²` by `ProbabilityTheory.HasLaw.hasSubgaussianMGF`. If `S` is not positive
-semidefinite, Mathlib's `multivariateGaussian 0 S` is the Dirac mass at `0` and the statement
-holds trivially. -/
+/-- A random variable with centred Gaussian law `gaussianReal 0 v` is `v`-sub-Gaussian. -/
+theorem HasLaw.hasSubgaussianMGF {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) μ) : HasSubgaussianMGF X v μ := by
+  rw [← HasSubgaussianMGF.id_map_iff hX.aemeasurable, hX.map_eq]
+  exact ⟨integrable_exp_mul_gaussianReal, fun t ↦ by simp [mgf_id_gaussianReal]⟩
+
+/-- A random vector with law `multivariateGaussian 0 S` is a sub-Gaussian vector whose variance
+proxy is the Euclidean operator norm `‖S‖₊` of the matrix parameter `S`. For positive
+semidefinite `S`, the covariance matrix, each linear form `⟪u, x⟫` has variance
+`⟪u, S u⟫ ≤ ‖S‖ ‖u‖²`; otherwise the law is the Dirac mass at `0`. -/
 theorem HasLaw.isSubgaussianVector {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     [Fintype ι] [DecidableEq ι] {x : Ω → EuclideanSpace ℝ ι} {S : Matrix ι ι ℝ}
     (hx : HasLaw x (multivariateGaussian 0 S) μ) : IsSubgaussianVector x ‖S‖₊ μ := by
@@ -51,10 +57,7 @@ theorem HasLaw.isSubgaussianVector {Ω ι : Type*} [MeasurableSpace Ω] {μ : Me
     refine (hlaw.comp hx).hasSubgaussianMGF.mono ?_
     rw [Real.toNNReal_le_iff_le_coe]
     push_cast
-    have hSu : ‖S.toEuclideanLin u‖ ≤ ‖S‖ * ‖u‖ := by
-      rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe,
-        ← Matrix.l2_opNorm_toEuclideanCLM]
-      exact ContinuousLinearMap.le_opNorm _ _
+    have hSu : ‖S.toEuclideanLin u‖ ≤ ‖S‖ * ‖u‖ := S.l2_opNorm_mulVec u
     calc q ≤ ‖u‖ * ‖S.toEuclideanLin u‖ := real_inner_le_norm _ _
       _ ≤ ‖u‖ * (‖S‖ * ‖u‖) := by gcongr
       _ = ‖S‖ * ‖u‖ ^ 2 := by ring

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Moments.SubGaussian
 import TauCeti.MeasureTheory.Measure.Tail
+import TauCeti.Probability.Moments.SubGaussian.Basic
 
 /-!
 # Two-sided sub-Gaussian tails
@@ -64,9 +65,7 @@ theorem measureReal_abs_sub_ge_le_of_hasSubgaussianMGF {α : Type*} [MeasurableS
     (h : ProbabilityTheory.HasSubgaussianMGF (fun x => g x - c) σ P) (hct : |c - t| ≤ ε / 2) :
     P.real {x | ε ≤ |g x - t|} ≤ 2 * Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) := by
   have hε : 0 ≤ ε := by linarith [abs_nonneg (c - t)]
-  have : IsFiniteMeasure P := by
-    exact (integrable_const_iff_isFiniteMeasure (c := (1 : ℝ)) one_ne_zero).1
-      (by simpa using h.integrable_exp_mul 0)
+  have : IsFiniteMeasure P := h.isFiniteMeasure
   have hincl : {x | ε ≤ |g x - t|} ⊆ {x | ε / 2 ≤ |g x - c|} := fun x hx => by
     rw [Set.mem_ofPred_eq] at hx ⊢
     have htri : |g x - t| ≤ |g x - c| + |c - t| := abs_sub_le _ _ _

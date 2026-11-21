@@ -13,6 +13,7 @@ public import TauCeti.Probability.Moments.SubGaussian.Basic
 public import TauCeti.Probability.Moments.SubGaussian.Vector
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
 import TauCeti.Probability.Moments.SubExponential
@@ -41,12 +42,6 @@ open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal NNReal Matrix Matrix.Norms.L2Operator
 
 namespace ProbabilityTheory
-
-/-- A random variable with centred Gaussian law `gaussianReal 0 v` is `v`-sub-Gaussian. -/
-theorem HasLaw.hasSubgaussianMGF {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
-    {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) μ) : HasSubgaussianMGF X v μ := by
-  rw [← HasSubgaussianMGF.id_map_iff hX.aemeasurable, hX.map_eq]
-  exact ⟨integrable_exp_mul_gaussianReal, fun t ↦ by simp [mgf_id_gaussianReal]⟩
 
 namespace HasSubgaussianMGF
 
@@ -280,24 +275,8 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
       (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
         intro i _
         exact hY i)
-  have hset : {ω | t ≤ |S ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
-    ext ω
-    simpa only [Set.mem_ofPred_eq, Set.mem_union] using (le_abs : t ≤ |S ω| ↔ _)
-  have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
   have hbound : μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by
-    calc
-      μ.real {ω | t ≤ |∑ i, a i * X i ω|} =
-          μ.real ({ω | t ≤ S ω} ∪ {ω | t ≤ -S ω}) := by
-            rw [hset']
-      _ ≤ μ.real {ω | t ≤ S ω} + μ.real {ω | t ≤ -S ω} :=
-        measureReal_union_le _ _
-      _ ≤ Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) +
-          Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) :=
-        add_le_add (hS.measure_ge_le ht) (hS.neg.measure_ge_le ht)
-      _ = 2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by ring
+      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := hS.measureReal_abs_ge_le ht
   have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) =
       ∑ i, (a i) ^ 2 * (c i : ℝ) := by
     rw [NNReal.coe_sum]
