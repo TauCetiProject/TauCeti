@@ -164,12 +164,10 @@ theorem multiplicationOperator_linftyIndicator_ae (hs : MeasurableSet s) (f : Lp
 /-- Cutting an `Lᵖ` class off to a measurable set does not increase its norm. -/
 theorem norm_multiplicationOperator_linftyIndicator_apply_le (hs : MeasurableSet s)
     (f : Lp E p μ) : ‖multiplicationOperator (TauCeti.linftyIndicator μ s hs) f‖ ≤ ‖f‖ := by
-  have h : ‖multiplicationOperator (TauCeti.linftyIndicator μ s hs) f‖ ≤ 1 * ‖f‖ := by
-    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [multiplicationOperator_linftyIndicator_ae hs f] with x hx
-    rw [hx, one_mul]
-    exact norm_indicator_le_norm_self f x
-  rwa [one_mul] at h
+  refine Lp.norm_le_norm_of_ae_le ?_
+  filter_upwards [multiplicationOperator_linftyIndicator_ae hs f] with x hx
+  rw [hx]
+  exact norm_indicator_le_norm_self f x
 
 /-- The cut-offs of an `Lᵖ` class to a measurable set and to its complement add up to the class. -/
 theorem multiplicationOperator_linftyIndicator_add_compl (hs : MeasurableSet s) (f : Lp E p μ) :
