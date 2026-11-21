@@ -188,8 +188,8 @@ diagonal forms `∑ uᵢ s(kᵢ) xᵢ²` and `∑ vⱼ s(lⱼ) yⱼ²`. -/
 theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [DecidableEq S]
     (k : ι → S) (l : κ → S) (u : ι → R) (v : κ → R) (s : S → R)
     (h : ∀ m : S,
-      (QuadraticMap.weightedSumSquares R (fun i : {i : ι // k i = m} => u i.1)).Equivalent
-        (QuadraticMap.weightedSumSquares R (fun j : {j : κ // l j = m} => v j.1))) :
+      (QuadraticMap.weightedSumSquares R (fun i : {i : ι // k i = m} => u i.val)).Equivalent
+        (QuadraticMap.weightedSumSquares R (fun j : {j : κ // l j = m} => v j.val))) :
     (QuadraticMap.weightedSumSquares R (fun i => u i * s (k i))).Equivalent
       (QuadraticMap.weightedSumSquares R (fun j => v j * s (l j))) := by
   let e m := (h m).some
@@ -201,8 +201,8 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [Decidable
             (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv l).symm)
   refine ⟨{ toLinearEquiv := E, map_app' := fun x => ?_ }⟩
   have hE (m : S) (j : {j : κ // l j = m}) :
-      E x j.1 = e m (fun i => x i.1) j := by
-    have hj : (Equiv.sigmaFiberEquiv l).symm j.1 = ⟨m, j⟩ :=
+      E x j.val = e m (fun i => x i.val) j := by
+    have hj : (Equiv.sigmaFiberEquiv l).symm j.val = ⟨m, j⟩ :=
       (Equiv.sigmaFiberEquiv l).symm_apply_eq.mpr rfl
     simp only [E, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
       LinearEquiv.piCurry_apply, LinearEquiv.piCongrRight_apply,
@@ -214,21 +214,21 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [Decidable
   rw [← Function.sum_fiber_subtype l (T := T) (by simp [T]),
     ← Function.sum_fiber_subtype k (T := T) (by simp [T])]
   refine Finset.sum_congr rfl fun m _ => ?_
-  have hmap := (e m).map_app (fun i => x i.1)
+  have hmap := (e m).map_app (fun i => x i.val)
   simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul] at hmap
   calc ∑ j : {j : κ // l j = m},
-          (v j.1 * s (l j.1)) * (E x j.1 * E x j.1)
+          (v j.val * s (l j.val)) * (E x j.val * E x j.val)
       = s m * ∑ j : {j : κ // l j = m},
-          v j.1 * (e m (fun i => x i.1) j * e m (fun i => x i.1) j) := by
+          v j.val * (e m (fun i => x i.val) j * e m (fun i => x i.val) j) := by
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun j _ => ?_
-        rw [hE m j, j.2, mul_comm (v j.1) (s m), mul_assoc]
-    _ = s m * ∑ i : {i : ι // k i = m}, u i.1 * (x i.1 * x i.1) := by
+        rw [hE m j, j.property, mul_comm (v j.val) (s m), mul_assoc]
+    _ = s m * ∑ i : {i : ι // k i = m}, u i.val * (x i.val * x i.val) := by
         rw [hmap]
-    _ = ∑ i : {i : ι // k i = m}, (u i.1 * s (k i.1)) * (x i.1 * x i.1) := by
+    _ = ∑ i : {i : ι // k i = m}, (u i.val * s (k i.val)) * (x i.val * x i.val) := by
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun i _ => ?_
-        rw [i.2, mul_comm (u i.1) (s m), mul_assoc]
+        rw [i.property, mul_comm (u i.val) (s m), mul_assoc]
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :

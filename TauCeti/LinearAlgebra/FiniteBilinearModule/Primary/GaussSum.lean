@@ -67,7 +67,7 @@ theorem gaussSign_eq_sum_primeFactors {A : FiniteQuadraticModule} (hA : A.IsNond
       ∑ p ∈ (Nat.card A).primeFactors, (A.restrict (primaryComponent A p)).gaussSign := by
   rw [← A.primaryDecomposition.gaussSign_eq, primaryComponents,
     gaussSign_pi _ fun p ↦
-      A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.2)]
+      A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.property)]
   exact Finset.sum_coe_sort (Nat.card A).primeFactors
     (fun p ↦ (A.restrict (primaryComponent A p)).gaussSign)
 

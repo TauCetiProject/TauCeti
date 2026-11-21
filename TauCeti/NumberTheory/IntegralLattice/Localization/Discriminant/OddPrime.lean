@@ -9,9 +9,9 @@ public import Mathlib.GroupTheory.Torsion
 public import TauCeti.Data.Fintype.Fiber
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Henselian
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
@@ -119,13 +119,13 @@ private theorem sum_eq_and_pos_invariants_of_primaryDiscriminantBilinear
   obtain ⟨hcnt, hleg⟩ := hpi m hm
   refine ⟨by rwa [occCount_eq_card_filter, occCount_eq_card_filter], ?_⟩
   rw [PadicInt.isSquare_prod_mul_prod_iff_prod_legendreSym_eq hp
-    (fun i : {i // k i = m} ↦ u i.1) (fun j : {j // l j = m} ↦ v j.1)
-    (fun i ↦ hθ_p i.1) (fun j ↦ hη_p j.1)]
-  have hksub : (∏ i : {i // k i = m}, legendreSym p (θ i.1)) =
+    (fun i : {i // k i = m} ↦ u i.val) (fun j : {j // l j = m} ↦ v j.val)
+    (fun i ↦ hθ_p i.val) (fun j ↦ hη_p j.val)]
+  have hksub : (∏ i : {i // k i = m}, legendreSym p (θ i.val)) =
       ∏ i with k i = m, legendreSym p (θ i) :=
     (Finset.prod_subtype (p := fun i ↦ k i = m)
       (Finset.univ.filter (k · = m)) (by simp) (fun i ↦ legendreSym p (θ i))).symm
-  have hlsub : (∏ j : {j // l j = m}, legendreSym p (η j.1)) =
+  have hlsub : (∏ j : {j // l j = m}, legendreSym p (η j.val)) =
       ∏ j with l j = m, legendreSym p (η j) :=
     (Finset.prod_subtype (p := fun j ↦ l j = m)
       (Finset.univ.filter (l · = m)) (by simp) (fun j ↦ legendreSym p (η j))).symm

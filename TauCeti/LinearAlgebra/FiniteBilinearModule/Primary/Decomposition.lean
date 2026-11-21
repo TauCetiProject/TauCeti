@@ -276,7 +276,7 @@ noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
 /-- The quadratic primary-decomposition isometry maps a tuple to its component sum. -/
 @[simp]
 theorem primaryDecomposition_apply (x : A.primaryComponents) :
-    A.primaryDecomposition x = ∑ p, (x p).1 :=
+    A.primaryDecomposition x = ∑ p, (x p).val :=
   A.primaryDecompositionAddEquiv_apply x
 
 /-- The orthogonal product of primary components is nondegenerate exactly when the original
@@ -292,7 +292,7 @@ def Isometry.restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
     Isometry (A.restrict (primaryComponent A n)) (B.restrict (primaryComponent B n)) where
   toLinearEquiv := (f.toAddEquiv.primaryComponent n).toIntLinearEquiv
   map_app' x :=
-    (congrArg B.quadratic (f.toAddEquiv.coe_primaryComponent_apply n x)).trans (f.map_app x.1)
+    (congrArg B.quadratic (f.toAddEquiv.coe_primaryComponent_apply n x)).trans (f.map_app x.val)
 
 /-- Restricting a quadratic isometry to `n`-primary components commutes with coercion to the
 ambient module. -/
@@ -300,7 +300,7 @@ ambient module. -/
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
     (x : A.restrict (primaryComponent A n)) :
-    (f.restrictPrimaryComponent n x).1 = f x.1 :=
+    (f.restrictPrimaryComponent n x).val = f x.val :=
   f.toAddEquiv.coe_primaryComponent_apply n x
 
 /-- The additive equivalence underlying a restricted quadratic isometry is the restricted additive
@@ -326,7 +326,8 @@ theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (
   exact DFunLike.ext _ _ fun x ↦ Subtype.ext <|
     (Isometry.coe_restrictPrimaryComponent_apply (A := A) (B := A)
       (QuadraticMap.IsometryEquiv.refl A.quadratic) n x).trans <|
-      (hrefl A x.1).trans (congrArg Subtype.val (hrefl (A.restrict (primaryComponent A n)) x).symm)
+      (hrefl A x.val).trans
+        (congrArg Subtype.val (hrefl (A.restrict (primaryComponent A n)) x).symm)
 
 /-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
 restricted isometry. -/
@@ -349,7 +350,7 @@ theorem Isometry.trans_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
       (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) :=
   DFunLike.ext _ _ fun x ↦ Subtype.ext <|
     (Isometry.coe_restrictPrimaryComponent_apply (A := A) (B := C) (f.trans g) n x).trans <|
-      (Isometry.trans_apply f g x.1).trans <|
+      (Isometry.trans_apply f g x.val).trans <|
         (congrArg g (Isometry.coe_restrictPrimaryComponent_apply f n x).symm).trans <|
           (Isometry.coe_restrictPrimaryComponent_apply g n
             (f.restrictPrimaryComponent n x)).symm.trans

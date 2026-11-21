@@ -146,10 +146,10 @@ product over all indices. -/
   over all indices. -/]
 theorem prod_fiber_subtype [Fintype X] [DecidableEq S] {K : Type*} [CommMonoid K]
     (f : X → S) {T : Finset S} (hT : ∀ x, f x ∈ T) (w : X → K) :
-    ∏ y ∈ T, ∏ x : {x // f x = y}, w x.1 = ∏ x, w x := by
+    ∏ y ∈ T, ∏ x : {x // f x = y}, w x.val = ∏ x, w x := by
   have hfib := Finset.prod_fiberwise_of_maps_to (s := Finset.univ) (t := T) (g := f)
     (fun x _ => hT x) w
-  have hsub (y : S) : (∏ x with f x = y, w x) = ∏ x : {x // f x = y}, w x.1 :=
+  have hsub (y : S) : (∏ x with f x = y, w x) = ∏ x : {x // f x = y}, w x.val :=
     Finset.prod_subtype (p := fun x => f x = y) (Finset.univ.filter (fun x => f x = y))
       (by simp) w
   simpa only [hsub] using hfib
@@ -266,20 +266,20 @@ theorem isSquare_prod_fiber_subtype_mul_of_forall_ne {Y G : Type*} [Fintype X] [
     [DecidableEq S] [CommGroup G] {u : X → S} {v : Y → S} {f : X → G} {g : Y → G} {z : S}
     (hall : IsSquare ((∏ x, f x) * ∏ y, g y))
     (hne : ∀ a, a ≠ z →
-      IsSquare ((∏ x : {x // u x = a}, f x.1) * ∏ y : {y // v y = a}, g y.1)) :
-    IsSquare ((∏ x : {x // u x = z}, f x.1) * ∏ y : {y // v y = z}, g y.1) := by
+      IsSquare ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val)) :
+    IsSquare ((∏ x : {x // u x = z}, f x.val) * ∏ y : {y // v y = z}, g y.val) := by
   obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
   have hmul :
-      ((∏ x : {x // u x = z}, f x.1) * ∏ y : {y // v y = z}, g y.1) *
-        ∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.1) * ∏ y : {y // v y = a}, g y.1) =
+      ((∏ x : {x // u x = z}, f x.val) * ∏ y : {y // v y = z}, g y.val) *
+        ∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val) =
       (∏ x, f x) * ∏ y, g y := by
     rw [Finset.prod_mul_distrib, mul_mul_mul_comm,
-      Finset.mul_prod_erase T (fun a => ∏ x : {x // u x = a}, f x.1) hzT,
+      Finset.mul_prod_erase T (fun a => ∏ x : {x // u x = a}, f x.val) hzT,
       prod_fiber_subtype u huT f,
-      Finset.mul_prod_erase T (fun a => ∏ y : {y // v y = a}, g y.1) hzT,
+      Finset.mul_prod_erase T (fun a => ∏ y : {y // v y = a}, g y.val) hzT,
       prod_fiber_subtype v hvT g]
   have hsq : IsSquare
-      (∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.1) * ∏ y : {y // v y = a}, g y.1)) :=
+      (∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val)) :=
     Finset.prod_induction _ IsSquare (fun _ _ => IsSquare.mul) IsSquare.one fun a ha =>
       hne a (Finset.mem_erase.mp ha).1
   simpa only [← hmul, mul_div_cancel_right] using hall.div hsq

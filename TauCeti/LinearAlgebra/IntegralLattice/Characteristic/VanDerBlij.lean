@@ -239,14 +239,14 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
   have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
     (A.restrict_quadratic P (a₂ + (h : A₂))).trans <|
       (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
-        (a₂ + (h : A₂)).1).trans <|
-        (quadratic_halfCharacteristicDual_add L hw ⟨h.1.1, h.2⟩).trans <|
+        (a₂ + (h : A₂)).val).trans <|
+        (quadratic_halfCharacteristicDual_add L hw ⟨h.val.val, h.property⟩).trans <|
           (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
-            a₂.1).symm.trans (A.restrict_quadratic P a₂).symm
+            a₂.val).symm.trans (A.restrict_quadratic P a₂).symm
   have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
     (A.restrict_quadratic P a₂).trans <|
-      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice a₂.1).trans
-        (quadratic_halfCharacteristicDual L hw)
+      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
+        a₂.val).trans (quadratic_halfCharacteristicDual L hw)
   have hsq' : Nat.card H₂ ^ 2 = Nat.card A₂ := hsq.trans (A.natCard_restrict P).symm
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq A₂ ?_
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a₂

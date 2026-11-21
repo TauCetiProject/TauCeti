@@ -85,10 +85,10 @@ variable {A B C : Type*} [CommGroup A] [CommGroup B] [CommGroup C]
 def primaryComponent (e : A ≃* B) (n : ℕ) :
     CommGroup.primaryComponent A n ≃* CommGroup.primaryComponent B n where
   toFun x := ⟨e x, by
-    obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp x.2
+    obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp x.property
     exact CommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_pow, hk, map_one]⟩⟩
   invFun y := ⟨e.symm y, by
-    obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp y.2
+    obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp y.property
     exact CommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_pow, hk, map_one]⟩⟩
   left_inv x := Subtype.ext (e.symm_apply_apply x)
   right_inv y := Subtype.ext (e.apply_symm_apply y)
