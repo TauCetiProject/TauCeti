@@ -57,7 +57,8 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.inclusionLp`: the inclusion `H^{s,p}(E, G) →L[ℂ] Lᵖ(E, G)` for `0 ≤ s`,
   characterised by `BesselPotentialSpace.toTemperedDistribution_inclusionLp` and
   `BesselPotentialSpace.inclusionLp_eq_iff`, and injective
-  (`BesselPotentialSpace.inclusionLp_injective`). Its normal forms are
+  (`BesselPotentialSpace.inclusionLp_injective`; a.e. form
+  `BesselPotentialSpace.ext_of_ae_eq_inclusionLp`). Its normal forms are
   `BesselPotentialSpace.toLp_inclusion`, `BesselPotentialSpace.inclusionLp_zero`,
   `BesselPotentialSpace.inclusionLp_inclusion` and
   `BesselPotentialSpace.inclusionLp_toBesselPotentialSpaceCLM`.
@@ -203,6 +204,11 @@ theorem inclusionLp_injective (hs : 0 ≤ s) :
     Function.Injective (inclusionLp hs : H^{s, p}(E, G) → Lp G p (volume : Measure E)) :=
   fun u v huv ↦ ext (by rw [← toTemperedDistribution_inclusionLp hs, huv,
     toTemperedDistribution_inclusionLp])
+
+/-- Two elements of `H^{s,p}` whose `Lᵖ` functions agree almost everywhere are equal. -/
+theorem ext_of_ae_eq_inclusionLp (hs : 0 ≤ s) {u v : H^{s, p}(E, G)}
+    (huv : inclusionLp hs u =ᵐ[volume] inclusionLp hs v) : u = v :=
+  inclusionLp_injective hs (Lp.ext huv)
 
 /-- The `Lᵖ` part of the inclusion of `u` in `H^{0,p}` is the inclusion of `u` into `Lᵖ`. -/
 @[simp]

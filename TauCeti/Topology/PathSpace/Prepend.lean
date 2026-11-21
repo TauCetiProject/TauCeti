@@ -69,6 +69,11 @@ theorem delayReflLeft_continuous_family {A : Type*} [TopologicalSpace A]
       fun_prop)
   exact h
 
+/-- The product of the H-space structure of the loop space `Path x x` is concatenation. -/
+@[simp]
+theorem hmul_eq_trans (γ₁ γ₂ : Path x x) : HSpace.hmul (γ₁, γ₂) = γ₁.trans γ₂ :=
+  (rfl)
+
 /-! ### Reparametrizing the paths of a path space -/
 
 /-- Reparametrizing by a fixed endpoint-preserving map `f : I → I` is continuous on the
@@ -77,6 +82,17 @@ compact-open space of paths. -/
 theorem continuous_reparam {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
     Continuous fun γ : Path x y ↦ γ.reparam f hf hf₀ hf₁ :=
   continuous_uncurry_iff.mp <| continuous_fst.eval (hf.comp continuous_snd)
+
+/-- The straight-line homotopy `Path.Homotopy.reparam` from a path to its reparametrization by
+`f` evaluates the path at the convex combination `(1 - s) t + s f(t)`. -/
+theorem Homotopy.reparam_apply (γ : Path x y) {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0)
+    (hf₁ : f 1 = 1) (q : I × I) :
+    Homotopy.reparam γ f hf hf₀ hf₁ q = γ.extend (σ q.1 * q.2 + q.1 * f q.2) := by
+  have h : (σ q.1 : ℝ) * q.2 + q.1 * f q.2 ∈ I := by
+    simpa only [smul_eq_mul] using
+      convex_Icc _ _ q.2.property (f q.2).property (nonneg (σ q.1)) (nonneg q.1) (by simp)
+  rw [extend_apply _ h]
+  rfl
 
 /-- The straight-line homotopy from the identity of the path space to reparametrization by `f`,
 evaluating `Path.Homotopy.reparam γ f` at each time. It is continuous in the path. -/

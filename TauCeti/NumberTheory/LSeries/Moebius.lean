@@ -7,14 +7,17 @@ module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
 # The Dirichlet series of the square of the Möbius function
 
-On `Re s > 1`, the squarefree-indicator series is absolutely convergent and satisfies
-`ζ(s) = ζ(2s) L(μ²,s)`. Its local factor at a prime is `1 + p^(-s)`.
+The squarefree-indicator series converges absolutely exactly on `Re s > 1`, so its abscissa of
+absolute convergence is `1`: at `s = 1` its terms at the primes are the divergent `1/p`. On
+`Re s > 1` it satisfies `ζ(s) = ζ(2s) L(μ²,s)`. Its local factor at a prime is `1 + p^(-s)`.
 At index zero the coefficient and the Dirichlet-series term are both zero.
 
 The argument is adapted from `zeta_alt` and its Möbius-square Euler-product stages in
@@ -32,20 +35,35 @@ open scoped ArithmeticFunction.Moebius
 
 namespace TauCeti
 
-/-- The square of the Möbius function has an absolutely convergent Dirichlet series
-on `Re s > 1`. -/
-theorem LSeriesSummable_moebius_sq {s : ℂ} (hs : 1 < s.re) :
-    LSeriesSummable (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s := by
-  have hnorm :
-      (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s n‖) =
-      (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ)) s n‖) := by
-    funext n
-    simp only [_root_.LSeries.norm_term_eq]
-    rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;> simp [h]
-  rw [LSeriesSummable]
-  rw [← summable_norm_iff, hnorm]
-  exact (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs).norm
+/-- The Dirichlet series of the square of the Möbius function converges absolutely exactly on
+`Re s > 1`. -/
+theorem LSeriesSummable_moebius_sq_iff {s : ℂ} :
+    LSeriesSummable (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s ↔ 1 < s.re := by
+  constructor
+  · intro hf
+    by_contra! hs
+    have hf1 : LSeriesSummable (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) 1 :=
+      hf.of_re_le_re (by simpa using hs)
+    refine Nat.Primes.not_summable_one_div ((hf1.comp_injective Subtype.val_injective).norm.congr
+      fun p ↦ ?_)
+    simp [p.prop.ne_zero, ArithmeticFunction.moebius_apply_prime p.prop]
+  · intro hs
+    have hnorm :
+        (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s n‖) =
+        (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ)) s n‖) := by
+      funext n
+      simp only [_root_.LSeries.norm_term_eq]
+      rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;> simp [h]
+    rw [LSeriesSummable]
+    rw [← summable_norm_iff, hnorm]
+    exact (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs).norm
 
+/-- The abscissa of absolute convergence of the Dirichlet series of the square of the Möbius
+function is one. -/
+theorem abscissaOfAbsConv_moebius_sq :
+    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) = 1 :=
+  (LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_moebius_sq_iff).trans EReal.coe_one
 
 private theorem moebius_sq_prime_pow_sum {s : ℂ} {p : Nat.Primes} :
     (∑' e : ℕ, _root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2)
@@ -75,7 +93,7 @@ theorem LSeries_moebius_sq_eulerProduct_hasProd {s : ℂ} (hs : 1 < s.re) :
       (_root_.LSeries (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s) :=
     EulerProduct.eulerProduct_hasProd (by simp)
     (TauCeti.LSeries.term_mul_of_coprime hmul)
-      (TauCeti.LSeriesSummable_moebius_sq hs).norm
+      (LSeriesSummable_moebius_sq_iff.mpr hs).norm
     (_root_.LSeries.term_zero (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s)
   simpa only [moebius_sq_prime_pow_sum] using hp
 
