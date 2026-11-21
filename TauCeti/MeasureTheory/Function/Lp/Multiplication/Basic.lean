@@ -129,13 +129,6 @@ theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp 𝕜 ∞ μ
     coeFn_mul a b] with x ha hb hab hsmul
   simp only [comp_apply, ha, hb, hab, hsmul, Pi.mul_apply, smul_smul]
 
-/-- Multiplying symbols multiplies the corresponding operators. -/
-@[simp]
-theorem multiplicationOperator_mul (a b : Lp 𝕜 ∞ μ) :
-    multiplicationOperator (E := E) (p := p) (a * b) =
-      multiplicationOperator a * multiplicationOperator b := by
-  rw [ContinuousLinearMap.mul_def, multiplicationOperator_comp_multiplicationOperator]
-
 /-- Multiplication operators commute with each other. -/
 theorem commute_multiplicationOperator (a b : Lp 𝕜 ∞ μ) :
     Commute (multiplicationOperator (E := E) (p := p) a) (multiplicationOperator b) := by
@@ -197,22 +190,13 @@ theorem compMeasurePreserving_multiplicationOperator_apply {β : Type*} [Measura
     coeFn_compMeasurePreserving a hg, coeFn_compMeasurePreserving f hg] with x h₃ ha hf
   rw [Function.comp_apply, h₃, ha, hf, Function.comp_apply, Function.comp_apply]
 
-/-- Multiplication by an `L∞` measurable-set unit indicator cuts off an `Lᵖ` constant indicator to
-the intersection of the two sets. -/
-@[simp]
-theorem multiplicationOperator_linftyIndicator_indicatorConstLp {s t : Set α}
-    (hs : MeasurableSet s) (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : E) :
-    multiplicationOperator (TauCeti.linftyIndicator μ 𝕜 s hs) (indicatorConstLp p ht hμt v) =
-      indicatorConstLp p (hs.inter ht)
-        ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne v := by
-  rw [multiplicationOperator_apply, TauCeti.linftyIndicator_smul_indicatorConstLp]
-
 /-- If `s ⊆ t`, multiplying an `Lᵖ` constant indicator of `t` by the `L∞` unit indicator of `s`
 restricts it to `s`. -/
 theorem multiplicationOperator_linftyIndicator_indicatorConstLp_of_subset {s t : Set α}
     (hs : MeasurableSet s) (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
     multiplicationOperator (TauCeti.linftyIndicator μ 𝕜 s hs) (indicatorConstLp p ht hμt v) =
       indicatorConstLp p hs ((measure_mono hst).trans_lt hμt.lt_top).ne v := by
+  rw [multiplicationOperator_apply, TauCeti.linftyIndicator_smul_indicatorConstLp]
   simp [Set.inter_eq_left.mpr hst]
 
 /-- Multiplying an `Lᵖ` constant indicator of `s` by the `L∞` unit indicator of `s` fixes it. -/
@@ -242,13 +226,6 @@ theorem adjoint_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
     multiplicationOperator_ae a g, Lp.coeFn_star a] with x hf hg ha
   simp [hf, hg, ha, inner_smul_left, inner_smul_right]
 
-/-- The operator-algebra involution of multiplication by `a` is multiplication by `star a`. -/
-@[simp]
-theorem star_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
-    star (multiplicationOperator (E := E) (p := 2) a) =
-      multiplicationOperator (E := E) (p := 2) (star a) := by
-  rw [ContinuousLinearMap.star_eq_adjoint, adjoint_multiplicationOperator]
-
 end InnerProductSpace
 
 section ComplexInnerProductSpace
@@ -261,13 +238,15 @@ def multiplicationStarAlgHom (μ : Measure α) (E : Type*) [NormedAddCommGroup E
     [InnerProductSpace ℂ E] [CompleteSpace E] : Lp ℂ ∞ μ →⋆ₐ[ℂ] (Lp E 2 μ →L[ℂ] Lp E 2 μ) where
   toFun := multiplicationOperator (E := E)
   map_one' := multiplicationOperator_one
-  map_mul' := multiplicationOperator_mul
+  map_mul' a b := by
+    simpa only [ContinuousLinearMap.mul_def] using
+      (multiplicationOperator_comp_multiplicationOperator a b).symm
   map_zero' := multiplicationOperator_zero
   map_add' := multiplicationOperator_add
   commutes' c := by
     rw [multiplicationOperator_algebraMap, Algebra.algebraMap_eq_smul_one,
       ContinuousLinearMap.one_def]
-  map_star' a := (star_multiplicationOperator a).symm
+  map_star' a := (adjoint_multiplicationOperator a).symm
 
 @[simp]
 theorem multiplicationStarAlgHom_apply (a : Lp ℂ ∞ μ) :

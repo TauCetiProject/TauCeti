@@ -52,8 +52,9 @@ almost everywhere equalities in place of pointwise ones.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * `MeasureTheory.Lp.exists_eq_algebraMap_dirac`: over a Dirac measure, every element of `L∞` is
   a scalar in the image of `algebraMap`.
-* `MeasureTheory.Lp.countStarAlgEquiv`: over counting measure on a finite measurable-singleton
-  space, `α → R` is star-isomorphic to `Lp R ∞ Measure.count`.
+* `MeasureTheory.MemLp.toLp_count_apply`, `MeasureTheory.Lp.countStarAlgEquiv`: over counting
+  measure, `MemLp.toLp` evaluates pointwise, and on a finite measurable-singleton space `α → R`
+  is star-isomorphic to `Lp R ∞ Measure.count`.
 * `TauCeti.linftyIndicator_mul_linftyIndicator`, `TauCeti.isStarProjection_linftyIndicator`:
   algebraic and star properties of measurable-set indicators in `L∞`.
 * `MeasureTheory.Lp.exists_measurableSet_eq_linftyIndicator_of_isIdempotentElem`: over a normed
@@ -229,10 +230,14 @@ instance inftyCommCStarAlgebra [CommCStarAlgebra R] : CommCStarAlgebra (Lp R ∞
 
 section Count
 
-private theorem toLp_of_discrete_apply {α R : Type*} [MeasurableSpace α] [Finite α]
-    [MeasurableSingletonClass α] [NormedRing R] (f : α → R) (x : α) :
-    (MemLp.of_discrete (p := ∞) (μ := (Measure.count : Measure α)) (f := f)).toLp f x = f x :=
-  Measure.ae_count_iff.mp MemLp.of_discrete.coeFn_toLp x
+/-- Evaluating the `Lp` class of a function on counting measure at any point returns its
+pointwise value. -/
+@[simp]
+theorem _root_.MeasureTheory.MemLp.toLp_count_apply {α E : Type*} {_ : MeasurableSpace α}
+    [NormedAddCommGroup E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p (Measure.count : Measure α))
+    (x : α) :
+    hf.toLp f x = f x :=
+  Measure.ae_count_iff.mp hf.coeFn_toLp x
 
 /-- Over a finite measurable-singleton space `α`, pointwise evaluation identifies `α → R` with
 `Lp R ∞ (Measure.count : Measure α)` as a unital ⋆-algebra. -/
@@ -242,16 +247,16 @@ def countStarAlgEquiv (α 𝕜 R : Type*) [MeasurableSpace α] [Finite α]
     (α → R) ≃⋆ₐ[𝕜] Lp R ∞ (Measure.count : Measure α) where
   toFun f := MemLp.of_discrete.toLp f
   invFun a x := a x
-  left_inv f := funext (toLp_of_discrete_apply f)
+  left_inv f := funext MemLp.of_discrete.toLp_count_apply
   right_inv a := Lp.ext (MemLp.coeFn_toLp _)
   map_mul' f g := Lp.ext <| Measure.ae_count_iff.mpr fun x ↦ by
-    rw [toLp_of_discrete_apply, Measure.ae_count_iff.mp (coeFn_mul _ _) x]
-    simp [toLp_of_discrete_apply]
+    rw [MemLp.toLp_count_apply, Measure.ae_count_iff.mp (coeFn_mul _ _) x]
+    simp
   map_add' _ _ := MemLp.toLp_add MemLp.of_discrete MemLp.of_discrete
   map_smul' c _ := MemLp.toLp_const_smul c MemLp.of_discrete
   map_star' f := Lp.ext <| Measure.ae_count_iff.mpr fun x ↦ by
-    rw [toLp_of_discrete_apply, Measure.ae_count_iff.mp (coeFn_star _) x]
-    simp [toLp_of_discrete_apply]
+    rw [MemLp.toLp_count_apply, Measure.ae_count_iff.mp (coeFn_star _) x]
+    simp
 
 @[simp]
 theorem countStarAlgEquiv_apply {α 𝕜 R : Type*} [MeasurableSpace α] [Finite α]

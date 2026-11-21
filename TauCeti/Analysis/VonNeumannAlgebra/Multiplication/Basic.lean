@@ -89,25 +89,25 @@ theorem multiplicationAlgebra_le_iff {μ : Measure α} {M : VonNeumannAlgebra (L
     multiplicationAlgebra μ ≤ M ↔ ∀ a : Lp ℂ ∞ μ, Lp.multiplicationOperator a ∈ M :=
   adjoin_le_iff.trans Set.forall_mem_range
 
-private theorem star_range_multiplicationOperator_subset (μ : Measure α) :
-    star (Set.range (Lp.multiplicationOperator (𝕜 := ℂ) (E := ℂ) (p := 2) (μ := μ))) ⊆
-      Set.range (Lp.multiplicationOperator (𝕜 := ℂ) (E := ℂ) (p := 2) (μ := μ)) := by
-  rintro T hT
-  obtain ⟨a, ha⟩ := Set.mem_star.mp hT
-  exact ⟨star a, by rw [← Lp.star_multiplicationOperator, ha, star_star]⟩
+private theorem coe_range_multiplicationStarAlgHom (μ : Measure α) :
+    ((Lp.multiplicationStarAlgHom μ ℂ).range : Set (Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ)) =
+      Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ)) :=
+  Set.ext fun _ ↦
+    ⟨fun ⟨a, ha⟩ ↦ ⟨a, Lp.multiplicationStarAlgHom_apply (E := ℂ) a ▸ ha⟩,
+      fun ⟨a, ha⟩ ↦ ⟨a, (Lp.multiplicationStarAlgHom_apply (E := ℂ) a).symm ▸ ha⟩⟩
 
 theorem coe_multiplicationAlgebra_eq_centralizer_centralizer (μ : Measure α) :
     (multiplicationAlgebra μ : Set (Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ)) =
-      (Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ))).centralizer.centralizer :=
-  coe_adjoin_of_star_subset (star_range_multiplicationOperator_subset μ)
+      (Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ))).centralizer.centralizer := by
+  rw [multiplicationAlgebra, ← coe_range_multiplicationStarAlgHom μ, coe_adjoin_starSubalgebra]
 
 /-- The commutant of `multiplicationAlgebra μ` is the centralizer of the range of
 `Lp.multiplicationOperator`. -/
 theorem coe_commutant_multiplicationAlgebra (μ : Measure α) :
     ((multiplicationAlgebra μ).commutant : Set (Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ)) =
       (Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ))).centralizer := by
-  rw [coe_commutant, coe_multiplicationAlgebra_eq_centralizer_centralizer,
-    Set.centralizer_centralizer_centralizer]
+  rw [multiplicationAlgebra, ← coe_range_multiplicationStarAlgHom μ, coe_commutant_adjoin,
+    StarMemClass.star_coe_eq, Set.union_self]
 
 /-- For **every** measure `μ` (without assuming `SigmaFinite μ`), `multiplicationAlgebra μ` equals
 its own commutant: it is a maximal abelian self-adjoint subalgebra of `B(Lp ℂ 2 μ)`. -/
@@ -182,7 +182,7 @@ theorem bot_lt_multiplicationAlgebra {μ : Measure α} {s t : Set α}
   have hfs := congr($hc (indicatorConstLp 2 hs hμs (1 : ℂ)))
   have hft := congr($hc (indicatorConstLp 2 ht hμt (1 : ℂ)))
   rw [Lp.multiplicationOperator_linftyIndicator_indicatorConstLp_self hs hμs (1 : ℂ)] at hfs
-  rw [Lp.multiplicationOperator_linftyIndicator_indicatorConstLp hs ht hμt (1 : ℂ)] at hft
+  rw [Lp.multiplicationOperator_apply, TauCeti.linftyIndicator_smul_indicatorConstLp] at hft
   have hfs0 : indicatorConstLp 2 hs hμs (1 : ℂ) ≠ 0 := by
     simp [TauCeti.indicatorConstLp_eq_zero_iff, hμs0]
   have hft0 : indicatorConstLp 2 ht hμt (1 : ℂ) ≠ 0 := by
@@ -231,12 +231,6 @@ theorem mem_multiplicationAlgebra_iff {μ : Measure α} [SigmaFinite μ]
     {T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ} :
     T ∈ multiplicationAlgebra μ ↔ ∃ a : Lp ℂ ∞ μ, Lp.multiplicationOperator a = T := by
   rw [← SetLike.mem_coe, coe_multiplicationAlgebra, Set.mem_range]
-
-theorem mem_commutant_multiplicationAlgebra_iff {μ : Measure α} [SigmaFinite μ]
-    {T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ} :
-    T ∈ (multiplicationAlgebra μ).commutant ↔
-      ∃ a : Lp ℂ ∞ μ, Lp.multiplicationOperator a = T := by
-  rw [commutant_multiplicationAlgebra, mem_multiplicationAlgebra_iff]
 
 private theorem bijective_multiplicationStarAlgHom :
     Function.Bijective (multiplicationStarAlgHom μ) := by
@@ -374,10 +368,8 @@ variable {α : Type*} [MeasurableSpace α]
 /-- On the zero measure space, `Lp ℂ 2 0` is trivial, so `multiplicationAlgebra 0` is a
 subsingleton (`0 = 1`, the zero C⋆-algebra). -/
 instance instSubsingletonMultiplicationAlgebraZero :
-    Subsingleton (multiplicationAlgebra (0 : Measure α)) := by
-  have : Subsingleton (Lp ℂ 2 (0 : Measure α)) :=
-    ⟨fun f g ↦ Lp.ext (by simp [Filter.EventuallyEq])⟩
-  infer_instance
+    Subsingleton (multiplicationAlgebra (0 : Measure α)) :=
+  inferInstance
 
 /-! ### Dirac point masses -/
 
@@ -509,16 +501,14 @@ private theorem isIdempotentElem_of_mul_linftyIndicator_eq {μ : Measure α}
     multiplicationStarAlgHom μ (TauCeti.linftyIndicator μ ℂ E hE)
   have hE_idem : E_op * E_op = E_op := by
     rw [← map_mul, (TauCeti.isIdempotentElem_linftyIndicator hE).eq]
-  have hS_idem : multiplicationStarAlgHom μ p * multiplicationStarAlgHom μ p =
-      multiplicationStarAlgHom μ p := by
-    rw [← hPE, mul_mul_mul_comm, hP.eq, hE_idem]
+  have hS_idem : multiplicationStarAlgHom μ (p * p) = multiplicationStarAlgHom μ p := by
+    rw [map_mul, ← hPE, mul_mul_mul_comm, hP.eq, hE_idem]
   exact sub_eq_zero.mp <|
     Lp.eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero (E := ℂ) hE hμE
       (by rw [sub_mul, mul_assoc, hpe])
       (by
-        rw [Lp.multiplicationOperator_sub, Lp.multiplicationOperator_mul, sub_eq_zero]
-        simpa only [MulMemClass.coe_mul, coe_multiplicationStarAlgHom_apply] using
-          congrArg Subtype.val hS_idem)
+        rw [Lp.multiplicationOperator_sub, sub_eq_zero]
+        simpa only [coe_multiplicationStarAlgHom_apply] using congrArg Subtype.val hS_idem)
 
 /-- A nonzero idempotent `P ∈ multiplicationAlgebra μ` restricts on some finite-measure measurable
 set `E` to multiplication by the indicator of a positive-measure measurable subset `s ⊆ E` (with

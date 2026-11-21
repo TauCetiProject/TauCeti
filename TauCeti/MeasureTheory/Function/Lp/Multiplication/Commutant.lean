@@ -68,6 +68,34 @@ theorem tendsto_multiplicationOperator_linftyIndicator_spanningSets [SigmaFinite
   filter_upwards [eventually_mem_spanningSets μ x] with n hn
   exact (Set.indicator_of_mem hn _).symm
 
+/-- Scalar specialization of `ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_ae_eq_zero`:
+a local bounded operator on `Lp ℂ 2 ν` (for `σ`-finite `ν`) is multiplication by an `L∞` symbol
+of norm at most `‖S‖`. -/
+private theorem exists_norm_le_and_multiplicationOperator_eq_of_forall_ae_eq_zero
+    {ν : Measure α} [SigmaFinite ν] (S : Lp ℂ 2 ν →L[ℂ] Lp ℂ 2 ν)
+    (hS : ∀ (f : Lp ℂ 2 ν) (t : Set α), MeasurableSet t → (∀ᵐ x ∂ν, x ∉ t → f x = 0) →
+      ∀ᵐ x ∂ν, x ∉ t → S f x = 0) :
+    ∃ a : Lp ℂ ∞ ν, ‖a‖ ≤ ‖S‖ ∧ multiplicationOperator (E := ℂ) a = S := by
+  obtain ⟨m, hm_meas, hm_norm, hm_apply⟩ :=
+    ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_ae_eq_zero ENNReal.ofNat_ne_top S hS
+  set φ : α → ℂ := fun x ↦ m x 1
+  have hφ_meas : StronglyMeasurable φ :=
+    (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).continuous.comp_stronglyMeasurable hm_meas
+  have hφ_bdd : ∀ᵐ x ∂ν, ‖φ x‖ ≤ ‖S‖ :=
+    hm_norm.mono fun x hx ↦ (ContinuousLinearMap.le_opNorm (m x) 1).trans <| by
+      simpa only [norm_one, mul_one] using hx
+  have hφ_mem : MemLp φ ∞ ν := memLp_top_of_bound hφ_meas.aestronglyMeasurable ‖S‖ hφ_bdd
+  have ha_norm : ‖hφ_mem.toLp φ‖ ≤ ‖S‖ := Lp.norm_le_of_ae_bound_top (norm_nonneg S) <| by
+    filter_upwards [hφ_mem.coeFn_toLp, hφ_bdd] with x hx hb
+    rwa [hx]
+  refine ⟨hφ_mem.toLp φ, ha_norm, ContinuousLinearMap.ext fun f ↦ Lp.ext ?_⟩
+  filter_upwards [multiplicationOperator_ae (hφ_mem.toLp φ) f, hφ_mem.coeFn_toLp,
+    hm_apply f] with x hmul hφx hSx
+  rw [hmul, hφx, hSx]
+  have hm1 : m x (f x) = f x * m x 1 := by
+    simpa only [smul_eq_mul, mul_one] using map_smul (m x) (f x) (1 : ℂ)
+  rw [hm1, smul_eq_mul, mul_comm]
+
 /-- **Local multiplier representation on a finite-measure set.** On an arbitrary measure space, a
 bounded operator on `Lp ℂ 2 μ` that commutes with indicator multiplications on measurable subsets
 of a finite-measure measurable set `s` agrees after cutoff to `s` with multiplication by an `L∞`
@@ -82,14 +110,14 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
           multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
   let R : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 (μ.restrict s) := LpToLpRestrictCLM α ℂ ℂ μ 2 s
-  let ι : Lp ℂ 2 (μ.restrict s) →L[ℂ] Lp ℂ 2 μ :=
-    (compMeasurePreservingₗᵢ (E := ℂ) (p := 2) ℂ id
-      ⟨measurable_id, by simp⟩).toContinuousLinearMap.comp
-      (TauCeti.extendByZeroLpₗᵢ ℂ μ hs.nullMeasurableSet (Set.subset_univ s)).toContinuousLinearMap
-  have hι_ae (g : Lp ℂ 2 (μ.restrict s)) : ι g =ᵐ[μ] s.indicator ⇑g := by
-    have h1 : (ι g : α → ℂ) =ᵐ[μ]
+  let ι (p : ℝ≥0∞) [Fact (1 ≤ p)] : Lp ℂ p (μ.restrict s) →ₗᵢ[ℂ] Lp ℂ p μ :=
+    (compMeasurePreservingₗᵢ (E := ℂ) (p := p) ℂ id ⟨measurable_id, by simp⟩).comp
+      (TauCeti.extendByZeroLpₗᵢ ℂ μ hs.nullMeasurableSet (Set.subset_univ s))
+  have hι_ae (p : ℝ≥0∞) [Fact (1 ≤ p)] (g : Lp ℂ p (μ.restrict s)) :
+      ι p g =ᵐ[μ] s.indicator ⇑g := by
+    have h1 : (ι p g : α → ℂ) =ᵐ[μ]
         ⇑(TauCeti.extendByZeroLpₗᵢ ℂ μ hs.nullMeasurableSet (Set.subset_univ s) g) := by
-      simpa only [ι, ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
+      simpa only [ι, LinearIsometry.coe_comp, Function.comp_apply,
         coe_compMeasurePreservingₗᵢ, Function.comp_id] using
         coeFn_compMeasurePreserving
           (TauCeti.extendByZeroLpₗᵢ ℂ μ hs.nullMeasurableSet (Set.subset_univ s) g)
@@ -99,12 +127,9 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
       simpa only [Measure.restrict_univ] using
         TauCeti.coeFn_extendByZeroLpₗᵢ ℂ hs.nullMeasurableSet (Set.subset_univ s) g
     exact h1.trans h2
-  have hι_norm (g : Lp ℂ 2 (μ.restrict s)) : ‖ι g‖ = ‖g‖ := by
-    simp only [ι, ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-      LinearIsometry.norm_map]
   have hιR (f : Lp ℂ 2 μ) :
-      ι (R f) = multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) f := by
-    refine Lp.ext ((hι_ae (R f)).trans ?_)
+      ι 2 (R f) = multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) f := by
+    refine Lp.ext ((hι_ae 2 (R f)).trans ?_)
     filter_upwards [(ae_restrict_iff' hs).mp (LpToLpRestrictCLM_coeFn ℂ s f),
       (multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ s hs) f).symm,
       TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hs] with x hxR hmul hind
@@ -112,22 +137,24 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
     by_cases hxs : x ∈ s
     · simp [R, hxs, hxR hxs, hind]
     · simp [hxs, hind]
-  let S : Lp ℂ 2 (μ.restrict s) →L[ℂ] Lp ℂ 2 (μ.restrict s) := R.comp (T.comp ι)
+  let S : Lp ℂ 2 (μ.restrict s) →L[ℂ] Lp ℂ 2 (μ.restrict s) :=
+    R.comp (T.comp (ι 2).toContinuousLinearMap)
   have hS_norm : ‖S‖ ≤ ‖T‖ := by
     refine opNorm_le_bound S (norm_nonneg T) fun g ↦ ?_
-    calc ‖S g‖ = ‖R (T (ι g))‖ := rfl
-      _ ≤ ‖T (ι g)‖ := norm_Lp_toLp_restrict_le s _
-      _ ≤ ‖T‖ * ‖ι g‖ := T.le_opNorm _
-      _ = ‖T‖ * ‖g‖ := by rw [hι_norm]
+    calc ‖S g‖ = ‖R (T (ι 2 g))‖ := rfl
+      _ ≤ ‖T (ι 2 g)‖ := norm_Lp_toLp_restrict_le s _
+      _ ≤ ‖T‖ * ‖ι 2 g‖ := T.le_opNorm _
+      _ = ‖T‖ * ‖g‖ := by rw [(ι 2).norm_map]
   have hS_loc : ∀ (g : Lp ℂ 2 (μ.restrict s)) (t : Set α), MeasurableSet t →
       (∀ᵐ x ∂μ.restrict s, x ∉ t → g x = 0) → ∀ᵐ x ∂μ.restrict s, x ∉ t → S g x = 0 := by
     intro g t ht hg
     set r := t ∩ s
     have hr : MeasurableSet r := ht.inter hs
-    have hι_fix : multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (ι g) = ι g := by
+    have hι_fix :
+        multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (ι 2 g) = ι 2 g := by
       refine Lp.ext ?_
-      filter_upwards [multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ r hr) (ι g),
-        TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hr, hι_ae g,
+      filter_upwards [multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ r hr) (ι 2 g),
+        TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hr, hι_ae 2 g,
         (ae_restrict_iff' hs).mp hg] with x hmul hind hιx hgx
       rw [hmul, hind]
       by_cases hxr : x ∈ r
@@ -136,40 +163,26 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
         by_cases hxs : x ∈ s
         · simp [hxr, hιx, hxs, hxrg hxs]
         · simp [hxr, hιx, hxs]
-    have hTι : T (ι g) = multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (T (ι g)) := by
-      calc T (ι g) = T (multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (ι g)) := by
+    have hTι :
+        T (ι 2 g) = multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (T (ι 2 g)) := by
+      calc T (ι 2 g) = T (multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (ι 2 g)) := by
             rw [hι_fix]
-        _ = multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (T (ι g)) := by
-            have := congrArg (fun A : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ ↦ A (ι g))
+        _ = multiplicationOperator (TauCeti.linftyIndicator μ ℂ r hr) (T (ι 2 g)) := by
+            have := congrArg (fun A : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ ↦ A (ι 2 g))
               ((commute_iff_eq _ _).mp (hcomm hr Set.inter_subset_right))
             simpa only [mul_apply_eq_comp, comp_apply] using this
-    filter_upwards [LpToLpRestrictCLM_coeFn ℂ s (T (ι g)),
+    filter_upwards [LpToLpRestrictCLM_coeFn ℂ s (T (ι 2 g)),
       ae_restrict_of_ae ((Lp.ext_iff.mp hTι).trans
-        (multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ r hr) (T (ι g)))),
+        (multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ r hr) (T (ι 2 g)))),
       ae_restrict_of_ae (TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hr),
       ae_restrict_mem hs] with x hxR hxT hind _hxs hxt
     have hxr : x ∉ r := fun h ↦ hxt h.1
-    change R (T (ι g)) x = 0
+    change R (T (ι 2 g)) x = 0
     rw [hxR, hxT, hind, Set.indicator_of_notMem hxr, zero_smul]
-  obtain ⟨m, hm_meas, hm_norm, hm_apply⟩ :=
-    ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_ae_eq_zero ENNReal.ofNat_ne_top S hS_loc
-  set φ : α → ℂ := s.indicator fun x ↦ m x 1
-  have hφ_meas : StronglyMeasurable φ :=
-    ((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).continuous.comp_stronglyMeasurable
-      hm_meas).indicator hs
-  have hφ_bdd : ∀ᵐ x ∂μ, ‖φ x‖ ≤ ‖T‖ := by
-    filter_upwards [(ae_restrict_iff' hs).mp hm_norm] with x hx
-    dsimp only [φ]
-    by_cases hxs : x ∈ s
-    · rw [Set.indicator_of_mem hxs]
-      exact (ContinuousLinearMap.le_opNorm (m x) 1).trans <| by
-        simpa only [norm_one, mul_one] using (hx hxs).trans hS_norm
-    · simp [hxs, norm_nonneg]
-  have hφ_mem : MemLp φ ∞ μ := memLp_top_of_bound hφ_meas.aestronglyMeasurable ‖T‖ hφ_bdd
-  have ha_norm : ‖hφ_mem.toLp φ‖ ≤ ‖T‖ := Lp.norm_le_of_ae_bound_top (norm_nonneg T) <| by
-    filter_upwards [hφ_mem.coeFn_toLp, hφ_bdd] with x hx hb
-    rwa [hx]
-  refine ⟨hφ_mem.toLp φ, ha_norm, ContinuousLinearMap.ext fun f ↦ Lp.ext ?_⟩
+  obtain ⟨b, hb_norm, hb_eq⟩ :=
+    exists_norm_le_and_multiplicationOperator_eq_of_forall_ae_eq_zero S hS_loc
+  refine ⟨ι ∞ b, ((ι ∞).norm_map b).trans_le (hb_norm.trans hS_norm),
+    ContinuousLinearMap.ext fun f ↦ Lp.ext ?_⟩
   set P := multiplicationOperator (E := ℂ) (p := 2) (TauCeti.linftyIndicator μ ℂ s hs)
   have hTf_off : ∀ᵐ x ∂μ, x ∉ s → T (P f) x = 0 := by
     have hTP : T (P f) = P (T f) := by
@@ -179,25 +192,24 @@ theorem exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq {s : S
     filter_upwards [(Lp.ext_iff.mp hTP).trans (multiplicationOperator_ae _ (T f)),
       TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hs] with x hx hind hxs
     rw [hx, hind, Set.indicator_of_notMem hxs, zero_smul]
-  have hTf_on : ⇑(T (P f)) =ᵐ[μ.restrict s] fun x ↦ m x (f x) := by
-    have h1 : ⇑(T (P f)) =ᵐ[μ.restrict s] ⇑(S (R f)) := by
-      filter_upwards [LpToLpRestrictCLM_coeFn ℂ s (T (ι (R f)))] with x hx
-      simpa only [S, comp_apply, hιR] using hx.symm
-    have h2 : (fun x ↦ m x (R f x)) =ᵐ[μ.restrict s] fun x ↦ m x (f x) :=
-      (LpToLpRestrictCLM_coeFn ℂ s f).mono fun x hx ↦ congrArg (m x) hx
-    exact (h1.trans (hm_apply (R f))).trans h2
+  have hTf_on : ⇑(T (P f)) =ᵐ[μ.restrict s] fun x ↦ b x * f x := by
+    have h1 : ⇑(T (P f)) =ᵐ[μ.restrict s] ⇑(multiplicationOperator (E := ℂ) b (R f)) := by
+      have hS_apply : multiplicationOperator (E := ℂ) b (R f) = R (T (ι 2 (R f))) :=
+        congrArg (fun A : Lp ℂ 2 (μ.restrict s) →L[ℂ] Lp ℂ 2 (μ.restrict s) ↦ A (R f)) hb_eq
+      filter_upwards [LpToLpRestrictCLM_coeFn ℂ s (T (ι 2 (R f)))] with x hx
+      simpa only [hS_apply, hιR] using hx.symm
+    filter_upwards [h1, multiplicationOperator_ae b (R f), LpToLpRestrictCLM_coeFn ℂ s f]
+      with x hx₁ hmul hR
+    rw [hx₁, hmul, hR, smul_eq_mul]
   filter_upwards [hTf_off, (ae_restrict_iff' hs).mp hTf_on,
-    multiplicationOperator_ae (hφ_mem.toLp φ) (P f),
+    multiplicationOperator_ae (ι ∞ b) (P f),
     multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ s hs) f,
-    hφ_mem.coeFn_toLp, TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hs]
-    with x hxoff hxon hmul₁ hmul₂ hφx hind
-  change T (P f) x = (multiplicationOperator (hφ_mem.toLp φ) (P f)) x
+    hι_ae ∞ b, TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hs]
+    with x hxoff hxon hmul₁ hmul₂ hax hind
+  change T (P f) x = (multiplicationOperator (ι ∞ b) (P f)) x
   by_cases hxs : x ∈ s
-  · rw [hxon hxs, hmul₁, hmul₂, hφx, hind]
-    simp only [φ, Set.indicator_of_mem hxs, Pi.one_apply, smul_eq_mul, one_mul]
-    have hm1 : m x (f x) = f x * m x 1 := by
-      simpa only [smul_eq_mul, mul_one] using map_smul (m x) (f x) (1 : ℂ)
-    rw [hm1, mul_comm]
+  · rw [hxon hxs, hmul₁, hmul₂, hax, hind, Set.indicator_of_mem hxs,
+      Set.indicator_of_mem hxs, Pi.one_apply, one_smul, smul_eq_mul]
   · rw [hxoff hxs, hmul₁, hmul₂, hind, Set.indicator_of_notMem hxs, zero_smul, smul_zero]
 
 /-- **Unconditional commutativity of the multiplier commutant.** On an arbitrary measure space —
@@ -265,28 +277,28 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_linftyIndicator [Sigm
   have hloc : ∀ (f : Lp ℂ 2 μ) (s : Set α), MeasurableSet s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
       ∀ᵐ x ∂μ, x ∉ s → T f x = 0 := by
     intro f s hs hf
-    set sₙ : ℕ → Set α := fun n ↦ s ∩ spanningSets μ n
-    have hsₙ (n : ℕ) : MeasurableSet (sₙ n) := hs.inter (measurableSet_spanningSets μ n)
+    set sₙ : ℕ → Set α := fun n ↦ spanningSets μ n ∩ s
+    have hsₙ (n : ℕ) : MeasurableSet (sₙ n) := (measurableSet_spanningSets μ n).inter hs
     have hμsₙ (n : ℕ) : μ (sₙ n) ≠ ∞ :=
-      ((measure_mono Set.inter_subset_right).trans_lt (measure_spanningSets_lt_top μ n)).ne
-    have hmem (n : ℕ) : MemLp ((sₙ n).indicator ⇑f) 2 μ :=
-      (Lp.memLp f).indicator (hsₙ n).nullMeasurableSet
+      ((measure_mono Set.inter_subset_left).trans_lt (measure_spanningSets_lt_top μ n)).ne
+    have hfs : multiplicationOperator (TauCeti.linftyIndicator μ ℂ s hs) f = f := by
+      refine Lp.ext ?_
+      filter_upwards [multiplicationOperator_ae (TauCeti.linftyIndicator μ ℂ s hs) f,
+        TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) hs, hf] with x hmul hind hfx
+      rw [hmul, hind]
+      by_cases hxs : x ∈ s
+      · simp [hxs]
+      · simp [hxs, hfx hxs]
     let fₙ (n : ℕ) : Lp ℂ 2 μ :=
       multiplicationOperator (TauCeti.linftyIndicator μ ℂ (sₙ n) (hsₙ n)) f
-    have hfₙ_eq (n : ℕ) : fₙ n = (hmem n).toLp _ := by
+    have hfₙ (n : ℕ) : fₙ n =
+        multiplicationOperator (TauCeti.linftyIndicator μ ℂ (spanningSets μ n)
+          (measurableSet_spanningSets μ n)) f := by
       dsimp only [fₙ]
-      rw [multiplicationOperator_apply, TauCeti.linftyIndicator_smul_eq_toLp]
+      rw [← TauCeti.linftyIndicator_mul_linftyIndicator (measurableSet_spanningSets μ n) hs,
+        ← multiplicationOperator_comp_multiplicationOperator, comp_apply, hfs]
     have htend : Tendsto fₙ atTop (𝓝 f) := by
-      rw [show fₙ = fun n ↦ (hmem n).toLp _ from funext hfₙ_eq]
-      refine TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le ENNReal.ofNat_ne_top hmem
-        EventuallyEq.rfl (fun n ↦ .of_forall fun x ↦ norm_indicator_le_norm_self _ _) ?_
-      filter_upwards [hf] with x hfx
-      refine tendsto_const_nhds.congr' ?_
-      filter_upwards [eventually_mem_spanningSets μ x] with n hn
-      by_cases hxs : x ∈ s
-      · exact (Set.indicator_of_mem (show x ∈ sₙ n from ⟨hxs, hn⟩) _).symm
-      · rw [hfx hxs]
-        exact (Set.indicator_apply_eq_zero.2 fun _ ↦ hfx hxs).symm
+      simpa only [funext hfₙ] using tendsto_multiplicationOperator_linftyIndicator_spanningSets f
     refine (Lp.isClosed_setOf_ae_notMem_imp_eq_zero s).mem_of_tendsto
       ((T.continuous.tendsto f).comp htend) (.of_forall fun n ↦ ?_)
     have hTfₙ : T (fₙ n) =
@@ -297,23 +309,8 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_linftyIndicator [Sigm
     filter_upwards [(Lp.ext_iff.mp hTfₙ).trans (multiplicationOperator_ae _ (T f)),
       TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) (hsₙ n)] with x hx hind hxs
     change T (fₙ n) x = 0
-    rw [hx, hind, Set.indicator_of_notMem fun (h : x ∈ sₙ n) ↦ hxs h.1, zero_smul]
-  obtain ⟨m, hm_meas, hm_norm, hm_apply⟩ :=
-    ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_ae_eq_zero ENNReal.ofNat_ne_top T hloc
-  set φ : α → ℂ := fun x ↦ m x 1
-  have hφ_meas : StronglyMeasurable φ :=
-    (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).continuous.comp_stronglyMeasurable hm_meas
-  have hφ_bdd : ∀ᵐ x ∂μ, ‖φ x‖ ≤ ‖T‖ :=
-    hm_norm.mono fun x hx ↦ (ContinuousLinearMap.le_opNorm (m x) 1).trans <| by
-      simpa only [norm_one, mul_one] using hx
-  have hφ_mem : MemLp φ ∞ μ := memLp_top_of_bound hφ_meas.aestronglyMeasurable ‖T‖ hφ_bdd
-  refine ⟨hφ_mem.toLp φ, ContinuousLinearMap.ext fun f ↦ Lp.ext ?_⟩
-  filter_upwards [multiplicationOperator_ae (hφ_mem.toLp φ) f, hφ_mem.coeFn_toLp,
-    hm_apply f] with x hmul hφx hTx
-  rw [hmul, hφx, hTx]
-  have hm1 : m x (f x) = f x * m x 1 := by
-    simpa only [smul_eq_mul, mul_one] using map_smul (m x) (f x) (1 : ℂ)
-  rw [hm1, smul_eq_mul, mul_comm]
+    rw [hx, hind, Set.indicator_of_notMem fun (h : x ∈ sₙ n) ↦ hxs h.2, zero_smul]
+  exact (exists_norm_le_and_multiplicationOperator_eq_of_forall_ae_eq_zero T hloc).imp fun _ h ↦ h.2
 
 /-- On a sigma-finite measure space, the centralizer in `Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ` of the range of
 `multiplicationOperator` is that range itself. -/
