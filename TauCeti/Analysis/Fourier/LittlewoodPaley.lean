@@ -98,7 +98,8 @@ reproduce it (`ContDiffBump.sum_fourierMultiplierCLM_fourierMultiplierCLM_little
 Together these give the duality of the dyadic `ℓ¹` and `ℓ^∞` norms: if `‖Pₖ g‖₂ ≤ A 2^{kγ}` for
 every `k`, then `|⟪f, g⟫| ≤ K A ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂`
 (`ContDiffBump.exists_enorm_inner_le_mul_tsum`), the pairing of the homogeneous Besov spaces
-`\dot B^γ_{2,1}` and `\dot B^{-γ}_{2,∞}`.
+`\dot B^γ_{2,1}` and `\dot B^{-γ}_{2,∞}`. In dimension `0` every block vanishes
+(`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero`).
 
 ## References
 
@@ -982,5 +983,17 @@ theorem exists_enorm_inner_le_mul_tsum [Nontrivial V] (γ : ℝ) :
     fun N ↦ ?_
   rw [Function.comp_apply, inner_sum, mul_comm _ A, mul_assoc, ← hsum, ← ENNReal.tsum_mul_left]
   exact (eNorm_sum_le _ _).trans ((sum_le_tsum _).trans (tsum_le_tsum hk))
+
+/-- In dimension `0` the cutoffs `ψⱼ` vanish, and so do the blocks `Pⱼ`. -/
+theorem fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    (hV : finrank ℝ V = 0) :
+    Lp.fourierMultiplierCLM (E := V) F m = 0 := by
+  have : Subsingleton V := finrank_zero_iff.1 hV
+  rw [Lp.fourierMultiplierCLM_of_ae_eq_const (c := 0)]
+  · exact zero_smul ℂ (ContinuousLinearMap.id ℂ (Lp F 2 (volume : Measure V)))
+  filter_upwards [hm] with ξ h
+  rw [h, Subsingleton.elim ξ 0, φ.littlewoodPaley_eq_zero_of_norm_le (by
+    rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), Complex.ofReal_zero]
 
 end ContDiffBump
