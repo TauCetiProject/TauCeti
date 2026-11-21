@@ -271,17 +271,18 @@ theorem coefficient_toSymbol_curl (p : CoordinateSpace n × CoordinateSpace n) :
 
 /-- **The curl is a pseudodifferential operator**: on Schwartz input the quantization of
 `ClassicalSymbol.curl` is the curl `u ↦ ∑ⱼ ⋆ (eⱼ ∧ ∂ⱼ u)`, with no smoothing remainder. -/
-theorem quantizeSchwartzValue_curl (h : 2 + 1 = finrank ℝ (CoordinateSpace n))
+theorem quantizeSchwartzValue_curl
     (u : 𝓢(CoordinateSpace n, WithLp 2 (Complexification (⋀[ℝ]^1 (CoordinateSpace n)))))
     (x : CoordinateSpace n) :
     quantizeSchwartzValue (curl o).toSymbol.coefficient u x =
       ∑ j, (LinearMap.toContinuousLinearMap
-        ((o.hodgeStar h : ⋀[ℝ]^2 (CoordinateSpace n) →ₗ[ℝ] ⋀[ℝ]^1 (CoordinateSpace n)) ∘ₗ
+        ((o.hodgeStar (k := 2) (l := 1) (Fact.out : finrank ℝ (CoordinateSpace n) = 3).symm :
+            ⋀[ℝ]^2 (CoordinateSpace n) →ₗ[ℝ] ⋀[ℝ]^1 (CoordinateSpace n)) ∘ₗ
           ExteriorAlgebra.wedgeLeft (EuclideanSpace.single j 1 : CoordinateSpace n) 1)).complexifyL2
             (∂_{(EuclideanSpace.single j 1 : CoordinateSpace n)} u x) := by
   rw [curl, quantizeSchwartzValue_ofLinear, Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [curlLinear_apply o h, smul_apply, smul_smul]
+  rw [curlLinear_apply o, smul_apply, smul_smul]
   simp
 
 /-- **The curl is not elliptic.** -/
