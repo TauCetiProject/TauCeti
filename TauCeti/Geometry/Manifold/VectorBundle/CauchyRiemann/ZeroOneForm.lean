@@ -78,11 +78,11 @@ theorem contMDiff_totalSpace_zeroOnePart {n : ℕ∞ω} (hn : n ≤ ∞) :
     ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] F)) (I.prod 𝓘(ℝ, E →L[ℝ] F)) n
       (fun p : TotalSpace (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x) ↦
         TotalSpace.mk' (E →L[ℝ] F)
-          (E := fun x ↦ TangentSpace I x →L[ℝ] V x) p.proj (j.zeroOnePart p.2)) := by
+          (E := fun x ↦ TangentSpace I x →L[ℝ] V x) p.proj (j.zeroOnePart p.snd)) := by
   have hid : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] F)) (I.prod 𝓘(ℝ, E →L[ℝ] F)) n
       (fun p : TotalSpace (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x) ↦
         TotalSpace.mk' (E →L[ℝ] F)
-          (E := fun x ↦ TangentSpace I x →L[ℝ] V x) p.proj p.2) := contMDiff_id
+          (E := fun x ↦ TangentSpace I x →L[ℝ] V x) p.proj p.snd) := contMDiff_id
   have hb : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] F)) I n
       (π (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x)) := Bundle.contMDiff_proj _
   have hJ := (j.toEndomorphism.contMDiff.of_le hn).comp hb
@@ -92,7 +92,7 @@ theorem contMDiff_totalSpace_zeroOnePart {n : ℕ∞ω} (hn : n ≤ ∞) :
     (hid.add_sectionAlong hI)).congr fun p ↦ ?_
   apply congrArg (TotalSpace.mk p.proj)
   ext v
-  exact j.zeroOnePart_apply p.2 v
+  exact j.zeroOnePart_apply p.snd v
 
 section Rank
 
@@ -110,10 +110,10 @@ def zeroOneFormLinearEquiv {G : Type*} [AddCommGroup G] [Module ℝ G] [Module �
     rw [φ.apply_symm_apply, map_neg, hφ, φ.apply_symm_apply]
     exact (_root_.neg_neg _).symm
   let f : j.zeroOneFormSubmodule (V := V) x →ₗ[ℂ] (G →ₗ[ℂ] V x) :=
-    { toFun := fun η ↦ (η.1.toLinearMap.comp φ.toLinearMap).complexOfMapISmul fun z ↦ by
+    { toFun := fun η ↦ (η.val.toLinearMap.comp φ.toLinearMap).complexOfMapISmul fun z ↦ by
         simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe]
         rw [hφ, map_neg,
-          (isZeroOneForm_iff.mp ((j.mem_zeroOneFormSubmodule_iff x η.1).mp η.2)) (φ z),
+          (isZeroOneForm_iff.mp ((j.mem_zeroOneFormSubmodule_iff x η.val).mp η.property)) (φ z),
           _root_.neg_neg]
       map_add' := fun η η' ↦ by ext z; simp
       map_smul' := fun c η ↦ by ext z; simp }
@@ -137,7 +137,7 @@ def zeroOneFormLinearEquiv {G : Type*} [AddCommGroup G] [Module ℝ G] [Module �
     [Module ℂ G] [IsScalarTower ℝ ℂ G] (x : M) (φ : G ≃ₗ[ℝ] TangentSpace I x)
     (hφ : ∀ z, φ (Complex.I • z) = -(j x (φ z)))
     (η : j.zeroOneFormSubmodule (V := V) x) (z : G) :
-    j.zeroOneFormLinearEquiv x φ hφ η z = η.1 (φ z) := by
+    j.zeroOneFormLinearEquiv x φ hφ η z = η.val (φ z) := by
   simp [zeroOneFormLinearEquiv]
 
 /-- The inverse coordinate comparison evaluates a complex-linear map in inverse coordinates. -/
@@ -145,7 +145,7 @@ def zeroOneFormLinearEquiv {G : Type*} [AddCommGroup G] [Module ℝ G] [Module �
     [Module ℂ G] [IsScalarTower ℝ ℂ G] (x : M) (φ : G ≃ₗ[ℝ] TangentSpace I x)
     (hφ : ∀ z, φ (Complex.I • z) = -(j x (φ z))) (L : G →ₗ[ℂ] V x)
     (v : TangentSpace I x) :
-    ((j.zeroOneFormLinearEquiv x φ hφ).symm L).1 v = L (φ.symm v) := by
+    ((j.zeroOneFormLinearEquiv x φ hφ).symm L).val v = L (φ.symm v) := by
   simp [zeroOneFormLinearEquiv]
 
 omit [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] in
@@ -183,27 +183,27 @@ theorem zeroOnePartToRange_coe (x : M) (η : j.zeroOneFormSubmodule (V := V) x) 
     j.zeroOnePartToRange x (η : TangentSpace I x →L[ℝ] V x) = η := by
   apply Subtype.ext
   rw [coe_zeroOnePartToRange]
-  exact ((j.mem_zeroOneFormSubmodule_iff x _).mp η.2).zeroOnePart_eq
+  exact ((j.mem_zeroOneFormSubmodule_iff x _).mp η.property).zeroOnePart_eq
 
 /-- The canonical inclusion of the actual `(0,1)`-range into the real Hom total space.
 The model tag `P` of the range total space does not affect the map. -/
 def zeroOneFormInclusion (P : Type*) :
     TotalSpace P (fun x ↦ j.zeroOneFormSubmodule (V := V) x) →
       TotalSpace (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x) :=
-  fun p ↦ ⟨p.proj, p.2⟩
+  fun p ↦ ⟨p.proj, p.snd⟩
 
 /-- The actual `(0,1)`-projection on total spaces, with codomain its range. -/
 def zeroOneFormProjection (P : Type*) :
     TotalSpace (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x) →
       TotalSpace P (fun x ↦ j.zeroOneFormSubmodule (V := V) x) :=
-  fun p ↦ ⟨p.proj, j.zeroOnePartToRange p.proj p.2⟩
+  fun p ↦ ⟨p.proj, j.zeroOnePartToRange p.proj p.snd⟩
 
 omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V] in
 @[simp]
 theorem zeroOneFormInclusion_apply (P : Type*)
     (p : TotalSpace P (fun x ↦ j.zeroOneFormSubmodule (V := V) x)) :
-    j.zeroOneFormInclusion (F := F) (V := V) P p = ⟨p.proj, p.2⟩ := by
+    j.zeroOneFormInclusion (F := F) (V := V) P p = ⟨p.proj, p.snd⟩ := by
   simp only [zeroOneFormInclusion]
 
 omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace (TotalSpace F V)]
@@ -211,7 +211,7 @@ omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace (TotalSpace
 @[simp]
 theorem zeroOneFormProjection_apply (P : Type*)
     (p : TotalSpace (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x)) :
-    j.zeroOneFormProjection P p = ⟨p.proj, j.zeroOnePartToRange p.proj p.2⟩ := by
+    j.zeroOneFormProjection P p = ⟨p.proj, j.zeroOnePartToRange p.proj p.snd⟩ := by
   simp only [zeroOneFormProjection]
 
 omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace (TotalSpace F V)]
@@ -221,7 +221,7 @@ theorem zeroOneFormInclusion_projection (P : Type*)
     (p : TotalSpace (E →L[ℝ] F) (fun x ↦ TangentSpace I x →L[ℝ] V x)) :
     j.zeroOneFormInclusion P (j.zeroOneFormProjection P p) =
       TotalSpace.mk' (E →L[ℝ] F) (E := fun x ↦ TangentSpace I x →L[ℝ] V x)
-        p.proj (j.zeroOnePart p.2) := by
+        p.proj (j.zeroOnePart p.snd) := by
   simp only [zeroOneFormProjection_apply, zeroOneFormInclusion_apply, coe_zeroOnePartToRange]
 
 omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace (TotalSpace F V)]
@@ -324,12 +324,12 @@ theorem contMDiff_zeroOneFormProjection (n : ℕ∞ω) (hn : n ≤ ∞)
     (inferInstance : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I).of_le hn
   refine ((j.hasLocalContMDiffSubbundleFrames_zeroOneFormSubmodule (F := F) (V := V) hn
     ).contMDiff_totalSpace_mk le_rfl (j.contMDiff_totalSpace_zeroOnePart (F := F) (V := V) hn)
-    (fun p ↦ (j.mem_zeroOneFormSubmodule_iff _ _).mpr (j.isZeroOneForm_zeroOnePart p.2))
+    (fun p ↦ (j.mem_zeroOneFormSubmodule_iff _ _).mpr (j.isZeroOneForm_zeroOnePart p.snd))
     ).congr fun p ↦ ?_
   rw [zeroOneFormProjection_apply]
   apply congrArg (TotalSpace.mk p.proj)
   apply Subtype.ext
-  exact j.coe_zeroOnePartToRange p.proj p.2
+  exact j.coe_zeroOnePartToRange p.proj p.snd
 
 end Bundle
 

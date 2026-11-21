@@ -80,14 +80,14 @@ example (j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ) (x : ℂ)
     (φ : ℂ ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, ℂ) x)
     (hφ : ∀ z : ℂ, φ (Complex.I • z) = -(j x (φ z)))
     (η : j.zeroOneFormSubmodule (V := Bundle.Trivial ℂ ℂ) x) (z w : ℂ) :
-    j.zeroOneFormLinearEquiv x φ hφ η (z + w) = η.1 (φ z) + η.1 (φ w) := by
+    j.zeroOneFormLinearEquiv x φ hφ η (z + w) = η.val (φ z) + η.val (φ w) := by
   simp only [SmoothAlmostComplexStructure.zeroOneFormLinearEquiv_apply, map_add]
 
 -- The inverse comparison simplifies at a coordinate tangent vector in an importing module.
 example (j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ) (x : ℂ)
     (φ : ℂ ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, ℂ) x)
     (hφ : ∀ z : ℂ, φ (Complex.I • z) = -(j x (φ z))) (L : ℂ →ₗ[ℂ] ℂ) (z : ℂ) :
-    ((j.zeroOneFormLinearEquiv (V := Bundle.Trivial ℂ ℂ) x φ hφ).symm L).1 (φ z) = L z := by
+    ((j.zeroOneFormLinearEquiv (V := Bundle.Trivial ℂ ℂ) x φ hφ).symm L).val (φ z) = L z := by
   simp
 
 -- The inverse evaluation law proves antilinearity without using its range membership.
@@ -95,7 +95,7 @@ example (j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ) (x : ℂ)
     (φ : ℂ ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, ℂ) x)
     (hφ : ∀ z : ℂ, φ (Complex.I • z) = -(j x (φ z))) (L : ℂ →ₗ[ℂ] ℂ) :
     j.IsZeroOneForm
-      ((j.zeroOneFormLinearEquiv (V := Bundle.Trivial ℂ ℂ) x φ hφ).symm L).1 := by
+      ((j.zeroOneFormLinearEquiv (V := Bundle.Trivial ℂ ℂ) x φ hφ).symm L).val := by
   refine SmoothAlmostComplexStructure.isZeroOneForm_iff.mpr fun v ↦ ?_
   obtain ⟨z, rfl⟩ := φ.surjective v
   rw [← neg_neg (j x (φ z)), ← hφ, map_neg]
