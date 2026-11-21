@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Nat.Find
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Logic.Equiv.Fintype
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -27,7 +28,9 @@ against a second family `g` into the part `min (f x) (g x)` matched by `g` and t
 For a finite family `c` of natural numbers, the truncated sums `∑ l, min k (c l)` count the boxes
 in the first `k` columns of the Young diagram with rows `c l`. Their second differences count
 the members of the family in a range: for `p < q`, the combination of the truncated sums at
-`p + 1`, `q - 1`, `p` and `q` is the number of members strictly between `p` and `q`.
+`p + 1`, `q - 1`, `p` and `q` is the number of members strictly between `p` and `q`. In
+particular the truncated sums determine a finite family of positive natural numbers up to
+reindexing; this is the counting step in the uniqueness of elementary divisors.
 
 For the uniform range `0, …, S - 1`, twice the truncated sum `2 * ∑ s ∈ range S, min k s` is bounded
 below by the quadratic `2 * S * k - k ^ 2 - k` in any ordered ring (with equality for `k ≤ S`), and
@@ -38,6 +41,8 @@ field.
 
 * `Finset.sum_min_add_sum_tsub`: the matched part and the excess add up to the total.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
+* `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
+  with the same truncated sums agree up to a bijection of their index types.
 * `Finset.exists_ne_forall_sum_min_lt`: if the sum of a family `a` is at most that of a family
   `b` and, for some `k`, the column count of `b` is strictly smaller than that of `a`, then two
   distinct members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`.
@@ -195,3 +200,37 @@ theorem le_two_mul_sum_range_min_div {K : Type*} [Field K] [LinearOrder K]
     _ ≤ ∑ r ∈ range R, 2 * ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := sum_le_sum hr_term
 
 end Finset
+
+namespace Fintype
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+
+/-- **Truncated sums determine a family of positive naturals up to reindexing.** If two finite
+families `e` and `e'` of positive natural numbers have the same truncated sums
+`∑ min k (e i) = ∑ min k (e' j)` for every `k`, then they agree after a bijection of their index
+types. Positivity is needed: members equal to `0` contribute nothing to any truncated sum. -/
+theorem exists_equiv_of_forall_sum_min_eq {e : ι → ℕ} {e' : κ → ℕ} (he : ∀ i, 0 < e i)
+    (he' : ∀ j, 0 < e' j) (h : ∀ k, ∑ i, min k (e i) = ∑ j, min k (e' j)) :
+    ∃ σ : ι ≃ κ, ∀ i, e i = e' (σ i) := by
+  classical
+  have hcard (k : ℕ) : Fintype.card {i // e i = k} = Fintype.card {j // e' j = k} := by
+    cases k with
+    | zero =>
+      have : IsEmpty {i // e i = 0} := ⟨fun i ↦ (he i.val).ne' i.property⟩
+      have : IsEmpty {j // e' j = 0} := ⟨fun j ↦ (he' j.val).ne' j.property⟩
+      simp
+    | succ k =>
+      -- The multiplicity of `k + 1` is a second difference of `k ↦ ∑ i, min k (e i)`.
+      have hk (n : ℕ) : k < n ∧ n < k + 1 + 1 ↔ n = k + 1 := by omega
+      have h₁ := Finset.sum_min_add_sum_min_eq Finset.univ e (by omega : k < k + 1 + 1)
+      have h₂ := Finset.sum_min_add_sum_min_eq Finset.univ e' (by omega : k < k + 1 + 1)
+      simp only [hk, Nat.add_sub_cancel] at h₁ h₂
+      rw [Fintype.card_subtype, Fintype.card_subtype]
+      have := h k
+      have := h (k + 1)
+      have := h (k + 1 + 1)
+      omega
+  exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
+    fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
+
+end Fintype

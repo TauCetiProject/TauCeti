@@ -36,6 +36,8 @@ coefficient spaces label the isomorphism classes of simple comodules.
 ## Main declarations
 
 * `matrixCoefficientSubmodule_eq_isotypicComponent`: the coefficient/isotypic comparison.
+* `hom_eq_zero_of_matrixCoefficientSubmodule_ne`: simple comodules with distinct coefficient
+  spaces admit no nonzero comodule morphism between them.
 * `iSupIndep_matrixCoefficientSubmodule`: coefficient spaces of pairwise non-isomorphic simple
   comodules are independent.
 * `matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over the ground ring,
@@ -116,6 +118,16 @@ theorem matrixCoefficientSubmodule_eq_of_ne_zero [IsSimpleOrder (Subcomodule R C
   rw [matrixCoefficientSubmodule_eq_isotypicComponent,
     matrixCoefficientSubmodule_eq_isotypicComponent,
     (LinearEquiv.ofBijective _ (LinearMap.bijective_of_ne_zero hf')).isotypicComponent_eq]
+
+/-- Simple comodules with distinct coefficient spaces have no nonzero comodule morphism between
+them. -/
+theorem hom_eq_zero_of_matrixCoefficientSubmodule_ne [IsSimpleOrder (Subcomodule R C M)]
+    [IsSimpleOrder (Subcomodule R C N)]
+    (hne : matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≠
+      matrixCoefficientSubmodule (R := R) (C := C) (M := N))
+    (f : Hom R C M N) : f = 0 := by
+  by_contra hf
+  exact hne (matrixCoefficientSubmodule_eq_of_ne_zero hf)
 
 /-- If the only comodule morphism from a nonzero comodule `M` to `N` is zero, then `M` and `N`
 are not isomorphic as modules over the convolution dual. -/

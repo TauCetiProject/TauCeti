@@ -36,6 +36,8 @@ is the prescribed field.
 * `ContMDiffAlmostComplexStructureFamily.chartField`: the family read in a chart `φ` of the
   domain and a chart `ψ` of the target with values in a normed space, as the pushforward
   `dψ ∘ J(φ⁻¹ z, ψ⁻¹ v) ∘ dψ⁻¹`; this is the coefficient of coordinate Cauchy–Riemann equations.
+  Reparametrizing along `g` with `g ∘ φ'⁻¹ = φ⁻¹` does not change it
+  (`ContMDiffAlmostComplexStructureFamily.chartField_comp`).
 
 ## References
 
@@ -325,6 +327,17 @@ theorem chartField_neg (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
     (-J).chartField φ ψ = -J.chartField φ ψ := by
   funext z v
   simp [chartField_apply]
+
+/-- **Transport in charts.** If `φ'` is a chart of `Q` and `φ` a chart of `P` with
+`g ∘ φ'⁻¹ = φ⁻¹`, the reparametrized family `J ∘ g` read in `φ'` is `J` read in `φ`. -/
+theorem chartField_comp {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
+    [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q]
+    [ChartedSpace HQ Q] (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (g : C^n⟮IQ, Q; IP, P⟯) {φ' : OpenPartialHomeomorph Q D} {φ : OpenPartialHomeomorph P D}
+    (hφ : g ∘ φ'.symm = φ.symm) (ψ : OpenPartialHomeomorph M G) :
+    (J.comp g).chartField φ' ψ = J.chartField φ ψ := by
+  funext z v
+  rw [chartField_apply, chartField_apply, freeze_comp, ← hφ, Function.comp_apply]
 
 /-- On a normed space, read in the identity chart, a structure is its value at the domain point
 `φ⁻¹ z`. -/

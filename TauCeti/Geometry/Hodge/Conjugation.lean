@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.Basic.Complex.ConjZPow
 
 /-!
 # Conjugation and maps on complexifications
@@ -47,6 +48,9 @@ models.
   exchanges conjugation with taking preimages of subspaces.
 * `TauCeti.Hodge.Conjugation.map_prod`: a conjugation acting componentwise on a product carries a
   product subspace to the product of the conjugate subspaces.
+* `TauCeti.Hodge.Conjugation.twist`: the twisted real structure `W_ℝ(p)`, the subspace on which a
+  conjugation acts by the sign `(-1) ^ p`, equal to `c ^ p • W_ℝ` for every nonzero purely
+  imaginary `c` (`TauCeti.Hodge.Conjugation.mem_twist_iff_exists`).
 * `TauCeti.Hodge.Conjugation.dual`: the twisted transpose of a conjugation, again a conjugation,
   on the complex dual space, with its pointwise description
   `TauCeti.Hodge.Conjugation.dual_toEquiv_apply`.
@@ -343,6 +347,71 @@ theorem quotient_toEquiv_mk (ω : Conjugation W) {U : Submodule ℂ W}
     (ω.quotient hU).toEquiv (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (ω.toEquiv x) :=
   (rfl)
+
+/-- The real twist `ω.twist p` of a conjugation `ω`: the real subspace of vectors on which `ω`
+acts as the sign `(-1) ^ p`. For `p = 0` it is the space of real points of `ω`
+(`TauCeti.Hodge.Conjugation.twist_zero`); for every nonzero purely imaginary `c`, such as `2πi`,
+it is `c ^ p` times the real points (`TauCeti.Hodge.Conjugation.mem_twist_iff_exists`). It is
+the twisted real structure `W_ℝ(p) = (2πi)ᵖ W_ℝ`. -/
+def twist (ω : Conjugation W) (p : ℤ) : Submodule ℝ W where
+  carrier := {x | ω.toEquiv x = p.negOnePow • x}
+  add_mem' {x y} (hx : ω.toEquiv x = _) (hy : ω.toEquiv y = _) := by
+    rw [Set.mem_ofPred_eq, map_add, hx, hy, smul_add]
+  zero_mem' := by simp
+  smul_mem' r x (hx : ω.toEquiv x = _) := by
+    -- `Complex.coe_smul` turns the real action into the complex one, which the semilinearity of
+    -- `ω` speaks about.
+    rw [Set.mem_ofPred_eq, ← Complex.coe_smul, map_smulₛₗ, Complex.conj_ofReal, hx,
+      smul_comm]
+
+/-- Membership in a real twist: conjugation acts by the sign `(-1) ^ p`. -/
+@[simp]
+theorem mem_twist (ω : Conjugation W) {p : ℤ} {x : W} :
+    x ∈ ω.twist p ↔ ω.toEquiv x = p.negOnePow • x :=
+  (Iff.rfl)
+
+/-- The untwisted real twist is the space of real points. -/
+theorem twist_zero (ω : Conjugation W) : ω.twist 0 = realPoints ω.toEquiv.toLinearMap := by
+  ext x
+  simp
+
+/-- An additive map intertwining two conjugations carries each real twist of the first into the
+same real twist of the second. -/
+theorem map_mem_twist {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F : Type*}
+    [FunLike F W W'] [AddMonoidHomClass F W W'] (ω : Conjugation W) (ω' : Conjugation W') {f : F}
+    (hf : ∀ x, ω'.toEquiv (f x) = f (ω.toEquiv x))
+    {p : ℤ} {x : W} (hx : x ∈ ω.twist p) : f x ∈ ω'.twist p := by
+  rw [mem_twist] at hx ⊢
+  rw [hf, hx, Units.smul_def, map_zsmul, ← Units.smul_def]
+
+/-- An additive map anti-intertwining two conjugations raises real twists by one. -/
+theorem map_mem_twist_add_one {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F : Type*}
+    [FunLike F W W'] [AddMonoidHomClass F W W'] (ω : Conjugation W) (ω' : Conjugation W') {f : F}
+    (hf : ∀ x, ω'.toEquiv (f x) = -f (ω.toEquiv x))
+    {p : ℤ} {x : W} (hx : x ∈ ω.twist p) : f x ∈ ω'.twist (p + 1) := by
+  rw [mem_twist] at hx ⊢
+  rw [hf, hx, Int.negOnePow_succ, Units.smul_def, map_zsmul, Units.smul_def, Units.val_neg,
+    neg_smul]
+
+/-- For a nonzero purely imaginary `c`, the real twist `ω.twist p` consists of the vectors
+`c ^ p • y` with `y` a real point of `ω`. With `c = 2πi` this is the description
+`W_ℝ(p) = (2πi)ᵖ W_ℝ`. -/
+theorem mem_twist_iff_exists (ω : Conjugation W) {c : ℂ} (hc : starRingEnd ℂ c = -c)
+    (hc0 : c ≠ 0) {p : ℤ} {x : W} :
+    x ∈ ω.twist p ↔ ∃ y, ω.toEquiv y = y ∧ x = c ^ p • y := by
+  have hu : ((p.negOnePow : ℤ) : ℂ) ≠ 0 := by
+    rcases Int.units_eq_one_or p.negOnePow with h | h <;> simp [h]
+  have hcp : c ^ p ≠ 0 := zpow_ne_zero p hc0
+  rw [mem_twist, Units.smul_def, ← Int.cast_smul_eq_zsmul ℂ]
+  constructor
+  · intro hx
+    refine ⟨(c ^ p)⁻¹ • x, ?_, ?_⟩
+    · rw [map_smulₛₗ, hx, map_inv₀, Complex.conj_zpow_of_conj_eq_neg hc, smul_smul]
+      congr 1
+      field_simp
+    · rw [smul_smul, mul_inv_cancel₀ hcp, one_smul]
+  · rintro ⟨y, hy, rfl⟩
+    rw [map_smulₛₗ, hy, Complex.conj_zpow_of_conj_eq_neg hc, smul_smul]
 
 /-- The twisted transpose of a conjugation `ω`: a functional `φ` acts by conjugating the values
 of `φ` along `ω`. It is again an involution, so it packages as a conjugation on the dual space;

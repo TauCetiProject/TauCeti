@@ -223,4 +223,18 @@ theorem toPartialDiffeomorph_toPartialEquiv (A : E ≃L[𝕜] F) :
     (A.toPartialDiffeomorph (n := n)).toPartialEquiv = A.toEquiv.toPartialEquiv :=
   (rfl)
 
+/-- The forward map of a continuous linear equivalence viewed as a partial diffeomorphism. -/
+theorem coe_toPartialDiffeomorph (A : E ≃L[𝕜] F) :
+    ⇑(A.toPartialDiffeomorph (n := n)) = A := by
+  simp
+
 end ContinuousLinearEquiv
+
+/-- Postcomposing a partial diffeomorphism with a continuous linear equivalence keeps its
+source. -/
+theorem PartialDiffeomorph.trans_toPartialDiffeomorph_source
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n)
+    (A : F ≃L[𝕜] G) : (Φ.trans (A.toPartialDiffeomorph (n := n))).source = Φ.source := by
+  rw [PartialDiffeomorph.trans_source]
+  simp
