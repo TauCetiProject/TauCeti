@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.DoubleTranspose.Minimal
 public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Finite
-public import TauCeti.Algebra.Category.ModuleCat.ScalarDual
-import TauCeti.Algebra.Module.AuslanderReiten.Inverse
+public import TauCeti.Algebra.Category.ModuleCat.Algebra
+import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.Algebra.Category.ModuleCat.Projective.Stable
 import TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.Reflection
 import Mathlib.Algebra.Category.ModuleCat.Injective
@@ -17,14 +17,14 @@ import Mathlib.RingTheory.HopkinsLevitzki
 /-!
 # Surjectivity of the Auslander–Reiten translate
 
-Every finite-dimensional non-injective indecomposable module over a finite-dimensional
-algebra is the Auslander–Reiten translate of a finite-dimensional non-projective
-indecomposable. The preimage is the right transpose of a minimal presentation of the
-scalar dual. A minimal presentation of this preimage then computes its translate.
+Every finitely generated non-injective indecomposable module `M` over an Artin algebra is the
+Auslander–Reiten translate of a finitely generated non-projective indecomposable: `τ (τ⁻ M) ≅ M`,
+where the inverse translate `τ⁻ M = Tr D M` is the right transpose of a presentation of the Matlis
+dual `D M`. A minimal presentation of this preimage then computes its translate.
 
 The result concerns actual modules, rather than objects modulo injectives or projectives.
 It supplies the surjectivity half of the correspondence on indecomposable isomorphism
-classes. The field is arbitrary and the algebra may be noncommutative.
+classes. The algebra may be noncommutative.
 
 ## References
 
@@ -34,66 +34,46 @@ classes. The field is arbitrary and the algebra may be noncommutative.
 
 public section
 
-namespace ModuleCat
+namespace TauCeti.FiniteProjectivePresentation
 
-open CategoryTheory TauCeti
+open CategoryTheory
 
 universe u v w
 
-attribute [local instance] moduleOfAlgebraModule isScalarTower_of_algebra_moduleCat
+attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra
 
-variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A]
-  [FiniteDimensional k A]
+variable {R : Type u} {A : Type v} {E : Type u} [CommRing R] [IsArtinianRing R] [Ring A]
+  [Algebra R A] [Module.Finite R A] [AddCommGroup E] [Module R E] [Module.Injective R E]
 
-/-- Every finite-dimensional non-injective indecomposable is `D Tr` of a finite minimal
-presentation of a finite-dimensional non-projective indecomposable. -/
-theorem exists_auslanderReitenTranslate (M : ModuleCat.{max u v w} A)
-    [Module.Finite k M] (hiM : Indecomposable M) (hinj : ¬ Injective M) :
-    ∃ (L : ModuleCat.{max u v w} A) (_ : Module.Finite k L),
-      Indecomposable L ∧ ¬ Projective L ∧
-      ∃ (P : FiniteProjectivePresentation L), IsMinimalProjectivePresentation P.p P.π ∧
-        Nonempty (AuslanderReitenTranslate k P.p ≃ₗ[A] M) := by
-  let : IsArtinianRing A := IsArtinianRing.of_finite k A
-  let : IsArtinianRing Aᵐᵒᵖ := IsArtinianRing.of_finite k Aᵐᵒᵖ
-  let N := matlisDualObj k k M
-  have : Module.Finite Aᵐᵒᵖ N := Module.Finite.of_restrictScalars_finite k Aᵐᵒᵖ N
-  have : Module.FinitePresentation Aᵐᵒᵖ N := Module.finitePresentation_of_finite Aᵐᵒᵖ N
-  obtain ⟨Q, hQ⟩ := FiniteProjectivePresentation.exists_isMinimal (M := N)
-  let e := scalarDualEvalEquiv k M
-  have he := scalarDualEvalEquiv_smul k M
-  have hiM' := (indecomposable_iff_isIndecomposableModule M).mp hiM
-  have hinj' : ¬ Module.Injective A M := fun h ↦
-    hinj ((Module.injective_iff_injective_object A M).mp h)
-  have hiL := (Q.isIndecomposableModule_rightTranspose_iff_not_injective hQ e he hiM').mpr
-    hinj'
-  have hpL : ¬ Module.Projective A Q.rightTranspose := fun h ↦
-    hinj' ((Q.projective_rightTranspose_iff_injective hQ e he).mp h)
-  -- The bundled transpose uses restriction of scalars, rather than the quotient's
-  -- independently inferred scalar action.
-  let : SMul k Q.rightTranspose := (moduleOfAlgebraModule (k := k) Q.rightTranspose).toSMul
-  let : Module k Q.rightTranspose := moduleOfAlgebraModule (k := k) Q.rightTranspose
-  let : IsScalarTower k A Q.rightTranspose :=
-    isScalarTower_of_algebra_moduleCat (k := k) Q.rightTranspose
-  have hL : Module.Finite k Q.rightTranspose := Module.Finite.trans A _
-  have : Module.FinitePresentation A Q.rightTranspose := Module.finitePresentation_of_finite A _
-  obtain ⟨P, hP⟩ := FiniteProjectivePresentation.exists_isMinimal (M := Q.rightTranspose)
-  have : Module.Finite k (AuslanderReitenTranspose P.p) := Module.Finite.trans Aᵐᵒᵖ _
-  have hN : IsFiniteLength Aᵐᵒᵖ N :=
-    isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
-  have hTr : IsFiniteLength Aᵐᵒᵖ (AuslanderReitenTranspose P.p) :=
-    isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
-  have hiN := (indecomposable_iff_isIndecomposableModule N).mpr
-    ((e.isIndecomposableModule_iff_of_dual he).mp hiM')
-  have hpN : ¬ Projective N := fun h ↦ hinj'
-    ((e.moduleInjective_iff_projective_of_dual he).mpr
-      ((IsProjective.iff_projective (R := Aᵐᵒᵖ) N).mpr h))
-  have hstable := (indecomposable_projectiveStableFunctor_obj_iff N hN hiN).mpr hpN
-  exact ⟨Q.rightTranspose, hL,
-    (indecomposable_iff_isIndecomposableModule _).mpr hiL,
-    fun h ↦ hpL ((IsProjective.iff_projective (R := A) Q.rightTranspose).mpr h),
-    P, hP,
-    (Q.nonempty_linearEquiv_translate_rightTranspose_iff_isZero_projective_retract.{v, max u w}
-      P hP.isSuperfluous_ker hN hTr e he).mpr
-        ((indecomposable_iff_isZero_projective_retract N hstable).mp hiN)⟩
+/-- **`τ τ⁻ M ≅ M`.** Over an Artin algebra, `D Tr` of a minimal presentation of the inverse
+translate `Tr D M` of a finitely generated non-injective indecomposable module `M` recovers `M`.
+The presentation `Q` of the Matlis dual `D M` need not be minimal. -/
+theorem nonempty_linearEquiv_translate_rightTranspose_matlisDual
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+    {M : ModuleCat.{max u v w} A} [Module.Finite A M] (hiM : IsIndecomposableModule A M)
+    (hinj : ¬ Module.Injective A M)
+    (Q : FiniteProjectivePresentation (ModuleCat.of Aᵐᵒᵖ (MatlisDual R E M)))
+    (P : FiniteProjectivePresentation Q.rightTranspose)
+    (hP : IsMinimalProjectivePresentation P.p P.π) :
+    Nonempty (AuslanderReitenTranslate R E P.p ≃ₗ[A] M) := by
+  have := IsArtinianRing.of_finite R A
+  have := IsArtinianRing.of_finite R Aᵐᵒᵖ
+  let N := ModuleCat.of Aᵐᵒᵖ (MatlisDual R E M)
+  have hM : IsFiniteLength R M := isFiniteLength_of_finite_trans R A M
+  have hN : IsFiniteLength R N := MatlisDual.isFiniteLength hE hM
+  have : Module.Finite R (AuslanderReitenTranspose P.p) := Module.Finite.trans Aᵐᵒᵖ _
+  have hiN : Indecomposable N := (indecomposable_iff_isIndecomposableModule N).mpr
+    ((MatlisDual.isIndecomposableModule_op_iff hE hM).mpr hiM)
+  -- A projective dual would make `M ≅ D (D M)` injective.
+  have hpN : ¬ Projective N := fun h ↦ hinj <| by
+    have : Module.Projective Aᵐᵒᵖ (MatlisDual R E M) := (IsProjective.iff_projective N).mpr h
+    exact ((Module.Baer.of_injective inferInstance).of_equiv
+      (MatlisDual.evalEquiv hE hM).symm).injective
+  obtain ⟨e⟩ := (nonempty_linearEquiv_translate_rightTranspose_iff_isZero_projective_retract.{v,
+    max u w, u, u} hE Q P hP.isSuperfluous_ker hN (isFiniteLength_of_finite R _)).mpr
+      ((ModuleCat.indecomposable_iff_isZero_projective_retract N
+        ((ModuleCat.indecomposable_projectiveStableFunctor_obj_iff N
+          (isFiniteLength_of_tower R hN) hiN).mpr hpN)).mp hiN)
+  exact ⟨e.trans (MatlisDual.evalEquiv hE hM).symm⟩
 
-end ModuleCat
+end TauCeti.FiniteProjectivePresentation
