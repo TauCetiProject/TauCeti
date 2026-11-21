@@ -25,6 +25,17 @@ dimension `(m + d choose d)`, the number of rows of an interpolation matrix buil
 
 public section
 
+namespace MvPolynomial
+
+variable (σ R) in
+/-- The polynomials of total degree at most `m` are those supported on exponents of degree at
+most `m`. -/
+theorem restrictTotalDegree_eq_restrictSupport [CommSemiring R] (m : ℕ) :
+    restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
+  simp only [restrictTotalDegree, Finsupp.sum, Finsupp.degree_apply]
+
+end MvPolynomial
+
 namespace TauCeti
 
 open MvPolynomial
@@ -144,10 +155,7 @@ theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
     Module.finrank R (restrictTotalDegree σ R m) =
       (m + Fintype.card σ).choose (Fintype.card σ) := by
   classical
-  have hset : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s : σ →₀ ℕ | s.degree ≤ m} := by
-    ext s
-    simp [Finsupp.sum, Finsupp.degree_apply]
-  rw [restrictTotalDegree, hset, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _)]
+  rw [restrictTotalDegree_eq_restrictSupport, finrank_restrictSupport]
   exact (Nat.card_eq_fintype_card (α := {s : σ →₀ ℕ // s.degree ≤ m})).trans
     ((Finsupp.card_degree_le m).trans (by rw [Nat.add_comm, Nat.choose_symm_add]))
 

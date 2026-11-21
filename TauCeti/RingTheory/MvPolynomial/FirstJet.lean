@@ -138,7 +138,9 @@ theorem isCoprime_ker_eval_of_exists_isUnit_sub {P Q : σ → R} (h : ∃ j, IsU
   obtain ⟨j, u, hu⟩ := h
   rw [Ideal.isCoprime_iff_sup_eq]
   refine Ideal.eq_top_of_isUnit_mem _ (x := C (P j - Q j)) ?_ (hu ▸ u.isUnit.map C)
-  rw [show C (P j - Q j) = (X j - C (Q j)) - (X j - C (P j)) by simp [map_sub]]
+  have hsub : C (P j - Q j) = (X j - C (Q j)) - (X j - C (P j)) := by
+    simp [map_sub]
+  rw [hsub]
   exact Ideal.sub_mem _ (Ideal.mem_sup_right (X_sub_C_mem_ker_eval Q j))
     (Ideal.mem_sup_left (X_sub_C_mem_ker_eval P j))
 
@@ -262,7 +264,8 @@ theorem ker_jetAlgebra (P : σ → R) :
   rw [RingHom.mem_ker, jetAlgebra_eq_zero_iff, mem_pow_ker_eval_iff, mem_pow_idealOfVars_iff']
   constructor
   · rintro ⟨h0, h1⟩ e he
-    rcases (show e.degree = 0 ∨ e.degree = 1 by omega) with hd | hd
+    have hdeg : e.degree = 0 ∨ e.degree = 1 := by omega
+    rcases hdeg with hd | hd
     · rw [Finsupp.degree_eq_zero_iff] at hd
       rw [hd, ← constantCoeff_eq, constantCoeff_taylor, h0]
     · have he1 : e ∈ Set.range (fun a : σ ↦ Finsupp.single a 1) := by

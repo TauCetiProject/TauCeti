@@ -119,6 +119,12 @@ theorem exists_forall_jetAlgebra_eq_of_pairwise_isUnit [Finite ι] [Finite σ]
   rw [← hg i, ← sub_eq_zero, ← map_sub]
   exact hf i
 
+private theorem pi_jetAlgebra_surjective [Finite ι] [Finite σ]
+    (hP : Pairwise fun i j ↦ ∃ s, IsUnit (P i s - P j s)) :
+    Function.Surjective (AlgHom.pi fun i ↦ jetAlgebra (P i)) := fun y ↦ by
+  obtain ⟨f, hf⟩ := exists_forall_jetAlgebra_eq_of_pairwise_isUnit hP y
+  exact ⟨f, funext hf⟩
+
 /-- For finitely many points in finitely many variables over a commutative ring with pairwise unit
 coordinate differences, the coordinate ring of the doubled points is the product of the first-jet
 algebras at the points. -/
@@ -129,10 +135,8 @@ noncomputable def doublePointQuotientEquivOfPairwiseIsUnit [Finite ι] [Finite �
       rw [doubleIdeal_eq_iInf_ker_jetAlgebra_of_pairwise_isUnit hP]
       ext f
       simp [RingHom.mem_ker, funext_iff]).trans
-    (Ideal.quotientKerAlgEquivOfSurjective
-      (f := AlgHom.pi fun i ↦ jetAlgebra (P i)) <| show Surjective _ from fun y ↦ by
-        obtain ⟨f, hf⟩ := exists_forall_jetAlgebra_eq_of_pairwise_isUnit hP y
-        exact ⟨f, funext hf⟩)
+    (Ideal.quotientKerAlgEquivOfSurjective (f := AlgHom.pi fun i ↦ jetAlgebra (P i))
+      (pi_jetAlgebra_surjective hP))
 
 /-- The class of `f` modulo the ideal of the doubled points corresponds to the first jets of `f`
 at the points. -/
@@ -142,7 +146,8 @@ theorem doublePointQuotientEquivOfPairwiseIsUnit_mk [Finite ι] [Finite σ]
     doublePointQuotientEquivOfPairwiseIsUnit hP (Ideal.Quotient.mk _ f) =
       fun i ↦ jetAlgebra (P i) f := by
   funext i
-  simp [doublePointQuotientEquivOfPairwiseIsUnit]
+  simp only [doublePointQuotientEquivOfPairwiseIsUnit, AlgEquiv.trans_apply,
+    Ideal.quotientEquivAlgOfEq_mk, Ideal.quotientKerAlgEquivOfSurjective_mk, AlgHom.pi_apply]
 
 /-- Reindexing the point family along an equivalence commutes with
 `doublePointQuotientEquivOfPairwiseIsUnit`. -/

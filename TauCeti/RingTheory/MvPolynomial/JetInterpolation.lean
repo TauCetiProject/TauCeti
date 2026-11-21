@@ -386,15 +386,19 @@ theorem WellPoised.rank_firstJetMatrix [StrongRankCondition R] [Fintype ι] [Fin
     (LinearEquiv.curry R R ι (Option σ)).symm.finrank_eq, Module.finrank_pi, Fintype.card_prod,
     Fintype.card_option]
 
-/-- Over a commutative semiring with the strong rank condition, a well-poised configuration of
-`card ι` points in `card σ` variables of degree `d` satisfies
+/-- Over a commutative semiring with the rank condition, a well-poised configuration of `card ι`
+points in `card σ` variables of degree `d` satisfies
 `card ι * (card σ + 1) ≤ (card σ + d).choose d`. -/
-theorem WellPoised.card_mul_le_choose [StrongRankCondition R] [Fintype ι] [Fintype σ]
+theorem WellPoised.card_mul_le_choose [RankCondition R] [Fintype ι] [Fintype σ]
     (h : WellPoised P d) :
     Fintype.card ι * (Fintype.card σ + 1) ≤ (Fintype.card σ + d).choose d := by
   classical
-  rw [← h.rank_firstJetMatrix]
-  exact (rank_firstJetMatrix_le P d).trans (min_le_left _ _)
+  let _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
+  have hsurj : Function.Surjective (firstJetMatrix P d).mulVecLin := by
+    rw [Matrix.coe_mulVecLin]
+    exact (firstJetMap_surjective_iff_mulVec_surjective (P := P) (d := d)).mp h
+  have hle := card_le_of_surjective R (firstJetMatrix P d).mulVecLin hsurj
+  simpa only [Fintype.card_prod, Fintype.card_option, Finsupp.card_degree_le] using hle
 
 end CommSemiring
 
@@ -466,22 +470,24 @@ end CommRing
 
 section Univariate
 
+private def optionUniqueEquivFinTwo (σ : Type*) [Unique σ] : Option σ ≃ Fin 2 where
+  toFun z := z.elim 0 fun _ ↦ 1
+  invFun k := if k = 0 then none else some default
+  left_inv z := by cases z with | none => rfl | some j => simp [Unique.eq_default j]
+  right_inv k := by fin_cases k <;> rfl
+
 private theorem firstJetMap_unique_eq_hasseJet {σ ι R : Type*} [CommSemiring R] [Unique σ]
-    (P : ι → σ → R) (d : ℕ) (f : restrictTotalDegree σ R d) (i : ι) (z : Option σ) :
-    firstJetMap P d f i z =
-      Polynomial.hasseJet (fun i ↦ P i default) (fun _ ↦ 2) (uniqueAlgEquiv R σ f.val) i
-        (match z with | none => 0 | some _ => 1) := by
-  cases z with
-  | none =>
-    simp only [firstJetMap_apply_none, Polynomial.hasseJet_apply, Fin.val_zero,
-      Polynomial.hasseDeriv_zero']
-    exact (eval₂_uniqueAlgEquiv (R := R) (σ := σ) (f := f.val) (φ := RingHom.id R)
-      (a := P i)).symm
-  | some j =>
-    simp only [firstJetMap_apply_some, Polynomial.hasseJet_apply, Fin.val_one,
-      Polynomial.hasseDeriv_one', ← uniqueAlgEquiv_pderiv j]
-    exact (eval₂_uniqueAlgEquiv (R := R) (σ := σ) (f := pderiv j f.val)
-      (φ := RingHom.id R) (a := P i)).symm
+    (P : ι → σ → R) (d : ℕ) (f : restrictTotalDegree σ R d) (i : ι) (k : Fin 2) :
+    firstJetMap P d f i ((optionUniqueEquivFinTwo σ).symm k) =
+      Polynomial.hasseJet (fun i ↦ P i default) (fun _ ↦ 2) (uniqueAlgEquiv R σ f.val) i k := by
+  fin_cases k
+  · change firstJetMap P d f i none = _
+    simp only [firstJetMap_apply_none, Polynomial.hasseJet_apply, Polynomial.hasseDeriv_zero']
+    rw [← MvPolynomial.eval₂_id, ← Polynomial.eval₂_id, eval₂_uniqueAlgEquiv]
+  · change firstJetMap P d f i (some default) = _
+    simp only [firstJetMap_apply_some, Polynomial.hasseJet_apply, Polynomial.hasseDeriv_one',
+      ← uniqueAlgEquiv_pderiv (default : σ)]
+    rw [← MvPolynomial.eval₂_id, ← Polynomial.eval₂_id, eval₂_uniqueAlgEquiv]
 
 /-- **Univariate Hermite injectivity** for double points over a commutative ring: when the node
 differences are units and `d + 1 ≤ 2 * card ι`, `firstJetMap P d` is injective. -/
@@ -490,22 +496,21 @@ theorem firstJetMap_injective_of_unique [CommRing R] [Unique σ] [Fintype ι] {P
     (hd : d + 1 ≤ 2 * Fintype.card ι) :
     Function.Injective (firstJetMap P d) := by
   intro f g hfg
-  let e := restrictTotalDegreeEquivDegreeLT σ R d
-  let incl := Submodule.inclusion
-    (Polynomial.degreeLT_mono (R := R) (by simpa [mul_comm] using hd : d + 1 ≤ ∑ _ : ι, 2))
-  have hjet : Polynomial.hermiteJet (fun i ↦ P i default) (fun _ ↦ 2) (incl (e f)) =
-      Polynomial.hermiteJet (fun i ↦ P i default) (fun _ ↦ 2) (incl (e g)) := by
+  have hle : d + 1 ≤ ∑ _ : ι, 2 := by simpa [mul_comm] using hd
+  have hjet : Polynomial.hermiteJet (fun i ↦ P i default) (fun _ ↦ 2)
+        (Submodule.inclusion (Polynomial.degreeLT_mono hle)
+          (restrictTotalDegreeEquivDegreeLT σ R d f)) =
+      Polynomial.hermiteJet (fun i ↦ P i default) (fun _ ↦ 2)
+        (Submodule.inclusion (Polynomial.degreeLT_mono hle)
+          (restrictTotalDegreeEquivDegreeLT σ R d g)) := by
     ext i k
-    fin_cases k
-    · have h0 := congrFun (congrFun hfg i) none
-      simp only [firstJetMap_unique_eq_hasseJet] at h0
-      simpa [incl, e] using h0
-    · have h1 := congrFun (congrFun hfg i) (some default)
-      simp only [firstJetMap_unique_eq_hasseJet] at h1
-      simpa [incl, e] using h1
+    simp only [Polynomial.hermiteJet_apply, Submodule.coe_inclusion,
+      coe_restrictTotalDegreeEquivDegreeLT_apply, ← firstJetMap_unique_eq_hasseJet]
+    exact congrFun (congrFun hfg i) ((optionUniqueEquivFinTwo σ).symm k)
   have heq :=
     (Polynomial.hermiteJet_bijective_of_pairwise_isUnit_sub hP (fun _ ↦ 2)).injective hjet
-  exact e.injective (Submodule.inclusion_injective _ heq)
+  exact (restrictTotalDegreeEquivDegreeLT σ R d).injective
+    (Submodule.inclusion_injective _ heq)
 
 /-- **Univariate Hermite surjectivity** for double points over a commutative ring: when the node
 differences are units and `2 * card ι ≤ d + 1`, `P` is well poised in degree `d`. -/
@@ -514,25 +519,18 @@ theorem wellPoised_of_unique [CommRing R] [Unique σ] [Fintype ι] {P : ι → �
     (hd : 2 * Fintype.card ι ≤ d + 1) :
     WellPoised P d := by
   intro y
-  let e := restrictTotalDegreeEquivDegreeLT σ R d
-  let incl := Submodule.inclusion
-    (Polynomial.degreeLT_mono (R := R) (by simpa [mul_comm] using hd : ∑ _ : ι, 2 ≤ d + 1))
-  let c : ∀ _ : ι, Fin 2 → R := fun i k ↦ match k with
-    | ⟨0, _⟩ => y i none
-    | ⟨1, _⟩ => y i (some default)
+  have hle : ∑ _ : ι, 2 ≤ d + 1 := by simpa [mul_comm] using hd
   obtain ⟨g, hg⟩ :=
-    (Polynomial.hermiteJet_bijective_of_pairwise_isUnit_sub hP (fun _ ↦ 2)).surjective c
-  refine ⟨e.symm (incl g), ?_⟩
+    (Polynomial.hermiteJet_bijective_of_pairwise_isUnit_sub hP (fun _ ↦ 2)).surjective
+      fun i k ↦ y i ((optionUniqueEquivFinTwo σ).symm k)
+  refine ⟨(restrictTotalDegreeEquivDegreeLT σ R d).symm
+    (Submodule.inclusion (Polynomial.degreeLT_mono hle) g), ?_⟩
   ext i z
-  rw [firstJetMap_unique_eq_hasseJet, coe_restrictTotalDegreeEquivDegreeLT_symm_apply,
-    AlgEquiv.apply_symm_apply]
-  have hgi := congrFun hg i
-  cases z with
-  | none =>
-    simpa [incl, c] using congrFun hgi 0
-  | some j =>
-    rw [Unique.eq_default j]
-    simpa [incl, c] using congrFun hgi 1
+  rw [← (optionUniqueEquivFinTwo σ).symm_apply_apply z, firstJetMap_unique_eq_hasseJet,
+    coe_restrictTotalDegreeEquivDegreeLT_symm_apply, Submodule.coe_inclusion,
+    AlgEquiv.apply_symm_apply,
+    ← Polynomial.hermiteJet_apply (a := fun i ↦ P i default) (m := fun _ ↦ 2) g]
+  exact congrFun (congrFun hg i) (optionUniqueEquivFinTwo σ z)
 
 /-- **Univariate Hermite interpolation rank.** Over any commutative ring with the strong rank
 condition, for univariate points `P : ι → σ → R` (`[Unique σ]`) whose pairwise differences are
@@ -547,10 +545,9 @@ theorem rank_firstJetMatrix_of_unique [CommRing R] [StrongRankCondition R] [Uniq
   · rw [min_eq_right hge, (wellPoised_of_unique hP hge).rank_firstJetMatrix,
       Fintype.card_unique (α := σ), mul_comm]
 
-/-- Over any commutative ring with the strong rank condition, univariate double points
-`P : ι → σ → R` (`[Unique σ]`) with pairwise unit differences are well poised in degree `d` if and
-only if `2 * card ι ≤ d + 1`. -/
-theorem wellPoised_iff_of_unique [CommRing R] [StrongRankCondition R] [Unique σ] [Fintype ι]
+/-- Over any nontrivial commutative ring, univariate double points `P : ι → σ → R` (`[Unique σ]`)
+with pairwise unit differences are well poised in degree `d` if and only if `2 * card ι ≤ d + 1`. -/
+theorem wellPoised_iff_of_unique [CommRing R] [Nontrivial R] [Unique σ] [Fintype ι]
     {P : ι → σ → R} (hP : Pairwise fun i j ↦ IsUnit (P i default - P j default)) (d : ℕ) :
     WellPoised P d ↔ 2 * Fintype.card ι ≤ d + 1 := by
   refine ⟨fun h ↦ ?_, wellPoised_of_unique hP⟩

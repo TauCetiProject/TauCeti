@@ -33,7 +33,7 @@ with the native degree spaces.
   supports exactly the polynomials with `degreeOf i ≤ d i`. Mathlib's `restrictDegree σ R m` is by
   definition the box of the constant bound `m`. The total-degree ball is
   `MvPolynomial.restrictTotalDegree_eq_restrictSupport`
-  (`TauCeti/RingTheory/MvPolynomial/RestrictTotalDegree.lean`).
+  (`TauCeti/RingTheory/MvPolynomial/Finrank.lean`).
 * `MvPolynomial.degreeOf_lt_of_mem_restrictSupport`: a support restriction bounding the exponent
   of one variable bounds `degreeOf`. Conversely, `MvPolynomial.mem_restrictSupport_of_degreeOf_lt`
   gives a support restriction from a strict partial-degree bound.

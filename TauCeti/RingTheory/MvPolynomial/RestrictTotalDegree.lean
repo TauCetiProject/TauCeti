@@ -97,13 +97,6 @@ theorem monomial_mem_restrictTotalDegree {s : σ →₀ ℕ} {m : ℕ} (h : s.de
     simpa [Finsupp.sum, Finsupp.degree_apply] using h
 
 variable (σ R) in
-/-- The polynomials of total degree at most `m` are those supported on exponents of degree at
-most `m`. -/
-theorem restrictTotalDegree_eq_restrictSupport (m : ℕ) :
-    restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
-  simp only [restrictTotalDegree, Finsupp.sum, Finsupp.degree_apply]
-
-variable (σ R) in
 /-- The polynomials of total degree at most `m` are spanned by the monomials of degree at most
 `m`. -/
 theorem restrictTotalDegree_eq_span (m : ℕ) :
