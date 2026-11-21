@@ -9,7 +9,7 @@ import Mathlib.Basic.Complex.Basic
 import Mathlib.Algebra.Star.Prod
 import Mathlib.Algebra.Star.Orthogonal
 import TauCeti.Algebra.Group.Idempotent
-import TauCeti.LinearAlgebra.Matrix.StarProjection
+import TauCeti.LinearAlgebra.Matrix.StarProjection.Transpose
 
 /-!
 # Finite examples of projection orthogonality symmetries
