@@ -55,7 +55,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `LinearIsometry.cornerEmbedding`: extension by zero `T ↦ e T e†`, an isometric embedding
   of operator spaces along an isometric inclusion.
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence, with the
-  same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`).
+  same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`), bounded below by `‖A⁻¹‖⁻¹`
+  (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
@@ -429,6 +430,13 @@ theorem continuous_adjointEquiv [CompleteSpace E] [CompleteSpace F] {X : Type*}
 theorem norm_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
     ‖(A.adjointEquiv : F →L[𝕜] E)‖ = ‖(A : E →L[𝕜] F)‖ := by
   rw [coe_adjointEquiv, LinearIsometryEquiv.norm_map]
+
+/-- The adjoint equivalence of `A` is bounded below by the reciprocal of the norm of `A⁻¹`:
+`‖ξ‖ ≤ ‖A⁻¹‖ ‖Aᵀ ξ‖`, since `(Aᵀ)⁻¹ = (A⁻¹)ᵀ` has the norm of `A⁻¹`. -/
+theorem norm_le_norm_symm_mul_norm_adjointEquiv [CompleteSpace E] [CompleteSpace F]
+    (A : E ≃L[𝕜] F) (ξ : F) : ‖ξ‖ ≤ ‖(A.symm : F →L[𝕜] E)‖ * ‖A.adjointEquiv ξ‖ := by
+  simpa only [coe_nnNorm, adjointEquiv_symm, norm_adjointEquiv] using
+    A.adjointEquiv.antilipschitzWith.le_mul_norm (map_zero _) ξ
 
 /-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
 operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/

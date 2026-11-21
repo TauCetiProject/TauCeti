@@ -47,7 +47,8 @@ The file develops:
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions, and the linear change
   of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
-  linear isomorphism `Q`;
+  linear isomorphism `Q`, and the image `HomogeneousSymbol.map` under a continuous real-linear map
+  of the coefficient spaces;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -613,6 +614,51 @@ theorem compProdMap_compProdMap (a : HomogeneousSymbol X E V W m) (P' : X'' →L
   (rfl)
 
 end CompProdMap
+
+/-! ### Images under maps of the coefficient spaces -/
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W']
+
+/-- The image `(x, ξ) ↦ Φ (a(x, ξ))` of a homogeneous symbol of degree `m` under a continuous
+real-linear map `Φ` of the coefficient spaces, again homogeneous of degree `m`. For isomorphisms
+`e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'`, conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` is such a map. -/
+def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : HomogeneousSymbol X E V W m) :
+    HomogeneousSymbol X E V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient := Φ.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by simp [a.homogeneous x ξ t ht]
+
+@[simp]
+theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a : HomogeneousSymbol X E V W m) (p : X × E) :
+    (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+@[simp]
+protected theorem map_zero (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) :
+    (0 : HomogeneousSymbol X E V W m).map Φ = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_add (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a b : HomogeneousSymbol X E V W m) : (a + b).map Φ = a.map Φ + b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_neg (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a : HomogeneousSymbol X E V W m) : (-a).map Φ = -a.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_sub (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a b : HomogeneousSymbol X E V W m) : (a - b).map Φ = a.map Φ - b.map Φ := by
+  ext1; funext p; simp
+
+end Map
 
 /-! ### Spatial and frequency derivatives -/
 
@@ -1277,13 +1323,8 @@ variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddComm
 /-- The pointwise adjoint `(x, ξ) ↦ a (x, ξ)†` of a homogeneous symbol between Hilbert spaces.
 Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
 degree. -/
-noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m where
-  coefficient := ContinuousLinearMap.adjointRealCLM ∘ a.coefficient
-  zero_covector x := by simp
-  contDiffOn_coefficient :=
-    ContinuousLinearMap.adjointRealCLM.contDiff.comp_contDiffOn a.contDiffOn_coefficient
-  homogeneous x ξ t ht := by
-    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m :=
+  a.map ContinuousLinearMap.adjointRealCLM
 
 @[simp]
 theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :
