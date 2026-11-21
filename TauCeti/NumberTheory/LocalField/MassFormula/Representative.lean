@@ -74,22 +74,8 @@ theorem isRepresentativeSet_iff {n : ℕ} {R : Set (IntermediateField K (Separab
 variable (K) in
 /-- Every `σ_K(n)` has a set of representatives of its `K`-isomorphism classes. -/
 theorem exists_isRepresentativeSet (n : ℕ) :
-    ∃ R : Set (IntermediateField K (SeparableClosure K)), IsRepresentativeSet n R := by
-  let s : Setoid (totallyRamifiedOfDegree K n) :=
-    { r := fun L M ↦ Nonempty (L.val ≃ₐ[K] M.val)
-      iseqv := ⟨fun L ↦ ⟨.refl⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩ }
-  -- Choose one member of each class.
-  refine ⟨Set.range fun c : Quotient s ↦ (c.out : IntermediateField K (SeparableClosure K)),
-    ?_, fun L hL ↦ ⟨(Quotient.mk s ⟨L, hL⟩).out,
-      ⟨⟨_, rfl⟩, Setoid.symm' s (Quotient.mk_out (s := s) ⟨L, hL⟩)⟩, ?_⟩⟩
-  · rintro _ ⟨c, rfl⟩
-    exact c.out.property
-  · rintro _ ⟨⟨c, rfl⟩, he⟩
-    -- A representative isomorphic to `L` is the one chosen in the class of `L`.
-    have : c = Quotient.mk s ⟨L, hL⟩ := by
-      rw [← Quotient.out_eq c]
-      exact Quotient.sound (Setoid.symm' s he)
-    rw [this]
+    ∃ R : Set (IntermediateField K (SeparableClosure K)), IsRepresentativeSet n R :=
+  IntermediateField.exists_subset_existsUnique_algEquiv (totallyRamifiedOfDegree K n)
 
 namespace IsRepresentativeSet
 

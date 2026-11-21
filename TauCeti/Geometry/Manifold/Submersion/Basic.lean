@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Topology.Maps.LocalSections
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
 -- its missing pointwise characterization.
@@ -48,6 +49,9 @@ constant on the fibres factors through a unique `C^m` map
 ## Main results
 
 * `Manifold.isSubmersionOfComplement_iff`: a submersion with complement `F` is one at every point.
+* `Manifold.IsSubmersion.of_le`, together with its `Manifold.IsSubmersionAt`,
+  `Manifold.IsSubmersionOfComplement` and `Manifold.IsSubmersionAtOfComplement` forms: lowering the
+  regularity order preserves submersions.
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_extend_comp_mfderiv`: the derivative of a
   submersion in its normal-form charts.
 * `Manifold.IsSubmersionAtOfComplement.surjective_mfderiv`,
@@ -66,6 +70,9 @@ constant on the fibres factors through a unique `C^m` map
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section`,
   `Manifold.IsSubmersionAt.exists_contMDiffOn_uncurry_section`: local sections through every
   nearby point of the source, depending smoothly on that point.
+* `Manifold.IsSubmersion.isOpenMap`: a submersion from a boundaryless manifold is an open map.
+* `Manifold.IsSubmersion.finrank_le`: a submersion out of a nonempty manifold does not raise
+  dimension.
 * `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
@@ -117,6 +124,41 @@ theorem isSubmersionOfComplement_fst [IsManifold I n M] [IsManifold J n N] :
 theorem isSubmersion_fst [IsManifold I n M] [IsManifold J n N] :
     IsSubmersion (I.prod J) I n (@Prod.fst M N) :=
   isSubmersionOfComplement_fst.isSubmersion
+
+section OfLe
+
+variable {m : WithTop ℕ∞}
+
+/-- Lowering the regularity order preserves the submersion normal form at a point, with the same
+complement. -/
+theorem IsSubmersionAtOfComplement.of_le {x : M}
+    (h : IsSubmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAtOfComplement F I J n f x :=
+  IsSubmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being a submersion at a point. -/
+theorem IsSubmersionAt.of_le {x : M}
+    (h : IsSubmersionAt I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAt I J n f x :=
+  (h.isSubmersionAtOfComplement_complement.of_le hnm).isSubmersionAt
+
+/-- Lowering the regularity order preserves submersions with a fixed complement. -/
+theorem IsSubmersionOfComplement.of_le
+    (h : IsSubmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsSubmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves submersions. -/
+theorem IsSubmersion.of_le
+    (h : IsSubmersion I J m f) (hnm : n ≤ m) :
+    IsSubmersion I J n f :=
+  (h.isSubmersionOfComplement_complement.of_le hnm).isSubmersion
+
+end OfLe
 
 end Pointwise
 
@@ -259,6 +301,15 @@ theorem IsSubmersion.hasRightInverse_mfderiv (h : IsSubmersion I J n f) (hn : n 
     (mfderiv I J f x).HasRightInverse :=
   (h.isSubmersionAt x).hasRightInverse_mfderiv hn
 
+/-- **A submersion does not raise dimension**: a `C^n` submersion, `n ≠ 0`, out of a nonempty
+manifold with finite-dimensional model has target model of dimension at most that of the source
+model. -/
+theorem IsSubmersion.finrank_le [FiniteDimensional 𝕜 E] [Nonempty M] (h : IsSubmersion I J n f)
+    (hn : n ≠ 0) : Module.finrank 𝕜 E'' ≤ Module.finrank 𝕜 E := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact LinearMap.finrank_le_finrank_of_surjective (f := (mfderiv I J f x).toLinearMap)
+    (h.surjective_mfderiv hn x)
+
 end Derivative
 
 section LocalSection
@@ -377,6 +428,15 @@ theorem IsSubmersion.exists_contMDiffOn_section_of_surjective [I.Boundaryless]
   obtain ⟨x, rfl⟩ := hsurj y
   obtain ⟨U, hU, hxU, s, _, hs, hfs⟩ := h.exists_contMDiffOn_section x
   exact ⟨U, hU, hxU, s, hs, hfs⟩
+
+omit [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- **A submersion from a boundaryless manifold is an open map.** Every point has a continuous
+local section through it by `exists_contMDiffOn_section`. -/
+theorem IsSubmersion.isOpenMap [I.Boundaryless] (h : IsSubmersion I J n f) : IsOpenMap f := by
+  refine .of_local_sections fun y ↦ ?_
+  obtain ⟨U, hU, hyU, s, hsy, hs, hfs⟩ := h.exists_contMDiffOn_section y
+  exact ⟨s, hs.continuousOn.continuousAt (hU.mem_nhds hyU), hsy,
+    eventually_of_mem (hU.mem_nhds hyU) hfs⟩
 
 section Descent
 

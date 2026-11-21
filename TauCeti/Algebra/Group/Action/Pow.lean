@@ -25,6 +25,9 @@ the sense that `g • c n = c (n + t)` for all `n`, translates it by `k • t` u
 for a group acting and an additive group of indices this holds for integer powers as well. An
 automorphism of a tree acting on its axis, parametrized by the integers, is an example.
 
+If the action of `g` commutes with an action of scalars and `g • v = μ • v`, then the powers of
+`g` act on `v` by the powers of `μ`.
+
 ## Main results
 
 * `TauCeti.exists_pow_smul_ne_zero_and_smul_eq_zero`: if `xⁿ • w = 0` for some `n` and `w ≠ 0`,
@@ -33,6 +36,7 @@ automorphism of a tree acting on its axis, parametrized by the integers, is an e
   `xⁿ • w = 0`.
 * `TauCeti.pow_smul_eq_add_nsmul`, `TauCeti.zpow_smul_eq_add_zsmul`: if `g • c n = c (n + t)` for
   all `n`, then `gᵏ • c n = c (n + k • t)`.
+* `TauCeti.pow_smul_eq_of_smul_eq`: if `g • v = μ • v`, then `gˡ • v = μˡ • v`.
 -/
 
 public section
@@ -84,5 +88,14 @@ theorem zpow_smul_eq_add_zsmul {G : Type*} [Group G] [MulAction G α] [AddGroup 
       natCast_zsmul, neg_add_cancel_right]
 
 end Translate
+
+/-- If the action of `g` commutes with the scalars and `g • v = μ • v`, then the powers of `g` act
+on `v` by the powers of `μ`. -/
+theorem pow_smul_eq_of_smul_eq {G K α : Type*} [Monoid G] [Monoid K] [MulAction G α]
+    [MulAction K α] [SMulCommClass G K α] {g : G} {v : α} {μ : K} (hg : g • v = μ • v) (l : ℕ) :
+    g ^ l • v = μ ^ l • v := by
+  induction l with
+  | zero => simp
+  | succ l ih => rw [pow_succ', mul_smul, ih, smul_comm, hg, smul_smul, pow_succ]
 
 end TauCeti

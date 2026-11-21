@@ -51,6 +51,7 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere`: spheres of nonnegative radius in real normed spaces
   of rank greater than two are simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_of_lt_finrank`: the same under `2 < Module.finrank ℝ E`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
 * `ContinuousMap.HomotopyEquiv.nonempty_of_sphere`: nonemptiness of a space homotopy equivalent
@@ -458,6 +459,12 @@ two-sphere. -/
 instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
   simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
+
+/-- Every sphere of nonnegative radius in a real normed space of finite rank greater than two is
+simply connected. -/
+theorem simplyConnectedSpace_sphere_of_lt_finrank (h : 2 < Module.finrank ℝ E) (c : E) {r : ℝ}
+    (hr : 0 ≤ r) : SimplyConnectedSpace (sphere c r) :=
+  simplyConnectedSpace_sphere (by exact_mod_cast Module.lt_rank_of_lt_finrank h) c hr
 
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :

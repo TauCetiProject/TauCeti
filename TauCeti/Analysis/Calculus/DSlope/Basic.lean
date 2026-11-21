@@ -37,6 +37,14 @@ public section
 
 namespace TauCeti
 
+/-- A function is its value at the base point plus the displacement times its divided
+difference. -/
+theorem eq_const_add_sub_smul_dslope {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] (f : 𝕜 → E) (a : 𝕜) :
+    f = (fun _ ↦ f a) + (fun z ↦ z - a) • dslope f a := by
+  funext z
+  exact eq_add_of_sub_eq' (sub_smul_dslope f a z).symm
+
 /-- `dslope` is symmetric in its two point arguments: off the diagonal both sides are the same
 difference quotient, and on the diagonal they coincide trivially. -/
 theorem dslope_comm {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]

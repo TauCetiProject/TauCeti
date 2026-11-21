@@ -12,8 +12,9 @@ import TauCeti.Computability.RecursiveIn
 /-!
 # Limits of uniformly computable sequences are computable in the jump
 
-Let `f : ℕ → ℕ → ℕ` be a sequence of total functions, read as the stages `f s`, which is
-computable in a set `Z` uniformly in the stage, and which converges pointwise to `g : ℕ → ℕ`.
+Let `f : ℕ → α → β` be a sequence of total functions between primitive-codable types, read as the
+stages `f s`, which is computable in a set `Z` uniformly in the stage, and which converges
+pointwise to `g : α → β`.
 Then `g` is computable in the jump `Z'`. This is the direction of the **Limit Lemma** used to bound
 the jump of a constructed set: to show `A' ≤_T ∅'` it suffices to approximate the characteristic
 function of `A'` by a computable sequence of guesses which is eventually correct at each point.
@@ -63,11 +64,8 @@ theorem IsModulus.computableIn {α β : Type*} [Primcodable α] [Primcodable β]
   RecursiveIn.of_eq (hf.comp (hmc.pair ComputableIn.id))
     fun x => congrArg Part.some (hm.apply_eq x)
 
-variable {Z : Set ℕ} {f : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
-
-/-- **Limit Lemma, computing the limit.** If the stages `f s` are computable in `Z`, uniformly in
-`s`, and converge pointwise to `g`, then `g` is computable in the jump `Z'`. -/
-theorem Converges.computableIn_jump (h : Converges f g) (hf : ComputableIn₂ {Z.oracle} f) :
+private theorem Converges.computableIn_jump_nat {Z : Set ℕ} {f : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
+    (h : Converges f g) (hf : ComputableIn₂ {Z.oracle} f) :
     ComputableIn {Z.jump.oracle} g := by
   obtain ⟨F, hF, hFdom⟩ := exists_recursiveIn_dom_iff_mem_instabilitySet hf
   have hU : TuringReducible (instabilitySet f).oracle Z.jump.oracle := by
@@ -78,6 +76,35 @@ theorem Converges.computableIn_jump (h : Converges f g) (hf : ComputableIn₂ {Z
     ComputableIn₂.iff_nat.2 <| (ComputableIn₂.iff_nat.1 hf).subst
       fun _ hg => (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 Z.turingReducible_jump
   exact h.computableIn_of_instabilitySet hfJ hU
+
+/-- **Limit Lemma, computing the limit.** If the stages `f s` are computable in `Z`, uniformly in
+`s`, and converge pointwise to `g`, then `g` is computable in the jump `Z'`. -/
+theorem Converges.computableIn_jump {α β : Type*} [Primcodable α] [Primcodable β]
+    {Z : Set ℕ} {f : ℕ → α → β} {g : α → β}
+    (h : Converges f g) (hf : ComputableIn₂ {Z.oracle} f) :
+    ComputableIn {Z.jump.oracle} g := by
+  cases isEmpty_or_nonempty α with
+  | inl hα =>
+    unfold ComputableIn
+    exact RecursiveIn.none.of_eq fun a => hα.elim a
+  | inr hne =>
+    obtain ⟨x₀⟩ := hne
+    let decα : ℕ → α := fun n => (decode (α := α) n).getD x₀
+    have hdecα : Primrec decα := Primrec.option_getD.comp Primrec.decode (Primrec.const x₀)
+    let decβ : ℕ → β := fun m => (decode (α := β) m).getD (g x₀)
+    have hdecβ : Primrec decβ := Primrec.option_getD.comp Primrec.decode (Primrec.const (g x₀))
+    have hf' : ComputableIn₂ {Z.oracle} (fun s n => encode (f s (decα n))) :=
+      Primrec.encode.computableIn.comp
+        (hf.comp (ComputableIn.fst.pair (hdecα.computableIn.comp ComputableIn.snd)))
+    have hconv' : Converges (fun s n => encode (f s (decα n))) (fun n => encode (g (decα n))) :=
+      converges_iff_eventually.2 fun n =>
+        (converges_iff_eventually.1 h (decα n)).mono fun _ hs => congrArg encode hs
+    have hg' : ComputableIn {Z.jump.oracle} (fun n => encode (g (decα n))) :=
+      hconv'.computableIn_jump_nat hf'
+    refine (hdecβ.computableIn.comp (hg'.comp Primrec.encode.computableIn)).of_eq fun x => ?_
+    simp [decα, decβ, encodek]
+
+variable {Z : Set ℕ} {f : ℕ → ℕ → ℕ}
 
 /-- **Limit Lemma for sets.** If the stages `f s` are computable in `Z`, uniformly in `s`, and
 converge pointwise to the characteristic function of `A`, then `A` is Turing reducible to the

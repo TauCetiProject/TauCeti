@@ -62,13 +62,18 @@ end Vanishing
 
 section CompactSupport
 
-variable [FiniteDimensional ℝ E] {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V]
-  [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] {T : 𝓕}
+variable {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] {T : 𝓕}
 
 /-- A compactly supported linear functional of locally finite mass has finite total mass,
 provided its support is contained in the open domain. -/
 theorem HasLocallyFiniteMass.mass_ne_top (hT : HasLocallyFiniteMass T)
     (hc : IsCompact (dsupport T)) (hΩ : dsupport T ⊆ Ω) : mass T ≠ ⊤ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- Every test function is zero, so `T` is zero and has zero mass.
+    rw [(mass_eq_zero_iff T).2 (funext fun φ => by
+      simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE])]
+    exact ENNReal.zero_ne_top
   obtain ⟨χ, hχ, hχ01⟩ := TestFunction.exists_eventually_eq_one (n := n) hc hΩ
   obtain ⟨C, hC, hTC⟩ := (hasLocallyFiniteMass_def.1 hT)
     (tsupport χ) χ.hasCompactSupport χ.tsupport_subset
@@ -98,7 +103,7 @@ end CompactSupport
 
 section Measure
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ]
   {T : 𝓕}
 

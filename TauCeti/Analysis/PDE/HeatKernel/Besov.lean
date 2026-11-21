@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Delta
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
+public import TauCeti.Analysis.Semigroups.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
+import Mathlib.Analysis.Normed.Group.Tannery
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
@@ -31,6 +35,18 @@ For all `t > 0` the bound holds
 with `max 1 (t^{-σ})` in place of `t^{-σ}`
 (`TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le`).
 
+The heat semigroup is **strongly continuous** on `B^s_{p,q}` for `q < ∞`: `e^{tΔ} u → u` as
+`t → 0` for every `u`, and every `1 ≤ p ≤ ∞` (`TauCeti.BesovSpace.tendsto_heatSemigroup`), so it
+is a strongly continuous contraction semigroup there
+(`TauCeti.BesovSpace.heatContractionSemigroup`). On `B^s_{p,∞}` it is strongly continuous at `u`
+exactly when the weighted blocks vanish at high frequency, `2^{js} ‖Δⱼ u‖_p → 0`
+(`TauCeti.BesovSpace.tendsto_heatSemigroup_iff`). This holds on the little Besov space
+`b^s_{p,∞}`, the closure of the Schwartz functions, and for `p < ∞` it characterizes it; at
+`p = ∞` this is the little Hölder–Zygmund space `c^s`, on which the heat semigroup is strongly
+continuous although it is not on `𝒞^s`. For instance `e^{tΔ} δ₀` does not tend to `δ₀` in
+`B^{-n/p'}_{p,∞}`, which is `𝒞^{-n}` at `p = ∞`
+(`TauCeti.BesovSpace.not_tendsto_heatSemigroup_delta_zero`).
+
 ## The argument
 
 The heat semigroup commutes with the blocks, so `Δⱼ e^{tΔ} u = e^{tΔ} Δⱼ u`, and the block `Δⱼ u` of
@@ -46,6 +62,17 @@ vanishing near the origin. The kernel of that multiplier has `L¹` norm `O(exp(-
 `2^{2σj} exp(-c 4^j t) = t^{-σ} x^σ exp(-c x)` with `x = 4^j t`, and `x^σ exp(-c x)` is bounded on
 `x ≥ 0` (`TauCeti.exists_rpow_mul_exp_neg_mul_le`).
 
+For strong continuity, the block `Δⱼ u` has frequencies in the ball of radius `2^j φ.rOut`, where
+`e^{tΔ} - 1` is the multiplier by a Schwartz symbol whose kernel tends to `0` in `L¹`, so
+`‖Δⱼ (e^{tΔ} u - u)‖_p ≤ cⱼ(t) ‖Δⱼ u‖_p` with `cⱼ(t) → 0`
+(`TauCeti.exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier`). Each weighted
+block of `e^{tΔ} u - u` is also at most twice that of `u`. For `q < ∞` dominated convergence in
+the sum `∑ⱼ (2^{js} ‖Δⱼ (e^{tΔ} u - u)‖_p)^q` gives the convergence; for `q = ∞` the decay of the
+weighted blocks of `u` controls the high blocks uniformly in `t`. Conversely, for `t > 0` the
+heat flow `e^{tΔ} u` lies in `B^{s+1}_{p,∞} ⊆ B^s_{p,1}`, so its weighted blocks in
+`B^s_{p,∞}` vanish at high frequency. Since this is a closed condition
+(`TauCeti.BesovSpace.isClosed_setOf_tendsto_rpow_mul_norm_block`), it passes to the limit `u`.
+
 ## Main declarations
 
 * `TauCeti.BesovSpace.heatSemigroup`: `e^{tΔ}` as a contraction of `B^s_{p,q}`, with
@@ -59,6 +86,13 @@ vanishing near the origin. The kernel of that multiplier has `L¹` norm `O(exp(-
   `TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le` and
   `TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le_rpow_neg`, the smoothing estimate
   `B^s_{p,q} → B^{s + 2σ}_{p,q}` with norm `O(t^{-σ})` for `0 < t ≤ 1`.
+* `TauCeti.BesovSpace.tendsto_heatSemigroup` and `TauCeti.BesovSpace.heatContractionSemigroup`:
+  strong continuity on `B^s_{p,q}` for `q < ∞`.
+* `TauCeti.BesovSpace.tendsto_heatSemigroup_iff`: strong continuity at `u ∈ B^s_{p,∞}` exactly
+  when `2^{js} ‖Δⱼ u‖_p → 0`, with `TauCeti.BesovSpace.tendsto_heatSemigroup_of_mem_littleBesov`
+  and, for `p < ∞`, `TauCeti.BesovSpace.tendsto_heatSemigroup_iff_mem_littleBesov`.
+* `TauCeti.BesovSpace.not_tendsto_heatSemigroup_delta_zero`: no strong continuity at `δ₀` in
+  `B^{-n/p'}_{p,∞}`.
 
 ## References
 
@@ -341,6 +375,178 @@ theorem exists_norm_heatSemigroupOfNeZero_le_rpow_neg {σ : ℝ} (hσ : 0 ≤ σ
     (by exact_mod_cast ht1) (neg_nonpos.2 hσ))]
 
 end Smoothing
+
+section StrongContinuity
+
+/-- **The heat semigroup contracts every block:** `‖Δⱼ e^{tΔ} u‖_p ≤ ‖Δⱼ u‖_p`. -/
+theorem norm_block_heatSemigroup_le (t : ℝ≥0) (u : BesovSpace F φ s p q) (j : ℕ) :
+    ‖(heatSemigroup F φ s p q t u).block j‖ ≤ ‖u.block j‖ := by
+  obtain ⟨g, hg, hgn⟩ := exists_heatSemigroup_eq_and_norm_le t (u.block j)
+  rwa [← Lp.toTemperedDistribution_injective ((coe_block_heatSemigroup t u j).trans hg)] at hgn
+
+variable (F φ) in
+/-- **The heat flow of a single block tends to the block**, at a rate depending on the block
+index `j` (and on `φ`) but uniform in `s`, `p`, `q` and `u`: for every `j` there is a function `c`
+of time with `c t → 0` as `t → 0` and `‖Δⱼ (e^{tΔ} u - u)‖_p ≤ c t ‖Δⱼ u‖_p` for every `u` in
+every Besov space `B^s_{p,q}`. The block `Δⱼ u` has frequencies in the ball of radius
+`2^j φ.rOut`, on which the heat flow tends to the identity uniformly. -/
+theorem exists_tendsto_and_norm_block_heatSemigroup_sub_le (j : ℕ) :
+    ∃ c : ℝ≥0 → ℝ, Tendsto c (𝓝 0) (𝓝 0) ∧ ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
+      [Fact (1 ≤ q)] (t : ℝ≥0) (u : BesovSpace F φ s p q),
+        ‖(heatSemigroup F φ s p q t u - u).block j‖ ≤ c t * ‖u.block j‖ := by
+  obtain ⟨c, hc, hcf⟩ := exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier
+    (E := E) (F := F) (2 ^ j * φ.rOut)
+  refine ⟨c, hc, fun {s p q} _ _ t u ↦ ?_⟩
+  have hv := isVanishingOn_fourier_littlewoodPaleyBlock φ j u.toDistr
+  rw [← coe_block] at hv
+  obtain ⟨g, hg, hgn⟩ := hcf t (u.block j) hv
+  have hb : (heatSemigroup F φ s p q t u - u).block j = g := by
+    refine Lp.toTemperedDistribution_injective ?_
+    dsimp only
+    rw [← hg, coe_block, toDistr_sub, toDistr_heatSemigroup, map_sub,
+      littlewoodPaleyBlock_heatSemigroup_comm, ← coe_block]
+  rwa [hb]
+
+/-- The weighted blocks of `e^{tΔ} u - u` are at most twice those of `u`. -/
+private theorem rpow_mul_norm_block_heatSemigroup_sub_le (t : ℝ≥0) (u : BesovSpace F φ s p q)
+    (j : ℕ) :
+    2 ^ (s * j) * ‖(heatSemigroup F φ s p q t u - u).block j‖ ≤
+      2 * (2 ^ (s * j) * ‖u.block j‖) := by
+  rw [block_sub, mul_left_comm, two_mul (‖u.block j‖)]
+  gcongr
+  exact (norm_sub_le _ _).trans (by gcongr; exact norm_block_heatSemigroup_le t u j)
+
+/-- Each weighted block of `e^{tΔ} u - u` tends to `0` as `t → 0`. -/
+private theorem tendsto_rpow_mul_norm_block_heatSemigroup_sub (u : BesovSpace F φ s p q)
+    (j : ℕ) :
+    Tendsto (fun t ↦ 2 ^ (s * j) * ‖(heatSemigroup F φ s p q t u - u).block j‖) (𝓝 0)
+      (𝓝 0) := by
+  obtain ⟨c, hc, hcu⟩ := exists_tendsto_and_norm_block_heatSemigroup_sub_le F φ j
+  refine squeeze_zero (fun t ↦ by positivity)
+    (fun t ↦ mul_le_mul_of_nonneg_left (hcu t u) (by positivity)) ?_
+  simpa using (hc.mul_const ‖u.block j‖).const_mul (2 ^ (s * j))
+
+/-- **Strong continuity of the heat semigroup on `B^s_{p,q}`, `q < ∞`.** For every
+`u ∈ B^s_{p,q}` with `q < ∞`, `e^{tΔ} u → u` in `B^s_{p,q}` as `t → 0`. This holds for every
+`1 ≤ p ≤ ∞`, including the case `p = ∞`, where the heat semigroup is not strongly continuous on
+`L^∞`. -/
+theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace F φ s p q) :
+    Tendsto (fun t ↦ heatSemigroup F φ s p q t u) (𝓝 0) (𝓝 u) := by
+  have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  simp_rw [norm_eq_tsum_rpow hq]
+  -- Dominated convergence for the sum of the `q`-th powers of the weighted blocks.
+  have hsum : Tendsto (fun t : ℝ≥0 ↦ ∑' j : ℕ,
+      (2 ^ (s * j) * ‖(heatSemigroup F φ s p q t u - u).block j‖) ^ q.toReal) (𝓝 0)
+      (𝓝 (∑' _ : ℕ, (0 : ℝ))) := by
+    refine tendsto_tsum_of_dominated_convergence (bound := fun j ↦
+      2 ^ q.toReal * (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal)
+      ((hasSum_norm hq u).summable.mul_left _) (fun j ↦ ?_) (.of_forall fun t j ↦ ?_)
+    · have h := (tendsto_rpow_mul_norm_block_heatSemigroup_sub u j).rpow_const (Or.inr hq0.le)
+      rwa [Real.zero_rpow hq0.ne'] at h
+    · rw [Real.norm_of_nonneg (by positivity), ← Real.mul_rpow zero_le_two (by positivity)]
+      exact Real.rpow_le_rpow (by positivity) (rpow_mul_norm_block_heatSemigroup_sub_le t u j)
+        hq0.le
+  rw [tsum_zero] at hsum
+  have h := hsum.rpow_const (Or.inr (one_div_pos.2 hq0).le)
+  rwa [Real.zero_rpow (one_div_pos.2 hq0).ne'] at h
+
+/-- If the heat flow of `u ∈ B^s_{p,∞}` tends to `u`, the weighted blocks of `u` vanish at high
+frequency, because those of `e^{tΔ} u`, `t > 0`, do and this is a closed condition. -/
+private theorem tendsto_rpow_mul_norm_block_of_tendsto_heatSemigroup {u : BesovSpace F φ s p ∞}
+    (hu : Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u)) :
+    Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) := by
+  refine isClosed_setOf_tendsto_rpow_mul_norm_block.mem_of_tendsto
+    (hu.mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0)))
+    (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
+  -- At `t > 0`, `e^{tΔ} u` lies in `B^{s+1}_{p,∞} ⊆ B^s_{p,1}`, with the same blocks.
+  set w := heatSemigroupOfNeZero F φ s p ∞ (s + 1) (ne_of_gt ht) u
+  have h := tendsto_rpow_mul_norm_block ENNReal.one_ne_top
+    (inclusionOfLT F φ p ∞ 1 (lt_add_one s) w)
+  simp only [block_inclusionOfLT] at h
+  exact h.congr fun j ↦ by
+    rw [block_eq_of_toDistr_eq (u := heatSemigroup F φ s p ∞ t u) (v := w) (by simp [w]) j]
+
+/-- If the weighted blocks of `u ∈ B^s_{p,∞}` vanish at high frequency, the heat flow of `u`
+tends to `u`: the high blocks are small uniformly in time, and each low block converges. -/
+private theorem tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_block {u : BesovSpace F φ s p ∞}
+    (ha : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) :
+    Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u) := by
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  -- High blocks are small for every `t`, and the finitely many low blocks converge.
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 ha (ε / 4) (by positivity)
+  have hlow : ∀ᶠ t in 𝓝 (0 : ℝ≥0), ∀ j ∈ Finset.range N,
+      2 ^ (s * j) * ‖(heatSemigroup F φ s p ∞ t u - u).block j‖ < ε / 2 :=
+    (Finset.range N).eventually_all.2 fun j _ ↦
+      (tendsto_rpow_mul_norm_block_heatSemigroup_sub u j).eventually (gt_mem_nhds (half_pos hε))
+  filter_upwards [hlow] with t ht
+  rw [dist_eq_norm]
+  refine lt_of_le_of_lt ?_ (half_lt_self hε)
+  rw [norm_eq_ciSup]
+  refine ciSup_le fun j ↦ ?_
+  rcases lt_or_ge j N with hj | hj
+  · exact (ht j (Finset.mem_range.2 hj)).le
+  · have hNj := hN j hj
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)] at hNj
+    linarith [rpow_mul_norm_block_heatSemigroup_sub_le t u j]
+
+/-- **Strong continuity of the heat semigroup on `B^s_{p,∞}`.** For `u ∈ B^s_{p,∞}`,
+`e^{tΔ} u → u` in `B^s_{p,∞}` as `t → 0` exactly when the weighted blocks of `u` vanish at high
+frequency, `2^{js} ‖Δⱼ u‖_p → 0`. At `p = ∞` this describes the elements of the Hölder–Zygmund
+space `𝒞^s` at which the heat semigroup is strongly continuous. -/
+theorem tendsto_heatSemigroup_iff (u : BesovSpace F φ s p ∞) :
+    Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u) ↔
+      Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) :=
+  ⟨tendsto_rpow_mul_norm_block_of_tendsto_heatSemigroup,
+    tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_block⟩
+
+/-- **Strong continuity of the heat semigroup on the little Besov spaces.** For `u` in the little
+Besov space `b^s_{p,∞}`, in particular in the little Hölder–Zygmund space `c^s` (`p = ∞`),
+`e^{tΔ} u → u` in `B^s_{p,∞}` as `t → 0`. -/
+theorem tendsto_heatSemigroup_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
+    (hu : u ∈ littleBesov F φ s p) :
+    Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u) :=
+  (tendsto_heatSemigroup_iff u).2 (tendsto_rpow_mul_norm_block_of_mem_littleBesov hu)
+
+/-- For `p < ∞` the heat semigroup on `B^s_{p,∞}` is strongly continuous exactly on the little
+Besov space: `e^{tΔ} u → u` as `t → 0` if and only if `u ∈ b^s_{p,∞}`. -/
+theorem tendsto_heatSemigroup_iff_mem_littleBesov (hp : p ≠ ⊤) (u : BesovSpace F φ s p ∞) :
+    Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u) ↔ u ∈ littleBesov F φ s p := by
+  rw [tendsto_heatSemigroup_iff, mem_littleBesov_iff_tendsto hp]
+
+variable (φ p) in
+/-- **The heat semigroup is not strongly continuous on `B^{-n/p'}_{p,∞}`.** On a real inner
+product space of dimension `n ≥ 1`, for `1 ≤ p ≤ ∞`, `e^{tΔ} δ₀` does not tend to the Dirac mass
+`δ₀` in `B^{-n/p'}_{p,∞}` as `t → 0`; at `p = ∞` this space is the Hölder–Zygmund space `𝒞^{-n}`.
+So the restriction to `q < ∞` in `TauCeti.BesovSpace.tendsto_heatSemigroup` cannot be dropped. -/
+theorem not_tendsto_heatSemigroup_delta_zero [Nontrivial E] :
+    ¬Tendsto (fun t ↦ heatSemigroup ℂ φ _ p ∞ t (memBesov_delta_zero φ p).toBesovSpace) (𝓝 0)
+      (𝓝 (memBesov_delta_zero φ p).toBesovSpace) := by
+  rw [tendsto_heatSemigroup_iff]
+  exact not_tendsto_rpow_mul_norm_block_delta_zero φ p
+
+variable (F φ s p q) in
+/-- **The heat semigroup on `B^s_{p,q}`, `q < ∞`, as a strongly continuous contraction
+semigroup**, for every `1 ≤ p ≤ ∞`. Its operators are those of
+`TauCeti.BesovSpace.heatSemigroup`, viewed as real-linear maps. -/
+def heatContractionSemigroup (hq : q ≠ ⊤) :
+    Semigroups.ContractionSemigroup (BesovSpace F φ s p q) where
+  toFun t := (heatSemigroup F φ s p q t).restrictScalars ℝ
+  map_zero' := by ext1 u; simp
+  map_add' t₁ t₂ := by ext1 u; simp [add_comm t₁ t₂]
+  continuousAt_zero' u := by
+    simpa [ContinuousAt] using tendsto_heatSemigroup hq u
+  contracting t := by
+    rw [ContinuousLinearMap.norm_restrictScalars]
+    exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+      rw [one_mul]; exact norm_heatSemigroup_le t u
+
+@[simp]
+theorem heatContractionSemigroup_apply (hq : q ≠ ⊤) (t : ℝ≥0) (u : BesovSpace F φ s p q) :
+    heatContractionSemigroup F φ s p q hq t u = heatSemigroup F φ s p q t u :=
+  (rfl)
+
+end StrongContinuity
 
 end BesovSpace
 
