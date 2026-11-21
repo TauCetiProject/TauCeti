@@ -17,7 +17,6 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.Set.Card
 -- Non-public: extending an isomorphism of lines to the whole space, inside the transitivity proof.
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
 # The general linear group permuting the nonzero vectors
@@ -28,9 +27,10 @@ An invertible matrix carries a nonzero vector to a nonzero vector, because it ha
 `Mathlib.LinearAlgebra.Matrix.Action`, and the permutation representation it carries is Mathlib's
 `MulAction.toPermHom`.
 
-That representation is faithful as soon as `R` is nontrivial: the standard basis vector `eⱼ` is
-then nonzero and `g • eⱼ` is the `j`-th column of `g`, so an element acting trivially on the
-nonzero vectors has the columns of the identity matrix. Over a finite semiring the set being
+That representation is faithful: over a nontrivial semiring the standard basis vector `eⱼ` is
+nonzero and `g • eⱼ` is the `j`-th column of `g`, so an element acting trivially on the nonzero
+vectors has the columns of the identity matrix, while over the trivial semiring `GL n R` is
+trivial. Over a finite semiring the set being
 permuted has `|R| ^ |n| - 1` elements, which can make the representation surjective in small
 cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/FieldCardTwo.lean`.
@@ -43,13 +43,12 @@ cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 
 ## Main results
 
-* `TauCeti.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is faithful over a
-  nontrivial semiring.
+* `TauCeti.faithfulSMulNonzeroVectors`: the action on the nonzero vectors is faithful.
 * `TauCeti.natCard_nonzeroVectors`: there are `|R| ^ |n| - 1` nonzero vectors.
 * `TauCeti.natCard_nonzeroVectors_fin_two_of_card_eq_two`: in dimension two over a semiring with
   two elements, there are three nonzero vectors.
-* `TauCeti.exists_smul_eq_of_ne_zero` and `TauCeti.isPretransitive_nonzeroVectors`: over a field
-  the action on the nonzero vectors is transitive.
+* `TauCeti.exists_smul_eq_of_ne_zero` and `TauCeti.isPretransitive_nonzeroVectors`: over a
+  division ring the action on the nonzero vectors is transitive.
 -/
 
 public section
@@ -71,20 +70,18 @@ def nonzeroVectors (n R : Type*) [Fintype n] [DecidableEq n] [Semiring R] :
 @[simp]
 theorem mem_nonzeroVectors {v : n → R} : v ∈ nonzeroVectors n R ↔ v ≠ 0 := Iff.rfl
 
-/-- **The action of `GL n R` on the nonzero vectors of `n → R` is faithful** over a nontrivial
-semiring. -/
-instance faithfulSMulNonzeroVectors [Nontrivial R] :
-    FaithfulSMul (GL n R) (nonzeroVectors n R) where
+/-- **The action of `GL n R` on the nonzero vectors of `n → R` is faithful.** Over the trivial
+semiring there are no nonzero vectors, but then `GL n R` is trivial as well. -/
+instance faithfulSMulNonzeroVectors : FaithfulSMul (GL n R) (nonzeroVectors n R) where
   eq_of_smul_eq_smul {g h} H := by
-    -- The standard basis vector `eⱼ` is nonzero, and `g • eⱼ` is the `j`-th column of `g`.
-    refine Units.ext (Matrix.ext fun i j ↦ ?_)
-    have hj : (Pi.single j (1 : R)) ∈ nonzeroVectors n R := by
-      refine mem_nonzeroVectors.2 fun hc ↦ one_ne_zero (α := R) ?_
-      simpa using congrFun hc j
-    have hcol := congrArg Subtype.val (H ⟨Pi.single j 1, hj⟩)
-    simp only [SubMulAction.val_smul, Units.smul_def, Matrix.smul_eq_mulVec,
-      Matrix.mulVec_single_one] at hcol
-    exact congrFun hcol i
+    cases subsingleton_or_nontrivial R
+    · exact Units.ext (Subsingleton.elim _ _)
+    -- Over a nontrivial semiring, the standard basis vector `eⱼ` is nonzero, and `g • eⱼ` is the
+    -- `j`-th column of `g`.
+    refine Units.ext (Matrix.ext_of_mulVec_single fun j ↦ ?_)
+    have hcol := congrArg Subtype.val
+      (H ⟨Pi.single j 1, mem_nonzeroVectors.2 (Pi.single_ne_zero_iff.2 one_ne_zero)⟩)
+    simpa only [SubMulAction.val_smul, Units.smul_def, Matrix.smul_eq_mulVec] using hcol
 
 /-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. Over an infinite semiring both sides are
 `0`: `Nat.card R = 0`, and `nonzeroVectors n R` is empty (when `n` is empty) or infinite. -/
@@ -109,31 +106,44 @@ noncomputable def nonzeroVectorsEquivFinThree (hR : Nat.card R = 2) :
   have : Finite R := Nat.finite_of_card_ne_zero (by omega)
   exact Finite.equivFinOfCardEq (natCard_nonzeroVectors_fin_two_of_card_eq_two hR)
 
-section Field
+section DivisionRing
 
-variable {K : Type*} [Field K]
+variable {D : Type*} [DivisionRing D]
 
-/-- **Invertible matrices act transitively on the nonzero vectors** over a field: any nonzero
-vector of `n → K` is carried to any other by some element of `GL n K`. -/
-theorem exists_smul_eq_of_ne_zero {v w : n → K} (hv : v ≠ 0) (hw : w ≠ 0) :
-    ∃ g : GL n K, g • v = w := by
-  -- Extend the isomorphism of lines `K ∙ v ≃ K ∙ w` sending `v` to `w` to all of `n → K`. This
-  -- adapts the proof of `Projectivization.linearEquiv_is_two_pretransitive` in
-  -- `Mathlib.LinearAlgebra.Projectivization.Action`, which extends an isomorphism of planes.
+/-- **Invertible matrices act transitively on the nonzero vectors** over a division ring: any
+nonzero vector of `n → D` is carried to any other by some element of `GL n D`. -/
+theorem exists_smul_eq_of_ne_zero {v w : n → D} (hv : v ≠ 0) (hw : w ≠ 0) :
+    ∃ g : GL n D, g • v = w := by
+  -- `Matrix.mulVec` commutes with the right scalar action of `D`, so we work over `Dᵐᵒᵖ`. Extend
+  -- the `Dᵐᵒᵖ`-linear isomorphism of the right lines through `v` and `w` sending `v` to `w` to an
+  -- automorphism `f` of `n → D`, as in `Projectivization.linearEquiv_is_two_pretransitive` of
+  -- `Mathlib.LinearAlgebra.Projectivization.Action`, and take the matrices of `f` and `f.symm`.
   obtain ⟨f, hf⟩ := Submodule.exists_linearEquiv_restrict_eq
-    ((LinearEquiv.toSpanNonzeroSingleton K _ v hv).symm.trans
-      (LinearEquiv.toSpanNonzeroSingleton K _ w hw))
-  refine ⟨GeneralLinearGroup.toLin.symm (LinearMap.GeneralLinearGroup.ofLinearEquiv f), ?_⟩
+    ((LinearEquiv.toSpanNonzeroSingleton Dᵐᵒᵖ _ v hv).symm.trans
+      (LinearEquiv.toSpanNonzeroSingleton Dᵐᵒᵖ _ w hw))
   have hfv : f v = w := by
-    have h1 : (LinearEquiv.toSpanNonzeroSingleton K _ v hv).symm _ = 1 :=
-      LinearEquiv.coord_self K _ v hv
+    have h1 : (LinearEquiv.toSpanNonzeroSingleton Dᵐᵒᵖ _ v hv).symm _ = 1 :=
+      LinearEquiv.coord_self Dᵐᵒᵖ _ v hv
     simpa [h1] using (hf ⟨v, Submodule.mem_span_singleton_self v⟩).symm
-  simpa [Units.smul_def, ← Matrix.mulVecLin_apply, ← GeneralLinearGroup.coe_toLin] using hfv
+  -- A `Dᵐᵒᵖ`-linear automorphism `e` of `n → D` is `Matrix.mulVec` by the matrix whose `j`-th
+  -- column is `e eⱼ`, since both are determined by their values on the `eⱼ`.
+  have key (e : (n → D) ≃ₗ[Dᵐᵒᵖ] n → D) (x : n → D) :
+      Matrix.of (fun i j ↦ e (Pi.single j 1) i) *ᵥ x = e x := by
+    have h : Matrix.mulVecBilin D Dᵐᵒᵖ (Matrix.of fun i j ↦ e (Pi.single j 1) i) = e.toLinearMap :=
+      LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring_op <| by
+        ext i
+        simp
+    exact LinearMap.congr_fun h x
+  refine ⟨⟨.of fun i j ↦ f (Pi.single j 1) i, .of fun i j ↦ f.symm (Pi.single j 1) i,
+    Matrix.ext_of_mulVec_single fun j ↦ ?_, Matrix.ext_of_mulVec_single fun j ↦ ?_⟩, ?_⟩
+  · rw [← Matrix.mulVec_mulVec, key, key, f.apply_symm_apply, Matrix.one_mulVec]
+  · rw [← Matrix.mulVec_mulVec, key, key, f.symm_apply_apply, Matrix.one_mulVec]
+  · rw [Units.smul_def, Units.val_mk, Matrix.smul_eq_mulVec, key, hfv]
 
-/-- The action of `GL n K` on the nonzero vectors of `n → K` is transitive. -/
-instance isPretransitive_nonzeroVectors : MulAction.IsPretransitive (GL n K) (nonzeroVectors n K) :=
+/-- The action of `GL n D` on the nonzero vectors of `n → D` is transitive. -/
+instance isPretransitive_nonzeroVectors : MulAction.IsPretransitive (GL n D) (nonzeroVectors n D) :=
   ⟨fun v w ↦ (exists_smul_eq_of_ne_zero v.property w.property).imp fun _ hg ↦ Subtype.ext hg⟩
 
-end Field
+end DivisionRing
 
 end TauCeti
