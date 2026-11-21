@@ -273,17 +273,10 @@ private theorem norm_leftMulPreStinespring_sum_le {n : ℕ} (c : A) (a : Fin n �
     CStarMatrix.ofMatrix (Matrix.of fun i j => star (c * a i) * (c * a j))
   let M₂ : CStarMatrix (Fin n) (Fin n) A :=
     CStarMatrix.ofMatrix (Matrix.of fun i j => (‖c‖ ^ 2 : ℝ) • (star (a i) * a j))
-  have hle : 0 ≤ M₂ - M₁ := CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun y => by
-    let z : A := ∑ j, a j * y j
-    have hdiff : (∑ i, ∑ j, star (y i) * (M₂ - M₁) i j * y j) =
-        (‖c‖ ^ 2 : ℝ) • (star z * z) - star z * (star c * c) * z := by
-      simp only [z, star_sum, Finset.sum_mul, Finset.smul_sum]
-      rw [← Finset.sum_sub_distrib]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      simp [M₁, M₂, Finset.mul_sum, Finset.smul_sum, Finset.sum_sub_distrib, mul_sub, sub_mul,
-        mul_assoc, mul_smul_comm, smul_mul_assoc]
-    rw [hdiff, sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
-    exact CStarAlgebra.star_left_conjugate_le_norm_smul z (star c * c)
+  have hle : 0 ≤ M₂ - M₁ := by
+    convert CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg c a using 1
+    ext i j
+    simp [M₁, M₂, -Complex.ofReal_pow, Complex.coe_smul]
   have hre : 0 ≤ (∑ i, ∑ j, ⟪ξ i, (M₂ - M₁).map φ i j (ξ j)⟫_ℂ).re :=
     (RCLike.nonneg_iff.mp
       ((CStarMatrix.nonneg_iff_forall_sum_inner_nonneg.mp
@@ -651,7 +644,7 @@ theorem norm_stinespringOp_sq_eq_norm_map_one : ‖φ.stinespringOp‖ ^ 2 = ‖
 
 /-- A completely positive map from a unital C⋆-algebra into `H →L[ℂ] H` attains its operator norm
 at `1`: `‖φ‖ = ‖φ 1‖`. -/
-@[simp] theorem opNorm_toContinuousLinearMap_eq_norm_map_one :
+theorem opNorm_toContinuousLinearMap_eq_norm_map_one :
     ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ := by
   rw [← φ.norm_stinespringOp_sq, φ.norm_stinespringOp_sq_eq_norm_map_one]
 

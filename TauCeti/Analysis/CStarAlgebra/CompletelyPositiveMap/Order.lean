@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
-public import TauCeti.Analysis.CStarAlgebra.MatrixOrder
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
@@ -211,8 +211,8 @@ theorem zero_le (φ : A₁ →CP A₂) : 0 ≤ φ := bot_le
 instance : IsOrderedAddMonoid (A₁ →CP A₂) where
   add_le_add_left ψ _ h χ := by obtain ⟨θ, rfl⟩ := h; exact ⟨θ, add_right_comm ψ θ χ⟩
 
-/-- If `ψ ≤ φ` in the completely positive order, then `ψ` is dominated entrywise by `φ` on positive
-matrices indexed by any finite type. -/
+/-- If `ψ ≤ φ` in the completely positive order, then `ψ` is dominated in the C⋆-matrix order after
+entrywise application by `φ` on positive matrices indexed by any finite type. -/
 theorem map_cstarMatrix_le_of_le {n : Type*} [Fintype n] {ψ φ : A₁ →CP A₂} (h : ψ ≤ φ)
     {M : CStarMatrix n n A₁} (hM : 0 ≤ M) : M.map ψ ≤ M.map φ := by
   obtain ⟨θ, rfl⟩ := h
