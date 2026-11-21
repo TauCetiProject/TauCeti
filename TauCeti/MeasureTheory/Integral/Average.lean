@@ -123,10 +123,15 @@ applied to an integrable function that is almost everywhere at least `a`.
   best constant, with no loss.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
+* `TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`: among the multiples
+  of `ν`, the projection of the average of `f` over `s ⊆ t` is no farther from `f` on `s` than any
+  multiple of `ν` is from `f` on `t`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.measureReal_mul_sq_norm_setAverage_le`: the real form `μ s ‖f_s‖² ≤ ∫_s ‖f‖²`, for
+  `f ∈ L²(s)`, of Hölder's bound `TauCeti.enorm_setAverage_rpow_le` at exponent `2`.
 * `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
 * `TauCeti.setLAverage_add_const`: a constant term comes out of the lower average over a set of
   finite nonzero measure.
@@ -582,6 +587,28 @@ theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup
   simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
   exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
 
+/-- The measure of a set `s` of finite measure times the squared norm of the average of `f` over
+`s` is at most `∫_s ‖f‖²`. This is the real-valued form of `enorm_setAverage_rpow_le` at
+exponent `2`. -/
+theorem measureReal_mul_sq_norm_setAverage_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {s : Set X} {f : X → F} (hs : μ s ≠ ⊤) (hf : MemLp f 2 (μ.restrict s)) :
+    μ.real s * ‖⨍ y in s, f y ∂μ‖ ^ 2 ≤ ∫ x in s, ‖f x‖ ^ 2 ∂μ := by
+  have hf2 : IntegrableOn (fun x ↦ ‖f x‖ ^ 2) s μ := by
+    simpa only [sub_zero] using hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs 0
+  have h := (enorm_setAverage_rpow_le (f := f) (mu := μ) (s := s) one_le_two).trans_eq <| by
+    rw [← ENNReal.div_eq_inv_mul, ← setLAverage_eq,
+      ← ofReal_setAverage_norm_rpow zero_le_two (by simpa only [Real.rpow_two] using hf2)]
+  simp only [Real.rpow_two, ENNReal.rpow_two] at h
+  rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
+    ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)] at h
+  calc μ.real s * ‖⨍ y in s, f y ∂μ‖ ^ 2
+      ≤ μ.real s * ⨍ x in s, ‖f x‖ ^ 2 ∂μ := by gcongr
+    _ ≤ ∫ x in s, ‖f x‖ ^ 2 ∂μ := by
+        rcases eq_or_ne (μ s) 0 with h0 | h0
+        · simp [Measure.real, h0]
+        · rw [measureReal_def, setAverage_eq, smul_eq_mul, measureReal_def, ← mul_assoc,
+            mul_inv_cancel₀ (ENNReal.toReal_ne_zero.2 ⟨h0, hs⟩), one_mul]
+
 end Jensen
 
 section VanishingProportion
@@ -949,6 +976,20 @@ theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
     rw [sub_smul]; abel
   rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]
   exact le_add_of_nonneg_right (sq_nonneg _)
+
+/-- **The best constant on a line, on nested sets.** Let `s ⊆ t` with `μ t < ∞` and let `f` be
+square integrable on `t`. The square mean distance on `s` from `f` to the projection
+`(⟪f_s, ν⟫ / ‖ν‖²) ν` of its average `f_s` is at most the square mean distance on `t` from `f` to
+any multiple `c ν`. -/
+theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset {t : Set X} (hst : s ⊆ t)
+    (ht : μ t ≠ ⊤) (hf : MemLp f 2 (μ.restrict t)) (ν : F) (c : ℝ) :
+    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
+      ∫ x in t, ‖f x - c • ν‖ ^ 2 ∂μ :=
+  (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le
+    (ne_top_of_le_ne_top ht (measure_mono hst))
+    (hf.mono_measure (Measure.restrict_mono hst le_rfl)) ν c).trans
+    (setIntegral_mono_set (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _)
+      (ae_of_all _ fun _ => by positivity) hst.eventuallySubset)
 
 end InnerProduct
 
