@@ -530,7 +530,7 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_ball
   have hu' := energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith (B := B') hB' hsub
     (h.mono_set hsub) hα haK hGK (hfB'.mono_exponent hq) hu
   have hM' : (Ka : ℝ) * (r / 2) ^ (α : ℝ) ≤ M := (mul_le_mul_of_nonneg_left
-    (Real.rpow_le_rpow (by positivity) (half_le_self hr.le) α.2) Ka.2).trans hM
+    (Real.rpow_le_rpow (by positivity) (half_le_self hr.le) α.property) Ka.property).trans hM
   have hH := hS (Omega := B') (u := W1p.restrictL hB' u) (S := ball x₀ r) (R := r / 2)
     (h.mono_set (ball_subset_ball (by linarith))) (by rw [hth]; exact haK.mono hsub)
     (by rw [hth]; exact hGK.mono hsub) hM' (by rw [hth]; exact hfB') hu' (half_pos hr) hth.le
