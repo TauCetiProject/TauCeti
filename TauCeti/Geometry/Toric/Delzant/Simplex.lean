@@ -52,7 +52,7 @@ vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
   and the points `a e k*`.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
-* `TauCeti.Toric.linearCombination_simplexNormal_apply`: the combinations of the real normals.
+* `TauCeti.Toric.linearCombination_simplexNormal`: the combinations of the real normals.
 * `TauCeti.Toric.surjective_linearCombination_simplexNormal`: the real normals span `ℝ^κ`.
 
 ## References
@@ -349,12 +349,20 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
 
 /-! ### The real normals -/
 
+/-- The combination `∑ o, t_o u_o` of the real normals of the standard simplex is the vector
+`(t_(some k) - t_none)_k`. -/
+theorem linearCombination_simplexNormal (t : Option κ → ℝ) :
+    Fintype.linearCombination ℝ (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t =
+      fun k ↦ t (some k) - t none := by
+  ext k
+  simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply, sub_eq_neg_add]
+
 /-- The combination `∑ o, t_o u_o` of the real normals of the standard simplex has coordinates
 `t_(some k) - t_none`. -/
 theorem linearCombination_simplexNormal_apply (t : Option κ → ℝ) (k : κ) :
     Fintype.linearCombination ℝ (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t k =
       t (some k) - t none := by
-  simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply, sub_eq_neg_add]
+  rw [linearCombination_simplexNormal]
 
 /-- **The real normals of the standard simplex span `ℝ^κ`**, since the coordinate vectors are among
 them. This is the hypothesis under which the Delzant quotient carries its reduced moment map. -/

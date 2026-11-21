@@ -94,10 +94,8 @@ theorem mem_delzantLevel_simplex_iff
     have h1 : (1 : Option κ → ℝ) ∈
         LinearMap.ker (Fintype.linearCombination ℝ
           fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) := by
-      rw [LinearMap.mem_ker]
-      ext l
-      rw [linearCombination_simplexNormal_apply, Pi.one_apply, Pi.one_apply, sub_self,
-        Pi.zero_apply]
+      rw [LinearMap.mem_ker, linearCombination_simplexNormal]
+      exact funext fun _ ↦ sub_self 1
     have := mem_delzantLevel.1 h 1 h1
     simp only [delzantMomentMap_apply, Pi.one_apply, one_mul, Fintype.sum_option,
       simplexSupport_none, simplexSupport_some, add_zero] at this
@@ -132,9 +130,7 @@ theorem mem_ker_facetTorusHom_simplex_iff {θ : Option κ → AddCircle (2 * π)
   obtain rfl : (fun o ↦ (t o : AddCircle (2 * π))) = θ := funext ht
   rw [AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff, AddMonoidHom.mem_range]
   -- The class of `t` is in the kernel when `t_(some k) - t_none ∈ 2πℤ` for every `k`.
-  rw [show Fintype.linearCombination ℝ
-      (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t =
-        fun k ↦ t (some k) - t none from funext (linearCombination_simplexNormal_apply t)]
+  rw [linearCombination_simplexNormal]
   have hcoe (k : κ) : ((t (some k) : AddCircle (2 * π)) = t none) ↔
       ∃ n : ℤ, (2 * π) * n = t (some k) - t none := by
     rw [← sub_eq_zero, ← QuotientAddGroup.mk_sub, AddCircle.coe_eq_zero_iff]
@@ -213,9 +209,9 @@ private theorem mk_eq_mk_iff_mk_complex_eq (ha : 0 < a)
     refine ⟨fun _ ↦ ((-Complex.arg c : ℝ) : AddCircle (2 * π)),
       mem_ker_facetTorusHom_simplex_iff.2 fun _ ↦ rfl,
       Subtype.ext ((complexEuclideanEquivRealProd _).symm.injective (PiLp.ext fun o ↦ ?_))⟩
-    rw [coe_vadd_delzantLevel, torusRotation_coe, show -(fun _ : Option κ ↦ -Complex.arg c) =
-      fun _ ↦ Complex.arg c from funext fun _ ↦ neg_neg _,
-      complexEuclideanEquivRealProd_symm_weightRotation_apply]
+    rw [coe_vadd_delzantLevel, torusRotation_coe]
+    simp only [Pi.neg_def, neg_neg]
+    rw [complexEuclideanEquivRealProd_symm_weightRotation_apply]
     have hcexp : (Real.cos (Complex.arg c) + Real.sin (Complex.arg c) * I : ℂ) = c := by
       simpa [hnorm] using Complex.norm_mul_cos_add_sin_mul_I c
     rw [hcexp, ← congrFun hc o, Pi.smul_apply, smul_eq_mul]
@@ -308,9 +304,9 @@ theorem reducedMomentMap_simplexHomeomorph_symm_mk (ha : 0 < a) {v : Option κ �
   have hxk : (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).1 (some k) ^ 2 +
       (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).2 (some k) ^ 2 =
         ‖c‖ ^ 2 * ‖v (some k)‖ ^ 2 := by
-    rw [← Complex.normSq_add_mul_I, ← Complex.sq_norm, ← complexEuclideanEquivRealProd_symm_apply,
-      ← hc,
-      Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
+    have h := congrArg (‖·‖ ^ 2) (congrFun hc (some k))
+    simpa [complexEuclideanEquivRealProd_symm_apply, Complex.sq_norm, Complex.normSq_add_mul_I,
+      norm_mul, mul_pow] using h.symm
   have hs : ∑ o, ‖v o‖ ^ 2 ≠ 0 := fun h0 ↦ by
     rw [h0, mul_zero] at hsum
     linarith
