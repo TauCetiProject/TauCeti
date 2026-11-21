@@ -413,14 +413,15 @@ theorem coeFn_floerWeightedSobolevOperator (ω : SymplecticForm V)
 
 /-- On the jet of a test section `ξ`, the weighted operator is `D_u ξ - c(s) ξ`, when its
 coefficients are essentially bounded on the cylinder. -/
-theorem floerWeightedSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V)
+theorem floerWeightedSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {c : ℝ → ℝ}
     (hM : MemLp (fun z ↦ ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure)
     (ξ : testSection V) :
-    ω.floerWeightedSobolevOperator J Ks Kt u c ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
+    ω.floerWeightedSobolevOperator J Ks Kt u c
+        ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       fun z ↦ ω.floerLinearization J Ks Kt u ξ z - c z.1 • (ξ : ℝ × ℝ → V) z := by
-  filter_upwards [coeFn_floerWeightedSobolevOperator ω hM ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩, coeFn_jetₗ ξ]
-    with z h₁ h₂
+  filter_upwards [coeFn_floerWeightedSobolevOperator ω hM
+      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂]
   simp only [sub_apply, smul_apply, coe_fst', floerJetCoeff_jet]
   simp only [jet_apply]
