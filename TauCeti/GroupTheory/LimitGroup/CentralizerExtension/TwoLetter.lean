@@ -16,7 +16,6 @@ import TauCeti.GroupTheory.HNNExtension.Map
 import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.HNN
 import TauCeti.GroupTheory.LimitGroup.TwoGenerator
 import TauCeti.GroupTheory.PushoutI.FreeFactor
-import TauCeti.GroupTheory.PushoutI.Map
 
 /-!
 # A free letter in two extensions of centralizers
@@ -87,6 +86,11 @@ theorem twoLetterHom_def (ρ δ : G) :
 @[simp]
 theorem twoLetterHom_comp_inl (ρ δ : G) : (twoLetterHom ρ δ).comp inl = of.comp of :=
   eval_comp_inl ..
+
+@[simp]
+theorem twoLetterHom_comp_inr (ρ δ : G) :
+    (twoLetterHom ρ δ).comp inr = FreeGroup.lift fun _ => of (t 0) * t 0 :=
+  eval_comp_inr ..
 
 @[simp]
 theorem twoLetterHom_inl (ρ δ g : G) : twoLetterHom ρ δ (inl g) = of (of g) := by
@@ -194,11 +198,18 @@ private theorem coe_hnnEquiv (hδ : δ ≠ 1)
     (a : centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})}) :
     (hnnEquiv hδ a : G ∗ centralizer {δ}) =
       inl ((snd (a : G ∗ centralizer {δ}) : centralizer {δ}) : G) := by
-  obtain ⟨q, hq⟩ := (MonoidHom.ofInjective (f := (inr : centralizer {δ} →* G ∗ centralizer {δ}))
-    inr_injective).surjective (MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ) a)
-  have ha : (a : G ∗ centralizer {δ}) = inr q := by
-    simpa [MonoidHom.ofInjective_apply] using (congrArg Subtype.val hq).symm
-  simp [hnnEquiv, ← hq, ha, MulEquiv.subgroupCongr_apply, MonoidHom.ofInjective_apply]
+  -- The representative `q ∈ C_G(δ)` of `a` in the free factor, and its image `inl q`.
+  let q := (MonoidHom.ofInjective (inr_injective (M := G) (N := centralizer {δ}))).symm
+    (MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ) a)
+  have ha : (a : G ∗ centralizer {δ}) = inr q :=
+    (MulEquiv.subgroupCongr_apply (centralizer_inr_deltaQ hδ) a).symm.trans
+      (MonoidHom.apply_ofInjective_symm _ _).symm
+  have hq : MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ) a =
+      MonoidHom.ofInjective inr_injective q :=
+    (MulEquiv.apply_symm_apply _ _).symm
+  rw [ha, snd_apply_inr, hnnEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_apply, hq, MonoidHom.rangeEquivRange_ofInjective,
+    MonoidHom.ofInjective_apply, MonoidHom.comp_apply, coe_subtype]
 
 /-- After `baseHom`, the identification of the two copies of `C_G(δ)` is `x ↦ s⁻¹ x s`. -/
 private theorem baseHom_hnnEquiv (hδ : δ ≠ 1)
@@ -274,8 +285,8 @@ theorem twoLetterHom_injective (hG : IsFullyResiduallyFree G) {ρ δ : G} (h : �
     Function.Injective (twoLetterHom ρ δ) :=
   twoLetterHom_injective_of_injective (hG.coprodLift_subtype_centralizer_injective h)
 
-/-- Over the free group `F(a, b)`, the product `s u` of the new letters of `F(a, s)(b, u)` is free
-over `F(a, b)`. -/
+/-- Let `F = F(a, b)` be the free group on `a` and `b`. The product `s u` of the new letters of
+`F(a, s)(b, u)` is free over `F`. -/
 example : Function.Injective (twoLetterHom (FreeGroup.of (0 : Fin 2)) (FreeGroup.of 1)) :=
   twoLetterHom_injective isFullyResiduallyFree_of_isFreeGroup fun h =>
     absurd (FreeGroup.eq_of_commute_of_of h) (by decide)

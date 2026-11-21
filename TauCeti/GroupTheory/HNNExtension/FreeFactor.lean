@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import Mathlib.GroupTheory.HNNExtension
 public import TauCeti.Algebra.Group.Subgroup.Ker

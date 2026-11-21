@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.ULift
-public import Mathlib.GroupTheory.Coprod.Basic
-public import Mathlib.GroupTheory.CoprodI
 public import TauCeti.GroupTheory.CoprodI
+import TauCeti.Algebra.Group.ULift
 
 /-!
 # The free product of two monoids as a free product of a family
@@ -17,7 +16,8 @@ Mathlib builds the free product `M ∗ N` of two monoids independently of the fr
 `Monoid.CoprodI` of an indexed family. The free product of two monoids, possibly in different
 universes, is the free product of the family of their `ULift`s indexed by `Bool`, by the
 isomorphism matching the canonical inclusions. Through it, results about free products of families
-apply to free products of two monoids.
+apply to free products of two monoids. The same family indexes the two factors of an amalgamated
+product `Monoid.PushoutI` of two monoids.
 
 ## Main definitions
 
@@ -35,8 +35,8 @@ namespace Monoid.Coprod
 
 variable (M : Type u) (N : Type v)
 
-/-- The factors of `M ∗ N` as a family indexed by `Bool`, lifted to a common universe: `false`
-gives `M` and `true` gives `N`. -/
+/-- The factors of `M ∗ N`, or of an amalgamated product of `M` and `N`, as a family indexed by
+`Bool`, lifted to a common universe: `false` gives `M` and `true` gives `N`. -/
 abbrev Factors : Bool → Type max u v
   | false => ULift.{v} M
   | true => ULift.{u} N
@@ -79,31 +79,23 @@ def equivCoprodI : M ∗ N ≃* CoprodI (Factors M N) :=
 @[simp]
 theorem equivCoprodI_inl (m : M) :
     equivCoprodI (inl m : M ∗ N) = CoprodI.of (M := Factors M N) (i := false) (ULift.up m) := by
-  -- `MulEquiv.ulift` is `ULift.down`, with inverse `ULift.up`.
   simp [equivCoprodI]
-  rfl
 
 @[simp]
 theorem equivCoprodI_inr (n : N) :
     equivCoprodI (inr n : M ∗ N) = CoprodI.of (M := Factors M N) (i := true) (ULift.up n) := by
-  -- `MulEquiv.ulift` is `ULift.down`, with inverse `ULift.up`.
   simp [equivCoprodI]
-  rfl
 
 -- The factor element is `no_index`: the discrimination tree would store the type
 -- `Factors M N false` of `CoprodI.of (i := false)` unreduced, and the lemma would never fire.
 @[simp]
 theorem equivCoprodI_symm_of_false (x : ULift.{v} M) :
     equivCoprodI.symm (no_index (CoprodI.of (M := Factors M N) (i := false) x)) = inl x.down := by
-  -- `MulEquiv.ulift` is `ULift.down`, with inverse `ULift.up`.
   simp [equivCoprodI]
-  rfl
 
 @[simp]
 theorem equivCoprodI_symm_of_true (x : ULift.{u} N) :
     equivCoprodI.symm (no_index (CoprodI.of (M := Factors M N) (i := true) x)) = inr x.down := by
-  -- `MulEquiv.ulift` is `ULift.down`, with inverse `ULift.up`.
   simp [equivCoprodI]
-  rfl
 
 end Monoid.Coprod

@@ -82,6 +82,16 @@ theorem rangeEquivRange_symm_ofInjective (c : C) :
     (rangeEquivRange f g hf hg).symm (ofInjective hg c) = ofInjective hf c := by
   simp [rangeEquivRange]
 
+@[to_additive (attr := simp)]
+theorem rangeEquivRange_rangeRestrict (c : C) :
+    rangeEquivRange f g hf hg (f.rangeRestrict c) = g.rangeRestrict c :=
+  rangeEquivRange_ofInjective f g hf hg c
+
+@[to_additive (attr := simp)]
+theorem rangeEquivRange_symm_rangeRestrict (c : C) :
+    (rangeEquivRange f g hf hg).symm (g.rangeRestrict c) = f.rangeRestrict c :=
+  rangeEquivRange_symm_ofInjective f g hf hg c
+
 end rangeEquivRange
 
 end MonoidHom

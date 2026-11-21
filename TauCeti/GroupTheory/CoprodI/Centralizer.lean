@@ -48,8 +48,9 @@ theorem centralizer_of_eq_map {i : ι} {g : G i} (hg : g ≠ 1) :
   let φ : ∀ i, Unit →* G i := fun _ => 1
   -- A conjugate of `g ≠ 1` is not in the trivial amalgamated subgroup.
   have hg' (k : G i) : k * g * k⁻¹ ∉ (φ i).range := fun ⟨_, hk⟩ => hg (conj_eq_one_iff.1 hk.symm)
-  exact MulEquiv.centralizer_singleton_eq_map (.id _) (PushoutI.equivCoprodI φ)
-    (fun _ => PushoutI.equivCoprodI_of _ _)
-    (PushoutI.centralizer_of_eq_map (fun _ => Function.injective_of_subsingleton _) hg')
+  simpa using MulEquiv.centralizer_image_eq_map (PushoutI.equivCoprodI φ) (.id _)
+    (fun _ => PushoutI.equivCoprodI_of _ _) (s := {g}) (by
+      rw [Set.image_singleton]
+      exact PushoutI.centralizer_of_eq_map (fun _ => Function.injective_of_subsingleton _) hg')
 
 end Monoid.CoprodI
