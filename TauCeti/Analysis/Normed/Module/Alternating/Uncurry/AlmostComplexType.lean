@@ -34,6 +34,12 @@ family of forms of type `(p,q)`, which consists of forms of type `(p,q)` again
 On an almost complex manifold this is the pointwise reason why the exterior derivative of a form
 of type `(p,q)` has components of these four types only, and `N` is the Nijenhuis tensor.
 
+Alternating the interior products `v ↦ ι_{A v} ω` of a form `ω` gives the derivation of `A` on
+`ω`. For `A = id` and `A = J` this yields the Euler identities: the alternation of
+`v ↦ ι_v ω ∓ I • ι_{J v} ω` is `2 p • ω`, respectively `2 q • ω`, for `ω` of type `(p,q)`. They
+recover a form from its contractions with `(1,0)`-vectors when `p > 0`, respectively
+`(0,1)`-vectors when `q > 0`.
+
 ## Main declarations
 
 * `ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap`: the derivation of
@@ -52,6 +58,12 @@ of type `(p,q)` has components of these four types only, and `N` is the Nijenhui
 * `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_left`,
   `ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_succ_right`: the two components
   for a constant `J`.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp`: alternating the interior
+  products `v ↦ ι_{A v} ω` gives the derivation of `A` on `ω`.
+* `ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp`,
+  `ContinuousAlternatingMap.IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp`: the Euler
+  identities `∑ j, dz_j ∧ ι_(∂/∂z_j) ω = p • ω` and `∑ j, d(conj z_j) ∧ ι_(∂/∂(conj z_j)) ω = q • ω`
+  for a form of type `(p,q)`.
 
 ## References
 
@@ -445,5 +457,47 @@ theorem typeProjection_alternatizeUncurryFin_succ_right (hJ : ∀ v, J (J v) = -
     (isOfType_alternatizeUncurryFin_succ_right h₃ h₄).typeProjection_self, zero_add]
 
 end Linear
+
+section Contraction
+
+/-- Alternating the family `v ↦ ι_{A v} ω` of interior products of a `(k+1)`-form `ω` gives the
+derivation of the endomorphism `A` on `ω`. For `A = id` this is Mathlib's
+`ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft`, `alternatizeUncurryFin ω.curryLeft =
+(k + 1) • ω`. -/
+theorem alternatizeUncurryFin_curryLeft_comp (ω : E [⋀^Fin (k + 1)]→L[ℝ] F) (A : E →L[ℝ] E) :
+    alternatizeUncurryFin (ω.curryLeft ∘L A) = A.alternatingDerivation ω := by
+  ext v
+  rw [alternatizeUncurryFin_apply, ContinuousLinearMap.alternatingDerivation_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, curryLeft_apply_apply, ← Fin.insertNth_removeNth,
+    map_insertNth']
+
+variable {J : E →L[ℝ] E} {p q : ℕ} {ω : E [⋀^Fin (k + 1)]→L[ℝ] F}
+
+/-- **The Euler identity for the `(1,0)`-contraction.** Alternating the interior products
+`v ↦ ι_v ω - I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 p • ω`. For an almost complex
+structure, `ι_v - I • ι_{J v}` is the interior product with `2 v^(1,0)`, and in coordinates
+`z_j` this is the identity `∑ j, dz_j ∧ ι_(∂/∂z_j) ω = p • ω`. -/
+theorem IsOfType.alternatizeUncurryFin_curryLeft_sub_I_smul_comp (h : ω.IsOfType J p q) :
+    alternatizeUncurryFin (ω.curryLeft - I • ω.curryLeft ∘L J) = (2 * p : ℂ) • ω := by
+  rw [alternatizeUncurryFin_sub, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
+    alternatizeUncurryFin_curryLeft_comp, h.alternatingDerivation_eq, smul_smul,
+    ← Nat.cast_smul_eq_nsmul ℂ, ← sub_smul]
+  congr 1
+  have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
+  linear_combination hk - (p - q : ℂ) * I_sq
+
+/-- **The Euler identity for the `(0,1)`-contraction.** Alternating the interior products
+`v ↦ ι_v ω + I • ι_{J v} ω` of a form `ω` of type `(p,q)` gives `2 q • ω`. -/
+theorem IsOfType.alternatizeUncurryFin_curryLeft_add_I_smul_comp (h : ω.IsOfType J p q) :
+    alternatizeUncurryFin (ω.curryLeft + I • ω.curryLeft ∘L J) = (2 * q : ℂ) • ω := by
+  rw [alternatizeUncurryFin_add, alternatizeUncurryFin_smul, alternatizeUncurryFin_curryLeft,
+    alternatizeUncurryFin_curryLeft_comp, h.alternatingDerivation_eq, smul_smul,
+    ← Nat.cast_smul_eq_nsmul ℂ, ← add_smul]
+  congr 1
+  have hk : ((k + 1 : ℕ) : ℂ) = p + q := by exact_mod_cast h.add_eq.symm
+  linear_combination hk + (p - q : ℂ) * I_sq
+
+end Contraction
 
 end ContinuousAlternatingMap
