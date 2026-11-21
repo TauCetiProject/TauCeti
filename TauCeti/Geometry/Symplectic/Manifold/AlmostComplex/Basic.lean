@@ -186,9 +186,8 @@ lemma ext_almostComplexStructureAt
 tangent spaces, with inverse `-J`. -/
 def tangentEquiv (J : SmoothAlmostComplexStructure I M) (x : M) :
     TangentSpace I x ≃L[ℝ] TangentSpace I x :=
-  ContinuousLinearEquiv.equivOfInverse (J.toEndomorphism x) (-J.toEndomorphism x)
-    (fun v ↦ by simp)
-    (fun v ↦ by simp)
+  ContinuousLinearEquiv.ofContinuousLinearMap (J.toEndomorphism x) (-J.toEndomorphism x)
+    (by ext v; simp) (by ext v; simp)
 
 @[simp]
 theorem tangentEquiv_apply (J : SmoothAlmostComplexStructure I M) (x : M) (v : TangentSpace I x) :
