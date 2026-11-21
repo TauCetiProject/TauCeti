@@ -43,8 +43,8 @@ variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(�
 def holomorphicCoordinateSection (z : ℂ) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
   ofMDifferentiable (fun y => e y - z) fun y =>
-    ((mdifferentiableAt_of_mem_maximalAtlas he y.2).comp y
-      (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)).sub mdifferentiableAt_const
+    ((mdifferentiableAt_of_mem_maximalAtlas he y.property).comp y
+      (contMDiff_subtypeVal (n := 1).mdifferentiable one_ne_zero y)).sub mdifferentiableAt_const
 
 /-- The translated coordinate section evaluates at `y` to `e y - z`. -/
 -- Index on evaluation rather than the unexposed section carrier and its dependent open set.
@@ -140,9 +140,9 @@ private theorem holomorphicCoordinateGerm_dvd_germ_of_dslope (hx : x ∈ e.sourc
   have hWe : W ≤ (⟨e.source, e.open_source⟩ : Opens X) := fun y hy => (hV y hy).2.1
   let q := ofMDifferentiable (fun y : W => dslope A (e x) (e y)) (by
     intro y
-    exact ((hV y y.2).2.2.differentiableAt.mdifferentiableAt).comp y
-      ((mdifferentiableAt_of_mem_maximalAtlas he (hWe y.2)).comp y
-        (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)))
+    exact ((hV y y.property).2.2.differentiableAt.mdifferentiableAt).comp y
+      ((mdifferentiableAt_of_mem_maximalAtlas he (hWe y.property)).comp y
+        (contMDiff_subtypeVal (n := 1).mdifferentiable one_ne_zero y)))
   -- The division identity on this neighborhood passes through the ring germ map.
   have hmul : S.map (homOfLE hWe).op (holomorphicCoordinateSection e he (e x)) * q =
       S.map (homOfLE hWU).op s := by
@@ -159,7 +159,7 @@ private theorem holomorphicCoordinateGerm_dvd_germ_of_dslope (hx : x ∈ e.sourc
       rw [e.left_inv hx, hF ⟨x, hxU⟩, hs0]
     have hAy : A (e y) = s (Opens.inclusion hWU y) := by
       dsimp only [A, Function.comp_def]
-      rw [e.left_inv (hWe y.2)]
+      rw [e.left_inv (hWe y.property)]
       exact hF (Opens.inclusion hWU y)
     simpa only [smul_eq_mul, hAx, hAy, sub_zero] using sub_smul_dslope A (e x) (e y)
   refine ⟨S.germ W x hxV q, ?_⟩

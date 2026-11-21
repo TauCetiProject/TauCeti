@@ -88,6 +88,15 @@ def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
   pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R)
     (toConv (AlgHom.id R (coordinateHopfAlgebra R)))
 
+/-- The tautological point is the image of the identity point of the coordinate algebra under the
+point equivalence. -/
+theorem tautologicalPoint_def :
+    tautologicalPoint R =
+      pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R)
+        (toConv (AlgHom.id R (coordinateHopfAlgebra R))) := by
+  unfold tautologicalPoint
+  rfl
+
 /-- The upper-left diagonal coordinate of the standard `SL₂` Borel, bundled as a unit. -/
 def diagonalUnit : (coordinateHopfAlgebra R)ˣ :=
   SL2Borel.diag (tautologicalPoint R)
@@ -118,6 +127,10 @@ private def presentationToCoordinate :
     presentationRing R →ₐ[R] coordinateHopfAlgebra R :=
   Polynomial.aevalTower (presentationCoefficientToCoordinate R) (upperRightCoordinate R)
 
+private theorem presentationToCoordinate_X :
+    presentationToCoordinate R Polynomial.X = upperRightCoordinate R := by
+  rw [presentationToCoordinate, Polynomial.aevalTower_X]
+
 private theorem map_tautologicalPoint :
     SL2Borel.map (coordinateToPresentation R).toRingHom (tautologicalPoint R) =
       presentationPoint R := by
@@ -130,27 +143,11 @@ private theorem map_tautologicalPoint :
 private theorem map_presentationPoint :
     SL2Borel.map (presentationToCoordinate R).toRingHom (presentationPoint R) =
       tautologicalPoint R := by
-  apply Subtype.ext
-  apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j
-  · simp [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
-      presentationUnit_val, laurentEval_T, diagonalUnit_val]
-  · simp [presentationPoint, presentationToCoordinate, upperRightCoordinate_def]
-  · simp [presentationPoint, SL2Borel.apply_one_zero]
-  · have hdet := (tautologicalPoint R).1.2
-    rw [Matrix.det_fin_two, SL2Borel.apply_one_zero, mul_zero, sub_zero] at hdet
-    have hunit :
-        ((tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 0) *
-          ((tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 1 1) = 1 :=
-      hdet
-    have hunit' :
-        (diagonalUnit R : coordinateHopfAlgebra R) *
-          ((tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 1 1) = 1 := by
-      simpa only [diagonalUnit_val] using hunit
-    have hinv := Units.inv_eq_of_mul_eq_one_right hunit'
-    simpa [presentationPoint, presentationToCoordinate, presentationCoefficientToCoordinate,
-      presentationUnit_val, laurentEval_T] using hinv
+  rw [presentationPoint, SL2Borel.map_mk, ← SL2Borel.mk_diag_upperRight (tautologicalPoint R)]
+  congr 1
+  · apply Units.ext
+    simp [presentationToCoordinate, presentationCoefficientToCoordinate, diagonalUnit]
+  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, presentationToCoordinate_X, upperRightCoordinate]
 
 private theorem map_tautologicalUnit :
     Units.map (coordinateToPresentation R : coordinateHopfAlgebra R →* presentationRing R)
@@ -200,10 +197,8 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
       (fun g : SL2Borel (presentationRing R) ↦
         (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 1)
       (map_tautologicalPoint R)
-    have hX : presentationToCoordinate R Polynomial.X =
-        (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 := by
-      rw [presentationToCoordinate, Polynomial.aevalTower_X, upperRightCoordinate_def]
-    rw [AlgHom.comp_apply, hX, AlgHom.id_apply]
+    rw [AlgHom.comp_apply, presentationToCoordinate_X, upperRightCoordinate_def,
+      AlgHom.id_apply]
     rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
     exact h
 
@@ -221,25 +216,16 @@ def coordinateAlgEquiv :
 theorem coordinateAlgEquiv_diagonalUnit :
     coordinateAlgEquiv R (diagonalUnit R : coordinateHopfAlgebra R) =
       Polynomial.C (LaurentPolynomial.T 1) := by
-  have h := congrArg
-    (fun g : SL2Borel (presentationRing R) ↦
-      (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 0)
-    (map_tautologicalPoint R)
-  rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
   rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_apply]
-  simpa [AlgHom.coe_toRingHom, diagonalUnit_val, presentationUnit_val] using h
+  simpa using congrArg Units.val (map_tautologicalUnit R)
 
 /-- The coordinate equivalence sends the upper-right coordinate to the polynomial generator. -/
 @[simp]
 theorem coordinateAlgEquiv_upperRightCoordinate :
     coordinateAlgEquiv R (upperRightCoordinate R) = Polynomial.X := by
-  have h := congrArg
-    (fun g : SL2Borel (presentationRing R) ↦
-      (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 1)
-    (map_tautologicalPoint R)
-  rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
-  rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_apply]
-  simpa [AlgHom.coe_toRingHom, upperRightCoordinate_def] using h
+  apply (coordinateAlgEquiv R).symm.injective
+  rw [AlgEquiv.symm_apply_apply]
+  rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, presentationToCoordinate_X]
 
 /-- The inverse coordinate equivalence sends the Laurent generator to the diagonal unit. -/
 @[simp]

@@ -88,7 +88,7 @@ def wordMove {d : ℕ} : List (ℕ × Fin d) → (Fin (d + 2) → ℝ) →ₗ[�
 /-- The chronological linear move of an unaccelerated word in `Fin (d + 1)`. -/
 def unaccelWordMove {d : ℕ} : List (Fin (d + 1)) → (Fin (d + 2) → ℝ) →ₗ[ℝ] (Fin (d + 2) → ℝ)
   | [] => LinearMap.id
-  | j :: js => (unaccelWordMove js).comp (unaccelMove j)
+  | j :: js => (unaccelWordMove js).comp (linearMove j)
 
 @[simp]
 theorem wordMap_nil {d : ℕ} (x : Fin d → ℝ) : wordMap [] x = x :=
@@ -138,11 +138,11 @@ theorem unaccelWordMove_nil {d : ℕ} : unaccelWordMove (d := d) [] = LinearMap.
 
 @[simp]
 theorem unaccelWordMove_cons {d : ℕ} (j : Fin (d + 1)) (js : List (Fin (d + 1))) :
-    unaccelWordMove (j :: js) = (unaccelWordMove js).comp (unaccelMove j) :=
+    unaccelWordMove (j :: js) = (unaccelWordMove js).comp (linearMove j) :=
   (rfl)
 
 theorem unaccelWordMove_singleton {d : ℕ} (j : Fin (d + 1)) :
-    unaccelWordMove [j] = unaccelMove j := by
+    unaccelWordMove [j] = linearMove j := by
   simp
 
 /-- Concatenation law for branch maps: `F_{u ++ v} = F_v ∘ F_u`. -/
@@ -179,7 +179,7 @@ theorem wordMap_mapsTo {d : ℕ} (u : List (ℕ × Fin d)) :
     MapsTo (wordMap u) (orderedSimplex d) (orderedSimplex d) := by
   induction u with
   | nil => exact mapsTo_id _
-  | cons a u ih => exact ih.comp (branchMap_mapsTo a)
+  | cons a u ih => exact ih.comp (mapsTo_branchMap a)
 
 /-- Every word map is smooth on `orderedSimplex d`. -/
 theorem contDiffOn_wordMap {d : ℕ} (u : List (ℕ × Fin d)) (n : WithTop ℕ∞) :
@@ -187,7 +187,7 @@ theorem contDiffOn_wordMap {d : ℕ} (u : List (ℕ × Fin d)) (n : WithTop ℕ�
   induction u with
   | nil => exact contDiffOn_id
   | cons a u ih =>
-    exact ih.comp (contDiffOn_branchMap_orderedSimplex a n) (branchMap_mapsTo a)
+    exact ih.comp (contDiffOn_branchMap a) (mapsTo_branchMap a)
 
 /-- Every word delay is smooth on `orderedSimplex d`. -/
 theorem contDiffOn_wordDelay {d : ℕ} (u : List (ℕ × Fin d)) (n : WithTop ℕ∞) :
@@ -196,8 +196,8 @@ theorem contDiffOn_wordDelay {d : ℕ} (u : List (ℕ × Fin d)) (n : WithTop �
   | nil => exact contDiffOn_const
   | cons a u ih =>
     have hcomp : ContDiffOn ℝ n (fun x => wordDelay u (branchMap a x)) (orderedSimplex d) :=
-      ih.comp (contDiffOn_branchMap_orderedSimplex a n) (branchMap_mapsTo a)
-    exact ((contDiffOn_branchDelay_orderedSimplex a n).add hcomp).congr fun x _ =>
+      ih.comp (contDiffOn_branchMap a) (mapsTo_branchMap a)
+    exact ((contDiffOn_branchDelay a).add hcomp).congr fun x _ =>
       wordDelay_cons a u x
 
 /-- Every accelerated linear word move preserves `orderedCone d`. -/
@@ -212,69 +212,68 @@ theorem unaccelWordMove_mapsTo_orderedCone {d : ℕ} (js : List (Fin (d + 1))) :
     MapsTo (unaccelWordMove js) (orderedCone d) (orderedCone d) := by
   induction js with
   | nil => exact mapsTo_id _
-  | cons j js ih => exact ih.comp (unaccelMove_mapsTo_orderedCone j)
+  | cons j js ih => exact ih.comp (linearMove_mapsTo_orderedCone j)
 
 /-! ### Homogeneous meaning and scale invariance -/
 
 /-- Homogeneous intertwining identity for chronological words on `orderedCone d`:
-`γ_u y = y_n exp(T_u(w)) (F_u(w), 1)` where `w = normalizeCone y`. -/
-theorem wordMove_eq_smul_toHomogeneous {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
+`γ_u y = y_n exp(T_u(w)) (F_u(w), 1)` where `w = simplexChart y`. -/
+theorem wordMove_eq_smul_simplexLift {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
     wordMove u y =
-      (y (Fin.last (d + 1)) * Real.exp (wordDelay u (normalizeCone y))) •
-        toHomogeneous (wordMap u (normalizeCone y)) := by
+      (y (Fin.last (d + 1)) * Real.exp (wordDelay u (simplexChart y))) •
+        simplexLift (wordMap u (simplexChart y)) := by
   induction u generalizing y with
   | nil =>
-    simp [smul_toHomogeneous_normalizeCone (orderedCone_subset_coneSpan d hy)
-      (last_pos_of_mem_orderedCone hy).ne']
+    simp [last_smul_simplexLift_simplexChart hy]
   | cons a u ih =>
     have hy' : accelMove a y ∈ orderedCone d := accelMove_mapsTo_orderedCone a hy
-    have hq : 0 < branchDenom a (normalizeCone y) :=
-      branchDenom_pos a (normalizeCone_mem_orderedSimplex hy)
-    rw [wordMove_cons, LinearMap.comp_apply, ih hy', normalizeCone_accelMove a hy,
+    have hq : 0 < branchDenom a (simplexChart y) :=
+      branchDenom_pos_of_mem_orderedSimplex a (simplexChart_mem_orderedSimplex hy)
+    rw [wordMove_cons, LinearMap.comp_apply, ih hy', simplexChart_accelMove a hy,
       accelMove_last_eq_mul_branchDenom a hy, wordDelay_cons, wordMap_cons, Real.exp_add,
       branchDelay_def, Real.exp_log hq, mul_assoc]
 
-/-- The last coordinate of `γ_u y` on `orderedCone d` equals `y_n exp(T_u(normalizeCone y))`. -/
+/-- The last coordinate of `γ_u y` on `orderedCone d` equals `y_n exp(T_u(simplexChart y))`. -/
 theorem wordMove_last_eq {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
     wordMove u y (Fin.last (d + 1)) =
-      y (Fin.last (d + 1)) * Real.exp (wordDelay u (normalizeCone y)) := by
-  rw [wordMove_eq_smul_toHomogeneous u hy]
+      y (Fin.last (d + 1)) * Real.exp (wordDelay u (simplexChart y)) := by
+  rw [wordMove_eq_smul_simplexLift u hy]
   simp
 
 /-- Projective normalisation intertwines `wordMove u` and `wordMap u` on `orderedCone d`. -/
-theorem normalizeCone_wordMove {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
+theorem simplexChart_wordMove {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
-    normalizeCone (wordMove u y) = wordMap u (normalizeCone y) := by
-  have hpos : 0 < y (Fin.last (d + 1)) * Real.exp (wordDelay u (normalizeCone y)) :=
-    mul_pos (last_pos_of_mem_orderedCone hy) (Real.exp_pos _)
-  rw [wordMove_eq_smul_toHomogeneous u hy, normalizeCone_smul hpos.ne',
-    normalizeCone_toHomogeneous]
+    simplexChart (wordMove u y) = wordMap u (simplexChart y) := by
+  have hpos : 0 < y (Fin.last (d + 1)) * Real.exp (wordDelay u (simplexChart y)) :=
+    mul_pos (pos_last_of_mem_orderedCone hy) (Real.exp_pos _)
+  rw [wordMove_eq_smul_simplexLift u hy, simplexChart_smul _ hpos.ne',
+    simplexChart_simplexLift]
 
-/-- Homogeneous formula for the word delay: `T_u(normalizeCone y) = log ((γ_u y)_n / y_n)`. -/
-theorem wordDelay_normalizeCone {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
+/-- Homogeneous formula for the word delay: `T_u(simplexChart y) = log ((γ_u y)_n / y_n)`. -/
+theorem wordDelay_simplexChart {d : ℕ} (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
-    wordDelay u (normalizeCone y) =
+    wordDelay u (simplexChart y) =
       Real.log (wordMove u y (Fin.last (d + 1)) / y (Fin.last (d + 1))) := by
-  rw [wordMove_last_eq u hy, mul_div_cancel_left₀ _ (last_pos_of_mem_orderedCone hy).ne',
+  rw [wordMove_last_eq u hy, mul_div_cancel_left₀ _ (pos_last_of_mem_orderedCone hy).ne',
     Real.log_exp]
 
 /-- Homogeneous description of the renewal count on `orderedCone d`. -/
-theorem wordCount_normalizeCone_eq {d : ℕ} {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d)
+theorem wordCount_simplexChart_eq {d : ℕ} {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d)
     (r : ℝ) :
-    wordCount d (normalizeCone y) r =
+    wordCount d (simplexChart y) r =
       {u : List (ℕ × Fin d) |
         Real.log (wordMove u y (Fin.last (d + 1)) / y (Fin.last (d + 1))) ≤ r}.ncard := by
   rw [wordCount_def]
   congr 1
   ext u
-  simp [wordDelay_normalizeCone u hy]
+  simp [wordDelay_simplexChart u hy]
 
 /-- Scale invariance of the renewal count under nonzero scaling of a homogeneous vector. -/
-theorem wordCount_normalizeCone_smul {d : ℕ} {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ) (r : ℝ) :
-    wordCount d (normalizeCone (c • y)) r = wordCount d (normalizeCone y) r := by
-  rw [normalizeCone_smul hc]
+theorem wordCount_simplexChart_smul {d : ℕ} {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ) (r : ℝ) :
+    wordCount d (simplexChart (c • y)) r = wordCount d (simplexChart y) r := by
+  rw [simplexChart_smul y hc]
 
 /-! ### Lower bounds and finiteness of contributing words -/
 
@@ -285,8 +284,10 @@ theorem length_mul_log_le_wordDelay {d : ℕ} (u : List (ℕ × Fin d)) {x : Fin
   induction u generalizing x with
   | nil => simp
   | cons a u ih =>
-    have h1 := log_three_div_two_le_branchDelay a hx
-    have h2 := ih (branchMap_mapsTo a hx)
+    have h1 : Real.log (3 / 2) ≤ branchDelay a x := by
+      rw [branchDelay_def]
+      exact log_three_halves_le_log_branchDenom a (le_one_half_of_mem_orderedSimplex hx a.2)
+    have h2 := ih (mapsTo_branchMap a hx)
     simp only [List.length_cons, Nat.cast_add, Nat.cast_one, wordDelay_cons]
     linarith
 
@@ -325,8 +326,8 @@ theorem log_le_wordDelay_of_mem {d : ℕ} {u : List (ℕ × Fin d)} {a : ℕ × 
   | cons b v ih =>
     rw [wordDelay_cons]
     rcases List.mem_cons.1 ha with rfl | hv
-    · linarith [log_le_branchDelay a hx, wordDelay_nonneg v (branchMap_mapsTo a hx)]
-    · linarith [(branchDelay_pos b hx).le, ih hv (branchMap_mapsTo b hx)]
+    · linarith [log_le_branchDelay a hx, wordDelay_nonneg v (mapsTo_branchMap a hx)]
+    · linarith [(branchDelay_pos b hx).le, ih hv (mapsTo_branchMap b hx)]
 
 /-- Every letter `(A, j)` occurring in a word with `T_u(w) ≤ r` satisfies `A ≤ 2 e^r - 3`. -/
 theorem letter_fst_le_of_wordDelay_le {d : ℕ} {u : List (ℕ × Fin d)} {a : ℕ × Fin d} (ha : a ∈ u)
@@ -343,7 +344,7 @@ theorem finite_wordDelay_le {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSim
     {u : List (ℕ × Fin d) | wordDelay u x ≤ r}.Finite := by
   let L : ℕ := Nat.ceil (r / Real.log (3 / 2))
   let M : ℕ := Nat.ceil (2 * Real.exp r)
-  let embed : List (Fin (M + 1) × Fin d) → List (ℕ × Fin d) := List.map fun p => (p.1.1, p.2)
+  let embed : List (Fin (M + 1) × Fin d) → List (ℕ × Fin d) := List.map fun p => (p.1.val, p.2)
   have hfin : (embed '' {l : List (Fin (M + 1) × Fin d) | l.length ≤ L}).Finite :=
     (List.finite_length_le (α := Fin (M + 1) × Fin d) (n := L)).image embed
   refine hfin.subset fun u hu => ?_
@@ -375,9 +376,9 @@ theorem wordCount_mono {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex 
 theorem wordCount_eq_zero_of_neg {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) {r : ℝ}
     (hr : r < 0) :
     wordCount d x r = 0 := by
-  rw [wordCount_def, show {u : List (ℕ × Fin d) | wordDelay u x ≤ r} = ∅ from
-    Set.eq_empty_of_forall_notMem fun u hu => not_le.2 (hr.trans_le (wordDelay_nonneg u hx)) hu,
-    Set.ncard_empty]
+  have hempty : {u : List (ℕ × Fin d) | wordDelay u x ≤ r} = ∅ :=
+    Set.eq_empty_of_forall_notMem fun u hu => not_le.2 (hr.trans_le (wordDelay_nonneg u hx)) hu
+  rw [wordCount_def, hempty, Set.ncard_empty]
 
 /-- For `0 ≤ r < log (3 / 2)`, only the empty word contributes to `wordCount d x r`. -/
 theorem wordCount_eq_one_of_lt_log {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) {r : ℝ}
@@ -470,7 +471,7 @@ theorem finite_support_wordCount_branch {d : ℕ} {x : Fin d → ℝ} (hx : x �
     (finite_wordDelay_le hx r).preimage fun _ _ _ _ h => by simpa using h
   refine hpre.subset fun a ha => by_contra fun hlt => ?_
   simp only [Set.mem_preimage, mem_ofPred_eq, wordDelay_singleton, not_le] at hlt
-  exact ha (wordCount_eq_zero_of_neg (branchMap_mapsTo a hx) (sub_neg.2 hlt))
+  exact ha (wordCount_eq_zero_of_neg (mapsTo_branchMap a hx) (sub_neg.2 hlt))
 
 private theorem ncard_nonempty_wordDelay_le {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
@@ -491,14 +492,14 @@ private theorem ncard_nonempty_wordDelay_le {d : ℕ} {x : Fin d → ℝ} (hx : 
       · have hv : wordDelay v (branchMap a x) ≤ r - branchDelay a x := by
           rw [wordDelay_cons] at hu; linarith
         refine ⟨a, ?_, v, hv, rfl⟩
-        rw [wordCount_def, Set.ncard_eq_zero (finite_wordDelay_le (branchMap_mapsTo a hx) _)]
+        rw [wordCount_def, Set.ncard_eq_zero (finite_wordDelay_le (mapsTo_branchMap a hx) _)]
         exact Set.Nonempty.ne_empty ⟨v, hv⟩
     · rintro ⟨a, _, v, hv, rfl⟩
       exact ⟨by rw [wordDelay_cons]; linarith, List.cons_ne_nil _ _⟩
   have hBdisj : T.PairwiseDisjoint B := fun a₁ _ a₂ _ hne =>
     Set.disjoint_left.2 fun _ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ => hne (List.cons.inj (h₁.trans h₂.symm)).1
   have hBfin : ∀ a ∈ T, (B a).Finite := fun a _ =>
-    (finite_wordDelay_le (branchMap_mapsTo a hx) _).image _
+    (finite_wordDelay_le (mapsTo_branchMap a hx) _).image _
   have hBcard : ∀ a, (B a).ncard = f a := fun a =>
     Set.ncard_image_of_injective _ fun _ _ h => (List.cons.inj h).2
   rw [hS₁_eq, hTfin.ncard_biUnion hBfin hBdisj]
@@ -519,12 +520,13 @@ theorem wordCount_renewal {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimpl
   have hS₀_card :
       {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []}.ncard = if 0 ≤ r then 1 else 0 := by
     split_ifs with hr
-    · rw [show {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = {[]} from by
+    · have hsing : {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = {[]} := by
         ext u; simp only [mem_ofPred_eq, mem_singleton_iff]
-        exact ⟨fun h => h.2, fun h => ⟨by simp [h, hr], h⟩⟩, Set.ncard_singleton]
-    · rw [show {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = ∅ from
-        Set.eq_empty_of_forall_notMem fun u ⟨hu, hnil⟩ => hr (by simpa [hnil] using hu),
-        Set.ncard_empty]
+        exact ⟨fun h => h.2, fun h => ⟨by simp [h, hr], h⟩⟩
+      rw [hsing, Set.ncard_singleton]
+    · have hempty : {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = ∅ :=
+        Set.eq_empty_of_forall_notMem fun u ⟨hu, hnil⟩ => hr (by simpa [hnil] using hu)
+      rw [hempty, Set.ncard_empty]
   have hSdisj : Disjoint {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []}
       {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u ≠ []} :=
     Set.disjoint_left.2 fun _ h0 h1 => h1.2 h0.2
@@ -579,21 +581,24 @@ private theorem isStrictOrderedCone_snoc_sum {d : ℕ} (hd : 1 ≤ d) {f : Fin (
 
 /-- A canonical witness in `IsStrictOrderedCone` for `1 ≤ d`: `(1, 2, …, d + 1, ∑ (i + 1))`. -/
 private def strictOrderedConePoint (d : ℕ) : Fin (d + 2) → ℝ :=
-  Fin.snoc (α := fun _ => ℝ) (fun i : Fin (d + 1) => (i.1 : ℝ) + 1)
-    (∑ i : Fin (d + 1), ((i.1 : ℝ) + 1))
+  Fin.snoc (α := fun _ => ℝ) (fun i : Fin (d + 1) => (i.val : ℝ) + 1)
+    (∑ i : Fin (d + 1), ((i.val : ℝ) + 1))
 
 private theorem strictOrderedConePoint_mem {d : ℕ} (hd : 1 ≤ d) :
     IsStrictOrderedCone (strictOrderedConePoint d) :=
   isStrictOrderedCone_snoc_sum hd (fun _ => by positivity)
     (fun _ _ h => by have : (_ : ℝ) < _ := Nat.cast_lt.2 h; linarith)
 
-private theorem unaccelMove_preserves_strict {d : ℕ} (hd : 1 ≤ d) (j : Fin (d + 1))
+private theorem linearMove_preserves_strict {d : ℕ} (hd : 1 ≤ d) (j : Fin (d + 1))
     {y : Fin (d + 2) → ℝ} (hy : IsStrictOrderedCone y) :
-    IsStrictOrderedCone (unaccelMove j y) := by
-  have hEq : unaccelMove j y =
+    IsStrictOrderedCone (linearMove j y) := by
+  have hsum : ∑ i : Fin (d + 1), y (j.castSucc.succAbove i) = ∑ k, y k - y j.castSucc := by
+    linarith [Fin.sum_univ_succAbove y j.castSucc]
+  have hEq : linearMove j y =
       Fin.snoc (α := fun _ => ℝ) (fun i => y (j.castSucc.succAbove i))
         (∑ i, y (j.castSucc.succAbove i)) :=
-    funext (Fin.lastCases (by simp [unaccelMove_last]) (fun i => by simp [unaccelMove_castSucc]))
+    funext (Fin.lastCases (by simp [linearMove_apply_last, hsum])
+      (fun i => by simp [linearMove_apply_castSucc]))
   rw [hEq]
   exact isStrictOrderedCone_snoc_sum hd (fun _ => hy.1 _)
     (fun _ _ h => hy.2.1 ((Fin.strictMono_succAbove _) h))
@@ -603,12 +608,12 @@ private theorem unaccelWordMove_preserves_strict {d : ℕ} (hd : 1 ≤ d) (js : 
     IsStrictOrderedCone (unaccelWordMove js y) := by
   induction js generalizing y with
   | nil => exact hy
-  | cons j _ ih => exact ih (unaccelMove_preserves_strict hd j hy)
+  | cons j _ ih => exact ih (linearMove_preserves_strict hd j hy)
 
-private theorem unaccelMove_last_gt {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
+private theorem linearMove_last_gt {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
     (hy : IsStrictOrderedCone y) :
-    y (Fin.last (d + 1)) < unaccelMove j y (Fin.last (d + 1)) := by
-  rw [unaccelMove_last_of_mem_coneSpan j hy.2.2]
+    y (Fin.last (d + 1)) < linearMove j y (Fin.last (d + 1)) := by
+  rw [linearMove_last_of_mem_coneSpan j hy.2.2]
   linarith [hy.2.1 (Fin.castSucc_lt_last j)]
 
 private theorem unaccelWordMove_last_ge {d : ℕ} (hd : 1 ≤ d) (js : List (Fin (d + 1)))
@@ -617,34 +622,34 @@ private theorem unaccelWordMove_last_ge {d : ℕ} (hd : 1 ≤ d) (js : List (Fin
   induction js generalizing y with
   | nil => exact le_rfl
   | cons j _ ih =>
-    exact (unaccelMove_last_gt j hy).le.trans (ih (unaccelMove_preserves_strict hd j hy))
+    exact (linearMove_last_gt j hy).le.trans (ih (linearMove_preserves_strict hd j hy))
 
 private theorem unaccelWordMove_snoc_ne_self {d : ℕ} (hd : 1 ≤ d) (l : List (Fin (d + 1)))
     (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ} (hy : IsStrictOrderedCone y) :
     unaccelWordMove (l ++ [j]) y ≠ y := fun hEq => by
   rw [unaccelWordMove_append, LinearMap.comp_apply, unaccelWordMove_singleton] at hEq
-  have hlt := unaccelMove_last_gt j (unaccelWordMove_preserves_strict hd l hy)
+  have hlt := linearMove_last_gt j (unaccelWordMove_preserves_strict hd l hy)
   have hge := unaccelWordMove_last_ge hd l hy
   linarith [congrFun hEq (Fin.last (d + 1))]
 
-/-- On strictly ordered cone vectors, `unaccelMove j y` uniquely determines both `j` and `y`. -/
-private theorem unaccelMove_inj_strict {d : ℕ} {j₁ j₂ : Fin (d + 1)}
+/-- On strictly ordered cone vectors, `linearMove j y` uniquely determines both `j` and `y`. -/
+private theorem linearMove_inj_strict {d : ℕ} {j₁ j₂ : Fin (d + 1)}
     {y₁ y₂ : Fin (d + 2) → ℝ} (hy₁ : IsStrictOrderedCone y₁) (hy₂ : IsStrictOrderedCone y₂)
-    (heq : unaccelMove j₁ y₁ = unaccelMove j₂ y₂) :
+    (heq : linearMove j₁ y₁ = linearMove j₂ y₂) :
     j₁ = j₂ ∧ y₁ = y₂ := by
   have hlast : y₁ (Fin.last (d + 1)) = y₂ (Fin.last (d + 1)) := by
-    simpa [unaccelMove_penultimate] using congrFun heq (Fin.last d).castSucc
+    simpa [linearMove_penultimate] using congrFun heq (Fin.last d).castSucc
   have hdel : y₁ j₁.castSucc = y₂ j₂.castSucc := by
     have htop := congrFun heq (Fin.last (d + 1))
-    rw [unaccelMove_last_of_mem_coneSpan j₁ hy₁.2.2,
-      unaccelMove_last_of_mem_coneSpan j₂ hy₂.2.2] at htop
+    rw [linearMove_last_of_mem_coneSpan j₁ hy₁.2.2,
+      linearMove_last_of_mem_coneSpan j₂ hy₂.2.2] at htop
     linarith
   have hnotlt : ∀ {a b : Fin (d + 1)} {u v : Fin (d + 2) → ℝ},
       IsStrictOrderedCone u → IsStrictOrderedCone v →
-      unaccelMove a u = unaccelMove b v → u a.castSucc = v b.castSucc → ¬ a < b := by
+      linearMove a u = linearMove b v → u a.castSucc = v b.castSucc → ¬ a < b := by
     intro a b u v hu hv hab huv hlt
     have hcoord := congrFun hab a.castSucc
-    rw [unaccelMove_castSucc, unaccelMove_castSucc,
+    rw [linearMove_apply_castSucc, linearMove_apply_castSucc,
       Fin.succAbove_of_le_castSucc a.castSucc a le_rfl,
       Fin.succAbove_of_castSucc_lt b.castSucc a (Fin.castSucc_lt_castSucc_iff.2 hlt)] at hcoord
     linarith [hu.2.1 (Fin.castSucc_lt_succ (i := a)), hv.2.1 (Fin.castSucc_lt_castSucc_iff.2 hlt)]
@@ -655,7 +660,7 @@ private theorem unaccelMove_inj_strict {d : ℕ} {j₁ j₂ : Fin (d + 1)}
   by_cases hk : k = j₁.castSucc
   · rw [hk, hdel]
   · rcases Fin.exists_succAbove_eq hk with ⟨i, rfl⟩
-    simpa [unaccelMove_castSucc] using congrFun heq i.castSucc
+    simpa [linearMove_apply_castSucc] using congrFun heq i.castSucc
 
 private theorem unaccelWordMove_apply_injective {d : ℕ} (hd : 1 ≤ d) {y : Fin (d + 2) → ℝ}
     (hy : IsStrictOrderedCone y) :
@@ -672,7 +677,7 @@ private theorem unaccelWordMove_apply_injective {d : ℕ} (hd : 1 ≤ d) {y : Fi
     dsimp only at hEq
     rw [unaccelWordMove_append, unaccelWordMove_append, LinearMap.comp_apply,
       LinearMap.comp_apply, unaccelWordMove_singleton, unaccelWordMove_singleton] at hEq
-    rcases unaccelMove_inj_strict (unaccelWordMove_preserves_strict hd l₁ hy)
+    rcases linearMove_inj_strict (unaccelWordMove_preserves_strict hd l₁ hy)
       (unaccelWordMove_preserves_strict hd l₂ hy) hEq with ⟨hj, hl⟩
     rw [ih hl, hj]
 
@@ -700,7 +705,7 @@ theorem expandWord_singleton {d : ℕ} (a : ℕ × Fin d) :
     expandWord [a] = a.2.castSucc :: List.replicate a.1 (Fin.last d) := by simp
 
 private theorem unaccelWordMove_replicate {d : ℕ} (A : ℕ) (j : Fin (d + 1)) :
-    unaccelWordMove (List.replicate A j) = unaccelMove j ^ A := by
+    unaccelWordMove (List.replicate A j) = linearMove j ^ A := by
   induction A with
   | zero => simp [Module.End.one_eq_id]
   | succ A ih => rw [List.replicate_succ, unaccelWordMove_cons, ih, pow_succ]; rfl

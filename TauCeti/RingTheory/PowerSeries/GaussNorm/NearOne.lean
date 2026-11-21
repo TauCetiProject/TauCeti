@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import Mathlib.RingTheory.Polynomial.GaussNorm
 
 /-!
 # Restricted series close to `1`
@@ -17,6 +18,8 @@ exactly that `U` is distinguished of degree `0` at `r`.
 
 ## Main results
 
+* `TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one`: the Gauss norm of `(1 - c X) - 1` at a
+  nonnegative radius `r` is `‖c‖ * r`.
 * `TauCeti.PowerSeries.norm_coeff_mul_pow_le_gaussNorm_sub_one`: the weighted coefficients of `U`
   in positive degrees are bounded by `‖U - 1‖_r`.
 * `TauCeti.PowerSeries.norm_constantCoeff_eq_one_of_gaussNorm_sub_one_lt` and
@@ -31,6 +34,18 @@ public section
 namespace TauCeti.PowerSeries
 
 open _root_.PowerSeries
+
+/-- At a nonnegative radius `r`, the Gauss norm of `(1 - c X) - 1 = -c X` is `‖c‖ * r`. -/
+theorem gaussNorm_one_sub_C_mul_X_sub_one {R : Type*} [SeminormedRing R] (c : R) {r : ℝ}
+    (hr : 0 ≤ r) :
+    ((1 - C c * X : R⟦X⟧) - 1).gaussNorm norm r = ‖c‖ * r := by
+  have heq : (1 - C c * X : R⟦X⟧) - 1 = monomial 1 (-c) := by
+    rw [sub_sub_cancel_left]
+    ext n
+    by_cases hn : n = 1 <;> simp [hn, coeff_monomial, coeff_X]
+  have hnorm : (monomial 1 (-c) : R⟦X⟧).gaussNorm norm r = ‖-c‖ * r ^ 1 :=
+    _root_.PowerSeries.gaussNorm_monomial (v := normRingSeminorm R) (r := -c) hr 1
+  rw [heq, hnorm, norm_neg, pow_one]
 
 variable {R : Type*} [NormedRing R] {r : ℝ} {U : PowerSeries R}
 
