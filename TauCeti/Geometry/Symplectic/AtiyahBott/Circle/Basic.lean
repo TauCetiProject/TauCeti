@@ -13,7 +13,6 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.Riemannian.Codifferential
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # The Atiyah–Bott symplectic structure of the trivial circle bundle over a surface
@@ -183,38 +182,17 @@ theorem atiyahBottForm_isAlt : (atiyahBottForm o).IsAlt := fun a ↦ by
   linarith
 
 omit [BoundarylessManifold I M] in
-/-- On the closed surface, a nonzero smooth `k`-form `α` pairs nontrivially with some smooth form
-`β` of the complementary degree, `∫_M α ∧ β ≠ 0`: take `β = ⋆α` for any Riemannian metric on `M`
-(`TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`). -/
-private theorem exists_integralTopForm_wedge_ne_zero {k l : ℕ} (hkl : k + l = 2)
-    {α : SmoothForm I M ℝ k} (hα : α ≠ 0) :
-    ∃ β : SmoothForm I M ℝ l, integralTopForm o
-      (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
-        (SmoothForm.wedge α β) : RoughForm I M ℝ 2) ≠ 0 := by
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
-    (E := fun y : M ↦ TangentSpace I y)
-  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
-  have : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
-    Bundle.instIsContMDiffRiemannianBundle g
-  exact ⟨_, SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero o hkl
-    ((mem_compactlySupportedForms I).mpr (isClosed_tsupport _).isCompact) hα⟩
-
-omit [BoundarylessManifold I M] in
 /-- **The Atiyah–Bott form is weakly nondegenerate**: if `Ω(a, b) = 0` for every `b`, then
 `a = 0`, and likewise in the second argument. Indeed `Ω(a, ⋆a) = ∫_M |a|² vol` for the Hodge
 star of any Riemannian metric on `M`. -/
 theorem atiyahBottForm_nondegenerate : (atiyahBottForm o).Nondegenerate := by
   have hleft : LinearMap.SeparatingLeft (atiyahBottForm o) := fun a ha ↦ by
     by_contra hne
-    obtain ⟨b, hb⟩ := exists_integralTopForm_wedge_ne_zero o (show 1 + 1 = 2 from rfl) hne
+    obtain ⟨b, hb⟩ := SmoothForm.exists_integralTopForm_wedge_ne_zero o
+      (show 1 + 1 = 2 from rfl)
+      ((mem_compactlySupportedForms I).mpr (isClosed_tsupport _).isCompact) hne
     refine hb ?_
-    rw [← ha b, atiyahBottForm_apply]
-    congr 1
-    funext x
-    ext v
-    rw [SmoothForm.cast_apply, Fin.cast_refl, Function.comp_id, SmoothForm.coe_wedge]
+    rw [← ha b, atiyahBottForm_apply, SmoothForm.cast_self, SmoothForm.coe_wedge]
   refine ⟨hleft, fun b hb ↦ hleft b fun a ↦ ?_⟩
   rw [atiyahBottForm_swap, hb, neg_zero]
 
@@ -258,13 +236,7 @@ theorem atiyahBottForm_circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) (b : Smo
     integralTopForm_add_of_compactSpace o ((SmoothForm.isSmoothForm _).of_le (by simp))
       ((SmoothForm.isSmoothForm _).of_le (by simp))] at hS
   -- the degree transport `0 + 1 + 1 = 1 + 1` of `dξ ∧ b` does not change the form
-  have hcast : (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
-      (show 0 + 1 + 1 = 1 + 1 by omega)
-      (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b) : RoughForm I M ℝ 2) =
-        (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b).val :=
-    funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
-      rw [SmoothForm.cast_apply, Fin.cast_refl, Function.comp_id]
-  rw [hcast] at hS
+  rw [SmoothForm.cast_self] at hS
   rw [ξ.circleGaugeGenerator_def, map_neg, LinearMap.neg_apply, atiyahBottForm, atiyahBottMoment,
     LinearMap.mk₂_apply, LinearMap.mk₂_apply]
   linarith
@@ -300,7 +272,9 @@ theorem atiyahBottMoment_eq_zero_iff {a : SmoothForm I M ℝ 1} :
     -- Pair the curvature `F = da` with a function `s` such that `∫_M F ∧ s ≠ 0`, for instance
     -- `s = ⋆F` for a Riemannian metric: then `⟨μ(a), s⟩ = ∫_M F ∧ s ≠ 0`.
     set F := mextDerivₗ I 1 a
-    obtain ⟨s, hFs⟩ := exists_integralTopForm_wedge_ne_zero o (show 2 + 0 = 2 from rfl) hne
+    obtain ⟨s, hFs⟩ := SmoothForm.exists_integralTopForm_wedge_ne_zero o
+      (show 2 + 0 = 2 from rfl)
+      ((mem_compactlySupportedForms I).mpr (isClosed_tsupport _).isCompact) hne
     have hs : ContMDiff I 𝓘(ℝ, ℝ) ∞ fun x ↦ s.val x 0 := by
       rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
       exact s.isSmoothForm
@@ -311,7 +285,7 @@ theorem atiyahBottMoment_eq_zero_iff {a : SmoothForm I M ℝ 1} :
     congr 1
     funext x
     ext v
-    rw [SmoothForm.cast_apply, SmoothForm.coe_wedge]
+    rw [SmoothForm.cast_self, SmoothForm.coe_wedge]
     conv_lhs => rw [RoughForm.eq_ofFunction s.val, RoughForm.wedge_ofFunction]
     simp [F, mextDerivₗ_apply]
   · ext ξ

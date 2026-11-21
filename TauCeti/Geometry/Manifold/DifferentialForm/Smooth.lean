@@ -564,6 +564,12 @@ theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   funext v
   exact cast_apply h α x v
 
+/-- Transporting a smooth form along a trivial degree equality leaves it unchanged. -/
+theorem cast_self {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : ℕ} (h : n = n) (α : SmoothForm I M F n) :
+    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α = α :=
+  (rfl)
+
 /-- Successive degree transports collapse to the transport along their composite equality. -/
 theorem cast_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m o : ℕ} (h : n = m) (h' : m = o)

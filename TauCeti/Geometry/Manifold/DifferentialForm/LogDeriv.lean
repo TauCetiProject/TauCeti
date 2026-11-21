@@ -413,6 +413,7 @@ theorem _root_.ContMDiffMap.circleExp_apply (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     f.circleExp x = Circle.exp (f x) :=
   (rfl)
 
+@[simp]
 theorem _root_.ContMDiffMap.circleExp_add (f g : C^∞⟮I, M; ℝ⟯) :
     (f + g).circleExp = f.circleExp * g.circleExp := by
   ext x
@@ -498,6 +499,7 @@ theorem _root_.ContMDiffMap.circleLogDeriv_eq_zero_iff [PreconnectedSpace M]
       Complex.zero_im]
 
 /-- **The real logarithmic derivative of `exp (i f)` is `df`.** -/
+@[simp]
 theorem _root_.ContMDiffMap.circleLogDeriv_circleExp (f : C^∞⟮I, M; ℝ⟯) :
     f.circleExp.circleLogDeriv = mextDerivₗ I 0 (SmoothForm.ofFunction f) := by
   apply Subtype.ext

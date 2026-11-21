@@ -182,13 +182,10 @@ theorem homologyPeriodHom_mapCoeff {G : Type} [NormedAddCommGroup G] [NormedSpac
     ((L.toLinearMap.restrictScalars ℤ).comp
       (chainsDesc fun s ↦ pathClassIntegral φ (.mk (path₁ s))))
     (fun c ↦ by
-      rw [AddMonoidHom.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk,
-        LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-        LinearMap.restrictScalars_apply, ContinuousLinearMap.coe_coe])
-    fun s ↦ by
-      rw [LinearMap.comp_apply, chainsDesc_simplexChain_one, pathClassIntegral_mapCoeff hφ hφc,
-        LinearMap.restrictScalars_apply, ContinuousLinearMap.coe_coe]
-  rw [h, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe]
+      rw [AddMonoidHom.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk]
+      simp)
+    fun s ↦ by simp [pathClassIntegral_mapCoeff hφ hφc]
+  simp [h]
 
 /-- The periods of a `1`-form which is not a closed `C¹` form are `0` by convention. -/
 theorem homologyPeriodHom_undef (h : ¬(IsSmoothForm I 1 φ ∧ mextDeriv φ = 0)) :

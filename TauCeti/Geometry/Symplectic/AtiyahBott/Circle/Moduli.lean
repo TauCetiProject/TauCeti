@@ -116,8 +116,7 @@ private theorem circleLogDerivSubgroup_eq_ker_flatCircleModuliMap :
   ext a
   rw [AddMonoidHom.mem_ker, flatCircleModuliMap, AddMonoidHom.comp_apply,
     QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff,
-    mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice]
-  rfl
+    mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice, LinearMap.toAddMonoidHom_coe]
 
 variable (I M) in
 /-- **Flat circle connections modulo gauge.** Taking de Rham classes identifies, as additive
@@ -133,7 +132,7 @@ def flatCircleModuliEquiv :
 @[simp]
 theorem flatCircleModuliEquiv_mk (a : closedForms I M 1) :
     flatCircleModuliEquiv I M (QuotientAddGroup.mk a) =
-      QuotientAddGroup.mk (deRhamCohomology.mk I 1 a) :=
-  (rfl)
+      QuotientAddGroup.mk (deRhamCohomology.mk I 1 a) := by
+  simp [flatCircleModuliEquiv, flatCircleModuliMap]
 
 end TauCeti
