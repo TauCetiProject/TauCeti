@@ -12,8 +12,8 @@ public import Mathlib.Order.PiLex
 public import Mathlib.Order.UpperLower.CompleteLattice
 public import Mathlib.Order.WellFoundedSet
 import Mathlib.Data.Finsupp.PWO
-import Mathlib.Data.Fintype.Pigeonhole
 import Mathlib.Order.Minimal
+import TauCeti.Data.Fintype.Pigeonhole
 
 /-!
 # Complement counts and lexicographic well-foundedness for upper sets in `σ →₀ ℕ`
@@ -55,25 +55,6 @@ public section
 
 namespace Finsupp
 
-/-- Pigeonhole extraction on a finite ball `B`: an infinite set of indices `S` contains an infinite
-subset on which membership in `E j` is constant on `B`. -/
-private theorem exists_infinite_subset_mem_iff {σ : Type*} (E : ℕ → UpperSet (σ →₀ ℕ))
-    (B : Finset (σ →₀ ℕ)) {S : Set ℕ} (hS : S.Infinite) :
-    ∃ S' ⊆ S, S'.Infinite ∧ ∃ A : Finset (σ →₀ ℕ),
-      ∀ j ∈ S', ∀ α ∈ B, (α ∈ E j ↔ α ∈ A) := by
-  classical
-  have : Infinite S := Set.infinite_coe_iff.mpr hS
-  let g : S → B.powerset := fun j ↦
-    ⟨B.filter (· ∈ E j.val), Finset.mem_powerset.mpr (Finset.filter_subset _ _)⟩
-  obtain ⟨⟨A, hA⟩, hfib⟩ := Finite.exists_infinite_fiber g
-  refine ⟨Subtype.val '' (g ⁻¹' {⟨A, hA⟩}), Subtype.coe_image_subset S _,
-    (Set.infinite_coe_iff.mp hfib).image Subtype.val_injective.injOn, A, ?_⟩
-  rintro _ ⟨⟨j, hjS⟩, hjg, rfl⟩ α hα
-  have hval : B.filter (· ∈ E j) = A := by
-    simpa [g] using congrArg Subtype.val (Set.mem_singleton_iff.mp hjg)
-  rw [← hval, Finset.mem_filter]
-  exact ⟨fun h ↦ ⟨hα, h⟩, fun h ↦ h.2⟩
-
 section UpperSetStabilization
 
 variable {σ : Type*} [Finite σ]
@@ -85,32 +66,34 @@ theorem exists_upperSet_infinite_mem_iff (E : ℕ → UpperSet (σ →₀ ℕ)) 
     ∃ (D : UpperSet (σ →₀ ℕ)) (S : ℕ → Set ℕ),
       (∀ ℓ, (S ℓ).Infinite) ∧
       ∀ ℓ, ∀ j ∈ S ℓ, ∀ α : σ →₀ ℕ, α.degree ≤ ℓ → (α ∈ D ↔ α ∈ E j) := by
-  let B : ℕ → Finset (σ →₀ ℕ) := fun ℓ ↦ (finite_of_degree_le ℓ).toFinset
-  let State (ℓ : ℕ) := { p : Set ℕ × Finset (σ →₀ ℕ) //
-    p.1.Infinite ∧ ∀ j ∈ p.1, ∀ α ∈ B ℓ, (α ∈ E j ↔ α ∈ p.2) }
+  let B (ℓ : ℕ) : Set (σ →₀ ℕ) := {α : σ →₀ ℕ | α.degree ≤ ℓ}
+  let State (ℓ : ℕ) := { p : Set ℕ × Set (σ →₀ ℕ) //
+    p.1.Infinite ∧ ∀ j ∈ p.1, ∀ α ∈ B ℓ, (α ∈ (E j : Set (σ →₀ ℕ)) ↔ α ∈ p.2) }
   let step : (ℓ : ℕ) → (st : State ℓ) → { next : State (ℓ + 1) // next.val.1 ⊆ st.val.1 } :=
     fun ℓ st ↦
-      have hex := exists_infinite_subset_mem_iff E (B (ℓ + 1)) st.property.1
+      have hex := st.property.1.exists_infinite_subset_mem_iff (fun j ↦ (E j : Set (σ →₀ ℕ)))
+        (finite_of_degree_le (ℓ + 1))
       ⟨⟨(hex.choose, hex.choose_spec.2.2.choose), hex.choose_spec.2.1,
-        hex.choose_spec.2.2.choose_spec⟩, hex.choose_spec.1⟩
+        hex.choose_spec.2.2.choose_spec.2⟩, hex.choose_spec.1⟩
   let init : State 0 :=
-    have hex := exists_infinite_subset_mem_iff E (B 0) Set.infinite_univ
+    have hex := Set.infinite_univ.exists_infinite_subset_mem_iff (fun j ↦ (E j : Set (σ →₀ ℕ)))
+      (finite_of_degree_le 0)
     ⟨(hex.choose, hex.choose_spec.2.2.choose), hex.choose_spec.2.1,
-      hex.choose_spec.2.2.choose_spec⟩
+      hex.choose_spec.2.2.choose_spec.2⟩
   let seq : (ℓ : ℕ) → State ℓ := Nat.rec init fun ℓ st ↦ (step ℓ st).val
   let S : ℕ → Set ℕ := fun ℓ ↦ (seq ℓ).val.1
-  let A : ℕ → Finset (σ →₀ ℕ) := fun ℓ ↦ (seq ℓ).val.2
+  let A : ℕ → Set (σ →₀ ℕ) := fun ℓ ↦ (seq ℓ).val.2
   have hS_step (ℓ : ℕ) : S (ℓ + 1) ⊆ S ℓ := (step ℓ (seq ℓ)).property
   have hS_anti : Antitone S := antitone_nat_of_succ_le hS_step
   have hS_inf (ℓ : ℕ) : (S ℓ).Infinite := (seq ℓ).property.1
   have hA (ℓ : ℕ) {j : ℕ} (hj : j ∈ S ℓ) {α : σ →₀ ℕ} (hα : α ∈ B ℓ) :
-      α ∈ E j ↔ α ∈ A ℓ := (seq ℓ).property.2 j hj α hα
+      α ∈ (E j : Set (σ →₀ ℕ)) ↔ α ∈ A ℓ := (seq ℓ).property.2 j hj α hα
   let Dset : Set (σ →₀ ℕ) := {α | α ∈ A α.degree}
   have hcons (ℓ : ℕ) {j : ℕ} (hj : j ∈ S ℓ) {α : σ →₀ ℕ} (hα : α.degree ≤ ℓ) :
       α ∈ Dset ↔ α ∈ E j := by
     have hj' : j ∈ S α.degree := hS_anti hα hj
     simp only [Dset, Set.mem_ofPred_eq]
-    exact (hA α.degree hj' ((Set.Finite.mem_toFinset _).mpr (le_refl α.degree))).symm
+    exact (hA α.degree hj' (le_refl α.degree)).symm
   have hD_upper : IsUpperSet Dset := by
     intro α β hαβ hα
     obtain ⟨j, hj⟩ := (hS_inf β.degree).nonempty
