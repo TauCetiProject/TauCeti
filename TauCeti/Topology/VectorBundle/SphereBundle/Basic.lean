@@ -492,8 +492,8 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E :
 the disc bundle onto the base, since the disc bundle contains the zero section. -/
 theorem IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle {ρ : TotalSpace F E → ℝ}
     (hρ : IsFiberGauge ρ) [CompactSpace (gaugeDiscBundle ρ)] : CompactSpace B :=
-  Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.1.proj)
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+  Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.val.proj)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
     fun b ↦ ⟨⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩, rfl⟩
 
 end Compact
