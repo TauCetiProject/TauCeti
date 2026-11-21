@@ -641,7 +641,8 @@ theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v :
   (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
     (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
 
-/-- The entries of a Wigner column outside its diagonal are independent. -/
+/-- If the upper entries in the corner are jointly independent, the entries of each column
+outside its diagonal are jointly independent. -/
 theorem iIndepFun_wignerMatrix_column_of_ne {n : ℕ} (i : Fin n)
     (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P) :
     iIndepFun (fun (j : {j // j ≠ i}) ω ↦ wignerMatrix ξ η n ω j i) P :=
@@ -728,27 +729,6 @@ theorem integral_norm_wignerMatrix_apply_sq_of_ne {s : ℝ} {n : ℕ}
     ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
   simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul]
   rw [hξ _ (max_lt i.isLt j.isLt)]
-
-/-- For a zero-diagonal Wigner corner, the principal minor is a.e.-measurable and is independent
-of the deleted off-diagonal column. The column entries are independent, and their squared-norm
-Bochner integrals are the common upper-entry integral divided by dimension. For square-integrable
-entries these are second absolute moments. -/
-theorem aemeasurable_indepFun_wignerMatrix_zero_minor_column {n : ℕ}
-    (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
-    (hm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
-    {v : ℝ} (hv : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = v) (i : Fin n) :
-    let B (ω : Ω) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ :=
-      (wignerMatrix ξ (fun _ _ ↦ 0) n ω).submatrix (↑) (↑)
-    let a (j : {j // j ≠ i}) (ω : Ω) := wignerMatrix ξ (fun _ _ ↦ 0) n ω j i
-    AEMeasurable B P ∧ IndepFun B (fun ω j ↦ a j ω) P ∧ iIndepFun a P ∧
-      ∀ j, ∫ ω, ‖a j ω‖ ^ 2 ∂P = v / (n : ℝ) := by
-  intro B a
-  exact ⟨(continuous_id.matrix_submatrix _ _).measurable.comp_aemeasurable
-      (aemeasurable_wignerMatrix hm (fun _ _ ↦ aemeasurable_const)),
-    indepFun_submatrix_wignerMatrix_zero_column hind hm i,
-    iIndepFun_wignerMatrix_column_of_ne i hind, fun j ↦
-      by simpa only [div_eq_inv_mul] using
-        integral_norm_wignerMatrix_apply_sq_of_ne (η := fun _ _ ↦ 0) hv j.property⟩
 
 private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) (hη : ∀ i, ∫ ω, η i ω ^ 2 ∂P = σ2) {n : ℕ}

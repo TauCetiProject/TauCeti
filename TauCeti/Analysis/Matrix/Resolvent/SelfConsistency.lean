@@ -36,20 +36,28 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The quadratic form of column `i` against the minor resolvent minus the minor trace
-times the variance `v / Fintype.card n`. -/
+/-- The quadratic form of column `i` with its diagonal entry omitted, evaluated against
+the minor resolvent, minus `v / Fintype.card n` times the minor trace. The supplied coefficient
+`v / Fintype.card n` is the common off-diagonal entry variance in the Wigner application. -/
 def minorQuadraticError (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ≥0) : ℂ :=
   let a : {j // j ≠ i} → ℂ := fun j ↦ A j i
   star a ⬝ᵥ A.minorResolvent i z *ᵥ a -
     ((v : ℂ) / (Fintype.card n : ℂ)) * (A.minorResolvent i z).trace
 
-/-- The defining formula for the variance-centered minor quadratic form. -/
+/-- Expand the deleted-column quadratic form and subtract the supplied trace term. -/
 theorem minorQuadraticError_def (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ≥0) :
     A.minorQuadraticError i z v =
       star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
         A.minorResolvent i z *ᵥ (fun j : {j // j ≠ i} ↦ A j i) -
         ((v : ℂ) / (Fintype.card n : ℂ)) * (A.minorResolvent i z).trace := by
   rw [minorQuadraticError]
+
+/-- At fixed index, spectral parameter and trace coefficient, the minor quadratic error
+is measurable in the matrix. -/
+@[fun_prop] theorem measurable_minorQuadraticError (i : n) (z : ℂ) (v : ℝ≥0) :
+    Measurable (fun A : Matrix n n ℂ ↦ A.minorQuadraticError i z v) := by
+  simp only [minorQuadraticError_def, dotProduct, mulVec, Pi.star_apply, trace, diag]
+  fun_prop
 
 end Matrix
 

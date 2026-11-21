@@ -7,19 +7,19 @@ module
 
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Probability.Independence.Integration
-public import TauCeti.Probability.Moments.SampleMean
 public import TauCeti.Probability.Moments.CenteredTruncation
 public import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Matrix.DotProduct
 
 /-!
 # Second-moment bounds for independent quadratic forms
 
-Quadratic monomials on distinct unordered off-diagonal pairs of centered independent
-coordinates are orthogonal for the integrated real inner product when the inner product is
-integrable. For the off-diagonal
-quadratic form, the coordinate second moments suffice for square integrability.
+For independent coordinates with zero totalized Bochner integrals, quadratic monomials on
+distinct unordered off-diagonal pairs have zero integrated real inner product when their
+`𝕜`-valued inner product is integrable. For the off-diagonal quadratic form, the coordinate
+second moments suffice for square integrability.
 The diagonal contribution is a sum of centered squared norms. A truncation estimate for
 pairwise independent real variables bounds this fluctuation by the cutoff and the discarded tails.
 The two estimates give a mean absolute bound for a quadratic form after subtracting its mean.
@@ -42,9 +42,10 @@ variable {Ω ι 𝕜 : Type*} [MeasurableSpace Ω] [Fintype ι] [RCLike 𝕜]
   {P : Measure Ω} {X : ι → Ω → 𝕜}
 
 omit [Fintype ι] in
-/-- Quadratic monomials on distinct unordered off-diagonal pairs of centered independent
-coordinates have zero integrated real inner product if their scalar inner product is integrable. -/
-theorem integral_real_inner_star_mul_eq_zero_of_distinct_pairs {i j k l : ι}
+/-- For independent coordinates with zero totalized Bochner integrals, quadratic monomials on
+distinct unordered off-diagonal pairs have zero integrated real inner product if their
+`𝕜`-valued inner product is integrable. -/
+theorem integral_real_inner_star_mul_eq_zero_of_distinct_unordered_pairs {i j k l : ι}
     (hX : iIndepFun (fun d : ({i, j, k, l} : Set ι) ↦ X d) P)
     (hm : ∀ d ∈ ({i, j, k, l} : Set ι), AEMeasurable (X d) P)
     (hc : ∀ d ∈ ({i, j, k, l} : Set ι), ∫ ω, X d ω ∂P = 0)
@@ -78,7 +79,7 @@ theorem integral_real_inner_star_mul_eq_zero_of_distinct_pairs {i j k l : ι}
       X i ω * star (X j ω) * (star (X k ω) * X l ω) := by
     simp [e', e, f, Fin.prod_univ_succ, mul_assoc]
   have hprod := hX.integral_fun_prod_comp_eq_zero_of_singleton_fiber univ e'
-    (fun d _ ↦ hm d d.property) (fun k _ ↦ (hf k).aestronglyMeasurable) (mem_univ c)
+    (fun d _ ↦ hm (e' d) (e' d).property) (fun k _ ↦ (hf k).aestronglyMeasurable) (mem_univ c)
     (fun b _ h ↦ hc' b (congrArg Subtype.val h)) hzero
   simp_rw [hexpand] at hprod
   have heq (ω : Ω) :
@@ -93,14 +94,18 @@ theorem integral_real_inner_star_mul_eq_zero_of_distinct_pairs {i j k l : ι}
 omit [Fintype ι] in
 /-- A sum of quadratic monomials on distinct unordered off-diagonal pairs is square integrable.
 Its mean norm is bounded by the second-moment cap times the Euclidean norm of the coefficients. -/
-theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_pairs {t : Set ι}
+theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_unordered_pairs {t : Set ι}
     (hX : iIndepFun (fun i : t ↦ X i) P)
     (hLp : ∀ i : t, MemLp (X i) 2 P) (hc : ∀ i : t, ∫ ω, X i ω ∂P = 0)
     (A : Matrix ι ι 𝕜) (s : Finset (ι × ι)) (ht : ∀ p ∈ s, p.1 ∈ t ∧ p.2 ∈ t)
     (hd : ∀ p ∈ s, p.1 ≠ p.2) (hs : ∀ p ∈ s, p.swap ∉ s) {v : ℝ}
-    (hv : ∀ i : t, ∫ ω, ‖X i ω‖ ^ 2 ∂P ≤ v) (hv₀ : 0 ≤ v) :
+    (hv : ∀ i : t, ∫ ω, ‖X i ω‖ ^ 2 ∂P ≤ v) :
     let Y (ω : Ω) := ∑ p ∈ s, A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)
     MemLp Y 2 P ∧ (∫ ω, ‖Y ω‖ ∂P) ≤ v * Real.sqrt (∑ p ∈ s, ‖A p.1 p.2‖ ^ 2) := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨p, hp⟩
+  · simp
+  have hv₀ : 0 ≤ v := (integral_nonneg fun ω ↦ sq_nonneg ‖X p.1 ω‖).trans
+    (hv ⟨p.1, (ht p hp).1⟩)
   have : IsProbabilityMeasure P := hX.isProbabilityMeasure
   let Y (p : ι × ι) (ω : Ω) := A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)
   let left (p : ι × ι) (hp : p ∈ s) : t := ⟨p.1, (ht p hp).1⟩
@@ -113,7 +118,8 @@ theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_pairs {t : S
     apply TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
       (fun i hi j hj ↦ (hY i hi).integrable_inner (hY j hj))
     intro i hi j hj hij
-    exact (hX.precomp Subtype.val_injective).integral_real_inner_star_mul_eq_zero_of_distinct_pairs
+    exact (hX.precomp Subtype.val_injective)
+      |>.integral_real_inner_star_mul_eq_zero_of_distinct_unordered_pairs
       (fun k _ ↦ (hLp k).aemeasurable) (fun k _ ↦ hc k)
       (i := left i hi) (j := right i hi) (k := left j hj) (l := right j hj)
       (fun h ↦ hd i hi (congrArg Subtype.val h)) (fun h ↦ hd j hj (congrArg Subtype.val h))
@@ -135,7 +141,7 @@ theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_pairs {t : S
           ‖A p.1 p.2‖ ^ 2 * ‖star (X p.1 ω) * X p.2 ω‖ ^ 2 := by
         simp only [Y, norm_mul, mul_pow]
       simp_rw [he, integral_const_mul]
-      have hmoment := (hpind p hp).integral_norm_sq_mul
+      have hmoment := (hpind p hp).integral_norm_mul_sq_eq_mul_integral
         (hLp (left p hp)).aemeasurable (hLp (right p hp)).aemeasurable
       simp only [norm_mul, norm_star] at hmoment ⊢
       rw [hmoment]
@@ -147,15 +153,20 @@ theorem memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_pairs {t : S
 
 /-- The off-diagonal part of a quadratic form in centered independent coordinates is
 integrable, with mean norm bounded in terms of the Euclidean operator norm. -/
-theorem integrable_and_integral_norm_sum_offDiag_mul_star_mul_le [DecidableEq ι]
+theorem integrable_and_integral_norm_sum_offDiag_mul_star_mul_le
+    [DecidableEq ι]
     (hX : iIndepFun X P)
     (hLp : ∀ i, MemLp (X i) 2 P) (hc : ∀ i, ∫ ω, X i ω ∂P = 0)
-    (A : Matrix ι ι 𝕜) {v : ℝ} (hv : ∀ i, ∫ ω, ‖X i ω‖ ^ 2 ∂P ≤ v) (hv₀ : 0 ≤ v) :
+    (A : Matrix ι ι 𝕜) {v : ℝ} (hv : ∀ i, ∫ ω, ‖X i ω‖ ^ 2 ∂P ≤ v) :
     let offDiag (ω : Ω) := ∑ p ∈ (univ : Finset ι).offDiag,
       A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)
     Integrable offDiag P ∧
       (∫ ω, ‖offDiag ω‖ ∂P) ≤ 2 * v * (Real.sqrt (Fintype.card ι)) * ‖A‖ := by
   classical
+  cases isEmpty_or_nonempty ι
+  · simp [Finset.offDiag_empty]
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  have hv₀ : 0 ≤ v := (integral_nonneg fun ω ↦ sq_nonneg ‖X i ω‖).trans (hv i)
   have := hX.isProbabilityMeasure
   let _ := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   let s : Finset (ι × ι) := univ.offDiag
@@ -165,9 +176,9 @@ theorem integrable_and_integral_norm_sum_offDiag_mul_star_mul_le [DecidableEq ι
       MemLp (fun ω ↦ ∑ p ∈ t, Y p ω) 2 P ∧
         (∫ ω, ‖∑ p ∈ t, Y p ω‖ ∂P) ≤ v * Real.sqrt (Fintype.card ι) * ‖A‖ := by
     have h := (hX.precomp Subtype.val_injective)
-      |>.memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_pairs (t := Set.univ)
+      |>.memLp_two_and_integral_norm_sum_mul_star_mul_le_of_distinct_unordered_pairs (t := Set.univ)
         (fun i ↦ hLp i) (fun i ↦ hc i) A t (fun _ _ ↦ by simp) (fun p hp ↦ hd p (ht hp))
-        hs (fun i ↦ hv i) hv₀
+        hs (fun i ↦ hv i)
     refine ⟨h.1, h.2.trans ?_⟩
     have hsum : ∑ p ∈ t, ‖A p.1 p.2‖ ^ 2 ≤ Fintype.card ι * ‖A‖ ^ 2 := by
       calc
@@ -201,75 +212,21 @@ theorem integrable_and_integral_norm_sum_offDiag_mul_star_mul_le [DecidableEq ι
       ((add_le_add htb hub).trans_eq (by ring))
   exact ⟨hs₂.integrable one_le_two, hnorm⟩
 
-/-- Mean-norm bound for a weighted sum of centered pairwise independent real variables.
-The cutoff controls the retained part and the tail integrals bound the discarded part. -/
-theorem _root_.TauCeti.integral_norm_sum_mul_centered_le [IsProbabilityMeasure P]
-    {W : ι → Ω → ℝ} (hWi : Pairwise fun i j ↦ IndepFun (W i) (W j) P)
-    (hW : ∀ i, Integrable (W i) P) (a : ι → 𝕜) {C v : ℝ}
-    (ha : ∀ i, ‖a i‖ ≤ C) (hv : ∀ i, ∫ ω, ‖W i ω‖ ∂P ≤ v) (r : ℝ≥0) :
-    (∫ ω, ‖∑ i, a i * ((W i ω - ∫ y, W i y ∂P : ℝ) : 𝕜)‖ ∂P) ≤
-      C * (Real.sqrt ((r : ℝ) * Fintype.card ι * v) +
-        2 * ∑ i, ∫ ω, {ω | (r : ℝ) < ‖W i ω‖}.indicator (fun ω ↦ ‖W i ω‖) ω ∂P) := by
-  classical
-  cases isEmpty_or_nonempty ι
-  · simp
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  have hC := (norm_nonneg (a i)).trans (ha i)
-  let T (i : ι) := TauCeti.Probability.centeredTruncation (W i) P r
-  let Y (i : ι) (ω : Ω) := a i * (T i ω : 𝕜)
-  let D (i : ι) (ω : Ω) := W i ω - (∫ y, W i y ∂P) - T i ω
-  have hY (i : ι) : MemLp (Y i) 2 P :=
-    ((hW i).aestronglyMeasurable.memLp_centeredTruncation r).ofReal.const_mul _
-  have hYi : Pairwise fun i j ↦ IndepFun (Y i) (Y j) P := by
-    intro i j hij
-    exact ((hWi hij).centeredTruncation r r).comp (φ := fun z : ℝ ↦ a i * (z : 𝕜))
-      (ψ := fun z : ℝ ↦ a j * (z : 𝕜)) (by fun_prop) (by fun_prop)
-  have hmean (i : ι) : ∫ ω, Y i ω ∂P = 0 := by
-    simp only [Y, integral_const_mul, integral_ofReal, T,
-      (hW i).aestronglyMeasurable.integral_centeredTruncation, RCLike.ofReal_zero, mul_zero]
-  have hsmall : (∫ ω, ‖∑ i, Y i ω‖ ∂P) ≤
-      C * Real.sqrt ((r : ℝ) * Fintype.card ι * v) := by
-    refine (TauCeti.integral_norm_sum_le_of_pairwise_indepFun (s := univ)
-      (fun i _ ↦ hY i) (fun i _ ↦ hmean i) (fun _ _ _ _ hij ↦ hYi hij)
-      (v := C ^ 2 * ((r : ℝ) * v)) (fun i _ ↦ ?_)).trans_eq ?_
-    · simp only [Y, norm_mul, RCLike.norm_ofReal, mul_pow, integral_const_mul]
-      exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (ha i) 2)
-        (((hW i).integral_norm_centeredTruncation_sq_le_mul r).trans
-          (mul_le_mul_of_nonneg_left (hv i) r.coe_nonneg))
-        (integral_nonneg fun _ ↦ sq_nonneg _) (sq_nonneg _)
-    · rw [card_univ]
-      calc
-        _ = Real.sqrt (C ^ 2 * ((r : ℝ) * Fintype.card ι * v)) := by congr 1; ring
-        _ = _ := by rw [Real.sqrt_mul (sq_nonneg C), Real.sqrt_sq hC]
-  have hdiscard := TauCeti.Probability.integral_norm_sum_mul_centeredTruncation_residual_le
-    hW a hC ha r
-  have hsum (ω : Ω) : (∑ i, a i * ((W i ω - ∫ y, W i y ∂P : ℝ) : 𝕜)) =
-      (∑ i, Y i ω) + ∑ i, a i * (D i ω : 𝕜) := by
-    rw [← sum_add_distrib]
-    refine sum_congr rfl fun i _ ↦ ?_
-    simp only [Y, D, RCLike.ofReal_sub]
-    ring
-  simp_rw [hsum, mul_add]
-  have ht := (memLp_finsetSum univ fun i _ ↦ hY i).integrable one_le_two
-  exact (ht.integral_norm_add_le hdiscard.1).trans (add_le_add hsmall hdiscard.2)
-
 /-- Mean absolute error of a quadratic form in centered independent coordinates,
 relative to its diagonal second-moment sum. The cutoff applies to squared absolute values.
 The bound uses only second moments and includes the contribution of the discarded tails. -/
-theorem integral_norm_star_dotProduct_mulVec_sub_sum_diag_le [DecidableEq ι]
+theorem integral_norm_star_dotProduct_mulVec_sub_sum_diag_le
+    [DecidableEq ι]
     (hX : iIndepFun X P) (hLp : ∀ i, MemLp (X i) 2 P) (hc : ∀ i, ∫ ω, X i ω ∂P = 0)
     (A : Matrix ι ι 𝕜) {v : ℝ} (hv : ∀ i, ∫ ω, ‖X i ω‖ ^ 2 ∂P ≤ v) (r : ℝ≥0) :
     (∫ ω, ‖star (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) -
       ∑ i, A i i * ((∫ y, ‖X i y‖ ^ 2 ∂P : ℝ) : 𝕜)‖ ∂P) ≤
       ‖A‖ * (2 * v * Real.sqrt (Fintype.card ι) + Real.sqrt ((r : ℝ) * Fintype.card ι * v) +
         2 * ∑ i, ∫ ω, {ω | (r : ℝ) < ‖X i ω‖ ^ 2}.indicator (fun ω ↦ ‖X i ω‖ ^ 2) ω ∂P) := by
-  cases isEmpty_or_nonempty ι
-  · simp [dotProduct_of_isEmpty]
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  have hv₀ : 0 ≤ v := (integral_nonneg fun ω ↦ sq_nonneg ‖X i ω‖).trans (hv i)
+  classical
   have := hX.isProbabilityMeasure
   let m (i : ι) : ℝ := ∫ ω, ‖X i ω‖ ^ 2 ∂P
-  have hA := hX.integrable_and_integral_norm_sum_offDiag_mul_star_mul_le hLp hc A hv hv₀
+  have hA := hX.integrable_and_integral_norm_sum_offDiag_mul_star_mul_le hLp hc A hv
   have hW (i : ι) : Integrable (fun ω ↦ ‖X i ω‖ ^ 2) P :=
     (memLp_two_iff_integrable_sq_norm (hLp i).aestronglyMeasurable).mp (hLp i)
   have hD := TauCeti.integral_norm_sum_mul_centered_le
@@ -286,7 +243,8 @@ theorem integral_norm_star_dotProduct_mulVec_sub_sum_diag_le [DecidableEq ι]
 /-- The mean absolute quadratic-form bound for an independent random coefficient matrix
 with integrable Euclidean operator norm. The quadratic form is integrable and is centered
 by the mean obtained with the coefficient matrix held fixed. -/
-theorem integral_norm_star_dotProduct_mulVec_sub_sum_diag_le_of_indepFun [DecidableEq ι]
+theorem integrable_and_integral_norm_star_dotProduct_mulVec_sub_sum_diag_le_of_indepFun
+    [DecidableEq ι]
     (hX : iIndepFun X P) (hLp : ∀ i, MemLp (X i) 2 P) (hc : ∀ i, ∫ ω, X i ω ∂P = 0)
     {A : Ω → Matrix ι ι 𝕜} (hA : AEMeasurable A P) (hind : IndepFun A (fun ω i ↦ X i ω) P)
     (hAnorm : Integrable (fun ω ↦ ‖A ω‖) P)
@@ -312,13 +270,14 @@ theorem integral_norm_star_dotProduct_mulVec_sub_sum_diag_le_of_indepFun [Decida
   have hg : Measurable g := measurable_norm.mul_const _
   have hgi : Integrable g (P.map A) :=
     (integrable_map_measure hg.aestronglyMeasurable hA).2 (hAnorm.mul_const _)
-  have h := hind.integral_norm_comp_prodMk_le_of_sections hA hZ hf hgi (.of_forall fun B ↦ by
-    have hint := (TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun
-      (fun _ _ hij ↦ hX.indepFun hij) (fun i ↦ (hLp i).integrable one_le_two)
-      (fun i ↦ (memLp_two_iff_integrable_sq_norm (hLp i).aestronglyMeasurable).1 (hLp i))
-      hc B).1
-    exact ⟨hint.sub (integrable_const (∑ i, B i i * (m i : 𝕜))),
-      hX.integral_norm_star_dotProduct_mulVec_sub_sum_diag_le hLp hc B hv r⟩)
+  have h := hind.integrable_and_integral_norm_comp_prodMk_le_of_sections hA hZ hf hgi
+    (.of_forall fun B ↦ by
+      have hint := (TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun
+        (fun _ _ hij ↦ hX.indepFun hij) (fun i ↦ (hLp i).integrable one_le_two)
+        (fun i ↦ (memLp_two_iff_integrable_sq_norm (hLp i).aestronglyMeasurable).1 (hLp i))
+        hc B).1
+      exact ⟨hint.sub (integrable_const (∑ i, B i i * (m i : 𝕜))),
+        hX.integral_norm_star_dotProduct_mulVec_sub_sum_diag_le hLp hc B hv r⟩)
   rw [integral_map hA hg.aestronglyMeasurable, integral_mul_const] at h
   exact h
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
-public import Mathlib.Algebra.BigOperators.Expect
 
 /-!
 # Deterministic semicircle comparison for Hermitian resolvents

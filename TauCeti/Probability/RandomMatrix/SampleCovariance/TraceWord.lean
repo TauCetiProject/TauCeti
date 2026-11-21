@@ -91,7 +91,7 @@ theorem integral_prod_apply_mul_star_apply_eq_zero
   classical
   simp_rw [prod_mul_star_eq_prod_readFactor]
   refine hindep.integral_fun_prod_comp_eq_zero_of_singleton_fiber Finset.univ
-    (bipartiteEdge u v) (fun ij _ ↦ hXm ij.1 ij.2)
+    (bipartiteEdge u v) (fun s _ ↦ hXm (bipartiteEdge u v s).1 (bipartiteEdge u v s).2)
     (fun s _ ↦ (measurable_readFactor s).aestronglyMeasurable) (Finset.mem_univ a)
     (fun b _ ↦ ha b) ?_
   cases a with

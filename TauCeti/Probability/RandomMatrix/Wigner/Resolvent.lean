@@ -8,9 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
 public import TauCeti.Analysis.Matrix.Resolvent.Semicircle
-import Mathlib.Algebra.Order.BigOperators.Expect
 import TauCeti.MeasureTheory.Measure.ResolventTransform.WeakConvergence
-import TauCeti.Analysis.Matrix.MeasurableSpace
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -76,14 +74,22 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
       2 * Real.exp (-(1 / 150528) *
         min (t ^ 2 * z.im ^ 2 / (K : ℝ) ^ 2) (t * z.im / (K : ℝ)) * (n + 1)) := by
   have hm (ij : StrictUpper) := (integrable_of_hasSubgaussianMGF_re_star_mul (hξ ij)).aemeasurable
-  obtain ⟨hA, hi, hia, ha⟩ := aemeasurable_indepFun_wignerMatrix_zero_minor_column
-    (hind.precomp Subtype.val_injective) (fun ij _ ↦ hm ij) (fun ij _ ↦ hv ij) i
+  have hind' : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n + 1} ↦ ξ ij.val) P :=
+    hind.precomp Subtype.val_injective
+  have hA : AEMeasurable (fun ω ↦ ((wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).submatrix (↑) (↑) :
+      Matrix {j // j ≠ i} {j // j ≠ i} ℂ)) P :=
+    (continuous_id.matrix_submatrix _ _).measurable.comp_aemeasurable
+      (aemeasurable_wignerMatrix (fun ij _ ↦ hm ij) (fun _ _ ↦ aemeasurable_const))
+  have hi := indepFun_submatrix_wignerMatrix_zero_column hind' (fun ij _ ↦ hm ij) i
+  have hia := iIndepFun_wignerMatrix_column_of_ne (η := fun _ _ ↦ 0) i hind'
+  have ha (j : {j // j ≠ i}) := integral_norm_wignerMatrix_apply_sq_of_ne
+    (η := fun _ _ ↦ 0) (fun ij _ ↦ hv ij) j.property
   have hcard : (Fintype.card {j // j ≠ i} : ℝ) ≤ n + 1 := by
     exact_mod_cast (Fintype.card_subtype_le (fun j : Fin (n + 1) ↦ j ≠ i)).trans_eq
       (Fintype.card_fin (n + 1))
   have htail := hia.measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_smul_trace_gt_le
     (fun j ↦ hasSubgaussianMGF_wignerMatrix_apply_of_ne hξ j.property)
-    (fun j ↦ by simpa only [Nat.cast_succ] using ha j) hA
+    (fun j ↦ by simpa only [Nat.cast_succ, div_eq_inv_mul] using ha j) hA
     (.of_forall fun ω ↦ (wignerMatrix_isHermitian ξ _ ω _).submatrix _) hi z 1 hcard (t := t)
   simp only [Complex.ofReal_one, one_mul, one_pow, abs_one, abs_of_pos hz] at htail
   have hd : 0 < (n + 1 : ℝ) := by positivity
@@ -102,7 +108,7 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
   rw [hr₁, hr₂, ← min_mul_of_nonneg _ _ hd.le, ← mul_assoc] at htail
   simpa only [Matrix.minorQuadraticError_def, Matrix.minorResolvent_def, Fintype.card_fin,
     Complex.ofReal_div, Complex.ofReal_add, Complex.ofReal_natCast, Complex.ofReal_one,
-    Nat.cast_add, Nat.cast_one]
+    Nat.cast_add, Nat.cast_one, Complex.ofReal_inv, Complex.ofReal_mul, div_eq_inv_mul]
     using htail
 
 omit [MeasurableSpace Ω] in
