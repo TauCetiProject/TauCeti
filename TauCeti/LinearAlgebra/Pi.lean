@@ -58,6 +58,8 @@ weights.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
+  `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -333,6 +335,14 @@ end FinsetUnion
 end LinearEquiv
 
 namespace LinearMap
+
+/-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
+one-point family `Pi.single i (f x)`. -/
+@[simp]
+public theorem compLeft_single {R M M₂ ι : Type*} [Semiring R] [AddCommMonoid M]
+    [AddCommMonoid M₂] [Module R M] [Module R M₂] [DecidableEq ι] (f : M →ₗ[R] M₂) (i : ι)
+    (x : M) : f.compLeft ι (Pi.single i x) = Pi.single i (f x) :=
+  funext (Pi.apply_single (fun _ ↦ f) (fun _ ↦ map_zero f) i x)
 
 /-- In the product bases `Pi.basis b` and `Pi.basis c`, the coordinatewise linear map
 `LinearMap.piMap f` has the block-diagonal matrix whose blocks are the matrices of the `f i`.
