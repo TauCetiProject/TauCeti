@@ -26,6 +26,8 @@ associated graded rings for their natural filtrations are polynomial rings.
 
 * `TauCeti.AlgFiltration.nontrivial_of_nontrivial_associatedGraded`: a ring with a nontrivial
   associated graded ring is nontrivial.
+* `TauCeti.AlgFiltration.mul_notMem_succ`: when `gr A` has no zero divisors, orders add under
+  multiplication.
 * `TauCeti.AlgFiltration.noZeroDivisors_of_noZeroDivisors_associatedGraded` and
   `TauCeti.AlgFiltration.isDomain_of_isDomain_associatedGraded`: the domain property descends
   from the associated graded ring to a separated filtered ring.
@@ -50,6 +52,15 @@ theorem nontrivial_of_nontrivial_associatedGraded [Nontrivial F.AssociatedGraded
   ⟨⟨1, 0, fun h => one_ne_zero (α := F.AssociatedGraded) <| by
     rw [one_eq_of_gradedZeroMk, h, map_zero, map_zero]⟩⟩
 
+/-- If the associated graded ring has no zero divisors, the product of elements of exact orders
+`r` and `s` has exact order `r + s`. -/
+theorem mul_notMem_succ [NoZeroDivisors F.AssociatedGraded] {x y : A} {r s : ℕ}
+    (hx : x ∈ F.ideal r) (hx' : x ∉ F.ideal (r + 1)) (hy : y ∈ F.ideal s)
+    (hy' : y ∉ F.ideal (s + 1)) : x * y ∉ F.ideal (r + s + 1) := by
+  have h := mul_ne_zero ((of_mk_eq_zero_iff ⟨x, hx⟩).not.mpr hx')
+    ((of_mk_eq_zero_iff ⟨y, hy⟩).not.mpr hy')
+  rwa [of_mk_mul_of_mk, Ne, of_mk_eq_zero_iff] at h
+
 /-- If the associated graded ring of a separated filtration has no zero divisors, neither does
 the filtered ring. -/
 theorem noZeroDivisors_of_noZeroDivisors_associatedGraded
@@ -59,13 +70,7 @@ theorem noZeroDivisors_of_noZeroDivisors_associatedGraded
     by_contra! h
     obtain ⟨m, hxm, hxm'⟩ := exists_mem_notMem_succ hF h.1
     obtain ⟨n, hyn, hyn'⟩ := exists_mem_notMem_succ hF h.2
-    have hx : DirectSum.of F.GradedPiece m ((⟨x, hxm⟩ : F.ideal m) : F.GradedPiece m) ≠ 0 := by
-      rwa [Ne, of_mk_eq_zero_iff]
-    have hy : DirectSum.of F.GradedPiece n ((⟨y, hyn⟩ : F.ideal n) : F.GradedPiece n) ≠ 0 := by
-      rwa [Ne, of_mk_eq_zero_iff]
-    have hxy' := mul_ne_zero hx hy
-    rw [of_mk_mul_of_mk, Ne, of_mk_eq_zero_iff] at hxy'
-    exact hxy' (by simp [hxy])
+    exact mul_notMem_succ hxm hxm' hyn hyn' (by simp [hxy])
 
 /-- If the associated graded ring of a separated filtration is a domain, so is the filtered
 ring. -/

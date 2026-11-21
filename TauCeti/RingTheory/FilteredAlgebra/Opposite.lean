@@ -41,18 +41,19 @@ variable {A : Type*} [Semiring A] (F : AlgFiltration A)
 def op : AlgFiltration Aᵐᵒᵖ where
   ideal k :=
     { carrier := {x | x.unop ∈ F.ideal k}
-      add_mem' := add_mem
-      zero_mem' := zero_mem (F.ideal k)
-      smul_mem' a x hx := F.mul_mem (b := 0) hx (by simp) }
-  isTwoSided k := ⟨fun b hx => (F.ideal k).smul_mem b.unop hx⟩
+      add_mem' ha hb := by simpa [unop_add] using add_mem ha hb
+      zero_mem' := by simp
+      smul_mem' a x hx := by
+        simpa [smul_eq_mul, unop_mul] using
+          F.mul_mem (b := 0) hx (show a.unop ∈ F.ideal 0 by simp) }
+  isTwoSided k := ⟨fun b hx => by
+    simpa [unop_mul] using (F.ideal k).smul_mem b.unop hx⟩
   antitone _ _ h _ hx := F.antitone h hx
   ideal_zero := by
     ext
     simp
   mul_mem {a b} _ _ hx hy := by
-    have h := F.mul_mem hy hx
-    rw [Nat.add_comm b a] at h
-    exact h
+    simpa [unop_mul, Nat.add_comm b a] using F.mul_mem hy hx
 
 variable {F}
 

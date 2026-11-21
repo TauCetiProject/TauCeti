@@ -44,10 +44,12 @@ perturbation lemma for complete filtered contractions, where the series need not
   `n ↦ F (n - d)`, keeps it complete and separated.
 * `TauCeti.IsCompleteFiltration.surjOn`: a map sending a complete filtration into a separated one
   compatibly, and surjective on the associated graded modules, maps `F 0` onto `G 0`.
-* `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
-  coordinates of weight below `n` is complete and separated.
+* `TauCeti.IsCompleteFiltration.of_eq_bot`: a decreasing filtration reaching `⊥` is complete and
+  separated.
 * `TauCeti.IsCompleteFiltration.pi`: a product of complete separated filtrations, filtered
   coordinatewise, is complete and separated.
+* `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
+  coordinates of weight below `n` is complete and separated.
 
 ## References
 
@@ -258,27 +260,26 @@ end TauCeti.IsCompleteFiltration
 
 namespace TauCeti
 
-/-- **Weight filtrations of products are complete.**  Let `w` assign a weight to each factor of
-the product `∀ i, E i`.  The filtration whose `n`-th term consists of the families vanishing in
-every coordinate of weight below `n` is complete and separated: a limit is read off one
-coordinate at a time, the `i`-th coordinate of a Cauchy sequence being constant from step
-`w i + 1` on. -/
-theorem isCompleteFiltration_pi {ι : Type*} {E : ι → Type*} [∀ i, AddCommGroup (E i)]
-    [∀ i, Module R (E i)] (w : ι → ℕ) (F : ℕ → Submodule R (∀ i, E i))
-    (hF : ∀ n x, x ∈ F n ↔ ∀ i, w i < n → x i = 0) : IsCompleteFiltration F where
-  antitone n m hnm x hx := (hF n x).2 fun i hi ↦ (hF m x).1 hx i (hi.trans_le hnm)
-  eq_zero_of_forall_mem x hx := funext fun i ↦ (hF _ x).1 (hx (w i + 1)) i (Nat.lt_succ_self _)
+/-- **Filtrations reaching zero are complete.** A decreasing filtration with `F N = ⊥` for some
+`N` is complete and separated: a sequence with `x (n + 1) - x n ∈ F n` is constant from step `N`
+on, and its value there is a limit. -/
+theorem IsCompleteFiltration.of_eq_bot {F : ℕ → Submodule R M} (hF : Antitone F) {N : ℕ}
+    (hN : F N = ⊥) : IsCompleteFiltration F where
+  antitone := hF
+  eq_zero_of_forall_mem x hx := by simpa [hN] using hx N
   exists_limit x hx := by
-    -- From step `w i + 1` on, the `i`-th coordinate of `x` no longer changes.
-    have hconst : ∀ i, ∀ n, w i + 1 ≤ n → x n i = x (w i + 1) i := by
-      intro i n hn
-      induction n, hn using Nat.le_induction with
-      | base => rfl
-      | succ n hn ih =>
-        rw [← ih, ← sub_eq_zero, ← Pi.sub_apply]
-        exact (hF n _).1 (hx n) i (by omega)
-    refine ⟨fun i ↦ x (w i + 1) i, fun n ↦ (hF n _).2 fun i hi ↦ ?_⟩
-    rw [Pi.sub_apply, hconst i n (by omega), sub_self]
+    -- The differences `x m - x n` for `n ≤ m` lie in `F n`.
+    have hsub : ∀ n m, n ≤ m → x m - x n ∈ F n := fun n m hnm ↦ by
+      induction m, hnm using Nat.le_induction with
+      | base => simp
+      | succ m hnm ih =>
+        simpa using add_mem (hF hnm (hx m)) ih
+    refine ⟨x N, fun n ↦ ?_⟩
+    rcases le_total n N with hn | hn
+    · exact hsub n N hn
+    · have h := hsub N n hn
+      rw [hN, Submodule.mem_bot, sub_eq_zero] at h
+      simp [h]
 
 /-- **Products of complete filtrations are complete.** If each `E i` carries a complete separated
 filtration `F i`, then the product `∀ i, E i` filtered coordinatewise, by `∏ i, F i n`, is
@@ -295,5 +296,21 @@ theorem IsCompleteFiltration.pi {ι : Type*} {E : ι → Type*} [∀ i, AddCommG
     choose L hL using fun i ↦
       (hF i).exists_limit (fun n ↦ x n i) fun n ↦ Submodule.mem_pi.1 (hx n) i trivial
     exact ⟨L, fun n ↦ Submodule.mem_pi.2 fun i _ ↦ hL i n⟩
+
+/-- **Weight filtrations of products are complete.**  Let `w` assign a weight to each factor of
+the product `∀ i, E i`.  The filtration whose `n`-th term consists of the families vanishing in
+every coordinate of weight below `n` is complete and separated: it is the product of the
+coordinate filtrations `n ↦ if w i < n then ⊥ else ⊤`, each of which reaches `⊥`. -/
+theorem isCompleteFiltration_pi {ι : Type*} {E : ι → Type*} [∀ i, AddCommGroup (E i)]
+    [∀ i, Module R (E i)] (w : ι → ℕ) (F : ℕ → Submodule R (∀ i, E i))
+    (hF : ∀ n x, x ∈ F n ↔ ∀ i, w i < n → x i = 0) : IsCompleteFiltration F := by
+  have hG : ∀ i, IsCompleteFiltration fun n ↦ (if w i < n then ⊥ else ⊤ : Submodule R (E i)) :=
+    fun i ↦ .of_eq_bot (N := w i + 1) (fun m n hmn ↦ by
+      split_ifs <;> first | exact bot_le | exact le_top | omega) (by simp)
+  convert IsCompleteFiltration.pi hG with n
+  ext x
+  simp only [hF, Submodule.mem_pi, Set.mem_univ, true_implies]
+  refine forall_congr' fun i ↦ ?_
+  split_ifs with h <;> simp [h]
 
 end TauCeti

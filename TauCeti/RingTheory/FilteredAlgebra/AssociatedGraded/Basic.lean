@@ -49,6 +49,12 @@ The graded-ring packaging (the transport lemmas along equalities of degrees and 
 `TauCeti.Algebra.WordFiltration.AssociatedGraded`. Here the pieces are quotients of additive groups
 and the product is biadditive, so `gr A` is a ring and no coefficient algebra is fixed.
 
+For the powers `n ↦ I ^ n` of an ideal of a commutative ring, `Ideal.AssociatedGraded` in
+`TauCeti.RingTheory.Ideal.AssociatedGraded` builds the commutative graded algebra
+`⨁ n, I ^ n / I ^ (n + 1)`, with `R`-linear pieces and a `DirectSum.GAlgebra` structure. Its pieces
+and their additive groups agree definitionally with those of the ideal-adic filtration
+`I.algFiltration` here; its product is the same product on representatives.
+
 ## References
 
 * P. Schneider and J. Teitelbaum, *Algebras of `p`-adic distributions and admissible
