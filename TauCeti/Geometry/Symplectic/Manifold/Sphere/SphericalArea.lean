@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere.Hurewicz
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
@@ -31,11 +30,11 @@ In particular the tautological sphere `TauCeti.sphereGenLoop 2`, whose Hurewicz 
 `H₂(S²; ℤ)`, has area `±4π` (`TauCeti.abs_sphereIntegral_sphereAreaForm_sphereGenLoop`).
 
 Since `S²` is simply connected, the Hurewicz map `π₂(S², x) → H₂(S²; ℤ)` is an isomorphism, so the
-area descends to a homomorphism `TauCeti.sphereAreaHom : H₂(S²; ℤ) → ℝ` that agrees with the
-integral of `σ` on the Hurewicz class of every sphere, at every base point
-(`TauCeti.sphereAreaHom_hurewiczIntHom`). This is the area period of the two-sphere in the form
-that capped Hamiltonian Floer theory takes it: a homomorphism on `H₂(M; ℤ)` together with its
-agreement with the sphere integral.
+area descends (`TauCeti.homologySphereIntegralHom`) to a homomorphism
+`TauCeti.sphereAreaHom : H₂(S²; ℤ) → ℝ` that agrees with the integral of `σ` on the Hurewicz class
+of every sphere, at every base point (`TauCeti.sphereAreaHom_hurewiczIntHom`). This is the area
+period of the two-sphere in the form that capped Hamiltonian Floer theory takes it: a homomorphism
+on `H₂(M; ℤ)` together with its agreement with the sphere integral.
 
 The computation uses one explicit sphere. On the plane put `a = p₁² + p₂²`, let
 `G(a) = β(1 - a)` for the smooth transition `β` (so `G > 0` for `a < 1` and `G = 0` for `a ≥ 1`),
@@ -619,27 +618,14 @@ theorem abs_sphereIntegral_sphereAreaForm_sphereGenLoop :
   rw [hS, abs_mul, abs_mul, abs_neg, abs_of_pos Real.pi_pos]
   rcases Int.eq_one_or_neg_one_of_mul_eq_one hkm with rfl | rfl <;> norm_num
 
-/-- **The area of the two-sphere on `H₂(S²; ℤ)`.** The integral of the area form of `S²` over
-`π₂(S², N)`, transported to `H₂(S²; ℤ)` along the Hurewicz isomorphism of the simply connected
-sphere. It agrees with the integral of the area form on the Hurewicz class of every sphere, at every
-base point (`TauCeti.sphereAreaHom_hurewiczIntHom`). -/
+/-- **The area of the two-sphere on `H₂(S²; ℤ)`.** The integral of the area form of `S²` on
+`H₂(S²; ℤ)` (`TauCeti.homologySphereIntegralHom`), defined since the sphere is simply connected. It
+agrees with the integral of the area form on the Hurewicz class of every sphere, at every base point
+(`TauCeti.sphereAreaHom_hurewiczIntHom`). -/
 def sphereAreaHom :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of S²) →+
       ℝ :=
-  (sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm
-    mextDeriv_sphereAreaForm).comp
-    (hurewiczAddEquiv (n := 0) (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _)).symm.toAddMonoidHom
-
-/-- The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes at the north
-pole, where it is defined. -/
-private theorem sphereAreaHom_hurewiczIntHom_sphereNorthPole
-    (a : Additive (HomotopyGroup (Fin 2) S² (sphereNorthPole 2))) :
-    sphereAreaHom (hurewiczIntHom S² (sphereNorthPole 2) 1 a) =
-      sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
-        a := by
-  rw [← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0)
-      (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _),
-    sphereAreaHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply]
+  homologySphereIntegralHom isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
 
 /-- **The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes**, at
 every base point. This is the hypothesis under which the capped action of the area form descends to
@@ -647,13 +633,8 @@ cap classes (`TauCeti.Floer.SphericalCapClass.action`). -/
 @[simp]
 theorem sphereAreaHom_hurewiczIntHom (x : S²) (a : Additive (HomotopyGroup (Fin 2) S² x)) :
     sphereAreaHom (hurewiczIntHom S² x 1 a) =
-      sphereIntegralHom x isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm a := by
-  -- Transport the class to the north pole along a path; both sides are invariant.
-  let γ : Path x (sphereNorthPole 2) := PathConnectedSpace.somePath _ _
-  rw [← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
-    sphereAreaHom_hurewiczIntHom_sphereNorthPole, sphereIntegralHom_apply, sphereIntegralHom_apply,
-    toMul_ofMul, toMul_ofMul,
-    sphereIntegral_homotopyGroupTransport isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm]
+      sphereIntegralHom x isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm a :=
+  homologySphereIntegralHom_hurewiczIntHom _ _ x a
 
 /-- **The generator of `H₂(S²; ℤ)` has area `±4π`.** -/
 theorem abs_sphereAreaHom_hurewicz_sphereGenLoop :
@@ -664,7 +645,7 @@ theorem abs_sphereAreaHom_hurewicz_sphereGenLoop :
     (hurewiczAddEquiv_ofMul_mk (n := 0)
       (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) _).symm.trans
       (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ _)
-  rw [h, sphereAreaHom_hurewiczIntHom_sphereNorthPole, sphereIntegralHom_apply]
+  rw [h, sphereAreaHom_hurewiczIntHom, sphereIntegralHom_apply]
   exact abs_sphereIntegral_sphereAreaForm_sphereGenLoop
 
 end TauCeti
