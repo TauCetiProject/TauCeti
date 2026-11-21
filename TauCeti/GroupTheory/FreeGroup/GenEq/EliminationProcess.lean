@@ -240,15 +240,12 @@ private theorem kernelExample_card : #kernelExample.freeItemsᶜ = 12 := by
 /-- The remaining items `h₀, …, h₁₁` keep their numbers. -/
 private theorem kernelExample_orderEmbOfFin (k : Fin #kernelExample.freeItemsᶜ) :
     kernelExample.freeItemsᶜ.orderEmbOfFin rfl k = (Fin.cast kernelExample_card k).castSucc := by
-  have hmem : ∀ j : Fin 13, j ≠ Fin.last 12 → j ∈ kernelExample.freeItemsᶜ := by
-    rw [kernelExample_freeItems]
-    intro j hj
-    simpa using hj
-  refine congrFun (Finset.orderEmbOfFin_unique rfl
-    (f := fun k => (Fin.cast kernelExample_card k).castSucc)
-    (fun k => hmem _ (Fin.castSucc_ne_last _)) fun a b h => ?_).symm k
-  rw [Fin.castSucc_lt_castSucc_iff, Fin.lt_def, Fin.val_cast, Fin.val_cast]
-  exact h
+  -- The finset also occurs in the type of `k`, so it is generalised rather than rewritten.
+  have key (s : Finset (Fin 13)) (hs : s = {Fin.last 12}) (k : Fin #sᶜ) (hk : #sᶜ = 12) :
+      sᶜ.orderEmbOfFin rfl k = (Fin.cast hk k).castSucc := by
+    subst hs
+    rw [Finset.orderEmbOfFin_compl_singleton_apply, Fin.succAbove_last]
+  exact key _ kernelExample_freeItems k kernelExample_card
 
 /-- The basic equation of a base of the example holds at a point. -/
 private theorem kernelExample_basicEquation {v : Fin 13 → FreeGroup (Fin 2)}
