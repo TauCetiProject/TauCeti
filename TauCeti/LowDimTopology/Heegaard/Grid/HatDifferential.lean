@@ -56,7 +56,7 @@ differential are the fully blocked rectangle counts
 fully blocked grid differential under the identification of grid states with generators
 (`TauCeti.GridDiagram.hatDifferential_comp_domLCongr`). In particular the hat differential of
 the Heegaard diagram of a grid diagram squares to zero
-(`TauCeti.GridDiagram.hatDifferential_comp_hatDifferential`).
+(`TauCeti.GridDiagram.hatDifferential_comp_self_eq_zero`).
 
 This is the combinatorial half of the identification of the fully blocked grid complex with the
 hat complex of the multi-pointed Heegaard diagram: it excludes every domain other than the empty
@@ -74,7 +74,7 @@ analytic and is not formalized here.
   differential are the fully blocked rectangle counts.
 * `TauCeti.GridDiagram.hatDifferential_comp_domLCongr`: the hat differential is the fully blocked
   grid differential.
-* `TauCeti.GridDiagram.hatDifferential_comp_hatDifferential`: it squares to zero.
+* `TauCeti.GridDiagram.hatDifferential_comp_self_eq_zero`: it squares to zero.
 
 ## References
 
@@ -559,7 +559,7 @@ theorem hatDifferential_comp_domLCongr :
 /-- **The hat differential of a grid diagram squares to zero.** For the Heegaard diagram of a grid
 diagram, with Euler characteristic `1` on every square, this follows from the fully blocked grid
 complex (`TauCeti.GridDiagram.fullyBlockedDifferential_comp_self_eq_zero`). -/
-theorem hatDifferential_comp_hatDifferential :
+theorem hatDifferential_comp_self_eq_zero :
     G.heegaardRegionSystem.hatDifferential 1 ∘ₗ G.heegaardRegionSystem.hatDifferential 1 = 0 := by
   set e := Finsupp.domLCongr (R := ZMod 2) (M := ZMod 2) G.gridStateEquivGenerator
   have he : ∀ c,
