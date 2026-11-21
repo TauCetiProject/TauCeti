@@ -23,6 +23,8 @@ one is.
 
 ## Main results
 
+* `TauCeti.DualGraph.DegreeDecoration.eq_transport_iff`: the moved decoration is characterized by
+  its component degrees at the images `f.vertexEquiv v`.
 * `TauCeti.DualGraph.DegreeDecoration.totalDegree_transport`: moving a decoration preserves its
   total degree.
 * `TauCeti.DualGraph.DegreeDecoration.isStable_transport_iff`: moving a decoration preserves
@@ -44,10 +46,10 @@ namespace DegreeDecoration
 
 open Finset
 
-universe u u' v
+universe u u' u'' v
 
-variable {ι : Type v} {G : DualGraph.{u} ι} {H : DualGraph.{u'} ι} (D : G.DegreeDecoration)
-  (f : G.Iso H)
+variable {ι : Type v} {G : DualGraph.{u} ι} {H : DualGraph.{u'} ι} {K : DualGraph.{u''} ι}
+  (D : G.DegreeDecoration) (f : G.Iso H)
 
 /-- The decoration of `H` obtained by moving `D` along the isomorphism `f : G.Iso H`: the
 component `f.vertexEquiv v` gets the degree of `v`. -/
@@ -61,6 +63,39 @@ lemma componentDegree_transport (w : H.Vertex) :
 @[simp]
 lemma componentDegree_transport_vertexEquiv (v : G.Vertex) :
     (D.transport f).componentDegree (f.vertexEquiv v) = D.componentDegree v := by
+  simp [componentDegree_transport]
+
+/-- A decoration of `H` is the one moved from `D` along `f` exactly when `f` carries each
+component degree of `D` to it. -/
+theorem eq_transport_iff {D' : H.DegreeDecoration} :
+    D' = D.transport f ↔ ∀ v, D'.componentDegree (f.vertexEquiv v) = D.componentDegree v := by
+  refine ⟨fun h v ↦ h ▸ D.componentDegree_transport_vertexEquiv f v, fun h ↦ ?_⟩
+  ext w
+  rw [componentDegree_transport, ← h, Equiv.apply_symm_apply]
+
+/-- Moving a decoration along the identity isomorphism does not change it. -/
+@[simp]
+theorem transport_refl : D.transport (Iso.refl G) = D := by
+  ext
+  simp [componentDegree_transport]
+
+/-- Moving a decoration along a composite isomorphism is moving it along each in turn. -/
+@[simp]
+theorem transport_trans (g : H.Iso K) : D.transport (f.trans g) = (D.transport f).transport g := by
+  ext
+  simp [componentDegree_transport]
+
+/-- Moving a decoration along an isomorphism and back recovers it. -/
+@[simp]
+theorem transport_symm_transport : (D.transport f).transport f.symm = D := by
+  ext
+  simp [componentDegree_transport]
+
+/-- Moving a decoration back along an isomorphism and then forward recovers it. -/
+@[simp]
+theorem transport_transport_symm (D : H.DegreeDecoration) :
+    (D.transport f.symm).transport f = D := by
+  ext
   simp [componentDegree_transport]
 
 /-- Moving a decoration along an isomorphism preserves its total degree. -/
