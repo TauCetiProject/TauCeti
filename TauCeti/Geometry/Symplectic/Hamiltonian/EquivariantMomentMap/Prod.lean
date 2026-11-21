@@ -231,13 +231,11 @@ theorem differential_prodMap [MulAction (G × G') (M × N)]
         (hμ.differential p.1 (Manifold.tangentSpaceProdEquiv p v).1,
           hν.differential p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
   ext ξ
-  rw [differential_apply_eq_eval₂, Lie.groupLieAlgebraDualProdDualEquivDual_apply,
-    differential_apply_eq_eval₂, differential_apply_eq_eval₂,
+  simp only [differential_apply_eq_eval₂, Lie.groupLieAlgebraDualProdDualEquivDual_apply,
     InfinitesimalAction.fundamental_apply,
     fundamentalVectorField_prod_of_smul_eq (MonoidHom.fst G G') (MonoidHom.snd G G')
       mdifferentiableAt_fst mdifferentiableAt_snd hsmul, eval₂_prod,
     Manifold.tangentSpaceProdEquiv_prodVectorField]
-  simp only [InfinitesimalAction.fundamental_apply]
 
 /-- **Regular values of the moment map of a product.** For `G × G'` acting factorwise on `M × N`,
 if `c` is a regular value of `μ` and `c'` is a regular value of `ν`, then `(c, c')` is a regular

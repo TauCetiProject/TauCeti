@@ -202,7 +202,4 @@ theorem ProperSMul.prod_of_smul_eq {G K X Y : Type*} [Group G] [Group K] [Topolo
       (Homeomorph.prodProdProdComm G K X Y).isProperMap
     convert h using 1
     funext ⟨⟨g, k⟩, x, y⟩
-    rw [hsmul]
-    -- `Homeomorph.prodProdProdComm` only reorders the factors, and Mathlib states no `apply`
-    -- lemma for it, so both sides agree by unfolding it.
-    rfl
+    simp [hsmul, Homeomorph.prodProdProdComm]
