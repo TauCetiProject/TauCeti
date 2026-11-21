@@ -114,9 +114,12 @@ theorem fixedNormalRepresentation_normalClass
     (k : K) (w : TangentSpace J (f x)) :
     f.fixedNormalRepresentation hf x hn hd k (f.normalClass x hn w) =
       f.normalClass x hn (mfderiv J J (fun y : N ↦ k • y) (f x) w) := by
-  rw [normalClass_def, ← tangentRepresentationOfMemFixedPoints_apply (fun k ↦ hf k x) hd]
+  rw [normalClass_def]
   -- The quotient representation acts on `mkQ w` by `Submodule.mapQ`, which is `mkQ` of the image.
-  rfl
+  refine (LinearMap.congr_fun (Representation.quotient_apply _ _
+    (f.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints hf x hn hd) k) _).trans ?_
+  rw [← tangentRepresentationOfMemFixedPoints_apply (mem_fixedPoints.2 fun k ↦ hf k x) hd]
+  exact Submodule.mapQ_apply _ _ _ w
 
 /-- The normal representation of `k` is the normal map induced by the commuting square
 `(k • ·) ∘ f = f ∘ id`. -/
