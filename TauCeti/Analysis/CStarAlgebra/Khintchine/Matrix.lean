@@ -13,7 +13,7 @@ import TauCeti.Analysis.CStarAlgebra.Khintchine.Dual
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 import TauCeti.Analysis.InnerProductSpace.Polar.Finite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
-import TauCeti.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 
 /-!
