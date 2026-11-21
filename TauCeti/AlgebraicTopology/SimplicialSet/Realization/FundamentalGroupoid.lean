@@ -94,6 +94,10 @@ theorem Edge.CompStruct.homotopic_toTopPath {e₀₁ : X.Edge x₀ x₁} {e₁�
     have hc₀ : SimplexCategory.const ⦋0⦌ ⦋2⦌ 0 = SimplexCategory.δ 1 ≫ SimplexCategory.δ 2 := by
       rw [SimplexCategory.δ_one_eq_const, SimplexCategory.const_comp]; rfl
     simp [F, hc₀, ← SimplicialObject.δ_def, h.d₂, e₀₁.src_eq]
+  have hx₁ : toTopPoint x₁ = F (StdSimplex.single 1) := by
+    have hc₁ : SimplexCategory.const ⦋0⦌ ⦋2⦌ 1 = SimplexCategory.δ 0 ≫ SimplexCategory.δ 2 := by
+      rw [SimplexCategory.δ_zero_eq_const, SimplexCategory.const_comp]; rfl
+    simp [F, hc₁, ← SimplicialObject.δ_def, h.d₂, e₀₁.tgt_eq]
   have hx₂ : toTopPoint x₂ = F (StdSimplex.single 2) := by
     have hc₂ : SimplexCategory.const ⦋0⦌ ⦋2⦌ 2 = SimplexCategory.δ 0 ≫ SimplexCategory.δ 0 := by
       rw [SimplexCategory.δ_zero_eq_const, SimplexCategory.const_comp]; rfl
@@ -103,12 +107,10 @@ theorem Edge.CompStruct.homotopic_toTopPath {e₀₁ : X.Edge x₀ x₁} {e₁�
     simp [F, facePath, SimplicialObject.δ_def, toTopObjMk_map]
   have htrans : ((p₀₁.trans p₁₂).map F.continuous).cast hx₀ hx₂ =
       e₀₁.toTopPath.trans e₁₂.toTopPath := by
-    ext t
-    rw [_root_.Path.cast_coe, _root_.Path.map_coe, Function.comp_apply, _root_.Path.trans_apply,
-      _root_.Path.trans_apply]
-    split_ifs
-    · exact (hface 2 _).trans (by rw [h.d₂, Edge.toTopPath_apply])
-    · exact (hface 0 _).trans (by rw [h.d₀, Edge.toTopPath_apply])
+    rw [_root_.Path.map_trans, _root_.Path.cast_trans _ _ hx₀ hx₁ hx₂]
+    congr 1
+    · ext t; exact (hface 2 t).trans (by rw [h.d₂, Edge.toTopPath_apply])
+    · ext t; exact (hface 0 t).trans (by rw [h.d₀, Edge.toTopPath_apply])
   have hdiag : (p₀₂.map F.continuous).cast hx₀ hx₂ = e₀₂.toTopPath := by
     ext t; exact (hface 1 t).trans (by rw [h.d₁, Edge.toTopPath_apply])
   exact ⟨((H.map F).pathCast hx₀ hx₂).cast htrans hdiag⟩
@@ -139,6 +141,19 @@ lemma toTopFundamentalGroupoid_map_homMk (X : SSet.{u}) {x y : X _⦋0⦌} (e : 
       _root_.FundamentalGroupoid.fromPath (.mk e.toTopPath) :=
   FundamentalGroupoid.desc_map_homMk _ _ (fun h ↦ Quotient.sound h.homotopic_toTopPath) e
 
+private lemma fromPath_naturality_eqToHom {A : TopCat.{u}} {B : TopCat.{v}}
+    {φ : C(A, B)} {a₁ a₂ : A} {b₁ b₂ : B} (h₁ : φ a₁ = b₁) (h₂ : φ a₂ = b₂)
+    (p : _root_.Path a₁ a₂) (q : _root_.Path b₁ b₂)
+    (hpq : q = (p.map φ.continuous).cast h₁.symm h₂.symm) :
+    _root_.FundamentalGroupoid.fromPath (.mk q) ≫ eqToHom (_root_.FundamentalGroupoid.ext h₂.symm) =
+      eqToHom (_root_.FundamentalGroupoid.ext h₁.symm) ≫
+        (_root_.FundamentalGroupoid.map φ).map (_root_.FundamentalGroupoid.fromPath (.mk p)) := by
+  rw [hpq, Path.Homotopic.Quotient.mk_cast]
+  exact (comp_eqToHom_iff _ _ _).2 <|
+    ((Category.assoc _ _ _).trans
+      (_root_.FundamentalGroupoid.conj_eqToHom
+        (p := .mk (p.map φ.continuous)) h₁.symm h₂.symm)).symm
+
 private lemma mapFundamentalGroupoid_toTop_obj {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
     (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
       (toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x) :=
@@ -150,15 +165,13 @@ noncomputable def mapFundamentalGroupoidToTopIso {X Y : SSet.{u}} (f : X ⟶ Y) 
     mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y ≅
       toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom :=
   FundamentalGroupoid.natIsoMk (fun x ↦ eqToIso (mapFundamentalGroupoid_toTop_obj f x))
-    fun {x y} e ↦ by
-      dsimp only [Functor.comp_map]
+    fun e ↦ by
+      dsimp only [Functor.comp_obj, Functor.comp_map]
       rw [mapFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
-        toTopFundamentalGroupoid_map_homMk, e.toTopPath_map f, Path.Homotopic.Quotient.mk_cast]
-      exact (comp_eqToHom_iff (mapFundamentalGroupoid_toTop_obj f y) _ _).2 <|
-        ((Category.assoc _ _ _).trans
-          (_root_.FundamentalGroupoid.conj_eqToHom
-            (p := .mk (e.toTopPath.map (toTop.map f).hom.continuous))
-            (toTop_map_toTopPoint f x).symm (toTop_map_toTopPoint f y).symm)).symm
+        toTopFundamentalGroupoid_map_homMk]
+      exact fromPath_naturality_eqToHom (φ := (toTop.map f).hom)
+        (toTop_map_toTopPoint f _) (toTop_map_toTopPoint f _)
+        e.toTopPath (e.map f).toTopPath (e.toTopPath_map f)
 
 @[simp] lemma mapFundamentalGroupoidToTopIso_hom_app {X Y : SSet.{u}} (f : X ⟶ Y)
     (x : SSet.FundamentalGroupoid X) :
@@ -184,16 +197,13 @@ noncomputable def uliftFundamentalGroupoidToTopIso (X : SSet.{u}) :
       toTopFundamentalGroupoid X ⋙
         _root_.FundamentalGroupoid.map (toTopUliftHomeomorph.{v, u} X : C(_, _)) :=
   FundamentalGroupoid.natIsoMk (fun x ↦ eqToIso (uliftFundamentalGroupoid_toTop_obj.{v} X x))
-    fun {x y} e ↦ by
-      dsimp only [Functor.comp_map]
+    fun e ↦ by
+      dsimp only [Functor.comp_obj, Functor.comp_map]
       rw [uliftFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
-        toTopFundamentalGroupoid_map_homMk, e.toTopPath_ulift.{v}, Path.Homotopic.Quotient.mk_cast]
-      exact (comp_eqToHom_iff (uliftFundamentalGroupoid_toTop_obj.{v} X y) _ _).2 <|
-        ((Category.assoc _ _ _).trans
-          (_root_.FundamentalGroupoid.conj_eqToHom
-            (p := .mk (e.toTopPath.map (toTopUliftHomeomorph.{v, u} X).continuous))
-            (toTopUliftHomeomorph_toTopPoint.{v, u} x).symm
-            (toTopUliftHomeomorph_toTopPoint.{v, u} y).symm)).symm
+        toTopFundamentalGroupoid_map_homMk]
+      exact fromPath_naturality_eqToHom (φ := (toTopUliftHomeomorph.{v, u} X : C(_, _)))
+        (toTopUliftHomeomorph_toTopPoint.{v, u} _) (toTopUliftHomeomorph_toTopPoint.{v, u} _)
+        e.toTopPath e.ulift.{v}.toTopPath (e.toTopPath_ulift.{v})
 
 @[simp] lemma uliftFundamentalGroupoidToTopIso_hom_app (X : SSet.{u})
     (x : SSet.FundamentalGroupoid X) :

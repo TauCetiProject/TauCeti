@@ -91,43 +91,25 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
       Function.Injective (objEquiv y) ∧ (∀ j, w'.weights j ≠ 0) ∧
       toTopObjMk x w = toTopObjMk y w' ∧
       StdSimplex.map (objEquiv x) w = StdSimplex.map (objEquiv y) w' := by
-  -- First strip zero weights once via `StdSimplex.exists_strictMono_map_eq`.
-  obtain ⟨k, f, w₀, hf, hw₀, rfl⟩ := StdSimplex.exists_strictMono_map_eq w
+  -- First strip zero weights via `StdSimplex.exists_strictMono_map_eq`, then factor out
+  obtain ⟨k, f, w₀, hf, hw₀, hw⟩ := StdSimplex.exists_strictMono_map_eq w
   let θ : ⦋k⦌ ⟶ ⦋n⦌ := SimplexCategory.Hom.mk ⟨f, hf.monotone⟩
-  have htop : toTopObjMk x (w₀.map f) = toTopObjMk ((Δ[p] ⊗ Δ[q]).map θ.op x) w₀ :=
-    (toTopObjMk_map θ x w₀).symm
-  have hmap : StdSimplex.map (objEquiv x) (w₀.map f) =
-      StdSimplex.map (objEquiv ((Δ[p] ⊗ Δ[q]).map θ.op x)) w₀ := by
-    rw [StdSimplex.map_map]
-    exact congrArg (w₀.map ·) (funext fun j ↦ (objEquiv_map_apply x θ j).symm)
-  rw [htop, hmap]
-  generalize (Δ[p] ⊗ Δ[q]).map θ.op x = x₀
-  clear f hf θ htop hmap
-  induction k with
-  | zero =>
-    exact ⟨0, x₀, w₀, fun a b _ ↦ Fin.ext (by have := a.isLt; have := b.isLt; lia), hw₀, rfl, rfl⟩
-  | succ k ih =>
-    by_cases hi : Function.Injective (objEquiv x₀)
-    · exact ⟨k + 1, x₀, w₀, hi, hw₀, rfl, rfl⟩
-    -- Pass to a degeneracy of the face opposite a repeated vertex, preserving nonzero weights.
-    obtain ⟨j, hj⟩ : ∃ j : Fin (k + 1), objEquiv x₀ j.castSucc = objEquiv x₀ j.succ := by
-      have h : ¬ StrictMono (objEquiv x₀) := fun h ↦ hi h.injective
-      rw [Fin.strictMono_iff_lt_succ] at h
-      push Not at h
-      obtain ⟨j, hj⟩ := h
-      exact ⟨j, ((objEquiv x₀).monotone (Fin.castSucc_le_succ j)).eq_of_not_lt hj⟩
-    have hx := (σ_δ_succ_of_eq x₀ j hj).symm
-    obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih (StdSimplex.map j.predAbove w₀)
-        (StdSimplex.weights_map_ne_zero_of_surjective (Fin.predAbove_surjective j) hw₀)
-        ((Δ[p] ⊗ Δ[q]).δ j.succ x₀)
-    refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
-    · rw [← h₁]
-      conv_lhs => rw [hx]
-      rw [SimplicialObject.σ, toTopObjMk_map, SimplexCategory.coe_σ]
-    · rw [← h₂, StdSimplex.map_map]
-      conv_lhs => rw [hx]
-      rw [objEquiv_σ, Function.comp_def]
+  have hwθ : w = w₀.map θ.toOrderHom := hw
+  rw [hwθ]
+  obtain ⟨r, π, hπ, ⟨y, hy⟩, hxy⟩ :=
+    SSet.exists_nonDegenerate (Δ[p] ⊗ Δ[q] : SSet.{u}) ((Δ[p] ⊗ Δ[q] : SSet.{u}).map θ.op x)
+  refine ⟨r, y, w₀.map π.toOrderHom, (nonDegenerate_iff_injective_objEquiv y).1 hy,
+    StdSimplex.weights_map_ne_zero_of_surjective
+      ((SimplexCategory.epi_iff_surjective (f := π)).1 hπ) hw₀, ?_, ?_⟩
+  · dsimp only at hxy
+    exact (toTopObjMk_map θ x w₀).symm.trans <|
+      (congrArg (toTopObjMk · w₀) hxy).trans (toTopObjMk_map π y w₀)
+  · rw [StdSimplex.map_map, StdSimplex.map_map]
+    refine congrArg (fun g ↦ w₀.map g) (funext fun j ↦ ?_)
+    have h1 := objEquiv_map_apply x θ j
+    have h2 := objEquiv_map_apply y π j
+    dsimp only [Function.comp_apply] at h1 h2 ⊢
+    rw [← h1, hxy, h2]
 
 /-- Two points of the realizations of simplices of `Δ[p] ⊗ Δ[q]` with injective vertex maps and
 nowhere vanishing coordinates agree if their coordinates have the same distribution on the

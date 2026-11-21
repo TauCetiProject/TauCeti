@@ -57,10 +57,6 @@ def toFundamentalGroupoid (C : Type u) [Category.{v} C] :
     (SSet.FundamentalGroupoid.homMk_id _)
   map_comp f g := ((nonempty_compStruct_iff f g (f ≫ g)).2 rfl).some.homMk_comp.symm
 
-private lemma nerveMap_app_nerveEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D) (X : C) :
-    (nerveMap F).app (op ⦋0⦌) (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) :=
-  nerveMap_app_mk₀ F X
-
 /-- Naturality isomorphism comparing `nerve.toFundamentalGroupoid` along `F : C ⥤ D` with
 `SSet.mapFundamentalGroupoid (nerveMap F)`. -/
 def toFundamentalGroupoidNatIso {D : Type u} [Category.{v} D] (F : C ⥤ D) :
@@ -68,7 +64,7 @@ def toFundamentalGroupoidNatIso {D : Type u} [Category.{v} D] (F : C ⥤ D) :
       toFundamentalGroupoid C ⋙ SSet.mapFundamentalGroupoid (nerveMap F) :=
   NatIso.ofComponents
     (fun X ↦ eqToIso (congrArg (SSet.FundamentalGroupoid.mk (X := nerve D))
-      (nerveMap_app_nerveEquiv_symm F X).symm))
+      (nerveMap_app_mk₀ F X).symm))
     fun f ↦
       (SSet.FundamentalGroupoid.homMk_comp_eqToHom (edgeMk (F.map f)) ((edgeMk f).map (nerveMap F))
         (nerveMap_app_mk₁ F f).symm).trans
