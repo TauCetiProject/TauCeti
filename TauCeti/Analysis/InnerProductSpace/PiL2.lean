@@ -307,6 +307,18 @@ theorem consPiEquivL_apply {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ} (z
   ext i
   simp [consPiEquivL, Fin.consEquivL_apply]
 
+/-- The first coordinate of `EuclideanSpace.consPiEquivL 𝕜 R n z` is `z.1`. -/
+@[simp]
+theorem consPiEquivL_apply_zero {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (z : 𝕜 × (Fin n → 𝕜)) : consPiEquivL 𝕜 R n z 0 = z.1 := by
+  simp [consPiEquivL_apply]
+
+/-- The coordinate `i + 1` of `EuclideanSpace.consPiEquivL 𝕜 R n z` is `z.2 i`. -/
+@[simp]
+theorem consPiEquivL_apply_succ {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (z : 𝕜 × (Fin n → 𝕜)) (i : Fin n) : consPiEquivL 𝕜 R n z i.succ = z.2 i := by
+  simp [consPiEquivL_apply]
+
 /-- The inverse of `EuclideanSpace.consPiEquivL` splits off the first coordinate,
 `x ↦ (x 0, (x (i + 1))ᵢ)`. -/
 @[simp]
