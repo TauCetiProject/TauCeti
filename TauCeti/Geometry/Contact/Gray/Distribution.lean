@@ -39,7 +39,9 @@ jointly smooth in time and point
 point where the hyperplane does not move with time
 (`TauCeti.IsContactDistributionFamily.distributionGrayVectorField_eq_zero`). For the kernels of a
 smooth family of contact forms on `M` it is the Gray vector field of the forms
-(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`).
+(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`). Its flow carries `ξ_s` to `ξ_t`
+(`TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`, in
+`TauCeti.Geometry.Contact.Gray.Stability`).
 
 ## Main definitions
 
@@ -95,6 +97,16 @@ theorem isLocalContactFormFamily_iff {U : Opens M} {α : SmoothForm (𝓘(ℝ, �
 namespace IsLocalContactFormFamily
 
 variable {U V : Opens M} {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1} {t₀ : ℝ}
+
+/-- At the time `t₀` of a local defining family `α` of `ξ` on `U`, a tangent vector of `U`, read in
+`M`, lies in `ξ_{t₀}` exactly when it lies in the kernel of the slice `α_{t₀}`. -/
+theorem mem_iff_mem_kerDistribution (hα : IsLocalContactFormFamily ξ U α t₀) {z : U}
+    {v : TangentSpace I z} :
+    Manifold.tangentSpaceOpenEquiv (I := I) z v ∈ ξ t₀ z ↔
+      v ∈ (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id)
+        α).kerDistribution z := by
+  rw [hα.self_of_nhds.2, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
+    Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
 /-- A local defining family restricts to smaller open sets. -/
 theorem mpullback_inclusion (hα : IsLocalContactFormFamily ξ U α t₀) (h : V ≤ U) :
@@ -207,6 +219,12 @@ theorem distributionGrayVectorField_eq_zero {t : ℝ} {x : M} (hx : ∀ᶠ u in 
   rw [hα.distributionGrayVectorField_eq hxU, grayVectorField_eq_zero hα.self_of_nhds.1, map_zero]
   filter_upwards [hα, hx] with u hu hux
   rw [hu.2, hα.self_of_nhds.2, hux]
+
+/-- At a point at which the contact hyperplane `ξ_u` is the same for all times, the Gray vector
+field of a smooth family of contact structures vanishes at all times. -/
+theorem distributionGrayVectorField_eq_zero_of_forall_eq {x : M} {t₀ : ℝ}
+    (hx : ∀ u, ξ u x = ξ t₀ x) (u : ℝ) : distributionGrayVectorField ξ u x = 0 :=
+  hξ.distributionGrayVectorField_eq_zero (.of_forall fun v ↦ (hx v).trans (hx u).symm)
 
 /-- **The Gray vector field of a smooth family of contact structures is smooth**: the map
 `(t, x) ↦ (x, Y_t(x))` into the tangent bundle is smooth. -/
