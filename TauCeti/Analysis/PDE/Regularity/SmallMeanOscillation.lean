@@ -16,6 +16,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.PDE.FundamentalSolution.Divergence
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The `W^{1,p}` estimate for coefficients of small mean oscillation
@@ -723,18 +724,20 @@ private theorem ofReal_inv_mul_eLpNorm_ball_le {p q : ℝ≥0}
         ℝ≥0) : ℝ≥0∞) * eLpNorm G p (volume.restrict (ball x₀ R)) := by
   set V : ℝ≥0 :=
     (volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toNNReal ^ ((n : ℝ) + 1)⁻¹
-  have hvol : volume (ball x₀ R) ^ (1 / (q : ℝ≥0∞).toReal - 1 / (p : ℝ≥0∞).toReal) =
-      ENNReal.ofReal R * V := by
-    rw [ENNReal.coe_toReal, ENNReal.coe_toReal, one_div, one_div, hpq, add_sub_cancel_left,
-      Measure.addHaar_ball _ _ hR.le, finrank_euclideanSpace_fin,
-      ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.ofReal_pow hR.le,
-      ENNReal.coe_rpow_of_nonneg _ (by positivity),
-      ENNReal.coe_toNNReal measure_ball_lt_top.ne]
-    congr 1
-    rw [show ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) by push_cast; rfl,
-      ENNReal.pow_rpow_inv_natCast n.succ_ne_zero]
-  have hH := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hqp hG
-  rw [Measure.restrict_apply_univ, hvol] at hH
+  have hq0 : (0 : ℝ) < q := inv_pos.1 (hpq ▸ by positivity)
+  have hfac : (R ^ Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) *
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) ^ (1 / (q : ℝ) - 1 / p) =
+      R * V := by
+    rw [finrank_euclideanSpace_fin, one_div, one_div, hpq, add_sub_cancel_left,
+      Real.mul_rpow (by positivity) measureReal_nonneg,
+      show ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) by push_cast; rfl,
+      Real.pow_rpow_inv_natCast hR.le n.succ_ne_zero, NNReal.coe_rpow]
+    push_cast
+    rfl
+  have hH := Measure.eLpNorm_ball_le_mul_rpow volume (x₀ := x₀) (p := p) hq0
+    (by exact_mod_cast hqp) hG
+  rw [hfac, ENNReal.ofReal_mul hR.le] at hH
+  simp only [ENNReal.ofReal_coe_nnreal] at hH
   calc ENNReal.ofReal R⁻¹ * eLpNorm G q (volume.restrict (ball x₀ R))
       ≤ ENNReal.ofReal R⁻¹ * (eLpNorm G p (volume.restrict (ball x₀ R)) *
           (ENNReal.ofReal R * V)) := by gcongr
