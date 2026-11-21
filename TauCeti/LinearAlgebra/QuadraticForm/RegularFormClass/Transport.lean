@@ -117,6 +117,7 @@ theorem RegularFormPresentation.equivOfRingEquiv_apply (e : K ≃+* L)
 
 /-- Evaluating the form presented by `RegularFormPresentation.equivOfRingEquiv e p` on
 coordinatewise `e`-images of `x` gives `e (presentedForm p x)`. -/
+@[simp↓ 1100]
 theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K ≃+* L)
     (x : Fin p.1 → K) :
     presentedForm (RegularFormPresentation.equivOfRingEquiv e p)
