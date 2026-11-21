@@ -5,24 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.Combinatorics.Hive.GelfandTsetlin
-import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson
-import TauCeti.RepresentationTheory.FDRep.Basic
-import TauCeti.RepresentationTheory.Intertwining
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
 
 /-!
-# The hive–Littlewood–Richardson equivalence and `GLₙ(ℂ)` tensor multiplicities
+# The hive–Littlewood–Richardson equivalence
 
 In the `(i, j)` product chart `Vertex.ofChart n i j = (n - j, j - i, i)` (`0 ≤ i ≤ j ≤ n`), the
 three-family rhombus characterization (`TauCeti.Hive.isRhombusConcave_iff_ofChart` in
@@ -46,20 +37,14 @@ This yields an explicit bijection `TauCeti.Hive.fixedIntegerHiveEquivLRTableau` 
 `FixedIntegerHive (productBoundary λ μ γ)` and `LRTableau λ.shape γ.shape μ.shape`. For arbitrary
 signed dominant weights, adding the normalized affine hive `affine n a (a + b)`
 (`TauCeti.Hive.shiftProductBoundaryEquiv`) reduces any product-boundary fibre to polynomial
-weights, giving both shift-independent bijections (`fixedIntegerHiveEquivLRTableauShift`,
-`fixedIntegerHiveEquivLRTableauDetShift`) and the unconditional count
+weights, giving shift-independent bijections (`fixedIntegerHiveEquivLRTableauShift`,
+`fixedIntegerHiveEquivLRTableauDetShift`), the shift-transport `lrTableauShiftEquiv` comparing
+different admissible shift pairs, and the unconditional count
 `hiveCount_productBoundary_eq_ite_natCard_lrTableau`.
 
-Combining this bijection with the Littlewood–Richardson rules for Schur polynomials and rational
-Weyl modules of `GLₙ(ℂ)` yields:
-
-* **Schur-polynomial expansion** (`TauCeti.Hive.schur_mul_eq_finsum_hiveCount`): over any
-  commutative semiring `R`, `s_λ · s_μ = ∑ᶠ γ, hiveCount (productBoundary λ μ γ) • s_γ`;
-* **`GLₙ(ℂ)` tensor-product multiplicities** (`TauCeti.Hive.finrank_hom_eq_hiveCount`): for
-  arbitrary dominant weights `λ, μ, γ`,
-  `Module.finrank ℂ (V_γ ⟶ V_λ ⊗ V_μ) = hiveCount (productBoundary λ μ γ)`;
-* **Commutativity** (`TauCeti.Hive.hiveCount_comm`):
-  `hiveCount (productBoundary λ μ γ) = hiveCount (productBoundary μ λ γ)`.
+For the downstream applications of this equivalence to Schur polynomials and `GLₙ(ℂ)` rational
+Weyl-module tensor multiplicities, see `TauCeti.Combinatorics.Hive.Schur` and
+`TauCeti.Combinatorics.Hive.TensorProduct`.
 
 ## Main definitions
 
@@ -70,17 +55,20 @@ Weyl modules of `GLₙ(ℂ)` yields:
 * `TauCeti.Hive.fixedIntegerHiveEquivLRTableauShift`,
   `TauCeti.Hive.fixedIntegerHiveEquivLRTableauDetShift`: signed-weight bijections via affine
   determinant shifts.
+* `TauCeti.Hive.lrTableauShiftEquiv`: canonical transport between shifted
+  Littlewood–Richardson tableaux for different admissible shift pairs.
 
 ## Main results
 
+* `TauCeti.Hive.rowCount_lrTableauOfHive_of_lt`, `TauCeti.Hive.rowCount_lrTableauOfHive_diag`:
+  pointwise row-count formulas for `lrTableauOfHive`.
+* `TauCeti.Hive.hiveOfLRTableau_lrTableauOfHive`, `TauCeti.Hive.lrTableauOfHive_hiveOfLRTableau`:
+  round-trip identities for the standalone maps.
+* `TauCeti.Hive.eq_lrTableauShiftEquiv_iff`: characterization of `lrTableauShiftEquiv` by
+  unchanged off-diagonal row counts and diagonal counts shifted by `b₂ - b₁`.
 * `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`,
   `TauCeti.Hive.hiveCount_productBoundary_eq_ite_natCard_lrTableau`: hive counts equal
   Littlewood–Richardson coefficients for polynomial and arbitrary signed weights.
-* `TauCeti.Hive.schur_mul_eq_finsum_hiveCount`: the hive Littlewood–Richardson rule for Schur
-  polynomials over any commutative semiring.
-* `TauCeti.Hive.finrank_hom_eq_hiveCount`: `GLₙ(ℂ)` rational tensor-product multiplicities equal
-  `hiveCount`.
-* `TauCeti.Hive.hiveCount_comm`: commutativity of `hiveCount` in the two input weights.
 
 ## References
 
@@ -95,7 +83,6 @@ Weyl modules of `GLₙ(ℂ)` yields:
 public section
 
 open scoped BigOperators
-open CategoryTheory MonoidalCategory
 
 namespace TauCeti.Hive
 
@@ -280,6 +267,24 @@ private theorem hiveEntryInt_eq_zero_of_le_right (h : IntegerHive n) {r k : ℕ}
   · exact hiveEntryInt_eq_zero_of_lt h (hr.trans_le hk)
   · exact hiveEntryInt_eq_zero_of_le h (Nat.le_of_not_lt hr)
 
+private theorem hiveEntryInt_add_affine_of_lt (h : IntegerHive n) (a b : ℤ)
+    {r k : ℕ} (hkr : k < r) (hr : r < n) :
+    hiveEntryInt (h + affine n a b) r k = hiveEntryInt h r k := by
+  simp only [hiveEntryInt, hr, ↓reduceDIte, hkr, Hive.add_apply, Hive.affine_apply,
+    Vertex.ofChart_y, Vertex.ofChart_z, nsmul_eq_mul]
+  zify [show k ≤ r from hkr.le, show k + 1 ≤ r from hkr,
+    show k ≤ r + 1 from by omega, show k + 1 ≤ r + 1 from by omega]
+  ring
+
+private theorem hiveEntryInt_add_affine_diag (h : IntegerHive n) (a b : ℤ)
+    {r : ℕ} (hr : r < n) :
+    hiveEntryInt (h + affine n a (a + b)) r r = hiveEntryInt h r r + b := by
+  simp only [hiveEntryInt, hr, ↓reduceDIte, lt_irrefl, ↓reduceIte, Hive.add_apply,
+    Hive.affine_apply, Vertex.ofChart_y, Vertex.ofChart_z, nsmul_eq_mul, Nat.sub_self,
+    Nat.add_sub_cancel_left]
+  push_cast
+  ring
+
 /-- Column telescoping of `hiveEntryInt`: for `k < j ≤ n`, summing `hiveEntryInt h r k` over
 `r < j` gives `h(k + 1, j) - h(k, j)`. -/
 private theorem sum_range_hiveEntryInt_col (h : IntegerHive n) {k j : ℕ}
@@ -328,47 +333,6 @@ private theorem sum_range_hiveEntryInt_row_full (h : IntegerHive n) {r i : ℕ}
 
 variable {lam μ γ : DominantWeight n}
 
-private theorem step_ofChart_zero_left (h : FixedIntegerHive (productBoundary lam μ γ))
-    {j : ℕ} (hj : j < n) :
-    h.val (Vertex.ofChart n 0 (j + 1) (Nat.zero_le _) hj) -
-        h.val (Vertex.ofChart n 0 j (Nat.zero_le _) hj.le) = lam.val ⟨j, hj⟩ := by
-  have hb := congrFun (congrFun h.property 0) ⟨j, hj⟩
-  rw [boundary_apply, productBoundary_zero] at hb
-  have h1 : Vertex.edgePoint n 0 (⟨j, hj⟩ : Fin n).succ =
-      Vertex.ofChart n 0 (j + 1) (Nat.zero_le _) hj :=
-    (Vertex.ofChart_zero_left n (j + 1) hj).symm
-  have h2 : Vertex.edgePoint n 0 (⟨j, hj⟩ : Fin n).castSucc =
-      Vertex.ofChart n 0 j (Nat.zero_le _) hj.le :=
-    (Vertex.ofChart_zero_left n j hj.le).symm
-  rwa [h1, h2] at hb
-
-private theorem step_ofChart_right (h : FixedIntegerHive (productBoundary lam μ γ))
-    {i : ℕ} (hi : i < n) :
-    h.val (Vertex.ofChart n (i + 1) n hi le_rfl) -
-        h.val (Vertex.ofChart n i n hi.le le_rfl) = μ.val ⟨i, hi⟩ := by
-  have hb := congrFun (congrFun h.property 1) ⟨i, hi⟩
-  rw [boundary_apply, productBoundary_one] at hb
-  have h1 : Vertex.edgePoint n 1 (⟨i, hi⟩ : Fin n).succ = Vertex.ofChart n (i + 1) n hi le_rfl :=
-    (Vertex.ofChart_right n (i + 1) hi).symm
-  have h2 : Vertex.edgePoint n 1 (⟨i, hi⟩ : Fin n).castSucc = Vertex.ofChart n i n hi.le le_rfl :=
-    (Vertex.ofChart_right n i hi.le).symm
-  rwa [h1, h2] at hb
-
-private theorem step_ofChart_self (h : FixedIntegerHive (productBoundary lam μ γ))
-    {r : ℕ} (hr : r < n) :
-    h.val (Vertex.ofChart n (r + 1) (r + 1) le_rfl hr) -
-        h.val (Vertex.ofChart n r r le_rfl hr.le) = γ.val ⟨r, hr⟩ := by
-  let i : Fin n := ⟨n - 1 - r, by omega⟩
-  have hirev : i.rev = ⟨r, hr⟩ := by ext; simp [i, Fin.val_rev]; omega
-  have hb := congrFun (congrFun h.property 2) i
-  rw [boundary_apply, productBoundary_two, DominantWeight.dual_apply, hirev] at hb
-  have h1 : Vertex.edgePoint n 2 i.succ = Vertex.ofChart n r r le_rfl hr.le := by
-    rw [Vertex.ofChart_self]; congr 1; ext; simp [i]; omega
-  have h2 : Vertex.edgePoint n 2 i.castSucc = Vertex.ofChart n (r + 1) (r + 1) le_rfl hr := by
-    rw [Vertex.ofChart_self]; congr 1; ext; simp [i]; omega
-  rw [h1, h2] at hb
-  linarith
-
 /-- Every extracted integer entry `hiveEntryInt h.val r k` is nonnegative when `μ` is polynomial. -/
 private theorem hiveEntryInt_nonneg (hμ : μ.IsPolynomial)
     (h : FixedIntegerHive (productBoundary lam μ γ)) (r k : ℕ) :
@@ -392,7 +356,7 @@ private theorem hiveEntryInt_nonneg (hμ : μ.IsPolynomial)
                 h.val (Vertex.ofChart n r n (by omega) le_rfl) := by
             simp only [hiveEntryInt, hr', ↓reduceDIte, lt_irrefl, ↓reduceIte]
             congr 2 <;> simp [hdn]
-          rw [h1, step_ofChart_right h hr']
+          rw [h1, step_ofChart_right_of_productBoundary h hr']
           exact (DominantWeight.isPolynomial_def _).mp hμ ⟨r, hr'⟩
         | succ d ih =>
           intro r hdn
@@ -425,7 +389,8 @@ private theorem shape_le_of_fixedIntegerHive (hlam : lam.IsPolynomial) (hμ : μ
   refine YoungDiagram.le_of_forall_rowLen_le fun r => ?_
   by_cases hr : r < n
   · have hfull := sum_range_hiveEntryInt_row_full h.val (i := n) hr hr
-    rw [step_ofChart_self h hr, step_ofChart_zero_left h hr] at hfull
+    rw [step_ofChart_self_of_productBoundary h hr,
+      step_ofChart_zero_left_of_productBoundary h hr] at hfull
     have hnn : 0 ≤ ∑ k ∈ Finset.range n, hiveEntryInt h.val r k :=
       Finset.sum_nonneg fun k _ => hiveEntryInt_nonneg hμ h r k
     have h1 : (lam.shape.rowLen r : ℤ) = lam.val ⟨r, hr⟩ :=
@@ -441,7 +406,8 @@ private theorem sum_range_hiveEntryNat_row (hlam : lam.IsPolynomial) (hμ : μ.I
   have hγ : γ.IsPolynomial := isPolynomial_of_productBoundary h.property hlam hμ
   by_cases hr : r < n
   · have hfull := sum_range_hiveEntryInt_row_full h.val (i := n) hr hr
-    rw [step_ofChart_self h hr, step_ofChart_zero_left h hr] at hfull
+    rw [step_ofChart_self_of_productBoundary h hr,
+      step_ofChart_zero_left_of_productBoundary h hr] at hfull
     have hZ : ((∑ k ∈ Finset.range n, hiveEntryNat h.val r k : ℕ) : ℤ) =
         ∑ k ∈ Finset.range n, hiveEntryInt h.val r k :=
       natCast_sum_hiveEntryNat hμ h (Finset.range n) (fun _ => r) (fun k => k)
@@ -464,7 +430,8 @@ private theorem sum_range_hiveEntryNat_col (hμ : μ.IsPolynomial)
       natCast_sum_hiveEntryNat hμ h (Finset.range n) (fun r => r) (fun _ => k)
     have hμk : (μ.shape.rowLen k : ℤ) = μ.val ⟨k, hk⟩ :=
       DominantWeight.natCast_rowLen_shape hμ ⟨k, hk⟩
-    rw [sum_range_hiveEntryInt_col h.val hk le_rfl, step_ofChart_right h hk, ← hμk] at hZ
+    rw [sum_range_hiveEntryInt_col h.val hk le_rfl,
+      step_ofChart_right_of_productBoundary h hk, ← hμk] at hZ
     exact Int.ofNat.inj hZ
   · have hnk : n ≤ k := Nat.le_of_not_lt hk
     simp [hiveEntryNat, hiveEntryInt_eq_zero_of_le_right h.val hnk,
@@ -487,12 +454,14 @@ private theorem hiveEntryNat_col_strict (hlam : lam.IsPolynomial) (hμ : μ.IsPo
     rcases le_or_gt x r with hxr | hrx
     · rw [sum_range_hiveEntryInt_row_le h.val (by omega : x + 1 ≤ r + 1) hr1,
         sum_range_hiveEntryInt_row_le h.val hxr hr,
-        step_ofChart_zero_left h hr1, step_ofChart_zero_left h hr]
+        step_ofChart_zero_left_of_productBoundary h hr1,
+        step_ofChart_zero_left_of_productBoundary h hr]
       linarith [h.val.le_of_isRhombus (isRhombus_ofChart_diag_x hxr (by omega : r + 2 ≤ n))]
     · rw [sum_range_hiveEntryInt_row_full h.val (by omega : r + 2 ≤ x + 1) hr1,
         sum_range_hiveEntryInt_row_full h.val hrx hr,
-        step_ofChart_self h hr1, step_ofChart_self h hr,
-        step_ofChart_zero_left h hr1, step_ofChart_zero_left h hr]
+        step_ofChart_self_of_productBoundary h hr1, step_ofChart_self_of_productBoundary h hr,
+        step_ofChart_zero_left_of_productBoundary h hr1,
+        step_ofChart_zero_left_of_productBoundary h hr]
       have hanti : γ.val ⟨r + 1, hr1⟩ ≤ γ.val ⟨r, hr⟩ :=
         γ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ r))
       linarith
@@ -526,7 +495,8 @@ private theorem hiveEntryNat_lattice (hμ : μ.IsPolynomial)
               hiveEntryInt_eq_zero_of_le h.val hr,
           sum_range_hiveEntryInt_col h.val hk1 le_rfl,
           sum_range_hiveEntryInt_col h.val (by omega : k < n) le_rfl,
-          step_ofChart_right h hk1, step_ofChart_right h (by omega : k < n)]
+          step_ofChart_right_of_productBoundary h hk1,
+          step_ofChart_right_of_productBoundary h (by omega : k < n)]
         exact μ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ k))
     · rw [Finset.sum_eq_zero fun r _ =>
         hiveEntryInt_eq_zero_of_le_right h.val (Nat.le_of_not_lt hk1)]
@@ -557,6 +527,50 @@ private theorem rowCount_lrTableauOfHive (hlam : lam.IsPolynomial) (hμ : μ.IsP
   SkewSemistandardYoungTableau.rowCount_ofRowCount _ _ _ (fun r l hl => by
     simp [hiveEntryNat, hiveEntryInt_eq_zero_of_le_right h.val hl]) r k
 
+/-- Below the diagonal (`k < r < n`), the multiplicity of letter `k` in row `r` of
+`lrTableauOfHive hlam hμ h` is the upright-rhombus slack of `h` at `(k, r)`. -/
+theorem rowCount_lrTableauOfHive_of_lt (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r k : ℕ} (hkr : k < r) (hr : r < n) :
+    ((lrTableauOfHive hlam hμ h).val.rowCount r k : ℤ) =
+      h.val (Vertex.ofChart n (k + 1) (r + 1) (by omega) hr) -
+        h.val (Vertex.ofChart n k (r + 1) (by omega) hr) -
+        h.val (Vertex.ofChart n (k + 1) r hkr hr.le) +
+        h.val (Vertex.ofChart n k r hkr.le hr.le) := by
+  rw [rowCount_lrTableauOfHive, Int.toNat_of_nonneg (hiveEntryInt_nonneg hμ h r k)]
+  simp only [hiveEntryInt, hr, ↓reduceDIte, hkr]
+
+/-- On the diagonal (`r < n`), the multiplicity of letter `r` in row `r` of
+`lrTableauOfHive hlam hμ h` is the diagonal step `h(r + 1, r + 1) - h(r, r + 1)`. -/
+theorem rowCount_lrTableauOfHive_diag (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r : ℕ} (hr : r < n) :
+    ((lrTableauOfHive hlam hμ h).val.rowCount r r : ℤ) =
+      h.val (Vertex.ofChart n (r + 1) (r + 1) le_rfl hr) -
+        h.val (Vertex.ofChart n r (r + 1) (Nat.le_succ r) hr) := by
+  rw [rowCount_lrTableauOfHive, Int.toNat_of_nonneg (hiveEntryInt_nonneg hμ h r r)]
+  simp [hiveEntryInt, hr]
+
+/-- Above the diagonal (`r < k`), letter `k` does not appear in row `r` of
+`lrTableauOfHive hlam hμ h`. -/
+@[simp] theorem rowCount_lrTableauOfHive_eq_zero_of_lt (hlam : lam.IsPolynomial)
+    (hμ : μ.IsPolynomial) (h : FixedIntegerHive (productBoundary lam μ γ)) {r k : ℕ}
+    (hrk : r < k) :
+    (lrTableauOfHive hlam hμ h).val.rowCount r k = 0 :=
+  (lrTableauOfHive hlam hμ h).rowCount_eq_zero_of_lt hrk
+
+/-- Past row `n - 1` (`n ≤ r`), `lrTableauOfHive hlam hμ h` has no entries. -/
+@[simp] theorem rowCount_lrTableauOfHive_eq_zero_of_le (hlam : lam.IsPolynomial)
+    (hμ : μ.IsPolynomial) (h : FixedIntegerHive (productBoundary lam μ γ)) {r k : ℕ}
+    (hnr : n ≤ r) :
+    (lrTableauOfHive hlam hμ h).val.rowCount r k = 0 := by
+  rw [rowCount_lrTableauOfHive, hiveEntryInt_eq_zero_of_le h.val hnr, Int.toNat_zero]
+
+/-- Letters `k ≥ n` do not appear in `lrTableauOfHive hlam hμ h`. -/
+@[simp] theorem rowCount_lrTableauOfHive_eq_zero_of_le_right (hlam : lam.IsPolynomial)
+    (hμ : μ.IsPolynomial) (h : FixedIntegerHive (productBoundary lam μ γ)) {r k : ℕ}
+    (hnk : n ≤ k) :
+    (lrTableauOfHive hlam hμ h).val.rowCount r k = 0 := by
+  rw [rowCount_lrTableauOfHive, hiveEntryInt_eq_zero_of_le_right h.val hnk, Int.toNat_zero]
+
 /-- Partial-sum identity for `lrTableauOfHive`: for `k < j ≤ n`, summing the multiplicity of
 letter `k` over rows `0, …, j - 1` gives the horizontal hive increment `h(k + 1, j) - h(k, j)`. -/
 theorem sum_range_rowCount_lrTableauOfHive (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
@@ -579,7 +593,8 @@ section FixedWeights
 
 variable {lam μ γ : DominantWeight n}
 
-private theorem hiveOfLRTableau_lrTableauOfHive (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
+/-- Evaluating `hiveOfLRTableau` after `lrTableauOfHive` recovers the original integer hive. -/
+@[simp] theorem hiveOfLRTableau_lrTableauOfHive (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
     (hγ : γ.IsPolynomial) (h : FixedIntegerHive (productBoundary lam μ γ)) :
     hiveOfLRTableau hlam hμ hγ (lrTableauOfHive hlam hμ h) = h := by
   refine Subtype.ext (Hive.ext fun p => ?_)
@@ -602,7 +617,7 @@ private theorem hiveOfLRTableau_lrTableauOfHive (hlam : lam.IsPolynomial) (hμ :
     induction j with
     | zero => simp [Vertex.ofChart_zero_zero]
     | succ m ih =>
-      have hstep := step_ofChart_zero_left h hjn
+      have hstep := step_ofChart_zero_left_of_productBoundary h hjn
       rw [← DominantWeight.natCast_rowLen_shape hlam ⟨m, hjn⟩] at hstep
       dsimp only at hstep
       rw [Finset.sum_range_succ, ih (by omega) (Nat.zero_le m), ← hstep]
@@ -612,7 +627,8 @@ private theorem hiveOfLRTableau_lrTableauOfHive (hlam : lam.IsPolynomial) (hμ :
       sum_range_hiveEntryInt_col h.val hij hjn]
     abel
 
-private theorem lrTableauOfHive_hiveOfLRTableau (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
+/-- Evaluating `lrTableauOfHive` after `hiveOfLRTableau` recovers the original tableau. -/
+@[simp] theorem lrTableauOfHive_hiveOfLRTableau (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
     (hγ : γ.IsPolynomial) (T : LRTableau lam.shape γ.shape μ.shape) :
     lrTableauOfHive hlam hμ (hiveOfLRTableau hlam hμ hγ T) = T := by
   refine Subtype.ext (SkewSemistandardYoungTableau.eq_of_rowCount_eq fun r k => ?_)
@@ -693,6 +709,167 @@ def fixedIntegerHiveEquivLRTableauShift {a b : ℤ}
     (T : LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape) :
     (fixedIntegerHiveEquivLRTableauShift hlam hμ hγ).symm T =
       (shiftProductBoundaryEquiv lam μ γ a b).symm (hiveOfLRTableau hlam hμ hγ T) := (rfl)
+
+/-- Canonical transport between shifted Littlewood–Richardson tableaux attached to two admissible
+shift pairs `(a₁, b₁)` and `(a₂, b₂)` for the same weights `λ, μ, γ`. -/
+def lrTableauShiftEquiv {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial) :
+    LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape ≃
+      LRTableau (lam.shift a₂).shape (γ.shift (a₂ + b₂)).shape (μ.shift b₂).shape :=
+  (fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁).symm.trans
+    (fixedIntegerHiveEquivLRTableauShift hlam₂ hμ₂ hγ₂)
+
+/-- Transporting along identical shift pairs is the identity equivalence. -/
+@[simp] theorem lrTableauShiftEquiv_refl {a b : ℤ}
+    (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial) :
+    lrTableauShiftEquiv hlam hμ hγ hlam hμ hγ = Equiv.refl _ :=
+  Equiv.symm_trans_self _
+
+/-- The inverse of `lrTableauShiftEquiv` reverses the two shift pairs. -/
+@[simp] theorem lrTableauShiftEquiv_symm {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial) :
+    (lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂).symm =
+      lrTableauShiftEquiv hlam₂ hμ₂ hγ₂ hlam₁ hμ₁ hγ₁ :=
+  Equiv.ext fun _ => rfl
+
+/-- Composing two `lrTableauShiftEquiv` transports collapses to the direct transport. -/
+@[simp] theorem lrTableauShiftEquiv_trans {a₁ b₁ a₂ b₂ a₃ b₃ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (hlam₃ : (lam.shift a₃).IsPolynomial) (hμ₃ : (μ.shift b₃).IsPolynomial)
+    (hγ₃ : (γ.shift (a₃ + b₃)).IsPolynomial) :
+    (lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂).trans
+        (lrTableauShiftEquiv hlam₂ hμ₂ hγ₂ hlam₃ hμ₃ hγ₃) =
+      lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₃ hμ₃ hγ₃ := by
+  ext T
+  simp [lrTableauShiftEquiv]
+
+/-- `lrTableauShiftEquiv` intertwines `fixedIntegerHiveEquivLRTableauShift` across admissible shift
+pairs. -/
+theorem lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂
+        (fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁ h) =
+      fixedIntegerHiveEquivLRTableauShift hlam₂ hμ₂ hγ₂ h := by
+  simp [lrTableauShiftEquiv]
+
+/-- Inverse commuting law between `lrTableauShiftEquiv` and
+`fixedIntegerHiveEquivLRTableauShift`. -/
+theorem fixedIntegerHiveEquivLRTableauShift_symm_lrTableauShiftEquiv {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (T : LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape) :
+    (fixedIntegerHiveEquivLRTableauShift hlam₂ hμ₂ hγ₂).symm
+        (lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T) =
+      (fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁).symm T := by
+  simp [lrTableauShiftEquiv]
+
+/-- `lrTableauShiftEquiv` preserves all off-diagonal row counts (`r ≠ k`). -/
+@[simp] theorem rowCount_lrTableauShiftEquiv_of_ne {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (T : LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape)
+    {r k : ℕ} (hrk : r ≠ k) :
+    (lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T).val.rowCount r k =
+      T.val.rowCount r k := by
+  let h := (fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁).symm T
+  have hT : T = fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁ h :=
+    ((fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁).apply_symm_apply T).symm
+  rw [hT, lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift,
+    fixedIntegerHiveEquivLRTableauShift_apply, fixedIntegerHiveEquivLRTableauShift_apply,
+    rowCount_lrTableauOfHive, rowCount_lrTableauOfHive]
+  by_cases hr : r < n
+  · rcases lt_or_gt_of_ne hrk with hlt | hgt
+    · rw [hiveEntryInt_eq_zero_of_lt _ hlt, hiveEntryInt_eq_zero_of_lt _ hlt]
+    · simp only [shiftProductBoundaryEquiv_apply_val]
+      rw [hiveEntryInt_add_affine_of_lt h.val a₂ (a₂ + b₂) hgt hr,
+        hiveEntryInt_add_affine_of_lt h.val a₁ (a₁ + b₁) hgt hr]
+  · rw [hiveEntryInt_eq_zero_of_le _ (Nat.le_of_not_lt hr),
+      hiveEntryInt_eq_zero_of_le _ (Nat.le_of_not_lt hr)]
+
+/-- On the diagonal (`r < n`), `lrTableauShiftEquiv` shifts the multiplicity of letter `r` in row
+`r` by the difference `b₂ - b₁` of the second shifts. -/
+theorem rowCount_lrTableauShiftEquiv_diag {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (T : LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape)
+    {r : ℕ} (hr : r < n) :
+    ((lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T).val.rowCount r r : ℤ) =
+      (T.val.rowCount r r : ℤ) + (b₂ - b₁) := by
+  let h := (fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁).symm T
+  have hT : T = fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁ h :=
+    ((fixedIntegerHiveEquivLRTableauShift hlam₁ hμ₁ hγ₁).apply_symm_apply T).symm
+  rw [hT, lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift,
+    fixedIntegerHiveEquivLRTableauShift_apply, fixedIntegerHiveEquivLRTableauShift_apply,
+    rowCount_lrTableauOfHive, rowCount_lrTableauOfHive,
+    Int.toNat_of_nonneg (hiveEntryInt_nonneg hμ₂ _ r r),
+    Int.toNat_of_nonneg (hiveEntryInt_nonneg hμ₁ _ r r),
+    shiftProductBoundaryEquiv_apply_val, shiftProductBoundaryEquiv_apply_val,
+    hiveEntryInt_add_affine_diag h.val a₂ b₂ hr,
+    hiveEntryInt_add_affine_diag h.val a₁ b₁ hr]
+  ring
+
+/-- Past row `n - 1` (`n ≤ r`), `lrTableauShiftEquiv` has zero row counts. -/
+@[simp] theorem rowCount_lrTableauShiftEquiv_of_le {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (T : LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape)
+    {r k : ℕ} (hnr : n ≤ r) :
+    (lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T).val.rowCount r k = 0 :=
+  (lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T).val.rowCount_eq_zero_of_colLen_le
+    ((DominantWeight.colLen_zero_shape_le _).trans hnr) k
+
+/-- Characterization of `lrTableauShiftEquiv`: a shifted tableau `T₂` equals
+`lrTableauShiftEquiv ... T₁` iff its off-diagonal row counts match `T₁` and its diagonal row
+counts for `r < n` shift by `b₂ - b₁`. -/
+theorem eq_lrTableauShiftEquiv_iff {a₁ b₁ a₂ b₂ : ℤ}
+    (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
+    (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
+    (hγ₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (T₁ : LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape)
+    (T₂ : LRTableau (lam.shift a₂).shape (γ.shift (a₂ + b₂)).shape (μ.shift b₂).shape) :
+    T₂ = lrTableauShiftEquiv hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ ↔
+      (∀ r k, r ≠ k → T₂.val.rowCount r k = T₁.val.rowCount r k) ∧
+        ∀ r < n, (T₂.val.rowCount r r : ℤ) = (T₁.val.rowCount r r : ℤ) + (b₂ - b₁) := by
+  refine ⟨?_, ?_⟩
+  · rintro rfl
+    exact ⟨fun _ _ hrk => rowCount_lrTableauShiftEquiv_of_ne hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hrk,
+      fun _ hr => rowCount_lrTableauShiftEquiv_diag hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hr⟩
+  · rintro ⟨hne, hdiag⟩
+    refine Subtype.ext (SkewSemistandardYoungTableau.eq_of_rowCount_eq fun r k => ?_)
+    by_cases hrk : r = k
+    · subst k
+      by_cases hr : r < n
+      · have h1 := hdiag r hr
+        have h2 := rowCount_lrTableauShiftEquiv_diag hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hr
+        omega
+      · have hnr : n ≤ r := Nat.le_of_not_lt hr
+        rw [T₂.val.rowCount_eq_zero_of_colLen_le
+            ((DominantWeight.colLen_zero_shape_le _).trans hnr),
+          rowCount_lrTableauShiftEquiv_of_le hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hnr]
+    · rw [hne r k hrk, rowCount_lrTableauShiftEquiv_of_ne hlam₁ hμ₁ hγ₁ hlam₂ hμ₂ hγ₂ T₁ hrk]
 
 /-- Shift-independent cardinality identity for arbitrary signed dominant weights. -/
 theorem hiveCount_productBoundary_eq_natCard_lrTableau_of_shift {a b : ℤ}
@@ -780,105 +957,5 @@ theorem hiveCount_productBoundary_eq_ite_natCard_lrTableau (lam μ γ : Dominant
   · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => hshift (detShift_le_of_productBoundary hb)⟩
 
 end Equivalence
-
-/-! ### The hive Littlewood–Richardson rule for Schur polynomials -/
-
-section SchurRule
-
-/-- **The hive Littlewood–Richardson rule for Schur polynomials**: over any commutative semiring
-`R`, the product of the Schur polynomials of two polynomial dominant weights `λ, μ` expands as a
-finitely supported sum over dominant weights `γ` with multiplicity
-`hiveCount (productBoundary λ μ γ)`. -/
-theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
-    (lam μ : DominantWeight n) (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) :
-    diagramSchurPoly n R lam.shape * diagramSchurPoly n R μ.shape =
-      ∑ᶠ γ : DominantWeight n,
-        hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape := by
-  classical
-  rw [diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
-    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le]
-  let e : {ν : (lam.shape.card + μ.shape.card).Partition //
-      (YoungDiagram.ofPartition ν).colLen 0 ≤ n} ↪ DominantWeight n :=
-    ⟨fun ν => weightOfShape n (YoungDiagram.ofPartition ν.val), fun ν₁ ν₂ h => Subtype.ext <|
-      YoungDiagram.ofPartition_injective <| by
-        have h' := congrArg DominantWeight.shape h
-        rwa [shape_weightOfShape ν₁.property, shape_weightOfShape ν₂.property] at h'⟩
-  have he (ν) : e ν = weightOfShape n (YoungDiagram.ofPartition ν.val) := rfl
-  have hsupp : Function.support (fun γ : DominantWeight n =>
-      hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape) ⊆
-      (Finset.univ.map e : Set (DominantWeight n)) := by
-    intro γ hγ
-    have hpos : 0 < hiveCount (productBoundary lam μ γ) := Nat.pos_of_ne_zero fun h0 => by
-      simp [h0] at hγ
-    obtain ⟨⟨h, hb⟩⟩ := hiveCount_pos_iff.mp hpos
-    have hγp : γ.IsPolynomial := isPolynomial_of_productBoundary hb hlam hμ
-    let T := lrTableauOfHive hlam hμ ⟨h, hb⟩
-    refine Finset.mem_coe.mpr (Finset.mem_map.mpr ⟨⟨γ.shape.toPartition T.card_eq, by simp⟩,
-      Finset.mem_univ _, ?_⟩)
-    rw [he, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγp]
-  rw [finsum_eq_sum_of_support_subset _ hsupp, Finset.sum_map]
-  refine Finset.sum_congr rfl fun ν _ => ?_
-  have hpoly : (e ν).IsPolynomial := isPolynomial_weightOfShape n _
-  have hshape : (e ν).shape = YoungDiagram.ofPartition ν.val := shape_weightOfShape ν.property
-  rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ hpoly, hshape]
-
-end SchurRule
-
-/-! ### `GLₙ(ℂ)` tensor-product multiplicities and commutativity -/
-
-section TensorMultiplicities
-
-/-- **Hive tensor-product multiplicity theorem for `GLₙ(ℂ)`**: for arbitrary dominant weights
-`λ, μ, γ` of `GLₙ(ℂ)`, the multiplicity of the irreducible rational Weyl module `V_γ` in
-`V_λ ⊗ V_μ` equals `hiveCount (productBoundary λ μ γ)`. -/
-theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
-    Module.finrank ℂ
-        (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ) =
-      hiveCount (productBoundary lam μ γ) := by
-  rw [finrank_hom_tprod_rationalWeylFDRep, hiveCount_productBoundary_eq_ite_natCard_lrTableau]
-
-/-- **Commutativity of Littlewood–Richardson hive counts**:
-`hiveCount (productBoundary λ μ γ) = hiveCount (productBoundary μ λ γ)`. -/
-theorem hiveCount_comm {n : ℕ} (lam μ γ : DominantWeight n) :
-    hiveCount (productBoundary lam μ γ) = hiveCount (productBoundary μ lam γ) := by
-  rw [← finrank_hom_eq_hiveCount, ← finrank_hom_eq_hiveCount]
-  let e₁ := FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
-    (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ)
-  let e₂ := Representation.Equiv.intertwiningMapCongr
-    (Representation.Equiv.refl (rationalWeylRep ℂ n γ))
-    (Representation.TensorProduct.comm (rationalWeylRep ℂ n lam) (rationalWeylRep ℂ n μ))
-  let e₃ := (FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
-    (rationalWeylFDRep ℂ n μ ⊗ rationalWeylFDRep ℂ n lam)).symm
-  exact (e₁ ≪≫ₗ e₂ ≪≫ₗ e₃).finrank_eq
-
-end TensorMultiplicities
-
-/-! ### Concrete `GLₙ(ℂ)` multiplicity checks at ranks `0`, `1`, and `3` -/
-
-section ConcreteChecks
-
-/-- Rank-`0` check: the unique trivial representation has tensor multiplicity `1`. -/
-theorem finrank_hom_zero_eq_one (lam μ γ : DominantWeight 0) :
-    Module.finrank ℂ
-        (rationalWeylFDRep ℂ 0 γ ⟶ rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ) = 1 := by
-  rw [finrank_hom_eq_hiveCount, hiveCount_rank_zero]
-
-/-- Rank-`1` `GL₁(ℂ)` tensor-product check via `finrank_hom_eq_hiveCount`. -/
-theorem finrank_hom_one_eq_ite (lam μ γ : DominantWeight 1) :
-    Module.finrank ℂ
-        (rationalWeylFDRep ℂ 1 γ ⟶ rationalWeylFDRep ℂ 1 lam ⊗ rationalWeylFDRep ℂ 1 μ) =
-      if lam.val 0 + μ.val 0 = γ.val 0 then 1 else 0 := by
-  rw [finrank_hom_eq_hiveCount, hiveCount_one_productBoundary]
-
-/-- `GL₃(ℂ)` multiplicity-`2` check: `V_{(2, 1, 0)} ⊗ V_{(2, 1, 0)}` contains two copies of
-`V_{(3, 2, 1)}`. -/
-theorem finrank_hom_three_two_one_two_one_three_two_one :
-    Module.finrank ℂ
-        (rationalWeylFDRep ℂ 3 ⟨![3, 2, 1], by decide⟩ ⟶
-          rationalWeylFDRep ℂ 3 ⟨![2, 1, 0], by decide⟩ ⊗
-            rationalWeylFDRep ℂ 3 ⟨![2, 1, 0], by decide⟩) = 2 := by
-  rw [finrank_hom_eq_hiveCount, hiveCount_three_two_one_two_one_three_two_one]
-
-end ConcreteChecks
 
 end TauCeti.Hive
