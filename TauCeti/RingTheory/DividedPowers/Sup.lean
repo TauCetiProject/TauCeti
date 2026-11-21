@@ -378,30 +378,34 @@ theorem supOfInfEqMul_eq_sup (hI : DividedPowers I) (hJ : DividedPowers J)
 /-- On `x + y` with `x ∈ I` and `y ∈ J`, `supOfInfEqMul` equals `convolution hI hJ n x y`. -/
 theorem supOfInfEqMul_dpow_add (hI : DividedPowers I) (hJ : DividedPowers J)
     (hinf : I ⊓ J = I * J) (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
-    (hI.supOfInfEqMul hJ hinf).dpow n (x + y) = convolution hI hJ n x y :=
-  sup_dpow_add hI hJ _ n hx hy
+    (hI.supOfInfEqMul hJ hinf).dpow n (x + y) = convolution hI hJ n x y := by
+  rw [supOfInfEqMul]
+  exact sup_dpow_add hI hJ _ n hx hy
 
 /-- On `I`, `supOfInfEqMul` agrees with `hI`. -/
 @[simp]
 theorem supOfInfEqMul_dpow_of_mem_left (hI : DividedPowers I) (hJ : DividedPowers J)
     (hinf : I ⊓ J = I * J) (n : ℕ) {x : A} (hx : x ∈ I) :
-    (hI.supOfInfEqMul hJ hinf).dpow n x = hI.dpow n x :=
-  sup_dpow_of_mem_left hI hJ _ n hx
+    (hI.supOfInfEqMul hJ hinf).dpow n x = hI.dpow n x := by
+  rw [supOfInfEqMul]
+  exact sup_dpow_of_mem_left hI hJ _ n hx
 
 /-- On `J`, `supOfInfEqMul` agrees with `hJ`. -/
 @[simp]
 theorem supOfInfEqMul_dpow_of_mem_right (hI : DividedPowers I) (hJ : DividedPowers J)
     (hinf : I ⊓ J = I * J) (n : ℕ) {y : A} (hy : y ∈ J) :
-    (hI.supOfInfEqMul hJ hinf).dpow n y = hJ.dpow n y :=
-  sup_dpow_of_mem_right hI hJ _ n hy
+    (hI.supOfInfEqMul hJ hinf).dpow n y = hJ.dpow n y := by
+  rw [supOfInfEqMul]
+  exact sup_dpow_of_mem_right hI hJ _ n hy
 
 /-- Universal property of `DividedPowers.supOfInfEqMul` for outgoing divided power morphisms. -/
 theorem isDPMorphism_supOfInfEqMul_iff {C : Type*} [CommSemiring C] {K : Ideal C}
     (hI : DividedPowers I) (hJ : DividedPowers J) (hinf : I ⊓ J = I * J)
     (hK : DividedPowers K) (g : A →+* C) :
     IsDPMorphism (hI.supOfInfEqMul hJ hinf) hK g ↔
-      IsDPMorphism hI hK g ∧ IsDPMorphism hJ hK g :=
-  isDPMorphism_sup_iff hI hJ _ hK g
+      IsDPMorphism hI hK g ∧ IsDPMorphism hJ hK g := by
+  rw [supOfInfEqMul]
+  exact isDPMorphism_sup_iff hI hJ _ hK g
 
 /-- Uniqueness of `DividedPowers.supOfInfEqMul`: a divided power structure on `I ⊔ J` equals
 `hI.supOfInfEqMul hJ hinf` if and only if it restricts to `hI` on `I` and to `hJ` on `J`. -/
@@ -409,8 +413,9 @@ theorem eq_supOfInfEqMul_iff (hI : DividedPowers I) (hJ : DividedPowers J)
     (hinf : I ⊓ J = I * J) (hIJ : DividedPowers (I ⊔ J)) :
     hIJ = hI.supOfInfEqMul hJ hinf ↔
       (∀ n, ∀ x ∈ I, hIJ.dpow n x = hI.dpow n x) ∧
-      (∀ n, ∀ y ∈ J, hIJ.dpow n y = hJ.dpow n y) :=
-  eq_sup_iff hI hJ _ hIJ
+      (∀ n, ∀ y ∈ J, hIJ.dpow n y = hJ.dpow n y) := by
+  rw [supOfInfEqMul]
+  exact eq_sup_iff hI hJ _ hIJ
 
 end CommRing
 
