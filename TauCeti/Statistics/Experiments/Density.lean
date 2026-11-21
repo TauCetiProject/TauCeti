@@ -30,6 +30,8 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 
 ## Main results
 
+* `TauCeti.hasDensity_def`, `TauCeti.hasDensity_of_measure_apply`: unfolding and set-evaluation
+  introduction for `HasDensity`.
 * `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`,
   `TauCeti.HasDensity.ae_eq_of_sigmaFinite`: a density may be changed on a `μ`-null set, and for
   σ-finite `μ` or σ-finite `P` it is unique up to such a change.
@@ -68,6 +70,22 @@ structure HasDensity (P μ : Measure X) (f : X → ℝ) : Prop where
   ae_nonneg : 0 ≤ᵐ[μ] f
   /-- The measure is the reference measure weighted by the density. -/
   eq_withDensity : P = μ.withDensity fun x ↦ ENNReal.ofReal (f x)
+
+/-- Unfolding lemma for `HasDensity`. -/
+theorem hasDensity_def :
+    HasDensity P μ f ↔
+      Measurable f ∧ 0 ≤ᵐ[μ] f ∧ P = μ.withDensity fun x ↦ ENNReal.ofReal (f x) :=
+  ⟨fun h ↦ ⟨h.measurable, h.ae_nonneg, h.eq_withDensity⟩, fun ⟨h1, h2, h3⟩ ↦ ⟨h1, h2, h3⟩⟩
+
+/-- A measurable, almost everywhere nonnegative function `f` whose set Lebesgue integrals
+`∫⁻ x in s, ENNReal.ofReal (f x) ∂μ` equal `P s` for all measurable sets `s` is a density of `P`
+with respect to `μ`. -/
+theorem hasDensity_of_measure_apply (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] f)
+    (happly : ∀ {s : Set X}, MeasurableSet s → P s = ∫⁻ x in s, ENNReal.ofReal (f x) ∂μ) :
+    HasDensity P μ f := by
+  refine ⟨hf, hf₀, ?_⟩
+  ext s hs
+  rw [happly hs, withDensity_apply _ hs]
 
 /-- A measurable, almost everywhere nonnegative `f` is a density of `μ.withDensity (ofReal ∘ f)`. -/
 theorem hasDensity_withDensity_ofReal (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] f) :
@@ -168,18 +186,16 @@ theorem trans {Q : Measure X} {g h : X → ℝ} (hPQ : HasDensity P Q g) (hQμ :
     · exact Or.inl h0
     · refine Or.inr (hx ?_)
       simp [ENNReal.ofReal_eq_zero, not_le.mpr (lt_of_le_of_ne hhx (Ne.symm h0))]
-  refine ⟨hPQ.measurable.mul hQμ.measurable, ?_, ?_⟩
-  · filter_upwards [hQμ.ae_nonneg, hgnn] with x hhx hcases
-    rcases hcases hhx with h0 | hgx
-    · simp [h0]
-    · exact mul_nonneg hgx hhx
-  · rw [hPQ.eq_withDensity, hQμ.eq_withDensity,
-      ← withDensity_mul _ hQμ.measurable.ennreal_ofReal hPQ.measurable.ennreal_ofReal]
-    refine withDensity_congr_ae ?_
+  have hae : ∀ᵐ x ∂μ, 0 ≤ g x * h x ∧
+      ENNReal.ofReal (h x) * ENNReal.ofReal (g x) = ENNReal.ofReal (g x * h x) := by
     filter_upwards [hQμ.ae_nonneg, hgnn] with x hhx hcases
     rcases hcases hhx with h0 | hgx
     · simp [h0]
-    · rw [Pi.mul_apply, mul_comm, ENNReal.ofReal_mul hgx]
+    · exact ⟨mul_nonneg hgx hhx, by rw [mul_comm, ENNReal.ofReal_mul hgx]⟩
+  refine ⟨hPQ.measurable.mul hQμ.measurable, hae.mono fun _ h ↦ h.1, ?_⟩
+  rw [hPQ.eq_withDensity, hQμ.eq_withDensity,
+    ← withDensity_mul _ hQμ.measurable.ennreal_ofReal hPQ.measurable.ennreal_ofReal]
+  exact withDensity_congr_ae (hae.mono fun _ h ↦ h.2)
 
 end HasDensity
 

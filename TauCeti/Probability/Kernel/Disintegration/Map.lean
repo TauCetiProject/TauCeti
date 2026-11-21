@@ -12,7 +12,6 @@ public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 import Mathlib.Probability.Kernel.Composition.WithDensity
 import Mathlib.Probability.Kernel.MeasurableIntegral
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Kernel.Composition.IntegralCompProd
 
@@ -26,14 +25,15 @@ kernel `K : Kernel S X`.
 
 It builds directly on Mathlib's `MeasureTheory.Measure.compProd`,
 `MeasureTheory.Measure.integral_compProd`, and `MeasureTheory.Measure.withDensity_compProd`,
-together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp`,
-`MeasureTheory.Measure.integrable_integral_compProd`, and
-`MeasureTheory.setIntegral_preimage_eq_integral_indicator_smul`.
+together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
+`MeasureTheory.Measure.integrable_integral_compProd`.
 
 ## Main statements
 
 * `ProbabilityTheory.comp_map_eq_self_of_map_prodMk_eq_compProd`: marginal reconstruction
   `K ∘ₘ μ.map T = μ`.
+* `ProbabilityTheory.map_prodMk_eq_compProd_iff`: rectangle characterization of disintegration
+  for a finite measure `μ`.
 * `ProbabilityTheory.lintegral_eq_lintegral_lintegral_of_map_prodMk_eq_compProd`: Lebesgue iterated
   integral identity.
 * `ProbabilityTheory.integral_eq_integral_integral_of_map_prodMk_eq_compProd`,
@@ -70,6 +70,19 @@ theorem comp_map_eq_self_of_map_prodMk_eq_compProd (hT : Measurable T)
     (h : μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K) :
     K ∘ₘ μ.map T = μ := by
   rw [← Measure.snd_compProd, ← h, Measure.snd_map_prodMk hT measurable_id', Measure.map_id']
+
+/-- Rectangle characterization of graph disintegration for a finite measure `μ`:
+`μ.map (T, id) = μ.map T ⊗ₘ K` holds if and only if for all measurable `A : Set S` and
+`B : Set X`, `∫⁻ x in T ⁻¹' A, K (T x) B ∂μ = μ (T ⁻¹' A ∩ B)`. -/
+theorem map_prodMk_eq_compProd_iff [IsFiniteMeasure μ] (hT : Measurable T) :
+    μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K ↔
+      ∀ {A : Set S} {B : Set X}, MeasurableSet A → MeasurableSet B →
+        ∫⁻ x in T ⁻¹' A, K (T x) B ∂μ = μ (T ⁻¹' A ∩ B) := by
+  rw [Measure.ext_prod_iff]
+  refine forall₂_congr fun A B ↦ forall₂_congr fun hA hB ↦ ?_
+  rw [Measure.map_apply (hT.prodMk measurable_id') (hA.prod hB), Set.mk_preimage_prod,
+    Set.preimage_id', Measure.compProd_apply_prod hA hB,
+    setLIntegral_map hA (Kernel.measurable_coe K hB) hT, eq_comm]
 
 /-- Lebesgue integral disintegration identity for `μ.map (T, id) = μ.map T ⊗ₘ K`. -/
 theorem lintegral_eq_lintegral_lintegral_of_map_prodMk_eq_compProd (hT : Measurable T)
@@ -159,17 +172,17 @@ theorem condExp_ae_eq_integral_of_map_prodMk_eq_compProd [CompleteSpace F]
     (fun _ _ _ ↦ hg_int.integrableOn) (fun A hA _ ↦ ?_)
     hgm.aestronglyMeasurable).symm.trans hinner_ae
   rcases hA with ⟨B, hB, rfl⟩
-  have hBφ : Integrable (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • φ' x) μ := by
-    have heq : (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • φ' x) = (T ⁻¹' B).indicator φ' := by
-      ext x
-      rw [← Set.indicator_comp_right (f := T), ← Set.indicator_smul_apply_left]
-      simp
-    rw [heq]
-    exact hφ'int.indicator (hT hB)
-  rw [setIntegral_preimage_eq_integral_indicator_smul hT.aemeasurable hB,
+  have hind (u : X → F) :
+      (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • u x) = (T ⁻¹' B).indicator u := by
+    ext x
+    rw [← Set.indicator_comp_right (f := T), ← Set.indicator_smul_apply_left]
+    simp
+  have hBφ : Integrable (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • φ' x) μ :=
+    (hind φ').symm ▸ hφ'int.indicator (hT hB)
+  rw [← integral_indicator₀ (hT hB).nullMeasurableSet, ← hind,
     ← integral_smul_eq_integral_smul_integral_of_map_prodMk_eq_compProd hT h
       (measurable_const.indicator hB) hφ'm hBφ,
-    ← setIntegral_preimage_eq_integral_indicator_smul hT.aemeasurable hB]
+    hind, integral_indicator₀ (hT hB).nullMeasurableSet]
   exact setIntegral_congr_ae (hT hB) (hφ'ae.symm.mono fun _ hx _ ↦ hx)
 
 end Bochner

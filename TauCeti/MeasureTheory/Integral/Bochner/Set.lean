@@ -64,8 +64,6 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
 * `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
   integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
   measure finite on compact sets.
-* `MeasureTheory.setIntegral_preimage_eq_integral_indicator_smul`: a set integral over a
-  preimage `T ⁻¹' B` equals the integral weighted by `B.indicator 1 ∘ T`.
 -/
 
 public section
@@ -354,17 +352,6 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
-
-/-- Rewriting a set integral over a preimage `T ⁻¹' B` as an integral weighted by the indicator
-`B.indicator 1 ∘ T`. -/
-theorem setIntegral_preimage_eq_integral_indicator_smul {β : Type*} [MeasurableSpace β]
-    {T : α → β} (hT : AEMeasurable T μ) {B : Set β} (hB : MeasurableSet B) (u : α → E) :
-    ∫ x in T ⁻¹' B, u x ∂μ = ∫ x, B.indicator (fun _ ↦ (1 : ℝ)) (T x) • u x ∂μ := by
-  rw [← integral_indicator₀ (hT.nullMeasurableSet_preimage hB)]
-  congr 1
-  ext x
-  rw [← Set.indicator_comp_right (f := T), ← Set.indicator_smul_apply_left]
-  simp
 
 end MeasureTheory
 

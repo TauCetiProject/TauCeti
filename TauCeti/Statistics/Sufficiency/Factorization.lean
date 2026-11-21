@@ -21,14 +21,14 @@ building on the generic two-measure disintegration/density lemmas in
 
 * `TauCeti.IsSufficientStatistic.exists_factorization`: forward factorization (no standard Borel
   assumption needed).
-* `TauCeti.isSufficientStatistic_of_exists_factorization`: converse factorization on a nonempty
-  standard Borel space for any s-finite reference measure `μ`, using `ProbabilityTheory.condDistrib`
-  under a Halmos–Savage dominating countable mixture.
+* `TauCeti.isSufficientStatistic_of_exists_factorization`: converse factorization on a standard
+  Borel space for any s-finite reference measure `μ`, using `ProbabilityTheory.condDistrib` under
+  a Halmos–Savage dominating countable mixture.
 * `TauCeti.isSufficientStatistic_iff_exists_factorization`: the Neyman–Fisher factorization theorem.
 * `TauCeti.isMinimalSufficientStatistic_likelihoodRatio`: for a countable family of probability
-  laws with densities `f θ` with respect to an s-finite measure `μ` on a nonempty standard Borel
-  space `X`, if a reference density `f θ₀` is `μ`-almost everywhere positive, then the likelihood
-  ratio `x ↦ (θ ↦ f θ x / f θ₀ x)` is minimal sufficient.
+  laws with densities `f θ` with respect to an s-finite measure `μ` on a standard Borel space `X`,
+  if a reference density `f θ₀` is `μ`-almost everywhere positive, then the likelihood ratio
+  `x ↦ (θ ↦ f θ x / f θ₀ x)` is minimal sufficient.
 
 ## References
 
@@ -90,16 +90,17 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
     exact (ENNReal.ofReal_toReal hx.ne).symm
   exact (hf θ).ae_eq_of_sigmaFinite (hPL_dens.trans hh_dens)
 
-/-- Converse direction of the factorization theorem: on a nonempty standard Borel space `X`, if
-the densities of a nonempty family of probability measures with respect to an s-finite measure `μ`
+/-- Converse direction of the factorization theorem: on a standard Borel space `X`, if the
+densities of a nonempty family of probability measures with respect to an s-finite measure `μ`
 factor through a measurable statistic `T`, then `T` is sufficient. -/
-theorem isSufficientStatistic_of_exists_factorization [StandardBorelSpace X] [Nonempty X]
+theorem isSufficientStatistic_of_exists_factorization [StandardBorelSpace X]
     [Nonempty Θ] (P : Θ → Measure X) [∀ θ, IsProbabilityMeasure (P θ)] (μ : Measure X)
     [SFinite μ] (f : Θ → X → ℝ) (hf : ∀ θ, HasDensity (P θ) μ (f θ)) (T : X → S)
     (hT : Measurable T) (g : Θ → S → ℝ) (h : X → ℝ)
     (hg : ∀ θ, Measurable (g θ) ∧ ∀ s, 0 ≤ g θ s) (hhm : Measurable h)
     (hfac : ∀ θ, ∀ᵐ x ∂μ, f θ x = g θ (T x) * h x) :
     IsSufficientStatistic P T := by
+  have : Nonempty X := nonempty_of_isProbabilityMeasure (P (Classical.arbitrary Θ))
   -- Step 1: pick a Halmos–Savage dominating mixture `L` and take `K = condDistrib id T L`.
   obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ
     fun θ ↦ (hf θ).absolutelyContinuous
@@ -131,10 +132,10 @@ theorem isSufficientStatistic_of_exists_factorization [StandardBorelSpace X] [No
 
 /-- **The Neyman–Fisher factorization theorem** (Pfanzagl, Theorem 1.2.10 with Corollary 1.3.11;
 Schervish, Theorem 2.21): for a nonempty family of probability measures with real densities `f θ`
-with respect to an s-finite measure `μ` on a nonempty standard Borel space `X`, a measurable
-statistic `T` is sufficient if and only if the densities factor `μ`-almost everywhere as
-`f θ x = g θ (T x) * h x` with nonnegative measurable `g θ` and `h`. -/
-theorem isSufficientStatistic_iff_exists_factorization [StandardBorelSpace X] [Nonempty X]
+with respect to an s-finite measure `μ` on a standard Borel space `X`, a measurable statistic `T` is
+sufficient if and only if the densities factor `μ`-almost everywhere as `f θ x = g θ (T x) * h x`
+with nonnegative measurable `g θ` and `h`. -/
+theorem isSufficientStatistic_iff_exists_factorization [StandardBorelSpace X]
     [Nonempty Θ] (P : Θ → Measure X) [∀ θ, IsProbabilityMeasure (P θ)] (μ : Measure X)
     [SFinite μ] (f : Θ → X → ℝ) (hf : ∀ θ, HasDensity (P θ) μ (f θ)) (T : X → S)
     (hT : Measurable T) :
@@ -149,10 +150,10 @@ theorem isSufficientStatistic_iff_exists_factorization [StandardBorelSpace X] [N
 
 /-- **Minimal sufficiency of the likelihood ratio** (Schervish, Theorem 2.29; Pfanzagl,
 Theorem 1.4.4): for a countable family of probability measures with real densities `f θ` with
-respect to an s-finite measure `μ` on a nonempty standard Borel space `X`, if a reference density
-`f θ₀` is `μ`-almost everywhere positive, then the likelihood-ratio statistic
-`x ↦ (θ ↦ f θ x / f θ₀ x)` is minimal sufficient. -/
-theorem isMinimalSufficientStatistic_likelihoodRatio [StandardBorelSpace X] [Nonempty X]
+respect to an s-finite measure `μ` on a standard Borel space `X`, if a reference density `f θ₀` is
+`μ`-almost everywhere positive, then the likelihood-ratio statistic `x ↦ (θ ↦ f θ x / f θ₀ x)` is
+minimal sufficient. -/
+theorem isMinimalSufficientStatistic_likelihoodRatio [StandardBorelSpace X]
     [Countable Θ] (P : Θ → Measure X) [∀ θ, IsProbabilityMeasure (P θ)] (μ : Measure X)
     [SFinite μ] (f : Θ → X → ℝ) (hf : ∀ θ, HasDensity (P θ) μ (f θ))
     (θ₀ : Θ) (hpos : ∀ᵐ x ∂μ, 0 < f θ₀ x) :

@@ -24,6 +24,8 @@ and develops the conditional-expectation characterization of sufficiency:
 * `TauCeti.IsSufficientStatistic P T`: `T : X → S` is measurable and there exists a single Markov
   kernel `K : Kernel S X` disintegrating every joint law `(P θ).map (fun x ↦ (T x, x))` as
   `(P θ).map T ⊗ₘ K`.
+* `TauCeti.isSufficientStatistic_of_forall_setLIntegral_eq`: rectangle introduction lemma for
+  sufficiency of finite families.
 * `TauCeti.IsMinimalSufficientStatistic.{u, v, w, r} P T`: `T` is sufficient and factors
   `P θ`-almost everywhere through every sufficient statistic `U : X → S'` whose codomain
   `S' : Type r` lies in the explicit universe parameter `r`, via a measurable map `φ : S' → S`.
@@ -78,6 +80,18 @@ theorem isSufficientStatistic_def {P : Θ → Measure X} {T : X → S} :
         ∀ θ, (P θ).map (fun x ↦ (T x, x)) = (P θ).map T ⊗ₘ K :=
   (Iff.rfl)
 
+/-- For a family of finite measures, a measurable statistic `T` is sufficient if there is a Markov
+kernel `K` matching the joint rectangle masses
+`∫⁻ x in T ⁻¹' A, K (T x) B ∂(P θ) = P θ (T ⁻¹' A ∩ B)` for all measurable `A : Set S` and
+`B : Set X`. -/
+theorem isSufficientStatistic_of_forall_setLIntegral_eq {P : Θ → Measure X}
+    [∀ θ, IsFiniteMeasure (P θ)] {T : X → S} (hT : Measurable T)
+    (K : Kernel S X) [IsMarkovKernel K]
+    (hrect : ∀ θ {A : Set S} {B : Set X}, MeasurableSet A → MeasurableSet B →
+      ∫⁻ x in T ⁻¹' A, K (T x) B ∂P θ = P θ (T ⁻¹' A ∩ B)) :
+    IsSufficientStatistic P T :=
+  ⟨hT, K, inferInstance, fun θ ↦ (map_prodMk_eq_compProd_iff hT).mpr (hrect θ)⟩
+
 /-- A sufficient statistic is measurable. -/
 @[fun_prop]
 theorem IsSufficientStatistic.measurable {P : Θ → Measure X} {T : X → S}
@@ -93,6 +107,7 @@ theorem IsSufficientStatistic.exists_kernel {P : Θ → Measure X} {T : X → S}
   h.2
 
 /-- The identity statistic is sufficient for every family of s-finite measures. -/
+@[simp]
 theorem isSufficientStatistic_id (P : Θ → Measure X) [∀ θ, SFinite (P θ)] :
     IsSufficientStatistic P id := by
   refine ⟨measurable_id, Kernel.id, inferInstance, fun θ ↦ ?_⟩
@@ -101,6 +116,7 @@ theorem isSufficientStatistic_id (P : Θ → Measure X) [∀ θ, SFinite (P θ)]
 
 /-- A constant statistic is sufficient for a nonempty family of probability measures if and only
 if all measures in the family are equal. -/
+@[simp]
 theorem isSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure X}
     [∀ θ, IsProbabilityMeasure (P θ)] (s₀ : S) :
     IsSufficientStatistic P (fun _ ↦ s₀) ↔ ∀ θ₁ θ₂, P θ₁ = P θ₂ := by
@@ -112,14 +128,10 @@ theorem isSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure X}
       rw [← comp_map_eq_self_of_map_prodMk_eq_compProd measurable_const (hdis θ), hmap]
     exact (hrec θ₁).trans (hrec θ₂).symm
   · let θ₀ : Θ := Classical.arbitrary Θ
-    have hpair : Measurable fun x : X ↦ (s₀, x) := measurable_const.prodMk measurable_id
-    refine ⟨measurable_const, Kernel.const S (P θ₀), inferInstance, fun θ ↦ ?_⟩
+    refine isSufficientStatistic_of_forall_setLIntegral_eq measurable_const
+      (Kernel.const S (P θ₀)) fun θ A B _ _ ↦ ?_
     rw [hconst θ θ₀]
-    ext A hA
-    rw [Measure.map_apply hpair hA, Measure.compProd_apply hA]
-    have hmap : (P θ₀).map (fun _ : X ↦ s₀) = Measure.dirac s₀ := by
-      rw [Measure.map_const, measure_univ, one_smul]
-    rw [hmap, lintegral_dirac' _ (Kernel.measurable_kernel_prodMk_left hA), Kernel.const_apply]
+    by_cases hs : s₀ ∈ A <;> simp [hs]
 
 /-- Any constant statistic is sufficient for a constant nonempty family of probability measures. -/
 theorem isSufficientStatistic_const [Nonempty Θ] {P : Θ → Measure X}
@@ -204,6 +216,7 @@ theorem isMinimalSufficientStatistic_const [Nonempty Θ] {P : Θ → Measure X}
 
 /-- A constant statistic is minimal sufficient for a nonempty family of probability measures if and
 only if all measures in the family are equal. -/
+@[simp]
 theorem isMinimalSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure X}
     [∀ θ, IsProbabilityMeasure (P θ)] (s₀ : S) :
     IsMinimalSufficientStatistic P (fun _ ↦ s₀) ↔ ∀ θ₁ θ₂, P θ₁ = P θ₂ :=

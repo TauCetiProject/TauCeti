@@ -349,14 +349,8 @@ theorem withDensity_eq_iff_of_sigmaFinite_withDensity {α : Type*} [MeasurableSp
       rw [← withDensity_apply f hs]
       exact (measure_spanningSets_lt_top (μ.withDensity f) n).ne
     exact (withDensity_eq_iff hf.restrict hg.restrict hfin).mp heq
-  rw [Filter.EventuallyEq, ae_iff]
-  have hcov : {x | ¬f x = g x} =
-      ⋃ n, {x | ¬f x = g x} ∩ spanningSets (μ.withDensity f) n := by
-    rw [← Set.inter_iUnion, iUnion_spanningSets, Set.inter_univ]
-  rw [hcov]
-  refine measure_iUnion_null fun n ↦ ?_
-  have h0 := ae_iff.mp (hae_n n)
-  rwa [Measure.restrict_apply' (measurableSet_spanningSets (μ.withDensity f) n)] at h0
+  rw [← Measure.restrict_univ (μ := μ), ← iUnion_spanningSets (μ.withDensity f)]
+  exact (ae_restrict_iUnion_iff _ _).2 hae_n
 
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise, with
 respect to a σ-finite reference measure that is positive on nonempty open sets. -/
@@ -403,13 +397,8 @@ theorem eq_withDensity_div_of_eq_withDensity_mul {α : Type*} [MeasurableSpace �
       refine ae_lt_top' hLm.restrict ?_
       rw [← withDensity_apply _ (measurableSet_spanningSets L n), ← hL]
       exact (measure_spanningSets_lt_top L n).ne
-    rw [ae_iff]
-    have hcov : {x | ¬G x * h x < ∞} = ⋃ n, {x | ¬G x * h x < ∞} ∩ spanningSets L n := by
-      rw [← Set.inter_iUnion, iUnion_spanningSets, Set.inter_univ]
-    rw [hcov]
-    refine measure_iUnion_null fun n ↦ ?_
-    have h0 := ae_iff.mp (hae_n n)
-    rwa [Measure.restrict_apply' (measurableSet_spanningSets L n)] at h0
+    rw [← Measure.restrict_univ (μ := μ), ← iUnion_spanningSets L]
+    exact (ae_restrict_iUnion_iff _ _).2 hae_n
   -- `G` is nonzero `L`-a.e., hence `P`-a.e., so `G x = 0` forces `g x * h x = 0` `μ`-a.e.
   have hZ : ∀ᵐ x ∂μ, G x = 0 → g x * h x = 0 := by
     have hLG : ∀ᵐ x ∂L, G x ≠ 0 := by
