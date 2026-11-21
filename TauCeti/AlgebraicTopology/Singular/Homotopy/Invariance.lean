@@ -138,7 +138,7 @@ theorem isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X : T
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
     have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
       ext x
-      exact hrc _ x.2
+      exact hrc _ x.property
     simp only [hid]
     exact Homotopy.refl _
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
@@ -158,7 +158,7 @@ theorem isZero_singularHomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t
     IsZero ((ofInclusion hst).singularHomology R n) := by
   -- The identity of the pair is homotopic to the retraction, which factors through `s`.
   refine isZero_singularHomology_of_homotopy
-    (f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).2)
+    (f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).property)
     ?_ (TopCat.ofHom r)
     (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) R n
   rw [← ofInclusionMap_id]

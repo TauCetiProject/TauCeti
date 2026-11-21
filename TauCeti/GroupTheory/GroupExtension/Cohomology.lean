@@ -103,7 +103,7 @@ variable (α β : FactorSet G M)
 induced by the action. -/
 theorem mem_cocycles₂ :
     (fun p : G × G => Additive.ofMul (α p)) ∈ cocycles₂ (Rep.ofMulDistribMulAction G M) :=
-  (cocyclesOfIsMulCocycle₂ α.isMulCocycle₂).2
+  (cocyclesOfIsMulCocycle₂ α.isMulCocycle₂).property
 
 /-- A factor set, read as a `2`-cocycle valued in `Additive M`. -/
 def toCocycles₂ : cocycles₂ (Rep.ofMulDistribMulAction G M) :=
@@ -143,7 +143,7 @@ theorem cohomologyClass_eq_iff :
     α.cohomologyClass = β.cohomologyClass ↔ IsMulCoboundary₂ fun p : G × G => α p / β p := by
   rw [cohomologyClass_def, cohomologyClass_def, H2π_eq_iff, coe_toCocycles₂_sub]
   exact ⟨fun h => isMulCoboundary₂_of_mem_coboundaries₂ _ h, fun h =>
-    (coboundariesOfIsMulCoboundary₂ h).2⟩
+    (coboundariesOfIsMulCoboundary₂ h).property⟩
 
 /-- **The class of a factor set vanishes exactly when it is a multiplicative `2`-coboundary.** -/
 theorem cohomologyClass_eq_zero_iff : α.cohomologyClass = 0 ↔ IsMulCoboundary₂ ⇑α := by
@@ -162,7 +162,7 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
     rfl
   rw [hcoe]
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
-    fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+    fun h ↦ (coboundariesOfIsMulCoboundary₂ h).property⟩
 
 /-- The cardinality of the kernel `M` kills the cohomology class of any factor set in `H²(G, M)`
 (when `M` is infinite, `Nat.card M = 0` and the statement is trivial). -/
@@ -265,10 +265,10 @@ theorem exists_cohomologyClass_eq (x : H2 (Rep.ofMulDistribMulAction G M)) :
     ∃ α : FactorSet G M, α.cohomologyClass = x := by
   induction x using H2_induction_on with
   | _ y =>
-    refine ⟨ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.2), ?_⟩
+    refine ⟨ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.property), ?_⟩
     rw [cohomologyClass_def, H2π_eq_iff]
     exact (coboundariesOfIsMulCoboundary₂
-      (isMulCoboundary₂_div_ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.2))).2
+      (isMulCoboundary₂_div_ofIsMulCocycle₂ (isMulCocycle₂_of_mem_cocycles₂ _ y.property))).property
 
 /-- **Cohomologous factor sets**: their pointwise quotient is a multiplicative `2`-coboundary,
 equivalently (`TauCeti.FactorSet.cohomologyClass_eq_iff`) they have the same class in `H²(G, M)`.

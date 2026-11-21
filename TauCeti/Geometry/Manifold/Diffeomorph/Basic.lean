@@ -23,7 +23,10 @@ and the tangent images of a map, the ranges of its differentials, are unchanged 
 with a diffeomorphism and are mapped by the differential under postcomposition.
 These facts support inverse isometries, calibrated immersions, and transport of curve
 differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
-a partial diffeomorphism is also characterized, for composition with partial coordinates.
+a partial diffeomorphism is also characterized, for composition with partial coordinates, and
+pulling back a `C^m` maximal-atlas chart along a `C^n` diffeomorphism (`m ≤ n`) preserves
+membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
+`Diffeomorph.trans_mem_maximalAtlas_iff`).
 -/
 
 public section
@@ -47,6 +50,31 @@ is its everywhere-defined equivalence. -/
 @[simp]
 theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
     h.toPartialDiffeomorph.toPartialEquiv = h.toEquiv.toPartialEquiv := (rfl)
+
+/-- Pulling back a chart `φ` of the maximal `C^m` atlas of `N'` along a `C^n` diffeomorphism
+`h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart of the maximal `C^m` atlas of `M`. -/
+theorem trans_mem_maximalAtlas {N' : Type*} [TopologicalSpace N'] [ChartedSpace H N']
+    {m : ℕ∞ω} [IsManifold I m M] (h : M ≃ₘ^n⟮I, I⟯ N') (hm : m ≤ n)
+    {φ : OpenPartialHomeomorph N' H} (hφ : φ ∈ IsManifold.maximalAtlas I m N') :
+    h.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas I m M := by
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+  exact ⟨(contMDiffOn_of_mem_maximalAtlas hφ).comp (h.contMDiff.of_le hm).contMDiffOn
+      fun _ hx ↦ hx.2,
+    (h.symm.contMDiff.of_le hm).comp_contMDiffOn
+      ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono Set.inter_subset_left)⟩
+
+/-- Pulling back `φ` along a `C^n` diffeomorphism `h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart
+of the maximal `C^m` atlas of `M` iff `φ` lies in the maximal `C^m` atlas of `N'`. -/
+theorem trans_mem_maximalAtlas_iff {N' : Type*} [TopologicalSpace N'] [ChartedSpace H N']
+    {m : ℕ∞ω} [IsManifold I m M] [IsManifold I m N'] (h : M ≃ₘ^n⟮I, I⟯ N') (hm : m ≤ n)
+    {φ : OpenPartialHomeomorph N' H} :
+    h.toHomeomorph.toOpenPartialHomeomorph.trans φ ∈ IsManifold.maximalAtlas I m M ↔
+      φ ∈ IsManifold.maximalAtlas I m N' := by
+  refine ⟨fun hφ ↦ ?_, h.trans_mem_maximalAtlas hm⟩
+  have heq : h.symm.toHomeomorph.toOpenPartialHomeomorph.trans
+      (h.toHomeomorph.toOpenPartialHomeomorph.trans φ) = φ := by
+    ext x <;> simp
+  simpa only [heq] using h.symm.trans_mem_maximalAtlas hm hφ
 
 /-- The differentials of a diffeomorphism and its inverse compose to the identity. -/
 @[simp]
@@ -84,8 +112,8 @@ original tangent vector. -/
 theorem tangentMap_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (z : TangentBundle I M) :
     tangentMap J I h.symm (tangentMap I J h z) = z := by
-  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.1))
-    ((h.mdifferentiable hn) z.1)]
+  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.proj))
+    ((h.mdifferentiable hn) z.proj)]
   have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
   rw [hinv]
   exact congrFun tangentMap_id z
@@ -177,6 +205,14 @@ theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f 
       (h.mdifferentiableAt_comp_diffeomorph_iff hn).not.mpr hf
     rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
       ContinuousLinearMap.zero_comp]
+
+/-- **Chain rule for precomposition with a diffeomorphism, for vector-valued functions.** The
+differential of `f ∘ h` at `x`, with values in `E'`, is `df ∘ dh`. No differentiability of `f` is
+assumed. -/
+theorem mvfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → E') (x : M) :
+    mvfderiv I (f ∘ h) x = (mvfderiv J f (h x)).comp (mfderiv I J h x) := by
+  rw [mvfderiv, mvfderiv, h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.comp_assoc,
+    Function.comp_apply]
 
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
 the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the
