@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.AnalyticFamily
 public import TauCeti.Analysis.Sobolev.BesselPotential.ExponentInterpolation
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Data.ENNReal.InterpolatedExponent
 
 /-!
@@ -117,24 +118,6 @@ private theorem toDistr_shiftedFamily {q : ℝ≥0∞} [Fact (1 ≤ q)] {hq : 1 
   push_cast
   ring
 
-/-- `(b + a |t|) ^ N exp (-t²) ≤ (b + a) ^ N exp (N² / 4)` for `a, b ≥ 0`: the Gaussian beats
-polynomial growth. -/
-private theorem add_mul_abs_pow_mul_exp_neg_sq_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (N : ℕ)
-    (t : ℝ) : (b + a * |t|) ^ N * Real.exp (-t ^ 2) ≤ (b + a) ^ N * Real.exp (N ^ 2 / 4) := by
-  have h1 : b + a * |t| ≤ (b + a) * Real.exp |t| := by
-    have := Real.add_one_le_exp |t|
-    nlinarith [abs_nonneg t]
-  have h2 : (b + a * |t|) ^ N ≤ (b + a) ^ N * Real.exp (N * |t|) := by
-    rw [Real.exp_natCast_mul, ← mul_pow]
-    exact pow_le_pow_left₀ (by positivity) h1 N
-  calc (b + a * |t|) ^ N * Real.exp (-t ^ 2) ≤ (b + a) ^ N * Real.exp (N * |t|) *
-        Real.exp (-t ^ 2) := by gcongr
-    _ = (b + a) ^ N * Real.exp (N * |t| - t ^ 2) := by rw [mul_assoc, ← Real.exp_add]; ring_nf
-    _ ≤ (b + a) ^ N * Real.exp (N ^ 2 / 4) := by
-        gcongr
-        nlinarith [sq_nonneg (|t| - N / 2), sq_abs t]
-
-
 /-- The norm of `J^{-b} J^w J^a` grows at most polynomially in `w`, `re w ≤ 0`. -/
 private theorem exists_norm_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q)
     (hq_top : q ≠ ∞) : ∃ C : ℝ≥0, ∀ (a b : ℝ) (w : ℂ), w.re ≤ 0 →
@@ -167,23 +150,6 @@ private theorem norm_stripGaussian_one_le {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ)
   have hz' : z.re ∈ Icc (0 : ℝ) 1 := hz
   nlinarith [hz'.1, hz'.2, hθ.1, hθ.2]
 
-/-- On the closed unit strip, `‖exp (δ z² + ω z)‖ ≤ exp (δ + |ω|)`. -/
-private theorem norm_exp_mul_sq_add_mul_le {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) {z : ℂ}
-    (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z)‖ ≤ Real.exp (δ + |ω|) := by
-  rw [Complex.norm_exp, Real.exp_le_exp]
-  have hz' : z.re ∈ Icc (0 : ℝ) 1 := hz
-  simp only [sq, Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
-    sub_zero]
-  have hω : ω * z.re ≤ |ω| := by
-    calc ω * z.re ≤ |ω * z.re| := le_abs_self _
-      _ = |ω| * z.re := by rw [abs_mul, abs_of_nonneg hz'.1]
-      _ ≤ |ω| := mul_le_of_le_one_right (abs_nonneg ω) hz'.2
-  have h1 : z.re * z.re ≤ 1 := by nlinarith [hz'.1, hz'.2]
-  have h2 : δ * (z.re * z.re - z.im * z.im) ≤ δ := by
-    nlinarith [mul_nonneg hδ.le (mul_self_nonneg z.im)]
-  linarith
-
 end Preliminaries
 
 /-! ### Stein interpolation of the Bessel potentials -/
@@ -207,7 +173,7 @@ private theorem isBounded_aux {W₀ : Type*} [NormedAddCommGroup W₀] [NormedSp
   obtain ⟨C, hC⟩ := exists_norm_shiftedFamily_le (E := E) (F := F) hq hq_top
   set N := finrank ℝ E / 2 + 1
   refine isBounded_iff_forall_norm_le.2 ⟨Real.exp 1 * Real.exp (δ + |ω|) * (‖ι‖ * (C *
-    ((1 + |κ| + |κ|) ^ N * Real.exp (N ^ 2 / 4)) * ‖u‖)), ?_⟩
+    ((1 + |κ|) ^ N * (N.factorial / (1 / 2 : ℝ) ^ N * Real.exp 1)) * ‖u‖)), ?_⟩
   rintro _ ⟨z, hz, rfl⟩
   have hz' : z.re ∈ Icc (0 : ℝ) 1 := hz
   have hνz : ‖ν z‖ ≤ (1 + |z.im|) * |κ| := by
@@ -218,23 +184,25 @@ private theorem isBounded_aux {W₀ : Type*} [NormedAddCommGroup W₀] [NormedSp
     simp only [ν, norm_mul, Complex.norm_real, Real.norm_eq_abs]
     gcongr
     linarith
-  have hf : ‖f z‖ ≤ ‖ι‖ * (C * ((1 + |κ| + |κ| * |z.im|) ^ N) * ‖u‖) := by
+  have hf : ‖f z‖ ≤ ‖ι‖ * (C * ((1 + |κ|) ^ N * (1 + |z.im|) ^ N) * ‖u‖) := by
     refine (ι.le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
     refine ((shiftedFamily hq hq_top a b (ν z)).le_opNorm u).trans ?_
     gcongr
     refine (hC a b (ν z) ((hre z).trans_le (hcl _ hz))).trans ?_
+    rw [← mul_pow]
     refine mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) ?_ N) C.coe_nonneg
     nlinarith [abs_nonneg κ, abs_nonneg z.im]
   rw [norm_smul, norm_smul]
-  have hg := add_mul_abs_pow_mul_exp_neg_sq_le (abs_nonneg κ) (by positivity : 0 ≤ 1 + |κ|) N z.im
+  have hg := one_add_pow_mul_exp_neg_mul_sq_le one_pos N (r := |z.im|)
+  rw [sq_abs, neg_one_mul] at hg
   calc ‖stripGaussian 1 θ z‖ * (‖cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z)‖ * ‖f z‖)
       ≤ Real.exp 1 * Real.exp (-z.im ^ 2) * (Real.exp (δ + |ω|) *
-          (‖ι‖ * (C * ((1 + |κ| + |κ| * |z.im|) ^ N) * ‖u‖))) := by
+          (‖ι‖ * (C * ((1 + |κ|) ^ N * (1 + |z.im|) ^ N) * ‖u‖))) := by
         gcongr
         · exact norm_stripGaussian_one_le hθ hz
-        · exact norm_exp_mul_sq_add_mul_le hδ ω hz
-    _ = Real.exp 1 * Real.exp (δ + |ω|) * (‖ι‖ * (C * ((1 + |κ| + |κ| * |z.im|) ^ N *
-          Real.exp (-z.im ^ 2)) * ‖u‖)) := by ring
+        · exact norm_exp_ofReal_mul_sq_add_ofReal_mul_le hδ.le ω hz
+    _ = Real.exp 1 * Real.exp (δ + |ω|) * (‖ι‖ * (C * ((1 + |κ|) ^ N * ((1 + |z.im|) ^ N *
+          Real.exp (-z.im ^ 2))) * ‖u‖)) := by ring
     _ ≤ _ := by gcongr
 
 /-- The strip functions `z ↦ exp ((z - θ)²) exp (δ z² + ω z) ι (J^{-b} J^{(z - c) κ} J^a u)` are
@@ -280,7 +248,7 @@ private theorem norm_exp_smul_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)]
     (hx : x ∈ Icc (0 : ℝ) 1) (a b κ t : ℝ) :
     ‖stripGaussian 1 θ (x + (t : ℂ) * I) • (shiftedFamily hq hq_top a b ((t : ℂ) * I * κ) :
       H^{a, q}(E, F) →L[ℂ] H^{b, q}(E, F))‖ ≤ Real.exp 1 * (C * ((1 + |κ|) ^ (finrank ℝ E / 2 + 1) *
-        Real.exp ((finrank ℝ E / 2 + 1 : ℕ) ^ 2 / 4))) := by
+        ((finrank ℝ E / 2 + 1).factorial / (1 / 2 : ℝ) ^ (finrank ℝ E / 2 + 1) * Real.exp 1))) := by
   set N := finrank ℝ E / 2 + 1
   have hz : (x + (t : ℂ) * I) ∈ verticalClosedStrip 0 1 := by
     simpa [verticalClosedStrip] using hx
@@ -292,10 +260,16 @@ private theorem norm_exp_smul_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)]
     Complex.I_im, mul_zero, mul_one, zero_add, add_zero] at h1
   have h2 := hC a b ((t : ℂ) * I * κ) (by simp)
   rw [hn] at h2
-  have h3 := add_mul_abs_pow_mul_exp_neg_sq_le (abs_nonneg κ) zero_le_one N t
+  have h3 := one_add_pow_mul_exp_neg_mul_sq_le one_pos N (r := |t|)
+  rw [sq_abs, neg_one_mul] at h3
+  have h4 : (1 + |κ| * |t|) ^ N ≤ (1 + |κ|) ^ N * (1 + |t|) ^ N := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (by positivity) (by nlinarith [abs_nonneg κ, abs_nonneg t]) N
   calc ‖stripGaussian 1 θ (x + (t : ℂ) * I)‖ * ‖shiftedFamily hq hq_top a b ((t : ℂ) * I * κ)‖
-      ≤ Real.exp 1 * Real.exp (-t ^ 2) * (C * (1 + |κ| * |t|) ^ N) := by gcongr
-    _ = Real.exp 1 * (C * ((1 + |κ| * |t|) ^ N * Real.exp (-t ^ 2))) := by ring
+      ≤ Real.exp 1 * Real.exp (-t ^ 2) * (C * ((1 + |κ|) ^ N * (1 + |t|) ^ N)) := by
+        gcongr
+        exact h2.trans (by gcongr)
+    _ = Real.exp 1 * (C * ((1 + |κ|) ^ N * ((1 + |t|) ^ N * Real.exp (-t ^ 2)))) := by ring
     _ ≤ _ := by gcongr
 
 /-- The boundary operator `exp ((x + i t - θ)²) J^{-b} J^{i t κ} J^a : H^{a,q} → H^{b,q}`. -/
@@ -303,109 +277,22 @@ private def boundaryOp {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q) (hq_top : 
     (a b κ x θ t : ℝ) : H^{a, q}(E, F) →L[ℂ] H^{b, q}(E, F) :=
   stripGaussian 1 θ ((x : ℝ) + (t : ℂ) * I) • shiftedFamily hq hq_top a b ((t : ℂ) * I * κ)
 
-/-- Boundary traces given by uniformly bounded operator families `T₀ t`, `T₁ t` applied to the
-traces of `G` have norm at most the bound times the norm of `G`. -/
-private theorem norm_le_mul_norm_of_forall_apply_eq {X₀ X₁ Y₀ Y₁ : Type*}
-    [NormedAddCommGroup X₀] [NormedSpace ℂ X₀] [NormedAddCommGroup X₁] [NormedSpace ℂ X₁]
-    [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁] [NormedSpace ℂ Y₁]
-    {K : ℝ} (hK : 0 ≤ K) (G : C₀(ℝ, X₀) × C₀(ℝ, X₁)) (g : (ℝ →ᵇ Y₀) × (ℝ →ᵇ Y₁))
-    (T₀ : ℝ → X₀ →L[ℂ] Y₀) (T₁ : ℝ → X₁ →L[ℂ] Y₁) (hT₀ : ∀ t, ‖T₀ t‖ ≤ K)
-    (hT₁ : ∀ t, ‖T₁ t‖ ≤ K) (hg₀ : ∀ t, g.1 t = T₀ t (G.1 t)) (hg₁ : ∀ t, g.2 t = T₁ t (G.2 t)) :
-    ‖g‖ ≤ K * ‖G‖ := by
-  refine norm_prod_le_iff.2 ⟨(BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦ ?_,
-    (BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦ ?_⟩
-  · rw [hg₀]
-    refine ((T₀ t).le_opNorm _).trans (mul_le_mul (hT₀ t) ?_ (norm_nonneg _) hK)
-    exact (G.1.toBCF.norm_coe_le_norm t).trans
-      (by rw [ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]; exact norm_fst_le _)
-  · rw [hg₁]
-    refine ((T₁ t).le_opNorm _).trans (mul_le_mul (hT₁ t) ?_ (norm_nonneg _) hK)
-    exact (G.2.toBCF.norm_coe_le_norm t).trans
-      (by rw [ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]; exact norm_snd_le _)
-
-/-- The boundary operators applied to a continuously varying multiple of a fixed vector form a
-continuous function of `t`. -/
-private theorem continuous_boundaryOp_apply_smul {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q)
-    (hq_top : q ≠ ∞) (a b κ x θ : ℝ) {c : ℝ → ℂ} (hc : Continuous c) (v : H^{a, q}(E, F)) :
-    Continuous fun t ↦ boundaryOp hq hq_top a b κ x θ t (c t • v) := by
-  simp only [boundaryOp, smul_apply, map_smul]
-  exact hc.smul (((differentiable_stripGaussian 1 θ).continuous.comp
+/-- The boundary operators are strongly continuous in `t`. -/
+private theorem continuous_boundaryOp_apply {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q)
+    (hq_top : q ≠ ∞) (a b κ x θ : ℝ) (v : H^{a, q}(E, F)) :
+    Continuous fun t ↦ boundaryOp hq hq_top a b κ x θ t v := by
+  simp only [boundaryOp, smul_apply]
+  exact ((differentiable_stripGaussian 1 θ).continuous.comp
     (by fun_prop : Continuous fun t : ℝ ↦ (x : ℂ) + (t : ℂ) * I)).smul
     ((continuousOn_shiftedFamily_apply hq hq_top a b v).comp_continuous
-      (by fun_prop : Continuous fun t : ℝ ↦ (t : ℂ) * I * κ) fun t ↦ by simp))
-
-/-- A bounded operator applied to `exp (δ z² + ω z) v`, `z` in the closed unit strip. -/
-private theorem norm_apply_exp_smul_le {X₀ Y₀ : Type*} [NormedAddCommGroup X₀] [NormedSpace ℂ X₀]
-    [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] {T : X₀ →L[ℂ] Y₀} {K : ℝ} (hT : ‖T‖ ≤ K)
-    (hK : 0 ≤ K) {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1)
-    (v : X₀) : ‖T (cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) • v)‖ ≤
-      K * (Real.exp (δ + |ω|) * ‖v‖) := by
-  refine (T.le_opNorm _).trans (mul_le_mul hT ?_ (norm_nonneg _) hK)
-  rw [norm_smul]
-  exact mul_le_mul_of_nonneg_right (norm_exp_mul_sq_add_mul_le hδ ω hz) (norm_nonneg _)
-
-/-- The boundary traces of the strip function of `exp (δ z² + ω z) x`: the boundary operators
-applied to the traces of `exp (δ z² + ω z) x` are bounded continuous functions. -/
-private theorem exists_traces_expGaussianTrace {p₀ p₁ : ℝ≥0∞}
-    [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] (hp₀ : 1 < p₀) (hp₀_top : p₀ ≠ ∞) (hp₁ : 1 < p₁)
-    (hp₁_top : p₁ ≠ ∞) {a₀ a₁ b₀ b₁ κ θ : ℝ} {K : ℝ} (hK : 0 ≤ K)
-    (hT₀ : ∀ t, ‖(boundaryOp hp₀ hp₀_top a₀ b₀ κ 0 θ t :
-      H^{a₀, p₀}(E, F) →L[ℂ] H^{b₀, p₀}(E, F))‖ ≤ K)
-    (hT₁ : ∀ t, ‖(boundaryOp hp₁ hp₁_top a₁ b₁ κ 1 θ t :
-      H^{a₁, p₁}(E, F) →L[ℂ] H^{b₁, p₁}(E, F))‖ ≤ K)
-    (x : (besselPotentialSpace E F a₀ p₀ a₁ p₁).inter) {δ : ℝ} (hδ : 0 < δ) (ω : ℝ) :
-    ∃ g : (ℝ →ᵇ H^{b₀, p₀}(E, F)) × (ℝ →ᵇ H^{b₁, p₁}(E, F)),
-      (∀ t, g.1 t = boundaryOp hp₀ hp₀_top a₀ b₀ κ 0 θ t
-        (((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x :
-          C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1 t)) ∧
-      (∀ t, g.2 t = boundaryOp hp₁ hp₁_top a₁ b₁ κ 1 θ t
-        (((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x :
-          C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t)) := by
-  -- The goal depends on `x`, so `set` alone would add a new `x` of the abbreviated type and
-  -- shadow the one the goal mentions; reverting `x` first lets `set` abstract the goal as well.
-  revert x
-  set X := besselPotentialSpace E F a₀ p₀ a₁ p₁
-  intro x
-  set x₀ := X.interFst x
-  set x₁ := X.interSnd x
-  set T₀ := boundaryOp (E := E) (F := F) hp₀ hp₀_top a₀ b₀ κ 0 θ
-  set T₁ := boundaryOp (E := E) (F := F) hp₁ hp₁_top a₁ b₁ κ 1 θ
-  have hstrip₀ (t : ℝ) : (t : ℂ) * I ∈ verticalClosedStrip 0 1 := by
-    simp [verticalClosedStrip]
-  have hstrip₁ (t : ℝ) : 1 + (t : ℂ) * I ∈ verticalClosedStrip 0 1 := by
-    simp [verticalClosedStrip]
-  have hcont₀ : Continuous fun t : ℝ ↦ T₀ t ((X.expGaussianTrace hδ ω x :
-      C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1 t) := by
-    simpa [x₀] using continuous_boundaryOp_apply_smul hp₀ hp₀_top a₀ b₀ κ 0 θ
-      (c := fun t : ℝ ↦ cexp ((δ : ℂ) * (t * I) ^ 2 + (ω : ℂ) * (t * I))) (by fun_prop) x₀
-  have hcont₁ : Continuous fun t : ℝ ↦ T₁ t ((X.expGaussianTrace hδ ω x :
-      C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t) := by
-    simpa [x₁] using continuous_boundaryOp_apply_smul hp₁ hp₁_top a₁ b₁ κ 1 θ
-      (c := fun t : ℝ ↦ cexp ((δ : ℂ) * (1 + t * I) ^ 2 + (ω : ℂ) * (1 + t * I))) (by fun_prop) x₁
-  have hb₀ (t : ℝ) : ‖T₀ t ((X.expGaussianTrace hδ ω x :
-      C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1 t)‖ ≤
-        K * (Real.exp (δ + |ω|) * ‖x₀‖) := by
-    rw [X.expGaussianTrace_apply_fst]
-    exact norm_apply_exp_smul_le (hT₀ t) hK hδ ω (hstrip₀ t) x₀
-  have hb₁ (t : ℝ) : ‖T₁ t ((X.expGaussianTrace hδ ω x :
-      C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t)‖ ≤
-        K * (Real.exp (δ + |ω|) * ‖x₁‖) := by
-    rw [X.expGaussianTrace_apply_snd]
-    exact norm_apply_exp_smul_le (hT₁ t) hK hδ ω (hstrip₁ t) x₁
-  set g₀ := BoundedContinuousFunction.ofNormedAddCommGroup _ hcont₀ _ hb₀
-  set g₁ := BoundedContinuousFunction.ofNormedAddCommGroup _ hcont₁ _ hb₁
-  exact ⟨(g₀, g₁), fun t ↦ rfl, fun t ↦ rfl⟩
+      (by fun_prop : Continuous fun t : ℝ ↦ (t : ℂ) * I * κ) fun t ↦ by simp)
 
 /-- The base case of `exists_besselPotentialSpace_complexMethod_map_aux`: the strip function
 `Ψ` of an elementary admissible function `exp (δ z² + ω z) x` is a bounded-boundary strip function
-whose traces are the boundary operators applied to those of `exp (δ z² + ω z) x`. -/
+whose traces `g` are the boundary operators applied to those of `exp (δ z² + ω z) x`. -/
 private theorem exists_isBoundedStripFunction_expGaussianTrace {p₀ p₁ : ℝ≥0∞}
     [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] (hp₀ : 1 < p₀) (hp₀_top : p₀ ≠ ∞) (hp₁ : 1 < p₁)
-    (hp₁_top : p₁ ≠ ∞) {a₀ a₁ b₀ b₁ : ℝ} {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1) {K : ℝ} (hK : 0 ≤ K)
-    (hT₀ : ∀ t, ‖(boundaryOp hp₀ hp₀_top a₀ b₀ ((a₁ - b₁) - (a₀ - b₀)) 0 θ t :
-      H^{a₀, p₀}(E, F) →L[ℂ] H^{b₀, p₀}(E, F))‖ ≤ K)
-    (hT₁ : ∀ t, ‖(boundaryOp hp₁ hp₁_top a₁ b₁ ((a₁ - b₁) - (a₀ - b₀)) 1 θ t :
-      H^{a₁, p₁}(E, F) →L[ℂ] H^{b₁, p₁}(E, F))‖ ≤ K)
+    (hp₁_top : p₁ ≠ ∞) {a₀ a₁ b₀ b₁ : ℝ} {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1)
     (x : (besselPotentialSpace E F a₀ p₀ a₁ p₁).inter) {δ : ℝ} (hδ : 0 < δ) (ω : ℝ)
     {Ψ : ℂ → (besselPotentialSpace E F b₀ p₀ b₁ p₁).SumSpace}
     (hdc : DiffContOnCl ℂ Ψ (verticalStrip 0 1))
@@ -414,33 +301,32 @@ private theorem exists_isBoundedStripFunction_expGaussianTrace {p₀ p₁ : ℝ�
       (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ z) =
       stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
         fourierMultiplierCLM F (japaneseBracketCpow (a₀ + z * ((a₁ - b₁) - (a₀ - b₀) : ℝ) - b₀))
-          ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr) :
-    ∃ g : (ℝ →ᵇ H^{b₀, p₀}(E, F)) × (ℝ →ᵇ H^{b₁, p₁}(E, F)),
-      (besselPotentialSpace E F b₀ p₀ b₁ p₁).IsBoundedStripFunction Ψ g ∧
-      (∀ t, g.1 t = boundaryOp hp₀ hp₀_top a₀ b₀ ((a₁ - b₁) - (a₀ - b₀)) 0 θ t
+          ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr)
+    (g : (ℝ →ᵇ H^{b₀, p₀}(E, F)) × (ℝ →ᵇ H^{b₁, p₁}(E, F)))
+    (hg₀ : ∀ t, g.1 t = boundaryOp hp₀ hp₀_top a₀ b₀ ((a₁ - b₁) - (a₀ - b₀)) 0 θ t
         (((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x :
-          C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1 t)) ∧
-      (∀ t, g.2 t = boundaryOp hp₁ hp₁_top a₁ b₁ ((a₁ - b₁) - (a₀ - b₀)) 1 θ t
+          C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1 t))
+    (hg₁ : ∀ t, g.2 t = boundaryOp hp₁ hp₁_top a₁ b₁ ((a₁ - b₁) - (a₀ - b₀)) 1 θ t
         (((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x :
-          C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t)) ∧
+          C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t)) :
+    (besselPotentialSpace E F b₀ p₀ b₁ p₁).IsBoundedStripFunction Ψ g ∧
       (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ θ) =
         besselPotential E F ((1 - θ) * (a₀ - b₀) + θ * (a₁ - b₁))
           ((besselPotentialSpace E F a₀ p₀ a₁ p₁).sumSpaceEmbed
             ((besselPotentialSpace E F a₀ p₀ a₁ p₁).stripEval θ
               ((besselPotentialSpace E F a₀ p₀ a₁ p₁).expGaussianTrace hδ ω x))) := by
-  -- As in `exists_traces_expGaussianTrace`, `x` and `hΨ` are reverted so that `set` abstracts
-  -- the couples in the goal instead of shadowing them with copies the goal does not mention.
-  revert x hΨ
+  -- The goal depends on `x`, so `set` alone would add a new `x` of the abbreviated type and
+  -- shadow the one the goal mentions; reverting `x` and the hypotheses about it first lets `set`
+  -- abstract the couples in the goal as well.
+  revert x hΨ hg₀ hg₁
   set X := besselPotentialSpace E F a₀ p₀ a₁ p₁
   set Y := besselPotentialSpace E F b₀ p₀ b₁ p₁
-  intro x hΨ
+  intro x hΨ hg₀ hg₁
   set κ : ℝ := (a₁ - b₁) - (a₀ - b₀) with hκ_def
   set x₀ := X.interFst x
   have hx : (X.interSnd x).toDistr = x₀.toDistr := by
     simpa [X, x₀] using (X.embed₀_interFst x).symm
-  obtain ⟨g, hg₀, hg₁⟩ := exists_traces_expGaussianTrace hp₀ hp₀_top hp₁ hp₁_top (θ := θ)
-    (b₀ := b₀) (b₁ := b₁) hK hT₀ hT₁ x hδ ω
-  refine ⟨g, ⟨hdc, hbd, fun t ↦ ?_, fun t ↦ ?_⟩, hg₀, hg₁, ?_⟩
+  refine ⟨⟨hdc, hbd, fun t ↦ ?_, fun t ↦ ?_⟩, ?_⟩
   · -- On `re z = 0` both sides are `exp ((i t - θ)²) exp (δ (i t)² + ω i t) J^{λ₀ + i t κ} x`.
     refine Y.sumSpace_ext ?_
     rw [hΨ _ (by simp [verticalClosedStrip]), sumSpaceEmbed_fstToSum, hg₀]
@@ -473,6 +359,52 @@ private theorem exists_isBoundedStripFunction_expGaussianTrace {p₀ p₁ : ℝ�
     push_cast
     ring_nf
 
+/-- Every elementary admissible function `G` of `(H^{a₀,p₀}, H^{a₁,p₁})` is matched by a
+bounded-boundary strip function whose traces are the boundary operators applied to those of `G`
+and whose value at `θ` is `J^{λ_θ} (G θ)`, given such strip functions for the generators
+`exp (δ z² + ω z) x` and operators `B₀`, `B₁` applying the boundary operators pointwise. -/
+private theorem exists_isBoundedStripFunction_of_mem_elementaryStripTraces {p₀ p₁ : ℝ≥0∞}
+    [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] (hp₀ : 1 < p₀) (hp₀_top : p₀ ≠ ∞) (hp₁ : 1 < p₁)
+    (hp₁_top : p₁ ≠ ∞) {a₀ a₁ b₀ b₁ : ℝ} {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1)
+    (hstrip : ∀ (x : (besselPotentialSpace E F a₀ p₀ a₁ p₁).inter) {δ : ℝ} (_ : 0 < δ) (ω : ℝ),
+      ∃ Ψ : ℂ → (besselPotentialSpace E F b₀ p₀ b₁ p₁).SumSpace,
+        DiffContOnCl ℂ Ψ (verticalStrip 0 1) ∧ Bornology.IsBounded (Ψ '' verticalClosedStrip 0 1) ∧
+        ∀ z ∈ verticalClosedStrip 0 1, (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ z) =
+          stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+            fourierMultiplierCLM F (japaneseBracketCpow (a₀ + z * ((a₁ - b₁) - (a₀ - b₀) : ℝ) - b₀))
+              ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr)
+    (B₀ : C₀(ℝ, H^{a₀, p₀}(E, F)) →L[ℂ] C₀(ℝ, H^{b₀, p₀}(E, F)))
+    (B₁ : C₀(ℝ, H^{a₁, p₁}(E, F)) →L[ℂ] C₀(ℝ, H^{b₁, p₁}(E, F)))
+    (hB₀ : ∀ f t, B₀ f t = boundaryOp hp₀ hp₀_top a₀ b₀ ((a₁ - b₁) - (a₀ - b₀)) 0 θ t (f t))
+    (hB₁ : ∀ f t, B₁ f t = boundaryOp hp₁ hp₁_top a₁ b₁ ((a₁ - b₁) - (a₀ - b₀)) 1 θ t (f t))
+    {G : (besselPotentialSpace E F a₀ p₀ a₁ p₁).stripTraces}
+    (hG : G ∈ (besselPotentialSpace E F a₀ p₀ a₁ p₁).elementaryStripTraces) :
+    ∃ (Ψ : ℂ → (besselPotentialSpace E F b₀ p₀ b₁ p₁).SumSpace)
+      (g : (ℝ →ᵇ H^{b₀, p₀}(E, F)) × (ℝ →ᵇ H^{b₁, p₁}(E, F))),
+      (besselPotentialSpace E F b₀ p₀ b₁ p₁).IsBoundedStripFunction Ψ g ∧
+      g.1 = (B₀ (G : C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1).toBCF ∧
+      g.2 = (B₁ (G : C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2).toBCF ∧
+      (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ θ) =
+        besselPotential E F ((1 - θ) * (a₀ - b₀) + θ * (a₁ - b₁))
+          ((besselPotentialSpace E F a₀ p₀ a₁ p₁).sumSpaceEmbed
+            ((besselPotentialSpace E F a₀ p₀ a₁ p₁).stripEval θ G)) := by
+  induction hG using elementaryStripTraces_induction with
+  | @expGaussian δ hδ ω x =>
+    obtain ⟨Ψ, hdc, hbd, hΨ⟩ := hstrip x hδ ω
+    obtain ⟨hΨg, hθG⟩ := exists_isBoundedStripFunction_expGaussianTrace hp₀ hp₀_top hp₁
+      hp₁_top hθ x hδ ω hdc hbd hΨ ((B₀ _).toBCF, (B₁ _).toBCF) (hB₀ _) (hB₁ _)
+    exact ⟨Ψ, _, hΨg, rfl, rfl, hθG⟩
+  | zero => exact ⟨0, 0, .zero, by ext; simp, by ext; simp, by simp⟩
+  | add G H _ _ hG hH =>
+    obtain ⟨Ψ, g, hΨ, hg₀, hg₁, hθG⟩ := hG
+    obtain ⟨Φ, h, hΦ, hh₀, hh₁, hθH⟩ := hH
+    exact ⟨Ψ + Φ, g + h, hΨ.add hΦ, by ext; simp [hg₀, hh₀], by ext; simp [hg₁, hh₁],
+      by simp [hθG, hθH]⟩
+  | smul c G _ hG =>
+    obtain ⟨Ψ, g, hΨ, hg₀, hg₁, hθG⟩ := hG
+    exact ⟨c • Ψ, c • g, hΨ.const_smul c, by ext; simp [hg₀], by ext; simp [hg₁],
+      by simp [hθG]⟩
+
 /-- Stein interpolation of the Bessel potentials `J^{λ(z)}`, `λ(z) = (1 - z) λ₀ + z λ₁` with
 `λⱼ = aⱼ - bⱼ`, given the strip functions `z ↦ exp ((z - θ)²) exp (δ z² + ω z) J^{λ(z)} x` for
 `x ∈ H^{a₀,p₀} ∩ H^{a₁,p₁}`. On the boundary lines they are `exp ((j + i t - θ)²) J^{λⱼ + i t κ}`,
@@ -498,7 +430,8 @@ private theorem exists_besselPotentialSpace_complexMethod_map_aux {p₀ p₁ : �
   obtain ⟨C₀, hC₀⟩ := exists_norm_shiftedFamily_le (E := E) (F := F) hp₀ hp₀_top
   obtain ⟨C₁, hC₁⟩ := exists_norm_shiftedFamily_le (E := E) (F := F) hp₁ hp₁_top
   set N := finrank ℝ E / 2 + 1
-  set K : ℝ := Real.exp 1 * ((C₀ + C₁) * ((1 + |κ|) ^ N * Real.exp (N ^ 2 / 4)))
+  set K : ℝ := Real.exp 1 * ((C₀ + C₁) * ((1 + |κ|) ^ N *
+    (N.factorial / (1 / 2 : ℝ) ^ N * Real.exp 1)))
   have hK : 0 ≤ K := by positivity
   -- The boundary operators `T₀ t : H^{a₀,p₀} → H^{b₀,p₀}` and `T₁ t : H^{a₁,p₁} → H^{b₁,p₁}`.
   set T₀ := boundaryOp (E := E) (F := F) hp₀ hp₀_top a₀ b₀ κ 0 θ
@@ -511,34 +444,26 @@ private theorem exists_besselPotentialSpace_complexMethod_map_aux {p₀ p₁ : �
     (norm_exp_smul_shiftedFamily_le hp₁ hp₁_top hC₁ hθ ⟨zero_le_one, le_rfl⟩ a₁ b₁ κ t).trans
       (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right
         (le_add_of_nonneg_left C₀.coe_nonneg) (by positivity)) (by positivity))
-  set L := besselPotential E F ((1 - θ) * (a₀ - b₀) + θ * (a₁ - b₁))
-  -- Every elementary admissible function `G` has a matching strip function with traces `T G`.
-  have key : ∀ G ∈ X.elementaryStripTraces, ∃ (Ψ : ℂ → Y.SumSpace)
-      (g : (ℝ →ᵇ H^{b₀, p₀}(E, F)) × (ℝ →ᵇ H^{b₁, p₁}(E, F))), Y.IsBoundedStripFunction Ψ g ∧
-        (∀ t, g.1 t = T₀ t ((G : C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).1 t)) ∧
-        (∀ t, g.2 t = T₁ t ((G : C₀(ℝ, H^{a₀, p₀}(E, F)) × C₀(ℝ, H^{a₁, p₁}(E, F))).2 t)) ∧
-        Y.sumSpaceEmbed (Ψ θ) = L (X.sumSpaceEmbed (X.stripEval θ G)) := by
-    intro G hG
-    induction hG using elementaryStripTraces_induction with
-    | @expGaussian δ hδ ω x =>
-      obtain ⟨Ψ, hdc, hbd, hΨ⟩ := hstrip x hδ ω
-      obtain ⟨g, hg⟩ := exists_isBoundedStripFunction_expGaussianTrace hp₀ hp₀_top hp₁ hp₁_top hθ
-        hK hT₀ hT₁ x hδ ω hdc hbd hΨ
-      exact ⟨Ψ, g, hg⟩
-    | zero => exact ⟨0, 0, .zero, fun t ↦ by simp, fun t ↦ by simp, by simp⟩
-    | add G H _ _ hG hH =>
-      obtain ⟨Ψ, g, hΨ, hg₀, hg₁, hθG⟩ := hG
-      obtain ⟨Φ, h, hΦ, hh₀, hh₁, hθH⟩ := hH
-      exact ⟨Ψ + Φ, g + h, hΨ.add hΦ, fun t ↦ by simp [hg₀, hh₀],
-        fun t ↦ by simp [hg₁, hh₁], by simp [hθG, hθH]⟩
-    | smul c G _ hG =>
-      obtain ⟨Ψ, g, hΨ, hg₀, hg₁, hθG⟩ := hG
-      exact ⟨c • Ψ, c • g, hΨ.const_smul c, fun t ↦ by simp [hg₀],
-        fun t ↦ by simp [hg₁], by simp [hθG]⟩
-  obtain ⟨T, -, hT⟩ := ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces hθ L hK
-    fun G hG ↦ by
-      obtain ⟨Ψ, g, hΨ, hg₀, hg₁, hθG⟩ := key G hG
-      exact ⟨Ψ, g, hΨ, hθG, norm_le_mul_norm_of_forall_apply_eq hK _ g T₀ T₁ hT₀ hT₁ hg₀ hg₁⟩
+  have hK₀ (t : ℝ) (v : H^{a₀, p₀}(E, F)) : ‖T₀ t v‖ ≤ K * ‖v‖ := (T₀ t).le_of_opNorm_le (hT₀ t) v
+  have hK₁ (t : ℝ) (v : H^{a₁, p₁}(E, F)) : ‖T₁ t v‖ ≤ K * ‖v‖ := (T₁ t).le_of_opNorm_le (hT₁ t) v
+  -- Their pointwise action on boundary traces.
+  set B₀ := ZeroAtInftyContinuousMap.compLeftFamily T₀
+    (continuous_boundaryOp_apply hp₀ hp₀_top a₀ b₀ κ 0 θ) ⟨K, hK₀⟩
+  set B₁ := ZeroAtInftyContinuousMap.compLeftFamily T₁
+    (continuous_boundaryOp_apply hp₁ hp₁_top a₁ b₁ κ 1 θ) ⟨K, hK₁⟩
+  obtain ⟨T, -, hT⟩ := ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces hθ
+    (besselPotential E F ((1 - θ) * (a₀ - b₀) + θ * (a₁ - b₁))) hK fun G hG ↦ by
+      obtain ⟨Ψ, g, hΨ, h₀, h₁, hθG⟩ :=
+        exists_isBoundedStripFunction_of_mem_elementaryStripTraces hp₀ hp₀_top hp₁ hp₁_top hθ
+          hstrip B₀ B₁ (ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _)
+          (ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _) hG
+      refine ⟨Ψ, g, hΨ, hθG, norm_prod_le_iff.2 ⟨?_, ?_⟩⟩
+      · rw [h₀, ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
+        exact (ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hK₀ _).trans
+          (mul_le_mul_of_nonneg_left (norm_fst_le _) hK)
+      · rw [h₁, ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
+        exact (ZeroAtInftyContinuousMap.norm_compLeftFamily_apply_le _ _ _ hK₁ _).trans
+          (mul_le_mul_of_nonneg_left (norm_snd_le _) hK)
   exact ⟨T, hT⟩
 
 /-- The strip function of `exists_besselPotentialSpace_complexMethod_map`, computed from the

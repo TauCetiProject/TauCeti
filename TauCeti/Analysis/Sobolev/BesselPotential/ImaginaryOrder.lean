@@ -129,6 +129,7 @@ theorem fourierMultiplierCLM_japaneseBracketCpow_zero (u : 𝓢'(E, F)) :
 
 /-- Fourier multipliers with complex powers of the Japanese bracket compose by adding the orders:
 `J^w (J^v u) = J^{v + w} u` on tempered distributions. -/
+@[simp]
 theorem fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow
     (v w : ℂ) (u : 𝓢'(E, F)) :
     fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w)
@@ -228,10 +229,7 @@ distributions as Mathlib's Bessel potential `TemperedDistribution.besselPotentia
 theorem toDistr_besselPotentialCLM_ofReal (hp : 1 < p) (hp_top : p ≠ ∞) (t : ℝ)
     (u : H^{s, p}(E, F)) :
     (besselPotentialCLM hp hp_top (t : ℂ) u).toDistr = besselPotential E F t u.toDistr := by
-  rw [toDistr_besselPotentialCLM, besselPotential]
-  congr 2
-  funext ξ
-  exact TauCeti.japaneseBracketCpow_ofReal t ξ
+  rw [toDistr_besselPotentialCLM, besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow]
 
 /-- The Bessel potential of order `0` on the Sobolev scale is the identity, after identifying
 `H^{s - re 0,p}` with `H^{s,p}`. -/
