@@ -12,7 +12,8 @@ public import Mathlib.Topology.VectorBundle.Basic
 
 `VectorBundleCore.globalTrivializationOfCoordChangeEqId` identifies the total space of a core
 whose transition maps are the identity on every chart overlap with the product of its base and
-model fibre.
+model fibre, and `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId` packages it as a
+homeomorphism `Z.TotalSpace ≃ₜ B × F`.
 
 Although each fibre `Z.Fiber x` is definitionally `F`, the total space `Z.TotalSpace` carries the
 topology glued from the local charts of `Z` rather than the product topology on `B × F`, so a
@@ -34,7 +35,7 @@ variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
   (hcoord : ∀ i j, ∀ x ∈ Z.baseSet i ∩ Z.baseSet j, ∀ v, Z.coordChange i j x v = v)
 
 /-- The global product trivialization of a core whose transitions are the identity on chart
-overlaps: it has base set `univ`, sends `q : Z.TotalSpace` to `(q.proj, q.2)`, and has inverse
+overlaps: it has base set `univ`, sends `q : Z.TotalSpace` to `(q.proj, q.snd)`, and has inverse
 `q ↦ ⟨q.1, q.2⟩`. -/
 def globalTrivializationOfCoordChangeEqId : Trivialization F (π F Z.Fiber) where
   toFun := fun q ↦ (q.proj, q.snd)
@@ -95,5 +96,30 @@ instance globalTrivializationOfCoordChangeEqId_isLinear :
     (Z.globalTrivializationOfCoordChangeEqId hcoord).IsLinear 𝕜 where
   -- Unfold `VectorBundleCore.Fiber` to identify the fibre's module structure with that of `F`.
   linear _ _ := (LinearMap.id : F →ₗ[𝕜] F).isLinear
+
+/-- A vector bundle core whose transitions are the identity on chart overlaps has total space
+homeomorphic to `B × F`. -/
+def totalSpaceHomeomorphOfCoordChangeEqId : Z.TotalSpace ≃ₜ B × F :=
+  let t := Z.globalTrivializationOfCoordChangeEqId hcoord
+  t.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
+    (by
+      rw [t.source_eq, Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord, Set.preimage_univ])
+    (by
+      rw [t.target_eq, Z.globalTrivializationOfCoordChangeEqId_baseSet hcoord, Set.univ_prod_univ])
+
+/-- Forward evaluation of `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId`. -/
+@[simp]
+theorem totalSpaceHomeomorphOfCoordChangeEqId_apply (q : Z.TotalSpace) :
+    Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord q = (q.proj, q.snd) := by
+  rw [totalSpaceHomeomorphOfCoordChangeEqId,
+    OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_apply]
+  exact Z.globalTrivializationOfCoordChangeEqId_apply hcoord q
+
+/-- Inverse evaluation of `VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId`. -/
+@[simp]
+theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply (p : B × F) :
+    (Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm p = ⟨p.1, p.2⟩ := by
+  rw [(Z.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm_apply_eq]
+  exact (Z.totalSpaceHomeomorphOfCoordChangeEqId_apply hcoord ⟨p.1, p.2⟩).symm
 
 end VectorBundleCore

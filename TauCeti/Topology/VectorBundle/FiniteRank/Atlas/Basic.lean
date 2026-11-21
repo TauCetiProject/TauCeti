@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Constructions.SumProd
 public import TauCeti.Topology.VectorBundle.Core.Trivial
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
@@ -27,7 +28,7 @@ rather than replaced by the product topology on coordinates.
 at each base point. `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId` identifies the
 reconstructed total space of any atlas with identity transitions on chart overlaps with the
 disjoint union of the stratum products, via
-`VectorBundleCore.globalTrivializationOfCoordChangeEqId`.
+`VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId` and `Homeomorph.sigmaCongrRight`.
 `FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata, in any fibre
 universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction with
 their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
@@ -257,17 +258,6 @@ end ChartBaseSet
 
 section CoordChangeEqId
 
-private def stratumHomeomorphOfCoordChangeEqId
-    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
-      (A.charts n).coordChange i j x v = v) (n : ℕ) :
-    (A.charts n).TotalSpace ≃ₜ {x : X // A.rank x = n} × (Fin n → 𝕜) :=
-  let t := (A.charts n).globalTrivializationOfCoordChangeEqId (hcoord n)
-  t.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
-    (by rw [t.source_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
-      Set.preimage_univ])
-    (by rw [t.target_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
-      Set.univ_prod_univ])
-
 /-- The reconstructed total space of any atlas whose transitions are the identity on all chart
 overlaps is homeomorphic to the disjoint union of the product spaces over its rank strata. -/
 def totalSpaceHomeomorphOfCoordChangeEqId
@@ -275,36 +265,33 @@ def totalSpaceHomeomorphOfCoordChangeEqId
       (A.charts n).coordChange i j x v = v) :
     TotalSpace Unit A.Fiber ≃ₜ Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜) :=
   A.totalSpaceHomeomorph.symm.trans
-    ((Equiv.sigmaCongrRight fun n =>
-      (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv).toHomeomorphOfIsInducing
-      ((Equiv.isHomeomorph_iff_isInducing _).mp <|
-        (funext fun ⟨_, _⟩ => rfl :
-          ⇑(Equiv.sigmaCongrRight fun n =>
-            (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv) =
-          Sigma.map id fun n => ⇑(A.stratumHomeomorphOfCoordChangeEqId hcoord n)) ▸
-        IsHomeomorph.sigmaMap
-          (Y := fun n => {x : X // A.rank x = n} × (Fin n → 𝕜))
-          Function.bijective_id fun n =>
-          (A.stratumHomeomorphOfCoordChangeEqId hcoord n).isHomeomorph))
+    (Homeomorph.sigmaCongrRight fun n =>
+      (A.charts n).totalSpaceHomeomorphOfCoordChangeEqId (hcoord n))
 
+/-- Forward evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
 @[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_apply
     (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
       (A.charts n).coordChange i j x v = v)
     (p : TotalSpace Unit A.Fiber) :
-    A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ :=
-  congrArg (Sigma.mk (A.rank p.proj))
-    ((A.charts (A.rank p.proj)).globalTrivializationOfCoordChangeEqId_apply
-      (hcoord (A.rank p.proj)) ⟨⟨p.proj, rfl⟩, p.snd⟩)
+    A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ := by
+  rw [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.trans_apply,
+    A.totalSpaceHomeomorph_symm_apply, Homeomorph.sigmaCongrRight_apply]
+  dsimp only
+  rw [VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId_apply]
+  rfl
 
+/-- Inverse evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
 @[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
     (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
       (A.charts n).coordChange i j x v = v)
     (n : ℕ) (x : {x : X // A.rank x = n}) (v : Fin n → 𝕜) :
     (A.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm ⟨n, (x, v)⟩ =
-      ⟨x.val, fun i => v (Fin.cast x.property i)⟩ :=
-  congrArg (fun q => A.totalSpaceHomeomorph ⟨n, q⟩)
-    ((A.stratumHomeomorphOfCoordChangeEqId hcoord n).symm_apply_eq.mpr
-      ((A.charts n).globalTrivializationOfCoordChangeEqId_apply (hcoord n) ⟨x, v⟩).symm)
+      ⟨x.val, fun i => v (Fin.cast x.property i)⟩ := by
+  rw [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.symm_trans_apply,
+    Homeomorph.symm_symm, Homeomorph.sigmaCongrRight_symm_apply]
+  dsimp only
+  rw [VectorBundleCore.totalSpaceHomeomorphOfCoordChangeEqId_symm_apply,
+    A.totalSpaceHomeomorph_apply]
 
 end CoordChangeEqId
 
@@ -342,17 +329,21 @@ stratum trivialization domain at `z`. -/
 
 private noncomputable def gluedReconstructionHomeomorph :
     (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
-  (Equiv.sigmaCongrRight fun n =>
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv).toHomeomorphOfIsInducing
-    ((Equiv.isHomeomorph_iff_isInducing _).mp <|
-      (funext fun ⟨_, _⟩ => rfl :
-        ⇑(Equiv.sigmaCongrRight fun n =>
-          (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv) =
-        Sigma.map id fun n => ⇑(pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))) ▸
-      IsHomeomorph.sigmaMap
-        (Y := fun n => TotalSpace (Fin n → 𝕜) (E n))
-        Function.bijective_id fun n =>
-        (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).isHomeomorph)
+  Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
+
+private theorem gluedReconstructionHomeomorph_apply
+    (p : (ofBundles 𝕜 r E).GluedTotalSpace) :
+    gluedReconstructionHomeomorph 𝕜 r E p =
+      ⟨p.1, pointIndexedCoreHomeomorph 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2⟩ := by
+  exact Homeomorph.sigmaCongrRight_apply
+    (fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)) p
+
+private theorem gluedReconstructionHomeomorph_symm_apply
+    (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
+    (gluedReconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
+      ⟨n, (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm p⟩ := by
+  exact Homeomorph.sigmaCongrRight_symm_apply
+    (fun m => pointIndexedCoreHomeomorph 𝕜 (Fin m → 𝕜) (E m)) ⟨n, p⟩
 
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear
@@ -366,7 +357,9 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  -- The sigma equivalence applies the existing reconstruction on the selected stratum.
+  rw [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
+    gluedReconstructionHomeomorph_apply]
+  dsimp only
   exact congrArg (Sigma.mk (r p.proj))
     (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) _)
 
@@ -377,8 +370,9 @@ by the canonical inclusion of that stratum into the reconstructed total space. -
     (reconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
         ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.snd⟩⟩ := by
-  exact congrArg (fun q => (ofBundles 𝕜 r E).totalSpaceHomeomorph ⟨n, q⟩)
-    (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) (E n) p)
+  rw [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+    gluedReconstructionHomeomorph_symm_apply, pointIndexedCoreHomeomorph_symm_apply]
+  rfl
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
 @[simp] theorem proj_reconstructionHomeomorph

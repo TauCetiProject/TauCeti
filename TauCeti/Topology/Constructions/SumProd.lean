@@ -19,8 +19,9 @@ assumptions on either factor.
 In particular, graphs with values in a space without isolated points have empty interior.
 
 The file also records the underlying function of the homeomorphism between functions on a
-sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
-a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
+sum type and pairs of functions, identifies a disjoint union of copies of one space, indexed by
+a discrete space, with a product (`Homeomorph.sigmaEquivProd`), and bundles a family of fibre
+homeomorphisms into a homeomorphism of sigma types (`Homeomorph.sigmaCongrRight`).
 -/
 
 public section
@@ -54,6 +55,31 @@ index `i`. -/
 theorem Homeomorph.sigmaEquivProd_symm_apply {ι X : Type*} [TopologicalSpace ι]
     [DiscreteTopology ι] [TopologicalSpace X] (p : ι × X) :
     (Homeomorph.sigmaEquivProd ι X).symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
+
+/-- A family of homeomorphisms `∀ a, β₁ a ≃ₜ β₂ a` induces a homeomorphism between
+`Σ a, β₁ a` and `Σ a, β₂ a`. -/
+def Homeomorph.sigmaCongrRight {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) : (Σ a, β₁ a) ≃ₜ Σ a, β₂ a where
+  toEquiv := Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv
+  continuous_toFun := continuous_sigma fun a ↦ continuous_sigmaMk.comp (F a).continuous
+  continuous_invFun := continuous_sigma fun a ↦ continuous_sigmaMk.comp (F a).symm.continuous
+
+/-- `Homeomorph.sigmaCongrRight F` applies `F a` on each summand `a`. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_apply {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₁ a) :
+    Homeomorph.sigmaCongrRight F p = ⟨p.1, F p.1 p.2⟩ :=
+  (rfl)
+
+/-- The inverse of `Homeomorph.sigmaCongrRight F` applies `(F a).symm` on each summand `a`. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_symm_apply {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₂ a) :
+    (Homeomorph.sigmaCongrRight F).symm p = ⟨p.1, (F p.1).symm p.2⟩ :=
   (rfl)
 
 namespace TauCeti
