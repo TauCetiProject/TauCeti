@@ -34,14 +34,14 @@ are at most `2ⁿ` such index sets, and the summand for `I` is the product of th
 `r + 1` in `|I| - 1` and `n - |I| + 1` unknowns. The increase of the base from `5n` to `6n` absorbs
 these factors and the increase of the rank.
 
-The subspace theorem enters as a hypothesis, `TauCeti.IsUnitEquationCoverBound` for the cover
-bound `⌊exp ((5m)^(3m) (s + 1))⌋₊`: this file does not prove it, and it fails in positive
-characteristic. The bound is stated twice. The first version is conditional on a cover bound over
-the field `K` itself. The second assumes the cover bound only over an algebraically
+The subspace theorem enters as a hypothesis, `TauCeti.IsUnitEquationCoverBound` for the cover bound
+`⌊exp ((5m)^(3m) (s + 1))⌋₊`: this file does not prove it, and it does not extend to arbitrary
+fields of positive characteristic. The bound is stated twice. The first version is conditional on a
+cover bound over the field `K` itself. The second assumes the cover bound only over an algebraically
 closed field `L`, such as `AlgebraicClosure ℚ` as in the cited Theorem 2.1, and transfers the
 resulting bound to every domain `K` sharing a subfield with `L` by specialization
-(`TauCeti.encard_isNondegenerateSolution_le_of_isAlgClosed`). Each version bounds the whole
-solution set by `⌊exp ((6n)^(3n) (r + 1))⌋₊` and then every finite set of solutions by
+(`TauCeti.encard_isNondegenerateSolution_le_of_isAlgClosed`). Each version bounds the whole solution
+set by `⌊exp ((6n)^(3n) (r + 1))⌋₊` and then every finite set of solutions by
 `exp ((6n)^(3n) (r + 1))`.
 
 ## Main results
@@ -176,14 +176,6 @@ theorem unitEquationNondegenerateBound_le_exp {N : ℕ → ℕ → ℕ} (n r : �
         nlinarith [mul_le_mul_of_nonneg_right hkey (by positivity : (0 : ℝ) ≤ r + 1),
           (Nat.cast_nonneg _ : (0 : ℝ) ≤ (n + 2 : ℕ)), (r.cast_nonneg : (0 : ℝ) ≤ r)]
 
-/-- The recursive bound for the cover bound `⌊exp ((5m)^(3m) (s + 1))⌋₊` is at most
-`⌊exp ((6n)^(3n) (r + 1))⌋₊`. -/
-private lemma unitEquationNondegenerateBound_le_floor_exp (n r : ℕ) :
-    (unitEquationNondegenerateBound (fun m s ↦ ⌊exp ((5 * m : ℝ) ^ (3 * m) * (s + 1))⌋₊) n r :
-        ℕ∞) ≤ ⌊exp ((6 * n : ℝ) ^ (3 * n) * (r + 1))⌋₊ :=
-  Nat.cast_le.mpr <| Nat.le_floor <|
-    unitEquationNondegenerateBound_le_exp n r fun _ _ _ _ _ ↦ Nat.floor_le (exp_pos _).le
-
 /-- **The Evertse–Schlickewei–Schmidt bound, from the subspace theorem for unit equations.**
 Suppose that `⌊exp ((5m)^(3m) (s + 1))⌋₊` bounds the subspace covers for unit equations over `K`
 (`TauCeti.IsUnitEquationCoverBound`): for every `m ≥ 2` and every subgroup of `(Fin m → Kˣ)` of
@@ -198,8 +190,9 @@ theorem encard_isNondegenerateSolution_le_floor_exp_of_subspaceCover {K : Type u
     (hΓ : Module.rank ℤ (Additive Γ) ≤ r) (a : ι → K) :
     {x | x ∈ Γ ∧ IsNondegenerateSolution a fun i ↦ (x i : K)}.encard ≤
       ⌊exp ((6 * Fintype.card ι : ℝ) ^ (3 * Fintype.card ι) * (r + 1))⌋₊ :=
-  (encard_isNondegenerateSolution_le_of_subspaceCover hN Γ hΓ a).trans
-    (unitEquationNondegenerateBound_le_floor_exp _ r)
+  (encard_isNondegenerateSolution_le_of_subspaceCover hN Γ hΓ a).trans <| Nat.cast_le.mpr <|
+    Nat.le_floor <| unitEquationNondegenerateBound_le_exp _ r fun _ _ _ _ _ ↦
+      Nat.floor_le (exp_pos _).le
 
 /-- **The Evertse–Schlickewei–Schmidt bound for finite sets of solutions.** Under the cover
 hypothesis of `TauCeti.encard_isNondegenerateSolution_le_floor_exp_of_subspaceCover`, for a
