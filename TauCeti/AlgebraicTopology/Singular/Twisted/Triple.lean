@@ -220,8 +220,9 @@ lemma twistedHomologyTotalToOuter_naturality_coefficient
       (T.twistedChainComplexTotalToOuter_naturality η)).trans
       (HomologicalComplex.homologyMap_comp _ _ _))
 
-/-- The quotient on relative twisted homology commutes with maps of the total and outer pairs of
-two triples that have the same ambient component, once the coefficients are matched. -/
+/-- The quotient `Hₖ(X, B) ⟶ Hₖ(X, A)` of a triple commutes with a map `g'` of the total pairs and
+a map `g` of the outer pairs that have the same ambient component, once the coefficients are
+matched. -/
 @[reassoc]
 lemma twistedHomologyTotalToOuter_naturality_of_fst_eq {T' : TopTriple.{v}}
     {S : LocalCoefficientSystem.{u, v, max v w} R T'.fst}
@@ -245,8 +246,7 @@ lemma twistedHomologyTotalToOuter_naturality_of_fst_eq {T' : TopTriple.{v}}
     TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
     TopPair.twistedChainComplexπ_comp_twistedChainComplexMap_assoc,
     twistedChainComplexπ_comp_totalToOuter, twistedChainComplexMap_congr _ S hg, ← ha,
-    twistedChainComplexCoefficientMap_comp_assoc]
-  rfl
+    twistedChainComplexCoefficientMap_comp_assoc, eqToIso.hom, Category.assoc]
 
 /-- The triple sequence ends with a surjection on degree-zero relative homology. -/
 instance : Epi (T.twistedHomologyTotalToOuter L 0) :=

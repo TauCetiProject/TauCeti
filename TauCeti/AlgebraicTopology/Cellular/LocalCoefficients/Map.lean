@@ -121,6 +121,7 @@ lemma pullback_obj_eq_pullback_complexBasePairMap :
     (pullback f.hom).obj L =
       (pullback (TopPair.Hom.fst (complexBasePairMap C C' hf)).hom).obj L := by
   rw [complexBasePairMap_fst]
+  -- `(complexBasePair C).fst` is `TopCat.of C` by definition.
   rfl
 
 /-! ### The chain map -/
@@ -187,14 +188,10 @@ lemma twistedCellularChainGroupMap_comp_twistedCellularDifferential (n : ℕ) :
   have h₁ := TopPair.twistedHomologyδ_naturality_coefficient (skeletonPair C (n + 1))
     (eqToHom (skeletonSystem_pullback_obj_eq_pullback_skeletonPairMap C C' hf L (n + 1)))
     (n + 1) n rfl
-  have key := (congrArg (fun x ↦ (skeletonPair C (n + 1)).twistedHomologyCoefficientMap
-      (eqToHom (skeletonSystem_pullback_obj_eq_pullback_skeletonPairMap C C' hf L (n + 1)))
-        (n + 1) ≫ x) hδ.symm).trans
-    ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h₁.symm).trans (Category.assoc _ _ _)))
   simp only [Category.assoc]
   -- The skeletal pairs agree with the pairs of the lemmas above only after unfolding them, so
   -- `erw` is needed to rewrite.
-  erw [reassoc_of% key]
+  erw [← reassoc_of% hδ, ← reassoc_of% h₁]
   congr 1
   -- The subspace component of the map of `(Xⁿ⁺¹, Xⁿ)` is the ambient component of that of
   -- `(Xⁿ, Xⁿ⁻¹)`; the remaining coefficient maps identify fibres of `L` over equal points.
@@ -214,6 +211,8 @@ lemma twistedCellularChainGroupMap_comp_twistedCellularDifferential (n : ℕ) :
     TopPair.subspaceSystemPullbackIso_hom_app, skeletonPairSubspaceSystemIso_hom_app,
     eqToHom_app, eqToHom_app, eqToHom_app, Category.id_comp, Category.id_comp, eqToHom_trans,
     eqToHom_trans]
+  -- Both sides are now identifications of the same two fibres of `L`, stated over the skeletal
+  -- pairs and their unfoldings, so they agree definitionally.
   rfl
 
 /-- **A cellular map induces a chain map of cellular chain complexes with local coefficients**,
@@ -288,13 +287,11 @@ lemma twistedCellularCyclesι_naturality (n : ℕ) :
   | zero =>
     rw [twistedCellularCyclesι_zero, twistedCellularCyclesι_zero, Category.id_comp,
       Category.comp_id, twistedCellularChainGroupMap, twistedHomologySkeletonBasePairMap]
-    -- In degree `0` the skeletal pair and the skeletal pair relative to the base coincide.
+    -- In degree `0` the skeletal pair and the skeletal pair relative to the base coincide only
+    -- after unfolding them, so `erw` is needed to rewrite.
     have hg := (skeletonPairMap_fst C C' hf 0).trans (skeletonBasePairMap_fst C C' hf 0).symm
-    exact (congrArg (_ ≫ ·) (TopPair.twistedHomologyMap_eq_of_fst_eq (skeletonPairMap C C' hf 0)
-      (skeletonSystem C' L 1) hg 0)).trans
-        ((TopPair.twistedHomologyCoefficientMap_comp_assoc _ _ _ _ _ _).symm.trans
-          (congrArg (fun φ ↦ (skeletonPair C 0).twistedHomologyCoefficientMap φ 0 ≫
-            TopPair.twistedHomologyMap (skeletonBasePairMap C C' hf 0) _ 0) (eqToHom_trans _ _)))
+    erw [TopPair.twistedHomologyMap_congr (f := skeletonPairMap C C' hf 0) _ hg,
+      ← TopPair.twistedHomologyCoefficientMap_comp_assoc, eqToHom_trans]
   | succ n =>
     rw [twistedCellularCyclesι_succ, twistedCellularCyclesι_succ, twistedCellularChainGroupMap,
       twistedHomologySkeletonBasePairMap]
