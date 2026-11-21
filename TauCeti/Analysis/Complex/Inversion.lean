@@ -8,12 +8,16 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Homeomorph.Defs
+public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Topology.Bornology.BoundedOperation
 import Mathlib.Topology.Algebra.GroupWithZero
+import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Geometry.Manifold.Connected
+import TauCeti.LinearAlgebra.Complex.Finrank
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -22,7 +26,9 @@ import TauCeti.Topology.Separation.InvFunOn
 Let `G` be a map of the unit disc with `G 0 = 0` which does not vanish on the punctured disc, and
 `p` a point of the plane. The map `w ↦ p + (G w⁻¹)⁻¹` is then defined on the exterior of the closed
 unit disc. This file records the elementary properties of this map that are used to pass between a
-Riemann map of a domain `W` and the Riemann map of the exterior of the inverted domain.
+Riemann map of a domain `W` and the Riemann map of the exterior of the inverted domain, together
+with the transport of the unbounded complementary component of a closed set `K` under
+`z ↦ (z - a₀)⁻¹`.
 
 ## Main results
 
@@ -33,6 +39,9 @@ Riemann map of a domain `W` and the Riemann map of the exterior of the inverted 
 * `TauCeti.exists_homeomorph_compl_ball_add_inv_comp_inv`: if `G` is a bijection of the closed disc
   onto a set `K` whose punctured copy is the inversion of `S`, the map is a homeomorphism of the
   closed exterior onto `S`.
+* `IsClosed.notMem_filledHull_inv_sub_image`: inverting a closed set `K` about a point `a₀` outside
+  its filled hull sends the punctured unbounded component of `Kᶜ` into the component of `0`, so `0`
+  lies outside the filled hull of the image.
 -/
 
 public section
@@ -111,5 +120,56 @@ theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {K S : S
       (hleft w.property),
     fun y => Subtype.ext (hright y.property)⟩, hhc.mapsToRestrict hbij.mapsTo,
     hkc.mapsToRestrict hkmaps⟩, fun _ => rfl⟩
+
+/-- Under inversion `z ↦ (z - a₀)⁻¹` about a point `a₀` in the unbounded complementary component of
+a closed set `K ⊆ ℂ`, the image of `connectedComponentIn Kᶜ a₀ \ {a₀}` lies in the unbounded
+component of `((fun z ↦ (z - a₀)⁻¹) '' K)ᶜ`, which also contains `0`; hence
+`0 ∉ filledHull ((fun z ↦ (z - a₀)⁻¹) '' K)`. -/
+theorem _root_.IsClosed.notMem_filledHull_inv_sub_image {K : Set ℂ} {a₀ : ℂ} (hK : IsClosed K)
+    (ha₀ : a₀ ∉ filledHull K) :
+    0 ∉ filledHull ((fun z ↦ (z - a₀)⁻¹) '' K) ∧
+      (fun z ↦ (z - a₀)⁻¹) '' (connectedComponentIn Kᶜ a₀ \ {a₀}) ⊆
+        connectedComponentIn ((fun z ↦ (z - a₀)⁻¹) '' K)ᶜ 0 := by
+  let φ : ℂ → ℂ := fun z ↦ (z - a₀)⁻¹
+  set D := connectedComponentIn Kᶜ a₀
+  have hφ_inj : Function.Injective φ := inv_injective.comp (sub_left_injective (b := a₀))
+  have hφ_cont : ContinuousOn φ {a₀}ᶜ :=
+    (continuousOn_id.sub continuousOn_const).inv₀ fun z hz h ↦ hz (sub_eq_zero.mp h)
+  have ha₀K : a₀ ∉ K := fun h ↦ ha₀ (subset_filledHull h)
+  have h0K' : (0 : ℂ) ∉ φ '' K := by
+    rintro ⟨z, hzK, h0⟩
+    exact inv_ne_zero (sub_ne_zero.mpr fun h : z = a₀ ↦ ha₀K (h ▸ hzK)) h0
+  have hD_open : IsOpen D := hK.isOpen_compl.connectedComponentIn
+  have hD_sdiff_preconn : IsPreconnected (D \ {a₀}) :=
+    isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank Complex.one_lt_rank_real hD_open
+      isPreconnected_connectedComponentIn isClosed_singleton (Set.finite_singleton a₀).isDiscrete
+  have hImg_sub : φ '' (D \ {a₀}) ⊆ (φ '' K)ᶜ :=
+    Set.subset_compl_iff_disjoint_right.mpr <| (Set.disjoint_image_iff hφ_inj).mpr <|
+      Set.subset_compl_iff_disjoint_right.mp
+        (sdiff_subset.trans (connectedComponentIn_subset Kᶜ a₀))
+  have hD_sdiff_unbdd : ¬ IsBounded (D \ {a₀}) := fun hbd ↦
+    (mem_filledHull_iff.not.mp ha₀) <| (hbd.insert a₀).subset fun z hz ↦ by
+      by_cases hza : z = a₀
+      · simp [hza]
+      · exact Or.inr ⟨hz, hza⟩
+  have h0_cl : (0 : ℂ) ∈ closure (φ '' (D \ {a₀})) := by
+    rw [closure_image_inv_sub hD_sdiff_unbdd]
+    exact mem_insert 0 _
+  have hD_sub : φ '' (D \ {a₀}) ⊆ connectedComponentIn (φ '' K)ᶜ 0 :=
+    (subset_insert 0 _).trans <|
+      ((hD_sdiff_preconn.image φ (hφ_cont.mono fun _ hz ↦ hz.2)).subset_closure
+        (subset_insert _ _) (insert_subset h0_cl subset_closure)).subset_connectedComponentIn
+        (mem_insert 0 _) (insert_subset h0K' hImg_sub)
+  have ha₀_cl : a₀ ∈ closure (D \ {a₀}) := mem_closure_iff_nhds.mpr fun U hU ↦ by
+    obtain ⟨z, ⟨hzU, hzD⟩, hza⟩ :=
+      (inferInstance : (𝓝[≠] a₀).NeBot).nonempty_of_mem <|
+        Filter.inter_mem
+          (nhdsWithin_le_nhds
+            (Filter.inter_mem hU (hD_open.mem_nhds (mem_connectedComponentIn ha₀K))))
+          self_mem_nhdsWithin
+    exact ⟨z, hzU, hzD, hza⟩
+  have hImg_unbdd : ¬ IsBounded (φ '' (D \ {a₀})) :=
+    not_isBounded_image_sub_inv_of_mem_closure ha₀_cl (fun h ↦ h.2 rfl)
+  exact ⟨mem_filledHull_iff.not.mpr fun hbd ↦ hImg_unbdd (hbd.subset hD_sub), hD_sub⟩
 
 end TauCeti

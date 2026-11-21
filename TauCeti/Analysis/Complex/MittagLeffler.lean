@@ -10,8 +10,9 @@ public import Mathlib.Analysis.Meromorphic.NormalForm
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.RemovableSingularity
-import TauCeti.Analysis.Complex.Runge.Laurent
+import TauCeti.Analysis.Complex.Runge.Approximation
 import TauCeti.Analysis.Normed.Module.Exhaustion
 import TauCeti.Topology.Codiscrete
 
@@ -352,9 +353,10 @@ end HasPrescribedSingularities
 
 /-! ### Compact-exhaustion patching -/
 
+omit [CompleteSpace F] in
 /-- Construct holomorphic Runge correction terms on each compact piece `K k` for the `(k + 1)`-th
 batch of global singular representatives. -/
-private theorem exists_corr_seq {Ω E : Set ℂ} (hΩ : IsOpen Ω)
+private theorem exists_corr_seq {Ω E : Set ℂ}
     {K : ℕ → Set ℂ} (hKcpt : ∀ n, IsCompact (K n)) (hKΩ : ∀ n, K n ⊆ Ω)
     (hKfill : ∀ n, IsFilledIn (K n) Ω) (S : ℕ → Finset E)
     (hSavoid : ∀ k, ∀ a ∈ S (k + 1), a.val ∉ K k)
@@ -362,9 +364,16 @@ private theorem exists_corr_seq {Ω E : Set ℂ} (hΩ : IsOpen Ω)
     ∃ corr : ℕ → ℂ → F, (∀ n, DifferentiableOn ℂ (corr n) Ω) ∧
       ∀ k, ∀ z ∈ K k, ‖(∑ a ∈ S (k + 1), q a z) - corr (k + 1) z‖ ≤ (1 / 2 : ℝ) ^ k := by
   have hstep : ∀ k : ℕ, ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
-      ∀ z ∈ K k, ‖(∑ a ∈ S (k + 1), q a z) - g z‖ < (1 / 2 : ℝ) ^ k := fun k =>
-    (hKfill k).exists_differentiableOn_norm_sum_sub_lt_of_differentiableOn_compl_singleton
-      (S (k + 1)) hΩ (hKcpt k) (hKΩ k) (hSavoid k) (fun a _ => hq a) (by positivity)
+      ∀ z ∈ K k, ‖(∑ a ∈ S (k + 1), q a z) - g z‖ < (1 / 2 : ℝ) ^ k := fun k => by
+    let U : Set ℂ := (Subtype.val '' (S (k + 1) : Set E))ᶜ
+    have hU_open : IsOpen U :=
+      ((S (k + 1)).finite_toSet.image Subtype.val).isClosed.isOpen_compl
+    have hKU : K k ⊆ U := fun z hz ⟨a, ha, haz⟩ => hSavoid k a ha (haz ▸ hz)
+    have hsum_diff : DifferentiableOn ℂ (fun z => ∑ a ∈ S (k + 1), q a z) U :=
+      DifferentiableOn.fun_sum fun a ha =>
+        (hq a).mono fun z hz hza => hz ⟨a, ha, hza.symm⟩
+    exact (hKfill k).exists_differentiableOn_norm_sub_lt (hKcpt k) (hKΩ k) hU_open hKU hsum_diff
+      (by positivity)
   choose g hg hbound using hstep
   refine ⟨Nat.rec 0 fun k _ => g k, ?_, fun k z hz => (hbound k z hz).le⟩
   rintro (_ | k)
@@ -491,7 +500,7 @@ private theorem exists_hasPrescribedSingularities_of_isOpen
   choose q hq_an _ g hg_an hPq using fun a : E =>
     exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt (hP a)
   have hq_diff : ∀ a : E, DifferentiableOn ℂ (q a) {a.val}ᶜ := fun a => (hq_an a).differentiableOn
-  obtain ⟨corr, hcorr, hbound⟩ := exists_corr_seq hΩ hKcpt hKΩ hKfill S
+  obtain ⟨corr, hcorr, hbound⟩ := exists_corr_seq hKcpt hKΩ hKfill S
     (fun k => hSavoid k (k + 1) (Nat.lt_succ_self k)) hq_diff
   let term : ℕ → ℂ → F := fun n z => (∑ a ∈ S n, q a z) - corr n z
   refine ⟨fun z => ∑' n : ℕ, term n z,

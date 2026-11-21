@@ -59,7 +59,11 @@ coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top 
 the subleading term is read off from the Taylor expansion of `p` at `-a`.
 
 Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
-of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
+of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`), and
+composing the degree-`d` reflection with `X - C a₀` evaluates to `(z - a₀) ^ d * P.eval (z - a₀)⁻¹`
+with degree at most `d` and degree-`d` coefficient `P.eval 0`
+(`Polynomial.eval_reflect_comp_X_sub_C`, `Polynomial.natDegree_reflect_comp_X_sub_C_le`,
+`Polynomial.coeff_reflect_comp_X_sub_C`).
 -/
 
 public section
@@ -433,5 +437,41 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
   rw [Finset.prod_congr rfl hlin]
   simp only [Finset.prod_mul_distrib, ← map_prod]
   rw [← mul_assoc, ← C_mul]
+
+/-- Evaluating the translated reflection `(P.reflect d).comp (X - C a₀)` at `z ≠ a₀` gives
+`(z - a₀) ^ d * P.eval (z - a₀)⁻¹` whenever `P.natDegree ≤ d`. -/
+theorem eval_reflect_comp_X_sub_C {K : Type*} [Field K] {a₀ z : K} {d : ℕ} {P : K[X]}
+    (hP : P.natDegree ≤ d) (hz : z ≠ a₀) :
+    ((P.reflect d).comp (X - C a₀)).eval z = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by
+  have hu : z - a₀ ≠ 0 := sub_ne_zero.mpr hz
+  let : Invertible (z - a₀)⁻¹ := invertibleOfNonzero (inv_ne_zero hu)
+  have h := eval₂_reflect_mul_pow (RingHom.id K) (z - a₀)⁻¹ d P hP
+  simp only [eval₂_id, invOf_eq_inv, inv_inv] at h
+  rw [eval_comp, eval_sub, eval_X, eval_C]
+  calc (P.reflect d).eval (z - a₀)
+      = ((P.reflect d).eval (z - a₀) * ((z - a₀)⁻¹) ^ d) * (z - a₀) ^ d := by
+        rw [mul_assoc, ← mul_pow, inv_mul_cancel₀ hu, one_pow, mul_one]
+    _ = (z - a₀) ^ d * P.eval (z - a₀)⁻¹ := by rw [h, mul_comm]
+
+/-- Reflecting at a degree bound `d` and translating by `X - C a₀` preserves the degree bound
+`d`. -/
+theorem natDegree_reflect_comp_X_sub_C_le [Ring R] (a₀ : R) {d : ℕ} {P : R[X]}
+    (hP : P.natDegree ≤ d) : ((P.reflect d).comp (X - C a₀)).natDegree ≤ d :=
+  natDegree_comp_le.trans <|
+    (Nat.mul_le_mul_left _ (natDegree_X_sub_C_le a₀)).trans <| by
+      simpa only [mul_one] using natDegree_reflect_le_of_natDegree_le hP
+
+/-- The degree-`d` coefficient of `(Q.reflect d).comp (X - C a₀)` equals `Q.eval 0` whenever
+`Q.natDegree ≤ d`. -/
+theorem coeff_reflect_comp_X_sub_C [CommRing R] (a₀ : R) {d : ℕ} {Q : R[X]}
+    (hQ : Q.natDegree ≤ d) : ((Q.reflect d).comp (X - C a₀)).coeff d = Q.eval 0 := by
+  have hq : (Q.reflect d).natDegree ≤ d := natDegree_reflect_le_of_natDegree_le hQ
+  rw [sub_eq_add_neg, ← C_neg, ← taylor_apply, coeff_taylor_eq_sum (Nat.lt_succ_of_le hq)]
+  rw [Finset.sum_eq_single 0]
+  · simp [coeff_zero_eq_eval_zero]
+  · intro k _ hk0
+    have hgt : (Q.reflect d).natDegree < k + d := lt_of_le_of_lt hq (by omega)
+    simp [coeff_eq_zero_of_natDegree_lt hgt]
+  · simp
 
 end Polynomial

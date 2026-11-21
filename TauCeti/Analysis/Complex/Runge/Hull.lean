@@ -257,7 +257,7 @@ theorem exists_differentiableOn_norm_lt_one_lt_of_notMem_holomorphicHull {Ω K :
 /-- A subset `K ⊆ Ω` equals its `Ω`-holomorphic hull if and only if every point of `Ω \ K` is
 strictly separated from `K` by an `Ω`-holomorphic function of modulus `< 1` on `K` and `> 1` at
 the point. -/
-theorem holomorphicHull_eq_self_iff_forall_notMem_exists_differentiableOn_norm_lt_one_lt
+theorem holomorphicHull_eq_self_iff_forall_mem_sdiff_exists_differentiableOn_norm_lt_one_lt
     {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
     holomorphicHull Ω K = K ↔
       ∀ z ∈ Ω \ K, ∃ f : ℂ → ℂ, DifferentiableOn ℂ f Ω ∧ (∀ w ∈ K, ‖f w‖ < 1) ∧ 1 < ‖f z‖ := by

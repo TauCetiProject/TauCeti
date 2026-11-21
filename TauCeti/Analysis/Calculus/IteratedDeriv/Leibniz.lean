@@ -24,6 +24,9 @@ without changing them.
 * `TauCeti.iteratedDeriv_pow_sub_smul_self`: the identity above.
 * `TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul`: the `(p + i)`-th Taylor coefficient of
   `z ↦ (z - a) ^ p • h z` at `a` is the `i`-th Taylor coefficient of `h`.
+* `TauCeti.iteratedDeriv_pow_sub_smul_eq_zero` and
+  `TauCeti.iteratedDeriv_prod_pow_sub_smul_eq_zero`: derivatives of order `< m a` at `a` vanish
+  when a `C^k` function is multiplied by `(z - a) ^ n` or `∏ b ∈ S, (z - b) ^ m b`.
 -/
 
 public section
@@ -85,5 +88,38 @@ theorem inv_factorial_smul_iteratedDeriv_pow_sub_smul [CharZero 𝕜] (p i : ℕ
   rw [← h]
   push_cast
   field_simp
+
+/-- All derivatives of order `k < n` of `z ↦ (z - a) ^ n • h z` vanish at `a` whenever `h` is
+`C^k` at `a`. -/
+theorem iteratedDeriv_pow_sub_smul_eq_zero {h : 𝕜 → E} {n k : ℕ} (hh : ContDiffAt 𝕜 k h a)
+    (hk : k < n) : iteratedDeriv k (fun z ↦ (z - a) ^ n • h z) a = 0 := by
+  have hpow (i : ℕ) (hi : i ≤ k) : iteratedDeriv i (fun z : 𝕜 ↦ (z - a) ^ n) a = 0 := by
+    rw [iteratedDeriv_comp_sub_const i (· ^ n) a]
+    dsimp only
+    rw [sub_self, iteratedDeriv_fun_pow_zero, ite_eq_right (by omega), Nat.cast_zero]
+  have hL := iteratedDerivWithin_smul (Set.mem_univ a) uniqueDiffOn_univ (n := k)
+    (f := fun z : 𝕜 ↦ (z - a) ^ n) (by fun_prop) hh.contDiffWithinAt
+  simp only [iteratedDerivWithin_univ] at hL
+  have hfun : (fun z ↦ (z - a) ^ n • h z) = (fun z : 𝕜 ↦ (z - a) ^ n) • h := by
+    ext z
+    simp only [Pi.smul_apply']
+  rw [hfun, hL]
+  exact Finset.sum_eq_zero fun i hi ↦ by
+    rw [hpow i (Finset.mem_range_succ_iff.mp hi), zero_smul, smul_zero]
+
+/-- Multiplying a function `C^k` at `a ∈ S` by `∏ b ∈ S, (z - b) ^ m b` annihilates all
+derivatives of order `k < m a` at `a`. -/
+theorem iteratedDeriv_prod_pow_sub_smul_eq_zero (S : Finset 𝕜) (m : 𝕜 → ℕ) {r : 𝕜 → E}
+    {a : 𝕜} (ha : a ∈ S) {k : ℕ} (hra : ContDiffAt 𝕜 k r a) (hk : k < m a) :
+    iteratedDeriv k (fun z ↦ (∏ b ∈ S, (z - b) ^ m b) • r z) a = 0 := by
+  classical
+  have hfactor : (fun z ↦ (∏ b ∈ S, (z - b) ^ m b) • r z) =
+      fun z ↦ (z - a) ^ m a • ((∏ b ∈ S.erase a, (z - b) ^ m b) • r z) := by
+    ext z
+    rw [← Finset.mul_prod_erase S (fun b ↦ (z - b) ^ m b) ha, mul_smul]
+  rw [hfactor]
+  have hr' : ContDiffAt 𝕜 k (fun z ↦ (∏ b ∈ S.erase a, (z - b) ^ m b) • r z) a :=
+    (by fun_prop : ContDiffAt 𝕜 k (fun z : 𝕜 ↦ ∏ b ∈ S.erase a, (z - b) ^ m b) a).smul hra
+  exact iteratedDeriv_pow_sub_smul_eq_zero hr' hk
 
 end TauCeti

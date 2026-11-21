@@ -35,6 +35,8 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
 ## Main declarations
 
 * `TauCeti.IsFilledIn`: no connected component of `Ω \ K` is relatively compact in `Ω`.
+* `TauCeti.IsFilledIn.compl_inter_connectedComponentIn_nonempty`: every bounded connected
+  component of `Kᶜ` meets `Ωᶜ` (without closedness, openness, or local connectedness).
 * `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset`: the same
   condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
@@ -182,31 +184,26 @@ end Topology
 
 section MetricSpace
 
-variable {X : Type*} [PseudoMetricSpace X] [ProperSpace X] [LocallyConnectedSpace X] {K Ω : Set X}
+variable {X : Type*} [PseudoMetricSpace X] [ProperSpace X] {K Ω : Set X}
 
-/-- If a closed set `K ⊆ Ω` is filled in `Ω`, then no bounded connected component of `Kᶜ` is
-contained in `Ω` (without requiring `Ω` to be open). -/
-theorem IsFilledIn.not_connectedComponentIn_subset (hfill : IsFilledIn K Ω) (hK : IsClosed K)
-    (hKΩ : K ⊆ Ω) {x : X} (hxH : x ∈ filledHull K) (hxK : x ∉ K) :
-    ¬ connectedComponentIn Kᶜ x ⊆ Ω := by
-  intro hDΩ
+/-- If a set `K ⊆ Ω` is filled in `Ω`, then every bounded connected component of `Kᶜ` meets
+`Ωᶜ` (without requiring `K` to be closed, `Ω` to be open, or `X` to be locally connected). -/
+theorem IsFilledIn.compl_inter_connectedComponentIn_nonempty (hfill : IsFilledIn K Ω)
+    (hKΩ : K ⊆ Ω) {x : X} (hx : x ∈ filledHull K \ K) :
+    (Ωᶜ ∩ connectedComponentIn Kᶜ x).Nonempty := by
+  by_contra h
+  rw [← sdiff_eq_compl_inter, sdiff_nonempty, not_not] at h
   have hCD : connectedComponentIn (Ω \ K) x ⊆ connectedComponentIn Kᶜ x :=
     connectedComponentIn_mono x (sdiff_subset_compl _ _)
-  have hclD : closure (connectedComponentIn Kᶜ x) ⊆ Ω := by
-    rw [closure_eq_self_union_frontier]
-    exact union_subset hDΩ <| (frontier_connectedComponentIn_subset_compl hK.isOpen_compl x).trans
-      (by rwa [compl_compl])
-  exact hfill x ⟨hDΩ (mem_connectedComponentIn hxK), hxK⟩
-    ⟨(mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
+  have hclD : closure (connectedComponentIn Kᶜ x) ⊆ Ω := fun y hy => by
+    by_cases hyK : y ∈ K
+    · exact hKΩ hyK
+    · exact h ((closure_connectedComponentIn_inter_self Kᶜ x).subset ⟨hy, hyK⟩)
+  exact hfill x ⟨h (mem_connectedComponentIn hx.2), hx.2⟩
+    ⟨(mem_filledHull_iff.mp hx.1).isCompact_closure.of_isClosed_subset isClosed_closure
       (closure_mono hCD), (closure_mono hCD).trans hclD⟩
 
-/-- If a closed set `K ⊆ Ω` is filled in `Ω`, then every bounded connected component of `Kᶜ`
-meets `Ωᶜ` (without requiring `Ω` to be open). -/
-theorem IsFilledIn.compl_inter_connectedComponentIn_nonempty (hfill : IsFilledIn K Ω)
-    (hK : IsClosed K) (hKΩ : K ⊆ Ω) {x : X} (hx : x ∈ filledHull K \ K) :
-    (Ωᶜ ∩ connectedComponentIn Kᶜ x).Nonempty :=
-  (not_subset.mp (hfill.not_connectedComponentIn_subset hK hKΩ hx.1 hx.2)).imp fun _ h =>
-    ⟨h.2, h.1⟩
+variable [LocallyConnectedSpace X]
 
 /-- **Filledness through the filled hull.** For a closed set `K` inside an open set `Ω` of a proper,
 locally connected metric space, `K` is filled in `Ω` exactly when no bounded connected component
@@ -215,7 +212,9 @@ theorem isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subs
     (hK : IsClosed K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
     IsFilledIn K Ω ↔ ∀ x ∈ filledHull K \ K, ¬ connectedComponentIn Kᶜ x ⊆ Ω := by
   constructor
-  · exact fun h _ hx => h.not_connectedComponentIn_subset hK hKΩ hx.1 hx.2
+  · intro h x hx
+    simpa only [← sdiff_nonempty, sdiff_eq_compl_inter, inter_comm] using
+      h.compl_inter_connectedComponentIn_nonempty hKΩ hx
   · -- A relatively compact component of `Ω \ K` equals the component of `x` in `Kᶜ`.
     rintro h x hx ⟨hcpt, hsub⟩
     have hD : connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=

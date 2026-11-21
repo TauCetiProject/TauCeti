@@ -10,9 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Topology.Compactness.LocallyCompact
 import TauCeti.Analysis.Complex.Runge.Rational
-import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # The finite-rank Runge approximation operator
@@ -21,11 +19,9 @@ A **Runge compact pair** `TauCeti.IsRungeCompactPair Ω K` consists of an open s
 compact subset `K ⊆ Ω` that is filled in `Ω` (`TauCeti.IsFilledIn K Ω`, meaning no connected
 component of `Ω \ K` is relatively compact in `Ω`).
 
-Via rational Runge approximation (`TauCeti.Analysis.Complex.Runge.Rational`), this file establishes
-the vector-valued finite-rank Runge operator (`TauCeti.IsFilledIn.exists_norm_sub_sum_smul_le`)
-without requiring `Ω` to be open, and derives the domain-relative operator
-(`TauCeti.exists_finite_rank_runge_operator`) for any Runge compact pair `(Ω, K)` and open
-neighbourhood `U ⊇ K` on a compact neighbourhood `L` of `K` inside `U ∩ Ω`.
+Via rational Runge approximation (`IsCompact.exists_rational_norm_sub_sum_smul_le` in
+`TauCeti.Analysis.Complex.Runge.Rational`), this file establishes the vector-valued finite-rank
+Runge operator (`TauCeti.IsFilledIn.exists_norm_sub_sum_smul_le`) without requiring `Ω` to be open.
 
 ## Main declarations and results
 
@@ -33,8 +29,6 @@ neighbourhood `U ⊇ K` on a compact neighbourhood `L` of `K` inside `U ∩ Ω`.
   `TauCeti.IsFilledIn K Ω`, with projection eliminators and `@[simp]` empty-set normal forms.
 * `TauCeti.IsFilledIn.exists_norm_sub_sum_smul_le`: vector-valued finite-rank Runge operator for
   compact sets filled in an arbitrary `Ω ⊆ ℂ`.
-* `TauCeti.exists_finite_rank_runge_operator`: existence of the compact neighbourhood `L ⊆ U ∩ Ω`
-  and `f`-independent finite-rank evaluation approximants with operator norm bound `ε * B`.
 
 ## References
 
@@ -115,36 +109,10 @@ theorem IsFilledIn.exists_norm_sub_sum_smul_le {K Ω V : Set ℂ} (hfill : IsFil
       ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] (f : ℂ → F) (M : ℝ),
         DifferentiableOn ℂ f V → (∀ z ∈ V, ‖f z‖ ≤ M) →
         ∀ w ∈ K, ‖f w - ∑ i, g i w • f (ζ i)‖ ≤ ε * M := by
-  obtain ⟨N, ζ, p, q, hζ, -, hqΩ, hop⟩ := exists_rational_norm_sub_sum_smul_le.{u} hK hV hKV
-    (fun _ hx => hfill.compl_inter_connectedComponentIn_nonempty hK.isClosed hKΩ hx) hε
+  obtain ⟨N, ζ, p, q, hζ, -, hqΩ, hop⟩ := hK.exists_rational_norm_sub_sum_smul_le.{u} hV hKV
+    (fun _ hx => hfill.compl_inter_connectedComponentIn_nonempty hKΩ hx) hε
   refine ⟨N, ζ, fun i w => (p i).eval w / (q i).eval w, hζ, fun i =>
-    (p i).differentiable.differentiableOn.div (q i).differentiable.differentiableOn
-      fun z hz h0 => (hqΩ i z h0).1 hz, hop⟩
-
-/-- **Finite-rank Runge operator.** For a Runge compact pair `(Ω, K)` and an open neighbourhood
-`U ⊇ K`, there exists a compact neighbourhood `L` of `K` inside `U ∩ Ω` such that for every
-`ε > 0` there are finitely many nodes `ζ j ∈ interior L`, weights `w j`, and `Ω`-holomorphic
-functions `g j` (all independent of `f`) approximating every `U`-holomorphic function `f` on `K`
-within `ε * B` for any upper bound `B ≥ 0` of `‖f‖` on `L`. -/
-theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
-    (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ L : Set ℂ, IsCompact L ∧ K ⊆ interior L ∧ L ⊆ U ∩ Ω ∧
-      ∀ ε : ℝ, 0 < ε →
-        ∃ N : ℕ, ∃ ζ : Fin N → ℂ, ∃ w : Fin N → ℂ,
-          ∃ g : Fin N → ℂ → ℂ,
-            (∀ j, ζ j ∈ interior L) ∧
-            (∀ j, DifferentiableOn ℂ (g j) Ω) ∧
-            ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U →
-              ∀ B : ℝ, 0 ≤ B → (∀ z ∈ L, ‖f z‖ ≤ B) →
-                ∀ z ∈ K,
-                  ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B := by
-  obtain ⟨hΩ, hK, hKΩ, hfill⟩ := hRunge
-  obtain ⟨L, hL, hKL, hLUO⟩ := exists_compact_between hK (hU.inter hΩ) (subset_inter hKU hKΩ)
-  refine ⟨L, hL, hKL, hLUO, fun ε hε => ?_⟩
-  obtain ⟨N, ζ, g, hζ, hg, hop⟩ := hfill.exists_norm_sub_sum_smul_le hK hKΩ isOpen_interior hKL hε
-  refine ⟨N, ζ, fun _ => 1, g, fun j => (hζ j).1, hg, fun f hf B _ hLf z hz => ?_⟩
-  have hbound := hop f B (hf.mono (interior_subset.trans (hLUO.trans inter_subset_left)))
-    (fun y hy => hLf y (interior_subset hy)) z hz
-  simpa only [one_mul, mul_comm (g _ z), smul_eq_mul] using hbound
+    DifferentiableOn.div (p i).differentiable.differentiableOn
+      (q i).differentiable.differentiableOn fun z hz h0 => (hqΩ i z h0).1 hz, hop⟩
 
 end TauCeti
