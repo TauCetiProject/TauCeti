@@ -471,20 +471,6 @@ namespace EllipticCurveGeom
 variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P Q : S ⟶ E.carrier}
   (hP : P ≫ E.structureMap = 𝟙 S) (hQ : Q ≫ E.structureMap = 𝟙 S)
 
--- A section killed by `n` gives, on every chart, a model point killed by `n`.
-private theorem modelPoint_projModelMulBy {n : ℤ} (hn : P ≫ (E.mulBy n).left = E.zero)
-    (c : PointedWeierstrassChart E.structureMap E.zero) :
-    c.modelPoint hP ≫ c.equation.projModelMulBy n = c.equation.projModelZero :=
-  c.isPullback_modelIso_inv_toTotal.hom_ext
-    (by rw [Category.assoc, c.equation.projModelMulBy_comp_of_isPullback
-      c.isPullback_modelIso_inv_toTotal c.projModelZero_modelIso_inv_toTotal, ← Category.assoc,
-      c.modelPoint_modelIso_inv_toTotal, Category.assoc, hn,
-      c.projModelZero_modelIso_inv_toTotal])
-    (by
-      rw [Category.assoc, projModelMulBy_projModelOver, c.modelPoint_projModelOver,
-        projModelZero_projModelOver]
-      rfl)
-
 variable (hP₀ : ∀ s, P s ≠ E.zero s) (hQ₀ : ∀ s, Q s ≠ E.zero s)
   (hP₃ : P ≫ (E.mulBy 3).left = E.zero) (hQ₃ : Q ≫ (E.mulBy 3).left = E.zero)
   (hQP : ∀ s, Q s ≠ P s ∧ Q s ≠ (P ≫ E.neg) s)
@@ -514,7 +500,8 @@ theorem existsUnique_levelThreeNormalForm :
   refine (existsUnique_congr fun _ ↦ by rw [Fin.forall_fin_two]; exact Iff.rfl).mpr
     (existsUnique_isLevelThree (c.modelPoint_projModelOver hP) (c.modelPoint_projModelOver hQ)
       (c.modelPoint_apply_ne hP hP₀) (c.modelPoint_apply_ne hQ hQ₀)
-      (modelPoint_projModelMulBy hP hP₃ c) (modelPoint_projModelMulBy hQ hQ₃ c) fun s ↦
+      (by simpa [hP₃] using (E.modelPoint_mulBy c hP 3).symm)
+      (by simpa [hQ₃] using (E.modelPoint_mulBy c hQ 3).symm) fun s ↦
         ⟨c.modelPoint_apply_ne_modelPoint hP hQ (fun s ↦ (hQP s).1) s, ?_⟩)
   rw [← modelPoint_neg c hP]
   exact c.modelPoint_apply_ne_modelPoint _ hQ (fun s ↦ (hQP s).2) s

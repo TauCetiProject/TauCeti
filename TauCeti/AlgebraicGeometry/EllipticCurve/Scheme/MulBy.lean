@@ -213,6 +213,27 @@ theorem comp_projModelMulBy_two :
 
 end CommRing
 
+/-- On a Weierstrass chart `c` of an elliptic curve `E`, the model point of
+`P ≫ (E.mulBy n).left` is `c.modelPoint hP ≫ c.equation.projModelMulBy n`. -/
+@[simp]
+theorem _root_.TauCeti.AlgebraicGeometry.EllipticCurveGeom.modelPoint_mulBy
+    {S : Scheme.{u}} {E : TauCeti.AlgebraicGeometry.EllipticCurveGeom S}
+    (c : TauCeti.AlgebraicGeometry.PointedWeierstrassChart E.structureMap E.zero)
+    {P : S ⟶ E.carrier} (hP : P ≫ E.structureMap = 𝟙 S) (n : ℤ) :
+    c.modelPoint (P := P ≫ (E.mulBy n).left)
+        (by rw [Category.assoc, E.mulBy_left_structureMap, hP]) =
+      c.modelPoint hP ≫ c.equation.projModelMulBy n :=
+  c.isPullback_modelIso_inv_toTotal.hom_ext
+    (by
+      rw [c.modelPoint_modelIso_inv_toTotal]
+      simp only [Category.assoc]
+      rw [c.equation.projModelMulBy_comp_of_isPullback c.isPullback_modelIso_inv_toTotal
+        c.projModelZero_modelIso_inv_toTotal]
+      simpa only [Category.assoc] using
+        (c.modelPoint_modelIso_inv_toTotal_assoc hP (E.mulBy n).left).symm)
+    (by rw [c.modelPoint_projModelOver, Category.assoc, projModelMulBy_projModelOver,
+      c.modelPoint_projModelOver])
+
 section Sections
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic]

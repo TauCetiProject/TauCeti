@@ -29,6 +29,8 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
+* `TauCeti.injective_zmod_two_prod_iff`: a homomorphism `(ℤ/2ℤ)² →* G` is injective exactly when
+  `(1, 0)`, `(0, 1)` and `(1, 1)` are not in its kernel.
 * `TauCeti.injective_zmod_three_prod_iff`: a homomorphism `(ℤ/3ℤ)² →* G` is injective exactly when
   `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel.
 -/
@@ -142,6 +144,22 @@ theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
     (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val := by
   simp [zmodProdMonoidHomEquiv, zmodLift_apply]
+
+/-- **Injectivity on `(ℤ/2ℤ)²`.** A homomorphism `ψ : (ℤ/2ℤ)² →* G` is injective exactly when
+`(1, 0)`, `(0, 1)` and `(1, 1)` are not in its kernel: these are the three nonzero elements of
+`(ℤ/2ℤ)²`. -/
+theorem injective_zmod_two_prod_iff {G : Type*} [MulOneClass G]
+    (ψ : Multiplicative (ZMod 2 × ZMod 2) →* G) :
+    Function.Injective ψ ↔
+      ψ (.ofAdd (1, 0)) ≠ 1 ∧ ψ (.ofAdd (0, 1)) ≠ 1 ∧ ψ (.ofAdd (1, 1)) ≠ 1 := by
+  rw [injective_iff_map_eq_one]
+  refine ⟨fun h ↦ ⟨fun e ↦ absurd (h _ e) (by decide), fun e ↦ absurd (h _ e) (by decide),
+    fun e ↦ absurd (h _ e) (by decide)⟩, fun ⟨h₁, h₂, h₃⟩ z hz ↦ ?_⟩
+  have hp : ∀ p : ZMod 2 × ZMod 2, p = 0 ∨ p = (1, 0) ∨ p = (0, 1) ∨ p = (1, 1) := by decide
+  obtain ⟨p, rfl⟩ : ∃ p, Multiplicative.ofAdd p = z := ⟨z.toAdd, rfl⟩
+  rcases hp p with rfl | rfl | rfl | rfl
+  · exact ofAdd_zero
+  all_goals contradiction
 
 /-- **Injectivity on `(ℤ/3ℤ)²`.** A homomorphism `ψ : (ℤ/3ℤ)² →* G` is injective exactly when
 `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel: every nonzero element of

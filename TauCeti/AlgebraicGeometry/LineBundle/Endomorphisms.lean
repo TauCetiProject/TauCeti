@@ -43,7 +43,9 @@ still act on the rigidified bundle.
 * `Scheme.Modules.globalSectionsAction_bijective`: for an invertible sheaf, the action of global
   functions on the sheaf is a bijection onto its endomorphisms;
 * `Scheme.Modules.globalSectionsActionRingEquiv`: the ring isomorphism `Γ(X, 𝒪_X) ≃+* End M`;
-* `Scheme.Modules.unitsGlobalSectionsMulEquivAut`: the group isomorphism `Γ(X, 𝒪_X)ˣ ≃* Aut M`.
+* `Scheme.Modules.unitsGlobalSectionsMulEquivAut`: the group isomorphism `Γ(X, 𝒪_X)ˣ ≃* Aut M`;
+* `Scheme.Modules.unitSmulIso`: rescaling a global trivialization `𝟙_ X.Modules ≅ M` by a global
+  unit `u : Γ(X, ⊤)ˣ`, a free and transitive action (`Scheme.Modules.existsUnique_unitSmulIso_eq`).
 
 ## References
 
@@ -54,7 +56,7 @@ still act on the rigidified bundle.
 
 public section
 
-open CategoryTheory Opposite TopologicalSpace
+open CategoryTheory MonoidalCategory Opposite TopologicalSpace
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -266,6 +268,57 @@ lemma globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm (f : Aut M) :
   rw [← unitsGlobalSectionsMulEquivAut_apply_hom, MulEquiv.apply_symm_apply]
 
 end Invertible
+
+/-- Rescale a global trivialization `ω : 𝟙_ X.Modules ≅ M` by a global unit `u : Γ(X, ⊤)ˣ`. -/
+def unitSmulIso (u : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) : 𝟙_ X.Modules ≅ M :=
+  (unitsGlobalSectionsMulEquivAut (𝟙_ X.Modules) u).asIso ≪≫ ω
+
+/-- The forward morphism of `unitSmulIso u ω` precomposes `ω.hom` with scalar multiplication by `u`
+on `𝟙_ X.Modules`. -/
+@[simp]
+lemma unitSmulIso_hom (u : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
+    (unitSmulIso u ω).hom = globalSectionsSmul (𝟙_ X.Modules) u ≫ ω.hom := by
+  simp [unitSmulIso]
+
+/-- Equivalently, `(unitSmulIso u ω).hom` postcomposes `ω.hom` with scalar multiplication by `u`
+on `M`. -/
+lemma unitSmulIso_hom_eq_comp_globalSectionsSmul (u : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
+    (unitSmulIso u ω).hom = ω.hom ≫ globalSectionsSmul M u := by
+  rw [unitSmulIso_hom, globalSectionsSmul_naturality]
+
+/-- Rescaling a trivialization by `1` is the identity. -/
+@[simp]
+lemma unitSmulIso_one (ω : 𝟙_ X.Modules ≅ M) : unitSmulIso 1 ω = ω := by
+  ext1
+  rw [unitSmulIso_hom, Units.val_one, globalSectionsSmul_one, Category.id_comp]
+
+/-- Rescaling a trivialization by `u * v` rescales successively by `v` and by `u`. -/
+lemma unitSmulIso_mul (u v : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
+    unitSmulIso (u * v) ω = unitSmulIso u (unitSmulIso v ω) := by
+  ext1
+  rw [unitSmulIso_hom, unitSmulIso_hom, unitSmulIso_hom, Units.val_mul,
+    mul_comm (u : Γ(X, ⊤)) v, globalSectionsSmul_mul, Category.assoc]
+
+/-- Global units act faithfully on any trivialization `ω : 𝟙_ X.Modules ≅ M`. -/
+@[simp]
+lemma unitSmulIso_inj (u v : Γ(X, ⊤)ˣ) (ω : 𝟙_ X.Modules ≅ M) :
+    unitSmulIso u ω = unitSmulIso v ω ↔ u = v := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have hhom : globalSectionsSmul (𝟙_ X.Modules) u = globalSectionsSmul (𝟙_ X.Modules) v := by
+    have := congrArg Iso.hom h
+    rwa [unitSmulIso_hom, unitSmulIso_hom, cancel_mono] at this
+  exact Units.ext ((globalSectionsAction_injective (𝟙_ X.Modules)) (by simpa using hhom))
+
+/-- Any two trivializations `ω₁, ω₂ : 𝟙_ X.Modules ≅ M` differ by a unique global unit
+`u : Γ(X, ⊤)ˣ`. -/
+theorem existsUnique_unitSmulIso_eq (ω₁ ω₂ : 𝟙_ X.Modules ≅ M) :
+    ∃! u : Γ(X, ⊤)ˣ, unitSmulIso u ω₂ = ω₁ := by
+  let α : Aut (𝟙_ X.Modules) := .of (ω₁ ≪≫ ω₂.symm)
+  have hu : unitSmulIso ((unitsGlobalSectionsMulEquivAut (𝟙_ X.Modules)).symm α) ω₂ = ω₁ := by
+    ext1
+    rw [unitSmulIso_hom, globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm]
+    simp [α]
+  exact ⟨_, hu, fun u hu' ↦ (unitSmulIso_inj _ _ ω₂).mp (hu'.trans hu.symm)⟩
 
 end
 
