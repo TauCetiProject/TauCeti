@@ -26,8 +26,9 @@ words `w u w⁻¹` in which no letter cancels at either join, and of words `u⁻
 `v` with different first letters (`FreeGroup.isReduced_invRev_append`). The reduced word of a
 product `of a * of b` of two generators is `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
-empty, a word is not reduced exactly when it contains a letter followed by its inverse, and
-inserting a letter followed by its inverse does not change the element represented.
+empty, a word is not reduced exactly when it contains a letter immediately followed by its inverse
+(`TauCeti.FreeGroup.not_isReduced_iff_exists_eq_append_cons_cons`), and inserting a letter followed
+by its inverse does not change the element represented.
 Free reductions are non-crossing: in a trivial word, the subword between the only two occurrences
 of a generator is trivial; and a cancelling pair in a concatenation of reduced words straddles
 two consecutive nonempty words.
@@ -150,6 +151,16 @@ theorem invRev_isUnsplit {l : List (α × Bool)} {L : List (List (α × Bool))} 
   rw [e]
   exact List.reverse_isUnsplit.trans (List.map_isUnsplit_iff hf)
 
+/-- The first letter of the formal inverse of `w` is the inverse of the last letter of `w`. -/
+theorem _root_.TauCeti.FreeGroup.head?_invRev {w : List (α × Bool)} :
+    (invRev w).head? = w.getLast?.map fun a ↦ (a.1, !a.2) := by
+  simp [invRev, List.head?_reverse, List.getLast?_map]
+
+/-- The last letter of the formal inverse of `w` is the inverse of the first letter of `w`. -/
+theorem _root_.TauCeti.FreeGroup.getLast?_invRev {w : List (α × Bool)} :
+    (invRev w).getLast? = w.head?.map fun a ↦ (a.1, !a.2) := by
+  simp [invRev, List.getLast?_reverse, List.head?_map]
+
 /-- If `w` and the nonempty word `u` are reduced, the last letter of `w` does not cancel against
 the first letter of `u`, and the last letter of `u` does not cancel against the first letter of
 `invRev w`, then `w ++ u ++ invRev w` is reduced. -/
@@ -159,16 +170,20 @@ theorem IsReduced.append_append_invRev {w u : List (α × Bool)} (hw : IsReduced
     (hlast : ∀ a ∈ w.getLast?, a ∉ u.getLast?) :
     IsReduced (w ++ u ++ FreeGroup.invRev w) := by
   -- The only new adjacent pairs are (last letter of `w`, first letter of `u`) and
-  -- (last letter of `u`, inverse of the last letter of `w`); compare signs letter by letter.
+  -- (last letter of `u`, inverse of the last letter of `w`). In each, equal generators with
+  -- unequal signs would make the second letter the inverse of the first.
   refine List.isChain_append.mpr ⟨List.isChain_append.mpr ⟨hw, hu, ?_⟩, hw.invRev, ?_⟩
-  · rintro ⟨x, e⟩ hx ⟨y, f⟩ hy (rfl : x = y)
-    cases e <;> cases f <;> simp_all
-  · rintro ⟨x, e⟩ hx ⟨y, f⟩ hy (rfl : x = y)
-    rw [List.getLast?_append_of_ne_nil _ hu₀] at hx
-    simp only [FreeGroup.invRev, List.head?_reverse, List.getLast?_map, Option.mem_def,
-      Option.map_eq_some_iff] at hy
-    obtain ⟨⟨z, g⟩, hz, h⟩ := hy
-    cases e <;> cases f <;> cases g <;> simp_all
+  · intro a ha b hb hab
+    by_contra hne
+    obtain rfl : b = (a.1, !a.2) := Prod.ext hab.symm (Bool.eq_not_of_ne (Ne.symm hne))
+    exact hhead a ha hb
+  · intro b hb c hc hbc
+    rw [List.getLast?_append_of_ne_nil _ hu₀] at hb
+    rw [TauCeti.FreeGroup.head?_invRev, Option.mem_map] at hc
+    obtain ⟨a, ha, rfl⟩ := hc
+    by_contra hne
+    obtain rfl : b = a := Prod.ext hbc ((Bool.eq_not_of_ne hne).trans (Bool.not_not _))
+    exact hlast b ha hb
 
 /-- If the reduced words `u` and `v` do not begin with the same letter, then `invRev u ++ v` is
 reduced: the last letter of `invRev u`, the inverse of the first letter of `u`, does not cancel
@@ -176,8 +191,7 @@ against the first letter of `v`. -/
 theorem isReduced_invRev_append {u v : List (α × Bool)} (hu : IsReduced u) (hv : IsReduced v)
     (h : ∀ a ∈ u.head?, a ∉ v.head?) : IsReduced (FreeGroup.invRev u ++ v) := by
   refine List.isChain_append.2 ⟨hu.invRev, hv, fun x hx y hy hxy ↦ ?_⟩
-  simp only [FreeGroup.invRev, List.getLast?_reverse, List.head?_map, Option.mem_def,
-    Option.map_eq_some_iff] at hx
+  rw [TauCeti.FreeGroup.getLast?_invRev, Option.mem_map] at hx
   obtain ⟨a, ha, rfl⟩ := hx
   by_contra hne
   obtain rfl : y = a := Prod.ext hxy.symm (by simpa using Ne.symm hne)
@@ -224,9 +238,10 @@ theorem IsReduced.eq_invRev_of_mk_append_eq_one {L₁ L₂ : List (α × Bool)} 
   rw [← inv_mk]
   exact eq_inv_of_mul_eq_one_right (by rwa [mul_mk])
 
-/-- A word is not reduced exactly when it contains a letter followed by its inverse. -/
-theorem not_isReduced_iff_exists_eq_append_cons_cons {L : List (α × Bool)} :
-    ¬IsReduced L ↔ ∃ L₁ L₂ x b, L = L₁ ++ (x, b) :: (x, !b) :: L₂ := by
+/-- A word is not reduced exactly when it contains a letter immediately followed by its
+inverse. -/
+theorem _root_.TauCeti.FreeGroup.not_isReduced_iff_exists_eq_append_cons_cons
+    {L : List (α × Bool)} : ¬IsReduced L ↔ ∃ L₁ L₂ x b, L = L₁ ++ (x, b) :: (x, !b) :: L₂ := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · simp only [isReduced_iff_not_step, not_forall, not_not] at h
     obtain ⟨_, ⟨⟩⟩ := h
@@ -308,7 +323,8 @@ theorem mk_append_cons_cons_of_ne {X Y : List (α × Bool)} {x : α} {b c : Bool
   obtain rfl := Bool.eq_not_of_ne hbc.symm
   exact Red.Step.not.mk_eq
 
-/-- In a reduced word, a letter is never followed by its inverse. -/
+/-- In a reduced word, the second letter is not the inverse of the first: a letter is never
+immediately followed by its inverse. -/
 theorem ne_inv_of_isReduced_cons_cons {a b : α × Bool} {l : List (α × Bool)}
     (h : IsReduced (a :: b :: l)) : b ≠ (a.1, !a.2) := by
   rintro rfl

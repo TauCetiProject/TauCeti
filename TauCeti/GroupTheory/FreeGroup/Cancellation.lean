@@ -527,7 +527,7 @@ theorem exists_cancellationPieces {ws : List (List (α × Bool))} (hws : ∀ w �
       (List.flatten_eq_nil_iff.1 (hred.eq_nil_of_mk_eq_one h))⟩
   -- The first free reduction cancels the end of a block against the start of the next
   -- nonempty block; the rest of the reduction process reduces the shorter list.
-  obtain ⟨L₁, L₂, x, e, hL⟩ := not_isReduced_iff_exists_eq_append_cons_cons.1 hred
+  obtain ⟨L₁, L₂, x, e, hL⟩ := FreeGroup.not_isReduced_iff_exists_eq_append_cons_cons.1 hred
   obtain ⟨pre, w₁, mid, w₂, post, rfl, hmid⟩ :=
     exists_eq_append_cons_append_cons_of_flatten_eq hws hL
   have hflat : (pre ++ (w₁ ++ [(x, e)]) :: (mid ++ ((x, !e) :: w₂) :: post)).flatten =
