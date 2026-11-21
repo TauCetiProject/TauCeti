@@ -156,9 +156,10 @@ theorem ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G : V × Λ → 
       (∀ y ∈ e.source, y ∈ S → ContDiffAt ℝ n e y) ∧
       (∀ y ∈ e.source, y ∈ S → DifferentiableAt ℝ e.symm (e y)) ∧ IsSliceChart e (L : Set F) S ∧
       (z : V × Λ) ∈ interior (G ⁻¹' e.source) := fun z ↦ by
-    obtain ⟨e, hze, he, hes, hS⟩ := hchart z z.2.1 z.2.2
+    obtain ⟨e, hze, he, hes, hS⟩ := hchart z z.property.1 z.property.2
     refine ⟨e, he, hes, hS, mem_interior_iff_mem_nhds.2 ?_⟩
-    exact ((hcont z z.2.1 z.2.2).continuousAt).preimage_mem_nhds (e.open_source.mem_nhds hze)
+    exact ((hcont z z.property.1 z.property.2).continuousAt).preimage_mem_nhds
+        (e.open_source.mem_nhds hze)
   choose e he hes hS hze using key
   -- Countably many of these neighbourhoods cover, and each chart contributes a null set.
   obtain ⟨T, hTc, hTZ⟩ := (HereditarilyLindelofSpace.isLindelof Z).elim_countable_subcover

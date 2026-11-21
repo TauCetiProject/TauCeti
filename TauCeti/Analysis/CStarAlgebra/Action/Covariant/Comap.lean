@@ -110,17 +110,6 @@ theorem integratedOperatorL1_comap (x : Completion (ConvolutionAlgebra α μ)) :
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f => simpa using P.integratedOperator_comap φ μ f
 
-end TauCeti.CStarAction.CovariantRepresentation
-
-namespace TauCeti.CStarAction.CovariantRepresentation
-
-variable {G A B H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {α : CStarAction G A} {β : CStarAction G B}
-  (P : CovariantRepresentation β H) (φ : Hom α β) (μ : Measure G) [μ.IsHaarMeasure]
-
 /-- Pullback and the `L¹` integrated ⋆-homomorphism commute on the twisted `L¹` completions. -/
 theorem integratedStarAlgHomL1_comap :
     (P.comap φ).integratedStarAlgHomL1 μ =

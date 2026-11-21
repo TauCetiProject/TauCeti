@@ -191,9 +191,9 @@ theorem dualNumberGradedResidue_piece_eq_bot {p : ℤ} (hp : p ≠ 0) :
 theorem positive_smul_top_shiftObj_dualNumberGradedResidue_eq_bot (j : ℤ) :
     (⨆ (i : ℤ) (_ : 0 < i), dualNumberIntegerGrade k i) •
       (⊤ : Submodule k ((dualNumberGradedResidue k).shiftObj j)) = ⊥ :=
-  GradedModuleCat.positive_smul_top_eq_bot_of_concentrated _ j fun q hq => by
-    simpa [sub_eq_add_neg] using
-      dualNumberGradedResidue_piece_eq_bot k (p := q - j) (sub_ne_zero.2 hq)
+  GradedModuleCat.positive_smul_top_eq_bot_of_concentrated _ _
+    (GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated
+      (fun _ hq => dualNumberGradedResidue_piece_eq_bot k hq) j)
 
 variable [HasExt.{w} (GradedModuleCat.{u} (dualNumberIntegerGrade k))]
 

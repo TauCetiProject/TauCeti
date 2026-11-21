@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import Mathlib.Topology.Algebra.LinearMapCompletion
@@ -21,10 +20,8 @@ compact-support twisted convolution algebra with its L¹ seminorm to the bounded
 the representation space. We bundle it both as a continuous linear map and, for a left-invariant
 measure, as a nonunital algebra homomorphism. Extending by continuity, the integrated form is a
 contractive nonunital algebra homomorphism on the twisted L¹ algebra, the completion
-`UniformSpace.Completion (ConvolutionAlgebra α μ)`. For a Haar measure on a locally compact Borel
-group, it also preserves the twisted involution and bundles as a continuous contractive nonunital
-complex `⋆`-algebra homomorphism `integratedStarAlgHomL1`. Its ranges generate the same closed
-essential subspace as the coefficient representation, so nondegeneracy is preserved and reflected.
+`UniformSpace.Completion (ConvolutionAlgebra α μ)`. Its ranges generate the same closed essential
+subspace as the coefficient representation, so nondegeneracy is preserved and reflected.
 
 Only finiteness on compact sets is needed for continuity. Left invariance is needed for the
 algebra homomorphism. Neither unitality of the coefficient algebra, nondegeneracy of the
@@ -41,8 +38,6 @@ open MeasureTheory UniformSpace
 open scoped CompactlySupported
 
 namespace TauCeti.CStarAction.CovariantRepresentation
-
-section Normed
 
 variable {G A H : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [OpensMeasurableSpace G] [NonUnitalCStarAlgebra A]
@@ -168,71 +163,5 @@ theorem dense_span_integratedOperatorL1_iff [LocallyCompactSpace G] [μ.IsOpenPo
     P.topologicalClosure_span_integratedOperatorL1 μ]
 
 end Multiplication
-
-end Normed
-
-section Star
-
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {α : CStarAction G A} (P : CovariantRepresentation α H)
-  (μ : Measure G) [μ.IsHaarMeasure]
-
-/-- The extended integrated form `integratedOperatorL1` on `Completion (ConvolutionAlgebra α μ)`
-preserves the star operation. -/
-@[simp]
-theorem integratedOperatorL1_star (x : Completion (ConvolutionAlgebra α μ)) :
-    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih f =>
-    rw [← Completion.coe_star, integratedOperatorL1_coe, integratedOperatorL1_coe,
-      ConvolutionAlgebra.ofConv_star, integratedOperator_twistedInvolution]
-
-/-- The integrated form on the twisted `L¹` completion bundled as a nonunital complex ⋆-algebra
-homomorphism. -/
-def integratedStarAlgHomL1 : Completion (ConvolutionAlgebra α μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
-  toNonUnitalAlgHom := P.integratedOperatorL1 μ
-  map_star' := P.integratedOperatorL1_star μ
-
-/-- Forgetting the star preservation of `integratedStarAlgHomL1` recovers `integratedOperatorL1`. -/
-@[simp]
-theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
-    (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ :=
-  (rfl)
-
-/-- The underlying function of `integratedStarAlgHomL1` is `integratedOperatorL1`. -/
-@[simp]
-theorem coe_integratedStarAlgHomL1 :
-    ⇑(P.integratedStarAlgHomL1 μ) = P.integratedOperatorL1 μ :=
-  (rfl)
-
-/-- `integratedStarAlgHomL1` agrees on elements with `integratedOperatorL1`. -/
-theorem integratedStarAlgHomL1_apply (x : Completion (ConvolutionAlgebra α μ)) :
-    P.integratedStarAlgHomL1 μ x = P.integratedOperatorL1 μ x :=
-  (rfl)
-
-/-- The `L¹` integrated ⋆-homomorphism is continuous. -/
-@[fun_prop]
-theorem continuous_integratedStarAlgHomL1 : Continuous (P.integratedStarAlgHomL1 μ) := by
-  rw [coe_integratedStarAlgHomL1]
-  exact P.continuous_integratedOperatorL1 μ
-
-/-- The `L¹` integrated ⋆-homomorphism is a contraction. -/
-theorem norm_integratedStarAlgHomL1_le (x : Completion (ConvolutionAlgebra α μ)) :
-    ‖P.integratedStarAlgHomL1 μ x‖ ≤ ‖x‖ :=
-  P.norm_integratedOperatorL1_le μ x
-
-/-- The `L¹` integrated ⋆-homomorphism has dense span of ranges precisely when the coefficient
-representation is nondegenerate. -/
-theorem dense_span_integratedStarAlgHomL1_iff :
-    Dense (Submodule.span ℂ
-      (⋃ x : Completion (ConvolutionAlgebra α μ),
-        Set.range (P.integratedStarAlgHomL1 μ x)) : Set H) ↔
-      P.coefficient.IsNondegenerate := by
-  simpa only [coe_integratedStarAlgHomL1] using P.dense_span_integratedOperatorL1_iff μ
-
-end Star
 
 end TauCeti.CStarAction.CovariantRepresentation
