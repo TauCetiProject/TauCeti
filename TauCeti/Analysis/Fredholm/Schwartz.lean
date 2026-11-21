@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Operator.Surjective
 public import TauCeti.Analysis.Normed.Operator.NonlinearRightInverse
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import TauCeti.Analysis.Fredholm.ClosedRange
+public import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
 # Compact perturbations of surjections
@@ -106,22 +107,37 @@ theorem isClosed_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] 
   have := cofg_range_add_of_surjective_of_isCompactOperator T K hT hK
   exact (T + K).isClosed_range_of_finite_coker
 
+open UniformSpace in
 /-- **Schwartz's lemma, cohomological form.** If every point of a Banach space `F` is of the
-form `r g + δ e` with `r` compact, then the range of `δ` has finite codimension. -/
+form `r g + δ e` with `r` compact, then the range of `δ` has finite codimension. The source `G`
+of `r` need not be complete: the proof extends `r` to the completion of `G`. -/
 theorem cofg_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E] [CompleteSpace F]
-    [CompleteSpace G] (r : G →L[𝕜] F) (δ : E →L[𝕜] F) (h : Function.Surjective (r.coprod δ))
+    (r : G →L[𝕜] F) (δ : E →L[𝕜] F) (h : Function.Surjective (r.coprod δ))
     (hr : IsCompactOperator r) : δ.range.CoFG := by
-  have hK : IsCompactOperator (-(r.comp (fst 𝕜 G E))) := (hr.comp_clm (fst 𝕜 G E)).neg
-  have hδ : r.coprod δ + -(r.comp (fst 𝕜 G E)) = δ.comp (snd 𝕜 G E) := by
+  let r' : Completion G →L[𝕜] F := r.fromCompletion
+  have hr' : IsCompactOperator r' := by
+    obtain ⟨K, hK, hKr⟩ := hr
+    refine ⟨K, hK, ?_⟩
+    have hU := Completion.isDenseInducing_coe.closure_image_mem_nhds hKr
+    rw [Completion.coe_zero] at hU
+    refine Filter.mem_of_superset hU (closure_minimal ?_ (hK.isClosed.preimage r'.continuous))
+    rintro _ ⟨x, hx, rfl⟩
+    simpa [r'] using hx
+  have h' : Function.Surjective (r'.coprod δ) := fun y => by
+    obtain ⟨⟨g, e⟩, rfl⟩ := h y
+    exact ⟨(g, e), by simp [r']⟩
+  have hK : IsCompactOperator (-(r'.comp (fst 𝕜 (Completion G) E))) :=
+    (hr'.comp_clm (fst 𝕜 _ E)).neg
+  have hδ : r'.coprod δ + -(r'.comp (fst 𝕜 (Completion G) E)) = δ.comp (snd 𝕜 _ E) := by
     ext <;> simp
-  have := cofg_range_add_of_surjective_of_isCompactOperator _ _ h hK
+  have := cofg_range_add_of_surjective_of_isCompactOperator _ _ h' hK
   rwa [hδ, toLinearMap_comp, coe_snd,
     LinearMap.range_comp_of_range_eq_top _ (Submodule.range_snd ..)] at this
 
 /-- If every point of a Banach space `F` is of the form `r g + δ e` with `r` compact, then the
-range of `δ` is closed. -/
+range of `δ` is closed. The source `G` of `r` need not be complete. -/
 theorem isClosed_range_of_surjective_coprod_of_isCompactOperator [CompleteSpace E]
-    [CompleteSpace F] [CompleteSpace G] (r : G →L[𝕜] F) (δ : E →L[𝕜] F)
+    [CompleteSpace F] (r : G →L[𝕜] F) (δ : E →L[𝕜] F)
     (h : Function.Surjective (r.coprod δ)) (hr : IsCompactOperator r) :
     IsClosed (δ.range : Set F) := by
   have := cofg_range_of_surjective_coprod_of_isCompactOperator r δ h hr
