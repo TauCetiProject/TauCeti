@@ -431,13 +431,9 @@ private theorem orbitSliceMap_apply_prod (hτ : ∀ h, IsSymplectomorphism ω ω
             hτ _ fun h _ ↦ apply_mem_orthogonal_range hτ hρτ h))) h w) =
       τ h (orbitSliceMap 𝔪.toSubmodule 𝔮.toSubmodule s w) := by
   obtain ⟨⟨a, b⟩, v⟩ := w
-  have ha : ((𝔪.toRepresentation h a : 𝔪.toSubmodule) : 𝔤) = Ad h a := by
-    rw [Subrepresentation.toRepresentation_apply, LinearMap.restrict_apply]
-  have hb : ((𝔮.toRepresentation h b : 𝔮.toSubmodule) : 𝔤) = Ad h b := by
-    rw [Subrepresentation.toRepresentation_apply, LinearMap.restrict_apply]
-  simp only [Representation.prod_apply_apply, orbitSliceMap_apply, ha, hb, hρτ,
-    MonoidHom.coe_comp, Function.comp_apply,
-    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, LinearEquiv.coe_coe, map_add, hsτ]
+  simp only [Representation.prod_apply_apply, orbitSliceMap_apply,
+    Subrepresentation.coe_toRepresentation_apply, hρτ,
+    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_comp_apply, map_add, hsτ]
 
 variable [Representation.IsSemisimpleRepresentation
       (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp τ : Representation ℝ H T)]
@@ -516,8 +512,7 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
     simpa using coe_apply_mk_sub_mem_range hs u
   · rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply,
       modelEquiv_apply_prod j hσB (fun g a ↦ Subtype.ext (by simp [hj, σ])), he₂σ]
-    simp only [MonoidHom.coe_comp, Function.comp_apply,
-      LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, LinearEquiv.coe_coe]
+    exact LinearEquiv.automorphismGroup.toLinearMapMonoidHom_comp_apply τ h _
 
 end Equivariant
 

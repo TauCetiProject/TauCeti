@@ -47,13 +47,11 @@ theorem exists_equivariant_section_reducedSpace {G : Type*} [Group G] {ρ : G �
     ∃ s : ω.ReducedSpace U →ₗ[ℝ] U, (∀ v, Submodule.Quotient.mk (s v) = v) ∧
       ∀ g v, (s (ω.reducedSpaceRepresentation ρ hρ U hU g v) : V) = ρ g (s v) := by
   let ρR : Representation ℝ G V := LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp ρ
-  have hρR (g : G) (v : V) : ρR g v = ρ g v := by
-    simp only [ρR, MonoidHom.coe_comp, Function.comp_apply,
-      LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, LinearEquiv.coe_coe]
+  have hρR (g : G) (v : V) : ρR g v = ρ g v :=
+    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_comp_apply ρ g v
   let Uₛ : Subrepresentation ρR := ⟨U, fun g u hu ↦ by rw [hρR]; exact hU g u hu⟩
-  have hUₛ (g : G) (u : U) : (Uₛ.toRepresentation g u : V) = ρ g u := by
-    rw [Subrepresentation.toRepresentation_apply, LinearMap.restrict_apply]
-    exact hρR g u
+  have hUₛ (g : G) (u : U) : (Uₛ.toRepresentation g u : V) = ρ g u :=
+    (Subrepresentation.coe_toRepresentation_apply Uₛ g u).trans (hρR g u)
   have : Uₛ.toRepresentation.IsSemisimpleRepresentation :=
     (U.subtype.intertwiningMap_of_isIntertwiningMap Uₛ.toRepresentation ρR fun g u ↦ by
       simp only [Submodule.subtype_apply, hUₛ, hρR]).isSemisimpleRepresentation_of_injective
@@ -81,7 +79,6 @@ theorem exists_equivariant_section_reducedSpace {G : Type*} [Group G] {ρ : G �
         C.toRepresentation g (e.toLinearEquiv (Submodule.Quotient.mk u)) :=
       Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g _
     rw [LinearMap.comp_apply, LinearMap.comp_apply, hq, LinearEquiv.coe_coe, he]
-    simp only [Submodule.subtype_apply, Subrepresentation.toRepresentation_apply,
-      LinearMap.restrict_apply, hρR]
+    simp only [Submodule.subtype_apply, Subrepresentation.coe_toRepresentation_apply, hρR]
 
 end TauCeti.SymplecticForm
