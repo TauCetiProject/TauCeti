@@ -157,6 +157,10 @@ range, so the value is a `dite` rather than a plain application.
   ends below it and never equals it drops below the level at some step.
 * `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone `Fin` family, the open interval between
   two consecutive values meets the closed interval of no other step.
+* `Fin.append_init_castLE`, `Fin.append_init_zero`, `Fin.append_init_last`,
+  `Fin.append_init_eq_or_eq`, `Fin.forall_append_init_castSucc_succ`: two chains with a common
+  point glue to the chain `Fin.append (Fin.init x₁) x₂`, whose endpoints, points and steps are
+  those of the two chains.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
@@ -962,6 +966,61 @@ theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : 
   obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ (β := αᵒᵈ)
     (fun j ↦ OrderDual.toDual (g j)) hk (x := OrderDual.toDual c) ⟨h0.le, hl.le⟩
   exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
+
+/-! ### Gluing two chains at a common point
+
+A chain `x₁ : Fin (k₁ + 1) → α` ending where a chain `x₂ : Fin (k₂ + 1) → α` starts glues to the
+chain `Fin.append (Fin.init x₁) x₂ : Fin (k₁ + k₂ + 1) → α`, which runs through `x₁` and then
+through `x₂`. -/
+
+section AppendInit
+
+variable {α β : Type*} {k₁ k₂ : ℕ} {x₁ : Fin (k₁ + 1) → α} {x₂ : Fin (k₂ + 1) → α}
+
+/-- Two chains glued at a common point run through the first one on its indices. -/
+theorem append_init_castLE (h : x₁ (last k₁) = x₂ 0) (l : Fin (k₁ + 1)) :
+    append (init x₁) x₂ (castLE (by omega) l : Fin (k₁ + k₂ + 1)) = x₁ l := by
+  rcases eq_castSucc_or_eq_last l with ⟨l, rfl⟩ | rfl
+  · rw [castLE_castSucc, append_left', init]
+  · rw [show (castLE (by omega) (last k₁) : Fin (k₁ + (k₂ + 1))) = natAdd k₁ 0 from
+      Fin.ext (by simp), append_right, h]
+
+/-- Two chains glued at a common point start where the first one starts. -/
+theorem append_init_zero (h : x₁ (last k₁) = x₂ 0) :
+    append (init x₁) x₂ (0 : Fin (k₁ + k₂ + 1)) = x₁ 0 := by
+  rw [← castLE_zero (show k₁ + 1 ≤ k₁ + k₂ + 1 by omega), append_init_castLE h]
+
+/-- Two chains glued at a common point end where the second one ends. -/
+theorem append_init_last : append (init x₁) x₂ (last (k₁ + k₂)) = x₂ (last k₂) := by
+  rw [← natAdd_last, append_right]
+
+/-- Every point of two chains glued together is a point of one of them. -/
+theorem append_init_eq_or_eq (l : Fin (k₁ + k₂ + 1)) :
+    (∃ l₁, append (init x₁) x₂ l = x₁ l₁) ∨ ∃ l₂, append (init x₁) x₂ l = x₂ l₂ :=
+  addCases (motive := fun l : Fin (k₁ + (k₂ + 1)) ↦
+    (∃ l₁, append (init x₁) x₂ l = x₁ l₁) ∨ ∃ l₂, append (init x₁) x₂ l = x₂ l₂)
+    (fun l ↦ .inl ⟨l.castSucc, append_left _ _ l⟩) (fun l ↦ .inr ⟨l, append_right _ _ l⟩) l
+
+/-- **The steps of two chains glued together are the steps of the two chains.** If every step
+`(x₁ j.castSucc, x₁ j.succ)` of the first chain, labelled by `z₁ j`, and every step of the second
+chain, labelled by `z₂ j`, satisfies `P`, then so does every step of the glued chain, labelled by
+`Fin.append z₁ z₂`. -/
+theorem forall_append_init_castSucc_succ {z₁ : Fin k₁ → β} {z₂ : Fin k₂ → β}
+    (h : x₁ (last k₁) = x₂ 0) {P : α → α → β → Prop}
+    (h₁ : ∀ j, P (x₁ j.castSucc) (x₁ j.succ) (z₁ j))
+    (h₂ : ∀ j, P (x₂ j.castSucc) (x₂ j.succ) (z₂ j)) (j : Fin (k₁ + k₂)) :
+    P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j) := by
+  refine addCases (motive := fun j : Fin (k₁ + k₂) ↦
+    P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j))
+    (fun j ↦ ?_) (fun j ↦ ?_) j
+  · rw [castSucc_castAdd, append_left, append_left, init,
+      show (castAdd k₂ j).succ = (castLE (by omega) j.succ : Fin (k₁ + k₂ + 1)) from
+        Fin.ext (by simp), append_init_castLE h]
+    exact h₁ j
+  · rw [← natAdd_castSucc, succ_natAdd, append_right, append_right, append_right]
+    exact h₂ j
+
+end AppendInit
 
 end Fin
 

@@ -40,8 +40,11 @@ Morse charts.
   subspace of the positive weights, the flow is the contraction `z ↦ e^{-t} z`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_coord_eq_zero`: near `x`, the points
   of the coordinate subspace of the positive weights lie in `W^s(x)`.
-* `TauCeti.IsAdaptedPseudoGradient.exists_flow_lt_of_coord_ne_zero`: the energy barrier for the
-  other points near `x`.
+* `TauCeti.IsAdaptedPseudoGradient.norm_linearFlow_lt_and_flow_eq_of_exp_mul_lt`: the flow is
+  the linear flow until a coordinate of negative weight has grown.
+* `TauCeti.IsAdaptedPseudoGradient.apply_flow_lt_of_le_exp_mul`,
+  `TauCeti.IsAdaptedPseudoGradient.exists_flow_lt_of_coord_ne_zero`: the energy barrier for the
+  other points near `x`, with a bound on the time at which it is crossed.
 * `TauCeti.IsAdaptedPseudoGradient.exists_forall_mem_stableSet_iff`: on a small coordinate cube,
   `W^s(x)` is the coordinate subspace of the positive weights.
 * `TauCeti.IsAdaptedPseudoGradient.exists_forall_coord_flow_eq_exp_smul`: on a small coordinate
@@ -236,6 +239,84 @@ theorem mem_stableSet_of_forall_coord_eq_zero (hX : IsAdaptedPseudoGradient f X)
   rw [comp_apply, ← hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT hyr hu ht,
     φ.toChart_symm_coord_symm_coord hy]
 
+/-- **The flow is linear until a coordinate of negative weight grows.** Let `X` be the linear field
+`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`, and let the coordinates of `y` have norm less than `r / 2`.
+At a time `t ≥ 0` by which no coordinate of negative weight of the linear orbit has grown to size
+`r`, the linear orbit has norm less than `r`, and the orbit of `y` is the linear orbit read on the
+manifold. -/
+theorem norm_linearFlow_lt_and_flow_eq_of_exp_mul_lt (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
+    {y : M} (hy : y ∈ φ.toChart.source) (hyr : ‖φ.coord (φ.toChart y)‖ < r / 2) {t : ℝ}
+    (ht : 0 ≤ t) (hsmall : ∀ i, φ.weight i < 0 → Real.exp t * |φ.coord (φ.toChart y) i| < r) :
+    ‖φ.linearFlow t (φ.coord (φ.toChart y))‖ < r ∧
+      hX.flow t y = φ.toChart.symm (φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart y)))) := by
+  set z := φ.coord (φ.toChart y)
+  have hnorm : ∀ s ∈ uIcc 0 t, ‖φ.linearFlow s z‖ < r := fun s hs ↦ by
+    rw [uIcc_of_le ht] at hs
+    have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+    exact φ.norm_linearFlow_lt hyr (by linarith [hs.1]) fun i hi ↦
+      (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hs.2) (abs_nonneg _)).trans_lt (hsmall i hi)
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ fun s hs ↦ hrT _ (hnorm s hs)
+  rw [φ.toChart_symm_coord_symm_coord hy] at hflow
+  exact ⟨hnorm t right_mem_uIcc, hflow⟩
+
+/-- **The energy barrier, with a time bound.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the
+Morse chart `φ`, and let the coordinates of `y` be small compared with `r`. At every time `t` by
+which a coordinate of negative weight of the linear orbit has grown to size `r`, the orbit of `y`
+is below the level `f x`. -/
+theorem apply_flow_lt_of_le_exp_mul (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
+    {y : M} (hy : y ∈ φ.toChart.source)
+    (hyr : ‖φ.coord (φ.toChart y)‖ < r / (4 * (Module.finrank ℝ E + 1)))
+    {t : ℝ} {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j < 0)
+    (hjr : r ≤ Real.exp t * |φ.coord (φ.toChart y) j|) :
+    f (hX.flow t y) < f x := by
+  set n : ℝ := (Module.finrank ℝ E : ℝ)
+  have hn0 : 0 ≤ n := Nat.cast_nonneg _
+  set z := φ.coord (φ.toChart y)
+  have hr : 0 < r :=
+    (div_pos_iff_of_pos_right (by positivity)).1 ((norm_nonneg _).trans_lt hyr)
+  set ε := r / (4 * (n + 1)) with hεdef
+  have hε : 0 < ε := by positivity
+  have h1 : ε * (n + 1) = r / 4 := by rw [hεdef]; field_simp
+  have hεn : n * ε ^ 2 < (r / 2) ^ 2 := by nlinarith [sq_nonneg ε, mul_pos hε hε]
+  have hz2 : ‖z‖ < r / 2 := by nlinarith
+  have hzi (i : Fin (Module.finrank ℝ E)) : |z i| < ε := (pi_norm_lt_iff hε).1 hyr i
+  -- The largest coordinate of negative weight reaches `r / 2` at a time `T ≤ t`, before which the
+  -- orbit is the linear one, and there the quadratic normal form is negative.
+  obtain ⟨j₀, hj₀, hmax⟩ := Finset.exists_max_image
+    (Finset.univ.filter fun i ↦ φ.weight i < 0) (fun i ↦ |z i|) ⟨j, by simp [hj]⟩
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₀ hmax
+  set m := |z j₀|
+  have hm0 : 0 < m := (pos_of_mul_pos_right (hr.trans_le hjr) (Real.exp_pos t).le).trans_le
+    (hmax j hj)
+  have hwj₀ : φ.weight j₀ = -1 := (φ.weight_eq_neg_one_or_eq_one j₀).resolve_right
+    (by intro h; rw [h] at hj₀; norm_num at hj₀)
+  set T := Real.log (r / 2 / m)
+  have hT0 : 0 ≤ T := Real.log_nonneg (by rw [le_div_iff₀ hm0]; nlinarith [hzi j₀])
+  have hexpT : Real.exp T = r / 2 / m := Real.exp_log (by positivity)
+  have hTt : T ≤ t := Real.exp_le_exp.1 <| by
+    rw [hexpT, div_le_iff₀ hm0]
+    nlinarith [hmax j hj, Real.exp_pos t]
+  obtain ⟨hnorm, hflow⟩ := hX.norm_linearFlow_lt_and_flow_eq_of_exp_mul_lt φ hφ hrT hy hz2 hT0
+    fun i hi ↦
+      calc Real.exp T * |z i| ≤ Real.exp T * m := by gcongr; exact hmax i hi
+        _ = r / 2 := by rw [hexpT]; field_simp
+        _ < r := half_lt_self hr
+  have hT' := hrT _ hnorm
+  have hfT : f (hX.flow T y) < f x := by
+    rw [hflow, φ.eq_quadratic _ (φ.toChart.map_target hT'), φ.toChart.right_inv hT',
+      LinearEquiv.apply_symm_apply]
+    have hsum := φ.sum_weight_mul_linearFlow_sq_le (fun i ↦ (hzi i).le) hwj₀ hT0 (c := r / 2)
+      (by rw [hexpT]; exact div_mul_cancel₀ _ hm0.ne')
+    nlinarith
+  exact (hX.antitone_flow y hTt).trans_lt hfT
+
 /-- **The energy barrier.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`,
 and let the coordinates of `y` be small, with some coordinate of negative weight nonzero. Then the
 orbit of `y` reaches a level below `f x`. -/
@@ -248,54 +329,14 @@ theorem exists_flow_lt_of_coord_ne_zero (hX : IsAdaptedPseudoGradient f X)
     (hyr : ‖φ.coord (φ.toChart y)‖ < r / (4 * (Module.finrank ℝ E + 1)))
     {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j < 0) (hjz : φ.coord (φ.toChart y) j ≠ 0) :
     ∃ T, f (hX.flow T y) < f x := by
-  -- The coordinates of negative weight grow until the largest one has size `r / 2`, while the
-  -- others stay small, so the quadratic normal form becomes negative.
-  set n : ℝ := (Module.finrank ℝ E : ℝ)
-  have hn0 : 0 ≤ n := Nat.cast_nonneg _
-  have hr : 0 < r := by
-    have h := (norm_nonneg _).trans_lt hyr
-    rwa [div_pos_iff_of_pos_right (by positivity)] at h
-  set ε := r / (4 * (n + 1)) with hεdef
-  have hε : 0 < ε := by positivity
-  have h1 : ε * (n + 1) = r / 4 := by
-    rw [hεdef]; field_simp
-  have hεn : n * ε ^ 2 < (r / 2) ^ 2 := by
-    nlinarith [sq_nonneg ε, mul_pos hε hε]
-  set z := φ.coord (φ.toChart y)
-  have hz2 : ‖z‖ < r / 2 := by nlinarith
-  have hzi (i : Fin (Module.finrank ℝ E)) : |z i| < ε := by
-    rw [← Real.norm_eq_abs]
-    exact (pi_norm_lt_iff hε).1 hyr i
-  obtain ⟨j₀, hj₀, hmax⟩ := Finset.exists_max_image
-    (Finset.univ.filter fun i ↦ φ.weight i < 0) (fun i ↦ |z i|) ⟨j, by simp [hj]⟩
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₀ hmax
-  set m := |z j₀|
-  have hm0 : 0 < m := (abs_pos.2 hjz).trans_le (hmax j hj)
-  have hwj₀ : φ.weight j₀ = -1 := (φ.weight_eq_neg_one_or_eq_one j₀).resolve_right
-    (by intro h; rw [h] at hj₀; norm_num at hj₀)
-  -- The time at which the largest coordinate of negative weight reaches `r / 2`.
-  set T := Real.log (r / 2 / m)
-  have hrm : 1 ≤ r / 2 / m := by rw [le_div_iff₀ hm0]; nlinarith [hzi j₀]
-  have hT0 : 0 ≤ T := Real.log_nonneg hrm
-  have hexpT : Real.exp T = r / 2 / m := Real.exp_log (by positivity)
-  have hTb : T < Real.log (r / m) := Real.log_lt_log (by positivity) (by gcongr; linarith)
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  have hstay : ∀ t ∈ Ioo (-Real.log 2) (Real.log (r / m)),
-      φ.coord.symm (φ.linearFlow t z) ∈ φ.toChart.target := fun t ht ↦
-    hrT _ (φ.norm_linearFlow_lt hz2 ht.1 fun i hi ↦
-      calc Real.exp t * |z i| ≤ Real.exp t * m := by gcongr; exact hmax i hi
-        _ < Real.exp (Real.log (r / m)) * m := by gcongr; exact ht.2
-        _ = r := by rw [Real.exp_log (by positivity)]; field_simp)
-  have hTmem : T ∈ Ioo (-Real.log 2) (Real.log (r / m)) := ⟨by linarith, hTb⟩
-  have hflow := hX.flow_toChart_symm φ hφ ⟨by linarith, by linarith⟩ hstay hTmem
-  rw [φ.toChart_symm_coord_symm_coord hy] at hflow
-  refine ⟨T, ?_⟩
-  have hT' := hstay T hTmem
-  rw [hflow, φ.eq_quadratic _ (φ.toChart.map_target hT'), φ.toChart.right_inv hT',
-    LinearEquiv.apply_symm_apply]
-  have hsum := φ.sum_weight_mul_linearFlow_sq_le (fun i ↦ (hzi i).le) hwj₀ hT0 (c := r / 2)
-    (by rw [hexpT]; exact div_mul_cancel₀ _ hm0.ne')
-  linarith
+  -- The coordinate `j` of the linear orbit has grown to size `r` by the time `r / |z j|`.
+  have hzj : 0 < |φ.coord (φ.toChart y) j| := abs_pos.2 hjz
+  refine ⟨r / |φ.coord (φ.toChart y) j|, hX.apply_flow_lt_of_le_exp_mul φ hφ hrT hy hyr hj ?_⟩
+  calc r = r / |φ.coord (φ.toChart y) j| * |φ.coord (φ.toChart y) j| :=
+        (div_mul_cancel₀ _ hzj.ne').symm
+    _ ≤ Real.exp (r / |φ.coord (φ.toChart y) j|) * |φ.coord (φ.toChart y) j| := by
+        gcongr
+        linarith [Real.add_one_le_exp (r / |φ.coord (φ.toChart y) j|)]
 
 /-- **The local stable set in a Morse chart.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in
 the Morse chart `φ`. On a small coordinate cube around `x`, a point lies in the stable set
