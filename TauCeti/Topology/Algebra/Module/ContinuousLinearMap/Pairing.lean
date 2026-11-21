@@ -12,12 +12,14 @@ public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 This file defines the continuous pairing obtained by exchanging the arguments of a jointly
 continuous pairing `μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃`, together with its evaluation and
-joint-continuity lemmas. The pairing `μ` is only assumed linear in its first argument and jointly
-continuous: its curried form need not be continuous (each slice `μ x` is continuous because `μ`
-is jointly continuous). Each argument may be semilinear, as for a sesquilinear complex pairing.
+joint-continuity lemmas. The pairing `μ` is semilinear in both arguments, possibly with different
+scalar homomorphisms, as for a sesquilinear complex pairing. Each slice `μ x` is bundled as a
+continuous semilinear map, but the curried map `x ↦ μ x` is only semilinear: it need not be
+continuous for the topology of bounded convergence, and only joint continuity of `μ` is assumed.
 The scalar field of `G₁` is nontrivially normed, the scalar homomorphism `σ₂₃` of the second
 argument is surjective, and scalar multiplication is only assumed continuous for each fixed
-scalar.
+scalar. Forgetting continuity, the flip is Mathlib's algebraic flip `LinearMap.flip`
+(`LinearMap.toLinearMap₁₂_pairingFlip`).
 
 When the hypotheses hold in both orientations, flipping a continuous pairing twice gives it back
 (`ContinuousLinearMap.pairingFlip_pairingFlip`).
@@ -68,6 +70,14 @@ theorem pairingFlip_continuous (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂�
     Continuous (Function.uncurry fun x y ↦ pairingFlip μ hμ x y) := by
   simpa only [Function.uncurry_def, Function.comp_def, Prod.swap, pairingFlip_apply]
     using hμ.comp continuous_swap
+
+/-- Forgetting continuity, the flip of a jointly continuous pairing is the algebraic flip
+`LinearMap.flip` of `μ` with its slices viewed as semilinear maps. -/
+@[simp]
+theorem toLinearMap₁₂_pairingFlip (μ : G₁ →ₛₗ[σ₁₃] G₂ →SL[σ₂₃] G₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    (pairingFlip μ hμ).toLinearMap₁₂ = ((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip :=
+  (rfl)
 
 end LinearMap
 
