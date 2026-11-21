@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Twist.Map
-public import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Order.Filter.Finite
 import TauCeti.Data.List.TakeDrop
 
@@ -29,8 +29,7 @@ all the points `φ_{L,p} v` with `p` a tuple of `L` natural numbers (`eval_twist
 The proof retracts the bottom letter first. Morphisms of stages
 (`TauCeti.GroupAlgGeom.Lift.TowerStage.Hom`) that eventually keep every nonidentity element of the
 base induce homomorphisms of towers that eventually keep every nonidentity element of the tower
-(`TowerStage.Hom.eventually_tower_ne_one`); for one step this is the normal form theorem for the
-amalgams (`TauCeti.LimitGroup.CentralizerExt.eventually_map_ne_one`). The retractions `t₁ ↦ u₁ ^ k`
+(`TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.eventually_tower_ne_one`). The retractions `t₁ ↦ u₁ ^ k`
 of the first step are morphisms onto the stage twisted `k` times
 (`TauCeti.GroupAlgGeom.Lift.TowerStage.liftRetraction`), and by the theorem of [IFT], §2.5, they
 eventually keep every nonidentity element
@@ -45,36 +44,42 @@ element `u`, by `t₁` and then by `t₂`, the element `t₂ t₁⁻¹` is nontr
 equal exponents kills it. The corollary of [IFT], §2.5, which claims all such tuples, is false as
 stated.
 
-If the twists fix every equation of a system `S` and `v` is a solution of `S`, the twisted points
-`φ_{L,p} v` are solutions, so for a nondegenerate tower over a CSA group with the big powers
-property every word of the radical of `S` vanishes at the top point
+If the twists map the radical of a system `S` into itself and `v` is a solution of `S`, the
+twisted points `φ_{L,p} v` are solutions (`wordMap_phi_mem_V`), so for a nondegenerate tower over a
+CSA group with the big powers property every word of the radical of `S` vanishes at the top point
 (`eval_twistTower_eq_one_of_mem_Rad`): the top point is a point of the coordinate group `G_{R(S)}`,
-which maps to the tower (`twistTowerGHom`). For the basic tower of a solution `β` of a standard
-orientable quadratic equation (`TauCeti.GroupAlgGeom.Lift.basicTower`) this is the homomorphism
-`λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2, Proposition 4 (`eval_basicTower_eq_one_of_mem_Rad`); no
-regularity of the equation is needed.
+which maps to the tower (`twistTowerGHom`), and the retraction with exponents `p` composed with this
+map is evaluation at `φ_{L,p} v` (`towerRetraction_twistTowerGHom`). This holds for the basic tower
+of `J` rounds of the basic sequence over a solution `β` of a standard orientable quadratic equation
+(`TauCeti.GroupAlgGeom.Lift.basicTower`, `eval_basicTower_eq_one_of_mem_Rad`), whose twists fix the
+equation; for `J = 2` the map is the homomorphism `λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2,
+Proposition 4, and no regularity of the equation is needed.
 
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.Lift.twistTowerGHom`: the `G`-homomorphism from the coordinate group of a
-  system fixed by the twists to a nondegenerate tower over a solution, over a CSA group with the
-  big powers property.
+  system whose radical the twists preserve to a nondegenerate tower over a solution, over a CSA
+  group with the big powers property.
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.eventually_tower_ne_one`: morphisms that eventually
-  keep every nonidentity element of the base induce homomorphisms of towers that eventually keep
-  every nonidentity element of the tower.
 * `TauCeti.GroupAlgGeom.Lift.exists_bound_forall_towerRetraction_ne_one`: the retractions with
   exponent tuples dominating a bound function keep a given finite set of nonidentity elements.
 * `TauCeti.GroupAlgGeom.Lift.exists_bound_forall_eval_phi_ne_one`: survival at `φ_{L,p} v` for
   exponent tuples dominating a bound function.
 * `TauCeti.GroupAlgGeom.Lift.eval_twistTower_eq_one_iff`: the kernel of the top point, tested on
   the tuples of `L` natural numbers.
+* `TauCeti.GroupAlgGeom.Lift.eval_wordMap_phi`: evaluating at the point `φ_{L,p} v` is
+  evaluating at `v` after applying `φ_{L,p}`.
+* `TauCeti.GroupAlgGeom.Lift.wordMap_phi_mem_V`: the points `φ_{L,p} v` of a solution `v` of a
+  system whose radical the twists preserve are solutions.
 * `TauCeti.GroupAlgGeom.Lift.eval_twistTower_eq_one_of_mem_Rad`,
   `TauCeti.GroupAlgGeom.Lift.eval_basicTower_eq_one_of_mem_Rad`: over a CSA group with the big
-  powers property, the top point of a nondegenerate tower over a solution of a system fixed by the
-  twists, in particular of a nondegenerate basic tower of a solution, vanishes on the radical.
+  powers property, the top point of a nondegenerate tower over a solution of a system whose radical
+  the twists preserve, in particular of a nondegenerate basic tower of a solution, vanishes on the
+  radical.
+* `TauCeti.GroupAlgGeom.Lift.towerRetraction_twistTowerGHom`: the retraction with exponents `p`
+  composed with `twistTowerGHom` is evaluation at `φ_{L,p} v`.
 
 ## References
 
@@ -93,61 +98,7 @@ namespace TauCeti.GroupAlgGeom.Lift
 
 variable {G : Type u} [Group G] {X : Type v}
 
-namespace TowerStage
-
-/-- If morphisms of stages `fᵢ : P → Qᵢ` eventually keep every nonidentity element of the base
-along a filter, the induced homomorphisms of the towers along any list of twist data eventually
-keep every nonidentity element of the tower. -/
-theorem Hom.eventually_tower_ne_one {ι : Type*} {F : Filter ι} {P : TowerStage.{u, v, w} G X}
-    {Q : ι → TowerStage.{u, v, w} G X} (f : ∀ i, P.Hom (Q i))
-    (hf : ∀ g : P.carrier, g ≠ 1 → ∀ᶠ i in F, f i g ≠ 1) (l : List (TwistData G X))
-    {x : (twistTower l P).carrier} (hx : x ≠ 1) : ∀ᶠ i in F, (f i).tower l x ≠ 1 := by
-  induction l generalizing P Q with
-  | nil => exact hf x hx
-  | cons d l ih =>
-    -- The lifts of the `fᵢ` are the maps of extensions of centralizers they induce, followed by
-    -- isomorphisms, so they eventually keep every nonidentity element.
-    refine ih (fun i => (f i).lift d) (fun g hg => ?_) hx
-    filter_upwards [CentralizerExt.eventually_map_ne_one (f := fun i => (f i).toMonoidHom) hf _ 1
-      hg] with i hi
-    rw [lift_apply]
-    exact (MulEquiv.map_ne_one_iff _).2 hi
-
-/-- If morphisms of stages `fᵢ : P → Qᵢ` eventually keep every nonidentity element of the base,
-the towers over the `Qᵢ` along a list along which the tower over `P` is nondegenerate are
-eventually nondegenerate. -/
-private theorem Hom.eventually_isNondegenerate {ι : Type*} {F : Filter ι}
-    {P : TowerStage.{u, v, w} G X} {Q : ι → TowerStage.{u, v, w} G X} (f : ∀ i, P.Hom (Q i))
-    (hf : ∀ g : P.carrier, g ≠ 1 → ∀ᶠ i in F, f i g ≠ 1) {l : List (TwistData G X)}
-    (hl : P.IsNondegenerate l) : ∀ᶠ i in F, (Q i).IsNondegenerate l := by
-  have h (j : Fin l.length) := (Hom.eventually_tower_ne_one f hf (l.take j)
-    ((P.isNondegenerate_iff l).1 hl j j.isLt)).mono fun i hi => by rwa [Hom.map_eval] at hi
-  filter_upwards [eventually_all.2 h] with i hi using
-    ((Q i).isNondegenerate_iff l).2 fun j hj => hi ⟨j, hj⟩
-
-end TowerStage
-
 /-! ### Discrimination along dominated exponents -/
-
-/-- A property of the tuples of `L + 1` natural numbers holds for all tuples dominating some bound
-function if, for every large first exponent `k`, it holds for the tuples `k :: q` with `q`
-dominating some bound function depending on `k`. -/
-private theorem exists_bound_of_forall_cons {Pr : List ℕ → Prop} {L : ℕ} (K : ℕ)
-    (h : ∀ k, K ≤ k → ∃ N : List ℕ → ℕ, ∀ q : List ℕ, q.length = L →
-      (∀ i (hi : i < q.length), N (q.take i) ≤ q[i]) → Pr (k :: q)) :
-    ∃ N : List ℕ → ℕ, ∀ p : List ℕ, p.length = L + 1 →
-      (∀ i (hi : i < p.length), N (p.take i) ≤ p[i]) → Pr p := by
-  have h' (k : ℕ) : ∃ N : List ℕ → ℕ, K ≤ k → ∀ q : List ℕ, q.length = L →
-      (∀ i (hi : i < q.length), N (q.take i) ≤ q[i]) → Pr (k :: q) := by
-    by_cases hk : K ≤ k
-    · obtain ⟨N, hN⟩ := h k hk
-      exact ⟨N, fun _ => hN⟩
-    · exact ⟨0, fun h => absurd h hk⟩
-  choose N hN using h'
-  refine ⟨fun | [] => K | k :: q => N k q, ?_⟩
-  rintro (_ | ⟨k, q⟩) hp hdom
-  · simp at hp
-  · exact hN k (hdom 0 (by simp)) q (by simpa using hp) fun i hi => hdom (i + 1) (by simpa)
 
 /-- **Discrimination along dominated exponents.** Let `P` be a point in a CSA group with the big
 powers property and `l` a list of `L` twist data along which the tower over `P` is nondegenerate.
@@ -178,7 +129,7 @@ theorem exists_bound_forall_towerRetraction_ne_one {P : TowerStage.{u, v, w} G X
         (hM x hx)))
     -- The stage twisted `k` times has the same group as `P`; the induction hypothesis gives a
     -- bound function for the remaining exponents.
-    refine exists_bound_of_forall_cons K fun k hk => ?_
+    refine List.exists_bound_of_forall_cons K fun k hk => ?_
     obtain ⟨N, hN⟩ := ih (P := P.twisted d k) hBP hCSA (hK k hk).1
       (M := M.image ((P.liftRetraction d k).tower l)) (Finset.forall_mem_image.2 (hK k hk).2)
     refine ⟨N, fun q hq hdom x hx h1 => hN q hq hdom _ (Finset.mem_image_of_mem _ hx) ?_⟩
@@ -220,57 +171,98 @@ theorem eval_twistTower_eq_one_iff {P : TowerStage.{u, v, w} G X} (hBP : Group.I
   · rw [← eval_towerRetraction l P hp.le, h, map_one]
   · by_contra hne
     obtain ⟨N, hN⟩ := exists_bound_forall_eval_phi_ne_one hBP hCSA hl (M := {w}) (by simpa)
-    obtain ⟨p, hp, hdom⟩ := List.exists_length_eq_forall_le_getElem N l.length
-    exact hN p hp hdom w (Finset.mem_singleton_self w) (h p hp)
+    obtain ⟨p, hp, hdom⟩ := List.exists_length_eq_forall_getElem_eq N l.length
+    exact hN p hp (fun i hi => (hdom i hi).ge) w (Finset.mem_singleton_self w) (h p hp)
 
 /-! ### Points of coordinate groups -/
 
+/-- If the substitutions of the twist data of `l` map a set of words into itself, so do the
+automorphisms `φ_{L,p}`. -/
+private theorem mapsTo_phi_map_toMulAut {l : List (TwistData G X)} {s : Set (GX G X)}
+    (hs : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) s s) (p : List ℕ) :
+    Set.MapsTo ⇑(phi (l.map TwistData.toMulAut) p) s s :=
+  mapsTo_phi (List.forall_mem_map.2 fun d hd x hx => by
+    rw [TwistData.toMulAut_apply]
+    exact hs d hd hx) p
+
+/-- The automorphisms `φ_{L,p}` fix the coefficients. -/
+private theorem phi_map_toMulAut_inl (l : List (TwistData G X)) (p : List ℕ) (g : G) :
+    phi (l.map TwistData.toMulAut) p (inl g) = inl g :=
+  phi_apply_of_forall_mem (List.forall_mem_map.2 fun d _ => by simp [twistHom_inl]) p
+
+/-- Evaluating at the point `φ_{L,p} v`, whose coordinates are the values at `v` of the words
+`φ_{L,p}(x)`, is evaluating at `v` after applying `φ_{L,p}`. -/
+theorem eval_wordMap_phi {H : Type*} [Group H] (ι : G →* H) (l : List (TwistData G X))
+    (p : List ℕ) (v : X → H) (w : GX G X) :
+    eval ι (wordMap ι (fun x => phi (l.map TwistData.toMulAut) p (inr (.of x))) v) w =
+      eval ι v (phi (l.map TwistData.toMulAut) p w) := by
+  have h := DFunLike.congr_fun
+    (eval_wordMap (ι := ι) (.ofMulEquiv _ (phi_map_toMulAut_inl l p)) v) w
+  simpa only [GHom.coe_ofMulEquiv, MonoidHom.comp_apply, GHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass] using h
+
+/-- If the substitutions of the twist data of `l` map the radical of a system `S` into itself, the
+points `φ_{L,p} v` obtained from a solution `v` of `S` are solutions of `S`. -/
+theorem wordMap_phi_mem_V {H : Type*} [Group H] {ι : G →* H} {l : List (TwistData G X)}
+    {S : Set (GX G X)} (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad ι S) (Rad ι S))
+    {v : X → H} (hv : v ∈ V ι S) (p : List ℕ) :
+    wordMap ι (fun x => phi (l.map TwistData.toMulAut) p (inr (.of x))) v ∈ V ι S :=
+  mem_V.2 fun s hs => by
+    rw [eval_wordMap_phi]
+    exact mem_Rad.1 (mapsTo_phi_map_toMulAut hS p (subset_Rad S hs)) v hv
+
 /-- Let `P` be a solution of a system `S` in a CSA group with the big powers property, `l` a list
-of twist data whose substitutions fix every equation of `S`, and suppose that the tower over `P`
-along `l` is nondegenerate. Then every word of the radical of `S` vanishes at the point of the
-tower. -/
+of twist data whose substitutions map the radical of `S` into itself, and suppose that the tower
+over `P` along `l` is nondegenerate. Then every word of the radical of `S` vanishes at the point of
+the tower. -/
 theorem eval_twistTower_eq_one_of_mem_Rad {P : TowerStage.{u, v, w} G X}
     (hBP : Group.IsBP P.carrier) (hCSA : Group.IsCSA P.carrier) {l : List (TwistData G X)}
-    (hl : P.IsNondegenerate l) {S : Set (GX G X)} (hS : ∀ d ∈ l, ∀ s ∈ S, twistHom d.A d.e s = s)
+    (hl : P.IsNondegenerate l) {S : Set (GX G X)}
+    (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad P.coeff S) (Rad P.coeff S))
     (hv : P.point ∈ V P.coeff S) {w : GX G X} (hw : w ∈ Rad P.coeff S) :
-    eval (twistTower l P).coeff (twistTower l P).point w = 1 := by
-  refine (eval_twistTower_eq_one_iff hBP hCSA hl w).2 fun p _ => ?_
-  -- The automorphism `φ_{L,p}` of `G[X]` fixes the coefficients and the equations of `S`, so it
-  -- maps the radical of `S` into itself.
-  have hfix {u : GX G X} (hu : ∀ d ∈ l, twistHom d.A d.e u = u) :
-      phi (l.map TwistData.toMulAut) p u = u :=
-    phi_apply_of_forall_mem (by simpa using hu) p
-  have hσ (g : G) := hfix fun d _ => twistHom_inl d.A d.e g
-  simpa using mem_Rad.1 (Rad_preimage_le_comap P.coeff (.ofMulEquiv _ hσ) S
-    (Rad_monotone P.coeff (fun s hs => by simpa [hfix fun d hd => hS d hd s hs]) hw)) P.point hv
+    eval (twistTower l P).coeff (twistTower l P).point w = 1 :=
+  (eval_twistTower_eq_one_iff hBP hCSA hl w).2 fun p _ =>
+    mem_Rad.1 (mapsTo_phi_map_toMulAut hS p hw) P.point hv
 
 /-- The `G`-homomorphism `G_{R(S)} → Z_L` from the coordinate group of a system `S` over the
 group of `P` to a nondegenerate tower over a solution `P` of `S` in a CSA group with the big powers
-property, along twist data whose substitutions fix every equation of `S`: the evaluation at the
-point of the tower. For the basic tower of a solution `β` of a standard orientable quadratic
-equation (`TauCeti.GroupAlgGeom.Lift.basicTower`), this is the homomorphism
-`λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2, Proposition 4. -/
+property, along twist data whose substitutions map the radical of `S` into itself: the evaluation
+at the point of the tower. For the basic tower of two rounds (`J = 2`) of the basic sequence over a
+solution `β` of a standard orientable quadratic equation (`TauCeti.GroupAlgGeom.Lift.basicTower`),
+this is the homomorphism `λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2, Proposition 4. -/
 noncomputable def twistTowerGHom {P : TowerStage.{u, v, w} G X} (hBP : Group.IsBP P.carrier)
     (hCSA : Group.IsCSA P.carrier) {l : List (TwistData G X)} (hl : P.IsNondegenerate l)
-    {S : Set (GX G X)} (hS : ∀ d ∈ l, ∀ s ∈ S, twistHom d.A d.e s = s)
-    (hv : P.point ∈ V P.coeff S) : GHom (CoordGroup.coeff P.coeff S) (twistTower l P).coeff where
-  toMonoidHom := QuotientGroup.lift _ (eval (twistTower l P).coeff (twistTower l P).point)
-    fun _ hw => MonoidHom.mem_ker.2 (eval_twistTower_eq_one_of_mem_Rad hBP hCSA hl hS hv hw)
-  map_coeff' g := by simp
+    {S : Set (GX G X)} (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad P.coeff S) (Rad P.coeff S))
+    (hv : P.point ∈ V P.coeff S) : GHom (CoordGroup.coeff P.coeff S) (twistTower l P).coeff :=
+  CoordGroup.evalGHomOfMemVRad (twistTower l P).point
+    (mem_V.2 fun _ hw => eval_twistTower_eq_one_of_mem_Rad hBP hCSA hl hS hv hw)
 
 @[simp]
 theorem twistTowerGHom_mk {P : TowerStage.{u, v, w} G X} (hBP : Group.IsBP P.carrier)
     (hCSA : Group.IsCSA P.carrier) {l : List (TwistData G X)} (hl : P.IsNondegenerate l)
-    {S : Set (GX G X)} (hS : ∀ d ∈ l, ∀ s ∈ S, twistHom d.A d.e s = s)
+    {S : Set (GX G X)} (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad P.coeff S) (Rad P.coeff S))
     (hv : P.point ∈ V P.coeff S) (w : GX G X) :
     twistTowerGHom hBP hCSA hl hS hv (w : CoordGroup P.coeff S) =
-      eval (twistTower l P).coeff (twistTower l P).point w := by
-  simp [twistTowerGHom]
+      eval (twistTower l P).coeff (twistTower l P).point w :=
+  CoordGroup.evalGHomOfMemVRad_mk _ w
 
-/-- The point of a nondegenerate basic tower of a solution `β` of a standard orientable quadratic
-equation `S = 1` over a CSA group with the big powers property is a point of the coordinate group:
-every word of the radical of `S` vanishes at it ([IFT], §7.2, Proposition 4,
-`λ_β : G_{R(S)} → G(U, T)`). -/
+/-- The retraction of the tower with exponents `p`, a tuple no longer than `l`, composed with
+`twistTowerGHom`, is evaluation at the solution `φ_{L,p} v` of `S`. -/
+theorem towerRetraction_twistTowerGHom {P : TowerStage.{u, v, w} G X}
+    (hBP : Group.IsBP P.carrier) (hCSA : Group.IsCSA P.carrier) {l : List (TwistData G X)}
+    (hl : P.IsNondegenerate l) {S : Set (GX G X)}
+    (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad P.coeff S) (Rad P.coeff S))
+    (hv : P.point ∈ V P.coeff S) {p : List ℕ} (hp : p.length ≤ l.length)
+    (q : CoordGroup P.coeff S) :
+    towerRetraction l P p (twistTowerGHom hBP hCSA hl hS hv q) =
+      CoordGroup.evalGHom _ (wordMap_phi_mem_V hS hv p) q := by
+  obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+  rw [twistTowerGHom_mk, eval_towerRetraction l P hp, CoordGroup.evalGHom_mk, eval_wordMap_phi]
+
+/-- The point of a nondegenerate basic tower of `J` rounds over a solution `β` of a standard
+orientable quadratic equation `S = 1` over a CSA group with the big powers property is a point of
+the coordinate group: every word of the radical of `S` vanishes at it. For `J = 2` this says that
+the homomorphism `λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2, Proposition 4, is defined. -/
 theorem eval_basicTower_eq_one_of_mem_Rad (hBP : Group.IsBP G) (hCSA : Group.IsCSA G)
     {S : Quadratic.Standard G X} (hS : S.IsOrientable) {β : X → G}
     (hβ : β ∈ V (.id G) {S.toWord}) (J : ℕ)
@@ -280,9 +272,13 @@ theorem eval_basicTower_eq_one_of_mem_Rad (hBP : Group.IsBP G) (hCSA : Group.IsC
     eval (basicTower S hS β J).coeff (basicTower S hS β J).point w = 1 := by
   rw [basicTower_def]
   refine eval_twistTower_eq_one_of_mem_Rad (P := ⟨G, .id G, β⟩) hBP hCSA hnd
-    (fun d hd s hs => ?_) hβ hw
+    (fun d hd u hu => ?_) hβ hw
   obtain ⟨_, hl, hdl⟩ := List.mem_flatten.1 hd
   obtain rfl := List.eq_of_mem_replicate hl
-  rw [Set.mem_singleton_iff.1 hs, twistHom_toWord_of_mem_basicSeqData hS hdl]
+  -- The twist fixes the coefficients and the equation, so it maps the radical into itself.
+  simpa using Rad_preimage_le_comap (.id G)
+    (.ofMulEquiv d.toMulAut fun g => (d.toMulAut_apply _).trans (twistHom_inl d.A d.e g))
+    {S.toWord} (Rad_monotone (.id G) (fun s hs => by
+      simp [Set.mem_singleton_iff.1 hs, twistHom_toWord_of_mem_basicSeqData hS hdl]) hu)
 
 end TauCeti.GroupAlgGeom.Lift

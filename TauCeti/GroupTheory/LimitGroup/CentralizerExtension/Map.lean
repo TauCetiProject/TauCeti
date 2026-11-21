@@ -29,6 +29,8 @@ in particular `C_K(f u)` may be larger than `f(C_G(u))`.
 
 ## Main results
 
+* `TauCeti.LimitGroup.CentralizerExt.retraction_comp_map`: it commutes with the retractions
+  `tᵢ ↦ u ^ kᵢ` and `tᵢ ↦ (f u) ^ kᵢ`.
 * `TauCeti.LimitGroup.CentralizerExt.eventually_map_ne_one`: if homomorphisms `fᵢ` (to possibly
   different groups) eventually keep every nonidentity element of `G` along a filter, the induced
   homomorphisms eventually keep every nonidentity element of `G(u, ℤⁿ)`, an instance of the
@@ -81,6 +83,17 @@ theorem map_id (u : G) (n : ℕ) : map (.id G) u n = .id (CentralizerExt u n) :=
 theorem map_comp {L : Type*} [Group L] (g : K →* L) (f : G →* K) (u : G) (n : ℕ) :
     map (g.comp f) u n = (map g (f u) n).comp (map f u n) :=
   hom_ext (by ext; simp) (by simp)
+
+/-- The homomorphism induced by `f` commutes with the retractions `tᵢ ↦ u ^ kᵢ` of `G(u, ℤⁿ)` and
+`tᵢ ↦ (f u) ^ kᵢ` of `K(f u, ℤⁿ)`. -/
+theorem retraction_comp_map (f : G →* K) (u : G) (n : ℕ) (k : Fin n → ℤ) :
+    (retraction k).comp (map f u n) = f.comp (retraction k) :=
+  hom_ext (by ext; simp) (by simp)
+
+@[simp]
+theorem retraction_map (f : G →* K) (u : G) (n : ℕ) (k : Fin n → ℤ) (x : CentralizerExt u n) :
+    retraction k (map f u n x) = f (retraction k x) :=
+  DFunLike.congr_fun (retraction_comp_map f u n k) x
 
 /-- The homomorphisms induced by `f : G →* K` on the two factors of the amalgam `G(u, ℤⁿ)`: `f`
 itself on `G`, and its restriction to the centralizers times the identity on `C_G(u) × ℤⁿ`. -/
@@ -141,7 +154,8 @@ theorem eventually_map_ne_one {ι : Type*} {l : Filter ι} {K : ι → Type*} [�
     {f : ∀ i, G →* K i} (hf : ∀ g : G, g ≠ 1 → ∀ᶠ i in l, f i g ≠ 1) (u : G) (n : ℕ)
     {x : CentralizerExt u n} (hx : x ≠ 1) : ∀ᶠ i in l, map (f i) u n x ≠ 1 := by
   simp only [map_eq_pushoutIMap]
-  refine Monoid.PushoutI.eventually_map_ne_one _ (fun i => centralizerExtMap_injective (f i u) n)
+  refine Monoid.PushoutI.eventually_map_ne_one _
+    (.of_forall fun i => centralizerExtMap_injective (f i u) n)
     (fun h hh => ?_) (fun b _ hg => eventually_factorMap_notMem_range hf u n b hg) hx
   filter_upwards [hf h (Subtype.coe_ne_coe.2 hh)] with i hi h1
   exact hi (by simpa using congrArg Subtype.val h1)

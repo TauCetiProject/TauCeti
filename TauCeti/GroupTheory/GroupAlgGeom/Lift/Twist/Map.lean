@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Twist.Tower
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Map
+import Mathlib.Order.Filter.Finite
 
 /-!
 # Morphisms of stages of twist towers
@@ -17,8 +18,16 @@ the point of `P` to its value at the point of `Q`. A morphism lifts to the lifts
 along a twist datum (`TowerStage.Hom.lift`): it is the homomorphism of extensions of centralizers
 that it induces (`TauCeti.LimitGroup.CentralizerExt.map`). So it induces homomorphisms of the towers
 along any list of twist data (`TowerStage.Hom.tower`), compatibly with identities and composition,
-and these commute with the retractions of the towers onto their bases
+and these commute with the inclusions of the bases into the towers
+(`TowerStage.Hom.tower_towerInclusion`) and with the retractions of the towers onto their bases
 (`TowerStage.Hom.towerRetraction_tower`).
+
+If morphisms `fᵢ : P → Qᵢ` eventually keep every nonidentity element of the base along a filter,
+so do the induced homomorphisms of towers on the towers (`TowerStage.Hom.eventually_tower_ne_one`):
+for one step this is the normal form theorem for the amalgams
+(`TauCeti.LimitGroup.CentralizerExt.eventually_map_ne_one`). In particular the towers over the `Qᵢ`
+along a list along which the tower over `P` is nondegenerate are eventually nondegenerate
+(`TowerStage.Hom.eventually_isNondegenerate`).
 
 The retraction `t ↦ u ^ k` of the lift along a twist datum `d` is a morphism from the lift to the
 stage twisted `k` times along `d` (`TowerStage.liftRetraction`, [IFT], §7.2, (84)–(85)).
@@ -36,8 +45,14 @@ stage twisted `k` times along `d` (`TowerStage.liftRetraction`, [IFT], §7.2, (8
 * `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.tower_id`,
   `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.tower_comp`: the induced homomorphisms of towers
   respect identities and composition.
-* `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.towerRetraction_tower`: they commute with the
-  retractions of the towers onto their bases.
+* `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.tower_towerInclusion`,
+  `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.towerRetraction_tower`: they commute with the
+  inclusions of the bases and with the retractions of the towers onto their bases.
+* `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.eventually_tower_ne_one`: morphisms that eventually
+  keep every nonidentity element of the base induce homomorphisms of towers that eventually keep
+  every nonidentity element of the tower.
+* `TauCeti.GroupAlgGeom.Lift.TowerStage.Hom.eventually_isNondegenerate`: the towers over their
+  targets are eventually nondegenerate.
 
 ## References
 
@@ -73,9 +88,10 @@ variable {P Q R : TowerStage.{u, v, w} G X}
 instance : FunLike (P.Hom Q) P.carrier Q.carrier where
   coe f := f.toFun
   coe_injective f g h := by
-    obtain ⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩ := f
-    obtain ⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩ := g
+    obtain ⟨f, _⟩ := f
+    obtain ⟨g, _⟩ := g
     congr
+    exact GHom.ext (congrFun h)
 
 instance : MonoidHomClass (P.Hom Q) P.carrier Q.carrier where
   map_mul f := f.map_mul'
@@ -108,27 +124,30 @@ theorem map_eval (f : P.Hom Q) (w : GX G X) : f (eval P.coeff P.point w) = eval 
 variable (P) in
 /-- The identity morphism of a stage. -/
 protected def id : P.Hom P where
-  toMonoidHom := .id P.carrier
-  map_coeff' _ := rfl
-  comp_point := rfl
+  toGHom := GHom.id P.coeff
+  comp_point := funext fun x => congrFun GHom.coe_id (P.point x)
 
 @[simp]
-theorem coe_id : ⇑(Hom.id P) = id := (rfl)
+theorem coe_id : ⇑(Hom.id P) = id :=
+  GHom.coe_id
 
 /-- The composite of two morphisms of stages. -/
 def comp (g : Q.Hom R) (f : P.Hom Q) : P.Hom R where
-  toMonoidHom := g.toMonoidHom.comp f.toMonoidHom
-  map_coeff' x := by simp
-  comp_point := funext fun x => by simp
+  toGHom := g.toGHom.comp f.toGHom
+  comp_point := funext fun x => (congrFun (GHom.coe_comp _ _) (P.point x)).trans <|
+    (congrArg g (f.map_point x)).trans (g.map_point x)
 
 @[simp]
-theorem coe_comp (g : Q.Hom R) (f : P.Hom Q) : ⇑(g.comp f) = g ∘ f := (rfl)
+theorem coe_comp (g : Q.Hom R) (f : P.Hom Q) : ⇑(g.comp f) = g ∘ f :=
+  GHom.coe_comp _ _
 
 @[simp]
-theorem id_comp (f : P.Hom Q) : (Hom.id Q).comp f = f := (rfl)
+theorem id_comp (f : P.Hom Q) : (Hom.id Q).comp f = f :=
+  ext fun _ => by simp
 
 @[simp]
-theorem comp_id (f : P.Hom Q) : f.comp (Hom.id P) = f := (rfl)
+theorem comp_id (f : P.Hom Q) : f.comp (Hom.id P) = f :=
+  ext fun _ => by simp
 
 /-- A morphism of stages lifts to their lifts along a twist datum: the homomorphism of extensions
 of centralizers induced by it (`TauCeti.LimitGroup.CentralizerExt.map`), followed by the
@@ -181,18 +200,25 @@ private theorem lift_ext {d : TwistData G X} {f g : (P.lift d).Hom Q}
   ext fun x => DFunLike.congr_fun (CentralizerExt.hom_ext (MonoidHom.ext hof)
     (fun i => Fin.fin_one_eq_zero i ▸ ht) : f.toMonoidHom = g.toMonoidHom) x
 
+/-- The lift of the identity morphism of a stage along a twist datum is the identity morphism of
+the lift. -/
 @[simp]
 theorem lift_id (d : TwistData G X) : (Hom.id P).lift d = Hom.id (P.lift d) :=
-  lift_ext (lift_of _ d) (lift_t _ d 0)
+  -- The carrier of the lift is the extension of the centralizer only up to unfolding, so `simp`
+  -- cannot apply `id_eq` to its elements `of x`, `t 0`; the two sides agree definitionally.
+  lift_ext (fun x => by simp only [lift_of, coe_id]; rfl) (by simp only [lift_t, coe_id]; rfl)
 
+/-- The lift of a composite of morphisms of stages along a twist datum is the composite of their
+lifts. -/
 theorem lift_comp (g : Q.Hom R) (f : P.Hom Q) (d : TwistData G X) :
     (g.comp f).lift d = (g.lift d).comp (f.lift d) :=
-  lift_ext (fun x => (lift_of _ d x).trans
-      ((congrArg (g.lift d) (lift_of f d x)).trans (lift_of g d (f x))).symm)
-    ((lift_t _ d 0).trans ((congrArg (g.lift d) (lift_t f d 0)).trans (lift_t g d 0)).symm)
+  -- As in `lift_id`, `simp` cannot apply `Function.comp_apply` to `of x`, `t 0`; the composites
+  -- are unfolded by `Function.comp_def` and the two sides agree definitionally.
+  lift_ext (fun x => by simp only [lift_of, coe_comp, Function.comp_def]; rfl)
+    (by simp only [lift_t, coe_comp, Function.comp_def]; rfl)
 
 /-- The homomorphism of towers induced by a morphism of their bases. -/
-@[expose] noncomputable def tower {P Q : TowerStage.{u, v, w} G X} :
+noncomputable def tower {P Q : TowerStage.{u, v, w} G X} :
     (l : List (TwistData G X)) → P.Hom Q → (twistTower l P).Hom (twistTower l Q)
   | [], f => f
   | d :: l, f => tower l (f.lift d)
@@ -204,32 +230,59 @@ theorem tower_nil (f : P.Hom Q) : f.tower [] = f := (rfl)
 theorem tower_cons (f : P.Hom Q) (d : TwistData G X) (l : List (TwistData G X)) :
     f.tower (d :: l) = (f.lift d).tower l := (rfl)
 
+/-- The homomorphism of towers induced by the identity morphism of the base is the identity
+morphism of the tower. -/
 @[simp]
 theorem tower_id (l : List (TwistData G X)) : (Hom.id P).tower l = Hom.id (twistTower l P) := by
   induction l generalizing P with
-  | nil => rfl
-  | cons d l ih => exact (congrArg (tower l) (lift_id d)).trans ih
+  | nil => exact tower_nil _
+  | cons d l ih =>
+    rw [tower_cons, lift_id]
+    exact ih
 
+/-- The homomorphism of towers induced by a composite of morphisms of the bases is the composite
+of the induced homomorphisms. -/
 theorem tower_comp (g : Q.Hom R) (f : P.Hom Q) (l : List (TwistData G X)) :
     (g.comp f).tower l = (g.tower l).comp (f.tower l) := by
   induction l generalizing P Q R with
-  | nil => rfl
-  | cons d l ih => exact (congrArg (tower l) (lift_comp g f d)).trans (ih _ _)
+  | nil =>
+    -- The towers along `[]` are the bases only up to unfolding `twistTower`.
+    simp only [tower_nil]
+    rfl
+  | cons d l ih =>
+    rw [tower_cons, tower_cons, tower_cons, lift_comp]
+    exact ih _ _
+
+/-- The homomorphisms of towers induced by a morphism of stages commute with the inclusions of
+the bases into the towers. -/
+@[simp]
+theorem tower_towerInclusion (f : P.Hom Q) (l : List (TwistData G X)) (x : P.carrier) :
+    f.tower l (towerInclusion l P x) = towerInclusion l Q (f x) := by
+  induction l generalizing P Q with
+  | nil =>
+    -- As in `towerRetraction_tower`, the identities are applied definitionally.
+    rw [tower_nil, towerInclusion_nil, towerInclusion_nil]
+    rfl
+  | cons d l ih =>
+    rw [tower_cons, towerInclusion_cons_apply, towerInclusion_cons_apply]
+    exact (ih (f.lift d) _).trans (congrArg _ (lift_of f d x))
 
 /-- The lift of a morphism of stages commutes with the retractions `t ↦ u ^ k` of the lifts. -/
-private theorem retraction_lift_apply (f : P.Hom Q) (d : TwistData G X) (k : ℤ)
-    (x : (P.lift d).carrier) :
+theorem retraction_lift (f : P.Hom Q) (d : TwistData G X) (k : ℤ) (x : (P.lift d).carrier) :
     CentralizerExt.retraction (fun _ => k) (f.lift d x) =
       f (CentralizerExt.retraction (fun _ => k) x) := by
-  refine DFunLike.congr_fun (CentralizerExt.hom_ext (MonoidHom.ext fun g => ?_) fun i => ?_ :
-    (CentralizerExt.retraction fun _ => k).comp (f.lift d).toMonoidHom =
-      f.toMonoidHom.comp (CentralizerExt.retraction fun _ => k)) x
-  -- Both sides are `f` on the base and send the new letter to `A(f ∘ v) ^ k = f (A(v) ^ k)`.
-  · exact (congrArg _ (lift_of f d g)).trans <| (CentralizerExt.retraction_of _ _).trans
-      (congrArg f (CentralizerExt.retraction_of _ g)).symm
-  · exact (congrArg _ (lift_t f d i)).trans <| (CentralizerExt.retraction_t _ i).trans <|
-      ((congrArg f (CentralizerExt.retraction_t _ i)).trans
-        ((map_zpow f _ k).trans (congrArg (· ^ k) (f.map_eval d.A)))).symm
+  -- The lift is the induced map of extensions of centralizers, which commutes with the
+  -- retractions, followed by the identification of the extensions of the centralizers of the
+  -- equal elements `f (A(v))` and `A(f ∘ v)`, which preserves the retractions. The first element
+  -- is written with `f.toMonoidHom`, the form in which `retraction_map` states it.
+  have h := (CentralizerExt.retraction_congr (u := f.toMonoidHom (eval P.coeff P.point d.A))
+    (d := 1) ((pow_one _).trans (f.map_eval d.A).symm)
+    (congrArg (Subgroup.centralizer {·}) (f.map_eval d.A)) (fun _ => k)
+    (CentralizerExt.map f.toMonoidHom _ 1 x)).trans
+      (CentralizerExt.retraction_map f.toMonoidHom _ 1 (fun _ => k) x)
+  simp only [Nat.cast_one, one_mul] at h
+  rw [lift_apply]
+  exact h
 
 /-- The homomorphisms of towers induced by a morphism of stages commute with the retractions of
 the towers onto their bases. -/
@@ -240,11 +293,42 @@ theorem towerRetraction_tower (f : P.Hom Q) (l : List (TwistData G X)) (p : List
   | nil =>
     -- The tower along `[]` is the base only up to unfolding `twistTower`, which blocks
     -- `MonoidHom.id_apply`; the identities are applied definitionally.
-    rw [towerRetraction_nil, towerRetraction_nil]
+    rw [tower_nil, towerRetraction_nil, towerRetraction_nil]
     rfl
   | cons d l ih =>
-    rw [towerRetraction_cons_apply, towerRetraction_cons_apply]
-    exact (congrArg _ (ih (f.lift d) p.tail x)).trans (retraction_lift_apply f d _ _)
+    rw [tower_cons, towerRetraction_cons_apply, towerRetraction_cons_apply]
+    exact (congrArg _ (ih (f.lift d) p.tail x)).trans (retraction_lift f d _ _)
+
+/-- If morphisms of stages `fᵢ : P → Qᵢ` eventually keep every nonidentity element of the base
+along a filter, the induced homomorphisms of the towers along any list of twist data eventually
+keep every nonidentity element of the tower. -/
+theorem eventually_tower_ne_one {ι : Type*} {F : Filter ι} {Q : ι → TowerStage.{u, v, w} G X}
+    (f : ∀ i, P.Hom (Q i)) (hf : ∀ g : P.carrier, g ≠ 1 → ∀ᶠ i in F, f i g ≠ 1)
+    (l : List (TwistData G X)) {x : (twistTower l P).carrier} (hx : x ≠ 1) :
+    ∀ᶠ i in F, (f i).tower l x ≠ 1 := by
+  induction l generalizing P Q with
+  | nil => exact (hf x hx).mono fun i hi => by rwa [tower_nil]
+  | cons d l ih =>
+    simp only [tower_cons]
+    -- The lifts of the `fᵢ` are the maps of extensions of centralizers they induce, followed by
+    -- isomorphisms, so they eventually keep every nonidentity element.
+    refine ih (fun i => (f i).lift d) (fun g hg => ?_) hx
+    filter_upwards [CentralizerExt.eventually_map_ne_one (f := fun i => (f i).toMonoidHom) hf _ 1
+      hg] with i hi
+    rw [lift_apply]
+    exact (MulEquiv.map_ne_one_iff _).2 hi
+
+/-- If morphisms of stages `fᵢ : P → Qᵢ` eventually keep every nonidentity element of the base
+along a filter, the towers over the `Qᵢ` along a list along which the tower over `P` is
+nondegenerate are eventually nondegenerate. -/
+theorem eventually_isNondegenerate {ι : Type*} {F : Filter ι} {Q : ι → TowerStage.{u, v, w} G X}
+    (f : ∀ i, P.Hom (Q i)) (hf : ∀ g : P.carrier, g ≠ 1 → ∀ᶠ i in F, f i g ≠ 1)
+    {l : List (TwistData G X)} (hl : P.IsNondegenerate l) :
+    ∀ᶠ i in F, (Q i).IsNondegenerate l := by
+  have h (j : Fin l.length) := (eventually_tower_ne_one f hf (l.take j)
+    ((P.isNondegenerate_iff l).1 hl j j.isLt)).mono fun i hi => by rwa [map_eval] at hi
+  filter_upwards [Filter.eventually_all.2 h] with i hi using
+    ((Q i).isNondegenerate_iff l).2 fun j hj => hi ⟨j, hj⟩
 
 end Hom
 

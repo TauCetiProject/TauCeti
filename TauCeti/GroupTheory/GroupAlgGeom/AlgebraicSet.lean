@@ -52,6 +52,9 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.CoordGroup ι S`: the coordinate group `G_{R(S)} = G[X] ⧸ Rad_H(S)`.
 * `TauCeti.GroupAlgGeom.CoordGroup.genericPoint ι S`: the generic point of `S`, the tuple of the
   images of the variables in `G_{R(S)}`.
+* `TauCeti.GroupAlgGeom.CoordGroup.evalGHomOfMemVRad`: evaluation at a point of a group `K` over
+  `G` at which every equation of `Rad_H(S)` vanishes, as a `G`-homomorphism `G_{R(S)} → K`;
+  `TauCeti.GroupAlgGeom.CoordGroup.evalGHom` is the case of a solution of `S` in `H`.
 * `TauCeti.GroupAlgGeom.SystemGroup G S`: the group `G_S = G[X] ⧸ ncl(S)` of the system `S`.
 * `TauCeti.GroupAlgGeom.SystemGroup.toCoordGroup ι S`: the surjection `G_S →* G_{R(S)}`.
 * `TauCeti.GroupAlgGeom.CoordGroup.gHomEquivCentralizer`,
@@ -734,10 +737,22 @@ theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) 
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
 
+/-- Evaluation at a point `p` of a group `K` over `G` at which every equation of the radical
+`Rad_H(S)` vanishes, as a `G`-homomorphism `G_{R(S)} → K` from the coordinate group of `S` over
+`H`. -/
+def evalGHomOfMemVRad {K : Type*} [Group K] {κ : G →* K} (p : X → K)
+    (hp : p ∈ V κ (Rad ι S : Set (GX G X))) : GHom (coeff ι S) κ :=
+  GX.quotientEvalGHom p hp
+
+@[simp]
+theorem evalGHomOfMemVRad_mk {K : Type*} [Group K] {κ : G →* K} {p : X → K}
+    (hp : p ∈ V κ (Rad ι S : Set (GX G X))) (w : GX G X) :
+    evalGHomOfMemVRad p hp (w : CoordGroup ι S) = eval κ p w := (rfl)
+
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
 def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
-  GX.quotientEvalGHom v ((V_Rad (ι := ι) S).ge hv)
+  evalGHomOfMemVRad v ((V_Rad (ι := ι) S).ge hv)
 
 @[simp]
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :

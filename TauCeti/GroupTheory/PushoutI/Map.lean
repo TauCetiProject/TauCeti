@@ -20,16 +20,17 @@ type, with amalgamated products `Monoid.PushoutI φ` and `Monoid.PushoutI φ'`. 
 `f i : G i →* G' i` and `k : H →* H'` with `f i ∘ φ i = φ' i ∘ k` induce a homomorphism
 `Monoid.PushoutI.map f k _ : Monoid.PushoutI φ →* Monoid.PushoutI φ'`.
 
-For groups, with the `φ' i` injective, the normal form theorem gives a criterion for the induced
-homomorphisms to keep nonidentity elements, in an eventual form for a family of homomorphisms
-`map (f a) (k a) _` indexed by `a : α` along a filter (`Monoid.PushoutI.eventually_map_ne_one`):
-if the `k a` eventually keep every nonidentity element of `H` and every letter of a factor outside
-the amalgamated subgroup is eventually mapped by the `f a i` outside the amalgamated subgroup of
-the target, then the reduced words of `PushoutI φ` are eventually mapped to reduced words, so
-every nonidentity element is eventually kept. For a single homomorphism this is the usual
-injectivity criterion for a subamalgam (`Monoid.PushoutI.map_injective`): `k` injective and every
-`f i` pulling the amalgamated subgroup `φ' i H'` back into `φ i H`. The `f i` and the `φ i` need
-not be assumed injective: under these hypotheses they are.
+For groups, the normal form theorem gives a criterion for the induced homomorphisms to keep
+nonidentity elements, in an eventual form for a family of homomorphisms `map (f a) (k a) _` indexed
+by `a : α` along a filter (`Monoid.PushoutI.eventually_map_ne_one`): if the structure maps
+`φ' a i` of the targets are eventually injective, the `k a` eventually keep every nonidentity
+element of `H` and every letter of a factor outside the amalgamated subgroup is eventually mapped
+by the `f a i` outside the amalgamated subgroup of the target, then the reduced words of
+`PushoutI φ` are eventually mapped to reduced words, so every nonidentity element is eventually
+kept. For a single homomorphism this is the usual injectivity criterion for a subamalgam
+(`Monoid.PushoutI.map_injective`): the `φ' i` and `k` injective and every `f i` pulling the
+amalgamated subgroup `φ' i H'` back into `φ i H`. The `f i` and the `φ i` need not be assumed
+injective: under these hypotheses they are.
 
 ## Main definitions
 
@@ -120,14 +121,16 @@ variable [∀ i, Group (G i)] [∀ i, Group (G' i)] [Group H] [Group H'] {φ : �
 
 /-- **Normal form criterion, eventual form.** Let
 `map (f a) (k a) _ : PushoutI φ →* PushoutI (φ' a)` be homomorphisms of amalgamated products of
-groups indexed by `a : α`, with injective structure maps `φ' a i`. If along a filter on `α` the
-`k a` eventually keep every nonidentity element of `H`, and every element of a factor outside the
-amalgamated subgroup is eventually mapped by the `f a i` outside the amalgamated subgroup of the
-target, then the induced homomorphisms eventually keep every nonidentity element. -/
+groups indexed by `a : α`. If along a filter on `α` the structure maps `φ' a i` are eventually
+injective, the `k a` eventually keep every nonidentity element of `H`, and every element of a factor
+outside the amalgamated subgroup is eventually mapped by the `f a i` outside the amalgamated
+subgroup of the target, then the induced homomorphisms eventually keep every nonidentity
+element. -/
 theorem eventually_map_ne_one {α : Type*} {l : Filter α} {G' : α → ι → Type*} {H' : α → Type*}
     [∀ a i, Group (G' a i)] [∀ a, Group (H' a)] {φ' : ∀ a i, H' a →* G' a i}
     {f : ∀ a i, G i →* G' a i} {k : ∀ a, H →* H' a}
-    (hfk : ∀ a i, (f a i).comp (φ i) = (φ' a i).comp (k a)) (hφ' : ∀ a i, Injective (φ' a i))
+    (hfk : ∀ a i, (f a i).comp (φ i) = (φ' a i).comp (k a))
+    (hφ' : ∀ᶠ a in l, ∀ i, Injective (φ' a i))
     (hk : ∀ h : H, h ≠ 1 → ∀ᶠ a in l, k a h ≠ 1)
     (hf : ∀ i (g : G i), g ∉ (φ i).range → ∀ᶠ a in l, f a i g ∉ (φ' a i).range)
     {x : PushoutI φ} (hx : x ≠ 1) : ∀ᶠ a in l, map (f a) (k a) (hfk a) x ≠ 1 := by
@@ -138,21 +141,24 @@ theorem eventually_map_ne_one {α : Type*} {l : Filter α} {G' : α → ι → T
     have hh : h ≠ 1 := by
       rintro rfl
       simp at hx
-    filter_upwards [hk h hh] with a ha
-    simpa [map_eq_one_iff _ (base_injective (hφ' a))] using ha
+    filter_upwards [hk h hh, hφ'] with a ha hφa
+    simpa [map_eq_one_iff _ (base_injective hφa)] using ha
   -- Otherwise the images of the letters eventually stay outside the amalgamated subgroup, so the
   -- image of the word is reduced and nonempty, and its product is not in the amalgamated subgroup.
   filter_upwards [(Filter.eventually_all_finite w.toList.finite_toSet).2 fun y hy =>
-    hf _ _ (hw y hy)] with a ha h1
+    hf _ _ (hw y hy), hφ'] with a ha hφa h1
   have hfw : ∀ y ∈ w.toList, f a y.1 y.2 ≠ 1 := fun y hy h1 => ha y hy (h1 ▸ one_mem _)
   have hw' : Reduced (φ' a) (w.map (f a) hfw) := fun y hy => by
     rw [Word.toList_map] at hy
     obtain ⟨y₀, hy₀, rfl⟩ := List.mem_map.1 hy
     exact ha y₀ hy₀
+  -- The image of `x` is `k a h` times the product of the image word, so that product is
+  -- `(k a h)⁻¹`, in the amalgamated subgroup.
+  rw [map_mul, map_base, map_ofCoprodI, ← Word.prod_map _ hfw] at h1
   refine hne <| (Word.map_eq_empty_iff _ hfw).1 <|
-    hw'.eq_empty_of_mem_range (hφ' a) ⟨k a h⁻¹, ?_⟩
-  rwa [map_inv, map_inv, eq_comm, ← mul_eq_one_iff_eq_inv', Word.prod_map,
-    ← map_ofCoprodI (f a) (k a) (hfk a), ← map_base (f a) (k a) (hfk a), ← map_mul]
+    hw'.eq_empty_of_mem_range hφa ⟨k a h⁻¹, ?_⟩
+  rw [map_inv, map_inv]
+  exact (eq_inv_of_mul_eq_one_right h1).symm
 
 /-- A homomorphism of amalgamated products of groups induced by homomorphisms `f i` of the factors
 and an injective homomorphism `k` of the amalgamated groups is injective if the structure maps of
@@ -163,7 +169,8 @@ theorem map_injective {f : ∀ i, G i →* G' i} {k : H →* H'}
     (hf : ∀ i g, f i g ∈ (φ' i).range → g ∈ (φ i).range) : Injective (map f k hfk) :=
   (injective_iff_map_eq_one _).2 fun _ hx => by_contra fun hne => Filter.eventually_pure.1
     (eventually_map_ne_one (l := pure ()) (G' := fun _ => G') (H' := fun _ => H')
-      (φ' := fun _ => φ') (f := fun _ => f) (k := fun _ => k) (fun _ => hfk) (fun _ => hφ')
+      (φ' := fun _ => φ') (f := fun _ => f) (k := fun _ => k) (fun _ => hfk)
+      (.of_forall fun _ => hφ')
       (fun _ hh => Filter.eventually_pure.2 ((map_ne_one_iff k hk).2 hh))
       (fun i g hg => Filter.eventually_pure.2 (mt (hf i g) hg)) hne) hx
 
