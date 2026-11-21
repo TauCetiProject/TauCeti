@@ -41,7 +41,9 @@ Since a bilinear product is a kernel map out of the completed tensor product, a 
 identity such as the Leibniz rule `δ₀ (a ⋆ b) = δ₁ a ⋆ b + (-1)^i a ⋆ δ₂ b` of a pair-of-pants
 product, or a chain homotopy `f ∘ g - h = δ₀ ∘ K + K ∘ D` for a degree `-1` map `K` out of the
 tensor product, is an identity between kernel maps on that module, and so follows from the
-corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`).
+corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`). The universal
+property of the completed tensor product for continuous maps with potential shifts, and its
+continuity, are in `TauCeti.RingTheory.NovikovModule.Tensor.Topology`.
 
 ## Main definitions
 
