@@ -26,7 +26,9 @@ degree of a closed point `x` of a curve.
 * `AlgebraicGeometry.Scheme.finite_Γevaluation_of_isClosed`: the evaluation map
   `Γ(X, ⊤) ⟶ κ(x)` at a closed point is finite;
 * `AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed`: the residue degree
-  `[κ(x) : κ(f x)]` at a closed point is finite, hence nonzero.
+  `[κ(x) : κ(f x)]` at a closed point is finite, hence nonzero;
+* `AlgebraicGeometry.Scheme.Hom.isClosed_singleton_iff_residueDegree_ne_zero`: over a field,
+  a finite residue degree also implies that the point is closed.
 
 The input is Mathlib's `isFinite_iff_locallyOfFiniteType_of_jacobsonSpace` applied to
 `Spec κ(x) ⟶ X ⟶ Y`, as in Mathlib's `AlgebraicGeometry.residueFieldIsoBase`.
@@ -75,6 +77,23 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed
   have : IsFinite (Spec.map (f.residueFieldMap x)) :=
     IsFinite.of_comp _ (Y.fromSpecResidueField (f x))
   exact (f.residueDegree_ne_zero_iff x).mpr ((IsFinite.SpecMap_iff _).mp this)
+
+/-- Over a field, a point of a locally finite-type scheme is closed if and only if its
+residue-field extension is finite, that is, its residue degree is nonzero. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isClosed_singleton_iff_residueDegree_ne_zero
+    {k : Type u} [Field k] {X : Scheme.{u}} (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f]
+    (x : X) : IsClosed ({x} : Set X) ↔ f.residueDegree x ≠ 0 := by
+  refine ⟨f.residueDegree_ne_zero_of_isClosed, fun h ↦ ?_⟩
+  have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
+  have : IsFinite (Spec.map (f.residueFieldMap x)) :=
+    (IsFinite.SpecMap_iff _).mpr ((f.residueDegree_ne_zero_iff x).mp h)
+  have : IsClosedImmersion ((Spec (.of k)).fromSpecResidueField (f x)) :=
+    isClosed_singleton_iff_isClosedImmersion.mp isClosed_singleton
+  have : LocallyOfFiniteType (X.fromSpecResidueField x ≫ f) := by
+    rw [← f.SpecMap_residueFieldMap_fromSpecResidueField]
+    infer_instance
+  exact isClosed_singleton_iff_locallyOfFiniteType.mpr
+    (locallyOfFiniteType_of_comp (X.fromSpecResidueField x) f)
 
 end AlgebraicGeometry
 
