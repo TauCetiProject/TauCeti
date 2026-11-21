@@ -46,12 +46,7 @@ primitive `p`-th root of unity. -/
 theorem sum_eval₂_mul_one_add_X_sub_one {ζ : R} (hζ : IsPrimitiveRoot ζ p)
     (j : ℤ_[p] →+* R) (P : Polynomial ℤ_[p]) :
     ∑ i : Fin p, P.eval₂ (C.comp j) (C (ζ ^ (i : ℕ)) * (1 + X) - 1) =
-      (p : R⟦X⟧) * map j ((psiSeries p (P : ℤ_[p]⟦X⟧)).subst
-        ((1 + X) ^ p - 1)) := by
-  have hb : HasSubst ((1 + X : ℤ_[p]⟦X⟧) ^ p - 1) := by
-    apply HasSubst.of_constantCoeff_zero'
-    simp
-  simp only [← coe_substAlgHom hb]
+      (p : R⟦X⟧) * map j (Coleman.frobeniusHom p ℤ_[p] (psiSeries p (P : ℤ_[p]⟦X⟧))) := by
   -- Taylor translation reduces the identity to the known psi formula on `(1 + X)^n`.
   obtain ⟨Q, hP⟩ : ∃ Q, Polynomial.taylor 1 Q = P :=
     ⟨Polynomial.taylor (-1) P, by
@@ -76,9 +71,7 @@ theorem sum_eval₂_mul_one_add_X_sub_one {ζ : R} (hζ : IsPrimitiveRoot ζ p)
         simpa only [← pow_mul, Nat.mul_comm] using hζ.sum_pow_pow_eq n
       rw [hsum]
       split_ifs with hn
-      · simp only [map_smul, map_pow, map_add, map_one, substAlgHom_X hb,
-          ← add_sub_assoc, add_sub_cancel_left]
-        rw [← pow_mul, Nat.mul_div_cancel' hn]
+      · rw [map_smul, Coleman.frobeniusHom_one_add_X_pow, Nat.mul_div_cancel' hn]
         simp [Algebra.smul_def, mul_comm, mul_assoc]
       · simp
 
@@ -89,7 +82,7 @@ namespace TauCeti
 -- The dyadic formula keeps both the translated constant term and the factor two.
 example (P : Polynomial ℤ_[2]) :
     P.eval₂ C (X : ℤ_[2]⟦X⟧) + P.eval₂ C (-2 - X) =
-      2 * (psiSeries 2 (P : ℤ_[2]⟦X⟧)).subst ((1 + X) ^ 2 - 1) := by
+      2 * Coleman.frobeniusHom 2 ℤ_[2] (psiSeries 2 (P : ℤ_[2]⟦X⟧)) := by
   have hζ : IsPrimitiveRoot (-1 : ℤ_[2]) 2 :=
     IsPrimitiveRoot.neg_one_of_two_ne_zero (by norm_num)
   have h := hζ.sum_eval₂_mul_one_add_X_sub_one (RingHom.id ℤ_[2]) P

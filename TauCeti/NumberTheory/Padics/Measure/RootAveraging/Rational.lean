@@ -60,7 +60,7 @@ theorem mul_map_subst_psiSeries_eq_sum_div {ζ : ℂ_[p]} (hζ : IsPrimitiveRoot
     (F : PowerSeries ℤ_[p]) (hF : (Q : PowerSeries ℤ_[p]) * F = P) :
     (p : FractionRing (PowerSeries ℂ_[p])) *
         ι (PowerSeries.map ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom)
-          ((psiSeries p F).subst ((1 + X) ^ p - 1))) =
+          (Coleman.frobeniusHom p ℤ_[p] (psiSeries p F))) =
       ∑ i : Fin p, ι (P.eval₂ κ (C (ζ ^ (i : ℕ)) * (1 + X) - 1)) /
         ι (Q.eval₂ κ (C (ζ ^ (i : ℕ)) * (1 + X) - 1)) := by
   have hnorm : ‖ζ‖ = 1 := (hζ.isOfFinOrder (Fact.out : p.Prime).ne_zero).norm_eq_one
@@ -73,7 +73,8 @@ theorem mul_map_subst_psiSeries_eq_sum_div {ζ : ℂ_[p]} (hζ : IsPrimitiveRoot
   have hζ₀ : IsPrimitiveRoot ζ₀ p :=
     hζ.of_map_of_injective (f := (𝓞_ℂ_[p]).subtype) Subtype.val_injective
   have h := congrArg (fun S ↦ ι (PowerSeries.map (𝓞_ℂ_[p]).subtype S))
-    (hζ₀.sum_rootTranslation F).symm
+    (hζ₀.sum_rootTranslation_eq_map_frobeniusHom_trace F).symm
+  rw [Coleman.trace_eq_p_mul_psiSeries, map_mul, map_natCast] at h
   simp only [map_mul, map_natCast, map_sum,
     rootTranslation_eq_div ζ₀ hζ₀.pow_eq_one _ P Q hQ F hF] at h
   convert h using 1

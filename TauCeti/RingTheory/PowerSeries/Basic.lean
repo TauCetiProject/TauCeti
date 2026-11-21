@@ -5,14 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
+
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # Complements on power series
 
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
-`A` over which `S` is an algebra: evaluation at `X = 0`.
+`A` over which `S` is an algebra: evaluation at `X = 0`. Since `C : R →+* R⟦X⟧` is injective,
+`R⟦X⟧` also inherits characteristic `p` and characteristic zero from `R`.
 
 ## Main definitions
 
@@ -22,6 +26,7 @@ homomorphism. This file records it as a homomorphism of `A`-algebras for any com
 
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
+* `PowerSeries.instCharP`, `PowerSeries.instCharZero`: `R⟦X⟧` inherits characteristic from `R`.
 -/
 
 public section
@@ -58,5 +63,19 @@ theorem constantCoeffAlgHom_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra 
   AlgHom.ext fun s ↦ by simp
 
 end ConstantCoeff
+
+section Characteristic
+
+variable {R : Type*} [Semiring R]
+
+/-- Power series over a semiring of characteristic `p` have characteristic `p`. -/
+instance instCharP (p : ℕ) [CharP R p] : CharP R⟦X⟧ p :=
+  charP_of_injective_ringHom C_injective p
+
+/-- Power series over a characteristic-zero semiring have characteristic zero. -/
+instance instCharZero [CharZero R] : CharZero R⟦X⟧ :=
+  charZero_of_injective_ringHom C_injective
+
+end Characteristic
 
 end PowerSeries

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
@@ -14,7 +13,6 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 public import TauCeti.RingTheory.PowerSeries.Basic
 -- Proof-only: coefficients of products of series with coefficients in ideals.
-import Mathlib.Algebra.CharP.Algebra
 import Mathlib.RingTheory.Finiteness.Ideal
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.RingTheory.PowerSeries.CoeffMulMem
@@ -27,8 +25,7 @@ import TauCeti.RingTheory.QuotSMulTop
 
 The kernel of the constant coefficient `R⟦X⟧ →+* R` is the ideal `(X)`, and the constant
 coefficient is a local homomorphism: a power series is a unit exactly when its constant
-coefficient is. Since `C : R →+* R⟦X⟧` is injective, `R⟦X⟧` inherits characteristic `p` and
-characteristic zero from `R`.
+coefficient is.
 
 For a ring homomorphism `f : R →+* S` with finitely generated kernel, the kernel of the induced
 map `R⟦X⟧ →+* S⟦X⟧` is the extension of `ker f` along the constant embedding `C`. This is the
@@ -50,7 +47,6 @@ its powers `(I.map C) ^ k` by their coefficients and shows that `I.map C` is pri
   `PowerSeries.quotientSpanXAlgEquiv`: the constant coefficient, as an `R`-algebra homomorphism
   `R⟦X⟧ →ₐ[R] R`, has kernel `(X)`, giving the `R`-algebra isomorphism `R⟦X⟧ ⧸ (X) ≃ₐ[R] R`.
 * `PowerSeries.isLocalHom_constantCoeff`: the constant coefficient is a local homomorphism.
-* `PowerSeries.instCharP`, `PowerSeries.instCharZero`: `R⟦X⟧` inherits characteristic from `R`.
 * `PowerSeries.ker_map_of_fg`: `ker (map f) = (ker f).map C` when `ker f` is finitely generated.
 * `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.mem_map_C_pow_iff_of_fg`,
   `PowerSeries.mem_span_C_pow_iff`, `PowerSeries.map_mem_span_C_pow`,
@@ -106,14 +102,6 @@ theorem quotientSpanXAlgEquiv_symm_apply [CommRing R] (r : R) :
 constant coefficient is. -/
 instance isLocalHom_constantCoeff [Ring R] : IsLocalHom (constantCoeff (R := R)) :=
   ⟨fun _ ↦ isUnit_iff_constantCoeff.mpr⟩
-
-/-- Power series over a semiring of characteristic `p` have characteristic `p`. -/
-instance instCharP [Semiring R] (p : ℕ) [CharP R p] : CharP R⟦X⟧ p :=
-  charP_of_injective_ringHom C_injective p
-
-/-- Power series over a characteristic-zero semiring have characteristic zero. -/
-instance instCharZero [Semiring R] [CharZero R] : CharZero R⟦X⟧ :=
-  charZero_of_injective_ringHom C_injective
 
 end ConstantCoeff
 

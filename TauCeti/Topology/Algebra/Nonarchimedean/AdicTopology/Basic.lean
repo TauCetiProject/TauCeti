@@ -54,6 +54,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   topology of the extended ideal is an open quotient map.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
+* `IsAdic.continuous_of_span_natCast` : every ring homomorphism between `(n)`-adic rings is
+  automatically continuous.
 * `IsAdic.continuous_iff_map_le_radical` and
   `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source topology has some
   finitely generated ideal of definition, continuity can be tested on any ideals of definition,
@@ -257,6 +259,15 @@ theorem continuous_of_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace 
   have hmem : f x ∈ (I ^ (k * n)).map f := Ideal.mem_map_of_mem f hx
   rw [Ideal.map_pow, pow_mul] at hmem
   exact Ideal.pow_right_mono hk n hmem
+
+/-- Every ring homomorphism between rings carrying the `(n)`-adic topology for the same
+natural number `n` is continuous. -/
+theorem continuous_of_span_natCast {S : Type*} [CommRing S] [TopologicalSpace S] {n : ℕ}
+    (hR : IsAdic (Ideal.span {(n : R)})) (hS : IsAdic (Ideal.span {(n : S)}))
+    (f : R →+* S) : Continuous f := by
+  refine hR.continuous_of_map_le_radical hS (Submodule.fg_span_singleton _) ?_
+  rw [Ideal.map_span, Set.image_singleton, map_natCast]
+  exact Ideal.le_radical
 
 /-- A continuous ring homomorphism carries an ideal of definition into the radical of every
 ideal of definition of its target. Unlike the converse, this needs no finite generation. -/

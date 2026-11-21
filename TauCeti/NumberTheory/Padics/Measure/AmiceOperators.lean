@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 public import TauCeti.NumberTheory.Padics.Measure.InverseWeight
-public import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Unit-supported Mahler primitives
@@ -19,10 +18,10 @@ It takes values in the kernel of `psiSeries`, the series psi operator from
 unit-supported measures.
 
 For the Mahler derivation `∂ = (1 + X) d/dX` and `H = inverseMahler p`, both `∂ H` and `H ∂`
-are the unit projector
-`F ↦ F - (psiSeries p F).subst ((1 + X) ^ p - 1)`. Consequently every series killed by psi has a
-unique primitive killed by psi. This support condition is essential: `∂` kills constants, whereas
-psi fixes them. All primes, including two, are allowed. No topology on measures is installed.
+are the unit projector `F ↦ F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F)`. Consequently every
+series killed by psi has a unique primitive killed by psi. This support condition is essential:
+`∂` kills constants, whereas psi fixes them. All primes, including two, are allowed. No topology
+on measures is installed.
 
 ## References
 
@@ -96,7 +95,7 @@ theorem psiSeries_inverseMahler (F : ℤ_[p]⟦X⟧) :
 /-- The Mahler derivative of `H F` is the unit projection of `F`. -/
 theorem mahlerDerivation_inverseMahler (F : ℤ_[p]⟦X⟧) :
     mahlerDerivation ℤ_[p] (inverseMahler p F) =
-      F - (psiSeries p F).subst ((1 + X) ^ p - 1) := by
+      F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F) := by
   obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
   rw [amiceTransformEquiv_apply, inverseMahler_amiceTransform,
     ← amiceTransform_weight_id_smul_one, weight_id_smul_one_inverseWeight,
@@ -105,7 +104,7 @@ theorem mahlerDerivation_inverseMahler (F : ℤ_[p]⟦X⟧) :
 /-- Applying `H` after the Mahler derivative also gives the unit projection. -/
 theorem inverseMahler_mahlerDerivation (F : ℤ_[p]⟦X⟧) :
     inverseMahler p (mahlerDerivation ℤ_[p] F) =
-      F - (psiSeries p F).subst ((1 + X) ^ p - 1) := by
+      F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F) := by
   obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
   rw [amiceTransformEquiv_apply, ← amiceTransform_weight_id_smul_one,
     inverseMahler_amiceTransform, inverseWeight_weight_id_smul_one,
@@ -117,9 +116,9 @@ theorem existsUnique_unitSupported_mahlerPrimitive (F : ℤ_[p]⟦X⟧)
     (hF : psiSeries p F = 0) :
     ∃! G : ℤ_[p]⟦X⟧, psiSeries p G = 0 ∧ mahlerDerivation ℤ_[p] G = F := by
   refine ⟨inverseMahler p F, ⟨psiSeries_inverseMahler F, ?_⟩, ?_⟩
-  · rw [mahlerDerivation_inverseMahler, hF, subst_zero, sub_zero]
+  · rw [mahlerDerivation_inverseMahler, hF, map_zero, sub_zero]
   · rintro G ⟨hG, hGF⟩
-    simpa only [hGF, hG, subst_zero, sub_zero] using (inverseMahler_mahlerDerivation G).symm
+    simpa only [hGF, hG, map_zero, sub_zero] using (inverseMahler_mahlerDerivation G).symm
 
 /-- The inverse Mahler operator kills constants. -/
 @[simp]
@@ -132,7 +131,7 @@ theorem inverseMahler_one : inverseMahler p 1 = 0 := by
 theorem inverseMahler_one_add_X : inverseMahler p (1 + X) = 1 + X := by
   have h := inverseMahler_mahlerDerivation (p := p) (1 + X)
   rw [Derivation.map_add, Derivation.map_one_eq_zero, mahlerDerivation_X, zero_add,
-    psiSeries_one_add_X, subst_zero, sub_zero] at h
+    psiSeries_one_add_X, map_zero, sub_zero] at h
   exact h
 
 -- A nonzero unit-supported input has a nonzero primitive. A zero operator fails this check.

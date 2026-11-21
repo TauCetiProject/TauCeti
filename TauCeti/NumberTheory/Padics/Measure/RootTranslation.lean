@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Complex.Basic
-public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.MvPowerSeries.LinearTopology
+public import TauCeti.NumberTheory.Padics.Complex.Basic
+public import TauCeti.RingTheory.PowerSeries.Evaluation
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -38,12 +38,9 @@ variable (p : ℕ) [Fact p.Prime]
 
 /-- The argument of a root translation is admissible for topological power-series evaluation. -/
 theorem hasEval_rootTranslation (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ) :
-    HasEval (C (ζ ^ i) * (1 + X) - 1 : PowerSeries 𝓞_ℂ_[p]) := by
-  have hi : (ζ ^ i) ^ p = 1 := by rw [← pow_mul, Nat.mul_comm i p, pow_mul, hζ, one_pow]
-  apply MvPowerSeries.LinearTopology.isTopologicallyNilpotent_of_constantCoeff
-  simpa only [← PowerSeries.constantCoeff_eq, map_sub, map_mul, constantCoeff_C,
-    map_add, map_one, constantCoeff_X, add_zero, mul_one] using
-    PadicComplex.isTopologicallyNilpotent_sub_one p (ζ ^ i) hi
+    HasEval (C (ζ ^ i) * (1 + X) - 1 : PowerSeries 𝓞_ℂ_[p]) :=
+  PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one
+    (PadicComplex.isTopologicallyNilpotent_sub_one p ζ hζ) i
 
 /-- Integral translation `F(X) ↦ F(ζ ^ i * (1 + X) - 1)`, by topological evaluation. -/
 noncomputable def rootTranslation (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ) :
@@ -58,6 +55,16 @@ theorem rootTranslation_apply (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
     rootTranslation p ζ hζ i F =
       eval₂ (C.comp (integralCoefficientMap p)) (C (ζ ^ i) * (1 + X) - 1) F := by
   rw [rootTranslation, coe_eval₂Hom]
+
+/-- An integral root translation is topological evaluation after extending coefficients to
+`𝓞_ℂ_[p]`. -/
+theorem rootTranslation_eq_eval₂_map (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
+    (F : PowerSeries ℤ_[p]) :
+    rootTranslation p ζ hζ i F =
+      eval₂ C (C (ζ ^ i) * (1 + X) - 1) (PowerSeries.map (integralCoefficientMap p) F) := by
+  rw [rootTranslation_apply, PowerSeries.eval₂_map PowerSeries.WithPiTopology.continuous_C
+    (PowerSeries.WithPiTopology.continuous_C.comp (continuous_integralCoefficientMap p))
+    (hasEval_rootTranslation p ζ hζ i)]
 
 /-- Integral root translation is continuous in the coefficientwise p-adic topologies. -/
 theorem continuous_rootTranslation (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ) :

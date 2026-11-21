@@ -8,6 +8,9 @@ module
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
+import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.RingTheory.MvPowerSeries.LinearTopology
+
 /-!
 # Evaluation of power series and division by `X - C c`
 
@@ -47,8 +50,10 @@ topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multiva
 ## Main results
 
 * `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
-* `PowerSeries.eval₂_map` and `PowerSeries.eval₂_C_X`: evaluation of a mapped power series and
-  evaluating a power series at `X` through `PowerSeries.C`.
+* `PowerSeries.eval₂_map`, `PowerSeries.eval₂_C_X`,
+  `PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one`: evaluation of a mapped power series,
+  evaluating a power series at `X` through `PowerSeries.C`, and admissibility of translated
+  arguments `C (ζ ^ i) * (1 + X) - 1` when `ζ - 1` is topologically nilpotent.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.constantCoeff_polynomial_aeval`: the constant coefficient of a polynomial evaluated
@@ -116,6 +121,18 @@ theorem eval₂_C_X {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup
     simpa only [← monomial_eq_C_mul_X_pow] using
       hasSum_eval₂ WithPiTopology.continuous_C HasEval.X f
   exact hsum.unique (hasSum_of_monomials_self f)
+
+open scoped PowerSeries.WithPiTopology in
+/-- In a linearly topologized commutative ring `S`, if `ζ - 1` is topologically nilpotent then
+`C (ζ ^ i) * (1 + X) - 1 : S⟦X⟧` is admissible for topological evaluation. -/
+theorem hasEval_C_pow_mul_one_add_X_sub_one
+    {S : Type*} [CommRing S] [TopologicalSpace S] [IsLinearTopology S S]
+    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) :
+    HasEval (C (ζ ^ i) * (1 + X) - 1 : S⟦X⟧) := by
+  apply MvPowerSeries.LinearTopology.isTopologicallyNilpotent_of_constantCoeff
+  simpa only [← constantCoeff_eq, map_sub, map_mul, constantCoeff_C,
+    map_add, map_one, constantCoeff_X, add_zero, mul_one, ← geom_sum_mul ζ i] using
+    HasEval.mul_left (∑ j ∈ Finset.range i, ζ ^ j) hζ_nil
 
 section AlgHom
 

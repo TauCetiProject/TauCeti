@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.PiTopology
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
-public import TauCeti.NumberTheory.Padics.Coleman.Norm
+public import TauCeti.NumberTheory.Padics.Coleman.Topology
+public import TauCeti.RingTheory.AdicCompletion.Principal
 
 import Mathlib.Algebra.CharP.Basic
 import Mathlib.Algebra.CharP.Frobenius
@@ -19,7 +18,6 @@ import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Topology.Algebra.Constructions
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import Mathlib.Topology.Algebra.Group.Units
-import TauCeti.RingTheory.AdicCompletion.Principal
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Ideal
@@ -31,15 +29,17 @@ import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 # Congruences, continuity, and the Coleman norm projector
 
 For a prime `p` and `(p)`-adically complete commutative ring `O`, this file establishes:
-1. Mod-`p ^ k` contraction `f ≡ g (mod p ^ k) → N(f) ≡ N(g) (mod p ^ (k + 1))` at units `IsUnit g`
-   (for all primes including `p = 2`) and char-`p` identity `N(f) = map (frobenius) f`, yielding
-   `N(f) ≡ σ(f) (mod p)` for any Frobenius lift `σ : O →+* O`.
+1. Mod-`p ^ k` contraction (`k ≥ 1`) `f ≡ g (mod p ^ k) → N(f) ≡ N(g) (mod p ^ (k + 1))` at units
+   `IsUnit g` (for all primes including `p = 2`) and char-`p` identity `N(f) = map (frobenius) f`,
+   yielding `N(f) ≡ σ(f) (mod p)` for any Frobenius lift `σ : O →+* O`.
 2. For a Frobenius-lifting automorphism `σ : O ≃+* O`, the corrected norm `N_σ(f) = σ⁻¹(N(f))` and
    multiplicative idempotent projector `normProjector : O⟦X⟧ˣ →* O⟦X⟧ˣ` onto `fixedUnits p O σ`
    with `L(f) ≡ N_σ^[n](f) (mod p ^ (n + 1))`, with no topology or compactness on `O`.
-3. Continuity of `coord`, `norm`, `trace`, `correctedNorm`, and `normProjector` in
-   `PowerSeries.WithPiTopology` when `IsAdic (Ideal.span {(p : O)})`, convergence
-   `N_σ^[n](f) → normProjector f` in `O⟦X⟧ˣ`, and compactness of `fixedUnits p O σ`.
+3. Continuity of `correctedNorm` and `normProjector` in the coefficientwise topology on `O⟦X⟧`
+   when `O` has its `(p)`-adic topology (`IsAdic (Ideal.span {(p : O)})`), convergence
+   `N_σ^[n](f) → normProjector f` in `O⟦X⟧ˣ`, closedness of `fixedUnits p O σ` when `O` is
+   Hausdorff with the `(p)`-adic topology, and compactness when `O` is compact Hausdorff with the
+   `(p)`-adic topology.
 
 ## Main definitions and results
 
@@ -48,11 +48,11 @@ For a prime `p` and `(p)`-adically complete commutative ring `O`, this file esta
 * `TauCeti.Coleman.correctedNorm`, `TauCeti.Coleman.fixedUnits`, `TauCeti.Coleman.normProjector`,
   `TauCeti.Coleman.normProjector_sub_iterate_mem_span_pow`, `TauCeti.Coleman.eq_normProjector_iff`,
   `TauCeti.Coleman.correctedNorm_normProjector`, `TauCeti.Coleman.normProjector_correctedNorm`,
-  `TauCeti.Coleman.normProjector_eq_self`: corrected norm, fixed subgroup, and algebraic projector.
-* `TauCeti.Coleman.continuous_coord`, `TauCeti.Coleman.continuous_norm`,
-  `TauCeti.Coleman.continuous_trace`, `TauCeti.Coleman.continuous_correctedNorm`,
-  `TauCeti.Coleman.tendsto_iterate_correctedNorm`, `TauCeti.Coleman.continuous_normProjector`,
-  `TauCeti.Coleman.isCompact_fixedUnits`: continuity, convergence, and compactness.
+  `TauCeti.Coleman.normProjector_eq_self`, `TauCeti.Coleman.range_normProjector`: corrected norm,
+  fixed subgroup, and algebraic projector.
+* `TauCeti.Coleman.continuous_correctedNorm`, `TauCeti.Coleman.tendsto_iterate_correctedNorm`,
+  `TauCeti.Coleman.continuous_normProjector`, `TauCeti.Coleman.isClosed_fixedUnits`,
+  `TauCeti.Coleman.isCompact_fixedUnits`: continuity, convergence, closedness, and compactness.
 
 ## References
 
@@ -111,9 +111,9 @@ theorem norm_sub_norm_mem_span_pow {k : ℕ} {f g : O⟦X⟧}
   obtain ⟨h, hh⟩ := Ideal.mem_span_singleton.mp (by rwa [Ideal.span_singleton_pow] at hfg)
   have hpk : q (C ((p : O) ^ k)) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr <| by
     rw [map_pow, map_natCast]; exact Ideal.pow_mem_pow (Ideal.subset_span rfl) k
+  have hf : f = g + C ((p : O) ^ k) * h := by rw [map_pow, map_natCast, ← hh]; ring
   have hcoord (r : Fin p) : q (coord p O r f) = q (coord p O r g) := by
-    rw [show f = g + C ((p : O) ^ k) * h by rw [map_pow, map_natCast, ← hh]; ring,
-      map_add, coord_C_mul, map_add, map_mul, hpk, zero_mul, add_zero]
+    rw [hf, map_add, coord_C_mul, map_add, map_mul, hpk, zero_mul, add_zero]
   congr 1; refine Matrix.ext fun i j ↦ ?_
   simp only [RingHom.mapMatrix_apply, Matrix.map_apply, leftMulMatrix_apply]
   split_ifs <;> simp [hcoord]
@@ -138,11 +138,13 @@ theorem norm_sub_norm_mem_span_pow_succ {k : ℕ} (hk : 1 ≤ k) {f g : O⟦X⟧
     norm p O f - norm p O g ∈ Ideal.span {(p : O⟦X⟧)} ^ (k + 1) := by
   obtain ⟨u, rfl⟩ := hg
   obtain ⟨d, hd⟩ := Ideal.mem_span_singleton.mp (by rwa [Ideal.span_singleton_pow] at hfg)
-  rw [show norm p O f - norm p O (u : O⟦X⟧) =
-      norm p O (u : O⟦X⟧) * (norm p O (1 + (p : O⟦X⟧) ^ k * ((u⁻¹ : O⟦X⟧ˣ) * d)) - 1) by
-    rw [show f = (u : O⟦X⟧) * (1 + (p : O⟦X⟧) ^ k * ((u⁻¹ : O⟦X⟧ˣ) * d)) by
-      rw [mul_add, mul_one, mul_left_comm, ← mul_assoc (u : O⟦X⟧), Units.mul_inv, one_mul, ← hd]
-      ring, map_mul]; ring]
+  have hf_eq : f = (u : O⟦X⟧) * (1 + (p : O⟦X⟧) ^ k * ((u⁻¹ : O⟦X⟧ˣ) * d)) := by
+    rw [mul_add, mul_one, mul_left_comm, ← mul_assoc (u : O⟦X⟧), Units.mul_inv, one_mul, ← hd]
+    ring
+  have hnorm_eq : norm p O f - norm p O (u : O⟦X⟧) =
+      norm p O (u : O⟦X⟧) * (norm p O (1 + (p : O⟦X⟧) ^ k * ((u⁻¹ : O⟦X⟧ˣ) * d)) - 1) := by
+    rw [hf_eq, map_mul]; ring
+  rw [hnorm_eq]
   exact Ideal.mul_mem_left _ _ (norm_one_add_sub_one_mem_span_pow_succ hk _)
 
 /-- **Mod-`p` Frobenius congruence.** If `σ : O →+* O` lifts Frobenius modulo `(p)`, then
@@ -171,13 +173,16 @@ end Congruences
 
 section CorrectedNorm
 
-variable (p : ℕ) (O : Type*) [CommRing O]
+variable (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
 
-/-- The corrected Coleman norm `N_σ : O⟦X⟧ˣ →* O⟦X⟧ˣ` sending `f` to `σ⁻¹(N(f))`. -/
+/-- The corrected Coleman norm `N_σ : O⟦X⟧ˣ →* O⟦X⟧ˣ` sending `f` to `σ⁻¹(N(f))`. Inherits the
+prime `p` and `(p)`-adic completeness hypotheses from `Coleman.normUnits` so `N` has no
+non-finite-free fallback. -/
 def correctedNorm (σ : O ≃+* O) : O⟦X⟧ˣ →* O⟦X⟧ˣ :=
   (Units.map (PowerSeries.map σ.symm.toRingHom).toMonoidHom).comp (normUnits p O)
 
-/-- The subgroup of units of `O⟦X⟧` fixed by the corrected Coleman norm `N_σ`. -/
+/-- The subgroup of units of `O⟦X⟧` fixed by `correctedNorm p O σ`, under the supported prime `p`
+and `(p)`-adic completeness hypotheses of `Coleman.normUnits`. -/
 def fixedUnits (σ : O ≃+* O) : Subgroup O⟦X⟧ˣ :=
   (correctedNorm p O σ).eqLocus (MonoidHom.id O⟦X⟧ˣ)
 
@@ -205,22 +210,13 @@ theorem mem_fixedUnits_iff_norm_eq_map (σ : O ≃+* O) (f : O⟦X⟧ˣ) :
     fun h ↦ by rw [h, hinv _ _ σ.symm_toRingHom_comp_toRingHom]⟩
 
 /-- A constant unit `Units.map C u` is fixed by `correctedNorm p O σ` iff `σ u = u ^ p`. -/
-theorem unitsMap_C_mem_fixedUnits_iff [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : O)}) O]
-    (σ : O ≃+* O) (u : Oˣ) :
+theorem unitsMap_C_mem_fixedUnits_iff (σ : O ≃+* O) (u : Oˣ) :
     Units.map (C : O →+* O⟦X⟧).toMonoidHom u ∈ fixedUnits p O σ ↔ σ u = (u : O) ^ p := by
   rw [mem_fixedUnits_iff_norm_eq_map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
     MonoidHom.coe_ofClass, norm_C, map_C]
   exact ⟨fun h ↦ (C_injective h).symm, fun h ↦ congrArg C h.symm⟩
 
 section Projector
-
-variable [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : O)}) O]
-
-omit [Fact p.Prime] in
-private theorem isAdicComplete_span_p : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
-  (show Ideal.span {(p : O⟦X⟧)} = (Ideal.span {(p : O)}).map C by
-    rw [Ideal.map_span, Set.image_singleton, map_natCast]) ▸
-    PowerSeries.isAdicComplete_map_C (Submodule.fg_span_singleton _)
 
 /-- `correctedNorm p O σ` contracts congruences modulo `(p) ^ k` (`k ≥ 1`) to `(p) ^ (k + 1)`. -/
 theorem correctedNorm_sub_correctedNorm_mem_span_pow_succ (σ : O ≃+* O) {k : ℕ} (hk : 1 ≤ k)
@@ -268,11 +264,12 @@ private theorem exists_normProjector_series (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) (f : O⟦X⟧ˣ) :
     ∃ g : O⟦X⟧, ∀ n : ℕ,
       g - (((correctedNorm p O σ)^[n]) f : O⟦X⟧) ∈ Ideal.span {(p : O⟦X⟧)} ^ (n + 1) := by
-  obtain ⟨g, hg⟩ := (isAdicComplete_span_p (p := p)).prec
-    (f := fun n ↦ (((correctedNorm p O σ)^[n]) f : O⟦X⟧)) fun {m n} hmn ↦ by
-      rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub]
-      exact Ideal.pow_le_pow_right (Nat.le_succ m)
-        (iterate_correctedNorm_sub_mem_span_pow σ hσ f hmn)
+  have hc : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
+    (map_natCast (C : O →+* O⟦X⟧) p) ▸ PowerSeries.isAdicComplete_span_C (p : O)
+  obtain ⟨g, hg⟩ := hc.prec (f := fun n ↦ (((correctedNorm p O σ)^[n]) f : O⟦X⟧)) fun {m n} hmn ↦ by
+    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub]
+    exact Ideal.pow_le_pow_right (Nat.le_succ m)
+      (iterate_correctedNorm_sub_mem_span_pow σ hσ f hmn)
   exact ⟨g, fun n ↦ by
     have h1 := hg (n + 1)
     rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub] at h1
@@ -290,36 +287,37 @@ private theorem normProjectorSeries_sub_iterate (σ : O ≃+* O)
       Ideal.span {(p : O⟦X⟧)} ^ (n + 1) :=
   (exists_normProjector_series σ hσ f).choose_spec n
 
-omit [Fact p.Prime] in
-private theorem eq_of_sub_mem_span_pow {a b : O⟦X⟧}
-    (h : ∀ n : ℕ, a - b ∈ Ideal.span {(p : O⟦X⟧)} ^ (n + 1)) : a = b :=
-  sub_eq_zero.mp <| (isAdicComplete_span_p (p := p)).haus _ fun n ↦ by
-    rw [SModEq.zero, smul_eq_mul, Ideal.mul_top]
-    exact Ideal.pow_le_pow_right (Nat.le_succ n) (h n)
-
 private theorem normProjectorSeries_mul (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) (f g : O⟦X⟧ˣ) :
     normProjectorSeries p O σ hσ (f * g) =
-      normProjectorSeries p O σ hσ f * normProjectorSeries p O σ hσ g :=
-  eq_of_sub_mem_span_pow (p := p) fun n ↦ by
-    set Lf := normProjectorSeries p O σ hσ f; set Lg := normProjectorSeries p O σ hσ g
-    set Nf : O⟦X⟧ := (((correctedNorm p O σ)^[n]) f : O⟦X⟧)
-    set Ng : O⟦X⟧ := (((correctedNorm p O σ)^[n]) g : O⟦X⟧)
-    have h1 : normProjectorSeries p O σ hσ (f * g) - Nf * Ng ∈
-        Ideal.span {(p : O⟦X⟧)} ^ (n + 1) := by
-      simpa only [iterate_map_mul, Units.val_mul] using
-        normProjectorSeries_sub_iterate σ hσ (f * g) n
-    have h2 : Lf * Lg - Nf * Ng ∈ Ideal.span {(p : O⟦X⟧)} ^ (n + 1) :=
-      (show Lf * Lg - Nf * Ng = (Lf - Nf) * Lg + Nf * (Lg - Ng) by ring) ▸ add_mem
-        (Ideal.mul_mem_right _ _ (normProjectorSeries_sub_iterate σ hσ f n))
-        (Ideal.mul_mem_left _ _ (normProjectorSeries_sub_iterate σ hσ g n))
-    simpa only [sub_sub_sub_cancel_right] using sub_mem h1 h2
+      normProjectorSeries p O σ hσ f * normProjectorSeries p O σ hσ g := by
+  have : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
+    (map_natCast (C : O →+* O⟦X⟧) p) ▸ PowerSeries.isAdicComplete_span_C (p : O)
+  refine (IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : O⟦X⟧)})).mpr fun n ↦ ?_
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  refine Ideal.pow_le_pow_right (Nat.le_succ n) ?_
+  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero]
+  set q : O⟦X⟧ →+* O⟦X⟧ ⧸ Ideal.span {(p : O⟦X⟧)} ^ (n + 1) := Ideal.Quotient.mk _
+  have hfg : q (normProjectorSeries p O σ hσ (f * g)) =
+      q ((((correctedNorm p O σ)^[n]) f : O⟦X⟧) * (((correctedNorm p O σ)^[n]) g : O⟦X⟧)) := by
+    have hmem := normProjectorSeries_sub_iterate σ hσ (f * g) n
+    rw [iterate_map_mul, Units.val_mul] at hmem
+    exact Ideal.Quotient.eq.mpr hmem
+  have hf : q (normProjectorSeries p O σ hσ f) = q (((correctedNorm p O σ)^[n]) f : O⟦X⟧) :=
+    Ideal.Quotient.eq.mpr (normProjectorSeries_sub_iterate σ hσ f n)
+  have hg : q (normProjectorSeries p O σ hσ g) = q (((correctedNorm p O σ)^[n]) g : O⟦X⟧) :=
+    Ideal.Quotient.eq.mpr (normProjectorSeries_sub_iterate σ hσ g n)
+  rw [hfg, map_mul, map_mul, hf, hg]
 
 private theorem normProjectorSeries_one (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) :
-    normProjectorSeries p O σ hσ 1 = 1 :=
-  eq_of_sub_mem_span_pow (p := p) fun n ↦ by
-    simpa only [iterate_map_one, Units.val_one] using normProjectorSeries_sub_iterate σ hσ 1 n
+    normProjectorSeries p O σ hσ 1 = 1 := by
+  have : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
+    (map_natCast (C : O →+* O⟦X⟧) p) ▸ PowerSeries.isAdicComplete_span_C (p : O)
+  refine (IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : O⟦X⟧)})).mpr fun n ↦ ?_
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  refine Ideal.pow_le_pow_right (Nat.le_succ n) ?_
+  simpa only [iterate_map_one, Units.val_one] using normProjectorSeries_sub_iterate σ hσ 1 n
 
 variable (p O)
 
@@ -350,23 +348,30 @@ theorem eq_normProjector_iff (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) {f g : O⟦X⟧ˣ} :
     g = normProjector p O σ hσ f ↔
       ∀ n : ℕ, (g : O⟦X⟧) - (((correctedNorm p O σ)^[n]) f : O⟦X⟧) ∈
-        Ideal.span {(p : O⟦X⟧)} ^ (n + 1) :=
-  ⟨fun h n ↦ h ▸ normProjector_sub_iterate_mem_span_pow σ hσ f n, fun h ↦
-    Units.ext (eq_of_sub_mem_span_pow (p := p) fun n ↦ by
-      simpa only [sub_sub_sub_cancel_right] using
-        sub_mem (h n) (normProjector_sub_iterate_mem_span_pow σ hσ f n))⟩
+        Ideal.span {(p : O⟦X⟧)} ^ (n + 1) := by
+  have : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
+    (map_natCast (C : O →+* O⟦X⟧) p) ▸ PowerSeries.isAdicComplete_span_C (p : O)
+  refine ⟨fun h n ↦ h ▸ normProjector_sub_iterate_mem_span_pow σ hσ f n, fun h ↦
+    Units.ext ((IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : O⟦X⟧)})).mpr fun n ↦ ?_)⟩
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  refine Ideal.pow_le_pow_right (Nat.le_succ n) ?_
+  simpa only [sub_sub_sub_cancel_right] using
+    sub_mem (h n) (normProjector_sub_iterate_mem_span_pow σ hσ f n)
 
 /-- Every value of `normProjector` is fixed by `correctedNorm`. -/
 @[simp]
 theorem correctedNorm_normProjector (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) (f : O⟦X⟧ˣ) :
-    correctedNorm p O σ (normProjector p O σ hσ f) = normProjector p O σ hσ f :=
-  Units.ext (eq_of_sub_mem_span_pow (p := p) fun n ↦ by
-    have h1 := correctedNorm_sub_correctedNorm_mem_span_pow_succ σ (Nat.succ_pos n)
-      (normProjector_sub_iterate_mem_span_pow σ hσ f n)
-    rw [← Function.iterate_succ_apply' (correctedNorm p O σ) n f] at h1
-    simpa only [sub_sub_sub_cancel_right] using Ideal.pow_le_pow_right (Nat.le_succ (n + 1))
-      (sub_mem h1 (normProjector_sub_iterate_mem_span_pow σ hσ f (n + 1))))
+    correctedNorm p O σ (normProjector p O σ hσ f) = normProjector p O σ hσ f := by
+  have : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
+    (map_natCast (C : O →+* O⟦X⟧) p) ▸ PowerSeries.isAdicComplete_span_C (p : O)
+  refine Units.ext ((IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : O⟦X⟧)})).mpr fun n ↦ ?_)
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  have h1 := correctedNorm_sub_correctedNorm_mem_span_pow_succ σ (Nat.succ_pos n)
+    (normProjector_sub_iterate_mem_span_pow σ hσ f n)
+  rw [← Function.iterate_succ_apply' (correctedNorm p O σ) n f] at h1
+  simpa only [sub_sub_sub_cancel_right] using Ideal.pow_le_pow_right (Nat.le_add_right n 2)
+    (sub_mem h1 (normProjector_sub_iterate_mem_span_pow σ hσ f (n + 1)))
 
 /-- Applying `correctedNorm` before `normProjector` leaves the projection unchanged. -/
 @[simp]
@@ -388,10 +393,14 @@ theorem normProjector_mem_fixedUnits (σ : O ≃+* O)
 theorem normProjector_eq_self (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) {f : O⟦X⟧ˣ}
     (hf : correctedNorm p O σ f = f) :
-    normProjector p O σ hσ f = f :=
-  Units.ext (eq_of_sub_mem_span_pow (p := p) fun n ↦ by
-    have hiter : ((correctedNorm p O σ)^[n]) f = f := Function.IsFixedPt.iterate hf n
-    simpa only [hiter] using normProjector_sub_iterate_mem_span_pow σ hσ f n)
+    normProjector p O σ hσ f = f := by
+  have : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧ :=
+    (map_natCast (C : O →+* O⟦X⟧) p) ▸ PowerSeries.isAdicComplete_span_C (p : O)
+  refine Units.ext ((IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : O⟦X⟧)})).mpr fun n ↦ ?_)
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  refine Ideal.pow_le_pow_right (Nat.le_succ n) ?_
+  have hiter : ((correctedNorm p O σ)^[n]) f = f := Function.IsFixedPt.iterate hf n
+  simpa only [hiter] using normProjector_sub_iterate_mem_span_pow σ hσ f n
 
 /-- `normProjector` is idempotent. -/
 @[simp]
@@ -399,6 +408,15 @@ theorem normProjector_idem (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) (f : O⟦X⟧ˣ) :
     normProjector p O σ hσ (normProjector p O σ hσ f) = normProjector p O σ hσ f :=
   normProjector_eq_self σ hσ (correctedNorm_normProjector σ hσ f)
+
+/-- The range of `normProjector p O σ hσ` is `fixedUnits p O σ`. -/
+@[simp]
+theorem range_normProjector (σ : O ≃+* O)
+    (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) :
+    Set.range (normProjector p O σ hσ) = (fixedUnits p O σ : Set O⟦X⟧ˣ) := by
+  ext f
+  exact ⟨fun ⟨g, hg⟩ ↦ hg ▸ normProjector_mem_fixedUnits σ hσ g,
+    fun hf ↦ ⟨f, normProjector_eq_self σ hσ hf⟩⟩
 
 private theorem coeff_normProjector_sub_iterate_mem (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) (f : O⟦X⟧ˣ) (n d : ℕ) :
@@ -416,69 +434,24 @@ section Topology
 
 open scoped PowerSeries.WithPiTopology Topology
 
-variable {p : ℕ} {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
+variable [TopologicalSpace O] [IsTopologicalRing O]
 
-/-- Frobenius substitution `Φ` is continuous for the coefficientwise topology on `O⟦X⟧`. -/
-theorem continuous_frobeniusHom : Continuous (frobeniusHom p O) :=
-  (funext frobeniusHom_apply : (frobeniusHom p O : O⟦X⟧ → O⟦X⟧) = _).symm ▸
-    Continuous.powerSeries_subst continuous_id continuous_const (fun _ ↦ by simp)
-
-omit [IsTopologicalRing O] in
-private theorem continuous_of_isAdic_span_p (hAdic : IsAdic (Ideal.span {(p : O)})) (φ : O →+* O) :
-    Continuous φ :=
-  hAdic.continuous_of_map_le_radical hAdic (Submodule.fg_span_singleton _)
-    (by rw [Ideal.map_span, Set.image_singleton, map_natCast]; exact Ideal.le_radical)
-
-variable [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : O)}) O]
-
-/-- Each Coleman coordinate `coord p O i` is continuous for the `(p)`-adic topology on `O⟦X⟧`. -/
-theorem continuous_coord (hAdic : IsAdic (Ideal.span {(p : O)})) (i : Fin p) :
-    Continuous (coord p O i) := by
-  refine continuous_of_continuousAt_zero (coord p O i).toAddMonoidHom ?_
-  rw [ContinuousAt, map_zero, PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
-  intro n
-  simp only [map_zero, hAdic.hasBasis_nhds_zero.tendsto_right_iff]
-  refine fun k _ ↦ Filter.mem_of_superset
-    (x := ⋂ s ∈ Finset.range (p ^ k * (n + 1)), {f : O⟦X⟧ | coeff s f ∈ Ideal.span {(p : O)} ^ k})
-    ((Filter.biInter_finset_mem _).mpr fun s _ ↦
-      (PowerSeries.WithPiTopology.continuous_coeff O s).continuousAt (x := 0) <| by
-        rw [map_zero]; exact hAdic.hasBasis_nhds_zero.mem_of_mem (i := k) trivial)
-    fun f hf ↦ coeff_coord_mem_span_pow_of_coeff_mem_span_pow k
-      (by simpa only [Set.mem_iInter, Set.mem_ofPred_eq, Finset.mem_range] using hf) i
-
-/-- Coleman's trace operator is continuous for the coefficientwise `(p)`-adic topology on `O⟦X⟧`. -/
-theorem continuous_trace (hAdic : IsAdic (Ideal.span {(p : O)})) : Continuous (trace p O) :=
-  (funext trace_eq_p_mul_coord_zero : (trace p O : O⟦X⟧ → O⟦X⟧) = _).symm ▸
-    continuous_const.mul (continuous_coord hAdic _)
-
-/-- Coleman's norm operator is continuous for the coefficientwise `(p)`-adic topology on `O⟦X⟧`. -/
-theorem continuous_norm (hAdic : IsAdic (Ideal.span {(p : O)})) : Continuous (norm p O) := by
-  rw [(funext norm_eq_det_leftMulMatrix :
-    (norm p O : O⟦X⟧ → O⟦X⟧) = fun f ↦ Matrix.det (leftMulMatrix p O f))]
-  simp_rw [Matrix.det_apply]
-  refine continuous_finsetSum _ fun τ _ ↦
-    continuous_const.smul (continuous_finsetProd _ fun j _ ↦ ?_)
-  simp_rw [leftMulMatrix_apply]; split_ifs
-  · exact continuous_coord hAdic _
-  · exact (continuous_coord hAdic _).mul continuous_const
-
-/-- Coleman's norm on units is continuous for the coefficientwise `(p)`-adic topology. -/
-theorem continuous_normUnits (hAdic : IsAdic (Ideal.span {(p : O)})) :
-    Continuous (normUnits p O) :=
-  normUnits_eq_unitsMap_norm p O ▸ Units.continuous_map (continuous_norm hAdic)
-
-/-- `correctedNorm p O σ` is continuous for the coefficientwise `(p)`-adic topology. -/
+/-- `correctedNorm p O σ` is continuous for the coefficientwise topology on `O⟦X⟧` when `O` has
+its `(p)`-adic topology. -/
 theorem continuous_correctedNorm (hAdic : IsAdic (Ideal.span {(p : O)})) (σ : O ≃+* O) :
     Continuous (correctedNorm p O σ) :=
   (Units.continuous_map (PowerSeries.WithPiTopology.continuous_map
-    (continuous_of_isAdic_span_p hAdic σ.symm.toRingHom))).comp (continuous_normUnits hAdic)
+    (hAdic.continuous_of_span_natCast hAdic σ.symm.toRingHom))).comp (continuous_normUnits hAdic)
 
-/-- The fixed subgroup `fixedUnits p O σ` is closed in `O⟦X⟧ˣ` when `O` is Hausdorff. -/
+/-- The fixed subgroup `fixedUnits p O σ` is closed in `O⟦X⟧ˣ` when `O` is Hausdorff with the
+`(p)`-adic topology. -/
 theorem isClosed_fixedUnits [T2Space O] (hAdic : IsAdic (Ideal.span {(p : O)})) (σ : O ≃+* O) :
     IsClosed (fixedUnits p O σ : Set O⟦X⟧ˣ) :=
   isClosed_eq (continuous_correctedNorm hAdic σ) continuous_id
 
-/-- The fixed subgroup `fixedUnits p O σ` is compact in `O⟦X⟧ˣ` when `O` is compact Hausdorff. -/
+/-- The fixed subgroup `fixedUnits p O σ` is compact in `O⟦X⟧ˣ` when `O` is compact Hausdorff
+with the `(p)`-adic topology. -/
 theorem isCompact_fixedUnits [CompactSpace O] [T2Space O] (hAdic : IsAdic (Ideal.span {(p : O)}))
     (σ : O ≃+* O) : IsCompact (fixedUnits p O σ : Set O⟦X⟧ˣ) :=
   (isClosed_fixedUnits hAdic σ).isCompact
@@ -522,7 +495,8 @@ private theorem continuous_val_normProjector (hAdic : IsAdic (Ideal.span {(p : O
   simpa only [Set.mem_ofPred_eq, SetLike.mem_coe, sub_add_sub_cancel,
     sub_sub_sub_cancel_right] using sub_mem (add_mem (hL f) hf) (hL f₀)
 
-/-- **Continuity of Coleman's norm projector** under the `(p)`-adic topology on `O`. -/
+/-- **Continuity of Coleman's norm projector** for the coefficientwise topology on `O⟦X⟧` when `O`
+has its `(p)`-adic topology. -/
 theorem continuous_normProjector (hAdic : IsAdic (Ideal.span {(p : O)})) (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) :
     Continuous (normProjector p O σ hσ) := by

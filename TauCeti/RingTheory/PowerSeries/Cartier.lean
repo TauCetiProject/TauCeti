@@ -36,7 +36,10 @@ Proposition 4, of Rowland–Stipulanti–Yassawi, *An elementary proof of Bridy'
 (<https://arxiv.org/html/2308.10977v2>). The substitution identities use Mathlib's
 `PowerSeries.expand`; the finite-field specializations use
 `FiniteField.PowerSeries.expand_card`. For `j < q`, `PowerSeries.cartier_one_add_X_pow`
-computes the Cartier components of `(1 + X) ^ j` as constant binomial coefficients.
+computes the Cartier components of `(1 + X) ^ j` as constant binomial coefficients, yielding the
+shifted-basis equivalence `PowerSeries.expandOneAddXEquiv` expressing every series as
+`∑ i < q, expand q hq (a i) * (1 + X) ^ i`, with coefficient-ideal bound
+`PowerSeries.coeff_expandOneAddXEquiv_symm_mem`.
 -/
 
 public section
@@ -322,6 +325,121 @@ theorem expand_cartier_zero_of_coeff_eq_zero (q : ℕ) (hq : q ≠ 0) {F : Power
   · obtain ⟨m, rfl⟩ := hn
     simp
   · rw [coeff_expand_of_not_dvd _ _ _ hn, hF n hn]
+
+private noncomputable def expandOneAddXLinearMap (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommRing R] :
+    (Fin q → R⟦X⟧) →ₗ[R] R⟦X⟧ where
+  toFun a := ∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ)
+  map_add' _ _ := by simp only [Pi.add_apply, map_add, add_mul, Finset.sum_add_distrib]
+  map_smul' _ _ := by
+    simp only [Pi.smul_apply, map_smul, smul_mul_assoc, Finset.smul_sum, RingHom.id_apply]
+
+private theorem expandOneAddXLinearMap_apply (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommRing R]
+    (a : Fin q → R⟦X⟧) :
+    expandOneAddXLinearMap q hq R a = ∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ) :=
+  rfl
+
+private noncomputable def expandOneAddXInv (q : ℕ) (R : Type*) [CommRing R] :
+    R⟦X⟧ →ₗ[R] (Fin q → R⟦X⟧) where
+  toFun f j := ∑ k : Fin q,
+    if (j : ℕ) ≤ k then ((-1 : R) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : R)) • cartier R q k f
+    else 0
+  map_add' _ _ := funext fun _ ↦ by
+    simp only [map_add, Pi.add_apply, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun _ _ ↦ by split_ifs <;> simp
+  map_smul' c _ := funext fun _ ↦ by
+    simp only [map_smul, Pi.smul_apply, RingHom.id_apply, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun _ _ ↦ by
+      split_ifs <;> first | exact smul_comm .. | exact (smul_zero c).symm
+
+private theorem expandOneAddXInv_apply (q : ℕ) (R : Type*) [CommRing R] (f : R⟦X⟧) (j : Fin q) :
+    expandOneAddXInv q R f j = ∑ k : Fin q,
+      if (j : ℕ) ≤ k then ((-1 : R) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : R)) • cartier R q k f
+      else 0 :=
+  rfl
+
+private theorem expandOneAddX_rightInverse {q : ℕ} (hq : q ≠ 0) (f : R⟦X⟧) :
+    expandOneAddXLinearMap q hq R (expandOneAddXInv q R f) = f := by
+  simp only [expandOneAddXLinearMap_apply, expandOneAddXInv_apply, map_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  trans ∑ k : Fin q, X ^ (k : ℕ) * expand q hq (cartier R q k f)
+  · refine Finset.sum_congr rfl fun k _ ↦ ?_
+    have hfilter : (Finset.range q).filter (· ≤ (k : ℕ)) = Finset.range ((k : ℕ) + 1) := by
+      ext j
+      simp only [Finset.mem_filter, Finset.mem_range]
+      have hk := k.isLt
+      omega
+    have hXpow : (X : R⟦X⟧) ^ (k : ℕ) = ((1 + X) + (-1)) ^ (k : ℕ) := by ring
+    have hbinom : (∑ j : Fin q, if (j : ℕ) ≤ k then
+        C ((-1 : R) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : R)) * (1 + X) ^ (j : ℕ) else 0) =
+        X ^ (k : ℕ) := by
+      rw [Fin.sum_univ_eq_sum_range (fun j ↦ if j ≤ (k : ℕ) then
+        C ((-1 : R) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : R)) * (1 + X) ^ j else 0),
+        ← Finset.sum_filter, hfilter, hXpow, add_pow]
+      exact Finset.sum_congr rfl fun j _ ↦ by simp; ring
+    rw [← hbinom, mul_comm, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by
+      split_ifs
+      · rw [map_smul, smul_eq_C_mul]
+        ring
+      · simp
+  · exact (Fin.sum_univ_eq_sum_range _ q).trans (sum_X_pow_mul_expand_cartier q hq f).symm
+
+private theorem expandOneAddX_injective {q : ℕ} (hq : q ≠ 0) :
+    Function.Injective (expandOneAddXLinearMap q hq R) := by
+  rw [injective_iff_map_eq_zero]
+  intro a ha
+  have hsys (k : Fin q) : ∑ j : Fin q, C (((j : ℕ).choose k : R)) * a j = 0 := by
+    have hc := congrArg (cartier R q k) ha
+    simp only [expandOneAddXLinearMap_apply, map_sum, map_zero] at hc
+    exact (Finset.sum_congr rfl fun j _ ↦ by
+      rw [cartier_expand_mul q k hq k.isLt, cartier_one_add_X_pow q k j.isLt, mul_comm]).symm.trans
+      hc
+  suffices ∀ d : ℕ, ∀ k : Fin q, q - 1 - (k : ℕ) = d → a k = 0 from funext fun k ↦ this _ k rfl
+  intro d
+  induction d using Nat.strongRecOn with | ind d ih =>
+    intro k hk
+    have hsplit := hsys k
+    rw [Finset.sum_eq_single k (fun j _ hjk ↦ by
+      rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hjk) with hlt | hgt
+      · rw [Nat.choose_eq_zero_of_lt hlt, Nat.cast_zero, map_zero, zero_mul]
+      · rw [ih _ (by omega) j rfl, mul_zero]) (by simp)] at hsplit
+    simpa using hsplit
+
+/-- The shifted-basis Cartier `R`-linear equivalence `(Fin q → R⟦X⟧) ≃ₗ[R] R⟦X⟧`, sending
+`a` to `∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ)`. -/
+noncomputable def expandOneAddXEquiv (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommRing R] :
+    (Fin q → R⟦X⟧) ≃ₗ[R] R⟦X⟧ :=
+  LinearEquiv.ofLinearMap (expandOneAddXLinearMap q hq R) (expandOneAddXInv q R)
+    (LinearMap.ext (expandOneAddX_rightInverse hq))
+    (LinearMap.ext fun _ ↦ expandOneAddX_injective hq (expandOneAddX_rightInverse hq _))
+
+/-- Evaluating `PowerSeries.expandOneAddXEquiv` at `a` expands to the shifted Cartier sum
+`∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ)`. -/
+@[simp]
+theorem expandOneAddXEquiv_apply (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommRing R]
+    (a : Fin q → R⟦X⟧) :
+    expandOneAddXEquiv q hq R a = ∑ i : Fin q, expand q hq (a i) * (1 + X) ^ (i : ℕ) :=
+  expandOneAddXLinearMap_apply q hq R a
+
+/-- Explicit formula for the inverse of `PowerSeries.expandOneAddXEquiv`. -/
+theorem expandOneAddXEquiv_symm_apply (q : ℕ) (hq : q ≠ 0) (R : Type*) [CommRing R]
+    (f : R⟦X⟧) (j : Fin q) :
+    (expandOneAddXEquiv q hq R).symm f j = ∑ k : Fin q,
+      if (j : ℕ) ≤ k then ((-1 : R) ^ ((k : ℕ) - j) * ((k : ℕ).choose j : R)) • cartier R q k f
+      else 0 :=
+  expandOneAddXInv_apply q R f j
+
+/-- If the first `q * (n + 1)` coefficients of `f` lie in an ideal `J`, then so does the `n`-th
+coefficient of each shifted Cartier component `(expandOneAddXEquiv q hq R).symm f j`. -/
+theorem coeff_expandOneAddXEquiv_symm_mem {q : ℕ} (hq : q ≠ 0) (J : Ideal R) {f : R⟦X⟧} {n : ℕ}
+    (hf : ∀ s < q * (n + 1), coeff s f ∈ J) (j : Fin q) :
+    coeff n ((expandOneAddXEquiv q hq R).symm f j) ∈ J := by
+  rw [expandOneAddXEquiv_symm_apply, map_sum]
+  refine Ideal.sum_mem _ fun k _ ↦ ?_
+  split_ifs
+  · rw [map_smul, coeff_cartier]
+    exact J.smul_mem _ (hf _ (by have := k.isLt; nlinarith))
+  · simp
 
 end CommRing
 

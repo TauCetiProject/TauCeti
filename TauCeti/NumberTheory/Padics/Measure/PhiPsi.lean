@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.NumberTheory.Padics.Coleman.Basic
 public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
@@ -46,10 +47,10 @@ norm.
 
 * `AbstractMeasure.amiceTransform_map_mulLeft_natCast`: pushforward along `x ↦ m x` is the
   substitution `T ↦ (1 + T) ^ m - 1` on Amice transforms.
-* `AbstractMeasure.amiceTransform_phiMeasure`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`.
+* `AbstractMeasure.amiceTransform_phiMeasure`: `A_(φ μ) = Coleman.frobeniusHom p R A_μ`.
 * `TauCeti.psiSeries_phi`: series psi is a left inverse of Frobenius substitution.
 * `AbstractMeasure.amiceTransform_unitRestriction`: restriction to the units is the series
-  projector `F ↦ F - (psiSeries p F).subst ((1 + X) ^ p - 1)`.
+  projector `F ↦ F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F)`.
 * `AbstractMeasure.psiMeasure_phiMeasure`: `ψ (φ μ) = μ`.
 * `AbstractMeasure.phiMeasure_psiMeasure`: `φ (ψ μ)` is the restriction of `μ` to `pℤ_p`.
 * `AbstractMeasure.unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure`: `1 - φ ψ` is restriction
@@ -139,11 +140,11 @@ theorem amiceTransform_map_mulLeft_natCast (m : ℕ) (μ : D(ℤ_[p], R)) :
     rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by lia : n < k)).trans_le
       (le_order_pow_of_constantCoeff_eq_zero k hG)), smul_zero]
 
-/-- **The Amice transform of `φ μ`** is the Amice transform of `μ` composed with
-`T ↦ (1 + T) ^ p - 1`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`. -/
+/-- **The Amice transform of `φ μ`** is the Frobenius substitution applied to the Amice
+transform of `μ`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`. -/
 theorem amiceTransform_phiMeasure (μ : D(ℤ_[p], R)) :
-    amiceTransform (phiMeasure μ) = (amiceTransform μ).subst ((1 + X : R⟦X⟧) ^ p - 1) := by
-  rw [phiMeasure_eq_map, amiceTransform_map_mulLeft_natCast]
+    amiceTransform (phiMeasure μ) = TauCeti.Coleman.frobeniusHom p R (amiceTransform μ) := by
+  rw [phiMeasure_eq_map, amiceTransform_map_mulLeft_natCast, TauCeti.Coleman.frobeniusHom_apply]
 
 end Phi
 
@@ -349,14 +350,14 @@ theorem psiSeries_amiceTransform (μ : D(ℤ_[p], ℤ_[p])) :
 /-- Series psi is a left inverse of Frobenius substitution. -/
 @[simp]
 theorem psiSeries_phi (F : ℤ_[p]⟦X⟧) :
-    psiSeries p (F.subst ((1 + X) ^ p - 1)) = F := by
+    psiSeries p (Coleman.frobeniusHom p ℤ_[p] F) = F := by
   obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
   rw [amiceTransformEquiv_apply, ← amiceTransform_phiMeasure,
     psiSeries_amiceTransform, psiMeasure_phiMeasure]
 
 /-- Frobenius after psi is the Amice transform of restriction to `pℤ_p`. -/
 theorem subst_psiSeries_amiceTransform (μ : D(ℤ_[p], ℤ_[p])) :
-    (psiSeries p μ.amiceTransform).subst ((1 + X) ^ p - 1) =
+    Coleman.frobeniusHom p ℤ_[p] (psiSeries p μ.amiceTransform) =
       (restrictMultiples μ).amiceTransform := by
   rw [psiSeries_amiceTransform, ← amiceTransform_phiMeasure, phiMeasure_psiMeasure]
 
@@ -422,7 +423,8 @@ namespace AbstractMeasure
 /-- Restriction to the units is the unit projector on integral Amice transforms. -/
 theorem amiceTransform_unitRestriction (μ : D(ℤ_[p], ℤ_[p])) :
     (unitRestriction μ).amiceTransform =
-      μ.amiceTransform - (TauCeti.psiSeries p μ.amiceTransform).subst ((1 + X) ^ p - 1) := by
+      μ.amiceTransform -
+        TauCeti.Coleman.frobeniusHom p ℤ_[p] (TauCeti.psiSeries p μ.amiceTransform) := by
   rw [TauCeti.subst_psiSeries_amiceTransform, unitRestriction_eq_sub, LinearMap.sub_apply,
     LinearMap.id_apply, map_sub]
 
