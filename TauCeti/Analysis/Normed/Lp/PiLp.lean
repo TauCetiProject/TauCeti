@@ -37,6 +37,8 @@ vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
+Without any finiteness assumption on `ι`, the product topology on `PiLp p β` inherits topological
+additive-group and continuous-constant-scalar-multiplication instances from the fibres.
 Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
@@ -56,6 +58,22 @@ public section
 open scoped ENNReal
 
 namespace PiLp
+
+section Topology
+
+variable {ι : Type*} {p : ℝ≥0∞} {β : ι → Type*} [∀ i, TopologicalSpace (β i)]
+
+instance instIsTopologicalAddGroup [∀ i, AddCommGroup (β i)] [∀ i, IsTopologicalAddGroup (β i)] :
+    IsTopologicalAddGroup (PiLp p β) where
+  continuous_add := continuous_induced_rng.2
+    ((continuous_induced_dom.comp continuous_fst).add (continuous_induced_dom.comp continuous_snd))
+  continuous_neg := continuous_induced_rng.2 continuous_induced_dom.neg
+
+instance instContinuousConstSMul {R : Type*} [∀ i, SMul R (β i)]
+    [∀ i, ContinuousConstSMul R (β i)] : ContinuousConstSMul R (PiLp p β) :=
+  ⟨fun c ↦ continuous_induced_rng.2 ((continuous_const_smul c).comp continuous_induced_dom)⟩
+
+end Topology
 
 variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
 
@@ -325,7 +343,7 @@ theorem toContinuousLinearMap_singleLI [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring
   simp
 
 /-- The coordinate projections and inclusions decompose the identity on `PiLp p β`. -/
-theorem sum_singleCLM_comp_proj [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
+theorem sum_singleCLM_comp_proj {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
     [∀ i, NormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] :
     ∑ i, (singleCLM p 𝕜 β i).comp (proj p β i) = ContinuousLinearMap.id 𝕜 (PiLp p β) := by
   ext x j

@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # The ultrastrong operator topology
@@ -32,13 +33,15 @@ topology. The copy is a Hausdorff locally convex topological vector space, with 
 The ultrastrong topology is coarser than the norm topology and finer than the strong operator
 topology on Mathlib's pointwise-convergence copy `E →Lₚₜ[𝕜] F`. On norm-bounded sets the latter
 comparison is an equality (`isInducing_restrict_toPointwiseConvergenceCLM`): for a uniformly
-bounded net, strong and ultrastrong convergence agree. This is the bounded-set agreement used to
-pass between the two topologies in von Neumann algebra theory. Without a norm bound the two
-topologies differ: when `E` is infinite-dimensional with separating dual and `F` is nontrivial, the
-identity from the strong operator topology to the ultrastrong topology is not continuous
-(`not_continuous_ofPointwiseConvergenceCLM`). The test is a square-summable linearly independent
-sequence `ξ` (`lp.exists_linearIndependent`) and a rank-one operator vanishing on the finitely many
-vectors seen by a strong seminorm bound, but not on the whole sequence.
+bounded net, strong and ultrastrong convergence agree, so bounded sets have the same strong and
+ultrastrong closures (`ofCLM_mem_closure_image_iff_of_norm_le`,
+`closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM`). This is the bounded-set
+agreement used to pass between the two topologies in von Neumann algebra theory. Without a norm
+bound the two topologies differ: when `E` is infinite-dimensional with separating dual and `F` is
+nontrivial, the identity from the strong operator topology to the ultrastrong topology is not
+continuous (`not_continuous_ofPointwiseConvergenceCLM`). The test is a square-summable linearly
+independent sequence `ξ` (`lp.exists_linearIndependent`) and a rank-one operator vanishing on the
+finitely many vectors seen by a strong seminorm bound, but not on the whole sequence.
 
 The definition needs no inner product: `E` and `F` are arbitrary normed spaces.
 
@@ -93,6 +96,14 @@ def equiv : ContinuousLinearMapUltrastrong 𝕜 E F ≃ (E →L[𝕜] F) where
 theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltrastrong 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
+
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.injective
+
+theorem ofCLM_surjective :
+    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.surjective
 
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
@@ -396,6 +407,46 @@ theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontri
   refine smul_ne_zero hfN hy (norm_le_zero_iff.1 (le_trans ?_ h0))
   simpa [lp.ampliation_apply_apply] using
     lp.norm_apply_le_norm two_ne_zero (lp.ampliation ℕ 2 (f.smulRight y) ξ) N
+
+/-- **Bounded-set closure agreement with the strong operator topology.** For any norm-bounded set
+`t` of operators, an operator lies in the ultrastrong closure of `t` if and only if it lies in the
+strong operator closure of `t`. -/
+theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : ℝ}
+    (ht : ∀ T ∈ t, ‖T‖ ≤ C) {x : E →L[𝕜] F} :
+    ofCLM x ∈ closure (ofCLM '' t) ↔
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F x ∈
+        closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) := by
+  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · simpa only [Set.image_image, Function.comp_def] using
+      mem_closure_image continuous_toPointwiseConvergenceCLM.continuousAt hx
+  · let l : Filter (E →Lₚₜ[𝕜] F) := 𝓝[q '' t] (q x)
+    have : l.NeBot := mem_closure_iff_nhdsWithin_neBot.1 hx
+    have hmem : ∀ᶠ T in l, PointwiseConvergenceCLM.toCLM T ∈ t := by
+      refine (eventually_mem_nhdsWithin (a := q x) (s := q '' t)).mono ?_
+      rintro T ⟨S, hS, rfl⟩
+      rwa [PointwiseConvergenceCLM.toCLM_toPointwiseConvergenceCLM]
+    have hlim : Tendsto (fun T : E →Lₚₜ[𝕜] F ↦ ofCLM (PointwiseConvergenceCLM.toCLM T)) l
+        (𝓝 (ofCLM x)) :=
+      (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
+        (hmem.mono fun T hT ↦ ht _ hT)).2
+        ((tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).congr fun T ↦
+          (PointwiseConvergenceCLM.toPointwiseConvergenceCLM_toCLM T).symm)
+    exact mem_closure_of_tendsto hlim
+      (hmem.mono fun T hT ↦ ⟨PointwiseConvergenceCLM.toCLM T, hT, rfl⟩)
+
+/-- **Bounded-set closure transfer from the strong operator topology.** If a norm-bounded set `t`
+of operators has strong operator closure `u`, then its ultrastrong closure is also `u`. -/
+theorem closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM {t u : Set (E →L[𝕜] F)}
+    {C : ℝ} (ht : ∀ T ∈ t, ‖T‖ ≤ C)
+    (hsot : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' u) :
+    closure (ofCLM '' t) = ofCLM '' u := by
+  ext A
+  obtain ⟨x, rfl⟩ := ofCLM_surjective A
+  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hsot,
+    ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
+    ofCLM_injective.mem_set_image]
 
 end Comparison
 
