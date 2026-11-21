@@ -81,13 +81,13 @@ theorem lintegral_powerBiasWeight_eq_of_integrable {μ : Measure ℝ} {q : ℝ}
   rw [← ofReal_integral_eq_lintegral_ofReal hq
     (hμ.mono fun x hx => Real.rpow_nonneg hx q)]
 
-/-- A positive finite power moment makes the corresponding power bias a probability measure. -/
-theorem isProbabilityMeasure_powerBias {μ : Measure ℝ} {q : ℝ}
-    (hpos : 0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ)
-    (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
-    IsProbabilityMeasure (μ.powerBias q) := by
-  rw [powerBias_def]
-  exact Measure.isProbabilityMeasure_weighted_iff.2 ⟨hpos, hfin⟩
+/-- A power bias is a probability measure exactly when its normalizing power moment is positive
+and finite; otherwise it is the zero measure. -/
+theorem isProbabilityMeasure_powerBias_iff {μ : Measure ℝ} {q : ℝ} :
+    IsProbabilityMeasure (μ.powerBias q) ↔
+      0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ∧
+        ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞ := by
+  rw [powerBias_def, isProbabilityMeasure_weighted_iff]
 
 /-- A law carried by `(0, ∞)` whose power moment `∫⁻ x ^ q` vanishes is the zero measure. -/
 theorem eq_zero_of_lintegral_powerBiasWeight_eq_zero {μ : Measure ℝ} {q : ℝ}
