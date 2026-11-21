@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Convolution.Commutator
 public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.LpSeminorm.FDeriv
 import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 
@@ -67,7 +68,7 @@ The proof is the classical one.
   `C_ρ g = ρ ⋆ ∂ᵥ (a g) - a (ρ ⋆ ∂ᵥ g)`
   (`TauCeti.mollifierCommutator_eq_sub_of_hasCompactSupport`), which converges in `Lᵖ` to
   `∂ᵥ (a g) - a ∂ᵥ g = (∂ᵥ a) g` (`TauCeti.tendsto_eLpNorm_apply_normed_convolution_sub`), and
-  `(∂ᵥ a) g` is bounded on `Lᵖ` (`MeasureTheory.eLpNorm_fderiv_apply_le`).
+  `(∂ᵥ a) g` is bounded on `Lᵖ` (`LipschitzWith.eLpNorm_fderiv_apply_apply_le`).
 * Smooth compactly supported functions are dense in `Lᵖ`, and a uniformly bounded family of
   operators that converges on a dense set converges everywhere.
 
@@ -81,8 +82,6 @@ For the weak solutions, testing the weak equation against `y ↦ ρ (x - y)` giv
 
 ## Main results
 
-* `MeasureTheory.eLpNorm_fderiv_apply_le`: the `Lᵖ` bound for the directional derivative of a
-  `C¹` Lipschitz field of operators.
 * `TauCeti.mollifierCommutator_eq_integral`: the commutator as a single integral.
 * `TauCeti.eLpNorm_mollifierCommutator_le`: its `Lᵖ` bound by the first moment of `∂ᵥ ρ`.
 * `TauCeti.tendsto_eLpNorm_mollifierCommutator_sub`: Friedrichs' lemma.
@@ -107,28 +106,6 @@ open scoped Convolution ENNReal NNReal Pointwise
 
 variable {E F F' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F'] [NormedSpace ℝ F']
-
-namespace MeasureTheory
-
-variable [SecondCountableTopology E] [MeasurableSpace E] [OpensMeasurableSpace E]
-  {μ : Measure E} {a : E → F →L[ℝ] F'} {K : ℝ≥0}
-
-/-- **The directional derivative of a Lipschitz field of operators on `Lᵖ`.** If
-`a : E → F →L[ℝ] F'` is `C¹` and `K`-Lipschitz, then `‖(∂ᵥ a) u‖_p ≤ K ‖v‖ ‖u‖_p`. -/
-theorem eLpNorm_fderiv_apply_le (ha : ContDiff ℝ 1 a) (haK : LipschitzWith K a) {u : E → F}
-    (hu : AEStronglyMeasurable u μ) (v : E) (p : ℝ≥0∞) :
-    eLpNorm (fun x ↦ fderiv ℝ a x v (u x)) p μ ≤ K * ‖v‖ₑ * eLpNorm u p μ := by
-  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p ?_ (Filter.Eventually.of_forall fun x ↦ ?_)
-  · exact (ContinuousLinearMap.id ℝ (F →L[ℝ] F')).aestronglyMeasurable_comp₂
-      ((ha.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable hu
-  · have hda : ‖fderiv ℝ a x‖ₑ ≤ K := by
-      rw [eNorm_eq_nnNorm]
-      exact_mod_cast norm_fderiv_le_of_lipschitz ℝ haK
-    calc ‖fderiv ℝ a x v (u x)‖ₑ ≤ ‖fderiv ℝ a x‖ₑ * ‖v‖ₑ * ‖u x‖ₑ :=
-          ((fderiv ℝ a x v).le_opENorm _).trans (by gcongr; exact (fderiv ℝ a x).le_opENorm v)
-      _ ≤ K * ‖v‖ₑ * ‖u x‖ₑ := by gcongr
-
-end MeasureTheory
 
 namespace TauCeti
 
@@ -301,8 +278,8 @@ theorem tendsto_eLpNorm_mollifierCommutator_sub {p : ℝ≥0∞} [Fact (1 ≤ p)
   have hρ := (φ i).contDiff_normed (μ := μ) (n := 1)
   set L : (E → F) → E → F' := fun k x ↦ fderiv ℝ a x v (k x)
   have hL : eLpNorm (L (g - h)) p μ ≤ K * ‖v‖ₑ * eLpNorm (g - h) p μ :=
-    eLpNorm_fderiv_apply_le ha haK (hg.aestronglyMeasurable.sub hh.continuous.aestronglyMeasurable)
-      v p
+    haK.eLpNorm_fderiv_apply_apply_le ha
+      (hg.aestronglyMeasurable.sub hh.continuous.aestronglyMeasurable) v p
   -- Split `g = (g - h) + h`.
   have hdec : mollifierCommutator μ ((φ i).normed μ) a v g - L g =
       (mollifierCommutator μ ((φ i).normed μ) a v (g - h) +
@@ -400,7 +377,7 @@ theorem tendsto_eLpNorm_sum_apply_fderiv_convolution_sub {p : ℝ≥0∞} [Fact 
   -- The terms `Gⱼ = (∂_{wⱼ} aⱼ) g` are in `Lᵖ`, since `∂_{wⱼ} aⱼ` is continuous and bounded.
   set G : ι' → E → F' := fun j y ↦ fderiv ℝ (a j) y (w j) (g y)
   have hG (j : ι') (hj : j ∈ s) : MemLp (G j) p μ := memLp_iff.2 <|
-    (eLpNorm_fderiv_apply_le (ha j hj) (haK j hj) hg.aestronglyMeasurable (w j) p).trans_lt
+    ((haK j hj).eLpNorm_fderiv_apply_apply_le (ha j hj) hg.aestronglyMeasurable (w j) p).trans_lt
       (ENNReal.mul_lt_top (by finiteness) (memLp_iff.1 hg))
   -- The weak equation, tested against `y ↦ ρ (x - y)`, identifies `∑ⱼ aⱼ ∂_{wⱼ} (ρ ⋆ g)` with
   -- `ρ ⋆ f + ∑ⱼ (ρ ⋆ Gⱼ - C_ρ g)`, where `C_ρ` is the commutator for `aⱼ` and `wⱼ`.
