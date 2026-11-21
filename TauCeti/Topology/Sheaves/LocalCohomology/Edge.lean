@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence
-import Mathlib.CategoryTheory.Abelian.DiagramLemmas.Four
+import TauCeti.CategoryTheory.Abelian.DiagramLemmas.Four
 import TauCeti.Topology.Sheaves.SupportedCohomology.Composition
 
 /-!
@@ -449,18 +449,6 @@ section higherEdge
 
 variable {S} {Z : Closeds X}
 
-/-- In a morphism `ψ : R₁ ⟶ R₂` of short complexes in an abelian category with `R₁.g` and `R₂.g`
-epimorphisms and `R₂` exact, if `ψ.τ₁` is an epimorphism and `ψ.τ₂` is an isomorphism, then
-`ψ.τ₃` is an isomorphism. -/
-private lemma isIso_τ₃_of_epi_of_isIso {C : Type*} [Category* C] [Abelian C]
-    {R₁ R₂ : ShortComplex C} (ψ : R₁ ⟶ R₂) (hR₂ : R₂.Exact)
-    [Epi R₁.g] [Epi R₂.g] [Epi ψ.τ₁] [IsIso ψ.τ₂] : IsIso ψ.τ₃ := by
-  have : Mono ψ.τ₃ :=
-    ShortComplex.mono_of_epi_of_epi_of_mono ψ hR₂ inferInstance inferInstance inferInstance
-  have : Epi (R₁.g ≫ ψ.τ₃) := ψ.comm₂₃ ▸ epi_comp ψ.τ₂ R₂.g
-  have : Epi ψ.τ₃ := epi_of_epi R₁.g ψ.τ₃
-  exact isIso_of_mono_of_epi ψ.τ₃
-
 /-- **Degenerate edge comparison for `n = 0`.** If the local cohomology sheaves `𝓗_S^{q+1}(F)`
 vanish for all `q < j`, then for every closed `Z ≤ S` the inclusion `Γ_S(F) ⟶ F` induces an
 isomorphism of presheaves `H_Z^j(-, Γ_S(F)) ≅ H_Z^j(-, F)`. -/
@@ -508,7 +496,8 @@ theorem isIso_supportedModuleHPresheafFunctor_map_supportedSubmoduleι {j : ℕ}
     have : IsIso ψ.τ₁ := ih T.X₂ fun q _ ↦ isZero_supportedModuleHSheaf_succ_of_isFlasque S T.X₂ q
     have : IsIso ψ.τ₂ := ih T.X₃ fun q hq ↦
       isZero_supportedModuleHSheaf_X₃_of_shortExact S hT (h (q + 1) (by omega))
-    exact isIso_τ₃_of_epi_of_isIso ψ (exact_supportedModuleHPresheafFunctor_map_g_δ Z hT j)
+    exact ShortComplex.isIso_τ₃_of_epi_of_isIso ψ
+      (exact_supportedModuleHPresheafFunctor_map_g_δ Z hT j)
 
 /-- If the local cohomology sheaves `𝓗_S^{q+1}(F)` vanish for all `q < j`, then for every closed
 `Z ≤ S` the inclusion `Γ_S(F) ⟶ F` induces bijections `H_Z^j(W, Γ_S(F)) ⟶ H_Z^j(W, F)`. -/
