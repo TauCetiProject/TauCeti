@@ -559,4 +559,59 @@ lemma twistedHomologyMap_comp_twistedHomologyMap_eq_of_fst_comp_eq
 
 end AmbientComponent
 
+section EqualMaps
+
+/-! ### Maps of pairs equal to an identity or a composite
+
+When a map of pairs is only propositionally equal to an identity or to a composite, the
+coefficient systems are matched along equalities of local systems, and the identity and
+composition laws hold after the corresponding `eqToHom` coefficient maps. -/
+
+variable {P' : TopPair.{v}}
+
+/-- A map of pairs equal to the identity induces the identity on twisted homology, once the
+coefficient systems are matched along equalities. -/
+lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id (g : P ⟶ P)
+    (hg : g = 𝟙 P) {N S : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (e : N = (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj S) (e' : N = S) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (eqToHom e) k ≫ twistedHomologyMap g S k =
+      P.twistedHomologyCoefficientMap (eqToHom e') k := by
+  subst hg e
+  rw [twistedHomologyMap_id, eqToHom_refl, twistedHomologyCoefficientMap_id, Category.id_comp]
+  congr 1
+  ext x : 2
+  rw [fstPullbackIdIso_hom_app, eqToHom_app]
+  -- Both sides identify the same fibre of `S` with itself up to unfolding the pullback.
+  rfl
+
+/-- A map of pairs equal to a composite induces the composite of the induced maps on twisted
+homology, once the coefficient systems are matched along equalities. -/
+lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp (g₁ : P ⟶ P')
+    (g₂ : P' ⟶ Q) (h : P ⟶ Q) (hw : h = g₁ ≫ g₂)
+    {N N' : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    {M : LocalCoefficientSystem.{u, v, max v w} R P'.fst}
+    {S : LocalCoefficientSystem.{u, v, max v w} R Q.fst}
+    (e₀ : N = N') (e : N' = (LocalCoefficientSystem.pullback (Hom.fst h).hom).obj S)
+    (e₁ : N = (LocalCoefficientSystem.pullback (Hom.fst g₁).hom).obj M)
+    (e₂ : M = (LocalCoefficientSystem.pullback (Hom.fst g₂).hom).obj S) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (eqToHom e₀) k ≫
+        P.twistedHomologyCoefficientMap (eqToHom e) k ≫ twistedHomologyMap h S k =
+      (P.twistedHomologyCoefficientMap (eqToHom e₁) k ≫ twistedHomologyMap g₁ M k) ≫
+        P'.twistedHomologyCoefficientMap (eqToHom e₂) k ≫ twistedHomologyMap g₂ S k := by
+  subst hw e₂ e₁ e₀
+  simp only [eqToHom_refl, twistedHomologyCoefficientMap_id, Category.id_comp,
+    twistedHomologyMap_comp, ← twistedHomologyCoefficientMap_comp_assoc]
+  convert Category.id_comp _
+  rw [← twistedHomologyCoefficientMap_id]
+  congr 1
+  ext x : 2
+  rw [NatTrans.comp_app, fstPullbackCompIso_hom_app]
+  -- The fibres of the iterated pullback and of the pullback along the composite agree only up to
+  -- unfolding, so `Category.comp_id` is applied by unification rather than by rewriting.
+  refine (Category.comp_id _).trans ?_
+  rw [eqToHom_app]
+  rfl
+
+end EqualMaps
+
 end TopPair

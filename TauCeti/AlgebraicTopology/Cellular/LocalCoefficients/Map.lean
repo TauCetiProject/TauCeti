@@ -284,56 +284,6 @@ lemma twistedHomologyComplexBasePairMap_def (k : ℕ) :
 
 /-! ### Identity and composition laws -/
 
-section GenericLaws
-
-variable {P P' Q : TopPair.{w}}
-
-/-- A map of pairs equal to the identity induces the identity on twisted homology, once the
-coefficient systems are matched along equalities. -/
-private lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id (g : P ⟶ P)
-    (hg : g = 𝟙 P) {N S : LocalCoefficientSystem.{u, w, max w v} R P.fst}
-    (e : N = (pullback (TopPair.Hom.fst g).hom).obj S) (e' : N = S) (k : ℕ) :
-    P.twistedHomologyCoefficientMap (eqToHom e) k ≫ TopPair.twistedHomologyMap g S k =
-      P.twistedHomologyCoefficientMap (eqToHom e') k := by
-  subst hg e
-  rw [TopPair.twistedHomologyMap_id, eqToHom_refl, TopPair.twistedHomologyCoefficientMap_id,
-    Category.id_comp]
-  congr 1
-  ext x : 2
-  rw [TopPair.fstPullbackIdIso_hom_app, eqToHom_app]
-  -- Both sides identify the same fibre of `S` with itself up to unfolding the pullback.
-  rfl
-
-/-- A map of pairs equal to a composite induces the composite of the induced maps on twisted
-homology, once the coefficient systems are matched along equalities. -/
-private lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp (g₁ : P ⟶ P')
-    (g₂ : P' ⟶ Q) (h : P ⟶ Q) (hw : h = g₁ ≫ g₂)
-    {N N' : LocalCoefficientSystem.{u, w, max w v} R P.fst}
-    {M : LocalCoefficientSystem.{u, w, max w v} R P'.fst}
-    {S : LocalCoefficientSystem.{u, w, max w v} R Q.fst}
-    (e₀ : N = N') (e : N' = (pullback (TopPair.Hom.fst h).hom).obj S)
-    (e₁ : N = (pullback (TopPair.Hom.fst g₁).hom).obj M)
-    (e₂ : M = (pullback (TopPair.Hom.fst g₂).hom).obj S) (k : ℕ) :
-    P.twistedHomologyCoefficientMap (eqToHom e₀) k ≫
-        P.twistedHomologyCoefficientMap (eqToHom e) k ≫ TopPair.twistedHomologyMap h S k =
-      (P.twistedHomologyCoefficientMap (eqToHom e₁) k ≫ TopPair.twistedHomologyMap g₁ M k) ≫
-        P'.twistedHomologyCoefficientMap (eqToHom e₂) k ≫ TopPair.twistedHomologyMap g₂ S k := by
-  subst hw e₂ e₁ e₀
-  simp only [eqToHom_refl, TopPair.twistedHomologyCoefficientMap_id, Category.id_comp,
-    TopPair.twistedHomologyMap_comp, ← TopPair.twistedHomologyCoefficientMap_comp_assoc]
-  convert Category.id_comp _
-  rw [← TopPair.twistedHomologyCoefficientMap_id]
-  congr 1
-  ext x : 2
-  rw [NatTrans.comp_app, TopPair.fstPullbackCompIso_hom_app]
-  -- The fibres of the iterated pullback and of the pullback along the composite agree only up to
-  -- unfolding, so `Category.comp_id` is applied by unification rather than by rewriting.
-  refine (Category.comp_id _).trans ?_
-  rw [eqToHom_app]
-  rfl
-
-end GenericLaws
-
 /-- The identity cellular map acts on the cellular chain groups with local coefficients as the
 identification of the pullback of `L` along the identity with `L`. -/
 @[simp]
@@ -342,7 +292,8 @@ lemma twistedCellularChainGroupMap_id (L : LocalCoefficientSystem.{u, w, max w v
     twistedCellularChainGroupMap C C (isCellular_id C) L n =
       (skeletonPair C n).twistedHomologyCoefficientMap
         (eqToHom (congrArg (skeletonSystem C · (n + 1)) (pullback_obj_id _ L))) n :=
-  twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id _ (skeletonPairMap_id C n) _ _ n
+  TopPair.twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id _ (skeletonPairMap_id C n)
+    _ _ n
 
 /-- The identity cellular map acts on the twisted homology of the skeleta relative to the base as
 the identification of the pullback of `L` along the identity with `L`. -/
@@ -352,8 +303,8 @@ lemma twistedHomologySkeletonBasePairMap_id
     twistedHomologySkeletonBasePairMap C C (isCellular_id C) L n k =
       (skeletonBasePair C n).twistedHomologyCoefficientMap
         (eqToHom (congrArg (skeletonSystem C · (n + 1)) (pullback_obj_id _ L))) k :=
-  twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id _ (skeletonBasePairMap_id C n)
-    _ _ k
+  TopPair.twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id _
+    (skeletonBasePairMap_id C n) _ _ k
 
 /-- The identity cellular map acts on the twisted homology of the complex relative to its base as
 the identification of the pullback of `L` along the identity with `L`. -/
@@ -362,7 +313,8 @@ lemma twistedHomologyComplexBasePairMap_id
     (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of C)) (k : ℕ) :
     twistedHomologyComplexBasePairMap C C (isCellular_id C) L k =
       (complexBasePair C).twistedHomologyCoefficientMap (eqToHom (pullback_obj_id _ L)) k :=
-  twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id _ (complexBasePairMap_id C) _ _ k
+  TopPair.twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_id _ (complexBasePairMap_id C)
+    _ _ k
 
 section Comp
 
@@ -380,7 +332,7 @@ lemma twistedCellularChainGroupMap_comp
       twistedCellularChainGroupMap C C'' (IsCellular.comp C C' hf hg) L n =
     twistedCellularChainGroupMap C C' hf ((pullback g.hom).obj L) n ≫
       twistedCellularChainGroupMap C' C'' hg L n :=
-  twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp _ _ _
+  TopPair.twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp _ _ _
     (skeletonPairMap_comp C C' hf C'' hg n) _ _ _ _ n
 
 /-- The maps of the twisted homology of the skeleta relative to the bases respect composition of
@@ -395,7 +347,7 @@ lemma twistedHomologySkeletonBasePairMap_comp
       twistedHomologySkeletonBasePairMap C C'' (IsCellular.comp C C' hf hg) L n k =
     twistedHomologySkeletonBasePairMap C C' hf ((pullback g.hom).obj L) n k ≫
       twistedHomologySkeletonBasePairMap C' C'' hg L n k :=
-  twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp _ _ _
+  TopPair.twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp _ _ _
     (skeletonBasePairMap_comp C C' hf C'' hg n) _ _ _ _ k
 
 /-- The maps of the twisted homology of the complexes relative to their bases respect composition
@@ -409,7 +361,7 @@ lemma twistedHomologyComplexBasePairMap_comp
       twistedHomologyComplexBasePairMap C C'' (IsCellular.comp C C' hf hg) L k =
     twistedHomologyComplexBasePairMap C C' hf ((pullback g.hom).obj L) k ≫
       twistedHomologyComplexBasePairMap C' C'' hg L k :=
-  twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp _ _ _
+  TopPair.twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp _ _ _
     (complexBasePairMap_comp C C' hf C'' hg) _ _ _ _ k
 
 end Comp
