@@ -892,6 +892,24 @@ theorem coefficient_map (p : X × E) : (a.map Φ).coefficient p = Φ (a.coeffici
   (rfl)
 
 @[simp]
+protected theorem map_zero : (0 : HomogeneousSymbol X E V W m).map Φ = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_add (b : HomogeneousSymbol X E V W m) :
+    (a + b).map Φ = a.map Φ + b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_neg : (-a).map Φ = -a.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_sub (b : HomogeneousSymbol X E V W m) :
+    (a - b).map Φ = a.map Φ - b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
 theorem map_castDegree (h : m = m') : (a.castDegree h).map Φ = (a.map Φ).castDegree h :=
   (rfl)
 
@@ -1360,13 +1378,8 @@ variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddComm
 /-- The pointwise adjoint `(x, ξ) ↦ a (x, ξ)†` of a homogeneous symbol between Hilbert spaces.
 Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
 degree. -/
-noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m where
-  coefficient := ContinuousLinearMap.adjointRealCLM ∘ a.coefficient
-  zero_covector x := by simp
-  contDiffOn_coefficient :=
-    ContinuousLinearMap.adjointRealCLM.contDiff.comp_contDiffOn a.contDiffOn_coefficient
-  homogeneous x ξ t ht := by
-    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m :=
+  a.map ContinuousLinearMap.adjointRealCLM
 
 @[simp]
 theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :
