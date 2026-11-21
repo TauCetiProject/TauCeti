@@ -169,14 +169,28 @@ theorem complexRealIndexEquiv_apply_val (n : ℕ) (i : Fin n) (k : Fin 2) :
   simp [complexRealIndexEquiv, Nat.add_comm]
 
 /-- Under `complexRealIndexEquiv`, `(i, 0)` maps to the even index `2 * i`. -/
+@[simp]
 theorem complexRealIndexEquiv_zero (n : ℕ) (i : Fin n) :
     complexRealIndexEquiv n (i, 0) = ⟨2 * (i : ℕ), by omega⟩ :=
   Fin.ext (by simp)
 
 /-- Under `complexRealIndexEquiv`, `(i, 1)` maps to the odd index `2 * i + 1`. -/
+@[simp]
 theorem complexRealIndexEquiv_one (n : ℕ) (i : Fin n) :
     complexRealIndexEquiv n (i, 1) = ⟨2 * (i : ℕ) + 1, by omega⟩ :=
   Fin.ext (by simp)
+
+/-- Under `(complexRealIndexEquiv n).symm`, an even index `2 * i` maps to `(i, 0)`. -/
+@[simp]
+theorem complexRealIndexEquiv_symm_even (n : ℕ) (i : Fin n) :
+    (complexRealIndexEquiv n).symm ⟨2 * (i : ℕ), by omega⟩ = (i, 0) :=
+  (Equiv.symm_apply_eq _).2 (complexRealIndexEquiv_zero n i).symm
+
+/-- Under `(complexRealIndexEquiv n).symm`, an odd index `2 * i + 1` maps to `(i, 1)`. -/
+@[simp]
+theorem complexRealIndexEquiv_symm_odd (n : ℕ) (i : Fin n) :
+    (complexRealIndexEquiv n).symm ⟨2 * (i : ℕ) + 1, by omega⟩ = (i, 1) :=
+  (Equiv.symm_apply_eq _).2 (complexRealIndexEquiv_one n i).symm
 
 /-- Casting along an equality of real dimensions commutes with `complexRealIndexEquiv`. -/
 @[simp]

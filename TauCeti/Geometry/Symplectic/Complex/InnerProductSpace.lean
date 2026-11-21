@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-import TauCeti.Analysis.InnerProductSpace.ReInner
+import TauCeti.Analysis.InnerProductSpace.Complex
 
 /-!
 # The complex inner product of an orthogonal complex structure
@@ -161,7 +161,7 @@ theorem real_inner_ofComplexModule_apply_ofComplexModule_apply
     {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℂ E]
     [IsScalarTower ℝ ℂ E] (v w : E) :
     ⟪ofComplexModule E v, ofComplexModule E w⟫_ℝ = ⟪v, w⟫_ℝ := by
-  simp [real_inner_eq_re_inner_of_norm (𝕜 := ℂ), inner_smul_left, inner_smul_right]
+  simp [TauCeti.inner_real_eq_re_inner ℂ, inner_smul_left, inner_smul_right]
 
 /-- Multiplication by `i` preserves the real inner product `Re ⟪·, ·⟫_ℂ` of a complex inner
 product space, so `ofComplexModule E` is an orthogonal complex structure. -/

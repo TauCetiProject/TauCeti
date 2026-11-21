@@ -42,7 +42,8 @@ two-vectors.
   exterior power.
 * `LinearEquiv.exteriorPower` is the equivalence of exterior powers induced by a linear
   equivalence.
-* `exteriorPower.pow`: the `r`-th exterior power `x ^ r ∈ ⋀[R]^(k * r) M` of `x ∈ ⋀[R]^k M`.
+* `exteriorPower.pow`: the `r`-th exterior power `x ^ r ∈ ⋀[R]^(k * r) M` of `x ∈ ⋀[R]^k M`,
+  commuting with induced maps (`exteriorPower.map_pow`).
 
 ## Main results
 
@@ -624,9 +625,7 @@ theorem noncommProd_univ_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin 
         (fun j : Fin r ↦ μ j • _root_.ExteriorAlgebra.ιMulti R 2
           ![v ⟨2 * (j : ℕ), by omega⟩, v ⟨2 * (j : ℕ) + 1, by omega⟩]) hcomm =
       (∏ j : Fin r, μ j) • _root_.ExteriorAlgebra.ιMulti R (2 * r) v := by
-  have huniv_eq : (Finset.univ : Finset (Fin r)) = (List.finRange r).toFinset := by
-    ext j; simp
-  exact ((Finset.noncommProd_congr huniv_eq (fun _ _ ↦ rfl) hcomm).trans
+  exact ((Finset.noncommProd_congr (List.toFinset_finRange r).symm (fun _ _ ↦ rfl) hcomm).trans
     (Finset.noncommProd_toFinset _ _ _ (List.nodup_finRange r))).trans
     (prod_map_finRange_smul_ιMulti_two μ v)
 
@@ -642,10 +641,7 @@ theorem pow_sum_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin (2 * r) �
   rw [Finset.sum_pow_of_pairwise_commute_of_mul_self_eq_zero Finset.univ _ hcomm
     (fun j _ ↦ smul_ιMulti_two_mul_self _ _ _) r]
   have hpow : (Finset.univ : Finset (Fin r)).powersetCard r = {Finset.univ} := by
-    ext t
-    simp only [Finset.mem_powersetCard, Finset.subset_univ, true_and, Finset.mem_singleton]
-    exact ⟨fun ht ↦ Finset.eq_univ_of_card t (by simpa using ht),
-      fun ht ↦ by simp [ht]⟩
+    simpa using Finset.powersetCard_self (Finset.univ : Finset (Fin r))
   rw [hpow, Finset.sum_singleton, noncommProd_univ_smul_ιMulti_two]
 
 end WeightedTwoVectors
@@ -790,6 +786,14 @@ protected theorem pow_zero {k : ℕ} (x : ⋀[R]^k M) :
 protected theorem pow_succ {k : ℕ} (x : ⋀[R]^k M) (r : ℕ) :
     exteriorPower.pow x (r + 1) = wedge R M (k * r) k (exteriorPower.pow x r) x :=
   Subtype.ext (by simp [_root_.pow_succ])
+
+/-- Induced maps on exterior powers commute with `exteriorPower.pow`. -/
+@[simp]
+protected theorem map_pow {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    {k : ℕ} (x : ⋀[R]^k M) (r : ℕ) :
+    map (k * r) f (exteriorPower.pow x r) = exteriorPower.pow (map k f x) r := by
+  apply Subtype.ext
+  simp [coe_map, _root_.map_pow]
 
 /-- The `r`-th exterior power of a sum of `r` weighted decomposable two-vectors in `⋀² M` is `r!`
 times the product of the weights times the `2r`-fold wedge product of the frame. -/

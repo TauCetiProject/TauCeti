@@ -7,14 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Cons
-import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
-# The real normal form of skew-symmetric maps and Pfaffian powers of two-vectors
+# The real normal form of skew-symmetric maps
 
 Let `E` be a finite-dimensional real inner product space and let `(A i)` be a family of pairwise
 commuting skew-symmetric linear maps of `E`, `⟪A i x, y⟫ = -⟪x, A i y⟫`. Over `ℂ` such a family is
@@ -37,18 +34,13 @@ When the family is the image of a linear map `ρ : V → End(E)`, the coefficien
 parameter: there are nonzero linear functionals `α_k` on `V` with `ρ X = α_k(X) J_k` on the `k`-th
 plane (`TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`).
 
-For a single skew-adjoint endomorphism `A : E →ₗ[ℝ] E`, in odd dimension `det A = -det A = 0`, so
-`A` admits a unit vector in its kernel (`LinearMap.det_eq_zero_of_skew_odd`,
-`LinearMap.exists_norm_eq_one_apply_eq_zero_of_skew_odd`). In even dimension `2 * r`, pairing the
+For a single skew-adjoint endomorphism `A : E →ₗ[ℝ] E` in even dimension `2 * r`, pairing the
 nonzero invariant planes with an orthonormal pairing of `ker A` yields a complete orthonormal basis
 `(b (j, 0), b (j, 1))` and nonnegative scalars `μ j` with `A (b (j, 0)) = μ j • b (j, 1)` and
-`A (b (j, 1)) = -(μ j • b (j, 0))` (`LinearMap.exists_orthonormalBasis_skew_normalForm`).
-
-Applying this normal form to the skew-adjoint contraction `TauCeti.twoVectorContraction F` of a
-two-vector `F ∈ ⋀² E` writes `F = ∑ⱼ μⱼ (pⱼ ∧ qⱼ)` in that orthonormal basis. Applying the divided
-exterior power formula (`exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_two`) then evaluates
-`(r!)⁻¹ • exteriorPower.pow F r = (∏ⱼ μⱼ) • (p₀ ∧ q₀ ∧ ⋯ ∧ p_{r-1} ∧ q_{r-1})`
-(`TauCeti.exists_orthonormalBasis_twoVector_normalForm`).
+`A (b (j, 1)) = -(μ j • b (j, 0))` (`LinearMap.exists_orthonormalBasis_skew_normalForm`). The
+odd-dimensional determinant and kernel properties live in
+`TauCeti.Analysis.InnerProductSpace.Adjoint`, and the application to two-vectors and Pfaffian
+powers lives in `TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm`.
 
 ## Main results
 
@@ -56,15 +48,8 @@ exterior power formula (`exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_t
   of skew-symmetric maps.
 * `TauCeti.exists_orthonormal_apply_eq_smul_of_skew_of_linearMap`: the same for a linear family,
   with linear weights.
-* `LinearMap.det_eq_zero_of_skew_odd`, `LinearMap.exists_norm_eq_one_apply_eq_zero_of_skew_odd`:
-  a skew-adjoint endomorphism of an odd-dimensional real inner product space has determinant zero
-  and a unit vector in its kernel.
 * `LinearMap.exists_orthonormalBasis_skew_normalForm`: the real block-diagonal normal form of a
   skew-adjoint endomorphism in even dimension `2 * r`.
-* `TauCeti.twoVector_eq_sum_of_skew_normalForm`: a two-vector whose contraction is in normal form
-  decomposes as `∑ⱼ μⱼ (pⱼ ∧ qⱼ)`.
-* `TauCeti.exists_orthonormalBasis_twoVector_normalForm`: simultaneous normal form and Pfaffian
-  divided-power identity for any two-vector in even dimension `2 * r`.
 
 ## References
 
@@ -72,8 +57,6 @@ exterior power formula (`exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_t
   Chapters IV and V (maximal tori and the roots of a compact Lie group).
 * R. A. Horn and C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press (2013),
   Section 2.5 (real normal matrices and their block-diagonal normal form).
-* R. Harvey and H. B. Lawson, *Calibrated geometries*, Acta Math. **148** (1982), §II.6.
-* H. Federer, *Geometric Measure Theory*, Springer (1969), §1.8.2.
 -/
 
 public section
@@ -286,33 +269,6 @@ namespace LinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- A skew-adjoint endomorphism of an odd-dimensional real inner product space has determinant
-zero, because `A† = -A` forces `det A = (-1)^(dim E) det A = -det A`. -/
-theorem det_eq_zero_of_skew_odd (A : E →ₗ[ℝ] E)
-    (hA : ∀ x y, ⟪A x, y⟫ = -⟪x, A y⟫) (hodd : Odd (finrank ℝ E)) :
-    A.det = 0 := by
-  have hadj : -A = A.adjoint := by
-    rw [eq_adjoint_iff]
-    intro x y
-    rw [LinearMap.neg_apply, inner_neg_left]
-    linarith [hA x y]
-  have hdet : A.det = (-A).det := by
-    simpa [← hadj] using (det_adjoint A).symm
-  have hneg : (-A).det = (-1 : ℝ) ^ finrank ℝ E * A.det := by
-    simpa [neg_one_smul] using det_smul (-1 : ℝ) A
-  rw [hneg, hodd.neg_one_pow] at hdet
-  linarith
-
-/-- A skew-adjoint endomorphism of an odd-dimensional real inner product space has a unit vector
-in its kernel. -/
-theorem exists_norm_eq_one_apply_eq_zero_of_skew_odd (A : E →ₗ[ℝ] E)
-    (hA : ∀ x y, ⟪A x, y⟫ = -⟪x, A y⟫) (hodd : Odd (finrank ℝ E)) :
-    ∃ u : E, ‖u‖ = 1 ∧ A u = 0 := by
-  have hker : ker A ≠ ⊥ := det_eq_zero_iff_ker_ne_bot.mp (A.det_eq_zero_of_skew_odd hA hodd)
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hker
-  refine ⟨‖v‖⁻¹ • v, norm_smul_inv_norm hv0, ?_⟩
-  rw [map_smul, mem_ker.mp hv, smul_zero]
-
 /-- **Real normal form of a skew-adjoint endomorphism**: on a `2r`-dimensional real inner product
 space, every skew-adjoint endomorphism `A` is block-diagonal in some orthonormal basis
 `(b (j, 0), b (j, 1))`, with `A (b (j, 0)) = μ j • b (j, 1)` and
@@ -327,18 +283,6 @@ theorem exists_orthonormalBasis_skew_normalForm {r : ℕ}
   obtain ⟨r₀, q, p, a, hon, hact, _, hker⟩ :=
     TauCeti.exists_orthonormal_apply_eq_smul_of_skew (fun _ : Unit ↦ A) (fun _ x y ↦ hA x y)
       (fun _ _ h ↦ (h rfl).elim)
-  let P : Submodule ℝ E := Submodule.span ℝ (Set.range (Sum.elim q p))
-  have hP_dim : finrank ℝ P = 2 * r₀ := by
-    rw [finrank_span_eq_card hon.linearIndependent, Fintype.card_sum, Fintype.card_fin]
-    omega
-  have hadd := Submodule.finrank_add_finrank_orthogonal P
-  have hr₀ : r₀ ≤ r := by omega
-  have hK_dim : finrank ℝ Pᗮ = 2 * (r - r₀) := by omega
-  let bK : OrthonormalBasis (Fin (r - r₀) × Fin 2) ℝ Pᗮ :=
-    (stdOrthonormalBasis ℝ Pᗮ).reindex (Fintype.equivOfCardEq (by simp [hK_dim, mul_comm]))
-  have hker' : Pᗮ = LinearMap.ker A := by simpa [P] using hker
-  have hbK_ker (j : Fin (r - r₀)) (t : Fin 2) : A (bK (j, t) : E) = 0 :=
-    LinearMap.mem_ker.1 (hker' ▸ (bK (j, t)).property)
   let s (k : Fin r₀) : ℝ := if 0 ≤ a k () then 1 else -1
   have hs_mul_sq (k : Fin r₀) : s k * s k = 1 := by dsimp [s]; split_ifs <;> norm_num
   have hs_mul_a (k : Fin r₀) : s k * a k () = |a k ()| := by
@@ -351,139 +295,92 @@ theorem exists_orthonormalBasis_skew_normalForm {r : ℕ}
     split_ifs with h
     · simp [abs_of_nonneg h]
     · simp [abs_of_neg (not_le.mp h)]
-  let v : (Fin r₀ ⊕ Fin (r - r₀)) × Fin 2 → E := fun ⟨jk, t⟩ ↦
-    Sum.elim (fun k ↦ if t = 0 then q k else s k • p k) (fun j ↦ (bK (j, t) : E)) jk
+  let vP : Fin r₀ × Fin 2 → E := fun ⟨k, t⟩ ↦ if t = 0 then q k else s k • p k
+  have hvP0 (k : Fin r₀) : vP (k, 0) = q k := rfl
+  have hvP1 (k : Fin r₀) : vP (k, 1) = s k • p k := rfl
   have hon_ite := orthonormal_iff_ite.1 hon
-  have hbK_ite := orthonormal_iff_ite.1 bK.orthonormal
-  have horth_P_K (k : Fin r₀) (t₁ : Fin 2) (j : Fin (r - r₀)) (t₂ : Fin 2) :
-      ⟪if t₁ = 0 then q k else s k • p k, (bK (j, t₂) : E)⟫ = 0 := by
-    have hmem : (if t₁ = 0 then q k else s k • p k) ∈ P := by
-      split_ifs
+  have hvP : Orthonormal ℝ vP := by
+    rw [orthonormal_iff_ite]
+    rintro ⟨k₁, t₁⟩ ⟨k₂, t₂⟩
+    rcases (by fin_cases t₁ <;> simp : t₁ = 0 ∨ t₁ = 1) with rfl | rfl <;>
+      rcases (by fin_cases t₂ <;> simp : t₂ = 0 ∨ t₂ = 1) with rfl | rfl
+    · simpa [hvP0] using hon_ite (.inl k₁) (.inl k₂)
+    · simp [hvP0, hvP1, real_inner_smul_right,
+        show ⟪q k₁, p k₂⟫ = 0 by simpa using hon_ite (.inl k₁) (.inr k₂)]
+    · simp [hvP0, hvP1, real_inner_smul_left,
+        show ⟪p k₁, q k₂⟫ = 0 by simpa using hon_ite (.inr k₁) (.inl k₂)]
+    · by_cases hk : k₁ = k₂
+      · subst hk
+        rw [hvP1, real_inner_smul_left, real_inner_smul_right,
+          show ⟪p k₁, p k₁⟫ = 1 by simpa using hon_ite (.inr k₁) (.inr k₁),
+          mul_one, hs_mul_sq]
+        simp
+      · simp [hvP1, hk, real_inner_smul_left, real_inner_smul_right,
+          show ⟪p k₁, p k₂⟫ = 0 by simpa [hk] using hon_ite (.inr k₁) (.inr k₂)]
+  let P : Submodule ℝ E := Submodule.span ℝ (Set.range vP)
+  have hP_eq : P = Submodule.span ℝ (Set.range (Sum.elim q p)) := by
+    refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
+    · rintro _ ⟨⟨k, t⟩, rfl⟩
+      fin_cases t
       · exact Submodule.subset_span ⟨.inl k, rfl⟩
       · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨.inr k, rfl⟩)
-    exact (bK (j, t₂)).property _ hmem
-  have h10 : (1 : Fin 2) ≠ 0 := by decide
-  have hv : Orthonormal ℝ v := by
-    rw [orthonormal_iff_ite]
-    rintro ⟨jk₁, t₁⟩ ⟨jk₂, t₂⟩
-    rcases jk₁ with k₁ | j₁ <;> rcases jk₂ with k₂ | j₂
-    · fin_cases t₁ <;> fin_cases t₂
-      · simpa [v] using hon_ite (.inl k₁) (.inl k₂)
-      · simp [v, real_inner_smul_right,
-          show ⟪q k₁, p k₂⟫ = 0 by simpa using hon_ite (.inl k₁) (.inr k₂)]
-      · simp [v, real_inner_smul_left,
-          show ⟪p k₁, q k₂⟫ = 0 by simpa using hon_ite (.inr k₁) (.inl k₂)]
-      · have hpp := hon_ite (.inr k₁) (.inr k₂)
-        by_cases hk : k₁ = k₂
-        · subst hk
-          simp only [v, Sum.elim_inl, ↓reduceIte]
-          split_ifs with h
-          · exact absurd h (by decide)
-          · rw [real_inner_smul_left, real_inner_smul_right,
-              show ⟪p k₁, p k₁⟫ = 1 by simpa using hpp, mul_one, hs_mul_sq]
-        · simp [v, hk, real_inner_smul_left, real_inner_smul_right,
-            show ⟪p k₁, p k₂⟫ = 0 by simpa [hk] using hpp]
-    · simp only [v, Sum.elim_inl, Sum.elim_inr, Prod.mk.injEq, Sum.inl_ne_inr, false_and,
-        ↓reduceIte]
-      exact horth_P_K k₁ t₁ j₂ t₂
-    · simp only [v, Sum.elim_inr, Sum.elim_inl, Prod.mk.injEq, Sum.inr_ne_inl, false_and,
-        ↓reduceIte, real_inner_comm]
-      exact horth_P_K k₂ t₂ j₁ t₁
-    · simpa [v, Submodule.coe_inner] using hbK_ite (j₁, t₁) (j₂, t₂)
-  have hcard : Fintype.card ((Fin r₀ ⊕ Fin (r - r₀)) × Fin 2) = finrank ℝ E := by
-    simp [hdim]
-    omega
+    · rintro _ ⟨k | k, rfl⟩
+      · exact Submodule.subset_span ⟨(k, 0), rfl⟩
+      · dsimp only [Sum.elim_inr]
+        have hpk : p k = s k • vP (k, 1) := by
+          simp [hvP1, smul_smul, hs_mul_sq]
+        rw [hpk]
+        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨(k, 1), rfl⟩)
+  have hP_dim : finrank ℝ P = 2 * r₀ := by
+    simpa [mul_comm] using finrank_span_eq_card hvP.linearIndependent
+  have hadd := Submodule.finrank_add_finrank_orthogonal P
+  have hr₀ : r₀ ≤ r := by omega
+  have hK_dim : finrank ℝ Pᗮ = 2 * (r - r₀) := by omega
+  let bP : OrthonormalBasis (Fin r₀ × Fin 2) ℝ P :=
+    (Basis.span hvP.linearIndependent).toOrthonormalBasis (by
+      convert orthonormal_span hvP
+      simp [Basis.span_apply])
+  let bK : OrthonormalBasis (Fin (r - r₀) × Fin 2) ℝ Pᗮ :=
+    (stdOrthonormalBasis ℝ Pᗮ).reindex (Fintype.equivOfCardEq (by simp [hK_dim, mul_comm]))
+  have hker' : Pᗮ = LinearMap.ker A := by simpa [hP_eq] using hker
+  have hbK_ker (j : Fin (r - r₀)) (t : Fin 2) : A (bK (j, t) : E) = 0 :=
+    LinearMap.mem_ker.1 (hker' ▸ (bK (j, t)).property)
   let eSum : Fin r₀ ⊕ Fin (r - r₀) ≃ Fin r :=
     finSumFinEquiv.trans (finCongr (Nat.add_sub_of_le hr₀))
-  let e : (Fin r₀ ⊕ Fin (r - r₀)) × Fin 2 ≃ Fin r × Fin 2 := eSum.prodCongr (Equiv.refl (Fin 2))
-  let b₀ : OrthonormalBasis ((Fin r₀ ⊕ Fin (r - r₀)) × Fin 2) ℝ E :=
-    (basisOfLinearIndependentOfCardEqFinrank' v hv.linearIndependent hcard).toOrthonormalBasis
-      (by simpa only [coe_basisOfLinearIndependentOfCardEqFinrank'] using hv)
-  let b : OrthonormalBasis (Fin r × Fin 2) ℝ E := b₀.reindex e
+  let e : ((Fin r₀ × Fin 2) ⊕ (Fin (r - r₀) × Fin 2)) ≃ Fin r × Fin 2 :=
+    { toFun := Sum.elim (fun ⟨k, t⟩ ↦ (eSum (.inl k), t)) (fun ⟨j, t⟩ ↦ (eSum (.inr j), t))
+      invFun := fun ⟨i, t⟩ ↦ Sum.elim (fun k ↦ .inl (k, t)) (fun j ↦ .inr (j, t)) (eSum.symm i)
+      left_inv := by rintro (⟨k, t⟩ | ⟨j, t⟩) <;> simp
+      right_inv := fun ⟨i, t⟩ ↦ by
+        obtain ⟨jk, rfl⟩ := eSum.surjective i
+        rcases jk with k | j <;> simp }
+  have he_inl (k : Fin r₀) (t : Fin 2) : e (.inl (k, t)) = (eSum (.inl k), t) := rfl
+  have he_inr (j : Fin (r - r₀)) (t : Fin 2) : e (.inr (j, t)) = (eSum (.inr j), t) := rfl
+  let b : OrthonormalBasis (Fin r × Fin 2) ℝ E :=
+    ((bP.prod bK).map P.orthogonalDecomposition.symm).reindex e
+  have hb_inl (k : Fin r₀) (t : Fin 2) :
+      b (eSum (.inl k), t) = vP (k, t) := by
+    have he' : e.symm (eSum (.inl k), t) = .inl (k, t) := by
+      rw [← he_inl, Equiv.symm_apply_apply]
+    simp [b, he', bP, Basis.span_apply]
+  have hb_inr (j : Fin (r - r₀)) (t : Fin 2) :
+      b (eSum (.inr j), t) = (bK (j, t) : E) := by
+    have he' : e.symm (eSum (.inr j), t) = .inr (j, t) := by
+      rw [← he_inr, Equiv.symm_apply_apply]
+    simp [b, he']
   let μ₀ : Fin r₀ ⊕ Fin (r - r₀) → ℝ := Sum.elim (fun k ↦ |a k ()|) (fun _ ↦ 0)
-  have hb0 (j : Fin r) : b (j, 0) = v (eSum.symm j, 0) := by
-    simp [b, b₀, e]
-  have hb1 (j : Fin r) : b (j, 1) = v (eSum.symm j, 1) := by
-    simp [b, b₀, e]
   refine ⟨b, μ₀ ∘ eSum.symm, fun j ↦ ?_, fun j ↦ ?_, fun j ↦ ?_⟩
   · rcases hj : eSum.symm j with k | j' <;> simp [μ₀, hj]
-  · rw [hb0, hb1]
-    rcases hj : eSum.symm j with k | j'
-    · simp only [Function.comp_apply, hj, μ₀, Sum.elim_inl, v, ↓reduceIte, h10]
-      rw [(hact k ()).1, smul_smul, mul_comm |a k ()|, hs_mul_abs]
-    · simp [μ₀, hj, v, hbK_ker]
-  · rw [hb0, hb1]
-    rcases hj : eSum.symm j with k | j'
-    · simp only [Function.comp_apply, hj, μ₀, Sum.elim_inl, v, ↓reduceIte, h10]
-      rw [map_smul, (hact k ()).2, smul_smul, mul_neg, hs_mul_a, neg_smul]
-    · simp [μ₀, hj, v, hbK_ker]
+  · obtain ⟨jk, rfl⟩ := eSum.surjective j
+    rcases jk with k | j'
+    · simp only [Function.comp_apply, Equiv.symm_apply_apply, μ₀, Sum.elim_inl, hb_inl, hvP0,
+        hvP1, (hact k ()).1, smul_smul, mul_comm |a k ()|, hs_mul_abs]
+    · simp [μ₀, hb_inr, hbK_ker]
+  · obtain ⟨jk, rfl⟩ := eSum.surjective j
+    rcases jk with k | j'
+    · simp only [Function.comp_apply, Equiv.symm_apply_apply, μ₀, Sum.elim_inl, hb_inl, hvP0,
+        hvP1, map_smul, (hact k ()).2]
+      rw [smul_smul, mul_neg, hs_mul_a, neg_smul]
+    · simp [μ₀, hb_inr, hbK_ker]
 
 end LinearMap
-
-namespace TauCeti
-
-/-! ### Normal form and Pfaffian divided power of a two-vector -/
-
-section TwoVectorNormalForm
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- A two-vector `F ∈ ⋀² E` whose skew-adjoint contraction `TauCeti.twoVectorContraction F` is
-block-diagonal in an orthonormal basis `(b (j, 0), b (j, 1))` with weights `μ j` decomposes as
-`F = ∑ j, μ j • (b (j, 0) ∧ b (j, 1))`. -/
-theorem twoVector_eq_sum_of_skew_normalForm {r : ℕ} (F : ⋀[ℝ]^2 E)
-    (b : OrthonormalBasis (Fin r × Fin 2) ℝ E) (μ : Fin r → ℝ)
-    (h0 : ∀ j, twoVectorContraction F (b (j, 0)) = μ j • b (j, 1))
-    (h1 : ∀ j, twoVectorContraction F (b (j, 1)) = -(μ j • b (j, 0))) :
-    F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2 ![b (j, 0), b (j, 1)] := by
-  refine exteriorPower.ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [← inner_twoVectorContraction_apply]
-  have expand (x : E) : x = ∑ j : Fin r,
-      (⟪b (j, 0), x⟫ • b (j, 0) + ⟪b (j, 1), x⟫ • b (j, 1)) := by
-    conv_lhs => rw [← b.sum_repr' x]
-    rw [Fintype.sum_prod_type]
-    simp [Fin.sum_univ_two]
-  conv_lhs => rw [expand u]
-  simp only [map_sum, map_add, map_smul, h0, h1, sum_inner, inner_add_left,
-    inner_neg_left, real_inner_smul_left, exteriorPower.inner_ιMulti_two]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  ring
-
-/-- **Simultaneous normal form and Pfaffian divided power of a two-vector**: on a `2r`-dimensional
-real inner product space `E`, every two-vector `F ∈ ⋀² E` admits an orthonormal basis
-`b : OrthonormalBasis (Fin (2 * r)) ℝ E` and nonnegative weights `μ : Fin r → ℝ` putting
-`TauCeti.twoVectorContraction F` in block-diagonal normal form, decomposing
-`F = ∑ j, μ j • (b_{2j} ∧ b_{2j+1})`, and evaluating the divided `r`-th exterior power as
-`(r!)⁻¹ • Fʳ = (∏ j, μ j) • (b₀ ∧ ⋯ ∧ b_{2r-1})`. -/
-theorem exists_orthonormalBasis_twoVector_normalForm {r : ℕ}
-    (hdim : finrank ℝ E = 2 * r) (F : ⋀[ℝ]^2 E) :
-    ∃ (b : OrthonormalBasis (Fin (2 * r)) ℝ E) (μ : Fin r → ℝ),
-      (∀ j, 0 ≤ μ j) ∧
-      (∀ j : Fin r, twoVectorContraction F (b ⟨2 * (j : ℕ), by omega⟩) =
-        μ j • b ⟨2 * (j : ℕ) + 1, by omega⟩) ∧
-      (∀ j : Fin r, twoVectorContraction F (b ⟨2 * (j : ℕ) + 1, by omega⟩) =
-        -(μ j • b ⟨2 * (j : ℕ), by omega⟩)) ∧
-      F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2
-        ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] ∧
-      (r.factorial : ℝ)⁻¹ • exteriorPower.pow F r =
-        (∏ j : Fin r, μ j) • exteriorPower.ιMulti ℝ (2 * r) b := by
-  obtain ⟨b₀, μ, hμ, h0, h1⟩ := (twoVectorContraction F).exists_orthonormalBasis_skew_normalForm
-    hdim (inner_twoVectorContraction_apply_left F)
-  let b : OrthonormalBasis (Fin (2 * r)) ℝ E := b₀.reindex (complexRealIndexEquiv r)
-  have hb0 (j : Fin r) : b ⟨2 * (j : ℕ), by omega⟩ = b₀ (j, 0) := by
-    rw [← complexRealIndexEquiv_zero r j]
-    simp only [b, OrthonormalBasis.coe_reindex, Function.comp_apply, Equiv.symm_apply_apply]
-  have hb1 (j : Fin r) : b ⟨2 * (j : ℕ) + 1, by omega⟩ = b₀ (j, 1) := by
-    rw [← complexRealIndexEquiv_one r j]
-    simp only [b, OrthonormalBasis.coe_reindex, Function.comp_apply, Equiv.symm_apply_apply]
-  have hF : F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2
-      ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] := by
-    simpa only [hb0, hb1] using twoVector_eq_sum_of_skew_normalForm F b₀ μ h0 h1
-  refine ⟨b, μ, hμ, fun j ↦ by simpa only [hb0, hb1] using h0 j,
-    fun j ↦ by simpa only [hb0, hb1] using h1 j, hF, ?_⟩
-  rw [hF]
-  exact exteriorPower.inv_factorial_smul_pow_sum_smul_ιMulti_two μ b
-
-end TwoVectorNormalForm
-
-end TauCeti

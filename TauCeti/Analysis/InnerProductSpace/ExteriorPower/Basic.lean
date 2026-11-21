@@ -82,7 +82,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
-  `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
+  `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`), and
+  when `u ⌟ F` is block-diagonal in an orthonormal basis, `F` decomposes into the corresponding
+  sum of wedges (`TauCeti.twoVector_eq_sum_of_skew_normalForm`).
 -/
 
 public section
@@ -524,6 +526,27 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     inner_twoVectorContraction_apply_self, inner_twoVectorContraction_apply_self] at h
   rw [real_inner_comm _ u]
   linarith
+
+/-- A two-vector `F ∈ ⋀² V` whose skew-adjoint contraction `TauCeti.twoVectorContraction F` is
+block-diagonal in an orthonormal basis `(b (j, 0), b (j, 1))` with weights `μ j` decomposes as
+`F = ∑ j, μ j • (b (j, 0) ∧ b (j, 1))`. -/
+theorem twoVector_eq_sum_of_skew_normalForm {r : ℕ} (F : ⋀[ℝ]^2 V)
+    (b : OrthonormalBasis (Fin r × Fin 2) ℝ V) (μ : Fin r → ℝ)
+    (h0 : ∀ j, twoVectorContraction F (b (j, 0)) = μ j • b (j, 1))
+    (h1 : ∀ j, twoVectorContraction F (b (j, 1)) = -(μ j • b (j, 0))) :
+    F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2 ![b (j, 0), b (j, 1)] := by
+  refine exteriorPower.ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [← inner_twoVectorContraction_apply]
+  have expand (x : V) : x = ∑ j : Fin r,
+      (⟪b (j, 0), x⟫ • b (j, 0) + ⟪b (j, 1), x⟫ • b (j, 1)) := by
+    conv_lhs => rw [← b.sum_repr' x]
+    rw [Fintype.sum_prod_type]
+    simp [Fin.sum_univ_two]
+  conv_lhs => rw [expand u]
+  simp only [map_sum, map_add, map_smul, h0, h1, sum_inner, inner_add_left,
+    inner_neg_left, real_inner_smul_left, exteriorPower.inner_ιMulti_two]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
 
 end TwoVectorContraction
 

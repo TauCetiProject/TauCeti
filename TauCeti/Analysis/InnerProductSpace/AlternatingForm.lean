@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 
 /-!
 # Alternating forms on a real inner product space
@@ -26,7 +26,11 @@ The identification carries the exterior product to the wedge product of forms,
 `ContinuousAlternatingMap.wedge`, normalized by `1 / (k! l!)` as in Lee's *Introduction to Smooth
 Manifolds*, and therefore commutes with taking `r`-th exterior powers (`exteriorPower.pow`) and
 pulling back along continuous linear maps
-(`TauCeti.alternatingFormEquiv_pow_compContinuousLinearMap`).
+(`TauCeti.alternatingFormEquiv_pow_compContinuousLinearMap`). On two-vectors, pulling back along `L`
+conjugates `TauCeti.twoVectorContraction` to `L† ∘ (· ⌟ B) ∘ L`, which for a subspace inclusion
+becomes orthogonal projection onto the subspace
+(`TauCeti.twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap`,
+`TauCeti.coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL`).
 It carries the contraction by `⟪u, ·⟫` to the interior product `ContinuousAlternatingMap.curryLeft`
 by `u`. Transporting the inner product of `⋀ᵏ V`, given on wedges by Gram determinants, defines the
 pointwise inner product of `k`-forms, `TauCeti.alternatingFormInner`. For an orthonormal basis
@@ -46,6 +50,9 @@ increasing wedges of the dual coframe are orthonormal. For an arbitrary basis `b
 * `TauCeti.alternatingFormEquiv_pow_zero`, `TauCeti.alternatingFormEquiv_pow_succ`, and
   `TauCeti.alternatingFormEquiv_pow_compContinuousLinearMap`: zero, wedge recurrence, and pullback
   compatibility for forms of exterior powers `exteriorPower.pow`.
+* `TauCeti.twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap` and
+  `TauCeti.coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL`:
+  pullback–contraction laws for two-vectors along arbitrary linear maps and subspace inclusions.
 * `TauCeti.alternatingFormEquiv_koszulDifferential`: it carries the contraction by `⟪u, ·⟫` to
   the interior product by `u`.
 * `TauCeti.alternatingFormEquiv_wedgeLeft_apply`: it carries exterior multiplication by `u` to
@@ -182,6 +189,41 @@ theorem alternatingFormEquiv_pow_compContinuousLinearMap {W : Type*} [NormedAddC
   | succ r ih =>
     rw [alternatingFormEquiv_pow_succ, alternatingFormEquiv_pow_succ,
       ← ContinuousAlternatingMap.wedge_compContinuousLinearMap, ih, h]
+
+/-- **Pullback–contraction law for two-forms**: under the Riesz identification
+`alternatingFormEquiv`, pulling back the two-form of `B ∈ ⋀² W` along a continuous linear map
+`L : V →L[ℝ] W` conjugates its contraction `TauCeti.twoVectorContraction` to `L† ∘ (· ⌟ B) ∘ L`. -/
+theorem twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap
+    {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+    (L : V →L[ℝ] W) (B : ⋀[ℝ]^2 W) :
+    twoVectorContraction
+        ((alternatingFormEquiv V 2).symm
+          ((alternatingFormEquiv W 2 B).compContinuousLinearMap L)) =
+      LinearMap.adjoint L.toLinearMap ∘ₗ twoVectorContraction B ∘ₗ L.toLinearMap := by
+  ext u
+  refine ext_inner_right ℝ fun w ↦ ?_
+  have hLuw : (L ∘ ![u, w]) = ![L u, L w] := by ext i; fin_cases i <;> simp
+  rw [inner_twoVectorContraction_apply, inner_alternatingFormEquiv_symm_ιMulti,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, hLuw, alternatingFormEquiv_apply,
+    LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.adjoint_inner_left,
+    inner_twoVectorContraction_apply, ContinuousLinearMap.coe_coe]
+
+/-- Restricting a bivector `B ∈ ⋀² V` to a subspace `P ≤ V` via `alternatingFormEquiv` has
+contraction given by the orthogonal projection of `twoVectorContraction B` onto `P`. -/
+theorem coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL
+    (P : Submodule ℝ V) (B : ⋀[ℝ]^2 V) (x : P) :
+    (twoVectorContraction
+        ((alternatingFormEquiv P 2).symm
+          ((alternatingFormEquiv V 2 B).compContinuousLinearMap P.subtypeL)) x : V) =
+      P.starProjection (twoVectorContraction B x.val) := by
+  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero
+    (twoVectorContraction _ x).property fun y hy ↦ ?_).symm
+  have hcontr := LinearMap.congr_fun
+    (twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap P.subtypeL B) x
+  have hinner := congrArg (fun z : P ↦ ⟪z, (⟨y, hy⟩ : P)⟫) hcontr
+  simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_left, Submodule.coe_inner,
+    ContinuousLinearMap.coe_coe, Submodule.subtypeL_apply] at hinner
+  rw [inner_sub_left, sub_eq_zero, hinner]
 
 /-- **Contraction is the interior product**: the form of the contraction `ι_u x` of
 `x ∈ ⋀ᵏ⁺¹ V` by `⟪u, ·⟫` is the interior product of the form of `x` by `u`. -/
