@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Prod
-public import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
@@ -28,8 +27,9 @@ symplectic manifold.
   `(ν, ν') = ν ∘ d(pr_G) + ν' ∘ d(pr_K)`, and its naturality along the projections.
 * **The product orbit.** The map `[(g, k)] ↦ ([g], [k])` is a diffeomorphism
   `(G × K) ⧸ (G × K)_{(ν, ν')} ≃ (G ⧸ G_ν) × (K ⧸ K_ν')` between the homogeneous orbit manifolds
-  (`Module.Dual.coadjointOrbitProdDiffeomorph`). It is smooth with smooth inverse because both
-  sides are quotients of `G × K` by surjective submersions.
+  (`Module.Dual.coadjointOrbitProdDiffeomorph`). It is the homogeneous-space diffeomorphism
+  `(G × K) ⧸ (G_ν × K_ν') ≃ (G ⧸ G_ν) × (K ⧸ K_ν')` of closed subgroups
+  (`Subgroup.quotientProdDiffeomorph`).
 * It is equivariant for the action of `G × K`
   (`Module.Dual.coadjointOrbitProdDiffeomorph_smul`), and it intertwines the orbit maps into
   `𝔤* × 𝔨*` (`Module.Dual.coadjointOrbitMap_groupLieAlgebraDualProdDualEquivDual`).
@@ -102,25 +102,6 @@ theorem leftInvariantKirillovForm_groupLieAlgebraDualProdDualEquivDual :
 
 /-! ### The product orbit -/
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The bijection `[(g, k)] ↦ ([g], [k])` from the coadjoint orbit of `(ν, ν')` to the product of
-the coadjoint orbits of `ν` and `ν'`. -/
-private def coadjointOrbitProdEquiv :
-    (G × K) ⧸ (coadjointRepresentation ℝ (I.prod J) (G × K)).stabilizer
-        (groupLieAlgebraDualProdDualEquivDual ℝ I G J K (ν, ν')) ≃
-      (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) ×
-        (K ⧸ (coadjointRepresentation ℝ J K).stabilizer ν') :=
-  (Subgroup.quotientEquivOfEq
-      (stabilizer_coadjointRepresentation_groupLieAlgebraDualProdDualEquivDual (ν, ν'))).trans
-    (QuotientGroup.prodEquiv _ _)
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-private theorem coadjointOrbitProdEquiv_comp_mk :
-    coadjointOrbitProdEquiv ν ν' ∘ QuotientGroup.mk =
-      Prod.map (QuotientGroup.mk : G → G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)
-        (QuotientGroup.mk : K → K ⧸ (coadjointRepresentation ℝ J K).stabilizer ν') :=
-  funext fun _ ↦ rfl
-
 variable [I.Boundaryless] [J.Boundaryless]
 
 /-- **The coadjoint orbit of a product is the product of the coadjoint orbits.** The map
@@ -139,25 +120,22 @@ def coadjointOrbitProdDiffeomorph :
         (groupLieAlgebraDualProdDualEquivDual ℝ I G J K (ν, ν')))
       ((G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) ×
         (K ⧸ (coadjointRepresentation ℝ J K).stabilizer ν')) ∞ :=
-  (coadjointOrbitProdEquiv ν ν').diffeomorphOfSubmersions
-    (isSubmersion_quotientMk_stabilizer_coadjointRepresentation _) QuotientGroup.mk_surjective
-    ((isSubmersion_quotientMk_stabilizer_coadjointRepresentation ν).prodMap
-      (isSubmersion_quotientMk_stabilizer_coadjointRepresentation ν'))
-    (coadjointOrbitProdEquiv_comp_mk ν ν')
+  Subgroup.quotientProdDiffeomorph I J (isClosed_stabilizer_coadjointRepresentation I ν)
+    (isClosed_stabilizer_coadjointRepresentation J ν')
+    (stabilizer_coadjointRepresentation_groupLieAlgebraDualProdDualEquivDual (ν, ν'))
 
 /-- The diffeomorphism sends the coset of `(g, k)` to the pair of cosets of `g` and `k`. -/
 @[simp]
 theorem coadjointOrbitProdDiffeomorph_mk (g : G × K) :
-    coadjointOrbitProdDiffeomorph ν ν' g = ((g.1 : G ⧸ _), (g.2 : K ⧸ _)) := by
-  rw [coadjointOrbitProdDiffeomorph, Equiv.diffeomorphOfSubmersions_apply]
-  exact congrFun (coadjointOrbitProdEquiv_comp_mk ν ν') g
+    coadjointOrbitProdDiffeomorph ν ν' g = ((g.1 : G ⧸ _), (g.2 : K ⧸ _)) :=
+  Subgroup.quotientProdDiffeomorph_mk _ _ _ g
 
 /-- The inverse diffeomorphism sends the pair of cosets of `g` and `k` to the coset of `(g, k)`. -/
 @[simp]
 theorem coadjointOrbitProdDiffeomorph_symm_mk (g : G) (k : K) :
     (coadjointOrbitProdDiffeomorph ν ν').symm ((g : G ⧸ _), (k : K ⧸ _)) =
-      ((g, k) : (G × K) ⧸ _) := by
-  simpa using (coadjointOrbitProdDiffeomorph ν ν').symm_apply_apply ((g, k) : (G × K) ⧸ _)
+      ((g, k) : (G × K) ⧸ _) :=
+  Subgroup.quotientProdDiffeomorph_symm_mk _ _ _ g k
 
 /-- The diffeomorphism composed with the projection of `G × K` onto the coadjoint orbit of `(ν, ν')`
 is the product of the projections onto the coadjoint orbits of `ν` and `ν'`. -/

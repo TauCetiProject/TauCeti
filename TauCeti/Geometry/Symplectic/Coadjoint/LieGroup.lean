@@ -352,6 +352,7 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDim
 
 /-- **Naturality of the left-invariant one-form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant one-form of `ν` back to the left-invariant one-form of `ν ∘ dφ`. -/
+@[simp]
 theorem mpullback_leftInvariantForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ) :
     SmoothForm.mpullback φ hφ ν.leftInvariantForm =
       leftInvariantForm (ν ∘ₗ (φ.groupLieAlgebraMap I' I).toLinearMap) := by
@@ -368,6 +369,7 @@ theorem mpullback_leftInvariantForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ
 
 /-- **Naturality of the left-invariant Kirillov form.** A smooth homomorphism `φ : K → G` pulls the
 left-invariant Kirillov form of `ν` back to the left-invariant Kirillov form of `ν ∘ dφ`. -/
+@[simp]
 theorem mpullback_leftInvariantKirillovForm (φ : K →* G) (hφ : ContMDiff I' I ∞ φ) :
     SmoothForm.mpullback φ hφ ν.leftInvariantKirillovForm =
       leftInvariantKirillovForm (ν ∘ₗ (φ.groupLieAlgebraMap I' I).toLinearMap) := by
