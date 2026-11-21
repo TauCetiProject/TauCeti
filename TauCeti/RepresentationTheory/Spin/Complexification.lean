@@ -20,24 +20,26 @@ choosing polarization data `P` for `Q_L`, the real Spin group acts on the spinor
 
 This action has the same invariant subspaces and intertwiners as the even Clifford algebra of
 `Q_L`: the `L`-linear span of the real Spin group is that whole even algebra
-(`CliffordAlgebra.span_spinGroupBaseChange_eq_even_of_anisotropic`). The irreducibility theorems
+(`QuadraticMap.Anisotropic.span_range_spinGroupBaseChange_eq_even`). The irreducibility theorems
 for groups spanning the even Clifford algebra therefore apply to it. In positive even dimension,
 the two half-spin representations of the real group are irreducible and inequivalent; in odd
 dimension, the whole spin representation is irreducible. This is a statement about the real
 group, and does not follow from the irreducibility of the complex Spin group: it says that the
 compact real form already sees all of the complex spin modules.
 
-In dimension zero the real Spin group is trivial, `S⁺ = L` and `S⁻ = 0`; the hypothesis
-`P.W ≠ ⊥` on the odd half excludes exactly this case. In dimension one the real Spin group is
-`{±1}`, acting by `±1` on the one-dimensional spinor module.
+The half-spin statements assume polarization data without a line remainder (`P.line = ⊥`), so
+that they concern even dimension. There, in dimension zero, the real Spin group is trivial,
+`S⁺ = L` and `S⁻ = 0`; the hypothesis `P.W ≠ ⊥` on the odd half excludes exactly this case. In
+dimension one the real Spin group is `{±1}`, acting by `±1` on the one-dimensional spinor module.
 
 ## Main results
 
 * `TauCeti.isIrreducible_spinPlusSubrep_comp_spinGroupBaseChange` and
   `TauCeti.isIrreducible_spinMinusSubrep_comp_spinGroupBaseChange`: the half-spin representations
-  of the real Spin group are irreducible, with `P.W ≠ ⊥` required for the odd half.
+  of the real Spin group are irreducible, for `P.line = ⊥` and with `P.W ≠ ⊥` required for the odd
+  half.
 * `TauCeti.isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_comp_spinGroupBaseChange`: the two
-  half-spin representations of the real Spin group are inequivalent.
+  half-spin representations of the real Spin group are inequivalent, for `P.line = ⊥`.
 * `TauCeti.isIrreducible_spinRep_comp_spinGroupBaseChange`: in odd dimension the spin
   representation of the real Spin group is irreducible.
 
@@ -61,33 +63,36 @@ section HalfSpin
 
 variable [FiniteDimensional ℝ V]
 
-/-- **The even half-spin representation of an anisotropic real Spin group is irreducible.** The
-real group acts on the even half-spinors of the scalar-extended form through
-`CliffordAlgebra.spinGroupBaseChange`. -/
+/-- **The even half-spin representation of an anisotropic real Spin group is irreducible.** For
+polarization data of the scalar-extended form without a line remainder (`P.line = ⊥`), the real
+group acts on the even half-spinors through `CliffordAlgebra.spinGroupBaseChange`. -/
 theorem isIrreducible_spinPlusSubrep_comp_spinGroupBaseChange (hQ : Q.Anisotropic)
     (hline : P.line = ⊥) :
     Representation.IsIrreducible
       ((spinPlusSubrep P hline).toRepresentation.comp (spinGroupBaseChange (A := L) Q)) :=
   isIrreducible_spinPlusSubrep_comp_of_span P _
-    (span_spinGroupBaseChange_eq_even_of_anisotropic hQ) hline
+    hQ.span_range_spinGroupBaseChange_eq_even hline
 
-/-- **The odd half-spin representation of an anisotropic real Spin group is irreducible** when
-the odd summand is nonzero, that is, outside dimension zero. -/
+/-- **The odd half-spin representation of an anisotropic real Spin group is irreducible** for
+polarization data without a line remainder (`P.line = ⊥`) whose odd summand is nonzero
+(`P.W ≠ ⊥`). In this even-dimensional setting, the second condition excludes exactly dimension
+zero. -/
 theorem isIrreducible_spinMinusSubrep_comp_spinGroupBaseChange (hQ : Q.Anisotropic)
     (hline : P.line = ⊥) (hW : P.W ≠ ⊥) :
     Representation.IsIrreducible
       ((spinMinusSubrep P hline).toRepresentation.comp (spinGroupBaseChange (A := L) Q)) :=
   isIrreducible_spinMinusSubrep_comp_of_span P _
-    (span_spinGroupBaseChange_eq_even_of_anisotropic hQ) hline hW
+    hQ.span_range_spinGroupBaseChange_eq_even hline hW
 
-/-- **The two half-spin representations of an anisotropic real Spin group are inequivalent.** -/
+/-- **The two half-spin representations of an anisotropic real Spin group are inequivalent** for
+polarization data without a line remainder (`P.line = ⊥`). -/
 theorem isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_comp_spinGroupBaseChange
     (hQ : Q.Anisotropic) (hline : P.line = ⊥) :
     IsEmpty (Representation.Equiv
       ((spinPlusSubrep P hline).toRepresentation.comp (spinGroupBaseChange (A := L) Q))
       ((spinMinusSubrep P hline).toRepresentation.comp (spinGroupBaseChange (A := L) Q))) :=
   isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_comp_of_span P _
-    (span_spinGroupBaseChange_eq_even_of_anisotropic hQ) hline
+    hQ.span_range_spinGroupBaseChange_eq_even hline
 
 end HalfSpin
 
@@ -101,7 +106,7 @@ theorem isIrreducible_spinRep_comp_spinGroupBaseChange (hQ : Q.Anisotropic)
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos hodd.pos
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℝ L).injective
   refine isIrreducible_spinRep_comp_of_span_of_surjective P _
-    (span_spinGroupBaseChange_eq_even_of_anisotropic hQ) (evenSpinAction_surjective P ?_)
+    hQ.span_range_spinGroupBaseChange_eq_even (evenSpinAction_surjective P ?_)
   rwa [finrank_baseChange]
 
 end TauCeti
