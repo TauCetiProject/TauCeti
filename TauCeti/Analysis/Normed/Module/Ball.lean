@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
 import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.Topology.Instances.Nat
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -34,7 +35,9 @@ symmetric difference with any set inside it (`TauCeti.preimage_add_smul_symmDiff
 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
-centered at zero lie on the same line exactly when they are equal or antipodal.
+centered at zero lie on the same line exactly when they are equal or antipodal. A ray from a
+point inside a closed ball along a direction of nonzero norm meets the bounding sphere at some
+nonnegative real parameter (`TauCeti.exists_dist_add_smul_eq`).
 
 The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
 norm conditions for `R⁻¹ • z` when `R > 0`.
@@ -229,6 +232,26 @@ theorem compl_singleton_inter_compl_singleton_neg_eq (p : Metric.sphere (0 : E) 
       ({x | (x : E) ∉ ℝ ∙ (p : E)} : Set (Metric.sphere (0 : E) 1)) := by
   ext x
   simp [not_or]
+
+/-- Any ray from a point inside a closed ball along a direction of nonzero norm meets the bounding
+sphere at some nonnegative real parameter. -/
+theorem exists_dist_add_smul_eq {a w y : E} (hw : ‖w‖ ≠ 0) {r : ℝ} (h : dist a y ≤ r) :
+    ∃ t : ℝ, 0 ≤ t ∧ dist (a + t • w) y = r := by
+  have hw_pos : 0 < ‖w‖ := lt_of_le_of_ne (norm_nonneg w) hw.symm
+  set T : ℝ := (r + dist a y) / ‖w‖
+  have hT : 0 ≤ T := div_nonneg (add_nonneg (dist_nonneg.trans h) dist_nonneg) hw_pos.le
+  have hcont : Continuous (fun t : ℝ ↦ dist (a + t • w) y) :=
+    (continuous_const.add (continuous_id.smul continuous_const)).dist continuous_const
+  have h0 : dist (a + (0 : ℝ) • w) y ≤ r := by simpa using h
+  have hT_le : r ≤ dist (a + T • w) y := by
+    have htri := dist_triangle (a + T • w) y a
+    have hdist : dist (a + T • w) a = r + dist a y := by
+      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hT,
+        div_mul_cancel₀ _ hw]
+    rw [hdist, dist_comm y a] at htri
+    linarith
+  obtain ⟨t, ht, hteq⟩ := intermediate_value_Icc hT hcont.continuousOn ⟨h0, hT_le⟩
+  exact ⟨t, ht.1, hteq⟩
 
 end Sphere
 

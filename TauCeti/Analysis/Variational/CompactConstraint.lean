@@ -21,10 +21,11 @@ In infinite dimensions, level constraints such as `{u | ‖J u‖ = 1}` under a 
 `J : V →L[𝕜] F` are generally not weakly closed. However, because `J` is weak-to-norm continuous
 on every norm-bounded set (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`), the
 intersection of `J ⁻¹' C` (for a closed `C ⊆ F`) with any bounded weakly closed set is weakly
-closed. Consequently, for an energy with bounded sublevels on `S₀ ∩ J ⁻¹' C` that is weakly lower
-semicontinuous on each bounded slice `closedBall 0 R ∩ (S₀ ∩ J ⁻¹' C)`, every bounded sublevel is
-weakly compact and the direct method yields a minimizer without global weak closedness of the
-admissible set.
+closed. Consequently, in a reflexive seminormed space over `ℝ` or `ℂ`, for a weakly closed set
+`S₀` and an energy with bounded sublevels on `S₀ ∩ J ⁻¹' C` that is weakly lower semicontinuous on
+each bounded slice `closedBall 0 R ∩ (S₀ ∩ J ⁻¹' C)`, every bounded sublevel is weakly compact and,
+whenever `S₀ ∩ J ⁻¹' C` (or a bounded sublevel) is nonempty, the direct method yields a minimizer
+without global weak closedness of the admissible set.
 
 In particular:
 
@@ -32,11 +33,12 @@ In particular:
   semicontinuous real-quasiconvex function preserves weak lower semicontinuity on every
   norm-bounded set `B`
   (`QuasiconvexOn.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded`).
-* In a reflexive seminormed space over `ℝ` or `ℂ`, bounded sublevels and bounded sets of minimizers
-  on `S₀ ∩ J ⁻¹' C` are weakly compact
+* In a reflexive seminormed space over `ℝ` or `ℂ` with `S₀` weakly closed, bounded sublevels and
+  bounded sets of minimizers on `S₀ ∩ J ⁻¹' C` are weakly compact
   (`TauCeti.isCompact_toWeakSpace_sublevel_of_compact_constraint`,
-  `TauCeti.isCompact_toWeakSpace_minimizers_of_compact_constraint`), and the energy attains its
-  minimum (`TauCeti.exists_isMinOn_of_compact_constraint_of_isBounded_sublevel`,
+  `TauCeti.isCompact_toWeakSpace_minimizers_of_compact_constraint`), and whenever a bounded
+  sublevel (or `S₀ ∩ J ⁻¹' C`) is nonempty, the energy attains its minimum
+  (`TauCeti.exists_isMinOn_of_compact_constraint_of_isBounded_sublevel`,
   `TauCeti.exists_isMinOn_of_compact_constraint`).
 * Specialized to additive energies `u ↦ f u + g (J u)` with `f` weakly lower semicontinuous on `S₀`
   and `g` lower semicontinuous on `C`, `TauCeti.exists_isMinOn_add_comp_of_compact_constraint`
@@ -204,7 +206,8 @@ variable {𝕜 V F β : Type*} [RCLike 𝕜]
   [TopologicalSpace β] [OrderTopology β] [ContinuousAdd β]
 
 /-- **Minimizing a compactly perturbed energy under a compact constraint.** In a reflexive
-seminormed space over `ℝ` or `ℂ`, an additive energy `u ↦ f u + g (J u)` with `f` weakly lower
+seminormed space over `ℝ` or `ℂ`, on a nonempty set `S₀ ∩ J ⁻¹' C` with `S₀` weakly closed, `C`
+closed, and `J` compact, an additive energy `u ↦ f u + g (J u)` with `f` weakly lower
 semicontinuous on `S₀`, `g` lower semicontinuous on `C`, and bounded sublevels on `S₀ ∩ J ⁻¹' C`
 attains its minimum on `S₀ ∩ J ⁻¹' C`. -/
 theorem exists_isMinOn_add_comp_of_compact_constraint

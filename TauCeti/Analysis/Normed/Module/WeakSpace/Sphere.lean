@@ -12,15 +12,17 @@ public import TauCeti.Topology.Algebra.Module.WeakSpace
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Weak-to-norm continuity and weak closures of spheres
 
 Using `LinearMap.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace` (every weak
-neighborhood contains an affine line on which an infinite-rank linear map `J : E →ₗ[𝕜] F` is
-nonzero) and `TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`, this file
+neighborhood of `x` contains an affine line `x + 𝕜 • v` along which an infinite-rank linear map
+`J : E →ₗ[𝕜] F` is nonconstant, with `J v ≠ 0`) and
+`TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`, this file
 establishes sharp characterizations of weak-to-norm continuity and weak closures of spheres in
 infinite dimensions:
 
@@ -39,8 +41,9 @@ infinite dimensions:
   particular, the weak closure of `{u | ‖J u‖ = r}` is `{u | ‖J u‖ ≤ r}`
   (`ContinuousLinearMap.closure_toWeakSpace_setOf_norm_apply_eq`), the weak closure of a sphere
   `Metric.sphere x r` in an infinite-dimensional normed space is `Metric.closedBall x r`
-  (`TauCeti.closure_toWeakSpace_sphere`), and for `r > 0` these spheres are weakly closed if and
-  only if the range (respectively the space) is finite-dimensional
+  (`TauCeti.closure_toWeakSpace_sphere`), and for `r > 0`, preimages of spheres centered in the
+  range (`J ⁻¹' sphere (J x) r`), level spheres `{u | ‖J u‖ = r}`, and spheres `Metric.sphere x r`
+  are weakly closed if and only if the range (respectively the space) is finite-dimensional
   (`ContinuousLinearMap.isClosed_toWeakSpace_preimage_sphere_iff`,
   `ContinuousLinearMap.isClosed_toWeakSpace_setOf_norm_apply_eq_iff`,
   `TauCeti.isClosed_toWeakSpace_sphere_iff`).
@@ -60,14 +63,6 @@ infinite dimensions:
 public section
 
 open Filter Metric Set Topology
-
-private theorem finiteDimensional_range_id_iff {𝕜 E : Type*} [Field 𝕜]
-    [AddCommGroup E] [Module 𝕜 E] :
-    FiniteDimensional 𝕜 (LinearMap.range (LinearMap.id (R := 𝕜) (M := E))) ↔
-      FiniteDimensional 𝕜 E := by
-  rw [LinearMap.range_id]
-  exact (Submodule.topEquiv (R := 𝕜) (M := E)).toLinearMap.finite_iff_of_bijective
-    Submodule.topEquiv.bijective
 
 section Continuity
 
@@ -139,7 +134,7 @@ topology is continuous if and only if the space is finite-dimensional. -/
 theorem continuous_toWeakSpace_symm_iff :
     Continuous (toWeakSpace 𝕜 E).symm ↔ FiniteDimensional 𝕜 E :=
   (ContinuousLinearMap.id 𝕜 E).continuous_comp_toWeakSpace_symm_iff.trans
-    finiteDimensional_range_id_iff
+    LinearMap.finite_range_id_iff
 
 end TauCeti
 
@@ -159,28 +154,6 @@ theorem isClosed_toWeakSpace_closedBall (𝕜 : Type*) {E : Type*} [RCLike 𝕜]
   exact isClosed_closedBall.isClosed_toWeakSpace_image_of_convex 𝕜 (convex_closedBall x r)
 
 end TauCeti
-
-/-- Any ray from a point inside a closed ball along a nonzero direction meets the bounding sphere
-at some nonnegative real parameter. -/
-private theorem exists_dist_add_ofReal_smul_eq {𝕜 F : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {a w y : F} (hw : w ≠ 0) {r : ℝ} (h : dist a y ≤ r) :
-    ∃ t : ℝ, 0 ≤ t ∧ dist (a + (t : 𝕜) • w) y = r := by
-  have hw_pos : 0 < ‖w‖ := norm_pos_iff.2 hw
-  set T : ℝ := (r + dist a y) / ‖w‖
-  have hT : 0 ≤ T := div_nonneg (add_nonneg (dist_nonneg.trans h) dist_nonneg) hw_pos.le
-  have hcont : Continuous (fun t : ℝ ↦ dist (a + (t : 𝕜) • w) y) :=
-    (continuous_const.add (RCLike.continuous_ofReal.smul continuous_const)).dist continuous_const
-  have h0 : dist (a + ((0 : ℝ) : 𝕜) • w) y ≤ r := by simpa using h
-  have hT_le : r ≤ dist (a + (T : 𝕜) • w) y := by
-    have htri := dist_triangle (a + (T : 𝕜) • w) y a
-    have hdist : dist (a + (T : 𝕜) • w) a = r + dist a y := by
-      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, RCLike.norm_ofReal, abs_of_nonneg hT,
-        div_mul_cancel₀ _ hw_pos.ne']
-    rw [hdist, dist_comm y a] at htri
-    linarith
-  obtain ⟨t, ht, hteq⟩ := intermediate_value_Icc hT hcont.continuousOn ⟨h0, hT_le⟩
-  exact ⟨t, ht.1, hteq⟩
 
 namespace ContinuousLinearMap
 
@@ -216,9 +189,12 @@ theorem closure_toWeakSpace_preimage_sphere (J : E →L[𝕜] F)
     intro U hU
     obtain ⟨v, hJv, hline⟩ :=
       J.toLinearMap.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace hJ x hU
-    obtain ⟨t, -, ht⟩ := exists_dist_add_ofReal_smul_eq (𝕜 := 𝕜) hJv hx
+    let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
+    have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
+    obtain ⟨t, -, ht⟩ := TauCeti.exists_dist_add_smul_eq (norm_ne_zero_iff.2 hJv) hx
     refine ⟨toWeakSpace 𝕜 E (x + (t : 𝕜) • v), hline (t : 𝕜), ⟨x + (t : 𝕜) • v, ?_, rfl⟩⟩
-    simpa only [mem_preimage, mem_sphere, map_add, map_smul, ContinuousLinearMap.coe_coe] using ht
+    simpa only [mem_preimage, mem_sphere, map_add, map_smul, ContinuousLinearMap.coe_coe,
+      ← RCLike.algebraMap_eq_ofReal, algebraMap_smul] using ht
 
 /-- For `r > 0` and `x : E`, the preimage `J ⁻¹' Metric.sphere (J x) r` is weakly closed if and
 only if `J` has finite-dimensional range. -/
@@ -268,7 +244,7 @@ theorem closure_toWeakSpace_sphere (hE : ¬ FiniteDimensional 𝕜 E) (x : E) (r
     closure (toWeakSpace 𝕜 E '' sphere x r) = toWeakSpace 𝕜 E '' closedBall x r := by
   simpa only [ContinuousLinearMap.coe_id', preimage_id] using
     (ContinuousLinearMap.id 𝕜 E).closure_toWeakSpace_preimage_sphere
-      (mt finiteDimensional_range_id_iff.1 hE) x r
+      (mt LinearMap.finite_range_id_iff.1 hE) x r
 
 /-- For `r > 0`, a sphere `Metric.sphere x r` in a real or complex normed space is weakly closed
 if and only if the space is finite-dimensional. -/
@@ -276,7 +252,7 @@ theorem isClosed_toWeakSpace_sphere_iff (x : E) {r : ℝ} (hr : 0 < r) :
     IsClosed (toWeakSpace 𝕜 E '' sphere x r) ↔ FiniteDimensional 𝕜 E := by
   simpa only [ContinuousLinearMap.coe_id', preimage_id, id_eq] using
     ((ContinuousLinearMap.id 𝕜 E).isClosed_toWeakSpace_preimage_sphere_iff x hr).trans
-      finiteDimensional_range_id_iff
+      LinearMap.finite_range_id_iff
 
 section Sphere
 

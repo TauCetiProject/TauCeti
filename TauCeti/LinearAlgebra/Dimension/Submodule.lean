@@ -36,8 +36,10 @@ does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
 dimensions, an endomorphism of a finite-dimensional space has kernel and cokernel of the same
-dimension, and the preimage of a submodule `p` inside another submodule `q` has the same
-`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`).
+dimension, the preimage of a submodule `p` inside another submodule `q` has the same
+`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`), and the top submodule
+`⊤` and range of the identity map are finite as modules exactly when the ambient module is
+(`Submodule.finite_top_iff`, `LinearMap.finite_range_id_iff`).
 -/
 
 public section
@@ -238,7 +240,24 @@ theorem finrank_comap_subtype {R M : Type*} [Semiring R] [AddCommMonoid M] [Modu
     finrank R ↥(p.comap q.subtype) = finrank R ↥(p ⊓ q) := by
   rw [← q.finrank_map_subtype_eq, map_comap_eq, range_subtype, inf_comm]
 
+/-- The top submodule `⊤ : Submodule R M` is finite as an `R`-module if and only if `M` is. -/
+@[simp]
+theorem finite_top_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] :
+    Module.Finite R (⊤ : Submodule R M) ↔ Module.Finite R M :=
+  Module.Finite.equiv_iff Submodule.topEquiv
+
 end Submodule
+
+namespace LinearMap
+
+/-- The range of the identity linear map is finite as an `R`-module if and only if the ambient
+module is. -/
+@[simp]
+theorem finite_range_id_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] :
+    Module.Finite R (range (LinearMap.id (R := R) (M := M))) ↔ Module.Finite R M := by
+  rw [LinearMap.range_id, Submodule.finite_top_iff]
+
+end LinearMap
 
 namespace LinearMap
 
