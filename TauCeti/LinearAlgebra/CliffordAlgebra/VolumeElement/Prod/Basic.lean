@@ -48,7 +48,8 @@ When moreover `Q₂ w = -‖w‖²`, the factor `Γ_W` is the chirality of `W`, 
 
   `(E ⊗ F)⁺ ≃ E⁺ ⊗ F⁺ × E⁻ ⊗ F⁻`,  `(E ⊗ F)⁻ ≃ E⁺ ⊗ F⁻ × E⁻ ⊗ F⁺`
 
-(`CliffordAlgebra.complexProdTensorEigenspaceEquiv`); in particular
+(`CliffordAlgebra.complexProdTensorEigenspaceEquiv`; see also
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/HalfSpin.lean`); in particular
 `S⁺_(V ⊕ W) ≃ S⁺_V ⊗ S⁺_W ⊕ S⁻_V ⊗ S⁻_W` for spinor modules. When `m` is odd the central
 volume element of `V ⊕ W` acts through the second factor alone, as `1 ⊗ ω_W`. Both formulas follow
 from the action of the ordered frame product, `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`, and the
