@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -206,39 +207,19 @@ private theorem continuous_endLoopDeriv (hHe : ContDiff ℝ 2 (uncurry He))
       ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHe).continuous.comp
         (continuous_id.prodMk hx)))
 
-/-- The derivative of a loop of `ω`-compatible structures is `ω`-skew: its `ω`-transpose is its
-negative. -/
-private theorem leftAdjointL_endLoopDeriv
+/-- The derivative `D` of a loop `j` of `ω`-compatible structures lies in the compatible tangent
+space: `D j = -j D` and `D` is `ω`-skew. -/
+private theorem endLoopDeriv_endLoop_apply_and_apply_endLoopDeriv_add
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t)
     (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) :
-    ω.leftAdjointL (endLoopDeriv ω Je He x t) = -endLoopDeriv ω Je He x t := by
-  have h := hasDerivAt_endLoop hJe hx t
-  refine (ω.leftAdjointL.hasFDerivAt.comp_hasDerivAt t h).unique ?_
-  exact h.neg.congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ (hJx s).invariant.leftAdjointL_eq_neg)
-
-/-- The derivative of a loop of `ω`-compatible structures is `ω`-skew. -/
-private theorem apply_endLoopDeriv_apply
-    (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t)
-    (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) (a b : V) :
-    ω (endLoopDeriv ω Je He x t a) b = -ω a (endLoopDeriv ω Je He x t b) := by
-  have h := ω.apply_leftAdjointL_apply (endLoopDeriv ω Je He x t) a b
-  rw [leftAdjointL_endLoopDeriv hJe hx hJx t] at h
-  beta_reduce at h ⊢
-  rw [neg_apply, map_neg, LinearMap.neg_apply] at h
-  linarith
-
-/-- `D j = -j D` for the derivative `D` of the loop `j` of complex structures, by differentiating
-`j * j = -1`. -/
-private theorem endLoopDeriv_endLoop_apply
-    (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t) (t : ℝ) (a : V) :
-    endLoopDeriv ω Je He x t (endLoop Je x t a) = -endLoop Je x t (endLoopDeriv ω Je He x t a) := by
-  have h := (ContinuousLinearMap.mul ℝ (V →L[ℝ] V)).apply_add_apply_eq_zero_of_const
-    (hasDerivAt_endLoop hJe hx t) (hasDerivAt_endLoop hJe hx t) endLoop_mul_self
-  exact eq_neg_of_add_eq_zero_left (by simpa using congrArg (· a) h)
+    (∀ a, endLoopDeriv ω Je He x t (endLoop Je x t a) =
+        -endLoop Je x t (endLoopDeriv ω Je He x t a)) ∧
+      ∀ a b, ω (endLoopDeriv ω Je He x t a) b + ω a (endLoopDeriv ω Je He x t b) = 0 := by
+  have h := mem_compatibleTangentSpace.1 <| ω.mem_compatibleTangentSpace_of_hasFDerivAt
+    (J := fun s ↦ Je s (x s)) (Eventually.of_forall fun s ↦ (hJx s).invariant)
+    (hasDerivAt_endLoop hJe hx t).hasFDerivAt 1
+  simpa [endLoop] using h
 
 /-- `rotatedField` is infinitesimally symplectic. -/
 private theorem apply_rotatedField_add
@@ -250,8 +231,7 @@ private theorem apply_rotatedField_add
   simp only [rotatedField, sub_apply, mul_apply_eq_comp, map_sub, LinearMap.sub_apply]
   have hj := apply_endLoop_apply hJx t
   have hS := apply_fderiv_hamiltonianVectorField_apply (ω := ω) hHe t (x t)
-  have hD := apply_endLoopDeriv_apply hJe hx hJx t
-  have e₁ := endLoopDeriv_endLoop_apply hJe hx t w
+  obtain ⟨e₁, hD⟩ := endLoopDeriv_endLoop_apply_and_apply_endLoopDeriv_add hJe hx hJx t
   set j := endLoop Je x t
   set D := endLoopDeriv ω Je He x t
   set S := fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t)
@@ -287,7 +267,7 @@ private theorem leftAdjointL_cylindricalAdjointCoeff
     LinearMap.sub_apply]
   have hj := apply_endLoop_apply hJx t
   have hS := apply_fderiv_hamiltonianVectorField_apply (ω := ω) hHe t (x t)
-  have hD := apply_endLoopDeriv_apply hJe hx hJx t v w
+  have hD := (endLoopDeriv_endLoop_apply_and_apply_endLoopDeriv_add hJe hx hJx t).2 v w
   have hjj (a : V) : endLoop Je x t (endLoop Je x t a) = -a := by
     simpa using congrArg (· a) (endLoop_mul_self (Je := Je) (x := x) t)
   rw [hjj, hjj, map_neg, map_neg, LinearMap.neg_apply, LinearMap.neg_apply]
