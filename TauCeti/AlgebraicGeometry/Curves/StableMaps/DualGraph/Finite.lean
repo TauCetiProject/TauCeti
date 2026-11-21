@@ -23,6 +23,8 @@ matters for stability, and the total degree of that decoration is the number `a`
 components. An energy threshold `ε > 0` for nonconstant components bounds `a` by the energy
 divided by `ε`, so the theorem below with `d` that bound applies.
 
+The argument follows the pointed `TauCeti.DualGraph.exists_finset_stable_representatives`, with
+the decoration moved along the isomorphism by `TauCeti.DualGraph.DegreeDecoration.transport`.
 The vertex and edge bounds come from
 `TauCeti.DualGraph.DegreeDecoration.IsStable.card_vertex_le` and
 `TauCeti.DualGraph.DegreeDecoration.IsStable.card_edge_le`, and the underlying graphs are
