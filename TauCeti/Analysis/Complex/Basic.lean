@@ -56,9 +56,6 @@ The canonical embedding of an `RCLike` field into `ℂ` is bundled as
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
 whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 
-A purely imaginary complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I`
-(`Complex.eq_im_mul_I_of_re_eq_zero`).
-
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
 (`Complex.dist_equivRealProdCLM_le`).
@@ -339,11 +336,6 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
-
-/-- A purely imaginary complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I`. -/
-theorem eq_im_mul_I_of_re_eq_zero {z : ℂ} (hz : z.re = 0) : z = (z.im : ℂ) * I := by
-  have h := (re_add_im z).symm
-  rwa [hz, ofReal_zero, zero_add] at h
 
 /-- The real coordinates `equivRealProdCLM` do not increase distances, so they map the disc of
 radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`. -/

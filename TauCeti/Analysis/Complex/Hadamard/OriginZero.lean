@@ -15,8 +15,8 @@ import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
 For a nonzero entire function `f : ℂ → ℂ` of order at most one that may vanish at the origin, let
 `m = (analyticOrderAt f 0).toNat` be its finite order of vanishing at `0`. By
 `TauCeti.OrderLE.exists_eq_sub_pow_mul`, `f` factors globally on `ℂ` as `f z = z ^ m * g z`, where
-`g` is entire, `g 0 ≠ 0`, and `OrderLE g 1`, with `m! * g 0 = iteratedDeriv m f 0` by
-`TauCeti.iteratedDeriv_pow_sub_smul_self`.
+`g` is entire, `g 0 ≠ 0`, and `OrderLE g 1`, with `g 0 = iteratedDeriv m f 0 / m!` by
+`TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul`.
 
 Applying `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne` to `g` yields
 `f z = z ^ m * exp (a + b * z) * divisorProductOne f z`: away from `0` the whole-plane divisor of
@@ -61,15 +61,12 @@ theorem OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne (h : OrderLE f 1)
     simpa only [sub_zero, analyticOrderNatAt] using hfg z
   have hfun : f = fun z : ℂ ↦ (z - 0) ^ (analyticOrderAt f 0).toNat • g z :=
     funext fun z ↦ by simpa only [smul_eq_mul, analyticOrderNatAt] using hfg z
-  have hder : (analyticOrderAt f 0).toNat.factorial • g 0 =
-      iteratedDeriv (analyticOrderAt f 0).toNat f 0 := by
-    rw [congrArg (iteratedDeriv (analyticOrderAt f 0).toNat · 0) hfun]
-    exact (TauCeti.iteratedDeriv_pow_sub_smul_self (hg.analyticAt 0).contDiffAt).symm
   have hg_der : g 0 = iteratedDeriv (analyticOrderAt f 0).toNat f 0 /
       ((analyticOrderAt f 0).toNat.factorial : ℂ) := by
-    have hfac : ((analyticOrderAt f 0).toNat.factorial : ℂ) ≠ 0 :=
-      Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-    rw [← hder, nsmul_eq_mul, mul_div_cancel_left₀ _ hfac]
+    have hinv := inv_factorial_smul_iteratedDeriv_pow_sub_smul (analyticOrderAt f 0).toNat 0
+      (hg.analyticAt 0).contDiffAt
+    rw [← hfun] at hinv
+    simpa [div_eq_inv_mul] using hinv.symm
   obtain ⟨a, ha, hga⟩ := hg_ord.exists_eq_cexp_mul_divisorProductOne hg hg0
   have hprod : divisorProductOne f = divisorProductOne g :=
     divisorProductOne_eq_of_eq_pow_mul hg hfg'

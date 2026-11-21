@@ -238,14 +238,14 @@ theorem AnalyticOnNhd.divisor_neg_eq_of_even
     MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg ρ (Set.mem_univ _))
       (Set.mem_univ _), analyticOrderNatAt, analyticOrderNatAt]
   have hcomp : g ∘ (-id : 𝕜 → 𝕜) = g := funext heven
-  have hsub : analyticOrderAt (fun z : 𝕜 ↦ -z - -ρ) ρ = (1 : ℕ) :=
-    (AnalyticAt.analyticOrderAt_eq_natCast (by fun_prop)).mpr
-      ⟨fun _ ↦ (-1 : 𝕜), analyticAt_const, neg_ne_zero.mpr one_ne_zero,
-        Filter.Eventually.of_forall fun z ↦ by simp only [pow_one, smul_eq_mul]; ring⟩
+  have hsub : analyticOrderAt (fun z : 𝕜 ↦ -z - -ρ) ρ = 1 := by
+    have hfun : (fun z : 𝕜 ↦ -z - -ρ) = -(fun z : 𝕜 ↦ z - ρ) := funext fun z ↦ by
+      simp only [Pi.neg_apply]; ring
+    rw [hfun, analyticOrderAt_neg, analyticOrderAt_id_sub_const_self]
   have hord := (hg (-ρ) (Set.mem_univ _)).analyticOrderAt_comp (g := (-id : 𝕜 → 𝕜))
     (z₀ := ρ) analyticAt_id.neg
   dsimp only [Pi.neg_apply, id_eq] at hord
-  rw [hcomp, hsub, Nat.cast_one, mul_one] at hord
+  rw [hcomp, hsub, mul_one] at hord
   rw [hord]
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.

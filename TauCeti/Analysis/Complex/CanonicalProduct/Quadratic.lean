@@ -14,13 +14,13 @@ import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 When zeros of an even entire function occur in opposite pairs `±i γ_n` (`γ_n > 0`), the genus-one
 Weierstrass factors multiply to paired quadratic factors `1 + z ^ 2 / γ_n ^ 2`. Under totalized
 division (`z ^ 2 / 0 = 0`), this expression automatically evaluates to `1` at padded `γ_n = 0`
-entries (`TauCeti.ite_eq_zero_one_add_div_sq`), avoiding conditional branching in convergence and
+entries (`z ^ 2 / 0 = 0`), avoiding conditional branching in convergence and
 coefficient proofs.
 
 ## Main results
 
-* `TauCeti.one_add_div_sq_eq_one_add_inv_sq_mul` and `TauCeti.ite_eq_zero_one_add_div_sq`:
-  algebraic normal forms of the paired quadratic factor.
+* `TauCeti.one_add_div_sq_eq_one_add_inv_sq_mul`: algebraic normal form of the paired quadratic
+  factor.
 * `TauCeti.hasProdUniformlyOn_one_add_div_sq`, `TauCeti.hasProd_one_add_div_sq`, and
   `TauCeti.tendstoUniformlyOn_mul_pow_one_add_div_sq`: compact uniform and pointwise convergence
   from inverse-square summability `∑' n, (γ n)⁻¹ ^ 2 < ∞`.
@@ -43,12 +43,6 @@ theorem one_add_div_sq_eq_one_add_inv_sq_mul (y : ℝ) (z : ℂ) :
     1 + z ^ 2 / (y : ℂ) ^ 2 = 1 + (((y⁻¹ ^ 2 : ℝ) : ℂ)) * z ^ 2 := by
   push_cast
   rw [div_eq_inv_mul, inv_pow, mul_comm]
-
-/-- Under totalized division, the zero-padded conditional factor `if y = 0 then 1 else ...`
-agrees unconditionally with `1 + z ^ 2 / (y : ℂ) ^ 2`. -/
-theorem ite_eq_zero_one_add_div_sq (y : ℝ) (z : ℂ) :
-    (if y = 0 then (1 : ℂ) else 1 + z ^ 2 / (y : ℂ) ^ 2) = 1 + z ^ 2 / (y : ℂ) ^ 2 := by
-  by_cases hy : y = 0 <;> simp [hy]
 
 /-- Square-summability of `(γ n)⁻¹` yields uniform convergence on every compact set `K ⊆ ℂ` of the
 paired quadratic infinite product. -/

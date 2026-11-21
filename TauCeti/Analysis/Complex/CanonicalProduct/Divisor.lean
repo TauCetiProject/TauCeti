@@ -515,8 +515,8 @@ theorem exists_paired_seq_divisorProductOne {g : ℂ → ℂ} (hg : Differentiab
   have hSpos_sum : Summable (fun ρ : Spos ↦ ((d ρ.val).toNat : ℝ) * (ρ.val.im)⁻¹ ^ 2) := by
     refine (hsum.comp_injective hincl).congr fun ρ ↦ ?_
     have hnorm : ‖(ρ.val)⁻¹‖ = (ρ.val.im)⁻¹ := by
-      conv_lhs => rw [norm_inv, Complex.eq_im_mul_I_of_re_eq_zero (hsupp_re ρ.property.1)]
-      rw [norm_mul, norm_I, mul_one, Complex.norm_real, Real.norm_of_nonneg ρ.property.2.le]
+      rw [norm_inv, ← Complex.abs_im_eq_norm.mpr (hsupp_re ρ.property.1),
+        abs_of_pos ρ.property.2]
     dsimp only [Function.comp_apply, incl]
     rw [hnorm]
   obtain ⟨γ, hγ_nonneg, hγ_sum, hγ_prod⟩ :=
