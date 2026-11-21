@@ -25,14 +25,18 @@ with `f ∈ L²(a, b; V*)` and `u₀ ∈ H` only has `u' ∈ L²(a, b; V*)`. Thi
 solution gains regularity when the data do: if `f = ι* g` with `g ∈ L²(a, b; H)` and `u₀ = ι v₀`
 with `v₀ ∈ V`, then
 
-* `ι ∘ u` has a weak time derivative `d ∈ L²(a, b; H)`, with `u' = ι* d`, and
-  `∫ₐᵇ ‖d‖² ≤ 2 A v₀ v₀ + 4 ∫ₐᵇ ‖g‖²`;
-* `u` is essentially bounded in `V`: `A u(t) u(t) ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` for almost every `t`
+* `ι ∘ u` has a weak time derivative `d ∈ L²(a, b; H)`, with `u' = ι* d`;
+* `u` has a representative `v` continuous on `[a, b]` with values in `V`, with `v a = v₀`;
+* the **second energy identity** `A v(t) v(t) - A v(s) v(s) = 2 ∫ₛᵗ ⟪g - d, d⟫` holds for all
+  `s, t ∈ [a, b]`, where `g - d` is the element of `H` representing `A u`, and with it the bound
+  `A v(t) v(t) + ∫ₐᵗ ‖d‖² ≤ A v₀ v₀ + ∫ₐᵗ ‖g‖²`
 
 (`TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm`).
 For a parabolic equation `∂ₜu - div(a ∇u) + … = f` this says `∂ₜu ∈ L²(0, T; L²(Ω))` and
-`u ∈ L^∞(0, T; H¹₀(Ω))` when `f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`. Lower-order terms `M u`
+`u ∈ C([0, T]; H¹₀(Ω))` when `f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`. Lower-order terms `M u`
 with `M : V →L[ℝ] H`, and a Gårding shift, are absorbed into `g`, since `M ∘ u ∈ L²(a, b; H)`.
+The energy identity is exact, not only an estimate, so it can be added up over the pieces of a
+partition of `[a, b]` on which the operator is frozen, as for coefficients depending on time.
 
 ## The argument
 
@@ -53,14 +57,17 @@ is coercive, and the abstract existence theorem
 (`TauCeti.exists_hasWeakLineDerivOn_gelfandDual`) produces `z ∈ L²(a, b; H)`. Read in `H`, its
 equation says that `ι (R z)` has weak derivative `g - z ∈ L²(a, b; H)`, and read in `V*` it says
 that `R z` is a weak solution of the original problem with the original initial value; by
-uniqueness (`TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`) it is `u`. The energy estimate in
-the shifted triple (`TauCeti.HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual`) is the
-formal estimate above: `A u(t) u(t) + ∫ₐᵗ ‖z‖² ≤ A v₀ v₀ + ∫ₐᵗ ‖g‖²`, with `z = g - u'`.
+uniqueness (`TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual`) it is `u`. In the shifted triple
+the continuous pivot representative of `z` is that of `Q (R z) = Q u`, so `Q⁻¹` of it is a
+representative of `u` continuous into `V`, and the energy identity of the shifted triple
+(`TauCeti.HasWeakLineDerivOn.norm_sq_sub_norm_sq_eq_of_gelfandDual`) is the second energy identity
+above, with `‖Q u‖² = A u u` and `z = g - d`.
 
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm`: the weak
-  time derivative in `L²(a, b; H)` and the essential bound in `V`.
+  time derivative in `L²(a, b; H)`, the continuous representative in `V` and the second energy
+  identity.
 
 The parabolic Dirichlet problem with time-independent symmetric principal coefficients is the
 instance `TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm`.
@@ -68,7 +75,8 @@ instance `TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isS
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §7.1.3, Theorem 5, which proves the
-  same estimates for second-order parabolic equations by Galerkin approximation.
+  bounds on `∂ₜu` and `sup_t ‖u(t)‖_{H¹₀}` for second-order parabolic equations by Galerkin
+  approximation.
 -/
 
 public section
@@ -125,7 +133,7 @@ private theorem exists_shiftedEmbedding (hι : Function.Injective ι)
 the problem `z' + z = g`, `z(a) = y₀` in the Gelfand triple `H ↪ V ↪ H*` given by `J` has a
 solution `z ∈ L²(a, b; H)`. Read in `H`, its equation says that `ι ∘ R ∘ z` has weak derivative
 `g - z`; the continuous representative `w₁` of `J ∘ z` starts at `y₀` and satisfies the energy
-estimate `‖w₁ t‖² + ∫ₐᵗ ‖z‖² ≤ ‖y₀‖² + ∫ₐᵗ ‖g‖²`. -/
+identity `‖w₁ t‖² - ‖w₁ s‖² = 2 ∫ₛᵗ ⟪g - z, z⟫`. -/
 private theorem exists_shiftedSolution [TopologicalSpace.SeparableSpace H] (hab : a ≤ b)
     {J R : H →L[ℝ] V} (hJd : DenseRange J) (hJ : ∀ x y, ⟪J x, J y⟫_ℝ = ⟪ι (R x), y⟫_ℝ)
     {g : ℝ → H} (hg : MemLp g 2 (volume.restrict (Ioo a b))) (y₀ : V) :
@@ -133,8 +141,8 @@ private theorem exists_shiftedSolution [TopologicalSpace.SeparableSpace H] (hab 
       HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι (R (z t)))
         (fun t ↦ g t - z t) 1 ∧
       ContinuousOn w₁ (Icc a b) ∧ (fun t ↦ J (z t)) =ᵐ[volume.restrict (Ioo a b)] w₁ ∧
-      w₁ a = y₀ ∧ ∀ t ∈ Icc a b,
-        ‖w₁ t‖ ^ 2 + ∫ s in a..t, ‖z s‖ ^ 2 ≤ ‖y₀‖ ^ 2 + ∫ s in a..t, ‖g s‖ ^ 2 := by
+      w₁ a = y₀ ∧ ∀ s ∈ Icc a b, ∀ t ∈ Icc a b,
+        ‖w₁ t‖ ^ 2 - ‖w₁ s‖ ^ 2 = 2 * ∫ r in s..t, ⟪g r - z r, z r⟫_ℝ := by
   -- In the shifted triple the operator is the inner product of `H`, coercive with constant `1`.
   have hA₁ : ∀ x y : H, AEStronglyMeasurable (fun _ : ℝ ↦ innerSL ℝ x y)
       (volume.restrict (Ioo a b)) := fun _ _ ↦ aestronglyMeasurable_const
@@ -158,16 +166,17 @@ private theorem exists_shiftedSolution [TopologicalSpace.SeparableSpace H] (hab 
     refine ext_inner_right ℝ fun y ↦ ?_
     simp [T]
   refine ⟨z, w₁, hz, by simpa only [map_sub, hT₁, hT₂] using hzd.clm_comp T, hw₁, hae₁, hw₁a,
-    fun t ht ↦ ?_⟩
-  have := hzd.norm_sq_add_mul_integral_le_of_gelfandDual hz hz' hf₁ one_pos le_rfl hA₁_coer
-    (Eventually.of_forall fun s ↦ sub_add_cancel _ _) hw₁ hae₁ ht
-  -- With `β = 0` and `α = 1` the exponential factor and the constants are `1`.
-  simp only [hw₁a, mul_zero, zero_mul, Real.exp_zero, one_mul, inv_one, innerSL_apply_norm]
-    at this
-  exact this
+    fun s hs t ht ↦ ?_⟩
+  -- The energy identity of the shifted triple, whose pairing is the inner product of `H`.
+  rw [hzd.norm_sq_sub_norm_sq_eq_of_gelfandDual hz hz' hw₁ hae₁ hs ht]
+  simp only [sub_apply, innerSL_apply_apply, inner_sub_left]
+  -- `simp` rewrites only the first pairing. In the second, `innerSL ℝ` is the operator family of
+  -- the existence theorem, used as an `ℝ`-linear map `H →L[ℝ] H*`, while `innerSL_apply_apply` is
+  -- stated for the conjugate-linear `H →L⋆[ℝ] H*`; over `ℝ` the two agree by definition.
+  rfl
 
 /-- `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` for
-`a ≤ b`, where the shifted problem can be solved. -/
+`a ≤ b`, where the shifted problem can be solved, without the energy bound. -/
 private theorem exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le
     [TopologicalSpace.SeparableSpace H] (hab : a ≤ b) (hι : Function.Injective ι)
     (hsymm : ∀ v w, A v w = A w v) (hα : 0 < α) (hA : ∀ v, α * ‖v‖ ^ 2 ≤ A v v)
@@ -178,11 +187,12 @@ private theorem exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le
     (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + A (u t) = ι.gelfandDual (g t))
     (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
     (h₀ : w a = ι v₀) :
-    ∃ d : ℝ → H, MemLp d 2 (volume.restrict (Ioo a b)) ∧
+    ∃ (d : ℝ → H) (v : ℝ → V), MemLp d 2 (volume.restrict (Ioo a b)) ∧
       HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι (u t)) d 1 ∧
       (∀ᵐ t ∂volume.restrict (Ioo a b), u' t = ι.gelfandDual (d t)) ∧
-      (∀ᵐ t ∂volume.restrict (Ioo a b), A (u t) (u t) ≤ A v₀ v₀ + ∫ s in Ioo a b, ‖g s‖ ^ 2) ∧
-      ∫ t in Ioo a b, ‖d t‖ ^ 2 ≤ 2 * A v₀ v₀ + 4 * ∫ t in Ioo a b, ‖g t‖ ^ 2 := by
+      ContinuousOn v (Icc a b) ∧ u =ᵐ[volume.restrict (Ioo a b)] v ∧ v a = v₀ ∧
+      ∀ s ∈ Icc a b, ∀ t ∈ Icc a b,
+        A (v t) (v t) - A (v s) (v s) = 2 * ∫ r in s..t, ⟪g r - d r, d r⟫_ℝ := by
   -- Solve the shifted problem `z' + z = g`, `z(a) = Q v₀`; `z` will be `A u = g - u'`.
   obtain ⟨Q, R, hQ, hR, hJd⟩ := exists_shiftedEmbedding hι hsymm hα hA
   have hRι (x : H) : A (R x) = ι.gelfandDual x := by
@@ -201,47 +211,36 @@ private theorem exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le
       hw hae ((ι.continuous.comp Q.symm.continuous).comp_continuousOn hw₁)
       (by filter_upwards [hae₁] with t ht; simp [← ht])
       (by simp only [Function.comp_apply, hw₁a, Q.symm_apply_apply, h₀])
-  -- The energy estimate of the shifted problem bounds `A u u` and `∫ ‖z‖²`.
-  have hQv : ‖Q v₀‖ ^ 2 = A v₀ v₀ := by rw [← real_inner_self_eq_norm_sq, hQ]
-  have hg2 : IntegrableOn (fun s ↦ ‖g s‖ ^ 2) (Ioo a b) :=
-    (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
-  have hz2 : IntegrableOn (fun s ↦ ‖z s‖ ^ 2) (Ioo a b) :=
-    (memLp_two_iff_integrable_sq_norm hz.aestronglyMeasurable).1 hz
-  have hen' (t : ℝ) (ht : t ∈ Icc a b) :
-      ‖w₁ t‖ ^ 2 + ∫ s in Ioo a t, ‖z s‖ ^ 2 ≤ A v₀ v₀ + ∫ s in Ioo a b, ‖g s‖ ^ 2 := by
-    have := hen t ht
-    rw [intervalIntegral.integral_of_le ht.1, integral_Ioc_eq_integral_Ioo,
-      intervalIntegral.integral_of_le ht.1, integral_Ioc_eq_integral_Ioo, hQv] at this
-    exact this.trans (add_le_add_right (setIntegral_mono_set hg2 (Eventually.of_forall fun _ ↦
-      by positivity) (Eventually.of_forall fun _ hs ↦ Ioo_subset_Ioo_right ht.2 hs)) _)
-  refine ⟨fun t ↦ g t - z t, hd, hH.congr_ae (huu.mono fun t ht ↦ by simp only [ht]), ?_, ?_,
-    ?_⟩
+  -- The continuous representative of `J z = Q (R z)` gives the one of `u = R z` in `V`, and the
+  -- energy identity of the shifted problem is the one of `A u u`, since `A v v = ‖Q v‖²`.
+  have hAw (t : ℝ) : A (Q.symm (w₁ t)) (Q.symm (w₁ t)) = ‖w₁ t‖ ^ 2 := by
+    rw [← hQ, Q.apply_symm_apply, real_inner_self_eq_norm_sq]
+  refine ⟨fun t ↦ g t - z t, fun t ↦ Q.symm (w₁ t), hd,
+    hH.congr_ae (huu.mono fun t ht ↦ by simp only [ht]), ?_,
+    Q.symm.continuous.comp_continuousOn hw₁, ?_, by simp only [hw₁a, Q.symm_apply_apply],
+    fun s hs t ht ↦ ?_⟩
   · filter_upwards [heq, huu] with t ht hut
     rw [map_sub, ← ht, ← hRι, hut, add_sub_cancel_right]
-  · filter_upwards [huu, hae₁, ae_restrict_mem measurableSet_Ioo] with t hut ht₁ ht
-    have hQu : A (u t) (u t) = ‖w₁ t‖ ^ 2 := by
-      rw [← ht₁, hut, ← real_inner_self_eq_norm_sq, ContinuousLinearMap.comp_apply,
-        ContinuousLinearEquiv.coe_coe, hQ]
-    linarith [hen' t (Ioo_subset_Icc_self ht), setIntegral_nonneg (μ := volume) (s := Ioo a t)
-      measurableSet_Ioo fun s _ ↦ sq_nonneg ‖z s‖]
-  · have hzb := hen' b (right_mem_Icc.2 hab)
-    have hpt : ∀ t ∈ Ioo a b, ‖g t - z t‖ ^ 2 ≤ 2 * ‖g t‖ ^ 2 + 2 * ‖z t‖ ^ 2 := fun t _ ↦ by
-      nlinarith [norm_sub_le (g t) (z t), norm_nonneg (g t - z t), sq_nonneg (‖g t‖ - ‖z t‖)]
-    have hle := setIntegral_mono_on ((memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).1
-      hd) ((hg2.const_mul 2).fun_add (hz2.const_mul 2)) measurableSet_Ioo hpt
-    rw [integral_add (hg2.const_mul 2) (hz2.const_mul 2), integral_const_mul,
-      integral_const_mul] at hle
-    nlinarith [sq_nonneg ‖w₁ b‖]
+  · filter_upwards [huu, hae₁] with t hut ht₁
+    rw [hut, ← ht₁, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      Q.symm_apply_apply]
+  · rw [hAw, hAw, hen s hs t ht]
+    congr 2
+    ext r
+    rw [sub_sub_cancel, real_inner_comm]
 
 /-- **Time regularity of weak solutions.** Let `ι : V →L[ℝ] H` be an injective map of real
 Hilbert spaces, `H` separable, and let `A : V →L[ℝ] V*` be symmetric and coercive,
 `α ‖v‖² ≤ A v v` with `α > 0`. Let `u ∈ L²(a, b; V)` be a weak solution of `u' + A u = ι* g` with
 `g ∈ L²(a, b; H)`, whose continuous `H`-valued representative `w` takes the value `w a = ι v₀`
 for some `v₀ ∈ V`. Then `ι ∘ u` has a weak time derivative `d ∈ L²(a, b; H)` on `(a, b)`, with
-`u' = ι* d` almost everywhere,
+`u' = ι* d` almost everywhere, and `u` has a representative `v` continuous on `[a, b]` with
+values in `V` and `v a = v₀`. It satisfies the **second energy identity**
 
-`A u(t) u(t) ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` for almost every `t ∈ (a, b)`, and
-`∫ₐᵇ ‖d‖² ≤ 2 A v₀ v₀ + 4 ∫ₐᵇ ‖g‖²`. -/
+`A v(t) v(t) - A v(s) v(s) = 2 ∫ₛᵗ ⟪g - d, d⟫` for all `s, t ∈ [a, b]`,
+
+the integrated form of `(A u u)' = 2 A u u'`, in which `g - d` represents `A u` in `H`, and the
+energy bound `A v(t) v(t) + ∫ₐᵗ ‖d‖² ≤ A v₀ v₀ + ∫ₐᵗ ‖g‖²` for every `t ∈ [a, b]`. -/
 theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm
     [TopologicalSpace.SeparableSpace H] (hι : Function.Injective ι)
     (hsymm : ∀ v w, A v w = A w v) (hα : 0 < α) (hA : ∀ v, α * ‖v‖ ^ 2 ≤ A v v)
@@ -252,19 +251,44 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_sym
     (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + A (u t) = ι.gelfandDual (g t))
     (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
     (h₀ : w a = ι v₀) :
-    ∃ d : ℝ → H, MemLp d 2 (volume.restrict (Ioo a b)) ∧
+    ∃ (d : ℝ → H) (v : ℝ → V), MemLp d 2 (volume.restrict (Ioo a b)) ∧
       HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι (u t)) d 1 ∧
       (∀ᵐ t ∂volume.restrict (Ioo a b), u' t = ι.gelfandDual (d t)) ∧
-      (∀ᵐ t ∂volume.restrict (Ioo a b), A (u t) (u t) ≤ A v₀ v₀ + ∫ s in Ioo a b, ‖g s‖ ^ 2) ∧
-      ∫ t in Ioo a b, ‖d t‖ ^ 2 ≤ 2 * A v₀ v₀ + 4 * ∫ t in Ioo a b, ‖g t‖ ^ 2 := by
+      ContinuousOn v (Icc a b) ∧ u =ᵐ[volume.restrict (Ioo a b)] v ∧ v a = v₀ ∧
+      (∀ s ∈ Icc a b, ∀ t ∈ Icc a b,
+        A (v t) (v t) - A (v s) (v s) = 2 * ∫ r in s..t, ⟪g r - d r, d r⟫_ℝ) ∧
+      ∀ t ∈ Icc a b, A (v t) (v t) + ∫ r in a..t, ‖d r‖ ^ 2 ≤ A v₀ v₀ + ∫ r in a..t, ‖g r‖ ^ 2 := by
   rcases lt_or_ge b a with hba | hab
   · -- On an empty interval there is nothing to prove.
     have hI : Ioo a b = ∅ := Ioo_eq_empty_of_le hba.le
-    have hA₀ : 0 ≤ A v₀ v₀ := (by positivity : 0 ≤ α * ‖v₀‖ ^ 2).trans (hA v₀)
-    refine ⟨0, MemLp.zero, hasWeakLineDerivOn_iff_locally.2 fun x hx ↦ ?_, by simp [hI],
-      by simp [hI], by simp [hI, hA₀]⟩
+    have hJ : Icc a b = ∅ := Icc_eq_empty_of_lt hba
+    refine ⟨0, fun _ ↦ v₀, MemLp.zero, hasWeakLineDerivOn_iff_locally.2 fun x hx ↦ ?_,
+      by simp [hI], by simp [hJ],
+      by rw [hI, Measure.restrict_empty, ae_zero]; exact Filter.eventually_bot, rfl, by simp [hJ],
+      by simp [hJ]⟩
     simp [hI] at hx
-  exact exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le hab hι hsymm hα hA hg h hu
-    hu' heq hw hae h₀
+  obtain ⟨d, v, hd, hdd, hu'd, hv, huv, hva, hid⟩ :=
+    exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le hab hι hsymm hα hA hg h hu hu'
+      heq hw hae h₀
+  refine ⟨d, v, hd, hdd, hu'd, hv, huv, hva, hid, fun t ht ↦ ?_⟩
+  -- The bound follows from the identity on `[a, t]` and `2 ⟪g - d, d⟫ ≤ ‖g‖² - ‖d‖²`.
+  have hint {f : ℝ → ℝ} (hf : IntegrableOn f (Ioo a b)) : IntervalIntegrable f volume a t :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le ht.1).2 (hf.mono_set (Ioo_subset_Ioo_right ht.2))
+  have hgd : IntegrableOn (fun r ↦ ⟪g r - d r, d r⟫_ℝ) (Ioo a b) :=
+    memLp_one_iff_integrable.1 ((innerSL ℝ (E := H)).memLp_of_bilin 1 (hg.sub hd) hd)
+  have hg2 : IntegrableOn (fun r ↦ ‖g r‖ ^ 2) (Ioo a b) :=
+    (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
+  have hd2 : IntegrableOn (fun r ↦ ‖d r‖ ^ 2) (Ioo a b) :=
+    (memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).1 hd
+  have hle : ∫ r in a..t, 2 * ⟪g r - d r, d r⟫_ℝ ≤ ∫ r in a..t, (‖g r‖ ^ 2 - ‖d r‖ ^ 2) :=
+    intervalIntegral.integral_mono_on ht.1 ((hint hgd).const_mul 2) ((hint hg2).sub (hint hd2))
+      fun r _ ↦ by
+        rw [inner_sub_left, real_inner_self_eq_norm_sq]
+        nlinarith [norm_sub_sq_real (g r) (d r), sq_nonneg ‖g r - d r‖]
+  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_sub (hint hg2) (hint hd2)]
+    at hle
+  have := hid a (left_mem_Icc.2 hab) t ht
+  rw [hva] at this
+  linarith
 
 end TauCeti
