@@ -120,7 +120,7 @@ theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} :
     obtain ⟨d, rfl⟩ := hc2
     have hϖ1 : valuation K ϖ < 1 := Valuation.integer.v_irreducible_lt_one hϖ
     have hϖ0 : 0 < valuation K ϖ := Valuation.integer.v_irreducible_pos hϖ
-    have hd : valuation K d ≤ 1 := (Valuation.mem_integer_iff _ _).1 d.2
+    have hd : valuation K d ≤ 1 := (Valuation.mem_integer_iff _ _).1 d.property
     have hle := h ϖ hϖ1
     rw [MulMemClass.coe_mul, map_mul, SubmonoidClass.coe_pow, map_pow] at hle
     exact (hle.trans (mul_le_of_le_one_right' hd)).not_gt (pow_lt_self_of_lt_one₀ hϖ0 hϖ1

@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-public import TauCeti.Analysis.Complex.IsolatedZero
-public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
+public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
+public import Mathlib.MeasureTheory.Integral.CircleAverage
+import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Complex.JensenFormula
+import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!

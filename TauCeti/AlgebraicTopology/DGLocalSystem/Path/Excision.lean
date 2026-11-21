@@ -133,9 +133,9 @@ private theorem image_symm_range_cellPullbackPair_map (n : ℕ) :
   rintro ⟨_, ⟨v, rfl⟩, hv⟩
   -- The inverse of `cellPullbackHomeomorph` is the identity on the underlying pairs, so the cell
   -- coordinate of `hv` is this equation by definition.
-  have hd : v.1.1.1 = d := congrArg (fun z ↦ z.1.1) hv
+  have hd : v.val.val.1 = d := congrArg (fun z ↦ z.val.1) hv
   rw [← hd]
-  exact v.2
+  exact v.property
 
 variable (b C) in
 /-- The preimage of `Xⁿ⁻¹`, as a subset of `P_b B`. -/
@@ -146,7 +146,7 @@ private theorem image_range_preimageSkeletonPair_map (n : ℕ) :
   refine Set.ext fun γ ↦ ⟨?_, fun hγ ↦ ?_⟩
   · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
     rw [← preimage_skeletonLT_eq]
-    exact w.2
+    exact w.property
   · rw [← preimage_skeletonLT_eq] at hγ
     exact ⟨_, ⟨⟨γ, hγ⟩, rfl⟩, rfl⟩
 
@@ -177,13 +177,13 @@ theorem exists_add_differential_sub_mem_pathFromChainSkeleton {n : ℕ}
         cubicalChainModuleLinearMap R MoorePathPullback.toMoorePathFrom u +
             cubicalChainModuleDifferential _ H R v - y ∈ pathFromChainSkeleton b C H R (n - 1) := by
   -- The based path space is the space of Moore paths starting in `{b}`.
-  have h : IsHurewiczFibration.{0} fun γ : MoorePathFrom B b ↦ γ.1.target :=
+  have h : IsHurewiczFibration.{0} fun γ : MoorePathFrom B b ↦ γ.val.target :=
     MoorePath.isHurewiczFibration_target ({b} : Set B)
   have hp : IsHurewiczFibration.{0} (MoorePathFrom.endpoint B b) := by
     convert h using 1
     funext γ
     exact (MoorePathFrom.endpoint_apply γ).trans
-      (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.1 γ.2))
+      (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
   have := TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap (C := C)
     (IsHurewiczFibration.mem_serreFibrations (p := pathFromEndpoint B b) hp) R n
   simp only [mem_pathFromChainSkeleton] at hy hxy ⊢

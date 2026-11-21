@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
 # The carrier of a biproduct in `ModuleCat`
@@ -24,7 +26,8 @@ Krull-Schmidt theorem among them — can be read as results about biproducts in 
 For a binary biproduct, Mathlib's `ModuleCat.biprodIsoProd` identifies `M ⊞ N` with the product
 module `M × N`; this file also records that it reads off the two biproduct projections and
 carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and that the biproduct
-`biprod.map f g` of two bijective maps is bijective.
+`biprod.map f g` of two bijective maps is bijective. A finite biproduct of finitely generated
+modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduct`).
 
 ## Main definitions
 
@@ -43,6 +46,8 @@ carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and tha
   `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
   `LinearMap.inr`.
 * `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
+* `ModuleCat.finite_biproduct`: a finite biproduct of finitely generated modules is finitely
+  generated.
 
 * `ModuleCat.biprod_inl_fst_apply`, `ModuleCat.biprod_inr_fst_apply`,
   `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
@@ -174,5 +179,13 @@ theorem biprod_inl_fst_add_inr_snd_apply (x : ↑(M ⊞ N)) :
       (biprod.inr : N ⟶ M ⊞ N) ((biprod.snd : M ⊞ N ⟶ N) x) = x := by
   simpa only [hom_add, LinearMap.add_apply, ConcreteCategory.comp_apply, id_apply] using
     ConcreteCategory.congr_hom (biprod.total (X := M) (Y := N)) x
+
+/-- A finite biproduct of finitely generated modules in `ModuleCat R` is finitely generated. -/
+theorem finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
+    [∀ i, Module.Finite R (V i)] :
+    Module.Finite R (⨁ V : ModuleCat.{v} R) := by
+  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
+  exact Module.Finite.equiv (((biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
+    biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).symm.toLinearEquiv
 
 end ModuleCat

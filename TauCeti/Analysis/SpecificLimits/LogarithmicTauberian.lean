@@ -357,7 +357,7 @@ private lemma tsum_geometric_level_le_rpow {ε u : ℝ} (hε : 0 < ε) (hu0 : 0 
   have hpow : u ^ (1 + ε) = u * exp (ε * log u) := by
     rw [rpow_add hu, rpow_one, rpow_def_of_pos hu, mul_comm (log u)]
   have hqm : q ^ m = exp (-(ε * m)) := by
-    rw [hq, ← exp_nat_mul]; congr 1; ring
+    rw [hq, ← exp_natCast_mul]; congr 1; ring
   have hm1 : -log u ≤ m := Nat.le_ceil _
   have hm2 : (m : ℝ) < -log u + 1 := Nat.ceil_lt_add_one (neg_nonneg.2 (log_nonpos hu0 hu1))
   rw [hpow, hqm]

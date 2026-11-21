@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.RingTheory.Polynomial.Pochhammer
 -- Proof-only: modules over `ℚ` are torsion-free.
 import Mathlib.Algebra.Module.Torsion.Field
+-- Proof-only: `ℕ`-scalars associate with multiplication in a nonassociative semiring.
+import Mathlib.GroupTheory.GroupAction.Ring
 
 /-!
 # Products of generalized binomial coefficients
@@ -520,8 +522,13 @@ The identity combines them without division, which is the integral step needed i
   degree `n` contains the degree-`n` coefficient of `-r`.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
+* `TauCeti.Ring.choose_mul_add_one_eq`: the analogue `(r choose k) (r + 1) =
+  (r + 1 choose k) (r + 1 - k)` of `Nat.choose_mul_succ_eq`.
 * `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
+  `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
+  division semiring.
 
 ## References
 
@@ -568,6 +575,23 @@ theorem mul_weighted_choose_add_mul_choose (r c : R) (k : ℕ) :
   rw [mul_add]
   abel
 
+/-- The analogue of `Nat.choose_mul_succ_eq` for generalized binomial coefficients:
+`(r choose k) (r + 1) = (r + 1 choose k) (r + 1 - k)`. -/
+theorem choose_mul_add_one_eq (r : R) (k : ℕ) :
+    _root_.Ring.choose r k * (r + 1) = _root_.Ring.choose (r + 1) k * (r + 1 - k) := by
+  -- A binomial ring has no additive torsion, so multiplying by `k!` is injective.
+  have := BinomialRing.toHasUniqueDiv (R := R)
+  rw [← nsmul_right_inj (Nat.factorial_ne_zero k), ← smul_mul_assoc, ← smul_mul_assoc,
+    ← _root_.Ring.descPochhammer_eq_factorial_smul_choose,
+    ← _root_.Ring.descPochhammer_eq_factorial_smul_choose]
+  -- Both sides are the Pochhammer evaluation `(r + 1) r ⋯ (r + 1 - k)`, peeled at either end.
+  have h := congrArg (Polynomial.smeval · (r + 1)) <| (descPochhammer_succ_right ℤ k).symm.trans
+    ((descPochhammer_succ_left ℤ k).trans (mul_comm _ _))
+  simp only [Polynomial.smeval_mul, Polynomial.smeval_comp, Polynomial.smeval_sub,
+    Polynomial.smeval_X, Polynomial.smeval_one, npow_one, npow_zero, ← Polynomial.C_eq_natCast,
+    Polynomial.smeval_C] at h
+  simpa using h.symm
+
 end WeightedPascal
 
 /-! ## The product recursion for multiset coefficients -/
@@ -588,6 +612,15 @@ theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing
     ← Nat.factorial_succ]
   simp only [_root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
     Polynomial.ascPochhammer_smeval_eq_eval, ascPochhammer_succ_eval]
+
+/-- Over a division semiring of characteristic zero, `Ring.multichoose x n` equals
+`(n!)⁻¹ * (ascPochhammer R n).eval x`. -/
+theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [DivisionSemiring R]
+    [CharZero R] (x : R) (n : ℕ) :
+    _root_.Ring.multichoose x n = (n.factorial : R)⁻¹ * (ascPochhammer R n).eval x := by
+  have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
+  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
+  rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
 
 /-! ## Negating the argument -/
 

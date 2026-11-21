@@ -45,6 +45,11 @@ coefficient `a = A(·, ū)`, with `λ ≤ a ≤ M`, the global Hölder estimate
 `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith` applies to it, with a constant
 that does not depend on `A` beyond `λ` and `M`.
 
+When both boundary values equal `g`, every solution stays close to `g`: if `∫_{x₀}^t f + F t`
+lies in an interval of length `N` for almost every `t`, then
+`|ū y - g| ≤ min (y - x₀) (x₁ - y) * N / λ`
+(`TauCeti.PDE.abs_intervalRepresentativeL_sub_le_min_mul_div_of_forall_setIntegral_eq`).
+
 Without uniqueness, the solutions are described as a set, and that set behaves well under
 perturbation of the data. Let `Aₙ → A` locally uniformly in `y` for almost every `x`, with common
 bounds `λ ≤ Aₙ ≤ M`, let `fₙ → f` and `Fₙ → F` in `L¹`, and let the boundary values converge. Then
@@ -205,6 +210,34 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
     ext y
     rw [hrep, ← DFunLike.congr_fun hū y, intervalDirichletSolution_apply]
   exact ⟨u, htr, by rwa [hū']⟩
+
+/-- **Decay towards equal boundary values for the quasilinear problem.** Let `A` be a Carathéodory
+function with `λ ≤ A t y ≤ M`, as in `exists_intervalTraceL_eq_and_forall_setIntegral_eq`, let `f`
+and `F` be integrable on `(x₀, x₁)`, and let `G t = ∫_{x₀}^t f + F t` lie in `[m, m + N]` for
+almost every `t ∈ (x₀, x₁)`. Then every solution `u ∈ W^{1,p}(x₀, x₁)` of `-(A(x, u) u')' = f + F'`
+with the value `g` at both endpoints satisfies `|ū y - g| ≤ min (y - x₀) (x₁ - y) * N / λ`. The
+bound holds for every solution, not only for the one constructed by Schauder's theorem, and
+depends on `A` only through `λ`. -/
+theorem abs_intervalRepresentativeL_sub_le_min_mul_div_of_forall_setIntegral_eq (hx : x₀ < x₁)
+    (hlam : 0 < lam)
+    (hAm : ∀ y, AEStronglyMeasurable (fun t => A t y) (volume.restrict (Ioo x₀ x₁)))
+    (hAc : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (A t))
+    (hA : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ∀ y, lam ≤ A t y ∧ A t y ≤ M)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁))
+    {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+          W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t)
+    {g : ℝ} (htr : W1p.intervalTraceL hx u = (g, g)) {m N : ℝ}
+    (hG : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      m ≤ (∫ s in x₀..t, f s) + F t ∧ (∫ s in x₀..t, f s) + F t ≤ m + N)
+    (y : Icc x₀ x₁) :
+    |W1p.intervalRepresentativeL hx u y - g| ≤ min ((y : ℝ) - x₀) (x₁ - y) * N / lam :=
+  -- `u` solves the linear problem with the frozen coefficient `A(·, ū)`.
+  abs_intervalRepresentativeL_sub_le_min_mul_div hx hlam
+    (aestronglyMeasurable_apply_projIcc hx.le hAm hAc _) (hA.mono fun _ ht => ht _) hf hF hu htr
+    hG y
 
 /-! ### Families of problems -/
 
@@ -543,12 +576,12 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_holderWith_deriv_deriv (h
   -- Integrating `h` twice gives the `C²` extension `w` of `w₁`, with `w'' = h ∘ projIcc`.
   obtain ⟨w, hw, hw₁w, hdw₁w, hddw⟩ :=
     exists_contDiff_two_eqOn_and_deriv_deriv_eq hx.le hw₁ hderiv (hH.continuousOn hα₀)
-  refine ⟨w, hw, fun t => (hū t).trans (hw₁w t.2), ?_, fun t ht => ?_⟩
+  refine ⟨w, hw, fun t => (hū t).trans (hw₁w t.property), ?_, fun t ht => ?_⟩
   · -- `w''` is Hölder on `ℝ`, since `projIcc` is `1`-Lipschitz.
     have hπ : LipschitzWith 1 fun t => (projIcc x₀ x₁ hx.le t : ℝ) := by
       simpa [Function.comp_def] using
-        (LipschitzWith.subtype_val _).comp (LipschitzWith.projIcc hx.le)
-    have hHₑ := hH.comp_holderWith hπ.holderWith fun t => (projIcc x₀ x₁ hx.le t).2
+        (LipschitzWith.subtypeVal _).comp (LipschitzWith.projIcc hx.le)
+    have hHₑ := hH.comp_holderWith hπ.holderWith fun t => (projIcc x₀ x₁ hx.le t).property
     rw [mul_one] at hHₑ
     rw [hddw]
     exact ⟨_, hHₑ⟩
