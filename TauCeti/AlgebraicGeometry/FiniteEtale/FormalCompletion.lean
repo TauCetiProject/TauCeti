@@ -14,6 +14,7 @@ import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Pullback
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
+import TauCeti.CategoryTheory.Comma.Over.Pullback
 import TauCeti.CategoryTheory.EqToHom
 
 /-!
@@ -850,86 +851,49 @@ private lemma isoLevelZeroOfKerEq_hom_comp (j : X₀ ⟶ X) [IsClosedImmersion j
   subst hj
   simp [isoLevelZeroOfKerEq]
 
-/-- Pulling back morphisms in `Over X` along `j = e.hom ≫ i` (for an isomorphism `e`) is injective
-if pulling back along `i` is injective. -/
-private lemma overPullback_map_injective_of_fac_iso {X₀' : Scheme.{u}} {i : X₀' ⟶ X} {j : X₀ ⟶ X}
-    (e : X₀ ≅ X₀') (he : e.hom ≫ i = j) {Y Z : Over X}
-    (hi : Function.Injective (fun g : Y ⟶ Z ↦ (Over.pullback i).map g)) :
-    Function.Injective (fun g : Y ⟶ Z ↦ (Over.pullback j).map g) := by
-  have : (Over.pullback e.hom).IsEquivalence :=
-    (Over.mapPullbackAdj e.hom).isEquivalence_right_of_isEquivalence_left
-  let hiso : Over.pullback j ≅ Over.pullback i ⋙ Over.pullback e.hom :=
-    eqToIso (congrArg (fun k : X₀ ⟶ X ↦ Over.pullback k) he.symm) ≪≫ Over.pullbackComp e.hom i
-  intro g₁ g₂ h
-  apply hi
-  apply (Over.pullback e.hom).map_injective
-  have hn₁ := hiso.hom.naturality g₁
-  have hn₂ := hiso.hom.naturality g₂
-  dsimp only at h
-  rw [h] at hn₁
-  exact (cancel_epi (hiso.hom.app Y)).mp (hn₁.symm.trans hn₂)
-
-/-- Pulling back morphisms in `Over X` along `j = e.hom ≫ i` (for an isomorphism `e`) is surjective
-if pulling back along `i` is surjective. -/
-private lemma overPullback_map_surjective_of_fac_iso {X₀' : Scheme.{u}} {i : X₀' ⟶ X} {j : X₀ ⟶ X}
-    (e : X₀ ≅ X₀') (he : e.hom ≫ i = j) {Y Z : Over X}
-    (hi : Function.Surjective (fun g : Y ⟶ Z ↦ (Over.pullback i).map g)) :
-    Function.Surjective (fun g : Y ⟶ Z ↦ (Over.pullback j).map g) := by
-  have : (Over.pullback e.hom).IsEquivalence :=
-    (Over.mapPullbackAdj e.hom).isEquivalence_right_of_isEquivalence_left
-  let hiso : Over.pullback j ≅ Over.pullback i ⋙ Over.pullback e.hom :=
-    eqToIso (congrArg (fun k : X₀ ⟶ X ↦ Over.pullback k) he.symm) ≪≫ Over.pullbackComp e.hom i
-  intro g₀
-  let g₀' : (Over.pullback i).obj Y ⟶ (Over.pullback i).obj Z :=
-    (Over.pullback e.hom).preimage (hiso.inv.app Y ≫ g₀ ≫ hiso.hom.app Z)
-  obtain ⟨g, hg⟩ := hi g₀'
-  refine ⟨g, ?_⟩
-  have hnat := hiso.hom.naturality g
-  simp only [Functor.comp_map] at hnat
-  dsimp only at hg
-  rw [hg, (Over.pullback e.hom).map_preimage] at hnat
-  have hcancel := congrArg (· ≫ hiso.inv.app Z) hnat
-  simpa only [Category.assoc, Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_app,
-    Category.comp_id] using hcancel
+private lemma overMk_w {Y Z : Scheme.{u}} {p : Y ⟶ X} {q : Z ⟶ X}
+    (g : Over.mk p ⟶ Over.mk q) : g.left ≫ q = p := by
+  simpa only [Over.mk_hom] using Over.w g
 
 /-- Identification of the zeroth level of `Y.formalCompletion (I.comap p)` with the base change
-`((Over.pullback (toScheme X I 0)).obj (Over.mk p)).left`. -/
+`((Over.pullback (toScheme X I 0)).obj (Over.mk p)).left` (which is definitionally
+`Limits.pullback p (toScheme X I 0)`). -/
 private noncomputable def levelZeroIsoPullback {Y : Scheme.{u}} (p : Y ⟶ X) :
     (Y.formalCompletion (I.comap p)).X 0 ≅
       ((Over.pullback (Scheme.formalCompletion.toScheme X I 0)).obj (Over.mk p)).left :=
   (Scheme.formalCompletion.isPullback_map_app (I := I.comap p) p rfl 0).isoPullback
 
+-- These two lemmas bridge the definitional equality between `(Over.pullback f).obj (Over.mk p)`
+-- and `Limits.pullback p f` once so downstream proofs rewrite only through `Over` lemmas.
+@[reassoc]
+private lemma levelZeroIsoPullback_hom_snd {Y : Scheme.{u}} (p : Y ⟶ X) :
+    (levelZeroIsoPullback I p).hom ≫
+        ((Over.pullback (Scheme.formalCompletion.toScheme X I 0)).obj (Over.mk p)).hom =
+      (Scheme.formalCompletion.map (I := I.comap p) p le_rfl).app 0 := by
+  simpa only [levelZeroIsoPullback, Over.pullback_obj_hom, Over.mk_hom] using
+    (Scheme.formalCompletion.isPullback_map_app (I := I.comap p) p rfl 0).isoPullback_hom_snd
+
+@[reassoc]
+private lemma levelZeroIsoPullback_inv_snd {Y : Scheme.{u}} (p : Y ⟶ X) :
+    (levelZeroIsoPullback I p).inv ≫
+        (Scheme.formalCompletion.map (I := I.comap p) p le_rfl).app 0 =
+      ((Over.pullback (Scheme.formalCompletion.toScheme X I 0)).obj (Over.mk p)).hom := by
+  simpa only [levelZeroIsoPullback, Over.pullback_obj_hom, Over.mk_hom] using
+    (Scheme.formalCompletion.isPullback_map_app (I := I.comap p) p rfl 0).isoPullback_inv_snd
+
 private lemma levelZeroIsoPullback_hom_map {Y Z : Scheme.{u}} {p : Y ⟶ X} {q : Z ⟶ X}
     (g : Over.mk p ⟶ Over.mk q) :
     (Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g.left
-        (by rw [← Scheme.IdealSheafData.comap_comp,
-          show g.left ≫ q = p from Over.w g])).app 0 ≫
+        (by rw [← Scheme.IdealSheafData.comap_comp, overMk_w g])).app 0 ≫
       (levelZeroIsoPullback I q).hom =
       (levelZeroIsoPullback I p).hom ≫
         ((Over.pullback (Scheme.formalCompletion.toScheme X I 0)).map g).left := by
   apply Limits.pullback.hom_ext
   · simp [levelZeroIsoPullback]
-  · have hw :
-        (Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g.left
-            (by rw [← Scheme.IdealSheafData.comap_comp,
-              show g.left ≫ q = p from Over.w g])).app 0 ≫
-          (Scheme.formalCompletion.map (I := I.comap q) q le_rfl).app 0 =
-        (Scheme.formalCompletion.map (I := I.comap p) p le_rfl).app 0 :=
-      congrArg (·.app 0) (Scheme.formalCompletion.map_comp_eq (I := I.comap p) (J := I.comap q)
-        (K := I) (show g.left ≫ q = p from Over.w g) _ le_rfl le_rfl)
-    have hL : (levelZeroIsoPullback I q).hom ≫
-        Limits.pullback.snd (Over.mk q).hom (Scheme.formalCompletion.toScheme X I 0) =
-        (Scheme.formalCompletion.map (I := I.comap q) q le_rfl).app 0 :=
-      IsPullback.isoPullback_hom_snd _
-    have hR1 : ((Over.pullback (Scheme.formalCompletion.toScheme X I 0)).map g).left ≫
-        Limits.pullback.snd (Over.mk q).hom (Scheme.formalCompletion.toScheme X I 0) =
-        Limits.pullback.snd (Over.mk p).hom (Scheme.formalCompletion.toScheme X I 0) :=
-      Over.w ((Over.pullback (Scheme.formalCompletion.toScheme X I 0)).map g)
-    have hR2 : (levelZeroIsoPullback I p).hom ≫
-        Limits.pullback.snd (Over.mk p).hom (Scheme.formalCompletion.toScheme X I 0) =
-        (Scheme.formalCompletion.map (I := I.comap p) p le_rfl).app 0 :=
-      IsPullback.isoPullback_hom_snd _
-    rw [Category.assoc, hL, hw, Category.assoc, hR1, hR2]
+  · simp only [Category.assoc, ← Over.pullback_obj_hom]
+    rw [levelZeroIsoPullback_hom_snd, Over.w, levelZeroIsoPullback_hom_snd]
+    exact congrArg (·.app 0) (Scheme.formalCompletion.map_comp_eq (I := I.comap p)
+      (J := I.comap q) (K := I) (overMk_w g) _ le_rfl le_rfl)
 
 /-- If completion is faithful on finite locally free sheaves, then base change along any closed
 immersion `j : X₀ ⟶ X` with `j.ker = I` is injective on `X`-morphisms from a finite locally free
@@ -943,12 +907,12 @@ theorem overPullback_map_injective_of_completion_finiteLocallyFree
     [IsFinite q] [Flat q] [LocallyOfFinitePresentation q] [FormallyUnramified q] :
     Function.Injective
       (fun g : Over.mk p ⟶ Over.mk q ↦ (Over.pullback j).map g) := by
-  refine overPullback_map_injective_of_fac_iso (isoLevelZeroOfKerEq I j hj)
+  refine Over.pullback_map_injective_of_fac_iso (isoLevelZeroOfKerEq I j hj)
     (isoLevelZeroOfKerEq_hom_comp I j hj) ?_
   intro g₁ g₂ h
   dsimp only at h
-  have hg₁ : g₁.left ≫ q = p := Over.w g₁
-  have hg₂ : g₂.left ≫ q = p := Over.w g₂
+  have hg₁ : g₁.left ≫ q = p := overMk_w g₁
+  have hg₂ : g₂.left ≫ q = p := overMk_w g₂
   have hg₀ :
       (Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left
           (by rw [← Scheme.IdealSheafData.comap_comp, hg₁])).app 0 =
@@ -992,7 +956,7 @@ theorem overPullback_map_bijective_of_completion_finiteLocallyFree
   have ⟨_, _, _⟩ : Flat q ∧ FormallyUnramified q ∧ LocallyOfFinitePresentation q :=
     Etale.iff_flat_and_formallyUnramified.mp inferInstance
   refine ⟨overPullback_map_injective_of_completion_finiteLocallyFree I j hj p q, ?_⟩
-  refine overPullback_map_surjective_of_fac_iso (isoLevelZeroOfKerEq I j hj)
+  refine Over.pullback_map_surjective_of_fac_iso (isoLevelZeroOfKerEq I j hj)
     (isoLevelZeroOfKerEq_hom_comp I j hj) ?_
   intro g₀
   let p_fc := Scheme.formalCompletion.map (I := I.comap p) p le_rfl
@@ -1000,16 +964,8 @@ theorem overPullback_map_bijective_of_completion_finiteLocallyFree
   let a₀ : (Y.formalCompletion (I.comap p)).X 0 ⟶ (Z.formalCompletion (I.comap q)).X 0 :=
     (levelZeroIsoPullback I p).hom ≫ g₀.left ≫ (levelZeroIsoPullback I q).inv
   have ha₀ : a₀ ≫ q_fc.app 0 = p_fc.app 0 := by
-    have hq₀ : (levelZeroIsoPullback I q).inv ≫ q_fc.app 0 =
-        Limits.pullback.snd q (Scheme.formalCompletion.toScheme X I 0) :=
-      IsPullback.isoPullback_inv_snd _
-    have hp₀ : (levelZeroIsoPullback I p).hom ≫
-        Limits.pullback.snd p (Scheme.formalCompletion.toScheme X I 0) = p_fc.app 0 :=
-      IsPullback.isoPullback_hom_snd _
-    simp only [a₀, Category.assoc, hq₀]
-    rw [show g₀.left ≫ Limits.pullback.snd q (Scheme.formalCompletion.toScheme X I 0) =
-      Limits.pullback.snd p (Scheme.formalCompletion.toScheme X I 0) from Over.w g₀]
-    exact hp₀
+    simp only [a₀, p_fc, q_fc, Category.assoc, levelZeroIsoPullback_inv_snd]
+    rw [Over.w g₀, levelZeroIsoPullback_hom_snd]
   let a := AdicThickeningSystem.liftOfEtale p_fc q_fc a₀ ha₀
   obtain ⟨g, hg, hga⟩ := Scheme.formalCompletion.exists_hom_of_isFinite_of_flat (I := I) p q rfl rfl
     a (AdicThickeningSystem.liftOfEtale_comp _ _ a₀ ha₀)
