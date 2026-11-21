@@ -517,14 +517,7 @@ theorem _root_.MaximalSpectrum.length_quotient_eq_length_residueField {A B S : T
     Module.length A (B ⧸ m.asIdeal) =
       Module.length (IsLocalRing.ResidueField A) (IsLocalRing.ResidueField S) := by
   let e := IsLocalization.algEquiv m.asIdeal.primeCompl (Localization.AtPrime m.asIdeal) S
-  let f : IsLocalRing.ResidueField (Localization.AtPrime m.asIdeal) ≃ₐ[A]
-      IsLocalRing.ResidueField S :=
-    AlgEquiv.ofRingEquiv (f := IsLocalRing.ResidueField.mapEquiv e.toRingEquiv) fun a ↦ by
-      rw [IsScalarTower.algebraMap_apply A (Localization.AtPrime m.asIdeal)
-          (IsLocalRing.ResidueField _), IsScalarTower.algebraMap_apply A S
-          (IsLocalRing.ResidueField S), IsScalarTower.algebraMap_apply A B,
-        IsScalarTower.algebraMap_apply A B S]
-      simp
+  let f := IsLocalRing.ResidueField.mapAlgEquiv (e.restrictScalars A)
   rw [← m.length_residueField_localization_eq, f.toLinearEquiv.length_eq,
     IsLocalRing.length_restrictScalars A S, TauCeti.length_residueField_eq_one, one_mul]
 

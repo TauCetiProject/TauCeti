@@ -69,9 +69,13 @@ theorem finsum_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord {a : A} (ha
   have : IsDomain A := .of_faithfulSMul A B
   rw [Nat.cast_mul, ENat.natCast_toNat (Ring.ord_ne_top (mem_nonZeroDivisors_of_ne_zero ha))]
   have hab : algebraMap A B a ≠ 0 := (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr ha
+  have hrange : LinearMap.range (LinearMap.lsmul A B a) =
+      (Ideal.span {algebraMap A B a}).restrictScalars A := by
+    rw [range_lsmul_eq_smul_top, ← Submodule.ideal_span_singleton_smul, Ideal.smul_top_eq_map,
+      Ideal.map_span]
+    simp
   have hlen := length_quotient_lsmul_eq_finrank_mul_ord (M := B) ha
-  rw [range_lsmul_eq_smul_top, ← Submodule.ideal_span_singleton_smul, Ideal.smul_top_eq_map,
-    Ideal.map_span, Set.image_singleton, (Submodule.Quotient.restrictScalarsEquiv A _).length_eq,
+  rw [hrange, (Submodule.Quotient.restrictScalarsEquiv A _).length_eq,
     length_quotient_span_singleton_eq_finsum_ord hab] at hlen
   refine (finsum_congr fun m ↦ ?_).trans hlen
   rw [Ring.ord_algebraMap_isLocalization m.asIdeal.primeCompl (Localization.AtPrime m.asIdeal),
