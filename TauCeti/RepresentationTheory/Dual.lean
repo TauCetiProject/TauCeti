@@ -97,6 +97,12 @@ theorem ker_le_ker_dual {R G V : Type*} [CommSemiring R] [Group G] [AddCommMonoi
   ext ℓ x
   simp [dual_apply, hinv, Module.End.one_eq_id, Module.Dual.transpose_apply]
 
+/-- The dual action sends a linear form `f` to `f ∘ ρ g⁻¹`. -/
+theorem dual_apply_apply {R G V : Type*} [CommSemiring R] [Group G] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) (g : G) (f : Module.Dual R V) (v : V) :
+    ρ.dual g f v = f (ρ g⁻¹ v) :=
+  (rfl)
+
 section Field
 
 variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]

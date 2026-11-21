@@ -8,7 +8,9 @@ module
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Embeddings
+public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.GaloisLattice.Basic
+public import TauCeti.RepresentationTheory.Smooth.Basic
 
 /-!
 # The character lattice of the Serre torus of a CM field
@@ -112,17 +114,14 @@ variable (L)
 
 /-- The involution of `ℤ[E]` induced by complex conjugation of the embeddings. -/
 noncomputable def conj : ℤ[L →ₐ[ℚ] AlgebraicClosure ℚ] →ₗ[ℤ] ℤ[L →ₐ[ℚ] AlgebraicClosure ℚ] :=
-  (coeffLinearEquiv ℤ).symm.toLinearMap ∘ₗ Finsupp.lmapDomain ℤ ℤ (conjEmbedding L) ∘ₗ
-    (coeffLinearEquiv ℤ).toLinearMap
+  mapDomainLinearMap ℤ ℤ (conjEmbedding L)
 
 variable {L}
 
 @[simp]
 theorem coeff_conj (χ : ℤ[L →ₐ[ℚ] AlgebraicClosure ℚ]) (φ : L →ₐ[ℚ] AlgebraicClosure ℚ) :
     (conj L χ).coeff φ = χ.coeff (conjEmbedding L φ) := by
-  simp only [conj, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    coeffLinearEquiv_symm_apply, coeff_ofCoeff, Finsupp.lmapDomain_apply, coeffLinearEquiv_apply]
-  rw [← conjEmbedding_conjEmbedding φ,
+  rw [conj, coeff_mapDomainLinearMap, ← conjEmbedding_conjEmbedding φ,
     Finsupp.mapDomain_apply_of_injective conjEmbedding_involutive.injective,
     conjEmbedding_conjEmbedding]
 
@@ -151,6 +150,8 @@ noncomputable def characterSubrep :
 
 variable {L}
 
+/-- A character lies in `X^*(S^L)` exactly when the sums `χ(φ) + χ(φ ∘ c)` over conjugate pairs
+of embeddings all take the same value `w`. -/
 theorem mem_characterSubrep_iff {χ : ℤ[L →ₐ[ℚ] AlgebraicClosure ℚ]} :
     χ ∈ characterSubrep L ↔ ∃ w : ℤ, ∀ φ, χ.coeff φ + χ.coeff (conjEmbedding L φ) = w :=
   Iff.rfl
@@ -182,14 +183,6 @@ theorem coeff_toRepresentation_apply (σ : Field.absoluteGaloisGroup ℚ)
     ((characterSubrep L).toRepresentation σ χ).val.coeff φ = χ.val.coeff (σ⁻¹ • φ) :=
   Representation.coeff_ofMulAction σ χ.val φ
 
-omit [IsCMField L] in
-/-- An element of `Gal(ℚ^al/ℚ)` fixing every embedding of `L` fixes every vector of `ℤ[E]`. -/
-private theorem ofMulAction_eq_self_of_forall_smul_eq {σ : Field.absoluteGaloisGroup ℚ}
-    (hσ : ∀ φ : L →ₐ[ℚ] AlgebraicClosure ℚ, σ • φ = φ) (χ : ℤ[L →ₐ[ℚ] AlgebraicClosure ℚ]) :
-    Representation.ofMulAction ℤ _ _ σ χ = χ := by
-  ext φ
-  rw [Representation.coeff_ofMulAction, ← hσ φ, inv_smul_smul, hσ φ]
-
 variable (L)
 
 -- The body is exposed so that the representation of `characterLattice L` is
@@ -202,23 +195,9 @@ variable (L)
     refine (galoisLatticeProperty_iff _ _).2
       ⟨⟨inferInstanceAs (Module.Free ℤ (characterSubrep L).toSubmodule),
         inferInstanceAs (Module.Finite ℤ (characterSubrep L).toSubmodule)⟩, fun χ ↦ ?_⟩
-    -- The vectors fixed by every embedding stabilizer form an open subgroup.
-    let H : Subgroup (Field.absoluteGaloisGroup ℚ) :=
-      { carrier := {σ | (characterSubrep L).toRepresentation σ χ = χ}
-        one_mem' := by simp
-        mul_mem' := fun {σ τ} hσ hτ ↦ by
-          rw [Set.mem_ofPred_eq] at hσ hτ ⊢
-          rw [map_mul, mul_apply_eq_comp, hτ, hσ]
-        inv_mem' := fun {σ} hσ ↦ by
-          rw [Set.mem_ofPred_eq] at hσ ⊢
-          conv_lhs => rw [← hσ]
-          exact Representation.inv_self_apply _ σ χ }
-    have hle : ⨅ φ : L →ₐ[ℚ] AlgebraicClosure ℚ, MulAction.stabilizer _ φ ≤ H := fun σ hσ ↦ by
-      rw [Subgroup.mem_iInf] at hσ
-      exact Subtype.ext (ofMulAction_eq_self_of_forall_smul_eq hσ χ.val)
-    refine Subgroup.isOpen_mono hle ?_
-    rw [Subgroup.coe_iInf]
-    exact isOpen_iInter_of_finite fun φ ↦ φ.isOpen_stabilizer_absoluteGaloisGroup
+    have := Representation.isSmooth_ofMulAction (A := ℤ)
+      fun φ : L →ₐ[ℚ] AlgebraicClosure ℚ ↦ φ.isOpen_stabilizer_absoluteGaloisGroup
+    exact Representation.IsSmooth.isOpen_stabilizer (ρ := (characterSubrep L).toRepresentation) χ
 
 /-- The underlying module of `characterLattice L` is `characterSubrep L`. -/
 theorem characterLattice_obj :
@@ -294,8 +273,8 @@ theorem dual_universalCocharacter_of_smul_eq {ι₀ : L →ₐ[ℚ] AlgebraicClo
     (characterSubrep L).toRepresentation.dual σ (universalCocharacter L ι₀) =
       universalCocharacter L ι₀ := by
   ext χ
-  simp only [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-    universalCocharacter_apply, coeff_toRepresentation_apply, inv_inv, hσ]
+  simp only [Representation.dual_apply_apply, universalCocharacter_apply,
+    coeff_toRepresentation_apply, inv_inv, hσ]
 
 /-- **The weight relation.** If `τ ∈ Gal(ℚ^al/ℚ)` lifts complex conjugation along `ι₀`, then
 `μ^L + τ μ^L` is the weight. Since the weight is `Gal(ℚ^al/ℚ)`-invariant, `μ^L` satisfies the Serre
@@ -306,15 +285,15 @@ theorem universalCocharacter_add_dual_eq_weight {ι₀ : L →ₐ[ℚ] Algebraic
         (characterSubrep L).toRepresentation.dual τ (universalCocharacter L ι₀) =
       weight L := by
   ext χ
-  simp only [LinearMap.add_apply, Representation.dual_apply, Module.Dual.transpose_apply,
-    LinearMap.comp_apply, universalCocharacter_apply, coeff_toRepresentation_apply, inv_inv, hτ]
+  simp only [LinearMap.add_apply, Representation.dual_apply_apply, universalCocharacter_apply,
+    coeff_toRepresentation_apply, inv_inv, hτ]
   exact coeff_add_coeff_conjEmbedding χ ι₀
 
 /-- The weight is fixed by the contragredient action of `Gal(ℚ^al/ℚ)`. -/
 theorem dual_weight (σ : Field.absoluteGaloisGroup ℚ) :
     (characterSubrep L).toRepresentation.dual σ (weight L) = weight L := by
   ext χ
-  simp [Representation.dual_apply, Module.Dual.transpose_apply]
+  simp only [Representation.dual_apply_apply, weight_apply_toRepresentation]
 
 section lift
 
@@ -324,19 +303,22 @@ variable {M : Type*} [AddCommGroup M] [Module ℤ M]
   (ρ : Representation ℤ (Field.absoluteGaloisGroup ℚ) M)
   {ι₀ : L →ₐ[ℚ] AlgebraicClosure ℚ} {τ : Field.absoluteGaloisGroup ℚ} {μ : Module.Dual ℤ M}
 
-omit [IsCMField L] in
-/-- A Galois element carrying `ι₀` to `φ`. -/
-private theorem exists_smul_eq (ι₀ φ : L →ₐ[ℚ] AlgebraicClosure ℚ) :
-    ∃ σ : Field.absoluteGaloisGroup ℚ, σ • ι₀ = φ :=
-  MulAction.exists_smul_eq _ ι₀ φ
-
 /-- Auxiliary construction for `lift`: the vector of `ℤ[E]` attached to `m : M` by a functional
 `μ`, whose coefficient at `σ • ι₀` is `μ(σ⁻¹ m)` for a choice of such `σ`. -/
 private noncomputable def liftAux (ι₀ : L →ₐ[ℚ] AlgebraicClosure ℚ) (μ : Module.Dual ℤ M) :
     M →ₗ[ℤ] ℤ[L →ₐ[ℚ] AlgebraicClosure ℚ] :=
   (coeffLinearEquiv ℤ).symm.toLinearMap ∘ₗ
     (Finsupp.linearEquivFunOnFinite ℤ ℤ _).symm.toLinearMap ∘ₗ
-      LinearMap.pi fun φ ↦ μ ∘ₗ ρ (exists_smul_eq ι₀ φ).choose⁻¹
+      LinearMap.pi fun φ ↦
+        μ ∘ₗ ρ (MulAction.exists_smul_eq (Field.absoluteGaloisGroup ℚ) ι₀ φ).choose⁻¹
+
+omit [IsCMField L] in
+/-- The coefficient of `liftAux` at `φ`, in terms of the chosen element carrying `ι₀` to `φ`. -/
+private theorem liftAux_coeff (ι₀ : L →ₐ[ℚ] AlgebraicClosure ℚ) (μ : Module.Dual ℤ M) (m : M)
+    (φ : L →ₐ[ℚ] AlgebraicClosure ℚ) :
+    (liftAux ρ ι₀ μ m).coeff φ =
+      μ (ρ (MulAction.exists_smul_eq (Field.absoluteGaloisGroup ℚ) ι₀ φ).choose⁻¹ m) := by
+  simp [liftAux]
 
 omit [IsCMField L] in
 /-- If `μ` is fixed by the stabilizer of `ι₀`, the coefficient of `liftAux` at `σ • ι₀` is
@@ -344,13 +326,11 @@ omit [IsCMField L] in
 private theorem coeff_liftAux (hstab : ∀ σ, σ • ι₀ = ι₀ → ρ.dual σ μ = μ)
     (σ : Field.absoluteGaloisGroup ℚ) (m : M) :
     (liftAux ρ ι₀ μ m).coeff (σ • ι₀) = μ (ρ σ⁻¹ m) := by
-  set s := (exists_smul_eq ι₀ (σ • ι₀)).choose
-  have hs : (σ⁻¹ * s) • ι₀ = ι₀ := by
-    rw [mul_smul, (exists_smul_eq ι₀ (σ • ι₀)).choose_spec, inv_smul_smul]
-  have h := LinearMap.congr_fun (hstab _ hs) (ρ σ⁻¹ m)
-  simp only [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-    mul_inv_rev, inv_inv, ← mul_apply_eq_comp, ← map_mul] at h
-  simpa [liftAux] using h
+  have hs := (MulAction.exists_smul_eq (Field.absoluteGaloisGroup ℚ) ι₀ (σ • ι₀)).choose_spec
+  have h := LinearMap.congr_fun (hstab (σ⁻¹ * _) (by rw [mul_smul, hs, inv_smul_smul])) (ρ σ⁻¹ m)
+  simp only [Representation.dual_apply_apply, mul_inv_rev, inv_inv, ← mul_apply_eq_comp,
+    ← map_mul, mul_inv_cancel_right] at h
+  rw [liftAux_coeff, h]
 
 omit [IsCMField L] in
 /-- `liftAux` is equivariant. -/
@@ -358,9 +338,8 @@ private theorem liftAux_apply (hstab : ∀ σ, σ • ι₀ = ι₀ → ρ.dual 
     (g : Field.absoluteGaloisGroup ℚ) (m : M) :
     liftAux ρ ι₀ μ (ρ g m) = Representation.ofMulAction ℤ _ _ g (liftAux ρ ι₀ μ m) := by
   ext φ
-  obtain ⟨σ, rfl⟩ := exists_smul_eq ι₀ φ
-  rw [Representation.coeff_ofMulAction, smul_smul, coeff_liftAux ρ hstab,
-    coeff_liftAux ρ hstab, mul_inv_rev, inv_inv, map_mul, mul_apply_eq_comp]
+  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_eq (Field.absoluteGaloisGroup ℚ) ι₀ φ
+  simp [Representation.coeff_ofMulAction, smul_smul, coeff_liftAux ρ hstab]
 
 /-- Under the Serre relation, `liftAux` takes values in the Serre character lattice: the pair of
 embeddings `σ • ι₀` and `σ • τ • ι₀` contributes `(μ + τ μ)(σ⁻¹ m)`, which the relation makes
@@ -370,13 +349,10 @@ private theorem liftAux_mem (hτ : τ • ι₀ = conjEmbedding L ι₀)
     (hrel : ∀ σ, ρ.dual σ (μ + ρ.dual τ μ) = μ + ρ.dual τ μ) (m : M) :
     liftAux ρ ι₀ μ m ∈ characterSubrep L := by
   refine ⟨(μ + ρ.dual τ μ) m, fun φ ↦ ?_⟩
-  obtain ⟨σ, rfl⟩ := exists_smul_eq ι₀ φ
+  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_eq (Field.absoluteGaloisGroup ℚ) ι₀ φ
   have h := LinearMap.congr_fun (hrel σ) m
-  simp only [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-    LinearMap.add_apply] at h
-  rw [conjEmbedding_smul, ← hτ, smul_smul, coeff_liftAux ρ hstab, coeff_liftAux ρ hstab,
-    mul_inv_rev, map_mul, mul_apply_eq_comp, h, LinearMap.add_apply, Representation.dual_apply,
-    Module.Dual.transpose_apply, LinearMap.comp_apply]
+  simp only [Representation.dual_apply_apply, LinearMap.add_apply] at h ⊢
+  simpa [← hτ, smul_smul, coeff_liftAux ρ hstab] using h
 
 variable (ι₀ τ μ) in
 /-- **The map to the Serre character lattice** attached to a functional `μ` on an integral
@@ -415,20 +391,8 @@ theorem eq_lift (f : ρ.IntertwiningMap (characterSubrep L).toRepresentation)
     f = lift ρ ι₀ τ μ hτ hstab hrel := by
   refine Representation.IntertwiningMap.ext (LinearMap.ext fun m ↦ Subtype.ext ?_)
   ext φ
-  obtain ⟨σ, rfl⟩ := exists_smul_eq ι₀ φ
-  have h := Representation.IntertwiningMap.isIntertwining _ _ f σ⁻¹ m
-  simp only [Representation.IntertwiningMap.toLinearMap_apply]
-  rw [coeff_lift, ← hf, LinearMap.comp_apply, universalCocharacter_apply,
-    Representation.IntertwiningMap.toLinearMap_apply, h, coeff_toRepresentation_apply, inv_inv]
-
-/-- Precomposition with an equivariant map commutes with the contragredient actions. -/
-private theorem dual_comp (f : ρ.IntertwiningMap (characterSubrep L).toRepresentation)
-    (σ : Field.absoluteGaloisGroup ℚ) (ν : Module.Dual ℤ (characterSubrep L).toSubmodule) :
-    ρ.dual σ (ν ∘ₗ f.toLinearMap) =
-      (characterSubrep L).toRepresentation.dual σ ν ∘ₗ f.toLinearMap := by
-  ext m
-  simp only [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-    Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.isIntertwining]
+  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_eq (Field.absoluteGaloisGroup ℚ) ι₀ φ
+  simp [coeff_lift, ← hf, Representation.IntertwiningMap.isIntertwining]
 
 /-- **The universal property, necessity.** The composite of the universal cocharacter with an
 equivariant map is fixed by the stabilizer of `ι₀`. -/
@@ -437,7 +401,10 @@ theorem dual_universalCocharacter_comp_of_smul_eq
     {σ : Field.absoluteGaloisGroup ℚ} (hσ : σ • ι₀ = ι₀) :
     ρ.dual σ (universalCocharacter L ι₀ ∘ₗ f.toLinearMap) =
       universalCocharacter L ι₀ ∘ₗ f.toLinearMap := by
-  rw [dual_comp, dual_universalCocharacter_of_smul_eq hσ]
+  have h := (Representation.IsIntertwiningMap.dualMap ⟨f.isIntertwining⟩).isIntertwining σ
+    (universalCocharacter L ι₀)
+  simp only [LinearMap.dualMap_apply', dual_universalCocharacter_of_smul_eq hσ] at h
+  exact h.symm
 
 /-- **The universal property, necessity.** The composite of the universal cocharacter with an
 equivariant map satisfies the Serre relation. -/
@@ -448,8 +415,9 @@ theorem dual_universalCocharacter_comp_add_dual
         ρ.dual τ (universalCocharacter L ι₀ ∘ₗ f.toLinearMap)) =
       universalCocharacter L ι₀ ∘ₗ f.toLinearMap +
         ρ.dual τ (universalCocharacter L ι₀ ∘ₗ f.toLinearMap) := by
-  rw [dual_comp, ← LinearMap.add_comp, universalCocharacter_add_dual_eq_weight hτ, dual_comp,
-    dual_weight]
+  have h := (Representation.IsIntertwiningMap.dualMap ⟨f.isIntertwining⟩).isIntertwining
+  simp only [LinearMap.dualMap_apply'] at h
+  rw [← h, ← LinearMap.add_comp, universalCocharacter_add_dual_eq_weight hτ, ← h, dual_weight]
 
 end lift
 

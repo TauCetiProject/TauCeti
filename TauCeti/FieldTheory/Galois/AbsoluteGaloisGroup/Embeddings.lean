@@ -23,7 +23,8 @@ transitive, and when `L` is finite over `k` the stabilizer of an embedding `φ`,
 
 ## Main results
 
-* `TauCeti.instMulActionAbsoluteGaloisGroupAlgHom`: the postcomposition action.
+* `TauCeti.instMulActionAbsoluteGaloisGroupAlgHom`: the postcomposition action, computed by
+  `Field.absoluteGaloisGroup.smul_algHom_apply`.
 * `Field.absoluteGaloisGroup.smul_algHom_comp`: it commutes with precomposition.
 * `AlgHom.isOpen_stabilizer_absoluteGaloisGroup`: stabilizers of embeddings of a finite extension
   are open.
@@ -35,14 +36,22 @@ namespace TauCeti
 
 variable {k : Type*} [Field k]
 
-/-- Bridge the postcomposition action on embeddings across the opaque definition of
-`Field.absoluteGaloisGroup`. -/
+-- `Field.absoluteGaloisGroup k` is by definition `AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k`,
+-- so `AlgEquiv.mulActionAlgHom` is reused through that definitional equality. The lemmas below
+-- about this action, and the transitivity instance, rely on it as well.
+/-- `Gal(k^al/k)` acts on the embeddings `A →ₐ[k] k^al` by postcomposition, `σ • φ = σ ∘ φ`. -/
 noncomputable abbrev instMulActionAbsoluteGaloisGroupAlgHom (A : Type*) [Semiring A]
-    [Algebra k A] : MulAction (Field.absoluteGaloisGroup k) (A →ₐ[k] AlgebraicClosure k) := by
-  unfold Field.absoluteGaloisGroup
-  exact AlgEquiv.mulActionAlgHom
+    [Algebra k A] : MulAction (Field.absoluteGaloisGroup k) (A →ₐ[k] AlgebraicClosure k) :=
+  inferInstanceAs (MulAction (AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k) _)
 
 attribute [instance] instMulActionAbsoluteGaloisGroupAlgHom
+
+/-- The action is postcomposition: `(σ • φ) x = σ (φ x)`. -/
+@[simp]
+theorem _root_.Field.absoluteGaloisGroup.smul_algHom_apply {A : Type*} [Semiring A]
+    [Algebra k A] (σ : Field.absoluteGaloisGroup k) (φ : A →ₐ[k] AlgebraicClosure k) (x : A) :
+    (σ • φ) x = DFunLike.coe (F := AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k) σ (φ x) :=
+  (rfl)
 
 /-- The action by postcomposition commutes with precomposition. -/
 theorem _root_.Field.absoluteGaloisGroup.smul_algHom_comp {A B : Type*} [Semiring A] [Algebra k A]
