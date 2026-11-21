@@ -55,8 +55,6 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
 * `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
-* `ContDiff.locallyLipschitz_neg_gradient`: the negative gradient field of a `C²` function is
-  locally Lipschitz.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
 * `ContDiffAt.hasFDerivAt_neg_gradient`: the derivative of `-∇ f` is the negative Hessian
@@ -264,11 +262,6 @@ open TauCeti
 theorem contDiff_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hmn : m + 2 ≤ n) :
     ContDiff ℝ m (hessianOperator f) :=
   contDiff_iff_contDiffAt.2 fun x ↦ (hf.contDiffAt (x := x)).contDiffAt_hessianOperator hmn
-
-/-- For a `C²` function, the negative gradient field `-∇f` is `C¹`, hence locally Lipschitz. -/
-theorem locallyLipschitz_neg_gradient {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hn : 2 ≤ n) :
-    LocallyLipschitz (-∇ f) :=
-  (hf.gradient_right (m := 1) (by rwa [one_add_one_eq_two])).neg.locallyLipschitz
 
 end ContDiff
 
