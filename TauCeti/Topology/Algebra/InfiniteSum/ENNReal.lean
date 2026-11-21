@@ -36,6 +36,7 @@ product type of the products of terms (`ENNReal.prod_tsum`).
 
 public section
 
+open Filter
 open scoped ENNReal
 
 /-- Applying `ENNReal.toReal` termwise preserves a series with finite sum. -/
@@ -44,6 +45,19 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
   have hfin : ∑' i, f i ≠ ∞ := by rwa [h.tsum_eq]
   simpa only [← ENNReal.tsum_toReal_eq (_root_.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
     using ENNReal.hasSum_toReal hfin
+
+/-- A series of finite extended nonnegative reals has finite sum if it is eventually
+bounded by a summable sequence of nonnegative real numbers. -/
+theorem ENNReal.tsum_lt_top_of_eventually_le_ofReal {f : ℕ → ℝ≥0∞} {b : ℕ → ℝ}
+    (hf : ∀ n, f n ≠ ∞) (hb₀ : ∀ n, 0 ≤ b n) (hb : Summable b)
+    (h : ∀ᶠ n in atTop, f n ≤ ENNReal.ofReal (b n)) : (∑' n, f n) < ∞ := by
+  obtain ⟨N, hN⟩ := eventually_atTop.1 h
+  have hs : Summable (fun n ↦ (f n).toReal) := (summable_nat_add_iff N).1 <|
+    Summable.of_nonneg_of_le (fun _ ↦ ENNReal.toReal_nonneg) (fun n ↦ by
+      simpa only [ENNReal.toReal_ofReal (hb₀ _)] using
+        ENNReal.toReal_mono ENNReal.ofReal_ne_top (hN (n + N) (Nat.le_add_left N n)))
+      ((summable_nat_add_iff N).2 hb)
+  simpa only [ENNReal.ofReal_toReal (hf _)] using hs.tsum_ofReal_lt_top
 
 /-- Summing the indicator of a set with value one counts its elements. -/
 theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
