@@ -59,8 +59,8 @@ private lemma collarModel_coordinateChange_eq_extChartAt {n : ℕ}
 
 private lemma modelProd_exists_fiber {E : Type*}
     (p : E × EuclideanSpace ℝ (Fin 1)) :
-    (∃ y : ModelProd E (EuclideanHalfSpace 1), y.1 = p.1 ∧ y.2.1 = p.2) ↔
-      ∃ y : EuclideanHalfSpace 1, y.1 = p.2 := by
+    (∃ y : ModelProd E (EuclideanHalfSpace 1), y.1 = p.1 ∧ y.2.val = p.2) ↔
+      ∃ y : EuclideanHalfSpace 1, y.val = p.2 := by
   constructor
   · rintro ⟨y, -, hy⟩
     exact ⟨y.2, hy⟩
@@ -75,8 +75,8 @@ private lemma collarTransition_coordinateDomain_iff {n : ℕ} {M : Type*} [Topol
             (collarChart e).symm
               (p.1, (modelWithCornersEuclideanHalfSpace 1).symm p.2) ∈ e'.source) ∧
           ∃ y : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1),
-            y.1 = p.1 ∧ y.2.1 = p.2) ↔
-        (∃ y : EuclideanHalfSpace 1, y.1 = p.2) ∧
+            y.1 = p.1 ∧ y.2.val = p.2) ↔
+        (∃ y : EuclideanHalfSpace 1, y.val = p.2) ∧
           EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n
             (p.1, (modelWithCornersEuclideanHalfSpace 1).symm p.2) ∈ e.target ∧
           e.symm (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n

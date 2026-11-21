@@ -55,9 +55,10 @@ strict isomorphism `FormalGroup.logIso` from `Ê` to the additive formal group l
   `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. Division
   is the totalized division of a field, so this is an identity for every `(q, w)`, including
   `w = 0`; for `w ≠ 0` it is the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
-* `WeierstrassCurve.inv_mul_derivation_div_subst_formalW`: over a domain with `2 ≠ 0`, the same
-  identity with a series parameter `q` (totalized division, so also for `q = 0`), read in a fraction
-  field of the series ring.
+* `WeierstrassCurve.inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero` and
+  `WeierstrassCurve.inv_mul_derivation_div_subst_formalW`: the same identity with a series parameter
+  `q` (totalized division, so also for `q = 0`) under `-2 + a₁q + a₃w(q) ≠ 0`, and in particular
+  over a ring with `2 ≠ 0` in a fraction field of the series ring.
 * `WeierstrassCurve.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom`: the
   invariant differential of `Ê` times the denominator is `1`.
 * `WeierstrassCurve.subst_pderiv_formalGroup`: `F_X(0, T)` is the denominator.
@@ -241,15 +242,19 @@ variable {σ KK : Type*} [Field KK] [Algebra R KK] [Algebra (MvPowerSeries σ R)
   [IsScalarTower R (MvPowerSeries σ R) KK]
 
 omit [Algebra R KK] [IsScalarTower R (MvPowerSeries σ R) KK] in
-/-- The denominator at a parameter `q` has constant coefficient `1`, so it does not vanish. -/
-private theorem algebraMap_subst_formalInvariantDifferentialDenom_ne_zero [IsDomain R]
-    [IsFractionRing (MvPowerSeries σ R) KK] {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
+/-- The denominator at a parameter `q` has constant coefficient `1`, so it is a unit and its image
+in `KK` does not vanish. -/
+private theorem algebraMap_subst_formalInvariantDifferentialDenom_ne_zero
+    {q : MvPowerSeries σ R} (hq : constantCoeff q = 0) :
     algebraMap (MvPowerSeries σ R) KK
       (PowerSeries.subst q W.formalInvariantDifferentialDenom) ≠ 0 := by
-  refine (map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R) KK)).2 fun h ↦ ?_
-  have := congrArg constantCoeff h
-  rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero hq] at this
-  simp at this
+  have hmul : PowerSeries.subst q W.formalInvariantDifferentialDenom *
+      PowerSeries.subst q (PowerSeries.invOfUnit W.formalInvariantDifferentialDenom 1) = 1 := by
+    rw [← PowerSeries.subst_mul (.of_constantCoeff_zero hq),
+      PowerSeries.mul_invOfUnit _ _ W.constantCoeff_formalInvariantDifferentialDenom,
+      ← PowerSeries.coe_substAlgHom (.of_constantCoeff_zero hq), map_one]
+  exact left_ne_zero_of_mul_eq_one
+    (by simpa only [map_mul, map_one] using congrArg (algebraMap (MvPowerSeries σ R) KK) hmul)
 
 /-- The denominator at a parameter `q`, written out in `KK`. -/
 private theorem algebraMap_subst_formalInvariantDifferentialDenom {q : MvPowerSeries σ R}
@@ -291,6 +296,30 @@ private theorem algebraMap_subst_formalW_eq_wEquationRHS {q : MvPowerSeries σ R
   rw [← algebraMap_wEquationRHS,
     ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
 
+/-- **The invariant differential at a point with a series parameter** under explicit non-vanishing
+of `-2 + a₁q + a₃w(q)` (covering characteristic `2` as well). Put `(x, y) = (q / w(q), -1 / w(q))`
+in `KK` with totalized division; every `R`-derivation `D : Derivation R KK M` satisfies
+`(2y + a₁x + a₃)⁻¹ • D x = G(q)⁻¹ • D q`, where `G` is `formalInvariantDifferentialDenom`. -/
+theorem inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero
+    {M : Type*} [AddCommGroup M] [Module R M] [Module KK M]
+    (D : Derivation R KK M) {q : MvPowerSeries σ R} (hq : constantCoeff q = 0)
+    (hu : -2 + algebraMap R KK W.a₁ * algebraMap (MvPowerSeries σ R) KK q +
+      algebraMap R KK W.a₃ *
+        algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0) :
+    ((W⁄KK).toAffine.polynomialY.evalEval
+        (algebraMap (MvPowerSeries σ R) KK q /
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)))
+        (-1 / algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))))⁻¹ •
+        D (algebraMap (MvPowerSeries σ R) KK q /
+          algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W))) =
+      (algebraMap (MvPowerSeries σ R) KK
+        (PowerSeries.subst q W.formalInvariantDifferentialDenom))⁻¹ •
+        D (algebraMap (MvPowerSeries σ R) KK q) := by
+  have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
+  rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
+  exact W.inv_evalEval_polynomialY_smul_derivation_div D
+    (W.algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 hu
+
 /-- **The invariant differential at a point with a series parameter.** Over a ring `R` in which
 `2 ≠ 0`, put `(x, y) = (q / w(q), -1 / w(q))` for the parameter `q`, with totalized division
 (this is an affine point exactly when `q ≠ 0`; the identity also holds for `q = 0`). Every
@@ -308,16 +337,9 @@ theorem inv_mul_derivation_div_subst_formalW [IsFractionRing (MvPowerSeries σ R
       (algebraMap (MvPowerSeries σ R) KK
         (PowerSeries.subst q W.formalInvariantDifferentialDenom))⁻¹ *
         D (algebraMap (MvPowerSeries σ R) KK q) := by
-  -- `R` embeds in the fraction field `KK` of its series ring, hence is a domain
-  have hinj : Function.Injective (algebraMap R KK) := by
-    rw [IsScalarTower.algebraMap_eq R (MvPowerSeries σ R) KK]
-    exact (IsFractionRing.injective (MvPowerSeries σ R) KK).comp MvPowerSeries.C_injective
-  have : IsDomain R := hinj.isDomain _
-  have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
-  rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
   simpa only [smul_eq_mul] using
-    W.inv_evalEval_polynomialY_smul_derivation_div D
-    (W.algebraMap_subst_formalW_eq_wEquationRHS hq) hG0 (W.neg_two_add_ne_zero h2 hq)
+    W.inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero D hq
+      (W.neg_two_add_ne_zero h2 hq)
 
 end SeriesParameter
 
@@ -334,6 +356,13 @@ private abbrev UnivSeries := MvPowerSeries (Fin 2) (MvPolynomial Coeff ℤ)
 /-- The fraction field of `UnivSeries`. -/
 private abbrev UnivField := FractionRing UnivSeries
 
+/-- The curve on which the points with series parameters live is the base change of the universal
+curve to `UnivField`. -/
+private theorem fracCurve_eq_baseChange :
+    fracCurve Universal.curve (Fin 2) UnivField = Universal.curve⁄UnivField := by
+  rw [fracCurve_def, ← IsScalarTower.algebraMap_eq]
+  rfl
+
 /-- The point with series parameter `q` is the affine point `(q / w(q), -1 / w(q))`. -/
 private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) UnivField).Δ ≠ 0)
     {q : UnivSeries} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
@@ -348,7 +377,7 @@ private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) Univ
         algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve)))
       (-1 / algebraMap UnivSeries UnivField (PowerSeries.subst q (formalW Universal.curve))) := by
     have hΔ' := hΔ
-    rw [fracCurve_eq_map] at hΔ' ⊢
+    rw [fracCurve_eq_baseChange] at hΔ' ⊢
     refine chord_point_nonsingular _ ?_
       (algebraMap_subst_formalW_ne_zero Universal.curve hq hq0) hΔ'
     simpa [wEquationRHS_def, WeierstrassCurve.baseChange] using
@@ -414,7 +443,7 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
   generalize Universal.curve.thetaPoint hΔ hFc hF0 = S at hSx hSy e
   -- move them to `Universal.curve⁄UnivField`, the curve the derivation lemmas are stated on
   revert P Q S
-  rw [fracCurve_eq_map, ← WeierstrassCurve.baseChange]
+  rw [fracCurve_eq_baseChange]
   intro P hPx hPy Q hQx hQy S hSx hSy e
   -- additivity of `dx / (2y + a₁x + a₃)` along `P + Q = S`
   have key := Affine.Point.inv_smul_derivation_xCoord_add D

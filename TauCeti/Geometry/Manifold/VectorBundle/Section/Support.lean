@@ -24,6 +24,14 @@ scalar function localizes even a section without compact support, and a cutoff e
 on the support acts as the identity. These operations provide the support stages and
 localizations used in test sections and their inductive-limit topologies.
 
+For fields of continuous linear maps `η : ∀ x, V x →L[𝕜] G`,
+`ContMDiffSection.tsupport_clm_apply_subset` bounds the pairing support by the section support.
+`ContMDiffSection.continuousOn_clm_apply` gives continuity of the pairing on a set `U`,
+and `ContMDiffSection.continuous_clm_apply_of_tsupport_subset` gives global continuity
+when the section is supported in an open `U`. Continuity of the field on `U` means
+continuity of total-space evaluation `p ↦ η p.proj p.snd` on `(π F V) ⁻¹' U`.
+These lemmas allow arbitrary topological module targets `G`.
+
 The smoothness of multiplication is supplied by Mathlib's `ContMDiff.smul_section`.
 
 Over a base without isolated points, two sections that agree off a point are equal
@@ -93,6 +101,38 @@ theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed
   exact closure_minimal (fun x hx => by by_contra hxK; exact hx (h x hxK)) hK
 
 end Support
+
+section Pairing
+
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  {G : Type*} [TopologicalSpace G] [AddCommMonoid G] [Module 𝕜 G]
+
+/-- Fibrewise continuous linear map evaluation does not enlarge the support of a
+`C^n` section. -/
+theorem tsupport_clm_apply_subset (s : Cₛ^n⟮I; F, V⟯) (η : ∀ x, V x →L[𝕜] G) :
+    _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
+  apply closure_minimal _ s.isClosed_tsupport
+  exact Function.support_subset_iff'.2 fun x hx ↦ by
+    simp [s.eq_zero_of_notMem_tsupport hx]
+
+/-- A field of continuous linear maps evaluates continuously on a `C^n` section on its
+continuity domain. -/
+theorem continuousOn_clm_apply (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M}
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U)) :
+    ContinuousOn (fun x ↦ η x (s x)) U :=
+  hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
+
+/-- Evaluating a field of continuous linear maps on a `C^n` section supported in an open
+continuity domain gives a continuous `G`-valued function on the whole base. -/
+theorem continuous_clm_apply_of_tsupport_subset (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M} (hU : IsOpen U)
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
+    (hsU : s.tsupport ⊆ U) : Continuous (fun x ↦ η x (s x)) := by
+  exact (s.continuousOn_clm_apply hη).continuous_of_tsupport_subset hU
+    ((s.tsupport_clm_apply_subset η).trans hsU)
+
+end Pairing
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
@@ -259,18 +299,22 @@ theorem tsupport_smul_function_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I;
     simp [s.eq_zero_of_notMem_tsupport hs]
   · simp [_root_.image_eq_zero_of_notMem_tsupport hf]
 
+/-- Multiplication by a smooth scalar function does not enlarge the support of a section. -/
+theorem tsupport_smul_function_subset_right (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    (f • s).tsupport ⊆ s.tsupport :=
+  (tsupport_smul_function_subset f s).trans inter_subset_right
+
 /-- Smooth multiplication preserves each fixed-support stage. -/
 theorem smul_function_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     {K : Set M} (hs : s ∈ supportedIn I F n V K) :
     f • s ∈ supportedIn I F n V K :=
-  (tsupport_smul_function_subset f s).trans (inter_subset_right.trans hs)
+  (tsupport_smul_function_subset_right f s).trans hs
 
 /-- Smooth multiplication preserves compact support of the section. -/
 theorem smul_function_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     (hs : s ∈ compactlySupported I F n V) :
     f • s ∈ compactlySupported I F n V :=
-  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_function_subset f s).trans
-    inter_subset_right)
+  hs.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_function_subset_right f s)
 
 /-- A compactly supported smooth scalar function localizes any smooth section to compact
 support, even when the original section is not compactly supported. -/

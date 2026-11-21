@@ -146,7 +146,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
     intro AB hAB
     simpa only [isRegularPair_iff, not_forall, not_le, exists_prop] using (hmem hAB).2.2.2
   obtain ⟨AB₀, hAB₀⟩ : I.Nonempty := by
-    rw [nonempty_iff_ne_empty]
+    rw [← ne_empty_iff_nonempty]
     rintro hempty
     rw [hempty, sum_empty] at hbad
     nlinarith [sq_nonneg (Fintype.card V : ℝ)]
@@ -168,7 +168,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
     -- Each witness rectangle carries an `ε²`-fraction of its block.
     have hsize : ∀ AB ∈ I, ε ^ 2 * #((AB.1 ×ˢ AB.2).filter fun p => p.1 ≠ p.2) ≤
         (#((X AB ×ˢ Y AB).filter fun p => p.1 ≠ p.2) : ℝ) := fun AB hAB ↦
-      Finset.sq_mul_card_filter_ne_product_le hε.le (hdisj hAB) (hXsub AB hAB) (hYsub AB hAB)
+      Finset.sq_mul_card_filter_ne_product_le hε.le ((hdisj hAB).mono (hXsub AB hAB) (hYsub AB hAB))
         (hXcard AB hAB) (hYcard AB hAB)
     have hgain := S.energy_increment_of_witnesses (inf_le_left : P ⊓ R ≤ P) I
       (fun AB hAB ↦ ⟨(hmem hAB).1, (hmem hAB).2.1⟩) c X Y hε.le hXsub hYsub

@@ -25,10 +25,11 @@ isomorphic exactly when their encodings are.
 
 On a finite carrier the permutation group is finite and acts continuously, so the graph of
 isomorphism is a finite union of graphs of continuous maps. It is therefore closed, and Borel in
-a countable relational vocabulary. On a countable carrier, in a countable relational vocabulary,
-the graph of isomorphism is analytic: a permutation is a pair of mutually inverse self-maps of
-the carrier, these pairs form a closed subset of a Polish space, and relabelling is jointly
-continuous. Hence the saturation of an analytic set under the logic action is analytic.
+a countable relational vocabulary. On a countable carrier the permutation group is Polish and
+acts continuously, so the saturation of an analytic set under the logic action is analytic, for
+every language, and with countably many relation symbols the orbit relation, hence the graph of
+isomorphism, is analytic. The stabilizer of a configuration is the automorphism group of its
+decoded structure.
 
 A set of configurations is *isomorphism invariant* when it contains every configuration
 isomorphic to one of its members. Equivalently, every permutation of the carrier maps it into
@@ -52,14 +53,18 @@ itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equa
 * `TauCeti.RelationalConfiguration.isClosed_setOf_isoSetoid` and
   `TauCeti.RelationalConfiguration.measurableSet_setOf_isoSetoid` — on a finite carrier the graph
   of isomorphism is closed and Borel;
-* `TauCeti.RelationalConfiguration.analyticSet_setOf_isoSetoid` — on a countable carrier the graph
-  of isomorphism is analytic;
+* `TauCeti.RelationalConfiguration.analyticSet_setOf_orbitRel` and
+  `TauCeti.RelationalConfiguration.analyticSet_setOf_isoSetoid` — on a countable carrier, with
+  countably many relation symbols, the orbit relation of the logic action is analytic for every
+  language, and so is the graph of isomorphism;
 * `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_isInvariantBlock` and
   `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_preimage_image_quotientMk` —
   isomorphism invariance is invariance under the logic action, and is equality with the
   saturation;
 * `TauCeti.RelationalConfiguration.analyticSet_iUnion_smul` — on a countable carrier the
-  saturation of an analytic set under the logic action is analytic.
+  saturation of an analytic set under the logic action is analytic, for every language;
+* `TauCeti.RelationalConfiguration.mem_stabilizer_iff` — the stabilizer of a configuration is the
+  automorphism group of its decoded structure.
 
 ## References
 
@@ -182,43 +187,25 @@ theorem measurableSet_setOf_isoSetoid [∀ n, Countable (L.Relations n)] [Finite
       isoSetoid L V p.1 p.2} :=
   isClosed_setOf_isoSetoid.measurableSet
 
+omit [L.IsRelational] in
+/-- On a countable carrier, in a vocabulary with countably many relation symbols, the orbit
+relation of the logic action is analytic, for every language: the permutation group of the
+discrete carrier is Polish and acts continuously on the Polish coding space
+(`MeasureTheory.analyticSet_setOf_orbitRel`). -/
+theorem analyticSet_setOf_orbitRel [∀ n, Countable (L.Relations n)] [Countable V] :
+    AnalyticSet {p : RelationalConfiguration L V × RelationalConfiguration L V |
+      MulAction.orbitRel (Equiv.Perm V) _ p.1 p.2} := by
+  let _ : TopologicalSpace V := ⊥
+  have : DiscreteTopology V := ⟨rfl⟩
+  exact MeasureTheory.analyticSet_setOf_orbitRel
+
 /-- On a countable carrier, in a countable relational vocabulary, the graph of isomorphism is
 analytic. -/
 theorem analyticSet_setOf_isoSetoid [∀ n, Countable (L.Relations n)] [Countable V] :
     AnalyticSet {p : RelationalConfiguration L V × RelationalConfiguration L V |
       isoSetoid L V p.1 p.2} := by
-  -- With the discrete topology on the countable carrier, `V → V` is Polish. Recording that `V`
-  -- itself is Polish lets instance search find the Polish structure of `V → V`.
-  let _ : TopologicalSpace V := ⊥
-  have : DiscreteTopology V := ⟨rfl⟩
-  have : PolishSpace V := inferInstance
-  have hev (v : V) : Continuous fun q : (V → V) × (V → V) => q.1 (q.2 v) := by
-    have h : Continuous fun r : (V → V) × V => r.1 r.2 :=
-      continuous_prod_of_discrete_right.2 fun w => continuous_apply w
-    exact h.comp (continuous_fst.prodMk ((continuous_apply v).comp continuous_snd))
-  -- The pairs of mutually inverse self-maps of `V`.
-  let S : Set ((V → V) × (V → V)) := {q | (∀ v, q.1 (q.2 v) = v) ∧ ∀ v, q.2 (q.1 v) = v}
-  have hS : IsClosed S := by
-    simp only [S, ofPred_and, ofPred_forall]
-    exact (isClosed_iInter fun v => isClosed_eq (hev v) continuous_const).inter
-      (isClosed_iInter fun v => isClosed_eq ((hev v).comp continuous_swap) continuous_const)
-  -- The graph of isomorphism is the image of `S × univ` under relabelling along the inverse map.
-  have h : {p : RelationalConfiguration L V × RelationalConfiguration L V |
-      isoSetoid L V p.1 p.2} = (fun q => (q.2, q.2.restrict q.1.2)) '' (S ×ˢ univ) := by
-    ext ⟨c, d⟩
-    simp only [mem_ofPred_eq, isoSetoid_iff_exists_perm_smul_eq, mem_image, mem_prod, mem_univ,
-      and_true, Prod.exists, Prod.mk.injEq]
-    constructor
-    · rintro ⟨σ, rfl⟩
-      refine ⟨σ, σ.symm, c, ⟨σ.apply_symm_apply, σ.symm_apply_apply⟩, rfl, ?_⟩
-      rw [perm_smul_def, Equiv.Perm.inv_def]
-    · rintro ⟨f, g, c, ⟨hfg, hgf⟩, rfl, rfl⟩
-      refine ⟨⟨f, g, hgf, hfg⟩, ?_⟩
-      rw [perm_smul_def, Equiv.Perm.inv_def, Equiv.coe_fn_symm_mk]
-  rw [h]
-  exact (hS.prod isClosed_univ).analyticSet.image_of_continuous
-    (continuous_snd.prodMk (continuous_uncurry_restrict.comp
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)))
+  rw [isoSetoid_eq_orbitRel]
+  exact analyticSet_setOf_orbitRel
 
 /-! ### Isomorphism-invariant sets -/
 
@@ -318,11 +305,35 @@ theorem isomorphismInvariant_iUnion {ι : Sort*} {A : ι → Set (RelationalConf
     obtain ⟨i, hi⟩ := mem_iUnion.1 hc
     exact mem_iUnion.2 ⟨i, hA i h hi⟩
 
-/-- On a countable carrier, in a countable relational vocabulary, the saturation of an analytic
-set of configurations under the logic action is analytic. -/
-theorem analyticSet_iUnion_smul [∀ n, Countable (L.Relations n)] [Countable V]
-    (hA : AnalyticSet A) : AnalyticSet (⋃ σ : Equiv.Perm V, σ • A) := by
-  rw [← preimage_image_quotientMk_eq_iUnion_smul]
-  exact analyticSet_setOf_isoSetoid.preimage_image_quotientMk hA
+omit [L.IsRelational] in
+/-- On a countable carrier the saturation of an analytic set of configurations under the logic
+action is analytic, for every language: the permutation group of the discrete carrier is Polish
+and acts continuously (`MeasureTheory.AnalyticSet.iUnion_smul`). -/
+theorem analyticSet_iUnion_smul [Countable V] (hA : AnalyticSet A) :
+    AnalyticSet (⋃ σ : Equiv.Perm V, σ • A) := by
+  let _ : TopologicalSpace V := ⊥
+  have : DiscreteTopology V := ⟨rfl⟩
+  exact hA.iUnion_smul
+
+/-! ### Stabilizers -/
+
+/-- **Stabilizers are automorphism groups**: a permutation fixes a configuration under the logic
+action exactly when it is an automorphism of the decoded structure. -/
+theorem mem_stabilizer_iff (c : RelationalConfiguration L V) (σ : Equiv.Perm V) :
+    σ ∈ MulAction.stabilizer (Equiv.Perm V) c ↔
+      ∀ {l : ℕ} (R : L.Relations l) (v : Fin l → V),
+        @Structure.RelMap L V c.toStructure l R (σ ∘ v) ↔
+          @Structure.RelMap L V c.toStructure l R v := by
+  rw [← inv_mem_iff, MulAction.mem_stabilizer_iff]
+  refine ⟨fun h l R v => ?_, fun h => ext fun a => ?_⟩
+  · rw [toStructure_relMap, toStructure_relMap]
+    conv_rhs => rw [← h]
+    rw [eval_perm_smul, Atom.map_atom]
+    simp [Equiv.Perm.inv_def]
+  · induction a using Atom.induction_atom with
+    | h R x =>
+      rw [eval_perm_smul, Atom.map_atom, Bool.eq_iff_iff, ← toStructure_relMap,
+        ← toStructure_relMap]
+      simpa [Equiv.Perm.inv_def] using h R x
 
 end TauCeti.RelationalConfiguration

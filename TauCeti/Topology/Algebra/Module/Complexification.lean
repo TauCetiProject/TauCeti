@@ -29,6 +29,8 @@ topology on `ℂ ⊗[ℝ] W` satisfies `IsComplexificationTopology W`
 `ContinuousLinearMap.liftBaseChangeComplex`, and, for a finite-dimensional source with maximal
 totally real image, the continuous complex-linear equivalence
 `ContinuousLinearMap.complexificationEquivOfIsMaximalTotallyReal`.
+The intrinsic `TauCeti.homComplexificationLinearEquiv` compares complexification of real
+continuous Hom with complex Hom between complexifications, without bundle frames or norms.
 
 ## References
 
@@ -292,14 +294,14 @@ namespace ContinuousLinearEquiv
 /-- Complex base change `c ⊗ₜ w ↦ c ⊗ₜ e w` of a continuous `ℝ`-linear equivalence `e : W ≃L[ℝ] W'`,
 as a continuous `ℂ`-linear equivalence `ℂ ⊗[ℝ] W ≃L[ℂ] ℂ ⊗[ℝ] W'`. -/
 def baseChangeComplex (e : W ≃L[ℝ] W') : ℂ ⊗[ℝ] W ≃L[ℂ] ℂ ⊗[ℝ] W' :=
-  equivOfInverse e.toContinuousLinearMap.baseChangeComplex
+  ofContinuousLinearMap e.toContinuousLinearMap.baseChangeComplex
     e.symm.toContinuousLinearMap.baseChangeComplex
-    (fun u ↦ by
-      simpa using DFunLike.congr_fun
-        (e.symm.toContinuousLinearMap.baseChangeComplex_comp e.toContinuousLinearMap).symm u)
-    (fun u ↦ by
+    (ContinuousLinearMap.ext fun u ↦ by
       simpa using DFunLike.congr_fun
         (e.toContinuousLinearMap.baseChangeComplex_comp e.symm.toContinuousLinearMap).symm u)
+    (ContinuousLinearMap.ext fun u ↦ by
+      simpa using DFunLike.congr_fun
+        (e.symm.toContinuousLinearMap.baseChangeComplex_comp e.toContinuousLinearMap).symm u)
 
 @[simp] theorem toContinuousLinearMap_baseChangeComplex (e : W ≃L[ℝ] W') :
     e.baseChangeComplex.toContinuousLinearMap = e.toContinuousLinearMap.baseChangeComplex := (rfl)
@@ -458,3 +460,155 @@ theorem complexificationEquivOfIsMaximalTotallyReal_apply [ContinuousConstSMul �
 end ContinuousLinearMap
 
 end MaximalTotallyReal
+
+namespace TauCeti
+
+section HomComplexification
+
+noncomputable section
+
+open scoped TensorProduct
+variable {W D : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+  [AddCommGroup D] [Module ℝ D] [TopologicalSpace D]
+  [IsTopologicalAddGroup D] [ContinuousSMul ℝ D]
+  [TopologicalSpace (ℂ ⊗[ℝ] W)] [IsComplexificationTopology W]
+  [TopologicalSpace (ℂ ⊗[ℝ] D)] [IsComplexificationTopology D]
+
+private def homComplexificationForward (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D) :=
+  (realPart _ u).baseChangeComplex + Complex.I • (imaginaryPart _ u).baseChangeComplex
+
+private theorem homComplexificationForward_realPart (u : ℂ ⊗[ℝ] (W →L[ℝ] D))
+    (v : ℂ ⊗[ℝ] W) :
+    realPart D (homComplexificationForward u v) =
+      realPart _ u (realPart W v) - imaginaryPart _ u (imaginaryPart W v) := by
+  simp [homComplexificationForward, realPart_smul, sub_eq_add_neg]
+private theorem homComplexificationForward_imaginaryPart (u : ℂ ⊗[ℝ] (W →L[ℝ] D))
+    (v : ℂ ⊗[ℝ] W) :
+    imaginaryPart D (homComplexificationForward u v) =
+      imaginaryPart _ u (realPart W v) + realPart _ u (imaginaryPart W v) := by
+  simp [homComplexificationForward, imaginaryPart_smul, add_comm]
+
+private def homComplexificationRestriction
+    (A : (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) : ℂ ⊗[ℝ] (W →L[ℝ] D) :=
+  1 ⊗ₜ[ℝ] (realPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W)) +
+    Complex.I ⊗ₜ[ℝ]
+      (imaginaryPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W))
+
+/-- The intrinsic scalar-extension comparison on continuous real Hom. It is complex-linear
+on the literal tensor and Hom fibres, with no norms or bundle frames. -/
+def homComplexificationLinearEquiv : (ℂ ⊗[ℝ] (W →L[ℝ] D)) ≃ₗ[ℂ]
+    ((ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) where
+  toFun := homComplexificationForward
+  invFun := homComplexificationRestriction
+  map_add' u v := by
+    ext x
+    apply complexification_ext <;>
+      simp [homComplexificationForward_realPart, homComplexificationForward_imaginaryPart] <;> abel
+  map_smul' c u := by
+    ext v
+    apply complexification_ext <;>
+      simp [homComplexificationForward_realPart, homComplexificationForward_imaginaryPart,
+        realPart_smul, imaginaryPart_smul] <;> module
+  left_inv u := by
+    apply complexification_ext <;> ext v <;>
+      simp [homComplexificationRestriction, homComplexificationForward_realPart,
+        homComplexificationForward_imaginaryPart]
+  right_inv A := by
+    apply DFunLike.ext
+    intro v
+    induction v with
+    | tmul c v =>
+      have ht : c ⊗ₜ[ℝ] v = c • (1 ⊗ₜ[ℝ] v) := by
+        simp only [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+      rw [ht, map_smul, map_smul]
+      congr 1
+      apply complexification_ext <;>
+        simp [homComplexificationRestriction, homComplexificationForward_realPart,
+          homComplexificationForward_imaginaryPart]
+    | add u v hu hv => simp only [map_add, hu, hv]
+
+/-- Application is the sum of the real scalar extension and i times the imaginary one. -/
+theorem homComplexificationLinearEquiv_apply (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    homComplexificationLinearEquiv u =
+      (realPart _ u).baseChangeComplex + Complex.I • (imaginaryPart _ u).baseChangeComplex := by
+  rfl
+
+/-- The inverse is obtained from the real and imaginary parts on included real vectors. -/
+theorem homComplexificationLinearEquiv_symm_apply
+    (A : (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) :
+    homComplexificationLinearEquiv.symm A =
+      1 ⊗ₜ[ℝ] (realPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W)) +
+        Complex.I ⊗ₜ[ℝ]
+          (imaginaryPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W)) := by rfl
+
+/-- Real part of evaluation of the intrinsic Hom comparison. -/
+@[simp] theorem homComplexificationLinearEquiv_apply_realPart
+    (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) (v : ℂ ⊗[ℝ] W) :
+    realPart D (homComplexificationLinearEquiv u v) =
+      realPart _ u (realPart W v) - imaginaryPart _ u (imaginaryPart W v) :=
+  homComplexificationForward_realPart u v
+/-- Imaginary part of evaluation of the intrinsic Hom comparison. -/
+@[simp] theorem homComplexificationLinearEquiv_apply_imaginaryPart
+    (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) (v : ℂ ⊗[ℝ] W) :
+    imaginaryPart D (homComplexificationLinearEquiv u v) =
+      imaginaryPart _ u (realPart W v) + realPart _ u (imaginaryPart W v) :=
+  homComplexificationForward_imaginaryPart u v
+
+/-- Pure tensor evaluation of the intrinsic Hom comparison. -/
+@[simp] theorem homComplexificationLinearEquiv_tmul_apply_tmul
+    (z w : ℂ) (T : W →L[ℝ] D) (v : W) :
+    homComplexificationLinearEquiv (z ⊗ₜ[ℝ] T) (w ⊗ₜ[ℝ] v) = (z*w) ⊗ₜ[ℝ] T v := by
+  apply complexification_ext <;> simp [Complex.mul_re, Complex.mul_im] <;> module
+
+/-- Conjugation commutes with the intrinsic coefficient comparison. -/
+theorem homComplexificationLinearEquiv_conj (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) (v : ℂ ⊗[ℝ] W) :
+    homComplexificationLinearEquiv (tmulConj _ u) (tmulConj _ v) =
+      tmulConj _ (homComplexificationLinearEquiv u v) := by
+  apply complexification_ext <;> simp; abel
+
+/-- The intrinsic comparison is natural under real continuous linear source and target maps. -/
+theorem homComplexificationLinearEquiv_naturality
+    {W' D' : Type*} [AddCommGroup W'] [Module ℝ W'] [TopologicalSpace W']
+    [AddCommGroup D'] [Module ℝ D'] [TopologicalSpace D']
+    [IsTopologicalAddGroup D'] [ContinuousSMul ℝ D']
+    [TopologicalSpace (ℂ ⊗[ℝ] W')] [IsComplexificationTopology W']
+    [TopologicalSpace (ℂ ⊗[ℝ] D')] [IsComplexificationTopology D']
+    [TopologicalSpace (ℂ ⊗[ℝ] (W →L[ℝ] D))]
+    [IsComplexificationTopology (W →L[ℝ] D)]
+    [TopologicalSpace (ℂ ⊗[ℝ] (W' →L[ℝ] D'))]
+    [IsComplexificationTopology (W' →L[ℝ] D')]
+    (U : W' →L[ℝ] W) (S : D →L[ℝ] D') (u : ℂ ⊗[ℝ] (W →L[ℝ] D))
+    (v : ℂ ⊗[ℝ] W') :
+    homComplexificationLinearEquiv
+      ((S.postcomp W').comp (U.precomp D) |>.baseChangeComplex u) v =
+        S.baseChangeComplex (homComplexificationLinearEquiv u (U.baseChangeComplex v)) := by
+  induction u with
+  | tmul z T =>
+    induction v with
+    | tmul w v => simp
+    | add v w hv hw => simp only [map_add, hv, hw]
+  | add u w hu hw => simp only [map_add, add_apply, hu, hw]
+
+open scoped TauCeti.Complexification
+
+/-- The intrinsic Hom comparison intertwines arbitrary real fibre frames with the model
+continuous Hom comparison. -/
+theorem homComplexificationLinearEquiv_in_frames {F G : Type*}
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    [SeminormedAddCommGroup G] [NormedSpace ℝ G]
+    [TopologicalSpace (ℂ ⊗[ℝ] (W →L[ℝ] D))]
+    [IsComplexificationTopology (W →L[ℝ] D)]
+    (e : W ≃L[ℝ] F) (d : D ≃L[ℝ] G)
+    (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (e.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification F)).arrowCongr
+      (d.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification G))
+        (homComplexificationLinearEquiv u) =
+      Complexification.continuousLinearMapEquiv F G
+        (((e.arrowCongr d).baseChangeComplex.trans
+          (tensorContinuousLinearEquivComplexification (F →L[ℝ] G))) u) := by
+  ext v <;> simp [sub_eq_add_neg]
+
+end
+end HomComplexification
+end TauCeti

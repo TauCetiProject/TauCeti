@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
