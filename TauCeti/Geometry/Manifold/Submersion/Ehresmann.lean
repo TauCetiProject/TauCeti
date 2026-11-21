@@ -25,8 +25,8 @@ tangent vector of `M` uniquely into a vertical and a horizontal part: these are 
 The derivative of `f` is injective on the horizontal space, which has the dimension of `N`, so it
 maps the horizontal space at `x` isomorphically onto the tangent space at `f x`
 (`TauCeti.IsEhresmannConnection.mfderivEquiv`). In particular `f` has surjective derivative at every
-point (`TauCeti.IsEhresmannConnection.surjective_mfderiv`): only submersions carry Ehresmann
-connections. The inverse isomorphism is the **horizontal lift**
+point (`TauCeti.IsEhresmannConnection.surjective_mfderiv`): only maps with surjective derivative
+carry Ehresmann connections. The inverse isomorphism is the **horizontal lift**
 (`TauCeti.IsEhresmannConnection.horizontalLift`): the unique horizontal vector at `x` with given
 image under the derivative (`TauCeti.IsEhresmannConnection.eq_horizontalLift_iff`). The horizontal
 part of a tangent vector `v` is the horizontal lift of its image `df v`
