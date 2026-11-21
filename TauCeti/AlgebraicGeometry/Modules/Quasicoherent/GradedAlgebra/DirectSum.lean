@@ -96,7 +96,9 @@ private theorem toQuasicoherentAlgebra_map_hom {A B : GradedQuasicoherentAlgebra
       eqToHom (toQuasicoherentAlgebra_obj_obj A) ≫
         (GradedObject.total ℕ X.Modules).mapCommMon.map f.hom ≫
           eqToHom (toQuasicoherentAlgebra_obj_obj B).symm :=
-  ObjectProperty.lift_map_hom_of_eq toQuasicoherentAlgebra.eq_1 f
+  ObjectProperty.lift_map_hom_of_eq
+    (F := (isGradedQuasicoherentAlgebra X).ι ⋙ (GradedObject.total ℕ X.Modules).mapCommMon)
+    (by rw [toQuasicoherentAlgebra]; exact ObjectProperty.lift_comp_ι ..) f
     (toQuasicoherentAlgebra_obj_obj A) (toQuasicoherentAlgebra_obj_obj B)
 
 private theorem toQuasicoherentAlgebra_map_hom_hom_hom
