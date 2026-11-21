@@ -38,6 +38,12 @@ realizing it, are read off a decomposition.
   and the admissibility predicate `NikulinGenerator.IsAdmissible`.
 * `TauCeti.FiniteQuadraticModule.orthogonalSumNikulinGenerators`: the orthogonal sum of the modules
   of a list of labels.
+* `TauCeti.FiniteQuadraticModule.orthogonalSumNikulinGeneratorsAppendIsometry`,
+  `TauCeti.FiniteQuadraticModule.orthogonalSumNikulinGeneratorsOfFnIsometry` and
+  `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry`:
+  the isometries splitting the orthogonal sum over a concatenation, identifying the sum over
+  `List.ofFn f` with the orthogonal sum `pi`, and identifying the `p`-primary component of the sum
+  with the sum of the generators of prime `p`.
 * `TauCeti.FiniteQuadraticModule.NikulinDecomposition`: a list of admissible labels together with
   an isometry onto the orthogonal sum of their modules.
 * `TauCeti.FiniteQuadraticModule.NikulinDecomposition.primaryComponent`: the decomposition of the
@@ -310,37 +316,60 @@ theorem gaussSign_orthogonalSumNikulinGenerators {gs : List NikulinGenerator}
       gaussSign_prod h.1 ((isNondegenerate_orthogonalSumNikulinGenerators_iff gs).mpr h.2),
       ih h.2, List.map_cons, List.sum_cons]
 
-/-- The orthogonal sum over a concatenation of lists is the orthogonal product of the two
-orthogonal sums. -/
-theorem nonempty_isometry_orthogonalSumNikulinGenerators_append (gs hs : List NikulinGenerator) :
-    Nonempty (Isometry (orthogonalSumNikulinGenerators (gs ++ hs))
-      ((orthogonalSumNikulinGenerators gs).prod (orthogonalSumNikulinGenerators hs))) := by
-  induction gs with
-  | nil =>
-    exact ⟨(QuadraticMap.IsometryEquiv.uniqueProd (orthogonalSumNikulinGenerators []).quadratic
-      _).symm⟩
-  | cons g gs ih =>
-    obtain ⟨e⟩ := ih
-    rw [List.cons_append, orthogonalSumNikulinGenerators_cons,
-      orthogonalSumNikulinGenerators_cons]
-    exact ⟨((QuadraticMap.IsometryEquiv.refl _).prod e).trans
-      (QuadraticMap.IsometryEquiv.prodAssoc _ _ _).symm⟩
+/-- **The orthogonal sum over a concatenation of lists** is the orthogonal product of the two
+orthogonal sums, by reassociating the summands of the first list. -/
+noncomputable def orthogonalSumNikulinGeneratorsAppendIsometry :
+    (gs hs : List NikulinGenerator) → Isometry (orthogonalSumNikulinGenerators (gs ++ hs))
+      ((orthogonalSumNikulinGenerators gs).prod (orthogonalSumNikulinGenerators hs))
+  | [], _ =>
+    (QuadraticMap.IsometryEquiv.uniqueProd (orthogonalSumNikulinGenerators []).quadratic _).symm
+  | _ :: gs, hs =>
+    ((QuadraticMap.IsometryEquiv.refl _).prod
+      (orthogonalSumNikulinGeneratorsAppendIsometry gs hs)).trans
+        (QuadraticMap.IsometryEquiv.prodAssoc _ _ _).symm
 
-/-- The orthogonal sum of the labels `f 0, …, f (n - 1)` is the orthogonal sum `pi` of the family
-of their modules. -/
-theorem nonempty_isometry_orthogonalSumNikulinGenerators_ofFn {n : ℕ}
-    (f : Fin n → NikulinGenerator) :
-    Nonempty (Isometry (orthogonalSumNikulinGenerators (List.ofFn f))
-      (pi fun i ↦ (f i).toFiniteQuadraticModule)) := by
-  induction n with
-  | zero =>
-    rw [List.ofFn_zero]
-    exact ⟨Isometry.ofSubsingleton⟩
-  | succ n ih =>
-    obtain ⟨e⟩ := ih fun i ↦ f i.succ
-    rw [List.ofFn_succ, orthogonalSumNikulinGenerators_cons]
-    exact ⟨((QuadraticMap.IsometryEquiv.refl _).prod e).trans
-      (QuadraticMap.IsometryEquiv.consPi fun i ↦ (f i).toFiniteQuadraticModule.quadratic)⟩
+/-- `orthogonalSumNikulinGeneratorsAppendIsometry` puts an empty first list in front as the zero
+module. Not a simp lemma: simp first rewrites `[] ++ hs` in the type of the isometry. -/
+theorem orthogonalSumNikulinGeneratorsAppendIsometry_nil_apply (hs : List NikulinGenerator)
+    (x : orthogonalSumNikulinGenerators hs) :
+    orthogonalSumNikulinGeneratorsAppendIsometry [] hs x = (default, x) :=
+  QuadraticMap.IsometryEquiv.uniqueProd_symm_apply _ _ x
+
+/-- `orthogonalSumNikulinGeneratorsAppendIsometry` keeps the head summand of the first list in
+front. Not a simp lemma: simp first rewrites `g :: gs ++ hs` in the type of the isometry. -/
+theorem orthogonalSumNikulinGeneratorsAppendIsometry_cons_apply (g : NikulinGenerator)
+    (gs hs : List NikulinGenerator) (x : orthogonalSumNikulinGenerators (g :: gs ++ hs)) :
+    orthogonalSumNikulinGeneratorsAppendIsometry (g :: gs) hs x =
+      ((x.1, (orthogonalSumNikulinGeneratorsAppendIsometry gs hs x.2).1),
+        (orthogonalSumNikulinGeneratorsAppendIsometry gs hs x.2).2) := by
+  -- Unfold the head summand, which `IsometryEquiv.refl` leaves in place.
+  change (QuadraticMap.IsometryEquiv.prodAssoc _ _ _).symm
+    (x.1, orthogonalSumNikulinGeneratorsAppendIsometry gs hs x.2) = _
+  exact QuadraticMap.IsometryEquiv.prodAssoc_symm_apply _ _ _ _
+
+/-- **The orthogonal sum of the labels `f 0, …, f (n - 1)`** is the orthogonal sum `pi` of the
+family of their modules, by moving the head summand into the coordinate `0`. -/
+noncomputable def orthogonalSumNikulinGeneratorsOfFnIsometry :
+    {n : ℕ} → (f : Fin n → NikulinGenerator) →
+      Isometry (orthogonalSumNikulinGenerators (List.ofFn f))
+        (pi fun i ↦ (f i).toFiniteQuadraticModule)
+  | 0, f =>
+    (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators (List.ofFn_zero (f := f)))).trans
+      Isometry.ofSubsingleton
+  | _ + 1, f =>
+    (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators (List.ofFn_succ (f := f)))).trans <|
+      ((QuadraticMap.IsometryEquiv.refl _).prod
+        (orthogonalSumNikulinGeneratorsOfFnIsometry fun i ↦ f i.succ)).trans
+      (QuadraticMap.IsometryEquiv.consPi fun i ↦ (f i).toFiniteQuadraticModule.quadratic)
+
+theorem orthogonalSumNikulinGeneratorsOfFnIsometry_succ {n : ℕ}
+    (f : Fin (n + 1) → NikulinGenerator) :
+    orthogonalSumNikulinGeneratorsOfFnIsometry f =
+      (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators (List.ofFn_succ (f := f)))).trans
+        (((QuadraticMap.IsometryEquiv.refl _).prod
+          (orthogonalSumNikulinGeneratorsOfFnIsometry fun i ↦ f i.succ)).trans
+        (QuadraticMap.IsometryEquiv.consPi fun i ↦ (f i).toFiniteQuadraticModule.quadratic)) :=
+  (rfl)
 
 /-- **The orthogonal sum of generators does not depend on their order.** -/
 theorem nonempty_isometry_orthogonalSumNikulinGenerators_of_perm {gs hs : List NikulinGenerator}
@@ -359,39 +388,77 @@ theorem nonempty_isometry_orthogonalSumNikulinGenerators_of_perm {gs hs : List N
     exact ⟨e₁.trans e₂⟩
 
 /-- **The `p`-primary component of an orthogonal sum of generators** is the orthogonal sum of the
-generators whose prime is `p`. -/
-theorem nonempty_isometry_restrict_primaryComponent_orthogonalSumNikulinGenerators {p : ℕ}
-    (hp : p.Prime) (gs : List NikulinGenerator) :
-    Nonempty (Isometry ((orthogonalSumNikulinGenerators gs).restrict
+generators whose prime is `p`: split the primary component of `g ⊕ S` into those of `g` and of
+`S`, and keep `g` exactly when its prime is `p`. -/
+noncomputable def restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry {p : ℕ}
+    (hp : p.Prime) :
+    (gs : List NikulinGenerator) → Isometry ((orthogonalSumNikulinGenerators gs).restrict
         (AddCommGroup.primaryComponent (orthogonalSumNikulinGenerators gs) p))
-      (orthogonalSumNikulinGenerators (gs.filter fun g ↦ g.prime = p))) := by
-  induction gs with
-  | nil =>
+      (orthogonalSumNikulinGenerators (gs.filter fun g ↦ g.prime = p))
+  | [] =>
     -- The carrier of `A.restrict H` is `↥H`, here a subgroup of `PUnit`.
-    have : Subsingleton ((orthogonalSumNikulinGenerators []).restrict
+    haveI : Subsingleton ((orthogonalSumNikulinGenerators []).restrict
         (AddCommGroup.primaryComponent (orthogonalSumNikulinGenerators []) p)) :=
       inferInstanceAs (Subsingleton (AddCommGroup.primaryComponent PUnit p))
-    rw [List.filter_nil]
-    exact ⟨Isometry.ofSubsingleton⟩
-  | cons g gs ih =>
-    obtain ⟨e⟩ := ih
-    -- Split the primary component of `g ⊕ S` into those of `g` and of `S`.
+    haveI : Subsingleton (orthogonalSumNikulinGenerators ([].filter fun g ↦ g.prime = p)) :=
+      inferInstanceAs (Subsingleton (orthogonalSumNikulinGenerators []))
+    Isometry.ofSubsingleton
+  | g :: gs =>
     let s := restrictPrimaryComponentProdIsometry g.toFiniteQuadraticModule
       (orthogonalSumNikulinGenerators gs) p
-    by_cases hg : g.prime = p
-    · -- The generator is its own `p`-primary component, and it is kept by the filter.
-      rw [List.filter_cons_of_pos (by simpa using hg), orthogonalSumNikulinGenerators_cons]
-      exact ⟨s.trans ((((g.toFiniteQuadraticModule.restrictCongr
-        (g.primaryComponent_toFiniteQuadraticModule_eq_top hg))).trans
-          g.toFiniteQuadraticModule.restrictTopIsometry).prod e)⟩
-    · -- The generator has trivial `p`-primary component, and it is dropped by the filter.
-      rw [List.filter_cons_of_neg (by simpa using hg)]
-      have hbot := g.primaryComponent_toFiniteQuadraticModule_eq_bot hp hg
-      let t := g.toFiniteQuadraticModule.restrictCongr hbot
+    let e := restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp gs
+    if hg : g.prime = p then
+      -- The generator is its own `p`-primary component, and it is kept by the filter.
+      (s.trans (((g.toFiniteQuadraticModule.restrictCongr
+        (g.primaryComponent_toFiniteQuadraticModule_eq_top hg)).trans
+          g.toFiniteQuadraticModule.restrictTopIsometry).prod e)).trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators
+          (List.filter_cons_of_pos (by simpa using hg))).symm)
+    else
+      -- The generator has trivial `p`-primary component, and it is dropped by the filter.
       -- The carrier of `A.restrict H` is `↥H`, so the restriction to `⊥` is trivial.
-      have : Unique (g.toFiniteQuadraticModule.restrict ⊥) :=
+      haveI : Unique (g.toFiniteQuadraticModule.restrict ⊥) :=
         (inferInstance : Unique (⊥ : AddSubgroup g.toFiniteQuadraticModule))
-      exact ⟨(s.trans (t.prod e)).trans (QuadraticMap.IsometryEquiv.uniqueProd _ _)⟩
+      (((s.trans ((g.toFiniteQuadraticModule.restrictCongr
+        (g.primaryComponent_toFiniteQuadraticModule_eq_bot hp hg)).prod e)).trans
+          (QuadraticMap.IsometryEquiv.uniqueProd _ _))).trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators
+          (List.filter_cons_of_neg (by simpa using hg))).symm)
+
+/-- On a generator of prime `p`, `restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry`
+keeps the generator as its own `p`-primary component. -/
+theorem restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry_cons_of_prime_eq {p : ℕ}
+    (hp : p.Prime) {g : NikulinGenerator} (gs : List NikulinGenerator) (hg : g.prime = p) :
+    restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp (g :: gs) =
+      ((restrictPrimaryComponentProdIsometry g.toFiniteQuadraticModule
+        (orthogonalSumNikulinGenerators gs) p).trans
+          (((g.toFiniteQuadraticModule.restrictCongr
+            (g.primaryComponent_toFiniteQuadraticModule_eq_top hg)).trans
+              g.toFiniteQuadraticModule.restrictTopIsometry).prod
+            (restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp gs))).trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators
+          (List.filter_cons_of_pos (by simpa using hg))).symm) := by
+  rw [restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry]
+  exact dite_eq_left_of_eq_true (eq_true hg)
+
+/-- On a generator of another prime,
+`restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry` drops the generator, whose
+`p`-primary component is trivial. -/
+theorem restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry_cons_of_prime_ne {p : ℕ}
+    (hp : p.Prime) {g : NikulinGenerator} (gs : List NikulinGenerator) (hg : g.prime ≠ p) :
+    haveI : Unique (g.toFiniteQuadraticModule.restrict ⊥) :=
+      (inferInstance : Unique (⊥ : AddSubgroup g.toFiniteQuadraticModule))
+    restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp (g :: gs) =
+      (((restrictPrimaryComponentProdIsometry g.toFiniteQuadraticModule
+        (orthogonalSumNikulinGenerators gs) p).trans
+          ((g.toFiniteQuadraticModule.restrictCongr
+            (g.primaryComponent_toFiniteQuadraticModule_eq_bot hp hg)).prod
+            (restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp gs))).trans
+          (QuadraticMap.IsometryEquiv.uniqueProd _ _)).trans
+        (Isometry.ofEq (congrArg orthogonalSumNikulinGenerators
+          (List.filter_cons_of_neg (by simpa using hg))).symm) := by
+  rw [restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry]
+  exact dite_eq_right_of_eq_false (eq_false hg)
 
 /-! ## Generator decompositions -/
 
@@ -443,17 +510,25 @@ theorem map_generators {B : FiniteQuadraticModule.{v}} (D : NikulinDecomposition
 
 /-- **The decomposition of a primary component.** The generators of a decomposition of `A` whose
 prime is `p` decompose the `p`-primary component of `A`. -/
-noncomputable def primaryComponent (D : NikulinDecomposition A) {p : ℕ} (hp : p.Prime) :
+@[expose] noncomputable def primaryComponent (D : NikulinDecomposition A) {p : ℕ} (hp : p.Prime) :
     NikulinDecomposition (A.restrict (AddCommGroup.primaryComponent A p)) where
   generators := D.generators.filter fun g ↦ g.prime = p
   isAdmissible g hg := D.isAdmissible g (List.mem_of_mem_filter hg)
   isometry := (D.isometry.restrictPrimaryComponent p).trans
-    (nonempty_isometry_restrict_primaryComponent_orthogonalSumNikulinGenerators hp
-      D.generators).some
+    (restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp D.generators)
 
 @[simp]
 theorem primaryComponent_generators (D : NikulinDecomposition A) {p : ℕ} (hp : p.Prime) :
     (D.primaryComponent hp).generators = D.generators.filter fun g ↦ g.prime = p := (rfl)
+
+/-- The isometry of the decomposition of a primary component restricts the isometry of `D` to the
+primary component and then splits off the generators of prime `p`. -/
+@[simp]
+theorem primaryComponent_isometry_apply (D : NikulinDecomposition A) {p : ℕ} (hp : p.Prime)
+    (x : A.restrict (AddCommGroup.primaryComponent A p)) :
+    (D.primaryComponent hp).isometry x =
+      restrictPrimaryComponentOrthogonalSumNikulinGeneratorsIsometry hp D.generators
+        (D.isometry.restrictPrimaryComponent p x) := (rfl)
 
 end NikulinDecomposition
 
@@ -492,16 +567,15 @@ theorem nonempty_nikulinDecomposition_iff {A : FiniteQuadraticModule.{u}} :
         rintro _ _ rfl
         rfl
       exact key _ _ (hpn i)
-  obtain ⟨e₁⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_append (List.ofFn odd)
+  let e₁ := orthogonalSumNikulinGeneratorsAppendIsometry (List.ofFn odd)
     (List.ofFn cyc ++ (List.ofFn us ++ List.ofFn vs))
-  obtain ⟨e₂⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_append (List.ofFn cyc)
+  let e₂ := orthogonalSumNikulinGeneratorsAppendIsometry (List.ofFn cyc)
     (List.ofFn us ++ List.ofFn vs)
-  obtain ⟨e₃⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_append (List.ofFn us)
-    (List.ofFn vs)
-  obtain ⟨o₁⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_ofFn odd
-  obtain ⟨o₂⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_ofFn cyc
-  obtain ⟨o₃⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_ofFn us
-  obtain ⟨o₄⟩ := nonempty_isometry_orthogonalSumNikulinGenerators_ofFn vs
+  let e₃ := orthogonalSumNikulinGeneratorsAppendIsometry (List.ofFn us) (List.ofFn vs)
+  let o₁ := orthogonalSumNikulinGeneratorsOfFnIsometry odd
+  let o₂ := orthogonalSumNikulinGeneratorsOfFnIsometry cyc
+  let o₃ := orthogonalSumNikulinGeneratorsOfFnIsometry us
+  let o₄ := orthogonalSumNikulinGeneratorsOfFnIsometry vs
   -- The modules of the dyadic labels are the dyadic modules of the native decomposition by
   -- definition, so only the odd summands need `eodd`.
   exact ⟨⟨gs, hadm, f.symm.trans <|
