@@ -90,10 +90,12 @@ theorem summable_norm_complexHurwitzSeries (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
       -s.re * Real.log ‖(n : ℂ) + c‖ + s.im * arg ((n : ℂ) + c) := by
     simp only [mul_re, neg_re, neg_im, log_re, log_im]
     ring
-  rw [norm_norm, norm_exp, hre, abs_of_pos hw, one_div, ← Real.rpow_neg hw.le,
-    Real.rpow_def_of_pos hw, ← Real.exp_add]
-  refine Real.exp_le_exp.mpr ?_
-  linarith [mul_le_mul_of_nonneg_left hlog (by linarith : (0 : ℝ) ≤ s.re)]
+  have hbound : ‖exp (-s * log ((n : ℂ) + c))‖ ≤
+      Real.exp (Real.pi * |s.im|) * Real.exp (-(Real.log ((n : ℝ) + c.re) * s.re)) := by
+    rw [norm_exp, hre, ← Real.exp_add]
+    exact Real.exp_le_exp.mpr
+      (by linarith [mul_le_mul_of_nonneg_left hlog (by linarith : (0 : ℝ) ≤ s.re)])
+  simpa [abs_of_pos hw, Real.rpow_def_of_pos hw, Real.exp_neg] using hbound
 
 /-- On `1 < re s` the Hurwitz series converges, for every complex parameter `c`. -/
 theorem summable_complexHurwitzSeries (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
@@ -122,8 +124,9 @@ theorem complexHurwitzSeries_add_natCast (c : ℂ) {s : ℂ} (hs : 1 < s.re) (k 
   rw [complexHurwitzSeries, complexHurwitzSeries,
     ← (summable_complexHurwitzSeries c hs).sum_add_tsum_nat_add k, add_sub_cancel_left]
   refine tsum_congr fun n ↦ ?_
+  congr 3
   push_cast
-  ring_nf
+  ring
 
 /-- The shift relation `ζ_H(s, c + 1) = ζ_H(s, c) - exp (-s log c)` of the Hurwitz series. -/
 theorem complexHurwitzSeries_add_one (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
@@ -175,7 +178,8 @@ theorem complexHurwitzSeries_one_half {s : ℂ} (hs : 1 < s.re) :
           refine tsum_congr fun k ↦ ?_
           have : (k : ℂ) + 1 / 2 = ((2 * k + 1 : ℝ) : ℂ) * ((2⁻¹ : ℝ) : ℂ) := by
             push_cast; ring
-          rw [this, mul_cpow_ofReal_nonneg (by positivity) (by norm_num), mul_comm]
+          rw [this, mul_cpow_ofReal_nonneg (by positivity) (by norm_num),
+            mul_comm (((2 * k + 1 : ℝ) : ℂ) ^ (-s))]
           push_cast
           have harg : arg 2 ≠ Real.pi := by
             rw [← ofReal_ofNat, arg_ofReal_of_nonneg zero_le_two]; exact Real.pi_pos.ne
@@ -216,11 +220,16 @@ theorem complexHurwitzSeries_eq_integral {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c
     have hnorm (n : ℕ) : ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))‖ =
         Real.Gamma s.re * (1 / |(n : ℝ) + c.re| ^ s.re) := by
       have hr : 0 < (n : ℝ) + c.re := by simpa using hnc n
-      rw [abs_of_pos hr, one_div, ← Real.inv_rpow hr.le, mul_comm, ← one_div,
-        ← Real.integral_rpow_mul_exp_neg_mul_Ioi hs0 hr]
-      refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-      rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
-      simp [mul_comm]
+      calc ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))‖
+          = ∫ t in Ioi (0 : ℝ), t ^ (s.re - 1) * Real.exp (-(((n : ℝ) + c.re) * t)) := by
+            refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+            rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
+            simp
+        _ = (1 / ((n : ℝ) + c.re)) ^ s.re * Real.Gamma s.re :=
+            Real.integral_rpow_mul_exp_neg_mul_Ioi hs0 hr
+        _ = Real.Gamma s.re * (1 / |(n : ℝ) + c.re| ^ s.re) := by
+            rw [abs_of_pos hr, Real.div_rpow zero_le_one hr.le, Real.one_rpow]
+            ring
     simp_rw [hnorm]
     exact ((Real.summable_one_div_nat_add_rpow c.re s.re).mpr hs).mul_left _
   have hΓ : Gamma s * complexHurwitzSeries s c = ∫ t in Ioi (0 : ℝ),
