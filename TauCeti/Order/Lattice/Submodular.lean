@@ -26,7 +26,9 @@ or network representation.
 * `TauCeti.IsSubmodular.comp_latticeHom`: precomposition by a lattice homomorphism preserves
   submodularity.
 * `TauCeti.isSubmodular_finsetSum`: summing fixed vertex weights over a finite set is submodular.
-* `TauCeti.IsSubmodular.isMinOn_sup_inf`: uncrossing two minimizers by join and meet.
+* `TauCeti.IsSubmodular.isMinOn_sup_inf`: uncrossing by join and meet. If `IsMinOn f s a` and
+  `IsMinOn f t b` (with no membership `a ∈ s` or `b ∈ t` required), `a ⊓ b ∈ s` and `a ⊔ b ∈ t`,
+  then `f` attains its minimum over `t` at `a ⊔ b` and over `s` at `a ⊓ b`.
 * `TauCeti.IsSubmodular.isSublattice_minimizers`: minimizers over a sublattice form a sublattice.
 * `TauCeti.IsSymmSubmodular.sdiff_add_sdiff_le`: the posimodular inequality.
 -/
@@ -95,10 +97,11 @@ theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] [FunLike F M L]
   intro a b
   simpa only [Function.comp_apply, map_sup, map_inf] using hf (g a) (g b)
 
-/-- Let `a` minimize a submodular function over `s` and `b` minimize it over `t`. If the meet
-lies in `s` and the join lies in `t`, then the join minimizes over `t` and the meet minimizes
-over `s`. Addition need not be commutative: it must preserve and reflect the order on both
-sides. -/
+/-- Uncrossing for a submodular function `f`. Suppose `IsMinOn f s a` and `IsMinOn f t b`, that
+is, `f a ≤ f x` for every `x ∈ s` and `f b ≤ f x` for every `x ∈ t`; neither `a ∈ s` nor `b ∈ t`
+is assumed. If the meet lies in `s` and the join lies in `t`, then the join minimizes `f` over `t`
+and the meet minimizes it over `s`. Addition need not be commutative: it must preserve and reflect
+the order on both sides. -/
 theorem isMinOn_sup_inf [Add K] [Preorder K] [AddLeftMono K] [AddRightMono K]
     [AddLeftReflectLE K] [AddRightReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s t : Set L} {a b : L} (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t)
