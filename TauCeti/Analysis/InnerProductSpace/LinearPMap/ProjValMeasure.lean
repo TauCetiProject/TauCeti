@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
@@ -169,7 +169,7 @@ theorem _root_.IsSelfAdjoint.inner_resolvent_apply_eq_integral (hA : IsSelfAdjoi
   refine integral_congr_ae ?_
   filter_upwards [h1] with w hw
   have h1w : 1 - (w : ℂ) ≠ 0 := sub_ne_zero.mpr (Ne.symm hw)
-  rw [(hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.2 hw).1]
+  rw [(hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.property hw).1]
   field_simp
   ring
 
@@ -235,7 +235,7 @@ theorem _root_.IsSelfAdjoint.spectralPVM_proj_eq_zero_of_forall_mem_resolventSet
     (hA.diagMeasure_cayley_preimage_singleton_one_eq_zero ξ)
   -- A point `w ≠ 1` of the spectrum of `U` has its inverse Cayley image in the spectrum of `A`.
   by_contra h1
-  obtain ⟨hre, hmem⟩ := hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.2 h1
+  obtain ⟨hre, hmem⟩ := hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.property h1
   exact (A.mem_spectrum_iff _).mp hmem (hre ▸ hBA _ hw)
 
 /-- For `x = v - U v` in the domain, the quadratic form is `re ⟪A x, x⟫ = -2 im ⟪v, U v⟫` and
@@ -253,7 +253,7 @@ private theorem re_inner_eq_integral_and_norm_sq_eq_integral (hA : IsSelfAdjoint
     rw [A.cayley.integral_diagMeasure_eq_inner_cfc v (fun w => w), cfc_id' ℂ A.cayley]
   have hint : Integrable (fun w : _root_.spectrum ℂ A.cayley => (w : ℂ))
       (A.cayley.diagMeasure v) :=
-    continuous_subtype_val.integrable_of_hasCompactSupport (.of_compactSpace _)
+    continuous_subtypeVal.integrable_of_hasCompactSupport (.of_compactSpace _)
   have him : ∫ w, (w : ℂ).im ∂A.cayley.diagMeasure v = (⟪v, A.cayley v⟫_ℂ).im := by
     simpa [hUint] using integral_im hint
   have hself : ⟪A.cayley v, A.cayley v⟫_ℂ = ⟪v, v⟫_ℂ := by

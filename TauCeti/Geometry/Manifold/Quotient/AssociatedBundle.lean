@@ -236,7 +236,7 @@ theorem exists_trivialization_baseSet_eq_univ_associatedCore_iff (hF : finrank �
   · rintro ⟨σ, hσ, hσ₀⟩
     refine ⟨hp.associatedSectionEquiv ρ σ,
       (hp.contMDiff_section_associatedCore_iff ρ hpd le_rfl).1 hσ, fun y ↦ ?_,
-      (hp.associatedSectionEquiv ρ σ).2⟩
+      (hp.associatedSectionEquiv ρ σ).property⟩
     rw [Ne, associatedSectionEquiv_apply_eq_zero_iff]
     exact hσ₀ _
   · rintro ⟨f, hf, hf₀, hfG⟩
@@ -299,7 +299,7 @@ theorem mdifferentiable_section_associatedCore_iff_exists_eq_const [Preconnected
     obtain ⟨v, hv⟩ := hf.exists_eq_const_of_compactSpace
     refine ⟨v, fun g ↦ ?_, hv⟩
     obtain ⟨y⟩ : Nonempty E := inferInstance
-    have h := (hp.associatedSectionEquiv ρ σ).2 g y
+    have h := (hp.associatedSectionEquiv ρ σ).property g y
     rw [hv, Function.const_apply, Function.const_apply] at h
     exact h.symm
 

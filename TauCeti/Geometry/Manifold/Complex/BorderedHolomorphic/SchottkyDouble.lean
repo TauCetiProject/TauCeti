@@ -172,7 +172,7 @@ private theorem continuousOn_doubleChartFun
     ContinuousOn (doubleChartFun e) (DoubleAlong.fold _ ⁻¹' e.source) := by
   have hc : ContinuousOn (fun z : SchottkyDouble M ↦ (e (DoubleAlong.fold _ z) : ℂ))
       (DoubleAlong.fold _ ⁻¹' e.source) :=
-    continuous_subtype_val.comp_continuousOn
+    continuous_subtypeVal.comp_continuousOn
       (e.continuousOn.comp (DoubleAlong.fold _).continuous.continuousOn fun _ hz ↦ hz)
   refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
     ((continuous_conj.comp_continuousOn hc).mono inter_subset_left)
@@ -414,9 +414,7 @@ private theorem doubleChart_symm_trans_mem_contDiffGroupoid
 the `C^n` maximal atlas of the double for every `n`, the holomorphic one included. -/
 theorem doubleChart_mem_maximalAtlas {n : ℕ∞ω} {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
     (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
-    doubleChart e (StructureGroupoid.maximalAtlas_mono
-        (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
-          (contDiffGroupoid_le ENat.LEInfty.out)) he) ∈
+    doubleChart e (borderedHolomorphicGroupoid_maximalAtlas_subset ENat.LEInfty.out he) ∈
       IsManifold.maximalAtlas 𝓘(ℂ) n (SchottkyDouble M) := by
   refine IsManifold.maximalAtlas_subset_of_le le_top ?_
   rintro _ ⟨e', he', rfl⟩

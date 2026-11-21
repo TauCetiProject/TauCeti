@@ -105,7 +105,7 @@ private theorem alt_part_add_exterior_eq {B : BilinForm R M} (hB : B.IsSymm)
 parts identifies `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinForm R M`. -/
 noncomputable def symmProdExteriorDualEquiv :
     (symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) ≃ₗ[R] BilinForm R M where
-  toFun p := p.1.1 + TauCeti.BilinForm.ofExteriorSquareDual p.2
+  toFun p := p.1.val + TauCeti.BilinForm.ofExteriorSquareDual p.2
   invFun B := (⟨⅟(2 : R) • (B + B.flip), (isSymm_add_flip B).smul _⟩,
     exteriorPower.alternatingMapLinearEquiv
       (LinearMap.IsAlt.toAlternatingMap ((isAlt_sub_flip B).smul _)))
@@ -114,8 +114,8 @@ noncomputable def symmProdExteriorDualEquiv :
   map_smul' _ _ := LinearMap.ext₂ fun _ _ ↦ by
     simp only [Prod.smul_fst, SetLike.val_smul, Prod.smul_snd, map_smul, RingHom.id_apply,
       LinearMap.add_apply, LinearMap.smul_apply, smul_add]
-  left_inv p := Prod.ext (Subtype.ext (symm_part_add_exterior_eq R M p.1.2 p.2))
-    (alt_part_add_exterior_eq R M p.1.2 p.2)
+  left_inv p := Prod.ext (Subtype.ext (symm_part_add_exterior_eq R M p.1.property p.2))
+    (alt_part_add_exterior_eq R M p.1.property p.2)
   right_inv B := LinearMap.ext₂ fun x y ↦ by
     simp only [LinearMap.add_apply, TauCeti.BilinForm.ofExteriorSquareDual_apply,
       exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
@@ -129,11 +129,11 @@ variable {R M}
 /-- Evaluation of `symmProdExteriorDualEquiv` as the sum of symmetric and alternating parts. -/
 @[simp] theorem symmProdExteriorDualEquiv_apply
     (p : symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) :
-    symmProdExteriorDualEquiv R M p = p.1.1 + TauCeti.BilinForm.ofExteriorSquareDual p.2 := (rfl)
+    symmProdExteriorDualEquiv R M p = p.1.val + TauCeti.BilinForm.ofExteriorSquareDual p.2 := (rfl)
 
 /-- The symmetric component of `symmProdExteriorDualEquiv.symm B` is `⅟2 • (B + B.flip)`. -/
 @[simp] theorem symmProdExteriorDualEquiv_symm_fst (B : BilinForm R M) :
-    ((symmProdExteriorDualEquiv R M).symm B).1.1 = ⅟(2 : R) • (B + B.flip) := (rfl)
+    ((symmProdExteriorDualEquiv R M).symm B).1.val = ⅟(2 : R) • (B + B.flip) := (rfl)
 
 /-- Exterior-square component of `symmProdExteriorDualEquiv.symm B` evaluated on `x ∧ y`. -/
 @[simp] theorem symmProdExteriorDualEquiv_symm_snd_apply_ιMulti (B : BilinForm R M) (x y : M) :
@@ -164,8 +164,8 @@ theorem finrank_symmSubmodule {R M : Type*} [CommSemiring R] [AddCommMonoid M] [
   let b : Module.Basis (Fin n) R M := (Module.Free.chooseBasis R M).reindex
     (Fintype.equivFinOfCardEq (Module.finrank_eq_card_chooseBasisIndex R M).symm)
   let e : symmSubmodule R M ≃ₗ[R] (Sym2 (Fin n) → R) :=
-    { toFun := fun B ↦ Sym2.lift ⟨fun i j ↦ toMatrix b B.1 i j,
-        fun i j ↦ ((B.1.isSymm_toMatrix_iff_isSymm b).mpr B.2).apply j i⟩
+    { toFun := fun B ↦ Sym2.lift ⟨fun i j ↦ toMatrix b B.val i j,
+        fun i j ↦ ((B.val.isSymm_toMatrix_iff_isSymm b).mpr B.property).apply j i⟩
       invFun := fun f ↦ ⟨(toMatrix b).symm (Matrix.of fun i j ↦ f s(i, j)), by
         rw [mem_symmSubmodule, ← isSymm_toMatrix_iff_isSymm b, LinearEquiv.apply_symm_apply]
         exact Matrix.IsSymm.ext fun i j ↦ by simp [Sym2.eq_swap]⟩

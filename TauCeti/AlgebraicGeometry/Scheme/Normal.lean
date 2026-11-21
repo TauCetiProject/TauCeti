@@ -156,8 +156,8 @@ of `Γ(X, U)` at a prime is an integrally closed domain. Stacks, Lemma 28.7.2 (0
 theorem isNormalScheme_iff_forall_affineOpens :
     IsNormalScheme X ↔ ∀ U : X.affineOpens, IsNormalScheme (Spec Γ(X, U)) := by
   refine ⟨fun _ U ↦ ?_, fun h ↦ .of_forall_exists_isOpenImmersion fun x ↦ ?_⟩
-  · have := U.2.isOpenImmersion_fromSpec
-    exact .of_isOpenImmersion U.2.fromSpec
+  · have := U.property.isOpenImmersion_fromSpec
+    exact .of_isOpenImmersion U.property.fromSpec
   · obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
     exact ⟨_, hU.fromSpec, hU.isOpenImmersion_fromSpec, h ⟨U, hU⟩, hU.range_fromSpec.ge hxU⟩
@@ -175,7 +175,8 @@ theorem isNormalScheme_iff_forall_exists_affineOpens :
       X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
     exact ⟨⟨U, hU⟩, hxU, isNormalScheme_iff_forall_affineOpens.mp h ⟨U, hU⟩⟩
   · obtain ⟨U, hxU, hU⟩ := h x
-    exact ⟨_, U.2.fromSpec, U.2.isOpenImmersion_fromSpec, hU, U.2.range_fromSpec.ge hxU⟩
+    exact ⟨_, U.property.fromSpec, U.property.isOpenImmersion_fromSpec, hU,
+        U.property.range_fromSpec.ge hxU⟩
 
 /-- A normal scheme is reduced: its local rings are domains. Stacks, Lemma 28.7.3 (033K). -/
 @[stacks 033K]
