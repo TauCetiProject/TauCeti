@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
-import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 
 /-!
 # The interior Hölder estimate of Krylov and Safonov
@@ -169,6 +169,25 @@ private theorem sum_mul_fderiv_fderiv_const_mul_sub_const_le {A : Matrix ι ι �
   rw [sum_mul_fderiv_fderiv_const_mul, h']
   exact (le_abs_self _).trans (abs_mul t _ ▸ mul_le_mul_of_nonneg_left h (abs_nonneg t))
 
+/-- **Smallness of the rescaled right-hand side.** If `‖f‖_{Lᵖ} ≤ F` and `ρ F ≤ b s` with
+`ρ ≥ 0` and `s > 0`, then `ρ ‖(s⁻¹ ‖f‖)⁺‖_{Lᵖ} ≤ b`. -/
+private theorem ofReal_mul_eLpNorm_posPart_inv_mul_norm_le {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {p : ℝ≥0∞} {f : X → ℝ} {ρ s F b : ℝ} (hρ : 0 ≤ ρ) (hs : 0 < s)
+    (hf : eLpNorm f p μ ≤ ENNReal.ofReal F) (hsF : ρ * F ≤ b * s) :
+    ENNReal.ofReal ρ * eLpNorm (fun x ↦ (s⁻¹ * ‖f x‖)⁺) p μ ≤ ENNReal.ofReal b := by
+  have hfm : AEStronglyMeasurable f μ :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.ofReal_lt_top).ne
+  have h : (fun x ↦ (‖f x‖)⁺) = fun x ↦ ‖f x‖ := funext fun x ↦ posPart_eq_self.2 (norm_nonneg _)
+  rw [eLpNorm_posPart_const_mul (by positivity), h, eLpNorm_norm _ hfm]
+  calc ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * eLpNorm f p μ) ≤
+        ENNReal.ofReal ρ * (ENNReal.ofReal s⁻¹ * ENNReal.ofReal F) := by gcongr
+    _ = ENNReal.ofReal (ρ * (s⁻¹ * F)) := by
+      rw [ENNReal.ofReal_mul hρ, ENNReal.ofReal_mul (by positivity)]
+    _ ≤ ENNReal.ofReal b := by
+      refine ENNReal.ofReal_le_ofReal ?_
+      rw [← div_eq_inv_mul, mul_div_assoc', div_le_iff₀ hs]
+      exact hsF
+
 /-- **One step of oscillation decay.** There are `0 < δ < 1` and `K ≥ 0`, depending only on the
 dimension and on `κ`, with the following property. Let `a` be uniformly elliptic on `B(c, ρ)`
 with `λ ≤ Λ ≤ κ λ`, and let `u` be continuous on `closedBall c ρ` and `C²` in `B(c, ρ)` with
@@ -210,16 +229,9 @@ private theorem exists_mem_Icc_closedBall_div_four {κ : ℝ} (hκ : 0 < κ) :
     linarith
   set s := L / (2 * T)
   have hs : 0 < s := div_pos hLpos (by positivity)
-  have hfnorm : eLpNorm (fun x ↦ (‖f x‖)⁺) (Fintype.card ι) (volume.restrict (ball c ρ)) ≤
-      ENNReal.ofReal F := by
-    have hfm : AEStronglyMeasurable f (volume.restrict (ball c ρ)) :=
-      aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.ofReal_lt_top).ne
-    simpa only [posPart_eq_self.2 (norm_nonneg _)] using (eLpNorm_norm f hfm).le.trans hf
-  have hg := ofReal_mul_eLpNorm_posPart_inv_mul_le hρ.le hs hfnorm hsF
-  obtain ⟨k, hR4, hk4⟩ :=
-    exists_two_zpow_mul_sqrt_card_le_and_lt (ι := ι) (r := ρ / 4) (by positivity)
-  have hR : 4 * 2 ^ k * √(Fintype.card ι) ≤ ρ := by linarith
-  have hk : ρ / 4 < 2 * 2 ^ k * √(Fintype.card ι) := by linarith
+  have hg := ofReal_mul_eLpNorm_posPart_inv_mul_norm_le hρ.le hs hf hsF
+  obtain ⟨k, hR, hk⟩ := exists_four_mul_two_zpow_mul_le_and_lt hρ
+    (Real.sqrt_pos.2 (Nat.cast_pos.2 (Fintype.card_pos (α := ι))))
   have hsub : closedBall c (ρ / 4) ⊆ ball c (2 * 2 ^ k * √(Fintype.card ι)) :=
     closedBall_subset_ball hk
   -- `v₁ = (u - m) / s` and `v₂ = (m + L - u) / s` are nonnegative supersolutions with sum `2 T`.

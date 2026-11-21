@@ -103,10 +103,8 @@ private theorem map_genericMatrix_generatedCoordinateLift (k : Fin 7 ⊕ Fin 7) 
     BialgHom.mapDomain_apply (generatedCoordinateLift R (.inl k)).hom,
     pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R k
       (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R))
-      (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))]
-  rcases k with i | i
-  · rw [coe_rootSubgroupPoints_inl, Sum.elim_inl]
-  · rw [coe_rootSubgroupPoints_inr, Sum.elim_inr]
+      (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))),
+    coe_rootSubgroupPoints_eq_one_add_smul]
 
 variable {B : Type v} [CommRing B] [Algebra R B]
 

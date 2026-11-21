@@ -48,9 +48,11 @@ representative only depends on `u` near each point (`preciseRepresentative_congr
   finite `q ≥ 1`, when `n ≤ p` and `V` is open with compact closure in `Ω`.
 * `TauCeti.Wkp.continuousOn_preciseRepresentative`: the precise representative of
   `u ∈ W^{2,p}(Ω)`, `n ≤ p`, is continuous on `Ω`.
-* `TauCeti.Wkp.preciseRepresentative_le_of_ae_le`, `TauCeti.Wkp.le_preciseRepresentative_of_ae_le`,
-  `TauCeti.Wkp.abs_preciseRepresentative_le_of_ae_abs_le`: almost everywhere comparison against a
-  continuous function on an open subset of `Ω` transfers pointwise to the precise representative.
+* `TauCeti.Wkp.preciseRepresentative_le_of_ae_le`, `TauCeti.Wkp.le_preciseRepresentative_of_ae_le`:
+  almost everywhere comparison against a continuous function on an open subset of `Ω` transfers
+  pointwise to the precise representative.
+* `TauCeti.Wkp.abs_preciseRepresentative_le`: an almost-everywhere bound `|u| ≤ M` on an open
+  subset of `Ω` holds at every point for the precise representative.
 * `TauCeti.Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact`: it is
   `(1 - n / q)`-Hölder continuous on every compact subset of `Ω`, for every finite `q > n`.
 
@@ -124,8 +126,8 @@ theorem Wkp.preciseRepresentative_le_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞)
     ∀ x ∈ U, preciseRepresentative mu (Wkp.value 2 u) x ≤ g x := by
   have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
     (ae_mono (Measure.restrict_mono hUΩ le_rfl))
-  refine ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).forall_le_of_ae_le
-    (μ := mu) hg hU ?_
+  refine ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).le_of_ae_le
+    (μ := mu) hU hg ?_
   filter_upwards [hae, hle] with x hx h
   exact hx ▸ h
 
@@ -138,24 +140,23 @@ theorem Wkp.le_preciseRepresentative_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞)
     ∀ x ∈ U, g x ≤ preciseRepresentative mu (Wkp.value 2 u) x := by
   have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
     (ae_mono (Measure.restrict_mono hUΩ le_rfl))
-  refine hg.forall_le_of_ae_le (μ := mu) ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ)
-    hU ?_
+  refine hg.le_of_ae_le (μ := mu) hU ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ) ?_
   filter_upwards [hae, hle] with x hx h
   exact hx ▸ h
 
-/-- If `u ∈ W^{2,p}(Ω)` with `n ≤ p` satisfies `|u| ≤ g` almost everywhere on an open subset
-`U ⊆ Ω` and `g` is continuous on `U`, then its precise representative satisfies `|u*| ≤ g`
-everywhere on `U`. -/
-theorem Wkp.abs_preciseRepresentative_le_of_ae_abs_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p)
-    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
-    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, |Wkp.value 2 u x| ≤ g x) :
-    ∀ x ∈ U, |preciseRepresentative mu (Wkp.value 2 u) x| ≤ g x := by
-  have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
-    (ae_mono (Measure.restrict_mono hUΩ le_rfl))
-  refine (((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).abs).forall_le_of_ae_le
-    (μ := mu) hg hU ?_
-  filter_upwards [hae, hle] with x hx h
-  exact hx ▸ h
+/-- **Pointwise bounds on the continuous representative.** If `n ≤ p ≤ ∞`, where `n` is the
+dimension, and `u ∈ W^{2,p}(Ω)` satisfies `|u| ≤ M` almost everywhere on an open set `U ⊆ Ω`, then
+its precise representative is bounded by `M` in absolute value at every point of `U`. -/
+theorem Wkp.abs_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) (u : Wkp mu Omega p 2)
+    {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict U, |Wkp.value 2 u x| ≤ M) {x : E} (hx : x ∈ U) :
+    |preciseRepresentative mu (Wkp.value 2 u) x| ≤ M := by
+  have hcU : ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) U :=
+    (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
+  refine hcU.abs.le_of_ae_le (μ := mu) hU continuousOn_const ?_ x hx
+  filter_upwards [hM, ae_restrict_of_ae_restrict_of_subset hUΩ
+    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
+  rwa [← hyū]
 
 /-- **Hölder continuity of `W^{2,p}` functions for `p` at least the dimension.** If `n ≤ p ≤ ∞`,
 where `n` is the dimension, then for every finite `q > n` the precise representative of any
