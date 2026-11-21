@@ -414,16 +414,6 @@ private theorem exists_rotheScheme_bound [CompleteSpace H] (hab : a < b) {N : �
       (hA _ (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN le_rfl) _)
     linarith [hbound N le_rfl]
 
-/-- A point of `(a, b)` is within one cell length of the right node of its cell. -/
-private theorem abs_sub_node_le {t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN : 0 < N) :
-    a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N) ∈ Icc a b ∧
-      |t - (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N))| ≤ (b - a) / N := by
-  obtain ⟨k, hk, hidx, hmem⟩ := exists_intervalCellIndex_eq ht hN
-  rw [hidx]
-  push_cast
-  refine ⟨Icc_add_natCast_mul_sub_div_natCast_subset_Icc (ht.1.trans ht.2).le hN hk
-    (right_mem_Icc.2 (hmem.1.le.trans hmem.2)), abs_le.2 ⟨?_, ?_⟩⟩ <;> linarith [hmem.1, hmem.2]
-
 omit [CompleteSpace V] in
 /-- **The scheme as an equation on `(a, b)`.** On each cell the difference quotient and the
 piecewise constant interpolant satisfy `ι* ι D + A(node) ū = ι* G`, with the operator frozen at the
@@ -538,7 +528,8 @@ private theorem norm_le_and_norm_sub_node_le (hL : 0 ≤ L)
     ‖A t‖ ≤ ‖A a‖ + L * (b - a) ∧
       ‖A t - A (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N))‖ ≤ L * ((b - a) / N) := by
   have hab : a ≤ b := (ht.1.trans ht.2).le
-  obtain ⟨hn, hd⟩ := abs_sub_node_le ht hN
+  have hn := add_intervalCellIndex_mul_mem_Icc ht hN
+  have hd := abs_sub_add_intervalCellIndex_mul_le ht hN
   refine ⟨?_, ?_⟩
   · have := hLip a (left_mem_Icc.2 hab) t (Ioo_subset_Icc_self ht)
     calc ‖A t‖ = ‖A a + (A t - A a)‖ := by rw [add_sub_cancel (A a) (A t)]

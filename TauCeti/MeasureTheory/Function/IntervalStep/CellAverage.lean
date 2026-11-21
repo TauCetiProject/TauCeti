@@ -109,10 +109,30 @@ theorem exists_intervalCellIndex_eq {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ}
   push_cast at hc
   exact ⟨k, by omega, hk, by constructor <;> linarith [hc.1, hc.2]⟩
 
+/-- On `(a, b)`, the right node `a + k h` of the cell `k` containing `t`, for the partition into
+`N` cells of length `h = (b - a) / N`, lies in `[a, b]`. -/
+theorem add_intervalCellIndex_mul_mem_Icc {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN : 0 < N) :
+    a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N) ∈ Icc a b := by
+  obtain ⟨k, hk, hidx, hmem⟩ := exists_intervalCellIndex_eq ht hN
+  rw [hidx]
+  push_cast
+  exact Icc_add_natCast_mul_sub_div_natCast_subset_Icc (ht.1.trans ht.2).le hN hk
+    (right_mem_Icc.2 (hmem.1.le.trans hmem.2))
+
+/-- On `(a, b)`, a point is within one cell length `h = (b - a) / N` of the right node
+`a + k h` of its cell. -/
+theorem abs_sub_add_intervalCellIndex_mul_le {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ}
+    (hN : 0 < N) :
+    |t - (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N))| ≤ (b - a) / N := by
+  obtain ⟨k, -, hidx, hmem⟩ := exists_intervalCellIndex_eq ht hN
+  rw [hidx]
+  push_cast
+  exact abs_le.2 ⟨by linarith [hmem.1, hmem.2], by linarith [hmem.1, hmem.2]⟩
+
 /-- The integral over `(a, b)` is the sum of the integrals over the cells of the partition into
 `N` cells. -/
-theorem integral_Ioo_eq_sum [NormedSpace ℝ E] {a b : ℝ} (hab : a < b) {N : ℕ}
-    (hN : 0 < N) {f : ℝ → E}
+theorem integral_Ioo_eq_sum_intervalIntegral_cell [NormedSpace ℝ E] {a b : ℝ} (hab : a < b)
+    {N : ℕ} (hN : 0 < N) {f : ℝ → E}
     (hf : ∀ k < N, IntervalIntegrable f volume (a + k * ((b - a) / N))
       (a + (k + 1) * ((b - a) / N))) :
     ∫ t in Ioo a b, f t = ∑ k ∈ Finset.range N,
@@ -138,7 +158,8 @@ theorem integral_Ioo_comp_intervalCellIndex [NormedSpace ℝ E] [CompleteSpace E
         F (intervalCellIndex a ((b - a) / N) t) = F (k + 1) := Eventually.of_forall fun t ht ↦ by
     rw [uIoc_of_le (by nlinarith)] at ht
     rw [intervalCellIndex_eq hh ht]
-  rw [integral_Ioo_eq_sum hab hN fun k _ ↦ (intervalIntegrable_const (c := F (k + 1))).congr_ae
+  rw [integral_Ioo_eq_sum_intervalIntegral_cell hab hN fun k _ ↦
+    (intervalIntegrable_const (c := F (k + 1))).congr_ae
     ((ae_restrict_iff' measurableSet_uIoc).2 ((hae k).mono fun t ht ht' ↦ (ht ht').symm))]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [intervalIntegral.integral_congr_ae (hae k), intervalIntegral.integral_const]
@@ -230,7 +251,8 @@ theorem integral_norm_intervalStepAverage_sq_le [CompleteSpace E] {a b : ℝ} (h
   have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
   have hg2 : IntegrableOn (fun s ↦ ‖g s‖ ^ 2) (Ioo a b) :=
     (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
-  rw [integral_Ioo_eq_sum hab hN fun k hk ↦ hg2.intervalIntegrable_cell hab.le hN hk]
+  rw [integral_Ioo_eq_sum_intervalIntegral_cell hab hN fun k hk ↦
+    hg2.intervalIntegrable_cell hab.le hN hk]
   simp only [intervalStepAverage]
   rw [integral_Ioo_comp_intervalCellIndex hab hN
     (fun n ↦ ‖intervalCellAverage g a ((b - a) / N) (n - 1)‖ ^ 2)]
