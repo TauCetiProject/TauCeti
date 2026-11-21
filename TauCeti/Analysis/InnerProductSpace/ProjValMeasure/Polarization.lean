@@ -20,7 +20,7 @@ A normalized projection-valued measure `P` carries a finite diagonal positive me
 the two vectors conjugates the values (`mapRangeL_conjCLE_polarizedComplexMeasure`,
 `polarizedComplexMeasure_swap_apply`), and applying `P.proj B hB` in either vector argument
 restricts the measure to `B` (`polarizedComplexMeasure_proj_left`,
-`polarizedComplexMeasure_proj_right`, `polarizedComplexMeasure_proj_proj`). On the diagonal,
+`polarizedComplexMeasure_proj_right`). On the diagonal,
 `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ` with the constant complex density `1`.
 
 The construction uses Mathlib's signed-measure and complex-measure conversions: countable
@@ -230,19 +230,8 @@ theorem norm_polarizedComplexMeasure_apply_le (P : ProjValMeasure X H) {ψ ξ : 
 /-- **Conjugate symmetry.** Exchanging the two vectors conjugates the polarized complex measure. -/
 theorem polarizedComplexMeasure_swap_apply (P : ProjValMeasure X H) (ψ ξ : H) (B : Set X) :
     P.polarizedComplexMeasure ξ ψ B = star (P.polarizedComplexMeasure ψ ξ B) := by
-  by_cases hB : MeasurableSet B
-  · rw [P.polarizedComplexMeasure_apply ξ ψ B hB, P.polarizedComplexMeasure_apply ψ ξ B hB,
-      ← inner_conj_symm]
-    exact congrArg (starRingEnd ℂ) ((P.isSelfAdjoint_proj B hB).isSymmetric ψ ξ)
-  · simp [VectorMeasure.not_measurable _ hB]
-
-/-- Applying the same spectral projection to both vectors restricts the polarized measure. -/
-theorem polarizedComplexMeasure_proj_proj (P : ProjValMeasure X H) (B : Set X)
-    (hB : MeasurableSet B) (ψ ξ : H) :
-    P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ) =
-      (P.polarizedComplexMeasure ψ ξ).restrict B := by
-  rw [P.polarizedComplexMeasure_proj_right, P.polarizedComplexMeasure_proj_left,
-    VectorMeasure.restrict_restrict _ hB hB, Set.inter_self]
+  rw [← P.mapRangeL_conjCLE_polarizedComplexMeasure ψ ξ, VectorMeasure.mapRangeL_apply]
+  simp
 
 end ProjValMeasure
 end TauCeti

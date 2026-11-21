@@ -45,10 +45,9 @@ from the structure's laws.
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
 * `diag`, `enorm_sq_proj_apply`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`,
-  `diag_neg`, `diag_add_add_sub`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
+  `diag_neg`, `diag_add_add_diag_sub`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
   measures carried by the structure, their real/extended-real total masses, and
   their behavior under vector operations and spectral projections.
-* `tendsto_proj_iUnion_of_monotone`: strong convergence along an increasing measurable sequence.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
   data field.
 
@@ -323,25 +322,20 @@ theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ :=
 
 /-- **Parallelogram law for diagonal measures**: the sum of the diagonal measures of `ξ + η` and
 `ξ - η` equals twice the sum of the diagonal measures of `ξ` and `η`. -/
-theorem diag_add_add_sub (P : ProjValMeasure X H) (ξ η : H) :
+theorem diag_add_add_diag_sub (P : ProjValMeasure X H) (ξ η : H) :
     P.diag (ξ + η) + P.diag (ξ - η) = (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
   refine Measure.ext fun B hB => ?_
-  have hpar := parallelogram_law_with_norm ℂ (P.proj B hB ξ) (P.proj B hB η)
-  rw [← map_add, ← map_sub] at hpar
-  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, eNorm_eq_nnNorm]
-  norm_cast
-  apply NNReal.coe_injective
-  push_cast
-  linarith [hpar]
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB,
+    map_add, map_sub, ← mul_add]
+  exact TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η)
 
 /-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
 measures. -/
 theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
-    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
-  refine Measure.le_iff.2 fun B hB => ?_
-  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, map_add, ← mul_add]
-  exact le_self_add.trans_eq
-    (TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η))
+    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η :=
+  Measure.le_iff'.mpr fun B => by
+    rw [← P.diag_add_add_diag_sub ξ η, add_apply]
+    exact le_self_add
 
 /-- Applying a measurable-set projection restricts the diagonal scalar measure to that set. -/
 @[simp]
@@ -525,27 +519,6 @@ theorem hasSum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ → S
   exact (hsum.hasSum_iff_tendsto_nat).2 (by
     simpa only [Nat.Iio_eq_range, sum_apply] using
       P.tendsto_sum_proj_of_pairwise_disjoint hf hdisj ξ)
-
-/-- Along an increasing sequence of measurable sets, the spectral projections converge strongly
-to the projection of the union. -/
-theorem tendsto_proj_iUnion_of_monotone (P : ProjValMeasure X H) {f : ℕ → Set X}
-    (hf : ∀ n, MeasurableSet (f n)) (hmono : Monotone f) (ξ : H) :
-    Tendsto (fun n => P.proj (f n) (hf n) ξ) Filter.atTop
-      (𝓝 (P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ)) := by
-  refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
-  have hmeas : Tendsto (fun n => (P.diag ξ (⋃ k, f k)).toReal - (P.diag ξ (f n)).toReal)
-      Filter.atTop (𝓝 0) := by
-    simpa [sub_self] using (tendsto_const_nhds (x := (P.diag ξ (⋃ k, f k)).toReal)).sub
-      ((ENNReal.tendsto_toReal (measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k))).comp
-        (tendsto_measure_iUnion_atTop hmono))
-  have hsq : Tendsto (fun n => ‖P.proj (f n) (hf n) ξ -
-      P.proj (⋃ k, f k) (MeasurableSet.iUnion hf) ξ‖ ^ 2) Filter.atTop (𝓝 0) := by
-    refine hmeas.congr fun n => ?_
-    rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
-      (P.isSelfAdjoint_proj (f n) (hf n)) (P.proj_idem (f n) (hf n))
-      (P.proj_mul_eq_left_of_subset (Set.subset_iUnion f n) (hf n) (MeasurableSet.iUnion hf)) ξ,
-      P.norm_sq_proj_apply, P.norm_sq_proj_apply]
-  simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
 
 /-! ## Extensionality
 

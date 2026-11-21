@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Variation
 public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Matrix elements of the integral against a projection-valued measure
@@ -157,10 +156,12 @@ theorem lintegral_enorm_variation_polarizedComplexMeasure_le (P : ProjValMeasure
     (g : BoundedBorelFunction X) (ψ ξ : H) :
     ∫⁻ t, ‖g t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
       ENNReal.ofReal (‖ψ‖ * ‖P.integral g ξ‖) := by
-  have hvar := P.polarizedComplexMeasure_variation_univ_le ψ (P.integral g ξ)
-  rwa [P.polarizedComplexMeasure_integral_right g ψ ξ,
-    VectorMeasure.variation_withDensity_mul (g.integrable _),
-    withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hvar
+  refine (P.lintegral_variation_polarizedComplexMeasure_le ψ ξ fun t => ‖g t‖ₑ).trans_eq ?_
+  have hsq : ∫⁻ t, ‖g t‖ₑ ^ 2 ∂(P.diag ξ) = ‖P.integral g ξ‖ₑ ^ 2 := by
+    rw [← P.diag_univ, P.diag_integral, withDensity_apply _ MeasurableSet.univ,
+      setLIntegral_univ]
+  rw [hsq, ← ENNReal.rpow_two, one_div, ENNReal.rpow_rpow_inv two_ne_zero,
+    ← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_mul (norm_nonneg _)]
 
 /-- For any function `f : X → E` that is almost everywhere strongly measurable for `P.diag ξ`,
 the lower Lebesgue integral of `‖f‖ₑ` against the variation of `P.polarizedComplexMeasure ψ ξ` is
@@ -170,41 +171,9 @@ theorem lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm {E : Type*}
     (hf : AEStronglyMeasurable f (P.diag ξ)) (ψ : H) :
     ∫⁻ t, ‖f t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
       ‖ψ‖ₑ * eLpNorm f 2 (P.diag ξ) := by
-  have hac := P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ψ ξ
-  let φ : X → ℂ := fun t => (‖hf.mk f t‖ : ℂ)
-  have hφ : Measurable φ :=
-    Complex.continuous_ofReal.measurable.comp hf.stronglyMeasurable_mk.norm.measurable
-  have hφ_enorm (t : X) : ‖φ t‖ₑ = ‖hf.mk f t‖ₑ := by
-    simp [φ, ← ofReal_norm]
-  calc
-    ∫⁻ t, ‖f t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation
-        = ∫⁻ t, ‖φ t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation :=
-      lintegral_congr_ae ((hac.ae_eq hf.ae_eq_mk).mono fun t ht => by
-        dsimp only; rw [ht, hφ_enorm])
-    _ = ⨆ n : ℕ, ∫⁻ t, ‖BoundedBorelFunction.truncate φ hφ n t‖ₑ
-          ∂(P.polarizedComplexMeasure ψ ξ).variation := by
-      simpa only [pow_one] using
-        (BoundedBorelFunction.iSup_lintegral_enorm_pow_truncate hφ 1 _).symm
-    _ ≤ ‖ψ‖ₑ * eLpNorm f 2 (P.diag ξ) := by
-      refine iSup_le fun n =>
-        (P.lintegral_enorm_variation_polarizedComplexMeasure_le
-          (BoundedBorelFunction.truncate φ hφ n) ψ ξ).trans ?_
-      rw [ENNReal.ofReal_mul (norm_nonneg ψ), ofReal_norm, ofReal_norm]
-      gcongr
-      refine (ENNReal.rpow_le_rpow_iff (show (0 : ℝ) < 2 by norm_num)).1 ?_
-      have heLp_sq : eLpNorm f 2 (P.diag ξ) ^ 2 = ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) := by
-        simpa only [Nat.cast_ofNat] using
-          (TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (n := 2) two_ne_zero hf).symm
-      rw [ENNReal.rpow_two, ENNReal.rpow_two, ← P.diag_univ, P.diag_integral,
-        withDensity_apply _ MeasurableSet.univ, setLIntegral_univ, heLp_sq]
-      calc
-        ∫⁻ t, ‖BoundedBorelFunction.truncate φ hφ n t‖ₑ ^ 2 ∂(P.diag ξ)
-            ≤ ∫⁻ t, ‖φ t‖ₑ ^ 2 ∂(P.diag ξ) :=
-          lintegral_mono fun t => pow_le_pow_left'
-            (eNorm_le_iff_norm_le.2 (BoundedBorelFunction.norm_truncate_apply_le φ hφ n t)) 2
-        _ = ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) :=
-          lintegral_congr_ae (hf.ae_eq_mk.mono fun t ht => by
-            dsimp only; rw [ht, hφ_enorm])
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by norm_num) (by norm_num) hf]
+  simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two] using
+    P.lintegral_variation_polarizedComplexMeasure_le ψ ξ fun t => ‖f t‖ₑ
 
 /-- Every function in `L²(P.diag ξ)` is integrable against `P.polarizedComplexMeasure ψ ξ`. -/
 theorem integrable_polarizedComplexMeasure_of_memLp {E : Type*} [NormedAddCommGroup E]
@@ -270,15 +239,16 @@ theorem norm_integral_polarizedComplexMeasure_le (P : ProjValMeasure X H) {f : X
 
 /-- **Conjugate symmetry of polarized integrals.** Integrating `star f` against `μ_(ξ,ψ)` is the
 conjugate of integrating `f` against `μ_(ψ,ξ)`, with no integrability hypothesis on `f`. -/
+@[simp]
 theorem integral_polarizedComplexMeasure_star (P : ProjValMeasure X H) (f : X → ℂ) (ψ ξ : H) :
-    ∫ᵛ t, star (f t) ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ψ] =
-      star (∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ]) := by
+    ∫ᵛ t, starRingEnd ℂ (f t) ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ψ] =
+      starRingEnd ℂ (∫ᵛ t, f t ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ]) := by
   have hmap : P.polarizedComplexMeasure ξ ψ =
       VectorMeasure.mapRangeL (Complex.conjCLE : ℂ →L[ℝ] ℂ)
         (P.polarizedComplexMeasure ψ ξ) :=
     (P.mapRangeL_conjCLE_polarizedComplexMeasure ψ ξ).symm
   by_cases hf : (P.polarizedComplexMeasure ψ ξ).Integrable f
-  · have hf' : (P.polarizedComplexMeasure ψ ξ).Integrable (fun t => star (f t)) :=
+  · have hf' : (P.polarizedComplexMeasure ψ ξ).Integrable (fun t => starRingEnd ℂ (f t)) :=
       (Complex.conjCLE : ℂ →L[ℝ] ℂ).integrable_comp hf
     have hnat := VectorMeasure.map_integral_comp_eq_integral_mapRangeL
       (P.polarizedComplexMeasure ψ ξ) hf'
@@ -288,12 +258,12 @@ theorem integral_polarizedComplexMeasure_star (P : ProjValMeasure X H) (f : X �
       (fun x y => by simp)
     rw [← hmap] at hnat
     simpa [Complex.conjCLE_apply] using hnat.symm
-  · have hfs : ¬ (P.polarizedComplexMeasure ξ ψ).Integrable (fun t => star (f t)) := by
+  · have hfs : ¬ (P.polarizedComplexMeasure ξ ψ).Integrable (fun t => starRingEnd ℂ (f t)) := by
       intro h
       rw [VectorMeasure.Integrable, P.variation_polarizedComplexMeasure_comm] at h
       exact hf (by simpa [Complex.conjCLE_apply] using
         (Complex.conjCLE : ℂ →L[ℝ] ℂ).integrable_comp h)
-    rw [VectorMeasure.integral_undef hf, VectorMeasure.integral_undef hfs, star_zero]
+    rw [VectorMeasure.integral_undef hf, VectorMeasure.integral_undef hfs, map_zero]
 
 end ProjValMeasure
 end TauCeti

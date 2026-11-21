@@ -30,9 +30,9 @@ and absolutely continuous with respect to both `P.diag ξ` and `P.diag ψ`
 (`variation_polarizedComplexMeasure_absolutelyContinuous_diag`,
 `variation_polarizedComplexMeasure_absolutelyContinuous_diag_left`).
 
-Restricting to any set `B` yields the local Cauchy–Schwarz variation estimate
+For every set `B` (not necessarily measurable), the local Cauchy–Schwarz variation estimate
 `(P.polarizedComplexMeasure ψ ξ).variation B ≤ (P.diag ψ B) ^ (1 / 2) * (P.diag ξ B) ^ (1 / 2)`
-(`polarizedComplexMeasure_variation_apply_le`), and summing over simple functions yields the
+holds (`polarizedComplexMeasure_variation_apply_le`), and summing over simple functions yields the
 variation Cauchy–Schwarz inequalities `lintegral_variation_polarizedComplexMeasure_le` and
 `lintegral_variation_polarizedComplexMeasure_le_left` for every `g : X → ℝ≥0∞`.
 
@@ -162,7 +162,8 @@ theorem polarizedComplexMeasure_variation_apply_le_enorm (P : ProjValMeasure X H
     _ = ((P.polarizedComplexMeasure ψ ξ).restrict B).variation Set.univ := by
         rw [VectorMeasure.variation_restrict hB]
     _ = (P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ)).variation Set.univ := by
-        rw [P.polarizedComplexMeasure_proj_proj B hB]
+        rw [P.polarizedComplexMeasure_proj_right, P.polarizedComplexMeasure_proj_left,
+          VectorMeasure.restrict_restrict _ hB hB, Set.inter_self]
     _ ≤ ENNReal.ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖) :=
         P.polarizedComplexMeasure_variation_univ_le _ _
     _ = ‖P.proj B hB ψ‖ₑ * ‖P.proj B hB ξ‖ₑ := by
@@ -179,8 +180,8 @@ theorem polarizedComplexMeasure_variation_apply_le (P : ProjValMeasure X H) (ψ 
     (measurableSet_toMeasurable _ _).inter (measurableSet_toMeasurable _ _)
   have hBE : B ⊆ E := Set.subset_inter (subset_toMeasurable _ _) (subset_toMeasurable _ _)
   have hdiag (v : H) : ‖P.proj E hE v‖ₑ = (P.diag v E) ^ (1 / 2 : ℝ) := by
-    rw [← P.enorm_sq_proj_apply E hE v, ← ENNReal.rpow_two, ← ENNReal.rpow_mul,
-      mul_one_div_cancel two_ne_zero, ENNReal.rpow_one]
+    rw [← P.enorm_sq_proj_apply E hE v, ← ENNReal.rpow_two, one_div,
+      ENNReal.rpow_rpow_inv two_ne_zero]
   have hψE : P.diag ψ E ≤ P.diag ψ B :=
     (measure_mono Set.inter_subset_left).trans_eq (measure_toMeasurable B)
   have hξE : P.diag ξ E ≤ P.diag ξ B :=
@@ -200,8 +201,8 @@ private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ �
     s.lintegral (P.polarizedComplexMeasure ψ ξ).variation ≤
       ‖ψ‖ₑ * (∫⁻ t, s t ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
   have hψ : (∑ c ∈ s.range, P.diag ψ (s ⁻¹' {c})) ^ (1 / 2 : ℝ) = ‖ψ‖ₑ := by
-    rw [s.sum_range_measure_preimage_singleton, P.diag_univ, ← ENNReal.rpow_two,
-      ← ENNReal.rpow_mul, mul_one_div_cancel two_ne_zero, ENNReal.rpow_one]
+    rw [s.sum_range_measure_preimage_singleton, P.diag_univ, ← ENNReal.rpow_two, one_div,
+      ENNReal.rpow_rpow_inv two_ne_zero]
   have hξ : ∑ c ∈ s.range, c ^ 2 * P.diag ξ (s ⁻¹' {c}) = ∫⁻ t, s t ^ 2 ∂(P.diag ξ) := by
     rw [← SimpleFunc.map_lintegral (fun c => c ^ 2) s,
       ← (s.map (fun c => c ^ 2)).lintegral_eq_lintegral]
@@ -224,9 +225,9 @@ private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ �
     _ = ‖ψ‖ₑ * (∫⁻ t, s t ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
         rw [← hψ, ← hξ]
         congr 2 <;> refine Finset.sum_congr rfl fun c _ => ?_
-        · rw [← ENNReal.rpow_mul, one_div_mul_cancel two_ne_zero, ENNReal.rpow_one]
-        · rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.rpow_two,
-            ← ENNReal.rpow_mul, one_div_mul_cancel two_ne_zero, ENNReal.rpow_one]
+        · rw [one_div, ENNReal.rpow_inv_rpow two_ne_zero]
+        · rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.rpow_two, one_div,
+            ENNReal.rpow_inv_rpow two_ne_zero]
 
 /-- **Cauchy–Schwarz inequality for the variation of a polarized spectral measure** (in the right
 vector): for every `g : X → ℝ≥0∞` (with no measurability hypothesis),
@@ -235,14 +236,10 @@ theorem lintegral_variation_polarizedComplexMeasure_le (P : ProjValMeasure X H) 
     (g : X → ℝ≥0∞) :
     ∫⁻ t, g t ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
       ‖ψ‖ₑ * (∫⁻ t, g t ^ 2 ∂(P.diag ξ)) ^ (1 / 2 : ℝ) := by
-  rw [← iSup_lintegral_measurable_le_eq_lintegral g]
-  refine iSup_le fun h => iSup_le fun hh => iSup_le fun hhg => ?_
-  rw [lintegral_eq_iSup_eapprox_lintegral hh]
-  refine iSup_le fun n =>
-    (P.simpleFunc_lintegral_variation_le ψ ξ (SimpleFunc.eapprox h n)).trans ?_
+  rw [lintegral_def]
+  refine iSup₂_le fun s hs => (P.simpleFunc_lintegral_variation_le ψ ξ s).trans ?_
   gcongr with t
-  exact ((le_iSup (fun m => (SimpleFunc.eapprox h m : SimpleFunc X ℝ≥0∞) t) n).trans_eq
-    (SimpleFunc.iSup_eapprox_apply hh t)).trans (hhg t)
+  exact hs t
 
 /-- **Cauchy–Schwarz inequality for the variation of a polarized spectral measure** (in the left
 vector): for every `g : X → ℝ≥0∞`,

@@ -42,9 +42,9 @@ on `H`.
 * `ProjValMeasure.dense_spectralIntegral_domain`,
   `ProjValMeasure.spectralIntegral_hasCore_iSup_range_proj`, and
   `ProjValMeasure.spectralIntegral_hasCore_iSup_range_proj_norm_le`: the domain of
-  `P.spectralIntegral f hf` is dense in `H`, and the supremum of the ranges of any strongly
-  convergent family of spectral projections mapping into the domain (in particular
-  `LinearMap.range (P.proj {‖f‖ ≤ n} _)`) is a graph core for `P.spectralIntegral f hf`.
+  `P.spectralIntegral f hf` is dense in `H`, and the supremum of the ranges of any family of
+  spectral projections converging strongly to the identity and mapping into the domain (in
+  particular `LinearMap.range (P.proj {‖f‖ ≤ n} _)`) is a graph core for `P.spectralIntegral f hf`.
 * `ProjValMeasure.norm_sq_spectralIntegral_apply` and `ProjValMeasure.diag_spectralIntegral`: the
   second-moment norm identity `‖P.spectralIntegral f hf x‖ ^ 2 = ∫ t, ‖f t‖ ^ 2 ∂(P.diag x)` and
   the diagonal measure density `P.diag (P.spectralIntegral f hf x) = (P.diag x).withDensity _`.
@@ -58,7 +58,9 @@ on `H`.
   `ProjValMeasure.polarizedComplexMeasure_spectralIntegral_left`, and
   `ProjValMeasure.eq_spectralIntegral_of_domain_of_inner`: matrix-element and weighted-measure
   formulas for `P.spectralIntegral f hf`, and uniqueness from the domain and matrix elements.
-* `ProjValMeasure.spectralIntegral_coe_boundedBorelFunction`,
+* `ProjValMeasure.mem_spectralIntegral_domain_congr_ae`,
+  `ProjValMeasure.spectralIntegral_apply_congr_ae`,
+  `ProjValMeasure.spectralIntegral_coe_boundedBorelFunction`,
   `ProjValMeasure.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction`,
   `ProjValMeasure.spectralIntegral_apply_of_ae_eq_boundedBorelFunction`,
   `ProjValMeasure.integral_apply_mem_spectralIntegral_domain`,
@@ -66,9 +68,9 @@ on `H`.
   `ProjValMeasure.spectralIntegral_proj_apply`,
   `ProjValMeasure.proj_mem_spectralIntegral_domain_of_bound`,
   `ProjValMeasure.spectralIntegral_proj_eq_integral_indicator_of_ae_eq`, and
-  `ProjValMeasure.spectralIntegral_proj_norm_le_eq_integral_truncate`: compatibility and
-  intertwining with the bounded Borel integral `P.integral`, spectral projections `P.proj`, and
-  level-set truncations.
+  `ProjValMeasure.spectralIntegral_proj_norm_le_eq_integral_truncate`: vectorwise a.e. congruence,
+  compatibility and intertwining with the bounded Borel integral `P.integral`, spectral
+  projections `P.proj`, and level-set truncations.
 * `ProjValMeasure.spectralIntegral_eq_zero_iff`,
   `ProjValMeasure.spectralIntegral_eq_spectralIntegral_iff`, and
   `ProjValMeasure.spectralIntegral_map`: `P`-almost-everywhere characterizations of vanishing and
@@ -242,14 +244,32 @@ theorem mem_spectralIntegral_domain_iff_integrable_norm_sq (P : ProjValMeasure X
   (P.mem_spectralIntegral_domain_iff_memLp hf x).trans
     (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable)
 
+/-- Every bounded Borel operator `P.integral g` leaves the domain of `P.spectralIntegral f hf`
+invariant. -/
+theorem integral_apply_mem_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) (g : BoundedBorelFunction X) {x : H}
+    (hx : x ∈ (P.spectralIntegral f hf).domain) :
+    P.integral g x ∈ (P.spectralIntegral f hf).domain := by
+  rw [P.mem_spectralIntegral_domain_iff hf, P.diag_integral,
+    lintegral_withDensity_eq_lintegral_mul₀ (g.measurable.eNorm.pow_const 2).aemeasurable
+      (hf.eNorm.pow_const 2).aemeasurable]
+  have hle : ∫⁻ t, ‖g t‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) ≤
+      ∫⁻ t, ‖g‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
+    refine lintegral_mono fun t => ?_
+    gcongr
+    exact eNorm_le_iff_norm_le.2 (g.norm_coe_le_norm t)
+  refine hle.trans_lt ?_
+  rw [lintegral_const_mul _ (hf.eNorm.pow_const 2)]
+  exact ENNReal.mul_lt_top (ENNReal.pow_lt_top eNorm_lt_top)
+    ((P.mem_spectralIntegral_domain_iff hf x).1 hx)
+
 /-- Every spectral projection `P.proj B hB` leaves the domain of `P.spectralIntegral f hf`
 invariant. -/
 theorem proj_mem_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
     (B : Set X) (hB : MeasurableSet B) {x : H} (hx : x ∈ (P.spectralIntegral f hf).domain) :
     P.proj B hB x ∈ (P.spectralIntegral f hf).domain := by
-  rw [P.mem_spectralIntegral_domain_iff hf] at hx ⊢
-  rw [P.diag_proj B hB x]
-  exact (lintegral_mono' Measure.restrict_le_self le_rfl).trans_lt hx
+  simpa only [P.integral_indicator hB] using
+    P.integral_apply_mem_spectralIntegral_domain hf (BoundedBorelFunction.indicator B hB 1) hx
 
 /-- If `f` is bounded in norm by `M` `P.diag x`-almost everywhere on a measurable set `B`, then
 `P.proj B hB x` belongs to the domain of `P.spectralIntegral f hf`. -/
@@ -284,86 +304,6 @@ theorem dense_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ} (
   mem_closure_of_tendsto (P.tendsto_proj_norm_le_apply hf x)
     (Eventually.of_forall fun M : ℝ => P.proj_norm_le_mem_spectralIntegral_domain hf M x)
 
-/-- Every spectral projection `P.proj B hB` commutes with `P.spectralIntegral f hf` on its
-domain. -/
-theorem spectralIntegral_proj_apply (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
-    (B : Set X) (hB : MeasurableSet B) (x : (P.spectralIntegral f hf).domain) :
-    P.spectralIntegral f hf ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩ =
-      P.proj B hB (P.spectralIntegral f hf x) := by
-  let xB : (P.spectralIntegral f hf).domain :=
-    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩
-  refine tendsto_nhds_unique (P.tendsto_integral_truncate_spectralIntegral hf xB) ?_
-  have hcont := ((P.proj B hB).continuous.tendsto _).comp
-    (P.tendsto_integral_truncate_spectralIntegral hf x)
-  refine hcont.congr fun M => ?_
-  simp only [Function.comp_apply, xB]
-  rw [P.integral_proj_apply _ hB x, P.proj_integral_apply hB _ x]
-
-/-- If `f` agrees with a bounded Borel symbol `g` `P.diag x`-almost everywhere on a measurable set
-`B`, then `P.spectralIntegral f hf` acts on `P.proj B hB x` as the bounded Borel integral of
-`BoundedBorelFunction.indicator B hB g` applied to `x`. -/
-theorem spectralIntegral_proj_eq_integral_indicator_of_ae_eq (P : ProjValMeasure X H) {f : X → ℂ}
-    (hf : Measurable f) {B : Set X} (hB : MeasurableSet B) {g : BoundedBorelFunction X} {x : H}
-    (hfg : ∀ᵐ t ∂P.diag x, t ∈ B → f t = g t) :
-    P.spectralIntegral f hf ⟨P.proj B hB x,
-        P.proj_mem_spectralIntegral_domain_of_bound hf hB
-          (hfg.mono fun t ht htB => (ht htB).symm ▸ g.norm_coe_le_norm t)⟩ =
-      P.integral (BoundedBorelFunction.indicator B hB g) x := by
-  let xB : (P.spectralIntegral f hf).domain :=
-    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain_of_bound hf hB
-      (hfg.mono fun t ht htB => (ht htB).symm ▸ g.norm_coe_le_norm t)⟩
-  refine tendsto_nhds_unique (P.tendsto_integral_truncate_spectralIntegral hf xB) ?_
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_ge_atTop ‖g‖] with M hM
-  symm
-  simp only [xB]
-  rw [P.integral_proj_apply (BoundedBorelFunction.truncate f hf M) hB x, ← sub_eq_zero,
-    ← sub_apply, ← map_sub, P.integral_apply_eq_zero_iff]
-  refine hfg.mono fun t ht => ?_
-  by_cases htB : t ∈ B
-  · have hle : t ∈ {s | ‖f s‖ ≤ M} := by
-      rw [Set.mem_ofPred_eq, ht htB]
-      exact (g.norm_coe_le_norm t).trans hM
-    simp [htB, Set.indicator_of_mem hle, ht htB]
-  · simp [htB]
-
-/-- If `f` agrees on a measurable set `B` with a bounded Borel symbol `g`, then
-`P.spectralIntegral f hf` acts on `P.proj B hB x` as the bounded Borel integral of
-`BoundedBorelFunction.indicator B hB g` applied to `x`. -/
-theorem spectralIntegral_proj_eq_integral_indicator_of_eqOn (P : ProjValMeasure X H) {f : X → ℂ}
-    (hf : Measurable f) {B : Set X} (hB : MeasurableSet B) {g : BoundedBorelFunction X}
-    (hfg : Set.EqOn f g B) (x : H) :
-    P.spectralIntegral f hf
-        ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain_of_eqOn hf hB hfg x⟩ =
-      P.integral (BoundedBorelFunction.indicator B hB g) x :=
-  P.spectralIntegral_proj_eq_integral_indicator_of_ae_eq hf hB (Eventually.of_forall hfg)
-
-/-- On the spectral cutoff `P.proj {t | ‖f t‖ ≤ M} _ x`, `P.spectralIntegral f hf` evaluates to the
-bounded Borel integral `P.integral (BoundedBorelFunction.truncate f hf M) x`. -/
-theorem spectralIntegral_proj_norm_le_eq_integral_truncate (P : ProjValMeasure X H) {f : X → ℂ}
-    (hf : Measurable f) (M : ℝ) (x : H) :
-    P.spectralIntegral f hf ⟨P.proj {t | ‖f t‖ ≤ M}
-        (measurableSet_le hf.norm measurable_const) x,
-        P.proj_norm_le_mem_spectralIntegral_domain hf M x⟩ =
-      P.integral (BoundedBorelFunction.truncate f hf M) x := by
-  simpa only [BoundedBorelFunction.indicator_norm_le_truncate] using
-    P.spectralIntegral_proj_eq_integral_indicator_of_eqOn hf (B := {t | ‖f t‖ ≤ M})
-      (measurableSet_le hf.norm measurable_const)
-      (g := BoundedBorelFunction.truncate f hf M)
-      (fun _ ht => by simp [Set.indicator_of_mem ht]) x
-
-/-- For `x` in the domain of `P.spectralIntegral f hf`, the values of `P.spectralIntegral f hf` on
-the spectral cutoffs `P.proj {t | ‖f t‖ ≤ M} _ x` converge to `P.spectralIntegral f hf x` as
-`M → ∞`. -/
-theorem tendsto_spectralIntegral_proj_norm_le_apply (P : ProjValMeasure X H) {f : X → ℂ}
-    (hf : Measurable f) (x : (P.spectralIntegral f hf).domain) :
-    Tendsto (fun M : ℝ => P.spectralIntegral f hf ⟨P.proj {t | ‖f t‖ ≤ M}
-        (measurableSet_le hf.norm measurable_const) x,
-        P.proj_norm_le_mem_spectralIntegral_domain hf M x⟩)
-      atTop (𝓝 (P.spectralIntegral f hf x)) := by
-  simpa only [spectralIntegral_proj_norm_le_eq_integral_truncate] using
-    P.tendsto_integral_truncate_spectralIntegral hf x
-
 /-! ## Norm-square identity, diagonal and polarized densities, and matrix elements -/
 
 /-- **Second-moment norm identity** for the unbounded spectral integral: for `x` in the domain of
@@ -391,33 +331,6 @@ theorem norm_sq_spectralIntegral_apply (P : ProjValMeasure X H) {f : X → ℂ} 
       (ae_of_all _ fun t => ((BoundedBorelFunction.tendsto_truncate_apply hf t).norm).pow 2)
   exact hdom.congr fun M =>
     (P.norm_sq_integral_apply (BoundedBorelFunction.truncate f hf M) x).symm
-
-/-- The diagonal scalar measure of `P.spectralIntegral f hf x` is `P.diag x` weighted by
-`t ↦ ‖f t‖ₑ ^ 2`. -/
-@[simp]
-theorem diag_spectralIntegral (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
-    (x : (P.spectralIntegral f hf).domain) :
-    P.diag (P.spectralIntegral f hf x) = (P.diag x).withDensity fun t => ‖f t‖ₑ ^ 2 := by
-  have hint : Integrable (fun t => ‖f t‖ ^ 2) (P.diag x) :=
-    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.property
-  ext B hB
-  let xB : (P.spectralIntegral f hf).domain :=
-    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩
-  calc
-    P.diag (P.spectralIntegral f hf x) B
-        = ‖P.proj B hB (P.spectralIntegral f hf x)‖ₑ ^ 2 :=
-      (P.enorm_sq_proj_apply B hB _).symm
-    _ = ENNReal.ofReal (‖P.spectralIntegral f hf xB‖ ^ 2) := by
-      rw [← P.spectralIntegral_proj_apply hf B hB x,
-        ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ENNReal.ofReal (∫ t in B, ‖f t‖ ^ 2 ∂(P.diag x)) := by
-      rw [P.norm_sq_spectralIntegral_apply hf xB, P.diag_proj B hB x]
-    _ = ∫⁻ t in B, ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
-      rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn
-        (ae_of_all _ fun _ => sq_nonneg _)]
-      refine lintegral_congr fun t => ?_
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ((P.diag x).withDensity fun t => ‖f t‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
 
 /-- For `x` in the domain of `P.spectralIntegral f hf`, `P.spectralIntegral f hf x = 0` if and
 only if `f = 0` almost everywhere for `P.diag x`. -/
@@ -491,16 +404,61 @@ theorem inner_spectralIntegral_apply_left (P : ProjValMeasure X H) {f : X → �
     (y : (P.spectralIntegral f hf).domain) (x : H) :
     ⟪P.spectralIntegral f hf y, x⟫_ℂ =
       ∫ᵛ t, star (f t) ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure y x] := by
-  have hsf : Measurable (star f) := continuous_star.measurable.comp hf
-  have hint : (P.polarizedComplexMeasure x y).Integrable (star f) :=
-    P.integrable_polarizedComplexMeasure_of_mem_spectralIntegral_domain hsf
-      (by rw [P.spectralIntegral_star_domain]; exact y.property) x
-  rw [← inner_conj_symm, P.inner_spectralIntegral_apply hf y x]
-  simpa [Complex.conjCLE_apply, P.mapRangeL_conjCLE_polarizedComplexMeasure] using
-    VectorMeasure.map_integral_comp_eq_integral_mapRangeL (P.polarizedComplexMeasure x y) hint
-      (Complex.conjCLE : ℂ →L[ℝ] ℂ) (Complex.conjCLE : ℂ →L[ℝ] ℂ) (Complex.conjCLE : ℂ →L[ℝ] ℂ)
-      (B := ContinuousLinearMap.mul ℝ ℂ) (B' := ContinuousLinearMap.mul ℝ ℂ)
-      (fun a b => by simp [mul_comm])
+  rw [← inner_conj_symm, P.inner_spectralIntegral_apply hf y x,
+    ← P.integral_polarizedComplexMeasure_star f x y]
+  simp only [RCLike.star_def]
+
+/-- **Intertwining with bounded Borel operators**: `P.spectralIntegral f hf` commutes with
+`P.integral g` on its domain. -/
+theorem spectralIntegral_integral_apply (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
+    (g : BoundedBorelFunction X) (x : (P.spectralIntegral f hf).domain) :
+    P.spectralIntegral f hf
+        ⟨P.integral g x, P.integral_apply_mem_spectralIntegral_domain hf g x.property⟩ =
+      P.integral g (P.spectralIntegral f hf x) := by
+  apply ext_inner_left ℂ
+  intro y
+  have hpol : P.polarizedComplexMeasure y (P.integral g x) =
+      P.polarizedComplexMeasure (P.integral (star g) y) x := by
+    rw [P.polarizedComplexMeasure_integral_right, P.polarizedComplexMeasure_integral_left]
+    simp
+  rw [P.inner_spectralIntegral_apply, hpol, ← P.inner_spectralIntegral_apply,
+    map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+
+/-- Every spectral projection `P.proj B hB` commutes with `P.spectralIntegral f hf` on its
+domain. -/
+theorem spectralIntegral_proj_apply (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
+    (B : Set X) (hB : MeasurableSet B) (x : (P.spectralIntegral f hf).domain) :
+    P.spectralIntegral f hf ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩ =
+      P.proj B hB (P.spectralIntegral f hf x) := by
+  simpa only [P.integral_indicator hB] using
+    P.spectralIntegral_integral_apply hf (BoundedBorelFunction.indicator B hB 1) x
+
+/-- The diagonal scalar measure of `P.spectralIntegral f hf x` is `P.diag x` weighted by
+`t ↦ ‖f t‖ₑ ^ 2`. -/
+@[simp]
+theorem diag_spectralIntegral (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
+    (x : (P.spectralIntegral f hf).domain) :
+    P.diag (P.spectralIntegral f hf x) = (P.diag x).withDensity fun t => ‖f t‖ₑ ^ 2 := by
+  have hint : Integrable (fun t => ‖f t‖ ^ 2) (P.diag x) :=
+    (P.mem_spectralIntegral_domain_iff_integrable_norm_sq hf x).1 x.property
+  ext B hB
+  let xB : (P.spectralIntegral f hf).domain :=
+    ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain hf B hB x.property⟩
+  calc
+    P.diag (P.spectralIntegral f hf x) B
+        = ‖P.proj B hB (P.spectralIntegral f hf x)‖ₑ ^ 2 :=
+      (P.enorm_sq_proj_apply B hB _).symm
+    _ = ENNReal.ofReal (‖P.spectralIntegral f hf xB‖ ^ 2) := by
+      rw [← P.spectralIntegral_proj_apply hf B hB x,
+        ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ENNReal.ofReal (∫ t in B, ‖f t‖ ^ 2 ∂(P.diag x)) := by
+      rw [P.norm_sq_spectralIntegral_apply hf xB, P.diag_proj B hB x]
+    _ = ∫⁻ t in B, ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
+      rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn
+        (ae_of_all _ fun _ => sq_nonneg _)]
+      refine lintegral_congr fun t => ?_
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ((P.diag x).withDensity fun t => ‖f t‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
 
 /-- Applying `P.spectralIntegral f hf` in the linear argument weights the polarized complex measure
 by `f`. -/
@@ -545,6 +503,27 @@ theorem eq_spectralIntegral_of_domain_of_inner (P : ProjValMeasure X H) {f : X �
 
 /-! ## Bounded calculus comparison, algebraic properties, `P.ae`-invariance, and reindexing -/
 
+/-- If two measurable symbols agree `P.diag x`-almost everywhere, then `x` belongs to the domain of
+`P.spectralIntegral f hf` if and only if it belongs to the domain of `P.spectralIntegral g hg`. -/
+theorem mem_spectralIntegral_domain_congr_ae (P : ProjValMeasure X H) {f g : X → ℂ}
+    (hf : Measurable f) (hg : Measurable g) {x : H} (h : f =ᵐ[P.diag x] g) :
+    x ∈ (P.spectralIntegral f hf).domain ↔ x ∈ (P.spectralIntegral g hg).domain := by
+  have hlin : (∫⁻ t, ‖f t‖ₑ ^ 2 ∂P.diag x) = ∫⁻ t, ‖g t‖ₑ ^ 2 ∂P.diag x :=
+    lintegral_congr_ae (h.fun_comp fun z : ℂ => ‖z‖ₑ ^ 2)
+  rw [P.mem_spectralIntegral_domain_iff hf, P.mem_spectralIntegral_domain_iff hg, hlin]
+
+/-- If two measurable symbols agree `P.diag x`-almost everywhere and `x` lies in both domains, then
+`P.spectralIntegral f hf` and `P.spectralIntegral g hg` agree at `x`. -/
+theorem spectralIntegral_apply_congr_ae (P : ProjValMeasure X H) {f g : X → ℂ}
+    (hf : Measurable f) (hg : Measurable g) {x : H} (h : f =ᵐ[P.diag x] g)
+    (hx₁ : x ∈ (P.spectralIntegral f hf).domain)
+    (hx₂ : x ∈ (P.spectralIntegral g hg).domain) :
+    P.spectralIntegral f hf ⟨x, hx₁⟩ = P.spectralIntegral g hg ⟨x, hx₂⟩ := by
+  refine P.spectralIntegral_apply_eq_of_inner hf ⟨x, hx₁⟩ fun y => ?_
+  rw [P.inner_spectralIntegral_apply hg ⟨x, hx₂⟩ y]
+  exact VectorMeasure.integral_congr_ae
+    ((P.variation_polarizedComplexMeasure_absolutelyContinuous_diag y x) h.symm)
+
 /-- For a bounded Borel symbol `g`, the unbounded spectral integral `P.spectralIntegral g _` is
 everywhere defined and coincides with the bounded Borel integral `P.integral g`. -/
 @[simp]
@@ -567,10 +546,9 @@ the domain of `P.spectralIntegral f hf`. -/
 theorem mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction (P : ProjValMeasure X H)
     {f : X → ℂ} (hf : Measurable f) {g : BoundedBorelFunction X} {x : H}
     (h : f =ᵐ[P.diag x] g) :
-    x ∈ (P.spectralIntegral f hf).domain := by
-  rw [P.mem_spectralIntegral_domain_iff_memLp hf]
-  exact (MemLp.of_bound g.measurable.aestronglyMeasurable ‖g‖
-    (Eventually.of_forall g.norm_coe_le_norm)).ae_eq h.symm
+    x ∈ (P.spectralIntegral f hf).domain :=
+  (P.mem_spectralIntegral_domain_congr_ae hf g.measurable h).2
+    (by rw [P.spectralIntegral_coe_boundedBorelFunction g]; simp)
 
 /-- If `f` agrees `P.diag x`-almost everywhere with a bounded Borel symbol `g`, then
 `P.spectralIntegral f hf` acts on `x` as the bounded operator `P.integral g`. -/
@@ -580,45 +558,63 @@ theorem spectralIntegral_apply_of_ae_eq_boundedBorelFunction (P : ProjValMeasure
     P.spectralIntegral f hf
         ⟨x, P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction hf h⟩ =
       P.integral g x := by
-  refine P.spectralIntegral_apply_eq_of_inner hf _ fun y => ?_
-  rw [← P.integral_polarizedComplexMeasure_eq_inner_integral g y x]
-  exact (VectorMeasure.integral_congr_ae
-    ((P.variation_polarizedComplexMeasure_absolutelyContinuous_diag y x) h)).symm
+  refine (P.spectralIntegral_apply_congr_ae hf g.measurable h _
+    (by rw [P.spectralIntegral_coe_boundedBorelFunction g]; simp)).trans ?_
+  rw [LinearPMap.congr_fun (P.spectralIntegral_coe_boundedBorelFunction g) _ (by simp)]
+  simp
 
-/-- Every bounded Borel operator `P.integral g` leaves the domain of `P.spectralIntegral f hf`
-invariant. -/
-theorem integral_apply_mem_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ}
-    (hf : Measurable f) (g : BoundedBorelFunction X) {x : H}
-    (hx : x ∈ (P.spectralIntegral f hf).domain) :
-    P.integral g x ∈ (P.spectralIntegral f hf).domain := by
-  rw [P.mem_spectralIntegral_domain_iff hf, P.diag_integral,
-    lintegral_withDensity_eq_lintegral_mul₀ (g.measurable.eNorm.pow_const 2).aemeasurable
-      (hf.eNorm.pow_const 2).aemeasurable]
-  have hle : ∫⁻ t, ‖g t‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) ≤
-      ∫⁻ t, ‖g‖ₑ ^ 2 * ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
-    refine lintegral_mono fun t => ?_
-    gcongr
-    exact eNorm_le_iff_norm_le.2 (g.norm_coe_le_norm t)
-  refine hle.trans_lt ?_
-  rw [lintegral_const_mul _ (hf.eNorm.pow_const 2)]
-  exact ENNReal.mul_lt_top (ENNReal.pow_lt_top eNorm_lt_top)
-    ((P.mem_spectralIntegral_domain_iff hf x).1 hx)
+/-- If `f` agrees with a bounded Borel symbol `g` `P.diag x`-almost everywhere on a measurable set
+`B`, then `P.spectralIntegral f hf` acts on `P.proj B hB x` as the bounded Borel integral of
+`BoundedBorelFunction.indicator B hB g` applied to `x`. -/
+theorem spectralIntegral_proj_eq_integral_indicator_of_ae_eq (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) {B : Set X} (hB : MeasurableSet B) {g : BoundedBorelFunction X} {x : H}
+    (hfg : ∀ᵐ t ∂P.diag x, t ∈ B → f t = g t) :
+    P.spectralIntegral f hf ⟨P.proj B hB x,
+        P.proj_mem_spectralIntegral_domain_of_bound hf hB
+          (hfg.mono fun t ht htB => (ht htB).symm ▸ g.norm_coe_le_norm t)⟩ =
+      P.integral (BoundedBorelFunction.indicator B hB g) x := by
+  have hfg' : f =ᵐ[P.diag (P.proj B hB x)] g := by
+    rw [P.diag_proj B hB x]
+    exact (ae_restrict_iff' hB).2 hfg
+  exact (P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction hf hfg').trans
+    (P.integral_proj_apply g hB x)
 
-/-- **Intertwining with bounded Borel operators**: `P.spectralIntegral f hf` commutes with
-`P.integral g` on its domain. -/
-theorem spectralIntegral_integral_apply (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f)
-    (g : BoundedBorelFunction X) (x : (P.spectralIntegral f hf).domain) :
+/-- If `f` agrees on a measurable set `B` with a bounded Borel symbol `g`, then
+`P.spectralIntegral f hf` acts on `P.proj B hB x` as the bounded Borel integral of
+`BoundedBorelFunction.indicator B hB g` applied to `x`. -/
+theorem spectralIntegral_proj_eq_integral_indicator_of_eqOn (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) {B : Set X} (hB : MeasurableSet B) {g : BoundedBorelFunction X}
+    (hfg : Set.EqOn f g B) (x : H) :
     P.spectralIntegral f hf
-        ⟨P.integral g x, P.integral_apply_mem_spectralIntegral_domain hf g x.property⟩ =
-      P.integral g (P.spectralIntegral f hf x) := by
-  apply ext_inner_left ℂ
-  intro y
-  have hpol : P.polarizedComplexMeasure y (P.integral g x) =
-      P.polarizedComplexMeasure (P.integral (star g) y) x := by
-    rw [P.polarizedComplexMeasure_integral_right, P.polarizedComplexMeasure_integral_left]
-    simp
-  rw [P.inner_spectralIntegral_apply, hpol, ← P.inner_spectralIntegral_apply,
-    map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+        ⟨P.proj B hB x, P.proj_mem_spectralIntegral_domain_of_eqOn hf hB hfg x⟩ =
+      P.integral (BoundedBorelFunction.indicator B hB g) x :=
+  P.spectralIntegral_proj_eq_integral_indicator_of_ae_eq hf hB (Eventually.of_forall hfg)
+
+/-- On the spectral cutoff `P.proj {t | ‖f t‖ ≤ M} _ x`, `P.spectralIntegral f hf` evaluates to the
+bounded Borel integral `P.integral (BoundedBorelFunction.truncate f hf M) x`. -/
+theorem spectralIntegral_proj_norm_le_eq_integral_truncate (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) (M : ℝ) (x : H) :
+    P.spectralIntegral f hf ⟨P.proj {t | ‖f t‖ ≤ M}
+        (measurableSet_le hf.norm measurable_const) x,
+        P.proj_norm_le_mem_spectralIntegral_domain hf M x⟩ =
+      P.integral (BoundedBorelFunction.truncate f hf M) x := by
+  simpa only [BoundedBorelFunction.indicator_norm_le_truncate] using
+    P.spectralIntegral_proj_eq_integral_indicator_of_eqOn hf (B := {t | ‖f t‖ ≤ M})
+      (measurableSet_le hf.norm measurable_const)
+      (g := BoundedBorelFunction.truncate f hf M)
+      (fun _ ht => by simp [Set.indicator_of_mem ht]) x
+
+/-- For `x` in the domain of `P.spectralIntegral f hf`, the values of `P.spectralIntegral f hf` on
+the spectral cutoffs `P.proj {t | ‖f t‖ ≤ M} _ x` converge to `P.spectralIntegral f hf x` as
+`M → ∞`. -/
+theorem tendsto_spectralIntegral_proj_norm_le_apply (P : ProjValMeasure X H) {f : X → ℂ}
+    (hf : Measurable f) (x : (P.spectralIntegral f hf).domain) :
+    Tendsto (fun M : ℝ => P.spectralIntegral f hf ⟨P.proj {t | ‖f t‖ ≤ M}
+        (measurableSet_le hf.norm measurable_const) x,
+        P.proj_norm_le_mem_spectralIntegral_domain hf M x⟩)
+      atTop (𝓝 (P.spectralIntegral f hf x)) := by
+  simpa only [spectralIntegral_proj_norm_le_eq_integral_truncate] using
+    P.tendsto_integral_truncate_spectralIntegral hf x
 
 /-- The unbounded spectral integral of `0` is the everywhere-defined zero partial operator. -/
 @[simp]
@@ -704,24 +700,10 @@ theorem sub_le_spectralIntegral_sub (P : ProjValMeasure X H) {f g : X → ℂ} (
 /-- Measurable symbols that agree `P`-almost everywhere have equal unbounded spectral integrals. -/
 theorem spectralIntegral_congr_ae (P : ProjValMeasure X H) {f g : X → ℂ} (hf : Measurable f)
     (hg : Measurable g) (h : f =ᶠ[P.ae] g) :
-    P.spectralIntegral f hf = P.spectralIntegral g hg := by
-  have hdom : (P.spectralIntegral f hf).domain = (P.spectralIntegral g hg).domain := by
-    ext x
-    simp only [P.mem_spectralIntegral_domain_iff]
-    have hlin : ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag x) = ∫⁻ t, ‖g t‖ₑ ^ 2 ∂(P.diag x) :=
-      lintegral_congr_ae ((P.ae_diag_of_ae x h).mono fun _ ht => by dsimp only; rw [ht])
-    rw [hlin]
-  refine LinearPMap.ext hdom fun x hx₁ hx₂ => ?_
-  have htr (M : ℝ) : P.integral (BoundedBorelFunction.truncate f hf M) x =
-      P.integral (BoundedBorelFunction.truncate g hg M) x := by
-    have htr_ae :
-        (BoundedBorelFunction.truncate f hf M : X → ℂ) =ᶠ[P.ae]
-          BoundedBorelFunction.truncate g hg M := by
-      filter_upwards [h] with t ht
-      simp [Set.indicator_apply, ht]
-    rw [P.integral_congr_ae htr_ae]
-  exact tendsto_nhds_unique (P.tendsto_integral_truncate_spectralIntegral hf ⟨x, hx₁⟩)
-    ((P.tendsto_integral_truncate_spectralIntegral hg ⟨x, hx₂⟩).congr fun M => (htr M).symm)
+    P.spectralIntegral f hf = P.spectralIntegral g hg :=
+  LinearPMap.ext
+    (Submodule.ext fun x => P.mem_spectralIntegral_domain_congr_ae hf hg (P.ae_diag_of_ae x h))
+    fun x hx₁ hx₂ => P.spectralIntegral_apply_congr_ae hf hg (P.ae_diag_of_ae x h) hx₁ hx₂
 
 /-- Two measurable symbols have the same unbounded spectral integral against `P` if and only if
 they agree `P`-almost everywhere. -/
