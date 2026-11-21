@@ -10,6 +10,7 @@ import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Linear differential equations with measurable coefficients
@@ -55,34 +56,25 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : ℝ → E →L[ℝ] E} {F : ℝ → E}
   {a b K : ℝ} {x₀ : E}
 
-/-- The right-hand side `s ↦ M s (x s) + F s` of a linear equation with `M` and `F` integrable on
-`(a, b)` is integrable on `(a, b)` along every curve `x` continuous on `[a, b]`. -/
-theorem integrableOn_clm_apply_add (hM : IntegrableOn M (Ioo a b)) (hF : IntegrableOn F (Ioo a b))
-    {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
-    IntegrableOn (fun s ↦ M s (x s) + F s) (Ioo a b) := by
-  -- `M` is integrable on the compact interval `[a, b]`, on which `x` is continuous.
-  have hM' := ((integrableOn_Icc_iff_integrableOn_Ioo (f := M)).2 hM).locallyIntegrableOn
-  exact (((hM'.clm_apply_continuousOn isClosed_Icc.isLocallyClosed hx).integrableOn_isCompact
-    isCompact_Icc).mono_set Ioo_subset_Icc_self).add hF
-
 namespace CaratheodoryLinear
 
 /-- The integrand `s ↦ M s (y s) + F s` of the Picard map is integrable on `[a, b]`. -/
 private theorem integrableOn_Icc (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
     (hF : IntegrableOn F (Ioo a b)) (y : C(Icc a b, E)) :
     IntegrableOn (fun s ↦ M s (IccExtend hab y s) + F s) (Icc a b) :=
-  (integrableOn_Icc_iff_integrableOn_Ioo (f := fun s ↦ M s (IccExtend hab y s) + F s)).2
-    (integrableOn_clm_apply_add hM hF y.continuous.Icc_extend'.continuousOn)
+  (((integrableOn_Icc_iff_integrableOn_Ioo (f := M)).2 hM).clm_apply_continuousOn
+    y.continuous.Icc_extend'.continuousOn isCompact_Icc).add
+    ((integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2 hF)
 
 /-- The Picard map `y ↦ x₀ + ∫ₐᵗ (M s (y s) + F s) ds` on `C([a, b], E)`. -/
 private noncomputable def next (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
     (hF : IntegrableOn F (Ioo a b)) (x₀ : E) (y : C(Icc a b, E)) : C(Icc a b, E) where
   toFun t := ODE.picard (fun s z ↦ M s z + F s) a x₀ (IccExtend hab y) t
   continuous_toFun := by
-    have h := continuousOn_primitive_interval (a := a) (b := b)
-      (by rw [uIcc_of_le hab]; exact integrableOn_Icc hab hM hF y)
-    rw [uIcc_of_le hab] at h
-    exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
+    simp only [ODE.picard_apply]
+    have h := intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo
+      ((integrableOn_Icc hab hM hF y).mono_set Ioo_subset_Icc_self) (left_mem_Icc.2 hab)
+    exact (continuousOn_const.add h).domRestrict
 
 private theorem next_apply (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
     (hF : IntegrableOn F (Ioo a b)) (y : C(Icc a b, E)) (t : Icc a b) :
@@ -194,7 +186,7 @@ theorem exists_continuousOn_eq_forall_mem_Icc_eq_picard [CompleteSpace E]
     ⟨_, hC.isFixedPt_fixedPoint_iterate⟩
   have hsol : ∀ t ∈ Icc a b,
       IccExtend hab y t = ODE.picard (fun s y ↦ M s y + F s) a x₀ (IccExtend hab y) t :=
-    fun t ht ↦ by rw [IccExtend_of_mem hab _ ht, ← next_apply hab hMi hF y ⟨t, ht⟩, hy]
+    fun t ht ↦ by rw [IccExtend_of_mem hab _ ht, ← next_apply hab hMi hF y ⟨t, ht⟩, hy.eq]
   exact ⟨IccExtend hab y, y.continuous.Icc_extend'.continuousOn,
     by simpa using hsol a (left_mem_Icc.2 hab), hsol⟩
 
