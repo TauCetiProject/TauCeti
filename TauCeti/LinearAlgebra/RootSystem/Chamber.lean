@@ -39,6 +39,7 @@ Weyl-invariant.
 * `RootPairing.IsRegularWeight` is regularity of a weight: no coroot functional vanishes on it.
 * `RootPairing.dominantChamber` is the closed dominant chamber of a base.
 * `RootPairing.openDominantChamber` is its open counterpart.
+* `RootPairing.posCorootSum` is the sum of the positive coroot functionals evaluated at a weight.
 
 ## Main results
 
@@ -48,6 +49,8 @@ Weyl-invariant.
 * `RootPairing.mem_openDominantChamber_of_isRegularWeight` and
   `RootPairing.isRegularWeight_of_mem_openDominantChamber`: strict dominance is equivalent to
   regular dominance.
+* `RootPairing.posCorootSum_reflection`: a simple reflection shifts `posCorootSum` by minus twice
+  its simple coroot functional.
 * `RootPairing.exists_mem_dominantChamber_of_finite_weylGroup` and
   `RootPairing.exists_mem_dominantChamber`: every weight is Weyl-conjugate into the closed dominant
   chamber.
@@ -59,6 +62,13 @@ Weyl-invariant.
 * `RootPairing.mem_dominantChamber_iff_forall_mem_posRoots` and
   `RootPairing.mem_openDominantChamber_iff_forall_mem_posRoots`: both chambers are cut out by
   all of the positive coroot functionals, not just the simple ones.
+* `RootPairing.exists_pos_coroot'_eq_of_mem_posRoots`,
+  `RootPairing.exists_neg_coroot'_eq_of_mem_negRoots`, `RootPairing.exists_ne_zero_coroot'_eq`
+  and `RootPairing.isRegularWeight_of_forall_exists_pos_coroot'_eq`: over a coefficient ring that
+  need not be ordered, if every simple coroot takes a value `φ t` with `0 < t` on a weight, for an
+  additive map `φ` from an ordered group `S`, then every positive, negative or arbitrary coroot
+  takes a value `φ t` there with `t` positive, negative or nonzero in `S` respectively, and the
+  weight is regular when `φ` is injective.
 * `RootPairing.root'_pos_of_isPos` and `RootPairing.root'_neg_of_not_isPos`: on the coweight
   space, where the simple roots are positive, so are the positive roots, and the negative roots
   are negative.
@@ -120,6 +130,12 @@ Not a `simp` lemma: unfolding the predicate would take `RootPairing.isRegularWei
 simp-normal form, and would dissolve `IsRegularWeight` out of the goals its own API is stated
 about. Use it explicitly, as `rw [isRegularWeight_iff]` or `simp [isRegularWeight_iff]`. -/
 lemma isRegularWeight_iff (x : M) : IsRegularWeight P x ↔ ∀ i, P.coroot' i x ≠ 0 := Iff.rfl
+
+variable {P} in
+/-- A regular weight is nonzero as soon as there is a root: every coroot functional vanishes at
+zero. -/
+lemma IsRegularWeight.ne_zero [Nonempty ι] {x : M} (hx : IsRegularWeight P x) : x ≠ 0 :=
+  fun h ↦ hx (Classical.arbitrary ι) (by rw [h, map_zero])
 
 /-- **Regularity is a Weyl-invariant condition on weights.** A Weyl-group element matches the
 coroot functional of a root with that of its image, so it can neither create nor destroy a
@@ -257,23 +273,27 @@ end Reflections
 
 section Finite
 
-variable [Finite ι] [CharZero R] [IsDomain R]
+variable [Finite ι] [CharZero R]
 
 /-- The sum of the coroot functionals indexed by the positive roots, evaluated at `x`. Up to the
-factor two this is the pairing of `x` with the Weyl vector on the coroot side; all that is used
-below is how it transforms under a simple reflection. -/
-private noncomputable def posCorootSum (x : M) : R :=
+factor two this is the pairing of `x` with the Weyl vector on the coroot side. -/
+noncomputable def posCorootSum (x : M) : R :=
   ∑ i ∈ posRootsFinset P b, P.coroot' i x
 
-variable [P.IsCrystallographic] [P.IsReduced]
+/-- Definitional expansion of `posCorootSum` as the sum over `posRootsFinset P b`. -/
+theorem posCorootSum_def (x : M) :
+    posCorootSum P b x = ∑ i ∈ posRootsFinset P b, P.coroot' i x :=
+  (rfl)
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
 /-- A simple reflection changes `posCorootSum` by twice the value of its own simple coroot. The
 reflection permutes the positive roots other than its own simple root, and negates that one. -/
-private lemma posCorootSum_reflection {i : ι} (hi : i ∈ b.support) (x : M) :
+theorem posCorootSum_reflection {i : ι} (hi : i ∈ b.support) (x : M) :
     posCorootSum P b (P.reflection i x) = posCorootSum P b x - 2 * P.coroot' i x := by
   classical
   -- Work with the underlying sums rather than leaning on `posCorootSum` unfolding silently.
-  unfold posCorootSum
+  rw [posCorootSum_def, posCorootSum_def]
   have his : i ∈ posRootsFinset P b :=
     (mem_posRootsFinset P b i).mpr (support_subset_posRoots P b hi)
   -- Reflecting the argument reindexes the summand along `P.reflectionPerm i`.
@@ -382,35 +402,88 @@ theorem mem_dominantChamber_iff_forall_mem_posRoots :
 
 end Preorder
 
+/-! #### Simple coroot values in an ordered group
+
+The coefficient ring need not be ordered: it suffices that the simple coroots take positive values
+of an ordered additive group `S` mapping to `R`, as for a weight of a complex root system on which
+the simple coroots take positive real values. The open dominant chamber is the case `S = R`. -/
+
+section Values
+
+variable {S F : Type*} [AddCommGroup S] [PartialOrder S] [IsOrderedAddMonoid S] [FunLike F S R]
+  [AddMonoidHomClass F S R] (φ : F)
+
+/-- If every simple coroot takes the value `φ t` of some `0 < t` on `x`, so does every positive
+coroot. -/
+theorem exists_pos_coroot'_eq_of_mem_posRoots
+    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = φ t) {i : ι}
+    (hi : i ∈ posRoots P b) : ∃ t : S, 0 < t ∧ P.coroot' i x = φ t := by
+  -- Some simple coroot really occurs in the expansion, because a coroot is never zero.
+  obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
+  choose! t ht hxt using hx
+  refine ⟨∑ k ∈ b.support, f k • t k, Finset.sum_pos' (fun k hk ↦ nsmul_nonneg (ht k hk).le _)
+    ⟨j, hj, nsmul_pos (ht j hj) hfj⟩, ?_⟩
+  rw [hsum, LinearMap.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [LinearMap.smul_apply, hxt k hk, map_nsmul, Nat.cast_smul_eq_nsmul]
+
+/-- If every simple coroot takes the value `φ t` of some `0 < t` on `x`, every negative coroot
+takes the value `φ t` of some `t < 0` there. -/
+theorem exists_neg_coroot'_eq_of_mem_negRoots
+    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = φ t) {i : ι}
+    (hi : i ∈ negRoots P b) : ∃ t : S, t < 0 ∧ P.coroot' i x = φ t := by
+  obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b φ hx
+    ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).mpr hi)
+  refine ⟨-t, neg_neg_of_pos ht, ?_⟩
+  rw [RootPairing.coroot'_reflectionPerm_self, LinearMap.neg_apply, neg_eq_iff_eq_neg] at hxt
+  rw [hxt, map_neg]
+
+/-- If every simple coroot takes the value `φ t` of some `0 < t` on `x`, every coroot takes the
+value `φ t` of some `t ≠ 0` there. -/
+theorem exists_ne_zero_coroot'_eq
+    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = φ t) (i : ι) :
+    ∃ t : S, t ≠ 0 ∧ P.coroot' i x = φ t := by
+  rcases mem_posRoots_or_mem_negRoots P b i with hi | hi
+  · obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b φ hx hi
+    exact ⟨t, ht.ne', hxt⟩
+  · obtain ⟨t, ht, hxt⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b φ hx hi
+    exact ⟨t, ht.ne, hxt⟩
+
+/-- **A weight on which the simple coroots take positive values of an ordered group is regular**,
+for an injective additive map `φ` from that group. -/
+theorem isRegularWeight_of_forall_exists_pos_coroot'_eq (hφ : Function.Injective φ)
+    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = φ t) : IsRegularWeight P x := by
+  intro i
+  obtain ⟨t, ht, hxt⟩ := exists_ne_zero_coroot'_eq P b φ hx i
+  rw [hxt]
+  exact (map_ne_zero_iff φ hφ).mpr ht
+
+end Values
+
 variable [PartialOrder R] [IsOrderedAddMonoid R]
 
 /-- Every positive coroot functional is positive on the open dominant chamber. -/
 theorem coroot'_pos_of_mem_posRoots (hx : x ∈ openDominantChamber P b) {i : ι}
     (hi : i ∈ posRoots P b) : 0 < P.coroot' i x := by
-  -- Some simple coroot really occurs in the expansion, because a coroot is never zero.
-  obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
-  have hx' := (mem_openDominantChamber P b x).mp hx
-  rw [hsum, LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply, Nat.cast_smul_eq_nsmul]
-  exact Finset.sum_pos' (fun k hk ↦ nsmul_nonneg (hx' k hk).le _) ⟨j, hj,
-    nsmul_pos (hx' j hj) hfj⟩
+  obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b (AddMonoidHom.id R)
+    (fun j hj ↦ ⟨_, (mem_openDominantChamber P b x).mp hx j hj, rfl⟩) hi
+  rw [hxt]
+  exact ht
 
 /-- Every negative coroot functional is negative on the open dominant chamber. -/
 theorem coroot'_neg_of_mem_negRoots (hx : x ∈ openDominantChamber P b) {i : ι}
     (hi : i ∈ negRoots P b) : P.coroot' i x < 0 := by
-  have h := coroot'_pos_of_mem_posRoots P b hx
-    ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).mpr hi)
-  rw [RootPairing.coroot'_reflectionPerm_self] at h
-  simpa using h
+  obtain ⟨t, ht, hxt⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b (AddMonoidHom.id R)
+    (fun j hj ↦ ⟨_, (mem_openDominantChamber P b x).mp hx j hj, rfl⟩) hi
+  rw [hxt]
+  exact ht
 
 /-- **A strictly dominant weight is regular.** Every root is positive or negative, and the two
 kinds of coroot functional are respectively positive and negative on the open dominant chamber. -/
 theorem isRegularWeight_of_mem_openDominantChamber (hx : x ∈ openDominantChamber P b) :
-    IsRegularWeight P x := by
-  intro i
-  rcases mem_posRoots_or_mem_negRoots P b i with hi | hi
-  · exact (coroot'_pos_of_mem_posRoots P b hx hi).ne'
-  · exact (coroot'_neg_of_mem_negRoots P b hx hi).ne
+    IsRegularWeight P x :=
+  isRegularWeight_of_forall_exists_pos_coroot'_eq P b (AddMonoidHom.id R) Function.injective_id
+    fun j hj ↦ ⟨_, (mem_openDominantChamber P b x).mp hx j hj, rfl⟩
 
 /-- **The open dominant chamber is cut out by the positive coroot functionals**, not just by the
 simple ones. -/

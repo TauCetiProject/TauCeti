@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
@@ -15,13 +14,13 @@ import TauCeti.Analysis.MellinInversion
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
-import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The Mellin–Barnes integral of `(1 + z)^{-a}` and Barnes's first lemma
 
 For `0 < Re s < Re a` the Mellin transform of `t ↦ (1 + t)^{-a}` is Euler's Beta integral of the
-second kind ([DLMF 5.12.3](https://dlmf.nist.gov/5.12.E3)),
+second kind (DLMF 5.12.3),
 
 `∫₀^∞ t^{s - 1} (1 + t)^{-a} dt = Γ(s) Γ(a - s) / Γ(a)`,
 
@@ -30,12 +29,12 @@ the real-variable proof of `TauCeti.integral_rpow_mul_one_add_rpow` to complex p
 every vertical line `Re s = σ` avoiding the poles of both factors the product `Γ(s) Γ(a - s)` is
 integrable, since `Γ(σ + i y)` decays faster than every power of `|y|` while `Γ(a - σ - i y)` is
 bounded. For `0 < σ < Re a`, Mellin inversion then gives the Mellin–Barnes integral of the
-binomial on `(0, ∞)`,
+binomial,
 
 `Γ(a) (1 + u)^{-a} = (1 / 2π) ∫ Γ(σ + i y) Γ(a - σ - i y) u^{-σ - i y} dy`   for `u > 0`.
 
 Stirling's vertical estimates (`TauCeti.exists_norm_Gamma_vertical_line_le` and
-`TauCeti.exists_norm_Gamma_sub_mul_I_le`) sharpen the vertical decay to
+`TauCeti.exists_norm_Gamma_sub_I_le`) sharpen the vertical decay to
 `‖Γ(σ + i y) Γ(a - σ - i y)‖ = O((1 + |y|)^{Re a - 1} e^{-π |y|})`, so the slit-plane holomorphy of
 the Mellin–Barnes kernel (`TauCeti.analyticOnNhd_integral_cpow_neg_smul`) and the
 positive-axis identity principle `AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq` continue the
@@ -43,45 +42,53 @@ representation to the whole cut plane `z ∈ Complex.slitPlane`:
 
 `(2π)⁻¹ ∫_ℝ Γ(σ + i y) Γ(a - σ - i y) z^{-(σ + i y)} dy = Γ(a) (1 + z)^{-a}`.
 
-Inserting this representation of `Γ(b + d) (1 + u)^{-(b + d)}` (translated along the vertical line
-to `s = d - i y`) against `u^{a + d - 1} (1 + u)^{-(a + c)}` on `(0, ∞)` and exchanging the order of
-integration by Fubini's theorem yields Barnes's first lemma
-([DLMF 5.13.3](https://dlmf.nist.gov/5.13.E3)): for `a, b, c, d : ℂ` in the open right half-plane,
+Inserting Euler's Beta integral of the second kind into the vertical integral of a four-Gamma
+product and swapping the two integrations by Fubini's theorem proves **Barnes's first lemma**
+(DLMF 5.13.3): for `a, b, c, d` in the open right half-plane,
 
-`(2π)⁻¹ ∫_ℝ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy =
-  Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`.
+`(1 / 2π) ∫ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy =
+  Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`,
+
+together with its general form on any vertical line `Re s = σ` separating the left and right pole
+sequences (`max (-Re a, -Re b) < σ < min (Re c, Re d)`).
 
 ## Main results
 
-* `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` on `(0, ∞)`
-  (DLMF 5.12.3).
+* `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
+  `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.integrableOn_cpow_mul_one_add_cpow_neg`, `Complex.integral_cpow_mul_one_add_cpow_neg`:
+  the same Beta integral as an integrable function and a set integral on `(0, ∞)`.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`,
   `Complex.integrable_Gamma_mul_Gamma_sub_mul_cpow_neg`,
   `Complex.integrable_Gamma_add_mul_Gamma_neg_mul_cpow`: vertical integrability of
   `Γ(s) Γ(a - s)` and its slit-plane Mellin–Barnes integrands.
-* `Complex.mellinInv_Gamma_mul_Gamma_sub`, `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`,
-  `Complex.integral_Gamma_mul_Gamma_sub_mul_cpow_neg`,
+* `Complex.mellinInv_Gamma_mul_Gamma_sub`, `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`:
+  Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line `Re s = σ` with `0 < σ < Re a` is
+  `Γ(a) (1 + u)^{-a}` for `u > 0`.
+* `Complex.integral_Gamma_mul_Gamma_sub_mul_cpow_neg`,
   `Complex.integral_Gamma_add_mul_Gamma_neg_mul_cpow`: the Mellin–Barnes integral representation of
-  `Γ(a) (1 + z)^{-a}` on `(0, ∞)` and on `Complex.slitPlane`, in both sign conventions.
-* `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`,
-  `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`,
-  `Complex.integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub`: Barnes's first lemma
-  (DLMF 5.13.3) and its shifted-contour corollary.
+  `Γ(a) (1 + z)^{-a}` on `Complex.slitPlane`, in both sign conventions.
+* `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: integrability of
+  `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` away from the poles of the four factors.
+* `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: **Barnes's first lemma** (DLMF 5.13.3)
+  on `i ℝ` for `a, b, c, d` in the open right half-plane.
+* `Complex.integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub`: Barnes's first lemma on a
+  general separating vertical line `Re s = σ`.
 
 ## References
 
-* [NIST Digital Library of Mathematical Functions, §5.12.3, §5.13.3, and §15.6](https://dlmf.nist.gov/5.13).
-* E. T. Whittaker and G. N. Watson, *A Course of Modern Analysis*, §§12.41 and 14.5–14.52.
+* NIST Digital Library of Mathematical Functions, equations 5.12.3 and 5.13.3, and §15.6 (the
+  Mellin–Barnes integrals 15.6.6–15.6.7).
+* E. T. Whittaker and G. N. Watson, *A Course of Modern Analysis*, §§12.41, 14.5, and 14.52.
+* G. E. Andrews, R. Askey, and R. Roy, *Special Functions*, §2.4 (Theorem 2.4.2).
 -/
 
 public section
 
-open Real Set MeasureTheory Filter Topology Function
+open Real Set MeasureTheory Filter
 open Complex hiding exp continuous_exp log
 
 namespace Complex
-
-/-! ### Mellin transform of `(1 + t)^{-a}` (DLMF 5.12.3) -/
 
 /-- Under the chart `u ↦ u / (1 - u)` of `(0, 1)` onto `(0, ∞)`, the Mellin integrand of
 `(1 + t)^{-a}` at `s` becomes the integrand of the Beta integral with parameters `s` and
@@ -147,7 +154,18 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 
-/-! ### Mellin–Barnes integral of `(1 + z)^{-a}` on `(0, ∞)` and on the slit plane -/
+/-- For `0 < Re s < Re a`, the integrand `u^{s - 1} (1 + u)^{-a}` of Euler's Beta integral of the
+second kind is integrable on `(0, ∞)`. -/
+theorem integrableOn_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a)) (Ioi 0) := by
+  simpa [MellinConvergent] using (hasMellin_one_add_cpow_neg hs hsa).1
+
+/-- **Euler's Beta integral of the second kind** (DLMF 5.12.3), as a set integral: for
+`0 < Re s < Re a`, `∫₀^∞ u^{s - 1} (1 + u)^{-a} du = Γ(s) Γ(a - s) / Γ(a)`. -/
+theorem integral_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a) =
+      Gamma s * Gamma (a - s) / Gamma a := by
+  simpa [mellin] using (hasMellin_one_add_cpow_neg hs hsa).2
 
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
@@ -159,9 +177,8 @@ theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
   refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
     (Eventually.of_forall fun y ↦ by simpa [hsub] using hC (a.im - y))
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ haσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+  simpa only [sub_add_eq_sub_sub] using
+    (continuous_Gamma_sub_mul_I (w := a - σ) (by simpa using haσ)).aestronglyMeasurable
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:
@@ -213,23 +230,25 @@ private theorem continuous_and_norm_Gamma_mul_Gamma_sub_le {a : ℂ} {σ : ℝ}
   have hsub (y : ℝ) : a - ((σ : ℂ) + y * I) = (a - σ) - y * I := by ring
   have hcont : Continuous fun y : ℝ ↦ Gamma (σ + y * I) * Gamma (a - (σ + y * I)) := by
     simp only [hsub]
-    exact (continuous_Gamma_add_mul_I (a := σ) (by simpa using hσ)).mul
-      (continuous_Gamma_sub_mul_I (a := a - σ) (by simpa [sub_re] using haσ))
+    exact (continuous_Gamma_add_mul_I (w := σ) (by simpa using hσ)).mul
+      (continuous_Gamma_sub_mul_I (w := a - σ) (by simpa [sub_re] using haσ))
   obtain ⟨C₁, hC₁, h₁⟩ := TauCeti.exists_norm_Gamma_vertical_line_le hσ
-  obtain ⟨C₂, hC₂, h₂⟩ := TauCeti.exists_norm_Gamma_sub_mul_I_le (z := a - σ)
+  obtain ⟨C₂, hC₂, h₂⟩ := TauCeti.exists_norm_Gamma_sub_I_le (w := a - σ)
     (by simpa [sub_re] using haσ)
   refine ⟨hcont, C₁ * C₂, mul_pos hC₁ hC₂, fun y ↦ ?_⟩
   have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
-  have h2y := h₂ y; simp only [sub_re, ofReal_re] at h2y
+  have h2y := h₂ y
+  simp only [sub_re, ofReal_re] at h2y
   rw [hsub, norm_mul]
   calc ‖Gamma (σ + y * I)‖ * ‖Gamma (a - σ - y * I)‖
-      ≤ (C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-π * |y| / 2)) *
-          (C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-π * |y| / 2)) :=
+      ≤ (C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π * |y| / 2))) *
+          (C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-(π * |y| / 2))) :=
         mul_le_mul (h₁ y) h2y (norm_nonneg _) (by positivity)
     _ = C₁ * C₂ * ((1 + |y|) ^ (σ - 1 / 2) * (1 + |y|) ^ (a.re - σ - 1 / 2)) *
-          (Real.exp (-π * |y| / 2) * Real.exp (-π * |y| / 2)) := by ring
+          (Real.exp (-(π * |y| / 2)) * Real.exp (-(π * |y| / 2))) := by ring
     _ = C₁ * C₂ * (1 + |y|) ^ (a.re - 1) * Real.exp (-π * |y|) := by
-        rw [← Real.rpow_add h1y, ← Real.exp_add]; ring_nf
+        rw [← Real.rpow_add h1y, ← Real.exp_add]
+        ring_nf
 
 /-- For `z ∈ Complex.slitPlane` and `σ : ℝ` avoiding the poles of `Γ(s)` and `Γ(a - s)`, the
 Mellin–Barnes integrand `y ↦ Γ(σ + i y) Γ(a - (σ + i y)) z^{-(σ + i y)}` is integrable on `ℝ`. -/
@@ -268,7 +287,8 @@ theorem integral_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ} (hσ : 
   refine hanL.eqOn_slitPlane_of_ofReal_pos_eq hanR (fun r hr ↦ ?_) hz
   have hm := mellinInv_Gamma_mul_Gamma_sub hσ hσa hr
   rw [mellinInv, real_smul, one_div] at hm
-  rw [← hm]; push_cast
+  rw [← hm]
+  push_cast
   congr 1
   exact integral_congr_ae (Eventually.of_forall fun _ ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
 
@@ -281,9 +301,9 @@ theorem integrable_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ}
       Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) := by
   refine (integrable_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
     hσ (by simpa [sub_neg_eq_add] using haσ) hz).comp_neg.congr (Eventually.of_forall fun y ↦ ?_)
-  simp only [ofReal_neg]
-  rw [show -(σ : ℂ) + -(y : ℂ) * I = -((σ : ℂ) + y * I) by ring, sub_neg_eq_add, neg_neg,
-    mul_comm (Gamma _)]
+  have hneg : ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by push_cast; ring
+  dsimp only [Function.comp_def]
+  rw [hneg, sub_neg_eq_add, neg_neg, mul_comm (Gamma _)]
 
 /-- Positive-exponent form of the Mellin–Barnes integral of `(1 + z)^{-a}`: for `-Re a < σ < 0` and
 `z ∈ Complex.slitPlane`,
@@ -298,187 +318,203 @@ theorem integral_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ} (hσ : 
   congr 1
   rw [← integral_neg_eq_self]
   refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-  simp only [ofReal_neg]
-  rw [show -((σ : ℂ) + -(y : ℂ) * I) = -(σ : ℂ) + y * I by ring,
-    show a + ((σ : ℂ) + -(y : ℂ) * I) = a - (-(σ : ℂ) + y * I) by ring,
-    show (σ : ℂ) + -(y : ℂ) * I = -(-(σ : ℂ) + y * I) by ring, mul_comm (Gamma _)]
+  have hneg : -((σ : ℂ) + (-y : ℝ) * I) = ((-σ : ℝ) : ℂ) + y * I := by push_cast; ring
+  have hadd : a + ((σ : ℂ) + (-y : ℝ) * I) = a - (((-σ : ℝ) : ℂ) + y * I) := by push_cast; ring
+  have hexp : (σ : ℂ) + (-y : ℝ) * I = -(((-σ : ℝ) : ℂ) + y * I) := by push_cast; ring
+  dsimp only
+  rw [hneg, hadd, hexp, mul_comm (Gamma _)]
 
-/-! ### Barnes's first lemma (DLMF 5.13.3) -/
+/-- The product `y ↦ Γ(b + i y) Γ(d - i y)` is integrable on `ℝ` whenever neither `Re b` nor
+`Re d` is a nonpositive integer. -/
+theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : ∀ n : ℕ, b.re ≠ -n)
+    (hd : ∀ n : ℕ, d.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
+  have h := (verticalIntegrable_Gamma_mul_Gamma_sub (a := b + d) hb
+    (by simpa using hd)).comp_add_left b.im
+  refine h.congr (Eventually.of_forall fun y ↦ ?_)
+  have hb' : (b.re : ℂ) + ↑(b.im + y) * I = b + y * I := by
+    apply Complex.ext <;> simp
+  have hd' : b + d - ((b.re : ℂ) + ↑(b.im + y) * I) = d - y * I := by
+    rw [hb']
+    ring
+  dsimp
+  rw [hd', hb']
 
-/-- The four-Gamma integrand `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` of Barnes's first
-lemma is integrable on `ℝ` whenever the real parts of `a`, `b`, `c`, `d` avoid the nonpositive
-integers. -/
+/-- Shifted form of `integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: for `Re b > 0`, `Re d > 0`, and
+`u > 0`, `∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}`. -/
+theorem integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : 0 < b.re) (hd : 0 < d.re)
+    {u : ℝ} (hu : 0 < u) :
+    ∫ y : ℝ, (u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I)) =
+      2 * π * (Gamma (b + d) * (1 + (u : ℂ)) ^ (-(b + d))) := by
+  have hcongr (y : ℝ) :
+      (u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I)) =
+        (u : ℂ) ^ (-((b.re : ℂ) + ↑(b.im + y) * I)) *
+          (Gamma ((b.re : ℂ) + ↑(b.im + y) * I) *
+            Gamma (b + d - ((b.re : ℂ) + ↑(b.im + y) * I))) := by
+    have hb' : (b.re : ℂ) + ↑(b.im + y) * I = b + y * I := by
+      apply Complex.ext <;> simp
+    have hd' : b + d - ((b.re : ℂ) + ↑(b.im + y) * I) = d - y * I := by
+      rw [hb']
+      ring
+    rw [hd', hb']
+  simp_rw [hcongr]
+  rw [integral_add_left_eq_self
+    (fun t : ℝ ↦ (u : ℂ) ^ (-((b.re : ℂ) + t * I)) *
+      (Gamma ((b.re : ℂ) + t * I) * Gamma (b + d - ((b.re : ℂ) + t * I)))) b.im]
+  exact integral_cpow_neg_mul_Gamma_mul_Gamma_sub hb (by simp; linarith) hu
+
+/-- The four-Gamma integrand of Barnes's first lemma is integrable on `ℝ` whenever none of
+`Re a`, `Re b`, `Re c`, `Re d` is a nonpositive integer. -/
 theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ}
-    (ha : ∀ n : ℕ, a.re ≠ -n) (hb : ∀ n : ℕ, b.re ≠ -n)
-    (hc : ∀ n : ℕ, c.re ≠ -n) (hd : ∀ n : ℕ, d.re ≠ -n) :
+    (ha : ∀ n : ℕ, a.re ≠ -n) (hb : ∀ n : ℕ, b.re ≠ -n) (hc : ∀ n : ℕ, c.re ≠ -n)
+    (hd : ∀ n : ℕ, d.re ≠ -n) :
     Integrable fun y : ℝ ↦
       Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) := by
-  obtain ⟨C₁, hC₁, h₁⟩ := TauCeti.exists_norm_Gamma_add_mul_I_le ha
-  obtain ⟨C₂, hC₂, h₂⟩ := TauCeti.exists_norm_Gamma_add_mul_I_le hb
-  obtain ⟨C₃, hC₃, h₃⟩ := TauCeti.exists_norm_Gamma_sub_mul_I_le hc
-  obtain ⟨C₄, _, h₄⟩ := TauCeti.exists_norm_Gamma_sub_mul_I_le hd
-  have hcont : Continuous fun y : ℝ ↦
-      Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) :=
-    (((continuous_Gamma_add_mul_I ha).mul (continuous_Gamma_add_mul_I hb)).mul
-      (continuous_Gamma_sub_mul_I hc)).mul (continuous_Gamma_sub_mul_I hd)
-  refine ((TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs
-    (a.re + b.re + c.re + d.re - 2) (show 0 < 2 * π by positivity)).const_mul
-    (C₁ * C₂ * C₃ * C₄)).mono' hcont.aestronglyMeasurable (Eventually.of_forall fun y ↦ ?_)
-  have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
-  rw [norm_mul, norm_mul, norm_mul]
-  calc ‖Gamma (a + y * I)‖ * ‖Gamma (b + y * I)‖ * ‖Gamma (c - y * I)‖ * ‖Gamma (d - y * I)‖
-      ≤ (C₁ * (1 + |y|) ^ (a.re - 1 / 2) * Real.exp (-π * |y| / 2)) *
-          (C₂ * (1 + |y|) ^ (b.re - 1 / 2) * Real.exp (-π * |y| / 2)) *
-          (C₃ * (1 + |y|) ^ (c.re - 1 / 2) * Real.exp (-π * |y| / 2)) *
-          (C₄ * (1 + |y|) ^ (d.re - 1 / 2) * Real.exp (-π * |y| / 2)) :=
-        mul_le_mul (mul_le_mul (mul_le_mul (h₁ y) (h₂ y) (norm_nonneg _) (by positivity))
-          (h₃ y) (norm_nonneg _) (by positivity)) (h₄ y) (norm_nonneg _) (by positivity)
-    _ = C₁ * C₂ * C₃ * C₄ *
-          ((1 + |y|) ^ (a.re - 1 / 2) * (1 + |y|) ^ (b.re - 1 / 2) *
-            (1 + |y|) ^ (c.re - 1 / 2) * (1 + |y|) ^ (d.re - 1 / 2)) *
-          (Real.exp (-π * |y| / 2) * Real.exp (-π * |y| / 2) *
-            Real.exp (-π * |y| / 2) * Real.exp (-π * |y| / 2)) := by ring
-    _ = _ := by
-        rw [← Real.rpow_add h1y, ← Real.rpow_add h1y, ← Real.rpow_add h1y,
-          ← Real.exp_add, ← Real.exp_add, ← Real.exp_add]; ring_nf
-
-/-- Translated Mellin–Barnes representation of `Γ(b + d) (1 + u)^{-(b + d)}` along the vertical
-line `s = d - i y`, used in the Fubini proof of Barnes's first lemma. -/
-private theorem Gamma_mul_one_add_cpow_neg_eq_integral_shift {b d : ℂ} (hb : 0 < b.re)
-    (hd : 0 < d.re) {u : ℝ} (hu : 0 < u) :
-    Gamma (b + d) * (1 + (u : ℂ)) ^ (-(b + d)) =
-      (2 * π : ℂ)⁻¹ * ∫ y : ℝ, Gamma (b + y * I) * Gamma (d - y * I) * (u : ℂ) ^ (y * I - d) := by
-  rw [← integral_Gamma_mul_Gamma_sub_mul_cpow_neg (a := b + d) (z := (u : ℂ)) (σ := d.re)
-    hd (by simp [add_re, hb]) (ofReal_mem_slitPlane.2 hu)]
-  congr 1; rw [← integral_sub_left_eq_self _ volume d.im]
-  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-  have hd_eq : (d.re : ℂ) + ((d.im - y : ℝ) : ℂ) * I = d - y * I := by apply Complex.ext <;> simp
-  dsimp only
-  rw [hd_eq, show b + d - (d - y * I) = b + y * I by ring,
-    show -(d - y * I) = y * I - d by ring, mul_comm (Gamma (d - y * I))]
-
-/-- Product-measure integrability on `(0, ∞) × ℝ` for the Fubini integrand in Barnes's first
-lemma. -/
-private theorem integrable_uncurry_barnesFirstLemma {a b c d : ℂ} (ha : 0 < a.re)
-    (hb : 0 < b.re) (hc : 0 < c.re) (hd : 0 < d.re) :
-    Integrable (uncurry fun u y : ℝ ↦
-        Gamma (b + y * I) * Gamma (d - y * I) *
-          ((u : ℂ) ^ (a + y * I - 1) * (1 + (u : ℂ)) ^ (-(a + c))))
-      ((volume.restrict (Ioi (0 : ℝ))).prod volume) := by
-  have hb_ne : ∀ n : ℕ, b.re ≠ -n := fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)]
-  have hd_ne : ∀ n : ℕ, d.re ≠ -n := fun n _ ↦ by linarith [n.cast_nonneg (α := ℝ)]
-  have hφ : Integrable (fun u : ℝ ↦ ‖(u : ℂ) ^ ((a.re : ℂ) - 1) *
-      (1 + (u : ℂ)) ^ (-((a.re + c.re : ℝ) : ℂ))‖) (volume.restrict (Ioi 0)) := by
-    simpa only [MellinConvergent, smul_eq_mul] using
-      (hasMellin_one_add_cpow_neg (s := a.re) (a := (a.re + c.re : ℝ))
-        (by simpa using ha) (by simp [hc])).1.norm
-  have hψ : Integrable (fun y : ℝ ↦ ‖Gamma (b + y * I) * Gamma (d - y * I)‖) volume := by
-    refine ((verticalIntegrable_Gamma_mul_Gamma_sub (a := b + d) (σ := b.re) hb_ne
-      (by simpa [add_re] using hd_ne)).comp_add_left b.im).norm.congr
-        (Eventually.of_forall fun y ↦ ?_)
-    have hb_eq : (b.re : ℂ) + ((b.im + y : ℝ) : ℂ) * I = b + y * I := by
+  obtain ⟨Cb, hCb⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hb 0
+  obtain ⟨Cd, hCd⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hd 0
+  have h_ac := integrable_Gamma_add_mul_Gamma_sub ha hc
+  have h_bd_cont : Continuous fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) :=
+    (continuous_Gamma_add_mul_I hb).mul (continuous_Gamma_sub_mul_I hd)
+  have h_bd_bdd : ∀ y : ℝ, ‖Gamma (b + y * I) * Gamma (d - y * I)‖ ≤ Cb * Cd := by
+    intro y
+    have hb_eq : b + y * I = (b.re : ℂ) + ↑(b.im + y) * I := by
       apply Complex.ext <;> simp
-    dsimp only
-    rw [hb_eq, show b + d - (b + y * I) = d - y * I by ring]
-  have hmeas_eq : (volume.restrict (Ioi (0 : ℝ))).prod (volume : Measure ℝ) =
-      ((volume : Measure ℝ).prod volume).restrict (Ioi (0 : ℝ) ×ˢ univ) := by
-    simpa only [Measure.restrict_univ] using
-      Measure.prod_restrict (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ)) (Ioi 0) univ
-  have hF_meas : AEStronglyMeasurable
-      (uncurry fun u y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) *
-        ((u : ℂ) ^ (a + y * I - 1) * (1 + (u : ℂ)) ^ (-(a + c))))
-      ((volume.restrict (Ioi (0 : ℝ))).prod volume) := by
-    rw [hmeas_eq]
-    refine ContinuousOn.aestronglyMeasurable (μ := (volume : Measure ℝ).prod volume)
-      (fun ⟨u, y⟩ ⟨hu, _⟩ ↦ ContinuousAt.continuousWithinAt ?_)
-      (measurableSet_Ioi.prod MeasurableSet.univ)
-    have hu_slit : (u : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.2 hu
-    exact (((continuous_Gamma_add_mul_I hb_ne).continuousAt.comp continuousAt_snd).mul
-      ((continuous_Gamma_sub_mul_I hd_ne).continuousAt.comp continuousAt_snd)).mul
-      ((ContinuousAt.cpow (f := fun p : ℝ × ℝ ↦ (p.1 : ℂ)) (by fun_prop) (by fun_prop)
-          hu_slit).mul
-        (ContinuousAt.cpow (f := fun p : ℝ × ℝ ↦ 1 + (p.1 : ℂ)) (by fun_prop) continuousAt_const
-          (by simpa using TauCeti.ofReal_add_mem_slitPlane hu_slit zero_le_one)))
-  refine (hφ.mul_prod hψ).mono' hF_meas ?_
-  rw [hmeas_eq]
-  filter_upwards [ae_restrict_mem (measurableSet_Ioi.prod MeasurableSet.univ)] with ⟨u, y⟩ ⟨hu, _⟩
-  have hu' : 0 < u := hu; have h1u : 0 < 1 + u := by linarith
-  dsimp only [uncurry]
-  have h1u_eq : 1 + (u : ℂ) = ((1 + u : ℝ) : ℂ) := by push_cast; rfl
-  have hre1 : (a + y * I - 1).re = ((a.re : ℂ) - 1).re := by simp
-  have hre2 : (-(a + c)).re = (-((a.re + c.re : ℝ) : ℂ)).re := by simp
-  simp only [h1u_eq, norm_mul, norm_cpow_eq_rpow_re_of_pos hu', norm_cpow_eq_rpow_re_of_pos h1u,
-    hre1, hre2]
-  exact le_of_eq (by ring)
+    have hd_eq : d - y * I = (d.re : ℂ) + ↑(d.im - y) * I := by
+      apply Complex.ext <;> simp [sub_eq_add_neg]
+    have hb0 : ‖Gamma (b + y * I)‖ ≤ Cb := by simpa [hb_eq] using hCb (b.im + y)
+    have hd0 : ‖Gamma (d - y * I)‖ ≤ Cd := by simpa [hd_eq] using hCd (d.im - y)
+    rw [norm_mul]
+    exact mul_le_mul hb0 hd0 (norm_nonneg _) ((norm_nonneg _).trans hb0)
+  refine (h_ac.mul_bdd h_bd_cont.aestronglyMeasurable (Eventually.of_forall h_bd_bdd)).congr
+    (Eventually.of_forall fun y ↦ by ring)
 
-/-- **Barnes's first lemma (DLMF 5.13.3)**: for `a, b, c, d : ℂ` in the open right half-plane,
-`(2π)⁻¹ ∫_ℝ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy =
+/-- Joint integrability on `(0, ∞) × ℝ` of the Fubini kernel used to prove Barnes's first lemma. -/
+private theorem integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 < b.re)
+    (hc : 0 < c.re) (hd : 0 < d.re) :
+    Integrable
+      (fun p : ℝ × ℝ ↦ ((p.1 : ℂ) ^ (c - p.2 * I - 1) * (1 + (p.1 : ℂ)) ^ (-(a + c))) *
+        (Gamma (b + p.2 * I) * Gamma (d - p.2 * I)))
+      ((volume.restrict (Ioi (0 : ℝ))).prod volume) := by
+  have hf₁ : Integrable
+      (fun u : ℝ ↦ ‖(u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c))‖)
+      (volume.restrict (Ioi (0 : ℝ))) := by
+    exact (integrableOn_cpow_mul_one_add_cpow_neg (s := c) (a := a + c) hc
+      (by simp; linarith)).norm
+  have hf₂ : Integrable (fun y : ℝ ↦ ‖Gamma (b + y * I) * Gamma (d - y * I)‖) :=
+    (integrable_Gamma_add_mul_Gamma_sub
+      (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])
+      (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])).norm
+  refine (hf₁.mul_prod hf₂).mono' ?_ ?_
+  · have hmeas_eq : (volume.restrict (Ioi (0 : ℝ))).prod (volume : Measure ℝ) =
+        volume.restrict (Ioi (0 : ℝ) ×ˢ (univ : Set ℝ)) := by
+      simpa [Measure.volume_eq_prod] using
+        Measure.prod_restrict (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ)) (Ioi 0) univ
+    rw [hmeas_eq]
+    refine ContinuousOn.aestronglyMeasurable (continuousOn_of_forall_continuousAt fun p hp ↦ ?_)
+      (measurableSet_Ioi.prod MeasurableSet.univ)
+    have hu : 0 < p.1 := hp.1
+    have hc1 : ContinuousAt (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (c - p.2 * I - 1)) p :=
+      ContinuousAt.cpow (continuous_ofReal.continuousAt.comp continuousAt_fst) (by fun_prop)
+        (ofReal_mem_slitPlane.mpr hu)
+    have hc2 : ContinuousAt (fun p : ℝ × ℝ ↦ (1 + (p.1 : ℂ)) ^ (-(a + c))) p := by
+      refine ContinuousAt.cpow (by fun_prop) continuousAt_const ?_
+      rw [← ofReal_one, ← ofReal_add]
+      exact ofReal_mem_slitPlane.mpr (by linarith)
+    have hc3 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (b + p.2 * I)) p :=
+      (continuous_Gamma_add_mul_I
+        (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])).continuousAt.comp continuousAt_snd
+    have hc4 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (d - p.2 * I)) p :=
+      (continuous_Gamma_sub_mul_I
+        (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])).continuousAt.comp continuousAt_snd
+    exact (hc1.mul hc2).mul (hc3.mul hc4)
+  · filter_upwards [TauCeti.ae_of_ae_fst (ae_restrict_mem measurableSet_Ioi)] with p (hu : 0 < p.1)
+    rw [norm_mul, norm_mul, norm_mul, norm_mul, norm_cpow_eq_rpow_re_of_pos hu,
+      norm_cpow_eq_rpow_re_of_pos hu]
+    have hre : (c - (p.2 : ℂ) * I - 1).re = (c - 1).re := by simp
+    rw [hre]
+
+/-- **Barnes's first lemma** ([DLMF 5.13.3](https://dlmf.nist.gov/5.13.E3)). For `a, b, c, d` in
+the open right half-plane,
+`(1 / 2π) ∫ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy =
   Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`. -/
 theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a.re)
     (hb : 0 < b.re) (hc : 0 < c.re) (hd : 0 < d.re) :
     (2 * π : ℂ)⁻¹ * ∫ y : ℝ, Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) *
         Gamma (d - y * I) =
       Gamma (a + c) * Gamma (a + d) * Gamma (b + c) * Gamma (b + d) / Gamma (a + b + c + d) := by
+  let μ : Measure ℝ := volume.restrict (Ioi (0 : ℝ))
   let F : ℝ → ℝ → ℂ := fun u y ↦
-    Gamma (b + y * I) * Gamma (d - y * I) *
-      ((u : ℂ) ^ (a + y * I - 1) * (1 + (u : ℂ)) ^ (-(a + c)))
-  have hF_int : Integrable (uncurry F) ((volume.restrict (Ioi (0 : ℝ))).prod volume) :=
-    integrable_uncurry_barnesFirstLemma ha hb hc hd
-  -- Evaluate `∫_{u > 0} ∫_y F u y` by Mellin–Barnes in `y`, then Beta integral in `u`.
-  have hLHS : (2 * π : ℂ)⁻¹ * ∫ u in Ioi (0 : ℝ), ∫ y : ℝ, F u y =
-      Gamma (b + d) * (Gamma (a + d) * Gamma (b + c) / Gamma (a + b + c + d)) := by
-    have hinner (u : ℝ) (hu : 0 < u) :
-        (2 * π : ℂ)⁻¹ * ∫ y : ℝ, F u y =
-          Gamma (b + d) * ((u : ℂ) ^ (a + d - 1) * (1 + (u : ℂ)) ^ (-(a + b + c + d))) := by
-      have hu_ne : (u : ℂ) ≠ 0 := ofReal_ne_zero.2 hu.ne'
-      have h1u_ne : 1 + (u : ℂ) ≠ 0 := by
-        rw [← ofReal_one, ← ofReal_add]; exact ofReal_ne_zero.2 (by linarith)
-      have hpull : (∫ y : ℝ, F u y) = ((u : ℂ) ^ (a + d - 1) * (1 + (u : ℂ)) ^ (-(a + c))) *
-          ∫ y : ℝ, Gamma (b + y * I) * Gamma (d - y * I) * (u : ℂ) ^ (y * I - d) := by
-        rw [← integral_const_mul]
-        refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-        dsimp [F]
-        have hpow : (u : ℂ) ^ (a + d - 1) * (u : ℂ) ^ (y * I - d) = (u : ℂ) ^ (a + y * I - 1) := by
-          rw [← cpow_add _ _ hu_ne]; congr 1; ring
-        rw [← hpow]; ring
-      have h1pow : (1 + (u : ℂ)) ^ (-(a + c)) * (1 + (u : ℂ)) ^ (-(b + d)) =
-          (1 + (u : ℂ)) ^ (-(a + b + c + d)) := by rw [← cpow_add _ _ h1u_ne]; congr 1; ring
-      rw [hpull, ← mul_left_comm ((u : ℂ) ^ (a + d - 1) * _),
-        ← Gamma_mul_one_add_cpow_neg_eq_integral_shift hb hd hu]
-      linear_combination Gamma (b + d) * (u : ℂ) ^ (a + d - 1) * h1pow
-    have hbeta : ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (a + d - 1) * (1 + (u : ℂ)) ^ (-(a + b + c + d)) =
-        Gamma (a + d) * Gamma (a + b + c + d - (a + d)) / Gamma (a + b + c + d) := by
-      simpa only [mellin, smul_eq_mul] using
-        (hasMellin_one_add_cpow_neg (s := a + d) (a := a + b + c + d)
-          (by simp [add_re]; linarith) (by simp [add_re]; linarith)).2
-    rw [← integral_const_mul, setIntegral_congr_fun measurableSet_Ioi hinner, integral_const_mul,
-      hbeta, show a + b + c + d - (a + d) = b + c by ring]
-  -- Evaluate `∫_y ∫_{u > 0} F u y` by Euler's second Beta integral in `u`.
-  have hRHS : (2 * π : ℂ)⁻¹ * ∫ y : ℝ, ∫ u in Ioi (0 : ℝ), F u y =
-      ((2 * π : ℂ)⁻¹ * ∫ y : ℝ,
-        Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I)) /
-          Gamma (a + c) := by
-    have hinner (y : ℝ) : ∫ u in Ioi (0 : ℝ), F u y =
-        (Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I)) /
-          Gamma (a + c) := by
-      dsimp [F]
-      have hbeta : ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (a + y * I - 1) * (1 + (u : ℂ)) ^ (-(a + c)) =
-          Gamma (a + y * I) * Gamma (a + c - (a + y * I)) / Gamma (a + c) := by
-        simpa only [mellin, smul_eq_mul] using
-          (hasMellin_one_add_cpow_neg (s := a + y * I) (a := a + c)
-            (by simpa using ha) (by simp [add_re, hc])).2
-      rw [integral_const_mul, hbeta, show a + c - (a + y * I) = c - y * I by ring]
+    ((u : ℂ) ^ (c - y * I - 1) * (1 + (u : ℂ)) ^ (-(a + c))) *
+      (Gamma (b + y * I) * Gamma (d - y * I))
+  have hF : Integrable (Function.uncurry F) (μ.prod volume) := integrable_barnesKernel ha hb hc hd
+  -- Integrating in `u` first yields `(Γ(a + c))⁻¹` times the four-Gamma integral.
+  have h_u_first : ∫ y : ℝ, ∫ u, F u y ∂μ =
+      (Gamma (a + c))⁻¹ * ∫ y : ℝ,
+        Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) := by
+    have hinner (y : ℝ) : ∫ u, F u y ∂μ =
+        (Gamma (a + c))⁻¹ *
+          (Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I)) := by
+      have hm := (hasMellin_one_add_cpow_neg (s := c - y * I) (a := a + c)
+        (by simpa using hc) (by simp; linarith)).2
+      have hsub : a + c - (c - (y : ℂ) * I) = a + y * I := by ring
+      simp only [mellin, smul_eq_mul, hsub] at hm
+      simp only [F, μ, integral_mul_const, hm]
       ring
-    simp_rw [hinner, integral_div, mul_div_assoc]
-  have hswap : (2 * π : ℂ)⁻¹ * ∫ u in Ioi (0 : ℝ), ∫ y : ℝ, F u y =
-      (2 * π : ℂ)⁻¹ * ∫ y : ℝ, ∫ u in Ioi (0 : ℝ), F u y := by rw [integral_integral_swap hF_int]
-  rw [hLHS, hRHS, eq_div_iff (Gamma_ne_zero_of_re_pos (by simp [add_re]; linarith))] at hswap
-  rw [← hswap]; ring
+    simp_rw [hinner, integral_const_mul]
+  -- Integrating in `y` first evaluates to `2π Γ(b + d) Γ(b + c) Γ(a + d) / Γ(a + b + c + d)`.
+  have h_y_first : ∫ u, (∫ y : ℝ, F u y) ∂μ =
+      2 * π * Gamma (b + d) * (Gamma (b + c) * Gamma (a + d) / Gamma (a + b + c + d)) := by
+    have hinner : ∀ᵐ u ∂μ, ∫ y : ℝ, F u y =
+        2 * π * Gamma (b + d) *
+          ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + b + c + d))) := by
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
+      have hsplit (y : ℝ) : F u y =
+          ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + c))) *
+            ((u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) := by
+        have hexp : c - (y : ℂ) * I - 1 = (b + c - 1) + (-(b + y * I)) := by ring
+        simp only [F, hexp, cpow_add _ _ (ofReal_ne_zero.mpr hu.ne')]
+        ring
+      have h1pow : (1 + (u : ℂ)) ^ (-(a + c)) * (1 + (u : ℂ)) ^ (-(b + d)) =
+          (1 + (u : ℂ)) ^ (-(a + b + c + d)) := by
+        rw [← cpow_add _ _ (by exact_mod_cast (by positivity : (1 : ℝ) + u ≠ 0))]
+        congr 1
+        ring
+      simp_rw [hsplit]
+      rw [integral_const_mul, integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub hb hd hu]
+      calc ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + c))) *
+              (2 * π * (Gamma (b + d) * (1 + (u : ℂ)) ^ (-(b + d))))
+          = 2 * π * Gamma (b + d) *
+              ((u : ℂ) ^ (b + c - 1) * ((1 + (u : ℂ)) ^ (-(a + c)) *
+                (1 + (u : ℂ)) ^ (-(b + d)))) := by ring
+        _ = 2 * π * Gamma (b + d) *
+              ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + b + c + d))) := by rw [h1pow]
+    rw [integral_congr_ae hinner, integral_const_mul]
+    have hm := (hasMellin_one_add_cpow_neg (s := b + c) (a := a + b + c + d)
+      (by simp; linarith) (by simp; linarith)).2
+    have hsub : a + b + c + d - (b + c) = a + d := by ring
+    simp only [mellin, smul_eq_mul, hsub] at hm
+    exact congrArg (2 * π * Gamma (b + d) * ·) hm
+  have hswap : ∫ u, (∫ y : ℝ, F u y) ∂μ = ∫ y : ℝ, ∫ u, F u y ∂μ := integral_integral_swap hF
+  rw [h_y_first, h_u_first] at hswap
+  have hΓac : Gamma (a + c) ≠ 0 := Gamma_ne_zero_of_re_pos (by simp; linarith)
+  have h2pi : (2 * π : ℂ) ≠ 0 := by norm_num [Real.pi_ne_zero]
+  calc (2 * π : ℂ)⁻¹ * ∫ y : ℝ, Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) *
+          Gamma (d - y * I)
+      = (2 * π : ℂ)⁻¹ * Gamma (a + c) * ((Gamma (a + c))⁻¹ *
+          ∫ y : ℝ, Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) *
+            Gamma (d - y * I)) := by
+          rw [mul_assoc, mul_inv_cancel_left₀ hΓac]
+    _ = (2 * π : ℂ)⁻¹ * Gamma (a + c) *
+          (2 * π * Gamma (b + d) * (Gamma (b + c) * Gamma (a + d) / Gamma (a + b + c + d))) := by
+          rw [← hswap]
+    _ = Gamma (a + c) * Gamma (a + d) * Gamma (b + c) * Gamma (b + d) /
+          Gamma (a + b + c + d) := by
+          field_simp [h2pi]
 
-/-- Shifted-contour form of Barnes's first lemma: on any vertical line `Re s = σ` separating the
-left-opening poles `-a - ℕ`, `-b - ℕ` from the right-opening poles `c + ℕ`, `d + ℕ`
-(that is, `-Re a < σ`, `-Re b < σ`, `σ < Re c`, `σ < Re d`),
-`(2π)⁻¹ ∫_ℝ Γ(a + (σ + i y)) Γ(b + (σ + i y)) Γ(c - (σ + i y)) Γ(d - (σ + i y)) dy =
+/-- **Barnes's first lemma** on a general vertical line `Re s = σ` separating the poles of
+`Γ(a + s) Γ(b + s)` from those of `Γ(c - s) Γ(d - s)`: for `max (-Re a, -Re b) < σ <
+min (Re c, Re d)`,
+`(1 / 2π) ∫ Γ(a + σ + i y) Γ(b + σ + i y) Γ(c - σ - i y) Γ(d - σ - i y) dy =
   Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`. -/
 theorem integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub {a b c d : ℂ} {σ : ℝ}
     (ha : -a.re < σ) (hb : -b.re < σ) (hc : σ < c.re) (hd : σ < d.re) :
@@ -488,16 +524,15 @@ theorem integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub {a b c d : 
       Gamma (a + c) * Gamma (a + d) * Gamma (b + c) * Gamma (b + d) / Gamma (a + b + c + d) := by
   have h := integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma
     (a := a + σ) (b := b + σ) (c := c - σ) (d := d - σ)
-    (by simp [add_re]; linarith) (by simp [add_re]; linarith)
-    (by simp [sub_re]; linarith) (by simp [sub_re]; linarith)
-  rw [show a + σ + (c - σ) = a + c by ring, show a + σ + (d - σ) = a + d by ring,
-    show b + σ + (c - σ) = b + c by ring, show b + σ + (d - σ) = b + d by ring,
-    show a + σ + (b + σ) + (c - σ) + (d - σ) = a + b + c + d by ring] at h
-  rw [← h]; congr 1
-  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-  simp only [show a + ((σ : ℂ) + y * I) = a + σ + y * I by ring,
-    show b + ((σ : ℂ) + y * I) = b + σ + y * I by ring,
-    show c - ((σ : ℂ) + y * I) = c - σ - y * I by ring,
-    show d - ((σ : ℂ) + y * I) = d - σ - y * I by ring]
+    (by simp; linarith) (by simp; linarith) (by simp; linarith) (by simp; linarith)
+  have hcongr (y : ℝ) :
+      Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
+          Gamma (c - (σ + y * I)) * Gamma (d - (σ + y * I)) =
+        Gamma (a + σ + y * I) * Gamma (b + σ + y * I) *
+          Gamma (c - σ - y * I) * Gamma (d - σ - y * I) := by
+    simp only [← add_assoc, sub_add_eq_sub_sub]
+  have hsum : a + (σ : ℂ) + (b + σ) + (c - σ) + (d - σ) = a + b + c + d := by ring
+  simp_rw [hcongr]
+  simpa only [add_add_sub_cancel, hsum] using h
 
 end Complex

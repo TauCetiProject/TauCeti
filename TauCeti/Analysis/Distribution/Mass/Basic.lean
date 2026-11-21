@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Mass of functionals on vector-valued test functions
@@ -46,6 +47,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.HasLocallyFiniteMass` and
   `Distribution.hasLocallyFiniteMass_iff_localMass_ne_top`: local finiteness of mass by order-zero
   bounds and its variational characterization.
+* `Distribution.HasLocallyFiniteMass.exists_nonneg_bound`: on a compact subset, an order-zero bound
+  with a nonnegative constant, tested against any pointwise bound on the test function.
 * `Distribution.mass_apply_apply`: the point evaluation `φ ↦ ℓ (φ x)` has mass `‖ℓ‖`; in particular
   the degree-zero point current has mass one (`Distribution.mass_apply_finZero`).
 * `Distribution.mass_integral_apply`: integration against a locally integrable field `G` has mass
@@ -324,9 +327,8 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
   · exact enorm_le_localMass (f := f) (φ := ι ψ) (by rw [hι]; exact ψ.tsupport_subset)
       (by simpa [hι] using hψ)
   · -- A test on `Ω` supported in `Ω'` is the image of a test on `Ω'`.
-    let ψ : 𝓓^{n}(Ω', F) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
-    have hψ : ι ψ = φ := TestFunction.ext fun x => by simp [hι, ψ]
-    simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
+    obtain ⟨ψ, rfl⟩ := TestFunction.exists_monoCLM_eq_of_tsupport_subset h hφU
+    simpa using enorm_le_mass (f := f ∘ ι) (φ := ψ) (by simpa [h] using hφ)
 
 /-- Precomposing with `TestFunction.monoCLM` does not increase mass. This covers restriction to an
 open subset `Ω' ≤ Ω` and restriction of the smoothness order (`n ≤ m`); otherwise `monoCLM` is
@@ -351,13 +353,11 @@ theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : 
   · exact enorm_le_localMass (f := f)
       (by rw [hcoe]; exact subset_inter hψU ψ.tsupport_subset)
       (by simpa [hcoe] using hψ)
-  · let ψ : 𝓓^{n}(Ω', F) := ⟨φ, φ.contDiff, φ.hasCompactSupport,
-      hφU.trans inter_subset_right⟩
-    have hψ : (TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = φ :=
-      TestFunction.ext fun x => by simp [hcoe, ψ]
-    simpa [Function.comp_apply, hψ] using
+  · obtain ⟨ψ, rfl⟩ :=
+      TestFunction.exists_monoCLM_eq_of_tsupport_subset h (hφU.trans inter_subset_right)
+    simpa [Function.comp_apply] using
       (enorm_le_localMass (f := f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] _))
-        (φ := ψ) (hφU.trans inter_subset_left) hφ)
+        (φ := ψ) (by simpa [hcoe] using hφU.trans inter_subset_left) (by simpa [hcoe] using hφ))
 
 end Restriction
 
@@ -374,6 +374,19 @@ theorem hasLocallyFiniteMass_def :
     HasLocallyFiniteMass f ↔ ∀ K : Set E, IsCompact K → K ⊆ Ω → ∃ C : ℝ, 0 ≤ C ∧
       ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ K → ‖f φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ :=
   Iff.rfl
+
+/-- On a compact `K ⊆ Ω`, an order-zero bound can be taken with a nonnegative constant and tested
+against any pointwise bound on the test function. -/
+theorem HasLocallyFiniteMass.exists_nonneg_bound (hf : HasLocallyFiniteMass f) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ C, 0 ≤ C ∧ ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ K → ∀ c, (∀ x, ‖φ x‖ ≤ c) →
+      ‖f φ‖ ≤ C * c := by
+  obtain ⟨C, hC0, hC⟩ := hasLocallyFiniteMass_def.1 hf K hK hKΩ
+  refine ⟨C, hC0, fun φ hφ c hc => ?_⟩
+  have hφc : ‖(φ : E →ᵇ F)‖ ≤ c :=
+    (BoundedContinuousFunction.norm_le ((norm_nonneg _).trans (hc 0))).2 fun x => by
+      simpa using hc x
+  exact (hC φ hφ).trans (mul_le_mul_of_nonneg_left hφc hC0)
 
 /-- Precomposing with `TestFunction.monoCLM` preserves locally finite mass: restricting to an open
 subset `Ω' ≤ Ω` (and possibly the smoothness order), or giving the constant map `f 0 = 0` when
