@@ -34,7 +34,9 @@ symmetric difference with any set inside it (`TauCeti.preimage_add_smul_symmDiff
 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
-centered at zero lie on the same line exactly when they are equal or antipodal.
+centered at zero lie on the same line exactly when they are equal or antipodal. In a nontrivial
+real normed space every vector is its norm times a unit vector
+(`TauCeti.exists_mem_sphere_norm_smul_eq`).
 
 The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
 norm conditions for `R⁻¹ • z` when `R > 0`.
@@ -229,6 +231,18 @@ theorem compl_singleton_inter_compl_singleton_neg_eq (p : Metric.sphere (0 : E) 
       ({x | (x : E) ∉ ℝ ∙ (p : E)} : Set (Metric.sphere (0 : E) 1)) := by
   ext x
   simp [not_or]
+
+/-- In a nontrivial real normed space every vector is its norm times a unit vector. For a nonzero
+vector the unit vector is unique; for the zero vector any unit vector works. -/
+theorem exists_mem_sphere_norm_smul_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [Nontrivial F] (a : F) : ∃ x : Metric.sphere (0 : F) 1, ‖a‖ • (x : F) = a := by
+  by_cases ha : a = 0
+  · obtain ⟨x, hx⟩ := (NormedSpace.sphere_nonempty (x := (0 : F))).2 zero_le_one
+    exact ⟨⟨x, hx⟩, by simp [ha]⟩
+  · refine ⟨⟨‖a‖⁻¹ • a, ?_⟩, ?_⟩
+    · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
+        inv_mul_cancel₀ (norm_ne_zero_iff.2 ha)]
+    · rw [smul_inv_smul₀ (norm_ne_zero_iff.2 ha)]
 
 end Sphere
 
