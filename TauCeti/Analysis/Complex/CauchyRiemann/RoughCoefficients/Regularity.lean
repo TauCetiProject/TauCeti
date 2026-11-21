@@ -87,70 +87,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {Ω : Opens ℂ} {p q s : ℝ≥0∞}
   {J S : ℂ → V →L[ℝ] V} {DJ DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
 
-private noncomputable def fstTestProdL2 (Φ : 𝓓(Ω, WithLp 2 (V × V))) : 𝓓(Ω, V) :=
-  TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ
-
-private noncomputable def sndTestProdL2 (Φ : 𝓓(Ω, WithLp 2 (V × V))) : 𝓓(Ω, V) :=
-  TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ
-
-omit [FiniteDimensional ℝ V] in
-private theorem integral_inner_postcomp_prodL2 {f g : ℂ → V}
-    (hf : LocallyIntegrableOn f Ω) (hg : LocallyIntegrableOn g Ω)
-    (Φ : 𝓓(Ω, WithLp 2 (V × V))) :
-    ∫ z, ⟪(Φ : ℂ → WithLp 2 (V × V)) z, WithLp.toLp 2 (f z, g z)⟫_ℝ =
-      (∫ z, ⟪(fstTestProdL2 Φ : ℂ → V) z, f z⟫_ℝ) +
-        ∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g z⟫_ℝ := by
-  rw [← integral_add ((fstTestProdL2 Φ).integrable_inner hf)
-    ((sndTestProdL2 Φ).integrable_inner hg)]
-  exact integral_congr_ae (.of_forall fun z => by
-    dsimp only; rw [WithLp.prod_inner_apply]; simp [fstTestProdL2, sndTestProdL2])
-
-omit [FiniteDimensional ℝ V] in
-private theorem integral_inner_postcomp_prodL2_add {f₁ f₂ g₁ g₂ : ℂ → V}
-    (hf₁ : LocallyIntegrableOn f₁ Ω) (hf₂ : LocallyIntegrableOn f₂ Ω)
-    (hg₁ : LocallyIntegrableOn g₁ Ω) (hg₂ : LocallyIntegrableOn g₂ Ω)
-    (Φ : 𝓓(Ω, WithLp 2 (V × V))) :
-    ∫ z, ⟪(Φ : ℂ → WithLp 2 (V × V)) z, WithLp.toLp 2 (f₁ z + f₂ z, g₁ z + g₂ z)⟫_ℝ =
-      ((∫ z, ⟪(fstTestProdL2 Φ : ℂ → V) z, f₁ z⟫_ℝ) +
-          ∫ z, ⟪(fstTestProdL2 Φ : ℂ → V) z, f₂ z⟫_ℝ) +
-        ((∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g₁ z⟫_ℝ) +
-          ∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g₂ z⟫_ℝ) := by
-  rw [integral_inner_postcomp_prodL2 (f := fun z => f₁ z + f₂ z) (g := fun z => g₁ z + g₂ z)
-    (hf₁.add hf₂) (hg₁.add hg₂) Φ]
-  simp only [inner_add_right]
-  rw [integral_add ((fstTestProdL2 Φ).integrable_inner hf₁)
-      ((fstTestProdL2 Φ).integrable_inner hf₂),
-    integral_add ((sndTestProdL2 Φ).integrable_inner hg₁)
-      ((sndTestProdL2 Φ).integrable_inner hg₂)]
-
-omit [FiniteDimensional ℝ V] in
-private theorem integral_inner_postcomp_prodL2_sub {f₁ f₂ g₁ g₂ : ℂ → V}
-    (hf₁ : LocallyIntegrableOn f₁ Ω) (hf₂ : LocallyIntegrableOn f₂ Ω)
-    (hg₁ : LocallyIntegrableOn g₁ Ω) (hg₂ : LocallyIntegrableOn g₂ Ω)
-    (Φ : 𝓓(Ω, WithLp 2 (V × V))) :
-    ∫ z, ⟪(Φ : ℂ → WithLp 2 (V × V)) z, WithLp.toLp 2 (f₁ z - f₂ z, g₁ z - g₂ z)⟫_ℝ =
-      ((∫ z, ⟪(fstTestProdL2 Φ : ℂ → V) z, f₁ z⟫_ℝ) -
-          ∫ z, ⟪(fstTestProdL2 Φ : ℂ → V) z, f₂ z⟫_ℝ) +
-        ((∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g₁ z⟫_ℝ) -
-          ∫ z, ⟪(sndTestProdL2 Φ : ℂ → V) z, g₂ z⟫_ℝ) := by
-  simpa only [← sub_eq_add_neg, inner_neg_right, integral_neg] using
-    integral_inner_postcomp_prodL2_add (f₂ := fun z => -f₂ z) (g₂ := fun z => -g₂ z)
-      hf₁ hf₂.neg hg₁ hg₂.neg Φ
-
-omit [FiniteDimensional ℝ V] in
-private theorem integral_inner_fderiv_postcomp_prodL2 {f g : ℂ → V}
-    (hf : LocallyIntegrableOn f Ω) (hg : LocallyIntegrableOn g Ω)
-    (u : ℂ) (Φ : 𝓓(Ω, WithLp 2 (V × V))) :
-    ∫ z, ⟪fderiv ℝ (Φ : ℂ → WithLp 2 (V × V)) z u, WithLp.toLp 2 (f z, g z)⟫_ℝ =
-      (∫ z, ⟪fderiv ℝ (fstTestProdL2 Φ : ℂ → V) z u, f z⟫_ℝ) +
-        ∫ z, ⟪fderiv ℝ (sndTestProdL2 Φ : ℂ → V) z u, g z⟫_ℝ := by
-  rw [← integral_add ((fstTestProdL2 Φ).integrable_inner_fderiv hf u)
-    ((sndTestProdL2 Φ).integrable_inner_fderiv hg u)]
-  refine integral_congr_ae (.of_forall fun z => ?_)
-  dsimp only [fstTestProdL2, sndTestProdL2]
-  rw [WithLp.prod_inner_apply, TestFunction.fderiv_postcompCLM, TestFunction.fderiv_postcompCLM]
-  simp
-
 private theorem isSobolevCRCoefficients_prodL2 (hJ : MemWkpLoc p Ω 1 J)
     (hDJ : HasWeakFDerivOn volume Ω J DJ) (hSp : MemLpLoc p Ω S) :
     IsSobolevCRCoefficients p Ω (fun z => (J z).withLpProdMap 2 (J z))
@@ -346,11 +282,14 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
     ⟨hΞq, LocallyIntegrableOn.of_fst_of_snd_prodLp
       ⟨(hDη_loc 1).sub (hDSξ_loc 1), (hDη_loc I).sub (hDSξ_loc I)⟩,
       fun Φ => ⟨hc₂.integrable_inner_crFormalAdjoint hpq hΞq Φ, ?_⟩⟩
-  have hrow1 := integral_fderiv_test_eq hp hq1 hJ hDJ hS hDS hξ hDξ hDη hsol 1 (fstTestProdL2 Φ)
-  have hrow2 := integral_fderiv_test_eq hp hq1 hJ hDJ hS hDS hξ hDξ hDη hsol I (sndTestProdL2 Φ)
+  have hrow1 := integral_fderiv_test_eq hp hq1 hJ hDJ hS hDS hξ hDξ hDη hsol 1
+    (TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ)
+  have hrow2 := integral_fderiv_test_eq hp hq1 hJ hDJ hS hDS hξ hDξ hDη hsol I
+    (TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ)
   have hcomm := integral_inner_fderiv_add_integral_inner_eq_of_hasWeakFDerivOn hp hpq hJ
-    hDJ hDξ hDξq 1 I (fstTestProdL2 Φ)
-  have hsymm := (hDξ.integral_inner_fderiv_comm 1 I (sndTestProdL2 Φ)).symm
+    hDJ hDξ hDξq 1 I (TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ)
+  have hsymm := (hDξ.integral_inner_fderiv_comm 1 I
+    (TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ)).symm
   have hDξ_loc (u : ℂ) : LocallyIntegrableOn (fun z => Dξ z u) Ω :=
     (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)).locallyIntegrableOn hq1 hloc
   have hADξ_loc {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) (u : ℂ) :
@@ -363,12 +302,14 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
     ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_symm,
     WithLp.prodContinuousLinearEquiv_apply, WithLp.prodContinuousLinearEquiv_symm_apply,
     differentiatedCRCoefficient_apply]
-  rw [integral_inner_fderiv_postcomp_prodL2 (hDξ_loc 1) (hDξ_loc I) 1 Φ,
-    integral_inner_fderiv_postcomp_prodL2 (hADξ_loc hJ.memLpLoc 1) (hADξ_loc hJ.memLpLoc I) I Φ,
-    integral_inner_postcomp_prodL2 (hADξ_loc (hDJu I) 1) (hADξ_loc (hDJu I) I) Φ,
-    integral_inner_postcomp_prodL2_add (hADξ_loc hS.memLpLoc 1) (hADξ_loc (hDJu 1) I)
+  rw [TestFunction.integral_inner_fderiv_postcomp_prodL2 (hDξ_loc 1) (hDξ_loc I) 1 Φ,
+    TestFunction.integral_inner_fderiv_postcomp_prodL2
+      (hADξ_loc hJ.memLpLoc 1) (hADξ_loc hJ.memLpLoc I) I Φ,
+    TestFunction.integral_inner_postcomp_prodL2 (hADξ_loc (hDJu I) 1) (hADξ_loc (hDJu I) I) Φ,
+    TestFunction.integral_inner_postcomp_prodL2_add (hADξ_loc hS.memLpLoc 1) (hADξ_loc (hDJu 1) I)
       (hADξ_loc hS.memLpLoc I) (hADξ_loc (hDJu I) I) Φ,
-    integral_inner_postcomp_prodL2_sub (hDη_loc 1) (hDSξ_loc 1) (hDη_loc I) (hDSξ_loc I) Φ]
+    TestFunction.integral_inner_postcomp_prodL2_sub (hDη_loc 1) (hDSξ_loc 1)
+      (hDη_loc I) (hDSξ_loc I) Φ]
   linarith
 
 /-! ### Interior regularity at all orders (McDuff–Salamon Proposition B.4.9) -/
