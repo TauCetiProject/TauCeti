@@ -252,14 +252,6 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz
     intervalIntegral.integral_congr hspeed]
   exact ENNReal.ofReal_le_ofReal (integral_le_rpow_sub_rpow_of_lojasiewicz hab hc₀ hθ he he₀ hloj)
 
-/-- The squared form `lam * e ≤ g ^ 2` of the Łojasiewicz inequality with exponent `1 / 2` gives
-the form `√lam * e ^ (1 / 2) ≤ g` taken by Łojasiewicz's length bound. -/
-private theorem sqrt_mul_rpow_le_of_mul_le_sq {lam e g : ℝ} (hlam : 0 ≤ lam) (hg : 0 ≤ g)
-    (h : lam * e ≤ g ^ 2) : √lam * e ^ (1 / 2 : ℝ) ≤ g := by
-  rw [← Real.sqrt_eq_rpow, ← Real.sqrt_mul hlam]
-  calc √(lam * e) ≤ √(g ^ 2) := Real.sqrt_le_sqrt h
-    _ = g := Real.sqrt_sq hg
-
 /-- The length bound of `pathELength_maximalIntegralCurve_neg_mgradient_le_of_lojasiewicz` with
 `c = f p`, in the form used for convergence to an ω-limit point `p`, below which `f` stays along
 the trajectory. -/
