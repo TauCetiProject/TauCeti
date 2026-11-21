@@ -439,6 +439,22 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
         inner ℝ (V t) (alongCurve cov γ W t) :=
   (hcov.hasDerivAt_inner_alongCurve hγ hV hW).deriv
 
+/-- For a metric-compatible connection, two differentiable tangent fields along a differentiable
+curve with locally constant inner product have skew-symmetric covariant derivatives at the
+evaluation parameter. -/
+theorem IsMetricCompatible.inner_alongCurve_add_inner_alongCurve_eq_zero_of_eventuallyEq_const
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
+    {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) {c : ℝ}
+    (hc : (fun r ↦ inner ℝ (V r) (W r)) =ᶠ[𝓝 t] fun _ ↦ c) :
+    inner ℝ (alongCurve cov γ V t) (W t) +
+      inner ℝ (V t) (alongCurve cov γ W t) = 0 :=
+  (hcov.hasDerivAt_inner_alongCurve hγ hV hW).unique
+    ((hasDerivAt_const t c).congr_of_eventuallyEq hc)
+
 /-- **A field of locally constant length is orthogonal to its covariant derivative.** If a
 differentiable tangent field `V` along a differentiable real curve has constant metric length on
 the parameter set `s` near `t`, then `D V / dt` is orthogonal to `V` at `t`, for a

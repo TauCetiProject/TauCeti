@@ -66,8 +66,8 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
     have hc : (fun r ↦ inner ℝ (s i (γ r)) (s j (γ r))) =ᶠ[𝓝 t]
         fun _ ↦ if i = j then (1 : ℝ) else 0 :=
       ho.mono fun r hr ↦ (orthonormal_iff_ite.mp hr) i j
-    have hm := (hcov.hasDerivAt_inner_alongCurve hγ (hcoord i) (hcoord j)).unique
-      ((hasDerivAt_const t _).congr_of_eventuallyEq hc)
+    have hm := hcov.inner_alongCurve_add_inner_alongCurve_eq_zero_of_eventuallyEq_const
+      hγ (hcoord i) (hcoord j) hc
     rw [alongCurve_pullback cov γ (s i) (hasMFDerivAt_curveVelocity hγ) (hframe i),
       alongCurve_pullback cov γ (s j) (hasMFDerivAt_curveVelocity hγ) (hframe j)] at hm
     rw [hs.coeff_eq_inner ht ho.self_of_nhds, hs.coeff_eq_inner ht ho.self_of_nhds]
