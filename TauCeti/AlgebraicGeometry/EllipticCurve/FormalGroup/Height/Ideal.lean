@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.Algebra.Field.ZMod
+public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.Regular.Flat
+import Mathlib.Tactic.Algebraize
 
 /-!
 # The Hasse invariant as Landweber's `v₁` for Weierstrass formal groups
@@ -45,7 +48,11 @@ unit on the nodal cubic `y² + xy = x³`, the Tate curve at `q = 0`
 (`WeierstrassCurve.Universal.not_natCast_dvd_coeff_invariantDifferential`). The ideal `(p, A)` is
 proper, since `A` vanishes modulo `p` at the cusp `y² = x³`, whose formal group is additive
 (`WeierstrassCurve.Universal.heightIdeal_formalGroup_ne_top`). These are Landweber's regularity
-conditions in heights `0` and `1` for the formal group of the universal curve.
+conditions in heights `0` and `1` for the formal group of the universal curve, and they transfer by
+flat base change to any curve with flat classifying morphism `W.specialize`, including the
+universal elliptic curve over `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`
+(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat`,
+`WeierstrassCurve.Universal.isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve`).
 
 ## Main results
 
@@ -63,6 +70,9 @@ conditions in heights `0` and `1` for the formal group of the universal curve.
   nonzero modulo `p`, and the height ideals of the universal curve are proper.
 * `WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential`: `p` and the Hasse
   invariant form a regular sequence on `ℤ[a₁, a₂, a₃, a₄, a₆]`.
+* `WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat` and
+  `WeierstrassCurve.Universal.isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve`:
+  weak regularity of `(p, A)` along flat classifying morphisms and on `EllipticRing`.
 
 ## References
 
@@ -221,3 +231,44 @@ theorem isRegular_natCast_coeff_invariantDifferential (hp : p.Prime) :
     exact (heightIdeal_formalGroup_ne_top hp.one_lt 2).symm
 
 end WeierstrassCurve.Universal
+
+namespace WeierstrassCurve
+
+/-- **Flat base change of `(p, A)`-regularity.** If `W` is a Weierstrass curve over `R` whose
+classifying ring homomorphism `W.specialize : ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` is flat, then for
+every prime `p`, the sequence `(p, A)` formed by `p` and the Hasse invariant of `W` is weakly
+regular on `R`. -/
+theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat
+    {R : Type*} [CommRing R] (W : WeierstrassCurve R) (hflat : W.specialize.Flat) {p : ℕ}
+    (hp : p.Prime) :
+    IsWeaklyRegular R
+      [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
+  algebraize [W.specialize]
+  have h :=
+    (Universal.isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular.of_flat (S := R)
+  have hA : algebraMap (MvPolynomial Coeff ℤ) R
+      (PowerSeries.coeff (p - 1)
+        (formalGroup Universal.curve).invariantDifferential) =
+      PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential := by
+    rw [RingHom.algebraMap_toAlgebra,
+      ← Universal.curve.coeff_invariantDifferential_formalGroup_map W.specialize]
+    simp only [W.map_specialize]
+  simpa [← hA] using h
+
+namespace Universal
+
+/-- On `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`, the sequence `(p, A)` formed by `p` and the Hasse invariant of
+the universal elliptic Weierstrass curve is weakly regular for every prime `p`. -/
+theorem isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve {p : ℕ}
+    (hp : p.Prime) :
+    IsWeaklyRegular EllipticRing
+      [(p : EllipticRing),
+        PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential] := by
+  refine ellipticCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat ?_ hp
+  rw [← ellipticCurve.specializeElliptic_comp_algebraMap, specializeElliptic_ellipticCurve,
+    RingHom.id_comp]
+  exact RingHom.Flat.holdsForLocalizationAway EllipticRing curve.Δ
+
+end Universal
+
+end WeierstrassCurve

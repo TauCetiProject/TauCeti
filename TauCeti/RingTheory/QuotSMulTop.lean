@@ -65,8 +65,6 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.isSMulRegular_quotient_smul_top_congr` and
   `Ideal.isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem`: regularity of a scalar on `M ⧸ I • M`
   depends only on its class modulo `I`, up to multiplication by units.
-* `Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk`: an element that is a unit modulo `I`
-  acts regularly on `M ⧸ I • M`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
@@ -351,16 +349,6 @@ theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u�
   rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
     I.isSMulRegular_quotient_smul_top_congr hab,
     (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
-
-/-- An element `r : R` whose image in `R ⧸ I` is a unit acts regularly on `M ⧸ I • M`. -/
-theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided] {r : R}
-    (hr : IsUnit (Ideal.Quotient.mk I r)) :
-    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) r := by
-  intro a b hab
-  refine hr.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) ?_
-  induction a using Submodule.Quotient.induction_on
-  induction b using Submodule.Quotient.induction_on
-  exact hab
 
 end Ring
 

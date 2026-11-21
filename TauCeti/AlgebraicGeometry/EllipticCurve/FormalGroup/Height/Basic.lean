@@ -57,6 +57,13 @@ section Ring
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p : ℕ}
 
+/-- The coefficients of the invariant differential of `formalGroup W` commute with base change. -/
+theorem coeff_invariantDifferential_formalGroup_map {S : Type*} [CommRing S] (φ : R →+* S)
+    (k : ℕ) :
+    PowerSeries.coeff k (formalGroup (W.map φ)).invariantDifferential =
+      φ (PowerSeries.coeff k (formalGroup W).invariantDifferential) := by
+  rw [map_formalGroup, ← FormalGroup.map_invariantDifferential, PowerSeries.coeff_map]
+
 /-- **The coefficient of `Tᵖ` in `[p]_Ê` modulo `p`**: for the formal group `Ê` of a Weierstrass
 curve over any commutative ring and a prime `p`, the coefficient of `Tᵖ` in `[p]_Ê(T)` is congruent
 modulo `p` to the coefficient of `Tᵖ⁻¹` in the invariant differential of `Ê`. -/
@@ -70,8 +77,9 @@ theorem natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferentia
     (IsLeftCancelMulZero.mul_left_cancel_of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero))
   -- and specializes to `W`
   have := map_dvd W.specialize h
-  rw [map_natCast, map_sub, ← PowerSeries.coeff_map, ← PowerSeries.coeff_map,
-    FormalGroup.map_nsmulSeries, FormalGroup.map_invariantDifferential, ← map_formalGroup] at this
+  rw [map_natCast, map_sub, ← FormalGroup.coeff_nsmulSeries_map,
+    ← Universal.curve.map_formalGroup W.specialize,
+    ← Universal.curve.coeff_invariantDifferential_formalGroup_map W.specialize] at this
   simpa only [map_specialize] using this
 
 /-- In characteristic `p`, the coefficient of `Tᵖ` in `[p]_Ê(T)` is the coefficient of `Tᵖ⁻¹` in
