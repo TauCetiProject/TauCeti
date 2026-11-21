@@ -67,20 +67,9 @@ theorem prod_pow_padicValNat_eq_self_of_mem_factoredNumbers {S : Finset ℕ}
 `∏_{p ∈ S prime} (1 - 1/p)⁻¹`. -/
 theorem hasSum_inv_factoredNumbers (S : Finset ℕ) :
     HasSum (fun n : Nat.factoredNumbers S ↦ ((n : ℕ) : ℝ)⁻¹)
-      (∏ p ∈ S with p.Prime, (1 - (p : ℝ)⁻¹)⁻¹) := by
-  have hgeom (p n : ℕ) : (((p ^ n : ℕ) : ℝ))⁻¹ = (p : ℝ)⁻¹ ^ n := by
-    rw [Nat.cast_pow, inv_pow]
-  have hlt {p : ℕ} (hp : p.Prime) : (p : ℝ)⁻¹ < 1 :=
-    inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.one_lt)
-  obtain ⟨-, hsum⟩ := EulerProduct.summable_and_hasSum_factoredNumbers_prod_filter_prime_tsum
-    (f := fun n : ℕ ↦ (n : ℝ)⁻¹) (by simp) (fun {m n} _ ↦ by simp [mul_comm])
-    (fun {p} hp ↦ by
-      simpa only [hgeom p, norm_pow, norm_inv, Real.norm_natCast] using
-        summable_geometric_of_lt_one (by positivity) (hlt hp)) S
-  convert hsum using 1
-  refine Finset.prod_congr rfl fun p hp ↦ ?_
-  have hp := (Finset.mem_filter.mp hp).2
-  simp only [hgeom p]
-  exact (tsum_geometric_of_lt_one (by positivity) (hlt hp)).symm
+      (∏ p ∈ S with p.Prime, (1 - (p : ℝ)⁻¹)⁻¹) :=
+  (EulerProduct.summable_and_hasSum_factoredNumbers_prod_filter_prime_geometric
+    (f := invMonoidHom.comp (Nat.castRingHom ℝ : ℕ →* ℝ))
+    (fun hp ↦ by simpa using inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.one_lt)) S).2
 
 end TauCeti
