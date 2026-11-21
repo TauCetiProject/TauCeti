@@ -173,12 +173,19 @@ theorem forall_unop_modularFunctionFieldActionZMod_apply_eq_iff {F : modularFunc
       coe_modularFunctionFieldMapOfLevelOne_apply]
     simp only [Function.comp_def, Subfield.subtype_apply, coe_modularFunctionFieldConst_apply,
       Set.range_comp' (algebraMap ℂ _), Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq]
-  rw [← SetLike.mem_coe, ← Subtype.coe_injective.mem_set_image, ← Subfield.coe_subtype,
-    ← Subfield.coe_map, hmap, SetLike.mem_coe, Subfield.mem_inf, IntermediateField.mem_toSubfield,
-    fixedField_unop_range_modularFunctionActionZMod, AlgHom.mem_fieldRange,
-    ← forall_unop_modularFunctionActionZMod_apply_eq_iff]
-  simp only [Subtype.ext_iff, coe_unop_modularFunctionFieldActionZMod_apply,
-    Subfield.subtype_apply, SetLike.coe_mem, true_and]
+  rw [← Subfield.map_comap_subtype] at hmap
+  have hclosure := Subfield.map_injective (f := (modularFunctionField N).subtype) hmap
+  rw [hclosure, Subfield.mem_comap, IntermediateField.mem_toSubfield,
+    IntermediateField.mem_fixedField_iff]
+  constructor
+  · rintro h σ ⟨g, hg⟩
+    rw [← unop_op σ, ← hg, Subfield.subtype_apply,
+      ← coe_unop_modularFunctionFieldActionZMod_apply]
+    exact congrArg Subtype.val (h g)
+  · intro h g
+    apply Subtype.ext
+    rw [coe_unop_modularFunctionFieldActionZMod_apply]
+    exact h _ ⟨g, op_unop _⟩
 
 /-- Opposite scalar signs induce the same arithmetic modular substitution. -/
 @[simp]

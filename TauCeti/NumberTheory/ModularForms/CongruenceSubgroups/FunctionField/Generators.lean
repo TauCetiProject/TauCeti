@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.QExpansion
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Arithmetic generation by Fricke functions
@@ -58,18 +57,12 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
     rintro F (rfl | ⟨a, _, rfl⟩)
     · exact compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N K
     · exact mem_coeffIntermediateField.mpr (frickeMeromorphicFunction_mem_coeffSubfield hK a)
-  let T := algebraMap B
-    (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) ⁻¹' S
-  let C := IntermediateField.adjoin K T
-  have himage : algebraMap B
-      (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) '' T = S :=
-    Set.image_preimage_eq_of_subset fun F hF ↦
-      ⟨⟨F, hAB (IntermediateField.subset_adjoin K S hF)⟩, IntermediateField.algebraMap_apply _ _⟩
+  let C := A.comap B.val
+  have hmap : C.map B.val = A :=
+    IntermediateField.map_comap_eq_self (by rwa [IntermediateField.fieldRange_val])
   have hrange : Set.range (algebraMap C
       (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)) = A := by
-    rw [TauCeti.IntermediateField.range_algebraMap_adjoin, himage]
-  have hmap : C.map B.val = A := SetLike.coe_injective <| by
-    rw [← IntermediateField.fieldRange_comp_val, AlgHom.coe_fieldRange, ← hrange]
+    rw [← hmap, ← IntermediateField.fieldRange_comp_val, AlgHom.coe_fieldRange]
     refine congrArg Set.range (funext fun F ↦ ?_)
     rw [AlgHom.comp_apply, IntermediateField.coe_val, IntermediateField.coe_val,
       IsScalarTower.algebraMap_apply C B, IntermediateField.algebraMap_apply,
