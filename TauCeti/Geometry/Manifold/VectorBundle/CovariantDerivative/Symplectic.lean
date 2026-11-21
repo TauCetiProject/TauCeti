@@ -278,7 +278,8 @@ theorem contMDiffCovariantDerivative_symplecticPart [ContMDiffCovariantDerivativ
       refine (TauCeti.Manifold.contMDiff_hom_iff _).2 fun τ hτ ↦ ?_
       refine Bundle.Trivial.contMDiff_mk_iff.2 ⟨contMDiff_id, ?_⟩
       exact ((contMDiff_const (c := (2⁻¹ : ℝ))).mul
-        (cov.contMDiff_derivBilinearTensor_apply hΩs hσ' hτ hX)).congr
+        (cov.contMDiff_derivBilinearTensor_apply (n := ∞) (by simpa using hΩs) hσ
+          (by simpa using hτ) hX)).congr
         fun y ↦ apply_difference_symplecticPart_apply (hΩ y) _ _ _
     have hA := ((ContMDiff.clm_bundle_inverse (b := id) hΩs hΩ).clm_bundle_apply hψ)
     refine ((cov.contMDiff_apply hX hσ).add_section hA).congr fun y ↦

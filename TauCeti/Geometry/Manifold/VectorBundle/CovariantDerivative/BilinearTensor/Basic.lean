@@ -41,8 +41,8 @@ For the inner product of a Riemannian bundle the tensor is Mathlib's
   `CovariantDerivative.derivBilinearTensor_apply_anticomm`).
 * `CovariantDerivative.derivBilinearTensor_apply_sub_derivBilinearTensor_apply`: changing the
   connection changes `∇b` by `-b(Δ ·, ·) - b(·, Δ ·)`, for the difference tensor `Δ`.
-* `CovariantDerivative.contMDiff_derivBilinearTensor_apply`: for a smooth connection, a smooth `b`,
-  smooth sections and a smooth vector field, `(∇_X b)(σ, τ)` is a smooth function.
+* `CovariantDerivative.contMDiff_derivBilinearTensor_apply`: for a `C^n` connection, a `C^(n + 1)`
+  field `b`, `C^(n + 1)` sections and a `C^n` vector field, `(∇_X b)(σ, τ)` is a `C^n` function.
 * `CovariantDerivative.derivBilinearTensor_eq_derivMetricTensor`: for the inner product of a
   Riemannian bundle, `∇b` is `CovariantDerivative.derivMetricTensor`.
 * `CovariantDerivative.IsMetricCompatible.derivBilinearTensor_eq_zero_of_eq_mul_inner`: for a
@@ -263,24 +263,26 @@ theorem derivBilinearTensor_eq_zero_iff
       h (mdifferentiableAt_extend I F σ₀) (mdifferentiableAt_extend I F τ₀) v]
     simp
 
-/-- The pairing `y ↦ (∇_{X y} b)(σ y, τ y)` of the covariant derivative of a smooth field of
-bilinear forms with smooth sections and a smooth vector field is smooth. -/
-theorem contMDiff_derivBilinearTensor_apply [IsManifold I 1 M]
-    [ContMDiffCovariantDerivative cov ∞]
-    (hbs : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) ∞
+/-- The pairing `y ↦ (∇_{X y} b)(σ y, τ y)` of the covariant derivative of a `C^(n + 1)` field of
+bilinear forms with `C^(n + 1)` sections and a `C^n` vector field, for a `C^n` connection, is `C^n`.
+-/
+theorem contMDiff_derivBilinearTensor_apply [IsManifold I 1 M] {n : ℕ∞ω}
+    [ContMDiffCovariantDerivative cov n]
+    (hbs : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) (n + 1)
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ) x (b x)))
-    {σ τ : Π x : M, V x} (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
-    {X : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)) :
-    ContMDiff I 𝓘(ℝ) ∞ fun y ↦ cov.derivBilinearTensor b y (σ y) (τ y) (X y) := by
-  have hpair {α β : Π x : M, V x} (hα : CMDiff ∞ (T% α)) (hβ : CMDiff ∞ (T% β)) :
-      ContMDiff I 𝓘(ℝ) ∞ fun y ↦ b y (α y) (β y) :=
-    (Bundle.Trivial.contMDiff_mk_iff.1 ((hbs.clm_bundle_apply hα).clm_bundle_apply hβ)).2
-  have hd : ContMDiff I 𝓘(ℝ) ∞ fun y ↦ mvfderiv I (fun z ↦ b z (σ z) (τ z)) y (X y) :=
+    {σ τ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) (hτ : CMDiff (n + 1) (T% τ))
+    {X : Π x : M, TangentSpace I x} (hX : CMDiff n (T% X)) :
+    ContMDiff I 𝓘(ℝ) n fun y ↦ cov.derivBilinearTensor b y (σ y) (τ y) (X y) := by
+  have hpair {m : ℕ∞ω} (hm : m ≤ n + 1) {α β : Π x : M, V x} (hα : CMDiff m (T% α))
+      (hβ : CMDiff m (T% β)) : ContMDiff I 𝓘(ℝ) m fun y ↦ b y (α y) (β y) :=
     (Bundle.Trivial.contMDiff_mk_iff.1
-      (((by simpa using hpair hσ hτ : ContMDiff I 𝓘(ℝ) (∞ + 1) _).contMDiff_totalSpaceMk_mvfderiv)
-        |>.clm_bundle_apply hX)).2
-  refine ((hd.sub (hpair (cov.contMDiff_apply hX (by simpa using hσ)) hτ)).sub
-    (hpair hσ (cov.contMDiff_apply hX (by simpa using hτ)))).congr fun y ↦ ?_
+      (((hbs.of_le hm).clm_bundle_apply hα).clm_bundle_apply hβ)).2
+  have hn : n ≤ n + 1 := le_self_add
+  have hd : ContMDiff I 𝓘(ℝ) n fun y ↦ mvfderiv I (fun z ↦ b z (σ z) (τ z)) y (X y) :=
+    (Bundle.Trivial.contMDiff_mk_iff.1
+      ((hpair le_rfl hσ hτ).contMDiff_totalSpaceMk_mvfderiv.clm_bundle_apply hX)).2
+  refine ((hd.sub (hpair hn (cov.contMDiff_apply hX hσ) (hτ.of_le hn))).sub
+    (hpair hn (hσ.of_le hn) (cov.contMDiff_apply hX hτ))).congr fun y ↦ ?_
   rw [cov.derivBilinearTensor_apply (fun α β hα hβ ↦ ?_) (hσ.mdifferentiableAt (by simp))
     (hτ.mdifferentiableAt (by simp))]
   exact (Bundle.Trivial.mdifferentiableAt_section_iff.1
