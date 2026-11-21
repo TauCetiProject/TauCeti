@@ -18,7 +18,10 @@ This file proves that every almost everywhere measurable continuous linear funct
 Gaussian measure has finite exponential moments of every real order and computes its
 moment-generating function. It then specializes the general result to inner products against a
 multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form,
-and computes the corresponding cumulant-generating function.
+and computes the corresponding cumulant-generating function. It also computes the
+moment-generating function of a linear combination of independent real Gaussian variables, in
+particular of a linear form `y ⬝ᵥ g` of a vector `g` with independent Gaussian coordinates; this
+is the auxiliary Gaussian integral in the decoupling proof of the Hanson–Wright inequality.
 
 The general results require no norm on the source space. Almost everywhere measurability of
 the functional suffices; the default proof handles continuous functionals when open sets are
@@ -41,6 +44,12 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 * `TauCeti.Probability.cgf_inner_multivariateGaussian` gives its real logarithm, the quadratic
   polynomial determined by the directional mean and variance.
+* `ProbabilityTheory.iIndepFun.mgf_sum_mul_gaussianReal` computes the moment-generating function
+  of `∑ i ∈ s, y i * X i` for independent real Gaussian variables `X i`, and
+  `TauCeti.Probability.mgf_dotProduct_pi_gaussianReal` specializes it to a linear form under a
+  finite product of real Gaussian laws.
+* `TauCeti.Probability.integrable_exp_mul_sum_mul_gaussianReal` says that such a linear
+  combination has finite exponential moments of every order, even without independence.
 * `TauCeti.Probability.integral_exp_nat_mul_sin_gaussianReal` and
   `TauCeti.Probability.integral_cos_gaussianReal` evaluate two real integrals against the standard
   Gaussian law.
@@ -58,6 +67,7 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped NNReal
 
 namespace ProbabilityTheory
 
@@ -102,7 +112,7 @@ end IsGaussian
 namespace iIndepFun
 
 variable {Ω γ : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : γ → Ω → ℝ}
-  {μ : γ → ℝ} {v : γ → NNReal}
+  {μ : γ → ℝ} {v : γ → ℝ≥0}
 
 /-- The moment-generating function of a linear combination `∑ i ∈ s, y i * X i` of independent
 real Gaussian variables `X i ∼ N(μ i, v i)` is that of the Gaussian law with mean
@@ -121,22 +131,12 @@ theorem mgf_sum_mul_gaussianReal (hInd : iIndepFun X P)
   rw [mgf_const_mul, mgf_gaussianReal (hLaw i)]
   ring_nf
 
-/-- A linear combination `∑ i ∈ s, y i * X i` of independent real Gaussian variables has
-finite exponential moments of every real order `r`: `ω ↦ exp (r * ∑ i ∈ s, y i * X i ω)` is
-integrable. -/
-theorem integrable_exp_mul_sum_mul_gaussianReal (hInd : iIndepFun X P)
-    (hLaw : ∀ i, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (s : Finset γ) (y : γ → ℝ)
-    (r : ℝ) :
-    Integrable (fun ω ↦ Real.exp (r * ∑ i ∈ s, y i * X i ω)) P :=
-  have := hInd.isProbabilityMeasure
-  mgf_pos_iff.mp (hInd.mgf_sum_mul_gaussianReal hLaw s y r ▸ Real.exp_pos _)
-
 end iIndepFun
 
 end ProbabilityTheory
 
 open ProbabilityTheory
-open scoped RealInnerProductSpace NNReal
+open scoped RealInnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -177,6 +177,29 @@ theorem gaussian_x_exp_integrable (a : ℝ) :
     have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
       simp
     simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
+
+/-- A linear combination `∑ i ∈ s, y i * X i` of real Gaussian variables `X i` on a finite measure
+space has finite exponential moments of every real order `r`: the function
+`ω ↦ exp (r * ∑ i ∈ s, y i * X i ω)` is integrable. The variables need not be independent. -/
+theorem integrable_exp_mul_sum_mul_gaussianReal {Ω γ : Type*} {mΩ : MeasurableSpace Ω}
+    {P : Measure Ω} [IsFiniteMeasure P] {X : γ → Ω → ℝ} {μ : γ → ℝ} {v : γ → ℝ≥0}
+    (hLaw : ∀ i, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (s : Finset γ) (y : γ → ℝ)
+    (r : ℝ) :
+    Integrable (fun ω ↦ Real.exp (r * ∑ i ∈ s, y i * X i ω)) P := by
+  classical
+  have hX (i : γ) : AEMeasurable (X i) P := (hLaw i).aemeasurable
+  induction s using Finset.induction_on generalizing r with
+  | empty => simp
+  | insert i s hi ih =>
+    -- Since `exp (a + b) ≤ exp (2 * a) + exp (2 * b)`, the new summand only needs the
+    -- exponential moments of `X i` and of the previous sum, at twice the order.
+    have hXi : Integrable (fun ω ↦ Real.exp (2 * r * y i * X i ω)) P :=
+      (hLaw i).integrable_fun_comp (integrable_exp_mul_gaussianReal (2 * r * y i))
+    refine (hXi.add (ih (2 * r))).mono' (by fun_prop) (.of_forall fun ω ↦ ?_)
+    rw [Finset.sum_insert hi, Real.norm_of_nonneg (Real.exp_pos _).le, Pi.add_apply]
+    rcases le_total (r * (y i * X i ω)) (r * ∑ j ∈ s, y j * X j ω) with h | h
+    · exact (Real.exp_le_exp.2 (by linarith)).trans (le_add_of_nonneg_left (Real.exp_pos _).le)
+    · exact (Real.exp_le_exp.2 (by linarith)).trans (le_add_of_nonneg_right (Real.exp_pos _).le)
 
 /-- The moment-generating function of a linear form `g ↦ y ⬝ᵥ g` under a finite product of
 real Gaussian laws `gaussianReal (μ l) (v l)`, that is, for a vector of independent Gaussian
