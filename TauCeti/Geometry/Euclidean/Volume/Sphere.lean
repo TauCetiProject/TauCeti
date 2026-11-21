@@ -63,13 +63,17 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   mass of Mathlib's surface measure `Measure.toSphere volume`.
 * `TauCeti.euclideanHausdorffMeasure_sphere`: `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`.
 * `TauCeti.roundSphereVolume`: the area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`, its normalized
-  `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
+  `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes by
+  `MeasureTheory.Measure.addHaar_sphere`).
 * `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
   real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
   particular this measure is finite. The sphere of radius `r > 0` has measure `r ^ n |Sⁿ|`
   (`TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume`).
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
+* `TauCeti.roundSphereVolume_add_two` and `TauCeti.roundSphereVolume_zero` through
+  `TauCeti.roundSphereVolume_four`: the recurrence `|Sⁿ⁺²| = (2 π / (n + 1)) |Sⁿ|` and the
+  low-dimensional areas `|S⁰| = 2`, `|S¹| = 2 π`, `|S²| = 4 π`, `|S³| = 2 π²`, `|S⁴| = 8 π² / 3`.
 
 ## References
 
@@ -466,5 +470,52 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n 
     _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
     smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
+
+/-- The zero-sphere `S⁰ = {-1, 1}` has counting measure `|S⁰| = 2`. -/
+@[simp]
+theorem roundSphereVolume_zero : roundSphereVolume 0 = 2 := by
+  rw [roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+  norm_num [Real.Gamma_one_half_eq, Real.sqrt_eq_rpow, mul_div_cancel_right₀ _
+    (Real.rpow_pos_of_pos Real.pi_pos (1 / 2 : ℝ)).ne']
+
+/-- The unit circle `S¹` has length `|S¹| = 2 π`. -/
+@[simp]
+theorem roundSphereVolume_one : roundSphereVolume 1 = 2 * Real.pi := by
+  rw [roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+  norm_num [Real.Gamma_one]
+
+/-- **Dimension-two recurrence for the area of the unit sphere**:
+`|Sⁿ⁺²| = (2 π / (n + 1)) |Sⁿ|`. -/
+theorem roundSphereVolume_add_two (n : ℕ) :
+    roundSphereVolume (n + 2) = 2 * Real.pi / ((n : ℝ) + 1) * roundSphereVolume n := by
+  set s : ℝ := ((n : ℝ) + 1) / 2
+  have hs : 0 < s := by positivity
+  have : 0 < Real.Gamma s := Real.Gamma_pos_of_pos hs
+  have hshift : (((n + 2 : ℕ) : ℝ) + 1) / 2 = s + 1 := by
+    simp only [s, Nat.cast_add, Nat.cast_ofNat]
+    ring
+  rw [roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma,
+    roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma, hshift,
+    Real.rpow_add_one Real.pi_pos.ne', Real.Gamma_add_one hs.ne']
+  simp only [s]
+  field_simp
+
+/-- The unit two-sphere `S²` has area `|S²| = 4 π`. -/
+@[simp]
+theorem roundSphereVolume_two : roundSphereVolume 2 = 4 * Real.pi := by
+  rw [roundSphereVolume_add_two 0, roundSphereVolume_zero]
+  ring
+
+/-- The unit three-sphere `S³` has volume `|S³| = 2 π²`. -/
+@[simp]
+theorem roundSphereVolume_three : roundSphereVolume 3 = 2 * Real.pi ^ 2 := by
+  rw [roundSphereVolume_add_two 1, roundSphereVolume_one]
+  ring
+
+/-- The unit four-sphere `S⁴` has volume `|S⁴| = 8 π² / 3`. -/
+@[simp]
+theorem roundSphereVolume_four : roundSphereVolume 4 = 8 * Real.pi ^ 2 / 3 := by
+  rw [roundSphereVolume_add_two 2, roundSphereVolume_two]
+  ring
 
 end TauCeti

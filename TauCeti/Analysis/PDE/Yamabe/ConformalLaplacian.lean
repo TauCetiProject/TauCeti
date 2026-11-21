@@ -6,12 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
+import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 
 /-!
@@ -49,7 +55,8 @@ examples, and the transformation law of scalar curvature:
 
 * `TauCeti.Yamabe.conformalLaplacian`: the conformal Laplacian `L_g`.
 * `TauCeti.Yamabe.conformalLaplacian_add`, `TauCeti.Yamabe.conformalLaplacian_smul`: linearity
-  on `C²` functions; `TauCeti.Yamabe.conformalLaplacian_const`: `L_g c = c Scal_g`.
+  on `C²` functions; `TauCeti.Yamabe.conformalLaplacian_const`: `L_g c = c Scal_g`;
+  `TauCeti.Yamabe.conformalLaplacian_congr_of_eventuallyEq`: locality on `C²` germs.
 * `TauCeti.Yamabe.contMDiff_conformalLaplacian`: `L_g` maps `C^(k + 2)` functions to `C^k`
   functions.
 * `TauCeti.Yamabe.conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian`: on Euclidean
@@ -62,10 +69,16 @@ examples, and the transformation law of scalar curvature:
   curvature `c` exactly where `L_g u = c u ^ (pₙ - 1)`.
 * `TauCeti.Yamabe.conformalLaplacian_rescale`: the conformal covariance
   `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)`.
+* `Bundle.ContMDiffRiemannianMetric.conformalLaplacian_eq_of_riemannianBundle_eq`: transports
+  `conformalLaplacian` along an equality of installed fibre metrics.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: if
   `L_g u = λ u`, then `Scal_ĝ = λ u ^ (-4 / (n - 2))`, and
   `Bundle.ContMDiffRiemannianMetric.sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: its
   sign is that of `λ`.
+* `TauCeti.IsLocalRiemannianIsometry.conformalLaplacian_comp`: naturality under local Riemannian
+  isometries, `L_M (u ∘ f) = (L_N u) ∘ f`.
+* `TauCeti.WithMetric.conformalLaplacian_comp_ofWithMetric`: transport from a metric-indexed copy
+  `WithMetric g` to `M`.
 
 ## References
 
@@ -76,7 +89,7 @@ examples, and the transformation law of scalar curvature:
 public section
 
 open Bundle InnerProductSpace Laplacian Module TauCeti.Manifold
-open scoped ContDiff Manifold Gradient
+open scoped ContDiff Manifold Gradient Topology
 
 noncomputable section
 
@@ -142,6 +155,15 @@ theorem contMDiff_conformalLaplacian {k : ℕ∞ω} (hk : k ≤ ∞) {u : M → 
   have hScal := ((CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature).of_le hk
   have hu' := hu.of_le (le_add_of_nonneg_right (by norm_num))
   exact (contMDiff_const.mul hΔ.neg).add (hScal.mul hu')
+
+variable {I} in
+/-- The conformal Laplacian at a point `x` depends only on the germ at `x` among functions that are
+`C²` at `x`. -/
+theorem conformalLaplacian_congr_of_eventuallyEq {u v : M → ℝ} {x : M}
+    (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (h : u =ᶠ[𝓝 x] v) :
+    conformalLaplacian I u x = conformalLaplacian I v x := by
+  rw [conformalLaplacian_def, conformalLaplacian_def,
+    laplaceBeltrami_congr_of_eventuallyEq I hu h, h.eq_of_nhds]
 
 end Manifold
 
@@ -320,6 +342,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
 
+/-- If the installed fibre metric is `g`, its conformal Laplacian is `conformalLaplacian I u x`.
+This transports `conformalLaplacian` along an equality of fibre metrics, such as
+`toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent arguments. -/
+theorem conformalLaplacian_eq_of_riemannianBundle_eq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (u : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+     conformalLaplacian I u x) = conformalLaplacian I u x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
+
 /-- **Scalar curvature from an eigenfunction of the conformal Laplacian.** Let `u` be a positive
 function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point where `L_g u = λ u`,
 the scalar curvature of `ĝ` is `Scal_ĝ = λ u ^ (-4 / (n - 2))`. In dimension `n = 2` the exponent
@@ -367,3 +402,54 @@ theorem sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul
     sign_pos (Real.rpow_pos_of_pos (hu_pos x) _), mul_one]
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti.IsLocalRiemannianIsometry
+
+open TauCeti.Yamabe
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+/-- A local Riemannian isometry pulls back the conformal Laplacian:
+`L_M (u ∘ f) x = L_N u (f x)` at every point where `u` is `C²`. -/
+theorem conformalLaplacian_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {u : N → ℝ} {x : M} (hu : ContMDiffAt J 𝓘(ℝ) 2 u (f x)) :
+    conformalLaplacian I (u ∘ f) x = conformalLaplacian J u (f x) := by
+  obtain ⟨e, -⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
+  have hdim : finrank ℝ E = finrank ℝ F := by
+    simpa only [finrank_tangentSpace] using e.toLinearEquiv.finrank_eq
+  rw [conformalLaplacian_def, conformalLaplacian_def, hdim, hf.laplaceBeltrami_comp hu,
+    ← hf.scalarCurvature_map x, Function.comp_apply]
+
+end TauCeti.IsLocalRiemannianIsometry
+
+namespace TauCeti.WithMetric
+
+open TauCeti.Yamabe
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+
+/-- Transport of the conformal Laplacian from a metric-indexed copy `WithMetric g` to `M`. -/
+theorem conformalLaplacian_comp_ofWithMetric
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {w : M → ℝ} {x : M} (hw : ContMDiffAt I 𝓘(ℝ) 2 w x) :
+    conformalLaplacian I (w ∘ ofWithMetric) (toWithMetric g x) =
+      (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+       conformalLaplacian I w x) := by
+  let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  have hw' : ContMDiffAt I 𝓘(ℝ) 2 w ((riemannianIsometry g) (toWithMetric g x)) := by
+    simpa [coe_riemannianIsometry] using hw
+  simpa [coe_riemannianIsometry] using
+    (riemannianIsometry g).isLocalRiemannianIsometry.conformalLaplacian_comp hw'
+
+end TauCeti.WithMetric

@@ -16,10 +16,12 @@ normalized `n`-dimensional Hausdorff measure. The *Yamabe constant of the sphere
 `Y(Sⁿ) = n (n - 1) |Sⁿ| ^ (2 / n)`.
 
 For `n > 2` it is the value of the Yamabe quotient `Q(u) = ∫ (aₙ |du|² + Scal u²) / ‖u‖_{pₙ}²` of
-the round metric (scalar curvature `n (n - 1)`) at a constant function `u`; it is the sharp
-constant of the Euclidean Sobolev inequality `aₙ ∫ |du|² ≥ Y(Sⁿ) ‖u‖_{pₙ}²` and the upper bound for
-the Yamabe invariant of every closed `n`-manifold. Neither of these facts is proved here; they are
-the reasons for introducing the constant.
+the round metric (scalar curvature `n (n - 1)`) at a nonzero constant function `u`
+(`TauCeti.Analysis.PDE.Yamabe.Sphere.Basic`); it is the sharp constant of the Euclidean Sobolev
+inequality `aₙ ∫ |du|² ≥ Y(Sⁿ) ‖u‖_{pₙ}²` and the upper bound for the Yamabe invariant of every
+closed `n`-manifold (`TauCeti.Analysis.PDE.Yamabe.UpperBound`). This file introduces the numerical
+constant and its elementary algebraic identities so both developments can share it without
+depending on the manifold theory of the sphere.
 
 ## Main declarations
 
