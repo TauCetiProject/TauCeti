@@ -16,6 +16,9 @@ A continuous family of bounded operators which is invertible on a compact parame
 remains invertible on a common neighborhood of that slice, with a uniform operator-norm bound
 on its inverses. Only the domain of the operators needs to be complete.
 
+A continuous family of bounded operators is uniformly bounded on a compact parameter set
+(`IsCompact.exists_forall_norm_apply_le_mul_norm`).
+
 A continuous family of bounded operators with a continuous family of left inverses moves norms
 by a uniformly bounded factor in both directions on a compact parameter set
 (`IsCompact.exists_norm_apply_le_and_norm_le`).
@@ -97,6 +100,14 @@ namespace IsCompact
 
 variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a compact parameter set, a continuous family of operators is uniformly bounded: some
+`A ≥ 0` has `‖L x v‖ ≤ A ‖v‖` for every `x ∈ K` and every `v`. -/
+theorem exists_forall_norm_apply_le_mul_norm {K : Set X} (hK : IsCompact K)
+    {L : X → E →L[𝕜] F} (hL : ContinuousOn L K) :
+    ∃ A, 0 ≤ A ∧ ∀ x ∈ K, ∀ v, ‖L x v‖ ≤ A * ‖v‖ := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hL
+  exact ⟨|A|, abs_nonneg A, fun x hx v ↦ (L x).le_of_opNorm_le ((hA x hx).trans (le_abs_self A)) v⟩
 
 /-- On a compact parameter set, a continuous family of operators `L x` with a continuous family of
 left inverses `Linv x` changes norms by a uniformly bounded factor: `‖L x v‖` and `‖v‖` are
