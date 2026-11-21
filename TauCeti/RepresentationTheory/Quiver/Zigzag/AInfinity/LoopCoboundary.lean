@@ -20,8 +20,10 @@ as soon as `∑ w, a w * c w ≠ 0` for weights `a` on words of darts which are 
 the signless preprojective relation in every pair of consecutive positions. This file proves the
 converse over a field: if every such pairing vanishes on `c`, the loop operation is the Hochschild
 differential of a suspended cochain of degree zero concentrated in arity `n + 1`. So the word
-pairings detect exactly the Hochschild classes of loop operations: this is the zigzag form of Liu
-and Wang's comparison of zigzag Hochschild cohomology with the preprojective cyclic quotient.
+pairings detect exactly the Hochschild classes of loop operations. This is a step towards Liu and
+Wang's comparison of zigzag Hochschild cohomology with the cyclic quotient of the preprojective
+algebra; identifying the weights with functionals on that cyclic quotient, and treating Hochschild
+classes other than those of loop operations, is not done here.
 
 ## Coordinate cochains
 
@@ -37,8 +39,6 @@ and a linear-algebra duality over a field gives the converse.
 
 ## Main results
 
-* `TauCeti.zigzagBasis_coord_volume_mul` and `TauCeti.zigzagBasis_coord_koszulTwist`: the volume
-  coordinates of a product and the coordinates of a Koszul twist.
 * `TauCeti.exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_iff`: over a
   field, a loop operation of arity at least three is a Hochschild coboundary exactly when every
   word pairing with anticyclic weights satisfying the signless relations vanishes on it.
@@ -66,22 +66,6 @@ universe u w
 section Words
 
 variable {V : Type u} {G : SimpleGraph V}
-
-variable (G) in
-/-- The path-length degree of a member of the vertex-arrow-volume basis. -/
-def zigzagBasisDegree : ZigzagBasisIndex G → ℤ
-  | .inl _ => 0
-  | .inr (.inl _) => 1
-  | .inr (.inr _) => 2
-
-@[simp]
-theorem zigzagBasisDegree_inl (i : V) : zigzagBasisDegree G (.inl i) = 0 := (rfl)
-
-@[simp]
-theorem zigzagBasisDegree_inr_inl (d : G.Dart) : zigzagBasisDegree G (.inr (.inl d)) = 1 := (rfl)
-
-@[simp]
-theorem zigzagBasisDegree_inr_inr (i : V) : zigzagBasisDegree G (.inr (.inr i)) = 2 := (rfl)
 
 /-- A word of darts, extended to the natural numbers by a default dart. -/
 private def natExt {m : ℕ} (w : Fin m → G.Dart) (d₀ : G.Dart) (i : ℕ) : G.Dart :=
@@ -348,82 +332,7 @@ section Coordinates
 variable {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V} [Finite V]
   {hns : ∀ i : V, ∃ j, G.Adj i j}
 
-local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
-
 local notation "κ" => Module.Basis.coord (zigzagBasis k G hns)
-
-/-- Each member of the vertex-arrow-volume basis is homogeneous of its path-length degree. -/
-theorem zigzagBasis_mem_zigzagIntegerGrade (b : ZigzagBasisIndex G) :
-    zigzagBasis k G hns b ∈ zigzagIntegerGrade k G (zigzagBasisDegree G b) := by
-  rcases b with i | d | i
-  · rw [zigzagBasis_apply, zigzagBasisFun_inl, zigzagBasisDegree, ← Nat.cast_zero,
-      zigzagIntegerGrade_ofNat, zigzagGrade_zero_eq_span_range_vertexIdempotent]
-    exact Submodule.subset_span ⟨i, rfl⟩
-  · rw [zigzagBasis_apply, zigzagBasisFun_inr_inl]
-    exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G d
-  · rw [zigzagBasis_apply, zigzagBasisFun_inr_inr]
-    exact zigzagVolume_mem_zigzagIntegerGrade_two k G i
-
-/-- **A volume coordinate vanishes off degree two**: the pieces of degree other than two are
-spanned by vertex idempotents and arrows, which have no volume component. -/
-theorem zigzagBasis_coord_volume_eq_zero_of_mem_zigzagIntegerGrade (i : V) {e : ℤ} (he : e ≠ 2)
-    {x : nonisolatedZigzagQuotient k G} (hx : x ∈ zigzagIntegerGrade k G e) :
-    κ (.inr (.inr i)) x = 0 := by
-  classical
-  suffices hle : zigzagIntegerGrade k G e ≤ LinearMap.ker (κ (.inr (.inr i))) from hle hx
-  rcases lt_or_ge e 0 with h | h
-  · simp [zigzagIntegerGrade_eq_bot_of_neg k G h]
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le h
-  rw [zigzagIntegerGrade_ofNat]
-  match n, he with
-  | 0, _ =>
-    rw [zigzagGrade_zero_eq_span_range_vertexIdempotent, Submodule.span_le]
-    rintro _ ⟨j, rfl⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_ker]
-    rw [← zigzagBasisFun_inl, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
-    simp
-  | 1, _ =>
-    rw [zigzagGrade_one_eq_span_range_ofArrow, Submodule.span_le]
-    rintro _ ⟨d, rfl⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_ker]
-    rw [← zigzagBasisFun_inr_inl, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
-    simp
-  | 2, he => exact absurd rfl he
-  | n + 3, _ =>
-    rw [zigzagGrade_eq_bot_of_three_le k G (by omega)]
-    exact bot_le
-
-/-- **A coordinate vanishes off its degree**: the coordinate of a member of the
-vertex-arrow-volume basis vanishes on the homogeneous pieces of every other degree. -/
-theorem zigzagBasis_coord_eq_zero_of_mem_zigzagIntegerGrade (b : ZigzagBasisIndex G) {e : ℤ}
-    (he : e ≠ zigzagBasisDegree G b) {x : nonisolatedZigzagQuotient k G}
-    (hx : x ∈ zigzagIntegerGrade k G e) : κ b x = 0 := by
-  rcases b with i | d | i
-  · exact zigzagBasis_coord_vertex_eq_zero_of_mem_zigzagIntegerGrade k G hns i he hx
-  · exact zigzagBasis_coord_dart_eq_zero_of_mem_zigzagIntegerGrade k G hns d he hx
-  · exact zigzagBasis_coord_volume_eq_zero_of_mem_zigzagIntegerGrade i he hx
-
-/-- **The coordinates of a Koszul twist.** For a grading whose pieces are the path-length pieces,
-the Koszul twist of parameter `q` scales the coordinate of a member of the vertex-arrow-volume basis
-of degree `e` by `(-1)^(q e)`. This generalizes `TauCeti.zigzagBasis_coord_dart_koszulTwist_one`
-to every basis index and every parameter. -/
-theorem zigzagBasis_coord_koszulTwist {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ}
-    (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G) (b : ZigzagBasisIndex G) (q : ℤ)
-    (x : nonisolatedZigzagQuotient k G) :
-    κ b (𝒢.koszulTwist q x) = negOnePowCast k (q * zigzagBasisDegree G b) * κ b x := by
-  classical
-  have key : κ b ∘ₗ 𝒢.koszulTwist q = negOnePowCast k (q * zigzagBasisDegree G b) • κ b := by
-    refine (zigzagBasis k G hns).ext fun c ↦ ?_
-    have hc : zigzagBasis k G hns c ∈ 𝒢.piece (zigzagBasisDegree G c) := by
-      rw [h𝒢]
-      exact zigzagBasis_mem_zigzagIntegerGrade c
-    rw [LinearMap.comp_apply, InternalGrading.koszulTwist_apply_of_mem _ hc, LinearMap.smul_apply,
-      map_smul, zigzagBasis_coord_apply, ← negOnePowCast_eq_intCast]
-    split_ifs with h
-    · subst h
-      simp
-    · simp
-  simpa using LinearMap.congr_fun key x
 
 /-- On a homogeneous element, a Koszul sign only matters through the degree of the coordinate read
 off it. -/
@@ -433,65 +342,7 @@ private theorem negOnePowCast_mul_zigzagBasis_coord_of_mem (b : ZigzagBasisIndex
     negOnePowCast k (q * e) * κ b x = negOnePowCast k (q * zigzagBasisDegree G b) * κ b x := by
   by_cases he : e = zigzagBasisDegree G b
   · rw [he]
-  · rw [zigzagBasis_coord_eq_zero_of_mem_zigzagIntegerGrade b he hx, mul_zero, mul_zero]
-
-/-- **The volume coordinates of a product.** The coefficient of the volume class at `v` in `x * y`
-pairs the idempotent and volume coordinates at `v` of the two factors, and adds the products of
-the coordinates of the arrows of the backtracks `d, d.symm` with head `v`: the volume class at `v`
-is a product only of itself with the idempotent at `v`, and of each backtrack at `v`. -/
-theorem zigzagBasis_coord_volume_mul [Fintype G.Dart] [DecidableEq V] (v : V)
-    (x y : nonisolatedZigzagQuotient k G) :
-    κ (.inr (.inr v)) (x * y) =
-      κ (.inl v) x * κ (.inr (.inr v)) y + κ (.inr (.inr v)) x * κ (.inl v) y +
-        ∑ d : G.Dart with d.snd = v, κ (.inr (.inl d)) x * κ (.inr (.inl d.symm)) y := by
-  classical
-  have key : (LinearMap.mul k (nonisolatedZigzagQuotient k G)).compr₂ (κ (.inr (.inr v))) =
-      (LinearMap.mul k k).compl₁₂ (κ (.inl v)) (κ (.inr (.inr v))) +
-        (LinearMap.mul k k).compl₁₂ (κ (.inr (.inr v))) (κ (.inl v)) +
-        ∑ d : G.Dart with d.snd = v,
-          (LinearMap.mul k k).compl₁₂ (κ (.inr (.inl d))) (κ (.inr (.inl d.symm))) := by
-    refine LinearMap.ext_basis (zigzagBasis k G hns) (zigzagBasis k G hns) fun b c => ?_
-    simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.add_apply,
-      LinearMap.compl₁₂_apply, zigzagBasis_mul, zigzagBasis_coord_apply, LinearMap.sum_apply]
-    rcases b with i | e | i <;> rcases c with j | f | j
-    case inr.inl.inr.inl =>
-      -- The products of two arrows: only the backtrack `e, e.symm` contributes.
-      rcases eq_or_ne f e.symm with rfl | hf
-      · simp only [zigzagBasisMul_dart_dart, ↓reduceIte, Option.elim_some, zigzagBasis_coord_apply,
-          Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, mul_zero, add_zero, zero_add, mul_ite,
-          mul_one]
-        by_cases hv : e.snd = v
-        · rw [Finset.sum_eq_single e (fun x _ hx ↦ by simp [Ne.symm hx])
-            (fun he ↦ absurd (Finset.mem_filter.2 ⟨Finset.mem_univ e, hv⟩) he)]
-          simp [hv]
-        · simp only [hv, ↓reduceIte]
-          refine (Finset.sum_eq_zero fun x hx ↦ ?_).symm
-          rw [Finset.mem_filter] at hx
-          split_ifs with h₁ h₂
-          · exact absurd (h₂ ▸ hx.2) hv
-          · rfl
-          · rfl
-      · simp only [zigzagBasisMul_dart_dart, hf, ↓reduceIte, Option.elim_none, map_zero,
-          Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, mul_zero, add_zero, zero_add, mul_ite,
-          mul_one]
-        refine (Finset.sum_eq_zero fun x _ ↦ ?_).symm
-        split_ifs with h₁ h₂
-        · exact absurd (h₂ ▸ h₁) hf
-        · rfl
-        · rfl
-    all_goals
-      simp only [zigzagBasisMul_vertex_vertex, zigzagBasisMul_vertex_dart,
-        zigzagBasisMul_vertex_volume, zigzagBasisMul_dart_vertex,
-        zigzagBasisMul_dart_volume, zigzagBasisMul_volume_vertex, zigzagBasisMul_volume_dart,
-        zigzagBasisMul_volume_volume]
-      split_ifs <;>
-      simp only [Option.elim_some, Option.elim_none, map_zero, zigzagBasis_coord_apply,
-        Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, ite_false, ite_self, mul_one, mul_zero,
-        add_zero, zero_add, Finset.sum_const_zero, mul_ite] <;>
-      simp_all
-  simpa only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.add_apply,
-    LinearMap.compl₁₂_apply, LinearMap.sum_apply] using
-    LinearMap.congr_fun₂ key x y
+  · rw [zigzagBasis_coord_eq_zero_of_mem_zigzagIntegerGrade k G hns b he hx, mul_zero, mul_zero]
 
 end Coordinates
 
@@ -581,7 +432,7 @@ private theorem isHomogeneous_coordCochain {r : ℕ} (hr : 0 < r) (β : ℕ → 
         omega
       · obtain ⟨i, hi⟩ := not_forall.mp hdeg
         rw [Finset.prod_eq_zero (Finset.mem_univ i)
-          (zigzagBasis_coord_eq_zero_of_mem_zigzagIntegerGrade (β i) hi (hx i)), zero_smul]
+          (zigzagBasis_coord_eq_zero_of_mem_zigzagIntegerGrade k G hns (β i) hi (hx i)), zero_smul]
         exact Submodule.zero_mem _
     · rw [coordCochain_of_ne hr β z fun h ↦ hnr (congrArg Subtype.val h)]
       exact Submodule.zero_mem _
@@ -922,11 +773,6 @@ private theorem hochschildDifferential_coordCochain_arrow {n : ℕ} (u : ℕ →
   rw [hochschildDifferential_coordCochain_apply (fun i ↦ .inr (.inl (u i))) vtx
       (fun i hi ↦ hu i hi) _ x d hx,
     LinearMap.neg_apply, LinearMap.add_apply, coordCochain_of_tprod_nat, coordCochain_of_tprod_nat]
-  have htw : (𝒵).grading.koszulTwist 1 (𝔞 b) = -𝔞 b := by
-    rw [InternalGrading.koszulTwist_one_apply_of_mem _ (e := 1) (by
-      rw [zigzagStrictAInfinityAlgebra_grading_piece]
-      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G b)]
-    simp
   have hR₁ : ∏ i ∈ Finset.range (n + 2),
       κ (.inr (.inl (if i < n + 1 then u i else b.symm))) (x i) =
         (∏ i ∈ Finset.range (n + 1), κ (.inr (.inl (u i))) (x i)) *
@@ -942,7 +788,8 @@ private theorem hochschildDifferential_coordCochain_arrow {n : ℕ} (u : ℕ →
     rw [Finset.prod_range_succ']
     simp only [↓reduceIte]
     exact congrArg₂ _ (Finset.prod_congr rfl fun i _ ↦ by simp) rfl
-  rw [hR₁, hR₂, htw, neg_mul, zigzagMk_ofArrow_mul hns, mul_zigzagMk_ofArrow hns]
+  rw [hR₁, hR₂, koszulTwist_one_zigzagMk_ofArrow zigzagStrictAInfinityAlgebra_grading_piece b,
+    neg_mul, zigzagMk_ofArrow_mul hns, mul_zigzagMk_ofArrow hns]
   simp only [zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece]
   simp only [telescopeTerm, prefixSign, backtrackTerm, zigzagBasisDegree, sub_self,
     Finset.sum_const_zero, negOnePowCast_zero, mul_zero, Finset.range_eq_Ico,
@@ -992,14 +839,9 @@ private theorem hochschildDifferential_coordCochain_volume {n p : ℕ} (hp : p �
     rw [prefixSign, Finset.sum_eq_single p (fun j hj hjp ↦ by
       rw [hβa j (by simp at hj; omega) hjp, sub_self]) (fun h ↦ absurd (by simp; omega) h), hβp]
     simp [zigzagBasisDegree, negOnePowCast_one]
-  have htw : (𝒵).grading.koszulTwist 1 (zigzagVolume k G (vtx 0)) = zigzagVolume k G (vtx 0) := by
-    rw [InternalGrading.koszulTwist_one_apply_of_mem _ (e := 2) (by
-      rw [zigzagStrictAInfinityAlgebra_grading_piece]
-      exact zigzagVolume_mem_zigzagIntegerGrade_two k G _)]
-    simp
-  rw [hochschildDifferential_coordCochain_apply β vtx hβ _ x d hx, hR, hBT, hsign₀, hsign₁, htw,
-    zigzagVolume_mul hns, mul_zigzagVolume hns,
-    zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece]
+  rw [hochschildDifferential_coordCochain_apply β vtx hβ _ x d hx, hR, hBT, hsign₀, hsign₁,
+    koszulTwist_one_zigzagVolume zigzagStrictAInfinityAlgebra_grading_piece, zigzagVolume_mul hns,
+    mul_zigzagVolume hns, zigzagBasis_coord_koszulTwist zigzagStrictAInfinityAlgebra_grading_piece]
   simp only [telescopeTerm, Finset.range_eq_Ico, Finset.Ico_self, Finset.prod_empty, mul_one,
     hvtx, zigzagBasisDegree, mul_zero, negOnePowCast_zero, one_mul]
   module
