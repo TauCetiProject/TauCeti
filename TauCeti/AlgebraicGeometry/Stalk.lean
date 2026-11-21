@@ -96,9 +96,22 @@ instance : IsDirectedOrder (X.AffineOpenNhds x)ᵒᵈ where
 
 variable (X x) in
 /-- Forgetful functor from affine open neighbourhoods of `x` to all open neighbourhoods of `x`. -/
-@[expose, simps] def toOpenNhds : X.AffineOpenNhds x ⥤ OpenNhds x where
+def toOpenNhds : X.AffineOpenNhds x ⥤ OpenNhds x where
   obj W := ⟨W.opens, W.mem⟩
   map f := homOfLE (Subtype.mk_le_mk.mpr (le_iff.mp (leOfHom f)))
+
+/-- Object action of `AffineOpenNhds.toOpenNhds`. -/
+@[simp] theorem toOpenNhds_obj (W : X.AffineOpenNhds x) :
+    (toOpenNhds X x).obj W = ⟨W.opens, W.mem⟩ := by
+  rfl
+
+/-- Morphism action of `AffineOpenNhds.toOpenNhds`, transported along `toOpenNhds_obj`. -/
+@[simp] theorem toOpenNhds_map {W₁ W₂ : X.AffineOpenNhds x} (f : W₁ ⟶ W₂) :
+    (toOpenNhds X x).map f =
+      eqToHom (toOpenNhds_obj W₁) ≫
+        homOfLE (Subtype.mk_le_mk.mpr (le_iff.mp (leOfHom f))) ≫
+          eqToHom (toOpenNhds_obj W₂).symm :=
+  Subsingleton.elim _ _
 
 instance : (toOpenNhds X x).Initial := Functor.initial_of_exists_of_isCofiltered _
   (fun U ↦ let ⟨_, ⟨W, hW, rfl⟩, hxW, hle⟩ :=
@@ -109,12 +122,26 @@ instance : (toOpenNhds X x).Initial := Functor.initial_of_exists_of_isCofiltered
 end AffineOpenNhds
 
 /-- The diagram of affine open subschemes containing `x`, with open-inclusion transition maps. -/
-@[expose, simps, implicit_reducible]
+@[implicit_reducible]
 def affineOpenNhdsDiagram : X.AffineOpenNhds x ⥤ Scheme.{u} where
   obj W := W.opens.toScheme
   map f := X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f))
   map_id W := X.homOfLE_rfl W.opens
   map_comp _ _ := (X.homOfLE_homOfLE _ _).symm
+
+/-- Object action of `X.affineOpenNhdsDiagram x`. -/
+@[simp] theorem affineOpenNhdsDiagram_obj (W : X.AffineOpenNhds x) :
+    (X.affineOpenNhdsDiagram x).obj W = W.opens.toScheme := by
+  rfl
+
+/-- Morphism action of `X.affineOpenNhdsDiagram x`, transported along
+`affineOpenNhdsDiagram_obj`. -/
+@[simp] theorem affineOpenNhdsDiagram_map {W₁ W₂ : X.AffineOpenNhds x} (f : W₁ ⟶ W₂) :
+    (X.affineOpenNhdsDiagram x).map f =
+      eqToHom (X.affineOpenNhdsDiagram_obj x W₁) ≫
+        X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f)) ≫
+          eqToHom (X.affineOpenNhdsDiagram_obj x W₂).symm := by
+  simp [affineOpenNhdsDiagram]
 
 instance (W : X.AffineOpenNhds x) : IsAffine ((X.affineOpenNhdsDiagram x).obj W) := W.isAffineOpen
 instance {W₁ W₂ : X.AffineOpenNhds x} (f : W₁ ⟶ W₂) :
@@ -127,24 +154,52 @@ def affineOpenNhdsDiagramIsoSpec :
   NatIso.ofComponents (fun W ↦ W.isAffineOpen.isoSpec) fun {_ _} f ↦
     (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map _ _ (AffineOpenNhds.le_iff.mp (leOfHom f))).symm
 
-/-- Forward component of `affineOpenNhdsDiagramIsoSpec` at `W`. -/
+/-- Forward component of `affineOpenNhdsDiagramIsoSpec` at `W`, transported along
+`affineOpenNhdsDiagram_obj` and `AffineOpenNhds.toOpenNhds_obj`. -/
 @[simp] theorem affineOpenNhdsDiagramIsoSpec_hom_app (W : X.AffineOpenNhds x) :
-    (X.affineOpenNhdsDiagramIsoSpec x).hom.app W = W.isAffineOpen.isoSpec.hom :=
-  NatIso.ofComponents_hom_app _ _ W
+    (X.affineOpenNhdsDiagramIsoSpec x).hom.app W =
+      eqToHom (X.affineOpenNhdsDiagram_obj x W) ≫ W.isAffineOpen.isoSpec.hom ≫
+        eqToHom (congrArg (fun U ↦ Spec (X.presheaf.obj (op ((OpenNhds.inclusion x).obj U))))
+          (AffineOpenNhds.toOpenNhds_obj W).symm) := by
+  dsimp [affineOpenNhdsDiagramIsoSpec, affineOpenNhdsDiagram, AffineOpenNhds.toOpenNhds,
+    OpenNhds.inclusion]
+  simp only [Category.id_comp]
+  rfl
 
-/-- Inverse component of `affineOpenNhdsDiagramIsoSpec` at `W`. -/
+/-- Inverse component of `affineOpenNhdsDiagramIsoSpec` at `W`, transported along
+`AffineOpenNhds.toOpenNhds_obj` and `affineOpenNhdsDiagram_obj`. -/
 @[simp] theorem affineOpenNhdsDiagramIsoSpec_inv_app (W : X.AffineOpenNhds x) :
-    (X.affineOpenNhdsDiagramIsoSpec x).inv.app W = W.isAffineOpen.isoSpec.inv :=
-  NatIso.ofComponents_inv_app _ _ W
+    (X.affineOpenNhdsDiagramIsoSpec x).inv.app W =
+      eqToHom (congrArg (fun U ↦ Spec (X.presheaf.obj (op ((OpenNhds.inclusion x).obj U))))
+          (AffineOpenNhds.toOpenNhds_obj W)) ≫
+        W.isAffineOpen.isoSpec.inv ≫
+        eqToHom (X.affineOpenNhdsDiagram_obj x W).symm := by
+  dsimp [affineOpenNhdsDiagramIsoSpec, affineOpenNhdsDiagram, AffineOpenNhds.toOpenNhds,
+    OpenNhds.inclusion]
+  simp only [Category.comp_id]
+  rfl
 
 /-- The cone with vertex `Spec 𝒪_{X,x}` over the diagram of affine open neighbourhoods of `x`. -/
-@[expose, simps, implicit_reducible] def specStalkCone : Cone (X.affineOpenNhdsDiagram x) where
+@[implicit_reducible] def specStalkCone : Cone (X.affineOpenNhdsDiagram x) where
   pt := Spec (X.presheaf.stalk x)
   π := { app W := W.opens.fromSpecStalkOfMem x W.mem
          naturality _ W₂ _ := by
            dsimp [affineOpenNhdsDiagram]
            rw [Category.id_comp, ← cancel_mono W₂.opens.ι, Category.assoc, Scheme.homOfLE_ι,
              Opens.fromSpecStalkOfMem_ι, Opens.fromSpecStalkOfMem_ι] }
+
+/-- The vertex of `X.specStalkCone x` is `Spec 𝒪_{X,x}`. -/
+@[simp] theorem specStalkCone_pt :
+    (X.specStalkCone x).pt = Spec (X.presheaf.stalk x) := by
+  rfl
+
+/-- The projection of `X.specStalkCone x` at `W`, transported along `specStalkCone_pt` and
+`affineOpenNhdsDiagram_obj`. -/
+@[reassoc, simp] theorem specStalkCone_π_app (W : X.AffineOpenNhds x) :
+    (X.specStalkCone x).π.app W =
+      eqToHom (X.specStalkCone_pt x) ≫ W.opens.fromSpecStalkOfMem x W.mem ≫
+        eqToHom (X.affineOpenNhdsDiagram_obj x W).symm := by
+  simp [specStalkCone]
 
 /-- `Spec 𝒪_{X,x}` is the cofiltered limit of the affine open neighbourhoods of `x`. -/
 def isLimitSpecStalkCone : IsLimit (X.specStalkCone x) := by
@@ -159,7 +214,7 @@ def isLimitSpecStalkCone : IsLimit (X.specStalkCone x) := by
     NatTrans.rightOp_app, Cocone.whisker_ι, Cocone.whisker_pt, Functor.whiskerLeft_app,
     colimit.cocone_ι, colimit.cocone_x, Functor.rightOp_obj, Functor.comp_obj, Functor.op_obj,
     Scheme.Spec_map, Quiver.Hom.unop_op, unop_op, affineOpenNhdsDiagramIsoSpec_inv_app,
-    specStalkCone_π_app, Iso.refl_hom]
+    specStalkCone_π_app, Iso.refl_hom, eqToHom_refl, Category.id_comp, Category.comp_id]
   -- `TopCat.Presheaf.stalk` is definitionally `colimit ((OpenNhds.inclusion x).op ⋙ X.presheaf)`
   -- and `TopCat.Presheaf.germ` is definitionally `colimit.ι`.
   change Spec.map (X.presheaf.germ W.opens x W.mem) ≫ W.isAffineOpen.isoSpec.inv =
@@ -245,7 +300,7 @@ def isLimitStalkOpensCone : IsLimit (X.stalkOpensCone U x W₀) :=
 def stalkOpensConePtIso : (X.stalkOpensCone U x W₀).pt ≅ (X.fromSpecStalk x ⁻¹ᵁ U).toScheme :=
   opensConePtIso (X.affineOpenNhdsDiagram x) (X.specStalkCone x) W₀ (W₀.opens.ι ⁻¹ᵁ U) ≪≫
     (Spec (X.presheaf.stalk x)).isoOfEq
-      (by rw [← Scheme.Hom.comp_preimage, X.specStalkCone_π_app, Scheme.Opens.fromSpecStalkOfMem_ι])
+      (by simp [← Scheme.Hom.comp_preimage, Scheme.Opens.fromSpecStalkOfMem_ι])
 end ExplicitNhds
 
 section Instances
@@ -268,7 +323,7 @@ def stalkOpensObjIso {W₀ : X.AffineOpenNhds x} (j : Over W₀) :
     (X.stalkOpensDiagram U x W₀).obj j ≅ (j.left.opens.ι ⁻¹ᵁ U).toScheme :=
   opensDiagramObjIso (X.affineOpenNhdsDiagram x) W₀ (W₀.opens.ι ⁻¹ᵁ U) j ≪≫
     j.left.opens.toScheme.isoOfEq
-      (by rw [← Scheme.Hom.comp_preimage, X.affineOpenNhdsDiagram_map, X.homOfLE_ι])
+      (by simp [← Scheme.Hom.comp_preimage, X.homOfLE_ι])
 
 /-- Compatibility of `stalkOpensDiagram` transition maps with `stalkOpensObjIso` and inclusions. -/
 theorem stalkOpensDiagram_map_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds x} {j k : Over W₀}
@@ -278,7 +333,8 @@ theorem stalkOpensDiagram_map_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds x} {j 
         X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f.left)) := by
   simp only [stalkOpensDiagram, stalkOpensObjIso, Iso.trans_hom, Category.assoc,
     Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc, opensDiagram_map_comp_objIso_hom_assoc,
-    Scheme.Hom.resLE_comp_ι, X.affineOpenNhdsDiagram_map x f.left]
+    Scheme.Hom.resLE_comp_ι, X.affineOpenNhdsDiagram_map x f.left, eqToHom_refl, Category.id_comp,
+    Category.comp_id]
 
 /-- Compatibility of `stalkOpensCone` projections with `stalkOpensConePtIso` and inclusions. -/
 theorem stalkOpensCone_π_app_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds x} (j : Over W₀) :
@@ -287,7 +343,8 @@ theorem stalkOpensCone_π_app_comp_objIso_hom_ι {W₀ : X.AffineOpenNhds x} (j 
         j.left.opens.fromSpecStalkOfMem x j.left.mem := by
   simp only [stalkOpensCone, stalkOpensObjIso, stalkOpensConePtIso, Iso.trans_hom, Category.assoc,
     Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc, opensCone_π_app_comp_objIso_hom_assoc,
-    Scheme.Hom.resLE_comp_ι, X.specStalkCone_π_app x j.left]
+    Scheme.Hom.resLE_comp_ι, X.specStalkCone_π_app x j.left, eqToHom_refl, Category.id_comp,
+    Category.comp_id]
 
 /-- Canonical open immersion from the top stage `Over.mk (𝟙 W₀)` to `U.toScheme`. -/
 def stalkOpensTopToOpen (W₀ : X.AffineOpenNhds x) :

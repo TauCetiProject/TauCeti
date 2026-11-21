@@ -28,7 +28,10 @@ middle-four interchange of fibre products,
 
 The canonical identification of an iterated fibre product with a direct fibre product commutes
 with maps in the first factor
-(`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`).
+(`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`), and `pullbackSymmetry`
+is involutive (`CategoryTheory.Limits.pullbackSymmetry_hom_comp_pullbackSymmetry_hom`,
+`CategoryTheory.Limits.pullbackSymmetry_symm`) and natural with respect to `pullback.map`
+(`CategoryTheory.Limits.pullback_map_pullbackSymmetry`).
 -/
 
 public section
@@ -188,5 +191,29 @@ theorem pullbackLeftPullbackSndIso_inv_naturality
           (pullback.map a g b g φ (𝟙 T) (𝟙 S) (by simp [hφ]) (by simp)) (𝟙 U) (𝟙 T)
           (by simp) (by simp) := by
   ext <;> simp
+
+/-- Reversing `pullbackSymmetry` twice yields the identity. -/
+@[reassoc (attr := simp)]
+theorem pullbackSymmetry_hom_comp_pullbackSymmetry_hom {C : Type*} [Category* C] {X Y Z : C}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [HasPullback f g] [HasPullback g f] :
+    (pullbackSymmetry f g).hom ≫ (pullbackSymmetry g f).hom = 𝟙 (pullback f g) := by
+  apply pullback.hom_ext <;> simp
+
+/-- The inverse of `pullbackSymmetry f g` is `pullbackSymmetry g f`. -/
+theorem pullbackSymmetry_symm {C : Type*} [Category* C] {X Y Z : C}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [HasPullback f g] [HasPullback g f] :
+    (pullbackSymmetry f g).symm = pullbackSymmetry g f := by
+  ext <;> simp
+
+/-- `pullbackSymmetry` is natural with respect to `pullback.map`. -/
+@[reassoc]
+theorem pullback_map_pullbackSymmetry {C : Type*} [Category* C]
+    {X₁ Y₁ X₂ Y₂ S₁ S₂ : C} (f₁ : X₁ ⟶ S₁) (g₁ : Y₁ ⟶ S₁) (f₂ : X₂ ⟶ S₂) (g₂ : Y₂ ⟶ S₂)
+    [HasPullback f₁ g₁] [HasPullback g₁ f₁] [HasPullback f₂ g₂] [HasPullback g₂ f₂]
+    (i₁ : X₁ ⟶ X₂) (i₂ : Y₁ ⟶ Y₂) (i₃ : S₁ ⟶ S₂)
+    (h₁ : f₁ ≫ i₃ = i₁ ≫ f₂) (h₂ : g₁ ≫ i₃ = i₂ ≫ g₂) :
+    pullback.map f₁ g₁ f₂ g₂ i₁ i₂ i₃ h₁ h₂ ≫ (pullbackSymmetry f₂ g₂).hom =
+      (pullbackSymmetry f₁ g₁).hom ≫ pullback.map g₁ f₁ g₂ f₂ i₂ i₁ i₃ h₂ h₁ := by
+  apply pullback.hom_ext <;> simp
 
 end CategoryTheory.Limits

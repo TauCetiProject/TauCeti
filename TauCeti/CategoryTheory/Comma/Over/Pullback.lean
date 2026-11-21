@@ -19,8 +19,10 @@ Mathlib identifies base change `Over.pullback` along an identity with the identi
 equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
 * `CategoryTheory.Over.mapPullbackAdj_homEquiv_apply_left`,
-  `CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_left`, and
-  `CategoryTheory.Over.pullback_hom_ext`: computation and extensionality for `Over.mapPullbackAdj`;
+  `CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_left`,
+  `CategoryTheory.Over.pullback_map_left_fst`, and
+  `CategoryTheory.Over.pullback_hom_ext`: computation and extensionality for `Over.mapPullbackAdj`
+  and `Over.pullback`;
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
@@ -95,6 +97,13 @@ theorem pullback_hom_ext {X Y : C} {f : X ⟶ Y} [HasPullbacksAlong f]
     v₁ = v₂ :=
   ((mapPullbackAdj f).homEquiv x y).symm.injective <| Over.OverMorphism.ext <| by
     simpa [mapPullbackAdj_homEquiv_symm_left] using h
+
+/-- First projection of `((Over.pullback f).map g).left`. -/
+@[reassoc] theorem pullback_map_left_fst {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+    {A B : Over Y} (g : A ⟶ B) :
+    ((pullback f).map g).left ≫ Limits.pullback.fst B.hom f =
+      Limits.pullback.fst A.hom f ≫ g.left := by
+  simp
 
 end Adjunction
 
@@ -245,6 +254,16 @@ theorem pullbackCompIsoOfEq_inv_app (h : f ≫ g = fg) (A : Over Y) :
       Limits.pullback.snd (Limits.pullback.snd A.hom g) f = Limits.pullback.snd A.hom fg := by
   subst h; simp [pullbackCompIsoOfEq_inv_app, pullbackComp]
 
+/-- First projection of a morphism between pullbacks conjugated along `pullbackCompIsoOfEq`. -/
+@[reassoc] theorem pullbackCompIsoOfEq_conj_left_fst
+    {A B : Over Y} (h : f ≫ g = fg) (β : (pullback g).obj A ⟶ (pullback g).obj B) :
+    ((pullbackCompIsoOfEq f g fg h).inv.app A ≫ (pullback f).map β ≫
+        (pullbackCompIsoOfEq f g fg h).hom.app B).left ≫
+      Limits.pullback.fst B.hom fg =
+      Limits.pullback.map A.hom fg A.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) ≫
+        β.left ≫ Limits.pullback.fst B.hom g := by
+  simp
+
 /-- Associativity of `pullbackCompIsoOfEq.inv`: decomposing `pullback fgh` via `fg ≫ h = fgh`
 and `f ≫ g = fg` agrees with decomposing via `f ≫ gh = fgh` and `g ≫ h = gh`. -/
 @[reassoc]
@@ -280,12 +299,20 @@ theorem pullbackCompIsoOfEq_comp_hom_app {W X Y Z : C} {f : W ⟶ X} {g : X ⟶ 
         (pullbackCompIsoOfEq fg h fgh hfgh₂).hom.app A =
       (pullback f).map ((pullbackCompIsoOfEq g h gh hgh).hom.app A) ≫
         (pullbackCompIsoOfEq f gh fgh hfgh₁).hom.app A := by
-  rw [← cancel_epi ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
-      (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A)),
-    Category.assoc, Iso.inv_hom_id_app_assoc, Iso.inv_hom_id_app,
-    pullbackCompIsoOfEq_comp_inv_app hfg hgh hfgh₁ hfgh₂ A, Category.assoc,
-    ← (pullback f).map_comp_assoc, Iso.inv_hom_id_app, (pullback f).map_id, Category.id_comp,
-    Iso.inv_hom_id_app]
+  apply (cancel_epi ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
+    (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A))).mp
+  have hL : ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
+        (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A)) ≫
+      (pullbackCompIsoOfEq f g fg hfg).hom.app ((pullback h).obj A) ≫
+        (pullbackCompIsoOfEq fg h fgh hfgh₂).hom.app A = 𝟙 _ := by
+    simp
+  have hR : ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
+        (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A)) ≫
+      (pullback f).map ((pullbackCompIsoOfEq g h gh hgh).hom.app A) ≫
+        (pullbackCompIsoOfEq f gh fgh hfgh₁).hom.app A = 𝟙 _ := by
+    rw [pullbackCompIsoOfEq_comp_inv_app hfg hgh hfgh₁ hfgh₂ A]
+    simp [← Functor.map_comp_assoc]
+  exact hL.trans hR.symm
 
 /-- Conjugating a morphism between pullbacks along `m₂` and then along `m₁` agrees with
 conjugating along `m = m₁ ≫ m₂`. -/
