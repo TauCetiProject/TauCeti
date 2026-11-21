@@ -307,7 +307,7 @@ characteristic zero, the Coxeter group of `TauCeti.coxeterMatrixOfGeneralizedCar
 faithfully on `H*` through the simple reflections. -/
 theorem coxeterHom_injective : Function.Injective (R.coxeterHom hA hzero) :=
   (injective_iff_map_eq_one _).mpr fun _ hw ↦
-    R.eq_one_of_forall_coxeterHom_apply_root_eq hA hzero hneg fun i ↦ by rw [hw]; rfl
+    R.eq_one_of_forall_coxeterHom_apply_root_eq hA hzero hneg fun i ↦ by rw [hw, one_apply_eq_self]
 
 /-! ### The Weyl group as a Coxeter system -/
 
@@ -321,6 +321,17 @@ noncomputable def weylCoxeterSystem :
     ((MonoidHom.ofInjective (R.coxeterHom_injective hA hzero hneg)).trans
       (MulEquiv.subgroupCongr (R.range_coxeterHom hA hzero)))
 
+/-- The inverse of the isomorphism stored in `TauCeti.CartanRealization.weylCoxeterSystem` is the
+corestriction of `TauCeti.CartanRealization.coxeterHom` from which it is built. -/
+private theorem weylCoxeterSystem_mulEquiv_symm :
+    (R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm =
+      (MonoidHom.ofInjective (R.coxeterHom_injective hA hzero hneg)).trans
+        (MulEquiv.subgroupCongr (R.range_coxeterHom hA hzero)) :=
+  -- `weylCoxeterSystem` is `toCoxeterSystem.map e`, whose stored isomorphism is
+  -- `e.symm.trans toCoxeterSystem.mulEquiv` by definition of `CoxeterSystem.map`, and the stored
+  -- isomorphism of `CoxeterMatrix.toCoxeterSystem` is `MulEquiv.refl` by definition
+  rfl
+
 /-- The isomorphism from the Coxeter group to the Weyl group underlying
 `TauCeti.CartanRealization.weylCoxeterSystem` is `TauCeti.CartanRealization.coxeterHom`. -/
 @[simp]
@@ -328,7 +339,8 @@ theorem coe_weylCoxeterSystem_mulEquiv_symm_apply
     (w : (coxeterMatrixOfGeneralizedCartanMatrix A).Group) :
     ((R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm w : Dual K H ≃ₗ[K] Dual K H) =
       R.coxeterHom hA hzero w := by
-  simp [weylCoxeterSystem, CoxeterMatrix.toCoxeterSystem, MonoidHom.ofInjective_apply]
+  rw [weylCoxeterSystem_mulEquiv_symm, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    MonoidHom.ofInjective_apply]
 
 /-- The simple reflections of the Coxeter system of the Weyl group are the simple reflections
 `sᵢ λ = λ - λ(hᵢ) αᵢ`. -/
@@ -346,10 +358,9 @@ theorem length_weylCoxeterSystem_mulEquiv_symm_apply
     (w : (coxeterMatrixOfGeneralizedCartanMatrix A).Group) :
     (R.weylCoxeterSystem hA hzero hneg).length
         ((R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm w) =
-      (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.length w :=
-  -- `weylCoxeterSystem` is `toCoxeterSystem.map e`, whose stored isomorphism has inverse `e` by
-  -- definition of `CoxeterSystem.map`
-  (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.length_map _ w
+      (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.length w := by
+  rw [weylCoxeterSystem_mulEquiv_symm]
+  exact (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.length_map _ w
 
 /-- **The descent criterion**: `ℓ(w sᵢ) < ℓ(w)` in the Weyl group exactly when `w αᵢ ∈ -Q₊`. -/
 theorem weylCoxeterSystem_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
