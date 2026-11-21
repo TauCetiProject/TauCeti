@@ -93,6 +93,14 @@ private theorem length_quotient_linearMap (hι : Function.Injective ι)
     ← (residueFieldLinearMapEquiv hι hess).length_eq]
   exact length_residueField_eq_one
 
+/-- If `E` contains a copy of the residue field, then `R ⧸ 𝔪` has a nonzero linear map to `E` for
+the maximal ideal `𝔪`: the hypothesis of the cogenerator test
+`TauCeti.injective_applyₗ_of_forall_isMaximal`. -/
+theorem nontrivial_quotient_linearMap_of_injective (hι : Function.Injective ι) (𝔪 : Ideal R)
+    (h𝔪 : 𝔪.IsMaximal) : Nontrivial (R ⧸ 𝔪 →ₗ[R] E) :=
+  ⟨ι ∘ₗ (quotientEquivResidueField h𝔪).toLinearMap, 0, fun h => one_ne_zero <| hι <| by
+    simpa using LinearMap.congr_fun h ((quotientEquivResidueField h𝔪).symm 1)⟩
+
 variable [Small.{v} R]
 
 /-- If `E` is injective and contains a copy of the residue field, then `E` is a cogenerator: the
@@ -100,17 +108,14 @@ evaluation map `M → Hom_R(Hom_R(M, E), E)` is injective for every module `M`. 
 theorem injective_applyₗ_of_injective [Module.Injective R E] (hι : Function.Injective ι)
     {M : Type w} [AddCommGroup M] [Module R M] :
     Function.Injective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) :=
-  injective_applyₗ_of_forall_isMaximal fun _ h𝔪 =>
-    ⟨ι ∘ₗ (quotientEquivResidueField h𝔪).toLinearMap, 0, fun h => one_ne_zero <| hι <| by
-      simpa using LinearMap.congr_fun h ((quotientEquivResidueField h𝔪).symm 1)⟩
+  injective_applyₗ_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι)
 
 /-- If `E` is injective and contains a copy of the residue field, then `E` separates points: every
 nonzero element of a module is detected by a linear map to `E`. -/
 theorem exists_apply_ne_zero_of_injective [Module.Injective R E] (hι : Function.Injective ι)
     {M : Type w} [AddCommGroup M] [Module R M] {m : M} (hm : m ≠ 0) :
-    ∃ f : M →ₗ[R] E, f m ≠ 0 := by
-  by_contra! h
-  exact hm (injective_applyₗ_of_injective hι (LinearMap.ext fun f ↦ by simp [h f]))
+    ∃ f : M →ₗ[R] E, f m ≠ 0 :=
+  exists_apply_ne_zero_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι) hm
 
 /-- If `E` is injective and contains a copy of the residue field, then the elements of `E`
 killed by an ideal `J` have annihilator exactly `J`. -/
