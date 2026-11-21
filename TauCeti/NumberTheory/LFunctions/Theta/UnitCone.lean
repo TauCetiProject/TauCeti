@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
-public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
-import Mathlib.MeasureTheory.Group.FundamentalDomain
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import TauCeti.Algebra.Group.TypeTags.Countable
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
@@ -32,12 +30,13 @@ multiplicity `w`:
 * `setLIntegral_unitCone_eq` and `setIntegral_unitCone_eq`: integrals over `unitCone D` of
   functions invariant under `unitScale` on the positive orthant do not depend on the choice of unit
   fundamental domain `D`.
-* `hasMellin_mellinKernel_sub`: the radial Mellin substitution identifying the Mellin transform of
-  `mellinKernel D L` minus its constant term with the norm-weighted integral of `latticeTheta L - 1`
-  over `unitCone D`.
+* `hasMellin_mellinKernel_sub`: the radial Mellin substitution identifying the Mellin transform at
+  `s / 2` of `mellinKernel D L` minus its constant term with `(2^r₂ / w) (V_L²)^(s/2)` times the
+  norm-weighted integral of `latticeTheta L - 1` over `unitCone D`.
 * `mellinKernelFEPair_Λ_eq_integral_unitCone`: for a unit fundamental domain `D`, equates
-  `(mellinKernelFEPair hD L).Λ s` on `Re s > 1/2` with that cone integral, provided that cone
-  integral is absolutely integrable.
+  `(mellinKernelFEPair hD L).Λ s` on `Re s > 1/2` with `(2^r₂ / w) (V_L²)^s` times the
+  norm-weighted cone integral of `latticeTheta L - 1`, provided that cone integral is absolutely
+  integrable.
 
 The unfolding of one unit orbit is recorded separately: for a point `x` of nonzero norm, the
 cone integrals of the Gaussians of the unit multiples `u x` against `N(y)^(s/2)` sum to `w` times
