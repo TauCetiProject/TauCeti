@@ -24,10 +24,11 @@ convolution power `MeasureTheory.Measure.freeConvolutionPower` (`μ^{⊞ n}`).
 
 ## Main results
 
-* `MeasureTheory.Measure.rSeries_integral_fold_freeConv`,
+* `MeasureTheory.Measure.isProbabilityMeasure_fold_freeConv_iff`,
+  `MeasureTheory.Measure.rSeries_integral_fold_freeConv`,
   `MeasureTheory.Measure.freeCumulant_integral_fold_freeConv`,
-  `MeasureTheory.Measure.support_fold_freeConv_subset_Icc`: formal series, cumulants, and support
-  bounds for finite `Finset.fold`s of `freeConv`.
+  `MeasureTheory.Measure.support_fold_freeConv_subset_Icc`: validity, formal series, cumulants,
+  and support bounds for finite `Finset.fold`s of `freeConv`.
 * `TauCeti.IsFreelyIndependentElements.law_sum`, `TauCeti.IsFreelyIndependent.law_sum`:
   C⋆- and von Neumann finite-sum transport.
 * `MeasureTheory.Measure.freeConvolutionPower_add`,
@@ -67,21 +68,26 @@ theorem isCompact_support_fold_freeConv (μ : ι → Measure ℝ) :
   · rw [← Finset.insert_erase hi, Finset.fold_insert (Finset.notMem_erase i s)]
     exact isCompact_support_freeConv _ _
 
+/-- Folding `freeConv` with base `Measure.dirac 0` yields a probability measure iff every indexed
+measure in `s` is a compactly supported probability measure (including when `s = ∅`). -/
+theorem isProbabilityMeasure_fold_freeConv_iff :
+    IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) ↔
+      ∀ i ∈ s, IsProbabilityMeasure (μ i) ∧ IsCompact (μ i).support := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+      simp only [Finset.fold_empty, notMem_empty, IsEmpty.forall_iff, implies_true, iff_true]
+      infer_instance
+  | @insert i s hi ih =>
+      rw [Finset.fold_insert hi, isProbabilityMeasure_freeConv_iff,
+        and_iff_left (isCompact_support_fold_freeConv s μ), ih, Finset.forall_mem_insert]
+
 /-- Folding `freeConv` with base `Measure.dirac 0` over compactly supported probability measures
 yields a probability measure (including when `s = ∅`). -/
 theorem isProbabilityMeasure_fold_freeConv (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ i))
     (hcomp : ∀ i ∈ s, IsCompact (μ i).support) :
-    IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => rw [Finset.fold_empty]; infer_instance
-  | @insert i s hi ih =>
-      have := hprob i (mem_insert_self i s)
-      have := ih (fun j hj => hprob j (mem_insert_of_mem hj))
-        (fun j hj => hcomp j (mem_insert_of_mem hj))
-      rw [Finset.fold_insert hi]
-      exact isProbabilityMeasure_freeConv (hcomp i (mem_insert_self i s))
-        (isCompact_support_fold_freeConv s μ)
+    IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) :=
+  (isProbabilityMeasure_fold_freeConv_iff s).mpr fun i hi => ⟨hprob i hi, hcomp i hi⟩
 
 /-- Interval support bounds add across a finite `Finset.fold` of `freeConv`, including `s = ∅` and
 when any factor is not a probability measure. -/

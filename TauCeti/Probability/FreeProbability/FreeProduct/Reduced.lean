@@ -53,11 +53,10 @@ theorem continuous_leftMul (ψ : StarPositiveFunctional (LinearAlgebra.FreeProdu
 
 variable (φ : ∀ i, StarPositiveFunctional (A i)) (hφ : ∀ i, φ i 1 = 1)
 
--- Keep `HilbertSpace` semireducible rather than reducible so typeclass search on operator
--- subalgebras treats it as an atomic Hilbert space without unfolding the GNS quotient, while
--- definitions in this file still unify it with `HilbertGNS`.
+-- Keep `HilbertSpace` an unexposed `def` with explicit Hilbert-space instances so typeclass
+-- search on operator subalgebras treats it as an atomic Hilbert space without unfolding the GNS
+-- quotient.
 /-- The completed GNS Hilbert space of the algebraic free-product state. -/
-@[expose]
 def HilbertSpace : Type _ :=
   (freeProductPositiveFunctional φ hφ).HilbertGNS
 
@@ -70,6 +69,11 @@ instance : InnerProductSpace ℂ (HilbertSpace φ hφ) :=
 instance : CompleteSpace (HilbertSpace φ hφ) :=
   inferInstanceAs (CompleteSpace (freeProductPositiveFunctional φ hφ).HilbertGNS)
 
+/-- The canonical linear map sending an element of the algebraic free product to its class in
+`HilbertSpace φ hφ`. -/
+def hilbertClassMap : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ] HilbertSpace φ hφ :=
+  (freeProductPositiveFunctional φ hφ).hilbertClassMap
+
 /-- The bounded left regular representation of the algebraic free product. -/
 def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
     (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
@@ -78,8 +82,7 @@ def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
 
 @[simp]
 theorem representation_hilbertClassMap (a b : LinearAlgebra.FreeProduct ℂ A) :
-    representation φ hφ a ((freeProductPositiveFunctional φ hφ).hilbertClassMap b) =
-      (freeProductPositiveFunctional φ hφ).hilbertClassMap (a * b) :=
+    representation φ hφ a (hilbertClassMap φ hφ b) = hilbertClassMap φ hφ (a * b) :=
   (freeProductPositiveFunctional φ hφ).boundedRepresentation_hilbertClassMap _ a b
 
 /-- The vacuum vector, represented by the unit of the algebraic free product. -/
@@ -93,8 +96,7 @@ theorem norm_vacuum : ‖vacuum φ hφ‖ = 1 :=
 
 @[simp]
 theorem representation_vacuum (a : LinearAlgebra.FreeProduct ℂ A) :
-    representation φ hφ a (vacuum φ hφ) =
-      (freeProductPositiveFunctional φ hφ).hilbertClassMap a :=
+    representation φ hφ a (vacuum φ hφ) = hilbertClassMap φ hφ a :=
   (freeProductPositiveFunctional φ hφ).boundedRepresentation_hilbertCyclicVector _ a
 
 /-- The represented algebraic free-product orbit of the vacuum is dense. -/

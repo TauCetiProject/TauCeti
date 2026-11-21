@@ -65,20 +65,14 @@ namespace MeasureTheory.Measure
 private abbrev IsCompactProb (μ : Measure ℝ) : Prop :=
   IsProbabilityMeasure μ ∧ IsCompact μ.support
 
-private theorem instProbCond {μ ν : Measure ℝ} (hμ : IsProbabilityMeasure μ)
-    (hν : IsProbabilityMeasure ν) : ∀ b : Bool, IsProbabilityMeasure (cond b μ ν) := Bool.rec hν hμ
-
-private theorem instCompactCond {μ ν : Measure ℝ} (hμ : IsCompact μ.support)
-    (hν : IsCompact ν.support) : ∀ b : Bool, CompactSpace (cond b μ ν).support :=
-  Bool.rec (isCompact_iff_compactSpace.mp hν) (isCompact_iff_compactSpace.mp hμ)
-
 open scoped Classical in
 /-- **Free additive convolution** of compactly supported Borel probability measures on `ℝ`: the law
 of `a + b` in the canonical reduced C⋆-free product realization of `(μ, ν)`, and `0` otherwise. -/
 def freeConv (μ ν : Measure ℝ) : Measure ℝ :=
   if h : IsCompactProb μ ∧ IsCompactProb ν then
-    have := instProbCond h.1.1 h.2.1
-    have := instCompactCond h.1.2 h.2.2
+    have := h.1.1; have := h.2.1
+    have := isCompact_iff_compactSpace.mp h.1.2
+    have := isCompact_iff_compactSpace.mp h.2.2
     (TauCeti.FreeLawRealization.state (cond · μ ν)).law
       (TauCeti.FreeLawRealization.generator (cond · μ ν) true +
         TauCeti.FreeLawRealization.generator (cond · μ ν) false)
@@ -90,7 +84,8 @@ scoped[FreeProbability] infixr:80 " ⊞ " => MeasureTheory.Measure.freeConv
 private theorem freeConv_def_of_isCompactProb {μ ν : Measure ℝ}
     [hμp : IsProbabilityMeasure μ] [hνp : IsProbabilityMeasure ν]
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
-    have := instProbCond hμp hνp; have := instCompactCond hμ hν
+    have := isCompact_iff_compactSpace.mp hμ
+    have := isCompact_iff_compactSpace.mp hν
     μ.freeConv ν = (TauCeti.FreeLawRealization.state (cond · μ ν)).law
       (TauCeti.FreeLawRealization.generator (cond · μ ν) true +
         TauCeti.FreeLawRealization.generator (cond · μ ν) false) := by
@@ -111,10 +106,11 @@ theorem freeConv_eq_zero_of_not {μ ν : Measure ℝ}
   freeConv_eq_zero_of_not fun h => not_isProbabilityMeasure_zero h.2.1
 
 /-- The free convolution of compactly supported probability laws is a probability measure. -/
-theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [hμp : IsProbabilityMeasure μ]
-    [hνp : IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
+theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     IsProbabilityMeasure (μ.freeConv ν) := by
-  have := instProbCond hμp hνp; have := instCompactCond hμ hν
+  have := isCompact_iff_compactSpace.mp hμ
+  have := isCompact_iff_compactSpace.mp hν
   rw [freeConv_def_of_isCompactProb hμ hν]
   exact PositiveLinearMap.isProbabilityMeasure_law _ (TauCeti.FreeLawRealization.state_one _)
     ((TauCeti.FreeLawRealization.isSelfAdjoint_generator _ true).add
@@ -146,7 +142,7 @@ theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
 
 /-- **Binary C⋆-probability realization of `μ`, `ν`, and `μ.freeConv ν`.** -/
 theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure ℝ}
-    [hμp : IsProbabilityMeasure μ] [hνp : IsProbabilityMeasure ν]
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     ∃ (A : Type) (_ : CStarAlgebra A) (_ : PartialOrder A) (_ : StarOrderedRing A)
       (φ : A →ₚ[ℂ] ℂ) (g : Bool → A),
@@ -154,9 +150,9 @@ theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure 
       IsSelfAdjoint (g true) ∧ IsSelfAdjoint (g false) ∧
       spectrum ℝ (g true) = μ.support ∧ spectrum ℝ (g false) = ν.support ∧
       φ.law (g true) = μ ∧ φ.law (g false) = ν ∧ φ.law (g true + g false) = μ.freeConv ν := by
+  have := isCompact_iff_compactSpace.mp hμ
+  have := isCompact_iff_compactSpace.mp hν
   let τ : Bool → Measure ℝ := (cond · μ ν)
-  have : ∀ b : Bool, IsProbabilityMeasure (τ b) := instProbCond hμp hνp
-  have : ∀ b : Bool, CompactSpace (τ b).support := instCompactCond hμ hν
   exact ⟨TauCeti.FreeLawRealization.algebra τ, inferInstance, inferInstance, inferInstance,
     TauCeti.FreeLawRealization.state τ, TauCeti.FreeLawRealization.generator τ,
     TauCeti.FreeLawRealization.state_one τ,
@@ -352,11 +348,12 @@ theorem freeConv_dirac {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : IsCom
   simpa [add_comm] using (freeConv_comm μ (Measure.dirac a)).trans (dirac_freeConv a hμ)
 
 /-- `Measure.dirac 0` is the left identity for `freeConv` on compactly supported laws. -/
-theorem dirac_zero_freeConv {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : IsCompact μ.support) :
-    (Measure.dirac 0).freeConv μ = μ := by simp [dirac_freeConv 0 hμ]
+@[simp] theorem dirac_zero_freeConv {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : IsCompact μ.support) : (Measure.dirac 0).freeConv μ = μ := by simp [dirac_freeConv 0 hμ]
 
 /-- `Measure.dirac 0` is the right identity for `freeConv` on compactly supported laws. -/
-theorem freeConv_dirac_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : IsCompact μ.support) :
+@[simp] theorem freeConv_dirac_zero {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : IsCompact μ.support) :
     μ.freeConv (Measure.dirac 0) = μ := (freeConv_comm _ _).trans (dirac_zero_freeConv hμ)
 
 /-- Free additive convolution of two Dirac masses is the Dirac mass at the sum of their atoms. -/

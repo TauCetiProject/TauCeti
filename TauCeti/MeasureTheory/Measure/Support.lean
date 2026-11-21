@@ -40,6 +40,9 @@ global continuity is unnecessary for this inclusion.
 * `MeasureTheory.Measure.isProbabilityMeasure_comap_support` — in a hereditarily Lindelöf space
   with measurable open sets, pulling a probability measure back to its support gives a probability
   measure.
+* `MeasureTheory.Measure.isCompact_support_cond` and
+  `MeasureTheory.Measure.compactSpace_support_cond` — Boolean selection between compactly
+  supported measures preserves compact support.
 -/
 
 public section
@@ -149,6 +152,20 @@ instance isProbabilityMeasure_comap_support {X : Type*} [TopologicalSpace X]
   (MeasurableEmbedding.subtypeVal
     (Measure.isClosed_support (μ := μ)).measurableSet).isProbabilityMeasure_comap
       (by simpa using Measure.support_mem_ae (μ := μ))
+
+/-- Selecting between two compactly supported measures via `cond` yields a compactly supported
+measure. -/
+theorem isCompact_support_cond {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ ν : Measure X} (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (b : Bool) :
+    IsCompact (cond b μ ν).support := by
+  cases b <;> assumption
+
+/-- Selecting between two measures with compact support via `cond` gives a `CompactSpace`
+instance on the resulting support. -/
+instance compactSpace_support_cond {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ ν : Measure X} [hμ : CompactSpace μ.support] [hν : CompactSpace ν.support] (b : Bool) :
+    CompactSpace (cond b μ ν).support :=
+  Bool.rec hν hμ b
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
