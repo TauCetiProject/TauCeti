@@ -84,7 +84,7 @@ private theorem norm_squareHomeomorphClosedBall_eq_one_iff (p : I × I) :
       coe_closedBallHomeomorphOfFinrankEq_apply,
       ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff, v, y]
   rw [hnorm]
-  have hvle : ‖(v : Fin 2 → ℝ)‖ ≤ 1 := mem_closedBall_zero_iff.mp v.2
+  have hvle : ‖(v : Fin 2 → ℝ)‖ ≤ 1 := mem_closedBall_zero_iff.mp v.property
   have hv0 : (v : Fin 2 → ℝ) 0 = 2 * (p.1 : ℝ) - 1 := by simp [v, y]
   have hv1 : (v : Fin 2 → ℝ) 1 = 2 * (p.2 : ℝ) - 1 := by simp [v, y]
   have hcoord (t : I) : ‖2 * (t : ℝ) - 1‖ = 1 ↔ t = 0 ∨ t = 1 := by
@@ -243,12 +243,14 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
     Continuous.homeoOfEquivCompactToT2 (f := hbij.equiv f) (hfc.mapsToRestrict hbij.mapsTo)
   -- Restrict `squareHomeomorphClosedBall` to a boundary homeomorphism `∂(I × I) ≃ₜ S¹`.
   let eQ : squareBoundary ≃ₜ sphere (0 : ℂ) 1 :=
-    { toFun := fun p => ⟨squareHomeomorphClosedBall p.1,
-        mem_sphere_zero_iff_norm.mpr ((norm_squareHomeomorphClosedBall_eq_one_iff p.1).mpr p.2)⟩
-      invFun := fun u => ⟨squareHomeomorphClosedBall.symm ⟨u.1, sphere_subset_closedBall u.2⟩, by
+    { toFun := fun p => ⟨squareHomeomorphClosedBall p.val,
+        mem_sphere_zero_iff_norm.mpr
+          ((norm_squareHomeomorphClosedBall_eq_one_iff p.val).mpr p.property)⟩
+      invFun := fun u =>
+        ⟨squareHomeomorphClosedBall.symm ⟨u.val, sphere_subset_closedBall u.property⟩, by
         rw [← norm_squareHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
         exact norm_eq_of_mem_sphere u⟩
-      left_inv := fun p => Subtype.ext (squareHomeomorphClosedBall.symm_apply_apply p.1)
+      left_inv := fun p => Subtype.ext (squareHomeomorphClosedBall.symm_apply_apply p.val)
       right_inv := fun u => Subtype.ext (by simp)
       continuous_toFun := by fun_prop
       continuous_invFun := by fun_prop }

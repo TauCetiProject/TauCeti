@@ -95,10 +95,10 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 private lemma isUnit_overlapHomEquiv_symm_transitionDet (x y z : Fin k → M)
     (N : ↥(chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) ∩ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i) ∩
       chart A (fun i ↦ (1 : A) ⊗ₜ[R] z i))) :
-    IsUnit ((overlapHomEquiv R x y A).symm ⟨N.1, N.2.1⟩
+    IsUnit ((overlapHomEquiv R x y A).symm ⟨N.val, N.property.1⟩
       (algebraMap _ _ (transitionDet R x z))) := by
   rw [overlapHomEquiv_symm_apply_algebraMap]
-  exact (chartHomEquiv_mem_chart_iff x z _).1 <| by simpa using N.2.2
+  exact (chartHomEquiv_mem_chart_iff x z _).1 <| by simpa using N.property.2
 
 -- The map classifying a point lying in the three charts.
 private noncomputable def tripleLift (x y z : Fin k → M)
@@ -112,7 +112,7 @@ private lemma tripleLift_comp (x y z : Fin k → M)
     (N : ↥(chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) ∩ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i) ∩
       chart A (fun i ↦ (1 : A) ⊗ₜ[R] z i))) :
     (tripleLift R x y z N).comp (IsScalarTower.toAlgHom R _ (TripleAlgebra R x y z)) =
-      (overlapHomEquiv R x y A).symm ⟨N.1, N.2.1⟩ :=
+      (overlapHomEquiv R x y A).symm ⟨N.val, N.property.1⟩ :=
   AlgHom.ext fun a ↦ by simp [tripleLift]
 
 /-- `R`-algebra maps `TripleAlgebra R x y z → A` are the points of `G(k, A ⊗[R] M; A)` lying in the
@@ -122,8 +122,8 @@ noncomputable def tripleHomEquiv (x y z : Fin k → M) (A : Type w) [CommRing A]
     (TripleAlgebra R x y z →ₐ[R] A) ≃
       ↥(chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) ∩ chart A (fun i ↦ (1 : A) ⊗ₜ[R] y i) ∩
         chart A (fun i ↦ (1 : A) ⊗ₜ[R] z i)) where
-  toFun g := ⟨(overlapHomEquiv R x y A (g.comp (IsScalarTower.toAlgHom R _ _))).1,
-    (overlapHomEquiv R x y A _).2, by
+  toFun g := ⟨(overlapHomEquiv R x y A (g.comp (IsScalarTower.toAlgHom R _ _))).val,
+    (overlapHomEquiv R x y A _).property, by
       rw [coe_overlapHomEquiv_apply, chartHomEquiv_mem_chart_iff]
       exact (IsLocalization.Away.algebraMap_isUnit (S := TripleAlgebra R x y z)
         (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x y) (transitionDet R x z))).map g⟩
@@ -139,19 +139,19 @@ variable {R}
 @[simp]
 theorem coe_tripleHomEquiv_apply (x y z : Fin k → M) (g : TripleAlgebra R x y z →ₐ[R] A) :
     (tripleHomEquiv R x y z A g : G(k, A ⊗[R] M; A)) =
-      (overlapHomEquiv R x y A (g.comp (IsScalarTower.toAlgHom R _ _))).1 :=
+      (overlapHomEquiv R x y A (g.comp (IsScalarTower.toAlgHom R _ _))).val :=
   (rfl)
 
 /-- `tripleHomEquiv` is natural: composing with `f : A → B` corresponds to base change of points
 along `f`. -/
 theorem tripleHomEquiv_comp (x y z : Fin k → M) {B : Type w} [CommRing B] [Algebra R B]
     (f : A →ₐ[R] B) (g : TripleAlgebra R x y z →ₐ[R] A) :
-    (tripleHomEquiv R x y z B (f.comp g)).1 = map f (tripleHomEquiv R x y z A g).1 := by
+    (tripleHomEquiv R x y z B (f.comp g)).val = map f (tripleHomEquiv R x y z A g).val := by
   simpa [AlgHom.comp_assoc] using overlapHomEquiv_comp x y f (g.comp (IsScalarTower.toAlgHom R _ _))
 
 /-- `R`-algebra maps out of `TripleAlgebra R x y z` are determined by the points they classify. -/
 theorem TripleAlgebra.hom_ext {x y z : Fin k → M} {g g' : TripleAlgebra R x y z →ₐ[R] A}
-    (h : (tripleHomEquiv R x y z A g).1 = (tripleHomEquiv R x y z A g').1) : g = g' :=
+    (h : (tripleHomEquiv R x y z A g).val = (tripleHomEquiv R x y z A g').val) : g = g' :=
   (tripleHomEquiv R x y z A).injective (Subtype.ext h)
 
 namespace TripleAlgebra
@@ -163,8 +163,8 @@ coordinate ring of the triple overlap of the charts at `x`, `y` and `z`: the map
 universal point of the triple overlap, which lies in the charts at `x` and `z`. -/
 noncomputable def inr (x y z : Fin k → M) : OverlapAlgebra R x z →ₐ[R] TripleAlgebra R x y z :=
   (overlapHomEquiv R x z _).symm
-    ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).1, (tripleHomEquiv R x y z _ _).2.1.1,
-      (tripleHomEquiv R x y z _ _).2.2⟩
+    ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).val, (tripleHomEquiv R x y z _ _).property.1.1,
+      (tripleHomEquiv R x y z _ _).property.2⟩
 
 variable {R}
 
@@ -176,7 +176,7 @@ theorem inr_comp_toAlgHom (x y z : Fin k → M) :
         (IsScalarTower.toAlgHom R (ChartAlgebra R x) (OverlapAlgebra R x y)) := by
   -- both maps classify the universal point of the triple overlap in the chart at `x`
   have : (chartHomEquiv R x _).symm
-      ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).1, (tripleHomEquiv R x y z _ _).2.1.1⟩ =
+      ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).val, (tripleHomEquiv R x y z _ _).property.1.1⟩ =
         (IsScalarTower.toAlgHom R (OverlapAlgebra R x y) (TripleAlgebra R x y z)).comp
           (IsScalarTower.toAlgHom R (ChartAlgebra R x) (OverlapAlgebra R x y)) :=
     (chartHomEquiv R x _).symm_apply_eq.2 <| Subtype.ext <| by
@@ -187,7 +187,7 @@ theorem inr_comp_toAlgHom (x y z : Fin k → M) :
 
 /-- The point classified by the restriction of `g` along `inr` is the point classified by `g`. -/
 theorem overlapHomEquiv_comp_inr (x y z : Fin k → M) (g : TripleAlgebra R x y z →ₐ[R] A) :
-    (overlapHomEquiv R x z A (g.comp (inr R x y z))).1 = (tripleHomEquiv R x y z A g).1 := by
+    (overlapHomEquiv R x z A (g.comp (inr R x y z))).val = (tripleHomEquiv R x y z A g).val := by
   rw [coe_overlapHomEquiv_apply, coe_tripleHomEquiv_apply, coe_overlapHomEquiv_apply,
     AlgHom.comp_assoc, inr_comp_toAlgHom, AlgHom.comp_assoc]
 
@@ -219,8 +219,8 @@ with inverse the composite of the cyclic maps for the other two cyclic orders
 `Module.Grassmannian.TripleAlgebra.cycleAlgEquiv`. -/
 noncomputable def cycle (x y z : Fin k → M) : TripleAlgebra R y z x →ₐ[R] TripleAlgebra R x y z :=
   (tripleHomEquiv R y z x _).symm
-    ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).1, ⟨(tripleHomEquiv R x y z _ _).2.1.2,
-      (tripleHomEquiv R x y z _ _).2.2⟩, (tripleHomEquiv R x y z _ _).2.1.1⟩
+    ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).val, ⟨(tripleHomEquiv R x y z _ _).property.1.2,
+      (tripleHomEquiv R x y z _ _).property.2⟩, (tripleHomEquiv R x y z _ _).property.1.1⟩
 
 variable {R}
 
@@ -231,7 +231,7 @@ the chart at `y`. -/
 -- (`Module.Grassmannian.map`) is defined.
 theorem tripleHomEquiv_comp_cycle {A : Type (max u v)} [CommRing A] [Algebra R A]
     (x y z : Fin k → M) (g : TripleAlgebra R x y z →ₐ[R] A) :
-    (tripleHomEquiv R y z x A (g.comp (cycle R x y z))).1 = (tripleHomEquiv R x y z A g).1 := by
+    (tripleHomEquiv R y z x A (g.comp (cycle R x y z))).val = (tripleHomEquiv R x y z A g).val := by
   rw [tripleHomEquiv_comp, cycle, Equiv.apply_symm_apply, ← tripleHomEquiv_comp, AlgHom.comp_id]
 
 /-- **The cocycle condition.** Going round the three cyclic orders of the charts at `x`, `y` and

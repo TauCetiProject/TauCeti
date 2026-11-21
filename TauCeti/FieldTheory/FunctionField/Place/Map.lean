@@ -116,7 +116,7 @@ theorem mapEquiv_symm_apply (Q : Place k F') : (mapEquiv e).symm Q = Q.map e.sym
 onto the valuation ring of `P.map e`. -/
 def integersEquivMap : P.integers ≃+* (P.map e).integers where
   toFun x := ⟨e x, (mem_integers_map_iff e P).mpr (by simp)⟩
-  invFun y := ⟨e.symm y, (mem_integers_map_iff e P).mp y.2⟩
+  invFun y := ⟨e.symm y, (mem_integers_map_iff e P).mp y.property⟩
   left_inv _ := Subtype.ext (by simp)
   right_inv _ := Subtype.ext (by simp)
   map_mul' _ _ := Subtype.ext (by simp)

@@ -108,14 +108,14 @@ private theorem lowerSemicircle_mem_sphere (t : I) : lowerSemicircle t ∈ spher
 
 private theorem upperSemicircle_im_nonneg (t : I) : 0 ≤ (upperSemicircle t).im := by
   simp only [upperSemicircle, Path.coe_mk_mk, Complex.exp_ofReal_mul_I_im]
-  exact Real.sin_nonneg_of_nonneg_of_le_pi (mul_nonneg Real.pi_pos.le t.2.1)
-    (mul_le_of_le_one_right Real.pi_pos.le t.2.2)
+  exact Real.sin_nonneg_of_nonneg_of_le_pi (mul_nonneg Real.pi_pos.le t.property.1)
+    (mul_le_of_le_one_right Real.pi_pos.le t.property.2)
 
 private theorem lowerSemicircle_im_nonpos (t : I) : (lowerSemicircle t).im ≤ 0 := by
   simp only [lowerSemicircle, Path.coe_mk_mk, Complex.exp_ofReal_mul_I_im, Real.sin_neg,
     Left.neg_nonpos_iff]
-  exact Real.sin_nonneg_of_nonneg_of_le_pi (mul_nonneg Real.pi_pos.le t.2.1)
-    (mul_le_of_le_one_right Real.pi_pos.le t.2.2)
+  exact Real.sin_nonneg_of_nonneg_of_le_pi (mul_nonneg Real.pi_pos.le t.property.1)
+    (mul_le_of_le_one_right Real.pi_pos.le t.property.2)
 
 /-- The semicircle parameter `Real.arccos u.re / Real.pi ∈ I` on the unit circle. -/
 private def circleAngleParam (u : sphere (0 : ℂ) 1) : I :=
@@ -126,21 +126,22 @@ private def circleAngleParam (u : sphere (0 : ℂ) 1) : I :=
 private theorem continuous_circleAngleParam : Continuous circleAngleParam := by
   refine Continuous.subtype_mk ?_ _
   exact (Real.continuous_arccos.comp
-    (Complex.continuous_re.comp continuous_subtype_val)).div_const Real.pi
+    (Complex.continuous_re.comp continuous_subtypeVal)).div_const Real.pi
 
 private theorem circleAngleParam_upperSemicircle (t : I) :
     circleAngleParam ⟨upperSemicircle t, upperSemicircle_mem_sphere t⟩ = t := by
   apply Subtype.ext
   change Real.arccos (Complex.exp (↑(Real.pi * (t : ℝ)) * Complex.I)).re / Real.pi = t
-  rw [Complex.exp_ofReal_mul_I_re, Real.arccos_cos (mul_nonneg Real.pi_pos.le t.2.1)
-    (mul_le_of_le_one_right Real.pi_pos.le t.2.2), mul_div_cancel_left₀ _ Real.pi_ne_zero]
+  rw [Complex.exp_ofReal_mul_I_re, Real.arccos_cos (mul_nonneg Real.pi_pos.le t.property.1)
+    (mul_le_of_le_one_right Real.pi_pos.le t.property.2), mul_div_cancel_left₀ _ Real.pi_ne_zero]
 
 private theorem circleAngleParam_lowerSemicircle (t : I) :
     circleAngleParam ⟨lowerSemicircle t, lowerSemicircle_mem_sphere t⟩ = t := by
   apply Subtype.ext
   change Real.arccos (Complex.exp (↑(-(Real.pi * (t : ℝ))) * Complex.I)).re / Real.pi = t
-  rw [Complex.exp_ofReal_mul_I_re, Real.cos_neg, Real.arccos_cos (mul_nonneg Real.pi_pos.le t.2.1)
-    (mul_le_of_le_one_right Real.pi_pos.le t.2.2), mul_div_cancel_left₀ _ Real.pi_ne_zero]
+  rw [Complex.exp_ofReal_mul_I_re, Real.cos_neg,
+    Real.arccos_cos (mul_nonneg Real.pi_pos.le t.property.1)
+      (mul_le_of_le_one_right Real.pi_pos.le t.property.2), mul_div_cancel_left₀ _ Real.pi_ne_zero]
 
 private theorem upperSemicircle_injective : Injective upperSemicircle := by
   intro s t hst
@@ -493,21 +494,21 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
   have hH_cont : Continuous H := by
     have h1 : Continuous fun p : sphere (0 : ℂ) 1 × I =>
         (Φp (circleAngleParam p.1, p.2) : ℂ) :=
-      continuous_subtype_val.comp (Φp.continuous.comp
+      continuous_subtypeVal.comp (Φp.continuous.comp
         ((continuous_circleAngleParam.comp continuous_fst).prodMk continuous_snd))
     have h2 : Continuous fun p : sphere (0 : ℂ) 1 × I =>
         (Φm (circleAngleParam p.1, p.2) : ℂ) :=
-      continuous_subtype_val.comp (Φm.continuous.comp
+      continuous_subtypeVal.comp (Φm.continuous.comp
         ((continuous_circleAngleParam.comp continuous_fst).prodMk continuous_snd))
     exact continuous_if_le continuous_const
-      (Complex.continuous_im.comp (continuous_subtype_val.comp continuous_fst))
+      (Complex.continuous_im.comp (continuous_subtypeVal.comp continuous_fst))
       h1.continuousOn h2.continuousOn fun p hp => hH_agree hp.symm p.2
   have hH_inj : Injective H := by
     rintro ⟨u₁, t₁⟩ ⟨u₂, t₂⟩ heq
     have hcross {u v : sphere (0 : ℂ) 1} {tu tv : I} (hv : (v : ℂ).im < 0)
         (h : (Φp (circleAngleParam u, tu) : ℂ) = (Φm (circleAngleParam v, tv) : ℂ)) : False := by
       have hmem : (Φm (circleAngleParam v, tv) : ℂ) ∈ Ap ∩ Am :=
-        ⟨h ▸ (Φp (circleAngleParam u, tu)).2, (Φm (circleAngleParam v, tv)).2⟩
+        ⟨h ▸ (Φp (circleAngleParam u, tu)).property, (Φm (circleAngleParam v, tv)).property⟩
       rw [hA_inter] at hmem
       rcases hmem with ⟨t, ht⟩ | ⟨t, ht⟩
       · have hΦ : Φm (circleAngleParam v, tv) = Φm (0, t) := Subtype.ext (by rw [hΦm_left, ht])
@@ -545,8 +546,8 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
     refine Subset.antisymm ?_ ?_
     · rintro _ ⟨⟨u, t⟩, rfl⟩
       by_cases hu : 0 ≤ (u : ℂ).im
-      · rw [hH_upper hu]; exact Or.inl (Φp _).2
-      · rw [hH_lower (not_le.mp hu).le]; exact Or.inr (Φm _).2
+      · rw [hH_upper hu]; exact Or.inl (Φp _).property
+      · rw [hH_lower (not_le.mp hu).le]; exact Or.inr (Φm _).property
     · rintro z (hz | hz)
       · obtain ⟨⟨s, t⟩, hst⟩ := Φp.surjective ⟨z, hz⟩
         refine ⟨(⟨upperSemicircle s, upperSemicircle_mem_sphere s⟩, t), ?_⟩
@@ -615,10 +616,10 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     simp [J₂, Path.segment, AffineMap.lineMap_apply, p₂]; ring
   have hJ₁_re {z : ℂ} (hz : z ∈ range J₁) : t₁ ≤ z.re := by
     rcases hz with ⟨t, rfl⟩
-    rw [hJ₁_eval, Complex.ofReal_re]; nlinarith [t.2.1, t.2.2]
+    rw [hJ₁_eval, Complex.ofReal_re]; nlinarith [t.property.1, t.property.2]
   have hJ₂_re {z : ℂ} (hz : z ∈ range J₂) : z.re ≤ -t₂ := by
     rcases hz with ⟨t, rfl⟩
-    rw [hJ₂_eval, Complex.ofReal_re]; nlinarith [t.2.1, t.2.2]
+    rw [hJ₂_eval, Complex.ofReal_re]; nlinarith [t.property.1, t.property.2]
   have hJ₁J₂ : Disjoint (range J₁) (range J₂) :=
     Set.disjoint_left.mpr fun _ hz₁ hz₂ => by linarith [hJ₁_re hz₁, hJ₂_re hz₂]
   have hJ₁C : range J₁ ∩ C = {p₁} := by
@@ -629,7 +630,7 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     · have : t = 1 := Subtype.ext ht1
       subst this; exact J₁.target
     · have hgt : t₁ < (1 - (t : ℝ)) + (t : ℝ) * t₁ := by
-        have : (t : ℝ) < 1 := lt_of_le_of_ne t.2.2 ht1
+        have : (t : ℝ) < 1 := lt_of_le_of_ne t.property.2 ht1
         nlinarith
       exact (ht₁max _ hgt (hJ₁_eval t ▸ hzC)).elim
   have hJ₂C : range J₂ ∩ C = {p₂} := by
@@ -640,22 +641,22 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     · have : t = 0 := Subtype.ext ht0
       subst this; exact J₂.source
     · have hgt : t₂ < (1 - (t : ℝ)) * t₂ + (t : ℝ) := by
-        have : 0 < (t : ℝ) := lt_of_le_of_ne t.2.1 (Ne.symm ht0)
+        have : 0 < (t : ℝ) := lt_of_le_of_ne t.property.1 (Ne.symm ht0)
         nlinarith
       exact (ht₂max _ hgt (hJ₂_eval t ▸ hzC)).elim
   have hJ₁_cb : range J₁ ⊆ closedBall 0 1 := by
     rintro z ⟨t, rfl⟩
     rw [mem_closedBall_zero_iff, hJ₁_eval, Complex.norm_real, Real.norm_eq_abs, abs_le]
-    constructor <;> nlinarith [t.2.1, t.2.2]
+    constructor <;> nlinarith [t.property.1, t.property.2]
   have hJ₂_cb : range J₂ ⊆ closedBall 0 1 := by
     rintro z ⟨t, rfl⟩
     rw [mem_closedBall_zero_iff, hJ₂_eval, Complex.norm_real, Real.norm_eq_abs, abs_le]
-    constructor <;> nlinarith [t.2.1, t.2.2]
+    constructor <;> nlinarith [t.property.1, t.property.2]
   have hJ₁S : range J₁ ∩ sphere 0 1 = {1} := by
     refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨J₁.source_mem_range, by simp⟩)
     rintro z ⟨⟨t, rfl⟩, hzS⟩
     rw [mem_sphere_zero_iff_norm, hJ₁_eval, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonneg (by nlinarith [t.2.1, t.2.2])] at hzS
+      abs_of_nonneg (by nlinarith [t.property.1, t.property.2])] at hzS
     have ht0 : t = 0 := Subtype.ext (by nlinarith : (t : ℝ) = 0)
     subst ht0
     exact mem_singleton_iff.mpr J₁.source
@@ -663,7 +664,7 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨J₂.target_mem_range, by simp⟩)
     rintro z ⟨⟨t, rfl⟩, hzS⟩
     rw [mem_sphere_zero_iff_norm, hJ₂_eval, Complex.norm_real, Real.norm_eq_abs, abs_neg,
-      abs_of_nonneg (by nlinarith [t.2.1, t.2.2])] at hzS
+      abs_of_nonneg (by nlinarith [t.property.1, t.property.2])] at hzS
     have ht1 : t = 1 := Subtype.ext (by nlinarith : (t : ℝ) = 1)
     subst ht1
     exact mem_singleton_iff.mpr J₂.target
@@ -881,7 +882,7 @@ theorem IsJordanCurve.exists_homeomorph_sphere_prod_unitInterval {C₁ C₂ : Se
     rw [mem_singleton_iff] at ht; subst ht
     dsimp only
     rw [hΦ0 u]
-    exact (φ u).2
+    exact (φ u).property
   · intro z hz
     refine ⟨(φ.symm ⟨z, hz⟩, 0), ⟨trivial, rfl⟩, ?_⟩
     dsimp only
