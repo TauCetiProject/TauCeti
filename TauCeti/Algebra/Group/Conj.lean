@@ -73,8 +73,8 @@ conjugation action.
 * `MulEquiv.isConj_apply_iff`: a multiplicative equivalence preserves and reflects conjugacy.
 * `MulAut.smul_conjClasses_mk`: an automorphism acts on a conjugacy class by
   mapping its representative; inner automorphisms fix every class.
-* `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
-  classes.
+* `IsConj.orderOf_eq` and `ConjClasses.mk_ne_mk_of_orderOf_ne`: conjugate elements of a monoid
+  have the same order, so elements of different orders lie in different conjugacy classes.
 
 The automorphism action lemmas are in the `MulAut` namespace, so dot notation applies:
 `φ.smul_conjClasses_mk x` computes on a representative,
@@ -542,17 +542,17 @@ namespace ConjClasses
 
 variable {M : Type*} [Monoid M]
 
-/-- Elements of different orders lie in different conjugacy classes, even in a monoid. -/
-theorem mk_ne_mk_of_orderOf_ne {a b : M} (h : orderOf a ≠ orderOf b) :
-    ConjClasses.mk a ≠ ConjClasses.mk b := by
-  intro hclasses
-  apply h
+/-- Conjugate elements of a monoid have the same order. -/
+theorem _root_.IsConj.orderOf_eq {a b : M} (h : IsConj a b) : orderOf a = orderOf b := by
   rw [orderOf_eq_orderOf_iff]
   intro n
-  have hc := mk_eq_mk_iff_isConj.mp hclasses
-  constructor <;> intro hpow
-  · simpa only [hpow, isConj_one_right] using hc.pow n
-  · simpa only [hpow, isConj_one_right] using hc.symm.pow n
+  exact ⟨fun ha ↦ by simpa only [ha, isConj_one_left] using h.symm.pow n,
+    fun hb ↦ by simpa only [hb, isConj_one_left] using h.pow n⟩
+
+/-- Elements of different orders lie in different conjugacy classes, even in a monoid. -/
+theorem mk_ne_mk_of_orderOf_ne {a b : M} (h : orderOf a ≠ orderOf b) :
+    ConjClasses.mk a ≠ ConjClasses.mk b :=
+  fun hc ↦ h (mk_eq_mk_iff_isConj.mp hc).orderOf_eq
 
 /-- **A nonidentity square in the cyclic group of order four.** The generator has order four, its
 class squares to the class of the element of order two, and those two classes are distinct. A group

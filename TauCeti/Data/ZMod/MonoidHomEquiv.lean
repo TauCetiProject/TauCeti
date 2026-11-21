@@ -18,6 +18,8 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 
 ## Main definitions
 
+* `TauCeti.zmodMulLift`: the homomorphism `Multiplicative (ZMod N) →* G` sending `ofAdd 1` to an
+  element `g : G` with `g ^ N = 1` (valid for all `N : ℕ`, including `N = 0`).
 * `TauCeti.zmodMonoidHomEquiv G`: the homomorphisms `ℤ/Nℤ →* G` are the elements of `G` killed by
   `N`.
 * `TauCeti.zmodProdMonoidHomEquiv G`: the homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of
@@ -26,6 +28,11 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 ## Main results
 
 * `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
+* `TauCeti.ofAdd_one_pow_self`, `TauCeti.ofAdd_neg_one_ne_one_of_ne_one`: the `N`-th power of
+  `ofAdd 1` is `1`, and `ofAdd (-1) ≠ 1` when `N ≠ 1`.
+* `TauCeti.zmodMulLift_ofAdd_one`, `TauCeti.zmodMulLift_ofAdd_natCast`,
+  `TauCeti.zmodMulLift_ofAdd_intCast`: evaluation of `zmodMulLift` on the generator and integer
+  multiples.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -43,6 +50,16 @@ theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
   ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
 
 namespace TauCeti
+
+/-- The standard generator `ofAdd 1` of `Multiplicative (ZMod N)` has `N`-th power `1`. -/
+@[simp]
+theorem ofAdd_one_pow_self : (Multiplicative.ofAdd (1 : ZMod N)) ^ N = 1 := by
+  rw [← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero]
+
+/-- For `N ≠ 1`, the inverse generator `ofAdd (-1)` of `Multiplicative (ZMod N)` is nontrivial. -/
+theorem ofAdd_neg_one_ne_one_of_ne_one (hN : N ≠ 1) :
+    Multiplicative.ofAdd (-1 : ZMod N) ≠ 1 := by
+  simp [ZMod.one_eq_zero_iff, hN]
 
 /-- The homomorphism `ℤ/Nℤ →+ G` sending `1` to an element `g` of `G` killed by `N`. -/
 private noncomputable def zmodLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
@@ -62,6 +79,30 @@ private theorem zmodLift_one {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
 private theorem zmodLift_apply {G : Type*} [Group G] [NeZero N] (g : G) (hg : g ^ N = 1)
     (a : ZMod N) : (zmodLift g hg a).toMul = g ^ a.val := by
   rw [← zmodLift_natCast, ZMod.natCast_zmod_val]
+
+/-- The group homomorphism `Multiplicative (ZMod N) →* G` sending `ofAdd 1` to an element `g : G`
+satisfying `g ^ N = 1` (valid for all `N : ℕ`, including `N = 0`). -/
+noncomputable def zmodMulLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
+    Multiplicative (ZMod N) →* G :=
+  (zmodLift g hg).toMultiplicativeLeft
+
+/-- `zmodMulLift g hg` sends `ofAdd (k : ZMod N)` for `k : ℤ` to `g ^ k`. -/
+@[simp]
+theorem zmodMulLift_ofAdd_intCast {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) (k : ℤ) :
+    zmodMulLift g hg (.ofAdd (k : ZMod N)) = g ^ k := by
+  simp [zmodMulLift, zmodLift]
+
+/-- `zmodMulLift g hg` sends `ofAdd (k : ZMod N)` for `k : ℕ` to `g ^ k`. -/
+@[simp]
+theorem zmodMulLift_ofAdd_natCast {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) (k : ℕ) :
+    zmodMulLift g hg (.ofAdd (k : ZMod N)) = g ^ k := by
+  rw [← Int.cast_natCast, zmodMulLift_ofAdd_intCast, zpow_natCast]
+
+/-- `zmodMulLift g hg` sends the generator `ofAdd 1` to `g` (including when `N = 0` or `N = 1`). -/
+@[simp]
+theorem zmodMulLift_ofAdd_one {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
+    zmodMulLift g hg (.ofAdd 1) = g := by
+  rw [← Nat.cast_one, zmodMulLift_ofAdd_natCast, pow_one]
 
 variable [NeZero N]
 

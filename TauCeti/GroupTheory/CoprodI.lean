@@ -17,10 +17,10 @@ Mathlib's `MulEquiv.coprodCongr` for the free product of two monoids.  It is use
 free product of fundamental groups one factor at a time, for instance to recognise the
 fundamental group of a wedge of circles as a free group.
 
-The free product of a family of two monoids indexed by `Bool` is the binary free product
-`Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions. Under it,
-the homomorphisms induced by a pair of homomorphisms on the two members correspond, so one of them
-is injective exactly when the other is.
+The free product of a family of two monoids indexed by `Bool` or `Fin 2` is the binary free
+product `Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
+Under the `Bool`-indexed isomorphism, the homomorphisms induced by a pair of homomorphisms on the
+two members correspond, so one of them is injective exactly when the other is.
 
 A free product of trivial monoids is trivial; in particular, so is the free product of an empty
 family. The free product of a family indexed by a type with a unique element is that single
@@ -35,6 +35,8 @@ from the free product.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
+* `Monoid.CoprodI.finTwoEquivCoprod`: `CoprodI M ≃* Coprod (M 0) (M 1)` for a family `M`
+  indexed by `Fin 2`.
 * `Monoid.CoprodI.instUnique`: the free product of a family of trivial monoids is trivial.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
@@ -105,6 +107,8 @@ end MulEquiv
 
 namespace Monoid.CoprodI
 
+section Bool
+
 variable (M : Bool → Type*) [∀ i, Monoid (M i)]
 
 /-- The free product of a family of monoids indexed by `Bool` is the free product of its two
@@ -157,6 +161,52 @@ theorem coprodLift_injective_iff :
     Function.Injective (Coprod.lift (f false) (f true)) ↔ Function.Injective (lift f) := by
   rw [← lift_comp_boolEquivCoprod_symm, MonoidHom.coe_comp, MonoidHom.coe_ofClass]
   exact EquivLike.injective_comp _ _
+
+end Bool
+
+section FinTwo
+
+variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
+
+/-- The free product of a family of monoids indexed by `Fin 2` is the free product of its two
+members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
+`Monoid.Coprod.inr`. -/
+def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
+  MonoidHom.toMulEquiv
+    (lift fun
+      | ⟨0, _⟩ => Coprod.inl
+      | ⟨1, _⟩ => Coprod.inr)
+    (Coprod.lift (of (i := 0)) (of (i := 1)))
+    (by
+      ext ⟨_ | _ | i, hi⟩ x
+      · exact Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
+      · exact Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
+      · omega)
+    (by ext <;> simp)
+
+variable {M}
+
+/-- `finTwoEquivCoprod` maps the canonical inclusion of `M 0` to `Coprod.inl`. -/
+@[simp]
+theorem finTwoEquivCoprod_of_zero (x : M 0) : finTwoEquivCoprod M (of x) = Coprod.inl x :=
+  lift_of _ _
+
+/-- `finTwoEquivCoprod` maps the canonical inclusion of `M 1` to `Coprod.inr`. -/
+@[simp]
+theorem finTwoEquivCoprod_of_one (x : M 1) : finTwoEquivCoprod M (of x) = Coprod.inr x :=
+  lift_of _ _
+
+/-- The inverse of `finTwoEquivCoprod` maps `Coprod.inl` to the canonical inclusion of `M 0`. -/
+@[simp]
+theorem finTwoEquivCoprod_symm_inl (x : M 0) : (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
+  Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
+
+/-- The inverse of `finTwoEquivCoprod` maps `Coprod.inr` to the canonical inclusion of `M 1`. -/
+@[simp]
+theorem finTwoEquivCoprod_symm_inr (x : M 1) : (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
+  Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
+
+end FinTwo
 
 end Monoid.CoprodI
 

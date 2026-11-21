@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.CoprodI
 
 /-!
-# Images of reduced words of a free product
+# Reduced words in a free product: functorial images and word length
 
 Let `f i : M i →* N i` be a family of monoid homomorphisms and `w` a reduced word of the free
 product `CoprodI M` none of whose letters is sent to `1`. Replacing every letter `m : M i` of `w`
@@ -17,6 +17,10 @@ under the homomorphism `CoprodI M →* CoprodI N` induced by the `f i`. In parti
 `1` only if `w` is empty, since an element of a free product is the product of exactly one reduced
 word. Likewise, injective homomorphisms of the factors induce an injective homomorphism of free
 products.
+
+We also record basic length properties of reduced words (`Word` and `NeWord`): left-multiplying a
+reduced word whose leading letter lies in `M i` by an element of `M i` does not increase its word
+length, and inverting a nonempty reduced word in a free product of groups preserves its word length.
 
 ## Main definitions
 
@@ -29,6 +33,9 @@ products.
 * `Monoid.CoprodI.Word.prod_map`: the product of the image is the image of the product.
 * `Monoid.CoprodI.Word.eq_empty_of_lift_prod_eq_one`: a reduced word whose product the
   homomorphism induced by the `f i` sends to `1` is empty.
+* `Monoid.CoprodI.Word.length_toList_of_smul_le_of_fstIdx_eq`: left-multiplying by `of m` does not
+  increase word length when the first letter lies in the same factor.
+* `Monoid.CoprodI.NeWord.length_toList_inv`: inverting a nonempty reduced word preserves its length.
 * `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
   injective homomorphism of free products.
 -/
@@ -36,6 +43,8 @@ products.
 public section
 
 namespace Monoid.CoprodI.Word
+
+section Map
 
 variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
 
@@ -106,7 +115,38 @@ theorem eq_empty_of_lift_prod_eq_one (hf : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1)
   rw [← map_eq_empty_iff f hf]
   exact prod_injective (by rw [prod_map, h, prod_empty])
 
+end Map
+
+/-- Left-multiplying a reduced word whose first letter lies in `M i` by an element of `M i` does
+not increase its word length: the leading `M i` letter merges with the new factor. -/
+theorem length_toList_of_smul_le_of_fstIdx_eq {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
+    [DecidableEq ι] [∀ i, DecidableEq (M i)] {i : ι} (m : M i) {w : Word M}
+    (hw : w.fstIdx = some i) :
+    (of m • w).toList.length ≤ w.toList.length := by
+  let p := equivPair i w
+  have hp : rcons p = w := (equivPair i).symm_apply_apply w
+  have hp1 : p.head ≠ 1 := fun h1 =>
+    p.fstIdx_ne (by simpa [rcons, h1, hw] using congrArg fstIdx hp)
+  have hw_len : w.toList.length = p.tail.toList.length + 1 := by
+    rw [← hp, rcons, dite_eq_right hp1]
+    rfl
+  rw [of_smul_def, rcons]
+  split_ifs <;> simp [p, hw_len]
+
 end Monoid.CoprodI.Word
+
+namespace Monoid.CoprodI.NeWord
+
+/-- Inverting a nonempty reduced word preserves its length. -/
+@[simp]
+theorem length_toList_inv {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)] {i j : ι}
+    (w : NeWord G i j) : w.inv.toList.length = w.toList.length := by
+  induction w with
+  | singleton => rfl
+  | append _ _ _ ih₁ ih₂ =>
+    simp only [inv, toList, List.length_append, ih₁, ih₂, Nat.add_comm]
+
+end Monoid.CoprodI.NeWord
 
 namespace Monoid.CoprodI
 

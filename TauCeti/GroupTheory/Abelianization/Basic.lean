@@ -19,8 +19,9 @@ the commutator subgroup (`Group.Abelianization.of_eq_one_iff`), so the abelianiz
 commutative group is injective (`Group.Abelianization.of_injective`), and isomorphisms out of an
 abelianization are determined by their values on classes (`Group.Abelianization.mulEquiv_ext`).
 Every element of the additive abelianization is the class of a group element
-(`Group.Abelianization.exists_eq_ofMul_of`). The abelianization of a product of two groups is the
-product of their abelianizations (`Group.Abelianization.prodMulEquiv`).
+(`Group.Abelianization.exists_eq_ofMul_of`). The trivial homomorphism induces the trivial map on
+abelianizations (`Group.Abelianization.map_one_hom`), and the abelianization of a product of two
+groups is the product of their abelianizations (`Group.Abelianization.prodMulEquiv`).
 -/
 
 public section
@@ -60,6 +61,11 @@ theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
 theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Group.Abelianization G ≃* M}
     (h : ∀ x : G, e (of x) = e' (of x)) : e = e' :=
   MulEquiv.toMonoidHom_injective (hom_ext _ _ (MonoidHom.ext h))
+
+/-- The map induced on abelianizations by the trivial homomorphism `1 : G →* H` is `1`. -/
+@[simp]
+theorem map_one_hom {H : Type*} [Group H] : map (1 : G →* H) = 1 :=
+  hom_ext _ _ (by ext; simp)
 
 /-- **The abelianization of a product** of two groups is the product of their abelianizations:
 the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/
