@@ -537,10 +537,10 @@ lemma linearHomComplexOfHom_comp (ψ : G ⟶ K) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [HomologicalComplex.leftUnitor_inv_f, HomologicalComplex.leftUnitor'_inv]
+  rw [HomologicalComplex.leftUnitor_inv_f]
   have hι :
       HomologicalComplex.ιTensorObj
-          (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
+          (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))
           (linearHomComplex R F G) 0 j j (zero_add j) ≫
         (linearHomComplexOfHom R ψ ▷ linearHomComplex R F G).f j ≫
           (linearHomComplexComp R F G K).f j =
@@ -587,10 +587,10 @@ lemma linearHomComplexComp_ofHom {F' : CochainComplex C ℤ} (φ : F' ⟶ F) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [HomologicalComplex.rightUnitor_inv_f, HomologicalComplex.rightUnitor'_inv]
+  rw [HomologicalComplex.rightUnitor_inv_f]
   have hι :
       HomologicalComplex.ιTensorObj (linearHomComplex R F G)
-          (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
+          (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))
           j 0 j (add_zero j) ≫
         (linearHomComplex R F G ◁ linearHomComplexOfHom R φ).f j ≫
           (linearHomComplexComp R F' F G).f j =
