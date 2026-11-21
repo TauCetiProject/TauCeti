@@ -23,8 +23,9 @@ real inner product, `TauCeti.AlmostComplexStructure.inner_apply_left_eq_neg_swap
 Consequently, by `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the
 parametrization `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
 
-Conversely, multiplication by `i` on a complex inner product space preserves the real inner product
-`Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
+Conversely, on a complex normed space whose norm comes from a real inner product, such as
+`Re ⟪·, ·⟫_ℂ` on a complex inner product space, multiplication by `i` preserves that inner product
+(`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -157,13 +158,13 @@ lemma complexInnerProductSpace_inner (J : AlmostComplexStructure V)
   let := J.complexInnerProductSpace hJ
   apply Complex.ext <;> simp <;> rfl
 
-/-- Multiplication by `i` preserves the real inner product `Re ⟪·, ·⟫_ℂ` of a complex inner
-product space, so `ofComplexModule E` is an orthogonal complex structure. -/
+/-- Multiplication by `i` is an orthogonal complex structure on a complex normed space whose norm
+comes from a real inner product; for a complex inner product space this real inner product is
+`Re ⟪·, ·⟫_ℂ`. -/
 theorem real_inner_ofComplexModule_ofComplexModule {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] (v w : E) :
-    letI := InnerProductSpace.complexToReal (G := E)
-    ⟪ofComplexModule E v, ofComplexModule E w⟫ = ⟪v, w⟫ := by
-  let := InnerProductSpace.complexToReal (G := E)
-  simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right, ← mul_assoc]
+    [InnerProductSpace ℝ E] [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] (v w : E) :
+    ⟪ofComplexModule E v, ofComplexModule E w⟫ = ⟪v, w⟫ :=
+  ({ (ofComplexModule E).toLinearMap with
+      norm_map' := fun u ↦ by simp [norm_smul] } : E →ₗᵢ[ℝ] E).inner_map_map v w
 
 end TauCeti.AlmostComplexStructure
