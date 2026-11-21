@@ -41,12 +41,13 @@ Let `x` lie over `y ∈ Δ` and let `A` be the set of facets active at `y`.
   (`TauCeti.Toric.isAddCyclic_ker_facetTorusHom_nsmul_inf_stabilizer_of_activeSet_eq_singleton`,
   `TauCeti.Toric.natCard_ker_facetTorusHom_nsmul_inf_stabilizer_of_activeSet_eq_singleton`), and
   over a vertex its order is the product of the labels of the facets meeting there.
-* **The labels are the facet isotropy orders.** Every facet of a Delzant polytope contains a
-  point lying on no other facet, so the label `m j` is the order of the isotropy group over that
-  point (`TauCeti.Toric.IsDelzant.exists_natCard_ker_facetTorusHom_nsmul_inf_stabilizer_eq`).
-  Hence the labels are determined by the isotropy groups of the labelled kernel torus. This
-  refines `TauCeti.Toric.IsDelzant.forall_eq_zero_of_vadd_eq_self_nsmul_iff`, which says only
-  that these isotropy groups are all trivial exactly for unit labels.
+* **The labels are the facet isotropy orders.** Every facet `j` of a Delzant polytope contains a
+  point lying on no other facet, and the label `m j` is the order of the isotropy group at a point
+  of the level over it
+  (`TauCeti.Toric.IsDelzant.exists_natCard_ker_facetTorusHom_nsmul_inf_stabilizer_eq`). So each
+  label can be read off from the isotropy groups over its own facet. This refines
+  `TauCeti.Toric.IsDelzant.forall_eq_zero_of_vadd_eq_self_nsmul_iff`, which says only that these
+  isotropy groups are all trivial exactly for unit labels.
 
 ## Main results
 
@@ -55,7 +56,7 @@ Let `x` lie over `y ∈ Δ` and let `A` be the set of facets active at `y`.
 * `TauCeti.Toric.labelledIsotropyAddEquiv`: its isomorphism with `∏_(j ∈ A) (ℝ / 2πℤ)[m j]`.
 * `TauCeti.Toric.natCard_ker_facetTorusHom_nsmul_inf_stabilizer`: its order `∏_(j ∈ A) m j`.
 * `TauCeti.Toric.IsDelzant.exists_natCard_ker_facetTorusHom_nsmul_inf_stabilizer_eq`: each label
-  is the order of an isotropy group over its facet.
+  is the order of an isotropy group over a point lying on its facet alone.
 
 ## References
 
@@ -231,12 +232,16 @@ theorem isAddCyclic_ker_facetTorusHom_nsmul_inf_stabilizer_of_activeSet_eq_singl
   exact isAddCyclic_of_surjective e.symm.toAddMonoidHom e.symm.surjective
 
 /-- **The labels of a Delzant polytope are the facet isotropy orders.** For a Delzant polytope
-with positive labels `m`, every facet `j` lies over a point `x` of the level of the labelled
-normals whose isotropy group in the labelled kernel torus has exactly `m j` elements: any point of
-the level over a point of `Δ` lying on the facet `j` alone. -/
+with positive labels `m`, every facet `j` contains a point `y` lying on no other facet, and over
+`y` there is a point `x` of the level of the labelled normals whose isotropy group in the labelled
+kernel torus has exactly `m j` elements. -/
 theorem IsDelzant.exists_natCard_ker_facetTorusHom_nsmul_inf_stabilizer_eq
     (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i) (hm : ∀ j, m j ≠ 0) (j : ι) :
-    ∃ x : delzantLevel i (fun j ↦ m j • u j) (fun j ↦ m j * c j),
+    ∃ x : delzantLevel i (fun j ↦ m j • u j) (fun j ↦ m j * c j), ∃ y : StrongDual ℝ V,
+      (∀ k, ((x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι).1 k ^ 2 +
+        (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι).2 k ^ 2) / 2 + m k * c k =
+          y (i (m k • u k))) ∧
+      activeSet (facetPairing i u) c y = {j} ∧
       Nat.card ((facetTorusHom i (fun j ↦ m j • u j) (2 * π)).ker ⊓
           AddAction.stabilizer (ι → AddCircle (2 * π)) x :
         AddSubgroup (ι → AddCircle (2 * π))) = m j := by
@@ -248,7 +253,8 @@ theorem IsDelzant.exists_natCard_ker_facetTorusHom_nsmul_inf_stabilizer_eq
       (fun j ↦ m j * c j), ∀ j, (x.1 j ^ 2 + x.2 j ^ 2) / 2 + m j * c j = y (i (m j • u j))} := by
     rwa [setOf_exists_mem_delzantLevel, facetPolyhedron_nsmul hm]
   obtain ⟨v, hv, hyv⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hyΔ
-  exact ⟨⟨x, hx⟩, natCard_ker_facetTorusHom_nsmul_inf_stabilizer_of_activeSet_eq_singleton
-    (x := ⟨x, hx⟩) hi hm hxy hyv (isSmoothVertex_def.1 hv) hA⟩
+  exact ⟨⟨x, hx⟩, y, hxy, hA,
+    natCard_ker_facetTorusHom_nsmul_inf_stabilizer_of_activeSet_eq_singleton (x := ⟨x, hx⟩) hi hm
+      hxy hyv (isSmoothVertex_def.1 hv) hA⟩
 
 end TauCeti.Toric
