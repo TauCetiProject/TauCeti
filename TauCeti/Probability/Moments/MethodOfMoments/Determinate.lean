@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.MeasureTheory.Measure.Tight.Normed
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.UniformIntegrable
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
@@ -37,8 +38,8 @@ matching polynomial moments.
 ## Implementation notes
 
 Bounded second moments give tightness, and Prokhorov's theorem gives compactness of an eventual
-family. Closed sublevel sets of lower-semicontinuous integrals, applied to `x ^ (2 * k)` and
-`(x ^ k - c) ^ 2`, show that every cluster point has the required `k`th moment.
+family. Lower semicontinuity of integrals gives integrability at a cluster point, while uniform
+integrability gives convergence of the moments along the cluster-point filter.
 
 ## References
 
@@ -54,6 +55,80 @@ namespace MeasureTheory.ProbabilityMeasure
 
 open TauCeti
 
+private theorem tendsto_toReal_lintegral_ofReal_of_sq_bound
+    {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
+    {ν : ProbabilityMeasure ℝ} {f g : ℝ → ℝ} {B : ℝ}
+    (hf : Continuous f) (hfsq : ∀ x, f x ^ 2 = g x ^ 2)
+    (hfν : Integrable f (ν : Measure ℝ))
+    (hμ : Tendsto (fun i ↦ (μn i).toFiniteMeasure) l (𝓝 ν.toFiniteMeasure))
+    (h2 : ∀ᶠ i in l, Integrable (fun x ↦ g x ^ 2) (μn i : Measure ℝ))
+    (hB : ∀ᶠ i in l, ∫ x, g x ^ 2 ∂(μn i : Measure ℝ) ≤ B) :
+    Tendsto (fun i ↦ (∫⁻ x, ENNReal.ofReal (f x) ∂(μn i : Measure ℝ)).toReal) l
+      (𝓝 (∫⁻ x, ENNReal.ofReal (f x) ∂(ν : Measure ℝ)).toReal) := by
+  have hbound : ∀ᶠ i in l,
+      ∫⁻ x, (Real.toNNReal (f x) : ℝ≥0∞) ^ 2 ∂(μn i : Measure ℝ) ≤
+        (Real.toNNReal B : ℝ≥0∞) := by
+    filter_upwards [h2, hB] with i h2i hBi
+    calc
+      _ ≤ ∫⁻ x, ENNReal.ofReal (g x ^ 2) ∂(μn i : Measure ℝ) := by
+        refine lintegral_mono fun x ↦ ?_
+        change ENNReal.ofReal (f x) ^ 2 ≤ ENNReal.ofReal (g x ^ 2)
+        by_cases hx : 0 ≤ f x
+        · rw [← ENNReal.ofReal_pow hx, hfsq x]
+        · rw [ENNReal.ofReal_of_nonpos (le_of_not_ge hx), zero_pow (by decide)]
+          exact bot_le
+      _ = ENNReal.ofReal (∫ x, g x ^ 2 ∂(μn i : Measure ℝ)) :=
+        (ofReal_integral_eq_lintegral_ofReal h2i (.of_forall fun x ↦ sq_nonneg (g x))).symm
+      _ ≤ (Real.toNNReal B : ℝ≥0∞) := ENNReal.ofReal_le_ofReal hBi
+  have hfinite : ∫⁻ x, ENNReal.ofReal (f x) ∂(ν : Measure ℝ) ≠ ∞ := by
+    have h := (lintegral_ofReal_ne_top_iff_integrable
+      hfν.pos_part.aestronglyMeasurable (.of_forall fun x ↦ le_max_right (f x) 0)).2
+        hfν.pos_part
+    simpa using h
+  have h := TauCeti.tendsto_lintegral_of_sq_bound
+    (continuous_real_toNNReal.comp hf) hμ hbound
+  exact (ENNReal.tendsto_toReal hfinite).comp h
+
+/-- A weak cluster point preserves the integral of a continuous function when its square has an
+eventual integral bound. -/
+theorem integral_eq_of_mapClusterPt_of_integral_sq_le
+    {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
+    {ν : ProbabilityMeasure ℝ} {g : ℝ → ℝ} {m B : ℝ}
+    (hg : Continuous g)
+    (h2 : ∀ᶠ i in l, Integrable (fun x ↦ g x ^ 2) (μn i : Measure ℝ))
+    (hB : ∀ᶠ i in l, ∫ x, g x ^ 2 ∂(μn i : Measure ℝ) ≤ B)
+    (hlim : Tendsto (fun i ↦ ∫ x, g x ∂(μn i : Measure ℝ)) l (𝓝 m))
+    (hν : MapClusterPt ν l μn) :
+    ∫ x, g x ∂(ν : Measure ℝ) = m := by
+  have hint : ∀ᶠ i in l, Integrable g (μn i : Measure ℝ) := by
+    filter_upwards [h2] with i hi
+    simpa only [pow_one] using
+      (integrable_pow_of_le hg.aestronglyMeasurable (by omega : 1 ≤ 2) hi)
+  have h2ν : Integrable (fun x ↦ g x ^ 2) (ν : Measure ℝ) :=
+    (integrable_and_integral_le_of_mapClusterPt_of_eventually_le
+      (hg.pow 2).lowerSemicontinuous (fun x ↦ sq_nonneg (g x)) h2 hB hν).1
+  have hνint : Integrable g (ν : Measure ℝ) := by
+    simpa only [pow_one] using
+      (integrable_pow_of_le hg.aestronglyMeasurable (by omega : 1 ≤ 2) h2ν)
+  let L : Filter ι := l ⊓ comap μn (𝓝 ν)
+  have : L.NeBot := by
+    rw [show L = l ⊓ comap μn (𝓝 ν) from rfl, neBot_inf_comap_iff_map, inf_comm]
+    exact hν
+  have hμ : Tendsto (fun i ↦ (μn i).toFiniteMeasure) L (𝓝 ν.toFiniteMeasure) :=
+    toFiniteMeasure_continuous.tendsto ν |>.comp (tendsto_comap.mono_left inf_le_right)
+  have hp := tendsto_toReal_lintegral_ofReal_of_sq_bound hg (fun _ ↦ rfl) hνint hμ
+    (h2.filter_mono inf_le_left) (hB.filter_mono inf_le_left)
+  have hn := tendsto_toReal_lintegral_ofReal_of_sq_bound hg.neg (fun x ↦ by simp) hνint.neg hμ
+    (h2.filter_mono inf_le_left) (hB.filter_mono inf_le_left)
+  have hconv : Tendsto (fun i ↦ ∫ x, g x ∂(μn i : Measure ℝ)) L
+      (𝓝 (∫ x, g x ∂(ν : Measure ℝ))) := by
+    have hdiff := hp.sub hn
+    rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hνint]
+    refine hdiff.congr' ?_
+    filter_upwards [hint.filter_mono inf_le_left] with i hi
+    exact (integral_eq_lintegral_pos_part_sub_lintegral_neg_part hi).symm
+  exact tendsto_nhds_unique hconv (hlim.mono_left inf_le_left)
+
 /-- A weak cluster point inherits a fixed moment if that moment converges and the moments
 of twice its order are eventually integrable and uniformly bounded. -/
 theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_of_integral_pow_le
@@ -67,86 +142,25 @@ theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_of_integral_pow_le
       ∫ x, x ^ k ∂(ν : Measure ℝ) = m := by
   have hnonneg : ∀ x : ℝ, 0 ≤ x ^ (2 * k) := by
     intro x
-    rw [show 2 * k = k * 2 by omega, pow_mul]
+    rw [Nat.mul_comm, pow_mul]
     exact sq_nonneg (x ^ k)
   have h2k : Integrable (fun x : ℝ => x ^ (2 * k)) (ν : Measure ℝ) :=
     (TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le
-      (continuous_id.pow (2 * k))
+      (continuous_id.pow (2 * k)).lowerSemicontinuous
       hnonneg hint hB hν).1
   have hk : Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ) :=
     integrable_pow_of_le aestronglyMeasurable_id (by omega) h2k
-  let a : ℝ := ∫ x, x ^ k ∂(ν : Measure ℝ)
-  let q : ℝ := ∫ x, x ^ (2 * k) ∂(ν : Measure ℝ)
   have hpow (x : ℝ) : x ^ (2 * k) = (x ^ k) ^ 2 := by
-    calc
-      x ^ (2 * k) = x ^ (k * 2) := by rw [Nat.mul_comm]
-      _ = (x ^ k) ^ 2 := by rw [pow_mul]
-  have hsquare_identity (c x : ℝ) :
-      (x ^ k - c) ^ 2 = x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2 := by
-    rw [hpow x]
-    ring
-  have square_info {ρ : ProbabilityMeasure ℝ}
-      (h2 : Integrable (fun x : ℝ => x ^ (2 * k)) (ρ : Measure ℝ)) (c : ℝ) :
-      Integrable (fun x : ℝ => (x ^ k - c) ^ 2) (ρ : Measure ℝ) ∧
-      ∫ x, (x ^ k - c) ^ 2 ∂(ρ : Measure ℝ) =
-        (∫ x, x ^ (2 * k) ∂(ρ : Measure ℝ)) -
-          (2 * c) * ∫ x, x ^ k ∂(ρ : Measure ℝ) + c ^ 2 := by
-    have hk : Integrable (fun x : ℝ => x ^ k) (ρ : Measure ℝ) :=
-      integrable_pow_of_le aestronglyMeasurable_id (by omega : k ≤ 2 * k) h2
-    have hpoly : Integrable
-        (fun x : ℝ => x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2) (ρ : Measure ℝ) :=
-      (h2.sub (hk.const_mul (2 * c))).add (integrable_const _)
-    refine ⟨hpoly.congr (ae_of_all _ fun x => (hsquare_identity c x).symm), ?_⟩
-    simp_rw [hsquare_identity c]
-    calc
-      _ = (∫ x, x ^ (2 * k) - (2 * c) * x ^ k ∂(ρ : Measure ℝ)) +
-          ∫ _ : ℝ, c ^ 2 ∂(ρ : Measure ℝ) :=
-        integral_add (h2.sub (hk.const_mul (2 * c))) (integrable_const _)
-      _ = _ := by
-        rw [integral_sub h2 (hk.const_mul (2 * c))]
-        simp [integral_const_mul]
-  have hνsquare (c : ℝ) :
-      ∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) = q - (2 * c) * a + c ^ 2 := by
-    simpa [a, q] using (square_info h2k c).2
-  -- The twice-order moment need only be bounded, since the remaining term has a limit.
-  have hbound_square (c : ℝ) :
-      ∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) ≤
-        B - (2 * c) * m + c ^ 2 := by
-    refine le_of_forall_pos_le_add fun ε hε => ?_
-    have hcomb : Tendsto
-        (fun i => B - (2 * c) * ∫ x, x ^ k ∂(μn i : Measure ℝ) + c ^ 2) l
-        (𝓝 (B - (2 * c) * m + c ^ 2)) :=
-      (tendsto_const_nhds.sub (hlimk.const_mul (2 * c))).add_const (c ^ 2)
-    have hevent : ∀ᶠ i in l,
-        ∫ x, (x ^ k - c) ^ 2 ∂(μn i : Measure ℝ) ≤
-          B - (2 * c) * m + c ^ 2 + ε := by
-      filter_upwards [hint, hB, hcomb.eventually
-        (Iio_mem_nhds (show B - (2 * c) * m + c ^ 2 <
-          B - (2 * c) * m + c ^ 2 + ε by linarith))] with i h2 hi hlim
-      rw [(square_info h2 c).2]
-      linarith
-    exact (TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le
-      (((continuous_id.pow k).sub continuous_const).pow 2)
-      (fun x => sq_nonneg (x ^ k - c))
-      (hint.mono fun _ h2 => (square_info h2 c).1) hevent hν).2
-  -- This quadratic inequality holds for every `c`, forcing the linear coefficients to agree.
-  have hmoment : a = m := by
-    by_contra hne
-    let c : ℝ := (B - q + 1) / (2 * (m - a))
-    have hden : 2 * (m - a) ≠ 0 := by
-      apply mul_ne_zero (by norm_num)
-      apply sub_ne_zero.mpr
-      intro heq
-      exact hne heq.symm
-    have hc : 2 * c * (m - a) = B - q + 1 := by
-      dsimp [c]
-      field_simp [hden]
-    have hineq := hbound_square c
-    rw [hνsquare c] at hineq
-    dsimp [c] at hc
-    dsimp [a, q] at hineq hc
-    nlinarith
-  exact ⟨hk, hmoment⟩
+    rw [Nat.mul_comm, pow_mul]
+  have h2 : ∀ᶠ i in l, Integrable (fun x : ℝ => (x ^ k) ^ 2) (μn i : Measure ℝ) := by
+    filter_upwards [hint] with i hi
+    exact hi.congr (ae_of_all _ hpow)
+  have hB' : ∀ᶠ i in l, ∫ x, (x ^ k) ^ 2 ∂(μn i : Measure ℝ) ≤ B := by
+    filter_upwards [hB] with i hi
+    rwa [← integral_congr_ae (ae_of_all _ hpow)]
+  refine ⟨hk, ?_⟩
+  exact integral_eq_of_mapClusterPt_of_integral_sq_le (continuous_id.pow k)
+    h2 hB' hlimk hν
 
 /-- A weak cluster point of probability measures with converging moments has finite moments,
 equal to the limits. -/

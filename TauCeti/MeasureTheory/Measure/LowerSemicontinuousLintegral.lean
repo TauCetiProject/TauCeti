@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Function.Lusin
 public import TauCeti.Topology.Semicontinuity.Approximation
+import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Lower semicontinuity of a lower semicontinuous integrand in the measure
@@ -36,8 +37,8 @@ the value `∞` is allowed on both sides.
   `TauCeti.isClosed_setOfPred_lintegral_le_probabilityMeasure`: the sublevel sets of the pairing
   are closed.
 * `TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le` and its finite-measure
-  counterpart: weak cluster points inherit eventual integral bounds for continuous nonnegative
-  functions.
+  counterpart: weak cluster points inherit eventual integral bounds for lower-semicontinuous
+  nonnegative functions.
 * `TauCeti.lowerSemicontinuousOn_lintegral_comp`: for `h` lower semicontinuous and `Φ` arbitrary,
   `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on a set of finite or probability measures when
   `Φ` is continuous on closed sets of uniformly almost full mass.
@@ -132,11 +133,11 @@ section IntegralBounds
 
 variable {γ : Type*} {L : Filter γ} {g : Ω → ℝ} {M : ℝ}
 
-/-- A weak cluster point of finite measures inherits an eventual integral bound for a continuous
-nonnegative function. -/
+/-- A weak cluster point of finite measures inherits an eventual integral bound for a
+nonnegative lower-semicontinuous real-valued function. -/
 theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasure
     {μs : γ → FiniteMeasure Ω} {μ : FiniteMeasure Ω}
-    (hg : Continuous g) (hnonneg : ∀ x, 0 ≤ g x)
+    (hg : LowerSemicontinuous g) (hnonneg : ∀ x, 0 ≤ g x)
     (hint : ∀ᶠ i in L, Integrable g (μs i : Measure Ω))
     (hbound : ∀ᶠ i in L, ∫ x, g x ∂(μs i : Measure Ω) ≤ M)
     (hμ : MapClusterPt μ L μs) :
@@ -144,7 +145,8 @@ theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasur
   have hlintegral :
       ∫⁻ x, ENNReal.ofReal (g x) ∂(μ : Measure Ω) ≤ ENNReal.ofReal M := by
     have hclosed := isClosed_setOfPred_lintegral_le_finiteMeasure
-      ((ENNReal.continuous_ofReal.comp hg).lowerSemicontinuous) (ENNReal.ofReal M)
+        (ENNReal.continuous_ofReal.comp_lowerSemicontinuous hg
+          (fun _ _ h ↦ ENNReal.ofReal_le_ofReal h)) (ENNReal.ofReal M)
     have hevent : ∀ᶠ i in L, μs i ∈
         {ρ : FiniteMeasure Ω |
           ∫⁻ x, ENNReal.ofReal (g x) ∂(ρ : Measure Ω) ≤ ENNReal.ofReal M} := by
@@ -154,7 +156,7 @@ theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasur
     exact hclosed.mem_of_mapClusterPt hμ hevent
   have hfinite := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlintegral
   have hμint : Integrable g (μ : Measure Ω) :=
-    (lintegral_ofReal_ne_top_iff_integrable hg.aestronglyMeasurable
+    (lintegral_ofReal_ne_top_iff_integrable hg.measurable.aestronglyMeasurable
       (ae_of_all _ hnonneg)).1 hfinite
   have hneBot : L.NeBot := (map_neBot_iff μs).1 (hμ.clusterPt.neBot.mono inf_le_right)
   have hM : 0 ≤ M := by
@@ -164,10 +166,10 @@ theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasur
   exact ⟨hμint, (ENNReal.ofReal_le_ofReal_iff hM).mp hlintegral⟩
 
 /-- A weak cluster point of probability measures inherits an eventual integral bound for a
-continuous nonnegative function. -/
+nonnegative lower-semicontinuous real-valued function. -/
 theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le
     {μs : γ → ProbabilityMeasure Ω} {μ : ProbabilityMeasure Ω}
-    (hg : Continuous g) (hnonneg : ∀ x, 0 ≤ g x)
+    (hg : LowerSemicontinuous g) (hnonneg : ∀ x, 0 ≤ g x)
     (hint : ∀ᶠ i in L, Integrable g (μs i : Measure Ω))
     (hbound : ∀ᶠ i in L, ∫ x, g x ∂(μs i : Measure Ω) ≤ M)
     (hμ : MapClusterPt μ L μs) :

@@ -52,9 +52,10 @@ theorem isTightMeasureSet_of_integral_norm_rpow_le {E : Type*} [MeasurableSpace 
       _ ≤ ENNReal.ofReal (B / R ^ p) :=
         ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right hB hRp.le)
   refine isTightMeasureSet_of_tendsto_measure_compl_closedBall (x := (0 : E)) ?_
-  convert! htail using 6 with R
-  ext x
-  simp
+  have hset (R : ℝ) : (Metric.closedBall (0 : E) R)ᶜ = {x | R < ‖x‖} := by
+    ext x
+    simp
+  simpa only [hset] using htail
 
 /-- Measures on a proper seminormed group with uniformly bounded second norm moment are tight. -/
 theorem isTightMeasureSet_of_integral_norm_sq_le {E : Type*} [MeasurableSpace E]

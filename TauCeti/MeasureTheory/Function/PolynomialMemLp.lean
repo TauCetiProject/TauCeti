@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 public import Mathlib.Topology.Algebra.Polynomial
 
 /-!
-# Integrability and `L²` membership of polynomials against a finite-moment measure
+# Integrability and `L²` membership of polynomials when moments are integrable
 
 This file proves that a real polynomial, evaluated pointwise, is integrable and square-integrable
 against any measure on `ℝ` whose polynomial moments are finite (up to the relevant degree):
@@ -33,10 +33,10 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
 * `memLp_two_eval_of_forall_integrable_pow` — a polynomial is in `L²`, since the square of a
   polynomial is again a polynomial (hence integrable), and `memLp_two_iff_integrable_sq`.
 
-The all-moments results consume only the moment hypothesis `∀ k, Integrable (x ↦ xᵏ) μ`, and the
-degree-bounded ones only its restriction to `k ≤ q.natDegree`, with no dependence on the
-particular measure, so they apply verbatim to the Gaussian measure (all moments finite by Fernique)
-and to the compactly supported Chebyshev measure alike.
+The all-moments results consume only the hypothesis `∀ k, Integrable (x ↦ xᵏ) μ`, and the
+degree-bounded ones only its restriction to `k ≤ q.natDegree`, with no dependence on the particular
+measure, so they apply verbatim to the Gaussian measure (all moments integrable by Fernique) and
+to the compactly supported Chebyshev measure alike.
 
 Building on the `L²` membership, `polynomialEvalLp` bundles polynomial evaluation, cast into any
 `[RCLike 𝕜]` scalar field, as an `ℝ`-linear map `ℝ[X] →ₗ[ℝ] Lp 𝕜 2 μ`.  Being measure- and
@@ -118,8 +118,7 @@ theorem tendsto_integral_eval_of_tendsto_integral_pow {ι : Type*} {l : Filter �
   exact tendsto_integral_eval_of_forall_le_natDegree p (fun n _ => hμs n)
     (fun n _ => hμ n) (fun n _ => h n)
 
-/-- A real polynomial is integrable against any measure all of whose polynomial moments are
-finite. -/
+/-- A real polynomial is integrable against any measure all of whose monomials are integrable. -/
 theorem integrable_eval_of_forall_integrable_pow
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
     Integrable (fun x : ℝ => q.eval x) μ :=
@@ -134,7 +133,7 @@ theorem integrable_pow_of_ae_abs_le [IsFiniteMeasure μ] {R : ℝ}
     rw [norm_pow, Real.norm_eq_abs]
     exact pow_le_pow_left₀ (abs_nonneg x) hx n
 
-/-- A real polynomial is in `L²` against any measure all of whose polynomial moments are finite.
+/-- A real polynomial is in `L²` against any measure all of whose monomials are integrable.
 The square of a polynomial is again a polynomial, hence integrable by
 `integrable_eval_of_forall_integrable_pow`, and `L²` membership is integrability of the square. -/
 theorem memLp_two_eval_of_forall_integrable_pow
@@ -147,7 +146,7 @@ theorem memLp_two_eval_of_forall_integrable_pow
   exact integrable_eval_of_forall_integrable_pow hmom (q ^ 2)
 
 /-- A real polynomial evaluation, cast into any `RCLike` scalar field, lies in `L²` against any
-measure all of whose polynomial moments are finite. -/
+measure all of whose monomials are integrable. -/
 theorem memLp_two_algebraMap_eval_of_forall_integrable_pow {𝕜 : Type*} [RCLike 𝕜]
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
     MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (q.eval x)) 2 μ := by
@@ -155,7 +154,7 @@ theorem memLp_two_algebraMap_eval_of_forall_integrable_pow {𝕜 : Type*} [RCLik
     (memLp_two_eval_of_forall_integrable_pow hmom q).ofReal (K := 𝕜)
 
 /-- Polynomial evaluation, cast into any `RCLike` scalar field, bundled as an `ℝ`-linear map into
-`L²` against any measure all of whose polynomial moments are finite. -/
+`L²` against any measure all of whose monomials are integrable. -/
 noncomputable def polynomialEvalLp (𝕜 : Type*) [RCLike 𝕜]
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) :
     ℝ[X] →ₗ[ℝ] Lp 𝕜 2 μ where
