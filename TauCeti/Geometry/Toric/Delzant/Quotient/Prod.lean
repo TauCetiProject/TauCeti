@@ -17,14 +17,16 @@ Let `i : N →+ V` and `i' : N' →+ V'` be lattices with facet presentations `(
 of polytopes `Δ` and `Δ'`. Their product `Δ × Δ'` has the facet presentation
 `(prodNormal u u', Sum.elim c c')` in the product lattice `i × i' : N × N' →+ V × V'`
 (`TauCeti.Geometry.Toric.Delzant.Prod`). This file shows that Delzant's construction turns this
-product into the product of the Delzant quotients: the symplectic toric manifold of `Δ × Δ'` is
-`M_Δ × M_Δ'`, with the product torus and the product moment map. For instance, presenting the
-rectangle `[0, a] × [0, b]` as the product of two intervals exhibits its Delzant quotient, the
-toric `S² × S²`, as the product of the Delzant quotients of the two intervals.
+product into the product of the Delzant quotients: the Delzant quotient of `Δ × Δ'` is
+`M_Δ × M_Δ'`, as smooth manifolds with the product torus action and the product moment map. For
+instance, presenting the rectangle `[0, a] × [0, b]` as the product of two intervals exhibits its
+Delzant quotient, the toric `S² × S²`, as the product of the Delzant quotients of the two
+intervals.
 
 * **The level and the kernel torus.** Splitting the coordinates of `ℂ^(ι ⊕ ι')` along `ι ⊕ ι'`
   (`TauCeti.Toric.sumCoordEquiv`) identifies the moment map of `(ℝ / 2πℤ)^(ι ⊕ ι')` with the sum
-  of the moment maps of the factors, and the kernel `𝔫` of `β_ℝ` with the product of the kernels.
+  of the moment maps of the factors, and the kernel `𝔫` of `β_ℝ` with the product of the kernels
+  (`TauCeti.Toric.mem_ker_linearCombination_prodNormal_iff`).
   So the level of the product presentation is the product of the levels
   (`TauCeti.Toric.mem_delzantLevel_prod_iff`, `TauCeti.Toric.delzantLevelProdHomeomorph`), and the
   kernel torus of the product is the product of the kernel tori
@@ -81,34 +83,12 @@ namespace TauCeti.Toric
 
 variable {ι ι' N N' V V' : Type*} [Fintype ι] [Fintype ι'] [AddCommGroup N] [AddCommGroup N']
 
-/-! ### The real and the toral lattice maps of a product -/
+/-! ### The kernel torus of a product -/
 
 section Lattice
 
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [Module ℝ V'] {i : N →+ V}
   {i' : N' →+ V'} {u : ι → N} {u' : ι' → N'}
-
-/-- The kernel `𝔫` of `β_ℝ` for the product normals consists of the pairs of elements of the
-kernels of the factors. -/
-theorem mem_ker_linearCombination_prodNormal_iff {t : ι ⊕ ι' → ℝ} :
-    t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i.prodMap i' (prodNormal u u' j)) ↔
-      t ∘ .inl ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)) ∧
-        t ∘ .inr ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i' (u' j)) := by
-  simp [Fintype.linearCombination_apply, Fintype.sum_sum_type, Prod.ext_iff, Prod.fst_sum,
-    Prod.snd_sum]
-
-/-- If the real normals of both factors span, so do the real normals of the product. -/
-theorem surjective_linearCombination_prodNormal
-    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
-    (hβ' : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i' (u' j))) :
-    Function.Surjective
-      (Fintype.linearCombination ℝ fun j ↦ i.prodMap i' (prodNormal u u' j)) := by
-  rintro ⟨v, v'⟩
-  obtain ⟨t, rfl⟩ := hβ v
-  obtain ⟨t', rfl⟩ := hβ' v'
-  refine ⟨Sum.elim t t', ?_⟩
-  simp [Fintype.linearCombination_apply, Fintype.sum_sum_type, Prod.ext_iff, Prod.fst_sum,
-    Prod.snd_sum]
 
 /-- **The kernel torus of a product.** An angle `θ ∈ (ℝ / pℤ)^(ι ⊕ ι')` lies in the kernel of the
 torus homomorphism of the product normals exactly when its restrictions `θ ∘ inl` and `θ ∘ inr` lie
@@ -118,10 +98,9 @@ theorem mem_ker_facetTorusHom_prod_iff {p : ℝ} {θ : ι ⊕ ι' → AddCircle 
       θ ∘ .inl ∈ (facetTorusHom i u p).ker ∧ θ ∘ .inr ∈ (facetTorusHom i' u' p).ker := by
   obtain ⟨t, rfl⟩ := (QuotientAddGroup.mk_surjective (s := AddSubgroup.zmultiples p)).comp_left θ
   simp only [AddMonoidHom.mem_ker, Function.comp_def]
-  rw [facetTorusHom_coe, facetTorusHom_coe, facetTorusHom_coe]
-  simp only [QuotientAddGroup.eq_zero_iff, AddMonoidHom.mem_range, AddMonoidHom.smul_apply]
-  simp [Fintype.linearCombination_apply, Fintype.sum_sum_type, Prod.ext_iff, Prod.fst_sum,
-    Prod.snd_sum]
+  rw [facetTorusHom_coe, facetTorusHom_coe, facetTorusHom_coe,
+    linearCombination_prodNormal_apply]
+  simp [Prod.ext_iff, Function.comp_def]
 
 end Lattice
 
