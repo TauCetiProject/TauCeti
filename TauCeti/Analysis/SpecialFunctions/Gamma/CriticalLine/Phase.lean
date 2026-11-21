@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 
 /-!
 # The phase of `Γ` on the line `Re s = ½`
@@ -37,7 +37,8 @@ form of `Γ` on the line `Re s = ½`.
 Since `d/da log Γ(½ + ia) = i ψ(½ + ia)`, the fundamental theorem of calculus identifies `φ₂(a)`
 with `Im log Γ(½ + ia)`, where `log Γ` is the normalized logarithm `TauCeti.logGamma`, real on
 the positive axis. Exponentiating `log Γ = Re log Γ + i Im log Γ` gives the phase identity.
-The oddness of `φ₂` uses `Complex.digamma_conj` (in `TauCeti.Analysis.SpecialFunctions.Gamma.Real`).
+The oddness of `φ₂` uses `Complex.digamma_conj`
+(in `TauCeti.Analysis.SpecialFunctions.Gamma.Digamma`).
 
 The real-argument declarations live in the root `Real` namespace.
 
