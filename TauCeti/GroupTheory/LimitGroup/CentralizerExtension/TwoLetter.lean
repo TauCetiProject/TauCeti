@@ -27,7 +27,9 @@ the variable `z` to `s u` is injective (`CentralizerExt.twoLetterHom_injective`)
 therefore a free product of `G` with `⟨s u⟩`, and it contains the second copy `(s u)⁻¹ G (s u)` of
 `G`, in which `ρ` becomes `(s u)⁻¹ ρ (s u) = u⁻¹ ρ u` since `s` commutes with `ρ`; this is the
 device by which Kharlampovich and Myasnikov replace, one atom at a time, a solution of a quadratic
-equation by a generic one.
+equation by a generic one. The same holds when the two centralizers are extended by free abelian
+groups `ℤᵐ` and `ℤⁿ` of higher rank, for the product `sᵢ uⱼ` of any letter `sᵢ` of the first and
+any letter `uⱼ` of the second extension.
 
 The second letter extends the full centralizer of `δ` in `G(ρ, s)`, as an extension of a
 centralizer of that group must. It is larger than `C_G(δ)` when `δ` is conjugate into `C_G(ρ)`; in
@@ -40,18 +42,18 @@ injectivity holds for every group with that property
 
 ## Main definitions
 
-* `TauCeti.LimitGroup.CentralizerExt.twoLetterHom ρ δ`: the homomorphism
-  `G[z] →* G(ρ, s)(δ, u)` over `G` sending `z` to `s u`.
+* `TauCeti.LimitGroup.CentralizerExt.twoLetterHom ρ δ i j`: the homomorphism
+  `G[z] →* G(ρ, s)(δ, u)` over `G` sending `z` to `sᵢ uⱼ`.
 
 ## Main results
 
 * `TauCeti.LimitGroup.CentralizerExt.twoLetterHom_conj_inv_apply`: for `g` commuting with `ρ`,
-  the image of `z⁻¹ g z` is `(s u)⁻¹ g (s u) = u⁻¹ g u`.
+  the image of `z⁻¹ g z` is `(sᵢ uⱼ)⁻¹ g (sᵢ uⱼ) = uⱼ⁻¹ g uⱼ`.
 * `TauCeti.LimitGroup.CentralizerExt.twoLetterHom_injective_of_injective`: if the centralizers of
-  `ρ` and `δ` generate their free product in `G`, the homomorphism `twoLetterHom ρ δ` is
+  `ρ` and `δ` generate their free product in `G`, the homomorphism `twoLetterHom ρ δ i j` is
   injective.
 * `TauCeti.LimitGroup.CentralizerExt.twoLetterHom_injective`: if `ρ` and `δ` do not commute in the
-  fully residually free group `G`, the homomorphism `twoLetterHom ρ δ` is injective.
+  fully residually free group `G`, the homomorphism `twoLetterHom ρ δ i j` is injective.
 
 ## References
 
@@ -70,54 +72,58 @@ namespace TauCeti.LimitGroup
 
 namespace CentralizerExt
 
-variable {G : Type u} [Group G]
+variable {G : Type u} [Group G] {m n : ℕ}
 
-/-- The homomorphism `G[z] → G(ρ, s)(δ, u)` over `G` sending the variable `z` to `s u`, where `s`
-is the new letter of the extension `G(ρ, s)` of the centralizer of `ρ` and `u` the new letter of
-the extension of the centralizer of `δ` in `G(ρ, s)`. -/
-def twoLetterHom (ρ δ : G) :
-    GX G Unit →* CentralizerExt (of δ : CentralizerExt ρ 1) 1 :=
-  eval (of.comp of) fun _ => of (t 0) * t 0
+/-- The homomorphism `G[z] → G(ρ, s)(δ, u)` over `G` sending the variable `z` to `sᵢ uⱼ`, where
+`G(ρ, s)` extends the centralizer of `ρ` by `ℤᵐ` with new letters `s₀, …, s_{m-1}` and
+`G(ρ, s)(δ, u)` extends the centralizer of `δ` in `G(ρ, s)` by `ℤⁿ` with new letters
+`u₀, …, u_{n-1}`. -/
+def twoLetterHom (ρ δ : G) (i : Fin m) (j : Fin n) :
+    GX G Unit →* CentralizerExt (of δ : CentralizerExt ρ m) n :=
+  eval (of.comp of) fun _ => of (t i) * t j
 
-theorem twoLetterHom_def (ρ δ : G) :
-    twoLetterHom ρ δ = eval (of.comp of) fun _ => of (t 0) * t 0 :=
+theorem twoLetterHom_def (ρ δ : G) (i : Fin m) (j : Fin n) :
+    twoLetterHom ρ δ i j = eval (of.comp of) fun _ => of (t i) * t j :=
   (rfl)
 
 @[simp]
-theorem twoLetterHom_comp_inl (ρ δ : G) : (twoLetterHom ρ δ).comp inl = of.comp of :=
+theorem twoLetterHom_comp_inl (ρ δ : G) (i : Fin m) (j : Fin n) :
+    (twoLetterHom ρ δ i j).comp inl = of.comp of :=
   eval_comp_inl ..
 
 @[simp]
-theorem twoLetterHom_comp_inr (ρ δ : G) :
-    (twoLetterHom ρ δ).comp inr = FreeGroup.lift fun _ => of (t 0) * t 0 :=
+theorem twoLetterHom_comp_inr (ρ δ : G) (i : Fin m) (j : Fin n) :
+    (twoLetterHom ρ δ i j).comp inr = FreeGroup.lift fun _ => of (t i) * t j :=
   eval_comp_inr ..
 
 @[simp]
-theorem twoLetterHom_inl (ρ δ g : G) : twoLetterHom ρ δ (inl g) = of (of g) := by
+theorem twoLetterHom_inl (ρ δ : G) (i : Fin m) (j : Fin n) (g : G) :
+    twoLetterHom ρ δ i j (inl g) = of (of g) := by
   simp [twoLetterHom]
 
 @[simp]
-theorem twoLetterHom_inr_of (ρ δ : G) (x : Unit) :
-    twoLetterHom ρ δ (inr (FreeGroup.of x)) = of (t 0) * t 0 := by
+theorem twoLetterHom_inr_of (ρ δ : G) (i : Fin m) (j : Fin n) (x : Unit) :
+    twoLetterHom ρ δ i j (inr (FreeGroup.of x)) = of (t i) * t j := by
   simp [twoLetterHom]
 
 /-- For `g` commuting with `ρ`, for instance `g = ρ`, the image of the conjugate `z⁻¹ g z` is
-`(s u)⁻¹ g (s u) = u⁻¹ g u`: the letter `s` commutes with `g`. -/
+`(sᵢ uⱼ)⁻¹ g (sᵢ uⱼ) = uⱼ⁻¹ g uⱼ`: the letter `sᵢ` commutes with `g`. -/
 @[simp]
-theorem twoLetterHom_conj_inv_apply (ρ δ : G) {g : G} (hg : Commute g ρ) :
-    twoLetterHom ρ δ ((inr (FreeGroup.of ()))⁻¹ * inl g * inr (FreeGroup.of ())) =
-      (t 0)⁻¹ * of (of g) * t 0 := by
-  have hc : Commute (of (of g) : CentralizerExt (of δ : CentralizerExt ρ 1) 1) (of (t 0)) :=
-    (commute_of_t (mem_centralizer_singleton_iff.2 hg) 0).map of
+theorem twoLetterHom_conj_inv_apply (ρ δ : G) (i : Fin m) (j : Fin n) {g : G}
+    (hg : Commute g ρ) :
+    twoLetterHom ρ δ i j ((inr (FreeGroup.of ()))⁻¹ * inl g * inr (FreeGroup.of ())) =
+      (t j)⁻¹ * of (of g) * t j := by
+  have hc : Commute (of (of g) : CentralizerExt (of δ : CentralizerExt ρ m) n) (of (t i)) :=
+    (commute_of_t (mem_centralizer_singleton_iff.2 hg) i).map of
   simp only [map_mul, map_inv, twoLetterHom_inl, twoLetterHom_inr_of]
-  calc (of (t 0) * t 0)⁻¹ * of (of g) * (of (t 0) * t 0)
-      = (t 0)⁻¹ * ((of (t 0))⁻¹ * (of (of g) * of (t 0))) * t 0 := by group
-    _ = (t 0)⁻¹ * of (of g) * t 0 := by rw [hc.eq, inv_mul_cancel_left]
+  calc (of (t i) * t j)⁻¹ * of (of g) * (of (t i) * t j)
+      = (t j)⁻¹ * ((of (t i))⁻¹ * (of (of g) * of (t i))) * t j := by group
+    _ = (t j)⁻¹ * of (of g) * t j := by rw [hc.eq, inv_mul_cancel_left]
 
 /-- `simp` computes the image of the conjugate `z⁻¹ ρ z`. -/
-example (ρ δ : G) :
-    twoLetterHom ρ δ ((inr (FreeGroup.of ()))⁻¹ * inl ρ * inr (FreeGroup.of ())) =
-      (t 0)⁻¹ * of (of ρ) * t 0 := by
+example (ρ δ : G) (i : Fin m) (j : Fin n) :
+    twoLetterHom ρ δ i j ((inr (FreeGroup.of ()))⁻¹ * inl ρ * inr (FreeGroup.of ())) =
+      (t j)⁻¹ * of (of ρ) * t j := by
   simp
 
 /-! ### Injectivity
@@ -135,7 +141,11 @@ this needs `δ ≠ 1`, and for `δ = 1` the hypothesis forces `G = 1`, where `tw
 `t = z⁻¹` (`HNNExtension.equivCoprodFreeGroup`). After `θ`, the identification `inr q ↦ inl q`
 becomes `x ↦ s⁻¹ x s` from the image `s q s⁻¹` of the free factor to the image `q` of `G`, so the
 HNN extension embeds in `K(θ δ, ℤ) = K(δ, ℤ)` by `θ` and `t ↦ (s u)⁻¹`
-(`CentralizerExt.hnnLift_injective`). The composite `G[z] → K(δ, ℤ)` is `twoLetterHom ρ δ`. -/
+(`CentralizerExt.hnnLift_injective`). The composite `G[z] → K(δ, ℤ)` is `twoLetterHom ρ δ 0 0`.
+
+For extensions by `ℤᵐ` and `ℤⁿ`, keeping the letters `sᵢ` and `uⱼ` and killing the others is a
+homomorphism `G(ρ, ℤᵐ)(δ, ℤⁿ) → G(ρ, ℤ)(δ, ℤ)` over `G` that carries `twoLetterHom ρ δ i j` to
+`twoLetterHom ρ δ 0 0`, so injectivity reduces to the rank-one case. -/
 
 section Injective
 
@@ -170,7 +180,8 @@ private abbrev deltaQ : centralizer {δ} :=
 
 variable {δ}
 
-/-- The centralizer of `δ` in the free factor `C_G(δ)` of `G ∗ C_G(δ)` is that factor. -/
+/-- For `δ ≠ 1`, the centralizer in the free product `G ∗ C_G(δ)` of the copy `inr δ` of `δ` in the
+free factor `C_G(δ)` is that free factor. -/
 private theorem centralizer_inr_deltaQ (hδ : δ ≠ 1) :
     centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})} =
       (inr : centralizer {δ} →* G ∗ centralizer {δ}).range := by
@@ -179,13 +190,15 @@ private theorem centralizer_inr_deltaQ (hδ : δ ≠ 1) :
   exact congrArg _ <| eq_top_iff.2 fun (q : centralizer {δ}) _ =>
     mem_centralizer_singleton_iff.2 (Subtype.ext (mem_centralizer_singleton_iff.1 q.property))
 
-/-- The centralizer of `δ ∈ G` in `G ∗ C_G(δ)` is the copy of `C_G(δ)` in `G`. -/
+/-- For `δ ≠ 1`, the centralizer in the free product `G ∗ C_G(δ)` of the copy `inl δ` of `δ` in `G`
+is the copy of `C_G(δ)` in `G`. -/
 private theorem centralizer_inl_delta (hδ : δ ≠ 1) :
     centralizer {(inl δ : G ∗ centralizer {δ})} = (inl.comp (centralizer {δ}).subtype).range := by
   rw [centralizer_inl_eq_map hδ, MonoidHom.range_comp, range_subtype]
 
-/-- The identification `inr q ↦ inl q` of the centralizer of `δ ∈ C_G(δ)` in `G ∗ C_G(δ)`, the free
-factor `C_G(δ)`, with the centralizer of `δ ∈ G`, the copy of `C_G(δ)` in `G`. -/
+/-- For `δ ≠ 1`, the isomorphism `inr q ↦ inl q` from the centralizer of `inr δ` in `G ∗ C_G(δ)`,
+which is the free factor `C_G(δ)`, onto the centralizer of `inl δ` in `G ∗ C_G(δ)`, which is the
+copy of `C_G(δ)` in `G`. -/
 private noncomputable def hnnEquiv (hδ : δ ≠ 1) :
     centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})} ≃*
       centralizer {(inl δ : G ∗ centralizer {δ})} :=
@@ -205,20 +218,13 @@ private theorem coe_hnnEquiv_inr (hδ : δ ≠ 1) (q : centralizer {δ})
     Subtype.ext (by simp)
   simp [hnnEquiv, h]
 
-private theorem coe_hnnEquiv (hδ : δ ≠ 1)
-    (a : centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})}) :
-    (hnnEquiv hδ a : G ∗ centralizer {δ}) =
-      inl ((snd (a : G ∗ centralizer {δ}) : centralizer {δ}) : G) := by
-  obtain ⟨_, ha⟩ := a
-  obtain ⟨q, rfl⟩ := (centralizer_inr_deltaQ hδ).le ha
-  rw [coe_hnnEquiv_inr, Subgroup.coe_mk, snd_apply_inr]
-
 /-- After `baseHom`, the identification of the two copies of `C_G(δ)` is `x ↦ s⁻¹ x s`. -/
 private theorem baseHom_hnnEquiv (hδ : δ ≠ 1)
     (a : centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})}) :
     baseHom ρ δ (hnnEquiv hδ a) = (t 0)⁻¹ * baseHom ρ δ a * t 0 := by
-  obtain ⟨q, hq⟩ := (centralizer_inr_deltaQ hδ).le a.property
-  rw [coe_hnnEquiv, ← hq, snd_apply_inr, baseHom_inl, baseHom_inr]
+  obtain ⟨_, ha⟩ := a
+  obtain ⟨q, rfl⟩ := (centralizer_inr_deltaQ hδ).le ha
+  rw [coe_hnnEquiv_inr, Subgroup.coe_mk, baseHom_inl, baseHom_inr]
   group
 
 /-- The homomorphism from `G[z]` to the HNN extension of `G ∗ C_G(δ)` along `hnnEquiv`, with
@@ -238,26 +244,24 @@ private theorem toHNN_injective (hδ : δ ≠ 1) : Function.Injective (toHNN hδ
 
 end Injective
 
-/-- Over the trivial group, `twoLetterHom` is the homomorphism `ℤ → ℤ²`, `z ↦ (1, 1)`, which is
-injective. -/
-private theorem twoLetterHom_injective_of_subsingleton [Subsingleton G] (ρ δ : G) :
-    Function.Injective (twoLetterHom ρ δ) := by
+/-- Over the trivial group, `twoLetterHom ρ δ 0 0` is the homomorphism `ℤ → ℤ²`, `z ↦ (1, 1)`, which
+is injective. -/
+private theorem twoLetterHom_zero_injective_of_subsingleton [Subsingleton G] (ρ δ : G) :
+    Function.Injective (twoLetterHom ρ δ (0 : Fin 1) (0 : Fin 1)) := by
   -- The homomorphism `G(ρ, s)(δ, u) →* ⟨z⟩` sending `u` to `z` and killing `G(ρ, s)` is a left
   -- inverse of `twoLetterHom` on `⟨z⟩`, which is all of `G[z]`.
   let ψ : CentralizerExt (of δ : CentralizerExt ρ 1) 1 →* FreeGroup Unit :=
     lift 1 (fun _ => FreeGroup.of ()) (fun _ _ => .refl _) fun _ _ _ => .one_left _
-  have hψ : ψ.comp ((twoLetterHom ρ δ).comp inr) = .id _ :=
+  have hψ : ψ.comp ((twoLetterHom ρ δ 0 0).comp inr) = .id _ :=
     FreeGroup.ext_hom _ _ fun _ => by simp [ψ]
   exact (Function.Injective.of_comp_iff' _ inr_bijective).1
     (Function.LeftInverse.injective (DFunLike.congr_fun hψ))
 
-/-- **The product of the two new letters is free over the base.** If the centralizers of `ρ` and
-`δ` generate their free product in `G`, the homomorphism `G[z] → G(ρ, s)(δ, u)`, `z ↦ s u`, is
-injective. -/
-theorem twoLetterHom_injective_of_injective {ρ δ : G}
+/-- The rank-one case of `twoLetterHom_injective_of_injective`. -/
+private theorem twoLetterHom_zero_injective_of_injective {ρ δ : G}
     (hinj : Function.Injective (Monoid.Coprod.lift (centralizer {ρ}).subtype
       (centralizer {δ}).subtype)) :
-    Function.Injective (twoLetterHom ρ δ) := by
+    Function.Injective (twoLetterHom ρ δ (0 : Fin 1) (0 : Fin 1)) := by
   rcases eq_or_ne δ 1 with rfl | hδ
   · -- `C_G(ρ) ∗ G → G` is injective, so `C_G(ρ) = 1`; hence `ρ = 1` and `G = C_G(ρ)` is trivial.
     have h1 (g : G) (hg : g ∈ centralizer {ρ}) : g = 1 := by
@@ -268,31 +272,57 @@ theorem twoLetterHom_injective_of_injective {ρ δ : G}
     have : Subsingleton G := ⟨fun a b => by
       rw [h1 a (hρ ▸ mem_centralizer_singleton_iff.2 (.one_right a)),
         h1 b (hρ ▸ mem_centralizer_singleton_iff.2 (.one_right b))]⟩
-    exact twoLetterHom_injective_of_subsingleton ρ 1
+    exact twoLetterHom_zero_injective_of_subsingleton ρ 1
   have hC : centralizer {baseHom ρ δ (inl δ)} = centralizer {(of δ : CentralizerExt ρ 1)} := by
     rw [baseHom_inl]
   -- `twoLetterHom` factors through the HNN extension of `G ∗ C_G(δ)`.
-  have hsq : twoLetterHom ρ δ = (CentralizerExt.congr hC).toMonoidHom.comp
+  have hsq : twoLetterHom ρ δ 0 0 = (CentralizerExt.congr hC).toMonoidHom.comp
       ((hnnLift (hnnEquiv hδ) (baseHom ρ δ) (t 0) (baseHom_hnnEquiv ρ hδ)).comp (toHNN hδ)) :=
     GX.ext_hom (fun g => by simp [toHNN, baseHom_inl]) fun _ => by simp [toHNN]
   rw [hsq, MonoidHom.coe_comp, MonoidHom.coe_comp]
   exact (CentralizerExt.congr hC).injective.comp <|
-    (hnnLift_injective _ (by rw [coe_hnnEquiv]; simp) (baseHom_injective ρ δ hinj) _).comp
+    (hnnLift_injective _ (coe_hnnEquiv_inr hδ _ _) (baseHom_injective ρ δ hinj) _).comp
       (toHNN_injective hδ)
 
-/-- **The product of the two new letters is free over the base** ([VAR-I] Proposition 12). If `ρ`
-and `δ` do not commute in the fully residually free group `G`, the homomorphism
-`G[z] → G(ρ, s)(δ, u)`, `z ↦ s u`, is injective. -/
-theorem twoLetterHom_injective (hG : IsFullyResiduallyFree G) {ρ δ : G} (h : ¬Commute ρ δ) :
-    Function.Injective (twoLetterHom ρ δ) :=
-  twoLetterHom_injective_of_injective (hG.coprodLift_subtype_centralizer_injective h)
+/-- **The product of two new letters is free over the base.** If the centralizers of `ρ` and `δ`
+generate their free product in `G`, the homomorphism `G[z] → G(ρ, s)(δ, u)`, `z ↦ sᵢ uⱼ`, is
+injective. -/
+theorem twoLetterHom_injective_of_injective {ρ δ : G}
+    (hinj : Function.Injective (Monoid.Coprod.lift (centralizer {ρ}).subtype
+      (centralizer {δ}).subtype)) (i : Fin m) (j : Fin n) :
+    Function.Injective (twoLetterHom ρ δ i j) := by
+  -- Keep the letters `sᵢ` and `uⱼ` and kill the others: `t k ↦ t 0 ^ [k = i]`, then `[k = j]`.
+  let r₁ : CentralizerExt ρ m →* CentralizerExt ρ 1 :=
+    lift of (fun k => t 0 ^ Pi.single (M := fun _ => ℤ) i 1 k) (fun _ _ => .zpow_zpow_self ..)
+      fun _ hc _ => (commute_of_t hc 0).zpow_right _
+  have hr₁ (c : CentralizerExt ρ m) (hc : c ∈ centralizer {of δ}) :
+      r₁ c ∈ centralizer {(of δ : CentralizerExt ρ 1)} :=
+    mem_centralizer_singleton_iff.2 <| by
+      simpa [r₁] using (mem_centralizer_singleton_iff.1 hc).map r₁
+  let r : CentralizerExt (of δ : CentralizerExt ρ m) n →*
+      CentralizerExt (of δ : CentralizerExt ρ 1) 1 :=
+    lift (of.comp r₁) (fun k => t 0 ^ Pi.single (M := fun _ => ℤ) j 1 k)
+      (fun _ _ => .zpow_zpow_self ..) fun c hc _ => (commute_of_t (hr₁ c hc) 0).zpow_right _
+  have hr : r.comp (twoLetterHom ρ δ i j) = twoLetterHom ρ δ 0 0 :=
+    GX.ext_hom (fun g => by simp [r, r₁]) fun _ => by simp [r, r₁]
+  refine Function.Injective.of_comp (f := r) ?_
+  rw [← MonoidHom.coe_comp, hr]
+  exact twoLetterHom_zero_injective_of_injective hinj
+
+/-- **The product of two new letters is free over the base** ([VAR-I] Proposition 12). If `ρ` and
+`δ` do not commute in the fully residually free group `G`, the homomorphism
+`G[z] → G(ρ, s)(δ, u)`, `z ↦ sᵢ uⱼ`, is injective. -/
+theorem twoLetterHom_injective (hG : IsFullyResiduallyFree G) {ρ δ : G} (h : ¬Commute ρ δ)
+    (i : Fin m) (j : Fin n) : Function.Injective (twoLetterHom ρ δ i j) :=
+  twoLetterHom_injective_of_injective (hG.coprodLift_subtype_centralizer_injective h) i j
 
 /-- Let `F = F(a, b)` be the free group on `a` and `b`. Extend the centralizer of `a` in `F` by a
 letter `s`, and then the centralizer of the image of `b` in `F(a, s)` by a letter `u`. The product
 `s u` of the two new letters of `F(a, s)(b, u)` is free over `F`. -/
-example : Function.Injective (twoLetterHom (FreeGroup.of (0 : Fin 2)) (FreeGroup.of 1)) :=
-  twoLetterHom_injective isFullyResiduallyFree_of_isFreeGroup fun h =>
-    absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
+example : Function.Injective
+    (twoLetterHom (FreeGroup.of (0 : Fin 2)) (FreeGroup.of 1) (0 : Fin 1) (0 : Fin 1)) :=
+  twoLetterHom_injective isFullyResiduallyFree_of_isFreeGroup
+    (fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)) 0 0
 
 end CentralizerExt
 

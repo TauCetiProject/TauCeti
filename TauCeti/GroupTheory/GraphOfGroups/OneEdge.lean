@@ -288,20 +288,20 @@ private noncomputable def toHNN :
       obtain ⟨⟨⟩, _ | _⟩ := e
       · simp
       · simp)
-    -- The edge group of every dart of the loop is `C` by definition.
+    -- The edge group of every dart of the loop is `C` by definition, so after the `loop_ω` and
+    -- `loop_α` rules the conjugation relations of the HNN extension close the goals by `exact`;
+    -- `simpa` rejects them, as its final check does not unfold the edge groups of `loop` to `C`.
     (fun e (c : C) => by
       obtain ⟨⟨⟩, _ | _⟩ := e
       · simp only [loop_ω_false, loop_α_false]
         have h := HNNExtension.equiv_eq_conj
           (φ := f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) (f.rangeRestrict c)
-        rw [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict,
-          MonoidHom.coe_rangeRestrict] at h
+        simp only [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict] at h
         exact h.symm
       · simp only [loop_ω_true, loop_α_true]
         have h := HNNExtension.equiv_symm_eq_conj
           (φ := f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) (g.rangeRestrict c)
-        rw [MonoidHom.rangeEquivRange_symm_rangeRestrict, MonoidHom.coe_rangeRestrict,
-          MonoidHom.coe_rangeRestrict] at h
+        simp only [MonoidHom.rangeEquivRange_symm_rangeRestrict, MonoidHom.coe_rangeRestrict] at h
         exact h.symm)
 
 private theorem toHNN_of (a : G) : toHNN f g hf hg (of ∅ () a) = HNNExtension.of a :=
@@ -320,8 +320,7 @@ private noncomputable def ofHNN :
       π₁Tree (loop f g hf hg) ∅ :=
   HNNExtension.lift (of (𝔸 := loop f g hf hg) ∅ ()) (edge ∅ ((), false)) fun a => by
     obtain ⟨c, rfl⟩ := f.rangeRestrict_surjective a
-    rw [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict,
-      MonoidHom.coe_rangeRestrict]
+    simp only [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict]
     exact edge_false_mul_of f g hf hg c
 
 private theorem ofHNN_of (a : G) : ofHNN f g hf hg (HNNExtension.of a) = of ∅ () a :=

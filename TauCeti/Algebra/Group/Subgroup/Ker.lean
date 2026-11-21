@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Ranges and equality loci of group homomorphisms
@@ -13,7 +14,8 @@ public import Mathlib.Algebra.Group.Subgroup.Basic
 This file supplies the characteristic membership equation for the subgroup equality locus, the
 invariance of the range of a group homomorphism under precomposition with a surjection, the
 range and kernel of the pointwise inverse of a homomorphism into a commutative group, and the
-isomorphism between the ranges of two homomorphisms with the same kernel out of the same group.
+homomorphism between the ranges of two homomorphisms out of the same group when the first kernel
+lies in the second, an isomorphism when the kernels are equal.
 
 ## Main results
 
@@ -21,8 +23,10 @@ isomorphism between the ranges of two homomorphisms with the same kernel out of 
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
-* `MonoidHom.rangeEquivRange`: for `f : C →* N` and `g : C →* N'` with `f.ker = g.ker`, the
-  isomorphism `f.range ≃* g.range` sending `f c` to `g c`.
+* `MonoidHom.rangeHom`: for `f : C →* N` and `g : C →* N'` with `f.ker ≤ g.ker`, the
+  homomorphism `f.range →* g.range` sending `f c` to `g c`.
+* `MonoidHom.rangeEquivRange`: for `f.ker = g.ker`, the isomorphism `f.range ≃* g.range` sending
+  `f c` to `g c`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -74,40 +78,40 @@ theorem ker_eq_ker_of_injective {f : C →* N} {g : C →* N'} (hf : Function.In
 /-- For `f.ker ≤ g.ker`, the homomorphism `f.range →* g.range` sending `f c` to `g c`. -/
 @[to_additive /-- For `f.ker ≤ g.ker`, the additive homomorphism `f.range →+ g.range` sending
 `f c` to `g c`. -/]
-private noncomputable def rangeHom (h : f.ker ≤ g.ker) : f.range →* g.range :=
+noncomputable def rangeHom (h : f.ker ≤ g.ker) : f.range →* g.range :=
   f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective
     ⟨g.rangeRestrict, by rwa [ker_rangeRestrict, ker_rangeRestrict]⟩
 
-@[to_additive]
-private theorem rangeHom_rangeRestrict (h : f.ker ≤ g.ker) (c : C) :
-    rangeHom f g h (f.rangeRestrict c) = g.rangeRestrict c :=
-  liftOfRightInverse_comp_apply ..
-
-@[to_additive]
-private theorem rangeHom_comp_rangeHom (h : f.ker ≤ g.ker) (h' : g.ker ≤ f.ker) :
-    (rangeHom g f h').comp (rangeHom f g h) = .id f.range :=
-  (cancel_right f.rangeRestrict_surjective).1 <| ext fun c => by
-    simp [rangeHom_rangeRestrict]
-
 /-- For homomorphisms `f : C →* N` and `g : C →* N'` with the same kernel, the isomorphism
-`f.range ≃* g.range` sending `f c` to `g c`. -/
+`f.range ≃* g.range` sending `f c` to `g c`: both ranges are the quotient of `C` by the kernel. -/
 @[to_additive /-- For additive homomorphisms `f : C →+ N` and `g : C →+ N'` with the same kernel,
-the isomorphism `f.range ≃+ g.range` sending `f c` to `g c`. -/]
+the isomorphism `f.range ≃+ g.range` sending `f c` to `g c`: both ranges are the quotient of `C` by
+the kernel. -/]
 noncomputable def rangeEquivRange (h : f.ker = g.ker) : f.range ≃* g.range :=
-  (rangeHom f g h.le).toMulEquiv (rangeHom g f h.ge) (rangeHom_comp_rangeHom f g h.le h.ge)
-    (rangeHom_comp_rangeHom g f h.ge h.le)
+  (QuotientGroup.quotientKerEquivRange f).symm.trans <|
+    (QuotientGroup.quotientMulEquivOfEq h).trans (QuotientGroup.quotientKerEquivRange g)
 
 variable {f g}
 
 @[to_additive (attr := simp)]
+theorem rangeHom_rangeRestrict (h : f.ker ≤ g.ker) (c : C) :
+    rangeHom f g h (f.rangeRestrict c) = g.rangeRestrict c :=
+  liftOfRightInverse_comp_apply ..
+
+@[to_additive (attr := simp)]
+theorem rangeHom_comp_rangeRestrict (h : f.ker ≤ g.ker) :
+    (rangeHom f g h).comp f.rangeRestrict = g.rangeRestrict :=
+  ext (rangeHom_rangeRestrict h)
+
+@[to_additive (attr := simp)]
 theorem rangeEquivRange_rangeRestrict (h : f.ker = g.ker) (c : C) :
-    rangeEquivRange f g h (f.rangeRestrict c) = g.rangeRestrict c := by
-  simp [rangeEquivRange, rangeHom_rangeRestrict]
+    rangeEquivRange f g h (f.rangeRestrict c) = g.rangeRestrict c :=
+  Subtype.ext <| by simp [rangeEquivRange]
 
 @[to_additive (attr := simp)]
 theorem rangeEquivRange_symm_rangeRestrict (h : f.ker = g.ker) (c : C) :
     (rangeEquivRange f g h).symm (g.rangeRestrict c) = f.rangeRestrict c := by
-  simp [rangeEquivRange, rangeHom_rangeRestrict]
+  rw [MulEquiv.symm_apply_eq, rangeEquivRange_rangeRestrict]
 
 end rangeEquivRange
 

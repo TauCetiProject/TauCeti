@@ -136,11 +136,9 @@ theorem t_mul_of_peripheral_mul_inv_t :
           (ker_eq_ker_of_injective (curveFst_injective g m) (curveSnd_injective g m)))) *
       HNNExtension.of (peripheral g (m + 2) (Fin.last m).castSucc) * t⁻¹ =
       (HNNExtension.of (peripheral g (m + 2) (Fin.last (m + 1))))⁻¹ := by
-  have h := HNNExtension.equiv_eq_conj (φ := MonoidHom.rangeEquivRange _ _
+  simpa using (HNNExtension.equiv_eq_conj (φ := MonoidHom.rangeEquivRange _ _
     (ker_eq_ker_of_injective (curveFst_injective g m) (curveSnd_injective g m)))
-    ((curveFst g m).rangeRestrict (.ofAdd 1))
-  rw [MonoidHom.rangeEquivRange_rangeRestrict] at h
-  simpa using h.symm
+    ((curveFst g m).rangeRestrict (.ofAdd 1))).symm
 
 /-! ### The two homomorphisms -/
 
@@ -205,12 +203,12 @@ private def ofBase : Orientable g (m + 2) →* Orientable (g + 1) m :=
 private noncomputable def ofHNN : HNN g m →* Orientable (g + 1) m :=
   HNNExtension.lift ofBase (a (g + 1) m 0) fun c ↦ by
     obtain ⟨n, rfl⟩ := (curveFst g m).rangeRestrict_surjective c
-    rw [MonoidHom.rangeEquivRange_rangeRestrict]
     have h : SemiconjBy (a (g + 1) m 0) ((a (g + 1) m 0)⁻¹ * (b (g + 1) m 0)⁻¹ * a (g + 1) m 0)
         (b (g + 1) m 0)⁻¹ := by
       simp [SemiconjBy, mul_assoc]
-    simp only [MonoidHom.coe_rangeRestrict, curveFst_apply, curveSnd_apply, ← inv_zpow', map_zpow,
-      map_inv, ofBase, lift_peripheral, Fin.snoc_castSucc, Fin.snoc_last]
+    simp only [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict, curveFst_apply,
+      curveSnd_apply, ← inv_zpow', map_zpow, map_inv, ofBase, lift_peripheral, Fin.snoc_castSucc,
+      Fin.snoc_last]
     exact h.zpow_right _
 
 private theorem ofHNN_comp_toHNN : ofHNN.comp toHNN = MonoidHom.id (Orientable (g + 1) m) := by
