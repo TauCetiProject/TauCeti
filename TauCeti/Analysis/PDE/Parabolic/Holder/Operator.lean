@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import TauCeti.Analysis.Holder.Bilinear
 public import TauCeti.Analysis.Holder.Coefficient
+import TauCeti.Analysis.Matrix.QuadraticBounds
 
 /-!
 # Second-order parabolic operators on order-two parabolic Hölder spaces
@@ -44,12 +45,17 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanSecondOrderCoeff_le`,
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanFirstOrderCoeff_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le` by the scalar coefficients.
+* `TauCeti.ParabolicC2HolderSpace.exists_coeff_norm_le` and
+  `TauCeti.ParabolicC2HolderSpace.toQuadraticForm'_le_of_forall_norm_le`: a common bound on the
+  norms of the scalar coefficients, and the upper ellipticity bound it gives.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_lineMap`,
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanParabolicOperatorL_sub_le` and
   `TauCeti.ParabolicC2HolderSpace.continuous_euclideanParabolicOperatorL`: the operator is affine
   and Lipschitz continuous in its scalar coefficients.
+* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_restrictL`: restriction to a smaller
+  slab commutes with the operator, the coefficients being restricted as well.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
   coefficient matrix at a point.
 * `TauCeti.ParabolicC2HolderSpace.hasDerivAt_slabMk_projIcc_add` and (in the same namespace)
@@ -299,6 +305,35 @@ theorem norm_euclideanZerothOrderCoeff_le
   (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
 
+omit [DecidableEq ι] in
+/-- Finitely many scalar coefficients `aⁱʲ`, `bⁱ`, `c` have a common bound `K` on their norms. -/
+theorem exists_coeff_norm_le
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ∃ K : ℝ≥0, (∀ i j, ‖a i j‖ ≤ K) ∧ (∀ i, ‖b i‖ ≤ K) ∧ ‖c‖ ≤ K := by
+  refine ⟨∑ i, ∑ j, ‖a i j‖₊ + ∑ i, ‖b i‖₊ + ‖c‖₊, fun i j ↦ ?_, fun i ↦ ?_, ?_⟩
+  · have h : ‖a i j‖₊ ≤ ∑ i, ∑ j, ‖a i j‖₊ :=
+      (Finset.single_le_sum (f := fun j ↦ ‖a i j‖₊) (fun _ _ ↦ zero_le)
+        (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖₊)
+          (fun _ _ ↦ zero_le) (Finset.mem_univ i))
+    exact_mod_cast h.trans (le_add_right (le_add_right le_rfl))
+  · have h : ‖b i‖₊ ≤ ∑ i, ‖b i‖₊ :=
+      Finset.single_le_sum (f := fun i ↦ ‖b i‖₊) (fun _ _ ↦ zero_le) (Finset.mem_univ i)
+    exact_mod_cast h.trans (le_add_right (le_add_left le_rfl))
+  · exact_mod_cast (le_add_left le_rfl :
+      ‖c‖₊ ≤ ∑ i, ∑ j, ‖a i j‖₊ + ∑ i, ‖b i‖₊ + ‖c‖₊)
+
+/-- A bound `‖aⁱʲ‖ ≤ M` on the norms of the scalar second-order coefficients is an upper
+ellipticity bound: `ξᵀ a(p) ξ ≤ (∑ᵢⱼ M) ‖ξ‖²` at every point `p`. -/
+theorem toQuadraticForm'_le_of_forall_norm_le
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} {M : ℝ}
+    (ha : ∀ i j, ‖a i j‖ ≤ M) (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (ξ : EuclideanSpace ℝ ι) :
+    (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ (∑ _i : ι, ∑ _j : ι, M) * ‖ξ‖ ^ 2 :=
+  Matrix.toQuadraticForm'_le_of_forall_abs_le (fun i j ↦
+    ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (ha i j)) ξ
+
 /-- The second-order coefficient field is linear in the scalar coefficients. -/
 @[simp]
 theorem euclideanSecondOrderCoeff_sub
@@ -371,6 +406,22 @@ theorem euclideanParabolicOperatorL_one_apply
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
   simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
   simp [Matrix.one_apply]
+
+/-- **Restriction commutes with the parabolic operator.** For `t₀ ≤ t₀' < t₁' ≤ t₁`, applying the
+operator with the coefficients restricted to `ℝⁿ × [t₀', t₁']` to the restriction of `u` gives the
+restriction of `P u`. -/
+theorem euclideanParabolicOperatorL_restrictL {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁)
+    (ht' : t₀' < t₁') (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanParabolicOperatorL hα
+        (fun i j ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+          (b i))
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) c)
+        (restrictL h₀ h₁ ht' u) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+        (euclideanParabolicOperatorL hα a b c u) :=
+  HolderSpace.ext fun p ↦ by simp
 
 /-- The Euclidean parabolic operator is affine in its coefficients: on the segment between two
 coefficient triples it is the segment between the two operators. -/

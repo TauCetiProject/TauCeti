@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Holder.UniformContinuous
+public import TauCeti.Analysis.PDE.Parabolic.Holder.PositiveTime
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Normed.Group.Submodule
 import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous
@@ -59,18 +60,30 @@ where `v` is the extended solution of the Cauchy problem with the reversed coeff
 `∂ₜv - L_R v = -f ∘ R`. It agrees with every classical solution in `C_b^{2+α,1+α/2}` of the
 terminal-value problem and is the only continuous linear map that does; it satisfies the maximum
 principle `u(x, t) ≤ exp (γ (T - t)) (M + (T - t) K)` for `c ≤ γ`, `f ≥ -K`, `g ≤ M`, and the
-comparison principle; and `u(·, T) = g`, with `u(·, t) → g` uniformly as `t → T⁻`. The interior
-regularity of the extended solution for `t > 0`, where it is a classical solution, needs Schauder
-estimates at positive times that do not involve the Hölder norm of the datum; it is not proved
-here. Uniqueness needs no such estimate. If `g` is approximated within `δ` by a `C_b^{2,α}` datum,
-the whole-space maximum principle bounds `v` minus the classical solution with that datum by
-`exp (‖c‖ t) δ`. That classical solution is within a multiple of `δ` of the extended solution, and
-`δ` is arbitrary.
+comparison principle; and `u(·, T) = g`, with `u(·, t) → g` uniformly as `t → T⁻`. Uniqueness
+among bounded solutions that are classical for `t > 0` needs no positive-time estimate. If `g` is
+approximated within `δ` by a `C_b^{2,α}` datum, the whole-space maximum principle bounds `v` minus
+the classical solution with that datum by `exp (‖c‖ t) δ`. That classical solution is within a
+multiple of `δ` of the extended solution, and `δ` is arbitrary.
+
+Away from the initial time the extended solution of the Cauchy problem is a classical solution.
+The Schauder estimate at positive times
+(`exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`) bounds the order-two norm of a
+classical solution on `ℝⁿ × [δ, T]` by `‖f‖_{α,par}` and the supremum of its initial values only,
+so for `0 < δ < T` the restrictions of the classical solutions to `ℝⁿ × [δ, T]` extend by
+continuity as well, to a continuous linear map
+`euclideanCauchySolutionBUCRestrictL : C_b^{α,α/2}(Q) × BUC(ℝⁿ) →L[ℝ] C_b^{2+α,1+α/2}(ℝⁿ × [δ, T])`.
+It agrees with the restriction of `euclideanCauchySolutionBUC`, solves `P u = f` on
+`ℝⁿ × [δ, T]`, and satisfies `δ^(1 + α/2) ‖u‖_{2+α,par;[δ,T]} ≤ C (‖f‖_{α,par} + sup |g|)` with
+`C` uniform in `δ`, in the coefficients within given bounds and in the horizon. Composed with the
+spatial trace `spatialTraceL` at a time `t ∈ [δ, T]`, it gives `g ↦ u(·, t)` as a bounded map from
+`BUC(ℝⁿ)` to `C_b^{2,α}(ℝⁿ)`.
 
 ## References
 
 * A. Lunardi, *Linear and nonlinear diffusion problems*, Cortona lecture notes, 2004, Chapter 4
-  (solutions with continuous initial data as limits of solutions with smooth data).
+  (solutions with continuous initial data as limits of solutions with smooth data, and their
+  regularity at positive times).
 * A. Friedman, *Partial Differential Equations of Parabolic Type*, Chapter 2, Section 4 (the
   maximum principle behind the supremum bounds).
 -/
@@ -132,6 +145,16 @@ private theorem nonneg_quadraticForm (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ 
   obtain ⟨lam, hlam, h⟩ := ha
   exact (mul_nonneg hlam.le (sq_nonneg _)).trans (h p ξ)
 
+/-- The classical solution is bounded at time `0` by the supremum of its initial datum. -/
+private theorem abs_euclideanInitialDataCLE_symm_apply_slabMk_zero_le
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
+    |(euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤
+      ‖toBUC d.2‖ := by
+  rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
+    ← ClosedSubmodule.norm_coe]
+  exact norm_coe_le_norm _ x
+
 /-- The supremum bound for the classical solution: `‖u‖_∞ ≤ exp (‖c‖ T) (1 + T) ‖(f, g)‖`, where
 `g` is measured in the supremum norm. -/
 private theorem norm_solutionValue_le
@@ -150,10 +173,7 @@ private theorem norm_solutionValue_le
     (fun q ↦ by
       rw [euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply]
       exact (Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le d.1 q))
-    (fun x ↦ by
-      rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
-        ← ClosedSubmodule.norm_coe]
-      exact norm_coe_le_norm _ x) p
+    (abs_euclideanInitialDataCLE_symm_apply_slabMk_zero_le hα₀ hα₁ hT ha d) p
   have ht0 : (0 : ℝ) ≤ slabTime p := (slabTime p).property.1
   have htT : (slabTime p : ℝ) ≤ T := (slabTime p).property.2
   have hexp : Real.exp (‖c‖ * (slabTime p - 0)) ≤ Real.exp (‖c‖ * T) :=
@@ -907,5 +927,202 @@ theorem tendstoUniformly_euclideanTerminalSolutionBUC
   exact ht x
 
 end Terminal
+
+/-! ### Regularity at positive times -/
+
+section PositiveTime
+
+variable [DecidableEq ι]
+
+/-- The positive-time estimate for the classical solution in terms of its data: with `u` the
+solution of `P u = f`, `u(·, 0) = g` for `g ∈ C_b^{2,α}`,
+`δ^(1 + α/2) ‖u‖_{2+α,par;[δ,T]} ≤ C (‖f‖_{α,par} + sup |g|)`, uniformly over coefficients with
+ellipticity constant `λ` and Hölder norms at most `K`, and horizons at most `T₀`. -/
+private theorem exists_rpow_mul_norm_restrictL_euclideanInitialDataCLE_symm_le (hα₀ : 0 < α)
+    (hα₁ : α < 1) {lam : ℝ} (hlam : 0 < lam) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (hl : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        ∀ (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+          CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T),
+          δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT
+            ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩).symm d)‖ ≤
+            C * (‖d.1‖ + ‖toBUC d.2‖) := by
+  obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (ι := ι)
+    hα₀ hα₁ (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
+  refine ⟨C, hC, ?_⟩
+  intro T hT hTT₀ a b c hl hak hbk hck d δ hδ hδT
+  have h := hest T hT hTT₀ a b c hl (toQuadraticForm'_le_of_forall_norm_le hak) hak hbk hck
+    ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩).symm d) (M := ‖toBUC d.2‖)
+    (abs_euclideanInitialDataCLE_symm_apply_slabMk_zero_le hα₀ hα₁ hT ⟨lam, hlam, hl⟩ d) hδ hδT
+  -- Name the restriction, so that unification does not unfold the order-two norm.
+  obtain ⟨r, hr⟩ : ∃ r, restrictL hδ.le le_rfl hδT
+      ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩).symm d) = r := ⟨_, rfl⟩
+  rw [hr, euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply] at h
+  rwa [hr]
+
+variable (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+  (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+  (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+  (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+  (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+    lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+  {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T)
+
+/-- The classical solution `(f, g) ↦ u` with `C_b^{2,α}` initial datum, restricted to
+`ℝⁿ × [δ, T]`. -/
+private def solutionRestrict :
+    HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ →ₗ[ℝ]
+        ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hδT :=
+  ((restrictL hδ.le le_rfl hδT).comp
+    (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm.toContinuousLinearMap).toLinearMap
+
+variable {a b c}
+
+private theorem solutionRestrict_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    solutionRestrict hα₀ hα₁ hT a b c ha hδ hδT d =
+      restrictL hδ.le le_rfl hδT ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d) :=
+  (rfl)
+
+/-- The restricted classical solution is bounded by the supremum norm of the initial datum, with a
+constant that blows up as `δ → 0`. -/
+private theorem exists_norm_solutionRestrict_le :
+    ∃ C, ∀ d, ‖solutionRestrict hα₀ hα₁ hT a b c ha hδ hδT d‖ ≤ C * ‖dataMap d‖ := by
+  obtain ⟨lam, hlam, hl⟩ := ha
+  obtain ⟨K, hak, hbk, hck⟩ := exists_coeff_norm_le a b c
+  obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictL_euclideanInitialDataCLE_symm_le
+    (ι := ι) hα₀ hα₁ hlam K T
+  have hδ' : 0 < δ ^ (1 + (α : ℝ) / 2) := Real.rpow_pos_of_pos hδ _
+  refine ⟨2 * C / δ ^ (1 + (α : ℝ) / 2), fun d ↦ ?_⟩
+  have h := hest T hT le_rfl a b c hl hak hbk hck d hδ hδT
+  have h₁ : ‖d.1‖ ≤ ‖dataMap d‖ := by simp
+  have h₂ : ‖toBUC d.2‖ ≤ ‖dataMap d‖ := by simp
+  rw [solutionRestrict_apply, div_mul_eq_mul_div, le_div_iff₀ hδ', mul_comm]
+  nlinarith
+
+variable (a b c)
+
+/-- **The solution for uniformly continuous initial data at positive times.** For `0 < α < 1`,
+coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}(ℝⁿ × [0, T])` with `a` uniformly elliptic, and
+`0 < δ < T`, this is the continuous linear map `(f, g) ↦ u|_{[δ, T]}` from
+`C_b^{α,α/2}(ℝⁿ × [0, T]) × BUC(ℝⁿ)` to the order-two space `C_b^{2+α,1+α/2}(ℝⁿ × [δ, T])`,
+where `u = euclideanCauchySolutionBUC (f, g)` solves `P u = f`, `u(·, 0) = g`
+(`euclideanCauchySolutionBUCRestrictL_apply`). So the restriction of `u` to `ℝⁿ × [δ, T]` is an
+order-two parabolic Hölder map, and `u` is a classical solution at positive times
+(`euclideanParabolicOperatorL_euclideanCauchySolutionBUCRestrictL`). -/
+def euclideanCauchySolutionBUCRestrictL :
+    HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ →L[ℝ]
+        ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hδT :=
+  (solutionRestrict hα₀ hα₁ hT a b c ha hδ hδT).extendOfNorm dataMap
+
+variable {a b c}
+
+private theorem euclideanCauchySolutionBUCRestrictL_dataMap
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (dataMap d) =
+      restrictL hδ.le le_rfl hδT ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d) :=
+  LinearMap.extendOfNorm_eq (denseRange_dataMap hα₁.le)
+    (exists_norm_solutionRestrict_le hα₀ hα₁ hT ha hδ hδT) d
+
+/-- **Agreement with the classical solution.** On a bounded `C^{2,α}` initial datum `g`, the
+solution at positive times is the restriction to `ℝⁿ × [δ, T]` of the solution in
+`C_b^{2+α,1+α/2}(ℝⁿ × [0, T])` of `P u = f`, `u(·, 0) = g`. -/
+@[simp]
+theorem euclideanCauchySolutionBUCRestrictL_toBUC
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (f, toBUC g) =
+      restrictL hδ.le le_rfl hδT ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) :=
+  euclideanCauchySolutionBUCRestrictL_dataMap hα₀ hα₁ hT ha hδ hδT (f, g)
+
+/-- **The solution at positive times is the restriction of the extended solution.** At every point
+of `ℝⁿ × [δ, T]`, `euclideanCauchySolutionBUCRestrictL` takes the value of
+`euclideanCauchySolutionBUC`. -/
+@[simp]
+theorem euclideanCauchySolutionBUCRestrictL_apply
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
+    (p : slab (E := EuclideanSpace ℝ ι) δ T) :
+    euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT d p =
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha d
+        (inclusion (slab_subset_slab hδ.le le_rfl) p) := by
+  refine (denseRange_dataMap hα₁.le).induction_on d ?_ fun d ↦ ?_
+  · exact isClosed_eq ((continuous_eval_const p).comp (valueL.continuous.comp
+      (euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT).continuous))
+      ((continuous_eval_const _).comp (euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha).continuous)
+  · rw [euclideanCauchySolutionBUCRestrictL_dataMap, euclideanCauchySolutionBUC_dataMap,
+      restrictL_apply, valueL_apply]
+
+/-- **The equation at positive times.** On `ℝⁿ × [δ, T]` the solution is a classical solution of
+`P u = f`: the operator with the coefficients restricted to `ℝⁿ × [δ, T]` maps it to the
+restriction of the forcing. -/
+theorem euclideanParabolicOperatorL_euclideanCauchySolutionBUCRestrictL
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
+    euclideanParabolicOperatorL hα₁.le
+        (fun i j ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab hδ.le le_rfl)) (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab hδ.le le_rfl)) (b i))
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab hδ.le le_rfl)) c)
+        (euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT d) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab hδ.le le_rfl))
+        d.1 := by
+  refine (denseRange_dataMap hα₁.le).induction_on d ?_ fun d ↦ ?_
+  · exact isClosed_eq ((ContinuousLinearMap.continuous _).comp
+      (euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT).continuous)
+      ((ContinuousLinearMap.continuous _).comp continuous_fst)
+  · rw [euclideanCauchySolutionBUCRestrictL_dataMap, euclideanParabolicOperatorL_restrictL,
+      euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply, dataMap_apply]
+
+/-- **The interior estimate at positive times.** For `0 < α < 1`, an ellipticity constant `λ > 0`,
+a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the horizon, there is a
+constant `C` such that on `ℝⁿ × [0, T]`, `T ≤ T₀`, the solution `u` of `P u = f`, `u(·, 0) = g`
+for `g ∈ BUC(ℝⁿ)` satisfies, for every `0 < δ < T`,
+
+`δ^(1 + α/2) ‖u‖_{2+α,par;[δ,T]} ≤ C (‖f‖_{α,par} + sup |g|)`.
+
+The weight `δ^(1 + α/2)` is the parabolic scaling of the top-order Hölder seminorms; only the
+supremum of the initial datum enters. -/
+theorem exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le {lam : ℝ} (hlam : 0 < lam)
+    (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (hl : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        ∀ (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+          (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {δ : ℝ} (hδ : 0 < δ)
+          (hδT : δ < T),
+          δ ^ (1 + (α : ℝ) / 2) *
+              ‖euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩ hδ hδT
+                (f, g)‖ ≤ C * (‖f‖ + ‖g‖) := by
+  obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictL_euclideanInitialDataCLE_symm_le
+    (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, ?_⟩
+  intro T hT hTT₀ a b c hl hak hbk hck f g δ hδ hδT
+  -- The estimate holds on the dense set of smooth data, and both sides are continuous.
+  refine (denseRange_dataMap hα₁.le).induction_on (p := fun d ↦ δ ^ (1 + (α : ℝ) / 2) *
+      ‖euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩ hδ hδT d‖ ≤
+        C * (‖d.1‖ + ‖d.2‖)) (f, g) ?_ fun d ↦ ?_
+  · exact isClosed_le (continuous_const.mul (continuous_norm.comp
+      (euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c _ hδ hδT).continuous))
+      (continuous_const.mul ((continuous_norm.comp continuous_fst).add
+        (continuous_norm.comp continuous_snd)))
+  · rw [euclideanCauchySolutionBUCRestrictL_dataMap, dataMap_apply]
+    exact hest T hT hTT₀ a b c hl hak hbk hck d hδ hδT
+
+end PositiveTime
 
 end TauCeti.ParabolicC2HolderSpace
