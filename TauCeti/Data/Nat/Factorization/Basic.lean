@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.Order.Interval.Finset.SuccPred
 
 /-!
 # Removing prime-power factors
@@ -20,7 +21,10 @@ ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m /
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
 same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
 factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
-factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
+factors of `n` exactly when it is coprime to `n`. Complementing Mathlib's
+`Nat.Ioc_filter_dvd_card_eq_div`, the non-multiples of `d` in `(0, n]` or `[1, n)` combine with
+`n / d` to give `n` (on `(0, n]` unconditionally, and on `[1, n)` when `d ∣ n`) or `n - 1` (on
+`[1, n)` when `¬ d ∣ n`). Monomial products of an injective family of
 primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
 supported exponent tuples.
 
@@ -105,6 +109,40 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
   rw [← ordProj_mul_ordCompl_eq_self d p, h, ← ordProj_mul_ordCompl_eq_self (p * k) p,
     ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
   simp [hp.factorization_self, Nat.div_self hp.pos]
+
+section DivisibilityCounting
+
+open Finset
+
+/-- Among the naturals in `(0, n]`, those not divisible by `d` together with the `n / d`
+multiples of `d` account for all `n` elements. -/
+theorem Ioc_filter_not_dvd_card_add_div (n d : ℕ) :
+    #{x ∈ Ioc 0 n | ¬ d ∣ x} + n / d = n := by
+  have hpart := card_filter_add_card_filter_not (s := Ioc 0 n) (fun x ↦ d ∣ x)
+  rw [Ioc_filter_dvd_card_eq_div, Nat.card_Ioc, Nat.sub_zero, add_comm] at hpart
+  exact hpart
+
+/-- If `d ∣ n`, the number of naturals in `[1, n)` not divisible by `d` plus `n / d` equals
+`n`. -/
+theorem Ico_filter_not_dvd_card_add_div_of_dvd {n d : ℕ} (h : d ∣ n) :
+    #{x ∈ Ico 1 n | ¬ d ∣ x} + n / d = n := by
+  rcases n with _ | m
+  · simp
+  · have hIco : Ico 1 (m + 1) = Ioc 0 m := by
+      simpa only [Order.succ_eq_add_one, Nat.zero_add] using Ico_succ_succ_eq_Ioc 0 m
+    rw [hIco, Nat.succ_div_of_dvd h, ← add_assoc, Ioc_filter_not_dvd_card_add_div]
+
+/-- If `¬ d ∣ n`, the number of naturals in `[1, n)` not divisible by `d` plus `n / d` equals
+`n - 1`. -/
+theorem Ico_filter_not_dvd_card_add_div_of_not_dvd {n d : ℕ} (h : ¬ d ∣ n) :
+    #{x ∈ Ico 1 n | ¬ d ∣ x} + n / d = n - 1 := by
+  rcases n with _ | m
+  · exact absurd (dvd_zero d) h
+  · have hIco : Ico 1 (m + 1) = Ioc 0 m := by
+      simpa only [Order.succ_eq_add_one, Nat.zero_add] using Ico_succ_succ_eq_Ioc 0 m
+    rw [hIco, Nat.succ_div_of_not_dvd h, Ioc_filter_not_dvd_card_add_div, Nat.add_sub_cancel]
+
+end DivisibilityCounting
 
 /-- A natural number has no prime divisor distinct from a prime `p` if and only if it is a power of
 `p`. -/

@@ -142,9 +142,8 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
         rw [coeff_monicOfCoeff a ⟨0, hn⟩] at h0
         exact forall_valuation_le_iff_notMem_maximalIdeal_sq.1 h0
   · rintro ⟨f, hf, hE⟩
-    have hdeg : f.natDegree = n := by
-      rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f, hf,
-        natDegree_monicOfCoeff]
+    have hdeg : f.natDegree = n :=
+      natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
     have hcoeff (i : ℕ) : (monicOfCoeff a).coeff i = f.coeff i := by
       rw [← hf, coeff_map, Algebra.algebraMap_ofSubsemiring_apply]
     refine ⟨fun i ↦ ?_, ?_⟩
@@ -160,9 +159,8 @@ theorem irreducible_monicOfCoeff_of_mem_eisensteinSet {n : ℕ} (hn : 0 < n)
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
     (hf ▸ monic_monicOfCoeff a)
-  have hdeg : f.natDegree = n := by
-    rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f,
-      hf, natDegree_monicOfCoeff]
+  have hdeg : f.natDegree = n :=
+    natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
   exact hf ▸ hmonic.irreducible_iff_irreducible_map_fraction_map.mp
     (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive (hdeg ▸ hn))
 
@@ -173,26 +171,15 @@ theorem eisensteinSet_eq_sdiff {n : ℕ} (hn : 0 < n) :
     eisensteinSet K n = (Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K]) \
       Set.univ.pi fun i ↦
         ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2 i) := by
-  set i₀ : Fin n := ⟨0, hn⟩
-  set e : Fin n → ℕ := Function.update (fun _ ↦ 1) i₀ 2
-  have he₀ : e i₀ = 2 := Function.update_self ..
-  have he₁ (i : Fin n) (hi : i ≠ i₀) : e i = 1 := Function.update_of_ne hi ..
   ext a
-  simp only [Set.mem_sdiff, Set.mem_univ_pi, ← valuation_lt_one_iff_mem_image_maximalIdeal,
-    mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
-  refine and_congr_right fun ha ↦ ?_
-  refine (forall_valuation_le_iff_notMem_maximalIdeal_sq
-    (c := ⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩)).trans
-    (not_congr ⟨fun h i ↦ ?_, fun h ↦ ?_⟩)
-  · rcases eq_or_ne i i₀ with rfl | hi
-    · rw [he₀]
-      exact ⟨_, h, rfl⟩
-    · rw [he₁ i hi, pow_one, ← valuation_lt_one_iff_mem_image_maximalIdeal]
-      exact ha i
-  · obtain ⟨c, hc, hca⟩ := h i₀
-    rw [he₀] at hc
-    obtain rfl : c = ⟨a i₀, (Valuation.mem_integer_iff _ _).2 (ha i₀).le⟩ := Subtype.ext hca
-    exact hc
+  have h := mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff
+    (K := K) (fun _ : Fin n ↦ 1) ⟨0, hn⟩ 2 (a := a)
+  simp only [pow_one] at h
+  rw [h, mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
+  simp only [← valuation_lt_one_iff_mem_image_maximalIdeal]
+  refine and_congr_right fun ha ↦ (forall_valuation_le_iff_notMem_maximalIdeal_sq
+    (c := ⟨a ⟨0, hn⟩, (Valuation.mem_integer_iff _ _).2 (ha _).le⟩)).trans
+    (not_congr Subtype.coe_injective.mem_set_image.symm)
 
 end EisensteinPolynomial
 
@@ -218,26 +205,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     (hμ : μ (integerBox K (Fin n)) = 1) :
     μ (eisensteinSet K n) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  set e : Fin n → ℕ := Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2
-  have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := fun _ ↦ 1) (e := e)
-    (le_update_iff.2 ⟨one_le_two, fun _ _ ↦ le_rfl⟩)
-  have he : ∑ i, e i = n + 1 := by
-    simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
-      Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
-    omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ fun _ ↦ 1
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
-  rw [hμ, mul_one] at h₁ h₂
-  simp only [pow_one, Fin.sum_const, smul_eq_mul, mul_one] at hsub h₁
-  rw [he] at h₂
-  have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
-  rw [eisensteinSet_eq_sdiff hn, measure_sdiff hsub
-    (measurableSet_univ_pi_image_maximalIdeal_pow e).nullMeasurableSet
-    (h₂ ▸ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)), h₁, h₂]
-  simp only [one_div]
-  rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
-    ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
-      (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
+  have h := Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ
+    (fun _ : Fin n ↦ 1) ⟨0, hn⟩
+  simpa [eisensteinSet_eq_sdiff hn, hμ] using h
 
 /-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
 since it lies in the compact integer box. -/

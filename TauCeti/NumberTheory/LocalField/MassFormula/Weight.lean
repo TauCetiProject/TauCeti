@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.MeasureTheory.Group.LocalFieldScaling
 
 /-!
 # The weights of Serre's mass formula
@@ -53,24 +54,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {n : ℕ}
-
-/-- The common factor `q ^ (-n) · (1 - q⁻¹)` of the weights is nonzero. For `0 < n`, it is the
-volume of the Eisenstein region. -/
-private theorem one_div_natCard_residueField_pow_mul_one_sub_ne_zero :
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 := by
-  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  refine mul_ne_zero (ENNReal.div_pos one_ne_zero
-    (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne' (tsub_pos_of_lt ?_).ne'
-  rwa [one_div, ENNReal.inv_lt_one]
-
-/-- The common factor `q ^ (-n) · (1 - q⁻¹)` of the weights is finite. -/
-private theorem one_div_natCard_residueField_pow_mul_one_sub_ne_top :
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ ∞ := by
-  have hq : (1 : ℝ≥0∞) ≤ Nat.card 𝓀[K] := by exact_mod_cast Nat.card_pos
-  refine ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top ?_)
-    (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)
-  rw [one_div]
-  exact ENNReal.inv_le_one.2 (one_le_pow₀ hq)
 
 /-- **The discriminant weights factor through the wild exponents**: the weights
 `q ^ (-(d(L) + 1)) · (1 - q⁻¹)` of the members of `σ_K(n)` sum to `q ^ (-n) · (1 - q⁻¹)` times the
