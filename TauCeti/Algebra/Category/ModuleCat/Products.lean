@@ -89,7 +89,7 @@ def cofanOpToPiLinearEquiv {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c 
     [PreservesLimitsOfShape (Discrete J) F] :
     F.obj (Opposite.op c.pt) ≃ₗ[R] ∀ j, F.obj (Opposite.op (f j)) :=
   let hFan : IsLimit (Fan.mk (F.obj (Opposite.op c.pt)) fun j ↦ F.map (c.inj j).op) :=
-    (isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).1
+    (isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).toFun
       (isLimitOfPreserves F (Cofan.IsColimit.op hc))
   let e : F.obj (Opposite.op c.pt) ≅ ModuleCat.of R (∀ j, F.obj (Opposite.op (f j))) :=
     hFan.conePointUniqueUpToIso (ModuleCat.productConeIsLimit fun j ↦ F.obj (Opposite.op (f j)))
@@ -101,7 +101,7 @@ theorem cofanOpToPiLinearEquiv_apply {R : Type uR} [Ring R] {J : Type w} {f : J 
     [PreservesLimitsOfShape (Discrete J) F] (x : F.obj (Opposite.op c.pt)) (j : J) :
     hc.cofanOpToPiLinearEquiv F x j = F.map (c.inj j).op x :=
   congrArg (fun φ : F.obj (Opposite.op c.pt) ⟶ F.obj (Opposite.op (f j)) ↦ φ x) <|
-    ((isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).1
+    ((isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).toFun
       (isLimitOfPreserves F (Cofan.IsColimit.op hc))).conePointUniqueUpToIso_hom_comp
         (ModuleCat.productConeIsLimit fun j ↦ F.obj (Opposite.op (f j))) ⟨j⟩
 

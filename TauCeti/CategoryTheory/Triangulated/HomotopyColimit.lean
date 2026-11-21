@@ -221,7 +221,8 @@ theorem exists_factor_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
   obtain ⟨u, rfl⟩ := surjective_comp_of_milnorTriangle ht hA g
   obtain ⟨s, h, rfl⟩ := hA.exists_finset_sum_comp_ι X.obj u
   have hψ : X.sequenceDifference ≫ ψ = 0 := comp_distTriang_mor_zero₁₂ _ ht
-  refine ⟨s.sup id, ∑ n ∈ s.attach, h n.1 ≫ X.map (homOfLE (Finset.le_sup (f := id) n.2)), ?_⟩
+  refine ⟨s.sup id,
+    ∑ n ∈ s.attach, h n.val ≫ X.map (homOfLE (Finset.le_sup (f := id) n.property)), ?_⟩
   dsimp only
   rw [Preadditive.sum_comp, Preadditive.sum_comp, ← Finset.sum_attach s]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
@@ -318,7 +319,7 @@ private abbrev shiftedCoproductCofan (X : ℕ ⥤ T) [HasCoproduct X.obj] :
 
 private def isColimit_shiftedCoproductCofan (X : ℕ ⥤ T) [HasCoproduct X.obj] :
     IsColimit (shiftedCoproductCofan X) :=
-  (isColimitMapCoconeCofanMkEquiv (shiftFunctor T (1 : ℤ)) X.obj (Sigma.ι X.obj)).1
+  (isColimitMapCoconeCofanMkEquiv (shiftFunctor T (1 : ℤ)) X.obj (Sigma.ι X.obj)).toFun
     (isColimitOfPreserves (shiftFunctor T (1 : ℤ)) (coproductIsCoproduct X.obj))
 
 section ModuleValued
@@ -559,7 +560,7 @@ theorem exists_lift_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M : 
       rw [ModuleTower.transition_def]; exact hx n⟩
   exact ⟨u, fun n ↦
     (CategoryTheory.Functor.coe_milnorObjToLim_apply _ ht u n).symm.trans <|
-      congrArg (fun v : ModuleTower.lim (X.op ⋙ (E ⋙ AddCommGrpCat.toIntModule)) ↦ v.1 n) hu⟩
+      congrArg (fun v : ModuleTower.lim (X.op ⋙ (E ⋙ AddCommGrpCat.toIntModule)) ↦ v.val n) hu⟩
 
 end AddCommGrpValued
 

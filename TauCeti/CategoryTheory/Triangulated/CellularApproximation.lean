@@ -437,7 +437,7 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
     (s : ApproxStage G E) : ApproxStep G E s := by
   let K := Σ i : I, { f : G i ⟶ s.obj // E.map f.op s.pt = 0 }
   let g : K → T := fun p ↦ G p.1
-  let k : (∐ g) ⟶ s.obj := Sigma.desc fun p ↦ p.2.1
+  let k : (∐ g) ⟶ s.obj := Sigma.desc fun p ↦ p.2.val
   have htri := distinguished_cocone_triangle k
   let nextObj : T := htri.choose
   let j : s.obj ⟶ nextObj := htri.choose_spec.choose
@@ -452,7 +452,7 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
     rw [map_zero]; funext p; rw [IsColimit.cofanOpToPiAddEquiv_apply]
     dsimp only [Cofan.inj, Cofan.mk_ι_app]
     rw [← CategoryTheory.comp_apply, ← E.map_comp, ← op_comp, Sigma.ι_comp_desc]
-    exact p.2.2
+    exact p.2.property
   have hlift : ∃ u : E.obj (op nextObj), E.map j.op u = s.pt := by
     have hex := (ShortComplex.ab_exact_iff _).1 (E.map_distinguished_op_exact _ ht)
     dsimp only [ShortComplex.op, ShortComplex.map, shortComplexOfDistTriangle] at hex
@@ -463,7 +463,7 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
       map_pt := hlift.choose_spec
       kill := fun i f hf ↦ by
         have hfk : f = Sigma.ι g ⟨i, ⟨f, hf⟩⟩ ≫ k :=
-          (Sigma.ι_comp_desc (fun p : K ↦ p.2.1) ⟨i, ⟨f, hf⟩⟩).symm
+          (Sigma.ι_comp_desc (fun p : K ↦ p.2.val) ⟨i, ⟨f, hf⟩⟩).symm
         have hkj : k ≫ j = 0 := comp_distTriang_mor_zero₁₂ _ ht
         rw [hfk, Category.assoc, hkj, comp_zero] }
 
