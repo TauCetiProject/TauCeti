@@ -269,6 +269,7 @@ instance finite_morseComplexOn_X (n : ℕ) :
 
 /-- The term of the Morse complex with values in `s` in degree `n` has dimension the number of
 critical points of index `n` with value in `s`. -/
+@[simp]
 theorem finrank_morseComplexOn_X (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplexOn hf s).X n) = Nat.card (MorseGenerators E f n s) := by
   have := hf.finite_morseGenerators n s
@@ -314,6 +315,10 @@ def morseComplexOnInclusion (hst : s ⊆ t) (hlow : ∀ x ∈ t, ∀ y ∈ s, x 
     rw [morseComplexOn_d, morseComplexOn_d]
     refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f (n + 1) s →₀ ZMod 2) ↦
       Finsupp.ext fun q ↦ ?_)
+    -- The components are typed at the terms `(h.morseComplexOn hf _).X n`, which are the modules
+    -- `ModuleCat.of (ZMod 2) (_ →₀ ZMod 2)` only after unfolding `morseComplexOn`, so the goal is
+    -- not type-correct at reducible transparency and `ModuleCat.hom_comp`/`ModuleCat.hom_ofHom`
+    -- do not rewrite it; `change` states it on the underlying chains instead.
     change h.morseBoundaryOn hf t n (c.mapDomain (MorseGenerators.inclusion hst)) q =
       (h.morseBoundaryOn hf s n c).mapDomain (MorseGenerators.inclusion hst) q
     rw [morseBoundaryOn_apply,
@@ -323,7 +328,7 @@ def morseComplexOnInclusion (hst : s ⊆ t) (hlow : ∀ x ∈ t, ∀ y ∈ s, x 
     · obtain ⟨q', rfl⟩ := (MorseGenerators.mem_range_inclusion_iff hst q).2 hq
       rw [Finsupp.mapDomain_apply_of_injective (MorseGenerators.inclusion_injective hst),
         morseBoundaryOn_apply]
-      rfl
+      simp only [MorseGenerators.coe_inclusion]
     · -- No trajectory runs from `s` to a critical point of `t` outside `s`.
       rw [Finsupp.mapDomain_of_notMem_range _ _
         (mt (MorseGenerators.mem_range_inclusion_iff hst q).1 hq)]
@@ -348,10 +353,13 @@ theorem morseComplexOnInclusion_comp_morseComplexOnInclusion (hst : s ⊆ t) (ht
         (fun x hx y hy hxy ↦ hlow x (hlow' x hx y (hst hy) hxy) y hy hxy) := by
   ext n : 1
   refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f n s →₀ ZMod 2) ↦ ?_)
+  -- The terms `(h.morseComplexOn hf _).X n` are the modules `ModuleCat.of (ZMod 2) (_ →₀ ZMod 2)`
+  -- only after unfolding `morseComplexOn`, so `morseComplexOnInclusion_f_apply` does not rewrite
+  -- the composite applied to `c`; `change` states the goal on the underlying chains instead.
   change (c.mapDomain (MorseGenerators.inclusion hst)).mapDomain (MorseGenerators.inclusion htu) =
     c.mapDomain (MorseGenerators.inclusion (hst.trans htu))
   rw [← Finsupp.mapDomain_comp]
-  rfl
+  exact congrArg (Finsupp.mapDomain · c) (funext (MorseGenerators.inclusion_inclusion hst htu))
 
 /-- The inclusion of a lower part is injective in every degree. -/
 instance mono_morseComplexOnInclusion (hst : s ⊆ t) (hlow : ∀ x ∈ t, ∀ y ∈ s, x < y → x ∈ s) :
@@ -376,6 +384,10 @@ def morseComplexOnRestriction (hst : s ⊆ t) (hup : ∀ x ∈ t, ∀ y ∈ s, y
     rw [morseComplexOn_d, morseComplexOn_d]
     refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f (n + 1) t →₀ ZMod 2) ↦
       Finsupp.ext fun r ↦ ?_)
+    -- The components are typed at the terms `(h.morseComplexOn hf _).X n`, which are the modules
+    -- `ModuleCat.of (ZMod 2) (_ →₀ ZMod 2)` only after unfolding `morseComplexOn`, so the goal is
+    -- not type-correct at reducible transparency and `ModuleCat.hom_comp`/`ModuleCat.hom_ofHom`
+    -- do not rewrite it; `change` states it on the underlying chains instead.
     change h.morseBoundaryOn hf s n (c.comapDomain (MorseGenerators.inclusion hst)
         (MorseGenerators.inclusion_injective hst).injOn) r =
       h.morseBoundaryOn hf t n c (MorseGenerators.inclusion hst r)
@@ -413,12 +425,35 @@ def morseComplexOnUnivIso : h.morseComplexOn hf univ ≅ h.morseComplex hf :=
     rw [morseComplexOn_d, morseComplex_d]
     refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f (n + 1) univ →₀ ZMod 2) ↦
       Finsupp.ext fun q ↦ ?_)
+    -- The terms of `morseComplexOn` and `morseComplex` are `ModuleCat.of` of the chain modules
+    -- only after unfolding these definitions, so the goal is not type-correct at reducible
+    -- transparency and the `ModuleCat` composition lemmas do not rewrite it; `change` states it
+    -- on the underlying chains instead.
     change h.morseBoundaryAt hf n (Finsupp.equivMapDomain _ c) q =
       Finsupp.equivMapDomain _ (h.morseBoundaryOn hf univ n c) q
     rw [Finsupp.equivMapDomain_apply, morseBoundaryOn_apply, morseBoundaryAt_apply,
       Finsupp.equivMapDomain_eq_mapDomain,
       Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
-    rfl
+    simp only [morseGeneratorsUnivEquiv, Equiv.subtypeEquivRight_apply_coe,
+      Equiv.subtypeEquivRight_symm_apply_coe]
+
+/-- The identification of the Morse complex with all critical values with the Morse complex sends
+a chain to the same chain. -/
+@[simp]
+theorem morseComplexOnUnivIso_hom_f_apply (n : ℕ) (c : MorseGenerators E f n univ →₀ ZMod 2) :
+    (h.morseComplexOnUnivIso hf).hom.f n c = c.mapDomain fun p ↦ ⟨p.val, p.property.1⟩ :=
+  -- The component is `(Finsupp.domLCongr _).toModuleIso`, whose application to a chain is
+  -- `Finsupp.equivMapDomain` by definition of `Finsupp.domLCongr`.
+  Finsupp.equivMapDomain_eq_mapDomain _ c
+
+/-- The inverse identification of the Morse complex with the Morse complex with all critical values
+sends a chain to the same chain. -/
+@[simp]
+theorem morseComplexOnUnivIso_inv_f_apply (n : ℕ)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ ZMod 2) :
+    (h.morseComplexOnUnivIso hf).inv.f n c = c.mapDomain fun p ↦ ⟨p.val, p.property, mem_univ _⟩ :=
+  -- As above, the component applied to a chain is `Finsupp.equivMapDomain` by definition.
+  Finsupp.equivMapDomain_eq_mapDomain _ c
 
 /-! ### Sublevels and bands -/
 
@@ -427,6 +462,16 @@ value at most `a` into the mod-two Morse complex. -/
 def morseSublevelι (a : ℝ) : h.morseComplexOn hf (Iic a) ⟶ h.morseComplex hf :=
   h.morseComplexOnInclusion hf (subset_univ _) (fun _ _ _ hy hxy ↦ hxy.le.trans hy) ≫
     (h.morseComplexOnUnivIso hf).hom
+
+/-- The sublevel subcomplex inclusion sends a chain to the same chain. -/
+@[simp]
+theorem morseSublevelι_f_apply (a : ℝ) (n : ℕ) (c : MorseGenerators E f n (Iic a) →₀ ZMod 2) :
+    (h.morseSublevelι hf a).f n c = c.mapDomain fun p ↦ ⟨p.val, p.property.1⟩ := by
+  simp only [morseSublevelι, comp_f, ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_def,
+    morseComplexOnInclusion_f_apply, morseComplexOnUnivIso_hom_f_apply, ← Finsupp.mapDomain_comp,
+    Function.comp_apply, MorseGenerators.coe_inclusion]
+  -- The two maps of generators differ only in the proofs of the index condition.
+  rfl
 
 instance mono_morseSublevelι (a : ℝ) : Mono (h.morseSublevelι hf a) := by
   rw [morseSublevelι]
@@ -444,6 +489,9 @@ theorem morseComplexOnInclusion_comp_morseSublevelι {a b : ℝ} (hab : a ≤ b)
 /-- **The sublevel–band sequence.** For `a ≤ b`, the short complex of chain maps
 `C(Iic a) → C(Iic b) → C(Ioc a b)` including the chains of the sublevel of `a` into those of the
 sublevel of `b`, and restricting these to the band between them. -/
+-- The body is exposed so that the terms and maps of the sequence compute to the sublevel and band
+-- complexes and the inclusion and restriction between them, which the `@[simps]` lemmas state.
+@[expose, simps]
 def morseComplexBandSequence {a b : ℝ} (hab : a ≤ b) :
     ShortComplex (ChainComplex (ModuleCat (ZMod 2)) ℕ) :=
   ShortComplex.mk
@@ -453,6 +501,10 @@ def morseComplexBandSequence {a b : ℝ} (hab : a ≤ b) :
     ext n : 1
     refine ModuleCat.hom_ext (LinearMap.ext fun (c : MorseGenerators E f n (Iic a) →₀ ZMod 2) ↦
       Finsupp.ext fun r ↦ ?_)
+    -- The terms `(h.morseComplexOn hf _).X n` are `ModuleCat.of` of the chain modules only after
+    -- unfolding `morseComplexOn`, so `morseComplexOnInclusion_f_apply` and
+    -- `morseComplexOnRestriction_f_apply` do not rewrite the composite applied to `c`; `change`
+    -- states the goal on the underlying chains instead.
     change (c.mapDomain (MorseGenerators.inclusion (Iic_subset_Iic.2 hab)))
       (MorseGenerators.inclusion Ioc_subset_Iic_self r) = 0
     rw [Finsupp.mapDomain_of_notMem_range _ _ fun hr ↦
@@ -473,6 +525,9 @@ theorem morseComplexBandSequence_shortExact {a b : ℝ} (hab : a ≤ b) :
         (MorseGenerators.inclusion_injective _) x⟩)
   · -- A chain vanishing on the band is the image of its restriction to the sublevel of `a`.
     refine ⟨c.comapDomain _ hinj.injOn, Finsupp.ext fun q ↦ ?_⟩
+    -- As above, `morseComplexOnInclusion_f_apply` does not rewrite the component applied to a
+    -- chain, since the terms of `morseComplexOn` are the chain modules only after unfolding it;
+    -- `change` states the goal on the underlying chains instead.
     change (Finsupp.mapDomain _ _) q = c q
     by_cases hq : f q.val ≤ a
     · obtain ⟨q', rfl⟩ := (MorseGenerators.mem_range_inclusion_iff (Iic_subset_Iic.2 hab) q).2
@@ -480,6 +535,8 @@ theorem morseComplexBandSequence_shortExact {a b : ℝ} (hab : a ≤ b) :
       rw [Finsupp.mapDomain_apply_of_injective hinj, Finsupp.comapDomain_apply]
     · rw [Finsupp.mapDomain_of_notMem_range _ _
         (mt (MorseGenerators.mem_range_inclusion_iff _ q).1 hq)]
+      -- `hc` states that the restriction of `c` to the band vanishes, with the restriction written
+      -- as a component of the sublevel–band sequence applied to `c`.
       have hc' : c.comapDomain (MorseGenerators.inclusion (s := Ioc a b) Ioc_subset_Iic_self)
           (MorseGenerators.inclusion_injective _).injOn = 0 := hc
       exact (DFunLike.congr_fun hc' ⟨q.val, q.property.1, not_le.1 hq, q.property.2⟩).symm
@@ -507,20 +564,11 @@ def morseFiltration (a : ℤ → ℝ) (q : ℤ) :
     Subobject ((h.morseComplex hf).extend ComplexShape.embeddingDownNat) :=
   Subobject.mk (h.morseFiltrationι hf (a q))
 
-/-- The `q`th stage of the critical-value filtration is the regraded complex of the chains of the
-critical points with value at most `a q`. -/
-def morseFiltrationIso (a : ℤ → ℝ) (q : ℤ) :
-    (h.morseFiltration hf a q : CochainComplex (ModuleCat (ZMod 2)) ℤ) ≅
-      (h.morseComplexOn hf (Iic (a q))).extend ComplexShape.embeddingDownNat :=
-  Subobject.underlyingIso (h.morseFiltrationι hf (a q))
-
-/-- The identification of a stage of the critical-value filtration with the sublevel chains is
-compatible with the inclusions into the Morse complex. -/
-@[reassoc (attr := simp)]
-theorem morseFiltrationIso_hom_comp_morseFiltrationι (a : ℤ → ℝ) (q : ℤ) :
-    (h.morseFiltrationIso hf a q).hom ≫ h.morseFiltrationι hf (a q) =
-      (h.morseFiltration hf a q).arrow :=
-  Subobject.underlyingIso_hom_comp_eq_mk _
+/-- The `q`th stage of the critical-value filtration is the subobject given by the regraded
+sublevel chains of `a q`. -/
+theorem morseFiltration_eq_mk (a : ℤ → ℝ) (q : ℤ) :
+    h.morseFiltration hf a q = Subobject.mk (h.morseFiltrationι hf (a q)) :=
+  (rfl)
 
 /-- For `a q ≤ a q'`, the inclusion of the sublevel chains of `a q` into the Morse complex factors
 through those of `a q'`. -/
@@ -539,19 +587,6 @@ variable {a : ℤ → ℝ}
 theorem morseFiltration_mono {q q' : ℤ} (hqq' : a q ≤ a q') :
     h.morseFiltration hf a q ≤ h.morseFiltration hf a q' :=
   Subobject.mk_le_mk_of_comm _ (h.extendMap_morseComplexOnInclusion_comp_morseFiltrationι hf hqq')
-
-/-- Under the identifications of the stages with sublevel chains, the inclusion of one stage of
-the critical-value filtration into a later one is the inclusion of sublevel chains. -/
-@[reassoc]
-theorem ofLE_comp_morseFiltrationIso_hom {q q' : ℤ} (hqq' : a q ≤ a q') :
-    Subobject.ofLE _ _ (h.morseFiltration_mono hf hqq') ≫ (h.morseFiltrationIso hf a q').hom =
-      (h.morseFiltrationIso hf a q).hom ≫
-        extendMap (h.morseComplexOnInclusion hf (Iic_subset_Iic.2 hqq')
-          (fun _ _ _ hy hxy ↦ hxy.le.trans hy)) ComplexShape.embeddingDownNat :=
-  (Iso.eq_comp_inv _).1 <| (Subobject.ofLE_mk_le_mk_of_comm
-    (f₁ := h.morseFiltrationι hf (a q)) (f₂ := h.morseFiltrationι hf (a q')) _
-    (h.extendMap_morseComplexOnInclusion_comp_morseFiltrationι hf hqq')).trans
-      (Category.assoc _ _ _).symm
 
 /-- For monotone cut values, the critical-value filtration is increasing. -/
 theorem monotone_morseFiltration (ha : Monotone a) : Monotone (h.morseFiltration hf a) :=
@@ -587,38 +622,35 @@ theorem morseFiltration_eq_top {q : ℤ} (hq : ∀ p : criticalPoints 𝓘(ℝ, 
     exact Functor.map_isIso (ComplexShape.embeddingDownNat.extendFunctor _) _
   exact Subobject.mk_eq_top_of_isIso _
 
-/-- **The graded pieces of the critical-value filtration are the band complexes.** The quotient of
-the stage `a q'` of the filtration by the stage `a q` is the regraded complex of the chains of the
-critical points with value in `Ioc (a q) (a q')`. The isomorphism is induced by restricting chains
-to the band. -/
-def morseFiltrationCokernelIso {q q' : ℤ} (hqq' : a q ≤ a q') :
-    cokernel (Subobject.ofLE _ _ (h.morseFiltration_mono hf hqq')) ≅
-      (h.morseComplexOn hf (Ioc (a q) (a q'))).extend ComplexShape.embeddingDownNat :=
-  cokernel.mapIso _
-      (extendMap (h.morseComplexOnInclusion hf (Iic_subset_Iic.2 hqq')
-        (fun _ _ _ hy hxy ↦ hxy.le.trans hy)) ComplexShape.embeddingDownNat)
-      (h.morseFiltrationIso hf a q) (h.morseFiltrationIso hf a q')
-      (h.ofLE_comp_morseFiltrationIso_hom hf hqq') ≪≫
-    (colimit.isColimit _).coconePointUniqueUpToIso
-      ((h.morseComplexBandSequence_shortExact hf hqq').extend
-        ComplexShape.embeddingDownNat).gIsCokernel
-
 variable (ha : Monotone a)
 
-/-- The quotient of two stages of the critical-value filtration, as the cokernel of a transition
-map of the functor `CochainComplex.filtrationFunctor` of the filtration, is the regraded band
-complex. -/
-def morseFiltrationCokernelFiltrationFunctorMapIso {q q' : ℤ} (g : (q : EInt) ⟶ q') :
-    cokernel ((CochainComplex.filtrationFunctor _ (h.monotone_morseFiltration hf ha)).map g) ≅
-      (h.morseComplexOn hf (Ioc (a q) (a q'))).extend ComplexShape.embeddingDownNat :=
-  cokernel.mapIso _ _
-      (CochainComplex.filtrationFunctorObjIso _ _ q ≪≫
-        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q))
-      (CochainComplex.filtrationFunctorObjIso _ _ q' ≪≫
-        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ q'))
-      (by simp only [Iso.trans_hom, Subobject.isoOfEq_hom, Subobject.ofLE_comp_ofLE,
-        reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc]) ≪≫
-    h.morseFiltrationCokernelIso hf (ha (WithBotTop.coe_le_coe.mp (leOfHom g)))
+/-- **The graded pieces of the critical-value filtration are the band complexes.** The quotient of
+the stage `a (q + 1)` of the filtration by the stage `a q`, as the cokernel of a transition map of
+the functor `CochainComplex.filtrationFunctor` of the filtration, is the regraded complex of the
+chains of the critical points with value in `Ioc (a q) (a (q + 1))`. The isomorphism is induced by
+restricting chains to the band
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.π_morseFiltrationCokernelIso_hom`). -/
+def morseFiltrationCokernelIso (q : ℤ) :
+    cokernel ((CochainComplex.filtrationFunctor _ (h.monotone_morseFiltration hf ha)).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : q = q) rfl))) ≅
+      (h.morseComplexOn hf (Ioc (a q) (a (q + 1)))).extend ComplexShape.embeddingDownNat :=
+  CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit _ _
+    (fun q ↦ h.morseFiltrationι hf (a q)) (h.morseFiltration_eq_mk hf a) q _
+    (h.extendMap_morseComplexOnInclusion_comp_morseFiltrationι hf (ha (Int.le_add_one le_rfl))) _ _
+    ((h.morseComplexBandSequence_shortExact hf (ha (Int.le_add_one le_rfl))).extend
+      ComplexShape.embeddingDownNat).gIsCokernel
+
+/-- The identification of the graded piece of the critical-value filtration with the band complex
+restricts chains to the band: under the identification of the stage `a (q + 1)` with the sublevel
+chains, the cokernel projection is the restriction to the band `Ioc (a q) (a (q + 1))`. -/
+@[reassoc (attr := simp)]
+theorem π_morseFiltrationCokernelIso_hom (q : ℤ) :
+    cokernel.π _ ≫ (h.morseFiltrationCokernelIso hf ha q).hom =
+      (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (h.monotone_morseFiltration hf ha)
+          (fun q ↦ h.morseFiltrationι hf (a q)) (h.morseFiltration_eq_mk hf a) (q + 1)).hom ≫
+        extendMap (h.morseComplexOnRestriction hf (s := Ioc (a q) (a (q + 1))) Ioc_subset_Iic_self
+          (fun _ hx _ hy hyx ↦ ⟨hy.1.trans hyx, hx⟩)) ComplexShape.embeddingDownNat :=
+  CochainComplex.π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom _ _ _ _ _ _ _ _ _ _
 
 /-- **The critical-value spectral sequence of the mod-two Morse complex.** For monotone cut values
 `a : ℤ → ℝ`, the spectral sequence of the filtration of the mod-two Morse complex by the chains of
@@ -635,7 +667,7 @@ def morseSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (n : ℕ) (hn : pq.1 + 
     ((h.morseSpectralSequence hf ha).page 2).X pq ≅
       (h.morseComplexOn hf (Ioc (a pq.2) (a (pq.2 + 1)))).homology n :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
-    (homologyFunctor _ _ _).mapIso (h.morseFiltrationCokernelFiltrationFunctorMapIso hf ha _) ≪≫
+    (homologyFunctor _ _ _).mapIso (h.morseFiltrationCokernelIso hf ha pq.2) ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat hn.symm
 
 /-- **The first page of the critical-value spectral sequence for a single critical value per
