@@ -56,7 +56,7 @@ omit [CompleteSpace H] in
 /-- Measurability of the closed spectral tail `{z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}`. -/
 private theorem measurableSet_spectralCutoffSet (a : H →L[ℂ] H) (ε : ℝ) :
     MeasurableSet {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖} :=
-  (isClosed_le continuous_const (continuous_norm.comp continuous_subtype_val)).measurableSet
+  (isClosed_le continuous_const (continuous_norm.comp continuous_subtypeVal)).measurableSet
 
 /-- For a normal operator `a : H →L[ℂ] H` and `ε : ℝ`, `a.spectralCutoff ε` is the spectral
 projection of `a` onto `{z ∈ spectrum ℂ a | ε ≤ ‖z‖}`. -/
@@ -102,10 +102,10 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
   have hB : MeasurableSet B := measurableSet_spectralCutoffSet a ε
   let invMap : C(spectrum ℂ a, ℂ) :=
     ⟨fun z ↦ conj (z : ℂ) * ((max (ε ^ 2) (‖(z : ℂ)‖ ^ 2) : ℝ) : ℂ)⁻¹, by
-      refine (Complex.continuous_conj.comp continuous_subtype_val).mul ?_
+      refine (Complex.continuous_conj.comp continuous_subtypeVal).mul ?_
       refine Continuous.inv₀ ?_ fun _ ↦ Complex.ofReal_ne_zero.mpr ?_
       · exact Complex.continuous_ofReal.comp
-          (continuous_const.max ((continuous_norm.comp continuous_subtype_val).pow 2))
+          (continuous_const.max ((continuous_norm.comp continuous_subtypeVal).pow 2))
       · positivity⟩
   let g : BoundedBorelFunction (spectrum ℂ a) :=
     BoundedBorelFunction.indicator B hB (BoundedBorelFunction.ofContinuousMap invMap)

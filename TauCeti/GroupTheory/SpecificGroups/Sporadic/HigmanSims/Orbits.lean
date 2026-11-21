@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.InvariantRelation
 import TauCeti.Logic.Function.Rigidity
 
 /-!
@@ -456,8 +457,8 @@ theorem orbit_stabilizerChain_one :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := mem_stabilizer_iff.mp g.2.2
-    have h := related_apply g.2.1 0 1
+    have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := mem_stabilizer_iff.mp g.property.2
+    have h := related_apply g.property.1 0 1
     rw [hg0] at h
     exact (related_zero _).mp (h.trans (by decide +kernel))
   · intro hx
@@ -620,7 +621,7 @@ theorem orbit_stabilizerChain_two :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.property
     have h0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := hfix 0 (by decide)
     have h1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := hfix 1 (by decide)
     apply (mem_twoPointOrbit_iff _).mpr
@@ -844,7 +845,7 @@ theorem orbit_stabilizerChain_three :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
     have h0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := hfix 0 (by omega)
     have h1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := hfix 1 (by omega)
     have h2 : (g : Equiv.Perm (Fin 100)) 2 = 2 := hfix 2 (by omega)
@@ -854,8 +855,8 @@ theorem orbit_stabilizerChain_three :
     rw [h0] at hr0
     rw [h1] at hr1
     rw [h2] at hr2
-    have h38 := commonNeighbors_apply g.2 (x := 38) (by decide)
-    have h49 := commonNeighbors_apply g.2 (x := 49) (by decide)
+    have h38 := commonNeighbors_apply g.property (x := 38) (by decide)
+    have h49 := commonNeighbors_apply g.property (x := 49) (by decide)
     have hne : related ((g : Equiv.Perm (Fin 100)) 3) ((g : Equiv.Perm (Fin 100)) 38) ≠
         related ((g : Equiv.Perm (Fin 100)) 3) ((g : Equiv.Perm (Fin 100)) 49) := by
       rw [related_apply hg, related_apply hg]
@@ -889,27 +890,9 @@ theorem card_stabilizerChain_three_eq :
 
 /-! ### The last basic orbit -/
 
--- Equality as well as relatedness to an anchor is recorded, so fixed anchors are distinguished
--- from other points with the same relation pattern.
-private def profile (l : List (Fin 100)) (x : Fin 100) : List (Bool × Bool) :=
-  l.map fun z => (decide (x = z), related z x)
-
-private theorem profile_apply (g : Equiv.Perm (Fin 100))
-    (hg : ∀ x y, related (g x) (g y) = related x y) {l : List (Fin 100)}
-    (hl : ∀ z ∈ l, g z = z) (x : Fin 100) : profile l (g x) = profile l x := by
-  apply List.map_congr_left
-  intro z hz
-  have hfix := hl z hz
-  have heq : (g x = z) ↔ x = z := by
-    constructor
-    · intro h
-      exact g.injective (h.trans hfix.symm)
-    · rintro rfl
-      exact hfix
-  exact Prod.ext (Bool.decide_congr heq) (by simpa only [hfix] using hg z x)
-
 private theorem profile_four (x : Fin 100) :
-    profile [0, 1, 2, 3] x = profile [0, 1, 2, 3] 4 → x ∈ ({4, 8, 47} : Finset (Fin 100)) := by
+    relationProfile related [0, 1, 2, 3] x = relationProfile related [0, 1, 2, 3] 4 →
+      x ∈ ({4, 8, 47} : Finset (Fin 100)) := by
   revert x
   decide +kernel
 
@@ -930,9 +913,9 @@ theorem orbit_stabilizerChain_four :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.property
     apply profile_four
-    apply profile_apply (g : Equiv.Perm (Fin 100)) (related_apply hg)
+    apply relationProfile_apply (g : Equiv.Perm (Fin 100)).injective (related_apply hg)
     intro z hz
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hz
     rcases hz with rfl | rfl | rfl | rfl
@@ -990,7 +973,8 @@ private theorem rigidAnchors_rank : ∀ x, ∀ z ∈ rigidAnchors x, rigidRank z
   decide +kernel
 
 private theorem rigidAnchors_unique : ∀ x : Fin 100, 6 ≤ x.val → ∀ y,
-    profile (rigidAnchors x) y = profile (rigidAnchors x) x → y = x := by
+    relationProfile related (rigidAnchors x) y =
+      relationProfile related (rigidAnchors x) x → y = x := by
   decide +kernel
 
 private theorem fixed_of_rank (g : Equiv.Perm (Fin 100))
@@ -1043,14 +1027,17 @@ private theorem eq_one_of_fix_five {g : Equiv.Perm (Fin 100)} (hg : g ∈ HS)
       exact this x hx h6
     exact hfix' x h5
   have hf := fixed_of_rank g (related_apply hg) 30 hseed
-  have hprofile : profile [9, 33, 46] (g 5) = profile [9, 33, 46] 5 := by
-    apply profile_apply g (related_apply hg)
+  have hprofile :
+      relationProfile related [9, 33, 46] (g 5) = relationProfile related [9, 33, 46] 5 := by
+    apply relationProfile_apply g.injective (related_apply hg)
     intro z hz
     apply hf
     have : ∀ z ∈ ([9, 33, 46] : List (Fin 100)), rigidRank z < 30 := by decide +kernel
     exact this z hz
   have h5 : g 5 = 5 ∨ g 5 = 85 := by
-    have : ∀ x : Fin 100, profile [9, 33, 46] x = profile [9, 33, 46] 5 → x = 5 ∨ x = 85 := by
+    have : ∀ x : Fin 100,
+        relationProfile related [9, 33, 46] x = relationProfile related [9, 33, 46] 5 →
+          x = 5 ∨ x = 85 := by
       decide +kernel
     exact this _ hprofile
   have hsix : ∀ x : Fin 100, x.val < 6 → x.val < 5 ∨ x = 5 := by decide +kernel

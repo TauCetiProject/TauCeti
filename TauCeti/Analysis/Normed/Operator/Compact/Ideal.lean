@@ -347,7 +347,7 @@ theorem twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed
       ext f
       simp [s]
     rw [hcoe]
-    exact isClosed_compactIdeal.isClosedMap_subtype_val _ hJ
+    exact isClosed_compactIdeal.isClosedMap_subtypeVal _ hJ
   have hrank : ∀ u v : H, rankOne 𝕜 u v ∈ s := fun u v ↦ by
     let L : ↥(compactIdeal 𝕜 H) :=
       ⟨TauCeti.rankOneDivNormSq 𝕜 u ((T : H →L[𝕜] H) x),
@@ -357,7 +357,7 @@ theorem twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed
     refine ⟨L * T * R, J.mul_mem_right _ R (J.mul_mem_left L T hTJ), ?_⟩
     simpa [L, R, mul_def, comp_assoc] using rankOneDivNormSq_comp_comp_rankOne hx u v
   obtain ⟨K', hK'J, hK'eq⟩ :=
-    mem_of_isCompactOperator_of_forall_rankOne_mem hs_closed hrank (mem_compactIdeal.mp K.2)
+    mem_of_isCompactOperator_of_forall_rankOne_mem hs_closed hrank (mem_compactIdeal.mp K.property)
   have hK' : K' = K := Subtype.ext hK'eq
   exact hK' ▸ hK'J
 
@@ -411,7 +411,7 @@ theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ Separab
     refine hsepU.mono ?_
     rintro _ ⟨x, rfl⟩
     rw [Submodule.starProjection_apply]
-    exact (U.orthogonalProjectionOnto x).2
+    exact (U.orthogonalProjectionOnto x).property
   have hmem_cpt : IsCompactOperator U.starProjection :=
     mem_compactIdeal.mp (heq.symm ▸ hmem_sep)
   have hvU : ∀ n : ℕ, U.starProjection (v n) = (1 : 𝕜) • v n := fun n ↦ by

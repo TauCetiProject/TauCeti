@@ -114,15 +114,16 @@ The data `w` and `L` are indexed by the underlying absolute value of a place, an
 noncomputable def approxProd (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
     (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ) (L : AbsoluteValue K ℝ → ι → Dual F (ι → F))
     (x : ι → K) : ℝ :=
-  (∏ v ∈ Sinf, (∏ i, w v.1 (L v.1 i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j)) ^ v.mult) *
-    ∏ v ∈ Sfin, ∏ i, w v.1 (L v.1 i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j)
+  (∏ v ∈ Sinf, (∏ i, w v.val (L v.val i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j)) ^ v.mult) *
+    ∏ v ∈ Sfin, ∏ i, w v.val (L v.val i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j)
 
 theorem approxProd_def (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
     (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ) (L : AbsoluteValue K ℝ → ι → Dual F (ι → F))
     (x : ι → K) :
     approxProd Sinf Sfin w L x =
-      (∏ v ∈ Sinf, (∏ i, w v.1 (L v.1 i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j)) ^ v.mult) *
-        ∏ v ∈ Sfin, ∏ i, w v.1 (L v.1 i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j) := by
+      (∏ v ∈ Sinf, (∏ i, w v.val (L v.val i fun j ↦ algebraMap K F (x j)) / ⨆ j, v
+          (x j)) ^ v.mult) *
+        ∏ v ∈ Sfin, ∏ i, w v.val (L v.val i fun j ↦ algebraMap K F (x j)) / ⨆ j, v (x j) := by
   rw [approxProd]
 
 variable {Sinf Sinf' : Finset (InfinitePlace K)} {Sfin Sfin' : Finset (FinitePlace K)}
@@ -130,8 +131,8 @@ variable {Sinf Sinf' : Finset (InfinitePlace K)} {Sfin Sfin' : Finset (FinitePla
 
 /-- The approximation product is invariant under scaling the point by a nonzero element of `K`,
 provided that each absolute value `w v` lies over `v`. -/
-theorem approxProd_smul (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1)
-    (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1) {c : K} (hc : c ≠ 0) (x : ι → K) :
+theorem approxProd_smul (hwInf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val)
+    (hwFin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val) {c : K} (hc : c ≠ 0) (x : ι → K) :
     approxProd Sinf Sfin w L (c • x) = approxProd Sinf Sfin w L x := by
   simp only [approxProd_def, InfinitePlace.coe_apply, FinitePlace.coe_apply]
   congr 1
@@ -144,7 +145,7 @@ theorem approxProd_smul (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1)
 
 /-- The approximation product depends on the forms only at the places of `Sinf` and `Sfin`. -/
 theorem approxProd_congr {L' : AbsoluteValue K ℝ → ι → Dual F (ι → F)}
-    (hInf : ∀ v ∈ Sinf, L v.1 = L' v.1) (hFin : ∀ v ∈ Sfin, L v.1 = L' v.1) (x : ι → K) :
+    (hInf : ∀ v ∈ Sinf, L v.val = L' v.val) (hFin : ∀ v ∈ Sfin, L v.val = L' v.val) (x : ι → K) :
     approxProd Sinf Sfin w L x = approxProd Sinf Sfin w L' x := by
   simp only [approxProd_def, InfinitePlace.coe_apply, FinitePlace.coe_apply]
   congr 1
@@ -174,19 +175,20 @@ theorem approxProd_union [DecidableEq (InfinitePlace K)] [DecidableEq (FinitePla
 
 /-- The approximation product is at most `1` when every place carries the coordinate forms,
 measured by an absolute value lying over it. -/
-theorem approxProd_le_one (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1)
-    (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1) (hLInf : ∀ v ∈ Sinf, ∀ i, L v.1 i = LinearMap.proj i)
-    (hLFin : ∀ v ∈ Sfin, ∀ i, L v.1 i = LinearMap.proj i) (x : ι → K) :
+theorem approxProd_le_one (hwInf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val)
+    (hwFin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val) (hLInf : ∀ v ∈ Sinf, ∀ i,
+        L v.val i = LinearMap.proj i)
+    (hLFin : ∀ v ∈ Sfin, ∀ i, L v.val i = LinearMap.proj i) (x : ι → K) :
     approxProd Sinf Sfin w L x ≤ 1 := by
   simp only [approxProd_def, InfinitePlace.coe_apply, FinitePlace.coe_apply]
   have hinf : ∀ v ∈ Sinf,
-      ∏ i, w v.1 (L v.1 i fun j ↦ algebraMap K F (x j)) / ⨆ j, v.1 (x j) ≤ 1 := fun v hv ↦ by
+      ∏ i, w v.val (L v.val i fun j ↦ algebraMap K F (x j)) / ⨆ j, v.val (x j) ≤ 1 := fun v hv ↦ by
     have := hwInf v hv
-    simpa only [hLInf v hv] using prod_proj_div_iSup_le_one (w := w v.1) x
+    simpa only [hLInf v hv] using prod_proj_div_iSup_le_one (w := w v.val) x
   have hfin : ∀ v ∈ Sfin,
-      ∏ i, w v.1 (L v.1 i fun j ↦ algebraMap K F (x j)) / ⨆ j, v.1 (x j) ≤ 1 := fun v hv ↦ by
+      ∏ i, w v.val (L v.val i fun j ↦ algebraMap K F (x j)) / ⨆ j, v.val (x j) ≤ 1 := fun v hv ↦ by
     have := hwFin v hv
-    simpa only [hLFin v hv] using prod_proj_div_iSup_le_one (w := w v.1) x
+    simpa only [hLFin v hv] using prod_proj_div_iSup_le_one (w := w v.val) x
   refine (mul_le_of_le_one_left (Finset.prod_nonneg fun v _ ↦ prod_div_iSup_nonneg _ _ _ x)
     (Finset.prod_le_one₀ (fun v _ ↦ pow_nonneg (prod_div_iSup_nonneg _ _ _ x) _)
       fun v hv ↦ pow_le_one₀ (prod_div_iSup_nonneg _ _ _ x) (hinf v hv))).trans ?_
@@ -195,10 +197,10 @@ theorem approxProd_le_one (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1)
 /-- Enlarging the sets of places by places carrying the coordinate forms, each measured by an
 absolute value lying over it, can only decrease the approximation product. -/
 theorem approxProd_le_approxProd_of_subset (hinf : Sinf ⊆ Sinf') (hfin : Sfin ⊆ Sfin')
-    (hwInf : ∀ v ∈ Sinf', v ∉ Sinf → (w v.1).LiesOver v.1)
-    (hwFin : ∀ v ∈ Sfin', v ∉ Sfin → (w v.1).LiesOver v.1)
-    (hLInf : ∀ v ∈ Sinf', v ∉ Sinf → ∀ i, L v.1 i = LinearMap.proj i)
-    (hLFin : ∀ v ∈ Sfin', v ∉ Sfin → ∀ i, L v.1 i = LinearMap.proj i) (x : ι → K) :
+    (hwInf : ∀ v ∈ Sinf', v ∉ Sinf → (w v.val).LiesOver v.val)
+    (hwFin : ∀ v ∈ Sfin', v ∉ Sfin → (w v.val).LiesOver v.val)
+    (hLInf : ∀ v ∈ Sinf', v ∉ Sinf → ∀ i, L v.val i = LinearMap.proj i)
+    (hLFin : ∀ v ∈ Sfin', v ∉ Sfin → ∀ i, L v.val i = LinearMap.proj i) (x : ι → K) :
     approxProd Sinf' Sfin' w L x ≤ approxProd Sinf Sfin w L x := by
   classical
   rw [← Finset.union_sdiff_of_subset hinf, ← Finset.union_sdiff_of_subset hfin,
