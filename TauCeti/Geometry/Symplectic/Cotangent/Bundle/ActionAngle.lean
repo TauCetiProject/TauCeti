@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Action–angle coordinates on the cotangent bundle of a torus

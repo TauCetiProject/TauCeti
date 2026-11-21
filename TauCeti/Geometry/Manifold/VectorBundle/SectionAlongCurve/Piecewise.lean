@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.PiecewisePath
-public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Piecewise smooth sections along an interval

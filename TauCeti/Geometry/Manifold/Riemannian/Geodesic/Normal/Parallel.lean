@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Connection.Joint
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
@@ -15,6 +14,8 @@ public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Analysis.ODE.DysonSeries
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
+
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Parallel transport along normal radial geodesics
