@@ -132,6 +132,23 @@ instance instUCompactlyGeneratedSpace
 
 end Basic
 
+section Lift
+
+variable {K : D ⥤ TopCat.{u}} {X : Dᵒᵖ ⥤ TopCat.{u}} {Z : Sort*}
+  (g : ∀ d, X.obj (op d) × K.obj d → Z)
+  (hg : ∀ ⦃c d : D⦄ (f : c ⟶ d) (x : X.obj (op d)) (t : K.obj c),
+    g c (X.map f.op x, t) = g d (x, K.map f t))
+
+/-- The universal property of the underlying set of `functorTensor K X`: compatible maps on
+`X(d) × K(d)` descend to a function on `functorTensor K X`. -/
+def lift : functorTensor K X → Z :=
+  Quot.lift (fun p ↦ g p.fst p.snd) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
+
+@[simp]
+theorem lift_ι (d : D) (p : X.obj (op d) × K.obj d) : lift g hg (ι K X d p) = g d p := (rfl)
+
+end Lift
+
 section Desc
 
 variable {K : D ⥤ TopCat.{u}} {X : Dᵒᵖ ⥤ TopCat.{u}} {Z : Type*} [TopologicalSpace Z]
@@ -142,7 +159,7 @@ variable {K : D ⥤ TopCat.{u}} {X : Dᵒᵖ ⥤ TopCat.{u}} {Z : Type*} [Topolo
 /-- The universal property of `functorTensor K X`: compatible continuous maps `X(d) × K(d) → Z`
 descend to a continuous map `functorTensor K X → Z`. -/
 def desc : C(functorTensor K X, Z) where
-  toFun := Quot.lift (fun p ↦ g p.fst p.snd) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
+  toFun := lift (fun d ↦ g d) hg
   continuous_toFun := continuous_quot_lift _ (continuous_sigma fun d ↦ (g d).continuous)
 
 @[simp]

@@ -12,8 +12,12 @@ public import Mathlib.Topology.Compactness.Lindelof
 
 The product of a Lindelöf set and a compact set is Lindelöf (`IsLindelof.prod_of_isCompact`,
 `IsCompact.prod_isLindelof`), with no separation assumptions, via the generalized tube lemma
-(`generalized_tube_lemma`), giving `TauCeti.instLindelofSpaceProdOfCompactSpace` and
+(`generalized_tube_lemma`), giving `LindelofSpace.prod_compactSpace` and
 `TauCeti.instLindelofSpaceProdOfCompactSpaceLeft`.
+
+Products of two Lindelöf spaces need not be Lindelöf (the Sorgenfrey plane), so some
+compactness assumption on one factor is needed. This is used for the levels `Xₙ × Δⁿ` of
+geometric realizations, where `Δⁿ` is a topological simplex.
 
 ## References
 
@@ -53,12 +57,12 @@ theorem IsCompact.prod_isLindelof {s : Set X} {t : Set Y} (hs : IsCompact s)
     (ht : IsLindelof t) : IsLindelof (s ×ˢ t) :=
   image_swap_prod (s := t) (t := s) ▸ (ht.prod_of_isCompact hs).image continuous_swap
 
-namespace TauCeti
-
 /-- The product of a Lindelöf space and a compact space is Lindelöf. -/
-instance (priority := 100) instLindelofSpaceProdOfCompactSpace [LindelofSpace X]
-    [CompactSpace Y] : LindelofSpace (X × Y) where
+instance LindelofSpace.prod_compactSpace [LindelofSpace X] [CompactSpace Y] :
+    LindelofSpace (X × Y) where
   isLindelof_univ := univ_prod_univ ▸ isLindelof_univ.prod_of_isCompact isCompact_univ
+
+namespace TauCeti
 
 /-- The product of a compact space and a Lindelöf space is Lindelöf. -/
 instance (priority := 100) instLindelofSpaceProdOfCompactSpaceLeft [CompactSpace X]
