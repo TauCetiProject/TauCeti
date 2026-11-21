@@ -75,6 +75,7 @@ noncomputable def sphericalPendulumRegularValues : Opens (Fin 2 → ℝ) where
 
 /-- Membership in `sphericalPendulumRegularValues`, in terms of the energy–momentum map `![H, J]`.
 -/
+@[simp]
 theorem mem_sphericalPendulumRegularValues_iff {c : Fin 2 → ℝ} :
     c ∈ sphericalPendulumRegularValues ↔ c ∈ range sphericalPendulumEnergyMomentumVec ∧
       IsRegularValue 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, Fin 2 → ℝ) sphericalPendulumEnergyMomentumVec c :=
