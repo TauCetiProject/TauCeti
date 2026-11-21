@@ -20,9 +20,11 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 On an open convex set, bounds for a derivative field and its next derivative give a Hölder
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
-hypothesis only at their top derivative. Currying preserves these bounds exactly. On an open set
-that need not be convex, a `C^1` map is locally Lipschitz, hence Hölder on every compact subset,
-so one more derivative makes the top derivative Hölder there.
+hypothesis only at their top derivative. On the whole space, a uniform bound on the next
+derivative makes a derivative field Lipschitz (`ContDiff.lipschitzWith_iteratedFDeriv`).
+Currying preserves these bounds exactly. On an open set that need not be convex, a `C^1` map is
+locally Lipschitz, hence Hölder on every compact subset, so one more derivative makes the top
+derivative Hölder there.
 -/
 
 public section
@@ -66,6 +68,17 @@ theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt {k j : ℕ} {s : Set
       hnext x hx
   have hlip := Convex.lipschitzOnWith_of_nnNorm_fderiv_le hdiff hder hconv
   exact hlip.holderOnWith_of_norm_le hb hα
+
+/-- A derivative field below the top order whose next derivative is bounded by `L` everywhere is
+`L`-Lipschitz. -/
+theorem _root_.ContDiff.lipschitzWith_iteratedFDeriv {k j : ℕ} {f : E → F} {L : ℝ≥0}
+    (hf : ContDiff ℝ k f) (hj : j < k) (hnext : ∀ x, ‖iteratedFDeriv ℝ (j + 1) f x‖ ≤ L) :
+    LipschitzWith L (iteratedFDeriv ℝ j f) :=
+  lipschitzWith_of_nnNorm_fderiv_le (hf.differentiable_iteratedFDeriv (by exact_mod_cast hj))
+    fun x ↦ by
+      have h := hnext x
+      rw [← norm_fderiv_iteratedFDeriv] at h
+      exact_mod_cast h
 
 /-- A map of class `C^1` on an open set `s` is locally Lipschitz on `s`. Compare Mathlib's
 `ContDiffOn.locallyLipschitzOn`, which assumes `s` convex instead of open. -/
