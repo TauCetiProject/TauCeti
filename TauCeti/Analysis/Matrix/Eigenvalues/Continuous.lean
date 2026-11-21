@@ -18,8 +18,10 @@ These results allow eigenvalues of a measurable random Hermitian matrix to be tr
 random variables, without choosing measurable eigenvectors.
 
 We use the subtype of Hermitian matrices, with its inherited topology and measurable
-structure. Continuity uses the usual entrywise topology: Mathlib's Euclidean operator norm
-induces this same topology. Empty index types are allowed.
+structure. For a family of Hermitian matrices, continuity of the entries at a point gives
+continuity of the ordered eigenvalues there (`Matrix.continuousAt_eigenvalues₀`). Continuity
+uses the usual entrywise topology: Mathlib's Euclidean operator norm induces this same topology.
+Empty index types are allowed.
 
 ## References
 
@@ -63,6 +65,15 @@ theorem continuous_eigenvalues :
   -- The matrix-indexed list is the sorted list reindexed by a fixed finite equivalence.
   simpa only [IsHermitian.eigenvalues, Function.comp_def] using
     (continuous_apply _).comp (continuous_eigenvalues₀ (n := n) (𝕜 := 𝕜))
+
+/-- The ordered eigenvalues of a family of Hermitian matrices are continuous at every point at
+which its entries are, including at repeated eigenvalues. -/
+theorem continuousAt_eigenvalues₀ {X : Type*} [TopologicalSpace X] {M : X → Matrix n n 𝕜}
+    (hM : ∀ x, (M x).IsHermitian) {x₀ : X} (h : ∀ a b, ContinuousAt (fun x ↦ M x a b) x₀)
+    (i : Fin (Fintype.card n)) : ContinuousAt (fun x ↦ (hM x).eigenvalues₀ i) x₀ :=
+  ((continuous_apply i).comp continuous_eigenvalues₀).continuousAt.comp
+    (f := fun x ↦ (⟨M x, hM x⟩ : {A : Matrix n n 𝕜 // A.IsHermitian}))
+    (tendsto_subtype_rng.2 (continuousAt_pi.2 fun a ↦ continuousAt_pi.2 fun b ↦ h a b))
 
 variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 

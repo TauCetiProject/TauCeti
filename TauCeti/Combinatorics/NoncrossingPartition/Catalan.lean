@@ -679,7 +679,8 @@ theorem card_isPairing_eq_catalan {n : ℕ} (hn : #s = 2 * n) :
   -- Reindex the recurrence by the positions after the first position `m`.
   set w := {x ∈ s | s.min' hs < x} with hw_def
   have hw : #w = 2 * k + 1 := by
-    rw [hw_def, filter_min'_lt_eq_erase hs, card_erase_of_mem (s.min'_mem hs), hn]
+    rw [hw_def, filter_lt_eq_erase_of_forall_le (s.min'_le · ·),
+      card_erase_of_mem (s.min'_mem hs), hn]
     omega
   have hlt {x : α} (hx : x ∈ w) {p : α → Prop} [DecidablePred p] (hp : ¬p x) :
       #{y ∈ w | p y} < 2 * k + 1 :=
