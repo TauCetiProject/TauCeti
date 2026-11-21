@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
 import TauCeti.GroupTheory.Index.Comp
 
 /-!
@@ -14,7 +16,8 @@ import TauCeti.GroupTheory.Index.Comp
 Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 `[E₂(F) : φ E₁(F)] / #E₁(F)[φ]`. The kernel is always finite. The ratio is positive when the
 image has finite index, and zero otherwise, following the convention for subgroup indices.
-It is multiplicative under composition, without a finite-index hypothesis.
+It is multiplicative under composition, without a finite-index hypothesis, and equals `1` on
+isogenies of degree one and hence on changes of variables.
 
 Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
 formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
@@ -88,26 +91,41 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
 
-/-- An isogeny of degree one induces an isomorphism on `F`-rational points and therefore has Kummer
-ratio one. -/
+/-- An isogeny of degree one is an isomorphism on rational points and therefore has Kummer ratio
+one. -/
 theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1) :
     φ.kummerRatio = 1 := by
   classical
-  have hcomp₁ : (Hom.ofIsogeny φ.dual).pointMapHom.comp (Hom.ofIsogeny φ).pointMapHom =
-      AddMonoidHom.id W₁.Point := by
-    rw [← Hom.comp_pointMapHom, ofIsogeny_dual_comp_ofIsogeny, hφ, one_smul, Hom.id_pointMapHom]
-  have hcomp₂ : (Hom.ofIsogeny φ).pointMapHom.comp (Hom.ofIsogeny φ.dual).pointMapHom =
-      AddMonoidHom.id W₂.Point := by
-    rw [← Hom.comp_pointMapHom, ofIsogeny_comp_ofIsogeny_dual, hφ, one_smul, Hom.id_pointMapHom]
-  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
-    (AddMonoidHom.ker_eq_bot_iff _).mpr fun P₁ P₂ hP ↦ by
-      have h₁ := DFunLike.congr_fun hcomp₁ P₁
-      have h₂ := DFunLike.congr_fun hcomp₁ P₂
-      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply] at h₁ h₂
-      rw [← h₁, hP, h₂]
+  obtain ⟨ψ, hψφ, hφψ⟩ := φ.exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one hφ
+  have hleft :
+      Function.LeftInverse (Hom.ofIsogeny ψ).pointMapHom (Hom.ofIsogeny φ).pointMapHom :=
+    fun P ↦ by
+      rw [← AddMonoidHom.comp_apply, ← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny,
+        hψφ, ← Hom.id_def, Hom.id_pointMapHom, AddMonoidHom.id_apply]
+  have hright :
+      Function.RightInverse (Hom.ofIsogeny ψ).pointMapHom (Hom.ofIsogeny φ).pointMapHom :=
+    fun P ↦ by
+      rw [← AddMonoidHom.comp_apply, ← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny,
+        hφψ, ← Hom.id_def, Hom.id_pointMapHom, AddMonoidHom.id_apply]
   have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
-    AddMonoidHom.range_eq_top.mpr fun Q ↦
-      ⟨(Hom.ofIsogeny φ.dual).pointMapHom Q, DFunLike.congr_fun hcomp₂ Q⟩
-  simp [kummerRatio_def, hker, hrange]
+    AddMonoidHom.range_eq_top.mpr hright.surjective
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    (AddMonoidHom.ker_eq_bot_iff _).mpr hleft.injective
+  simp [kummerRatio_def, hrange, hker]
+
+/-- The isomorphism induced by a change of variables has Kummer ratio one. -/
+@[simp]
+theorem kummerRatio_variableChangeIsogeny (C : WeierstrassCurve.VariableChange F)
+    (h : C • W₁ = W₂) :
+    (variableChangeIsogeny C h).kummerRatio = 1 :=
+  kummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
+
+/-- `Isogeny.baseChange` is `Isogeny.map (algebraMap F K)` typed between the `WeierstrassCurve`
+base changes, so both have the same Kummer ratio. -/
+theorem kummerRatio_baseChange {K : Type*} [Field K] [Algebra F K]
+    {E₁ E₂ : WeierstrassCurve F} [E₁.IsElliptic] [E₂.IsElliptic]
+    (φ : Isogeny E₁.toAffine E₂.toAffine) :
+    (φ.baseChange K).kummerRatio = (φ.map (algebraMap F K)).kummerRatio :=
+  (rfl)
 
 end TauCeti.Isogeny

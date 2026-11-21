@@ -99,9 +99,9 @@ private def indexOn {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) : ℤ :=
   (((TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U))).singularKronecker ℤ (n + 1)
     (TopPair.singularCohomologyMap
-      (thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.1 (s x.1),
-        hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
-        fun x hx h0 ↦ hx (Subtype.ext (hUz x.1 x.2 h0)))
+      (thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.val (s x.val),
+        hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
+        fun x hx h0 ↦ hx (Subtype.ext (hUz x.val x.property h0)))
       (n + 1) (o.thomClass hF))).hom
     ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
       hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ (n + 1)).inv (oM z).val)).down
@@ -145,8 +145,9 @@ private theorem singularKronecker_localOrientationAlong {z : M} {U : Set M} (hU 
         (o.thomClass hF))).hom (oM.localOrientationAlong hU hz hUz)).down =
       indexOn o hF oM hs hU hz hUz := by
   rw [HomologicalOrientation.localOrientationAlong_def, localHomologyMap_def
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩ (S := {(⟨z, hz⟩ : U)})
-    (T := {x | s x = 0}) (fun x (hx : x.1 ∈ {x | s x = 0}) ↦ Subtype.ext (hUz x.1 x.2 hx)),
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtypeVal⟩ (S := {(⟨z, hz⟩ : U)})
+    (T := {x | s x = 0}) (fun x (hx : x.val ∈ {x | s x = 0}) ↦ Subtype.ext
+        (hUz x.val x.property hx)),
     ← ModuleCat.comp_apply,
     ← TopPair.singularKronecker_naturality, ← TopPair.singularCohomologyMap_comp_apply,
     ofSubsetMap_comp_thomPairMapOfNeZero_of_comp_eq (hf := rfl), indexOn]
@@ -183,9 +184,9 @@ theorem sectionIndex_eq {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
     o.sectionIndex hF oM hs z =
       (((TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U))).singularKronecker ℤ (n + 1)
         (TopPair.singularCohomologyMap
-          (thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.1 (s x.1),
-            hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
-            fun x hx h0 ↦ hx (Subtype.ext (hUz x.1 x.2 h0)))
+          (thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.val (s x.val),
+            hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
+            fun x hx h0 ↦ hx (Subtype.ext (hUz x.val x.property h0)))
           (n + 1) (o.thomClass hF))).hom
         ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
           hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ (n + 1)).inv (oM z).val)).down := by
@@ -201,7 +202,8 @@ theorem sectionIndex_of_ne_zero {z : M} (h : s z ≠ 0) : o.sectionIndex hF oM h
   · obtain ⟨U, hU, hz, hUz⟩ := hU
     -- No point of `U` is a zero of `s`, so `s` is a map of pairs `(U, U) ⟶ (E, E₀)`, and the
     -- local orientation is paired through `Hₙ₊₁(U, U) = 0`.
-    have h₀ : ∀ x : U, x ∉ (∅ : Set U) → s x.1 ≠ 0 := fun x _ h0 ↦ h (hUz x.1 x.2 h0 ▸ h0)
+    have h₀ : ∀ x : U, x ∉ (∅ : Set U) → s x.val ≠ 0 := fun x _ h0 ↦ h
+        (hUz x.val x.property h0 ▸ h0)
     rw [sectionIndex_eq o hF oM hs hU hz hUz, ← ofSubsetMap_comp_thomPairMapOfNeZero_of_comp_eq
       _ h₀ (ContinuousMap.id U) (T := {⟨z, hz⟩}) (fun _ _ h ↦ h) (ContinuousMap.comp_id _),
       TopPair.singularCohomologyMap_comp_apply, TopPair.singularKronecker_naturality,

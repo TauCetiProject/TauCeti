@@ -72,7 +72,7 @@ private lemma index_subgroupOf_sup_comap_ne_zero [CompactSpace K]
     ((H.subgroupOf K) ⊔ N.toSubgroup.comap K.subtype).index ≠ 0 := by
   have : Finite (K ⧸ N.toSubgroup.comap K.subtype) :=
     Subgroup.quotient_finite_of_isOpen _
-      (N.toOpenSubgroup.isOpen.preimage continuous_subtype_val)
+      (N.toOpenSubgroup.isOpen.preimage continuous_subtypeVal)
   have : (N.toSubgroup.comap K.subtype).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
 
@@ -104,10 +104,10 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
     exact Nat.cast_le.mpr <| Subgroup.padicValNat_index_le_of_le
       (sup_le_sup_left hNV (H.subgroupOf K)) (index_subgroupOf_sup_comap_ne_zero H K N) ell
   · refine iSup_le fun N ↦ ?_
-    refine le_iSup_of_le (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val) ?_
-    have hV : (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val).toSubgroup =
+    refine le_iSup_of_le (OpenNormalSubgroup.comap N K.subtype continuous_subtypeVal) ?_
+    have hV : (OpenNormalSubgroup.comap N K.subtype continuous_subtypeVal).toSubgroup =
         N.toSubgroup.comap K.subtype :=
-      OpenNormalSubgroup.toSubgroup_comap N K.subtype continuous_subtype_val
+      OpenNormalSubgroup.toSubgroup_comap N K.subtype continuous_subtypeVal
     rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
       Subgroup.index_map_mk'_eq_index_sup, hV]
 

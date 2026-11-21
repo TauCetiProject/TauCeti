@@ -60,7 +60,7 @@ theorem tamagawaNumberAt_def (E : WeierstrassCurve K)
 
 /-- The completed Tamagawa number at `v` may be read using the canonical adic valuation `Valued.v`,
 which is equivalent to `ValuativeRel.valuation`. -/
-theorem tamagawaNumberAt_eq_tamagawaNumber_valued (E : WeierstrassCurve K) [E.IsElliptic]
+theorem tamagawaNumberAt_eq_tamagawaNumber_valued (E : WeierstrassCurve K)
     (v : HeightOneSpectrum R) :
     E.tamagawaNumberAt v =
       (E.baseChange (v.adicCompletion K)).tamagawaNumber
@@ -107,7 +107,7 @@ theorem hasFiniteMulSupport_tamagawaNumberAt (E : WeierstrassCurve K) [E.IsEllip
     obtain ⟨hI, hΔ⟩ := hv
     let := hI
     have : (E.baseChange (v.adicCompletion K)).HasGoodReduction 𝒪[v.adicCompletion K] :=
-      (hasGoodReduction_iff_isUnit_integralModel_Δ _ _).2 hΔ.1
+      (hasGoodReduction_iff_isUnit_integralModel_Δ _ _).2 hΔ.isUnit
     exact E.tamagawaNumberAt_eq_one_of_hasGoodReduction v
   exact Filter.eventually_cofinite.mp hone
 

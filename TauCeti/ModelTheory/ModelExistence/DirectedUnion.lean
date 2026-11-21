@@ -67,7 +67,7 @@ theorem aElementary_iSup (hdir : Directed (· ≤ ·) S) (hS : ∀ i, AElementar
   rw [BoundedFormulaInf.realize_all] at hfail
   push Not at hfail
   obtain ⟨c, hc⟩ := hfail
-  refine ⟨⟨c, Substructure.mem_iSup_of_directed hdir |>.2 ⟨k, c.2⟩⟩, fun h => hc ?_⟩
+  refine ⟨⟨c, Substructure.mem_iSup_of_directed hdir |>.2 ⟨k, c.property⟩⟩, fun h => hc ?_⟩
   rw [← (hS k).realize_iff (A.all_mem hφ), Fin.comp_snoc, ← hab]
   exact h
 

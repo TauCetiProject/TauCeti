@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basis
+public import TauCeti.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
@@ -39,7 +39,8 @@ The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`
 
 * `TauCeti.matrixCochainExtension`: the matrix extension `φ ↦ φ#Tr`.
 * `TauCeti.matrixCyclicCochainExtension`: its restriction to cyclic cochains.
-* `TauCeti.cyclicCohomology.matrixExtension`: the induced map on cyclic cohomology.
+* `TauCeti.cyclicCohomology.matrixExtension`, `TauCeti.cyclicCohomology.matrixRestriction`: matrix
+  extension and `(r, r)` corner restriction on cyclic cohomology.
 
 ## Main results
 
@@ -49,8 +50,9 @@ The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`
 * `TauCeti.matrixCochainExtension_diagonal`: on diagonal matrices, matrix extension is the sum of
   the original cochain over the diagonal positions.
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
-  `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
-  Hochschild coboundary.
+  `TauCeti.matrixCochainExtension_hochschildCoboundary`,
+  `TauCeti.matrixCochainExtension_barCoboundary`: compatibility with the cofaces, the Hochschild
+  coboundary, and the bar coboundary.
 * `TauCeti.cyclicCohomology.matrixExtension_map`: on cyclic cohomology, matrix extension is natural
   for algebra homomorphisms.
 -/
@@ -145,7 +147,7 @@ theorem matrixCochainExtension_mem_cyclicCochains
     {R : Type*} [Semiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
     [AddCommGroup M] [Module R M] [SMulCommClass R R M]
     (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
-    matrixCochainExtension ι n φ.1 ∈ cyclicCochains R (Matrix ι ι A) M n := by
+    matrixCochainExtension ι n φ.val ∈ cyclicCochains R (Matrix ι ι A) M n := by
   rw [mem_cyclicCochains_iff]
   intro a
   rw [matrixCochainExtension_rotate]
@@ -170,7 +172,7 @@ theorem coe_matrixCyclicCochainExtension_apply
     (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
     (matrixCyclicCochainExtension ι n φ :
       MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M) =
-      matrixCochainExtension ι n φ.1 := (rfl)
+      matrixCochainExtension ι n φ.val := (rfl)
 
 /-- On a one-by-one matrix algebra, matrix extension is the original cochain. -/
 @[simp] theorem matrixCochainExtension_unique (ι : Type*) [Fintype ι] [Unique ι] (n : ℕ)
@@ -449,6 +451,14 @@ theorem matrixCochainExtension_hochschildCoboundary (ι : Type*) [Fintype ι] (n
   simp only [hochschildCoboundary_apply, hface, Finset.smul_sum]
   exact Finset.sum_comm
 
+/-- Matrix extension commutes with the bar coboundary `b'`: `(b'φ)#Tr = b'(φ#Tr)`. -/
+theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) :
+    matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
+      barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
+  simp only [barCoboundary_def, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul,
+    matrixCochainExtension_hochschildCoface]
+
 end Coboundary
 
 section CyclicCohomology
@@ -508,8 +518,33 @@ noncomputable def matrixExtension :
 theorem matrixExtension_mk (φ : cyclicCocycles R A M n) :
     matrixExtension M ι n (mk R A M n φ) =
       mk R (Matrix ι ι A) M n ⟨matrixCyclicCochainExtension ι n φ,
-        matrixCyclicCochainExtension_mem_cyclicCocycles φ.2⟩ :=
+        matrixCyclicCochainExtension_mem_cyclicCocycles φ.property⟩ :=
   desc_mk _ _ _ φ
+
+variable (M) in
+/-- Corner restriction `HCⁿ(Matrix ι ι A; M) →ₗ[R] HCⁿ(A; M)` along `x ↦ Matrix.single r r x`. -/
+noncomputable def matrixRestriction (r : ι) (n : ℕ) :
+    cyclicCohomology R (Matrix ι ι A) M n →ₗ[R] cyclicCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ (cyclicCochainsMap M (Matrix.singleLinearMap R r r) n).restrict
+      fun _ h ↦ Matrix.singleNonUnitalAlgHom_toLinearMap (R := R) (A := A) r ▸
+        cyclicCochainsMap_mem_cyclicCocycles (Matrix.singleNonUnitalAlgHom R r) h)
+    fun _ hφ ↦ (mk_eq_zero_iff R A M n _).2 <| by
+      simpa only [LinearMap.restrict_apply, ← Matrix.singleNonUnitalAlgHom_toLinearMap] using
+        cyclicCochainsMap_mem_cyclicCoboundaries (Matrix.singleNonUnitalAlgHom R (A := A) r) hφ
+
+/-- `matrixRestriction` sends `[φ]` to the class of its `(r, r)` corner restriction. -/
+@[simp] theorem matrixRestriction_mk (r : ι) (φ : cyclicCocycles R (Matrix ι ι A) M n) :
+    matrixRestriction M r n (mk R (Matrix ι ι A) M n φ) =
+      mk R A M n ⟨cyclicCochainsMap M (Matrix.singleLinearMap R r r) n φ.val,
+        Matrix.singleNonUnitalAlgHom_toLinearMap (R := R) (A := A) r ▸
+          cyclicCochainsMap_mem_cyclicCocycles (Matrix.singleNonUnitalAlgHom R r) φ.property⟩ :=
+  desc_mk _ _ _ φ
+/-- Corner restriction is a left inverse to matrix extension on cyclic cohomology. -/
+@[simp] theorem matrixRestriction_matrixExtension (r : ι) (n : ℕ) (c : cyclicCohomology R A M n) :
+    matrixRestriction M r n (matrixExtension M ι n c) = c := by
+  obtain ⟨φ, rfl⟩ := mk_surjective R A M n c
+  simp only [matrixExtension_mk, matrixRestriction_mk]
+  congr 1; exact Subtype.ext (Subtype.ext (by ext x; simp))
 
 /-- Matrix extension is natural: it commutes with pullback along an algebra homomorphism
 `f : A →ₐ[R] B` and along its entrywise extension `Matrix ι ι A →ₐ[R] Matrix ι ι B`. -/
@@ -527,7 +562,7 @@ theorem matrixExtension_map {B : Type _} [Ring B] [Algebra R B] (f : A →ₐ[R]
   -- definitionally `f.toLinearMap` and its entrywise extension `LinearMap.mapMatrix f.toLinearMap`,
   -- the linear maps in `matrixCochainExtension_compLinearMap`. Mathlib has no simp lemma for the
   -- underlying function of `NonUnitalAlgHomClass.toNonUnitalAlgHom`, so this is closed by `exact`.
-  exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.1.1
+  exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.val.val
 
 end cyclicCohomology
 
