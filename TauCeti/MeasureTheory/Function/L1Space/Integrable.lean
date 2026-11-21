@@ -34,6 +34,9 @@ everywhere nonnegative functions into Bochner `p`-th moment inequalities
 (`MeasureTheory.integral_rpow_le_mul_integral_rpow_of_eLpNorm_le`). Membership of the identity in
 `Lᵖ` gives integrability of its norm power even on a seminormed group, and on the real line
 positive-order `Lᵖ` membership is equivalent to integrability of the corresponding absolute power.
+By Hölder's inequality, a finite product of functions, the `i`th in `L^(p i)`, is integrable when
+`∑ i, (p i)⁻¹ = 1` (`MeasureTheory.MemLp.integrable_fun_prod`); on a finite measure space this
+covers a product of `k` functions in `Lᵏ` (`MeasureTheory.MemLp.integrable_fun_prod_card`).
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
@@ -219,6 +222,27 @@ theorem MemLp.integrable_of_ae_notMem_eq_zero {α E : Type*} [MeasurableSpace α
     (hs : μ s ≠ ⊤) (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable hp) hfs
+
+/-- **Hölder's inequality** for finite products, as an integrability criterion: a finite product
+of functions, the `i`th in `L^(p i)`, is integrable when the reciprocal exponents sum to `1`. -/
+theorem MemLp.integrable_fun_prod {X ι 𝕜 : Type*} [MeasurableSpace X] [NormedCommRing 𝕜]
+    {μ : Measure X} {f : ι → X → 𝕜} {p : ι → ENNReal} {s : Finset ι}
+    (hf : ∀ i ∈ s, MemLp (f i) (p i) μ) (hp : ∑ i ∈ s, (p i)⁻¹ = 1) :
+    Integrable (fun x ↦ ∏ i ∈ s, f i x) μ := by
+  have h := MemLp.fun_prod hf
+  rw [hp, inv_one] at h
+  exact memLp_one_iff_integrable.1 h
+
+/-- On a finite measure space, a product of functions indexed by a finset `s` is integrable when
+every factor lies in `L^(s.card)`. The finite measure is needed only for the empty product. -/
+theorem MemLp.integrable_fun_prod_card {X ι 𝕜 : Type*} [MeasurableSpace X] [NormedCommRing 𝕜]
+    {μ : Measure X} [IsFiniteMeasure μ] {f : ι → X → 𝕜} {s : Finset ι}
+    (hf : ∀ i ∈ s, MemLp (f i) s.card μ) :
+    Integrable (fun x ↦ ∏ i ∈ s, f i x) μ := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  exact MemLp.integrable_fun_prod hf <| by
+    simp [nsmul_eq_mul, ENNReal.mul_inv_cancel, hs.ne_empty]
 
 end MeasureTheory
 
