@@ -334,13 +334,12 @@ variable [FaithfulSMul B' K']
 theorem baseChangeMap_injective {f : V →ₗ[K] V'} (hf : IsBaseChange K' f)
     (Λ : ProjectiveLattice B K V) : Function.Injective (baseChangeMap (B' := B') f Λ) := by
   have := Λ.isLocalizedModule_baseChangeMap (B' := B') S hf
-  intro x y h
-  obtain ⟨c, hc⟩ := IsLocalizedModule.exists_of_eq (S := Algebra.algebraMapSubmonoid B' S) h
+  refine (IsLocalizedModule.injective_iff_isRegular (Algebra.algebraMapSubmonoid B' S) _).mpr
+    fun c ↦ ?_
   have hc0 : (c : B') ∈ nonZeroDivisors B' :=
     mem_nonZeroDivisors_of_injective (FaithfulSMul.algebraMap_injective B' K')
       (IsLocalization.map_units K' c).mem_nonZeroDivisors
-  exact Module.Flat.isSMulRegular_of_nonZeroDivisors hc0
-    (by simpa only [Submonoid.smul_def] using hc)
+  exact Module.Flat.isSMulRegular_of_nonZeroDivisors (M := B' ⊗[B] Λ.toSubmodule) hc0
 
 variable (B') in
 /-- The *base change* of a lattice along a base change `f : V → V'` of `K`-modules to `K'`, where
