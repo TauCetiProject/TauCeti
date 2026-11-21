@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 
 /-!
@@ -13,8 +14,9 @@ public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 
 The tensor unit `𝟙_ (ModuleCat R)` of the monoidal category of modules over a commutative ring `R`
 is `R` itself. This file records the consequences that instance search and `Module.finrank` do
-not see through the monoidal structure: the unit is a free, finitely generated `R`-module
-(`ModuleCat.free_tensorUnit`, `ModuleCat.finite_tensorUnit`), of rank one when `R` satisfies the
+not see through the monoidal structure: the unit is a free, projective, finitely generated
+`R`-module (`ModuleCat.free_tensorUnit`, `ModuleCat.projective_tensorUnit`,
+`ModuleCat.finite_tensorUnit`), of rank one when `R` satisfies the
 strong rank condition (`ModuleCat.finrank_tensorUnit`).
 
 Coefficients are often taken in the copy `ULift R` of `R`, for instance integral singular homology
@@ -36,6 +38,13 @@ variable (R : Type u) [CommRing R]
 /-- The tensor unit of `ModuleCat R`, which is `R` itself, is a free `R`-module. -/
 instance free_tensorUnit : Module.Free R (𝟙_ (ModuleCat.{u} R)) :=
   inferInstanceAs (Module.Free R R)
+
+/-- The tensor unit of `ModuleCat R`, which is `R` itself, is a projective `R`-module. This follows
+from `ModuleCat.free_tensorUnit`, but instance search reaches the low-priority
+`Module.Projective.of_free` only after the other projectivity instances, which can time out, for
+instance over `ℤ`. -/
+instance projective_tensorUnit : Module.Projective R (𝟙_ (ModuleCat.{u} R)) :=
+  inferInstanceAs (Module.Projective R R)
 
 /-- The tensor unit of `ModuleCat R`, which is `R` itself, is a finitely generated `R`-module. -/
 instance finite_tensorUnit : Module.Finite R (𝟙_ (ModuleCat.{u} R)) :=

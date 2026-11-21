@@ -38,7 +38,12 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
 * `TauCeti.halfWavePropagator_neg`: `W₊(-t) = W₋(t)`, the multiplier with phase `-2π ‖·‖`.
 * `TauCeti.halfWavePropagator_add_apply`, `TauCeti.adjoint_halfWavePropagator` and
   `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM`: the group law, the adjoint
-  `W₊(t)* = W₊(-t)` and commutation with Fourier multipliers.
+  `W₊(t)* = W₊(-t)` and commutation with Fourier multipliers
+  (applied form: `TauCeti.fourierMultiplierCLM_halfWavePropagator_apply`).
+* `TauCeti.adjoint_halfWavePropagator_comp_fourierMultiplierCLM` and
+  `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint`: for `U(t) = W₊(t) T_m`,
+  the adjoint `U(t)* = T_{star m} W₊(-t)` and the time pairings
+  `U(s) U(t)* = W₊(s - t) T_m T_{star m}`.
 * `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
   away from the origin.
 
@@ -91,6 +96,39 @@ theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (
     halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
       Lp.fourierMultiplierCLM F m ∘L halfWavePropagator F t :=
   phasePropagator_comp_fourierMultiplierCLM _ t m
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier, applied form. -/
+theorem fourierMultiplierCLM_halfWavePropagator_apply (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    Lp.fourierMultiplierCLM F m (halfWavePropagator F t f) =
+      halfWavePropagator F t (Lp.fourierMultiplierCLM F m f) :=
+  (ContinuousLinearMap.ext_iff.1 (halfWavePropagator_comp_fourierMultiplierCLM t m) f).symm
+
+/-- The adjoint of `W₊(t) T_m` is `T_{star m} W₊(-t)`. -/
+theorem adjoint_halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ)
+    (m : Lp ℂ ∞ (volume : Measure E)) :
+    ContinuousLinearMap.adjoint (halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m) =
+      Lp.fourierMultiplierCLM F (star m) ∘L halfWavePropagator F (-t) := by
+  rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM,
+    adjoint_halfWavePropagator]
+
+/-- The adjoint of `W₊(t) T_m` is `T_{star m} W₊(-t)`, applied form. -/
+theorem adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply (t : ℝ)
+    (m : Lp ℂ ∞ (volume : Measure E)) (g : Lp F 2 (volume : Measure E)) :
+    ContinuousLinearMap.adjoint (halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m) g =
+      Lp.fourierMultiplierCLM F (star m) (halfWavePropagator F (-t) g) := by
+  rw [adjoint_halfWavePropagator_comp_fourierMultiplierCLM, ContinuousLinearMap.comp_apply]
+
+/-- The time pairings `U(s) U(t)*` of `U(t) = W₊(t) T_m` are `W₊(s - t) T_m T_{star m}`. -/
+theorem halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint (s t : ℝ)
+    (m : Lp ℂ ∞ (volume : Measure E)) (g : Lp F 2 (volume : Measure E)) :
+    (halfWavePropagator F s ∘L Lp.fourierMultiplierCLM F m)
+        (ContinuousLinearMap.adjoint (halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m) g) =
+      halfWavePropagator F (s - t)
+        (Lp.fourierMultiplierCLM F m (Lp.fourierMultiplierCLM F (star m) g)) := by
+  rw [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply, ContinuousLinearMap.comp_apply,
+    fourierMultiplierCLM_halfWavePropagator_apply, fourierMultiplierCLM_halfWavePropagator_apply,
+    ← halfWavePropagator_add_apply, ← sub_eq_add_neg]
 
 /-- On the Fourier side, `W₊(t)` is pointwise multiplication by `exp(2πi t ‖ξ‖)`, almost
 everywhere. -/

@@ -65,9 +65,9 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
   blocks are `L^{p'}` functions with weighted norms `2^{js'} ‖Δⱼ w‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p` for
   some `u ∈ B^s_{p,q}` lies in `B^{s'}_{p',q}`, with norm at most `B ‖u‖`.
-* `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
-  tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
-  `B^s_{p,q}` is a Banach space.
+* `TauCeti.BesovSpace.toDistrCLM` and `TauCeti.BesovSpace.toDistrCLM_injective`: for `1 ≤ q`, the
+  continuous injective inclusion of `B^s_{p,q}` in the tempered distributions, and the instance
+  `CompleteSpace (TauCeti.BesovSpace F φ s p q)`: `B^s_{p,q}` is a Banach space.
 * `TauCeti.BesovSpace.inclusion`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` with norm at most `1` for
   `s' ≤ s` and `q ≤ q'`.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
@@ -510,12 +510,12 @@ theorem norm_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
 
 /-- The weighted block norms `2^{js} ‖Δⱼ u‖_p` of `u ∈ B^s_{p,q}`, as an element of `ℓ^q`. -/
 def weightedBlockNorms (u : BesovSpace F φ s p q) : lp (fun _ : ℕ ↦ ℝ) q :=
-  ⟨fun j ↦ ‖u.weightedBlocks j‖, (lp.memℓp _).norm⟩
+  lp.normSeq u.weightedBlocks
 
 @[simp]
 theorem weightedBlockNorms_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     u.weightedBlockNorms j = 2 ^ (s * j) * ‖u.block j‖ :=
-  norm_weightedBlocks_apply u j
+  (lp.normSeq_apply _ j).trans (norm_weightedBlocks_apply u j)
 
 @[simp]
 theorem block_zero (j : ℕ) : (0 : BesovSpace F φ s p q).block j = 0 := by
@@ -591,10 +591,7 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
 /-- The `ℓ^q` norm of the weighted block norms of `u` is the Besov norm of `u`. -/
 @[simp]
 theorem norm_weightedBlockNorms (u : BesovSpace F φ s p q) : ‖u.weightedBlockNorms‖ = ‖u‖ := by
-  have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  rw [← norm_weightedBlocks]
-  exact le_antisymm (lp.norm_mono hq fun j ↦ (norm_norm _).le)
-    (lp.norm_mono hq fun j ↦ (norm_norm (u.weightedBlocks j)).ge)
+  rw [weightedBlockNorms, lp.norm_normSeq, norm_weightedBlocks]
 
 /-- **The single-block bound, unweighted:** `‖Δⱼ u‖_p ≤ (2^{-s})^j ‖u‖`. -/
 theorem norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
@@ -853,6 +850,10 @@ def toDistrCLM : BesovSpace F φ s p q →L[ℂ] 𝓢'(E, F) where
 @[simp]
 theorem toDistrCLM_apply (u : BesovSpace F φ s p q) : toDistrCLM F φ s p q u = u.toDistr :=
   (rfl)
+
+/-- The inclusion `B^s_{p,q} →L[ℂ] 𝓢'(E, F)` is injective. -/
+theorem toDistrCLM_injective : Function.Injective (toDistrCLM F φ s p q) :=
+  fun _ _ h ↦ ext <| by simpa only [toDistrCLM_apply] using h
 
 /-- The weighted blocks form an isometry from `B^s_{p,q}` into `ℓ^q(ℕ, Lᵖ)`. -/
 theorem isometry_weightedBlocks :

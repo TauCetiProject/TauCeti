@@ -13,9 +13,10 @@ import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 /-!
 # Noetherianity under finite-type morphisms and fibres
 
-A scheme of finite type over a Noetherian scheme is Noetherian. In particular, proper schemes
-over a field are Noetherian, supplying the finiteness hypothesis in divisor and line-bundle
-arguments without requiring a separate instance from the caller.
+A scheme of finite type over a Noetherian scheme is Noetherian (`isNoetherian_of_finiteType`); in
+particular, open subschemes (`isNoetherian_of_isOpenImmersion`) and proper schemes over a field are
+Noetherian, supplying the finiteness hypothesis in divisor and line-bundle arguments without
+requiring a separate instance from the caller.
 
 The fibre `X ×_S Spec κ(s)` of any morphism `f : X ⟶ S` with `X` locally Noetherian is locally
 Noetherian (`AlgebraicGeometry.Scheme.Hom.isLocallyNoetherian_fiber`), with no finiteness
@@ -34,11 +35,24 @@ namespace TauCeti.AlgebraicGeometry
 
 universe u
 
+/-- The terminal scheme is locally Noetherian since it is the spectrum of the integers. -/
+instance isLocallyNoetherian_terminal : IsLocallyNoetherian (Limits.terminal Scheme.{u}) := by
+  have : IsNoetherianRing (ULift.{u} ℤ) :=
+    isNoetherianRing_of_ringEquiv ℤ ULift.ringEquiv.symm
+  let t : Spec (.of (ULift.{u} ℤ)) ⟶ Limits.terminal Scheme.{u} := Limits.terminal.from _
+  have : IsIso t := Limits.isIso_of_isTerminal specULiftZIsTerminal Limits.terminalIsTerminal t
+  exact isLocallyNoetherian_of_isOpenImmersion (inv t)
+
 /-- A scheme of finite type over a Noetherian scheme is Noetherian. -/
 theorem isNoetherian_of_finiteType {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFiniteType f]
     [QuasiCompact f] [IsNoetherian Y] : IsNoetherian X where
   toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian f
   toCompactSpace := QuasiCompact.compactSpace_of_compactSpace f
+
+/-- The source of an open immersion into a Noetherian scheme is Noetherian. -/
+theorem isNoetherian_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    [IsNoetherian X] : IsNoetherian U :=
+  isNoetherian_of_finiteType j
 
 /-- The underlying space of a locally Noetherian scheme is locally connected: every point has
 arbitrarily small affine open neighbourhoods, whose underlying spaces are Noetherian and hence
@@ -61,6 +75,17 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
 end TauCeti.AlgebraicGeometry
 
 open Limits
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+/-- A scheme locally of finite type over the terminal scheme is locally Noetherian. -/
+instance isLocallyNoetherian_of_locallyOfFiniteType_terminal (X : Scheme.{u})
+    [LocallyOfFiniteType (terminal.from X)] : IsLocallyNoetherian X :=
+  LocallyOfFiniteType.isLocallyNoetherian (terminal.from X)
+
+end AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Hom
 

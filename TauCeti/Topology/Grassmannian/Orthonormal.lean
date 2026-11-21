@@ -110,6 +110,22 @@ theorem isCompact_setOf_orthonormal :
 instance : CompactSpace (finiteOrthonormalFrame 𝕜 r N) :=
   isCompact_iff_compactSpace.1 isCompact_setOf_orthonormal
 
+/-- The `i`th vector of an orthonormal frame, as a unit vector of `EuclideanSpace 𝕜 (Fin N)`. -/
+def toSphere (f : finiteOrthonormalFrame 𝕜 r N) (i : Fin r) :
+    Metric.sphere (0 : EuclideanSpace 𝕜 (Fin N)) 1 :=
+  ⟨WithLp.toLp 2 (f.val i), mem_sphere_zero_iff_norm.2 (f.property.1 i)⟩
+
+@[simp]
+theorem coe_toSphere (f : finiteOrthonormalFrame 𝕜 r N) (i : Fin r) :
+    (f.toSphere i : EuclideanSpace 𝕜 (Fin N)) = WithLp.toLp 2 (f.val i) :=
+  (rfl)
+
+@[fun_prop]
+theorem continuous_toSphere (i : Fin r) :
+    Continuous fun f : finiteOrthonormalFrame 𝕜 r N ↦ f.toSphere i :=
+  Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp
+    ((continuous_apply i).comp continuous_subtypeVal)) _
+
 /-- The unitary group acts on orthonormal frames by left multiplication of the matrix of row
 vectors: `A • f` has `j`th vector `∑ i, A j i • f i`. -/
 instance : SMul (Matrix.unitaryGroup (Fin r) 𝕜) (finiteOrthonormalFrame 𝕜 r N) where

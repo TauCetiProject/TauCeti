@@ -565,20 +565,9 @@ theorem range_spinGroup_toUnits :
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range =
       (lipschitzGroup Q) ⊓ evenUnitaryGroup Q := by
   ext x
-  constructor
-  · rintro ⟨g, rfl⟩
-    refine ⟨spinGroup.units_mem_lipschitzGroup g.property, ?_⟩
-    exact ⟨g.property.2, g.property.1.2⟩
-  · intro hx
-    rcases hx with ⟨hLip, hEvenUnit⟩
-    have hEven : (x : CliffordAlgebra Q) ∈ even Q := hEvenUnit.1
-    have hUnitary : (x : CliffordAlgebra Q) ∈ unitary (CliffordAlgebra Q) := hEvenUnit.2
-    have hPin : (x : CliffordAlgebra Q) ∈ pinGroup Q := by
-      rw [pinGroup.mem_iff]
-      exact ⟨lipschitzGroup.coe_mem_iff_mem.mpr hLip, hUnitary⟩
-    refine ⟨⟨(x : CliffordAlgebra Q), hPin, hEven⟩, ?_⟩
-    apply Units.ext
-    rfl
+  simp only [mem_spinGroup_toUnits_range_iff, spinGroup.mem_iff, pinGroup.units_mem_iff,
+    Subgroup.mem_inf, evenUnitaryGroup.mem_iff]
+  tauto
 
 /-! ### Spin action after right multiplication by a negative vector -/
 
