@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
 
+import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
+
 /-!
 # The rank of an approximation domain
 
@@ -48,15 +50,9 @@ theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
       0 ∈ interior (B : Set (ι → mixedSpace K)) ∧
       approxSpan S₀ L c Q = Submodule.span K {x | x ∈ approxModule S₀ L c Q ∧
         (fun j ↦ mixedEmbedding K (x j)) ∈ (1 : ℝ) • (B : Set (ι → mixedSpace K))} := by
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q :=
-    ConvexBody.coe_mk _ _ _ _
-  refine ⟨B, hcoe, ?_, ?_⟩
-  · rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  · rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  refine ⟨B, hcoe, hB, ?_⟩
+  rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
 
 open scoped Classical in
 /-- The rank of an approximation domain of positive level is the number of its successive

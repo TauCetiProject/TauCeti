@@ -79,9 +79,11 @@ holds for any compact convex neighbourhood `B` of `0` balanced at every infinite
 * `Submodule.successiveMinimum_le_iff`: below `#ι` and for `t > 0`, `μ l ≤ t` exactly when
   `t • B` contains the images of `l + 1` vectors of `Λ` independent over `K`; in particular each
   minimum is attained.
-* `Submodule.successiveMinimum_pos`, `Submodule.monotoneOn_successiveMinimum`,
-  `Submodule.successiveMinimum_antitone_body`, `Submodule.successiveMinimum_antitone_lattice`:
-  positivity and monotonicity properties below `#ι`.
+* `Submodule.successiveMinimum_pos`, `Submodule.successiveMinimum_antitone_body`,
+  `Submodule.successiveMinimum_antitone_lattice`: positivity and monotonicity properties below
+  `#ι`.
+* `Submodule.monotoneOn_successiveMinimum`: for an absorbent `B`, the minima are nondecreasing
+  below the rank of `Λ`.
 * `Submodule.exists_linearIndependent_mem_smul_successiveMinimum`: there are `#ι` vectors of
   `Λ`, independent over `K`, the `l`-th of them with image in `μ l • B`.
 * `Submodule.successiveMin_mixedImage_le`,
@@ -302,19 +304,26 @@ theorem successiveMinimum_le_iff [DiscreteTopology Λ.mixedImage]
   exact ⟨x, hx, fun k ↦
     ⟨(hxB k).1, (ConvexBody.gauge_le_iff_mem_smul hB ht).1 ((hxB k).2.trans h)⟩⟩
 
-open scoped Classical in
-/-- The successive minima over `K` are nondecreasing below `#ι`. They are not monotone on all of
-`ℕ`, since they vanish from `#ι` on (`Submodule.successiveMinimum_of_card_le`). -/
-theorem monotoneOn_successiveMinimum [DiscreteTopology Λ.mixedImage]
-    [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
-    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K))) :
-    MonotoneOn (successiveMinimum Λ B) (Set.Iio (Fintype.card ι)) := by
+omit [NumberField K] [Fintype ι] in
+/-- The successive minima over `K` with respect to an absorbent set `B` are nondecreasing below
+the rank `finrank K (span K Λ)`: some dilate of `B` holds that many vectors of `Λ` independent over
+`K`, and an independent family restricts to its initial segments, so the admissible dilations only
+shrink as the index grows. Neither discreteness nor compactness is needed. The minima are not
+monotone on all of `ℕ`, since they vanish from `#ι` on (`Submodule.successiveMinimum_of_card_le`).
+-/
+theorem monotoneOn_successiveMinimum [Finite ι] {B : Set (ι → mixedSpace K)} (hB : Absorbent ℝ B) :
+    MonotoneOn (successiveMinimum Λ B)
+      (Set.Iio (finrank K (Submodule.span K (Λ : Set (ι → K))))) := by
   intro i _ j hj hij
-  have hpos := successiveMinimum_pos (Λ := Λ) hB hj
-  obtain ⟨x, hx, hxB⟩ := (successiveMinimum_le_iff (Λ := Λ) hB hj hpos).1 le_rfl
-  have hle : i + 1 ≤ j + 1 := by omega
-  exact successiveMinimum_le hpos (hx.comp _ (Fin.castLE_injective hle)) (fun k ↦ (hxB _).1)
-    fun k ↦ (hxB _).2
+  obtain ⟨x, hx, hxΛ⟩ : ∃ x : Fin (j + 1) → ι → K, LinearIndependent K x ∧ ∀ k, x k ∈ Λ :=
+    Submodule.le_finrank_span_iff_exists_linearIndependent.1 hj
+  obtain ⟨r, hr, hrB⟩ :=
+    (hB.absorbs_finite (Set.finite_range fun k j ↦ mixedEmbedding K (x k j))).exists_pos
+  rw [successiveMinimum_def, successiveMinimum_def]
+  refine csInf_le_csInf ⟨0, fun _ ht ↦ ht.1.le⟩
+    ⟨r, hr, x, hx, fun k ↦ ⟨hxΛ k, hrB r (Real.le_norm_self r) ⟨k, rfl⟩⟩⟩ ?_
+  rintro t ⟨ht, y, hy, hyB⟩
+  exact ⟨ht, y ∘ Fin.castLE (by omega), hy.comp _ (Fin.castLE_injective _), fun k ↦ hyB _⟩
 
 open scoped Classical in
 /-- **Enlarging the body decreases the successive minima over `K`.** -/
