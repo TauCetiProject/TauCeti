@@ -576,8 +576,17 @@ variable [CompleteSpace E] [CompleteSpace F]
 /-- The range of the conjugate `U P U⁻¹` is the image under `U` of the range of `P`. -/
 @[simp]
 theorem range_conjStarAlgEquiv (U : E ≃ₗᵢ[𝕜] F) (P : E →L[𝕜] E) :
-    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) :=
-  U.toContinuousLinearEquiv.range_conjContinuousAlgEquiv P
+    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) := by
+  rw [conjStarAlgEquiv_apply, toContinuousLinearEquiv_symm,
+    ← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  exact U.toContinuousLinearEquiv.range_conjContinuousAlgEquiv P
+
+/-- Conjugation of bounded operators by a linear isometric equivalence is continuous. -/
+@[fun_prop]
+theorem continuous_conjStarAlgEquiv (U : E ≃ₗᵢ[𝕜] F) : Continuous U.conjStarAlgEquiv := by
+  rw [show ⇑U.conjStarAlgEquiv = fun P ↦ (U : E →L[𝕜] F) ∘L P ∘L (U.symm : F →L[𝕜] E) from
+    funext U.conjStarAlgEquiv_apply]
+  fun_prop
 
 end LinearIsometryEquiv
 

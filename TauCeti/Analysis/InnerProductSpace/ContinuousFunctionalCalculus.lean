@@ -13,6 +13,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
@@ -360,11 +361,6 @@ namespace LinearIsometryEquiv
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-
-/-- Conjugation of bounded operators by a linear isometric equivalence is continuous. -/
-@[fun_prop]
-theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.conjStarAlgEquiv :=
-  e.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.congr fun _ ↦ rfl
 
 variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
   [Algebra ℝ (F →L[𝕜] F)] [IsScalarTower ℝ 𝕜 (F →L[𝕜] F)]

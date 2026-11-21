@@ -441,10 +441,8 @@ noncomputable def grassmannianCongr (U : E ≃ₗᵢ[𝕜] F) :
   invFun Q := ⟨U.conjStarAlgEquiv.symm Q, U.symm.conjStarAlgEquiv_mem_grassmannian Q.property⟩
   left_inv P := Subtype.ext (U.conjStarAlgEquiv.symm_apply_apply P)
   right_inv Q := Subtype.ext (U.conjStarAlgEquiv.apply_symm_apply Q)
-  continuous_toFun := (U.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.comp
-    continuous_subtypeVal).subtype_mk _
-  continuous_invFun := (U.symm.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.comp
-    continuous_subtypeVal).subtype_mk _
+  continuous_toFun := (U.continuous_conjStarAlgEquiv.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (U.symm.continuous_conjStarAlgEquiv.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_grassmannianCongr_apply (U : E ≃ₗᵢ[𝕜] F) (P : grassmannian 𝕜 E k) :
