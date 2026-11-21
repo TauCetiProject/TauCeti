@@ -49,8 +49,11 @@ action differences `aₖ(0) - aₖ(∞) ≤ A` and images of an open `Ω ⊆ D` 
 subsequence whose neck lengths converge to some `L₀ ∈ C` and which converges locally uniformly on
 `Ω` off a finite set `Z` of bubbling points, with `#Z * δ ≤ N (A + B_1 + (B_0 + B_1 + B_∞))`. The
 structures are arbitrary, as for domain-dependent structures perturbed for transversality. The
-regularity of the limit, the bubbles at the points of `Z`, breaking along the two ends, and the
-long-neck end `L → ∞` of the family are not treated here.
+regularity of the limit, the bubbles at the points of `Z` and breaking along the two ends are not
+treated here. Interior compactness at the long-neck end `L → ∞`, on a truncation of the pair of
+pants and on compact windows of the inserted plane including its pole, is proved on the capped
+plane in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capping`; the cylinders
+breaking off along the neck are not treated.
 
 ## References
 
