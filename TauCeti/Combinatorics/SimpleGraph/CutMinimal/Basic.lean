@@ -5,11 +5,10 @@ Authors: pi
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Clique
-public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import TauCeti.Combinatorics.SimpleGraph.Degree
+import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -312,12 +311,18 @@ theorem exists_finset_isCutMinimal_symmDiff_top_between [Finite V] (G : SimpleGr
     Finset.univ_nonempty
   refine ⟨s, (isCutMinimal_iff_forall_finset_card_edgeFinset_le_symmDiff_top_between _).mpr
     fun t ↦ ?_⟩
-  have heq : (G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ ∆
-      (⊤ : SimpleGraph V).between (t : Set V) (t : Set V)ᶜ).edgeFinset =
-      (G ∆ (⊤ : SimpleGraph V).between ((s ∆ t : Finset V) : Set V)
-        ((s ∆ t : Finset V) : Set V)ᶜ).edgeFinset :=
-    edgeFinset_inj.mpr (by rw [Finset.coe_symmDiff, symmDiff_top_between_symmDiff])
-  exact heq.symm ▸ hmin (s ∆ t) (Finset.mem_univ _)
+  have heq : G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ ∆
+      (⊤ : SimpleGraph V).between (t : Set V) (t : Set V)ᶜ =
+      G ∆ (⊤ : SimpleGraph V).between ((s ∆ t : Finset V) : Set V)
+        ((s ∆ t : Finset V) : Set V)ᶜ := by
+    rw [Finset.coe_symmDiff, symmDiff_top_between_symmDiff]
+  have hcard : ∀ {H₁ H₂ : SimpleGraph V} {inst₁ : Fintype H₁.edgeSet} {inst₂ : Fintype H₂.edgeSet}
+      (_ : H₁ = H₂), @Finset.card (Sym2 V) (@edgeFinset V H₁ inst₁) =
+        @Finset.card (Sym2 V) (@edgeFinset V H₂ inst₂) := by
+    rintro H₁ H₂ inst₁ inst₂ rfl
+    exact card_edgeFinset_congr _ _ _
+  exact (card_edgeFinset_congr _ _ _).trans_le
+    ((hmin (s ∆ t) (Finset.mem_univ _)).trans_eq (hcard heq.symm))
 
 /-- On at least three vertices, every single-edge graph `SimpleGraph.edge u v` is cut-minimal. -/
 theorem isCutMinimal_edge_of_three_le_card [Fintype V] (hV : 3 ≤ Fintype.card V) (u v : V) :
@@ -372,9 +377,7 @@ theorem IsCutMinimal.two_mul_card_edgeFinset_le [Fintype V] {G : SimpleGraph V}
     [Fintype G.edgeSet] (hG : G.IsCutMinimal) :
     2 * #G.edgeFinset ≤ Fintype.card V * ((Fintype.card V - 1) / 2) := by
   classical
-  have hcard : #G.edgeFinset = #(@edgeFinset _ G G.fintypeEdgeSet) :=
-    congrArg card ((@edgeFinset_inj _ G G _ G.fintypeEdgeSet).mpr rfl)
-  rw [hcard, ← G.sum_degrees_eq_twice_card_edges]
+  rw [G.card_edgeFinset_congr _ G.fintypeEdgeSet, ← G.sum_degrees_eq_twice_card_edges]
   calc ∑ v : V, G.degree v ≤ ∑ _v : V, (Fintype.card V - 1) / 2 :=
         Finset.sum_le_sum fun v _ ↦ by
           have := hG.two_mul_degree_le v

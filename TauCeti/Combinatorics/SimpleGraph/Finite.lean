@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.Sym
 public import Mathlib.Order.Sym2
 import TauCeti.Order.Sym2
 
@@ -36,6 +37,12 @@ cardinalities over `G.edgeFinset` into ones over `{p : V × V | p.1 < p.2 ∧ G.
   graph it generates.
 * `SimpleGraph.edgeFinset_edge_of_ne`, `SimpleGraph.card_edgeFinset_edge_of_ne` — the edge finset
   and cardinality of a single-edge graph `SimpleGraph.edge u v` (`u ≠ v`).
+* `SimpleGraph.card_edgeFinset_congr` — `#G.edgeFinset` is independent of the `Fintype G.edgeSet`
+  instance.
+* `SimpleGraph.edgeFinset_inter_sym2_triple`, `SimpleGraph.edgeFinset_inter_sym2_triple_subset`,
+  `SimpleGraph.card_edgeFinset_inter_sym2_triple`, and
+  `SimpleGraph.edgeFinset_inter_sym2_triple_of_adj_of_not_adj` — edges of `G` spanned by a vertex
+  triple `{a, b, c}`.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -103,6 +110,66 @@ theorem edgeFinset_edge_of_ne {u v : V} (huv : u ≠ v) [Fintype (edge u v).edge
 theorem card_edgeFinset_edge_of_ne {u v : V} (huv : u ≠ v) [Fintype (edge u v).edgeSet] :
     #(edge u v).edgeFinset = 1 := by
   rw [edgeFinset_edge_of_ne huv, card_singleton]
+
+/-- The cardinality of `G.edgeFinset` does not depend on the `Fintype G.edgeSet` instance. -/
+theorem card_edgeFinset_congr (G : SimpleGraph V) (h₁ h₂ : Fintype G.edgeSet) :
+    @Finset.card (Sym2 V) (@edgeFinset V G h₁) = @Finset.card (Sym2 V) (@edgeFinset V G h₂) := by
+  have h : ((@edgeFinset V G h₁).card : ℕ∞) = (@edgeFinset V G h₂).card := by
+    rw [← Set.encard_coe_eq_coe_finsetCard, ← Set.encard_coe_eq_coe_finsetCard,
+      @coe_edgeFinset V G h₁, @coe_edgeFinset V G h₂]
+  exact Nat.cast_injective h
+
+/-- The edges of `G` spanned by three vertices `a`, `b`, `c` are the candidate pairs among
+`{s(a, b), s(a, c), s(b, c)}` that belong to `G.edgeSet`. -/
+theorem edgeFinset_inter_sym2_triple [DecidableEq V] {G : SimpleGraph V} [Fintype G.edgeSet]
+    [DecidableRel G.Adj] (a b c : V) :
+    G.edgeFinset ∩ ({a, b, c} : Finset V).sym2 =
+      ({s(a, b), s(a, c), s(b, c)} : Finset (Sym2 V)).filter (· ∈ G.edgeSet) := by
+  ext e
+  induction e using Sym2.ind with
+  | _ x y =>
+    simp only [mem_inter, mem_edgeFinset, mem_sym2_iff, Sym2.mem_iff, mem_filter,
+      mem_insert, mem_singleton, mem_edgeSet, Sym2.eq_iff]
+    constructor
+    · rintro ⟨hxy, hx⟩
+      have hx' := hx x (Or.inl rfl)
+      have hy' := hx y (Or.inr rfl)
+      refine ⟨?_, hxy⟩
+      rcases hx' with rfl | rfl | rfl <;> rcases hy' with rfl | rfl | rfl <;> simp_all
+    · grind
+
+/-- Every edge of `G` spanned by `{a, b, c}` is one of `s(a, b)`, `s(a, c)`, `s(b, c)`. -/
+theorem edgeFinset_inter_sym2_triple_subset [DecidableEq V] {G : SimpleGraph V}
+    [Fintype G.edgeSet] (a b c : V) :
+    G.edgeFinset ∩ ({a, b, c} : Finset V).sym2 ⊆ {s(a, b), s(a, c), s(b, c)} := by
+  classical
+  rw [edgeFinset_inter_sym2_triple]
+  exact filter_subset _ _
+
+/-- The edges spanned by three distinct vertices are counted pair by pair. -/
+theorem card_edgeFinset_inter_sym2_triple [DecidableEq V] {G : SimpleGraph V} [Fintype G.edgeSet]
+    [DecidableRel G.Adj] {a b c : V} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c) :
+    #(G.edgeFinset ∩ ({a, b, c} : Finset V).sym2) =
+      (if G.Adj a b then 1 else 0) + (if G.Adj a c then 1 else 0) +
+        (if G.Adj b c then 1 else 0) := by
+  rw [edgeFinset_inter_sym2_triple, card_filter, sum_insert, sum_insert, sum_singleton]
+  · simp [add_assoc]
+  · simp [hab, hbc.symm]
+  · simp [hbc, hab.symm, hac]
+
+/-- When `a` and `b` are adjacent in `G` and `c` is adjacent to neither `a` nor `b`, the only
+edge of `G` spanned by `{a, b, c}` is `s(a, b)`. -/
+theorem edgeFinset_inter_sym2_triple_of_adj_of_not_adj [DecidableEq V] {G : SimpleGraph V}
+    [Fintype G.edgeSet] {a b c : V} (hab : G.Adj a b) (hac : ¬ G.Adj a c) (hbc : ¬ G.Adj b c) :
+    G.edgeFinset ∩ ({a, b, c} : Finset V).sym2 = {s(a, b)} := by
+  classical
+  rw [edgeFinset_inter_sym2_triple]
+  ext e
+  simp only [mem_filter, mem_insert, mem_singleton]
+  exact ⟨fun ⟨hmem, he⟩ ↦ hmem.elim id
+      (fun h ↦ h.elim (fun h' ↦ (hac (G.mem_edgeSet.mp (h' ▸ he))).elim)
+        (fun h' ↦ (hbc (G.mem_edgeSet.mp (h' ▸ he))).elim)),
+    fun h ↦ ⟨Or.inl h, h ▸ G.mem_edgeSet.mpr hab⟩⟩
 
 section Interval
 

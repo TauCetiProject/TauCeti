@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Binary
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
-public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
-public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
-import Mathlib.Tactic.Ring
-import TauCeti.Combinatorics.SimpleGraph.CutMinimal.OddTriple
+public import TauCeti.Combinatorics.SimpleGraph.CutMinimal.Basic
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
-# Parity-retracted gauges, cut-minimality, and four-vertex binary exactness
+# Parity-retracted gauges and cut-minimality
 
 Specializing `SimpleGraph.toCochain` (from
 `TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph`) to a finite symmetric group
@@ -26,16 +24,13 @@ permutation gauges to cut-minimality and binary cochains via `Equiv.Perm.parityR
   `2 * #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset ≤
     (G.toCochain ht.mul_self).cost (Equiv.Perm.movedNorm α) β`
   (`SimpleGraph.two_mul_card_symmDiff_le_cost_movedNorm_toCochain`);
-* `TauCeti.simpleGraphEquivPermFinTwo` identifies `SimpleGraph V` with
-  `Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))`, transporting `Cochain.cost`,
+* `SimpleGraph.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq` characterizes cut-minimality by
+  `(G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset`, and via
+  `TauCeti.simpleGraphEquivPermFinTwo` (from `Cochain.Binary`) transports `Cochain.cost`,
   `Cochain.defect`, and `Cochain.gaugeDist` to cut-switched edge counts, `#G.oddTripleFinset`,
   and cut-minimality (`TauCeti.Cochain.cost_movedNorm_fin_two`,
   `TauCeti.Cochain.defect_movedNorm_fin_two`,
-  `SimpleGraph.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq`,
-  `TauCeti.Cochain.isCutMinimal_symm_simpleGraphEquivPermFinTwo_iff`);
-* when `Fintype.card V ≤ 4`, cut-switching invariance of `oddTripleFinset` combined with the
-  degree-`1` bound on cut-minimal graphs gives `defect = (Fintype.card V - 2) * gaugeDist` on
-  `TwoComplex.complete V` for both `Equiv.Perm (Fin 2)` and `Subgroup.zpowers t` cochains.
+  `TauCeti.Cochain.isCutMinimal_symm_simpleGraphEquivPermFinTwo_iff`).
 
 ## References
 
@@ -165,24 +160,19 @@ theorem isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrd
   · intro hG
     have hG' : (G ∆ (⊤ : SimpleGraph V).between (∅ : Set V) (∅ : Set V)ᶜ).IsCutMinimal := by
       simpa using hG
-    have heq : #(G ∆ (⊤ : SimpleGraph V).between (∅ : Set V) (∅ : Set V)ᶜ).edgeFinset =
-        #G.edgeFinset :=
-      congrArg card (coe_injective (by simp))
-    rw [G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff ht hG', heq]
+    rw [G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff ht hG']
+    congr 2
+    exact congrArg card (coe_injective (by simp))
   · intro h
     rw [isCutMinimal_iff_forall_finset_card_edgeFinset_le_symmDiff_top_between]
     intro s
-    have hfintype : #(@edgeFinset _ G G.fintypeEdgeSet) = #G.edgeFinset :=
-      congrArg card (coe_injective (by simp))
-    rw [hfintype]
-    have hle : (2 : ℝ) * #G.edgeFinset ≤
-        2 * #(G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).edgeFinset := by
-      rw [← h, ← G.cost_movedNorm_toCochain_ite_mem ht (s : Set V)]
-      exact (G.toCochain ht.mul_self).gaugeDist_le_cost _ _
-    have hle' : 2 * #G.edgeFinset ≤
-        2 * #(G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).edgeFinset := by
-      exact_mod_cast hle
-    omega
+    have hle := ((G.toCochain ht.mul_self).gaugeDist_le_cost (Equiv.Perm.movedNorm α)
+      (fun v ↦ if v ∈ (s : Set V) then t else 1)).trans_eq
+      (G.cost_movedNorm_toCochain_ite_mem ht (s : Set V))
+    rw [h] at hle
+    norm_cast at hle
+    exact (G.card_edgeFinset_congr _ _).trans_le
+      ((Nat.le_of_mul_le_mul_left hle two_pos).trans_eq (card_edgeFinset_congr _ _ _))
 
 /-- The `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self` vanishes if and only if `G` is a
 complete-graph cut. -/
@@ -192,23 +182,6 @@ theorem gaugeDist_movedNorm_toCochain_eq_zero_iff [Fintype V] [LinearOrder V]
       ∃ S : Set V, G = (⊤ : SimpleGraph V).between S Sᶜ :=
   ((G.toCochain ht.mul_self).gaugeDist_eq_zero_iff_isCoboundary _).trans
     (G.isCoboundary_toCochain_iff ht.mul_self ht.isCycle.ne_one)
-
-/-- **Transposition exactness on at most four vertices**: on a vertex type of size at most four,
-every graph `G` and every transposition `t` satisfy
-`(G.toCochain ht.mul_self).defect (Equiv.Perm.movedNorm α) =
-  ((Fintype.card V - 2 : ℕ) : ℝ) * (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α)`. -/
-theorem defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four
-    [Fintype V] [LinearOrder V] (G : SimpleGraph V) (hV : Fintype.card V ≤ 4)
-    {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).defect (Equiv.Perm.movedNorm α) =
-      ((Fintype.card V - 2 : ℕ) : ℝ) *
-        (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) := by
-  classical
-  obtain ⟨s, hs, hval⟩ := G.exists_finset_isCutMinimal_and_gaugeDist_movedNorm_toCochain_eq ht
-  rw [G.defect_movedNorm_toCochain ht, hval, ← G.oddTripleFinset_symmDiff_top_between (s : Set V),
-    hs.card_oddTripleFinset_of_card_le_four hV]
-  push_cast
-  ring
 
 end SwapGauge
 
@@ -227,135 +200,21 @@ distinct vertices `u ≠ v` and transposition `t` equals `2 * (Fintype.card V - 
 theorem defect_movedNorm_singleEdge {u v : V} (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
     (singleEdge (TwoComplex.complete V) u v t).defect (Equiv.Perm.movedNorm α) =
       2 * ((Fintype.card V - 2 : ℕ) : ℝ) := by
-  classical
-  have hcard : #(SimpleGraph.edge u v).edgeFinset = 1 :=
-    SimpleGraph.card_edgeFinset_edge_of_ne huv
-  have hdeg (w : V) : (SimpleGraph.edge u v).degree w ≤ 1 :=
-    ((SimpleGraph.edge u v).degree_le_card_edgeFinset (v := w)).trans_eq hcard
-  rw [← SimpleGraph.edge_toCochain u v ht.mul_self,
-    (SimpleGraph.edge u v).defect_movedNorm_toCochain ht,
-    (SimpleGraph.edge u v).card_oddTripleFinset_of_degree_le_one hdeg, hcard, mul_one]
+  rw [defect_singleEdge _ huv t, ht.movedNorm, mul_comm]
 
 /-- On `TwoComplex.complete V` with `3 ≤ Fintype.card V`, the `Equiv.Perm.movedNorm α` gauge
 distance of `Cochain.singleEdge` at `u ≠ v` and any transposition `t` equals `2`. -/
 theorem gaugeDist_movedNorm_singleEdge_of_three_le_card (hV : 3 ≤ Fintype.card V) {u v : V}
     (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
     (singleEdge (TwoComplex.complete V) u v t).gaugeDist (Equiv.Perm.movedNorm α) = 2 := by
-  classical
-  have hcard : #(SimpleGraph.edge u v).edgeFinset = 1 :=
-    SimpleGraph.card_edgeFinset_edge_of_ne huv
-  rw [← SimpleGraph.edge_toCochain u v ht.mul_self,
-    ((SimpleGraph.edge u v).isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq ht).mp
-      (SimpleGraph.isCutMinimal_edge_of_three_le_card hV u v), hcard, Nat.cast_one, mul_one]
+  rw [gaugeDist_singleEdge_of_three_le_card Equiv.Perm.isConjInvariant_movedNorm hV huv t,
+    ht.movedNorm]
 
 end SingleEdge
-
-section ZPowers
-
-/-- **Subgroup cochain exactness on at most four vertices**: on a vertex type of size at most four,
-every `Subgroup.zpowers t`-valued `1`-cochain `γ` on `TwoComplex.complete V` for a transposition `t`
-satisfies `γ.defect ℓ = ((Fintype.card V - 2 : ℕ) : ℝ) * γ.gaugeDist ℓ` under the restricted
-moved-point norm `ℓ := (Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective`. -/
-theorem defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four
-    {V α : Type*} [Fintype V] [LinearOrder V] [Fintype α] [DecidableEq α]
-    (hV : Fintype.card V ≤ 4) {t : Equiv.Perm α} (ht : t.IsSwap)
-    (γ : Cochain (TwoComplex.complete V) (Subgroup.zpowers t)) :
-    γ.defect ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) =
-      ((Fintype.card V - 2 : ℕ) : ℝ) *
-        γ.gaugeDist ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) := by
-  obtain ⟨G, hmap⟩ := γ.exists_map_zpowers_subtype_eq_toCochain ht.mul_self
-  rw [← γ.defect_map_subtype (Equiv.Perm.movedNorm α) (Subgroup.zpowers t),
-    ← γ.gaugeDist_map_zpowers_subtype ht, hmap]
-  exact G.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV ht
-
-end ZPowers
 
 end Cochain
 
 section PermFinTwo
-
-/-- Simple graphs on a finite vertex type `V` are in bijection with `Equiv.Perm (Fin 2)`-valued
-`1`-cochains on `TwoComplex.complete V`: adjacent vertex pairs carry `Equiv.swap 0 1` and
-non-adjacent pairs carry `1`. -/
-noncomputable def simpleGraphEquivPermFinTwo (V : Type*) [Fintype V] :
-    SimpleGraph V ≃ Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2)) where
-  toFun G := G.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self
-  invFun α := α.supportGraph
-  left_inv G :=
-    SimpleGraph.supportGraph_toCochain G
-      (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self
-      (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).isCycle.ne_one
-  right_inv α := by
-    ext u v _
-    rcases (α u v).eq_one_or_swap_fin_two with h | h <;> simp [h]
-
-/-- `TauCeti.simpleGraphEquivPermFinTwo` agrees with `SimpleGraph.toCochain` at `Equiv.swap 0 1`. -/
-theorem simpleGraphEquivPermFinTwo_eq_toCochain {V : Type*} [Fintype V] (G : SimpleGraph V) :
-    simpleGraphEquivPermFinTwo V G =
-      G.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self :=
-  (rfl)
-
-/-- `TauCeti.simpleGraphEquivPermFinTwo` assigns `Equiv.swap 0 1` to adjacent vertices. -/
-@[simp, grind =]
-theorem simpleGraphEquivPermFinTwo_apply_of_adj {V : Type*} [Fintype V] {G : SimpleGraph V}
-    {u v : V} (h : G.Adj u v) :
-    simpleGraphEquivPermFinTwo V G u v = Equiv.swap 0 1 :=
-  SimpleGraph.toCochain_apply_of_adj
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self h
-
-/-- `TauCeti.simpleGraphEquivPermFinTwo` assigns `1` to non-adjacent vertices. -/
-@[simp, grind =]
-theorem simpleGraphEquivPermFinTwo_apply_of_not_adj {V : Type*} [Fintype V] {G : SimpleGraph V}
-    {u v : V} (h : ¬ G.Adj u v) :
-    simpleGraphEquivPermFinTwo V G u v = 1 :=
-  SimpleGraph.toCochain_apply_of_not_adj
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self h
-
-/-- Explicit `ite` evaluation of `TauCeti.simpleGraphEquivPermFinTwo` when `G.Adj` is decidable. -/
-theorem simpleGraphEquivPermFinTwo_apply {V : Type*} [Fintype V] (G : SimpleGraph V)
-    [DecidableRel G.Adj] (u v : V) :
-    simpleGraphEquivPermFinTwo V G u v = if G.Adj u v then Equiv.swap 0 1 else 1 :=
-  G.toCochain_apply
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self u v
-
-/-- The inverse of `TauCeti.simpleGraphEquivPermFinTwo` is `Cochain.supportGraph`. -/
-@[simp]
-theorem simpleGraphEquivPermFinTwo_symm_eq_supportGraph {V : Type*} [Fintype V]
-    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    (simpleGraphEquivPermFinTwo V).symm α = α.supportGraph :=
-  (rfl)
-
-/-- The inverse of `TauCeti.simpleGraphEquivPermFinTwo` makes `u` and `v` adjacent precisely when
-`α u v ≠ 1`. -/
-@[grind =]
-theorem simpleGraphEquivPermFinTwo_symm_adj {V : Type*} [Fintype V]
-    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) (u v : V) :
-    ((simpleGraphEquivPermFinTwo V).symm α).Adj u v ↔ α u v ≠ 1 := by
-  rw [simpleGraphEquivPermFinTwo_symm_eq_supportGraph, Cochain.supportGraph_adj]
-
-/-- Adjacency in `(simpleGraphEquivPermFinTwo V).symm α` is decidable because equality in
-`Equiv.Perm (Fin 2)` is decidable. -/
-instance instDecidableRelSimpleGraphEquivPermFinTwoSymm {V : Type*} [Fintype V]
-    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    DecidableRel ((simpleGraphEquivPermFinTwo V).symm α).Adj :=
-  fun u v ↦ decidable_of_iff (α u v ≠ 1) (simpleGraphEquivPermFinTwo_symm_adj α u v).symm
-
-/-- Acting on `α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))` by a gauge `β` switches
-its support graph by the cut `{w | β w ≠ 1}`. -/
-theorem simpleGraphEquivPermFinTwo_symm_smul {V : Type*} [Fintype V]
-    (β : V → Equiv.Perm (Fin 2)) (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    (simpleGraphEquivPermFinTwo V).symm (β • α) =
-      (simpleGraphEquivPermFinTwo V).symm α ∆
-        (⊤ : SimpleGraph V).between {w | β w ≠ 1} {w | β w ≠ 1}ᶜ := by
-  classical
-  have hβ : β = fun v ↦ if v ∈ {w | β w ≠ 1} then Equiv.swap 0 1 else 1 :=
-    funext fun v ↦ Equiv.Perm.eq_ite_ne_one_fin_two (β v)
-  have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
-  conv_lhs =>
-    rw [← (simpleGraphEquivPermFinTwo V).apply_symm_apply α,
-      simpleGraphEquivPermFinTwo_eq_toCochain, hβ,
-      ((simpleGraphEquivPermFinTwo V).symm α).smul_ite_mem_toCochain hswap.mul_self {w | β w ≠ 1}]
-  exact SimpleGraph.supportGraph_toCochain _ hswap.mul_self hswap.isCycle.ne_one
 
 /-- **Ambient-degree invariance of transposition gauge distance**: the `Equiv.Perm α` gauge distance
 of `G.toCochain ht.mul_self` depends only on `G`, and coincides with the `Equiv.Perm (Fin 2)` gauge
@@ -423,33 +282,6 @@ theorem Cochain.isCutMinimal_symm_simpleGraphEquivPermFinTwo_iff {V : Type*}
         2 * #((simpleGraphEquivPermFinTwo V).symm α).edgeFinset := by
   rw [((simpleGraphEquivPermFinTwo V).symm α).isCutMinimal_iff_gaugeDist_movedNorm_fin_two_eq,
     (simpleGraphEquivPermFinTwo V).apply_symm_apply]
-
-/-- An `Equiv.Perm (Fin 2)`-valued `1`-cochain on `TwoComplex.complete V` is a coboundary if and
-only if its support graph is a complete-graph cut. -/
-theorem Cochain.isCoboundary_fin_two_iff {V : Type*} [Fintype V]
-    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    α.IsCoboundary ↔
-      ∃ S : Set V, (simpleGraphEquivPermFinTwo V).symm α = (⊤ : SimpleGraph V).between S Sᶜ := by
-  have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
-  conv_lhs =>
-    rw [← (simpleGraphEquivPermFinTwo V).apply_symm_apply α,
-      simpleGraphEquivPermFinTwo_eq_toCochain]
-  exact ((simpleGraphEquivPermFinTwo V).symm α).isCoboundary_toCochain_iff hswap.mul_self
-    hswap.isCycle.ne_one
-
-/-- **Binary cochain exactness on at most four vertices**: on a vertex type of size at most four,
-every `α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))` satisfies
-`α.defect (Equiv.Perm.movedNorm (Fin 2)) =
-  ((Fintype.card V - 2 : ℕ) : ℝ) * α.gaugeDist (Equiv.Perm.movedNorm (Fin 2))`. -/
-theorem Cochain.defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four
-    {V : Type*} [Fintype V] [LinearOrder V] (hV : Fintype.card V ≤ 4)
-    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    α.defect (Equiv.Perm.movedNorm (Fin 2)) =
-      ((Fintype.card V - 2 : ℕ) : ℝ) * α.gaugeDist (Equiv.Perm.movedNorm (Fin 2)) := by
-  let G := (simpleGraphEquivPermFinTwo V).symm α
-  rw [← (simpleGraphEquivPermFinTwo V).apply_symm_apply α, simpleGraphEquivPermFinTwo_eq_toCochain]
-  exact G.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
-    (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one)
 
 end PermFinTwo
 

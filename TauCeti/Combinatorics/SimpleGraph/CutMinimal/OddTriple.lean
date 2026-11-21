@@ -5,8 +5,8 @@ Authors: pi
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
-public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
+public import TauCeti.Combinatorics.SimpleGraph.CutMinimal.Basic
+public import TauCeti.Combinatorics.SimpleGraph.OddTriple.Counting
 
 /-!
 # Odd-triple count of small cut-minimal graphs

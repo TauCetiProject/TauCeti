@@ -21,7 +21,8 @@ of adjacent pairs among `(u, v)`, `(v, w)`, and `(w, u)` adds modulo `2` under `
 
 ## Main results
 
-* `SimpleGraph.SymmDiff.adjDecidable`: decidable adjacency instance for `G₁ ∆ G₂`.
+* `SimpleGraph.SymmDiff.adjDecidable`, `SimpleGraph.SymmDiff.edgeSetFintype`: decidable
+  adjacency and finite edge-set instances for `G₁ ∆ G₂`.
 * `SimpleGraph.symmDiff_adj`, `SimpleGraph.edgeSet_symmDiff`, `SimpleGraph.edgeFinset_symmDiff`:
   adjacency, edge set, and edge finset of `G₁ ∆ G₂`.
 * `SimpleGraph.xor_symmDiff_adj`: adjacency parity around `(u, v, w)` adds modulo `2` under `∆`.
@@ -53,6 +54,12 @@ theorem symmDiff_adj (G₁ G₂ : SimpleGraph V) (u v : V) :
 theorem edgeSet_symmDiff (G₁ G₂ : SimpleGraph V) :
     (G₁ ∆ G₂).edgeSet = G₁.edgeSet ∆ G₂.edgeSet := by
   rw [symmDiff_def, edgeSet_sup, edgeSet_sdiff, edgeSet_sdiff, symmDiff_def]
+
+/-- The edge set of `G₁ ∆ G₂` is finite whenever both `G₁.edgeSet` and `G₂.edgeSet` are finite. -/
+instance SymmDiff.edgeSetFintype (G₁ G₂ : SimpleGraph V) [DecidableEq V]
+    [Fintype G₁.edgeSet] [Fintype G₂.edgeSet] : Fintype (G₁ ∆ G₂).edgeSet :=
+  Fintype.ofFinset (G₁.edgeFinset ∆ G₂.edgeFinset) fun e ↦ by
+    rw [mem_symmDiff, mem_edgeFinset, mem_edgeFinset, edgeSet_symmDiff, Set.mem_symmDiff]
 
 /-- The edge finset of `G₁ ∆ G₂` is the symmetric difference of the edge finsets of `G₁` and
 `G₂`. -/

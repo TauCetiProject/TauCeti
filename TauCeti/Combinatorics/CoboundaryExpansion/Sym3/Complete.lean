@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
 import TauCeti.GroupTheory.Perm.FinThree.Basic

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Invariance
-public import TauCeti.Combinatorics.SimpleGraph.Finite
-public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
+public import TauCeti.Combinatorics.SimpleGraph.Bipartite
+public import TauCeti.Combinatorics.SimpleGraph.OddTriple.Basic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
@@ -20,7 +20,9 @@ an involution `c : Γ` (`c * c = 1`) define a `1`-cochain `G.toCochain hc` on
 
 ## Main definitions and results
 
-* `TauCeti.Cochain.supportGraph`: the simple graph of vertex pairs where `α u v ≠ 1`.
+* `TauCeti.Cochain.supportGraph`, `TauCeti.Cochain.supportGraph_comapComplete`,
+  `TauCeti.Cochain.supportGraph_map`: the simple graph of vertex pairs where `α u v ≠ 1`, and its
+  compatibility with vertex pullback and injective coefficient maps.
 * `SimpleGraph.toCochain`: the `{1, c}`-valued `1`-cochain on `TwoComplex.complete V` supported
   on `G` for an element `c * c = 1`.
 * `SimpleGraph.smul_ite_mem_toCochain`, `SimpleGraph.cost_toCochain_ite_mem`: acting by the
@@ -62,6 +64,23 @@ instance instDecidableRelSupportGraphAdj {V Γ : Type*} [Group Γ] [DecidableEq 
     {X : TwoComplex V} (α : Cochain X Γ) :
     DecidableRel α.supportGraph.Adj :=
   fun u v ↦ inferInstanceAs (Decidable (α u v ≠ 1))
+
+/-- Pulling a cochain on `TwoComplex.complete V` back along `f : W → V` pulls its support graph
+back along `f`. -/
+@[simp]
+theorem supportGraph_comapComplete {V W Γ : Type*} [Fintype V] [Fintype W] [Group Γ]
+    (α : Cochain (TwoComplex.complete V) Γ) (f : W → V) :
+    (α.comapComplete f).supportGraph = α.supportGraph.comap f := by
+  ext u v
+  simp
+
+/-- Pushing a cochain forward along an injective group homomorphism preserves its support graph. -/
+@[simp]
+theorem supportGraph_map {V Γ H : Type*} [Group Γ] [Group H] {X : TwoComplex V}
+    (α : Cochain X Γ) {φ : Γ →* H} (hφ : Function.Injective φ) :
+    (α.map φ).supportGraph = α.supportGraph := by
+  ext u v
+  simp [map_eq_one_iff φ hφ]
 
 end Cochain
 

@@ -97,6 +97,18 @@ theorem val_ofLtTriple (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) 
   ext a
   simp [ofLtTriple_apply, val_ofFinEmb, ltTripleEmb_apply, Fin.exists_fin_succ, eq_comm]
 
+/-- An increasing triple in a linear order is determined by the three-element finset `{a, b, c}`
+it spans. -/
+theorem eq_of_lt_lt_triple_eq {a₁ b₁ c₁ a₂ b₂ c₂ : I} (hab₁ : a₁ < b₁) (hbc₁ : b₁ < c₁)
+    (hab₂ : a₂ < b₂) (hbc₂ : b₂ < c₂)
+    (h : ({a₁, b₁, c₁} : Finset I) = {a₂, b₂, c₂}) :
+    (a₁, b₁, c₁) = (a₂, b₂, c₂) :=
+  congrArg Subtype.val
+    (ofLtTriple.injective
+      (a₁ := ⟨(a₁, b₁, c₁), hab₁, hbc₁⟩) (a₂ := ⟨(a₂, b₂, c₂), hab₂, hbc₂⟩)
+      (Subtype.ext <| (val_ofLtTriple ⟨(a₁, b₁, c₁), hab₁, hbc₁⟩).trans
+        (h.trans (val_ofLtTriple ⟨(a₂, b₂, c₂), hab₂, hbc₂⟩).symm)))
+
 /-- Every three-element set of a linear order is `{a, b, c}` for some `a < b < c`. -/
 theorem exists_lt_lt_val_eq (s : powersetCard I 3) :
     ∃ a b c, a < b ∧ b < c ∧ s.val = {a, b, c} := by

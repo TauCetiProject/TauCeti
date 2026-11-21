@@ -6,26 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
-public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
-public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
+public import TauCeti.Combinatorics.SimpleGraph.CutMinimal.Basic
+public import TauCeti.Combinatorics.SimpleGraph.OddTriple.Basic
+import TauCeti.Combinatorics.CoboundaryExpansion.SwapGauge
 import TauCeti.Combinatorics.SimpleGraph.Staircase
-import TauCeti.Algebra.BigOperators.Sym
-import TauCeti.GroupTheory.Perm.ParityRetract
-import Mathlib.GroupTheory.Perm.Cycle.Basic
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
 /-!
 # The `Sym(3)` coboundary constant along Kozlov's staircase graphs
 
-For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V) f` with
-`f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTripleFinset`
-(`SimpleGraph.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
-`2 * #G.edgeFinset`: the parity retraction onto `{1, swap 0 1}`
-(`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the moved-point norm,
-`Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the size of the
-symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
+For a graph `G` on a finite linear order `V`, the transposition cochain `G.toCochain ht.mul_self`
+with `t = Equiv.swap 0 1 : Perm (Fin 3)` has moved-point defect `2 * #G.oddTripleFinset`
+(`SimpleGraph.defect_movedNorm_toCochain`). When `G` is cut-minimal,
+`SimpleGraph.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq` gives
+`gaugeDist = 2 * #G.edgeFinset`. Hence:
 
 * `SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an
   edge,
@@ -46,37 +40,11 @@ symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
   k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792,
   Corollary 7 and Theorem 8 (the `Sym(3)` transfer).
 * Jeromie Beasley, `coboundary-k3-lean` (MIT), https://github.com/dicipler-pixel/coboundary-k3-lean,
-  commit `7f5f2c6`: this file adapts the staircase cochain and its parity bound from
-  `CoboundaryK3/Staircase.lean`, with the counting replaced by `SimpleGraph.staircase`.
+  commit `7f5f2c6`: this file adapts the staircase upper bound from `CoboundaryK3/Staircase.lean`,
+  using `SimpleGraph.staircase` and `SimpleGraph.toCochain`.
 -/
 
 public section
-
-namespace TauCeti
-
-open Finset Equiv TwoComplex
-
-variable {V : Type*} [Fintype V] [LinearOrder V]
-
-namespace Sym3
-
-/-- A `{1, swap 0 1}`-gauged edge term moves `2` points exactly when an odd number of the edge
-label and the two gauge values are `swap 0 1`. -/
-private theorem card_support_inv_mul_ite_mul {x y : Perm (Fin 3)} (hx : x = 1 ∨ x = swap 0 1)
-    (hy : y = 1 ∨ y = swap 0 1) (p : Prop) [Decidable p] :
-    #(x⁻¹ * (if p then swap 0 1 else 1) * y).support =
-      if Xor p (Xor (x = swap 0 1) (y = swap 0 1)) then 2 else 0 := by
-  have key : ∀ x y : Perm (Fin 3), x = 1 ∨ x = swap 0 1 → y = 1 ∨ y = swap 0 1 → ∀ b : Bool,
-      #(x⁻¹ * (if b = true then swap 0 1 else 1) * y).support =
-        if Xor (b = true) (Xor (x = swap 0 1) (y = swap 0 1)) then 2 else 0 := by
-    decide +kernel
-  by_cases hp : p
-  · simpa [hp] using key x y hx hy true
-  · simpa [hp] using key x y hx hy false
-
-end Sym3
-
-end TauCeti
 
 namespace SimpleGraph
 
@@ -84,72 +52,19 @@ open Finset Equiv TauCeti TauCeti.TwoComplex
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
-/-- **Parity retraction against a cut-minimal graph.** Every gauge costs at least
-`2 * #G.edgeFinset` against the cochain equal to `swap 0 1` on the edges of a cut-minimal `G`. -/
-private theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRel G.Adj]
-    (hG : G.IsCutMinimal) (β : V → Perm (Fin 3)) :
-    (2 * #G.edgeFinset : ℝ) ≤
-      (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).cost
-        (Perm.movedNorm (Fin 3)) β := by
-  set α := Cochain.ofLt (complete V) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
-  have ht : (swap 0 1 : Perm (Fin 3)).IsSwap := Perm.swap_isSwap_iff.mpr (by decide)
-  have hφα : α.map (Perm.parityRetract ht) = α := by
-    refine Cochain.ext fun u v _ => ?_
-    rw [Cochain.map_apply, Perm.parityRetract_eq_self_iff]
-    rcases lt_trichotomy u v with h | rfl | h
-    · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr h.ne) h]
-      split_ifs <;> simp
-    · simp
-    · rw [Cochain.ofLt_apply_of_gt _ ((adj_complete u v).mpr h.ne') h]
-      split_ifs <;> simp
-  refine le_trans ?_ (Cochain.cost_map_le (Perm.movedNorm_parityRetract_le ht) α β)
-  rw [hφα]
-  set γ := Perm.parityRetract ht ∘ β
-  have hγ : ∀ u, γ u = 1 ∨ γ u = swap 0 1 := fun u =>
-    (Perm.mem_range_parityRetract ht _).mp ⟨β u, rfl⟩
-  let S : Set V := {u | γ u = swap 0 1}
-  have hcm := (SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff G).mp hG S
-  set F := symmDiff G.edgeFinset ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset
-  have hF : (#F : ℝ) = ∑ u, ∑ v,
-      if u < v ∧ Xor (G.Adj u v) (Xor (γ u = swap 0 1) (γ v = swap 0 1)) then 1 else 0 := by
-    rw [card_eq_sum_sum_ite_lt_of_forall_mk_notMem F (fun u => by simp [F, mem_symmDiff])]
-    push_cast
-    refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => ?_
-    by_cases huv : u < v
-    · have hne := huv.ne
-      by_cases ha : G.Adj u v <;> by_cases hu : γ u = swap 0 1 <;>
-        by_cases hv : γ v = swap 0 1 <;>
-        simp [huv, hne, ha, hu, hv, F, S, mem_symmDiff, SimpleGraph.between_adj]
-    · simp [huv]
-  rw [Cochain.cost_complete, sum_filter, Fintype.sum_prod_type]
-  calc (2 * #G.edgeFinset : ℝ) ≤ 2 * #F := by exact_mod_cast Nat.mul_le_mul_left 2 hcm
-    _ = ∑ u, ∑ v, if u < v then Perm.movedNorm (Fin 3) ((γ u)⁻¹ * α u v * γ v) else 0 := by
-      rw [hF, mul_sum]
-      refine sum_congr rfl fun u _ => ?_
-      rw [mul_sum]
-      refine sum_congr rfl fun v _ => ?_
-      by_cases huv : u < v
-      · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv, Perm.movedNorm_apply,
-          TauCeti.Sym3.card_support_inv_mul_ite_mul (hγ u) (hγ v)]
-        by_cases hx : Xor (G.Adj u v) (Xor (γ u = swap 0 1) (γ v = swap 0 1)) <;> simp [huv, hx]
-      · simp [huv]
-
 /-- **Cut-minimal graphs bound the `Sym(3)` constant.** For a cut-minimal graph `G` on `V` with at
 least one edge, `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTripleFinset / #G.edgeFinset`. -/
 theorem h1_complete_movedNorm_fin_three_le_of_isCutMinimal (G : SimpleGraph V)
     [DecidableRel G.Adj] (hG : G.IsCutMinimal) (hE : 0 < #G.edgeFinset) :
     h1 (complete V) (Perm.movedNorm (Fin 3)) ≤
       (#G.oddTripleFinset : ℝ) / #G.edgeFinset := by
-  set α := Cochain.ofLt (complete V) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
+  have ht : (swap 0 1 : Perm (Fin 3)).IsSwap := Perm.swap_isSwap_iff.mpr (by decide)
   have hE' : (0 : ℝ) < 2 * #G.edgeFinset := by positivity
-  have hgd : (2 * #G.edgeFinset : ℝ) ≤ α.gaugeDist (Perm.movedNorm (Fin 3)) :=
-    (α.le_gaugeDist_iff _).mpr (G.two_mul_card_edgeFinset_le_cost hG)
-  refine (h1_le_div (hE'.trans_le hgd)).trans ?_
-  rw [defect_ofLt_ite_adj]
-  calc (2 * #G.oddTripleFinset : ℝ) / α.gaugeDist (Perm.movedNorm (Fin 3)) ≤
-        2 * #G.oddTripleFinset / (2 * #G.edgeFinset) :=
-        div_le_div_of_nonneg_left (by positivity) hE' hgd
-    _ = #G.oddTripleFinset / #G.edgeFinset := mul_div_mul_left _ _ two_ne_zero
+  have hgd : (G.toCochain ht.mul_self).gaugeDist (Perm.movedNorm (Fin 3)) = 2 * #G.edgeFinset :=
+    (G.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq ht).mp hG
+  refine (h1_le_div (hgd ▸ hE')).trans_eq ?_
+  rw [G.defect_movedNorm_toCochain ht, hgd]
+  exact mul_div_mul_left _ _ two_ne_zero
 
 end SimpleGraph
 
