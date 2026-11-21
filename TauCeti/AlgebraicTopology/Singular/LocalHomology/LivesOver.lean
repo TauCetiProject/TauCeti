@@ -392,6 +392,45 @@ theorem singularHomologyCrossRel_localHomologyMap_tmul {X X' : Type w} [Topologi
     R S i j n hn).hom (x ⊗ₜ b)) (ConcreteCategory.congr_hom (localHomologyMap_def R f h i) a)).trans
     (ConcreteCategory.congr_hom hnat (a ⊗ₜ b))
 
+/-- Naturality of the relative cross product in the second factor, read in local homology: for a
+map `g : Y → Y'`, the relative cross product of `a` with `g_* b` is the image under `id × g` of the
+relative cross product of `a` with `b`. -/
+theorem singularHomologyCrossRel_tmul_homologyMap {X Y Y' : Type w} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Y'] (g : C(Y, Y')) {T : Set X} {i j n : ℕ}
+    (hn : i + j = n) (a : localHomology (A := ModuleCat.{w} k) R T i)
+    (b : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (TopCat.singularHomologyCrossRel (TopCat.of X) (TopCat.of Y') Tᶜ R S i j n hn).hom
+        (a ⊗ₜ (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) S j).hom b) =
+      (localHomologyMap (R ⊗ S) ((ContinuousMap.id X).prodMap g) (S := Prod.fst ⁻¹' T)
+        (T := Prod.fst ⁻¹' T) (fun _ hz ↦ hz) n).hom
+        ((TopCat.singularHomologyCrossRel (TopCat.of X) (TopCat.of Y) Tᶜ R S i j n hn).hom
+          (a ⊗ₜ b)) := by
+  have h' : (ContinuousMap.id X).prodMap g ⁻¹' (Prod.fst ⁻¹' T) ⊆ Prod.fst ⁻¹' T :=
+    fun _ hz ↦ hz
+  have hT : Set.MapsTo (𝟙 (TopCat.of X)) Tᶜ Tᶜ := fun _ hx ↦ hx
+  have hnat := TopCat.singularHomologyCrossRel_naturality (TopCat.of X) (TopCat.of Y) Tᶜ R S i j
+    n hn (B' := Tᶜ) (𝟙 (TopCat.of X)) hT (TopCat.ofHom g)
+  rw [← localHomologyRestriction_def R (subset_refl T) i, localHomologyRestriction_refl,
+    MonoidalCategory.id_tensorHom] at hnat
+  have hfg : TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of X) ⊗ₘ TopCat.ofHom g)
+      (TopCat.mapsTo_tensorHom_preimage_fst _ _ hT)) (R ⊗ S) n =
+      localHomologyMap (R ⊗ S) ((ContinuousMap.id X).prodMap g) h' n := by
+    have hXg : 𝟙 (TopCat.of X) ⊗ₘ TopCat.ofHom g =
+        TopCat.ofHom ((ContinuousMap.id X).prodMap g) :=
+      TopCat.hom_ext (ContinuousMap.ext fun z ↦ TopCat.tensor_apply _ _ z)
+    have h₁ : TopPair.ofSubsetMap (𝟙 (TopCat.of X) ⊗ₘ TopCat.ofHom g)
+        (TopCat.mapsTo_tensorHom_preimage_fst _ _ hT) =
+        TopPair.ofSubsetMap (X := TopCat.of (X × Y)) (Y := TopCat.of (X × Y'))
+          (B := (Prod.fst ⁻¹' T)ᶜ) (B' := (Prod.fst ⁻¹' T)ᶜ)
+          (TopCat.ofHom ((ContinuousMap.id X).prodMap g))
+          ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h')) :=
+      TopPair.hom_ext_of_fst _
+        (Eq.trans (TopPair.ofSubsetMap_fst _ _) (hXg.trans (TopPair.ofSubsetMap_fst _ _).symm))
+    exact (congrArg (fun φ ↦ TopPair.singularHomologyMap φ _ n) h₁).trans
+      (localHomologyMap_def _ ((ContinuousMap.id X).prodMap g) h' n).symm
+  rw [hfg] at hnat
+  exact ConcreteCategory.congr_hom hnat (a ⊗ₜ b)
+
 /-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `b` for
 `p ∘ fst : E × Y → M`, then `α` lives over the fundamental class at `b` for `p`. -/
 theorem LivesOverFundamentalClass.of_singularHomologyCross {p : E → M} {b : M} {i j n : ℕ}

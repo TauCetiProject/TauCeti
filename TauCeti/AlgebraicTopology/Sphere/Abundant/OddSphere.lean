@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
+import TauCeti.AlgebraicTopology.Singular.Homotopy.BasedMapStabilizer
 import TauCeti.AlgebraicTopology.Sphere.Abundant.Action
 import TauCeti.AlgebraicTopology.Sphere.DoubleTangentCircle
 import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
@@ -117,7 +118,8 @@ theorem isAbundantWithTwoSpheres_sphere_of_odd {n : ℕ} (hn : Odd n) (h3 : 3 �
     finrank_euclideanSpace_fin).isAbundantWithTwoSpheres_of_smul_ne_zero
     finrank_euclideanSpace_fin π (fun _ ↦ rfl)
     (exists_continuousOn_specialOrthogonalGroup_smul_eq (by omega) x₀)
-    (isPathConnected_setOf_specialOrthogonalGroup_smul_eq x₀) hA (by omega : 0 < m + 1)
-    hα
+    hA (by omega : 0 < m + 1) hα fun h ↦
+      ((isPathConnected_setOf_specialOrthogonalGroup_smul_eq x₀).joinedIn 1 (one_smul _ _) h
+        h.property).homologyMap_stabilizer_smul_apply _ _ _
 
 end TauCeti
