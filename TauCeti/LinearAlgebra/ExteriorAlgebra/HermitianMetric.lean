@@ -387,24 +387,6 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_one (σ : R →+* R) :
     rw [LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hcard hS hT]
     simp [hne]
 
-/-- **Gram-determinant formula for the wedge-basis form**: in every degree `p` (including `p = 0`),
-the form making `b.ExteriorAlgebra` orthonormal evaluates on pure wedges to the Gram determinant of
-the form making `b` orthonormal. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti (σ : R →+* R) (p : ℕ) (v w : Fin p → M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) R)
-        (_root_.ExteriorAlgebra.ιMulti R p v) (_root_.ExteriorAlgebra.ιMulti R p w) =
-      (Matrix.of fun i j ↦ toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) (v i) (w j)).det := by
-  rw [toLinearMapₛₗ₂_exteriorAlgebra_one, LinearMap.sesqExteriorAlgebra_ιMulti_ιMulti]
-
-/-- **Distinct exterior powers are orthogonal for the wedge-basis form.** -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (σ : R →+* R)
-    {p q : ℕ} (hpq : p ≠ q) {s t : _root_.ExteriorAlgebra R M}
-    (hs : s ∈ ⋀[R]^p M) (ht : t ∈ ⋀[R]^q M) :
-    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) R)
-        s t = 0 := by
-  rw [toLinearMapₛₗ₂_exteriorAlgebra_one]
-  exact LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hpq hs ht
-
 section StarRing
 
 variable [StarRing R]
@@ -441,9 +423,7 @@ theorem toLinearMapₛₗ₂_ι_mul_right (x : M) (s t : _root_.ExteriorAlgebra 
         (contractLeft (Q := (0 : QuadraticForm R M))
           (toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) x) s) t := by
   have hB : (toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R)).IsSymm :=
-    LinearMap.isSymm_def.mpr fun u v ↦ by
-      rw [toLinearMapₛₗ₂_one_apply, toLinearMapₛₗ₂_one_apply]
-      simp [mul_comm]
+    LinearMap.isSymm_def.mpr (Matrix.star_toLinearMapₛₗ₂_one_apply b)
   rw [toLinearMapₛₗ₂_exteriorAlgebra_one, LinearMap.sesqExteriorAlgebra_ι_mul_right hB]
 
 /-- **The wedge-basis form of `⋀ M` depends only on the form of `M`**: if two finite ordered bases
@@ -464,8 +444,9 @@ and `t ∈ ⋀[R]^q M`. -/
 theorem toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
     {s t : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (ht : t ∈ ⋀[R]^q M) :
     toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
-      (1 : Matrix (Finset I) (Finset I) R) s t = 0 :=
-  toLinearMapₛₗ₂_exteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne b (starRingEnd R) hpq hs ht
+      (1 : Matrix (Finset I) (Finset I) R) s t = 0 := by
+  rw [toLinearMapₛₗ₂_exteriorAlgebra_one]
+  exact LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hpq hs ht
 
 /-- **In degree one, the exterior Hermitian form restricts to the Hermitian form on `M`.** -/
 theorem toLinearMapₛₗ₂_ι_ι (x y : M) :
@@ -482,8 +463,8 @@ theorem toLinearMapₛₗ₂_ιMulti_ιMulti (p : ℕ) (x y : Fin p → M) :
         (1 : Matrix (Finset I) (Finset I) R)
         (_root_.ExteriorAlgebra.ιMulti R p x) (_root_.ExteriorAlgebra.ιMulti R p y) =
       (Matrix.of fun i j ↦
-        toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) (x i) (y j)).det :=
-  toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti b (starRingEnd R) p x y
+        toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) (x i) (y j)).det := by
+  rw [toLinearMapₛₗ₂_exteriorAlgebra_one, LinearMap.sesqExteriorAlgebra_ιMulti_ιMulti]
 
 /-- **Characterization of the exterior Gram metric**: the form making the wedge basis of `b`
 orthonormal is the unique sesquilinear form on `⋀ M` for which distinct exterior powers are

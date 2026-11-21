@@ -68,9 +68,7 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_apply_eq_sesqComplexification`, and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra`: an
   orthonormal basis of `W` identifies the wedge-basis form with the exterior Gram form `H`.
-* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti`,
-  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti_eq_det_polar`,
-  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti`, and
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti` and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti_eq_det_sesqComplexification`:
   the Gram-determinant formulas in every degree `p`.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_wedge_left`,
@@ -119,19 +117,10 @@ theorem pairingEquiv_tmulConj_eq_domRestrict₁₂ (x : (J.spinPolarizationData 
         ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property⟩ =
       (-2 : ℂ) • (LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
         (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W x := by
-  have hpolar : (Q.baseChange ℂ).polarBilin = (-2 : ℂ) • g.baseChange ℂ := by
-    rw [QuadraticForm.polarBilin_baseChange]
-    apply TensorProduct.AlgebraTensorModule.ext
-    intro z u
-    apply TensorProduct.AlgebraTensorModule.ext
-    intro w v
-    simp only [LinearMap.BilinForm.baseChange_tmul, LinearMap.smul_apply, polarBilin_apply_apply,
-      polar, hQg, map_add, LinearMap.add_apply, hg.eq v u, Complex.real_smul, smul_eq_mul]
-    push_cast
-    ring
   refine LinearMap.ext fun y ↦ ?_
-  rw [SpinPolarizationData.pairingEquiv_apply, polar_comm, ← polarBilin_apply_apply, hpolar]
-  simp [LinearMap.domRestrict₁₂_apply, LinearMap.BilinForm.sesqComplexification_apply]
+  rw [SpinPolarizationData.pairingEquiv_apply, polar_comm,
+    QuadraticForm.polar_baseChange_tmulConj_eq_two_mul_sesqComplexification hg.neg hQg]
+  simp [LinearMap.domRestrict₁₂_apply]
 
 /-- **Creation is adjoint to annihilation for the exterior Gram metric**: exterior multiplication by
 `x ∈ W` is adjoint to `-(1/2)` times polar contraction with `conj x ∈ W'`. -/
@@ -356,35 +345,6 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra {g : LinearM
   (ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one b (starRingEnd ℂ)).trans <|
     congrArg LinearMap.sesqExteriorAlgebra
       (J.toLinearMapₛₗ₂_eq_domRestrict₁₂_sesqComplexification hQJ hQ b hb hg hQg)
-
-/-- **Gram-determinant formula for the Fock metric**: when `b` is polar-orthonormal
-(`polar Q_ℂ (conj bᵢ, bⱼ) = -2 δᵢⱼ`) and `Q (v) = -g (v, v)` for a symmetric real bilinear form
-`g`, the wedge-basis Fock metric pairs pure wedges in every degree `p` (including `p = 0` and the
-top degree) by the Gram determinant `det (g.sesqComplexification (xᵢ, yⱼ))`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti {g : LinearMap.BilinForm ℝ V}
-    (hg : g.IsSymm) (hQg : ∀ v, Q v = -g v v) {p : ℕ}
-    (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset ι) (Finset ι) ℂ)
-        (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
-      (Matrix.of fun i j ↦ LinearMap.BilinForm.sesqComplexification g (x i) (y j)).det := by
-  rw [J.toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra hQJ hQ b hb hg hQg,
-    LinearMap.sesqExteriorAlgebra_ιMulti_ιMulti]
-  simp only [LinearMap.domRestrict₁₂_apply]
-
-/-- **Gram-determinant formula for the Fock metric** in terms of `polar (Q.baseChange ℂ)`, valid in
-every degree `p` without choosing a real bilinear form `g`. -/
-theorem toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti_eq_det_polar {p : ℕ}
-    (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
-        (1 : Matrix (Finset ι) (Finset ι) ℂ)
-        (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
-      (Matrix.of fun i j ↦
-        -(2 : ℂ)⁻¹ * polar (Q.baseChange ℂ) (tmulConj V (x i)) (y j)).det := by
-  rw [ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti]
-  congr 1
-  ext i j
-  exact J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb (x i) (y j)
 
 /-- Specialization of `toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra` to the symmetric real
 bilinear form `g = QuadraticMap.associated (R := ℝ) (-Q)`. -/

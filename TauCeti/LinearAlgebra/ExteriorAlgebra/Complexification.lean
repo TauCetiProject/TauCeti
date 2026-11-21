@@ -43,9 +43,8 @@ No finiteness, flatness, or basis assumption is needed for the comparison theore
 
 ## Main results
 
-* `LinearMap.BilinForm.sesqExteriorPower_sesqComplexification_equivBaseChange_symm`,
-  `LinearMap.BilinForm.sesqComplexification_sesqExteriorPower_equivBaseChange`, and
-  `LinearMap.BilinForm.sesqExteriorPower_sesqComplexification`: compatibility of
+* `LinearMap.BilinForm.sesqExteriorPower_sesqComplexification_equivBaseChange_symm` and
+  `LinearMap.BilinForm.sesqComplexification_sesqExteriorPower_equivBaseChange`: compatibility of
   `sesqExteriorPower` with `sesqComplexification` across `equivBaseChange ℂ n`.
 * `LinearMap.BilinForm.sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv` and
   `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_baseChangeEquiv_symm`:
@@ -122,20 +121,6 @@ theorem sesqComplexification_sesqExteriorPower_equivBaseChange (B : BilinForm �
       B.sesqComplexification.sesqExteriorPower n x y := by
   rw [← sesqExteriorPower_sesqComplexification_equivBaseChange_symm,
     LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply]
-
-/-- **Complexification commutes with exterior Gram forms on exterior powers**: under
-`TauCeti.exteriorPower.equivBaseChange ℂ n`, `B.sesqComplexification.sesqExteriorPower n` agrees
-with `(B.sesqExteriorPower n).sesqComplexification`.
-
-Not `@[simp]`: matching bare `x y` would introduce `equivBaseChange` on arbitrary arguments and
-preempt `LinearMap.sesqExteriorPower_ιMulti_ιMulti`. -/
-theorem sesqExteriorPower_sesqComplexification (B : BilinForm ℝ V) (n : ℕ)
-    (x y : ⋀[ℂ]^n (ℂ ⊗[ℝ] V)) :
-    B.sesqComplexification.sesqExteriorPower n x y =
-      sesqComplexification (B.sesqExteriorPower n)
-        (TauCeti.exteriorPower.equivBaseChange ℂ n x)
-        (TauCeti.exteriorPower.equivBaseChange ℂ n y) :=
-  (sesqComplexification_sesqExteriorPower_equivBaseChange B n x y).symm
 
 /-- **Complexified exterior Gram form in homogeneous degree `n`**: on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`,
 restricting `B.sesqExteriorAlgebra.sesqComplexification` along `(⋀[ℝ]^n V).subtype.baseChange ℂ`
