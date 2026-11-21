@@ -106,8 +106,8 @@ private def pullbackHomeomorphOfEq {Y : Type w} [TopologicalSpace Y]
     (A : FiniteRankBundleCore 𝕜 Y) (f : C(B, Y)) (f' : B → Y) (hf : (f : B → Y) = f') :
     (A.pullback f).core.TotalSpace ≃ₜ TotalSpace (Fin A.rank → 𝕜) (f' *ᵖ A.core.Fiber) where
   toEquiv :=
-    { toFun p := ⟨p.proj, p.2⟩
-      invFun p := ⟨p.proj, p.2⟩
+    { toFun p := ⟨p.proj, p.snd⟩
+      invFun p := ⟨p.proj, p.snd⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   continuous_toFun := by
@@ -240,9 +240,9 @@ theorem exists_iso_cylinder_of_isClosed [R1Space X] [ParacompactSpace X] {s : Se
   have hΦ₀ : Continuous fun v : TotalSpace (Fin A.rank → 𝕜)
       ((fun q : s × I ↦ (q.1.1, (0 : I))) *ᵖ A.core.Fiber) ↦
       TotalSpace.mk' (Fin A.rank → 𝕜) (E := (fun q : s × I ↦ (q.1.1, q.2)) *ᵖ A.core.Fiber)
-        v.proj (Φ₀ v.proj v.2) :=
+        v.proj (Φ₀ v.proj v.snd) :=
     (eS₁.continuous.comp (e₀.hom.continuous_totalSpaceMap.comp eS₀.symm.continuous)).congr
-      fun v ↦ congrArg eS₁ (CoordinateHom.totalSpaceMap_mk e₀.hom v.proj (v.2 : Fin A.rank → 𝕜))
+      fun v ↦ congrArg eS₁ (CoordinateHom.totalSpaceMap_mk e₀.hom v.proj (v.snd : Fin A.rank → 𝕜))
   have hΦ₀0 (x : s) : Φ₀ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (A.core.Fiber (x.1, 0)) :=
     DFunLike.ext _ _ fun (v : Fin A.rank → 𝕜) ↦
       (isoFiberEquiv_apply e₀ (x, 0) v).trans
@@ -354,7 +354,7 @@ theorem _root_.ContinuousMap.HomotopicRel.exists_iso_pullback {s : Set X}
     fun x hx ↦ ContinuousLinearMap.ext fun (v : Fin A.rank → 𝕜) ↦ ?_⟩
   rw [fiberMap_pullbackIsoOfTotalSpaceContinuous_hom]
   simp only [ContinuousLinearEquiv.coe_coe, ofCoreEquiv_apply]
-  let sndCoord (p : TotalSpace (Fin A.rank → 𝕜) A.core.Fiber) : Fin A.rank → 𝕜 := p.2
+  let sndCoord (p : TotalSpace (Fin A.rank → 𝕜) A.core.Fiber) : Fin A.rank → 𝕜 := p.snd
   exact congrArg sndCoord (hΦs x hx v)
 
 end Relative
