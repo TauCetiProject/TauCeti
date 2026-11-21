@@ -35,6 +35,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_flow_ne_zero`: so the orbit of a regular point consists
+  of regular points.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_eq_of_isMIntegralCurve`: every integral curve is an
   orbit, and `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn`: so is every
   integral curve on an open interval, on that interval.
@@ -154,6 +156,13 @@ theorem flow_apply_of_mfderiv_eq_zero {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
   globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField
     (isMIntegralCurve_const (hX.eq_zero_of_mfderiv_eq_zero hx)) t
 
+/-- The orbit of a regular point consists of regular points: critical points are rest points. -/
+theorem mfderiv_flow_ne_zero {y : M} (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0) (t : ℝ) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t y) ≠ 0 := fun h ↦ hy <| by
+  have := hX.flow_apply_of_mfderiv_eq_zero h (-t)
+  rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
+  rwa [this]
+
 /-- **Integral curves are orbits.** Every integral curve of an adapted pseudo-gradient on a compact
 boundaryless manifold is the orbit of its value at time `0`. -/
 theorem flow_apply_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ X) (t : ℝ) :
@@ -221,8 +230,7 @@ theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstabl
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
   Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
+    hf.finite_setOf_mfderiv_eq_zero (fun _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
 
 /-- **Every orbit converges backward in time to a critical point.** -/
 theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
@@ -232,7 +240,7 @@ theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     (fun y ↦ fun s t hst ↦ by
       simp only [Flow.reverse_apply, Pi.neg_apply]
       exact neg_le_neg (hX.antitone_flow y (neg_le_neg hst)))
-    (by simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints)
+    hf.finite_setOf_mfderiv_eq_zero
     (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by
       have := hz (-t)
       simp only [Flow.reverse_apply, neg_neg, Pi.neg_apply] at this

@@ -104,6 +104,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
+* `TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`: on a compact manifold, the zeros of the
+  manifold derivative of a Morse function are finite.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
 * `TauCeti.IsMorse.exists_lt_lt_forall_mem_Ioo`: on a compact manifold, for `a < b` there are
@@ -701,6 +703,11 @@ theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
     (criticalPoints I f).Finite := by
   simpa using hf.finite_criticalPoints_inter isCompact_univ
+
+/-- A Morse function on a compact manifold has finitely many zeros of its manifold derivative. -/
+theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse I f) :
+    {x | mfderiv I 𝓘(ℝ) f x = 0}.Finite :=
+  criticalPoints_eq_setOf_mfderiv_eq_zero (I := I) (f := f) ▸ hf.finite_criticalPoints
 
 /-- **Levels separating the critical values.** For a Morse function on a compact manifold and
 `a < b`, there are levels `a < c₂ < c₁ < b` such that every critical value strictly between `a`
