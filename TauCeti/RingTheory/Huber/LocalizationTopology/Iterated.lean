@@ -179,7 +179,7 @@ theorem hasDenominatorPower_completionLocalization
       add_mem' := fun hx hy ↦ by simpa using L.add_mem hx hy
       zero_mem' := by simp
       smul_mem' := fun c x hx ↦ by
-        simpa [divBy_mul] using L.mul_mem (algebraMap_mem_locSubring _ _ _ _ c.2) hx }
+        simpa [divBy_mul] using L.mul_mem (algebraMap_mem_locSubring _ _ _ _ c.property) hx }
   refine (hasDenominatorPower_iff _ _ _ _).mpr ⟨N, fun b hb ↦
     completionLocalization_idealOfDefinition_pow_le P T s S hden N K (fun a ha x hx ↦ ?_) hb⟩
   have h := map_mem_locSubring_completionLocalization P T s S hden T'' s'' S'' SB TB hTB (hN a ha)

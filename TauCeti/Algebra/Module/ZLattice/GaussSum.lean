@@ -148,9 +148,9 @@ noncomputable def gaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
       rcases eq_or_ne c 0 with rfl | hc
       · simp
       have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
-      obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ v₂.2 _ w.2
-      obtain ⟨j, hj⟩ := isEven_iff.mp hL _ w.2
-      obtain ⟨k, hk⟩ := mem_dual.mp m.2 _ w.2
+      obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ v₂.property _ w.property
+      obtain ⟨j, hj⟩ := isEven_iff.mp hL _ w.property
+      obtain ⟨k, hk⟩ := mem_dual.mp m.property _ w.property
       -- The argument changes by `a ⟪v₂, w⟫ + a c ‖w‖² / 2 + ⟪w, m⟫`, an integer.
       have hint : (a : ℝ) * i + a * (c * (2 * j)) / 2 + k = ((a * i + a * c * j + k : ℤ) : ℝ) := by
         push_cast; ring
@@ -221,7 +221,7 @@ theorem gaussTerm_eq_of_modEq {a a' : ℤ} {c : ℕ} (h : a ≡ a' [ZMOD c]) (m 
   rcases eq_or_ne c 0 with rfl | hc
   · simp
   obtain ⟨t, ht⟩ := Int.modEq_iff_add_fac.mp h.symm
-  obtain ⟨j, hj⟩ := isEven_iff.mp hL _ v.2
+  obtain ⟨j, hj⟩ := isEven_iff.mp hL _ v.property
   have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
   -- Replacing `a'` by `a' + c t` changes the argument by the integer `t j`, as `‖v‖² = 2 j`.
   have harg : (((a' + c * t : ℤ) : ℝ) * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c =
@@ -374,7 +374,7 @@ theorem gaussSumTwisted_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [
       gaussTerm L hL a c m (y + Submodule.Quotient.mk u) =
         cexp (2 * π * I * (⟪(m : E), w⟫ : ℂ)) * gaussTerm L hL a c m y := by
     induction y using Submodule.Quotient.induction_on with | H v
-    obtain ⟨i, hi⟩ := mem_dual.mp hw _ v.2
+    obtain ⟨i, hi⟩ := mem_dual.mp hw _ v.property
     obtain ⟨j, hj⟩ := level_dvd_iff.mp hc w hw
     -- The argument changes by `⟪m, w⟫` plus the integer `a ⟪v, w⟫ + a c ‖w‖² / 2 = a i + a j`.
     have harg (x : ℝ) : x + (a * i + a * (2 * j) / 2 + ⟪(m : E), w⟫) =
@@ -418,7 +418,7 @@ theorem gaussSumTwisted_eq_of_mem {a d : ℤ} {c : ℕ} [Fintype (L ⧸ ((c : �
     rcases eq_or_ne c 0 with rfl | hc
     · simp
     obtain ⟨t, ht⟩ := Int.modEq_iff_add_fac.mp had.symm
-    obtain ⟨i, hi⟩ := mem_dual.mp m.2 _ v.2
+    obtain ⟨i, hi⟩ := mem_dual.mp m.property _ v.property
     have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
     have had' : (a : ℝ) * d = 1 + c * t := by exact_mod_cast ht
     have huv : ((v + u : L) : E) = v + (d : ℝ) • (m : E) := by
@@ -459,7 +459,7 @@ noncomputable def dualGaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ)
       have hv : (v₁ : E) = v₂ + (c : ℝ) • w := by rw [hvw, AddSubgroupClass.coe_sub]; abel
       rcases eq_or_ne c 0 with rfl | hc
       · simp
-      obtain ⟨k, hk⟩ := mem_dual.mp v₂.2 w hw
+      obtain ⟨k, hk⟩ := mem_dual.mp v₂.property w hw
       obtain ⟨j, hj⟩ := isEven_iff.mp hL w hw
       -- The argument changes by `a ⟪v₂, w⟫ + a c ‖w‖² / 2 = a k + a c j`, an integer.
       have harg : a * ‖(v₂ : E) + (c : ℝ) • w‖ ^ 2 / (2 * c) =
@@ -540,7 +540,7 @@ private theorem dualGaussSum_level_mul_aux (b : ℤ) (c : ℕ)
   -- The scaling `L^∨ → M`, `x ↦ √N • x`, followed by the reduction modulo `cM`.
   let g : dual L →ₗ[ℤ] M := LinearMap.codRestrict M
     (DistribSMul.toLinearMap ℤ E √(level L : ℝ) ∘ₗ (dual L).subtype)
-    fun x => hM ▸ smul_mem_pointwise_smul _ _ _ x.2
+    fun x => hM ▸ smul_mem_pointwise_smul _ _ _ x.property
   -- `g` is a local definition, so its values are computed by unfolding it.
   have hg (x : dual L) : (g x : E) = √(level L : ℝ) • (x : E) := (rfl)
   let f₀ := (((c : ℝ) • M).submoduleOf M).mkQ ∘ₗ g
@@ -609,7 +609,7 @@ theorem dualGaussSum_eq_pow_mul_card_of_dvd {t : ℤ} {a : ℕ}
     induction y using Submodule.Quotient.induction_on with | H v
     rcases eq_or_ne a 0 with rfl | ha
     · simp
-    obtain ⟨j, hj⟩ := exists_level_mul_norm_sq_eq v.2
+    obtain ⟨j, hj⟩ := exists_level_mul_norm_sq_eq v.property
     -- The argument of `e` is `s N ‖v‖² / 2 = s j`, an integer.
     have harg : ((a * level L * s : ℤ) : ℝ) * ‖(v : E)‖ ^ 2 / (2 * a) = ((s * j : ℤ) : ℝ) := by
       have ha' : (a : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr ha
@@ -636,7 +636,7 @@ private theorem gaussTerm_mk_eq_stdAddChar {a u : ℤ} {c : ℕ} [NeZero c]
     (hu : 2 * u = (c + 1) * a) (v : L) :
     gaussTerm L hL a c 0 (Submodule.Quotient.mk v) =
       ZMod.stdAddChar ((u * hL.isIntegral.integralForm v v : ℤ) : ZMod c) := by
-  obtain ⟨j, hj⟩ := isEven_iff.mp hL _ v.2
+  obtain ⟨j, hj⟩ := isEven_iff.mp hL _ v.property
   have hv : hL.isIntegral.integralForm v v = 2 * j := Int.cast_injective (α := ℝ) <| by
     rw [IsIntegral.integralForm_cast, real_inner_self_eq_norm_sq, hj]
     push_cast

@@ -127,6 +127,31 @@ theorem tendsto_coe_iff {ι : Type*} {l : Filter ι} {f : ι → A} {a : A} :
 
 end RegularNormedAlgebra
 
+section UnitalRegularNormedAlgebra
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+  [RegularNormedAlgebra 𝕜 A]
+
+variable (𝕜 A) in
+/-- For a unital regular normed algebra `A` (including every unital C⋆-algebra), the canonical
+inclusion `A → 𝓜(𝕜, A)` is a linear isometric equivalence with inverse `m ↦ m.fst 1`. -/
+def ofUnitalLinearIsometryEquiv : A ≃ₗᵢ[𝕜] 𝓜(𝕜, A) where
+  toFun a := a
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+  map_add' := coe_add
+  map_smul' := coe_smul
+  norm_map' := norm_coe
+
+@[simp] theorem ofUnitalLinearIsometryEquiv_apply (a : A) :
+    ofUnitalLinearIsometryEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalLinearIsometryEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalLinearIsometryEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
+end UnitalRegularNormedAlgebra
+
 section CStarAlgebra
 
 variable {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]

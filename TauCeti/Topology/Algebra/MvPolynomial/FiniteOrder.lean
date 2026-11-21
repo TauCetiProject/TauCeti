@@ -44,7 +44,7 @@ theorem exists_finset_orderAt_eq_iInf_transverse_of_isOpen (n D : ℕ)
         ∀ a : Fin (n + 1) → K,
           p.orderAt a = ⨅ v : T,
             (aeval (Fin.cons (C (a 0) + X (1 : Fin 2))
-              (fun i ↦ C (a i.succ) + C (v.1 i) * X (0 : Fin 2))) p).orderAt (0 : Fin 2 → K) := by
+              (fun i ↦ C (a i.succ) + C (v.val i) * X (0 : Fin 2))) p).orderAt (0 : Fin 2 → K) := by
   obtain ⟨a, ha⟩ := hne
   obtain ⟨s, hs, hsU⟩ := isOpen_pi_iff'.1 hU a ha
   have hinfinite (i : Fin n) : (s i).Infinite :=
@@ -86,12 +86,12 @@ theorem eventually_orderAt_eq_of_transverse (n D : ℕ)
       (MvPolynomial.aeval
         (Fin.cons (MvPolynomial.C (a y 0) + MvPolynomial.X (1 : Fin 2))
           (fun i ↦ MvPolynomial.C (a y i.succ) +
-            MvPolynomial.C (v.1 i) * MvPolynomial.X (0 : Fin 2)))
+            MvPolynomial.C (v.val i) * MvPolynomial.X (0 : Fin 2)))
         (p y)).orderAt (0 : Fin 2 → K) =
       (MvPolynomial.aeval
         (Fin.cons (MvPolynomial.C (a x 0) + MvPolynomial.X (1 : Fin 2))
           (fun i ↦ MvPolynomial.C (a x i.succ) +
-            MvPolynomial.C (v.1 i) * MvPolynomial.X (0 : Fin 2)))
+            MvPolynomial.C (v.val i) * MvPolynomial.X (0 : Fin 2)))
         (p x)).orderAt (0 : Fin 2 → K) := fun v ↦ hlocal v (hTU v.property)
   filter_upwards [Filter.eventually_all.2 hslice, hp] with y hy hpy
   rw [horder (p y) hpy (a y), horder (p x) hp.self_of_nhds (a x)]

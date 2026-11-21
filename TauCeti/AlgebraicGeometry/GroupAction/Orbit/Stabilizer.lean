@@ -10,15 +10,16 @@ public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Flat
 public import TauCeti.AlgebraicGeometry.GroupAction.Stabilizer
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.KernelPair
 public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 
 /-!
 # Smooth orbit maps and scheme-theoretic stabilizers
 
-For a reduced finite-type group scheme over an algebraically closed field, the projection
-onto an orbit scheme is smooth exactly when its scheme-theoretic stabilizer is smooth.
-In characteristic zero an affine acting group has smooth stabilizers by Cartier's theorem,
-so its orbit projections are smooth. The target here is the locally closed orbit scheme,
+For a geometrically reduced finite-type group scheme over any field, the projection onto an orbit
+scheme is smooth exactly when its scheme-theoretic stabilizer is smooth. Over any field of
+characteristic zero, an affine acting group is smooth and has smooth stabilizers by Cartier's
+theorem, so its orbit projections are smooth. The target here is the locally closed orbit scheme,
 rather than the possibly larger ambient scheme.
 
 The actual relation over the orbit is `G × Stab(x) ≅ G ×_O G`, with maps
@@ -41,7 +42,7 @@ namespace TauCeti.SchemeAction
 
 universe u
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]
@@ -86,27 +87,24 @@ theorem smooth_stabilizer_of_smooth_toOrbit (h : Smooth (toOrbit G x)) :
     Smooth (stabilizer G x).hom :=
   MorphismProperty.of_isPullback (isPullback_toOrbit_stabilizer G x) h
 
-/-- For a reduced group, the orbit projection is smooth exactly when its stabilizer is.
-The stabilizer need not be reduced a priori. -/
-theorem smooth_toOrbit_iff [IsReduced G.left] :
+/-- For a geometrically reduced group over any field, the orbit projection is smooth exactly when
+its scheme-theoretic stabilizer is. The stabilizer need not be reduced a priori. -/
+theorem smooth_toOrbit_iff [GeometricallyReduced G.hom] :
     Smooth (toOrbit G x) ↔ Smooth (stabilizer G x).hom := by
   refine ⟨smooth_stabilizer_of_smooth_toOrbit G x, fun hs ↦ ?_⟩
   let := hs
   have hp : Smooth (fst G (stabilizer G x)).left := by
     rw [Over.fst_left]
     infer_instance
-  have hf : (@Surjective ⊓ @Flat ⊓ @QuasiCompact : MorphismProperty Scheme)
-      (toOrbit G x) := ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
-  exact MorphismProperty.of_isPullback_of_descendsAlong
-    (isPullback_toOrbit_rightMul G x) hf hp
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
+    (isPullback_toOrbit_rightMul G x) hp
 
-/-- Orbit projections for affine finite-type groups in characteristic zero are smooth.
-No connectedness or reducedness hypothesis on the acting group is needed. -/
+/-- Over any field of characteristic zero, orbit projections for affine finite-type groups are
+smooth. No algebraic closedness, connectedness or reducedness hypothesis on the acting group is
+needed. -/
 instance smooth_toOrbit_of_charZero [CharZero k] [IsAffine G.left] :
     Smooth (toOrbit G x) := by
   have : Smooth G.hom := TauCeti.AlgebraicGeometry.smooth_of_grpObj_of_charZero G
-  have : IsReduced G.left :=
-    GeometricallyReduced.isReduced_of_flat_of_isLocallyNoetherian G.hom
   exact (smooth_toOrbit_iff G x).mpr (smooth_stabilizer G x)
 
 end TauCeti.SchemeAction

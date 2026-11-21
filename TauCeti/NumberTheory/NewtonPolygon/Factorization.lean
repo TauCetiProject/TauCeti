@@ -383,8 +383,7 @@ theorem exists_mul_newtonSlopes_filter_le {f : K[X]} (hf0 : f.coeff 0 = 1) (σ :
   obtain ⟨l, j, hface⟩ := exists_isFiniteFace_newtonPolygon
     (newtonPolygon_ne_top_of_ne_zero (fun _ => v.top_iff.mp) hf_ne) σ
   have hfd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (f : K⟦X⟧) :=
-    PowerSeries.isDistinguished_of_isFiniteFace v hb hv
-      (TauCeti.PowerSeries.isRestricted_polynomial f) (f.newtonPolygon_coe v ▸ hface)
+    PowerSeries.isDistinguished_of_isFiniteFace v hb hv (f.newtonPolygon_coe v ▸ hface)
   obtain ⟨e, ω, he, hωm, heω⟩ := hfd.exists_isUnit_isMonicOfDegree_mul_eq
     hfd.coeff_ne_zero.isUnit hc (TauCeti.PowerSeries.isRestricted_polynomial f)
   have hωd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (ω : K⟦X⟧) :=

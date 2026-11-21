@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.Quaternion
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import TauCeti.Topology.Algebra.Module.Determinant
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Order.Interval.Set.Pi
@@ -36,8 +37,9 @@ statement.
 On the coordinate triple obtained by deleting the `i`-th direction, `Dq` takes the value
 `(-1) ^ i` times the `i`-th unit `1, i, j, k`. More intrinsically, `Dq` is the quaternionic
 interior product of the volume form: for every `w`, the real inner product of `dq w` with
-`Dq v` is the determinant of the `4 × 4` matrix with rows `w, v 0, v 1, v 2`. Quaternion
-conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
+`Dq v` is the determinant of the `4 × 4` matrix with rows `w, v 0, v 1, v 2`, and `‖Dq v‖ ^ 2`
+is the `3 × 3` Gram determinant of `dq (v 0), dq (v 1), dq (v 2)`. Quaternion conjugation of the
+tangent vectors (`tupleConj` in real coordinates) pulls `Dq` back to `-star Dq`.
 
 ## Main declarations
 
@@ -55,7 +57,10 @@ conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
 * `TauCeti.Quaternion.Dq_succAbove`: the value of `Dq` on the coordinate triple omitting the
   `i`-th direction is `(-1) ^ i` times the `i`-th unit.
 * `TauCeti.Quaternion.inner_dq_Dq`: `⟪dq w, Dq v⟫_ℝ = det (w, v 0, v 1, v 2)`.
+* `TauCeti.Quaternion.norm_Dq_sq`: `‖Dq v‖ ^ 2 = (Matrix.gram ℝ fun r ↦ dq (v r)).det`.
 * `TauCeti.Quaternion.Dq_star`: the pullback of `Dq` under quaternion conjugation is `-star Dq`.
+* `TauCeti.Quaternion.tupleConj`: quaternionic conjugation `(t, x, y, z) ↦ (t, -x, -y, -z)` on
+  `Fin 4 → ℝ`, with `dq (tupleConj x) = star (dq x)` and `det tupleConj = -1`.
 * `ContinuousLinearEquiv.Dq_map_succAbove`: the oriented affine face coefficient is the
   corresponding row of the cofactor transform, with the signed determinant.
 
@@ -228,6 +233,51 @@ theorem norm_dq_lt_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hx : ∀ i, |x i| < d)
   simp only [Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
   linarith [hsq 0, hsq 1, hsq 2, hsq 3]
 
+/-- The squared Euclidean norm of `dq x` is the sum of squares of its four coordinates. -/
+theorem norm_dq_sq (x : Fin 4 → ℝ) : ‖dq x‖ ^ 2 = ∑ i : Fin 4, (x i) ^ 2 := by
+  rw [norm_dq, PiLp.norm_sq_eq_of_L2]
+  simp [Real.norm_eq_abs]
+
+/-- The coordinate cube of half-side `r ≥ 0` centred at `x₀` in `Fin 4 → ℝ` maps under `dq` into
+the closed Euclidean ball `Metric.closedBall (dq x₀) (2 * r)`. -/
+theorem dq_image_Icc_subset_closedBall (x₀ : Fin 4 → ℝ) {r : ℝ} (hr : 0 ≤ r) :
+    dq '' Set.Icc (fun j ↦ x₀ j - r) (fun j ↦ x₀ j + r) ⊆ Metric.closedBall (dq x₀) (2 * r) := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [Metric.mem_closedBall, dist_eq_norm, ← map_sub]
+  refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+  rw [norm_dq_sq]
+  calc ∑ i : Fin 4, (x i - x₀ i) ^ 2
+      ≤ ∑ _i : Fin 4, r ^ 2 := Finset.sum_le_sum fun i _ ↦ by
+        rw [← sq_abs, sq_le_sq₀ (abs_nonneg _) hr, abs_le]
+        exact ⟨by linarith [hx.1 i], by linarith [hx.2 i]⟩
+    _ = (2 * r) ^ 2 := by simp [Finset.sum_const]; ring
+
+/-- The open coordinate cube of half-side `r > 0` centred at `x₀` in `Fin 4 → ℝ` maps under `dq`
+into the open Euclidean ball `Metric.ball (dq x₀) (2 * r)`. -/
+theorem dq_image_pi_Ioo_subset_ball (x₀ : Fin 4 → ℝ) {r : ℝ} (hr : 0 < r) :
+    dq '' Set.pi Set.univ (fun j ↦ Set.Ioo (x₀ j - r) (x₀ j + r)) ⊆
+      Metric.ball (dq x₀) (2 * r) := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [Metric.mem_ball, dist_eq_norm, ← map_sub]
+  refine (sq_lt_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+  rw [norm_dq_sq]
+  calc ∑ i : Fin 4, (x i - x₀ i) ^ 2
+      < ∑ _i : Fin 4, r ^ 2 := Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun i _ ↦ by
+        have hi := hx i (Set.mem_univ i)
+        rw [← sq_abs, sq_lt_sq₀ (abs_nonneg _) hr.le, abs_lt]
+        exact ⟨by linarith [hi.1], by linarith [hi.2]⟩
+    _ = (2 * r) ^ 2 := by simp [Finset.sum_const]; ring
+
+/-- Every point on a hyperplane `x i = x₀ i ± r` (`r ≥ 0`) sits at Euclidean quaternion distance at
+least `r` from `dq x₀`. -/
+theorem le_norm_dq_insertNth_sub (x₀ : Fin 4 → ℝ) {r : ℝ} (hr : 0 ≤ r)
+    (i : Fin 4) {c : ℝ} (hc : c = x₀ i - r ∨ c = x₀ i + r) (w : Fin 3 → ℝ) :
+    r ≤ ‖dq (i.insertNth c w) - dq x₀‖ := by
+  rw [← map_sub, norm_dq]
+  have hcoord := PiLp.norm_apply_le (WithLp.toLp 2 (i.insertNth c w - x₀)) i
+  simp only [Pi.sub_apply, Fin.insertNth_apply_same, Real.norm_eq_abs] at hcoord
+  rcases hc with rfl | rfl <;> simpa [abs_of_nonneg hr] using hcoord
+
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/
 theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
@@ -306,6 +356,17 @@ theorem inner_dq_Dq (w : Fin 4 → ℝ) (v : Fin 3 → Fin 4 → ℝ) :
   simp [minorForm_apply, Matrix.submatrix, Fin.succAbove]
   ring
 
+/-- The squared Euclidean norm of `Dq v` equals the `3 × 3` Gram determinant of the three tangent
+vectors `dq (v 0), dq (v 1), dq (v 2)` in `ℍ`, i.e. the squared 3-dimensional volume of the
+parallelepiped they span. -/
+theorem norm_Dq_sq (v : Fin 3 → Fin 4 → ℝ) :
+    ‖Dq v‖ ^ 2 = (Matrix.gram ℝ fun r ↦ dq (v r)).det := by
+  rw [sq, ← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
+  simp only [re_Dq, imI_Dq, imJ_Dq, imK_Dq, minorForm_apply, Matrix.det_fin_three,
+    Matrix.gram_apply, _root_.Quaternion.inner_def, Fin.succAbove]
+  norm_num
+  ring
+
 /-- Conjugating the tangent vectors pulls `Dq` back to `-star Dq`: if `dq (w r)` is the conjugate of
 `dq (v r)` for each `r`, then `Dq w = -star (Dq v)`. -/
 theorem Dq_star {v w : Fin 3 → Fin 4 → ℝ} (h : ∀ r, dq (w r) = star (dq (v r))) :
@@ -316,6 +377,88 @@ theorem Dq_star {v w : Fin 3 → Fin 4 → ℝ} (h : ∀ r, dq (w r) = star (dq 
   have h3 r : w r 3 = -v r 3 := by simpa using congrArg QuaternionAlgebra.imK (h r)
   ext <;> simp [minorForm_apply, Matrix.det_fin_three, Fin.succAbove, h0, h1, h2, h3]
   ring
+
+/-- Quaternionic conjugation in real coordinates `(t, x, y, z) ↦ (t, -x, -y, -z)`, as a continuous
+linear equivalence of `Fin 4 → ℝ`. -/
+def tupleConj : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ) :=
+  ContinuousLinearEquiv.piCongrRight
+    (Function.update (fun _ : Fin 4 ↦ ContinuousLinearEquiv.neg ℝ) 0
+      (ContinuousLinearEquiv.refl ℝ ℝ))
+
+theorem tupleConj_def :
+    tupleConj = ContinuousLinearEquiv.piCongrRight
+      (Function.update (fun _ : Fin 4 ↦ ContinuousLinearEquiv.neg ℝ) 0
+        (ContinuousLinearEquiv.refl ℝ ℝ)) :=
+  (rfl)
+
+@[simp]
+theorem tupleConj_apply_zero (x : Fin 4 → ℝ) : tupleConj x 0 = x 0 := by
+  simp [tupleConj_def]
+
+@[simp]
+theorem tupleConj_apply_of_ne_zero {i : Fin 4} (hi : i ≠ 0) (x : Fin 4 → ℝ) :
+    tupleConj x i = -x i := by
+  simp [tupleConj_def, hi]
+
+/-- `dq` intertwines `tupleConj` with quaternion conjugation `star`. -/
+@[simp]
+theorem dq_tupleConj (x : Fin 4 → ℝ) : dq (tupleConj x) = star (dq x) := by
+  ext <;> simp [tupleConj_def]
+
+@[simp]
+theorem symm_tupleConj : tupleConj.symm = tupleConj := by
+  ext x i
+  by_cases hi : i = 0
+  · subst hi
+    simp [tupleConj_def]
+  · simp [tupleConj_def, hi]
+
+@[simp]
+theorem tupleConj_tupleConj (x : Fin 4 → ℝ) : tupleConj (tupleConj x) = x := by
+  ext i
+  by_cases hi : i = 0
+  · subst hi
+    simp
+  · simp [hi]
+
+@[simp]
+theorem tupleConj_trans_tupleConj :
+    tupleConj.trans tupleConj = ContinuousLinearEquiv.refl ℝ (Fin 4 → ℝ) := by
+  ext x i
+  simp
+
+@[simp]
+theorem tupleConj_comp_tupleConj :
+    (tupleConj : (Fin 4 → ℝ) → Fin 4 → ℝ) ∘ (tupleConj : (Fin 4 → ℝ) → Fin 4 → ℝ) = id := by
+  ext x i
+  simp
+
+@[simp]
+theorem tupleConj_single_zero (r : ℝ) :
+    tupleConj (Pi.single 0 r) = Pi.single 0 r := by
+  ext i
+  by_cases hi : i = 0
+  · subst hi
+    simp
+  · simp [hi]
+
+@[simp]
+theorem tupleConj_single_of_ne_zero {i : Fin 4} (hi : i ≠ 0) (r : ℝ) :
+    tupleConj (Pi.single i r) = Pi.single i (-r) := by
+  ext j
+  by_cases hj : j = 0
+  · subst hj
+    simp [hi.symm]
+  · by_cases hji : j = i
+    · subst hji
+      simp [hi]
+    · simp [hj, hji]
+
+/-- Quaternionic conjugation negates the three imaginary axes and fixes the real axis, so it has
+determinant `-1`. -/
+@[simp]
+theorem det_tupleConj : LinearMap.det (tupleConj : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ) = -1 := by
+  simp [tupleConj_def, ContinuousLinearEquiv.det_piCongrRight, Fin.prod_univ_four]
 
 end TauCeti.Quaternion
 
