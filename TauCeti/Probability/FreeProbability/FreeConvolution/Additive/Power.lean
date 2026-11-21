@@ -27,16 +27,21 @@ convolution power `MeasureTheory.Measure.freeConvolutionPower` (`μ^{⊞ n}`).
 * `MeasureTheory.Measure.isProbabilityMeasure_fold_freeConv_iff`,
   `MeasureTheory.Measure.rSeries_integral_fold_freeConv`,
   `MeasureTheory.Measure.freeCumulant_integral_fold_freeConv`,
+  `MeasureTheory.Measure.eq_fold_freeConv_iff_rSeries_integral_eq`,
+  `MeasureTheory.Measure.eq_fold_freeConv_iff_forall_freeCumulant_integral_eq`,
   `MeasureTheory.Measure.support_fold_freeConv_subset_Icc`: validity, formal series, cumulants,
-  and support bounds for finite `Finset.fold`s of `freeConv`.
+  determinacy, and support bounds for finite `Finset.fold`s of `freeConv`.
 * `TauCeti.IsFreelyIndependentElements.law_sum`, `TauCeti.IsFreelyIndependent.law_sum`:
   C⋆- and von Neumann finite-sum transport.
 * `MeasureTheory.Measure.freeConvolutionPower_add`,
   `MeasureTheory.Measure.freeConvolutionPower_mul`,
   `MeasureTheory.Measure.freeConvolutionPower_map_affine`,
   `MeasureTheory.Measure.rSeries_integral_freeConvolutionPower`,
-  `MeasureTheory.Measure.freeCumulant_integral_freeConvolutionPower`: algebraic, affine, support,
-  series, cumulant, mean, and variance laws for `freeConvolutionPower`.
+  `MeasureTheory.Measure.freeCumulant_integral_freeConvolutionPower`,
+  `MeasureTheory.Measure.eq_freeConvolutionPower_iff_rSeries_integral_eq`,
+  `MeasureTheory.Measure.eq_freeConvolutionPower_iff_forall_freeCumulant_integral_eq`: algebraic,
+  affine, support, series, cumulant, determinacy, mean, and variance laws for
+  `freeConvolutionPower`.
 
 ## References
 
@@ -153,6 +158,33 @@ theorem freeCumulant_integral_fold_freeConv (hprob : ∀ i ∈ s, IsProbabilityM
   simp_rw [TauCeti.freeCumulant_const_eq_coeff_freeCumulantSeries, hk,
     TauCeti.coeff_succ_freeCumulantSeries, rSeries_integral_fold_freeConv s hprob hcomp,
     _root_.map_sum (PowerSeries.coeff k)]
+
+/-- A compactly supported probability measure `ρ` equals `s.fold freeConv (Measure.dirac 0) μ`
+iff its formal R-series equals the sum of those of `μ i` over `i ∈ s`. -/
+theorem eq_fold_freeConv_iff_rSeries_integral_eq {ρ : Measure ℝ} [IsProbabilityMeasure ρ]
+    (hρ : IsCompact ρ.support) (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ i))
+    (hcomp : ∀ i ∈ s, IsCompact (μ i).support) :
+    ρ = s.fold freeConv (Measure.dirac 0) μ ↔
+      TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) id =
+        ∑ i ∈ s, TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ i) id := by
+  have := isProbabilityMeasure_fold_freeConv s hprob hcomp
+  rw [eq_iff_rSeries_integral_eq hρ (isCompact_support_fold_freeConv s μ),
+    rSeries_integral_fold_freeConv s hprob hcomp]
+
+/-- A compactly supported probability measure `ρ` equals `s.fold freeConv (Measure.dirac 0) μ`
+iff all positive-order free cumulants of `ρ` equal the sums of those of `μ i` over `i ∈ s`. -/
+theorem eq_fold_freeConv_iff_forall_freeCumulant_integral_eq {ρ : Measure ℝ}
+    [IsProbabilityMeasure ρ] (hρ : IsCompact ρ.support)
+    (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ i))
+    (hcomp : ∀ i ∈ s, IsCompact (μ i).support) :
+    ρ = s.fold freeConv (Measure.dirac 0) μ ↔ ∀ n : ℕ, n ≠ 0 →
+      TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) (fun _ : Fin n => (id : ℝ → ℝ)) univ =
+        ∑ i ∈ s, TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ i)
+          (fun _ : Fin n => (id : ℝ → ℝ)) univ := by
+  have := isProbabilityMeasure_fold_freeConv s hprob hcomp
+  rw [eq_iff_forall_freeCumulant_integral_eq hρ (isCompact_support_fold_freeConv s μ)]
+  exact forall₂_congr fun n hn => by
+    rw [freeCumulant_integral_fold_freeConv s hprob hcomp ⟨⟨0, Nat.pos_of_ne_zero hn⟩, mem_univ _⟩]
 
 end MeasureTheory.Measure
 
@@ -391,6 +423,32 @@ theorem freeCumulant_integral_freeConvolutionPower {μ : Measure ℝ} [IsProbabi
       n • TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : α => (id : ℝ → ℝ)) s := by
   simpa [fold_freeConv_const _ μ] using freeCumulant_integral_fold_freeConv (univ : Finset (Fin n))
     (μ := fun _ => μ) (fun _ _ => inferInstance) (fun _ _ => hμ) hs
+
+/-- A compactly supported probability measure `ρ` equals `μ.freeConvolutionPower n` iff its formal
+R-series equals `n` times that of `μ`. -/
+theorem eq_freeConvolutionPower_iff_rSeries_integral_eq {ρ μ : Measure ℝ}
+    [IsProbabilityMeasure ρ] [IsProbabilityMeasure μ] (hρ : IsCompact ρ.support)
+    (hμ : IsCompact μ.support) (n : ℕ) :
+    ρ = μ.freeConvolutionPower n ↔
+      TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) id =
+        n • TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id := by
+  have := isProbabilityMeasure_freeConvolutionPower hμ n
+  rw [eq_iff_rSeries_integral_eq hρ (isCompact_support_freeConvolutionPower μ n),
+    rSeries_integral_freeConvolutionPower hμ n]
+
+/-- A compactly supported probability measure `ρ` equals `μ.freeConvolutionPower n` iff all
+positive-order free cumulants of `ρ` equal `n` times those of `μ`. -/
+theorem eq_freeConvolutionPower_iff_forall_freeCumulant_integral_eq {ρ μ : Measure ℝ}
+    [IsProbabilityMeasure ρ] [IsProbabilityMeasure μ] (hρ : IsCompact ρ.support)
+    (hμ : IsCompact μ.support) (n : ℕ) :
+    ρ = μ.freeConvolutionPower n ↔ ∀ k : ℕ, k ≠ 0 →
+      TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) (fun _ : Fin k => (id : ℝ → ℝ)) univ =
+        n • TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ)
+          (fun _ : Fin k => (id : ℝ → ℝ)) univ := by
+  have := isProbabilityMeasure_freeConvolutionPower hμ n
+  rw [eq_iff_forall_freeCumulant_integral_eq hρ (isCompact_support_freeConvolutionPower μ n)]
+  exact forall₂_congr fun k hk => by
+    rw [freeCumulant_integral_freeConvolutionPower hμ n ⟨⟨0, Nat.pos_of_ne_zero hk⟩, mem_univ _⟩]
 
 /-- The mean of `μ^{⊞ n}` is `n` times the mean of `μ`. -/
 theorem integral_id_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]

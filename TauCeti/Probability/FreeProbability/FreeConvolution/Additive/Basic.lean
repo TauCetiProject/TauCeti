@@ -342,7 +342,7 @@ theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.fr
     rw [freeConv_eq_zero_of_not h', freeConv_eq_zero_of_not h]; simp [Measure.neg_def]
 
 /-- Convolving on the left with `Measure.dirac a` translates `μ` by `a`. -/
-theorem dirac_freeConv (a : ℝ) {μ : Measure ℝ} [IsProbabilityMeasure μ]
+@[simp] theorem dirac_freeConv (a : ℝ) {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) : (Measure.dirac a).freeConv μ = μ.map (a + ·) := by
   obtain ⟨A, _, _, _, φ, g, hφ, hg_free, -, hg_sa, -, -, -, hg_law, -⟩ :=
     exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hμ
@@ -354,16 +354,16 @@ theorem dirac_freeConv (a : ℝ) {μ : Measure ℝ} [IsProbabilityMeasure μ]
   simpa [add_comm] using hadd.symm
 
 /-- Convolving on the right with `Measure.dirac a` translates `μ` by `a`. -/
-theorem freeConv_dirac {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : IsCompact μ.support)
+@[simp] theorem freeConv_dirac {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : IsCompact μ.support)
     (a : ℝ) : μ.freeConv (Measure.dirac a) = μ.map (· + a) := by
   simpa [add_comm] using (freeConv_comm μ (Measure.dirac a)).trans (dirac_freeConv a hμ)
 
 /-- `Measure.dirac 0` is the left identity for `freeConv` on compactly supported laws. -/
-@[simp] theorem dirac_zero_freeConv {μ : Measure ℝ} [IsProbabilityMeasure μ]
+theorem dirac_zero_freeConv {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) : (Measure.dirac 0).freeConv μ = μ := by simp [dirac_freeConv 0 hμ]
 
 /-- `Measure.dirac 0` is the right identity for `freeConv` on compactly supported laws. -/
-@[simp] theorem freeConv_dirac_zero {μ : Measure ℝ} [IsProbabilityMeasure μ]
+theorem freeConv_dirac_zero {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) :
     μ.freeConv (Measure.dirac 0) = μ := (freeConv_comm _ _).trans (dirac_zero_freeConv hμ)
 
