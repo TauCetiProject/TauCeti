@@ -26,6 +26,10 @@ This is the rank stability used when selecting a spectral subspace by a fixed th
 The norm in these threshold results is the Euclidean operator norm, selected by
 `Matrix.Norms.L2Operator`.
 
+The decreasing eigenvalue list is determined by the characteristic polynomial
+(`Matrix.IsHermitian.eigenvalues₀_eq_eigenvalues₀_iff`), so it is unchanged by unitary
+conjugation (`Matrix.IsHermitian.eigenvalues₀_mul_mul_star`).
+
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
 initial segment of length equal to the rank. Thus a rank bound is equivalent to vanishing
@@ -74,6 +78,23 @@ theorem IsHermitian.eigenvalues₀_congr (h : A = B) (hA : A.IsHermitian) (hB : 
     hA.eigenvalues₀ = hB.eigenvalues₀ := by
   subst h
   rfl
+
+/-- **The characteristic polynomial determines the sorted eigenvalues**: two Hermitian matrices
+have the same decreasing eigenvalue list exactly when they have the same characteristic
+polynomial. -/
+theorem IsHermitian.eigenvalues₀_eq_eigenvalues₀_iff (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    hA.eigenvalues₀ = hB.eigenvalues₀ ↔ A.charpoly = B.charpoly := by
+  refine ⟨fun h ↦ (hA.eigenvalues_eq_eigenvalues_iff hB).1 ?_, fun h ↦ ?_⟩
+  · funext i
+    simp only [IsHermitian.eigenvalues, h]
+  · simp_rw [← List.ofFn_inj, ← sort_roots_charpoly_eq_eigenvalues₀, h]
+
+/-- **Unitary conjugation preserves the sorted eigenvalues** of a Hermitian matrix. -/
+theorem IsHermitian.eigenvalues₀_mul_mul_star (hA : A.IsHermitian) {U : Matrix ι ι 𝕜}
+    (hU : U ∈ unitaryGroup ι 𝕜) (hUA : (U * A * star U).IsHermitian) :
+    hUA.eigenvalues₀ = hA.eigenvalues₀ :=
+  (hUA.eigenvalues₀_eq_eigenvalues₀_iff hA).2 <| by
+    rw [charpoly_mul_comm, ← Matrix.mul_assoc, Unitary.star_mul_self_of_mem hU, Matrix.one_mul]
 
 /-- Entrywise perturbations of size `ε` change every sorted eigenvalue of a Hermitian matrix
 by at most `card ι * ε`. -/
