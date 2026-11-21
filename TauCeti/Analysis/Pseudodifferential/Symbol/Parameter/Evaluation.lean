@@ -68,14 +68,6 @@ variable {Λ : TopologicalSpace.Opens ℂ} {V W U : Type*} [NormedAddCommGroup V
 
 /-! ### Slices at a fixed spectral parameter -/
 
-/-- The coefficient of a parameter-dependent symbol is smooth at every point whose spectral
-parameter lies in `Λ`. -/
-theorem contDiffAt_coefficient (a : ParameterSymbol n Λ V W m)
-    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
-    ContDiffAt ℝ ∞ a.coefficient p :=
-  (a.contDiffOn_coefficient p ⟨mem_univ _, hp⟩).contDiffAt
-    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)
-
 /-- At a spectral parameter outside `Λ` the coefficient vanishes in the position and the
 frequency. -/
 theorem coefficient_slice_of_notMem (a : ParameterSymbol n Λ V W m) {z : ℂ} (hz : z ∉ Λ) :
@@ -217,6 +209,16 @@ theorem toSymbol_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m) (z : 
 theorem toSymbol_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) (z : ℂ) :
     (b.comp a).toSymbol z = (b.toSymbol z).comp (a.toSymbol z) :=
   Symbol.ext <| funext fun q => by simp
+
+/-- At a spectral parameter in `Λ`, the symbol of a function of the position is the ordinary symbol
+of that function. -/
+@[simp]
+theorem toSymbol_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) {z : ℂ}
+    (hz : z ∈ Λ) :
+    (ofSpatial f hf : ParameterSymbol n Λ V W 0).toSymbol z = Symbol.ofSpatial f hf :=
+  Symbol.ext <| funext fun q => by
+    rw [coefficient_toSymbol, ← q.eta, coefficient_ofSpatial f hf _ _ hz,
+      Symbol.coefficient_ofSpatial]
 
 /-- If a parameter-dependent symbol vanishes, at a spectral parameter `z`, at the positions outside
 a compact set `K` for every frequency, then its symbol at `z` has compact spatial support. -/

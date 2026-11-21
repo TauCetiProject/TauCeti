@@ -35,7 +35,8 @@ tree with the Bass–Serre tree of its quotient graph of groups. Isomorphic grap
 together and trees together (`SerreGraph.Iso.isAcyclic_iff`, `SerreGraph.Iso.isTree_iff`).
 
 A graph without darts, such as the graph `noEdge V` without edges, is acyclic, and it is a tree
-exactly when it has one vertex. A graph without vertices is not a tree. The segment is a tree.
+exactly when it has one vertex. A graph without vertices is not a tree. The segment is a tree,
+its dart being the unique reduced path from one vertex to the other.
 A rose with a petal is not a tree, since its petal is a reduced loop.
 
 ## References
@@ -392,6 +393,13 @@ theorem segment_isTree : segment.IsTree := by
       | cons p e =>
         refine absurd ?_ ((Path.isReduced_cons_cons segment p e f).mp hp).2
         exact f.property.1.trans e.property.2.symm
+
+/-- A path in the segment from the vertex `false` to the vertex `true` is reduced exactly when it
+is the dart `false`: the segment has a unique reduced path between its two vertices. -/
+theorem isReduced_segment_iff_eq_toPath {p : segment.Path false true} :
+    Path.IsReduced segment p ↔ p = (segment.dart false).toPath :=
+  ⟨fun hp => segment_isTree.isAcyclic.eq_of_isReduced hp (Path.isReduced_toPath _ _),
+    fun h => h ▸ Path.isReduced_toPath _ _⟩
 
 /-- A rose with a petal is not a tree. -/
 theorem rose_not_isTree {α : Type*} (a : α) : ¬(rose α).IsTree := by
