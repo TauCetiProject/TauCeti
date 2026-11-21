@@ -233,7 +233,7 @@ private theorem integral_inner_crFormalAdjoint_eq_of_memWkpLoc_one {Dξ : ℂ �
         (fun z => ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ + ⟪(φ : ℂ → V) z, J z (Dξ z I)⟫_ℝ) := hiD.add hiB
     simp only [inner_add_right]
     rw [integral_add hiDB hiC, integral_add hiD hiB]
-  rw [hc.integral_inner_crFormalAdjoint_eq_sub_add hp2.le hξ2 φ, hrhs, hξ_one, hJξI]
+  rw [hc.integral_inner_crFormalAdjoint_eq_terms hp2.le hξ2 φ, hrhs, hξ_one, hJξI]
   ring
 
 /-- Upgrading a `W^{1,1}_loc(Ω)` solution of the almost-everywhere Cauchy–Riemann equation to a
@@ -356,7 +356,7 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
   have hADξ_loc {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) (u : ℂ) :
       LocallyIntegrableOn (fun z => A z (Dξ z u)) Ω :=
     hA.locallyIntegrableOn_clm_apply (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V u)) hpq hloc
-  rw [hc₂.integral_inner_crFormalAdjoint_eq_sub_add hpq hΞq Φ]
+  rw [hc₂.integral_inner_crFormalAdjoint_eq_terms hpq hΞq Φ]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     ContinuousLinearMap.withLpProdMapL_apply, ContinuousLinearMap.withLpProdMap_apply,
     WithLp.toLp_fst, WithLp.toLp_snd, ContinuousLinearEquiv.arrowCongr_symm,
@@ -420,7 +420,7 @@ theorem IsWeakCRSolution.memWkpLoc_of_memWkpLoc {k ℓ m : ℕ} (hp : 2 < p)
         ((J z).withLpProdMap 2 (J z)).comp ((J z).withLpProdMap 2 (J z)) =
           -ContinuousLinearMap.id ℝ (WithLp 2 (V × V)) :=
       hJsq.mono fun z hz => by
-        rw [ContinuousLinearMap.withLpProdMap_comp, hz, ContinuousLinearMap.withLpProdMap_neg,
+        rw [← ContinuousLinearMap.withLpProdMap_comp, hz, ContinuousLinearMap.withLpProdMap_neg,
           ContinuousLinearMap.withLpProdMap_id]
     have hS₂ := ((hS.of_le (by omega)).differentiatedCRCoefficient (hJ.of_le hkℓ) hDJ).clm_comp
       (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V))

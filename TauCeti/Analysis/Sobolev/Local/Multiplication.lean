@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Mollification
+import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 import TauCeti.Data.ENNReal.Holder

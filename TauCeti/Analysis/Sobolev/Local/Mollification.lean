@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry

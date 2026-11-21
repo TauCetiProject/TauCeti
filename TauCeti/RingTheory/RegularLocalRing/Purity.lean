@@ -103,7 +103,7 @@ theorem etale_of_isUnramifiedAt_height_eq_one_of_ringKrullDim_le_two
     have h1 : ringKrullDim A = 1 := le_antisymm (Order.le_of_lt_succ hlt) hdim₁
     have := IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr h1
     have : Algebra.FormallyUnramified A B := Algebra.formallyUnramified_iff_forall.mpr fun q ↦
-      key q.1 (by exact_mod_cast h1 ▸ Ideal.height_le_ringKrullDim_of_isPrime)
+      key q.asIdeal (by exact_mod_cast h1 ▸ Ideal.height_le_ringKrullDim_of_isPrime)
     have := Algebra.FinitePresentation.of_finiteType.mp (inferInstance : Algebra.FiniteType A B)
     exact Algebra.Etale.of_formallyUnramified_of_flat
   · -- Dimension two: a prime not lying over the closed point lies over a prime of height at

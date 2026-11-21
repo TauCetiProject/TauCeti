@@ -193,20 +193,20 @@ variable (G : Type u) [Group G] (M : Type v) [AddCommGroup M] [DistribMulAction 
 /-- Degree `0`, on the carriers: the explicit `H⁰(G, M) = M^G` is the submodule of invariants of
 the induced representation. -/
 def H0AddEquivInvariants : H0 G M ≃+ (Rep.ofDistribMulAction ℤ G M).ρ.invariants where
-  toFun m := ⟨m.1, (mem_invariants_iff_mem_H0 m.1).2 m.2⟩
-  invFun m := ⟨m.1, (mem_invariants_iff_mem_H0 (G := G) (M := M) m.1).1 m.2⟩
+  toFun m := ⟨m.val, (mem_invariants_iff_mem_H0 m.val).2 m.property⟩
+  invFun m := ⟨m.val, (mem_invariants_iff_mem_H0 (G := G) (M := M) m.val).1 m.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
 
 /-- `H0AddEquivInvariants` is the identity on underlying elements. -/
 @[simp]
-theorem H0AddEquivInvariants_val (m : H0 G M) : (H0AddEquivInvariants G M m).1 = m.1 := (rfl)
+theorem H0AddEquivInvariants_val (m : H0 G M) : (H0AddEquivInvariants G M m).val = m.val := (rfl)
 
 /-- The inverse of `H0AddEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0AddEquivInvariants_symm_val (m : (Rep.ofDistribMulAction ℤ G M).ρ.invariants) :
-    ((H0AddEquivInvariants G M).symm m).1 = m.1 := (rfl)
+    ((H0AddEquivInvariants G M).symm m).val = m.val := (rfl)
 
 end NumeratorDegree0
 
@@ -308,7 +308,7 @@ class of a cocycle `z` goes to the class of `h ↦ ψ (z (φ⁻¹ h))`. -/
 noncomputable def explicitH1AddEquivGroupCohomology : H1 G M ≃+ groupCohomology B 1 := by
   let c : Z1 G M →+ cocycles₁ B :=
     { toFun z := ⟨transport₁ φ ψ z, (transport₁_mem_cocycles₁_iff φ ψ hψ z).2
-        (mem_Z1_iff.1 z.2).2⟩
+        (mem_Z1_iff.1 z.property).2⟩
       map_zero' := Subtype.ext (funext fun _ ↦ map_zero ψ)
       map_add' _ _ := Subtype.ext (funext fun _ ↦ map_add ψ _ _) }
   let f := (H1π B).hom.toAddMonoidHom.comp c
@@ -318,7 +318,7 @@ noncomputable def explicitH1AddEquivGroupCohomology : H1 G M ≃+ groupCohomolog
       let z : G → M := fun g ↦ ψ.symm (x (φ g))
       have hz : transport₁ φ ψ z = x := funext fun h ↦ by simp [transport₁, z]
       have hzc : groupCohomology.IsCocycle₁ z :=
-        (transport₁_mem_cocycles₁_iff φ ψ hψ z).1 (hz ▸ x.2)
+        (transport₁_mem_cocycles₁_iff φ ψ hψ z).1 (hz ▸ x.property)
       exact ⟨⟨z, mem_Z1_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
         congrArg (H1π B) (Subtype.ext hz)⟩
   have hker : (B1 G M).addSubgroupOf (Z1 G M) = f.ker := by
@@ -386,7 +386,7 @@ class of a cocycle `z` goes to the class of `(h, h') ↦ ψ (z (φ⁻¹ h, φ⁻
 noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomology B 2 := by
   let c : Z2 G M →+ cocycles₂ B :=
     { toFun z := ⟨transport₂ φ ψ z, (mem_cocycles₂_iff_of_equiv φ ψ hψ z).2
-        (mem_Z2_iff.1 z.2).2⟩
+        (mem_Z2_iff.1 z.property).2⟩
       map_zero' := Subtype.ext (funext fun _ ↦ map_zero ψ)
       map_add' _ _ := Subtype.ext (funext fun _ ↦ map_add ψ _ _) }
   let f := (H2π B).hom.toAddMonoidHom.comp c
@@ -397,7 +397,7 @@ noncomputable def explicitH2AddEquivGroupCohomology : H2 G M ≃+ groupCohomolog
       have hz : (fun h : H × H ↦ ψ (z (φ.symm h.1, φ.symm h.2))) = x :=
         funext fun h ↦ by simp [z]
       have hzc : groupCohomology.IsCocycle₂ z :=
-        (mem_cocycles₂_iff_of_equiv φ ψ hψ z).1 (hz ▸ x.2)
+        (mem_cocycles₂_iff_of_equiv φ ψ hψ z).1 (hz ▸ x.property)
       exact ⟨⟨z, mem_Z2_iff.2 ⟨continuous_of_discreteTopology, hzc⟩⟩,
         congrArg (H2π B) (Subtype.ext hz)⟩
   have hker : (B2 G M).addSubgroupOf (Z2 G M) = f.ker := by
@@ -428,7 +428,7 @@ theorem explicitH2AddEquivGroupCohomology_explicitRes2
   induction x using QuotientAddGroup.induction_on with
   | H z =>
     let c : cocycles₂ B := ⟨fun h ↦ ψ ((z : G × G → M) (φ.symm h.1, φ.symm h.2)),
-      (mem_cocycles₂_iff_of_equiv φ ψ hψ z).2 (mem_Z2_iff.1 z.2).2⟩
+      (mem_cocycles₂_iff_of_equiv φ ψ hψ z).2 (mem_Z2_iff.1 z.property).2⟩
     rw [explicitRes2_mk, explicitH2AddEquivGroupCohomology_mk φ ψ hψ z c (fun _ ↦ rfl)]
     have hmap := ConcreteCategory.congr_hom
       (groupCohomology.H2π_comp_map S.subtype (𝟙 (Rep.res S.subtype B))) c
@@ -454,8 +454,8 @@ variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- Degree `1`, on the numerators: the continuous `1`-cocycles are Mathlib's `1`-cocycles. -/
 def Z1AddEquivCocycles₁ : Z1 G M ≃+ cocycles₁ (Rep.ofDistribMulAction ℤ G M) where
-  toFun z := ⟨z.1, (mem_cocycles₁_iff_mem_Z1 z.1).2 z.2⟩
-  invFun c := ⟨c.1, (mem_cocycles₁_iff_mem_Z1 (G := G) (M := M) c.1).1 c.2⟩
+  toFun z := ⟨z.val, (mem_cocycles₁_iff_mem_Z1 z.val).2 z.property⟩
+  invFun c := ⟨c.val, (mem_cocycles₁_iff_mem_Z1 (G := G) (M := M) c.val).1 c.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -518,8 +518,8 @@ variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- Degree `2`, on the numerators: the continuous `2`-cocycles are Mathlib's `2`-cocycles. -/
 def Z2AddEquivCocycles₂ : Z2 G M ≃+ cocycles₂ (Rep.ofDistribMulAction ℤ G M) where
-  toFun z := ⟨z.1, (mem_cocycles₂_iff_mem_Z2 z.1).2 z.2⟩
-  invFun c := ⟨c.1, (mem_cocycles₂_iff_mem_Z2 (G := G) (M := M) c.1).1 c.2⟩
+  toFun z := ⟨z.val, (mem_cocycles₂_iff_mem_Z2 z.val).2 z.property⟩
+  invFun c := ⟨c.val, (mem_cocycles₂_iff_mem_Z2 (G := G) (M := M) c.val).1 c.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

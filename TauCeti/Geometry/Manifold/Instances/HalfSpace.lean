@@ -41,12 +41,12 @@ noncomputable def modelWithCornersHalfSpace :
     invFun := fun q => ⟨(q.1, max q.2 0), by exact le_max_right q.2 (0 : ℝ)⟩
     source := univ
     target := {q | 0 ≤ q.2}
-    map_source' := fun q _ => q.2
+    map_source' := fun q _ => q.property
     map_target' := fun _ _ => mem_univ _
-    left_inv' := fun q _ => Subtype.ext (Prod.ext rfl (max_eq_left q.2))
+    left_inv' := fun q _ => Subtype.ext (Prod.ext rfl (max_eq_left q.property))
     right_inv' := fun q hq => Prod.ext rfl (max_eq_left hq) }
   apply ModelWithCorners.ofConvexRange φ rfl
-    (convex_halfSpace_ge (LinearMap.snd ℝ E ℝ).isLinear 0) continuous_subtype_val
+    (convex_halfSpace_ge (LinearMap.snd ℝ E ℝ).isLinear 0) continuous_subtypeVal
     ((continuous_fst.prodMk (continuous_snd.max continuous_const)).subtype_mk _)
   refine ⟨(0, 1), mem_interior_iff_mem_nhds.mpr ?_⟩
   exact Filter.mem_of_superset
@@ -55,7 +55,7 @@ noncomputable def modelWithCornersHalfSpace :
 
 /-- The half-space model embeds by the subtype inclusion. -/
 @[simp] theorem modelWithCornersHalfSpace_apply (q : {q : E × ℝ | 0 ≤ q.2}) :
-    modelWithCornersHalfSpace E q = q.1 := (rfl)
+    modelWithCornersHalfSpace E q = q.val := (rfl)
 
 /-- The inverse clips negative heights to zero. -/
 theorem modelWithCornersHalfSpace_symm_apply (q : E × ℝ) :
@@ -64,13 +64,31 @@ theorem modelWithCornersHalfSpace_symm_apply (q : E × ℝ) :
 
 /-- On the half-space, the model inverse leaves the ambient coordinates unchanged. -/
 theorem coe_modelWithCornersHalfSpace_symm_apply {q : E × ℝ} (hq : 0 ≤ q.2) :
-    ((modelWithCornersHalfSpace E).symm q).1 = q := by
+    ((modelWithCornersHalfSpace E).symm q).val = q := by
   simp [modelWithCornersHalfSpace_symm_apply, max_eq_left hq]
 
 /-- The range of the model is the closed half-space. -/
 @[simp] theorem range_modelWithCornersHalfSpace :
     range (modelWithCornersHalfSpace E) = {q : E × ℝ | 0 ≤ q.2} :=
   Subtype.range_val
+
+/-- The interior of the range of the model is the open half-space of positive heights. -/
+theorem interior_range_modelWithCornersHalfSpace :
+    interior (range (modelWithCornersHalfSpace E)) = {q : E × ℝ | 0 < q.2} := by
+  have h : {q : E × ℝ | 0 ≤ q.2} = Prod.snd ⁻¹' Ici 0 := by ext; simp
+  rw [range_modelWithCornersHalfSpace, h,
+    ← isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd, interior_Ici]
+  ext q
+  simp
+
+/-- The frontier of the range of the model is the hyperplane of zero height. -/
+theorem frontier_range_modelWithCornersHalfSpace :
+    frontier (range (modelWithCornersHalfSpace E)) = {q : E × ℝ | q.2 = 0} := by
+  have h : {q : E × ℝ | 0 ≤ q.2} = Prod.snd ⁻¹' Ici 0 := by ext; simp
+  rw [range_modelWithCornersHalfSpace, h,
+    ← isOpenMap_snd.preimage_frontier_eq_frontier_preimage continuous_snd, frontier_Ici]
+  ext q
+  simp
 
 /-- The range of the model, the closed half-space, is a convex polyhedron: it is cut out by the
 single inequality `-q.2 ≤ 0`. -/
@@ -88,7 +106,7 @@ noncomputable def halfSpaceInteriorChart :
     OpenPartialHomeomorph {q : E × ℝ | 0 ≤ q.2} (E × ℝ) where
   toFun := modelWithCornersHalfSpace E
   invFun := (modelWithCornersHalfSpace E).symm
-  source := {q | 0 < q.1.2}
+  source := {q | 0 < q.val.2}
   target := {q | 0 < q.2}
   map_source' _ hq := hq
   map_target' q hq := by
@@ -96,14 +114,14 @@ noncomputable def halfSpaceInteriorChart :
     rwa [coe_modelWithCornersHalfSpace_symm_apply E hq.le]
   left_inv' q _ := (modelWithCornersHalfSpace E).left_inv q
   right_inv' q hq := coe_modelWithCornersHalfSpace_symm_apply E (le_of_lt hq)
-  open_source := isOpen_lt continuous_const (continuous_snd.comp continuous_subtype_val)
+  open_source := isOpen_lt continuous_const (continuous_snd.comp continuous_subtypeVal)
   open_target := isOpen_lt continuous_const continuous_snd
   continuousOn_toFun := (modelWithCornersHalfSpace E).continuous.continuousOn
   continuousOn_invFun := (modelWithCornersHalfSpace E).continuous_symm.continuousOn
 
 /-- The interior chart is the inclusion of the half-space. -/
 @[simp, mfld_simps] theorem halfSpaceInteriorChart_apply (q : {q : E × ℝ | 0 ≤ q.2}) :
-    halfSpaceInteriorChart E q = q.1 := (rfl)
+    halfSpaceInteriorChart E q = q.val := (rfl)
 
 /-- The inverse of the interior chart is the inverse of the model. -/
 @[simp, mfld_simps] theorem halfSpaceInteriorChart_symm_apply (q : E × ℝ) :
@@ -111,7 +129,7 @@ noncomputable def halfSpaceInteriorChart :
 
 /-- The interior chart is defined at the points of positive height. -/
 @[simp, mfld_simps] theorem halfSpaceInteriorChart_source :
-    (halfSpaceInteriorChart E).source = {q | 0 < q.1.2} := (rfl)
+    (halfSpaceInteriorChart E).source = {q | 0 < q.val.2} := (rfl)
 
 /-- The interior chart takes values in the open half-space. -/
 @[simp, mfld_simps] theorem halfSpaceInteriorChart_target :

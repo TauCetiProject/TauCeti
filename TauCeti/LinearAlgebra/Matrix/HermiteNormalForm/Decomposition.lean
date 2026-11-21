@@ -132,7 +132,7 @@ theorem range_mulVecLin_hermitePad (H : Matrix ι (Fin k) α) (hk : k ≤ n) :
 /-- Padding with zero columns does not change the rank. -/
 theorem rank_hermitePad (H : Matrix ι (Fin k) α) (hk : k ≤ n) :
     (hermitePad H n).rank = H.rank := by
-  rw [rank, rank, range_mulVecLin_hermitePad H hk]
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, range_mulVecLin_hermitePad H hk]
 
 end Pad
 
@@ -193,7 +193,7 @@ theorem rank_map_eq {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
     ext j i
     simp
   rw [← rank_mul_eq_left_of_isUnit_det _ _ hU, hmul, hermitePad_map _ _ Int.cast_zero,
-    rank_hermitePad _ h.le, rank_eq_finrank_span_cols, hcol,
+    rank_hermitePad _ h.le, ← finrank_span_range_col, hcol,
     finrank_span_eq_card (linearIndependent_algebraMap_comp_iff.mpr
       h.isHermiteNormalForm.linearIndependent_cols), Fintype.card_fin]
 

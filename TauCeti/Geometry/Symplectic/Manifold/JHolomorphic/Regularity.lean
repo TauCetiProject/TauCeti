@@ -15,11 +15,10 @@ import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 /-!
 # Smoothness of `C¹` pseudoholomorphic curves between almost complex manifolds
 
-Let `M` be a smooth real surface equipped with a smooth almost complex structure `j` admitting
-isothermal charts (`SmoothAlmostComplexStructure.HasIsothermalCharts`), and let `M'` be a
-finite-dimensional smooth manifold without boundary equipped with a smooth almost complex structure
-`J`. This file proves that every `C¹` `(j, J)`-holomorphic map `u : M → M'` on an open subset of
-`M` is `C^n` for every `n : ℕ∞`, and in particular smooth (`ContMDiffOn 𝓘(ℝ, ℂ) I' ∞`).
+Let `M` be a smooth real surface equipped with a smooth almost complex structure `j`, and let `M'`
+be a finite-dimensional smooth manifold without boundary equipped with a smooth almost complex
+structure `J`. This file proves that every `C¹` `(j, J)`-holomorphic map `u : M → M'` on an open
+subset of `M` is `C^n` for every `n : ℕ∞`, and in particular smooth (`ContMDiffOn 𝓘(ℝ, ℂ) I' ∞`).
 
 The proof reduces manifold regularity to the planar nonlinear elliptic bootstrap
 (`TauCeti.IsJHolomorphicOn.contDiffOn` in `TauCeti.Geometry.Symplectic.JHolomorphic.Regularity`) in
@@ -29,18 +28,18 @@ two steps:
    `u` with an extended chart `φ := extChartAt I' (u z₀)` yields a `C¹` map `φ ∘ u` satisfying the
    varying-structure normed-space Cauchy–Riemann equation for `J.inChart (u z₀)` on `φ.target`,
    which bootstraps to `C^∞`.
-2. For an isothermal chart `e : OpenPartialHomeomorph M ℂ` of `(M, j)`, the inverse `e.symm` is
-   `C¹` and pseudoholomorphic from `ℂ`, hence `C^∞` by step 1. Applying
+2. For an isothermal chart `e : OpenPartialHomeomorph M ℂ` of `(M, j)`
+   (`SmoothAlmostComplexStructure.exists_isIsothermalChart`), the inverse `e.symm` is `C¹` and
+   pseudoholomorphic from `ℂ`, hence `C^∞` by step 1. Applying
    `OpenPartialHomeomorph.isInvertible_fderiv` and the inverse function theorem
-   (`OpenPartialHomeomorph.contDiffAt_symm`) to `e.symm ≫ₕ chartAt ℂ x₀` shows that `e`
-   itself is `C^∞`, so `u = (u ∘ e.symm) ∘ e` is `C^∞` near every point of the open domain.
+   (`OpenPartialHomeomorph.contDiffAt_symm`) to `e.symm ≫ₕ chartAt ℂ x₀` shows that `e` itself
+   is `C^∞`, so `u = (u ∘ e.symm) ∘ e` is `C^∞` near every point of the open domain.
 
 ## Main results
 
 * `TauCeti.IsPseudoholomorphicOn.contMDiffOn`, `TauCeti.IsPseudoholomorphic.contMDiff`: a `C¹`
-  pseudoholomorphic map from an open subset (or all) of an almost complex surface with isothermal
-  charts into a finite-dimensional smooth almost complex manifold without boundary is `C^n` for
-  every `n : ℕ∞`.
+  pseudoholomorphic map from an open subset (or all) of an almost complex surface into a
+  finite-dimensional smooth almost complex manifold without boundary is `C^n` for every `n : ℕ∞`.
 * `TauCeti.IsPseudoholomorphicOn.contDiffOn`, `TauCeti.IsPseudoholomorphic.contDiff`: the planar
   specializations for maps `ℂ → V` into a finite-dimensional real normed space `V`.
 
@@ -179,13 +178,13 @@ private theorem contMDiffAt_of_isIsothermalChart
   exact ((contMDiffAt_iff_contDiffAt.2 hf_symm_smooth).comp x₀ hψ_at).congr_of_eventuallyEq he_eq
 
 /-- **Smoothness of `C¹` pseudoholomorphic curves between almost complex manifolds.** Let `M` be a
-smooth real surface carrying a smooth almost complex structure `j` with isothermal charts, and let
-`M'` be a finite-dimensional smooth manifold without boundary carrying a smooth almost complex
-structure `J`. If `u : M → M'` is `C¹` and `(j, J)`-holomorphic on an open set `s ⊆ M`, then `u`
-is `C^n` on `s` for every `n : ℕ∞` (McDuff–Salamon, Theorem B.4.1). -/
+smooth real surface carrying a smooth almost complex structure `j`, and let `M'` be a
+finite-dimensional smooth manifold without boundary carrying a smooth almost complex structure `J`.
+If `u : M → M'` is `C¹` and `(j, J)`-holomorphic on an open set `s ⊆ M`, then `u` is `C^n` on `s`
+for every `n : ℕ∞` (McDuff–Salamon, Theorem B.4.1). -/
 theorem IsPseudoholomorphicOn.contMDiffOn
     {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
-    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} [j.HasIsothermalCharts]
+    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M}
     {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
     [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
     [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
@@ -196,8 +195,7 @@ theorem IsPseudoholomorphicOn.contMDiffOn
   suffices ContMDiffOn 𝓘(ℝ, ℂ) I' ∞ u s from this.of_le (WithTop.coe_le_coe.2 le_top)
   intro x₀ hx₀s
   refine ContMDiffAt.contMDiffWithinAt ?_
-  obtain ⟨e, he, hx₀⟩ :=
-    SmoothAlmostComplexStructure.HasIsothermalCharts.exists_isIsothermalChart (j := j) x₀
+  obtain ⟨e, he, hx₀⟩ := j.exists_isIsothermalChart x₀
   let T : Set ℂ := e.target ∩ e.symm ⁻¹' s
   have hT : IsOpen T := e.isOpen_inter_preimage_symm hs
   have h_comp_c1 : ContMDiffOn 𝓘(ℝ, ℂ) I' 1 (u ∘ e.symm) T :=
@@ -222,13 +220,12 @@ theorem IsPseudoholomorphicOn.contMDiffOn
   exact (h_comp_at.comp x₀ he_at).congr_of_eventuallyEq hu_eq
 
 /-- **Smoothness of global `C¹` pseudoholomorphic curves between almost complex manifolds.** If `M`
-is a smooth real surface with a smooth almost complex structure `j` admitting isothermal charts,
-`M'` is a finite-dimensional smooth manifold without boundary with a smooth almost complex
-structure `J`, and `u : M → M'` is `C¹` and `(j, J)`-holomorphic, then `u` is `C^n` for every
-`n : ℕ∞`. -/
+is a smooth real surface with a smooth almost complex structure `j`, `M'` is a finite-dimensional
+smooth manifold without boundary with a smooth almost complex structure `J`, and `u : M → M'` is
+`C¹` and `(j, J)`-holomorphic, then `u` is `C^n` for every `n : ℕ∞`. -/
 theorem IsPseudoholomorphic.contMDiff
     {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
-    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M} [j.HasIsothermalCharts]
+    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M}
     {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
     [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
     [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
@@ -243,23 +240,22 @@ section Planar
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- **Smoothness of `C¹` pseudoholomorphic maps on planar open sets.** If `j` is a smooth almost
-complex structure on `ℂ` with isothermal charts (for instance `ofComplexManifold ℂ ℂ`), `J` is a
-smooth almost complex structure on a finite-dimensional real normed space `V`, and `u : ℂ → V` is
-`C¹` and `(j, J)`-holomorphic on an open set `s ⊆ ℂ`, then `u` is `C^n` on `s` for every
-`n : ℕ∞`. -/
+complex structure on `ℂ`, `J` is a smooth almost complex structure on a finite-dimensional real
+normed space `V`, and `u : ℂ → V` is `C¹` and `(j, J)`-holomorphic on an open set `s ⊆ ℂ`, then
+`u` is `C^n` on `s` for every `n : ℕ∞`. -/
 theorem IsPseudoholomorphicOn.contDiffOn [FiniteDimensional ℝ V]
-    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ} [j.HasIsothermalCharts]
+    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ}
     {J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V} {s : Set ℂ} {n : ℕ∞} {u : ℂ → V}
     (h : IsPseudoholomorphicOn j J u s) (hs : IsOpen s) (hu : ContDiffOn ℝ 1 u s) :
     ContDiffOn ℝ n u s :=
   contMDiffOn_iff_contDiffOn.1 (h.contMDiffOn hs (contMDiffOn_iff_contDiffOn.2 hu))
 
 /-- **Smoothness of global `C¹` pseudoholomorphic maps from `ℂ`.** If `j` is a smooth almost
-complex structure on `ℂ` with isothermal charts, `J` is a smooth almost complex structure on a
-finite-dimensional real normed space `V`, and `u : ℂ → V` is `C¹` and `(j, J)`-holomorphic, then
-`u` is `C^n` for every `n : ℕ∞`. -/
+complex structure on `ℂ`, `J` is a smooth almost complex structure on a finite-dimensional real
+normed space `V`, and `u : ℂ → V` is `C¹` and `(j, J)`-holomorphic, then `u` is `C^n` for every
+`n : ℕ∞`. -/
 theorem IsPseudoholomorphic.contDiff [FiniteDimensional ℝ V]
-    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ} [j.HasIsothermalCharts]
+    {j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) ℂ}
     {J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V} {n : ℕ∞} {u : ℂ → V}
     (h : IsPseudoholomorphic j J u) (hu : ContDiff ℝ 1 u) :
     ContDiff ℝ n u :=
