@@ -9,7 +9,9 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
+public import Mathlib.Data.Set.Card
 public import TauCeti.Data.Finsupp.Order
+import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 
 import Mathlib.Algebra.BigOperators.Fin
 
@@ -66,6 +68,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   finitely many exponent vectors of each degree, and of degree at most `n`.
 * `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
+* `Finsupp.ncard_degree_le`: in finitely many variables,
+  `{α : σ →₀ ℕ | α.degree ≤ ℓ}.ncard = (Fintype.card σ + ℓ).choose (Fintype.card σ)`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 * `Finsupp.injOn_weight_pow`: uniqueness of base-`B` digits; the weight `i ↦ B ^ i` on `Fin m`,
@@ -287,7 +291,22 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree ≤ n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
     ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
-    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum, Nat.lt_succ_iff]
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+/-- In finitely many variables, there are `(card σ + ℓ).choose (card σ)` multi-indices of total
+degree at most `ℓ`. -/
+theorem ncard_degree_le (σ : Type*) [Fintype σ] (ℓ : ℕ) :
+    {α : σ →₀ ℕ | α.degree ≤ ℓ}.ncard = (Fintype.card σ + ℓ).choose (Fintype.card σ) := by
+  have himg : (equivFunOnFinite : (σ →₀ ℕ) ≃ (σ → ℕ)) '' {α : σ →₀ ℕ | α.degree ≤ ℓ} =
+      {c : σ → ℕ | ∑ a, c a ≤ ℓ} := by
+    ext c
+    simp only [Set.mem_image, Set.mem_ofPred_eq]
+    refine ⟨?_, fun hc ↦ ⟨equivFunOnFinite.symm c, ?_, equivFunOnFinite.apply_symm_apply c⟩⟩
+    · rintro ⟨α, hα, rfl⟩
+      simpa [degree_eq_sum] using hα
+    · simpa [degree_eq_sum] using hc
+  rw [← Set.ncard_image_of_injective _ equivFunOnFinite.injective, himg,
+    TauCeti.ncard_setOf_sum_le, add_comm]
 
 end Finsupp
 

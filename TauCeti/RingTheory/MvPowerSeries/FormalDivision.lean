@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.RingTheory.MvPowerSeries.InitialDiagram
+import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -35,7 +37,8 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
   and `IsCompl (I.restrictScalars K) (ord.complementSubmodule I)`
   (`MonomialOrder.isCompl_restrictScalars_complementSubmodule`);
 * the `K`-linear projection `ord.normalRemainder I` (via `Submodule.projection`) and quotient
-  equivalence `ord.quotientEquivComplementSubmodule I` (via `Submodule.quotientEquivOfIsCompl`);
+  equivalences `ord.quotientEquivComplementSubmodule I` (via `Submodule.quotientEquivOfIsCompl`)
+  and `ord.quotientSupMaximalIdealPowEquiv hdeg I n` for degree-compatible `ord`;
 * for each `v ∈ ord.initialDiagram I`, the normalized generator `ord.standardGenerator I v ∈ I`
   with initial exponent `v` and initial coefficient `1`, generating `I` over
   `ord.initialDiagramVertices I`
@@ -49,6 +52,9 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
   `MvPowerSeries σ K →ₗ[K] MvPowerSeries σ K` modulo `I` onto `ord.complementSubmodule I`.
 * `MonomialOrder.quotientEquivComplementSubmodule`: the canonical `K`-linear isomorphism
   `(MvPowerSeries σ K ⧸ I) ≃ₗ[K] ord.complementSubmodule I`.
+* `MonomialOrder.quotientSupMaximalIdealPowEquiv`: the canonical `K`-linear isomorphism
+  identifying `MvPowerSeries σ K ⧸ (I ⊔ 𝔪 ^ n)` with functions on
+  `{α | α.degree < n} \ ord.initialDiagram I`.
 * `MonomialOrder.standardGenerator`: the unique normalized element of `I` congruent to
   `monomial v 1` modulo `ord.complementSubmodule I`.
 
@@ -63,6 +69,12 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
 * `MonomialOrder.isCompl_restrictScalars_complementSubmodule`,
   `MonomialOrder.snd_eq_normalRemainder_of_eq_sum_mul_add`: complement decomposition and agreement
   of formal-division remainders with `ord.normalRemainder I`.
+* `MonomialOrder.order_le_order_normalRemainder`,
+  `MonomialOrder.normalRemainder_mem_maximalIdeal_pow`,
+  `MonomialOrder.quotientSupMaximalIdealPowEquiv_mk`,
+  `MonomialOrder.quotientSupMaximalIdealPowEquiv_symm_apply`: normal remainders for a
+  degree-compatible monomial order preserve total-degree order and maximal-ideal powers, inducing
+  the finite-jet quotient equivalence.
 * `MonomialOrder.eq_standardGenerator_iff`, `MonomialOrder.initialExp_standardGenerator`,
   `MonomialOrder.span_image_standardGenerator_initialDiagramVertices`: uniqueness, initial data,
   and ideal generation for Hironaka's normalized vertex generators.
@@ -864,6 +876,136 @@ theorem coeff_normalRemainder_eq_zero_of_isLowerSet {I : Ideal (MvPowerSeries σ
   rw [← ord.snd_eq_normalRemainder_of_eq_sum_mul_add hFI hD hdiv hR]
   exact (ord.coeff_eq_zero_and_coeff_eq_zero_of_isLowerSet hα hu hQ hR hS
     fun γ hγ ↦ hdiv ▸ hG γ hγ).2
+
+/-- For a degree-compatible monomial order `ord`, taking the normal remainder modulo `I` does not
+decrease total-degree order. -/
+theorem order_le_order_normalRemainder (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) (f : MvPowerSeries σ K) :
+    f.order ≤ (ord.normalRemainder I f).order := by
+  have hS : IsLowerSet {s : ord.syn | ((ord.toSyn.symm s).degree : ℕ∞) < f.order} :=
+    fun _ _ hle (hs : _ < f.order) ↦ lt_of_le_of_lt (Nat.cast_le (α := ℕ∞).mpr (hdeg hle)) hs
+  have hf : ∀ γ, ord.toSyn γ ∈ {s : ord.syn | ((ord.toSyn.symm s).degree : ℕ∞) < f.order} →
+      MvPowerSeries.coeff γ f = 0 := by
+    intro γ hγ
+    simp only [Set.mem_ofPred_eq, AddEquiv.symm_apply_apply] at hγ
+    exact MvPowerSeries.coeff_of_lt_order hγ
+  have hrem := ord.coeff_normalRemainder_eq_zero_of_isLowerSet (I := I) hS hf
+  refine MvPowerSeries.le_order fun γ hγ ↦ hrem γ ?_
+  simpa only [Set.mem_ofPred_eq, AddEquiv.symm_apply_apply] using hγ
+
+/-- For a degree-compatible monomial order `ord`, the normal-remainder projection modulo `I`
+preserves every power `𝔪 ^ n` of the maximal ideal of `MvPowerSeries σ K`. -/
+theorem normalRemainder_mem_maximalIdeal_pow (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) {f : MvPowerSeries σ K} {n : ℕ}
+    (hf : f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n) :
+    ord.normalRemainder I f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n := by
+  rw [MvPowerSeries.mem_maximalIdeal_pow_iff_le_order] at hf ⊢
+  exact hf.trans (ord.order_le_order_normalRemainder hdeg I f)
+
+/-- Coefficient-evaluation map sending `f` to the restriction of `ord.normalRemainder I f` to
+exponents of degree `< n` outside `ord.initialDiagram I`. -/
+private noncomputable def normalRemainderEval (I : Ideal (MvPowerSeries σ K)) (n : ℕ) :
+    MvPowerSeries σ K →ₗ[K]
+      (↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :=
+  LinearMap.pi fun α ↦ (MvPowerSeries.coeff α.val).comp (ord.normalRemainder I)
+
+@[simp]
+private theorem normalRemainderEval_apply (I : Ideal (MvPowerSeries σ K)) (n : ℕ)
+    (f : MvPowerSeries σ K)
+    (α : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I)) :
+    ord.normalRemainderEval I n f α = MvPowerSeries.coeff α.val (ord.normalRemainder I f) := by
+  simp [normalRemainderEval]
+
+private theorem ker_normalRemainderEval (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) (n : ℕ) :
+    LinearMap.ker (ord.normalRemainderEval I n) =
+      (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n).restrictScalars K := by
+  ext f
+  rw [LinearMap.mem_ker, Submodule.restrictScalars_mem]
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · have hrem_mem : ord.normalRemainder I f ∈
+        IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n := by
+      rw [MvPowerSeries.mem_maximalIdeal_pow_iff_le_order]
+      refine MvPowerSeries.nat_le_order fun γ hγ ↦ ?_
+      by_cases hD : γ ∈ ord.initialDiagram I
+      · by_contra hc
+        exact ord.notMem_initialDiagram_of_mem_support_normalRemainder I f
+          (MvPowerSeries.mem_support.mpr hc) hD
+      · simpa using congrFun hf ⟨γ, hγ, hD⟩
+    have hsum : (f - ord.normalRemainder I f) + ord.normalRemainder I f = f := sub_add_cancel _ _
+    exact hsum ▸ Submodule.add_mem_sup (ord.sub_normalRemainder_mem I f) hrem_mem
+  · obtain ⟨g, hg, h, hh, rfl⟩ := Submodule.mem_sup.mp hf
+    funext ⟨α, hα_deg, _⟩
+    simp only [normalRemainderEval_apply, map_add, ord.normalRemainder_eq_zero_iff.mpr hg, zero_add]
+    have hh' := MvPowerSeries.mem_maximalIdeal_pow_iff_le_order.mp
+      (ord.normalRemainder_mem_maximalIdeal_pow hdeg I hh)
+    exact MvPowerSeries.coeff_of_lt_order ((Nat.cast_lt.mpr hα_deg).trans_le hh')
+
+private theorem normalRemainderEval_sum_monomial (I : Ideal (MvPowerSeries σ K)) (n : ℕ)
+    [Fintype ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I)]
+    (v : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :
+    ord.normalRemainderEval I n (∑ β, MvPowerSeries.monomial β.val (v β)) = v := by
+  classical
+  have hg_comp : (∑ β, MvPowerSeries.monomial β.val (v β)) ∈ ord.complementSubmodule I :=
+    Submodule.sum_mem _ fun β _ ↦ ord.monomial_mem_complementSubmodule_iff.mpr (Or.inr β.property.2)
+  funext α
+  rw [normalRemainderEval_apply,
+    ord.normalRemainder_eq_self_of_mem_complementSubmodule hg_comp, map_sum,
+    Finset.sum_eq_single α]
+  · exact MvPowerSeries.coeff_monomial_same α.val (v α)
+  · intro β _ hβα
+    exact MvPowerSeries.coeff_monomial_ne (fun h ↦ hβα (Subtype.ext h.symm)) (v β)
+  · intro hα
+    exact absurd (Finset.mem_univ α) hα
+
+private theorem surjective_normalRemainderEval (I : Ideal (MvPowerSeries σ K)) (n : ℕ) :
+    Function.Surjective (ord.normalRemainderEval I n) := by
+  have hfin : ({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I).Finite :=
+    (Finsupp.finite_of_degree_lt n).sdiff
+  have : Fintype ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) := hfin.fintype
+  exact fun v ↦ ⟨_, ord.normalRemainderEval_sum_monomial I n v⟩
+
+/-- For any degree-compatible monomial order `ord`, the quotient `MvPowerSeries σ K ⧸ (I ⊔ 𝔪 ^ n)`
+is canonically `K`-linearly isomorphic to the space of functions on the complement of
+`ord.initialDiagram I` in `{α | α.degree < n}`. -/
+noncomputable def quotientSupMaximalIdealPowEquiv
+    (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) (n : ℕ) :
+    (MvPowerSeries σ K ⧸ (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n)) ≃ₗ[K]
+      (↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :=
+  (Submodule.Quotient.restrictScalarsEquiv K
+      (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ n)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (ord.ker_normalRemainderEval hdeg I n).symm ≪≫ₗ
+    (ord.normalRemainderEval I n).quotKerEquivOfSurjective
+      (ord.surjective_normalRemainderEval I n)
+
+/-- Forward evaluation of `quotientSupMaximalIdealPowEquiv` on a quotient class. -/
+@[simp]
+theorem quotientSupMaximalIdealPowEquiv_mk
+    (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) (n : ℕ) (f : MvPowerSeries σ K)
+    (α : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I)) :
+    ord.quotientSupMaximalIdealPowEquiv hdeg I n (Ideal.Quotient.mk _ f) α =
+      MvPowerSeries.coeff α.val (ord.normalRemainder I f) := by
+  simp [quotientSupMaximalIdealPowEquiv, ← Ideal.Quotient.mk_eq_mk]
+
+/-- Inverse of `quotientSupMaximalIdealPowEquiv`: sums the corresponding monomials modulo
+`I ⊔ 𝔪 ^ n`. -/
+theorem quotientSupMaximalIdealPowEquiv_symm_apply
+    (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
+    (I : Ideal (MvPowerSeries σ K)) (n : ℕ)
+    (v : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :
+    (ord.quotientSupMaximalIdealPowEquiv hdeg I n).symm v =
+      Ideal.Quotient.mk _ (∑ᶠ β, MvPowerSeries.monomial β.val (v β)) := by
+  have hfin : ({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I).Finite :=
+    (Finsupp.finite_of_degree_lt n).sdiff
+  have : Fintype ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) := hfin.fintype
+  rw [finsum_eq_sum_of_fintype]
+  apply (ord.quotientSupMaximalIdealPowEquiv hdeg I n).injective
+  rw [LinearEquiv.apply_symm_apply]
+  funext α
+  rw [quotientSupMaximalIdealPowEquiv_mk, ← ord.normalRemainderEval_apply,
+    ord.normalRemainderEval_sum_monomial]
 
 /-- For `v ∈ ord.initialDiagram I`, `ord.standardGenerator I v` has `ord`-initial exponent `v`. -/
 @[simp]
