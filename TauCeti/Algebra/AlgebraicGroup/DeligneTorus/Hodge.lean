@@ -248,8 +248,8 @@ theorem finite_setOf_hodgeComponent_ne_bot [Module.Finite ℝ V] :
   have h := DiagonalizableGroup.finite_setOf_weightSpace_ne_bot (R := ℂ) (C := ℂ ⊗[ℝ] S) (ℂ ⊗[ℝ] V)
     ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
       ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-  change ((fun pq : ℤ × ℤ ↦ hodgeComponent V pq.1 pq.2) ⁻¹' {W | W ≠ ⊥}).Finite
-  rw [hodgeComponent_eq_comp, Set.preimage_comp]
+  rw [← Set.preimage_ofPred_eq (p := (· ≠ ⊥)) (f := fun pq : ℤ × ℤ ↦ hodgeComponent V pq.1 pq.2),
+    hodgeComponent_eq_comp, Set.preimage_comp]
   exact h.preimage hodgeIndexEquiv.injective.injOn
 
 /-! ### Complex conjugation -/
