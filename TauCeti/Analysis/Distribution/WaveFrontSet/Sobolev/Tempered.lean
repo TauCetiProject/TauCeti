@@ -66,6 +66,8 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
 * `Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered`,
   `Distribution.IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered`: being `H^s` near
   a point in terms of Mathlib's Bessel-potential spaces.
+* `Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt`: `φ T ∈ H^s` when `T` is
+  `H^s` near every point of the support of `φ`.
 * `Distribution.exists_memSobolev_cutoffTempered`: every `φ T` has a finite Sobolev order.
 * `Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt`: if `T` is `H^s` near every
   point of the support of `φ`, then `φ T ∈ H^s`.
@@ -238,6 +240,14 @@ theorem IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered
     ∃ U ∈ 𝓝 x, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U → MemSobolev s 2 (T.cutoffTempered φ) := by
   obtain ⟨U, hU, hL⟩ := h.exists_nhds
   exact ⟨U, hU, fun φ hφ ↦ memSobolev_cutoffTempered_iff.2 (hL φ hφ)⟩
+
+/-- **Cutoffs supported where `T` is `H^s`.** If `T` is `H^s` near every point of the support of a
+cutoff `φ`, then the tempered distribution `φ T` lies in the Bessel-potential space `H^s`. -/
+theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
+    (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) :
+    MemSobolev s 2 (T.cutoffTempered φ) :=
+  memSobolev_cutoffTempered_iff.2
+    (memLp_one_add_norm_sq_rpow_smul_localFourier_of_forall_isLocallySobolevAt h)
 
 /-- **Finite Sobolev order.** Every cut-off distribution `φ T` lies in the Bessel-potential space
 `H^s` for some real order `s`. -/

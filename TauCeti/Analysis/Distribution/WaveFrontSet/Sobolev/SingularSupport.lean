@@ -61,6 +61,8 @@ The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s �
 * `Distribution.isOpen_diff_sobolevSingularSupport`, `Distribution.sobolevSingularSupport_mono`,
   `Distribution.sobolevSingularSupport_subset_singularSupport`: the `H^s` singular support is
   closed in `Ω`, grows with `s`, and lies in the singular support.
+* `Distribution.memLp_one_add_norm_sq_rpow_smul_localFourier_of_forall_isLocallySobolevAt`: if
+  `T` is `H^s` near every point of the support of a cutoff `φ`, then `φ T` is `H^s`.
 * `Distribution.IsLocallySobolevAt.add`, `Distribution.IsLocallySobolevAt.smulLeftCLM`,
   `Distribution.isLocallySobolevAt_restrictCLM_iff`: being `H^s` near a point is preserved by
   sums, smooth multiples and restriction.
@@ -182,6 +184,27 @@ theorem IsLocallySobolevAt.exists_nhds {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E}
       MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier ψ η) 2 volume :=
   exists_nhds_forall_memLp_of_forall_isMicrolocallySobolevAt fun ξ _ ↦
     h.isMicrolocallySobolevAt ξ
+
+/-- **Cutoffs supported where `T` is `H^s`.** If `T` is `H^s` near every point of the support of a
+cutoff `φ`, then the weighted localized Fourier transform `η ↦ ⟨η⟩ ^ s T (φ e_η)` is square
+integrable on all of `E`. -/
+theorem memLp_one_add_norm_sq_rpow_smul_localFourier_of_forall_isLocallySobolevAt {s : ℝ}
+    {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)} (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) :
+    MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) 2 volume := by
+  classical
+  -- Around each point of the support, a neighbourhood on which every cutoff gives `H^s`.
+  choose! U hU hL using fun x hx ↦ (h x hx).exists_nhds
+  -- Split `φ` into finitely many pieces supported in these neighbourhoods.
+  obtain ⟨t, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate (fun x : tsupport φ ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU x hx)⟩
+  have heq : (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) =
+      fun η ↦ ∑ i, (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier (ψ i) η := by
+    ext η
+    rw [← Finset.smul_sum, ← localFourier_sum_cutoff, hsum]
+  rw [heq]
+  exact memLp_finsetSum _ fun i _ ↦
+    hL _ (i : tsupport φ).2 (ψ i) ((hψ i).trans interior_subset)
 
 /-- The zero distribution is `H^s` near every point of its domain. -/
 @[simp]
