@@ -22,10 +22,10 @@ into limits of normalized functions, and conversely recovers error estimates fro
 The quotient is right division: multiplication need not be commutative. For ordered fields,
 the ratio formulation also supports order arguments.
 
-If `(σ - a) • f(σ)` has a limit along a filter on the real line that eventually avoids `a`, then
-`f(σ) = O((σ - a)⁻¹)` along it. For `a = 1` and the right-sided limit `σ → 1⁺` this is the growth
-bound near `s = 1` of a Dedekind zeta function or an `L`-series with a simple pole there, read off
-from the limit of `(s - 1) L(s)` along the real axis.
+If `(σ - a) • f(σ)` has a limit along a filter on a normed division ring that eventually avoids
+`a`, then `f(σ) = O((σ - a)⁻¹)` along it. On the real line, for `a = 1` and the right-sided limit
+`σ → 1⁺`, this is the growth bound near `s = 1` of a Dedekind zeta function or an `L`-series with
+a simple pole there, read off from the limit of `(s - 1) L(s)` along the real axis.
 
 A map `u` whose differences satisfy `u y - u y' = O(y - y')` near `(x, x)`, the difference
 estimate of a strictly differentiable map, is continuous at `x`. Only this Lipschitz-type
@@ -45,17 +45,19 @@ theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence li
 the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`; this is how a bound on the
 partial sums of a sequence enters an integral against the partial-sum step function.
 
-An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
-dominated function is bounded on compact intervals and the dominating one is bounded away from
-zero. This is how an asymptotic estimate becomes an explicit inequality valid at every point,
-which a summation argument can apply at infinitely many points at once. Continuity of both
-functions on the half-line, with a nonvanishing dominating function, is another sufficient
-condition: it covers exponentially decaying majorants such as `exp (-p x)`. For the slowly decaying
-majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local boundedness of `f` on compact intervals alone
-suffices, covering step functions such as summatory functions.
+An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` of a linear order as
+soon as the dominated function is bounded on the intervals `[a, b]` and the dominating one is
+bounded away from zero. This is how an asymptotic estimate becomes an explicit inequality valid at
+every point, which a summation argument can apply at infinitely many points at once. Continuity of
+both functions on the half-line, with a nonvanishing dominating function, is another sufficient
+condition when closed intervals are compact: it covers exponentially decaying majorants such as
+`exp (-p x)`. For the slowly decaying majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local
+boundedness of `f` on compact intervals alone suffices, covering step functions such as summatory
+functions.
 
-A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
-to zero. This is the form needed to absorb polynomial growth after shifting an index.
+A fixed power of a shifted natural number times a geometric sequence of ratio of absolute value
+less than one tends to zero. This is the form needed to absorb polynomial growth after shifting an
+index.
 
 If the weighted terms `aₙ qⁿ` of a real sequence are bounded by `A` at a radius `q > 0`, then at
 a radius `c` they are bounded by `A * (|c| / q)ⁿ`. For `|c| < q` this geometric bound is the
@@ -79,9 +81,9 @@ evaluations of elliptic integrals.
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
-* `Asymptotics.eq_zero_of_smul_isLittleO`: if `ψ` is frequently nonzero and `ψ • c = o(ψ)`, then
-  `c = 0`.
-* `Asymptotics.IsBigO.smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
+* `Asymptotics.isLittleO_smul_const_self_iff`: if `ψ` is frequently nonzero, then `ψ • c = o(ψ)`
+  if and only if `c = 0`.
+* `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
@@ -89,8 +91,8 @@ evaluations of elliptic integrals.
   are continuous on `[a, ∞)` and `g` does not vanish there.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
-* `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
-  `0 ≤ ρ < 1`.
+* `TauCeti.tendsto_add_pow_mul_pow_of_abs_lt_one`: `(n + m) ^ k * ρ ^ n` tends to zero when
+  `|ρ| < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
   are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
 * `TauCeti.continuousAt_of_isBigO_sub`: `u y - u y' = O(y - y')` near `(x, x)` implies continuity
@@ -122,55 +124,44 @@ theorem isLittleO_sub_mul_iff_tendsto_div {α 𝕜 : Type*} [NormedDivisionRing 
   rw [sub_div, mul_div_cancel_right₀ _ hx]
 
 /-- **A limit of `(σ - a) • f(σ)` bounds `f` by `(σ - a)⁻¹`.** If `(σ - a) • f(σ)` has a limit
-along a filter `l` on the real line on which eventually `σ ≠ a`, then `f(σ) = O((σ - a)⁻¹)` along
-`l`. Typical choices of `l` are the one-sided and punctured neighbourhoods of `a`. For `a = 1` and
-`l = 𝓝[>] 1` this is how such a bound is usually obtained for a Dedekind zeta function or an
-`L`-series near `s = 1`, from the limit of `(s - 1) L(s)` along the real axis. -/
-theorem isBigO_inv_sub_of_tendsto_sub_smul {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] {l : Filter ℝ} {f : ℝ → E} {a : ℝ} {r : E} (hne : ∀ᶠ σ in l, σ ≠ a)
-    (h : Tendsto (fun σ ↦ (σ - a) • f σ) l (𝓝 r)) :
+along a filter `l` on a normed division ring `𝕜` on which eventually `σ ≠ a`, then
+`f(σ) = O((σ - a)⁻¹)` along `l`. Typical choices of `l` are the one-sided and punctured
+neighbourhoods of `a`. For `𝕜 = ℝ`, `a = 1` and `l = 𝓝[>] 1` this is how such a bound is usually
+obtained for a Dedekind zeta function or an `L`-series near `s = 1`, from the limit of
+`(s - 1) L(s)` along the real axis. -/
+theorem isBigO_inv_sub_of_tendsto_sub_smul {𝕜 E : Type*} [NormedDivisionRing 𝕜]
+    [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {l : Filter 𝕜} {f : 𝕜 → E}
+    {a : 𝕜} {r : E} (hne : ∀ᶠ σ in l, σ ≠ a) (h : Tendsto (fun σ ↦ (σ - a) • f σ) l (𝓝 r)) :
     f =O[l] fun σ ↦ (σ - a)⁻¹ := by
-  refine ((isBigO_refl (fun σ ↦ (σ - a)⁻¹) _).smul (h.isBigO_one ℝ)).congr' ?_ (by simp)
+  refine ((isBigO_refl (fun σ ↦ (σ - a)⁻¹) _).smul (h.isBigO_one 𝕜)).congr' ?_ (by simp)
   filter_upwards [hne] with σ hσ
   rw [smul_smul, inv_mul_cancel₀ (sub_ne_zero.2 hσ), one_smul]
 
 /-- **At the origin a higher power of the norm is dominated by a lower one.** The norm is at most
 one near `0`, so `‖x‖ ^ m = O(‖x‖ ^ n)` whenever `n ≤ m`. -/
-theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddCommGroup E]
+theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddGroup E]
     {m n : ℕ} (h : n ≤ m) :
     (fun x : E ↦ ‖x‖ ^ m) =O[𝓝 (0 : E)] fun x ↦ ‖x‖ ^ n := by
   refine isBigO_iff.2 ⟨1, ?_⟩
   filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with x hx
-  simp only [one_mul, norm_pow, norm_norm]
+  simp only [one_mul, norm_pow, Real.norm_of_nonneg (norm_nonneg x)]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
 
 /-- **An inverse-power bound about any centre is a decay bound at infinity.** If
 `‖g x‖ ≤ A / ‖x - c‖ ^ n` whenever `R < ‖x - c‖`, then `g = O(x⁻¹ ^ n)` along `cobounded 𝕜`. -/
-theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing 𝕜]
-    [SeminormedAddCommGroup E] {g : 𝕜 → E} {c : 𝕜} {R A : ℝ} (n : ℕ)
+theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing 𝕜] [Norm E]
+    {g : 𝕜 → E} {c : 𝕜} {R A : ℝ} (n : ℕ)
     (hg : ∀ x, R < ‖x - c‖ → ‖g x‖ ≤ A / ‖x - c‖ ^ n) :
     g =O[Bornology.cobounded 𝕜] fun x ↦ x⁻¹ ^ n := by
-  refine IsBigO.of_bound (2 ^ n * A) ?_
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (2 * ‖c‖ + 2 * |R| + 1)]
-    with x hx
-  have := norm_sub_norm_le x c
-  have := norm_nonneg c
-  have := le_abs_self R
-  have := abs_nonneg R
-  have hρ : 0 < ‖x - c‖ := by linarith
-  have hxR : R < ‖x - c‖ := by linarith
-  have hA : 0 ≤ A := by
-    have := (norm_nonneg _).trans (hg x hxR)
-    rwa [le_div_iff₀ (by positivity), zero_mul] at this
-  have hinv : (‖x - c‖ ^ n)⁻¹ ≤ 2 ^ n * (‖x‖ ^ n)⁻¹ := by
-    have hx0 : 0 < ‖x‖ := by linarith
-    calc (‖x - c‖ ^ n)⁻¹ = 2 ^ n * ((2 * ‖x - c‖) ^ n)⁻¹ := by
-          rw [mul_pow, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
-      _ ≤ 2 ^ n * (‖x‖ ^ n)⁻¹ := by gcongr; linarith
-  calc ‖g x‖ ≤ A / ‖x - c‖ ^ n := hg x hxR
-    _ = A * (‖x - c‖ ^ n)⁻¹ := div_eq_mul_inv _ _
-    _ ≤ A * (2 ^ n * (‖x‖ ^ n)⁻¹) := by gcongr
-    _ = 2 ^ n * A * ‖x⁻¹ ^ n‖ := by rw [norm_pow, norm_inv, inv_pow]; ring
+  -- `g = O((x - c)⁻¹ ^ n)`, as `R < ‖x - c‖` eventually
+  have hgc : g =O[Bornology.cobounded 𝕜] fun x ↦ (x - c)⁻¹ ^ n :=
+    .of_bound A <| (tendsto_norm_cobounded_atTop.eventually_gt_atTop (R + ‖c‖)).mono fun x hx ↦
+      by simpa [div_eq_mul_inv] using hg x (by linarith [norm_sub_norm_le x c])
+  -- `x - c ∼ x`, as the constant `c` is `o(x)`; hence `x = O(x - c)`
+  have hx : (fun x : 𝕜 ↦ x) =O[Bornology.cobounded 𝕜] fun x ↦ x - c :=
+    IsEquivalent.isBigO_symm <| (isLittleO_const_id_cobounded (-c)).congr_left fun x ↦ by simp
+  exact hgc.trans ((hx.inv_rev ((Bornology.eventually_ne_cobounded 0).mono
+    fun _ h h0 ↦ absurd h0 h)).pow n)
 
 /-- **A power bound at infinity survives a dilation.** If `F = O(x ^ r)` as `x → ∞`, then
 `F (c x) = O(x ^ r)` for every `c > 0`. -/
@@ -199,10 +190,12 @@ theorem IsBigO.comp_natFloor_rpow {E : Type*} [Norm E] {u : ℕ → E} {r : ℝ}
 /-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
 bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on
 `[a, ∞)`, then `f = O(g)` uniformly on `[a, ∞)`. -/
-theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ → E} {g : ℝ → F}
-    {a c : ℝ} (h : f =O[atTop] g) (hc : 0 < c) (hg : ∀ x, a ≤ x → c ≤ ‖g x‖)
-    (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
+theorem IsBigO.isBigO_principal_Ici {ι E F : Type*} [LinearOrder ι] [Norm E] [Norm F]
+    {f : ι → E} {g : ι → F} {a : ι} {c : ℝ} (h : f =O[atTop] g) (hc : 0 < c)
+    (hg : ∀ x, a ≤ x → c ≤ ‖g x‖) (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
     f =O[𝓟 (Set.Ici a)] g := by
+  -- `eventually_atTop` needs a nonempty order
+  have : Nonempty ι := ⟨a⟩
   obtain ⟨c₀, hc₀⟩ := h.bound
   obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
   obtain ⟨B, hB⟩ := hf b
@@ -221,11 +214,13 @@ theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ →
 `atTop`, both functions are continuous on `[a, ∞)` and `g` does not vanish there, then
 `f = O(g)` uniformly on `[a, ∞)`. Unlike `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero,
 as for an exponentially decaying majorant. -/
-theorem IsBigO.isBigO_principal_Ici_of_continuousOn {E F : Type*} [SeminormedAddGroup E]
-    [NormedAddGroup F] {f : ℝ → E} {g : ℝ → F} {a : ℝ} (h : f =O[atTop] g)
-    (hf : ContinuousOn f (Set.Ici a)) (hg : ContinuousOn g (Set.Ici a))
-    (hg0 : ∀ x ∈ Set.Ici a, g x ≠ 0) :
+theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrder ι]
+    [TopologicalSpace ι] [CompactIccSpace ι] [SeminormedAddGroup E] [NormedAddGroup F]
+    {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g) (hf : ContinuousOn f (Set.Ici a))
+    (hg : ContinuousOn g (Set.Ici a)) (hg0 : ∀ x ∈ Set.Ici a, g x ≠ 0) :
     f =O[𝓟 (Set.Ici a)] g := by
+  -- `eventually_atTop` needs a nonempty order
+  have : Nonempty ι := ⟨a⟩
   obtain ⟨c₀, hc₀⟩ := h.bound
   obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
   have hcont : ContinuousOn (fun x ↦ ‖f x‖ / ‖g x‖) (Set.Icc a b) :=
@@ -240,22 +235,25 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {E F : Type*} [SeminormedAdd
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_le_iff₀ hgx] at hBx
     exact hBx.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hgx.le)
 
-/-- **A constant multiple of `ψ` that is `o(ψ)` vanishes.** If `ψ` is frequently nonzero along `l`
-and `ψ • c = o(ψ)` along `l`, then `c = 0`. -/
-theorem eq_zero_of_smul_isLittleO {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [NormedAddCommGroup E]
-    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ψ x ≠ 0)
-    (h : (fun x => ψ x • c) =o[l] ψ) : c = 0 := by
-  by_contra hc
-  have hcpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
-  obtain ⟨x, hx, hψx⟩ := (hψ.and_eventually (h.def (half_pos hcpos))).exists
-  rw [norm_smul] at hψx
-  have hψpos : 0 < ‖ψ x‖ := norm_pos_iff.mpr hx
-  nlinarith
+/-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `ψ` is frequently nonzero
+along `l`, then `ψ • c = o(ψ)` along `l` if and only if `c = 0`. -/
+theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [NormedAddGroup 𝕜] [NormedAddGroup E]
+    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E}
+    (hψ : ∃ᶠ x in l, ψ x ≠ 0) : (fun x => ψ x • c) =o[l] ψ ↔ c = 0 := by
+  refine ⟨fun h ↦ ?_, fun hc ↦ isLittleO_iff.mpr fun ε hε ↦ .of_forall fun x ↦ ?_⟩
+  · by_contra hc
+    have hcpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
+    obtain ⟨x, hx, hψx⟩ := (hψ.and_eventually (h.def (half_pos hcpos))).exists
+    rw [norm_smul] at hψx
+    have hψpos : 0 < ‖ψ x‖ := norm_pos_iff.mpr hx
+    nlinarith
+  · rw [norm_smul, hc, norm_zero, mul_zero]
+    positivity
 
 /-- **A scalar function times a constant vector is big-O of the scalar function:**
 `(fun x => u x • c) =O[l] u`, with constant `‖c‖`. -/
-theorem IsBigO.smul_const_self {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [NormedAddCommGroup E]
-    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} (u : α → 𝕜) (c : E) :
+theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul 𝕜 E] [NormSMulClass 𝕜 E]
+    {l : Filter α} (u : α → 𝕜) (c : E) :
     (fun x => u x • c) =O[l] u :=
   IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => by rw [norm_smul, mul_comm])
 
@@ -288,19 +286,20 @@ end Asymptotics
 
 namespace TauCeti
 
-/-- For `0 ≤ ρ < 1`, the shifted polynomial-times-geometric sequence `(n + k)ᵏ ρⁿ` tends to `0`.
+/-- For `|ρ| < 1`, the shifted polynomial-times-geometric sequence `(n + m)ᵏ ρⁿ` tends to `0`.
 This is useful for absorbing polynomial growth after shifting an index. -/
-theorem tendsto_add_pow_mul_pow_of_lt_one (k : ℕ) {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ1 : ρ < 1) :
-    Tendsto (fun n : ℕ ↦ (n + k : ℝ) ^ k * ρ ^ n) atTop (𝓝 0) := by
-  rcases hρ0.eq_or_lt with rfl | hρ
+theorem tendsto_add_pow_mul_pow_of_abs_lt_one (m k : ℕ) {ρ : ℝ} (hρ : |ρ| < 1) :
+    Tendsto (fun n : ℕ ↦ (n + m : ℝ) ^ k * ρ ^ n) atTop (𝓝 0) := by
+  rcases eq_or_ne ρ 0 with rfl | hρ0
   · exact tendsto_const_nhds.congr' <| (eventually_ge_atTop 1).mono fun n hn ↦ by
       simp [zero_pow (Nat.one_le_iff_ne_zero.mp hn)]
-  have h := ((tendsto_pow_const_mul_const_pow_of_lt_one k hρ0 hρ1).comp
-    (tendsto_add_atTop_nat k)).const_mul (ρ⁻¹ ^ k)
+  -- `(n + m)ᵏ ρⁿ = ρ⁻ᵐ (n + m)ᵏ ρⁿ⁺ᵐ`, a shift of Mathlib's unshifted limit
+  have h := ((tendsto_pow_const_mul_const_pow_of_abs_lt_one k hρ).comp
+    (tendsto_add_atTop_nat m)).const_mul (ρ⁻¹ ^ m)
   convert h using 1
   · ext n
     simp only [Function.comp_apply, Nat.cast_add, pow_add, inv_pow]
-    field_simp [hρ.ne']
+    field_simp
   · simp
 
 /-- If the weighted terms `aₙ qⁿ` of a real sequence at a radius `q > 0` are bounded by `A`, then
@@ -314,8 +313,8 @@ theorem mul_abs_pow_le_of_forall_mul_pow_le {a : ℕ → ℝ} {q A c : ℝ} (hq 
 
 /-- A map satisfying the difference estimate of a strictly differentiable map near `x` is
 continuous at `x`. -/
-theorem continuousAt_of_isBigO_sub {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G]
-    {u : E → G} {x : E}
+theorem continuousAt_of_isBigO_sub {E G : Type*} [SeminormedAddCommGroup E]
+    [SeminormedAddCommGroup G] {u : E → G} {x : E}
     (hu : (fun p : E × E ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
     ContinuousAt u x := by
   have hpair : Tendsto (fun y : E ↦ (y, x)) (𝓝 x) (𝓝 (x, x)) :=
@@ -323,7 +322,7 @@ theorem continuousAt_of_isBigO_sub {E G : Type*} [NormedAddCommGroup E] [NormedA
   have hsub : Tendsto (fun y : E ↦ y - x) (𝓝 x) (𝓝 0) := by
     simpa using (tendsto_id (x := 𝓝 x)).sub_const x
   rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  simpa using ((hu.comp_tendsto hpair).trans_tendsto hsub).norm
+  exact (hu.comp_tendsto hpair).norm_norm.trans_tendsto (by simpa using hsub.norm)
 
 /-- In an ordered field, the ratio `(t + x) / (t + y)` of two translates of `t` tends to `1` as
 `t → ∞`. -/
