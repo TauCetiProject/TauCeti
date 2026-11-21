@@ -238,10 +238,10 @@ private theorem exists_inversionPoints_mul_borelSubgroup_step (i : Fin t.rank)
   obtain ⟨a, v, hv, rfl⟩ :=
     (D.mem_positivePoints_iff_exists_rootSubgroupPoints_mul K i u₁).mp hu₁
   have hnorm := Subgroup.inv_mem _
-    (D.weylElement_mem_normalizer_positivePoints_diff_singleton K i 1)
+    (D.weylElement_mem_normalizer_puncturedPositivePoints K i 1)
   have hv'pos : (D.simpleWeylLift K i : D.points K)⁻¹ * v *
       (D.simpleWeylLift K i : D.points K) ∈ D.positivePoints K :=
-    D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints K i
+    D.puncturedPositivePoints_le_positivePoints K i
       (by simpa only [D.coe_simpleWeylLift, inv_inv] using
         (Subgroup.mem_normalizer_iff.mp hnorm v).mp hv)
   obtain ⟨u', hu', b₀, hb₀, hih⟩ := ih hv'pos

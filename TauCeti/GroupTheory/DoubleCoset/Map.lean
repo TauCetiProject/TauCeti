@@ -18,8 +18,8 @@ laws.  It also transports a double-coset space along a group isomorphism, identi
 quotients by conjugate right subgroups by right translation, and carries a single double coset
 along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image,
 `DoubleCoset.mem_doubleCoset_image_iff` transports membership along an injective multiplicative
-map, and `DoubleCoset.image_doubleCoset_subgroupOf` / `DoubleCoset.mem_doubleCoset_subgroupOf_iff`
-specialize this to double cosets of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E`.
+map, and `DoubleCoset.image_doubleCoset_subgroupOf` specializes this to double cosets of restricted
+subgroups `H.subgroupOf E` and `K.subgroupOf E`.
 
 These are the double-coset analogues of `Subgroup.quotientMapOfLE` and `QuotientGroup.congr` for
 ordinary coset spaces.
@@ -191,12 +191,5 @@ theorem image_doubleCoset_subgroupOf {E H K : Subgroup G} (hH : H ≤ E) (hK : K
     rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.map_subgroupOf_eq_of_le hK]
   simpa only [Subgroup.coe_subtype, hH', hK'] using
     image_doubleCoset E.subtype x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E)
-
-/-- Double cosets of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E` coincide with
-restrictions of ambient double cosets of `H` and `K`, provided `H ≤ E` and `K ≤ E`. -/
-theorem mem_doubleCoset_subgroupOf_iff {E H K : Subgroup G} (hH : H ≤ E) (hK : K ≤ E) {x z : E} :
-    z ∈ doubleCoset x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E) ↔
-      (z : G) ∈ doubleCoset (x : G) (H : Set G) (K : Set G) := by
-  rw [← image_doubleCoset_subgroupOf hH hK, Subtype.val_injective.mem_set_image]
 
 end DoubleCoset

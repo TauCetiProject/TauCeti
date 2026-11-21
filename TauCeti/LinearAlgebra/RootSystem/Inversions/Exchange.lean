@@ -12,8 +12,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 
 Right multiplication by a simple reflection changes the number of positive roots sent to
 negative roots by exactly one. Reflection bijects the two inversion sets away from its defining
-simple root, while that root itself changes sides. Via inversion invariance of inversion counts,
-the same step formulas hold for left multiplication by a simple reflection.
+simple root, while that root itself changes sides.
 
 This is the exchange step that underlies the Coxeter presentation of a Weyl group and the later
 identification of Coxeter length with the number of inversions.
@@ -27,9 +26,6 @@ identification of Coxeter length with the number of inversions.
   say in which direction the count moves: it goes up exactly when the defining simple root is not
   already an inversion.
 * `TauCeti.ncard_inversions_mul_ofIdx` proves that the inversion count changes by one.
-* `TauCeti.ncard_inversions_ofIdx_mul_of_notMem` and `TauCeti.ncard_inversions_ofIdx_mul_of_mem`
-  give the corresponding step formulas for left multiplication by a simple reflection, read off
-  from the inverse element.
 
 ## References
 
@@ -146,23 +142,5 @@ theorem ncard_inversions_mul_ofIdx {i : ι} (hi : i ∈ b.support) :
   by_cases hiw : i ∈ inversions P b w
   · exact Or.inr (ncard_inversions_mul_ofIdx_of_mem P w b hi hiw)
   · exact Or.inl (ncard_inversions_mul_ofIdx_of_notMem P w b hi hiw)
-
-/-- Left multiplication by a simple reflection whose simple root is **not** an inversion of `w⁻¹`
-raises the number of inversions by one. -/
-theorem ncard_inversions_ofIdx_mul_of_notMem {i : ι} (hi : i ∈ b.support)
-    (hiw : i ∉ inversions P b w⁻¹) :
-    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard =
-      (inversions P b w).ncard + 1 := by
-  rw [ncard_inversions_ofIdx_mul, ncard_inversions_mul_ofIdx_of_notMem P w⁻¹ b hi hiw,
-    ncard_inversions_inv]
-
-/-- Left multiplication by a simple reflection whose simple root is already an inversion of `w⁻¹`
-lowers the number of inversions by one. -/
-theorem ncard_inversions_ofIdx_mul_of_mem {i : ι} (hi : i ∈ b.support)
-    (hiw : i ∈ inversions P b w⁻¹) :
-    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard + 1 =
-      (inversions P b w).ncard := by
-  rw [ncard_inversions_ofIdx_mul, ncard_inversions_mul_ofIdx_of_mem P w⁻¹ b hi hiw,
-    ncard_inversions_inv]
 
 end TauCeti

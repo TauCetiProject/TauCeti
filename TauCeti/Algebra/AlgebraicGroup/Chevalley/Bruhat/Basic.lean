@@ -6,11 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
-public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
-public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum
@@ -43,10 +39,6 @@ increase in terms of positive roots.
   `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots`, and
   `ChevalleyDatum.wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots`: root-positivity rules
   for simple Bruhat-cell multiplication and Tits word length.
-* `ChevalleyDatum.ncard_inversions_titsWeylGroupMulEquiv`,
-  `ChevalleyDatum.wordLength_titsWeylGroupMulEquiv_symm`, and
-  `ChevalleyDatum.titsSimpleReflection_injective`: identification of Tits word length with the
-  root-inversion count and injectivity of the numbered simple reflections.
 
 ## References
 
@@ -81,10 +73,11 @@ theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
   subst hn
   rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_weylProjection K n,
-    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, DoubleCoset.image_doubleCoset,
-    ← Subgroup.coe_map,
-    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
-    Subgroup.subtype_apply, coe_titsSubgroupNMulEquiv_symm]
+    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, Subgroup.coe_subtype,
+    DoubleCoset.image_doubleCoset_subgroupOf
+      (D.borelSubgroup_le_extendedElementarySubgroup K)
+      (D.borelSubgroup_le_extendedElementarySubgroup K),
+    coe_titsSubgroupNMulEquiv_symm]
 
 /-- The Bruhat cell of `D.weylProjection K n` is the double coset `B n B` in `D.points K`. -/
 @[simp]
@@ -349,76 +342,5 @@ theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
       exact hunion
     exact (D.titsSystem K).bruhatCell_mul_ne_union_of_ne_one
       ((D.titsSystem K).simple_ne_one (D.titsSimpleReflection_mem_simple K i)) q hunionT
-
-/-- The root-inversion count of `D.titsWeylGroupMulEquiv K q` equals the Tits word length of
-`q`. -/
-theorem ncard_inversions_titsWeylGroupMulEquiv (q : (D.titsSystem K).WeylGroup) :
-    (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-        (D.titsWeylGroupMulEquiv K q)).ncard =
-      (D.titsSystem K).simpleGenerators.wordLength q := by
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  let T := D.titsSystem K
-  let P := t.simplyConnectedRootDatum ht
-  let b := t.simplyConnectedBase ht
-  suffices h : ∀ m : ℕ, ∀ q : T.WeylGroup, T.simpleGenerators.wordLength q = m →
-      (inversions P b (D.titsWeylGroupMulEquiv K q)).ncard = m from h _ q rfl
-  intro m
-  induction m with
-  | zero =>
-    intro q hq
-    rw [(Group.Generators.wordLength_eq_zero_iff _).mp hq, map_one, ncard_inversions_one]
-  | succ m ih =>
-    intro q hq
-    obtain ⟨l, hl, hlen, hprod⟩ := T.exists_prod_eq_of_wordLength q
-    rw [hq] at hlen
-    rcases l with _ | ⟨s, l'⟩
-    · cases hlen
-    rw [List.forall_mem_cons] at hl
-    obtain ⟨hs, hl'⟩ := hl
-    rw [List.length_cons, Nat.add_right_cancel_iff] at hlen
-    rw [List.prod_cons] at hprod
-    set y : T.WeylGroup := l'.prod
-    have hyle : T.simpleGenerators.wordLength y ≤ m := hlen ▸ T.wordLength_prod_le hl'
-    have hstep := T.wordLength_simple_mul hs y
-    have hsy : T.simpleGenerators.wordLength (s * y) = m + 1 := by rwa [hprod]
-    have hylen : T.simpleGenerators.wordLength y = m := by omega
-    have hlt : T.simpleGenerators.wordLength y < T.simpleGenerators.wordLength (s * y) := by omega
-    rw [titsSystem_simple] at hs
-    obtain ⟨i, rfl⟩ := hs
-    have hpos := (D.wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots K i y).mp hlt
-    have hnotmem : t.simpleIndex ht i ∉
-        inversions P b (D.titsWeylGroupMulEquiv K y)⁻¹ := by
-      intro hmem
-      rw [t.posRoots_rationalRootSystem ht, mem_posRoots] at hpos
-      exact ((mem_inversions P b _ _).mp hmem).2 hpos
-    rw [← hprod, map_mul, D.titsWeylGroupMulEquiv_titsSimpleReflection K i,
-      ncard_inversions_ofIdx_mul_of_notMem P _ b (by simp [b]) hnotmem, ih y hylen]
-
-/-- Transporting a root-datum Weyl element to `(D.titsSystem K).WeylGroup` turns its inversion
-count into its Tits word length. -/
-@[simp]
-theorem wordLength_titsWeylGroupMulEquiv_symm
-    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
-    (D.titsSystem K).simpleGenerators.wordLength
-        ((D.titsWeylGroupMulEquiv K).symm w) =
-      (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w).ncard := by
-  simpa only [MulEquiv.apply_symm_apply] using
-    (D.ncard_inversions_titsWeylGroupMulEquiv K ((D.titsWeylGroupMulEquiv K).symm w)).symm
-
-/-- Distinct Bourbaki nodes determine distinct simple reflections in `(D.titsSystem K).WeylGroup`
-over every field `K`. -/
-theorem titsSimpleReflection_injective : Function.Injective (D.titsSimpleReflection K) := by
-  let _ := t.isReduced_simplyConnectedRootDatum ht
-  intro i j hij
-  have hidx : RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) =
-      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht j) := by
-    rw [← D.titsWeylGroupMulEquiv_titsSimpleReflection K i,
-      ← D.titsWeylGroupMulEquiv_titsSimpleReflection K j, hij]
-  have hsing :=
-    congrArg (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) hidx
-  rw [inversions_ofIdx _ _ (by simp), inversions_ofIdx _ _ (by simp),
-    Set.singleton_eq_singleton_iff] at hsing
-  exact (t.simpleSupportEquiv ht).injective (Subtype.ext (by
-    simpa only [coe_simpleSupportEquiv] using hsing))
 
 end TauCeti.DynkinType.ChevalleyDatum
