@@ -98,7 +98,7 @@ theorem separableSpace (hp_top : p ≠ ∞) :
     ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x with hν₃_def
   have hprob₃ : IsProbabilityMeasure ν₃ := isProbabilityMeasure_natWeights hmpos
   obtain ⟨x₁, _⟩ : S.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro rfl
     simp at hmpos
   have hmom₃ : HasFiniteMoment p ν₃ :=

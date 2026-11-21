@@ -115,7 +115,7 @@ theorem exists_lift_doubleDual (ι : V →ₗ[𝕜] StrongDual 𝕜 (StrongDual 
   let J := inclusionInDoubleDual 𝕜 E
   have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
   let F₀ : Submodule 𝕜 V := (LinearMap.range (J : E →ₗ[𝕜] _)).comap ι
-  exact ⟨F₀, LinearMap.codRestrictOfInjective (ι ∘ₗ F₀.subtype) J hJ fun φ ↦ φ.2,
+  exact ⟨F₀, LinearMap.codRestrictOfInjective (ι ∘ₗ F₀.subtype) J hJ fun φ ↦ φ.property,
     fun φ ↦ LinearMap.codRestrictOfInjective_comp_apply (ι ∘ₗ F₀.subtype) (J : E →ₗ[𝕜] _)
       hJ _ φ, fun v x hv ↦ ⟨x, hv.symm⟩⟩
 

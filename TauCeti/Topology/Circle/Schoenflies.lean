@@ -220,17 +220,17 @@ private theorem collar_mapsTo [NormedSpace ℝ F] (hF : finrank ℝ F = 2)
     ext y
     constructor
     · rintro ⟨t, ht, rfl⟩
-      exact ⟨t, ht, hgβ t.2⟩
+      exact ⟨t, ht, hgβ t.property⟩
     · rintro ⟨t, ht, rfl⟩
       exact ⟨⟨t, hI ht⟩, ht, (hgβ _).symm⟩
   have hIoc : Ioc (0 : ℝ) 1 ⊆ Icc (-1) 1 := fun t ht ↦ ⟨by linarith [ht.1], ht.2⟩
   have hIco : Ico (-1 : ℝ) 0 ⊆ Icc (-1) 1 := fun t ht ↦ ⟨ht.1, by linarith [ht.2]⟩
   have hpos :
       {t : ↥(Icc (-1 : ℝ) 1) | 0 < (t : ℝ)} = {t : ↥(Icc (-1 : ℝ) 1) | (t : ℝ) ∈ Ioc 0 1} :=
-    Set.ext fun t ↦ ⟨fun h ↦ ⟨h, t.2.2⟩, fun h ↦ h.1⟩
+    Set.ext fun t ↦ ⟨fun h ↦ ⟨h, t.property.2⟩, fun h ↦ h.1⟩
   have hneg :
       {t : ↥(Icc (-1 : ℝ) 1) | (t : ℝ) < 0} = {t : ↥(Icc (-1 : ℝ) 1) | (t : ℝ) ∈ Ico (-1) 0} :=
-    Set.ext fun t ↦ ⟨fun h ↦ ⟨t.2.1, h⟩, fun h ↦ h.2⟩
+    Set.ext fun t ↦ ⟨fun h ↦ ⟨t.property.1, h⟩, fun h ↦ h.2⟩
   simp only [mapsTo_iff_image_subset, hpos, hneg, hslice hIoc, hslice hIco]
   -- By invariance of domain the open collar arc is a neighbourhood of its centre `g 0 ∈ Σ`.
   -- Invariance of domain is applied in the Euclidean unit circle, through a homeomorphism `Φ`.
@@ -302,7 +302,7 @@ theorem exists_closure_homeomorph_closedBall_of_finrank_eq_one [NormedSpace ℝ 
   -- The zero-sphere `S⁰` is `{u, -u}`.
   have huv' (x : sphere (0 : E) 1) : x = u ∨ x = -u := by
     have hx : (x : E) ∈ ({(u : E), -(u : E)} : Set E) :=
-      sphere_eq_pair_of_finrank_eq_one hE u.2 ▸ x.2
+      sphere_eq_pair_of_finrank_eq_one hE u.property ▸ x.property
     rcases hx with hx | hx
     · exact Or.inl (Subtype.ext hx)
     · exact Or.inr (Subtype.ext hx)
@@ -357,7 +357,7 @@ private theorem exists_isComplementaryArc (hEF : finrank ℝ F = finrank ℝ E +
     congr 1
     refine (eq_univ_of_forall fun x ↦ ?_).symm
     have hx : (x : E) ∈ ({(u : E), -(u : E)} : Set E) :=
-      sphere_eq_pair_of_finrank_eq_one hE u.2 ▸ x.2
+      sphere_eq_pair_of_finrank_eq_one hE u.property ▸ x.property
     rcases hx with hx | hx
     · exact Or.inl (Subtype.ext hx)
     · exact Or.inr (Subtype.ext hx)
@@ -437,7 +437,7 @@ theorem exists_homeomorph_closure_connectedComponentIn_compl_range_of_finrank_eq
     exact ⟨x, congrArg Subtype.val this⟩
   · rintro ⟨x, hx⟩
     rw [hh z x hx.symm]
-    exact x.2
+    exact x.property
 
 /-- **The collar arcs at a point of a pair in a circle.** Let `b` be a bicollar of a map `σ` from
 the unit sphere `S⁰` of a real normed space of dimension `1` into the unit sphere `S¹` of a real

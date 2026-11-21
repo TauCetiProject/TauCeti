@@ -10,8 +10,11 @@ public import Mathlib.Topology.Coherent
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Equiv
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Tactic.Linarith
+import TauCeti.Dynamics.Flow.Basic
 import Mathlib.Tactic.Positivity
 import Mathlib.Topology.Coherent
 
@@ -81,7 +84,13 @@ homeomorphism between the sublevels on either side of a band without critical po
 
 Under the same hypotheses the band `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a
 homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of the band is sent to
-the point where its flow line meets the level `a`, together with its value.
+the point where its flow line meets the level `a`, together with its value. Inside the band the
+flow moves `f` at unit speed backwards in time as well (`Flow.apply_eq_sub_of_mem_Icc`). On the
+open superlevel `V = {a < f}`, pushing the level `f⁻¹(a)` up into a collar `f⁻¹[a, s]` along the
+flow is a homotopy equivalence to the sublevel `f⁻¹(a, s]` of `V`
+(`Flow.exists_homotopyEquiv_level_sublevel`), and pushing the bottom of the collar back down is a
+homotopy equivalence from the sublevel `f⁻¹(a, b]` of `V` to the band `f⁻¹[a, b]`
+(`Flow.exists_homotopyEquiv_sublevel_band`).
 
 Along an inducing map `j : M → X` whose range contains a band `F⁻¹[a, b]`, compactness of the
 band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_preimage_Icc`).
@@ -345,7 +354,7 @@ theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] 
     [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
     (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
   .inclusion (sublevel_mono f hab)
-    ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
+    ((isClosed_Iic.preimage hf).preimage continuous_subtypeVal)
 
 /-- The sublevel pair `({f ≤ b}, {f ≤ a})` of a function `f` for `a ≤ b`, as a pair of subspaces
 of `X`. -/
@@ -426,7 +435,7 @@ the sublevels into `X`. -/
 @[expose, simps]
 def sublevelCocone : Cocone (sublevelFunctor f) where
   pt := TopCat.of X
-  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 end Functor
 
@@ -458,33 +467,35 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       refine hφf x _ (by rw [hτx]; nlinarith) ?_ hx
       rw [hτx]
       nlinarith
-  have hra : ∀ x : {x | f x ≤ b}, φ (τ x.1) x.1 ∈ {x | f x ≤ a} := fun x ↦ by
-    have h := hfφ x.1 x.2 1 zero_le_one le_rfl
+  have hra : ∀ x : {x | f x ≤ b}, φ (τ x.val) x.val ∈ {x | f x ≤ a} := fun x ↦ by
+    have h := hfφ x.val x.property 1 zero_le_one le_rfl
     rw [one_mul] at h
     rw [mem_ofPred_eq, h]
-    linarith [le_max_left (f x.1 - a) 0]
-  obtain ⟨r, hr⟩ : ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}), ∀ x, (r x : X) = φ (τ x.1) x.1 :=
-    ⟨⟨fun x ↦ ⟨φ (τ x.1) x.1, hra x⟩,
-      (hφ.comp ((hτ.comp continuous_subtype_val).prodMk continuous_subtype_val)).subtype_mk _⟩,
+    linarith [le_max_left (f x.val - a) 0]
+  obtain ⟨r, hr⟩ : ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}), ∀ x, (r x : X) = φ (τ x.val) x.val :=
+    ⟨⟨fun x ↦ ⟨φ (τ x.val) x.val, hra x⟩,
+      (hφ.comp ((hτ.comp continuous_subtypeVal).prodMk continuous_subtypeVal)).subtype_mk _⟩,
       fun _ ↦ rfl⟩
   refine ⟨r, hr, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
-  · simp [hr, hτ0 x.1 x.2, hφ0]
+  · simp [hr, hτ0 x.val x.property, hφ0]
   have hHb : ∀ p : unitInterval × {x | f x ≤ b},
-      φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1 ∈ {x | f x ≤ b} := fun p ↦ by
-    have h := hfφ p.2.1 p.2.2 (1 - p.1) (by linarith [p.1.2.2]) (by linarith [p.1.2.1])
-    have hb : f p.2.1 ≤ b := p.2.2
-    have : 0 ≤ (1 - (p.1 : ℝ)) * τ p.2.1 := mul_nonneg (by linarith [p.1.2.2]) (le_max_right _ _)
+      φ ((1 - (p.1 : ℝ)) * τ p.2.val) p.2.val ∈ {x | f x ≤ b} := fun p ↦ by
+    have h := hfφ p.2.val p.2.property (1 - p.1)
+        (by linarith [p.1.property.2]) (by linarith [p.1.property.1])
+    have hb : f p.2.val ≤ b := p.2.property
+    have : 0 ≤ (1 - (p.1 : ℝ)) * τ p.2.val := mul_nonneg
+        (by linarith [p.1.property.2]) (le_max_right _ _)
     rw [mem_ofPred_eq, h]
     linarith
   have hx : Continuous fun p : unitInterval × {x | f x ≤ b} ↦ (p.2 : X) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   exact
-    { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1, hHb p⟩
+    { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * τ p.2.val) p.2.val, hHb p⟩
       continuous_toFun := (hφ.comp (((continuous_const.sub
-        (continuous_subtype_val.comp continuous_fst)).mul (hτ.comp hx)).prodMk hx)).subtype_mk _
+        (continuous_subtypeVal.comp continuous_fst)).mul (hτ.comp hx)).prodMk hx)).subtype_mk _
       map_zero_left := fun x ↦ Subtype.ext <| by simp [hr]
       map_one_left := fun x ↦ Subtype.ext <| by simp [hφ0]
-      prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
+      prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.val hx, hφ0] }
 
 end TauCeti
 
@@ -604,6 +615,176 @@ theorem apply_neg_eq_add_of_apply_eq_sub (hf : Continuous f)
     rw [← Flow.map_add, ← sub_eq_add_neg, hfu, add_sub_cancel_right] at h1
     exact lt_irrefl a (h1 ▸ h2)
 
+/-- **Unit speed through the band in both directions of time.** Under the hypotheses of
+`Flow.apply_eq_iff_of_apply_eq_sub`, the flow moves `f` at unit speed between any two values in
+`[a, b]`, forwards or backwards in time: if `f y` and `f y - t` lie in `[a, b]`, then
+`f (φ t y) = f y - t`. -/
+theorem apply_eq_sub_of_mem_Icc (hf : Continuous f)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) {y : X} {t : ℝ} (hy : f y ∈ Icc a b)
+    (ht : f y - t ∈ Icc a b) : f (φ t y) = f y - t := by
+  rcases le_or_gt 0 t with ht₀ | ht₀
+  · exact hφf y t ht₀ ht.1 hy.2
+  -- Flow `y` down to the level `a`, and then back up for a longer time.
+  have hy₀ : f (φ (f y - a) y) = a := by
+    rw [hφf y _ (sub_nonneg.2 hy.1) (by linarith) hy.2]
+    ring
+  have h := φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa hy₀ (t := f y - a - t)
+    (by linarith [hy.1]) (by linarith [ht.2])
+  have htime : -(f y - a - t) + (f y - a) = t := by ring
+  have hval : a + (f y - a - t) = f y - t := by ring
+  rwa [← Flow.map_add, htime, hval] at h
+
+open Topology in
+open scoped ContinuousMap in
+/-- **A collar of a level as a sublevel of the open superlevel.** Let `φ` be a flow
+moving `f` at unit speed through a collar `f⁻¹[a, s]`, `a < s`, and let `V` be the open set
+`{a < f}`. Pushing the level `f⁻¹(a)` up to the middle level `(a + s) / 2` of the collar is a
+homotopy equivalence to the sublevel `f⁻¹(a, s]` of `V`. -/
+theorem exists_homotopyEquiv_level_sublevel (hf : Continuous f) {s : ℝ} (has : a < s)
+    (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
+    (V : TopologicalSpace.Opens X) (hV : ∀ x, x ∈ V ↔ a < f x) :
+    ∃ h₀ : f ⁻¹' {a} ≃ₕ {y : V | (f ∘ Subtype.val) y ≤ s},
+      ∀ x, ((h₀ x : V) : X) = φ (a - (a + s) / 2) x ∧ f ((h₀ x : V) : X) = (a + s) / 2 := by
+  set m := (a + s) / 2 with hm
+  have hup (x : f ⁻¹' {a}) : f (φ (a - m) x) = m := by
+    have hx : f x = a := x.property
+    rw [hφ _ _ ⟨hx.ge, by linarith⟩ ⟨by linarith, by linarith⟩, hx]
+    ring
+  let p₀ : C({y : V | (f ∘ Subtype.val) y ≤ s}, X) := ⟨fun y ↦ ((y : V) : X), by fun_prop⟩
+  have hp₀ (y : {y : V | (f ∘ Subtype.val) y ≤ s}) : a < f (p₀ y) ∧ f (p₀ y) ≤ s :=
+    ⟨(hV _).1 (y : V).property, y.property⟩
+  have hdown (y : {y : V | (f ∘ Subtype.val) y ≤ s}) : f (φ (f (p₀ y) - a) (p₀ y)) = a := by
+    rw [hφ _ _ ⟨(hp₀ y).1.le, (hp₀ y).2⟩ ⟨by linarith, by linarith [has, (hp₀ y).2]⟩]
+    ring
+  let up : C(f ⁻¹' {a}, {y : V | (f ∘ Subtype.val) y ≤ s}) :=
+    ⟨fun x ↦ ⟨⟨φ (a - m) x, (hV _).2 (by rw [hup]; linarith)⟩,
+      by simp only [mem_ofPred_eq, Function.comp_apply, hup]; linarith⟩, by fun_prop⟩
+  let down : C({y : V | (f ∘ Subtype.val) y ≤ s}, f ⁻¹' {a}) :=
+    ⟨fun y ↦ ⟨φ (f (p₀ y) - a) (p₀ y), hdown y⟩, by fun_prop⟩
+  refine ⟨⟨up, down, ?_, ?_⟩, fun x ↦ ⟨rfl, hup x⟩⟩
+  · -- Flowing up and back down is the identity of `f⁻¹(a)`.
+    refine φ.homotopic_of_eq_apply IsEmbedding.subtypeVal continuous_subtypeVal continuous_const
+      continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ 0) (fun x ↦ ?_) (fun x ↦ by simp)
+      fun x t _ ↦ ⟨x, by simp⟩
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down, p₀, Flow.map_zero_apply]
+    rw [hup, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+  · -- Flowing down and back up moves `f⁻¹(a, s]` to the level `m` along its flow lines.
+    refine φ.homotopic_of_eq_apply (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
+      p₀.continuous (by fun_prop) continuous_const (τ₀ := fun y ↦ f (p₀ y) - m)
+      (τ₁ := fun _ ↦ 0) (fun y ↦ ?_) (fun y ↦ by simp [p₀]) fun y t ht ↦ ?_
+    · simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down]
+      rw [← Flow.map_add]
+      congr 1
+      ring
+    obtain ⟨hya, hys⟩ := hp₀ y
+    simp only [mul_zero, add_zero]
+    have hf' : f (φ ((1 - t) * (f (p₀ y) - m)) (p₀ y)) =
+        f (p₀ y) - (1 - t) * (f (p₀ y) - m) :=
+      hφ _ _ ⟨hya.le, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
+    refine ⟨⟨⟨_, (hV _).2 ?_⟩, ?_⟩, rfl⟩ <;>
+      simp only [mem_ofPred_eq, Function.comp_apply, hf'] <;> nlinarith [ht.1, ht.2]
+
+open Topology in
+open scoped ContinuousMap in
+/-- **Removing the bottom level of a band.** Let `φ` be a flow moving `f` at unit speed through a
+collar `f⁻¹[a, s]`, `a < s ≤ b`, and let `V` be the open set `{a < f}`. Then the sublevel
+`f⁻¹(a, b]` of `V` is homotopy equivalent to the band `f⁻¹[a, b]` by a map which pushes the bottom
+of the collar down along `φ`, carrying the middle level `(a + s) / 2` to `f⁻¹(a)`. -/
+theorem exists_homotopyEquiv_sublevel_band (hf : Continuous f) {s : ℝ} (has : a < s)
+    (hsb : s ≤ b)
+    (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
+    (V : TopologicalSpace.Opens X) (hV : ∀ x, x ∈ V ↔ a < f x) :
+    ∃ k : {y : V | (f ∘ Subtype.val) y ≤ b} ≃ₕ f ⁻¹' Icc a b,
+      ∀ y : {y : V | (f ∘ Subtype.val) y ≤ b}, f (y : V) = (a + s) / 2 →
+        (k y : X) = φ ((a + s) / 2 - a) (y : V) := by
+  let p₁ : C({y : V | (f ∘ Subtype.val) y ≤ b}, X) := ⟨fun y ↦ ((y : V) : X), by fun_prop⟩
+  have hp₁ (y : {y : V | (f ∘ Subtype.val) y ≤ b}) : a < f (p₁ y) ∧ f (p₁ y) ≤ b :=
+    ⟨(hV _).1 (y : V).property, y.property⟩
+  -- The point `y` is pushed down for the time `σ y`, which carries the middle level of the collar
+  -- to `a`, and back up for the time `θ y`.
+  let σ : X → ℝ := fun y ↦ max 0 (min (f y - a) (s - f y))
+  have hσc : Continuous σ := by fun_prop
+  let θ : X → ℝ := fun y ↦ max 0 (s - f y) / 2
+  have hθc : Continuous θ := by fun_prop
+  -- Flowing for any time between `0` and `σ y` keeps a point `y` of the band in the band.
+  have hσ (y : X) (hya : a ≤ f y) (hyb : f y ≤ b) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      f (φ (t * σ y) y) = f y - t * σ y ∧ a ≤ f y - t * σ y ∧ f y - t * σ y ≤ b := by
+    rcases le_or_gt (f y) s with hys | hys
+    · have h0 : 0 ≤ min (f y - a) (s - f y) := le_min (by linarith) (by linarith)
+      have hσy : σ y = min (f y - a) (s - f y) := max_eq_right h0
+      have h1 : σ y ≤ f y - a := hσy ▸ min_le_left _ _
+      exact ⟨hφ _ _ ⟨hya, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩,
+        by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
+    · have hσy : σ y = 0 := max_eq_left ((min_le_right _ _).trans (by linarith))
+      rw [hσy, mul_zero, Flow.map_zero_apply, sub_zero]
+      exact ⟨rfl, hya, hyb⟩
+  -- Flowing back for any time between `0` and `θ y` keeps a point `y` of the band in the band,
+  -- and for the time `θ y` it lifts `y` strictly above `a`.
+  have hθ (y : X) (hya : a ≤ f y) (hyb : f y ≤ b) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      f (φ (-(t * θ y)) y) = f y + t * θ y ∧ f y ≤ f y + t * θ y ∧ f y + t * θ y ≤ b ∧
+        a < f y + θ y := by
+    rcases le_or_gt (f y) s with hys | hys
+    · have hθy : θ y = (s - f y) / 2 := by
+        simp only [θ, max_eq_right (by linarith : 0 ≤ s - f y)]
+      have h := hφ y (-(t * θ y)) ⟨hya, hys⟩
+        ⟨by rw [hθy]; nlinarith [ht.1, ht.2], by rw [hθy]; nlinarith [ht.1, ht.2]⟩
+      refine ⟨by rw [h]; ring, ?_, ?_, ?_⟩ <;> rw [hθy] <;> nlinarith [ht.1, ht.2]
+    · have hθy : θ y = 0 := by simp only [θ, max_eq_left (by linarith : s - f y ≤ 0), zero_div]
+      rw [hθy, mul_zero, neg_zero, Flow.map_zero_apply, add_zero]
+      exact ⟨rfl, le_rfl, hyb, has.trans hys⟩
+  let k : C({y : V | (f ∘ Subtype.val) y ≤ b}, f ⁻¹' Icc a b) :=
+    ⟨fun y ↦ ⟨φ (σ (p₁ y)) (p₁ y), by
+      obtain ⟨h₁, h₂, h₃⟩ := hσ _ (hp₁ y).1.le (hp₁ y).2 1 ⟨zero_le_one, le_rfl⟩
+      rw [one_mul] at h₁ h₂ h₃
+      exact ⟨h₁ ▸ h₂, h₁ ▸ h₃⟩⟩, by fun_prop⟩
+  let incl : C({y : V | (f ∘ Subtype.val) y ≤ b}, f ⁻¹' Icc a b) :=
+    ⟨fun y ↦ ⟨p₁ y, (hp₁ y).1.le, (hp₁ y).2⟩, by fun_prop⟩
+  let ρ : C(f ⁻¹' Icc a b, {y : V | (f ∘ Subtype.val) y ≤ b}) :=
+    ⟨fun y ↦ ⟨⟨φ (-(1 * θ y)) y, (hV _).2 <| by
+        obtain ⟨h₁, -, -, h₄⟩ := hθ _ y.property.1 y.property.2 1 ⟨zero_le_one, le_rfl⟩
+        rw [h₁, one_mul]
+        exact h₄⟩, by
+        obtain ⟨h₁, -, h₃, -⟩ := hθ _ y.property.1 y.property.2 1 ⟨zero_le_one, le_rfl⟩
+        simp only [mem_ofPred_eq, Function.comp_apply, h₁]
+        exact h₃⟩, by fun_prop⟩
+  -- `k` is homotopic to the inclusion, which has the homotopy inverse `ρ`.
+  have hk : k.Homotopic incl := φ.homotopic_of_eq_apply IsEmbedding.subtypeVal p₁.continuous
+    (hσc.comp p₁.continuous) continuous_const (τ₀ := fun y ↦ σ (p₁ y)) (τ₁ := fun _ ↦ 0)
+    (fun y ↦ rfl) (fun y ↦ by simp [incl])
+    fun y t ht ↦ by
+      obtain ⟨h₁, h₂, h₃⟩ := hσ _ (hp₁ y).1.le (hp₁ y).2 (1 - t)
+        ⟨by linarith [ht.2], by linarith [ht.1]⟩
+      simp only [mul_zero, add_zero]
+      exact ⟨⟨_, h₁ ▸ h₂, h₁ ▸ h₃⟩, rfl⟩
+  have hρ₁ : (incl.comp ρ).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
+    IsEmbedding.subtypeVal continuous_subtypeVal (by fun_prop) continuous_const
+    (τ₀ := fun y ↦ -(1 * θ y)) (τ₁ := fun _ ↦ 0) (fun y ↦ rfl) (fun y ↦ by simp)
+    fun y t ht ↦ by
+      obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ y.property.1 y.property.2 (1 - t)
+          ⟨by linarith [ht.2], by linarith [ht.1]⟩
+      rw [mul_zero, add_zero, one_mul, mul_neg]
+      exact ⟨⟨_, by rw [h₁]; linarith [y.property.1], by rw [h₁]; exact h₃⟩, rfl⟩
+  have hρ₂ : (ρ.comp incl).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
+    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) p₁.continuous
+    (by fun_prop) continuous_const (τ₀ := fun y ↦ -(1 * θ (p₁ y))) (τ₁ := fun _ ↦ 0)
+    (fun y ↦ rfl) (fun y ↦ by simp [p₁])
+    fun y t ht ↦ by
+      obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ (hp₁ y).1.le (hp₁ y).2 (1 - t)
+        ⟨by linarith [ht.2], by linarith [ht.1]⟩
+      rw [mul_zero, add_zero, one_mul, mul_neg]
+      exact ⟨⟨⟨_, (hV _).2 (by rw [h₁]; linarith [(hp₁ y).1])⟩,
+        by simp only [mem_ofPred_eq, Function.comp_apply, h₁]; exact h₃⟩, rfl⟩
+  refine ⟨⟨k, ρ, ((ContinuousMap.Homotopic.refl ρ).comp hk).trans hρ₂,
+    (hk.comp (ContinuousMap.Homotopic.refl ρ)).trans hρ₁⟩, fun y hy ↦ ?_⟩
+  -- At the middle level of the collar `σ` is the distance to `a`.
+  have hσy : σ (y : V) = (a + s) / 2 - a := by
+    have hmid : s - (a + s) / 2 = (a + s) / 2 - a := by ring
+    simp only [σ, hy]
+    rw [hmid, min_self, max_eq_right (by linarith)]
+  simp only [k, p₁, ContinuousMap.coe_mk, hσy]
+
 /-- **A band traversed at unit speed is a product.** Under the hypotheses of
 `Flow.apply_eq_iff_of_apply_eq_sub`, following the flow line of a point `x` of the band
 `f⁻¹[a, b]` down to the level `a` is a homeomorphism `x ↦ (φ (f x - a) x, f x)` from the band onto
@@ -614,15 +795,16 @@ def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (
     (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) :
     f ⁻¹' Icc a b ≃ₜ (f ⁻¹' {a}) × Icc a b :=
   have hdown (x : f ⁻¹' Icc a b) : φ (f x - a) x ∈ f ⁻¹' {a} := by
-    rw [mem_preimage, mem_singleton_iff, hφf x _ (by linarith [x.2.1]) (by linarith) x.2.2]
+    rw [mem_preimage, mem_singleton_iff, hφf x _
+        (by linarith [x.property.1]) (by linarith) x.property.2]
     ring
   have hup (p : (f ⁻¹' {a}) × Icc a b) : f (φ (a - p.2) p.1) = p.2 := by
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa p.1.2
-      (sub_nonneg.2 p.2.2.1) (by linarith [p.2.2.2]), add_sub_cancel]
+    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa p.1.property
+      (sub_nonneg.2 p.2.property.1) (by linarith [p.2.property.2]), add_sub_cancel]
   have hband (p : (f ⁻¹' {a}) × Icc a b) : φ (a - p.2) p.1 ∈ f ⁻¹' Icc a b := by
     rw [mem_preimage, hup p]
-    exact p.2.2
-  { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, x.2⟩)
+    exact p.2.property
+  { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, x.property⟩)
     invFun p := ⟨φ (a - p.2) p.1, hband p⟩
     left_inv x := Subtype.ext <| by
       dsimp only
@@ -632,12 +814,12 @@ def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (
         rw [hup p, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply])
       (Subtype.ext (hup p))
     continuous_toFun := by
-      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtype_val
+      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtypeVal
       exact ((φ.continuous ((hf.comp hx).sub continuous_const) hx).subtype_mk _).prodMk
         ((hf.comp hx).subtype_mk _)
     continuous_invFun :=
-      (φ.continuous (continuous_const.sub (continuous_subtype_val.comp continuous_snd))
-        (continuous_subtype_val.comp continuous_fst)).subtype_mk hband }
+      (φ.continuous (continuous_const.sub (continuous_subtypeVal.comp continuous_snd))
+        (continuous_subtypeVal.comp continuous_fst)).subtype_mk hband }
 
 variable (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
   (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)

@@ -393,7 +393,7 @@ noncomputable def substEquiv (φ : FormalCoordinate K) :
   toFun := subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero
   invFun := subst φ⁻¹.constantCoeff_toPowerSeries φ⁻¹.toPowerSeries_ne_zero
   map_add' := map_add _
-  map_smul' f ω := by simp
+  map_smul' f ω := by simp [LaurentSeries.coe_substAlgEquiv]
   left_inv ω := by
     rw [subst_subst]
     exact subst_eq_self_of_eq_X _ _ (FormalCoordinate.toPowerSeries_mul_inv φ) ω
