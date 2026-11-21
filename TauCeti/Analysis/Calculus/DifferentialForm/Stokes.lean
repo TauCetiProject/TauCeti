@@ -422,7 +422,7 @@ theorem integral_upperHalfAnnulus_eq_of_extDeriv_eq {ω : ℂ → ℂ [⋀^Fin 1
   have hP : ContDiff ℝ 2 P := contDiff_add_polarCoord_symm z₀
   have hmem (p : ℝ × ℝ) (hp : p ∈ Icc (a, 0) (b, π)) : P p ∈ S :=
     add_polarCoord_symm_mem_upperHalfAnnulus z₀ ha hp
-  have hmemU (p : ℝ × ℝ) (hp : p ∈ U) := add_polarCoord_symm_interior_upperHalfAnnulus z₀ ha hp
+  have hmemU (p : ℝ × ℝ) (hp : p ∈ U) := add_polarCoord_symm_mem_openUpperHalfAnnulus z₀ ha hp
   have hCLM := ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
     (𝕜 := ℝ) (E := ℝ × ℝ) (F := ℂ) (G := F) (ι := Fin 1) 1 (by simp)
   have hηc : ContinuousOn (polarPullback ω z₀) (Icc (a, 0) (b, π)) :=

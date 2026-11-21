@@ -72,15 +72,14 @@ theorem add_polarCoord_symm_mem_upperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (ha : 
   rw [add_polarCoord_symm_eq_circleMap]
   exact circleMap_mem_upperHalfAnnulus ha ⟨hp.1.1, hp.2.1⟩ ⟨hp.1.2, hp.2.2⟩
 
-/-- A polar point of the open rectangle `(a, b) × (0, π)`, with `0 ≤ a`, maps into the interior
-of the closed upper half-annulus of radii `a` and `b` about `z₀`. -/
-theorem add_polarCoord_symm_interior_upperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
+/-- A polar point of the open rectangle `(a, b) × (0, π)`, with `0 ≤ a`, maps into the open
+upper half-annulus of radii `a` and `b` about `z₀`. -/
+theorem add_polarCoord_symm_mem_openUpperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
     {p : ℝ × ℝ} (hp : p ∈ Ioo a b ×ˢ Ioo 0 π) :
-    z₀.im < (z₀ + Complex.polarCoord.symm p).im ∧ a < ‖z₀ + Complex.polarCoord.symm p - z₀‖ ∧
-      ‖z₀ + Complex.polarCoord.symm p - z₀‖ < b := by
+    z₀ + Complex.polarCoord.symm p ∈ {z : ℂ | z₀.im < z.im ∧ a < ‖z - z₀‖ ∧ ‖z - z₀‖ < b} := by
   obtain ⟨⟨hr₁, hr₂⟩, hθ₁, hθ₂⟩ := hp
   have hr : 0 < p.1 := ha.trans_lt hr₁
-  rw [add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
+  rw [mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
     add_polarCoord_symm_eq_circleMap, circleMap_im, lt_add_iff_pos_right]
   exact ⟨mul_pos hr (Real.sin_pos_of_pos_of_lt_pi hθ₁ hθ₂), hr₁, hr₂⟩
 
