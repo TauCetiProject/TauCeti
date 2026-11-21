@@ -283,15 +283,21 @@ theorem autPullbackSplitting_apply (g : Aut F) :
     (F.autPullbackSplitting h) g = F.pullbackAut p g :=
   (rfl)
 
-/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
+/-- The conjugation action of the automorphism extension on the restriction kernel is
+conjugation in `Aut (F.pullback p)`. -/
 @[simp]
+theorem autPullbackExtension_conjAct_apply_coe (e : Aut (F.pullback p))
+    (x : (F.restrictAut h).ker) :
+    ((F.autPullbackExtension h).conjAct e x : Aut (F.pullback p)) =
+      e * (x : Aut (F.pullback p)) * e⁻¹ := by
+  simpa only [autPullbackExtension_inl, Subgroup.subtype_apply] using
+    (F.autPullbackExtension h).inl_conjAct_comm (e := e) (n := x)
+
+/-- The action on the restriction kernel is conjugation by the base-changed automorphism. -/
 theorem autPullbackSplitting_conjAct_apply_coe (g : Aut F) (x : (F.restrictAut h).ker) :
     ((F.autPullbackSplitting h).conjAct g x : Aut (F.pullback p)) =
-      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ := by
-  simpa only [GroupExtension.Splitting.conjAct, MonoidHom.comp_apply,
-    MonoidHom.coe_ofClass, autPullbackSplitting_apply,
-    autPullbackExtension_inl, Subgroup.subtype_apply] using
-    (F.autPullbackExtension h).inl_conjAct_comm (e := F.pullbackAut p g) (n := x)
+      F.pullbackAut p g * (x : Aut (F.pullback p)) * (F.pullbackAut p g)⁻¹ :=
+  F.autPullbackExtension_conjAct_apply_coe h (F.pullbackAut p g) x
 
 /-- The automorphism group of `F.pullback p` is the semidirect product of the automorphisms
 restricting to the identity along the section and the base changes of the automorphisms of `F`,

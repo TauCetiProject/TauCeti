@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Integral.RieszPotential
+public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
-import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The non-endpoint `TT*` argument
@@ -52,6 +53,9 @@ Hardy–Littlewood–Sobolev fails, needs the Keel–Tao argument instead.
 
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`: the bilinear `TT*` estimate
   `∫∫ |⟪U(s)* F(s), U(t)* G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`.
+* `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm`: the truncation to
+  `s < t` of a pairing integral is bounded by the full integral of its absolute value, which
+  reduces retarded estimates to the bilinear one.
 * `TauCeti.exists_enorm_integral_adjoint_le`: the dual homogeneous estimate
   `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_inner_apply_le`: the homogeneous estimate in weak form,
@@ -80,7 +84,7 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
 
 /-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
 `|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
-private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
+theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
@@ -91,6 +95,13 @@ private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A :
         gcongr
         exact hU s t hst g
     _ = _ := by ring
+
+/-- The reduction of a retarded estimate to the bilinear one: the pairing integrated over the
+region `s < t` is bounded by the integral of its absolute value over the whole `(s, t)` plane. -/
+theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
+    ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
+  enorm_integral_setIntegral_le_lintegral_lintegral f
 
 /-- **The bilinear `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators whose time pairings decay from `L^{r'}` to `L^r`,

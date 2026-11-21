@@ -275,7 +275,7 @@ theorem mgf_sum_le_exp_of_hasSubexponentialMGF (h_indep : iIndepFun X μ) {s : F
       have hbound := (hX i hi).centered_mgf_le t ht
       simpa [hmean i hi] using hbound
     _ = exp ((s.card : ℝ) * K ^ 2 * t ^ 2) := by
-      rw [Finset.prod_const, ← exp_nat_mul]
+      rw [Finset.prod_const, ← exp_natCast_mul]
       congr 1
       ring
 

@@ -210,7 +210,7 @@ noncomputable def ofFinpartition : Equipartition X G where
   pieces := P.parts.image fun s ↦ (s, γ s)
   nonempty_fst p hp := by
     obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hp
-    exact nonempty_iff_ne_empty.2 (P.ne_bot hs)
+    exact Set.ne_empty_iff_nonempty.1 (P.ne_bot hs)
   pairwiseDisjoint_fst := by
     rw [Finset.coe_image]; exact Set.Pairwise.image (f := fun s ↦ (s, γ s)) P.disjoint
   pairwiseDisjoint_smul := by

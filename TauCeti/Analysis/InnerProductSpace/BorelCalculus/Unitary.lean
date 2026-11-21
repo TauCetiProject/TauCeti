@@ -78,7 +78,7 @@ namespace Unitary
 def borelArgSymbol (u : unitary (H →L[ℂ] H)) :
     BoundedBorelFunction (spectrum ℂ (u : H →L[ℂ] H)) :=
   BoundedBorelFunction.ofRealFunction (fun z ↦ Complex.arg (z : ℂ))
-    (Complex.measurable_arg.comp measurable_subtype_coe)
+    (Complex.measurable_arg.comp measurable_subtypeVal)
     ⟨π, Real.pi_nonneg, fun z ↦ Complex.abs_arg_le_pi (z : ℂ)⟩
 
 /-- Evaluating `borelArgSymbol u` at a spectral value `z` gives `(Complex.arg z : ℂ)`. -/
@@ -128,7 +128,7 @@ theorem exp_I_smul_borelArg (u : unitary (H →L[ℂ] H)) :
       BoundedBorelFunction.ofContinuousMap
         ((ContinuousMap.id ℂ).restrict (spectrum ℂ (u : H →L[ℂ] H))) := by
     ext z
-    have hz : ‖(z : ℂ)‖ = 1 := spectrum.norm_eq_one_of_unitary u.2 z.2
+    have hz : ‖(z : ℂ)‖ = 1 := spectrum.norm_eq_one_of_unitary u.property z.property
     simp only [BoundedBorelFunction.exp_apply, BoundedBorelFunction.smul_apply,
       borelArgSymbol_apply, mul_comm Complex.I,
       BoundedBorelFunction.ofContinuousMap_apply, ContinuousMap.restrict_apply,
@@ -186,7 +186,7 @@ theorem borelArg_eq_argSelfAdjoint {u : unitary (H →L[ℂ] H)}
     (hu : ‖(u - 1 : H →L[ℂ] H)‖ < 2) :
     borelArg u = argSelfAdjoint u :=
   borelArg_eq_argSelfAdjoint_of_continuousOn <|
-    Complex.continuousOn_arg.mono ((spectrum_subset_slitPlane_iff_norm_lt_two u.2).2 hu)
+    Complex.continuousOn_arg.mono ((spectrum_subset_slitPlane_iff_norm_lt_two u.property).2 hu)
 
 -- Elaborate `expUnitary x` before unifying its `Monoid` projection with `borelArg`'s domain.
 /-- On the open ball `‖x‖ < π` in `selfAdjoint (H →L[ℂ] H)`, `borelArg` is a left inverse to
@@ -234,11 +234,12 @@ variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [Comple
 /-- Conjugating a unitary operator by a Hilbert-space linear isometric equivalence `U : H ≃ₗᵢ[ℂ] H'`
 conjugates its Borel argument. -/
 theorem borelArg_conj (u : unitary (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] H') :
-    (borelArg ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H), Unitary.map_mem U.conjStarAlgEquiv u.2⟩ :
+    (borelArg ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H),
+        Unitary.map_mem U.conjStarAlgEquiv u.property⟩ :
         H' →L[ℂ] H') =
       U.conjStarAlgEquiv (borelArg u : H →L[ℂ] H) := by
   let u' : unitary (H' →L[ℂ] H') :=
-    ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H), Unitary.map_mem U.conjStarAlgEquiv u.2⟩
+    ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H), Unitary.map_mem U.conjStarAlgEquiv u.property⟩
   rw [borelArg_coe u', borelArg_coe u]
   have hconj := (u : H →L[ℂ] H).borelCalculus_conj U (borelArgSymbol u')
   refine Eq.trans ?_ (hconj.trans (congrArg U.conjStarAlgEquiv
@@ -267,8 +268,8 @@ theorem norm_borelPathToOne_sub_one_le (u : unitary (H →L[ℂ] H)) (t : I) :
     ‖((borelPathToOne u t : unitary (H →L[ℂ] H)) - 1 : H →L[ℂ] H)‖ ≤
       ‖(u - 1 : H →L[ℂ] H)‖ := by
   have ht : ‖(t : ℝ) • borelArg u‖ ≤ ‖borelArg u‖ := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg t.2.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) t.2.2
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg t.property.left]
+    exact mul_le_of_le_one_left (norm_nonneg _) t.property.right
   have hsq : ‖(selfAdjoint.expUnitary ((t : ℝ) • borelArg u) - 1 : H →L[ℂ] H)‖ ^ 2 =
       2 * (1 - Real.cos ‖(t : ℝ) • borelArg u‖) :=
     selfAdjoint.norm_sq_expUnitary_sub_one (ht.trans (norm_borelArg_le_pi u))
@@ -293,7 +294,7 @@ theorem pathComponent_one_eq_univ :
 theorem isPathConnected :
     IsPathConnected (unitary (H →L[ℂ] H) : Set (H →L[ℂ] H)) := by
   rw [← Subtype.range_val (s := (unitary (H →L[ℂ] H) : Set (H →L[ℂ] H)))]
-  exact isPathConnected_range (X := unitary (H →L[ℂ] H)) continuous_subtype_val
+  exact isPathConnected_range (X := unitary (H →L[ℂ] H)) continuous_subtypeVal
 
 end Unitary
 

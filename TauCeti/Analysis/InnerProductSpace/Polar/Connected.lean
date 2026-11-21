@@ -174,7 +174,7 @@ space `{A : E →L[ℂ] F // A.IsInvertible}` of invertible bounded operators is
 instance instPathConnectedSpaceSubtypeIsInvertible [h : Nonempty (E ≃L[ℂ] F)] :
     PathConnectedSpace {A : E →L[ℂ] F // A.IsInvertible} where
   nonempty := let ⟨e⟩ := h; ⟨⟨e, isInvertible_equiv⟩⟩
-  joined S T := ⟨S.2.borelPolarPath T.2⟩
+  joined S T := ⟨S.property.borelPolarPath T.property⟩
 
 /-- For a complex Hilbert space `E` and a complex seminormed space `F`,
 `{A : E →L[ℂ] F | A.IsInvertible}` is path-connected if and only if `E` and `F` are continuously

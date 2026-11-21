@@ -29,8 +29,8 @@ variable {ε : ℝ}
 
 /-- The scaling `t ↦ ε t` of half-open intervals, `[0, 1) ≃ₜ [0, ε)`, for `ε > 0`. -/
 noncomputable def icoScale (hε : 0 < ε) : ↥(Ico (0 : ℝ) 1) ≃ₜ ↥(Ico (0 : ℝ) ε) where
-  toFun t := ⟨ε * t, mul_nonneg hε.le t.2.1, mul_lt_of_lt_one_right hε t.2.2⟩
-  invFun s := ⟨s / ε, div_nonneg s.2.1 hε.le, (div_lt_one hε).2 s.2.2⟩
+  toFun t := ⟨ε * t, mul_nonneg hε.le t.property.1, mul_lt_of_lt_one_right hε t.property.2⟩
+  invFun s := ⟨s / ε, div_nonneg s.property.1 hε.le, (div_lt_one hε).2 s.property.2⟩
   left_inv t := Subtype.ext (mul_div_cancel_left₀ _ hε.ne')
   right_inv s := Subtype.ext (mul_div_cancel₀ _ hε.ne')
   continuous_toFun := by fun_prop

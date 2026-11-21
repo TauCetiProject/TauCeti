@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.DoubleDual
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
+import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
+import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 
@@ -29,8 +31,9 @@ into `WeakSpace 𝕜 F`; this lets weak compactness reuse Mathlib's `IsCompactOp
   operators are stable under sums, scalar multiples and composition with bounded operators.
 * `IsCompactOperator.isWeaklyCompact`: compact operators are weakly compact.
 * `ContinuousLinearMap.isWeaklyCompact_id_iff`: the identity is weakly compact exactly on a
-  reflexive space; on an infinite-dimensional reflexive space it is weakly compact but not
-  compact.
+  reflexive space.
+* `ContinuousLinearMap.isWeaklyCompact_id_and_not_isCompactOperator_id`: on an
+  infinite-dimensional reflexive space the identity is weakly compact but not compact.
 * `ContinuousLinearMap.isWeaklyCompact_iff_range_subset`: **Gantmacher's criterion**, `T` is
   weakly compact iff its bidual adjoint `T**` takes values in the canonical image of `F`.
 * `ContinuousLinearMap.isWeaklyCompact_precomp_iff`: **Gantmacher's theorem**, an operator into

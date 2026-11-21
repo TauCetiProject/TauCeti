@@ -51,6 +51,7 @@ theorem support_vonMisesFisherNaturalMeasure (η : E) :
     exact Set.eq_univ_iff_forall.mpr fun x ↦ isEmptyElim x
   · rw [vonMisesFisherNaturalMeasure_eq_withDensity,
       Measure.support_withDensity_eq (by fun_prop) (Filter.Eventually.of_forall fun x ↦ by
+        rw [vonMisesFisherNaturalPDF_def, vonMisesFisherNaturalPDFReal_def]
         rw [ENNReal.ofReal_ne_zero_iff]
         exact div_pos (exp_pos _) (integral_exp_inner_uniformSphereMeasure_pos η)),
       support_uniformSphereMeasure]

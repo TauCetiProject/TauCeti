@@ -62,7 +62,7 @@ instance {G : Type v} {H : Type w} [Monoid G] [Monoid H] (φ : H →* G) :
 theorem resCoindAdjunction_counit_app_hom_apply
     {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Monoid G] [Monoid H]
     (φ : G →* H) (A : Rep.{max w t} k G) (f : Rep.coind φ A) :
-    ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.1 1 :=
+    ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.val 1 :=
   rfl
 
 /-- The inverse restriction–coinduction reciprocity evaluates the coinduced function at `1`. -/
@@ -70,7 +70,7 @@ theorem resCoindHomEquiv_symm_hom_apply {k : Type u} {G : Type v} {H : Type w}
     [CommRing k] [Monoid G] [Monoid H] (φ : G →* H)
     (B : Rep.{max w t} k H) (A : Rep.{max w t} k G)
     (f : B ⟶ coind φ A) (b : B) :
-    ((resCoindHomEquiv.{t, u, v, w} φ B A).symm f).hom b = (f.hom b).1 1 :=
+    ((resCoindHomEquiv.{t, u, v, w} φ B A).symm f).hom b = (f.hom b).val 1 :=
   rfl
 
 variable {G : Type v} [Group G]
@@ -97,7 +97,7 @@ variable {k G H V : Type*} [Semiring k] [Monoid G] [Monoid H] [AddCommMonoid V] 
 -- so the left-hand side is not in simp-normal form (`simpNF`).
 /-- The coinduced action translates the argument of a function: `(h • f) h₁ = f (h₁ * h)`. -/
 theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : coindV φ ρ)
-    (h h₁ : H) : ((coind φ ρ h) f).1 h₁ = f.1 (h₁ * h) :=
+    (h h₁ : H) : ((coind φ ρ h) f).val h₁ = f.val (h₁ * h) :=
   rfl
 
 end Apply
@@ -251,21 +251,21 @@ theorem resCoindToHom_bijective_of_transport {k : Type*} [CommRing k] {B : Rep k
     rw [← he g x h, ← he g' _ h', ← he (g' * g) x _, map_mul]
     rfl
   have hA : ∀ (d : MulAction.stabilizer G (p w)) (a : A),
-      eA (A.ρ d a) = T d (MulAction.mem_stabilizer_iff.mp d.2).symm (eA a) := by
+      eA (A.ρ d a) = T d (MulAction.mem_stabilizer_iff.mp d.property).symm (eA a) := by
     intro d a
     obtain ⟨x, hx⟩ := hcomp w (eA a)
     obtain rfl : f.hom x = a := eA.injective ((hf x).trans hx)
     have := Rep.hom_comm_apply f d x
     simp only [Rep.res_obj_ρ] at this
     rw [← this, hf, hf, MonoidHom.comp_apply, Subgroup.subtype_apply,
-      he d.1 x (MulAction.mem_stabilizer_iff.mp d.2).symm]
+      he d.val x (MulAction.mem_stabilizer_iff.mp d.property).symm]
   refine ⟨fun x x' h ↦ e.eq_of_forall_transport_component_eq T he htrans fun g ↦ ?_,
     fun F ↦ ?_⟩
   · rw [← hf, ← hf]
-    exact congrArg (fun F ↦ eA (F.1 g)) h
+    exact congrArg (fun F ↦ eA (F.val g)) h
   obtain ⟨x, hx⟩ := e.exists_forall_transport_component_eq T he hT htrans hsurj
-    (fun g ↦ eA (F.1 g)) fun d hd g ↦ by
-      have hF := F.2 ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ g
+    (fun g ↦ eA (F.val g)) fun d hd g ↦ by
+      have hF := F.property ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ g
       simp only [Subgroup.subtype_apply] at hF
       rw [hF, hA]
   exact ⟨x, Subtype.ext <| funext fun g ↦ eA.injective <| (hf _).trans (hx g)⟩

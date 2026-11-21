@@ -192,6 +192,43 @@ theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
       (normSq_nonneg _)
   linarith
 
+/-- On the closed upper half-plane of candidate values, the error from the semicircle
+transform is controlled by the quadratic residual at a nonreal upper-half-plane parameter. -/
+theorem norm_sub_resolventTransform_semicircleReal_le
+    (hz : 0 < z.im) {w : ℂ} (hw : 0 ≤ w.im) :
+    ‖w - resolventTransform (semicircleReal a v) z‖ ≤
+      ‖(v : ℂ) * (w * w) + (z - a) * w + 1‖ / z.im := by
+  let s := resolventTransform (semicircleReal a v) z
+  obtain ⟨hs, hquad⟩ := (eq_resolventTransform_semicircleReal_iff hz).mp (rfl : s = s)
+  have hfactor : (v : ℂ) * (w * w) + (z - a) * w + 1 =
+      (w - s) * ((v : ℂ) * (w + s) + (z - a)) := by
+    linear_combination hquad
+  have him : z.im ≤ ((v : ℂ) * (w + s) + (z - a)).im := by
+    simp only [add_im, sub_im, ofReal_im, sub_zero, im_ofReal_mul]
+    exact le_add_of_nonneg_left (mul_nonneg v.coe_nonneg (add_nonneg hw hs.le))
+  rw [hfactor, norm_mul, le_div_iff₀ hz]
+  exact mul_le_mul_of_nonneg_left (him.trans (im_le_norm _)) (norm_nonneg _)
+
+/-- Changing the semicircle variance at fixed centre changes the upper-half-plane
+transform by at most the variance difference divided by `(Im z)^3`. -/
+theorem norm_resolventTransform_semicircleReal_sub_le
+    (hz : 0 < z.im) (v' : ℝ≥0) :
+    ‖resolventTransform (semicircleReal a v') z -
+      resolventTransform (semicircleReal a v) z‖ ≤ |(v' : ℝ) - v| / z.im ^ 3 := by
+  let w := resolventTransform (semicircleReal a v') z
+  obtain ⟨hw, hquad⟩ := (eq_resolventTransform_semicircleReal_iff hz).mp (rfl : w = w)
+  have h := norm_sub_resolventTransform_semicircleReal_le (a := a) (v := v) hz hw.le
+  have hres : (v : ℂ) * (w * w) + (z - a) * w + 1 = ((v : ℂ) - v') * (w * w) := by
+    linear_combination hquad
+  rw [hres, norm_mul, norm_mul, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_sub_comm] at h
+  have hb : ‖w‖ ≤ z.im⁻¹ := by
+    simpa only [abs_of_pos hz, probReal_univ, mul_one] using
+      norm_resolventTransform_le (μ := semicircleReal a v') hz.ne'
+  calc
+    _ ≤ |(v' : ℝ) - v| * (‖w‖ * ‖w‖) / z.im := h
+    _ ≤ |(v' : ℝ) - v| * (z.im⁻¹ * z.im⁻¹) / z.im := by gcongr
+    _ = _ := by simp only [div_eq_mul_inv, ← inv_pow]; ring
+
 /-- The transform of the standard semicircle law at `i` is `i (√5 - 1) / 2`, the root of
 `m² + i m + 1 = 0` with positive imaginary part; the other root is `-i (√5 + 1) / 2`. -/
 theorem resolventTransform_semicircleReal_zero_one_I :

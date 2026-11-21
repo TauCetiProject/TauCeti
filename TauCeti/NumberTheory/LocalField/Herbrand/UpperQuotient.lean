@@ -227,18 +227,19 @@ section Quotient
 
 variable {K M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field M] [ValuativeRel M] [TopologicalSpace M]
-  [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M] [Module.Finite K M]
-  [IsGalois K M] (H : Subgroup (M ≃ₐ[K] M)) [H.Normal]
+  [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M] [IsGalois K M]
+  (H : Subgroup (M ≃ₐ[K] M)) [H.Normal]
 
 /-- The **upper ramification filtration of the quotient** `G ⧸ H`, for a normal subgroup `H` of
 `G = Gal(M/K)`: the image of `G^v` under the quotient map `G → G ⧸ H`. -/
 def upperRamificationGroupQuotient (v : RamificationIndexDomain) :
     Subgroup ((M ≃ₐ[K] M) ⧸ H) :=
+  haveI : Module.Finite K M := TauCeti.finite_of_valuativeExtension K M
   (upperRamificationGroup K M v).map (QuotientGroup.mk' H)
 
 /-- For a normal subgroup `H` of `G = Gal(M/K)`, the defined quotient filtration is
 `G^v H / H`. -/
-theorem upperRamificationGroup_quotient (v : RamificationIndexDomain) :
+theorem upperRamificationGroup_quotient [Module.Finite K M] (v : RamificationIndexDomain) :
     upperRamificationGroupQuotient H v =
       (upperRamificationGroup K M v ⊔ H).map (QuotientGroup.mk' H) := by
   simp [upperRamificationGroupQuotient, Subgroup.map_sup]
@@ -246,8 +247,8 @@ theorem upperRamificationGroup_quotient (v : RamificationIndexDomain) :
 /-- A representative belongs to the quotient upper ramification group exactly when it belongs
 to `G^v H`. -/
 @[simp]
-theorem mem_upperRamificationGroupQuotient_mk_iff (v : RamificationIndexDomain)
-    (σ : M ≃ₐ[K] M) :
+theorem mem_upperRamificationGroupQuotient_mk_iff [Module.Finite K M]
+    (v : RamificationIndexDomain) (σ : M ≃ₐ[K] M) :
     (σ : (M ≃ₐ[K] M) ⧸ H) ∈ upperRamificationGroupQuotient H v ↔
       σ ∈ upperRamificationGroup K M v ⊔ H := by
   rw [← QuotientGroup.mk'_apply H σ]
@@ -255,22 +256,25 @@ theorem mem_upperRamificationGroupQuotient_mk_iff (v : RamificationIndexDomain)
 
 /-- The upper ramification filtration on a quotient is decreasing. -/
 theorem upperRamificationGroupQuotient_antitone :
-    Antitone (upperRamificationGroupQuotient H) :=
-  fun _ _ hvw ↦ Subgroup.map_mono (upperRamificationGroup_antitone K M hvw)
+    Antitone (upperRamificationGroupQuotient H) := by
+  have : Module.Finite K M := TauCeti.finite_of_valuativeExtension K M
+  exact fun _ _ hvw ↦ Subgroup.map_mono (upperRamificationGroup_antitone K M hvw)
 
 /-- Each upper ramification group in the quotient is normal. -/
 instance instNormalUpperRamificationGroupQuotient (v : RamificationIndexDomain) :
-    (upperRamificationGroupQuotient H v).Normal :=
-  Subgroup.Normal.map inferInstance (QuotientGroup.mk' H) (QuotientGroup.mk'_surjective H)
+    (upperRamificationGroupQuotient H v).Normal := by
+  have : Module.Finite K M := TauCeti.finite_of_valuativeExtension K M
+  exact Subgroup.Normal.map inferInstance (QuotientGroup.mk' H) (QuotientGroup.mk'_surjective H)
 
 /-- **The upper numbering of a quotient, field-theoretically.** For a normal subgroup `H` of
 `G = Gal(M/K)` and any local-field structure on the fixed field `M^H` compatible with `K`, the
 restriction isomorphism `G ⧸ H ≃* Gal(M^H/K)` maps the quotient upper ramification group at `v`
 onto the upper ramification group of `M^H/K`. -/
 @[simp]
-theorem upperRamificationGroup_fixedField [ValuativeRel (fixedField H)]
-    [TopologicalSpace (fixedField H)] [IsNonarchimedeanLocalField (fixedField H)]
-    [ValuativeExtension K (fixedField H)] (v : RamificationIndexDomain) :
+theorem upperRamificationGroup_fixedField [Module.Finite K M]
+    [ValuativeRel (fixedField H)] [TopologicalSpace (fixedField H)]
+    [IsNonarchimedeanLocalField (fixedField H)] [ValuativeExtension K (fixedField H)]
+    (v : RamificationIndexDomain) :
     (upperRamificationGroupQuotient H v).map
         (IsGalois.normalAutEquivQuotient H) =
       upperRamificationGroup K (fixedField H) v := by

@@ -140,11 +140,11 @@ theorem borelCalculus_conj (U : H ≃ₗᵢ[ℂ] H')
       U.conjStarAlgEquiv (a.borelCalculus
         (BoundedBorelFunction.compStarAlgHom'
           (Set.inclusion (AlgEquiv.spectrum_eq U.conjStarAlgEquiv a).ge)
-          measurable_subtype_coe.subtype_mk f)) := by
+          measurable_subtypeVal.subtype_mk f)) := by
   let a' : H' →L[ℂ] H' := U.conjStarAlgEquiv a
   let σc : C(spectrum ℂ a, spectrum ℂ a') :=
     ⟨Set.inclusion (AlgEquiv.spectrum_eq U.conjStarAlgEquiv a).ge, continuous_inclusion _⟩
-  have hσ : Measurable ⇑σc := measurable_subtype_coe.subtype_mk
+  have hσ : Measurable ⇑σc := measurable_subtypeVal.subtype_mk
   -- Push `a.spectralPVM` along `σc` and conjugate its representation by `U`; uniqueness of the
   -- spectral measure on continuous symbols identifies the result with `a'.spectralPVM`.
   let π' : C(spectrum ℂ a', ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H) :=

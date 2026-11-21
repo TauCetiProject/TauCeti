@@ -5,13 +5,13 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
+public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Radical
+import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
 import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
 # Solvable reductive groups are tori
@@ -28,14 +28,10 @@ this radical trivial, so the unipotent part of every rational point of `G` is th
 point is semisimple. The diagonalization criterion
 `TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint` then identifies `G` as a split torus.
 
-Consequently such a group is linearly reductive.
-
 ## Main declarations
 
 * `TauCeti.reductiveCommHopfAlgProperty.torus_of_geometricallySolvable`: a solvable reductive
   group is a torus.
-* `TauCeti.reductiveCommHopfAlgProperty.linearlyReductive_of_geometricallySolvable`: a solvable
-  reductive group is linearly reductive.
 
 ## References
 
@@ -70,7 +66,6 @@ private theorem isSemisimplePoint_geometricFiber_of_geometricallySolvable
   let _ : Algebra.Smooth K G := hG.smooth
   let _ : IsReduced G := isReduced_of_smooth K G
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
-  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   rw [HopfAlgebra.isSemisimplePoint_iff_unipotentPart_eq_one]
   let v := HopfAlgebra.Point.unipotentPart K G K g
   have hv : HopfAlgebra.IsUnipotentPoint v := by
@@ -96,19 +91,10 @@ theorem torus_of_geometricallySolvable
   let _ : ConnectedSpace (PrimeSpectrum G) :=
     hH.geometricallyConnected.connectedSpace_algebraicClosureBaseChange
   let _ : _root_.Coalgebra.IsCocomm k H := hH.isCocomm_of_geometricallySolvable hsolv
-  let _ : _root_.Coalgebra.IsCocomm K G := inferInstance
   have hT : torusCommHopfAlgProperty K G :=
     torusCommHopfAlgProperty_of_isSemisimplePoint G
       (hH.isSemisimplePoint_geometricFiber_of_geometricallySolvable hsolv)
   exact (torusCommHopfAlgProperty_iff k H).mpr
     ((splitTorusCommHopfAlgProperty_iff K G).mp (hT.split K G))
-
-/-- A reductive group with solvable geometric points is linearly reductive, in every
-characteristic and including when its torus does not split over the ground field. -/
-theorem linearlyReductive_of_geometricallySolvable
-    (hH : reductiveCommHopfAlgProperty k H)
-    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
-    linearlyReductiveCommHopfAlgProperty k H.obj :=
-  (hH.torus_of_geometricallySolvable hsolv).linearlyReductive
 
 end TauCeti.reductiveCommHopfAlgProperty

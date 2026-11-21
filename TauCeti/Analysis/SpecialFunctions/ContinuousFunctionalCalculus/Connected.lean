@@ -99,10 +99,11 @@ variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [Complete
 strictly positive element `p : A`. -/
 def IsStrictlyPositive.linePathToOne {p : A} (hp : IsStrictlyPositive p) :
     Path (1 : Aˣ) hp.isUnit.unit where
-  toFun t := (hp.one_sub_smul_add_smul t.2).isUnit.unit
+  toFun t := (hp.one_sub_smul_add_smul t.property).isUnit.unit
   continuous_toFun := by
     rw [(Units.isOpenEmbedding_val (R := A)).isEmbedding.continuous_iff]
-    have hEq : ((Units.val : Aˣ → A) ∘ fun t : I ↦ (hp.one_sub_smul_add_smul t.2).isUnit.unit) =
+    have hEq :
+        ((Units.val : Aˣ → A) ∘ fun t : I ↦ (hp.one_sub_smul_add_smul t.property).isUnit.unit) =
         fun t : I ↦ (1 - (t : ℝ)) • (1 : A) + (t : ℝ) • p := by
       ext t
       exact IsUnit.unit_spec _
@@ -122,7 +123,7 @@ theorem IsStrictlyPositive.isStrictlyPositive_linePathToOne_apply {p : A}
     (hp : IsStrictlyPositive p) (t : I) :
     IsStrictlyPositive (hp.linePathToOne t : A) := by
   rw [hp.val_linePathToOne_apply]
-  exact hp.one_sub_smul_add_smul t.2
+  exact hp.one_sub_smul_add_smul t.property
 
 section ContinuousStar
 

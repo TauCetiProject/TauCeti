@@ -11,6 +11,7 @@ public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.DiagonalMeasure
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.DominatedConvergence
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
+public import TauCeti.MeasureTheory.MeasurableSpace.Subtype
 
 /-!
 # The Borel functional calculus of a normal operator
@@ -31,7 +32,9 @@ this is the spectral theorem for bounded normal operators in its projection-valu
 The spectral measure is the only projection-valued measure on the spectrum that recovers the
 continuous functional calculus (finite measures on the compact metrizable spectrum are regular,
 so no regularity hypothesis is needed), and it charges every nonempty relatively open subset of
-the spectrum. By the Fuglede–Putnam–Rosenblum theorem, an operator commutes with `a` iff it
+the spectrum. The spectral projection of a single point `z` is the projection onto the eigenspace
+of `a` for `z`, so exactly the eigenvalues carry point masses. By the
+Fuglede–Putnam–Rosenblum theorem, an operator commutes with `a` iff it
 commutes with every spectral projection, equivalently with every value of the Borel calculus.
 
 ## Main declarations
@@ -46,6 +49,12 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.borelCalculus_indicator`: indicators give the spectral projections.
 * `ContinuousLinearMap.eq_spectralPVM_iff`: uniqueness of the spectral measure.
 * `ContinuousLinearMap.spectralPVM_proj_eq_zero_iff`: the spectral measure has full support.
+* `ContinuousLinearMap.mul_spectralPVM_proj_preimage_singleton`,
+  `ContinuousLinearMap.spectralPVM_proj_preimage_singleton_apply_eq_self_iff`,
+  `ContinuousLinearMap.range_spectralPVM_proj_preimage_singleton`,
+  `ContinuousLinearMap.spectralPVM_proj_preimage_singleton_eq_zero_iff`: the spectral projection
+  of a point `z` is the projection onto the eigenspace of `z`, so it vanishes exactly when `z` is
+  not an eigenvalue.
 * `ContinuousLinearMap.forall_commute_borelCalculus_iff`,
   `ContinuousLinearMap.forall_commute_spectralPVM_proj_iff`: the spectral commutant.
 
@@ -230,5 +239,74 @@ theorem spectralPVM_proj_eq_zero_iff {U : Set (spectrum ℂ a)} (hU : IsOpen U) 
     ?_⟩
   rintro rfl
   exact a.spectralPVM.proj_empty
+
+/-- **Spectral projections of points.** The spectral projection of a point `z` takes values in
+the eigenspace of `a` for `z`: `a P({z}) = z P({z})`. -/
+theorem mul_spectralPVM_proj_preimage_singleton (z : ℂ) :
+    a * a.spectralPVM.proj (Subtype.val ⁻¹' {z})
+        (measurableSet_preimage_val_singleton z) =
+      z • a.spectralPVM.proj (Subtype.val ⁻¹' {z})
+        (measurableSet_preimage_val_singleton z) := by
+  have hS := measurableSet_preimage_val_singleton (p := (· ∈ spectrum ℂ a)) z
+  -- On the preimage of `{z}` the coordinate function is the constant `z`.
+  have hmul : BoundedBorelFunction.ofContinuousMap
+      ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)) * BoundedBorelFunction.indicator _ hS 1 =
+      z • BoundedBorelFunction.indicator _ hS 1 := by
+    ext w
+    by_cases hw : (w : ℂ) = z <;> simp [hw]
+  calc a * a.spectralPVM.proj _ hS
+      = a.borelCalculus (BoundedBorelFunction.ofContinuousMap
+          ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))) *
+        a.borelCalculus (BoundedBorelFunction.indicator _ hS 1) := by
+        rw [borelCalculus_restrict_id, borelCalculus_indicator]
+    _ = z • a.spectralPVM.proj _ hS := by
+        rw [← map_mul, hmul, map_smul, borelCalculus_indicator]
+
+/-- **Point projections fix the eigenvectors.** The spectral projection of a point `z` fixes `ξ`
+exactly when `ξ` lies in the eigenspace of `a` for `z`. -/
+theorem spectralPVM_proj_preimage_singleton_apply_eq_self_iff (z : ℂ) (ξ : H) :
+    a.spectralPVM.proj (Subtype.val ⁻¹' {z})
+        (measurableSet_preimage_val_singleton z) ξ = ξ ↔ a ξ = z • ξ := by
+  have hS := measurableSet_preimage_val_singleton (p := (· ∈ spectrum ℂ a)) z
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · simpa [h] using congr($(a.mul_spectralPVM_proj_preimage_singleton z) ξ)
+  -- Conversely, `(w - z)(a) ξ = 0`, so the diagonal measure of `ξ` lives on the point `z`.
+  have hf : a.spectralPVM.integral (BoundedBorelFunction.ofContinuousMap
+      ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)) - z • 1) ξ = 0 := by
+    simp [integral_spectralPVM, h]
+  rw [ProjValMeasure.integral_apply_eq_zero_iff] at hf
+  have hc : a.spectralPVM.diag ξ (Subtype.val ⁻¹' {z})ᶜ = 0 :=
+    ae_iff.mp (hf.mono fun w hw => by simpa [sub_eq_zero] using hw)
+  have h0 : a.spectralPVM.proj _ hS.compl ξ = 0 := by
+    rw [← norm_eq_zero, ← sq_eq_zero_iff, ProjValMeasure.norm_sq_proj_apply, hc,
+      ENNReal.toReal_zero]
+  rw [ProjValMeasure.proj_compl _ _ hS] at h0
+  have h1 : ξ - a.spectralPVM.proj _ hS ξ = 0 := by simpa using h0
+  exact (sub_eq_zero.mp h1).symm
+
+/-- **Points carry spectral mass exactly at eigenvalues.** The spectral projection of a point `z`
+vanishes exactly when `z` is not an eigenvalue of the normal operator `a`. -/
+theorem spectralPVM_proj_preimage_singleton_eq_zero_iff (z : ℂ) :
+    a.spectralPVM.proj (Subtype.val ⁻¹' {z})
+        (measurableSet_preimage_val_singleton z) = 0 ↔
+      ∀ x, a x = z • x → x = 0 := by
+  refine ⟨fun h x hx => ?_, fun hz => ?_⟩
+  · rw [← (a.spectralPVM_proj_preimage_singleton_apply_eq_self_iff z x).mpr hx, h,
+      zero_apply]
+  · ext ξ
+    exact hz _ (by simpa using congr($(a.mul_spectralPVM_proj_preimage_singleton z) ξ))
+
+/-- **Point masses are eigenspaces.** The spectral projection of a point `z` projects onto the
+eigenspace of `a` at `z`. -/
+theorem range_spectralPVM_proj_preimage_singleton (z : ℂ) :
+    LinearMap.range (a.spectralPVM.proj (Subtype.val ⁻¹' {z})
+        (measurableSet_preimage_val_singleton z) : H →ₗ[ℂ] H) =
+      Module.End.eigenspace (a : H →ₗ[ℂ] H) z := by
+  ext ξ
+  rw [Module.End.mem_eigenspace_iff, coe_coe,
+    ← a.spectralPVM_proj_preimage_singleton_apply_eq_self_iff]
+  refine ⟨?_, fun h => ⟨ξ, h⟩⟩
+  rintro ⟨η, rfl⟩
+  exact a.spectralPVM.proj_apply_proj _ _ η
 
 end ContinuousLinearMap
