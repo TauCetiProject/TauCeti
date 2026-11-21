@@ -150,8 +150,10 @@ private theorem norm_readFactor {k : ℕ} (s : Fin k ⊕ Fin k) (z : 𝕜) :
 /-- For entries in `L^(2k)` and `k > 0`, a common upper bound on the absolute `2k`th entry
 moments bounds the norm of the expected product along a bipartite word of half-length `k`. -/
 theorem norm_integral_prod_apply_mul_star_apply_le {k : ℕ} (hk : k ≠ 0)
-    (hXk : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P) {B : ℝ}
-    (hB : ∀ i j, ∫ ω, ‖X ω i j‖ ^ (2 * k) ∂P ≤ B) (u : Fin k → p) (v : Fin k → n) :
+    (u : Fin k → p) (v : Fin k → n)
+    (hXk : ∀ s, MemLp (fun ω ↦ X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2)
+      (2 * k) P) {B : ℝ}
+    (hB : ∀ s, ∫ ω, ‖X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2‖ ^ (2 * k) ∂P ≤ B) :
     ‖∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P‖ ≤ B := by
   have : NeZero k := ⟨hk⟩
   have hcard : (Finset.univ : Finset (Fin k ⊕ Fin k)).card = 2 * k := by simp [two_mul]
@@ -160,9 +162,9 @@ theorem norm_integral_prod_apply_mul_star_apply_le {k : ℕ} (hk : k ≠ 0)
   · intro s _
     simp only [hcard, norm_readFactor]
     exact MemLp.integrable_norm_pow
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk _ _) (by omega)
+      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk s) (by omega)
   · intro s _
-    simpa only [hcard, norm_readFactor] using hB (bipartiteEdge u v s).1 (bipartiteEdge u v s).2
+    simpa only [hcard, norm_readFactor] using hB s
 
 /-- **Trace-word expansion of sample covariance moments.** Let the entries of a random
 rectangular matrix `X` be independent, centred and in `L²ᵏ`, `k ≠ 0`. Then the expected trace of

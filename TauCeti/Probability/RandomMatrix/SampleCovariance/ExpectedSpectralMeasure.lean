@@ -99,31 +99,21 @@ theorem integrable_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P
     Integrable (fun x : ℝ ↦ x ^ k) (expectedCovarianceSpectralMeasure hXm : Measure ℝ) := by
   let L (ω : Ω) : Measure ℝ := ((X ω).sampleCovariance.spectralMeasure
     (isHermitian_sampleCovariance (X ω)) : Measure ℝ)
-  have hL : AEMeasurable L P :=
-    aemeasurable_covarianceMeasure hXm
-  rw [toMeasure_expectedCovarianceSpectralMeasure]
-  refine ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr ?_⟩
-  rw [Measure.lintegral_bind hL (by fun_prop)]
-  have hinner (ω : Ω) :
-      ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂L ω =
-        ENNReal.ofReal ‖(Fintype.card p : ℝ)⁻¹ *
-          RCLike.re ((X ω).sampleCovariance ^ k).trace‖ := by
-    have hpos : ∀ᵐ x ∂L ω, 0 ≤ x ^ k :=
-      ((Matrix.posSemidef_sampleCovariance (X ω)).ae_mem_Ici_spectralMeasure).mono
-        fun _ hx ↦ pow_nonneg hx k
-    have hint : Integrable (fun x : ℝ ↦ x ^ k) (L ω) :=
-      ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr
-        ((lintegral_ofReal_norm_pow_spectralMeasure_le _ _ k).trans_lt ENNReal.ofReal_lt_top)⟩
-    have he := integral_pow_spectralMeasure (X ω).sampleCovariance
-      (isHermitian_sampleCovariance (X ω)) k
-    have hnonneg := integral_nonneg_of_ae hpos
-    simp only [Real.norm_of_nonneg (he ▸ hnonneg)]
-    rw [← he, ofReal_integral_eq_lintegral_ofReal hint hpos]
-    apply lintegral_congr_ae
-    exact hpos.mono fun x hx ↦ congrArg ENNReal.ofReal (Real.norm_of_nonneg hx)
-  simp_rw [hinner]
-  exact (hasFiniteIntegral_iff_norm _).mp
-    ((RCLike.reCLM.integrable_comp htrace).const_mul _).hasFiniteIntegral
+  have hL : AEMeasurable L P := aemeasurable_covarianceMeasure hXm
+  rw [toMeasure_expectedCovarianceSpectralMeasure, Measure.bind_congr_right hL.ae_eq_mk]
+  refine (Measure.integrable_bind_iff hL.measurable_mk
+    (continuous_pow k).aestronglyMeasurable).mpr ⟨?_, ?_⟩
+  · filter_upwards [hL.ae_eq_mk] with ω hω
+    rw [← hω]
+    exact ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr
+      ((lintegral_ofReal_norm_pow_spectralMeasure_le _ _ k).trans_lt ENNReal.ofReal_lt_top)⟩
+  · refine ((RCLike.reCLM.integrable_comp htrace).const_mul (Fintype.card p : ℝ)⁻¹).congr ?_
+    filter_upwards [hL.ae_eq_mk] with ω hω
+    rw [← hω, RCLike.reCLM_apply, ← integral_pow_spectralMeasure (X ω).sampleCovariance
+      (isHermitian_sampleCovariance (X ω)) k]
+    apply integral_congr_ae
+    exact ((Matrix.posSemidef_sampleCovariance (X ω)).ae_mem_Ici_spectralMeasure).mono
+      fun x hx ↦ (Real.norm_of_nonneg (pow_nonneg hx k)).symm
 
 variable {k : ℕ} in
 /-- The expected spectral moment, cast into the matrix scalar field, is the expected
