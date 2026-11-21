@@ -78,6 +78,18 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
     (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
     (fun i hi j hj hij ↦ hcross i hi j hj hij.symm)
 
+/-- The second moment of a linear form in pairwise independent centered coordinates is the
+sum of the coordinate second moments weighted by the squared coefficients. -/
+theorem integral_sq_sum_mul_of_pairwise_indepFun [Fintype ι] [IsFiniteMeasure μ]
+    {X : ι → Ω → ℝ} (hX : ∀ i, MemLp (X i) 2 μ) (hmean : ∀ i, ∫ ω, X i ω ∂μ = 0)
+    (hind : Pairwise fun i j ↦ X i ⟂ᵢ[μ] X j) (a : ι → ℝ) :
+    ∫ ω, (∑ i, a i * X i ω) ^ 2 ∂μ = ∑ i, a i ^ 2 * ∫ ω, X i ω ^ 2 ∂μ := by
+  have h := integral_norm_sum_sq_of_pairwise_indepFun
+    (s := (univ : Finset ι)) (X := fun i ω ↦ a i * X i ω)
+    (fun i _ ↦ (hX i).const_mul _) (fun i _ ↦ by simp [integral_const_mul, hmean i])
+    (fun i _ j _ hij ↦ (hind hij).comp (measurable_const_mul _) (measurable_const_mul _))
+  simpa only [Real.norm_eq_abs, sq_abs, mul_pow, integral_const_mul] using h
+
 variable [Fintype ι] [Nonempty ι]
 
 /-- **The mean-square error of a sample mean.** If the random vectors `X i` in a real Hilbert space

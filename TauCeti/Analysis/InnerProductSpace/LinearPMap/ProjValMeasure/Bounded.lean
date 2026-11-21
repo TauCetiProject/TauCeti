@@ -42,7 +42,7 @@ private theorem cayley_mul_integral (hA : IsSelfAdjoint A)
     A.cayley * (A.spectralPVM hA).integral (g + I • f) =
       (A.spectralPVM hA).integral (g - I • f) := by
   have := hA.isStarNormal_cayley
-  let κ (w : _root_.spectrum ℂ A.cayley) := (I * (1 + (w : ℂ)) / (1 - w)).re
+  let κ (w : _root_.spectrum ℂ A.cayley) := inverseCayleyCoord (w : ℂ)
   have hκ : Measurable κ := by fun_prop
   let pull := BoundedBorelFunction.compStarAlgHom' κ hκ
   have hp (b : BoundedBorelFunction ℝ) :
@@ -61,7 +61,7 @@ private theorem cayley_mul_integral (hA : IsSelfAdjoint A)
   intro ξ
   have h1 : ∀ᵐ w : _root_.spectrum ℂ A.cayley ∂A.cayley.diagMeasure ξ, (w : ℂ) ≠ 1 := by
     apply ae_iff.mpr
-    convert hA.diagMeasure_cayley_preimage_singleton_one_eq_zero ξ using 1
+    convert cayley_diagMeasure_singleton_one hA.neg_I_mem_resolventSet ξ using 1
     congr 1
     ext w
     simp
@@ -75,7 +75,8 @@ private theorem cayley_mul_integral (hA : IsSelfAdjoint A)
   change (w : ℂ) * (g (κ w) + I * f (κ w)) = g (κ w) - I * f (κ w)
   rw [← hfg]
   have hk : (κ w : ℂ) = I * (1 + (w : ℂ)) / (1 - w) :=
-    (hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.property hw).1
+    by simpa only [κ, inverseCayleyCoord_def] using
+      (hA.ofReal_re_inverseCayley_eq_and_mem_spectrum w.property hw).1
   rw [hk]
   field_simp
   ring

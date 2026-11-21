@@ -52,6 +52,8 @@ entries back into diagonal entries. The resolvent identities specialize Mathlib'
   at the same parameter has norm at most `|Im z|⁻¹`;
 * `Matrix.IsHermitian.im_inv_sub_smul_one_apply_self` and
   `Matrix.IsHermitian.sum_norm_inv_sub_smul_one_apply_sq` — the Ward identity;
+* `Matrix.IsHermitian.im_mul_dotProduct_inv_sub_smul_one_mulVec` — the quadratic-form identity
+  `Im (z uᴴ R_A(z) u) = Im z · Re (wᴴ A w)` for `w = R_A(z) u`;
 * `Matrix.IsHermitian.im_inv_sub_smul_one_apply_self_pos` — `0 < Im (R_A(z) i i)` when
   `0 < Im z`.
 
@@ -69,7 +71,7 @@ public section
 noncomputable section
 
 open Unitary
-open scoped ComplexConjugate
+open scoped ComplexConjugate ComplexOrder
 
 namespace Matrix
 
@@ -275,6 +277,30 @@ theorem im_inv_sub_smul_one_apply_self (z : 𝕜) (i : n) :
     RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_sum, RCLike.im_mul_ofReal, map_sub,
     RCLike.conj_im] at key
   linarith
+
+/-- The imaginary part of `z uᴴ R u`, for the resolvent `R = (A - z • 1)⁻¹`, is `Im z` times the
+real quadratic form `wᴴ A w` of the vector `w = R u`. If `A - z • 1` is singular, then `R = 0` by
+the convention for `⁻¹` and both sides vanish. -/
+theorem im_mul_dotProduct_inv_sub_smul_one_mulVec (u : n → 𝕜) (z : 𝕜) :
+    RCLike.im (z * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u))) =
+      RCLike.im z *
+        RCLike.re (star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A *ᵥ ((A - z • 1)⁻¹ *ᵥ u))) := by
+  by_cases hdet : IsUnit (A - z • 1).det
+  swap
+  · simp [nonsing_inv_apply_not_isUnit _ hdet]
+  set w := (A - z • 1)⁻¹ *ᵥ u
+  have hu : u = (A - z • 1) *ᵥ w := by
+    rw [mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
+  -- Writing `u = (A - z • 1) w` turns `uᴴ w` into `wᴴ A w - conj z * wᴴ w`.
+  have hq : star u ⬝ᵥ w = star w ⬝ᵥ (A *ᵥ w) - star z * (star w ⬝ᵥ w) := by
+    conv_lhs => rw [hu]
+    rw [star_mulVec, ← dotProduct_mulVec, conjTranspose_sub, hA.eq, conjTranspose_smul,
+      conjTranspose_one, sub_mulVec, smul_mulVec, one_mulVec, dotProduct_sub, dotProduct_smul,
+      smul_eq_mul]
+  have ha := hA.im_star_dotProduct_mulVec_self w
+  have hw := (RCLike.nonneg_iff.mp (dotProduct_star_self_nonneg w)).2
+  rw [hq, mul_sub, ← mul_assoc, RCLike.star_def, RCLike.mul_conj]
+  simp [RCLike.mul_im, ha, hw]
 
 /-- **Ward identity.** For a Hermitian matrix and a non-real `z`, the squared moduli of the entries
 in a row of the resolvent `R = (A - z • 1)⁻¹` sum to `Im (R i i) / Im z`. -/

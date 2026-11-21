@@ -30,6 +30,8 @@ kernels of the derivative of the projection; its descent is the reduced symplect
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.isBasic_of_mpullback_eq_of_ker_mfderiv_le`: an invariant two-form whose
+  kernels contain the vertical vectors is basic.
 * `TauCeti.SmoothTwoForm.existsUnique_isSymplectic_mpullback_eq`: a closed basic two-form with
   these kernels descends to a unique symplectic form.
 * `TauCeti.SmoothTwoForm.eval₂_descendedForm_mfderiv`: the descent evaluates on images under the
@@ -56,6 +58,38 @@ open Function Manifold
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothTwoForm
+
+section Basic
+
+variable {E H M E' H' M' : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
+  [IsManifold I ∞ M] {f : M → M'}
+
+/-- **Invariant two-forms with vertical null directions are basic.** Let `f` be differentiable and
+let `τ` be a family of differentiable self-maps of `M` over `f` (`f ∘ τ i = f`) that is transitive
+on the fibres of `f`. A two-form `σ` invariant under every `τ i` whose kernel at each point contains
+the kernel of the derivative of `f` is basic for `f`. -/
+theorem isBasic_of_mpullback_eq_of_ker_mfderiv_le {ι : Type*} {τ : ι → M → M}
+    (hf : MDifferentiable I I' f) (hτ : ∀ i, MDifferentiable I I (τ i)) (hfτ : ∀ i, f ∘ τ i = f)
+    (hτf : ∀ x y, f x = f y → x = y ∨ ∃ i, τ i x = y) {σ : SmoothTwoForm I M}
+    (hker : ∀ x, (mfderiv I I' f x).ker ≤ LinearMap.ker (σ.bilinFormAt x))
+    (hσ : ∀ i, TauCeti.mpullback I I (τ i) σ.val = σ.val) :
+    RoughForm.IsBasic (V := ℝ) I' f σ.val := by
+  refine RoughForm.isBasic_of_mpullback_eq hf hτ hfτ hτf (fun x v j hj ↦ ?_) hσ
+  -- A vertical vector is a null direction of `σ_x`, in either slot.
+  have hnull (u w : TangentSpace I x) (hu : mfderiv I I' f x u = 0) :
+      SmoothBundleForm.eval₂ σ x u w = 0 := by
+    rw [← SmoothForm.bilinFormAt_apply, LinearMap.mem_ker.1 (hker x hu), LinearMap.zero_apply]
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv, ← SmoothBundleForm.eval₂_apply]
+  obtain rfl | rfl : j = 0 ∨ j = 1 := by fin_cases j <;> simp
+  · exact hnull _ _ hj
+  · rw [SmoothBundleForm.eval₂_swap, hnull _ _ hj, neg_zero]
+
+end Basic
 
 section Descent
 

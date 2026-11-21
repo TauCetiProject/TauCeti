@@ -116,11 +116,12 @@ open LieAlgebra LieModule Module
 
 universe u v
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [IsKilling K L] [FiniteDimensional K L]
-  (H : LieSubalgebra K L) [H.IsCartanSubalgebra] [IsTriangularizable K H L]
-
 /-! ### Spans of root spaces -/
+
+section RootSpaceSpan
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
 
 /-- The `H`-submodule of `L` spanned by the root spaces indexed by a set `S` of roots: the weight
 spaces of `L` itself at the weights the members of `S` name. -/
@@ -129,13 +130,11 @@ def rootSpaceSpan (S : Set H.root) : LieSubmodule K H L :=
 
 variable {H}
 
-omit [IsKilling K L] [IsTriangularizable K H L] in
 /-- A root space indexed by a member of `S` lies in the span of `S`. -/
 theorem rootSpace_le_rootSpaceSpan {S : Set H.root} {α : H.root} (hα : α ∈ S) :
     rootSpace H (α : H → K) ≤ rootSpaceSpan H S :=
   genWeightSpace_le_genWeightSpaceSpan (Set.mem_image_of_mem _ hα)
 
-omit [IsKilling K L] [IsTriangularizable K H L] in
 /-- The span of the root spaces indexed by `S`, written as the supremum of those root spaces. -/
 theorem rootSpaceSpan_eq_iSup (S : Set H.root) :
     rootSpaceSpan H S = ⨆ α : S, rootSpace H ((α : H.root) : H → K) := by
@@ -144,13 +143,11 @@ theorem rootSpaceSpan_eq_iSup (S : Set H.root) :
     exact le_iSup (fun β : S => rootSpace H ((β : H.root) : H → K)) ⟨α, hα⟩
   · exact rootSpace_le_rootSpaceSpan α.property
 
-omit [IsKilling K L] [IsTriangularizable K H L] in
 /-- Spans of root spaces are monotone in the indexing set. -/
 theorem rootSpaceSpan_mono {S T : Set H.root} (h : S ⊆ T) :
     rootSpaceSpan H S ≤ rootSpaceSpan H T :=
   genWeightSpaceSpan_mono (Set.image_mono h)
 
-omit [IsKilling K L] [IsTriangularizable K H L] in
 /-- The span of the root spaces indexed by `S` is contained in an `H`-submodule exactly when each
 of the root spaces it is spanned by is. -/
 theorem rootSpaceSpan_le_iff {S : Set H.root} {N : LieSubmodule K H L} :
@@ -158,7 +155,6 @@ theorem rootSpaceSpan_le_iff {S : Set H.root} {N : LieSubmodule K H L} :
   ⟨fun h _ hα => (rootSpace_le_rootSpaceSpan hα).trans h,
     fun h => genWeightSpaceSpan_le_iff.mpr (by rintro _ ⟨α, hα, rfl⟩; exact h α hα)⟩
 
-omit [IsKilling K L] [IsTriangularizable K H L] in
 /-- The span of the root spaces indexed by `S` is closed under the bracket as soon as the root
 space of the sum of any two members of `S` lies back inside it. -/
 theorem lie_mem_rootSpaceSpan {S : Set H.root}
@@ -173,7 +169,15 @@ theorem lie_mem_rootSpaceSpan {S : Set H.root}
     (fun β y hy => ?_) (by simp) (fun y z hy hz => by rw [lie_add]; exact add_mem hy hz)
   exact hS α α.property β β.property (lie_mem_genWeightSpace_of_mem_genWeightSpace hx hy)
 
+end RootSpaceSpan
+
 /-! ### Special closed sets of roots -/
+
+section TriangularDecomposition
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
 
 variable (H) in
 /-- A set `S` of roots is **special closed** when it is *closed*, that is stable under those sums
@@ -646,13 +650,18 @@ theorem isCompl_negativeNilradical_borelSubalgebra :
   ⟨disjoint_negativeNilradical_borelSubalgebra H b,
     codisjoint_iff.mpr (negativeNilradical_sup_borelSubalgebra_eq_top H b)⟩
 
+end TriangularDecomposition
+
 /-! ### A basis of root vectors of the negative nilradical -/
 
 section NegativeNilradicalBasis
 
-variable {H}
+section RootVector
 
-omit [CharZero K] in
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
+  [IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+
 /-- A nonzero vector of the root space `L_{-α}`, for a root `α`. -/
 private theorem exists_ne_zero_mem_rootSpace_neg (i : H.root) :
     ∃ x ∈ rootSpace H (-((i : Weight K H L) : H → K)), x ≠ 0 :=
@@ -662,14 +671,19 @@ private theorem exists_ne_zero_mem_rootSpace_neg (i : H.root) :
 private noncomputable def negRootVector (i : H.root) : L :=
   (exists_ne_zero_mem_rootSpace_neg i).choose
 
-omit [CharZero K] in
 private theorem negRootVector_mem_rootSpace (i : H.root) :
     negRootVector i ∈ rootSpace H (-((i : Weight K H L) : H → K)) :=
   (exists_ne_zero_mem_rootSpace_neg i).choose_spec.1
 
-omit [CharZero K] in
 private theorem negRootVector_ne_zero (i : H.root) : negRootVector i ≠ 0 :=
   (exists_ne_zero_mem_rootSpace_neg i).choose_spec.2
+
+end RootVector
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+  (b : (IsKilling.rootSystem H).Base)
 
 /-- The root vector of weight `-α`, for a positive root `α`, as an element of the negative
 nilradical. -/
@@ -759,6 +773,13 @@ end NegativeNilradicalBasis
 
 /-! ### The characters of the Borel subalgebra -/
 
+section BorelCharacter
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [IsKilling K L] [FiniteDimensional K L]
+  (H : LieSubalgebra K L) [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+  (b : (IsKilling.rootSystem H).Base)
+
 /-- **The Cartan subalgebra meets the positive nilradical trivially**: `H` is the root space of
 the zero weight, and the root spaces are independent. -/
 theorem disjoint_cartan_positiveNilradical :
@@ -822,5 +843,7 @@ theorem borelCharacter_apply_of_mem_positiveNilradical {x : borelSubalgebra H b}
     (hx : (x : L) ∈ positiveNilradical H b) : borelCharacter H b lam x = 0 := by
   rw [borelCharacter_eq_borelPMap]
   exact (borelPMap_apply H b lam _ 0 ⟨x, hx⟩ (zero_add _)).trans (map_zero lam)
+
+end BorelCharacter
 
 end TauCeti
