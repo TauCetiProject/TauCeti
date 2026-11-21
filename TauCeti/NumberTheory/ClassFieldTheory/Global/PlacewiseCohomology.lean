@@ -170,16 +170,16 @@ variable (S : Finset (HeightOneSpectrum (𝓞 K)))
 through `finiteSIdelesPiIso`. -/
 private theorem sIdelesToFiniteSIdeles_comp_piProj_inl (v : S) :
     sIdelesToFiniteSIdeles L S ≫ (finiteSIdelesPiIso L S).hom ≫ Rep.piProj _ (Sum.inl v) =
-      sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v.1 := by
+      sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v.val := by
   ext x
   -- both composites take the semi-local component at `v` of the finite part
-  have h : (sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v.1).hom x =
-      Additive.ofMul (finiteIdeleSemilocalHom L v.1
+  have h : (sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v.val).hom x =
+      Additive.ofMul (finiteIdeleSemilocalHom L v.val
         (IdeleGroup.toFiniteIdele (𝓞 L) L
-          (Additive.toMul (α := sIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))) x).1)) :=
-    (congrArg (idelesToSemilocalUnits L v.1).hom
+          (Additive.toMul (α := sIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))) x).val)) :=
+    (congrArg (idelesToSemilocalUnits L v.val).hom
       (sIdelesToIdeles_hom_apply (K := K) L S x)).trans
-        (idelesToSemilocalUnits_hom_apply L v.1 _)
+        (idelesToSemilocalUnits_hom_apply L v.val _)
   exact ((Rep.piProj_hom_apply _ _).trans <|
     (congrArg (fun z ↦ (finiteSIdelesPiIso L S).hom.hom z (Sum.inl v))
       (sIdelesToFiniteSIdeles_hom_apply L S x)).trans
@@ -193,10 +193,10 @@ private def sIdelesToSemilocalIntegralUnits (v : HeightOneSpectrum (𝓞 K)) (hv
     (((finiteIdeleSemilocalHom L v).comp ((IdeleGroup.toFiniteIdele (𝓞 L) L).comp
       (sIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).subtype)).codRestrict
         (semilocalIntegralUnits L v) fun x ↦
-          mem_finiteSIdeles_iff.1 (toFiniteIdele_mem_finiteSIdeles_iff.2 x.2) v hv
+          mem_finiteSIdeles_iff.1 (toFiniteIdele_mem_finiteSIdeles_iff.2 x.property) v hv
       ).toAdditive.toIntLinearMap
     fun σ x ↦ congrArg Additive.ofMul <| Subtype.ext <| (congrArg (finiteIdeleSemilocalHom L v)
-      (toFiniteIdele_smul σ x.toMul.1)).trans
+      (toFiniteIdele_smul σ x.toMul.val)).trans
         (finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction v σ _)
 
 /-- At a place `v ∉ S`, the semi-local component of an `S`-idele factors through the integral
@@ -240,7 +240,7 @@ private theorem exists_map_sIdelesToIdeles_eq (n : ℤ) (x : tateCohomology (ide
   -- a finite set of ideles lies in the `S`-ideles for the union of the sets that work for each
   have hcover (s : Finset (idelesRep K L)) : ∃ S : {S : Finset (HeightOneSpectrum (𝓞 K)) //
       NumberField.ramifiedSupport K L ⊆ S},
-        ∀ x ∈ s, x ∈ Set.range (sIdelesToIdeles (K := K) L S.1).hom := by
+        ∀ x ∈ s, x ∈ Set.range (sIdelesToIdeles (K := K) L S.val).hom := by
     choose S _ hS using fun x : idelesRep K L ↦ exists_finset_mem_sIdeles
       (NumberField.ramifiedSupport K L) (Additive.toMul x : IdeleGroup (𝓞 L) L)
     let T := NumberField.ramifiedSupport K L ∪ s.sup S
@@ -250,7 +250,7 @@ private theorem exists_map_sIdelesToIdeles_eq (n : ℤ) (x : tateCohomology (ide
     exact Finset.coe_subset.2 ((Finset.le_sup hx).trans Finset.subset_union_right)
   obtain ⟨⟨S, hS⟩, y, hy⟩ := TateCohomology.exists_tateCohomologyFunctor_map_eq
     (fun S : {S : Finset (HeightOneSpectrum (𝓞 K)) // NumberField.ramifiedSupport K L ⊆ S} ↦
-      sIdelesToIdeles (K := K) L S.1) (fun S ↦ sIdelesToIdeles_hom_injective (K := K) L S.1)
+      sIdelesToIdeles (K := K) L S.val) (fun S ↦ sIdelesToIdeles_hom_injective (K := K) L S.val)
     hcover n x
   exact ⟨S, hS, y, hy⟩
 
@@ -291,7 +291,7 @@ theorem eq_zero_of_forall_map_semilocal_eq_zero
     · exact hy _ _ _ ((Category.assoc _ _ _).trans (sIdelesToFiniteSIdeles_comp_piProj_inl L S v))
         (hfin v)
     · exact (ModuleCat.subsingleton_of_isZero
-        (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem L hS v.2 n)).elim _ _
+        (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem L hS v.property n)).elim _ _
   -- the infinite part of `y` vanishes: its components are those of `x`
   have hinf' : ((tateCohomologyFunctor n).map
       (sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L)).hom y = 0 := by
@@ -352,9 +352,9 @@ private theorem exists_map_semilocal_eq (S : Finset (HeightOneSpectrum (𝓞 K))
   set T := NumberField.ramifiedSupport K L ∪ S
   -- a class of the finite `T`-ideles with components `y` at the places of `T`
   obtain ⟨a, ha⟩ : ∃ a : tateCohomology (finiteSIdelesRep L T) n, ∀ v : T,
-      (F.map ((finiteSIdelesPiIso L T).hom ≫ Rep.piProj _ (Sum.inl v))).hom a = y v.1 :=
+      (F.map ((finiteSIdelesPiIso L T).hom ≫ Rep.piProj _ (Sum.inl v))).hom a = y v.val :=
     ⟨(F.map (finiteSIdelesPiIso L T).inv).hom
-      ((TateCohomology.linearEquivPi _ n).symm (Sum.rec (fun v ↦ y v.1) fun _ ↦ 0)), fun v ↦ by
+      ((TateCohomology.linearEquivPi _ n).symm (Sum.rec (fun v ↦ y v.val) fun _ ↦ 0)), fun v ↦ by
         rw [hF, Iso.inv_hom_id_assoc, ← TateCohomology.linearEquivPi_apply,
           LinearEquiv.apply_symm_apply]⟩
   -- a class of the infinite ideles with components `z`

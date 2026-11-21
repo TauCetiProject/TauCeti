@@ -146,9 +146,7 @@ functional `f` on `ℓ^q` form an `ℓᵖ` family. -/
 theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
     Memℓp (fun i ↦ f (lp.single q i 1)) p := by
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine memℓp_infty ⟨‖f‖, ?_⟩
-    rintro _ ⟨i, rfl⟩
-    exact f.norm_apply_lp_single_le i
+  · exact memℓp_infty f.bddAbove_range_norm_apply_lp_single
   · exact memℓp_gen' (f.sum_norm_lp_single_rpow_le hp)
 
 /-- For Hölder conjugate exponents `p` and `q`, an `ℓᵖ` family `a` whose entries are the coordinate

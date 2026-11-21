@@ -291,6 +291,37 @@ def refl (dM : Module.End R M) : LinearSpecialContraction dM dM where
 /-- The identity contraction has zero homotopy. -/
 @[simp] theorem refl_homotopy (dM : Module.End R M) : (refl dM).homotopy = 0 := (rfl)
 
+section Copy
+
+variable {dM' : Module.End R M} {dN' : Module.End R N}
+  (incl' : N →ₗ[R] M) (proj' : M →ₗ[R] N) (homotopy' : Module.End R M)
+  (hdM : dM = dM') (hdN : dN = dN')
+  (hi : c.incl = incl') (hp : c.proj = proj') (hh : c.homotopy = homotopy')
+
+/-- Rebuild a special contraction with definitionally replaced differentials and maps. -/
+def copy : LinearSpecialContraction dM' dN' where
+  incl := incl'; proj := proj'; homotopy := homotopy'
+  dM_comp_incl := by subst hdM hdN hi; exact c.dM_comp_incl
+  proj_comp_dM := by subst hdM hdN hp; exact c.proj_comp_dM
+  proj_comp_incl := by subst hi hp; exact c.proj_comp_incl
+  dM_comp_homotopy_add_homotopy_comp_dM := by
+    subst hdM hi hp hh; exact c.dM_comp_homotopy_add_homotopy_comp_dM
+  homotopy_comp_incl := by subst hi hh; exact c.homotopy_comp_incl
+  proj_comp_homotopy := by subst hp hh; exact c.proj_comp_homotopy
+  homotopy_comp_homotopy := by subst hh; exact c.homotopy_comp_homotopy
+
+/-- The inclusion of a copied special contraction is the supplied map. -/
+@[simp] theorem copy_incl : (c.copy incl' proj' homotopy' hdM hdN hi hp hh).incl = incl' := (rfl)
+
+/-- The projection of a copied special contraction is the supplied map. -/
+@[simp] theorem copy_proj : (c.copy incl' proj' homotopy' hdM hdN hi hp hh).proj = proj' := (rfl)
+
+/-- The homotopy of a copied special contraction is the supplied map. -/
+@[simp] theorem copy_homotopy :
+    (c.copy incl' proj' homotopy' hdM hdN hi hp hh).homotopy = homotopy' := (rfl)
+
+end Copy
+
 end LinearSpecialContraction
 
 end TauCeti

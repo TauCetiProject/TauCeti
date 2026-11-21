@@ -308,6 +308,35 @@ theorem map_comp (f : X ⟶ Y) (g : Y ⟶ Z) (hf : J.comap f ≤ I) (hg : K.coma
   rw [← cancel_mono (toScheme Z K n), map_app_toScheme, AdicThickeningSystem.comp_app,
     Category.assoc, map_app_toScheme, map_app_toScheme_assoc]
 
+/-- Composition of `formalCompletion.map` along a commuting triangle `f ≫ g = h`. -/
+@[reassoc]
+theorem map_comp_eq {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : f ≫ g = h)
+    (hf : J.comap f ≤ I) (hg : K.comap g ≤ J) (hh : K.comap h ≤ I) :
+    map f hf ≫ map g hg = map h hh := by
+  subst hfg
+  exact map_comp f g hf hg
+
+/-- An isomorphism of schemes `u : X ≅ Y` identifying ideal sheaves induces an isomorphism of
+formal completions. -/
+noncomputable def mapIso (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    X.formalCompletion I ≅ Y.formalCompletion J where
+  hom := map u.hom hu.le
+  inv := map u.inv (by rw [← hu, ← comap_comp, Iso.inv_hom_id, comap_id])
+  hom_inv_id := (map_comp_eq u.hom_inv_id _ _ (by rw [comap_id])).trans (map_id _)
+  inv_hom_id := (map_comp_eq u.inv_hom_id _ _ (by rw [comap_id])).trans (map_id _)
+
+/-- The forward morphism of `mapIso u hu` is `map u.hom hu.le`. -/
+@[simp]
+theorem mapIso_hom (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    (mapIso u hu).hom = map u.hom hu.le :=
+  (rfl)
+
+/-- The inverse morphism of `mapIso u hu` is `map u.inv _`. -/
+@[simp]
+theorem mapIso_inv (u : X ≅ Y) (hu : J.comap u.hom = I) :
+    (mapIso u hu).inv = map u.inv (by rw [← hu, ← comap_comp, Iso.inv_hom_id, comap_id]) :=
+  (rfl)
+
 /-- If `V(I)` is the scheme-theoretic inverse image of `V(J)` under `f`, i.e. `J.comap f = I`, then
 the induced morphism of formal completions is adic: each `V(I ^ (n + 1))` is the inverse image of
 `V(J ^ (n + 1))`. -/

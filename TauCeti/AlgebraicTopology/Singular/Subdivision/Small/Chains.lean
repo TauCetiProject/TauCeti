@@ -150,7 +150,7 @@ def toSmallSingularSubcomplex {S : Set X} {i : ι} (h : S ⊆ U i) :
     rintro n _ ⟨σ, rfl⟩
     rw [mem_smallSingularSubcomplex_iff, TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app,
       ContinuousMap.coe_comp, Set.range_comp]
-    exact ⟨i, (Set.image_subset_range _ _).trans fun _ ⟨x, hx⟩ ↦ hx ▸ h x.2⟩)
+    exact ⟨i, (Set.image_subset_range _ _).trans fun _ ⟨x, hx⟩ ↦ hx ▸ h x.property⟩)
 
 @[reassoc (attr := simp)]
 lemma toSmallSingularSubcomplex_ι {S : Set X} {i : ι} (h : S ⊆ U i) :
@@ -188,9 +188,9 @@ lemma chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero {C : Type u} [Cate
     SSet.chainComplexMap (X.smallSingularSubcomplex U).ι T ≫ F = 0 := by
   ext n : 1
   refine SSet.chainComplex_hom_ext fun σ ↦ ?_
-  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.1).1 σ.2
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.val).1 σ.property
   -- `σ` is the image of a singular simplex of `U i`
-  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.1).2 hi
+  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.val).2 hi
   have h : (toSSet.obj (of (U i))).ιChainComplex (R := T) τ ≫
       (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U i))))
         T).f n ≫ F.f n = 0 := by

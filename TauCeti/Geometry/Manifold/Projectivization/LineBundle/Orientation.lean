@@ -132,7 +132,6 @@ theorem nonempty_vectorBundleOrientation_twistCore_iff (hι : Fintype.card ι = 
   have hι' : Fintype.card ι = finrank ℝ ℝ := by rw [hι, finrank_self]
   refine ⟨fun ⟨o⟩ ↦ ?_, fun h ↦ ?_⟩
   · by_contra! h
-    rw [← Int.not_odd_iff_even, not_not] at h
     exact (isEmpty_vectorBundleOrientation_twistCore hι h.1 h.2).elim o
   · -- The standard charts form a positive atlas.
     let b : Basis ι ℝ ℝ :=

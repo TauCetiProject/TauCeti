@@ -202,7 +202,7 @@ noncomputable def integralBocksteinH1Equiv (n : ℕ) [NeZero n] :
       (mem_range_integralBockstein_iff G n 1 _).1 ⟨x, rfl⟩)
     ⟨fun _ _ h ↦ integralBockstein_one_injective G n (congrArg Subtype.val h),
       fun x ↦ by
-        obtain ⟨y, hy⟩ := (mem_range_integralBockstein_iff G n 1 x).2 x.2
+        obtain ⟨y, hy⟩ := (mem_range_integralBockstein_iff G n 1 x).2 x.property
         exact ⟨y, Subtype.ext hy⟩⟩
 
 /-- The torsion equivalence is induced by the named integral connecting map. -/

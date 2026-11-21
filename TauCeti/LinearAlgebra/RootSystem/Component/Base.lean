@@ -328,7 +328,7 @@ theorem mem_closure_root_componentBase_iff {x : P.componentSpace C} :
   rw [support_componentBase, Finset.coe_preimage,
     AddSubmonoid.mem_closure_image_preimage_val_iff (P.coe_componentPairing_root C)]
   exact ⟨fun h ↦ AddSubmonoid.closure_mono (Set.image_mono Set.inter_subset_left) h,
-    fun h ↦ mem_closure_root_inter_supp h x.2⟩
+    fun h ↦ mem_closure_root_inter_supp h x.property⟩
 
 /-- A vector of the coroot space of `C` is a sum of simple coroots of the component base exactly
 when it is a sum of simple coroots of `b`. -/
@@ -338,7 +338,7 @@ theorem mem_closure_coroot_componentBase_iff {x : P.corootComponentSpace C} :
   rw [support_componentBase, Finset.coe_preimage,
     AddSubmonoid.mem_closure_image_preimage_val_iff (P.coe_componentPairing_coroot C)]
   exact ⟨fun h ↦ AddSubmonoid.closure_mono (Set.image_mono Set.inter_subset_left) h,
-    fun h ↦ mem_closure_coroot_inter_supp h x.2⟩
+    fun h ↦ mem_closure_coroot_inter_supp h x.property⟩
 
 /-- The heights of the roots of `C` relative to the component base are their heights relative to
 `b`. -/
@@ -350,7 +350,7 @@ theorem height_componentBase [CharZero K] (i : C.supp) :
   let F : ι → ℤ := fun k ↦ if hk : k ∈ C.supp then f ⟨k, hk⟩ else 0
   have hF (k : ι) (hk : k ∉ Set.range ((↑) : C.supp → ι)) : F k = 0 :=
     dite_eq_right fun h ↦ hk ⟨⟨k, h⟩, rfl⟩
-  have hFf (j : C.supp) : F j = f j := dite_eq_left j.2
+  have hFf (j : C.supp) : F j = f j := dite_eq_left j.property
   rw [height_eq_sum hf, b.height_eq_sum (f := F) ?_, support_componentBase]
   · rw [← Finset.sum_preimage _ _ Subtype.val_injective.injOn F fun k _ hk ↦ hF k hk]
     exact Finset.sum_congr rfl fun j _ ↦ (hFf j).symm
@@ -369,10 +369,10 @@ theorem isPos_componentBase_iff [CharZero K] (i : C.supp) :
 Dynkin diagram of `b`. -/
 noncomputable def supportComponentBaseEquiv [CharZero K] [P.IsCrystallographic] [P.IsReduced] :
     (b.componentBase C).support ≃ (b.componentEquiv.symm C).supp where
-  toFun i := ⟨⟨i, (b.mem_support_componentBase C).mp i.2⟩,
-    (b.mem_supp_componentEquiv_symm C).mpr i.1.2⟩
-  invFun i := ⟨⟨i.1, (b.mem_supp_componentEquiv_symm C).mp i.2⟩,
-    (b.mem_support_componentBase C).mpr i.1.2⟩
+  toFun i := ⟨⟨i, (b.mem_support_componentBase C).mp i.property⟩,
+    (b.mem_supp_componentEquiv_symm C).mpr i.val.property⟩
+  invFun i := ⟨⟨i.val, (b.mem_supp_componentEquiv_symm C).mp i.property⟩,
+    (b.mem_support_componentBase C).mpr i.val.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -380,14 +380,14 @@ noncomputable def supportComponentBaseEquiv [CharZero K] [P.IsCrystallographic] 
 theorem coe_supportComponentBaseEquiv_apply [CharZero K] [P.IsCrystallographic] [P.IsReduced]
     (i : (b.componentBase C).support) :
     (b.supportComponentBaseEquiv C i : b.support) =
-      ⟨i, (b.mem_support_componentBase C).mp i.2⟩ := by
+      ⟨i, (b.mem_support_componentBase C).mp i.property⟩ := by
   simp [supportComponentBaseEquiv]
 
 @[simp]
 theorem coe_supportComponentBaseEquiv_symm_apply [CharZero K] [P.IsCrystallographic]
     [P.IsReduced] (i : (b.componentEquiv.symm C).supp) :
     ((b.supportComponentBaseEquiv C).symm i : C.supp) =
-      ⟨(i : b.support), (b.mem_supp_componentEquiv_symm C).mp i.2⟩ := by
+      ⟨(i : b.support), (b.mem_supp_componentEquiv_symm C).mp i.property⟩ := by
   simp [supportComponentBaseEquiv]
 
 /-- The `S`-valued Cartan matrix of the component base is the block of the `S`-valued Cartan
@@ -396,16 +396,16 @@ matrix of `b` on the simple roots in `C`. -/
 theorem cartanMatrixIn_componentBase (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S]
     (i j : (b.componentBase C).support) :
     (b.componentBase C).cartanMatrixIn S i j =
-      b.cartanMatrixIn S ⟨i, (b.mem_support_componentBase C).mp i.2⟩
-        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ := by
+      b.cartanMatrixIn S ⟨i, (b.mem_support_componentBase C).mp i.property⟩
+        ⟨j, (b.mem_support_componentBase C).mp j.property⟩ := by
   simp [cartanMatrixIn_def]
 
 /-- The Cartan matrix of the component base is the block of the Cartan matrix of `b` on the simple
 roots in `C`. -/
 theorem cartanMatrix_componentBase [P.IsCrystallographic] (i j : (b.componentBase C).support) :
     (b.componentBase C).cartanMatrix i j =
-      b.cartanMatrix ⟨i, (b.mem_support_componentBase C).mp i.2⟩
-        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ :=
+      b.cartanMatrix ⟨i, (b.mem_support_componentBase C).mp i.property⟩
+        ⟨j, (b.mem_support_componentBase C).mp j.property⟩ :=
   b.cartanMatrixIn_componentBase C ℤ i j
 
 end ComponentPairing

@@ -178,8 +178,9 @@ theorem nondegenerate_domRestrict₁₂_maxGenEigenspace (hB : B.Nondegenerate)
     (h : IsAdjointPair B B f g) (μ : R) :
     (B.domRestrict₁₂ (f.maxGenEigenspace μ) (g.maxGenEigenspace μ)).Nondegenerate := by
   refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-  · exact Subtype.ext <| h.eq_zero_of_mem_maxGenEigenspace hB.1 v.2 fun w hw ↦ hv ⟨w, hw⟩
-  · exact Subtype.ext <| h.flip.eq_zero_of_mem_maxGenEigenspace (flip_separatingLeft.2 hB.2) w.2
+  · exact Subtype.ext <| h.eq_zero_of_mem_maxGenEigenspace hB.1 v.property fun w hw ↦ hv ⟨w, hw⟩
+  · exact Subtype.ext <| h.flip.eq_zero_of_mem_maxGenEigenspace
+      (flip_separatingLeft.2 hB.2) w.property
       fun v hv ↦ hw ⟨v, hv⟩
 
 end Fitting

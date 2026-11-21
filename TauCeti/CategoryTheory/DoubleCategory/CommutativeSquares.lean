@@ -37,34 +37,16 @@ def commutativeSquares (C : Type u) [Category.{v} C] :
   vId f := ⟨⟨by simp⟩⟩
   hComp α β := ⟨α.down.horiz_comp β.down⟩
   vComp α β := ⟨α.down.vert_comp β.down⟩
-  h_id_comp_heq := by
-    intros
-    apply Subsingleton.helim
-    simp only [edgeComp, edgeId, Category.id_comp]
-  h_comp_id_heq := by
-    intros
-    apply Subsingleton.helim
-    simp only [edgeComp, edgeId, Category.comp_id]
-  v_id_comp_heq := by
-    intros
-    apply Subsingleton.helim
-    simp only [edgeComp, edgeId, Category.id_comp]
-  v_comp_id_heq := by
-    intros
-    apply Subsingleton.helim
-    simp only [edgeComp, edgeId, Category.comp_id]
-  h_assoc_heq := by
-    intros
-    apply Subsingleton.helim
-    simp only [edgeComp, Category.assoc]
-  v_assoc_heq := by
-    intros
-    apply Subsingleton.helim
-    simp only [edgeComp, Category.assoc]
+  hId_hComp _ := Subsingleton.elim _ _
+  hComp_hId _ := Subsingleton.elim _ _
+  vId_vComp _ := Subsingleton.elim _ _
+  vComp_vId _ := Subsingleton.elim _ _
+  hComp_assoc _ _ _ := Subsingleton.elim _ _
+  vComp_assoc _ _ _ := Subsingleton.elim _ _
   interchange _ _ _ _ := Subsingleton.elim _ _
-  hId_vComp _ _ := Subsingleton.elim _ _
-  vId_hComp _ _ := Subsingleton.elim _ _
-  id_id _ := Subsingleton.elim _ _
+  hId_comp _ _ := Subsingleton.elim _ _
+  vId_comp _ _ := Subsingleton.elim _ _
+  hId_id _ := Subsingleton.elim _ _
 
 namespace commutativeSquares
 

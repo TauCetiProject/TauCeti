@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -42,17 +43,19 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
-* `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a real-linear
-  continuous map.
+* `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
+  conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
+* `SchwartzMap.eq_of_forall_integral_mul_eq`: two `𝕜`-valued Schwartz functions with the same
+  integral pairing against every Schwartz function are equal.
 * `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
   agree there if they have the same integrals against compactly supported Schwartz functions
   supported in `U`.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
-* `TauCeti.eq_of_forall_integral_mul_eq`: scalar Schwartz functions are determined by their
-  integrals against Schwartz functions.
+* `SchwartzMap.closure_range_toLp_eq`: the closure of the Schwartz functions in `Lᵖ` is the
+  topological closure of the range of `SchwartzMap.toLpCLM`, a closed subspace.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
   is the same whether built through `HasCompactSupport.toSchwartzMap` or from `MemLp`.
 -/
@@ -157,6 +160,26 @@ theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
   have hcont : Continuous fun x => ‖f x‖ ^ 2 := by fun_prop
   have := (hcont.ae_eq_iff_eq μ continuous_zero).mp hae
   exact SchwartzMap.ext fun x => by simpa using congrFun this x
+
+omit [SecondCountableTopology E] in
+/-- Two `𝕜`-valued Schwartz functions that have the same integral pairing against every `𝕜`-valued
+Schwartz function are equal, for a measure of temperate growth that charges every nonempty open
+set. -/
+theorem eq_of_forall_integral_mul_eq {𝕜 : Type*} [RCLike 𝕜] [μ.IsOpenPosMeasure] {f g : 𝓢(E, 𝕜)}
+    (h : ∀ θ : 𝓢(E, 𝕜), ∫ x, f x * θ x ∂μ = ∫ x, g x * θ x ∂μ) : f = g := by
+  have hmul_int (s₁ s₂ : 𝓢(E, 𝕜)) : Integrable (fun x ↦ s₁ x * s₂ x) μ :=
+    memLp_one_iff_integrable.1 ((s₁.pairing (ContinuousLinearMap.mul ℝ 𝕜) s₂).memLp 1 μ)
+  set δ : 𝓢(E, 𝕜) := f - g
+  set θ : 𝓢(E, 𝕜) := δ.postcompCLM (RCLike.conjCLE (K := 𝕜)).toContinuousLinearMap
+  have hδ0 : ∫ x, δ x * θ x ∂μ = 0 := by
+    have hsub : (fun x ↦ δ x * θ x) = fun x ↦ f x * θ x - g x * θ x :=
+      funext fun x ↦ sub_mul (f x) (g x) (θ x)
+    rw [hsub, integral_sub (hmul_int f θ) (hmul_int g θ), h θ, sub_self]
+  have hnorm : ∫ x, ‖δ x‖ ^ 2 ∂μ = 0 := by
+    have hcongr : (fun x ↦ δ x * θ x) = fun x ↦ ((‖δ x‖ ^ 2 : ℝ) : 𝕜) :=
+      funext fun x ↦ by simp [θ, mul_comm (δ x), RCLike.conj_mul]
+    rwa [hcongr, integral_ofReal, RCLike.ofReal_eq_zero] at hδ0
+  exact sub_eq_zero.1 ((integral_norm_sq_eq_zero_iff (μ := μ)).1 hnorm)
 
 omit [SecondCountableTopology E] in
 /-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
@@ -281,22 +304,45 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
 
 end Smul
 
+open scoped ENNReal in
+/-- The closure of the Schwartz functions in `Lᵖ` is the topological closure of the range of the
+inclusion `SchwartzMap.toLpCLM`. In particular it is a closed subspace: sums and scalar multiples
+of `Lᵖ` limits of Schwartz functions are again such limits. -/
+theorem closure_range_toLp_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [SecondCountableTopologyEither E F] {μ : Measure E} [μ.HasTemperateGrowth] (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] :
+    closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p μ) =
+      ((LinearMap.range (toLpCLM ℝ F p μ).toLinearMap).topologicalClosure : Set (Lp F p μ)) := by
+  have hcoe : ⇑(toLpCLM ℝ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
+  rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
+
 section Conj
 
 open ComplexConjugate
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Pointwise complex conjugation of the values, as a real-linear map on Schwartz space. -/
-noncomputable def conjCLM : 𝓢(E, 𝕜) →L[ℝ] 𝓢(E, 𝕜) :=
-  postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap
+/-- Pointwise complex conjugation of the values, as a conjugate-linear map on Schwartz space. -/
+noncomputable def conjCLM : 𝓢(E, 𝕜) →L⋆[𝕜] 𝓢(E, 𝕜) where
+  -- Conjugation is real-linear, and postcomposition with a real-linear map is continuous.
+  toFun := postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap
+  map_add' := map_add _
+  map_smul' c f := by
+    ext x
+    simp
+  cont := (postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap).continuous
 
 @[simp]
 theorem conjCLM_apply (f : 𝓢(E, 𝕜)) (x : E) : conjCLM f x = conj (f x) :=
   (rfl)
 
 /-- Conjugation is antilinear: `conj (c • f) = conj c • conj f`. -/
-theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c • conjCLM f := by
+theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c • conjCLM f :=
+  map_smulₛₗ conjCLM c f
+
+@[simp]
+theorem conjCLM_conjCLM (f : 𝓢(E, 𝕜)) : conjCLM (conjCLM f) = f := by
   ext x
   simp
 
@@ -369,18 +415,6 @@ theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[𝕜] W} (hg 
     (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 :=
   isOpen_univ.eqOn_of_integral_clm_apply_eq (μ := μ) (K₂ := 0) hg.continuousOn continuousOn_const
     (fun f _ _ ↦ by simp [h f]) (Set.mem_univ ζ)
-
-/-- **Schwartz functions are determined by their pairings.** Two scalar Schwartz functions `f`
-and `g` with `∫ f u ∂μ = ∫ g u ∂μ` for every Schwartz function `u` agree, for a locally finite
-measure of temperate growth charging every nonempty open set. -/
-theorem eq_of_forall_integral_mul_eq [μ.HasTemperateGrowth] {𝕜' : Type*} [RCLike 𝕜']
-    {f g : 𝓢(E, 𝕜')} (h : ∀ u : 𝓢(E, 𝕜'), ∫ x, f x * u x ∂μ = ∫ x, g x * u x ∂μ) : f = g := by
-  ext x
-  have h0 := eq_zero_of_forall_integral_apply_eq_zero (μ := μ)
-    (g := fun y ↦ ContinuousLinearMap.mul 𝕜' 𝕜' (f y - g y)) (by fun_prop) (fun u ↦ by
-      simp only [ContinuousLinearMap.mul_apply', sub_mul]
-      rw [integral_sub (f.integrable_mul u) (g.integrable_mul u), h u, sub_self]) x
-  simpa [sub_eq_zero] using congrArg (· 1) h0
 
 end TauCeti
 
