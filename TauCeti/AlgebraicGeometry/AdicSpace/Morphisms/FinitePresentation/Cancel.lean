@@ -73,9 +73,7 @@ theorem LocallyOfFinitePresentation.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     .of_isTopologicallyFiniteType hψ₀_tft.isTopologicallyFiniteType_toRingHom
   have hsq_g₀ : CZ.pairComap CY ψ₀ ≫ CZ.hom = CY.hom ≫ g.hom := by
     rw [CZ.pairComap_comp CZ₁ CY _ ψ, Category.assoc]
-    have h := hsq_g
-    rw [ofRationalLocalization_hom] at h
-    exact h
+    have h := hsq_g; rw [ofRationalLocalization_hom] at h; exact h
   obtain ⟨TC, sC, hTC, φ, c₁, hc₁, hsq_f, hφψ₀⟩ :=
     exists_rationalLocalization_lift_sq (f := f.hom) (g := g.hom) CZ CY CX₀ ψ₀ χ hb₀ hc₀₀
       hsq_g₀ hsq_fg

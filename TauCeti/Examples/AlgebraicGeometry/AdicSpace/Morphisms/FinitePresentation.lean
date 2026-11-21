@@ -115,8 +115,7 @@ example [TopologicalSpace (MvPolynomial ℕ ℤ)] [DiscreteTopology (MvPolynomia
   intro aug φ
   have hsurj : Function.Surjective aug := fun m ↦ ⟨MvPolynomial.C m, by simp [aug]⟩
   have hft : φ.toRingHom.FiniteType := by
-    rw [Pair.Hom.toRingHom_ofDiscrete]
-    exact RingHom.FiniteType.of_surjective aug hsurj
+    rw [Pair.Hom.toRingHom_ofDiscrete]; exact RingHom.FiniteType.of_surjective aug hsurj
   refine ⟨Pair.Hom.isTopologicallyFiniteType_iff_finiteType_discrete.mpr hft,
     (locallyOfFiniteType_comapOfPair_discrete_iff hR hZ φ).mpr hft, fun hlfp ↦ ?_⟩
   have hfp : aug.FinitePresentation := by
@@ -125,8 +124,7 @@ example [TopologicalSpace (MvPolynomial ℕ ℤ)] [DiscreteTopology (MvPolynomia
   have : Algebra.FinitePresentation (MvPolynomial ℕ ℤ) ℤ := hfp
   have hfg : (RingHom.ker aug).FG :=
     Algebra.FinitePresentation.ker_fG_of_surjective (Algebra.ofId (MvPolynomial ℕ ℤ) ℤ) hsurj
-  rw [MvPolynomial.ker_constantCoeff] at hfg
-  exact MvPolynomial.not_fg_idealOfVars ℕ ℤ hfg
+  rw [MvPolynomial.ker_constantCoeff] at hfg; exact MvPolynomial.not_fg_idealOfVars ℕ ℤ hfg
 
 /-- Empty source: any morphism out of `Spa(0, 0)` is locally of finite presentation. -/
 example {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
@@ -134,9 +132,7 @@ example {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
     (f : ofPair S hS ⟶ Y) : LocallyOfFinitePresentation f := by
   have : IsEmpty (ofPair S hS).obj := ⟨fun z ↦ by
     have hz := (spa_eq_empty_iff_subsingleton S.plus S.isRingOfIntegralElements).mpr inferInstance
-    obtain ⟨_, hm⟩ := ofPairHomeomorph S hS z
-    rw [hz] at hm
-    exact hm⟩
+    obtain ⟨_, hm⟩ := ofPairHomeomorph S hS z; rw [hz] at hm; exact hm⟩
   exact LocallyOfFinitePresentation.of_isEmpty f
 
 end FinitePresentationChecks

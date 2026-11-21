@@ -77,11 +77,7 @@ theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_i
   obtain ⟨V, hV, hfxV⟩ := isLocallyHuberStandard_iff.mp hY (f.hom.base x)
   obtain ⟨A, _, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ :=
     (isHuberStandardAffinoid_iff _).mp ((mem_propOpens_iff _).mp hV)
-  have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-      (presentationLimitPresheaf P S.plus) :=
-    (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp
-      (ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ Y.property.isSheafy))
+  have hsheafA := isSheaf_of_restrict_iso P hP eV
   let CY := ofRestrictIso S P hP hsheafA eV
   have ha₀ : CY.hom.base (eV.hom.base ⟨f.hom.base x, hfxV⟩) = f.hom.base x :=
     ofRestrictIso_hom_base S P hP hsheafA eV hfxV
@@ -116,8 +112,7 @@ theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP := ⟨a₁, ha₁⟩
     have ha₀ : a₀ ∈ (presentationLimitPreAdicSpace P S.plus
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP).analyticPoints := by
-      rw [← preimage_analyticPoints_of_isOpenImmersion k, ha]
-      exact Set.mem_univ _
+      rw [← preimage_analyticPoints_of_isOpenImmersion k, ha]; exact Set.mem_univ _
     rw [analyticPoints_presentationLimitPreAdicSpace] at ha₀
     exact ((isAnalyticPoint_def _).mp ((mem_spaAnalytic_iff S.plus _).mp ha₀).2
       (isOpen_discrete _)).elim
@@ -156,11 +151,11 @@ noetherian, then the induced morphism `hf.isAdic.analyticLocusMap` between analy
 locally of finite presentation. -/
 theorem LocallyOfFiniteType.locallyOfFinitePresentation_analyticLocusMap {f : X ⟶ Y}
     (hf : LocallyOfFiniteType f) (hY : Y.IsLocallyNoetherian) :
-    LocallyOfFinitePresentation hf.isAdic.analyticLocusMap := by
-  have haY : Y.analyticLocus.obj.analyticPoints = Set.univ := by
-    rw [analyticLocus_obj, analyticPoints_analyticLocus]
-  exact (locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ
-    hY.isLocallyHuberStandard_analyticLocus haY).mpr (hf.restrict hf.isAdic.analyticLocusMap_ι)
+    LocallyOfFinitePresentation hf.isAdic.analyticLocusMap :=
+  (locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ
+    hY.isLocallyHuberStandard_analyticLocus
+    (by rw [analyticLocus_obj, analyticPoints_analyticLocus])).mpr
+    (hf.restrict hf.isAdic.analyticLocusMap_ι)
 
 section Affinoid
 
@@ -197,9 +192,8 @@ theorem locallyOfFinitePresentation_comapOfPresentation {A B : Type u} [CommRing
           Pair.Hom.toRingHom_comp]
         exact (finitePresentation_toCompletionHom P' hT hsheafT).comp (hfp hDiscA)
   refine (locallyOfFinitePresentation_iff _).mpr fun x ↦ ?_
-  obtain ⟨b₀, hb₀⟩ : x ∈ Set.range CX.hom.base := by
-    rw [range_ofCompletion_hom_base]
-    exact Set.mem_univ _
+  obtain ⟨b₀, hb₀⟩ : x ∈ Set.range CX.hom.base :=
+    range_ofCompletion_hom_base P' hT hsheafT ▸ Set.mem_univ _
   refine locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁ hb₀ ?_
   rw [comapOfPresentation_hom]
   exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ

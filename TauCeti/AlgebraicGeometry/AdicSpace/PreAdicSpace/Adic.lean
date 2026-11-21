@@ -72,6 +72,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `Spa(A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_rationalLocalizationPair`: the same,
   for the rational localisation as a pair.
+* `TauCeti.AdicSpace.isSheaf_of_restrict_iso`: transferring sheafiness from an open adic subspace
+  across a chart isomorphism.
 
 ## References
 
@@ -467,6 +469,26 @@ theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommR
     (isSheaf_presentationLimitPresheaf_of_isSheafyRing P hAplus hP hA)
 
 end ValuationSpectrum
+
+namespace AdicSpace
+
+open Huber PreAdicSpace ValuationSpectrum
+
+/-- Transfer sheafiness from an open adic subspace `S.restrict V` across a `PreAdicSpace` chart
+isomorphism `S.obj.restrict V ≅ Spa(A, A⁺)`. -/
+theorem isSheaf_of_restrict_iso {S : AdicSpace.{u}} {V : Opens S.obj}
+    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+    {SA : Pair A} (PA : PairOfDefinition A) (hPA : PA.ringOfDefinition ≤ SA.plus)
+    (eV₀ : S.obj.restrict V.isOpenEmbedding ≅
+      presentationLimitPreAdicSpace PA SA.plus SA.isRingOfIntegralElements.isPowerBounded_of_mem
+        hPA) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa SA.plus))
+      (presentationLimitPresheaf PA SA.plus) :=
+  (isSheafy_presentationLimitPreAdicSpace_iff PA SA.plus _ hPA).mp
+    (ObjectProperty.prop_of_iso PreAdicSpace.isSheafy eV₀
+      (PreAdicSpace.isSheafy_restrict V.isOpenEmbedding S.property.isSheafy))
+
+end AdicSpace
 
 end TauCeti
 

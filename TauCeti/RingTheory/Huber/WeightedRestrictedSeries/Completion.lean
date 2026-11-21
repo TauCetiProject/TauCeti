@@ -71,9 +71,10 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   case, the structure map `A → A⟨X₁,…,Xₖ⟩`.
 * `TauCeti.Huber.continuousSMul_completion_weightedRestrictedSubring`: scalar multiplication on
   the completion is jointly continuous, so it is a topological `A`-algebra.
-* `TauCeti.Huber.weightedMapCompletion_coe` and
+* `TauCeti.Huber.weightedMapCompletion_coe`,
+  `TauCeti.Huber.weightedMapCompletion_comp_algebraMap`, and
   `TauCeti.Huber.continuous_weightedMapCompletion`: the induced map on the image of `A⟨X⟩_T`,
-  and its continuity.
+  its structure-map compatibility, and its continuity.
 * `TauCeti.Huber.weightedMapCompletion_id` and `TauCeti.Huber.weightedMapCompletion_comp`: the
   functor laws.
 * `TauCeti.Huber.weightedMapCompletionEquiv_apply`, `…_symm_apply`, `…_coe_weightedC`, and
@@ -199,6 +200,16 @@ theorem continuous_weightedMapCompletion (hφ : Continuous φ) (hT : IsWeightFam
     (hS : IsWeightFamily S) (hTS : ∀ i, φ '' T i ⊆ S i) :
     Continuous (weightedMapCompletion hφ hT hS hTS) :=
   UniformSpace.Completion.continuous_map
+
+/-- `TauCeti.Huber.weightedMapCompletion` commutes with the structure maps from `A` and `B`. -/
+@[simp]
+theorem weightedMapCompletion_comp_algebraMap (hφ : Continuous φ) (hT : IsWeightFamily T)
+    (hS : IsWeightFamily S) (hTS : ∀ i, φ '' T i ⊆ S i) :
+    (weightedMapCompletion hφ hT hS hTS).comp
+        (algebraMap A (UniformSpace.Completion (weightedRestrictedSubring T hT))) =
+      (algebraMap B (UniformSpace.Completion (weightedRestrictedSubring S hS))).comp φ := by
+  ext a
+  simp [algebraMap_completion_weightedRestrictedSubring_apply]
 
 /-- **The identity law**: the map induced by `RingHom.id` is the identity. -/
 @[simp]

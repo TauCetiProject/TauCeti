@@ -164,11 +164,7 @@ theorem LocallyOfFiniteType.exists_complete_openImmersion_chart {f : X ⟶ Y}
     φ, hφ, hsheafB, eU, eV, hfac⟩ :=
     exists_complete_chart_of_chartLocally (fun φ ↦ φ.IsTopologicallyFiniteType)
       (fun h ↦ .of_comp h) ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
-  have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-      (presentationLimitPresheaf P S.plus) :=
-    (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp
-      (ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ Y.property.isSheafy))
+  have hsheafA := isSheaf_of_restrict_iso P hP eV
   exact ⟨ofRestrictIso S P hP hsheafA eV, ofRestrictIso T P' hP' hsheafB eU, φ, hφ,
     eU.hom.base ⟨x, hxU⟩, ofRestrictIso_hom_base T P' hP' hsheafB eU hxU,
     ofRestrictIso_pairComap_comp_hom S P hP hsheafA eV T P' hP' hsheafB eU φ hfac⟩
@@ -270,8 +266,7 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
   have hb₀ : CY.hom.base (eW.hom.base ⟨f.hom.base x, hfxW⟩) = f.hom.base x :=
     ofRestrictIso_hom_base T P' hP' hsheafB eW hfxW
   have hrangeY : Set.range (CY.hom ≫ g.hom).base ⊆ Set.range CZ.hom.base := by
-    rintro _ ⟨b, rfl⟩
-    exact hWO (eW.inv.base b).property
+    rintro _ ⟨b, rfl⟩; exact hWO (eW.inv.base b).property
   let p := PreAdicSpace.IsOpenImmersion.lift CZ.hom (CY.hom ≫ g.hom) hrangeY
   let ψ := presentationLimitHomPairHom CZ.pairOfDefinition CY.pairOfDefinition CZ.pair CY.pair
     CZ.le_plus CY.le_plus p
@@ -316,9 +311,8 @@ theorem locallyOfFiniteType_comapOfPresentation {A : Type u} [CommRing A] [Topol
     (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType) :
     LocallyOfFiniteType (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
   refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦ ?_
-  obtain ⟨b₀, hb₀⟩ : x ∈ Set.range (ofCompletion P' hT hsheafT).hom.base := by
-    rw [range_ofCompletion_hom_base]
-    exact Set.mem_univ _
+  obtain ⟨b₀, hb₀⟩ : x ∈ Set.range (ofCompletion P' hT hsheafT).hom.base :=
+    range_ofCompletion_hom_base P' hT hsheafT ▸ Set.mem_univ _
   refine ⟨ofCompletion P hS hsheafS, ofCompletion P' hT hsheafT,
     ofCompletionMap P hS hsheafS P' hT hsheafT φ,
     isTopologicallyFiniteType_ofCompletionMap P hS hsheafS P' hT hsheafT φ hφ, b₀, hb₀, ?_⟩
@@ -381,14 +375,11 @@ theorem LocallyOfFiniteType.finiteType_of_discreteTopology {A B : Type u} [CommR
   obtain ⟨TA, sA, hTA, -, CX, β, hβ, c₀, hc₀, hsq⟩ :=
     hq.exists_openImmersion_over_rationalLocalization CA y rfl
   have : DiscreteTopology (CA.rationalLocalization TA sA hTA).Ring :=
-    (isTopologicallyFiniteType_iff_discreteTopology_and_finiteType.mp
-      (CA.isTopologicallyFiniteType_rationalLocalizationHom TA sA
-        hTA).isTopologicallyFiniteType_toRingHom).1
-  obtain ⟨hDiscC, hβ_ft⟩ :=
-    isTopologicallyFiniteType_iff_discreteTopology_and_finiteType.mp
-      hβ.isTopologicallyFiniteType_toRingHom
-  rw [comapOfPresentation_hom] at hsq
-  exact ⟨TA, sA, hTA, CX, hDiscC, β, hβ_ft, c₀, hc₀, hsq⟩
+    (CA.isTopologicallyFiniteType_rationalLocalizationHom TA sA
+      hTA).isTopologicallyFiniteType_toRingHom.discreteTopology
+  obtain ⟨hDiscC, hβ_ft⟩ := isTopologicallyFiniteType_iff_discreteTopology_and_finiteType.mp
+    hβ.isTopologicallyFiniteType_toRingHom
+  rw [comapOfPresentation_hom] at hsq; exact ⟨TA, sA, hTA, CX, hDiscC, β, hβ_ft, c₀, hc₀, hsq⟩
 
 /-- **Discrete affinoid comparison for `LocallyOfFiniteType`**: for discrete rings `A, B` with
 maximal plus subrings `Pair.discrete A` and `Pair.discrete B`, the affinoid morphism

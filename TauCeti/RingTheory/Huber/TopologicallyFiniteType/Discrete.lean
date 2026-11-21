@@ -25,7 +25,8 @@ finiteness conditions collapse to algebraic finite type together with target dis
 
 ## Main results
 
-* `TauCeti.Huber.IsTopologicallyFiniteType.finiteType`,
+* `TauCeti.Huber.IsTopologicallyFiniteType.discreteTopology`,
+  `TauCeti.Huber.IsTopologicallyFiniteType.finiteType`,
   `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.of_finiteType`,
   `TauCeti.Huber.IsTopologicallyFiniteType.of_finiteType`,
   `TauCeti.Huber.isTopologicallyFiniteType_iff_discreteTopology_and_finiteType`: ring-level
@@ -49,19 +50,21 @@ open UniformSpace
 
 namespace TauCeti.Huber
 
-section Helpers
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] [DiscreteTopology A]
-  {B : Type*} [CommRing B]
-
-/-- Over a discrete base, the target of a ring homomorphism topologically of finite type is
-discrete, being an open quotient of a discrete completed weighted restricted power-series ring. -/
-private theorem discreteTopology_of_isTopologicallyFiniteType [TopologicalSpace B] {φ : A →+* B}
-    (hφ : IsTopologicallyFiniteType φ) : DiscreteTopology B := by
+/-- **Discrete topology ascends along homomorphisms topologically of finite type**: over a discrete
+ring `A`, every weighted restricted power-series ring `A⟨X⟩_T` and its completion are discrete, so
+any open quotient `B` is discrete as well. -/
+theorem IsTopologicallyFiniteType.discreteTopology {A : Type*} [CommRing A] [TopologicalSpace A]
+    [NonarchimedeanRing A] {B : Type*} [CommRing B] [TopologicalSpace B] {φ : A →+* B}
+    [DiscreteTopology A] (hφ : IsTopologicallyFiniteType φ) : DiscreteTopology B := by
   obtain ⟨k, T, _, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
   have : DiscreteUniformity (weightedRestrictedSubring T hT) :=
     IsRightUniformAddGroup.discreteUniformity
   exact hπ.discreteTopology
+
+section Helpers
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] [DiscreteTopology A]
+  {B : Type*} [CommRing B]
 
 /-- Transport an `A`-algebra homomorphism `ψ : A[X₁, …, Xₖ] →ₐ[A] B` (with `Algebra A B :=
 φ.toAlgebra`) along `(weightedPolynomialCompletionEquivOfDiscrete T hT).symm` to a ring
@@ -144,8 +147,7 @@ theorem IsTopologicallyFiniteType.finiteType (hφ : IsTopologicallyFiniteType φ
   let e := weightedPolynomialCompletionEquivOfDiscrete T hT
   have hcomp : (π.comp e.toRingHom).comp (algebraMap A (MvPolynomial (Fin k) A)) =
       π.comp (algebraMap A (Completion (weightedRestrictedSubring T hT))) := by
-    ext a
-    simp [e, MvPolynomial.algebraMap_eq]
+    ext a; simp [e, MvPolynomial.algebraMap_eq]
   rw [← hcomp]
   exact (RingHom.finiteType_algebraMap.mpr inferInstance).comp_surjective
     (hπ.surjective.comp e.surjective)
@@ -175,8 +177,7 @@ is topologically of finite type if and only if `B` is discrete and `φ` is algeb
 type. -/
 theorem isTopologicallyFiniteType_iff_discreteTopology_and_finiteType :
     IsTopologicallyFiniteType φ ↔ DiscreteTopology B ∧ φ.FiniteType :=
-  ⟨fun h ↦ ⟨discreteTopology_of_isTopologicallyFiniteType h, h.finiteType⟩,
-    fun ⟨_, h⟩ ↦ .of_finiteType h⟩
+  ⟨fun h ↦ ⟨h.discreteTopology, h.finiteType⟩, fun ⟨_, h⟩ ↦ .of_finiteType h⟩
 
 end Ring
 
@@ -188,6 +189,47 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Di
   {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   {S : Pair A} {U : Pair B}
 
+/-- Given a continuous ring homomorphism `π : Â⟨X⟩_T →+* B` sending constants to `f(a)` and the
+designated `1 * X_{k + j}` variables to the generators `E`, the integral closure of `π(Â⟨X⟩_T⁺)`
+coincides with `U.plus` when `U.plus` is the plus-closure of `f(S.plus) ∪ E`. -/
+private theorem integralClosure_map_weighted_plus_eq [DiscreteTopology B]
+    {k : ℕ} {E : Finset B} (eE : Fin E.card ≃ E) {f : Hom S U}
+    (hE : U.plus = plusClosure (f.toRingHom '' S.plus ∪ (E : Set B)))
+    {T : Fin (k + E.card) → Set A} (hT : IsWeightFamily T)
+    (hT_left : ∀ i : Fin k, T (Fin.castAdd E.card i) = ∅)
+    (hT_right : ∀ j : Fin E.card, T (Fin.natAdd k j) = {1})
+    {π : Completion (weightedRestrictedSubring T hT) →+* B} (hπc : Continuous π)
+    (hπC : ∀ a : A, π (algebraMap A _ a) = f.toRingHom a)
+    (hπ_right : ∀ j : Fin E.card, π ((weightedC T hT 1 * weightedX T hT (Fin.natAdd k j) :
+        weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) =
+      (eE j : B)) :
+    U.plus = (integralClosure ((S.weighted hT).completion.plus.map π) B).toSubring := by
+  have hEU : (E : Set B) ⊆ U.plus := hE ▸ fun _ hb ↦ subset_plusClosure _ (Or.inr hb)
+  let I := integralClosure ((S.weighted hT).completion.plus.map π) B
+  refine le_antisymm ?_ ?_
+  · rw [hE]
+    refine plusClosure_le (isOpen_discrete _) (Set.union_subset ?_ ?_)
+    · rintro _ ⟨a, ha, rfl⟩
+      refine I.algebraMap_mem ⟨f.toRingHom a, Subring.mem_map.mpr
+        ⟨(weightedC T hT a : _), S.weightedC_mem_weighted_completion_plus hT ha, ?_⟩⟩
+      rw [← algebraMap_completion_weightedRestrictedSubring_apply, hπC]
+    · intro b hb
+      let j : Fin E.card := eE.symm ⟨b, hb⟩
+      have ht : (1 : A) ∈ T (Fin.natAdd k j) := hT_right j ▸ Set.mem_singleton _
+      refine I.algebraMap_mem ⟨b, Subring.mem_map.mpr
+        ⟨((weightedC T hT 1 * weightedX T hT (Fin.natAdd k j) : weightedRestrictedSubring T hT) :
+            Completion (weightedRestrictedSubring T hT)),
+          S.weightedC_mul_weightedX_mem_weighted_completion_plus hT ht,
+          (hπ_right j).trans (congrArg Subtype.val (eE.apply_symm_apply ⟨b, hb⟩))⟩⟩
+  · have := U.isRingOfIntegralElements.isIntegrallyClosedIn
+    rw [Subring.integralClosure_subring_le_iff]
+    refine Subring.map_le_iff_le_comap.mpr <| S.weighted_completion_plus_le_comap hT U hπc
+      (fun a ha ↦ ?_) (Fin.addCases (fun i _ ht ↦ ?_) (fun j _ ht ↦ ?_))
+    · rw [← algebraMap_completion_weightedRestrictedSubring_apply, hπC]; exact f.map_mem_plus a ha
+    · exact (Set.notMem_empty _ (hT_left i ▸ ht)).elim
+    · rw [hT_right, Set.mem_singleton_iff] at ht; subst ht; rw [hπ_right]
+      exact hEU (eE j).property
+
 /-- **Over a discrete base, pair-level topological finite type coincides with `+`-weakly finite
 type**: given a finite set `E ⊆ U.plus` such that `U.plus` is the plus-closure of `f(S.plus) ∪ E`,
 a finite polynomial generating set for `B` over `A` can be adjoined with weight `∅` while `E` is
@@ -197,7 +239,7 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
   refine ⟨IsTopologicallyFiniteType.isPlusWeaklyFiniteType, fun hf ↦ ?_⟩
   classical
   obtain ⟨hft, E, hE⟩ := isPlusWeaklyFiniteType_iff.mp hf
-  have : DiscreteTopology B := discreteTopology_of_isTopologicallyFiniteType hft
+  have : DiscreteTopology B := hft.discreteTopology
   let _ : Algebra A B := f.toRingHom.toAlgebra
   obtain ⟨k, ψ₀, hψ₀⟩ :=
     Algebra.FiniteType.iff_quotient_mvPolynomial''.mp (hft.finiteType : Algebra.FiniteType A B)
@@ -215,47 +257,16 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
     exact AlgHom.congr_fun hcomp p
   let π := weightedCompletionQuotientHom T hT ev
   have hπ : IsOpenQuotientMap π := isOpenQuotientMap_weightedCompletionQuotientHom T hT ev hev_surj
-  have hπC (a : A) :
-      π (algebraMap A (Completion (weightedRestrictedSubring T hT)) a) = f.toRingHom a :=
+  have hπC (a : A) : π (algebraMap A _ a) = f.toRingHom a :=
     weightedCompletionQuotientHom_algebraMap T hT ev a
   have hπ_right (j : Fin E.card) :
       π ((weightedC T hT 1 * weightedX T hT (Fin.natAdd k j) : weightedRestrictedSubring T hT) :
         Completion (weightedRestrictedSubring T hT)) = (eE j : B) := by
-    rw [weightedCompletionQuotientHom_weightedC_one_mul_weightedX]
-    simp [ev]
-  have hEU : (E : Set B) ⊆ U.plus := hE ▸ fun _ hb ↦ subset_plusClosure _ (Or.inr hb)
-  refine isTopologicallyFiniteType_iff_exists_isOpenQuotientMap.mpr
-    ⟨k + E.card, T, hTfin, hT, π, hπ, RingHom.ext hπC, le_antisymm ?_ ?_⟩
-  · rw [hE]
-    refine plusClosure_le (isOpen_discrete _) (Set.union_subset ?_ ?_)
-    · rintro _ ⟨a, ha, rfl⟩
-      refine (integralClosure ((S.weighted hT).completion.plus.map π) B).algebraMap_mem
-        ⟨f.toRingHom a, Subring.mem_map.mpr
-          ⟨(weightedC T hT a : Completion (weightedRestrictedSubring T hT)),
-            S.weightedC_mem_weighted_completion_plus hT ha, ?_⟩⟩
-      rw [← algebraMap_completion_weightedRestrictedSubring_apply, hπC]
-    · intro b hb
-      let j : Fin E.card := eE.symm ⟨b, hb⟩
-      have hj : (eE j : B) = b := congrArg Subtype.val (eE.apply_symm_apply ⟨b, hb⟩)
-      have ht : (1 : A) ∈ T (Fin.natAdd k j) := by simp [T]
-      refine (integralClosure ((S.weighted hT).completion.plus.map π) B).algebraMap_mem
-        ⟨b, Subring.mem_map.mpr
-          ⟨((weightedC T hT 1 * weightedX T hT (Fin.natAdd k j) :
-              weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)),
-            S.weightedC_mul_weightedX_mem_weighted_completion_plus hT ht,
-            (hπ_right j).trans hj⟩⟩
-  · have := U.isRingOfIntegralElements.isIntegrallyClosedIn
-    rw [Subring.integralClosure_subring_le_iff]
-    refine Subring.map_le_iff_le_comap.mpr <|
-      S.weighted_completion_plus_le_comap hT U hπ.continuous
-        (fun a ha ↦ ?_) (Fin.addCases (fun _ _ ht ↦ ?_) (fun j _ ht ↦ ?_))
-    · rw [← algebraMap_completion_weightedRestrictedSubring_apply, hπC]
-      exact f.map_mem_plus a ha
-    · simp only [T, Fin.append_left, Set.mem_empty_iff_false] at ht
-    · simp only [T, Fin.append_right, Set.mem_singleton_iff] at ht
-      subst ht
-      rw [hπ_right]
-      exact hEU (eE j).property
+    rw [weightedCompletionQuotientHom_weightedC_one_mul_weightedX]; simp [ev]
+  exact isTopologicallyFiniteType_iff_exists_isOpenQuotientMap.mpr
+    ⟨k + E.card, T, hTfin, hT, π, hπ, RingHom.ext hπC,
+      integralClosure_map_weighted_plus_eq eE hE hT (fun _ ↦ by simp [T]) (fun _ ↦ by simp [T])
+        hπ.continuous hπC hπ_right⟩
 
 /-- Over a discrete base `A`, a morphism `f : S → U` of Huber pairs whose plus rings are both the
 entire ring (`S.plus = ⊤`, `U.plus = ⊤`) is topologically of finite type if and only if `B` is
@@ -263,8 +274,7 @@ discrete and `f.toRingHom` is algebraically of finite type. -/
 theorem isTopologicallyFiniteType_iff_discreteTopology_and_finiteType_of_plus_eq_top
     (hS : S.plus = ⊤) (hU : U.plus = ⊤) {f : Hom S U} :
     f.IsTopologicallyFiniteType ↔ DiscreteTopology B ∧ f.toRingHom.FiniteType := by
-  refine ⟨fun hf ↦ ⟨discreteTopology_of_isTopologicallyFiniteType
-      hf.isTopologicallyFiniteType_toRingHom,
+  refine ⟨fun hf ↦ ⟨hf.isTopologicallyFiniteType_toRingHom.discreteTopology,
     hf.isTopologicallyFiniteType_toRingHom.finiteType⟩, fun ⟨_, hft⟩ ↦ ?_⟩
   classical
   rw [isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology]

@@ -110,20 +110,6 @@ universe u
 
 section Helpers
 
-/-- Transfer sheafiness from an open adic subspace `S.restrict V` across a `PreAdicSpace` chart
-isomorphism `S.obj.restrict V ≅ Spa(A, A⁺)`. -/
-private theorem isSheaf_of_restrict_iso {S : AdicSpace.{u}} {V : Opens S.obj}
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {SA : Pair A} (PA : PairOfDefinition A) (hPA : PA.ringOfDefinition ≤ SA.plus)
-    (eV₀ : S.obj.restrict V.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace PA SA.plus SA.isRingOfIntegralElements.isPowerBounded_of_mem
-        hPA) :
-    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa SA.plus))
-      (presentationLimitPresheaf PA SA.plus) :=
-  (isSheafy_presentationLimitPreAdicSpace_iff PA SA.plus _ hPA).mp
-    (ObjectProperty.prop_of_iso isSheafy eV₀
-      (isSheafy_restrict V.isOpenEmbedding S.property.isSheafy))
-
 /-- Lift a `PreAdicSpace` affinoid chart equation for `f : X ⟶ S` to an `AdicSpace` factorization
 through `comapOfPresentation`. -/
 private theorem ofRestrict_comp_eq_comapOfPresentation {X S : AdicSpace.{u}} {f : X ⟶ S}

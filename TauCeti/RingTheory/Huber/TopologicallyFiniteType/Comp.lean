@@ -144,6 +144,18 @@ private theorem exists_finite_weights_isWeightedVarPowerBounded [IsHuberRing A] 
       exact hG i ha
   exact ⟨V, hVfin, hV, hφV, hVy⟩
 
+private theorem iterateStructureHom_eq_comp {k m : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsHuberRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
+    {W : Fin m → Set (UniformSpace.Completion (weightedRestrictedSubring T hT))}
+    (hW : IsWeightFamily W) :
+    iterateStructureHom hT hW =
+      (algebraMap (UniformSpace.Completion (weightedRestrictedSubring T hT))
+        (UniformSpace.Completion (weightedRestrictedSubring W hW))).comp
+        (algebraMap A (UniformSpace.Completion (weightedRestrictedSubring T hT))) := by
+  ext a
+  simp only [iterateStructureHom_apply, RingHom.comp_apply,
+    algebraMap_completion_weightedRestrictedSubring_apply]
+
 /-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
 type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
 theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
@@ -152,28 +164,17 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
   obtain ⟨k, T, hTfin, hT, π, hπ, hπφ⟩ := isTopologicallyFiniteType_iff.mp hφ
   have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
   obtain ⟨m, U, hUfin, hU, ρ, hρ, hρψ⟩ := isTopologicallyFiniteType_iff.mp hψ
-  have hρψ_apply (b : B) :
-      ρ (algebraMap B (Completion (weightedRestrictedSubring U hU)) b) = ψ b :=
-    RingHom.congr_fun hρψ b
   obtain ⟨V, hVfin, hV, hφV, hVy⟩ := exists_finite_weights_isWeightedVarPowerBounded hφ hU
   obtain ⟨n, _, _, _, _, θ, hθ, hθB, _, _⟩ :=
-    exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append
-      hU hUfin hφV hVy
+    exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hU hUfin hφV hVy
   let D := Completion (weightedRestrictedSubring T hT)
-  let W : Fin (m + n) → Set D := Fin.append
-    (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D))
-  let W' : Fin (m + n) → Set B := Fin.append
-    (fun i ↦ φ '' V i) (fun _ ↦ ({1} : Set B))
+  let W : Fin (m + n) → Set D :=
+    Fin.append (fun i ↦ algebraMap A D '' V i) fun _ ↦ ({1} : Set D)
+  let W' : Fin (m + n) → Set B := Fin.append (fun i ↦ φ '' V i) fun _ ↦ ({1} : Set B)
   have hW : IsWeightFamily W :=
     (hT.image_algebraMap_completion hV).append isWeightFamily_one_weight
   have hW' : IsWeightFamily W' := hφV.append isWeightFamily_one_weight
-  have hθB_apply (b : B) :
-      θ (algebraMap B (Completion (weightedRestrictedSubring W' hW')) b) =
-        algebraMap B (Completion (weightedRestrictedSubring U hU)) b := by
-    simpa only [W', RingHom.comp_apply] using RingHom.congr_fun hθB b
-  have hπφ_apply (a : A) :
-      π (algebraMap A (Completion (weightedRestrictedSubring T hT)) a) = φ a :=
-    RingHom.congr_fun hπφ a
+  have hπφ_apply (a : A) : π (algebraMap A D a) = φ a := RingHom.congr_fun hπφ a
   have hWW' := image_append_algebraMap_weights (n := n) V π hπφ_apply
   let β := weightedMapCompletion hπ.continuous hW hW' fun i ↦ (hWW' i).subset
   have hβ : IsOpenQuotientMap β := hπ.weightedMapCompletion hW hW' hWW'
@@ -188,17 +189,25 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
   have he : IsOpenQuotientMap e :=
     (Homeomorph.mk e.toEquiv (continuous_iterateRingEquiv ..)
       (continuous_iterateRingEquiv_symm ..)).isOpenQuotientMap
+  let DQ := Completion (weightedRestrictedSubring Q hQ)
+  let DW := Completion (weightedRestrictedSubring W hW)
+  let DW' := Completion (weightedRestrictedSubring W' hW')
   refine isTopologicallyFiniteType_iff.mpr
     ⟨k + (m + n), Q, finite_append_append_weights hTfin hVfin,
-      hQ, (ρ.comp θ).comp (β.comp (e : _ →+* _)),
-      hρ.comp (hθ.comp (hβ.comp he)), RingHom.ext fun a ↦ ?_⟩
-  dsimp only [β, e]
-  simp only [RingHom.coe_comp, RingHom.coe_coe, Function.comp_apply,
-    algebraMap_completion_weightedRestrictedSubring_apply, iterateRingEquiv_apply,
-    iterateSplitHom_coe_weightedC, iterateStructureHom_apply, weightedMapCompletion_coe,
-    weightedMap_weightedC]
-  rw [← algebraMap_completion_weightedRestrictedSubring_apply, hθB_apply, hρψ_apply,
-    ← algebraMap_completion_weightedRestrictedSubring_apply, hπφ_apply]
+      hQ, (ρ.comp θ).comp (β.comp (e : DQ →+* DW)), hρ.comp (hθ.comp (hβ.comp he)), ?_⟩
+  calc
+    ((ρ.comp θ).comp (β.comp (e : DQ →+* DW))).comp (algebraMap A DQ)
+      = ρ.comp (θ.comp (β.comp ((e : DQ →+* DW).comp (algebraMap A DQ)))) := by
+          simp only [RingHom.comp_assoc]
+    _ = ρ.comp (θ.comp ((β.comp (algebraMap D DW)).comp (algebraMap A D))) := by
+          dsimp only [e]
+          rw [iterateRingEquiv_coe, iterateSplitHom_comp_algebraMap, iterateStructureHom_eq_comp]
+          simp only [RingHom.comp_assoc]; rfl
+    _ = ρ.comp (θ.comp (((algebraMap B DW').comp π).comp (algebraMap A D))) := by
+          rw [weightedMapCompletion_comp_algebraMap]
+    _ = (ρ.comp (θ.comp (algebraMap B DW'))).comp (π.comp (algebraMap A D)) := by
+          simp only [RingHom.comp_assoc]
+    _ = ψ.comp φ := by rw [hθB, hρψ, hπφ]
 
 namespace Pair
 
@@ -248,25 +257,36 @@ theorem Hom.IsTopologicallyFiniteType.comp {S : Pair A} {U : Pair B} {V : Pair C
   have he : e.IsQuotientMapping := S.isQuotientMapping_iterateSplitHom hT hWD hZ hTZ hZW
   refine isTopologicallyFiniteType_iff.mpr
     ⟨k + (m + n), Z, finite_append_append_weights hTfin hWfin, hZ,
-      (ρ.comp θ).comp (β.comp e), (hρ.comp hθ).comp (hβ.comp he),
-      Hom.ext (RingHom.ext fun a ↦ ?_)⟩
-  have hθB_apply (b : B) : θ.toRingHom
-      (algebraMap B (Completion (weightedRestrictedSubring _ hWB)) b) =
-        algebraMap B (Completion (weightedRestrictedSubring Q hQ)) b := by
-    simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom, RingHom.comp_apply] using
-      RingHom.congr_fun (congrArg Hom.toRingHom hθB) b
-  have hρg_apply (b : B) :
-      ρ.toRingHom (algebraMap B (Completion (weightedRestrictedSubring Q hQ)) b) =
-        g.toRingHom b := by
-    simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom, RingHom.comp_apply] using
-      RingHom.congr_fun (congrArg Hom.toRingHom hρg) b
-  simp only [e, β, Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom,
-    Hom.toRingHom_iterateSplitHom, Hom.toRingHom_weightedMapCompletion, RingHom.comp_apply,
-    algebraMap_completion_weightedRestrictedSubring_apply, iterateSplitHom_coe_weightedC,
-    iterateStructureHom_apply, weightedMapCompletion_coe, weightedMap_weightedC]
-  rw [← algebraMap_completion_weightedRestrictedSubring_apply, hθB_apply, hρg_apply,
-    ← algebraMap_completion_weightedRestrictedSubring_apply]
-  exact congrArg g.toRingHom (RingHom.congr_fun hπA a)
+      (ρ.comp θ).comp (β.comp e), (hρ.comp hθ).comp (hβ.comp he), ?_⟩
+  let DT := Completion (weightedRestrictedSubring T hT)
+  let DW := Completion (weightedRestrictedSubring _ hWD)
+  let DWB := Completion (weightedRestrictedSubring _ hWB)
+  let DQ := Completion (weightedRestrictedSubring Q hQ)
+  let DZ := Completion (weightedRestrictedSubring Z hZ)
+  have hθB' : θ.toRingHom.comp (algebraMap B DWB) = algebraMap B DQ := by
+    simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] using
+      congrArg Hom.toRingHom hθB
+  have hρg' : ρ.toRingHom.comp (algebraMap B DQ) = g.toRingHom := by
+    simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] using
+      congrArg Hom.toRingHom hρg
+  apply Hom.ext
+  calc
+    (((ρ.comp θ).comp (β.comp e)).comp (S.weightedCompletionHom hZ)).toRingHom
+      = ρ.toRingHom.comp (θ.toRingHom.comp (β.toRingHom.comp
+          (e.toRingHom.comp (algebraMap A DZ)))) := by
+          simp only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom, RingHom.comp_assoc]
+          rfl
+    _ = ρ.toRingHom.comp (θ.toRingHom.comp ((β.toRingHom.comp (algebraMap DT DW)).comp
+          (algebraMap A DT))) := by
+          rw [Hom.toRingHom_iterateSplitHom, iterateSplitHom_comp_algebraMap,
+            iterateStructureHom_eq_comp]
+          simp only [RingHom.comp_assoc]; rfl
+    _ = ρ.toRingHom.comp (θ.toRingHom.comp (((algebraMap B DWB).comp π.toRingHom).comp
+          (algebraMap A DT))) := by
+          rw [Hom.toRingHom_weightedMapCompletion, weightedMapCompletion_comp_algebraMap]
+    _ = (ρ.toRingHom.comp (θ.toRingHom.comp (algebraMap B DWB))).comp
+          (π.toRingHom.comp (algebraMap A DT)) := by simp only [RingHom.comp_assoc]
+    _ = (g.comp f).toRingHom := by rw [hθB', hρg', hπA, Hom.toRingHom_comp]
 
 end Pair
 
