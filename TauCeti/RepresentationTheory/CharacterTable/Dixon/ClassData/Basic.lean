@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.ClassEquation
+public import TauCeti.GroupTheory.Subgroup.Centralizer
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.MultiplicationMatrix
 import Mathlib.Data.List.GetD
 
@@ -688,33 +689,15 @@ each representative. -/
 theorem index_centralizer_rep_map (i : Fin (d.map e).numClasses) :
     (Subgroup.centralizer {(d.map e).rep i}).index =
       (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}).index := by
-  have hcomap :
-      Subgroup.centralizer {(d.map e).rep i} =
-        (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}).comap
-          e.symm.toMonoidHom := by
-    ext y
-    simp only [rep_map, Subgroup.mem_centralizer_singleton_iff, Subgroup.mem_comap,
-      MulEquiv.coe_toMonoidHom]
-    exact ⟨fun h => by simpa using congrArg e.symm h, fun h => by simpa using congrArg e h⟩
-  rw [hcomap]
-  exact Subgroup.index_comap_of_surjective _ e.symm.surjective
+  rw [rep_map, ← Set.image_singleton, ← Subgroup.map_centralizer_equiv e,
+    Subgroup.index_map_equiv]
 
 /-- Transporting class data along a multiplicative equivalence restricts `e` to a multiplicative
 equivalence between the centralizers of corresponding representatives. -/
 def centralizerRepMapEquiv (i : Fin (d.map e).numClasses) :
     Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)} ≃*
-      Subgroup.centralizer {(d.map e).rep i} where
-  toFun x := ⟨e x, by
-    simpa [rep_map, Subgroup.mem_centralizer_singleton_iff] using
-      congrArg e (Subgroup.mem_centralizer_singleton_iff.mp x.2)⟩
-  invFun y := ⟨e.symm y, by
-    have hy : y.1 * e (d.rep (Fin.cast (d.numClasses_map e) i)) =
-        e (d.rep (Fin.cast (d.numClasses_map e) i)) * y.1 := by
-      simpa only [rep_map] using Subgroup.mem_centralizer_singleton_iff.mp y.2
-    exact Subgroup.mem_centralizer_singleton_iff.mpr (by simpa using congrArg e.symm hy)⟩
-  left_inv x := Subtype.ext (e.symm_apply_apply x)
-  right_inv y := Subtype.ext (e.apply_symm_apply y)
-  map_mul' _ _ := Subtype.ext (e.map_mul _ _)
+      Subgroup.centralizer {(d.map e).rep i} :=
+  e.centralizerMap (by rw [rep_map, Set.image_singleton])
 
 /-- The centralizer isomorphism `TauCeti.ClassData.centralizerRepMapEquiv` acts as `e` on
 underlying elements. -/
@@ -722,7 +705,7 @@ underlying elements. -/
 theorem coe_centralizerRepMapEquiv_apply (i : Fin (d.map e).numClasses)
     (x : Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) :
     ((d.centralizerRepMapEquiv e i x : Subgroup.centralizer {(d.map e).rep i}) : H) = e x :=
-  (rfl)
+  MulEquiv.centralizerMap_apply_coe ..
 
 /-- The inverse of `TauCeti.ClassData.centralizerRepMapEquiv` acts as `e.symm` on underlying
 elements. -/
@@ -731,7 +714,7 @@ theorem coe_centralizerRepMapEquiv_symm_apply (i : Fin (d.map e).numClasses)
     (y : Subgroup.centralizer {(d.map e).rep i}) :
     (((d.centralizerRepMapEquiv e i).symm y :
       Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) : G) = e.symm y :=
-  (rfl)
+  MulEquiv.centralizerMap_symm_apply_coe ..
 
 /-- Transporting class data along a multiplicative equivalence preserves the centralizer order of
 each representative. -/
