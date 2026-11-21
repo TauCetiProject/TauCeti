@@ -28,6 +28,8 @@ constructions on Laurent series are natural.
 * `HahnSeries.mapRingHom f`: the coefficientwise ring homomorphism `R⟦Γ⟧ →+* S⟦Γ⟧`.
 * `HahnSeries.mapAlgHom f`: the coefficientwise algebra homomorphism `A⟦Γ⟧ →ₐ[R] B⟦Γ⟧`, for the
   coefficientwise algebra structures.
+* `HahnSeries.piAlgEquiv R`: Hahn series over a finite product `∀ i, A i` are families of Hahn
+  series over the factors.
 
 ## Main results
 
@@ -36,6 +38,8 @@ constructions on Laurent series are natural.
   series, `PowerSeries.map` on the source side.
 * `HahnSeries.mem_map_rangeS`: the range of a coefficientwise map consists of the series
   with all coefficients in the range of the coefficient map.
+* `HahnSeries.eqLocusS_mapRingHom`: coefficientwise maps preserve equalizers; for a faithfully
+  flat `R → S` this describes `R⟦Γ⟧` inside `S⟦Γ⟧` by the two maps to `(S ⊗[R] S)⟦Γ⟧`.
 * `HahnSeries.support_map_of_injective`, `HahnSeries.orderTop_map_of_injective`,
   `HahnSeries.order_map_of_injective`: an injective coefficient map preserves the support and
   the order.
@@ -165,6 +169,18 @@ theorem mem_map_rangeS {f : R →+* S} {x : S⟦Γ⟧} :
   · ext g
     by_cases hx : x.coeff g = 0 <;> simp [hx, hc]
 
+/-- **Coefficientwise maps preserve equalizers.** If `f : R →+* S` maps onto the equalizer of
+`g₁ g₂ : S →+* T`, then `mapRingHom f` maps onto the equalizer of `mapRingHom g₁` and
+`mapRingHom g₂`: a series is in the image of `R⟦Γ⟧` exactly when its two coefficientwise images
+in `T⟦Γ⟧` agree. -/
+theorem eqLocusS_mapRingHom {f : R →+* S} {g₁ g₂ : S →+* T} (h : g₁.eqLocusS g₂ = f.rangeS) :
+    (mapRingHom g₁ : S⟦Γ⟧ →+* T⟦Γ⟧).eqLocusS (mapRingHom g₂) =
+      (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧).rangeS := by
+  ext x
+  rw [mem_map_rangeS, RingHom.mem_eqLocusS, HahnSeries.ext_iff, funext_iff]
+  refine forall_congr' fun n ↦ ?_
+  rw [coeff_mapRingHom, coeff_mapRingHom, ← RingHom.mem_eqLocusS, h]
+
 end Semiring
 
 section Algebra
@@ -208,6 +224,49 @@ theorem mapAlgHom_injective {f : A →ₐ[R] B} (hf : Function.Injective f) :
   mapRingHom_injective (f := (f : A →+* B)) hf
 
 end Algebra
+
+section Pi
+
+variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] (R) [CommSemiring R]
+  {ι : Type*} [Finite ι] {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+
+/-- **Hahn series over a finite product.** A Hahn series with coefficients in a finite product
+`∀ i, A i` is the family of its coefficientwise projections, as an isomorphism of algebras for
+the coefficientwise algebra structures `HahnSeries.instAlgebra`. Finiteness of `ι` makes the
+union of the supports of a family partially well-ordered. -/
+noncomputable def piAlgEquiv : (∀ i, A i)⟦Γ⟧ ≃ₐ[R] ∀ i, (A i)⟦Γ⟧ where
+  toFun x i := mapRingHom (Pi.evalRingHom A i) x
+  invFun y :=
+    { coeff g i := (y i).coeff g
+      isPWO_support' := by
+        have := Fintype.ofFinite ι
+        refine ((Finset.isPWO_bUnion Finset.univ).mpr fun i _ ↦ (y i).isPWO_support).mono ?_
+        intro g hg
+        obtain ⟨i, hi⟩ := Function.ne_iff.mp hg
+        exact Set.mem_biUnion (Finset.mem_coe.mpr (Finset.mem_univ i)) hi }
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' x y := funext fun i ↦ map_mul (mapRingHom (Pi.evalRingHom A i)) x y
+  map_add' x y := funext fun i ↦ map_add (mapRingHom (Pi.evalRingHom A i)) x y
+  commutes' r := funext fun i ↦ by
+    rw [algebraMap_apply, Pi.algebraMap_apply, algebraMap_apply]
+    exact map_C _ (Pi.evalRingHom A i)
+
+@[simp]
+theorem piAlgEquiv_apply (x : (∀ i, A i)⟦Γ⟧) (i : ι) :
+    piAlgEquiv R x i = mapRingHom (Pi.evalRingHom A i) x :=
+  (rfl)
+
+theorem coeff_piAlgEquiv_apply (x : (∀ i, A i)⟦Γ⟧) (i : ι) (g : Γ) :
+    (piAlgEquiv R x i).coeff g = x.coeff g i :=
+  (rfl)
+
+@[simp]
+theorem coeff_piAlgEquiv_symm_apply (y : ∀ i, (A i)⟦Γ⟧) (g : Γ) (i : ι) :
+    ((piAlgEquiv R).symm y).coeff g i = (y i).coeff g :=
+  (rfl)
+
+end Pi
 
 section PowerSeries
 
