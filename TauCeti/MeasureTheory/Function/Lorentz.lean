@@ -108,6 +108,34 @@ theorem eLorentzNorm_eq_eLpNorm (hf : AEStronglyMeasurable f μ) (hp : p ≠ 0) 
       ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t) q multHaar := by
   simp [eLorentzNorm_def, hf, hp]
 
+/-- For a.e. strongly measurable `f`, `p ≠ 0`, and finite `q ≠ 0`, the Lorentz gauge is the
+`(1 / q)`-th power of the `dt / t`-integral of `(t ^ (1 / p) f*(t)) ^ q`. -/
+theorem eLorentzNorm_eq_lintegral (hf : AEStronglyMeasurable f μ) (hp0 : p ≠ 0) (hq0 : q ≠ 0)
+    (hq : q ≠ ∞) :
+    eLorentzNorm f p q μ =
+      (∫⁻ t, (ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t) ^ q.toReal
+        ∂multHaar) ^ (1 / q.toReal) := by
+  rw [eLorentzNorm_eq_eLpNorm hf hp0,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq
+      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
+  simp only [eNorm_eq_self]
+
+/-- For a.e. strongly measurable `f`, `p ≠ 0`, and finite `q ≠ 0`, the Lorentz gauge is the
+`(1 / q)`-th power of `∫ t ^ (q / p) f*(t) ^ q dt / t`. -/
+theorem eLorentzNorm_eq_lintegral_rpow_mul (hf : AEStronglyMeasurable f μ) (hp0 : p ≠ 0)
+    (hq0 : q ≠ 0) (hq : q ≠ ∞) :
+    eLorentzNorm f p q μ =
+      (∫⁻ t, ENNReal.ofReal (t ^ (q.toReal / p.toReal)) *
+        μ.decreasingRearrangement (‖f ·‖ₑ) t ^ q.toReal ∂multHaar) ^ (1 / q.toReal) := by
+  have hq_pos : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  rw [eLorentzNorm_eq_lintegral hf hp0 hq0 hq]
+  congr 1
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_pos_multHaar] with t ht
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hq_pos.le,
+    ENNReal.ofReal_rpow_of_nonneg (Real.rpow_nonneg ht.le _) hq_pos.le,
+    ← Real.rpow_mul ht.le, ENNReal.toReal_inv, inv_mul_eq_div]
+
 theorem aestronglyMeasurable_of_eLorentzNorm_ne_top (h : eLorentzNorm f p q μ ≠ ∞) :
     AEStronglyMeasurable f μ :=
   not_imp_comm.1 eLorentzNorm_of_not_aestronglyMeasurable h
@@ -223,29 +251,10 @@ theorem eLorentzNorm_self {ε' : Type*} [TopologicalSpace ε'] [ContinuousENorm 
   · rw [eLorentzNorm_of_not_aestronglyMeasurable hf, eLpNorm_of_not_aestronglyMeasurable hf]
   rcases eq_or_ne p 0 with rfl | hp0
   · rw [eLorentzNorm_exponent_zero_left hf, eLpNorm_exponent_zero hf]
-  have hmeas := (μ.measurable_rpow_mul_decreasingRearrangement (‖f ·‖ₑ) (p⁻¹).toReal)
-    |>.aestronglyMeasurable (μ := multHaar)
-  rcases eq_or_ne p ∞ with rfl | hptop
-  · rw [eLorentzNorm_eq_eLpNorm hf hp0, eLpNorm_exponent_top hmeas, eLpNorm_exponent_top hf,
-      eLpNormEssSup_eq_essSup_eNorm, eLpNormEssSup_eq_essSup_eNorm]
-    simp only [ENNReal.inv_top, ENNReal.toReal_zero, Real.rpow_zero, ENNReal.ofReal_one, one_mul,
-      eNorm_eq_self, essSup_multHaar_eq_iSup_Ioi fun t _ ↦
-        μ.continuousWithinAt_decreasingRearrangement (‖f ·‖ₑ) t]
-    exact le_antisymm (iSup₂_le fun t _ ↦ μ.decreasingRearrangement_le_essSup (‖f ·‖ₑ) t) <|
-      le_of_tendsto (μ.tendsto_decreasingRearrangement_nhdsGT_zero (‖f ·‖ₑ))
-        (eventually_nhdsWithin_of_forall fun t ht ↦ le_iSup₂_of_le t ht le_rfl)
-  · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
-    rw [eLorentzNorm_eq_eLpNorm hf hp0, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hmeas,
-      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf]
-    congr 1
-    rw [lintegral_multHaar_eq_setLIntegral, ← μ.lintegral_rpow_decreasingRearrangement hf.eNorm hr]
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-    simp only [eNorm_eq_self, ENNReal.toReal_inv]
-    rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le,
-      ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _), ← Real.rpow_mul ht.le,
-      inv_mul_cancel₀ hr.ne', Real.rpow_one, ← mul_assoc,
-      ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one,
-      one_mul]
+  rw [eLorentzNorm_eq_eLpNorm hf hp0]
+  simp_rw [ENNReal.toReal_inv]
+  rw [← eLpNorm_volume_Ioi_eq_eLpNorm_multHaar hp0 (μ.decreasingRearrangement (‖f ·‖ₑ)),
+    Measure.eLpNorm_decreasingRearrangement μ hf.eNorm, eLpNorm_eNorm _ hf]
 
 /-- On the diagonal `q = p`, membership in `L^{p, p}(μ)` coincides with `MemLp f p μ`. -/
 @[simp]
@@ -678,6 +687,32 @@ theorem MemLorentz.add (hf : MemLorentz f p q μ) (hg : MemLorentz g p q μ) :
 end ContinuousAdd
 
 end ESeminormedAddMonoid
+
+section ENormedAddMonoid
+
+/-- For `p ≠ 0` and `q ≠ 0`, the Lorentz gauge vanishes exactly for almost-everywhere zero
+functions. -/
+theorem eLorentzNorm_eq_zero_iff {ε : Type*} [TopologicalSpace ε] [ENormedAddMonoid ε]
+    {f : α → ε} (hp : p ≠ 0) (hq : q ≠ 0) :
+    eLorentzNorm f p q μ = 0 ↔ f =ᵐ[μ] 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (eLorentzNorm_congr_ae h).trans eLorentzNorm_zero⟩
+  have hf : AEStronglyMeasurable f μ :=
+    aestronglyMeasurable_of_eLorentzNorm_ne_top (h ▸ ENNReal.zero_ne_top)
+  rw [eLorentzNorm_eq_eLpNorm hf hp, eLpNorm_eq_zero_iff hq] at h
+  have hzero : ∀ᵐ t ∂volume.restrict (Ioi (0 : ℝ)), μ.decreasingRearrangement (‖f ·‖ₑ) t = 0 := by
+    rw [← ae_multHaar_eq_ae_volume_Ioi]
+    filter_upwards [h, ae_pos_multHaar] with t ht ht0
+    have hpow : ENNReal.ofReal (t ^ (p⁻¹).toReal) ≠ 0 :=
+      (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht0 _)).ne'
+    exact (mul_eq_zero.1 (by simpa using ht)).resolve_left hpow
+  have hess : essSup (‖f ·‖ₑ) μ = 0 := by
+    rw [← μ.essSup_decreasingRearrangement]
+    exact le_antisymm (essSup_le_of_ae_le 0 (hzero.mono fun _ ht ↦ ht.le)) zero_le
+  filter_upwards [ENNReal.ae_le_essSup (μ := μ) (‖f ·‖ₑ)] with x hx
+  rw [hess, nonpos_iff_eq_zero, eNorm_eq_zero] at hx
+  exact hx
+
+end ENormedAddMonoid
 
 section SeminormedAddCommGroup
 
