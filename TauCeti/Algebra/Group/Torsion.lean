@@ -14,9 +14,14 @@ import Mathlib.Algebra.Group.Semiconj.Units
 
 In a monoid with unique roots, a unit commutes with a nonzero natural power of `x` exactly when
 it commutes with `x`. In a group with unique roots, the same holds for nonzero integer powers.
+
+`Group.isUnit` is registered as a simp lemma, so that `simp` discharges the unit hypothesis of
+the natural-power lemmas in a group.
 -/
 
 public section
+
+attribute [simp] Group.isUnit
 
 namespace Commute
 
