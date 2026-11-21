@@ -28,6 +28,10 @@ Forgetting the grading turns the same data into a projective resolution of the u
 `A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
 ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
 
+The file also supplies the generic shifted resolution
+(`TauCeti.GradedProjectiveResolution.shiftObj`) and first-syzygy tail resolution
+(`TauCeti.GradedProjectiveResolution.tail`) in `GradedModuleCat`.
+
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
@@ -71,6 +75,47 @@ theorem differential_comp_differential (n : ℕ) :
 @[reassoc (attr := simp)]
 theorem differential_zero_comp_augmentation : r.differential 0 ≫ r.augmentation = 0 :=
   GradedModuleCat.hom_ext r.exact_d_π.linearMap_comp_eq_zero
+
+/-- Shifting a graded projective resolution of `M` by `d` produces a graded projective resolution
+of `M.shiftObj d` with `n`-th term `(r.termObj n).shiftObj d`. -/
+abbrev shiftObj (d : ℤ) :
+    GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
+  r.shift (-d)
+
+/-- The `n`-th term of a shifted resolution is the `d`-shift of the original `n`-th term. -/
+@[simp]
+theorem termObj_shiftObj (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d :=
+  rfl
+
+/-- Shifting a resolution preserves minimality. -/
+theorem isMinimal_shiftObj_iff (d : ℤ) :
+    (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
+  r.isMinimal_shift_iff (-d)
+
+/-- The tail (first syzygy) resolution of a graded projective resolution `r`, resolving
+`GradedModuleCat.kernelObj r.augmentation` with `n`-th term `r.X (n + 1)`. -/
+noncomputable abbrev tail :
+    GradedProjectiveResolution.{uk, uA, v, v} 𝒜
+      (GradedModuleCat.kernelObj r.augmentation).grading where
+  X n := r.X (n + 1)
+  grading n := r.grading (n + 1)
+  projective n := r.projective (n + 1)
+  d n := r.d (n + 1)
+  «π» := (r.d 0).codRestrict (LinearMap.ker r.π) fun x =>
+    LinearMap.mem_ker.mpr (r.exact_d_π.apply_apply_eq_zero x)
+  isHomogeneous_d n := r.isHomogeneous_d (n + 1)
+  isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun _ _ hx => by
+    rw [InternalGrading.mem_ker_piece]
+    exact (r.isHomogeneous_d 0).map_mem hx
+  surjective_π := by
+    rintro ⟨y, hy⟩
+    obtain ⟨x, hx⟩ := (r.exact_d_π y).mp (LinearMap.mem_ker.mp hy)
+    exact ⟨x, Subtype.ext hx⟩
+  exact_d_π := fun y =>
+    ⟨fun hy => (r.exact_d_d 0 y).mp (congrArg Subtype.val hy),
+     by rintro ⟨z, rfl⟩; exact Subtype.ext ((r.exact_d_d 0).apply_apply_eq_zero z)⟩
+  exact_d_d n := r.exact_d_d (n + 1)
 
 private noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
