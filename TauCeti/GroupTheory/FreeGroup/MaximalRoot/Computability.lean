@@ -10,7 +10,8 @@ public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Computability
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 public import TauCeti.GroupTheory.FreeGroup.Reduce
-import TauCeti.GroupTheory.FreeGroup.MaximalRoot.CyclicallyReduced
+import TauCeti.Data.List.Commutation
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Word
 
 /-!
 # Primitive-recursive maximal roots in free groups
@@ -95,8 +96,7 @@ private theorem not_isProperPower_mk_take_period {v : List (α × Bool)}
   have hk : k ≠ 0 := (Nat.div_pos hjv hj).ne'
   have hb0 : b ≠ [] := by simp [hbdef, take_eq_nil_iff, hv0, hj.ne']
   -- The block is cyclically reduced, so it would be a word power `v'ⁿ` with `n ≥ 2`.
-  have hb : IsCyclicallyReduced b :=
-    (isCyclicallyReduced_flatten_replicate_iff hk).1 (by rwa [← hrep])
+  have hb : IsCyclicallyReduced b := (hrep ▸ hv).of_flatten_replicate hk
   rw [hb.isProperPower_mk_iff]
   rintro ⟨v', n, hn, hword⟩
   have hi : 0 < v'.length := length_pos_iff.2 fun h ↦ hb0 (by simpa [h] using hword)
@@ -105,7 +105,7 @@ private theorem not_isProperPower_mk_take_period {v : List (α × Bool)}
     rw [← hblen, hword]
     simp
   have hvv : v = (replicate (k * n) v').flatten := by
-    rw [hrep, hword, ← flatten_replicate_replicate, flatten_flatten, map_replicate]
+    rw [hrep, hword, flatten_replicate_flatten_replicate]
   have hkn : k * n ≠ 0 := Nat.mul_ne_zero hk (by omega)
   -- Then `v'` is a shorter period of `v`, contradicting the minimality of `j`.
   refine hmin v'.length hi (by rw [hjn]; nlinarith) ?_

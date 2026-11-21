@@ -23,10 +23,18 @@ group rests. Write `wⁿ` for the concatenation `(replicate n w).flatten` of `n`
   periodicity lemma of Fine and Wilf (`List.HasPeriod.gcd`). In particular `aᵐ = bⁿ` with
   `m ≠ 0` forces `a` and `b` to commute (`List.append_comm_of_flatten_replicate_eq`).
 
+Following Lyndon and Schützenberger, call a word *primitive* if it is not a power `uˡ` with
+`l ≥ 2`; the empty word `[] = []²` is not primitive.
+
+* Every nonempty word is a nonzero power of a primitive word
+  (`List.exists_eq_flatten_replicate_forall_ne_flatten_replicate`).
+* If `a` and `b` are primitive and powers of `a` and of `b` have a common prefix of length
+  `|a| + |b|`, then `a = b` (`List.eq_of_prefix_flatten_replicate`).
+
 ## References
 
 * R. C. Lyndon, M. P. Schützenberger, *The equation `a^M = b^N c^P` in a free group*, Michigan
-  Math. J. 9 (1962), 289–298, §2, Lemmas 2–4 and Corollary 4.1.
+  Math. J. 9 (1962), 289–298, §2, Lemmas 2–5 and Corollaries 4.1–4.2.
 * N. J. Fine, H. S. Wilf, *Uniqueness theorems for periodic functions*, Proc. Amer. Math. Soc. 16
   (1965), 109–114.
 -/
@@ -103,5 +111,46 @@ theorem append_comm_of_flatten_replicate_eq {a b : List α} {m n : ℕ} (hm : m 
     have := Nat.le_mul_of_pos_left a.length (Nat.pos_of_ne_zero hm)
     have := Nat.le_mul_of_pos_left b.length hn
     lia
+
+/-- `m` concatenated copies of `n` concatenated copies of `w` are `m * n` concatenated copies of
+`w`: `(wⁿ)ᵐ = wᵐⁿ`. -/
+theorem flatten_replicate_flatten_replicate (w : List α) (m n : ℕ) :
+    (replicate m (replicate n w).flatten).flatten = (replicate (m * n) w).flatten := by
+  rw [← flatten_replicate_replicate, flatten_flatten, map_replicate]
+
+/-- **Lyndon–Schützenberger, Corollary 4.2**, existence half: a nonempty word `w` is a nonzero
+power `rᵏ` of a primitive word `r`, that is, of a word that is not a power `uˡ` with `l ≥ 2`. -/
+theorem exists_eq_flatten_replicate_forall_ne_flatten_replicate {w : List α} (hw : w ≠ []) :
+    ∃ r : List α, ∃ k : ℕ, k ≠ 0 ∧ w = (replicate k r).flatten ∧
+      ∀ u : List α, ∀ l : ℕ, 2 ≤ l → r ≠ (replicate l u).flatten := by
+  induction hn : w.length using Nat.strong_induction_on generalizing w with
+  | _ n ih =>
+    by_cases h : ∃ u : List α, ∃ l : ℕ, 2 ≤ l ∧ w = (replicate l u).flatten
+    · -- `w = uˡ` with `l ≥ 2`, and the shorter word `u` is a power of a primitive word.
+      obtain ⟨u, l, hl, rfl⟩ := h
+      have hu : u ≠ [] := by rintro rfl; simp at hw
+      obtain ⟨r, k, hk, rfl, hr⟩ := ih u.length
+        (by simpa [← hn] using (Nat.lt_mul_iff_one_lt_left (length_pos_iff.2 hu)).2 hl) hu rfl
+      exact ⟨r, l * k, Nat.mul_ne_zero (by lia) hk, flatten_replicate_flatten_replicate r l k, hr⟩
+    · exact ⟨w, 1, Nat.one_ne_zero, by simp, fun u l hl hu ↦ h ⟨u, l, hl, hu⟩⟩
+
+/-- **Lyndon–Schützenberger, Lemma 5.** If the words `a` and `b` are primitive, that is, neither
+is a power `uˡ` with `l ≥ 2`, and a power of `a` and a power of `b` have a common prefix of length
+at least `|a| + |b|`, then `a = b`. -/
+theorem eq_of_prefix_flatten_replicate {a b x : List α} {m n : ℕ}
+    (ha : ∀ u : List α, ∀ l : ℕ, 2 ≤ l → a ≠ (replicate l u).flatten)
+    (hb : ∀ u : List α, ∀ l : ℕ, 2 ≤ l → b ≠ (replicate l u).flatten)
+    (h₁ : x <+: (replicate m a).flatten) (h₂ : x <+: (replicate n b).flatten)
+    (hx : a.length + b.length ≤ x.length) : a = b := by
+  obtain ⟨w, i, j, rfl, rfl⟩ :=
+    exists_eq_flatten_replicate_of_append_comm (append_comm_of_prefix_flatten_replicate h₁ h₂ hx)
+  -- A primitive power `wᵏ` has `k = 1`, since `[] = []²` is not primitive.
+  have key (k : ℕ) (hk : ∀ u l, 2 ≤ l → (replicate k w).flatten ≠ (replicate l u).flatten) :
+      k = 1 := by
+    rcases k with _ | _ | k
+    · exact absurd (by simp) (hk [] 2 le_rfl)
+    · rfl
+    · exact absurd rfl (hk w (k + 2) (by lia))
+  rw [key i ha, key j hb]
 
 end List

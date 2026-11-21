@@ -25,9 +25,10 @@ word of `x ^ m` is `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. Its first `L` letters th
 `c ++ v ++ v ++ ⋯` of `x`. In particular, the reduced word of `x ^ m` has at least `m` letters
 (`FreeGroup.length_take_toWord_pow`).
 
-A nonzero power `wⁿ = (List.replicate n w).flatten` is cyclically reduced exactly when `w` is
-(`FreeGroup.isCyclicallyReduced_flatten_replicate_iff`). If a word `a` and its formal inverse
-both occur in powers of a cyclically reduced word `b`, then `b` is a cyclic rotation of
+If a nonzero power `wⁿ = (List.replicate n w).flatten` is cyclically reduced, then so is `w`
+(`FreeGroup.IsCyclicallyReduced.of_flatten_replicate`, the converse of Mathlib's
+`FreeGroup.IsCyclicallyReduced.flatten_replicate`). If a word `a` and its formal inverse both
+occur in powers of a cyclically reduced word `b`, then `b` is a cyclic rotation of
 `a ++ v ++ invRev a ++ u` (`FreeGroup.IsCyclicallyReduced.exists_isRotated_append_invRev`,
 Lemma 7 of Lyndon and Schützenberger); in particular `b` is at least twice as long as `a`.
 
@@ -47,12 +48,14 @@ theorem isCyclicallyReduced_of_forall_snd_eq {α : Type*} {w : List (α × Bool)
   ⟨isReduced_of_forall_snd_eq h, fun x hx y hy _ ↦
     (h x (List.mem_of_getLast? hx)).trans (h y (List.mem_of_mem_head? hy)).symm⟩
 
-/-- A nonzero power `wⁿ` of a word is cyclically reduced exactly when `w` is. -/
-@[to_additive (attr := simp)]
-theorem isCyclicallyReduced_flatten_replicate_iff {α : Type*} {w : List (α × Bool)} {n : ℕ}
-    (hn : n ≠ 0) : IsCyclicallyReduced (List.replicate n w).flatten ↔ IsCyclicallyReduced w := by
-  refine ⟨fun h ↦ ⟨h.isReduced.infix (List.infix_of_mem_flatten (List.mem_replicate.2 ⟨hn, rfl⟩)),
-    fun x hx y hy ↦ h.2 x ?_ y ?_⟩, fun h ↦ h.flatten_replicate n⟩
+/-- If a nonzero power `wⁿ` of a word is cyclically reduced, then so is `w`. This is the converse
+of `FreeGroup.IsCyclicallyReduced.flatten_replicate`. -/
+@[to_additive]
+theorem IsCyclicallyReduced.of_flatten_replicate {α : Type*} {w : List (α × Bool)} {n : ℕ}
+    (h : IsCyclicallyReduced (List.replicate n w).flatten) (hn : n ≠ 0) :
+    IsCyclicallyReduced w := by
+  refine ⟨h.isReduced.infix (List.infix_of_mem_flatten (List.mem_replicate.2 ⟨hn, rfl⟩)),
+    fun x hx y hy ↦ h.2 x ?_ y ?_⟩
   · rwa [List.getLast?_flatten_replicate hn]
   · rwa [List.head?_flatten_replicate hn]
 
