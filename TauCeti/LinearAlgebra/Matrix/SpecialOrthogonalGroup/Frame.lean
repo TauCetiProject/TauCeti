@@ -34,6 +34,9 @@ is `TauCeti.stiefelTwoHomeomorphSpecialOrthogonalGroup`.
   of the frame of its first two columns.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_mulVec_mulVec`: rotating the frame by `g`
   multiplies its matrix by `g`.
+* `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_cross_mem`,
+  `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_cross_mulVec_single_two`: for orthonormal `p`
+  and `u`, the frame `(u, p ⨯₃ u, p)` is a rotation carrying the last standard basis vector to `p`.
 -/
 
 public section
@@ -131,6 +134,27 @@ theorem ofFrame_mulVec_mulVec {g : Matrix (Fin 3) (Fin 3) R}
     mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hg u v
   refine ext_col fun j ↦ ?_
   fin_cases j <;> simp [col_mul_eq_mulVec_col, h2]
+
+section Cross
+
+variable {p u : Fin 3 → R}
+
+/-- For orthonormal `p` and `u`, the frame matrix with columns `u`, `p ⨯₃ u` and `p` is a
+rotation. -/
+theorem ofFrame_cross_mem (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1) (hpu : p ⬝ᵥ u = 0) :
+    ofFrame u (p ⨯₃ u) ∈ specialOrthogonalGroup (Fin 3) R := by
+  refine ofFrame_mem_iff.mpr ⟨hu, ?_, dot_cross_self p u⟩
+  rw [cross_dot_cross, hp, hu, hpu, dotProduct_comm u p, hpu]
+  ring
+
+/-- The third vector of the frame `(u, p ⨯₃ u, u ⨯₃ (p ⨯₃ u))` is `p`, for orthonormal `p`
+and `u`, so its matrix carries the last standard basis vector to `p`. -/
+theorem ofFrame_cross_mulVec_single_two (hu : u ⬝ᵥ u = 1) (hpu : p ⬝ᵥ u = 0) :
+    ofFrame u (p ⨯₃ u) *ᵥ Pi.single 2 1 = p := by
+  rw [mulVec_single_one, ofFrame_col_two, cross_cross_eq_smul_sub_smul', hu, hpu, one_smul,
+    zero_smul, sub_zero]
+
+end Cross
 
 variable [TopologicalSpace R] [IsTopologicalRing R]
 
