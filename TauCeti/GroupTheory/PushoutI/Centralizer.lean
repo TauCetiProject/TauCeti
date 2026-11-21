@@ -633,28 +633,6 @@ private theorem isCyclic_centralizer (hφ : ∀ b, Injective (φ b)) (A : Axis �
   have hy0 : τ y = 0 := by simpa using hy
   exact A.eq_one_of_forall_mem hφ hT fun m => by simpa [hy0] using hτ y m
 
-end Axis
-
-/-- The step from `m` to `m + 1` in the indexing `m ↦ (m / n, m.natMod n)` of a periodic word on
-`n > 0` letters: the index moves to the next letter, or from the last letter back to `0` while the
-quotient increases by one. -/
-private theorem natMod_add_one {n : ℕ} (hn : 0 < n) (m : ℤ) :
-    ((m + 1).natMod n = m.natMod n + 1 ∧ (m + 1) / n = m / n) ∨
-      ((m + 1).natMod n = 0 ∧ m.natMod n + 1 = n ∧ (m + 1) / n = m / n + 1) := by
-  have h0 := Int.emod_nonneg m (b := n) (by omega)
-  have h1 := Int.emod_lt_of_pos m (b := n) (by omega)
-  have habs : |(n : ℤ)| = n := abs_of_nonneg (by omega)
-  obtain h | h : m % n + 1 < |(n : ℤ)| ∨ m % n + 1 = |(n : ℤ)| := by omega
-  · refine .inl ⟨?_, Int.add_one_ediv_of_emod_add_one_lt h⟩
-    rw [Int.natMod, Int.natMod, Int.add_one_emod_of_emod_add_one_lt h]
-    omega
-  · refine .inr ⟨by rw [Int.natMod, Int.add_one_emod_of_emod_add_one_eq h]; rfl, ?_, ?_⟩
-    · rw [Int.natMod]
-      omega
-    · rw [Int.add_one_ediv_of_emod_add_one_eq h, Int.sign_natCast_of_ne_zero hn.ne']
-
-namespace Axis
-
 /-- The axis of a cyclically reduced word `Z`: the letters of `Z` repeated periodically, with
 `P m = Z ^ q * (the first j letters of Z)` for `m = q * |Z| + j`, `0 ≤ j < |Z|`. -/
 private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ [])
@@ -666,7 +644,8 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
   isLetter m := hZ.2 _ (List.getElem_mem _)
   ne m := by
     have hlt := Int.natMod_lt (m := m + 1) (List.length_pos_of_ne_nil hne).ne'
-    rcases natMod_add_one (List.length_pos_of_ne_nil hne) m with ⟨h, -⟩ | ⟨h, h', -⟩
+    rcases Int.add_one_natMod_cases m (n := Z.length) (by simpa using hne) with
+      ⟨h, -⟩ | ⟨h, h', -⟩
     · simp only [h]
       exact (hZ.1.getElem _ (by omega)).symm
     · simp only [h]
@@ -680,10 +659,12 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
     have hk : lprod (Z.take (m.natMod Z.length + 1)) =
         lprod (Z.take (m.natMod Z.length)) * Z[m.natMod Z.length].2 := by
       simp [lprod, List.map_take, List.prod_take_succ (Z.map Prod.snd) _ (by simpa using hlt)]
-    rcases natMod_add_one (List.length_pos_of_ne_nil hne) m with ⟨h, h'⟩ | ⟨h, h', h''⟩
+    rcases Int.add_one_natMod_cases m (n := Z.length) (by simpa using hne) with
+      ⟨h, h'⟩ | ⟨h, h', h''⟩
     · rw [h, h', hk, mul_assoc]
-    · rw [h, h'', zpow_add_one, List.take_zero, lprod_nil, mul_one, mul_assoc, ← hk, h',
-        List.take_length]
+    · rw [Int.natAbs_natCast] at h'
+      rw [h, h'', Int.sign_natCast_of_ne_zero (List.length_pos_of_ne_nil hne).ne', zpow_add_one,
+        List.take_zero, lprod_nil, mul_one, mul_assoc, ← hk, h', List.take_length]
 
 private theorem ofList_P_r (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ [])
     (hcyc : ∀ z ∈ Z.head?, ∀ z' ∈ Z.getLast?, z.1 ≠ z'.1) :
