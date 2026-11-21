@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.State.Tracial
+public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
 
 /-!
-# Extending positive functionals and tracial states to the unitization
+# Extending positive functionals to the unitization
 
 A positive functional `τ` on a possibly nonunital C⋆-algebra `A` extends to the unitization
 `A⁺¹ = Unitization ℂ A` by `τ⁺¹ (λ + a) = λ ‖τ‖ + τ a`. This is the unique positive extension with
 the same norm, so statements about states of unital C⋆-algebras pass to nonunital ones along
-it. For a tracial state `τ`, the extension `τ⁺¹` is again a tracial state. The extension of a
-faithful positive functional is faithful when `A` has no unit.
+it. The extension of a faithful positive functional is faithful when `A` has no unit. That the
+extension of a tracial state is again a tracial state is
+`PositiveContinuousLinearMap.isTracialState_unitization_iff`, in
+`TauCeti.Analysis.CStarAlgebra.State.Tracial`.
 
 ## Main declarations
 
@@ -32,8 +35,8 @@ faithful positive functional is faithful when `A` has no unit.
 * `PositiveContinuousLinearMap.unitization_injective` and
   `PositiveContinuousLinearMap.unitization_add`: the extension is injective and additive;
   additivity rests on `PositiveContinuousLinearMap.opNorm_add`, `‖τ + σ‖ = ‖τ‖ + ‖σ‖`.
-* `PositiveContinuousLinearMap.isTracialState_unitization_iff`: `τ⁺¹` is a tracial state exactly
-  when `τ` is.
+* `PositiveContinuousLinearMap.unitization_map_mul_comm`: if `τ (a * b) = τ (b * a)` on `A`, then
+  the same holds for `τ⁺¹` on `A⁺¹`.
 * `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`: if `τ` is
   faithful, `τ (star a * a) = 0 → a = 0`, and `A` has no two-sided unit, then `τ⁺¹` is faithful
   too.
@@ -46,8 +49,8 @@ value of `τ⁺¹` at `(λ + a)⋆ (λ + a)`, which follows from `|τ a|² ≤ �
 C⋆-algebra `A⁺¹` has the form `x⋆x`. Faithfulness passes to `τ⁺¹` because, for `x = λ + b` with
 `τ⁺¹ (x⋆x) = 0`, the null space of `τ⁺¹` is a left ideal, so `cx = λc + cb ∈ A` lies in the null
 space of `τ` for every `c ∈ A` and vanishes. If `λ ≠ 0`, then `e = -λ⁻¹ b` is a right unit of `A`,
-and a right unit of a C⋆-algebra is self-adjoint (`e⋆ = e⋆e`), hence a two-sided unit. Without
-the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺¹` vanishes at `1 - 1_A`.
+and a right unit of a star algebra is a two-sided unit (`TauCeti.exists_right_identity_iff`).
+Without the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺¹` vanishes at `1 - 1_A`.
 
 ## References
 
@@ -181,7 +184,7 @@ theorem unitization_zero : (0 : A →P[ℂ] ℂ).unitization = 0 :=
 theorem unitization_add (τ σ : A →P[ℂ] ℂ) :
     (τ + σ).unitization = τ.unitization + σ.unitization :=
   ext fun x => by
-    rw [add_apply, unitization_apply, unitization_apply, unitization_apply, opNorm_add, add_apply]
+    simp only [add_apply, unitization_apply, opNorm_add]
     push_cast
     ring
 
@@ -192,18 +195,6 @@ theorem unitization_map_mul_comm (h : ∀ a b : A, τ (a * b) = τ (b * a))
   simp only [unitization_apply, Unitization.fst_mul, Unitization.snd_mul, map_add, map_smul,
     smul_eq_mul, h x.snd y.snd]
   ring
-
-/-- The extension `τ⁺¹` is a tracial state of `Unitization ℂ A` exactly when `τ` is a tracial
-state of `A`. -/
-@[simp]
-theorem isTracialState_unitization_iff : τ.unitization.IsTracialState ↔ τ.IsTracialState := by
-  simp only [isTracialState_iff, norm_unitization, and_congr_right_iff]
-  refine fun _ => ⟨fun h a b => ?_, unitization_map_mul_comm⟩
-  simpa only [← Unitization.inr_mul, unitization_apply_inr] using h a b
-
-/-- The extension of a tracial state to the unitization is a tracial state. -/
-theorem IsTracialState.unitization (hτ : τ.IsTracialState) : τ.unitization.IsTracialState :=
-  isTracialState_unitization_iff.mpr hτ
 
 /-- **Faithfulness of the unitization extension.** Let `τ` be a positive functional on a
 C⋆-algebra `A` without a two-sided unit, faithful in the sense that `τ (star a * a) = 0` only for
@@ -229,16 +220,9 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
   · have hsnd : x.snd = 0 := hf _ <| by
       simpa [unitization_apply, h0] using hx
     exact Unitization.ext h0 hsnd
-  · -- `e = -λ⁻¹ b` is a right unit of `A`, hence self-adjoint and a two-sided unit
-    set e := -(x.fst⁻¹ • x.snd)
-    have hr : ∀ c : A, c * e = c := fun c => by
-      rw [mul_neg, mul_smul_comm, eq_neg_of_add_eq_zero_right (hl c), smul_neg, neg_neg,
-        inv_smul_smul₀ h0]
-    have he : star e = e := by
-      have h1 : star e * e = star e := hr (star e)
-      calc star e = star (star e * e) := by rw [star_mul, star_star, h1]
-        _ = e := by rw [h1, star_star]
-    refine (hA ⟨e, fun c => ⟨?_, hr c⟩⟩).elim
-    rw [← star_star (e * c), star_mul, he, hr, star_star]
+  · -- `e = -λ⁻¹ b` is a right unit of `A`, hence a two-sided unit
+    refine (hA (TauCeti.exists_right_identity_iff.mp ⟨-(x.fst⁻¹ • x.snd), fun c => ?_⟩)).elim
+    have hc : c * x.snd = -(x.fst • c) := eq_neg_of_add_eq_zero_right (hl c)
+    simp [mul_smul_comm, hc, h0]
 
 end PositiveContinuousLinearMap
