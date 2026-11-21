@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Adjoint
+public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Adjoint.KernelCutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian

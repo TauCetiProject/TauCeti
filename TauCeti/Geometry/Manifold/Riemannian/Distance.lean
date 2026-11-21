@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -57,6 +57,13 @@ is the special case that matters downstream.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
+* `TauCeti.Manifold.riemannianEDist_le_of_tendsto_of_forall_pathELength_le` and
+  `TauCeti.Manifold.tendsto_of_mapClusterPt_of_forall_pathELength_le`: a convergent `C¹` curve is
+  within its tail length of its limit, and a curve whose tail lengths tend to zero converges to each
+  of its cluster points.
+
+The path-containment lemma `TauCeti.Manifold.mem_ball_of_pathELength_lt` is adapted from
+Giada Franz’s verified `ForTauCeti` formalization.
 
 ## References
 
@@ -195,6 +202,68 @@ theorem riemannianEDist_ne_top [PreconnectedSpace M] (x y : M) : riemannianEDist
   (riemannianEDist_lt_top I x y).ne
 
 end Finiteness
+
+section TailLength
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  {γ : ℝ → M} {p : M}
+
+open Filter
+
+/-- **The distance from a point of a convergent curve to its limit is at most the length of the
+rest of the curve.** If `γ` is `C¹` on `[t, ∞)` and converges to `p`, and every piece of `γ`
+starting at time `t` has Riemannian length at most `L`, then `γ t` is at Riemannian distance at
+most `L` from `p`. -/
+theorem riemannianEDist_le_of_tendsto_of_forall_pathELength_le {t : ℝ} {L : ℝ≥0∞}
+    (hγ : CMDiff[Ici t] 1 γ) (hp : Tendsto γ atTop (𝓝 p))
+    (hL : ∀ s, pathELength I γ t s ≤ L) : riemannianEDist I (γ t) p ≤ L := by
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
+  -- Compare with a later point `γ s` which is `ε`-close to `p`.
+  obtain ⟨s, hs, hts⟩ := ((hp.eventually (eventually_riemannianEDist_lt I p
+    (c := ε) (by exact_mod_cast hε))).and (eventually_ge_atTop t)).exists
+  calc riemannianEDist I (γ t) p
+      ≤ riemannianEDist I (γ t) (γ s) + riemannianEDist I (γ s) p := riemannianEDist_triangle
+    _ ≤ pathELength I γ t s + ε := by
+        gcongr
+        · exact riemannianEDist_le_pathELength (hγ.mono Icc_subset_Ici_self) rfl rfl hts
+        · rw [riemannianEDist_comm]
+          exact hs.le
+    _ ≤ L + ε := by gcongr; exact hL s
+
+/-- **A curve whose tail lengths tend to zero converges to each of its cluster points.** If `γ`
+is `C¹` on `[a, ∞)`, the Riemannian lengths of its pieces starting at time `t` tend to zero as
+`t → ∞`, and `p` is a cluster point of `γ t` as `t → ∞`, then `γ` converges to `p`. In particular
+a curve of finite length on `[a, ∞)` in a compact manifold converges. -/
+theorem tendsto_of_mapClusterPt_of_forall_pathELength_le [RegularSpace M] {a : ℝ}
+    (hγ : CMDiff[Ici a] 1 γ) (hp : MapClusterPt p atTop γ)
+    (hlen : ∀ ε > 0, ∀ᶠ t in atTop, ∀ s, pathELength I γ t s ≤ ε) :
+    Tendsto γ atTop (𝓝 p) := by
+  intro U hU
+  -- Points at Riemannian distance less than `c` from `p` lie in `U`.
+  obtain ⟨c, hc, hcU⟩ := setOfPred_riemannianEDist_lt_subset_nhds I hU
+  have hc2 : (0 : ℝ≥0∞) < (c : ℝ≥0∞) / 2 :=
+    ENNReal.half_pos (by exact_mod_cast hc.ne')
+  obtain ⟨T, hT⟩ := eventually_atTop.1 ((hlen _ hc2).and (eventually_ge_atTop a))
+  -- Some time `u ≥ T` brings `γ` within `c / 2` of `p`; afterwards `γ` moves by at most `c / 2`.
+  obtain ⟨u, hu, huT⟩ := ((hp.frequently (eventually_riemannianEDist_lt I p hc2)).and_eventually
+    (eventually_ge_atTop T)).exists
+  refine mem_map.2 (mem_atTop_sets.2 ⟨T, fun t ht ↦ hcU ?_⟩)
+  have hut : riemannianEDist I (γ u) (γ t) ≤ c / 2 := by
+    rcases le_total u t with h | h
+    · exact (riemannianEDist_le_pathELength (hγ.mono fun r hr ↦ (hT u huT).2.trans hr.1) rfl rfl
+        h).trans ((hT u huT).1 t)
+    · rw [riemannianEDist_comm]
+      exact (riemannianEDist_le_pathELength (hγ.mono fun r hr ↦ (hT t ht).2.trans hr.1) rfl rfl
+        h).trans ((hT t ht).1 u)
+  calc riemannianEDist I p (γ t)
+      ≤ riemannianEDist I p (γ u) + riemannianEDist I (γ u) (γ t) := riemannianEDist_triangle
+    _ < c / 2 + c / 2 :=
+        ENNReal.add_lt_add_of_lt_of_le (ne_top_of_le_ne_top (by finiteness) hut) hu hut
+    _ = c := ENNReal.add_halves _
+
+end TailLength
 
 end Manifold
 
@@ -376,6 +445,33 @@ theorem exists_pathELength_lt_of_dist_lt {x y : M} {r : ℝ} (hr : dist x y < r)
 end PseudoMetric
 
 end IsRiemannianManifold
+
+namespace Manifold
+
+section BallContainment
+
+variable {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+
+/-- A `C¹` path starting at `p` whose length is less than `s` stays in the open ball `B(p, s)`. -/
+theorem mem_ball_of_pathELength_lt {γ : ℝ → M} {p : M} {s : ℝ} (hγ : CMDiff[Icc 0 1] 1 γ)
+    (hγ0 : γ 0 = p) (hlen : pathELength I γ 0 1 < ENNReal.ofReal s) {t : ℝ} (ht : t ∈ Icc 0 1) :
+    γ t ∈ Metric.ball p s := by
+  have hle : pathELength I γ 0 t ≤ pathELength I γ 0 1 := pathELength_mono le_rfl ht.2
+  have hlt : pathELength I γ 0 t < ENNReal.ofReal s := hle.trans_lt hlen
+  have hd := TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength (I := I)
+    (hγ.mono (Icc_subset_Icc le_rfl ht.2)) hγ0 rfl ht.1 hlt.ne_top
+  rw [Metric.mem_ball, dist_comm]
+  refine hd.trans_lt ?_
+  have hs : 0 < s := by
+    by_contra h
+    simp [ENNReal.ofReal_eq_zero.2 (not_lt.1 h)] at hlt
+  exact (ENNReal.toReal_lt_toReal hlt.ne_top ENNReal.ofReal_ne_top).2 hlt |>.trans_eq
+    (ENNReal.toReal_ofReal hs.le)
+
+end BallContainment
+
+end Manifold
 
 section OfRiemannianMetric
 
