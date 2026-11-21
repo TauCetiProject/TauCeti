@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Basic
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
-import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 
 /-!
 # Continuation trajectories through the transition diffeomorphisms of the slab
@@ -67,9 +66,9 @@ this form the transversality condition for continuations is the transversality o
   pseudo-gradient.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet`,
   `TauCeti.IsAdaptedPseudoGradient.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet`: a
-  trajectory `s ↦ (φ_{τ, s + τ} x, β (s + τ))` enters the slab along an unstable manifold and
-  leaves it along a stable manifold exactly when its value at one very negative, resp. very
-  positive, time lies in that manifold.
+  time-dependent flow line `s ↦ φ_{τ, s} x` tends to a point `p` at `-∞`, resp. `+∞`,
+  exactly when its value at one very negative, resp. very positive, time lies in the unstable,
+  resp. stable, manifold of `p`.
 * `TauCeti.IsContinuationField.eventually_atBot_continuationSpaceField_eq`,
   `TauCeti.IsContinuationField.eventually_atTop_continuationSpaceField_eq`: the space component
   along the base trajectory is `X₀` at very negative times and `X₁` at very positive times.
@@ -238,41 +237,25 @@ theorem eqOn_timeDependentFlowOf_flow_of_gt (hYX : ∀ u > a, Y u = X) (hab : a 
   hX.eqOn_flow_of_isMIntegralCurveOn_Ioi (isMIntegralCurveOn_timeDependentFlowOf
     (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY (T := Ioi a) hYX) hab
 
-/-- **A time-dependent trajectory through the slab enters it along the unstable manifold.** Let
-the `C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times before `b`, let
-`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, β (s + τ))` in `M × ℝ`, where `φ`
-is the time-dependent flow of `Y` and `β` the base trajectory, tends to `(p, 0)` at `-∞` exactly
+/-- **A time-dependent flow line tends to a point at `-∞` along its unstable manifold.** If the
+`C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times before `b`, and
+`a < b`, then the curve `s ↦ φ_{τ, s} x` of its time-dependent flow tends to `p` at `-∞` exactly
 when `φ_{τ, a} x` lies in the unstable manifold of `p` for `X`. -/
-theorem tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet (hC : 0 < C)
-    (hYX : ∀ u < b, Y u = X) (hab : a < b) :
-    Tendsto (fun s ↦ (timeDependentFlowOf Y τ (s + τ) x, intervalBaseOrbit C (s + τ))) atBot
-      (𝓝 (p, 0)) ↔ timeDependentFlowOf Y τ a x ∈ hX.flow.unstableSet p := by
-  have hq : Tendsto (fun s ↦ intervalBaseOrbit C (s + τ)) atBot (𝓝 0) :=
-    (tendsto_intervalBaseOrbit_atBot hC).comp (tendsto_atBot_add_const_right _ τ tendsto_id)
-  rw [nhds_prod_eq, tendsto_prod_iff',
-    ← Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn
-      (hX.eqOn_timeDependentFlowOf_flow_of_lt hY hYX hab),
-    and_iff_left hq]
-  exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ (-τ) tendsto_id)).congr
-    fun u ↦ by simp, fun h ↦ h.comp (tendsto_atBot_add_const_right _ τ tendsto_id)⟩
+theorem tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet (hYX : ∀ u < b, Y u = X)
+    (hab : a < b) :
+    Tendsto (fun s ↦ timeDependentFlowOf Y τ s x) atBot (𝓝 p) ↔
+      timeDependentFlowOf Y τ a x ∈ hX.flow.unstableSet p :=
+  Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn (hX.eqOn_timeDependentFlowOf_flow_of_lt hY hYX hab)
 
-/-- **A time-dependent trajectory through the slab leaves it along the stable manifold.** Let the
-`C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times after `a`, let
-`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, β (s + τ))` in `M × ℝ`, where `φ`
-is the time-dependent flow of `Y` and `β` the base trajectory, tends to `(p, 1)` at `+∞` exactly
+/-- **A time-dependent flow line tends to a point at `+∞` along its stable manifold.** If the
+`C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times after `a`, and
+`a < b`, then the curve `s ↦ φ_{τ, s} x` of its time-dependent flow tends to `p` at `+∞` exactly
 when `φ_{τ, b} x` lies in the stable manifold of `p` for `X`. -/
-theorem tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet (hC : 0 < C)
-    (hYX : ∀ u > a, Y u = X) (hab : a < b) :
-    Tendsto (fun s ↦ (timeDependentFlowOf Y τ (s + τ) x, intervalBaseOrbit C (s + τ))) atTop
-      (𝓝 (p, 1)) ↔ timeDependentFlowOf Y τ b x ∈ hX.flow.stableSet p := by
-  have hq : Tendsto (fun s ↦ intervalBaseOrbit C (s + τ)) atTop (𝓝 1) :=
-    (tendsto_intervalBaseOrbit_atTop hC).comp (tendsto_atTop_add_const_right _ τ tendsto_id)
-  rw [nhds_prod_eq, tendsto_prod_iff',
-    ← Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn
-      (hX.eqOn_timeDependentFlowOf_flow_of_gt hY hYX hab),
-    and_iff_left hq]
-  exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ (-τ) tendsto_id)).congr
-    fun u ↦ by simp, fun h ↦ h.comp (tendsto_atTop_add_const_right _ τ tendsto_id)⟩
+theorem tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet (hYX : ∀ u > a, Y u = X)
+    (hab : a < b) :
+    Tendsto (fun s ↦ timeDependentFlowOf Y τ s x) atTop (𝓝 p) ↔
+      timeDependentFlowOf Y τ b x ∈ hX.flow.stableSet p :=
+  Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn (hX.eqOn_timeDependentFlowOf_flow_of_gt hY hYX hab)
 
 end IsAdaptedPseudoGradient
 
@@ -339,12 +322,23 @@ theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
   have hΓ (x : M) : IsMIntegralCurve (Γ x) V :=
     (isMIntegralCurve_timeDependentFlowOf_continuationSpaceField hsnd hVs σ x).comp_add σ
   -- Its limits at the two ends are read off the transition maps to the times `a` and `b`.
+  -- The time component tends to `0` and `1`, and the shift by `σ` does not change the limits.
   have hbot (x : M) : Tendsto (Γ x) atBot (𝓝 (p, 0)) ↔
-      timeDependentFlowOf (continuationSpaceField C V) σ a x ∈ hX₀.flow.unstableSet p :=
-    hX₀.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet hY hC (fun u hu ↦ ha₀ u hu.le) ha
+      timeDependentFlowOf (continuationSpaceField C V) σ a x ∈ hX₀.flow.unstableSet p := by
+    have hβ : Tendsto (fun s ↦ (Γ x s).2) atBot (𝓝 0) :=
+      (tendsto_intervalBaseOrbit_atBot hC).comp (tendsto_atBot_add_const_right _ σ tendsto_id)
+    rw [nhds_prod_eq, tendsto_prod_iff', and_iff_left hβ,
+      ← hX₀.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet hY (fun u hu ↦ ha₀ u hu.le) ha]
+    exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ (-σ) tendsto_id)).congr
+      fun u ↦ by simp [Γ], fun h ↦ h.comp (tendsto_atBot_add_const_right _ σ tendsto_id)⟩
   have htop (x : M) : Tendsto (Γ x) atTop (𝓝 (q, 1)) ↔
-      timeDependentFlowOf (continuationSpaceField C V) σ b x ∈ hX₁.flow.stableSet q :=
-    hX₁.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet hY hC (fun u hu ↦ hb₀ u hu.le) hb
+      timeDependentFlowOf (continuationSpaceField C V) σ b x ∈ hX₁.flow.stableSet q := by
+    have hβ : Tendsto (fun s ↦ (Γ x s).2) atTop (𝓝 1) :=
+      (tendsto_intervalBaseOrbit_atTop hC).comp (tendsto_atTop_add_const_right _ σ tendsto_id)
+    rw [nhds_prod_eq, tendsto_prod_iff', and_iff_left hβ,
+      ← hX₁.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet hY (fun u hu ↦ hb₀ u hu.le) hb]
+    exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ (-σ) tendsto_id)).congr
+      fun u ↦ by simp [Γ], fun h ↦ h.comp (tendsto_atTop_add_const_right _ σ tendsto_id)⟩
   ext x
   simp only [mem_morseContinuationSlice, mem_inter_iff, mem_preimage]
   refine ⟨fun ⟨γ, hγ, hγ0, hp, hq⟩ ↦ ?_, fun ⟨hp, hq⟩ ↦
