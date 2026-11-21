@@ -237,13 +237,6 @@ theorem aedisjoint_squareLowerHalf_squareUpperHalf :
       h ▸ Submodule.mem_top
     simp at h10
 
-/-- The shear `(s, t) ↦ (s + t, t)` of the plane is a measurable embedding. -/
-private theorem measurableEmbedding_shear_fst :
-    MeasurableEmbedding fun z : ℝ × ℝ ↦ (z.1 + z.2, z.2) :=
-  .of_measurable_inverse (by fun_prop) (by
-      rw [Set.range_eq_univ.2 fun z ↦ ⟨(z.1 - z.2, z.2), by simp⟩]; exact .univ)
-    (g := fun z : ℝ × ℝ ↦ (z.1 - z.2, z.2)) (by fun_prop) fun z ↦ by simp
-
 omit [CompleteSpace F] in
 /-- A volume-preserving measurable embedding `g` of the plane carrying `Δ²`, read in the coordinates
 `(y₀, y₁)`, onto a set `S` transports integrals over `Δ²` to integrals over `S`. -/
@@ -265,7 +258,13 @@ volume. -/
 theorem setIntegral_fullSimplex_comp_shear_fst (f : ℝ × ℝ → F) :
     ∫ y in fullSimplex 2, f (y 0 + y 1, y 1) = ∫ z in squareLowerHalf, f z :=
   setIntegral_fullSimplex_comp_of_mem_iff (measurePreserving_add_prod volume volume)
-    measurableEmbedding_shear_fst (fun y ↦ by
+    -- the shear `(s, t) ↦ (s + t, t)` is Mathlib's `(s, t) ↦ (s, s + t)` conjugated by the swap
+    (by
+      convert (MeasurableEquiv.prodComm.trans
+        ((MeasurableEquiv.shearAddRight ℝ).trans MeasurableEquiv.prodComm)).measurableEmbedding
+        using 1
+      ext z <;> simp [MeasurableEquiv.shearAddRight, MeasurableEquiv.prodComm, add_comm])
+    (fun y ↦ by
       simp only [mem_squareLowerHalf_iff, mem_fullSimplex_iff, Fin.forall_fin_two,
         Fin.sum_univ_two]
       constructor
