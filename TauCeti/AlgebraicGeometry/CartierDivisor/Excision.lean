@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
+public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
