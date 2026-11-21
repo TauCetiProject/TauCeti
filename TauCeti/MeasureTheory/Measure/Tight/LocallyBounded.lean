@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Topology.UrysohnsLemma
+import TauCeti.Topology.UrysohnsLemma
 
 /-!
 # Weighting measures with locally bounded masses
@@ -44,22 +44,6 @@ namespace MeasureTheory
 
 variable {α : Type*} [TopologicalSpace α]
 
-/-- Cutoffs along a compact exhaustion: continuous functions with values in `[0, 1]`, equal to
-one on `K j` and vanishing off `K (j + 1)`. -/
-private theorem exists_cutoffs [R1Space α] [LocallyCompactSpace α] (K : CompactExhaustion α) :
-    ∃ g : ℕ → C(α, ℝ), (∀ j, EqOn (g j) 1 (K j)) ∧ (∀ j x, g j x ∈ Icc 0 1) ∧
-      ∀ j x, ENNReal.ofReal (g j x) ≤ (K (j + 1)).indicator 1 x := by
-  have hg (j : ℕ) : ∃ g : C(α, ℝ), EqOn g 1 (K j) ∧ tsupport g ⊆ K (j + 1) ∧
-      ∀ x, g x ∈ Icc 0 1 := by
-    obtain ⟨g, hg1, -, hgs, hgr⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen
-      (K.isCompact j) isOpen_interior (K.subset_interior_succ j)
-    exact ⟨g, hg1, hgs.trans interior_subset, hgr⟩
-  choose g hg1 hgs hgr using hg
-  refine ⟨g, hg1, hgr, fun j x ↦ ?_⟩
-  by_cases hx : x ∈ K (j + 1)
-  · simpa [hx] using ENNReal.ofReal_le_ofReal (hgr j x).2
-  · simp [hx, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hgs j h)]
-
 /-- The weight `∑ⱼ aⱼ gⱼ` built from cutoffs along a compact exhaustion and positive
 coefficients `aⱼ ≤ 2⁻ʲ` is continuous and strictly positive, and the weighted mass of a
 measurable set `s` is at most `∑ⱼ aⱼ ρ (K (j + 1) ∩ s)`. -/
@@ -69,7 +53,7 @@ private theorem exists_weight_le_tsum [T2Space α] [LocallyCompactSpace α] [Mea
     ∃ w : α → ℝ≥0, Continuous w ∧ (∀ x, 0 < w x) ∧ ∀ (ρ : Measure α) {s : Set α},
       MeasurableSet s →
         ρ.withDensity (fun x ↦ w x) s ≤ ∑' j, (a j : ℝ≥0∞) * ρ (K (j + 1) ∩ s) := by
-  obtain ⟨g, hg1, hgr, hgK⟩ := exists_cutoffs K
+  obtain ⟨g, hg1, hgs, hgr⟩ := K.exists_cutoffs
   -- The weight, as a uniformly convergent series of continuous functions.
   let f : ℕ → α → ℝ := fun j x ↦ a j * g j x
   have hf_nonneg (j : ℕ) (x : α) : 0 ≤ f j x := mul_nonneg (a j).2 (hgr j x).1
@@ -80,16 +64,15 @@ private theorem exists_weight_le_tsum [T2Space α] [LocallyCompactSpace α] [Mea
   have hsum (x : α) : Summable fun j ↦ f j x := .of_norm_bounded hgeom (hf_le · x)
   let w : α → ℝ≥0 := fun x ↦ ⟨∑' j, f j x, tsum_nonneg (hf_nonneg · x)⟩
   have hw_eq (x : α) : (w x : ℝ≥0∞) = ∑' j, (a j : ℝ≥0∞) * ENNReal.ofReal (g j x) := by
-    have hw : (w x : ℝ) = ∑' j, f j x := rfl
+    have hw : (w x : ℝ) = ∑' j, f j x := NNReal.coe_mk _ _
     rw [← ENNReal.ofReal_coe_nnreal, hw, ENNReal.ofReal_tsum_of_nonneg (hf_nonneg · x) (hsum x)]
     simp only [f, ENNReal.ofReal_mul (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal]
   refine ⟨w, ?_, fun x ↦ ?_, fun ρ s hs ↦ ?_⟩
   · exact (continuous_tsum (fun j ↦ continuous_const.mul (g j).continuous) hgeom
       hf_le).subtype_mk _
   · obtain ⟨j, hj⟩ := K.exists_mem x
-    have h1 : f j x = a j := by simp [f, hg1 j hj]
-    exact NNReal.coe_pos.mp <| (h1 ▸ NNReal.coe_pos.mpr (ha_pos j) : (0 : ℝ) < f j x).trans_le
-      ((hsum x).le_tsum j fun k _ ↦ hf_nonneg k x)
+    have : (0 : ℝ) < f j x := by simpa [f, hg1 j hj] using ha_pos j
+    exact_mod_cast this.trans_le ((hsum x).le_tsum j fun k _ ↦ hf_nonneg k x)
   -- Integrate the series term by term, bounding each cutoff by the indicator of `K (j + 1)`.
   rw [withDensity_apply _ hs]
   simp_rw [hw_eq]
@@ -97,9 +80,13 @@ private theorem exists_weight_le_tsum [T2Space α] [LocallyCompactSpace α] [Mea
     ((g j).continuous.measurable.ennreal_ofReal.const_mul _).aemeasurable]
   refine tsum_le_tsum fun j ↦ ?_
   have hKm : MeasurableSet (K (j + 1)) := (K.isCompact _).isClosed.measurableSet
+  have hgK (x : α) : ENNReal.ofReal (g j x) ≤ (K (j + 1)).indicator 1 x := by
+    by_cases hx : x ∈ K (j + 1)
+    · simpa [hx] using ENNReal.ofReal_le_ofReal (hgr j x).2
+    · simp [hx, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hgs j h)]
   calc ∫⁻ x in s, (a j : ℝ≥0∞) * ENNReal.ofReal (g j x) ∂ρ
       ≤ ∫⁻ x in s, (a j : ℝ≥0∞) * (K (j + 1)).indicator 1 x ∂ρ :=
-        lintegral_mono fun x ↦ by gcongr; exact hgK j x
+        lintegral_mono fun x ↦ by gcongr; exact hgK x
     _ = (a j : ℝ≥0∞) * ρ (K (j + 1) ∩ s) := by
         rw [lintegral_const_mul _ (measurable_one.indicator hKm), lintegral_indicator_one hKm,
           Measure.restrict_apply hKm]
@@ -151,9 +138,7 @@ theorem exists_weight_bound_isTightMeasureSet_withDensity [T2Space α] [LocallyC
       gcongr
       exact le_add_of_nonneg_right zero_le_one
     calc (a j : ℝ≥0∞) * μ i (K (j + 1)) ≤ (a j : ℝ≥0∞) * T j := by gcongr
-      _ = ((a j * T j : ℝ≥0) : ℝ≥0∞) := (ENNReal.coe_mul ..).symm
-      _ ≤ ((2⁻¹ ^ j * 2⁻¹ ^ j : ℝ≥0) : ℝ≥0∞) := ENNReal.coe_le_coe.mpr this
-      _ = 2⁻¹ ^ j * 2⁻¹ ^ j := by simp [ENNReal.inv_pow]
+      _ ≤ 2⁻¹ ^ j * 2⁻¹ ^ j := by simpa [ENNReal.inv_pow] using ENNReal.coe_le_coe.mpr this
   obtain ⟨w, hw, hpos, hle⟩ := exists_weight_le_tsum K a (fun j ↦ by positivity) ha_le
   have htail (i : ι) (m : ℕ) {s : Set α} (hsm : MeasurableSet s)
       (hs : ∀ j < m, K (j + 1) ∩ s = ∅) :

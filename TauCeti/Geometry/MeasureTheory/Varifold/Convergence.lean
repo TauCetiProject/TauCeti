@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Topology.ContinuousMap.CocompactMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.MeasureTheory.Measure.Prokhorov
 import TauCeti.MeasureTheory.Measure.Tight.LocallyBounded
+import TauCeti.MeasureTheory.Measure.Vague
 
 /-!
 # Varifold convergence
@@ -32,8 +34,8 @@ this file proves the basic properties of the convergence for them:
 * the masses of compact sets are upper semicontinuous and those of open sets lower
   semicontinuous along the sequence (`TauCeti.VarifoldTendsto.limsup_measure_le`,
   `TauCeti.VarifoldTendsto.le_liminf_measure`); for relatively compact sets whose boundary is
-  null for the limit, the masses converge by
-  `MeasureTheory.Measure.tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported`;
+  null for the limit, the masses converge
+  (`TauCeti.VarifoldTendsto.tendsto_measure_of_null_frontier`);
 * convergence is preserved by push-forward along continuous maps under which preimages of
   compact sets are compact (`TauCeti.VarifoldTendsto.map`); this is how the weights
   `‖V n‖ = π_* V n` of convergent varifolds converge to the weight of the limit;
@@ -85,21 +87,6 @@ theorem varifoldTendsto_iff : VarifoldTendsto μ ν ↔
 theorem varifoldTendsto_const (ν : Measure Y) : VarifoldTendsto (fun _ ↦ ν) ν :=
   fun _ ↦ tendsto_const_nhds
 
-/-- A compactly supported continuous function whose integral against every measure lies between
-the mass of a compact set `K` and the mass of an open neighbourhood `U` of `K`; the lower bound
-needs the measure to be finite on compact sets. -/
-private theorem exists_cutoff [R1Space Y] [LocallyCompactSpace Y] [OpensMeasurableSpace Y]
-    {K U : Set Y} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ f : C_c(Y, ℝ), (∀ (ρ : Measure Y) [IsFiniteMeasureOnCompacts ρ],
-      ρ K ≤ ENNReal.ofReal (∫ y, f y ∂ρ)) ∧
-      ∀ ρ : Measure Y, ENNReal.ofReal (∫ y, f y ∂ρ) ≤ ρ U := by
-  obtain ⟨f, hf1, hfc, hfU, hfr⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen hK hU hKU
-  refine ⟨⟨f, hfc⟩, fun ρ _ ↦ ?_, fun ρ ↦ ?_⟩
-  · exact (CompactlySupportedContinuousMap.integrable ⟨f, hfc⟩).measure_le_integral
-      (ae_of_all _ fun y ↦ (hfr y).1) fun _ hy ↦ (hf1 hy).ge
-  · exact integral_le_measure (fun y _ ↦ (hfr y).2) fun y hy ↦
-      (image_eq_zero_of_notMem_tsupport fun h ↦ hy (hfU h)).le
-
 namespace VarifoldTendsto
 
 /-- The integrals of a compactly supported continuous function along a convergent sequence
@@ -119,13 +106,22 @@ theorem unique [T2Space Y] [LocallyCompactSpace Y] [BorelSpace Y] [ν.Regular] [
     (h : VarifoldTendsto μ ν) (h' : VarifoldTendsto μ ν') : ν = ν' :=
   Measure.ext_of_integral_eq_on_compactlySupported fun f ↦ tendsto_nhds_unique (h f) (h' f)
 
+/-- Along a convergent sequence of locally finite measures, the masses of a relatively compact
+measurable set whose boundary is null for the limit converge to its mass for the limit. -/
+theorem tendsto_measure_of_null_frontier [T2Space Y] [LocallyCompactSpace Y] [BorelSpace Y]
+    [HasOuterApproxClosed Y] [∀ n, IsLocallyFiniteMeasure (μ n)] [IsLocallyFiniteMeasure ν]
+    (h : VarifoldTendsto μ ν) {s : Set Y} (hs : MeasurableSet s) (hsc : IsCompact (closure s))
+    (hb : ν (frontier s) = 0) : Tendsto (fun n ↦ μ n s) atTop (𝓝 (ν s)) :=
+  Measure.tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported h hs hsc hb
+
 variable [R1Space Y] [LocallyCompactSpace Y]
 
 /-- A convergent sequence of measures that are finite on compact sets has **locally bounded
 masses**: on each compact set, the masses are bounded uniformly in `n`. -/
 theorem iSup_measure_ne_top [OpensMeasurableSpace Y] [∀ n, IsFiniteMeasureOnCompacts (μ n)]
     (h : VarifoldTendsto μ ν) {K : Set Y} (hK : IsCompact K) : ⨆ n, μ n K ≠ ∞ := by
-  obtain ⟨f, hfK, -⟩ := exists_cutoff hK isOpen_univ (subset_univ K)
+  obtain ⟨f, hfK, -⟩ := hK.exists_compactlySupported_measure_le_integral_le isOpen_univ
+    (subset_univ K)
   obtain ⟨C, hC⟩ := (h f).bddAbove_range
   refine ne_top_of_le_ne_top (b := ENNReal.ofReal C) ENNReal.ofReal_ne_top
     (iSup_le fun n ↦ ?_)
@@ -139,7 +135,7 @@ theorem limsup_measure_le [OpensMeasurableSpace Y] [∀ n, IsFiniteMeasureOnComp
     limsup (fun n ↦ μ n K) atTop ≤ ν K := by
   refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
   obtain ⟨U, hKU, hU, hUr⟩ := K.exists_isOpen_lt_of_lt r hr
-  obtain ⟨f, hfK, hfU⟩ := exists_cutoff hK hU hKU
+  obtain ⟨f, hfK, hfU⟩ := hK.exists_compactlySupported_measure_le_integral_le hU hKU
   have hlim := (ENNReal.continuous_ofReal.tendsto _).comp (h f)
   refine limsup_le_of_le (h := ?_)
   filter_upwards [hlim.eventually (gt_mem_nhds ((hfU ν).trans_lt hUr))] with n hn
@@ -152,7 +148,7 @@ theorem le_liminf_measure [OpensMeasurableSpace Y] [ν.Regular] (h : VarifoldTen
     ν U ≤ liminf (fun n ↦ μ n U) atTop := by
   refine le_of_forall_lt_imp_le_of_dense fun r hr ↦ ?_
   obtain ⟨K, hKU, hK, hrK⟩ := hU.exists_lt_isCompact hr
-  obtain ⟨f, hfK, hfU⟩ := exists_cutoff hK hU hKU
+  obtain ⟨f, hfK, hfU⟩ := hK.exists_compactlySupported_measure_le_integral_le hU hKU
   have hlim := (ENNReal.continuous_ofReal.tendsto _).comp (h f)
   refine le_liminf_of_le (h := ?_)
   filter_upwards [hlim.eventually (lt_mem_nhds (hrK.trans_le (hfK ν)))] with n hn
