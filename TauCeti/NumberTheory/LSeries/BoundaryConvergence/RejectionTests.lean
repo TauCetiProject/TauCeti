@@ -54,7 +54,7 @@ private theorem alternatingCoeff_eq_neg_exp {n : ℕ} (hn : n ≠ 0) :
   have hexp : Complex.exp (2 * Real.pi * Complex.I * (1 / 2 : ℂ) * n) = (-1 : ℂ) ^ n := by
     have harg : 2 * Real.pi * Complex.I * (1 / 2 : ℂ) * n =
         n * ((Real.pi : ℂ) * Complex.I) := by ring
-    rw [harg, Complex.exp_nat_mul, Complex.exp_pi_mul_I]
+    rw [harg, Complex.exp_natCast_mul, Complex.exp_pi_mul_I]
   rw [hexp]
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   simp [alternatingCoeff, pow_succ]

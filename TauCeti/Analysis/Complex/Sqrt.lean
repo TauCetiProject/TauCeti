@@ -14,8 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}`,
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and the negation law
-`Complex.sqrt_neg` together with its open half-plane corollaries `√(-z) = ∓i √z`.
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the negation law
+`Complex.sqrt_neg` together with its open half-plane corollaries `√(-z) = ∓i √z`, and
+packages the principal square root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
 -/
 
 public section
@@ -118,6 +119,10 @@ theorem sqrt_re_pos_iff (z : ℂ) : 0 < (sqrt z).re ↔ z ∈ slitPlane := by
     have hlt := lt_of_le_of_ne h hz
     linarith
 
+/-- The principal half-power `z ^ (1 / 2)` has positive real part exactly on the slit plane. -/
+theorem cpow_one_half_re_pos_iff (z : ℂ) : 0 < (z ^ (1 / 2 : ℂ)).re ↔ z ∈ slitPlane := by
+  simpa only [sqrt, one_div] using sqrt_re_pos_iff z
+
 /-- A sum of principal square roots has positive real part exactly when at least one
 input lies in the slit plane. -/
 @[simp]
@@ -131,5 +136,18 @@ theorem sqrt_add_sqrt_re_pos_iff (x y : ℂ) :
     by_contra! hn
     linarith
   · rintro (h | h) <;> linarith
+
+/-- The principal square root of a nonzero complex number, as a unit. -/
+noncomputable def sqrtUnit {z : ℂ} (hz : z ≠ 0) : ℂˣ :=
+  Units.mk0 (sqrt z) (sqrt_eq_zero_iff.not.2 hz)
+
+/-- The value of `Complex.sqrtUnit` is the principal square root. -/
+@[simp]
+theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
+  Units.val_mk0 _
+
+/-- The unit principal square root of `z` squares to `z`. -/
+theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
+  rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
 
 end Complex

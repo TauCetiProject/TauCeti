@@ -98,10 +98,10 @@ theorem mem_lower {z : sphere (0 : ℂ) 1} : z ∈ lower ↔ (z : ℂ) ≠ I := 
 theorem mem_basepoints {z : sphere (0 : ℂ) 1} : z ∈ basepoints ↔ z = 1 ∨ z = -1 := Iff.rfl
 
 theorem isOpen_upper : IsOpen upper :=
-  isOpen_ne_fun continuous_subtype_val continuous_const
+  isOpen_ne_fun continuous_subtypeVal continuous_const
 
 theorem isOpen_lower : IsOpen lower :=
-  isOpen_ne_fun continuous_subtype_val continuous_const
+  isOpen_ne_fun continuous_subtypeVal continuous_const
 
 /-- The two arcs cover the circle. -/
 theorem upper_union_lower : upper ∪ lower = univ := by
@@ -153,9 +153,9 @@ private theorem isPathConnected_re_pos :
   have : PathConnectedSpace H := isPathConnected_iff_pathConnectedSpace.mp
     ((convex_halfSpace_re_gt 0).isPathConnected ⟨1, by simp⟩)
   have hne : ∀ w : H, (w : ℂ) ≠ 0 := fun w h ↦ by
-    have hw : 0 < (w : ℂ).re := w.2
+    have hw : 0 < (w : ℂ).re := w.property
     simp [h] at hw
-  let f := normalizeToSphere (fun w : H ↦ (w : ℂ)) continuous_subtype_val hne
+  let f := normalizeToSphere (fun w : H ↦ (w : ℂ)) continuous_subtypeVal hne
   convert isPathConnected_range f.continuous using 1
   ext z
   constructor
@@ -163,7 +163,7 @@ private theorem isPathConnected_re_pos :
     exact ⟨⟨z, hz⟩, Subtype.ext (by
       simpa [f] using NormedSpace.normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere z))⟩
   · rintro ⟨w, rfl⟩
-    have hw : 0 < (w : ℂ).re := w.2
+    have hw : 0 < (w : ℂ).re := w.property
     simp only [mem_ofPred_eq, f, coe_normalizeToSphere_apply, NormedSpace.normalize,
       Complex.real_smul, re_ofReal_mul]
     exact mul_pos (inv_pos.mpr (norm_pos_iff.mpr (hne w))) hw
@@ -188,7 +188,7 @@ private theorem re_pos_iff_of_joinedIn {x y : sphere (0 : ℂ) 1} (h : JoinedIn 
     0 < (x : ℂ).re ↔ 0 < (y : ℂ).re := by
   obtain ⟨γ, hγ⟩ := h
   let f : unitInterval → ℝ := fun t ↦ ((γ t : sphere (0 : ℂ) 1) : ℂ).re
-  have hf : Continuous f := continuous_re.comp (continuous_subtype_val.comp γ.continuous)
+  have hf : Continuous f := continuous_re.comp (continuous_subtypeVal.comp γ.continuous)
   have hne : ∀ t, f t ≠ 0 := fun t ↦ re_ne_zero_of_mem_inter (hγ t)
   have h0 : f 0 = (x : ℂ).re := by simp [f]
   have h1 : f 1 = (y : ℂ).re := by simp [f]
@@ -296,7 +296,7 @@ morphism from `1` to `-1` to `k`. -/
 private def arcFunctor (T : Set (sphere (0 : ℂ) 1)) {K : Type*} [Group K] (k : K) :
     FundamentalGroupoidOn (Subtype.val ⁻¹' basepoints : Set T) ⥤ SingleObj K :=
   open scoped Classical in
-  SingleObj.differenceFunctor fun x ↦ if (x.1 : sphere (0 : ℂ) 1) = 1 then 1 else k
+  SingleObj.differenceFunctor fun x ↦ if (x.val : sphere (0 : ℂ) 1) = 1 then 1 else k
 
 private theorem arcFunctor_map_arcHom {K : Type*} [Group K] (k : K)
     (γ : Path (1 : sphere (0 : ℂ) 1) (-1)) (hγ : ∀ t, γ t ∈ T) :
@@ -312,8 +312,8 @@ private theorem arcFunctor_comp_eq {K : Type*} [Group K] (kA kB : K) :
         (ContinuousMap.inclusion inter_subset_right) (fun _ h ↦ h) ⋙ arcFunctor lower kB := by
   refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ ?_
   obtain ⟨γ, -⟩ := Quotient.exists_rep f.hom
-  have hab : (a.1 : sphere (0 : ℂ) 1) = b.1 := eq_of_joinedIn_inter a.2 b.2
-    ⟨γ.map continuous_subtype_val, fun t ↦ (γ t).2⟩
+  have hab : (a.val : sphere (0 : ℂ) 1) = b.val := eq_of_joinedIn_inter a.property b.property
+    ⟨γ.map continuous_subtypeVal, fun t ↦ (γ t).property⟩
   rw [Functor.comp_map, Functor.comp_map, arcFunctor, arcFunctor,
     SingleObj.differenceFunctor_map, SingleObj.differenceFunctor_map]
   simp [FundamentalGroupoidOn.map, hab]
@@ -418,9 +418,9 @@ for `y = 1` and by the class of `γA` for `y = -1`. -/
 private def conn (γA : Path (1 : sphere (0 : ℂ) 1) (-1)) (y : FundamentalGroupoidOn basepoints) :
     one ⟶ y := by
   classical
-  exact if h : (y.1 : sphere (0 : ℂ) 1) = 1 then eqToHom (Subtype.ext h.symm)
+  exact if h : (y.val : sphere (0 : ℂ) 1) = 1 then eqToHom (Subtype.ext h.symm)
     else (InducedCategory.homMk (Path.Homotopic.Quotient.mk γA) : one ⟶ negOne) ≫
-      eqToHom (Subtype.ext ((mem_basepoints.mp y.2).resolve_left h).symm)
+      eqToHom (Subtype.ext ((mem_basepoints.mp y.property).resolve_left h).symm)
 
 private theorem conn_one : conn γA one = 𝟙 one := by
   simp [conn]

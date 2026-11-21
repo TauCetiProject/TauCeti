@@ -14,7 +14,8 @@ Mathlib characterises equality of complex exponentials by `Complex.exp_eq_exp_if
 `exp x = exp y` if and only if `x - y ∈ 2 π i ℤ`. This file records the forms of the sufficient
 condition used for the factors `exp (π i x)` of theta series and modular forms, where the
 period is `2` in the variable `x`, and for the additive character `e(x) = exp (2 π i x)`, where
-the period is `1`.
+the period is `1`. Conversely, if `exp (π x i)` is an integer for a real number `x`, then `x` is
+an integer, and the parity of `x` is the sign of `exp (π x i)`.
 
 Two logarithms of the same number differ by `2 π i k` for an integer `k`, so dividing them by
 `2 π i` and using them as coefficients of a vector `v` changes the result by `k • v`. Near
@@ -25,6 +26,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 
 * `Complex.exp_pi_mul_I_mul_eq_of_sub_eq`: `exp (π i a) = exp (π i b)` whenever `a - b` is an
   even integer.
+* `Complex.exists_int_eq_of_exp_pi_mul_I_eq`: if `exp (π x i)` is an integer for real `x`, then
+  `x` is an integer `k` and `exp (π x i) = (-1) ^ k`.
 * `Complex.exp_two_pi_mul_I_mul_add_intCast`: `exp (2 π i (z + k)) = exp (2 π i z)` for an
   integer `k`.
 * `Complex.exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub`:
@@ -48,6 +51,23 @@ namespace Complex
 theorem exp_pi_mul_I_mul_eq_of_sub_eq {a b : ℂ} {m : ℤ} (h : a - b = 2 * m) :
     cexp (π * I * a) = cexp (π * I * b) :=
   exp_eq_exp_iff_exists_int.mpr ⟨m, by linear_combination (π * I) * h⟩
+
+/-- If `exp (π x i)` is an integer `u` for a real number `x`, then `x` is an integer `k` with
+`(-1) ^ k = u`. -/
+theorem exists_int_eq_of_exp_pi_mul_I_eq {x : ℝ} {u : ℤ} (h : cexp (↑(π * x) * I) = u) :
+    ∃ k : ℤ, x = k ∧ (k.negOnePow : ℤ) = u := by
+  have hsin : Real.sin (π * x) = 0 := by
+    rw [← exp_ofReal_mul_I_im, h, intCast_im]
+  obtain ⟨k, hk⟩ := Real.sin_eq_zero_iff.1 hsin
+  have hx : x = k := by
+    have := Real.pi_pos.ne'
+    field_simp at hk
+    linarith
+  refine ⟨k, hx, ?_⟩
+  have h2 : cexp (↑(π * x) * I) = (k.negOnePow : ℤ) := by
+    rw [hx, show (↑(π * (k : ℝ)) : ℂ) * I = k * (π * I) by push_cast; ring, exp_intCast_mul,
+      exp_pi_mul_I, Int.cast_negOnePow ℂ k]
+  exact_mod_cast h2.symm.trans h
 
 /-- `e(z + k) = e(z)` for `e(z) = exp (2 π i z)` and an integer `k`. -/
 @[simp]
@@ -110,8 +130,8 @@ theorem exists_div_two_pi_I_smul_eq_add_zsmul {E : Type*} [AddCommGroup E] [Modu
 theorem exp_log_add_inv_mul_log_div_pow {m : ℕ} [NeZero m] {z₀ t : ℂ} (hz₀ : z₀ ≠ 0)
     (ht : t ≠ 0) : exp (log z₀ + (m : ℂ)⁻¹ * log (t / z₀ ^ m)) ^ m = t := by
   have hm : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  rw [← exp_nat_mul, mul_add, ← mul_assoc, mul_inv_cancel₀ hm, one_mul, exp_add,
-    exp_nat_mul, exp_log hz₀, exp_log (div_ne_zero ht (pow_ne_zero m hz₀)),
+  rw [← exp_natCast_mul, mul_add, ← mul_assoc, mul_inv_cancel₀ hm, one_mul, exp_add,
+    exp_natCast_mul, exp_log hz₀, exp_log (div_ne_zero ht (pow_ne_zero m hz₀)),
     mul_div_cancel₀ _ (pow_ne_zero m hz₀)]
 
 end Complex

@@ -166,7 +166,7 @@ theorem IsHurewiczFibration.restrictPreimage_mooreLoopMap (hp : IsHurewiczFibrat
     rw [Homeomorph.eq_symm_apply]
     refine Prod.ext (Subtype.ext ?_) ?_
     · simp [φ, hset]
-    · simpa [φ, hset] using toPath_map ⟨p, hp.continuous⟩ γ.1
+    · simpa [φ, hset] using toPath_map ⟨p, hp.continuous⟩ γ.val
   rw [hφ]
   exact (posLengthHomeomorph (p e)).symm.isHurewiczFibration.comp
     (((Homeomorph.refl _).isHurewiczFibration.prodMap (hp.loopMap e)).comp_homeomorph φ)

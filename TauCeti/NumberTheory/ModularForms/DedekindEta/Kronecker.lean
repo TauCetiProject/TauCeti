@@ -22,7 +22,7 @@ For `γ = (a b; c d) ∈ SL(2, ℤ)` and `e(x) = exp(2π i x)`, the Dedekind eta
 
 where `(· / ·)` is the Kronecker symbol `TauCeti.kroneckerSym`. For `c ≥ 0`, `|c| = c`, so
 `(d / |c|)` reduces to `(d / c)`. Unlike the Dedekind-sum formula in
-`TauCeti.NumberTheory.ModularForms.DedekindEta.Multiplier`, this expression exhibits the quadratic
+`TauCeti.NumberTheory.ModularForms.DedekindEta.DedekindSum`, this expression exhibits the quadratic
 character in `d` and `c` directly across all of `SL(2, ℤ)`, which is the input to the modularity
 criterion for eta quotients on `Γ₀(N)`.
 
@@ -85,7 +85,7 @@ private theorem neg_one_pow_mul_cexp_sub_three_sub_twelve_mul (n : ℤ) (k : ℕ
     push_cast
     ring
   have hsign : (-1 : ℂ) ^ k * cexp (-(k : ℂ) * (π * I)) = 1 := by
-    rw [neg_mul, Complex.exp_neg, Complex.exp_nat_mul, Complex.exp_pi_mul_I,
+    rw [neg_mul, Complex.exp_neg, Complex.exp_natCast_mul, Complex.exp_pi_mul_I,
       mul_inv_cancel₀ (pow_ne_zero k (by norm_num))]
   rw [hexp, Complex.exp_add, Complex.exp_add]
   linear_combination cexp (-(π * I / 4)) * cexp (2 * π * I * (n : ℂ) / 24) * hsign
@@ -380,7 +380,7 @@ private theorem etaMultiplier_eq_kronecker_even_of_c_eq_zero {γ : SL(2, ℤ)} (
   have hdet := γ.fin_two_mul_sub_mul_eq_one
   rw [hc, mul_zero, sub_zero] at hdet
   rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨_, hd⟩ | ⟨_, hd⟩
-  · rw [etaMultiplier_of_c_eq_zero_of_d_pos hc (by omega), hc, hd, kroneckerSym_one_right,
+  · rw [etaMultiplier_of_c_eq_zero_of_d_pos γ hc (by omega), hc, hd, kroneckerSym_one_right,
       Int.cast_one, one_mul]
     congr 1
     push_cast
@@ -390,7 +390,7 @@ private theorem etaMultiplier_eq_kronecker_even_of_c_eq_zero {γ : SL(2, ℤ)} (
         -π / 2 * I + -(π * I * γ 0 1 / 12) := by
       push_cast
       ring
-    rw [etaMultiplier_of_c_eq_zero_of_d_neg hc (by omega), hc, hd,
+    rw [etaMultiplier_of_c_eq_zero_of_d_neg γ hc (by omega), hc, hd,
       kroneckerSym_zero_left, ite_eq_left (Or.inr rfl), Int.cast_one, one_mul,
       hexp, Complex.exp_add, Complex.exp_neg_pi_div_two_mul_I]
 
@@ -470,7 +470,7 @@ private theorem etaMultiplier_eq_kronecker_even_of_c_neg {γ : SL(2, ℤ)} (hc :
   have hnot_odd : ¬ Odd ((-γ) 1 0) :=
     Int.not_odd_iff_even.mpr (by simpa using heven.neg)
   have hmul : etaMultiplier γ = I * etaMultiplier (-γ) := by
-    rw [etaMultiplier_neg_of_c_neg hc, ← mul_assoc]
+    rw [etaMultiplier_neg_of_c_neg γ hc, ← mul_assoc]
     simp
   have hsym : kroneckerSym (-γ 1 0) (-γ 1 1) =
       χ₄ (γ 1 1 : ZMod 4) * kroneckerSym (γ 1 0) (γ 1 1) := by
@@ -500,7 +500,7 @@ private theorem etaMultiplier_eq_kronecker_odd_of_c_neg {γ : SL(2, ℤ)} (hc : 
   have hodd_abs : Odd (γ 1 0).natAbs := Int.natAbs_odd.mpr hodd
   have habs : ((γ 1 0).natAbs : ℤ) = -γ 1 0 := Int.ofNat_natAbs_of_nonpos hc.le
   have hmul : etaMultiplier γ = I * etaMultiplier (-γ) := by
-    rw [etaMultiplier_neg_of_c_neg hc, ← mul_assoc]
+    rw [etaMultiplier_neg_of_c_neg γ hc, ← mul_assoc]
     simp
   have hsym : kroneckerSym (-γ 1 1) (-γ 1 0) =
       χ₄ ((-γ 1 0 : ℤ) : ZMod 4) * kroneckerSym (γ 1 1) (γ 1 0).natAbs := by

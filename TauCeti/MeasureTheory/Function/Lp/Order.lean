@@ -16,7 +16,8 @@ the values is monotone, then so is scalar multiplication on `Lᵖ` classes, sinc
 almost everywhere pointwise. In particular real `Lᵖ` is an ordered real module, which is the
 hypothesis under which Mathlib's Bochner integral of almost everywhere nonnegative functions is
 nonnegative (`MeasureTheory.integral_nonneg_of_ae`), now applicable to `Lᵖ`-valued functions.
-Finite running suprema also preserve `MemLp`.
+Finite running suprema and positive parts also preserve `MemLp`
+(`MeasureTheory.MemLp.partialSups`, `MeasureTheory.MemLp.posPart`).
 
 The positive part of a real `Lᵖ` class is nonnegative (`MeasureTheory.Lp.posPart_nonneg`), and it
 vanishes exactly when the class is nonpositive (`MeasureTheory.Lp.posPart_eq_zero_iff`).
@@ -27,6 +28,12 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- The positive part of an `Lᵖ` function is in `Lᵖ`. -/
+theorem MemLp.posPart {α E : Type*} {m : MeasurableSpace α} {μ : Measure[m] α}
+    {p : ℝ≥0∞} [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E]
+    [IsOrderedAddMonoid E] {f : α → E} (hf : MemLp f p μ) : MemLp (f⁺) p μ :=
+  hf.sup .zero
 
 /-- The supremum of a nonempty finite family of `Lᵖ` functions is in `Lᵖ`. -/
 theorem memLp_finset_sup' {α E ι : Type*} {m : MeasurableSpace α} {μ : Measure[m] α}
