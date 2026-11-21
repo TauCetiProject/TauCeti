@@ -117,9 +117,10 @@ scalar multiplication by the values of a continuous semilinear map `L` costs at 
 On a finite product `ι → R`, a nonzero continuous linear map is nonzero at some coordinate vector
 (`ContinuousLinearMap.exists_apply_single_ne_zero`), and bounds at the coordinate vectors bound
 every value (`ContinuousLinearMap.norm_apply_le_card_mul_norm`). Replacing one coordinate by a
-functional with nonzero coefficient there is injective over a ring without zero divisors
-(`ContinuousLinearMap.pi_update_injective`) and a continuous linear equivalence over a topological
-field (`ContinuousLinearMap.exists_pi_update_equiv`). The coordinate arguments are adapted from
+functional is injective over a semiring with cancellative addition if its coefficient there is
+right-regular (`ContinuousLinearMap.pi_update_injective`), and a continuous linear equivalence over
+a topological ring if that coefficient is a unit (`ContinuousLinearMap.exists_pi_update_equiv`).
+The coordinate arguments are adapted from
 [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
@@ -631,57 +632,67 @@ theorem norm_apply_le_card_mul_norm [Fintype ι] [SeminormedRing R] {F : Type*}
     _ = Fintype.card ι * ‖v‖ * M := by simp [mul_assoc]
 
 /-- Replacing one coordinate by a linear functional is injective when its coefficient at
-that coordinate is nonzero. -/
-theorem pi_update_injective [Ring R] [NoZeroDivisors R] [TopologicalSpace R]
-    (α : (ι → R) →L[R] R) (i : ι) (hα : α (Pi.single i 1) ≠ 0) :
+that coordinate is right-regular. -/
+theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R]
+    (α : (ι → R) →L[R] R) (i : ι) (hα : IsRightRegular (α (Pi.single i 1))) :
     Function.Injective (pi fun m : ι ↦ if m = i then α else proj m) := by
-  refine (injective_iff_map_eq_zero _).2 fun v h0 ↦ ?_
-  have hoff (m : ι) (hm : m ≠ i) : v m = 0 := by simpa [pi_apply, hm] using congrFun h0 m
-  -- The kernel vector `v` is supported on the coordinate `i`.
-  have hsingle : v = v i • Pi.single i 1 := by
+  intro v w h
+  have hoff (m : ι) (hm : m ≠ i) : v m = w m := by simpa [pi_apply, hm] using congrFun h m
+  -- Split off the coordinate `i`: the remaining parts of `v` and `w` agree.
+  have hsplit (x : ι → R) : α x = α (Function.update x i 0) + x i * α (Pi.single i 1) := by
+    rw [← smul_eq_mul, ← map_smul, ← map_add]
+    congr 1
     ext m
     rcases eq_or_ne m i with rfl | hm
     · simp
-    · simp [hoff m hm, hm]
-  have hαv : v i * α (Pi.single i 1) = 0 := by
-    rw [← smul_eq_mul, ← map_smul, ← hsingle]
-    simpa [pi_apply] using congrFun h0 i
-  rw [hsingle, (mul_eq_zero.mp hαv).resolve_right hα, zero_smul]
+    · simp [hm]
+  have hrest : Function.update v i 0 = Function.update w i 0 := by
+    ext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp
+    · simp [hm, hoff m hm]
+  have hi : v i = w i := hα <| add_left_cancel (a := α (Function.update v i 0)) <| by
+    rw [← hsplit, hrest, ← hsplit]
+    simpa [pi_apply] using congrFun h i
+  ext m
+  rcases eq_or_ne m i with rfl | hm
+  · exact hi
+  · exact hoff m hm
 
-/-- Replacing one coordinate by a functional with a nonzero coefficient at that coordinate
+/-- Replacing one coordinate by a functional whose coefficient at that coordinate is a unit
 is a continuous linear equivalence. -/
-theorem exists_pi_update_equiv {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
-    (α : (ι → K) →L[K] K) (i : ι) (hα : α (Pi.single i 1) ≠ 0) :
-    ∃ e : (ι → K) ≃L[K] (ι → K),
-      (e : (ι → K) →L[K] (ι → K)) = pi fun m : ι ↦ if m = i then α else proj m := by
-  set c := α (Pi.single i 1)
-  set f : (ι → K) →L[K] (ι → K) := pi fun m : ι ↦ if m = i then α else proj m
+theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
+    (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1))) :
+    ∃ e : (ι → R) ≃L[R] (ι → R),
+      (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
+  obtain ⟨u, hu⟩ := hα
+  set f : (ι → R) →L[R] (ι → R) := pi fun m : ι ↦ if m = i then α else proj m
   -- The inverse keeps the coordinates `m ≠ i` and solves `α v = w i` for the coordinate `i`.
-  let g : (ι → K) →L[K] (ι → K) :=
-    pi fun m : ι ↦ if m = i then proj i + c⁻¹ • (proj i - α) else proj m
+  let g : (ι → R) →L[R] (ι → R) :=
+    pi fun m : ι ↦ if m = i then proj i + (proj i - α).smulRight (↑u⁻¹ : R) else proj m
   -- Both maps change only the coordinate `i`, by a multiple of `Pi.single i 1`.
-  have hf (v : ι → K) : f v = v + (α v - v i) • Pi.single i 1 := by
+  have hf (v : ι → R) : f v = v + (α v - v i) • Pi.single i 1 := by
     ext m
     rcases eq_or_ne m i with rfl | hm
     · simp [f, pi_apply]
     · simp [f, pi_apply, hm]
-  have hg (w : ι → K) : g w = w + (c⁻¹ * (w i - α w)) • Pi.single i 1 := by
+  have hg (w : ι → R) : g w = w + ((w i - α w) * ↑u⁻¹) • Pi.single i 1 := by
     ext m
     rcases eq_or_ne m i with rfl | hm
     · simp [g, pi_apply]
     · simp [g, pi_apply, hm]
-  have hgf (v : ι → K) : g (f v) = v := by
-    rw [hg, hf, add_assoc, ← add_smul, add_eq_left, smul_eq_zero]
-    left
-    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul]
-    field_simp
-    ring
-  have hfg (w : ι → K) : f (g w) = w := by
-    rw [hf, hg, add_assoc, ← add_smul, add_eq_left, smul_eq_zero]
-    left
-    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul]
-    field_simp
-    ring
+  have hgf (v : ι → R) : g (f v) = v := by
+    rw [hg, hf, add_assoc, ← add_smul, add_eq_left]
+    refine (congrArg (· • _) ?_).trans (zero_smul R _)
+    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul,
+      ← hu, mul_one, add_sub_cancel, sub_add_cancel_left, neg_mul, Units.mul_inv_cancel_right,
+      add_neg_cancel]
+  have hfg (w : ι → R) : f (g w) = w := by
+    rw [hf, hg, add_assoc, ← add_smul, add_eq_left]
+    refine (congrArg (· • _) ?_).trans (zero_smul R _)
+    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul,
+      ← hu, mul_one, Units.inv_mul_cancel_right]
+    abel
   exact ⟨.ofContinuousLinearMap f g (ext hfg) (ext hgf),
     ContinuousLinearEquiv.toContinuousLinearMap_ofContinuousLinearMap ..⟩
 
@@ -811,6 +822,25 @@ end TauCeti
 
 namespace ContinuousLinearMap
 
+section Rescale
+
+variable {𝕜 E F : Type*} [NormedDivisionRing 𝕜] [SeminormedAddCommGroup E]
+  [SeminormedAddCommGroup F] [Module 𝕜 E] [Module 𝕜 F] [NormSMulClass 𝕜 E] [NormSMulClass 𝕜 F]
+
+/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
+`L (t • v)` with `t ≠ 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
+theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) {w : F} {v : E} {L : E →L[𝕜] F} {c : ℝ}
+    (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) : ‖t⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
+  have : t⁻¹ • w - L v = t⁻¹ • (w - L (t • v)) := by
+    rw [map_smul, smul_sub, inv_smul_smul₀ ht]
+  have ht' : 0 < ‖t‖ := norm_pos_iff.2 ht
+  rw [this, norm_smul, norm_inv]
+  rw [norm_smul] at h
+  calc ‖t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
+    _ = c * ‖v‖ := by field_simp
+
+end Rescale
+
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 /-- If `A² = -1`, then `a + A b = y` holds exactly when `b - A a = -A y`: apply `A`. For a complex
@@ -838,18 +868,6 @@ section FirstOrder
 
 variable {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 E]
   [NormedSpace 𝕜 F]
-
-/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` with `t ≠ 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
-theorem norm_inv_smul_sub_le {t : 𝕜} (ht : t ≠ 0) {w : F} {v : E} {L : E →L[𝕜] F} {c : ℝ}
-    (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) : ‖t⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
-  have : t⁻¹ • w - L v = t⁻¹ • (w - L (t • v)) := by
-    rw [map_smul, smul_sub, inv_smul_smul₀ ht]
-  have ht' : 0 < ‖t‖ := norm_pos_iff.2 ht
-  rw [this, norm_smul, norm_inv]
-  rw [norm_smul] at h
-  calc ‖t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
-    _ = c * ‖v‖ := by field_simp
 
 /-- Let `B` invert `T` on `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `T v` with
 `K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within `(2 K² ε' + η) ‖u‖` of
