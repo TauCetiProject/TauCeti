@@ -91,8 +91,10 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω₀ : SymplecticForm V} {H' : ℝ → V → ℝ} {x : ℝ → V}
 
 /-- On the half-cylinder `s > a`, where `u` takes values in `B ⊆ φ.source`, the coordinate map
-`φ ∘ u` has the energy density of `u` for the cylindrical perturbation. -/
-private theorem floerEnergyDensity_comp_eq (hω : ω.IsNondegenerate)
+`φ ∘ u` has the energy density of `u` for the cylindrical perturbation, and solves the coordinate
+Floer equation for the structure `J'` read in the chart wherever `u` solves the Floer equation for
+`J`. -/
+private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNondegenerate)
     (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {n : WithTop ℕ∞} (hn : n ≠ 0)
     (hφ : ∀ y ∈ B, ∀ v w : TangentSpace I y,
       ω.eval₂ y v w = ω₀ (mvfderiv I φ y v) (mvfderiv I φ y w))
@@ -100,38 +102,23 @@ private theorem floerEnergyDensity_comp_eq (hω : ω.IsNondegenerate)
     (hBφ : B ⊆ φ.source) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u (Ioi a ×ˢ univ))
     (huB : ∀ s, a < s → ∀ t, u (s, t) ∈ B) {z : ℝ × ℝ} (hz : a < z.1) :
     ω₀.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H' w.2) (φ ∘ u) z =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
+        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z ∧
+      ∀ {J : AlmostComplexStructure (TangentSpace I (u z))} {J' : AlmostComplexStructure V},
+        IsComplexLinearMap J J' (mvfderiv I φ (u z)).toLinearMap →
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+          (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap →
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) J'
+          (ω₀.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H' w.2) (φ ∘ u) z).toLinearMap := by
   have huz : u z ∈ B := huB z.1 hz z.2
-  exact hω.floerEnergyDensity_comp
-    ((hu.contMDiffAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hz, mem_univ _⟩)).mdifferentiableAt
-      hn) (φ.mdifferentiableAt (by simp) (hBφ huz))
-    (φ.bijective_mvfderiv (by simp) (hBφ huz)).surjective (hφ _ huz) EventuallyEq.rfl
-    (hHH' z.2 _ huz) (differentiableAt_const _)
-    ((hH'.comp (contDiff_prodMk_right z.2)).differentiable one_ne_zero _)
-
-/-- On the half-cylinder `s > a`, where `u` takes values in `B ⊆ φ.source`, the coordinate map
-`φ ∘ u` solves the coordinate Floer equation for the structure `J'` read in the chart wherever `u`
-solves the Floer equation for `J`. -/
-private theorem isComplexLinearMap_perturbedFDeriv_comp (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {n : WithTop ℕ∞} (hn : n ≠ 0)
-    (hφ : ∀ y ∈ B, ∀ v w : TangentSpace I y,
-      ω.eval₂ y v w = ω₀ (mvfderiv I φ y v) (mvfderiv I φ y w))
-    (hHH' : ∀ t, ∀ y ∈ B, H t =ᶠ[𝓝 y] H' t ∘ φ) (hH' : ContDiff ℝ 1 (uncurry H'))
-    (hBφ : B ⊆ φ.source) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u (Ioi a ×ˢ univ))
-    (huB : ∀ s, a < s → ∀ t, u (s, t) ∈ B) {z : ℝ × ℝ} (hz : a < z.1)
-    {J : AlmostComplexStructure (TangentSpace I (u z))} {J' : AlmostComplexStructure V}
-    (hJJ' : IsComplexLinearMap J J' (mvfderiv I φ (u z)).toLinearMap)
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J'
-      (ω₀.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H' w.2) (φ ∘ u) z).toLinearMap := by
-  have huz : u z ∈ B := huB z.1 hz z.2
-  exact (hω.isComplexLinearMap_perturbedFDeriv_comp_iff
-    ((hu.contMDiffAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hz, mem_univ _⟩)).mdifferentiableAt
-      hn) (φ.mdifferentiableAt (by simp) (hBφ huz))
-    (φ.bijective_mvfderiv (by simp) (hBφ huz)).surjective (hφ _ huz) EventuallyEq.rfl
-    (hHH' z.2 _ huz) (differentiableAt_const _)
-    ((hH'.comp (contDiff_prodMk_right z.2)).differentiable one_ne_zero _) hJJ').2 hfl
+  have hum := (hu.contMDiffAt
+    ((isOpen_Ioi.prod isOpen_univ).mem_nhds ⟨hz, mem_univ _⟩)).mdifferentiableAt hn
+  have hφx := φ.mdifferentiableAt (by simp) (hBφ huz)
+  have hsurj := (φ.bijective_mvfderiv (by simp) (hBφ huz)).surjective
+  have hH'z := (hH'.comp (contDiff_prodMk_right z.2)).differentiable one_ne_zero (φ (u z))
+  exact ⟨hω.floerEnergyDensity_comp hum hφx hsurj (hφ _ huz) EventuallyEq.rfl (hHH' z.2 _ huz)
+      (differentiableAt_const _) hH'z,
+    fun hJJ' hfl ↦ (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hum hφx hsurj (hφ _ huz)
+      EventuallyEq.rfl (hHH' z.2 _ huz) (differentiableAt_const _) hH'z hJJ').2 hfl⟩
 
 omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V] in
 /-- The coordinate map `φ ∘ u` of a `Cⁿ` map `u` with values in `B ⊆ φ.source` on the
@@ -157,6 +144,23 @@ private theorem setLIntegral_floerEnergyDensity_comp {φ : M → V} {S : Set (�
         (ω₀.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H' w.2) (φ ∘ u) z) =
       ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) :=
   setLIntegral_congr_fun hS fun z hz ↦ by rw [h z (hSa z hz)]
+
+/-- The coordinate map `φ ∘ u` of a map `u` of finite energy on the half-cylinder `s > a`, with
+values in `B ⊆ φ.source`, has finite energy there. -/
+private theorem setLIntegral_floerEnergyDensity_comp_ne_top (hω : ω.IsNondegenerate)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {n : WithTop ℕ∞} (hn : n ≠ 0)
+    (hφ : ∀ y ∈ B, ∀ v w : TangentSpace I y,
+      ω.eval₂ y v w = ω₀ (mvfderiv I φ y v) (mvfderiv I φ y w))
+    (hHH' : ∀ t, ∀ y ∈ B, H t =ᶠ[𝓝 y] H' t ∘ φ) (hH' : ContDiff ℝ 1 (uncurry H'))
+    (hBφ : B ⊆ φ.source) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u (Ioi a ×ˢ univ))
+    (huB : ∀ s, a < s → ∀ t, u (s, t) ∈ B)
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
+    ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω₀.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H' w.2) (φ ∘ u) z) ≠ ⊤ := by
+  rwa [setLIntegral_floerEnergyDensity_comp (measurableSet_Ioi.prod measurableSet_Icc)
+    (fun z hz ↦ hz.1) fun z hz ↦
+      (floerEnergyDensity_comp_and_isComplexLinearMap hω φ hn hφ hHH' hH' hBφ hu huB hz).1]
 
 /-- **Exponential decay of the energy at a nondegenerate end in a symplectic chart.** Let `φ` be a
 smooth partial diffeomorphism from `M` onto an open subset of `V`, pulling the symplectic form `ω₀`
@@ -196,19 +200,19 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp (hω : 
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≤
         ENNReal.ofReal (C * Real.exp (-(κ * s))) := by
   have hH'1 : ContDiff ℝ 1 (uncurry H') := hH'.of_le (by norm_num)
-  have hdens (z : ℝ × ℝ) (hz : a < z.1) :=
-    floerEnergyDensity_comp_eq (n := 2) hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hz
+  have hchart (z : ℝ × ℝ) (hz : a < z.1) :=
+    floerEnergyDensity_comp_and_isComplexLinearMap (n := 2) hω φ (by simp) hφ hHH' hH'1 hBφ hu
+      huB hz
   obtain ⟨κ, hκ, C, hdecay⟩ :=
     TauCeti.SymplecticForm.exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
       (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per (contDiffOn_comp φ hBφ hu huB)
     (fun s hs t ↦ congrArg φ (hper s hs t)) hc hJc hJM
-    (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp (n := 2) hω φ (by simp) hφ hHH' hH'1 hBφ
-      hu huB hz.1 (hJJ' z hz) (hfloer z hz))
-    (by rwa [setLIntegral_floerEnergyDensity_comp (measurableSet_Ioi.prod measurableSet_Icc)
-      (fun z hz ↦ hz.1) hdens]) hxper hx hnd hux
+    (fun z hz ↦ (hchart z hz.1).2 (hJJ' z hz) (hfloer z hz))
+    (setLIntegral_floerEnergyDensity_comp_ne_top hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hE)
+    hxper hx hnd hux
   refine ⟨κ, hκ, C, (hdecay.and (eventually_gt_atTop a)).mono fun s ⟨hs, hsa⟩ ↦ ?_⟩
   rwa [setLIntegral_floerEnergyDensity_comp (measurableSet_Ici.prod measurableSet_Icc)
-    (fun z hz ↦ hsa.trans_le hz.1) hdens] at hs
+    (fun z hz ↦ hsa.trans_le hz.1) fun z hz ↦ (hchart z hz).1] at hs
 
 /-- **Exponential convergence at a nondegenerate end in a symplectic chart.** Under the hypotheses
 of the energy decay
@@ -245,11 +249,9 @@ theorem exists_pos_eventually_norm_sub_le_exp (hω : ω.IsNondegenerate)
   exact TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp
     (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per (contDiffOn_comp φ hBφ hu huB)
     (fun s hs t ↦ congrArg φ (hper s hs t)) hc hJc hJM
-    (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp (n := 2) hω φ (by simp) hφ hHH' hH'1 hBφ
-      hu huB hz.1 (hJJ' z hz) (hfloer z hz))
-    (by rwa [setLIntegral_floerEnergyDensity_comp (measurableSet_Ioi.prod measurableSet_Icc)
-      (fun z hz ↦ hz.1) fun z hz ↦
-        floerEnergyDensity_comp_eq (n := 2) hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hz])
+    (fun z hz ↦ (floerEnergyDensity_comp_and_isComplexLinearMap (n := 2) hω φ (by simp) hφ hHH'
+      hH'1 hBφ hu huB hz.1).2 (hJJ' z hz) (hfloer z hz))
+    (setLIntegral_floerEnergyDensity_comp_ne_top hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hE)
     hL hxper hx hnd hux
 
 end NormedSpace
@@ -314,11 +316,9 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
     (hB.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hBφ)) hBW hJ't
     (contDiffOn_comp φ hBφ hu huB) (fun s hs t ↦ congrArg φ (hper s hs t))
     (fun s hs t ↦ ⟨u (s, t), huB s hs t, rfl⟩)
-    (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp (n := 3) hω φ (by simp) hφ hHH' hH'1 hBφ
-      hu huB hz.1 (hJJ' z.2 _ (huB z.1 hz.1 z.2)) (hfloer z hz))
-    (by rwa [setLIntegral_floerEnergyDensity_comp (measurableSet_Ioi.prod measurableSet_Icc)
-      (fun z hz ↦ hz.1) fun z hz ↦
-        floerEnergyDensity_comp_eq (n := 3) hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hz])
+    (fun z hz ↦ (floerEnergyDensity_comp_and_isComplexLinearMap (n := 3) hω φ (by simp) hφ hHH'
+      hH'1 hBφ hu huB hz.1).2 (hJJ' z.2 _ (huB z.1 hz.1 z.2)) (hfloer z hz))
+    (setLIntegral_floerEnergyDensity_comp_ne_top hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hE)
     hiso hnd
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
