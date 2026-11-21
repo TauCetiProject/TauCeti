@@ -48,7 +48,7 @@ characteristic of the double is `2 = 2 · 1`, twice that of the disc.
   chart centred at `ζ`, the biholomorphism is the Möbius transformation of
   `Complex.UnitClosedDisc.cayleyMoebius ζ`, that is, `w ↦ ζ (I - w) / (w + I)`.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_swap`: the sheet swap becomes the inversion
-  `OnePoint.unitCircleInversion`.
+  `OnePoint.inversion` with centre `0` and radius `1`.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_image_fixed`: the fixed set of the sheet swap
   becomes the unit circle.
 * `Complex.UnitClosedDisc.eulerChar_schottkyDouble` and
@@ -172,7 +172,7 @@ private theorem toSphere_inl (z : 𝕔𝔻) :
   simp [toSphere]
 
 private theorem toSphere_inr (z : 𝕔𝔻) :
-    toSphere (DoubleAlong.inr _ z) = unitCircleInversion ((z : ℂ) : OnePoint ℂ) := by
+    toSphere (DoubleAlong.inr _ z) = inversion (0 : ℂ) 1 one_ne_zero ((z : ℂ) : OnePoint ℂ) := by
   simp [toSphere]
 
 /-- The inverse of a doubled Cayley chart followed by the homeomorphism to the sphere is the
@@ -199,7 +199,7 @@ private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
         apply hwI
         rw [sub_eq_zero] at h
         rw [← conj_conj w, ← h, conj_I]
-      rw [unitCircleInversion_coe (div_ne_zero (mul_ne_zero hζ0 hcw') hcw),
+      rw [inversion_zero_one_coe_eq_conj_inv (div_ne_zero (mul_ne_zero hζ0 hcw') hcw),
         cayleyMoebius_smul_coe ζ hζ0 hw, coe_eq_coe]
       have hw2 : -I - w ≠ 0 := by
         rw [← neg_add', neg_ne_zero, add_comm]
@@ -279,7 +279,7 @@ theorem schottkyDoubleDiffeomorph_inl (z : 𝕔𝔻) :
 @[simp]
 theorem schottkyDoubleDiffeomorph_inr (z : 𝕔𝔻) :
     schottkyDoubleDiffeomorph (DoubleAlong.inr _ z) =
-      unitCircleInversion ((z : ℂ) : OnePoint ℂ) :=
+      inversion (0 : ℂ) 1 one_ne_zero ((z : ℂ) : OnePoint ℂ) :=
   toSphere_inr z
 
 /-- The underlying homeomorphism of the biholomorphism is
@@ -307,14 +307,14 @@ involution, to the inversion `w ↦ (conj w)⁻¹` of the sphere in the unit cir
 @[simp]
 theorem schottkyDoubleDiffeomorph_swap (p : SchottkyDouble 𝕔𝔻) :
     schottkyDoubleDiffeomorph (DoubleAlong.swap _ p) =
-      unitCircleInversion (schottkyDoubleDiffeomorph p) := by
+      inversion (0 : ℂ) 1 one_ne_zero (schottkyDoubleDiffeomorph p) := by
   induction p using DoubleAlong.induction_on <;> simp
 
 /-- The inverse of the biholomorphism carries the inversion in the unit circle to the sheet
 swap. -/
 @[simp]
-theorem schottkyDoubleDiffeomorph_symm_unitCircleInversion (x : OnePoint ℂ) :
-    schottkyDoubleDiffeomorph.symm (unitCircleInversion x) =
+theorem schottkyDoubleDiffeomorph_symm_inversion_zero_one (x : OnePoint ℂ) :
+    schottkyDoubleDiffeomorph.symm (inversion (0 : ℂ) 1 one_ne_zero x) =
       DoubleAlong.swap _ (schottkyDoubleDiffeomorph.symm x) :=
   EquivLike.injective schottkyDoubleDiffeomorph <| by
     rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_swap, Diffeomorph.apply_symm_apply]
@@ -333,7 +333,7 @@ theorem schottkyDoubleDiffeomorph_symm_coe_of_one_le_norm {z : ℂ} (hz : 1 ≤ 
   have hz0 : z ≠ 0 := norm_pos_iff.1 (one_pos.trans_le hz)
   refine EquivLike.injective schottkyDoubleDiffeomorph ?_
   rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_inr, coe_mk,
-    unitCircleInversion_coe (by simpa using hz0), map_inv₀, conj_conj, inv_inv]
+    inversion_zero_one_coe_eq_conj_inv (by simpa using hz0), map_inv₀, conj_conj, inv_inv]
 
 /-- The point at infinity comes from the centre of the second sheet. -/
 @[simp]
@@ -341,7 +341,7 @@ theorem schottkyDoubleDiffeomorph_symm_infty :
     schottkyDoubleDiffeomorph.symm ∞ = DoubleAlong.inr _ 0 :=
   EquivLike.injective schottkyDoubleDiffeomorph <| by
     rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_inr, coe_zero,
-      unitCircleInversion_zero]
+      inversion_center]
 
 /-- The biholomorphism carries the fixed set of the sheet swap, the boundary circle of the disc on
 the first sheet, onto the unit circle of the sphere. -/
