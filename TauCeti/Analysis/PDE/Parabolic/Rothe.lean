@@ -41,12 +41,13 @@ a sequence of stationary problems solved by Lax–Milgram. Testing a step with `
 bounds the energies `A(t_k) x_k x_k` and the dissipation `∑ ‖ι (x (k + 1) - x k)‖² / h` by `M`,
 uniformly in `N`. The piecewise linear interpolant `uh` of the scheme has weak derivative `D`,
 `ι* ι D + A(t_{k+1}) ub = ι* G` for the piecewise constant interpolant `ub` and the cellwise
-average `G` of `g`, and `∫ ‖uh - ub‖² ≤ h M / α`. The energy estimate
-`TauCeti.HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual` for `uh - u`, whose forcing
+average `G` of `g`, and `∫ ‖uh - ub‖² ≤ h M / α`. The energy estimate for `uh - u`
+(`TauCeti.HasWeakLineDerivOn.sq_mul_integral_norm_sub_sq_le_of_gelfandDual`), whose forcing
 `ι* (G - g) + A(t) (uh - ub) + (A(t) - A(t_{k+1})) ub` tends to zero since cell averages converge in
 `L²` (`MeasureTheory.tendsto_integral_norm_intervalStepAverage_sub_sq`), gives `uh → u` and
 `ub → u` in `L²(a, b; V)`. An almost everywhere convergent subsequence of `ub` passes the energy
-bound to `u`, and a weakly convergent subsequence of `ι D` in `L²(a, b; H)` gives `d`
+bound to `u` (`MeasureTheory.ae_le_of_tendsto_integral_norm_sub_sq`), and a weakly convergent
+subsequence of `ι D` in `L²(a, b; H)` gives `d`
 (`TauCeti.exists_hasWeakLineDerivOn_and_norm_le_of_tendsto`).
 
 ## References
@@ -441,80 +442,6 @@ private theorem rotheDeriv_add_eq {g : ℝ → H} {x : ℕ → V} (hab : a < b) 
 
 end Scheme
 
-/-! ### Comparison with the weak solution -/
-
-section Comparison
-
-variable [CompleteSpace V] {a b α : ℝ}
-
-/-- **Comparison of the weak solution with an approximate solution.** Let `u` be a weak solution
-of `u' + A(t) u = ι* g`, `u(a) = v₀`, with coercive `A(t)`, and let `uh` start at `v₀` and solve
-`ι* ι uh' + Ah(t) ub = ι* gh` for some `ub` and operators `Ah(t)` with `‖A(t)‖ ≤ Λ` and
-`‖A(t) - Ah(t)‖ ≤ ε₁`. Then the energy estimate for `uh - u` gives
-`α² ∫ ‖uh - u‖² ≤ 3 (‖ι‖² ∫ ‖gh - g‖² + Λ² ∫ ‖uh - ub‖² + ε₁² ∫ ‖ub‖²)`. -/
-private theorem integral_norm_sub_sq_le_of_approx
-    {A Ah : ℝ → V →L[ℝ] StrongDual ℝ V} {Λ ε₁ : ℝ} (hα : 0 < α) (hab : a ≤ b)
-    (hA : ∀ t ∈ Ioo a b, ∀ v, α * ‖v‖ ^ 2 ≤ A t v v)
-    (hAm : AEStronglyMeasurable A (volume.restrict (Ioo a b)))
-    (hAhm : AEStronglyMeasurable Ah (volume.restrict (Ioo a b)))
-    (hΛ : ∀ t ∈ Ioo a b, ‖A t‖ ≤ Λ) (hε : ∀ t ∈ Ioo a b, ‖A t - Ah t‖ ≤ ε₁)
-    {g gh : ℝ → H} (hg : MemLp g 2 (volume.restrict (Ioo a b)))
-    (hgh : MemLp gh 2 (volume.restrict (Ioo a b)))
-    {u : ℝ → V} {u' : ℝ → StrongDual ℝ V} {w : ℝ → H} {v₀ : V}
-    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t))) u' 1)
-    (hu : MemLp u 2 (volume.restrict (Ioo a b))) (hu' : MemLp u' 2 (volume.restrict (Ioo a b)))
-    (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t + A t (u t) = ι.gelfandDual (g t))
-    (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
-    (h₀ : w a = ι v₀)
-    {uh ub D : ℝ → V} (hD : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ uh D 1)
-    (huh : MemLp uh 2 (volume.restrict (Ioo a b))) (hDm : MemLp D 2 (volume.restrict (Ioo a b)))
-    (hub : MemLp ub 2 (volume.restrict (Ioo a b))) (huhc : ContinuousOn uh (Icc a b))
-    (huh₀ : uh a = v₀)
-    (hscheme : ∀ t ∈ Ioo a b, ι.gelfandDual (ι (D t)) + Ah t (ub t) = ι.gelfandDual (gh t)) :
-    α ^ 2 * ∫ t in Ioo a b, ‖uh t - u t‖ ^ 2 ≤
-      3 * ((‖ι‖ ^ 2 * ∫ t in Ioo a b, ‖gh t - g t‖ ^ 2) +
-        (Λ ^ 2 * ∫ t in Ioo a b, ‖uh t - ub t‖ ^ 2) + ε₁ ^ 2 * ∫ t in Ioo a b, ‖ub t‖ ^ 2) := by
-  set μ := volume.restrict (Ioo a b)
-  have hF₁ : MemLp (fun t ↦ ι.gelfandDual (gh t - g t)) 2 μ :=
-    ι.gelfandDual.comp_memLp' (hgh.sub hg)
-  obtain ⟨hF₂, h₂⟩ := memLp_clm_apply_and_integral_norm_sq_le hAm
-    ((ae_restrict_mem measurableSet_Ioo).mono hΛ) (huh.sub hub)
-  obtain ⟨hF₃, h₃⟩ := memLp_clm_apply_and_integral_norm_sq_le (hAm.sub hAhm)
-    ((ae_restrict_mem measurableSet_Ioo).mono hε) hub
-  simp only [Pi.sub_apply] at hF₂ h₂ hF₃ h₃
-  -- The error `uh - u` solves `e' + A(t) e = F₁ + F₂ + F₃`.
-  have he : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
-      (fun t ↦ ι.gelfandDual (ι (uh t - u t))) (fun t ↦ ι.gelfandDual (ι (D t)) - u' t) 1 := by
-    convert (hD.clm_comp (ι.gelfandDual ∘L ι)).sub h using 1 <;> ext t : 1 <;> simp
-  have heq' : ∀ᵐ t ∂μ, (ι.gelfandDual (ι (D t)) - u' t) + A t (uh t - u t) =
-      ι.gelfandDual (gh t - g t) + A t (uh t - ub t) + (A t - Ah t) (ub t) := by
-    filter_upwards [heq, ae_restrict_mem measurableSet_Ioo] with t ht ht'
-    rw [eq_sub_of_add_eq (hscheme t ht'), eq_sub_of_add_eq ht]
-    simp only [map_sub, sub_apply]
-    abel
-  have hest := he.norm_sq_add_mul_integral_le_of_gelfandDual (A := A) (β := 0) (huh.sub hu)
-    ((ι.gelfandDual.comp_memLp' (ι.comp_memLp' hDm)).sub hu') ((hF₁.add hF₂).add hF₃) hα le_rfl
-    (by filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht v; simpa using hA t ht v)
-    heq' (w := fun t ↦ ι (uh t) - w t) ((ι.continuous.comp_continuousOn huhc).sub hw)
-    (by filter_upwards [hae] with t ht; simp [← ht]) (right_mem_Icc.2 hab)
-  simp only [huh₀, h₀, sub_self, norm_zero, mul_zero, zero_mul, Real.exp_zero, one_mul,
-    ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add] at hest
-  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
-    intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at hest
-  have hF := integral_norm_sq_le_three_mul (μ := μ) hF₁ hF₂ hF₃ (Eventually.of_forall fun _ ↦ rfl)
-  have h₁ := integral_norm_sq_le_sq_mul_of_norm_le hF₁ (hgh.sub hg)
-    (Eventually.of_forall fun t ↦ by
-      simpa using ι.gelfandDual.le_opNorm (gh t - g t))
-  simp only [Pi.add_apply] at hest
-  simp only [Pi.sub_apply] at h₁
-  have hnn : 0 ≤ ‖ι (uh b) - w b‖ ^ 2 := sq_nonneg _
-  have key : α * ∫ t in Ioo a b, ‖uh t - u t‖ ^ 2 ≤
-      α⁻¹ * ∫ t in Ioo a b, ‖ι.gelfandDual (gh t - g t) + A t (uh t - ub t) +
-        (A t - Ah t) (ub t)‖ ^ 2 := by linarith
-  linarith [(le_inv_mul_iff₀ hα).1 key]
-
-end Comparison
-
 /-! ### The approximations for one partition -/
 
 section Approx
@@ -649,8 +576,8 @@ private theorem exists_rotheApprox [CompleteSpace H] (hab : a < b) {N : ℕ} (hN
     (LipschitzOnWith.of_dist_le' (f := A) (K := L) fun t ht s hs ↦ by
       rw [Real.dist_eq]
       exact (dist_eq_norm (A t) (A s)).trans_le (hLip s hs t ht)).continuousOn
-  have hcmp := integral_norm_sub_sq_le_of_approx (ι := ι) (A := A)
-    (Ah := fun t ↦ A (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N)))
+  have hcmp := HasWeakLineDerivOn.sq_mul_integral_norm_sub_sq_le_of_gelfandDual (ι := ι)
+    (A := A) (Ah := fun t ↦ A (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N)))
     (Λ := ‖A a‖ + L * (b - a)) (ε₁ := L * ((b - a) / N)) hα hab.le
     (fun t ht ↦ hA t (Ioo_subset_Icc_self ht))
     ((hAc.mono Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo)
@@ -712,21 +639,6 @@ private theorem tendsto_integral_norm_rotheApprox_sub [CompleteSpace H] {M : ℝ
     (fun n ↦ ?_) hR
   rw [le_inv_mul_iff₀ (by positivity)]
   exact hcmp n
-
-omit [CompleteSpace V] in
-/-- **The energy bound in the limit.** If `ub n → u` in `L²(a, b; V)` and
-`A t (ub n t) (ub n t) ≤ c n` on `(a, b)` with `c n → M`, then `A t (u t) (u t) ≤ M` almost
-everywhere on `(a, b)`. -/
-private theorem ae_apply_le_of_tendsto {M : ℝ} {c : ℕ → ℝ} (hc : Tendsto c atTop (𝓝 M))
-    {u : ℝ → V} {ub : ℕ → ℝ → V} (hub : ∀ n, MemLp (ub n) 2 (volume.restrict (Ioo a b)))
-    (hu : MemLp u 2 (volume.restrict (Ioo a b)))
-    (hubu : Tendsto (fun n ↦ ∫ t in Ioo a b, ‖ub n t - u t‖ ^ 2) atTop (𝓝 0))
-    (hE : ∀ n, ∀ t ∈ Ioo a b, A t (ub n t) (ub n t) ≤ c n) :
-    ∀ᵐ t ∂volume.restrict (Ioo a b), A t (u t) (u t) ≤ M := by
-  obtain ⟨ns, hns, hlim⟩ := exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq hub hu hubu
-  filter_upwards [hlim, ae_restrict_mem measurableSet_Ioo] with t ht ht'
-  exact le_of_tendsto_of_tendsto' (((A t).continuous₂.tendsto (u t, u t)).comp (ht.prodMk_nhds ht))
-    (hc.comp hns.tendsto_atTop) fun k ↦ hE (ns k) t ht'
 
 /-- **Time regularity of weak solutions with time-dependent coefficients.** Let `V ↪ H ↪ V*` be
 given by `ι : V →L[ℝ] H`, and let `A(t) : V →L[ℝ] V*`, `t ∈ [a, b]`, be symmetric and coercive,
@@ -810,10 +722,10 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lip
     (fun n ↦ (hD n).clm_comp ι) (fun n ↦ ι.comp_memLp' (huh n)) (ι.comp_memLp' hu)
     (fun n ↦ ι.comp_memLp' (hDm n)) hDbd (tendsto_integral_norm_clm_apply_sub_sq ι huh hu huhu)
   refine ⟨dl, Lp.memLp dl, hderiv, h.ae_eq (hderiv.clm_comp ι.gelfandDual),
-    ae_apply_le_of_tendsto hc hub hu hubu hE, ?_⟩
-  have hn := MemLp.norm_toLp_sq (Lp.memLp dl)
-  rw [Lp.toLp_coeFn] at hn
-  calc ∫ t in Ioo a b, ‖dl t‖ ^ 2 = ‖dl‖ ^ 2 := hn.symm
+    ae_le_of_tendsto_integral_norm_sub_sq (φ := fun t v ↦ A t v v) hub hu hubu
+      (fun t ↦ by fun_prop) hc fun n ↦ (ae_restrict_mem measurableSet_Ioo).mono (hE n), ?_⟩
+  calc ∫ t in Ioo a b, ‖dl t‖ ^ 2 = ‖dl‖ ^ 2 :=
+        (Lp.toLp_coeFn dl (Lp.memLp dl) ▸ MemLp.norm_toLp_sq (Lp.memLp dl)).symm
     _ ≤ Real.sqrt M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hdl 2
     _ = M := Real.sq_sqrt hM
 

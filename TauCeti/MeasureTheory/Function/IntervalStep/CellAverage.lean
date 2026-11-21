@@ -60,12 +60,6 @@ theorem intervalCellIndex_eq {a h t : ℝ} (hh : 0 < h) {k : ℕ}
 theorem measurable_intervalCellIndex (a h : ℝ) : Measurable (intervalCellIndex a h) :=
   ((measurable_id.sub_const a).div_const h).nat_ceil
 
-/-- The last node of the partition of `[a, b]` into `N` cells is `b`. -/
-theorem add_natCast_mul_sub_div_natCast_self (a b : ℝ) {N : ℕ} (hN : 0 < N) :
-    a + N * ((b - a) / N) = b := by
-  rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hN.ne')]
-  ring
-
 /-- On `(a, b)`, the index of the cell of the partition into `N` cells lies between `1` and `N`. -/
 theorem intervalCellIndex_mem_Icc {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN : 0 < N) :
     intervalCellIndex a ((b - a) / N) t ∈ Icc 1 N := by
@@ -99,7 +93,7 @@ theorem add_intervalCellIndex_mul_mem_Icc {a b t : ℝ} (ht : t ∈ Ioo a b) {N 
   obtain ⟨k, hk, hidx, -⟩ := exists_intervalCellIndex_eq ht hN
   have hh : 0 ≤ (b - a) / N := div_nonneg (sub_nonneg.2 (ht.1.trans ht.2).le) N.cast_nonneg
   rw [hidx]
-  exact Icc_subset_Icc_right (add_natCast_mul_sub_div_natCast_self a b hN).le
+  exact Icc_subset_Icc_right (TauCeti.add_natCast_mul_sub_div_natCast_self a b hN).le
     (TauCeti.add_natCast_mul_mem_Icc a hh hk)
 
 /-- On `(a, b)`, a point is within one cell length `h = (b - a) / N` of the right node
@@ -125,7 +119,7 @@ theorem integral_Ioo_eq_sum_intervalIntegral_cell [NormedSpace ℝ E] {a b : ℝ
       push_cast
       exact hf k hk
   push_cast at hsum
-  rw [zero_mul, add_zero, add_natCast_mul_sub_div_natCast_self a b hN] at hsum
+  rw [zero_mul, add_zero, TauCeti.add_natCast_mul_sub_div_natCast_self a b hN] at hsum
   rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hab.le, ← hsum]
 
 /-- **Integrals of cellwise constant functions.** For the partition of `(a, b)` into `N` cells of
@@ -169,7 +163,7 @@ theorem IntegrableOn.intervalIntegrable_cell {a b : ℝ} {g : ℝ → E}
   refine (hI.mono_set ?_).intervalIntegrable
   rw [uIcc_of_le (by nlinarith)]
   exact (TauCeti.Icc_add_natCast_mul_subset_Icc a hh hk).trans
-    (Icc_subset_Icc_right (add_natCast_mul_sub_div_natCast_self a b hN).le)
+    (Icc_subset_Icc_right (TauCeti.add_natCast_mul_sub_div_natCast_self a b hN).le)
 
 /-! ### Cell averages -/
 
@@ -312,7 +306,7 @@ private theorem norm_intervalStepAverage_sub_le [CompleteSpace E] {φ : ℝ → 
   have hh : 0 < (b - a) / N := div_pos (sub_pos.2 (ht.1.trans ht.2)) (Nat.cast_pos.2 hN)
   obtain ⟨k, hk, -, hmem⟩ := exists_intervalCellIndex_eq ht hN
   have hsub := (TauCeti.Icc_add_natCast_mul_subset_Icc a hh.le hk).trans
-    (Icc_subset_Icc_right (add_natCast_mul_sub_div_natCast_self a b hN).le)
+    (Icc_subset_Icc_right (TauCeti.add_natCast_mul_sub_div_natCast_self a b hN).le)
   rw [intervalStepAverage_eq φ hh hmem]
   set h := (b - a) / N
   set p := a + k * h
