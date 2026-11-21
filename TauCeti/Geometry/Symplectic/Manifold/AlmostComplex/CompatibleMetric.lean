@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Pullback.Average
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Metric
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
 /-!
-# The metric of a smooth compatible pair
+# Compatible metrics and pullback averaging
 
 A smooth two-form `σ` on a manifold `M` compatible with a smooth almost complex structure `J`
 (`TauCeti.SmoothTwoForm.Compatible`: `σ(J u, J w) = σ(u, w)` and `σ(u, J u) > 0` for `u ≠ 0`)
@@ -36,7 +39,15 @@ four-manifold every nondegenerate smooth two-form `σ` admits a compatible `J`
 compatible with the symplectic orientation of `σ` and has Kähler two-form `σ`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_isCompatibleOrientation_and_kahlerTwoForm_eq`).
 
+A given `C^n` Riemannian metric can also be averaged with its pullback by a smooth almost
+complex structure `J`. This produces a `J`-invariant metric in arbitrary dimension, without
+an orientation hypothesis. Existence of an initial metric is used only in the separate
+finite-dimensional Hausdorff σ-compact existence theorem.
+
 ## Main definitions
+
+* `TauCeti.SmoothAlmostComplexStructure.compatibleAverage`: the average of a given metric and
+  its pullback by `J`, with the same regularity and invariant under `J`.
 
 * `TauCeti.SmoothTwoForm.Compatible.metric`: the smooth Riemannian metric `σ(·, J ·)` of a smooth
   compatible pair `(σ, J)`.
@@ -70,6 +81,8 @@ open Bundle Module
 open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
+
+section CompatiblePair
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -174,5 +187,85 @@ theorem exists_isCompatibleOrientation_and_kahlerTwoForm_eq [T2Space M] [SigmaCo
     h.inner_eq_eval₂ ho, SmoothAlmostComplexStructure.kahlerTwoForm_eq_of_inner_eq h.inner_eq_eval₂⟩
 
 end SmoothTwoForm.IsNondegenerate
+
+end CompatiblePair
+
+end TauCeti
+
+namespace TauCeti
+
+namespace SmoothAlmostComplexStructure
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] (j : SmoothAlmostComplexStructure I M)
+
+variable {n : ℕ∞ω} [ENat.LEInfty n]
+
+/-- **The compatible average of a metric.** The mean of a metric `g` and its pullback by `j`,
+`½ (g(u, v) + g(j u, j v))`. It is compatible with `j`
+(`TauCeti.SmoothAlmostComplexStructure.compatibleAverage_inner_apply_apply`). -/
+def compatibleAverage (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :
+    ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x) :=
+  g.pullbackAverage j.tangentEquiv j.contMDiff_tangentEquiv
+
+/-- The compatible average is the half-sum of the metric and its pullback by `j`. -/
+@[simp]
+theorem compatibleAverage_inner
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (x : M)
+    (u v : TangentSpace I x) :
+    (j.compatibleAverage g).inner x u v = 2⁻¹ * (g.inner x u v + g.inner x (j x u) (j x v)) := by
+  simp [compatibleAverage]
+
+/-- The compatible average is compatible with `j`: `j` is an isometry for it. -/
+theorem compatibleAverage_inner_apply_apply
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (x : M)
+    (u v : TangentSpace I x) :
+    (j.compatibleAverage g).inner x (j x u) (j x v) = (j.compatibleAverage g).inner x u v := by
+  simpa [compatibleAverage] using g.pullbackAverage_inner_apply_apply _ j.contMDiff_tangentEquiv
+    (by simp) x u v
+
+/-- A metric is its own compatible average exactly when it is compatible with `j`. -/
+theorem compatibleAverage_eq_self_iff
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :
+    j.compatibleAverage g = g ↔
+      ∀ x (u v : TangentSpace I x), g.inner x (j x u) (j x v) = g.inner x u v := by
+  simpa [compatibleAverage] using g.pullbackAverage_eq_self_iff _ j.contMDiff_tangentEquiv
+
+/-- Compatible averaging is idempotent. -/
+@[simp]
+theorem compatibleAverage_compatibleAverage
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :
+    j.compatibleAverage (j.compatibleAverage g) = j.compatibleAverage g :=
+  (j.compatibleAverage_eq_self_iff _).2 (j.compatibleAverage_inner_apply_apply g)
+
+/-- The structures `j` and `-j` have the same compatible averages. -/
+@[simp]
+theorem neg_compatibleAverage
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :
+    (-j).compatibleAverage g = j.compatibleAverage g := by
+  ext x u v
+  simp
+
+/-- Compatible averaging commutes with lowering the smoothness of the metric. -/
+@[simp]
+theorem compatibleAverage_ofLE {m : ℕ∞ω} [ENat.LEInfty m]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hmn : m ≤ n) :
+    j.compatibleAverage (g.ofLE hmn) = (j.compatibleAverage g).ofLE hmn := by
+  ext x u v
+  simp
+
+/-- **Existence of compatible metrics.** A σ-compact Hausdorff manifold modelled on a
+finite-dimensional space with a smooth almost complex structure `j` carries a `C^n` Riemannian
+metric for which `j` is an isometry. -/
+theorem exists_contMDiffRiemannianMetric_compatible [FiniteDimensional ℝ E] [T2Space M]
+    [SigmaCompactSpace M] {n : ℕ∞} :
+    ∃ g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x),
+      ∀ x (u v : TangentSpace I x), g.inner x (j x u) (j x v) = g.inner x u v := by
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := n) (F := E)
+    (E := fun x : M ↦ TangentSpace I x)
+  exact ⟨j.compatibleAverage g, j.compatibleAverage_inner_apply_apply g⟩
+
+end SmoothAlmostComplexStructure
 
 end TauCeti
