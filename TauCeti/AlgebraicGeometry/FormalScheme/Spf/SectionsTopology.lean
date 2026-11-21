@@ -406,7 +406,7 @@ private theorem sectionsTopology_eq_iInf_of_isCompact_cover (hI : IsAdic I)
   obtain ⟨F, hFS, hFfin, hFcov⟩ := hU.elim_finite_subcover_image
     (fun g _ ↦ (basicOpen g).isOpen) hcov
   have : Finite F := hFfin.to_subtype
-  have hF_le (i : F) : basicOpen i.1 ≤ U := hS_le i.1 (Set.mem_of_subset_of_mem hFS i.2)
+  have hF_le (i : F) : basicOpen i.val ≤ U := hS_le i.val (Set.mem_of_subset_of_mem hFS i.property)
   refine le_iInf fun n ↦ ?_
   let _ : TopologicalSpace ((structureSheaf hI).obj.obj (op U)) :=
     ⨅ (g : A) (hg : g ∈ S),
@@ -424,17 +424,17 @@ private theorem sectionsTopology_eq_iInf_of_isCompact_cover (hI : IsAdic I)
         ((quotientProjection hI n).hom.app (op U) x) := by
     refine Filter.eventually_all.mpr fun i ↦ ?_
     let _ : TopologicalSpace
-      ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op (basicOpen i.1))) := ⊥
+      ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op (basicOpen i.val))) := ⊥
     have := discreteTopology_bot
-      ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op (basicOpen i.1)))
-    let _ := sectionsTopology hI (basicOpen i.1)
+      ((quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op (basicOpen i.val)))
+    let _ := sectionsTopology hI (basicOpen i.val)
     have hcont : Continuous
-        (((quotientProjection hI n).hom.app (op (basicOpen i.1))) ∘
+        (((quotientProjection hI n).hom.app (op (basicOpen i.val))) ∘
           ((structureSheaf hI).obj.map (homOfLE (hF_le i)).op)) :=
-      (continuous_quotientProjection_app hI (basicOpen i.1) n).comp
-        (continuous_iInf_dom (i := i.1) <|
-          continuous_iInf_dom (i := Set.mem_of_subset_of_mem hFS i.2) <|
-            continuous_induced_dom (t := sectionsTopology hI (basicOpen i.1)))
+      (continuous_quotientProjection_app hI (basicOpen i.val) n).comp
+        (continuous_iInf_dom (i := i.val) <|
+          continuous_iInf_dom (i := Set.mem_of_subset_of_mem hFS i.property) <|
+            continuous_induced_dom (t := sectionsTopology hI (basicOpen i.val)))
     have hnat := NatTrans.naturality_apply (quotientProjection hI n).hom (homOfLE (hF_le i)).op
     exact (((IsLocallyConstant.iff_continuous _).mpr hcont).eventually_eq x).mono fun y hy ↦ by
       simpa only [Function.comp_apply, hnat] using hy
@@ -442,7 +442,7 @@ private theorem sectionsTopology_eq_iInf_of_isCompact_cover (hI : IsAdic I)
   -- `n`-th projection itself is eventually constant near `x`.
   refine hev.mono fun y hy ↦
     TopCat.Sheaf.eq_of_locally_eq' (quotientSheaf (is_ideal_adic_pow hI n.succ_pos))
-      (fun i : F ↦ basicOpen i.1) U (fun i ↦ homOfLE (hF_le i)) ?_ _ _ hy
+      (fun i : F ↦ basicOpen i.val) U (fun i ↦ homOfLE (hF_le i)) ?_ _ _ hy
   intro p hp
   obtain ⟨g, hgF, hpg⟩ := Set.mem_iUnion₂.mp (hFcov hp)
   exact Opens.mem_iSup.mpr ⟨⟨g, hgF⟩, hpg⟩
@@ -542,12 +542,12 @@ theorem quotientSectionsTopology_isLinearTopology (hI : IsAdic I) (U : Opens (ca
   have := quotientSectionsTopology_isTopologicalRing hI U
   let Idx := { f : A // basicOpen f ≤ U } × ℕ
   let J (q : Idx) : Ideal ((structureSheaf hI).obj.obj (op U)) :=
-    (RingHom.ker (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.1))).hom)).comap
-      (((structureSheaf hI).obj.map (homOfLE q.1.2).op).hom)
+    (RingHom.ker (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.val))).hom)).comap
+      (((structureSheaf hI).obj.map (homOfLE q.1.property).op).hom)
   have heq : quotientSectionsTopology hI U =
       ⨅ q : Idx, TopologicalSpace.induced
-        (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.1))) ∘
-          ((structureSheaf hI).obj.map (homOfLE q.1.2).op)) ⊥ := by
+        (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.val))) ∘
+          ((structureSheaf hI).obj.map (homOfLE q.1.property).op)) ⊥ := by
     simp only [Idx, quotientSectionsTopology, sectionsTopology, induced_iInf, induced_compose,
       iInf_prod, iInf_subtype]
   have hnhds : (𝓝 (0 : (structureSheaf hI).obj.obj (op U))).HasBasis
@@ -558,8 +558,8 @@ theorem quotientSectionsTopology_isLinearTopology (hI : IsAdic I) (U : Opens (ca
     rw [heq, nhds_iInf]
     have hq (q : Idx) :
         @nhds _ (TopologicalSpace.induced
-          (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.1))) ∘
-            ((structureSheaf hI).obj.map (homOfLE q.1.2).op)) ⊥) 0 = 𝓟 (J q : Set _) := by
+          (((quotientProjection hI q.2).hom.app (op (basicOpen q.1.val))) ∘
+            ((structureSheaf hI).obj.map (homOfLE q.1.property).op)) ⊥) 0 = 𝓟 (J q : Set _) := by
       rw [TauCeti.nhds_induced_bot]
       congr 1
       ext x
@@ -582,8 +582,8 @@ theorem quotientSectionsTopology_t2Space (hI : IsAdic I) (U : Opens (carrier A))
         (structureSheaf hI).obj.map (homOfLE hf).op y := by
     by_contra! hall
     exact hxy <| TopCat.Sheaf.eq_of_locally_eq' (structureSheaf hI)
-      (fun p : { f : A // basicOpen f ≤ U } ↦ basicOpen p.1) U (fun p ↦ homOfLE p.2)
-      (le_iSup_basicOpen_le U) x y fun p ↦ hall p.1 p.2
+      (fun p : { f : A // basicOpen f ≤ U } ↦ basicOpen p.val) U (fun p ↦ homOfLE p.property)
+      (le_iSup_basicOpen_le U) x y fun p ↦ hall p.val p.property
   obtain ⟨f, hf, hne⟩ := hex
   let _ := sectionsTopology hI (basicOpen f)
   have := sectionsTopology_t2Space hI (basicOpen f)
@@ -691,10 +691,10 @@ theorem quotientSectionsTopology_completeSpace (hI : IsAdic I) (U : Opens (carri
     (hu : u.toTopologicalSpace = quotientSectionsTopology hI U) :
     CompleteSpace ((structureSheaf hI).obj.obj (op U)) := by
   let P := { f : A // basicOpen f ≤ U }
-  let D (p : P) := ((structureSheaf hI).obj.obj (op (basicOpen p.1)) : Type u)
-  let tD (p : P) : TopologicalSpace (D p) := quotientSectionsTopology hI (basicOpen p.1)
+  let D (p : P) := ((structureSheaf hI).obj.obj (op (basicOpen p.val)) : Type u)
+  let tD (p : P) : TopologicalSpace (D p) := quotientSectionsTopology hI (basicOpen p.val)
   have htr (p : P) : @IsTopologicalRing (D p) (tD p) _ :=
-    quotientSectionsTopology_isTopologicalRing hI (basicOpen p.1)
+    quotientSectionsTopology_isTopologicalRing hI (basicOpen p.val)
   have htag (p : P) : @IsTopologicalAddGroup (D p) (tD p) _ := by
     let _ := tD p; have := htr p; exact inferInstance
   let _ (p : P) : UniformSpace (D p) :=
@@ -702,11 +702,12 @@ theorem quotientSectionsTopology_completeSpace (hI : IsAdic I) (U : Opens (carri
   have _ (p : P) : IsUniformAddGroup (D p) := by
     let _ := tD p; have := htag p; exact isUniformAddGroup_of_addCommGroup
   have _ (p : P) : CompleteSpace (D p) :=
-    sectionsTopology_completeSpace hI (basicOpen p.1) (quotientSectionsTopology_basicOpen hI p.1)
-  obtain ⟨⟨⟨heq⟩, -⟩, hcl⟩ := quotientSectionsTopology_glue hI (V := fun p : P ↦ basicOpen p.1)
-    (fun p ↦ p.2) (le_iSup_basicOpen_le U)
+    sectionsTopology_completeSpace hI (basicOpen p.val) (quotientSectionsTopology_basicOpen hI
+        p.val)
+  obtain ⟨⟨⟨heq⟩, -⟩, hcl⟩ := quotientSectionsTopology_glue hI (V := fun p : P ↦ basicOpen p.val)
+    (fun p ↦ p.property) (le_iSup_basicOpen_le U)
   let Φ : ((structureSheaf hI).obj.obj (op U) : Type u) →+ ∀ p : P, D p :=
-    AddMonoidHom.mk' (fun s p ↦ (structureSheaf hI).obj.map (homOfLE p.2).op s) fun s t ↦
+    AddMonoidHom.mk' (fun s p ↦ (structureSheaf hI).obj.map (homOfLE p.property).op s) fun s t ↦
       funext fun p ↦ map_add _ s t
   have hind : Topology.IsInducing Φ := ⟨hu.trans heq⟩
   have huind : IsUniformInducing Φ := AddMonoidHom.isUniformInducing_of_isInducing hind

@@ -44,7 +44,7 @@ def coordinateRotation (i j : n) (hij : i ≠ j) : Matrix.specialOrthogonalGroup
   ⟨Matrix.swap R i j * Matrix.diagonal (Function.update 1 j (-1)), by
     rw [← coe_orthogonalDiagonalReflection, mem_specialOrthogonalGroup_iff, det_mul,
       det_orthogonalDiagonalReflection]
-    refine ⟨Submonoid.mul_mem _ ?_ (orthogonalDiagonalReflection R j).2, ?_⟩
+    refine ⟨Submonoid.mul_mem _ ?_ (orthogonalDiagonalReflection R j).property, ?_⟩
     · rw [mem_orthogonalGroup_iff', transpose_swap, swap_mul_self]
     · simp [swap, det_permutation, hij]⟩
 

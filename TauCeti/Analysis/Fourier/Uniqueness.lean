@@ -149,7 +149,7 @@ theorem IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero {a b : ℝ} (ha
     exact liftIoc_coe_apply (hIoc ▸ hx)
   have hint : Integrable (liftIoc (b - a) a f) haarAddCircle := by
     rw [← integrable_smul_measure hc ENNReal.ofReal_ne_top, ← volume_eq_smul_haarAddCircle]
-    exact ((measurePreserving_subtype_coe measurableSet_Ioc).comp
+    exact ((measurePreserving_subtypeVal measurableSet_Ioc).comp
       (measurePreserving_equivIoc _)).integrable_comp_of_integrable (hIoc ▸ hf)
   have hzero := hint.ae_eq_zero_of_forall_fourierCoeff_eq_zero fun n ↦ by
     simpa only [fourierCoeffOn] using h n

@@ -196,7 +196,7 @@ private theorem cliffordOperator_mem_evenOdd (hline : P.line = ⊥) (v : V) {j :
     P.cliffordOperator v s ∈ evenOdd (0 : QuadraticForm K P.W) (j + 1) := by
   obtain ⟨c, rfl⟩ := P.decompositionEquiv.surjective v
   obtain ⟨⟨x, y⟩, z⟩ := c
-  have hz : (z : V) = 0 := Submodule.mem_bot K |>.mp (hline ▸ z.2)
+  have hz : (z : V) = 0 := Submodule.mem_bot K |>.mp (hline ▸ z.property)
   rw [P.decompositionEquiv_apply, hz, add_zero, map_add, LinearMap.add_apply,
     P.cliffordOperator_coe_W, P.cliffordOperator_coe_W']
   refine add_mem ?_ ?_
@@ -260,7 +260,7 @@ noncomputable def spinPlusAction (Q : QuadraticForm K V) (P : SpinPolarizationDa
     CliffordAlgebra.even Q →ₐ[K] Module.End K (spinPlus Q P) :=
   restrictSpinAction P (spinPlus Q P) fun x s hs => by
     rw [spinPlus_def] at hs ⊢
-    exact spinAction_mem_evenOdd_of_mem_even P hline x.2 hs
+    exact spinAction_mem_evenOdd_of_mem_even P hline x.property hs
 
 /-- **The action of the even Clifford subalgebra on the odd half-spin summand** `S⁻`. -/
 noncomputable def spinMinusAction (Q : QuadraticForm K V) (P : SpinPolarizationData Q)
@@ -268,7 +268,7 @@ noncomputable def spinMinusAction (Q : QuadraticForm K V) (P : SpinPolarizationD
     CliffordAlgebra.even Q →ₐ[K] Module.End K (spinMinus Q P) :=
   restrictSpinAction P (spinMinus Q P) fun x s hs => by
     rw [spinMinus_def] at hs ⊢
-    exact spinAction_mem_evenOdd_of_mem_even P hline x.2 hs
+    exact spinAction_mem_evenOdd_of_mem_even P hline x.property hs
 
 /-- The action of an even Clifford element on `S⁺` is the Fock action. -/
 @[simp]
@@ -307,7 +307,7 @@ theorem spinPlus_invariant (hline : P.line = ⊥) (g : spinGroup Q) :
   rintro _ ⟨s, hs, rfl⟩
   rw [spinPlus_def] at hs ⊢
   rw [spinRep_apply]
-  exact spinAction_mem_evenOdd_of_mem_even P hline (spinGroup.mem_even g.2) hs
+  exact spinAction_mem_evenOdd_of_mem_even P hline (spinGroup.mem_even g.property) hs
 
 /-- **The odd half-spin summand is invariant** under the spin representation, when the
 polarization has no line summand. -/
@@ -316,7 +316,7 @@ theorem spinMinus_invariant (hline : P.line = ⊥) (g : spinGroup Q) :
   rintro _ ⟨s, hs, rfl⟩
   rw [spinMinus_def] at hs ⊢
   rw [spinRep_apply]
-  exact spinAction_mem_evenOdd_of_mem_even P hline (spinGroup.mem_even g.2) hs
+  exact spinAction_mem_evenOdd_of_mem_even P hline (spinGroup.mem_even g.property) hs
 
 /-- **The even half-spin summand as a subrepresentation** of the spin representation. -/
 def spinPlusSubrep (hline : P.line = ⊥) : Subrepresentation (spinRep Q P) where
@@ -358,9 +358,9 @@ theorem mem_spinMinusSubrep (hline : P.line = ⊥) {s : ExteriorAlgebra K P.W} :
 carried by the even half-spin subrepresentation. -/
 theorem coe_spinPlusAction_spinGroup_apply (hline : P.line = ⊥) (g : spinGroup Q)
     (s : spinPlus Q P) :
-    (spinPlusAction Q P hline ⟨g, spinGroup.mem_even g.2⟩ s : ExteriorAlgebra K P.W) =
+    (spinPlusAction Q P hline ⟨g, spinGroup.mem_even g.property⟩ s : ExteriorAlgebra K P.W) =
       ((spinPlusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinPlusSubrep P hline).2 s.2⟩ : ExteriorAlgebra K P.W) := by
+        ⟨s, (mem_spinPlusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
   simp only [coe_spinPlusAction_apply, Subrepresentation.toRepresentation_apply,
     LinearMap.coe_restrict_apply, spinRep_apply]
 
@@ -368,9 +368,9 @@ theorem coe_spinPlusAction_spinGroup_apply (hline : P.line = ⊥) (g : spinGroup
 carried by the odd half-spin subrepresentation. -/
 theorem coe_spinMinusAction_spinGroup_apply (hline : P.line = ⊥) (g : spinGroup Q)
     (s : spinMinus Q P) :
-    (spinMinusAction Q P hline ⟨g, spinGroup.mem_even g.2⟩ s : ExteriorAlgebra K P.W) =
+    (spinMinusAction Q P hline ⟨g, spinGroup.mem_even g.property⟩ s : ExteriorAlgebra K P.W) =
       ((spinMinusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinMinusSubrep P hline).2 s.2⟩ : ExteriorAlgebra K P.W) := by
+        ⟨s, (mem_spinMinusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
   simp only [coe_spinMinusAction_apply, Subrepresentation.toRepresentation_apply,
     LinearMap.coe_restrict_apply, spinRep_apply]
 
@@ -380,8 +380,8 @@ theorem coe_spinPlusAction_spinGroupToEven_apply (hline : P.line = ⊥) (g : spi
     (s : spinPlus Q P) :
     (spinPlusAction Q P hline (spinGroupToEven Q g) s : ExteriorAlgebra K P.W) =
       ((spinPlusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinPlusSubrep P hline).2 s.2⟩ : ExteriorAlgebra K P.W) := by
-  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
+        ⟨s, (mem_spinPlusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
+  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.property⟩ :=
     Subtype.ext (coe_spinGroupToEven_apply Q g)
   rw [hspinGroupToEven]
   exact coe_spinPlusAction_spinGroup_apply P hline g s
@@ -392,8 +392,8 @@ theorem coe_spinMinusAction_spinGroupToEven_apply (hline : P.line = ⊥) (g : sp
     (s : spinMinus Q P) :
     (spinMinusAction Q P hline (spinGroupToEven Q g) s : ExteriorAlgebra K P.W) =
       ((spinMinusSubrep P hline).toRepresentation g
-        ⟨s, (mem_spinMinusSubrep P hline).2 s.2⟩ : ExteriorAlgebra K P.W) := by
-  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.2⟩ :=
+        ⟨s, (mem_spinMinusSubrep P hline).2 s.property⟩ : ExteriorAlgebra K P.W) := by
+  have hspinGroupToEven : spinGroupToEven Q g = ⟨g, spinGroup.mem_even g.property⟩ :=
     Subtype.ext (coe_spinGroupToEven_apply Q g)
   rw [hspinGroupToEven]
   exact coe_spinMinusAction_spinGroup_apply P hline g s

@@ -84,8 +84,8 @@ private theorem exists_khovanovComplexMarkX_eq {a b c : ℤ}
   let q := b - D.positiveCrossingCount + 2 * D.negativeCrossingCount
   let I := {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}
   have hs (S : I) : ∃ y : (D.toPDCode.resolutionCube hD R
-      (a - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1,
-      (D.toPDCode.resolutionCubeMarkX p hD R (j' := q) (by dsimp [q]; omega)).app S.1 y =
+      (a - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.val,
+      (D.toPDCode.resolutionCubeMarkX p hD R (j' := q) (by dsimp [q]; omega)).app S.val y =
         (D.khovanovComplexπ hD R b S).hom x := by
     apply D.toPDCode.exists_resolutionCubeMarkX_eq p hD R
       (j'' := c - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
@@ -99,7 +99,7 @@ private theorem exists_khovanovComplexMarkX_eq {a b c : ℤ}
   calc
     _ = ∑ S : I, (D.khovanovComplexι hD R b S).hom
         ((D.toPDCode.resolutionCubeMarkX p hD R (j' := q)
-          (by dsimp [q]; omega)).app S.1 (y S)) := by
+          (by dsimp [q]; omega)).app S.val (y S)) := by
       rw [map_sum]
       apply Finset.sum_congr rfl
       intro S _

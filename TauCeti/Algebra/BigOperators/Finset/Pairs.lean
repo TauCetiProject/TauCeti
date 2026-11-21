@@ -9,9 +9,11 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Sums and products over pairs
@@ -39,6 +41,8 @@ sign of the permutation.
   over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi`: an off-diagonal pairing against an antisymmetric
+  kernel, folded onto the strictly increasing pairs `i < j`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
@@ -368,5 +372,24 @@ theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
   · rcases le_total (σ a) (σ b) with hab | hab
     · simp [hab]
     · simp [hab, hf]
+
+/-- **An off-diagonal pairing against an antisymmetric kernel, folded onto increasing pairs.**
+Summing `u i * ∑ j ∈ univ.erase i, k i j` folds onto strictly increasing pairs `i < j` as
+`∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j`. Only off-diagonal antisymmetry (`i < j → k j i = -k i j`)
+is required, since the diagonal is excluded from `univ.erase i`. -/
+theorem sum_mul_sum_erase_eq_sum_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderTop ι] [NonUnitalNonAssocRing R]
+    (u : ι → R) (k : ι → ι → R) (hk : ∀ ⦃i j : ι⦄, i < j → k j i = -k i j) :
+    ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j := by
+  let : LocallyFiniteOrderBot ι :=
+    { finsetIio := fun a ↦ univ.filter (· < a)
+      finsetIic := fun a ↦ univ.filter (· ≤ a)
+      finset_mem_Iic := fun _ _ ↦ by simp
+      finset_mem_Iio := fun _ _ ↦ by simp }
+  have hpull : ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ {i}ᶜ, u i * k i j :=
+    sum_congr rfl fun i _ ↦ by rw [compl_singleton, mul_sum]
+  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
+  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
+  rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
 
 end TauCeti

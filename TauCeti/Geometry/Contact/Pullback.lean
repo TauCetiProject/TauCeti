@@ -121,7 +121,7 @@ of a one-form `α` exactly when it pulls `α` back to zero. -/
 theorem isHorizontalMap_kerDistribution_iff_mpullback_eq_zero {f : M → N}
     (α : SmoothForm J N ℝ 1) (hf : ContMDiff I J ∞ f) :
     IsHorizontalMap I α.kerDistribution f ↔ mpullback f hf α = 0 := by
-  have h (x : M) : (mpullback f hf α).1 x = 0 ↔
+  have h (x : M) : (mpullback f hf α).val x = 0 ↔
       LinearMap.range (mfderiv I J f x).toLinearMap ≤ α.kerDistribution (f x) := by
     rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α x, kerDistribution_eq_ker,
       RoughForm.ker_eq_top_iff]
@@ -184,7 +184,7 @@ theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
     refine (isContactForm_iff.1 hα x).2 w ?_ fun w' _ ↦ ?_
     · rw [mpullback_apply_one, hw, ← degreeOneEquiv_coe_apply, map_zero]
     · rw [mextDeriv_mpullback_apply_two, hw]
-      exact (mextDeriv α.1 (f x)).map_coord_zero 0 rfl
+      exact (mextDeriv α.val (f x)).map_coord_zero 0 rfl
   exact Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap hinj
 
 /-- The differential of a smooth map with bijective differentials carries the Reeb field of

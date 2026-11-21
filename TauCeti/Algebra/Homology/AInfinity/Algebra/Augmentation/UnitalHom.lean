@@ -79,21 +79,21 @@ noncomputable def toAInfinityStrictUnitalHom :
 
 theorem linearPart_strictlyUnitalHomEquiv_symm_coe {eB : B} (hB : ℬ.StrictUnit eB)
     (g : AInfinityHom ε.reducedAlgebra ℬ) (x : ε.augmentationIdeal) :
-    ((ε.strictlyUnitalHomEquiv hB).symm g).1.linearPart x = g.linearPart x := by
-  simp [ε.mem_augmentationIdeal.mp x.2]
+    ((ε.strictlyUnitalHomEquiv hB).symm g).val.linearPart x = g.linearPart x := by
+  simp [ε.mem_augmentationIdeal.mp x.property]
 
 theorem linearPart_strictlyUnitalHomEquiv_symm_unit {eB : B} (hB : ℬ.StrictUnit eB)
     (g : AInfinityHom ε.reducedAlgebra ℬ) :
-    ((ε.strictlyUnitalHomEquiv hB).symm g).1.linearPart ε.unit = eB :=
-  ((ε.strictlyUnitalHomEquiv hB).symm g).2.map_unit
+    ((ε.strictlyUnitalHomEquiv hB).symm g).val.linearPart ε.unit = eB :=
+  ((ε.strictlyUnitalHomEquiv hB).symm g).property.map_unit
 
 /-- Extending a nonunital morphism `A⁺ ⟶ B` commutes with postcomposition by a strictly unital
 strict morphism `B ⟶ C`. -/
 theorem strictlyUnitalHomEquiv_symm_comp_strict {eB : B} {eC : C} (hB : ℬ.StrictUnit eB)
     (hC : 𝒞.StrictUnit eC) (φ : AInfinityStrictUnitalHom hB hC)
     (g : AInfinityHom ε.reducedAlgebra ℬ) :
-    ((ε.strictlyUnitalHomEquiv hC).symm (φ.toAInfinityStrictHom.toAInfinityHom.comp g)).1 =
-      φ.toAInfinityStrictHom.toAInfinityHom.comp ((ε.strictlyUnitalHomEquiv hB).symm g).1 :=
+    ((ε.strictlyUnitalHomEquiv hC).symm (φ.toAInfinityStrictHom.toAInfinityHom.comp g)).val =
+      φ.toAInfinityStrictHom.toAInfinityHom.comp ((ε.strictlyUnitalHomEquiv hB).symm g).val :=
   AInfinityHom.ext <| LinearMap.ext fun _ ↦ by
     rw [taylor_toAInfinityHom_comp, strictlyUnitalHomEquiv_symm_apply_val,
       strictlyUnitalHomEquiv_symm_apply_val, taylor_extendStrictlyUnitalHom,
@@ -103,7 +103,7 @@ theorem strictlyUnitalHomEquiv_symm_comp_strict {eB : B} {eC : C} (hB : ℬ.Stri
 /-- A strictly unital morphism preserves augmentations iff its restriction vanishes under `εB`. -/
 theorem comp_toAInfinityStrictHom_eq_iff (εB : ℬ.Augmentation)
     (f : {f : AInfinityHom 𝒜 ℬ // f.IsStrictlyUnital ε.isStrictUnit εB.isStrictUnit}) :
-    εB.toAInfinityStrictHom.toAInfinityHom.comp f.1 = ε.toAInfinityStrictHom.toAInfinityHom ↔
+    εB.toAInfinityStrictHom.toAInfinityHom.comp f.val = ε.toAInfinityStrictHom.toAInfinityHom ↔
       εB.toLinearMap ∘ₗ (ε.strictlyUnitalHomEquiv εB.isStrictUnit f).taylor = 0 := by
   have hcomp_red : (ε.toAInfinityStrictHom.toAInfinityHom.comp
       ε.inclusion.toAInfinityHom).taylor = 0 := by
@@ -115,8 +115,8 @@ theorem comp_toAInfinityStrictHom_eq_iff (εB : ℬ.Augmentation)
         hcomp_red] at h',
     fun h ↦ congrArg Subtype.val <|
       (ε.strictlyUnitalHomEquiv (isDGAlgebra_trivialGrading R).strictUnit_one).injective
-        (a₁ := ⟨εB.toAInfinityStrictHom.toAInfinityHom.comp f.1,
-          εB.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom.comp f.2⟩)
+        (a₁ := ⟨εB.toAInfinityStrictHom.toAInfinityHom.comp f.val,
+          εB.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom.comp f.property⟩)
         (a₂ := ⟨ε.toAInfinityStrictHom.toAInfinityHom,
           ε.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom⟩) <|
       AInfinityHom.ext <| by rwa [strictlyUnitalHomEquiv_apply, strictlyUnitalHomEquiv_apply,
