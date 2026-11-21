@@ -9,7 +9,6 @@ public import TauCeti.Probability.Distributions.LKJ.Symmetry
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import TauCeti.Analysis.Matrix.PartialCorrelation.GramPowers
 public import Mathlib.Probability.Distributions.Beta
-import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
@@ -520,26 +519,15 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
               (mulTransposeExpansionPower c₀) ij) /
         beta (1 / 2) (lkjPartialCorrelationShape 3 η ij)
     else 0
-  let g : Fin 3 → Fin 3 → ℝ := fun j i ↦ if h : j < i then f ⟨(i, j), h⟩ else 1
   have hprod : (∏ ij : strictLowerTriangle 3, f ij) =
       f ⟨(1, 0), by decide⟩ * f ⟨(2, 0), by decide⟩ * f ⟨(2, 1), by decide⟩ := by
-    rw [← Fintype.prod_fiberwise (fun ij : strictLowerTriangle 3 ↦ ij.val.2) f]
-    have hcol (j : Fin 3) :
-        (∏ ij : {ij : strictLowerTriangle 3 // ij.val.2 = j}, f ij.val) =
-          ∏ i ∈ Finset.Ioi j, g j i := by
-      rw [Fintype.prod_equiv (strictLowerTriangleColumnEquiv j) _ (fun i : Set.Ioi j ↦ g j i.val)
-        fun ij ↦ by
-          have hj : j < ij.val.val.1 := by
-            simpa only [strictLowerTriangleColumnEquiv_apply_coe] using
-              Set.mem_Ioi.mp (strictLowerTriangleColumnEquiv j ij).property
-          simp only [g, strictLowerTriangleColumnEquiv_apply_coe]
-          split_ifs
-          exact congrArg f (Subtype.ext (Prod.ext rfl ij.property))]
-      refine Finset.prod_bij (fun i _ ↦ i.val) (fun i _ ↦ Finset.mem_Ioi.mpr i.property)
-        (fun _ _ _ _ h ↦ Subtype.ext h)
-        (fun i hi ↦ ⟨⟨i, Finset.mem_Ioi.mp hi⟩, Finset.mem_univ _, rfl⟩) (fun _ _ ↦ rfl)
-    simp_rw [hcol, prod_prod_Ioi_three g, g]
-    simp
+    have hset : (∏ ij : strictLowerTriangle 3, f ij) =
+        ∏ ab : Fin 3 × Fin 3, if h : ab.2 < ab.1 then f ⟨ab, h⟩ else 1 := by
+      refine (Finset.prod_congr_set {ab : Fin 3 × Fin 3 | ab.2 < ab.1}
+        (fun ab ↦ if h : ab.2 < ab.1 then f ⟨ab, h⟩ else 1)
+        (fun ij ↦ f ij) (fun _ h ↦ dite_eq_left h) (fun _ h ↦ dite_eq_right h)).symm
+    rw [hset, Fintype.prod_prod_type]
+    simp [Fin.prod_univ_three, mul_assoc]
   change (∏ ij : strictLowerTriangle 3, f ij) = 1 / (2 * η + 2) ^ 2
   rw [hprod]
   simp only [f, hm10, hm20, hm21, hres, add_zero, even_two, Even.zero, ↓reduceIte,
