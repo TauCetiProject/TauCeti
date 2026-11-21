@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Descending trivializations to orbit spaces
@@ -30,10 +31,10 @@ coordinate of `x` (`Bundle.Trivialization.orbitRelQuotient_apply_mk`).
 
 For a free properly discontinuous action, every point of `N` has a neighbourhood on which the
 orbit projection is injective, so a locally trivial equivariant map descends to a locally
-trivial map of orbit spaces with the same fibre. Freeness on the base is genuinely needed: for
-`G = ℤ/2` acting on a circle `N = ℝ/ℤ` by `y ↦ -y` and on `M = N × ℤ/2` by
-`(y, s) ↦ (-y, s + 1)`, the projection `M → N` is a trivial double cover, but over the orbit of
-the fixed point `0` the induced map `M/G → N/G` has one point in its fibre rather than two.
+trivial map of orbit spaces with the same fibre. Freeness on the base is genuinely needed, even
+when the orbit projection of `N` is injective and `G` acts freely on `M`: for `G = ℤ/2` acting
+trivially on a point `N` and by swapping on `M = ℤ/2`, the map `M → N` is trivial with a two-point
+fibre, but the induced map `M/G → N/G` has one point in its fibre.
 
 ## Main definitions
 
@@ -100,15 +101,6 @@ theorem image_quotientMk_source :
 
 variable [ContinuousConstSMul G M] [ContinuousConstSMul G N]
 
-/-- The orbit projection restricted to an open set on which it is injective, as an open partial
-homeomorphism onto the image. -/
-private def quotientMkOn {X : Type*} [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
-    [Nonempty X] (s : Set X) (hs : IsOpen s)
-    (hinj : InjOn (Quotient.mk (MulAction.orbitRel G X)) s) :
-    OpenPartialHomeomorph X (MulAction.orbitRel.Quotient G X) :=
-  OpenPartialHomeomorph.ofContinuousOpen (hinj.toPartialEquiv _ s) continuous_quot_mk.continuousOn
-    isOpenMap_quotient_mk'_mul hs
-
 variable [Nonempty M]
 
 /-- **A trivialization descends to orbit spaces.** Let `e` be a trivialization of an equivariant
@@ -121,18 +113,18 @@ def orbitRelQuotient (hinj : InjOn (Quotient.mk (MulAction.orbitRel G N)) e.base
     Trivialization F (MulActionHom.orbitRelQuotientMap φ) :=
   haveI : Nonempty N := ⟨φ (Classical.arbitrary M)⟩
   { toOpenPartialHomeomorph :=
-      (((quotientMkOn e.source e.open_source (e.injOn_quotientMk_source hinj hfree)).symm.trans'
-        e.toOpenPartialHomeomorph rfl).trans'
-        ((quotientMkOn e.baseSet e.open_baseSet hinj).prod (OpenPartialHomeomorph.refl F))
-        (by simp [e.target_eq, quotientMkOn]))
+      (((TauCeti.quotientMkOn e.open_source (e.injOn_quotientMk_source hinj hfree)).symm.trans'
+        e.toOpenPartialHomeomorph (by simp)).trans'
+        ((TauCeti.quotientMkOn e.open_baseSet hinj).prod (OpenPartialHomeomorph.refl F))
+        (by simp [e.target_eq]))
     baseSet := Quotient.mk (MulAction.orbitRel G N) '' e.baseSet
     open_baseSet := isOpenMap_quotient_mk'_mul _ e.open_baseSet
     source_eq := e.image_quotientMk_source
-    target_eq := by simp [quotientMkOn]
+    target_eq := by simp
     proj_toFun := by
       rintro _ ⟨x, hx, rfl⟩
       have hx' := (e.injOn_quotientMk_source hinj hfree).leftInvOn_invFunOn hx
-      simp [quotientMkOn, OpenPartialHomeomorph.trans'_apply, hx', e.coe_fst hx] }
+      simp [OpenPartialHomeomorph.trans'_apply, hx', e.coe_fst hx] }
 
 variable (hinj : InjOn (Quotient.mk (MulAction.orbitRel G N)) e.baseSet)
   (hfree : ∀ y ∈ e.baseSet, ∀ g : G, g • y = y → g = 1)
