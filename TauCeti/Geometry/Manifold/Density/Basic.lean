@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Density.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Topology.PartitionOfUnity.Basic
 
 /-!
 # Rough densities on manifolds and the density of an oriented top form
@@ -32,7 +31,7 @@ public section
 
 noncomputable section
 
-open Module Set
+open Module
 
 namespace TauCeti
 
@@ -43,72 +42,6 @@ regularity in the base point. -/
 abbrev RoughDensity (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] (m : ℕ) : Type _ :=
   (x : M) → Density (TangentSpace I x) m
-
-namespace RoughDensity
-
-variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
-
-/-- A point lies in the support of `μ` (in `Density E m`) iff `μ x ≠ 0`. -/
-theorem mem_support_iff {μ : RoughDensity I M m} {x : M} :
-    x ∈ Function.support (M := Density E m) μ ↔ μ x ≠ 0 := Iff.rfl
-
-/-- Pointwise scalar multiplication does not enlarge the topological support of `μ`. -/
-theorem tsupport_fun_smul_subset_right (f : M → ℝ) (μ : RoughDensity I M m) :
-    _root_.tsupport (α := Density E m) (fun x ↦ f x • μ x : RoughDensity I M m) ⊆
-      _root_.tsupport (α := Density E m) μ :=
-  -- `TangentSpace I x` is definitionally `E`, giving fixed codomain `Density E m`.
-  _root_.tsupport_smul_subset_right f (show M → Density E m from μ)
-
-/-- Pointwise scalar multiplication has support contained in `tsupport f`. -/
-theorem tsupport_fun_smul_subset_left (f : M → ℝ) (μ : RoughDensity I M m) :
-    _root_.tsupport (α := Density E m) (fun x ↦ f x • μ x : RoughDensity I M m) ⊆
-      _root_.tsupport f :=
-  -- `TangentSpace I x` is definitionally `E`, giving fixed codomain `Density E m`.
-  _root_.tsupport_smul_subset_left f (show M → Density E m from μ)
-
-/-- Constant scalar multiplication does not enlarge `tsupport μ`. -/
-theorem tsupport_smul_subset (c : ℝ) (μ : RoughDensity I M m) :
-    _root_.tsupport (α := Density E m) (c • μ) ⊆ _root_.tsupport (α := Density E m) μ :=
-  tsupport_fun_smul_subset_right (fun _ ↦ c) μ
-
-/-- Multiplication by a nonzero constant preserves `tsupport μ`. -/
-theorem tsupport_smul (c : ℝ) (μ : RoughDensity I M m) (hc : c ≠ 0) :
-    _root_.tsupport (α := Density E m) (c • μ) = _root_.tsupport (α := Density E m) μ :=
-  Subset.antisymm (tsupport_smul_subset c μ) <| by
-    simpa only [inv_smul_smul₀ hc] using tsupport_smul_subset c⁻¹ (c • μ)
-
-/-- The topological support of `μ + ν` lies in `tsupport μ ∪ tsupport ν`. -/
-theorem tsupport_add (μ ν : RoughDensity I M m) :
-    _root_.tsupport (α := Density E m) (μ + ν) ⊆
-      _root_.tsupport (α := Density E m) μ ∪ _root_.tsupport (α := Density E m) ν :=
-  -- `TangentSpace I x` is definitionally `E`, giving fixed codomain `Density E m`.
-  _root_.tsupport_add (show M → Density E m from μ) (show M → Density E m from ν)
-
-/-- The zero rough density has compact topological support. -/
-theorem isCompact_tsupport_zero :
-    IsCompact (_root_.tsupport (α := Density E m) (0 : RoughDensity I M m)) := by
-  -- View the dependent zero section with fixed codomain `Density E m` for `_root_.tsupport_zero`.
-  change IsCompact (_root_.tsupport (0 : M → Density E m)); simp
-
-/-- The sum of two compactly supported rough densities has compact topological support. -/
-theorem isCompact_tsupport_add {μ ν : RoughDensity I M m}
-    (hμ : IsCompact (_root_.tsupport (α := Density E m) μ))
-    (hν : IsCompact (_root_.tsupport (α := Density E m) ν)) :
-    IsCompact (_root_.tsupport (α := Density E m) (μ + ν)) :=
-  -- `TangentSpace I x` is definitionally `E`, giving fixed codomain `Density E m`.
-  HasCompactSupport.add (f := (show M → Density E m from μ)) hμ hν
-
-/-- A partition of unity covering `tsupport μ` localizes a compactly supported `μ` into finitely
-many terms, with all remaining terms vanishing identically. -/
-theorem exists_finset_partition_eq {ι : Type*} (μ : RoughDensity I M m)
-    (hc : IsCompact (_root_.tsupport (α := Density E m) μ)) {t : Set M}
-    (ρ : PartitionOfUnity ι M t) (ht : _root_.tsupport (α := Density E m) μ ⊆ t) :
-    ∃ s : Finset ι, μ = (fun x ↦ ∑ i ∈ s, ρ i x • μ x) ∧
-      ∀ i ∉ s, (fun x ↦ ρ i x • μ x : RoughDensity I M m) = 0 :=
-  -- `TangentSpace I x` is definitionally `E`, giving fixed codomain `Density E m`.
-  ρ.exists_finset_eq_sum_smul (show M → Density E m from μ) hc ht
-
-end RoughDensity
 
 variable [FiniteDimensional ℝ E] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I 1 M] {m : ℕ}
@@ -222,15 +155,14 @@ theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
     _root_.tsupport (α := Density E m) (φ.toDensity o) =
       _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ := by
   simp only [_root_.tsupport]; congr 1; ext x
-  -- `TangentSpace I x` is definitionally `E`, giving fixed model codomain for `Function.support`.
-  rw [RoughDensity.mem_support_iff,
-    Function.mem_support (f := (show M → E [⋀^Fin m]→L[ℝ] ℝ from φ))]
+  -- `TangentSpace I x` is definitionally `E`, bridging the dependent fibres to the fixed codomains.
+  change φ.toDensity o x ≠ 0 ↔ φ x ≠ 0
   have := o.fact_finrank_tangentSpace x
   have h0 : (0 : TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ).toAlternatingMap = 0 := by ext; simp
   refine not_congr ?_
   rw [toDensity, ← Orientation.densityEquiv_apply,
     (Orientation.densityEquiv (o.orientationAt x)).map_eq_zero_iff, ← h0,
-    ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]; rfl
+    ContinuousAlternatingMap.toAlternatingMap_injective.eq_iff]
 
 end RoughForm
 

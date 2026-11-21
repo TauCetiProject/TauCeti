@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Density.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.ExtChartAt.Cover
+import TauCeti.Topology.PartitionOfUnity.Basic
 
 /-!
 # Orientation-free integration of densities on manifolds
@@ -99,7 +100,10 @@ public theorem RoughDensity.integrableDensity_iff_of_tsupport_subset_chart
 public theorem integrableDensity_smul_iff (c : ℝ) (μ : RoughDensity I M m) (hc : c ≠ 0) :
     IntegrableDensity (c • μ) ↔ IntegrableDensity μ := by
   let : MeasurableSpace E := borel E; let : BorelSpace E := ⟨rfl⟩
-  rw [integrableDensity_iff, integrableDensity_iff, RoughDensity.tsupport_smul c μ hc]
+  have hts : _root_.tsupport (α := Density E m) (c • μ) = _root_.tsupport (α := Density E m) μ :=
+    congrArg closure
+      (Function.support_const_smul_of_ne_zero c (show M → Density E m from μ) hc)
+  rw [integrableDensity_iff, integrableDensity_iff, hts]
   refine and_congr Iff.rfl (and_congr Iff.rfl (forall_congr' fun b ↦ forall_congr' fun α ↦ ?_))
   rw [funext (RoughDensity.coeffInChartAt_smul c μ b α)]
   exact integrable_const_mul_iff (isUnit_iff_ne_zero.mpr hc) _
@@ -109,15 +113,17 @@ public theorem IntegrableDensity.add {μ ν : RoughDensity I M m}
     (hμ : IntegrableDensity μ) (hν : IntegrableDensity ν) : IntegrableDensity (μ + ν) := by
   let : MeasurableSpace E := borel E; let : BorelSpace E := ⟨rfl⟩
   rw [integrableDensity_iff] at hμ hν ⊢
-  exact ⟨RoughDensity.isCompact_tsupport_add hμ.1 hν.1, hμ.2.1, fun b α ↦ by
-    rw [funext (RoughDensity.coeffInChartAt_add μ ν b α)]; exact (hμ.2.2 b α).add (hν.2.2 b α)⟩
+  exact ⟨HasCompactSupport.add (f := (show M → Density E m from μ)) hμ.1 hν.1, hμ.2.1,
+    fun b α ↦ by
+      rw [funext (RoughDensity.coeffInChartAt_add μ ν b α)]; exact (hμ.2.2 b α).add (hν.2.2 b α)⟩
 
 /-- The zero density is integrable whenever `E` admits a basis of cardinality `m`. -/
 public theorem IntegrableDensity.zero (b : Basis (Fin m) ℝ E) :
     IntegrableDensity (0 : RoughDensity I M m) := by
   let : MeasurableSpace E := borel E; let : BorelSpace E := ⟨rfl⟩
-  exact (integrableDensity_iff _).mpr ⟨RoughDensity.isCompact_tsupport_zero, ⟨b⟩, fun b' α ↦ by
-    simpa only [RoughDensity.coeffInChartAt_zero] using integrable_zero E ℝ b'.addHaar⟩
+  exact (integrableDensity_iff _).mpr
+    ⟨HasCompactSupport.zero (α := M) (β := Density E m), ⟨b⟩, fun b' α ↦ by
+      simpa only [RoughDensity.coeffInChartAt_zero] using integrable_zero E ℝ b'.addHaar⟩
 
 /-- Constant scalar multiplication preserves `IntegrableDensity`. -/
 public theorem IntegrableDensity.smul {μ : RoughDensity I M m} (hμ : IntegrableDensity μ) (c : ℝ) :
@@ -161,7 +167,8 @@ public theorem IntegrableDensity.fun_smul {μ : RoughDensity I M m} (hμ : Integ
     · have hz : μ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := Density E m) hx; simp [hz]
   rw [← hgf, integrableDensity_iff]
   refine ⟨hμ.isCompact.of_isClosed_subset (_root_.isClosed_tsupport _)
-    (RoughDensity.tsupport_fun_smul_subset_right g μ), hμ.nonempty_basis, fun b α ↦ ?_⟩
+    (_root_.tsupport_smul_subset_right g (show M → Density E m from μ)),
+    hμ.nonempty_basis, fun b α ↦ ?_⟩
   have hm := measurableSet_extChartAt_target (I := I) α
   exact (integrableOn_iff_integrable_of_support_subset
     (RoughDensity.support_coeffInChartAt_subset_target _ b α)).mp <| IntegrableOn.congr_fun
@@ -344,7 +351,8 @@ public theorem exists_chart_partition_integralDensity [IsManifold I 1 M] [Compac
     rw [integralDensity_eq_choose _ hi' b, integralDensity_eq_choose _ hi b, hs,
       ChartCover.integral_smul, smul_eq_mul]
     exact congrArg (c * ·) (ChartCover.integral_choose_congr hi'.isCompact hi.isCompact
-      (RoughDensity.tsupport_smul c μ hc) (μ.coeffInChartAt b) b.addHaar)
+      (congrArg closure (Function.support_const_smul_of_ne_zero c (show M → Density E m from μ) hc))
+      (μ.coeffInChartAt b) b.addHaar)
   · rw [integralDensity_eq_zero_of_not_integrable _ (mt (integrableDensity_smul_iff c μ hc).mp hi),
       integralDensity_eq_zero_of_not_integrable _ hi, mul_zero]
 
@@ -363,7 +371,8 @@ public theorem integralDensity_add_of_integrable [IsManifold I 1 M] {μ ν : Rou
   let c := ChartCover.choose I (hμ.isCompact.union hν.isCompact)
   have ha : (μ + ν).coeffInChartAt b = fun α y ↦ μ.coeffInChartAt b α y + ν.coeffInChartAt b α y :=
     funext fun α ↦ funext (RoughDensity.coeffInChartAt_add μ ν b α)
-  rw [integralDensity_eq_coverIntegral _ (hμ.add hν) b c (RoughDensity.tsupport_add μ ν),
+  rw [integralDensity_eq_coverIntegral _ (hμ.add hν) b c
+      (_root_.tsupport_add (show M → Density E m from μ) (show M → Density E m from ν)),
     integralDensity_eq_coverIntegral _ hμ b c subset_union_left,
     integralDensity_eq_coverIntegral _ hν b c subset_union_right, ha]
   exact c.integral_add b.addHaar
@@ -398,7 +407,10 @@ public theorem exists_finset_integralDensity_eq_sum_partitionOfUnity [IsManifold
     (ht : _root_.tsupport (α := Density E m) μ ⊆ t) :
     ∃ s : Finset ι, integralDensity μ = ∑ i ∈ s, integralDensity (fun x ↦ ρ i x • μ x) ∧
       ∀ i ∉ s, integralDensity (fun x ↦ ρ i x • μ x) = 0 := by
-  obtain ⟨s, hsum, hzero⟩ := μ.exists_finset_partition_eq hi.isCompact ρ ht
+  have hpart : ∃ s : Finset ι, μ = (fun x ↦ ∑ i ∈ s, ρ i x • μ x) ∧
+      ∀ i ∉ s, (fun x ↦ ρ i x • μ x : RoughDensity I M m) = 0 :=
+    ρ.exists_finset_eq_sum_smul (show M → Density E m from μ) hi.isCompact ht
+  obtain ⟨s, hsum, hzero⟩ := hpart
   exact ⟨s, (congrArg integralDensity (hsum.trans (by funext x; simp))).trans
     (integralDensity_sum _ s fun i _ ↦ hi.fun_smul (ρ i).continuous),
     fun i his ↦ by rw [hzero i his, integralDensity_zero]⟩
@@ -469,24 +481,16 @@ section ZeroDim
 
 variable [Subsingleton E]
 
-private theorem extChartAt_source_eq_singleton (x : M) : (extChartAt I x).source = {x} :=
-  Set.ext fun _ ↦ ⟨fun hy ↦ (extChartAt I x).injOn hy (mem_extChartAt_source x)
-    (Subsingleton.elim _ _), by rintro rfl; exact mem_extChartAt_source _⟩
-
-include I in
-private theorem discreteTopology_of_subsingleton : DiscreteTopology M :=
-  discreteTopology_iff_isOpen_singleton.mpr fun x ↦
-    extChartAt_source_eq_singleton (I := I) x ▸ isOpen_extChartAt_source x
-
 private theorem tsupport_zeroDim_eq_support (μ : RoughDensity I M 0) :
     _root_.tsupport (α := Density E 0) μ = {x | μ x ≠ 0} :=
-  have : DiscreteTopology M := discreteTopology_of_subsingleton (I := I)
-  ((isClosed_discrete _).closure_eq).trans (Set.ext fun _ ↦ RoughDensity.mem_support_iff)
+  have : DiscreteTopology M := I.discreteTopology M
+  ((isClosed_discrete _).closure_eq).trans
+    (Set.ext fun _ ↦ Function.mem_support (f := (show M → Density E 0 from μ)))
 
 /-- On a zero-dimensional manifold, a rough density is integrable iff its support is finite. -/
 public theorem integrableDensity_zeroDim_iff (μ : RoughDensity I M 0) :
     IntegrableDensity μ ↔ {x | μ x ≠ 0}.Finite := by
-  have : DiscreteTopology M := discreteTopology_of_subsingleton (I := I)
+  have : DiscreteTopology M := I.discreteTopology M
   let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
   rw [integrableDensity_iff, tsupport_zeroDim_eq_support μ, isCompact_iff_finite]
   exact ⟨fun h ↦ h.1, fun hfin ↦ ⟨hfin, ⟨Basis.empty E⟩, fun _ _ ↦ by
@@ -512,8 +516,8 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
     disjoint_singleton.mpr fun h ↦ hij (e.symm.injective (Subtype.ext h))
   rw [integralDensity_eq_sum_disjointed_chart_integrals μ
     ((integrableDensity_zeroDim_iff μ).mpr hfin) b α (fun i ↦ {α i})
-    (fun i ↦ extChartAt_source_eq_singleton (I := I) (α i) ▸ isOpen_extChartAt_source (α i))
-    (fun i ↦ (extChartAt_source_eq_singleton (I := I) (α i)).ge)
+    (fun i ↦ extChartAt_source_zeroDim (I := I) (α i) ▸ isOpen_extChartAt_source (α i))
+    (fun i ↦ (extChartAt_source_zeroDim (I := I) (α i)).ge)
     (by rw [tsupport_zeroDim_eq_support]; exact fun x hx ↦
       mem_iUnion.mpr ⟨e ⟨x, hfin.mem_toFinset.mpr hx⟩, by simp [α]⟩)]
   have hterm (i : Fin s.card) : (∫ y in (extChartAt I (α i)) '' disjointed (fun j ↦ {α j}) i,

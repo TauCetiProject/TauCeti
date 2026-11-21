@@ -184,16 +184,6 @@ private theorem coverIntegral_smul [FiniteDimensional ℝ E] {s : Set M}
     funext fun α ↦ funext fun y ↦ RoughForm.signedInChartAt_smul r φ b α _ y
   rw [hs, p.integral_smul, smul_eq_mul]; ring
 
-private theorem coverIntegral_choose_eq [FiniteDimensional ℝ E]
-    (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (φ : RoughForm I M ℝ k) {s t : Set M} (hs : IsCompact s) (ht : IsCompact t)
-    (hst : s = t) :
-    letI : LocallyCompactSpace H := I.locallyCompactSpace
-    coverIntegral l b φ (ChartCover.choose I hs) =
-      coverIntegral l b φ (ChartCover.choose I ht) := by
-  subst t
-  rfl
-
 /-- The signed coefficient of an integrable top form in a preferred chart is integrable for the
 Haar measure of any basis, when the chart sign is continuous. -/
 public theorem signed_coefficient_integrable [FiniteDimensional ℝ E]
@@ -524,11 +514,15 @@ public theorem integralTopForm_smul (o : Manifold.Orientation I M (Fin k))
   obtain ⟨l, rfl⟩ := o.exists_lift
   by_cases hi : IntegrableTopForm φ
   · have hi' := (integrableTopForm_smul_iff c φ hc).mpr hi
+    let : LocallyCompactSpace H := I.locallyCompactSpace
     let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
     rw [integralTopForm_mk l _ hi' b, integralTopForm_mk l _ hi b]
     rw [coverIntegral_smul]
     apply congrArg (fun r : ℝ ↦ c * r)
-    exact coverIntegral_choose_eq l b φ hi'.isCompact hi.isCompact (RoughForm.tsupport_smul c φ hc)
+    unfold coverIntegral
+    exact congrArg ((Orientation.signBasis l.modelOrientation b : ℝ) * ·)
+      (ChartCover.integral_choose_congr hi'.isCompact hi.isCompact (RoughForm.tsupport_smul c φ hc)
+        _ b.addHaar)
   · have hi' : ¬IntegrableTopForm (c • φ) := fun h ↦ hi ((integrableTopForm_smul_iff c φ hc).mp h)
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi',
       integralTopForm_eq_zero_of_not_integrable _ _ hi, mul_zero]

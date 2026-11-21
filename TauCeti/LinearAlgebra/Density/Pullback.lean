@@ -91,10 +91,6 @@ def compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) : Density V m := μ.compLin
 theorem compLinearMap_eq_compEnd (μ : Density V m) (L : V →ₗ[ℝ] V) (h : Nonempty (V ≃ₗ[ℝ] V)) :
     μ.compLinearMap L h = μ.compEnd L := by ext; simp
 
-/-- Endomorphism pullback multiplies every tuple value by `|LinearMap.det L|`. -/
-theorem compEnd_apply_eq_abs_det_mul (μ : Density V m) (L : V →ₗ[ℝ] V) (v : Fin m → V) :
-    μ.compEnd L v = |LinearMap.det L| * μ v := μ.comp_apply L v
-
 /-- Endomorphism pullback scales a density by `|LinearMap.det L|`. -/
 theorem compEnd_eq_abs_det_smul (μ : Density V m) (L : V →ₗ[ℝ] V) :
     μ.compEnd L = |LinearMap.det L| • μ := by ext v; exact μ.comp_apply L v

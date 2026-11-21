@@ -94,18 +94,9 @@ theorem inChartAt_chart_apply [IsManifold I 1 M] (μ : RoughDensity I M m) (α :
 /-- Evaluating `μ.inChartAt x` at `extChartAt I x x` recovers `μ x`, without atlas smoothness. -/
 theorem inChartAt_extChartAt_self (μ : RoughDensity I M m) (x : M) :
     μ.inChartAt x (extChartAt I x x) = μ x := by
-  have hderiv : HasMFDerivWithinAt 𝓘(ℝ, E) I (extChartAt I x).symm (range I) (extChartAt I x x)
-      (ContinuousLinearMap.id ℝ E) := by
-    refine ⟨(continuousAt_extChartAt_symm x).continuousWithinAt, ?_⟩
-    simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
-      PartialEquiv.refl_coe, preimage_id_eq, id_eq, modelWithCornersSelf_coe, range_id, inter_univ,
-      (extChartAt I x).left_inv (mem_extChartAt_source x)]
-    exact (hasFDerivWithinAt_id (𝕜 := ℝ) (extChartAt I x x) (range I)).congr_of_eventuallyEq
-      (Eventually.mono (extChartAt_target_mem_nhdsWithin x) fun _ hy ↦
-        (extChartAt I x).right_inv hy)
-      ((extChartAt I x).right_inv (mem_extChartAt_target x))
-  have hmf := hderiv.mfderivWithin (I.uniqueDiffOn.uniqueDiffWithinAt
-    (extChartAt_target_subset_range x (mem_extChartAt_target x))).uniqueMDiffWithinAt
+  have hmf := (hasMFDerivWithinAt_extChartAt_symm_self (I := I) x).mfderivWithin
+    (I.uniqueDiffOn.uniqueDiffWithinAt
+      (extChartAt_target_subset_range x (mem_extChartAt_target x))).uniqueMDiffWithinAt
   -- `TangentSpace I x` is definitionally `E`, so `id ∘ v` agrees with `v`.
   ext v; rw [inChartAt_apply, (extChartAt I x).left_inv (mem_extChartAt_source x), hmf]; rfl
 
@@ -164,7 +155,7 @@ theorem inChartAt_apply_eq_abs_det_mul [IsManifold I 1 M] (μ : RoughDensity I M
     μ.inChartAt x₀ z v =
       |(fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z).toLinearMap.det| *
         μ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z)) v := by
-  rw [μ.inChartAt_eq_compEnd hz hx, Density.compEnd_apply_eq_abs_det_mul]
+  rw [μ.inChartAt_eq_compEnd hz hx, Density.compEnd_apply, Density.comp_apply]
 
 end InChartAt
 
