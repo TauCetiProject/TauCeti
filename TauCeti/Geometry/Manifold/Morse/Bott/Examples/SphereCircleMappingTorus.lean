@@ -249,7 +249,7 @@ theorem isMorseBottFamily_torusHeight (hε : ε ≠ 0) :
     IsMorseBottFamily
       (fun q : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε) ↦
         SmoothMappingTorus.fixedPtCircle _
-          (isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε q.2))
+          (isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε q.property))
       (torusHeight huv ε) :=
   (isMorse_sphereCircleHeight hε).isMorseBottFamily_fixedPtCircle (torusHeight_mk huv ε) _
 

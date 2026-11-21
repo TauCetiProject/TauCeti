@@ -189,11 +189,11 @@ index is that of `g` at `x` (`TauCeti.SmoothMappingTorus.manifoldMorseIndex_mk_o
 -/
 theorem _root_.TauCeti.IsMorse.isMorseBottFamily_fixedPtCircle (hg : IsMorse I g)
     (hfix : ∀ x ∈ criticalPoints I g, IsFixedPt φ x) :
-    IsMorseBottFamily (fun x : criticalPoints I g ↦ fixedPtCircle φ (hfix x x.2)) f := by
+    IsMorseBottFamily (fun x : criticalPoints I g ↦ fixedPtCircle φ (hfix x x.property)) f := by
   refine .of_pairwise_disjoint (by simp)
     ((contMDiff_iff_of_forall_mk_eq φ hfg le_rfl).2 hg.contMDiff)
-    (fun x ↦ isNondegenerateCriticalSubmanifold_fixedPtCircle hfg (hfix x x.2)
-      (hg.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints x.2)) ?_ ?_
+    (fun x ↦ isNondegenerateCriticalSubmanifold_fixedPtCircle hfg (hfix x x.property)
+      (hg.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints x.property)) ?_ ?_
   · -- Circles through distinct fixed points are disjoint.
     intro x y hxy
     refine disjoint_left.2 ?_
