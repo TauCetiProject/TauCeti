@@ -122,11 +122,6 @@ theorem Ioc_filter_not_dvd_card_add_div (n d : ℕ) :
   rw [Ioc_filter_dvd_card_eq_div, Nat.card_Ioc, Nat.sub_zero, add_comm] at hpart
   exact hpart
 
-/-- Exactly `n - n / d` naturals in `(0, n]` are not multiples of `d`. -/
-theorem Ioc_filter_not_dvd_card_eq_sub_div (n d : ℕ) :
-    #{x ∈ Ioc 0 n | ¬ d ∣ x} = n - n / d :=
-  Nat.eq_sub_of_add_eq (Ioc_filter_not_dvd_card_add_div n d)
-
 /-- If `d ∣ n`, the number of naturals in `[1, n)` not divisible by `d` plus `n / d` equals
 `n`. -/
 theorem Ico_filter_not_dvd_card_add_div_of_dvd {n d : ℕ} (h : d ∣ n) :

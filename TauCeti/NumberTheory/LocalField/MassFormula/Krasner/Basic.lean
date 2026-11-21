@@ -15,16 +15,19 @@ import TauCeti.NumberTheory.LocalField.MassFormula.Countable
 Let `K` be a nonarchimedean local field with residue field of cardinality `q`, and let `σ_K(n)`
 (`TauCeti.totallyRamifiedOfDegree K n`) be the family of totally ramified degree-`n` subextensions
 of `SeparableClosure K`. Integrating the root-count identity `∑_{L ∈ σ_K(n)} L.rootCount a = n`
-over Krasner's discriminant box `TauCeti.eisensteinBox K n j` localizes the sum to those
-`L ∈ σ_K(n)` with `L.wildExponent = j`, where each root-count integral equals
-`q ^ (-(n + j)) (1 - q⁻¹)`.
+(`TauCeti.tsum_rootCount_eq_of_separable`) over Krasner's discriminant box
+`TauCeti.eisensteinBox K n j` localizes the sum to those `L ∈ σ_K(n)` with `L.wildExponent = j`,
+where each root-count integral equals `q ^ (-(n + j)) (1 - q⁻¹)`.
 
 Comparing this localized integral with the Haar volume of `eisensteinBox K n j` proves uniformly in
 mixed and equal characteristic that every wild-exponent stratum `{E ∈ σ_K(n) | E.wildExponent = j}`
 and every bounded-discriminant stratum `{E ∈ σ_K(n) | E.discriminantExponent ≤ D}` is finite, and
-that `({E ∈ σ_K(n) | E.wildExponent = j}.ncard : ℚ) = krasnerCount K n j`. Summing over `j`
-recovers Serre's first mass formula, gives the isomorphism-class stratum mass `#{c = j} / n`, and
-yields the finite total count `#σ_K(n)` whenever `(n : K) ≠ 0`.
+that `({E ∈ σ_K(n) | E.wildExponent = j}.ncard : ℚ) = krasnerCount K n j` (generalizing the
+`p`-adic count of Krasner and Pauli–Roblot, Theorem 6.1, to equal characteristic). Summing over
+`j` recovers Serre's first mass formula
+(`TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent`), gives the isomorphism-class stratum
+mass `#{c = j} / n` via `IsRepresentativeSet.tsum_eq_tsum_div_natCard_algEquiv_mul`, and yields
+the finite total count `#σ_K(n)` whenever `(n : K) ≠ 0`.
 
 ## Main definitions
 
@@ -53,6 +56,9 @@ yields the finite total count `#σ_K(n)` whenever `(n : K) ≠ 0`.
   **254** (1962), 3470–3472; Colloques Internationaux du CNRS **143**, Paris, 1966, 143–169.
 * J.-P. Serre, *Une « formule de masse » pour les extensions totalement ramifiées de degré donné
   d'un corps local*, C. R. Acad. Sci. Paris Sér. A **286** (1978), 1031–1036.
+* S. Pauli and X.-F. Roblot, *On the computation of all extensions of a p-adic field of a given
+  degree*, Math. Comp. **70** (2001), 1641–1659, Theorem 6.1 (stated over `p`-adic fields; this
+  module extends the refined count and stratum finiteness uniformly to equal characteristic).
 -/
 
 public section
@@ -141,15 +147,6 @@ private theorem tsum_ite_wildExponent_eq (A : Set (IntermediateField K (Separabl
   refine tsum_congr fun L ↦ ?_
   by_cases h : L.val.wildExponent = j <;> simp [Set.indicator, h]
 
-private theorem one_sub_one_div_natCard_residueField_ne_zero :
-    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by
-  have hq1 : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-  exact (tsub_pos_of_lt (by rwa [one_div, ENNReal.inv_lt_one])).ne'
-
-private theorem one_sub_one_div_natCard_residueField_ne_top :
-    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ ∞ :=
-  ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
-
 /-- Core integral identity on `eisensteinBox K n j`: the `encard` of the stratum
 `{E ∈ σ_K(n) | E.wildExponent = j}` times `q ^ (-(n + j)) (1 - q⁻¹)` equals
 `n * μ (eisensteinBox K n j)`. -/
@@ -192,9 +189,7 @@ theorem finite_mem_totallyRamifiedOfDegree_wildExponent_eq (n j : ℕ) :
   obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
   have hid := encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox (j := j) μ hμ
   have hw0 : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 :=
-    mul_ne_zero (ENNReal.div_pos one_ne_zero
-      (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne'
-      (one_sub_one_div_natCard_residueField_ne_zero (K := K))
+    one_div_natCard_residueField_pow_mul_one_sub_ne_zero
   have hrhs_lt : (n : ℝ≥0∞) * μ (eisensteinBox K n j) < ∞ :=
     ENNReal.mul_lt_top (ENNReal.natCast_lt_top n)
       ((measure_mono (eisensteinBox_subset_eisensteinSet K n j)).trans_lt

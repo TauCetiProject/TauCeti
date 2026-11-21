@@ -23,7 +23,8 @@ vectors `a : Fin n → K` whose lower coordinates `a_h` (`1 ≤ h < n`) lie in
 when `0 < j % n`; for inadmissible `(n, j)` the box is empty. Every polynomial in
 `eisensteinBox K n j` is separable over `K`, the boxes partition the separable locus of
 `eisensteinSet K n`, and for every `L ∈ σ_K(n)`, `L.rootCount` vanishes on `eisensteinSet K n`
-outside `eisensteinBox K n L.wildExponent`, localizing Serre's root-count integral to a single box.
+outside `eisensteinBox K n L.wildExponent`, localizing Serre's root-count integral
+(`IntermediateField.lintegral_rootCount`) to a single box.
 
 ## Main definitions
 
@@ -440,9 +441,8 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
       simp only [one_div]
       rw [pow_succ, ENNReal.mul_inv (.inl (pow_ne_zero _ hq)) (.inl (ENNReal.pow_ne_top hqt))]
       ring
-    have hfin_base : 1 / q ^ N * (1 - 1 / q) ≠ ∞ := ENNReal.mul_ne_top
-      (ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq))
-      (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)
+    have hfin_base : 1 / q ^ N * (1 - 1 / q) ≠ ∞ :=
+      one_div_natCard_residueField_pow_mul_one_sub_ne_top
     have hY_fin : μ (S e₂) ≠ ∞ := hY_vol ▸ ENNReal.mul_ne_top hfin_base
       (ENNReal.div_ne_top ENNReal.one_ne_top hq)
     rw [hbox, ite_eq_right hmod.ne', measure_sdiff hYX

@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Topology
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.Valuation.ValuationRing
 
@@ -154,6 +155,39 @@ theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type
     rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
     exact mul_mem (pow_mem ϖ.property _) a.property
   exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
+
+section ResidueCard
+
+/-- The residue factor `1 - q⁻¹` is finite, where `q = Nat.card 𝓀[K]`. -/
+theorem one_sub_one_div_natCard_residueField_ne_top :
+    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ ∞ :=
+  ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
+
+variable [Finite 𝓀[K]]
+
+/-- The residue factor `1 - q⁻¹` is nonzero when the residue field is finite. -/
+theorem one_sub_one_div_natCard_residueField_ne_zero :
+    1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by
+  have hq : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
+  exact (tsub_pos_of_lt (by rwa [one_div, ENNReal.inv_lt_one])).ne'
+
+/-- The scaling factor `q ^ (-n) · (1 - q⁻¹)` is nonzero when the residue field is finite. -/
+theorem one_div_natCard_residueField_pow_mul_one_sub_ne_zero {n : ℕ} :
+    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 :=
+  mul_ne_zero
+    (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne'
+    one_sub_one_div_natCard_residueField_ne_zero
+
+/-- The scaling factor `q ^ (-n) · (1 - q⁻¹)` is finite when the residue field is finite. -/
+theorem one_div_natCard_residueField_pow_mul_one_sub_ne_top {n : ℕ} :
+    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ ∞ := by
+  have hq : (1 : ℝ≥0∞) ≤ Nat.card 𝓀[K] := by exact_mod_cast Nat.card_pos
+  refine ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top ?_)
+    one_sub_one_div_natCard_residueField_ne_top
+  rw [one_div]
+  exact ENNReal.inv_le_one.2 (one_le_pow₀ hq)
+
+end ResidueCard
 
 variable [TopologicalSpace K] {ι : Type*}
 
@@ -314,11 +348,10 @@ theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measur
   · -- When `μ (integerBox K ι) = ∞`, the difference contains a translate of the inner subbox.
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
     have hϖ_mem : ϖ ^ d k ∈ 𝓂[K] ^ d k := by
-      rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]; exact Ideal.mem_span_singleton_self _
+      rw [TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, hϖ.addVal_pow]
     have hϖ_notMem : ϖ ^ d k ∉ 𝓂[K] ^ (d k + 1) := by
-      rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_succ]
-      exact fun hdvd ↦ hϖ.not_isUnit (isUnit_of_dvd_one
-        ((mul_dvd_mul_iff_left (pow_ne_zero _ hϖ.ne_zero)).mp (by rwa [mul_one])))
+      rw [TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, hϖ.addVal_pow]
+      exact_mod_cast Nat.not_succ_le_self (d k)
     let v : ι → K := Function.update 0 k ((ϖ ^ d k : 𝒪[K]) : K)
     have hv_sub :
         v +ᵥ (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i)) ⊆
@@ -335,14 +368,12 @@ theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measur
         · simpa [v, d', Function.update_of_ne hik] using hx i (mem_univ i)
       · have heq : ϖ ^ d k + c = y := Subtype.ext (by simpa [v, hcx] using hyx.symm)
         simpa [← heq] using sub_mem hy hc
-    have hpow0 (m : ℕ) : (1 : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ m ≠ 0 :=
+    have hpow0 : (1 : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, d i + 1) ≠ 0 :=
       (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top hq_top)).ne'
     have hv_top : μ (v +ᵥ univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i)) = ∞ := by
-      rw [measure_vadd, h₂, hμ, ENNReal.mul_top (hpow0 _)]
-    have h1_lt : (1 : ℝ≥0∞) < Nat.card 𝓀[K] := by exact_mod_cast Finite.one_lt_card
-    have hfac0 : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, d i) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) ≠ 0 :=
-      mul_ne_zero (hpow0 _) (tsub_pos_of_lt (by rwa [one_div, ENNReal.inv_lt_one])).ne'
-    rw [top_le_iff.mp (hv_top.symm.trans_le (measure_mono hv_sub)), hμ, ENNReal.mul_top hfac0]
+      rw [measure_vadd, h₂, hμ, ENNReal.mul_top hpow0]
+    rw [top_le_iff.mp (hv_top.symm.trans_le (measure_mono hv_sub)), hμ,
+      ENNReal.mul_top one_div_natCard_residueField_pow_mul_one_sub_ne_zero]
   · -- When `μ (integerBox K ι) ≠ ∞`, subtract the two finite box volumes directly.
     rw [measure_sdiff hsub (measurableSet_univ_pi_image_maximalIdeal_pow d').nullMeasurableSet
       (h₂ ▸ ENNReal.mul_ne_top (ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)) hμ),
