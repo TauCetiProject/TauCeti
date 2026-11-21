@@ -31,8 +31,7 @@ interior of the subspace (`TopPair.isIso_twistedHomologyMap_excisionMap_compl`),
 homology modulo the complement of a set `K` in an open neighbourhood `U` of its closure
 (`TopPair.isIso_twistedHomologyMap_excisionMap_of_closure_subset`), in particular of a closed set
 (`TopPair.isIso_twistedHomologyMap_excisionMap_of_isClosed_subset`), each with a chain-level
-`quasiIso_twistedChainComplexMap_` counterpart. It also covers isomorphisms of pairs
-(`TopPair.isIso_twistedHomologyMap_of_isIso`). The form with an open neighbourhood is what
+`quasiIso_twistedChainComplexMap_` counterpart. The last form is what
 compares relative groups `H_*(U, U ∖ K; L)` of an open subset with those of the ambient space, as
 needed for restriction of locally finite homology to open subsets and for compact pairs.
 
@@ -202,21 +201,6 @@ isomorphisms on relative twisted homology in every degree. -/
 theorem isIso_twistedHomologyMap_of_open_cover (n : ℕ) : IsIso (twistedHomologyMap f L n) := by
   have := quasiIso_twistedChainComplexMap_of_open_cover f L hf hsnd U hU hcov hUf
   infer_instance
-
-omit hf hsnd hU hcov hUf in
-/-- An isomorphism of topological pairs induces isomorphisms on relative twisted homology, for
-every local coefficient system on the ambient space of its target. -/
-instance isIso_twistedHomologyMap_of_isIso [IsIso f] (n : ℕ) :
-    IsIso (twistedHomologyMap f L n) := by
-  have hfst : IsHomeomorph (Hom.fst f) :=
-    (TopCat.isIso_iff_isHomeomorph _).1 (proj₁.map_isIso f)
-  refine isIso_twistedHomologyMap_of_open_cover f L hfst.isEmbedding (fun x ⟨c, hc⟩ ↦ ?_)
-    (fun _ : Unit ↦ Set.univ) (fun _ ↦ isOpen_univ) (Set.iUnion_const _)
-    (fun _ ↦ Or.inr hfst.surjective.range_eq.ge) n
-  -- `x` is the image under `f` of the image of `c` under the inverse of `f`.
-  refine ⟨Hom.snd (inv f) c, hfst.injective ?_⟩
-  rw [Hom.w_apply, ← hc, ← ConcreteCategory.comp_apply, ← Hom.fst_comp, IsIso.inv_hom_id,
-    Hom.fst_id, TopCat.id_app]
 
 end OpenCover
 

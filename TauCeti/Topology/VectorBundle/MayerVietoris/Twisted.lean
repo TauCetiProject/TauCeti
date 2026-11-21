@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
 public import TauCeti.AlgebraicTopology.Singular.Twisted.MayerVietoris.Pair
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ProdThomPair
 public import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
