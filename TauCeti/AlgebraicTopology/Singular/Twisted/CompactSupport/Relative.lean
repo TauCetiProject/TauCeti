@@ -283,27 +283,9 @@ preimage under `π` of some `S i`, then `Hₖ(X, A; L)` is the colimit of the gr
 def isColimitRestrictPreimagePairTwistedHomologyCocone [IsDirectedOrder ι]
     (hK : ∀ K : Set X, IsCompact K → ∃ i, K ⊆ π ⁻¹' S i) :
     Limits.IsColimit (restrictPreimagePairTwistedHomologyCocone A L π hS k) :=
-  ModuleCat.isColimitOfJointlySurjective _
+  ModuleCat.isColimitOfJointlySurjectiveOfMapEqZero _
     (fun x ↦ exists_twistedHomologyMap_restrictPreimagePairMap_eq A L π hK x)
-    (fun i j xi xj hij ↦ by
-      obtain ⟨l, hil, hjl⟩ := exists_ge_ge i j
-      let F := restrictPreimagePairTwistedHomologyFunctor A L π hS k
-      -- the difference of the two images at a common upper bound vanishes in `(X, A)`
-      have hl : ((restrictPreimagePairTwistedHomologyCocone A L π hS k).ι.app l).hom
-          ((F.map (homOfLE hil)).hom xi - (F.map (homOfLE hjl)).hom xj) = 0 := by
-        rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, Limits.Cocone.w,
-          ← ConcreteCategory.comp_apply, Limits.Cocone.w]
-      rw [restrictPreimagePairTwistedHomologyCocone_ι_app] at hl
-      obtain ⟨m, hlm, hm⟩ :=
-        exists_homologyMap_restrictPreimagePairTwistedChainComplexMap_eq_zero A L π hS hK _ hl
-      refine ⟨m, homOfLE (hil.trans hlm), homOfLE (hjl.trans hlm), ?_⟩
-      -- so it already vanishes in the member over `S m`: `hm` is this statement by
-      -- `restrictPreimagePairTwistedHomologyFunctor_map`; it is stated on the carriers of the
-      -- homology modules, which agree with `F.obj` only by unfolding, so the exposed definition
-      -- is used directly
-      have hm' : (F.map (homOfLE hlm)).hom
-          ((F.map (homOfLE hil)).hom xi - (F.map (homOfLE hjl)).hom xj) = 0 := hm
-      rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-        ← F.map_comp, ← F.map_comp] at hm')
+    (fun _ y hy ↦
+      exists_homologyMap_restrictPreimagePairTwistedChainComplexMap_eq_zero A L π hS hK y hy)
 
 end TopPair

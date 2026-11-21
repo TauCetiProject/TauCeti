@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Relative
-public import TauCeti.Topology.VectorBundle.EulerClass
+public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
