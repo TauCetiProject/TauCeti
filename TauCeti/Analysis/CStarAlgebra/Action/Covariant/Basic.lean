@@ -71,6 +71,16 @@ theorem coefficient_action (P : CovariantRepresentation α H) (g : G) (a : A) :
   rw [P.group_mul_coefficient, mul_assoc, ← map_mul]
   simp
 
+/-- Applying the group unitary followed by a coefficient operator has norm at most `‖a‖ * ‖v‖`. -/
+theorem norm_coefficient_group_apply_le (P : CovariantRepresentation α H) (a : A) (g : G)
+    (v : H) :
+    ‖P.coefficient a (P.group g v)‖ ≤ ‖a‖ * ‖v‖ := by
+  calc ‖P.coefficient a (P.group g v)‖
+      ≤ ‖P.coefficient a‖ * ‖P.group g v‖ := (P.coefficient a).le_opNorm _
+    _ ≤ ‖a‖ * ‖v‖ := by
+      rw [P.isUnitary.norm_map]
+      exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
+
 /-- Every coefficient representation gives a covariant pair for the trivial action, with
 trivial group representation. -/
 def trivial (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :

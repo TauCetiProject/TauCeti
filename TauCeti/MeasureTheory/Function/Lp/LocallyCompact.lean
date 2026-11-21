@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
@@ -18,7 +19,9 @@ Let `μ` be a measure on a weakly locally compact `R₁` space `X` with its Bore
 finite on compact sets and inner regular with respect to compact sets on measurable sets of finite
 measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), for instance a Haar
 measure on a locally compact group. This file proves that compactly supported continuous functions
-are dense in `Lᵖ(X, μ)` for `p < ∞`.
+are dense in `Lᵖ(X, μ)` for `p < ∞`, and that every integrable function is the `L¹` and
+almost-everywhere sum of an `L¹`-absolutely convergent series of compactly supported continuous
+functions.
 
 Mathlib's `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` assumes `NormalSpace X`
 and `μ.Regular` in addition to `R1Space X` and `WeaklyLocallyCompactSpace X`, and Mathlib provides
@@ -40,6 +43,9 @@ approximation from indicator functions to all of `Lᵖ`.
 * `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport` and
   `CompactlySupportedContinuousMap.denseRange_toLp`: the classes of compactly supported continuous
   functions are dense in `Lᵖ`, `p < ∞`.
+* `MeasureTheory.Integrable.exists_sum_compactlySupported_tendsto`: every integrable function is
+  approximated in `L¹` and almost everywhere by partial sums of a sequence in `C_c(X, E)` with
+  summable `L¹` norms.
 
 ## References
 
@@ -137,6 +143,64 @@ theorem Lp.dense_setOf_continuous_hasCompactSupport [Fact (1 ≤ p)] (hp : p ≠
   rw [Metric.mem_ball, dist_comm, Lp.dist_def,
     eLpNorm_congr_ae (EventuallyEq.rfl.sub hfp.coeFn_toLp)]
   exact (ENNReal.toReal_le_of_le_ofReal (half_pos hr).le hf).trans_lt (half_lt_self hr)
+
+/-- Every integrable function `f : X → E` is approximated by a sequence `φ : ℕ → C_c(X, E)` that
+is the partial-sum sequence of `u : ℕ → C_c(X, E)` with summable `L¹` norms, converging to `f`
+both in `Lp E 1 μ` and `μ`-almost everywhere. -/
+theorem Integrable.exists_sum_compactlySupported_tendsto {f : X → E} (hf : Integrable f μ) :
+    ∃ (φ u : ℕ → C_c(X, E)),
+      (∀ n, ∑ i ∈ Finset.range (n + 1), u i = φ n) ∧
+      Tendsto (fun n => (φ n).integrable.toL1 (φ n)) atTop (𝓝 (hf.toL1 f)) ∧
+      (∀ᵐ x ∂μ, Tendsto (fun n => φ n x) atTop (𝓝 (f x))) ∧
+      (∑' k, ∫⁻ x, ‖u k x‖ₑ ∂μ) ≠ ∞ := by
+  have hf_memLp : MemLp f 1 μ := memLp_one_iff_integrable.2 hf
+  choose g hgs hfg hgc _ using fun n : ℕ =>
+    hf_memLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace ENNReal.one_ne_top
+      (ENNReal.pow_pos (a := 2⁻¹) (by simp) n).ne'
+  let φ : ℕ → C_c(X, E) := fun n => ⟨⟨g n, hgc n⟩, hgs n⟩
+  have hdist (n : ℕ) : eLpNorm ((φ n : X → E) - f) 1 μ ≤ (2⁻¹ : ℝ≥0∞) ^ n := by
+    rw [eLpNorm_sub_comm]; exact hfg n
+  have hgeom : (∑' n : ℕ, (2⁻¹ : ℝ≥0∞) ^ n) ≠ ∞ := by simp
+  -- Convergence in `Lp E 1 μ` and `μ`-almost everywhere from `∑' n, eLpNorm (φ n - f) 1 μ < ∞`.
+  have hL1 : Tendsto (fun n => (φ n).integrable.toL1 (φ n)) atTop (𝓝 (hf.toL1 f)) := by
+    rw [Lp.ext (hf.coeFn_toL1.trans hf_memLp.coeFn_toLp.symm)]
+    refine Lp.tendsto_Lp_of_tendsto_eLpNorm f hf_memLp ?_
+    simp_rw [eLpNorm_congr_ae ((φ _).integrable.coeFn_toL1.sub EventuallyEq.rfl)]
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (ENNReal.tendsto_atTop_zero_of_tsum_ne_top hgeom) (fun _ => zero_le) hdist
+  have hae : ∀ᵐ x ∂μ, Tendsto (fun n => φ n x) atTop (𝓝 (f x)) := by
+    have hmeas (n : ℕ) : AEMeasurable (fun x => ‖φ n x - f x‖ₑ) μ :=
+      ((φ n).integrable.sub hf).aestronglyMeasurable.eNorm
+    have hsum_ae : ∫⁻ x, (∑' n, ‖φ n x - f x‖ₑ) ∂μ ≠ ∞ := by
+      rw [lintegral_tsum hmeas]
+      refine ne_top_of_le_ne_top hgeom (tsum_le_tsum fun n => ?_)
+      simpa only [eLpNorm_one_eq_lintegral_eNorm ((φ n).integrable.sub hf).aestronglyMeasurable,
+        Pi.sub_apply] using hdist n
+    filter_upwards [ae_lt_top' (AEMeasurable.tsum hmeas) hsum_ae] with x hx
+    simpa only [tendsto_iff_edist_tendsto_0, eDist_eq_eNorm_sub] using
+      ENNReal.tendsto_atTop_zero_of_tsum_ne_top hx.ne
+  -- Telescopic differences `u 0 = φ 0`, `u (n + 1) = φ (n + 1) - φ n`.
+  let u : ℕ → C_c(X, E) := fun k => match k with | 0 => φ 0 | n + 1 => φ (n + 1) - φ n
+  have hu_succ (n : ℕ) : u (n + 1) = φ (n + 1) - φ n := rfl
+  have hsum_u (n : ℕ) : ∑ i ∈ Finset.range (n + 1), u i = φ n := by
+    induction n with
+    | zero => simp [u]
+    | succ n ih => rw [Finset.sum_range_succ, ih, add_sub_cancel]
+  have hu_lt : (∑' k, ∫⁻ x, ‖u k x‖ₑ ∂μ) ≠ ∞ := by
+    rw [tsum_eq_zero_add' CompleteLattice.summable]
+    refine (ENNReal.add_lt_top.2 ⟨(φ 0).integrable.2, ?_⟩).ne
+    have hbound (n : ℕ) : ∫⁻ x, ‖u (n + 1) x‖ₑ ∂μ ≤ (2⁻¹ : ℝ≥0∞) ^ (n + 1) + (2⁻¹ : ℝ≥0∞) ^ n := by
+      have hsub : ((φ (n + 1) : X → E) - (φ n : X → E)) =
+          ((φ (n + 1) : X → E) - f) + (f - (φ n : X → E)) := by ext x; simp
+      rw [← eLpNorm_one_eq_lintegral_eNorm (u (n + 1)).integrable.aestronglyMeasurable,
+        hu_succ, CompactlySupportedContinuousMap.coe_sub, hsub]
+      exact (eLpNorm_add_le le_rfl).trans (add_le_add (hdist (n + 1)) (hfg n))
+    refine lt_of_le_of_lt (tsum_le_tsum hbound) ?_
+    rw [tsum_add]
+    exact ENNReal.add_lt_top.2 ⟨by
+      simpa only [pow_succ, ENNReal.tsum_mul_right] using
+        ENNReal.mul_lt_top hgeom.lt_top (by simp), hgeom.lt_top⟩
+  exact ⟨φ, u, hsum_u, hL1, hae, hu_lt⟩
 
 end Dense
 

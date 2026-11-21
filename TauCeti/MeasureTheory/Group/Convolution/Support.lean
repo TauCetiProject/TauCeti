@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.Topology.Algebra.Group.Pointwise
+import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Supports of convolution-type parametric integrals over a group
@@ -15,7 +20,10 @@ Convolutions over a group `G` are parametric integrals `s ↦ ∫ r, F s r ∂μ
 vanishes unless `r ∈ K` and `r⁻¹ * s ∈ L`, where `K` and `L` are the supports of the two factors.
 This file records the resulting support bounds, for any normed-space valued integrand: the
 parametric integral is supported in `K * L`, and for compact `K` and `L` both the integrand on
-`G × G` and the parametric integral are compactly supported.
+`G × G` and the parametric integral are compactly supported. For a left-invariant measure finite on
+compacts, Fubini's theorem for compactly supported continuous functions then evaluates the iterated
+`ℝ≥0∞`-norm convolution integral of two compactly supported continuous functions as the product of
+their `L¹` seminorms without σ-finiteness.
 
 ## Main statements
 
@@ -27,12 +35,18 @@ parametric integral is supported in `K * L`, and for compact `K` and `L` both th
   `G × G`.
 * `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`: the parametric integral is compactly
   supported.
+* `TauCeti.continuous_integral_norm_mul_inv_mul` and
+  `TauCeti.lintegral_eNorm_mul_inv_mul_eq_ofReal_integral`: continuity of
+  `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ` and equality of `∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ` with
+  its `ENNReal.ofReal` when `u` is continuous with compact support and `v` is continuous.
+* `TauCeti.lintegral_lintegral_eNorm_mul_inv_mul`: iterated `ℝ≥0∞`-norm convolution identity for
+  `u : C_c(G, E)` and `v : C_c(G, F)` against a left-invariant measure finite on compacts.
 -/
 
 public section
 
 open MeasureTheory Function
-open scoped Pointwise
+open scoped CompactlySupported ENNReal Pointwise
 
 namespace TauCeti
 
@@ -84,5 +98,67 @@ theorem hasCompactSupport_integral_of_inv_mul_mem [NormedSpace ℝ E] [Measurabl
     (hF : ∀ s r, F s r ≠ 0 → r ∈ K ∧ r⁻¹ * s ∈ L) :
     HasCompactSupport (fun s => ∫ r, F s r ∂μ) :=
   (hK.mul hL).closure_of_subset (support_integral_subset_mul μ hF)
+
+/-- For continuous `u : G → E` with compact support and continuous `v : G → E'`, the scalar
+parametric convolution `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ` is continuous against any measure
+finite on compact sets. -/
+theorem continuous_integral_norm_mul_inv_mul {E' : Type*} [NormedAddCommGroup E']
+    [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    {u : G → E} {v : G → E'} (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v) :
+    Continuous fun s => ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ := by
+  refine continuous_integral_of_compact_support μ huc ?_ fun _ _ hsr =>
+    subset_tsupport _ (mem_support.2 fun hr => hsr (by simp [hr]))
+  rw [uncurry_def]
+  fun_prop
+
+/-- For continuous `u : G → E` with compact support and continuous `v : G → E'`, the lower Lebesgue
+parametric convolution `∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ` equals `ENNReal.ofReal` of the Bochner
+integral `∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ` against any measure finite on compact sets. -/
+theorem lintegral_eNorm_mul_inv_mul_eq_ofReal_integral {E' : Type*} [NormedAddCommGroup E']
+    [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    {u : G → E} {v : G → E'} (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v)
+    (s : G) :
+    ∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ = ENNReal.ofReal (∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ) := by
+  have hint : Integrable (fun r => ‖u r‖ * ‖v (r⁻¹ * s)‖) μ :=
+    (by fun_prop : Continuous fun r => ‖u r‖ * ‖v (r⁻¹ * s)‖).integrable_of_hasCompactSupport
+      (huc.mono' fun _ hsr => subset_tsupport _ (mem_support.2 fun hr => hsr (by simp [hr])))
+  rw [ofReal_integral_eq_lintegral_ofReal hint
+    (.of_forall fun _ => mul_nonneg (norm_nonneg _) (norm_nonneg _))]
+  congr 1 with r
+  rw [ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm]
+
+/-- Against any left-invariant measure finite on compact sets (with no σ-finiteness assumption),
+two compactly supported continuous functions `u : C_c(G, E)` and `v : C_c(G, E')` satisfy
+`∫⁻ s, ∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ ∂μ = (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂μ`. -/
+theorem lintegral_lintegral_eNorm_mul_inv_mul {E' : Type*} [NormedAddCommGroup E']
+    [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G] (μ : Measure G)
+    [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (u : C_c(G, E)) (v : C_c(G, E')) :
+    (∫⁻ s, (∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ) ∂μ) =
+      (∫⁻ r, ‖u r‖ₑ ∂μ) * ∫⁻ s, ‖v s‖ₑ ∂μ := by
+  have hsupp : ∀ s r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport u ∧ r⁻¹ * s ∈ tsupport v :=
+    fun s r hsr => ⟨subset_tsupport _ (mem_support.2 fun hu => hsr (by simp [hu])),
+      subset_tsupport _ (mem_support.2 fun hv => hsr (by simp [hv]))⟩
+  have hcont : Continuous (uncurry fun s r => ‖u r‖ * ‖v (r⁻¹ * s)‖) := by
+    rw [uncurry_def]; fun_prop
+  have hNcont := continuous_integral_norm_mul_inv_mul μ (map_continuous u) u.hasCompactSupport
+    (map_continuous v)
+  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ u.hasCompactSupport
+    v.hasCompactSupport hsupp
+  simp_rw [lintegral_eNorm_mul_inv_mul_eq_ofReal_integral μ (map_continuous u) u.hasCompactSupport
+    (map_continuous v)]
+  rw [← ofReal_integral_eq_lintegral_ofReal (hNcont.integrable_of_hasCompactSupport hNsupp)
+      (.of_forall fun _ => integral_nonneg fun _ => mul_nonneg (norm_nonneg _) (norm_nonneg _)),
+    integral_integral_swap_of_hasCompactSupport hcont
+      (hasCompactSupport_uncurry_of_inv_mul_mem u.hasCompactSupport v.hasCompactSupport hsupp)]
+  have hswap : (∫ r, ∫ s, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂μ) =
+      (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂μ := by
+    calc (∫ r, ∫ s, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂μ)
+        = ∫ r, ‖u r‖ * ∫ s, ‖v s‖ ∂μ ∂μ := by
+          congr 1 with r
+          rw [integral_const_mul, integral_mul_left_eq_self (fun s => ‖v s‖) r⁻¹]
+      _ = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂μ := integral_mul_const _ _
+  rw [hswap, ENNReal.ofReal_mul (integral_nonneg fun _ => norm_nonneg _),
+    ofReal_integral_norm_eq_lintegral_eNorm u.integrable,
+    ofReal_integral_norm_eq_lintegral_eNorm v.integrable]
 
 end TauCeti
