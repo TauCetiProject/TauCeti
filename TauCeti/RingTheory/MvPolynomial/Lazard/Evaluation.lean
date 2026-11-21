@@ -222,7 +222,7 @@ theorem eventually_lazardValuation_eq {α : Type*} {l : Filter α} {A : Set (Fin
     (heq : ∀ x ∈ A, ∀ y ∈ A, p.lazardValuation x = p.lazardValuation y) (x : A) :
     ∀ᶠ u in l, p.lazardValuation (φ u) = toLex (p.lazardExponent x) := by
   filter_upwards [hφA] with u hu
-  rw [heq (φ u) hu x x.2, lazardValuation_eq_lazardExponent hp x]
+  rw [heq (φ u) hu x x.property, lazardValuation_eq_lazardExponent hp x]
 
 /-- A fixed polynomial has only finitely many vectors of removed Lazard exponents. -/
 theorem finite_range_lazardExponent (p : MvPolynomial (Fin n) S) :

@@ -173,7 +173,7 @@ private def centralizerMulLeftEnd (c : Subalgebra.centralizer K (B : Set A)) :
       induction r using TensorProduct.inductionOn with
       | tmul b a =>
           have hc : (c : A) * (b : A) = (b : A) * (c : A) :=
-            ((Subalgebra.mem_centralizer_iff K).1 c.2 (b : A) b.2).symm
+            ((Subalgebra.mem_centralizer_iff K).1 c.property (b : A) b.property).symm
           simp only [Bimodule.toEnd_tmul_apply, Subalgebra.coe_val, ← mul_assoc, hc]
       | add r s hr hs => simp only [map_add, LinearMap.add_apply, mul_add, hr, hs]
     -- The defining equation of the action turns both sides into `key r`, read through `of`.
@@ -273,7 +273,7 @@ theorem centralizerAlgEquivEnd_symm_apply (φ : Module.End (↥B ⊗[K] Aᵐᵒ�
 under which `Algebra.TensorProduct.lift` builds `TauCeti.tensorCentralizerAlgHom`. -/
 private theorem commute_val_centralizer (b : B) (c : Subalgebra.centralizer K (B : Set A)) :
     Commute (B.val b) ((Subalgebra.centralizer K (B : Set A)).val c) :=
-  (Subalgebra.mem_centralizer_iff K).1 c.2 (b : A) b.2
+  (Subalgebra.mem_centralizer_iff K).1 c.property (b : A) b.property
 
 /-- **Multiplication `B ⊗[K] C_A(B) → A`**, as a `K`-algebra homomorphism.
 

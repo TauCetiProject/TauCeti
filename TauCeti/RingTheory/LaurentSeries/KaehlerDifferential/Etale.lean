@@ -191,7 +191,7 @@ theorem continuous_derivation [τ₀ : TopologicalSpace L] [IsModuleTopology K�
       ext p <;> dsimp [φ, H]
       rw [Algebra.smul_def, (derivation K L).leibniz, derivation_algebraMap,
         laurentSeriesDerivation_apply, smul_eq_mul, smul_eq_mul, mul_comm p.2, ← Algebra.smul_def,
-        ← Algebra.smul_def]
+        ← Algebra.smul_def, LaurentSeries.derivative_apply]
     rw [hprod, induced_compose, heq, ← induced_compose]
     exact induced_mono hH.le_induced
   exact continuous_snd.comp <| continuous_iff_le_induced.mpr <|

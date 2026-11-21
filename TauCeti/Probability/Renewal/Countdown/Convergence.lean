@@ -61,7 +61,7 @@ private theorem exists_invariant_countdownKernel_subtype (ν : Measure ℕ)
     μ.invariant_inv_mean_smul_countdownInvariantMeasure
   let ρ : Measure μ.countdownStates := π.comap Subtype.val
   have hρ : IsProbabilityMeasure ρ :=
-    (MeasurableEmbedding.subtype_coe μ.measurableSet_countdownStates).isProbabilityMeasure_comap
+    (MeasurableEmbedding.subtypeVal μ.measurableSet_countdownStates).isProbabilityMeasure_comap
       (by simpa only [Subtype.range_coe] using (ae_iff.mpr hsupport))
   refine ⟨ρ, hρ,
     (Kernel.invariant_comap_subtype_iff _ _ μ.countdownKernel_isClosedSet π hsupport).2 hinv, ?_⟩
@@ -93,7 +93,7 @@ theorem tendsto_countdownKernel_map_pred_pow_apply_zero (ν : Measure ℕ) [IsPr
       simp [z, Subtype.ext_iff]
     have hm := μ.countdownKernel.lintegral_hittingAfter_markovChainLaw_subtype
       μ.measurableSet_countdownStates (dirac z) (measurableSet_singleton 0) 1
-    rw [hpre, map_dirac' measurable_subtype_coe] at hm
+    rw [hpre, map_dirac' measurable_subtypeVal] at hm
     have hret : (∫⁻ ω, (hittingAfter (fun n ω => ω n) {z} 1 ω).recTopCoe ⊤
         (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (dirac z) κ) = ∞ := by
       rw [hm]

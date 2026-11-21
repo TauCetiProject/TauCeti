@@ -71,7 +71,7 @@ theorem exists_holderOnWith_chartIteratedFDeriv_ball (hα : α ≤ 1) {hk : k �
   have hsopen : IsOpen τ.source := I.isOpen_extendCoordChange_source
   have hz₀s : (z₀ : E) ∈ τ.source := by
     rw [hsrc]
-    exact ⟨z₀.2, hz₀⟩
+    exact ⟨z₀.property, hz₀⟩
   have hst : MapsTo τ τ.source (extChartAt I y).target := fun z hz ↦ by
     have h := τ.map_source hz
     rw [hτ, PartialEquiv.trans_target] at h

@@ -110,8 +110,12 @@ variable [CompleteSpace V]
 
 /-- The right action of the unitary group `unitary (V →L[𝕜] V)` on the frames of a fibre by
 precomposition: `op g` carries the frame `φ` to `φ ∘ g`. -/
-instance instMulAction (b : B) : MulAction (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
+instance instSMul (b : B) : SMul (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
   smul g φ := ofFrame ((Unitary.linearIsometryEquiv g.unop).trans φ.frame)
+
+/-- The right precomposition action of `unitary (V →L[𝕜] V)` on `Fiber 𝕜 F E V b` is a monoid
+action. -/
+instance instMulAction (b : B) : MulAction (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
   -- By the definition of `smul`, both sides of each action law are points `ofFrame _`, so
   -- `congrArg ofFrame` reduces the law to an identity of linear isometric equivalences. In
   -- `mul_smul`, the frame of `h • φ` is by definition the composite that `trans_assoc` expects.
@@ -137,7 +141,7 @@ variable [CompleteSpace V]
 base point and a frame. -/
 def totalSpaceEquiv :
     TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) ≃ OrthonormalFrameBundle 𝕜 F E V where
-  toFun p := ⟨p.proj, p.2.frame⟩
+  toFun p := ⟨p.proj, p.snd.frame⟩
   invFun p := ⟨p.proj, .ofFrame p.frame⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -146,7 +150,7 @@ def totalSpaceEquiv :
 `b` to the pair of `b` and its frame. -/
 @[simp]
 theorem totalSpaceEquiv_apply (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
-    totalSpaceEquiv p = ⟨p.proj, p.2.frame⟩ :=
+    totalSpaceEquiv p = ⟨p.proj, p.snd.frame⟩ :=
   (rfl)
 
 theorem proj_totalSpaceEquiv (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :

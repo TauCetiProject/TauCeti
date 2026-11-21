@@ -61,7 +61,7 @@ def attachDeformation : C(I × Z, Z) :=
     (by
       rintro ⟨t, x⟩ ⟨s, a⟩ h
       obtain ⟨rfl, hx⟩ : t = s ∧ (x : Z) = φ a := Prod.ext_iff.1 h
-      rw [ContinuousMap.coe_mk, ContinuousMap.comp_apply, hHS t a (hφX a (hx ▸ x.2))]
+      rw [ContinuousMap.coe_mk, ContinuousMap.comp_apply, hHS t a (hφX a (hx ▸ x.property))]
       exact hx)
 
 /-- The extended deformation is `φ ∘ H` on the image of `φ`. -/

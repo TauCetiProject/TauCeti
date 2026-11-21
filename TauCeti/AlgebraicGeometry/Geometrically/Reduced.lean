@@ -66,7 +66,7 @@ instance isReduced_pullback_of_geometricallyReduced {X Y S : Scheme.{u}} (f : X 
     [GeometricallyReduced f] [IsIntegral Y] [Subsingleton Y] :
     IsReduced (pullback f g) :=
   self_of_isIntegral_of_geometrically
-    (inferInstance : GeometricallyReduced (pullback.snd f g)).1
+    (inferInstance : GeometricallyReduced (pullback.snd f g)).geometrically_isReduced
 
 /-- Base change of an object in `Over S` with geometrically reduced structure morphism along a
 morphism from an integral subsingleton scheme (such as `Spec K` for a field `K`) has a reduced

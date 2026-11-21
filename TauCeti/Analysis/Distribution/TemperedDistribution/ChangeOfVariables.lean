@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TemperateGrowth
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
@@ -35,7 +36,9 @@ multiplication by `g` into multiplication by `g ∘ φ` (`compCLM_smulLeftCLM`).
 chain rule: if `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
 `∂_v (φ^* T) = ∑ᵢ cᵢ φ^* (∂_{bᵢ} T)` (`lineDerivOp_compCLM`), and conversely
 `φ^* (∂_v T) = ∑ᵢ (dᵢ ∘ φ) ∂_{bᵢ} (φ^* T)` for the coordinates `dᵢ` of `Dφ⁻¹ v`
-(`compCLM_lineDerivOp`).
+(`compCLM_lineDerivOp`). With the Leibniz rule this moves the derivative off `T`:
+`g φ^* (∂_v T) = ∑ᵢ (∂_{bᵢ} ((dᵢ ∘ φ) g φ^* T) - ∂_{bᵢ} ((dᵢ ∘ φ) g) φ^* T)`
+(`smulLeftCLM_compCLM_lineDerivOp`, and `compCLM_lineDerivOp_eq_sum_sub` for `g = 1`).
 
 If `φ` pushes `μ` forward to at most a finite multiple of `μ`, the pullback of the distribution of
 `u ∈ Lᵖ(μ)` is that of the `Lᵖ` precomposition `Lp.compOfMapLeSmul`
@@ -158,6 +161,51 @@ theorem compCLM_lineDerivOp (b : Module.Basis ι ℝ E) (hφ : (φ : E → E).Ha
 
 end TVS
 
+section Leibniz
+
+variable [NormedAddCommGroup F] [NormedSpace ℂ F] {ι : Type*} [Fintype ι]
+
+/-- **The pullback of a derivative, moved off the distribution.** If
+`Dφ⁻¹(φ x) v = ∑ᵢ dᵢ(x) bᵢ` in a basis `b`, then by the chain rule and the Leibniz rule
+`g φ^* (∂_v T) = ∑ᵢ (∂_{bᵢ} (dᵢ g φ^* T) - ∂_{bᵢ} (dᵢ g) φ^* T)` for every `g` of temperate
+growth. -/
+theorem smulLeftCLM_compCLM_lineDerivOp (b : Module.Basis ι ℝ E)
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (T : 𝓢'(E, F)) (v : E) :
+    smulLeftCLM F g (compCLM F φ hφ hψ (∂_{v} T)) = ∑ i,
+      (∂_{b i} (smulLeftCLM F
+          ((fun x ↦ ((b.repr (fderiv ℝ φ.symm (φ x) v) i : ℝ) : ℂ)) * g)
+          (compCLM F φ hφ hψ T)) -
+        smulLeftCLM F (fun x ↦ fderiv ℝ
+          ((fun x ↦ ((b.repr (fderiv ℝ φ.symm (φ x) v) i : ℝ) : ℂ)) * g) x (b i))
+          (compCLM F φ hφ hψ T)) := by
+  rw [compCLM_lineDerivOp b hφ hψ, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hd : (fun x ↦ ((b.repr (fderiv ℝ φ.symm (φ x) v) i : ℝ) : ℂ)).HasTemperateGrowth :=
+    (hψ.basis_repr_fderiv_apply b v i).comp hφ
+  rw [smulLeftCLM_smulLeftCLM_apply hd hg, lineDerivOp_smulLeftCLM (hd.mul hg)]
+  abel
+
+/-- **The pullback of a derivative, moved off the distribution**: the case `g = 1` of
+`smulLeftCLM_compCLM_lineDerivOp`. If `Dφ⁻¹(φ x) v = ∑ᵢ dᵢ(x) bᵢ` in a basis `b`, then
+`φ^* (∂_v T) = ∑ᵢ (∂_{bᵢ} (dᵢ φ^* T) - (∂_{bᵢ} dᵢ) φ^* T)`. -/
+theorem compCLM_lineDerivOp_eq_sum_sub (b : Module.Basis ι ℝ E)
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (T : 𝓢'(E, F)) (v : E) :
+    compCLM F φ hφ hψ (∂_{v} T) = ∑ i,
+      (∂_{b i} (smulLeftCLM F (fun x ↦ ((b.repr (fderiv ℝ φ.symm (φ x) v) i : ℝ) : ℂ))
+          (compCLM F φ hφ hψ T)) -
+        smulLeftCLM F (fun x ↦ fderiv ℝ
+          (fun y ↦ ((b.repr (fderiv ℝ φ.symm (φ y) v) i : ℝ) : ℂ)) x (b i))
+          (compCLM F φ hφ hψ T)) := by
+  have h := smulLeftCLM_compCLM_lineDerivOp b hφ hψ (g := 1)
+    (Function.HasTemperateGrowth.const (1 : ℂ)) T v
+  simp only [mul_one] at h
+  rw [← h]
+  exact ((smulLeftCLM_const 1 _).trans (one_smul ℂ _)).symm
+
+end Leibniz
+
 section Normed
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace E] [BorelSpace E]
@@ -194,12 +242,12 @@ theorem compCLM_toTemperedDistribution_eq_compOfMapLeSmul [CompleteSpace F] {p :
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (hC : C ≠ ∞) (hmap : μ.map φ ≤ C • μ)
     (u : Lp F p μ) :
     compCLM F φ hφ hψ (u : 𝓢'(E, F)) =
-      (Lp.compOfMapLeSmul ℂ hφ.1.continuous.measurable hC hmap u : 𝓢'(E, F)) := by
+      (Lp.compOfMapLeSmul ℂ hφ.1.continuous.aemeasurable hC hmap u : 𝓢'(E, F)) := by
   ext f
   rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
     SchwartzMap.integral_pushforwardCLM_smul]
   refine integral_congr_ae
-    ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.measurable hC hmap u).mono fun x hx ↦ ?_)
+    ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.aemeasurable hC hmap u).mono fun x hx ↦ ?_)
   dsimp only
   rw [hx, Function.comp_apply]
 

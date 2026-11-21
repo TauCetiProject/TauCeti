@@ -7,161 +7,116 @@ module
 
 public import TauCeti.RingTheory.WittVector.Truncated
 
+import Mathlib.Tactic.FinCases
+
 /-!
-# δ-structures as sections of length-two Witt vectors
+# Delta structures as length-two Witt-vector sections
 
-Let `p` be a prime. On the length-two Witt vectors `W₂(A) = TruncatedWittVector p 2 A` of any
-commutative ring `A` (with no torsion hypothesis) the first coordinates of a sum and a product
-are `(x + y)₁ = x₁ + y₁ + C_p(x₀, y₀)` and `(x * y)₁ = x₀ ^ p * y₁ + y₀ ^ p * x₁ + p * x₁ * y₁`,
-where `C_p = DeltaRing.addCorrection p`. These are exactly the sum and product rules of a
-`δ`-structure, so a `δ`-structure on `A` is the same thing as a ring homomorphism
-`s : A →+* W₂(A)` with `s(x)₀ = x`, via `s(x) = (x, δ x)`
-(Bhatt and Scholze, *Prisms and prismatic cohomology*, Remark 2.4). Under this correspondence
-the Frobenius `φ x = x ^ p + p * δ x` is the first ghost component of `s(x)`. This description
-of `δ`-structures by ring homomorphisms is what allows them to be extended along localizations
-and to be compared with the Witt vector Frobenius.
-
-## Main definitions and results
-
-* `TauCeti.DeltaRing.wittSection`: the ring homomorphism `x ↦ (x, δ x)` of a `δ`-ring.
-* `TauCeti.DeltaRing.ofWittSection`: the `δ`-structure of a ring homomorphism `A →+* W₂(A)`
-  whose zeroth coordinate is the identity.
-* `TauCeti.DeltaRing.equivWittSection`: `δ`-structures on `A` are equivalent to ring
-  homomorphisms `A →+* W₂(A)` whose zeroth coordinate is the identity.
-* `TauCeti.DeltaRing.wittSection_coeff_zero_pow_add_mul_coeff_one`: the Frobenius is
-  `s(x)₀ ^ p + p * s(x)₁` for the Witt section `s`.
-* `TauCeti.DeltaRing.ghostComponent_one_eq_frobenius`: the Frobenius is the first ghost
-  component of any Witt vector lifting the Witt section.
+A delta structure on a commutative ring is equivalent to a ring section of the zeroth
+coordinate of its length-two Witt vectors. The section sends `x` to `(x, delta p x)`.
+Its ghost component at index one is the Frobenius lift. This description works with arbitrary
+`p`-torsion and therefore retains information that the Frobenius lift alone may forget.
 
 ## References
 
 * B. Bhatt and P. Scholze, *Prisms and prismatic cohomology*, Ann. of Math. 196 (2022),
-  §2.1, Remark 2.4.
+  Remark 2.4.
 -/
 
 public section
 
-namespace TauCeti
+namespace TauCeti.DeltaRing
 
-namespace DeltaRing
+variable (p : ℕ) (A : Type*) [CommRing A] [Fact p.Prime]
 
-variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A]
-
-section WittSection
+section Section
 
 variable [DeltaRing p A]
 
-variable (p A) in
-/-- The ring homomorphism `x ↦ (x, δ x)` from a `δ`-ring to its length-two Witt vectors
-(Bhatt and Scholze, *Prisms and prismatic cohomology*, Remark 2.4). Its zeroth coordinate is the
-identity (`wittSection_coeff_zero`) and its first coordinate is `δ` (`wittSection_coeff_one`). -/
+/-- The length-two Witt-vector ring section `x ↦ (x, delta p x)` of a delta ring. -/
 noncomputable def wittSection : A →+* TruncatedWittVector p 2 A where
-  toFun x := TruncatedWittVector.mk p ![x, delta p x]
-  map_one' := by
-    ext i
-    fin_cases i <;> simp [TruncatedWittVector.coeff_mk]
-  map_mul' x y := by
-    ext i
-    fin_cases i
-    · simp [TruncatedWittVector.coeff_mk]
-    · simp [TruncatedWittVector.coeff_mk, TruncatedWittVector.mul_coeff_one, delta_mul]
+  toFun x := TruncatedWittVector.mk p fun i => if i = 0 then x else delta p x
   map_zero' := by
     ext i
-    fin_cases i <;> simp [TruncatedWittVector.coeff_mk]
+    fin_cases i <;> simp
+  map_one' := by
+    ext i
+    fin_cases i <;> simp
   map_add' x y := by
     ext i
-    fin_cases i
-    · simp [TruncatedWittVector.coeff_mk]
-    · simp [TruncatedWittVector.coeff_mk, TruncatedWittVector.add_coeff_one, delta_add]
+    fin_cases i <;>
+      simp [TruncatedWittVector.add_coeff_one, delta_add]
+  map_mul' x y := by
+    ext i
+    fin_cases i <;>
+      simp [TruncatedWittVector.mul_coeff_one, delta_mul]
 
-/-- The Witt section sends `x` to the length-two Witt vector with coordinates `(x, δ x)`. -/
-theorem wittSection_apply (x : A) :
-    wittSection p A x = TruncatedWittVector.mk p ![x, delta p x] :=
-  (rfl)
+/-- The zeroth coordinate of the Witt section is the original element. -/
+-- Evaluate before a ring-homomorphism numeral rule erases the section application.
+@[simp↓]
+theorem wittSection_coeff_zero (x : A) : (wittSection p A x).coeff 0 = x := (rfl)
 
-/-- The zeroth coordinate of the Witt section is the identity. -/
+/-- The first coordinate of the Witt section is the delta operation. -/
+@[simp↓]
+theorem wittSection_coeff_one (x : A) : (wittSection p A x).coeff 1 = delta p x := (rfl)
+
+/-- The Witt section is a section of the zeroth-coordinate ring homomorphism. -/
 @[simp]
-theorem wittSection_coeff_zero (x : A) : (wittSection p A x).coeff 0 = x := by
-  simp [wittSection_apply, TruncatedWittVector.coeff_mk]
-
-/-- The first coordinate of the Witt section is `δ`. -/
-@[simp]
-theorem wittSection_coeff_one (x : A) : (wittSection p A x).coeff 1 = delta p x := by
-  simp [wittSection_apply, TruncatedWittVector.coeff_mk]
-
-/-- The Frobenius is `s(x)₀ ^ p + p * s(x)₁` for the Witt section `s(x) = (x, δ x)`. -/
-theorem wittSection_coeff_zero_pow_add_mul_coeff_one (x : A) :
-    (wittSection p A x).coeff 0 ^ p + p * (wittSection p A x).coeff 1 = frobenius p A x := by
-  rw [wittSection_coeff_zero, wittSection_coeff_one, frobenius_apply]
-
-/-- The Frobenius `φ x = x ^ p + p * δ x` is the first ghost component of any Witt vector lifting
-the Witt section `(x, δ x)`. -/
-theorem ghostComponent_one_eq_frobenius {x : A} {w : WittVector p A}
-    (hw : WittVector.truncate 2 w = wittSection p A x) :
-    WittVector.ghostComponent 1 w = frobenius p A x := by
-  rw [← wittSection_coeff_zero_pow_add_mul_coeff_one, ← hw, WittVector.coeff_truncate,
-    WittVector.coeff_truncate, WittVector.ghostComponent_one]
-  rfl
-
-end WittSection
-
-/-- The `δ`-structure `δ x = s(x)₁` of a ring homomorphism `s : A →+* W₂(A)` whose zeroth
-coordinate is the identity (Bhatt and Scholze, *Prisms and prismatic cohomology*, Remark 2.4). -/
-@[instance_reducible]
-def ofWittSection (s : A →+* TruncatedWittVector p 2 A) (hs : ∀ x, (s x).coeff 0 = x) :
-    DeltaRing p A where
-  delta x := (s x).coeff 1
-  delta_zero := by simp
-  delta_one := by simp
-  delta_add x y := by simp [TruncatedWittVector.add_coeff_one, hs]
-  delta_mul x y := by simp [TruncatedWittVector.mul_coeff_one, hs]
-
-/-- The `δ`-operation of `ofWittSection s hs` is the first coordinate of `s`. -/
-@[simp]
-theorem delta_ofWittSection (s : A →+* TruncatedWittVector p 2 A)
-    (hs : ∀ x, (s x).coeff 0 = x) (x : A) :
-    @delta p A _ (ofWittSection s hs) x = (s x).coeff 1 :=
-  (rfl)
-
-/-- The Witt section of `ofWittSection s hs` is `s`. -/
-@[simp]
-theorem wittSection_ofWittSection (s : A →+* TruncatedWittVector p 2 A)
-    (hs : ∀ x, (s x).coeff 0 = x) : @wittSection p _ A _ (ofWittSection s hs) = s := by
-  let := ofWittSection s hs
-  ext x i
-  fin_cases i
-  · exact (wittSection_coeff_zero x).trans (hs x).symm
-  · exact wittSection_coeff_one x
-
-/-- The `δ`-structure of the Witt section of a `δ`-ring is the given one. -/
-@[simp]
-theorem ofWittSection_wittSection [δ : DeltaRing p A] :
-    ofWittSection (wittSection p A) wittSection_coeff_zero = δ := by
+theorem constantCoeff_comp_wittSection :
+    (TruncatedWittVector.constantCoeff (p := p)).comp (wittSection p A) = RingHom.id A := by
   ext x
-  exact wittSection_coeff_one x
+  simp [TruncatedWittVector.constantCoeff_apply]
 
-variable (p A) in
-/-- `δ`-structures on `A` are equivalent to ring homomorphisms `s : A →+* W₂(A)` to the
-length-two Witt vectors whose zeroth coordinate is the identity, via `s x = (x, δ x)`
-(Bhatt and Scholze, *Prisms and prismatic cohomology*, Remark 2.4). -/
-noncomputable def equivWittSection :
-    DeltaRing p A ≃ {s : A →+* TruncatedWittVector p 2 A // ∀ x, (s x).coeff 0 = x} where
-  toFun δ := letI := δ; ⟨wittSection p A, wittSection_coeff_zero⟩
-  invFun s := ofWittSection s.1 s.2
-  left_inv δ := ofWittSection_wittSection (δ := δ)
-  right_inv s := Subtype.ext (wittSection_ofWittSection s.1 s.2)
-
+/-- The ghost component at index one of the Witt section is the delta-ring Frobenius lift. -/
 @[simp]
-theorem equivWittSection_apply_coe (δ : DeltaRing p A) :
-    (equivWittSection p A δ : A →+* TruncatedWittVector p 2 A) = @wittSection p _ A _ δ :=
-  (rfl)
+theorem ghostComponentOne_comp_wittSection :
+    (TruncatedWittVector.ghostComponentOne (p := p)).comp (wittSection p A) =
+      frobenius p A := by
+  ext x
+  simp [TruncatedWittVector.ghostComponentOne_apply, frobenius_apply]
 
+end Section
+
+/-- Over any commutative ring, delta structures are equivalent to ring sections of the zeroth
+coordinate on length-two Witt vectors (Bhatt–Scholze, Remark 2.4). -/
+noncomputable def equivWittSection : DeltaRing p A ≃
+    {s : A →+* TruncatedWittVector p 2 A //
+      (TruncatedWittVector.constantCoeff (p := p)).comp s = RingHom.id A} where
+  toFun d := letI := d; ⟨wittSection p A, constantCoeff_comp_wittSection p A⟩
+  invFun s := by
+    have hs (x : A) : (s.val x).coeff 0 = x := by
+      simpa [TruncatedWittVector.constantCoeff_apply] using DFunLike.congr_fun s.property x
+    refine
+      { delta := fun x => (s.val x).coeff 1
+        delta_zero := by simp
+        delta_one := by simp
+        delta_add := ?_
+        delta_mul := ?_ }
+    · intro x y
+      simp [TruncatedWittVector.add_coeff_one, hs]
+    · intro x y
+      simp [TruncatedWittVector.mul_coeff_one, hs]
+  left_inv d := by
+    ext x
+    rfl
+  right_inv s := by
+    apply Subtype.ext
+    ext x i
+    fin_cases i
+    · simpa [TruncatedWittVector.constantCoeff_apply] using
+        (DFunLike.congr_fun s.property x).symm
+    · rfl
+
+/-- The equivalence sends a delta structure to its Witt section. -/
 @[simp]
-theorem equivWittSection_symm_apply
-    (s : {s : A →+* TruncatedWittVector p 2 A // ∀ x, (s x).coeff 0 = x}) :
-    (equivWittSection p A).symm s = ofWittSection s.1 s.2 :=
-  (rfl)
+theorem equivWittSection_apply (d : DeltaRing p A) :
+    (equivWittSection p A d).val = @wittSection p A _ _ d := (rfl)
 
-end DeltaRing
+/-- The inverse equivalence recovers the first Witt coordinate as the delta operation. -/
+@[simp]
+theorem delta_equivWittSection_symm
+    (s : {s : A →+* TruncatedWittVector p 2 A //
+      (TruncatedWittVector.constantCoeff (p := p)).comp s = RingHom.id A}) (x : A) :
+    @delta p A _ ((equivWittSection p A).symm s) x = (s.val x).coeff 1 := (rfl)
 
-end TauCeti
+end TauCeti.DeltaRing

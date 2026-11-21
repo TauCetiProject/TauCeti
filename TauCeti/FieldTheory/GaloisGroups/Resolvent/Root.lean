@@ -346,7 +346,7 @@ private noncomputable def cosetValueEquiv (hf : f.Monic)
     ⟨fun _ _ h => cosetValue_injective spec hf hdeg e hres (congrArg Subtype.val h), by
       intro x
       obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e
-        (aeval_eq_zero_of_mem_rootSet x.2)
+        (aeval_eq_zero_of_mem_rootSet x.property)
       exact ⟨c, Subtype.ext hc⟩⟩
 
 -- The value of the root represented by a coset is its coset value.
