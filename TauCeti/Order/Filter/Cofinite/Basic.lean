@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.Cofinite
+import Mathlib.Basic.Finite.Sigma
 
 /-!
-# Functions tending to infinity along the cofinite filter
+# Convergence along the cofinite filter
 
 If a function tending to `atTop` along the cofinite filter takes all its values strictly above `b`,
 then they are bounded below by a single `c > b` (`Filter.Tendsto.exists_gt_forall_le`); for
@@ -20,6 +21,10 @@ function takes only finitely many values below each bound is Mathlib's Northcott
 Extending a function along any map by a constant preserves convergence along the cofinite filter
 to a limit that the constant lies in (`Filter.Tendsto.extend_cofinite`); for instance, the extension
 by zero of a function vanishing at infinity on a subgroup vanishes at infinity on the whole group.
+
+On a sigma type with finitely many components, convergence along the cofinite filter can be checked
+on each component (`Filter.tendsto_cofinite_sigma_iff`); for instance, the row norms of an operator
+into a finite sum of coefficient models tend to zero when they do on each summand.
 -/
 
 public section
@@ -57,3 +62,17 @@ theorem extend_cofinite {γ : Type*} {l : Filter γ} {φ : α → γ} (hφ : Ten
     exact absurd (he hs) hb
 
 end Filter.Tendsto
+
+namespace Filter
+
+/-- Over finitely many components, a function on a sigma type tends to `l` along the cofinite
+filter exactly when its restriction to each component does. -/
+theorem tendsto_cofinite_sigma_iff {ι β : Type*} [Finite ι] {α : ι → Type*}
+    {f : (Σ i, α i) → β} {l : Filter β} :
+    Tendsto f cofinite l ↔ ∀ i, Tendsto (fun a ↦ f ⟨i, a⟩) cofinite l := by
+  refine ⟨fun hf i ↦ hf.comp sigma_mk_injective.tendsto_cofinite, fun hf s hs ↦ ?_⟩
+  rw [mem_map, mem_cofinite]
+  exact (Set.finite_univ.sigma fun i _ ↦ mem_cofinite.mp (hf i hs)).subset
+    fun _ hx ↦ ⟨Set.mem_univ _, hx⟩
+
+end Filter
