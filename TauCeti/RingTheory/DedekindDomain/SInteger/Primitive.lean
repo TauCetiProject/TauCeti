@@ -83,7 +83,7 @@ theorem isPrimitive_coe_iff_span_eq_top (a : ι → S.integer K) :
     rw [← range_comp]
     simp [Function.comp_def]
   rw [IsPrimitive, hrange, ← Submodule.map_span, Ideal.eq_top_iff_one, Submodule.mem_map]
-  refine ⟨fun ⟨_, b, hb, hb1⟩ ↦ ?_, fun h ↦ ⟨fun i ↦ (a i).2, 1, h, by simp⟩⟩
+  refine ⟨fun ⟨_, b, hb, hb1⟩ ↦ ?_, fun h ↦ ⟨fun i ↦ (a i).property, 1, h, by simp⟩⟩
   have hb1' : b = 1 := Subtype.ext (by simpa using hb1)
   rwa [hb1'] at hb
 
@@ -100,7 +100,7 @@ theorem isPrimitive_iff_exists_sum_mul_eq_one [Fintype ι] :
       ∃ c : ι → K, (∀ i, c i ∈ S.integer K) ∧ ∑ i, c i * x i = 1 := by
   refine and_congr_right fun _ ↦ ?_
   rw [Submodule.mem_span_range_iff_exists_fun]
-  refine ⟨fun ⟨c, hc⟩ ↦ ⟨fun i ↦ c i, fun i ↦ (c i).2, by simpa [Algebra.smul_def] using hc⟩,
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨fun i ↦ c i, fun i ↦ (c i).property, by simpa [Algebra.smul_def] using hc⟩,
     fun ⟨c, hcS, hc⟩ ↦ ⟨fun i ↦ ⟨c i, hcS i⟩, by simpa [Algebra.smul_def] using hc⟩⟩
 
 /-- **Scaling by an `S`-unit preserves `S`-primitivity**: an `S`-unit is a unit of the ring of
@@ -111,7 +111,7 @@ theorem IsPrimitive.unit_smul (h : S.IsPrimitive x) (u : S.unit K) :
   have hw : ((u : Kˣ) : K) • x = fun i ↦ (w : S.integer K) • x i := by
     funext i
     rw [Pi.smul_apply, Subalgebra.smul_def, val_unitEquivUnitsInteger_apply_coe]
-  refine ⟨fun i ↦ mul_mem (w : S.integer K).2 (h.1 i), ?_⟩
+  refine ⟨fun i ↦ mul_mem (w : S.integer K).property (h.1 i), ?_⟩
   rw [hw, ← smul_set_range, Submodule.span_smul_eq_of_isUnit _ _ w.isUnit]
   exact h.2
 

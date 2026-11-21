@@ -40,6 +40,9 @@ preserving both containment and pairwise disjointness.
 * `TauCeti.exists_gt_closedBall_subset_and_pairwiseDisjoint`: in a proper pseudometric space, a
   finite pairwise-disjoint family of closed balls of common radius inside open sets admits a
   strictly larger common radius with the same properties.
+* `TauCeti.sphere_subset_sdiff_of_closedBall_subset` and
+  `TauCeti.continuousOn_sphere_of_closedBall_subset`: a sphere inside a family of pairwise disjoint
+  closed balls contained in `U` avoids the centres and inherits continuity from `U \ T`.
 -/
 
 public section
@@ -157,6 +160,32 @@ theorem exists_gt_closedBall_subset_and_pairwiseDisjoint {T : Finset Y} {U : Y �
   exact (eventually_mem_nhdsWithin.and (h1.and h2)).exists
 
 end ProperSpace
+
+/-- If pairwise disjoint closed balls `closedBall w r'` around the points of `T` lie in `U`,
+then for any `0 < s ≤ r'` and `w ∈ T`, the sphere `sphere w s` avoids `T` and lies in `U \ T`. -/
+theorem sphere_subset_sdiff_of_closedBall_subset {Y : Type*} [PseudoMetricSpace Y]
+    {U : Set Y} {T : Finset Y} {s r' : ℝ} (hs : 0 < s) (hsr : s ≤ r')
+    (hT : ∀ w ∈ T, closedBall w r' ⊆ U)
+    (hdisj : (T : Set Y).Pairwise fun w w' ↦ Disjoint (closedBall w r') (closedBall w' r'))
+    {w : Y} (hw : w ∈ T) :
+    sphere w s ⊆ U \ (T : Set Y) :=
+  fun x hx ↦
+    ⟨hT w hw (closedBall_subset_closedBall hsr (sphere_subset_closedBall hx)), fun hxT ↦ by
+      rcases eq_or_ne x w with rfl | hne
+      · exact ne_of_mem_sphere hx hs.ne' rfl
+      · exact Set.disjoint_left.1 (hdisj hw hxT hne.symm)
+          (closedBall_subset_closedBall hsr (sphere_subset_closedBall hx))
+          (mem_closedBall_self (hs.le.trans hsr))⟩
+
+/-- If pairwise disjoint closed balls `closedBall w r'` around the points of `T` lie in `U`,
+then any function continuous on `U \ T` is continuous on `sphere w s` for `0 < s ≤ r'`. -/
+theorem continuousOn_sphere_of_closedBall_subset {Y E : Type*} [PseudoMetricSpace Y]
+    [TopologicalSpace E] {U : Set Y} {T : Finset Y} {s r' : ℝ} (hs : 0 < s) (hsr : s ≤ r')
+    (hT : ∀ w ∈ T, closedBall w r' ⊆ U)
+    (hdisj : (T : Set Y).Pairwise fun w w' ↦ Disjoint (closedBall w r') (closedBall w' r'))
+    {f : Y → E} (hf : ContinuousOn f (U \ (T : Set Y))) {w : Y} (hw : w ∈ T) :
+    ContinuousOn f (sphere w s) :=
+  hf.mono (sphere_subset_sdiff_of_closedBall_subset hs hsr hT hdisj hw)
 
 end TauCeti
 

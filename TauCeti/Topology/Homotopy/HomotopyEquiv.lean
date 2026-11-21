@@ -35,6 +35,13 @@ homotopy equivalence is automatically a right homotopy inverse.
 ## Main declarations
 
 * `ContinuousMap.HomotopyEquiv.symm_symm`: the double inverse of a homotopy equivalence is itself.
+* `ContinuousMap.HomotopyEquiv.nonempty` and `ContinuousMap.HomotopyEquiv.nonempty_iff`:
+  nonemptiness is invariant under homotopy equivalence.
+* `ContinuousMap.Homotopic.preconnectedSpace_of_comp_homotopic_id`,
+  `ContinuousMap.Homotopic.connectedSpace_of_comp_homotopic_id`: (pre)connectedness passes to
+  homotopy retracts.
+* `ContinuousMap.HomotopyEquiv.preconnectedSpace`, `ContinuousMap.HomotopyEquiv.connectedSpace`:
+  a space homotopy equivalent to a (pre)connected space is (pre)connected.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.zerothHomotopyCongr`: a homotopy equivalence induces a bijection
@@ -66,6 +73,70 @@ variable {X Y Z Z' : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologic
 @[simp]
 theorem HomotopyEquiv.symm_symm (e : X ≃ₕ Y) : e.symm.symm = e :=
   rfl
+
+/-- A space homotopy equivalent to a nonempty space is nonempty. -/
+theorem HomotopyEquiv.nonempty [Nonempty X] (e : X ≃ₕ Y) : Nonempty Y :=
+  ‹Nonempty X›.map e
+
+/-- Homotopy equivalent spaces are simultaneously nonempty. -/
+theorem HomotopyEquiv.nonempty_iff (e : X ≃ₕ Y) : Nonempty X ↔ Nonempty Y :=
+  ⟨fun _ ↦ e.nonempty, fun _ ↦ e.symm.nonempty⟩
+
+/-- **Preconnectedness passes to homotopy retracts.** If `g ∘ f ≃ id_X` for continuous maps
+`f : C(X, Y)` and `g : C(Y, X)` and `Y` is preconnected, then `X` is preconnected. -/
+theorem Homotopic.preconnectedSpace_of_comp_homotopic_id [PreconnectedSpace Y]
+    {f : C(X, Y)} {g : C(Y, X)} (h : (g.comp f).Homotopic (ContinuousMap.id X)) :
+    PreconnectedSpace X := by
+  obtain ⟨H⟩ := h
+  refine preconnectedSpace_iff_clopen.2 fun s hs ↦ ?_
+  -- Every point `x` is joined to `g (f x)` by the path `t ↦ H (t, x)`, so they agree on clopen
+  -- sets.
+  have hmem (x : X) : x ∈ s ↔ f x ∈ g ⁻¹' s := by
+    let γ := H.evalAt x
+    have h0eq : γ 0 = g (f x) := γ.source
+    have h1eq : γ 1 = x := γ.target
+    rcases isClopen_iff.1 (hs.preimage γ.continuous) with h0 | h1
+    · constructor <;> intro hx
+      · exact False.elim
+          (Set.eq_empty_iff_forall_notMem.1 h0 1 (by rw [Set.mem_preimage, h1eq]; exact hx))
+      · exact False.elim
+          (Set.eq_empty_iff_forall_notMem.1 h0 0 (by rw [Set.mem_preimage, h0eq]; exact hx))
+    · have h0' : (0 : unitInterval) ∈ γ ⁻¹' s := h1.symm ▸ trivial
+      have h1' : (1 : unitInterval) ∈ γ ⁻¹' s := h1.symm ▸ trivial
+      rw [Set.mem_preimage, h0eq] at h0'
+      rw [Set.mem_preimage, h1eq] at h1'
+      exact ⟨fun _ ↦ h0', fun _ ↦ h1'⟩
+  rcases isClopen_iff.1 (hs.preimage g.continuous) with h_empty | h_univ
+  · left; ext x; simp [hmem x, h_empty]
+  · right; ext x; simp [hmem x, h_univ]
+
+/-- **Connectedness passes to homotopy retracts.** If `g ∘ f ≃ id_X` for continuous maps
+`f : C(X, Y)` and `g : C(Y, X)` and `Y` is connected, then `X` is connected. -/
+theorem Homotopic.connectedSpace_of_comp_homotopic_id [ConnectedSpace Y]
+    {f : C(X, Y)} {g : C(Y, X)} (h : (g.comp f).Homotopic (ContinuousMap.id X)) :
+    ConnectedSpace X :=
+  { toPreconnectedSpace := h.preconnectedSpace_of_comp_homotopic_id
+    toNonempty := (inferInstance : Nonempty Y).map g }
+
+/-- **Preconnectedness is a homotopy invariant.** A space homotopy equivalent to a preconnected
+space is preconnected. -/
+theorem HomotopyEquiv.preconnectedSpace [PreconnectedSpace X] (e : X ≃ₕ Y) :
+    PreconnectedSpace Y :=
+  e.right_inv.preconnectedSpace_of_comp_homotopic_id
+
+/-- **Preconnectedness is preserved and reflected by homotopy equivalences.** -/
+theorem HomotopyEquiv.preconnectedSpace_iff (e : X ≃ₕ Y) :
+    PreconnectedSpace X ↔ PreconnectedSpace Y :=
+  ⟨fun _ ↦ e.preconnectedSpace, fun _ ↦ e.symm.preconnectedSpace⟩
+
+/-- **Connectedness is a homotopy invariant.** A space homotopy equivalent to a connected space
+is connected. -/
+theorem HomotopyEquiv.connectedSpace [ConnectedSpace X] (e : X ≃ₕ Y) : ConnectedSpace Y :=
+  e.right_inv.connectedSpace_of_comp_homotopic_id
+
+/-- **Connectedness is preserved and reflected by homotopy equivalences.** -/
+theorem HomotopyEquiv.connectedSpace_iff (e : X ≃ₕ Y) : ConnectedSpace X ↔ ConnectedSpace Y :=
+  ⟨fun _ ↦ e.connectedSpace, fun _ ↦ e.symm.connectedSpace⟩
 
 /-- **Path connectedness is a homotopy invariant.** A space homotopy equivalent to a path
 connected space is path connected. -/

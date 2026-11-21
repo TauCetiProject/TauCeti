@@ -70,7 +70,7 @@ omit [Flat toBase] in
 generator `π` of the maximal ideal. -/
 private lemma ideal_ker_specialFiberι (hπ : maximalIdeal R = Ideal.span {π}) (U : X.affineOpens) :
     (specialFiberι R toBase).ker.ideal U = Ideal.span
-      {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op
+      {X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op
         (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))} := by
   rw [ker_specialFiberι_eq_ofIdealTop_span toBase hπ, Scheme.IdealSheafData.ofIdealTop_ideal,
     Ideal.map_span, Set.image_singleton]
@@ -96,13 +96,15 @@ def unitIsoKerSpecialFiberι (hπ : maximalIdeal R = Ideal.span {π}) (hreg : Is
 /-- The trivialization `unitIsoKerSpecialFiberι` is multiplication by `π`: composed with the
 inclusion of the ideal sheaf of the special fibre into `𝒪_X`, it sends a function `r` over `V`
 to the product of `r` with the restriction of the pullback of `π`. -/
-@[simp]
 lemma sheafι_app_unitIsoKerSpecialFiberι_hom (hπ : maximalIdeal R = Ideal.span {π})
     (hreg : IsSMulRegular R π) (V : X.Opens) (r : Γ(X, V)) :
-    Scheme.Modules.Hom.app (specialFiberι R toBase).ker.sheafι V
+    dsimp% only [Over.pullback_obj_left, Over.mk_left, Over.mk_hom,
+      IsLocalRing.ResidueField.algebraMap_eq, sheafCompose_obj_obj, Functor.comp_obj,
+      CommRingCat.forgetToRingCat_obj]
+    (Scheme.Modules.Hom.app (specialFiberι R toBase).ker.sheafι V
         ((unitIsoKerSpecialFiberι toBase hπ hreg).hom.val.app (op V) r) =
       X.presheaf.map (homOfLE (le_top : V ≤ ⊤)).op
-        (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)) * r :=
+        (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)) * r) :=
   Scheme.IdealSheafData.sheafι_app_unitIsoOfForallIdealEqSpan_hom _ _ _ V r
 
 /-- **The special fibre is linearly equivalent to zero.** If the maximal ideal of the local ring

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Complex.Laurent.Basic
 import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.Analysis.Contour.Cycle.Fubini
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
@@ -219,22 +220,6 @@ private theorem integral_rectPolygon_exteriorCauchy [CompleteSpace E]
     rw [Cycle.integral_smul_const, integral_rectPolygon_sub_inv (hDsub hw)]
   rw [circleIntegral.integral_congr hr.le hinner, circleIntegral.integral_smul,
     inv_smul_smul₀ hne]
-
-omit [NormedSpace ℂ E] in
-/-- A circle of radius `0 < s ≤ r'` around `ρ ∈ P` lies in `U \ P` whenever the pairwise disjoint
-closed discs `closedBall ρ r'` lie in `U`, so `f` is continuous on the circle. -/
-private theorem continuousOn_sphere_of_closedBall_subset {U : Set ℂ} {P : Finset ℂ} {s r' : ℝ}
-    (hs : 0 < s) (hsr : s ≤ r') (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ U)
-    (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
-    {f : ℂ → E} (hf : ContinuousOn f (U \ P)) {ρ : ℂ} (hρ : ρ ∈ P) :
-    ContinuousOn f (sphere ρ s) :=
-  hf.mono fun w hw ↦
-    ⟨hP' ρ hρ (closedBall_subset_closedBall hsr (sphere_subset_closedBall hw)), fun hwP ↦ by
-      rcases eq_or_ne w ρ with rfl | hne
-      · exact ne_of_mem_sphere hw hs.ne' rfl
-      · exact disjoint_left.1 (hdisj' hρ hwP hne.symm)
-          (closedBall_subset_closedBall hsr (sphere_subset_closedBall hw))
-          (mem_closedBall_self (hs.le.trans hsr))⟩
 
 /-- On the open annulus `ball ρ r' \ closedBall ρ r`, subtracting the exterior Cauchy integral of
 `f` over `C(ρ, r)` leaves the interior Cauchy integral over `C(ρ, r')`. -/
@@ -476,36 +461,6 @@ section LShaped
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- Uniform decay of `f s` as `Re s → -∞` on the horizontal strip `y₁ ≤ Im s ≤ y₂` makes the left
-vertical edge integral `∫ y in y₁..y₂, f (-X + iy)` tend to `0` as `X → ∞`. -/
-private theorem tendsto_integral_left_edge_zero {f : ℂ → E} {y₁ y₂ : ℝ} (hy : y₁ ≤ y₂)
-    (hdecay : Tendsto f (comap Complex.re atBot ⊓ 𝓟 {s : ℂ | y₁ ≤ s.im ∧ s.im ≤ y₂}) (𝓝 0)) :
-    Tendsto (fun X : ℝ ↦ ∫ y : ℝ in y₁..y₂, f ((-X : ℝ) + y * I)) atTop (𝓝 0) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  have hlen : 0 < y₂ - y₁ + 1 := by linarith
-  have hε' : 0 < ε / (y₂ - y₁ + 1) := div_pos hε hlen
-  have hev := (Metric.tendsto_nhds.1 hdecay) (ε / (y₂ - y₁ + 1)) hε'
-  rw [Filter.eventually_inf_principal, Filter.eventually_comap] at hev
-  obtain ⟨M, hM⟩ := Filter.eventually_atBot.1 hev
-  refine Filter.eventually_atTop.2 ⟨-M, fun X hX ↦ ?_⟩
-  rw [dist_zero_right]
-  have hbound : ∀ y ∈ uIoc y₁ y₂, ‖f ((-X : ℝ) + y * I)‖ ≤ ε / (y₂ - y₁ + 1) := by
-    intro y hy'
-    rw [uIoc_of_le hy] at hy'
-    have hs := hM (-X) (by linarith) ((-X : ℝ) + y * I) (by simp)
-      ⟨by simpa using hy'.1.le, by simpa using hy'.2⟩
-    simpa [dist_zero_right] using hs.le
-  calc ‖∫ y : ℝ in y₁..y₂, f ((-X : ℝ) + y * I)‖
-      ≤ ε / (y₂ - y₁ + 1) * |y₂ - y₁| :=
-        intervalIntegral.norm_integral_le_of_norm_le_const hbound
-    _ = ε * ((y₂ - y₁) / (y₂ - y₁ + 1)) := by rw [abs_of_nonneg (sub_nonneg.2 hy)]; ring
-    _ < ε * 1 := by
-        refine mul_lt_mul_of_pos_left ?_ hε
-        rw [div_lt_one hlen]
-        linarith
-    _ = ε := mul_one ε
-
 /-- Finite-cutoff L-shaped contour identity: combining the rectangle `[-X, σ₂] ×ℂ [w.im, t₂]`
 (containing the singularities `P`) with the pole-free rectangle `[w.re, σ₂] ×ℂ [t₁, w.im]`
 cancels the shared horizontal segment `[w.re, σ₂] ×ℂ {w.im}`. -/
@@ -626,7 +581,23 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
       (𝓝 (∫ x in Iic σ₂, f (x + t₂ * I))) :=
     intervalIntegral_tendsto_integral_Iic σ₂ ht₂_int tendsto_neg_atTop_atBot
   have h3 : Tendsto (fun X : ℝ ↦ I • ∫ y : ℝ in w.im..t₂, f ((-X : ℝ) + y * I)) atTop (𝓝 0) := by
-    simpa only [smul_zero] using (tendsto_integral_left_edge_zero ht₂ hdecay).const_smul I
+    have hmap : Tendsto (fun q : ℝ × ℝ ↦ ((-q.1 : ℝ) + q.2 * I))
+        (atTop ×ˢ 𝓟 (uIcc w.im t₂))
+        (comap Complex.re atBot ⊓ 𝓟 {s : ℂ | w.im ≤ s.im ∧ s.im ≤ t₂}) := by
+      refine tendsto_inf.2 ⟨?_, ?_⟩
+      · rw [tendsto_comap_iff]
+        have hfst : Tendsto (Prod.fst : ℝ × ℝ → ℝ) (atTop ×ˢ 𝓟 (uIcc w.im t₂)) atTop :=
+          tendsto_fst
+        simpa [Function.comp_def] using tendsto_neg_atTop_atBot.comp hfst
+      · rw [tendsto_principal, Filter.eventually_prod_iff]
+        refine ⟨fun _ ↦ True, .of_forall fun _ ↦ trivial, fun y ↦ y ∈ uIcc w.im t₂,
+          eventually_principal.2 fun _ h ↦ h, fun {_} _ {_} hy ↦ ?_⟩
+        rw [uIcc_of_le ht₂] at hy
+        simpa using hy
+    have hprod : Tendsto (Function.uncurry fun X y : ℝ ↦ f ((-X : ℝ) + y * I))
+        (atTop ×ˢ 𝓟 (uIcc w.im t₂)) (𝓝 0) := hdecay.comp hmap
+    simpa only [smul_zero] using
+      (TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_tendsto_prod hprod).const_smul I
   have hrhs : Tendsto (fun X : ℝ ↦
         (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) + I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
           (∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) + (∫ x : ℝ in (-X)..σ₂, f (x + t₂ * I)) +

@@ -83,7 +83,7 @@ private theorem iteratedFDeriv_compLinear (e : E →L[ℝ] E') (f : CkHolderSpac
       (f.iteratedFDeriv i (e x)).compContinuousLinearMap (fun _ ↦ e) := by
   rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq]
   rw [coe_compLinear]
-  exact e.iteratedFDeriv_comp_right f.contDiff x (by exact_mod_cast Nat.le_of_lt_succ i.2)
+  exact e.iteratedFDeriv_comp_right f.contDiff x (by exact_mod_cast Nat.le_of_lt_succ i.isLt)
 
 /-- A linear change of coordinates multiplies the norm by at most
 `max(1, ‖e‖)^k max(1, ‖e‖^α)`. -/
@@ -100,7 +100,7 @@ private theorem norm_compLinear_le (e : E →L[ℝ] E') (f : CkHolderSpace k α 
     refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
     rw [← iteratedFDeriv_eq, coe_compLinear]
     refine (e.norm_iteratedFDeriv_comp_right_le f.contDiff x
-      (by exact_mod_cast Nat.le_of_lt_succ i.2)).trans ?_
+      (by exact_mod_cast Nat.le_of_lt_succ i.isLt)).trans ?_
     rw [iteratedFDeriv_eq f i]
     calc
       _ ≤ ‖f.iteratedFDeriv i‖ * C := mul_le_mul
