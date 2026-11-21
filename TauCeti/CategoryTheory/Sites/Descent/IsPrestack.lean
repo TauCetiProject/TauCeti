@@ -37,8 +37,17 @@ Mathlib's sheaf criteria (`Presieve.isSheafFor_trans`, `Presieve.isSheafFor_of_f
 
 * `CategoryTheory.Pseudofunctor.presheafHom_map_presheafHomObjHomEquiv`: restricting the element
   of `F.presheafHom M N` given by `φ : M ⟶ N` to `(Y, f)` gives `f^* φ`.
-* `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`: pulling back
-  a morphism between pullbacks commutes with restricting `F` along a functor `p : D ⥤ C`.
+* `CategoryTheory.Pseudofunctor.isSeparatedFor_presheafHom_of_hom_ext`: joint injectivity of
+  restriction on morphisms in `F(Y.left)` along a sieve `R` implies separation of
+  `F.presheafHom M N` for the corresponding sieve on `Y : Over S₀`.
+* `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_comp`,
+  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_id'`,
+  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_mapComp'_hom`,
+  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_mapComp'_inv`,
+  `CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.pullHom_toPseudofunctor_comp`:
+  composition, identity, comparison, and restriction laws for `pullHom`.
+* `CategoryTheory.Pseudofunctor.map_map_eq_iff_map_comp`: equality of morphisms after iterated
+  restriction along `f` then `g` is equivalent to equality after restriction along `g ≫ f`.
 * `CategoryTheory.Pseudofunctor.IsPrestack.of_le`: a prestack for a finer Grothendieck topology
   is a prestack for any coarser topology.
 * `CategoryTheory.Pseudofunctor.isPrestackFor_top`: every pseudofunctor satisfies descent of
@@ -88,7 +97,99 @@ lemma presheafHom_map_presheafHomObjHomEquiv {M N : F.obj (.mk (op S))} (φ : M 
     $(DescentData.subtypeCompatibleHomEquiv_toCompatible_presheafHomObjHomEquiv F
       (fun _ : PUnit.{1} ↦ y) φ) PUnit.unit)
 
+open LocallyDiscreteOpToCat in
+/-- Joint injectivity of restriction on morphisms in `F(Y.left)` along a sieve `R` implies that
+`F.presheafHom M N` is separated for the corresponding sieve on `Y : Over S₀`. -/
+lemma isSeparatedFor_presheafHom_of_hom_ext {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} {S₀ : C}
+    (M N : F.obj (.mk (op S₀))) (Y : Over S₀) (R : Sieve Y.left)
+    (hR : ∀ {φ ψ : (F.map Y.hom.op.toLoc).toFunctor.obj M ⟶
+        (F.map Y.hom.op.toLoc).toFunctor.obj N},
+      (∀ ⦃Z : C⦄ (r : Z ⟶ Y.left), R r →
+        (F.map r.op.toLoc).toFunctor.map φ = (F.map r.op.toLoc).toFunctor.map ψ) → φ = ψ) :
+    Presieve.IsSeparatedFor (F.presheafHom M N) ((Sieve.overEquiv Y).symm R).arrows := by
+  intro x φ ψ hφ hψ
+  refine hR fun Z r hr ↦ ?_
+  have hr' : ((Sieve.overEquiv Y).symm R).arrows (Over.homMk r rfl : Over.mk (r ≫ Y.hom) ⟶ Y) :=
+    (Sieve.overEquiv_symm_iff R _).2 hr
+  have h' : pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl =
+      pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl :=
+    (hφ _ hr').trans (hψ _ hr').symm
+  rw [map_eq_pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl,
+    map_eq_pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl, h']
+
+/-- Two morphisms `M ⟶ N` over `Z` have equal iterated pullbacks along `f : Y ⟶ Z` and `g : X ⟶ Y`
+if and only if they have equal pullbacks along `g ≫ f`. -/
+lemma map_map_eq_iff_map_comp {X Y Z : C} (f : Y ⟶ Z) (g : X ⟶ Y)
+    {M N : F.obj (.mk (op Z))} {φ ψ : M ⟶ N} :
+    (F.map g.op.toLoc).toFunctor.map ((F.map f.op.toLoc).toFunctor.map φ) =
+      (F.map g.op.toLoc).toFunctor.map ((F.map f.op.toLoc).toFunctor.map ψ) ↔
+      (F.map (g ≫ f).op.toLoc).toFunctor.map φ =
+        (F.map (g ≫ f).op.toLoc).toFunctor.map ψ := by
+  rw [← F.mapComp'_naturality_1 f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc
+      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) φ,
+    ← F.mapComp'_naturality_1 f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc
+      (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) ψ,
+    cancel_epi, cancel_mono]
+
 namespace LocallyDiscreteOpToCat
+
+/-- Pulling back a composite morphism along `g` is the composite of the pullbacks along `g`. -/
+@[reassoc]
+lemma pullHom_comp {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} ⦃X₁ X₂ X₃ : C⦄
+    ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄ ⦃M₃ : F.obj (.mk (op X₃))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄ ⦃f₃ : Y ⟶ X₃⦄
+    (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂)
+    (ψ : (F.map f₂.op.toLoc).toFunctor.obj M₂ ⟶ (F.map f₃.op.toLoc).toFunctor.obj M₃)
+    ⦃Y' : C⦄ (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (gf₃ : Y' ⟶ X₃)
+    (hgf₁ : g ≫ f₁ = gf₁ := by cat_disch) (hgf₂ : g ≫ f₂ = gf₂ := by cat_disch)
+    (hgf₃ : g ≫ f₃ = gf₃ := by cat_disch) :
+    pullHom (φ ≫ ψ) g gf₁ gf₃ hgf₁ hgf₃ =
+      pullHom φ g gf₁ gf₂ hgf₁ hgf₂ ≫ pullHom ψ g gf₂ gf₃ hgf₂ hgf₃ := by
+  simp [pullHom, Cat.Hom.inv_hom_id_toNatTrans_app_assoc]
+
+/-- Pulling back an identity morphism gives the identity morphism. -/
+@[simp]
+lemma pullHom_id' {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} ⦃X : C⦄ ⦃M : F.obj (.mk (op X))⦄
+    ⦃Y : C⦄ ⦃f : Y ⟶ X⦄ ⦃Y' : C⦄ (g : Y' ⟶ Y) (gf : Y' ⟶ X)
+    (hgf : g ≫ f = gf := by cat_disch) :
+    pullHom (𝟙 ((F.map f.op.toLoc).toFunctor.obj M)) g gf gf hgf hgf = 𝟙 _ := by
+  simp [pullHom]
+
+/-- Pulling back the forward composition comparison `mapComp' a r ra` along `g` yields the
+composition comparison `mapComp' a (g ≫ r) (g ≫ ra)`. -/
+lemma pullHom_mapComp'_hom {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} ⦃W X Y Z : C⦄
+    (M : F.obj (.mk (op X))) (a : Y ⟶ X) (r : Z ⟶ Y) (ra : Z ⟶ X) (hra : r ≫ a = ra)
+    (g : W ⟶ Z) (gr : W ⟶ Y) (gra : W ⟶ X) (hgr : g ≫ r = gr) (hgra : g ≫ ra = gra) :
+    pullHom ((F.mapComp' a.op.toLoc r.op.toLoc ra.op.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hra])).hom.toNatTrans.app M)
+      g gra gr hgra hgr =
+      (F.mapComp' a.op.toLoc gr.op.toLoc gra.op.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ← hgr, Category.assoc, hra,
+          hgra])).hom.toNatTrans.app M := by
+  subst hra hgr hgra
+  simp only [pullHom]
+  rw [F.mapComp'₀₁₃_hom_app a.op.toLoc r.op.toLoc g.op.toLoc (r ≫ a).op.toLoc (g ≫ r).op.toLoc
+    (g ≫ r ≫ a).op.toLoc (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])
+    (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])
+    (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) M]
+
+/-- Pulling back the inverse composition comparison `(mapComp' a r ra).inv` along `g` yields the
+inverse composition comparison `(mapComp' a (g ≫ r) (g ≫ ra)).inv`. -/
+lemma pullHom_mapComp'_inv {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} ⦃W X Y Z : C⦄
+    (M : F.obj (.mk (op X))) (a : Y ⟶ X) (r : Z ⟶ Y) (ra : Z ⟶ X) (hra : r ≫ a = ra)
+    (g : W ⟶ Z) (gr : W ⟶ Y) (gra : W ⟶ X) (hgr : g ≫ r = gr) (hgra : g ≫ ra = gra) :
+    pullHom ((F.mapComp' a.op.toLoc r.op.toLoc ra.op.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, hra])).inv.toNatTrans.app M)
+      g gr gra hgr hgra =
+      (F.mapComp' a.op.toLoc gr.op.toLoc gra.op.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, ← op_comp, ← hgr, Category.assoc, hra,
+          hgra])).inv.toNatTrans.app M := by
+  subst hra hgr hgra
+  simp only [pullHom]
+  rw [F.mapComp'₀₁₃_inv_app a.op.toLoc r.op.toLoc g.op.toLoc (r ≫ a).op.toLoc (g ≫ r).op.toLoc
+    (g ≫ r ≫ a).op.toLoc (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])
+    (by simp [← Quiver.Hom.comp_toLoc, ← op_comp])
+    (by simp [← Quiver.Hom.comp_toLoc, ← op_comp]) M]
 
 variable {D : Type*} [Category* D] (p : D ⥤ C)
 
@@ -219,24 +320,6 @@ theorem IsPrestackFor.comp {J : GrothendieckTopology C} [F.IsPrestack J]
     rw [Sieve.overEquiv_pullback, OrderIso.apply_symm_apply]
     exact F.isPrestackFor' _ hmem
 
-/-- Joint injectivity of restriction on morphisms in `F(Y.left)` along a sieve `R` implies that
-`F.presheafHom M N` is separated for the corresponding sieve on `Y : Over S₀`. -/
-private lemma isSeparatedFor_presheafHom_of_hom_ext {S₀ : C} (M N : F.obj (.mk (op S₀)))
-    (Y : Over S₀) (R : Sieve Y.left)
-    (hR : ∀ ⦃M' N' : F.obj (.mk (op Y.left))⦄ {φ ψ : M' ⟶ N'},
-      (∀ ⦃Z : C⦄ (r : Z ⟶ Y.left), R r →
-        (F.map r.op.toLoc).toFunctor.map φ = (F.map r.op.toLoc).toFunctor.map ψ) → φ = ψ) :
-    Presieve.IsSeparatedFor (F.presheafHom M N) ((Sieve.overEquiv Y).symm R).arrows := by
-  intro x φ ψ hφ hψ
-  refine hR fun Z r hr ↦ ?_
-  have hr' : ((Sieve.overEquiv Y).symm R).arrows (Over.homMk r rfl : Over.mk (r ≫ Y.hom) ⟶ Y) :=
-    (Sieve.overEquiv_symm_iff R _).2 hr
-  have h' : pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl =
-      pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl :=
-    (hφ _ hr').trans (hψ _ hr').symm
-  rw [map_eq_pullHom φ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl,
-    map_eq_pullHom ψ r (r ≫ Y.hom) (r ≫ Y.hom) rfl rfl, h']
-
 /-- **Refinement for `IsPrestackFor`.** If `R₁ ≤ R₂` are presieves on `S`, `F` satisfies descent of
 morphisms for `R₁`, and restriction along `(Sieve.generate R₁).pullback g` is jointly injective on
 morphisms for every arrow `g` in `R₂`, then `F` satisfies descent of morphisms for `R₂`. -/
@@ -256,7 +339,7 @@ theorem IsPrestackFor.of_le {S : C} {R₁ R₂ : Presieve S}
     (Presieve.factorsThru_of_le _ _ fun _ _ hf ↦ h _ _ hf) h₁'
     fun Y g hg ↦ ⟨((Sieve.overEquiv Y).symm ((Sieve.generate R₁).pullback g.left)).arrows,
       isSeparatedFor_presheafHom_of_hom_ext M N Y ((Sieve.generate R₁).pullback g.left)
-        (h₂ g.left hg), ?_⟩
+        fun {φ ψ} h ↦ h₂ g.left hg h, ?_⟩
   rintro Z f ⟨W, a, b, hb, hab⟩
   exact ⟨Over.mk b,
     Over.homMk a (by
@@ -297,7 +380,7 @@ theorem IsPrestackFor.of_pullback' {J : GrothendieckTopology C} [F.IsPrestack J]
     rw [Sieve.overEquiv_pullback, OrderIso.apply_symm_apply]
     exact h₁ i
   · rw [← Sieve.overEquiv_symm_pullback]
-    exact isSeparatedFor_presheafHom_of_hom_ext M N _ _ (h₂ k)
+    exact isSeparatedFor_presheafHom_of_hom_ext M N _ _ fun {φ ψ} h ↦ h₂ k h
 
 /-- **Base-change locality for `IsPrestackFor` along a `1`-hypercover.** If `F` is a prestack for
 `J`, `E` is a `J`-`1`-hypercover of `S`, and a presieve `R` on `S` satisfies `IsPrestackFor` after
