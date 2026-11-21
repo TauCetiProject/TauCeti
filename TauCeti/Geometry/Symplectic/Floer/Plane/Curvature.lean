@@ -82,6 +82,9 @@ discs into the energy of a whole PSS plane.
 
 ## Main results
 
+* `TauCeti.Floer.PSSPlane.perturbationPullback_realChart_cylindricalEndLift_of_le`: a
+  perturbation that is `H(t) dt` on the part `ε s ≥ T₀` of the end pulls back there along the end
+  lift in real coordinates to `H(t) dt`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`: the curvature in end
   coordinates is `ε β'(ε s - 1) H(t)`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`: it vanishes outside
@@ -120,7 +123,7 @@ discs into the energy of a whole PSS plane.
 public section
 
 open Set Real Function MeasureTheory Filter Manifold
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply realChart_mk contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti
@@ -177,6 +180,33 @@ theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X 
       fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
   rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
     endComponent_I hH]
+
+/-- **A perturbation that is `H(t) dt` far out on the end, in real coordinates.** Let `K` be
+`H(t) dt` on the part `ε s ≥ T₀` of the end, for a period-one `H`. At a point `ζ = (s, t)` with
+`ε s ≥ T₀`, the pullback of `K` along the end lift in real coordinates sends a tangent vector
+`v = (σ, τ)` of the cylinder to `τ H(t)`. -/
+theorem perturbationPullback_realChart_cylindricalEndLift_of_le {X : Type*} (p : PSSPlane)
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ w x, T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) {ζ : ℝ × ℝ} (hζ : T₀ ≤ p.endSign * ζ.1) (v : ℝ × ℝ) (x : X) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) v ζ x =
+      v.2 * H ζ.2 x := by
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
+  have hp : H (ζ.2 + k) x = H ζ.2 x := by simpa using congrFun (hH.int_mul k ζ.2) x
+  rw [perturbationPullback_realChart _ (p.hasDerivAt_cylindricalEndLift _),
+    hKH _ x (by simpa using hζ), smul_apply, ← deriv_cylindricalEndLift,
+    endAngularForm_cylindricalEndLift, hk]
+  simp [hp, mul_comm]
+
+/-- The end lift in real coordinates is `1`-periodic in the angular coordinate. -/
+@[simp]
+theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
+    realChart p.cylindricalEndLift (s, t + 1) = realChart p.cylindricalEndLift (s, t) := by
+  rw [realChart_mk, realChart_mk]
+  exact congrArg Complex.equivRealProdCLM (p.periodic_cylindricalEndLift s t)
 
 /-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
 positive. -/

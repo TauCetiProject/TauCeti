@@ -17,7 +17,8 @@ import Mathlib.RingTheory.Norm.Transitivity
 # Maps of the complex plane in real coordinates
 
 A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ ≃ ℂ` given by
-`Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`. When `f` has complex derivative
+`Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`, which sends `(s, t)` to the real
+coordinates of `f (s + i t)` (`TauCeti.Complex.realChart_mk`). When `f` has complex derivative
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), whose real
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
@@ -40,6 +41,11 @@ noncomputable def realChart (f : ℂ → ℂ) : ℝ × ℝ → ℝ × ℝ :=
 theorem realChart_apply (f : ℂ → ℂ) (z : ℝ × ℝ) :
     realChart f z = Complex.equivRealProdCLM (f (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
+
+/-- In real coordinates, `f` sends `(s, t)` to the real coordinates of `f (s + i t)`. -/
+theorem realChart_mk (f : ℂ → ℂ) (s t : ℝ) :
+    realChart f (s, t) = Complex.equivRealProdCLM (f (s + t * Complex.I)) := by
+  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
 
 /-- In complex coordinates, the real chart of `f` is `f`. -/
 @[simp]
