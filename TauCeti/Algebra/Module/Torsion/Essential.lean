@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.Module.Submodule.Essential
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.RingTheory.Filtration
+public import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.RingTheory.Jacobson.Semiprimary
+import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Ideal-power torsion in essential extensions
@@ -21,6 +24,11 @@ These results apply in particular to injective envelopes. The argument uses Math
 Artin–Rees lemma and `Ideal.exists_le_torsionBySet_pow_of_le_primaryComponent` to find a
 power whose image misses the essential submodule, and hence vanishes.
 
+In addition, in any module whose submodule lattice is atomic (in particular, any Artinian module)
+over an arbitrary commutative ring, the submodule annihilated by any subset of the Jacobson radical
+is essential (`TauCeti.isEssential_torsionBySet_of_subset_jacobson`), because the Jacobson radical
+annihilates every simple submodule.
+
 ## References
 
 * The Stacks Project, Section 47.7, Tag 08Z1, on injective hulls of residue fields.
@@ -31,6 +39,22 @@ public section
 namespace TauCeti
 
 open Submodule
+
+section Atomic
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- In a module with atomic submodule lattice (in particular, any Artinian module), the submodule
+annihilated by any subset of the Jacobson radical is essential. -/
+theorem isEssential_torsionBySet_of_subset_jacobson [IsAtomic (Submodule R M)] {s : Set R}
+    (hs : s ⊆ Ring.jacobson R) : IsEssential (Submodule.torsionBySet R M s) := by
+  refine isEssential_of_forall_atom_le fun a ha x hx ↦
+    (Submodule.mem_torsionBySet_iff _ _).mpr fun ⟨r, hr⟩ ↦ ?_
+  have : IsSimpleModule R a := isSimpleModule_iff_isAtom.mpr ha
+  exact congrArg Subtype.val
+    (Module.mem_annihilator.mp (IsSemisimpleModule.jacobson_le_annihilator R a (hs hr)) ⟨x, hx⟩)
+
+end Atomic
 
 variable {R M : Type*} [CommRing R] [IsNoetherianRing R] [AddCommGroup M] [Module R M]
 

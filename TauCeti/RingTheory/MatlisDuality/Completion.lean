@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.RingTheory.AdicCompletion.Finite
 public import TauCeti.RingTheory.Artinian.LocalRing
 public import TauCeti.RingTheory.MatlisDuality.Finite
+import TauCeti.RingTheory.AdicCompletion.LocalRing
 import TauCeti.RingTheory.AdicCompletion.Small
 
 /-!
@@ -72,9 +73,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open IsLocalRing LinearMap
+
+namespace TauCeti
 
 universe u v w z
 
@@ -210,23 +211,6 @@ end ArtinianDual
 
 /-! ### The injective hull over the completion -/
 
-omit hι in
-/-- The `R`-algebra equivalence `ResidueField R ≃ₐ[R] ResidueField R̂` induced by `R → R̂`. -/
-private def adicCompletionResidueFieldEquiv (R : Type u) [CommRing R] [IsLocalRing R]
-    [IsNoetherianRing R] :
-    ResidueField R ≃ₐ[R] ResidueField (_root_.AdicCompletion (maximalIdeal R) R) :=
-  have : IsLocalHom (Algebra.ofId R (_root_.AdicCompletion (maximalIdeal R) R)) :=
-    ⟨IsLocalHom.map_nonunit (f := algebraMap R (_root_.AdicCompletion (maximalIdeal R) R))⟩
-  AlgEquiv.ofBijective
-    (ResidueField.mapAlgHom (Algebra.ofId R (_root_.AdicCompletion (maximalIdeal R) R)))
-    (_root_.AdicCompletion.residueField_map_bijective R)
-
-omit hι in
-private theorem adicCompletionResidueFieldEquiv_apply (x : ResidueField R) :
-    adicCompletionResidueFieldEquiv R x =
-      ResidueField.map (algebraMap R (_root_.AdicCompletion (maximalIdeal R) R)) x :=
-  AlgEquiv.ofBijective_apply _ _ x
-
 /-- The embedding of the residue field of `R̂` into `E`, induced by `ι : κ →ₗ[R] E` via the
 `R`-algebra equivalence `ResidueField R ≃ₐ[R] ResidueField R̂`. -/
 def adicCompletionResidueMap :
@@ -249,7 +233,7 @@ def adicCompletionResidueMap :
     exact fun x ↦ htop.ge Submodule.mem_top
   exact (AdicCompletion.restrictScalarsEquivOfPrimaryComponent
     (maximalIdeal R).fg_of_isNoetherianRing hκ).symm
-    (ι.comp (adicCompletionResidueFieldEquiv R).symm.toLinearMap)
+    (ι.comp (AdicCompletion.residueFieldEquiv R).symm.toLinearMap)
 
 @[simp]
 theorem adicCompletionResidueMap_apply_map (x : ResidueField R) :
@@ -259,7 +243,7 @@ theorem adicCompletionResidueMap_apply_map (x : ResidueField R) :
   rw [adicCompletionResidueMap,
     AdicCompletion.restrictScalarsEquivOfPrimaryComponent_symm_apply_apply,
     LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    ← adicCompletionResidueFieldEquiv_apply, AlgEquiv.symm_apply_apply]
+    ← AdicCompletion.residueFieldEquiv_apply, AlgEquiv.symm_apply_apply]
 
 @[simp]
 theorem adicCompletionResidueMap_residue_algebraMap (r : R) :
