@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 import Mathlib.RingTheory.KrullDimension.Field
+import TauCeti.Order.KrullDimension
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Localization.Annihilator
@@ -27,12 +28,23 @@ survives in `M_p` as a non-maximal associated prime.
 This is the dimension input to the characterization of Serre's condition `(S_1)` as the absence of
 embedded primes.
 
+The support of a quotient `M ⧸ I • M` of a finite module depends only on the radical of `I`, so
+`supportDim R (M ⧸ I • ⊤)` is invariant under replacing `I` by an ideal with the same radical.
+For a product of ideals `I * J`, `Supp(M ⧸ (I * J) • M) = Supp(M ⧸ I • M) ∪ Supp(M ⧸ J • M)`;
+since module supports are upper sets in `PrimeSpectrum R`, `Order.krullDim_union_of_isUpperSet`
+gives `supportDim R (M ⧸ (I * J) • ⊤) = supportDim R (M ⧸ I • ⊤) ⊔ supportDim R (M ⧸ J • ⊤)`.
+
 ## Main results
 
 * `Module.supportDim_eq_of_surjective`: restriction along a surjective scalar map preserves the
   support dimension of a module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
   such as a Noetherian local ring, has support of finite dimension.
+* `Module.supportDim_quotient_eq_of_radical_eq`: for a finite module, `supportDim R (M ⧸ I • ⊤)`
+  depends only on the radical of `I`.
+* `Module.supportDim_quotient_mul` and `Module.supportDim_quotSMulTop_mul`: the support dimension
+  of `M ⧸ (I * J) • M` (resp. `M ⧸ (x * y) M`) is the supremum of the support dimensions modulo `I`
+  and `J` (resp. `x` and `y`).
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
   `p` is a minimal prime of the support of `M`.
 -/
@@ -150,5 +162,53 @@ theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finit
         (LocalizedModule.mkLinearMap p.primeCompl M)).trans (annihilator_le_of_mem_support hQ)
     exact Localization.AtPrime.eq_maximalIdeal_iff_under_eq.1
       (le_antisymm hQp (h.2 ⟨Ideal.IsPrime.under R Q.asIdeal, hann⟩ hQp))
+
+section Quotient
+
+open scoped Pointwise
+
+/-- For a finite module `M`, the support of `M ⧸ I • M` depends only on the radical of `I`. -/
+theorem support_quotient_eq_of_radical_eq [Module.Finite R M] {I J : Ideal R}
+    (h : I.radical = J.radical) :
+    support R (M ⧸ (I • ⊤ : Submodule R M)) = support R (M ⧸ (J • ⊤ : Submodule R M)) := by
+  rw [support_quotient, support_quotient, ← PrimeSpectrum.zeroLocus_radical I,
+    ← PrimeSpectrum.zeroLocus_radical J, h]
+
+/-- For a finite module `M`, the support dimension of `M ⧸ I • M` depends only on the radical of
+`I`. -/
+theorem supportDim_quotient_eq_of_radical_eq [Module.Finite R M] {I J : Ideal R}
+    (h : I.radical = J.radical) :
+    supportDim R (M ⧸ (I • ⊤ : Submodule R M)) = supportDim R (M ⧸ (J • ⊤ : Submodule R M)) :=
+  Order.krullDim_eq_of_orderIso (Set.orderIsoOfEq _ _ (support_quotient_eq_of_radical_eq h))
+
+/-- For a finite module `M` and ideals `I, J`, the support dimension of `M ⧸ (I * J) • M` is the
+supremum of the support dimensions of `M ⧸ I • M` and `M ⧸ J • M`. -/
+theorem supportDim_quotient_mul [Module.Finite R M] (I J : Ideal R) :
+    supportDim R (M ⧸ ((I * J) • ⊤ : Submodule R M)) =
+      supportDim R (M ⧸ (I • ⊤ : Submodule R M)) ⊔
+        supportDim R (M ⧸ (J • ⊤ : Submodule R M)) := by
+  have hsupp : support R (M ⧸ ((I * J) • ⊤ : Submodule R M)) =
+      support R (M ⧸ (I • ⊤ : Submodule R M)) ∪ support R (M ⧸ (J • ⊤ : Submodule R M)) := by
+    rw [support_quotient, support_quotient, support_quotient, PrimeSpectrum.zeroLocus_mul,
+      Set.inter_union_distrib_left]
+  exact (Order.krullDim_eq_of_orderIso (Set.orderIsoOfEq _ _ hsupp)).trans
+    (Order.krullDim_union_of_isUpperSet (fun _ _ ↦ mem_support_mono) (fun _ _ ↦ mem_support_mono))
+
+/-- For a finite module `M` and `x, y : R`, the support dimension of `M ⧸ (x * y) M` is the
+supremum of the support dimensions of `M ⧸ x M` and `M ⧸ y M`. -/
+theorem supportDim_quotSMulTop_mul [Module.Finite R M] (x y : R) :
+    supportDim R (QuotSMulTop (x * y) M) =
+      supportDim R (QuotSMulTop x M) ⊔ supportDim R (QuotSMulTop y M) := by
+  have hx := supportDim_eq_of_equiv
+    (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x (⊤ : Submodule R M)))
+  have hy := supportDim_eq_of_equiv
+    (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul y (⊤ : Submodule R M)))
+  have hxy := supportDim_eq_of_equiv (Submodule.quotEquivOfEq _ _
+    (by rw [Ideal.span_singleton_mul_span_singleton, Submodule.ideal_span_singleton_smul]
+      : (Ideal.span {x} * Ideal.span {y}) • (⊤ : Submodule R M) = (x * y) • ⊤))
+  rw [← hxy, ← hx, ← hy]
+  exact supportDim_quotient_mul (Ideal.span {x}) (Ideal.span {y})
+
+end Quotient
 
 end Module
