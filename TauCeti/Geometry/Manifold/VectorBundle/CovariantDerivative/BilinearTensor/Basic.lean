@@ -35,9 +35,10 @@ For the inner product of a Riemannian bundle the tensor is Mathlib's
 * `CovariantDerivative.derivBilinearTensor_apply`: its value on differentiable sections.
 * `CovariantDerivative.derivBilinearTensor_eq_zero_iff`: `∇b` vanishes exactly when `∇` satisfies
   the product rule `v (b(σ, τ)) = b(∇_v σ, τ) + b(σ, ∇_v τ)`.
-* `CovariantDerivative.derivBilinearTensor_apply_comm`,
-  `CovariantDerivative.derivBilinearTensor_apply_anticomm`: `∇b` is symmetric, respectively
-  skew-symmetric, when `b` is.
+* `CovariantDerivative.derivBilinearTensor_apply_eq_smul_swap`: if `b(v, w) = c b(w, v)` for a
+  constant `c`, then `∇b` has the same property. In particular `∇b` is symmetric, respectively
+  skew-symmetric, when `b` is (`CovariantDerivative.derivBilinearTensor_apply_comm`,
+  `CovariantDerivative.derivBilinearTensor_apply_anticomm`).
 * `CovariantDerivative.derivBilinearTensor_apply_sub_derivBilinearTensor_apply`: changing the
   connection changes `∇b` by `-b(Δ ·, ·) - b(·, Δ ·)`, for the difference tensor `Δ`.
 * `CovariantDerivative.contMDiff_derivBilinearTensor_apply`: for a smooth connection, a smooth `b`,
@@ -190,39 +191,40 @@ theorem derivBilinearTensor_apply_eq_extend
   simpa using cov.derivBilinearTensor_apply hb (mdifferentiableAt_extend I F σ₀)
     (mdifferentiableAt_extend I F τ₀) v
 
+/-- If a field of bilinear forms satisfies `b(v, w) = c b(w, v)` for a constant `c`, so does its
+covariant derivative in its two fibre arguments. -/
+theorem derivBilinearTensor_apply_eq_smul_swap (c : ℝ) (h : ∀ y (v w : V y), b y v w = c * b y w v)
+    (σ₀ τ₀ : V x) :
+    cov.derivBilinearTensor b x σ₀ τ₀ = c • cov.derivBilinearTensor b x τ₀ σ₀ := by
+  by_cases hb : ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x
+  · ext v
+    have hpair : (fun y ↦ b y (extend F σ₀ y) (extend F τ₀ y)) =
+        (fun _ ↦ c) * fun y ↦ b y (extend F τ₀ y) (extend F σ₀ y) :=
+      funext fun y ↦ h y _ _
+    rw [smul_apply, cov.derivBilinearTensor_apply_eq_extend hb,
+      cov.derivBilinearTensor_apply_eq_extend hb, hpair,
+      mvfderiv_mul mdifferentiableAt_const
+        (hb (mdifferentiableAt_extend I F τ₀) (mdifferentiableAt_extend I F σ₀)),
+      mvfderiv_const, h x σ₀, h x (cov (extend F σ₀) x v)]
+    simp only [add_apply, smul_apply, zero_apply, smul_eq_mul]
+    ring
+  · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
+
 /-- The covariant derivative of a symmetric field of bilinear forms is symmetric in its two
 fibre arguments. -/
 theorem derivBilinearTensor_apply_comm (hsymm : ∀ y (v w : V y), b y v w = b y w v)
     (σ₀ τ₀ : V x) :
     cov.derivBilinearTensor b x σ₀ τ₀ = cov.derivBilinearTensor b x τ₀ σ₀ := by
-  by_cases hb : ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
-      MDiffAt (fun y ↦ b y (σ y) (τ y)) x
-  · ext v
-    have hpair : (fun y ↦ b y (extend F σ₀ y) (extend F τ₀ y)) =
-        fun y ↦ b y (extend F τ₀ y) (extend F σ₀ y) :=
-      funext fun y ↦ hsymm y _ _
-    rw [cov.derivBilinearTensor_apply_eq_extend hb, cov.derivBilinearTensor_apply_eq_extend hb,
-      hpair, hsymm x σ₀, hsymm x (cov (extend F σ₀) x v)]
-    ring
-  · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
+  simpa using cov.derivBilinearTensor_apply_eq_smul_swap 1 (by simpa using hsymm) σ₀ τ₀
 
 /-- The covariant derivative of a skew-symmetric field of bilinear forms is skew-symmetric in its
 two fibre arguments. -/
 theorem derivBilinearTensor_apply_anticomm (hskew : ∀ y (v w : V y), b y v w = -b y w v)
     (σ₀ τ₀ : V x) :
     cov.derivBilinearTensor b x σ₀ τ₀ = -cov.derivBilinearTensor b x τ₀ σ₀ := by
-  by_cases hb : ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
-      MDiffAt (fun y ↦ b y (σ y) (τ y)) x
-  · ext v
-    have hpair : (fun y ↦ b y (extend F σ₀ y) (extend F τ₀ y)) =
-        -fun y ↦ b y (extend F τ₀ y) (extend F σ₀ y) :=
-      funext fun y ↦ hskew y _ _
-    rw [neg_apply, cov.derivBilinearTensor_apply_eq_extend hb,
-      cov.derivBilinearTensor_apply_eq_extend hb, hpair, mvfderiv_neg, hskew x σ₀,
-      hskew x (cov (extend F σ₀) x v)]
-    simp only [neg_apply]
-    ring
-  · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
+  ext v
+  simp [cov.derivBilinearTensor_apply_eq_smul_swap (-1) (by simpa using hskew) σ₀ τ₀]
 
 /-- **Changing the connection changes `∇b` by the difference tensor.** For a field of bilinear
 forms `b` differentiable at `x`, replacing `∇'` by `∇` changes `(∇_v b)(σ₀, τ₀)` by
