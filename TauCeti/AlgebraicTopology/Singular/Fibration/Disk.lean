@@ -66,6 +66,16 @@ along straight lines. Over the closed unit ball, the radial deformation
 
 ## Main results
 
+* `TauCeti.TopCat.isZero_singularHomology_preimage_of_starConvex`,
+  `TauCeti.TopCat.isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos`,
+  `TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero_preimage_sphere`: the acyclic pairs from
+  which the computation is assembled, also used for the cohomological computation
+  `TauCeti.TopCat.singularCohomologyPreimageSphereIso`.
+* `TauCeti.TopCat.SerreDisk.proj`, `TauCeti.TopCat.SerreDisk.pair`,
+  `TauCeti.TopCat.SerreDisk.botIso` and their naturality
+  `TauCeti.TopCat.SerreDisk.proj_apply_of_comp_eq`,
+  `TauCeti.TopCat.SerreDisk.botIso_hom_naturality`: the projection `E → K → V` and the pairs it
+  defines, shared with the cohomological computation.
 * `TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero`,
   `TauCeti.TopCat.singularHomologyPreimageNeZeroIso`: the relative homology of `E` modulo the part
   over `K ∖ {0}`.
@@ -109,13 +119,12 @@ namespace TopCat
 variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {K : Set V}
   {E : _root_.TopCat.{u}} {p : E ⟶ _root_.TopCat.of K} {R : Type*} [Ring R] (M : ModuleCat.{u} R)
 
-namespace SerreDisk
-
-/-- For a Serre fibration over a convex set `K`, the pair `(E, p⁻¹(K ∩ S))` is acyclic when
-`S ⊆ V` is star-convex about a point `c ∈ K ∩ S`: `K` deforms into `K ∩ S` along straight lines
-towards `c`, by the affine homotopy from the inclusion of `K` to the constant map at `c`. -/
-private lemma isZero_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K) {c : V}
-    (hc : c ∈ K) {S : Set V} (hS : StarConvex ℝ c S) (hcS : c ∈ S) (m : ℕ) :
+/-- **A Serre fibration over a convex set is acyclic modulo the part over a star-convex set.** Let
+`p : E ⟶ K` be a Serre fibration over a convex set `K`, and `S ⊆ V` star-convex about a point
+`c ∈ K ∩ S`. Then `Hₘ(E, p⁻¹(K ∩ S); M) = 0` for every `m`: `K` deforms into `K ∩ S` along straight
+lines towards `c`. -/
+theorem isZero_singularHomology_preimage_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K)
+    {c : V} (hc : c ∈ K) {S : Set V} (hS : StarConvex ℝ c S) (hcS : c ∈ S) (m : ℕ) :
     IsZero ((TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ S})).singularHomology M m) :=
   let G := ContinuousMap.Homotopy.affine ⟨((↑) : K → V), continuous_subtypeVal⟩ (.const K c)
   isZero_singularHomology_preimage_of_deformation hp
@@ -128,24 +137,52 @@ private lemma isZero_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K) 
       rw [add_comm]
       exact hS hx t.property.1 (sub_nonneg.2 t.property.2) (add_sub_cancel _ _)) M m
 
-/-- The composite `E → K → V` of the fibration with the inclusion of the base. -/
-private abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
+/-- **A Serre fibration over a convex neighbourhood of `0` is acyclic modulo the part over the
+complement of a closed half-subspace.** Let `p : E ⟶ K` be a Serre fibration over a convex
+neighbourhood `K` of `0`, `W` a subspace of `V` and `φ` a functional with `φ v = 1` for some
+`v ∈ W`. Then `Hₘ(E, p⁻¹(K ∖ {y ∈ W | φ y ≤ 0}); M) = 0` for every `m`: the complement of the
+closed half-subspace is star-convex about a point of `K` on the open half-line through `v`. -/
+theorem isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos (hp : serreFibrations p)
+    (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) (v : V)
+    (hv : v ∈ W) (hφv : φ v = 1) (m : ℕ) :
+    IsZero ((TopPair.ofSubset
+      (p ⁻¹' {x : K | (x : V) ∈ {y | y ∈ W ∧ φ y ≤ 0}ᶜ})).singularHomology M m) := by
+  obtain ⟨c, hcK, hcS, hS⟩ :=
+    exists_mem_starConvex_compl_setOf_mem_and_nonpos hK₀ hv (hφv ▸ one_pos)
+  exact isZero_singularHomology_preimage_of_starConvex M hp hK hcK hS hcS m
+
+namespace SerreDisk
+
+/-- The composite `E → K → V` of the fibration with the inclusion of the base. The preimage
+under it of a set `S ⊆ V` is the part of `E` over `K ∩ S`
+(`TauCeti.TopCat.SerreDisk.preimage_proj`). -/
+abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
   ⟨fun e ↦ (p e : V), continuous_subtypeVal.comp p.hom.continuous⟩
 
-/-- The part of `E` over the complement of a closed half-subspace is acyclic. -/
+omit [NormedSpace ℝ V] in
+/-- The projection `E → K → V` sends a point of `E` to its image in the base, read in `V`. -/
+lemma proj_apply (p : E ⟶ _root_.TopCat.of K) (e : E) : proj p e = p e :=
+  (rfl)
+
+omit [NormedSpace ℝ V] in
+/-- The preimage of a set `S ⊆ V` under the projection `E → K → V` is the part of `E` over
+`K ∩ S`. -/
+lemma preimage_proj (p : E ⟶ _root_.TopCat.of K) (S : Set V) :
+    proj p ⁻¹' S = p ⁻¹' {x : K | (x : V) ∈ S} :=
+  (rfl)
+
+/-- The pair `(E, p⁻¹(K ∖ W))`. -/
+abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
+  subspaceComplPair (proj p) ∅ W
+
+/-- The acyclicity hypothesis of `TauCeti.subspaceComplPairSingularHomologyIso` for the pairs
+`pair p`, with `A = ∅`. -/
 private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
     (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) (v : V) (hv : v ∈ W) (hφv : φ v = 1) (m : ℕ) :
     IsZero ((TopPair.ofSubset (∅ ∪ proj p ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularHomology
       M m) := by
-  rw [Set.empty_union]
-  obtain ⟨c, hcK, hcS, hS⟩ :=
-    exists_mem_starConvex_compl_setOf_mem_and_nonpos hK₀ hv (hφv ▸ one_pos)
-  -- The preimage under `E → K → V` of a set `S` is the part of `E` over `K ∩ S` by definition.
-  exact isZero_of_starConvex M hp hK hcK hS hcS m
-
-/-- The pair `(E, p⁻¹(K ∖ W))`. -/
-private abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
-  subspaceComplPair (proj p) ∅ W
+  rw [Set.empty_union, preimage_proj]
+  exact isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos M hp hK hK₀ W φ v hv hφv m
 
 /-- `Hₙ(E, ∅) ≅ Hₙ(F)`: the base contracts onto `0` along straight lines, so the inclusion of the
 fibre over `0` is a homology isomorphism. -/
@@ -153,7 +190,8 @@ private def emptyIso (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V
     (pair p (⊤ : Submodule ℝ V)).singularHomology M n ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
         M).obj (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})) :=
-  have h (m : ℕ) := isZero_of_starConvex M hp hK h₀ (starConvex_singleton (0 : V)) rfl m
+  have h (m : ℕ) := isZero_singularHomology_preimage_of_starConvex M hp hK h₀
+    (starConvex_singleton (0 : V)) rfl m
   haveI := TopPair.isIso_homologyMap_map_of_isZero _ _ (h (n + 1)) (h n)
   (asIso ((pair p (⊤ : Submodule ℝ V)).singularHomologyπ M n)).symm ≪≫
     (asIso (SSet.homologyMap (TopCat.toSSet.map
@@ -173,7 +211,7 @@ private lemma homologyMap_comp_singularHomologyπ_eq_emptyIso_inv (hp : serreFib
   rfl
 
 /-- The identification of `(E, p⁻¹(K ∖ {0}))` with `(E, p⁻¹(K ∖ ⊥))`. -/
-private def botIso (p : E ⟶ _root_.TopCat.of K) :
+def botIso (p : E ⟶ _root_.TopCat.of K) :
     TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ≠ 0}) ≅ pair p (⊥ : Submodule ℝ V) :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun e ↦ by
     simp only [mem_preimage, mem_ofPred_eq, mem_compl_iff, SetLike.mem_coe, Submodule.mem_bot,
@@ -226,9 +264,11 @@ private abbrev puncturedBall : Set (closedBall (0 : V) 1) := {x | (x : V) ≠ 0}
 private abbrev unitSphere : Set (closedBall (0 : V) 1) := {x | (x : V) ∈ sphere (0 : V) 1}
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-private lemma unitSphere_subset_puncturedBall : unitSphere (V := V) ⊆ puncturedBall := by
-  intro x hx h
-  simp [h] at hx
+/-- The part of `E` over the unit sphere lies in the part over the punctured closed unit ball. -/
+lemma preimage_sphere_subset_preimage_ne_zero
+    (p : E ⟶ _root_.TopCat.of (closedBall (0 : V) 1)) :
+    p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1} ⊆ p ⁻¹' {x | (x : V) ≠ 0} :=
+  preimage_mono fun _ hx h ↦ by simp [h] at hx
 
 /-- The radial deformation of the punctured closed unit ball onto the unit sphere: the
 straight-line homotopy `StarConvex.radialHomotopy` from the radial projection to the identity, run
@@ -242,10 +282,14 @@ private def radial : C(I × _root_.TopCat.of (puncturedBall (V := V)),
     continuous_toFun := by fun_prop }
 
 omit [FiniteDimensional ℝ V] in
-/-- The part of `E` over the punctured ball is acyclic modulo the part over the unit sphere. -/
-private lemma isZero_singularHomology_puncturedBall_unitSphere (hp : serreFibrations p) (m : ℕ) :
-    IsZero ((TopTriple.innerPair.obj (TopTriple.ofSubset (preimage_mono (f := p)
-      (unitSphere_subset_puncturedBall (V := V))))).singularHomology M m) := by
+/-- **A Serre fibration over a disk is acyclic over the punctured disk modulo the part over the
+boundary sphere.** Let `p : E ⟶ Dʳ` be a Serre fibration over the closed unit ball. Then
+`Hₘ(p⁻¹(Dʳ ∖ {0}), p⁻¹(Sʳ⁻¹); M) = 0` for every `m`: the punctured ball deforms radially onto the
+sphere. -/
+theorem isZero_singularHomology_preimage_ne_zero_preimage_sphere (hp : serreFibrations p)
+    (m : ℕ) :
+    IsZero ((TopTriple.innerPair.obj
+      (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p))).singularHomology M m) := by
   have hz := isZero_singularHomology_preimage_of_deformation
     (mem_serreFibrations_restrictPreimage hp puncturedBall)
     (A := Subtype.val ⁻¹' unitSphere) radial
@@ -258,17 +302,16 @@ private lemma isZero_singularHomology_puncturedBall_unitSphere (hp : serreFibrat
       have hx' : ‖(x : V)‖ = 1 := mem_sphere_zero_iff_norm.1 hx
       simp [radial, hx']) M m
   exact hz.of_iso (asIso (TopPair.singularHomologyMap
-    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p)
-      (unitSphere_subset_puncturedBall (V := V)))).hom M m)).symm
+    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_sphere_subset_preimage_ne_zero p)).hom M
+      m)).symm
 
 omit [FiniteDimensional ℝ V] in
 private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopTriple.totalToOuter.app (TopTriple.ofSubset
-      (preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V))))) M
-      m) :=
+      (preimage_sphere_subset_preimage_ne_zero p))) M m) :=
   TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero _ _ m
-    (isZero_singularHomology_puncturedBall_unitSphere M hp m)
-    fun m' _ ↦ isZero_singularHomology_puncturedBall_unitSphere M hp m'
+    (isZero_singularHomology_preimage_ne_zero_preimage_sphere M hp m)
+    fun m' _ ↦ isZero_singularHomology_preimage_ne_zero_preimage_sphere M hp m'
 
 omit [FiniteDimensional ℝ V] in
 /-- **Over a disk, the part over the boundary sphere and the part off the centre have the same
@@ -322,7 +365,8 @@ namespace SerreDisk
 variable {p' : E' ⟶ _root_.TopCat.of K} {f : E ⟶ E'}
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-private lemma proj_apply_of_comp_eq (hf : f ≫ p' = p) (e : E) : proj p' (f e) = proj p e :=
+/-- A map `f` over the base commutes with the projections `E → K → V` and `E' → K → V`. -/
+lemma proj_apply_of_comp_eq (hf : f ≫ p' = p) (e : E) : proj p' (f e) = proj p e :=
   congrArg Subtype.val (ConcreteCategory.congr_hom hf e)
 
 /-- The map of pairs `(E, p⁻¹(K ∖ W)) ⟶ (E', p'⁻¹(K ∖ W))` induced by a map `f` over `K`. -/
@@ -373,10 +417,11 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
   rw [← Iso.comp_inv_eq, Category.assoc, key, Iso.hom_inv_id_assoc]
 
 omit [FiniteDimensional ℝ V] in
-private lemma botIso_hom_naturality (hf : f ≫ p' = p) :
-    (botIso p).hom ≫ pairMap hf ⊥ =
+/-- The identification `TauCeti.TopCat.SerreDisk.botIso` is natural in maps over the base. -/
+lemma botIso_hom_naturality (hf : f ≫ p' = p) :
+    (botIso p).hom ≫ subspaceComplPairMap f (proj_apply_of_comp_eq hf) (mapsTo_empty _ _) ⊥ =
       TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _) ≫ (botIso p').hom := by
-  rw [pairMap, subspaceComplPairMap_eq_ofSubsetMap f (proj_apply_of_comp_eq hf) (mapsTo_empty _ _) ⊥
+  rw [subspaceComplPairMap_eq_ofSubsetMap f (proj_apply_of_comp_eq hf) (mapsTo_empty _ _) ⊥
     ((mapsTo_empty _ _).union_union fun e he ↦ by rwa [mem_preimage, proj_apply_of_comp_eq hf])]
   simp only [botIso, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
@@ -431,9 +476,9 @@ theorem singularHomologyPreimageSphereIso_hom_naturality (hp : serreFibrations p
   -- The inclusion `(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` commutes with the maps induced by `f`.
   have hpair : TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf unitSphere) ≫
         TopTriple.totalToOuter.app (TopTriple.ofSubset
-          (preimage_mono (f := p') (unitSphere_subset_puncturedBall (V := V)))) =
+          (preimage_sphere_subset_preimage_ne_zero p')) =
       TopTriple.totalToOuter.app (TopTriple.ofSubset
-          (preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V)))) ≫
+          (preimage_sphere_subset_preimage_ne_zero p)) ≫
         TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf puncturedBall) :=
     TopPair.hom_ext_of_fst _ (by
       ext x
@@ -463,11 +508,6 @@ section Relative
 namespace SerreDisk
 
 variable (p : E ⟶ _root_.TopCat.of K)
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The preimage under `E → K → V` of a set `S` is the part of `E` over `K ∩ S`. -/
-private lemma preimage_proj (S : Set V) : proj p ⁻¹' S = p ⁻¹' {x : K | (x : V) ∈ S} :=
-  rfl
 
 variable (A : Set E)
 

@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.Topology.Circle.Degree
 
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import Mathlib.Analysis.Complex.Polynomial.Basic
@@ -93,7 +94,10 @@ of a unitary matrix `W` is `(-1) ^ (n - k) e^{2πi s(W)}`, where `k` is that mul
 (`Matrix.det_eq_neg_one_pow_mul_exp_spectralAngleSum`), and `s` is continuous along a family of
 unitary matrices in which `k` is constant (`Matrix.continuousAt_spectralAngleSum`), since no other
 eigenvalue can then reach `1`. So `2π s(W t) + (n - k) π` is a continuous angle of `det (W t)`, and
-the two terms of the index cancel.
+the two terms of the index cancel. With invariance under homotopies fixing the endpoints, the zero
+axiom gives invariance under homotopies whose endpoints move through Lagrangians whose
+intersections with `ℝⁿ` keep their dimensions, the stratum homotopy property of Robbin and Salamon
+(`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq`).
 
 The index modulo `2` depends only on the endpoint frames: `e^{πi μ(γ)}` is the quotient of the
 values of `U ↦ det U e^{-πi s(U Uᵀ)}` at the two ends
@@ -118,6 +122,8 @@ computes the parity of the Conley–Zehnder index.
 * `Matrix.UnitaryGroup.exp_maslovIndex_mul_det_mul_exp_spectralAngleSum`: the index modulo `2`
   from the endpoint frames.
 * `Matrix.UnitaryGroup.maslovIndex_map_map_star`: complex conjugation negates the index.
+* `Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq`: the homotopy axiom,
+  with endpoints along which the eigenvalue `1` of the Souriau map keeps its multiplicity.
 
 ## References
 
@@ -632,6 +638,34 @@ theorem maslovIndex_eq_zero_of_rootMultiplicity_eq {U V : unitaryGroup n ℂ} (�
   rw [maslovIndex, Circle.angleChange_eq_sub _ θ.continuous hθ, hm 1, hm 0, γ.source, γ.target]
   field_simp
   ring
+
+/-- **The homotopy axiom.** Let `F` be a homotopy from the path `γ₀` to the path `γ₁` of unitary
+frames, with moving endpoints, such that the eigenvalue `1` of the Souriau map of `F (s, 0)` has
+the same multiplicity for every `s`, and so does that of `F (s, 1)`. Then `γ₀` and `γ₁` have the
+same Maslov index. -/
+theorem maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq {U₀ V₀ U₁ V₁ : unitaryGroup n ℂ}
+    (γ₀ : Path U₀ V₀) (γ₁ : Path U₁ V₁) (F : C(I × I, unitaryGroup n ℂ))
+    (h₀ : ∀ t, F (0, t) = γ₀ t) (h₁ : ∀ t, F (1, t) = γ₁ t) {k₀ k₁ : ℕ}
+    (hk₀ : ∀ s, (souriau (F (s, 0)) : Matrix n n ℂ).charpoly.rootMultiplicity 1 = k₀)
+    (hk₁ : ∀ s, (souriau (F (s, 1)) : Matrix n n ℂ).charpoly.rootMultiplicity 1 = k₁) :
+    maslovIndex γ₀ = maslovIndex γ₁ := by
+  let G : ContinuousMap.Homotopy γ₀.toContinuousMap γ₁.toContinuousMap :=
+    { toFun := F
+      continuous_toFun := F.continuous
+      map_zero_left := h₀
+      map_one_left := h₁ }
+  -- The edge `G.evalAt x` traces `s ↦ F (s, x)`; this holds by definition of `G` and `evalAt`.
+  have hG : ∀ x s, G.evalAt x s = F (s, x) := fun _ _ ↦ rfl
+  -- `γ₀` followed by the final edge is homotopic to the initial edge followed by `γ₁`, and the
+  -- two edges have index zero by the zero axiom.
+  have h := maslovIndex_eq_of_homotopic (Path.Homotopic.map_trans_evalAt G Path.id)
+  rw [maslovIndex_trans, maslovIndex_trans,
+    maslovIndex_eq_zero_of_rootMultiplicity_eq (G.evalAt 0) fun s ↦ by rw [hG]; exact hk₀ s,
+    maslovIndex_eq_zero_of_rootMultiplicity_eq (G.evalAt 1) fun s ↦ by rw [hG]; exact hk₁ s,
+    add_zero, zero_add] at h
+  rw [maslovIndex_eq_of_souriau_eq γ₀ (Path.id.map (map_continuous γ₀.toContinuousMap))
+    fun t ↦ by simp, h]
+  exact maslovIndex_eq_of_souriau_eq _ _ fun t ↦ by simp
 
 /-- A path of frames whose Souriau maps never have the eigenvalue `1`, that is, a path of
 Lagrangians transverse to `ℝⁿ`, has Maslov index zero. -/
