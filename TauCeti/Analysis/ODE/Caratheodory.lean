@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.ODE.PicardLindelof
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
@@ -86,13 +87,10 @@ continuous on `[a, b]`. -/
 theorem integrableOn_Icc_clm_apply_add (hM : IntegrableOn M (Icc a b))
     (hF : IntegrableOn F (Icc a b)) {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
     IntegrableOn (fun s ↦ M s (x s) + F s) (Icc a b) := by
-  refine IntegrableOn.add ?_ hF
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hx
-  refine (hM.norm.mul_const C).mono'
-    ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).aestronglyMeasurable_comp₂ hM.aestronglyMeasurable
-      (hx.aestronglyMeasurable measurableSet_Icc)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Icc] with s hs
-  exact ((M s).le_opNorm _).trans (mul_le_mul_of_nonneg_left (hC s hs) (norm_nonneg _))
+  exact ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).integrable_of_bilin_of_bdd_right C hM
+    (hx.aestronglyMeasurable measurableSet_Icc)
+    ((ae_restrict_iff' measurableSet_Icc).2 (ae_of_all _ hC))).add hF
 
 /-- The right-hand side `s ↦ M s (x s) + F s` of a linear equation whose coefficient `M` and
 forcing term `F` are integrable on `[a, b]`, with `a ≤ b`, is interval integrable on `a..b` along
