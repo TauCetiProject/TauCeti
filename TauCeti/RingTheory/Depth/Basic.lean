@@ -364,6 +364,42 @@ theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Module R F]
 
 end Free
 
+section LengthLe
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+/-- The length of an `M`-regular sequence is at most `dim (R ⧸ p)` for every associated prime `p`
+of `M`. -/
+private theorem length_le_ringKrullDim_quotient_of_isRegular [IsNoetherianRing R]
+    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) {p : Ideal R}
+    (hp : IsAssociatedPrime p M) : (rs.length : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p) := by
+  induction rs generalizing M p with
+  | nil =>
+    have := hp.isPrime
+    simpa using ringKrullDim_nonneg_of_nontrivial (R := R ⧸ p)
+  | cons x rs ih =>
+    obtain ⟨hx, hrs⟩ := (isRegular_cons_iff M x rs).1 reg
+    -- `p` lies in an associated prime `q` of `M ⧸ x M`. As `x` kills `M ⧸ x M` but is
+    -- `M`-regular, `x ∈ q ∖ p`, so `dim (R ⧸ q) + 1 ≤ dim (R ⧸ p)`.
+    obtain ⟨q, hq, hpq⟩ := hp.exists_le_isAssociatedPrime_quotSMulTop hx
+      (maximalIdeal_le_jacobson _ (reg.mem_maximalIdeal List.mem_cons_self))
+    have hxq : x ∈ q := hq.annihilator_le <| by
+      rw [Submodule.annihilator_top]
+      exact QuotSMulTop.mem_annihilator M x
+    have hxp : x ∉ p := fun hxp ↦ by
+      have hmem : x ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp hxp
+      rw [biUnion_associatedPrimes_eq_compl_regular R M] at hmem
+      exact hmem hx
+    have := hp.isPrime
+    calc ((x :: rs).length : WithBot ℕ∞) = rs.length + 1 := by simp
+      _ ≤ ringKrullDim (R ⧸ q) + 1 := by gcongr; exact ih hrs hq
+      _ ≤ ringKrullDim (R ⧸ p) := TauCeti.ringKrullDim_quotient_add_one_le_of_lt <|
+        lt_of_le_of_ne hpq fun h ↦ hxp (h ▸ hxq)
+
+end LengthLe
+
+section LocalDepth
+
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
   {M : Type v} [AddCommGroup M] [Module R M]
 
@@ -461,35 +497,6 @@ theorem depth_add_length_eq_depth_of_isRegular [IsNoetherianRing R] [Module.Fini
     rw [depth_eq_of_linearEquiv (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M x rs),
       ← depth_quotSMulTop_succ_eq_depth hx (reg.mem_maximalIdeal List.mem_cons_self), ← ih hrs,
       List.length_cons, Nat.cast_succ, add_assoc]
-
-omit [Small.{v} R] in
-/-- The length of an `M`-regular sequence is at most `dim (R ⧸ p)` for every associated prime `p`
-of `M`. -/
-private theorem length_le_ringKrullDim_quotient_of_isRegular [IsNoetherianRing R]
-    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) {p : Ideal R}
-    (hp : IsAssociatedPrime p M) : (rs.length : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p) := by
-  induction rs generalizing M p with
-  | nil =>
-    have := hp.isPrime
-    simpa using ringKrullDim_nonneg_of_nontrivial (R := R ⧸ p)
-  | cons x rs ih =>
-    obtain ⟨hx, hrs⟩ := (isRegular_cons_iff M x rs).1 reg
-    -- `p` lies in an associated prime `q` of `M ⧸ x M`. As `x` kills `M ⧸ x M` but is
-    -- `M`-regular, `x ∈ q ∖ p`, so `dim (R ⧸ q) + 1 ≤ dim (R ⧸ p)`.
-    obtain ⟨q, hq, hpq⟩ := hp.exists_le_isAssociatedPrime_quotSMulTop hx
-      (maximalIdeal_le_jacobson _ (reg.mem_maximalIdeal List.mem_cons_self))
-    have hxq : x ∈ q := hq.annihilator_le <| by
-      rw [Submodule.annihilator_top]
-      exact QuotSMulTop.mem_annihilator M x
-    have hxp : x ∉ p := fun hxp ↦ by
-      have hmem : x ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp hxp
-      rw [biUnion_associatedPrimes_eq_compl_regular R M] at hmem
-      exact hmem hx
-    have := hp.isPrime
-    calc ((x :: rs).length : WithBot ℕ∞) = rs.length + 1 := by simp
-      _ ≤ ringKrullDim (R ⧸ q) + 1 := by gcongr; exact ih hrs hq
-      _ ≤ ringKrullDim (R ⧸ p) := TauCeti.ringKrullDim_quotient_add_one_le_of_lt <|
-        lt_of_le_of_ne hpq fun h ↦ hxp (h ▸ hxq)
 
 /-- The depth of a finite module `M` over a Noetherian local ring is at most `dim (R ⧸ p)` for
 every associated prime `p` of `M`. H. Matsumura, *Commutative Ring Theory*, Theorem 17.2. -/
@@ -630,6 +637,8 @@ theorem depth_eq_depth_of_bijective {T : Type*} [CommRing T] [IsLocalRing T] [Al
       (k.symm.trans (Shrink.linearEquiv.{v} R (R ⧸ maximalIdeal R)).symm))
     (LinearEquiv.refl R M)
 
+end LocalDepth
+
 /-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
 prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
 theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
@@ -672,7 +681,7 @@ theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalR
       ∃ t ∉ p, algebraMap R K t * x ∈ (algebraMap R K).range) :
     x ∈ (algebraMap R K).range := by
   obtain ⟨⟨c, b⟩, hcb⟩ := IsLocalization.surj (nonZeroDivisors R) x
-  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.2).left
+  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.property).left
   -- The ideal `J` of `r` with `r c ∈ (b)` lies in no prime other than the maximal ideal.
   let J : Ideal R := Submodule.comap (LinearMap.mulRight R c) (Ideal.span {(b : R)})
   have hJ (r : R) : r ∈ J ↔ r * c ∈ Ideal.span {(b : R)} := Iff.rfl

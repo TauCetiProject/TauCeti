@@ -37,6 +37,8 @@ segments. In particular, it applies to weight-space blocks of arbitrary dimensio
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
   `Matrix.toBlocks₂₁_eq_submatrix`, and `Matrix.toBlocks₂₂_eq_submatrix`: block extraction
   as submatrix restriction.
+* `Matrix.eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero`: a matrix with vanishing
+  off-diagonal blocks is block diagonal.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
@@ -82,6 +84,13 @@ public theorem toBlocks₂₁_eq_submatrix {m n p q α : Type*} (M : Matrix (m �
 public theorem toBlocks₂₂_eq_submatrix {m n p q α : Type*} (M : Matrix (m ⊕ n) (p ⊕ q) α) :
     M.toBlocks₂₂ = M.submatrix Sum.inr Sum.inr :=
   (rfl)
+
+/-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal
+blocks. -/
+public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero {m n p q α : Type*}
+    [Zero α] {X : Matrix (m ⊕ n) (p ⊕ q) α} (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
+    X = fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
+  rw [← h₁₂, ← h₂₁, fromBlocks_toBlocks]
 
 /-- The determinant of a block-diagonal matrix with blocks of possibly different sizes is the
 product of the determinants of the blocks. This is the dependent version of
@@ -132,7 +141,7 @@ public theorem BlockTriangular.toSquareBlockProp_mul_of_toDual [NonUnitalNonAsso
   simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => A i k * B k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => A i k * B k j) fun k => ?_, add_zero]
-  have hik : b i < b k := lt_of_not_ge fun h => k.2 (hp h i.2)
+  have hik : b i < b k := lt_of_not_ge fun h => k.property (hp h i.property)
   rw [hA (toDual_lt_toDual.mpr hik), zero_mul]
 
 /-- **Leading blocks of a product with a block upper triangular right factor.** If `A` is block
@@ -146,7 +155,7 @@ public theorem BlockTriangular.toSquareBlockProp_mul [NonUnitalNonAssocSemiring 
   simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
-  rw [hA (lt_of_not_ge fun h => k.2 (hp h j.2)), mul_zero]
+  rw [hA (lt_of_not_ge fun h => k.property (hp h j.property)), mul_zero]
 
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
 initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/
@@ -157,7 +166,7 @@ public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M :
   · simp
   obtain ⟨k, hk⟩ := Finite.exists_max fun j : {j // b j < b i} => b j
   rw [equiv_block_det M (q := fun j => b j ≤ b k) fun j =>
-    ⟨fun hj => hj.trans_lt k.2, fun hj => hk ⟨j, hj⟩⟩]
+    ⟨fun hj => hj.trans_lt k.property, fun hj => hk ⟨j, hj⟩⟩]
   exact hM k
 
 variable [DecidableEq m] [CommRing R] {A L M U : Matrix m m R} {p : m → Prop} [DecidablePred p]

@@ -233,11 +233,11 @@ theorem fejerPoly_exp_mul_I (m : ℕ) (θ : ℝ) :
   refine sum_congr rfl fun j hj ↦ ?_
   have hjm : j ≤ m := (mem_Icc.mp hj).2
   have h1 : exp ((θ : ℂ) * I) ^ (m - j) = exp ((m : ℂ) * θ * I) * exp (-((j : ℂ) * θ * I)) := by
-    rw [← exp_nat_mul, ← exp_add, Nat.cast_sub hjm]
+    rw [← exp_natCast_mul, ← exp_add, Nat.cast_sub hjm]
     congr 1
     ring
   have h2 : exp ((θ : ℂ) * I) ^ (m + j) = exp ((m : ℂ) * θ * I) * exp ((j : ℂ) * θ * I) := by
-    rw [← exp_nat_mul, ← exp_add, Nat.cast_add]
+    rw [← exp_natCast_mul, ← exp_add, Nat.cast_add]
     congr 1
     ring
   have hsin : exp (-((j : ℂ) * θ * I)) - exp ((j : ℂ) * θ * I) =

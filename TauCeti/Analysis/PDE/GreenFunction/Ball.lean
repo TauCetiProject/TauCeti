@@ -480,7 +480,7 @@ theorem continuous_ballPoissonKernel_on_sphere (x : EuclideanSpace ℝ (Fin n)) 
   refine (contDiffOn_ballPoissonKernel (n := n) (k := 0)).continuousOn.comp_continuous
     (f := fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       (x, (y : EuclideanSpace ℝ (Fin n))))
-    (continuous_const.prodMk continuous_subtype_val) ?_
+    (continuous_const.prodMk continuous_subtypeVal) ?_
   intro y hxy
   exact hx ((congrArg norm hxy).trans (norm_eq_of_mem_sphere y))
 

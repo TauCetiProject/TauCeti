@@ -169,32 +169,32 @@ private theorem ringSubgroupsBasis :
       basisSubgroup (u : Aˣ) := by
   refine .of_comm _ (fun u v ↦ ?_) (fun u ↦ ⟨u, ?_⟩) fun x u ↦ ?_
   · -- `uv • A°°` lies in both `u • A°°` and `v • A°°`.
-    have hu := IsPowerBounded.of_isTopologicallyNilpotent u.2
-    have hv := IsPowerBounded.of_isTopologicallyNilpotent v.2
-    refine ⟨⟨u.1 * v.1, by simpa using hu.isTopologicallyNilpotent_mul v.2⟩,
+    have hu := IsPowerBounded.of_isTopologicallyNilpotent u.property
+    have hv := IsPowerBounded.of_isTopologicallyNilpotent v.property
+    refine ⟨⟨u.val * v.val, by simpa using hu.isTopologicallyNilpotent_mul v.property⟩,
       le_inf (basisSubgroup_le ?_) (basisSubgroup_le ?_)⟩
     · simpa using hv
-    · simpa [mul_comm (u.1 : A)] using hu
+    · simpa [mul_comm (u.val : A)] using hu
   · -- `u⁻¹ (xy) = (u⁻¹ x) (u⁻¹ y u)`, and `u⁻¹ y u` is power-bounded.
     rintro _ ⟨x, hx, y, hy, rfl⟩
     have hpb := (IsPowerBounded.of_isTopologicallyNilpotent (mem_basisSubgroup.mp hy)).mul
-      (IsPowerBounded.of_isTopologicallyNilpotent u.2)
+      (IsPowerBounded.of_isTopologicallyNilpotent u.property)
     refine mem_basisSubgroup.mpr ?_
     convert hpb.isTopologicallyNilpotent_mul (mem_basisSubgroup.mp hx) using 1
     rw [map_mul]
-    linear_combination -(((u.1⁻¹ : Aˣ) : A) * (toSpectralTop A).symm x *
-      (toSpectralTop A).symm y) * Units.inv_mul u.1
+    linear_combination -(((u.val⁻¹ : Aˣ) : A) * (toSpectralTop A).symm x *
+      (toSpectralTop A).symm y) * Units.inv_mul u.val
   · -- If `uⁿ x` is topologically nilpotent, then `x • (u ^ (n + 1) • A°°) ⊆ u • A°°`.
-    obtain ⟨n, hn⟩ := u.2.exists_pow_mul ((toSpectralTop A).symm x)
-    refine ⟨⟨u.1 ^ (n + 1), by simpa using u.2.pow n.succ_ne_zero⟩, fun y hy ↦ ?_⟩
+    obtain ⟨n, hn⟩ := u.property.exists_pow_mul ((toSpectralTop A).symm x)
+    refine ⟨⟨u.val ^ (n + 1), by simpa using u.property.pow n.succ_ne_zero⟩, fun y hy ↦ ?_⟩
     have := (IsPowerBounded.of_isTopologicallyNilpotent hn).isTopologicallyNilpotent_mul
       (mem_basisSubgroup.mp hy)
     refine mem_basisSubgroup.mpr ?_
     convert this using 1
     simp only [map_mul, ← inv_pow, Units.val_pow_eq_pow_val]
-    calc ((u.1⁻¹ : Aˣ) : A) * ((toSpectralTop A).symm x * (toSpectralTop A).symm y) =
-        ((u.1⁻¹ : Aˣ) : A) * (toSpectralTop A).symm x * (toSpectralTop A).symm y *
-          ((u.1 : A) * ((u.1⁻¹ : Aˣ) : A)) ^ n := by
+    calc ((u.val⁻¹ : Aˣ) : A) * ((toSpectralTop A).symm x * (toSpectralTop A).symm y) =
+        ((u.val⁻¹ : Aˣ) : A) * (toSpectralTop A).symm x * (toSpectralTop A).symm y *
+          ((u.val : A) * ((u.val⁻¹ : Aˣ) : A)) ^ n := by
           rw [Units.mul_inv, one_pow, mul_one, mul_assoc]
       _ = _ := by ring
 
@@ -266,7 +266,7 @@ theorem hasBasis_nhds_zero {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) :
   have hnil := hϖ.isTopologicallyNilpotent
   simp only [image_pow_smul]
   refine hasBasis_nhds_zero_basisSubgroup.to_hasBasis (fun v _ ↦ ?_) fun n _ ↦ ?_
-  · obtain ⟨n, hn⟩ := exists_basisSubgroup_pow_le v.1 hnil
+  · obtain ⟨n, hn⟩ := exists_basisSubgroup_pow_le v.val hnil
     exact ⟨n, trivial, hn⟩
   · have hpb : IsPowerBounded ((((u ^ n)⁻¹ : Aˣ) : A) * ((u ^ (n + 1) : Aˣ) : A)) := by
       rw [pow_succ, Units.val_mul, ← mul_assoc, Units.inv_mul, one_mul]
@@ -297,7 +297,7 @@ theorem continuous_toSpectralTop : Continuous (toSpectralTop A) := by
   -- `u⁻¹ x` is topologically nilpotent near zero, since `A°°` contains an open ideal image.
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   have hP : (P.idealImage 1 : Set A) ∈ 𝓝 0 := (P.isOpen_idealImage 1).mem_nhds (zero_mem _)
-  filter_upwards [(continuous_const_mul ((u.1⁻¹ : Aˣ) : A)).tendsto' 0 0 (mul_zero _) hP]
+  filter_upwards [(continuous_const_mul ((u.val⁻¹ : Aˣ) : A)).tendsto' 0 0 (mul_zero _) hP]
     with x hx
   simpa [mem_basisSubgroup] using P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero hx
 

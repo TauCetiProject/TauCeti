@@ -40,7 +40,7 @@ theorem continuous_matrixNormalMeasure {ι κ : Type*} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] :
     Continuous (fun p : Matrix ι κ ℝ × {U : Matrix ι ι ℝ // U.PosSemidef} ×
         {V : Matrix κ κ ℝ // V.PosSemidef} ↦
-      (matrixNormalMeasure p.1 p.2.1.1 p.2.2.1).toProbabilityMeasure) := by
+      (matrixNormalMeasure p.1 p.2.1.val p.2.2.val).toProbabilityMeasure) := by
   have hmean : Continuous (fun p : Matrix ι κ ℝ ×
       {U : Matrix ι ι ℝ // U.PosSemidef} × {V : Matrix κ κ ℝ // V.PosSemidef} ↦
         WithLp.toLp 2 p.1.vec) := by
@@ -49,9 +49,9 @@ theorem continuous_matrixNormalMeasure {ι κ : Type*} [Fintype ι] [Fintype κ]
     exact continuous_pi fun ij ↦ continuous_fst.matrix_elem ij.2 ij.1
   have hcov : Continuous (fun p : Matrix ι κ ℝ ×
       {U : Matrix ι ι ℝ // U.PosSemidef} × {V : Matrix κ κ ℝ // V.PosSemidef} ↦
-        p.2.2.1 ⊗ₖ p.2.1.1) := by
-    exact (continuous_subtype_val.comp (continuous_snd.comp continuous_snd)).matrix_kronecker
-      (continuous_subtype_val.comp (continuous_fst.comp continuous_snd))
+        p.2.2.val ⊗ₖ p.2.1.val) := by
+    exact (continuous_subtypeVal.comp (continuous_snd.comp continuous_snd)).matrix_kronecker
+      (continuous_subtypeVal.comp (continuous_fst.comp continuous_snd))
   have hread : Continuous ((TauCeti.matrixVecMeasurableEquiv 2).symm :
       EuclideanSpace ℝ (κ × ι) → Matrix ι κ ℝ) := by
     have h : Continuous (fun x : EuclideanSpace ℝ (κ × ι) ↦
@@ -59,12 +59,12 @@ theorem continuous_matrixNormalMeasure {ι κ : Type*} [Fintype ι] [Fintype κ]
       continuous_matrix fun i j ↦ PiLp.continuous_apply 2 _ (j, i)
     exact h.congr fun x ↦ (TauCeti.matrixVecMeasurableEquiv_symm_apply 2 x).symm
   have h := (ProbabilityMeasure.continuous_map hread).comp
-    (hmean.multivariateGaussian hcov fun p ↦ p.2.2.2.kronecker p.2.1.2)
+    (hmean.multivariateGaussian hcov fun p ↦ p.2.2.property.kronecker p.2.1.property)
   refine h.congr fun p ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
   simp only [Function.comp_apply, ProbabilityMeasure.toMeasure_map,
     Measure.coe_toProbabilityMeasure]
-  exact (matrixNormalMeasure_of_posSemidef p.1 p.2.1.2 p.2.2.2).symm
+  exact (matrixNormalMeasure_of_posSemidef p.1 p.2.1.property p.2.2.property).symm
 
 end TauCeti.Probability
 
