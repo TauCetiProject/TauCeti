@@ -58,13 +58,9 @@ theorem comap_map_toSO3_binaryOctahedralSubgroup :
 /-- **The `SO(3)` image of the binary octahedral subgroup has `24` elements.** -/
 theorem natCard_map_toSO3_binaryOctahedralSubgroup :
     Nat.card (binaryOctahedralSubgroup.map toSO3) = 24 := by
-  let f := toSO3.domRestrict binaryOctahedralSubgroup
-  have hker_card : Nat.card f.ker = 2 := by
-    rw [MonoidHom.ker_domRestrict,
-      Nat.card_congr (Subgroup.subgroupOfEquivOfLe ker_toSO3_le_binaryOctahedralSubgroup).toEquiv,
-      natCard_ker_toSO3]
-  have hmul := Subgroup.card_ker_mul_card_range f
-  rw [hker_card, MonoidHom.domRestrict_range, natCard_binaryOctahedralSubgroup] at hmul
+  have h := toSO3.ker.relIndex_mul_card binaryOctahedralSubgroup
+  rw [Subgroup.relIndex_ker, inf_of_le_left ker_toSO3_le_binaryOctahedralSubgroup,
+    natCard_ker_toSO3, natCard_binaryOctahedralSubgroup] at h
   omega
 
 /-- The image of the eighth-turn `τ = (1 + i) / √2` under `toSO3` is a cube rotation. -/
@@ -77,11 +73,10 @@ private theorem toSO3_binaryDihedralRotation_four_mem_range :
   refine ⟨A, Subtype.ext ?_⟩
   rw [coe_cubeRotationToSpecialOrthogonalGroup, binaryDihedralRotation_def, coe_toSO3_torusHom]
   have hz : ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2) = Complex.I := by
-    have h1 := ZMod.toCircle_natCast (N := 2 * 4) 1
-    rw [Nat.cast_one] at h1
-    rw [h1, ← Complex.exp_natCast_mul]
-    convert Complex.exp_pi_div_two_mul_I using 2
-    push_cast; ring
+    have hsq := congrArg (fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)
+      (binaryDihedralRotation_two_mul_sq 2)
+    rw [binaryDihedralRotation_def, ← map_pow, coe_torusHom, coe_binaryDihedralRotation 2] at hsq
+    simpa [torusMatrix_apply_zero_zero, mul_div_right_comm, Complex.exp_pi_div_two_mul_I] using hsq
   ext i j
   fin_cases i <;> fin_cases j <;> simp [A, hz]
 

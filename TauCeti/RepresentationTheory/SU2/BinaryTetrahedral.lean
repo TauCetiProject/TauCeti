@@ -118,12 +118,11 @@ private theorem exists_mem_binaryTetrahedralCoords_of_coe_eq {g : SU2} {v : Fin 
     (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩) :
     ∃ v ∈ binaryTetrahedralCoords,
       (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ := by
-  have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
-  rw [hg, det_toComplexMatrix, normSq_mk_div_two, ← Complex.ofReal_one, Complex.ofReal_inj,
-    div_eq_one_iff_eq four_ne_zero] at hdet
+  have hnorm := normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hg ▸ g.property)
+  rw [normSq_mk_div_two, div_eq_one_iff_eq four_ne_zero] at hnorm
   refine ⟨v, mem_binaryTetrahedralCoords_iff.mpr ?_, hg⟩
   rw [Fin.sum_univ_four]
-  exact_mod_cast hdet
+  exact_mod_cast hnorm
 
 /-- The points of the binary tetrahedral coordinate set give unit quaternions. -/
 private theorem toComplexMatrix_mem_of_mem_binaryTetrahedralCoords {v : Fin 4 → ℤ}
@@ -255,25 +254,6 @@ theorem binaryDihedralSubgroup_two_le_binaryTetrahedralSubgroup :
   · rw [coe_weylElement_inv_eq_toComplexMatrix]
     congr 1
     ext <;> simp
-
-/-- The eighth-turn generator `τ = (1 + i) / √2` does not belong to the binary tetrahedral
-subgroup. -/
-theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
-    binaryDihedralRotation 4 ∉ binaryTetrahedralSubgroup := by
-  intro h
-  obtain ⟨v, hv⟩ := mem_binaryTetrahedralSubgroup_iff_exists_int.mp h
-  rw [coe_binaryDihedralRotation_four_eq_toComplexMatrix] at hv
-  have hre := congrArg QuaternionAlgebra.re (toComplexMatrix_injective hv)
-  dsimp only at hre
-  have hv0 : v 0 * v 0 = 2 := by
-    have hsq : ((1 : ℝ) / √2) ^ 2 = ((v 0 : ℝ) / 2) ^ 2 := by rw [hre]
-    rw [div_pow, one_pow, Real.sq_sqrt zero_le_two, div_pow] at hsq
-    have : ((v 0 * v 0 : ℤ) : ℝ) = 2 := by push_cast; linear_combination -4 * hsq
-    exact_mod_cast this
-  have h1 : -1 ≤ v 0 := by nlinarith
-  have h2 : v 0 ≤ 1 := by nlinarith
-  rcases (by omega : v 0 = -1 ∨ v 0 = 0 ∨ v 0 = 1) with h0 | h0 | h0 <;>
-    rw [h0] at hv0 <;> norm_num at hv0
 
 /-! ### Generators -/
 

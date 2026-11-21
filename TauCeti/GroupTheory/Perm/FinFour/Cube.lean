@@ -582,15 +582,6 @@ private theorem mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup
     ⟨(mem_orthogonalGroup_iff' _ _).mpr (transpose_mul_self_of_mem_cubeRotationGroup hA),
       A.property⟩
 
-/-- Every rotation of the cube is orthogonal as a matrix over any commutative ring `R`, hence
-lies in `Matrix.specialOrthogonalGroup (Fin 3) R`. -/
-theorem map_mem_specialOrthogonalGroup_of_mem_cubeRotationGroup {R : Type*} [CommRing R]
-    {A : SpecialLinearGroup (Fin 3) ℤ} (hA : A ∈ cubeRotationGroup) :
-    (Int.castRingHom R).mapMatrix (A : Matrix (Fin 3) (Fin 3) ℤ) ∈
-      Matrix.specialOrthogonalGroup (Fin 3) R :=
-  Matrix.SpecialOrthogonalGroup.map_mem (Int.castRingHom R)
-    (mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup hA)
-
 /-- The embedding of the cube rotation group into `SO(3, ℤ)`. -/
 private def cubeRotationToIntSpecialOrthogonalGroup :
     cubeRotationGroup →* Matrix.specialOrthogonalGroup (Fin 3) ℤ :=
