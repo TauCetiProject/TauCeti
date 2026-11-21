@@ -51,11 +51,6 @@ variable {h : ℝ} {f : ℍ → ℂ}
 
 local notation "𝕢" => Function.Periodic.qParam
 
-/-- Twisting a periodic function by a power of the `q`-parameter keeps it periodic. -/
-private theorem periodic_qParam_pow_mul (hper : Periodic (f ∘ ofComplex) h) (n : ℕ) :
-    Periodic ((fun τ : ℍ ↦ 𝕢 h τ ^ n * f τ) ∘ ofComplex) h :=
-  ((periodic_qParam_comp_ofComplex (h := h)).comp (· ^ n)).mul hper
-
 /-- An `h`-periodic function, holomorphic sufficiently high, with exponential growth
 `O(exp (C · Im τ))` at `i∞`, has a cusp function meromorphic at `q = 0`. -/
 theorem meromorphicAt_cuspFunction_of_isBigO_exp (hh : 0 < h)
@@ -88,8 +83,7 @@ theorem meromorphicAt_cuspFunction_of_isBigO_exp (hh : 0 < h)
   exact ((analyticAt_id.pow n).meromorphicAt.inv.mul han.meromorphicAt).congr heq.symm
 
 /-- An `h`-periodic function whose cusp function is meromorphic at `q = 0` has exponential
-growth `O(exp (C · Im τ))` at `i∞`. If the pole has order at most `n`, any `C ≥ 2 π n / h`
-works. -/
+growth `O(exp (C · Im τ))` at `i∞`. -/
 theorem exists_isBigO_exp_of_meromorphicAt_cuspFunction (hh : 0 < h)
     (hper : Periodic (f ∘ ofComplex) h) (hf : MeromorphicAt (cuspFunction h f) 0) :
     ∃ C : ℝ, f =O[atImInfty] fun τ ↦ Real.exp (C * τ.im) := by

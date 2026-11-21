@@ -231,8 +231,10 @@ theorem isWeakForm_iff_meromorphicAt_cuspFunction [Γ.FiniteIndex] :
 theorem IsWeakForm.eq_zero_of_neg_one_mem (hf : IsWeakForm Γ k f) (hΓ : -1 ∈ Γ) (hk : Odd k) :
     f = 0 := by
   funext τ
-  have hτ : -f τ = f τ := by
-    simpa [SL_slash_apply, denom, hk.neg_one_zpow] using congr_fun (hf.slash_eq _ hΓ) τ
+  have hneg : f ∣[k] (-1 : SL(2, ℤ)) = -f := by
+    rw [SL_slash, show ((-1 : SL(2, ℤ)) : GL (Fin 2) ℝ) = -1 from mapGL_neg_one, slash_neg_one,
+      hk.neg_one_zpow, neg_one_mul]
+  have hτ : -f τ = f τ := congr_fun (hneg.symm.trans (hf.slash_eq _ hΓ)) τ
   simpa using (by linear_combination -hτ : (2 : ℂ) * f τ = 0)
 
 /-! ### Modular forms -/
