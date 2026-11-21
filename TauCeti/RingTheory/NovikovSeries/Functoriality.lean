@@ -355,7 +355,7 @@ theorem coe_mapNonnegSubring (a : nonnegSubring R N) :
 /-- The pushforward on the nonnegative subrings is continuous for the period topologies. -/
 @[fun_prop]
 theorem continuous_mapNonnegSubring : Continuous (mapNonnegSubring ρ φ hφ) :=
-  continuous_induced_rng.2 <| (continuous_mapRingHom ρ φ hφ).comp continuous_subtype_val
+  continuous_induced_rng.2 <| (continuous_mapRingHom ρ φ hφ).comp continuous_subtypeVal
 
 /-- The pushforward on the nonnegative subrings along injective coefficient and exponent maps is
 injective. -/
@@ -515,7 +515,7 @@ theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
     (a : NovikovSeries R H N) :
     comap K.subtype hφ hker (algebraMap _ _ b * a) = b * comap K.subtype hφ hker a := by
   ext k
-  rw [coeff_comap, AddSubgroup.subtype_apply, coeff_mul]
+  rw [coeff_comap, AddSubgroup.subtype_apply]
   refine (coeff_mul_eq_sum_of_injOn (F := (finite_setOf_add_eq b (comap K.subtype hφ hker a)
     k).toFinset) (f := fun p : K × K => ((p.1 : H), (p.2 : H)))
     (fun p hp => ?_) (fun u v huv hu hv => ?_) fun p _ p' _ hpp' => ?_).trans ?_
@@ -524,7 +524,7 @@ theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
   · have huK : u ∈ K := by_contra fun huK => hu (coeff_algebraMap_addSubgroup_of_notMem b huK)
     have hvK : v ∈ K := by
       rw [← add_sub_cancel_left u v, huv]
-      exact K.sub_mem k.2 huK
+      exact K.sub_mem k.property huK
     refine ⟨(⟨u, huK⟩, ⟨v, hvK⟩), (Set.Finite.mem_toFinset _).2 ⟨Subtype.ext huv, ?_, ?_⟩, rfl⟩
     · rwa [← coeff_algebraMap_addSubgroup_coe (H := H)]
     · rwa [coeff_comap]

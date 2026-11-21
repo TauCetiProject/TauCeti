@@ -42,8 +42,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω Ω' : Opens E} {n : ℕ∞}
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  {T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ}
+variable [MeasurableSpace E] [BorelSpace E] {T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ}
 
 /-- The mass measure of an open restriction is the comap of the original mass measure along
 the inclusion of open domains. No finiteness near the frontier of `Ω'` is assumed. -/
