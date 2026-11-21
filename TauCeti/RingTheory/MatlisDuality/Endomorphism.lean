@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.ResidueField
+public import TauCeti.Algebra.Module.Injective.Envelope.ResidueField
 public import TauCeti.RingTheory.AdicCompletion.Torsion
 public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.MatlisDuality.FiniteLength
@@ -14,10 +14,11 @@ public import TauCeti.RingTheory.MatlisDuality.FiniteLength
 # The endomorphisms of the injective hull of the residue field
 
 Let `R` be a Noetherian local ring with maximal ideal `𝔪` and residue field `κ`, and let
-`ι : κ → E` be an injective envelope of `κ`. Every element of `E` is killed by a power of `𝔪`, so
-the `𝔪`-adic completion `R̂` acts on `E` (`TauCeti.AdicCompletion.torsionModule`). This file proves
-that this action identifies `R̂` with the ring of `R`-linear endomorphisms of `E`: in Matlis duality
-notation, `D(E) = Hom_R(E, E) ≅ R̂`. Neither completeness of `R` nor finiteness of `κ` is assumed.
+`ι : κ → E` be an injective envelope of `κ`. Every element of `E` is killed by a power of `𝔪`
+(`TauCeti.IsInjectiveEnvelope.mem_primaryComponent`), so the `𝔪`-adic completion `R̂` acts on `E`
+(`TauCeti.AdicCompletion.torsionModule`). This file proves that this action identifies `R̂` with
+the ring of `R`-linear endomorphisms of `E`: in Matlis duality notation, `D(E) = Hom_R(E, E) ≅ R̂`.
+Neither completeness of `R` nor finiteness of `κ` is assumed.
 
 The identification is assembled from the layers `E[𝔪ⁿ]` of elements killed by `𝔪ⁿ`. Each layer
 is the Matlis dual `Hom_R(R ⧸ 𝔪ⁿ, E)` of a module of finite length, so finite-length biduality makes
@@ -27,8 +28,6 @@ therefore a compatible system of residues modulo `𝔪ⁿ`, that is, an element 
 
 ## Main declarations
 
-* `TauCeti.IsInjectiveEnvelope.mem_primaryComponent`: every element of `E` is killed by a power
-  of `𝔪`, the hypothesis of `TauCeti.AdicCompletion.torsionModule`.
 * `TauCeti.IsInjectiveEnvelope.adicCompletionEquivEnd`: the `R`-algebra isomorphism
   `R̂ ≃ End_R(E)` given by the completion action, with `adicCompletionEquivEnd_apply_of_mem` and
   `evalₐ_adicCompletionEquivEnd_symm` computing it and its inverse through residues modulo `𝔪ⁿ`.
@@ -55,11 +54,6 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] {E : Type v} [AddCommGroup E]
 variable [IsNoetherianRing R]
 
 namespace IsInjectiveEnvelope
-
-/-- Every element of an injective envelope of the residue field is killed by a power of `𝔪`. -/
-theorem mem_primaryComponent (hι : IsInjectiveEnvelope ι) (x : E) :
-    x ∈ (maximalIdeal R).primaryComponent E :=
-  hι.isEssential_range.primaryComponent_maximalIdeal_eq_top ▸ mem_top
 
 /-- The completion action on an injective envelope of the residue field, as an algebra map into
 the endomorphisms. -/
