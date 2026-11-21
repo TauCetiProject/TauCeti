@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Linearization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
-import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 
 /-!
