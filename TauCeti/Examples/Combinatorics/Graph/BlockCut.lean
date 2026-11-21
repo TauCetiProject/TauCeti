@@ -61,7 +61,7 @@ theorem isLoopAt : graph.IsLoopAt s(0, 0) 0 := by
 triangles. -/
 theorem toSimpleGraph_adj {x y : V(graph)} :
     graph.toSimpleGraph.Adj x y ↔ trianglesSharingVertex.Adj x y := by
-  have hadj : graph.Adj x y ↔ trianglesSharingVertex.Adj x y ∨ (x.1 = 0 ∧ y.1 = 0) := by
+  have hadj : graph.Adj x y ↔ trianglesSharingVertex.Adj x y ∨ (x.val = 0 ∧ y.val = 0) := by
     simp [graph, loopPart]
   rw [Graph.toSimpleGraph_adj, hadj]
   exact ⟨fun ⟨hxy, h⟩ ↦ h.resolve_right fun ⟨hx, hy⟩ ↦ hxy (Subtype.ext (hx.trans hy.symm)),
@@ -74,11 +74,12 @@ def firstTriangle : Set V(graph) := Subtype.val ⁻¹' {0, 1, 2}
 def secondTriangle : Set V(graph) := Subtype.val ⁻¹' {0, 3, 4}
 
 @[simp]
-theorem mem_firstTriangle {x : V(graph)} : x ∈ firstTriangle ↔ x.1 = 0 ∨ x.1 = 1 ∨ x.1 = 2 :=
+theorem mem_firstTriangle {x : V(graph)} : x ∈ firstTriangle ↔ x.val = 0 ∨ x.val = 1 ∨ x.val = 2 :=
   Iff.rfl
 
 @[simp]
-theorem mem_secondTriangle {x : V(graph)} : x ∈ secondTriangle ↔ x.1 = 0 ∨ x.1 = 3 ∨ x.1 = 4 :=
+theorem mem_secondTriangle {x : V(graph)} : x ∈ secondTriangle ↔ x.val = 0 ∨ x.val = 3 ∨ x.val = 4
+    :=
   Iff.rfl
 
 /-- The two triangles are different vertex sets. -/
@@ -131,7 +132,7 @@ theorem isBlock_secondTriangle : graph.IsBlock secondTriangle :=
 
 private theorem exists_adj (x : V(graph)) : ∃ y, graph.toSimpleGraph.Adj x y := by
   have key : ∀ i : Fin 5, trianglesSharingVertex.Adj i (if i = 0 then 1 else 0) := by decide
-  exact ⟨vertex (if x.1 = 0 then 1 else 0), toSimpleGraph_adj.mpr (key x.1)⟩
+  exact ⟨vertex (if x.val = 0 then 1 else 0), toSimpleGraph_adj.mpr (key x.val)⟩
 
 private theorem adj_mem_triangle {x y : V(graph)} (h : graph.toSimpleGraph.Adj x y) :
     x ∈ firstTriangle ∧ y ∈ firstTriangle ∨ x ∈ secondTriangle ∧ y ∈ secondTriangle := by
@@ -139,7 +140,7 @@ private theorem adj_mem_triangle {x y : V(graph)} (h : graph.toSimpleGraph.Adj x
       (i = 0 ∨ i = 1 ∨ i = 2) ∧ (j = 0 ∨ j = 1 ∨ j = 2) ∨
         (i = 0 ∨ i = 3 ∨ i = 4) ∧ (j = 0 ∨ j = 3 ∨ j = 4) := by
     decide
-  exact key x.1 y.1 (toSimpleGraph_adj.mp h)
+  exact key x.val y.val (toSimpleGraph_adj.mp h)
 
 /-- **The vertex blocks of `graph`** are exactly the two triangles. -/
 theorem isBlock_iff {B : Set V(graph)} :

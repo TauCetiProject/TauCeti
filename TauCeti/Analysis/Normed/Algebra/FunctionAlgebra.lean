@@ -116,7 +116,7 @@ private theorem exists_pos_norm_coeff_modByMonic_le [Nontrivial A]
         refine (natDegree_sum_le Finset.univ _).trans_lt ?_
         rw [Finset.fold_max_lt]
         refine ⟨hd, fun i _ ↦ ?_⟩
-        exact (natDegree_C_mul_X_pow_le (c i) (i : ℕ)).trans_lt i.2
+        exact (natDegree_C_mul_X_pow_le (c i) (i : ℕ)).trans_lt i.isLt
       exact hlt.not_ge (Polynomial.natDegree_le_of_dvd hdvd hq_ne)
     ext i
     have hci : q.coeff (i : ℕ) = c i := by
@@ -265,7 +265,7 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
   have : Nonempty ι := b.index_nonempty
   obtain ⟨Ψ, d₀, hΨ_inj, hΨ_spec⟩ := Module.Finite.exists_injective_lift_pi_of_basis
     B⁰ (IsFractionRing.injective B F) b (f := φ.toLinearMap) hφ
-  have hd₀_ne : (d₀ : B) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp d₀.2
+  have hd₀_ne : (d₀ : B) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp d₀.property
   have : 0 < ‖(d₀ : B)‖ := norm_pos_iff.mpr hd₀_ne
   have : Huber.IsTateRing B := Huber.IsTateRing.of_normedAlgebra K B
   have : ContinuousSMul B A := continuousSMul_of_algebraMap B A hBA

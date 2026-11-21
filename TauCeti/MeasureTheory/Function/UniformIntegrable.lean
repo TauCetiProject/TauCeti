@@ -6,14 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
-# Vitali's convergence theorem for maps into a pseudometric space
+# Uniform-integrability domination criteria and pseudometric Vitali convergence
 
-Let `μ` be a finite measure on `X` and let `T n, T₀ : X → Y` be almost-everywhere strongly
-measurable maps into a pseudometric space; no measurable structure on `Y` is involved. Mathlib's
-Vitali convergence theorem `MeasureTheory.tendstoInMeasure_iff_tendsto_Lp_finite` characterises
-`Lᵖ` convergence of vector-valued functions as convergence in measure together with uniform
+For normed-group-valued families over arbitrary measures, this file supplies norm-domination
+criteria for `MeasureTheory.UniformIntegrable`, including its uniform `Lᵖ` bound: domination by
+another such family, by one `Lᵖ` function, or in `p`-th power by an integrable extended-real
+majorant. A countable-supremum criterion follows from the last form. For nonnegative real
+families over a finite measure, uniformly small upper-tail integrals also suffice.
+
+For the Vitali convergence results, let `μ` be a finite measure on `X` and let `T n, T₀ : X → Y`
+be almost-everywhere strongly measurable maps into a pseudometric space; no measurable structure
+on `Y` is involved. Mathlib's Vitali convergence theorem
+`MeasureTheory.tendstoInMeasure_iff_tendsto_Lp_finite` characterises `Lᵖ` convergence of
+vector-valued functions as convergence in measure together with uniform
 integrability. This file transports it to `Y`-valued maps through the real-valued distances: for
 `1 ≤ p < ∞` and maps with finite `p`-th moment about a basepoint `y₀`, the distances
 `dist (T n x) (T₀ x)` converge to `0` in `Lᵖ(μ)` exactly when `T n` converges to `T₀` in measure
@@ -30,6 +38,20 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
 
 ## Main statements
 
+* `MeasureTheory.UniformIntegrable.ae_mono` — uniform integrability, including a uniform `Lᵖ`
+  bound, passes to a family dominated almost everywhere in norm, even with a different codomain;
+* `MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le` — a family dominated almost everywhere
+  in norm by one `Lᵖ` function is uniformly integrable, with a uniform `Lᵖ` bound;
+* `TauCeti.uniformIntegrable_of_eNorm_rpow_le_of_lintegral_lt_top` — domination of `p`-th powers
+  of norms by an integrable extended-real majorant gives uniform integrability and a uniform
+  `Lᵖ` bound;
+* `TauCeti.uniformIntegrable_of_lintegral_iSup_eNorm_rpow_lt_top` — a countable family with
+  integrable supremum of its `p`-th powers of norms is uniformly integrable with a uniform
+  `Lᵖ` bound;
+* `MeasureTheory.UniformIntegrable.comp` — uniform integrability passes to reindexed families;
+* `TauCeti.uniformIntegrable_of_setIntegral_le` — over a finite measure, a family of
+  nonnegative integrable real functions with uniformly small upper-tail integrals is uniformly
+  integrable;
 * `TauCeti.memLp_dist_of_memLp_dist` — two maps whose distances to a common reference map have
   finite `p`-th moment have a distance with finite `p`-th moment;
 * `TauCeti.eLpNorm_dist_le_eLpNorm_dist_add`, `MeasureTheory.UnifIntegrable.dist_of_memLp_dist`
@@ -55,7 +77,152 @@ public section
 open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
+/-- Uniform integrability, including a uniform `Lᵖ` bound, passes to an almost everywhere
+norm-dominated family. The two families may take values in different normed groups. -/
+theorem MeasureTheory.UniformIntegrable.ae_mono {α β γ ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] [NormedAddCommGroup γ]
+    {μ : Measure α} {p : ℝ≥0∞} {D : ι → α → γ} {V : ι → α → β}
+    (hUI : UniformIntegrable D p μ) (hV : ∀ i, AEStronglyMeasurable (V i) μ)
+    (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D i x‖ₑ) : UniformIntegrable V p μ := by
+  constructor
+  · refine unifIntegrable_iff.2 fun ε hε ↦ ?_
+    obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hUI.unifIntegrable ε hε
+    refine ⟨δ, hδ, fun i s hs ↦ ?_⟩
+    exact (eLpNorm_mono_eNorm_ae (hV i).restrict
+      ((hle i).filter_mono ae_restrict_le)).trans (hbound i s hs)
+  · exact lt_of_le_of_lt (iSup_le fun i ↦ (eLpNorm_mono_eNorm_ae (hV i) (hle i)).trans
+      (le_iSup (fun i ↦ eLpNorm (D i) p μ) i)) hUI.iSup_eLpNorm_lt
+
+/-- Uniform integrability, including a uniform `Lᵖ` bound, passes to a reindexed family. -/
+protected theorem MeasureTheory.UniformIntegrable.comp {α β ι ι' : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞} {f : ι → α → β} (g : ι' → ι)
+    (hf : UniformIntegrable f p μ) : UniformIntegrable (f ∘ g) p μ :=
+  ⟨hf.unifIntegrable.comp g,
+    (iSup_comp_le (fun i ↦ eLpNorm (f i) p μ) g).trans_lt hf.iSup_eLpNorm_lt⟩
+
+/-- A family dominated almost everywhere in norm by one `Lᵖ` function is uniformly integrable
+in `Lᵖ`, including a uniform bound on its `Lᵖ` norms, for `1 ≤ p < ∞`. -/
+theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] [NormedAddCommGroup γ]
+    {μ : Measure α} {p : ℝ≥0∞} {D : α → γ} {V : ι → α → β}
+    (hD : MemLp D p μ) (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+    (hV : ∀ i, AEStronglyMeasurable (V i) μ)
+    (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D x‖ₑ) : UniformIntegrable V p μ :=
+  (uniformIntegrable_const hp hp_top hD).ae_mono hV hle
+
+/-- A uniform bound in a strictly larger `Lᵠ` gives uniform integrability in `Lᵖ`. -/
+theorem MeasureTheory.unifIntegrable_of_eLpNorm_le {α E ι : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {ν : Measure α} {p q C : ℝ≥0∞} {u : ι → α → E}
+    (hpq : p < q) (hC : C ≠ ∞)
+    (h : ∀ i, eLpNorm (u i) q ν ≤ C) :
+    UnifIntegrable u p ν := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · refine unifIntegrable_iff.2 fun ε hε ↦ ⟨1, one_pos, fun i s _ ↦ ?_⟩
+    have hi : MemLp (u i) q ν := memLp_iff.mpr ((h i).trans_lt hC.lt_top)
+    rw [eLpNorm_exponent_zero hi.aestronglyMeasurable.restrict]
+    exact hε.le
+  have hp := pos_iff_ne_zero.mpr hp0
+  have hp' : p ≠ ∞ := (hpq.trans_le le_top).ne
+  have hpos : 0 < 1 / p.toReal - 1 / q.toReal := by
+    by_cases hq : q = ∞
+    · simp [hq, ENNReal.toReal_pos hp.ne' hp']
+    · exact sub_pos.2 (one_div_lt_one_div_of_lt (ENNReal.toReal_pos hp.ne' hp')
+        ((ENNReal.toReal_lt_toReal hp' hq).2 hpq))
+  have hlim : Tendsto (fun t : ℝ≥0∞ ↦ C * t ^ (1 / p.toReal - 1 / q.toReal)) (𝓝 0) (𝓝 0) := by
+    have ht := (ENNReal.continuous_rpow_const (y := 1 / p.toReal - 1 / q.toReal)).continuousAt
+      (x := (0 : ℝ≥0∞))
+    have hm := ENNReal.Tendsto.const_mul (a := C) ht (Or.inr hC)
+    simpa only [ENNReal.zero_rpow_of_pos hpos, mul_zero] using hm
+  refine unifIntegrable_iff.2 fun ε hε ↦ ?_
+  have hev := ENNReal.tendsto_nhds_zero.1 hlim ε hε
+  obtain ⟨δ, hδ, hδε⟩ := ENNReal.nhds_zero_basis_Iic.eventually_iff.1 hev
+  refine ⟨δ, hδ, fun i s hsmall ↦ ?_⟩
+  have hLp : MemLp (u i) q ν := memLp_iff.mpr ((h i).trans_lt hC.lt_top)
+  calc
+    eLpNorm (u i) p (ν.restrict s) ≤
+        eLpNorm (u i) q (ν.restrict s) * (ν s) ^ (1 / p.toReal - 1 / q.toReal) := by
+      rw [← Measure.restrict_apply_univ]
+      exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpq.le hLp.aestronglyMeasurable.restrict
+    _ ≤ C * (ν s) ^ (1 / p.toReal - 1 / q.toReal) :=
+      mul_le_mul' ((eLpNorm_restrict_le _ _ _ _).trans (h i)) le_rfl
+    _ ≤ ε := hδε (x := ν s) hsmall
+
 namespace TauCeti
+
+/-- A family of almost everywhere nonnegative integrable real functions on a finite measure
+space is uniformly integrable when its integrals over the upper tails `{C ≤ f i}` are uniformly
+small for large `C`. This is the real-integral form of `MeasureTheory.uniformIntegrable_of`. -/
+theorem uniformIntegrable_of_setIntegral_le {α ι : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {f : ι → α → ℝ} (hf : ∀ i, Integrable (f i) μ)
+    (hnn : ∀ i, 0 ≤ᵐ[μ] f i)
+    (h : ∀ ε > 0, ∃ C : ℝ, ∀ i, ∫ x in {x | C ≤ f i x}, f i x ∂μ ≤ ε) :
+    UniformIntegrable f 1 μ := by
+  refine uniformIntegrable_of le_rfl ENNReal.one_ne_top (fun i ↦ (hf i).aestronglyMeasurable)
+    fun ε hε ↦ ?_
+  rcases eq_or_ne ε ∞ with rfl | hε_top
+  · exact ⟨0, fun _ ↦ le_top⟩
+  obtain ⟨C, hC⟩ := h ε.toReal (ENNReal.toReal_pos hε.ne' hε_top)
+  refine ⟨C.toNNReal, fun i ↦ ?_⟩
+  set T := {x | C ≤ f i x}
+  have hT : NullMeasurableSet T μ :=
+    nullMeasurableSet_le aemeasurable_const (hf i).aemeasurable
+  calc eLpNorm ({x | C.toNNReal ≤ ‖f i x‖₊}.indicator (f i)) 1 μ
+      = ∫⁻ x, ‖{x | C.toNNReal ≤ ‖f i x‖₊}.indicator (f i) x‖ₑ ∂μ :=
+        eLpNorm_one_eq_lintegral_eNorm ((hf i).aestronglyMeasurable.indicator₀
+          (nullMeasurableSet_le aemeasurable_const (hf i).aemeasurable.nnNorm))
+    _ ≤ ∫⁻ x, T.indicator (fun x ↦ ENNReal.ofReal (f i x)) x ∂μ := by
+        refine lintegral_mono_ae ((hnn i).mono fun x hx ↦ ?_)
+        by_cases hxS : x ∈ {x | C.toNNReal ≤ ‖f i x‖₊}
+        · have hxT : x ∈ T := by
+            have hle : (C.toNNReal : ℝ) ≤ ‖f i x‖ := by
+              simpa [← NNReal.coe_le_coe, coe_nnNorm] using hxS
+            rw [Real.norm_of_nonneg hx] at hle
+            exact (Real.le_coe_toNNReal C).trans hle
+          rw [indicator_of_mem hxS, indicator_of_mem hxT, Real.eNorm_eq_ofReal hx]
+        · rw [indicator_of_notMem hxS, eNorm_zero]
+          exact bot_le
+    _ = ∫⁻ x in T, ENNReal.ofReal (f i x) ∂μ := lintegral_indicator₀ hT _
+    _ = ENNReal.ofReal (∫ x in T, f i x ∂μ) :=
+        (ofReal_integral_eq_lintegral_ofReal (hf i).integrableOn
+          (ae_restrict_of_ae (hnn i))).symm
+    _ ≤ ε := (ENNReal.ofReal_le_ofReal (hC i)).trans (ENNReal.ofReal_toReal hε_top).le
+
+/-- A family whose `p`-th powers of norms are dominated almost everywhere by an integrable
+extended-real majorant is uniformly integrable with a uniform `Lᵖ` bound, for `1 ≤ p < ∞`.
+The measure need not be finite, and the index type may be arbitrary. -/
+theorem uniformIntegrable_of_eNorm_rpow_le_of_lintegral_lt_top {α β ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞}
+    {V : ι → α → β} {G : α → ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+    (hV : ∀ i, AEStronglyMeasurable (V i) μ) (hG : AEMeasurable G μ)
+    (hfin : ∫⁻ x, G x ∂μ < ∞)
+    (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ^ p.toReal ≤ G x) : UniformIntegrable V p μ := by
+  have hp_zero : p ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hp)
+  have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp_zero hp_top
+  have hfinite : ∀ᵐ x ∂μ, G x ^ p.toReal⁻¹ ≠ ∞ :=
+    (ae_lt_top' hG hfin.ne).mono fun x hx ↦
+      ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hp_pos.le) hx.ne
+  have hD : MemLp (fun x ↦ (G x ^ p.toReal⁻¹).toReal) p μ := by
+    apply (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp_zero hp_top
+      (hG.pow_const _).ennreal_toReal.aestronglyMeasurable).2
+    exact lt_of_eq_of_lt (lintegral_congr_ae <| hfinite.mono fun x hx ↦ by
+      simp only [Real.eNorm_toReal hx, ← ENNReal.rpow_mul, inv_mul_cancel₀ hp_pos.ne',
+        ENNReal.rpow_one]) hfin
+  exact hD.uniformIntegrable_of_eNorm_le hp hp_top hV fun i ↦ by
+    filter_upwards [hfinite, hle i] with x hx hi
+    rw [Real.eNorm_toReal hx]
+    exact (ENNReal.le_rpow_inv_iff hp_pos).2 hi
+
+/-- A countable family is uniformly integrable in `Lᵖ`, with a uniform `Lᵖ` bound, if the
+supremum of the `p`-th powers of its norms has finite integral, for `1 ≤ p < ∞`.
+The measure need not be finite. -/
+theorem uniformIntegrable_of_lintegral_iSup_eNorm_rpow_lt_top {α β ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] [Countable ι] {μ : Measure α} {p : ℝ≥0∞}
+    {V : ι → α → β} (hp : 1 ≤ p) (hp_top : p ≠ ∞)
+    (hV : ∀ i, AEStronglyMeasurable (V i) μ)
+    (hfin : ∫⁻ x, ⨆ i, ‖V i x‖ₑ ^ p.toReal ∂μ < ∞) : UniformIntegrable V p μ := by
+  exact uniformIntegrable_of_eNorm_rpow_le_of_lintegral_lt_top hp hp_top hV
+    (AEMeasurable.iSup fun i ↦ (hV i).eNorm.pow_const _) hfin
+    fun i ↦ ae_of_all _ fun x ↦ le_iSup (fun j ↦ ‖V j x‖ₑ ^ p.toReal) i
 
 variable {X Y : Type*} [PseudoMetricSpace Y]
 

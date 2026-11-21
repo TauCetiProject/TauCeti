@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.PDE.Vortex.Uniqueness
@@ -25,10 +26,15 @@ has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`).
 Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, the
 section factors near every point as `(w - z) ^ n z * v w` with `v` of class `Cᵏ` at `z` and
 nonzero there (`TauCeti.Vortex.exists_contDiffAt_section_eq_pow_mul`), so `n` is a zero
-multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). The topological argument
-principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end framing forces the
-multiplicities to add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
-with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
+multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). When `α` is eventually nonzero
+near infinity (in particular when `|α|² → 1`), the zeros are isolated and bounded, hence form an
+effective divisor `D : Multiset ℂ`
+(`TauCeti.Vortex.exists_multiset_sectionValue_eq_pow_count_mul`,
+`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue`,
+`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto`). Under the degree-`m`
+end framing, the topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows
+that the multiplicities add up to `m`. Hence the zeros of a framed degree-`m` vortex section,
+counted with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
 (`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Only the holomorphicity rows are
 used; the curvature equation is not needed. The divisor is determined by the section, since zero
 multiplicities are unique (`TauCeti.IsZeroMultiplicity.unique`).
@@ -40,6 +46,8 @@ symmetries of the vortex equations on `Sym^m ℂ`:
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_translateField`);
 * rotating a field by `u`, that is pulling it back by `z ↦ u z`, rotates its divisor by `u⁻¹`
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_rotateField`);
+* dilating a field by `t ≠ 0`, that is pulling it back by `z ↦ t z`, divides its divisor by `t`
+  (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_dilateField`);
 * continuous gauge transformations, in particular the smooth framed gauges and the constant
   line-frame gauges, do not change the divisor
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_gaugeTransform`).
@@ -49,7 +57,9 @@ divisors of their sections converge in `Sym ℂ m`
 (`TauCeti.Vortex.tendsto_of_tendstoLocallyUniformly`), by Hurwitz's theorem
 `TauCeti.IsZeroMultiplicity.tendsto_of_tendstoLocallyUniformly`. Since `H^s(ℂ)`, `s > 1`, embeds
 continuously in the bounded continuous functions, convergence in the affine field space `A_m^s` is
-stronger than locally uniform convergence; no topology on `A_m^s` is constructed here.
+stronger than locally uniform convergence. The topology of `A_m^s` on its continuous fields, and the
+resulting continuity of the divisor (`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_tendsto`), are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology`.
 
 Conversely, by Taubes's uniqueness theorem
 (`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`), two smooth framed vortices with a common
@@ -84,6 +94,62 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {k : ℕ∞} (hn : 1 ≤ k)
 
 include hn hb₁ hb₂ hp hq hhol
 
+/-- Local `Cᵏ` factorization and zero-multiplicity count of a section nonvanishing near infinity. -/
+private theorem exists_multiset_isZeroMultiplicity_and_eq_pow_count_mul
+    (htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0) :
+    ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) ∧
+      ∀ z, ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
+        ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := by
+  choose n v hvc hv₀ hvf using
+    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol htail.exists
+  have hmult : IsZeroMultiplicity (sectionValue x) n :=
+    isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
+  obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
+  exact ⟨D, hmult, fun z ↦ ⟨v z, hvc z, hv₀ z, hvf z⟩⟩
+
+/-- **The zero divisor of a vortex section nonvanishing near infinity.** If the section of a field
+with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows is eventually
+nonzero near infinity, then there is an effective divisor `D : Multiset ℂ` whose multiplicity at
+each `z` is the exponent of a local factorization `α(w) = (w - z) ^ D(z) v(w)`, with `v` of class
+`Cᵏ` at `z` and nonzero there. -/
+theorem exists_multiset_sectionValue_eq_pow_count_mul
+    (htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0) :
+    ∃ D : Multiset ℂ, ∀ z, ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w :=
+  let ⟨D, _, hD⟩ :=
+    exists_multiset_isZeroMultiplicity_and_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol htail
+  ⟨D, hD⟩
+
+omit hn hb₁ hb₂ hp hq hhol in
+/-- The zero multiplicities of a field with `C¹` connection coefficients satisfying the
+holomorphicity rows and nonvanishing near infinity are the counts of an effective divisor
+`D : Multiset ℂ`: the form of `exists_multiset_sectionValue_eq_pow_count_mul` used by
+`TauCeti.IsZeroMultiplicity`. -/
+theorem exists_multiset_isZeroMultiplicity_sectionValue
+    (hb₁ : ContDiff ℝ 1 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 1 (fun w ↦ x w 1))
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0) :
+    ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z :=
+  let ⟨D, hmult, _⟩ :=
+    exists_multiset_isZeroMultiplicity_and_eq_pow_count_mul le_rfl hb₁ hb₂ hp hq hhol htail
+  ⟨D, hmult⟩
+
+omit hn hb₁ hb₂ hp hq hhol in
+/-- The zero multiplicities of a field with `C¹` connection coefficients and differentiable section
+satisfying the holomorphicity rows with `|α|² → 1` at infinity are the counts of an effective
+divisor `D : Multiset ℂ`. -/
+theorem exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto
+    (hb₁ : ContDiff ℝ 1 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 1 (fun w ↦ x w 1))
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
+  refine exists_multiset_isZeroMultiplicity_sectionValue hb₁ hb₂ hp hq hhol ?_
+  filter_upwards [hlim.eventually (lt_mem_nhds zero_lt_one)] with w hw hz
+  rw [sectionValue_eq_zero_iff] at hz
+  simp [hz] at hw
+
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
 field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the
 end framing `α(z) (z / |z|)⁻ᵐ → 1`, then there is an effective divisor `D` of degree `m` whose
@@ -96,16 +162,24 @@ theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
   have htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0 := by
     filter_upwards [hframe.eventually_ne one_ne_zero] with w hw h0
     exact hw (by simp [h0])
-  choose n v hvc hv₀ hvf using
-    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol htail.exists
-  have hmult : IsZeroMultiplicity (sectionValue x) n :=
-    isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
-  obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
-  exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, fun z ↦ ⟨v z, hvc z, hv₀ z, hvf z⟩⟩
+  obtain ⟨D, hmult, hD⟩ :=
+    exists_multiset_isZeroMultiplicity_and_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol htail
+  exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, hD⟩
+
+/-- The zero multiplicities of a framed degree-`m` field satisfying the holomorphicity rows are
+the counts of an effective divisor of degree `m`: the form of
+`exists_sym_sectionValue_eq_pow_count_mul` used by `TauCeti.IsZeroMultiplicity`. -/
+theorem exists_sym_isZeroMultiplicity_sectionValue {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∃ D : Sym ℂ m, IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
+  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol hframe
+  exact ⟨D, isZeroMultiplicity_iff.2 fun z ↦
+    let ⟨v, hv, hv₀, hfac⟩ := hD z
+    ⟨v, hv.continuousAt, hv₀, hfac⟩⟩
 
 omit hn hb₁ hb₂ hp hq hhol
 
-/-! ### The divisor under translations, rotations and gauge transformations -/
+/-! ### The divisor under translations, rotations, dilations and gauge transformations -/
 
 section Laws
 
@@ -129,13 +203,18 @@ theorem isZeroMultiplicity_sectionValue_rotateField
     (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (u : Circle) :
     IsZeroMultiplicity (sectionValue (rotateField u x))
       fun z ↦ (D.map ((u : ℂ)⁻¹ * ·)).count z := by
-  have hu := Circle.coe_ne_zero u
-  convert h.comp_mul_add hu 0 using 1
-  · funext w
-    rw [sectionValue_rotateField, add_zero]
-  · funext z
-    rw [add_zero, ← Multiset.count_map_eq_count' ((u : ℂ)⁻¹ * ·) D
-      (mul_right_injective₀ (inv_ne_zero hu)) (u * z), inv_mul_cancel_left₀ hu]
+  convert h.comp_const_mul (Circle.coe_ne_zero u) using 1
+  exact funext (sectionValue_rotateField u x)
+
+/-- **Dilation law for the divisor.** Pulling a field back by `z ↦ t • z`, `t ≠ 0`, divides
+its zero divisor `D` by `t`. -/
+theorem isZeroMultiplicity_sectionValue_dilateField
+    (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {t : ℝ}
+    (ht : t ≠ 0) :
+    IsZeroMultiplicity (sectionValue (dilateField t x))
+      fun z ↦ (D.map ((t : ℂ)⁻¹ * ·)).count z := by
+  convert h.comp_const_mul (Complex.ofReal_ne_zero.2 ht) using 1
+  exact funext fun w ↦ by rw [sectionValue_dilateField, Complex.real_smul]
 
 /-- **Gauge invariance of the divisor.** A continuous gauge transformation multiplies the
 section by a function without zeros, so it does not change the zero multiplicities. This applies

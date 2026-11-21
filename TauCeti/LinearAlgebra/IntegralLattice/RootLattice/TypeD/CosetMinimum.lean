@@ -99,7 +99,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
   constructor
   · exact fun ⟨hx, hnorm⟩ ↦ exists_eq_single_of_form_self_eq_one hx hnorm
   · rintro ⟨i, hx | hx⟩ <;> subst hx
-    · refine ⟨mem_checkerboardCarrier_of
+    · refine ⟨mem_checkerboardCarrier_of_even_sum
         (fun j ↦ (if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.single_apply, checkerboardVector_apply]
@@ -107,14 +107,14 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
         split_ifs <;> norm_num
       · simp [Finset.sum_sub_distrib]
       · rw [checkerboardLattice_form_single, Pi.single_eq_same, mul_one]
-    · refine ⟨mem_checkerboardCarrier_of
+    · refine ⟨mem_checkerboardCarrier_of_even_sum
         (fun j ↦ -(if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.neg_apply, Pi.single_apply, checkerboardVector_apply]
         push_cast
         split_ifs <;> norm_num
       · simp [Finset.sum_sub_distrib]
-      · simp
+      · simp [Pi.single_apply]
 
 /-- **The minimum norm of the vector coset of `Dₙ` is `1`**: it is attained by `v = eₙ` and
 bounds the norm of every dual vector in the vector class. -/
@@ -125,7 +125,7 @@ theorem isLeast_form_self_checkerboardVectorClass [NeZero n] :
   have h := (isPosDef_checkerboardLattice n).isPosSemidef.isLeast_form_self_of_form_self_lt_two
     (isEven_checkerboardLattice n)
     (x := ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩)
-    ((mk_eq_checkerboardVectorClass_iff _).mpr (by rw [sub_self]; exact zero_mem _))
+    (checkerboardVectorClass_def n).symm
     (by rw [checkerboardLattice_form_checkerboardVector_self]; norm_num)
   rwa [checkerboardLattice_form_checkerboardVector_self] at h
 
@@ -261,7 +261,7 @@ theorem isLeast_form_self_checkerboardSpinorClass :
       Submodule.Quotient.mk x = checkerboardSpinorClass n ∧
         (checkerboardLattice n).form x x = q} ((n : ℚ) / 4) := by
   refine ⟨⟨⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩,
-    (mk_eq_checkerboardSpinorClass_iff _).mpr (by rw [sub_self]; exact zero_mem _),
+    (checkerboardSpinorClass_def n).symm,
     checkerboardLattice_form_checkerboardSpinor_self⟩, ?_⟩
   rintro q ⟨x, hx, rfl⟩
   exact div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem
@@ -274,7 +274,7 @@ theorem isLeast_form_self_checkerboardCospinorClass [NeZero n] :
       Submodule.Quotient.mk x = checkerboardCospinorClass n ∧
         (checkerboardLattice n).form x x = q} ((n : ℚ) / 4) := by
   refine ⟨⟨⟨checkerboardCospinor n, checkerboardCospinor_mem_dualCarrier⟩,
-    (mk_eq_checkerboardCospinorClass_iff _).mpr (by rw [sub_self]; exact zero_mem _),
+    (checkerboardCospinorClass_def n).symm,
     checkerboardLattice_form_checkerboardCospinor_self⟩, ?_⟩
   rintro q ⟨x, hx, rfl⟩
   exact div_four_le_checkerboardLattice_form_self_of_sub_checkerboardCospinor_mem

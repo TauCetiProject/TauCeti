@@ -8,8 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Classical symbols
@@ -39,6 +42,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.principal`, the principal symbol, with
   `TauCeti.ClassicalSymbol.exists_sub_cutoffSymbol_principal`: the full symbol and its cut-off
   principal symbol differ by a symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`: at a nonzero frequency the
+  principal symbol is the high-frequency limit `σ(a)(x, ξ) = lim_{t → ∞} t ^ (-m) a(x, t ξ)`;
 * `TauCeti.ClassicalSymbol.principal_eq_zero_iff` and
   `TauCeti.ClassicalSymbol.principal_surjective`: the principal symbol vanishes exactly on the
   classical symbols of order `m - 1`, and every homogeneous symbol of degree `m` is a principal
@@ -55,7 +60,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.ofEqHomogeneous`: a symbol that agrees with a homogeneous symbol `h` at
   all large frequencies is classical, with principal symbol `h` and no further terms; in
   particular so is a coefficient that is smooth everywhere and homogeneous away from `ξ = 0`, such
-  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`);
+  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`) or a
+  smooth function of the position (`TauCeti.ClassicalSymbol.ofSpatial`);
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
@@ -87,7 +93,9 @@ and proves:
   Ellipticity does not see terms of order `m - 1`
   (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
   unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
-  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`).
+  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`). If the full symbol outside a
+  compact set repeats its values on that set, the radius is uniform in the position
+  (`TauCeti.ClassicalSymbol.IsElliptic.exists_isEllipticAbove`).
 
 ## References
 
@@ -357,6 +365,40 @@ theorem exists_norm_toSymbol_sub_principal_le {K : Set (CoordinateSpace n)} (hK 
   rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ hξ] at h
   exact h ▸ hC x hx ξ
 
+/-- **The principal symbol is the high-frequency limit of the full symbol.** At a nonzero
+frequency `ξ`, `t ^ (-m) a(y, t ζ) → σ(a)(x, ξ)` as `t → ∞` and `(y, ζ) → (x, ξ)`. -/
+theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    Tendsto (fun p : ℝ × (CoordinateSpace n × CoordinateSpace n) ↦
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2))
+      (atTop ×ˢ 𝓝 (x, ξ)) (𝓝 (a.principal.coefficient (x, ξ))) := by
+  have hσ : ContinuousAt a.principal.coefficient (x, ξ) :=
+    a.principal.contDiffOn_coefficient.continuousOn.continuousAt
+      ((isOpen_ne.preimage continuous_snd).mem_nhds hξ)
+  obtain ⟨b, hb⟩ := a.exists_sub_cutoffSymbol_principal default
+  have hr : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hN : {p : CoordinateSpace n × CoordinateSpace n | ‖ξ‖ / 2 < ‖p.2‖} ∈ 𝓝 (x, ξ) :=
+    (isOpen_lt continuous_const (continuous_norm.comp continuous_snd)).mem_nhds (half_lt_self hr)
+  -- For `‖t ζ‖ ≥ 2` the cut-off principal symbol is `σ(a)(y, t ζ) = t ^ m σ(a)(y, ζ)`, so
+  -- `t ^ (-m) a(y, t ζ) = σ(a)(y, ζ) + t ^ (-m) b(y, t ζ)` with `b` of order `m - 1`.
+  have heq : ∀ᶠ p : ℝ × (CoordinateSpace n × CoordinateSpace n) in atTop ×ˢ 𝓝 (x, ξ),
+      a.principal.coefficient p.2 + p.1 ^ (-m) • b.coefficient (p.2.1, p.1 • p.2.2) =
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) := by
+    filter_upwards [prod_mem_prod (eventually_ge_atTop (4 / ‖ξ‖)) hN]
+    rintro ⟨t, y, ζ⟩ ⟨ht, hζ⟩
+    have ht : 4 / ‖ξ‖ ≤ t := ht
+    have hζ : ‖ξ‖ / 2 < ‖ζ‖ := hζ
+    have ht0 : 0 < t := (by positivity : 0 < 4 / ‖ξ‖).trans_le ht
+    have h2 : 2 ≤ ‖t • ζ‖ := by
+      rw [norm_smul, Real.norm_of_nonneg ht0.le]
+      have : 4 ≤ t * ‖ξ‖ := by rwa [div_le_iff₀ hr] at ht
+      nlinarith
+    have h := congrFun hb (y, t • ζ)
+    rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ h2,
+      a.principal.homogeneous _ _ _ ht0] at h
+    simp [h, smul_sub, smul_smul, ← Real.rpow_add ht0]
+  simpa using ((hσ.tendsto.comp tendsto_snd).add
+    (b.tendsto_rpow_neg_smul_coefficient_smul_zero (by linarith) hξ)).congr' heq
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _
@@ -504,6 +546,31 @@ theorem principal_ofContDiffHomogeneous :
 theorem term_ofContDiffHomogeneous_succ (j : ℕ) :
     (ofContDiffHomogeneous f hf hhom).term (j + 1) = 0 := by
   rw [ofContDiffHomogeneous, term_ofEqHomogeneous_succ]
+
+/-- A smooth function `f` of the position, the symbol of multiplication by `f`, is a classical
+symbol of order `0`: its full symbol is `TauCeti.Symbol.ofSpatial f`
+(`TauCeti.ClassicalSymbol.toSymbol_ofSpatial`), its principal symbol is `f(x)` at every nonzero
+frequency (`TauCeti.ClassicalSymbol.coefficient_principal_ofSpatial`), and its other homogeneous
+terms vanish. -/
+def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    ClassicalSymbol n V W 0 :=
+  ofContDiffHomogeneous (fun p ↦ f p.1) (hf.comp contDiff_fst) fun _ _ _ _ _ ↦ by simp
+
+variable (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+
+@[simp]
+theorem toSymbol_ofSpatial : (ofSpatial f hf).toSymbol = Symbol.ofSpatial f hf := by
+  ext1
+  rw [ofSpatial, toSymbol_ofContDiffHomogeneous, Symbol.coefficient_ofContDiffHomogeneous]
+  exact funext fun p ↦ (Symbol.coefficient_ofSpatial f hf p).symm
+
+theorem coefficient_principal_ofSpatial {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (ofSpatial f hf).principal.coefficient (x, ξ) = f x := by
+  rw [ofSpatial, principal_ofContDiffHomogeneous, coefficient_mk'_of_ne_zero _ _ _ hξ]
+
+@[simp]
+theorem term_ofSpatial_succ (j : ℕ) : (ofSpatial f hf).term (j + 1) = 0 :=
+  term_ofContDiffHomogeneous_succ _ _ _ j
 
 end EqHomogeneous
 
@@ -1059,7 +1126,7 @@ private theorem isInvertible_and_norm_inverse_le_of_norm_sub_le [CompleteSpace V
   -- `⟨ξ⟩^(-m) ⟨ξ⟩^(m - 1) = ⟨ξ⟩^(-1) ≤ R⁻¹`.
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) ≤ R⁻¹ := by
     have h := rpow_weight_le_rpow_mul_rpow_weight (s := -1) (s' := 0) hR hξ (by norm_num)
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     convert h using 2
     · ring
     · simp [Real.rpow_neg_one]
@@ -1099,6 +1166,21 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
   exact isInvertible_and_norm_inverse_le_of_norm_sub_le
     (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
     hM (hC₁ x hx ξ h2)
+
+/-- **Elliptic symbols with coefficients constant off a compact set.** An elliptic classical
+symbol whose full symbol at every position outside a compact set `K` is its full symbol at some
+position of `K` is elliptic above a radius independent of the position. -/
+theorem IsElliptic.exists_isEllipticAbove {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (hKa : ∀ x ∉ K, ∃ y ∈ K, ∀ ξ, a.toSymbol.coefficient (x, ξ) = a.toSymbol.coefficient (y, ξ)) :
+    ∃ R, a.toSymbol.IsEllipticAbove R := by
+  obtain ⟨R, C, hRC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
+  refine ⟨R, Symbol.isEllipticAbove_iff.2 fun _ _ ↦ ⟨C, fun x _ ξ hξ ↦ ?_⟩⟩
+  by_cases hx : x ∈ K
+  · exact hRC x hx ξ hξ
+  · obtain ⟨y, hy, hxy⟩ := hKa x hx
+    rw [hxy ξ]
+    exact hRC y hy ξ hξ
 
 /-- **Ellipticity from invertibility at large frequencies.** If at every position `x` the full
 symbol `a(x, ξ)` is invertible at all frequencies of norm at least some `R`, with

@@ -47,7 +47,7 @@ theorem exists_pos_norm_le_mul_norm_of_isEmbedding (f : E →ₗ[𝕜] F) (hf : 
   let e : E ≃ₗ[𝕜] LinearMap.range f := LinearEquiv.ofInjective f hf.injective
   have hsymm : Continuous e.symm.toLinearMap := by
     rw [hf.isInducing.continuous_iff]
-    refine continuous_subtype_val.congr fun y ↦ ?_
+    refine continuous_subtypeVal.congr fun y ↦ ?_
     simp [Function.comp_apply, e]
   obtain ⟨C, hC, hbound⟩ := SemilinearMapClass.bound_of_continuous e.symm.toLinearMap hsymm
   refine ⟨C, hC, fun x ↦ ?_⟩

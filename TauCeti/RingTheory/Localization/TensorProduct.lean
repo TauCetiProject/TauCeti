@@ -113,7 +113,7 @@ theorem Algebra.TensorProduct.includeRight_injective_of_isFractionRing {R A B : 
     Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) :=
   includeRight_injective_of_isLocalization R⁰ <|
     (IsLocalization.injective_iff_isRegular R⁰).mpr fun c ↦
-      isRegular_iff_mem_nonZeroDivisors.mpr c.2
+      isRegular_iff_mem_nonZeroDivisors.mpr c.property
 
 namespace IsLocalization.Away
 

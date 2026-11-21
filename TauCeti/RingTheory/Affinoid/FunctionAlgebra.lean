@@ -291,18 +291,18 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
   let _ : Fintype (minimalPrimes A) := Fintype.ofFinite (minimalPrimes A)
   have : Nonempty (minimalPrimes A) := Ideal.nonempty_minimalPrimes bot_ne_top
   -- Each minimal prime `𝔭` is closed, so `A ⧸ 𝔭` is a completely normed affinoid domain.
-  have hclosed (𝔭 : minimalPrimes A) : IsClosed (𝔭.1 : Set A) := hA.isClosed_ideal 𝔭.1
-  have hprime (𝔭 : minimalPrimes A) : 𝔭.1.IsPrime := 𝔭.2.1.1
+  have hclosed (𝔭 : minimalPrimes A) : IsClosed (𝔭.val : Set A) := hA.isClosed_ideal 𝔭.val
+  have hprime (𝔭 : minimalPrimes A) : 𝔭.val.IsPrime := 𝔭.property.1.1
   have hdom_bound (𝔭 : minimalPrimes A) :
-      ∃ C : ℝ, 0 < C ∧ ∀ q : A ⧸ 𝔭.1, ‖q‖ ≤ C * supSeminorm K q := by
+      ∃ C : ℝ, 0 < C ∧ ∀ q : A ⧸ 𝔭.val, ‖q‖ ≤ C * supSeminorm K q := by
     have := hclosed 𝔭
     have := hprime 𝔭
-    obtain ⟨C, hC, h⟩ := banachFunctionAlgebra_of_isDomain (hA.quotient 𝔭.1)
+    obtain ⟨C, hC, h⟩ := banachFunctionAlgebra_of_isDomain (hA.quotient 𝔭.val)
     exact ⟨C, hC, fun q ↦ (h q).2⟩
   choose C𝔭 hC𝔭_pos hC𝔭 using hdom_bound
   -- Glue across the finitely many irreducible components via the strict injective diagonal map.
-  let δ : A →ₗ[A] ∀ 𝔭 : minimalPrimes A, A ⧸ 𝔭.1 :=
-    LinearMap.pi fun 𝔭 ↦ (Ideal.Quotient.mkₐ A 𝔭.1).toLinearMap
+  let δ : A →ₗ[A] ∀ 𝔭 : minimalPrimes A, A ⧸ 𝔭.val :=
+    LinearMap.pi fun 𝔭 ↦ (Ideal.Quotient.mkₐ A 𝔭.val).toLinearMap
   have hδ_inj : Function.Injective δ := by
     intro x y hxy
     refine Ideal.injective_pi_quotient_mk_minimalPrimes A ?_
@@ -323,12 +323,12 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     refine (pi_norm_le_iff_of_nonneg (mul_nonneg hM_pos.le (supSeminorm_nonneg f))).mpr fun 𝔭 ↦ ?_
     have := hclosed 𝔭
     calc
-      ‖δ f 𝔭‖ = ‖Ideal.Quotient.mk 𝔭.1 f‖ := by
+      ‖δ f 𝔭‖ = ‖Ideal.Quotient.mk 𝔭.val f‖ := by
         rw [LinearMap.pi_apply, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
-      _ ≤ C𝔭 𝔭 * supSeminorm K (Ideal.Quotient.mk 𝔭.1 f) := hC𝔭 𝔭 _
+      _ ≤ C𝔭 𝔭 * supSeminorm K (Ideal.Quotient.mk 𝔭.val f) := hC𝔭 𝔭 _
       _ ≤ M * supSeminorm K f :=
         mul_le_mul (Finset.le_sup' C𝔭 (Finset.mem_univ 𝔭))
-          (hA.supSeminorm_map_le (hA.quotient 𝔭.1) (Ideal.Quotient.mkₐ K 𝔭.1) f)
+          (hA.supSeminorm_map_le (hA.quotient 𝔭.val) (Ideal.Quotient.mkₐ K 𝔭.val) f)
           (supSeminorm_nonneg _) hM_pos.le
   calc
     ‖f‖ ≤ D * ‖δ f‖ := hδ_bound f
