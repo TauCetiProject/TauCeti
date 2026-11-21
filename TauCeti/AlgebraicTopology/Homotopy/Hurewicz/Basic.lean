@@ -757,9 +757,8 @@ theorem hurewiczModuleCatHom_naturality {X Y : Type} [TopologicalSpace X] [Topol
         ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
           (TopCat.ofHom f) := by
   ext a
-  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-    hurewiczModuleCatHom_apply, hurewiczModuleCatHom_apply, ModuleCat.hom_ofHom,
-    AddMonoidHom.coe_toIntLinearMap, MonoidHom.toAdditive_apply_apply, mapHom_apply]
+  simp only [ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
+    AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply, mapHom_apply]
   -- This is `hurewiczIntHom_map` up to `Additive.ofMul a.toMul = a` and `n + 1 + 1 = n + 2`,
   -- both definitional; `rw [ofMul_toMul]` cannot see the first through the carrier of
   -- `ModuleCat.of`.

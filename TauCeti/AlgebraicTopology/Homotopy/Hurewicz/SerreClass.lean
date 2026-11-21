@@ -75,7 +75,8 @@ The converse direction, from homology to homotopy, is not treated here.
 ## Main results
 
 * `CategoryTheory.ObjectProperty.SatisfiesEilenbergMacLaneAxiom`: Serre's axiom on
-  Eilenberg--Mac Lane spaces through a given degree, the hypothesis on the class.
+  Eilenberg--Mac Lane spaces through a given degree, the hypothesis on the class, unfolded by
+  `CategoryTheory.ObjectProperty.satisfiesEilenbergMacLaneAxiom_iff`.
 * `TauCeti.prop_singularHomology_of_nConnectedCover`: one step down the Whitehead tower.
 * `TauCeti.prop_singularHomology_of_prop_homotopyGroup`: Serre's theorem, homotopy groups in `P`
   through degree `k` give homology in `P` through degree `k`.
@@ -120,6 +121,21 @@ def SatisfiesEilenbergMacLaneAxiom (P : ObjectProperty (ModuleCat.{0} ℤ)) (k :
         ∀ q, q ≠ 0 → q ≤ k →
           Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
             (TopCat.of Z))
+
+/-- Unfolding `ObjectProperty.SatisfiesEilenbergMacLaneAxiom`: the class `P` satisfies Serre's
+axiom through degree `k` exactly when every `G ∈ P` and `m` admit a property `Q ≤ P`, closed
+under isomorphisms and direct sums and containing zero, which contains the integral homology in
+degrees `1, …, k` of every `K(G, m + 1)` space. -/
+theorem satisfiesEilenbergMacLaneAxiom_iff (P : ObjectProperty (ModuleCat.{0} ℤ)) (k : ℕ) :
+    P.SatisfiesEilenbergMacLaneAxiom k ↔
+      ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ m : ℕ,
+        ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+          Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+          ∀ (Z : Type) [TopologicalSpace Z] (z : Z),
+            TauCeti.IsEilenbergMacLaneSpace G (m + 1) Z z → ∀ q, q ≠ 0 → q ≤ k →
+              Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+                (TopCat.of Z)) :=
+  Iff.rfl
 
 end CategoryTheory.ObjectProperty
 
@@ -254,7 +270,8 @@ private theorem prop_singularHomology_of_add (k : ℕ)
     -- above dimension `n + 2`.
     obtain ⟨hC, hπC⟩ := subsingleton_and_prop_homotopyGroup_nConnectedCover P X x₀ hπX
     -- The fibres are `K(πₙ₊₂(X), n + 1)` spaces, with homology through degree `k` in some `Q`.
-    obtain ⟨Q, hQP, _, _, _, hQ⟩ := hK _ (hπX n le_rfl hkn') n
+    obtain ⟨Q, hQP, _, _, _, hQ⟩ :=
+      (P.satisfiesEilenbergMacLaneAxiom_iff k).1 hK _ (hπX n le_rfl hkn') n
     refine prop_singularHomology_of_nConnectedCover P Q hQP X x₀ n i hX
       (fun Z' _ z' hZ' q hq hqi ↦ hQ Z' z' hZ' q hq (hqi.trans hik)) ?_
     exact ih (n + 1) _ (by omega) hC hπC i hi0 hik
@@ -362,7 +379,8 @@ private theorem isoModSerre_hurewiczModuleCatHom_of_add (n : ℕ)
     obtain ⟨hC, hπC⟩ := subsingleton_and_prop_homotopyGroup_nConnectedCover P X x₀ hπX
     -- The fibres of `X⟨j + 2⟩ → X` are `K(π_{j + 2}(X), j + 1)` spaces, with homology in some
     -- `Q ≤ P` through degree `n + 2`, so the projection is an isomorphism on `Hₙ₊₂` modulo `P`.
-    obtain ⟨Q, hQP, _, _, _, hQ⟩ := hK _ (hπX j le_rfl (by omega)) j
+    obtain ⟨Q, hQP, _, _, _, hQ⟩ :=
+      (P.satisfiesEilenbergMacLaneAxiom_iff (n + 2)).1 hK _ (hπX j le_rfl (by omega)) j
     have hfib (b : X) := isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x₀ j hX b
     refine isoModSerre_hurewiczModuleCatHom_of_map (nConnectedCoverProj (j + 2) X x₀).hom
       (nConnectedCoverProj_nConnectedCoverBasepoint (j + 2) X x₀)
@@ -400,7 +418,7 @@ homology of the classifying space of a torsion abelian group is torsion. -/
 theorem satisfiesEilenbergMacLaneAxiom_isTorsion (k : ℕ) :
     (AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ)
       AddCommGrpCat)).SatisfiesEilenbergMacLaneAxiom k := by
-  intro G _ hG m
+  refine (ObjectProperty.satisfiesEilenbergMacLaneAxiom_iff _ k).2 fun G _ hG m ↦ ?_
   refine ⟨_, le_rfl, inferInstance, inferInstance, inferInstance, fun Z _ z hZ q hq _ ↦ ?_⟩
   refine IsEilenbergMacLaneSpace.prop_singularHomology_of_one _ (fun Z _ z hZ q hq ↦ ?_) m hZ hq
   -- A `K(G, 1)` space receives a weak homotopy equivalence from the classifying space of `G`,
