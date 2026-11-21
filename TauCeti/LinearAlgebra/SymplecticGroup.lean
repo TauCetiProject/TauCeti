@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 -- mentions any of them.
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -464,9 +465,7 @@ theorem isUnit_det_mul_J_add_J_mul {A : Matrix (l ⊕ l) (l ⊕ l) ℝ}
   have hsymp : A * J l ℝ * Aᵀ = J l ℝ := mem_iff.1 hA
   have hkey : (A * J l ℝ + J l ℝ * A) * Aᵀ = J l ℝ * (1 + A * Aᵀ) := by
     rw [add_mul, hsymp, mul_add, mul_one, Matrix.mul_assoc]
-  have hpos : (1 + A * Aᵀ).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial] using
-      PosDef.one.add_posSemidef (posSemidef_self_mul_conjTranspose A)
+  have hpos := posDef_one_add_mul_transpose A
   have h := congrArg Matrix.det hkey
   rw [det_mul, det_mul] at h
   have hne : (J l ℝ).det * (1 + A * Aᵀ).det ≠ 0 :=

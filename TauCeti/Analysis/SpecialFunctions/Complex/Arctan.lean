@@ -46,8 +46,9 @@ theorem one_add_mul_I_div_one_sub_mul_I_eq_exp (x : ℝ) :
 `arctan x`. -/
 theorem one_add_mul_I_eq_sqrt_mul_exp (x : ℝ) :
     1 + x * I = (√(1 + x ^ 2) : ℝ) * exp (Real.arctan x * I) := by
-  have h : √(1 + x ^ 2) ≠ 0 := (Real.sqrt_pos.2 (by positivity)).ne'
-  rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_arctan, Real.sin_arctan, mul_add,
-    ← mul_assoc, ← ofReal_mul, ← ofReal_mul, mul_one_div_cancel h, mul_div_cancel₀ x h, ofReal_one]
+  have h : (√(1 + x ^ 2) : ℂ) ≠ 0 := ofReal_ne_zero.2 (Real.sqrt_pos.2 (by positivity)).ne'
+  rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_arctan, Real.sin_arctan]
+  push_cast
+  field_simp
 
 end Complex

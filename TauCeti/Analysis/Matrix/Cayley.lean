@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.LinearAlgebra.Matrix.OfReal
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # The Cayley transform of a Hermitian matrix
@@ -48,7 +49,6 @@ determinant is `z / conj z` for `z = det (1 + i A)` (`Matrix.IsHermitian.det_cay
   `λⱼ`, `det (1 + i A) = ∏ⱼ (1 + i λⱼ)`, and its polar form
   `Matrix.IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp`:
   `det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`.
-* `Matrix.IsSymm.posDef_one_add_mul_self`: `1 + A²` is positive definite for real symmetric `A`.
 * `Matrix.IsSymm.inv_one_add_I_smul_map_ofReal`: `(1 + i A)⁻¹ = (1 - i A) (1 + A²)⁻¹` for real
   symmetric `A`.
 * `Matrix.IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for
@@ -196,12 +196,6 @@ transform has determinant `∏ⱼ (1 + i λⱼ)` over the eigenvalues `λⱼ` of
 
 section Real
 
-/-- For a real symmetric matrix `A`, the matrix `1 + A² = 1 + Aᵀ A` is positive definite. -/
-theorem IsSymm.posDef_one_add_mul_self {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    (1 + A * A).PosDef := by
-  simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using
-    PosDef.one.add_posSemidef (posSemidef_conjTranspose_mul_self A)
-
 /-- For a real symmetric matrix `A` with eigenvalues `λⱼ`, `det (1 + i A) = ∏ⱼ (1 + i λⱼ)`. -/
 theorem IsHermitian.det_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (1 + I • A.map ((↑) : ℝ → ℂ)).det = ∏ j, (1 + (hA.eigenvalues j : ℂ) * I) := by
@@ -242,9 +236,10 @@ theorem IsSymm.inv_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsSymm
     rw [Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
     simp [add_mul, mul_sub, smul_smul]
     abel
+  have hpos : (1 + A * A).PosDef := by simpa [hA.eq] using posDef_one_add_mul_transpose A
   refine inv_eq_right_inv ?_
   rw [← Matrix.mul_assoc, h1, ← map_ofReal_mul,
-    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hA.posDef_one_add_mul_self.isUnit),
+    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hpos.isUnit),
     map_ofReal_one]
 
 /-- For a real symmetric matrix `A`, the linear functional `B ↦ tr ((1 + A²)⁻¹ B)` is positive on
@@ -252,12 +247,9 @@ the rank-one matrices `ξ ξᵀ`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for every n
 theorem IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos {A : Matrix n n ℝ}
     (hA : A.IsSymm) {ξ : n → ℝ} (hξ : ξ ≠ 0) :
     0 < trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) := by
-  have htr : trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) = ξ ⬝ᵥ ((1 + A * A)⁻¹ *ᵥ ξ) := by
-    simp only [trace, diag, Matrix.mul_apply, vecMulVec_apply, dotProduct, mulVec,
-      Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-  rw [htr]
-  simpa using hA.posDef_one_add_mul_self.inv.dotProduct_mulVec_pos hξ
+  have hpos : (1 + A * A).PosDef := by simpa [hA.eq] using posDef_one_add_mul_transpose A
+  rw [mul_vecMulVec, trace_vecMulVec, dotProduct_comm]
+  simpa using hpos.inv.dotProduct_mulVec_pos hξ
 
 end Real
 
