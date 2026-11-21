@@ -55,10 +55,8 @@ private theorem mk_eq_weierstrassPoint_toProjective (L : PeriodPair) {z : ℂ} {
     Projective.Point.mk ((Projective.nonsingularLift_iff P).mpr hn) =
       (L.weierstrassPoint z).toProjective := by
   apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
-  rw [Projective.Point.toAffineAddEquiv_apply, Projective.Point.toAffineLift_eq, hP]
-  simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
-    ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
-      (L.weierstrassPoint z)).symm
+  rw [Projective.Point.toAffineAddEquiv_toProjective, Projective.Point.toAffineAddEquiv_apply,
+    Projective.Point.toAffineLift_eq, hP]
 
 /-- Near every `z₀`, the projective point `(℘(z), ℘'(z) / 2)`, the point at infinity for
 `z ∈ Λ`, is the point of nonsingular homogeneous coordinates depending holomorphically on `z`. -/

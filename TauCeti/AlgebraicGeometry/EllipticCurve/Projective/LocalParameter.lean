@@ -17,12 +17,15 @@ It vanishes at the origin `O = [0 : 1 : 0]`, and near `O` it is the standard loc
 `(1 + O(z)) dz`. It is the coordinate of the formal group of the curve. On the points with `Y = 0`
 the formula takes the junk value `0`.
 
-Unlike a chart of the complex manifold `E(ℂ)` at `O`, the parameter `-X / Y` is intrinsic to the
-Weierstrass equation. Over `ℂ` it is holomorphic near `O`
-(`WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`), and its differential at `O`
+This file contains only the algebraic API, over any field. Unlike a chart of the complex manifold
+`E(ℂ)` at `O`, the parameter `-X / Y` is intrinsic to the Weierstrass equation. Over `ℂ` it is
+holomorphic near `O` (`WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`, in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Projective.ComplexManifold`), and its differential at `O`
 is a coordinate on the tangent space there. The tangent-space exponential of `E(ℂ)` is canonical,
 but expressing its domain as `ℂ` requires such a tangent coordinate; this one normalizes the
-exponential `WeierstrassCurve.Projective.exp`.
+exponential `WeierstrassCurve.Projective.exp`
+(`WeierstrassCurve.Projective.hasDerivAt_localParameter_exp`, in
+`TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`).
 
 ## Main definitions
 

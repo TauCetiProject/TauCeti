@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LieGroup
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LocalParameter
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Pullback
 
 /-!
@@ -14,13 +13,20 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Pullback
 
 On the points `E(ℂ)` of a complex elliptic curve, the local parameter `t = -X / Y`
 (`WeierstrassCurve.Projective.Point.localParameter`) is holomorphic wherever `Y ≠ 0`, in particular
-near the origin `O = [0 : 1 : 0]`. Translating a tangent vector at `P` to the origin and applying
-the differential of `t` there gives the normalized invariant differential `ω` of `E(ℂ)`: at `P`
-it is the differential of `Q ↦ t (Q - P)`. It is invariant under translations.
+near the origin `O = [0 : 1 : 0]`
+(`WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`, in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Projective.ComplexManifold`). Translating a tangent vector
+at `P` to the origin and applying the differential of `t` there gives the normalized invariant
+differential `ω` of `E(ℂ)`: at `P` it is the differential of `Q ↦ t (Q - P)`. It is invariant
+under translations.
 
-Its pullback along the exponential map is `dz`
-(`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`), from which it is holomorphic
-and vanishes nowhere, and on affine coordinate neighbourhoods it is `dx / (2y + a₁x + a₃)`
+This file only defines `ω` and proves its translation invariance. The results that use the
+exponential map are in `TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`: its pullback
+along the exponential map is `dz`
+(`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`), it is holomorphic
+(`WeierstrassCurve.Projective.holomorphicAt_invariantDifferential`) and vanishes nowhere
+(`WeierstrassCurve.Projective.invariantDifferential_ne_zero`), and on affine coordinate
+neighbourhoods where `2y + a₁x + a₃ ≠ 0` it is `dx / (2y + a₁x + a₃)`
 (`WeierstrassCurve.Projective.invariantDifferential_eq_inv_smul_mvfderiv`).
 
 ## Main definitions
@@ -30,14 +36,9 @@ and vanishes nowhere, and on affine coordinate neighbourhoods it is `dx / (2y + 
 
 ## Main results
 
-* `WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_mk`: the local parameter is
-  holomorphic at the points `[X : Y : Z]` with `Y ≠ 0`.
-* `WeierstrassCurve.Projective.Point.eventually_contMDiffAt_localParameter` and
-  `WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`: in particular it is
-  holomorphic near the origin.
 * `WeierstrassCurve.Projective.invariantDifferential_zero`: at the origin the invariant
   differential is the differential of the local parameter.
-* `WeierstrassCurve.Projective.pullback_invariantDifferential_add`: translations preserve it.
+* `WeierstrassCurve.Projective.pullback_invariantDifferential_add_right`: translations preserve it.
 
 ## References
 
@@ -51,57 +52,12 @@ open scoped Manifold ContDiff Topology
 
 namespace WeierstrassCurve.Projective
 
-namespace Point
-
-variable {W : Projective ℂ} [W.IsElliptic]
-
-omit [W.IsElliptic] in
-/-- Representatives of the same point are proportional, so whether `Y ≠ 0` does not depend on
-the representative. -/
-private theorem apply_one_ne_zero_of_mk_eq {P Q : Fin 3 → ℂ} {hP : W.NonsingularLift ⟦P⟧}
-    {hQ : W.NonsingularLift ⟦Q⟧} (h : Point.mk hQ = Point.mk hP) (hY : P 1 ≠ 0) : Q 1 ≠ 0 := by
-  obtain ⟨u, hu⟩ := Quotient.exact (congrArg Point.point h)
-  rw [← hu]
-  simp [Units.smul_def, hY]
-
-/-- **The local parameter is holomorphic where `Y ≠ 0`.** Near such a point it is `-X / Y` for
-holomorphic homogeneous coordinates with `Y ≠ 0`. -/
-theorem contMDiffAt_localParameter_mk {P : Fin 3 → ℂ} (hP : W.NonsingularLift ⟦P⟧)
-    (hY : P 1 ≠ 0) (r : ℕ∞ω) :
-    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) (Point.mk hP) := by
-  obtain ⟨s, hs, h⟩ := exists_contMDiffAt_mk_eq (Point.mk hP)
-  have hY' : s (Point.mk hP) 1 ≠ 0 := apply_one_ne_zero_of_mk_eq h.self_of_nhds.choose_spec hY
-  have hd : ContDiffAt ℂ r (fun v : Fin 3 → ℂ ↦ -(v 0 / v 1)) (s (Point.mk hP)) :=
-    ((contDiffAt_apply ℂ (fun _ ↦ ℂ) _ _).div (contDiffAt_apply ℂ (fun _ ↦ ℂ) _ _) hY').neg
-  refine (hd.comp_contMDiffAt (hs.of_le le_top)).congr_of_eventuallyEq ?_
-  filter_upwards [h] with Q ⟨hQ, hQs⟩
-  conv_lhs => rw [← hQs]
-  rw [localParameter_mk, Function.comp_apply]
-
-/-- **The local parameter is holomorphic near the origin**, where `Y ≠ 0`. -/
-theorem eventually_contMDiffAt_localParameter (r : ℕ∞ω) :
-    ∀ᶠ P in 𝓝 (0 : W.Point), ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) P := by
-  obtain ⟨s, hs, h⟩ := exists_contMDiffAt_mk_eq (0 : W.Point)
-  -- The coordinates `s 0` represent `[0 : 1 : 0]`, so their `Y`-coordinate is nonzero.
-  have hY : s 0 1 ≠ 0 :=
-    apply_one_ne_zero_of_mk_eq (h.self_of_nhds.choose_spec.trans zero_def) (by simp)
-  filter_upwards [h, ((continuous_apply 1).continuousAt.comp hs.continuousAt).eventually_ne hY]
-    with P ⟨hP, hPs⟩ hP1
-  rw [← hPs]
-  exact contMDiffAt_localParameter_mk _ hP1 r
-
-/-- **The local parameter at the origin is holomorphic there.** -/
-theorem contMDiffAt_localParameter_zero (r : ℕ∞ω) :
-    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) 0 :=
-  (eventually_contMDiffAt_localParameter r).self_of_nhds
-
-end Point
-
 variable (W : Projective ℂ) [W.IsElliptic]
 
 /-- The normalized invariant differential on `E(ℂ)`: translate a tangent vector to the origin
 and apply the differential of the local parameter `-X / Y` there. Its pullback along the
-exponential map is `dz` (`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`). -/
+exponential map is `dz` (`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`, in
+`TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`). -/
 noncomputable def invariantDifferential : TauCeti.RiemannSurface.OneForm W.Point := fun P ↦
   mvfderiv 𝓘(ℂ) (fun Q : W.Point ↦ (Q - P).localParameter) P
 
@@ -118,7 +74,7 @@ theorem invariantDifferential_zero :
 
 /-- Translation preserves the invariant differential. -/
 @[simp]
-theorem pullback_invariantDifferential_add (P : W.Point) :
+theorem pullback_invariantDifferential_add_right (P : W.Point) :
     W.invariantDifferential.pullback (fun Q ↦ Q + P) = W.invariantDifferential := by
   funext Q
   apply ContinuousLinearMap.ext

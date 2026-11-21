@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LocalParameter
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Topology
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Projectivization.ZeroLocus
@@ -57,6 +58,10 @@ uniformization `ℂ / Λ ≃ E(ℂ)` are built.
 * `WeierstrassCurve.Projective.Point.contMDiff_iff_contMDiff_toProjectivization_comp` and
   `WeierstrassCurve.Projective.Point.contMDiffAt_iff_contMDiffAt_toProjectivization_comp`: maps to
   `W.Point` are holomorphic exactly when their composites with the embedding are.
+* `WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_mk`: the local parameter `-X / Y`
+  is holomorphic at the points `[X : Y : Z]` with `Y ≠ 0`; in particular near the origin
+  (`WeierstrassCurve.Projective.Point.eventually_contMDiffAt_localParameter` and
+  `WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`).
 
 ## References
 
@@ -262,6 +267,46 @@ theorem exists_contMDiffAt_mk_eq (P₀ : W.Point) :
     (affineChart_symm_apply i _).symm.trans ((affineChart i).left_inv (by rwa [affineChart_source]))
   exact ⟨(exists_toProjectivization_eq_mk_iff _ _).mp ⟨P, h.symm⟩,
     toProjectivization_injective ((toProjectivization_mk _).trans h)⟩
+
+omit [W.IsElliptic] in
+/-- Representatives of the same point are proportional, so whether `Y ≠ 0` does not depend on
+the representative. -/
+private theorem apply_one_ne_zero_of_mk_eq {P Q : Fin 3 → ℂ} {hP : W.NonsingularLift ⟦P⟧}
+    {hQ : W.NonsingularLift ⟦Q⟧} (h : Point.mk hQ = Point.mk hP) (hY : P 1 ≠ 0) : Q 1 ≠ 0 := by
+  obtain ⟨u, hu⟩ := Quotient.exact (congrArg Point.point h)
+  rw [← hu]
+  simp [Units.smul_def, hY]
+
+/-- **The local parameter is holomorphic where `Y ≠ 0`.** Near such a point it is `-X / Y` for
+holomorphic homogeneous coordinates with `Y ≠ 0`. -/
+theorem contMDiffAt_localParameter_mk {P : Fin 3 → ℂ} (hP : W.NonsingularLift ⟦P⟧)
+    (hY : P 1 ≠ 0) (r : ℕ∞ω) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) (Point.mk hP) := by
+  obtain ⟨s, hs, h⟩ := exists_contMDiffAt_mk_eq (Point.mk hP)
+  have hY' : s (Point.mk hP) 1 ≠ 0 := apply_one_ne_zero_of_mk_eq h.self_of_nhds.choose_spec hY
+  have hd : ContDiffAt ℂ r (fun v : Fin 3 → ℂ ↦ -(v 0 / v 1)) (s (Point.mk hP)) :=
+    ((contDiffAt_apply ℂ (fun _ ↦ ℂ) _ _).div (contDiffAt_apply ℂ (fun _ ↦ ℂ) _ _) hY').neg
+  refine (hd.comp_contMDiffAt (hs.of_le le_top)).congr_of_eventuallyEq ?_
+  filter_upwards [h] with Q ⟨hQ, hQs⟩
+  conv_lhs => rw [← hQs]
+  rw [localParameter_mk, Function.comp_apply]
+
+/-- **The local parameter is holomorphic near the origin**, where `Y ≠ 0`. -/
+theorem eventually_contMDiffAt_localParameter (r : ℕ∞ω) :
+    ∀ᶠ P in 𝓝 (0 : W.Point), ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) P := by
+  obtain ⟨s, hs, h⟩ := exists_contMDiffAt_mk_eq (0 : W.Point)
+  -- The coordinates `s 0` represent `[0 : 1 : 0]`, so their `Y`-coordinate is nonzero.
+  have hY : s 0 1 ≠ 0 :=
+    apply_one_ne_zero_of_mk_eq (h.self_of_nhds.choose_spec.trans zero_def) (by simp)
+  filter_upwards [h, ((continuous_apply 1).continuousAt.comp hs.continuousAt).eventually_ne hY]
+    with P ⟨hP, hPs⟩ hP1
+  rw [← hPs]
+  exact contMDiffAt_localParameter_mk _ hP1 r
+
+/-- **The local parameter at the origin is holomorphic there.** -/
+theorem contMDiffAt_localParameter_zero (r : ℕ∞ω) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) r (localParameter : W.Point → ℂ) 0 :=
+  (eventually_contMDiffAt_localParameter r).self_of_nhds
 
 end Point
 

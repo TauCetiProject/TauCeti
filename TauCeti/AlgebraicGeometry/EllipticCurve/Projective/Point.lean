@@ -41,6 +41,8 @@ projective points given by the matrix `C.toMatrix` on homogeneous coordinates.
   nonsingular point representative and its negation is equivalent to `![0, 1, 0]`.
 * `WeierstrassCurve.Projective.Point.toAffine_eq_toAffine_iff`: over a field, two nonsingular point
   representatives have the same affine point exactly when they are equivalent.
+* `WeierstrassCurve.Projective.Point.toAffineAddEquiv_toProjective`: over a field, the
+  projective-affine comparison inverts `WeierstrassCurve.Affine.Point.toProjective`.
 * `WeierstrassCurve.Projective.Point.toAffine_toMatrix_mulVec`: over a field, the affine point of
   `C.toMatrix *ᵥ P` is the image of the affine point of `P` under the change of variables `C`.
 * `WeierstrassCurve.Projective.toMatrix_mulVec_add_equiv`: over a field, for nonsingular point
@@ -139,6 +141,12 @@ theorem Point.exists_mk_eq_mk_add_mk {P Q R : Fin 3 → F} (hP : W.Nonsingular P
   refine ⟨(nonsingular_of_equiv hR).mpr (nonsingular_add hP hQ), ?_⟩
   rw [Point.ext_iff, Point.add_point, addMap_eq]
   exact Quotient.sound hR
+
+/-- Over a field, the projective-affine comparison `Point.toAffineAddEquiv` sends the projective
+point `P.toProjective` of an affine point `P` back to `P`. -/
+theorem Point.toAffineAddEquiv_toProjective [DecidableEq F] (P : W.toAffine.Point) :
+    Point.toAffineAddEquiv W P.toProjective = P :=
+  (Point.toAffineAddEquiv W).apply_symm_apply P
 
 end Field
 
