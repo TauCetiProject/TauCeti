@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
 public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 
 /-!
@@ -19,6 +20,13 @@ pair whose gap `‖P_U - P_V‖` is less than `1` is acute, with no completeness
 hypothesis. In finite dimension, `P_V` is injective on `U` exactly when every principal angle from
 `U` to `V` is strictly below `π/2`, exactly when the directed gap `‖P_{Vᗮ} P_U‖` is less than `1`;
 so for subspaces of equal dimension, acuteness is the condition `‖P_U - P_V‖ < 1`.
+
+The two subspaces of an acute pair of complete subspaces are unitarily equivalent, in any
+dimension: the compression `P_V|_U : U → V` is injective with dense range, so its polar factor is
+a surjective isometry `U ≃ₗᵢ V`. This is the Hilbert-space comparison behind the constancy of the
+deficiency subspaces of a symmetric operator on each open half-plane; the algebraic rank, which
+`Submodule.rank_eq_of_projectionGap_lt_one` compares, is the wrong invariant in infinite
+dimension.
 
 On this pole-free locus the *principal tangents* (`Submodule.principalTangents`) are the tangents
 of the principal angles; a right angle records the junk value `Real.tan (π / 2) = 0`. They are the
@@ -38,6 +46,8 @@ when the directed gap is less than `√2/2`.
 
 * `Submodule.isAcute_iff_disjoint`: acuteness in terms of the subspaces `U ⊓ Vᗮ` and `V ⊓ Uᗮ`.
 * `Submodule.IsAcute.of_projectionGap_lt_one`: a pair with gap less than `1` is acute.
+* `Submodule.IsAcute.nonempty_linearIsometryEquiv`: the subspaces of an acute pair of complete
+  subspaces are linearly isometrically equivalent.
 * `Submodule.isAcute_iff_forall_principalAngles_lt_pi_div_two`: in finite dimension, a pair is acute
   exactly when all principal angles in both directions are strictly below `π/2`;
   `Submodule.isAcute_iff_projectionGap_lt_one_of_finrank_eq` for subspaces of equal dimension.
@@ -54,7 +64,7 @@ when the directed gap is less than `√2/2`.
 
 * C. Davis, W. M. Kahan, *The rotation of eigenvectors by a perturbation. III*,
   SIAM J. Numer. Anal. **7** (1970), 1–46.
-* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), §I.6.8.
+* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), §I.4.6 and §I.6.8.
 -/
 
 public section
@@ -102,6 +112,40 @@ theorem IsAcute.of_projectionGap_lt_one (h : U.projectionGap V < 1) : U.IsAcute 
         ((directedProjectionGap_le_projectionGap U V).trans_lt h),
       disjoint_orthogonal_of_directedProjectionGap_lt_one V U
         ((directedProjectionGap_le_projectionGap V U).trans_lt (projectionGap_comm U V ▸ h))⟩
+
+end Submodule
+
+namespace Submodule
+
+open ContinuousLinearMap
+open scoped InnerProductSpace
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {U V : Submodule 𝕜 E} [CompleteSpace U] [CompleteSpace V]
+
+/-- **Acute pairs are unitarily equivalent.** The two subspaces of an acute pair of complete
+subspaces are linearly isometrically equivalent, with no dimension hypothesis and no completeness
+of the ambient space. An equivalence is the polar factor of the compression `P_V|_U : U → V`. -/
+theorem IsAcute.nonempty_linearIsometryEquiv (h : U.IsAcute V) : Nonempty (U ≃ₗᵢ[𝕜] V) := by
+  obtain ⟨hUV, hVU⟩ := isAcute_iff_disjoint.1 h
+  set T : U →L[𝕜] V := V.orthogonalProjectionOnto ∘L U.subtypeL
+  have hT (u : U) : (T u : E) = V.starProjection u := rfl
+  have hinj : Function.Injective T := by
+    refine (injective_iff_map_eq_zero T).2 fun u hu ↦ Subtype.ext ?_
+    exact disjoint_def.1 hUV _ u.2 (orthogonalProjectionOnto_eq_zero_iff.1 hu)
+  -- A vector of `V` orthogonal to the range of `T` is orthogonal to `U`, hence zero.
+  have hdense : T.range.topologicalClosure = ⊤ := by
+    refine topologicalClosure_eq_top_iff.2 (eq_bot_iff.2 fun v hv ↦ ?_)
+    have hvU : (v : E) ∈ Uᗮ := fun u hu ↦ by
+      have h := inner_right_of_mem_orthogonal
+        (LinearMap.mem_range_self (T : U →ₗ[𝕜] V) ⟨u, hu⟩) hv
+      rwa [ContinuousLinearMap.coe_coe, coe_inner, hT, inner_starProjection_left_eq_right,
+        starProjection_eq_self_iff.2 v.2] at h
+    exact (mem_bot 𝕜).2 (Subtype.ext (disjoint_def.1 hVU _ v.2 hvU))
+  have hsurj : Function.Surjective T.polarFactor :=
+    LinearMap.range_eq_top.1 (by rw [range_polarFactor, hdense])
+  exact ⟨LinearIsometryEquiv.ofSurjective
+    ⟨T.polarFactor.toLinearMap, T.norm_polarFactor_apply_of_injective hinj⟩ hsurj⟩
 
 end Submodule
 
