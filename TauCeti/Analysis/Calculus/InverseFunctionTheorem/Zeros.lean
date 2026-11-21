@@ -87,9 +87,8 @@ that ball, then `g` has a zero `a` in the ball, it is the only one there, the de
 `g` at `a` is invertible, and `a` lies within `C * ‖g z‖` of `z`, for a constant `C` depending only
 on `f` and `z`. The map `f` need not vanish at `z`.
 
-The argument was first written in Tau Ceti for critical points, in
-`TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation`; here `fderiv ℝ g` is
-replaced by `g`, and that theorem is derived from this one. -/
+For `f := fderiv ℝ h` this gives the persistence of nondegenerate critical points,
+`TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation`. -/
 theorem exists_zero_perturbation {z : E} (hc : ContinuousAt (fderiv 𝕜 f) z)
     (hz : (fderiv 𝕜 f z).IsInvertible) :
     ∃ C : ℝ, ∀ᶠ r in 𝓝[>] 0, ∃ δ > 0, ∀ g : E → F,

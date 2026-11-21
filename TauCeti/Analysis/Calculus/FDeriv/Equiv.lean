@@ -331,22 +331,16 @@ theorem IsCompact.finite_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 
 
 /-- **Zeros with invertible derivative on a compact set are finitely many.** If `f` is continuous
 on a compact set `K` and its derivative is invertible at every zero of `f` in `K`, then `f` has
-only finitely many zeros in `K`. This is `IsCompact.finite_inter_preimage_of_hasFDerivAt`: an
-invertible `fderiv` is a genuine derivative unless `E` is trivial. -/
+only finitely many zeros in `K`. This is `IsCompact.finite_inter_preimage_of_hasFDerivAt`: by
+`differentiableAt_of_isInvertible_fderiv`, an invertible `fderiv` is a genuine derivative. -/
 theorem IsCompact.finite_sep_eq_zero_of_isInvertible_fderiv {𝕜 : Type*}
     [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {K : Set E} (hK : IsCompact K)
     (hf : ContinuousOn f K) (hz : ∀ x ∈ K, f x = 0 → (fderiv 𝕜 f x).IsInvertible) :
-    {x ∈ K | f x = 0}.Finite := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · exact Set.toFinite _
-  have hd (x) (hx : x ∈ K ∩ f ⁻¹' {0}) : DifferentiableAt 𝕜 f x := by
-    by_contra h
-    have h0 := hz x hx.1 hx.2
-    rw [fderiv_zero_of_not_differentiableAt h, ContinuousLinearMap.isInvertible_zero_iff] at h0
-    exact not_subsingleton E h0.1
-  exact (hK.of_isClosed_subset (hf.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton)
-    inter_subset_left).finite_inter_preimage_of_hasFDerivAt (fun x hx ↦ (hd x hx).hasFDerivAt)
+    {x ∈ K | f x = 0}.Finite :=
+  (hK.of_isClosed_subset (hf.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton)
+    inter_subset_left).finite_inter_preimage_of_hasFDerivAt
+    (fun x hx ↦ (differentiableAt_of_isInvertible_fderiv (hz x hx.1 hx.2)).hasFDerivAt)
     fun x hx ↦ by
       obtain ⟨L, hL⟩ := hz x hx.1 hx.2
       rw [← hL]
