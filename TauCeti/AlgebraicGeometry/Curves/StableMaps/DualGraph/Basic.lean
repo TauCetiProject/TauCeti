@@ -298,7 +298,7 @@ theorem IsStable.card_filter_componentDegree_eq_zero_le [Fintype ι] (hD : D.IsS
   rw [← sum_filter_add_sum_filter_not univ fun v ↦ D.componentDegree v = 0] at hsum
   simp only [← ne_eq] at hsum
   have h₀ := card_nsmul_le_sum {v | D.componentDegree v = 0} G.logCanonicalDegree 1
-    fun v hv ↦ hD v (mem_filter.mp hv).2
+    fun v hv ↦ by have := hD v (mem_filter.mp hv).2; omega
   have h₁ := card_nsmul_le_sum {v | D.componentDegree v ≠ 0} G.logCanonicalDegree (-2)
     fun v _ ↦ by rw [G.logCanonicalDegree_def]; omega
   simp only [nsmul_eq_mul, mul_one] at h₀ h₁
@@ -325,16 +325,21 @@ theorem IsStable.card_edge_le [Fintype ι] (hD : D.IsStable) :
   have := G.card_edge_add_one_le_arithmeticGenus_add_card_vertex
   omega
 
+namespace IsStable
+
 /-- A stable decorated graph satisfies `2g - 2 + n + 3a > 0`, where `a` is the number of
 components of positive degree. Since `a` is at most the total degree, this sharpens
 `IsStable.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDegree_pos`. -/
-theorem IsStable.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_card_pos [Fintype ι]
-    (hD : D.IsStable) :
+theorem
+    two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_card_filter_componentDegree_ne_zero_pos
+    [Fintype ι] (hD : D.IsStable) :
     0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι +
       3 * #{v | D.componentDegree v ≠ 0} := by
   have := hD.card_vertex_le
   have : 0 < Fintype.card G.Vertex := Fintype.card_pos
   omega
+
+end IsStable
 
 end DegreeDecoration
 
