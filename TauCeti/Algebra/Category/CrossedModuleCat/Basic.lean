@@ -23,6 +23,8 @@ boundary are functors to commutative groups and to groups, built from the induce
   categorical morphisms and morphisms of crossed modules.
 * `TauCeti.CrossedModuleCat.hom_id`, `TauCeti.CrossedModuleCat.hom_comp`: identities and
   composites of the underlying morphisms of crossed modules.
+* `TauCeti.CrossedModuleCat.ofHom_id`, `TauCeti.CrossedModuleCat.ofHom_comp`: identities and
+  composites of morphisms of crossed modules give categorical identities and composites.
 * `TauCeti.CrossedModuleCat.ker`: the kernel of the boundary, as a functor to `CommGrpCat`.
 * `TauCeti.CrossedModuleCat.coker`: the cokernel of the boundary, as a functor to `GrpCat`.
 
@@ -63,7 +65,6 @@ abbrev of {T H : Type u} [Group T] [Group H] (M : CrossedModule T H) : CrossedMo
   ⟨T, H, M⟩
 
 /-- A morphism of bundled crossed modules. -/
-@[ext]
 structure Hom (M N : CrossedModuleCat.{u}) where
   /-- The underlying morphism of crossed modules. -/
   hom : M.toCrossedModule.Hom N.toCrossedModule
@@ -99,10 +100,24 @@ theorem hom_ofHom (f : M.toCrossedModule.Hom N.toCrossedModule) : (ofHom f).hom 
 theorem ofHom_hom (f : M ⟶ N) : ofHom f.hom = f :=
   rfl
 
+/-- The identity morphism of crossed modules gives the categorical identity. -/
+@[simp]
+theorem ofHom_id : ofHom (CrossedModule.Hom.id M.toCrossedModule) = 𝟙 M :=
+  rfl
+
+/-- Composites of morphisms of crossed modules give categorical composites. -/
+@[simp]
+theorem ofHom_comp (f : M.toCrossedModule.Hom N.toCrossedModule)
+    (g : N.toCrossedModule.Hom P.toCrossedModule) : ofHom (g.comp f) = ofHom f ≫ ofHom g :=
+  rfl
+
 /-- Categorical morphisms are equal if their underlying morphisms of crossed modules agree. -/
 @[ext]
-theorem hom_ext {f g : M ⟶ N} (h : f.hom = g.hom) : f = g :=
-  Hom.ext h
+theorem hom_ext {f g : M ⟶ N} (h : f.hom = g.hom) : f = g := by
+  cases f
+  cases g
+  cases h
+  rfl
 
 open scoped IsMulCommutative in
 /-- The kernel of the boundary, as a functor from crossed modules to commutative groups. -/

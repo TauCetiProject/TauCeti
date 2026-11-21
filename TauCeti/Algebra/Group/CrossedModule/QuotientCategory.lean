@@ -268,6 +268,12 @@ theorem isomorphismClassesEquiv_mk (h : H) :
       (h : H ⧸ M.boundary.range) := by
   rw [isomorphismClassesEquiv, Equiv.symm_apply_eq, Quotient.congr_mk]
 
+@[simp]
+theorem isomorphismClassesEquiv_symm_mk (h : H) :
+    (isomorphismClassesEquiv M).symm (h : H ⧸ M.boundary.range) =
+      _root_.Quotient.mk _ (objEquiv M h) := by
+  rw [Equiv.symm_apply_eq, isomorphismClassesEquiv_mk]
+
 end IsomorphismClasses
 
 section Aut
