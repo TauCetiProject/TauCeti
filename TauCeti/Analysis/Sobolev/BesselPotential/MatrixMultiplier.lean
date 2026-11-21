@@ -98,9 +98,9 @@ private theorem hasSobolevExtension_smulLeftCLM_natCast (k : ℕ) {g : E → ℂ
     simp [L, toDistr_toBesselPotentialSpaceCLM, smulLeftCLM_toTemperedDistributionCLM_eq])
 
 /-- Multiplication by a function with bounded derivatives up to order `k` is bounded on `H^{-k}`,
-on Schwartz functions. The test function `v = J^{-2k} (g u)` realizes the `H^{-k}` norm of `g u`
-in the `L²` pairing, and `∫ ⟪g u, v⟫ = ∫ ⟪u, conj g v⟫` is bounded by the `H^k` bound for
-`conj g`. -/
+on Schwartz functions. By duality (`norm_toBesselPotentialSpaceCLM_neg_le_of_forall`) it suffices
+to bound the pairing `∫ ⟪g u, v⟫ = ∫ ⟪u, conj g v⟫` by `‖v‖_{H^k}`, which follows from the `H^k`
+bound for `conj g`. -/
 private theorem hasSobolevExtension_smulLeftCLM_neg_natCast (k : ℕ) {g : E → ℂ}
     (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
     HasSobolevExtension (smulLeftCLM F g) (-k) (-k) := by
@@ -111,37 +111,21 @@ private theorem hasSobolevExtension_smulLeftCLM_neg_natCast (k : ℕ) {g : E →
       obtain ⟨C, hC⟩ := hbd n hn
       exact ⟨C, fun x ↦ (Complex.conjLIE.norm_iteratedFDeriv_comp_left g x n).trans_le (hC x)⟩
   refine hasSobolevExtension_iff_exists_norm_le.2 ⟨C, hC0, fun u ↦ ?_⟩
-  set w := smulLeftCLM F g u
-  set v := besselPotentialCLM ((-2 * k : ℝ) : ℂ) w
-  set N := ‖toBesselPotentialSpaceCLM (-k) 2 w‖
-  have hvN : ‖toBesselPotentialSpaceCLM k 2 v‖ = N := by
-    rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
-      show (k : ℝ) + -2 * k = -k by ring]
-  have hvL :
-      (toBesselPotentialSpaceCLM k 2 v).toLp = (toBesselPotentialSpaceCLM (-k) 2 w).toLp := by
-    rw [toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
-      toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
-      besselPotentialCLM_besselPotentialCLM_apply,
-      show ((-2 * k : ℝ) : ℂ) + (k : ℝ) = ((-k : ℝ) : ℂ) by push_cast; ring]
-  have hpair : ∫ x, ⟪w x, v x⟫_ℂ = ((N ^ 2 : ℝ) : ℂ) := by
-    rw [← inner_toLp_toBesselPotentialSpaceCLM_neg (k : ℝ), hvL, inner_self_eq_norm_sq_to_K,
-      BesselPotentialSpace.norm_toLp_eq]
-    norm_cast
+  refine norm_toBesselPotentialSpaceCLM_neg_le_of_forall (k : ℝ) _ (by positivity) fun v ↦ ?_
   -- Move the multiplier to the other side of the pairing.
-  have hmove : ∫ x, ⟪w x, v x⟫_ℂ = ∫ x, ⟪u x, smulLeftCLM F g' v x⟫_ℂ := by
+  have hmove : ∫ x, ⟪smulLeftCLM F g u x, v x⟫_ℂ = ∫ x, ⟪u x, smulLeftCLM F g' v x⟫_ℂ := by
     congr 1
     funext x
-    simp only [w, smulLeftCLM_apply_apply hg, smulLeftCLM_apply_apply hg', inner_smul_left,
+    simp only [smulLeftCLM_apply_apply hg, smulLeftCLM_apply_apply hg', inner_smul_left,
       inner_smul_right, g']
-  have hle : N ^ 2 ≤ ‖toBesselPotentialSpaceCLM (-k) 2 u‖ * (C * N) := by
-    have h := norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (k : ℝ) u
-      (smulLeftCLM F g' v)
-    rw [← hmove, hpair, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at h
-    exact h.trans (by gcongr; exact (hC v).trans_eq (by rw [hvN]))
-  -- `N ^ 2 ≤ C ‖u‖ N`, so `N ≤ C ‖u‖`.
-  rcases (norm_nonneg _ : 0 ≤ N).eq_or_lt with h0 | h0
-  · exact h0.symm.trans_le (by positivity)
-  · nlinarith
+  rw [hmove]
+  calc _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 u‖ *
+        ‖toBesselPotentialSpaceCLM k 2 (smulLeftCLM F g' v)‖ :=
+        norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (k : ℝ) u _
+    _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 u‖ * (C * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
+        gcongr
+        exact hC v
+    _ = _ := by ring
 
 /-- Multiplication by a function with bounded derivatives up to order `|j|` is bounded on `H^j`,
 for every integer `j`, on Schwartz functions. -/

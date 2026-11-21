@@ -57,6 +57,8 @@ directions of `E` would cross the same values near `p`, contradicting injectivit
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
   open embedding, and `IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn` is its form for
   a map continuous and injective on an open set.
+* `IsOpen.image_of_continuousOn_of_injOn_of_mapsTo`: invariance of domain for maps into an open
+  subset of an arbitrary space which is homeomorphic to such a manifold.
 * `Continuous.surjective_of_injective`: a continuous injection of a compact manifold into a
   connected manifold of the same dimension is surjective.
 * `Homeomorph.coe_apply_mem_interior_iff` and `Homeomorph.coe_apply_mem_frontier_iff`: a
@@ -262,6 +264,36 @@ theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N
   rw [domRestrict_eq, image_comp]
   exact (hU.isOpenMap_subtypeVal s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
     (hinj.mono hsU) hEF
+
+omit [FiniteDimensional ℝ E] in
+/-- **Invariance of domain into an open copy of a manifold.** Let `U` be an open subset of a
+topological space `X` which is homeomorphic to a topological manifold `N` without boundary, and
+let `f` map an open set `W` of a topological manifold `M` without boundary into `U`, continuously
+and injectively, where `M` and `N` are charted on real normed spaces of the same `finrank`, the
+second finite dimensional. Then `f '' W` is open in `X`. Nothing is assumed about `X` away from
+`U`. -/
+theorem IsOpen.image_of_continuousOn_of_injOn_of_mapsTo {X : Type*} [TopologicalSpace X]
+    {f : M → X} {W : Set M} (hW : IsOpen W) {U : Set X} (hU : IsOpen U) (e : U ≃ₜ N)
+    (hf : ContinuousOn f W) (hinj : InjOn f W) (hfW : MapsTo f W U)
+    (hEF : finrank ℝ E = finrank ℝ F) : IsOpen (f '' W) := by
+  -- Read `f` on the open submanifold `W` through `e`, as a continuous injection into `N`.
+  let W' : TopologicalSpace.Opens M := ⟨W, hW⟩
+  let g : W' → N := fun y ↦ e ⟨f y, hfW y.property⟩
+  have hg : Continuous g :=
+    e.continuous.comp
+      ((continuousOn_iff_continuous_domRestrict.1 hf).subtype_mk fun y ↦ hfW y.property)
+  have hginj : Injective g := fun y z h ↦
+    Subtype.ext (hinj y.property z.property (congrArg Subtype.val (e.injective h)))
+  have himage : f '' W = Subtype.val '' (e ⁻¹' range g) := by
+    ext p
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨⟨f y, hfW hy⟩, ⟨⟨y, hy⟩, rfl⟩, rfl⟩
+    · rintro ⟨u, ⟨y, hy⟩, rfl⟩
+      exact ⟨y, y.property, congrArg Subtype.val (e.injective hy)⟩
+  rw [himage]
+  exact hU.isOpenMap_subtypeVal _
+    ((hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range.preimage e.continuous)
 
 omit [FiniteDimensional ℝ E] in
 /-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
