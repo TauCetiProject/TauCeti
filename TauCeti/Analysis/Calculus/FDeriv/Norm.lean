@@ -18,9 +18,11 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
 particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
-vanish. The norm itself, being `1`-Lipschitz, has derivative of norm at most `1` everywhere
-(`TauCeti.norm_fderiv_norm_le`). In any real normed space, a curve whose derivative is a multiple
-`c • f a` of its value has norm with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
+vanish, and a radial function on a real inner product space has Fréchet derivatives of equal
+operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). The norm itself,
+being `1`-Lipschitz, has derivative of norm at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`).
+In any real normed space, a curve whose derivative is a multiple `c • f a` of its value has norm
+with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -51,6 +53,17 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
   have h := congr($(((differentiableAt_of_deriv_ne_zero hv).hasDerivAt.hasFDerivAt.comp x
     hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
+
+/-- A radial function `v : F → E` on a real inner product space has Fréchet derivatives of equal
+operator norm at points of equal norm, without any differentiability hypothesis on `v`. -/
+theorem norm_fderiv_eq_of_norm_eq {v : F → E} (hrad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
+    {x y : F} (hxy : ‖x‖ = ‖y‖) : ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by
+  let R := (ℝ ∙ (x - y))ᗮ.reflection
+  have hcomp : v ∘ R = v := funext fun z ↦ hrad (R z) z (R.norm_map z)
+  have h := R.toContinuousLinearEquiv.comp_right_fderiv (f := v) (x := x)
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hcomp, Submodule.reflection_sub hxy] at h
+  have hnorm := congrArg norm h
+  simpa only [ContinuousLinearMap.opNorm_comp_linearIsometryEquiv] using hnorm
 
 /-- The derivative of the norm has norm at most `1` at every point, including the points where the
 norm is not differentiable and its derivative is `0` by definition. -/
