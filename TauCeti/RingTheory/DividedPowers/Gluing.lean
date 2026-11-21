@@ -168,6 +168,7 @@ theorem dpowConv_zero_right (hI : DividedPowers I) (hJ : DividedPowers J) (n : �
   rw [dpowConv_comm, dpowConv_zero_left hJ hI n x]
 
 /-- The convolution of `hI` with itself is `hI.dpow` of the sum. -/
+@[simp low]
 theorem dpowConv_self (hI : DividedPowers I) (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ I) :
     hI.dpowConv hI n x y = hI.dpow n (x + y) := by
   rw [dpowConv_def, hI.dpow_add hx hy]
@@ -336,6 +337,14 @@ noncomputable def sup (hI : DividedPowers I) (hJ : DividedPowers J)
       · rw [supAdditive_dpow_right hI hJ h n hsJ,
           supAdditive_dpow_right hI hJ h m (hJ.dpow_mem hn hsJ),
           supAdditive_dpow_right hI hJ h (m * n) hsJ, hJ.dpow_comp hn hsJ])
+
+/-- Forgetting the multiplication and composition axioms of `hI.sup hJ h` recovers
+`hI.supAdditive hJ h`. -/
+@[simp]
+theorem sup_toAdditiveDividedPowers (hI : DividedPowers I) (hJ : DividedPowers J)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
+    (hI.sup hJ h).toAdditiveDividedPowers = hI.supAdditive hJ h := by
+  rw [sup, TauCeti.AdditiveDividedPowers.toDividedPowers_toAdditiveDividedPowers]
 
 /-- On a sum `x + y` with `x ∈ I` and `y ∈ J`, `(hI.sup hJ h).dpow n (x + y)` equals the
 antidiagonal convolution `hI.dpowConv hJ n x y`. -/
