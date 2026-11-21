@@ -68,9 +68,9 @@ theorem isEffectiveCartier_comap_hom {M N : Model R K C toK} (f : N ⟶ M)
   intro x
   obtain ⟨U, hxU, a, ha, hUa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff E).mp hE (f.hom x)
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU'⟩ :=
-    N.total.isBasis_affineOpens.exists_subset_of_mem_open hxU (f.hom ⁻¹ᵁ U.1).isOpen
-  have hVU : V ≤ f.hom ⁻¹ᵁ U.1 := hVU'
-  let b : Γ(N.total, V) := f.hom.appLE U.1 V hVU a
+    N.total.isBasis_affineOpens.exists_subset_of_mem_open hxU (f.hom ⁻¹ᵁ U.val).isOpen
+  have hVU : V ≤ f.hom ⁻¹ᵁ U.val := hVU'
+  let b : Γ(N.total, V) := f.hom.appLE U.val V hVU a
   have hEV : (E.comap f.hom).ideal ⟨V, hV⟩ = Ideal.span {b} := by
     rw [E.ideal_comap_of_le f.hom U ⟨V, hV⟩ hVU, hUa, Ideal.map_span, Set.image_singleton]
   refine ⟨⟨V, hV⟩, hxV, b, fun u v huv ↦ N.genericι.app_injective V ?_, hEV⟩
@@ -78,17 +78,17 @@ theorem isEffectiveCartier_comap_hom {M N : Model R K C toK} (f : N ⟶ M)
     rw [genericι_hom]
     have := M.isOpenImmersion_genericι
     infer_instance
-  have hWU : N.genericι ⁻¹ᵁ V ≤ (N.genericι ≫ f.hom) ⁻¹ᵁ U.1 := N.genericι.preimage_mono hVU
-  let : Algebra Γ(M.total, U.1) Γ(C, N.genericι ⁻¹ᵁ V) :=
-    ((N.genericι ≫ f.hom).appLE U.1 (N.genericι ⁻¹ᵁ V) hWU).hom.toAlgebra
-  have : Module.Flat Γ(M.total, U.1) Γ(C, N.genericι ⁻¹ᵁ V) :=
-    (N.genericι ≫ f.hom).flat_appLE U.2 (hV.preimage N.genericι) hWU
+  have hWU : N.genericι ⁻¹ᵁ V ≤ (N.genericι ≫ f.hom) ⁻¹ᵁ U.val := N.genericι.preimage_mono hVU
+  let : Algebra Γ(M.total, U.val) Γ(C, N.genericι ⁻¹ᵁ V) :=
+    ((N.genericι ≫ f.hom).appLE U.val (N.genericι ⁻¹ᵁ V) hWU).hom.toAlgebra
+  have : Module.Flat Γ(M.total, U.val) Γ(C, N.genericι ⁻¹ᵁ V) :=
+    (N.genericι ≫ f.hom).flat_appLE U.property (hV.preimage N.genericι) hWU
   have hreg : IsSMulRegular Γ(C, N.genericι ⁻¹ᵁ V) (N.genericι.app V b) := by
     have hcomm : N.genericι.app V b =
-        algebraMap Γ(M.total, U.1) Γ(C, N.genericι ⁻¹ᵁ V) a := by
+        algebraMap Γ(M.total, U.val) Γ(C, N.genericι ⁻¹ᵁ V) a := by
       rw [RingHom.algebraMap_toAlgebra]
-      have hnat : f.hom.appLE U.1 V hVU ≫ N.genericι.app V =
-          (N.genericι ≫ f.hom).appLE U.1 (N.genericι ⁻¹ᵁ V) hWU := by
+      have hnat : f.hom.appLE U.val V hVU ≫ N.genericι.app V =
+          (N.genericι ≫ f.hom).appLE U.val (N.genericι ⁻¹ᵁ V) hWU := by
         rw [N.genericι.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
       exact ConcreteCategory.congr_hom hnat a
     rw [hcomm]

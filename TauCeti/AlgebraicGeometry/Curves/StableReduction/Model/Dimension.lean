@@ -115,9 +115,9 @@ over `K`, then the model `M` has relative dimension at most `d` over `R`. -/
 @[stacks 0B2J]
 instance relativeDimensionLE_toBase (M : Model R K C toK) {d : ℕ} [RelativeDimensionLE d toK] :
     RelativeDimensionLE d M.toBase := by
-  refine IsZariskiLocalAtSource.of_iSup_eq_top (fun U : M.total.affineOpens ↦ U.1)
+  refine IsZariskiLocalAtSource.of_iSup_eq_top (fun U : M.total.affineOpens ↦ U.val)
     (iSup_affineOpens_eq_top M.total) fun U ↦ ?_
-  have hU : IsAffineOpen U.1 := U.2
+  have hU : IsAffineOpen U.val := U.property
   have := relativeDimensionLE_fromSpec_toBase (d := d) M hU
   rw [← hU.isoSpec_hom_fromSpec, Category.assoc]
   exact RelativeDimensionLE.isPreimmersion_comp hU.isoSpec.hom _

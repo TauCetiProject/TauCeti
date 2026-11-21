@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 /-!
@@ -34,10 +35,15 @@ primes:
 * `TauCeti.exists_minimalPrime_le_and_map_isPrime`: every prime `q` contains a minimal prime `p`
   disjoint from a submonoid `M` of non-zero-divisors, extending to a prime of `M⁻¹ A` that
   contracts back to `p`.
+* `TauCeti.isCoprime_of_mem_minimalPrimes_of_isDomain_localization`: distinct minimal primes
+  are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
   radical ideal `I`, then `I` generates the maximal ideal of `A_m`.
 * `TauCeti.isLocalization_atPrime_residueField_of_mem_minimalPrimes`: at a minimal prime `P` of a
   reduced ring `B`, `P.ResidueField` is a localization of `B` at `P`.
+* `IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero`: in a localization at
+  non-zero-divisors of Krull dimension zero, such as an Artinian total ring of fractions, every
+  prime contracts to a minimal prime.
 -/
 
 public section
@@ -73,6 +79,23 @@ theorem exists_minimalPrime_le_and_map_isPrime {A B : Type*} [CommRing A] [CommR
   exact ⟨p, hp, hpq, hdisj,
     IsLocalization.isPrime_of_isPrime_disjoint M B p hp_prime hdisj,
     IsLocalization.under_map_of_isPrime_disjoint M B hp_prime hdisj⟩
+
+/-- Over a semiring whose localizations at maximal ideals are domains, distinct minimal primes are
+coprime: a maximal ideal containing both would contain two minimal primes of a local domain. -/
+theorem isCoprime_of_mem_minimalPrimes_of_isDomain_localization {A : Type*} [CommSemiring A]
+    (h : ∀ (m : Ideal A) [m.IsMaximal], IsDomain (Localization.AtPrime m)) {P Q : Ideal A}
+    (hP : P ∈ minimalPrimes A) (hQ : Q ∈ minimalPrimes A) (hPQ : P ≠ Q) : IsCoprime P Q := by
+  rw [Ideal.isCoprime_iff_sup_eq]
+  by_contra hne
+  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
+  have := h m
+  have := hP.1.1
+  have := hQ.1.1
+  exact hPQ (le_antisymm
+    (le_of_mem_minimalPrimes_of_isDomain_localization (Localization.AtPrime m)
+      hP (le_sup_left.trans hle) (le_sup_right.trans hle))
+    (le_of_mem_minimalPrimes_of_isDomain_localization (Localization.AtPrime m)
+      hQ (le_sup_right.trans hle) (le_sup_left.trans hle)))
 
 end TauCeti
 
@@ -110,3 +133,18 @@ theorem isLocalization_atPrime_residueField_of_mem_minimalPrimes {B : Type*} [Co
   exact IsLocalization.isLocalization_of_algEquiv P.primeCompl (AlgEquiv.ofBijective _ hbij)
 
 end TauCeti
+
+namespace IsLocalization
+
+/-- In a localization at non-zero-divisors of Krull dimension zero, such as an Artinian total ring
+of fractions, every prime contracts to a minimal prime of the original ring. -/
+theorem comap_mem_minimalPrimes_of_krullDimLE_zero {R : Type*} [CommRing R] {M : Submonoid R}
+    (hM : M ≤ nonZeroDivisors R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S]
+    [Ring.KrullDimLE 0 S] (p : Ideal S) [p.IsPrime] :
+    p.comap (algebraMap R S) ∈ minimalPrimes R := by
+  have h := minimalPrimes_comap M S (⊥ : Ideal S)
+  rw [Ideal.comap_bot_of_injective _ (IsLocalization.injective S hM)] at h
+  exact (h ▸ ⟨p, Ideal.mem_minimalPrimes_of_krullDimLE_zero p, rfl⟩ :
+    p.comap (algebraMap R S) ∈ (⊥ : Ideal R).minimalPrimes)
+
+end IsLocalization

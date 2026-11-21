@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.QuasiFinite.Basic
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.ZariskisMainTheorem
 import TauCeti.RingTheory.KrullDimension.FiniteType
+import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
 
 /-!
 # Quasi-finiteness from fibre quotients
@@ -20,7 +21,8 @@ Let `S` be an `R`-algebra of finite type and `q` a prime ideal of `S` lying over
 By Zariski's main theorem (`Algebra.QuasiFiniteAt.of_weaklyQuasiFiniteAt`), `S` is quasi-finite over
 `R` at `q` as soon as the quotient `S ⧸ p S` is quasi-finite over `R` at the image of `q`. More
 generally, if `J ≤ p S` is an ideal of `S` such that `S ⧸ J` is quasi-finite over `R` at the image
-of `q` (or globally), then `S` is quasi-finite over `R` at `q`.
+of `q` (or globally, see `Algebra.QuasiFiniteAt.of_quasiFinite_quotient`), then `S` is quasi-finite
+over `R` at `q`.
 
 Both hypotheses are needed:
 * Without `J ≤ (q.under R).map (algebraMap R S)`, take `R = k`, `S = k[X]`, and `J = q = (X)`:
@@ -30,7 +32,7 @@ Both hypotheses are needed:
   `q` of `S` lying over `(π)` with `S ⧸ π S ≃ R ⧸ (π)` finite over `R`, yet
   `K ⊗[R] S_q ≃ K[X]_{(X)}` has dimension `1`, so `S` is not quasi-finite over `R` at `q`.
 
-Combining this criterion with one-dimensional Noether normalization
+Combining `Algebra.QuasiFiniteAt.of_quasiFinite_quotient` with one-dimensional Noether normalization
 (`TauCeti.exists_finite_aeval_of_krullDimLE_one`) yields a quasi-finite polynomial parameter lift
 modulo a maximal ideal `𝔪` of `R`: when `A` is of finite type over `R` and `A ⧸ 𝔪 A` has Krull
 dimension at most `1`, there exists `a : A` such that for every `x : A` congruent to `a` modulo
@@ -41,8 +43,6 @@ dimension at most `1`, there exists `a : A` such that for every `x : A` congruen
 * `Algebra.QuasiFiniteAt.of_quasiFiniteAt_quotient`: for finite-type `S` over `R` and
   `J ≤ (q.under R).map (algebraMap R S)`, `Algebra.QuasiFiniteAt R p` at the image `p` of `q` in
   `S ⧸ J` implies `Algebra.QuasiFiniteAt R q`.
-* `Algebra.QuasiFiniteAt.of_quasiFinite_quotient`: global `Algebra.QuasiFinite R (S ⧸ J)` with
-  `J ≤ (q.under R).map (algebraMap R S)` implies `Algebra.QuasiFiniteAt R q`.
 * `TauCeti.exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient`: lifting a Noether
   normalization parameter modulo `𝔪 A` produces `a : A` making every `x ≡ a (mod 𝔪 A)` quasi-finite
   over `R[X]` at all primes above `𝔪`.
@@ -100,19 +100,6 @@ theorem of_quasiFiniteAt_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
     rw [← map_mul, IsLocalization.mk'_spec' (Localization.AtPrime q) x ⟨s, hs⟩]
   exact .of_weaklyQuasiFiniteAt q
 
-/-- If `S` is of finite type over `R`, `J ≤ (q.under R) S`, and `S ⧸ J` is quasi-finite over `R`,
-then `S` is quasi-finite over `R` at `q`. -/
-theorem of_quasiFinite_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
-    (hJ : J ≤ (q.under R).map (algebraMap R S)) [Algebra.QuasiFinite R (S ⧸ J)] :
-    Algebra.QuasiFiniteAt R q := by
-  let I := (q.under R).map (algebraMap R S)
-  have hJI : J ≤ I.comap (AlgHom.id R S) := by simpa using hJ
-  have : Algebra.QuasiFinite R (S ⧸ I) :=
-    .of_surjective_algHom (Ideal.quotientMapₐ I (AlgHom.id R S) hJI)
-      (Ideal.quotientMap_surjective (H := hJI) Function.surjective_id)
-  have : Algebra.WeaklyQuasiFiniteAt R q := inferInstance
-  exact .of_weaklyQuasiFiniteAt q
-
 end Algebra.QuasiFiniteAt
 
 namespace TauCeti
@@ -162,6 +149,6 @@ theorem exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient {R A : Type*} [Co
     refine Ideal.map_mono (Ideal.map_le_iff_le_comap.mpr ?_)
     rw [Ideal.comap_comap, ← IsScalarTower.algebraMap_eq R R[X] A]
     exact Ideal.map_le_iff_le_comap.mp hq
-  exact Algebra.QuasiFiniteAt.of_quasiFinite_quotient hJ
+  exact Algebra.QuasiFiniteAt.of_quasiFinite_quotient q J hJ
 
 end TauCeti

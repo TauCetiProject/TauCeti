@@ -100,7 +100,7 @@ theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
       (R := R) (Rₘ := Rₘ) M (algebraMap Sₘ L y)
         ((IsIntegralClosure.isIntegral_iff (A := Sₘ) (R := Rₘ)).mpr ⟨y, rfl⟩)
     obtain ⟨s, hs⟩ := (IsIntegralClosure.isIntegral_iff (A := S) (R := R)).mp hm
-    refine ⟨⟨s, algebraMap R S m, m, m.2, rfl⟩, ?_⟩
+    refine ⟨⟨s, algebraMap R S m, m, m.property, rfl⟩, ?_⟩
     apply IsIntegralClosure.algebraMap_injective Sₘ Rₘ L
     rw [map_mul, ← IsScalarTower.algebraMap_apply S Sₘ L,
       ← IsScalarTower.algebraMap_apply S Sₘ L,
@@ -141,7 +141,7 @@ abbrev integralClosureMapAlgebra (R S Rf Sf : Type*) [CommRing R] [CommRing S]
     [Algebra R Sf] [IsScalarTower R S Sf] [IsScalarTower R Rf Sf] :
     Algebra (integralClosure R S) (integralClosure Rf Sf) :=
   RingHom.toAlgebra
-    { toFun y := ⟨algebraMap S Sf y, (y.2.map (IsScalarTower.toAlgHom R S Sf)).tower_top⟩
+    { toFun y := ⟨algebraMap S Sf y, (y.property.map (IsScalarTower.toAlgHom R S Sf)).tower_top⟩
       map_one' := Subtype.ext (map_one _)
       map_mul' _ _ := Subtype.ext (map_mul _ _ _)
       map_zero' := Subtype.ext (map_zero _)
@@ -212,14 +212,14 @@ in `L` is a finite `R_f`-module, then the integral closure of `R` in `L` is a fi
 This is the converse of `finite_integralClosure_of_isLocalization`. -/
 theorem finite_integralClosure_of_span_eq_top {R : Type*} [CommRing R] (L : Type*) [CommRing L]
     [Algebra R L] {t : Set R} (ht : Ideal.span t = ⊤) {Rₚ : t → Type*}
-    [∀ f, CommRing (Rₚ f)] [∀ f, Algebra R (Rₚ f)] [∀ f, IsLocalization.Away f.1 (Rₚ f)]
+    [∀ f, CommRing (Rₚ f)] [∀ f, Algebra R (Rₚ f)] [∀ f, IsLocalization.Away f.val (Rₚ f)]
     [∀ f, Algebra (Rₚ f) L] [∀ f, IsScalarTower R (Rₚ f) L]
     (H : ∀ f, Module.Finite (Rₚ f) (integralClosure (Rₚ f) L)) :
     Module.Finite R (integralClosure R L) := by
   -- The integral closure of `R_f` in `L` is the localization of that of `R` away from `f`.
   let (f : t) := integralClosureMapAlgebra R L (Rₚ f) L
-  have (f : t) := (isLocalization_integralClosure (Rₚ f) L (.powers f.1)).1
-  have (f : t) := (isLocalization_integralClosure (Rₚ f) L (.powers f.1)).2
+  have (f : t) := (isLocalization_integralClosure (Rₚ f) L (.powers f.val)).1
+  have (f : t) := (isLocalization_integralClosure (Rₚ f) L (.powers f.val)).2
   exact Module.Finite.of_localizationSpan' t ht
     (fun f ↦ (IsScalarTower.toAlgHom R _ (integralClosure (Rₚ f) L)).toLinearMap) H
 
@@ -315,7 +315,8 @@ theorem IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' (hT : T ≤ B⁰) (x 
       map_ne_zero_iff _ (IsFractionRing.injective Bq K)]
     intro h
     obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.primeCompl Bq _).mp h
-    exact c.2 (by rw [(mem_nonZeroDivisors_iff_right.mp (hT s.2)) c hc]; exact q.zero_mem)
+    exact c.property (by rw [(mem_nonZeroDivisors_iff_right.mp (hT s.property)) c hc]; exact
+        q.zero_mem)
   let φ : E →ₐ[B] K := IsLocalization.liftAlgHom (M := T) (f := Algebra.ofId B K) hunit
   -- The image of `x / t` in the fraction field of `B_q` is integral, hence lies in `B_q`.
   obtain ⟨y, hy⟩ := (IsIntegrallyClosed.isIntegral_iff (R := Bq) (K := K)).mp
@@ -329,7 +330,7 @@ theorem IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' (hT : T ≤ B⁰) (x 
     rw [map_mul, map_mul, ← hxt, ← mul_assoc, mul_comm (algebraMap B Bq u),
       IsLocalization.mk'_spec_mk]
   obtain ⟨w, hw⟩ := (IsLocalization.eq_iff_exists q.primeCompl Bq).mp hbt
-  exact ⟨b, u, w, u.2, w.2, hw⟩
+  exact ⟨b, u, w, u.property, w.property, hw⟩
 
 end IsIntegral
 
@@ -345,7 +346,7 @@ theorem finite_localizedModule_integralClosure {A B : Type*} [CommRing A] [CommR
     refine Submodule.eq_top_iff'.mpr fun x ↦ ?_
     induction x using LocalizedModule.induction_on with
     | h c t =>
-      obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M c.1
+      obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M c.val
       have hc : (m : A) • c ∈ N := by
         have hce : (m : A) • c = a • (1 : integralClosure A B) :=
           Subtype.ext (by simpa [Algebra.smul_def, mul_comm] using ha)

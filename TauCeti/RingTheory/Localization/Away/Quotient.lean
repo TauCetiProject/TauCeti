@@ -74,7 +74,7 @@ theorem IsLocalization.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Alge
     exact IsLocalization.map_units B ⟨m, hm⟩
   · intro b
     obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M b
-    refine ⟨⟨algebraMap A (A ⧸ I) a, algebraMap A (A ⧸ I) m, m, m.2, rfl⟩, ?_⟩
+    refine ⟨⟨algebraMap A (A ⧸ I) a, algebraMap A (A ⧸ I) m, m, m.property, rfl⟩, ?_⟩
     simpa only [← IsScalarTower.algebraMap_apply A (A ⧸ I) B] using ha
   · intro x y hxy
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
@@ -82,7 +82,7 @@ theorem IsLocalization.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Alge
     rw [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply A (A ⧸ I) B,
       ← IsScalarTower.algebraMap_apply A (A ⧸ I) B] at hxy
     obtain ⟨m, hm⟩ := IsLocalization.exists_of_eq (M := M) hxy
-    refine ⟨⟨algebraMap A (A ⧸ I) m, m, m.2, rfl⟩, ?_⟩
+    refine ⟨⟨algebraMap A (A ⧸ I) m, m, m.property, rfl⟩, ?_⟩
     simpa only [← map_mul, Ideal.Quotient.algebraMap_eq] using congrArg (Ideal.Quotient.mk I) hm
 
 /-- If `B` is a localization of `A` away from `r` and `A → B` factors through `A ⧸ I`, then `B` is

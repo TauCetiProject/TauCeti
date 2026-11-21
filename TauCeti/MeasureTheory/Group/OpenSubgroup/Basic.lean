@@ -26,13 +26,16 @@ compact topological group (`OpenSubgroup.locallyCompactSpace`), and its inclusio
 an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H` via
 `μ.comap ((↑) : H → G)` turns ambient analysis on `G` into subgroup analysis on `H`:
 
-* **Haar measures, regularity, and modular character:** When `H` is an open subgroup of a Borel
-  group `G`, `μ.comap ((↑) : H → G)` inherits `IsOpenPosMeasure`, `IsHaarMeasure`, `Regular`, and
-  `InnerRegular` (left and right multiplication invariance hold for every subgroup, by the instances
-  `Measure.isMulLeftInvariant_comap_subtype` and `Measure.isMulRightInvariant_comap_subtype`); if
-  `H` is moreover σ-compact and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on
-  a non-σ-compact group does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and
-  the modular character of `H` agrees with the restriction of the modular character of `G`
+* **Haar measures, regularity, compactness, and modular character:** When `H` is an open subgroup
+  of a Borel group `G`, `μ.comap ((↑) : H → G)` inherits `IsOpenPosMeasure`, `IsHaarMeasure`,
+  `Regular`, and `InnerRegular` (left and right multiplication invariance hold for every subgroup,
+  by the instances `Measure.isMulLeftInvariant_comap_subtype` and
+  `Measure.isMulRightInvariant_comap_subtype`); if `G` is a weakly locally compact topological
+  group and `μ` is left-invariant and open-positive with `μ H ≠ ∞`, then `H` is automatically
+  compact (`MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isMulLeftInvariant`); if `H` is
+  moreover σ-compact and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on a
+  non-σ-compact group does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and the
+  modular character of `H` agrees with the restriction of the modular character of `G`
   (`OpenSubgroup.modularCharacter_eq`).
 * **Translated-coset calculations:** For a measurable subgroup `H`, left translation `u ↦ g * u`
   from `(H, μ.comap (↑))` onto `(G, μ.restrict (g • H))` is a measure-preserving measurable
@@ -51,6 +54,10 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 * `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
   `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`:
   Haar, regularity, and modular-character inheritance on open subgroups.
+* `MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isMulLeftInvariant`: an open subgroup of
+  a weakly locally compact topological group with finite left-invariant open-positive Borel measure
+  is compact (with additive counterpart
+  `MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isAddLeftInvariant`).
 * `MeasureTheory.setIntegral_leftCoset_eq_comap`,
   `MeasureTheory.integral_mul_left_comap_eq_of_inv_mul_mem`,
   `MeasureTheory.setIntegral_rightCoset_eq_modularCharacter_smul_comap`,
@@ -135,7 +142,7 @@ theorem modularCharacter_eq {G : Type*} [Group G] [TopologicalSpace G] [IsTopolo
   set μ : Measure G := Measure.haar
   set ν : Measure H := μ.comap ((↑) : H → G)
   have hcoe : MeasurableEmbedding ((↑) : H → G) :=
-    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+    MeasurableEmbedding.subtypeVal H.isOpen.measurableSet
   have hmap : Measure.map (· * u) ν = Measure.modularCharacter (u : G) • ν := by
     ext E hE
     rw [Measure.map_apply (measurable_mul_const u) hE, smul_apply, Measure.nnreal_smul_coe_apply,
@@ -161,9 +168,35 @@ end ModularCharacter
 
 end OpenSubgroup
 
-/-! ### Translated-coset calculations -/
-
 namespace MeasureTheory
+
+/-- **Open subgroups of finite invariant measure are compact.** An open subgroup of a weakly
+locally compact topological group that has finite mass for a left-invariant open-positive Borel
+measure is compact. -/
+@[to_additive
+/-- **Open additive subgroups of finite invariant measure are compact.** An open additive subgroup
+of a weakly locally compact topological additive group that has finite mass for a left-invariant
+open-positive Borel measure is compact. -/]
+theorem isCompact_of_isOpen_of_measure_ne_top_of_isMulLeftInvariant {G S : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G] [MeasurableSpace G]
+    [BorelSpace G] [SetLike S G] [SubgroupClass S G] {H : S} (hHopen : IsOpen (H : Set G))
+    (μ : Measure G) [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant] (hμ : μ H ≠ ∞) :
+    IsCompact (H : Set G) := by
+  have hemb : IsOpenEmbedding ((↑) : H → G) := hHopen.isOpenEmbedding_subtypeVal
+  have hHclosed : IsClosed (H : Set G) := Subgroup.isClosed_of_isOpen (Subgroup.ofClass H) hHopen
+  have : WeaklyLocallyCompactSpace H := hHclosed.weaklyLocallyCompactSpace
+  have : IsTopologicalGroup H :=
+    Topology.IsInducing.subtypeVal.isTopologicalGroup (SubgroupClass.subtype H)
+  have : (μ.comap ((↑) : H → G)).IsOpenPosMeasure := Measure.IsOpenPosMeasure.comap μ hemb
+  have hfin : μ.comap ((↑) : H → G) Set.univ ≠ ∞ := by
+    rw [hemb.measurableEmbedding.comap_apply, image_univ, Subtype.range_coe_subtype]
+    exact hμ
+  rw [isCompact_iff_compactSpace]
+  by_contra hnc
+  have : NoncompactSpace H := not_compactSpace_iff.mp hnc
+  exact hfin (measure_univ_of_isMulLeftInvariant (μ.comap ((↑) : H → G)))
+
+/-! ### Translated-coset calculations -/
 
 section LeftCosets
 
@@ -176,7 +209,7 @@ embedding. -/
 `G` is a measurable embedding. -/]
 theorem measurableEmbedding_mul_left_subtype_coe (hH : MeasurableSet (H : Set G)) (g : G) :
     MeasurableEmbedding (fun u : H ↦ g * (u : G)) :=
-  (MeasurableEquiv.mulLeft g).measurableEmbedding.comp (MeasurableEmbedding.subtype_coe hH)
+  (MeasurableEquiv.mulLeft g).measurableEmbedding.comp (MeasurableEmbedding.subtypeVal hH)
 
 /-- Left coset parametrization `u ↦ g * u` pushes `μ.comap ((↑) : H → G)` forward to
 `μ.restrict (g • (H : Set G))` whenever `μ` is left-invariant. -/
@@ -187,7 +220,7 @@ theorem measurePreserving_mul_left_subtype_coe [μ.IsMulLeftInvariant]
     MeasurePreserving (fun u : H ↦ g * (u : G)) (μ.comap ((↑) : H → G))
       (μ.restrict (g • (H : Set G))) := by
   have hmp : MeasurePreserving ((↑) : H → G) (μ.comap ((↑) : H → G)) (μ.restrict (H : Set G)) :=
-    measurePreserving_subtype_coe (μa := μ) hH
+    measurePreserving_subtypeVal (μa := μ) hH
   simpa only [Function.comp_def, ← smul_eq_mul, image_smul] using
     ((measurePreserving_mul_left μ g).restrict_image_emb
       (MeasurableEquiv.mulLeft g).measurableEmbedding (H : Set G)).comp hmp
@@ -265,7 +298,7 @@ to `G` is a measurable embedding. -/]
 theorem measurableEmbedding_mul_right_subtype_coe {G S : Type*} [Group G] [MeasurableSpace G]
     [MeasurableMul G] [SetLike S G] {H : S} (hH : MeasurableSet (H : Set G)) (g : G) :
     MeasurableEmbedding (fun u : H ↦ (u : G) * g) :=
-  (MeasurableEquiv.mulRight g).measurableEmbedding.comp (MeasurableEmbedding.subtype_coe hH)
+  (MeasurableEquiv.mulRight g).measurableEmbedding.comp (MeasurableEmbedding.subtypeVal hH)
 
 variable {G S : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
@@ -279,11 +312,11 @@ theorem restrict_rightCoset_eq_modularCharacter_smul_map_comap (hH : MeasurableS
       Measure.modularCharacter g⁻¹ •
         Measure.map (fun u : H ↦ (u : G) * g) (μ.comap ((↑) : H → G)) := by
   have hsub : Measure.map ((↑) : H → G) (μ.comap ((↑) : H → G)) = μ.restrict (H : Set G) :=
-    map_comap_subtype_coe hH μ
+    map_comap_subtypeVal hH μ
   have hmap : Measure.map (fun u : H ↦ (u : G) * g) (μ.comap ((↑) : H → G)) =
       Measure.modularCharacter g • μ.restrict ((· * g) '' (H : Set G)) := by
     have hcomp : (fun u : H ↦ (u : G) * g) = (· * g) ∘ ((↑) : H → G) := rfl
-    rw [hcomp, ← Measure.map_map (measurable_mul_const g) measurable_subtype_coe, hsub]
+    rw [hcomp, ← Measure.map_map (measurable_mul_const g) measurable_subtypeVal, hsub]
     have hres := (MeasurableEquiv.mulRight g).measurableEmbedding.restrict_map μ
       ((· * g) '' (H : Set G))
     rw [MeasurableEquiv.coe_mulRight, preimage_image_eq _ (mul_left_injective g),
@@ -296,7 +329,7 @@ theorem restrict_rightCoset_eq_modularCharacter_smul_map_comap (hH : MeasurableS
 theorem comap_mul_right_subtype_coe (hH : MeasurableSet (H : Set G)) (g : G) :
     μ.comap (fun u : H ↦ (u : G) * g) =
       Measure.modularCharacter g⁻¹ • μ.comap ((↑) : H → G) := by
-  have hcoe : MeasurableEmbedding ((↑) : H → G) := MeasurableEmbedding.subtype_coe hH
+  have hcoe : MeasurableEmbedding ((↑) : H → G) := MeasurableEmbedding.subtypeVal hH
   ext E _
   rw [(measurableEmbedding_mul_right_subtype_coe hH g).comap_apply, smul_apply,
     Measure.nnreal_smul_coe_apply, hcoe.comap_apply]

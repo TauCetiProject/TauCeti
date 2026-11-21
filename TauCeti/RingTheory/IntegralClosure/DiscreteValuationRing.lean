@@ -110,32 +110,32 @@ private lemma exists_separating_perturbation [IsReduced B] [Finite (minimalPrime
       letI : Algebra R[X] B :=
         (Polynomial.aeval (R := R) (algebraMap A B (a + π • b))).toRingHom.toAlgebra
       Module.Finite R[X] (integralClosure R[X] B) := by
-  let F (i : minimalPrimes B) : Type _ := letI := i.2.1.1; i.1.ResidueField
-  let (i : minimalPrimes B) : Field (F i) := by letI := i.2.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra K (F i) := by letI := i.2.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra R (F i) := by letI := i.2.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra B (F i) := by letI := i.2.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra A (F i) := by letI := i.2.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower R K (F i) := by have := i.2.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower R A (F i) := by have := i.2.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower A B (F i) := by have := i.2.1.1; infer_instance
+  let F (i : minimalPrimes B) : Type _ := letI := i.property.1.1; i.val.ResidueField
+  let (i : minimalPrimes B) : Field (F i) := by letI := i.property.1.1; infer_instance
+  let (i : minimalPrimes B) : Algebra K (F i) := by letI := i.property.1.1; infer_instance
+  let (i : minimalPrimes B) : Algebra R (F i) := by letI := i.property.1.1; infer_instance
+  let (i : minimalPrimes B) : Algebra B (F i) := by letI := i.property.1.1; infer_instance
+  let (i : minimalPrimes B) : Algebra A (F i) := by letI := i.property.1.1; infer_instance
+  have (i : minimalPrimes B) : IsScalarTower R K (F i) := by have := i.property.1.1; infer_instance
+  have (i : minimalPrimes B) : IsScalarTower R A (F i) := by have := i.property.1.1; infer_instance
+  have (i : minimalPrimes B) : IsScalarTower A B (F i) := by have := i.property.1.1; infer_instance
   have (i : minimalPrimes B) : Algebra.EssFiniteType K (F i) := by
-    have := i.2.1.1; exact (hF i.1 i.2).essFiniteType
+    have := i.property.1.1; exact (hF i.val i.property).essFiniteType
   have (i : minimalPrimes B) : Algebra.Transcendental K (F i) :=
-    trdeg_ne_zero_iff.mp ((hF i.1 i.2).trdeg_eq_one ▸ one_ne_zero)
+    trdeg_ne_zero_iff.mp ((hF i.val i.property).trdeg_eq_one ▸ one_ne_zero)
   have (i : minimalPrimes B) : Algebra.FormallyUnramified A (F i) := by
-    have : i.1.IsPrime := i.2.1.1
-    have : IsLocalization.AtPrime (F i) i.1 :=
-      isLocalization_atPrime_residueField_of_mem_minimalPrimes i.2
+    have : i.val.IsPrime := i.property.1.1
+    have : IsLocalization.AtPrime (F i) i.val :=
+      isLocalization_atPrime_residueField_of_mem_minimalPrimes i.property
     have : Algebra.FormallyUnramified A B :=
       Algebra.FormallyUnramified.of_isLocalization (.powers (algebraMap R A π))
     have : Algebra.FormallyUnramified B (F i) :=
-      Algebra.FormallyUnramified.of_isLocalization i.1.primeCompl
+      Algebra.FormallyUnramified.of_isLocalization i.val.primeCompl
     exact Algebra.FormallyUnramified.comp A B (F i)
   have : FaithfulSMul R K := (faithfulSMul_iff_algebraMap_injective R K).mpr
     (IsFractionRing.injective R K)
   obtain ⟨b, hb⟩ := exists_forall_transcendental_and_isSeparable_adjoin_add_smul F
-    (fun i ↦ hΩ i.1 i.2) a hπ0
+    (fun i ↦ hΩ i.val i.property) a hπ0
   refine ⟨b, ?_⟩
   let : Algebra R[X] B :=
     (Polynomial.aeval (R := R) (algebraMap A B (a + π • b))).toRingHom.toAlgebra
@@ -269,9 +269,10 @@ theorem finite_integralClosure_of_isReduced_of_isFunctionField [IsReduced B]
     have : Module.Finite A A' := hAA'
     Algebra.IsIntegral.of_finite A A'
   let g : integralClosure A' B →+* integralClosure A B :=
-    { toFun x := ⟨x.1, isIntegral_trans _ x.2⟩
+    { toFun x := ⟨x.val, isIntegral_trans _ x.property⟩
       map_one' := rfl, map_mul' _ _ := rfl, map_zero' := rfl, map_add' _ _ := rfl }
-  have hg : g.Finite := RingHom.Finite.of_surjective g fun y ↦ ⟨⟨y.1, y.2.tower_top⟩, rfl⟩
+  have hg : g.Finite :=
+    RingHom.Finite.of_surjective g fun y ↦ ⟨⟨y.val, y.property.tower_top⟩, rfl⟩
   have hcomp : g.comp ((algebraMap A' (integralClosure A' B)).comp (algebraMap A A')) =
       algebraMap A (integralClosure A B) := by ext; rfl
   exact RingHom.finite_algebraMap.mp
@@ -293,11 +294,11 @@ theorem finite_integralClosure_of_exists_isStandardSmoothOfRelativeDimension_one
       (Algebra.IsPushout.equiv R K A B).surjective
   have : IsReduced B := by
     refine ⟨fun x hx ↦ Module.eq_zero_of_isLocalized_span s hspan
-      (fun r : s ↦ Localization.Away r.1)
-      (fun r : s ↦ Algebra.linearMap B (Localization.Away r.1)) x fun r ↦ ?_⟩
-    have := (hsmooth r.1 r.2).isStandardSmooth
-    have := isReduced_of_smooth K (Localization.Away r.1)
-    exact (hx.map (algebraMap B (Localization.Away r.1))).eq_zero
+      (fun r : s ↦ Localization.Away r.val)
+      (fun r : s ↦ Algebra.linearMap B (Localization.Away r.val)) x fun r ↦ ?_⟩
+    have := (hsmooth r.val r.property).isStandardSmooth
+    have := isReduced_of_smooth K (Localization.Away r.val)
+    exact (hx.map (algebraMap B (Localization.Away r.val))).eq_zero
   have hboth : ∀ (P : Ideal B) (hP : P ∈ minimalPrimes B), haveI := hP.1.1;
       IsFunctionField K P.ResidueField ∧ Module.finrank P.ResidueField Ω[P.ResidueField⁄K] = 1 := by
     intro P hP

@@ -287,21 +287,21 @@ theorem continuous_retraction (b : B) : Continuous (retraction p b) :=
 def fiberHomeomorph (b : B) :
     (∀ i, AddCircle (p i b : ℝ)) ≃ₜ {z : TorusFamily p // z.base = b} where
   toFun x := ⟨mk b x, rfl⟩
-  invFun z := retraction p b z.1
+  invFun z := retraction p b z.val
   left_inv := retraction_mk p b
-  right_inv z := Subtype.ext (mk_retraction p z.2)
+  right_inv z := Subtype.ext (mk_retraction p z.property)
   continuous_toFun := (continuous_mk p b).subtype_mk _
-  continuous_invFun := (continuous_retraction p b).comp continuous_subtype_val
+  continuous_invFun := (continuous_retraction p b).comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the inclusion of the torus. -/
 @[simp]
 theorem coe_fiberHomeomorph (b : B) (x : ∀ i, AddCircle (p i b : ℝ)) :
-    (fiberHomeomorph p b x).1 = mk b x := (rfl)
+    (fiberHomeomorph p b x).val = mk b x := (rfl)
 
 /-- The inverse fiber homeomorphism is the retraction restricted to the fiber. -/
 @[simp]
 theorem fiberHomeomorph_symm_apply (b : B) (z : {z : TorusFamily p // z.base = b}) :
-    (fiberHomeomorph p b).symm z = retraction p b z.1 := (rfl)
+    (fiberHomeomorph p b).symm z = retraction p b z.val := (rfl)
 
 /-- In normalized coordinates, the `i`-th coordinate keeps the base point and the `i`-th
 normalized angle. -/
@@ -661,7 +661,7 @@ is one. -/
 theorem isLocalDiffeomorphOn_comap {s : Set B'} (hf : IsLocalDiffeomorphOn IB' IB n f s) :
     IsLocalDiffeomorphOn (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
       (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) (base ⁻¹' s) :=
-  fun z ↦ isLocalDiffeomorphAt_comap p f IB (hf ⟨z.1.base, z.2⟩)
+  fun z ↦ isLocalDiffeomorphAt_comap p f IB (hf ⟨z.val.base, z.property⟩)
 
 /-- Base change along a `C^n` local diffeomorphism is a `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_comap (hf : IsLocalDiffeomorph IB' IB n f) :

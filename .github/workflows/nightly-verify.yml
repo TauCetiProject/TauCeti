@@ -37,7 +37,7 @@ name: Nightly verification
 
 on:
   schedule:
-  - cron: "25 15 * * *"   # daily, offset from stuck-alerts (:50) and housekeeping (:20)
+  - cron: "25 15 * * *"   # daily, offset from housekeeping (:20)
   workflow_dispatch: {}
 
 permissions:
@@ -102,10 +102,9 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: fresh
 
       - name: Resolve the commit under test
@@ -253,10 +252,9 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
@@ -616,8 +614,7 @@ jobs:
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
           ZULIP_CHANNEL: Tau Ceti
-          # A topic of its own, not "Stuck PRs": stuck_alerts.py reconciles that topic by marker and
-          # edits messages it recognises, so an unrelated post would sit inside its bookkeeping.
+          # A topic of its own, so these posts stay together and apart from other announcements.
           ZULIP_TOPIC: Nightly verification
           RESULT: ${{ needs.verify.result }}
           REFERENCE_RESULT: ${{ needs.reference.result }}

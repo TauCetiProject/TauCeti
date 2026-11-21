@@ -57,8 +57,8 @@ variable (R) (B : ι → Type*) [∀ i, CommRing (B i)] [∀ i, Algebra R (B i)]
 /-- Integral closure commutes with finite products, by taking coordinates of integral tuples. -/
 def integralClosurePiAlgEquiv :
     integralClosure R (∀ i, B i) ≃ₐ[R] ∀ i, integralClosure R (B i) where
-  toFun x i := ⟨x.1 i, (isIntegral_pi_iff.mp x.2) i⟩
-  invFun x := ⟨fun i ↦ (x i).1, isIntegral_pi_iff.mpr fun i ↦ (x i).2⟩
+  toFun x i := ⟨x.val i, (isIntegral_pi_iff.mp x.property) i⟩
+  invFun x := ⟨fun i ↦ (x i).val, isIntegral_pi_iff.mpr fun i ↦ (x i).property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -68,7 +68,7 @@ def integralClosurePiAlgEquiv :
 /-- The product comparison takes an integral tuple to its coordinates. -/
 @[simp]
 theorem integralClosurePiAlgEquiv_apply (x : integralClosure R (∀ i, B i)) (i : ι) :
-    (integralClosurePiAlgEquiv R B x i : B i) = x.1 i := (rfl)
+    (integralClosurePiAlgEquiv R B x i : B i) = x.val i := (rfl)
 
 /-- The inverse product comparison assembles the coordinates into an integral tuple. -/
 @[simp]
@@ -83,12 +83,12 @@ theorem finite_integralClosure_of_isReduced_of_forall_minimalPrimes {P B : Type*
     (hfin : ∀ (Q : Ideal B) (hQ : Q ∈ minimalPrimes B), haveI := hQ.1.1;
       Module.Finite P (integralClosure P Q.ResidueField)) :
     Module.Finite P (integralClosure P B) := by
-  let F (i : minimalPrimes B) : Type _ := letI := i.2.1.1; i.1.ResidueField
-  let (i : minimalPrimes B) : Field (F i) := by letI := i.2.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra B (F i) := by letI := i.2.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra P (F i) := by letI := i.2.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower P B (F i) := by have := i.2.1.1; infer_instance
-  have (i : minimalPrimes B) : Module.Finite P (integralClosure P (F i)) := hfin i.1 i.2
+  let F (i : minimalPrimes B) : Type _ := letI := i.property.1.1; i.val.ResidueField
+  let (i : minimalPrimes B) : Field (F i) := by letI := i.property.1.1; infer_instance
+  let (i : minimalPrimes B) : Algebra B (F i) := by letI := i.property.1.1; infer_instance
+  let (i : minimalPrimes B) : Algebra P (F i) := by letI := i.property.1.1; infer_instance
+  have (i : minimalPrimes B) : IsScalarTower P B (F i) := by have := i.property.1.1; infer_instance
+  have (i : minimalPrimes B) : Module.Finite P (integralClosure P (F i)) := hfin i.val i.property
   have : Module.Finite P (integralClosure P (∀ i : minimalPrimes B, F i)) :=
     Module.Finite.equiv (integralClosurePiAlgEquiv P F).toLinearEquiv.symm
   let ψ : B →ₐ[P] ∀ i : minimalPrimes B, F i :=
@@ -98,7 +98,7 @@ theorem finite_integralClosure_of_isReduced_of_forall_minimalPrimes {P B : Type*
     nilradical, Ideal.zero_eq_bot, ← Ideal.sInf_minimalPrimes, Ideal.mem_sInf]
   intro Q hQ
   have : Q.IsPrime := hQ.1.1
-  have hi : algebraMap B Q.ResidueField (u.1 - v.1) = 0 := by
+  have hi : algebraMap B Q.ResidueField (u.val - v.val) = 0 := by
     rw [map_sub, sub_eq_zero]
     exact congrFun (congrArg Subtype.val huv) ⟨Q, hQ⟩
   rwa [IsScalarTower.algebraMap_apply B (B ⧸ Q) Q.ResidueField,
