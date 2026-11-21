@@ -89,13 +89,6 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableS
   [BorelSpace G] [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] {α : CStarAction G A} (P : CovariantRepresentation α H)
 
-omit [R1Space G] [MeasurableSpace G] [BorelSpace G] in
-private theorem norm_coefficient_group_le (a : A) (g : G) (v : H) :
-    ‖P.coefficient a (P.group g v)‖ ≤ ‖a‖ * ‖v‖ := by
-  refine ((P.coefficient a).le_opNorm _).trans ?_
-  rw [P.isUnitary.norm_map]
-  exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
-
 /-- For a Bochner-integrable coefficient function `f : G → A` against an inner-regular Borel
 measure, each Hilbert-space orbit integrand `g ↦ P.coefficient (f g) (P.group g v)` is Bochner
 integrable. Neither separability of `H` or `A` nor σ-finiteness of `μ` is assumed. -/
@@ -109,7 +102,7 @@ theorem integrable_integrand_of_integrable {μ : Measure G} [μ.InnerRegularComp
     hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
       (L.continuous.comp (P.continuous_orbit v))
   exact (hf.norm.mul_const ‖v‖).mono' hmeas
-    (.of_forall fun g => norm_coefficient_group_le P _ g v)
+    (.of_forall fun g => P.norm_coefficient_group_apply_le _ g v)
 
 omit [R1Space G] [BorelSpace G] in
 private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : Integrable f μ)
@@ -117,7 +110,7 @@ private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : 
     ‖∫ g, P.coefficient (f g) (P.group g v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
   rw [← integral_mul_const]
   exact norm_integral_le_of_norm_le (hf.norm.mul_const _)
-    (.of_forall fun g => norm_coefficient_group_le P _ g v)
+    (.of_forall fun g => P.norm_coefficient_group_apply_le _ g v)
 
 /-- **Vector-valued `L¹` integrated form** of a covariant representation on `Lp A 1 μ`, sending
 `f` to the bounded operator `v ↦ ∫ g, P.coefficient (f g) (P.group g v) ∂μ`. -/

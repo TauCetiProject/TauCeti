@@ -252,6 +252,24 @@ namespace MeasureTheory.Measure
 
 open TauCeti
 
+section Measurable
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [MeasurableInv G]
+  (μ : Measure G)
+
+/-- If `μ` is left-invariant and `μ.inv ≪ μ`, then `y ↦ y⁻¹ * x` is quasi-measure-preserving for
+every `x : G`, since `y⁻¹ * x = (x⁻¹ * y)⁻¹` is left translation followed by inversion. -/
+theorem quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous [μ.IsMulLeftInvariant]
+    (hinv : μ.inv ≪ μ) (x : G) :
+    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ := by
+  have hinv_qmp : QuasiMeasurePreserving Inv.inv μ μ := ⟨measurable_inv.aemeasurable, hinv⟩
+  have hcomp := hinv_qmp.comp (measurePreserving_mul_left μ x⁻¹).quasiMeasurePreserving
+  convert hcomp using 1
+  ext y
+  simp [mul_inv_rev]
+
+end Measurable
+
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G]
 variable [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
@@ -309,18 +327,6 @@ theorem measure_mul_right_null_of_innerRegular [μ.IsMulLeftInvariant]
       _root_.smul_apply, nnreal_smul_coe_apply] at hmap
     have hpos : modularCharacterFun g ≠ 0 := (modularCharacterFun_pos g).ne'
     simp [← hmap, hpos]
-
-omit [LocallyCompactSpace G] in
-/-- If `μ` is left-invariant and `μ.inv ≪ μ`, then `y ↦ y⁻¹ * x` is quasi-measure-preserving for
-every `x : G`, since `y⁻¹ * x = (x⁻¹ * y)⁻¹` is left translation followed by inversion. -/
-theorem quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous [μ.IsMulLeftInvariant]
-    (hinv : μ.inv ≪ μ) (x : G) :
-    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ := by
-  have hinv_qmp : QuasiMeasurePreserving Inv.inv μ μ := ⟨measurable_inv.aemeasurable, hinv⟩
-  have hcomp := hinv_qmp.comp (measurePreserving_mul_left μ x⁻¹).quasiMeasurePreserving
-  convert hcomp using 1
-  ext y
-  simp [mul_inv_rev]
 
 variable [μ.IsHaarMeasure]
 
@@ -505,12 +511,12 @@ theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := 
 theorem quasiMeasurePreserving_inv_of_regular : QuasiMeasurePreserving Inv.inv μ μ :=
   ⟨measurable_inv.aemeasurable, inv_absolutelyContinuous_of_regular μ⟩
 
-/-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving: it is inversion
-followed by right translation by `x`. -/
+/-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving. -/
 @[fun_prop]
 theorem quasiMeasurePreserving_inv_mul_of_regular (x : G) :
     QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ :=
-  (quasiMeasurePreserving_mul_right_of_regular μ x).comp (quasiMeasurePreserving_inv_of_regular μ)
+  quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous μ
+    (inv_absolutelyContinuous_of_regular μ) x
 
 end Regular
 

@@ -47,10 +47,12 @@ telescopic series in `C_c(G, A)` and exchanges integration on each compactly sup
   assumption on `G`), the twisted convolution integrand is a.e. integrable, `bochnerConvolution` is
   integrable, and it represents `convolutionL1` almost everywhere.
 * `TauCeti.CStarAction.integrable_bochnerInvolution`,
-  `TauCeti.CStarAction.twistedInvolutionL1_toL1_eq_bochnerInvolution`, and
-  `TauCeti.CStarAction.coeFn_twistedInvolutionL1_of_inv_absolutelyContinuous`: twisted involution
-  of an integrable function is integrable with the same `L¹` norm and represents
-  `twistedInvolutionL1` almost everywhere whenever `μ.inv ≪ μ` (without `[μ.Regular]`).
+  `TauCeti.CStarAction.twistedInvolutionL1_toL1_eq_bochnerInvolution`,
+  `TauCeti.CStarAction.coeFn_twistedInvolutionL1`, and
+  `TauCeti.CStarAction.twistedInvolutionL1_trivial`: twisted involution of an integrable function
+  is integrable with the same `L¹` norm, represents `twistedInvolutionL1` almost everywhere whenever
+  `μ.inv ≪ μ` (without `[μ.Regular]`), and specializes to `star ∘ MeasureTheory.Lp.modularInversion`
+  for the trivial action on a regular Haar measure.
 
 ## References
 
@@ -115,6 +117,17 @@ theorem bochnerConvolution_smul_right (α : CStarAction G A) (μ : Measure G)
   ext s
   simp [bochnerConvolution_apply, mul_smul_comm, integral_smul]
 
+/-- Pointwise left additivity for `bochnerConvolution` at `s` when both integrands are integrable
+there. -/
+theorem bochnerConvolution_add_left_apply (α : CStarAction G A) (μ : Measure G)
+    {f₁ f₂ g : G → A} {s : G}
+    (hf₁ : Integrable (fun r => f₁ r * α r (g (r⁻¹ * s))) μ)
+    (hf₂ : Integrable (fun r => f₂ r * α r (g (r⁻¹ * s))) μ) :
+    α.bochnerConvolution μ (f₁ + f₂) g s =
+      α.bochnerConvolution μ f₁ g s + α.bochnerConvolution μ f₂ g s := by
+  simp only [bochnerConvolution_apply, Pi.add_apply, add_mul]
+  exact integral_add hf₁ hf₂
+
 /-- Left additivity almost everywhere for `bochnerConvolution` under a.e.-integrability of the
 integrands. -/
 theorem bochnerConvolution_add_left (α : CStarAction G A) (μ : Measure G) {f₁ f₂ g : G → A}
@@ -123,8 +136,18 @@ theorem bochnerConvolution_add_left (α : CStarAction G A) (μ : Measure G) {f�
     α.bochnerConvolution μ (f₁ + f₂) g =ᵐ[μ]
       α.bochnerConvolution μ f₁ g + α.bochnerConvolution μ f₂ g := by
   filter_upwards [hf₁, hf₂] with s hs₁ hs₂
-  simp only [Pi.add_apply, bochnerConvolution_apply, add_mul]
-  exact integral_add hs₁ hs₂
+  exact α.bochnerConvolution_add_left_apply μ hs₁ hs₂
+
+/-- Pointwise right additivity for `bochnerConvolution` at `s` when both integrands are integrable
+there. -/
+theorem bochnerConvolution_add_right_apply (α : CStarAction G A) (μ : Measure G)
+    {f g₁ g₂ : G → A} {s : G}
+    (hg₁ : Integrable (fun r => f r * α r (g₁ (r⁻¹ * s))) μ)
+    (hg₂ : Integrable (fun r => f r * α r (g₂ (r⁻¹ * s))) μ) :
+    α.bochnerConvolution μ f (g₁ + g₂) s =
+      α.bochnerConvolution μ f g₁ s + α.bochnerConvolution μ f g₂ s := by
+  simp only [bochnerConvolution_apply, Pi.add_apply, map_add, mul_add]
+  exact integral_add hg₁ hg₂
 
 /-- Right additivity almost everywhere for `bochnerConvolution` under a.e.-integrability of the
 integrands. -/
@@ -134,8 +157,7 @@ theorem bochnerConvolution_add_right (α : CStarAction G A) (μ : Measure G) {f 
     α.bochnerConvolution μ f (g₁ + g₂) =ᵐ[μ]
       α.bochnerConvolution μ f g₁ + α.bochnerConvolution μ f g₂ := by
   filter_upwards [hg₁, hg₂] with s hs₁ hs₂
-  simp only [Pi.add_apply, bochnerConvolution_apply, map_add, mul_add]
-  exact integral_add hs₁ hs₂
+  exact α.bochnerConvolution_add_right_apply μ hs₁ hs₂
 
 /-- On compactly supported continuous functions, `bochnerConvolution` agrees with `convolution`. -/
 theorem bochnerConvolution_coe [IsTopologicalGroup G] [OpensMeasurableSpace G]
@@ -504,8 +526,7 @@ theorem integral_norm_bochnerInvolution
 
 /-- For `u : Lp A 1 μ`, `α.twistedInvolutionL1 μ u` is represented `μ`-almost everywhere by
 `α.bochnerInvolution u` whenever `μ.inv ≪ μ` (without assuming `[μ.Regular]`). -/
-theorem coeFn_twistedInvolutionL1_of_inv_absolutelyContinuous
-    (hinv : μ.inv ≪ μ) (u : Lp A 1 μ) :
+theorem coeFn_twistedInvolutionL1 (hinv : μ.inv ≪ μ) (u : Lp A 1 μ) :
     α.twistedInvolutionL1 μ u =ᵐ[μ] α.bochnerInvolution u := by
   have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
   conv_lhs => rw [← hu]
@@ -513,5 +534,27 @@ theorem coeFn_twistedInvolutionL1_of_inv_absolutelyContinuous
   exact Integrable.coeFn_toL1 _
 
 end InvAbsolutelyContinuous
+
+section RegularHaar
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
+
+/-- For the trivial action and a regular Haar measure, `twistedInvolutionL1` is pointwise `star`
+composed with `MeasureTheory.Lp.modularInversion`. -/
+@[simp]
+theorem twistedInvolutionL1_trivial (f : Lp A 1 μ) :
+    (trivial (G := G) (A := A)).twistedInvolutionL1 μ f =
+      star (Lp.modularInversion μ 1 ℂ f) := by
+  refine Lp.ext ?_
+  filter_upwards [(trivial (G := G) (A := A)).coeFn_twistedInvolutionL1
+      (Measure.inv_absolutelyContinuous_of_regular μ) f,
+    Lp.coeFn_star (Lp.modularInversion μ 1 ℂ f),
+    Lp.coeFn_modularInversion (𝕜 := ℂ) f] with s h₁ h₂ h₃
+  rw [h₁, bochnerInvolution_apply, trivial_apply, h₂, Pi.star_apply, h₃]
+  simp [ENNReal.toReal_one, star_smul]
+
+end RegularHaar
 
 end TauCeti.CStarAction

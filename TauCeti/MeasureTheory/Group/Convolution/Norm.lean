@@ -7,9 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Group.Convolution.Support
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Norm estimates for convolution-type integrals over a group
@@ -21,10 +19,9 @@ left-invariant measure `μ` finite on compact sets, then
 
 `∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ`.
 
-Neither local compactness, separability, nor σ-finiteness of `μ` is assumed: continuity of the
-scalar convolution comes from `TauCeti.continuous_integral_of_compact_support`, its compact support
-from `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`, and the Fubini swap from
-`MeasureTheory.integral_integral_swap_of_hasCompactSupport`.
+Neither local compactness, separability, nor σ-finiteness of `μ` is assumed: integrability and the
+iterated-integral identity come from `TauCeti.integrable_integral_norm_mul_inv_mul` and
+`TauCeti.integral_integral_norm_mul_inv_mul`.
 
 ## Main statements
 
@@ -50,31 +47,17 @@ theorem integral_norm_le_mul_of_norm_le_integral {G E₁ E₂ E₃ : Type*}
     (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
     (F : C_c(G, E₃)) (f : C_c(G, E₁)) (g : C_c(G, E₂))
     (hF : ∀ s, ‖F s‖ ≤ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ) :
-    ∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
-  have hsupp : ∀ s r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-    fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h (by intro hf; simp [hf])
-      (by intro hg; simp [hg])
-  have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
-    rw [uncurry_def]
-    fun_prop
-  have hNcont := continuous_integral_of_compact_support μ f.hasCompactSupport hcont
-    fun s r h => (hsupp s r h).1
-  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
-    g.hasCompactSupport hsupp
+    ∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ :=
   calc ∫ s, ‖F s‖ ∂μ
       ≤ ∫ s, ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
         integral_mono
           (F.continuous.norm.integrable_of_hasCompactSupport
             (F.hasCompactSupport.comp_left norm_zero))
-          (hNcont.integrable_of_hasCompactSupport hNsupp) hF
-    _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont
-          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
-    _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
-        congr 1 with r
-        rw [integral_const_mul]
-        congr 1
-        exact integral_mul_left_eq_self (fun s => ‖g s‖) r⁻¹
-    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := integral_mul_const _ _
+          (integrable_integral_norm_mul_inv_mul μ f.continuous f.hasCompactSupport
+            g.continuous g.hasCompactSupport)
+          hF
+    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ :=
+        integral_integral_norm_mul_inv_mul μ f.continuous f.hasCompactSupport
+          g.continuous g.hasCompactSupport
 
 end TauCeti

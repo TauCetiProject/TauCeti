@@ -55,11 +55,9 @@ those of `Completion (ConvolutionAlgebra α μ)` across `completionEquivL1`:
   `TauCeti.MeasureTheory.Function.Lp.GroupConvolution`. On locally compact `G`, `completionEquivL1`
   intertwines multiplication in the completion with `convolutionL1`.
 * `CStarAction.twistedInvolutionL1`: the twisted involution on `Lp A 1 μ` as a conjugate-linear
-  isometric equivalence, anti-multiplicative for `convolutionL1`, and represented almost everywhere
-  by `s ↦ (Measure.modularCharacter s : ℝ) • α s (star (f s⁻¹))` for a regular Haar measure.
+  isometric equivalence, anti-multiplicative for `convolutionL1`.
 
-For the trivial action on `ℂ`, `convolutionL1` and `twistedInvolutionL1` specialize to
-`MeasureTheory.Lp.convolutionL` and `star ∘ MeasureTheory.Lp.modularInversion`.
+For the trivial action on `ℂ`, `convolutionL1` specializes to `MeasureTheory.Lp.convolutionL`.
 
 ## References
 
@@ -703,105 +701,6 @@ theorem twistedInvolutionL1_convolutionL1 (f g : Lp A 1 μ) :
     ((ConvolutionAlgebra.completionEquivL1 α μ).symm g)
 
 end InvolutionL1
-
-section ActionPointwise
-
-variable {G A : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableSpace G]
-  [BorelSpace G] [NonUnitalCStarAlgebra A] (α : CStarAction G A)
-
-private theorem integrable_action_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
-    (u : Lp A 1 μ) : Integrable (fun s => α s (u s)) μ :=
-  (L1.integrable_coeFn u).mono
-    (α.aestronglyMeasurable_apply (L1.integrable_coeFn u).aefinStronglyMeasurable)
-    (.of_forall fun s => (StarAlgEquiv.norm_map (α s) (u s)).le)
-
-private def actionPointwiseL1 {μ : Measure G} [μ.InnerRegularCompactLTTop] :
-    Lp A 1 μ →ₗᵢ[ℂ] Lp A 1 μ where
-  toFun u := (α.integrable_action_apply u).toL1 _
-  map_add' u v := by
-    refine Lp.ext ?_
-    filter_upwards [(α.integrable_action_apply (u + v)).coeFn_toL1,
-      Lp.coeFn_add ((α.integrable_action_apply u).toL1 _)
-        ((α.integrable_action_apply v).toL1 _),
-      (α.integrable_action_apply u).coeFn_toL1,
-      (α.integrable_action_apply v).coeFn_toL1,
-      Lp.coeFn_add u v] with s h₁ h₂ h₃ h₄ h₅
-    rw [h₁, h₂, Pi.add_apply, h₃, h₄, h₅, Pi.add_apply, map_add]
-  map_smul' c u := by
-    simp only [RingHom.id_apply]
-    refine Lp.ext ?_
-    filter_upwards [(α.integrable_action_apply (c • u)).coeFn_toL1,
-      Lp.coeFn_smul c ((α.integrable_action_apply u).toL1 _),
-      (α.integrable_action_apply u).coeFn_toL1,
-      Lp.coeFn_smul c u] with s h₁ h₂ h₃ h₄
-    rw [h₁, h₂, Pi.smul_apply, h₃, h₄, Pi.smul_apply, map_smul]
-  norm_map' u := by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, L1.norm_eq_integral_norm]
-    refine integral_congr_ae ?_
-    filter_upwards [(α.integrable_action_apply u).coeFn_toL1] with s hs
-    rw [hs, StarAlgEquiv.norm_map]
-
-private theorem coeFn_actionPointwiseL1 {μ : Measure G} [μ.InnerRegularCompactLTTop]
-    (u : Lp A 1 μ) :
-    α.actionPointwiseL1 u =ᵐ[μ] fun s => α s (u s) :=
-  (α.integrable_action_apply u).coeFn_toL1
-
-end ActionPointwise
-
-section RegularHaar
-
-variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
-  (α : CStarAction G A) {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
-
-private theorem twistedInvolutionL1_eq_actionPointwiseL1 (f : Lp A 1 μ) :
-    α.twistedInvolutionL1 μ f = α.actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ f)) := by
-  have hc₁ : Continuous (α.twistedInvolutionL1 μ) := (α.twistedInvolutionL1 μ).continuous
-  have hc₂ : Continuous fun u : Lp A 1 μ =>
-      α.actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ u)) :=
-    α.actionPointwiseL1.continuous.comp
-      (continuous_star.comp (Lp.modularInversion μ 1 ℝ).continuous)
-  refine congrFun ((ConvolutionAlgebra.denseRange_toL1 (α := α) (μ := μ)).equalizer hc₁ hc₂ ?_) f
-  ext g : 1
-  simp only [Function.comp_apply, ← ConvolutionAlgebra.toL1_star]
-  refine Lp.ext ?_
-  filter_upwards [ConvolutionAlgebra.coeFn_toL1 (star g),
-    α.coeFn_actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ (ConvolutionAlgebra.toL1 g))),
-    Lp.coeFn_star (Lp.modularInversion μ 1 ℝ (ConvolutionAlgebra.toL1 g)),
-    Lp.coeFn_modularInversion (𝕜 := ℝ) (ConvolutionAlgebra.toL1 g),
-    (Measure.quasiMeasurePreserving_inv_of_regular μ).ae (ConvolutionAlgebra.coeFn_toL1 g)]
-    with s h₁ h₂ h₃ h₄ h₅
-  rw [h₁, ConvolutionAlgebra.ofConv_star, twistedInvolution_apply, h₂, h₃, Pi.star_apply, h₄, h₅]
-  simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, star_smul, star_trivial]
-  rw [← map_smul, Complex.coe_smul]
-
-/-- For a regular Haar measure, the twisted `L¹` involution is represented almost everywhere by
-`s ↦ (Measure.modularCharacter s : ℝ) • α s (star (f s⁻¹))`. -/
-theorem coeFn_twistedInvolutionL1 (f : Lp A 1 μ) :
-    α.twistedInvolutionL1 μ f =ᵐ[μ]
-      fun s => (Measure.modularCharacter s : ℝ) • α s (star (f s⁻¹)) := by
-  rw [α.twistedInvolutionL1_eq_actionPointwiseL1 f]
-  filter_upwards [α.coeFn_actionPointwiseL1 (star (Lp.modularInversion μ 1 ℝ f)),
-    Lp.coeFn_star (Lp.modularInversion μ 1 ℝ f),
-    Lp.coeFn_modularInversion (𝕜 := ℝ) f] with s h₁ h₂ h₃
-  rw [h₁, h₂, Pi.star_apply, h₃]
-  simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, star_smul, star_trivial]
-  rw [← Complex.coe_smul, map_smul, Complex.coe_smul]
-
-/-- For the trivial action and a regular Haar measure, `twistedInvolutionL1` is pointwise `star`
-composed with `MeasureTheory.Lp.modularInversion`. -/
-@[simp]
-theorem twistedInvolutionL1_trivial (f : Lp A 1 μ) :
-    (trivial (G := G) (A := A)).twistedInvolutionL1 μ f =
-      star (Lp.modularInversion μ 1 ℂ f) := by
-  refine Lp.ext ?_
-  filter_upwards [(trivial (G := G) (A := A)).coeFn_twistedInvolutionL1 f,
-    Lp.coeFn_star (Lp.modularInversion μ 1 ℂ f),
-    Lp.coeFn_modularInversion (𝕜 := ℂ) f] with s h₁ h₂ h₃
-  rw [h₁, trivial_apply, h₂, Pi.star_apply, h₃]
-  simp [ENNReal.toReal_one, star_smul]
-
-end RegularHaar
 
 end CStarAction
 
