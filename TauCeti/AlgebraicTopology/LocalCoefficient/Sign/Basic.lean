@@ -314,14 +314,41 @@ def signLocalSystemPullbackIsoOfLift {Y : TopCat.{v'}} (g : C(Y, X)) (t : C(Y, E
       exact congrArg f.val h
 
 /-- The trivialization given by a lift `t` of `g` evaluates at the value of `t`. -/
+@[simp]
 theorem signLocalSystemPullbackIsoOfLift_hom_app_apply {Y : TopCat.{v'}} (g : C(Y, X))
     (t : C(Y, E)) (ht : ∀ y, t y ∈ p ⁻¹' {g y}) (y : FundamentalGroupoid Y)
-    (f : ((TauCeti.LocalCoefficientSystem.pullback g).obj (hp.signLocalSystem R σ hσ)).obj y) :
-    (ModuleCat.Hom.hom (B := ModuleCat.of R (ULift.{w} R))
+    (f : (hp.signLocalSystem R σ hσ).obj ((FundamentalGroupoid.map g).obj y)) :
+    (ModuleCat.Hom.hom (A := (hp.signLocalSystem R σ hσ).obj ((FundamentalGroupoid.map g).obj y))
+        (B := ModuleCat.of R (ULift.{w} R))
         ((hp.signLocalSystemPullbackIsoOfLift hfix hfib g t ht).hom.app y)) f =
       ULift.up ((hp.signLocalSystemObjEquiv σ hσ ((FundamentalGroupoid.map g).obj y) f :
         p ⁻¹' {((FundamentalGroupoid.map g).obj y).as} → R) ⟨t y.as, ht y.as⟩) :=
   (rfl)
+
+/-- The inverse of the trivialization given by a lift `t` of `g` sends `r` to the function changing
+sign under `σ` with value `r` at `t y`. -/
+@[simp]
+theorem signLocalSystemPullbackIsoOfLift_inv_app_apply {Y : TopCat.{v'}} (g : C(Y, X))
+    (t : C(Y, E)) (ht : ∀ y, t y ∈ p ⁻¹' {g y}) (y : FundamentalGroupoid Y) (r : R) :
+    (hp.signLocalSystemObjEquiv σ hσ ((FundamentalGroupoid.map g).obj y)
+        (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{w} R))
+          (B := (hp.signLocalSystem R σ hσ).obj ((FundamentalGroupoid.map g).obj y))
+          ((hp.signLocalSystemPullbackIsoOfLift hfix hfib g t ht).inv.app y) (ULift.up r)) :
+        p ⁻¹' {((FundamentalGroupoid.map g).obj y).as} → R) ⟨t y.as, ht y.as⟩ = r :=
+  TauCeti.signFiberEquiv_symm_apply_self hfix hfib _ r
+
+/-- The inverse of the trivialization given by a lift `t` of `g` sends `r` to a function whose
+value at the other point of the fibre over `g y` is `-r`. -/
+@[simp]
+theorem signLocalSystemPullbackIsoOfLift_inv_app_apply_fiberMap {Y : TopCat.{v'}} (g : C(Y, X))
+    (t : C(Y, E)) (ht : ∀ y, t y ∈ p ⁻¹' {g y}) (y : FundamentalGroupoid Y) (r : R) :
+    (hp.signLocalSystemObjEquiv σ hσ ((FundamentalGroupoid.map g).obj y)
+        (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{w} R))
+          (B := (hp.signLocalSystem R σ hσ).obj ((FundamentalGroupoid.map g).obj y))
+          ((hp.signLocalSystemPullbackIsoOfLift hfix hfib g t ht).inv.app y) (ULift.up r)) :
+        p ⁻¹' {((FundamentalGroupoid.map g).obj y).as} → R)
+        (Function.fiberMap σ hσ ((FundamentalGroupoid.map g).obj y).as ⟨t y.as, ht y.as⟩) = -r :=
+  TauCeti.signFiberEquiv_symm_apply_fiberMap hfix hfib _ r
 
 end DoubleCover
 

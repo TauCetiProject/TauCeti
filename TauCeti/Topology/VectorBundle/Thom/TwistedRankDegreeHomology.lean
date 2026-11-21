@@ -185,6 +185,15 @@ theorem thomPairOverSignSystemIso_neg_hom {W : Set B} (hW : W ⊆ e.baseSet) :
   exact (congrArg (_ ≫ ·) (signLocalSystemPullbackIsoOfMapsTo_neg_hom hι e ω _ _)).trans
     (Preadditive.comp_neg _ _)
 
+/-- Reading the orientations through `-ω` instead of `ω` negates the inverse of the trivialization
+over `W`. -/
+@[simp]
+theorem thomPairOverSignSystemIso_neg_inv {W : Set B} (hW : W ⊆ e.baseSet) :
+    (thomPairOverSignSystemIso hι K e (-ω) hW).inv =
+      -(thomPairOverSignSystemIso hι K e ω hW).inv :=
+  Iso.inv_ext (by
+    rw [thomPairOverSignSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
+
 variable (K) in
 /-- Over a subset `W` of the base set of a trivialization `e` of the atlas, the trivialization of
 the orientation local system read through `e` and `ω` identifies `Hₙ(E|_W, E₀|_W; o(E))` with the

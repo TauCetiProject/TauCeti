@@ -198,11 +198,12 @@ def signLocalSystemPullbackIsoOfMapsTo {Y : TopCat.{uY}} (g : C(Y, B))
 
 /-- The trivialization read through `e` and `ω` evaluates at the orientation of the fibre which `e`
 reads as `ω`. -/
+@[simp]
 theorem signLocalSystemPullbackIsoOfMapsTo_hom_app_apply {Y : TopCat.{uY}} (g : C(Y, B))
     (hg : ∀ y, g y ∈ e.baseSet) (y : FundamentalGroupoid Y)
-    (f : ((LocalCoefficientSystem.pullback (X := Y) (Y := TopCat.of B) g).obj
-      (signLocalSystem F E S hι)).obj y) :
-    ((signLocalSystemPullbackIsoOfMapsTo hι e ω g hg).hom.app y).hom f =
+    (f : (signLocalSystem F E S hι).obj ((FundamentalGroupoid.map g).obj y)) :
+    (ModuleCat.Hom.hom (A := (signLocalSystem F E S hι).obj ((FundamentalGroupoid.map g).obj y))
+        (B := ModuleCat.of S S) ((signLocalSystemPullbackIsoOfMapsTo hι e ω g hg).hom.app y)) f =
       (signLocalSystemObjEquiv hι ((FundamentalGroupoid.map g).obj y) f :
         (proj ⁻¹' {((FundamentalGroupoid.map g).obj y).as} :
           Set (VectorBundleOrientationCover F E ι)) → S)
@@ -210,6 +211,21 @@ theorem signLocalSystemPullbackIsoOfMapsTo_hom_app_apply {Y : TopCat.{uY}} (g : 
   congrArg ULift.down
     ((isCoveringMap_proj hι).signLocalSystemPullbackIsoOfLift_hom_app_apply (X := TopCat.of B)
       (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g _ (fun _ ↦ rfl) y f)
+
+/-- The inverse of the trivialization read through `e` and `ω` sends `r` to the element of the
+fibre whose evaluation at the orientation which `e` reads as `ω` is `r`. -/
+@[simp]
+theorem signLocalSystemPullbackIsoOfMapsTo_inv_app_apply {Y : TopCat.{uY}} (g : C(Y, B))
+    (hg : ∀ y, g y ∈ e.baseSet) (y : FundamentalGroupoid Y) (r : S) :
+    (signLocalSystemObjEquiv hι ((FundamentalGroupoid.map g).obj y)
+        (ModuleCat.Hom.hom (A := ModuleCat.of S S)
+          (B := (signLocalSystem F E S hι).obj ((FundamentalGroupoid.map g).obj y))
+          ((signLocalSystemPullbackIsoOfMapsTo hι e ω g hg).inv.app y) r) :
+        (proj ⁻¹' {((FundamentalGroupoid.map g).obj y).as} :
+          Set (VectorBundleOrientationCover F E ι)) → S)
+        ⟨⟨g y.as, (e.mapOrientation ι (hg y.as)).symm ω⟩, rfl⟩ = r :=
+  (isCoveringMap_proj hι).signLocalSystemPullbackIsoOfLift_inv_app_apply (X := TopCat.of B)
+    (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g _ (fun _ ↦ rfl) y r
 
 /-- The trivialization along `g`, at the image of a point under a map `k`, is the trivialization
 along `g ∘ k` at that point. -/
@@ -232,8 +248,9 @@ theorem signLocalSystemPullbackIsoOfMapsTo_hom_eq (e' : Trivialization F (π F E
     (signLocalSystemPullbackIsoOfMapsTo (S := S) hι e ω g hg).hom =
       (signLocalSystemPullbackIsoOfMapsTo hι e' ω' g hg').hom := by
   ext y f
-  rw [signLocalSystemPullbackIsoOfMapsTo_hom_app_apply,
-    signLocalSystemPullbackIsoOfMapsTo_hom_app_apply, h y.as]
+  refine (signLocalSystemPullbackIsoOfMapsTo_hom_app_apply hι e ω g hg y f).trans
+    (Eq.trans ?_ (signLocalSystemPullbackIsoOfMapsTo_hom_app_apply hι e' ω' g hg' y f).symm)
+  rw [h y.as]
 
 /-- Two trivializations of the atlas reading opposite orientations along `g` as `ω` and `ω'` give
 opposite trivializations of the orientation local system along `g`. -/
@@ -244,9 +261,9 @@ theorem signLocalSystemPullbackIsoOfMapsTo_hom_eq_neg (e' : Trivialization F (π
     (signLocalSystemPullbackIsoOfMapsTo (S := S) hι e ω g hg).hom =
       -(signLocalSystemPullbackIsoOfMapsTo hι e' ω' g hg').hom := by
   ext y f
-  rw [NatTrans.app_neg, ModuleCat.hom_neg, LinearMap.neg_apply,
-    signLocalSystemPullbackIsoOfMapsTo_hom_app_apply,
-    signLocalSystemPullbackIsoOfMapsTo_hom_app_apply]
+  rw [NatTrans.app_neg, ModuleCat.hom_neg, LinearMap.neg_apply]
+  refine (signLocalSystemPullbackIsoOfMapsTo_hom_app_apply hι e ω g hg y f).trans (Eq.trans ?_
+    (congrArg Neg.neg (signLocalSystemPullbackIsoOfMapsTo_hom_app_apply hι e' ω' g hg' y f)).symm)
   -- The deck involution exchanges the two orientations read as `ω` and `ω'`.
   have hd : Function.fiberMap _ proj_comp_deck ((FundamentalGroupoid.map g).obj y).as
       ⟨⟨g y.as, (e'.mapOrientation ι (hg' y.as)).symm ω'⟩, rfl⟩ =
@@ -266,6 +283,16 @@ theorem signLocalSystemPullbackIsoOfMapsTo_neg_hom {Y : TopCat.{uY}} (g : C(Y, B
       -(signLocalSystemPullbackIsoOfMapsTo hι e ω g hg).hom :=
   signLocalSystemPullbackIsoOfMapsTo_hom_eq_neg hι e (-ω) e ω g hg hg fun y ↦
     (Equiv.symm_apply_eq _).2 (by rw [Trivialization.mapOrientation_neg, Equiv.apply_symm_apply])
+
+/-- Reading the orientations through `-ω` instead of `ω` negates the inverse of the trivialization
+of the orientation local system. -/
+@[simp]
+theorem signLocalSystemPullbackIsoOfMapsTo_neg_inv {Y : TopCat.{uY}} (g : C(Y, B))
+    (hg : ∀ y, g y ∈ e.baseSet) :
+    (signLocalSystemPullbackIsoOfMapsTo (S := S) hι e (-ω) g hg).inv =
+      -(signLocalSystemPullbackIsoOfMapsTo hι e ω g hg).inv :=
+  Iso.inv_ext (by
+    rw [signLocalSystemPullbackIsoOfMapsTo_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
 
 end Trivialization
 
