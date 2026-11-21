@@ -36,7 +36,7 @@ Hence the area form of a second compatible metric `g'` is the area form of `g` t
 factor `c(x) = g'(w, w) / g(w, w)`. So, with the bundle metric `h` fixed, the `L²` pairing of
 bundle sections over a surface,
 `Bundle.ContinuousRiemannianMetric.l2Pairing`, becomes `∫ c(x) h(ξ(x), η(x)) dA` under a change of
-compatible metric; it is a scalar multiple of the original pairing only when `c` is constant.
+compatible metric. If `c` is constant, the new pairing is that constant times the original pairing.
 
 ## Main declarations
 
