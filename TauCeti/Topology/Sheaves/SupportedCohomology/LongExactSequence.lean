@@ -13,14 +13,26 @@ import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 /-!
 # The coefficient sequence for module-valued supported cohomology
 
-For a short exact sequence of sheaves of modules, the Yoneda product with its
-extension class defines connecting maps on the supported cohomology presheaves.
-These maps commute with open restriction and with morphisms of short exact
-sequences, and give an exact coefficient sequence. A flasque middle term makes
-its positive-degree connecting maps dimension-shift isomorphisms. Read through
-the identification of degree-zero supported cohomology with supported sections,
-the degree-zero connecting map `Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` is exact after
-`Γ_S(-, F₂) ⟶ Γ_S(-, F₃)`, and surjective when the middle term is flasque.
+A short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves of `R`-modules gives a
+connecting morphism `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of supported cohomology
+presheaves (`CategoryTheory.Sheaf.supportedModuleHPresheafδ`), defined as Yoneda
+postcomposition (`CategoryTheory.Sheaf.supportedModuleHPresheafPostcomp`, from
+`TauCeti.Topology.Sheaves.SupportedCohomology.Module`) with its extension class.
+This is the `R`-linear counterpart of the abelian-group connecting-morphism and
+flasque-isomorphism API (`CategoryTheory.Sheaf.supportedHPresheafδ`,
+`CategoryTheory.Sheaf.isIso_supportedHPresheafPostcomp_extClass`,
+`CategoryTheory.Sheaf.isIso_supportedHPresheafPostcomp_mk₀_g`, and
+`CategoryTheory.Sheaf.relativeH'.mk₀_g_postcomp_bijective_of_isFlasque`) in
+`TauCeti.Topology.Sheaves.SupportedCohomology`.
+
+These maps commute with enlarging the closed support and with morphisms of short
+exact sequences, and give an exact coefficient sequence. A flasque middle term
+makes the positive-degree connecting maps dimension-shift isomorphisms and all
+connecting maps epimorphisms; a flasque kernel makes the positive-degree quotient
+maps isomorphisms. Read through the identification of degree-zero supported
+cohomology with supported sections, the degree-zero connecting map
+`Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` is exact after `Γ_S(-, F₂) ⟶ Γ_S(-, F₃)`, and
+surjective when the middle term is flasque.
 
 Sheafification of this sequence is treated in
 `TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence`.
@@ -44,30 +56,56 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R] (S : Closeds X)
 
 noncomputable section
 
+/-- If `F₂` is flasque, the connecting morphism `H_Sᵃ⁺¹(-, F₃) ⟶ H_Sᵏ(-, F₁)`,
+for `k = a + 2`, is an isomorphism of presheaves. -/
+theorem isIso_supportedModuleHPresheafPostcomp_extClass (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₂.obj] {a k : ℕ} (hk : a + 1 + 1 = k) :
+    IsIso (supportedModuleHPresheafPostcomp S hT.extClass hk) :=
+  isIso_supportedModuleHPresheafPostcomp S _ _ fun W ↦ by
+    subst hk
+    exact hT.extClass_postcomp_bijective _ rfl inferInstance inferInstance
+
+/-- If `F₁` is flasque, the morphism `H_Sⁿ⁺¹(-, F₂) ⟶ H_Sⁿ⁺¹(-, F₃)` induced by
+`F₂ ⟶ F₃` is an isomorphism of presheaves. -/
+theorem isIso_supportedModuleHPresheafFunctor_map_g_succ (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₁.obj] (n : ℕ) :
+    IsIso ((supportedModuleHPresheafFunctor S (n + 1)).map T.g) := by
+  have : IsIso (supportedModuleHPresheafPostcomp S (Ext.mk₀ T.g) (add_zero (n + 1))) :=
+    isIso_supportedModuleHPresheafPostcomp S _ _ fun _ ↦
+      ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+          obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₂ _ hT x hx
+          rw [Subsingleton.elim z 0, Ext.zero_comp],
+        fun x ↦ Ext.covariant_sequence_exact₃ _ hT x rfl (Subsingleton.elim _ _)⟩
+  rw [supportedModuleHPresheafPostcomp_mk₀] at this
+  exact this
+
 /-- The connecting morphism of supported cohomology presheaves for a short exact
 sequence of coefficient sheaves, given by its Yoneda extension class. -/
 def supportedModuleHPresheafδ (hT : T.ShortExact) (n : ℕ) :
-    T.X₃.supportedModuleHPresheaf S n ⟶ T.X₁.supportedModuleHPresheaf S (n + 1) where
-  app W := ModuleCat.ofHom (Ext.postcompOfLinear hT.extClass R
-    ((S.supportedFreeModuleSheafFunctor R).obj W.unop) rfl)
-  naturality W W' f := by
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    -- Normalize the source before introducing a class, so rewriting sees Ext
-    -- rather than the opaque presheaf object's carrier.
-    change ∀ x : T.X₃.supportedModuleH S W.unop n,
-      ((Ext.mk₀ ((S.supportedFreeModuleSheafFunctor R).map f.unop)).comp x
-          (zero_add n)).comp hT.extClass rfl =
-        (Ext.mk₀ ((S.supportedFreeModuleSheafFunctor R).map f.unop)).comp
-          (x.comp hT.extClass rfl) (zero_add (n + 1))
-    intro x
-    exact Ext.comp_assoc _ x hT.extClass (zero_add n) rfl (by omega)
+    T.X₃.supportedModuleHPresheaf S n ⟶ T.X₁.supportedModuleHPresheaf S (n + 1) :=
+  supportedModuleHPresheafPostcomp S hT.extClass rfl
+
+/-- For the extension class of a short exact sequence, Yoneda postcomposition is the
+connecting morphism `CategoryTheory.Sheaf.supportedModuleHPresheafδ`. -/
+@[simp]
+lemma supportedModuleHPresheafPostcomp_extClass (hT : T.ShortExact) (n : ℕ) :
+    supportedModuleHPresheafPostcomp S hT.extClass rfl = supportedModuleHPresheafδ S hT n :=
+  (rfl)
 
 @[simp]
 lemma supportedModuleHPresheafδ_app_apply (hT : T.ShortExact) (n : ℕ)
     (W : (Opens X)ᵒᵖ) (x : T.X₃.supportedModuleH S W.unop n) :
     (supportedModuleHPresheafδ S hT n).app W x = x.comp hT.extClass rfl :=
-  (rfl)
+  supportedModuleHPresheafPostcomp_app_apply S hT.extClass rfl W x
+
+variable {S} in
+/-- Enlarging the support from `Z` to `S` commutes with the connecting morphisms
+of a short exact sequence of coefficients. -/
+@[reassoc]
+lemma supportedModuleHPresheafMap_δ {Z : Closeds X} (hZS : Z ≤ S) (hT : T.ShortExact) (n : ℕ) :
+    T.X₃.supportedModuleHPresheafMap hZS n ≫ supportedModuleHPresheafδ S hT n =
+      supportedModuleHPresheafδ Z hT n ≫ T.X₁.supportedModuleHPresheafMap hZS (n + 1) :=
+  supportedModuleHPresheafMap_supportedModuleHPresheafPostcomp hZS hT.extClass rfl
 
 /-- The connecting morphism is natural in short exact sequences of coefficients. -/
 @[reassoc]
@@ -76,50 +114,35 @@ lemma supportedModuleHPresheafδ_naturality (hT : T.ShortExact) (hT' : T'.ShortE
     (supportedModuleHPresheafFunctor S n).map f.τ₃ ≫ supportedModuleHPresheafδ S hT' n =
       supportedModuleHPresheafδ S hT n ≫
         (supportedModuleHPresheafFunctor S (n + 1)).map f.τ₁ := by
-  apply NatTrans.ext
-  funext W
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  -- Normalize the domain before introducing its Ext class, as in the definition.
-  change ∀ x : T.X₃.supportedModuleH S W.unop n,
-    (x.comp (Ext.mk₀ f.τ₃) (add_zero n)).comp hT'.extClass rfl =
-      (x.comp hT.extClass rfl).comp (Ext.mk₀ f.τ₁) (add_zero (n + 1))
-  intro x
-  exact (Ext.comp_assoc_of_second_deg_zero x _ _ rfl).trans
-    ((congrArg (fun a : Ext.{u} T.X₃ T'.X₁ 1 ↦ x.comp a rfl)
-      (hT.extClass_naturality hT' f).symm).trans
-        (Ext.comp_assoc_of_third_deg_zero x _ _ rfl).symm)
+  have h : supportedModuleHPresheafPostcomp S (Ext.mk₀ f.τ₃) (add_zero n) ≫
+      supportedModuleHPresheafPostcomp S hT'.extClass rfl =
+      supportedModuleHPresheafPostcomp S hT.extClass rfl ≫
+      supportedModuleHPresheafPostcomp S (Ext.mk₀ f.τ₁) (add_zero (n + 1)) := by
+    rw [supportedModuleHPresheafPostcomp_comp (hp := zero_add 1),
+      supportedModuleHPresheafPostcomp_comp (hp := add_zero 1), hT.extClass_naturality hT' f]
+  simp only [supportedModuleHPresheafPostcomp_mk₀, supportedModuleHPresheafPostcomp_extClass] at h
+  exact h
 
 @[simp, reassoc]
 lemma supportedModuleHPresheafFunctor_map_g_δ (hT : T.ShortExact) (n : ℕ) :
     (supportedModuleHPresheafFunctor S n).map T.g ≫ supportedModuleHPresheafδ S hT n = 0 := by
-  apply NatTrans.ext
-  funext W
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  -- Expose the Ext domain before introducing a section of the composite functor.
-  change ∀ x : T.X₂.supportedModuleH S W.unop n,
-    (x.comp (Ext.mk₀ T.g) (add_zero n)).comp hT.extClass rfl = 0
-  intro x
-  exact (Ext.comp_assoc_of_second_deg_zero x _ _ rfl).trans
-    ((congrArg (fun a : Ext.{u} T.X₂ T.X₁ 1 ↦ x.comp a rfl) hT.comp_extClass).trans
-      (Ext.comp_zero x _ _ _ rfl))
+  have h : supportedModuleHPresheafPostcomp S (Ext.mk₀ T.g) (add_zero n) ≫
+      supportedModuleHPresheafPostcomp S hT.extClass rfl = 0 := by
+    rw [supportedModuleHPresheafPostcomp_comp (hp := zero_add 1), hT.comp_extClass,
+      supportedModuleHPresheafPostcomp_zero]
+  simp only [supportedModuleHPresheafPostcomp_mk₀, supportedModuleHPresheafPostcomp_extClass] at h
+  exact h
 
 @[simp, reassoc]
 lemma supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
     supportedModuleHPresheafδ S hT n ≫
       (supportedModuleHPresheafFunctor S (n + 1)).map T.f = 0 := by
-  apply NatTrans.ext
-  funext W
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  -- Expose the Ext domain before introducing a section of the composite functor.
-  change ∀ x : T.X₃.supportedModuleH S W.unop n,
-    (x.comp hT.extClass rfl).comp (Ext.mk₀ T.f) (add_zero (n + 1)) = 0
-  intro x
-  exact (Ext.comp_assoc_of_third_deg_zero x _ _ rfl).trans
-    ((congrArg (fun a : Ext.{u} T.X₃ T.X₂ 1 ↦ x.comp a rfl) hT.extClass_comp).trans
-      (Ext.comp_zero x _ _ _ rfl))
+  have h : supportedModuleHPresheafPostcomp S hT.extClass rfl ≫
+      supportedModuleHPresheafPostcomp S (Ext.mk₀ T.f) (add_zero (n + 1)) = 0 := by
+    rw [supportedModuleHPresheafPostcomp_comp (hp := add_zero 1), hT.extClass_comp,
+      supportedModuleHPresheafPostcomp_zero]
+  simp only [supportedModuleHPresheafPostcomp_mk₀, supportedModuleHPresheafPostcomp_extClass] at h
+  exact h
 
 /-- The coefficient sequence is exact at the middle supported cohomology presheaf. -/
 theorem exact_map_supportedModuleHPresheafFunctor (hT : T.ShortExact) (n : ℕ) :
@@ -137,7 +160,8 @@ theorem exact_supportedModuleHPresheafFunctor_map_g_δ (hT : T.ShortExact) (n : 
   rw [ShortComplex.exact_iff_evaluation]
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
-  exact fun x hx ↦ Ext.covariant_sequence_exact₃ _ hT x rfl hx
+  exact fun x hx ↦ Ext.covariant_sequence_exact₃ _ hT x rfl
+    ((supportedModuleHPresheafδ_app_apply S hT n W x).symm.trans hx)
 
 /-- The coefficient sequence is exact immediately after its connecting map. -/
 theorem exact_supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
@@ -147,23 +171,16 @@ theorem exact_supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
   rw [ShortComplex.exact_iff_evaluation]
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
-  exact fun x hx ↦ Ext.covariant_sequence_exact₁ _ hT x hx rfl
+  intro x hx
+  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₁ _ hT x hx rfl
+  exact ⟨y, (supportedModuleHPresheafδ_app_apply S hT n W y).trans hy⟩
 
 /-- A flasque middle term makes the positive-degree connecting morphism an
 isomorphism of supported cohomology presheaves. -/
 instance isIso_supportedModuleHPresheafδ_succ (hT : T.ShortExact)
     [TopCat.Presheaf.IsFlasque T.X₂.obj] (n : ℕ) :
-    IsIso (supportedModuleHPresheafδ S hT (n + 1)) := by
-  have (W : (Opens X)ᵒᵖ) : IsIso ((supportedModuleHPresheafδ S hT (n + 1)).app W) := by
-    rw [ConcreteCategory.isIso_iff_bijective]
-    -- The component is the Yoneda postcomposition map, with an explicit Ext domain.
-    change Function.Bijective (Ext.postcomp hT.extClass
-      ((S.supportedFreeModuleSheafFunctor R).obj W.unop) (rfl : n + 1 + 1 = n + 2))
-    refine ⟨(injective_iff_map_eq_zero _).2 (fun x hx ↦ ?_), fun x ↦ ?_⟩
-    · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ _ hT x rfl hx
-      rw [Subsingleton.elim z 0, Ext.zero_comp]
-    · exact Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
-  exact NatIso.isIso_of_isIso_app _
+    IsIso (supportedModuleHPresheafδ S hT (n + 1)) :=
+  isIso_supportedModuleHPresheafPostcomp_extClass S hT rfl
 
 /-- The degree-zero connecting morphism `Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` of a short exact sequence
 `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, read through the identification of degree-zero supported cohomology
@@ -178,11 +195,9 @@ lemma supportedModuleHPresheafδZero_app_apply (hT : T.ShortExact) (W : (Opens X
     (s : T.X₃.supportedSubmodule S W.unop) :
     (supportedModuleHPresheafδZero S hT).app W s =
       ((T.X₃.supportedModuleHZeroEquiv S W.unop).symm s).comp hT.extClass (zero_add 1) :=
-  (supportedModuleHPresheafδ_app_apply S hT 0 W _).trans <| congrArg (Ext.comp · hT.extClass _) <|
-    (LinearEquiv.eq_symm_apply _).2 <| Subtype.ext <|
-      (coe_supportedModuleHPresheafZeroIso_hom_app_apply S T.X₃ W _).symm.trans <|
-        congrArg Subtype.val (ConcreteCategory.congr_hom
-          ((T.X₃.supportedModuleHPresheafZeroIso S).inv_hom_id_app W) s)
+  (supportedModuleHPresheafδ_app_apply S hT 0 W _).trans <|
+    congrArg (Ext.comp · hT.extClass _)
+      (supportedModuleHPresheafZeroIso_inv_app_apply S T.X₃ W s)
 
 /-- Under `CategoryTheory.Sheaf.supportedModuleHZeroEquiv`, the image of a supported section of
 `F₂` in `F₃` corresponds to the image of its class. -/
@@ -233,6 +248,19 @@ instance epi_supportedModuleHPresheafδZero_app (hT : T.ShortExact)
   refine ⟨T.X₃.supportedModuleHZeroEquiv S W.unop y, ?_⟩
   exact (supportedModuleHPresheafδZero_app_apply S hT W _).trans
     (by rw [LinearEquiv.symm_apply_apply])
+
+/-- A flasque middle term makes the connecting morphism
+`H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` an epimorphism of presheaves in every degree `n`. -/
+instance epi_supportedModuleHPresheafδ (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₂.obj] (n : ℕ) :
+    Epi (supportedModuleHPresheafδ S hT n) := by
+  rcases n with _ | n
+  · have : Epi ((T.X₃.supportedModuleHPresheafZeroIso S).hom ≫
+        supportedModuleHPresheafδZero S hT) := by
+      have : Epi (supportedModuleHPresheafδZero S hT) := NatTrans.epi_of_epi_app _
+      exact epi_comp _ _
+    rwa [supportedModuleHPresheafδZero, Iso.hom_inv_id_assoc] at this
+  · infer_instance
 
 end
 

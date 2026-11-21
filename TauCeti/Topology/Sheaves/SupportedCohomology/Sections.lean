@@ -372,6 +372,23 @@ lemma coe_supportedModuleHPresheafZeroIso_hom_app_apply
         F.supportedModuleHZeroEquiv S W.unop x :=
   (rfl)
 
+/-- The inverse degree-zero comparison sends a supported section to its cohomology class. -/
+@[simp]
+lemma supportedModuleHPresheafZeroIso_inv_app_apply
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (W : (Opens X)ᵒᵖ)
+    (s : F.supportedSubmodule S W.unop) :
+    (F.supportedModuleHPresheafZeroIso S).inv.app W s =
+      (F.supportedModuleHZeroEquiv S W.unop).symm s :=
+  (rfl)
+
+/-- The degree-zero presheaf comparison is natural in the coefficient sheaf. -/
+@[reassoc]
+lemma supportedModuleHPresheafZeroIso_hom_naturality (f : F ⟶ G) :
+    (supportedModuleHPresheafFunctor S 0).map f ≫ (G.supportedModuleHPresheafZeroIso S).hom =
+      (F.supportedModuleHPresheafZeroIso S).hom ≫ ((supportedSubmoduleFunctor S).map f).hom := by
+  ext W x
+  exact Subtype.ext (coe_supportedModuleHZeroEquiv_naturality_right S W f x)
+
 /-- The degree-zero supported cohomology presheaf of modules already satisfies the sheaf law. -/
 theorem isSheaf_supportedModuleHPresheaf_zero
     (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
