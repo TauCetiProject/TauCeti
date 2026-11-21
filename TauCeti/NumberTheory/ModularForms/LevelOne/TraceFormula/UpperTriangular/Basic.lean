@@ -113,13 +113,13 @@ open ModularGroup in
 /-- For `n ≠ 0`, the class of an upper-triangular matrix of determinant `n` can be moved into
 `ℳₙ^∞` by a power of `T`. -/
 theorem exists_T_zpow_smul_mk_mem_upperTriangularReps (hn : n ≠ 0) {A : TraceFormulaMatrix n}
-    (hA : A.1 1 0 = 0) : ∃ m : ℤ, T ^ m • mk A ∈ upperTriangularReps n := by
+    (hA : A.val 1 0 = 0) : ∃ m : ℤ, T ^ m • mk A ∈ upperTriangularReps n := by
   -- `FixedDetMatrices.reduce A` is `T ^ m • A` or `T ^ m • S • S • A`, and `S * S = -1`
   obtain ⟨m, hm⟩ : ∃ m : ℤ, T ^ m • mk A = mk (FixedDetMatrices.reduce A) := by
-    by_cases ha : 0 < A.1 0 0
+    by_cases ha : 0 < A.val 0 0
     · exact ⟨_, by rw [FixedDetMatrices.reduce_of_pos hA ha, smul_mk]⟩
     · exact ⟨_, by rw [FixedDetMatrices.reduce_of_not_pos hA ha, ← smul_mk, ← smul_mk,
-        ← smul_mk, ← mul_smul S S, show S * S = -1 from Subtype.ext S_mul_S_eq, neg_one_smul]⟩
+        ← smul_mk, ← mul_smul S S, S_mul_S_eq, neg_one_smul]⟩
   exact ⟨m, _, FixedDetMatrices.reduce_mem_reps hn A, hm.symm⟩
 
 /-- **Uniqueness of upper-triangular representatives**: if `g : SL(2, ℤ)` moves an element of
@@ -173,7 +173,7 @@ theorem infinite_orbitRel_quotient_zero :
   simp only at hg
   rw [smul_mk, mk_eq_iff] at hg
   have key (ε : ℤ) (hε : ε = 1 ∨ ε = -1)
-      (h0 : (g • B j).1 0 0 = ε * (B k).1 0 0) (h1 : (g • B j).1 0 1 = ε * (B k).1 0 1) :
+      (h0 : (g • B j).val 0 0 = ε * (B k).val 0 0) (h1 : (g • B j).val 0 1 = ε * (B k).val 0 1) :
       k = j := by
     rw [FixedDetMatrices.smul_coe_apply] at h0 h1
     simp only [Fin.isValue, of_apply, cons_val', cons_val_zero, cons_val_fin_one, mul_one,

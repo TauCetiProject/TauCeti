@@ -406,7 +406,7 @@ theorem part_interlacePairs {x : α} (hx : x ∈ s) (b : Bool) :
 `{(x, false), (x, true)}` joins each position `(x, false)` with the bar `(x, true)`. -/
 private theorem toLex_mem_part_of_interlacePairs_le {ρ : NoncrossingPartition s.interlace}
     (hρ : interlacePairs s ≤ ρ) {x : α} (hx : x ∈ s) (b c : Bool) :
-    toLex (x, c) ∈ ρ.1.part (toLex (x, b)) := by
+    toLex (x, c) ∈ ρ.val.part (toLex (x, b)) := by
   refine part_mono (Subtype.coe_le_coe.2 hρ) _ ?_
   rw [part_interlacePairs hx]
   cases c <;> simp
@@ -416,7 +416,7 @@ is a noncrossing partition: two interlaced positions lie in a common part exactl
 coordinates both lie in `(c, c']` or both lie outside it. -/
 private theorem exists_forall_toLex_mem_part_iff {c c' : α} (hc' : c' ∈ s) (hcc' : c < c') :
     ∃ ρ : NoncrossingPartition s.interlace, ∀ x ∈ s, ∀ y ∈ s, ∀ b b' : Bool,
-      toLex (y, b') ∈ ρ.1.part (toLex (x, b)) ↔ (c < y ∧ y ≤ c' ↔ c < x ∧ x ≤ c') := by
+      toLex (y, b') ∈ ρ.val.part (toLex (x, b)) ↔ (c < y ∧ y ≤ c' ↔ c < x ∧ x ≤ c') := by
   set T : Finset (α ×ₗ Bool) := {p ∈ s.interlace | c < (ofLex p).1 ∧ (ofLex p).1 ≤ c'}
   have hT {x : α} (hx : x ∈ s) (b : Bool) : toLex (x, b) ∈ T ↔ c < x ∧ x ≤ c' := by
     simp [T, hx]
@@ -448,14 +448,14 @@ private theorem sup_interlacePairs_ne_top {P Q : Finpartition s}
   have hle : σ ⊔ interlacePairs s ≤ ρ := by
     refine sup_le (le_iff_forall_part_subset.2 fun p q hq => ?_)
       (le_iff_forall_part_subset.2 fun p q hq => ?_)
-    · have hp : p ∈ s.interlace := σ.1.part_nonempty.1 ⟨q, hq⟩
+    · have hp : p ∈ s.interlace := σ.val.part_nonempty.1 ⟨q, hq⟩
       obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
       obtain ⟨⟨y, b'⟩, rfl⟩ := toLex.surjective q
       have hx := toLex_mem_interlace.1 hp
       obtain ⟨rfl, hy⟩ := (mem_part_interlace_iff hx).1 (hσ ▸ hq)
       have hc (R : Finpartition s)
           (hR : ∀ a, ∀ b ∈ R.part a, c < a → a ≤ c' → c < b ∧ b ≤ c') (hy : y ∈ R.part x) :
-          toLex (y, b') ∈ ρ.1.part (toLex (x, b')) :=
+          toLex (y, b') ∈ ρ.val.part (toLex (x, b')) :=
         (hρ x hx y (R.part_subset x hy) _ _).2
           ⟨fun h => hR y x (mem_part_comm.1 hy) h.1 h.2, fun h => hR x y hy h.1 h.2⟩
       cases b'
@@ -481,11 +481,11 @@ private theorem exists_interval_of_interlacePairs_le {ρ : NoncrossingPartition 
     (hρ : interlacePairs s ≤ ρ) (hne : ρ ≠ ⊤) :
     ∃ T ⊆ s, (∀ x ∈ T, ∀ z ∈ T, ∀ y ∈ s, x ≤ y → y ≤ z → y ∈ T) ∧ T.Nonempty ∧
       (∃ x ∈ s, x ∉ T) ∧ ∀ x ∈ T, ∀ y ∈ s, ∀ b b' : Bool,
-        toLex (y, b') ∈ ρ.1.part (toLex (x, b)) → y ∈ T := by
+        toLex (y, b') ∈ ρ.val.part (toLex (x, b)) → y ∈ T := by
   rcases s.interlace.eq_empty_or_nonempty with hI | hI
   · exact absurd ((eq_bot_of_eq_empty hI _).trans (eq_bot_of_eq_empty hI _).symm) hne
-  obtain ⟨B, hB, hBint⟩ := ρ.2.exists_interval_mem_parts hI
-  have hBρ {p : α ×ₗ Bool} (hp : p ∈ B) : ρ.1.part p = B := ρ.1.part_eq_of_mem hB hp
+  obtain ⟨B, hB, hBint⟩ := ρ.property.exists_interval_mem_parts hI
+  have hBρ {p : α ×ₗ Bool} (hp : p ∈ B) : ρ.val.part p = B := ρ.val.part_eq_of_mem hB hp
   set T := {x ∈ s | toLex (x, false) ∈ B}
   have hTB {x : α} (hx : x ∈ s) (b : Bool) : x ∈ T ↔ toLex (x, b) ∈ B := by
     simp only [T, mem_filter, hx, true_and]
@@ -502,14 +502,14 @@ private theorem exists_interval_of_interlacePairs_le {ρ : NoncrossingPartition 
           (Prod.Lex.toLex_lt_toLex.2 (Or.inl hxy)) (Prod.Lex.toLex_lt_toLex.2 (Or.inl hyz))
       · exact hzB
     · exact hxB
-  · obtain ⟨p, hp⟩ := ρ.1.nonempty_of_mem_parts hB
+  · obtain ⟨p, hp⟩ := ρ.val.nonempty_of_mem_parts hB
     obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
-    exact ⟨x, (hTB (toLex_mem_interlace.1 (ρ.1.le hB hp)) b).2 hp⟩
+    exact ⟨x, (hTB (toLex_mem_interlace.1 (ρ.val.le hB hp)) b).2 hp⟩
   · -- `B` is not everything, as `ρ` is not the partition into one part.
     obtain ⟨p, hpI, hpB⟩ : ∃ p ∈ s.interlace, p ∉ B := by
       by_contra! h
       exact hne (Subtype.ext ((eq_top_of_mem_parts
-        (Subset.antisymm (ρ.1.le hB) h ▸ hB : s.interlace ∈ ρ.1.parts)).trans coe_top.symm))
+        (Subset.antisymm (ρ.val.le hB) h ▸ hB : s.interlace ∈ ρ.val.parts)).trans coe_top.symm))
     obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
     have hx := toLex_mem_interlace.1 hpI
     exact ⟨x, hx, fun hxT => hpB ((hTB hx b).1 hxT)⟩
@@ -522,21 +522,22 @@ partition `σ = P.interlace Q` is a noncrossing partition of the interlaced posi
 the first coordinate, is the partition into one part exactly when `Q = K(P)`. This is the
 combinatorial input of the formula for the free cumulants of products of two free families. -/
 theorem sup_interlacePairs_eq_top_iff {P Q : NoncrossingPartition s}
-    {σ : NoncrossingPartition s.interlace} (hσ : (σ : Finpartition s.interlace) = P.1.interlace Q.1)
+    {σ : NoncrossingPartition s.interlace} (hσ : (σ : Finpartition s.interlace) = P.val.interlace
+        Q.val)
     (hQ : Q ≤ kreweras P) :
     σ ⊔ interlacePairs s = ⊤ ↔ Q = kreweras P := by
   refine ⟨fun htop => by_contra fun hne => ?_, fun hQK => by_contra fun hne => ?_⟩
   · -- If `Q < K(P)`, an interval `(c, c']` that is a union of parts of `P` and of `Q` separates.
-    obtain ⟨c, hc, c', hc', hcc', hPc, hQc⟩ := exists_lt_forall_mem_Ioc_of_lt_kreweras (P := P.1)
-      Q.2 (coe_kreweras P ▸ Subtype.coe_le_coe.2 hQ)
+    obtain ⟨c, hc, c', hc', hcc', hPc, hQc⟩ := exists_lt_forall_mem_Ioc_of_lt_kreweras (P := P.val)
+      Q.property (coe_kreweras P ▸ Subtype.coe_le_coe.2 hQ)
       fun h => hne (Subtype.ext (h.trans (coe_kreweras P).symm))
     exact sup_interlacePairs_ne_top hσ hc hc' hcc' hPc hQc htop
   · -- If `Q = K(P)`, an interval part of the join other than everything would give an interval of
     -- `s` that is a union of parts of both `P` and `K(P)`, which does not exist.
     obtain ⟨T, hTs, hconv, hTne, hsT, hρT⟩ := exists_interval_of_interlacePairs_le le_sup_right hne
-    have hσT {x y : α} (hx : x ∈ T) (b : Bool) (hy : y ∈ (bif b then Q.1 else P.1).part x) :
+    have hσT {x y : α} (hx : x ∈ T) (b : Bool) (hy : y ∈ (bif b then Q.val else P.val).part x) :
         y ∈ T :=
-      hρT x hx y ((bif b then Q.1 else P.1).part_subset x hy) b b <|
+      hρT x hx y ((bif b then Q.val else P.val).part_subset x hy) b b <|
         part_mono (Subtype.coe_le_coe.2 (le_sup_left (b := interlacePairs s))) _
           (hσ ▸ (mem_part_interlace_iff (hTs hx)).2 ⟨rfl, hy⟩)
     obtain ⟨x, hxT, y, hy, hyT⟩ := exists_mem_part_kreweras_notMem hTs hconv hTne hsT

@@ -154,7 +154,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
     simpa using congrArg (fun B : E →L[𝕜] E ↦ B (A'.symm z)) hDA
   have hι0 : q'.symm (q' y + ((0 : F) : E)) = y := by simp [q'.left_inv hyq']
   have hcont : ContinuousAt (fun z : F ↦ q'.symm (q' y + (z : E))) 0 :=
-    (q'.continuousAt_symm_add hyq').comp_of_eq continuous_subtype_val.continuousAt rfl
+    (q'.continuousAt_symm_add hyq').comp_of_eq continuous_subtypeVal.continuousAt rfl
   have hmem := hs₀.eventually_symm_add_mem hyq' ⟨hys, rfl⟩
   have hreach := hs₀.eventually_exists_symm_add_eq hyq' ⟨hys, rfl⟩
   refine ⟨F, fun z ↦ q'.symm (q' y + z), D ∘L F.subtypeL, hι0, hcont, hmem,
@@ -163,7 +163,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   · refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq
       (P ∘L D ∘L F.subtypeL) hdimF ?_
     refine (injective_iff_map_eq_zero (P ∘L D ∘L F.subtypeL)).2 fun z hz ↦ Subtype.ext ?_
-    have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.2)
+    have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.property)
       (LinearMap.mem_ker.2 (by simpa [π, hDF] using hz))
     simpa using h0
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.SingleHomology
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Point
 
 /-!
@@ -275,11 +276,8 @@ theorem isZero_singularCohomology_of_contractibleSpace (X : TopCat.{w}) [Contrac
 /-- **The singular cohomology of the empty space vanishes** in every degree, for arbitrary
 coefficients: there are no singular simplices, so the singular cochain complex is zero. -/
 theorem isZero_singularCohomology_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
-    IsZero (X.singularCohomology R k M n) := by
-  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
+    IsZero (X.singularCohomology R k M n) :=
+  (HomologicalComplex.homologyFunctor _ _ n).map_isZero
     ((ChainComplex.linearYonedaFunctor k M).map_isZero
       ((TopCat.toSSet.obj X).isZero_chainComplex R).op)
 

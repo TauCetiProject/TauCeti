@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Classical symbols
@@ -59,7 +60,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.ofEqHomogeneous`: a symbol that agrees with a homogeneous symbol `h` at
   all large frequencies is classical, with principal symbol `h` and no further terms; in
   particular so is a coefficient that is smooth everywhere and homogeneous away from `ξ = 0`, such
-  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`);
+  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`) or a
+  smooth function of the position (`TauCeti.ClassicalSymbol.ofSpatial`);
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
@@ -544,6 +546,31 @@ theorem principal_ofContDiffHomogeneous :
 theorem term_ofContDiffHomogeneous_succ (j : ℕ) :
     (ofContDiffHomogeneous f hf hhom).term (j + 1) = 0 := by
   rw [ofContDiffHomogeneous, term_ofEqHomogeneous_succ]
+
+/-- A smooth function `f` of the position, the symbol of multiplication by `f`, is a classical
+symbol of order `0`: its full symbol is `TauCeti.Symbol.ofSpatial f`
+(`TauCeti.ClassicalSymbol.toSymbol_ofSpatial`), its principal symbol is `f(x)` at every nonzero
+frequency (`TauCeti.ClassicalSymbol.coefficient_principal_ofSpatial`), and its other homogeneous
+terms vanish. -/
+def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    ClassicalSymbol n V W 0 :=
+  ofContDiffHomogeneous (fun p ↦ f p.1) (hf.comp contDiff_fst) fun _ _ _ _ _ ↦ by simp
+
+variable (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+
+@[simp]
+theorem toSymbol_ofSpatial : (ofSpatial f hf).toSymbol = Symbol.ofSpatial f hf := by
+  ext1
+  rw [ofSpatial, toSymbol_ofContDiffHomogeneous, Symbol.coefficient_ofContDiffHomogeneous]
+  exact funext fun p ↦ (Symbol.coefficient_ofSpatial f hf p).symm
+
+theorem coefficient_principal_ofSpatial {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (ofSpatial f hf).principal.coefficient (x, ξ) = f x := by
+  rw [ofSpatial, principal_ofContDiffHomogeneous, coefficient_mk'_of_ne_zero _ _ _ hξ]
+
+@[simp]
+theorem term_ofSpatial_succ (j : ℕ) : (ofSpatial f hf).term (j + 1) = 0 :=
+  term_ofContDiffHomogeneous_succ _ _ _ j
 
 end EqHomogeneous
 
@@ -1099,7 +1126,7 @@ private theorem isInvertible_and_norm_inverse_le_of_norm_sub_le [CompleteSpace V
   -- `⟨ξ⟩^(-m) ⟨ξ⟩^(m - 1) = ⟨ξ⟩^(-1) ≤ R⁻¹`.
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) ≤ R⁻¹ := by
     have h := rpow_weight_le_rpow_mul_rpow_weight (s := -1) (s' := 0) hR hξ (by norm_num)
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     convert h using 2
     · ring
     · simp [Real.rpow_neg_one]

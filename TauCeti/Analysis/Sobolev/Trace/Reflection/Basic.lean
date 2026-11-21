@@ -43,7 +43,8 @@ Dominated convergence then passes to the limit.
 ## Main declarations
 
 * `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
-  `Submodule.reflection` in the hyperplane `{0} × E`.
+  `Submodule.reflection` in the hyperplane `{0} × E`, orthogonal to the normal `(1, 0)`
+  (`TauCeti.normalLinearReflection_eq_reflection`).
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative. It is the special case of
   `TauCeti.hyperplaneReflection` with normal `(1, 0)`
@@ -223,6 +224,16 @@ theorem normalReflection_eq_hyperplaneReflection (a : ℝ) :
   simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
   ring
 
+/-- The linear normal reflection is the reflection in the hyperplane orthogonal to the normal
+direction `(1, 0)`, the linear part of `TauCeti.hyperplaneReflection` with that normal. -/
+theorem normalLinearReflection_eq_reflection :
+    normalLinearReflection E = (ℝ ∙ WithLp.toLp 2 ((1 : ℝ), (0 : E)))ᗮ.reflection := by
+  ext x
+  obtain ⟨⟨t, y⟩⟩ := x
+  rw [normalLinearReflection_apply, reflection_orthogonal_singleton_apply_div_norm_sq]
+  simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul, ← WithLp.toLp_sub]
+  ring
+
 /-- The derivative of the normal reflection is its linear part. -/
 theorem hasFDerivAt_normalReflection (a : ℝ) (x : WithLp 2 (ℝ × E)) :
     HasFDerivAt (normalReflection E a)
@@ -279,10 +290,9 @@ theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 
 
 /-- The normal reflection in `{a} × E` maps every ball centred on that hyperplane into itself. -/
 theorem mapsTo_normalReflection_ball {a : ℝ} {x₀ : WithLp 2 (ℝ × E)} (hx₀ : x₀.fst = a) (r : ℝ) :
-    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) := fun x hx => by
-  rw [Metric.mem_ball, ← (normalReflection_eq_self_iff a x₀).2 hx₀,
-    (normalReflection E a).dist_map]
-  exact hx
+    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) :=
+  normalReflection_eq_hyperplaneReflection (E := E) a ▸
+    mapsTo_hyperplaneReflection_ball (by simpa [WithLp.prod_inner_apply] using hx₀) r
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -613,9 +623,9 @@ private theorem norm_mul_deriv_cutoff_le {a : ℝ} {w : WithLp 2 (ℝ × E) → 
   · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
   by_cases hxa : a < x.fst
   swap
-  · simpa [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)] using hb0
+  · simpa [Real.smoothTransition.deriv_of_nonpos (cutoffArg_neg_of_not_lt n hxa).le] using hb0
   by_cases hs : 1 < cutoffArg a n x
-  · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
+  · simpa [Real.smoothTransition.deriv_of_one_le hs.le] using hb0
   push Not at hs
   have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
   have hs' : -1 ≤ cutoffArg a n x := by
@@ -669,9 +679,9 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
   -- derivative of `smoothTransition` vanishes; outside it the cutoff argument is negative.
   · by_cases hxa : a < x.fst
     · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
-        simp [Real.smoothTransition.deriv_of_one_lt hn]
+        simp [Real.smoothTransition.deriv_of_one_le hn.le]
     · exact tendsto_const_nhds.congr fun n => by
-        simp [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)]
+        simp [Real.smoothTransition.deriv_of_nonpos (cutoffArg_neg_of_not_lt n hxa).le]
 
 /-- **The boundary-layer error vanishes in the limit.** Let `G` be a locally integrable vector
 field, and let `χ` be smooth with compact support and vanishing on the

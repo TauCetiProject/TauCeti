@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Data.Fintype.Option
 public import TauCeti.GroupTheory.Amenable.Finite
-public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.Topology.Algebra.Group.UCB.Prod
+import TauCeti.Algebra.Group.Equiv.Pi
 
 /-!
 # Products of amenable groups
@@ -31,9 +31,7 @@ trivial group.
 
 No discreteness is needed: the factors are arbitrary topological groups, and the product carries the
 product topology. A finite product of discrete groups is again discrete, so this covers finite
-products of discrete groups. For the additive counterparts, `AddAmenable.prod` uses
-`TauCeti.ContinuousMulEquiv.prodMultiplicative`, while `addAmenable_prod_iff`, `AddAmenable.pi`,
-and `addAmenable_pi_iff` are obtained directly via `@[to_additive]`.
+products of discrete groups.
 
 ## Main definitions
 
@@ -50,8 +48,6 @@ and `addAmenable_pi_iff` are obtained directly via `@[to_additive]`.
 * `TauCeti.Amenable.pi`: the product of a finite family of amenable topological groups is amenable.
 * `TauCeti.amenable_pi_iff`: a finite product of topological groups is amenable exactly when every
   factor is.
-* Additive counterparts: `TauCeti.AddAmenable.prod`, `TauCeti.addAmenable_prod_iff`,
-  `TauCeti.AddAmenable.pi`, and `TauCeti.addAmenable_pi_iff`.
 
 ## References
 
@@ -117,28 +113,14 @@ instance Amenable.prod [Amenable G] [Amenable H] : Amenable (G × H) :=
   have ⟨n, hn⟩ := Amenable.exists_isLeftInvariant (G := H)
   ⟨⟨m.prod n, hm.prod hn⟩⟩
 
-/-- The product of two amenable additive topological groups is amenable. -/
-instance AddAmenable.prod {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-    [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B] [AddAmenable A] [AddAmenable B] :
-    AddAmenable (A × B) := by
-  rw [← amenable_multiplicative_iff,
-    (ContinuousMulEquiv.prodMultiplicative A B).amenable_iff]
-  infer_instance
-
-attribute [to_additive existing AddAmenable.prod] Amenable.prod
-
 variable (G H) in
 /-- A product of two topological groups is amenable exactly when both factors are. -/
-@[to_additive addAmenable_prod_iff
-/-- A product of two additive topological groups is amenable exactly when both factors are. -/]
 theorem amenable_prod_iff : Amenable (G × H) ↔ Amenable G ∧ Amenable H :=
   ⟨fun _ => ⟨.of_denseRange (ContinuousMonoidHom.fst G H) Prod.fst_surjective.denseRange,
       .of_denseRange (ContinuousMonoidHom.snd G H) Prod.snd_surjective.denseRange⟩,
     fun ⟨_, _⟩ => inferInstance⟩
 
 /-- The product of a finite family of amenable topological groups is amenable. -/
-@[to_additive /-- The product of a finite family of amenable additive topological groups is
-amenable. -/]
 instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] [∀ i, Amenable (G i)] :
     Amenable (∀ i, G i) := by
@@ -149,15 +131,9 @@ instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group
     intro α β e h G _ _ _ _
     have := h (fun a => G (e a))
     let φ : (∀ a, G (e a)) →ₜ* ∀ b, G b :=
-      { toFun := Equiv.piCongrLeft G e
-        map_one' := funext fun b => by
-          obtain ⟨a, rfl⟩ := e.surjective b
-          simp [Equiv.piCongrLeft_apply_apply]
-        map_mul' f f' := funext fun b => by
-          obtain ⟨a, rfl⟩ := e.surjective b
-          simp [Equiv.piCongrLeft_apply_apply]
-        continuous_toFun := (Homeomorph.piCongrLeft e).continuous }
-    exact .of_denseRange φ (Equiv.piCongrLeft G e).surjective.denseRange
+      { (MulEquiv.piCongrLeft G e).toMonoidHom with
+        continuous_toFun := by simpa using (Homeomorph.piCongrLeft e).continuous_toFun }
+    exact .of_denseRange φ (MulEquiv.piCongrLeft G e).surjective.denseRange
   · -- The empty product is the trivial group.
     intro G _ _ _ _
     infer_instance
@@ -179,9 +155,6 @@ instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group
 
 /-- A product of a finite family of topological groups is amenable exactly when every factor
 is. -/
-@[to_additive addAmenable_pi_iff
-/-- A product of a finite family of additive topological groups is amenable exactly
-when every factor is. -/]
 theorem amenable_pi_iff {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, IsTopologicalGroup (G i)] :
     Amenable (∀ i, G i) ↔ ∀ i, Amenable (G i) :=

@@ -243,18 +243,18 @@ theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [Topologi
 -- of `TopRep.res H.subtype X` serve as the coefficient map of `ContinuousCohomology.map` along the
 -- inclusion `H ↪ S` (the restriction `TauCeti.ContinuousCohomology.resLE`).
 /-- The inclusion of a subgroup, carrying the subspace topology, as a continuous homomorphism. -/
-@[expose, to_additive TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype
-/-- The inclusion of an additive subgroup, carrying the subspace topology, as a continuous
-additive homomorphism. -/]
+@[expose, to_additive _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype
+  /-- The inclusion of an additive subgroup, carrying the subspace topology, as a continuous
+  additive homomorphism. -/]
 def subgroupSubtype (S : Subgroup G) : S →ₜ* G where
   __ := S.subtype
-  continuous_toFun := continuous_subtype_val
+  continuous_toFun := continuous_subtypeVal
 
-@[to_additive (attr := simp) TauCeti.ContinuousAddMonoidHom.coe_addSubgroupSubtype]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.coe_addSubgroupSubtype]
 theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = S.subtype :=
   (rfl)
 
-@[to_additive (attr := simp) TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype_apply]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype_apply]
 theorem subgroupSubtype_apply (S : Subgroup G) (s : S) : subgroupSubtype S s = (s : G) :=
   (rfl)
 
@@ -266,26 +266,26 @@ theorem id_subgroupSubtype_smul (M : Type*) [AddZero M] [SMul G M]
 
 /-- The inclusion of a subgroup into a larger subgroup, both carrying the subspace topology, as a
 continuous homomorphism. -/
-@[expose, to_additive TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion
-/-- The inclusion of an additive subgroup into a larger additive subgroup, both carrying the
-subspace topology, as a continuous additive homomorphism. -/]
+@[expose, to_additive _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion
+  /-- The inclusion of an additive subgroup into a larger additive subgroup, both carrying the
+  subspace topology, as a continuous additive homomorphism. -/]
 def subgroupInclusion {H S : Subgroup G} (h : H ≤ S) : H →ₜ* S where
   __ := Subgroup.inclusion h
-  continuous_toFun := continuous_subtype_val.subtype_mk _
+  continuous_toFun := continuous_subtypeVal.subtype_mk _
 
-@[to_additive (attr := simp) TauCeti.ContinuousAddMonoidHom.coe_addSubgroupInclusion]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.coe_addSubgroupInclusion]
 theorem coe_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
     (subgroupInclusion h : H →* S) = Subgroup.inclusion h :=
   (rfl)
 
-@[to_additive (attr := simp) TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_apply]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_apply]
 theorem subgroupInclusion_apply {H S : Subgroup G} (h : H ≤ S) (x : H) :
     subgroupInclusion h x = Subgroup.inclusion h x :=
   (rfl)
 
 /-- The inclusion of a subgroup into itself is the identity. -/
-@[to_additive (attr := simp) TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_refl
-/-- The inclusion of an additive subgroup into itself is the identity. -/]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_refl
+  /-- The inclusion of an additive subgroup into itself is the identity. -/]
 theorem subgroupInclusion_refl (H : Subgroup G) :
     subgroupInclusion (le_refl H) = ContinuousMonoidHom.id H :=
   (rfl)
@@ -293,17 +293,17 @@ theorem subgroupInclusion_refl (H : Subgroup G) :
 /-- Inclusions of subgroups compose: including `H` into `S` and then `S` into `T` is including `H`
 into `T`. -/
 @[to_additive (attr := simp)
-  TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_comp_addSubgroupInclusion
-/-- Inclusions of additive subgroups compose: including `H` into `S` and then `S` into `T` is
-including `H` into `T`. -/]
+  _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_comp_addSubgroupInclusion
+  /-- Inclusions of additive subgroups compose: including `H` into `S` and then `S` into `T` is
+  including `H` into `T`. -/]
 theorem subgroupInclusion_comp_subgroupInclusion {H S T : Subgroup G} (hHS : H ≤ S) (hST : S ≤ T) :
     (subgroupInclusion hST).comp (subgroupInclusion hHS) = subgroupInclusion (hHS.trans hST) :=
   (rfl)
 
 /-- The inclusion of a subgroup factors through any larger subgroup. -/
 @[to_additive (attr := simp)
-  TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype_comp_addSubgroupInclusion
-/-- The inclusion of an additive subgroup factors through any larger additive subgroup. -/]
+  _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype_comp_addSubgroupInclusion
+  /-- The inclusion of an additive subgroup factors through any larger additive subgroup. -/]
 theorem subgroupSubtype_comp_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
     (subgroupSubtype S).comp (subgroupInclusion h) = subgroupSubtype H :=
   (rfl)
@@ -316,7 +316,7 @@ def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgr
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
   continuous_toFun := continuous_induced_rng.2 <|
     ((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
-      continuous_subtype_val).congr fun n => (MulAut.conjNormal_apply g⁻¹ n).symm
+      continuous_subtypeVal).congr fun n => (MulAut.conjNormal_apply g⁻¹ n).symm
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]
@@ -428,10 +428,9 @@ theorem quotientLift_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
 /-- A continuous homomorphism on the quotient is determined by its values on representatives. -/
 theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : G →ₜ* H) (N : Subgroup G) [N.Normal] (hf : N ≤ f.ker) (g : (G ⧸ N) →ₜ* H)
-    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift f N hf := by
-  ext q
-  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective N q
-  simpa only [QuotientGroup.mk'_apply, quotientLift_mk] using hg x
+    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift f N hf :=
+  ContinuousMonoidHom.ext fun q =>
+    QuotientGroup.induction_on q fun x => (hg x).trans (quotientLift_mk f N hf x).symm
 
 /-- The restriction of a continuous homomorphism `f : H → G` to the preimage of a subgroup `U`,
 both carrying the subspace topology, as a continuous homomorphism `f⁻¹(U) → U`: the continuous
@@ -439,7 +438,7 @@ form of `MonoidHom.subgroupComap`. -/
 def subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
     (U : Subgroup G) : U.comap (f : H →* G) →ₜ* U where
   toMonoidHom := (f : H →* G).subgroupComap U
-  continuous_toFun := (f.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (f.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
@@ -461,8 +460,11 @@ theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →
 /-- The kernel of precomposition with the quotient projection contains the subgroup. -/
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
     {N : Subgroup G} [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
-  fun x hx => by simp [MonoidHom.mem_ker, (QuotientGroup.eq_one_iff x).mpr hx]
+    N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker := by
+  have hcomp : (g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H) =
+      (g : (G ⧸ N) →* H).comp (QuotientGroup.mk' N) := MonoidHom.ext fun _ => by simp
+  rw [hcomp, ← MonoidHom.comap_ker]
+  exact QuotientGroup.le_comap_mk' N _
 
 end ContinuousMonoidHom
 

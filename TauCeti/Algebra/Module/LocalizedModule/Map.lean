@@ -25,6 +25,8 @@ the module of sections of a quasi-coherent sheaf this says that restricting from
   localization at `T` is a localization at `T`.
 * `IsLocalizedModule.of_bijective_semilinearMap`: a linear map identified, along a ring
   homomorphism `σ : R →+* A`, with a localization at the image of `S` is a localization at `S`.
+* `IsLocalizedModule.liftOfLE_comp_map`, `IsLocalizedModule.liftOfLE_map_apply`: naturality of
+  `IsLocalizedModule.liftOfLE` with respect to `IsLocalizedModule.map`.
 -/
 
 public section
@@ -91,5 +93,35 @@ theorem of_bijective_semilinearMap {A : Type*} [CommSemiring A] {σ : R →+* A}
     show eN' ∘ₗ f = f'.restrictScalars R ∘ₗ eM' from LinearMap.ext h,
     comp_iff_of_bijective_right S eM' heM]
   exact restrictScalars S f'
+
+end IsLocalizedModule
+
+namespace IsLocalizedModule
+
+variable {R : Type*} [CommSemiring R] (S₁ S₂ : Submonoid R) (h : S₁ ≤ S₂)
+  {M M₁ M₂ N N₁ N₂ : Type*}
+  [AddCommMonoid M] [AddCommMonoid M₁] [AddCommMonoid M₂]
+  [AddCommMonoid N] [AddCommMonoid N₁] [AddCommMonoid N₂]
+  [Module R M] [Module R M₁] [Module R M₂]
+  [Module R N] [Module R N₁] [Module R N₂]
+  (f₁ : M →ₗ[R] M₁) (f₂ : M →ₗ[R] M₂) (g₁ : N →ₗ[R] N₁) (g₂ : N →ₗ[R] N₂)
+  [IsLocalizedModule S₁ f₁] [IsLocalizedModule S₂ f₂]
+  [IsLocalizedModule S₁ g₁] [IsLocalizedModule S₂ g₂]
+
+/-- `IsLocalizedModule.liftOfLE` is natural with respect to `IsLocalizedModule.map`:
+passing along an inclusion of submonoids `S₁ ≤ S₂` commutes with the localized map of `u`. -/
+theorem liftOfLE_comp_map (u : M →ₗ[R] N) :
+    liftOfLE S₁ S₂ h g₁ g₂ ∘ₗ map S₁ f₁ g₁ u =
+      map S₂ f₂ g₂ u ∘ₗ liftOfLE S₁ S₂ h f₁ f₂ := by
+  refine IsLocalizedModule.ext S₁ f₁ (fun s ↦ map_units g₂ ⟨s.val, h s.property⟩) ?_
+  ext m
+  simp
+
+/-- Pointwise naturality of `IsLocalizedModule.liftOfLE` with respect to
+`IsLocalizedModule.map`. -/
+theorem liftOfLE_map_apply (u : M →ₗ[R] N) (x : M₁) :
+    liftOfLE S₁ S₂ h g₁ g₂ (map S₁ f₁ g₁ u x) =
+      map S₂ f₂ g₂ u (liftOfLE S₁ S₂ h f₁ f₂ x) :=
+  LinearMap.congr_fun (liftOfLE_comp_map S₁ S₂ h f₁ f₂ g₁ g₂ u) x
 
 end IsLocalizedModule

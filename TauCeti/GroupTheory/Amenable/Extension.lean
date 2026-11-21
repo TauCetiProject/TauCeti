@@ -9,15 +9,14 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.Amenable.Subgroup
 import TauCeti.GroupTheory.Amenable.Finite
-import TauCeti.GroupTheory.Amenable.Multiplicative
 
 /-!
 # Extensions of amenable discrete groups
 
 If `N` is a normal subgroup of a discrete group `G` and both `N` and `G ⧸ N` are amenable, then
 `G` is amenable. As for solvable groups in Mathlib (`isSolvable_of_ker_le_range`), the result is
-proved for homomorphisms `ψ : K →* G` and `φ : G →* Q` of discrete groups with
-`φ.ker ≤ ψ.range`: if `K` and `Q` are amenable, so is `G`.
+proved for homomorphisms `ψ : K →* G` and `φ : G →* Q` with `φ.ker ≤ ψ.range`: if `K` and `Q` are
+amenable discrete groups, then `G` is amenable for every group topology.
 
 The mean on `G` is an iterated mean. For a mean `n` on `K` and a bounded function `f` on `G`,
 the *fiber average* `x ↦ n (k ↦ f (x * ψ k))` (`TauCeti.UCB.fiberAverage`) is again bounded by
@@ -32,8 +31,6 @@ containing an amenable subgroup `H` of finite index is amenable: the permutation
 finite coset space `G ⧸ H` maps `G` into a finite group with kernel contained in `H`. Consequently,
 a discrete group acting with a finite orbit whose point stabilizer is amenable is itself amenable.
 
-Additive counterparts are provided for `TauCeti.AddAmenable`.
-
 ## Main definitions
 
 * `TauCeti.UCB.fiberAverage ψ n`: the fiber average `f ↦ (x ↦ n (k ↦ f (x * ψ k)))`.
@@ -43,13 +40,10 @@ Additive counterparts are provided for `TauCeti.AddAmenable`.
 
 * `TauCeti.Mean.IsLeftInvariant.extension`: the iterated mean of left-invariant means along a
   section of `φ` is left invariant when `φ.ker ≤ ψ.range`.
-* `TauCeti.Amenable.of_ker_le_range`: if `φ.ker ≤ ψ.range` and `K`, `Q` are amenable, then `G` is
-  amenable.
+* `TauCeti.Amenable.of_ker_le_range`: if `φ.ker ≤ ψ.range` and `K`, `Q` are amenable discrete
+  groups, then `G` is amenable for every group topology.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
-* `TauCeti.Amenable.of_subgroup_quotient` and additive counterparts
-  `TauCeti.AddAmenable.of_ker_le_range`, `TauCeti.addAmenable_iff_addSubgroup_quotient`, and
-  `TauCeti.AddAmenable.of_addSubgroup_quotient`.
 * `TauCeti.Amenable.semidirectProduct`: a semidirect product of amenable discrete groups is
   amenable for every group topology.
 * `TauCeti.Amenable.of_finiteIndex`: a discrete group with a finite-index amenable subgroup is
@@ -70,6 +64,8 @@ noncomputable section
 open scoped BoundedContinuousFunction
 
 namespace TauCeti
+
+section DiscreteMiddle
 
 variable {G K Q : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [Group K] [TopologicalSpace K] [DiscreteTopology K] [Group Q]
@@ -179,58 +175,51 @@ theorem IsLeftInvariant.extension {n : Mean K} {m : Mean Q} (hn : n.IsLeftInvari
 
 end Mean
 
-variable [TopologicalSpace Q] [DiscreteTopology Q]
+end DiscreteMiddle
 
-/-- If `ψ : K →* G` and `φ : G →* Q` are homomorphisms of discrete groups with
-`φ.ker ≤ ψ.range`, and `K` and `Q` are amenable, then `G` is amenable. -/
-theorem Amenable.of_ker_le_range [Amenable K] [Amenable Q] (ψ : K →* G) (φ : G →* Q)
-    (h : φ.ker ≤ ψ.range) : Amenable G := by
+/-- If `ψ : K →* G` and `φ : G →* Q` are homomorphisms with `φ.ker ≤ ψ.range` and `K`, `Q` are
+amenable discrete groups, then `G` is amenable for every group topology on `G`. -/
+theorem Amenable.of_ker_le_range {G K Q : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [Group K] [TopologicalSpace K] [DiscreteTopology K]
+    [Group Q] [TopologicalSpace Q] [DiscreteTopology Q] [Amenable K] [Amenable Q]
+    (ψ : K →* G) (φ : G →* Q) (h : φ.ker ≤ ψ.range) : Amenable G := by
+  refine Amenable.of_discrete ?_
+  let : TopologicalSpace G := ⊥
+  let : DiscreteTopology G := discreteTopology_bot G
   -- Corestrict `φ` to its range, which is amenable as a subgroup of `Q`.
   have hφ := φ.rangeRestrict_surjective
   obtain ⟨n, hn⟩ := Amenable.exists_isLeftInvariant (G := K)
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := φ.range)
   exact ⟨⟨_, hn.extension hm (φ.ker_rangeRestrict ▸ h) (Function.surjInv_eq hφ)⟩⟩
 
-/-- If `ψ : B →+ A` and `φ : A →+ C` are homomorphisms of discrete additive groups with
-`φ.ker ≤ ψ.range`, and `B` and `C` are amenable, then `A` is amenable. -/
-theorem AddAmenable.of_ker_le_range {A B C : Type*} [AddGroup A] [TopologicalSpace A]
-    [DiscreteTopology A] [AddGroup B] [TopologicalSpace B] [DiscreteTopology B] [AddGroup C]
-    [TopologicalSpace C] [DiscreteTopology C] [AddAmenable B] [AddAmenable C] (ψ : B →+ A)
-    (φ : A →+ C) (h : φ.ker ≤ ψ.range) : AddAmenable A := by
-  rw [← amenable_multiplicative_iff]
-  exact .of_ker_le_range (AddMonoidHom.toMultiplicative ψ) (AddMonoidHom.toMultiplicative φ)
-    (by simpa only [MonoidHom.coe_toMultiplicative_ker, MonoidHom.coe_toMultiplicative_range] using
-      AddSubgroup.toSubgroup.monotone h)
-
-attribute [to_additive existing] Amenable.of_ker_le_range
-
 /-- A discrete group with a normal subgroup `N` is amenable exactly when `N` and `G ⧸ N` are
 amenable. -/
-@[to_additive addAmenable_iff_addSubgroup_quotient
-/-- A discrete additive group with a normal additive subgroup `N` is amenable
-exactly when `N` and `G ⧸ N` are amenable. -/]
-theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
-    Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) :=
-  ⟨fun _ => ⟨inferInstance, inferInstance⟩,
-    fun ⟨_, _⟩ => .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
+theorem amenable_iff_subgroup_quotient {G : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] (N : Subgroup G) [N.Normal] :
+    Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) := by
+  have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
+  refine ⟨fun _ => ⟨inferInstance, ?_⟩, fun ⟨_, _⟩ =>
+    .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
+  exact .of_denseRange ⟨QuotientGroup.mk' N, continuous_of_discreteTopology⟩
+    (QuotientGroup.mk'_surjective N).denseRange
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable
 quotient. -/
-@[to_additive /-- A discrete additive group is amenable when it has an amenable normal additive
-subgroup with amenable quotient. -/]
-theorem Amenable.of_subgroup_quotient (N : Subgroup G) [N.Normal] [Amenable N]
-    [Amenable (G ⧸ N)] : Amenable G :=
+theorem Amenable.of_subgroup_quotient {G : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] (N : Subgroup G) [N.Normal] [Amenable N] [Amenable (G ⧸ N)] :
+    Amenable G :=
   (amenable_iff_subgroup_quotient N).2 ⟨‹_›, ‹_›⟩
+
+section
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- A semidirect product of amenable discrete groups is amenable for every group topology. -/
 instance Amenable.semidirectProduct {N : Type*} [Group N] [TopologicalSpace N]
     [DiscreteTopology N] [Amenable N] [Amenable G] {φ : G →* MulAut N}
     [TopologicalSpace (N ⋊[φ] G)] [IsTopologicalGroup (N ⋊[φ] G)] :
-    Amenable (N ⋊[φ] G) := by
-  apply Amenable.of_discrete
-  let : TopologicalSpace (N ⋊[φ] G) := ⊥
-  have : DiscreteTopology (N ⋊[φ] G) := ⟨rfl⟩
-  exact .of_ker_le_range SemidirectProduct.inl SemidirectProduct.rightHom
+    Amenable (N ⋊[φ] G) :=
+  .of_ker_le_range SemidirectProduct.inl SemidirectProduct.rightHom
     SemidirectProduct.range_inl_eq_ker_rightHom.symm.le
 
 /-- A discrete group containing an amenable subgroup of finite index is amenable. -/
@@ -251,5 +240,7 @@ theorem Amenable.of_finite_orbit {α : Type*} [MulAction G α] (x : α)
     Finite.of_equiv (MulAction.orbit G x) (MulAction.orbitEquivQuotientStabilizer G x)
   have : (MulAction.stabilizer G x).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   exact .of_finiteIndex (MulAction.stabilizer G x)
+
+end
 
 end TauCeti

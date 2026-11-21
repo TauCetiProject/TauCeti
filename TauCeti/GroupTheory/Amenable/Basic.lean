@@ -14,41 +14,38 @@ public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
 A mean `m` on `TauCeti.UCB G` is *left invariant* when `m (L_g f) = m f` for every `g : G` and
 every `f`, where `(L_g f)(x) = f (g⁻¹ * x)` is the left translation. A topological group is
-*amenable* when `UCB G` carries a left-invariant mean. Dually, an additive topological group `G` is
-*amenable* (`TauCeti.AddAmenable G`) when `AddUCB G` carries a left-invariant mean. No separation,
-local compactness, countability or generation hypothesis is part of the definition.
+*amenable* when `UCB G` carries a left-invariant mean. No separation, local compactness,
+countability or generation hypothesis is part of the definition. Left invariance and pushforward
+also apply to additive means `TauCeti.AddMean A` on `TauCeti.AddUCB A` for a topological additive
+group `A`; additive amenability is developed in `TauCeti.GroupTheory.Amenable.Additive`.
 
 A mean `m` on `UCB G` pushes forward along a continuous homomorphism `φ : G →ₜ* H` to the mean
 `f ↦ m (f ∘ φ)` on `UCB H`. Since `(L_(φ g) f) ∘ φ = L_g (f ∘ φ)`, the pushforward of a
 left-invariant mean is invariant under translation by the range of `φ`, and, by continuity of
 `k ↦ m ((L_k f) ∘ φ)`, by its closure. So the pushforward along a homomorphism with dense range is
 left invariant. Hence amenability passes to the target of a continuous homomorphism with dense
-range, in particular to continuous homomorphic ranges and quotients by normal subgroups, and is
-invariant under isomorphisms of topological groups.
+range, in particular to images under surjective continuous homomorphisms, and is invariant under
+isomorphisms of topological groups.
 
 ## Main definitions
 
-* `TauCeti.Mean.IsLeftInvariant`: `m (L_g f) = m f` for all `g` and `f`.
-* `TauCeti.Mean.map φ`: the pushforward of means along a continuous homomorphism `φ`.
+* `TauCeti.Mean.IsLeftInvariant`, `TauCeti.AddMean.IsLeftInvariant`: `m (L_g f) = m f` for all `g`
+  and `f`.
+* `TauCeti.Mean.map φ`, `TauCeti.AddMean.map φ`: the pushforward of means along a continuous
+  homomorphism `φ`.
 * `TauCeti.Amenable G`: `UCB G` carries a left-invariant mean.
-* `TauCeti.AddMean.IsLeftInvariant`, `TauCeti.AddMean.map`, `TauCeti.AddAmenable`: additive
-  counterparts.
 
 ## Main results
 
 * `TauCeti.Mean.convex_toContinuousLinearMap_image_setOf_isLeftInvariant`: the left-invariant
   means form a convex set.
-* `TauCeti.Mean.IsLeftInvariant.map`: pushforward along a continuous homomorphism with dense
-  range preserves left invariance.
+* `TauCeti.Mean.IsLeftInvariant.map`, `TauCeti.AddMean.IsLeftInvariant.map`: pushforward along a
+  continuous homomorphism with dense range preserves left invariance.
 * `TauCeti.Amenable.of_denseRange`: amenability passes to the target of a continuous homomorphism
   with dense range, in particular to images under surjective continuous homomorphisms.
-* `TauCeti.Amenable.range_of_continuous`, `TauCeti.Amenable.quotientGroup`: continuous homomorphic
-  ranges and quotients by normal subgroups of amenable topological groups are amenable.
 * `TauCeti.Amenable.of_le`: amenability passes from a finer to a coarser group topology.
 * `ContinuousMulEquiv.amenable_iff`: amenability is invariant under isomorphisms of topological
   groups.
-* Additive counterparts for `TauCeti.AddMean`, `TauCeti.AddAmenable`, and
-  `ContinuousAddEquiv.addAmenable_iff`.
 
 ## References
 
@@ -62,14 +59,37 @@ noncomputable section
 
 namespace TauCeti
 
+variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
 variable {G H K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
   [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
+
+namespace AddMean
+
+/-- An additive mean `m` on `AddUCB A` is left invariant when `m (L_a f) = m f` for every `a` and
+`f`, where `(L_a f)(x) = f (-a + x)`. -/
+def IsLeftInvariant (m : AddMean A) : Prop :=
+  ∀ (a : A) (f : AddUCB A), m (AddUCB.leftTranslation a f) = m f
+
+/-- The defining property of a left-invariant additive mean. -/
+theorem isLeftInvariant_iff {m : AddMean A} :
+    m.IsLeftInvariant ↔ ∀ (a : A) (f : AddUCB A), m (AddUCB.leftTranslation a f) = m f :=
+  Iff.rfl
+
+/-- A left-invariant additive mean takes the same value at a function and at its left translates. -/
+@[simp]
+theorem IsLeftInvariant.apply_leftTranslation {m : AddMean A} (hm : m.IsLeftInvariant) (a : A)
+    (f : AddUCB A) : m (AddUCB.leftTranslation a f) = m f :=
+  hm a f
+
+end AddMean
 
 namespace Mean
 
 /-- A mean `m` on `UCB G` is left invariant when `m (L_g f) = m f` for every `g` and `f`, where
 `(L_g f)(x) = f (g⁻¹ * x)`. -/
+@[to_additive existing]
 def IsLeftInvariant (m : Mean G) : Prop :=
   ∀ (g : G) (f : UCB G), m (UCB.leftTranslation g f) = m f
 
@@ -97,8 +117,9 @@ theorem convex_toContinuousLinearMap_image_setOf_isLeftInvariant :
 
 /-- The pushforward `f ↦ m (f ∘ φ)` of a mean `m` on `UCB G` along a continuous homomorphism
 `φ : G →ₜ* H`, as a mean on `UCB H`. -/
-@[to_additive /-- The pushforward `f ↦ m (f ∘ φ)` of a mean `m` on `AddUCB G` along a continuous
-additive homomorphism `φ : G →ₜ+ H`, as a mean on `AddUCB H`. -/]
+@[to_additive
+  /-- The pushforward `f ↦ m (f ∘ φ)` of an additive mean `m` on `AddUCB G` along a continuous
+  additive homomorphism `φ : G →ₜ+ H`, as an additive mean on `AddUCB H`. -/]
 def map (φ : G →ₜ* H) (m : Mean G) : Mean H :=
   mk₀ (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.compRightAlgHom φ).toLinearMap)
     (fun f hf => map_nonneg m (by simpa using UCB.monotone_compRightAlgHom φ hf)) (by simp)
@@ -114,11 +135,36 @@ theorem map_id (m : Mean G) : m.map (ContinuousMonoidHom.id G) = m :=
   ext fun f => by simp
 
 /-- Pushing forward along `φ` and then along `ψ` is pushing forward along `ψ ∘ φ`. -/
-@[to_additive (attr := simp) /-- Pushing forward along `φ` and then along `ψ` is pushing forward
-along `ψ ∘ φ`. -/]
+@[to_additive (attr := simp)
+  /-- Pushing forward along `φ` and then along `ψ` is pushing forward along `ψ ∘ φ`. -/]
 theorem map_map (ψ : H →ₜ* K) (φ : G →ₜ* H) (m : Mean G) :
     (m.map φ).map ψ = m.map (ψ.comp φ) :=
   ext fun f => by simp [UCB.compRightAlgHom_comp]
+
+end Mean
+
+namespace AddMean
+
+/-- The pushforward of a left-invariant additive mean along `φ` is invariant under left translation
+by elements in the range of `φ`. -/
+theorem IsLeftInvariant.map_apply_leftTranslation {m : AddMean A} (hm : m.IsLeftInvariant)
+    (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
+    m.map φ (AddUCB.leftTranslation (φ a) f) = m.map φ f := by
+  rw [map_apply, map_apply, AddUCB.compRightAlgHom_leftTranslation, hm]
+
+/-- The pushforward of a left-invariant additive mean along a continuous additive homomorphism with
+dense range is left invariant. -/
+theorem IsLeftInvariant.map {m : AddMean A} (hm : m.IsLeftInvariant) {φ : A →ₜ+ B}
+    (hφ : DenseRange φ) : (m.map φ).IsLeftInvariant := by
+  intro b f
+  have hc : Continuous fun k : B => m.map φ (AddUCB.leftTranslation k f) :=
+    (map_continuous (m.map φ)).comp (AddUCB.continuous_leftTranslation_apply f)
+  exact hφ.induction_on (p := fun k => m.map φ (AddUCB.leftTranslation k f) = m.map φ f) b
+    (isClosed_eq hc continuous_const) fun a => hm.map_apply_leftTranslation φ a f
+
+end AddMean
+
+namespace Mean
 
 /-- The pushforward of a left-invariant mean along a continuous homomorphism `φ` is invariant under
 left translation by the elements `φ g` of the range of `φ`. -/
@@ -129,6 +175,7 @@ theorem IsLeftInvariant.map_apply_leftTranslation {m : Mean G} (hm : m.IsLeftInv
 
 /-- The pushforward of a left-invariant mean along a continuous homomorphism with dense range is
 left invariant. -/
+@[to_additive existing]
 theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ* H}
     (hφ : DenseRange φ) : (m.map φ).IsLeftInvariant := by
   -- the pushforward is invariant under translation by the range, and
@@ -141,101 +188,36 @@ theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ
 
 end Mean
 
-namespace AddMean
-
-variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-
-/-- A mean `m` on `AddUCB A` is left invariant when `m (L_a f) = m f` for every `a` and `f`. -/
-def IsLeftInvariant (m : AddMean A) : Prop :=
-  ∀ (a : A) (f : AddUCB A), m (AddUCB.leftTranslation a f) = m f
-
-attribute [to_additive existing] Mean.IsLeftInvariant
-
-/-- The defining property of a left-invariant mean. -/
-theorem isLeftInvariant_iff {m : AddMean A} :
-    m.IsLeftInvariant ↔ ∀ (a : A) (f : AddUCB A), m (AddUCB.leftTranslation a f) = m f := Iff.rfl
-
-/-- A left-invariant mean takes the same value at a function and at its left translates. -/
-@[simp] theorem IsLeftInvariant.apply_leftTranslation {m : AddMean A} (hm : m.IsLeftInvariant)
-    (a : A) (f : AddUCB A) : m (AddUCB.leftTranslation a f) = m f := hm a f
-
-/-- The left-invariant means on `AddUCB A` form a convex set of continuous linear functionals. -/
-theorem convex_toContinuousLinearMap_image_setOf_isLeftInvariant :
-    Convex ℝ (toContinuousLinearMap '' {m : AddMean A | m.IsLeftInvariant}) := by
-  rintro _ ⟨m, hm, rfl⟩ _ ⟨n, hn, rfl⟩ a b ha hb hab
-  obtain ⟨k, hk⟩ := convex_range_toContinuousLinearMap ⟨m, rfl⟩ ⟨n, rfl⟩ ha hb hab
-  refine ⟨k, fun g f => sub_eq_zero.1 ?_, hk⟩
-  simpa [hm g f, hn g f] using congr($hk (AddUCB.leftTranslation g f) - $hk f)
-
-attribute [to_additive existing] Mean.convex_toContinuousLinearMap_image_setOf_isLeftInvariant
-
-/-- The pushforward of a left-invariant mean along `φ` is invariant under translation by `φ a`. -/
-theorem IsLeftInvariant.map_apply_leftTranslation {m : AddMean A} (hm : m.IsLeftInvariant)
-    (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
-    m.map φ (AddUCB.leftTranslation (φ a) f) = m.map φ f := by
-  rw [map_apply, map_apply, AddUCB.compRightAlgHom_leftTranslation, hm]
-
-/-- The pushforward of a left-invariant mean along a dense-range homomorphism is left invariant. -/
-theorem IsLeftInvariant.map {m : AddMean A} (hm : m.IsLeftInvariant) {φ : A →ₜ+ B}
-    (hφ : DenseRange φ) : (m.map φ).IsLeftInvariant := fun b f =>
-  hφ.induction_on (p := fun k => m.map φ (AddUCB.leftTranslation k f) = m.map φ f) b
-    (isClosed_eq ((map_continuous (m.map φ)).comp (AddUCB.continuous_leftTranslation_apply f))
-      continuous_const)
-    fun a => hm.map_apply_leftTranslation φ a f
-
-attribute [to_additive existing] Mean.IsLeftInvariant.map
-
-end AddMean
-
-/-- An additive topological group `A` is amenable when `AddUCB A` carries a left-invariant mean. -/
-class AddAmenable (A : Type*) [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A] :
-    Prop where
-  /-- An amenable additive group has a left-invariant mean on `AddUCB A`. -/
-  exists_isLeftInvariant : ∃ m : AddMean A, m.IsLeftInvariant
-
 variable (G) in
 /-- A topological group `G` is amenable when `UCB G` carries a left-invariant mean. -/
-@[to_additive existing AddAmenable]
 class Amenable : Prop where
   /-- An amenable group has a left-invariant mean on `UCB G`. -/
   exists_isLeftInvariant : ∃ m : Mean G, m.IsLeftInvariant
 
 variable (G) in
 /-- A topological group is amenable exactly when `UCB G` carries a left-invariant mean. -/
-@[to_additive addAmenable_iff /-- An additive topological group is amenable exactly when `AddUCB G`
-carries a left-invariant mean. -/]
 theorem amenable_iff : Amenable G ↔ ∃ m : Mean G, m.IsLeftInvariant :=
-  ⟨fun h => h.1, fun h => ⟨h⟩⟩
+  ⟨fun h => h.exists_isLeftInvariant, fun h => ⟨h⟩⟩
 
 /-- The target of a continuous homomorphism with dense range from an amenable topological group
 is amenable; in particular, so is the image under a surjective continuous homomorphism. -/
-@[to_additive /-- The target of a continuous additive homomorphism with dense range from an amenable
-additive topological group is amenable; in particular, so is the image under a surjective continuous
-additive homomorphism. -/]
 theorem Amenable.of_denseRange [Amenable G] (φ : G →ₜ* H) (hφ : DenseRange φ) :
     Amenable H :=
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
 
 /-- The range of a continuous homomorphism from an amenable topological group is amenable. -/
-@[to_additive /-- The range of a continuous additive homomorphism from an amenable additive
-topological group is amenable. -/]
 theorem Amenable.range_of_continuous [Amenable G] {φ : G →* H} (hφ : Continuous φ) :
     Amenable φ.range :=
   .of_denseRange ⟨φ.rangeRestrict, hφ.subtype_mk _⟩ φ.rangeRestrict_surjective.denseRange
 
 /-- Any quotient of an amenable topological group by a normal subgroup is amenable. -/
-@[to_additive /-- Any quotient of an amenable additive topological
-group by a normal additive subgroup is amenable. -/]
 instance Amenable.quotientGroup [Amenable G] (N : Subgroup G) [N.Normal] : Amenable (G ⧸ N) :=
   .of_denseRange ⟨QuotientGroup.mk' N, QuotientGroup.continuous_mk⟩
     (QuotientGroup.mk'_surjective N).denseRange
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] in
 /-- Amenability passes from a finer group topology to a coarser group topology. -/
-@[to_additive /-- Amenability passes from a finer additive group topology to a coarser additive
-group topology. -/]
 theorem Amenable.of_le {t₁ t₂ : TopologicalSpace G}
     [@IsTopologicalGroup G t₁ _] [@IsTopologicalGroup G t₂ _] (h : t₁ ≤ t₂)
     (ha : @Amenable G _ t₁ _) : @Amenable G _ t₂ _ := by
@@ -255,8 +237,6 @@ variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 /-- Amenability is invariant under isomorphisms of topological groups. -/
-@[to_additive addAmenable_iff
-/-- Amenability is invariant under isomorphisms of additive topological groups. -/]
 theorem amenable_iff (e : G ≃ₜ* H) : Amenable G ↔ Amenable H :=
   ⟨fun _ => .of_denseRange (e : G →ₜ* H) e.surjective.denseRange,
     fun _ => .of_denseRange (e.symm : H →ₜ* G) e.symm.surjective.denseRange⟩

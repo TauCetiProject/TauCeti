@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Algebra.Module.ZLattice.Quotient
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Diffeomorphism.RelativeCongr
 import TauCeti.Topology.Covering.Quotient
 
@@ -99,8 +100,8 @@ theorem ContMDiff.exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
     linear_combination this
   -- Hence `F'` is `L`-periodic, so bounded, and constant by Liouville's theorem.
   have hFd' : Differentiable ℂ (deriv F) := hFd.deriv
-  have hderiv (z l : ℂ) (hl : l ∈ L) : deriv F (z + l) = deriv F z := by
-    rw [← deriv_comp_add_const, funext (hper l hl), deriv_add_const]
+  have hderiv (z l : ℂ) (hl : l ∈ L) : deriv F (z + l) = deriv F z :=
+    TauCeti.periodic_deriv_of_apply_add_eq_add (hper l hl) z
   have hbdd : Bornology.IsBounded (range (deriv F)) :=
     (IsZLattice.isCompact_range_of_periodic L _ hFd'.continuous hderiv).isBounded
   have hFa (z : ℂ) : F z = deriv F 0 * z + F 0 := by
@@ -174,8 +175,8 @@ private theorem finite_fixingSubgroup_of_nonempty [IsZLattice ℝ L] (hn : n ≠
   -- Both maps fix `[p]`, so their translation parts agree modulo `L`.
   have hbb : b φ - b ψ ∈ L := by
     have := L.orbitRelQuotient_mk_eq_mk_iff.mp
-      (((hb φ p).symm.trans (apply_eq_of_mem_fixingSubgroup φ.2 hx)).trans
-        ((hb ψ p).symm.trans (apply_eq_of_mem_fixingSubgroup ψ.2 hx)).symm)
+      (((hb φ p).symm.trans (apply_eq_of_mem_fixingSubgroup φ.property hx)).trans
+        ((hb ψ p).symm.trans (apply_eq_of_mem_fixingSubgroup ψ.property hx)).symm)
     rw [hu] at this
     convert this using 1
     ring
@@ -194,7 +195,7 @@ give infinitely many. -/
 theorem finite_fixingSubgroup_iff_nonempty [IsZLattice ℝ L]
     (e : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient L ℂ) (hn : n ≠ 0) {s : Set M} :
     Finite (fixingSubgroup (I := I) (n := n) s) ↔ s.Nonempty := by
-  refine ⟨fun h ↦ nonempty_iff_ne_empty.mpr fun hs ↦ ?_, fun hs ↦ ?_⟩
+  refine ⟨fun h ↦ Set.ne_empty_iff_nonempty.mp fun hs ↦ ?_, fun hs ↦ ?_⟩
   · rw [hs] at h
     exact not_finite_iff_infinite.mpr e.infinite_fixingSubgroup_empty h
   · have := finite_fixingSubgroup_of_nonempty (n := n) hn (hs.image e)
