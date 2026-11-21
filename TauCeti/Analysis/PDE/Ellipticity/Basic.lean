@@ -53,6 +53,8 @@ constants are parameters, not hidden existential data.
   the predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
+* `TauCeti.PDE.norm_matrixBilinearForm_transpose`: transposing the coefficient matrix does not
+  change the operator norm of the attached bilinear form.
 * `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
 * `TauCeti.PDE.matrixBilinearForm_eq_sum_inner_transpose`: expansion of the second argument,
   `ηᵀ A ξ = ∑ⱼ ⟪η, cⱼ⟫ ξⱼ` with `cⱼ` the columns of `A`.
@@ -209,6 +211,16 @@ form. -/
 lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, Matrix.dotProduct_transpose_mulVec]
+
+/-- Transposing the coefficient matrix does not change the operator norm of the bundled matrix
+bilinear form: the form of `Aᵀ` is the flip of that of `A`. -/
+@[simp]
+lemma norm_matrixBilinearForm_transpose (A : Matrix n n ℝ) :
+    ‖matrixBilinearForm Aᵀ‖ = ‖matrixBilinearForm A‖ := by
+  rw [← ContinuousLinearMap.opNorm_flip (matrixBilinearForm A)]
+  congr 1
+  ext η ξ
+  exact matrixBilinearForm_transpose_apply A η ξ
 
 /-- The bundled bilinear form of the symmetric part is the average of the original bilinear
 form and its transpose. -/
