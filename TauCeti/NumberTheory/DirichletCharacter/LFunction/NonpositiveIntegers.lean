@@ -1,0 +1,189 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
+import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.LSeries.HurwitzZeta.Values
+
+/-!
+# Dirichlet L-values at the nonpositive integers
+
+For a Dirichlet character `χ` modulo `N` and `k ≥ 1`, the continued Dirichlet L-function takes
+the value `L(χ, 1 - k) = -Bₖ,χ / k`, where `Bₖ,χ` is the generalized Bernoulli number
+`DirichletCharacter.generalizedBernoulli`. No primitivity is assumed: for an imprimitive `χ` both
+sides carry the Euler factors at the primes dividing `N` but not the conductor. The convention
+of `generalizedBernoulli`, with representatives in `{1, …, N}`, is the one that makes the formula
+hold also at `N = 1`, `k = 1`, where it reads `ζ(0) = -1 / 2`.
+
+The scalar `-Bₖ,χ / k` makes sense for a character with values in any `ℚ`-algebra `R`. It is
+named `DirichletCharacter.algebraicDirichletValue`; it commutes with every `ℚ`-algebra map, so for
+a character with values in a number field each complex embedding sends it to the complex L-value
+of the embedded character. This is the common algebraic special value through which complex and
+`p`-adic L-values are compared.
+
+The complex formula reduces, via Mathlib's expression of `DirichletCharacter.LFunction` through
+Hurwitz zeta functions, to `ZMod.LFunction_neg_nat`. The change-of-level formula is transported
+from Mathlib's `DirichletCharacter.LFunction_changeLevel`.
+
+## Main definitions
+
+* `DirichletCharacter.algebraicDirichletValue χ k`: the scalar `-Bₖ,χ / k`.
+
+## Main results
+
+* `DirichletCharacter.LFunction_one_sub_natCast`: `L(χ, 1 - k) = -Bₖ,χ / k` for `k ≥ 1`.
+* `DirichletCharacter.algebraicDirichletValue_complex`: a complex embedding `ι` sends the algebraic
+  value of `χ` to `L(ι ∘ χ, 1 - k)`.
+* `DirichletCharacter.map_algebraicDirichletValue`: naturality under `ℚ`-algebra maps.
+* `DirichletCharacter.algebraicDirichletValue_eq_zero_of_apply_neg_one_eq_neg`: parity vanishing,
+  except at modulus one in degree one.
+* `DirichletCharacter.algebraicDirichletValue_changeLevel` and
+  `DirichletCharacter.algebraicDirichletValue_eq_primitiveCharacter_mul`: raising the level
+  multiplies the value by `∏ (1 - χ(p) pᵏ⁻¹)` over the new primes.
+* `DirichletCharacter.LFunction_kroneckerChar_neg_three_zero`: `L(χ₋₃, 0) = 1 / 3`.
+
+## References
+
+* L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., Theorem 4.2.
+* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Essential Number
+  Theory **4** (2025), §2.4.1 and §§5.1–5.2.
+-/
+
+public section
+
+noncomputable section
+
+open Complex
+
+namespace DirichletCharacter
+
+variable {N : ℕ} [NeZero N]
+
+/-- **Dirichlet L-values at the nonpositive integers.** For a Dirichlet character `χ` modulo `N`
+and `k ≥ 1`, `L(χ, 1 - k) = -Bₖ,χ / k`. -/
+theorem LFunction_one_sub_natCast (χ : DirichletCharacter ℂ N) {k : ℕ} (hk : k ≠ 0) :
+    χ.LFunction (1 - k) = -χ.generalizedBernoulli k / k := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
+  rw [LFunction, show (1 : ℂ) - (m + 1 : ℕ) = -(m : ℂ) by push_cast; ring, ZMod.LFunction_neg_nat,
+    generalizedBernoulli_def]
+  simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_right, zpow_natCast, map_pow,
+    map_natCast, Finset.mul_sum, Polynomial.eval_map_algebraMap]
+  rw [← Finset.sum_neg_distrib, Finset.sum_div]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [show ((if j = 0 then N else j.val : ℕ) : ℂ) / N =
+      algebraMap ℚ ℂ (((if j = 0 then N else j.val : ℕ) : ℚ) / N) by
+        rw [map_div₀, map_natCast, map_natCast],
+    Polynomial.aeval_algebraMap_apply, Polynomial.coe_aeval_eq_eval]
+  ring
+
+variable {R : Type*} [CommRing R] [Algebra ℚ R]
+
+/-- The **algebraic Dirichlet value** `-Bₖ,χ / k` of a character `χ` with values in a
+`ℚ`-algebra. For `k ≥ 1` and complex values it is `L(χ, 1 - k)`
+(`DirichletCharacter.LFunction_one_sub_natCast`). At `k = 0` it is `0`. -/
+def algebraicDirichletValue (χ : DirichletCharacter R N) (k : ℕ) : R :=
+  -((k : ℚ)⁻¹ • χ.generalizedBernoulli k)
+
+/-- The defining formula of `DirichletCharacter.algebraicDirichletValue`. -/
+theorem algebraicDirichletValue_def (χ : DirichletCharacter R N) (k : ℕ) :
+    χ.algebraicDirichletValue k = -((k : ℚ)⁻¹ • χ.generalizedBernoulli k) := by
+  rw [algebraicDirichletValue]
+
+/-- Over a field, the algebraic Dirichlet value is `-Bₖ,χ / k`. -/
+theorem algebraicDirichletValue_eq_neg_div {F : Type*} [Field F] [Algebra ℚ F]
+    (χ : DirichletCharacter F N) (k : ℕ) :
+    χ.algebraicDirichletValue k = -χ.generalizedBernoulli k / k := by
+  rw [algebraicDirichletValue_def, Algebra.smul_def, map_inv₀, map_natCast, neg_div,
+    div_eq_inv_mul]
+
+/-- Algebraic Dirichlet values commute with every `ℚ`-algebra map of the coefficients. -/
+@[simp]
+theorem map_algebraicDirichletValue {S : Type*} [CommRing S] [Algebra ℚ S]
+    (χ : DirichletCharacter R N) (f : R →ₐ[ℚ] S) (k : ℕ) :
+    f (χ.algebraicDirichletValue k) =
+      algebraicDirichletValue (χ.ringHomComp (f : R →+* S) : DirichletCharacter S N) k := by
+  rw [algebraicDirichletValue_def, algebraicDirichletValue_def, map_neg, map_smul,
+    map_generalizedBernoulli]
+
+/-- At modulus one the algebraic Dirichlet value is the image of `-B'ₖ / k`, with the
+positive-first-convention Bernoulli number `bernoulli'`. In degree one it is `-1 / 2`, the value
+`ζ(0)`. -/
+@[simp]
+theorem algebraicDirichletValue_modOne (χ : DirichletCharacter R 1) (k : ℕ) :
+    χ.algebraicDirichletValue k = algebraMap ℚ R (-_root_.bernoulli' k / k) := by
+  rw [algebraicDirichletValue_def, generalizedBernoulli_modOne, Algebra.smul_def, ← map_mul,
+    ← map_neg, neg_div, div_eq_inv_mul]
+
+/-- **Parity vanishing.** The algebraic Dirichlet value vanishes when `χ (-1) = -(-1) ^ k`,
+except for `k = 1` at modulus one, where it is `-1 / 2`. -/
+theorem algebraicDirichletValue_eq_zero_of_apply_neg_one_eq_neg {χ : DirichletCharacter R N}
+    {k : ℕ} (hk : k ≠ 1 ∨ N ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
+    χ.algebraicDirichletValue k = 0 := by
+  rw [algebraicDirichletValue_def, generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg hk hχ,
+    smul_zero, neg_zero]
+
+/-- **The complex image of the algebraic Dirichlet value.** For a character `χ` with values in a
+`ℚ`-algebra `R`, a `ℚ`-algebra map `ι : R → ℂ` and `k ≥ 1`, the complex L-value of the character
+`ι ∘ χ` at `1 - k` is the image of the algebraic value of `χ`. In particular the latter does not
+depend on the choice of `ι`. -/
+theorem algebraicDirichletValue_complex (χ : DirichletCharacter R N) (ι : R →ₐ[ℚ] ℂ) {k : ℕ}
+    (hk : k ≠ 0) :
+    LFunction (χ.ringHomComp (ι : R →+* ℂ)) (1 - k) = ι (χ.algebraicDirichletValue k) := by
+  rw [map_algebraicDirichletValue, algebraicDirichletValue_eq_neg_div,
+    LFunction_one_sub_natCast _ hk]
+
+/-- **Raising the level.** If `M ∣ N`, the algebraic Dirichlet value of `χ` viewed at level `N`
+is that at level `M` times `∏ (1 - χ(p) pᵏ⁻¹)` over the primes `p ∣ N`; the factors at primes
+dividing `M` are `1` unless `M = 1`. The proof transports Mathlib's
+`DirichletCharacter.LFunction_changeLevel` through an injective `ℚ`-algebra map `R → ℂ`. -/
+theorem algebraicDirichletValue_changeLevel (ι : R →ₐ[ℚ] ℂ) (hι : Function.Injective ι)
+    {M : ℕ} [NeZero M] (hMN : M ∣ N) (χ : DirichletCharacter R M) (k : ℕ) :
+    (changeLevel hMN χ).algebraicDirichletValue k =
+      χ.algebraicDirichletValue k * ∏ p ∈ N.primeFactors, (1 - χ p * (p : R) ^ (k - 1)) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp [algebraicDirichletValue_def]
+  apply hι
+  simp only [map_mul, map_prod, map_sub, map_one, map_pow, map_natCast,
+    map_algebraicDirichletValue, ← changeLevel_ringHomComp]
+  set ψ := χ.ringHomComp (ι : R →+* ℂ)
+  have hk' : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hk
+  have hL := LFunction_changeLevel hMN ψ (s := 1 - k) (Or.inr (by simpa using hk'))
+  rw [LFunction_one_sub_natCast _ hk, LFunction_one_sub_natCast _ hk] at hL
+  rw [algebraicDirichletValue_eq_neg_div, algebraicDirichletValue_eq_neg_div, hL]
+  congr 1
+  refine Finset.prod_congr rfl fun p _ ↦ ?_
+  rw [show -(1 - (k : ℂ)) = ((k - 1 : ℕ) : ℂ) by push_cast [Nat.one_le_iff_ne_zero.mpr hk]; ring,
+    cpow_natCast]
+  rfl
+
+/-- **Imprimitive characters.** The algebraic Dirichlet value of `χ` is that of its primitive
+character `χ₀` times `∏ (1 - χ₀(p) pᵏ⁻¹)` over the primes `p ∣ N`. -/
+theorem algebraicDirichletValue_eq_primitiveCharacter_mul (ι : R →ₐ[ℚ] ℂ)
+    (hι : Function.Injective ι) (χ : DirichletCharacter R N) (k : ℕ) :
+    χ.algebraicDirichletValue k = χ.primitiveCharacter.algebraicDirichletValue k *
+      ∏ p ∈ N.primeFactors, (1 - χ.primitiveCharacter p * (p : R) ^ (k - 1)) := by
+  conv_lhs => rw [← χ.changeLevel_primitiveCharacter]
+  exact algebraicDirichletValue_changeLevel ι hι χ.conductor_dvd_level _ k
+
+section KroneckerNegThree
+
+local instance : NeZero (-3 : ℤ).natAbs := ⟨by decide⟩
+
+/-- `L(χ₋₃, 0) = 1 / 3` for the quadratic character `(-3 / ·)` of conductor `3`. -/
+theorem LFunction_kroneckerChar_neg_three_zero :
+    (TauCeti.kroneckerChar ℂ (-3) (by decide) (by decide)).LFunction 0 = 1 / 3 := by
+  have h := LFunction_one_sub_natCast (TauCeti.kroneckerChar ℂ (-3) (by decide) (by decide))
+    one_ne_zero
+  rw [Nat.cast_one, sub_self, generalizedBernoulli_one_kroneckerChar_neg_three] at h
+  rw [h]
+  norm_num
+
+end KroneckerNegThree
+
+end DirichletCharacter
