@@ -115,6 +115,14 @@ theorem thomPairFiniteTrivializingUnionDiagram_map {s t : Finset B} (f : s ⟶ t
   (conj_eqToHom_iff_heq _ _ (thomPairFiniteTrivializingUnionDiagram_obj s)
     (thomPairFiniteTrivializingUnionDiagram_obj t)).2 HEq.rfl
 
+omit [∀ b, Zero (E b)] in
+variable (F E) in
+/-- The finite unions of the trivializing open sets of the bundle atlas increase with the finite
+set of points. -/
+theorem monotone_biUnion_baseSet_trivializationAt :
+    Monotone fun s : Finset B ↦ ⋃ b ∈ s, (trivializationAt F E b).baseSet :=
+  fun _ _ h ↦ biUnion_subset_biUnion_left h
+
 /-- The inclusions from finite trivializing unions into the whole Thom pair. -/
 def thomPairFiniteTrivializingUnionCocone :
     Cocone (thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)) where
