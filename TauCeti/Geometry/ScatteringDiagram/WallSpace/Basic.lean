@@ -114,7 +114,7 @@ variable {Λ : Type*} [AddCommGroup Λ] {ρ : Γ →+ Λ} {ℒ : Γ → Submodul
   (H : DirectedWallSpaces ρ ℒ)
 
 /-- A smaller kernel of the normal permits a larger wall space. -/
-theorem wall_le_wall_of_ker_le (n : Γ) {m μ : Λ →+ ℤ} (hker : μ.ker ≤ m.ker) :
+theorem wall_le_wall_of_ker_ge (n : Γ) {m μ : Λ →+ ℤ} (hker : μ.ker ≤ m.ker) :
     H.wall n m ≤ H.wall n μ := by
   obtain ⟨a, b, ha, hab⟩ := μ.exists_ne_zero_zsmul_eq_of_ker_le m hker
   rw [← H.rescale n m a ha, hab]
@@ -127,7 +127,7 @@ theorem wall_le_wall_of_ker_le (n : Γ) {m μ : Λ →+ ℤ} (hker : μ.ker ≤ 
 In particular a change of coorientation preserves eligible coefficients. -/
 theorem wall_eq_of_ker_eq (n : Γ) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) :
     H.wall n m = H.wall n m' :=
-  le_antisymm (H.wall_le_wall_of_ker_le n hker.ge) (H.wall_le_wall_of_ker_le n hker.le)
+  le_antisymm (H.wall_le_wall_of_ker_ge n hker.ge) (H.wall_le_wall_of_ker_ge n hker.le)
 
 /-- At a transverse degree, any wall space with normal annihilating the common kernel
 is contained in the wall space with the contracted normal. -/
@@ -135,8 +135,8 @@ theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : 
     (hn : ρ n ∉ f.ker ⊓ g.ker) (hm : f.ker ⊓ g.ker ≤ m.ker) :
     H.wall n m ≤ H.wall n (wallBracketNormal ρ n n f g) := by
   by_cases hmn : m (ρ n) = 0
-  · exact H.wall_le_wall_of_ker_le n
-      (f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn)
+  · apply H.wall_le_wall_of_ker_ge n
+    simpa only [wallBracketNormal] using f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
   · simp [hmn]
 
 /-- At a degree transverse to the common kernel of two normals, the sum of the wall spaces
@@ -148,9 +148,7 @@ theorem iSup_wall_eq_wall_wallBracketNormal_of_notMem_inf_ker (f g : Λ →+ ℤ
   refine le_antisymm
     (iSup₂_le fun m hm => H.wall_le_wall_wallBracketNormal_of_inf_ker_le f g m hn hm) ?_
   have hμ : f.ker ⊓ g.ker ≤ (wallBracketNormal ρ n n f g).ker := by
-    intro v hv
-    obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hv
-    simp [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker.mp hf, AddMonoidHom.mem_ker.mp hg]
+    simpa only [wallBracketNormal] using f.inf_ker_le_ker_zsmul_sub_zsmul g (ρ n)
   exact le_iSup₂_of_le (wallBracketNormal ρ n n f g) hμ le_rfl
 
 end KernelComparison
