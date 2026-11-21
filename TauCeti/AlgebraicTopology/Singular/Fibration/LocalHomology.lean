@@ -257,7 +257,7 @@ variable [T1Space B]
 
 include hb in
 /-- Excision onto the part of `E` over `e.chartBall b ε` is an isomorphism on homology. -/
-private lemma isIso_singularHomologyMap_excisionMap_chartBall (hε₀ : 0 < ε) (m : ℕ) :
+lemma isIso_singularHomologyMap_excisionMap_chartBall (hε₀ : 0 < ε) (m : ℕ) :
     IsIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) M m) :=
   TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset M
