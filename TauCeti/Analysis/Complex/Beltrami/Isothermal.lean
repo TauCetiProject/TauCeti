@@ -409,97 +409,6 @@ private theorem contDiffAt_normalizer {K : ℂ → ℂ →L[ℝ] ℂ} {n : ℕ�
   ext u
   simp [div_eq_mul_inv]
 
-/-- The Beltrami coefficient `ν u = (i - K u 1) / (conj (K u 1) - i)` of a `C¹` field `K` of
-complex structures with `K 0 = i` is `1/2`-Hölder near `0`, and conjugates `K u` to `i` there. -/
-private theorem exists_holderOnWith_coefficient {K : ℂ → ℂ →L[ℝ] ℂ} (hK : ContDiffAt ℝ 1 K 0)
-    (hsq : ∀ᶠ u in 𝓝 0, ∀ v, K u (K u v) = -v) (hK0 : K 0 1 = I) :
-    ∃ ρ > 0, ∃ C : ℝ≥0,
-      HolderOnWith C (1 / 2) (fun u ↦ (I - K u 1) / (conj (K u 1) - I)) (ball 0 ρ) ∧
-      ∀ u ∈ ball (0 : ℂ) ρ, ∀ v, linearMap ((I - K u 1) / (conj (K u 1) - I)) (K u v) =
-        I * linearMap ((I - K u 1) / (conj (K u 1) - I)) v := by
-  set b : ℂ → ℂ := fun u ↦ K u 1
-  set ν : ℂ → ℂ := fun u ↦ (I - b u) / (conj (b u) - I)
-  have hbc : ContDiffAt ℝ 1 b 0 := hK.clm_apply contDiffAt_const
-  have hν0 : ν 0 = 0 := by simp [ν, b, hK0]
-  -- `ν` is `C¹` near `0`, hence Lipschitz there.
-  have hνc : ContDiffAt ℝ 1 ν 0 := contDiffAt_normalizer hK (by
-    rw [hK0, conj_I]
-    norm_num [Complex.ext_iff])
-  obtain ⟨L, t, ht, hL⟩ := hνc.exists_lipschitzOnWith
-  have hgood : ∀ᶠ u in 𝓝 (0 : ℂ), u ∈ t ∧ (∀ v, K u (K u v) = -v) ∧ b u ≠ -I :=
-    (show ∀ᶠ u in 𝓝 (0 : ℂ), u ∈ t from ht).and (hsq.and (hbc.continuousAt.eventually_ne
-      (by rw [show b 0 = I from hK0]; norm_num [Complex.ext_iff])))
-  obtain ⟨ρ, hρ, hρgood⟩ := Metric.eventually_nhds_iff_ball.1 hgood
-  -- A Lipschitz function vanishing at `0` is bounded on a ball, hence Hölder there.
-  have hνL : LipschitzOnWith L ν (ball 0 ρ) := hL.mono fun u hu ↦ (hρgood u hu).1
-  have hνb : ∀ u ∈ ball (0 : ℂ) ρ, ‖ν u‖ ≤ ((L * ρ.toNNReal : ℝ≥0) : ℝ) := by
-    intro u hu
-    have h := hνL.dist_le_mul u hu 0 (mem_ball_self hρ)
-    rw [hν0, dist_zero_right, dist_zero_right] at h
-    refine h.trans ?_
-    push_cast
-    rw [Real.coe_toNNReal _ hρ.le]
-    exact mul_le_mul_of_nonneg_left (mem_ball_zero_iff.mp hu).le L.coe_nonneg
-  refine ⟨ρ, hρ, _, hνL.holderOnWith_of_norm_le hνb (by norm_num), fun u hu v ↦ ?_⟩
-  obtain ⟨-, hKsq, hbne⟩ := hρgood u hu
-  exact linearMap_apply_eq_I_mul hKsq hbne v
-
-/-- **Isothermal charts at a point where the field is `i`, after rescaling.** If `K` is a `C¹`
-field of complex structures near `0` with `K 0 = i`, then for some `ε > 0` the rescaled field
-`w ↦ K (ε w)` has a `C¹` isothermal chart at `0`, with `C¹` inverse. -/
-private theorem exists_isothermal_chart_rescale {K : ℂ → ℂ →L[ℝ] ℂ} (hK : ContDiffAt ℝ 1 K 0)
-    (hsq : ∀ᶠ u in 𝓝 0, ∀ v, K u (K u v) = -v) (hK0 : K 0 1 = I) :
-    ∃ ε > (0 : ℝ), ∃ e : OpenPartialHomeomorph ℂ ℂ, 0 ∈ e.source ∧
-      (∀ w ∈ e.source, ContDiffAt ℝ 1 e w) ∧ (∀ w ∈ e.target, ContDiffAt ℝ 1 e.symm w) ∧
-      ∀ w ∈ e.source, ∀ v, fderiv ℝ e w (K (ε • w) v) = I * fderiv ℝ e w v := by
-  obtain ⟨ρ, hρ, C', hνH, hνK⟩ := exists_holderOnWith_coefficient hK hsq hK0
-  set ν : ℂ → ℂ := fun u ↦ (I - K u 1) / (conj (K u 1) - I)
-  have hν0 : ν 0 = 0 := by simp [ν, hK0]
-  have hα0 : (0 : ℝ≥0) < 1 / 2 := by norm_num
-  have hα1 : (1 / 2 : ℝ≥0) < 1 := by
-    rw [← NNReal.coe_lt_coe]
-    norm_num
-  -- The planar Beltrami chart on the disc of radius `2`, for the coefficient `χ w ν (ε w)`.
-  obtain ⟨δ, hδ, C, hchart⟩ := exists_isComplexLinear_chart hα0 hα1 (0 : ℂ) (r := 2) two_pos
-  let χ : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
-  obtain ⟨ε, ⟨⟨f, hf, hfχ, hfδ⟩, hερ⟩, hε⟩ :=
-    ((((eventually_exists_holderSpace_cutoff_rescale hα0 hα1.le hρ hνH hν0 χ.contDiff
-      χ.hasCompactSupport (lt_min hδ one_pos)).and (ball_mem_nhds (0 : ℝ) hρ)).filter_mono
-        nhdsWithin_le_nhds).and self_mem_nhdsWithin : ∀ᶠ ε in 𝓝[>] (0 : ℝ), _).exists
-  rw [χ.tsupport_eq] at hf
-  have hf1 : ∀ w, ‖f w‖ < 1 := fun w ↦
-    (HolderSpace.norm_apply_le f w).trans_lt (hfδ.trans_le (min_le_right _ _))
-  set Jf : ℂ → AlmostComplexStructure ℂ := fun w ↦ (coefficientEquiv.symm ⟨f w, hf1 w⟩).val
-  obtain ⟨h, -, -, -, -, -, -, -, -, -, hφC1, -, -, hφlin, e, he, he0, hesrc, hes⟩ :=
-    hchart Jf (fun w _ ↦ (coefficientEquiv.symm ⟨f w, hf1 w⟩).property) f hf
-      (fun w _ ↦ by simp [Jf]) (hfδ.trans_le (min_le_left _ _))
-  rw [← he] at hφC1 hφlin
-  -- On the unit disc, the structure with coefficient `f w = ν (ε w)` is `K (ε w)`.
-  have hJfK : ∀ w ∈ ball (0 : ℂ) 1, ∀ v, (Jf w).toLinearMap v = K (ε • w) v := by
-    intro w hw v
-    have hu : ε • w ∈ ball (0 : ℂ) ρ := by
-      rw [mem_ball_zero_iff, norm_smul]
-      calc ‖ε‖ * ‖w‖ ≤ ‖ε‖ * 1 := mul_le_mul_of_nonneg_left (mem_ball_zero_iff.mp hw).le
-            (norm_nonneg _)
-        _ < ρ := by simpa using hερ
-    have hfw : (f w : ℂ) = ν (ε • w) := by
-      rw [hfχ, χ.one_of_mem_closedBall (mem_closedBall_zero_iff.mpr (mem_ball_zero_iff.mp hw).le),
-        one_smul]
-    simp only [Jf, coefficientEquiv_symm_apply]
-    rw [ContinuousLinearEquiv.symm_apply_eq, linearEquiv_apply, linearEquiv_apply]
-    have hlin := hνK _ hu v
-    simp only [linearMap_apply] at hlin
-    simp only [hfw, ν]
-    rw [hlin]
-  -- Restrict the chart to the unit disc.
-  refine ⟨ε, hε, e.restrOpen (ball 0 1) isOpen_ball, ⟨he0, mem_ball_self one_pos⟩,
-    fun w hw ↦ ?_, fun w hw ↦ ?_, fun w hw v ↦ ?_⟩
-  · exact hφC1.contDiffAt (isOpen_ball.mem_nhds (ball_subset_ball (by norm_num) (hesrc hw.1)))
-  · exact hes w (by simpa using hw : w ∈ e.target ∧ _).1
-  · have h := (hφlin w (ball_subset_closedBall (hesrc hw.1))).apply v
-    rw [OpenPartialHomeomorph.coe_restrOpen, ← hJfK w hw.2 v]
-    simpa [AlmostComplexStructure.ofComplexModule_apply] using h
-
 /-- Coordinates in which the field at the chosen point is multiplication by `i`. -/
 private theorem exists_standardizing_equiv {J : ℂ → ℂ →L[ℝ] ℂ} {c : ℂ} {n : ℕ∞ω}
     (hJ : ContDiffAt ℝ n J c) (hsq : ∀ᶠ z in 𝓝 c, ∀ v, J z (J z v) = -v) :
@@ -516,8 +425,9 @@ private theorem exists_standardizing_equiv {J : ℂ → ℂ →L[ℝ] ℂ} {c : 
   · have hJc : ContDiffAt ℝ n J (c + B 0) := by simpa using hJ
     exact (B.symm.arrowCongr B.symm).contDiff.contDiffAt.comp 0
       (hJc.comp 0 (contDiffAt_const.add B.contDiff.contDiffAt))
-  · have hT : Tendsto (fun u : ℂ ↦ c + B u) (𝓝 0) (𝓝 c) :=
-      (show Continuous (fun u : ℂ ↦ c + B u) by fun_prop).tendsto' 0 c (by simp)
+  · have hcont : Continuous (fun u : ℂ ↦ c + B u) := by fun_prop
+    have hT : Tendsto (fun u : ℂ ↦ c + B u) (𝓝 0) (𝓝 c) :=
+      hcont.tendsto' 0 c (by simp)
     filter_upwards [hT.eventually hsq] with u hu v
     simp [ContinuousLinearEquiv.arrowCongr_apply, hu]
   · simpa [ContinuousLinearEquiv.arrowCongr_apply] using congr(B.symm ($hB 1))
@@ -526,28 +436,6 @@ private theorem exists_standardizing_equiv {J : ℂ → ℂ →L[ℝ] ℂ} {c : 
     intro z v
     simp [ContinuousLinearEquiv.arrowCongr_apply, Units.smul_def, smul_smul,
       mul_inv_cancel₀ hε, -Complex.real_smul]
-
-/-- **Isothermal coordinates for a field of either orientation.** Let `J` be a field of
-real-linear endomorphisms of the plane which is `C¹` at `z₀` and squares to `-1` near `z₀`, of
-either orientation. Then there is an open partial homeomorphism `e` of the plane, with `z₀` in its
-source, which is `C¹` on its source with `C¹` inverse on its target and whose derivative carries
-`J` to multiplication by `i` at every point of its source: `J = i` in the chart `e`. -/
-theorem exists_isothermal_chart_of_contDiffAt_of_sq_eq_neg_one {J : ℂ → ℂ →L[ℝ] ℂ} {z₀ : ℂ}
-    (hJ : ContDiffAt ℝ 1 J z₀)
-    (hsq : ∀ᶠ z in 𝓝 z₀, ∀ v, J z (J z v) = -v) :
-    ∃ e : OpenPartialHomeomorph ℂ ℂ, z₀ ∈ e.source ∧ (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧
-      (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
-      ∀ z ∈ e.source, ∀ v, fderiv ℝ e z (J z v) = I * fderiv ℝ e z v := by
-  /- In the coordinates `u = B⁻¹ (z - z₀)`, where `B` carries `i` to `J z₀`, the field becomes
-  `K u = B⁻¹ ∘ J (z₀ + B u) ∘ B`, with `K 0 = i`. -/
-  obtain ⟨B, hKc, hKsq, hK0, hconj⟩ := exists_standardizing_equiv hJ hsq
-  let K : ℂ → ℂ →L[ℝ] ℂ := fun u ↦ (B.symm.arrowCongr B.symm) (J (z₀ + B u))
-  obtain ⟨ε, hε, e, he0, he, hes, heK⟩ := exists_isothermal_chart_rescale hKc hKsq hK0
-  obtain ⟨F, hFsrc, -, hF, hFs, hFJ⟩ := exists_isothermal_chart_comp_affine (J := J)
-    (K := fun w ↦ K (ε • w)) le_rfl he hes heK
-    (B.symm.trans (ContinuousLinearEquiv.smulLeft (Units.mk0 (ε⁻¹ : ℝ) (inv_ne_zero hε.ne'))))
-    z₀ fun z _ v ↦ hconj ε hε.ne' z v
-  exact ⟨F, (hFsrc z₀).2 (by simpa using he0), hF, hFs, hFJ⟩
 
 /-! ### Smooth fields -/
 
@@ -682,6 +570,22 @@ theorem exists_isothermal_chart_finite_order (k : ℕ) {J : ℂ → ℂ →L[ℝ
     fun z hz ↦ (hFc z hz).contDiffWithinAt, fun z hz ↦ ?_, hFJ⟩
   exact F.isInvertible_fderiv hz ((hFc z hz).differentiableAt (by simp))
     ((hFsc _ (F.map_source hz)).differentiableAt (by simp))
+
+/-- **Isothermal coordinates for a field of either orientation.** Let `J` be a field of
+real-linear endomorphisms of the plane which is `C¹` at `z₀` and squares to `-1` near `z₀`, of
+either orientation. Then there is an open partial homeomorphism `e` of the plane, with `z₀` in its
+source, which is `C¹` on its source with `C¹` inverse on its target and whose derivative carries
+`J` to multiplication by `i` at every point of its source: `J = i` in the chart `e`. -/
+theorem exists_isothermal_chart_of_contDiffAt_of_sq_eq_neg_one {J : ℂ → ℂ →L[ℝ] ℂ} {z₀ : ℂ}
+    (hJ : ContDiffAt ℝ 1 J z₀)
+    (hsq : ∀ᶠ z in 𝓝 z₀, ∀ v, J z (J z v) = -v) :
+    ∃ e : OpenPartialHomeomorph ℂ ℂ, z₀ ∈ e.source ∧ (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧
+      (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
+      ∀ z ∈ e.source, ∀ v, fderiv ℝ e z (J z v) = I * fderiv ℝ e z v := by
+  obtain ⟨e, hc, -, he, hinv, hlin⟩ := exists_isothermal_chart_finite_order 0 hJ hsq
+  have hes := e.contDiffOn_symm_of_isInvertible_fderiv he hinv
+  exact ⟨e, hc, fun z hz ↦ he.contDiffAt (e.open_source.mem_nhds hz),
+    fun z hz ↦ hes.contDiffAt (e.open_target.mem_nhds hz), hlin⟩
 
 /-- A `C¹` isothermal chart and its inverse are smooth for a smooth field. -/
 theorem contDiffOn_infty_and_symm_of_contDiffOn_field {J : ℂ → ℂ →L[ℝ] ℂ}
