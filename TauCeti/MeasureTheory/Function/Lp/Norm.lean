@@ -18,6 +18,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -618,13 +619,10 @@ theorem memLp_and_eLpNorm_le_of_norm_le_add {G₁ G₂ : Type*} [NormedAddCommGr
     simpa only [Set.indicator_eq_self.2 hsupp] using
       (aestronglyMeasurable_indicator_iff hs).2 hf
   rw [← eLpNorm_restrict_eq_of_support_subset hfm hsupp]
-  refine (eLpNorm_mono_ae hf hle).trans ((eLpNorm_add_le (f := fun x => c₁ * ‖g₁ x‖)
-    (g := fun x => c₂ * ‖g₂ x‖) hr).trans_eq ?_)
-  congr 1
-  · exact (eLpNorm_const_smul c₁ (fun x => ‖g₁ x‖) r _).trans
-      (by rw [Real.eNorm_of_nonneg hc₁]; congr 1; exact eLpNorm_norm g₁ hg₁.aestronglyMeasurable)
-  · exact (eLpNorm_const_smul c₂ (fun x => ‖g₂ x‖) r _).trans
-      (by rw [Real.eNorm_of_nonneg hc₂]; congr 1; exact eLpNorm_norm g₂ hg₂.aestronglyMeasurable)
+  exact TauCeti.eLpNorm_le_mul_add_mul_of_ae_norm_le hr hf hg₁.aestronglyMeasurable
+    hg₂.aestronglyMeasurable (A := c₁.toNNReal) (B := c₂.toNNReal)
+    (ae_restrict_of_forall_mem hs fun x hx => by
+      simpa only [Real.coe_toNNReal _ hc₁, Real.coe_toNNReal _ hc₂] using hfg x hx)
 
 end Restrict
 

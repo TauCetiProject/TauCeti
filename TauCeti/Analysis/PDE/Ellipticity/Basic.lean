@@ -212,6 +212,7 @@ lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : Euclidean
 
 /-- Transposing the coefficient matrix does not change the operator norm of the bundled matrix
 bilinear form: the form of `Aᵀ` is the flip of that of `A`. -/
+@[simp]
 lemma norm_matrixBilinearForm_transpose (A : Matrix n n ℝ) :
     ‖matrixBilinearForm Aᵀ‖ = ‖matrixBilinearForm A‖ := by
   rw [← ContinuousLinearMap.opNorm_flip (matrixBilinearForm A)]

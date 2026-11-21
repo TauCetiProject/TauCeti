@@ -433,7 +433,7 @@ private theorem integrable_cutoff_terms_gradient
     (hgζ0 : ∀ x ∉ K, ∇ ζ x = 0) (hgψ0 : ∀ x ∉ K, ∇ ψ x = 0) :
     Integrable (fun x => matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x)) ∧
       Integrable (fun x => matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x) * φ x) := by
-  have hBa := aestronglyMeasurable_matrixBilinearForm ha
+  have hBa := continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
   have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
   have hguK : IntegrableOn (fun x => ‖W1p.gradient u x‖) K :=
     (((Lp.memLp (W1p.gradient u)).mono_measure
@@ -475,7 +475,7 @@ private theorem integrable_cutoff_term_value
     ((((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
       (Measure.restrict_mono_set volume hKΩ)).sub aestronglyMeasurable_const).mul
         (aestronglyMeasurable_matrixBilinearForm_apply
-          (aestronglyMeasurable_matrixBilinearForm ha).restrict
+          (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).restrict
           (measurable_gradient φ).aestronglyMeasurable
           (measurable_gradient ζ).aestronglyMeasurable)) (hvuK.mul_const (Lam * M * M))
     (fun x hx => by simp [hgζ0 x hx]) fun x hx => ?_
@@ -515,6 +515,13 @@ private theorem integrable_cutoff_terms_datum
       _ ≤ (‖G x‖ * M) * M := by gcongr; exact hgζM x hx
       _ = M * M * ‖G x‖ := by ring
 
+/-- The Leibniz rule `∇(ζ φ) = ζ ∇φ + φ ∇ζ` for smooth real functions. -/
+private theorem gradient_mul_eq_smul_add_smul {ζ φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hζ : ContDiff ℝ (⊤ : ℕ∞) ζ) (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (x : EuclideanSpace ℝ (Fin (n + 1))) :
+    ∇ (fun y => ζ y * φ y) x = ζ x • ∇ φ x + φ x • ∇ ζ x := by
+  simpa only [conj_trivial] using
+    gradient_fun_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x)
+
 /-- **The equation tested with `ζ φ`.** For a smooth cutoff `ζ` with compact support in `Ω` and a
 smooth `φ`, the product `ζ φ` is a test function on `Ω`, so a weak solution `u` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` satisfies `∫ ⟪∇(ζ φ), a ∇u⟫ = ∫ ζ ⟪G, ∇φ⟫ + ∫ ⟪G, ∇ζ⟫ φ`. -/
@@ -547,8 +554,7 @@ private theorem integral_matrixBilinearForm_gradient_mul_eq
   rw [h1, hu ψΩ, hcoe, ← integral_add i4 i5,
     setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [hgψ0 x hx]]
   refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  simp only [ψ, gradient_fun_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x),
-    conj_trivial, inner_add_right, real_inner_smul_right]
+  simp only [ψ, gradient_mul_eq_smul_add_smul hζ hφ x, inner_add_right, real_inner_smul_right]
   ring
 
 /-- **The equation of a cutoff solution.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in
@@ -585,9 +591,6 @@ private theorem integral_matrixBilinearForm_cutoff_eq
   have hKΩ : K ⊆ Ω := hζB.trans hBΩ
   set gu : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
   set ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ζ x * φ x
-  have hgradψ : ∀ x, ∇ ψ x = ζ x • ∇ φ x + φ x • ∇ ζ x := fun x => by
-    simpa only [conj_trivial] using
-      gradient_fun_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x)
   obtain ⟨M, hζM, hgζM, hφM, hgφM, hgψM⟩ :=
     exists_forall_mem_abs_le_and_norm_gradient_le hζ hφ (hζ.mul hφ) (K := K) hζc.isCompact
   have hζ0 : ∀ x ∉ K, ζ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
@@ -608,7 +611,8 @@ private theorem integral_matrixBilinearForm_cutoff_eq
       matrixBilinearForm (a x) (∇ ψ x) (gu x) - matrixBilinearForm (a x) (∇ ζ x) (gu x) * φ x)
       (i1.sub i2) i3]
     refine integral_congr_ae (ae_of_all _ fun x => ?_)
-    simp only [hgradψ x, map_add, map_smul, add_apply, smul_apply, smul_eq_mul]
+    simp only [ψ, gradient_mul_eq_smul_add_smul hζ hφ x, map_add, map_smul, add_apply, smul_apply,
+      smul_eq_mul]
     ring
   have e2 : ∫ x, (⟪G x, ∇ ζ x⟫_ℝ - matrixBilinearForm (a x) (∇ ζ x) (gu x)) * φ x =
       (∫ x, ⟪G x, ∇ ζ x⟫_ℝ * φ x) - ∫ x, matrixBilinearForm (a x) (∇ ζ x) (gu x) * φ x := by
@@ -626,7 +630,7 @@ private theorem aestronglyMeasurable_toDual_symm_transpose
     AEStronglyMeasurable (fun x => (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm
       (matrixBilinearForm (a x).transpose (∇ ζ x))) volume := by
   have hBa : AEStronglyMeasurable (fun x => matrixBilinearForm (a x).transpose) volume :=
-    aestronglyMeasurable_matrixBilinearForm
+    continuous_matrixBilinearForm.comp_aestronglyMeasurable
       ((continuous_id.matrix_transpose).comp_aestronglyMeasurable ha)
   have hc : Continuous fun q : (EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ]
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin (n + 1)) =>
@@ -719,15 +723,18 @@ private theorem mul_add_mul_add_le_mul_add {CW CD : ℝ≥0} {c₀ Lam R : ℝ} 
   have hk' : ENNReal.ofReal (Lam * (c₀ * R⁻¹)) = L * (κ * ρ) := by
     rw [ENNReal.ofReal_mul hLam, hk, ENNReal.ofReal]
   have h1 : (1 : ℝ≥0) ≤ 1 + κ * (L + CD + CD * L) := le_self_add
-  have h2 : L * κ ≤ 1 + κ * (L + CD + CD * L) := by
-    rw [mul_comm]
-    exact (mul_le_mul_right (le_add_right (le_add_right le_rfl)) κ).trans le_add_self
-  have h3 : CD * κ ≤ 1 + κ * (L + CD + CD * L) := by
-    rw [mul_comm]
-    exact (mul_le_mul_right (le_add_right (le_add_left le_rfl)) κ).trans le_add_self
-  have h4 : CD * L * κ ≤ 1 + κ * (L + CD + CD * L) := by
-    rw [mul_comm]
-    exact (mul_le_mul_right (le_add_left le_rfl) κ).trans le_add_self
+  have h2 : L * κ ≤ 1 + κ * (L + CD + CD * L) := calc
+    L * κ = κ * L := mul_comm _ _
+    _ ≤ κ * (L + CD + CD * L) := by gcongr; exact le_self_add.trans le_self_add
+    _ ≤ _ := le_add_self
+  have h3 : CD * κ ≤ 1 + κ * (L + CD + CD * L) := calc
+    CD * κ = κ * CD := mul_comm _ _
+    _ ≤ κ * (L + CD + CD * L) := by gcongr; exact le_add_self.trans le_self_add
+    _ ≤ _ := le_add_self
+  have h4 : CD * L * κ ≤ 1 + κ * (L + CD + CD * L) := calc
+    CD * L * κ = κ * (CD * L) := mul_comm _ _
+    _ ≤ κ * (L + CD + CD * L) := by gcongr; exact le_add_self
+    _ ≤ _ := le_add_self
   set K : ℝ≥0 := 1 + κ * (L + CD + CD * L)
   rw [hk, hk', ENNReal.ofReal_one]
   calc (CW : ℝ≥0∞) * ((1 * X + L * (κ * ρ) * Y) + CD * (κ * ρ * Z + L * (κ * ρ) * W))
@@ -761,6 +768,16 @@ private theorem exists_cutoff_ball :
       (isOpen_ball.mem_nhds hx) fun y hy => hζ1 (ball_subset_closedBall hy)
     exact ⟨hev.eq_of_nhds, by rw [_root_.gradient, hev.fderiv_eq, fderiv_const_apply, map_zero]⟩
 
+/-- The pointwise bound `‖ζ X + c W‖ ≤ ‖X‖ + k |c|` when `|ζ| ≤ 1` and `‖W‖ ≤ k`. -/
+private theorem norm_smul_add_smul_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ζ c k : ℝ} {X W : F} (hζ : |ζ| ≤ 1) (hW : ‖W‖ ≤ k) :
+    ‖ζ • X + c • W‖ ≤ 1 * ‖X‖ + k * ‖c‖ := by
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_right hζ (norm_nonneg _)
+  · rw [norm_smul, mul_comm]
+    exact mul_le_mul_of_nonneg_right hW (norm_nonneg _)
+
 /-- The scalar datum `⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫` of a cutoff solution lies in `L^q`, with norm at most
 `k (‖G‖_{q,B} + Λ ‖∇u‖_{q,B})` when `‖∇ζ‖ ≤ k` and `ζ` is supported in `B`. -/
 private theorem memLp_and_eLpNorm_le_scalarDatum
@@ -788,7 +805,7 @@ private theorem memLp_and_eLpNorm_le_scalarDatum
     (mul_nonneg hLam hk)
     ((hGq.aestronglyMeasurable.inner (measurable_gradient ζ).aestronglyMeasurable).sub
       (aestronglyMeasurable_matrixBilinearForm_apply
-        (aestronglyMeasurable_matrixBilinearForm ha).restrict
+        (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).restrict
         (measurable_gradient ζ).aestronglyMeasurable hgq.aestronglyMeasurable))
     (fun x hx => by simp [hgζ0 x hx]) hGq hgq fun x _ => ?_
   refine (norm_sub_le _ _).trans (add_le_add ((abs_real_inner_le_norm _ _).trans ?_)
@@ -829,12 +846,8 @@ private theorem memLp_and_eLpNorm_le_divergenceDatum
     hB hp zero_le_one (mul_nonneg hLam hk)
     ((hζ.aestronglyMeasurable.smul hGp.aestronglyMeasurable).add
       (hvum.aestronglyMeasurable.smul (aestronglyMeasurable_toDual_symm_transpose ha ζ).restrict))
-    (fun x hx => by simp [hζ0 x hx, hgζ0 x hx]) hGp hvum fun x _ => ?_
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right (hζle x) (norm_nonneg _)
-  · rw [norm_smul, mul_comm]
-    exact mul_le_mul_of_nonneg_right (hwle x) (norm_nonneg _)
+    (fun x hx => by simp [hζ0 x hx, hgζ0 x hx]) hGp hvum fun x _ =>
+      norm_smul_add_smul_le (hζle x) (hwle x)
 
 /-- The gradient `ζ ∇u + (u - m) ∇ζ` of a cutoff solution lies in `Lᵖ` when `|ζ| ≤ 1`, `‖∇ζ‖ ≤ k`,
 `ζ` is supported in `B` and `∇u, u ∈ Lᵖ(B)`. -/
@@ -853,12 +866,8 @@ private theorem memLp_cutoff_gradient {Ω : Opens (EuclideanSpace ℝ (Fin (n + 
     (f := fun x => ζ x • W1p.gradient u x + (W1p.value u x - m) • ∇ ζ x) hB hp zero_le_one hk
     ((hζ.aestronglyMeasurable.smul hgp.aestronglyMeasurable).add
       (hvum.aestronglyMeasurable.smul (measurable_gradient ζ).aestronglyMeasurable))
-    (fun x hx => by simp [hζ0 x hx, hgζ0 x hx]) hgp hvum fun x _ => ?_).1
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right (hζle x) (norm_nonneg _)
-  · rw [norm_smul, mul_comm]
-    exact mul_le_mul_of_nonneg_right (hgζk x) (norm_nonneg _)
+    (fun x hx => by simp [hζ0 x hx, hgζ0 x hx]) hgp hvum fun x _ =>
+      norm_smul_add_smul_le (hζle x) (hgζk x)).1
 
 /-- Where the cutoff `ζ` is one with vanishing gradient, the gradient `ζ ∇u + (u - m) ∇ζ` of
 `ζ (u - m)` is `∇u`, so the `Lᵖ` norm of `∇u` there is at most that of the whole gradient. -/
@@ -873,6 +882,19 @@ private theorem eLpNorm_gradient_le_of_ae_eq_cutoff {Ω : Opens (EuclideanSpace 
   refine (eLpNorm_congr_ae ?_).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
   filter_upwards [ae_restrict_of_ae hv, ae_restrict_mem hS] with x hx hxS
   rw [hx, (hζ1 x hxS).1, (hζ1 x hxS).2, one_smul, smul_zero, add_zero]
+
+/-- The gradient `ζ ∇u + (u - m) ∇ζ` of a cutoff `ζ` supported in `B(x₀, R)` vanishes almost
+everywhere outside `B(x₀, r₀ / 4)` when `4 R ≤ r₀`. -/
+private theorem ae_gradient_eq_zero_of_cutoff {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    (u : W1p volume Ω 2) {v : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2}
+    {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {m : ℝ}
+    (hv : ∀ᵐ x, W1p.gradient v x = ζ x • W1p.gradient u x + (W1p.value u x - m) • ∇ ζ x)
+    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R r₀ : ℝ} (hRr₀ : 4 * R ≤ r₀)
+    (hζ0 : ∀ x ∉ ball x₀ R, ζ x = 0) (hgζ0 : ∀ x ∉ ball x₀ R, ∇ ζ x = 0) :
+    ∀ᵐ x, x ∉ ball x₀ (r₀ / 4) → W1p.gradient v x = 0 := by
+  filter_upwards [hv] with x hx hxr
+  have hxB : x ∉ ball x₀ R := fun hxB => hxr (ball_subset_ball (by linarith) hxB)
+  rw [hx, hζ0 x hxB, hgζ0 x hxB, zero_smul, smul_zero, add_zero]
 
 /-- **The interior `W^{1,p}` estimate for coefficients of small mean oscillation below a radius.**
 Let `ℝ^{n+1}` have dimension at least two, let `2 < p < ∞` and `1 / q = 1 / p + 1 / (n + 1)`, and
@@ -950,19 +972,17 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
   obtain ⟨hG₁p, hG₁le⟩ := memLp_and_eLpNorm_le_divergenceDatum ha hbd hLam u (G := G)
     measurableSet_ball hp1 hζ.continuous hζle (by positivity) hgζk hζ0 hgζ0 m hvum hGp
   -- The whole-space estimate for the cutoff `ζ (u - m)`.
-  obtain ⟨v, hv⟩ := W1p.exists_top_gradient_ae_eq_contDiffSMul_sub_const (by norm_num) u hζ hζc
-    (hζB.trans hball) m
-  have hWv := hW ha hbd hosc x₀ v _ (by
-      filter_upwards [hv] with x hx hxr
-      have hxB : x ∉ ball x₀ R := fun hxB => hxr (ball_subset_ball (by linarith) hxB)
-      rw [hx, hζ0 x hxB, hgζ0 x hxB, zero_smul, smul_zero, add_zero])
+  obtain ⟨v, -, hv⟩ := W1p.exists_top_gradient_ae_eq_contDiffSMul_sub_const (by norm_num) u hζ
+    hζc (hζB.trans hball) m
+  have hvg1 := memLp_cutoff_gradient u measurableSet_ball le_rfl hζ.continuous hζle
+    (by positivity) hgζk hζ0 hgζ0 m (hgp.mono_exponent hp1) (hvum.mono_exponent hp1)
+  have hvgp := memLp_cutoff_gradient u measurableSet_ball hp1 hζ.continuous hζle (by positivity)
+    hgζk hζ0 hgζ0 m hgp hvum
+  have hWv := hW ha hbd hosc x₀ v _ (ae_gradient_eq_zero_of_cutoff u hv hRr₀ hζ0 hgζ0)
     (energyFormH1_eq_integral_inner_of_cutoff ha hbd hLam u hball (hGp.integrable hp1) hu hζ hζc
       hζB m hv (hHp.locallyIntegrable hp1) hHh)
-    ((memLp_one_iff_integrable.1 (memLp_cutoff_gradient u measurableSet_ball le_rfl hζ.continuous
-      hζle (by positivity) hgζk hζ0 hgζ0 m (hgp.mono_exponent hp1) (hvum.mono_exponent hp1))).congr
-        (hv.mono fun x hx => hx.symm))
-    ((memLp_cutoff_gradient u measurableSet_ball hp1 hζ.continuous hζle (by positivity) hgζk hζ0
-      hgζ0 m hgp hvum).ae_eq (hv.mono fun x hx => hx.symm)) (hG₁p.add hHp)
+    ((memLp_one_iff_integrable.1 hvg1).congr (hv.mono fun x hx => hx.symm))
+    (hvgp.ae_eq (hv.mono fun x hx => hx.symm)) (hG₁p.add hHp)
   -- On `B(x₀, R/2)` the cutoff is one, so the gradient there is `∇u`.
   refine ((eLpNorm_gradient_le_of_ae_eq_cutoff u measurableSet_ball hv hζ1 p).trans
     (hWv.trans (mul_le_mul_right (eLpNorm_add_le hp1) _))).trans
