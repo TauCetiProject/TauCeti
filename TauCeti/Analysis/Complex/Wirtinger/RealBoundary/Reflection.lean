@@ -361,7 +361,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_inte
   have hH (f : ℂ → F) (hf : ∀ z, z ∉ tsupport (φ : ℂ → ℝ) → f z = 0) :
       ∫ z in {z : ℂ | 0 ≤ z.im}, f z = ∫ z, f z :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦
-      hf z (hφ z fun h' ↦ hz (show (0 : ℝ) ≤ z.im from h'.le))
+      hf z (hφ z fun h' ↦ hz (ofPred_subset_ofPred.2 (fun _ ↦ le_of_lt) h'))
   simp only [halfPairing, hψ] at h0
   rw [hH _ fun z hz ↦ by simp [lineDeriv_of_notMem_tsupport hz],
     hH _ fun z hz ↦ by simp [lineDeriv_of_notMem_tsupport hz],

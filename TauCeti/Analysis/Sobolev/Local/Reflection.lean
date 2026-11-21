@@ -267,7 +267,7 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
   have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
   have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
   have hHsub : H ⊆ {z : ℂ | 0 ≤ z.im} :=
-    fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
+    ofPred_subset_ofPred.2 fun _ => le_of_lt
   have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   -- A continuous factor supported in `tsupport χ` makes `g` or `g'` integrable on `H`.
   have hint {f : ℂ → ℝ} {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
@@ -595,7 +595,7 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
     (hφ.continuous_fderiv (by simp)).clm_apply continuous_const
   have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   have hHsub : {z : ℂ | 0 < z.im} ⊆ {z : ℂ | 0 ≤ z.im} :=
-    fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
+    ofPred_subset_ofPred.2 fun _ => le_of_lt
   simp_rw [(hφd _).lineDeriv_eq_fderiv]
   rw [integral_smul_planarReflection hΩ hg d hdφ (hφc.fderiv_apply (𝕜 := ℝ) I)
       ((tsupport_fderiv_apply_subset ℝ I).trans hφΩ),

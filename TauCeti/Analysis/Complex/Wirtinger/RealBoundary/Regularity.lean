@@ -167,7 +167,8 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.memWkpLoc_one (hp : 1 < p) (hp_t
     MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 ξ := by
   have := FiniteDimensional.completeSpace ℂ F
   refine memWkpLoc_iff_locally.2 fun x hx ↦ ?_
-  rcases (show (0 : ℝ) ≤ x.im from hx.2).lt_or_eq with hpos | hzero
+  have hx0 : 0 ≤ x.im := by simpa only [mem_ofPred_eq] using hx.2
+  rcases hx0.lt_or_eq with hpos | hzero
   · -- Above the axis, interior regularity applies on `Ω ∩ {0 < im}`.
     have hxO : x ∈ Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
       rw [← SetLike.mem_coe, Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
@@ -177,14 +178,18 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.memWkpLoc_one (hp : 1 < p) (hp_t
       (hξ.mono_set interior_subset) (hη.mono_set interior_subset)
   · -- On the axis, reflect on the conjugation-invariant open set `Ω ∩ conj Ω`.
     let W : Opens ℂ := Ω ⊓ ⟨starRingEnd ℂ ⁻¹' Ω, Ω.isOpen.preimage Complex.continuous_conj⟩
-    have hW : MapsTo (starRingEnd ℂ) W W := fun z hz ↦
-      ⟨hz.2, show conj (conj z) ∈ Ω by simpa using hz.1⟩
-    have hxW : x ∈ (W : Set ℂ) :=
-      ⟨hx.1, show conj x ∈ Ω by rw [Complex.conj_eq_iff_im.2 hzero.symm]; exact hx.1⟩
+    have hWc : (W : Set ℂ) = (Ω : Set ℂ) ∩ starRingEnd ℂ ⁻¹' Ω := by
+      simp only [W, Opens.coe_inf, Opens.coe_mk]
+    have hW : MapsTo (starRingEnd ℂ) W W := fun z hz ↦ by
+      rw [hWc, mem_inter_iff, mem_preimage] at hz ⊢
+      exact ⟨hz.2, by simpa using hz.1⟩
+    have hxW : x ∈ (W : Set ℂ) := by
+      rw [hWc, mem_inter_iff, mem_preimage, Complex.conj_eq_iff_im.2 hzero.symm]
+      exact ⟨hx.1, hx.1⟩
     have hsub : (W : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
-      inter_subset_inter_left _ fun z hz ↦ hz.1
+      inter_subset_inter_left _ (hWc.subset.trans inter_subset_left)
     exact ⟨(W : Set ℂ) ∩ {z | 0 ≤ z.im},
-      mem_nhdsWithin.2 ⟨W, W.isOpen, hxW, fun z hz ↦ ⟨hz.1, hz.2.2⟩⟩,
+      mem_nhdsWithin.2 ⟨W, W.isOpen, hxW, inter_subset_inter_right _ inter_subset_right⟩,
       memWkpLoc_one_of_mapsTo hp hp_top hW (hξ.mono_set hsub) (hη.mono_set hsub)
         (h.mono inf_le_left)⟩
 
