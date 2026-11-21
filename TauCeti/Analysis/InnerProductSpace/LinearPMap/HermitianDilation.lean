@@ -156,7 +156,9 @@ theorem mem_graph_hermitianDilation_iff {z : WithLp 2 (E × F) × WithLp 2 (E ×
   refine Iff.trans ?_ (mem_graph_withLpProdMap_iff (z := (z.1, WithLp.toLp 2 (z.2.snd, z.2.fst))))
   rw [mem_graph_iff, mem_graph_iff]
   -- `D_T` is `T ⊕ T†` followed by the swap, so `D_T u = z.2` exactly when `(T ⊕ T†) u` is the
-  -- swap of `z.2`.
+  -- swap of `z.2`. The two existentials range over the same type: `compPMap g f` is defined with
+  -- `domain := f.domain`, so `T.hermitianDilation.domain` is by definition the domain
+  -- `(T.withLpProdMap 2 T†).domain`, and `D_T` applies directly to its elements `u` below.
   refine exists_congr fun u ↦ and_congr_right fun _ ↦ ?_
   have hs : T.hermitianDilation u =
       WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) :=
