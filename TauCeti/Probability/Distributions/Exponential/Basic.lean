@@ -356,23 +356,6 @@ theorem mgf_centered_expMeasure (hr : 0 < r) (ht : t < r) :
       simp only [div_eq_mul_inv, mul_neg]
       ring
 
-/-- The centered standard exponential has an exponential moment exactly below the rate. -/
-@[simp]
-theorem integrable_exp_mul_centered_expMeasure_one_iff (t : ℝ) :
-    Integrable (fun x : ℝ => exp (t * (x - 1))) (expMeasure 1) ↔ t < 1 := by
-  simpa using integrable_exp_mul_centered_expMeasure_iff (r := 1) one_pos t
-
-/-- The centered standard exponential has no finite exponential moment at `t = 1`. -/
-theorem not_integrable_exp_centered_expMeasure_one :
-    ¬ Integrable (fun x : ℝ => exp (x - 1)) (expMeasure 1) := by
-  simpa using not_integrable_exp_mul_centered_expMeasure (r := 1) one_pos
-
-/-- The centered MGF of the standard exponential law, on its integrability domain. -/
-@[simp]
-theorem mgf_centered_expMeasure_one {t : ℝ} (ht : t < 1) :
-    mgf (fun x : ℝ => x - 1) (expMeasure 1) t = exp (-t) / (1 - t) := by
-  simpa [div_eq_mul_inv] using mgf_centered_expMeasure (r := 1) one_pos ht
-
 /-- The cumulant-generating function of an exponential law with positive rate. -/
 @[simp]
 theorem cgf_id_expMeasure (hr : 0 < r) (ht : t < r) :

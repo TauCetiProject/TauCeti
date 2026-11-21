@@ -37,11 +37,6 @@ theorem mgf_centered_expMeasure_le {r t : ℝ} (hr : 0 < r) (ht : |t| ≤ r / 2)
   rw [heq]
   simpa [div_eq_mul_inv] using Real.exp_neg_div_one_sub_le htr
 
-/-- A quadratic MGF bound on the symmetric interval `[-1/2, 1/2]`. -/
-theorem mgf_centered_expMeasure_one_le {t : ℝ} (ht : |t| ≤ 1 / 2) :
-    mgf (fun x : ℝ => x - 1) (expMeasure 1) t ≤ exp (2 * t ^ 2) := by
-  simpa using mgf_centered_expMeasure_le (r := 1) one_pos (by simpa using ht)
-
 /-- Every positive-rate exponential law is sub-exponential with parameter `2 / r`. -/
 theorem hasSubexponentialMGF_expMeasure {r : ℝ} (hr : 0 < r) :
     letI : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
@@ -64,13 +59,6 @@ theorem hasSubexponentialMGF_expMeasure {r : ℝ} (hr : 0 < r) :
     rw [heq]
     linarith
 
-local instance : IsProbabilityMeasure (expMeasure 1) := isProbabilityMeasure_expMeasure one_pos
-
-/-- The standard exponential law is sub-exponential with parameter `2`. -/
-theorem hasSubexponentialMGF_expMeasure_one :
-    HasSubexponentialMGF (fun x : ℝ => x) 2 (expMeasure 1) := by
-  simpa using hasSubexponentialMGF_expMeasure (r := 1) one_pos
-
 /-- No positive-rate exponential law is sub-Gaussian. -/
 theorem not_hasSubgaussianMGF_expMeasure {r : ℝ} (hr : 0 < r) (c : ℝ≥0) :
     ¬ HasSubgaussianMGF (fun x : ℝ => x) c (expMeasure r) := by
@@ -84,15 +72,5 @@ theorem not_hasSubgaussianMGF_centered_expMeasure {r : ℝ} (hr : 0 < r) (c : �
   intro h
   have hi := h.integrable_exp_mul r
   exact lt_irrefl r ((integrable_exp_mul_centered_expMeasure_iff hr r).mp (by simpa using hi))
-
-/-- The standard exponential law is not sub-Gaussian for any variance proxy. -/
-theorem not_hasSubgaussianMGF_expMeasure_one (c : ℝ≥0) :
-    ¬ HasSubgaussianMGF (fun x : ℝ => x) c (expMeasure 1) := by
-  simpa using not_hasSubgaussianMGF_expMeasure (r := 1) one_pos c
-
-/-- Centering the standard exponential law does not make it sub-Gaussian. -/
-theorem not_hasSubgaussianMGF_centered_expMeasure_one (c : ℝ≥0) :
-    ¬ HasSubgaussianMGF (fun x : ℝ => x - 1) c (expMeasure 1) := by
-  simpa using not_hasSubgaussianMGF_centered_expMeasure (r := 1) one_pos c
 
 end TauCeti.Probability
