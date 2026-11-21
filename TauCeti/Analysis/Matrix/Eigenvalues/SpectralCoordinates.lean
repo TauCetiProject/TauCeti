@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # Local spectral coordinates for self-adjoint matrices
@@ -301,15 +302,7 @@ section Differentiation
 
 open scoped Matrix.Norms.L2Operator
 
-/-- The matrix operator norm is compatible with the existing real scalar action. -/
-@[instance_reducible]
-private def l2OpNormedAlgebraReal : NormedAlgebra ℝ (Matrix (Fin n) (Fin n) 𝕜) where
-  toAlgebra := inferInstance
-  norm_smul_le r A := by
-    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜)]
-    simpa only [RCLike.norm_ofReal, Real.norm_eq_abs] using norm_smul_le (r : 𝕜) A
-
-attribute [local instance] l2OpNormedAlgebraReal
+attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 private theorem contDiff_expStrictUpper {k : WithTop ℕ∞} :
     ContDiff ℝ k (fun a : StrictUpperFin n → 𝕜 ↦
