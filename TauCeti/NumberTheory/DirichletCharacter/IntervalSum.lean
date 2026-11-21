@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.MulChar.Lemmas
 public import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Algebra.Order.Interval.Finset.Basic
 import Mathlib.Data.Int.Interval
+import Mathlib.Data.Nat.Periodic
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 
 /-!
@@ -95,9 +96,7 @@ theorem intervalSum_add (M : ℤ) (N N' : ℕ) :
 /-- Extending an interval on the right by one adds the value at the new endpoint. -/
 theorem intervalSum_succ (M : ℤ) (N : ℕ) :
     χ.intervalSum M (N + 1) = χ.intervalSum M N + χ ((M : ZMod q) + N + 1) := by
-  rw [intervalSum_add, intervalSum_one]
-  push_cast
-  rfl
+  rw [intervalSum_add, intervalSum_one, Int.cast_add, Int.cast_natCast]
 
 /-- An interval sum of length `N + 1` is its first term plus the sum over the remaining `N`
 integers. -/
@@ -113,10 +112,21 @@ theorem sum_Icc_eq_intervalSum (M : ℤ) (N : ℕ) :
   push_cast
   ring
 
+/-- An initial interval sum is the sum over `[1, N]` of natural numbers:
+`S_χ(0, N) = ∑_{1 ≤ n ≤ N} χ n`. -/
+theorem intervalSum_zero_eq_sum_Icc (N : ℕ) : χ.intervalSum 0 N = ∑ n ∈ Icc 1 N, χ n := by
+  rw [intervalSum_eq_sum_range, ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range]
+  simp [add_comm]
+
 /-- Interval sums are `q`-periodic in the left endpoint. -/
 theorem intervalSum_periodic (N : ℕ) : Function.Periodic (χ.intervalSum · N) (q : ℤ) := by
   intro M
   simp [intervalSum_eq_sum_range]
+
+/-- An interval sum depends only on the left endpoint modulo the level. -/
+theorem intervalSum_emod (M : ℤ) (N : ℕ) : χ.intervalSum (M % q) N = χ.intervalSum M N := by
+  rw [Int.emod_def, mul_comm]
+  exact (χ.intervalSum_periodic N).sub_int_mul_eq (M / q)
 
 /-- Reflecting an interval about the origin multiplies its sum by `χ (-1)`:
 `∑_{-M-N-1 < n ≤ -M-1} χ n = χ (-1) ∑_{M < n ≤ M + N} χ n`. -/
@@ -166,10 +176,8 @@ theorem intervalSum_add_level (hχ : χ ≠ 1) (M : ℤ) (N : ℕ) :
 level. -/
 theorem intervalSum_mod_level (hχ : χ ≠ 1) (M : ℤ) (N : ℕ) :
     χ.intervalSum M (N % q) = χ.intervalSum M N := by
-  conv_rhs => rw [← Nat.mod_add_div N q]
-  induction N / q with
-  | zero => simp
-  | succ k ih => rw [mul_add_one, ← add_assoc, intervalSum_add_level hχ, ih]
+  exact Function.Periodic.map_mod_nat (f := (χ.intervalSum M ·))
+    (fun N ↦ intervalSum_add_level hχ M N) N
 
 end Domain
 
@@ -233,14 +241,10 @@ sum. -/
 theorem norm_intervalSum_le_maxIntervalSum (hχ : χ ≠ 1) (M : ℤ) (N : ℕ) :
     ‖χ.intervalSum M N‖ ≤ χ.maxIntervalSum := by
   -- Reduce `M` modulo `q` by periodicity and `N` modulo `q` by the vanishing over a period.
-  have hM : χ.intervalSum (M % q) N = χ.intervalSum M N := by
-    rw [Int.emod_def, mul_comm]
-    exact (χ.intervalSum_periodic N).sub_int_mul_eq (M / q)
-  rw [← hM, ← intervalSum_mod_level hχ, ← Int.toNat_of_nonneg
-    (Int.emod_nonneg M (Int.natCast_ne_zero.mpr (NeZero.ne q)))]
+  have h0 := Int.emod_nonneg M (Int.natCast_ne_zero.mpr (NeZero.ne q))
+  rw [← χ.intervalSum_emod, ← intervalSum_mod_level hχ, ← Int.toNat_of_nonneg h0]
   refine χ.norm_intervalSum_le_maxIntervalSum_of_lt ?_ (Nat.mod_lt N (NeZero.pos q)).le
   have := Int.emod_lt_of_pos M (Int.natCast_pos.mpr (NeZero.pos q))
-  have := Int.emod_nonneg M (Int.natCast_ne_zero.mpr (NeZero.ne q))
   omega
 
 /-- For a nonprincipal character, `M_χ` is the largest norm of an interval sum. -/
@@ -356,23 +360,21 @@ theorem Even.two_mul_norm_intervalSum_zero_le (hχe : χ.Even) (hχ : χ ≠ 1) 
   rw [← intervalSum_mod_level hχ]
   set N₀ := N % q
   have hN₀ : N₀ < q := Nat.mod_lt N (NeZero.pos q)
-  -- The interval between `N₀` and its mirror point `q - 1 - N₀` has sum `±2 S_χ(0, N₀)`.
+  -- If `a ≤ b < q` and `S_χ(0, b) = -S_χ(0, a)`, the interval `(a, b]` has sum `-2 S_χ(0, a)`.
+  have key {a b : ℕ} (hab : a ≤ b) (hb : b < q) (h : χ.intervalSum 0 b = -χ.intervalSum 0 a) :
+      2 * ‖χ.intervalSum 0 a‖ ≤ χ.maxIntervalSum := by
+    have hs := χ.intervalSum_add 0 a (b - a)
+    rw [Nat.add_sub_cancel' hab, h, zero_add] at hs
+    have : χ.intervalSum a (b - a) = -(2 * χ.intervalSum 0 a) := by
+      linear_combination (-1 : F) * hs
+    calc 2 * ‖χ.intervalSum 0 a‖ = ‖χ.intervalSum a (b - a)‖ := by
+          rw [this, norm_neg, norm_mul, RCLike.norm_ofNat]
+      _ ≤ _ := χ.norm_intervalSum_le_maxIntervalSum_of_lt (hab.trans_lt hb) (by omega)
+  -- Apply it to `N₀` and its mirror point `q - 1 - N₀`, in whichever order they come.
   have hmirror := hχe.intervalSum_level_sub_one_sub hχ hN₀
   rcases le_total N₀ (q - 1 - N₀) with hle | hle
-  · have h := χ.intervalSum_add 0 N₀ (q - 1 - N₀ - N₀)
-    rw [Nat.add_sub_cancel' hle, hmirror, zero_add] at h
-    have : χ.intervalSum N₀ (q - 1 - N₀ - N₀) = -(2 * χ.intervalSum 0 N₀) := by
-      linear_combination (-1 : F) * h
-    calc 2 * ‖χ.intervalSum 0 N₀‖ = ‖χ.intervalSum N₀ (q - 1 - N₀ - N₀)‖ := by
-          rw [this, norm_neg, norm_mul, RCLike.norm_ofNat]
-      _ ≤ _ := χ.norm_intervalSum_le_maxIntervalSum_of_lt hN₀ (by omega)
-  · have h := χ.intervalSum_add 0 (q - 1 - N₀) (N₀ - (q - 1 - N₀))
-    rw [Nat.add_sub_cancel' hle, hmirror, zero_add] at h
-    have : χ.intervalSum (q - 1 - N₀ : ℕ) (N₀ - (q - 1 - N₀)) = 2 * χ.intervalSum 0 N₀ := by
-      linear_combination (-1 : F) * h
-    calc 2 * ‖χ.intervalSum 0 N₀‖ = ‖χ.intervalSum (q - 1 - N₀ : ℕ) (N₀ - (q - 1 - N₀))‖ := by
-          rw [this, norm_mul, RCLike.norm_ofNat]
-      _ ≤ _ := χ.norm_intervalSum_le_maxIntervalSum_of_lt (by omega) (by omega)
+  · exact key hle (by omega) hmirror
+  · simpa only [hmirror, norm_neg] using key hle hN₀ (by rw [hmirror, neg_neg])
 
 /-- For an even nonprincipal character, `M_χ` is twice the largest initial sum:
 `M_χ = 2 max_{0 ≤ N < q} ‖∑_{0 < n ≤ N} χ n‖`. -/
