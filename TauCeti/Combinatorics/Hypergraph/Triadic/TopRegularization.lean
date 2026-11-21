@@ -83,12 +83,7 @@ theorem topRegularRefinementBound_mono_parts (r : ℕ) (η ε : ℝ) (m : ℕ) :
   intro t₁ t₂ ht
   dsimp only
   rw [topRegularRefinementBound_def, topRegularRefinementBound_def]
-  generalize ⌊1 / (η ^ 3 * ε)⌋₊ + 1 = k
-  induction k with
-  | zero => exact le_rfl
-  | succ j ih =>
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
-    gcongr
+  exact Monotone.iterate_le_of_le (fun a b hab ↦ by gcongr) (fun a ↦ by gcongr) _ m
 
 /-- Top regularization never lowers the number of pair colors. -/
 theorem le_topRegularRefinementBound (t r : ℕ) (η ε : ℝ) (m : ℕ) :

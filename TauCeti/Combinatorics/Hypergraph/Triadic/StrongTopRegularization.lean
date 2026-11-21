@@ -244,23 +244,15 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
       (∀ c, π (C.skeleton.pairColors.rev c) = S.pairColors.rev (π c)) ∧
       C.polyads = univ ∧ H.TopRegularOverMostPolyads C δ ε (r C.complexity) := by
   have := Fintype.ofFinite κ
-  set q : ℝ := (Nat.card κ : ℝ)
-  set γ := ε * δ ^ 2 / (4 * (q + 1))
-  have hγ : 0 < γ := by positivity
   obtain ⟨C, D, π, f, hCcard, -, hCV, hDV, hπ, hrev, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
-    H.exists_strong_topRegularOverMostPolyads S (pow_pos hγ 2) (η := fun _ ↦ δ ^ 2 / 2)
-      (μ := fun _ ↦ ε * δ ^ 2 / 4) (fun _ ↦ by positivity) (fun _ ↦ by positivity) r
-  refine ⟨C, π, hCcard, hCV, hπ, hrev, hCpol, ?_⟩
-  have hreg := hDreg.of_polyadEnergy_sub_le (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
-    (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
-    (fun p ↦ (hf p).symm) hgap (by positivity) hδ (by linarith [pow_pos hδ 2])
-  refine hreg.mono le_rfl ?_ le_rfl
-  -- The exceptional proportion is at most `(ε δ² / 4 + q γ) / (δ² / 2) ≤ ε`.
-  rw [Real.sqrt_sq hγ.le, ← Nat.card_eq_fintype_card, div_le_iff₀ (by nlinarith [pow_pos hδ 2])]
-  have hqγ : q * γ ≤ ε * δ ^ 2 / 4 := by
-    rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [mul_pos hε (pow_pos hδ 2)]
-  linarith
+    H.exists_strong_topRegularOverMostPolyads S
+      (pow_pos (by positivity : 0 < ε * δ ^ 2 / (4 * (Nat.card κ + 1))) 2)
+      (η := fun _ ↦ δ ^ 2 / 2) (μ := fun _ ↦ ε * δ ^ 2 / 4)
+      (fun _ ↦ by positivity) (fun _ ↦ by positivity) r
+  exact ⟨C, π, hCcard, hCV, hπ, hrev, hCpol,
+    hDreg.of_polyadEnergy_sub_le_div_sq (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
+      (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
+      (fun p ↦ (hf p).symm) hgap hδ hε⟩
 
 end Colored3Graph
 

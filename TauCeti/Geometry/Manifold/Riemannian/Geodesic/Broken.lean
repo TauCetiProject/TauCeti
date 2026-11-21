@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment.Basic
 public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
