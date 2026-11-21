@@ -85,43 +85,8 @@ theorem next_eq_finRotate_mul : σ.next = finRotate n * σ.pair := by
 
 /-- The orbits of the involution `σ.pair` are the pairs of sides: one for each representative
 `i ≤ σ.pair i`. -/
-theorem orbitCount_pair : orbitCount σ.pair = Nat.card σ.SideRepresentative := by
-  -- each orbit `{i, σ.pair i}` is sent to its least element
-  let r : Fin n → σ.SideRepresentative := fun i ↦ ⟨min i (σ.pair i), by
-    rcases le_total i (σ.pair i) with h | h
-    · rwa [min_eq_left h]
-    · rw [min_eq_right h, pair_pair]
-      exact h⟩
-  have hr : Function.Surjective r := fun i ↦ ⟨i, Subtype.ext (min_eq_left i.2)⟩
-  have hker (i j : Fin n) : σ.pair.SameCycle i j ↔ r i = r j := by
-    rw [σ.pair_involutive.sameCycle_iff, Subtype.ext_iff]
-    constructor
-    · rintro (rfl | rfl)
-      · rfl
-      · simp only [r, pair_pair, min_comm]
-    · intro h
-      simp only [r] at h
-      rcases min_choice i (σ.pair i) with hi | hi <;>
-        rcases min_choice j (σ.pair j) with hj | hj <;> rw [hi, hj] at h
-      · exact Or.inl h
-      · exact Or.inr h
-      · exact Or.inr (by rw [← h, pair_pair])
-      · exact Or.inl (σ.pair.injective h)
-  rw [orbitCount_def]
-  exact Nat.card_congr ((Quotient.congrRight (r := SameCycle.setoid σ.pair) (r' := Setoid.ker r)
-    hker).trans (Setoid.quotientKerEquivOfSurjective r hr))
-
-/-- The number of vertex cycles of `σ` with vertices satisfying a property `p` constant along
-cycles, counted vertex by vertex. -/
-private theorem natCard_cycle_eq_sum {p : Fin n → Prop} [DecidablePred p]
-    (hp : ∀ {j i}, i ∈ σ.cycle j → (p i ↔ p j)) :
-    (Nat.card (Quotient (Setoid.comap Subtype.val (SameCycle.setoid σ.next) :
-        Setoid {i : Fin n // p i})) : ℚ) =
-      ∑ i, if p i then (1 : ℚ) / σ.cycleLength i else 0 := by
-  classical
-  rw [← σ.finsum_eq_sum_ite_div_cycleLength hp (fun _ ↦ 1) _ fun _ ↦ rfl,
-    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
-    Nat.card_eq_fintype_card]
+theorem orbitCount_pair : orbitCount σ.pair = Nat.card σ.SideRepresentative :=
+  σ.pair_involutive.orbitCount_eq_natCard_le
 
 /-- The cycles of the successor permutation `σ.next` are the vertex cycles of `σ`: the finite
 vertex cycles together with the ideal ones. -/
@@ -137,10 +102,9 @@ theorem orbitCount_next :
       (Equiv.subtypeUnivEquiv fun _ ↦ trivial).symm fun _ _ ↦ Iff.rfl)
   have h : (orbitCount σ.next : ℚ) =
       Nat.card σ.FiniteVertexCycle + Nat.card σ.IdealVertexCycle := by
-    rw [hall, σ.natCard_cycle_eq_sum (p := fun _ ↦ True) (by simp),
-      σ.natCard_cycle_eq_sum (p := fun i ↦ (P.vertex i).isLeft)
-        fun hi ↦ by rw [σ.isLeft_vertex_eq_of_mem_cycle hi],
-      σ.natCard_cycle_eq_sum (p := fun i ↦ (P.vertex i).isRight)
+    rw [hall, σ.natCard_vertexCycle_eq_sum (p := fun _ ↦ True) (by simp),
+      σ.natCard_finiteVertexCycle_eq_sum,
+      σ.natCard_vertexCycle_eq_sum (p := fun i ↦ (P.vertex i).isRight)
         fun hi ↦ by rw [σ.isRight_vertex_of_mem_cycle hi],
       ← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
