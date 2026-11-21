@@ -742,34 +742,34 @@ def cobarComplex : CochainComplex AddCommGrpCat.{0} ℕ :=
 theorem cobarComplex_X (n : ℕ) : cobarComplex.X n = AddCommGrpCat.of (cobarRing n) :=
   (rfl)
 
-/-- The forgetful functors to additive groups keep the underlying function of a structure map of
-`cobarObject`. -/
-private theorem hom_forget₂_map_cobarObject_map_apply {m n : SimplexCategory} (f : m ⟶ n)
-    (x : cobarRing m.len) :
-    ((forget₂ RingCat AddCommGrpCat).map ((forget₂ CommRingCat RingCat).map
-      (cobarObject.map f))).hom x = cobarMap f x :=
-  (rfl)
+/-- The differential of the alternating coface complex of a cosimplicial additive group, evaluated
+at a cochain, is the alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
+private theorem alternatingCofaceMapComplex_d_hom_apply (X : CosimplicialObject AddCommGrpCat.{0})
+    (n : ℕ) (x : X.obj ⦋n⦌) :
+    (((AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj X).d n (n + 1)).hom x =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (X.δ i).hom x := by
+  have h : ((AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj X).d n (n + 1) =
+      AlgebraicTopology.AlternatingCofaceMapComplex.objD X n :=
+    CochainComplex.of_d (fun n ↦ X.obj (SimplexCategory.mk n)) _ n
+  rw [h]
+  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex.
+  change (AlgebraicTopology.AlternatingCofaceMapComplex.objD X n).hom x = _
+  rw [AlgebraicTopology.AlternatingCofaceMapComplex.objD]
+  -- Evaluating a morphism of additive groups is additive in the morphism.
+  refine (congrArg (fun g : X.obj ⦋n⦌ →+ X.obj ⦋n + 1⦌ ↦ g x)
+    (map_sum AddCommGrpCat.homAddEquiv _ Finset.univ)).trans ?_
+  refine (AddMonoidHom.finsetSum_apply _ _ x).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [map_zsmul]
+  rfl
 
 /-- The differential `Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` of the cobar complex is the alternating sum
 `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
 theorem cobarComplex_d_hom_apply (n : ℕ) (x : cobarRing n) :
     (cobarComplex.d n (n + 1)).hom x =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarMap (SimplexCategory.δ i) x := by
-  have h : cobarComplex.d n (n + 1) = AlgebraicTopology.AlternatingCofaceMapComplex.objD
-      (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n :=
-    CochainComplex.of_d (fun n ↦ (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙
-      forget₂ RingCat AddCommGrpCat).obj (SimplexCategory.mk n)) _ n
-  rw [h]
-  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex.
-  change (AlgebraicTopology.AlternatingCofaceMapComplex.objD
-    (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n).hom x = _
-  rw [AlgebraicTopology.AlternatingCofaceMapComplex.objD]
-  -- Evaluating a morphism of additive groups is additive in the morphism.
-  refine (congrArg (fun g : cobarRing n →+ cobarRing (n + 1) ↦ g x)
-    (map_sum AddCommGrpCat.homAddEquiv _ Finset.univ)).trans ?_
-  refine (AddMonoidHom.finsetSum_apply _ _ x).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-  rw [map_zsmul]
-  exact congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) (hom_forget₂_map_cobarObject_map_apply _ x)
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarMap (SimplexCategory.δ i) x :=
+  -- The forgetful functors to additive groups keep the underlying functions of the cofaces.
+  alternatingCofaceMapComplex_d_hom_apply
+    (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n x
 
 /-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`. -/
 theorem cobarComplex_d_zero_one_hom_apply (x : MvPolynomial Coeff ℤ) :
@@ -861,10 +861,10 @@ theorem cobarWeight_comp (k : ℤ) {l m n : SimplexCategory} (f : l ⟶ m) (g : 
   have h₂ : SimplexCategory.mkOfLe (f.toOrderHom (Fin.last l.len)) (Fin.last m.len)
       (Fin.le_last _) ≫ g = SimplexCategory.δ (n := 1) 2 ≫ T :=
     SimplexCategory.Hom.ext_one_left _ _
-  rw [cobarWeight, cobarWeight, cobarWeight, ← RingHom.comp_apply, ← cobarMap_comp, h₀, h₁, h₂,
-    cobarMap_comp, cobarMap_comp, cobarMap_comp, RingHom.comp_apply, RingHom.comp_apply,
-    RingHom.comp_apply, cobarMap_δ_zero_eq_map_rightUnit, cobarMap_δ_one_eq_coproduct,
-    cobarMap_δ_two_eq_algebraMap, coproduct_weightCharacter, map_mul, mul_comm]
+  rw [cobarWeight, cobarWeight, cobarWeight, ← RingHom.comp_apply, ← cobarMap_comp, h₀, h₁, h₂]
+  simp only [cobarMap_comp, RingHom.comp_apply, cobarMap_δ_zero_eq_map_rightUnit,
+    cobarMap_δ_one_eq_coproduct, cobarMap_δ_two_eq_algebraMap, coproduct_weightCharacter, map_mul]
+  exact mul_comm _ _
 
 /-- The weight-`k` structure map `Γ^{⊗_A m} → Γ^{⊗_A n}` of `f : [m] ⟶ [n]`: the structure map
 `cobarMap f` followed by multiplication with the weight `cobarWeight k f`. -/
@@ -926,6 +926,19 @@ theorem weightedCobarObject_map_hom (k : ℤ) {m n : SimplexCategory} (f : m ⟶
     ((weightedCobarObject k).map f).hom = weightedCobarMap k f :=
   (rfl)
 
+/-- The cofaces of `weightedCobarObject k` are the weight-`k` structure maps of the `δ i`. -/
+@[simp]
+theorem weightedCobarObject_δ_hom (k : ℤ) {n : ℕ} (i : Fin (n + 2)) :
+    ((weightedCobarObject k).δ i).hom = weightedCobarMap k (SimplexCategory.δ i) :=
+  (rfl)
+
+/-- The codegeneracies of `weightedCobarObject k` are the weight-`k` structure maps of the
+`σ i`. -/
+@[simp]
+theorem weightedCobarObject_σ_hom (k : ℤ) {n : ℕ} (i : Fin (n + 1)) :
+    ((weightedCobarObject k).σ i).hom = weightedCobarMap k (SimplexCategory.σ i) :=
+  (rfl)
+
 /-- **The cobar complex of weight `k`** of the Weierstrass Hopf algebroid, with coefficients in the
 `k`-th power `ω^k` of the Hodge line: the alternating coface complex of `weightedCobarObject k`,
 with `n`-cochains `Γ^{⊗_A n}` and differential `∑ᵢ (-1)ⁱ δⁱ` of the weight-`k` cofaces. In degrees
@@ -943,21 +956,9 @@ theorem weightedCobarComplex_X (k : ℤ) (n : ℕ) :
 alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the weight-`k` cofaces. -/
 theorem weightedCobarComplex_d_hom_apply (k : ℤ) (n : ℕ) (x : cobarRing n) :
     ((weightedCobarComplex k).d n (n + 1)).hom x =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • weightedCobarMap k (SimplexCategory.δ i) x := by
-  have h : (weightedCobarComplex k).d n (n + 1) =
-      AlgebraicTopology.AlternatingCofaceMapComplex.objD (weightedCobarObject k) n :=
-    CochainComplex.of_d (fun n ↦ (weightedCobarObject k).obj (SimplexCategory.mk n)) _ n
-  rw [h]
-  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex.
-  change (AlgebraicTopology.AlternatingCofaceMapComplex.objD (weightedCobarObject k) n).hom x = _
-  rw [AlgebraicTopology.AlternatingCofaceMapComplex.objD]
-  -- Evaluating a morphism of additive groups is additive in the morphism.
-  refine (congrArg (fun g : cobarRing n →+ cobarRing (n + 1) ↦ g x)
-    (map_sum AddCommGrpCat.homAddEquiv _ Finset.univ)).trans ?_
-  refine (AddMonoidHom.finsetSum_apply _ _ x).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-  rw [map_zsmul]
-  exact congrArg ((-1 : ℤ) ^ (i : ℕ) • ·)
-    (DFunLike.congr_fun (weightedCobarObject_map_hom k (SimplexCategory.δ i)) x)
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • weightedCobarMap k (SimplexCategory.δ i) x :=
+  -- The cofaces of `weightedCobarObject k` are the maps `weightedCobarMap k (δ i)`.
+  alternatingCofaceMapComplex_d_hom_apply (weightedCobarObject k) n x
 
 /-- The differential `A → Γ` of the weight-`k` cobar complex in degree `0` is the first weighted
 cobar differential `f ↦ η_R(f) - u⁻ᵏ η_L(f)`. -/
