@@ -66,43 +66,43 @@ variable {k : ℕ}
 /-- The **Dyck step** of a planar matching `x` at the boundary point `a`: the up step `U` if the
 arc at `a` opens there (`a < x a`), and the down step `D` if it closes there (`x a < a`). -/
 def dyckStep (x : PlanarMatching k) (a : Fin k) : DyckStep :=
-  if a < x.1.val a then U else D
+  if a < x.val.val a then U else D
 
 /-- A planar matching has an up step exactly where an arc opens. -/
 @[simp]
 theorem dyckStep_eq_U_iff {x : PlanarMatching k} {a : Fin k} :
-    x.dyckStep a = U ↔ a < x.1.val a := by
+    x.dyckStep a = U ↔ a < x.val.val a := by
   unfold dyckStep
   split_ifs with h <;> simp [h]
 
 /-- A planar matching has a down step exactly where an arc closes. -/
 @[simp]
 theorem dyckStep_eq_D_iff {x : PlanarMatching k} {a : Fin k} :
-    x.dyckStep a = D ↔ x.1.val a < a := by
+    x.dyckStep a = D ↔ x.val.val a < a := by
   unfold dyckStep
   split_ifs with h
   · simp [h.not_gt]
-  · simp [(not_lt.mp h).lt_of_ne (x.1.apply_ne a)]
+  · simp [(not_lt.mp h).lt_of_ne (x.val.apply_ne a)]
 
 /-- In every prefix, the arcs closing before `j` inject into the arcs opening before `j`, by
 sending a closing point to its partner. -/
 private theorem card_closing_le_card_opening (x : PlanarMatching k) (j : ℕ) :
     #{a : Fin k | (a : ℕ) < j ∧ x.dyckStep a = D} ≤
       #{a : Fin k | (a : ℕ) < j ∧ x.dyckStep a = U} := by
-  refine card_le_card_of_injOn x.1.val (fun a ha => ?_) x.1.val.injective.injOn
+  refine card_le_card_of_injOn x.val.val (fun a ha => ?_) x.val.val.injective.injOn
   simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq, dyckStep_eq_U_iff,
-    dyckStep_eq_D_iff, x.1.apply_apply] at ha ⊢
+    dyckStep_eq_D_iff, x.val.apply_apply] at ha ⊢
   exact ⟨lt_trans (Fin.lt_def.mp ha.2) ha.1, ha.2⟩
 
 /-- Over the whole boundary, the partner map exchanges the closing and the opening points. -/
 private theorem card_closing_eq_card_opening (x : PlanarMatching k) :
     #{a : Fin k | (a : ℕ) < k ∧ x.dyckStep a = D} =
       #{a : Fin k | (a : ℕ) < k ∧ x.dyckStep a = U} := by
-  refine card_nbij' x.1.val x.1.val (fun a ha => ?_) (fun a ha => ?_)
-    (fun a _ => x.1.apply_apply a) (fun a _ => x.1.apply_apply a)
+  refine card_nbij' x.val.val x.val.val (fun a ha => ?_) (fun a ha => ?_)
+    (fun a _ => x.val.apply_apply a) (fun a _ => x.val.apply_apply a)
   all_goals
     simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq, dyckStep_eq_U_iff,
-      dyckStep_eq_D_iff, x.1.apply_apply, Fin.is_lt] at ha ⊢
+      dyckStep_eq_D_iff, x.val.apply_apply, Fin.is_lt] at ha ⊢
     exact ha
 
 /-- The **Dyck word of a planar matching**: the steps `dyckStep x 0, …, dyckStep x (k - 1)`, an up
@@ -137,51 +137,52 @@ theorem semilength_toDyckWord {n : ℕ} (x : PlanarMatching (2 * n)) :
 /-- Two planar matchings agree at a point `c` once they agree at whichever of `c` and its partner
 opens the arc between them. -/
 private theorem apply_eq_of_forall_opening {x y : PlanarMatching k} {c : Fin k}
-    (h : ∀ b, (b = c ∨ b = x.1.val c) → b < x.1.val b → y.1.val b = x.1.val b) :
-    y.1.val c = x.1.val c := by
-  rcases lt_or_gt_of_ne (x.1.apply_ne c) with hc | hc
+    (h : ∀ b, (b = c ∨ b = x.val.val c) → b < x.val.val b → y.val.val b = x.val.val b) :
+    y.val.val c = x.val.val c := by
+  rcases lt_or_gt_of_ne (x.val.apply_ne c) with hc | hc
   · -- The arc closes at `c`, so it opens at `x c`, where the two matchings agree.
-    have := h _ (.inr rfl) (by rwa [x.1.apply_apply])
-    rwa [x.1.apply_apply, y.1.apply_eq_comm] at this
+    have := h _ (.inr rfl) (by rwa [x.val.apply_apply])
+    rwa [x.val.apply_apply, y.val.apply_eq_comm] at this
   · exact h c (.inl rfl) hc
 
 /-- If two planar matchings open arcs at the same points and agree strictly inside the arc
 `{a, x a}` of `x`, then they agree at `a`: otherwise the arcs of `y` at `a` and at `x a` would
 interleave. -/
 private theorem apply_eq_of_eqOn_Ioo {x y : PlanarMatching k}
-    (h : ∀ a, a < x.1.val a ↔ a < y.1.val a) {a : Fin k} (ha : a < x.1.val a)
-    (hin : ∀ c, a < c → c < x.1.val a → y.1.val c = x.1.val c) : y.1.val a = x.1.val a := by
+    (h : ∀ a, a < x.val.val a ↔ a < y.val.val a) {a : Fin k} (ha : a < x.val.val a)
+    (hin : ∀ c, a < c → c < x.val.val a → y.val.val c = x.val.val c) : y.val.val a = x.val.val a
+        := by
   -- A point inside the arc is not matched by `y` to an endpoint of the arc.
-  have hout : ∀ c, a < c → c < x.1.val a → ∀ e, y.1.val e = c → a < e ∧ e < x.1.val a := by
+  have hout : ∀ c, a < c → c < x.val.val a → ∀ e, y.val.val e = c → a < e ∧ e < x.val.val a := by
     intro c hac hcb e he
-    rw [← y.1.apply_eq_comm, hin c hac hcb] at he
+    rw [← y.val.apply_eq_comm, hin c hac hcb] at he
     exact he ▸ x.val_apply_mem_Ioo hac hcb
   by_contra hne
   -- Otherwise `y` matches `a` beyond `x a` and `x a` before `a`, so its two arcs interleave.
-  have hya : x.1.val a < y.1.val a := by
-    rcases lt_trichotomy (y.1.val a) (x.1.val a) with h' | h' | h'
+  have hya : x.val.val a < y.val.val a := by
+    rcases lt_trichotomy (y.val.val a) (x.val.val a) with h' | h' | h'
     · exact absurd (hout _ ((h a).1 ha) h' a rfl).1 (lt_irrefl a)
     · exact absurd h' hne
     · exact h'
-  have hyb : y.1.val (x.1.val a) < a := by
-    have hb : y.1.val (x.1.val a) < x.1.val a := by
-      refine (not_lt.mp fun h' => ?_).lt_of_ne (y.1.apply_ne _)
-      exact (lt_asymm ha) (by simpa only [x.1.apply_apply] using (h (x.1.val a)).2 h')
-    rcases lt_trichotomy (y.1.val (x.1.val a)) a with h' | h' | h'
+  have hyb : y.val.val (x.val.val a) < a := by
+    have hb : y.val.val (x.val.val a) < x.val.val a := by
+      refine (not_lt.mp fun h' => ?_).lt_of_ne (y.val.apply_ne _)
+      exact (lt_asymm ha) (by simpa only [x.val.apply_apply] using (h (x.val.val a)).2 h')
+    rcases lt_trichotomy (y.val.val (x.val.val a)) a with h' | h' | h'
     · exact h'
-    · exact absurd (y.1.apply_eq_comm.mpr h') hne
-    · exact absurd (hout _ h' hb (x.1.val a) rfl).2 (lt_irrefl _)
-  exact Equiv.Perm.isNoncrossingMatching_iff.mp y.2 hyb (by rwa [y.1.apply_apply])
-    (by rwa [y.1.apply_apply])
+    · exact absurd (y.val.apply_eq_comm.mpr h') hne
+    · exact absurd (hout _ h' hb (x.val.val a) rfl).2 (lt_irrefl _)
+  exact Equiv.Perm.isNoncrossingMatching_iff.mp y.property hyb (by rwa [y.val.apply_apply])
+    (by rwa [y.val.apply_apply])
 
 /-- **A planar matching is determined by the points at which its arcs open.** -/
 theorem dyckStep_injective : Function.Injective (dyckStep (k := k)) := by
   intro x y hxy
-  have h : ∀ a, a < x.1.val a ↔ a < y.1.val a := fun a => by
+  have h : ∀ a, a < x.val.val a ↔ a < y.val.val a := fun a => by
     rw [← dyckStep_eq_U_iff, ← dyckStep_eq_U_iff, hxy]
   -- Every arc of `x` is an arc of `y`, by strong induction on the length of the arc.
-  have H : ∀ d (a : Fin k), a < x.1.val a → (x.1.val a : ℕ) - a = d →
-      y.1.val a = x.1.val a := by
+  have H : ∀ d (a : Fin k), a < x.val.val a → (x.val.val a : ℕ) - a = d →
+      y.val.val a = x.val.val a := by
     intro d
     induction d using Nat.strong_induction_on with
     | _ d ih =>
@@ -195,7 +196,7 @@ theorem dyckStep_injective : Function.Injective (dyckStep (k := k)) := by
     rw [Fin.lt_def] at hac hcb hb'
     rcases hb with rfl | rfl
     · omega
-    · rw [x.1.apply_apply] at hb' ⊢
+    · rw [x.val.apply_apply] at hb' ⊢
       omega
   exact PlanarMatching.ext fun a => (apply_eq_of_forall_opening fun b _ hb => H _ b hb rfl).symm
 

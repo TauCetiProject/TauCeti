@@ -26,7 +26,7 @@ any differentiability hypothesis on the underlying function.
 * `TauCeti.iteratedFDeriv_comp_star`, `TauCeti.iteratedFDeriv_comp_star_apply`,
   `TauCeti.norm_iteratedFDeriv_comp_star`: pre-composition `x ↦ f (star x)` evaluates the iterated
   derivative at `star x` with conjugated tangent inputs and preserves its operator norm.
-* `TauCeti.iteratedFDeriv_star_star_apply`, `TauCeti.norm_iteratedFDeriv_star_star`: two-sided
+* `TauCeti.iteratedFDeriv_star_star_apply`, `TauCeti.norm_iteratedFDeriv_star_comp_star`: two-sided
   reflection `x ↦ star (f (star x))` conjugates inputs and output and preserves the operator norm.
 -/
 
@@ -134,7 +134,7 @@ theorem iteratedFDeriv_star_star_apply [ContinuousStar E] [ContinuousStar F]
 /-- Two-sided star reflection `y ↦ star (f (star y))` preserves the operator norm of every iterated
 Fréchet derivative, moving the evaluation point `x` to `star x`, without any differentiability
 hypothesis. -/
-theorem norm_iteratedFDeriv_star_star [NormedStarGroup E] [NormedStarGroup F]
+theorem norm_iteratedFDeriv_star_comp_star [NormedStarGroup E] [NormedStarGroup F]
     (f : E → F) (m : ℕ) (x : E) :
     ‖iteratedFDeriv 𝕜 m (fun y ↦ star (f (star y))) x‖ = ‖iteratedFDeriv 𝕜 m f (star x)‖ := by
   simp
