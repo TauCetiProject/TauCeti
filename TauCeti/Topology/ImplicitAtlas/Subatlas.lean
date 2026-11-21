@@ -253,7 +253,7 @@ theorem footprintMap_relabel {I J : Finset A'} (h : I ⊆ J)
 theorem footprint_relabel (I : Finset A') :
     (𝒜.relabel f hf).footprint I = 𝒜.footprint (I.map f) := by
   ext y
-  simp only [mem_footprint]
+  simp only [PreImplicitAtlas.mem_footprint]
   -- The footprint maps `ψ_∅I` and `ψ_∅(f I)` agree on the equal zero sets `Z_∅I = Z_∅(f I)`.
   constructor
   · rintro ⟨x, hx, rfl⟩

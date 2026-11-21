@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.ImplicitAtlas.Boundary
 public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Topology.UnitInterval
 import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Examples of implicit atlases
 
 This file constructs the two basic examples of `TauCeti.ImplicitAtlas`, which are the test inputs
-for the virtual fundamental class.
+for the virtual fundamental class, and the basic example of `TauCeti.ImplicitAtlasWithBoundary`.
 
 * **The manifold atlas** (`TauCeti.ImplicitAtlas.ofChartedSpace`). A Hausdorff space charted on
   `ℝⁿ` is an implicit atlas of virtual dimension `n` with an empty index set: the only thickening
@@ -27,6 +29,11 @@ for the virtual fundamental class.
   `Z_∅α = {0}` (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the
   footprint `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not
   cut out transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+* **The interval atlas** (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalAtlas`). The interval
+  `[0, 1]` is an implicit atlas with boundary `{0, 1}` of virtual dimension `1` with an empty index
+  set, with the half-space charts `t ↦ t` near `0` and `t ↦ 1 - t` near `1`. Its boundary
+  restriction, an atlas of virtual dimension `0` on `{0, 1}`, is regular everywhere
+  (`TauCeti.ImplicitAtlasWithBoundary.regLocus_boundaryAtlas_unitIntervalAtlas`).
 
 For the atlas `s(x) = xᵐ`, whose regular locus `X_∅^reg` is empty, the deformation space
 `D_(∅,α,α)` is empty (`TauCeti.ImplicitAtlas.deformationSpace_powAtlas_empty`), and
@@ -42,7 +49,7 @@ The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` 
 
 * J. Pardon, *An algebraic approach to virtual fundamental cycles on moduli spaces of
   pseudo-holomorphic curves*, Geom. Topol. 20 (2016), 779–1034, Example 2.3.2 and
-  Definition 3.1.1.
+  Definitions 3.1.1 and 3.2.1 (implicit atlases with boundary).
 -/
 
 public section
@@ -326,3 +333,135 @@ theorem mem_deformationSupport_powAtlas_iff (hm : m ≠ 0)
 end Pow
 
 end TauCeti.ImplicitAtlas
+
+namespace TauCeti.ImplicitAtlasWithBoundary
+
+/-! ### The interval `[0, 1]` -/
+
+section UnitInterval
+
+variable (P : Type*) [TopologicalSpace P] [Unique P]
+
+/-- The half-space chart `t ↦ t` of `[0, 1]` at `0`, with source `[0, 1)`, into
+`(ℝ⁰ × ℝ≥0) × P` for a one-point factor `P`. -/
+private noncomputable def unitIntervalChart :
+    OpenPartialHomeomorph unitInterval ((EuclideanSpace ℝ (Fin 0) × NNReal) × P) where
+  toFun t := ((0, unitInterval.toNNReal t), default)
+  invFun p := Set.projIcc (0 : ℝ) 1 zero_le_one p.1.2
+  source := {t | (t : ℝ) < 1}
+  target := {p | (p.1.2 : ℝ) < 1}
+  map_source' _ ht := ht
+  map_target' p (hp : (p.1.2 : ℝ) < 1) :=
+    (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨p.1.2.property, hp.le⟩)).trans_lt hp
+  left_inv' t _ := Set.projIcc_val _ _
+  right_inv' p (hp : (p.1.2 : ℝ) < 1) := Prod.ext (Prod.ext (Subsingleton.elim _ _)
+    (NNReal.eq (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨p.1.2.property, hp.le⟩) :)))
+    (Subsingleton.elim _ _)
+  open_source := isOpen_lt continuous_subtypeVal continuous_const
+  open_target := isOpen_lt (by fun_prop) continuous_const
+  continuousOn_toFun := by fun_prop
+  continuousOn_invFun := by fun_prop
+
+@[simp]
+private theorem unitIntervalChart_apply (t : unitInterval) :
+    unitIntervalChart P t = ((0, unitInterval.toNNReal t), default) :=
+  (rfl)
+
+@[simp]
+private theorem unitIntervalChart_source :
+    (unitIntervalChart P).source = {t : unitInterval | (t : ℝ) < 1} :=
+  (rfl)
+
+/-- On its source, the chart at `0` meets the boundary slice exactly at `0`. -/
+private theorem mem_boundary_iff_unitIntervalChart {t : unitInterval}
+    (ht : t ∈ (unitIntervalChart P).source) :
+    t ∈ ({0, 1} : Set unitInterval) ↔ (unitIntervalChart P t).1.2 = 0 := by
+  rw [unitIntervalChart_source] at ht
+  have h1 : t ≠ 1 := by
+    rintro rfl
+    simp at ht
+  rw [mem_insert_iff, mem_singleton_iff, or_iff_left h1, unitIntervalChart_apply,
+    ← NNReal.coe_eq_zero, unitInterval.coe_toNNReal]
+  exact Set.Icc.coe_eq_zero.symm
+
+variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
+  [∀ α, Finite (Γ α)] (E : A → Type*) [∀ α, NormedAddCommGroup (E α)]
+  [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
+  (ρ : ∀ α, Representation ℝ (Γ α) (E α))
+
+/-- **The interval atlas.** The interval `[0, 1]` is an implicit atlas with boundary `{0, 1}` of
+virtual dimension `1` with an empty index set: the only thickening is `X_∅ = [0, 1]`, regular
+everywhere, with the half-space charts `t ↦ t` near `0` and `t ↦ 1 - t` near `1`. -/
+noncomputable def unitIntervalAtlas :
+    ImplicitAtlasWithBoundary Γ E ρ (fun _ ↦ unitInterval) (fun _ ↦ 1)
+      unitInterval {0, 1} 1 where
+  baseHomeomorph := Homeomorph.refl unitInterval
+  kuranishi _ α _ := (IsEmpty.false α.val).elim
+  continuous_kuranishi _ α := (IsEmpty.false α.val).elim
+  kuranishi_act _ α := (IsEmpty.false α.val).elim
+  regLocus _ := univ
+  isOpen_regLocus _ := isOpen_univ
+  act_mem_regLocus _ _ _ _ := mem_univ _
+  footprintMap _ _ _ x := x.val
+  continuous_footprintMap _ _ _ := continuous_subtypeVal
+  footprintMap_act _ _ _ _ _ _ := rfl
+  footprintMap_self _ _ := rfl
+  footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
+  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.val).elim
+  isOpen_range_footprintMap _ _ _ := by
+    rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
+    exact isOpen_univ
+  range_footprintMap_inter _ _ _ _ _ := by
+    ext
+    simp
+  footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
+  isQuotientMap_footprintMap I J _ :=
+    IsQuotientMap.of_inverse
+      (f := fun y ↦ ⟨y.val, by simp⟩)
+      (continuous_subtypeVal.subtype_mk _) continuous_subtypeVal.rangeFactorization
+      fun _ ↦ rfl
+  footprintMap_eq_footprintMap_iff _ _ _ x y :=
+    ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
+  mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
+  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.val).elim
+  boundary _ := {0, 1}
+  isClosed_boundary _ := (toFinite _).isClosed
+  act_mem_boundary _ _ _ h := h
+  baseHomeomorph_mem_iff _ := Iff.rfl
+  footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
+  exists_openPartialHomeomorph I J _ x _ := by
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
+    refine Or.inr ⟨0, by simp [Finset.eq_empty_of_isEmpty I], ?_⟩
+    by_cases hx : (x.val : ℝ) < 1
+    · exact ⟨unitIntervalChart _, by simpa [unitIntervalChart_source] using hx,
+        fun y hy ↦ ⟨mem_boundary_iff_unitIntervalChart _ hy, Subsingleton.elim _ _⟩⟩
+    -- Near `1`, the chart at `0` composed with the reflection `t ↦ 1 - t`.
+    refine ⟨unitInterval.symmHomeomorph.toOpenPartialHomeomorph.trans (unitIntervalChart _), ?_,
+      fun y hy ↦ ⟨?_, Subsingleton.elim _ _⟩⟩
+    · have hx1 : (x.val : unitInterval) = 1 :=
+        Subtype.ext (le_antisymm x.val.property.2 (not_lt.1 hx))
+      simp [unitInterval.symmHomeomorph_apply, hx1]
+    · simp only [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
+        univ_inter, mem_preimage, Homeomorph.toOpenPartialHomeomorph_apply] at hy
+      simpa [unitInterval.symmHomeomorph_apply, or_comm] using
+        mem_boundary_iff_unitIntervalChart _ hy
+  exists_footprintMap_eq y := ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
+
+@[simp]
+theorem regLocus_unitIntervalAtlas (I : Finset A) : (unitIntervalAtlas Γ E ρ).regLocus I = univ :=
+  (rfl)
+
+@[simp]
+theorem boundary_unitIntervalAtlas (I : Finset A) :
+    (unitIntervalAtlas Γ E ρ).boundary I = {0, 1} :=
+  (rfl)
+
+/-- The boundary restriction of the interval atlas, an atlas of virtual dimension `1 - 1` on
+`{0, 1}`, is regular everywhere. -/
+theorem regLocus_boundaryAtlas_unitIntervalAtlas (I : Finset A) :
+    (unitIntervalAtlas Γ E ρ).boundaryAtlas.regLocus I = univ := by
+  simp
+
+end UnitInterval
+
+end TauCeti.ImplicitAtlasWithBoundary

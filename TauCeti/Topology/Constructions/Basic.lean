@@ -28,6 +28,11 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
+* `Topology.IsQuotientMap.isOpen_image_of_saturated`: a quotient map onto an open range sends open
+  sets closed under its fibres to open sets.
+* `Topology.IsQuotientMap.of_isClosedMap_of_isEmbedding`: a quotient map `q` restricts to a
+  quotient map over a closed subset. More generally, `q` pulls back along a continuous closed map
+  `i` over an embedding `j`, provided the range of `i` contains `q ⁻¹' range j`.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
@@ -79,6 +84,20 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
 
 end Setoid
 
+/-- If `f` is a quotient map onto its open range, then the image under `f` of an open set closed
+under the fibres of `f` is open. -/
+theorem Topology.IsQuotientMap.isOpen_image_of_saturated {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X → Y} (hf : IsQuotientMap (rangeFactorization f))
+    (hrange : IsOpen (range f)) {W : Set X} (hW : IsOpen W)
+    (hsat : ∀ ⦃x y⦄, f x = f y → x ∈ W → y ∈ W) : IsOpen (f '' W) := by
+  have hpre : rangeFactorization f ⁻¹' (rangeFactorization f '' W) = W := by
+    refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
+    exact hsat (congrArg Subtype.val hyx) hy
+  have hopen : IsOpen (rangeFactorization f '' W) := hf.isOpen_preimage.1 (by rwa [hpre])
+  have himage : f '' W = Subtype.val '' (rangeFactorization f '' W) := by
+    simp only [image_image, rangeFactorization_coe]
+  exact himage ▸ hrange.isOpenMap_subtypeVal _ hopen
+
 section Pullback
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Z] {f : X → Y} {g : Z → Y}
@@ -122,6 +141,29 @@ theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSp
     obtain ⟨x, hxU, hx⟩ : g (ι q).2 ∈ f '' U := hfU ▸ ⟨hqO, (ι q).1, hfg q⟩
     obtain ⟨q', hq'⟩ : (x, (ι q).2) ∈ range ι := hrange ▸ hx
     exact ⟨q', show ι q' ∈ T from hq' ▸ hUV ⟨hxU, hqV⟩, Subtype.ext (by simp [hq'])⟩
+
+/-- **Quotient maps pull back along closed maps whose range contains the preimage.** Let
+`q : X → Y` be a quotient map, let `i : P → X` be a continuous closed map and `j : Q → Y` an
+embedding with `q ∘ i = j ∘ q'`, such that every point which `q` maps into the range of `j`
+lies in the range of `i`. Then `q'` is a quotient map. For the inclusion `j` of a closed subset
+`s` and the inclusion `i` of `q ⁻¹' s`, this says that `q` restricted to `q ⁻¹' s` is a quotient
+map onto `s`, the closed counterpart of `Topology.IsQuotientMap.restrictPreimage_isOpen`. -/
+theorem Topology.IsQuotientMap.of_isClosedMap_of_isEmbedding [TopologicalSpace Y] {P Q : Type*}
+    [TopologicalSpace P] [TopologicalSpace Q] {q : X → Y} {q' : P → Q} {i : P → X} {j : Q → Y}
+    (hq : IsQuotientMap q) (hi : IsClosedMap i) (hic : Continuous i) (hj : IsEmbedding j)
+    (h : q ∘ i = j ∘ q') (hrange : q ⁻¹' range j ⊆ range i) : IsQuotientMap q' := by
+  have hpre (W : Set Q) : q ⁻¹' (j '' W) = i '' (q' ⁻¹' W) := by
+    ext x
+    refine ⟨fun ⟨w, hw, hwx⟩ ↦ ?_, fun ⟨p, hp, hpx⟩ ↦ ⟨q' p, hp, hpx ▸ (congrFun h p).symm⟩⟩
+    obtain ⟨p, rfl⟩ := hrange ⟨w, hwx⟩
+    exact ⟨p, by rwa [mem_preimage, hj.injective ((congrFun h p).symm.trans hwx.symm)], rfl⟩
+  refine isQuotientMap_iff_isClosed.2 ⟨fun w ↦ ?_, fun W ↦ ⟨fun hW ↦ ?_, fun hW ↦ ?_⟩⟩
+  · obtain ⟨x, hx⟩ := hq.surjective (j w)
+    obtain ⟨p, rfl⟩ := hrange ⟨w, hx.symm⟩
+    exact ⟨p, hj.injective ((congrFun h p).symm.trans hx)⟩
+  · exact hW.preimage (hj.continuous_iff.2 (h ▸ hq.continuous.comp hic))
+  · rw [← hj.injective.preimage_image W]
+    exact (hq.isClosed_preimage.1 (hpre W ▸ hi _ hW)).preimage hj.continuous
 
 variable (f g)
 
