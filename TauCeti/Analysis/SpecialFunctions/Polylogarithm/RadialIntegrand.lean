@@ -29,9 +29,10 @@ of `|log t| ^ k`. Away from `t = 0` the factor `(-log t) ^ k / t` is continuous,
 real part has a logarithmic singularity and its imaginary part is bounded by `π`. On a compact
 subset of the principal domain, `1 - t z` stays uniformly away from zero for `t ∈ [0, 1]`; this
 gives the uniform majorant of the integrand, and the same lower bound controls its derivative
-`(-log t) ^ k / (1 - t z)` in `z`. On a general bounded parameter set `‖z‖ ≤ R`, no single
-integrable majorant exists because the logarithmic singularity at `t = 1 / z` moves across `(0, 1]`;
-instead, translating `log |t - Re(1 / z)| ^ 2` gives a uniform `L²` bound on `(0, 1]`, which yields
+`(-log t) ^ k / (1 - t z)` in `z`. On a general bounded parameter family `‖z‖ ≤ R`, a common
+integrable majorant need not exist (for example, on the full ball with `R > 1`, the logarithmic
+singularity at `t = 1 / z` moves through `(1 / R, 1)`); instead, translating
+`log |t - Re(1 / z)| ^ 2` gives a uniform `L²` bound on `(0, 1]`, which yields
 `MeasureTheory.UniformIntegrable` by de la Vallée Poussin's criterion.
 
 ## Main declarations
@@ -44,10 +45,9 @@ instead, translating `log |t - Re(1 / z)| ^ 2` gives a uniform `L²` bound on `(
   domain, `‖1 - t z‖` is bounded below by a positive constant for `t ∈ [0, 1]`.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
   compact subset of the principal domain.
-* `TauCeti.Polylog.setLIntegral_norm_radialIntegrand_pow_Ioc_le`,
-  `TauCeti.Polylog.exists_lintegral_norm_radialIntegrand_sq_le`, and
-  `TauCeti.Polylog.uniformIntegrable_radialIntegrand`: `L^p` reduction away from `0`, uniform `L²`
-  bound, and uniform integrability on `(0, 1]` over bounded parameter families.
+* `TauCeti.Polylog.exists_lintegral_norm_radialIntegrand_sq_le` and
+  `TauCeti.Polylog.uniformIntegrable_radialIntegrand`: uniform `L²` bound and uniform
+  integrability on `(0, 1]` over bounded parameter families.
 
 ## References
 
@@ -208,8 +208,8 @@ theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : �
 /-- Away from `t = 0` (`0 < a ≤ 1`), the Lebesgue integral of the `p`-th power of the norm of the
 polylogarithm radial integrand on `(a, 1]` is bounded by `(|log a| ^ k / a) ^ p` times that of
 `t ↦ Log (1 - t * z)` on `(a, 1]`. -/
-theorem setLIntegral_norm_radialIntegrand_pow_Ioc_le (p k : ℕ) {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1)
-    (z : ℂ) :
+private lemma setLIntegral_norm_radialIntegrand_pow_Ioc_le (p k : ℕ) {a : ℝ} (ha0 : 0 < a)
+    (ha1 : a ≤ 1) (z : ℂ) :
     ∫⁻ t in Ioc a 1,
         ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ p) ≤
       ENNReal.ofReal ((|Real.log a| ^ k / a) ^ p) *

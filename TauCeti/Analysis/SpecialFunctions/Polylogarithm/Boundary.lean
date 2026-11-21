@@ -41,13 +41,13 @@ Specifically:
   principal jump `2 π i (log x) ^ (n - 1) / (n - 1)!`, pointwise discontinuity along `(1, ∞)`, and
   the characterization `ContinuousAt (polylog n) z ↔ z.im ≠ 0 ∨ z.re ≤ 1` for `2 ≤ n`.
 * In weight two, the `+2 π log x` jump of `(polylog 2 z).im` cancels the `-2 π log x` jump of
-  `arg (1 - z) * log ‖z‖`, making `(polylog 2 z).im + arg (1 - z) * log ‖z‖` continuous on all of
-  `ℂ` (including `z = 0`, `z = 1`, and the cut `(1, ∞)`).
+  `arg (1 - z) * log ‖z‖`, making the Bloch–Wigner dilogarithm `TauCeti.Polylog.blochWigner`
+  continuous on all of `ℂ` (including `z = 0`, `z = 1`, and the cut `(1, ∞)`).
 
 ## Main declarations
 
 * `TauCeti.Polylog.continuousAt_polylog_of_im_ne_zero_or_re_le_one`,
-  `TauCeti.Polylog.continuousAt_polylog_iff`, `TauCeti.Polylog.continuousAt_polylog_one`, and
+  `TauCeti.Polylog.continuousAt_polylog_iff`, `TauCeti.Polylog.continuousAt_polylog_at_one`, and
   `TauCeti.Polylog.continuousOn_polylog_closedBall`: unrestricted continuity off `(1, ∞)` (and its
   iff characterization for `2 ≤ n`), at `1`, and on the closed unit disc.
 * `TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos` and
@@ -66,9 +66,10 @@ Specifically:
   `TauCeti.Polylog.not_continuousAt_polylog_of_one_lt`, and
   `TauCeti.Polylog.not_exists_continuousOn_eqOn_polylog`: cut discontinuity on `(1, ∞)` for
   `1 ≤ n` and non-existence of a continuous extension on `ℂ ∖ {0, 1}`.
-* `TauCeti.Polylog.continuousAt_im_polylog_two_add_arg_mul_log_norm` and
-  `TauCeti.Polylog.continuous_im_polylog_two_add_arg_mul_log_norm`: continuity of
-  `(polylog 2 z).im + (1 - z).arg * log ‖z‖` on all of `ℂ`.
+* `TauCeti.Polylog.blochWigner`, `TauCeti.Polylog.blochWigner_zero`,
+  `TauCeti.Polylog.blochWigner_one`, `TauCeti.Polylog.blochWigner_of_ne`,
+  `TauCeti.Polylog.blochWigner_eq`, and `TauCeti.Polylog.continuous_blochWigner`:
+  the Bloch–Wigner dilogarithm, its endpoint and formula identities, and its continuity on `ℂ`.
 
 ## References
 
@@ -151,7 +152,7 @@ theorem continuousAt_polylog_of_im_ne_zero_or_re_le_one {n : ℤ} {z : ℂ} (hn 
 
 /-- For integer weight `n ≥ 2`, `polylog n` is continuous at `1` for unrestricted complex
 approach. -/
-theorem continuousAt_polylog_one {n : ℤ} (hn : 2 ≤ n) : ContinuousAt (polylog n) 1 :=
+theorem continuousAt_polylog_at_one {n : ℤ} (hn : 2 ≤ n) : ContinuousAt (polylog n) 1 :=
   continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr hn) (Or.inr (by simp))
 
 /-- For integer weight `n ≥ 2`, `polylog n` is continuous on the closed unit disc. -/
@@ -203,7 +204,8 @@ theorem tendsto_polylog_nhdsWithin_im_neg (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 
 `polylog n (x - t * I) → polylog n x` as `t → 0+`. -/
 theorem tendsto_polylog_sub_mul_I_nhdsGT_zero (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 2 ≤ n) :
     Tendsto (fun t : ℝ ↦ polylog n (x - t * Complex.I)) (𝓝[>] 0) (𝓝 (polylog n x)) :=
-  (tendsto_polylog_nhdsWithin_im_neg n hx).comp (tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
+  (tendsto_polylog_nhdsWithin_im_neg n hx).comp
+    (Real.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
 
 /-- Imaginary part of the radial integral on `(1, ∞)` obtained by splitting `[0, 1]` at `x⁻¹`. -/
 private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 < x) :
@@ -269,12 +271,11 @@ theorem tendsto_polylog_nhdsWithin_im_pos (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 
     Tendsto (polylog n) (𝓝[{z : ℂ | 0 < z.im}] x) (𝓝 (conj (polylog n x))) := by
   have hlim := Complex.continuous_conj.continuousAt.tendsto.comp
     ((tendsto_polylog_nhdsWithin_im_neg n hx).comp
-      (by simpa using tendsto_conj_nhdsWithin_im_pos (x : ℂ)))
+      (by simpa using Complex.tendsto_conj_nhdsWithin_im_pos (x : ℂ)))
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
   dsimp only [Function.comp_def]
-  rw [polylog_conj_of_im_ne_zero_or_re_le_one n (Or.inl hz.ne'), RingHomCompTriple.comp_apply,
-    RingHom.id_apply]
+  rw [polylog_conj n (Or.inl hz.ne'), RingHomCompTriple.comp_apply, RingHom.id_apply]
 
 /-- On `(1, ∞)` in positive weight `n ≥ 1`, `conj (polylog n x)` differs from `polylog n x` by
 `2 π i (log x) ^ (n - 1) / (n - 1)!`. -/
@@ -303,7 +304,7 @@ theorem tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt {n : ℕ} (hn : 1 ≤ n)
       (𝓝 (polylog n x +
         2 * Real.pi * Complex.I * (Real.log x : ℂ) ^ (n - 1) / ((n - 1).factorial : ℂ))) :=
   (tendsto_polylog_nhdsWithin_im_pos_of_one_lt hn hx).comp
-    (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
+    (Real.tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
 
 /-- Principal jump formula across `(1, ∞)`: for natural `n ≥ 1` and real `x > 1`,
 `polylog n (x + t * I) - polylog n (x - t * I)` tends to
@@ -326,10 +327,10 @@ theorem not_continuousAt_of_eqOn_polylog_of_one_lt {n : ℤ} (hn : 1 ≤ n) {x :
   intro hgx
   have hpath_pos : Tendsto (fun t : ℝ ↦ g (x + t * Complex.I)) (𝓝[>] 0) (𝓝 (g x)) :=
     (hgx.tendsto.mono_left nhdsWithin_le_nhds).comp
-      (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
+      (Real.tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
   have hpath_neg : Tendsto (fun t : ℝ ↦ g (x - t * Complex.I)) (𝓝[>] 0) (𝓝 (g x)) :=
     (hgx.tendsto.mono_left nhdsWithin_le_nhds).comp
-      (tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
+      (Real.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg x)
   have hg_diff : Tendsto (fun t : ℝ ↦ g (x + t * Complex.I) - g (x - t * Complex.I))
       (𝓝[>] 0) (𝓝 0) := by
     simpa using hpath_pos.sub hpath_neg
@@ -425,7 +426,7 @@ private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm_of_one_lt {x : �
 
 /-- The single-valued dilogarithm combination `(polylog 2 w).im + (1 - w).arg * log ‖w‖` is
 continuous at every complex number `z : ℂ` (including `z = 0`, `z = 1`, and the cut `(1, ∞)`). -/
-theorem continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
+private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
     ContinuousAt (fun w : ℂ ↦ (polylog 2 w).im + (1 - w).arg * Real.log ‖w‖) z := by
   obtain rfl | hz := eq_or_ne z 0
   · -- At `z = 0`, `|(1 - w).arg| ≤ (3 / 2) ‖w‖` for `‖w‖ < 1 / 2` and `‖w‖ * log ‖w‖ → 0`.
@@ -451,7 +452,7 @@ theorem continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
   obtain rfl | hz1 := eq_or_ne z 1
   · -- At `z = 1`, `polylog 2` is continuous, `|(1 - w).arg| ≤ π`, and `log ‖w‖ → 0`.
     have hli : ContinuousAt (fun w : ℂ ↦ (polylog 2 w).im) 1 :=
-      Complex.continuous_im.continuousAt.comp (continuousAt_polylog_one (by norm_num))
+      Complex.continuous_im.continuousAt.comp (continuousAt_polylog_at_one (by norm_num))
     have hupper : Tendsto (fun w : ℂ ↦ Real.pi * |Real.log ‖w‖|) (𝓝 1) (𝓝 0) := by
       simpa using (tendsto_const_nhds (x := Real.pi)).mul hlog_norm.abs.tendsto
     have hprod : Tendsto (fun w : ℂ ↦ (1 - w).arg * Real.log ‖w‖) (𝓝 1) (𝓝 0) :=
@@ -478,10 +479,39 @@ theorem continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
         (Complex.continuousAt_arg hslit).comp (by fun_prop)
       exact hli.add (harg.mul hlog_norm)
 
-/-- The single-valued dilogarithm combination `(polylog 2 w).im + (1 - w).arg * log ‖w‖` is
-continuous on all of `ℂ`. -/
-theorem continuous_im_polylog_two_add_arg_mul_log_norm :
-    Continuous fun w : ℂ ↦ (polylog 2 w).im + (1 - w).arg * Real.log ‖w‖ :=
-  continuous_iff_continuousAt.mpr continuousAt_im_polylog_two_add_arg_mul_log_norm
+/-- The Bloch–Wigner dilogarithm `D(z) = Im Li₂(z) + Arg(1 - z) log ‖z‖`, with
+`D(0) = D(1) = 0`. -/
+noncomputable def blochWigner (z : ℂ) : ℝ :=
+  if z = 0 ∨ z = 1 then 0 else (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖
+
+/-- At `0`, the Bloch–Wigner dilogarithm vanishes. -/
+@[simp]
+theorem blochWigner_zero : blochWigner 0 = 0 := by
+  simp [blochWigner]
+
+/-- At `1`, the Bloch–Wigner dilogarithm vanishes. -/
+@[simp]
+theorem blochWigner_one : blochWigner 1 = 0 := by
+  simp [blochWigner]
+
+/-- Away from `0` and `1`, `blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖`. -/
+theorem blochWigner_of_ne {z : ℂ} (hz0 : z ≠ 0) (hz1 : z ≠ 1) :
+    blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖ := by
+  simp [blochWigner, hz0, hz1]
+
+/-- On all of `ℂ`, `blochWigner z` equals `(polylog 2 z).im + (1 - z).arg * Real.log ‖z‖`. -/
+theorem blochWigner_eq (z : ℂ) :
+    blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖ := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · simp
+  rcases eq_or_ne z 1 with rfl | hz1
+  · simpa using (polylog_ofReal_im 2 (le_refl 1)).symm
+  exact blochWigner_of_ne hz0 hz1
+
+/-- The Bloch–Wigner dilogarithm is continuous on all of `ℂ` (including `0`, `1`, and the cut
+`(1, ∞)`). -/
+theorem continuous_blochWigner : Continuous blochWigner :=
+  (continuous_iff_continuousAt.mpr continuousAt_im_polylog_two_add_arg_mul_log_norm).congr
+    fun z ↦ (blochWigner_eq z).symm
 
 end TauCeti.Polylog

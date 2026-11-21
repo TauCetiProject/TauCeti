@@ -22,10 +22,10 @@ open set is the upper half of `Ω`
 axis (`TauCeti.inter_setOf_im_nonneg_induction`).
 
 Vertical approaches `t ↦ x ± t * I` along `𝓝[>] 0` map into the open upper and lower half-plane
-neighbourhood filters at `x : ℝ` (`TauCeti.tendsto_ofReal_add_mul_I_nhdsWithin_im_pos`,
-`TauCeti.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg`), and complex conjugation maps the open upper
+neighbourhood filters at `x : ℝ` (`Real.tendsto_ofReal_add_mul_I_nhdsWithin_im_pos`,
+`Real.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg`), and complex conjugation maps the open upper
 half-plane neighbourhood filter at `z : ℂ` into the open lower half-plane neighbourhood filter at
-`conj z` (`TauCeti.tendsto_conj_nhdsWithin_im_pos`).
+`conj z` (`Complex.tendsto_conj_nhdsWithin_im_pos`).
 -/
 
 public noncomputable section
@@ -101,6 +101,10 @@ theorem inter_setOf_im_nonneg_induction {Ω : Opens ℂ} (P : Set ℂ → Prop)
       ⟨Metric.ball (z.re : ℂ) r, Metric.isOpen_ball, hzx ▸ Metric.mem_ball_self hr,
         fun w hw => ⟨hw.1, hw.2.2⟩⟩, hbd z.re r hr hrΩ⟩
 
+end TauCeti
+
+namespace Real
+
 /-- Approaching a real point `x` vertically from above along `t ↦ x + t * I` (`t → 0+`) maps into
 the open upper half-plane neighbourhood filter at `x`. -/
 theorem tendsto_ofReal_add_mul_I_nhdsWithin_im_pos (x : ℝ) :
@@ -111,6 +115,10 @@ theorem tendsto_ofReal_add_mul_I_nhdsWithin_im_pos (x : ℝ) :
     simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   · filter_upwards [self_mem_nhdsWithin] with t ht
     simpa using ht
+
+end Real
+
+namespace Complex
 
 open scoped ComplexConjugate in
 /-- Complex conjugation maps the open upper half-plane neighbourhood filter at `z` into the open
@@ -123,14 +131,19 @@ theorem tendsto_conj_nhdsWithin_im_pos (z : ℂ) :
   · filter_upwards [self_mem_nhdsWithin] with w hw
     simpa using hw
 
+end Complex
+
+namespace Real
+
 /-- Approaching a real point `x` vertically from below along `t ↦ x - t * I` (`t → 0+`) maps into
 the open lower half-plane neighbourhood filter at `x`. -/
 theorem tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg (x : ℝ) :
     Filter.Tendsto (fun t : ℝ ↦ (x : ℂ) - t * Complex.I) (𝓝[>] 0) (𝓝[{z : ℂ | z.im < 0}] x) := by
   simpa [Function.comp_def, sub_eq_add_neg] using
-    (tendsto_conj_nhdsWithin_im_pos (x : ℂ)).comp (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
+    (Complex.tendsto_conj_nhdsWithin_im_pos (x : ℂ)).comp
+      (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
 
-end TauCeti
+end Real
 
 /-- The interior of the half-disc `Ω ∩ {0 ≤ im}`, as an open set, is the upper half of `Ω`. -/
 theorem TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :

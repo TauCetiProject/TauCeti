@@ -19,12 +19,12 @@ conjugation wherever the principal logarithm does. This file proves
 * in nonpositive weight the functions are Euler derivatives of the rational function
   `z / (1 - z)` with real coefficients, and the identity holds for **every** `z`, including the
   totalised value at the pole `1`;
-* in positive weight the identity holds whenever `arg (1 - z) ≠ π`, that is on the principal
-  domain `ℂ ∖ [1, ∞)` together with the point `1`. In weight one this is Mathlib's
+* in positive weight the identity holds off the open cut `(1, ∞)`, that is whenever
+  `z.im ≠ 0 ∨ z.re ≤ 1` (equivalently `arg (1 - z) ≠ π`). In weight one this is Mathlib's
   `Complex.log_conj`; in weight at least two the same holds for every `1 - t z` with
   `t ∈ [0, 1]`, so conjugation passes through the logarithmic radial integral.
 
-The hypothesis `arg (1 - z) ≠ π` cannot be dropped in positive weight: on the cut `(1, ∞)` the
+The hypothesis `z.im ≠ 0 ∨ z.re ≤ 1` cannot be dropped in positive weight: on the cut `(1, ∞)` the
 total function takes its lower boundary value, while the conjugate is the upper boundary value.
 For instance `Li₁(3) = -log 2 - π i` is not equal to its conjugate.
 
@@ -35,8 +35,7 @@ the closed unit disc, and real values of every `Liₙ` on the real half-line `(-
 
 * `TauCeti.Polylog.polylog_neg_nat_conj`, `TauCeti.Polylog.polylog_conj_of_nonpos`:
   conjugation symmetry of nonpositive weights on `ℂ`.
-* `TauCeti.Polylog.polylog_conj`, `TauCeti.Polylog.polylog_conj_of_im_ne_zero_or_re_le_one`:
-  conjugation symmetry in every weight off the cut `(1, ∞)`.
+* `TauCeti.Polylog.polylog_conj`: conjugation symmetry in every weight off the cut `(1, ∞)`.
 * `TauCeti.Polylog.polylog_conj_of_re_le_one`, `TauCeti.Polylog.polylog_conj_of_norm_le_one`:
   conjugation symmetry on `re z ≤ 1` and on the closed unit disc `‖z‖ ≤ 1`.
 * `TauCeti.Polylog.polylog_ofReal_im`, `TauCeti.Polylog.im_polylog_ofReal_of_nonpos`:
@@ -88,17 +87,25 @@ theorem polylog_conj_of_nonpos {n : ℤ} (hn : n ≤ 0) (z : ℂ) :
   obtain ⟨r, rfl⟩ := Int.exists_eq_neg_ofNat hn
   exact polylog_neg_nat_conj r z
 
-/-- Every integer-weight polylogarithm commutes with complex conjugation whenever
-`arg (1 - z) ≠ π`, that is on the principal domain `ℂ ∖ [1, ∞)` together with the point `1`.
-Nonpositive weights need no hypothesis, by `polylog_neg_nat_conj`. -/
-theorem polylog_conj (n : ℤ) {z : ℂ} (hz : (1 - z).arg ≠ Real.pi) :
+/-- Every integer-weight polylogarithm commutes with complex conjugation off the open cut
+`(1, ∞)`, that is, whenever `z.im ≠ 0 ∨ z.re ≤ 1`. Nonpositive weights need no hypothesis, by
+`polylog_neg_nat_conj`. -/
+theorem polylog_conj (n : ℤ) {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) :
     polylog n (conj z) = conj (polylog n z) := by
+  have hzarg : (1 - z).arg ≠ Real.pi := by
+    intro harg
+    obtain ⟨hre, him⟩ := Complex.arg_eq_pi_iff.mp harg
+    simp only [Complex.sub_re, Complex.one_re, Complex.sub_im, Complex.one_im, zero_sub,
+      neg_eq_zero] at hre him
+    rcases hz with hzim | hzre
+    · exact hzim him
+    · linarith
   rcases le_or_gt n 0 with hn | hn
   · obtain ⟨r, rfl⟩ := Int.exists_eq_neg_ofNat hn
     exact polylog_neg_nat_conj r z
   obtain ⟨_ | _ | k, rfl⟩ := Int.eq_ofNat_of_zero_le hn.le
   · exact absurd hn (lt_irrefl 0)
-  · rw [Nat.cast_one, polylog_one, polylog_one, map_neg, ← Complex.log_conj _ hz, map_sub,
+  · rw [Nat.cast_one, polylog_one, polylog_one, map_neg, ← Complex.log_conj _ hzarg, map_sub,
       map_one]
   · rw [polylog_nat_add_two, polylog_nat_add_two, map_mul, map_inv₀, map_natCast,
       ← intervalIntegral.intervalIntegral_conj]
@@ -107,37 +114,22 @@ theorem polylog_conj (n : ℤ) {z : ℂ} (hz : (1 - z).arg ≠ Real.pi) :
     rw [Set.uIcc_of_le zero_le_one] at ht
     -- For `t ∈ [0, 1]`, the point `1 - t z` also avoids the negative real axis.
     have harg : (1 - t * z).arg ≠ Real.pi := by
-      rw [Ne, Complex.arg_eq_pi_iff] at hz ⊢
+      rw [Ne, Complex.arg_eq_pi_iff] at hzarg ⊢
       simp only [Complex.sub_re, Complex.one_re, Complex.mul_re, Complex.ofReal_re,
         Complex.ofReal_im, zero_mul, sub_zero, Complex.sub_im, Complex.one_im,
-        Complex.mul_im, add_zero, zero_sub, neg_eq_zero, mul_eq_zero] at hz ⊢
+        Complex.mul_im, add_zero, zero_sub, neg_eq_zero, mul_eq_zero] at hzarg ⊢
       rintro ⟨hre, ht0 | him⟩
       · norm_num [ht0] at hre
-      · exact hz ⟨by nlinarith [ht.1, ht.2], him⟩
+      · exact hzarg ⟨by nlinarith [ht.1, ht.2], him⟩
     have hlog := Complex.log_conj _ harg
     simp only [map_sub, map_one, map_mul, Complex.conj_ofReal] at hlog
     simp [hlog]
 
-/-- Every integer-weight polylogarithm commutes with complex conjugation off the open cut `(1, ∞)`,
-that is, whenever `z.im ≠ 0 ∨ z.re ≤ 1`. -/
-theorem polylog_conj_of_im_ne_zero_or_re_le_one (n : ℤ) {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) :
-    polylog n (conj z) = conj (polylog n z) := by
-  refine polylog_conj n fun harg ↦ ?_
-  obtain ⟨hre, him⟩ := Complex.arg_eq_pi_iff.mp harg
-  simp only [Complex.sub_re, Complex.one_re, Complex.sub_im, Complex.one_im, zero_sub,
-    neg_eq_zero] at hre him
-  rcases hz with hzim | hzre
-  · exact hzim him
-  · linarith
-
 /-- Every integer-weight polylogarithm commutes with complex conjugation on the closed
 half-plane `re z ≤ 1`, in particular on the closed unit disc. -/
 theorem polylog_conj_of_re_le_one (n : ℤ) {z : ℂ} (hz : z.re ≤ 1) :
-    polylog n (conj z) = conj (polylog n z) := by
-  refine polylog_conj n fun h ↦ ?_
-  have := (Complex.arg_eq_pi_iff.1 h).1
-  simp only [Complex.sub_re, Complex.one_re] at this
-  linarith
+    polylog n (conj z) = conj (polylog n z) :=
+  polylog_conj n (Or.inr hz)
 
 /-- On the closed unit disc `‖z‖ ≤ 1`, every integer-weight polylogarithm commutes with complex
 conjugation. -/
