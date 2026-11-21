@@ -13,9 +13,10 @@ public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.RingTheory.Localization.Annihilator
 public import TauCeti.RingTheory.Flat.Annihilator
 public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.Conductor
 
 /-!
-# The conductor of an algebra
+# The conductor of an algebra and of a subring
 
 For an algebra `B` over a commutative ring `A`, the **conductor** of `B` over `A` is the ideal
 
@@ -33,9 +34,19 @@ of `A`, the conductor of `S⁻¹B` over `S⁻¹A` is the extension of the conduc
 This compatibility lets the conductors of a finite morphism over affine opens of its target
 glue to an ideal sheaf. Without finiteness only one inclusion holds.
 
+For a subring `S` of a commutative ring `B` there is also the conductor as an ideal of the larger
+ring: `Subring.conductor S = {b ∈ B | b B ⊆ S}`, the largest ideal of `B` contained in `S`. It is
+the ideal through which Ferrand's pinching compares `S` with `B`: away from any element `t` of it,
+the inclusion `S → B` becomes an isomorphism. No finiteness, reducedness or normality is assumed.
+It specializes to Mathlib's `conductor R x` for the subring `R<x>`, and its contraction to `S` is
+the conductor of `B` over `S` defined above; for an arbitrary algebra `A → B` the conductor of `B`
+over `A` is the contraction of the conductor of the image of `A`.
+
 ## Main definitions
 
 * `TauCeti.Algebra.conductor A B`: the conductor of `B` over `A`, the annihilator of `B / A`.
+* `Subring.conductor S`: the conductor of a subring `S` of `B`, the largest ideal of `B` contained
+  in `S`.
 
 ## Main results
 
@@ -52,16 +63,125 @@ glue to an ideal sheaf. Without finiteness only one inclusion holds.
   localization `S⁻¹B` over `S⁻¹A` is the extension of the conductor of `B` over `A`.
 * `TauCeti.Algebra.conductor_eq_map_of_flat`: conductors commute with flat base change
   when `B / A` is finite; in particular this applies to finite algebras.
+* `Subring.le_conductor_iff`: an ideal of `B` lies in the conductor of `S` exactly when it is
+  contained in `S`.
+* `Subring.map_subtype_comap_conductor`, `Subring.image_subtype_comap_conductor`: the conductor
+  of `S` is the image of its contraction to `S`, already as a set.
+* `Subring.away_map_subtype_bijective_of_mem_conductor`: inverting an element of the conductor
+  turns the inclusion `S → B` into an isomorphism of localizations.
+* `Subring.conductor_adjoin_toSubring`: for `S = R<x>` this is Mathlib's `conductor R x`.
+* `TauCeti.Algebra.conductor_eq_comap_conductor_range`, `Subring.comap_subtype_conductor`: the
+  conductor of an algebra is the contraction of the conductor of the image subring.
 
 ## References
 
 * J.-P. Serre, *Algebraic Groups and Class Fields*, Chapter IV, §1, for the conductor of the
   normalization of a singular curve.
+* D. Ferrand, *Conducteur, descente et pincement*, Bull. Soc. Math. France 131 (2003),
+  553–585, for the conductor of an arbitrary subring and its role in pinching (introduction and
+  Théorème 5.1). The definition of `Subring.conductor` follows Mathlib's `conductor R x`, with the
+  subalgebra `R<x>` replaced by an arbitrary subring.
 -/
 
 public section
 
 noncomputable section
+
+namespace Subring
+
+variable {B : Type*} [CommRing B] (S : Subring B)
+
+/-- The **conductor** of a subring `S` of a commutative ring `B`: the ideal of `b : B` with
+`b * x ∈ S` for every `x : B`. It is the largest ideal of `B` contained in `S`
+(`Subring.le_conductor_iff`). Unlike `TauCeti.Algebra.conductor S B`, it is an ideal of the larger
+ring `B`, and unlike Mathlib's `conductor R x`, the subring is arbitrary. -/
+def conductor : Ideal B where
+  carrier := {b | ∀ x : B, b * x ∈ S}
+  zero_mem' x := by simp
+  add_mem' ha hb x := by simpa only [add_mul] using S.add_mem (ha x) (hb x)
+  smul_mem' c b hb x := by simpa only [smul_eq_mul, mul_left_comm, mul_assoc] using hb (c * x)
+
+variable {S}
+
+/-- An element of `B` lies in the conductor of `S` exactly when all its multiples lie in `S`. -/
+@[simp]
+theorem mem_conductor_iff {b : B} : b ∈ S.conductor ↔ ∀ x : B, b * x ∈ S :=
+  Iff.rfl
+
+/-- The conductor of `S` is contained in `S`. -/
+theorem mem_of_mem_conductor {b : B} (hb : b ∈ S.conductor) : b ∈ S := by
+  simpa using hb 1
+
+variable (S) in
+/-- The conductor of `S`, as a set, is contained in `S`. -/
+theorem coe_conductor_subset : (S.conductor : Set B) ⊆ S :=
+  fun _ ↦ mem_of_mem_conductor
+
+/-- The conductor of `S` is the largest ideal of `B` contained in `S`. -/
+theorem le_conductor_iff {I : Ideal B} : I ≤ S.conductor ↔ (I : Set B) ⊆ S :=
+  ⟨fun h ↦ Set.Subset.trans h (coe_conductor_subset S),
+    fun h _ hb x ↦ h (I.mul_mem_right x hb)⟩
+
+/-- Enlarging the subring enlarges its conductor. -/
+@[gcongr]
+theorem conductor_mono {T : Subring B} (h : S ≤ T) : S.conductor ≤ T.conductor :=
+  le_conductor_iff.mpr ((coe_conductor_subset S).trans h)
+
+/-- The conductor of `S` is the unit ideal exactly when `S` is all of `B`. -/
+@[simp]
+theorem conductor_eq_top_iff : S.conductor = ⊤ ↔ S = ⊤ := by
+  refine ⟨fun h ↦ eq_top_iff.mpr fun _ _ ↦ mem_of_mem_conductor (h ▸ Submodule.mem_top), ?_⟩
+  rintro rfl
+  exact eq_top_iff.mpr fun _ _ _ ↦ Subring.mem_top _
+
+/-- The conductor of `B` in itself is the unit ideal. -/
+@[simp]
+theorem conductor_top : (⊤ : Subring B).conductor = ⊤ :=
+  conductor_eq_top_iff.mpr rfl
+
+/-- The conductor of a subring of a field is zero exactly when the subring is proper. In
+particular a proper subfield has zero conductor, even when the extension is finite. -/
+@[simp]
+theorem conductor_eq_bot_iff {K : Type*} [Field K] {S : Subring K} :
+    S.conductor = ⊥ ↔ S ≠ ⊤ := by
+  rw [Ne, ← conductor_eq_top_iff]
+  exact ⟨fun h ↦ h ▸ bot_ne_top, (Ideal.eq_bot_or_top _).resolve_right⟩
+
+variable (S) in
+/-- The image in `B` of the contraction of the conductor to `S` is the conductor itself, as a
+set: the image of this ideal of `S` is already an ideal of `B`. -/
+theorem image_subtype_comap_conductor :
+    S.subtype '' (S.conductor.comap S.subtype : Set S) = S.conductor := by
+  ext b
+  exact ⟨by rintro ⟨a, ha, rfl⟩; exact ha, fun hb ↦ ⟨⟨b, mem_of_mem_conductor hb⟩, hb, rfl⟩⟩
+
+variable (S) in
+/-- The extension to `B` of the contraction of the conductor to `S` is the conductor. -/
+@[simp]
+theorem map_subtype_comap_conductor :
+    (S.conductor.comap S.subtype).map S.subtype = S.conductor :=
+  le_antisymm Ideal.map_comap_le fun b hb ↦ by
+    simpa using Ideal.mem_map_of_mem S.subtype (x := ⟨b, mem_of_mem_conductor hb⟩) hb
+
+/-- **Inverting an element of the conductor.** If `t ∈ S` lies in the conductor of `S`, then the
+map `S[1/t] → B[1/t]` induced by the inclusion is bijective, for any localizations `St` of `S`
+away from `t` and `Bt` of `B` away from `t`. Every `b : B` is the image of `(t * b) / t`. -/
+theorem away_map_subtype_bijective_of_mem_conductor {t : S} (ht : (t : B) ∈ S.conductor)
+    (St Bt : Type*) [CommRing St] [CommRing Bt] [Algebra S St] [Algebra B Bt]
+    [IsLocalization.Away t St] [IsLocalization.Away (S.subtype t) Bt] :
+    Function.Bijective (IsLocalization.Away.map St Bt S.subtype t) := by
+  refine ⟨(IsLocalization.Away.map_injective_iff Bt S.subtype t).mpr fun a ha ↦ ⟨0, ?_⟩,
+    (IsLocalization.Away.map_surjective_iff St Bt S.subtype t).mpr fun b ↦
+      ⟨⟨t * b, ht b⟩, 1, by simp⟩⟩
+  simpa using S.subtype_injective (ha.trans (map_zero _).symm)
+
+/-- For the subalgebra `R<x>` generated by one element, the conductor of the underlying subring
+is Mathlib's `conductor R x`. -/
+theorem conductor_adjoin_toSubring (R : Type*) [CommRing R] [Algebra R B] (x : B) :
+    (Algebra.adjoin R {x}).toSubring.conductor = _root_.conductor R x :=
+  Ideal.ext fun _ ↦ by simp [_root_.mem_conductor_iff]
+
+end Subring
 
 namespace TauCeti.Algebra
 
@@ -159,5 +279,24 @@ theorem conductor_eq_map [Module.Finite A (B ⧸ (1 : Submodule A B))] :
   exact conductor_eq_map_of_flat A A' B'
 
 end Localization
+
+section Subring
+
+variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
+
+/-- The conductor of an algebra `B` over `A` is the contraction along `A → B` of the conductor of
+the image of `A`, an ideal of `B`. The map `A → B` need not be injective. -/
+theorem conductor_eq_comap_conductor_range :
+    conductor A B = (algebraMap A B).range.conductor.comap (algebraMap A B) := by
+  ext
+  simp
+
+variable {B} in
+/-- The contraction to a subring `S` of its conductor is the conductor of `B` over `S`. -/
+theorem _root_.Subring.comap_subtype_conductor (S : Subring B) :
+    S.conductor.comap S.subtype = conductor S B := by
+  rw [conductor_eq_comap_conductor_range, Algebra.algebraMap_ofSubring, Subring.range_subtype]
+
+end Subring
 
 end TauCeti.Algebra
