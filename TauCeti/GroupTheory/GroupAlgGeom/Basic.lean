@@ -38,6 +38,8 @@ injectivity.
 * `TauCeti.GroupAlgGeom.wordMap ι w`: the map on tuples defined by substituting words `w`.
 * `TauCeti.GroupAlgGeom.homEquiv ι`: `G[X]` is free on `X` among groups under `G`:
   `G`-homomorphisms `G[X] → H` correspond to points `X → H`.
+* `TauCeti.GroupAlgGeom.extendWords Y w`: the extension of a tuple of words `w : X → G[X']` to
+  the tuple `Y ⊔ X → G[Y ⊔ X']` that keeps the further variables `Y`.
 * `TauCeti.GroupAlgGeom.sumExtend Y σ`: the extension of a `G`-homomorphism
   `σ : G[X'] → G[X]` to `G[X' ⊔ Y] → G[X ⊔ Y]` by the identity on further variables `Y`.
 
@@ -53,6 +55,8 @@ injectivity.
 * `TauCeti.GroupAlgGeom.wordMap_inr_of`, `TauCeti.GroupAlgGeom.wordMap_sumElim`: the tuple of
   variables `f y` maps `v` to `v ∘ f`, and the word map of a tuple of words indexed by a sum is the
   pair of the word maps of its two parts.
+* `TauCeti.GroupAlgGeom.wordMap_extendWords`: the extension of `w` by `Y` acts on points by the
+  word map of `w` on the coordinates in `X'`, leaving those in `Y` unchanged.
 * `TauCeti.GroupAlgGeom.sumExtend_surjective_iff`, `TauCeti.GroupAlgGeom.sumExtend_bijective_iff`,
   `TauCeti.GroupAlgGeom.eval_sumExtend`: the extension of `σ` is surjective, respectively a change
   of coordinates, exactly when `σ` is, and acts on points by the word map of `σ` on the
@@ -547,6 +551,9 @@ theorem wordMap_wordMap {Y Z : Type*} (w : Y → GX G X) (u : Z → GX G Y) (v :
   exact (DFunLike.congr_fun (eval_comp_eval w v) (u z)).symm
 
 /-- The tuple of variables `f y` maps a tuple `v` to `v ∘ f`. -/
+-- Low priority, so that `wordMap_id` rewrites the tuple of all variables to `v` itself rather
+-- than to `v ∘ fun x => x`.
+@[simp low]
 theorem wordMap_inr_of {Y : Type*} (f : Y → X) (v : X → H) :
     wordMap ι (fun y => inr (FreeGroup.of (f y))) v = v ∘ f := by
   funext y
@@ -559,6 +566,7 @@ theorem wordMap_inr_of {Y : Type*} (f : Y → X) (v : X → H) :
 
 /-- The word map of a tuple of words indexed by `Y ⊕ Z` is the pair of the word maps of its two
 parts. -/
+@[simp]
 theorem wordMap_sumElim {Y Z : Type*} (w : Y → GX G X) (w' : Z → GX G X) (v : X → H) :
     wordMap ι (Sum.elim w w') v = Sum.elim (wordMap ι w v) (wordMap ι w' v) :=
   Sum.comp_elim (eval ι v) w w'
@@ -641,7 +649,53 @@ theorem GX.map_map {Y Z : Type*} (f : K →* G) (f' : G →* L) (e : Y → X) (e
   congr 2
   exact FreeGroup.ext_hom _ _ fun _ => rfl
 
-/-! ### Extending a word homomorphism by further variables -/
+/-! ### Extending tuples of words and word homomorphisms by further variables -/
+
+section ExtendWords
+
+variable {X' Y : Type*}
+
+variable (Y) in
+/-- The extension of a tuple of words `w : X → G[X']` by further variables `Y`: the tuple of words
+in `G[Y ⊔ X']` indexed by `Y ⊔ X` that keeps each variable of `Y` and substitutes for each variable
+`x` of `X` the word `w x`, read in `G[Y ⊔ X']`. Unlike `sumExtend`, which extends a
+`G`-homomorphism by further variables on the right, the further variables come first. -/
+def extendWords (w : X → GX G X') : Y ⊕ X → GX G (Y ⊕ X') :=
+  Sum.elim (fun y => inr (FreeGroup.of (Sum.inl y)))
+    fun x => Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) (w x)
+
+variable (w : X → GX G X')
+
+/-- The extension of `w` by `Y` keeps the variables `Y`. -/
+@[simp]
+theorem extendWords_inl (y : Y) : extendWords Y w (Sum.inl y) = inr (FreeGroup.of (Sum.inl y)) :=
+  (rfl)
+
+/-- The extension of `w` by `Y` substitutes `w x`, read in `G[Y ⊔ X']`, for a variable `x`. -/
+@[simp]
+theorem extendWords_inr (x : X) :
+    extendWords Y w (Sum.inr x) = Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) (w x) :=
+  (rfl)
+
+variable (Y X) in
+/-- The extension of the tuple of variables of `G[X]` by `Y` is the tuple of variables of
+`G[Y ⊔ X]`. -/
+@[simp]
+theorem extendWords_inr_of :
+    extendWords Y (fun x : X => (inr (FreeGroup.of x) : GX G X)) =
+      fun u => inr (FreeGroup.of u) := by
+  funext u
+  cases u <;> simp
+
+/-- The extension of `w` by `Y` acts on points by leaving the coordinates in `Y` unchanged and
+applying the word map of `w` to the coordinates in `X'`. -/
+@[simp]
+theorem wordMap_extendWords (v : Y ⊕ X' → H) :
+    wordMap ι (extendWords Y w) v = Sum.elim (v ∘ Sum.inl) (wordMap ι w (v ∘ Sum.inr)) := by
+  funext u
+  cases u <;> simp
+
+end ExtendWords
 
 section SumExtend
 

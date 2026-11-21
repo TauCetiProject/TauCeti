@@ -429,13 +429,11 @@ the composed words are words in `X^φ`, which are then read as words in `X`. -/
 @[simp]
 theorem isBackSubst_mapParam_iff {X' : Type*} {l : X → GX (FreeGroup A) X'}
     {β' : X' → FreeGroup A} :
-    IsBackSubst (P'.mapParam l) (P.mapParam l) β' (fun m =>
-      eval (inl : FreeGroup A →* GX (FreeGroup A) (M' ⊕ X'))
-        (Sum.elim (fun m' => inr (FreeGroup.of (Sum.inl m')))
-          fun x => eval inl (fun x' => inr (FreeGroup.of (Sum.inr x'))) (l x)) (μ m)) ↔
+    IsBackSubst (P'.mapParam l) (P.mapParam l) β'
+      (fun m => eval (inl : FreeGroup A →* GX (FreeGroup A) (M' ⊕ X')) (extendWords M' l) (μ m)) ↔
       IsBackSubst P' P (wordMap (MonoidHom.id (FreeGroup A)) l β') μ := by
-  simp only [isBackSubst_iff, isGroupSolution_mapParam_iff, ← wordMap_wordMap, wordMap_sumElim,
-    wordMap_inr_of, Sum.elim_comp_inl, Sum.elim_comp_inr]
+  simp only [isBackSubst_iff, isGroupSolution_mapParam_iff, ← wordMap_wordMap, wordMap_extendWords,
+    Sum.elim_comp_inl, Sum.elim_comp_inr]
 
 /-- The product `m₀ ⋯ m_{n-1}` of the pieces of `m₀ ⋯ m_{n-1} = x` back-substitutes this cut
 equation into the cut equation `m = x` of one piece, at every value of `x`. -/
