@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Basic
-public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.NumberTheory.Padics.AnnularRing.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Away
-import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The `T`-adic completeness of `ℤ_p⟦T, p/T⟧` and its localization `H[1/T]`
@@ -43,13 +42,16 @@ series, and the `T`-adic filtration `T ^ n H` is characterized by
 * `TauCeti.AnnularRing.T_not_dvd_U_pow`: no power `U ^ j` is divisible by `T` in `H`.
 * `TauCeti.AnnularRing.instIsAdicCompleteSpanT`, `TauCeti.AnnularRing.isAdicComplete_span_p_T`:
   `H` is `(T)`-adically and `(p, T)`-adically complete.
-* `TauCeti.AnnularRing.localizedCoeff_injective`, `TauCeti.AnnularRing.localizedCoeff_mul`:
-  coefficients determine elements of `H[1/T]` and multiply by convolution.
+* `TauCeti.AnnularRing.localizedCoeff_injective`, `TauCeti.AnnularRing.localizedCoeff_ext`,
+  `TauCeti.AnnularRing.localizedCoeff_mul`: coefficients determine elements of `H[1/T]` and
+  multiply by convolution.
 * `TauCeti.AnnularRing.existsUnique_localizedCoeff_eq_iff`: the coefficient criterion
   `‖d m‖ ≤ p ^ min 0 (m + k)` characterizing `H[1/T]`.
 * `TauCeti.AnnularRing.T_zpow_neg_mul_mem_range_iff`,
   `TauCeti.AnnularRing.mem_awayNhd_iff_norm_localizedCoeff_le`: coefficient description of the
   `T`-adic filtration `T ^ n H` in `H[1/T]`.
+* `TauCeti.AnnularRing.not_tendsto_sum_U_pow`, `TauCeti.AnnularRing.not_cauchySeq_sum_U_pow`:
+  divergence of the partial sums `∑_{j < N} U ^ j` in the `T`-adic topology on `H[1/T]`.
 
 ## References
 
@@ -234,6 +236,18 @@ theorem localizedCoeff_injective : Function.Injective (localizedCoeff p (A := A)
   exact ((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).pow (k₁ + k₂)).mul_right_cancel
     hmul
 
+/-- Elements of `H[1/T]` with equal coefficients are equal. -/
+theorem localizedCoeff_ext {x y : A}
+    (h : ∀ m : ℤ, localizedCoeff p x m = localizedCoeff p y m) : x = y :=
+  localizedCoeff_injective (funext h)
+
+/-- Pointwise coefficient extensionality registered for `ext` on the canonical localization
+`Localization.Away (T : AnnularRing p)` (Lean's `ext` attribute requires a concrete head type
+constructor rather than an abstract type variable `A`). -/
+@[ext] theorem localizedCoeff_away_ext {x y : Localization.Away (T : AnnularRing p)}
+    (h : ∀ m : ℤ, localizedCoeff p x m = localizedCoeff p y m) : x = y :=
+  localizedCoeff_ext h
+
 @[simp] theorem localizedCoeff_zero (m : ℤ) : localizedCoeff p (0 : A) m = 0 := by
   simpa using localizedCoeff_algebraMap (A := A) (0 : AnnularRing p) m
 
@@ -272,35 +286,28 @@ private theorem localizedCoeff_nsmul (n : ℕ) (x : A) (m : ℤ) :
   | zero => simp
   | succ n ih => rw [succ_nsmul, succ_nsmul, localizedCoeff_add, ih]
 
-/-- Every ring homomorphism `ℤ_[p] →+* H[1/T]` equals the canonical structure map through `H`:
-any two ring homomorphisms agree modulo `p ^ n` for every `n`, and `H[1/T]` is `p`-adically
-separated. -/
-theorem ringHom_padicInt_eq (f : ℤ_[p] →+* A) :
-    f = (algebraMap (AnnularRing p) A).comp (algebraMap ℤ_[p] (AnnularRing p)) := by
-  ext c
-  refine localizedCoeff_injective (p := p) (funext fun m ↦ ?_)
-  have hle (n : ℕ) :
-      ‖localizedCoeff p (f c - algebraMap (AnnularRing p) A (algebraMap ℤ_[p] (AnnularRing p) c))
-        m‖ ≤ (p : ℝ) ^ (-(n : ℤ)) := by
-    obtain ⟨r, hr⟩ := Ideal.mem_span_singleton.mp (PadicInt.appr_spec n c)
-    have hc : c = (c.appr n : ℤ_[p]) + (p : ℤ_[p]) ^ n * r := eq_add_of_sub_eq' hr
-    have hsub : f c - algebraMap (AnnularRing p) A (algebraMap ℤ_[p] (AnnularRing p) c) =
-        ((p ^ n : ℕ) : A) * (f r - algebraMap (AnnularRing p) A
-          (algebraMap ℤ_[p] (AnnularRing p) r)) := by
-      conv_lhs => rw [hc]
-      simp only [map_add, map_natCast, map_mul, map_pow, Nat.cast_pow]
-      ring
-    rw [hsub, ← nsmul_eq_mul, localizedCoeff_nsmul, nsmul_eq_mul, Nat.cast_pow, norm_mul,
-      PadicInt.norm_p_pow]
+/-- Any localization `H[1/T]` is `p`-adically separated, since divisibility by `p ^ n` forces the
+same divisibility on every localized coefficient. -/
+instance instIsHausdorffSpanP : IsHausdorff (Ideal.span {(p : A)}) A := by
+  refine ⟨fun x hx ↦ localizedCoeff_injective (p := p) (funext fun m ↦ ?_)⟩
+  have hle (n : ℕ) : ‖localizedCoeff p x m‖ ≤ (p : ℝ) ^ (-(n : ℤ)) := by
+    have hmem := hx n
+    rw [SModEq.sub_mem, sub_zero, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
+      Ideal.mem_span_singleton] at hmem
+    obtain ⟨r, hr⟩ := hmem
+    rw [hr, ← Nat.cast_pow, ← nsmul_eq_mul, localizedCoeff_nsmul, nsmul_eq_mul, Nat.cast_pow,
+      norm_mul, PadicInt.norm_p_pow]
     exact mul_le_of_le_one_right (by positivity) (PadicInt.norm_le_one _)
-  have ht : Tendsto (fun _ : ℕ ↦ localizedCoeff p
-      (f c - algebraMap (AnnularRing p) A (algebraMap ℤ_[p] (AnnularRing p) c)) m)
-      atTop (𝓝 0) :=
+  have ht : Tendsto (fun _ : ℕ ↦ localizedCoeff p x m) atTop (𝓝 0) :=
     tendsto_zero_of_norm_le_zpow (one_lt_p (p := p)) hle
       (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
-  have h0 := tendsto_const_nhds_iff.mp ht
-  rw [localizedCoeff_sub, sub_eq_zero] at h0
-  exact h0
+  simpa using tendsto_const_nhds_iff.mp ht
+
+/-- Every ring homomorphism `ℤ_[p] →+* H[1/T]` equals the canonical structure map through `H`,
+since `H[1/T]` is `p`-adically separated (`PadicInt.ringHom_eq_of_isHausdorff`). -/
+theorem ringHom_padicInt_eq (f : ℤ_[p] →+* A) :
+    f = (algebraMap (AnnularRing p) A).comp (algebraMap ℤ_[p] (AnnularRing p)) :=
+  PadicInt.ringHom_eq_of_isHausdorff f _
 
 @[simp] theorem localizedCoeff_smul [Algebra ℤ_[p] A] (c : ℤ_[p]) (x : A) (m : ℤ) :
     localizedCoeff p (c • x) m = c * localizedCoeff p x m := by
@@ -329,6 +336,18 @@ theorem ringHom_padicInt_eq (f : ℤ_[p] →+* A) :
     localizedCoeff p (algebraMap (AnnularRing p) A T * x) m = localizedCoeff p x (m - 1) := by
   simpa using localizedCoeff_T_pow_mul 1 x m
 
+/-- Multiplication by `U` in `H[1/T]` shifts the coefficients down by one degree and multiplies them
+by `p`. -/
+@[simp] theorem localizedCoeff_U_mul (x : A) (m : ℤ) :
+    localizedCoeff p (algebraMap (AnnularRing p) A U * x) m = p * localizedCoeff p x (m + 1) := by
+  obtain ⟨k, a, h⟩ := IsLocalization.Away.surj (T : AnnularRing p) x
+  have hmul : (algebraMap (AnnularRing p) A U * x) * algebraMap (AnnularRing p) A T ^ k =
+      algebraMap (AnnularRing p) A (U * a) := by
+    rw [mul_assoc, h, map_mul]
+  rw [localizedCoeff_eq_of_mul_pow hmul, localizedCoeff_eq_of_mul_pow h, coeff_U_mul]
+  congr 2
+  omega
+
 /-- Multiplication by an integer power `T ^ k` in `H[1/T]` shifts the coefficients by `k`
 degrees. -/
 @[simp] theorem localizedCoeff_T_zpow_mul (k : ℤ) (x : A) (m : ℤ) :
@@ -340,51 +359,43 @@ degrees. -/
   | ofNat n =>
     simp [hu]
   | negSucc n =>
+    have hinv : (u ^ Int.negSucc n : Aˣ) = (u ^ (n + 1))⁻¹ := by rw [zpow_negSucc]
     have hmul : algebraMap (AnnularRing p) A T ^ (n + 1) * (((u ^ (Int.negSucc n) : Aˣ) : A) * x) =
         x := by
-      rw [← hu, ← Units.val_pow_eq_pow_val, ← mul_assoc, ← Units.val_mul, zpow_negSucc,
-        mul_inv_cancel, Units.val_one, one_mul]
+      rw [hinv, ← hu, ← Units.val_pow_eq_pow_val, Units.mul_inv_cancel_left]
     have := localizedCoeff_T_pow_mul (p := p) (n + 1) (((u ^ (Int.negSucc n) : Aˣ) : A) * x)
       (m + ((n + 1 : ℕ) : ℤ))
     rw [hmul, add_sub_cancel_right] at this
     exact this.symm.trans (congr_arg _ (by omega))
 
-/-- The convolution series of the coefficients of two elements of `H[1/T]` converges in `ℤ_p`. -/
-theorem summable_localizedCoeff_mul_localizedCoeff (x y : A) (m : ℤ) :
-    Summable fun i : ℤ ↦ localizedCoeff p x i * localizedCoeff p y (m - i) := by
-  obtain ⟨k₁, a₁, h₁⟩ := IsLocalization.Away.surj (T : AnnularRing p) x
-  obtain ⟨k₂, a₂, h₂⟩ := IsLocalization.Away.surj (T : AnnularRing p) y
-  have hs := ((Equiv.addRight (k₁ : ℤ)).summable_iff).mpr
-    (summable_coeff_mul_coeff a₁ a₂ (m + k₁ + k₂))
-  refine hs.congr fun i ↦ ?_
-  rw [Function.comp_apply, Equiv.coe_addRight, localizedCoeff_eq_of_mul_pow h₁,
-    localizedCoeff_eq_of_mul_pow h₂]
-  dsimp only
-  congr 2
-  omega
-
-/-- The coefficient of `T ^ m` in a product in `H[1/T]` is the convolution of the coefficients. -/
-theorem localizedCoeff_mul (x y : A) (m : ℤ) :
-    localizedCoeff p (x * y) m = ∑' i : ℤ, localizedCoeff p x i * localizedCoeff p y (m - i) := by
+/-- The convolution series converges to the coefficient of the product in `H[1/T]`. -/
+theorem hasSum_localizedCoeff_mul (x y : A) (m : ℤ) :
+    HasSum (fun i : ℤ ↦ localizedCoeff p x i * localizedCoeff p y (m - i))
+      (localizedCoeff p (x * y) m) := by
   obtain ⟨k₁, a₁, h₁⟩ := IsLocalization.Away.surj (T : AnnularRing p) x
   obtain ⟨k₂, a₂, h₂⟩ := IsLocalization.Away.surj (T : AnnularRing p) y
   have hprod : (x * y) * algebraMap (AnnularRing p) A T ^ (k₁ + k₂) =
       algebraMap (AnnularRing p) A (a₁ * a₂) := by
     rw [map_mul, ← h₁, ← h₂, pow_add]
     ring
-  rw [localizedCoeff_eq_of_mul_pow hprod, coeff_mul, ← (Equiv.addRight (k₁ : ℤ)).tsum_eq]
-  refine tsum_congr fun i ↦ ?_
-  rw [Equiv.coe_addRight, localizedCoeff_eq_of_mul_pow h₁, localizedCoeff_eq_of_mul_pow h₂]
+  rw [localizedCoeff_eq_of_mul_pow hprod]
+  refine ((Equiv.addRight (k₁ : ℤ)).hasSum_iff.mpr
+    (hasSum_coeff_mul a₁ a₂ (m + (k₁ + k₂ : ℕ)))).congr_fun fun i ↦ ?_
+  rw [Function.comp_apply, Equiv.coe_addRight, localizedCoeff_eq_of_mul_pow h₁,
+    localizedCoeff_eq_of_mul_pow h₂]
   dsimp only
   congr 2
   omega
 
-/-- The convolution series converges to the coefficient of the product in `H[1/T]`. -/
-theorem hasSum_localizedCoeff_mul (x y : A) (m : ℤ) :
-    HasSum (fun i : ℤ ↦ localizedCoeff p x i * localizedCoeff p y (m - i))
-      (localizedCoeff p (x * y) m) := by
-  rw [localizedCoeff_mul]
-  exact (summable_localizedCoeff_mul_localizedCoeff x y m).hasSum
+/-- The convolution series of the coefficients of two elements of `H[1/T]` converges in `ℤ_p`. -/
+theorem summable_localizedCoeff_mul_localizedCoeff (x y : A) (m : ℤ) :
+    Summable fun i : ℤ ↦ localizedCoeff p x i * localizedCoeff p y (m - i) :=
+  (hasSum_localizedCoeff_mul x y m).summable
+
+/-- The coefficient of `T ^ m` in a product in `H[1/T]` is the convolution of the coefficients. -/
+theorem localizedCoeff_mul (x y : A) (m : ℤ) :
+    localizedCoeff p (x * y) m = ∑' i : ℤ, localizedCoeff p x i * localizedCoeff p y (m - i) :=
+  (hasSum_localizedCoeff_mul x y m).tsum_eq.symm
 
 /-! ### The coefficient criterion and `T`-adic filtration in `H[1/T]` -/
 
@@ -406,12 +417,12 @@ theorem existsUnique_localizedCoeff_eq_iff {d : ℤ → ℤ_[p]} :
   · rintro ⟨k, hk⟩
     let a : AnnularRing p := ⟨fun m ↦ d (m - k), fun m ↦ by simpa [sub_add_cancel] using hk (m - k)⟩
     let u : Aˣ := (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit
-    refine ⟨((u ^ (-(k : ℤ)) : Aˣ) : A) * algebraMap (AnnularRing p) A a, funext fun m ↦ ?_,
-      fun y hy ↦ localizedCoeff_injective <| hy.trans <| (funext fun m ↦ ?_).symm⟩
-    · rw [localizedCoeff_T_zpow_mul, localizedCoeff_algebraMap]
+    let x : A := ((u ^ (-(k : ℤ)) : Aˣ) : A) * algebraMap (AnnularRing p) A a
+    have hx : localizedCoeff p x = d := funext fun m ↦ by
+      dsimp only [x]
+      rw [localizedCoeff_T_zpow_mul, localizedCoeff_algebraMap]
       simp [a]
-    · rw [localizedCoeff_T_zpow_mul, localizedCoeff_algebraMap]
-      simp [a]
+    exact ⟨x, hx, fun y hy ↦ localizedCoeff_injective (hy.trans hx.symm)⟩
 
 /-- An element `x ∈ H[1/T]` lies in `T ^ n H` (with `n : ℤ`) exactly when its coefficients satisfy
 `‖localizedCoeff p x m‖ ≤ p ^ min 0 (m - n)` for every `m ∈ ℤ`. -/
@@ -419,7 +430,6 @@ theorem T_zpow_neg_mul_mem_range_iff {x : A} {n : ℤ} :
     (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ (-n) : Aˣ) : A) * x ∈
         (algebraMap (AnnularRing p) A).range ↔
       ∀ m : ℤ, ‖localizedCoeff p x m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
-  set u : Aˣ := (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨a, ha⟩ m
     have hx : localizedCoeff p x m = a.coeff (m - n) := by
@@ -448,17 +458,58 @@ theorem mem_awayNhd_iff_norm_localizedCoeff_le {n : ℕ} {x : A} :
       ∀ m : ℤ, ‖localizedCoeff p x m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
   rw [← T_zpow_neg_mul_mem_range_iff (p := p), Huber.mem_awayNhd, RingHom.mem_range]
   set u : Aˣ := (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit
-  have hu : ((u ^ (n : ℤ) : Aˣ) : A) = algebraMap (AnnularRing p) A (T ^ n) := by
-    simp [u]
+  have hinv : (u ^ (-(n : ℤ)) : Aˣ) = (u ^ n)⁻¹ := by rw [zpow_neg, zpow_natCast]
+  have hu : ((u ^ n : Aˣ) : A) = algebraMap (AnnularRing p) A (T ^ n) := by simp [u]
   refine ⟨?_, ?_⟩
   · rintro ⟨a, rfl⟩
-    refine ⟨a, ?_⟩
-    rw [map_mul, ← hu, ← mul_assoc, ← Units.val_mul, ← zpow_add, neg_add_cancel, zpow_zero,
-      Units.val_one, one_mul]
+    exact ⟨a, by rw [map_mul, ← hu, hinv, Units.inv_mul_cancel_left]⟩
   · rintro ⟨a, ha⟩
     refine ⟨a, ?_⟩
-    rw [map_mul, ← hu, ha, ← mul_assoc, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero,
-      Units.val_one, one_mul]
+    rw [map_mul, ← hu]
+    exact ((Units.inv_mul_eq_iff_eq_mul (u ^ n)).mp (hinv ▸ ha.symm)).symm
+
+section Divergence
+
+variable [TopologicalSpace A]
+  (hb : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦
+    (Huber.awayNhd (T : AnnularRing p) A n : Set A))
+include hb
+
+/-- The terms `U ^ j` do not tend to zero in the `T`-adic topology on `H[1/T]`, since no power
+`U ^ j` is divisible by `T` in `H`. -/
+theorem not_tendsto_U_pow_zero :
+    ¬ Tendsto (fun j : ℕ ↦ algebraMap (AnnularRing p) A (U ^ j)) atTop (𝓝 0) := by
+  intro h
+  obtain ⟨j, hj⟩ := (h.eventually (hb.mem_of_mem (i := 1) trivial)).exists
+  exact T_not_dvd_U_pow j <| by
+    simpa only [pow_one] using (Huber.algebraMap_mem_awayNhd_iff T_mem_nonZeroDivisors).mp hj
+
+/-- The partial sums `∑_{j < N} U ^ j` do not converge in the `T`-adic topology on `H[1/T]`, even
+though the formal geometric series `ofPowerSeriesU (PowerSeries.mk 1)` lies in `H` and inverts
+`1 - U`. -/
+theorem not_tendsto_sum_U_pow [ContinuousSub A] :
+    ¬ ∃ L : A, Tendsto (fun N : ℕ ↦ ∑ j ∈ Finset.range N, algebraMap (AnnularRing p) A (U ^ j))
+      atTop (𝓝 L) := by
+  rintro ⟨L, hL⟩
+  have hdiff := (hL.comp (tendsto_add_atTop_nat 1)).sub hL
+  refine not_tendsto_U_pow_zero hb ?_
+  simpa only [Function.comp_def, Finset.sum_range_succ, add_sub_cancel_left, sub_self] using hdiff
+
+/-- The series `∑ U ^ j` is not summable in the `T`-adic topology on `H[1/T]`. -/
+theorem not_summable_U_pow [ContinuousSub A] :
+    ¬ Summable fun j : ℕ ↦ algebraMap (AnnularRing p) A (U ^ j) := fun ⟨L, hL⟩ ↦
+  not_tendsto_sum_U_pow hb ⟨L, hL.tendsto_sum_nat⟩
+
+end Divergence
+
+/-- The partial sums `∑_{j < N} U ^ j` do not form a Cauchy sequence in the `T`-adic uniformity on
+`H[1/T]`. -/
+theorem not_cauchySeq_sum_U_pow [UniformSpace A] [IsUniformAddGroup A]
+    (hb : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦
+      (Huber.awayNhd (T : AnnularRing p) A n : Set A)) :
+    ¬ CauchySeq fun N : ℕ ↦ ∑ j ∈ Finset.range N, algebraMap (AnnularRing p) A (U ^ j) := by
+  have : CompleteSpace A := Huber.completeSpace_of_hasBasis hb T_mem_nonZeroDivisors
+  exact fun hc ↦ not_tendsto_sum_U_pow hb (cauchySeq_tendsto_of_complete hc)
 
 end Localization
 

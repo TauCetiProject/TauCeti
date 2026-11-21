@@ -18,9 +18,10 @@ its field structure, and an instance expressing that `2` is invertible. These in
 finite-dimensional constructions and algebraic trace and norm calculations over the `p`-adic field.
 
 It also records that the scalar action of `ℤ_[p]` on `ℚ_[p]` multiplies norms,
-`‖a • x‖ = ‖a‖ * ‖x‖`. In particular the action is contractive, so `ℚ_[p]` itself is a
-coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the Amice transform
-of measures on `ℤ_p`.
+`‖a • x‖ = ‖a‖ * ‖x‖`, and that the open annulus `p⁻¹ < ‖t‖ < 1` has no points in `ℚ_[p]`
+(`TauCeti.not_exists_padic_annulus`). In particular the action is contractive, so `ℚ_[p]` itself
+is a coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the Amice
+transform of measures on `ℤ_p`.
 
 Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
 map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
@@ -60,6 +61,16 @@ norms. This also provides the contractive action `IsBoundedSMul ℤ_[p] ℚ_[p]`
 instance normSMulClass_padicInt_padic (p : ℕ) [Fact (Nat.Prime p)] :
     NormSMulClass ℤ_[p] ℚ_[p] :=
   ⟨fun a x ↦ by rw [Algebra.smul_def, norm_mul, PadicInt.algebraMap_apply, PadicInt.norm_coe]⟩
+
+/-- The open annulus `p⁻¹ < ‖t‖ < 1` has no points in `ℚ_[p]`, because the value group of `ℚ_[p]`
+is `p ^ ℤ`. -/
+theorem not_exists_padic_annulus (p : ℕ) [Fact (Nat.Prime p)] :
+    ¬ ∃ t : ℚ_[p], (p : ℝ)⁻¹ < ‖t‖ ∧ ‖t‖ < 1 := by
+  rintro ⟨t, ht₀, ht₁⟩
+  rw [← zpow_zero (p : ℝ)] at ht₁
+  have hle := (Padic.norm_lt_pow_iff_norm_le_pow_sub_one t 0).mp ht₁
+  norm_num at hle
+  linarith
 
 end TauCeti
 

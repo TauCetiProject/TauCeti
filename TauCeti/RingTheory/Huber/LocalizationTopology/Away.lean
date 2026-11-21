@@ -35,6 +35,7 @@ own topology instance; `TauCeti.Huber.hasBasis_nhds_zero_awayTopology` supplies 
 
 * `TauCeti.Huber.awayNhd π A n`: the additive subgroup `πⁿ A₀` of `A`.
 * `TauCeti.Huber.awayTopology π A`: the ring topology on `A` with basis `πⁿ A₀`.
+* `TauCeti.Huber.awayUniformSpace π A`: the additive group uniformity of `awayTopology π A`.
 
 ## Main results
 
@@ -157,6 +158,24 @@ theorem isTopologicalRing_awayTopology : @IsTopologicalRing A (awayTopology π A
 /-- `awayTopology` is nonarchimedean. -/
 theorem nonarchimedeanRing_awayTopology : @NonarchimedeanRing A _ (awayTopology π A) :=
   (awayBasis π A).nonarchimedean
+
+variable (π A) in
+/-- **The `π`-adic uniformity on `A₀[1/π]`**: the additive group uniformity induced by
+`awayTopology π A`. It is not a global instance. -/
+noncomputable abbrev awayUniformSpace : UniformSpace A :=
+  letI : TopologicalSpace A := awayTopology π A
+  haveI : IsTopologicalRing A := isTopologicalRing_awayTopology (π := π)
+  IsTopologicalAddGroup.rightUniformSpace A
+
+theorem topologicalSpace_awayUniformSpace :
+    (awayUniformSpace π A).toTopologicalSpace = awayTopology π A := (rfl)
+
+theorem isUniformAddGroup_awayUniformSpace :
+    letI := awayUniformSpace π A
+    IsUniformAddGroup A :=
+  letI : TopologicalSpace A := awayTopology π A
+  haveI : IsTopologicalRing A := isTopologicalRing_awayTopology (π := π)
+  isUniformAddGroup_of_addCommGroup
 
 /-- If `π` is a nonzerodivisor, the image of `a ∈ A₀` lies in `πⁿ A₀` exactly when `πⁿ` divides
 `a`: the neighbourhoods `πⁿ A₀` restrict to the `π`-adic filtration of `A₀`. -/

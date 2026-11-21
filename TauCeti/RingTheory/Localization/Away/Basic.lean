@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.GroupWithZero.Action.Regular
+import Mathlib.Algebra.Ring.Subsemiring.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -18,7 +19,8 @@ A localisation `S` of `A` away from `s` inverts `s`, so it contains `t/s` for ev
 Mathlib names the inverse itself — `IsLocalization.Away.invSelf s` is `1/s` — but not the general
 fraction; this file names it and gives the identities that manipulating it needs: scaling `1/s`
 by `t`, and clearing the denominator on either side. It also records, over commutative rings,
-when the image of an element is a nonzerodivisor in a localisation away from another element.
+when the image of an element is a nonzerodivisor in a localisation away from another element, and
+lifts ring homomorphisms into possibly non-commutative semirings along an away localisation.
 
 Nothing here is topological or Huber-specific — it is `IsLocalization` algebra over an arbitrary
 commutative semiring, for an arbitrary localisation away from `s` — so it is stated outside the
@@ -27,6 +29,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
 ## Main definitions
 
 * `TauCeti.Localization.divBy`: the element `t/s` of a localisation away from `s`.
+* `IsLocalization.Away.liftNoncomm`: lift a ring homomorphism into a possibly non-commutative
+  semiring along an away localisation.
 
 ## Main results
 
@@ -68,6 +72,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   if and only if `x` is regular.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
+* `IsLocalization.Away.liftNoncomm_eq`, `IsLocalization.Away.liftNoncomm_comp`: the lifted ring
+  homomorphism into a possibly non-commutative semiring extends the given map along `algebraMap`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
   through compatible algebra towers.
 * `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
@@ -510,6 +516,63 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
+
+section LiftNoncomm
+
+variable {R S K : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  (x : R) [IsLocalization.Away x S] [Semiring K]
+
+private def ringHomToCenter (g : R →+* K) :
+    R →+* Subsemiring.center (Subsemiring.centralizer (Set.range g)) :=
+  (g.codRestrict (Subsemiring.centralizer (Set.range g)) fun a ↦
+    Subsemiring.mem_centralizer_iff.mpr fun _ ⟨b, hb⟩ ↦ by
+      rw [← hb, ← map_mul, mul_comm b a, map_mul]).codRestrict
+    (Subsemiring.center (Subsemiring.centralizer (Set.range g))) fun a ↦
+      Subsemiring.mem_center_iff.mpr fun ⟨_, hc⟩ ↦
+        Subtype.ext (Subsemiring.mem_centralizer_iff.mp hc (g a) ⟨a, rfl⟩).symm
+
+private theorem ringHomToCenter_apply (g : R →+* K) (a : R) :
+    (((ringHomToCenter g a : Subsemiring.center (Subsemiring.centralizer (Set.range g))) :
+      Subsemiring.centralizer (Set.range g)) : K) = g a := by
+  rw [ringHomToCenter, RingHom.codRestrict_apply, RingHom.codRestrict_apply]
+
+private theorem isUnit_ringHomToCenter (g : R →+* K) (hg : IsUnit (g x)) :
+    IsUnit (ringHomToCenter g x) := by
+  have hinv_mem : ((hg.unit⁻¹ : Kˣ) : K) ∈ Subsemiring.centralizer (Set.range g) :=
+    Subsemiring.mem_centralizer_iff.mpr fun _ ⟨b, hb⟩ ↦ by
+      have hcomm : Commute (g b) (hg.unit : K) := by
+        rw [commute_iff_eq, IsUnit.unit_spec, ← map_mul, mul_comm b x, map_mul]
+      rw [← hb]
+      exact hcomm.units_inv_right.eq
+  refine ⟨⟨ringHomToCenter g x, ⟨⟨((hg.unit⁻¹ : Kˣ) : K), hinv_mem⟩,
+      Subsemiring.mem_center_iff.mpr fun ⟨c, hc⟩ ↦ Subtype.ext <| by
+        have hcomm : Commute (hg.unit : K) c := by
+          rw [commute_iff_eq, IsUnit.unit_spec]
+          exact Subsemiring.mem_centralizer_iff.mp hc (g x) ⟨x, rfl⟩
+        exact hcomm.units_inv_left.eq.symm⟩,
+    Subtype.ext (Subtype.ext <| by simp [ringHomToCenter_apply, hg.mul_val_inv]),
+    Subtype.ext (Subtype.ext <| by simp [ringHomToCenter_apply, hg.val_inv_mul])⟩, rfl⟩
+
+/-- Lift a ring homomorphism `g : R →+* K` (into a possibly non-commutative semiring `K`) along
+`IsLocalization.Away x S` when `g x` is a unit, by factoring `g` through the center of the
+centralizer of `Set.range g`. -/
+noncomputable def liftNoncomm (g : R →+* K) (hg : IsUnit (g x)) : S →+* K :=
+  ((Subsemiring.centralizer (Set.range g)).subtype.comp
+    (Subsemiring.center (Subsemiring.centralizer (Set.range g))).subtype).comp
+    (IsLocalization.Away.lift x (isUnit_ringHomToCenter x g hg))
+
+@[simp]
+theorem liftNoncomm_eq (g : R →+* K) (hg : IsUnit (g x)) (a : R) :
+    liftNoncomm x g hg (algebraMap R S a) = g a := by
+  simp only [liftNoncomm, RingHom.comp_apply, Subsemiring.coe_subtype,
+    IsLocalization.Away.lift_eq, ringHomToCenter_apply]
+
+@[simp]
+theorem liftNoncomm_comp (g : R →+* K) (hg : IsUnit (g x)) :
+    (liftNoncomm (S := S) x g hg).comp (algebraMap R S) = g :=
+  RingHom.ext (liftNoncomm_eq x g hg)
+
+end LiftNoncomm
 
 end IsLocalization.Away
 

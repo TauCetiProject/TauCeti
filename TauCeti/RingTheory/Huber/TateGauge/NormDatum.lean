@@ -35,6 +35,8 @@ of a Tate ring is; the norm does not depend on an ideal of definition, so none i
 
 * `TauCeti.Huber.tateNorm_zpow_mul`: `‖ϖ ^ k * x‖ = r ^ k * ‖x‖` for `k ∈ ℤ`.
 * `TauCeti.Huber.tateNorm_le_zpow_iff`: the closed ball of radius `r ^ n` is `ϖ ^ n A₀`.
+* `TauCeti.Huber.tateNorm_lt_iff`: the open ball of radius `r` is the union of `ϖ ^ n A₀` with
+  `d.radius ^ n < r`.
 * `TauCeti.Huber.tateNorm_eq_zpow_of_mem_of_not_mem`: exact norm from consecutive filtration
   membership.
 * `TauCeti.Huber.tateNorm_hasBasis_nhds_zero`: the open balls about zero are a neighbourhood
@@ -179,19 +181,24 @@ theorem tateNorm_le_zpow_iff {x : A} {n : ℤ} :
   rw [tateNorm_apply, ← tateGauge_le_zpow_iff d.pseudoUniformizer_mem (d.exists_zpow_mul_mem x)
     d.one_lt_radius_inv, inv_zpow', neg_neg]
 
+/-- The open ball of radius `r` about zero of the norm of a norm datum is the union of
+`ϖ ^ n A₀` over integers `n` with `d.radius ^ n < r`. -/
+theorem tateNorm_lt_iff {x : A} {r : ℝ} :
+    tateNorm d x < r ↔
+      ∃ n : ℤ, ((d.pseudoUniformizer ^ (-n) : Aˣ) : A) * x ∈ d.ringOfDefinition ∧
+        d.radius ^ n < r := by
+  rw [tateNorm_apply, tateGauge_lt_iff (zero_le_one.trans d.one_lt_radius_inv.le)
+    (d.exists_zpow_mul_mem x)]
+  simp only [inv_zpow', neg_neg]
+
 /-- If `x ∈ ϖ ^ n A₀` and `x ∉ ϖ ^ (n + 1) A₀`, then the norm of `x` is `r ^ n`. -/
 theorem tateNorm_eq_zpow_of_mem_of_not_mem {x : A} {n : ℤ}
     (hmem : ((d.pseudoUniformizer ^ (-n) : Aˣ) : A) * x ∈ d.ringOfDefinition)
     (hnot : ((d.pseudoUniformizer ^ (-(n + 1)) : Aˣ) : A) * x ∉ d.ringOfDefinition) :
     tateNorm d x = d.radius ^ n := by
   refine le_antisymm ((tateNorm_le_zpow_iff d).2 hmem) (le_of_not_gt fun hlt ↦ hnot ?_)
-  rw [tateNorm_apply,
-    tateGauge_lt_iff (zero_le_one.trans d.one_lt_radius_inv.le) (d.exists_zpow_mul_mem x)]
-    at hlt
-  obtain ⟨m, hm, hmn⟩ := hlt
-  have hlt' : (d.radius⁻¹) ^ (-m) < (d.radius⁻¹) ^ (-n) := by
-    simpa only [inv_zpow', neg_neg] using hmn
-  rw [zpow_lt_zpow_iff_right₀ d.one_lt_radius_inv] at hlt'
+  obtain ⟨m, hm, hmn⟩ := (tateNorm_lt_iff d).1 hlt
+  rw [zpow_lt_zpow_iff_right_of_lt_one₀ d.radius_pos d.radius_lt_one] at hmn
   exact zpow_neg_mul_mem_of_le d.pseudoUniformizer_mem (by omega) hm
 
 /-- Elements of the ring of definition have norm at most one. -/
