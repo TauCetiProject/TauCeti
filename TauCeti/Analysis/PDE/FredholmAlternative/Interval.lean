@@ -434,10 +434,8 @@ private theorem forall_energyFormH1_eq_iff_forall_sub_eq_zero (κ : ℝ)
       ∀ v : W1p0 volume (intervalDomain a b) 2,
         energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) ((u - u₀ : W1p0 volume (intervalDomain a b) 2) :
           W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) = 0 := by
-  have hsub : ((u - u₀ : W1p0 volume (intervalDomain a b) 2) :
-      W1p volume (intervalDomain a b) 2) = (u : W1p volume (intervalDomain a b) 2) - u₀ := rfl
   refine forall_congr' fun v ↦ ?_
-  rw [← hu₀ v, hsub]
+  rw [← hu₀ v, Submodule.coe_sub]
   simp only [energyFormH1_one_zero_neg, energyFormH1_sub_left
     (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)), W1p.value_sub,
     inner_sub_left]
@@ -472,9 +470,7 @@ private theorem value_sub_smul_ae_eq (u s : W1p0 volume (intervalDomain a b) 2) 
         W1p volume (intervalDomain a b) 2)
       =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
         fun x ↦ W1p.value (u : W1p volume (intervalDomain a b) 2) x - c * g x := by
-  have hcoe : ((u - c • s : W1p0 volume (intervalDomain a b) 2) :
-      W1p volume (intervalDomain a b) 2) = (u : W1p volume (intervalDomain a b) 2) - c • s := rfl
-  rw [hcoe]
+  rw [Submodule.coe_sub, Submodule.coe_smul]
   filter_upwards [W1p.value_sub_ae (u : W1p volume (intervalDomain a b) 2)
       (c • (s : W1p volume (intervalDomain a b) 2)),
     W1p.value_smul_ae c (s : W1p volume (intervalDomain a b) 2), hs] with x h1 h2 h3
@@ -503,7 +499,7 @@ theorem isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin (hab : a < b
   simp only [inner_eq_inner_value_of_ae_eq f hf hsm]
   rw [forall_energyFormH1_eq_iff_forall_sub_eq_zero _
       (isWeakSolutionDirichlet_of_coe_eq hab hmk hsmeq (u := ((m * π / (b - a)) ^ 2 -
-        (k * π / (b - a)) ^ 2)⁻¹ • sm) rfl),
+        (k * π / (b - a)) ^ 2)⁻¹ • sm) (Submodule.coe_smul _ _)),
     forall_energyFormH1_eq_zero_iff_exists_value_ae_eq hab k]
   have h0 := value_sub_smul_ae_eq u sm (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹) hsm
   refine exists_congr fun t ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
