@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.Graph.Lattice
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 public import TauCeti.Combinatorics.Graph.EdgeEnds
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.Union
 
 /-!
