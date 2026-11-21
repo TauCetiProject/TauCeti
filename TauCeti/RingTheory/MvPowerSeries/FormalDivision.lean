@@ -567,8 +567,8 @@ private theorem coeff_seriesOfComplement {R : Type*} [Semiring R]
 noncomputable def complementSubmoduleEquivFun {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) :
     ord.complementSubmodule I ≃ₗ[R] ({α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R) where
-  toFun f α := MvPowerSeries.coeff α.1 f.1
-  map_add' f g := funext fun α ↦ map_add (MvPowerSeries.coeff α.1) f.1 g.1
+  toFun f α := MvPowerSeries.coeff α.val f.val
+  map_add' f g := funext fun α ↦ map_add (MvPowerSeries.coeff α.val) f.val g.val
   map_smul' _ _ := funext fun _ ↦ by simp
   invFun g := ⟨ord.seriesOfComplement I g,
     ord.mem_complementSubmodule_iff.mpr fun β hβ hD ↦ by
@@ -579,7 +579,8 @@ noncomputable def complementSubmoduleEquivFun {R : Type*} [Semiring R]
     split_ifs with h
     · symm
       by_contra hne
-      exact absurd h (ord.mem_complementSubmodule_iff.mp f.2 β (MvPowerSeries.mem_support.mpr hne))
+      exact absurd h
+        (ord.mem_complementSubmodule_iff.mp f.property β (MvPowerSeries.mem_support.mpr hne))
     · rfl
   right_inv g := funext fun ⟨α, hα⟩ ↦ by
     dsimp only
@@ -590,7 +591,7 @@ noncomputable def complementSubmoduleEquivFun {R : Type*} [Semiring R]
 theorem complementSubmoduleEquivFun_apply {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (f : ord.complementSubmodule I)
     (α : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I}) :
-    ord.complementSubmoduleEquivFun I f α = MvPowerSeries.coeff α.1 f.1 := (rfl)
+    ord.complementSubmoduleEquivFun I f α = MvPowerSeries.coeff α.val f.val := (rfl)
 
 open scoped Classical in
 /-- Coefficients of the power series reconstructed from a function on the complement of
@@ -608,10 +609,10 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm {R : Type*} [Semiring R]
 theorem coeff_coe_complementSubmoduleEquivFun_symm_coe {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
     (α : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I}) :
-    MvPowerSeries.coeff α.1 ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
+    MvPowerSeries.coeff α.val ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
       g α := by
   classical
-  rw [ord.coeff_coe_complementSubmoduleEquivFun_symm, dite_eq_left α.2]
+  rw [ord.coeff_coe_complementSubmoduleEquivFun_symm, dite_eq_left α.property]
 
 /-- At an unpacked exponent `β ∉ ord.initialDiagram I`, the series
 `((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R)` has coefficient `g ⟨β, hβ⟩`. -/

@@ -281,7 +281,7 @@ instance finite_degree_le {σ : Type*} [Finite σ] (n : ℕ) :
 an additional predicate is finite. -/
 instance finite_degree_le_and {σ : Type*} [Finite σ] (n : ℕ) (p : (σ →₀ ℕ) → Prop) :
     Finite {s : σ →₀ ℕ // s.degree ≤ n ∧ p s} :=
-  .of_injective (fun s ↦ (⟨s.1, s.2.1⟩ : {s : σ →₀ ℕ // s.degree ≤ n}))
+  .of_injective (fun s ↦ (⟨s.val, s.property.1⟩ : {s : σ →₀ ℕ // s.degree ≤ n}))
     fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
 
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a

@@ -63,7 +63,8 @@ private theorem diagramHilbert_anti {σ : Type*} [Finite σ] {D₁ D₂ : Set (�
     (h : D₁ ⊆ D₂) (n : ℕ) :
     diagramHilbert D₂ n ≤ diagramHilbert D₁ n :=
   Nat.card_le_card_of_injective
-    (fun α ↦ (⟨α.1, α.2.1, fun h₁ ↦ α.2.2 (h h₁)⟩ : {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D₁}))
+    (fun α ↦ (⟨α.val, α.property.1, fun h₁ ↦ α.property.2 (h h₁)⟩ :
+      {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D₁}))
     (fun _ _ hEq ↦ Subtype.ext (Subtype.mk.inj hEq))
 
 private theorem diagramHilbert_congr_of_degree_le {σ : Type*} {D₁ D₂ : Set (σ →₀ ℕ)} {n m : ℕ}

@@ -152,15 +152,15 @@ theorem localQuotientHilbertSamuel_mvPowerSeries_span_image_X {σ : Type*} (K : 
     grind
   let e₁ : {α : σ →₀ ℕ //
       α.degree ≤ n ∧ α ∉ ⋃ β ∈ (fun i ↦ Finsupp.single i 1) '' S, Set.Ici β} ≃
-      {α : {α : σ →₀ ℕ // ↑α.support ⊆ Sᶜ} // α.1.degree ≤ n} :=
+      {α : {α : σ →₀ ℕ // ↑α.support ⊆ Sᶜ} // α.val.degree ≤ n} :=
     (Equiv.subtypeEquivRight fun α ↦ and_congr_right fun _ ↦ hnotMem α).trans
       ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
         (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm)
-  let e₂ : {α : {α : σ →₀ ℕ // ↑α.support ⊆ Sᶜ} // α.1.degree ≤ n} ≃
+  let e₂ : {α : {α : σ →₀ ℕ // ↑α.support ⊆ Sᶜ} // α.val.degree ≤ n} ≃
       {β : ↥Sᶜ →₀ ℕ // β.degree ≤ n} :=
     Equiv.subtypeEquiv (Finsupp.restrictSupportEquiv Sᶜ ℕ) fun α ↦ by
       have hdeg : ((Finsupp.restrictSupportEquiv Sᶜ ℕ).symm
-          (Finsupp.restrictSupportEquiv Sᶜ ℕ α)).1.degree =
+          (Finsupp.restrictSupportEquiv Sᶜ ℕ α)).val.degree =
           (Finsupp.restrictSupportEquiv Sᶜ ℕ α).degree := by
         rw [Finsupp.restrictSupportEquiv_symm_apply_coe, Finsupp.extendDomain_eq_embDomain_subtype,
           Finsupp.embDomain_eq_mapDomain, Finsupp.degree_mapDomain]
