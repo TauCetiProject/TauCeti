@@ -81,6 +81,10 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
 * `CoxeterSystem.exists_mem_parabolic_pair_mul_of_isLeftDescent_pair`: the rank-two parabolic
   factor of an element with two left descents inherits both descents.
 * `CoxeterSystem.exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair`: **Tits' lemma.**
+* `CoxeterSystem.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent` and
+  `CoxeterSystem.length_lt_of_mem_parabolic_pair_of_not_isRightDescent`: an element of a rank-two
+  standard parabolic subgroup without right descent at `i` is the alternating word of its length
+  ending in `i'`, and that length is below the braid length `M i i'`.
 
 ## References
 
@@ -342,5 +346,37 @@ theorem exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair {i i' : B}
     omega
   rw [cs.length_eq_orderOf_of_isLeftDescent_pair hx hdx hdx'] at h h' hpos hlen
   exact ⟨v, hpos, by rw [h], by rw [h'], hlen⟩
+
+/-! ### No right descent -/
+
+/-- An element of `cs.parabolic {i, i'}` without right descent at `i` is spelled by the
+alternating word of its own length ending in `i'`. -/
+theorem wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B}
+    {w : W} (hw : w ∈ cs.parabolic {i, i'}) (hwi : ¬cs.IsRightDescent w i) :
+    π (alternatingWord i i' (ℓ w)) = w := by
+  have hlen := cs.not_isRightDescent_iff.mp hwi
+  -- a reduced alternating word for `w` ending in `i` would make `i` a right descent
+  refine (cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair hw).elim id fun h ↦ ?_
+  rcases hk : ℓ w with - | k
+  · simp [cs.length_eq_zero_iff.mp hk, alternatingWord]
+  · rw [hk, alternatingWord_succ, wordProd_concat] at h
+    have hle := cs.length_wordProd_le (alternatingWord i i' k)
+    rw [length_alternatingWord] at hle
+    rw [← h, cs.simple_mul_simple_cancel_right, h] at hlen
+    omega
+
+/-- An element of `cs.parabolic {i, i'}` without right descent at `i` is shorter than the
+Coxeter-matrix entry `M i i'`, unless that entry is `0` (infinite). -/
+theorem length_lt_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B} {w : W}
+    (hw : w ∈ cs.parabolic {i, i'}) (hwi : ¬cs.IsRightDescent w i) :
+    ℓ w < M i i' ∨ M i i' = 0 := by
+  have hred : cs.IsReduced (alternatingWord i' i (ℓ w + 1)) := by
+    rw [IsReduced, alternatingWord_succ, wordProd_concat,
+      cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent hw hwi,
+      cs.not_isRightDescent_iff.mp hwi, List.concat_eq_append, List.length_append,
+      length_alternatingWord, List.length_singleton]
+  by_contra hcon
+  rw [not_or, not_lt, ← M.symmetric i' i] at hcon
+  exact cs.not_isReduced_alternatingWord i' i hcon.2 (by omega) hred
 
 end CoxeterSystem
