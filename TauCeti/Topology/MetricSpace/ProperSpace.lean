@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
+public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.MetricSpace.Bounded
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.Sets.Opens
@@ -43,6 +44,8 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 * `TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_forall_exists_le`: such a nested
   exhaustion of `Ω`, every member of which has closure inside `Ω`, eventually containing every open
   set whose closure is compact and contained in `Ω`.
+* `Homeomorph.isBounded_image_iff`: a homeomorphism between proper pseudometric spaces preserves
+  and reflects boundedness of subsets.
 
 ## References
 
@@ -204,5 +207,16 @@ theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_foral
     (hWΩ.trans hVU.symm.subset)
     (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
   exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
+
+/-- A homeomorphism between proper pseudometric spaces preserves boundedness of sets. -/
+theorem _root_.Homeomorph.isBounded_image_iff {β : Type*} [PseudoMetricSpace β]
+    [ProperSpace α] [ProperSpace β] (e : α ≃ₜ β) {s : Set α} :
+    Bornology.IsBounded (e '' s) ↔ Bornology.IsBounded s := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · have hc : IsCompact (e.symm '' closure (e '' s)) :=
+      h.isCompact_closure.image e.symm.continuous
+    refine hc.isBounded.subset fun x hx => ⟨e x, subset_closure (mem_image_of_mem e hx), ?_⟩
+    exact e.symm_apply_apply x
+  · exact (h.isCompact_closure.image e.continuous).isBounded.subset (image_mono subset_closure)
 
 end TauCeti
