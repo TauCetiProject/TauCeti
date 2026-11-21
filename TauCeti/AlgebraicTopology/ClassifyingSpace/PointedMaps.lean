@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
-public import TauCeti.Topology.Homotopy.Homotopic.Rel
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
 
@@ -42,6 +42,9 @@ specializes to it:
 * `TauCeti.existsUnique_homotopicRel_classifyingSpaceMap`: every pointed map
   `classifyingSpace G → classifyingSpace H` is pointed homotopic to `φ.classifyingSpaceMap` for a
   unique `φ : G →* H`.
+* `TauCeti.fundamentalGroupFunctor_map_bijective_classifyingSpace`: pointed homotopy classes of
+  maps out of `classifyingSpace G` into a space without higher homotopy groups are classified by
+  `π₁`.
 
 ## References
 
@@ -113,5 +116,20 @@ theorem existsUnique_homotopicRel_classifyingSpaceMap {G : Type u} {H : Type v} 
   rw [ψ.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq,
     (classifyingSpaceFundamentalGroupMulEquiv G).apply_symm_apply] at hEq
   exact hEq.symm
+
+/-- **Pointed maps out of Milnor's classifying space are classified by `π₁`.** If the homotopy
+groups of `Y` vanish from degree `2` on, at every point, then pointed homotopy classes
+`classifyingSpace G → Y` correspond bijectively to homomorphisms `π₁(classifyingSpace G) ⟶ π₁(Y)`.
+-/
+theorem fundamentalGroupFunctor_map_bijective_classifyingSpace (G : Type u) [Group G]
+    {Y : BasedTopologicalSpace.{u}}
+    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y)) :
+    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
+      (X := PointedHomotopyCat.quotient.obj ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+      (Y := PointedHomotopyCat.quotient.obj Y)) :=
+  IsAspherical.fundamentalGroupFunctor_map_bijective
+    (X := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical
+    (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G) hY
 
 end TauCeti

@@ -46,6 +46,9 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
+* `Topology.RelCWComplex.Subcomplex.ofBaseSubsetSkeletonLTOne` and
+  `Topology.RelCWComplex.Subcomplex.coe_ofBaseSubsetSkeletonLTOne`: any subset between the base
+  and the `0`-skeleton is a subcomplex.
 * `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
   of `C`.
 
@@ -357,6 +360,44 @@ lemma coe_ofLE {F E : Subcomplex C} (h : F ≤ E) : (ofLE h : Set X) = F :=
 @[simp]
 lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
     (ofLE h).I n = (Subtype.val : E.I n → cell C n) ⁻¹' F.I n :=
+  (rfl)
+
+/-- Every subset between the base `D` and the `0`-skeleton `skeletonLT C 1` is a subcomplex of `C`,
+whose `0`-cells are the `0`-cells of `C` lying in `S` and which has no cells of positive
+dimension. -/
+def ofBaseSubsetSkeletonLTOne {S : Set X} (hDS : D ⊆ S) (hS : S ⊆ (skeletonLT C 1 : Set X)) :
+    Subcomplex C :=
+  RelCWComplex.Subcomplex.mk' C S
+    (fun n ↦ match n with
+      | 0 => {j : cell C 0 | map 0 j ![] ∈ S}
+      | _ + 1 => ∅)
+    (fun n j ↦ by
+      cases n with
+      | zero =>
+        rw [closedCell_zero_eq_singleton]
+        exact singleton_subset_iff.2 j.2
+      | succ n => exact j.2.elim)
+    (by
+      refine Subset.antisymm (union_subset hDS (iUnion₂_subset fun n j ↦ ?_)) fun x hx ↦ ?_
+      · cases n with
+        | zero =>
+          rw [openCell_zero_eq_singleton]
+          exact singleton_subset_iff.2 j.2
+        | succ n => exact j.2.elim
+      · obtain hxD | ⟨m, hm, j, hxj⟩ := RelCWComplex.mem_skeletonLT_iff.1 (hS hx)
+        · exact Or.inl hxD
+        · obtain rfl : m = 0 := Nat.lt_one_iff.1 (Nat.cast_lt.1 (hm.trans_eq Nat.cast_one.symm))
+          rw [openCell_zero_eq_singleton, mem_singleton_iff] at hxj
+          refine Or.inr (mem_iUnion₂.2
+            ⟨0, ⟨j, by simpa only [mem_ofPred_eq, ← hxj] using hx⟩, ?_⟩)
+          rw [openCell_zero_eq_singleton, mem_singleton_iff]
+          exact hxj)
+
+/-- As a set, `ofBaseSubsetSkeletonLTOne hDS hS` is `S`. -/
+@[simp]
+lemma coe_ofBaseSubsetSkeletonLTOne {S : Set X} (hDS : D ⊆ S)
+    (hS : S ⊆ (skeletonLT C 1 : Set X)) :
+    (ofBaseSubsetSkeletonLTOne hDS hS : Set X) = S :=
   (rfl)
 
 end

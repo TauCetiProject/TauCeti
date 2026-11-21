@@ -203,32 +203,8 @@ so it is a subcomplex of `C`. -/
 theorem hasHomotopyExtensionProperty_of_base_subset_of_subset_skeletonLT_one
     {S : Set X} (hDS : D ⊆ S) (hS : S ⊆ (skeletonLT C 1 : Set X)) :
     HasHomotopyExtensionProperty (Subtype.val ⁻¹' S : Set C) := by
-  let J : ∀ n, Set (cell C n) := fun n ↦ match n with
-    | 0 => {j : cell C 0 | map 0 j ![] ∈ S}
-    | _ + 1 => ∅
-  let E : Subcomplex C := RelCWComplex.Subcomplex.mk' C S J
-    (fun n j ↦ by
-      cases n with
-      | zero =>
-        rw [closedCell_zero_eq_singleton]
-        exact singleton_subset_iff.2 j.2
-      | succ n => exact j.2.elim)
-    (by
-      refine Subset.antisymm (union_subset hDS (iUnion₂_subset fun n j ↦ ?_)) fun x hx ↦ ?_
-      · cases n with
-        | zero =>
-          rw [openCell_zero_eq_singleton]
-          exact singleton_subset_iff.2 j.2
-        | succ n => exact j.2.elim
-      · obtain hxD | ⟨m, hm, j, hxj⟩ := RelCWComplex.mem_skeletonLT_iff.1 (hS hx)
-        · exact Or.inl hxD
-        · obtain rfl : m = 0 := Nat.lt_one_iff.1 (Nat.cast_lt.1 (hm.trans_eq Nat.cast_one.symm))
-          rw [openCell_zero_eq_singleton, mem_singleton_iff] at hxj
-          refine Or.inr (mem_iUnion₂.2
-            ⟨0, ⟨j, by simpa only [J, mem_ofPred_eq, ← hxj] using hx⟩, ?_⟩)
-          rw [openCell_zero_eq_singleton, mem_singleton_iff]
-          exact hxj)
-  exact E.hasHomotopyExtensionProperty
+  have h := (Subcomplex.ofBaseSubsetSkeletonLTOne hDS hS).hasHomotopyExtensionProperty
+  rwa [Subcomplex.coe_ofBaseSubsetSkeletonLTOne] at h
 
 /-- **Every subset of the `0`-skeleton of a CW complex has the homotopy extension property.** -/
 theorem hasHomotopyExtensionProperty_of_subset_skeletonLT_one [CWComplex (univ : Set X)]

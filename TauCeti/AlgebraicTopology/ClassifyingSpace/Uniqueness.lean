@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
-public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
@@ -59,6 +58,9 @@ for abelian `G`, which need not have CW type.
 
 * `TauCeti.IsAspherical.pointedHomotopyCatIso`: **the unique isomorphism in `PointedHomotopyCat`
   between well-pointed aspherical spaces of CW type realizing a prescribed isomorphism on `π₁`.**
+* `TauCeti.IsAspherical.pointedHomotopyCatIsoClassifyingSpace`: **the unique isomorphism in
+  `PointedHomotopyCat` from a well-pointed aspherical space of CW type to `classifyingSpace G`
+  realizing a given identification on `π₁`.**
 
 ## Main results
 
@@ -283,5 +285,52 @@ theorem IsAspherical.eq_pointedHomotopyCatIso_of_fundamentalGroupFunctor_map_eq
   CategoryTheory.Iso.ext <| (hX.fundamentalGroupFunctor_map_bijective hX_hep
     (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).1
     (he.trans (hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom hY hX_hep hY_hep φ).symm)
+
+/-- **Every well-pointed `K(G, 1)` of CW type is canonically isomorphic in `PointedHomotopyCat` to
+Milnor's classifying space `classifyingSpace G`.** -/
+def IsAspherical.pointedHomotopyCatIsoClassifyingSpace {G : Type u} [Group G]
+    {X : BasedTopologicalSpace.{u}} [CWType X.carrier] (hX : IsAspherical X.carrier X.basepoint)
+    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
+    (eX : FundamentalGroup X.carrier X.basepoint ≃* G) :
+    PointedHomotopyCat.quotient.obj X ≅
+      PointedHomotopyCat.quotient.obj ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩ :=
+  hX.pointedHomotopyCatIso (Y := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
+    (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
+    (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
+
+/-- The forward morphism of `IsAspherical.pointedHomotopyCatIsoClassifyingSpace` realizes `eX`
+under the identification of `π₁(classifyingSpace G)` with `G`. -/
+@[simp]
+theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIsoClassifyingSpace_hom
+    {G : Type u} [Group G] {X : BasedTopologicalSpace.{u}} [CWType X.carrier]
+    (hX : IsAspherical X.carrier X.basepoint)
+    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
+    (eX : FundamentalGroup X.carrier X.basepoint ≃* G) :
+    PointedHomotopyCat.fundamentalGroupFunctor.map
+        (hX.pointedHomotopyCatIsoClassifyingSpace hX_hep eX).hom =
+      GrpCat.ofHom (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm).toMonoidHom :=
+  hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom
+    (Y := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
+    (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
+    (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
+
+/-- The inverse morphism of `IsAspherical.pointedHomotopyCatIsoClassifyingSpace` realizes `eX⁻¹`
+under the identification of `π₁(classifyingSpace G)` with `G`. -/
+@[simp]
+theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIsoClassifyingSpace_inv
+    {G : Type u} [Group G] {X : BasedTopologicalSpace.{u}} [CWType X.carrier]
+    (hX : IsAspherical X.carrier X.basepoint)
+    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
+    (eX : FundamentalGroup X.carrier X.basepoint ≃* G) :
+    PointedHomotopyCat.fundamentalGroupFunctor.map
+        (hX.pointedHomotopyCatIsoClassifyingSpace hX_hep eX).inv =
+      GrpCat.ofHom ((classifyingSpaceFundamentalGroupMulEquiv G).trans eX.symm).toMonoidHom :=
+  hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_inv
+    (Y := ⟨classifyingSpace G, classifyingSpaceBasepoint G⟩)
+    (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hX_hep
+    (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
+    (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
 
 end TauCeti

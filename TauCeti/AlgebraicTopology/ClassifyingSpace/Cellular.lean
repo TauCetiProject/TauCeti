@@ -8,11 +8,11 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.PresentationComplex
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
+public import TauCeti.Topology.Category.BasedTopologicalSpace
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
 public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
-import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 import TauCeti.Topology.Homotopy.Extension.CWComplex
 
 /-!
@@ -65,6 +65,7 @@ inclusion of the presentation complex is a homotopy equivalence
   homotopy groups killed.
 * `TauCeti.cellularClassifyingSpaceBasepoint R`: its base point, the vertex of the presentation
   complex.
+* `TauCeti.cellularClassifyingSpaceBased R`: the cellular classifying space as a based space.
 * `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv R`: the isomorphism of its
   fundamental group with `PresentedGroup R`.
 * `TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace`: for an aspherical
@@ -119,6 +120,21 @@ abbrev cellularClassifyingSpace : TopCat.{u} :=
 abbrev cellularClassifyingSpaceBasepoint : cellularClassifyingSpace R :=
   killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R)) (PresentationComplex.basepoint R)
     (PresentationComplex.basepoint R)
+
+/-- The cellular classifying space `cellularClassifyingSpace R` as a based space, based at the
+vertex `cellularClassifyingSpaceBasepoint R`. -/
+@[expose] def cellularClassifyingSpaceBased : BasedTopologicalSpace.{u} :=
+  ⟨cellularClassifyingSpace R, cellularClassifyingSpaceBasepoint R⟩
+
+@[simp]
+theorem cellularClassifyingSpaceBased_carrier :
+    (cellularClassifyingSpaceBased R).carrier = cellularClassifyingSpace R :=
+  (rfl)
+
+@[simp]
+theorem cellularClassifyingSpaceBased_basepoint :
+    (cellularClassifyingSpaceBased R).basepoint = cellularClassifyingSpaceBasepoint R :=
+  (rfl)
 
 /-- **The fundamental group of the cellular classifying space is the presented group.** The
 inclusion of the presentation complex induces an isomorphism on fundamental groups, and the
@@ -211,6 +227,11 @@ with the cells of dimension at least `3` attached to kill the higher homotopy gr
 instance instCWComplexCellularClassifyingSpace :
     CWComplex (univ : Set (cellularClassifyingSpace R)) :=
   killHomotopyGroupsCWComplex 2 _ _ fun _ ↦ PresentationComplex.isEmpty_cell R
+
+/-- The underlying space of `cellularClassifyingSpaceBased R` has CW type. -/
+instance instCWTypeCellularClassifyingSpaceBased :
+    CWType (cellularClassifyingSpaceBased R).carrier :=
+  inferInstanceAs (CWType (cellularClassifyingSpace R))
 
 /-- The cellular classifying space has a single `0`-cell, that of the presentation complex: the
 tower attaches no cells of dimension `0`. -/
