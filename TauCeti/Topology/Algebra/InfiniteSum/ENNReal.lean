@@ -56,8 +56,7 @@ theorem ENNReal.tsum_lt_top_of_eventually_le {f b : ℕ → ℝ≥0∞}
   refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun n _ ↦ (hf n).lt_top, ?_⟩
   refine (tsum_le_tsum (g := fun n : {n // n ∉ Finset.range N} ↦ b n) fun n ↦
     hN n (by simpa only [Finset.mem_range, not_lt] using n.property)).trans_lt ?_
-  exact (CompleteLattice.summable.tsum_le_tsum_of_inj Subtype.val Subtype.val_injective
-    (fun _ _ ↦ zero_le) (fun _ ↦ le_rfl) CompleteLattice.summable).trans_lt hb
+  exact (tsum_comp_le_tsum_of_injective Subtype.val_injective b).trans_lt hb
 
 /-- Summing the indicator of a set with value one counts its elements. -/
 theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :

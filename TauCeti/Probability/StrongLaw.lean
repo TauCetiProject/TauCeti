@@ -11,6 +11,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!
@@ -243,36 +244,6 @@ open scoped ENNReal
 variable {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E]
   [MeasurableSpace E] [BorelSpace E] {P : Measure Ω} {X : ℕ → Ω → E} {Y : Ω → E}
 
-private theorem tsum_measure_nat_succ_lt_lt_top {g : Ω → ℝ}
-    (hint : Integrable g P) (hpos : ∀ ω, 0 ≤ g ω) :
-    (∑' i : ℕ, P {ω | g ω ∈ Ioi ((i + 1 : ℕ) : ℝ)}) < ∞ := by
-  let E (i : ℕ) := {ω | g ω ∈ Ioi ((i + 1 : ℕ) : ℝ)}
-  have hE (i : ℕ) : NullMeasurableSet (E i) P :=
-    hint.aemeasurable.nullMeasurableSet_preimage measurableSet_Ioi
-  let I (i : ℕ) := (E i).indicator (fun _ : Ω ↦ (1 : ℝ≥0∞))
-  have hI (i : ℕ) : AEMeasurable (I i) P := aemeasurable_const.indicator₀ (hE i)
-  have hcount (ω : Ω) : (∑' i, I i ω) ≤ ENNReal.ofReal (g ω) := by
-    refine ENNReal.tsum_le_of_sum_range_le fun N ↦ ?_
-    simp only [I, Set.indicator_apply, ← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul,
-      mul_one]
-    have hcard := Finset.card_le_card (t := Finset.range ⌊g ω⌋₊) (s :=
-      (Finset.range N).filter fun i ↦ ω ∈ E i) (fun i hi ↦ by
-        have hlt : ((i + 1 : ℕ) : ℝ) < g ω := (Finset.mem_filter.1 hi).2
-        exact Finset.mem_range.2 (Nat.lt_of_succ_le (Nat.le_floor hlt.le)))
-    rw [Finset.card_range] at hcard
-    exact (Nat.cast_le.2 hcard).trans (by
-      rw [← ENNReal.ofReal_natCast]
-      exact ENNReal.ofReal_le_ofReal (Nat.floor_le (hpos ω)))
-  have heq' (i : ℕ) : P (E i) = ∫⁻ ω, I i ω ∂P :=
-    (lintegral_indicator_one₀ (hE i)).symm
-  calc
-    _ = ∑' i, P (E i) := rfl
-    _ = ∫⁻ ω, ∑' i, I i ω ∂P := by simp_rw [heq', lintegral_tsum hI]
-    _ ≤ ∫⁻ ω, ENNReal.ofReal (g ω) ∂P := lintegral_mono hcount
-    _ < ∞ := by
-      rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall hpos)]
-      exact ENNReal.ofReal_lt_top
-
 /-- If the prefix length is at most the `p`-th power of a divergent scale, its maximal
 absolute entry divided by that scale tends to zero almost surely. The variables need only
 have the same distribution and a finite `p`-th absolute moment. The tail-summability
@@ -289,7 +260,7 @@ theorem ae_eventually_forall_lt_norm_le_mul_of_identDistrib
     have hi' : i = 0 := by omega
     rw [hi', mul_comm]
     exact (div_le_iff₀ hε).1 hs'
-  have htail (δ : ℝ) (hδ : 0 < δ) :
+  have htail (δ : ℝ) :
       ∀ᵐ ω ∂P, ∀ᶠ i in atTop, (‖X i ω‖ / δ) ^ p ≤ (i : ℝ) := by
     let f (x : E) := (‖x‖ / δ) ^ p
     have hf : Measurable f := by
@@ -298,8 +269,7 @@ theorem ae_eventually_forall_lt_norm_le_mul_of_identDistrib
     have hint : Integrable (fun ω ↦ f (Y ω)) P := by
       simpa only [f, div_eq_mul_inv, mul_pow, inv_pow] using
         (hY.integrable_norm_pow hp).mul_const (δ ^ p)⁻¹
-    have hpos (ω : Ω) : 0 ≤ f (Y ω) := by dsimp [f]; positivity
-    have hsum := tsum_measure_nat_succ_lt_lt_top hint hpos
+    have hsum := tsum_measure_nat_succ_lt_lt_top hint
     have heq (i : ℕ) : P {ω | f (X (i + 1) ω) ∈ Ioi ((i + 1 : ℕ) : ℝ)} =
         P {ω | f (Y ω) ∈ Ioi ((i + 1 : ℕ) : ℝ)} :=
       ((hX (i + 1)).comp hf).measure_mem_eq measurableSet_Ioi
@@ -310,7 +280,7 @@ theorem ae_eventually_forall_lt_norm_le_mul_of_identDistrib
     refine eventually_atTop.2 ⟨N + 1, fun i hi ↦ ?_⟩
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : i ≠ 0)
     exact not_lt.1 (hN j (by omega))
-  filter_upwards [ae_all_iff.2 (fun k : ℕ ↦ htail (1 / (k + 1)) (by positivity))] with ω hω
+  filter_upwards [ae_all_iff.2 (fun k : ℕ ↦ htail (1 / (k + 1)))] with ω hω
   intro ε hε
   obtain ⟨k, hk⟩ := exists_nat_one_div_lt hε
   obtain ⟨N, hN⟩ := eventually_atTop.1 (hω k)

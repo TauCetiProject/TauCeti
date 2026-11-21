@@ -61,6 +61,22 @@ theorem wignerMatrix_eq_center_add_hermitianOffDiagonal
     push_cast
     ring
 
+open scoped Matrix.Norms.L2Operator in
+/-- Subtracting a common constant from the upper entries changes the normalized Wigner
+matrix by at most `√n * ‖c‖` in operator norm. -/
+theorem l2_opNorm_wignerMatrix_sub_center_le
+    (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (c : ℂ) (n : ℕ) (ω : Ω) :
+    ‖wignerMatrix ξ η n ω - wignerMatrix (fun ij ω' ↦ ξ ij ω' - c) η n ω‖ ≤
+      Real.sqrt n * ‖c‖ := by
+  rw [wignerMatrix_eq_center_add_hermitianOffDiagonal ξ η c n ω, add_sub_cancel_left]
+  refine (l2_opNorm_hermitianOffDiagonal_le _ _).trans_eq ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hs : 0 < Real.sqrt n := Real.sqrt_pos.2 (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn))
+  rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le), ← mul_assoc]
+  congr 1
+  exact (mul_inv_eq_iff_eq_mul₀ hs.ne').2 (by rw [← pow_two, Real.sq_sqrt (Nat.cast_nonneg _)])
+
 section Limits
 
 variable {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]

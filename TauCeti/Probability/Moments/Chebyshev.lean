@@ -19,6 +19,8 @@ of an estimator.
 
 ## Main statements
 
+* `TauCeti.measure_ge_le_ofReal_integral_div` gives Markov's inequality for the extended
+  measure of a superlevel set of a nonnegative integrable real function.
 * `TauCeti.meas_ge_le_integral_norm_sq_div_sq`: Chebyshev's inequality for the second moment,
   `μ {c ≤ ‖Y‖} ≤ (∫ ‖Y‖²) / c²`, for any measure and without centering.
 * `TauCeti.meas_gt_le_div_sq_of_integral_sq_le`: the uncentered Chebyshev inequality
@@ -37,23 +39,28 @@ namespace TauCeti
 
 variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
+/-- Markov's inequality for the extended measure of a positive superlevel set of an
+integrable, almost everywhere nonnegative real function. -/
+theorem measure_ge_le_ofReal_integral_div {f : Ω → ℝ} (hf : Integrable f μ)
+    (hnonneg : 0 ≤ᵐ[μ] f) {c : ℝ} (hc : 0 < c) :
+    μ {ω | c ≤ f ω} ≤ ENNReal.ofReal ((∫ ω, f ω ∂μ) / c) := by
+  have hsub : {ω | c ≤ f ω} ⊆ {ω | ENNReal.ofReal c ≤ ENNReal.ofReal (f ω)} :=
+    fun _ hω ↦ ENNReal.ofReal_le_ofReal hω
+  refine (measure_mono hsub).trans ?_
+  refine (meas_ge_le_lintegral_div hf.aemeasurable.ennreal_ofReal
+    (ENNReal.ofReal_pos.2 hc).ne' ENNReal.ofReal_ne_top).trans_eq ?_
+  rw [← ofReal_integral_eq_lintegral_ofReal hf hnonneg, ENNReal.ofReal_div_of_pos hc]
+
 /-- **Chebyshev's inequality for the second moment.** For any measure, if `‖Y‖²` is integrable
 and `0 < c`, the set where `‖Y‖` is at least `c` has measure at most `(∫ ‖Y‖²) / c²`. Unlike
 `ProbabilityTheory.meas_ge_le_variance_div_sq`, `Y` is not centered at its mean. -/
 theorem meas_ge_le_integral_norm_sq_div_sq [Norm E] {Y : Ω → E}
     (hY : Integrable (fun ω ↦ ‖Y ω‖ ^ 2) μ) {c : ℝ} (hc : 0 < c) :
     μ {ω | c ≤ ‖Y ω‖} ≤ ENNReal.ofReal ((∫ ω, ‖Y ω‖ ^ 2 ∂μ) / c ^ 2) := by
-  have hc2 : 0 < c ^ 2 := pow_pos hc 2
-  calc μ {ω | c ≤ ‖Y ω‖}
-      ≤ μ {ω | ENNReal.ofReal (c ^ 2) ≤ ENNReal.ofReal (‖Y ω‖ ^ 2)} :=
-        measure_mono fun ω (hω : c ≤ ‖Y ω‖) ↦
-          ENNReal.ofReal_le_ofReal (pow_le_pow_left₀ hc.le hω 2)
-    _ ≤ (∫⁻ ω, ENNReal.ofReal (‖Y ω‖ ^ 2) ∂μ) / ENNReal.ofReal (c ^ 2) :=
-        meas_ge_le_lintegral_div hY.aemeasurable.ennreal_ofReal
-          (ENNReal.ofReal_pos.2 hc2).ne' ENNReal.ofReal_ne_top
-    _ = ENNReal.ofReal ((∫ ω, ‖Y ω‖ ^ 2 ∂μ) / c ^ 2) := by
-        rw [← ofReal_integral_eq_lintegral_ofReal hY (.of_forall fun ω ↦ by positivity),
-          ENNReal.ofReal_div_of_pos hc2]
+  have hsub : {ω | c ≤ ‖Y ω‖} ⊆ {ω | c ^ 2 ≤ ‖Y ω‖ ^ 2} :=
+    fun _ hω ↦ pow_le_pow_left₀ hc.le hω 2
+  refine (measure_mono hsub).trans ?_
+  exact measure_ge_le_ofReal_integral_div hY (.of_forall fun _ ↦ sq_nonneg _) (sq_pos_of_pos hc)
 
 /-- **The uncentered Chebyshev inequality.** If `Y²` is integrable with `∫ Y² ≤ v` and `0 < η`,
 then the set where `Y` exceeds `η` has measure at most `v / η²`. -/

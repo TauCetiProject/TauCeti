@@ -78,8 +78,9 @@ theorem continuousAt_eigenvalues₀ {X : Type*} [TopologicalSpace X] {M : X → 
     (f := fun x ↦ (⟨M x, hM x⟩ : {A : Matrix n n 𝕜 // A.IsHermitian}))
     (tendsto_subtype_rng.2 (continuousAt_pi.2 fun a ↦ continuousAt_pi.2 fun b ↦ h a b))
 
-/-- Corresponding ordered eigenvalues of two Hermitian matrix families have the same limit
-if the operator norm of their difference tends to zero, even when the index type varies. -/
+/-- If the selected ordered eigenvalues of `B` converge and `‖A - B‖` tends to zero in
+operator norm, the corresponding eigenvalues of `A` converge to the same limit.
+The index type may vary. -/
 theorem tendsto_eigenvalues₀_of_tendsto_norm_sub_zero
     {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
     {A B : (i : ι) → Matrix (m i) (m i) 𝕜} (hA : ∀ i, (A i).IsHermitian)

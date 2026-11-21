@@ -195,8 +195,8 @@ theorem ae_eventually_norm_wignerMatrix_zero_apply_le
       have hpow : Real.sqrt (n + 1 : ℕ) ^ 4 = ((n + 1 : ℕ) : ℝ) ^ 2 := calc
         _ = (Real.sqrt (n + 1 : ℕ) ^ 2) ^ 2 := by norm_num [← pow_mul]
         _ = _ := by rw [Real.sq_sqrt (Nat.cast_nonneg _)]
-      rw [hpow, Nat.cast_choose_two, Nat.cast_add, Nat.cast_one]
-      nlinarith [sq_nonneg (n : ℝ), Nat.cast_nonneg (α := ℝ) n]
+      rw [hpow]
+      exact_mod_cast Nat.choose_le_pow (n + 1) 2
   filter_upwards [ae_eventually_forall_lt_norm_le_mul_of_identDistrib
     (fun k ↦ hid (strictUpperEquivNat.symm k)) hX hs hm] with ω hω
   intro ε hε

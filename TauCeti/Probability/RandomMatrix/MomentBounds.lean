@@ -61,23 +61,20 @@ theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
 
 open TauCeti.Probability in
 /-- For a centered truncated Wigner corner, the absolute entry moment of order
-`k+2` is bounded by the original second moment divided by the dimension, times
-the factor `(2 * R / √n)^k`. Here `2 * R / √n` bounds the entries after centering. -/
+`k+2` is bounded by the common second-moment bound divided by the dimension, times
+`(2 * R / √n)^k`. Here `2 * R / √n` bounds the entries after centering. -/
 theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
-    [IsProbabilityMeasure P] {n : ℕ}
-    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
-    (hX : MemLp X 2 P) (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    [IsProbabilityMeasure P] {n : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hLp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ M)
+    (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
     ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
       (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
-      (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂P) / n) := by
-  let M := ∫ ω, ‖X ω‖ ^ 2 ∂P
-  have hM : 0 ≤ M := integral_nonneg fun _ ↦ sq_nonneg _
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * (M / n) := by
   have hupper (ij : StrictUpper) (hij : ij.val.2 < n) :
       ∫ ω, ‖centeredTruncation (ξ ij) P R ω‖ ^ (k + 2) ∂P ≤ (2 * (R : ℝ)) ^ k * M := by
-    have h := ((hid ij hij).symm.memLp_snd hX).integral_norm_centeredTruncation_pow_le R k
-    have heq : (∫ ω, ‖ξ ij ω‖ ^ 2 ∂P) = M :=
-      ((hid ij hij).comp (by fun_prop : Measurable (fun z : ℂ ↦ ‖z‖ ^ 2))).integral_eq
-    rwa [heq] at h
+    exact ((hLp ij hij).integral_norm_centeredTruncation_pow_le R k).trans
+      (mul_le_mul_of_nonneg_left (hξ ij hij) (by positivity))
   have hdiag (i : ℕ) (_ : i < n) :
       ∫ _ : Ω, ‖(0 : ℝ)‖ ^ (k + 2) ∂P ≤ (2 * (R : ℝ)) ^ k * M := by
     simpa only [norm_zero, zero_pow (Nat.succ_ne_zero (k + 1)), integral_zero] using
@@ -85,6 +82,21 @@ theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
   refine (integral_norm_wignerMatrix_apply_pow_le hupper hdiag i j).trans_eq ?_
   rw [pow_add, inv_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), div_pow]
   ring
+
+open TauCeti.Probability in
+/-- With a common upper-entry law, the original second moment of that law bounds
+the absolute entry moments of the centered truncated Wigner corner. -/
+theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le_of_identDistrib
+    [IsProbabilityMeasure P] {n : ℕ}
+    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
+    (hX : MemLp X 2 P) (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
+      (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂P) / n) :=
+  integral_norm_wignerMatrix_centeredTruncation_apply_pow_le (integral_nonneg fun _ ↦ sq_nonneg _)
+    (fun ij hij ↦ (hid ij hij).symm.memLp_snd hX)
+    (fun ij hij ↦ ((hid ij hij).comp
+      (by fun_prop : Measurable (fun z : ℂ ↦ ‖z‖ ^ 2))).integral_eq.le) R i j k
 
 /-- Uniform `k`th absolute moments on the `n × n` corner bound every expected product of `k`
 entries of the `n × n` Wigner matrix, indexed by a finite nonempty type `ι` of cardinality `k`.

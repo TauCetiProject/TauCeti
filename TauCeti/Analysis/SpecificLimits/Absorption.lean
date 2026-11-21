@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Basic
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Algebra.Order.Field.GeomSum
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -367,17 +366,5 @@ theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t
   have hrest : 0 ≤ K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W) :=
     add_nonneg (mul_nonneg hK hPW) (mul_nonneg (mul_nonneg hQ0 hcA) hPW)
   linarith
-
-/-- If the order `k` is at least `B * log x`, the geometric factor `q^k`
-offsets the power `x^d` up to any exponent at least `d + B * log q`. -/
-theorem rpow_mul_pow_le_rpow_of_log_le {x q B d e : ℝ} {k : ℕ} (hx : 1 ≤ x)
-    (hq : 0 < q) (hq' : q ≤ 1) (hk : B * Real.log x ≤ k) (he : d + B * Real.log q ≤ e) :
-    x ^ d * q ^ k ≤ x ^ e := by
-  have hx₀ : 0 < x := zero_lt_one.trans_le hx
-  have hlog := Real.log_nonneg hx
-  have hqlog := Real.log_nonpos hq.le hq'
-  rw [← Real.rpow_natCast, Real.rpow_def_of_pos hx₀, Real.rpow_def_of_pos hq,
-    ← Real.exp_add, Real.rpow_def_of_pos hx₀, Real.exp_le_exp]
-  nlinarith [mul_le_mul_of_nonpos_right hk hqlog, mul_le_mul_of_nonneg_right he hlog]
 
 end TauCeti

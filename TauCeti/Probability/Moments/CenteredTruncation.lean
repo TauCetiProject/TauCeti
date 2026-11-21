@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Moments.Variance
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
 
@@ -141,30 +140,21 @@ theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_norm_le_of_integral_e
   · rw [indicator_of_notMem hω, norm_zero]
     positivity
 
-/-- For a centered variable with a finite fourth moment and `a > 1/6`, the truncated
-mean at cutoff `(n + 1)^a` vanishes even after multiplying by `√(n + 1)`. -/
-theorem _root_.MeasureTheory.MemLp.tendsto_sqrt_mul_norm_integral_indicator_norm_le
-    (hX : MemLp X 4 P)
-    (hmean : ∫ ω, X ω ∂P = 0) {a : ℝ} (ha : 1 / 6 < a) :
-    Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) *
-      ‖∫ ω, {ω' | ‖X ω'‖ ≤ ((n + 1 : ℕ) : ℝ) ^ a}.indicator X ω ∂P‖) atTop (𝓝 0) := by
-  let C := ∫ ω, ‖X ω‖ ^ 4 ∂P
-  have hlim : Tendsto (fun n : ℕ ↦ C * ((n + 1 : ℕ) : ℝ) ^ (1 / 2 - 3 * a)) atTop (𝓝 0) :=
-    by
-      simpa only [mul_zero, neg_sub, Function.comp_apply] using
-        ((tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
-          (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))).const_mul C
-  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hlim
-  let N : ℝ := (n + 1 : ℕ)
-  have hN : 0 < N := by dsimp only [N]; positivity
+/-- The weighted truncated mean tends to zero when the weight divided by the
+cutoff to the power `k` tends to zero and the centered variable has moment `k + 1`. -/
+theorem _root_.MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_norm_le_nhds_zero
+    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P) (hmean : ∫ ω, X ω ∂P = 0)
+    {ι : Type*} {l : Filter ι} {R w : ι → ℝ} (hR : ∀ i, 0 < R i) (hw : ∀ i, 0 ≤ w i)
+    (hlim : Tendsto (fun i ↦ w i / R i ^ k) l (𝓝 0)) :
+    Tendsto (fun i ↦ w i * ‖∫ ω, {ω' | ‖X ω'‖ ≤ R i}.indicator X ω ∂P‖) l (𝓝 0) := by
+  let C := ∫ ω, ‖X ω‖ ^ (k + 1) ∂P
+  refine squeeze_zero (fun i ↦ mul_nonneg (hw i) (norm_nonneg _)) (fun i ↦ ?_)
+    (by simpa only [mul_zero] using hlim.const_mul C)
   calc
-    _ ≤ Real.sqrt N * (C / (N ^ a) ^ 3) :=
+    _ ≤ w i * (C / R i ^ k) :=
       mul_le_mul_of_nonneg_left
-        (hX.norm_integral_indicator_norm_le_of_integral_eq_zero hmean (Real.rpow_pos_of_pos hN _))
-        (Real.sqrt_nonneg _)
-    _ = _ := by
-      rw [Real.sqrt_eq_rpow, Real.rpow_mul_div_rpow_pow hN]
-      simp only [N, Nat.cast_ofNat, mul_comm a]
+        (hX.norm_integral_indicator_norm_le_of_integral_eq_zero hmean (hR i)) (hw i)
+    _ = C * (w i / R i ^ k) := by rw [mul_div_left_comm, ← mul_div_assoc]
 
 end TruncationMean
 

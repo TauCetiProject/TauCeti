@@ -11,9 +11,8 @@ public import TauCeti.Probability.Moments.CenteredTruncation
 import TauCeti.Probability.RandomMatrix.Diagonal
 import TauCeti.Probability.Moments.Chebyshev
 import TauCeti.Probability.RandomMatrix.Centering
-import TauCeti.Analysis.Matrix.HardThreshold
+import TauCeti.Probability.RandomMatrix.Wigner.Truncation.Basic
 import Mathlib.Analysis.PSeries
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Operator-norm truncation of Wigner corners
@@ -45,29 +44,13 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {X : Ω → ℂ}
 
-omit [MeasurableSpace Ω] in
-private theorem div_lt_norm_wignerMatrix_apply_iff {n : ℕ} (ω : Ω)
-    {i j : Fin n} (hij : i ≠ j) (R : ℝ) :
-    R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i j‖ ↔
-      R < ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ ω‖ := by
-  rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div,
-    div_lt_div_iff_of_pos_right (Real.sqrt_pos.2 (Nat.cast_pos.2 (Nat.zero_lt_of_lt i.isLt)))]
-
-private theorem measure_norm_wignerMatrix_zero_apply_gt {n : ℕ}
-    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
-    {i j : Fin n} (hij : i ≠ j) (R : ℝ) :
-    P {ω | R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i j‖} =
-      P {ω | R < ‖X ω‖} := by
-  simp_rw [div_lt_norm_wignerMatrix_apply_iff _ hij]
-  exact ((hid _ (max_lt i.isLt j.isLt)).comp measurable_norm).measure_mem_eq measurableSet_Ioi
-
-private theorem measure_row_large_wigner_entries {n q : ℕ}
+private theorem measure_row_large_wigner_entries_le {n q : ℕ}
     (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
-    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
+    {R : ℝ} {p : ℝ≥0∞}
+    (htail : ∀ ij : StrictUpper, ij.val.2 < n → P {ω | R < ‖ξ ij ω‖} ≤ p)
     (i : Fin n) (j : Fin q → Fin n) (hinj : Function.Injective j)
-    (hne : ∀ k, i ≠ j k) (R : ℝ) :
-    P (⋂ k, {ω | R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i (j k)‖}) =
-      P {ω | R < ‖X ω‖} ^ q := by
+    (hne : ∀ k, i ≠ j k) :
+    P (⋂ k, {ω | R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i (j k)‖}) ≤ p ^ q := by
   have hedge : Function.Injective (fun k ↦ s(i, j k)) := by
     intro a b h
     rcases Sym2.eq_iff.mp h with h | h
@@ -79,19 +62,23 @@ private theorem measure_row_large_wigner_entries {n q : ℕ}
     _ = ∏ k, P {ω | R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i (j k)‖} :=
       hind'.meas_iInter (fun _ ↦ ⟨{z : ℂ | R / Real.sqrt n < ‖z‖},
         measurableSet_lt measurable_const measurable_norm, rfl⟩)
-    _ = _ := by
-      simp only [measure_norm_wignerMatrix_zero_apply_gt hid (hne _), Finset.prod_const,
-        Finset.card_univ, Fintype.card_fin]
+    _ ≤ ∏ _k : Fin q, p := by
+      refine Finset.prod_le_prod fun k _ ↦ ?_
+      simp_rw [norm_wignerMatrix_apply_of_ne _ _ _ (hne k), inv_mul_eq_div,
+        div_lt_div_iff_of_pos_right (Real.sqrt_pos.2 (Nat.cast_pos.2 (Nat.zero_lt_of_lt i.isLt)))]
+      exact htail _ (max_lt i.isLt (j k).isLt)
+    _ = _ := by simp
 
 /-- The probability that some row has at least `q` entries above the normalized cutoff
-is at most `n^(q+1)` times the `q`-th power of the common unnormalized tail probability. -/
+is at most `n^(q+1)` times the `q`-th power of a uniform bound on the unnormalized tail
+probabilities. The upper entries in the corner are independent. -/
 theorem measure_exists_row_with_large_wigner_entries_le {n q : ℕ}
     (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
-    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
-    {R : ℝ} (hR : 0 ≤ R) :
+    {R : ℝ} (hR : 0 ≤ R) {p : ℝ≥0∞}
+    (htail : ∀ ij : StrictUpper, ij.val.2 < n → P {ω | R < ‖ξ ij ω‖} ≤ p) :
     P {ω | ∃ i : Fin n, q ≤ (Finset.univ.filter fun j ↦
       R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i j‖).card} ≤
-        (n : ℝ≥0∞) ^ (q + 1) * P {ω | R < ‖X ω‖} ^ q := by
+        (n : ℝ≥0∞) ^ (q + 1) * p ^ q := by
   classical
   let E (p : Fin n × (Fin q → Fin n)) : Set Ω :=
     if Function.Injective p.2 ∧ ∀ k, p.1 ≠ p.2 k then
@@ -116,14 +103,14 @@ theorem measure_exists_row_with_large_wigner_entries_le {n q : ℕ}
       simpa only [E, ite_eq_left hv, mem_iInter, mem_ofPred_eq, j, Function.comp_apply] using hj⟩
   calc
     _ ≤ ∑ p, P (E p) := (measure_mono hcover).trans (measure_iUnion_fintype_le P E)
-    _ ≤ ∑ _p : Fin n × (Fin q → Fin n), P {ω | R < ‖X ω‖} ^ q := by
-      refine Finset.sum_le_sum fun p _ ↦ ?_
+    _ ≤ ∑ _j : Fin n × (Fin q → Fin n), p ^ q := by
+      refine Finset.sum_le_sum fun pair _ ↦ ?_
       dsimp only [E]
       split_ifs with h
-      · exact (measure_row_large_wigner_entries hind hid p.1 p.2 h.1 h.2 _).le
+      · exact measure_row_large_wigner_entries_le hind htail pair.1 pair.2 h.1 h.2
       · rw [measure_empty]
         exact bot_le
-    _ = _ := by simp [pow_succ, mul_comm, mul_assoc]
+    _ = _ := by simp [pow_succ, mul_comm]
 
 private theorem measure_exists_row_with_large_wigner_entries_rpow_le
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P P)
@@ -133,32 +120,26 @@ private theorem measure_exists_row_with_large_wigner_entries_rpow_le
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card} ≤
       ENNReal.ofReal ((∫ ω, ‖X ω‖ ^ 4 ∂P) ^ q *
         ((n + 1 : ℕ) : ℝ) ^ ((q : ℝ) + 1 - a * (4 * q))) := by
-  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let C : ℝ := ∫ ω, ‖X ω‖ ^ 4 ∂P
   have hC : 0 ≤ C := integral_nonneg fun _ ↦ by positivity
   let N : ℝ := (n + 1 : ℕ)
   have hN : 0 < N := by dsimp only [N]; positivity
   have hr : 0 < N ^ a := Real.rpow_pos_of_pos hN _
   have htail : P {ω | N ^ a < ‖X ω‖} ≤ ENNReal.ofReal (C / (N ^ a) ^ 4) := by
-    have hsq : Integrable (fun ω ↦ ‖(‖X ω‖ ^ 2 : ℝ)‖ ^ 2) P := by
-      simpa only [Real.norm_of_nonneg (sq_nonneg _), ← pow_mul] using
-        (hX.integrable_norm_pow (by decide))
-    have hsub : {ω | N ^ a < ‖X ω‖} ⊆ {ω | (N ^ a) ^ 2 ≤ ‖(‖X ω‖ ^ 2 : ℝ)‖} := by
-      intro ω hω
-      simp only [mem_ofPred_eq, Real.norm_of_nonneg (sq_nonneg _)] at hω ⊢
-      exact pow_le_pow_left₀ hr.le hω.le _
-    refine (measure_mono hsub).trans ?_
-    simpa only [Real.norm_of_nonneg (sq_nonneg _), ← pow_mul, C] using
-      meas_ge_le_integral_norm_sq_div_sq hsq (sq_pos_of_pos hr)
+    have hsub : {ω | N ^ a < ‖X ω‖} ⊆ {ω | (N ^ a) ^ 4 ≤ ‖X ω‖ ^ 4} :=
+      fun _ hω ↦ pow_le_pow_left₀ hr.le hω.le 4
+    exact (measure_mono hsub).trans (measure_ge_le_ofReal_integral_div
+      (hX.integrable_norm_pow (by decide)) (.of_forall fun _ ↦ by positivity) (pow_pos hr 4))
   have hpow : N ^ (q + 1) * (C / (N ^ a) ^ 4) ^ q =
       C ^ q * N ^ ((q : ℝ) + 1 - a * (4 * q)) := by
-    rw [div_pow, ← pow_mul, ← Real.rpow_natCast N (q + 1), Real.rpow_mul_div_rpow_pow hN]
+    rw [div_pow, ← pow_mul, ← Real.rpow_natCast N (q + 1), ← Real.rpow_mul_natCast hN.le,
+      mul_div_left_comm, ← Real.rpow_sub hN]
     push_cast
     ring
   calc
     _ ≤ ((n + 1 : ℕ) : ℝ≥0∞) ^ (q + 1) * P {ω | N ^ a < ‖X ω‖} ^ q :=
       measure_exists_row_with_large_wigner_entries_le (hind.precomp Subtype.val_injective)
-        (fun ij _ ↦ hid ij) hr.le
+        hr.le fun ij _ ↦ ((hid ij).comp measurable_norm).measure_mem_eq measurableSet_Ioi |>.le
     _ ≤ ENNReal.ofReal (N ^ (q + 1) * (C / (N ^ a) ^ 4) ^ q) := by
       rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
         ENNReal.ofReal_natCast, ENNReal.ofReal_pow (div_nonneg hC (by positivity))]
@@ -185,25 +166,6 @@ private theorem ae_eventually_card_row_large_wigner_entries_lt
   exact (ae_eventually_notMem hfinite.ne).mono fun ω hω ↦
     hω.mono fun n hn i ↦ lt_of_not_ge fun hi ↦ hn ⟨i, hi⟩
 
-omit [MeasurableSpace Ω] in
-private theorem wignerMatrix_sub_indicator_eq_hardThreshold {n : ℕ}
-    (r : ℝ≥0) (ω : Ω) :
-    wignerMatrix ξ (fun _ _ ↦ 0) n ω -
-      wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ r}.indicator (ξ ij)) (fun _ _ ↦ 0) n ω =
-    (wignerMatrix ξ (fun _ _ ↦ 0) n ω).hardThreshold (r / Real.sqrt n) := by
-  ext i j
-  by_cases hij : i = j
-  · subst j
-    simp [Matrix.hardThreshold_apply]
-  simp only [wignerMatrix_sub, Matrix.hardThreshold_apply, div_lt_norm_wignerMatrix_apply_iff _ hij]
-  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, min_eq_left h.le, max_eq_right h.le,
-      indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
-    split_ifs <;> simp
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, min_eq_right h.le, max_eq_left h.le,
-      indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
-    split_ifs <;> simp
-
 private theorem ae_tendsto_norm_wignerMatrix_hardThreshold
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P P)
     (hX : MemLp X 4 P) {a : ℝ} (ha : 1 / 4 < a) :
@@ -226,10 +188,9 @@ private theorem ae_tendsto_norm_wignerMatrix_hardThreshold
     _ = r := div_mul_cancel₀ _ (by positivity)
 
 /-- The original Wigner corners and their zero-diagonal centered truncations at radius
-`n^a` differ by a vanishing operator norm almost surely. Only the upper coordinates
-need to be independent, and no independence between the diagonal and upper coordinates
-is needed. -/
-theorem ae_tendsto_norm_wignerMatrix_sub_centeredTruncation
+`(n+1)^a`, with `a > 1/4`, differ by a vanishing operator norm almost surely.
+Only the upper coordinates need to be independent. -/
+theorem ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_centeredTruncation
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P P) (hX : MemLp X 4 P)
     (hmean : ∫ ω, X ω ∂P = 0) (hd : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P)
     {a : ℝ} (ha : 1 / 4 < a) :
@@ -239,9 +200,20 @@ theorem ae_tendsto_norm_wignerMatrix_sub_centeredTruncation
         (fun _ _ ↦ 0) (n + 1) ω‖) atTop (𝓝 0) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   filter_upwards [ae_tendsto_norm_wignerMatrix_hardThreshold hind hid hX ha,
-    ae_tendsto_norm_wignerMatrix_sub_zero_diagonal (ξ := ξ) hd hη] with ω htail hdiag
-  have hExp : 1 / 6 < a := by linarith
-  have hcenterLimit := hX.tendsto_sqrt_mul_norm_integral_indicator_norm_le hmean hExp
+    ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη] with ω htail hdiag
+  have hquot : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) / ((((n + 1 : ℕ) : ℝ) ^ a) ^ 3))
+      atTop (𝓝 0) := by
+    refine ((tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
+      (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))).congr fun n ↦ ?_
+    have hN : 0 < ((n + 1 : ℕ) : ℝ) := by positivity
+    rw [Function.comp_apply, Function.comp_apply, Real.sqrt_eq_rpow,
+      ← Real.rpow_mul_natCast hN.le, ← Real.rpow_sub hN]
+    congr 1
+    push_cast
+    ring
+  have hcenterLimit := hX.tendsto_mul_norm_integral_indicator_norm_le_nhds_zero
+    (k := 3) hmean (fun _ ↦ Real.rpow_pos_of_pos (by positivity) _)
+    (fun _ ↦ Real.sqrt_nonneg _) hquot
   refine squeeze_zero (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
     (by simpa only [add_zero] using (hdiag.add htail).add hcenterLimit)
   let R : ℝ≥0 := ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩
@@ -249,17 +221,13 @@ theorem ae_tendsto_norm_wignerMatrix_sub_centeredTruncation
   let T := wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) (n + 1) ω
   let B := wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) (fun _ _ ↦ 0) (n + 1) ω
   let c := ∫ ω', {ω'' | ‖X ω''‖ ≤ R}.indicator X ω' ∂P
-  have hTB : T - B = hermitianOffDiagonal ((Real.sqrt (n + 1 : ℕ))⁻¹ • c) (n + 1) := by
-    have hcenter : (fun ij ω' ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij) ω' - c) =
-        (fun ij ↦ centeredTruncation (ξ ij) P R) := by
-      funext ij
-      rw [centeredTruncation_def, (hid ij).integral_indicator_setOf_norm_le_eq]
-    have h : T = wignerMatrix (fun ij ω' ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij) ω' - c)
-        (fun _ _ ↦ 0) (n + 1) ω + hermitianOffDiagonal ((Real.sqrt (n + 1 : ℕ))⁻¹ • c) (n + 1) :=
-      wignerMatrix_eq_center_add_hermitianOffDiagonal
-        (fun ij ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) c (n + 1) ω
-    rw [hcenter] at h
-    exact sub_eq_iff_eq_add.2 (h.trans (add_comm _ _))
+  have hcenter : (fun ij ω' ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij) ω' - c) =
+      (fun ij ↦ centeredTruncation (ξ ij) P R) := by
+    funext ij
+    rw [centeredTruncation_def, (hid ij).integral_indicator_setOf_norm_le_eq]
+  have hTB : ‖T - B‖ ≤ Real.sqrt (n + 1 : ℕ) * ‖c‖ := by
+    simpa only [hcenter] using l2_opNorm_wignerMatrix_sub_center_le
+      (fun ij ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) c (n + 1) ω
   have hZT := wignerMatrix_sub_indicator_eq_hardThreshold (ξ := ξ) (n := n + 1) R ω
   calc
     _ ≤ ‖wignerMatrix ξ η (n + 1) ω - Z‖ + ‖Z - T‖ + ‖T - B‖ := by
@@ -268,14 +236,6 @@ theorem ae_tendsto_norm_wignerMatrix_sub_centeredTruncation
     _ ≤ _ := by
       have h1 : ‖Z - T‖ = ‖Z.hardThreshold ((R : ℝ) / Real.sqrt (n + 1 : ℕ))‖ :=
         congrArg norm hZT
-      have h2 : ‖T - B‖ ≤ Real.sqrt (n + 1 : ℕ) * ‖c‖ := by
-        rw [hTB]
-        refine (l2_opNorm_hermitianOffDiagonal_le _ _).trans_eq ?_
-        have hs : 0 < Real.sqrt (n + 1 : ℕ) := by positivity
-        rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le), ← mul_assoc]
-        congr 1
-        exact (mul_inv_eq_iff_eq_mul₀ hs.ne').2
-          (by rw [← pow_two, Real.sq_sqrt (Nat.cast_nonneg _)])
-      exact add_le_add (add_le_add_right h1.le _) h2
+      exact add_le_add (add_le_add_right h1.le _) hTB
 
 end TauCeti.Probability

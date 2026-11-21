@@ -549,9 +549,16 @@ theorem exp_neg_mul_abs_isLittleO_abs_rpow_cocompact {a : ℝ} (ha : 0 < a) (s :
     (isLittleO_exp_neg_mul_rpow_atTop ha s).comp_tendsto
       (tendsto_norm_cocompact_atTop (E := ℝ))
 
-end TauCeti
+/-- If the order `k` is at least `B * log x`, the geometric factor `q^k`
+offsets the power `x^d` up to any exponent at least `d + B * log q`. -/
+theorem rpow_mul_pow_le_rpow_of_log_le {x q B d e : ℝ} {k : ℕ} (hx : 1 ≤ x)
+    (hq : 0 < q) (hq' : q ≤ 1) (hk : B * Real.log x ≤ k) (he : d + B * Real.log q ≤ e) :
+    x ^ d * q ^ k ≤ x ^ e := by
+  have hx₀ : 0 < x := zero_lt_one.trans_le hx
+  have hlog := Real.log_nonneg hx
+  have hqlog := Real.log_nonpos hq.le hq'
+  rw [← Real.rpow_natCast, Real.rpow_def_of_pos hx₀, Real.rpow_def_of_pos hq,
+    ← Real.exp_add, Real.rpow_def_of_pos hx₀, Real.exp_le_exp]
+  nlinarith [mul_le_mul_of_nonpos_right hk hqlog, mul_le_mul_of_nonneg_right he hlog]
 
-/-- Collect the powers of a positive base in a quotient with a scalar numerator. -/
-theorem Real.rpow_mul_div_rpow_pow {x : ℝ} (hx : 0 < x) (a b C : ℝ) (k : ℕ) :
-    x ^ b * (C / (x ^ a) ^ k) = C * x ^ (b - a * k) := by
-  rw [← Real.rpow_mul_natCast hx.le, mul_div_left_comm, ← Real.rpow_sub hx]
+end TauCeti

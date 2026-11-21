@@ -96,7 +96,7 @@ omit [IsFiniteMeasure P] in
 open scoped Matrix.Norms.L2Operator in
 /-- Removing the diagonal changes the normalized operator norm by a quantity tending
 to zero almost surely under a common finite second moment. -/
-theorem ae_tendsto_norm_wignerMatrix_sub_zero_diagonal
+theorem ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_zero
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
     (hid : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖wignerMatrix ξ η (n + 1) ω -

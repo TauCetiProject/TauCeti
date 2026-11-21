@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Spectrum
-public import TauCeti.Probability.RandomMatrix.Wigner.Edge.Truncation
+public import TauCeti.Probability.RandomMatrix.Wigner.Truncation.OperatorNorm
 import TauCeti.Probability.RandomMatrix.Wigner.SemicircleLaw
 import TauCeti.Probability.RandomMatrix.Diagonal
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
@@ -45,8 +45,8 @@ local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 
 /-- To prove both Wigner edge limits under a finite fourth moment, it suffices to bound the
 expected real trace of the `2*k`-th powers of the zero-diagonal centered truncations at radius
-`(n+1)^a` by a polynomial in the sequence index times `4^k`. At each threshold `r > 2`, the
-order may depend on `r` and `n`, with `k n ≥ B * log (n + 1)` eventually and
+`(n+1)^a`, with `a > 1/4`, by a polynomial in the sequence index times `4^k`. At each threshold
+`r > 2`, the order may depend on `r` and `n`, with `k n ≥ B * log (n + 1)` eventually and
 `2 * B * log (r/2) > d+1` for the polynomial exponent `d`. -/
 theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_le
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) (ξ e₀) P P)
@@ -84,12 +84,12 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
       exact hi.re
     · simpa only [B, R, RCLike.re_to_complex] using htrace'
   have happrox : ∀ᵐ ω ∂P, Tendsto (fun n ↦ ‖Z n ω - B n ω‖) atTop (𝓝 0) := by
-    simpa only [B, Z, R] using ae_tendsto_norm_wignerMatrix_sub_centeredTruncation
+    simpa only [B, Z, R] using ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_centeredTruncation
       (η := fun _ _ ↦ 0) hind hid hξ hmean (fun _ ↦ IdentDistrib.refl aemeasurable_const)
       (memLp_const 0) ha
   have hweak := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
     hind hid (hξ.mono_exponent (by norm_num)) hmean 1 (by simpa using hvar)
-  have hdiag := ae_tendsto_norm_wignerMatrix_sub_zero_diagonal (ξ := ξ) hd hη
+  have hdiag := ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
   filter_upwards [hnorm, happrox, hweak, hdiag] with ω hn hdiff hw hdω
   have hZnorm r (hr : 2 < r) : ∀ᶠ n in atTop, ‖Z n ω‖ < r := by
     have hgap : 0 < (r - 2) / 2 := by linarith
