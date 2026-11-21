@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Axis
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Stabilizer
 
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
@@ -71,7 +71,8 @@ All declarations are in the namespace `TauCeti.Matrix.SpecialOrthogonalGroup`.
 * `card_orbitRel_quotient_poles_eq_two_or_three`: a nontrivial finite group of rotations has two
   or three orbits of poles.
 * `stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two`: if there are two orbits, every pole
-  is fixed by all of `K`.
+  is fixed by all of `K`, and `isCyclic_of_card_orbitRel_quotient_poles_eq_two`: `K` is then cyclic.
+* The stabilizer of a pole is cyclic, an instance deduced from `isCyclic_stabilizer`.
 
 ## References
 
@@ -214,6 +215,12 @@ instance (p : poles K) : Nontrivial (stabilizer K p) := by
   exact ⟨⟨g, mem_stabilizer_iff.mpr (Subtype.ext (by rw [SubMulAction.val_smul, hgp]))⟩, 1,
     fun h ↦ hg ((Subgroup.mk_eq_one _).mp h)⟩
 
+/-- **The stabilizer of a pole is cyclic**, for a finite group of rotations: it is a finite group
+of rotations about the axis through the pole (`isCyclic_stabilizer`). -/
+instance [Finite K] (p : poles K) : IsCyclic (stabilizer K p) := by
+  rw [SubMulAction.stabilizer_of_subMul]
+  exact isCyclic_stabilizer (poles.coe_ne_zero p)
+
 /-- **Every orbit of poles has a stabilizer of order at least `2`**, for a finite group of
 rotations: the stabilizer of a pole contains a nonidentity rotation. -/
 theorem one_lt_cardStabilizerOnOrbit_poles [Finite K] (ω : orbitRel.Quotient K (poles K)) :
@@ -348,5 +355,14 @@ theorem stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two [Finite K]
     (Quotient.mk'' p) (Finset.mem_univ _)
   rw [cardStabilizerOnOrbit_mk, sub_eq_zero, _root_.inv_inj, Nat.cast_inj] at hterm
   exact (Subgroup.card_eq_iff_eq_top _).mp hterm
+
+/-- **In the two-orbit case, `K` is cyclic.** If a finite group `K` of rotations has exactly two
+orbits of poles, then `K` fixes every pole, so it is the stabilizer of a pole, which is cyclic. -/
+theorem isCyclic_of_card_orbitRel_quotient_poles_eq_two [Finite K]
+    (h : Nat.card (orbitRel.Quotient K (poles K)) = 2) : IsCyclic K := by
+  obtain ⟨ω⟩ : Nonempty (orbitRel.Quotient K (poles K)) := (Nat.card_pos_iff.mp (by omega)).1
+  rw [← (Subgroup.topEquiv (G := K)).isCyclic,
+    ← stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two h ω.out]
+  infer_instance
 
 end TauCeti.Matrix.SpecialOrthogonalGroup
