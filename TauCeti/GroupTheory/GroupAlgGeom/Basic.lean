@@ -57,6 +57,8 @@ injectivity.
   pair of the word maps of its two parts.
 * `TauCeti.GroupAlgGeom.wordMap_extendWords`: the extension of `w` by `Y` acts on points by the
   word map of `w` on the coordinates in `X'`, leaving those in `Y` unchanged.
+* `TauCeti.GroupAlgGeom.eval_extendWords_eval_extendWords`: substituting the extensions by `Y` of
+  `w` and then of `w'` is substituting the extension by `Y` of `w` with `w'` substituted into it.
 * `TauCeti.GroupAlgGeom.sumExtend_surjective_iff`, `TauCeti.GroupAlgGeom.sumExtend_bijective_iff`,
   `TauCeti.GroupAlgGeom.eval_sumExtend`: the extension of `σ` is surjective, respectively a change
   of coordinates, exactly when `σ` is, and acts on points by the word map of `σ` on the
@@ -694,6 +696,20 @@ theorem wordMap_extendWords (v : Y ⊕ X' → H) :
     wordMap ι (extendWords Y w) v = Sum.elim (v ∘ Sum.inl) (wordMap ι w (v ∘ Sum.inr)) := by
   funext u
   cases u <;> simp
+
+/-- Substituting the extensions by `Y` of `w` and then of `w'` is substituting the extension by `Y`
+of the tuple `w` with `w'` substituted into it. -/
+@[simp]
+theorem eval_extendWords_eval_extendWords {X'' : Type*} (w' : X' → GX G X'')
+    (u : GX G (Y ⊕ X)) :
+    eval (inl : G →* GX G (Y ⊕ X'')) (extendWords Y w') (eval inl (extendWords Y w) u) =
+      eval inl (extendWords Y fun x => eval (inl : G →* GX G X'') w' (w x)) u := by
+  rw [← MonoidHom.comp_apply, eval_comp_eval]
+  congr 2
+  funext u
+  cases u <;> simp [hom_eval, Function.comp_def]
+  -- The coefficient map `(map (.id G) _).comp inl` is `inl` by definition.
+  rfl
 
 end ExtendWords
 
