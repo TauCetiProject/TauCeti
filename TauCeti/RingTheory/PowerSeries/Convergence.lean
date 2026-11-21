@@ -460,12 +460,12 @@ section ConvergenceRadiusUltrametric
 
 variable {R A : Type*} [NormedRing R] [SeminormedRing A]
 
-/-- In a complete ultrametric extension, restrictedness at `‖x‖` gives
+/-- In a complete ultrametric ring with a bounded scalar action, restrictedness at `‖x‖` gives
 `‖x‖ₑ ≤ f.convergenceRadius A`. -/
-theorem le_convergenceRadius_of_isRestricted [SMul R A] [NormSMulClass R A] [NormMulClass A]
+theorem le_convergenceRadius_of_isRestricted [SMulZeroClass R A] [IsBoundedSMul R A]
     [IsUltrametricDist A] [CompleteSpace A] {f : R⟦X⟧} {x : A} (hf : f.IsRestricted ‖x‖) :
     ‖x‖ₑ ≤ f.convergenceRadius A :=
-  le_convergenceRadius_of_summable (summable_smul_pow_iff_isRestricted.mpr hf)
+  le_convergenceRadius_of_summable (hf.summable_smul_pow le_rfl)
 
 /-- In a complete ultrametric extension, `f.convergenceRadius A` is the supremum of `‖x‖ₑ` over the
 points `x : A` whose norm is a restricted radius of `f`. -/
@@ -484,17 +484,16 @@ theorem lt_convergenceRadius_iff_exists_isRestricted [SMul R A] [NormSMulClass R
 /-- If the coefficients of `g` are no larger in norm than those of `f`, then the pointwise
 convergence radius of `g` in `A` is at least that of `f`. -/
 theorem convergenceRadius_le_convergenceRadius_of_norm_coeff_le {S : Type*} [NormedRing S]
-    [SMul R A] [NormSMulClass R A] [SMul S A] [NormSMulClass S A] [NormMulClass A]
+    [SMul R A] [NormSMulClass R A] [SMul S A] [NormSMulClass S A]
     [IsUltrametricDist A] [CompleteSpace A] {f : R⟦X⟧} {g : S⟦X⟧}
     (h : ∀ n, ‖coeff n g‖ ≤ ‖coeff n f‖) :
     f.convergenceRadius A ≤ g.convergenceRadius A := by
-  rw [convergenceRadius_eq_iSup_isRestricted, convergenceRadius_eq_iSup_isRestricted]
-  refine iSup₂_le fun y hfy ↦ ?_
-  have hgy : g.IsRestricted ‖y‖ := by
-    rw [isRestricted_iff] at hfy ⊢
-    exact squeeze_zero (fun _ ↦ by positivity)
-      (fun n ↦ mul_le_mul_of_nonneg_right (h n) (by positivity)) hfy
-  exact le_iSup₂ (f := fun (z : A) (_ : g.IsRestricted ‖z‖) ↦ ‖z‖ₑ) y hgy
+  refine convergenceRadius_le_iff.mpr fun y hfy ↦ le_convergenceRadius_of_summable ?_
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    tendsto_zero_iff_norm_tendsto_zero] at hfy ⊢
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hfy
+  rw [norm_smul, norm_smul]
+  exact mul_le_mul_of_nonneg_right (h n) (norm_nonneg _)
 
 private theorem min_convergenceRadius_le_of_isRestricted [SMul R A] [NormSMulClass R A]
     [NormMulClass A] [IsUltrametricDist A] [CompleteSpace A] {f g h : R⟦X⟧}
@@ -748,7 +747,7 @@ theorem convergenceRadius_eq_ofReal_of_norm_le_or_le [IsUltrametricDist A] [Comp
   refine le_antisymm (convergenceRadius_le_ofReal_of_norm_le_or_le hc hgap hnc) ?_
   obtain ⟨x, rfl⟩ := hx
   rw [ofReal_norm]
-  exact le_convergenceRadius_of_isRestricted hf
+  exact le_convergenceRadius_of_summable (summable_smul_pow_iff_isRestricted.mpr hf)
 
 end NormGap
 
