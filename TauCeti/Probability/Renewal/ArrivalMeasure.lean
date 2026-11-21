@@ -108,6 +108,16 @@ theorem occurrenceGap_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
       occurrenceTime_renewalArrivalMeasure, occurrenceTime_renewalArrivalMeasure,
       arrival_succ, ENNReal.coe_add, ENNReal.add_sub_cancel_left ENNReal.coe_ne_top]
 
+/-- When the `n`-th interarrival gap of `N ω` is finite, casting the `(n + 1)`-th arrival of its
+nonnegative-real gaps recovers its `n`-th occurrence time, without assuming local finiteness or
+integrality. -/
+theorem coe_arrival_succ_toNNReal_occurrenceGap {N : Ω → Measure ℝ≥0} {ω : Ω} {n : ℕ}
+    (hn : (N ω).occurrenceGap n ≠ ∞) :
+    (arrival (fun k ω => ((N ω).occurrenceGap k).toNNReal) (n + 1) ω : ℝ≥0∞) =
+      (N ω).occurrenceTime n := by
+  rw [arrival_def, Measure.coe_sum_range_succ_toNNReal_occurrenceGap
+    (((N ω).occurrenceGap_eq_top_iff n).not.mp hn)]
+
 /-- A locally finite counting measure with all interarrival gaps finite is the renewal arrival
 measure of its nonnegative-real gaps. Zero gaps and repeated occurrences are retained. -/
 theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ≥0} {ω : Ω}
@@ -116,10 +126,8 @@ theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ�
     renewalArrivalMeasure (fun n ω => ((N ω).occurrenceGap n).toNNReal) ω = N ω := by
   rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure]
   have harr : (fun n => (arrival (fun k ω => ((N ω).occurrenceGap k).toNNReal) (n + 1) ω :
-      ℝ≥0∞)) = (N ω).occurrenceTime := by
-    funext n
-    have hn : (N ω).occurrenceTime n ≠ ∞ := ((N ω).occurrenceGap_eq_top_iff n).not.mp (hfin n)
-    rw [arrival_def, Measure.coe_sum_range_succ_toNNReal_occurrenceGap hn]
+      ℝ≥0∞)) = (N ω).occurrenceTime :=
+    funext fun n => coe_arrival_succ_toNNReal_occurrenceGap (hfin n)
   rw [harr]
   exact hN.eq_occurrenceTimeMeasure.symm
 
@@ -209,6 +217,30 @@ theorem measurable_renewalArrivalMeasure_iff :
 
 variable {P : Measure Ω}
 
+/-- The renewal arrival measure is almost everywhere measurable if and only if every increment
+is almost everywhere measurable. -/
+theorem aemeasurable_renewalArrivalMeasure_iff :
+    AEMeasurable (renewalArrivalMeasure T) P ↔ ∀ n, AEMeasurable (T n) P := by
+  refine ⟨fun h n => ?_, fun hT => ?_⟩
+  · have hcomp : T n = fun ω => ((renewalArrivalMeasure T ω).occurrenceGap n).toNNReal := by
+      funext ω
+      simp
+    rw [hcomp]
+    exact ENNReal.measurable_toNNReal.comp_aemeasurable
+      ((Measure.measurable_occurrenceGap n).comp_aemeasurable h)
+  · let T' : ℕ → Ω → ℝ≥0 := fun n => (hT n).mk (T n)
+    refine ⟨renewalArrivalMeasure T',
+      measurable_renewalArrivalMeasure fun n => (hT n).measurable_mk, ?_⟩
+    filter_upwards [arrival_congr_ae fun n => (hT n).ae_eq_mk] with ω hω
+    simp only [renewalArrivalMeasure_def, T', hω]
+
+/-- Almost-everywhere measurable increments give an almost-everywhere measurable random arrival
+measure for the evaluation σ-algebra on measures. -/
+@[fun_prop]
+theorem aemeasurable_renewalArrivalMeasure (hT : ∀ n, AEMeasurable (T n) P) :
+    AEMeasurable (renewalArrivalMeasure T) P :=
+  aemeasurable_renewalArrivalMeasure_iff.2 hT
+
 /-- Nondegenerate i.i.d. increments give almost surely locally finite arrival measures. -/
 theorem ae_isLocallyFiniteMeasure_renewalArrivalMeasure
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
@@ -273,5 +305,18 @@ theorem hasLaw_renewalArrivalMeasure_Ioc_poissonMeasure {r : ℝ≥0}
   apply (hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).congr
   filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw] with ω hω
   simp [hω t]
+
+/-- For independent exponential increments of rate `r`, the arrival-measure mass of `(0, t]`
+divided by `t` converges almost surely to `r` along all nonnegative real times. -/
+theorem ae_tendsto_renewalArrivalMeasure_Ioc_div_of_expMeasure {r : ℝ≥0}
+    (hindep : iIndepFun T P)
+    (hlaw : ∀ n, HasLaw (fun ω => (T n ω : ℝ)) (expMeasure r) P) :
+    ∀ᵐ ω ∂P, Tendsto
+      (fun t : ℝ≥0 => (renewalArrivalMeasure T ω (Ioc 0 t)).toReal / (t : ℝ)) atTop
+      (𝓝 (r : ℝ)) := by
+  filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw,
+    ae_tendsto_renewalCountNat_div_of_expMeasure (fun _ _ hij => hindep.indepFun hij) hlaw]
+    with ω hω hlim
+  simpa only [hω, ENNReal.toReal_natCast] using hlim
 
 end TauCeti.Probability

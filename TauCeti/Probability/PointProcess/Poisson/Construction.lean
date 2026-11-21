@@ -158,11 +158,6 @@ theorem IsPoissonRandomMeasure.hasLaw_poissonLaw [SigmaFinite Λ]
   have hid := h.identDistrib (Measure.isPoissonRandomMeasure_poissonLaw Λ)
   exact ⟨hid.aemeasurable_fst, by simpa only [Measure.map_id] using hid.map_eq⟩
 
-/-- Every Poisson random measure with σ-finite intensity has `Λ.poissonLaw` as its law. -/
-theorem IsPoissonRandomMeasure.map_eq_poissonLaw [SigmaFinite Λ]
-    (h : IsPoissonRandomMeasure P N Λ) : P.map N = Λ.poissonLaw :=
-  h.hasLaw_poissonLaw.map_eq
-
 /-- For σ-finite intensity, a measurable random measure is Poisson if and only if its law is
 `Λ.poissonLaw`. -/
 theorem isPoissonRandomMeasure_iff_hasLaw_poissonLaw [SigmaFinite Λ] (hN : Measurable N) :

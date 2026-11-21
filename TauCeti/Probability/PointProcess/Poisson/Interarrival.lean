@@ -79,9 +79,10 @@ theorem hasLaw_toNNReal_occurrenceGap_infinitePi
   let Q : Measure (ℕ → ℝ≥0) := Measure.infinitePi fun _ : ℕ ↦ nnrealExpMeasure r
   let T : ℕ → (ℕ → ℝ≥0) → ℝ≥0 := fun n w ↦ w n
   have hindep : ProbabilityTheory.iIndepFun T Q := iIndepFun_eval_infinitePi _
-  have hlaw : ∀ n, HasLaw (fun w ↦ (T n w : ℝ)) (expMeasure r) Q := fun n ↦
-    hasLaw_nnrealExpMeasure_iff.mp
-      ⟨(measurable_pi_apply n).aemeasurable, Measure.infinitePi_map_eval _ n⟩
+  have hlaw : ∀ n, HasLaw (fun w ↦ (T n w : ℝ)) (expMeasure r) Q := fun n ↦ by
+    dsimp only [T, Q]
+    exact hasLaw_nnrealExpMeasure_iff.mp
+      (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ nnrealExpMeasure r) n).hasLaw
   have hid := identDistrib_increments_toNNReal_occurrenceGap_of_isPoissonRandomMeasure
     hindep hlaw h
   exact hid.hasLaw ⟨measurable_id.aemeasurable, Measure.map_id⟩
@@ -90,11 +91,10 @@ theorem hasLaw_toNNReal_occurrenceGap_infinitePi
 law `nnrealExpMeasure r`. -/
 theorem hasLaw_toNNReal_occurrenceGap
     (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (hr : 0 < r) (n : ℕ) :
-    HasLaw (fun ω ↦ ((M ω).occurrenceGap n).toNNReal) (nnrealExpMeasure r) P := by
+    HasLaw (fun ω ↦ ((M ω).occurrenceGap n).toNNReal) (nnrealExpMeasure r) P :=
   have := isProbabilityMeasure_nnrealExpMeasure (NNReal.coe_pos.mpr hr)
-  have hproj := (hasLaw_map (P := Measure.infinitePi fun _ : ℕ ↦ nnrealExpMeasure r)
-    (measurable_pi_apply n).aemeasurable).comp (h.hasLaw_toNNReal_occurrenceGap_infinitePi hr)
-  simpa only [Measure.infinitePi_map_eval, Function.comp_def] using hproj
+  (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ nnrealExpMeasure r) n).fun_comp_hasLaw
+    (h.hasLaw_toNNReal_occurrenceGap_infinitePi hr)
 
 /-- Each real-valued interarrival gap of a positive-rate homogeneous Poisson random measure has
 the exponential law `expMeasure r`. -/
@@ -170,14 +170,11 @@ theorem iIndepFun_toReal_occurrenceGap
 has law `(expMeasure r).map ENNReal.ofReal`. -/
 theorem hasLaw_occurrenceGap
     (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (hr : 0 < r) (n : ℕ) :
-    HasLaw (fun ω ↦ (M ω).occurrenceGap n) ((expMeasure r).map ENNReal.ofReal) P := by
-  have hcoe := (hasLaw_map (P := nnrealExpMeasure r)
-    measurable_coe_nnreal_ennreal.aemeasurable).comp
-    (h.hasLaw_toNNReal_occurrenceGap hr n)
-  rw [nnrealExpMeasure_map_coe_ennreal] at hcoe
-  refine hcoe.congr ?_
-  filter_upwards [h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hω
-  exact (ENNReal.coe_toNNReal (hω n).2.ne).symm
+    HasLaw (fun ω ↦ (M ω).occurrenceGap n) ((expMeasure r).map ENNReal.ofReal) P :=
+  have := isProbabilityMeasure_expMeasure (NNReal.coe_pos.mpr hr)
+  (measurePreserving_eval_infinitePi
+    (fun _ : ℕ ↦ (expMeasure r).map ENNReal.ofReal) n).fun_comp_hasLaw
+    (h.hasLaw_occurrenceGap_infinitePi hr)
 
 /-- The extended-valued interarrival gaps of a homogeneous Poisson random measure are mutually
 independent, including at rate zero where every gap is almost surely infinite. -/
@@ -234,7 +231,7 @@ theorem hasLaw_toReal_occurrenceTime_sub
 
 /-- Almost every realization of a positive-rate homogeneous Poisson random measure is the sum of
 Dirac masses at the partial sums of its interarrival gaps. -/
-theorem ae_eq_renewalArrivalMeasure_occurrenceGap
+theorem ae_eq_renewalArrivalMeasure_toNNReal_occurrenceGap
     (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (hr : 0 < r) :
     ∀ᵐ ω ∂P, M ω = renewalArrivalMeasure (fun n ω ↦ ((M ω).occurrenceGap n).toNNReal) ω := by
   have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • nnvolume) :=
@@ -243,14 +240,6 @@ theorem ae_eq_renewalArrivalMeasure_occurrenceGap
     h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hloc hint hgap
   let := hloc
   exact (renewalArrivalMeasure_toNNReal_occurrenceGap_eq hint fun n ↦ (hgap n).2.ne).symm
-
-/-- For zero intensity, every occurrence time of a temporal Poisson random measure is
-simultaneously infinite almost surely. -/
-theorem ae_forall_occurrenceTime_eq_top_of_zero
-    (h : IsPoissonRandomMeasure P M 0) :
-    ∀ᵐ ω ∂P, ∀ n, (M ω).occurrenceTime n = ∞ := by
-  filter_upwards [h.ae_eq_zero_measure] with ω hω n
-  simp [hω]
 
 /-- For zero intensity, every interarrival gap of a temporal Poisson random measure is
 simultaneously infinite almost surely. -/
@@ -284,9 +273,8 @@ theorem isPoissonRandomMeasure_smul_nnvolume_of_iIndepFun_toReal_occurrenceGap
   filter_upwards [hint, ae_forall_occurrenceGap_pos_lt_top_of_hasLaw hlaw,
     ae_tendsto_arrival_atTop_of_expMeasure hindT hlawT] with ω hωint hωgap hωtop
   have hfin (n : ℕ) : (M ω).occurrenceGap n ≠ ∞ := (hωgap n).2.ne
-  have hfun : (M ω).occurrenceTime = fun n ↦ (arrival T (n + 1) ω : ℝ≥0∞) := funext fun n ↦ by
-    rw [arrival_def, Measure.coe_sum_range_succ_toNNReal_occurrenceGap
-      (((M ω).occurrenceGap_eq_top_iff n).not.mp (hfin n))]
+  have hfun : (M ω).occurrenceTime = fun n ↦ (arrival T (n + 1) ω : ℝ≥0∞) :=
+    funext fun n ↦ (coe_arrival_succ_toNNReal_occurrenceGap (hfin n)).symm
   have hloc : IsLocallyFiniteMeasure (M ω) := by
     apply Measure.isLocallyFiniteMeasure_of_tendsto_occurrenceTime
     rw [hfun]

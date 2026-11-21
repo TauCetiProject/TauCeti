@@ -68,6 +68,7 @@ theorem occurrenceGap_succ_of_eq_top {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.o
   simp [occurrenceGap_succ, hn]
 
 /-- Gap `n` is infinite if and only if occurrence `n` never happens. -/
+@[simp]
 theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
     μ.occurrenceGap n = ∞ ↔ μ.occurrenceTime n = ∞ := by
   cases n with
@@ -81,6 +82,7 @@ theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
     · simp [hn, ENNReal.sub_eq_top_iff]
 
 /-- Gap `n` is finite if and only if occurrence `n` is finite. -/
+@[simp]
 theorem occurrenceGap_lt_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
     μ.occurrenceGap n < ∞ ↔ μ.occurrenceTime n < ∞ := by
   simp only [lt_top_iff_ne_top, ne_eq, occurrenceGap_eq_top_iff]

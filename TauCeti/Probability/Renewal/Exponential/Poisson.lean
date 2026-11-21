@@ -10,7 +10,6 @@ public import TauCeti.Probability.PointProcess.Poisson.Construction
 public import TauCeti.MeasureTheory.Measure.NNReal
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Probability.Renewal.Exponential.Process
-import TauCeti.Probability.PointProcess.Poisson.Law
 import TauCeti.Probability.PointProcess.Poisson.Temporal
 
 /-!
@@ -28,9 +27,8 @@ laws (both natural-valued and extended-valued), the full ordered arrival-time se
 and the full interarrival-gap sequence laws between the exponential renewal construction and
 any homogeneous Poisson random measure of the same rate. Strict measurability of the increments
 is needed only for `IsPoissonRandomMeasure`, which requires strict measurability of the random
-measure itself; the distributional identities and the almost-sure arrival-rate limit require
-only the independence and exponential-law hypotheses, which already supply almost-everywhere
-measurability and positivity of `r`.
+measure itself; the distributional identities require only the independence and exponential-law
+hypotheses, which already supply almost-everywhere measurability and positivity of `r`.
 
 ## References
 
@@ -89,12 +87,8 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     (hlaw n).congr ((haeT n).symm.mono fun _ hω ↦ congrArg NNReal.toReal hω)
   have hP' := isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure hT' hindep' hlaw'
   have hmeas_eq : renewalArrivalMeasure T =ᵐ[P] renewalArrivalMeasure T' := by
-    filter_upwards [ae_all_iff.mpr haeT] with ω hω
-    simp only [renewalArrivalMeasure_def, arrival_def]
-    congr 1
-    funext n
-    congr 1
-    exact Finset.sum_congr rfl fun i _ ↦ hω i
+    filter_upwards [arrival_congr_ae haeT] with ω hω
+    simp only [renewalArrivalMeasure_def, hω]
   exact hP'.hasLaw_poissonLaw.congr hmeas_eq
 
 /-- **Equality in distribution of arrival measures.** The exponential renewal arrival measure has
@@ -162,7 +156,7 @@ theorem identDistrib_arrival_succ_occurrenceTime_of_isPoissonRandomMeasure
 /-- Real-valued form of `identDistrib_arrival_succ_occurrenceTime_of_isPoissonRandomMeasure`:
 the positive-index arrivals of an exponential renewal process have the same joint law as the
 real-valued occurrence times of any homogeneous Poisson random measure of the same rate. -/
-theorem identDistrib_toReal_arrival_succ_occurrenceTime_of_isPoissonRandomMeasure
+theorem identDistrib_arrival_succ_toReal_occurrenceTime_of_isPoissonRandomMeasure
     (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P)
     (hM : IsPoissonRandomMeasure Q M ((r : ℝ≥0∞) • nnvolume)) :
@@ -201,18 +195,5 @@ theorem identDistrib_increments_toNNReal_occurrenceGap_of_isPoissonRandomMeasure
     hindep hlaw hM).comp
     (measurable_pi_iff.mpr fun n ↦ ENNReal.measurable_toNNReal.comp (measurable_pi_apply n))
   simpa only [Function.comp_def, ENNReal.toNNReal_coe] using hcomp
-
-/-- For independent exponential increments of rate `r`, the arrival-measure mass of `(0, t]`
-divided by `t` converges almost surely to `r` along all nonnegative real times. -/
-theorem ae_tendsto_renewalArrivalMeasure_Ioc_div_of_expMeasure
-    (hindep : iIndepFun T P)
-    (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
-    ∀ᵐ ω ∂P, Tendsto
-      (fun t : ℝ≥0 ↦ (renewalArrivalMeasure T ω (Ioc 0 t)).toReal / (t : ℝ)) atTop
-      (𝓝 (r : ℝ)) := by
-  filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw,
-    ae_tendsto_renewalCountNat_div_of_expMeasure (fun _ _ hij ↦ hindep.indepFun hij) hlaw]
-    with ω hω hlim
-  simpa only [hω, ENNReal.toReal_natCast] using hlim
 
 end TauCeti.Probability
