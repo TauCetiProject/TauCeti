@@ -51,7 +51,7 @@ to the first `n` coordinates. -/
 private theorem finsetRestrict_eq_comp_prefixProj (I : Finset ℕ) {n : ℕ}
     (hn : ∀ i ∈ I, i < n) :
     (Finset.restrict I : (ℕ → α) → ((i : I) → α)) =
-      (fun y : Fin n → α => fun i : I => y ⟨i.1, hn i.1 i.2⟩) ∘ prefixProj α n := by
+      (fun y : Fin n → α => fun i : I => y ⟨i.val, hn i.val i.property⟩) ∘ prefixProj α n := by
   funext x i
   simp [prefixProj_apply]
 
@@ -67,7 +67,7 @@ theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)} [IsFinite
     intro I
     obtain ⟨n, hn⟩ : ∃ n, ∀ i ∈ I, i < n :=
       ⟨I.sup id + 1, fun i hi => Nat.lt_succ_of_le (Finset.le_sup (f := id) hi)⟩
-    let g : (Fin n → α) → ((i : I) → α) := fun y i => y ⟨i.1, hn i.1 i.2⟩
+    let g : (Fin n → α) → ((i : I) → α) := fun y i => y ⟨i.val, hn i.val i.property⟩
     have hg : Measurable g := Measurable.of_eval fun i => measurable_pi_apply _
     have hcomp : (Finset.restrict I : (ℕ → α) → ((i : I) → α)) = g ∘ prefixProj α n := by
       simpa [g] using finsetRestrict_eq_comp_prefixProj (α := α) I hn

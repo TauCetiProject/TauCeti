@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # The `Lᵖ` integral is bounded by the `p`-th power of the `Lᵖ` seminorm
@@ -34,7 +36,11 @@ finiteness of the lower integral of its squared extended norm
 
 The same identification gives monotone convergence for the seminorm: the `Lᵖ` seminorm of the
 supremum of an increasing sequence of functions with values in `[0, ∞]` is the supremum of their
-seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`.
+seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`. With the triangle
+inequality it gives Minkowski's inequality for series: for `1 ≤ p` the `Lᵖ` seminorm of the sum of
+a countable family of functions with values in `[0, ∞]` is at most the sum of their seminorms
+(`MeasureTheory.eLpNorm_tsum_le`). In particular a step function `∑ᵢ cᵢ 1_{Aᵢ}` has `Lᵖ` seminorm
+at most `∑ᵢ cᵢ μ(Aᵢ) ^ (1 / p)` (`MeasureTheory.eLpNorm_tsum_indicator_const_le`).
 -/
 
 public section
@@ -141,6 +147,37 @@ theorem eLpNorm_iSup_eq_iSup_eLpNorm {f : ℕ → α → ℝ≥0∞} (hf : ∀ n
   rw [lintegral_iSup' (fun n ↦ (hf n).pow_const _)
     (hmono.mono fun x hx m n hmn ↦ ENNReal.rpow_le_rpow (hx hmn) hr.le),
     ENNReal.iSup_rpow_of_pos (by positivity)]
+
+/-- **Minkowski's inequality for series.** For `1 ≤ p`, the `Lᵖ` seminorm of the pointwise sum of
+a countable family of almost everywhere measurable functions with values in `[0, ∞]` is at most the
+sum of their `Lᵖ` seminorms. -/
+theorem eLpNorm_tsum_le {ι : Type*} [Countable ι] {f : ι → α → ℝ≥0∞}
+    (hf : ∀ i, AEMeasurable (f i) μ) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fun x ↦ ∑' i, f i x) p μ ≤ ∑' i, eLpNorm (f i) p μ := by
+  have := Encodable.ofCountable ι
+  -- The indices of code below `n` form an increasing sequence of finite sets exhausting `ι`.
+  set s : ℕ → Finset ι := fun n ↦
+    (Finset.range n).preimage Encodable.encode Encodable.encode_injective.injOn
+  have hs : ∀ t : Finset ι, ∃ n, t ⊆ s n := fun t ↦
+    ⟨t.sup Encodable.encode + 1, fun i hi ↦ by
+      simpa [s, Nat.lt_succ_iff] using Finset.le_sup (f := Encodable.encode) hi⟩
+  have hmono : Monotone s := fun m n hmn i ↦ by
+    simpa [s] using fun h ↦ h.trans_le hmn
+  simp_rw [tsum_eq_iSup_sum' s hs]
+  rw [eLpNorm_iSup_eq_iSup_eLpNorm (fun n ↦ Finset.aemeasurable_fun_sum _ fun i _ ↦ hf i)
+    (ae_of_all _ fun x m n hmn ↦ Finset.sum_le_sum_of_subset (hmono hmn))]
+  exact iSup_mono fun n ↦ by
+    simpa only [Finset.sum_fn] using eLpNorm_sum_le (s := s n) (f := f) (μ := μ) hp
+
+/-- For `1 ≤ p`, the `Lᵖ` seminorm of a step function `∑ᵢ cᵢ 1_{Aᵢ}` over countably many null
+measurable sets is at most `∑ᵢ cᵢ μ(Aᵢ) ^ (1 / p)`. -/
+theorem eLpNorm_tsum_indicator_const_le {ι : Type*} [Countable ι] {A : ι → Set α}
+    (hA : ∀ i, NullMeasurableSet (A i) μ) (c : ι → ℝ≥0∞) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fun x ↦ ∑' i, (A i).indicator (fun _ ↦ c i) x) p μ ≤
+      ∑' i, c i * μ (A i) ^ (1 / p.toReal) :=
+  (eLpNorm_tsum_le (fun i ↦ aemeasurable_const.indicator₀ (hA i)) hp).trans <|
+    tsum_le_tsum fun i ↦ by
+      simpa only [eNorm_eq_self] using eLpNorm_indicator_const_le (c i) p (hA i)
 
 end MeasureTheory
 

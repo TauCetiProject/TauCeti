@@ -134,7 +134,7 @@ lemma deckEquivFiberOfSurjective_fiberMap_coe [PreconnectedSpace E]
     letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
         (surjective_smul_fiberMap h hpq e hsurj) (conjMulEquiv h hpq φ) : F) =
-      h (φ.1 e.1) := by
+      h (φ.val e.val) := by
   let : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   rw [deckEquivFiberOfSurjective_fiberMap hp hq h hpq e hsurj φ,
     fiberMap_apply_coe, deckEquivFiberOfSurjective_apply_coe]
@@ -180,7 +180,7 @@ lemma deckEquivFiber_fiberMap_coe [PreconnectedSpace E]
     letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     (deckEquivFiber hq (hreg.conj h hpq) (fiberMap h hpq b e)
         (conjMulEquiv h hpq φ) : F) =
-      h (φ.1 e.1) := by
+      h (φ.val e.val) := by
   let : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   rw [deckEquivFiber_fiberMap hp hq hreg h hpq e φ, fiberMap_apply_coe,
     deckEquivFiber_apply_coe]

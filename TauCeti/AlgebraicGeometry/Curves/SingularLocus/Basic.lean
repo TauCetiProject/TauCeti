@@ -116,7 +116,7 @@ theorem _root_.AlgebraicGeometry.Scheme.singularLocus_ideal (U : X.affineOpens) 
 locus exactly when the fibre `κ(x) ⊗ Ω[Γ(X, U)⁄R]` of the relative differentials at `x` has
 dimension greater than one. -/
 theorem _root_.AlgebraicGeometry.Scheme.mem_support_singularLocus_iff {x : X}
-    {U : X.affineOpens} (hx : x ∈ U.1) :
+    {U : X.affineOpens} (hx : x ∈ U.val) :
     x ∈ (X.singularLocus R).support ↔
       letI := (X.evaluation U x hx).hom.toAlgebra
       letI : Algebra R Γ(X, U) :=
@@ -161,16 +161,16 @@ variable {R X} in
 dimension one over `R`, the fibre of `Ω_{X/R}` is one-dimensional, so `x` does not lie in the
 singular locus. -/
 private theorem notMem_support_singularLocus_of_isStandardSmooth {x : X} {W : X.affineOpens}
-    (hxW : x ∈ W.1)
-    (hW : ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension
+    (hxW : x ∈ W.val)
+    (hW : ((X.baseRingToStructurePresheaf R).app (op W.val)).hom.IsStandardSmoothOfRelativeDimension
       1) :
     x ∉ (X.singularLocus R).support := by
   let := (X.evaluation W x hxW).hom.toAlgebra
-  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.toAlgebra
+  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.val)).hom.toAlgebra
   have : Algebra.IsStandardSmoothOfRelativeDimension 1 R Γ(X, W) := hW.toAlgebra
   have : Algebra.IsStandardSmooth R Γ(X, W) :=
     Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth 1
-  have : Nonempty W.1 := ⟨⟨x, hxW⟩⟩
+  have : Nonempty W.val := ⟨⟨x, hxW⟩⟩
   -- `Ω[Γ(X, W)⁄R]` is free of rank one, hence so is its fibre at `x`.
   have hrank : Module.finrank Γ(X, W) Ω[Γ(X, W)⁄R] = 1 :=
     Module.finrank_eq_of_rank_eq

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
+import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -92,10 +93,15 @@ the values `Q vᵢ` is a unit.
   element of a pairwise orthogonal list by the same sign `(-1) ^ (n.choose 2)`.
 * `CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho`: the two-factor case, the square of the product
   of two orthogonal generators being the scalar `-(Q a * Q b)`.
-* `CliffordAlgebra.neg_one_pow_choose_two_mul_prod_map_ne_zero`: over a field, that scalar is
+* `CliffordAlgebra.neg_one_pow_choose_two_mul_prod_map_ne_zero`: over a domain, that scalar is
   nonzero when no member of the list is isotropic.
 * `CliffordAlgebra.isUnit_prod_map_ι`: an ordered product of generators — orthogonal or not — is
   a unit as soon as the product of the values `Q vᵢ` is.
+* `CliffordAlgebra.algebraMap_add_smul_mul_algebraMap_sub_smul`: for `ω` squaring to a scalar `s`,
+  such as the volume element, `a + b • ω` times `a - b • ω` is the scalar `a² - b² s`, in either
+  order.
+* `CliffordAlgebra.algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul`: if `ω` also anticommutes
+  with `ι Q v`, then `(a + b • ω) * ι Q v * (a - b • ω) = (a² + b² s) • ι Q v + 2ab • ω ι Q v`.
 * `CliffordAlgebra.prod_map_ι_mul_ι_notMem_range_ι`: over a field, the volume element of an
   orthogonal anisotropic list of even length at least three moves each member of the list out of
   the vectors.
@@ -329,6 +335,51 @@ theorem isUnit_prod_map_ι {l : List M} (h : IsUnit ((l.map Q).prod)) :
   have hQm : IsUnit (Q m) := List.prod_isUnit_iff.mp h _ (List.mem_map_of_mem hm)
   exact isUnit_ι_of_isUnit Q hQm
 
+/-! ### The scalar square of an anisotropic volume element -/
+
+/-- Over a domain, the scalar square `(-1) ^ (n.choose 2) * Q v₁ ⋯ Q vₙ` of the volume element
+(`CliffordAlgebra.prod_map_ι_sq_scalar`) is nonzero as soon as no member of the list is
+isotropic. -/
+theorem neg_one_pow_choose_two_mul_prod_map_ne_zero [IsDomain R] {l : List M}
+    (haniso : ∀ v ∈ l, Q v ≠ 0) :
+    (-1 : R) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
+  refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
+  intro hmem
+  obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
+  exact haniso v hv hv0
+
+/-! ### Elements `a + b • ω` for `ω` squaring to a scalar -/
+
+/-- Both products of `a + b • ω` with `a - b • ω`, for `ω` squaring to the scalar `s`: each is the
+scalar `a² - b² s`. So `a + b • ω` is a unit as soon as `a² - b² s` is. -/
+theorem algebraMap_add_smul_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
+    (hsq : ω * ω = algebraMap R _ s) (a b : R) :
+    (algebraMap R _ a + b • ω) * (algebraMap R _ a - b • ω) =
+        algebraMap R (CliffordAlgebra Q) (a ^ 2 - b ^ 2 * s) ∧
+      (algebraMap R _ a - b • ω) * (algebraMap R _ a + b • ω) =
+        algebraMap R (CliffordAlgebra Q) (a ^ 2 - b ^ 2 * s) := by
+  constructor <;>
+  · simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, sub_mul, mul_sub,
+      smul_mul_smul_comm, one_mul, mul_one, hsq, smul_smul]
+    module
+
+/-- The product `(a + b • ω) * ι Q v * (a - b • ω)`, for `ω` anticommuting with `ι Q v` and
+squaring to the scalar `s`. When `a - b • ω` is the inverse of `a + b • ω`, this is conjugation of
+the vector by `a + b • ω`; it leaves the vectors as soon as `ω * ι Q v` does and `2ab` is a unit
+(over a field, `2ab ≠ 0`). -/
+theorem algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
+    (hsq : ω * ω = algebraMap R _ s) {v : M} (hv : ω * ι Q v = -(ι Q v * ω)) (a b : R) :
+    (algebraMap R _ a + b • ω) * ι Q v * (algebraMap R _ a - b • ω) =
+      (a ^ 2 + b ^ 2 * s) • ι Q v + (2 * a * b) • (ω * ι Q v) := by
+  have hvω : ι Q v * ω = -(ω * ι Q v) := by rw [hv, neg_neg]
+  have h1 : ι Q v * (algebraMap R _ a - b • ω) = (algebraMap R _ a + b • ω) * ι Q v := by
+    rw [mul_sub, add_mul, ← Algebra.commutes, mul_smul_comm, smul_mul_assoc, hvω, smul_neg,
+      sub_neg_eq_add]
+  rw [mul_assoc, h1, ← mul_assoc]
+  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
+    one_mul, mul_one, hsq, smul_smul]
+  module
+
 section Field
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
@@ -365,18 +416,6 @@ private theorem exists_isOrtho_pair_of_mem {l : List V} (hl : l.Pairwise Q.IsOrt
   exact ⟨(s ++ t)[0], hmem _ (List.getElem_mem h0), (s ++ t)[1], hmem _ (List.getElem_mem h1),
     hortho _ (List.getElem_mem h0), hortho _ (List.getElem_mem h1),
     List.pairwise_iff_getElem.mp hpair 0 1 h0 h1 zero_lt_one⟩
-
-/-! ### The scalar square of an anisotropic volume element -/
-
-/-- Over a field, the scalar square `(-1) ^ (n.choose 2) * Q v₁ ⋯ Q vₙ` of the volume element
-(`CliffordAlgebra.prod_map_ι_sq_scalar`) is nonzero as soon as no member of the list is
-isotropic. -/
-theorem neg_one_pow_choose_two_mul_prod_map_ne_zero {l : List V} (haniso : ∀ v ∈ l, Q v ≠ 0) :
-    (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
-  refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-  intro hmem
-  obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-  exact haniso v hv hv0
 
 variable [Invertible (2 : K)]
 

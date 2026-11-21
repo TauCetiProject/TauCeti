@@ -255,7 +255,7 @@ variable {x y : ℝ}
 /-- On `(-1, 1)`, the inverse error function is the inverse of `Real.erfOrderIso`. -/
 @[simp]
 theorem erfOrderIso_symm_apply (y : Ioo (-1 : ℝ) 1) : erfOrderIso.symm y = erfInv y := by
-  rw [erfInv, dite_eq_left y.2]
+  rw [erfInv, dite_eq_left y.property]
 
 /-- Outside the open interval `(-1, 1)`, the inverse error function is `0`. -/
 theorem erfInv_of_notMem (hy : y ∉ Ioo (-1) 1) : erfInv y = 0 :=

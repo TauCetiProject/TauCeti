@@ -37,11 +37,14 @@ underlying real manifold.
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
+* `ContMDiffSMul.contMDiffConstSMul`: a `C^n` action is by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
 * `ContMDiffSMul.mdifferentiableAt_smul_const`: the orbit maps of a `C^1` action are
   differentiable.
 * `ContMDiffConstSMul.mdifferentiable_const_smul`, `ContMDiffSMul.mdifferentiable_const_smul`: the
   translations `y ↦ g • y` of an action by `C^n` maps, with `n ≠ 0`, are differentiable.
+* `ContMDiffSMul.prod_of_smul_eq`: an action on `M × N` through `C^n` maps to groups acting by
+  `C^n` actions on `M` and on `N`, such as the factorwise action of a product group, is `C^n`.
 * `ContMDiffSMul.contMDiffOn_comp_smul_symm`: in the coordinates `(w, g) ↦ e (g • e.symm w)` of
   a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is jointly `C^n`.
 * `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
@@ -81,6 +84,21 @@ instance SetLike.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {G S : Type*} [SetLike S G] [SMul G M]
     [ContMDiffConstSMul I n G M] (s : S) : ContMDiffConstSMul I n s M where
   contMDiff_const_smul g := contMDiff_const_smul (g : G)
+
+/-- A `C^n` action is by `C^n` maps. This has to be a theorem instead of an instance because
+`ContMDiffSMul` depends on the model `I` of the acting type, which `ContMDiffConstSMul` doesn't. -/
+@[to_additive /-- A `C^n` additive action is by `C^n` maps. This has to be a theorem instead of an
+instance because `ContMDiffVAdd` depends on the model `I` of the acting type, which
+`ContMDiffConstVAdd` doesn't. -/]
+theorem ContMDiffSMul.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] : ContMDiffConstSMul I' n G M :=
+  ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
 
 /-- The orbit map `g ↦ g • x` of a `C^n` action is `C^n`. -/
 @[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^n` additive action is `C^n`. -/]
@@ -128,6 +146,40 @@ theorem ContMDiffSMul.mdifferentiable_const_smul {𝕜 : Type*} [NontriviallyNor
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
     [ContMDiffSMul I I' n G M] (hn : n ≠ 0) (g : G) : MDifferentiable I' I' fun y : M ↦ g • y :=
   (ContMDiffSMul.contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn
+
+/-- **Factorwise actions on products.** Let `K` act on `M × N` through `C^n` maps `φ : K → G` and
+`ψ : K → G'` into groups acting by `C^n` actions on `M` and on `N`,
+`k • (x, y) = (φ k • x, ψ k • y)`. Then the action of `K` is `C^n`. For instance, `G × G'` acting
+factorwise on `M × N`, with `φ` and `ψ` the two projections. -/
+@[to_additive prod_of_vadd_eq
+/-- **Factorwise additive actions on products.** Let `K` act additively on `M × N` through `C^n`
+maps `φ : K → G` and `ψ : K → G'` into types acting additively by `C^n` actions on `M` and on `N`,
+`k +ᵥ (x, y) = (φ k +ᵥ x, ψ k +ᵥ y)`. Then the additive action of `K` is `C^n`. -/]
+theorem ContMDiffSMul.prod_of_smul_eq {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {HF : Type*} [TopologicalSpace HF] {IF : ModelWithCorners 𝕜 F HF}
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {HF' : Type*} [TopologicalSpace HF'] {IF' : ModelWithCorners 𝕜 F' HF'}
+    {EK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK]
+    {HK : Type*} [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {G' : Type*} [TopologicalSpace G'] [ChartedSpace HF G']
+    {K : Type*} [TopologicalSpace K] [ChartedSpace HK K]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
+    {N : Type*} [TopologicalSpace N] [ChartedSpace HF' N]
+    [SMul G M] [SMul G' N] [SMul K (M × N)] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] [ContMDiffSMul IF IF' n G' N] {φ : K → G} {ψ : K → G'}
+    (hφ : ContMDiff IK I n φ) (hψ : ContMDiff IK IF n ψ)
+    (hsmul : ∀ (k : K) (p : M × N), k • p = (φ k • p.1, ψ k • p.2)) :
+    ContMDiffSMul IK (I'.prod IF') n K (M × N) where
+  contMDiff_smul := by
+    simp only [hsmul]
+    exact ((hφ.comp contMDiff_fst).smul (contMDiff_fst.comp contMDiff_snd)).prodMk
+      ((hψ.comp contMDiff_fst).smul (contMDiff_snd.comp contMDiff_snd))
 
 /-- In the coordinates of a `C^n` partial homeomorphism `e` with `C^n` inverse, a `C^n` action is
 the jointly `C^n` map `(w, g) ↦ e (g • e.symm w)` on the set of pairs for which it is defined.

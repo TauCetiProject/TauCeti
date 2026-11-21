@@ -54,6 +54,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
   products of `K` preserve and reflect bounded sets.
+* `TauCeti.isOpen_maximalIdeal_integer`: for any valued field `K`, the maximal ideal `𝓂[K]` of
+  `𝒪[K]` is open.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
   is not finitely generated.
 -/
@@ -61,7 +63,7 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
 public section
 
 open IsLocalRing Bornology
-open scoped NormedField
+open scoped NormedField Valued
 
 namespace Valued
 
@@ -258,6 +260,15 @@ theorem Valued.integer.exists_seq_mem_maximalIdeal :
 end DenselyNormed
 
 namespace TauCeti
+
+/-- The maximal ideal `𝓂[K]` of the valuation ring `𝒪[K]` of a valued field is open, being the
+open unit ball around `0`. -/
+theorem isOpen_maximalIdeal_integer {K : Type*} [Field K] {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀] [Valued K Γ₀] : IsOpen (𝓂[K] : Set 𝒪[K]) := by
+  convert (Valued.isOpen_ball K 1).preimage (continuous_subtypeVal : Continuous ((↑) : 𝒪[K] → K))
+  ext x
+  simp [Valued.maximalIdeal, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
+    Valuation.Integer.not_isUnit_iff_valuation_lt_one]
 
 variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
 

@@ -192,7 +192,7 @@ preserving the identity section. -/
 def Hom.equivPointed (A B : AbelianScheme (Spec (.of K))) :
     (A ⟶ B) ≃ {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]} where
   toFun f := ⟨Hom.toOverHom f, Hom.one_hom f⟩
-  invFun f := Hom.mk' f.1 f.2 (isMonHom_of_one_hom f.1 f.2).mul_hom
+  invFun f := Hom.mk' f.val f.property (isMonHom_of_one_hom f.val f.property).mul_hom
   left_inv _ := Hom.toOverHom_injective (Hom.toOverHom_mk' _ _ _)
   right_inv _ := Subtype.ext (Hom.toOverHom_mk' _ _ _)
 
@@ -204,7 +204,7 @@ lemma Hom.coe_equivPointed_apply {A B : AbelianScheme (Spec (.of K))} (f : A ⟶
 @[simp]
 lemma Hom.toOverHom_equivPointed_symm_apply {A B : AbelianScheme (Spec (.of K))}
     (f : {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]}) :
-    Hom.toOverHom ((Hom.equivPointed A B).symm f) = f.1 :=
+    Hom.toOverHom ((Hom.equivPointed A B).symm f) = f.val :=
   Hom.toOverHom_mk' _ _ _
 
 /-! ### Equivalence of categories over `Spec K` -/
