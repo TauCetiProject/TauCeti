@@ -155,7 +155,7 @@ theorem primePowerProd_mul_eq_sum_divisors_gcd
   have hn' : ¬p ∣ ordCompl[p] n := Nat.not_dvd_ordCompl hp hn
   -- The `p`-free gcd is strictly smaller, so the induction hypothesis applies to it.
   have hlt : Nat.gcd (ordCompl[p] m) (ordCompl[p] n) < g := by
-    rw [← hg, ← ordCompl_gcd]
+    rw [← hg, ← Nat.ordCompl_gcd]
     exact ordCompl_lt_self_iff.2
       (hp.mem_primeFactors (Nat.dvd_gcd hpm hpn) (Nat.gcd_ne_zero_left hm))
   rw [← hg, primePowerProd_eq_ordProj_mul_ordCompl D p (m := m),

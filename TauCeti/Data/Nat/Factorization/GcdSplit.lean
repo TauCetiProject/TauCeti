@@ -21,16 +21,17 @@ two exponents:
 the one `Nat.ordProj` and `Nat.ordCompl` perform. The canonical form is stated for every `p`: when
 `p` is not prime, both factorization exponents are zero and both complements are the numbers
 themselves, so it holds trivially. Passing to `p`-free parts commutes with the gcd
-(`TauCeti.Nat.ordCompl_gcd`). Together with `TauCeti.ordCompl_lt_self_iff`, this shows that passing
-to the `p`-free parts strictly shrinks the gcd exactly when `p` is a prime factor of it, which lets
-an induction on the gcd terminate.
+(`Nat.ordCompl_gcd`). Together with `TauCeti.ordCompl_lt_self_iff`, this shows that passing to the
+`p`-free parts strictly shrinks the gcd exactly when `p ∈ (Nat.gcd m n).primeFactors`, which lets an
+induction on the gcd terminate. Prime divisibility alone does not suffice: every prime divides
+`Nat.gcd 0 0 = 0`, but `ordCompl[p] 0 = 0`, so the gcd does not shrink when `m = n = 0`.
 
 ## Main results
 
 * `TauCeti.Nat.gcd_pow_mul_pow_mul`: the gcd splits at a prime, for an explicit splitting.
 * `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min`: the same for the `ordProj`/`ordCompl` splitting,
   for any `p` (trivially when `p` is not prime).
-* `TauCeti.Nat.ordCompl_gcd`: removing the `p`-part commutes with the gcd.
+* `Nat.ordCompl_gcd`: removing the `p`-part commutes with the gcd.
 * `Nat.coprime_iff_coprime_ordCompl`: coprimality to `n` splits into a condition at `p`
   and coprimality to the `p`-free part of `n`, for any `p`.
 * `Nat.gcd_mul_prime_eq_of_factorization_le`: multiplying `c` by a prime `p` does not change
@@ -82,6 +83,12 @@ theorem gcd_eq_gcd_ordCompl_mul_pow_min {p m n : ℕ} (hm : m ≠ 0)
     exact gcd_pow_mul_pow_mul hp (Nat.not_dvd_ordCompl hp hm) (Nat.not_dvd_ordCompl hp hn)
   · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
 
+end Nat
+
+end TauCeti
+
+namespace Nat
+
 /-- **Removing the `p`-part commutes with the gcd**: for any `p`, `m` and `n`,
 
 `ordCompl[p] (gcd m n) = gcd (ordCompl[p] m) (ordCompl[p] n)`.
@@ -97,15 +104,9 @@ theorem ordCompl_gcd (m n p : ℕ) :
   · simp
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [gcd_eq_gcd_ordCompl_mul_pow_min (p := p) hm hn, mul_comm,
+  rw [TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min (p := p) hm hn, mul_comm,
     Nat.ordCompl_pow_mul_of_not_dvd _ hp]
   exact fun h ↦ Nat.not_dvd_ordCompl hp hm (h.trans (Nat.gcd_dvd_left _ _))
-
-end Nat
-
-end TauCeti
-
-namespace Nat
 
 /-- **Coprimality splits at a prime.** Writing `n = p ^ e * n'` with `p ∤ n'`, the number `m` is
 coprime to `n` exactly when `p ∣ m` forces `e = 0` and `m` is coprime to `n'`. For `p` not prime
