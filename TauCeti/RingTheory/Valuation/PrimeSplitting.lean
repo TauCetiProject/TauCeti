@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-public import Mathlib.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # The prime-splitting square of a valuation ring
@@ -30,17 +30,16 @@ decomposing a valuation ring along a chain of primes, as in the theory of arc-de
 
 The underlying fact is elementary: if `x ∈ p` and `s ∉ p`, then `s` divides `x`, and the quotient
 `x / s` again lies in `p`. Most of this holds for any `PreValuationRing`, with no domain
-hypothesis.
+hypothesis. That `V ⧸ p` and `V_p` are valuation domains is the general fact that quotients and
+localizations of valuation rings are valuation rings when they are domains, see
+`TauCeti.ValuationRing.of_isLocalization` and the instances next to it.
 
 ## Main results
 
-* `TauCeti.PreValuationRing.dvd_of_mem_of_notMem`: an element outside an ideal divides every
-  element of the ideal.
-* `TauCeti.PreValuationRing.of_isLocalization` and `TauCeti.ValuationRing.of_isLocalization`:
-  localizations of (pre)valuation rings are (pre)valuation rings. There are instances for
-  `Localization M` and for quotients `R ⧸ I`.
 * `TauCeti.PreValuationRing.exists_mem_algebraMap_eq_of_mem_map`: every element of `p S`, for a
   localization `S` at a submonoid avoiding `p`, is the image of an element of `p`.
+* `TauCeti.PreValuationRing.exists_mk_eq_and_algebraMap_eq`: elements of `V ⧸ p` and `V_p` with
+  the same image in `κ(p)` come from a common element of `V`.
 * `TauCeti.ValuationRing.primeEquivMap`: the `V`-linear isomorphism `p ≃ p V_p`.
 * `TauCeti.ValuationRing.isPullback_quotient_localizationAtPrime`: the square
   `V, V ⧸ p, V_p, κ(p)` is a pullback square of commutative rings.
@@ -62,38 +61,12 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R] [PreValuationRing R]
 
-/-- In a ring with total divisibility, an element outside an ideal divides every element of the
-ideal. -/
-theorem dvd_of_mem_of_notMem {I : Ideal R} {x s : R} (hx : x ∈ I) (hs : s ∉ I) : s ∣ x :=
-  (ValuationRing.dvd_total s x).resolve_right fun h ↦ hs (I.mem_of_dvd h hx)
-
 /-- In a ring with total divisibility, an element `x` of a prime ideal `p` is divisible by every
 `s ∉ p`, with quotient again in `p`. -/
 theorem exists_mem_mul_eq_of_mem_of_notMem {p : Ideal R} [p.IsPrime] {x s : R} (hx : x ∈ p)
     (hs : s ∉ p) : ∃ y ∈ p, s * y = x := by
   obtain ⟨y, rfl⟩ := dvd_of_mem_of_notMem hx hs
   exact ⟨y, (Ideal.IsPrime.mem_or_mem ‹_› hx).resolve_left hs, rfl⟩
-
-/-- A localization of a ring with total divisibility has total divisibility. -/
-theorem of_isLocalization (M : Submonoid R) (S : Type*) [CommSemiring S] [Algebra R S]
-    [IsLocalization M S] : PreValuationRing S := by
-  refine PreValuationRing.iff_dvd_total.mpr ⟨fun x y ↦ ?_⟩
-  obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective M x
-  obtain ⟨⟨b, t⟩, rfl⟩ := IsLocalization.mk'_surjective M y
-  -- If `a * c = b` then `a / s * (s * c / t) = b / t`, and symmetrically.
-  rcases ValuationRing.dvd_total a b with ⟨c, rfl⟩ | ⟨c, rfl⟩
-  · refine .inl ⟨IsLocalization.mk' S (s * c : R) t, ?_⟩
-    rw [← IsLocalization.mk'_mul, IsLocalization.mk'_eq_iff_eq, Submonoid.coe_mul]
-    congr 1
-    ring
-  · refine .inr ⟨IsLocalization.mk' S (t * c : R) s, ?_⟩
-    rw [← IsLocalization.mk'_mul, IsLocalization.mk'_eq_iff_eq, Submonoid.coe_mul]
-    congr 1
-    ring
-
-/-- `Localization M` of a ring with total divisibility has total divisibility. -/
-instance (M : Submonoid R) : PreValuationRing (Localization M) :=
-  of_isLocalization M _
 
 /-- Let `S` be a localization of a ring with total divisibility at a submonoid `M` avoiding a
 prime ideal `p`. Then every element of the extended ideal `p S` is the image of an element
@@ -109,34 +82,33 @@ theorem exists_mem_algebraMap_eq_of_mem_map {p : Ideal R} [p.IsPrime] {M : Submo
 
 end CommSemiring
 
-/-- A quotient of a ring with total divisibility has total divisibility. -/
-instance {R : Type*} [CommRing R] [PreValuationRing R] (I : Ideal R) :
-    PreValuationRing (R ⧸ I) :=
-  Function.Surjective.preValuationRing (Ideal.Quotient.mk I).toMonoidHom.toMulHom
-    Ideal.Quotient.mk_surjective
+section CommRing
+
+variable {R : Type*} [CommRing R] [PreValuationRing R] {p : Ideal R} [p.IsPrime]
+
+/-- In a ring with total divisibility, elements of `R ⧸ p` and of `R_p` with the same image in
+the residue field `κ(p)` come from a common element of `R`. -/
+theorem exists_mk_eq_and_algebraMap_eq {a : R ⧸ p} {b : Localization.AtPrime p}
+    (h : algebraMap (R ⧸ p) p.ResidueField a = algebraMap _ p.ResidueField b) :
+    ∃ x : R, Ideal.Quotient.mk p x = a ∧ algebraMap R (Localization.AtPrime p) x = b := by
+  obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective a
+  -- The two maps `R → κ(p)`, through `R ⧸ p` and through `R_p`, agree.
+  have hu : algebraMap (R ⧸ p) p.ResidueField (Ideal.Quotient.mk p u) =
+      algebraMap (Localization.AtPrime p) p.ResidueField (algebraMap R _ u) := by
+    simp [IsScalarTower.algebraMap_apply R (Localization.AtPrime p) p.ResidueField]
+  have hmem : b - algebraMap R _ u ∈ p.map (algebraMap R (Localization.AtPrime p)) := by
+    rw [Localization.AtPrime.map_eq_maximalIdeal, ← IsLocalRing.residue_eq_zero_iff,
+      ← IsLocalRing.ResidueField.algebraMap_eq, map_sub, sub_eq_zero, ← h, hu]
+  obtain ⟨y, hy, hyb⟩ := exists_mem_algebraMap_eq_of_mem_map le_rfl hmem
+  refine ⟨u + y, ?_, ?_⟩
+  · rw [map_add, Ideal.Quotient.eq_zero_iff_mem.mpr hy, add_zero]
+  · rw [map_add, hyb, add_sub_cancel]
+
+end CommRing
 
 end PreValuationRing
 
 namespace ValuationRing
-
-/-- A localization of a ring with total divisibility is a valuation ring as soon as it is a
-domain. For a valuation domain this applies to every localization at a submonoid not
-containing `0`. -/
-theorem of_isLocalization {R : Type*} [CommRing R] [PreValuationRing R] (M : Submonoid R)
-    (S : Type*) [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] :
-    ValuationRing S :=
-  have := PreValuationRing.of_isLocalization M S
-  {}
-
-/-- `Localization M` of a ring with total divisibility is a valuation ring when it is a domain;
-for instance `Localization.AtPrime p` for a prime `p` of a valuation domain. -/
-instance {R : Type*} [CommRing R] [PreValuationRing R] (M : Submonoid R)
-    [IsDomain (Localization M)] : ValuationRing (Localization M) where
-
-/-- A quotient of a ring with total divisibility is a valuation ring when it is a domain;
-for instance `R ⧸ p` for a prime `p` of a valuation domain `R`. -/
-instance {R : Type*} [CommRing R] [PreValuationRing R] (I : Ideal R) [IsDomain (R ⧸ I)] :
-    ValuationRing (R ⧸ I) where
 
 variable {R : Type*} [CommRing R] [IsDomain R] [ValuationRing R]
 
@@ -171,22 +143,6 @@ end primeEquivMap
 
 variable {p : Ideal R} [p.IsPrime]
 
-/-- Elements of `R ⧸ p` and of `R_p` with the same image in the residue field `κ(p)` come from a
-common element of the valuation domain `R`. -/
-theorem exists_mk_eq_and_algebraMap_eq {a : R ⧸ p} {b : Localization.AtPrime p}
-    (h : algebraMap (R ⧸ p) p.ResidueField a = algebraMap _ p.ResidueField b) :
-    ∃ x : R, Ideal.Quotient.mk p x = a ∧ algebraMap R (Localization.AtPrime p) x = b := by
-  obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective a
-  have hmem : b - algebraMap R _ u ∈ p.map (algebraMap R (Localization.AtPrime p)) := by
-    rw [Localization.AtPrime.map_eq_maximalIdeal, ← IsLocalRing.residue_eq_zero_iff, map_sub,
-      sub_eq_zero, ← IsLocalRing.ResidueField.algebraMap_eq, ← h,
-      Ideal.algebraMap_quotient_residueField_mk,
-      IsScalarTower.algebraMap_apply R (Localization.AtPrime p) p.ResidueField]
-  obtain ⟨y, hy, hyb⟩ := PreValuationRing.exists_mem_algebraMap_eq_of_mem_map le_rfl hmem
-  refine ⟨u + y, ?_, ?_⟩
-  · rw [map_add, Ideal.Quotient.eq_zero_iff_mem.mpr hy, add_zero]
-  · rw [map_add, hyb, add_sub_cancel]
-
 /-- **The prime-splitting square.** For a prime `p` of a valuation domain `R`, the square
 `R → R ⧸ p → κ(p)`, `R → R_p → κ(p)` is a pullback square of commutative rings. -/
 theorem isPullback_quotient_localizationAtPrime :
@@ -199,8 +155,10 @@ theorem isPullback_quotient_localizationAtPrime :
   refine ⟨?_, fun x y ⟨_, h⟩ ↦ ?_, fun a b h ↦ ?_⟩
   · ext x
     simpa using IsScalarTower.algebraMap_apply R (Localization.AtPrime p) p.ResidueField x
-  · simpa using h
-  · simpa using exists_mk_eq_and_algebraMap_eq (by simpa using h)
+  · -- Uniqueness: `R → R_p` is injective since `R` is a domain.
+    exact IsLocalization.injective (Localization.AtPrime p) p.primeCompl_le_nonZeroDivisors
+      (by simpa using h)
+  · simpa using PreValuationRing.exists_mk_eq_and_algebraMap_eq (by simpa using h)
 
 end ValuationRing
 
