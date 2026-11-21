@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Basic
 import TauCeti.Data.Set.Card
 
 /-!

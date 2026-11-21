@@ -590,6 +590,18 @@ theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
     intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
     intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
 
+/-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate `C s` recovers the time. -/
+theorem intervalBaseOrbit_injective (hC : C ≠ 0) : Function.Injective (intervalBaseOrbit C) :=
+  fun s t h ↦ mul_left_cancel₀ hC (by
+    rw [← intervalBaseTimeCoordinate_intervalBaseOrbit, h,
+      intervalBaseTimeCoordinate_intervalBaseOrbit])
+
+/-- The trajectory `q(s) = 1 / √(1 + e^{-2 C s})` is smooth. -/
+theorem contDiff_intervalBaseOrbit (C : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseOrbit C) := by
+  have h : ContDiff ℝ n fun s : ℝ ↦ 1 + Real.exp (-(2 * C * s)) := by fun_prop
+  exact (h.sqrt fun s ↦ by positivity).inv fun s ↦ by positivity
+
 /-- The time coordinate is strictly increasing on `(0, 1)`. -/
 theorem strictMonoOn_intervalBaseTimeCoordinate :
     StrictMonoOn intervalBaseTimeCoordinate (Ioo 0 1) := by

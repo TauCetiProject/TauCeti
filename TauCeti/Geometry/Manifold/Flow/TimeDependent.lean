@@ -74,6 +74,8 @@ the initial position of the submanifold to the later ones.
   from `s` to `t`.
 * `TauCeti.isCompleteVectorField_timeDependentSuspensionField`: a time-dependent field vanishing
   outside a fixed compact set has a complete suspension.
+* `TauCeti.isCompleteVectorField_timeDependentSuspensionField_of_compactSpace`: on a compact
+  manifold every `C¹` time-dependent field has a complete suspension.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf_comp`: a map moved by the flow at a varying time,
   `y ↦ timeDependentFlowOf X s (τ y) (v y)`, has derivative `dφ ∘ dv + dτ ⊗ X`.
 
@@ -525,6 +527,12 @@ theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsC
     obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
       (eventually_notMem_nhdsGT_maximalIntegralCurve hW hglb (hC (sInf _) b))).exists
     exact hτC (hmem (hsub ⟨hτ.1, by linarith [hτ.2]⟩) ⟨hτ.1.le, by linarith [hτ.2]⟩)
+
+/-- **On a compact manifold every `C¹` time-dependent field has a complete suspension.** -/
+theorem isCompleteVectorField_timeDependentSuspensionField_of_compactSpace [CompactSpace M] :
+    IsCompleteVectorField (timeDependentSuspensionField X) :=
+  isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ fun _ _ hy ↦
+    absurd (mem_univ _) hy
 
 omit [CompleteSpace E] in
 /-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then
