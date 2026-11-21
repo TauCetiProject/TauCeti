@@ -158,19 +158,21 @@ theorem symm_apply_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (w : F) :
 
 /-- Let `e` be a trivialization that is linear on the fibres and `b` a map continuous at `x₀`
 within `u`, with `b x₀` in the base set of `e`. For a fibrewise operation `op` that every linear
-map carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the `e`-coordinates of
-`s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. This is the coordinate step
-in the regularity of fibrewise sums and differences of sections along a map. -/
+equivalence `E y ≃ₗ[R] F` carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the
+`e`-coordinates of `s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. Only
+linear equivalences are needed because over the base set `e` is the linear equivalence
+`e.linearEquivAt R`. This is the coordinate step in the regularity of fibrewise sums and
+differences of sections along a map. -/
 theorem snd_apply_mk_op_eventuallyEq_and_eq {X : Type*} [TopologicalSpace X] {b : X → B}
     {s t : ∀ x, E (b x)} {u : Set X} {x₀ : X} {op : ∀ y, E y → E y → E y} {opF : F → F → F}
-    (hop : ∀ y (g : E y → F), IsLinearMap R g → ∀ v w, g (op y v w) = opF (g v) (g w))
+    (hop : ∀ y (g : E y ≃ₗ[R] F) v w, g (op y v w) = opF (g v) (g w))
     (hb : ContinuousWithinAt b u x₀) (hx₀ : b x₀ ∈ e.baseSet) :
     (fun x ↦ (e ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
         (fun x ↦ opF (e ⟨b x, s x⟩).2 (e ⟨b x, t x⟩).2) ∧
       (e ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 = opF (e ⟨b x₀, s x₀⟩).2 (e ⟨b x₀, t x₀⟩).2 := by
-  refine ⟨?_, hop _ _ (e.linear R hx₀) _ _⟩
+  refine ⟨?_, hop _ (e.linearEquivAt R _ hx₀) _ _⟩
   filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
-  exact hop _ _ (e.linear R hx) _ _
+  exact hop _ (e.linearEquivAt R _ hx) _ _
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
 its fibrewise linear equivalence. -/

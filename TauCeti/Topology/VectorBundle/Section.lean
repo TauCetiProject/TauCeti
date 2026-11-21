@@ -99,7 +99,7 @@ theorem ContinuousWithinAt.add_totalSpace
     ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) u y₀ := by
   rw [FiberBundle.continuousWithinAt_totalSpace] at hs ht ⊢
   obtain ⟨h, h₀⟩ := (trivializationAt F E (b y₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ _ hg ↦ hg.map_add) hs.1 (mem_baseSet_trivializationAt F E (b y₀))
+    (s := s) (t := t) (fun _ g ↦ g.map_add) hs.1 (mem_baseSet_trivializationAt F E (b y₀))
   exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
 
 variable (𝕜) in

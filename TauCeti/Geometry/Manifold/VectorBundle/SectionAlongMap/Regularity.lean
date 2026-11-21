@@ -58,7 +58,7 @@ theorem ContMDiffWithinAt.add_sectionAlong
       (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) u x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
   obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ _ hg ↦ hg.map_add) hs.1.continuousWithinAt
+    (s := s) (t := t) (fun _ g ↦ g.map_add) hs.1.continuousWithinAt
     (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
 
@@ -144,7 +144,7 @@ theorem ContMDiffWithinAt.sub_sectionAlong
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
   obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ _ hg ↦ hg.map_sub) hs.1.continuousWithinAt
+    (s := s) (t := t) (fun _ g ↦ g.map_sub) hs.1.continuousWithinAt
     (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq h h₀⟩
 
@@ -180,7 +180,7 @@ theorem MDifferentiableWithinAt.sub_sectionAlong
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
   rw [mdifferentiableWithinAt_totalSpace] at hs ht ⊢
   obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
-    (s := s) (t := t) (fun _ _ hg ↦ hg.map_sub) hs.1.continuousWithinAt
+    (s := s) (t := t) (fun _ g ↦ g.map_sub) hs.1.continuousWithinAt
     (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq h h₀⟩
 
