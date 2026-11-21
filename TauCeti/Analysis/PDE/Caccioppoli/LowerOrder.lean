@@ -149,18 +149,6 @@ private theorem UniformlyEllipticOn.energyFormH1_zero_zero_le_of_lowerOrder
   linarith [hu v hv]
 
 omit [DecidableEq ι] in
-/-- Multiplying an integrable function by the square of a smooth compactly supported cutoff keeps
-it integrable. -/
-private theorem integrable_sq_mul_of_contDiff {ν : Measure (EuclideanSpace ℝ ι)}
-    {ψ g : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hg : Integrable g ν) : Integrable (fun x => ψ x ^ 2 * g x) ν := by
-  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  refine hg.bdd_mul (c := M ^ 2) (hψ.continuous.pow 2).aestronglyMeasurable
-    (.of_forall fun x => ?_)
-  rw [Real.norm_eq_abs, abs_pow]
-  exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
-
-omit [DecidableEq ι] in
 /-- Young's inequality for the drift: for `w = (u - k)⁺` and `‖b‖ ≤ β` on `Ω`, the drift part of
 the forcing `F - ⟪b, ∇u⟫`, tested against `ψ² w`, is at most `λ/4 · ∫ ψ² ‖∇w‖² + β²/λ · ∫ ψ² w²`
 above the `F` part. -/
@@ -176,16 +164,17 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
         + (lam / 4 * ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
           + beta ^ 2 / lam * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu) := by
   intro w
+  have hψ2 : MemLp (fun x => ψ x ^ 2) ⊤ (mu.restrict Omega) :=
+    (hψ.continuous.pow 2).memLp_top_of_hasCompactSupport (hcpt.comp_left (zero_pow two_ne_zero)) _
   have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
-    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.gradient w)).norm.integrable_sq
+    (Lp.memLp (W1p.gradient w)).norm.integrable_sq.mul_of_top_right hψ2
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.value w)).integrable_sq
+    (Lp.memLp (W1p.value w)).integrable_sq.mul_of_top_right hψ2
   have hFw : Integrable (fun x => ψ x ^ 2 * F x * W1p.value w x) (mu.restrict Omega) :=
-    (integrable_sq_mul_of_contDiff hψ hcpt (hF.integrable_mul (Lp.memLp (W1p.value w)))).congr
+    ((hF.integrable_mul (Lp.memLp (W1p.value w))).mul_of_top_right hψ2).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hG : Integrable (fun x => ψ x ^ 2 * hg.toLp _ x * W1p.value w x) (mu.restrict Omega) :=
-    (integrable_sq_mul_of_contDiff hψ hcpt
-      ((Lp.memLp (hg.toLp _)).integrable_mul (Lp.memLp (W1p.value w)))).congr
+    (((Lp.memLp (hg.toLp _)).integrable_mul (Lp.memLp (W1p.value w))).mul_of_top_right hψ2).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hR : Integrable (fun x => lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
       + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2)) (mu.restrict Omega) :=
@@ -454,13 +443,14 @@ private theorem setIntegral_sub_inner_sub_mul_mul_le (hlam : 0 < lam)
       ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu
         + (lam / 4 * ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu
           + (beta ^ 2 / lam + gamma) * ∫ x in Omega, ψ x ^ 2 * W1p.value u x ^ 2 ∂mu) := by
+  have hψ2 : MemLp (fun x => ψ x ^ 2) ⊤ (mu.restrict Omega) :=
+    (hψ.continuous.pow 2).memLp_top_of_hasCompactSupport (hcpt.comp_left (zero_pow two_ne_zero)) _
   have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.gradient u)).norm.integrable_sq
+    (Lp.memLp (W1p.gradient u)).norm.integrable_sq.mul_of_top_right hψ2
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.value u)).integrable_sq
+    (Lp.memLp (W1p.value u)).integrable_sq.mul_of_top_right hψ2
   have hFu : Integrable (fun x => ψ x ^ 2 * f x * W1p.value u x) (mu.restrict Omega) :=
-    (integrable_sq_mul_of_contDiff hψ hcpt
-      ((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u)))).congr
+    (((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u))).mul_of_top_right hψ2).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hG : Integrable (fun x => (f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) *
       W1p.value v x) (mu.restrict Omega) :=
@@ -544,17 +534,17 @@ private theorem mul_setIntegral_add_div_mul_setIntegral_le (hlam : 0 < lam) {R :
         + 4 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ((B + 2 / R ^ 2) * W1p.value u x ^ 2 +
         2 * (R / lam) ^ 2 * f x ^ 2) ∂mu := by
+  have hψ2 : MemLp (fun x => ψ x ^ 2) ⊤ (mu.restrict Omega) :=
+    (hψ.continuous.pow 2).memLp_top_of_hasCompactSupport (hcpt.comp_left (zero_pow two_ne_zero)) _
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.value u)).integrable_sq
+    (Lp.memLp (W1p.value u)).integrable_sq.mul_of_top_right hψ2
   have hFu : Integrable (fun x => ψ x ^ 2 * f x * W1p.value u x) (mu.restrict Omega) :=
-    (integrable_sq_mul_of_contDiff hψ hcpt
-      ((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u)))).congr
+    (((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u))).mul_of_top_right hψ2).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hg : Integrable (fun x => ψ x ^ 2 * ((B + 2 / R ^ 2) * W1p.value u x ^ 2 +
       2 * (R / lam) ^ 2 * f x ^ 2)) (mu.restrict Omega) :=
-    integrable_sq_mul_of_contDiff hψ hcpt
-      (((Lp.memLp (W1p.value u)).integrable_sq.const_mul _).add
-        ((Lp.memLp f).integrable_sq.const_mul _))
+    (((Lp.memLp (W1p.value u)).integrable_sq.const_mul _).add
+      ((Lp.memLp f).integrable_sq.const_mul _)).mul_of_top_right hψ2
   rw [← integral_const_mul, ← integral_const_mul,
     ← integral_add (hZ.const_mul _) (hFu.const_mul _)]
   refine integral_mono ((hZ.const_mul _).add (hFu.const_mul _)) hg fun x => ?_
