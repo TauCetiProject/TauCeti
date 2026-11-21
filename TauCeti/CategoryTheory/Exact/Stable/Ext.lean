@@ -43,8 +43,7 @@ theorem ext_mk₀_comp_eq_zero_of_factorsThrough {X Y : C} {f : X ⟶ Y}
     (x : Ext.{w} Y Z (n + 1)) : (Ext.mk₀ f).comp x (zero_add _) = 0 := by
   obtain ⟨Q, hQ, i, p, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).1 hf
   have := (ExactStructure.abelian_isProjective_iff Q).1 hQ
-  rw [← Ext.mk₀_comp_mk₀_assoc, Ext.eq_zero_of_projective ((Ext.mk₀ p).comp x (zero_add _)),
-    Ext.comp_zero]
+  exact ext_mk₀_comp_eq_zero_of_projective i p x
 
 /-- **`Ext` vanishing is a stable invariant**: if `X` and `Y` are isomorphic in the projective
 stable category, then `Ext^{n+1}(X, Z) = 0` as soon as `Ext^{n+1}(Y, Z) = 0`. -/

@@ -35,6 +35,7 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.transpose_mem_sp` and `LieAlgebra.Symplectic.conjTranspose_mem_sp`: the
   symplectic Lie algebra is stable under transpose, and under conjugate transpose over a star
   ring.
+* `LieAlgebra.Symplectic.J_mul_mem_sp`: `J` times a symmetric matrix lies in `sp l R`.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
 * `LieAlgebra.Symplectic.jConj` and `LieAlgebra.Symplectic.symmetrize`: the linear involution
@@ -128,6 +129,12 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
     star_J, conjTranspose_zero, conjTranspose_transpose_eq_transpose_conjTranspose] at h
   rw [mem_sp, eq_neg_iff_add_eq_zero, ← neg_eq_zero, ← h]
   noncomm_ring
+
+/-- **`J` times a symmetric matrix is a symplectic Lie matrix**: `(J S)ᵀ J = S (-J) J = S` and
+`-(J (J S)) = S`, both since `J * J = -1`. These are the Hamiltonian matrices of quadratic
+Hamiltonians. -/
+theorem J_mul_mem_sp {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) : J l R * S ∈ sp l R := by
+  simp [transpose_mul, hS.eq, Matrix.mul_assoc, ← Matrix.mul_assoc (J l R) (J l R), J_squared]
 
 /-- On the symplectic Lie algebra, conjugation by `J` is negative transpose. -/
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
