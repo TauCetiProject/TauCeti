@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
-public import TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -186,7 +186,7 @@ theorem IsSmooth.comp {H : Type*} [Group H] [TopologicalSpace H] {ρ : Represent
 representation. -/
 instance instIsSmoothCompSubtype {ρ : Representation A G V} [ρ.IsSmooth] (H : Subgroup G) :
     IsSmooth (ρ.comp H.subtype) :=
-  IsSmooth.comp continuous_subtype_val
+  IsSmooth.comp continuous_subtypeVal
 
 /-- Descending a smooth representation to `G ⧸ S` along a normal subgroup `S` acting trivially
 yields a smooth representation of `G ⧸ S` in the quotient topology. -/
@@ -312,7 +312,7 @@ instance instIsSmoothSmoothVectors [SeparatelyContinuousMul G] (ρ : Representat
     ρ.smoothVectors.toRepresentation.IsSmooth where
   isOpen_stabilizer v := by
     rw [ρ.smoothVectors.stabilizer_toRepresentation v]
-    exact mem_smoothVectors_iff.mp v.2
+    exact mem_smoothVectors_iff.mp v.property
 
 /-- **Universal property of `smoothVectors`:** a subrepresentation `S` of `ρ` is contained in
 `ρ.smoothVectors` if and only if `S` is smooth. -/
@@ -323,7 +323,7 @@ theorem _root_.Subrepresentation.le_smoothVectors_iff_isSmooth [SeparatelyContin
   rw [isSmooth_iff]
   refine ⟨fun hS v ↦ ?_, fun hS v hv ↦ ?_⟩
   · rw [S.stabilizer_toRepresentation v]
-    exact mem_smoothVectors_iff.mp (hS v.2)
+    exact mem_smoothVectors_iff.mp (hS v.property)
   · simpa [S.stabilizer_toRepresentation ⟨v, hv⟩] using hS ⟨v, hv⟩
 
 /-- `ρ.smoothVectors = ⊤` if and only if `ρ` is smooth. -/
@@ -353,7 +353,7 @@ def IntertwiningMap.restrictSmoothVectors [SeparatelyContinuousMul G]
     {ρ : Representation A G V} {σ : Representation A G W} (f : ρ.IntertwiningMap σ) :
     ρ.smoothVectors.toRepresentation.IntertwiningMap σ.smoothVectors.toRepresentation :=
   (f.comp ρ.smoothVectors.subtype).codRestrict σ.smoothVectors fun v ↦ by
-    simpa using f.apply_mem_smoothVectors (Subrepresentation.mem_toSubmodule.mp v.2)
+    simpa using f.apply_mem_smoothVectors (Subrepresentation.mem_toSubmodule.mp v.property)
 
 /-- Coercing `f.restrictSmoothVectors v` to the ambient module evaluates `f` on `v`. -/
 @[simp]
@@ -465,7 +465,7 @@ theorem mem_smoothVectors_iff_exists_isCompact_openSubgroup_le_stabilizer
       ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ U.toSubgroup ≤ ρ.stabilizer v := by
   rw [mem_smoothVectors_iff_exists_openSubgroup_le_stabilizer]
   refine ⟨fun ⟨U₀, hU₀⟩ ↦ ?_, fun ⟨U, _, hU⟩ ↦ ⟨U, hU⟩⟩
-  obtain ⟨U, hUcpt, hUU₀⟩ := U₀.exists_isCompact_le
+  obtain ⟨U, hUcpt, hUU₀⟩ := NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup U₀
   exact ⟨U, hUcpt, fun _ hg ↦ hU₀ (hUU₀ hg)⟩
 
 /-- **Smoothness over a locally profinite group:** in a weakly locally compact zero-dimensional

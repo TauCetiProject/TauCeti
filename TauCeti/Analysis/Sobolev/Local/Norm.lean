@@ -25,10 +25,11 @@ supplies its unfolding, its value through a given weak derivative on an open set
 `W^{k,p}_loc` membership of a function of finite norm and, conversely, the finiteness of the
 norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
-zero norm, monotonicity in the set, invariance under almost-everywhere change, the triangle
-inequality and the operator-norm bound under a continuous linear map of the codomain. An upper
-bound of the form `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite
-when `c = 0`) may be checked through each weak derivative of `f` separately.
+zero norm, monotonicity in the set and in the derivative order, invariance under
+almost-everywhere change, the triangle inequality (also over finite sums) and the operator-norm
+bound under a continuous linear map of the codomain. An upper bound of the form
+`a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
+checked through each weak derivative of `f` separately.
 
 ## References
 
@@ -99,6 +100,17 @@ theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp 
     gcongr ?_ + ?_
     · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
     · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) ih
+
+/-- The `W^{k,p}(U)` norm increases with the derivative order. -/
+theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
+    eLpNormWkp p U l f ≤ eLpNormWkp p U k f := by
+  induction l generalizing k F with
+  | zero => exact eLpNorm_le_eLpNormWkp.trans_eq' eLpNormWkp_zero.symm
+  | succ l ih =>
+    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    rw [eLpNormWkp_succ, eLpNormWkp_succ]
+    gcongr
+    exact ih (by omega)
 
 /-- Almost-everywhere equality on `U` preserves the `W^{k,p}(U)` norm. -/
 theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
@@ -214,6 +226,12 @@ theorem eLpNormWkp_add_le (hp : 1 ≤ p) :
     · exact eLpNorm_add_le hp
     · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
         iInf₂_le_of_le (D + D') (hD.add hD') ih
+
+/-- The triangle inequality for the `W^{k,p}` norm over a finite sum. -/
+theorem eLpNormWkp_sum_le [CompleteSpace F] {ι : Type*} {s : Finset ι} {u : ι → ℂ → F}
+    (hp : 1 ≤ p) : eLpNormWkp p U k (∑ i ∈ s, u i) ≤ ∑ i ∈ s, eLpNormWkp p U k (u i) :=
+  Finset.le_sum_of_subadditive (fun u : ℂ → F ↦ eLpNormWkp p U k u) eLpNormWkp_zero_fun.le
+    (fun _ _ ↦ eLpNormWkp_add_le hp) s u
 
 /-- A continuous linear map of the codomain scales the `W^{k,p}` norm by at most its operator
 norm. -/

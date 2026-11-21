@@ -29,7 +29,7 @@ preimages. These apply to arbitrary open subgroups, without normality. Separate 
 multiplication makes the target coset spaces discrete; the preimage criterion only needs this
 on the target group of the homomorphism.
 
-## Main instances
+## Main instances and results
 
 * `OpenSubgroup.instSeparatelyContinuousMul`, `OpenSubgroup.instContinuousMul`,
   `OpenSubgroup.instContinuousInv`, `OpenSubgroup.instIsTopologicalGroup`: topological group
@@ -37,18 +37,9 @@ on the target group of the homomorphism.
 * `OpenSubgroup.instLocallyCompactSpace`, `OpenSubgroup.instWeaklyLocallyCompactSpace`,
   `OpenSubgroup.instCompactSpace`: local compactness and compactness inherited from the ambient
   group, with additive versions on `OpenAddSubgroup`.
-
-## Main results
-
-* `OpenSubgroup.isCompact_of_subset`, `OpenSubgroup.isCompact_inf_left`,
-  `OpenSubgroup.isCompact_inf_right`, `OpenSubgroup.directedOn_isCompact_le`,
-  `TauCeti.directedOn_isCompact_openSubgroup`: compactness of open subgroups inside compact sets,
-  stability of compact open subgroups under intersection, and downward directedness of compact
-  open subgroups.
-* `OpenSubgroup.eq_top_of_preconnectedSpace`: in a preconnected group with separately continuous
-  multiplication, every open subgroup is `⊤`.
-* `OpenSubgroup.continuous_mk_inf_iff`, `OpenSubgroup.continuous_mk_comap_iff`: continuity into
-  coset spaces of intersections and preimages of open subgroups.
+* `OpenSubgroup.directedOn_ge_isCompact_and_le`, `OpenSubgroup.isCoinitial_isCompact_and_le`:
+  compact open subgroups below a given open subgroup `U₀` are downward-directed, and when `U₀` is
+  compact they form a coinitial family in `OpenSubgroup G`.
 -/
 
 public section
@@ -106,54 +97,27 @@ instance instCompactSpace [SeparatelyContinuousMul G] [CompactSpace G] (U : Open
     CompactSpace U :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
 
-/-- In a group with separately continuous multiplication, every open subgroup contained in a
-compact subset is compact. -/
-@[to_additive
-/-- In an additive group with separately continuous addition, every open additive subgroup
-contained in a compact subset is compact. -/]
-theorem isCompact_of_subset [SeparatelyContinuousMul G] (U : OpenSubgroup G) {K : Set G}
-    (hK : IsCompact K) (hUK : (U : Set G) ⊆ K) : IsCompact (U : Set G) :=
-  hK.of_isClosed_subset U.isClosed hUK
+/-- For any open subgroup `U₀`, the compact open subgroups contained in `U₀` are downward-directed
+(directed under `≥`). -/
+@[to_additive /-- For any open additive subgroup `U₀`, the compact open additive subgroups
+contained in `U₀` are downward-directed (directed under `≥`). -/]
+theorem directedOn_ge_isCompact_and_le [SeparatelyContinuousMul G] (U₀ : OpenSubgroup G) :
+    DirectedOn (· ≥ ·) {V : OpenSubgroup G | IsCompact (V : Set G) ∧ V ≤ U₀} :=
+  directedOn_of_inf_mem fun V₁ V₂ h₁ _ ↦
+    ⟨h₁.1.of_isClosed_subset (V₁ ⊓ V₂).isClosed inf_le_left, inf_le_of_left_le h₁.2⟩
 
-/-- In a group with separately continuous multiplication, the intersection of a compact open
-subgroup with any open subgroup is compact. -/
-@[to_additive
-/-- In an additive group with separately continuous addition, the intersection of a compact open
-additive subgroup with any open additive subgroup is compact. -/]
-theorem isCompact_inf_left [SeparatelyContinuousMul G] {U : OpenSubgroup G}
-    (hU : IsCompact (U : Set G)) (V : OpenSubgroup G) :
-    IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
-  (U ⊓ V).isCompact_of_subset hU Set.inter_subset_left
-
-/-- In a group with separately continuous multiplication, the intersection of any open subgroup
-with a compact open subgroup is compact. -/
-@[to_additive
-/-- In an additive group with separately continuous addition, the intersection of any open additive
-subgroup with a compact open additive subgroup is compact. -/]
-theorem isCompact_inf_right [SeparatelyContinuousMul G] (U : OpenSubgroup G) {V : OpenSubgroup G}
-    (hV : IsCompact (V : Set G)) : IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
-  (U ⊓ V).isCompact_of_subset hV Set.inter_subset_right
-
-/-- In a group with separately continuous multiplication, the compact open subgroups of `G`
-contained in a given open subgroup `U₀` form a downward-directed family (directed under reverse
-inclusion). -/
-@[to_additive
-/-- In an additive group with separately continuous addition, the compact open additive subgroups of
-`G` contained in a given open additive subgroup `U₀` form a downward-directed family (directed under
-reverse inclusion). -/]
-theorem directedOn_isCompact_le [SeparatelyContinuousMul G] (U₀ : OpenSubgroup G) :
-    DirectedOn (· ≥ ·) {H : OpenSubgroup G | IsCompact (H : Set G) ∧ H ≤ U₀} :=
-  fun H₁ ⟨hH₁, h₁⟩ _ ⟨_, _⟩ ↦
-    ⟨H₁ ⊓ _, ⟨H₁.isCompact_inf_left hH₁ _, inf_le_of_left_le h₁⟩, inf_le_left, inf_le_right⟩
-
-/-- In a preconnected group with separately continuous multiplication, every open subgroup is
-`⊤`. -/
-@[to_additive
-/-- In a preconnected additive group with separately continuous addition, every open additive
-subgroup is `⊤`. -/]
-theorem eq_top_of_preconnectedSpace [SeparatelyContinuousMul G] [PreconnectedSpace G]
-    (U : OpenSubgroup G) : U = ⊤ :=
-  SetLike.ext' (U.isClopen.eq_univ ⟨1, U.one_mem⟩)
+/-- **Cofinality under reverse inclusion.** The compact open subgroups contained in a given compact
+open subgroup `U₀` are coinitial in `OpenSubgroup G` (that is, cofinal in `(OpenSubgroup G)ᵒᵈ`
+under reverse inclusion `≥`): every open subgroup `W` contains `U₀ ⊓ W`. -/
+@[to_additive /-- **Cofinality under reverse inclusion.** The compact open additive subgroups
+contained in a given compact open additive subgroup `U₀` are coinitial in `OpenAddSubgroup G` (that
+is, cofinal in `(OpenAddSubgroup G)ᵒᵈ` under reverse inclusion `≥`): every open additive subgroup
+`W` contains `U₀ ⊓ W`. -/]
+theorem isCoinitial_isCompact_and_le [SeparatelyContinuousMul G] {U₀ : OpenSubgroup G}
+    (hU₀ : IsCompact (U₀ : Set G)) :
+    IsCoinitial {V : OpenSubgroup G | IsCompact (V : Set G) ∧ V ≤ U₀} :=
+  fun W ↦ ⟨U₀ ⊓ W, ⟨hU₀.of_isClosed_subset (U₀ ⊓ W).isClosed inf_le_left, inf_le_left⟩,
+    inf_le_right⟩
 
 variable {H X : Type*} [Group H] [TopologicalSpace H] [TopologicalSpace X]
 
@@ -219,18 +183,3 @@ theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H)
     exact h.isOpen_preimage _ (isOpen_discrete _)
 
 end OpenSubgroup
-
-namespace TauCeti
-
-variable {G : Type*} [Group G] [TopologicalSpace G]
-
-/-- In a group with separately continuous multiplication, the compact open subgroups of `G` form a
-downward-directed family under reverse inclusion. -/
-@[to_additive
-/-- In an additive group with separately continuous addition, the compact open additive subgroups of
-`G` form a downward-directed family under reverse inclusion. -/]
-theorem directedOn_isCompact_openSubgroup [SeparatelyContinuousMul G] :
-    DirectedOn (· ≥ ·) {H : OpenSubgroup G | IsCompact (H : Set G)} :=
-  fun H₁ hH₁ H₂ _ ↦ ⟨H₁ ⊓ H₂, H₁.isCompact_inf_left hH₁ H₂, inf_le_left, inf_le_right⟩
-
-end TauCeti

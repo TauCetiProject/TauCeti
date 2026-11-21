@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.Inflation
-public import TauCeti.FieldTheory.GaloisCohomology.UnitsRestriction
+public import TauCeti.FieldTheory.GaloisCohomology.Units.Restriction
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Subextension
 
 /-!

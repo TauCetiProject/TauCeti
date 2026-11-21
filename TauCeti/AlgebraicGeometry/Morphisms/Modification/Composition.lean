@@ -63,7 +63,7 @@ theorem exists_isIso_morphismRestrict_preimage_le (hf : IsModification f)
         hV.preimage (f ⁻¹ᵁ U).ι.isOpenEmbedding.isOpenMap
   have hWU : W ≤ U := by
     rintro _ ⟨y, _, rfl⟩
-    exact y.2
+    exact y.property
   have hpre : f ⁻¹ᵁ W = (f ⁻¹ᵁ U) ⊓ V := by
     dsimp only [W]
     rw [← image_morphismRestrict_preimage, Scheme.Hom.preimage_image_eq,

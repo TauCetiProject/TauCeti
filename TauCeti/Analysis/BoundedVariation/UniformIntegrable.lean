@@ -65,7 +65,7 @@ theorem LocallyIntegrableOn.variationMeasure_absolutelyContinuous_of_unifIntegra
     variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E) := by
   refine Measure.AbsolutelyContinuous.mk fun A _ hnull => ?_
   have hnull' : μ (((↑) : Ω → E) '' A) = 0 := by
-    exact ((MeasurableEmbedding.subtype_coe Ω.isOpen.measurableSet).comap_apply μ A).symm.trans
+    exact ((MeasurableEmbedding.subtypeVal Ω.isOpen.measurableSet).comap_apply μ A).symm.trans
       hnull
   refine le_antisymm ?_ bot_le
   apply le_of_forall_gt_imp_ge_of_dense fun ε hε => ?_
@@ -75,7 +75,7 @@ theorem LocallyIntegrableOn.variationMeasure_absolutelyContinuous_of_unifIntegra
   let W : Opens E := ⟨V ∩ Ω, hVo.inter Ω.isOpen⟩
   have hWΩ : W ≤ Ω := inter_subset_right
   have hAW : A ⊆ ((↑) : Ω → E) ⁻¹' (W : Set E) := fun x hx =>
-    ⟨hAV (mem_image_of_mem _ hx), x.2⟩
+    ⟨hAV (mem_image_of_mem _ hx), x.property⟩
   refine (measure_mono hAW).trans ?_
   rw [variationMeasure_preimage_coe hu hfin hWΩ]
   refine (totalVariationOn_le_liminf
@@ -137,7 +137,8 @@ theorem LocallyIntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegr
   have hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ V : Opens E, K ⊆ (V : Set E) ∧ totalVariationOn μ V u ≠ ∞ :=
     fun _ _ hK => ⟨Ω, hK, (htv.trans_lt ENNReal.coe_lt_top).ne⟩
-  have hac := hu.variationMeasure_absolutelyContinuous_of_unifIntegrable hfin hv hUI.1 hconv
+  have hac := hu.variationMeasure_absolutelyContinuous_of_unifIntegrable hfin hv hUI.unifIntegrable
+      hconv
   have hg := hasWeakFDerivOn_of_absolutelyContinuous hu hfin hac
   have hnormg : (∫⁻ x in Ω, ‖Function.extend ((↑) : Ω → E)
       (fun x => ((variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x).toReal •

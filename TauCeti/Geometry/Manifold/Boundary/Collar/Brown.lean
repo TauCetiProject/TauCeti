@@ -172,14 +172,14 @@ variable {U : Set N} {c : U × Ico (0 : ℝ) 1 → M}
 
 /-- The depth `max s 0 ∈ [0, 1)` read by the local collar at chart depth `s < 1`. -/
 private def depth (s : Iio (1 : ℝ)) : Ico (0 : ℝ) 1 :=
-  ⟨max (s : ℝ) 0, le_max_right _ _, max_lt s.2 one_pos⟩
+  ⟨max (s : ℝ) 0, le_max_right _ _, max_lt s.property one_pos⟩
 
 private theorem depth_eq_zero {s : Iio (1 : ℝ)} (hs : (s : ℝ) ≤ 0) :
     depth s = ⟨0, by norm_num⟩ :=
   Subtype.ext (max_eq_right hs)
 
 private theorem continuous_depth : Continuous depth :=
-  (continuous_subtype_val.max continuous_const).subtype_mk _
+  (continuous_subtypeVal.max continuous_const).subtype_mk _
 
 /-- The chart of `extended f` built from the local collar `c`. -/
 private def chart (hc : IsCollar (f ∘ ((↑) : U → N)) c) (z : U × Iio (1 : ℝ)) : extended f :=
@@ -203,7 +203,7 @@ private theorem continuous_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c) :
     Continuous (chart hc) :=
   ((hc.isOpenEmbedding.continuous.comp (continuous_fst.prodMk
     (continuous_depth.comp continuous_snd))).prodMk
-    ((continuous_subtype_val.comp continuous_snd).min continuous_const)).subtype_mk _
+    ((continuous_subtypeVal.comp continuous_snd).min continuous_const)).subtype_mk _
 
 /-- Read in the chart, a point of the local collar `c` at height `t ≤ 0` is the point `(c q, t)`,
 provided it lies in the external collar (`q` at depth zero) or in `M` (`t = 0`). -/
@@ -212,8 +212,8 @@ private theorem coe_chart_add (hc : IsCollar (f ∘ ((↑) : U → N)) c) (q : U
     (chart hc (q.1, ⟨(q.2 : ℝ) + t, h⟩) : M × ℝ) = (c q, t) := by
   rcases hqt with rfl | hq0
   · refine Prod.ext (congrArg c (Prod.ext rfl (Subtype.ext ?_))) ?_
-    · simp [depth, q.2.2.1]
-    · simp [coe_chart, q.2.2.1]
+    · simp [depth, q.2.property.1]
+    · simp [coe_chart, q.2.property.1]
   · have hcq : c q = f q.1 :=
       (congrArg c (Prod.ext rfl (Subtype.ext hq0) : q = (q.1, ⟨0, by norm_num⟩))).trans
         (hc.apply_zero q.1)
@@ -228,10 +228,10 @@ private def chartRange (c : U × Ico (0 : ℝ) 1 → M) : Set (extended f) :=
 `(q.1, q.2 + t)`. -/
 private noncomputable def chartInv (hc : IsCollar (f ∘ ((↑) : U → N)) c)
     (y : chartRange (f := f) c) : U × Iio (1 : ℝ) :=
-  let q := hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm ⟨(y : M × ℝ).1, y.2⟩
+  let q := hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm ⟨(y : M × ℝ).1, y.property⟩
   (q.1, ⟨(q.2 : ℝ) + (y : M × ℝ).2, by
-    have hq := q.2.2.2
-    have ht := (y : extended f).2.1
+    have hq := q.2.property.2
+    have ht := (y : extended f).property.1
     simp only [mem_Iio]
     linarith⟩)
 
@@ -240,9 +240,9 @@ private theorem isOpenEmbedding_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c
     (hcf : ∀ p, c p ∈ range f → (p.2 : ℝ) = 0) : IsOpenEmbedding (chart hc) := by
   set e := hc.isOpenEmbedding.isEmbedding.toHomeomorph
   have hopen : IsOpen (chartRange (f := f) c) :=
-    hc.isOpenEmbedding.isOpen_range.preimage (continuous_fst.comp continuous_subtype_val)
-  have he : ∀ y : chartRange (f := f) c, c (e.symm ⟨(y : M × ℝ).1, y.2⟩) = (y : M × ℝ).1 :=
-    fun y => congrArg Subtype.val (e.apply_symm_apply ⟨(y : M × ℝ).1, y.2⟩)
+    hc.isOpenEmbedding.isOpen_range.preimage (continuous_fst.comp continuous_subtypeVal)
+  have he : ∀ y : chartRange (f := f) c, c (e.symm ⟨(y : M × ℝ).1, y.property⟩) = (y : M × ℝ).1 :=
+    fun y => congrArg Subtype.val (e.apply_symm_apply ⟨(y : M × ℝ).1, y.property⟩)
   let E : U × Iio (1 : ℝ) ≃ₜ chartRange (f := f) c :=
     { toFun := fun z => ⟨chart hc z, (z.1, depth z.2), rfl⟩
       invFun := chartInv hc
@@ -254,20 +254,20 @@ private theorem isOpenEmbedding_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c
         refine Prod.ext rfl (Subtype.ext ?_)
         rcases le_total (z.2 : ℝ) 0 with h | h <;> simp [depth, h]
       right_inv := fun y => by
-        obtain ⟨hy0, hy⟩ := (y : extended f).2
+        obtain ⟨hy0, hy⟩ := (y : extended f).property
         -- `chartInv hc y` is by definition `(q.1, q.2 + t)` for `y = (c q, t)`.
-        have hqt : (y : M × ℝ).2 = 0 ∨ ((e.symm ⟨(y : M × ℝ).1, y.2⟩).2 : ℝ) = 0 :=
+        have hqt : (y : M × ℝ).2 = 0 ∨ ((e.symm ⟨(y : M × ℝ).1, y.property⟩).2 : ℝ) = 0 :=
           hy.imp id fun hy => hcf _ (by rw [he y]; exact hy)
         exact Subtype.ext (Subtype.ext ((coe_chart_add hc _ hy0 hqt _).trans
           (Prod.ext (he y) rfl)))
       continuous_toFun := (continuous_chart hc).subtype_mk _
       continuous_invFun := by
-        have hq : Continuous fun y : chartRange (f := f) c => e.symm ⟨(y : M × ℝ).1, y.2⟩ :=
+        have hq : Continuous fun y : chartRange (f := f) c => e.symm ⟨(y : M × ℝ).1, y.property⟩ :=
           e.symm.continuous.comp ((continuous_fst.comp
-            (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _)
+            (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _)
         exact (continuous_fst.comp hq).prodMk
-          (((continuous_subtype_val.comp (continuous_snd.comp hq)).add
-            (continuous_snd.comp (continuous_subtype_val.comp continuous_subtype_val))).subtype_mk
+          (((continuous_subtypeVal.comp (continuous_snd.comp hq)).add
+            (continuous_snd.comp (continuous_subtypeVal.comp continuous_subtypeVal))).subtype_mk
             _) }
   exact hopen.isOpenEmbedding_subtypeVal.comp E.isOpenEmbedding
 
@@ -276,18 +276,18 @@ private theorem isOpenEmbedding_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c
 /-- The push by the depth function `a`, as a homeomorphism of the chart domain. -/
 private noncomputable def pushHomeomorph (a : N → ℝ) (ha : Continuous a) (ha0 : ∀ x, 0 ≤ a x)
     (ha1 : ∀ x, a x ≤ 1 / 4) : (U × Iio (1 : ℝ)) ≃ₜ (U × Iio (1 : ℝ)) where
-  toFun z := (z.1, ⟨push (a z.1) z.2, push_lt_one (ha0 _) (ha1 _) z.2.2⟩)
-  invFun z := (z.1, ⟨unpush (a z.1) z.2, (unpush_le _ _).trans_lt z.2.2⟩)
+  toFun z := (z.1, ⟨push (a z.1) z.2, push_lt_one (ha0 _) (ha1 _) z.2.property⟩)
+  invFun z := (z.1, ⟨unpush (a z.1) z.2, (unpush_le _ _).trans_lt z.2.property⟩)
   left_inv z := Prod.ext rfl (Subtype.ext (unpush_push (ha0 _) (ha1 _) _))
   right_inv z := Prod.ext rfl (Subtype.ext (push_unpush (ha0 _) (ha1 _) _))
   continuous_toFun := continuous_fst.prodMk ((continuous_push.comp
-    ((ha.comp (continuous_subtype_val.comp continuous_fst)).prodMk
-      (continuous_subtype_val.comp continuous_snd))).subtype_mk _)
+    ((ha.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
+      (continuous_subtypeVal.comp continuous_snd))).subtype_mk _)
   continuous_invFun := by
     have ha' : Continuous fun z : U × Iio (1 : ℝ) => a z.1 :=
-      ha.comp (continuous_subtype_val.comp continuous_fst)
+      ha.comp (continuous_subtypeVal.comp continuous_fst)
     have hs : Continuous fun z : U × Iio (1 : ℝ) => (z.2 : ℝ) :=
-      continuous_subtype_val.comp continuous_snd
+      continuous_subtypeVal.comp continuous_snd
     refine continuous_fst.prodMk (Continuous.subtype_mk ?_ _)
     exact ((hs.sub ha').max ((hs.sub ha').div (continuous_const.sub (continuous_const.mul ha'))
       fun z => by dsimp only [Pi.sub_apply, Pi.mul_apply]; linarith [ha1 z.1])).min hs
@@ -312,7 +312,7 @@ private theorem mem_of_coe_chart_eq (hf : Injective f) (hc : IsCollar (f ∘ ((�
   have hcz : c (z.1, depth z.2) = f x := congrArg Prod.fst h
   have hd : depth z.2 = ⟨0, by norm_num⟩ := Subtype.ext (hcf _ ⟨x, hcz.symm⟩)
   rw [hd, hc.apply_zero] at hcz
-  exact hf hcz ▸ z.1.2
+  exact hf hcz ▸ z.1.property
 
 /-- A local collar and a depth function `a ≤ 1/4` supported in its domain give a homeomorphism of
 `extended f` pushing the external collar inward by `a`. -/
@@ -327,7 +327,7 @@ private theorem exists_pushesBy [T2Space M] [CompactSpace N] (hf : Injective f)
   set C : Set (extended f) := {y | (y : M × ℝ) ∈ (f '' T) ×ˢ Iic 0} ∪
     chart hc '' {z | (z.1 : N) ∈ T ∧ (z.2 : ℝ) ∈ Icc 0 (1 / 2)}
   have hC : IsClosed C :=
-    (((hT.image hfc).isClosed.prod isClosed_Iic).preimage continuous_subtype_val).union
+    (((hT.image hfc).isClosed.prod isClosed_Iic).preimage continuous_subtypeVal).union
       ((isCompact_slab hT hsupp).image (continuous_chart hc)).isClosed
   have hCχ : C ⊆ range (chart hc) := by
     rintro y (⟨⟨x, hxT, hx⟩, ht⟩ | ⟨z, -, rfl⟩)
@@ -375,7 +375,7 @@ omit [TopologicalSpace N] in
 private theorem PushesBy.coe_snd_eq_zero {G : extended f ≃ₜ extended f}
     (hG : PushesBy f G fun _ => 1 / 4) {x : N} {t : ℝ} (h : (f x, t) ∈ extended f)
     (ht : -(1 / 4) ≤ t) : (G ⟨(f x, t), h⟩ : M × ℝ).2 = 0 := by
-  obtain ⟨hy0, hy | ⟨x', hx'⟩⟩ := (G ⟨(f x, t), h⟩).2
+  obtain ⟨hy0, hy | ⟨x', hx'⟩⟩ := (G ⟨(f x, t), h⟩).property
   · exact hy
   -- Otherwise the image is in the external collar, where it is the push of a point below the strip.
   by_contra hne
@@ -395,7 +395,7 @@ private theorem PushesBy.le_coe_snd {G : extended f ≃ₜ extended f}
     -(1 / 4) ≤ (y : M × ℝ).2 := by
   by_contra hlt
   rw [not_le] at hlt
-  obtain ⟨x, hx⟩ : (y : M × ℝ).1 ∈ range f := y.2.2.resolve_left (by linarith)
+  obtain ⟨x, hx⟩ : (y : M × ℝ).1 ∈ range f := y.property.2.resolve_left (by linarith)
   have hy' : y = ⟨(f x, (y : M × ℝ).2), mk_mem_extended (by linarith)⟩ :=
     Subtype.ext (Prod.ext hx.symm rfl)
   rw [hy', hG x _ _ (by linarith)] at hy
@@ -411,7 +411,7 @@ private theorem isCollared_of_pushesBy (hfe : IsEmbedding f) {G : extended f ≃
   have hι : Continuous ι := (continuous_id.prodMk continuous_const).subtype_mk _
   -- The strip of the external collar, parametrized by `N × [0, 1)`.
   let e : N × Ico (0 : ℝ) 1 → extended f := fun p =>
-    ⟨(f p.1, ((p.2 : ℝ) - 1) / 4), mk_mem_extended (by linarith [p.2.2.2])⟩
+    ⟨(f p.1, ((p.2 : ℝ) - 1) / 4), mk_mem_extended (by linarith [p.2.property.2])⟩
   let aff : ℝ ≃ₜ ℝ :=
     { toFun := fun t => (t - 1) / 4
       invFun := fun t => 4 * t + 1
@@ -424,20 +424,20 @@ private theorem isCollared_of_pushesBy (hfe : IsEmbedding f) {G : extended f ≃
   -- The collar is the push of the strip, which lands in `M`.
   let col : N × Ico (0 : ℝ) 1 → M := fun p => (G (e p) : M × ℝ).1
   have hcomp : ι ∘ col = G ∘ e := funext fun p =>
-    Subtype.ext (Prod.ext rfl (hG.coe_snd_eq_zero _ (by linarith [p.2.2.1])).symm)
+    Subtype.ext (Prod.ext rfl (hG.coe_snd_eq_zero _ (by linarith [p.2.property.1])).symm)
   have hcol : Continuous col :=
-    continuous_fst.comp (continuous_subtype_val.comp (G.continuous.comp he.continuous))
+    continuous_fst.comp (continuous_subtypeVal.comp (G.continuous.comp he.continuous))
   -- Its image is the part of `M` covered by the push of the open lower half of `extended f`.
   have hrange : range col = ι ⁻¹' (G '' {y | (y : M × ℝ).2 < 0}) := by
     ext m
     constructor
     · rintro ⟨p, rfl⟩
-      have hp : ((p.2 : ℝ) - 1) / 4 < 0 := by linarith [p.2.2.2]
+      have hp : ((p.2 : ℝ) - 1) / 4 < 0 := by linarith [p.2.property.2]
       exact ⟨e p, hp, (congrFun hcomp p).symm⟩
     · rintro ⟨y, hy, hym⟩
       have hy' : (y : M × ℝ).2 < 0 := hy
       have hge := hG.le_coe_snd (y := y) (by rw [hym])
-      obtain ⟨x, hx⟩ : (y : M × ℝ).1 ∈ range f := y.2.2.resolve_left hy'.ne
+      obtain ⟨x, hx⟩ : (y : M × ℝ).1 ∈ range f := y.property.2.resolve_left hy'.ne
       let p : N × Ico (0 : ℝ) 1 := (x, ⟨4 * (y : M × ℝ).2 + 1, by linarith, by linarith⟩)
       have hey : e p = y := Subtype.ext (Prod.ext hx (by simp only [e, p]; ring))
       have hp : (ι ∘ col) p = ι m := (congrFun hcomp p).trans (by rw [comp_apply, hey, hym])
@@ -445,7 +445,7 @@ private theorem isCollared_of_pushesBy (hfe : IsEmbedding f) {G : extended f ≃
   refine isCollared_iff.2 ⟨col, ⟨.of_comp hcol hι (hcomp ▸ G.isEmbedding.comp he), hrange ▸ ?_⟩,
     fun x => ?_⟩
   · exact (G.isOpenMap _ (isOpen_Iio.preimage
-      (continuous_snd.comp continuous_subtype_val))).preimage hι
+      (continuous_snd.comp continuous_subtypeVal))).preimage hι
   · -- At depth zero the collar is `f`.
     have he0 : e (x, ⟨0, by norm_num⟩) = ⟨(f x, -(1 / 4)), mk_mem_extended (by norm_num)⟩ :=
       Subtype.ext (Prod.ext rfl (by norm_num))

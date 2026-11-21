@@ -14,6 +14,8 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Local Sobolev maps from a Riemann surface into a manifold
@@ -56,6 +58,8 @@ class of continuous maps with Sobolev coordinate expressions.
   subset.
 * `TauCeti.MemWkpLocMapOnGroupoid.of_le`, `TauCeti.MemWkpLocMapOnGroupoid.mono_exponent`:
   decreasing the derivative order or the integrability exponent.
+* `TauCeti.memWkpLocMapOnGroupoid_zero_iff`, `TauCeti.memWkpLocMapGroupoid_zero_iff`: at order
+  zero the class is that of continuous maps.
 * `ContMDiffOn.memWkpLocMapOn`, `ContMDiff.memWkpLocMap`: `C^n` maps belong to the class of
   every order `k ≤ n`, for every exponent.
 * `TauCeti.memWkpLocMapOn_iff`, `TauCeti.memWkpLocMap_iff`,
@@ -185,6 +189,18 @@ theorem MemWkpLocMapOnGroupoid.continuousOn (hu : MemWkpLocMapOnGroupoid G J I p
 theorem MemWkpLocMapGroupoid.continuous (hu : MemWkpLocMapGroupoid G J I p k u) : Continuous u :=
   hu.1
 
+/-- At order zero, the local Sobolev maps on `s` are the maps continuous on `s`. -/
+@[simp]
+theorem memWkpLocMapOnGroupoid_zero_iff :
+    MemWkpLocMapOnGroupoid G J I p 0 u s ↔ ContinuousOn u s :=
+  ⟨MemWkpLocMapOnGroupoid.continuousOn, fun hu ↦ memWkpLocMapOnGroupoid_iff.2
+    ⟨hu, fun φ _ ψ _ ↦ memWkpLoc_zero_iff.2 (hu.extend_comp_extend_symm φ ψ).memLpLoc⟩⟩
+
+/-- At order zero, the local Sobolev maps are the continuous maps. -/
+@[simp]
+theorem memWkpLocMapGroupoid_zero_iff : MemWkpLocMapGroupoid G J I p 0 u ↔ Continuous u := by
+  rw [← memWkpLocMapOnGroupoid_univ, memWkpLocMapOnGroupoid_zero_iff, continuousOn_univ]
+
 /-- Restriction to a smaller set, in particular to an open subset, preserves the class. -/
 theorem MemWkpLocMapOnGroupoid.mono (hu : MemWkpLocMapOnGroupoid G J I p k u s) (hts : t ⊆ s) :
     MemWkpLocMapOnGroupoid G J I p k u t :=
@@ -285,7 +301,7 @@ theorem _root_.ContMDiffOn.memWkpLocMapOn [CompleteSpace F] {n : ℕ∞ω}
     MemWkpLocMapOn I p k u s := by
   refine memWkpLocMapOn_iff.2 ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ ?_⟩
   have hV : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-    φ.isOpen_inter_preimage_symm (hu.continuousOn.isOpen_inter_preimage hs ψ.open_source)
+    φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs ψ.open_source
   have hφ' : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) k φ.symm φ.target :=
     contMDiffOn_symm_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero _ one_ne_zero hφ)
