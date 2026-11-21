@@ -9,15 +9,16 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Analysis.Asymptotics.Basic
+import TauCeti.Algebra.Order.BigOperators.Sum.IcoMulLe
 
 /-!
 # Norm divergence of partial sums of rapidly growing sequences
 
 For any sequence `f : ℕ → R` in a preordered, not necessarily associative ring with monotone
 addition satisfying `c * f k ≤ f (k + 1)` on `Finset.Ico M m` (`M ≤ m`), telescoping gives the
-finite-horizon bound `(c - 1) * ∑ j ∈ Finset.Ico M m, f j + f M ≤ f m`. In a seminormed additive
-group `E`, combining this with the triangle inequality when `1 ≤ c` and `c * ‖u k‖ ≤ ‖u (k + 1)‖`
-on `Finset.Ico M m` yields
+finite-horizon bound `(c - 1) * ∑ j ∈ Finset.Ico M m, f j + f M ≤ f m`
+(`TauCeti.sub_one_mul_sum_Ico_add_le_of_mul_le`). In a seminormed additive group `E`, combining this
+with the triangle inequality when `1 ≤ c` and `c * ‖u k‖ ≤ ‖u (k + 1)‖` on `Finset.Ico M m` yields
 `(c - 2) * ‖u m‖ + ‖u M‖ ≤ (c - 1) * ‖∑ j ∈ Finset.Ico M (m + 1), u j‖`.
 
 At `c = 2`, the bound specializes to `‖u M‖ ≤ ‖∑ j ∈ Finset.Ico M (m + 1), u j‖`. Thus if a
@@ -34,9 +35,6 @@ theorem.
 
 ## Main results
 
-* `TauCeti.sub_one_mul_sum_Ico_add_le_of_mul_le`: in a preordered, not necessarily associative ring
-  with monotone addition, if `c * f k ≤ f (k + 1)` for `k ∈ Finset.Ico M m` (`M ≤ m`), then
-  `(c - 1) * ∑ j ∈ Finset.Ico M m, f j + f M ≤ f m`.
 * `TauCeti.sub_two_mul_norm_add_norm_le_sub_one_mul_norm_sum_Ico_succ_of_mul_norm_le`: if `1 ≤ c`
   and `c * ‖u k‖ ≤ ‖u (k + 1)‖` for `k ∈ Finset.Ico M m` (`M ≤ m`), then
   `(c - 2) * ‖u m‖ + ‖u M‖ ≤ (c - 1) * ‖∑ j ∈ Finset.Ico M (m + 1), u j‖`.
@@ -57,25 +55,6 @@ public section
 open Asymptotics Filter Finset
 
 namespace TauCeti
-
-/-- Along a sequence in a preordered, not necessarily associative ring with monotone addition
-satisfying `c * f k ≤ f (k + 1)` for `k ∈ Ico M m` (`M ≤ m`),
-`(c - 1) * ∑ j ∈ Ico M m, f j + f M ≤ f m`. -/
-theorem sub_one_mul_sum_Ico_add_le_of_mul_le {R : Type*} [NonAssocRing R] [Preorder R]
-    [IsOrderedAddMonoid R] {f : ℕ → R} {c : R} {M m : ℕ} (hm : M ≤ m)
-    (hstep : ∀ k ∈ Ico M m, c * f k ≤ f (k + 1)) :
-    (c - 1) * ∑ j ∈ Ico M m, f j + f M ≤ f m := by
-  induction m, hm using Nat.le_induction with
-  | base => simp
-  | succ m hm ih =>
-    calc (c - 1) * ∑ j ∈ Ico M (m + 1), f j + f M
-        = (c - 1) * ∑ j ∈ Ico M m, f j + f M + (c - 1) * f m := by
-            rw [sum_Ico_succ_top hm, mul_add, add_right_comm]
-      _ ≤ f m + (c - 1) * f m := by
-            gcongr
-            exact ih fun k hk ↦ hstep k (Ico_subset_Ico_right m.le_succ hk)
-      _ = c * f m := by rw [sub_mul, one_mul, add_comm, sub_add_cancel]
-      _ ≤ f (m + 1) := hstep m (mem_Ico.2 ⟨hm, m.lt_succ_self⟩)
 
 /-- Along a sequence in a seminormed additive group satisfying `c * ‖u k‖ ≤ ‖u (k + 1)‖` for
 `k ∈ Ico M m` (`1 ≤ c`, `M ≤ m`),
