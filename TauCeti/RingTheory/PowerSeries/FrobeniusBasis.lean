@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.PowerSeries.Cartier
 
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.PowerSeries.AdicComplete
-import TauCeti.RingTheory.PowerSeries.Dvd
+import TauCeti.RingTheory.PowerSeries.Ideal
 
 /-!
 # The Frobenius power basis of a power series ring
@@ -33,13 +33,14 @@ This is the finite free algebra whose determinant norm and trace are Coleman's n
 operators on `R⟦X⟧`.
 
 The proof reduces modulo `p`. Over any commutative ring `S`, the series `(1 + X) ^ i` with
-`i < q` form a basis of `S⟦X⟧` over itself through the expansion `f ↦ f (X ^ q)`; this follows
-from the Cartier decomposition `F = ∑ r < q, X ^ r * F_r (X ^ q)` by the binomial change of basis
-between `X ^ r` and `(1 + X) ^ i`. Modulo `p`, the binomial theorem turns `φ` into the expansion
-by `p`. Existence of coordinates modulo every power of `p` follows by successive approximation,
-and the approximations converge since `R⟦X⟧` is complete for the ideal of series whose constant
-coefficient lies in `pR` (`PowerSeries.isAdicComplete_comap_constantCoeff`). Uniqueness uses that
-`p` is a nonzerodivisor, and Hausdorffness for the same ideal.
+`i < q` form a basis of `S⟦X⟧` over itself through the expansion `f ↦ f (X ^ q)`
+(`PowerSeries.exists_sum_one_add_X_pow_mul_expand` and
+`PowerSeries.eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero` in `Cartier.lean`). Modulo `p`,
+the binomial theorem turns `φ` into the expansion by `p`. Existence of coordinates modulo every
+power of `p` follows by successive approximation, and the approximations converge since `R⟦X⟧`
+is complete for the ideal of series whose constant coefficient lies in `pR`
+(`PowerSeries.isAdicComplete_comap_constantCoeff`). Uniqueness uses that `p` is a nonzerodivisor,
+and Hausdorffness for the same ideal.
 
 ## Main definitions
 
@@ -51,15 +52,17 @@ coefficient lies in `pR` (`PowerSeries.isAdicComplete_comap_constantCoeff`). Uni
 
 ## Main results
 
-* `PowerSeries.exists_sum_one_add_X_pow_mul_expand`,
-  `PowerSeries.eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero`: over any commutative ring, every
-  series is uniquely `∑ i < q, (1 + X) ^ i * b i (X ^ q)`.
 * `PowerSeries.frobeniusSubst_eq_expand`: if `p = 0` in `S`, then `φ` is the expansion by `p`.
+* `PowerSeries.exists_frobeniusAssembly_add_pow_mul`: every series is a Frobenius assembly up to a
+  multiple of `p ^ r`.
+* `PowerSeries.natCast_pow_dvd_frobeniusAssembly_iff`: if `p` is a nonzerodivisor, `p ^ r` divides
+  a Frobenius assembly exactly when it divides every coordinate.
 * `PowerSeries.frobeniusAssembly_injective`, `PowerSeries.frobeniusAssembly_surjective`: the
   Frobenius coordinates exist when `R` is `p`-adically complete, and are unique when `R` is
   `p`-adically Hausdorff and `p` is a nonzerodivisor.
 * `PowerSeries.frobeniusAssembly_frobeniusBasis_repr`: the coordinates of `f` in the Frobenius
   basis assemble to `f`.
+* `PowerSeries.frobeniusBasis_repr_mul`: the coordinates of `φ a * f` are `a` times those of `f`.
 * `PowerSeries.finrank_frobeniusAlgebra`: `R⟦X⟧` has rank `p` over itself through `φ`.
 
 ## References
@@ -72,94 +75,6 @@ coefficient lies in `pR` (`PowerSeries.isAdicComplete_comap_constantCoeff`). Uni
 public section
 
 namespace PowerSeries
-
-/-! ### Expanded coordinates over an arbitrary ring -/
-
-section Expand
-
-variable {S : Type*} [CommRing S]
-
-/-- Every Cartier component of modulus `q` of a power `(1 + X) ^ i` with `i < q` is a constant
-binomial coefficient. -/
-theorem cartier_one_add_X_pow {q i : ℕ} (j : ℕ) (hi : i < q) :
-    cartier S q j ((1 + X) ^ i) = C (i.choose j : S) := by
-  ext n
-  rw [coeff_cartier, coeff_C, ← Polynomial.coe_one, ← Polynomial.coe_X, ← Polynomial.coe_add,
-    ← Polynomial.coe_pow, Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp
-  · rw [Nat.choose_eq_zero_of_lt (by nlinarith)]
-    simp [hn.ne']
-
-/-- The Cartier component of index `j` of `(1 + X) ^ i * g (X ^ q)`, for `i < q`, is the binomial
-coefficient times `g`. -/
-theorem cartier_one_add_X_pow_mul_expand {q i j : ℕ} (hq : q ≠ 0) (hi : i < q) (hj : j < q)
-    (g : S⟦X⟧) :
-    cartier S q j ((1 + X) ^ i * expand q hq g) = C (i.choose j : S) * g := by
-  rw [mul_comm, cartier_expand_mul q j hq hj, cartier_one_add_X_pow j hi, mul_comm]
-
-/-- A power of `X` below `q` is a combination of the powers `(1 + X) ^ i`, `i < q`, with
-binomial coefficients. -/
-theorem X_pow_eq_sum_one_add_X_pow {q r : ℕ} (hr : r < q) :
-    (X : S⟦X⟧) ^ r =
-      ∑ i : Fin q, C ((-1) ^ (r - i) * (r.choose i : S)) * (1 + X) ^ (i : ℕ) := by
-  have h : (X : S⟦X⟧) ^ r = ((1 + X) + (-1)) ^ r := by ring
-  rw [h, add_pow, Fin.sum_univ_eq_sum_range
-    (fun i ↦ C ((-1) ^ (r - i) * (r.choose i : S)) * (1 + X) ^ i)]
-  rw [← Finset.sum_range_add_sum_Ico _ (show r + 1 ≤ q by omega)]
-  rw [Finset.sum_eq_zero (s := Finset.Ico _ _) fun i hi ↦ by
-    rw [Nat.choose_eq_zero_of_lt (by simp at hi; omega)]; simp, add_zero]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [map_mul, map_pow, map_neg, map_one, map_natCast]
-  ring
-
-/-- **Existence of expanded coordinates.** Over any commutative ring, every power series is
-`∑ i < q, (1 + X) ^ i * b i (X ^ q)` for some series `b i`. -/
-theorem exists_sum_one_add_X_pow_mul_expand (q : ℕ) (hq : q ≠ 0) (g : S⟦X⟧) :
-    ∃ b : Fin q → S⟦X⟧, ∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i) = g := by
-  refine ⟨fun i ↦ ∑ r ∈ Finset.range q,
-    C ((-1) ^ (r - i) * (r.choose i : S)) * cartier S q r g, ?_⟩
-  conv_rhs => rw [sum_X_pow_mul_expand_cartier q hq g]
-  simp_rw [map_sum, Finset.mul_sum, map_mul, expand_C]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun r hr ↦ ?_
-  rw [X_pow_eq_sum_one_add_X_pow (Finset.mem_range.mp hr), Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [map_mul]
-  ring
-
-/-- The Cartier components of an expanded combination: the component of index `j < q` of
-`∑ i < q, (1 + X) ^ i * b i (X ^ q)` is `∑ i, choose i j * b i`. -/
-theorem cartier_sum_one_add_X_pow_mul_expand {q j : ℕ} (hq : q ≠ 0) (hj : j < q)
-    (b : Fin q → S⟦X⟧) :
-    cartier S q j (∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i)) =
-      ∑ i : Fin q, C ((i : ℕ).choose j : S) * b i := by
-  rw [map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ cartier_one_add_X_pow_mul_expand hq i.isLt hj (b i)
-
-/-- **Uniqueness of expanded coordinates.** Over any commutative ring, if
-`∑ i < q, (1 + X) ^ i * b i (X ^ q) = 0`, then every `b i` vanishes. -/
-theorem eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero {q : ℕ} (hq : q ≠ 0)
-    {b : Fin q → S⟦X⟧} (hb : ∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i) = 0) : b = 0 := by
-  have hc (j : Fin q) : ∑ i : Fin q, C ((i : ℕ).choose j : S) * b i = 0 := by
-    rw [← cartier_sum_one_add_X_pow_mul_expand hq j.isLt, hb, map_zero]
-  -- Downward induction: the component of index `j` sees `b j` and the `b i` with `i > j`.
-  suffices h : ∀ k, ∀ j : Fin q, q ≤ j + k → b j = 0 from
-    funext fun j ↦ h q j (by omega)
-  intro k
-  induction k with
-  | zero => exact fun j hj ↦ absurd j.isLt (by omega)
-  | succ k ih =>
-    intro j hj
-    rw [← hc j, Finset.sum_eq_single j]
-    · simp
-    · intro i _ hij
-      rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
-      · rw [Nat.choose_eq_zero_of_lt h]; simp
-      · rw [ih i (by omega), mul_zero]
-    · simp
-
-end Expand
 
 /-! ### The Frobenius substitution -/
 
@@ -174,7 +89,8 @@ theorem hasSubst_one_add_X_pow_sub_one : HasSubst ((1 + X : R⟦X⟧) ^ p - 1) :
   HasSubst.of_constantCoeff_zero' (constantCoeff_one_add_X_pow_sub_one p)
 
 variable (R) in
-/-- The Frobenius substitution `f ↦ f ((1 + X) ^ p - 1)` on `R⟦X⟧`. It fixes coefficients. -/
+/-- The Frobenius substitution `f ↦ f ((1 + X) ^ p - 1)` on `R⟦X⟧`. It is an `R`-algebra map,
+so it fixes the constants `C c`. -/
 noncomputable def frobeniusSubst : R⟦X⟧ →ₐ[R] R⟦X⟧ :=
   substAlgHom (hasSubst_one_add_X_pow_sub_one (R := R) p)
 
@@ -211,9 +127,9 @@ theorem map_frobeniusSubst {S : Type*} [CommRing S] (h : R →+* S) (f : R⟦X�
 theorem frobeniusSubst_eq_expand [hp : Fact p.Prime] {S : Type*} [CommRing S]
     (hpS : (p : S) = 0) (f : S⟦X⟧) :
     frobeniusSubst S p f = expand p hp.out.ne_zero f := by
-  obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp.out (X : S⟦X⟧) 1
+  obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp.out (1 : S⟦X⟧) X
   have hp' : (p : S⟦X⟧) = 0 := by rw [← map_natCast (C (R := S)), hpS, map_zero]
-  rw [frobeniusSubst_apply, expand_apply, add_comm, hr, hp']
+  rw [frobeniusSubst_apply, expand_apply, hr, hp']
   simp
 
 /-! ### The Frobenius scalar algebra -/
@@ -230,6 +146,7 @@ theorem algebraMap_frobeniusAlgebra :
     @algebraMap R⟦X⟧ R⟦X⟧ _ _ (frobeniusAlgebra R p) = (frobeniusSubst R p).toRingHom :=
   (rfl)
 
+@[simp]
 theorem frobeniusAlgebra_smul (a f : R⟦X⟧) :
     @HSMul.hSMul _ _ _ (@instHSMul _ _ (frobeniusAlgebra R p).toSMul) a f =
       frobeniusSubst R p a * f :=
@@ -264,13 +181,6 @@ theorem frobeniusAssembly_mul (a : R⟦X⟧) (v : Fin p → R⟦X⟧) :
 
 /-! ### Reduction modulo `p` -/
 
-/-- Divisibility by `p` in `R⟦X⟧` is coefficientwise divisibility, detected by reduction modulo
-`p`. -/
-private theorem natCast_dvd_iff_map_eq_zero {f : R⟦X⟧} :
-    (p : R⟦X⟧) ∣ f ↔ map (Ideal.Quotient.mk (Ideal.span {(p : R)})) f = 0 := by
-  rw [← map_natCast C, C_dvd_iff_dvd_coeff, PowerSeries.ext_iff]
-  simp [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
-
 /-- Reduction modulo `p` of the Frobenius assembly is the expanded assembly. -/
 private theorem map_frobeniusAssembly [Fact p.Prime] (a : Fin p → R⟦X⟧) :
     map (Ideal.Quotient.mk (Ideal.span {(p : R)})) (frobeniusAssembly R p a) =
@@ -287,18 +197,59 @@ theorem exists_frobeniusAssembly_add_natCast_mul [Fact p.Prime] (f : R⟦X⟧) :
   obtain ⟨b, hb⟩ := exists_sum_one_add_X_pow_mul_expand p (Fact.out : p.Prime).ne_zero
     (map (Ideal.Quotient.mk (Ideal.span {(p : R)})) f)
   choose a ha using fun i ↦ map_surjective _ Ideal.Quotient.mk_surjective (b i)
-  obtain ⟨h, hh⟩ := (natCast_dvd_iff_map_eq_zero p).mpr
-    (show map (Ideal.Quotient.mk _) (f - frobeniusAssembly R p a) = 0 by
-      rw [map_sub, map_frobeniusAssembly, ← hb]; simp [ha])
+  obtain ⟨h, hh⟩ : (p : R⟦X⟧) ∣ f - frobeniusAssembly R p a := by
+    rw [← map_natCast C, C_dvd_iff_map_mk_eq_zero, map_sub, map_frobeniusAssembly, ← hb]
+    simp [ha]
   exact ⟨a, h, by rw [← hh]; ring⟩
+
+/-- **Coordinates modulo `p ^ r`.** Every series is a Frobenius assembly up to a multiple of
+`p ^ r`. -/
+theorem exists_frobeniusAssembly_add_pow_mul [Fact p.Prime] (r : ℕ) (f : R⟦X⟧) :
+    ∃ a h, f = frobeniusAssembly R p a + (p : R⟦X⟧) ^ r * h := by
+  induction r generalizing f with
+  | zero => exact ⟨0, f, by simp⟩
+  | succ r ih =>
+    obtain ⟨a, h, rfl⟩ := ih f
+    obtain ⟨b, k, rfl⟩ := exists_frobeniusAssembly_add_natCast_mul p h
+    refine ⟨a + fun i ↦ (p : R⟦X⟧) ^ r * b i, k, ?_⟩
+    rw [map_add, frobeniusAssembly_mul, map_pow, map_natCast]
+    ring
 
 /-- **Reflection of divisibility by `p`.** If `p` divides a Frobenius assembly, it divides every
 coordinate. -/
 theorem natCast_dvd_of_natCast_dvd_frobeniusAssembly [Fact p.Prime] {a : Fin p → R⟦X⟧}
     (ha : (p : R⟦X⟧) ∣ frobeniusAssembly R p a) (i : Fin p) : (p : R⟦X⟧) ∣ a i := by
-  rw [natCast_dvd_iff_map_eq_zero, map_frobeniusAssembly] at ha
-  rw [natCast_dvd_iff_map_eq_zero]
+  rw [← map_natCast C, C_dvd_iff_map_mk_eq_zero, map_frobeniusAssembly] at ha
+  rw [← map_natCast C, C_dvd_iff_map_mk_eq_zero]
   exact congrFun (eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero _ ha) i
+
+/-- If `p` is a nonzerodivisor of `R`, multiplication by `p` is injective on `R⟦X⟧`. -/
+private theorem natCast_mul_left_cancel (hp : IsSMulRegular R (p : R)) {f g : R⟦X⟧}
+    (h : (p : R⟦X⟧) * f = p * g) : f = g :=
+  ext fun n ↦ hp <| by
+    simpa only [← map_natCast C, coeff_C_mul, smul_eq_mul] using congrArg (coeff n) h
+
+/-- **Divisibility by powers of `p`.** If `p` is a nonzerodivisor of `R`, then `p ^ r` divides a
+Frobenius assembly if and only if it divides every coordinate. -/
+theorem natCast_pow_dvd_frobeniusAssembly_iff [Fact p.Prime] (hp : IsSMulRegular R (p : R))
+    {r : ℕ} {a : Fin p → R⟦X⟧} :
+    (p : R⟦X⟧) ^ r ∣ frobeniusAssembly R p a ↔ ∀ i, (p : R⟦X⟧) ^ r ∣ a i := by
+  refine ⟨fun ha ↦ ?_, fun ha ↦ ?_⟩
+  · induction r generalizing a with
+    | zero => simp
+    | succ r ih =>
+      intro i
+      choose b hb using natCast_dvd_of_natCast_dvd_frobeniusAssembly p
+        ((dvd_pow_self _ r.succ_ne_zero).trans ha)
+      rw [show a = fun i ↦ (p : R⟦X⟧) * b i from funext hb, frobeniusAssembly_mul,
+        map_natCast, pow_succ'] at ha
+      obtain ⟨c, hc⟩ := ha
+      obtain ⟨d, hd⟩ := ih (a := b) ⟨c, natCast_mul_left_cancel p hp (hc.trans (mul_assoc _ _ _))⟩ i
+      exact ⟨d, by rw [hb i, hd, pow_succ', mul_assoc]⟩
+  · choose c hc using ha
+    rw [show a = fun i ↦ (p : R⟦X⟧) ^ r * c i from funext hc, frobeniusAssembly_mul, map_pow,
+      map_natCast]
+    exact dvd_mul_right _ _
 
 /-! ### Exact coordinates -/
 
@@ -307,6 +258,14 @@ local notation "𝔍" => Ideal.comap (constantCoeff (R := R)) (Ideal.span {(p : 
 
 private theorem natCast_mem : (p : R⟦X⟧) ∈ 𝔍 := by
   simp
+
+private theorem natCast_pow_mul_mem (n : ℕ) (x : R⟦X⟧) : (p : R⟦X⟧) ^ n * x ∈ 𝔍 ^ n :=
+  Ideal.mul_mem_right x _ (Ideal.pow_mem_pow (natCast_mem p) n)
+
+/-- Congruence modulo `I • ⊤` in a commutative ring is congruence modulo the ideal `I`. -/
+private theorem smodEq_iff_sub_mem {A : Type*} [CommRing A] {I : Ideal A} {x y : A} :
+    x ≡ y [SMOD I • (⊤ : Submodule A A)] ↔ x - y ∈ I := by
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
 
 /-- The Frobenius assembly preserves the powers of the ideal of series with constant coefficient
 in `pR`. -/
@@ -324,26 +283,15 @@ private theorem frobeniusAssembly_mem_pow {n : ℕ} {a : Fin p → R⟦X⟧} (ha
 nonzerodivisor of `R`, the Frobenius assembly is injective. -/
 theorem frobeniusAssembly_injective [Fact p.Prime] [IsHausdorff (Ideal.span {(p : R)}) R]
     (hp : IsSMulRegular R (p : R)) : Function.Injective (frobeniusAssembly R p) := by
-  have hreg {g : R⟦X⟧} (hg : (p : R⟦X⟧) * g = 0) : g = 0 := ext fun n ↦ hp <| by
-    have := congrArg (coeff n) hg
-    rwa [← map_natCast C, coeff_C_mul, map_zero, ← mul_zero (p : R)] at this
-  -- Every coordinate of a vanishing assembly is divisible by every power of `p`.
-  have hdvd (r : ℕ) : ∀ a, frobeniusAssembly R p a = 0 → ∀ i, (p : R⟦X⟧) ^ r ∣ a i := by
-    induction r with
-    | zero => simp
-    | succ r ih =>
-      intro a ha i
-      choose b hb using natCast_dvd_of_natCast_dvd_frobeniusAssembly p (ha ▸ dvd_zero _)
-      have hb' : a = fun i ↦ (p : R⟦X⟧) * b i := funext hb
-      rw [hb', frobeniusAssembly_mul, map_natCast] at ha
-      obtain ⟨c, hc⟩ := ih b (hreg (by simpa using ha)) i
-      exact ⟨c, by rw [hb i, hc]; ring⟩
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro a ha
   funext i
   refine (isHausdorff_comap_constantCoeff (Ideal.span {(p : R)})).haus _ fun n ↦ ?_
-  obtain ⟨c, hc⟩ := hdvd n a ha i
-  simpa [SModEq.zero, hc] using Ideal.mul_mem_right c _ (Ideal.pow_mem_pow (natCast_mem p) n)
+  -- Every coordinate of a vanishing assembly is divisible by every power of `p`.
+  obtain ⟨c, hc⟩ := (natCast_pow_dvd_frobeniusAssembly_iff p hp (r := n)).mp
+    (ha ▸ dvd_zero _) i
+  rw [smodEq_iff_sub_mem, sub_zero, hc]
+  exact natCast_pow_mul_mem p n c
 
 /-- **Existence of Frobenius coordinates.** If `R` is `p`-adically complete, the Frobenius
 assembly is surjective. -/
@@ -351,8 +299,6 @@ theorem frobeniusAssembly_surjective [Fact p.Prime] [IsAdicComplete (Ideal.span 
     Function.Surjective (frobeniusAssembly R p) := by
   intro f
   choose A H hAH using exists_frobeniusAssembly_add_natCast_mul (R := R) p
-  have hmem {n : ℕ} (x : R⟦X⟧) : (p : R⟦X⟧) ^ n * x ∈ 𝔍 ^ n :=
-    Ideal.mul_mem_right x _ (Ideal.pow_mem_pow (natCast_mem p) n)
   -- Successive approximations `s r`, with `f = Ξ (s r) + p ^ r * H^[r] f`.
   let s (r : ℕ) : Fin p → R⟦X⟧ := ∑ k ∈ Finset.range r, p ^ k • A (H^[k] f)
   have hsucc (r : ℕ) : s (r + 1) = s r + p ^ r • A (H^[r] f) := Finset.sum_range_succ _ _
@@ -369,24 +315,22 @@ theorem frobeniusAssembly_surjective [Fact p.Prime] [IsAdicComplete (Ideal.span 
     | base => simp
     | succ n hmn ih =>
       rw [hsucc, Pi.add_apply, add_sub_right_comm, Pi.smul_apply, nsmul_eq_mul, Nat.cast_pow]
-      exact add_mem ih (Ideal.pow_le_pow_right hmn (hmem _))
+      exact add_mem ih (Ideal.pow_le_pow_right hmn (natCast_pow_mul_mem p _ _))
   choose L hL using fun i ↦ (isPrecomplete_comap_constantCoeff (Ideal.span {(p : R)})).prec
     (f := fun n ↦ s n i) fun hmn ↦ by
-      rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub]
+      rw [smodEq_iff_sub_mem, ← neg_mem_iff, neg_sub]
       exact hcauchy hmn i
   have := isHausdorff_comap_constantCoeff (Ideal.span {(p : R)})
   refine ⟨L, (IsHausdorff.eq_iff_smodEq (I := 𝔍)).mpr fun n ↦ ?_⟩
-  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
-  have hL' : frobeniusAssembly R p (s n - L) ∈ 𝔍 ^ n := frobeniusAssembly_mem_pow p fun i ↦ by
-    have := hL i n
-    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] at this
-    exact this
+  rw [smodEq_iff_sub_mem]
+  have hL' : frobeniusAssembly R p (s n - L) ∈ 𝔍 ^ n :=
+    frobeniusAssembly_mem_pow p fun i ↦ smodEq_iff_sub_mem.mp (hL i n)
   have : frobeniusAssembly R p L - f = -(frobeniusAssembly R p (s n - L) + p ^ n * H^[n] f) := by
     conv_lhs => rw [hs n]
     rw [map_sub]
     ring
   rw [this, neg_mem_iff]
-  exact add_mem hL' (hmem _)
+  exact add_mem hL' (natCast_pow_mul_mem p _ _)
 
 /-- **Frobenius coordinates.** If `R` is `p`-adically complete and `p` is a nonzerodivisor of `R`,
 every series is uniquely `∑ i < p, (1 + X) ^ i * φ (a i)`. -/
@@ -407,30 +351,30 @@ the Frobenius substitution `f ↦ f ((1 + X) ^ p - 1)`. The module structure is 
 since it differs from the ordinary self-module structure. -/
 noncomputable def frobeniusBasis (hp : IsSMulRegular R (p : R)) :
     @Module.Basis (Fin p) R⟦X⟧ R⟦X⟧ _ _ (frobeniusAlgebra R p).toModule :=
-  @Module.Basis.mk _ _ _ _ _ (frobeniusAlgebra R p).toModule (fun i : Fin p ↦ (1 + X) ^ (i : ℕ))
-    ((@Fintype.linearIndependent_iff _ _ _ _ _ (frobeniusAlgebra R p).toModule _ _).mpr
-      fun g hg ↦ by
-        have h0 : frobeniusAssembly R p g = 0 := by
-          rw [← hg, frobeniusAssembly_apply]
-          exact Finset.sum_congr rfl fun i _ ↦ by rw [frobeniusAlgebra_smul, mul_comm]
-        exact congrFun (frobeniusAssembly_injective p hp (h0.trans (map_zero _).symm)))
-    fun f _ ↦ (@Submodule.mem_span_range_iff_exists_fun _ _ _ _ _ _
-      (frobeniusAlgebra R p).toModule _ _).mpr <| by
-        obtain ⟨a, rfl⟩ := frobeniusAssembly_surjective p f
-        exact ⟨a, Finset.sum_congr rfl fun i _ ↦ by rw [frobeniusAlgebra_smul, mul_comm]⟩
+  letI : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
+  Module.Basis.mk (v := fun i : Fin p ↦ (1 + X) ^ (i : ℕ))
+    (Fintype.linearIndependent_iff.mpr fun g hg ↦ by
+      have h0 : frobeniusAssembly R p g = 0 := by
+        rw [← hg, frobeniusAssembly_apply]
+        exact Finset.sum_congr rfl fun i _ ↦ by rw [frobeniusAlgebra_smul, mul_comm]
+      exact congrFun (frobeniusAssembly_injective p hp (h0.trans (map_zero _).symm)))
+    fun f _ ↦ (Submodule.mem_span_range_iff_exists_fun _).mpr <| by
+      obtain ⟨a, rfl⟩ := frobeniusAssembly_surjective p f
+      exact ⟨a, Finset.sum_congr rfl fun i _ ↦ by rw [frobeniusAlgebra_smul, mul_comm]⟩
 
 variable (hp : IsSMulRegular R (p : R))
 
 @[simp]
 theorem frobeniusBasis_apply (i : Fin p) : frobeniusBasis R p hp i = (1 + X) ^ (i : ℕ) :=
-  @Module.Basis.mk_apply _ _ _ _ _ (frobeniusAlgebra R p).toModule _ _ _ i
+  letI : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
+  Module.Basis.mk_apply _ _ i
 
 /-- Assembling coordinates is the inverse of the coordinate map of the Frobenius basis. -/
 theorem frobeniusBasis_equivFun_symm_apply (a : Fin p → R⟦X⟧) :
     (@Module.Basis.equivFun _ _ _ _ _ (frobeniusAlgebra R p).toModule _
       (frobeniusBasis R p hp)).symm a = frobeniusAssembly R p a := by
-  rw [@Module.Basis.equivFun_symm_apply _ _ _ _ _ (frobeniusAlgebra R p).toModule,
-    frobeniusAssembly_apply]
+  let : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
+  rw [Module.Basis.equivFun_symm_apply, frobeniusAssembly_apply]
   exact Finset.sum_congr rfl fun i _ ↦ by
     rw [frobeniusBasis_apply, frobeniusAlgebra_smul, mul_comm]
 
@@ -441,23 +385,36 @@ theorem frobeniusAssembly_frobeniusBasis_repr (f : R⟦X⟧) :
     frobeniusAssembly R p
       (@Module.Basis.repr _ _ _ _ _ (frobeniusAlgebra R p).toModule (frobeniusBasis R p hp) f) =
       f := by
-  rw [← @Module.Basis.equivFun_apply _ _ _ _ _ (frobeniusAlgebra R p).toModule,
-    ← frobeniusBasis_equivFun_symm_apply p hp, LinearEquiv.symm_apply_apply]
+  let : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
+  rw [← Module.Basis.equivFun_apply, ← frobeniusBasis_equivFun_symm_apply p hp,
+    LinearEquiv.symm_apply_apply]
 
 /-- The coordinates of an assembly in the Frobenius basis are the assembled coordinates. -/
 @[simp]
 theorem frobeniusBasis_repr_frobeniusAssembly (a : Fin p → R⟦X⟧) (i : Fin p) :
     @Module.Basis.repr _ _ _ _ _ (frobeniusAlgebra R p).toModule (frobeniusBasis R p hp)
       (frobeniusAssembly R p a) i = a i := by
-  rw [← @Module.Basis.equivFun_apply _ _ _ _ _ (frobeniusAlgebra R p).toModule,
-    ← frobeniusBasis_equivFun_symm_apply p hp, LinearEquiv.apply_symm_apply]
+  let : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
+  rw [← Module.Basis.equivFun_apply, ← frobeniusBasis_equivFun_symm_apply p hp,
+    LinearEquiv.apply_symm_apply]
+
+/-- The Frobenius coordinates are linear over the Frobenius scalars: the coordinates of
+`φ a * f` are `a` times the coordinates of `f`. -/
+@[simp]
+theorem frobeniusBasis_repr_mul (a f : R⟦X⟧) (i : Fin p) :
+    @Module.Basis.repr _ _ _ _ _ (frobeniusAlgebra R p).toModule (frobeniusBasis R p hp)
+        (frobeniusSubst R p a * f) i =
+      a * @Module.Basis.repr _ _ _ _ _ (frobeniusAlgebra R p).toModule
+        (frobeniusBasis R p hp) f i := by
+  rw [← frobeniusAlgebra_smul, LinearEquiv.map_smul, Finsupp.smul_apply, smul_eq_mul]
 
 include hp in
-/-- The power series ring has rank `p` over itself through the Frobenius substitution. -/
+/-- If `R` is nontrivial and `p`-adically complete and `p` is a nonzerodivisor of `R`, the power
+series ring has rank `p` over itself through the Frobenius substitution. -/
 theorem finrank_frobeniusAlgebra [Nontrivial R] :
     @Module.finrank R⟦X⟧ R⟦X⟧ _ _ (frobeniusAlgebra R p).toModule = p := by
-  rw [@Module.finrank_eq_card_basis _ _ _ _ (frobeniusAlgebra R p).toModule _ _ _
-    (frobeniusBasis R p hp), Fintype.card_fin]
+  let : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
+  rw [Module.finrank_eq_card_basis (frobeniusBasis R p hp), Fintype.card_fin]
 
 end Basis
 
