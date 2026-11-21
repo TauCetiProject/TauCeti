@@ -165,8 +165,9 @@ of the sums over the parts of `Q A`. -/
 theorem sum_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
     [DecidableEq α] [AddCommMonoid M] {a : α} (P : Finpartition a)
     (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
-    ∑ b ∈ (P.bind Q).parts, g b = ∑ A ∈ P.parts.attach, ∑ b ∈ (Q A.1 A.2).parts, g b := by
-  rw [bind_parts, ← combine_parts (fun A : P.parts => Q A.1 A.2) P.supIndep.attach, sum_combine]
+    ∑ b ∈ (P.bind Q).parts, g b = ∑ A ∈ P.parts.attach, ∑ b ∈ (Q A.val A.property).parts, g b := by
+  rw [bind_parts, ← combine_parts (fun A : P.parts => Q A.val A.property) P.supIndep.attach,
+      sum_combine]
 
 /-- A product over the parts of the juxtaposition `P.bind Q` is the product, over the parts `A`
 of `P`, of the products over the parts of `Q A`. -/
@@ -174,7 +175,7 @@ of `P`, of the products over the parts of `Q A`. -/
 theorem prod_parts_bind {α M : Type*} [Lattice α] [OrderBot α] [IsModularLattice α]
     [DecidableEq α] [CommMonoid M] {a : α} (P : Finpartition a)
     (Q : ∀ i ∈ P.parts, Finpartition i) (g : α → M) :
-    ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.1 A.2).parts, g b :=
+    ∏ b ∈ (P.bind Q).parts, g b = ∏ A ∈ P.parts.attach, ∏ b ∈ (Q A.val A.property).parts, g b :=
   -- Mathlib only provides the additive `Finpartition.sum_combine`, so we transfer `sum_parts_bind`
   -- through `Additive M`, whose finite sums are by definition the finite products in `M`.
   sum_parts_bind (M := Additive M) P Q (Additive.ofMul ∘ g)
@@ -245,7 +246,7 @@ noncomputable def ofFibers (g : Ω → κ) : Finpartition (Set.univ : Set Ω) :=
 theorem mem_ofFibers_parts : s ∈ (ofFibers g).parts ↔ ∃ x, g ⁻¹' {g x} = s := by
   classical
   rw [ofFibers, ofErase_parts, Finset.mem_erase, Set.Finite.mem_toFinset, Set.bot_eq_empty,
-    ← Set.nonempty_iff_ne_empty]
+    Set.ne_empty_iff_nonempty]
   constructor
   · rintro ⟨⟨x, hx⟩, i, rfl⟩
     exact ⟨x, by rw [Set.mem_preimage, Set.mem_singleton_iff] at hx; rw [hx]⟩
@@ -267,7 +268,7 @@ noncomputable def indexedPartition (P : Finpartition (Set.univ : Set Ω)) :
     IndexedPartition (fun p : P.parts => (p : Set Ω)) :=
   IndexedPartition.mk' _
     (fun p q hne => P.disjoint p.property q.property fun h => hne (Subtype.ext h))
-    (fun p => Set.nonempty_iff_ne_empty.mpr (P.ne_bot p.property))
+    (fun p => Set.ne_empty_iff_nonempty.mp (P.ne_bot p.property))
     (fun x => by
       obtain ⟨p, ⟨hp, hxp⟩, _⟩ := P.isPartition_parts.2 x
       exact ⟨⟨p, hp⟩, hxp⟩)
@@ -294,7 +295,7 @@ theorem sUnion_parts : ⋃₀ (P.parts : Set (Set Ω)) = u := by
 
 /-- A part of a finite partition of a set is nonempty. -/
 theorem nonempty_of_mem_parts_set {s : Set Ω} (hs : s ∈ P.parts) : s.Nonempty :=
-  Set.nonempty_iff_ne_empty.2 (P.ne_bot hs)
+  Set.ne_empty_iff_nonempty.1 (P.ne_bot hs)
 
 /-- Every point of a set lies in some part of a finite partition of it. -/
 theorem exists_mem_set {x : Ω} (hx : x ∈ u) : ∃ s ∈ P.parts, x ∈ s := by
@@ -332,26 +333,26 @@ variable {α : Type*} [Lattice α] [OrderBot α] {a : α} {P Q : Finpartition a}
 disjoint. -/
 theorem pairwiseDisjoint_subtype_val (P : Finpartition a) (t : Set P.parts) :
     t.PairwiseDisjoint Subtype.val :=
-  fun B _ D _ hBD => P.disjoint B.2 D.2 (Subtype.coe_injective.ne hBD)
+  fun B _ D _ hBD => P.disjoint B.property D.property (Subtype.coe_injective.ne hBD)
 
 /-- The part of a coarser partition `P` containing a part `B` of a finer partition `Q ≤ P`. It is
 uniquely determined, since parts are nonzero and pairwise disjoint; see
 `Finpartition.refinementParent_eq_iff`. -/
 noncomputable def refinementParent (h : Q ≤ P) (B : Q.parts) : P.parts :=
-  ⟨(h B.2).choose, (h B.2).choose_spec.1⟩
+  ⟨(h B.property).choose, (h B.property).choose_spec.1⟩
 
 /-- A part of a finer partition lies below its coarse parent. -/
-theorem le_refinementParent (h : Q ≤ P) (B : Q.parts) : B.1 ≤ (refinementParent h B).1 :=
-  (h B.2).choose_spec.2
+theorem le_refinementParent (h : Q ≤ P) (B : Q.parts) : B.val ≤ (refinementParent h B).val :=
+  (h B.property).choose_spec.2
 
 /-- The coarse parent of `B` is the unique coarse part lying above `B`. -/
 @[simp]
 theorem refinementParent_eq_iff (h : Q ≤ P) {B : Q.parts} {A : P.parts} :
-    refinementParent h B = A ↔ B.1 ≤ A.1 := by
+    refinementParent h B = A ↔ B.val ≤ A.val := by
   refine ⟨fun hA => hA ▸ le_refinementParent h B, fun hBA => ?_⟩
   by_contra hne
-  exact Q.ne_bot B.2 <| disjoint_self.1 <|
-    (P.disjoint (refinementParent h B).2 A.2 (Subtype.coe_injective.ne hne)).mono
+  exact Q.ne_bot B.property <| disjoint_self.1 <|
+    (P.disjoint (refinementParent h B).property A.property (Subtype.coe_injective.ne hne)).mono
       (le_refinementParent h B) hBA
 
 /-- A double sum over the fine parts can be grouped by the coarse parents of both parts. -/
@@ -375,7 +376,7 @@ variable {α : Type*} [DecidableEq α] {s : Finset α} {P Q : Finpartition s}
 
 /-- The sizes of the parts of a finite partition add up to the size of its support. -/
 theorem sum_card_subtype {R : Type*} [AddCommMonoidWithOne R] (P : Finpartition s) :
-    ∑ A : P.parts, (#A.1 : R) = #s := by
+    ∑ A : P.parts, (#A.val : R) = #s := by
   rw [Finset.sum_coe_sort P.parts fun A => (#A : R)]
   rw [← Nat.cast_sum, P.sum_card_parts]
 
@@ -383,7 +384,7 @@ theorem sum_card_subtype {R : Type*} [AddCommMonoidWithOne R] (P : Finpartition 
 No compatibility between the preorder and arithmetic is needed beyond `0 ≤ 1`. -/
 theorem sum_sum_weight_le_one {K : Type*} [DivisionSemiring K] [Preorder K] [ZeroLEOneClass K]
     (P : Finpartition s) :
-    ∑ A : P.parts, ∑ C : P.parts, (#A.1 * #C.1 / (#s : K) ^ 2) ≤ 1 := by
+    ∑ A : P.parts, ∑ C : P.parts, (#A.val * #C.val / (#s : K) ^ 2) ≤ 1 := by
   simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]
   exact div_self_le_one _
 
@@ -406,6 +407,19 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
     ∑ x ∈ s, f (P.part x) = ∑ A ∈ P.parts, #A • f A := by
   rw [P.sum_apply_part_of_subset subset_rfl]
   exact Finset.sum_congr rfl fun A hA => by rw [Finset.inter_eq_right.2 (P.le hA)]
+
+/-- For a partition `P` of `univ`, summing a function on `P.parts` evaluated at the part containing
+each point of `t` groups the points by part: each part `A` is counted with multiplicity
+`#(t ∩ A.1)`. -/
+theorem sum_apply_part_subtype [Fintype α] {M : Type*} [AddCommMonoid M]
+    (P : Finpartition (univ : Finset α)) (t : Finset α) (g : P.parts → M) :
+    ∑ x ∈ t, g ⟨P.part x, P.part_mem.2 (mem_univ x)⟩ =
+      ∑ A : P.parts, #(t ∩ A.val) • g A := by
+  let f : Finset α → M := fun A => if h : A ∈ P.parts then g ⟨A, h⟩ else 0
+  have h1 := P.sum_apply_part_of_subset (subset_univ t) f
+  simp only [f, P.part_mem.2 (mem_univ _), ↓reduceDIte] at h1
+  rw [h1, ← Finset.sum_coe_sort P.parts]
+  exact Finset.sum_congr rfl fun A _ => by simp [A.property]
 
 /-- Refining a partition shrinks the part containing each point. -/
 @[gcongr]
@@ -432,6 +446,12 @@ theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) 
     exact (Q.part_eq_of_mem (Q.part_mem.2 ha) (part_mono h a hb)).symm
   · have hb : b ∉ s := P.part_eq_empty.1 (hab ▸ P.part_eq_empty.2 ha)
     rw [Q.part_eq_empty.2 ha, Q.part_eq_empty.2 hb]
+
+/-- A point lies in the union of the parts through two points of `s` exactly when its part is one
+of the two. -/
+theorem mem_part_union_part_iff {i j x : α} (hi : i ∈ s) (hj : j ∈ s) :
+    x ∈ P.part i ∪ P.part j ↔ P.part x = P.part i ∨ P.part x = P.part j := by
+  rw [mem_union, ← P.part_eq_iff_mem (P.part_mem.2 hi), ← P.part_eq_iff_mem (P.part_mem.2 hj)]
 
 /-- Membership in a union of parts is constant on each part. -/
 theorem mem_iff_mem_of_part_eq_part {X : Finset α} (hX : ∀ C ∈ P.parts, C ⊆ X ∨ Disjoint C X)
@@ -554,18 +574,18 @@ theorem part_restrict {t : Finset α} (P : Finpartition s) (hts : t ≤ s) {a : 
 
 /-- A coarse part is the disjoint union of the fine parts whose coarse parent it is. -/
 theorem biUnion_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
-    ({B | refinementParent h B = A} : Finset Q.parts).biUnion Subtype.val = A.1 := by
+    ({B | refinementParent h B = A} : Finset Q.parts).biUnion Subtype.val = A.val := by
   classical
   calc
-    _ = {B ∈ Q.parts | B ⊆ A.1}.biUnion id := by
+    _ = {B ∈ Q.parts | B ⊆ A.val}.biUnion id := by
       ext x
       simp [Subtype.exists, and_assoc, and_left_comm]
-    _ = _ := biUnion_filter_subset_eq_of_le h A.2
+    _ = _ := biUnion_filter_subset_eq_of_le h A.property
 
 /-- The traces on `X` of the fine parts with a given coarse parent add up to the trace of `X` on
 that parent. -/
 theorem sum_card_inter_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) (X : Finset α) :
-    ∑ B with refinementParent h B = A, #(X ∩ B.1) = #(X ∩ A.1) := by
+    ∑ B with refinementParent h B = A, #(X ∩ B.val) = #(X ∩ A.val) := by
   conv_rhs => rw [← biUnion_filter_refinementParent_eq h A, Finset.inter_biUnion]
   rw [Finset.card_biUnion fun B _ D _ hBD ↦
     (Q.pairwiseDisjoint_subtype_val _ (Set.mem_univ B) (Set.mem_univ D) hBD).mono
@@ -573,24 +593,25 @@ theorem sum_card_inter_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) (X
 
 /-- The sizes of the fine parts with a given coarse parent add up to the size of that parent. -/
 theorem sum_card_filter_refinementParent_eq (h : Q ≤ P) (A : P.parts) :
-    ∑ B with refinementParent h B = A, #B.1 = #A.1 := by
-  calc ∑ B with refinementParent h B = A, #B.1
-      = ∑ B with refinementParent h B = A, #(s ∩ B.1) :=
-        Finset.sum_congr rfl fun B _ ↦ by rw [Finset.inter_eq_right.2 (Q.le B.2)]
-    _ = #A.1 := by
-        rw [sum_card_inter_filter_refinementParent_eq, Finset.inter_eq_right.2 (P.le A.2)]
+    ∑ B with refinementParent h B = A, #B.val = #A.val := by
+  calc ∑ B with refinementParent h B = A, #B.val
+      = ∑ B with refinementParent h B = A, #(s ∩ B.val) :=
+        Finset.sum_congr rfl fun B _ ↦ by rw [Finset.inter_eq_right.2 (Q.le B.property)]
+    _ = #A.val := by
+        rw [sum_card_inter_filter_refinementParent_eq, Finset.inter_eq_right.2 (P.le A.property)]
 
 /-- Under a refinement `Q ≤ P`, the coarse part through a point of a fine part `B` is the coarse
 parent of `B`. -/
-theorem part_eq_refinementParent (h : Q ≤ P) (B : Q.parts) {a : α} (ha : a ∈ B.1) :
-    P.part a = (refinementParent h B).1 :=
-  P.part_eq_of_mem (refinementParent h B).2 (le_refinementParent h B ha)
+theorem part_eq_refinementParent (h : Q ≤ P) (B : Q.parts) {a : α} (ha : a ∈ B.val) :
+    P.part a = (refinementParent h B).val :=
+  P.part_eq_of_mem (refinementParent h B).property (le_refinementParent h B ha)
 
 /-- Under a refinement `Q ≤ P`, a sum of a function of the fine and coarse parts through each
 point groups the points by fine part, each fine part paired with its coarse parent. -/
 theorem sum_apply_part_part (h : Q ≤ P) {M : Type*} [AddCommMonoid M]
     (f : Finset α → Finset α → M) :
-    ∑ a ∈ s, f (Q.part a) (P.part a) = ∑ B : Q.parts, #B.1 • f B.1 (refinementParent h B).1 := by
+    ∑ a ∈ s, f (Q.part a) (P.part a) = ∑ B : Q.parts, #B.val • f B.val (refinementParent h B).val
+        := by
   have hs : ∑ a ∈ s, f (Q.part a) (P.part a) =
       ∑ B ∈ Q.parts, ∑ a ∈ B, f (Q.part a) (P.part a) := by
     calc ∑ a ∈ s, f (Q.part a) (P.part a)
@@ -600,30 +621,30 @@ theorem sum_apply_part_part (h : Q ≤ P) {M : Type*} [AddCommMonoid M]
   refine Finset.sum_congr rfl fun B _ => ?_
   rw [← Finset.sum_const]
   exact Finset.sum_congr rfl fun a ha => by
-    rw [Q.part_eq_of_mem B.2 ha, part_eq_refinementParent h B ha]
+    rw [Q.part_eq_of_mem B.property ha, part_eq_refinementParent h B ha]
 
 /-- A refinement `Q ≤ P` with at most as many parts as `P` is `P` itself. -/
 theorem eq_of_le_of_card_parts_le (h : Q ≤ P) (hc : #Q.parts ≤ #P.parts) : Q = P := by
   classical
   have hsurj : Function.Surjective (refinementParent h) := fun A => by
-    obtain ⟨B, hB, hBA⟩ := exists_le_of_le h A.2
+    obtain ⟨B, hB, hBA⟩ := exists_le_of_le h A.property
     exact ⟨⟨B, hB⟩, (refinementParent_eq_iff h).2 hBA⟩
   have hinj : Function.Injective (refinementParent h) :=
     ((Fintype.bijective_iff_surjective_and_card _).2
       ⟨hsurj, by simpa using hc.antisymm (card_mono h)⟩).1
   -- Each fine part is the only fine part below its coarse parent, so it equals that parent.
-  have key (B : Q.parts) : B.1 = (refinementParent h B).1 := by
+  have key (B : Q.parts) : B.val = (refinementParent h B).val := by
     rw [← biUnion_filter_refinementParent_eq h (refinementParent h B)]
     have hB : ({B' | refinementParent h B' = refinementParent h B} : Finset Q.parts) = {B} :=
       Finset.ext fun B' => by simp [hinj.eq_iff]
     rw [hB, singleton_biUnion]
   ext C
   refine ⟨fun hC => ?_, fun hC => ?_⟩
-  · have hC' : C = (refinementParent h ⟨C, hC⟩).1 := key ⟨C, hC⟩
-    exact hC' ▸ (refinementParent h _).2
+  · have hC' : C = (refinementParent h ⟨C, hC⟩).val := key ⟨C, hC⟩
+    exact hC' ▸ (refinementParent h _).property
   · obtain ⟨B, hB⟩ := hsurj ⟨C, hC⟩
-    have hBC : B.1 = C := by rw [key B, hB]
-    exact hBC ▸ B.2
+    have hBC : B.val = C := by rw [key B, hB]
+    exact hBC ▸ B.property
 
 /-- A finite partition of a set with at most two elements is either the partition into singletons
 or the partition into one part. -/
@@ -764,7 +785,7 @@ variable {α : Type*} [DecidableEq α] {s C : Finset α} {i j : α}
 
 /-- The partition of `s` with the part `{i, j}`, all other points forming singletons. -/
 noncomputable def pairPartition (s : Finset α) (i j : α) (hij : {i, j} ⊆ s) : Finpartition s :=
-  (⊥ : Finpartition (s \ {i, j})).extend (insert_ne_empty i {j}) sdiff_disjoint
+  (⊥ : Finpartition (s \ {i, j})).extend (insert_nonempty i {j}).ne_empty sdiff_disjoint
     (sdiff_union_of_subset hij)
 
 /-- The parts of `pairPartition s i j` are `{i, j}` and the singletons of the other points. -/
@@ -935,6 +956,20 @@ theorem parts_comap_copy_equiv [Fintype α] [Fintype β] (P : Finpartition (univ
   refine image_congr fun B _ => ?_
   ext x
   simp [mem_map_equiv]
+
+/-- Pulling back a finite partition `P` of `univ` along an equivalence `g`, after identifying
+`univ` with its image under `g`, sends the part through `x` to the image under `g.symm` of the
+part of `P` through `g x`. -/
+@[simp]
+theorem part_comap_copy_equiv [Fintype α] [Fintype β] (P : Finpartition (univ : Finset β))
+    (g : α ≃ β) (x : α) :
+    ((P.copy (image_univ_equiv g).symm).comap g).part x =
+      (P.part (g x)).map g.symm.toEmbedding := by
+  have hcopy : (P.copy (image_univ_equiv g).symm).part (g x) = P.part (g x) :=
+    part_eq_of_mem _ (by simp) (P.mem_part (mem_univ (g x)))
+  ext y
+  rw [part_comap (mem_univ _), mem_filter, hcopy, mem_map_equiv]
+  simp
 
 /-- Pulling back along `f` reflects and preserves refinement. -/
 @[simp]

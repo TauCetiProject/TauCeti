@@ -114,7 +114,7 @@ theorem IsConnectedSumPosition.boostConcordance
     {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)} (hK : IsConnectedSumPosition ι K)
     {a : ℝ} (ha : 0 ≤ a) :
     (SmoothCircleEmbedding.boostConcordance ι a K).IsConnectedSumPosition ι := by
-  set τ := SmoothEmbedding.Concordance.collaredSmoothTransitionUnit
+  set τ := collaredSmoothTransitionUnit
   set Ψ := circleBoostDiffeotopy (m := ∞) (-a)
   set g : Circle × ℝ → Circle := fun q => Ψ (τ q.2, q.1)
   have hg : Continuous g := Ψ.contMDiff.continuous.comp (by fun_prop)
@@ -128,7 +128,7 @@ theorem IsConnectedSumPosition.boostConcordance
   -- Boosting the parameters toward `-i` keeps the closed lower half of the circle.
   have him (q : Circle × ℝ) (hq : (q.1 : ℂ).im ≤ 0) : ((g q : Circle) : ℂ).im ≤ 0 := by
     have h := monotone_inner_sphereBoost (v := Complex.I) (x := (q.1 : ℂ)) (by simp)
-      (Circle.norm_coe q.1) (by nlinarith [(τ q.2).2.1] : -a * (τ q.2 : ℝ) ≤ 0)
+      (Circle.norm_coe q.1) (by nlinarith [(τ q.2).property.1] : -a * (τ q.2 : ℝ) ≤ 0)
     have hgq : ((g q : Circle) : ℂ) = sphereBoost Complex.I (-a * (τ q.2 : ℝ)) q.1 :=
       coe_circleBoostDiffeotopy_apply _ _
     simp only [sphereBoost_zero, id, Complex.real_inner_I_right] at h
@@ -145,7 +145,7 @@ theorem IsConnectedSumPosition.boostConcordance
   have hpos : 0 < ⟪(K (g p) : E), ι Complex.I⟫ :=
     hK.inner_pos (not_le.1 fun h => hgp (hK.eventuallyEq_greatCircle h))
   have h := monotone_inner_sphereBoost ι.norm_map_I (norm_eq_of_mem_sphere (K (g p)))
-    (mul_nonneg ha (τ p.2).2.1 : (0 : ℝ) ≤ a * (τ p.2 : ℝ))
+    (mul_nonneg ha (τ p.2).property.1 : (0 : ℝ) ≤ a * (τ p.2 : ℝ))
   simp only [sphereBoost_zero, id] at h
   rw [happly, coe_sphereBoostDiffeotopy_apply]
   exact hpos.trans_le h

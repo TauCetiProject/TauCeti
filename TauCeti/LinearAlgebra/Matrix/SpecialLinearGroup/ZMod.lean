@@ -156,25 +156,25 @@ noncomputable def kerMapZModPowSuccEquiv {p k : ℕ} [NeZero p] (hk : 1 ≤ k) :
   Equiv.ofBijective
     (fun t ↦
       let g : SL(2, ZMod (p ^ (k + 1))) :=
-        ⟨!![1 + m t.1, m t.2.1; m t.2.2, 1 - m t.1], det_one_add_mulCastHom hk t.1 t.2.1 t.2.2⟩
+        .mk !![1 + m t.1, m t.2.1; m t.2.2, 1 - m t.1] (det_one_add_mulCastHom hk t.1 t.2.1 t.2.2)
       ⟨g, by
         rw [MonoidHom.mem_ker]
-        simp_rw [ext_iff, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply]
+        simp_rw [ext_iff, map_apply_coe, Matrix.map_apply]
         intro i j
         fin_cases i <;> fin_cases j <;>
           simp [g, m, -ZMod.castHom_apply, ZMod.castHom_mulCastHom]⟩)
     ⟨fun ⟨a₁, b₁, c₁⟩ ⟨a₂, b₂, c₂⟩ h ↦ by
       have hinj := ZMod.mulCastHom_injective (p ^ k) (pow_succ' p k).symm
         (pow_ne_zero k (NeZero.ne p))
-      have h00 : m a₁ = m a₂ := by simpa [m] using congrArg (fun M ↦ M.1.1 0 0) h
-      have h01 : m b₁ = m b₂ := congrArg (fun M ↦ M.1.1 0 1) h
-      have h10 : m c₁ = m c₂ := congrArg (fun M ↦ M.1.1 1 0) h
+      have h00 : m a₁ = m a₂ := by simpa [m] using congrArg (fun M ↦ M.val 0 0) h
+      have h01 : m b₁ = m b₂ := congrArg (fun M ↦ M.val 0 1) h
+      have h10 : m c₁ = m c₂ := congrArg (fun M ↦ M.val 1 0) h
       exact Prod.ext (hinj h00) (Prod.ext (hinj h01) (hinj h10)),
      fun M ↦ by
       have hM : ∀ i j, ZMod.castHom (pow_dvd_pow p (Nat.le_succ k)) (ZMod (p ^ k))
-          (M.1 i j - (1 : Matrix (Fin 2) (Fin 2) _) i j) = 0 := fun i j ↦ by
+          (M.val i j - (1 : Matrix (Fin 2) (Fin 2) _) i j) = 0 := fun i j ↦ by
         rw [map_sub, sub_eq_zero]
-        simpa [Matrix.one_apply] using congrArg (fun X : SL(2, ZMod (p ^ k)) ↦ X i j) M.2
+        simpa [Matrix.one_apply] using congrArg (fun X : SL(2, ZMod (p ^ k)) ↦ X i j) M.property
       obtain ⟨a, ha⟩ :=
         (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 0 0)
       obtain ⟨b, hb⟩ :=
@@ -183,11 +183,11 @@ noncomputable def kerMapZModPowSuccEquiv {p k : ℕ} [NeZero p] (hk : 1 ≤ k) :
         (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 1 0)
       obtain ⟨d, hd⟩ :=
         (ZMod.exact_mulCastHom_castHom (p ^ k) (pow_succ' p k).symm _).mp (by simpa using hM 1 1)
-      have h00 : M.1 0 0 = 1 + m a := by linear_combination -ha
-      have h11' : M.1 1 1 = 1 + m d := by linear_combination -hd
-      have hdet := fin_two_mul_sub_mul_eq_one M.1
+      have h00 : M.val 0 0 = 1 + m a := by linear_combination -ha
+      have h11' : M.val 1 1 = 1 + m d := by linear_combination -hd
+      have hdet := fin_two_mul_sub_mul_eq_one M.val
       rw [h00, ← hb, ← hc, h11'] at hdet
-      have h11 : M.1 1 1 = 1 - m a := by
+      have h11 : M.val 1 1 = 1 - m a := by
         rw [h11']
         linear_combination hdet - mulCastHom_mul_eq_zero hk a d + mulCastHom_mul_eq_zero hk b c
       refine ⟨(a, b, c), ?_⟩

@@ -93,14 +93,14 @@ variable {b : B} {g g' : C(I × (I^N), Y)} {hg : MapsTo g (Cube.prodBoundary N) 
 /-- The class of a map of pairs is the class of a relative cube to which it is homotopic through
 maps of pairs. -/
 private theorem exists_pairClass_eq_mk : ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
-    pairClass b g hg = mk p ∧ g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
+    pairClass b g hg = mk p ∧ g.HomotopicWith p.val fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
   let ⟨p, hp, h⟩ := (existsUnique_homotopicWith b g hg).exists.choose_spec
   ⟨p, hp.symm, h⟩
 
 /-- **The characterisation of the class of a map of pairs**: it is the class of a relative cube
 `p` exactly when the map is homotopic to `p` through maps of pairs. -/
 theorem pairClass_eq_mk_iff {p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩} :
-    pairClass b g hg = mk p ↔ g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B := by
+    pairClass b g hg = mk p ↔ g.HomotopicWith p.val fun f ↦ MapsTo f (Cube.prodBoundary N) B := by
   obtain ⟨q, hq, hgq⟩ := exists_pairClass_eq_mk (b := b) (g := g) (hg := hg)
   refine ⟨fun h ↦ hgq.trans ?_, fun h ↦ ?_⟩
   · have hqp := (mk_eq_mk.1 (hq.symm.trans h)).homotopicWith
@@ -110,7 +110,7 @@ theorem pairClass_eq_mk_iff {p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩} :
 /-- The class of a relative cube, as a map of pairs, is its class. -/
 @[simp]
 theorem pairClass_coe (p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩)
-    (hp : MapsTo p.1 (Cube.prodBoundary N) B) : pairClass b p.1 hp = mk p :=
+    (hp : MapsTo p.val (Cube.prodBoundary N) B) : pairClass b p.val hp = mk p :=
   pairClass_eq_mk_iff.2 (.refl _ hp)
 
 /-- Maps of pairs homotopic through maps of pairs have the same class. -/
@@ -141,7 +141,7 @@ theorem transport_pairClass {b b' : B} (γ : Path b b') :
 at another point `y` of `B` is the transport of the class of `p` along any path from `y` to
 `b`. -/
 theorem pairClass_eq_transport_mk {b y : B} (p : RelGenLoop N ⟨TopPair.ofSubset B, y⟩)
-    (h : g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B) (γ : Path y b) :
+    (h : g.HomotopicWith p.val fun f ↦ MapsTo f (Cube.prodBoundary N) B) (γ : Path y b) :
     pairClass b g hg = transport (X := ⟨TopPair.ofSubset B, y⟩) γ (mk p) := by
   rw [← transport_pairClass γ, pairClass_eq_mk_iff.2 h]
 
@@ -157,7 +157,7 @@ theorem pairClass_eq_default_of_range_subset {b : B} (h : range g ⊆ B) :
   have := Fintype.ofFinite N
   -- Contracting the cube deforms `g` into a constant map, through maps with values in `B`.
   obtain ⟨y, hy⟩ : ∃ y : B, (y : Y) = g (1, fun _ ↦ 0) := ⟨⟨_, h ⟨_, rfl⟩⟩, rfl⟩
-  have hc : g.HomotopicWith (RelGenLoop.const : RelGenLoop N ⟨TopPair.ofSubset B, y⟩).1
+  have hc : g.HomotopicWith (RelGenLoop.const : RelGenLoop N ⟨TopPair.ofSubset B, y⟩).val
       fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
     ⟨{ toFun := fun q ↦ g (openBoxContractionTo (fun _ ↦ 0) q.1 q.2)
        continuous_toFun := g.continuous.comp (continuous_openBoxContractionTo _)
@@ -201,7 +201,7 @@ theorem pairClass_cubeTransAt (j : N) {f g : C(I × (I^N), Y)}
     exact h _ _
   -- Glue them into a homotopy through maps of pairs from the concatenation of `f` and `g` to the
   -- concatenation of the two relative cubes.
-  have hpq : (cubeTransAt j f g h).HomotopicWith (RelGenLoop.transAt j p q).1
+  have hpq : (cubeTransAt j f g h).HomotopicWith (RelGenLoop.transAt j p q).val
       fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
     (congrArg (fun k ↦ (cubeTransAt j f g h).HomotopicWith k
       fun f ↦ MapsTo f (Cube.prodBoundary N) B) (RelGenLoop.coe_transAt j p q)).mpr
@@ -225,7 +225,7 @@ theorem pairClass_cubeSymmAt (j : N) {g : C(I × (I^N), Y)}
   have hH (t : I) (w : I × I^N) :
       H (t, w) = G.toContinuousMap (t, (w.1, fun i ↦ if i = j then σ (w.2 j) else w.2 i)) :=
     congrArg (fun x ↦ G.toContinuousMap (t, x)) (cubeSymmAt_apply j (.id _) w)
-  have hp : (cubeSymmAt j g).HomotopicWith (RelGenLoop.symmAt j p).1
+  have hp : (cubeSymmAt j g).HomotopicWith (RelGenLoop.symmAt j p).val
       fun f ↦ MapsTo f (Cube.prodBoundary N) B :=
     ⟨{ toContinuousMap := H
        map_zero_left := fun w ↦

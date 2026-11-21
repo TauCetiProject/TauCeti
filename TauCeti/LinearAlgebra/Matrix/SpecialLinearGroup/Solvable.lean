@@ -89,7 +89,7 @@ theorem not_isSolvable_fin_two (F : Type*) [Field F]
   have : Group.IsPerfect SL(2, F) := ⟨Matrix.SL2.commutator_eq_top ha0 ha1⟩
   -- The transvection with off-diagonal entry `1` witnesses that `SL₂(F)` is nontrivial.
   have : Nontrivial SL(2, F) := ⟨Matrix.SpecialLinearGroup.transvection zero_ne_one 1, 1,
-    fun h ↦ by simpa [Matrix.SpecialLinearGroup.transvection_coe] using congr($h.1 0 1)⟩
+    fun h ↦ by simpa [Matrix.SpecialLinearGroup.transvection_coe] using congr(($h).val 0 1)⟩
   exact Group.IsPerfect.not_isSolvable _
 
 /-- The special linear group `SL₂` over an infinite field is not solvable. -/

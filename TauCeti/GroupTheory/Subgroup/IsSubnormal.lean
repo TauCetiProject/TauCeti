@@ -185,9 +185,9 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
   have hψ_surj : Function.Surjective ψ := πN.subgroupMap_surjective H
   have hcomap : ((K.map πN).subgroupOf (H.map πN)).comap ψ = K.subgroupOf H := by
     ext x
-    refine ⟨fun hx ↦ ?_, fun hxK ↦ mem_map.mpr ⟨x.1, hxK, rfl⟩⟩
+    refine ⟨fun hx ↦ ?_, fun hxK ↦ mem_map.mpr ⟨x.val, hxK, rfl⟩⟩
     rcases mem_map.mp hx with ⟨k, hkK, hkx⟩
-    have hmem : (⟨k⁻¹ * x.1, mul_mem (inv_mem (hKH hkK)) x.2⟩ : H) ∈ N.subgroupOf H :=
+    have hmem : (⟨k⁻¹ * x.val, mul_mem (inv_mem (hKH hkK)) x.property⟩ : H) ∈ N.subgroupOf H :=
       mem_subgroupOf.mpr (QuotientGroup.eq.mp hkx)
     have hm := mem_map_of_mem (QuotientGroup.mk' (K.subgroupOf H)) hmem
     rw [hbot, mem_bot, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff] at hm
@@ -209,11 +209,11 @@ private theorem of_normal_map_eq_top {H K N : Subgroup G} (hH : H.IsSubnormal)
     (hKH : K ≤ H) [(K.subgroupOf H).Normal] (e : (H ⧸ K.subgroupOf H) ≃* S)
     (htop : (N.subgroupOf H).map (QuotientGroup.mk' (K.subgroupOf H)) = ⊤) :
     HasSubnormalSection N S := by
-  let α : H.subgroupOf N →* H := ⟨⟨fun x ↦ ⟨x.1.1, x.2⟩, rfl⟩, fun _ _ ↦ rfl⟩
+  let α : H.subgroupOf N →* H := ⟨⟨fun x ↦ ⟨x.val.val, x.property⟩, rfl⟩, fun _ _ ↦ rfl⟩
   let ω := (QuotientGroup.mk' (K.subgroupOf H)).comp α
   have hω_surj : Function.Surjective ω := fun q ↦ by
     rcases mem_map.mp (htop.symm ▸ mem_top q) with ⟨y, hyN, rfl⟩
-    exact ⟨⟨⟨y.1, hyN⟩, y.2⟩, rfl⟩
+    exact ⟨⟨⟨y.val, hyN⟩, y.property⟩, rfl⟩
   have hker : ω.ker = (K.subgroupOf N).subgroupOf (H.subgroupOf N) := by
     ext x; exact QuotientGroup.eq_one_iff _
   have hKNN : ((K.subgroupOf N).subgroupOf (H.subgroupOf N)).Normal := hker ▸ ω.normal_ker

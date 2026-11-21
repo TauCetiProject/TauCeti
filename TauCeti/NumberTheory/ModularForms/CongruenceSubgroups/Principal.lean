@@ -56,26 +56,26 @@ theorem quotientGammaEquiv_mk (N : ℕ) (γ : SL(2, ℤ)) :
 `Multiplicative.ofAdd (γ 0 1 : ZMod N)`. Since matrices in `Γ₁(N)` are congruent to `!![1, *; 0, 1]`
 modulo `N`, matrix multiplication adds their upper-right entries modulo `N`. -/
 def gamma1UpperRightHom (N : ℕ) : Gamma1 N →* Multiplicative (ZMod N) where
-  toFun g := Multiplicative.ofAdd (g.1 0 1 : ZMod N)
+  toFun g := Multiplicative.ofAdd (g.val 0 1 : ZMod N)
   map_one' := by simp
   map_mul' := fun ⟨A, hA⟩ ⟨B, hB⟩ ↦ by
     obtain ⟨hA00, -, -⟩ := (Gamma1_mem N A).mp hA
     obtain ⟨-, hB11, -⟩ := (Gamma1_mem N B).mp hB
     rw [← ofAdd_add]
     congr 1
-    simp only [Subgroup.coe_mul, coe_mul, (Matrix.two_mul_expl A.1 B.1).2.1, Int.cast_add,
+    simp only [Subgroup.coe_mul, coe_mul, (Matrix.two_mul_expl A.val B.val).2.1, Int.cast_add,
       Int.cast_mul, hA00, hB11, one_mul, mul_one]
     exact add_comm _ _
 
 /-- Evaluation formula for `gamma1UpperRightHom`. -/
 theorem gamma1UpperRightHom_apply (N : ℕ) (g : Gamma1 N) :
-    gamma1UpperRightHom N g = Multiplicative.ofAdd (g.1 0 1 : ZMod N) := (rfl)
+    gamma1UpperRightHom N g = Multiplicative.ofAdd (g.val 0 1 : ZMod N) := (rfl)
 
 /-- Converting the value of `gamma1UpperRightHom N g` back to `ZMod N` yields the upper-right
 entry `g 0 1` modulo `N`. -/
 @[simp]
 theorem toAdd_gamma1UpperRightHom_apply (N : ℕ) (g : Gamma1 N) :
-    Multiplicative.toAdd (gamma1UpperRightHom N g) = (g.1 0 1 : ZMod N) := by
+    Multiplicative.toAdd (gamma1UpperRightHom N g) = (g.val 0 1 : ZMod N) := by
   rw [gamma1UpperRightHom_apply, toAdd_ofAdd]
 
 /-- Powers of the translation matrix `ModularGroup.T` witness surjectivity of

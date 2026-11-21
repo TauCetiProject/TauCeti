@@ -113,7 +113,7 @@ noncomputable def mapSubtypeSubquotientEquiv {M : Subgroup G} (K H : Subgroup M)
     ext x
     simp only [φ, e, MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
       QuotientGroup.eq_one_iff, mem_subgroupOf, mem_map]
-    exact ⟨fun ⟨y, hyK, hyx⟩ ↦ M.subtype_injective hyx ▸ hyK, fun hxK ↦ ⟨x.1, hxK, rfl⟩⟩
+    exact ⟨fun ⟨y, hyK, hyx⟩ ↦ M.subtype_injective hyx ▸ hyK, fun hxK ↦ ⟨x.val, hxK, rfl⟩⟩
   (QuotientGroup.quotientMulEquivOfEq hker.symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective φ
       ((QuotientGroup.mk'_surjective _).comp e.surjective))

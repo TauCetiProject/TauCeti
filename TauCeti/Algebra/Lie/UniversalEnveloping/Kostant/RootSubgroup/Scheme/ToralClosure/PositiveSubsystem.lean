@@ -62,7 +62,7 @@ variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
 variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ) (α : I → κ → ℤ) (S : Set I)
 variable (hnilS : ∀ i : S,
-  IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+  IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
 variable (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
 variable (hα : ∀ i ∈ S, ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
 variable (hpos : ∀ i ∈ S, ∀ {r s : Fin n} {m : ℕ},

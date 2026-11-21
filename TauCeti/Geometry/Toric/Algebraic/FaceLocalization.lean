@@ -94,7 +94,7 @@ as an element of the larger dual semigroup of the face. -/
 theorem faceAffineCoordinateRingMap_single (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ) (z : ℂ) :
     faceAffineCoordinateRingMap hi hτσ (MonoidAlgebra.single (ofAdd m) z) =
-      MonoidAlgebra.single (ofAdd ⟨m, dualSemigroup_anti hi hτσ.le m.2⟩) z := by
+      MonoidAlgebra.single (ofAdd ⟨m, dualSemigroup_anti hi hτσ.le m.property⟩) z := by
   rw [faceAffineCoordinateRingMap]
   convert affineCoordinateRingMap_single hi hi (AddMonoidHom.id N) LinearMap.id
     (fun _ ↦ rfl) (fun _ hx ↦ hτσ.le hx) m z using 1
@@ -209,7 +209,7 @@ theorem isLocalization_away_affineCoordinateRingMap_inf_ker (hi : IsIntegralLatt
     apply Subtype.ext
     simp [hf]
   · intro y
-    obtain ⟨n, hn⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ m.2 (toAdd y).2
+    obtain ⟨n, hn⟩ := exists_add_nsmul_mem_dualSemigroup hi hσ m.property (toAdd y).property
     refine ⟨n, ofAdd ⟨_, hn⟩, ?_⟩
     apply toAdd.injective
     apply Subtype.ext
@@ -255,7 +255,7 @@ monomial of `m` does not vanish. -/
 theorem range_faceAffineToricSchemeMap (hi : IsIntegralLattice i) (hσ : σ.FG)
     (m : dualSemigroup hi σ) :
     Set.range (faceAffineToricSchemeMap hi
-      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2))) =
+      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.property))) =
       (PrimeSpectrum.basicOpen (MonoidAlgebra.single (ofAdd m) (1 : ℂ)) :
         Set (PrimeSpectrum (affineCoordinateRing hi σ))) :=
   range_faceAffineToricSchemeMap_of_eq hi hσ _ m rfl
@@ -272,10 +272,10 @@ theorem preimage_range_faceAffineToricSchemeMap_inf_ker {N N' : Type u} {V' : Ty
     (m : dualSemigroup hi' ρ) :
     affineToricSchemeMap hi hi' f g hfg hσρ ⁻¹'
         Set.range (faceAffineToricSchemeMap hi'
-          (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi' m).1 m.2))) =
+          (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi' m).1 m.property))) =
       Set.range (faceAffineToricSchemeMap hi
         (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi _).1
-          (dualSemigroupMap hi hi' f g hfg hσρ m).2))) := by
+          (dualSemigroupMap hi hi' f g hfg hσρ m).property))) := by
   ext x
   rw [Set.mem_preimage, range_faceAffineToricSchemeMap hi' hρ m,
     range_faceAffineToricSchemeMap hi hσ, affineToricSchemeMap_def, Spec.map_apply]
@@ -346,7 +346,7 @@ noncomputable abbrev affineToricChart (σ : Φ.cones) : Scheme :=
 
 /-- The affine toric scheme of the intersection of two cones is their pairwise overlap chart. -/
 noncomputable abbrev affineToricOverlap (σ τ : Φ.cones) : Scheme :=
-  affineToricScheme Φ.lattice (σ.1 ⊓ τ.1)
+  affineToricScheme Φ.lattice (σ.val ⊓ τ.val)
 
 /-- The canonical map from a pairwise overlap into its left affine chart. -/
 noncomputable def affineToricOverlapLeft (σ τ : Φ.cones) :
