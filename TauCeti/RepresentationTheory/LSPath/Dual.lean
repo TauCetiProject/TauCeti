@@ -12,10 +12,12 @@ public import TauCeti.RepresentationTheory.LSPath.Weight
 # Littelmann's dual Lakshmibai–Seshadri path
 
 For a finite reduced root pairing `P` with base `b` and longest element `w₀`, Littelmann's dual of
-an LS path `π = (τ₀, …, τ_l; a₀, …, a_{l+1})` of shape `λ` is
-`π^* = (τ_l w₀, …, τ₀ w₀; 1 - a_{l+1}, …, 1 - a₀)` of shape `-(w₀ • λ)`. Its distinguished timed
-presentation is `PLPath.reverseTimed (π.timed 𝕜 f)` and its path is `(π.toPLPath 𝕜 f).reverse`,
-with no dominance assumption on `λ`.
+an LS path `π = (τ₀, …, τ_l; a₀, …, a_{l+1})` of shape `λ` is the path `π^*` of shape
+`-(w₀ • λ)` whose coset sequence is `(τ_l w₀ W_{-w₀ λ}, …, τ₀ w₀ W_{-w₀ λ})` (encoded by their
+minimal coset representatives `minimalCosetRep (P.wallIndices b (-(w₀ • λ))) (τ_{l - j} w₀)`) and
+whose breaks are `(1 - a_{l+1}, …, 1 - a₀)`. Its distinguished timed presentation is
+`PLPath.reverseTimed (π.timed 𝕜 f)` and its path is `(π.toPLPath 𝕜 f).reverse`, with no dominance
+assumption on `λ`.
 
 ## Main definitions and results
 
@@ -181,7 +183,9 @@ end Realization
 theorem weight_dual (hlam : lam ∈ dominantChamber P b)
     (hlam' : -(longestElement P b • lam) ∈ dominantChamber P b) :
     (dual π).weight hlam' = -π.weight hlam :=
-  (dual π).weight_eq_of_forall_endpoint_eq hlam' fun f ↦ by
-    rw [toPLPath_dual, PLPath.endpoint_reverse, map_neg, apply_weight ℚ]
+  ((dual π).weight_eq_iff_toRatPLPath_endpoint hlam').mpr (by
+    rw [toRatPLPath, toPLPath_dual, PLPath.endpoint_reverse, map_neg, ← toRatPLPath,
+      ← apply_weight ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom hlam π,
+      LinearMap.toAddMonoidHom_coe])
 
 end TauCeti.LSPath

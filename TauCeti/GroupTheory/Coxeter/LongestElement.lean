@@ -279,8 +279,8 @@ theorem reverseMul_apply (k : Fin ((C.reverseMul h hJK).length + 1)) :
       cs.minimalCosetRep K ((C (Fin.rev ⟨k, by simpa using k.isLt⟩)).val * w₀) :=
   (rfl)
 
-/-- The `k`-th step of a reversed chain starts at the `(rev k).succ`-th vertex of `C`, times `w₀`.
--/
+/-- The `k`-th step of a reversed chain starts at the minimal representative of the coset of the
+`(rev k).succ`-th vertex of `C` times `w₀` modulo `K`. -/
 theorem reverseMul_castSucc (k : Fin (C.reverseMul h hJK).length) :
     ((C.reverseMul h hJK) k.castSucc).val =
       cs.minimalCosetRep K ((C (k.cast (length_reverseMul h hJK C)).rev.succ).val * w₀) := by
@@ -291,8 +291,8 @@ theorem reverseMul_castSucc (k : Fin (C.reverseMul h hJK).length) :
     rw [← Fin.rev_castSucc]; rfl
   rw [hk]
 
-/-- The `k`-th step of a reversed chain ends at the `(rev k).castSucc`-th vertex of `C`, times
-`w₀`. -/
+/-- The `k`-th step of a reversed chain ends at the minimal representative of the coset of the
+`(rev k).castSucc`-th vertex of `C` times `w₀` modulo `K`. -/
 theorem reverseMul_succ (k : Fin (C.reverseMul h hJK).length) :
     ((C.reverseMul h hJK) k.succ).val =
       cs.minimalCosetRep K ((C (k.cast (length_reverseMul h hJK C)).rev.castSucc).val * w₀) := by

@@ -48,8 +48,9 @@ reparametrizations of a common one exactly when their normal forms agree, are in
 * `TauCeti.PLPath.ofSegments`: the path presented by a segment list.
 * `TauCeti.PLPath.endpoint`, `TauCeti.PLPath.reverse`, `TauCeti.PLPath.straight`: the endpoint,
   the reversed path and the straight path `t ↦ t • v`.
-* `TauCeti.PLPath.map`, `TauCeti.PLPath.mapSemilinear`: the linear and semilinear images of a path,
-  allowing collapsed segments.
+* `TauCeti.PLPath.map`, `TauCeti.PLPath.mapSemilinear`: the linear image of a path, and the
+  semilinear image mapping the normalized segments (which matches any presentation segment by
+  segment via `TauCeti.PLPath.mapSemilinear_ofSegments` when the scalar homomorphism is monotone).
 
 ## Main results
 
@@ -653,7 +654,9 @@ theorem ofSegments_map_normalize_semilinear (g : V →ₛₗ[σ] W) (hσ : Monot
   ofSegments_eq_ofSegments_iff.mpr ((Relation.reflTransGen_le_eqvGen _ _ _
     ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.mapSemilinear g hσ)).symm _ _)
 
-/-- The semilinear image of a piecewise-linear path along `g : V →ₛₗ[σ] W`. -/
+/-- The semilinear image of a piecewise-linear path along `g : V →ₛₗ[σ] W`, defined by mapping
+its normalized segments; when `σ` is monotone, `PLPath.mapSemilinear_ofSegments` gives the
+presentation-independent rule. -/
 noncomputable def mapSemilinear (p : PLPath 𝕜 V) (g : V →ₛₗ[σ] W) : PLPath 𝕜' W :=
   ofSegments 𝕜' (p.segments.map g)
 

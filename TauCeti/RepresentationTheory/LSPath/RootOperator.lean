@@ -123,7 +123,8 @@ theorem listMinHeight_cons (v : V) (l : List V) :
     listMinHeight f (v :: l) = min 0 (f v + listMinHeight f l) :=
   (rfl)
 
-/-- Running minimum height commutes with a semilinear map along a monotone ring homomorphism. -/
+/-- Running minimum height commutes with a semilinear map along a monotone ring homomorphism
+when the target height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem listMinHeight_mapSemilinear {𝕜' W : Type*} [Semiring 𝕜'] [LinearOrder 𝕜']
     [AddCommMonoid W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
     {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (l : List V) :
@@ -286,7 +287,8 @@ theorem minHeight_def (p : PLPath 𝕜 V) : p.minHeight f = listMinHeight f p.se
 theorem minHeight_ofSegments (l : List V) : (ofSegments 𝕜 l).minHeight f = listMinHeight f l := by
   rw [minHeight_def, segments_ofSegments, listMinHeight_normalize]
 
-/-- Minimum height commutes with a semilinear image along a monotone ring homomorphism. -/
+/-- Minimum height commutes with a semilinear image along a monotone ring homomorphism when
+the target height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem minHeight_mapSemilinear {𝕜' W : Type*} [Field 𝕜'] [LinearOrder 𝕜']
     [IsStrictOrderedRing 𝕜'] [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W}
     (hσ : Monotone σ) {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (p : PLPath 𝕜 V) :

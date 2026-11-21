@@ -31,8 +31,8 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
   positive reflection is `0`, and `RootPairing.reflectionBond_self` says the bond of a weight with
   itself is `0`.
 * `RootPairing.reflectionBond_reflection`: the bond of `x` and `s_β x` is `-⟨x, β^∨⟩`.
-* `RootPairing.reflectionBond_neg_neg`: negating both weights and reversing their order preserves
-  their bond.
+* `RootPairing.reflectionBond_neg_neg_swap`: negating both weights and reversing their order
+  preserves their bond.
 * `RootPairing.reflectionBond_dvd_sub`: when `y = s_β x` for a positive root `β`, the bond of `x`
   and `y` divides `f x - f y` for every linear form `f`.
 * `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
@@ -107,7 +107,7 @@ theorem reflectionBond_reflection [P.IsReduced] [NoZeroDivisors R] {β : ι} (h�
 
 /-- **Negating two weights and reversing their order preserves their reflection bond.** -/
 @[simp]
-theorem reflectionBond_neg_neg (x y : M) :
+theorem reflectionBond_neg_neg_swap (x y : M) :
     P.reflectionBond b (-y) (-x) = P.reflectionBond b x y := by
   have hpred : (fun β ↦ b.IsPos β ∧ P.reflection β (-y) = -x) =
       (fun β ↦ b.IsPos β ∧ P.reflection β x = y) := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.Bruhat
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Combinatorics
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 import TauCeti.GroupTheory.Coxeter.ChainProperty
@@ -81,6 +81,10 @@ saturated chains of orbit weights, in which each step is a reflection `ξ ↦ s_
   side of its wall to covers**.
 * `TauCeti.eq_simple_mul_of_minimalCosetRepCovBy_of_coroot'_nonpos`: a cover `y ⋖ x` with
   `⟨x λ, αᵢ^∨⟩ ≤ 0 < ⟨y λ, αᵢ^∨⟩` is `x = sᵢ y`.
+* `TauCeti.oppositionPerm_mem_wallIndices_neg_longestElement_smul_iff`,
+  `TauCeti.conj_longestElement_mem_parabolic_wallIndices_iff`, and
+  `TauCeti.minimalCosetRep_mul_longestElement_smul`: the longest element exchanges `W_λ` and
+  `W_{-w₀ λ}` and sends minimal coset representatives `u w₀` to `-(u • λ)`.
 
 ## References
 
@@ -178,6 +182,8 @@ theorem _root_.RootPairing.parabolic_wallIndices_le_stabilizer (P : _root_.RootP
   (CoxeterSystem.parabolic_le_iff _).mpr fun i hi ↦ by
     rw [MulAction.mem_stabilizer_iff, weylCoxeterSystem_simple]
     exact ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hi)
+
+section Ordered
 
 variable (P b) [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
   [P.IsReduced] [P.flip.IsReduced] {lam : M}
@@ -533,5 +539,66 @@ theorem eq_simple_mul_of_minimalCosetRepCovBy_of_coroot'_nonpos
     exact h.bruhatLE.simple_mul_of_not_isLeftDescent i hd
   exact ((h.eq_or_eq _ hcov.isMinimalCosetRep_right hcov.bruhatLE hle).resolve_left
     hcov.ne.symm).symm
+
+end Ordered
+
+/-! ### Opposition and conjugation by the longest element -/
+
+section LongestElement
+
+open CoxeterSystem
+
+variable [CharZero R] [IsDomain R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+
+/-- The opposition permutation carries the simple walls through `λ` onto those through `-(w₀ • λ)`.
+-/
+theorem oppositionPerm_mem_wallIndices_neg_longestElement_smul_iff (lam : M) (i : b.support) :
+    oppositionPerm P b i ∈ P.wallIndices b (-(longestElement P b • lam)) ↔
+      i ∈ P.wallIndices b lam := by
+  rw [mem_wallIndices, mem_wallIndices, coe_oppositionPerm, coroot'_opposition, smul_neg, map_neg,
+    smul_smul_longestElement, neg_neg]
+
+private theorem conj_longestElement_mem_parabolic_wallIndices (lam : M) {p : P.weylGroup}
+    (hp : p ∈ (weylCoxeterSystem P b).parabolic (P.wallIndices b lam)) :
+    longestElement P b * p * longestElement P b ∈
+      (weylCoxeterSystem P b).parabolic (P.wallIndices b (-(longestElement P b • lam))) := by
+  simpa only [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, longestElement_inv]
+    using (CoxeterSystem.parabolic_le_iff (H := ((weylCoxeterSystem P b).parabolic
+      (P.wallIndices b (-(longestElement P b • lam)))).comap
+      (MulAut.conj (longestElement P b)).toMonoidHom) _).mpr (fun i hi ↦ by
+        simp only [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
+          longestElement_inv, conj_longestElement_simple]
+        exact (weylCoxeterSystem P b).simple_mem_parabolic
+          ((oppositionPerm_mem_wallIndices_neg_longestElement_smul_iff lam i).mpr hi)) hp
+
+/-- **Conjugation by `w₀` exchanges the wall parabolic subgroups of `λ` and `-(w₀ • λ)`.** -/
+theorem conj_longestElement_mem_parabolic_wallIndices_iff (lam : M) (p : P.weylGroup) :
+    longestElement P b * p * longestElement P b ∈
+        (weylCoxeterSystem P b).parabolic (P.wallIndices b (-(longestElement P b • lam))) ↔
+      p ∈ (weylCoxeterSystem P b).parabolic (P.wallIndices b lam) := by
+  refine ⟨fun h ↦ ?_, conj_longestElement_mem_parabolic_wallIndices lam⟩
+  have hmul := (P.isLongest_longestElement b).mul_self
+  have hp : longestElement P b * (longestElement P b * p * longestElement P b) *
+      longestElement P b = p := by
+    rw [← mul_assoc, ← mul_assoc, hmul, one_mul, mul_assoc, hmul, mul_one]
+  simpa [smul_neg, neg_neg, smul_smul_longestElement, hp] using
+    conj_longestElement_mem_parabolic_wallIndices (-(longestElement P b • lam)) h
+
+/-- **The minimal coset rep of `u * w₀` for `-(w₀ • λ)` sends `-(w₀ • λ)` to `-(u • λ)`.** -/
+theorem minimalCosetRep_mul_longestElement_smul (lam : M) (u : P.weylGroup) :
+    (weylCoxeterSystem P b).minimalCosetRep
+        (P.wallIndices b (-(longestElement P b • lam))) (u * longestElement P b) •
+        (-(longestElement P b • lam)) = -(u • lam) := by
+  set lam' := -(longestElement P b • lam)
+  have hfix : ((u * longestElement P b)⁻¹ *
+      (weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b lam') (u * longestElement P b)) •
+      lam' = lam' :=
+    MulAction.mem_stabilizer_iff.mp (P.parabolic_wallIndices_le_stabilizer b lam'
+      ((weylCoxeterSystem P b).inv_mul_minimalCosetRep_mem _ _))
+  rw [← mul_inv_cancel_left (u * longestElement P b)
+    ((weylCoxeterSystem P b).minimalCosetRep _ _), mul_smul, hfix]
+  simp [lam', mul_smul, smul_neg, smul_smul_longestElement]
+
+end LongestElement
 
 end TauCeti

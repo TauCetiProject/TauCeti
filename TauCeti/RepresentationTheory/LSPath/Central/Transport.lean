@@ -46,13 +46,14 @@ the transport by `-χ` inverting the transport by `χ`.
 * `TauCeti.LSPath.toPLPath_centralTransport`: **for dominant `λ`, a realization `f` injective on
   `W λ`, and a realized orbit with no two distinct points on a common ray, the transported path is
   the central shift of the original path.**
+* `TauCeti.LSPath.lower_toPLPath_centralTransport`: lowering on a centrally transported path lifts
+  through the time–weight graph shift.
 * `TauCeti.LSPath.endpoint_toPLPath_centralTransport`, `TauCeti.LSPath.weight_centralTransport`,
   and `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint and lattice-valued weight
   move by `χ` and the minimum height of a form killing `χ` is unchanged.
 * `TauCeti.LSPath.centralTransport_zero`, `TauCeti.LSPath.centralTransport_centralTransport`,
-  `TauCeti.LSPath.centralTransport_symm_apply`, `TauCeti.LSPath.centralTransport_neg`, and
-  `TauCeti.LSPath.centralTransport_congr`: encoding-level identity, composition, inverse, and shape
-  congruence coherence laws.
+  `TauCeti.LSPath.centralTransport_symm_apply`, and `TauCeti.LSPath.centralTransport_congr`:
+  encoding-level identity, composition, inverse, and shape congruence coherence laws.
 * `TauCeti.LSPath.toPLPath_centralTransport_centralTransport`,
   `TauCeti.LSPath.toPLPath_centralTransport_zero` and
   `TauCeti.LSPath.toPLPath_centralTransport_neg`: on realized paths the transports compose
@@ -211,13 +212,6 @@ theorem centralTransport_symm_apply (π : LSPath P b (lam + χ)) :
         (centralTransport (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero]) π) :=
   ext' (by simp) (fun _ ↦ by simp) (fun _ ↦ by simp)
 
-/-- Central transport by `-χ` agrees with the inverse of central transport by `χ`. -/
-theorem centralTransport_neg (hneg : ∀ i ∈ b.support, P.coroot' i (-χ) = 0)
-    (π : LSPath P b (lam + χ)) :
-    centralTransport (-χ) hneg π =
-      congr (add_neg_cancel_right lam χ).symm ((centralTransport χ hχ).symm π) := by
-  rw [centralTransport_symm_apply χ hχ π, congr_congr]; simp
-
 @[simp]
 theorem centralTransport_congr {lam' : M} (h : lam = lam') :
     centralTransport χ hχ (congr h π) =
@@ -247,6 +241,17 @@ theorem toPLPath_centralTransport_eq_ofSegments :
     (centralTransport χ hχ π).toPLPath 𝕜 f =
       PLPath.ofSegments 𝕜 ((PLPath.shiftTimed (f χ) (π.timed 𝕜 f)).map Prod.snd) := by
   rw [toPLPath_def, timed_centralTransport]
+
+/-- Lowering along a form killing `χ` on a centrally transported LS path computes the lower of the
+time–weight graph of `π` shifted by `f χ` and projected back to `V`. -/
+theorem lower_toPLPath_centralTransport (F : Module.Dual 𝕜 V)
+    (hFχ : F (f χ) = 0) (i : b.support) :
+    PLPath.lower F (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
+      (PLPath.lower (F.comp (LinearMap.snd 𝕜 𝕜 V)) (0, f (P.root i))
+        (PLPath.ofSegments 𝕜 (π.timed 𝕜 f))).map
+        (fun q ↦ (q.shiftGraph (f χ)).map (LinearMap.snd 𝕜 𝕜 V)) := by
+  rw [toPLPath_centralTransport_eq_ofSegments,
+    PLPath.lower_ofSegments_shiftTimed (π.timed 𝕜 f) hFχ (f (P.root i))]
 
 /-- The central transport moves the endpoint of an LS path by `χ`. -/
 @[simp]
@@ -308,8 +313,10 @@ end Realization
 theorem weight_centralTransport (hlam : lam ∈ dominantChamber P b)
     (hlam' : lam + χ ∈ dominantChamber P b) :
     (centralTransport χ hχ π).weight hlam' = π.weight hlam + χ :=
-  (centralTransport χ hχ π).weight_eq_of_forall_endpoint_eq hlam' fun f ↦ by
-    rw [endpoint_toPLPath_centralTransport, map_add, apply_weight ℚ]
+  ((centralTransport χ hχ π).weight_eq_iff_toRatPLPath_endpoint hlam').mpr (by
+    rw [toRatPLPath, endpoint_toPLPath_centralTransport, ← toRatPLPath,
+      ← apply_weight ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom hlam π, ← map_add]
+    rfl)
 
 end LSPath
 

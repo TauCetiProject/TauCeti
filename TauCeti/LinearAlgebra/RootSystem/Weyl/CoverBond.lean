@@ -61,6 +61,8 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
   `⟨u λ, αᵢ^∨⟩`, and `sᵢ` preserves the bond of a cover `y ⋖ x` unless `y λ = (sᵢ x) λ`.
 * `TauCeti.reflectionBond_smul_add`: translating `λ` by a weight killed by the simple coroots
   does not change the bonds between its orbit weights.
+* `TauCeti.reflectionBond_minimalCosetRep_mul_longestElement_swap`: reversing minimal coset
+  representatives by `w₀` (and swapping arguments) preserves reflection bonds.
 
 ## References
 
@@ -99,6 +101,21 @@ theorem reflectionBond_smul_add [IsDomain R] [P.IsReduced]
   rw [smul_add, smul_add, smul_eq_self_of_forall_coroot'_eq_zero b hχ,
     smul_eq_self_of_forall_coroot'_eq_zero b hχ,
     reflectionBond_add_add (coroot'_eq_zero_of_forall_mem_support P b hχ)]
+
+/-- **Reversing minimal coset representatives by `w₀` (and swapping arguments) preserves reflection
+bonds.** -/
+theorem reflectionBond_minimalCosetRep_mul_longestElement_swap [IsDomain R] [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] (lam : M) (x y : P.weylGroup) :
+    P.reflectionBond b
+        ((weylCoxeterSystem P b).minimalCosetRep
+          (P.wallIndices b (-(longestElement P b • lam))) (y * longestElement P b) •
+          (-(longestElement P b • lam)))
+        ((weylCoxeterSystem P b).minimalCosetRep
+          (P.wallIndices b (-(longestElement P b • lam))) (x * longestElement P b) •
+          (-(longestElement P b • lam))) =
+      P.reflectionBond b (x • lam) (y • lam) := by
+  rw [minimalCosetRep_mul_longestElement_smul, minimalCosetRep_mul_longestElement_smul,
+    P.reflectionBond_neg_neg_swap]
 
 /-! ### Bonds of covers -/
 

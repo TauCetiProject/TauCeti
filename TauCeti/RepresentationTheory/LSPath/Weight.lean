@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Tower
-public import TauCeti.RepresentationTheory.LSPath.Basic
+public import TauCeti.RepresentationTheory.LSPath.Realization
 
 import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 
@@ -28,7 +27,7 @@ chosen realization then gives uniqueness of the lattice weight.
 Using the canonical rational realization `M → ℚ ⊗[ℤ] M` (`RootPairing.tensorProduct_mk_injective`),
 this yields the intrinsic lattice-valued weight `TauCeti.LSPath.weight`, characterized by its
 endpoint image in every additive realization (`TauCeti.LSPath.apply_weight`,
-`TauCeti.LSPath.weight_eq_iff_endpoint`, `TauCeti.LSPath.weight_eq_of_forall_endpoint_eq`).
+`TauCeti.LSPath.weight_eq_iff_endpoint`, `TauCeti.LSPath.weight_eq_iff_toRatPLPath_endpoint`).
 
 ## References
 
@@ -106,19 +105,6 @@ universe u w x
 variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
-/-- The canonical rational piecewise-linear realization of an LS path in `ℚ ⊗[ℤ] M`. -/
-noncomputable abbrev toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] M) :=
-  π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom
-
-/-- Pushing `LSPath.toRatPLPath` forward along the canonical semilinear extension of `f : M →+ V`
-yields `π.toPLPath 𝕜 f`. -/
-theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) (π : LSPath P b lam) :
-    π.toRatPLPath.mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
-      π.toPLPath 𝕜 f := by
-  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ (Rat.cast_mono (K := 𝕜)),
-    AddMonoidHom.liftBaseChangeSemilinear_comp_mk]
-
 /-- **The lattice-valued weight of an LS path of dominant shape**, characterized by
 `f (π.weight hlam) = (π.toPLPath 𝕜 f).endpoint` (`TauCeti.LSPath.apply_weight`). -/
 noncomputable def weight (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) : M :=
@@ -145,18 +131,17 @@ theorem weight_eq_iff_endpoint {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] 
     π.weight hlam = μ ↔ (π.toPLPath 𝕜 f).endpoint = f μ := by
   rw [← apply_weight 𝕜 f hlam π, hf.eq_iff]
 
-/-- `π.weight hlam = μ` if `(π.toPLPath ℚ f).endpoint = f μ` for every rational realization `f`. -/
-theorem weight_eq_of_forall_endpoint_eq (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam)
-    {μ : M} (h : ∀ {V : Type w} [AddCommGroup V] [Module ℚ V] (f : M →+ V),
-      (π.toPLPath ℚ f).endpoint = f μ) :
-    π.weight hlam = μ :=
-  (weight_eq_iff_endpoint (𝕜 := ℚ) (P.tensorProduct_mk_injective ℚ) hlam π).mpr
-    (h (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom)
+/-- Characterization of `π.weight hlam` by the endpoint of its canonical rational realization
+`π.toRatPLPath`. -/
+theorem weight_eq_iff_toRatPLPath_endpoint (hlam : lam ∈ dominantChamber P b)
+    (π : LSPath P b lam) {μ : M} :
+    π.weight hlam = μ ↔ π.toRatPLPath.endpoint = TensorProduct.mk ℤ ℚ M 1 μ :=
+  weight_eq_iff_endpoint (𝕜 := ℚ) (P.tensorProduct_mk_injective ℚ) hlam π
 
 @[simp]
 theorem weight_straight (hlam : lam ∈ dominantChamber P b) : (straight lam).weight hlam = lam :=
-  weight_eq_of_forall_endpoint_eq hlam (straight lam) fun f ↦ by
-    rw [toPLPath_straight, PLPath.endpoint_straight]
+  (weight_eq_iff_toRatPLPath_endpoint hlam (straight lam)).mpr (by
+    rw [toRatPLPath, toPLPath_straight, PLPath.endpoint_straight, LinearMap.toAddMonoidHom_coe])
 
 @[simp]
 theorem weight_congr {lam' : M} (h : lam = lam') (hlam' : lam' ∈ dominantChamber P b)

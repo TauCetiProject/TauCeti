@@ -96,11 +96,9 @@ theorem graph_adj_of_f_eq_some (h : c.f i x = some y) : c.graph.Adj x y :=
 /-- Elements connected by a defined raising word are reachable in the crystal graph. -/
 theorem graph_reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
     c.graph.Reachable x y := by
-  induction w generalizing x with
-  | nil => obtain rfl := Option.some.inj (by simpa using h); exact .refl _
-  | cons i w ih =>
-    obtain ⟨z, hxz, hzy⟩ := Option.bind_eq_some_iff.mp (by rwa [eWord_cons] at h)
-    exact (c.graph_adj_of_e_eq_some hxz).reachable.trans (ih hzy)
+  rw [SimpleGraph.reachable_iff_reflTransGen]
+  exact Option.reflTransGen_of_nil_of_cons_eq_some c.eWord_nil c.eWord_cons
+    (fun h' ↦ c.graph_adj_of_e_eq_some h') h
 
 /-- Elements connected by a defined lowering word are reachable in the crystal graph. -/
 theorem graph_reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
@@ -119,19 +117,13 @@ theorem dual_graph : c.dual.graph = c.graph := by
 /-- Elements connected by an iterated raising operator lie in the same connected component of the
 crystal graph. -/
 theorem reachable_of_eIter_eq_some {n : ℕ} (h : c.eIter i n x = some y) :
-    c.graph.Reachable x y := by
-  induction n generalizing x with
-  | zero =>
-    simp only [eIter_zero, Option.some.injEq] at h
-    exact h ▸ SimpleGraph.Reachable.refl _
-  | succ n ih =>
-    obtain ⟨z, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.eIter_succ n x ▸ h)
-    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hy)
+    c.graph.Reachable x y :=
+  c.graph_reachable_of_eWord_eq_some (w := List.replicate n i) (by simpa [eWord_replicate] using h)
 
 /-- Elements connected by an iterated lowering operator lie in the same connected component of the
 crystal graph. -/
 theorem reachable_of_fIter_eq_some {n : ℕ} (h : c.fIter i n x = some y) : c.graph.Reachable x y :=
-  (c.reachable_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+  c.graph_reachable_of_fWord_eq_some (w := List.replicate n i) (by simpa [fWord_replicate] using h)
 
 end Graph
 

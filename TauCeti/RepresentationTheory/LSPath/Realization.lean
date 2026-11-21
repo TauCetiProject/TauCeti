@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
-public import TauCeti.RepresentationTheory.LSPath.Weight
 import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
@@ -26,6 +26,10 @@ counting presentations. This allows root operators on paths to be transferred to
 once their stability is established. Zero and central shapes are included; no regularity of
 the dominant shape is required.
 
+This file also defines the canonical rational realization `TauCeti.LSPath.toRatPLPath` in
+`ℚ ⊗[ℤ] M`, its pushforward `TauCeti.LSPath.mapSemilinear_toRatPLPath` to arbitrary realizations,
+and its injectivity (`TauCeti.LSPath.toRatPLPath_injective`).
+
 ## References
 
 * P. Littelmann, *Paths and root operators in representation theory*, Ann. of Math. 142 (1995),
@@ -40,11 +44,11 @@ open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
-  {lam : M} {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
+  {lam : M}
 
 section Timed
 
-variable [CharZero 𝕜]
+variable {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜] [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
 
 /-- For a dominant shape, an LS encoding is determined by its timed presentation whenever the
 realization separates orbit weights. No ray condition is needed for timed presentations. -/
@@ -91,7 +95,10 @@ theorem timed_injective (hlam : lam ∈ dominantChamber P b)
 
 end Timed
 
-variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+section PLPath
+
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] {f : M →+ V}
 
 /-- For a dominant shape whose realized orbit has no distinct weights on the same ray, the
 unparametrized piecewise-linear path determines the entire LS encoding, including its breaks. -/
@@ -116,6 +123,25 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
 
+end PLPath
+
+section Rational
+
+open scoped TensorProduct
+
+/-- The canonical rational piecewise-linear realization of an LS path in `ℚ ⊗[ℤ] M`. -/
+noncomputable abbrev toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] M) :=
+  π.toPLPath ℚ (TensorProduct.mk ℤ ℚ M 1).toAddMonoidHom
+
+/-- Pushing `LSPath.toRatPLPath` forward along the canonical semilinear extension of `f : M →+ V`
+yields `π.toPLPath 𝕜 f`. -/
+theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) (π : LSPath P b lam) :
+    π.toRatPLPath.mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
+      π.toPLPath 𝕜 f := by
+  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ (Rat.cast_mono (K := 𝕜)),
+    AddMonoidHom.liftBaseChangeSemilinear_comp_mk]
+
 /-- The canonical rational realization `LSPath.toRatPLPath` is injective for any dominant shape. -/
 theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
     Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
@@ -123,5 +149,7 @@ theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
   exact toPLPath_injective hlam (P.tensorProduct_mk_injective ℚ).injOn
     (by simpa only [LinearMap.toAddMonoidHom_coe] using
       P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam)
+
+end Rational
 
 end TauCeti.LSPath

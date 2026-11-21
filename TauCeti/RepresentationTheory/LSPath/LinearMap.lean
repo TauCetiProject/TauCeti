@@ -32,7 +32,8 @@ variable {𝕜 𝕜' V W : Type*} [Field 𝕜] [LinearOrder 𝕜] [Field 𝕜'] 
   [AddCommGroup V] [Module 𝕜 V] [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'}
   {g : V →ₛₗ[σ] W} {f : Dual 𝕜 V} {f' : Dual 𝕜' W}
 
-/-- Capped record reflection commutes with a semilinear map along a monotone ring homomorphism. -/
+/-- Capped record reflection commutes with a semilinear map along a monotone ring homomorphism
+when the target height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem reflectRecords_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v))
     (x : V) (c : 𝕜) (l : List V) :
     reflectRecords f' (g x) (σ c) (l.map g) = (reflectRecords f x c l).map g := by
@@ -43,19 +44,21 @@ theorem reflectRecords_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) =
     have hmin : min (f' (g v) + listMinHeight f' (l.map g)) (σ c) =
         σ (min (f v + listMinHeight f l) c) := by
       rw [hf v, listMinHeight_mapSemilinear hσ hf l, ← map_add, hσ.map_min]
+    have hcond : 0 < min (f' (g v) + listMinHeight f' (l.map g)) (σ c) ↔
+        0 < min (f v + listMinHeight f l) c := by
+      rw [hmin, ← map_zero σ, hσ_strict.lt_iff_lt]
     have hc : σ c - f' (g v) = σ (c - f v) := by rw [hf v, map_sub]
     by_cases h : 0 < min (f v + listMinHeight f l) c
-    · rw [List.map_cons,
-        reflectRecords_cons_of_pos (f := f') (hmin ▸ map_zero σ ▸ hσ_strict h),
-        reflectRecords_cons_of_pos h, List.map_cons, List.map_cons, hmin, hc, ih (c - f v)]
+    · simp only [List.map_cons, reflectRecords_cons_of_pos h,
+        reflectRecords_cons_of_pos (hcond.mpr h), hmin, hc, ih (c - f v)]
       refine congrArg₂ List.cons (by simp [preReflection_apply, map_sub, map_smulₛₗ, hf])
         (congrArg₂ List.cons ?_ rfl)
       rw [hf v, ← map_div₀, ← _root_.map_one σ, ← map_sub, map_smulₛₗ]
-    · rw [List.map_cons,
-        reflectRecords_cons_of_nonpos (f := f') (hmin ▸ map_zero σ ▸ hσ (le_of_not_gt h)),
-        reflectRecords_cons_of_nonpos (le_of_not_gt h), List.map_cons, hc, ih (c - f v)]
+    · simp only [List.map_cons, reflectRecords_cons_of_nonpos (le_of_not_gt h),
+        reflectRecords_cons_of_nonpos (le_of_not_gt (mt hcond.mp h)), hc, ih (c - f v)]
 
-/-- Lowering on lists is natural for semilinear maps along a monotone ring homomorphism. -/
+/-- Lowering on lists is natural for semilinear maps along a monotone ring homomorphism when the
+target height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem listLower_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v))
     (x : V) (l : List V) :
     listLower f' (g x) (l.map g) = (listLower f x l).map (List.map g) := by
@@ -71,7 +74,8 @@ theorem listLower_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (
     rw [hm, ← _root_.map_one σ, ← map_add, reflectRecords_mapSemilinear hσ hf]
   · simp only [h, mt hcond.mp h, ↓reduceIte, Option.map_none]
 
-/-- Lowering commutes with a semilinear image along a monotone ring homomorphism. -/
+/-- Lowering commutes with a semilinear image along a monotone ring homomorphism when the target
+height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem lower_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
     (p : PLPath 𝕜 V) (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
     lower f' (g x) (p.mapSemilinear g) = (lower f x p).map (fun q ↦ q.mapSemilinear g) := by
@@ -80,7 +84,8 @@ theorem lower_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜
     Option.map_map]
   exact congrArg (Option.map · _) (funext fun m ↦ (mapSemilinear_ofSegments m g hσ).symm)
 
-/-- Raising commutes with a semilinear image along a monotone ring homomorphism. -/
+/-- Raising commutes with a semilinear image along a monotone ring homomorphism when the target
+height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem raise_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
     (p : PLPath 𝕜 V) (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
     raise f' (g x) (p.mapSemilinear g) = (raise f x p).map (fun q ↦ q.mapSemilinear g) := by

@@ -48,6 +48,9 @@ into a normal crystal when `f` is injective.
   preserves Lakshmibai–Seshadri paths**.
 * `TauCeti.LSPath.isCrystalSet_range_toPLPath`: the realized LS paths of a dominant shape form a
   crystal-admissible set of paths (`TauCeti.PLPath.IsCrystalSet`).
+* `TauCeti.LSPath.isIntegralPath_toPLPath`, `TauCeti.LSPath.isIntegralPath_straight`: realized
+  LS paths of dominant shape and dominant straight paths are integral in any compatible
+  realization (`F i (f x) = (P.coroot' i x : 𝕜)`).
 
 ## References
 
@@ -467,5 +470,21 @@ theorem isCrystalSet_range_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M 
   mem_of_lower_eq_some := by
     rintro i _ q h ⟨π, rfl⟩
     exact π.exists_toPLPath_eq_of_lower_eq_some hlam f i (F i) (hF i) h
+
+/-- Every realized Lakshmibai–Seshadri path of dominant shape is an integral path in any compatible
+realization (`∀ i x, F i (f x) = (P.coroot' i x : 𝕜)`). -/
+theorem isIntegralPath_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
+    (F : b.support → Module.Dual 𝕜 V)
+    (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+    PLPath.IsIntegralPath b f F (π.toPLPath 𝕜 f) :=
+  (isCrystalSet_range_toPLPath hlam f hF).subset_isIntegralPath ⟨π, rfl⟩
+
+/-- The straight path along a dominant weight `λ` is an integral path in any compatible realization
+(`∀ i x, F i (f x) = (P.coroot' i x : 𝕜)`). -/
+theorem isIntegralPath_straight (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
+    (F : b.support → Module.Dual 𝕜 V)
+    (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) :
+    PLPath.IsIntegralPath b f F (PLPath.straight 𝕜 (f lam)) := by
+  simpa only [toPLPath_straight] using isIntegralPath_toPLPath hlam f F hF (straight lam)
 
 end TauCeti.LSPath

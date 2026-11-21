@@ -89,14 +89,6 @@ theorem tensorProduct_mk_injective (P : RootPairing ι R M N) (S : Type*) [CommS
   P.toLinearMap.tensorProduct_mk_injective_of_injective S
     (LinearMap.IsPerfPair.bijective_left _).injective
 
-/-- Evaluating the scalar-extended coroot functional `Module.Dual.baseChange S (P.coroot' i)` at
-`1 ⊗ₜ x` yields `algebraMap R S (P.coroot' i x)`. -/
-theorem dual_baseChange_coroot'_tensorProduct_mk (P : RootPairing ι R M N) (S : Type*)
-    [CommSemiring S] [Algebra R S] (i : ι) (x : M) :
-    (Module.Dual.baseChange S (P.coroot' i) : Module.Dual S (S ⊗[R] M))
-      (TensorProduct.mk R S M 1 x) = algebraMap R S (P.coroot' i x) := by
-  simp [TensorProduct.mk_apply, Algebra.algebraMap_eq_smul_one]
-
 variable (P : RootPairing ι R M N) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
   [Free R N] [Module.Finite R N]
 
