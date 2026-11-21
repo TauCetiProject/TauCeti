@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import TauCeti.Analysis.Convex.SimplyConnected
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
+import TauCeti.AlgebraicTopology.UniversalCover.Countable
 
 /-!
 # Local topology of real manifolds
@@ -15,7 +16,9 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 The convex model range makes charted spaces locally path-connected; nonempty preconnected
 charted spaces are therefore path-connected. Extended charts also provide convex-image open
 neighbourhood bases (`ModelWithCorners.isBasis_convex_image_extChartAt`) and simply connected
-neighbourhoods, so real manifolds are semilocally simply connected.
+neighbourhoods, so real manifolds are semilocally simply connected. In a second-countable
+charted space this implies countability of the fundamental group
+(`ModelWithCorners.countable_fundamentalGroup`).
 -/
 
 public section
@@ -149,5 +152,13 @@ theorem isBasis_convex_image_extChartAt (I : ModelWithCorners 𝕜 E H) {M : Typ
     rw [Set.mem_preimage, (extChartAt I x).left_inv z.property] at hz_mem
     obtain ⟨w, hwU, hw⟩ := hz_mem
     exact Subtype.ext hw ▸ hwU
+
+/-- A second-countable manifold has countable fundamental group. -/
+theorem countable_fundamentalGroup (I : ModelWithCorners 𝕜 E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [SecondCountableTopology M] (x₀ : M) :
+    Countable (FundamentalGroup M x₀) :=
+  have := I.locallyPathConnectedSpace_of_chartedSpace M
+  have := I.semilocallySimplyConnectedSpace M
+  TauCeti.countable_fundamentalGroup x₀
 
 end ModelWithCorners
