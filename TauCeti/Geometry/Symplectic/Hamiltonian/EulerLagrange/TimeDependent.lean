@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ExtendedPhaseSpace
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The Legendre transform of a time-dependent Lagrangian
@@ -39,12 +38,14 @@ nonautonomous Hamilton equations of `H` and to the autonomous Hamiltonian
   momentum `e` conjugate to the time by `∂_t L`.
 * **Energy balance.** Along a solution of the time-dependent Euler–Lagrange equations the energy
   `E_L(t, q, v) = ∂_v L(t, q, v)(v) - L(t, q, v)` changes at the rate `-∂_t L`
-  (`TauCeti.hasDerivAt_energy_of_eulerLagrange`); for an autonomous Lagrangian this is
-  conservation of energy, `TauCeti.energy_eq_of_eulerLagrange`.
+  (`TauCeti.hasDerivAt_energy_of_eulerLagrange`, proved in
+  `TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange`, where conservation of energy
+  `TauCeti.energy_eq_of_eulerLagrange` is derived from it).
 * **Euler–Lagrange versus Hamilton.** A curve `q` with velocity `v` solves the time-dependent
   Euler–Lagrange equations at `t` exactly when its Legendre lift `s ↦ FL_s(q s, v s)` solves the
   nonautonomous Hamilton equations `x' = X_{H_t}(x)` at `t`
-  (`TauCeti.hasDerivAt_timeDependent_linearLegendreMap_iff`). Conversely, along a solution `γ` of
+  (`TauCeti.hasDerivAt_timeDependent_linearLegendreMap_iff`, also proved in
+  `TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange`). Conversely, along a solution `γ` of
   the nonautonomous Hamilton equations, the position and the velocity `w t (γ t)` recovered from
   the momentum solve the Euler–Lagrange equations
   (`TauCeti.eulerLagrange_of_hasDerivAt_timeDependent_hamiltonianVectorField`).
@@ -95,10 +96,9 @@ theorem hasDerivAt_legendreHamiltonian {z : E × StrongDual ℝ E} {t : ℝ} {w'
     (hp : fderiv ℝ (fun v ↦ L t (z.1, v)) (w t z) = z.2) :
     HasDerivAt (fun s ↦ legendreHamiltonian (L s) (w s) z)
       (-timeFDeriv (uncurry L) t (z.1, w t z)) t := by
-  have hLc := hasDerivAt_comp_prodMk hL ((hasDerivAt_const t z.1).prodMk hw)
-  rw [← fderiv_timeSlice hL, fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
-    (hasFDerivAt_timeSlice hL).differentiableAt] at hLc
-  simp only [uncurry_apply_pair, map_zero, zero_add, hp] at hLc
+  have hLc := hasDerivAt_timeDependent_comp_prodMk (q := fun _ ↦ z.1) (v := fun s ↦ w s z) hL
+    (hasDerivAt_const t z.1) hw
+  simp only [map_zero, add_zero, hp] at hLc
   have hfun : (fun s ↦ legendreHamiltonian (L s) (w s) z) =
       fun s ↦ z.2 (w s z) - L s (z.1, w s z) := by
     ext s
@@ -133,53 +133,11 @@ theorem timeFDeriv_uncurry_legendreHamiltonian {z : E × StrongDual ℝ E} {t : 
   (hasDerivAt_parameterCurve (differentiableAt_uncurry_legendreHamiltonian hw hL)).unique
     (hasDerivAt_legendreHamiltonian (hasDerivAt_parameterCurve_uncurry hw) hL hp)
 
-/-! ### Energy balance -/
-
-/-- **Energy balance.** Let `q` solve the time-dependent Euler–Lagrange equation
-`d/dt ∂_v L(t, q, v) = ∂_q L(t, q, v)` at `t` with velocity `v` differentiable at `t`, and let `L`
-be jointly differentiable at `(t, q t, v t)`. Then the energy
-`E_L(s) = ∂_v L(s, q s, v s)(v s) - L(s, q s, v s)` has derivative `-∂_t L(t, q t, v t)` at `t`. -/
-theorem hasDerivAt_energy_of_eulerLagrange {q v : ℝ → E} {t : ℝ} (hq : HasDerivAt q (v t) t)
-    (hEL : HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L s (q s, u)) (v s))
-      (fderiv ℝ (fun y ↦ L t (y, v t)) (q t)) t)
-    (hL : DifferentiableAt ℝ (uncurry L) (t, (q t, v t))) (hv : DifferentiableAt ℝ v t) :
-    HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L s (q s, u)) (v s) (v s) - L s (q s, v s))
-      (-timeFDeriv (uncurry L) t (q t, v t)) t := by
-  have hLc := hasDerivAt_comp_prodMk hL (hq.prodMk hv.hasDerivAt)
-  rw [← fderiv_timeSlice hL, fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
-    (hasFDerivAt_timeSlice hL).differentiableAt] at hLc
-  simp only [uncurry_apply_pair] at hLc
-  exact ((hEL.clm_apply hv.hasDerivAt).sub hLc).congr_deriv (by abel)
-
 /-! ### Euler–Lagrange equations and the nonautonomous Hamilton equations -/
 
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
-
-/-- **Euler–Lagrange equations versus the nonautonomous Hamilton equations.** Let `q` be a curve
-with velocity field `v`, and suppose that `w t` recovers the velocity from the Legendre lift at
-time `t`. Then the Legendre lift `s ↦ FL_s(q s, v s)` solves the Hamilton equations of the
-Hamiltonian `H_t = p(w t) - L(t, q, w t)` at `t` exactly when `v` is the velocity of `q` at `t` and
-the time-dependent Euler–Lagrange equation `d/dt ∂_v L(t, q, v) = ∂_q L(t, q, v)` holds at `t`.
-For a constant family `L` this is `TauCeti.hasDerivAt_linearLegendreMap_iff`. -/
-theorem hasDerivAt_timeDependent_linearLegendreMap_iff {q v : ℝ → E} {t : ℝ}
-    (hw : DifferentiableAt ℝ (w t) (linearLegendreMap (L t) (q t, v t)))
-    (hL : DifferentiableAt ℝ (L t) (q t, v t))
-    (hwv : w t (linearLegendreMap (L t) (q t, v t)) = v t) :
-    HasDerivAt (fun s ↦ linearLegendreMap (L s) (q s, v s))
-        ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
-          (legendreHamiltonian (L t) (w t)) (linearLegendreMap (L t) (q t, v t))) t ↔
-      HasDerivAt q (v t) t ∧
-        HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L s (q s, u)) (v s))
-          (fderiv ℝ (fun y ↦ L t (y, v t)) (q t)) t := by
-  have hfun : (fun s ↦ linearLegendreMap (L s) (q s, v s)) =
-      fun s ↦ (q s, fderiv ℝ (fun u ↦ L s (q s, u)) (v s)) :=
-    funext fun s ↦ Prod.ext (linearLegendreMap_fst _ _) (linearLegendreMap_snd _ _)
-  rw [hfun, hamiltonianVectorField_legendreHamiltonian hw (by simpa [hwv] using hL)
-    (by simp [hwv])]
-  simp only [linearLegendreMap_fst, hwv]
-  exact ⟨fun h ↦ ⟨h.fst, h.snd⟩, fun h ↦ h.1.prodMk h.2⟩
 
 /-- **Solutions of the nonautonomous Hamilton equations satisfy the Euler–Lagrange equations.**
 Let `γ` solve the Hamilton equations `γ' = X_{H_t}(γ)` of the time-dependent Hamiltonian
