@@ -252,14 +252,11 @@ theorem pauliRotation_mulVec_single_two :
 private theorem eq_smul_one_of_commute_pauli {A : Matrix (Fin 2) (Fin 2) ℂ}
     (h3 : A * pauli (Pi.single 2 1) = pauli (Pi.single 2 1) * A)
     (h1 : A * pauli (Pi.single 0 1) = pauli (Pi.single 0 1) * A) : A = A 0 0 • 1 := by
-  have h01 : -A 0 1 = A 0 1 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h3 0 1
-  have h10 : A 1 0 = -A 1 0 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h3 1 0
+  have hd := isDiag_of_commute_pauli_single_two h3
   have h11 : A 0 0 = A 1 1 := by
     simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h1 0 1
-  have h01' : A 0 1 = 0 := by linear_combination -h01 / 2
-  have h10' : A 1 0 = 0 := by linear_combination h10 / 2
+  have h01' : A 0 1 = 0 := hd (by decide)
+  have h10' : A 1 0 = 0 := hd (by decide)
   ext i j
   fin_cases i <;> fin_cases j <;> simp [h01', h10', h11]
 
