@@ -42,7 +42,8 @@ With the supremum norm inherited from `C(closedBall c R, ℂ)`, `discAlgebra c R
   and canonical extension by zero outside `closedBall c R`.
 * `TauCeti.DiscAlgebra.coord`: the coordinate element `z ↦ z`.
 * `TauCeti.DiscAlgebra.dslope`: division by `z - a` after subtracting the value at an interior
-  point `a ∈ ball c R`, satisfying `(coord c R - a) * dslope ha f + f(a) = f`.
+  point `a ∈ ball c R`, as a `ℂ`-linear endomorphism satisfying
+  `(coord c R - a) * dslope ha f + f(a) = f`.
 * `TauCeti.DiscAlgebra.mkD`, `TauCeti.DiscAlgebra.analyticAt_mkD_of_analyticAt`: a jointly analytic
   family `F : E × ℂ → ℂ` near `{a} × closedBall c R` (with `E` finite-dimensional over `ℂ`)
   induces an analytic map `E → discAlgebra c R` at `a`.
@@ -155,11 +156,9 @@ theorem extend_apply_of_notMem (f : discAlgebra c R) {z : ℂ} (hz : z ∉ close
   exact hz w.property
 
 /-- The zero extension is injective on `discAlgebra c R`. -/
-theorem extend_injective : Function.Injective (extend (c := c) (R := R)) := by
-  intro f g h
-  apply Subtype.ext
-  ext z
-  simpa only [extend_apply] using congrFun h z.val
+theorem extend_injective : Function.Injective (extend (c := c) (R := R)) :=
+  (Function.extend_injective Subtype.val_injective (0 : ℂ → ℂ)).comp
+    (DFunLike.coe_injective.comp Subtype.val_injective)
 
 /-- Two elements of `discAlgebra c R` have equal zero extensions if and only if they are equal. -/
 @[simp]
@@ -168,51 +167,38 @@ theorem extend_inj {f g : discAlgebra c R} : extend f = extend g ↔ f = g :=
 
 /-- The zero extension of `0` is `0`. -/
 @[simp]
-theorem extend_zero : extend (0 : discAlgebra c R) = 0 := by
-  ext z
-  by_cases hz : z ∈ closedBall c R
-  · simp [extend_apply _ ⟨z, hz⟩]
-  · simp [extend_apply_of_notMem _ hz]
+theorem extend_zero : extend (0 : discAlgebra c R) = 0 :=
+  Function.extend_zero Subtype.val
 
 /-- Zero extension commutes with addition. -/
 @[simp]
 theorem extend_add (f g : discAlgebra c R) : extend (f + g) = extend f + extend g := by
-  ext z
-  by_cases hz : z ∈ closedBall c R
-  · simp [extend_apply _ ⟨z, hz⟩]
-  · simp [extend_apply_of_notMem _ hz]
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_add Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
 
 /-- Zero extension commutes with negation. -/
 @[simp]
 theorem extend_neg (f : discAlgebra c R) : extend (-f) = -extend f := by
-  ext z
-  by_cases hz : z ∈ closedBall c R
-  · simp [extend_apply _ ⟨z, hz⟩]
-  · simp [extend_apply_of_notMem _ hz]
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_neg Subtype.val (f : C(closedBall c R, ℂ)) 0
 
 /-- Zero extension commutes with subtraction. -/
 @[simp]
 theorem extend_sub (f g : discAlgebra c R) : extend (f - g) = extend f - extend g := by
-  ext z
-  by_cases hz : z ∈ closedBall c R
-  · simp [extend_apply _ ⟨z, hz⟩]
-  · simp [extend_apply_of_notMem _ hz]
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_sub Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
 
 /-- Zero extension commutes with complex scalar multiplication. -/
 @[simp]
 theorem extend_smul (a : ℂ) (f : discAlgebra c R) : extend (a • f) = a • extend f := by
-  ext z
-  by_cases hz : z ∈ closedBall c R
-  · simp [extend_apply _ ⟨z, hz⟩]
-  · simp [extend_apply_of_notMem _ hz]
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_smul a Subtype.val (f : C(closedBall c R, ℂ)) 0
 
 /-- Zero extension commutes with multiplication. -/
 @[simp]
 theorem extend_mul (f g : discAlgebra c R) : extend (f * g) = extend f * extend g := by
-  ext z
-  by_cases hz : z ∈ closedBall c R
-  · simp [extend_apply _ ⟨z, hz⟩]
-  · simp [extend_apply_of_notMem _ hz]
+  simpa [extend, ← Pi.zero_def] using
+    Function.extend_mul Subtype.val (f : C(closedBall c R, ℂ)) g 0 0
 
 /-- The zero extension is continuous on `closedBall c R`. -/
 theorem continuousOn_extend (f : discAlgebra c R) :
@@ -256,15 +242,38 @@ def coord (c : ℂ) (R : ℝ) : discAlgebra c R :=
 theorem coord_apply (c : ℂ) (R : ℝ) (z : closedBall c R) :
     (coord c R : C(closedBall c R, ℂ)) z = z := (rfl)
 
-/-- The divided-difference operator `z ↦ (f z - f a) / (z - a)` (with value `f'(a)` at `a`)
-at an interior point `a ∈ ball c R`, acting on `discAlgebra c R`. -/
-noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
-    discAlgebra c R :=
-  of c R (_root_.dslope (extend f) a)
-    ((continuousOn_dslope (closedBall_mem_nhds_of_mem ha)).2
-      ⟨continuousOn_extend f,
-        (differentiableOn_extend f).differentiableAt (isOpen_ball.mem_nhds ha)⟩)
-    ((Complex.differentiableOn_dslope (isOpen_ball.mem_nhds ha)).2 (differentiableOn_extend f))
+/-- The divided-difference operator `f ↦ (z ↦ (f z - f a) / (z - a))` (with value `f'(a)` at
+`a`) at an interior point `a ∈ ball c R`, as a `ℂ`-linear endomorphism of `discAlgebra c R`. -/
+noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) :
+    discAlgebra c R →ₗ[ℂ] discAlgebra c R where
+  toFun f :=
+    of c R (_root_.dslope (extend f) a)
+      ((continuousOn_dslope (closedBall_mem_nhds_of_mem ha)).2
+        ⟨continuousOn_extend f,
+          (differentiableOn_extend f).differentiableAt (isOpen_ball.mem_nhds ha)⟩)
+      ((Complex.differentiableOn_dslope (isOpen_ball.mem_nhds ha)).2 (differentiableOn_extend f))
+  map_add' f g := by
+    apply Subtype.ext
+    ext z
+    by_cases hza : z.val = a
+    · simp only [Subalgebra.coe_add, ContinuousMap.add_apply, of_apply, hza, dslope_same,
+        extend_add]
+      exact deriv_add ((differentiableOn_extend f).differentiableAt (isOpen_ball.mem_nhds ha))
+        ((differentiableOn_extend g).differentiableAt (isOpen_ball.mem_nhds ha))
+    · simp only [Subalgebra.coe_add, ContinuousMap.add_apply, of_apply, dslope_of_ne _ hza,
+        slope_def_module, smul_eq_mul, extend_add, Pi.add_apply]
+      ring
+  map_smul' k f := by
+    apply Subtype.ext
+    ext z
+    by_cases hza : z.val = a
+    · simp only [Subalgebra.coe_smul, ContinuousMap.smul_apply, smul_eq_mul, RingHom.id_apply,
+        of_apply, hza, dslope_same, extend_smul]
+      exact deriv_const_smul k ((differentiableOn_extend f).differentiableAt
+        (isOpen_ball.mem_nhds ha))
+    · simp only [Subalgebra.coe_smul, ContinuousMap.smul_apply, smul_eq_mul, RingHom.id_apply,
+        of_apply, dslope_of_ne _ hza, slope_def_module, extend_smul, Pi.smul_apply]
+      ring
 
 /-- Evaluating `dslope ha f` at `z : closedBall c R` returns `_root_.dslope (extend f) a z`. -/
 @[simp]
@@ -286,6 +295,7 @@ theorem extend_dslope_self {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R)
 
 /-- Dividing off the value at an interior point `a ∈ ball c R` recovers `f`:
 `(coord c R - a) * dslope ha f + f(a) = f`. -/
+@[simp]
 theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
     (coord c R - algebraMap ℂ (discAlgebra c R) a) * dslope ha f +
       algebraMap ℂ (discAlgebra c R) (extend f a) = f := by
@@ -326,12 +336,12 @@ theorem eq_dslope_of_coord_sub_algebraMap_mul_add {a : ℂ} (ha : a ∈ ball c R
     filter_upwards [inter_mem_nhdsWithin _ (closedBall_mem_nhds_of_mem ha)] with w ⟨hw_ne, hw_cb⟩
     rw [extend_apply q ⟨w, hw_cb⟩, extend_apply (dslope ha f) ⟨w, hw_cb⟩]
     exact hne ⟨w, hw_cb⟩ hw_ne
+  have hqc : ContinuousAt (extend q) a :=
+    (continuousOn_extend q).continuousAt (closedBall_mem_nhds_of_mem ha)
+  have hfc : ContinuousAt (extend (dslope ha f)) a :=
+    (continuousOn_extend (dslope ha f)).continuousAt (closedBall_mem_nhds_of_mem ha)
   have ha_eq : extend q a = extend (dslope ha f) a :=
-    tendsto_nhds_unique
-      ((continuousOn_extend q).continuousAt (closedBall_mem_nhds_of_mem ha) |>.mono_left
-        nhdsWithin_le_nhds)
-      (((continuousOn_extend (dslope ha f)).continuousAt
-        (closedBall_mem_nhds_of_mem ha) |>.mono_left nhdsWithin_le_nhds).congr' hev.symm)
+    (((hqc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hfc).1 hev)).self_of_nhds
   apply Subtype.ext
   ext z
   by_cases hza : z.val = a

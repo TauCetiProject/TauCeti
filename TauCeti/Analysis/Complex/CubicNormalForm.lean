@@ -71,10 +71,11 @@ square-root rate `√(α - α₀)`.
 * `TauCeti.CubicNormalForm.deriv_eq_sq_sub_mul_deriv`,
   `TauCeti.CubicNormalForm.deriv_eq_zero_iff_sq_eq`,
   `TauCeti.CubicNormalForm.eventually_deriv_eq_zero_iff_sq_eq`,
-  `TauCeti.CubicNormalForm.exists_bijOn_deriv_eq_zero_sq_eq`: derivative factorization
+  `TauCeti.CubicNormalForm.exists_bijOn_deriv_eq_zero_sq_eq`,
+  `TauCeti.CubicNormalForm.exists_bijOn_deriv_eq_zero_sq_eq_of_eq_zero`: derivative factorization
   `∂p/∂t = (w ^ 2 - ζ) ∂w/∂t`, critical-point correspondence
   `∂p/∂t (α, t) = 0 ↔ w(α, t) ^ 2 = ζ(α)`, and local bijection between the critical and root
-  loci.
+  loci (including onto the full set of square roots near a centered point).
 * `TauCeti.CubicNormalForm.deriv_deriv_deriv_eq_two_mul_deriv_pow_three`,
   `TauCeti.CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv`,
   `TauCeti.CubicNormalForm.deriv_ne_zero_iff_deriv_deriv_ne_zero`: jet identities
@@ -190,48 +191,34 @@ private theorem ker_cubicLinearCLM {R : ℝ} (hR : 0 < R) :
     LinearMap.ker (cubicLinearCLM R : (discAlgebra 0 R × (ℂ × ℂ)) →ₗ[ℂ] discAlgebra 0 R) = ⊥ := by
   rw [LinearMap.ker_eq_bot']
   rintro ⟨δu, δζ, δη⟩ hx
-  have hval (z : ℂ) (hz : z ∈ closedBall (0 : ℂ) R) :
-      z ^ 2 * (δu : C(closedBall (0 : ℂ) R, ℂ)) ⟨z, hz⟩ - δζ * z + δη = 0 := by
-    simpa [cubicLinearCLM_apply_coe] using
-      congrArg (fun f : discAlgebra 0 R => (f : C(closedBall (0 : ℂ) R, ℂ)) ⟨z, hz⟩) hx
-  have h0mem : (0 : ℂ) ∈ closedBall (0 : ℂ) R := mem_closedBall_self hR.le
-  have hη : δη = 0 := by simpa using hval 0 h0mem
-  subst hη
-  have hseq (n : ℕ) : ((R / (n + 2 : ℝ) : ℝ) : ℂ) ∈ closedBall (0 : ℂ) R ∧
-      ((R / (n + 2 : ℝ) : ℝ) : ℂ) ≠ 0 := by
-    have hpos : 0 < R / (n + 2 : ℝ) := by positivity
-    refine ⟨?_, Complex.ofReal_ne_zero.2 hpos.ne'⟩
-    rw [mem_closedBall_zero_iff, Complex.norm_real, Real.norm_of_nonneg hpos.le]
-    exact div_le_self hR.le (by linarith)
-  have htend : Tendsto (fun n : ℕ => ((R / (n + 2 : ℝ) : ℝ) : ℂ)) atTop (𝓝 0) := by
-    simpa [Function.comp_def] using Complex.continuous_ofReal.continuousAt.tendsto.comp
-      ((tendsto_const_nhds (x := R)).div_atTop
-        ((tendsto_natCast_atTop_atTop (R := ℝ)).atTop_add (tendsto_const_nhds (x := (2 : ℝ)))))
-  have htend_sub : Tendsto (fun n : ℕ => (⟨_, (hseq n).1⟩ : closedBall (0 : ℂ) R))
-      atTop (𝓝 ⟨0, h0mem⟩) := tendsto_subtype_rng.2 htend
-  have hζ : δζ = 0 := by
-    have hlim : Tendsto (fun n : ℕ =>
-        ((R / (n + 2 : ℝ) : ℝ) : ℂ) * (δu : C(closedBall (0 : ℂ) R, ℂ)) ⟨_, (hseq n).1⟩)
-        atTop (𝓝 0) := by
-      simpa using htend.mul
-        (((δu : C(closedBall (0 : ℂ) R, ℂ)).continuous.tendsto ⟨0, h0mem⟩).comp htend_sub)
-    have hconst (n : ℕ) :
-        ((R / (n + 2 : ℝ) : ℝ) : ℂ) * (δu : C(closedBall (0 : ℂ) R, ℂ)) ⟨_, (hseq n).1⟩ = δζ :=
-      mul_right_cancel₀ (hseq n).2 (by linear_combination hval _ (hseq n).1)
-    exact tendsto_nhds_unique (tendsto_const_nhds.congr fun n => (hconst n).symm) hlim
-  subst hζ
-  have hδu : δu = 0 := by
+  have h0 : (0 : ℂ) ∈ ball (0 : ℂ) R := mem_ball_self hR
+  have h0cb : (0 : ℂ) ∈ closedBall (0 : ℂ) R := ball_subset_closedBall h0
+  let q₁ : discAlgebra 0 R :=
+    DiscAlgebra.coord 0 R * δu - algebraMap ℂ (discAlgebra 0 R) δζ
+  have h_eq1 : (DiscAlgebra.coord 0 R - algebraMap ℂ (discAlgebra 0 R) 0) * q₁ +
+      algebraMap ℂ (discAlgebra 0 R) δη = 0 := by
+    rw [← hx]
     apply Subtype.ext
-    ext ⟨z, hz⟩
-    by_cases hz0 : z = 0
-    · subst hz0
-      have hzero_n (n : ℕ) : (δu : C(closedBall (0 : ℂ) R, ℂ)) ⟨_, (hseq n).1⟩ = 0 :=
-        (mul_eq_zero.1 (by simpa using hval _ (hseq n).1)).resolve_left (pow_ne_zero 2 (hseq n).2)
-      exact tendsto_nhds_unique
-        (((δu : C(closedBall (0 : ℂ) R, ℂ)).continuous.tendsto ⟨0, h0mem⟩).comp htend_sub)
-        (tendsto_const_nhds.congr fun n => (hzero_n n).symm)
-    · exact (mul_eq_zero.1 (by simpa using hval z hz)).resolve_left (pow_ne_zero 2 hz0)
-  simp [hδu]
+    ext z
+    simp only [q₁, map_zero, sub_zero, ContinuousLinearMap.coe_coe, cubicLinearCLM_apply_coe,
+      Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_sub, Algebra.algebraMap_eq_smul_one,
+      Subalgebra.coe_smul, Subalgebra.coe_one, ContinuousMap.add_apply, ContinuousMap.mul_apply,
+      ContinuousMap.sub_apply, ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul,
+      mul_one, DiscAlgebra.coord_apply]
+    ring
+  have hq₁ : q₁ = 0 := by
+    simpa using DiscAlgebra.eq_dslope_of_coord_sub_algebraMap_mul_add h0 h_eq1
+  have eval0 {x : ℂ} (h : algebraMap ℂ (discAlgebra 0 R) x = 0) : x = 0 := by
+    simpa [Algebra.algebraMap_eq_smul_one] using
+      congrArg (fun f : discAlgebra 0 R => (f : C(closedBall (0 : ℂ) R, ℂ)) ⟨0, h0cb⟩) h
+  have hη : δη = 0 := eval0 (by simpa [hq₁] using h_eq1)
+  have h_eq2 : (DiscAlgebra.coord 0 R - algebraMap ℂ (discAlgebra 0 R) 0) * δu +
+      algebraMap ℂ (discAlgebra 0 R) (-δζ) = 0 := by
+    simpa [q₁, map_zero, sub_zero, map_neg, sub_eq_add_neg] using hq₁
+  have hδu : δu = 0 := by
+    simpa using DiscAlgebra.eq_dslope_of_coord_sub_algebraMap_mul_add h0 h_eq2
+  have hζ : δζ = 0 := eval0 (neg_eq_zero.1 (by simpa [hδu] using h_eq2))
+  simp [hδu, hζ, hη]
 
 private noncomputable def cubicLinearEquiv {R : ℝ} (hR : 0 < R) :
     (discAlgebra 0 R × (ℂ × ℂ)) ≃L[ℂ] discAlgebra 0 R :=
@@ -578,7 +565,10 @@ theorem exists_translated_cubic_normal_form {E : Type*} [NormedAddCommGroup E] [
         (hηα.fun_sub (haα.fun_mul hζα)).fun_add ((haα.fun_pow 3).mul_const (3 : ℂ)⁻¹)⟩
   · filter_upwards [hw, continuousAt_fst.eventually ha] with q ⟨hwq, hpq⟩ haq
     refine ⟨hwq.sub (haq.comp q differentiableAt_fst), ?_⟩
-    rw [hpq]
+    rw [hpq, ← add_pow_three_div_three_sub_mul_add (w q - a q.1) (a q.1)
+      (a q.1 ^ 2 - ζ q.1) (η q.1 - a q.1 * ζ q.1 + a q.1 ^ 3 / 3)]
+    simp only [sub_add_cancel, sub_sub_cancel]
+    congr 1
     ring
 
 /-! ### Critical points, jet identities, and nondegeneracy -/
@@ -643,22 +633,10 @@ theorem exists_bijOn_deriv_eq_zero_sq_eq {𝕜 E : Type*} [NontriviallyNormedFie
         (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) (V ∩ {u | u.2 ^ 2 = ζ u.1}) ∧
       Set.BijOn (fun u : E × 𝕜 => (u.1, T u))
         (V ∩ {u | u.2 ^ 2 = ζ u.1}) (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) := by
-  have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
-  have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible := by
-    refine ⟨ContinuousLinearEquiv.unitsEquivAut 𝕜 (.mk0 _ hdw), ?_⟩
-    have hd : HasFDerivAt (fun t => w (α₀, t))
-        (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜) t₀ :=
-      df.hasFDerivAt.comp t₀ (hasFDerivAt_prodMk_right α₀ t₀)
-    ext
-    simp [hd.hasDerivAt.deriv]
-  let T : E × 𝕜 → 𝕜 := df.jointImplicitFunctionOfProdDomain hinv
-  have hTa : AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) :=
-    df.analyticAt_jointImplicitFunctionOfProdDomain hinv hw
-  have hT0 : T (α₀, w (α₀, t₀)) = t₀ := df.jointImplicitFunctionOfProdDomain_apply_self hinv
+  obtain ⟨T, hTa, hT0, hT_right, hT_left⟩ := hw.exists_analyticAt_localInverse_snd hdw
   have hcrit : ∀ᶠ q in 𝓝 (α₀, t₀),
       T (q.1, w q) = q.2 ∧ (deriv (fun t => p (q.1, t)) q.2 = 0 ↔ w q ^ 2 = ζ q.1) :=
-    (df.eventually_jointImplicitFunctionOfProdDomain_apply hinv).and
-      (eventually_deriv_eq_zero_iff_sq_eq hw.deriv_snd.continuousAt hdw hpw)
+    hT_left.and (eventually_deriv_eq_zero_iff_sq_eq hw.deriv_snd.continuousAt hdw hpw)
   set S₁ : Set (E × 𝕜) :=
     {q | T (q.1, w q) = q.2 ∧ (deriv (fun t => p (q.1, t)) q.2 = 0 ↔ w q ^ 2 = ζ q.1)}
   have hS₁ : S₁ ∈ 𝓝 (α₀, t₀) := hcrit
@@ -666,8 +644,7 @@ theorem exists_bijOn_deriv_eq_zero_sq_eq {𝕜 E : Type*} [NontriviallyNormedFie
     continuousAt_fst.prodMk hTa.continuousAt
   set V : Set (E × 𝕜) := {u | w (u.1, T u) = u.2 ∧ (u.1, T u) ∈ S₁}
   have hV : V ∈ 𝓝 (α₀, w (α₀, t₀)) :=
-    (df.eventually_apply_jointImplicitFunctionOfProdDomain hinv).and
-      (hmapT.preimage_mem_nhds (by simpa [hT0] using hS₁))
+    hT_right.and (hmapT.preimage_mem_nhds (by simpa [hT0] using hS₁))
   have hmapw : ContinuousAt (fun q : E × 𝕜 => (q.1, w q)) (α₀, t₀) :=
     continuousAt_fst.prodMk hw.continuousAt
   set U : Set (E × 𝕜) := S₁ ∩ (fun q : E × 𝕜 => (q.1, w q)) ⁻¹' V
@@ -690,6 +667,60 @@ theorem exists_bijOn_deriv_eq_zero_sq_eq {𝕜 E : Type*} [NontriviallyNormedFie
     simpa [(hV_mem u huV).2] using hu2
   exact ⟨T, U, hU, V, hV, hTa, hT0, hU_mem, hV_mem,
     hinvOn.bijOn hmaps₁ hmaps₂, hinvOn.symm.bijOn hmaps₂ hmaps₁⟩
+
+/-- **Centered local bijection onto all square roots.** Under the hypotheses of
+`exists_bijOn_deriv_eq_zero_sq_eq`, if in addition `ζ` is continuous at `α₀`, `ζ α₀ = 0`, and
+`w (α₀, t₀) = 0`, then there exist neighbourhoods `A ∈ 𝓝 α₀` and `W ∈ 𝓝 t₀` such that for every
+`α ∈ A`, `t ↦ w (α, t)` and `u ↦ T (α, u)` restrict to mutually inverse bijections between
+`{t ∈ W | ∂p/∂t (α, t) = 0}` and the full set `{u | u ^ 2 = ζ α}` of square roots of `ζ α`. -/
+theorem exists_bijOn_deriv_eq_zero_sq_eq_of_eq_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NeZero (3 : 𝕜)] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [CompleteSpace E] {p w : E × 𝕜 → 𝕜} {ζ η : E → 𝕜} {α₀ : E} {t₀ : 𝕜}
+    (hw : AnalyticAt 𝕜 w (α₀, t₀)) (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
+    (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1)
+    (hζc : ContinuousAt ζ α₀) (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0) :
+    ∃ T : E × 𝕜 → 𝕜, ∃ A ∈ 𝓝 α₀, ∃ W ∈ 𝓝 t₀,
+      AnalyticAt 𝕜 T (α₀, 0) ∧ T (α₀, 0) = t₀ ∧
+      (∀ α ∈ A, ∀ t ∈ W, T (α, w (α, t)) = t) ∧
+      (∀ α ∈ A, ∀ u, u ^ 2 = ζ α → T (α, u) ∈ W ∧ w (α, T (α, u)) = u) ∧
+      ∀ α ∈ A,
+        Set.BijOn (fun t : 𝕜 => w (α, t))
+          (W ∩ {t | deriv (fun s => p (α, s)) t = 0}) {u | u ^ 2 = ζ α} ∧
+        Set.BijOn (fun u : 𝕜 => T (α, u))
+          {u | u ^ 2 = ζ α} (W ∩ {t | deriv (fun s => p (α, s)) t = 0}) := by
+  obtain ⟨T, U₀, hU₀, V₀, hV₀, hTa, hT0, hU_mem, hV_mem, hbij₁, hbij₂⟩ :=
+    exists_bijOn_deriv_eq_zero_sq_eq hw hdw hpw
+  rw [hw0] at hV₀ hTa hT0
+  obtain ⟨A₀, hA₀, W, hW, hAW_sub⟩ := mem_nhds_prod_iff.1 hU₀
+  have hV₁ : V₀ ∩ (fun u : E × 𝕜 => (u.1, T u)) ⁻¹' (A₀ ×ˢ W) ∈ 𝓝 (α₀, (0 : 𝕜)) :=
+    inter_mem hV₀ ((continuousAt_fst.prodMk hTa.continuousAt).preimage_mem_nhds
+      (by simpa [hT0] using prod_mem_nhds hA₀ hW))
+  obtain ⟨A₁, hA₁, V₂, hV₂, hAV_sub⟩ := mem_nhds_prod_iff.1 hV₁
+  obtain ⟨r, hr, hr_ball⟩ := Metric.mem_nhds_iff.1 hV₂
+  have hζ_lt : ∀ᶠ α in 𝓝 α₀, ‖ζ α‖ < r ^ 2 :=
+    (hζc.eventually (by rw [hζ0]; exact ball_mem_nhds (0 : 𝕜) (sq_pos_of_pos hr))).mono
+      fun _ h => by simpa [mem_ball_zero_iff] using h
+  have hball {α : E} {u : 𝕜} (hα : ‖ζ α‖ < r ^ 2) (hu : u ^ 2 = ζ α) : u ∈ ball (0 : 𝕜) r := by
+    rw [mem_ball_zero_iff]
+    exact lt_of_pow_lt_pow_left₀ 2 hr.le (by rwa [← norm_pow, hu])
+  refine ⟨T, A₀ ∩ A₁ ∩ {α | ‖ζ α‖ < r ^ 2}, inter_mem (inter_mem hA₀ hA₁) hζ_lt, W, hW,
+    hTa, hT0, fun α hα t ht => (hU_mem (α, t) (hAW_sub ⟨hα.1.1, ht⟩)).2, ?_, ?_⟩
+  · intro α hα u hu
+    have huV₁ := hAV_sub (Set.mk_mem_prod hα.1.2 (hr_ball (hball hα.2 hu)))
+    exact ⟨huV₁.2.2, (hV_mem (α, u) huV₁.1).2⟩
+  · intro α hα
+    have hinvOn : Set.InvOn (fun u : 𝕜 => T (α, u)) (fun t : 𝕜 => w (α, t))
+        (W ∩ {t | deriv (fun s => p (α, s)) t = 0}) {u | u ^ 2 = ζ α} :=
+      ⟨fun t ht => (hU_mem (α, t) (hAW_sub ⟨hα.1.1, ht.1⟩)).2, fun u hu =>
+        (hV_mem (α, u) (hAV_sub (Set.mk_mem_prod hα.1.2 (hr_ball (hball hα.2 hu)))).1).2⟩
+    have hmaps₁ : Set.MapsTo (fun t : 𝕜 => w (α, t))
+        (W ∩ {t | deriv (fun s => p (α, s)) t = 0}) {u | u ^ 2 = ζ α} := fun t ht =>
+      (hbij₁.mapsTo ⟨hAW_sub ⟨hα.1.1, ht.1⟩, ht.2⟩).2
+    have hmaps₂ : Set.MapsTo (fun u : 𝕜 => T (α, u))
+        {u | u ^ 2 = ζ α} (W ∩ {t | deriv (fun s => p (α, s)) t = 0}) := fun u hu =>
+      have huV₁ := hAV_sub (Set.mk_mem_prod hα.1.2 (hr_ball (hball hα.2 hu)))
+      ⟨huV₁.2.2, (hbij₂.mapsTo ⟨huV₁.1, hu⟩).2⟩
+    exact ⟨hinvOn.bijOn hmaps₁ hmaps₂, hinvOn.symm.bijOn hmaps₂ hmaps₁⟩
 
 /-- For a one-variable germ `g(t) = u(t) ^ 3 / 3 + c` with `u` twice continuously differentiable at
 `t₀` and `u(t₀) = 0`, the third derivative of `g` at `t₀` is `2 * u'(t₀) ^ 3`, over any nontrivially

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Analytic.Inverse
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import TauCeti.Analysis.Analytic.IteratedDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The implicit function theorem with a moving level
@@ -47,6 +48,9 @@ map of a holomorphic equation, see `TauCeti.Analysis.Complex.ImplicitFunction`.
   at `(u.1, f u)` is `(z, w) ↦ ∂₂f(u)⁻¹ (w - ∂₁f(u) z)`.
 * `HasStrictFDerivAt.contDiffAt_jointImplicitFunctionOfProdDomain` and
   `HasStrictFDerivAt.analyticAt_jointImplicitFunctionOfProdDomain`: `ψ` is as regular as `f`.
+* `AnalyticAt.exists_analyticAt_localInverse_snd`: for a scalar analytic coordinate
+  `w : E × 𝕜 → 𝕜` with `∂w/∂t ≠ 0`, constructs the analytic local inverse `T(α, u)` in the second
+  variable.
 * `AnalyticAt.exists_analyticAt_mul_deriv_eq`: for a scalar analytic coordinate `w : E × 𝕜 → 𝕜`
   with `∂w/∂t ≠ 0` and analytic amplitude `q`, constructs the analytic local inverse `T` and
   transformed amplitude `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` satisfying
@@ -265,6 +269,29 @@ end NontriviallyNormedField
 
 namespace AnalyticAt
 
+/-- **Analytic local inverse in the second scalar variable.** Given a coordinate `w : E × 𝕜 → 𝕜`
+analytic at `(α₀, t₀)` with `∂w/∂t (α₀, t₀) ≠ 0` (over complete normed spaces `E, 𝕜`), there
+exists an analytic local inverse `T : E × 𝕜 → 𝕜` at `(α₀, w (α₀, t₀))` such that
+`T (α₀, w (α₀, t₀)) = t₀`, `w (α, T (α, u)) = u` near `(α₀, w (α₀, t₀))`, and
+`T (α, w (α, t)) = t` near `(α₀, t₀)`. -/
+theorem exists_analyticAt_localInverse_snd {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    {w : E × 𝕜 → 𝕜} {α₀ : E} {t₀ : 𝕜}
+    (hw : AnalyticAt 𝕜 w (α₀, t₀))
+    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0) :
+    ∃ T : E × 𝕜 → 𝕜,
+      AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) ∧ T (α₀, w (α₀, t₀)) = t₀ ∧
+      (∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)), w (u.1, T u) = u.2) ∧
+      ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2 := by
+  have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
+  have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible :=
+    hw.differentiableAt.isInvertible_fderiv_comp_inr_iff.2 hdw
+  exact ⟨df.jointImplicitFunctionOfProdDomain hinv,
+    df.analyticAt_jointImplicitFunctionOfProdDomain hinv hw,
+    df.jointImplicitFunctionOfProdDomain_apply_self hinv,
+    df.eventually_apply_jointImplicitFunctionOfProdDomain hinv,
+    df.eventually_jointImplicitFunctionOfProdDomain_apply hinv⟩
+
 /-- **Analytic inverse coordinate and transformed amplitude** (DLMF 2.4.20). Given a coordinate
 `w : E × 𝕜 → 𝕜` analytic at `(α₀, t₀)` with `∂w/∂t (α₀, t₀) ≠ 0` and an amplitude `q : E × 𝕜 → 𝕜`
 analytic at `(α₀, t₀)` (over complete normed spaces `E, 𝕜`), there exist analytic functions `T` and
@@ -284,22 +311,7 @@ theorem exists_analyticAt_mul_deriv_eq {𝕜 E : Type*} [NontriviallyNormedField
         w (u.1, T u) = u.2 ∧ f u = q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2) ∧
       ∀ᶠ x in 𝓝 (α₀, t₀),
         T (x.1, w x) = x.2 ∧ f (x.1, w x) * deriv (fun t => w (x.1, t)) x.2 = q x := by
-  have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
-  have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible := by
-    refine ⟨ContinuousLinearEquiv.unitsEquivAut 𝕜 (.mk0 _ hdw), ?_⟩
-    have hd : HasFDerivAt (fun t => w (α₀, t))
-        (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜) t₀ :=
-      df.hasFDerivAt.comp t₀ (hasFDerivAt_prodMk_right α₀ t₀)
-    ext
-    simp [hd.hasDerivAt.deriv]
-  let T : E × 𝕜 → 𝕜 := df.jointImplicitFunctionOfProdDomain hinv
-  have hTa : AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) :=
-    df.analyticAt_jointImplicitFunctionOfProdDomain hinv hw
-  have hT0 : T (α₀, w (α₀, t₀)) = t₀ := df.jointImplicitFunctionOfProdDomain_apply_self hinv
-  have hT_right : ∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)), w (u.1, T u) = u.2 :=
-    df.eventually_apply_jointImplicitFunctionOfProdDomain hinv
-  have hT_left : ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2 :=
-    df.eventually_jointImplicitFunctionOfProdDomain_apply hinv
+  obtain ⟨T, hTa, hT0, hT_right, hT_left⟩ := hw.exists_analyticAt_localInverse_snd hdw
   set f : E × 𝕜 → 𝕜 := fun u => q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2
   have hfa : AnalyticAt 𝕜 f (α₀, w (α₀, t₀)) :=
     (hq.comp_of_eq (analyticAt_fst.prod hTa) (by simp [hT0])).fun_mul hTa.deriv_snd
