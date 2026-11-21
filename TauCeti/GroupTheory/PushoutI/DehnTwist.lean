@@ -203,7 +203,7 @@ theorem eqOn_dehnTwist_conj_of_false (z : Subgroup.centralizer (Set.range (φ tr
   have h : Set.EqOn (dehnTwist φ z) (MulAut.conj 1) (of (φ := φ) false).range := by
     rintro _ ⟨a, rfl⟩
     simp
-  simpa only [mul_one] using h.map_conj w
+  simpa only [mul_one, Subgroup.coe_map, MonoidHom.coe_ofClass] using h.map_conj w
 
 /-- On every conjugate `w B w⁻¹` of the right factor `B`, the twist `τ` with parameter `z` agrees
 with conjugation by `τ(w) z w⁻¹` in the amalgamated product. -/
@@ -216,7 +216,7 @@ theorem eqOn_dehnTwist_conj_of_true (z : Subgroup.centralizer (Set.range (φ tru
       (of (φ := φ) true).range := by
     rintro _ ⟨b, rfl⟩
     simp [MulAut.conj_apply]
-  exact h.map_conj w
+  simpa only [Subgroup.coe_map, MonoidHom.coe_ofClass] using h.map_conj w
 
 /-! ### Necessity of the centralizer hypothesis -/
 

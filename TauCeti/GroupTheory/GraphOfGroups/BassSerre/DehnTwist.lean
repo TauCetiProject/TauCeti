@@ -26,14 +26,15 @@ Each vertex stabilizer of the Bass–Serre tree is a conjugate of a vertex group
 `bassSerreTree_loop_isEllipticSubgroup_comap_iff`). A Dehn twist fixes `A` and conjugates `B` by
 its parameter `z`, or fixes `G` and multiplies the stable letter by `z`; on each conjugate
 `w A w⁻¹`, `w B w⁻¹` or `w G w⁻¹` it therefore agrees with an inner automorphism of the whole
-group. Hence a Dehn twist agrees with an inner automorphism on every elliptic subgroup, and in
-particular carries every elliptic subgroup to a conjugate of itself.
+group, whose conjugating element depends on `w`. Hence for each elliptic subgroup `H` there is an
+inner automorphism, which may depend on `H`, that agrees with the Dehn twist on `H`; in particular
+the twist carries `H` to a conjugate of itself.
 
 ## Main results
 
 * `TauCeti.GraphOfGroups.exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_segment`,
-  `TauCeti.GraphOfGroups.exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop`: a Dehn twist
-  agrees with an inner automorphism on every elliptic subgroup.
+  `TauCeti.GraphOfGroups.exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop`: on each elliptic
+  subgroup `H`, a Dehn twist agrees with an inner automorphism, which may depend on `H`.
 * `TauCeti.GraphOfGroups.exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_segment`,
   `TauCeti.GraphOfGroups.exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_loop`: a Dehn
   twist preserves the conjugacy class of every elliptic subgroup.
@@ -64,8 +65,9 @@ section segment
 variable {A B : Type w} {C : Type x} [Group A] [Group B] [Group C] {f : C →* A} {g : C →* B}
   {hf : Function.Injective f} {hg : Function.Injective g}
 
-/-- **Dehn twists act on elliptic subgroups by conjugation.** A Dehn twist of `A ∗_C B` agrees with
-an inner automorphism on every subgroup that is elliptic in the Bass–Serre tree of the splitting. -/
+/-- **Dehn twists act on elliptic subgroups by conjugation.** For each subgroup `H` of `A ∗_C B`
+that is elliptic in the Bass–Serre tree of the splitting, a Dehn twist agrees on `H` with an inner
+automorphism, which may depend on `H`. -/
 theorem exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_segment {a : SerreGraph.segment.V}
     (z : Subgroup.centralizer (Set.range (segmentMaps f g hf hg true)))
     {H : Subgroup (Monoid.PushoutI (segmentMaps f g hf hg))}
@@ -91,7 +93,7 @@ theorem exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_segment {a : Serr
       H.map (Monoid.PushoutI.dehnTwist (segmentMaps f g hf hg) z).toMonoidHom =
         H.map (MulAut.conj x).toMonoidHom := by
   obtain ⟨x, hx⟩ := exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_segment z hH
-  exact ⟨x, Subgroup.map_eq_map_of_eqOn hx⟩
+  exact ⟨x, hx.subgroup_map_eq⟩
 
 end segment
 
@@ -102,9 +104,9 @@ section loop
 variable {G : Type w} {C : Type x} [Group G] [Group C] {f g : C →* G}
   {hf : Function.Injective f} {hg : Function.Injective g} {v : (SerreGraph.rose Unit).V}
 
-/-- **Dehn twists act on elliptic subgroups by conjugation.** A Dehn twist of an HNN extension
-agrees with an inner automorphism on every subgroup that is elliptic in the Bass–Serre tree of the
-splitting. -/
+/-- **Dehn twists act on elliptic subgroups by conjugation.** For each subgroup `H` of an HNN
+extension that is elliptic in the Bass–Serre tree of the splitting, a Dehn twist agrees on `H` with
+an inner automorphism, which may depend on `H`. -/
 theorem exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop
     (z : Subgroup.centralizer (f.range : Set G))
     {H : Subgroup (HNNExtension G f.range g.range (loopEquiv f g hf hg))}
@@ -128,7 +130,7 @@ theorem exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_loop
       H.map (HNNExtension.dehnTwist (loopEquiv f g hf hg) z).toMonoidHom =
         H.map (MulAut.conj x).toMonoidHom := by
   obtain ⟨x, hx⟩ := exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop z hH
-  exact ⟨x, Subgroup.map_eq_map_of_eqOn hx⟩
+  exact ⟨x, hx.subgroup_map_eq⟩
 
 end loop
 

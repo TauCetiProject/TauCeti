@@ -173,7 +173,7 @@ theorem eqOn_dehnTwist_conj_of (z : Subgroup.centralizer (A : Set G))
   have h : Set.EqOn (dehnTwist φ z) (MulAut.conj 1) (of : G →* HNNExtension G A B φ).range := by
     rintro _ ⟨g, rfl⟩
     simp
-  simpa only [mul_one] using h.map_conj w
+  simpa only [mul_one, Subgroup.coe_map, MonoidHom.coe_ofClass] using h.map_conj w
 
 /-! ### Necessity of the centralizer hypothesis and uniqueness -/
 

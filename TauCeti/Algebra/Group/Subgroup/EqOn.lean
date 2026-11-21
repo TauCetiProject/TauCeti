@@ -7,20 +7,22 @@ module
 
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.ConjugationTransfer
 
 /-!
 # Maps agreeing on a subgroup
 
 Two homomorphisms that agree on a subgroup `H` have the same image of `H`. If an endomorphism `f`
-of a group agrees on a subgroup `K` with the inner automorphism by `c`, then on each conjugate
-`w K w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`, because
-`f(w k w⁻¹) = f(w) (c k c⁻¹) f(w)⁻¹` for `k ∈ K`. So an endomorphism that agrees with an inner
-automorphism on `K` does so on every conjugate of `K`, and carries it to a conjugate of itself.
+of a group agrees on a set `s` with the inner automorphism by `c`, then on each conjugate
+`w s w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`, because
+`f(w k w⁻¹) = f(w) (c k c⁻¹) f(w)⁻¹` for `k ∈ s`. So an endomorphism that agrees with an inner
+automorphism on a subgroup `K` does so on every conjugate of `K`, and carries it to a conjugate of
+itself.
 
 ## Main results
 
-* `Subgroup.map_eq_map_of_eqOn`: homomorphisms agreeing on `H` have the same image of `H`.
-* `Set.EqOn.map_conj`: agreement with an inner automorphism on `K` passes to the conjugates of `K`.
+* `Set.EqOn.subgroup_map_eq`: homomorphisms agreeing on `H` have the same image of `H`.
+* `Set.EqOn.map_conj`: agreement with an inner automorphism on `s` passes to the conjugates of `s`.
 -/
 
 public section
@@ -28,14 +30,16 @@ public section
 variable {G N : Type*} [Group G] [Group N]
 
 /-- Two homomorphisms that agree on a subgroup `H` have the same image of `H`. -/
-theorem Subgroup.map_eq_map_of_eqOn {f g : G →* N} {H : Subgroup G} (h : Set.EqOn f g H) :
+theorem Set.EqOn.subgroup_map_eq {f g : G →* N} {H : Subgroup G} (h : Set.EqOn f g H) :
     H.map f = H.map g :=
   SetLike.coe_injective (by simpa only [Subgroup.coe_map] using h.image_eq)
 
-/-- If an endomorphism `f` agrees on a subgroup `K` with the inner automorphism by `c`, then on the
-conjugate `w K w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`. -/
+/-- If an endomorphism `f` agrees on a set `s` with the inner automorphism by `c`, then on the
+conjugate `w s w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`. -/
 theorem Set.EqOn.map_conj {F : Type*} [FunLike F G G] [MonoidHomClass F G G] {f : F} {c : G}
-    {K : Subgroup G} (h : Set.EqOn f (MulAut.conj c) K) (w : G) :
-    Set.EqOn f (MulAut.conj (f w * c * w⁻¹)) (K.map (MulAut.conj w : G →* G)) := by
+    {s : Set G} (h : Set.EqOn f (MulAut.conj c) s) (w : G) :
+    Set.EqOn f (MulAut.conj (f w * c * w⁻¹)) (MulAut.conj w '' s) := by
   rintro _ ⟨k, hk, rfl⟩
-  simp [MulAut.conj_apply, h hk, mul_assoc]
+  have hw := TauCeti.map_conj_eq_conj_of_map_eq_conj f id (q := w) (c := c⁻¹) rfl
+    (by simpa [MulAut.conj_apply] using h hk)
+  simpa [MulAut.conj_apply, mul_assoc] using hw
