@@ -319,6 +319,7 @@ def sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ ι) 1) :
 
 /-- The matrix `TauCeti.sphereRotationMatrix p x` is the unitary matrix of the rotation
 `TauCeti.sphereRotationIsometry p x`. -/
+@[simp]
 theorem coe_sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ ι) 1)
     (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1) :
     (sphereRotationMatrix p x : Matrix ι ι ℝ) =
