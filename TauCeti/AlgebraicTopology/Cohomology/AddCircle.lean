@@ -49,8 +49,8 @@ when both slant products do (`TopCat.isOfFinAddOrder_iff_singularSlant_addCircle
 is torsion-free, every class of finite order of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back from a
 class of finite order of `Hⁿ⁺¹(Y; M)`
 (`TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`); this is always the case
-for `n = 1` and `M = ℤ`, so the torsion labels of `H²((ℝ / pℤ) × Y; ℤ)` are those of `H²(Y; ℤ)`
-(`TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle_one_add`). If
+for `n = 1` and `M = ℤ`, by the instance `TopCat.isAddTorsionFree_singularCohomology_one`, so the
+torsion labels of `H²((ℝ / pℤ) × Y; ℤ)` are those of `H²(Y; ℤ)`. If
 `Hⁿ⁺¹(Y; M)` and `Hⁿ(Y; M)` are generated modulo torsion by `v` and `a`, then `pr₂^* v` and
 `pr₁^* θ_p ⌣ pr₂^* a` generate `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` modulo torsion
 (`TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`), and they are independent modulo
@@ -74,8 +74,9 @@ cohomology.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
 * `TopCat.isOfFinAddOrder_iff_singularSlant_addCircle`: the classes of finite order.
-* `TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle_one_add`: the torsion of
-  `H²((ℝ / pℤ) × Y; ℤ)` is pulled back from `Y`.
+* `TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`: when `Hⁿ(Y; M)` is
+  torsion-free, as `H¹(Y; ℤ)` always is, the torsion of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back
+  from `Y`.
 * `TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`,
   `TopCat.isOfFinAddOrder_smul_add_smul_addCircle_iff`: generators modulo torsion.
 
@@ -354,19 +355,6 @@ theorem isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle {n : ℕ}
     exact (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ) (M := M)
       (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom.toAddMonoidHom
         |>.isOfFinAddOrder hb
-
-/-- **The torsion labels of `H²((ℝ / pℤ) × Y; M)` are pulled back from `Y`**: for coefficients `M`
-without additive torsion, such as `ℤ`, a class of `H²((ℝ / pℤ) × Y; M)` has finite order exactly
-when it is the pullback of a class of finite order of `H²(Y; M)`, because the cross summand
-`H¹(Y; M)` is torsion-free (`TopCat.isAddTorsionFree_singularCohomology_one`). -/
-theorem isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle_one_add
-    [IsAddTorsionFree M]
-    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (1 + 1)) :
-    IsOfFinAddOrder φ ↔ ∃ b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (1 + 1),
-      IsOfFinAddOrder b ∧
-        TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (1 + 1) b = φ := by
-  have := Y.isAddTorsionFree_singularCohomology_one (R := 𝟙_ (ModuleCat.{0} ℤ)) M
-  exact isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle M Y φ
 
 /-- **Generators modulo torsion of `(ℝ / pℤ) × Y`**: if every class of `Hⁿ⁺¹(Y; M)` differs from a
 multiple of `v` by an element of finite order, and every class of `Hⁿ(Y; M)` from a multiple of

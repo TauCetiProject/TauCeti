@@ -180,7 +180,7 @@ module `M` without additive torsion, `H¹(X; R, M)` has no nonzero element of fi
 the Kronecker map identifies it with `Hom(H₁(X; R), M)`
 (`TopCat.singularKroneckerEquivOne`). For instance `H¹(X; ℤ)` is torsion-free for every space
 `X`. -/
-theorem isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCat.{w} k)
+instance isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCat.{w} k)
     [IsAddTorsionFree M] : IsAddTorsionFree (X.singularCohomology R k M 1) :=
   Function.Injective.isAddTorsionFree
     { toFun α := ⇑(X.singularKroneckerEquivOne M α).hom
