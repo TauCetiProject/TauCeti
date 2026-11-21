@@ -539,7 +539,7 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
           (fun j hj ↦ by
             have hj : j < n := hj.trans_le hk
             simpa [hj, hc] using
-              hw.sum_sq_norm_inner_le_one ((hT.eigenvectorBasis hn).orthonormal.1 ⟨j, hj⟩))
+              hw.sum_sq_norm_inner_left_le_one ((hT.eigenvectorBasis hn).orthonormal.1 ⟨j, hj⟩))
           hmass fun j hj ↦ by
             simpa [hj, (by omega : j < n)] using hT.eigenvalues_antitone hn
               (Fin.mk_le_mk.mpr (Nat.le_succ j))

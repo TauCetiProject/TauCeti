@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Spectral.KyFanGap
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Algebra.Order.Group.Finite
 import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
 import TauCeti.Analysis.Matrix.EntrywiseOpNorm
 
@@ -129,22 +130,10 @@ theorem hasFDerivAt_prefixSum_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian)
       (RCLike.reCLM.comp (∑ j : Fin (Fintype.card n) with j.val < k, ∑ a, ∑ b,
         (star (u j a) * u j b) • fderiv ℝ (fun x ↦ M x a b) x₀)) x₀ := by
   -- Finitely many strict inequalities hold with a uniform margin `δ > 0`.
-  obtain ⟨δ, hδ, hgapδ⟩ : ∃ δ > 0, ∀ i j : Fin (Fintype.card n), i.val < k → k ≤ j.val →
-      (hM x₀).eigenvalues₀ j + δ ≤ (hM x₀).eigenvalues₀ i := by
-    set P := univ.filter fun ij : Fin (Fintype.card n) × Fin (Fintype.card n) ↦
-      ij.1.val < k ∧ k ≤ ij.2.val
-    rcases P.eq_empty_or_nonempty with hP | hP
-    · refine ⟨1, one_pos, fun i j hi hj ↦ ?_⟩
-      have hmem : (i, j) ∈ P := mem_filter.2 ⟨mem_univ _, hi, hj⟩
-      rw [hP] at hmem
-      exact absurd hmem (notMem_empty _)
-    · obtain ⟨ij, hij, hmin⟩ :=
-        P.exists_min_image (fun ij ↦ (hM x₀).eigenvalues₀ ij.1 - (hM x₀).eigenvalues₀ ij.2) hP
-      refine ⟨_, sub_pos.2 (hgap _ _ (mem_filter.1 hij).2.1 (mem_filter.1 hij).2.2),
-        fun i j hi hj ↦ ?_⟩
-      have := hmin (i, j) (mem_filter.2 ⟨mem_univ _, hi, hj⟩)
-      simp only at this
-      linarith
+  obtain ⟨δ, hδ, hgapδ⟩ := exists_pos_forall_add_le_of_forall_lt
+    (ι := {ij : Fin (Fintype.card n) × Fin (Fintype.card n) // ij.1.val < k ∧ k ≤ ij.2.val})
+    (f := fun ij ↦ (hM x₀).eigenvalues₀ ij.val.2) (g := fun ij ↦ (hM x₀).eigenvalues₀ ij.val.1)
+    fun ij ↦ hgap _ _ ij.property.1 ij.property.2
   -- The linear part.
   set ℓ : E → ℝ := fun x ↦ RCLike.re (∑ j : Fin (Fintype.card n) with j.val < k, ∑ a, ∑ b,
     star (u j a) * u j b * M x a b)
@@ -166,7 +155,8 @@ theorem hasFDerivAt_prefixSum_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian)
     refine IsBigO.of_bound (k * Fintype.card n ^ 2 / δ) (Eventually.of_forall fun x ↦ ?_)
     simp only [zero_apply, sub_zero, Real.norm_eq_abs, norm_pow, sq_abs]
     refine le_of_eq_of_le (congrArg _ ?_)
-      (abs_prefixSum_eigenvalues₀_sub_le (hM x₀) (hM x) hkn hδ hgapδ u hu)
+      (abs_prefixSum_eigenvalues₀_sub_le (hM x₀) (hM x) hkn hδ
+        (fun i j hi hj ↦ hgapδ ⟨(i, j), hi, hj⟩) u hu)
     ring
   have hsum := hℓd.add hR
   rw [add_zero] at hsum

@@ -160,7 +160,7 @@ theorem norm_sub_sum_inner_smul_sq (hv : Orthonormal 𝕜 v) (s : Finset ι) (x 
 
 /-- Bessel's inequality against a unit vector: the squared lengths `‖⟪x, vᵢ⟫‖²` of the components
 of a unit vector `x` along an orthonormal family add up to at most `1`. -/
-theorem sum_sq_norm_inner_le_one (hv : Orthonormal 𝕜 v) {x : E} (hx : ‖x‖ = 1) :
+theorem sum_sq_norm_inner_left_le_one (hv : Orthonormal 𝕜 v) {x : E} (hx : ‖x‖ = 1) :
     ∑ i, ‖⟪x, v i⟫_𝕜‖ ^ 2 ≤ 1 := by
   simpa [norm_inner_symm, hx] using hv.sum_inner_products_le (s := Finset.univ) (x := x)
 

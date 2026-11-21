@@ -51,8 +51,8 @@ on each side; with `2 C x ≤ δ x² + C² / δ` the difference is at most `δ d
   the sum of the `k` leading eigenvalues lies in the span of the leading eigenvectors.
 * `LinearMap.IsSymmetric.prefixSum_add_sum_re_inner_apply_self_le_prefixSum_eigenvalues`: the
   lower bound `μ₀ + ⋯ + μₖ₋₁ + ∑_{j < k} re ⟪(S - T) bⱼ, bⱼ⟫ ≤ κₖ(S)`, which needs no gap.
-* `LinearMap.IsSymmetric.prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_add`: the upper
-  bound with the quadratic remainder `k C² / δ`.
+* `LinearMap.IsSymmetric.prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_apply_self_add`:
+  the upper bound with the quadratic remainder `k C² / δ`.
 * `LinearMap.IsSymmetric.abs_prefixSum_eigenvalues_sub_le`: both bounds together.
 
 ## References
@@ -78,7 +78,7 @@ has `k ≤ n`. -/
 private theorem le_of_orthonormal (b : OrthonormalBasis (Fin n) 𝕜 E) {k : ℕ} {w : Fin k → E}
     (hw : Orthonormal 𝕜 w) : k ≤ n := by
   simpa using (hw.sum_sum_sq_norm_inner_eq_card b).symm.trans_le
-    (sum_le_card_nsmul _ _ 1 fun j _ ↦ hw.sum_sq_norm_inner_le_one (b.orthonormal.1 j))
+    (sum_le_card_nsmul _ _ 1 fun j _ ↦ hw.sum_sq_norm_inner_left_le_one (b.orthonormal.1 j))
 
 /-- For `k ≤ n`, exactly `k` indices `j : Fin n` satisfy `j < k`. -/
 private theorem card_filter_val_lt_eq {k : ℕ} (hkn : k ≤ n) :
@@ -98,7 +98,7 @@ theorem sum_re_inner_apply_self_add_mul_le_prefixSum (T : E →ₗ[𝕜] E)
       prefixSum k μ := by
   have hkn := le_of_orthonormal b hw
   have hc1 (j : Fin n) : ∑ i, ‖⟪b j, w i⟫‖ ^ 2 ≤ 1 :=
-    hw.sum_sq_norm_inner_le_one (b.orthonormal.1 j)
+    hw.sum_sq_norm_inner_left_le_one (b.orthonormal.1 j)
   have hmass := hw.sum_sum_sq_norm_inner_eq_card b
   rw [Fintype.card_fin] at hmass
   set c : Fin n → ℝ := fun j ↦ ∑ i, ‖⟪b j, w i⟫‖ ^ 2 with hc
@@ -270,7 +270,7 @@ theorem prefixSum_add_sum_re_inner_apply_self_le_prefixSum_eigenvalues (hS : S.I
 eigenbasis of `T` with eigenvalues `μ`, whose first `k` eigenvalues exceed the others by at least
 `δ > 0`. If `S` is symmetric and `‖(S - T) x‖ ≤ C ‖x‖` for all `x`, then the sum of the `k` largest
 eigenvalues of `S` is at most `μ₀ + ⋯ + μₖ₋₁ + ∑_{j < k} re ⟪(S - T) bⱼ, bⱼ⟫ + k C² / δ`. -/
-theorem prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_add (hS : S.IsSymmetric)
+theorem prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_apply_self_add (hS : S.IsSymmetric)
     (hn : finrank 𝕜 E = n) (b : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
     (hb : ∀ j, T (b j) = (μ j : 𝕜) • b j) {k : ℕ} (hkn : k ≤ n) {δ : ℝ} (hδ : 0 < δ)
     (hgap : ∀ i j : Fin n, (i : ℕ) < k → k ≤ (j : ℕ) → μ j + δ ≤ μ i) {C : ℝ}
@@ -306,7 +306,8 @@ theorem abs_prefixSum_eigenvalues_sub_le (hS : S.IsSymmetric) (hn : finrank 𝕜
     |prefixSum k (hS.eigenvalues hn) - prefixSum k μ -
         ∑ j : Fin n with j.val < k, RCLike.re ⟪(S - T) (b j), b j⟫| ≤ k * C ^ 2 / δ := by
   have h₁ := hS.prefixSum_add_sum_re_inner_apply_self_le_prefixSum_eigenvalues hn b hb hkn
-  have h₂ := hS.prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_add hn b hb hkn hδ hgap hC
+  have h₂ :=
+    hS.prefixSum_eigenvalues_le_prefixSum_add_sum_re_inner_apply_self_add hn b hb hkn hδ hgap hC
   rw [abs_le]
   constructor <;> linarith [show 0 ≤ k * C ^ 2 / δ by positivity]
 
