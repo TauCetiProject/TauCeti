@@ -8,10 +8,10 @@ module
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.IsPerfect
+public import Mathlib.GroupTheory.QuotientGroup.Simple
 public import Mathlib.GroupTheory.Solvable
 public import TauCeti.GroupTheory.Commutator
 import Mathlib.Data.SetLike.Fintype
-import Mathlib.GroupTheory.QuotientGroup.Simple
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Order.Atoms.Finite
 import TauCeti.Algebra.Group.Subgroup.Map
@@ -48,6 +48,9 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 * `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer`: in a perfect group, a normal
   subgroup supplemented by a subgroup normalizing a solvable subgroup whose conjugates generate the
   group is the whole group.
+* `IsSimpleGroup.isMulCommutative_of_isSolvable`: a simple solvable group is commutative.
+* `Subgroup.isMulCommutative_quotient_of_isSolvable`: every simple section of a solvable group
+  is commutative.
 * `Group.isSolvable_of_forall_notMem_mul_self_eq_one`: a group with a proper subgroup outside
   which every element squares to one is solvable.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
@@ -142,6 +145,22 @@ theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer {G : T
     (QuotientGroup.map_mk'_eq_top.mp ?_)
   rw [eq_top_iff, ← Subgroup.map_top_of_surjective _ hπ, ← hU, Subgroup.map_normalClosure _ _ hπ]
   exact Subgroup.normalClosure_le_normal (Subgroup.coe_map _ U).ge
+
+/-- A simple group that is also solvable is commutative: `IsMulCommutative` form of
+`IsSimpleGroup.comm_iff_isSolvable`. -/
+@[to_additive /-- A simple additive group that is also solvable is commutative. -/]
+theorem _root_.IsSimpleGroup.isMulCommutative_of_isSolvable (G : Type*) [Group G]
+    [IsSimpleGroup G] [Group.IsSolvable G] : IsMulCommutative G :=
+  IsMulCommutative.of_comm (IsSimpleGroup.comm_iff_isSolvable.mpr ‹_›)
+
+/-- Every simple section `H ⧸ K.subgroupOf H` of a solvable group is commutative. -/
+@[to_additive /-- Every simple section `H ⧸ K.addSubgroupOf H` of a solvable additive group is
+commutative. -/]
+theorem _root_.Subgroup.isMulCommutative_quotient_of_isSolvable {G : Type*} [Group G]
+    [Group.IsSolvable G] (H K : Subgroup G) [(K.subgroupOf H).Normal]
+    [IsSimpleGroup (H ⧸ K.subgroupOf H)] :
+    IsMulCommutative (H ⧸ K.subgroupOf H) :=
+  _root_.IsSimpleGroup.isMulCommutative_of_isSolvable (H ⧸ K.subgroupOf H)
 
 /-- A group with a proper subgroup `M` such that every element outside `M` squares to one is
 solvable. Conjugation by any element outside `M` inverts `M`, so `M` is normal and commutative, and
