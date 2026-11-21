@@ -17,6 +17,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -56,6 +57,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
   rational.
+* `Circle.denseRange_zpow_of_not_isOfFinOrder`: the integer powers of a point of infinite order are
+  dense in the circle.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
@@ -126,7 +129,7 @@ theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
     (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
-  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+  rw [Circle.coe_exp, ← Complex.exp_natCast_mul]
   have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
     push_cast
     field_simp
@@ -203,6 +206,25 @@ theorem isOfFinOrder_exp_two_pi_mul_iff {x : ℝ} :
     rw [Rat.cast_def]
     field_simp
 
+/-- **Irrational rotations have dense orbits.** The integer powers of a point of the circle of
+infinite order are dense in the circle. -/
+theorem denseRange_zpow_of_not_isOfFinOrder {c : Circle} (hc : ¬IsOfFinOrder c) :
+    DenseRange (c ^ · : ℤ → Circle) := by
+  set x := Complex.arg c / (2 * Real.pi)
+  have hcx : exp (2 * Real.pi * x) = c := by
+    rw [mul_div_cancel₀ _ (by positivity : 2 * Real.pi ≠ 0), exp_arg]
+  have hx : Irrational x := by
+    by_contra h
+    exact hc (hcx ▸ isOfFinOrder_exp_two_pi_mul_iff.2 h)
+  have hd : DenseRange (· • (x : AddCircle (1 : ℝ)) : ℤ → AddCircle (1 : ℝ)) :=
+    AddCircle.denseRange_zsmul_coe_iff.2 (by simpa using hx)
+  have hsurj : Function.Surjective (AddCircle.toCircle : AddCircle (1 : ℝ) → Circle) := by
+    simpa only [← funext (AddCircle.homeomorphCircle_apply one_ne_zero)] using
+      (AddCircle.homeomorphCircle (one_ne_zero (α := ℝ))).surjective
+  convert hsurj.denseRange.comp hd AddCircle.continuous_toCircle using 1
+  funext k
+  simp [AddCircle.toCircle_zsmul, AddCircle.toCircle_apply_mk, hcx]
+
 /-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
 theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by
   rw [coe_exp]
@@ -276,7 +298,8 @@ its inverse, the point `x - √(1 - x²) I` of the lower semicircle, it parametr
 its real part. -/
 def upperSemicircle (x : Set.Icc (-1 : ℝ) 1) : Circle :=
   ⟨(x : ℝ) + √(1 - (x : ℝ) ^ 2) * Complex.I, mem_sphere_zero_iff_norm.2 (by
-    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.2.1, x.2.2]), add_sub_cancel,
+    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.property.1, x.property.2]),
+        add_sub_cancel,
       Real.sqrt_one])⟩
 
 theorem coe_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) :
@@ -315,7 +338,7 @@ theorem upperSemicircle_eq_inv_iff {x y : Set.Icc (-1 : ℝ) 1} :
     obtain rfl : x = y := Subtype.ext hre
     refine ⟨rfl, ?_⟩
     have h0 : √(1 - (x : ℝ) ^ 2) = 0 := by linarith [Real.sqrt_nonneg (1 - (x : ℝ) ^ 2)]
-    nlinarith [Real.sqrt_eq_zero'.1 h0, x.2.1, x.2.2]
+    nlinarith [Real.sqrt_eq_zero'.1 h0, x.property.1, x.property.2]
   · rintro ⟨rfl, hx⟩
     exact (inv_upperSemicircle_of_sq_eq_one hx).symm
 
@@ -354,13 +377,13 @@ open Complex
 /-- The unit circle `Circle` in `ℂ` is topologically isomorphic as a group to `unitary ℂ`. -/
 def circleEquivUnitary : Circle ≃ₜ* unitary ℂ where
   toFun z := ⟨(z : ℂ), z.coe_mem_unitary⟩
-  invFun u := ⟨(u : ℂ), mem_sphere_zero_iff_norm.2 <| CStarRing.norm_of_mem_unitary u.2⟩
+  invFun u := ⟨(u : ℂ), mem_sphere_zero_iff_norm.2 <| CStarRing.norm_of_mem_unitary u.property⟩
   left_inv _ := Circle.ext rfl
   right_inv _ := Subtype.ext rfl
   map_mul' _ _ := Subtype.ext rfl
   continuous_toFun := Continuous.subtype_mk
-    (continuous_subtype_val : Continuous ((↑) : Circle → ℂ)) Circle.coe_mem_unitary
-  continuous_invFun := Continuous.subtype_mk continuous_subtype_val _
+    (continuous_subtypeVal : Continuous ((↑) : Circle → ℂ)) Circle.coe_mem_unitary
+  continuous_invFun := Continuous.subtype_mk continuous_subtypeVal _
 
 @[simp]
 theorem coe_circleEquivUnitary (z : Circle) : (circleEquivUnitary z : ℂ) = z :=

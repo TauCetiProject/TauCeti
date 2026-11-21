@@ -39,7 +39,7 @@ theorem coheight_zeroLocus_eq_height_map {A : CommRingCat.{u}} (I : Ideal A) (x 
       (x.asIdeal.map (Ideal.Quotient.mk I)).height := by
   let e : {y : Spec A | I ≤ y.asIdeal} ≃o (PrimeSpectrum.zeroLocus (R := A) I)ᵒᵈ :=
     { toEquiv := (Equiv.refl _).trans OrderDual.toDual
-      map_rel_iff' := fun {a b} ↦ PrimeSpectrum.le_iff_specializes b.1 a.1 }
+      map_rel_iff' := fun {a b} ↦ PrimeSpectrum.le_iff_specializes b.val a.val }
   rw [← coheight_orderIso e, ← height_ofDual,
     ← height_orderIso I.primeSpectrumQuotientOrderIsoZeroLocus.symm,
     ← PrimeSpectrum.height_eq_orderHeight]
@@ -63,8 +63,8 @@ theorem coheight_fiber_eq_height_map {R S : CommRingCat.{u}} (φ : R ⟶ S) (x :
     exact Ideal.comap_mono hle
   rw [← coheight_zeroLocus_eq_height_map I x (hTI rfl)]
   exact coheight_eq_of_strictMono
-    (fun v : T ↦ (⟨v, hTI v.2⟩ : {v : Spec S | I ≤ v.asIdeal})) (fun _ _ h ↦ h)
-    (fun v b h ↦ ⟨⟨b, hTup v.2 h.le b.2⟩, h, rfl⟩) ⟨x, rfl⟩
+    (fun v : T ↦ (⟨v, hTI v.property⟩ : {v : Spec S | I ≤ v.asIdeal})) (fun _ _ h ↦ h)
+    (fun v b h ↦ ⟨⟨b, hTup v.property h.le b.property⟩, h, rfl⟩) ⟨x, rfl⟩
 
 end TauCeti.AlgebraicGeometry
 

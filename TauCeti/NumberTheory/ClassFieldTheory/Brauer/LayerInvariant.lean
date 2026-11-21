@@ -111,8 +111,8 @@ private theorem subsingleton_H1_top :
   have := subsingleton_H1_unitsCoeff_of_isClosed K L.top.toSubgroup L.top.isClosed
   let φ : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) ≃ₜ* L.top.toSubgroup :=
     { toMulEquiv := Subgroup.subgroupOfEquivOfLe (OpenSubgroup.toSubgroup_le.2 L.top_le_ground)
-      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   exact (explicitMap1Equiv _ _ _ _ φ (AddEquiv.refl (UnitsCoeff K)) continuous_id continuous_id
     fun _ _ => rfl).symm.injective.subsingleton
 

@@ -151,7 +151,7 @@ theorem piSimpleRootVector_mem_carrier (ht : ∀ i, (t i).IsSimplyLaced)
   rw [piSimpleRootVector_def]
   refine single_mem_pi_carrier (fun i ↦ (t i).rootLattice (ht i)) p.1 ?_
   rw [← coe_simpleRootBasis (t p.1) (ht p.1) p.2]
-  exact ((t p.1).simpleRootBasis (ht p.1) p.2).2
+  exact ((t p.1).simpleRootBasis (ht p.1) p.2).property
 
 /-- Every `piSimpleRootVector` has squared norm `2`. -/
 theorem form_piSimpleRootVector_self (ht : ∀ i, (t i).IsSimplyLaced)
