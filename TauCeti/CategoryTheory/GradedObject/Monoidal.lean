@@ -43,10 +43,12 @@ facts about these coproducts which are used to compare homology of tensor produc
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`), and symmetrically for `X` when the
   indices commute (`CategoryTheory.GradedObject.Monoidal.succTensorObjIso`).  This identifies the
   degree shift of a connecting morphism between tensor products.
-* For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, the tensor
-  product in degree `n` is the biproduct indexed by `Finset.antidiagonal n`
-  (`CategoryTheory.GradedObject.Monoidal.tensorObjIsoBiproduct`), a special case of
-  `CategoryTheory.GradedObject.mapBifunctorMapObjIsoBiproduct`.
+* For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, whose tensor
+  product exists in every degree (`HasTensor`) and whose summands in degree `n` have a biproduct,
+  the tensor product in degree `n` is this biproduct indexed by `Finset.antidiagonal n`
+  (`CategoryTheory.GradedObject.Monoidal.tensorObjIsoBiproduct`), naturally
+  (`CategoryTheory.GradedObject.Monoidal.tensorHom_tensorObjIsoBiproduct_hom`); it is a special
+  case of `CategoryTheory.GradedObject.mapBifunctorMapObjIsoBiproduct`.
 -/
 
 public section
@@ -367,8 +369,9 @@ private instance : HasBiproduct fun x : Finset.antidiagonal n ↦
     ((curriedTensor C).obj (X x.val.1)).obj (Y x.val.2) :=
   ‹HasBiproduct fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2›
 
-/-- For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, the tensor
-product in degree `n` is the biproduct of the `X i ⊗ Y j` indexed by `Finset.antidiagonal n`. -/
+/-- For graded objects indexed by an additive monoid with antidiagonals, such as `ℕ`, whose tensor
+product exists in every degree (`HasTensor X Y`), the tensor product in degree `n` is the biproduct
+of the `X i ⊗ Y j` indexed by `Finset.antidiagonal n`, assuming this biproduct exists. -/
 noncomputable def tensorObjIsoBiproduct :
     tensorObj X Y n ≅ ⨁ fun x : Finset.antidiagonal n ↦ X x.val.1 ⊗ Y x.val.2 :=
   mapBifunctorMapObjIsoBiproduct X Y (curriedTensor C) n
@@ -390,6 +393,18 @@ lemma ι_tensorObjIsoBiproduct_inv (x : Finset.antidiagonal n) :
         (tensorObjIsoBiproduct X Y n).inv =
       ιTensorObj X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) :=
   ι_mapBifunctorMapObjIsoBiproduct_inv X Y (curriedTensor C) n x
+
+variable {X Y} {X' Y' : GradedObject I C} [HasTensor X' Y']
+  [HasBiproduct fun x : Finset.antidiagonal n ↦ X' x.val.1 ⊗ Y' x.val.2]
+
+/-- **Naturality of `tensorObjIsoBiproduct`**: under these identifications, the tensor product of
+morphisms `f` and `g` of graded objects is the map of biproducts given by the `f i ⊗ g j`. -/
+@[reassoc]
+lemma tensorHom_tensorObjIsoBiproduct_hom (f : X ⟶ X') (g : Y ⟶ Y') :
+    tensorHom f g n ≫ (tensorObjIsoBiproduct X' Y' n).hom =
+      (tensorObjIsoBiproduct X Y n).hom ≫ biproduct.map fun x ↦ f x.val.1 ⊗ₘ g x.val.2 := by
+  refine tensorObj_ext _ _ fun i j h ↦ ?_
+  simp
 
 end Antidiagonal
 

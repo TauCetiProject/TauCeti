@@ -760,7 +760,7 @@ theorem finrank_tensorObj [Nontrivial k] (n : I) :
       ∑ x ∈ Finset.antidiagonal n, Module.finrank k (A x.1) * Module.finrank k (B x.2) := by
   classical
   let P := (fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}
-  let e : P ≃ Finset.antidiagonal n := Equiv.subtypeEquivRight fun x ↦ by simp [P]
+  let e : P ≃ Finset.antidiagonal n := TauCeti.fiberEquivAntidiagonal n
   have := Fintype.ofEquiv _ e.symm
   let ε := (Fintype.equivFin P).symm
   -- The degree `n` part of the tensor product is by definition the coproduct of the summands.

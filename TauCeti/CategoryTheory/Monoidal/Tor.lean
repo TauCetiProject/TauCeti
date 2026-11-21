@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Monoidal.Tor
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Obj
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 import Mathlib.CategoryTheory.Abelian.Exact
 import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HomologyFunctorAccessible
@@ -65,39 +66,6 @@ functor and hence exact.
 public section
 
 noncomputable section
-
-namespace HomologicalComplex
-
-open CategoryTheory Limits MonoidalCategory
-
-variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {ι : Type*} {c : ComplexShape ι} (P : HomologicalComplex C c)
-
-/-- The functor `X ↦ X ⊗ P` from `C` to complexes, tensoring every term of the complex `P` on the
-left with `X`: its terms are `X ⊗ P.X n` (`HomologicalComplex.objTensor_obj_X`), its differentials
-`X ◁ P.d i j` (`HomologicalComplex.objTensor_obj_d`), and it sends `f` to the maps `f ▷ P.X n`
-(`HomologicalComplex.objTensor_map_f`). -/
--- The body is exposed: the component lemmas below are definitional, and
--- `CategoryTheory.ProjectiveResolution.torFlipObjIso` identifies `objTensor` with
--- `Functor.mapHomologicalComplex` of `tensoringLeft` by unfolding.
-@[expose, simps obj_X obj_d map_f]
-def objTensor : C ⥤ HomologicalComplex C c where
-  obj X :=
-    { X n := X ⊗ P.X n
-      d i j := X ◁ P.d i j
-      shape i j h := by rw [P.shape i j h, MonoidalPreadditive.whiskerLeft_zero]
-      d_comp_d' i j k _ _ := by
-        rw [← whiskerLeft_comp, P.d_comp_d, MonoidalPreadditive.whiskerLeft_zero] }
-  map f :=
-    { f n := f ▷ P.X n
-      comm' i j _ := (whisker_exchange _ _).symm }
-
-instance : P.objTensor.Additive where
-  map_add {_ _ f g} := by
-    ext
-    exact MonoidalPreadditive.add_whiskerRight f g
-
-end HomologicalComplex
 
 namespace CategoryTheory
 
@@ -211,7 +179,7 @@ instance preservesColimitsOfShape_Tor_flip_obj {J : Type*} [Category* J] [HasCol
   let P := projectiveResolution Y
   have : PreservesColimitsOfShape J P.complex.objTensor :=
     HomologicalComplex.preservesColimitsOfShape_of_eval _ fun k ↦
-      inferInstanceAs (PreservesColimitsOfShape J (tensorRight (P.complex.X k)))
+      preservesColimitsOfShape_of_natIso (P.complex.objTensorCompEvalIso k).symm
   have : PreservesColimitsOfShape J
       (HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n) :=
     inferInstanceAs (PreservesColimitsOfShape J

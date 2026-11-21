@@ -16,9 +16,9 @@ subtraction on `ℕ` is truncated, both cases are the single formula `n - 1`
 (`ChainComplex.next_nat`), which lets statements about a degree `n` of a chain complex name its
 neighbour without splitting on `n`.
 
-For the shape `ComplexShape.up' a` on an additive group, in which `i` is related to `i + a`, the
-next degree after `i` is `i + a` (`ComplexShape.up'_next`) and the previous one is `i - a`
-(`ComplexShape.up'_prev`). These describe the neighbours on the pages of spectral sequences.
+For the shape `ComplexShape.up' a`, in which `i` is related to `i + a`, the
+next degree after `i` is `i + a` (`TauCeti.up'_next`) and the previous one is `i - a`
+(`TauCeti.up'_prev`). These describe the neighbours on the pages of spectral sequences.
 -/
 
 public section
@@ -31,12 +31,12 @@ theorem ChainComplex.next_nat (n : ℕ) : (ComplexShape.down ℕ).next n = n - 1
 
 /-- In the shape `ComplexShape.up' a`, the degree after `i` is `i + a`. -/
 @[simp]
-theorem ComplexShape.up'_next {α : Type*} [AddRightCancelSemigroup α] (a i : α) :
+theorem TauCeti.up'_next {α : Type*} [Add α] [IsRightCancelAdd α] (a i : α) :
     (ComplexShape.up' a).next i = i + a :=
   (ComplexShape.up' a).next_eq' rfl
 
 /-- In the shape `ComplexShape.up' a` on an additive group, the degree before `i` is `i - a`. -/
 @[simp]
-theorem ComplexShape.up'_prev {α : Type*} [AddGroup α] (a i : α) :
+theorem TauCeti.up'_prev {α : Type*} [AddGroup α] (a i : α) :
     (ComplexShape.up' a).prev i = i - a :=
   (ComplexShape.up' a).prev_eq' (sub_add_cancel i a)

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Antidiag.Prod
-public import Mathlib.Algebra.Order.Monoid.Canonical.Defs
 public import Mathlib.Algebra.Order.Sub.Defs
-public import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Algebra.Order.Sub.Unbundled.Basic
 
 /-!
@@ -21,11 +19,11 @@ serving as the `Finset.Iic` counterpart of `Finset.HasAntidiagonal.sigmaAntidiag
 types such as `ι → ℕ` that carry no `Finset.HasAntidiagonal` instance.
 
 For a type with an addition and antidiagonals, `Finset.antidiagonal n` is the fibre over `n` of the
-addition map `α × α → α` (`Finset.fiberEquivAntidiagonal`), as a type.
+addition map `α × α → α` (`TauCeti.fiberEquivAntidiagonal`), as a type.
 
 ## Main definitions
 
-* `Finset.fiberEquivAntidiagonal`: the equivalence between the fibre of the addition map over `n`
+* `TauCeti.fiberEquivAntidiagonal`: the equivalence between the fibre of the addition map over `n`
   and `Finset.antidiagonal n`.
 
 * `Finset.sigmaIicEquivProd`: the equivalence `(Σ a : α, Iic a) ≃ α × α` sending `(a, b)` to
@@ -34,9 +32,9 @@ addition map `α × α → α` (`Finset.fiberEquivAntidiagonal`), as a type.
 
 public section
 
-namespace Finset
+namespace TauCeti
 
-section FiberEquivAntidiagonal
+open Finset
 
 variable {α : Type*} [Add α] [HasAntidiagonal α]
 
@@ -48,13 +46,21 @@ def fiberEquivAntidiagonal (n : α) :
     ((fun x : α × α ↦ x.1 + x.2) ⁻¹' {n}) ≃ antidiagonal n :=
   Equiv.subtypeEquivRight fun x ↦ by simp
 
-/-- `Finset.fiberEquivAntidiagonal n` does not change the underlying pair. -/
+/-- `TauCeti.fiberEquivAntidiagonal n` does not change the underlying pair. -/
 @[simp]
 lemma coe_fiberEquivAntidiagonal_apply (n : α) (x : (fun x : α × α ↦ x.1 + x.2) ⁻¹' {n}) :
     (fiberEquivAntidiagonal n x : α × α) = x :=
   (rfl)
 
-end FiberEquivAntidiagonal
+/-- The inverse of `TauCeti.fiberEquivAntidiagonal n` does not change the underlying pair. -/
+@[simp]
+lemma coe_fiberEquivAntidiagonal_symm_apply (n : α) (x : antidiagonal n) :
+    ((fiberEquivAntidiagonal n).symm x : α × α) = x :=
+  (rfl)
+
+end TauCeti
+
+namespace Finset
 
 variable {α : Type*} [AddCommSemigroup α] [PartialOrder α] [CanonicallyOrderedAdd α]
   [Sub α] [OrderedSub α] [AddLeftReflectLE α] [LocallyFiniteOrderBot α]

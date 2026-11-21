@@ -223,7 +223,9 @@ private lemma isZero_Tor_succ_iff (P : ProjectiveResolution M) (X : ModuleCat.{u
   simp only [HomologicalComplex.shortComplexFunctor'_obj_X₁,
     HomologicalComplex.shortComplexFunctor'_obj_X₂, HomologicalComplex.shortComplexFunctor'_obj_f,
     HomologicalComplex.shortComplexFunctor'_obj_g, HomologicalComplex.objTensor_obj_d]
-  -- the terms of `X ⊗ P` are `X ⊗ P.X n`, and `X ◁ f` acts as `f.hom.lTensor X`, by definition
+  -- `HomologicalComplex.objTensor_obj_X` and `ModuleCat.hom_whiskerLeft` do not rewrite here: after
+  -- `objTensor_obj_d` the whiskering is typed by the terms of `X ⊗ P`, which are `X ⊗ P.X n` only
+  -- by definition, so the two sides agree by definition
   exact Iff.rfl
 
 /-- **Flat modules are `Tor`-acyclic.** If `X` is flat, then `Tor_{n+1}(X, M) = 0` for every
@@ -319,26 +321,28 @@ injective. -/
 private lemma mono_homologyMap_zero_iff (P : ProjectiveResolution M) :
     Mono (HomologicalComplex.homologyMap (S.map P.complex.objTensor).f 0) ↔
       Function.Injective (S.f.hom.rTensor M) := by
-  -- `X ⊗ P` is by definition `(tensoringLeft _).obj X` applied to `P`, the form in which
-  -- `ProjectiveResolution.fromLeftDerivedZero'` is stated
-  let T (X : ModuleCat.{u} A) := (((tensoringLeft _).obj X).mapHomologicalComplex _).obj P.complex
-  let φ : T S.X₁ ⟶ T S.X₂ := (NatTrans.mapHomologicalComplex ((tensoringLeft _).map S.f) _).app _
-  change Mono (HomologicalComplex.homologyMap φ 0) ↔ _
+  let T (X : ModuleCat.{u} A) := P.complex.objTensor.obj X
+  let φ : T S.X₁ ⟶ T S.X₂ := (S.map P.complex.objTensor).f
+  -- `ProjectiveResolution.fromLeftDerivedZero'` is stated for Mathlib's prolongation of
+  -- `tensorLeft X`, to which `HomologicalComplex.objTensorObjIso` compares `X ⊗ P`
   let e (X : ModuleCat.{u} A) : (T X).homology 0 ⟶ X ⊗ M :=
-    (T X).homologyι 0 ≫ P.fromLeftDerivedZero' ((tensoringLeft _).obj X)
+    (T X).homologyι 0 ≫ HomologicalComplex.opcyclesMap (P.complex.objTensorObjIso X).hom 0 ≫
+      P.fromLeftDerivedZero' (tensorLeft X)
   have he (X : ModuleCat.{u} A) : IsIso (e X) := by
     have : IsIso ((T X).homologyι 0) := (ChainComplex.isoHomologyι₀ (T X)).isIso_hom
-    have : IsIso (P.fromLeftDerivedZero' ((tensoringLeft _).obj X)) :=
-      inferInstanceAs (IsIso (P.fromLeftDerivedZero' (tensorLeft X)))
+    have : IsIso (HomologicalComplex.opcyclesMap (P.complex.objTensorObjIso X).hom 0) :=
+      (HomologicalComplex.opcyclesMapIso (P.complex.objTensorObjIso X) 0).isIso_hom
     exact IsIso.comp_isIso
   have key : HomologicalComplex.homologyMap φ 0 ≫ e S.X₂ = e S.X₁ ≫ S.f ▷ M := by
     simp only [e, HomologicalComplex.homologyι_naturality_assoc, Category.assoc]
     congr 1
     rw [← cancel_epi (HomologicalComplex.pOpcycles _ 0)]
-    simp only [T, φ, HomologicalComplex.p_opcyclesMap_assoc,
+    simp only [φ, ShortComplex.map_f, HomologicalComplex.p_opcyclesMap_assoc,
       ProjectiveResolution.pOpcycles_comp_fromLeftDerivedZero',
-      ProjectiveResolution.pOpcycles_comp_fromLeftDerivedZero'_assoc]
-    -- `(tensoringLeft _).obj X` acts on morphisms by whiskering on the left with `X`.
+      ProjectiveResolution.pOpcycles_comp_fromLeftDerivedZero'_assoc,
+      HomologicalComplex.objTensorObjIso_hom_f,
+      HomologicalComplex.objTensor_map_f]
+    -- `tensorLeft X` acts on morphisms by whiskering on the left with `X`.
     exact (whisker_exchange S.f (P.π.f 0)).symm
   have hmono : Mono (HomologicalComplex.homologyMap φ 0) ↔ Mono (S.f ▷ M) := by
     refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
@@ -346,7 +350,7 @@ private lemma mono_homologyMap_zero_iff (P : ProjectiveResolution M) :
       rwa [IsIso.inv_hom_id_assoc] at this
     · have : Mono (HomologicalComplex.homologyMap φ 0 ≫ e S.X₂) := key.symm ▸ inferInstance
       exact mono_of_mono _ (e S.X₂)
-  simpa [ModuleCat.mono_iff_injective, ModuleCat.hom_whiskerRight] using hmono
+  simpa [φ, ModuleCat.mono_iff_injective, ModuleCat.hom_whiskerRight] using hmono
 
 /-- **`Tor₁` of a cokernel**: for a short exact sequence `0 → X₁ → X₂ → X₃ → 0`, if
 `Tor₁(X₂, M)` vanishes and `X₁ ⊗ M → X₂ ⊗ M` is injective, then `Tor₁(X₃, M)` vanishes. -/
