@@ -239,8 +239,12 @@ theorem covectorDifferential_single_mk_singleton (K : P.characteristicVectors) (
         Finsupp.single
           ⟨P.addTwoMulVec K (Pi.single v 1), ∅⟩
           (Polynomial.X ^ ((K.val v + P.weight v) / 2).toNat) := by
-  simp [covectorDifferentialOnGenerator_mk, ← Finset.univ_eq_attach, characteristicWeight_single]
-  congr 3 <;> omega
+  have hlower : (max 0 (-((K.val v + P.weight v) / 2))).toNat =
+      (-((K.val v + P.weight v) / 2)).toNat := by omega
+  have hupper : (max 0 (-((K.val v + P.weight v) / 2)) + (K.val v + P.weight v) / 2).toNat =
+      ((K.val v + P.weight v) / 2).toNat := by omega
+  simp [covectorDifferentialOnGenerator_mk, ← Finset.univ_eq_attach, characteristicWeight_single,
+    hlower, hupper]
 
 /-! ### Orbits of characteristic covectors -/
 
@@ -316,8 +320,9 @@ noncomputable def latticeChainEquivCovectorOrbitPart (k : P.characteristicVector
 @[simp]
 theorem coe_latticeChainEquivCovectorOrbitPart_apply (k : P.characteristicVectors)
     (h : P.intersectionMatrix.det ≠ 0) (c : PlumbingChain V) :
-    (P.latticeChainEquivCovectorOrbitPart k h c : P.CovectorChain) = P.toCovectorChain k c :=
-  (rfl)
+    (P.latticeChainEquivCovectorOrbitPart k h c : P.CovectorChain) = P.toCovectorChain k c := by
+  simp [latticeChainEquivCovectorOrbitPart, LinearEquiv.ofInjective_apply,
+    LinearEquiv.coe_ofEq_apply]
 
 end PlumbingGraph
 
