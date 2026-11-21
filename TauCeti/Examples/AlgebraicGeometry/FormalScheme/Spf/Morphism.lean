@@ -106,11 +106,6 @@ section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
-private local instance : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
-
 -- A continuous map from a nondiscrete adic ring also gives a local morphism.
 example (J : Ideal ℤ_[p]) :
     Spf (ℤ_[p] ⧸ J) ⟶ Spf ℤ_[p] :=

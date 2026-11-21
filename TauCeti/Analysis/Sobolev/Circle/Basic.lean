@@ -40,6 +40,8 @@ product when `E` has them.
 * `TauCeti.CircleSobolev.reflect`: the linear isometric reflection `n ↦ -n` of the Fourier
   coefficients.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
+* `TauCeti.CircleSobolev.fourierMultiplier g hg`: the Fourier multiplier `H^s → H^t` multiplying
+  the `n`-th coefficient by `g n`, for a symbol with `(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s`.
 * `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
   `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem), and
   `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
@@ -109,8 +111,20 @@ theorem norm_weight (s : ℝ) (n : ℤ) : ‖weight s n‖ = weight s n :=
 theorem weight_zero_left (n : ℤ) : weight 0 n = 1 :=
   Real.rpow_zero _
 
+/-- The constant mode has weight `1` in every `H^s`. -/
+@[simp]
+theorem weight_zero_right (s : ℝ) : weight s 0 = 1 := by
+  simp [weight_def]
+
 theorem weight_add (s t : ℝ) (n : ℤ) : weight (s + t) n = weight s n * weight t n :=
   Real.rpow_add (zero_lt_one.trans_le (one_le_one_add_abs n)) s t
+
+theorem weight_add_one (s : ℝ) (n : ℤ) : weight (s + 1) n = weight s n * (1 + |(n : ℝ)|) := by
+  rw [weight_add, weight_def 1, Real.rpow_one]
+
+theorem weight_add_two (s : ℝ) (n : ℤ) :
+    weight (s + 2) n = weight s n * (1 + |(n : ℝ)|) ^ 2 := by
+  rw [weight_add, weight_def 2, Real.rpow_two]
 
 theorem weight_neg (s : ℝ) (n : ℤ) : weight (-s) n = (weight s n)⁻¹ :=
   Real.rpow_neg (zero_le_one.trans (one_le_one_add_abs n)) s
@@ -649,6 +663,49 @@ theorem norm_inclusion_le (h : t ≤ s) (a : CircleSobolev s E) : ‖inclusion h
   simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) (C := 1)
     (by simpa using weight_mul_norm_le_of_le h a)
 
+/-! ### Fourier multipliers -/
+
+section FourierMultiplier
+
+variable {g : ℤ → ℂ} {C : ℝ}
+
+private theorem weight_mul_norm_smul_coeff_le (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) (n : ℤ) :
+    weight t n * ‖g n • a.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖) := by
+  rw [norm_smul, ← mul_assoc, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (hg n) (norm_nonneg _)
+
+/-- The **Fourier multiplier** with symbol `g`, as a bounded operator `H^s → H^t`: it multiplies
+the `n`-th Fourier coefficient by `g n`. It is bounded, with norm at most `C`, as soon as
+`(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s` for every `n`. -/
+def fourierMultiplier (g : ℤ → ℂ) (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) :
+    CircleSobolev s E →L[ℂ] CircleSobolev t E :=
+  LinearMap.mkContinuous
+    { toFun a := ⟨fun n ↦ g n • a.coeff n, memℓp_of_forall_le (weight_mul_norm_smul_coeff_le hg a)⟩
+      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ (a.coeff n) (b.coeff n))
+      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c (a.coeff n)) }
+    C fun a ↦ norm_le_of_forall_le (weight_mul_norm_smul_coeff_le hg a)
+
+@[simp]
+theorem coeff_fourierMultiplier (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) (n : ℤ) :
+    (fourierMultiplier g hg a).coeff n = g n • a.coeff n :=
+  (rfl)
+
+theorem norm_fourierMultiplier_le (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) : ‖fourierMultiplier g hg a‖ ≤ C * ‖a‖ :=
+  norm_le_of_forall_le (weight_mul_norm_smul_coeff_le hg a)
+
+@[simp]
+theorem fourierMultiplier_single (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) (n : ℤ)
+    (x : E) : fourierMultiplier g hg (single n x) = single n (g n • x) :=
+  CircleSobolev.ext (funext fun m ↦ by
+    rcases eq_or_ne m n with rfl | hm
+    · simp
+    · simp [hm])
+
+end FourierMultiplier
+
 section Restrict
 
 variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s')
@@ -711,10 +768,10 @@ variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃
 `P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
 `t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
 def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
-  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+  ContinuousLinearEquiv.ofContinuousLinearMap (restrict h h' P fun a ↦ by simpa using hP a)
     (restrict h' h P.symm fun b ↦ by simpa using hP' b)
-    (fun a ↦ inclusion_injective h (by simp))
-    (fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun a ↦ inclusion_injective h (by simp))
 
 /-- In `H^t'`, `restrictEquiv` is `P`. -/
 @[simp]

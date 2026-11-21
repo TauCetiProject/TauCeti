@@ -214,7 +214,7 @@ theorem deletion_ofMasks_of_isFreeMaskStep {G : List ℕ} {s i : ℕ}
       obtain ⟨j, hjs, hjω⟩ := Finset.not_subset.mp hσω
       have hjτ : (s ||| 2 ^ i).testBit j = true := by
         simp [Nat.testBit_or, (mem_maskFace.mp hjs)]
-      refine ⟨_, Or.inr ⟨j, ⟨j.2, mem_maskFace.mp hjs⟩, rfl⟩, ?_⟩
+      refine ⟨_, Or.inr ⟨j, ⟨j.isLt, mem_maskFace.mp hjs⟩, rfl⟩, ?_⟩
       rw [maskFace_xor_two_pow j hjτ]
       exact fun k hk => Finset.mem_erase.mpr ⟨fun hkj => hjω (hkj ▸ hk), hωτ hk⟩
     · exact ⟨g, Or.inl ⟨hg, hsg⟩, hωg⟩

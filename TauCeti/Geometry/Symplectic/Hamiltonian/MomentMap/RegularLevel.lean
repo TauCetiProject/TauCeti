@@ -53,9 +53,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 variable {ι : Type*} [Fintype ι]
 
 /-- The components of a moment map in a basis of `𝔤` form a differentiable map to `ι → ℝ`. -/
-private theorem mdifferentiableAt_components (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M) :
+theorem mdifferentiableAt_components (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M) :
     MDifferentiableAt I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x :=
   mdifferentiableAt_pi_space.2 fun i ↦ h.mdifferentiableAt (b i) x
+
+/-- The derivative of the components of a moment map in a basis `b` of `𝔤` is the differential
+`dμ_x` read in that basis. -/
+theorem mfderiv_components_apply (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M)
+    (v : TangentSpace I x) (i : ι) :
+    mfderiv I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x v i = h.differential x v (b i) := by
+  have := congrArg (fun L ↦ L v) (mvfderiv_apply (h.mdifferentiableAt_components b x) i)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at this
+  rw [h.differential_apply, this, mvfderiv_apply_eq_mfderiv_apply]
 
 variable [FiniteDimensional ℝ E]
 
@@ -66,15 +75,11 @@ theorem isRegularPoint_iff_isotropy_eq_bot (h : σ.IsMomentMap a μ) (b : Basis 
     (hσx : (σ.bilinFormAt x).Nondegenerate) :
     IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x ↔ a.isotropy x = ⊥ := by
   classical
-  have hd := h.mdifferentiableAt_components b x
   -- The derivative of the components is the differential read in the dual basis.
   have heq : ⇑(mfderiv I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x) =
       ⇑b.dualBasis.equivFun ∘ ⇑(h.differential x) := by
     funext v i
-    have := congrArg (fun L ↦ L v) (mvfderiv_apply hd i)
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at this
-    rw [Function.comp_apply, Basis.dualBasis_equivFun, h.differential_apply, this,
-      mvfderiv_apply_eq_mfderiv_apply]
+    rw [Function.comp_apply, Basis.dualBasis_equivFun, h.mfderiv_components_apply]
   rw [isRegularPoint_iff, heq]
   exact (EquivLike.comp_surjective _ b.dualBasis.equivFun).trans (h.differential_surjective_iff hσx)
 
@@ -89,11 +94,14 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topologic
 with injective derivatives, from a manifold of dimension `dim M - dim 𝔤`. If the action is locally
 free and the cocycle of `μ` vanishes at every point of the image, and `c` is coadjoint-fixed,
 then `g` is a coisotropic map. -/
-theorem isCoisotropicMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMomentMap a μ)
+theorem isCoisotropicMap_of_forall_eq (h : σ.IsMomentMap a μ)
     (hg : ∀ p, μ (g p) = c) (hfree : ∀ p, a.isotropy (g p) = ⊥)
     (hc : ∀ p, σ.momentCocycle a μ (g p) = 0) (hcμ : lieAnnihilator ℝ 𝔤 c = ⊤)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p))
     (hdim : finrank ℝ E' + finrank ℝ 𝔤 = finrank ℝ E) : hσ.IsCoisotropicMap J g := by
+  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
+  · exact hσ.isCoisotropicMap_iff.2 fun p ↦ isEmptyElim p
+  have := a.finiteDimensional_of_isotropy_eq_bot _ (hfree p₀)
   let b := Module.finBasis ℝ 𝔤
   refine hσ.isCoisotropicMap_of_forall_eq (F := fun y i ↦ μ y (b i)) (c := fun i ↦ c (b i))
     (fun p ↦ by simp only [hg]) (fun p ↦ (h.isRegularPoint_iff_isotropy_eq_bot b
@@ -106,11 +114,14 @@ theorem isCoisotropicMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMom
 the level `μ = c` of a moment map, with injective derivatives, where `2 dim 𝔤 = dim M` and
 `dim N = dim 𝔤`. If the action is locally free and the cocycle of `μ` vanishes at every point of the
 image, and `c` is coadjoint-fixed, then `g` is a Lagrangian map. -/
-theorem isLagrangianMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMomentMap a μ)
+theorem isLagrangianMap_of_forall_eq (h : σ.IsMomentMap a μ)
     (hg : ∀ p, μ (g p) = c) (hfree : ∀ p, a.isotropy (g p) = ⊥)
     (hc : ∀ p, σ.momentCocycle a μ (g p) = 0) (hcμ : lieAnnihilator ℝ 𝔤 c = ⊤)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p)) (hdimN : finrank ℝ E' = finrank ℝ 𝔤)
     (hdim : 2 * finrank ℝ 𝔤 = finrank ℝ E) : hσ.IsLagrangianMap J g := by
+  rcases isEmpty_or_nonempty N with _ | ⟨⟨p₀⟩⟩
+  · exact hσ.isLagrangianMap_iff_forall.2 fun p ↦ isEmptyElim p
+  have := a.finiteDimensional_of_isotropy_eq_bot _ (hfree p₀)
   let b := Module.finBasis ℝ 𝔤
   refine hσ.isLagrangianMap_of_forall_eq (F := fun y i ↦ μ y (b i)) (c := fun i ↦ c (b i))
     (fun p ↦ by simp only [hg]) (fun p ↦ (h.isRegularPoint_iff_isotropy_eq_bot b

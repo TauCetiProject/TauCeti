@@ -22,9 +22,9 @@ In particular the definition works for empty families and does not require compl
 of the target space.
 
 We also record the basic invariance and structural properties used to compare Gaussian sums:
-coordinatewise sign-flip invariance of `stdGaussian`, invariance under reindexing, zero-padding,
-and coordinatewise sign changes, subadditivity (the `L²` triangle inequality), comparison along
-bounded additive maps, and the exact value on constant and single-element families.
+coordinatewise sign-flip invariance of `stdGaussian`, invariance under zero-padding,
+subadditivity (the `L²` triangle inequality), comparison along bounded additive maps, and the
+exact value on constant and single-element families.
 
 ## References
 
@@ -119,54 +119,14 @@ theorem stdGaussian_map_units_smul (ε : ι → ℤˣ) :
         (fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i) =
       stdGaussian (EuclideanSpace ℝ ι) := by
   let L : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
-    { toFun g := WithLp.toLp 2 fun i ↦ ε i • g i
-      invFun g := WithLp.toLp 2 fun i ↦ ε i • g i
-      left_inv g := by
-        ext i
-        rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
-      right_inv g := by
-        ext i
-        rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
-      map_add' g h := by
-        ext i
-        simp [smul_add]
-      map_smul' c g := by
-        ext i
-        rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
-      norm_map' g := by
-        simp only [PiLp.norm_eq_of_L2]
-        congr 1
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h] }
-  exact stdGaussian_map L
-
-/-- Flipping the signs of a family does not change its Gaussian second moment. -/
-theorem gaussianSecondMoment_units_smul (ε : ι → ℤˣ) (x : ι → Y) :
-    gaussianSecondMoment (fun i ↦ ε i • x i) = gaussianSecondMoment x := by
-  rw [gaussianSecondMoment_def, gaussianSecondMoment_def]
-  congr 1
-  have hmap := stdGaussian_map_units_smul ε
-  conv_rhs => rw [← hmap, integral_map (by fun_prop) (by fun_prop)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-  dsimp only
-  congr 2
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
-
-/-- Reindexing a finite family along an equivalence preserves its Gaussian second moment. -/
-theorem gaussianSecondMoment_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι → Y) :
-    gaussianSecondMoment (x ∘ e) = gaussianSecondMoment x := by
-  rw [gaussianSecondMoment_def, gaussianSecondMoment_def]
-  congr 1
-  let L : EuclideanSpace ℝ κ ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
-    LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e
-  conv_rhs => rw [← stdGaussian_map L, integral_map (by fun_prop) (by fun_prop)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-  dsimp only
-  congr 2
-  rw [← Equiv.sum_comp e]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simp [L, LinearIsometryEquiv.piLpCongrLeft_apply]
+    LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
+      if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
+  have hL : (L : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
+      fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i := by
+    ext g i
+    simp only [L, LinearIsometryEquiv.piLpCongrRight_apply, WithLp.ofLp_toLp]
+    rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
+  simpa only [hL] using stdGaussian_map L
 
 /-- The Gaussian second moment satisfies the triangle inequality. -/
 theorem gaussianSecondMoment_add_le (x y : ι → Y) :
@@ -248,9 +208,18 @@ theorem gaussianSecondMoment_sumElim_le {κ : Type*} [Fintype κ] (x : ι → Y)
   have hsplit : Sum.elim x y = Sum.elim x (0 : κ → Y) + Sum.elim (0 : ι → Y) y := by
     ext k; cases k <;> simp
   have hright : gaussianSecondMoment (Sum.elim (0 : ι → Y) y) = gaussianSecondMoment y := by
-    have hcomm : Sum.elim (0 : ι → Y) y = Sum.elim y (0 : ι → Y) ∘ Equiv.sumComm ι κ := by
-      ext k; cases k <;> simp
-    rw [hcomm, gaussianSecondMoment_comp_equiv, gaussianSecondMoment_sumElim_zero]
+    let L : EuclideanSpace ℝ (ι ⊕ κ) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (κ ⊕ ι) :=
+      LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.sumComm ι κ)
+    rw [← gaussianSecondMoment_sumElim_zero (ι := κ) (κ := ι) y,
+      gaussianSecondMoment_def, gaussianSecondMoment_def]
+    congr 1
+    conv_rhs => rw [← stdGaussian_map L, integral_map (by fun_prop) (by fun_prop)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+    dsimp only
+    congr 2
+    rw [← Equiv.sum_comp (Equiv.sumComm ι κ)]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    cases k <;> simp [L, LinearIsometryEquiv.piLpCongrLeft_apply]
   rw [hsplit]
   exact (gaussianSecondMoment_add_le _ _).trans_eq
     (by rw [gaussianSecondMoment_sumElim_zero, hright])
