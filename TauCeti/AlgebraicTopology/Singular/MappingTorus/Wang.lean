@@ -373,10 +373,8 @@ theorem wangCokernelShortComplex_shortExact (n : ℕ) [Epi (wangδ φ (ModuleCat
   exact := (ShortComplex.moduleCat_exact_iff_ker_sub_range _).2 fun y hy ↦ by
     obtain ⟨x, rfl⟩ := (range_homologyMap_fibreInclusionChainMap φ n).ge hy
     exact ⟨Submodule.Quotient.mk x, wangCokernelShortComplex_f_mk φ n x⟩
-  mono_f := (ModuleCat.mono_iff_injective _).2 <| (injective_iff_map_eq_zero _).2 fun y hy ↦ by
-    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ y
-    exact (Submodule.Quotient.mk_eq_zero _).2 ((ker_homologyMap_fibreInclusionChainMap φ (n + 1)).le
-      (LinearMap.mem_ker.2 ((wangCokernelShortComplex_f_mk φ n x).symm.trans hy)))
+  mono_f := (ModuleCat.mono_iff_injective _).2 <| LinearMap.ker_eq_bot.1 <|
+    Submodule.ker_liftQ_eq_bot _ _ _ (ker_homologyMap_fibreInclusionChainMap φ (n + 1)).le
   epi_g := by rw [wangCokernelShortComplex_g]; exact ‹Epi (wangδ φ (ModuleCat.of k k) n)›
 
 end ModuleCat

@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 /-!
 # The torsion of singular cohomology
 
-Over a hereditary commutative domain `k`, the universal coefficient sequence
+Over a hereditary commutative ring `k`, the universal coefficient sequence
 
 `0 → Ext¹(Hₙ(X; R), M) → Hⁿ⁺¹(X; R, M) → Hom(Hₙ₊₁(X; R), M) → 0`
 
@@ -53,11 +53,11 @@ universe w
 
 namespace TopCat
 
-variable {k : Type w} [CommRing k] [IsDomain k]
+variable {k : Type w} [CommRing k]
   [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1]
   (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R] [Module.IsTorsionFree k M]
 
-/-- **Torsion classes come from `Ext¹`.** Over a hereditary commutative domain, with a torsion-free
+/-- **Torsion classes come from `Ext¹`.** Over a hereditary commutative ring, with a torsion-free
 coefficient module `M`, every torsion class of `Hⁿ⁺¹(X; R, M)` pairs to zero with
 `Hₙ₊₁(X; R)`, hence lies in the image of `Ext¹(Hₙ(X; R), M)`. -/
 theorem torsion_singularCohomology_le_range_singularExtToCohomology (n : ℕ) :
@@ -71,10 +71,12 @@ theorem torsion_singularCohomology_le_range_singularExtToCohomology (n : ℕ) :
     (congrArg (X.singularKronecker (R := R) (M := M) k (n + 1)) hc)
   simp only [Submonoid.smul_def, map_smul, map_zero, ModuleCat.hom_smul, LinearMap.smul_apply,
     ModuleCat.hom_zero, LinearMap.zero_apply] at hx
-  simpa using (smul_eq_zero.mp hx).resolve_left (nonZeroDivisors.coe_ne_zero a)
+  -- `a` is a non-zero-divisor, so it acts injectively on the torsion-free module `M`.
+  simpa using Module.IsTorsionFree.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.2 a.2)
+    (hx.trans (smul_zero _).symm)
 
 variable {X R M} in
-/-- **The torsion of singular cohomology.** Over a hereditary commutative domain, with a
+/-- **The torsion of singular cohomology.** Over a hereditary commutative ring, with a
 torsion-free coefficient module `M`, if `Ext¹(Hₙ(X; R), M)` is a torsion module then the torsion
 submodule of `Hⁿ⁺¹(X; R, M)` is the image of `Ext¹(Hₙ(X; R), M)` under the universal coefficient
 sequence. -/

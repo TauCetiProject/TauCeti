@@ -31,7 +31,7 @@ For an endomorphism `f` of a finite free module over a principal ideal domain wi
 `det f ≠ 0`, the transpose `f.dualMap` has the same determinant (`LinearMap.det_dualMap`), so
 `Ext¹(P ⧸ range f, R)` has the cardinality of `R ⧸ (det f)`, the same as the cokernel
 `P ⧸ range f` itself (`LinearMap.card_ext_one_quotient_range_eq_card_quotient_span_det`,
-`LinearMap.card_ext_one_quotient_range_eq_card_quotient_range`). It is a torsion module, killed by
+`LinearMap.card_quotient_range_eq_card_quotient_span_det`). It is a torsion module, killed by
 `det f`, which by Cramer's rule kills the cokernel `P ⧸ range f` and hence every
 `Extⁿ(P ⧸ range f, M)` (`LinearMap.det_smul_ext_quotient_range_eq_zero`,
 `LinearMap.isTorsion_ext_quotient_range`). Over `ℤ` the order of the finite group
@@ -144,15 +144,6 @@ theorem card_ext_one_quotient_range_eq_card_quotient_span_det [IsPrincipalIdealR
   rw [Nat.card_congr (extOneQuotientRangeEquiv
       (injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hf))).toEquiv,
     card_quotient_range_eq_card_quotient_span_det (by rwa [det_dualMap]), det_dualMap]
-
-/-- For an endomorphism `f` of a finite free module over a principal ideal domain with
-`det f ≠ 0`, `Ext¹(P ⧸ range f, R)` has the same `Nat.card` as the cokernel `P ⧸ range f`. -/
-theorem card_ext_one_quotient_range_eq_card_quotient_range [IsPrincipalIdealRing R]
-    (hf : f.det ≠ 0) :
-    Nat.card (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) =
-      Nat.card (P ⧸ range f) := by
-  rw [card_ext_one_quotient_range_eq_card_quotient_span_det hf,
-    card_quotient_range_eq_card_quotient_span_det hf]
 
 omit [IsDomain R] in
 /-- For an endomorphism `f` of a finite free module, `det f` kills `Extⁿ(P ⧸ range f, M)` for every
