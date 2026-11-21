@@ -1,0 +1,372 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
+
+/-!
+# The diagonal Spin lift `SO(Q) →* Spin(Q ⊕ Q)`
+
+Let `Q` be a finite-dimensional nondegenerate quadratic form over a field `K` with `2` invertible,
+and suppose the Spin projection `Spin(Q) →* SO(Q)` is surjective (for instance, `Q` is
+positive-definite over `ℝ`, or `K` is quadratically closed). Although the double cover
+`Spin(Q) →* SO(Q)` generally admits no section, the doubled orthogonal sum `Q ⊕ Q` canonically
+receives the diagonal homomorphism
+
+`CliffordAlgebra.spinDiagonalLift Q hQ hsurj : SO(Q) →* Spin(Q ⊕ Q)`
+
+sending `g ∈ SO(Q)` to `spinGroupProd Q Q (x, x)` for any preimage `x ∈ Spin(Q)` of `g`. This is
+independent of the choice of `x`, because the kernel of `Spin(Q) →* SO(Q)` is contained in
+`{1, -1}` and `spinGroupProd Q Q (-1, -1) = 1`.
+
+Composing with the Spin projection of `Q ⊕ Q` recovers the diagonal embedding `g ↦ (g, g)` of
+`SO(Q)` into `SO(Q ⊕ Q)`, so `spinDiagonalLift` is injective and acts diagonally on `V × V`. It
+is natural under isometric equivalences `e : Q₁ ≃qᵢ Q₂`, invariant under swapping the two summands
+of `Q ⊕ Q`, trivial when `dim V ≤ 1`, and compatible with orthogonal sums via the middle-block
+exchange `QuadraticMap.IsometryEquiv.prodProdProdComm`: since even Clifford elements on orthogonal
+summands commute, transporting `spinDiagonalLift (Q₁ ⊕ Q₂)` along `prodProdProdComm` gives the
+`spinGroupProd` of `spinDiagonalLift Q₁` and `spinDiagonalLift Q₂` with no sign.
+
+Over `ℝ`, the diagonal lift of the rotation induced by a circle element `spinCircle Q u w` (or
+`spinRotation Q u w t`) is the commuting product of the two circle elements in the first and second
+summands of `Q ⊕ Q`. At the half-turn `z = -1` (angle `t = π` in `Spin`, corresponding to a full
+`2π` rotation in `SO`), both factors equal `-1`, so their product closes to `1`.
+
+## Main definitions
+
+* `CliffordAlgebra.spinDiagonalLift`: the canonical homomorphism `SO(Q) →* Spin(Q ⊕ Q)` lifting the
+  diagonal embedding `g ↦ (g, g)`.
+
+## Main results
+
+* `QuadraticMap.Isometry.spinGroupMap_spinRotation`: quadratic isometries carry `spinRotation` to
+  `spinRotation`.
+* `CliffordAlgebra.spinGroupEquiv_prodProdProdComm_spinGroupProd`: coherence of `spinGroupProd`
+  under `QuadraticMap.IsometryEquiv.prodProdProdComm`.
+* `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal`: evaluating `spinDiagonalLift` on the
+  projection of `x ∈ Spin(Q)` gives `spinGroupProd Q Q (x, x)`.
+* `CliffordAlgebra.spinToSpecialOrthogonal_spinDiagonalLift`,
+  `CliffordAlgebra.spinVectorAction_spinDiagonalLift`, and
+  `CliffordAlgebra.spinDiagonalLift_injective`: `spinDiagonalLift` lifts `g ↦ (g, g)`, acts
+  diagonally on `V × V`, and is injective.
+* `CliffordAlgebra.spinDiagonalLift_eq_one_of_finrank_le_one`: when `dim V ≤ 1`, the diagonal lift
+  is constantly `1`.
+* `CliffordAlgebra.spinGroupEquiv_prod_spinDiagonalLift`,
+  `CliffordAlgebra.spinGroupEquiv_prodComm_spinDiagonalLift`, and
+  `CliffordAlgebra.spinGroupEquiv_prodProdProdComm_spinDiagonalLift`: naturality, swap invariance,
+  and orthogonal-sum coherence of `spinDiagonalLift`.
+* `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal_spinCircle` and
+  `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal_spinRotation`: explicit plane-rotation
+  formulas over `ℝ`, closing to `1` at `z = -1` / `t = π`.
+
+## References
+
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §§2 and 6.
+* C. Chevalley, *The Algebraic Theory of Spinors*, Columbia (1954), Chapter II.
+-/
+
+public section
+
+open QuadraticMap
+
+namespace QuadraticMap.Isometry
+
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
+  {Q : QuadraticForm ℝ V} {P : QuadraticForm ℝ W} {x y : V}
+
+/-- **Quadratic isometries carry Spin rotations to Spin rotations**: the Spin-group map induced by
+`f` sends `spinRotation Q x y` to `spinRotation P (f x) (f y)`. -/
+theorem spinGroupMap_spinRotation (f : Q →qᵢ P) (hx : Q x = 1) (hy : Q y = 1)
+    (hxy : Q.IsOrtho x y) (hx' : P (f x) = 1) (hy' : P (f y) = 1)
+    (hxy' : P.IsOrtho (f x) (f y)) (t : ℝ) :
+    f.spinGroupMap (CliffordAlgebra.spinRotation Q x y hx hy hxy t) =
+      CliffordAlgebra.spinRotation P (f x) (f y) hx' hy' hxy' t := by
+  apply Subtype.ext
+  simp
+
+end QuadraticMap.Isometry
+
+namespace CliffordAlgebra
+
+section ProdProdProdComm
+
+variable {R M₁ M₂ M₃ M₄ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  [AddCommGroup M₃] [Module R M₃] [AddCommGroup M₄] [Module R M₄]
+  (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+  (Q₃ : QuadraticForm R M₃) (Q₄ : QuadraticForm R M₄)
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Middle-block exchange coherence for `spinGroupProd`**: transporting the product of two
+`spinGroupProd` elements along `IsometryEquiv.prodProdProdComm` swaps the middle two Spin factors,
+with no sign because Spin elements have even Clifford parity. -/
+theorem spinGroupEquiv_prodProdProdComm_spinGroupProd
+    (x₁ : spinGroup Q₁) (x₂ : spinGroup Q₂) (x₃ : spinGroup Q₃) (x₄ : spinGroup Q₄) :
+    (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).spinGroupEquiv
+        (spinGroupProd (Q₁.prod Q₂) (Q₃.prod Q₄)
+          (spinGroupProd Q₁ Q₂ (x₁, x₂), spinGroupProd Q₃ Q₄ (x₃, x₄))) =
+      spinGroupProd (Q₁.prod Q₃) (Q₂.prod Q₄)
+        (spinGroupProd Q₁ Q₃ (x₁, x₃), spinGroupProd Q₂ Q₄ (x₂, x₄)) := by
+  let e := (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry
+  let i₁ := (QuadraticMap.Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
+    (QuadraticMap.Isometry.inl Q₁ Q₃)
+  let i₂ := (QuadraticMap.Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
+    (QuadraticMap.Isometry.inl Q₂ Q₄)
+  let i₃ := (QuadraticMap.Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
+    (QuadraticMap.Isometry.inr Q₁ Q₃)
+  let i₄ := (QuadraticMap.Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp
+    (QuadraticMap.Isometry.inr Q₂ Q₄)
+  have h₁ : e.comp ((QuadraticMap.Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
+      (QuadraticMap.Isometry.inl Q₁ Q₂)) = i₁ := QuadraticMap.Isometry.ext fun _ ↦ rfl
+  have h₂ : e.comp ((QuadraticMap.Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
+      (QuadraticMap.Isometry.inr Q₁ Q₂)) = i₂ := QuadraticMap.Isometry.ext fun _ ↦ rfl
+  have h₃ : e.comp ((QuadraticMap.Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
+      (QuadraticMap.Isometry.inl Q₃ Q₄)) = i₃ := QuadraticMap.Isometry.ext fun _ ↦ rfl
+  have h₄ : e.comp ((QuadraticMap.Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp
+      (QuadraticMap.Isometry.inr Q₃ Q₄)) = i₄ := QuadraticMap.Isometry.ext fun _ ↦ rfl
+  have hcomm : Commute (i₂.spinGroupMap x₂) (i₃.spinGroupMap x₃) := by
+    simpa only [i₂, i₃, ← QuadraticMap.Isometry.spinGroupMap_spinGroupMap] using
+      (commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₃) (Q₂.prod Q₄)
+        ((QuadraticMap.Isometry.inr Q₁ Q₃).spinGroupMap x₃)
+        ((QuadraticMap.Isometry.inl Q₂ Q₄).spinGroupMap x₂)).symm
+  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
+    QuadraticMap.Isometry.spinGroupMap_spinGroupMap, show (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃
+      Q₄).toIsometry = e from rfl, h₁, h₂, h₃, h₄]
+  change i₁.spinGroupMap x₁ * i₂.spinGroupMap x₂ * (i₃.spinGroupMap x₃ * i₄.spinGroupMap x₄) =
+    i₁.spinGroupMap x₁ * i₃.spinGroupMap x₃ * (i₂.spinGroupMap x₂ * i₄.spinGroupMap x₄)
+  rw [← mul_assoc, mul_assoc (i₁.spinGroupMap x₁), hcomm.eq, ← mul_assoc, mul_assoc]
+
+end ProdProdProdComm
+
+section DiagonalLift
+
+open TauCeti.QuadraticMap
+
+noncomputable section
+
+variable {K V : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V]
+
+/-- The diagonal map `x ↦ spinGroupProd Q Q (x, x)` on `Spin(Q)`, which kills the kernel of the
+Spin projection `Spin(Q) →* SO(Q)`. -/
+private def spinDiag (Q : QuadraticForm K V) : spinGroup Q →* spinGroup (Q.prod Q) :=
+  (spinGroupProd Q Q).comp (MonoidHom.prod (MonoidHom.id (spinGroup Q)) (MonoidHom.id _))
+
+private theorem ker_spinToSpecialOrthogonal_le_ker_spinDiag
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    (spinToSpecialOrthogonal Q).ker ≤ (spinDiag Q).ker := by
+  intro x hx
+  rw [MonoidHom.mem_ker]
+  rcases subsingleton_or_nontrivial V with hsub | hnt
+  · rw [ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton Q, Subgroup.mem_bot] at hx
+    rw [hx, map_one]
+  · rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ x).mp hx with rfl | rfl
+    · exact map_one _
+    · exact spinGroupProd_negOne_negOne hQ.ne_zero hQ.ne_zero
+
+/-- **The diagonal Spin lift `SO(Q) →* Spin(Q ⊕ Q)`.**
+
+For a finite-dimensional nondegenerate quadratic form `Q` over a field with `2` invertible whose
+Spin projection `Spin(Q) →* SO(Q)` is surjective, sending `g ∈ SO(Q)` to
+`spinGroupProd Q Q (x, x)` for any Spin lift `x` of `g` is independent of the sign choice `±x` and
+defines a group homomorphism lifting the diagonal embedding `g ↦ (g, g)`. -/
+def spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) :
+    specialOrthogonalGroup Q →* spinGroup (Q.prod Q) :=
+  (QuotientGroup.lift (spinToSpecialOrthogonal Q).ker (spinDiag Q)
+    (ker_spinToSpecialOrthogonal_le_ker_spinDiag Q hQ)).comp
+      (QuotientGroup.quotientKerEquivOfSurjective
+        (spinToSpecialOrthogonal Q) hsurj).symm.toMonoidHom
+
+/-- Evaluating `spinDiagonalLift` on the special-orthogonal projection of `x ∈ Spin(Q)` yields the
+diagonal product `spinGroupProd Q Q (x, x)`. -/
+@[simp]
+theorem spinDiagonalLift_spinToSpecialOrthogonal (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) (x : spinGroup Q) :
+    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q x) = spinGroupProd Q Q (x, x) := by
+  have hsymm :
+      (QuotientGroup.quotientKerEquivOfSurjective (spinToSpecialOrthogonal Q) hsurj).symm
+        (spinToSpecialOrthogonal Q x) = (x : spinGroup Q ⧸ (spinToSpecialOrthogonal Q).ker) :=
+    (QuotientGroup.quotientKerEquivOfSurjective (spinToSpecialOrthogonal Q) hsurj).symm_apply_apply
+      (x : spinGroup Q ⧸ (spinToSpecialOrthogonal Q).ker)
+  rw [spinDiagonalLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsymm,
+    QuotientGroup.lift_mk]
+  rfl
+
+/-- Evaluating `spinDiagonalLift` on the projection of `x ∈ Spin(Q)` multiplies the images of `x`
+under the two orthogonal summand inclusions. -/
+theorem spinDiagonalLift_spinToSpecialOrthogonal_eq_mul (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hsurj : Function.Surjective (spinToSpecialOrthogonal Q))
+    (x : spinGroup Q) :
+    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q x) =
+      (QuadraticMap.Isometry.inl Q Q).spinGroupMap x *
+        (QuadraticMap.Isometry.inr Q Q).spinGroupMap x := by
+  rw [spinDiagonalLift_spinToSpecialOrthogonal, spinGroupProd_apply]
+
+/-- **The projection of `spinDiagonalLift` to `SO(Q ⊕ Q)`** is the diagonal embedding
+`g ↦ (g, g)`. -/
+@[simp]
+theorem spinToSpecialOrthogonal_spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) (g : specialOrthogonalGroup Q) :
+    spinToSpecialOrthogonal (Q.prod Q) (spinDiagonalLift Q hQ hsurj g) =
+      specialOrthogonalGroupProd Q Q (g, g) := by
+  obtain ⟨x, rfl⟩ := hsurj g
+  rw [spinDiagonalLift_spinToSpecialOrthogonal, spinToSpecialOrthogonal_spinGroupProd]
+
+/-- **The projection of `spinDiagonalLift` to `O(Q ⊕ Q)`** is the diagonal embedding
+`g ↦ (g, g)`. -/
+@[simp]
+theorem spinToOrthogonal_spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) (g : specialOrthogonalGroup Q) :
+    spinToOrthogonal (Q.prod Q) (spinDiagonalLift Q hQ hsurj g) =
+      orthogonalGroupProd Q Q
+        (specialOrthogonalToOrthogonal Q g, specialOrthogonalToOrthogonal Q g) := by
+  rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
+    spinToSpecialOrthogonal_spinDiagonalLift,
+    specialOrthogonalToOrthogonal_specialOrthogonalGroupProd]
+
+/-- **`spinDiagonalLift` acts diagonally on `V × V`**: `spinDiagonalLift g` sends `(u, v)` to
+`(g u, g v)`. -/
+@[simp]
+theorem spinVectorAction_spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) (g : specialOrthogonalGroup Q)
+    (u v : V) :
+    spinVectorAction (Q.prod Q) (spinDiagonalLift Q hQ hsurj g) (u, v) =
+      ((g : V ≃ₗ[K] V) u, (g : V ≃ₗ[K] V) v) := by
+  obtain ⟨x, rfl⟩ := hsurj g
+  rw [spinDiagonalLift_spinToSpecialOrthogonal, spinVectorAction_spinGroupProd,
+    coe_spinToSpecialOrthogonal_apply, coe_spinToSpecialOrthogonal_apply]
+
+/-- **The diagonal Spin lift `SO(Q) →* Spin(Q ⊕ Q)` is injective.** -/
+theorem spinDiagonalLift_injective (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) :
+    Function.Injective (spinDiagonalLift Q hQ hsurj) := by
+  intro g₁ g₂ h
+  have hSO := congrArg (spinToSpecialOrthogonal (Q.prod Q)) h
+  rw [spinToSpecialOrthogonal_spinDiagonalLift, spinToSpecialOrthogonal_spinDiagonalLift] at hSO
+  exact congrArg Prod.fst (specialOrthogonalGroupProd_injective Q Q hSO)
+
+/-- When `dim V ≤ 1`, `SO(Q)` is trivial and `spinDiagonalLift` is constantly `1`. -/
+theorem spinDiagonalLift_eq_one_of_finrank_le_one (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) (hV : Module.finrank K V ≤ 1)
+    (g : specialOrthogonalGroup Q) :
+    spinDiagonalLift Q hQ hsurj g = 1 := by
+  have hsub : Subsingleton (specialOrthogonalGroup Q) := by
+    rw [QuadraticMap.specialOrthogonalGroup_eq_bot_of_finrank_le_one Q hV]
+    infer_instance
+  rw [Subsingleton.elim g 1, map_one]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **`spinDiagonalLift` is natural under isometric equivalences.** -/
+theorem spinGroupEquiv_prod_spinDiagonalLift {W : Type*} [AddCommGroup W] [Module K W]
+    [FiniteDimensional K W] {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K W}
+    (hQ₁ : Q₁.Nondegenerate) (hsurj₁ : Function.Surjective (spinToSpecialOrthogonal Q₁))
+    (hQ₂ : Q₂.Nondegenerate) (hsurj₂ : Function.Surjective (spinToSpecialOrthogonal Q₂))
+    (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₁) :
+    (e.prod e).spinGroupEquiv (spinDiagonalLift Q₁ hQ₁ hsurj₁ g) =
+      spinDiagonalLift Q₂ hQ₂ hsurj₂ (e.specialOrthogonalGroupCongr g) := by
+  obtain ⟨x, rfl⟩ := hsurj₁ g
+  rw [spinDiagonalLift_spinToSpecialOrthogonal, spinGroupEquiv_prod_spinGroupProd,
+    IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    spinDiagonalLift_spinToSpecialOrthogonal]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Swapping the two copies of `Q` fixes the diagonal Spin lift.** -/
+theorem spinGroupEquiv_prodComm_spinDiagonalLift (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsurj : Function.Surjective (spinToSpecialOrthogonal Q)) (g : specialOrthogonalGroup Q) :
+    (IsometryEquiv.prodComm Q Q).spinGroupEquiv (spinDiagonalLift Q hQ hsurj g) =
+      spinDiagonalLift Q hQ hsurj g := by
+  obtain ⟨x, rfl⟩ := hsurj g
+  rw [spinDiagonalLift_spinToSpecialOrthogonal, spinGroupEquiv_prodComm_spinGroupProd,
+    Prod.swap_prod_mk]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Orthogonal-sum coherence for `spinDiagonalLift`**: transporting the diagonal lift of a block
+sum `(g₁, g₂) ∈ SO(Q₁) × SO(Q₂)` along the middle-block exchange `IsometryEquiv.prodProdProdComm`
+recovers the `spinGroupProd` of the diagonal lifts of `g₁` and `g₂`. -/
+theorem spinGroupEquiv_prodProdProdComm_spinDiagonalLift {W : Type*} [AddCommGroup W] [Module K W]
+    [FiniteDimensional K W] {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K W}
+    (hQ₁ : Q₁.Nondegenerate) (hsurj₁ : Function.Surjective (spinToSpecialOrthogonal Q₁))
+    (hQ₂ : Q₂.Nondegenerate) (hsurj₂ : Function.Surjective (spinToSpecialOrthogonal Q₂))
+    (hsurj₁₂ : Function.Surjective (spinToSpecialOrthogonal (Q₁.prod Q₂)))
+    (g₁ : specialOrthogonalGroup Q₁) (g₂ : specialOrthogonalGroup Q₂) :
+    (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₁ Q₂).spinGroupEquiv
+        (spinDiagonalLift (Q₁.prod Q₂) (hQ₁.prod hQ₂) hsurj₁₂
+          (specialOrthogonalGroupProd Q₁ Q₂ (g₁, g₂))) =
+      spinGroupProd (Q₁.prod Q₁) (Q₂.prod Q₂)
+        (spinDiagonalLift Q₁ hQ₁ hsurj₁ g₁, spinDiagonalLift Q₂ hQ₂ hsurj₂ g₂) := by
+  obtain ⟨x₁, rfl⟩ := hsurj₁ g₁
+  obtain ⟨x₂, rfl⟩ := hsurj₂ g₂
+  rw [← spinToSpecialOrthogonal_spinGroupProd (x := (x₁, x₂)),
+    spinDiagonalLift_spinToSpecialOrthogonal, spinDiagonalLift_spinToSpecialOrthogonal,
+    spinDiagonalLift_spinToSpecialOrthogonal, spinGroupEquiv_prodProdProdComm_spinGroupProd]
+
+end
+
+end DiagonalLift
+
+section RealRotation
+
+open TauCeti.QuadraticMap
+
+noncomputable section
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate)
+  (hsurj : Function.Surjective (spinToSpecialOrthogonal Q))
+
+/-- **Circle-subgroup formula for `spinDiagonalLift`**: the diagonal lift of the rotation induced
+by `spinCircle Q u w z` is the commuting product of the two circle elements in the first and second
+summands of `Q ⊕ Q`. -/
+theorem spinDiagonalLift_spinToSpecialOrthogonal_spinCircle {u w : V}
+    (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) (z : Circle) :
+    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q (spinCircle Q u w huw h z)) =
+      spinCircle (Q.prod Q) (u, 0) (w, 0) (by simpa [QuadraticMap.isOrtho_def] using huw)
+          (by simpa using h) z *
+        spinCircle (Q.prod Q) (0, u) (0, w) (by simpa [QuadraticMap.isOrtho_def] using huw)
+          (by simpa using h) z := by
+  rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
+    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinCircle huw h _ _,
+    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinCircle huw h _ _]
+  rfl
+
+/-- At `z = -1`, the circle-subgroup rotation projects to the identity in `SO(Q)` and its diagonal
+lift closes to `1` in `Spin(Q ⊕ Q)`. -/
+theorem spinDiagonalLift_spinToSpecialOrthogonal_spinCircle_neg_one {u w : V}
+    (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
+    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q (spinCircle Q u w huw h (-1))) = 1 := by
+  rw [spinCircle_neg_one, spinGroup.spinToSpecialOrthogonal_negOne, map_one]
+
+/-- **Plane-rotation formula for `spinDiagonalLift`**: the diagonal lift of the rotation induced
+by `spinRotation Q u w t` is the commuting product of the two `spinRotation` elements in the first
+and second summands of `Q ⊕ Q`. -/
+theorem spinDiagonalLift_spinToSpecialOrthogonal_spinRotation {u w : V}
+    (hu : Q u = 1) (hw : Q w = 1) (huw : Q.IsOrtho u w) (t : ℝ) :
+    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q (spinRotation Q u w hu hw huw t)) =
+      spinRotation (Q.prod Q) (u, 0) (w, 0) (by simpa using hu) (by simpa using hw)
+          (by simpa [QuadraticMap.isOrtho_def] using huw) t *
+        spinRotation (Q.prod Q) (0, u) (0, w) (by simpa using hu) (by simpa using hw)
+          (by simpa [QuadraticMap.isOrtho_def] using huw) t := by
+  rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
+    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinRotation hu hw huw _ _ _ t,
+    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinRotation hu hw huw _ _ _ t]
+  rfl
+
+/-- At Spin angle `π` (a full `2π` rotation in `SO(Q)`), each single-summand rotation equals `-1`,
+and the diagonal lift closes to `1` in `Spin(Q ⊕ Q)`. -/
+theorem spinDiagonalLift_spinToSpecialOrthogonal_spinRotation_pi {u w : V}
+    (hu : Q u = 1) (hw : Q w = 1) (huw : Q.IsOrtho u w) :
+    spinDiagonalLift Q hQ hsurj
+        (spinToSpecialOrthogonal Q (spinRotation Q u w hu hw huw Real.pi)) = 1 := by
+  rw [spinRotation_pi, spinGroup.spinToSpecialOrthogonal_negOne, map_one]
+
+end
+
+end RealRotation
+
+end CliffordAlgebra
