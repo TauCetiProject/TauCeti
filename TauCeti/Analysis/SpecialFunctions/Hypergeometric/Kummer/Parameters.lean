@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 
 /-!
 # The regularized Kummer function as a function of its parameters
@@ -66,17 +67,14 @@ theorem norm_regularizedHGFunCoeff_singleton_mul_pow_le {a b z : ℂ} {A R : ℝ
     ‖regularizedHGFunCoeff {a} {b} (n + N) * z ^ (n + N)‖ ≤
       ‖(Gamma (b + N))⁻¹‖ *
         ‖regularizedHGFunCoeff {(A : ℂ)} {1 - (N : ℂ)} (n + N) * (R : ℂ) ^ (n + N)‖ := by
-  have hA : 0 ≤ A := (norm_nonneg a).trans ha
   have hR : 0 ≤ R := (norm_nonneg z).trans hz
+  -- The Pochhammer bound `‖(a)ₘ‖ ≤ (A)ₘ`, with `(A)ₘ` evaluated in `ℂ` as the cast of a real.
   have hpoch (m : ℕ) : ‖(ascPochhammer ℂ m).eval a‖ ≤ ‖(ascPochhammer ℂ m).eval (A : ℂ)‖ := by
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, norm_mul, norm_mul]
-      have hlin : ‖a + m‖ ≤ ‖(A : ℂ) + m‖ := by
-        rw [← ofReal_natCast, ← ofReal_add, norm_real, Real.norm_of_nonneg (by positivity)]
-        exact (norm_add_le _ _).trans (by simpa using ha)
-      exact mul_le_mul ih hlin (norm_nonneg _) (norm_nonneg _)
+    have h := TauCeti.norm_ascPochhammer_eval_le_of_norm_le m ha
+    have hcast : (ascPochhammer ℂ m).eval (A : ℂ) = (((ascPochhammer ℝ m).eval A : ℝ) : ℂ) := by
+      rw [← ascPochhammer_map ofRealHom, ← ofRealHom_eq_coe, Polynomial.eval_map_apply,
+        ofRealHom_eq_coe]
+    rwa [hcast, norm_real, Real.norm_of_nonneg ((norm_nonneg _).trans h)]
   have hshift : 1 - (N : ℂ) + ((n + N : ℕ) : ℂ) = n + 1 := by push_cast; ring
   have hΓ : Gamma (1 - (N : ℂ) + ((n + N : ℕ) : ℂ)) = n ! := by
     rw [hshift, Gamma_nat_eq_factorial]
