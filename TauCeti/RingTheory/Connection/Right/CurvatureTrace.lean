@@ -163,11 +163,19 @@ theorem rangeEndExtend_mul_proj (hp : IsIdempotentElem p)
   simp [LinearMap.IsIdempotentElem.rangeRestrict_apply_self hp]
 
 /-- For an idempotent `p`, the extension by zero of an endomorphism of the range of `p` takes
+values in the range of `p`, so `p` fixes its values. -/
+theorem apply_rangeEndExtend (hp : IsIdempotentElem p)
+    (S : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap.range p) (x : ι → A) :
+    p (rangeEndExtend p S x) = rangeEndExtend p S x := by
+  rw [rangeEndExtend_apply]
+  exact (LinearMap.IsIdempotentElem.mem_range_iff hp).mp (S _).property
+
+/-- For an idempotent `p`, the extension by zero of an endomorphism of the range of `p` takes
 values in the range of `p`. -/
 theorem proj_mul_rangeEndExtend (hp : IsIdempotentElem p)
     (S : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap.range p) :
     p * rangeEndExtend p S = rangeEndExtend p S :=
-  LinearMap.ext fun _ ↦ (LinearMap.IsIdempotentElem.mem_range_iff hp).mp (S _).property
+  LinearMap.ext fun x ↦ by rw [mul_apply_eq_comp, apply_rangeEndExtend hp]
 
 /-- The extension by zero of the derivative of `S` along the projection of the coordinate
 connection is `p [D, T] p`, with `T` the extension by zero of `S`. -/
@@ -175,13 +183,13 @@ theorem rangeEndExtend_derivativeEnd_project_coordinate (hp : IsIdempotentElem p
     (D : derivationLieAlgebra k A) (S : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap.range p) :
     rangeEndExtend p (derivativeEnd (project (coordinate D ι) p hp) S) =
       p * derivativeEnd (coordinate D ι) (rangeEndExtend p S) * p := by
-  have hS (y : ι → A) : p (S (p.rangeRestrict y)) = S (p.rangeRestrict y) :=
-    (LinearMap.IsIdempotentElem.mem_range_iff hp).mp (S _).property
   refine LinearMap.ext fun x ↦ ?_
   have hg : project (coordinate D ι) p hp (p.rangeRestrict x) =
       p.rangeRestrict (coordinate D ι (p x)) :=
     Subtype.ext (coe_project_apply _ _ _ _)
-  simp [hS, hg, LinearMap.IsIdempotentElem.rangeRestrict_apply_self hp, map_sub]
+  rw [rangeEndExtend_apply]
+  simp only [mul_apply_eq_comp, derivativeEnd_apply, map_sub, apply_rangeEndExtend hp]
+  simp [hg, LinearMap.IsIdempotentElem.rangeRestrict_apply_self hp]
 
 variable [Fintype ι] [DecidableEq ι] (p)
 
@@ -232,9 +240,13 @@ theorem rangeEndTrace_derivativeEnd_eq_zero (hτ : ∀ x y, τ (x * y) = τ (y *
     rw [mul_assoc, piEndTrace_mul_comm hτ, mul_assoc, hp.eq]
   have h₂ : derivativeEnd (coordinate D ι) T * p = derivativeEnd (coordinate D ι) T - T * d := by
     rw [eq_sub_iff_add_eq, ← derivativeEnd_mul, hTp]
-  have h₃ : piEndTrace τ (T * d) = 0 := by
-    rw [← hpT, ← hTp, mul_assoc p, piEndTrace_mul_comm hτ p, mul_assoc, mul_assoc, hpdp,
-      mul_zero, map_zero]
+  have h₃ : piEndTrace τ (T * d) = 0 :=
+    calc piEndTrace τ (T * d) = piEndTrace τ (p * (T * p * d)) := by
+          rw [hTp, ← mul_assoc, hpT]
+      _ = piEndTrace τ (T * (p * (d * p))) := by
+          rw [piEndTrace_mul_comm hτ p]
+          simp only [mul_assoc]
+      _ = 0 := by rw [hpdp, mul_zero, map_zero]
   rw [h₁, h₂, map_sub, piEndTrace_derivativeEnd_coordinate_eq_zero hD, h₃, sub_zero]
 
 variable {D₁ D₂ : derivationLieAlgebra k A}
@@ -249,10 +261,11 @@ theorem rangeEndTrace_curvature_eq (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (c₁ c₁' : RightConnection (E := LinearMap.range p) D₁)
     (c₂ c₂' : RightConnection (E := LinearMap.range p) D₂) :
     rangeEndTrace τ p (curvature c₁ c₂ hD) = rangeEndTrace τ p (curvature c₁' c₂' hD) := by
-  rw [curvature_eq_curvature_add c₁ c₁' c₂ c₂', map_add, map_sub (rangeEndTrace τ p),
-    map_add, map_sub (rangeEndTrace τ p),
-    rangeEndTrace_derivativeEnd_eq_zero hτ hp hD₁, rangeEndTrace_derivativeEnd_eq_zero hτ hp hD₂,
-    rangeEndTrace_mul_comm hτ hp]
+  rw [curvature_eq_curvature_add c₁ c₁' c₂ c₂']
+  -- `simp` only unifies the subtraction coming from `curvature_eq_curvature_add` with `map_sub`
+  -- once the map is given explicitly.
+  simp only [map_add, map_sub (rangeEndTrace τ p), rangeEndTrace_derivativeEnd_eq_zero hτ hp hD₁,
+    rangeEndTrace_derivativeEnd_eq_zero hτ hp hD₂, rangeEndTrace_mul_comm hτ hp]
   abel
 
 /-- The trace of the curvature of the projected coordinate connections on the range of an

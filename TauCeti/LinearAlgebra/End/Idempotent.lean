@@ -72,11 +72,13 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {p : M →ₗ
 theorem rangeRestrict_coe (hp : IsIdempotentElem p) (y : LinearMap.range p) :
     p.rangeRestrict y = y := by
   obtain ⟨_, z, rfl⟩ := y
-  exact Subtype.ext congr($hp z)
+  ext
+  rw [LinearMap.codRestrict_apply, ← mul_apply_eq_comp, hp.eq]
 
 /-- An idempotent `p` corestricted to its range does not change when precomposed with `p`. -/
 theorem rangeRestrict_apply_self (hp : IsIdempotentElem p) (y : M) :
-    p.rangeRestrict (p y) = p.rangeRestrict y :=
-  Subtype.ext congr($hp y)
+    p.rangeRestrict (p y) = p.rangeRestrict y := by
+  ext
+  rw [LinearMap.codRestrict_apply, LinearMap.codRestrict_apply, ← mul_apply_eq_comp, hp.eq]
 
 end LinearMap.IsIdempotentElem

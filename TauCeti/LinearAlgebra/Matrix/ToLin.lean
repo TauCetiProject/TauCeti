@@ -290,6 +290,7 @@ variable {R S A l m n : Type*} [Semiring R] [Semiring S] [NonUnitalSemiring A] [
 
 /-- `Matrix.mulVecBilin` is multiplicative: over a possibly noncommutative semiring, the action
 on column vectors of a product of matrices is the composite of their actions. -/
+@[simp]
 theorem mulVecBilin_mul [Fintype m] [Fintype n] (M : Matrix l m A) (N : Matrix m n A) :
     mulVecBilin R S (M * N) = mulVecBilin R S M ∘ₗ mulVecBilin R S N :=
   LinearMap.ext fun _ ↦ (mulVec_mulVec _ _ _).symm
