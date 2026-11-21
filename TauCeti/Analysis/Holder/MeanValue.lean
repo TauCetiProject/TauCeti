@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Normed.Affine.Convex
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -33,6 +34,9 @@ functions are the constants, which is why Hölder exponents are taken in `(0, 1]
   derivative zero there.
 * `HolderOnWith.eq_of_one_lt`: a function `r`-Hölder on a preconnected open set, with `r > 1`, is
   constant there.
+* `TauCeti.holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow`: a function vanishing at `0`
+  with weighted bounds `‖f z‖ ≤ A ‖z‖ ^ α` and `‖Df z‖ ≤ B ‖z‖ ^ (α - 1)` on a punctured ball is
+  `α`-Hölder on the ball.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
 -/
 
@@ -134,6 +138,83 @@ theorem holderOnWith_thickening_of_norm_fderiv_le {Ω K : Set E} {g : E → F} {
       (thickening_mono (by linarith [δ.coe_nonneg]) K).trans hKΩ
     push_cast
     linarith [dist_le_norm_add_norm (g x) (g y), hg0 x (hU hx), hg0 y (hU hy)]
+
+/-- The near-diagonal case of `holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow`: if
+`‖x - y‖ ≤ ‖x‖ / 2`, the segment from `x` to `y` stays at distance at least `‖x - y‖` from `0`,
+where the derivative is at most `B ‖x - y‖ ^ (α - 1)`. -/
+private theorem norm_sub_le_of_norm_fderiv_le_rpow_of_near {f : E → F} {α r B : ℝ} (hα : α ≤ 1)
+    (hB : 0 ≤ B) (hf : ∀ z ∈ ball (0 : E) r, z ≠ 0 → DifferentiableAt ℝ f z)
+    (hf1 : ∀ z ∈ ball (0 : E) r, z ≠ 0 → ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ (α - 1))
+    {x y : E} (hx : x ∈ ball (0 : E) r) (hy : y ∈ ball (0 : E) r)
+    (hxy : ‖x - y‖ ≤ ‖x‖ / 2) (hne : x ≠ y) : ‖f x - f y‖ ≤ B * ‖x - y‖ ^ α := by
+  have hd : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
+  -- every point of the segment is in the ball and at distance at least `‖x - y‖` from `0`
+  have hseg : ∀ z ∈ segment ℝ x y, z ∈ ball (0 : E) r ∧ z ≠ 0 ∧ ‖x - y‖ ≤ ‖z‖ := by
+    intro z hz
+    have h1 := dist_add_dist_of_mem_segment hz
+    rw [dist_eq_norm, dist_eq_norm, dist_eq_norm] at h1
+    have h2 := norm_sub_norm_le x (x - z)
+    rw [sub_sub_cancel] at h2
+    have h3 : ‖x - y‖ ≤ ‖z‖ := by linarith [norm_nonneg (z - y)]
+    exact ⟨(convex_ball (0 : E) r).segment_subset hx hy hz, norm_pos_iff.1 (hd.trans_le h3), h3⟩
+  have hmvt := (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
+    (fun z hz ↦ hf z (hseg z hz).1 (hseg z hz).2.1)
+    (fun z hz ↦ (hf1 z (hseg z hz).1 (hseg z hz).2.1).trans (mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos hd (hseg z hz).2.2 (by linarith)) hB))
+    (right_mem_segment ℝ x y) (left_mem_segment ℝ x y)
+  calc ‖f x - f y‖ ≤ B * ‖x - y‖ ^ (α - 1) * ‖x - y‖ := hmvt
+    _ = B * ‖x - y‖ ^ α := by rw [Real.rpow_sub_one hd.ne', mul_assoc, div_mul_cancel₀ _ hd.ne']
+
+/-- **Hölder bound from weighted bounds at a point.** A function vanishing at `0` and
+differentiable on the punctured ball `ball 0 r \ {0}`, with `‖f z‖ ≤ A ‖z‖ ^ α` and
+`‖Df z‖ ≤ B ‖z‖ ^ (α - 1)` there, is `α`-Hölder on `ball 0 r` with constant `B + 4 A`, for every
+`α ≤ 1`. Near the diagonal, `‖x - y‖ ≤ ‖x‖ / 2`, the mean value inequality along the segment from
+`x` to `y` gives `‖f x - f y‖ ≤ B ‖x - y‖ ^ α`; away from it, `‖x‖ < 2 ‖x - y‖` and the bound on
+`f` does. -/
+theorem holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow {f : E → F} {r : ℝ}
+    {A B α : ℝ≥0} (hα : α ≤ 1) (h0 : f 0 = 0)
+    (hf : ∀ z ∈ ball (0 : E) r, z ≠ 0 → DifferentiableAt ℝ f z)
+    (hf0 : ∀ z ∈ ball (0 : E) r, z ≠ 0 → ‖f z‖ ≤ A * ‖z‖ ^ (α : ℝ))
+    (hf1 : ∀ z ∈ ball (0 : E) r, z ≠ 0 → ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ ((α : ℝ) - 1)) :
+    HolderOnWith (B + 4 * A) α f (ball 0 r) := by
+  have hα' : (α : ℝ) ≤ 1 := by exact_mod_cast hα
+  have hfA : ∀ z ∈ ball (0 : E) r, ‖f z‖ ≤ A * ‖z‖ ^ (α : ℝ) := fun z hz ↦ by
+    rcases eq_or_ne z 0 with rfl | hz0
+    · simpa [h0] using mul_nonneg A.coe_nonneg (Real.rpow_nonneg le_rfl _)
+    · exact hf0 z hz hz0
+  refine HolderOnWith.of_dist_le ?_
+  push_cast
+  -- by symmetry, it suffices to treat `‖y‖ ≤ ‖x‖`
+  suffices H : ∀ x ∈ ball (0 : E) r, ∀ y ∈ ball (0 : E) r, ‖y‖ ≤ ‖x‖ →
+      ‖f x - f y‖ ≤ (B + 4 * A) * ‖x - y‖ ^ (α : ℝ) by
+    intro x hx y hy
+    simp only [dist_eq_norm]
+    rcases le_total ‖y‖ ‖x‖ with h | h
+    · exact H x hx y hy h
+    · rw [norm_sub_rev (f x), norm_sub_rev x]
+      exact H y hy x hx h
+  intro x hx y hy hyx
+  have hpow : 0 ≤ ‖x - y‖ ^ (α : ℝ) := Real.rpow_nonneg (norm_nonneg _) _
+  have hA := A.coe_nonneg
+  have hB := B.coe_nonneg
+  rcases eq_or_ne x y with rfl | hne
+  · simpa using mul_nonneg (by positivity : (0 : ℝ) ≤ B + 4 * A) hpow
+  rcases le_or_gt ‖x - y‖ (‖x‖ / 2) with hxy | hxy
+  · have := norm_sub_le_of_norm_fderiv_le_rpow_of_near hα' hB hf hf1 hx hy hxy hne
+    nlinarith
+  · -- far from the diagonal both values are small: `‖x‖ < 2 ‖x - y‖`
+    have h2 : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
+      simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα'
+    have hxα : ‖x‖ ^ (α : ℝ) ≤ 2 * ‖x - y‖ ^ (α : ℝ) := by
+      calc ‖x‖ ^ (α : ℝ) ≤ (2 * ‖x - y‖) ^ (α : ℝ) :=
+            Real.rpow_le_rpow (norm_nonneg _) (by linarith) α.coe_nonneg
+        _ = 2 ^ (α : ℝ) * ‖x - y‖ ^ (α : ℝ) := Real.mul_rpow zero_le_two (norm_nonneg _)
+        _ ≤ 2 * ‖x - y‖ ^ (α : ℝ) := mul_le_mul_of_nonneg_right h2 hpow
+    have hyα : ‖y‖ ^ (α : ℝ) ≤ ‖x‖ ^ (α : ℝ) :=
+      Real.rpow_le_rpow (norm_nonneg _) hyx α.coe_nonneg
+    calc ‖f x - f y‖ ≤ ‖f x‖ + ‖f y‖ := norm_sub_le _ _
+      _ ≤ A * ‖x‖ ^ (α : ℝ) + A * ‖y‖ ^ (α : ℝ) := add_le_add (hfA x hx) (hfA y hy)
+      _ ≤ (B + 4 * A) * ‖x - y‖ ^ (α : ℝ) := by nlinarith
 
 end TauCeti
 

@@ -11,12 +11,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.ContDiffZPow
-import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
+import TauCeti.Analysis.Calculus.ContDiff.Puncture
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.Asymptotics.Lemmas
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Normed.Affine.Convex
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Holder.MeanValue
 
 /-!
 # Symbol classes at a puncture
@@ -64,7 +62,8 @@ lower derivative orders controls the next order.
 * it is `α`-Hölder on a ball about `0` for every `α ≤ min ℓ 1`
   (`IsPuncturedSymbol.exists_holderOnWith`), and `C¹` with `α`-Hölder derivative for every
   `0 < α ≤ 1` with `α + 1 ≤ ℓ` (`IsPuncturedSymbol.exists_contDiffOn_holderOnWith_fderiv`). In
-  particular a symbol of order `ℓ ≥ 2` is `C^{1,1}` near `0`, hence locally `W^{2,∞}` on the plane
+  particular a symbol of order `ℓ ≥ 2` is `C^{1,1}` near `0`, hence, for a symbol on the plane
+  with values in a finite-dimensional space, locally `W^{2,∞}`
   (`TauCeti.IsPuncturedSymbol.exists_memWkpLoc_two`).
 
 So symbols of order at least two, such as the deviations of coefficients from their values at a
@@ -577,8 +576,9 @@ theorem contDiffAt.{u, v} {E : Type u} {F : Type v} [NormedAddCommGroup E] [Norm
   let e : ULift.{u} F ≃L[ℝ] F := ContinuousLinearEquiv.ulift
   have h := contDiffAt_aux k (hf.continuousLinearMap_comp (e.symm : F →L[ℝ] ULift F)) hk
     (by rw [h0]; exact map_zero _)
-  rw [← e.symm.comp_contDiffAt_iff]
-  exact h
+  -- `h` is about `fun z ↦ (e.symm : F →L[ℝ] ULift F) (f z)`, that is `⇑e.symm ∘ f`
+  exact e.symm.comp_contDiffAt_iff.1 (by simpa only [ContinuousLinearEquiv.coe_coe,
+    Function.comp_def] using h)
 
 /-- A punctured symbol of order `ℓ > k` which vanishes at `0` is `Cᵏ` on a neighbourhood of `0`. -/
 theorem eventually_nhds_contDiffAt {k : ℕ} (hf : IsPuncturedSymbol ℓ f) (hk : (k : ℝ) < ℓ)
@@ -588,93 +588,32 @@ theorem eventually_nhds_contDiffAt {k : ℕ} (hf : IsPuncturedSymbol ℓ f) (hk 
   · exact hf.contDiffAt hk h0
   · exact (hz hz0).of_le (by exact_mod_cast le_top)
 
-/-- The constants of a punctured symbol on a ball: smoothness off the centre and the bounds
+/-- The constants of a punctured symbol on a ball: differentiability off the centre and the bounds
 `‖f z‖ ≤ A ‖z‖ ^ ℓ` and `‖Df z‖ ≤ B ‖z‖ ^ (ℓ - 1)`. -/
 private theorem exists_ball_bounds (hf : IsPuncturedSymbol ℓ f) :
-    ∃ r > 0, ∃ A > 0, ∃ B > 0, ∀ z ∈ Metric.ball (0 : E) r, z ≠ 0 →
-      ContDiffAt ℝ ∞ f z ∧ ‖f z‖ ≤ A * ‖z‖ ^ ℓ ∧ ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ (ℓ - 1) := by
-  obtain ⟨A, hA, hAf⟩ := hf.isBigO.exists_pos
-  obtain ⟨B, hB, hBf⟩ := hf.fderiv.isBigO.exists_pos
+    ∃ r > 0, ∃ A B : ℝ≥0, ∀ z ∈ Metric.ball (0 : E) r, z ≠ 0 →
+      DifferentiableAt ℝ f z ∧ ‖f z‖ ≤ A * ‖z‖ ^ ℓ ∧ ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ (ℓ - 1) := by
+  obtain ⟨A, hA, hAf⟩ := hf.isBigO.exists_nonneg
+  obtain ⟨B, hB, hBf⟩ := hf.fderiv.isBigO.exists_nonneg
   have h := hf.1.and (hAf.bound.and hBf.bound)
   obtain ⟨r, hr, hrf⟩ := Metric.eventually_nhds_iff_ball.1 (eventually_nhdsWithin_iff.1 h)
-  refine ⟨r, hr, A, hA, B, hB, fun z hz hz0 ↦ ?_⟩
+  refine ⟨r, hr, A.toNNReal, B.toNNReal, fun z hz hz0 ↦ ?_⟩
   obtain ⟨h1, h2, h3⟩ := hrf z hz hz0
   have hn : ∀ a : ℝ, ‖‖z‖ ^ a‖ = ‖z‖ ^ a := fun a ↦
     Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg z) a)
-  exact ⟨h1, by rwa [hn] at h2, by rwa [hn] at h3⟩
-
-/-- The near-diagonal case of `IsPuncturedSymbol.exists_holderOnWith`: if `‖x - y‖ ≤ ‖x‖ / 2`,
-the segment from `x` to `y` stays at distance at least `‖x‖ / 2` from `0`, where the derivative
-is at most `B ‖x - y‖ ^ (α - 1)`. -/
-private theorem norm_sub_le_of_near {α r B : ℝ} (hα : α ≤ 1) (hB : 0 ≤ B)
-    (hbd : ∀ z ∈ Metric.ball (0 : E) r, z ≠ 0 →
-      ContDiffAt ℝ ∞ f z ∧ ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ (α - 1))
-    {x y : E} (hx : x ∈ Metric.ball (0 : E) r) (hy : y ∈ Metric.ball (0 : E) r)
-    (hxy : ‖x - y‖ ≤ ‖x‖ / 2) (hne : x ≠ y) : ‖f x - f y‖ ≤ B * ‖x - y‖ ^ α := by
-  have hd : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
-  -- every point of the segment is in the ball and at distance at least `‖x‖ / 2` from `0`
-  have hseg : ∀ z ∈ segment ℝ x y, z ∈ Metric.ball (0 : E) r ∧ ‖x - y‖ ≤ ‖z‖ := by
-    intro z hz
-    refine ⟨(convex_ball (0 : E) r).segment_subset hx hy hz, ?_⟩
-    have h1 := dist_add_dist_of_mem_segment hz
-    rw [dist_eq_norm, dist_eq_norm, dist_eq_norm] at h1
-    have h2 := norm_sub_norm_le x (x - z)
-    rw [sub_sub_cancel] at h2
-    linarith [norm_nonneg (z - y)]
-  have hmvt := (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
-    (fun z hz ↦ ((hbd z (hseg z hz).1 (norm_pos_iff.1 (hd.trans_le (hseg z hz).2))).1
-      |>.differentiableAt (by simp)))
-    (fun z hz ↦ (hbd z (hseg z hz).1 (norm_pos_iff.1 (hd.trans_le (hseg z hz).2))).2.trans
-      (mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow_of_nonpos hd (hseg z hz).2 (by linarith)) hB))
-    (right_mem_segment ℝ x y) (left_mem_segment ℝ x y)
-  calc ‖f x - f y‖ ≤ B * ‖x - y‖ ^ (α - 1) * ‖x - y‖ := hmvt
-    _ = B * ‖x - y‖ ^ α := by rw [Real.rpow_sub_one hd.ne', mul_assoc, div_mul_cancel₀ _ hd.ne']
+  rw [hn] at h2 h3
+  rw [Real.coe_toNNReal _ hA, Real.coe_toNNReal _ hB]
+  exact ⟨h1.differentiableAt (by simp), h2, h3⟩
 
 /-- **Hölder continuity across the puncture.** A punctured symbol of order `ℓ` which vanishes at
 `0` is `α`-Hölder on a ball about `0` for every exponent `α ≤ min ℓ 1`. -/
 theorem exists_holderOnWith (hf : IsPuncturedSymbol ℓ f) {α : ℝ≥0} (hαℓ : (α : ℝ) ≤ ℓ)
     (hα1 : α ≤ 1) (h0 : f 0 = 0) :
     ∃ C : ℝ≥0, ∃ r > 0, HolderOnWith C α f (Metric.ball (0 : E) r) := by
-  have hα1' : (α : ℝ) ≤ 1 := by exact_mod_cast hα1
-  obtain ⟨r, hr, A, hA, B, hB, hbd⟩ := exists_ball_bounds (hf.mono hαℓ)
-  have hfA : ∀ z ∈ Metric.ball (0 : E) r, ‖f z‖ ≤ A * ‖z‖ ^ (α : ℝ) := fun z hz ↦ by
-    rcases eq_or_ne z 0 with rfl | hz0
-    · simpa [h0] using mul_nonneg hA.le (Real.rpow_nonneg le_rfl _)
-    · exact (hbd z hz hz0).2.1
-  refine ⟨⟨B + 4 * A, by positivity⟩, r, hr, HolderOnWith.of_dist_le ?_⟩
-  -- Near the diagonal, `‖x - y‖ ≤ ‖x‖ / 2`, the mean value inequality along the segment gives
-  -- `‖f x - f y‖ ≤ B ‖x - y‖ ^ α`; away from it, `‖f x‖ ≤ A ‖x‖ ^ α` with `‖x‖ < 2 ‖x - y‖`
-  -- does. By symmetry, it suffices to treat `‖y‖ ≤ ‖x‖`.
-  suffices H : ∀ x ∈ Metric.ball (0 : E) r, ∀ y ∈ Metric.ball (0 : E) r, ‖y‖ ≤ ‖x‖ →
-      ‖f x - f y‖ ≤ (B + 4 * A) * ‖x - y‖ ^ (α : ℝ) by
-    intro x hx y hy
-    simp only [dist_eq_norm]
-    rcases le_total ‖y‖ ‖x‖ with h | h
-    · exact H x hx y hy h
-    · rw [norm_sub_rev (f x), norm_sub_rev x]
-      exact H y hy x hx h
-  intro x hx y hy hyx
-  have hpow : 0 ≤ ‖x - y‖ ^ (α : ℝ) := Real.rpow_nonneg (norm_nonneg _) _
-  rcases eq_or_ne x y with rfl | hne
-  · simpa using mul_nonneg (by positivity : 0 ≤ B + 4 * A) hpow
-  rcases le_or_gt ‖x - y‖ (‖x‖ / 2) with hxy | hxy
-  · have := norm_sub_le_of_near hα1' hB.le (fun z hz hz0 ↦ ⟨(hbd z hz hz0).1, (hbd z hz hz0).2.2⟩)
-      hx hy hxy hne
-    nlinarith
-  · -- far from the diagonal both values are small: `‖x‖ < 2 ‖x - y‖`
-    have h2 : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
-      simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1'
-    have hxα : ‖x‖ ^ (α : ℝ) ≤ 2 * ‖x - y‖ ^ (α : ℝ) := by
-      calc ‖x‖ ^ (α : ℝ) ≤ (2 * ‖x - y‖) ^ (α : ℝ) :=
-            Real.rpow_le_rpow (norm_nonneg _) (by linarith) α.coe_nonneg
-        _ = 2 ^ (α : ℝ) * ‖x - y‖ ^ (α : ℝ) := Real.mul_rpow zero_le_two (norm_nonneg _)
-        _ ≤ 2 * ‖x - y‖ ^ (α : ℝ) := mul_le_mul_of_nonneg_right h2 hpow
-    have hyα : ‖y‖ ^ (α : ℝ) ≤ ‖x‖ ^ (α : ℝ) :=
-      Real.rpow_le_rpow (norm_nonneg _) hyx α.coe_nonneg
-    calc ‖f x - f y‖ ≤ ‖f x‖ + ‖f y‖ := norm_sub_le _ _
-      _ ≤ A * ‖x‖ ^ (α : ℝ) + A * ‖y‖ ^ (α : ℝ) := add_le_add (hfA x hx) (hfA y hy)
-      _ ≤ (B + 4 * A) * ‖x - y‖ ^ (α : ℝ) := by nlinarith
+  obtain ⟨r, hr, A, B, hbd⟩ := exists_ball_bounds (hf.mono hαℓ)
+  exact ⟨B + 4 * A, r, hr, holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow hα1 h0
+    (fun z hz hz0 ↦ (hbd z hz hz0).1) (fun z hz hz0 ↦ (hbd z hz hz0).2.1)
+    (fun z hz hz0 ↦ (hbd z hz hz0).2.2)⟩
 
 /-- **`C^{1,α}` regularity across the puncture.** A punctured symbol of order `ℓ` which vanishes
 at `0` is `C¹` on a ball about `0`, with `α`-Hölder derivative, for every exponent

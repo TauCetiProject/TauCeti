@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
-# Lipschitz maps are in every local `W^{1,p}` class
+# Lipschitz maps and maps with Lipschitz derivative in local Sobolev classes
 
 A map from the plane into a finite-dimensional space which is locally Lipschitz on an open set is
 in the local class `W^{1,p}` there, for every exponent (`LocallyLipschitzOn.memWkpLoc_one`). By
@@ -52,7 +52,9 @@ class `W^{1,p}` on every set, for every exponent: its Fréchet derivative is a w
 bounded by the Lipschitz constant. -/
 theorem _root_.LipschitzWith.memWkpLoc_one [FiniteDimensional ℝ F] {K : NNReal} {u : ℂ → F}
     (hu : LipschitzWith K u) : MemWkpLoc p U 1 u :=
-  (hu.locallyLipschitz.locallyLipschitzOn.memWkpLoc_one (Ω := ⊤)).mono (subset_univ U)
+  (hu.locallyLipschitz.locallyLipschitzOn.memWkpLoc_one (Ω := ⊤)).mono <| by
+    rw [Opens.coe_top]
+    exact subset_univ U
 
 /-- A map from the plane into a finite-dimensional space which is differentiable on an open set
 `Ω`, with derivative locally Lipschitz on `Ω`, is in the local class `W^{2,p}` on `Ω`, for every

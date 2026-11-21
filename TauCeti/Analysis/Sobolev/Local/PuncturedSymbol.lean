@@ -46,8 +46,11 @@ theorem IsPuncturedSymbol.exists_memWkpLoc_two (hf : IsPuncturedSymbol ℓ f) (h
     (h0 : f 0 = 0) : ∃ r > 0, MemWkpLoc ⊤ (Metric.ball (0 : ℂ) r) 2 f := by
   obtain ⟨r, hr, hC1, C, hC⟩ := hf.exists_contDiffOn_holderOnWith_fderiv (α := 1) one_pos
     (by push_cast; linarith) le_rfl h0
-  exact ⟨r, hr, (hC1.differentiableOn one_ne_zero).memWkpLoc_two_of_locallyLipschitzOn_fderiv
-    (Ω := ⟨_, Metric.isOpen_ball⟩)
-    fun _ _ ↦ ⟨C, _, self_mem_nhdsWithin, holderOnWith_one.1 hC⟩⟩
+  refine ⟨r, hr, ?_⟩
+  -- read the ball as an open set, as `memWkpLoc_two_of_locallyLipschitzOn_fderiv` needs
+  rw [← TopologicalSpace.Opens.coe_mk (hU := Metric.isOpen_ball (x := (0 : ℂ)) (ε := r))]
+    at hC1 hC ⊢
+  exact (hC1.differentiableOn one_ne_zero).memWkpLoc_two_of_locallyLipschitzOn_fderiv
+    fun _ _ ↦ ⟨C, _, self_mem_nhdsWithin, holderOnWith_one.1 hC⟩
 
 end TauCeti
