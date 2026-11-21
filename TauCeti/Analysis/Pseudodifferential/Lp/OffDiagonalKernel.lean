@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 
 /-!
 # Kernel representation of `Lᵖ` extensions of quantizations
@@ -54,42 +56,6 @@ section Representation
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {p : ℝ≥0∞}
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- Integration against a kernel `y ↦ A y` bounded by `M` on a compact set `L` is bounded on
-functions vanishing off `L`: `∫ ‖A y (g y)‖ dy ≤ C ‖g‖_p`. -/
-private theorem exists_lintegral_enorm_apply_le [Fact (1 ≤ p)] (hp : p ≠ ∞)
-    {A : CoordinateSpace n → V →L[ℂ] W} {L : Set (CoordinateSpace n)} (hL : IsCompact L) {M : ℝ}
-    (hM : ∀ y ∈ L, ‖A y‖ ≤ M) :
-    ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ g : CoordinateSpace n → V, AEStronglyMeasurable g volume →
-      (∀ᵐ y, y ∉ L → g y = 0) → ∫⁻ y, ‖A y (g y)‖ₑ ≤ C * eLpNorm g p volume := by
-  have hp1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
-  refine ⟨‖M‖ₑ * volume L ^ (1 - 1 / p.toReal), ENNReal.mul_ne_top eNorm_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 (div_le_one_of_le₀ hp1 ENNReal.toReal_nonneg))
-      hL.measure_lt_top.ne), fun g hg hgL ↦ ?_⟩
-  calc (∫⁻ y, ‖A y (g y)‖ₑ)
-      ≤ ∫⁻ y, L.indicator (fun y ↦ ‖M‖ₑ * ‖g y‖ₑ) y := by
-        refine lintegral_mono_ae ?_
-        filter_upwards [hgL] with y hy
-        by_cases hyL : y ∈ L
-        · rw [indicator_of_mem hyL]
-          refine ((A y).le_opENorm (g y)).trans ?_
-          gcongr
-          exact eNorm_le_iff_norm_le.2 ((hM y hyL).trans (le_abs_self M))
-        · rw [hy hyL, map_zero, eNorm_zero]
-          exact zero_le
-    _ = ‖M‖ₑ * eLpNorm g 1 (volume.restrict L) := by
-        rw [lintegral_indicator hL.measurableSet, lintegral_const_mul' _ _ eNorm_ne_top,
-          eLpNorm_one_eq_lintegral_eNorm hg.restrict]
-    _ ≤ ‖M‖ₑ * (eLpNorm g p (volume.restrict L) *
-          volume.restrict L univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal)) := by
-        gcongr
-        exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ Fact.out hg.restrict
-    _ ≤ ‖M‖ₑ * volume L ^ (1 - 1 / p.toReal) * eLpNorm g p volume := by
-        rw [Measure.restrict_apply_univ, ENNReal.toReal_one, div_one, mul_comm (eLpNorm g p _),
-          ← mul_assoc]
-        gcongr
-        exact Measure.restrict_le_self
-
 /-- The kernel representation of an `Lᵖ` extension of `Op(a)` at the points outside the closed
 `δ`-thickening of a compact set off which the argument vanishes. -/
 private theorem ae_notMem_cthickening_apply_eq_integral_offDiagonalKernel [Fact (1 ≤ p)]
@@ -130,7 +96,8 @@ private theorem ae_notMem_cthickening_apply_eq_integral_offDiagonalKernel [Fact 
   obtain ⟨M, hM⟩ := hL.exists_bound_of_continuousOn
     ((continuousOn_offDiagonalKernel_compl_singleton a x).mono fun y hy (hyx : y = x) ↦
       hxL (hyx ▸ hy))
-  obtain ⟨C, hC, hCle⟩ := exists_lintegral_enorm_apply_le hp hL hM
+  have hC := ENNReal.mul_ne_top (ENNReal.ofReal_ne_top (r := M)) (ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_sub_one_div_toReal_nonneg (Fact.out : 1 ≤ p)) (hL.measure_ne_top (μ := volume)))
   have hint (g : CoordinateSpace n → V) (hg : MemLp g p volume) (hgL : ∀ᵐ y, y ∉ L → g y = 0) :
       Integrable (fun y ↦ offDiagonalKernel a x y (g y)) :=
     (hg.integrable_of_ae_notMem_eq_zero Fact.out hL.measure_lt_top.ne hgL).apply_of_norm_le
@@ -146,10 +113,10 @@ private theorem ae_notMem_cthickening_apply_eq_integral_offDiagonalKernel [Fact 
     (.of_forall fun k ↦ hint _ ((w k).memLp p) (hw0 k)) ?_).comp hns.tendsto_atTop
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using ENNReal.Tendsto.const_mul hw_lim (Or.inr hC)) (fun _ ↦ zero_le) fun k ↦ ?_
-  have hsub : ∀ᵐ y, y ∉ L → (⇑(w k) - ⇑f) y = 0 :=
-    (hfL.and (hw0 k)).mono fun y hy hyL ↦ by simp [hy.1 hyL, hy.2 hyL]
-  simpa only [Pi.sub_apply, map_sub] using
-    hCle _ ((w k).continuous.aestronglyMeasurable.sub (Lp.aestronglyMeasurable f)) hsub
+  simpa only [Pi.sub_apply, map_sub, one_div] using
+    lintegral_enorm_apply_le_mul_eLpNorm (.of_forall hM) (Fact.out : 1 ≤ p)
+      ((w k).continuous.aestronglyMeasurable.sub (Lp.aestronglyMeasurable f))
+      ((hfL.and (hw0 k)).mono fun y hy hyL ↦ by simp [hy.1 hyL, hy.2 hyL])
 
 /-- **Kernel representation of `Lᵖ` extensions.** Let `T` be a bounded operator on `Lᵖ`,
 `1 ≤ p < ∞`, which agrees with `Op(a)` on Schwartz functions, for a symbol `a` of any order. If
