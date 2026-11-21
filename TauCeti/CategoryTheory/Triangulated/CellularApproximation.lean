@@ -13,66 +13,50 @@ import Mathlib.Algebra.FiveLemma
 import Mathlib.Algebra.Homology.ShortComplex.Ab
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import Mathlib.CategoryTheory.Triangulated.HomologicalFunctor
+import TauCeti.Algebra.Category.Grp.Products
 import TauCeti.Algebra.DirectSum.Exact
 
 /-!
 # Cellular approximation in pretriangulated categories with coproducts
 
-This file establishes three closely related results in a pretriangulated category `T` (with
-morphisms in `Type v`):
+In a pretriangulated category `T` (with morphisms in `Type v`), we establish:
 
-1. **Compact objects form a thick triangulated subcategory:** If two vertices of a distinguished
-   triangle are compact for coproducts (`TauCeti.IsCompactForCoproducts`), then so is the third
-   (`TauCeti.IsCompactForCoproducts.of_distTriang`, proved by applying the five lemma to the
-   five-term contravariant exact sequence induced by the triangle on direct sums of morphism
-   groups). Hence `TauCeti.compactForCoproducts T : ObjectProperty T` is an isomorphism-closed,
-   retract-closed triangulated subcategory of `T`.
-2. **The cellular closure of a small generating family:** For a family `G : I → T` indexed by
-   `I : Type v` in a pretriangulated category with `Type v`-indexed coproducts,
-   `TauCeti.InCellClosure G R` holds if `R` lies in every isomorphism-invariant class containing
-   every `G i` and closed under `Type v`-indexed coproducts and third objects of distinguished
-   triangles whose first two objects lie in the class. We establish its closure under small
-   coproducts, zero objects, positive shifts `⟦n⟧` (`n : ℕ`), and sequential Milnor homotopy
-   colimits, its containment in `ObjectProperty.localizingClosure`, its characterization for the
-   empty family (`TauCeti.inCellClosure_empty_iff`), and the negative-shift obstruction showing
-   that `InCellClosure` is in general strictly smaller than `localizingClosure`
-   (`TauCeti.hom_shift_eq_zero_of_inCellClosure`, `TauCeti.isZero_shift_of_inCellClosure`,
-   `TauCeti.not_inCellClosure_shift_neg_one`).
-3. **Generic cellular approximation:** For any small family `G : I → T` of compact objects and any
-   contravariant homological functor `E : Tᵒᵖ ⥤ AddCommGrpCat.{v}` sending `Type v`-indexed
-   coproducts to products, there exist `R` in `InCellClosure G` and `x : E.obj (op R)` such that
-   evaluation `f ↦ E.map f.op x` is bijective `(G i ⟶ R) ≃ E.obj (op (G i))` for every `i`
-   (`TauCeti.cellularApproximation`, Schwede, *Symmetric spectra*, Chapter II, Proposition 5.14).
-   Applying this to `E = preadditiveYoneda.obj Y` yields cellular approximation of every object
-   `Y : T` (`TauCeti.cellularApproximation_obj`). Notably, the construction requires only
-   `Pretriangulated T` (not the octahedral axiom `IsTriangulated T`).
+1. **Compact objects form a thick triangulated subcategory:** `TauCeti.compactForCoproducts T` is
+   isomorphism-closed, retract-closed, shift-closed, and triangulated
+   (`TauCeti.IsCompactForCoproducts.of_distTriang`, via the five lemma).
+2. **Cellular closure:** `TauCeti.InCellClosure G R` is the smallest isomorphism-invariant class
+   containing `G : I → T` (`I : Type v`) closed under `Type v`-indexed coproducts and cones. We
+   prove closure under small coproducts, zero objects, positive shifts `⟦n⟧`, and Milnor
+   homotopy colimits, containment in `ObjectProperty.localizingClosure`,
+   `TauCeti.inCellClosure_empty_iff`, and the negative-shift obstruction
+   (`TauCeti.hom_shift_eq_zero_of_inCellClosure`,
+   `CategoryTheory.Functor.isZero_shift_of_inCellClosure`,
+   `CategoryTheory.Functor.not_inCellClosure_shift_neg_one`).
+3. **Generic cellular approximation:** for compact `G : I → T` and homological
+   `E : Tᵒᵖ ⥤ AddCommGrpCat.{v}` taking `Type v`-indexed coproducts to products, there exist
+   `R` in `InCellClosure G` and `x : E.obj (op R)` with `(G i ⟶ R) ≃ E.obj (op (G i))`
+   (`TauCeti.cellularApproximation`), yielding `TauCeti.cellularApproximation_obj` without
+   `IsTriangulated T`.
 
 ## Main definitions
 
-* `TauCeti.compactForCoproducts`: the `ObjectProperty T` of objects compact for coproducts.
-* `TauCeti.InCellClosure`: the smallest isomorphism-invariant class containing a small family `G`
-  and closed under small coproducts and cones (third objects of distinguished triangles).
+* `TauCeti.compactForCoproducts`, `TauCeti.InCellClosure`
 
 ## Main results
 
 * `TauCeti.IsCompactForCoproducts.of_distTriang`, `TauCeti.IsCompactForCoproducts.of_distTriang₁`,
-  `TauCeti.IsCompactForCoproducts.of_distTriang₂`: two-out-of-three closure of compactness on
-  distinguished triangles.
+  `TauCeti.IsCompactForCoproducts.of_distTriang₂`
 * `TauCeti.InCellClosure.shift_nat`, `TauCeti.InCellClosure.of_milnorTriangle`,
-  `TauCeti.inCellClosure_empty_iff`, `TauCeti.inCellClosure_le_localizingClosure`: closure and
-  structural properties of `InCellClosure`.
-* `TauCeti.hom_shift_eq_zero_of_inCellClosure`, `TauCeti.isZero_shift_of_inCellClosure`,
-  `TauCeti.not_inCellClosure_shift_neg_one`: preservation of vanishing in positive shifts and
-  non-membership of negative shifts.
-* `TauCeti.cellularApproximation`: generic cellular approximation for contravariant homological
-  functors sending small coproducts to products.
-* `TauCeti.cellularApproximation_obj`: cellular approximation `u : R ⟶ Y` of an arbitrary object.
+  `TauCeti.inCellClosure_empty_iff`, `TauCeti.inCellClosure_le_localizingClosure`
+* `TauCeti.hom_shift_eq_zero_of_inCellClosure`,
+  `CategoryTheory.Functor.isZero_shift_of_inCellClosure`,
+  `CategoryTheory.Functor.not_inCellClosure_shift_neg_one`
+* `TauCeti.cellularApproximation`, `TauCeti.cellularApproximation_obj`
 
 ## References
 
-* A. Neeman, *Triangulated categories*, Annals of Mathematics Studies 148, Princeton University
-  Press (2001), Lemma 4.2.4 and Section 8.2.
-* S. Schwede, *Symmetric spectra*, Chapter II, Definition 5.4, Lemma 5.6, and Proposition 5.14.
+* A. Neeman, *Triangulated categories*, Princeton Univ. Press (2001), Lemma 4.2.4, Section 8.2.
+* S. Schwede, *Symmetric spectra*, Chapter II, Def. 5.4, Lemma 5.6, and Prop. 5.14.
 -/
 
 public section
@@ -171,8 +155,7 @@ is the first object. -/
 theorem IsCompactForCoproducts.of_distTriang₁ {t : Triangle T} (ht : t ∈ distTriang T)
     (h₂ : IsCompactForCoproducts t.obj₂) (h₃ : IsCompactForCoproducts t.obj₃) :
     IsCompactForCoproducts t.obj₁ :=
-  (isCompactForCoproducts_shift_iff t.obj₁ (1 : ℤ)).1
-    (h₂.of_distTriang (rot_of_distTriang _ ht) h₃)
+  (isCompactForCoproducts_shift_iff t.obj₁ (1 : ℤ)).1 (h₂.of_distTriang (rot_of_distTriang _ ht) h₃)
 
 instance : (compactForCoproducts T).IsTriangulated where
   exists_zero := ⟨0, isZero_zero T, isCompactForCoproducts_zero⟩
@@ -193,8 +176,7 @@ variable {T : Type u} [Category.{v} T] [Preadditive T] [HasZeroObject T] [HasShi
 closed under `Type v`-indexed coproducts and third objects of distinguished triangles whose first
 two objects belong to the class. -/
 def InCellClosure {I : Type v} (G : I → T) (R : T) : Prop :=
-  ∀ P : T → Prop, (∀ i, P (G i)) →
-    (∀ {A B : T}, (A ≅ B) → P A → P B) →
+  ∀ P : T → Prop, (∀ i, P (G i)) → (∀ {A B : T}, (A ≅ B) → P A → P B) →
     (∀ (J : Type v) (f : J → T), (∀ j, P (f j)) → P (∐ f)) →
     (∀ t : Triangle T, t ∈ distTriang T → P t.obj₁ → P t.obj₂ → P t.obj₃) → P R
 
@@ -202,31 +184,24 @@ variable {I : Type v} {G : I → T}
 
 /-- Elimination / induction principle for `InCellClosure G`. -/
 theorem InCellClosure.induction {P : T → Prop} {R : T} (hR : InCellClosure G R)
-    (generator : ∀ i, P (G i))
-    (of_iso : ∀ {A B : T}, (A ≅ B) → P A → P B)
+    (generator : ∀ i, P (G i)) (of_iso : ∀ {A B : T}, (A ≅ B) → P A → P B)
     (coproduct : ∀ (J : Type v) (f : J → T), (∀ j, P (f j)) → P (∐ f))
-    (of_distTriang :
-      ∀ t : Triangle T, t ∈ distTriang T → P t.obj₁ → P t.obj₂ → P t.obj₃) :
-    P R :=
-  hR P generator of_iso coproduct of_distTriang
+    (of_distTriang : ∀ t : Triangle T, t ∈ distTriang T → P t.obj₁ → P t.obj₂ → P t.obj₃) :
+    P R := hR P generator of_iso coproduct of_distTriang
 
 /-- Every generator lies in its own cellular closure. -/
-theorem InCellClosure.generator (G : I → T) (i : I) : InCellClosure G (G i) :=
-  fun _ hgen _ _ _ ↦ hgen i
+theorem InCellClosure.generator (G : I → T) (i : I) : InCellClosure G (G i) := fun _ h _ _ _ ↦ h i
 
 /-- Membership in `InCellClosure G` is invariant under isomorphism. -/
 theorem InCellClosure.of_iso {A B : T} (e : A ≅ B) (hA : InCellClosure G A) :
-    InCellClosure G B :=
-  fun P hgen hiso hcop htri ↦ hiso e (hA P hgen hiso hcop htri)
+    InCellClosure G B := fun P hgen hiso hcop htri ↦ hiso e (hA P hgen hiso hcop htri)
 
 theorem inCellClosure_iff_of_iso {A B : T} (e : A ≅ B) :
-    InCellClosure G A ↔ InCellClosure G B :=
-  ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
+    InCellClosure G A ↔ InCellClosure G B := ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
 
 /-- `InCellClosure G` is closed under `Type v`-indexed coproducts. -/
 theorem InCellClosure.coproduct {J : Type v} (f : J → T) (hf : ∀ j, InCellClosure G (f j)) :
-    InCellClosure G (∐ f) :=
-  fun P hgen hiso hcop htri ↦ hcop J f fun j ↦ hf j P hgen hiso hcop htri
+    InCellClosure G (∐ f) := fun P hgen hiso hcop htri ↦ hcop J f fun j ↦ hf j P hgen hiso hcop htri
 
 /-- `InCellClosure G` is closed under coproducts indexed by any `v`-small type (such as `ℕ` or any
 finite type). -/
@@ -239,8 +214,7 @@ theorem InCellClosure.coproduct_of_small {J : Type w} [Small.{v} J] (f : J → T
 /-- Every zero object lies in `InCellClosure G` (as the empty coproduct). -/
 theorem InCellClosure.of_isZero (G : I → T) {Z : T} (hZ : IsZero Z) : InCellClosure G Z := by
   have h0 : IsZero (∐ (PEmpty.elim : PEmpty.{v + 1} → T)) := by
-    rw [IsZero.iff_id_eq_zero]
-    exact Sigma.hom_ext _ _ fun j ↦ PEmpty.elim j
+    rw [IsZero.iff_id_eq_zero]; exact Sigma.hom_ext _ _ fun j ↦ PEmpty.elim j
   exact (InCellClosure.coproduct (G := G) (PEmpty.elim : PEmpty.{v + 1} → T)
     fun j ↦ PEmpty.elim j).of_iso (h0.iso hZ)
 
@@ -251,10 +225,8 @@ theorem InCellClosure.zero (G : I → T) : InCellClosure G (0 : T) :=
 /-- `InCellClosure G` is closed under taking the third object (cone) of a distinguished triangle
 whose first two objects lie in `InCellClosure G`. -/
 theorem InCellClosure.of_distTriang {t : Triangle T} (ht : t ∈ distTriang T)
-    (h₁ : InCellClosure G t.obj₁) (h₂ : InCellClosure G t.obj₂) :
-    InCellClosure G t.obj₃ :=
-  fun P hgen hiso hcop htri ↦
-    htri t ht (h₁ P hgen hiso hcop htri) (h₂ P hgen hiso hcop htri)
+    (h₁ : InCellClosure G t.obj₁) (h₂ : InCellClosure G t.obj₂) : InCellClosure G t.obj₃ :=
+  fun P hgen hiso hcop htri ↦ htri t ht (h₁ P hgen hiso hcop htri) (h₂ P hgen hiso hcop htri)
 
 /-- `InCellClosure G` is closed under unit positive suspension `⟦1⟧` (as the cone of
 `R ⟶ 0`). -/
@@ -297,8 +269,7 @@ theorem InCellClosure.of_range_subset {I' : Type v} {G' : I' → T}
 /-- Replacing generators by isomorphic objects leaves `InCellClosure` unchanged. -/
 theorem inCellClosure_iff_of_iso_family {G' : I → T} (e : ∀ i, G i ≅ G' i) (R : T) :
     InCellClosure G R ↔ InCellClosure G' R :=
-  ⟨fun h ↦ h.mono fun i ↦ ⟨i, ⟨e i⟩⟩,
-    fun h ↦ h.mono fun i ↦ ⟨i, ⟨(e i).symm⟩⟩⟩
+  ⟨fun h ↦ h.mono fun i ↦ ⟨i, ⟨e i⟩⟩, fun h ↦ h.mono fun i ↦ ⟨i, ⟨(e i).symm⟩⟩⟩
 
 /-- The cellular closure of the empty family consists precisely of the zero objects. -/
 theorem inCellClosure_empty_iff (R : T) :
@@ -306,8 +277,7 @@ theorem inCellClosure_empty_iff (R : T) :
   refine ⟨fun hR ↦ ?_, InCellClosure.of_isZero _⟩
   refine hR.induction (fun i ↦ PEmpty.elim i) (fun e hA ↦ hA.of_iso e.symm)
     (fun _ f hf ↦ ?_) (fun t ht h₁ h₂ ↦ ?_)
-  · rw [IsZero.iff_id_eq_zero]
-    exact Sigma.hom_ext _ _ fun j ↦ (hf j).eq_of_src _ _
+  · rw [IsZero.iff_id_eq_zero]; exact Sigma.hom_ext _ _ fun j ↦ (hf j).eq_of_src _ _
   · have hm : t.mor₁ = (h₁.iso h₂).hom := h₁.eq_of_src _ _
     have : IsIso t.mor₁ := hm ▸ inferInstance
     exact t.isZero₃_of_isIso₁ ht inferInstance
@@ -325,27 +295,19 @@ theorem inCellClosure_le_localizingClosure (G : I → T) {R : T} (hR : InCellClo
 every object `R` in `InCellClosure G`. -/
 theorem hom_shift_eq_zero_of_inCellClosure (W : T) (n : ℤ)
     (hG : ∀ i, ∀ k : ℤ, n < k → ∀ g : (G i)⟦k⟧ ⟶ W, g = 0) {R : T}
-    (hR : InCellClosure G R) :
-    ∀ k : ℤ, n < k → ∀ g : R⟦k⟧ ⟶ W, g = 0 := by
-  refine hR.induction
-    (P := fun A ↦ ∀ k : ℤ, n < k → ∀ g : A⟦k⟧ ⟶ W, g = 0) hG ?_ ?_ ?_
+    (hR : InCellClosure G R) : ∀ k : ℤ, n < k → ∀ g : R⟦k⟧ ⟶ W, g = 0 := by
+  refine hR.induction (P := fun A ↦ ∀ k : ℤ, n < k → ∀ g : A⟦k⟧ ⟶ W, g = 0) hG ?_ ?_ ?_
   · intro A B e hA k hk g
-    have hcomp : e.hom⟦k⟧' ≫ g = 0 := hA k hk (e.hom⟦k⟧' ≫ g)
-    exact (cancel_epi (e.hom⟦k⟧')).1 (by rw [comp_zero]; exact hcomp)
+    exact (cancel_epi (e.hom⟦k⟧')).1 (by rw [comp_zero]; exact hA k hk (e.hom⟦k⟧' ≫ g))
   · intro J f hf k hk g
-    have hc : IsColimit ((shiftFunctor T k).mapCocone (Cofan.mk (∐ f) (Sigma.ι f))) :=
-      isColimitOfPreserves (shiftFunctor T k) (coproductIsCoproduct f)
-    refine hc.hom_ext fun ⟨j⟩ ↦ ?_
+    refine (isColimitOfPreserves (shiftFunctor T k) (coproductIsCoproduct f)).hom_ext fun ⟨j⟩ ↦ ?_
     dsimp only [Functor.mapCocone_ι_app, Cofan.mk_ι_app]
-    rw [comp_zero]
-    exact hf j k hk ((Sigma.ι f j)⟦k⟧' ≫ g)
+    rw [comp_zero]; exact hf j k hk ((Sigma.ι f j)⟦k⟧' ≫ g)
   · intro t ht h₁ h₂ k hk g
     let ts := (CategoryTheory.shiftFunctor (Triangle T) k).obj t
     have hts : ts ∈ distTriang T := t.shift_distinguished ht k
-    have hmor₂ : ts.mor₂ ≫ g = 0 := h₂ k hk (ts.mor₂ ≫ g)
-    obtain ⟨h, rfl⟩ := ts.yoneda_exact₃ hts g hmor₂
-    let e : t.obj₁⟦k + 1⟧ ≅ (t.obj₁⟦k⟧)⟦(1 : ℤ)⟧ :=
-      (shiftFunctorAdd T k 1).app t.obj₁
+    obtain ⟨h, rfl⟩ := ts.yoneda_exact₃ hts g (h₂ k hk (ts.mor₂ ≫ g))
+    let e : t.obj₁⟦k + 1⟧ ≅ (t.obj₁⟦k⟧)⟦(1 : ℤ)⟧ := (shiftFunctorAdd T k 1).app t.obj₁
     let h' : (t.obj₁⟦k⟧)⟦(1 : ℤ)⟧ ⟶ W := h
     have hh : e.hom ≫ h' = 0 := h₁ (k + 1) (by omega) (e.hom ≫ h')
     have hh0 : h' = 0 := (cancel_epi e.hom).1 (hh.trans comp_zero.symm)
@@ -360,33 +322,39 @@ theorem not_inCellClosure_shift_neg_one_of_hom {X : T} (hX : ¬ IsZero X)
   let e : (X⟦(-1 : ℤ)⟧)⟦(1 : ℤ)⟧ ≅ X := (shiftEquiv T (1 : ℤ)).counitIso.app X
   have he : e.hom = 0 :=
     hom_shift_eq_zero_of_inCellClosure X 0 (fun _ ↦ hpos) hmem 1 zero_lt_one e.hom
-  have hid : (𝟙 X : X ⟶ X) = 0 := by
-    rw [← e.inv_hom_id, he, comp_zero]
-  exact hX ((IsZero.iff_id_eq_zero X).2 hid)
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by rw [← e.inv_hom_id, he, comp_zero]))
+
+end CellClosure
+
+end TauCeti
+
+namespace CategoryTheory.Functor
+
+section
+
+variable {T : Type u} [Category.{v} T] [Preadditive T] [HasZeroObject T] [HasShift T ℤ]
+  [∀ n : ℤ, (shiftFunctor T n).Additive] [Pretriangulated T] [HasCoproducts.{v} T]
+  {I : Type v} {G : I → T}
 
 /-- If a coproduct-preserving homological functor `H : T ⥤ AddCommGrpCat.{v}` vanishes on
-`(G i)⟦k⟧` for all `k > n`, then it vanishes on `R⟦k⟧` for every `R` in `InCellClosure G`
+`(G i)⟦k⟧` for all `k > n`, then it vanishes on `R⟦k⟧` for every `R` in `TauCeti.InCellClosure G`
 and all `k > n`. -/
 theorem isZero_shift_of_inCellClosure (H : T ⥤ AddCommGrpCat.{v}) [H.IsHomological]
     (hH : ∀ J : Type v, PreservesColimitsOfShape (Discrete J) H) (n : ℤ)
     (hG : ∀ i, ∀ k : ℤ, n < k → IsZero (H.obj ((G i)⟦k⟧))) {R : T}
-    (hR : InCellClosure G R) :
-    ∀ k : ℤ, n < k → IsZero (H.obj (R⟦k⟧)) := by
+    (hR : TauCeti.InCellClosure G R) : ∀ k : ℤ, n < k → IsZero (H.obj (R⟦k⟧)) := by
   refine hR.induction (P := fun A ↦ ∀ k : ℤ, n < k → IsZero (H.obj (A⟦k⟧))) hG ?_ ?_ ?_
-  · intro A B e hA k hk
-    exact (hA k hk).of_iso (H.mapIso ((shiftFunctor T k).mapIso e.symm))
+  · intro A B e hA k hk; exact (hA k hk).of_iso (H.mapIso ((shiftFunctor T k).mapIso e.symm))
   · intro J f hf k hk
     have := hH J
     have hc :
         IsColimit (H.mapCocone ((shiftFunctor T k).mapCocone (Cofan.mk (∐ f) (Sigma.ι f)))) :=
       isColimitOfPreserves H (isColimitOfPreserves (shiftFunctor T k) (coproductIsCoproduct f))
     rw [IsZero.iff_id_eq_zero]
-    refine hc.hom_ext fun ⟨j⟩ ↦ ?_
-    exact (hf j k hk).eq_of_src _ _
+    exact hc.hom_ext fun ⟨j⟩ ↦ (hf j k hk).eq_of_src _ _
   · intro t ht h₁ h₂ k hk
     let ts := (CategoryTheory.shiftFunctor (Triangle T) k).obj t
-    have hts : ts ∈ distTriang T := t.shift_distinguished ht k
-    have hrot : ts.rotate ∈ distTriang T := rot_of_distTriang _ hts
+    have hrot : ts.rotate ∈ distTriang T := rot_of_distTriang _ (t.shift_distinguished ht k)
     have hex := (ShortComplex.ab_exact_iff _).1 (H.map_distinguished_exact _ hrot)
     dsimp only [ShortComplex.map, shortComplexOfDistTriangle, Triangle.rotate] at hex
     have hZ₁ : IsZero (H.obj ((t.obj₁⟦k⟧)⟦(1 : ℤ)⟧)) :=
@@ -407,13 +375,17 @@ for all `k > 0`, then `X⟦-1⟧` does not lie in the cellular closure of `{X}`.
 theorem not_inCellClosure_shift_neg_one {X : T} (H : T ⥤ AddCommGrpCat.{v}) [H.IsHomological]
     (hH : ∀ J : Type v, PreservesColimitsOfShape (Discrete J) H)
     (hX0 : ¬ IsZero (H.obj X)) (hXpos : ∀ k : ℤ, 0 < k → IsZero (H.obj (X⟦k⟧))) :
-    ¬ InCellClosure (fun _ : PUnit.{v + 1} ↦ X) (X⟦(-1 : ℤ)⟧) := by
+    ¬ TauCeti.InCellClosure (fun _ : PUnit.{v + 1} ↦ X) (X⟦(-1 : ℤ)⟧) := by
   intro hmem
   have h1 : IsZero (H.obj ((X⟦(-1 : ℤ)⟧)⟦(1 : ℤ)⟧)) :=
-    isZero_shift_of_inCellClosure H hH 0 (fun _ ↦ hXpos) hmem 1 zero_lt_one
+    H.isZero_shift_of_inCellClosure hH 0 (fun _ ↦ hXpos) hmem 1 zero_lt_one
   exact hX0 (h1.of_iso (H.mapIso ((shiftEquiv T (1 : ℤ)).counitIso.symm.app X)))
 
-end CellClosure
+end
+
+end CategoryTheory.Functor
+
+namespace TauCeti
 
 section CellularApproximation
 
@@ -438,7 +410,7 @@ private def approxStageZero (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v})
   have : PreservesLimitsOfShape (Discrete J₀) E := hE J₀
   { obj := ∐ f₀
     cell := InCellClosure.coproduct f₀ fun p ↦ InCellClosure.generator G p.1
-    pt := (cofanOpToPiAddEquiv (coproductIsCoproduct f₀) E).symm fun p ↦ p.2 }
+    pt := ((coproductIsCoproduct f₀).cofanOpToPiAddEquiv E).symm fun p ↦ p.2 }
 
 private lemma approxStageZero_map_ι (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v})
     (hE : ∀ J : Type v, PreservesLimitsOfShape (Discrete J) E)
@@ -448,7 +420,7 @@ private lemma approxStageZero_map_ι (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCa
   let J₀ := Σ i : I, E.obj (op (G i))
   let f₀ : J₀ → T := fun p ↦ G p.1
   have : PreservesLimitsOfShape (Discrete J₀) E := hE J₀
-  exact map_inj_cofanOpToPiAddEquiv_symm (coproductIsCoproduct f₀) E
+  exact IsColimit.map_inj_cofanOpToPiAddEquiv_symm (coproductIsCoproduct f₀) E
     (fun p : J₀ ↦ p.2) ⟨i, y⟩
 
 /-- One inductive step attaching cells along all morphisms from `G i` that annihilate the current
@@ -476,10 +448,8 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
       (InCellClosure.coproduct g fun p ↦ InCellClosure.generator G p.1) s.cell
   have hk0 : E.map k.op s.pt = 0 := by
     have := hE K
-    apply (cofanOpToPiAddEquiv (coproductIsCoproduct g) E).injective
-    rw [map_zero]
-    funext p
-    rw [cofanOpToPiAddEquiv_apply]
+    apply ((coproductIsCoproduct g).cofanOpToPiAddEquiv E).injective
+    rw [map_zero]; funext p; rw [IsColimit.cofanOpToPiAddEquiv_apply]
     dsimp only [Cofan.inj, Cofan.mk_ι_app]
     rw [← CategoryTheory.comp_apply, ← E.map_comp, ← op_comp, Sigma.ι_comp_desc]
     exact p.2.2
@@ -492,11 +462,10 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
       mor := j
       map_pt := hlift.choose_spec
       kill := fun i f hf ↦ by
+        have hfk : f = Sigma.ι g ⟨i, ⟨f, hf⟩⟩ ≫ k :=
+          (Sigma.ι_comp_desc (fun p : K ↦ p.2.1) ⟨i, ⟨f, hf⟩⟩).symm
         have hkj : k ≫ j = 0 := comp_distTriang_mor_zero₁₂ _ ht
-        calc
-          f ≫ j = (Sigma.ι g ⟨i, ⟨f, hf⟩⟩ ≫ k) ≫ j := by simp [k]
-          _ = Sigma.ι g ⟨i, ⟨f, hf⟩⟩ ≫ (k ≫ j) := Category.assoc _ _ _
-          _ = 0 := by rw [hkj, comp_zero] }
+        rw [hfk, Category.assoc, hkj, comp_zero] }
 
 /-- **Cellular approximation in a pretriangulated category with coproducts** (Schwede, *Symmetric
 spectra*, Chapter II, Proposition 5.14): for any small family `G : I → T` of compact objects and
@@ -517,38 +486,24 @@ theorem cellularApproximation (G : I → T) (hG : ∀ i, IsCompactForCoproducts 
     have := hE (ULift.{v} ℕ)
     preservesLimitsOfShape_of_equiv (Discrete.equivalence Equiv.ulift.{v}) E
   obtain ⟨R, ψ, δ, ht⟩ := distinguished_cocone_triangle X.sequenceDifference
-  have hcell : InCellClosure G R :=
-    InCellClosure.of_milnorTriangle ht fun n ↦ (stage n).cell
+  have hcell : InCellClosure G R := InCellClosure.of_milnorTriangle ht fun n ↦ (stage n).cell
   obtain ⟨x, hx⟩ := exists_lift_of_milnorTriangle ht E (fun n ↦ (stage n).pt) fun n ↦ by
-    rw [Functor.ofSequence_map_homOfLE_succ]
-    exact (approxStep G E hE (stage n)).map_pt
+    rw [Functor.ofSequence_map_homOfLE_succ]; exact (approxStep G E hE (stage n)).map_pt
   refine ⟨R, hcell, x, fun i ↦ ⟨fun f₁ f₂ hfeq ↦ sub_eq_zero.1 ?_, fun y ↦ ?_⟩⟩
   · have hf : E.map (f₁ - f₂).op x = 0 := by
-      dsimp only at hfeq
-      simpa [op_sub, E.map_sub] using sub_eq_zero.2 hfeq
+      dsimp only at hfeq; simpa [op_sub, E.map_sub] using sub_eq_zero.2 hfeq
     obtain ⟨N, h, hfac⟩ := exists_factor_of_milnorTriangle ht (hG i) (f₁ - f₂)
     rw [hfac] at hf ⊢
     have hh : E.map h.op (stage N).pt = 0 := by
-      rw [← hx N, ← CategoryTheory.comp_apply, ← E.map_comp, ← op_comp]
-      exact hf
+      rw [← hx N, ← CategoryTheory.comp_apply, ← E.map_comp, ← op_comp]; exact hf
     have hkill : h ≫ X.map (homOfLE (Nat.le_add_right N 1)) = 0 := by
-      rw [Functor.ofSequence_map_homOfLE_succ]
-      exact (approxStep G E hE (stage N)).kill i h hh
+      rw [Functor.ofSequence_map_homOfLE_succ]; exact (approxStep G E hE (stage N)).kill i h hh
     have hψ : X.sequenceDifference ≫ ψ = 0 := comp_distTriang_mor_zero₁₂ _ ht
-    calc
-      h ≫ Sigma.ι X.obj N ≫ ψ
-          = h ≫ X.map (homOfLE (Nat.le_add_right N 1)) ≫ Sigma.ι X.obj (N + 1) ≫ ψ := by
-            rw [← X.map_homOfLE_comp_ι_of_sequenceDifference_comp_eq_zero hψ
-              (Nat.le_add_right N 1)]
-      _ = (h ≫ X.map (homOfLE (Nat.le_add_right N 1))) ≫ Sigma.ι X.obj (N + 1) ≫ ψ := by
-            rw [Category.assoc]
-      _ = 0 := by
-            rw [hkill, zero_comp]
-  · let ι₀ : G i ⟶ X.obj 0 :=
-      Sigma.ι (fun p : Σ i : I, E.obj (op (G i)) ↦ G p.1) ⟨i, y⟩
+    rw [← X.map_homOfLE_comp_ι_of_sequenceDifference_comp_eq_zero hψ (Nat.le_add_right N 1),
+      ← Category.assoc, hkill, zero_comp]
+  · let ι₀ : G i ⟶ X.obj 0 := Sigma.ι (fun p : Σ i : I, E.obj (op (G i)) ↦ G p.1) ⟨i, y⟩
     refine ⟨ι₀ ≫ Sigma.ι X.obj 0 ≫ ψ, ?_⟩
-    dsimp only
-    rw [op_comp, E.map_comp, CategoryTheory.comp_apply, hx 0]
+    dsimp only; rw [op_comp, E.map_comp, CategoryTheory.comp_apply, hx 0]
     exact approxStageZero_map_ι G E hE i y
 
 /-- **Cellular approximation of an object:** for a small family `G` of compact objects and any
