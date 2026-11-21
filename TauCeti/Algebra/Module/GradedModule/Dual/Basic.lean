@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Trivial
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # Duals of internally graded modules
@@ -36,8 +38,10 @@ The construction follows the graded-dual convention used for DG and `A∞` objec
 
 ## Main results
 
-* `InternalGrading.mem_dualPiece_iff`: a degree-`p` functional vanishes on every original degree
-  other than `-p`.
+* `InternalGrading.mem_dualPiece_iff` and
+  `InternalGrading.mem_dualPiece_iff_isHomogeneous_trivialGrading`: a degree-`p` functional vanishes
+  on every original degree other than `-p`, equivalently is homogeneous of degree `p` into
+  `trivialGrading R R`.
 * `InternalGrading.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero`: evaluation vanishes unless
   the degrees of the functional and vector sum to zero.
 * `InternalGrading.dualPiece_apply_eq_apply_decompose`: a degree-`p` functional sees only the
@@ -87,6 +91,16 @@ theorem mem_dualPiece_iff (G : InternalGrading R M ℤ) (p : ℤ) (φ : Module.D
   simp only [dualPiece, Submodule.mem_iInf, Submodule.mem_dualAnnihilator]
   aesop
 
+/-- Membership in `InternalGrading.dualPiece q` is equivalent to homogeneity of degree `q` into the
+trivial grading of the base ring. -/
+theorem mem_dualPiece_iff_isHomogeneous_trivialGrading (G : InternalGrading R M ℤ) (q : ℤ)
+    (φ : Module.Dual R M) :
+    φ ∈ G.dualPiece q ↔ LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) q := by
+  rw [G.mem_dualPiece_iff, LinearMap.isHomogeneous_def]
+  refine ⟨fun hφ p x hx => (mem_trivialGrading_iff R R).mpr ?_, fun hφ p x hx hp =>
+    ((mem_trivialGrading_iff R R).mp (hφ p x hx)).resolve_left (by omega)⟩
+  exact if hp : p + q = 0 then Or.inl hp else Or.inr (hφ p x hx (by omega))
+
 /-- A functional in dual degree `p` vanishes on an original homogeneous vector of degree `q`
 unless `p + q = 0`. -/
 @[grind →]
@@ -128,10 +142,10 @@ noncomputable def dualPieceEquiv (G : InternalGrading R M ℤ) (p : ℤ) :
       rw [LinearMap.comp_apply, projection_apply,
         Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne G.piece hx hq), map_zero]⟩
   left_inv φ :=
-    Subtype.ext (LinearMap.ext fun x ↦ (dualPiece_apply_eq_apply_decompose G φ.2 x).symm)
+    Subtype.ext (LinearMap.ext fun x ↦ (dualPiece_apply_eq_apply_decompose G φ.property x).symm)
   right_inv ψ := LinearMap.ext fun y ↦ by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply, projection_apply,
-      Subtype.ext (DirectSum.decompose_of_mem_same G.piece y.2)]
+      Subtype.ext (DirectSum.decompose_of_mem_same G.piece y.property)]
 
 /-- A functional of dual degree `p` restricts to the degree-`-p` piece by evaluation. -/
 @[simp]
@@ -160,7 +174,7 @@ theorem dualPiece_eq_bot_of_piece_eq_bot (G : InternalGrading R M ℤ) {p : ℤ}
     (h : G.piece (-p) = ⊥) : G.dualPiece p = ⊥ := by
   refine (Submodule.eq_bot_iff _).mpr fun φ hφ ↦ LinearMap.ext fun x ↦ ?_
   have hx : (DirectSum.decompose G.piece x (-p) : M) = 0 :=
-    (Submodule.eq_bot_iff _).mp h _ (DirectSum.decompose G.piece x (-p)).2
+    (Submodule.eq_bot_iff _).mp h _ (DirectSum.decompose G.piece x (-p)).property
   rw [dualPiece_apply_eq_apply_decompose G hφ x, hx, map_zero, LinearMap.zero_apply]
 
 /-- The dual grading has only finitely many nonzero pieces as soon as the original one does, the
@@ -185,22 +199,22 @@ private theorem iSup_dualPiece_eq_top (G : InternalGrading R M ℤ)
         Submodule.subtype_apply]
       rw [neg_neg, DirectSum.decompose_of_mem_same G.piece hx]
     · intro p _ hp
-      exact G.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero (φp p).2 hx (by omega)
+      exact G.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero (φp p).property hx (by omega)
     · intro hq
       have hbot : G.dualPiece (-q) = ⊥ := by simpa using hq
       have hzero : (φp (-q) : Module.Dual R M) = 0 := by
-        simpa only [hbot, Submodule.mem_bot] using (φp (-q)).2
+        simpa only [hbot, Submodule.mem_bot] using (φp (-q)).property
       rw [hzero, LinearMap.zero_apply]
   rw [← hφ]
-  exact Submodule.sum_mem _ fun p _ ↦ le_iSup G.dualPiece p (φp p).2
+  exact Submodule.sum_mem _ fun p _ ↦ le_iSup G.dualPiece p (φp p).property
 
 /-- The direct sum of dual pieces embeds in the full linear dual without a finiteness hypothesis. -/
 private theorem coeLinearMap_dualPiece_injective (G : InternalGrading R M ℤ) :
     Function.Injective (DirectSum.coeLinearMap G.dualPiece) := by
   intro a b hab
   ext p x
-  rw [dualPiece_apply_eq_apply_decompose G (a p).2,
-    dualPiece_apply_eq_apply_decompose G (b p).2]
+  rw [dualPiece_apply_eq_apply_decompose G (a p).property,
+    dualPiece_apply_eq_apply_decompose G (b p).property]
   have hcomponent : ∀ c : ⨁ p, G.dualPiece p,
       DirectSum.coeLinearMap G.dualPiece c
         (DirectSum.decompose G.piece x (-p) : M) =
@@ -214,8 +228,8 @@ private theorem coeLinearMap_dualPiece_injective (G : InternalGrading R M ℤ) :
         simp
       · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_of_ne _ _ _ (Ne.symm hqp)]
         simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply]
-        exact dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero G φ.2
-          (DirectSum.decompose G.piece x (-p)).2 (by omega)
+        exact dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero G φ.property
+          (DirectSum.decompose G.piece x (-p)).property (by omega)
     | add c d hc hd => simp [hc, hd]
   rw [← hcomponent a, hab, hcomponent b]
 
@@ -268,9 +282,9 @@ theorem dual_decompose_apply (G : InternalGrading R M ℤ)
     ((DirectSum.decompose (G.dual hD).piece φ p : (G.dual hD).piece p) :
       Module.Dual R M) x = φ (DirectSum.decompose G.piece x (-p) : M) := by
   rw [dualPiece_apply_eq_apply_decompose G
-    (by exact (DirectSum.decompose (G.dual hD).piece φ p).2)]
+    (by exact (DirectSum.decompose (G.dual hD).piece φ p).property)]
   have h := dual_decompose_apply_of_mem_piece G hD φ
-    (DirectSum.decompose G.piece x (-p)).2
+    (DirectSum.decompose G.piece x (-p)).property
   have hp : - -p = p := by omega
   rw [hp] at h
   exact h

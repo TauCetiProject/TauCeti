@@ -63,9 +63,6 @@ variable {l m n o R A B C : Type*}
 @[simp] theorem ofMatrix_one [DecidableEq n] [Zero A] [One A] :
     ofMatrix (1 : Matrix n n A) = (1 : CStarMatrix n n A) := (rfl)
 
-@[simp] theorem ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
-    ofMatrix.symm (1 : CStarMatrix n n A) = (1 : Matrix n n A) := (rfl)
-
 @[simp] theorem ofMatrix_hMul [Fintype m] [Mul A] [AddCommMonoid A]
     (M : Matrix l m A) (N : Matrix m n A) :
     ofMatrix (M * N) = ofMatrix M * ofMatrix N := (rfl)
@@ -130,9 +127,6 @@ protected theorem mul_sub [Fintype m] [NonUnitalNonAssocRing A]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     (M * N).conjTranspose = N.conjTranspose * M.conjTranspose :=
   Matrix.conjTranspose_mul (ofMatrix.symm M) (ofMatrix.symm N)
-
-theorem map_comp (M : CStarMatrix m n A) (f : A → B) (g : B → C) :
-    (M.map f).map g = M.map (g ∘ f) := ext fun _ _ => rfl
 
 @[simp] theorem map_zero [Zero A] [Zero B] {f : A → B} (hf : f 0 = 0) :
     (0 : CStarMatrix m n A).map f = 0 := ext fun _ _ => hf
@@ -720,7 +714,7 @@ theorem continuous_blockRotation : Continuous (blockRotation (n := n) (A := A)) 
 noncomputable def blockRotationPath (θ : ℝ) :
     Path (1 : unitary (CStarMatrix (n ⊕ n) (n ⊕ n) A)) (blockRotation θ) where
   toFun t := blockRotation ((t : ℝ) * θ)
-  continuous_toFun := continuous_blockRotation.comp (continuous_subtype_val.mul continuous_const)
+  continuous_toFun := continuous_blockRotation.comp (continuous_subtypeVal.mul continuous_const)
   source' := by simp
   target' := by simp
 
@@ -736,13 +730,13 @@ end CStarRotation
 
 end BlockRotation
 
-end CStarMatrix
-
 /-- The block-diagonal C⋆-matrix `fromBlocks p 0 0 q` is a star projection when `p` and `q` are. -/
-theorem IsStarProjection.fromBlocks_zero₁₂_zero₂₁ {m n A : Type*} [Fintype m] [Fintype n]
+theorem isStarProjection_fromBlocks_zero₁₂_zero₂₁ {m n A : Type*} [Fintype m] [Fintype n]
     [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
     {p : CStarMatrix m m A} {q : CStarMatrix n n A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    IsStarProjection (CStarMatrix.fromBlocks p 0 0 q) :=
+    IsStarProjection (fromBlocks p 0 0 q) :=
   ⟨by simp [IsIdempotentElem, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq],
    by simp [IsSelfAdjoint, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]⟩
+
+end CStarMatrix

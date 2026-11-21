@@ -14,6 +14,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.UniformSpace.Compact
+import TauCeti.Analysis.CStarAlgebra.Idempotent
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 
 /-!
@@ -102,7 +103,7 @@ theorem Unitary.expUnitary_pi_half_one_sub {A : Type*} [NormedRing A] [NormedAlg
     (hmem : (π : ℂ) • ((2 : ℂ)⁻¹ • (1 - (u : A))) ∈ selfAdjoint A) :
     selfAdjoint.expUnitary ⟨(π : ℂ) • ((2 : ℂ)⁻¹ • (1 - (u : A))), hmem⟩ = u := by
   have hu2 : (u : A) * (u : A) = 1 := by
-    simpa [hu.star_eq] using Unitary.star_mul_self_of_mem u.2
+    simpa [hu.star_eq] using Unitary.star_mul_self_of_mem u.property
   apply Subtype.ext
   rw [(IsStarProjection.half_one_sub_of_mul_self_eq_one hu2 hu).coe_expUnitary_pi_smul hmem,
     smul_smul]
@@ -121,55 +122,13 @@ range (`e * p = p` and `p * e = e`). -/
 theorem IsIdempotentElem.exists_isStarProjection_similar {A : Type*} [CStarAlgebra A]
     {e : A} (he : IsIdempotentElem e) :
     ∃ p : A, IsStarProjection p ∧ e * p = p ∧ p * e = e ∧
-      ∃ s : Aˣ, (s : A) * e * ↑s⁻¹ = p := by
-  let : PartialOrder A := CStarAlgebra.spectralOrder A
-  let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  have hee : e * e = e := he.eq
-  have hss : Star.star e * Star.star e = Star.star e := by rw [← star_mul, hee]
-  let z : A := 1 + Star.star (e - Star.star e) * (e - Star.star e)
-  have hz_pos : IsStrictlyPositive z := isStrictlyPositive_one.add_nonneg (star_mul_self_nonneg _)
-  have hz_expand : z = 1 + Star.star e * e - Star.star e - e + e * Star.star e := by
-    calc z = 1 + (Star.star e * e - Star.star e * Star.star e - e * e + e * Star.star e) :=
-          by simp only [z, star_sub, star_star]; noncomm_ring
-      _ = 1 + Star.star e * e - Star.star e - e + e * Star.star e := by rw [hss, hee]; abel
-  have hez : e * z = e * Star.star e * e := by
-    calc e * z = e + e * Star.star e * e - e * Star.star e - e * e + (e * e) * Star.star e :=
-          by rw [hz_expand]; noncomm_ring
-      _ = e * Star.star e * e := by rw [hee]; abel
-  have hze : z * e = e * Star.star e * e := by
-    calc z * e = e + Star.star e * (e * e) - Star.star e * e - e * e + e * Star.star e * e :=
-          by rw [hz_expand]; noncomm_ring
-      _ = e * Star.star e * e := by rw [hee]; abel
-  have hcomm_e : Commute z e := hze.trans hez.symm
-  have hcomm_se : Commute z (Star.star e) := by
-    simpa only [Commute, SemiconjBy, star_mul, hz_pos.isSelfAdjoint.star_eq] using
-      (congrArg Star.star hcomm_e.eq).symm
-  let p : A := e * Star.star e * z⁻¹ʳ
-  have hep : e * p = p := by simp only [p, ← mul_assoc, hee]
-  have hpe : p * e = e := by
-    calc e * Star.star e * z⁻¹ʳ * e = (e * Star.star e * e) * z⁻¹ʳ := by
-          rw [mul_assoc, (commute_ring_inverse_left hz_pos.isUnit hcomm_e).eq, ← mul_assoc]
-      _ = e * (z * z⁻¹ʳ) := by rw [← hze, hcomm_e.eq, mul_assoc]
-      _ = e := by rw [Ring.mul_inverse_cancel _ hz_pos.isUnit, mul_one]
-  have hpp : IsIdempotentElem p := by
-    rw [IsIdempotentElem]; nth_rw 2 [← hep]; rw [← mul_assoc, hpe, hep]
-  have hp_sa : IsSelfAdjoint p := by
-    rw [isSelfAdjoint_iff, star_mul, ← Ring.inverse_star, hz_pos.isSelfAdjoint.star_eq, star_mul,
-      star_star, (commute_ring_inverse_left hz_pos.isUnit (hcomm_e.mul_right hcomm_se)).eq]
-  let s : Aˣ :=
-    { val := 1 - p + e, inv := 1 + p - e
-      val_inv := by
-        calc (1 - p + e) * (1 + p - e)
-            = 1 + p - e - p - p * p + p * e + e + e * p - e * e := by noncomm_ring
-          _ = 1 := by rw [hpp.eq, hpe, hep, hee]; abel
-      inv_val := by
-        calc (1 + p - e) * (1 - p + e)
-            = 1 - p + e + p - p * p + p * e - e + e * p - e * e := by noncomm_ring
-          _ = 1 := by rw [hpp.eq, hpe, hep, hee]; abel }
-  refine ⟨p, ⟨hpp, hp_sa⟩, hep, hpe, s, ?_⟩
-  calc (1 - p + e) * e * (1 + p - e)
-      = (e - p * e + e * e) * (1 + p - e) := by noncomm_ring
-    _ = p := by rw [hpe, hee, sub_self, zero_add, mul_sub, mul_add, mul_one, hee, hep]; abel
+      ∃ s : Aˣ, (s : A) * e * ↑s⁻¹ = p :=
+  ⟨TauCeti.idempotentRangeProjection e, he.isStarProjection_idempotentRangeProjection,
+    he.mul_idempotentRangeProjection, he.idempotentRangeProjection_mul,
+    TauCeti.idempotentConjUnit e (TauCeti.idempotentRangeProjection e)
+      he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul,
+    TauCeti.idempotentConjUnit_mul_mul_inv e (TauCeti.idempotentRangeProjection e)
+      he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul⟩
 
 /-- Every idempotent in a (possibly non-unital) C⋆-algebra is similar in the unitization `A⁺¹`
 to a star projection in `A` with the same range (`e * p = p` and `p * e = e`). -/
@@ -255,7 +214,7 @@ theorem IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one {A : Type*} [CSt
     have hup : (u : A) * p = q * (u : A) := by
       rw [hu_eq, mul_assoc, hzp, ← mul_assoc,
         (commute_ring_inverse_left hs_unit (hcomm_1d_q.cfcₙ_nnreal NNReal.sqrt)).eq, mul_assoc]
-    rw [hup, mul_assoc, Unitary.mul_star_self_of_mem u.2, mul_one]
+    rw [hup, mul_assoc, Unitary.mul_star_self_of_mem u.property, mul_one]
   have hu_add_star : (u : A) + star (u : A) = (2 : ℝ) • s := by
     have hsu : star (u : A) = s⁻¹ʳ * star z := by
       rw [hu_eq, star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
@@ -267,7 +226,8 @@ theorem IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one {A : Type*} [CSt
         = star (u : A) * (u : A) - ((u : A) + star (u : A)) + 1 := by
           rw [star_sub, star_one]; noncomm_ring
       _ = (2 : ℝ) • (1 - s) := by
-          rw [Unitary.star_mul_self_of_mem u.2, hu_add_star, smul_sub, two_smul, two_smul]; abel
+          rw [Unitary.star_mul_self_of_mem u.property, hu_add_star, smul_sub, two_smul, two_smul]
+          abel
   have h1d_le : 1 - d ≤ 1 := sub_le_self 1 (hd_sa_prod ▸ star_mul_self_nonneg (p - q))
   have h1d_norm_le : ‖1 - d‖ ≤ 1 := by
     simpa only [norm_one] using CStarAlgebra.norm_le_norm_of_le_of_nonneg h1d_le h1d_nonneg
@@ -324,7 +284,7 @@ theorem IsStarProjection.exists_path_isStarProjection_of_norm_sub_lt_one {A : Ty
   refine ⟨⟨⟨fun t => ((δ t : A⁺¹) * (p : A⁺¹) * star (δ t : A⁺¹)).snd, ?_⟩,
     by simp [δ.source], by simp [δ.target, hconj]⟩, fun t => (hp.unitization_conj_snd (δ t)).1⟩
   have hδ : Continuous (fun t : I => ((δ t : unitary A⁺¹) : A⁺¹)) :=
-    continuous_subtype_val.comp δ.continuous
+    continuous_subtypeVal.comp δ.continuous
   exact (Unitization.continuous_snd (𝕜 := ℂ) (A := A)).comp
     ((hδ.mul continuous_const).mul hδ.star)
 
@@ -344,7 +304,8 @@ theorem IsStarProjection.exists_unitary_conj_of_path {A : Type*} [CStarAlgebra A
   let N : ℕ := n + 1
   have hNposR : (0 : ℝ) < N := Nat.cast_pos.mpr (Nat.succ_pos n)
   let grid : Fin (N + 1) → I := fun k =>
-    ⟨(k : ℝ) / N, by positivity, (div_le_one hNposR).mpr (Nat.cast_le.mpr (Nat.le_of_lt_succ k.2))⟩
+    ⟨(k : ℝ) / N, by positivity,
+      (div_le_one hNposR).mpr (Nat.cast_le.mpr (Nat.le_of_lt_succ k.isLt))⟩
   have hstep : ∀ k : ℕ, (hk : k ≤ N) →
       ∃ u : unitary A, (u : A) * γ 0 * star (u : A) = γ (grid ⟨k, Nat.lt_succ_of_le hk⟩) ∧
         Joined (1 : unitary A) u := fun k => by

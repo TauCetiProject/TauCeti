@@ -13,6 +13,7 @@ import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 import TauCeti.Analysis.CStarAlgebra.Projection.Nearby
+import TauCeti.Data.Matrix.Block
 
 /-!
 # Murray–von Neumann equivalence of matrix projections
@@ -290,7 +291,7 @@ theorem MurrayVonNeumannEquiv.fromBlocks_comm [Fintype m] [Fintype n]
     (fromBlocks p 0 0 q).MurrayVonNeumannEquiv (fromBlocks q 0 0 p) := by
   simpa only [reindexₐ_sumComm_fromBlocks (R := ℕ)] using
     MurrayVonNeumannEquiv.reindexₐ (R := ℕ) (Equiv.sumComm m n)
-      (IsStarProjection.fromBlocks_zero₁₂_zero₂₁ hp hq)
+      (isStarProjection_fromBlocks_zero₁₂_zero₂₁ hp hq)
 
 /-- Block-diagonal sums of star projections are associative up to Murray–von Neumann equivalence. -/
 theorem MurrayVonNeumannEquiv.fromBlocks_assoc [Fintype m₁] [Fintype m₂] [Fintype m₃]
@@ -301,8 +302,8 @@ theorem MurrayVonNeumannEquiv.fromBlocks_assoc [Fintype m₁] [Fintype m₂] [Fi
       (fromBlocks p₁ 0 0 (fromBlocks p₂ 0 0 p₃)) := by
   simpa only [reindexₐ_sumAssoc_fromBlocks (R := ℕ)] using
     MurrayVonNeumannEquiv.reindexₐ (R := ℕ) (Equiv.sumAssoc m₁ m₂ m₃)
-      (IsStarProjection.fromBlocks_zero₁₂_zero₂₁
-        (IsStarProjection.fromBlocks_zero₁₂_zero₂₁ hp₁ hp₂) hp₃)
+      (isStarProjection_fromBlocks_zero₁₂_zero₂₁
+        (isStarProjection_fromBlocks_zero₁₂_zero₂₁ hp₁ hp₂) hp₃)
 
 /-- Unitary conjugacy of star projections implies Murray–von Neumann equivalence. -/
 theorem MurrayVonNeumannEquiv.of_unitary_conj [Fintype n] [DecidableEq n]
@@ -312,7 +313,7 @@ theorem MurrayVonNeumannEquiv.of_unitary_conj [Fintype n] [DecidableEq n]
     p.MurrayVonNeumannEquiv q := by
   refine ⟨(u : CStarMatrix n n A) * p, ?_, ?_⟩
   · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq, mul_assoc,
-      ← mul_assoc (star (u : CStarMatrix n n A)), Unitary.star_mul_self_of_mem u.2, one_mul,
+      ← mul_assoc (star (u : CStarMatrix n n A)), Unitary.star_mul_self_of_mem u.property, one_mul,
       hp.isIdempotentElem.eq]
   · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq, mul_assoc,
       ← mul_assoc p p, hp.isIdempotentElem.eq, ← mul_assoc, h]
@@ -334,7 +335,7 @@ theorem MurrayVonNeumannEquiv.of_unitization_unitary_conj [Fintype n]
     rw [← star_eq_conjTranspose, Unitization.inr_mul, Unitization.inr_star, hinr]
     simp only [v', star_mul, hp.inr.isSelfAdjoint.star_eq, mul_assoc]
     first
-    | rw [← mul_assoc (star (u : (CStarMatrix n n A)⁺¹)), Unitary.star_mul_self_of_mem u.2,
+    | rw [← mul_assoc (star (u : (CStarMatrix n n A)⁺¹)), Unitary.star_mul_self_of_mem u.property,
         one_mul, hp.inr.isIdempotentElem.eq]
     | rw [← mul_assoc (p : (CStarMatrix n n A)⁺¹) (p : (CStarMatrix n n A)⁺¹),
         hp.inr.isIdempotentElem.eq, ← mul_assoc, h]
@@ -365,8 +366,8 @@ theorem MurrayVonNeumannEquiv.of_matrix_unitization_unitary_conj [Fintype n] [De
     rw [CStarMatrix.map_mul ι, map_conjTranspose ι, hv_inr, ← star_eq_conjTranspose]
     simp only [v', star_mul, hp'.isSelfAdjoint.star_eq, mul_assoc]
     first
-    | rw [← mul_assoc (star (u : CStarMatrix n n A⁺¹)), Unitary.star_mul_self_of_mem u.2, one_mul,
-        hp'.isIdempotentElem.eq]
+    | rw [← mul_assoc (star (u : CStarMatrix n n A⁺¹)),
+        Unitary.star_mul_self_of_mem u.property, one_mul, hp'.isIdempotentElem.eq]
     | rw [← mul_assoc p' p', hp'.isIdempotentElem.eq, ← mul_assoc, hι]; exact h
 
 /-- Entrywise application of a non-unital star ring homomorphism preserves Murray–von Neumann
@@ -580,10 +581,13 @@ def stabilizedUnitary (v : CStarMatrix n m A) (hv₁ : v.conjTranspose * v = p)
     MurrayVonNeumannEquiv.isStarProjection_right ⟨v, hv₁, hv₂⟩ hp
   have hmul : fromBlocks (1 - p) v.conjTranspose v (1 - q) *
       fromBlocks (1 - p) v.conjTranspose v (1 - q) = 1 := by
-    obtain ⟨hvp, hqv, hpv, hvq⟩ := mul_eq_self_of_conjTranspose_mul_self hv₁ hv₂ hp.isIdempotentElem
-    simp only [fromBlocks_mul, CStarMatrix.sub_mul, CStarMatrix.mul_sub, CStarMatrix.one_mul,
-      CStarMatrix.mul_one, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq, hv₁, hv₂, hvp, hqv,
-      hpv, hvq, sub_self, sub_zero, add_zero, sub_add_cancel, add_sub_cancel, fromBlocks_one]
+    obtain ⟨hvp, -, hpv, -⟩ := mul_eq_self_of_conjTranspose_mul_self hv₁ hv₂ hp.isIdempotentElem
+    exact ofMatrix.symm.injective <| by
+      simpa only [ofMatrix_symm_hMul, ofMatrix_symm_fromBlocks, ofMatrix_symm_sub,
+        ofMatrix_symm_one, ofMatrix_symm_conjTranspose] using
+        Matrix.fromBlocks_one_sub_mul_self_of_mul_eq
+          (congrArg ofMatrix.symm hv₁) (congrArg ofMatrix.symm hv₂)
+          (congrArg ofMatrix.symm hpv) (congrArg ofMatrix.symm hvp)
   have hsa : star (fromBlocks (1 - p) v.conjTranspose v (1 - q)) =
       fromBlocks (1 - p) v.conjTranspose v (1 - q) := by
     rw [fromBlocks_star, star_sub, star_one, hp.isSelfAdjoint.star_eq,
@@ -613,9 +617,14 @@ theorem stabilizedUnitary_conj (v : CStarMatrix n m A) (hv₁ : v.conjTranspose 
       fromBlocks 0 0 0 q := by
   obtain ⟨hvp, -, -, -⟩ := mul_eq_self_of_conjTranspose_mul_self hv₁ hv₂ hp.isIdempotentElem
   rw [(isSelfAdjoint_stabilizedUnitary v hv₁ hv₂ hp).star_eq, coe_stabilizedUnitary]
-  simp only [fromBlocks_mul, CStarMatrix.mul_zero, CStarMatrix.zero_mul, CStarMatrix.sub_mul,
-    CStarMatrix.mul_sub, CStarMatrix.one_mul, CStarMatrix.mul_one, hp.isIdempotentElem.eq,
-    hv₂, hvp, sub_self, add_zero]
+  exact ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_hMul, ofMatrix_symm_fromBlocks, ofMatrix_symm_sub,
+      ofMatrix_symm_one, ofMatrix_symm_zero,
+      show ofMatrix.symm (0 : CStarMatrix m n A) = 0 from rfl,
+      show ofMatrix.symm (0 : CStarMatrix n m A) = 0 from rfl] using
+      Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq
+        (a := ofMatrix.symm v.conjTranspose) (b := ofMatrix.symm v)
+        (e := ofMatrix.symm p) (f := ofMatrix.symm q) hv₁ hv₂ hvp
 
 end StabilizedUnitary
 
@@ -685,6 +694,8 @@ private theorem path_of_unitization_unitary_path {k A : Type*} [Fintype k] [Deci
       star (u : CStarMatrix k k A⁺¹) = Q.map (Unitization.inr : A → A⁺¹))
     (hjoin : Joined (1 : unitary (CStarMatrix k k A⁺¹)) u) :
     ∃ γ : Path P Q, ∀ t : I, IsStarProjection (γ t) := by
+  let : PartialOrder A⁺¹ := CStarAlgebra.spectralOrder A⁺¹
+  let : StarOrderedRing A⁺¹ := CStarAlgebra.spectralOrderedRing A⁺¹
   let ι : A →⋆ₙₐ[ℂ] A⁺¹ := Unitization.inrNonUnitalStarAlgHom ℂ A
   have hι : (ι : A → A⁺¹) = Unitization.inr := funext fun _ => rfl
   obtain ⟨δ⟩ := hjoin
@@ -701,7 +712,7 @@ private theorem path_of_unitization_unitary_path {k A : Type*} [Fintype k] [Deci
     map_inr_map_snd_of_map_fstHom_eq_zero (hfst t)
   have hf_cont : Continuous f := by
     have hδ : Continuous (fun t : I => ((δ t : unitary (CStarMatrix k k A⁺¹)) :
-        CStarMatrix k k A⁺¹)) := continuous_subtype_val.comp δ.continuous
+        CStarMatrix k k A⁺¹)) := continuous_subtypeVal.comp δ.continuous
     exact (continuous_map (Unitization.continuous_snd (𝕜 := ℂ) (A := A))).comp
       ((hδ.mul continuous_const).mul hδ.star)
   have hinj : Function.Injective (fun M : CStarMatrix k k A => M.map (ι : A → A⁺¹)) := by
@@ -737,7 +748,7 @@ theorem MurrayVonNeumannEquiv.exists_path_fromBlocks_zero_left {m n A : Type*} [
   have hp' : IsStarProjection (p.map ι) := hp.map (CStarMatrix.mapₙₐ ι)
   obtain ⟨u, hconj, hjoin⟩ := (h.map ι).exists_stabilized_unitary_conj hp'
   refine path_of_unitization_unitary_path
-    (IsStarProjection.fromBlocks_zero₁₂_zero₂₁ hp (IsStarProjection.zero _)) ?_ hjoin
+    (isStarProjection_fromBlocks_zero₁₂_zero₂₁ hp (IsStarProjection.zero _)) ?_ hjoin
   simpa only [← hι, fromBlocks_map, CStarMatrix.map_zero (_root_.map_zero ι)] using hconj
 
 /-- **Stabilized homotopy of equivalent projections (equal sizes, non-unital case).**
@@ -756,7 +767,7 @@ theorem MurrayVonNeumannEquiv.exists_path_fromBlocks_zero_right {n A : Type*} [F
   have hp' : IsStarProjection (p.map ι) := hp.map (CStarMatrix.mapₙₐ ι)
   obtain ⟨u, hconj, hjoin⟩ := (h.map ι).exists_stabilized_unitary_conj_same hp'
   refine path_of_unitization_unitary_path
-    (IsStarProjection.fromBlocks_zero₁₂_zero₂₁ hp (IsStarProjection.zero _)) ?_ hjoin
+    (isStarProjection_fromBlocks_zero₁₂_zero₂₁ hp (IsStarProjection.zero _)) ?_ hjoin
   simpa only [← hι, fromBlocks_map, CStarMatrix.map_zero (_root_.map_zero ι)] using hconj
 
 end PathsAndStabilization

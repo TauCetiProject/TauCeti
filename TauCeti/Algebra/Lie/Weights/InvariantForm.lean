@@ -221,7 +221,7 @@ theorem killingExtend_apply_eq_zero [LieModule.IsTriangularizable K H L] (lam : 
   refine LieAlgebra.killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
     (α := (0 : H → K)) ?_ hx (by simpa using hχ)
   rw [LieAlgebra.rootSpace_zero_eq, LieSubalgebra.mem_toLieSubmodule]
-  exact ((cartanEquivDual H).symm lam).2
+  exact ((cartanEquivDual H).symm lam).property
 
 /-! ## Roots and coroots -/
 
@@ -256,7 +256,7 @@ theorem invForm_coroot (lam : Module.Dual K H) (i : H.root) :
     lam ((rootSystem H).coroot i) *
         invForm ((rootSystem H).root i) ((rootSystem H).root i) =
       2 * invForm lam ((rootSystem H).root i) :=
-  invForm_coroot_weight lam i.1
+  invForm_coroot_weight lam i.val
 
 /-! ## The invariant form of the root system -/
 
@@ -268,14 +268,14 @@ noncomputable def rootInvariantForm : (rootSystem H).InvariantForm where
     simpa only [rootSystem_root_apply] using invForm_self_ne_zero (H.isNonZero_coe_root i)
   isOrthogonal_reflection i := by
     intro a b
-    have ha := invForm_coroot_weight a i.1
-    have hb := invForm_coroot_weight b i.1
+    have ha := invForm_coroot_weight a i.val
+    have hb := invForm_coroot_weight b i.val
     rw [RootPairing.reflection_apply, RootPairing.reflection_apply]
     simp only [LinearMap.flip_apply, rootSystem_toLinearMap_apply,
       rootSystem_coroot_apply, rootSystem_root_apply, map_sub, LinearMap.sub_apply, map_smul,
       LinearMap.smul_apply, smul_eq_mul]
-    rw [(invForm_isSymm (H := H)).eq (i.1 : Module.Dual K H) b]
-    linear_combination (b (coroot i.1) / 2) * ha + (a (coroot i.1) / 2) * hb
+    rw [(invForm_isSymm (H := H)).eq (i.val : Module.Dual K H) b]
+    linear_combination (b (coroot i.val) / 2) * ha + (a (coroot i.val) / 2) * hb
 
 @[simp]
 theorem rootInvariantForm_form : (rootInvariantForm (H := H)).form = invForm := (rfl)
