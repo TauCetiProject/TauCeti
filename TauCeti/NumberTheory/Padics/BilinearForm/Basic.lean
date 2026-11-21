@@ -12,7 +12,7 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
-# Two dyadic phenomena for bilinear forms
+# Dyadic counterexamples for bilinear forms
 
 The hyperbolic plane over `ℤ_[2]`, obtained from the integer Gram matrix
 `!![0, 1; 1, 0]`, has no orthogonal basis. It illustrates why diagonalization of
@@ -22,12 +22,18 @@ Odd unimodular forms over `ℤ_[2]` do have orthogonal bases, but unlike at odd 
 and determinant square class do not classify them: the oddity, the trace of a diagonal Gram matrix
 modulo `8`, is a further invariant. The forms `⟨1, 1⟩` and `⟨3, 3⟩` are separated by it.
 
+At scale `2`, parity is an independent invariant as well: `⟨2, -2⟩` and `2 • U` both have scale
+`2`, rank `2`, determinant `-4`, and oddity `0`, yet only `2 • U` has all self-pairings divisible
+by `4`.
+
 ## Main results
 
 * `TauCeti.not_exists_orthogonal_basis_hyperbolic_padicInt_two`: the hyperbolic plane over
   `ℤ_[2]` has no orthogonal basis.
 * `TauCeti.not_equivalent_toBilin'_diagonal_one_one_three_three_padicInt_two`: the forms `⟨1, 1⟩`
   and `⟨3, 3⟩` over `ℤ_[2]` are not isometric.
+* `TauCeti.not_equivalent_toBilin'_diagonal_two_neg_two_two_smul_hyperbolic`: the forms `⟨2, -2⟩`
+  and `2 • U` over `ℤ_[2]` are not isometric.
 -/
 
 public section
@@ -76,5 +82,26 @@ theorem not_equivalent_toBilin'_diagonal_one_one_three_three_padicInt_two :
   obtain ⟨k, hk⟩ := h8'
   revert k
   decide
+
+/-- The forms `⟨2, -2⟩` and `2 • U` are not isometric over `ℤ_[2]`: both have scale `2`,
+rank `2`, determinant `-4`, and oddity `0`, yet `2 • U` takes values in `4 ℤ_[2]` while
+`⟨2, -2⟩` represents `2`. -/
+theorem not_equivalent_toBilin'_diagonal_two_neg_two_two_smul_hyperbolic :
+    ¬(Matrix.toBilin' (Matrix.diagonal ![2, -2] : Matrix (Fin 2) (Fin 2) ℤ_[2])).Equivalent
+      (Matrix.toBilin' ((2 : ℤ_[2]) • !![0, 1; 1, 0])) := by
+  rintro ⟨e⟩
+  have h4 : (4 : ℤ_[2]) ∣
+      Matrix.toBilin' ((2 : ℤ_[2]) • !![0, 1; 1, 0]) (e ![1, 0]) (e ![1, 0]) :=
+    ⟨e ![1, 0] 0 * e ![1, 0] 1, by
+      simp only [Matrix.toBilin'_apply', Matrix.mulVec, dotProduct, Fin.sum_univ_two,
+        Matrix.smul_apply, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_fin_one, smul_eq_mul]; ring⟩
+  have hdiag : Matrix.toBilin' (Matrix.diagonal ![2, -2] : Matrix (Fin 2) (Fin 2) ℤ_[2])
+      ![1, 0] ![1, 0] = 2 := by
+    simp [Matrix.toBilin'_apply', Matrix.mulVec_diagonal, dotProduct, Fin.sum_univ_two]
+  rw [e.map_app, hdiag] at h4
+  obtain ⟨r, hr⟩ := h4
+  exact PadicInt.not_isUnit_two (isUnit_iff_exists_inv.mpr ⟨r,
+    mul_left_cancel₀ (two_ne_zero (α := ℤ_[2])) (by linear_combination -hr)⟩)
 
 end TauCeti

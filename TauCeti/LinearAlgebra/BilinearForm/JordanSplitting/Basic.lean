@@ -906,6 +906,29 @@ theorem IsJordanSplitting.finite_of_finrank_eq
       · exact le_iSup_of_le i (le_iSup_of_le (hs.mem_toFinset.mpr hi) le_rfl)
   exact .of_fg_top (htop ▸ hfg)
 
+/-- A module with a finitely supported Jordan splitting whose constituents are finite and free is
+itself finite and free. -/
+theorem IsJordanSplitting.free_and_finite
+    {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {B : BilinForm R M} {π : R} {N : ℕ → Submodule R M}
+    (h : B.IsJordanSplitting π N) [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)]
+    {m : ℕ} (hm : ∀ i ≥ m, N i = ⊥) : Module.Free R M ∧ Module.Finite R M := by
+  have hsup : ⨆ i : Fin m, N i = ⊤ := by
+    rw [eq_top_iff, ← h.isInternal.submodule_iSup_eq_top]
+    refine iSup_le fun i ↦ ?_
+    by_cases hi : i < m
+    · exact le_iSup (fun j : Fin m ↦ N j) ⟨i, hi⟩
+    · rw [hm i (by omega)]
+      exact bot_le
+  have hint : DirectSum.IsInternal (fun i : Fin m ↦ N i) :=
+    (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
+      ⟨((DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mp h.isInternal).1.comp
+        Fin.val_injective, hsup⟩
+  let e : (∀ i : Fin m, N i) ≃ₗ[R] M :=
+    (DirectSum.linearEquivFunOnFintype R (Fin m) (fun i : Fin m ↦ N i)).symm.trans
+      (LinearEquiv.ofBijective (DirectSum.coeLinearMap (fun i : Fin m ↦ N i)) hint)
+  exact ⟨Module.Free.of_equiv e, Module.Finite.equiv e⟩
+
 /-- Prefixwise matching Jordan splittings of the same constituent ranks give isometric forms
 once the first splitting has finite support. -/
 theorem IsJordanSplitting.equivalent_of_forall_exists_equivalent_restrict

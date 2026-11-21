@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import TauCeti.Data.ZMod.Eight
@@ -437,12 +436,13 @@ theorem IsSymm.exists_isUnit_apply_self_toZModPow_two_eq_of_three_le {ι : Type*
   · exact ⟨c i2, hcu i2, h⟩
   · have ho {j k : Fin (Fintype.card ι)} (hjk : j ≠ k) : B (c j) (c k) = 0 :=
       iIsOrtho_def.mp hc j k hjk
+    have h01 : i0 ≠ i1 := by simp [i0, i1, Fin.ext_iff]
+    have h02 : i0 ≠ i2 := by simp [i0, i2, Fin.ext_iff]
+    have h12 : i1 ≠ i2 := by simp [i1, i2, Fin.ext_iff]
     have hval : B (c i0 + c i1 + c i2) (c i0 + c i1 + c i2) =
         B (c i0) (c i0) + B (c i1) (c i1) + B (c i2) (c i2) := by
-      simp only [map_add, LinearMap.add_apply, ho (show i0 ≠ i1 by simp [i0, i1]),
-        ho (show i0 ≠ i2 by simp [i0, i2]), ho (show i1 ≠ i2 by simp [i1, i2]),
-        ho (show i1 ≠ i0 by simp [i0, i1]), ho (show i2 ≠ i0 by simp [i0, i2]),
-        ho (show i2 ≠ i1 by simp [i1, i2]), add_zero, zero_add]
+      simp only [map_add, LinearMap.add_apply, ho h01, ho h02, ho h12,
+        ho h01.symm, ho h02.symm, ho h12.symm, add_zero, zero_add]
     have hmod : PadicInt.toZModPow 2 (B (c i0 + c i1 + c i2) (c i0 + c i1 + c i2)) = r := by
       rw [hval, map_add, map_add]; exact h
     refine ⟨c i0 + c i1 + c i2, by_contra fun hnu ↦ ?_, hmod⟩

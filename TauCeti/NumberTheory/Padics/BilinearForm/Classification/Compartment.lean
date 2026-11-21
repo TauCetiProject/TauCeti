@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.NumberTheory.Padics.BilinearForm.Classification.Invariants
-import Mathlib.Data.ZMod.Basic
+import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
@@ -147,8 +148,8 @@ private theorem isValidOdd_and_exists_rep_mod4 {M : Type*} {n : ℕ} [AddCommGro
     exact (by decide : ∀ (a : ZMod (2 ^ 3)) (b : Bool), a * a = 1 →
       canRepMod4 0 (decide (χ₈ a = -1)) a b = true →
       a = (if b then 3 else 1) ∨ a = (if b then 7 else 5)) (u 0) isThree (hu 0) hcan
-  · simp only [rankClass, show (2 : ℕ) ≠ 1 by decide, ↓reduceIte, Fin.prod_univ_two,
-      Fin.sum_univ_two]
+  · have h21 : (2 : ℕ) ≠ 1 := by decide
+    simp only [rankClass, h21, ↓reduceIte, Fin.prod_univ_two, Fin.sum_univ_two]
     refine ⟨(by decide : ∀ a d : ZMod (2 ^ 3), a * a = 1 → d * d = 1 →
         isValidOdd 1 (decide (χ₈ (a * d) = -1)) (a + d) = true) (u 0) (u 1) (hu 0) (hu 1),
       fun isThree hcan ↦ ?_⟩
@@ -173,9 +174,10 @@ private theorem isValidOdd_and_exists_rep_mod4 {M : Type*} {n : ℕ} [AddCommGro
     refine ⟨?_, fun isThree _ ↦ hC.exists_isUnit_apply_self_toZModPow_two_eq_of_three_le b hdet
       hodd (by simp)
       (by cases isThree <;> [exact isUnit_one; exact IsUnit.of_mul_eq_one 3 (by decide)])⟩
+    have hm1 : m + 3 ≠ 1 := by omega
+    have hm2 : m + 3 ≠ 2 := by omega
     by_cases hmod : (m + 3) % 2 = 1 <;>
-      simp only [rankClass, show m + 3 ≠ 1 by omega, show m + 3 ≠ 2 by omega, hmod,
-        ↓reduceIte] at h4s ⊢
+      simp only [rankClass, hm1, hm2, hmod, ↓reduceIte] at h4s ⊢
     · exact (by decide : ∀ s (t : ZMod (2 ^ 3)), 4 * t = 4 → isValidOdd 2 s t = true) _ _ h4s
     · exact (by decide : ∀ s (t : ZMod (2 ^ 3)), 4 * t = 0 → isValidOdd 3 s t = true) _ _ h4s
 
@@ -278,19 +280,6 @@ private theorem eq_or_flip_of_stateJ_eq {s s' : Bool} {t t' : ZMod (2 ^ 3)}
     (h : stateJ s t = stateJ s' t') : (s = s' ∧ t = t') ∨ ((!s) = s' ∧ t + 4 = t') := by
   revert s s' t t' h; decide
 
-private theorem sum_Icc_eq_of_eq_outside_two {c d a b : ℕ} (ha : a ∈ Finset.Icc c d)
-    (hb : b ∈ Finset.Icc c d) (hab : a ≠ b) {f g : ℕ → ZMod (2 ^ 3)}
-    (hout : ∀ i, i ≠ a → i ≠ b → f i = g i) (hpair : f a + f b = g a + g b) :
-    ∑ i ∈ Finset.Icc c d, f i = ∑ i ∈ Finset.Icc c d, g i := by
-  have hb' : b ∈ (Finset.Icc c d).erase a := Finset.mem_erase.mpr ⟨hab.symm, hb⟩
-  rw [← Finset.add_sum_erase _ _ ha, ← Finset.add_sum_erase _ _ hb',
-    ← Finset.add_sum_erase _ _ ha, ← Finset.add_sum_erase _ _ hb',
-    ← add_assoc, ← add_assoc, hpair]
-  congr 1
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [Finset.mem_erase, Finset.mem_erase] at hi
-  exact hout i hi.2.1 hi.1
-
 private theorem compT_and_compS_eq_of_outside_two {s s' : ℕ → Bool}
     {t t' : ℕ → ZMod (2 ^ 3)} {c d a b : ℕ}
     (ha : a ∈ Finset.Icc c d) (hb : b ∈ Finset.Icc c d) (hab : a ≠ b)
@@ -302,9 +291,28 @@ private theorem compT_and_compS_eq_of_outside_two {s s' : ℕ → Bool}
     (hS : (if s' a then (4 : ZMod (2 ^ 3)) else 0) + (if s' b then 4 else 0) =
       (if s a then 4 else 0) + (if s b then 4 else 0)) :
     compT s' t' c d = compT s t c d ∧ compS s' c d = compS s c d :=
-  ⟨sum_Icc_eq_of_eq_outside_two ha hb hab
-    (fun i h1 h2 ↦ by rw [(hout i h1 h2).1, (hout i h1 h2).2]) hT,
-   sum_Icc_eq_of_eq_outside_two ha hb hab (fun i h1 h2 ↦ by rw [(hout i h1 h2).1]) hS⟩
+  ⟨Finset.sum_eq_of_eq_outside_two ha hb hab
+    (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1, (hout i h1 h2).2]) hT,
+   Finset.sum_eq_of_eq_outside_two ha hb hab (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1]) hS⟩
+
+private theorem pairInv_eq_of_compT_compS {s s' : ℕ → Bool} {t t' : ℕ → ZMod (2 ^ 3)}
+    {c : ℕ} (hT : compT s t c (c + 1) = compT s' t' c (c + 1))
+    (hS : compS s c (c + 1) = compS s' c (c + 1)) :
+    pairInv ((s c, t c), (s (c + 1), t (c + 1))) =
+      pairInv ((s' c, t' c), (s' (c + 1), t' (c + 1))) := by
+  have hIcc : Finset.Icc c (c + 1) = {c, c + 1} := by
+    rw [← Finset.insert_Icc_succ_left_eq_Icc (Nat.le_succ c), Order.succ_eq_add_one,
+      Nat.succ_eq_add_one, Finset.Icc_self]
+  have hne : c ≠ c + 1 := Nat.ne_of_lt (Nat.lt_succ_self c)
+  have hd0 : c + 1 + 1 - c = 2 := by omega
+  have hd1 : c + 1 + 1 - (c + 1) = 1 := by omega
+  have hnotOdd2 : ¬Odd 2 := by decide
+  simp only [compT, compS, hIcc, Finset.sum_pair hne, hd0, hd1, hnotOdd2, odd_one,
+    false_and, true_and, ↓reduceIte, add_zero] at hT hS
+  refine Prod.ext (by simpa [pairInv, add_assoc] using hT) ?_
+  exact (by decide : ∀ a b e f : Bool,
+    (if a then (4 : ZMod (2 ^ 3)) else 0) + (if b then 4 else 0) =
+      (if e then 4 else 0) + (if f then 4 else 0) → xor a b = xor e f) _ _ _ _ hS
 
 private theorem compT_and_compS_eq_of_pairStep {s s' : ℕ → Bool} {t t' : ℕ → ZMod (2 ^ 3)}
     {c d k : ℕ} (hck : c ≤ k) (hkd : k + 1 ≤ d)
@@ -314,8 +322,9 @@ private theorem compT_and_compS_eq_of_pairStep {s s' : ℕ → Bool} {t t' : ℕ
     compT s' t' c d = compT s t c d ∧ compS s' c d = compS s c d := by
   have hp1 := Prod.mk.injEq .. ▸ congrArg Prod.fst hpair
   have hp2 := Prod.mk.injEq .. ▸ congrArg Prod.snd hpair
+  have hsub : d + 1 - k = (d + 1 - (k + 1)) + 1 := by omega
   have hpar : Odd (d + 1 - k) ↔ ¬Odd (d + 1 - (k + 1)) := by
-    rw [show d + 1 - k = (d + 1 - (k + 1)) + 1 by omega, Nat.odd_add_one]
+    rw [hsub, Nat.odd_add_one]
   have hkey : ∀ (s0 s1 a b p : Bool) (t0 t1 : ZMod (2 ^ 3)),
       let q := pairStep ((s0, t0), (s1, t1)) a b
       ((q.1.2 + if !p && q.1.1 then 4 else 0) + (q.2.2 + if p && q.2.1 then 4 else 0) =
@@ -336,8 +345,10 @@ private theorem compT_and_compS_eq_of_flip_add_two {s s' : ℕ → Bool}
     (hsk : s' k = !s k) (htk : t' k = t k + 4)
     (hsl : s' (k + 2) = !s (k + 2)) (htl : t' (k + 2) = t (k + 2) + 4) :
     compT s' t' c d = compT s t c d ∧ compS s' c d = compS s c d := by
+  have hsub : d + 1 - k = (d + 1 - (k + 2)) + 2 := by omega
   have hpar : Odd (d + 1 - k) ↔ Odd (d + 1 - (k + 2)) := by
-    rw [show d + 1 - k = (d + 1 - (k + 2)) + 2 by omega]; simp [Nat.odd_add]
+    rw [hsub]
+    simp [Nat.odd_add]
   have hkey : ∀ (s0 s2 p : Bool) (t0 t2 : ZMod (2 ^ 3)),
       ((t0 + 4 + if p && !s0 then 4 else 0) + (t2 + 4 + if p && !s2 then 4 else 0) =
         (t0 + if p && s0 then 4 else 0) + (t2 + if p && s2 then 4 else 0)) ∧
@@ -365,6 +376,21 @@ private noncomputable def pairState (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm
     PairState :=
   (state h hB k, state h hB (k + 1))
 
+private theorem state_of_pairState_eq (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm) {k : ℕ}
+    {s0 s1 : Bool} {t0 t1 : ZMod (2 ^ 3)} (hp : pairState h hB k = ((s0, t0), (s1, t1))) :
+    (signBool h k = s0 ∧ h.constituentOddity hB k = t0) ∧
+      (signBool h (k + 1) = s1 ∧ h.constituentOddity hB (k + 1) = t1) := by
+  have h1 := congrArg Prod.fst hp
+  have h2 := congrArg Prod.snd hp
+  simp only [pairState, state, Prod.mk.injEq] at h1 h2
+  exact ⟨h1, h2⟩
+
+private theorem signBool_eq_decide (h : B.IsJordanSplitting 2 N) {i : ℕ}
+    {C : BilinForm ℤ_[2] (N i)} (hC : (2 : ℤ_[2]) ^ i • C = B.restrict (N i))
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (d : Basis ι ℤ_[2] (N i)) :
+    signBool h i = decide (χ₈ (PadicInt.toZModPow 3 (C.toMatrix d).det) = -1) := by
+  simp only [signBool, h.constituentSign_eq hC d]
+
 private theorem isValidOdd_constituent_and_exists_mem (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm)
     {k : ℕ} (hodd : ¬∀ x ∈ N k, 2 * 2 ^ k ∣ B x x) :
     isValidOdd (rankClass (finrank ℤ_[2] (N k))) (signBool h k)
@@ -375,19 +401,20 @@ private theorem isValidOdd_constituent_and_exists_mem (h : B.IsJordanSplitting 2
       ∃ x ∈ N k, ∃ a : ℤ_[2], IsUnit a ∧ B x x = 2 ^ k * a ∧
         PadicInt.toZModPow 2 a = if isThree then 3 else 1 := by
   have := h.free k; have := h.finite k
-  obtain ⟨C, hC, hCp⟩ := isModular_def.mp (h.isModular k)
+  let C := h.constituentForm k
+  have hC := h.two_pow_smul_constituentForm k
   have h2k := mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k (two_ne_zero (α := ℤ_[2])))
-  have hCs : C.IsSymm := IsSymm.of_smul h2k (hC ▸ hB.restrict (N k))
   let d := Module.finBasis ℤ_[2] (N k)
-  obtain ⟨w, hw⟩ := hCs.exists_isCharacteristic PadicInt.two_dvd_sq_sub_self
   have hCodd : ∃ x : N k, IsUnit (C x x) := by
     obtain ⟨x, hx, a, ha, hxx⟩ := h.exists_mem_apply_self_eq_two_pow_mul hodd
     have hBC : (2 : ℤ_[2]) ^ k * C ⟨x, hx⟩ ⟨x, hx⟩ = B x x := by
       simpa using LinearMap.congr_fun₂ hC ⟨x, hx⟩ ⟨x, hx⟩
     exact ⟨⟨x, hx⟩, ((mul_cancel_left_mem_nonZeroDivisors h2k).mp (hBC.trans hxx)) ▸ ha⟩
-  have hres := isValidOdd_and_exists_rep_mod4 hCs d (d.isUnit_det_of_isPerfPair d C hCp) hCodd hw
-  rw [show signBool h k = decide (χ₈ (PadicInt.toZModPow 3 (C.toMatrix d).det) = -1) by
-      simp only [signBool, h.constituentSign_eq hC d], h.constituentOddity_eq hB hC hw]
+  have hres := isValidOdd_and_exists_rep_mod4 (h.isSymm_constituentForm hB k) d
+    (d.isUnit_det_of_isPerfPair d C (h.isPerfPair_constituentForm k)) hCodd
+    (h.isCharacteristic_constituentCharVec hB k)
+  rw [signBool_eq_decide h hC d,
+    h.constituentOddity_eq hB hC (h.isCharacteristic_constituentCharVec hB k)]
   refine ⟨hres.1, fun isThree hcan ↦ ?_⟩
   obtain ⟨x, hx, hmod⟩ := hres.2 isThree hcan
   exact ⟨x.val, x.property, C x x, hx, Eq.symm (by simpa using LinearMap.congr_fun₂ hC x x), hmod⟩
@@ -437,8 +464,7 @@ private theorem exists_move_odd_odd (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm
         h.constituentOddity_eq_add_of_eight_dvd h' hB (δ := 2 * v) hok,
         h.constituentOddity_eq_add_of_eight_dvd h' hB (δ := 2 * v) hol, h2v]⟩
   · have huv : (4 : ℤ_[2]) ∣ u + v := by
-      rw [show u + v = u - (-v) by ring, PadicInt.four_dvd_sub_iff_toZModPow_two_eq, map_neg,
-        humod, hvmod]
+      rw [← sub_neg_eq_add, PadicInt.four_dvd_sub_iff_toZModPow_two_eq, map_neg, humod, hvmod]
       cases a <;> cases b <;>
         first | exact absurd rfl hab | (simp only [↓reduceIte, Bool.false_eq_true]; decide)
     obtain ⟨N', h', hagree, hdk, hdl, hok, hol⟩ :=
@@ -477,7 +503,8 @@ private theorem exists_isJordanSplitting_of_pairValidPath (hB : B.IsSymm) {k : �
     simp only [pairValidPath, pairCanStep, Bool.and_eq_true] at hp
     obtain ⟨N1, h1, hagree1, hu1⟩ := exists_move_odd_odd h hB hodd0 hodd1 s.1 s.2 hp.1.1 hp.1.2
     have hrank (i) := h1.finrank_eq h two_ne_zero PadicInt.not_isUnit_two i
-    have hpar (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h i
+    have hpar (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h
+      (mem_nonZeroDivisors_of_ne_zero two_ne_zero) dvd_rfl i
     obtain ⟨N2, h2, hagree2, hu2⟩ := ih h1 (by rwa [hpar k]) (by rwa [hpar (k + 1)])
       (by rw [hrank k, hrank (k + 1), hu1]; exact hp.2)
     exact ⟨N2, h2, fun i h1' h2' ↦ (hagree2 i h1' h2').trans (hagree1 i h1' h2'), hu2⟩
@@ -530,15 +557,10 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
     set u := pairState h hB c
     set v : PairState := ((s' c, t' c), (s' (c + 1), t' (c + 1)))
     have hIcc : Finset.Icc c (c + 1) = {c, c + 1} := by
-      ext i; simp only [Finset.mem_Icc, Finset.mem_insert, Finset.mem_singleton]; omega
-    have hinv : pairInv u = pairInv v := by
-      simp only [compT, compS, hIcc, Finset.sum_pair (show c ≠ c + 1 by omega)] at hT hS
-      rw [show c + 1 + 1 - c = 2 by omega, show c + 1 + 1 - (c + 1) = 1 by omega] at hT
-      simp only [show ¬Odd 2 by decide, odd_one, false_and, true_and, ↓reduceIte, add_zero] at hT
-      refine Prod.ext (by simpa [pairInv, u, v, pairState, state, add_assoc] using hT) ?_
-      exact (by decide : ∀ a b e f : Bool,
-        (if a then (4 : ZMod (2 ^ 3)) else 0) + (if b then 4 else 0) =
-          (if e then 4 else 0) + (if f then 4 else 0) → xor a b = xor e f) _ _ _ _ hS
+      rw [← Finset.insert_Icc_succ_left_eq_Icc (Nat.le_succ c), Order.succ_eq_add_one,
+        Nat.succ_eq_add_one, Finset.Icc_self]
+    have hinv : pairInv u = pairInv v :=
+      pairInv_eq_of_compT_compS hT hS
     set rc0 := rankClass (finrank ℤ_[2] (N c)); set rc1 := rankClass (finrank ℤ_[2] (N (c + 1)))
     have hp1 := pairValidPath_pairCanon rc0 rc1 u
       (isValidOdd_constituent_and_exists_mem h hB hodd0).1
@@ -548,14 +570,16 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
         (hvalid' c (by simp)) (hvalid' (c + 1) (by simp)))
     obtain ⟨N', h', hagree, hu'⟩ := exists_isJordanSplitting_of_pairValidPath hB
       (_ ++ _) h hodd0 hodd1 (pairValidPath_append rc0 rc1 hp1 hp2)
+    have hproj := state_of_pairState_eq h' hB hu'
     refine ⟨N', h', fun i hi ↦ hagree i (by simp only [Finset.mem_Icc] at hi; omega)
         (by simp only [Finset.mem_Icc] at hi; omega), fun i hi ↦ ?_⟩
     rw [hIcc, Finset.mem_insert, Finset.mem_singleton] at hi
     rcases hi with rfl | rfl
-    · exact Prod.mk.injEq .. ▸ congrArg Prod.fst hu'
-    · exact Prod.mk.injEq .. ▸ congrArg Prod.snd hu'
+    · exact hproj.1
+    · exact hproj.2
   | len + 2, c, N, h, hodd, hvalid', hT, hS => by
     set d := c + (len + 2)
+    have h2nz : (2 : ℤ_[2]) ∈ nonZeroDivisors ℤ_[2] := mem_nonZeroDivisors_of_ne_zero two_ne_zero
     have hodd0 := hodd c (by simp [d]); have hodd1 := hodd (c + 1) (by simp [d])
     -- Step 1: match `stateJ` at index `c` using at most `2` moves on `(c, c + 1)`.
     obtain ⟨N1, h1, hagree1, hJ1, hT1, hS1⟩ : ∃ N1, ∃ h1 : B.IsJordanSplitting 2 N1,
@@ -574,7 +598,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
       · obtain ⟨N1, h1, hagree1, hf1, hT1, hS1⟩ :=
           exists_move_stateJ_step h hB (d := d) (by omega) a1 hodd0 hodd1 ha1
         have hrank1 := h1.finrank_eq h two_ne_zero PadicInt.not_isUnit_two c
-        have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h i
+        have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h h2nz dvd_rfl i
         have hodd0' : ¬∀ x ∈ N1 c, 2 * 2 ^ c ∣ B x x := by rwa [hpar1 c]
         obtain ⟨N2, h2, hagree2, hf2, hT2, hS2⟩ :=
           exists_move_stateJ_step h1 hB (d := d) (by omega) a2 hodd0' (by rwa [hpar1 (c + 1)])
@@ -591,7 +615,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
       rcases eq_or_flip_of_stateJ_eq hJ1 with ⟨hs, ht⟩ | ⟨hs, ht⟩
       · exact ⟨N1, h1, fun i hi ↦ hagree1 i (by simp only [Finset.mem_Icc] at hi; omega)
           (by simp only [Finset.mem_Icc] at hi; omega), hs, ht, hT1, hS1⟩
-      · have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h i
+      · have hpar1 (i) := h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h h2nz dvd_rfl i
         obtain ⟨N2, h2, hagree2, hdk, hdl, hok, hol⟩ :=
           h1.exists_signWalk_add_two_of_odd_of_odd hB (by rwa [hpar1 c])
             (by rw [hpar1 (c + 2)]; exact hodd (c + 2) (by simp [d]))
@@ -615,14 +639,16 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
             exact (hagree2 i (by omega) (by omega)).trans (hagree1 i (by omega) (by omega)),
           hsc.trans hs, htc.trans ht, hTS2.1.trans hT1, hTS2.2.trans hS1⟩
     -- Step 3: peel off index `c` and apply the induction hypothesis to `[c + 1, d]`.
+    have hcd : c ≤ d := by omega
+    have hd : d = (c + 1) + (len + 1) := by omega
     have hIcc_split : Finset.Icc c d = insert c (Finset.Icc (c + 1) ((c + 1) + (len + 1))) := by
-      ext i; simp only [Finset.mem_Icc, Finset.mem_insert]; omega
+      rw [← Finset.insert_Icc_succ_left_eq_Icc hcd, hd, Order.succ_eq_add_one]
     have hc_notMem : c ∉ Finset.Icc (c + 1) ((c + 1) + (len + 1)) := by
       simp only [Finset.mem_Icc]; omega
     obtain ⟨N3, h3, hagree3, hmatch3⟩ := exists_isJordanSplitting_matching_compartment hB s' t'
       (len + 1) (c + 1) N2 h2
       (fun i hi ↦ by
-        rw [h2.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h i]
+        rw [h2.forall_two_mul_pow_dvd_iff_of_isJordanSplitting h h2nz dvd_rfl i]
         exact hodd i (hIcc_split ▸ Finset.mem_insert_of_mem hi))
       (fun i hi ↦ by
         rw [h2.finrank_eq h two_ne_zero PadicInt.not_isUnit_two i]
@@ -630,7 +656,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
       (by
         unfold compT at hT2 ⊢
         rw [hIcc_split, Finset.sum_insert hc_notMem, Finset.sum_insert hc_notMem, hsc2, htc2] at hT2
-        simpa only [show d = (c + 1) + (len + 1) by omega] using add_left_cancel hT2)
+        simpa only [hd] using add_left_cancel hT2)
       (by
         unfold compS at hS2 ⊢
         rw [hIcc_split, Finset.sum_insert hc_notMem, Finset.sum_insert hc_notMem, hsc2] at hS2

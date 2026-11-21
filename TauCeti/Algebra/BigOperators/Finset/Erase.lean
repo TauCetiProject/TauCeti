@@ -23,6 +23,9 @@ the product with one factor removed by the full product leaves the inverse of th
   the products with a second function once `f t` is replaced by `f t'`.
 * `Finset.prod_erase_mul_units_inv`: `(∏_{j ∈ s, j ≠ a} f j) / ∏_{j ∈ s} f j = 1 / f a` in a
   commutative monoid, when the full product and `f a` are units.
+* `Finset.prod_eq_of_eq_outside_two`, `Finset.sum_eq_of_eq_outside_two`: two functions on a finite
+  set that agree outside `{a, b}` and have equal products (sums) on `{a, b}` have equal products
+  (sums) on the whole set.
 -/
 
 public section
@@ -65,5 +68,24 @@ theorem sum_erase_merge_mul {ι R : Type*} [NonUnitalNonAssocSemiring R] [Decida
     ∑ a ∈ A.erase t, (v a + if a = t' then v t else 0) * f a =
       ∑ a ∈ A.erase t, v a * f a + v t * f t' := by
   simp [add_mul, sum_add_distrib, ht'A']
+
+/-- Two functions on a finite set `s` that agree outside `{a, b}` and have equal products on
+`{a, b}` have equal products on `s`. -/
+@[to_additive
+/-- Two functions on a finite set `s` that agree outside `{a, b}` and have equal sums on
+`{a, b}` have equal sums on `s`. -/]
+theorem prod_eq_of_eq_outside_two {ι M : Type*} [CommMonoid M] {s : Finset ι}
+    {a b : ι} (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) {f g : ι → M}
+    (hout : ∀ i ∈ s, i ≠ a → i ≠ b → f i = g i) (hpair : f a * f b = g a * g b) :
+    ∏ i ∈ s, f i = ∏ i ∈ s, g i := by
+  classical
+  have hb' : b ∈ s.erase a := mem_erase.mpr ⟨hab.symm, hb⟩
+  rw [← mul_prod_erase s f ha, ← mul_prod_erase (s.erase a) f hb',
+    ← mul_prod_erase s g ha, ← mul_prod_erase (s.erase a) g hb',
+    ← mul_assoc, ← mul_assoc, hpair]
+  congr 1
+  refine prod_congr rfl fun i hi ↦ ?_
+  rw [mem_erase, mem_erase] at hi
+  exact hout i hi.2.2 hi.2.1 hi.1
 
 end Finset
