@@ -49,6 +49,15 @@ in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported 
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
+The cutoff of a compact set also comes in a form that is eventually equal to one near every point
+of the set (`IsCompact.exists_contDiff_cutoff_eventuallyEq_one`) and in a form whose value and
+gradient are bounded by a common constant (`IsCompact.exists_contDiff_cutoff_with_bounds`; for a
+given compactly supported `C¹` function, `ContDiff.exists_abs_le_and_norm_gradient_le`). A bilinear
+product `L (f x) (g x)` is globally `C^k` when `g` is supported inside an open set on which `f` and
+`g` are `C^k` (`ContinuousLinearMap.contDiff_of_tsupport_subset_right`), and satisfies the usual
+derivative rule when `g` is differentiable and `f` is differentiable on that set
+(`ContinuousLinearMap.fderiv_of_tsupport_subset_right`).
+
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
@@ -64,11 +73,20 @@ have `L²` mass at least `2 r` and derivative energy bounded independently of `c
 ball with bounded gradient there has integral at most the squared bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
+On a finite-dimensional real normed space, for a constant `C` depending only on the space, every
+ball of radius `r` has a cutoff that is one on it and zero beyond radius `2 r`, with derivative of
+norm at most `C r⁻¹` (`TauCeti.exists_cutoff_fderiv_bound`). For `R > 0`, a cutoff `χ` equal to
+one on the closed ball of radius `R` and zero beyond radius `2 R`, with `‖Dχ‖ ≤ A` everywhere, and
+data `u` with `‖x‖ ‖u x‖ ≤ M` whenever `‖x‖ ≥ R`, the product `‖Dχ x‖ ‖u x‖` is at most `A (M / R)`
+on the closed ball of radius `2 R` and vanishes outside it
+(`TauCeti.norm_fderiv_mul_norm_le_indicator`).
+
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
 a time interval, for a bump `χ` and a small scale `s`, have compact support
 (`ContDiffBump.hasCompactSupport_cutoff_mul`), an explicit derivative
-(`ContDiffBump.fderiv_cutoff_mul_apply`) with a bound
-(`ContDiffBump.norm_cutoff_fderiv_le`) that tends to the derivative of `φ` as `s → 0`
+(`ContDiffBump.fderiv_cutoff_mul_apply`) whose norm is at most `(C + B * D) * (1 + ‖w‖)` for bounds
+`C`, `B`, `D` on `φ'`, `φ`, `χ'` (`ContDiffBump.norm_cutoff_fderiv_le`), and which tends, as
+`s → 0`, to the derivative of `φ` applied to `(1, w)`
 (`ContDiffBump.tendsto_cutoff_fderiv_add`).
 
 ## References
@@ -226,8 +244,9 @@ theorem _root_.ContinuousLinearMap.contDiff_of_tsupport_subset_right {𝕜 A B G
       simp [hy]
     exact contDiffAt_const.congr_of_eventuallyEq h0
 
-/-- The usual bilinear derivative rule holds globally when the second factor is supported
-inside the open set where the first factor is differentiable. Outside this set all terms vanish. -/
+/-- The usual bilinear derivative rule holds globally when the second factor `g` is
+differentiable everywhere and supported inside the open set `s` where the first factor `f` is
+differentiable. Outside `s` all terms vanish. -/
 theorem _root_.ContinuousLinearMap.fderiv_of_tsupport_subset_right {𝕜 A B G : Type*}
     [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
     [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
@@ -922,10 +941,14 @@ theorem fderiv_cutoff_mul_apply {φ : ℝ × E → ℝ} {q : ℝ × E} (hφd : D
   rw [fderiv_fun_mul hc.differentiableAt hφd, hc.fderiv]
   simp
 
-/-- The bound on the derivative at `q`, applied to `(1, w)`, of a cut-off
-`(t, x) ↦ χ (s • x) * φ (t, x)`: the cut-off does not increase the derivative of `φ`, and the
-derivative of `χ`, applied to `s • w`, contributes at most `B * D * (1 + ‖w‖)`, where `B` bounds `φ`
-and `D` bounds the derivative of `χ`; so the bound is `(C + B * D) * (1 + ‖w‖)`. -/
+/-- The bound on the expression
+`χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w)`, which
+`ContDiffBump.fderiv_cutoff_mul_apply` identifies with the derivative at `q`, applied to `(1, w)`,
+of the cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` when `φ` is differentiable at `q`. The statement
+itself assumes no differentiability: the cut-off does not increase the derivative of `φ`, whose
+norm is at most `C`, and the derivative of `χ`, applied to `s • w`, contributes at most
+`B * D * (1 + ‖w‖)`, where `B` bounds `φ` and `D` bounds the derivative of `χ` (for `‖s‖ ≤ 1`); so
+the bound is `(C + B * D) * (1 + ‖w‖)`. -/
 theorem norm_cutoff_fderiv_le (χ : ContDiffBump (0 : E)) {φ : ℝ × E → ℝ} {C D B : ℝ}
     {q : ℝ × E} (hC : ‖fderiv ℝ φ q‖ ≤ C) {s : ℝ} (hD : ‖fderiv ℝ χ (s • q.2)‖ ≤ D)
     (hB : ‖φ q‖ ≤ B) (hs : ‖s‖ ≤ 1) (w : E) :
