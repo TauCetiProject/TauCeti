@@ -551,7 +551,7 @@ theorem puncturedSphereAlmostComplex_associativity_of_one_le {τ L : ℝ} (hτ :
     -- The configurations agree; it remains to match the end structures entry by entry.
     congr 1
     funext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
 
 variable {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
   {I' : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
