@@ -10,24 +10,22 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Algebra.Order.Chebyshev
-import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Analysis.Complex.Trigonometric
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Fourier.Fejer
 import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
+import TauCeti.Analysis.Normed.Group.AddCircle
 
 /-!
 # Bombieri's additive large sieve inequality
 
 This file proves Bombieri's additive large sieve inequality for trigonometric polynomials evaluated
 at points well-spaced in the circle `UnitAddCircle = ℝ / ℤ`, following Bombieri's 1971 Hilbert-space
-proof via Selberg's weighted Gram inequality (`TauCeti.sum_norm_inner_sq_le_of_diag_offDiag`) and
+proof via Selberg's weighted Gram inequality (`Finset.sum_norm_inner_sq_le_of_diag_offDiag`) and
 tapered Fourier vectors.
 
 ## Main definitions
@@ -40,24 +38,15 @@ tapered Fourier vectors.
 
 ## Main results
 
-* `TauCeti.sum_Icc_max_sub_abs_mul_fourierChar`: the triangular Fourier sum identity
-  `∑ n ∈ Icc (-K) K, max 0 (M - |n|) * e(n * t) = ‖∑ k ∈ range M, e(k * t)‖ ^ 2` for `M ≤ K`.
-* `TauCeti.norm_sum_range_fourierChar_mul_abs_sin` and
-  `TauCeti.norm_sum_range_fourierChar_sq_eq_sin_div_sq`: closed forms for the norm of a geometric
-  exponential sum in terms of `Real.sin`.
-* `TauCeti.two_mul_norm_unitAddCircle_le_abs_sin` and
-  `TauCeti.four_mul_norm_unitAddCircle_sq_le_sin_sq`: the circular sine lower bound
-  `2 * ‖(t : UnitAddCircle)‖ ≤ |sin (π * t)|`.
-* `TauCeti.card_filter_floor_div_norm_unitAddCircle_le_two`: circular radial bin-packing bound
-  showing that at most two points of a `δ`-separated family lie in each shell
-  `m δ ≤ ‖x_i - x_j‖ < (m + 1) δ`.
 * `TauCeti.sum_erase_inv_sin_sq_le`: the cosecant row bound
   `∑ j ∈ s.erase i, (sin (π * (x i - x j)) ^ 2)⁻¹ ≤ π ^ 2 / (12 * δ ^ 2)`.
 * `TauCeti.inner_taperedFourierVec`, `TauCeti.norm_taperedFourierVec_sq`, and
   `TauCeti.norm_inner_taperedFourierVec_le`: Gram entries of `taperedFourierVec`.
-* `TauCeti.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le`: the cosecant-row large sieve for
+* `Finset.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le`: the cosecant-row large sieve for
   core-supported vectors.
-* `TauCeti.sum_norm_sum_Ico_fourierChar_sq_le` and `TauCeti.sum_norm_sum_fourierChar_sq_le`:
+* `Finset.sum_norm_sum_fourierChar_sq_le_of_support`: centered core additive large sieve for
+  `0 < δ ≤ 1 / 2`.
+* `Finset.sum_norm_sum_Ico_fourierChar_sq_le` and `Finset.sum_norm_sum_fourierChar_sq_le`:
   **Bombieri's additive large sieve inequality** with constant `H + 2 / δ` for arbitrary `H : ℕ`,
   `M : ℤ`, `0 < δ`, and `δ`-separated points in `UnitAddCircle`.
 
@@ -73,171 +62,7 @@ open scoped InnerProductSpace ComplexConjugate
 
 namespace TauCeti
 
-/-! ### Finite Fourier sums and triangular weights -/
-
-/-- For `M ≤ K`, the triangular Fourier polynomial over `[-K, K]` equals the squared norm of the
-first `M` additive characters `k ↦ Real.fourierChar (k * t)`. -/
-theorem sum_Icc_max_sub_abs_mul_fourierChar {M K : ℕ} (hMK : M ≤ K) (t : ℝ) :
-    ∑ n ∈ Finset.Icc (-(K : ℤ)) K,
-        ((max (0 : ℝ) ((M : ℝ) - |(n : ℝ)|) : ℝ) : ℂ) *
-          (Real.fourierChar ((n : ℝ) * t) : ℂ) =
-      (‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 : ℝ) := by
-  have hexp :
-      ((‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 : ℝ) : ℂ) =
-        ∑ i ∈ Finset.range M, ∑ j ∈ Finset.range M,
-          (Real.fourierChar ((((i : ℤ) - j : ℤ) : ℝ) * t) : ℂ) := by
-    rw [Complex.ofReal_pow, ← Complex.mul_conj', map_sum, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv, ← Circle.coe_mul,
-      ← AddChar.map_add_eq_mul]
-    congr 2; push_cast; ring
-  have hsplit :
-      ∀ i ∈ Finset.range M, ∀ j ∈ Finset.range M,
-        (Real.fourierChar ((((i : ℤ) - j : ℤ) : ℝ) * t) : ℂ) =
-          ∑ n ∈ Finset.Icc (-(K : ℤ)) K,
-            if (i : ℤ) - j = n then (Real.fourierChar ((n : ℝ) * t) : ℂ) else 0 := by
-    intro i hi j hj
-    have hiM : i < M := Finset.mem_range.mp hi
-    have hjM : j < M := Finset.mem_range.mp hj
-    have hmem : (i : ℤ) - j ∈ Finset.Icc (-(K : ℤ)) K :=
-      Finset.mem_Icc.mpr ⟨by omega, by omega⟩
-    rw [Finset.sum_ite_eq, ite_eq_left hmem]
-  rw [hexp, Finset.sum_congr rfl fun i hi ↦ Finset.sum_congr rfl fun j hj ↦ hsplit i hi j hj,
-    Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [Finset.sum_range_sum_range_ite_int_sub_eq_nsmul, nsmul_eq_mul]
-  congr 1
-  have habs : (n.natAbs : ℝ) = |(n : ℝ)| := by
-    rw [← Int.cast_natCast, Int.natCast_natAbs, Int.cast_abs]
-  have hcast : ((M - n.natAbs : ℕ) : ℝ) = max (0 : ℝ) ((M : ℝ) - |(n : ℝ)|) := by
-    rw [← habs]
-    by_cases hn : n.natAbs ≤ M
-    · rw [Nat.cast_sub hn, max_eq_right (sub_nonneg.mpr (Nat.cast_le.mpr hn))]
-    · rw [Nat.sub_eq_zero_of_le (le_of_not_ge hn), Nat.cast_zero,
-        max_eq_left (sub_nonpos.mpr (Nat.cast_le.mpr (le_of_not_ge hn)))]
-  exact_mod_cast hcast.symm
-
-/-- Closed-form product identity for the norm of a geometric exponential sum:
-`‖∑ k ∈ range M, Real.fourierChar (k * t)‖ * |sin (π * t)| = |sin (π * M * t)|`. -/
-theorem norm_sum_range_fourierChar_mul_abs_sin (M : ℕ) (t : ℝ) :
-    ‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ * |Real.sin (Real.pi * t)| =
-      |Real.sin (Real.pi * (M : ℝ) * t)| := by
-  let z : ℂ := (Real.fourierChar t : ℂ)
-  have hpow : ∀ k : ℕ, (Real.fourierChar ((k : ℝ) * t) : ℂ) = z ^ k := by
-    intro k
-    rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul]
-  simp_rw [hpow]
-  have hgeom := congrArg norm (geom_sum_mul z M)
-  rw [norm_mul] at hgeom
-  have hz1 : ‖z - 1‖ = 2 * |Real.sin (Real.pi * t)| := by
-    have h1 : z = Complex.exp (Complex.I * ((2 * Real.pi * t : ℝ) : ℂ)) := by
-      simp only [z, Real.fourierChar_apply, mul_comm]
-    rw [h1, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
-    congr 3; ring
-  have hzM : ‖z ^ M - 1‖ = 2 * |Real.sin (Real.pi * (M : ℝ) * t)| := by
-    have hM : z ^ M = Complex.exp (Complex.I * ((2 * Real.pi * (M : ℝ) * t : ℝ) : ℂ)) := by
-      rw [← hpow M, Real.fourierChar_apply, mul_comm]
-      congr 2; push_cast; ring
-    rw [hM, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
-    congr 3; ring
-  rw [hz1, hzM] at hgeom
-  linarith
-
-/-- Whenever `sin (π * t) ≠ 0`, the squared norm of the geometric exponential sum of length `M`
-equals `(sin (π * M * t) / sin (π * t)) ^ 2`. -/
-theorem norm_sum_range_fourierChar_sq_eq_sin_div_sq (M : ℕ) {t : ℝ}
-    (ht : Real.sin (Real.pi * t) ≠ 0) :
-    ‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 =
-      (Real.sin (Real.pi * (M : ℝ) * t) / Real.sin (Real.pi * t)) ^ 2 := by
-  have h := congrArg (fun r : ℝ ↦ r ^ 2) (norm_sum_range_fourierChar_mul_abs_sin M t)
-  rw [mul_pow, sq_abs, sq_abs] at h
-  rw [div_pow, eq_div_iff (pow_ne_zero 2 ht)]
-  exact h
-
-/-! ### Circular separation and cosecant row bounds -/
-
-/-- Jordan's sine lower bound on `UnitAddCircle = ℝ / ℤ`:
-`2 * ‖(t : UnitAddCircle)‖ ≤ |sin (π * t)|`. -/
-theorem two_mul_norm_unitAddCircle_le_abs_sin (t : ℝ) :
-    2 * ‖(t : UnitAddCircle)‖ ≤ |Real.sin (Real.pi * t)| := by
-  set u : ℝ := t - round t
-  have hu : ‖(t : UnitAddCircle)‖ = |u| := UnitAddCircle.norm_eq
-  have hle : |u| ≤ 1 / 2 := abs_sub_round t
-  have hsin_le : 2 * |u| ≤ Real.sin (Real.pi / 2 * (2 * |u|)) :=
-    Real.le_sin_mul (by positivity) (by linarith)
-  have harg : Real.pi / 2 * (2 * |u|) = Real.pi * |u| := by ring
-  have habs_u : |Real.sin (Real.pi * |u|)| = |Real.sin (Real.pi * u)| := by
-    rcases abs_cases u with ⟨h, _⟩ | ⟨h, _⟩
-    · rw [h]
-    · rw [h, mul_neg, Real.sin_neg, abs_neg]
-  have habs_t : |Real.sin (Real.pi * u)| = |Real.sin (Real.pi * t)| := by
-    have hsub : Real.pi * u = Real.pi * t - (round t : ℤ) * Real.pi := by
-      simp only [u]; ring
-    rw [hsub, Real.sin_sub_int_mul_pi, abs_mul, abs_zpow, abs_neg, abs_one, one_zpow, one_mul]
-  calc
-    2 * ‖(t : UnitAddCircle)‖ = 2 * |u| := by rw [hu]
-    _ ≤ Real.sin (Real.pi * |u|) := harg ▸ hsin_le
-    _ ≤ |Real.sin (Real.pi * |u|)| := le_abs_self _
-    _ = |Real.sin (Real.pi * t)| := habs_u.trans habs_t
-
-/-- Squared form of Jordan's sine lower bound on `UnitAddCircle`:
-`4 * ‖(t : UnitAddCircle)‖ ^ 2 ≤ sin (π * t) ^ 2`. -/
-theorem four_mul_norm_unitAddCircle_sq_le_sin_sq (t : ℝ) :
-    4 * ‖(t : UnitAddCircle)‖ ^ 2 ≤ Real.sin (Real.pi * t) ^ 2 := by
-  nlinarith [two_mul_norm_unitAddCircle_le_abs_sin t, sq_abs (Real.sin (Real.pi * t)),
-    norm_nonneg (t : UnitAddCircle)]
-
-/-- Circular radial bin-packing bound: around any center `c : ℝ`, each radial bin
-`⌊‖c - x j‖ / δ⌋₊ = m` of a `δ`-separated finite family in `UnitAddCircle` contains at most two
-indices `j ∈ s` (at most one on each side of `c`). -/
-theorem card_filter_floor_div_norm_unitAddCircle_le_two {ι : Type*}
-    {s : Finset ι} {x : ι → ℝ} {δ : ℝ} (hδ : 0 < δ)
-    (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ ‖((x i - x j : ℝ) : UnitAddCircle)‖)
-    (c : ℝ) (m : ℕ) :
-    (s.filter fun j ↦ ⌊‖((c - x j : ℝ) : UnitAddCircle)‖ / δ⌋₊ = m).card ≤ 2 := by
-  classical
-  let B : Finset ι :=
-    s.filter fun j ↦ ⌊‖((c - x j : ℝ) : UnitAddCircle)‖ / δ⌋₊ = m
-  let u : ι → ℝ := fun j ↦ (c - x j) - round (c - x j)
-  have hdiff_le : ∀ j₁ j₂, ‖((x j₁ - x j₂ : ℝ) : UnitAddCircle)‖ ≤ |u j₂ - u j₁| := by
-    intro j₁ j₂
-    have hcoe : ((x j₁ - x j₂ : ℝ) : UnitAddCircle) = ((u j₂ - u j₁ : ℝ) : UnitAddCircle) := by
-      let k : ℤ := round (c - x j₁) - round (c - x j₂)
-      have hsub : u j₂ - u j₁ = (x j₁ - x j₂) + k • (1 : ℝ) := by
-        simp only [u, k, zsmul_eq_mul, mul_one, Int.cast_sub]; ring
-      rw [hsub, AddCircle.coe_add, AddCircle.coe_zsmul, AddCircle.coe_period, smul_zero, add_zero]
-    rw [hcoe, UnitAddCircle.norm_eq]
-    simpa using round_le (u j₂ - u j₁) 0
-  have hbin : ∀ j ∈ B, (m : ℝ) * δ ≤ |u j| ∧ |u j| < ((m : ℝ) + 1) * δ := by
-    intro j hj
-    have hm : ⌊‖((c - x j : ℝ) : UnitAddCircle)‖ / δ⌋₊ = m := (Finset.mem_filter.mp hj).2
-    rw [← UnitAddCircle.norm_eq (x := c - x j)]
-    exact ⟨(le_div_iff₀ hδ).mp (hm ▸ Nat.floor_le (by positivity)),
-      (div_lt_iff₀ hδ).mp (hm ▸ Nat.lt_floor_add_one _)⟩
-  have hside : ∀ (P : ℝ → Prop) [DecidablePred P],
-      (∀ r₁ r₂, P r₁ → P r₂ → |r₂ - r₁| = |(|r₂| - |r₁|)|) →
-      (B.filter fun j ↦ P (u j)).card ≤ 1 := by
-    intro P _ hP
-    refine Finset.card_le_one.mpr fun j₁ hj₁ j₂ hj₂ ↦ ?_
-    by_contra hne
-    rcases Finset.mem_filter.mp hj₁ with ⟨hj₁B, hP₁⟩
-    rcases Finset.mem_filter.mp hj₂ with ⟨hj₂B, hP₂⟩
-    have hb₁ := hbin j₁ hj₁B
-    have hb₂ := hbin j₂ hj₂B
-    have hlt : |u j₂ - u j₁| < δ := by
-      rw [hP (u j₁) (u j₂) hP₁ hP₂, abs_lt]
-      exact ⟨by linarith, by linarith⟩
-    linarith [hsep j₁ (Finset.mem_filter.mp hj₁B).1 j₂ (Finset.mem_filter.mp hj₂B).1 hne,
-      hdiff_le j₁ j₂]
-  have hpos_card := hside (0 ≤ ·) fun r₁ r₂ h₁ h₂ ↦ by rw [abs_of_nonneg h₁, abs_of_nonneg h₂]
-  have hneg_card := hside (¬ 0 ≤ ·) fun r₁ r₂ h₁ h₂ ↦ by
-    rw [abs_of_neg (lt_of_not_ge h₁), abs_of_neg (lt_of_not_ge h₂), ← abs_neg (r₂ - r₁)]
-    congr 1; ring
-  have hpart := Finset.card_filter_add_card_filter_not (s := B) (fun j ↦ 0 ≤ u j)
-  dsimp only [B] at hpart hpos_card hneg_card
-  omega
+/-! ### Cosecant row bound -/
 
 /-- Bombieri's cosecant row bound: for any `δ`-separated finite family in `UnitAddCircle` (`0 < δ`)
 and any `i ∈ s`, `∑ j ∈ s.erase i, (sin (π * (x i - x j)) ^ 2)⁻¹ ≤ π ^ 2 / (12 * δ ^ 2)`. -/
@@ -293,19 +118,6 @@ theorem sum_erase_inv_sin_sq_le {ι : Type*} [DecidableEq ι] {s : Finset ι} {x
     _ ≤ (4 * δ ^ 2)⁻¹ * (2 * (Real.pi ^ 2 / 6)) :=
       mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hzeta (by positivity)) (by positivity)
     _ = Real.pi ^ 2 / (12 * δ ^ 2) := by ring
-
-/-- Because every point of `UnitAddCircle` has norm at most `1 / 2`, a `δ`-separated finite family
-with `1 / 2 < δ` has cardinality at most `1`. -/
-theorem card_le_one_of_half_lt_norm_unitAddCircle {ι : Type*} {s : Finset ι} {x : ι → ℝ} {δ : ℝ}
-    (hδ : 1 / 2 < δ)
-    (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ ‖((x i - x j : ℝ) : UnitAddCircle)‖) :
-    s.card ≤ 1 := by
-  refine Finset.card_le_one.mpr fun i hi j hj ↦ ?_
-  by_contra hne
-  have hle : ‖((x i - x j : ℝ) : UnitAddCircle)‖ ≤ 1 / 2 := by
-    simpa using AddCircle.norm_le_half_period (p := (1 : ℝ)) one_ne_zero
-      (x := ((x i - x j : ℝ) : UnitAddCircle))
-  linarith [hsep i hi j hj hne]
 
 /-! ### Bombieri's tapered Fourier vectors -/
 
@@ -425,10 +237,10 @@ theorem inner_taperedFourierVec (N L : ℕ) (x y : ℝ) :
     rw [PiLp.inner_apply]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     set n : ℤ := (k : ℤ) - ((N + L : ℕ) : ℤ)
-    rw [RCLike.inner_apply, taperedFourierVec_apply, taperedFourierVec_apply, map_mul,
-      Complex.conj_ofReal, ← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv, neg_neg,
-      mul_mul_mul_comm, ← Complex.ofReal_mul, Real.mul_self_sqrt (taperWeight_nonneg N L n),
-      ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
+    simp only [RCLike.inner_apply, taperedFourierVec_apply, map_mul, Complex.conj_ofReal,
+      Real.conj_fourierChar, neg_neg]
+    rw [mul_mul_mul_comm, ← Complex.ofReal_mul, Real.mul_self_sqrt (taperWeight_nonneg N L n),
+      Real.fourierChar_mul_fourierChar]
     congr 3; ring
   have hreindex :
       (∑ k : Fin (2 * (N + L) + 1),
@@ -497,9 +309,17 @@ theorem inner_taperedFourierVec_eq_sum {N L : ℕ} (hL : 0 < L) (x : ℝ)
   rw [PiLp.inner_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   by_cases hk : |(k : ℤ) - ((N + L : ℕ) : ℤ)| ≤ (N : ℤ)
-  · rw [RCLike.inner_apply, taperedFourierVec_apply_of_abs_le hL x hk, ← Circle.coe_inv_eq_conj,
-      ← AddChar.map_neg_eq_inv, neg_neg]
+  · simp only [RCLike.inner_apply, taperedFourierVec_apply_of_abs_le hL x hk, Real.conj_fourierChar,
+      neg_neg, mul_comm]
   · rw [hf k (lt_of_not_ge hk), inner_zero_right, zero_mul]
+
+end TauCeti
+
+/-! ### Bombieri's additive large sieve -/
+
+namespace Finset
+
+open TauCeti
 
 /-- Cosecant-row large sieve for vectors supported on the flat core `|k - (N + L)| ≤ N`: if the
 off-diagonal cosecant row sums are bounded by `S ≥ 0`, then the sum of squared Fourier polynomial
@@ -523,7 +343,7 @@ theorem sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le {ι : Type*} [Decida
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [norm_inner_symm, inner_taperedFourierVec_eq_sum hL (x i) f hf]
   rw [hinner]
-  refine sum_norm_inner_sq_le_of_diag_offDiag s (fun i ↦ taperedFourierVec N L (x i)) f
+  refine s.sum_norm_inner_sq_le_of_diag_offDiag (fun i ↦ taperedFourierVec N L (x i)) f
     (by positivity) (fun i _ ↦ (norm_taperedFourierVec_sq hL (x i)).le) fun i hi ↦ ?_
   calc
     ∑ j ∈ s.erase i, ‖⟪taperedFourierVec N L (x i), taperedFourierVec N L (x j)⟫_ℂ‖
@@ -535,8 +355,6 @@ theorem sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le {ι : Type*} [Decida
       simp_rw [mul_inv, Finset.mul_sum]
     _ ≤ (L : ℝ)⁻¹ * S := mul_le_mul_of_nonneg_left (hrow i hi) (by positivity)
     _ = S / (L : ℝ) := by ring
-
-/-! ### Bombieri's additive large sieve -/
 
 /-- Centered core additive large sieve for `0 < δ ≤ 1 / 2`: taking taper width `L = ⌊1 / δ⌋₊`
 yields the explicit constant `2 * N + 2 / δ`. -/
@@ -581,7 +399,7 @@ theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
     have hlb := two_mul_norm_unitAddCircle_le_abs_sin (x i - x j)
     rw [hzero, abs_zero] at hlb
     linarith [hsep i hi j hj hne]
-  have hmain := sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le s x hL_pos f hf
+  have hmain := s.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le x hL_pos f hf
     (by positivity) hsin (fun i hi ↦ sum_erase_inv_sin_sq_le hδ hsep hi)
   exact le_trans hmain (mul_le_mul_of_nonneg_right (by linarith) (sq_nonneg _))
 
@@ -635,8 +453,8 @@ private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     by_cases hk : L ≤ k.val ∧ k.val - L < H
     · simp only [f, hk, and_self, ↓reduceIte]
-      rw [← mul_assoc, mul_comm (Real.fourierChar _ : ℂ), mul_assoc, ← Circle.coe_mul,
-        ← AddChar.map_add_eq_mul]
+      rw [← mul_assoc, mul_comm (Real.fourierChar _ : ℂ), mul_assoc,
+        Real.fourierChar_mul_fourierChar]
       congr 3
       have heq : M + ((k.val - L : ℕ) : ℤ) = (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by
         omega
@@ -650,7 +468,7 @@ private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
         ‖∑ k : Fin (2 * (N + L) + 1),
             f k * (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * x i) : ℂ)‖ ^ 2
         ≤ (2 * (N : ℝ) + 2 / δ) * ‖f‖ ^ 2 :=
-      sum_norm_sum_fourierChar_sq_le_of_support s x hδ hδ' hsep N f hf_supp
+      s.sum_norm_sum_fourierChar_sq_le_of_support x hδ hδ' hsep N f hf_supp
     _ = (2 * (N : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by rw [hnorm_f]
     _ ≤ ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 :=
       mul_le_mul_of_nonneg_right (by linarith) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
@@ -666,7 +484,7 @@ theorem sum_norm_sum_Ico_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ
     ∑ i ∈ s, ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2 ≤
       ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   by_cases hδ' : δ ≤ 1 / 2
-  · exact sum_norm_sum_Ico_fourierChar_sq_le_of_le_half s M H a x hδ hδ' hsep
+  · exact s.sum_norm_sum_Ico_fourierChar_sq_le_of_le_half M H a x hδ hδ' hsep
   have hcard : (s.card : ℝ) ≤ 1 := by
     exact_mod_cast card_le_one_of_half_lt_norm_unitAddCircle (lt_of_not_ge hδ') hsep
   have hsingle : ∀ i ∈ s,
@@ -740,6 +558,6 @@ theorem sum_norm_sum_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ) (H
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [hb j]; push_cast; rfl
   simpa only [hsum_fourier, hsum_norm_sq] using
-    sum_norm_sum_Ico_fourierChar_sq_le s M H b x hδ hsep
+    s.sum_norm_sum_Ico_fourierChar_sq_le M H b x hδ hsep
 
-end TauCeti
+end Finset

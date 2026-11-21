@@ -23,18 +23,18 @@ This file proves:
 * `TauCeti.sum_norm_inner_eq_zero_iff_norm_eq_zero` and `TauCeti.sum_norm_inner_eq_zero_iff`:
   a Gram row sum `r i` vanishes if and only if `‖y i‖ = 0` (respectively `y i = 0` in a normed
   inner-product space).
-* `TauCeti.norm_sum_smul_sq_le_sum_mul_sum_norm_inner`: for any scalars `c : ι → 𝕜`,
+* `Finset.norm_sum_smul_sq_le_sum_mul_sum_norm_inner`: for any scalars `c : ι → 𝕜`,
   `‖∑ i ∈ s, c i • y i‖ ^ 2 ≤ ∑ i ∈ s, ‖c i‖ ^ 2 * r i`.
-* `TauCeti.norm_sub_sum_inner_div_sq_le`: Selberg's normalized projection defect bound,
+* `Finset.norm_sub_sum_inner_div_sq_le`: Selberg's normalized projection defect bound,
   `‖x - ∑ i ∈ s, (⟪y i, x⟫_𝕜 / r i) • y i‖ ^ 2 ≤ ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i`.
-* `TauCeti.sum_norm_inner_sq_div_le`: **Selberg's weighted Gram inequality**,
+* `Finset.sum_norm_inner_sq_div_le`: **Selberg's weighted Gram inequality**,
   `∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i ≤ ‖x‖ ^ 2`, with zero rows contributing zero under totalized
   real division.
-* `TauCeti.sum_norm_inner_sq_le_of_sum_norm_inner_le`: the uniform Gram-row inequality,
+* `Finset.sum_norm_inner_sq_le_of_sum_norm_inner_le`: the uniform Gram-row inequality,
   `∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ C * ‖x‖ ^ 2` whenever `0 ≤ C` and `r i ≤ C` for all `i ∈ s`.
 * `TauCeti.sum_norm_inner_sq_le_sup'_sum_norm_inner`: the maximum-row Gram inequality for nonempty
   `s`.
-* `TauCeti.sum_norm_inner_sq_le_of_diag_offDiag`: the diagonal/off-diagonal Gram inequality when
+* `Finset.sum_norm_inner_sq_le_of_diag_offDiag`: the diagonal/off-diagonal Gram inequality when
   `‖y i‖ ^ 2 ≤ D` and `∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O` with `0 ≤ D + O`.
 
 ## References
@@ -49,11 +49,11 @@ public section
 
 open scoped InnerProductSpace
 
-namespace TauCeti
-
 section Seminormed
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+namespace TauCeti
 
 /-- A Gram row sum `∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖` vanishes if and only if `‖y i‖ = 0`. -/
 theorem sum_norm_inner_eq_zero_iff_norm_eq_zero {s : Finset ι} {y : ι → E} {i : ι} (hi : i ∈ s) :
@@ -70,6 +70,10 @@ theorem sum_norm_inner_eq_zero_iff_norm_eq_zero {s : Finset ι} {y : ι → E} {
     have hle : ‖⟪y i, y j⟫_𝕜‖ ≤ ‖y i‖ * ‖y j‖ := norm_inner_le_norm (y i) (y j)
     rw [h, zero_mul] at hle
     exact le_antisymm hle (norm_nonneg _)
+
+end TauCeti
+
+namespace Finset
 
 /-- **Gram-row quadratic bound for a finite linear combination** (Bombieri, eq. (4)):
 `‖∑ i ∈ s, c i • y i‖ ^ 2 ≤ ∑ i ∈ s, ‖c i‖ ^ 2 * ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖`. -/
@@ -146,7 +150,7 @@ theorem norm_sub_sum_inner_div_sq_le (s : Finset ι) (y : ι → E) (x : E) :
         ‖x‖ ^ 2 - 2 * RCLike.re ⟪x, ∑ i ∈ s, c i • y i⟫_𝕜 + ‖∑ i ∈ s, c i • y i‖ ^ 2 :=
     norm_sub_sq (𝕜 := 𝕜) x (∑ i ∈ s, c i • y i)
   have hbound : ‖∑ i ∈ s, c i • y i‖ ^ 2 ≤ ∑ i ∈ s, ‖c i‖ ^ 2 * r i :=
-    norm_sum_smul_sq_le_sum_mul_sum_norm_inner s y c
+    s.norm_sum_smul_sq_le_sum_mul_sum_norm_inner y c
   linarith
 
 /-- **Selberg's weighted Gram inequality** (Bombieri 1971, Proposition 1): for every finite family
@@ -156,7 +160,7 @@ Zero rows contribute zero under totalized real division; no completeness, indepe
 nonvanishing assumption is needed. -/
 theorem sum_norm_inner_sq_div_le (s : Finset ι) (y : ι → E) (x : E) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / (∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) ≤ ‖x‖ ^ 2 := by
-  have hdef := norm_sub_sum_inner_div_sq_le (𝕜 := 𝕜) s y x
+  have hdef := s.norm_sub_sum_inner_div_sq_le (𝕜 := 𝕜) y x
   linarith [sq_nonneg ‖x - ∑ i ∈ s,
     (⟪y i, x⟫_𝕜 / ((∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ : ℝ) : 𝕜)) • y i‖]
 
@@ -170,7 +174,7 @@ theorem sum_norm_inner_sq_le_of_sum_norm_inner_le (s : Finset ι) (y : ι → E)
     intro i hi
     set r : ℝ := ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖
     by_cases hr : r = 0
-    · have hy0 : ‖y i‖ = 0 := (sum_norm_inner_eq_zero_iff_norm_eq_zero (𝕜 := 𝕜) hi).mp hr
+    · have hy0 : ‖y i‖ = 0 := (TauCeti.sum_norm_inner_eq_zero_iff_norm_eq_zero (𝕜 := 𝕜) hi).mp hr
       have hinner0 : ‖⟪x, y i⟫_𝕜‖ = 0 := by
         have hle := norm_inner_le_norm (𝕜 := 𝕜) x (y i)
         rw [hy0, mul_zero] at hle
@@ -186,7 +190,11 @@ theorem sum_norm_inner_sq_le_of_sum_norm_inner_le (s : Finset ι) (y : ι → E)
         ≤ ∑ i ∈ s, C * (‖⟪x, y i⟫_𝕜‖ ^ 2 / ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) :=
       Finset.sum_le_sum hterm
     _ = C * ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ := (Finset.mul_sum _ _ _).symm
-    _ ≤ C * ‖x‖ ^ 2 := mul_le_mul_of_nonneg_left (sum_norm_inner_sq_div_le s y x) hC
+    _ ≤ C * ‖x‖ ^ 2 := mul_le_mul_of_nonneg_left (s.sum_norm_inner_sq_div_le y x) hC
+
+end Finset
+
+namespace TauCeti
 
 /-- **Maximum-row Gram inequality** (Bennett–Siksek 2020, Theorem 7): for a nonempty finite family
 `y : ι → E` on `s : Finset ι`, the sum of squared inner products with `x` is at most `‖x‖ ^ 2`
@@ -196,10 +204,14 @@ theorem sum_norm_inner_sq_le_sup'_sum_norm_inner {s : Finset ι} (hs : s.Nonempt
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤
       s.sup' hs (fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) * ‖x‖ ^ 2 := by
   obtain ⟨i₀, hi₀⟩ := hs
-  refine sum_norm_inner_sq_le_of_sum_norm_inner_le s y x ?_
+  refine s.sum_norm_inner_sq_le_of_sum_norm_inner_le y x ?_
     (fun i hi ↦ Finset.le_sup' (f := fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) hi)
   exact le_trans (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
     (Finset.le_sup' (f := fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) hi₀)
+
+end TauCeti
+
+namespace Finset
 
 /-- **Diagonal/off-diagonal Gram inequality**: if `0 ≤ D + O`, `‖y i‖ ^ 2 ≤ D`, and
 `∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O` for all `i ∈ s`, then
@@ -208,10 +220,12 @@ theorem sum_norm_inner_sq_le_of_diag_offDiag [DecidableEq ι] (s : Finset ι) (y
     {D O : ℝ} (hDO : 0 ≤ D + O) (hdiag : ∀ i ∈ s, ‖y i‖ ^ 2 ≤ D)
     (hoff : ∀ i ∈ s, ∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ (D + O) * ‖x‖ ^ 2 := by
-  refine sum_norm_inner_sq_le_of_sum_norm_inner_le s y x hDO fun i hi ↦ ?_
+  refine s.sum_norm_inner_sq_le_of_sum_norm_inner_le y x hDO fun i hi ↦ ?_
   rw [← Finset.add_sum_erase _ _ hi, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal,
     abs_of_nonneg (norm_nonneg _)]
   exact add_le_add (hdiag i hi) (hoff i hi)
+
+end Finset
 
 end Seminormed
 
@@ -219,12 +233,14 @@ section Normed
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
+namespace TauCeti
+
 /-- In a normed inner-product space, a Gram row sum `∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖` vanishes if and only
 if `y i = 0`. -/
 theorem sum_norm_inner_eq_zero_iff {s : Finset ι} {y : ι → E} {i : ι} (hi : i ∈ s) :
     (∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) = 0 ↔ y i = 0 := by
   rw [sum_norm_inner_eq_zero_iff_norm_eq_zero (𝕜 := 𝕜) hi, norm_eq_zero]
 
-end Normed
-
 end TauCeti
+
+end Normed
