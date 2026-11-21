@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
@@ -29,10 +30,11 @@ In particular `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≤ f + N ‖D²v - D²u‖`, so `
 with a right-hand side whose positive part is at most `‖f⁺‖_{Lᵖ} + η` in `Lᵖ`. No regularity or
 measurability of the coefficients is needed.
 
-Shifting `v` up by `ζ` and dividing by `1 + 3 ζ` absorbs the error `η` in the right-hand side: the
-result `w` lies between `ū / (1 + 3 ζ)` and `(ū + 2 ζ) / (1 + 3 ζ)` on `K`, and its right-hand side
-obeys the same `Lᵖ` bound as `f⁺`. So `w ≥ 0` where `ū ≥ 0`, and `w ≤ 1` where `ū ≤ 1`, which is
-the form in which the Krylov–Safonov estimates consume supersolutions.
+Shifting `v` up by `η / 2` gives a smooth `w` with `ū ≤ w ≤ ū + η` on `K` (preserving nonnegativity
+without rescaling, for the weak Harnack and Harnack inequalities); shifting `v` up by `ζ` and
+dividing by `1 + 3 ζ` absorbs the error `η` in the right-hand side: the result `w` lies between
+`ū / (1 + 3 ζ)` and `(ū + 2 ζ) / (1 + 3 ζ)` on `K`, and its right-hand side obeys the same `Lᵖ`
+bound as `f⁺`. So `w ≥ 0` where `ū ≥ 0`, and `w ≤ 1` where `ū ≤ 1`.
 
 Subsolutions, `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f`, are approximated in the same way, now from below: shifting `v`
 down gives a smooth `w` with `ū - η ≤ w ≤ ū` on `K`, a classical subsolution whose right-hand
@@ -46,8 +48,12 @@ principle consumes subsolutions.
 * `TauCeti.PDE.exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: a strong
   supersolution is uniformly approximated by smooth classical supersolutions whose right-hand
   sides have nearly the same `Lᵖ` norm of the positive part.
+* `TauCeti.PDE.exists_contDiff_le_and_le_add_and_sum_mul_fderiv_fderiv_le_of_wkp`: an upward
+  approximation `ū ≤ w ≤ ū + η` of a strong supersolution.
 * `TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`: the same for
   a two-sided bound `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
+* `TauCeti.PDE.exists_contDiff_le_and_le_add_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`: an upward
+  approximation `ū ≤ w ≤ ū + η` for a two-sided bound `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
 * `TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: the rescaled
   approximations, classical supersolutions whose right-hand sides obey a given `Lᵖ` bound for
   `f⁺`.
@@ -251,8 +257,8 @@ theorem exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp {p : ℝ≥0�
   obtain ⟨v, hv, hvK, hvH⟩ := Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le hp
     u hcont hū hK hKΩ hδ
   set w : EuclideanSpace ℝ ι → ℝ := fun y ↦ v y - η / 2
-  have hww : fderiv ℝ (fderiv ℝ w) = fderiv ℝ (fderiv ℝ v) :=
-    congrArg _ (funext fun y ↦ fderiv_sub_const _)
+  have hww : ∀ x, fderiv ℝ (fderiv ℝ w) x = fderiv ℝ (fderiv ℝ v) x :=
+    fderiv_fderiv_sub_const v (η / 2)
   set D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
     fun x ↦ fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x
   set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
@@ -293,6 +299,36 @@ theorem exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp {p : ℝ≥0�
         rw [mul_div_assoc', div_le_iff₀ (by positivity)]
         nlinarith
 
+/-- **Approximation of a strong supersolution from above.** Under the hypotheses of
+`TauCeti.PDE.exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp`, shifting the smooth
+approximations upward by `η / 2` gives `w` with `ū ≤ w ≤ ū + η` on `K`, `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼw ≤ g` on
+`S`, and `‖g⁺‖_{Lᵖ(S)} ≤ ‖f⁺‖_{Lᵖ(S)} + η`. -/
+theorem exists_contDiff_le_and_le_add_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ ι)} (u : Wkp mu Ω p 2)
+    {ū : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn ū Ω)
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū)
+    {K S : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hSK : S ⊆ K)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Λ : ℝ}
+    (ha : ∀ᵐ x ∂mu.restrict S, ∀ i j, |a x i j| ≤ Λ)
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : ∀ᵐ x ∂mu.restrict S,
+      ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ w g : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ (⊤ : ℕ∞) w ∧
+      (∀ y ∈ K, ū y ≤ w y ∧ w y ≤ ū y + η) ∧
+      (∀ x ∈ S, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ g x) ∧
+      eLpNorm (fun x ↦ (g x)⁺) p (mu.restrict S) ≤
+        eLpNorm (fun x ↦ (f x)⁺) p (mu.restrict S) + ENNReal.ofReal η := by
+  obtain ⟨v, g, hv, hvK, hvg, hg⟩ :=
+    exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp hp u hcont hū hK hKΩ hSK ha hf
+      (half_pos hη)
+  refine ⟨fun y ↦ v y + η / 2, g, hv.add contDiff_const, fun y hy ↦ ?_, fun x hx ↦ ?_,
+    hg.trans (by gcongr; exact half_le_self hη.le)⟩
+  · have h := abs_le.1 (hvK y hy)
+    constructor <;> linarith
+  · simpa only [fderiv_fderiv_add_const] using hvg x hx
+
 /-- **Approximation of a two-sided strong inequality by classical ones.** Let `u ∈ W^{2,p}(Ω)`,
 `p < ∞`, have a representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and
 suppose that `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere on `S` for the weak Hessian, with coefficient
@@ -330,6 +366,35 @@ theorem exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp {p : 
     _ ≤ eLpNorm f p (mu.restrict S) + eLpNorm e p (mu.restrict S) :=
         eLpNorm_add_le Fact.out
     _ ≤ _ := by gcongr
+
+/-- **Approximation of a two-sided strong inequality from above.** Under the hypotheses of
+`TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`, shifting the
+smooth approximations upward by `η / 2` gives `w` with `ū ≤ w ≤ ū + η` on `K`,
+`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼw| ≤ g` on `S`, and `‖g‖_{Lᵖ(S)} ≤ ‖f‖_{Lᵖ(S)} + η`. -/
+theorem exists_contDiff_le_and_le_add_and_abs_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ ι)} (u : Wkp mu Ω p 2)
+    {ū : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn ū Ω)
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū)
+    {K S : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hSK : S ⊆ K)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Λ : ℝ}
+    (ha : ∀ᵐ x ∂mu.restrict S, ∀ i j, |a x i j| ≤ Λ)
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : ∀ᵐ x ∂mu.restrict S,
+      |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ w g : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ (⊤ : ℕ∞) w ∧
+      (∀ y ∈ K, ū y ≤ w y ∧ w y ≤ ū y + η) ∧
+      (∀ x ∈ S, |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ g x) ∧
+      eLpNorm g p (mu.restrict S) ≤ eLpNorm f p (mu.restrict S) + ENNReal.ofReal η := by
+  obtain ⟨v, g, hv, hvK, hvg, hg⟩ :=
+    exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp hp u hcont hū hK hKΩ hSK ha
+      hf (half_pos hη)
+  refine ⟨fun y ↦ v y + η / 2, g, hv.add contDiff_const, fun y hy ↦ ?_, fun x hx ↦ ?_,
+    hg.trans (by gcongr; exact half_le_self hη.le)⟩
+  · have h := abs_le.1 (hvK y hy)
+    constructor <;> linarith
+  · simpa only [fderiv_fderiv_add_const] using hvg x hx
 
 /-- **Rescaled approximation of a strong supersolution.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`, have a
 representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
@@ -375,8 +440,7 @@ theorem exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0�
       mul_le_mul_of_nonneg_left (by linarith) (inv_pos.2 hσ).le⟩
   · -- The principal part of `w` is that of `v` divided by `σ`.
     rw [sum_mul_fderiv_fderiv_const_mul]
-    have h : fderiv ℝ (fun y ↦ v y + ζ) = fderiv ℝ v := funext fun y ↦ fderiv_add_const ζ
-    rw [h]
+    simp_rw [fderiv_fderiv_add_const]
     exact mul_le_mul_of_nonneg_left (hvg x hx) (inv_pos.2 hσ).le
   have hpos : (fun x ↦ (σ⁻¹ * g x)⁺) = σ⁻¹ • fun x ↦ (g x)⁺ := by
     funext x

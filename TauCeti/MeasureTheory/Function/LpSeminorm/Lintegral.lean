@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
-import Mathlib.MeasureTheory.Integral.Lebesgue.Sub
+import Mathlib.MeasureTheory.Integral.Average
 
 /-!
 # The `Lᵖ` integral is bounded by the `p`-th power of the `Lᵖ` seminorm
@@ -32,7 +32,7 @@ Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
 (`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`. On a nonzero finite measure space,
 every `f ∈ Lᵖ` with `0 < p < ∞` satisfies `(μ univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_p` on a set of positive
 measure (`MeasureTheory.MemLp.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm`), and in
-particular at some point of any measurable set of positive finite measure
+particular at some point of any set of positive finite measure
 (`MeasureTheory.MemLp.exists_mem_measure_rpow_mul_enorm_le_eLpNorm`).
 
 For an almost everywhere strongly measurable function, square integrability is equivalent to
@@ -198,6 +198,16 @@ theorem ae_enorm_lt_top {f : α → ε} {p : ℝ≥0∞} (hf : MemLp f p μ) (hp
   filter_upwards [ae_lt_top' (hf.aestronglyMeasurable.eNorm.pow_const _) hlt.ne] with x hx
   exact (ENNReal.rpow_lt_top_iff_of_pos (ENNReal.toReal_pos hp hp_top)).1 hx
 
+private theorem rpow_inv_mul_enorm_le_of_rpow_le_div {a b c : ℝ≥0∞} {r : ℝ} (hr : 0 < r)
+    (hc0 : c ≠ 0) (hc : c ≠ ∞) (h : a ^ r ≤ b ^ r / c) : c ^ r⁻¹ * a ≤ b := by
+  have hmul : c * a ^ r ≤ b ^ r := by
+    rw [mul_comm]
+    exact (ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inl hc)).1 h
+  have hpow := ENNReal.rpow_le_rpow hmul (inv_pos.2 hr).le
+  rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_pos.2 hr).le, ← ENNReal.rpow_mul,
+    ← ENNReal.rpow_mul, mul_inv_cancel₀ hr.ne', ENNReal.rpow_one, ENNReal.rpow_one] at hpow
+  exact hpow
+
 /-- **Chebyshev point selection in `Lᵖ`.** On a nonzero finite measure space, a function in `Lᵖ` for
 `0 < p < ∞` satisfies `(μ Set.univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(μ)}` on a set of positive measure
 (in particular, at some point). -/
@@ -205,46 +215,23 @@ theorem frequently_measure_univ_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : �
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ0 : μ ≠ 0) (hμ : μ Set.univ ≠ ∞) :
     ∃ᵐ x ∂μ, (μ Set.univ) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p μ := by
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  have : Filter.NeBot (ae μ) := ae_neBot.2 hμ0
-  rw [Filter.Frequently]
-  intro hall
-  -- Raise the strict a.e. inequality to `p.toReal`: the integral of the larger function equals
-  -- that of the smaller finite constant, contradiction on a nonzero measure space.
-  have hlt : ∀ᵐ x ∂μ, eLpNorm f p μ ^ p.toReal < μ Set.univ * ‖f x‖ₑ ^ p.toReal := by
-    filter_upwards [hall] with x hx
-    have hpow := ENNReal.rpow_lt_rpow (not_le.1 hx) hpr
-    rwa [ENNReal.mul_rpow_of_nonneg _ _ hpr.le, ← ENNReal.rpow_mul, inv_mul_cancel₀ hpr.ne',
-      ENNReal.rpow_one] at hpow
-  have hc_top : ∫⁻ _x, eLpNorm f p μ ^ p.toReal ∂μ ≠ ∞ := by
-    rw [lintegral_const]
-    exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hpr.le hf.eLpNorm_ne_top) hμ
-  have heq : ∫⁻ x, μ Set.univ * ‖f x‖ₑ ^ p.toReal ∂μ = ∫⁻ _x, eLpNorm f p μ ^ p.toReal ∂μ := by
-    rw [lintegral_const_mul' _ _ hμ, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp
-      hf.aestronglyMeasurable, lintegral_const, mul_comm]
-  have hzero : ∫⁻ x, (μ Set.univ * ‖f x‖ₑ ^ p.toReal - eLpNorm f p μ ^ p.toReal) ∂μ = 0 := by
-    rw [lintegral_sub' aemeasurable_const hc_top (hlt.mono fun _ h => h.le), heq, tsub_self]
-  have hle : ∀ᵐ x ∂μ, μ Set.univ * ‖f x‖ₑ ^ p.toReal ≤ eLpNorm f p μ ^ p.toReal := by
-    have hae := (lintegral_eq_zero_iff'
-      ((aemeasurable_const.mul (hf.aestronglyMeasurable.eNorm.pow_const _)).sub
-        aemeasurable_const)).1 hzero
-    filter_upwards [hae] with x hx
-    exact tsub_eq_zero_iff_le.1 hx
-  obtain ⟨x, hx1, hx2⟩ := (hlt.and hle).exists
-  exact (hx1.trans_le hx2).false
+  have : IsFiniteMeasure μ := ⟨hμ.lt_top⟩
+  have hpos := measure_le_laverage_pos hμ0 (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
+  rw [laverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hpos
+  exact frequently_ae_iff.2 ((hpos.trans_le (measure_mono fun _ hx ↦
+    rpow_inv_mul_enorm_le_of_rpow_le_div hpr (mt Measure.measure_univ_eq_zero.1 hμ0) hμ hx)).ne')
 
-/-- **Chebyshev point selection on a measurable set in `Lᵖ`.** On a measurable set `s` of positive
-finite measure, a function in `Lᵖ(μ.restrict s)` for `0 < p < ∞` satisfies
-`(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(s)}` at some point `x ∈ s`. -/
+/-- **Chebyshev point selection on a set in `Lᵖ`.** On a set `s` of positive finite measure, a
+function in `Lᵖ(μ.restrict s)` for `0 < p < ∞` satisfies `(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(s)}`
+at some point `x ∈ s`. -/
 theorem exists_mem_measure_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : ℝ≥0∞} {s : Set α}
-    (hf : MemLp f p (μ.restrict s)) (hp0 : p ≠ 0) (hp : p ≠ ∞) (hs : MeasurableSet s)
+    (hf : MemLp f p (μ.restrict s)) (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (hμ0 : μ s ≠ 0) (hμ : μ s ≠ ∞) :
     ∃ x ∈ s, (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s) := by
-  have hres0 : μ.restrict s ≠ 0 := fun h =>
-    hμ0 (by simpa using congrArg (fun m : Measure _ => m Set.univ) h)
-  have hfreq := hf.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm hp0 hp hres0
-    (by simpa [Measure.restrict_apply_univ] using hμ)
-  rw [Measure.restrict_apply_univ] at hfreq
-  obtain ⟨x, hx, hxs⟩ := (hfreq.and_eventually (ae_restrict_mem hs)).exists
-  exact ⟨x, hxs, hx⟩
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  obtain ⟨x, hxs, hx⟩ := exists_le_setLAverage hμ0 hμ
+    (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
+  rw [setLAverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hx
+  exact ⟨x, hxs, rpow_inv_mul_enorm_le_of_rpow_le_div hpr hμ0 hμ hx⟩
 
 end MeasureTheory.MemLp
