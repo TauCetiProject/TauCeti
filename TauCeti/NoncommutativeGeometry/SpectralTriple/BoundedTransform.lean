@@ -176,10 +176,7 @@ Fredholm modules. -/
 theorem toFredholmModule_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H']
     [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') :
     (S.conj U).toFredholmModule = S.toFredholmModule.conj U := by
-  ext1
-  · ext1 a
-    simp
-  · simp
+  ext1 <;> (ext1 a; simp)
 
 end SpectralTriple
 
@@ -227,11 +224,7 @@ bounded-transform even Fredholm modules. -/
 theorem toEvenFredholmModule_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H']
     [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') :
     (S.conj U).toEvenFredholmModule = S.toEvenFredholmModule.conj U := by
-  ext1
-  · ext1 a
-    simp
-  · simp
-  · simp
+  ext1 <;> (ext1 a; simp)
 
 end EvenSpectralTriple
 

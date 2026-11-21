@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
 
 /-!
 # Orthonormal eigenbases of self-adjoint operators with compact resolvent
@@ -15,7 +17,9 @@ public import TauCeti.LinearAlgebra.LinearPMap.Restrict
 A self-adjoint operator `D` with compact resolvent on a complex Hilbert space `H` has a complete
 orthonormal basis of eigenvectors, each in the domain of `D` and with a real eigenvalue. This is
 the basis in which the functional calculus of such operators, and in particular of the Dirac
-operator of a spectral triple, is written.
+operator of a spectral triple, is written. Because the eigenvalues satisfy the Northcott property,
+the index type is countable and `H` is automatically separable
+(`IsSelfAdjoint.separableSpace_of_hasCompactResolvent`).
 
 The proof diagonalizes `D` on finite-dimensional pieces. The compact positive injective operator
 `K = (1 + D²)⁻¹` (`LinearPMap.invOneAddSq`) has mutually orthogonal eigenspaces with dense span.
@@ -41,6 +45,8 @@ in `TauCeti.Analysis.InnerProductSpace.Spectrum`.
   eigenvalues.
 * `IsSelfAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent`: a self-adjoint
   operator with compact resolvent has a Hilbert basis of eigenvectors with real eigenvalues.
+* `IsSelfAdjoint.separableSpace_of_hasCompactResolvent`: a complex Hilbert space admitting a
+  self-adjoint operator with compact resolvent is separable.
 
 ## References
 
@@ -131,3 +137,19 @@ theorem IsSelfAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactReso
   rcases eq_or_ne μ 0 with rfl | hμ
   · exact h0.le.trans bot_le
   · simpa using eigenspace_invOneAddSq_le_domainPow hp hm hμ 1
+
+/-- A complex Hilbert space carrying a self-adjoint operator with compact resolvent is
+automatically separable: the eigenbasis index type is a countable union of finite sublevel sets
+of `|λᵢ|`. -/
+theorem IsSelfAdjoint.separableSpace_of_hasCompactResolvent
+    {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
+    TopologicalSpace.SeparableSpace H := by
+  obtain ⟨κ, b, lam, hb⟩ := hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent h
+  have hN : Northcott fun k ↦ |lam k| := by
+    simpa only [Complex.norm_real, Real.norm_eq_abs] using
+      h.northcott_norm_of_orthonormal b.orthonormal hb
+  have : Countable κ := by
+    rw [← Set.countable_univ_iff, show (Set.univ : Set κ) = ⋃ n : ℕ, {k | |lam k| ≤ (n : ℝ)} by
+      ext k; simp [exists_nat_ge]]
+    exact Set.countable_iUnion fun n ↦ (hN.finite_le (n : ℝ)).countable
+  exact b.separableSpace

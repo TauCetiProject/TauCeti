@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.BoundedTransform
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
 
 /-!
 # Spectral triples
@@ -325,8 +325,7 @@ theorem conj_commutator (U : H ≃ₗᵢ[ℂ] H') (a : A) :
 @[simp]
 theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).conj U.symm = S := by
   ext1
-  · ext1 a
-    simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
+  · ext1 a; simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
   · exact LinearPMap.unitaryConj_unitaryConj_symm U S.operator
 
 /-- Transporting along the inverse unitary and then along `U` recovers the original triple. -/
@@ -338,8 +337,7 @@ theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S :=
 @[simp]
 theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
   ext1
-  · ext1 a
-    simp
+  · ext1 a; simp
   · exact LinearPMap.unitaryConj_refl S.operator
 
 /-- Transporting along `U` and then along `V` is transporting along their composite. -/
@@ -347,9 +345,7 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
     [CompleteSpace H''] (U : H ≃ₗᵢ[ℂ] H') (V : H' ≃ₗᵢ[ℂ] H'') :
     (S.conj U).conj V = S.conj (U.trans V) := by
   ext1
-  · ext1 a
-    ext x
-    simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  · ext1 a; ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
   · exact LinearPMap.unitaryConj_trans U V S.operator
 
 end Conj
@@ -386,10 +382,7 @@ theorem comap_commutator (φ : B →⋆ₐ[ℂ] A) (b : B) :
 
 @[simp]
 theorem comap_id : S.comap (StarAlgHom.id ℂ A) = S := by
-  ext1
-  · ext1 a
-    rfl
-  · rfl
+  ext1 <;> first | (ext1 a; rfl) | rfl
 
 theorem comap_comp {C : Type*} [Semiring C] [Algebra ℂ C] [Star C]
     (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) :
@@ -427,6 +420,12 @@ theorem ofFiniteDimensional_rep [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ]
 theorem ofFiniteDimensional_operator [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
     (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) :
     (ofFiniteDimensional π D hD).operator = (D : H →ₗ[ℂ] H).toPMap ⊤ :=
+  (rfl)
+
+@[simp]
+theorem ofFiniteDimensional_operator_apply [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
+    (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) (x : (ofFiniteDimensional π D hD).operator.domain) :
+    (ofFiniteDimensional π D hD).operator x = D x :=
   (rfl)
 
 @[simp]
@@ -472,6 +471,28 @@ section Conj
 
 variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
 
+private theorem conj_grading_mem_domain (U : H ≃ₗᵢ[ℂ] H') {y : H'}
+    (hy : y ∈ (LinearPMap.unitaryConj U S.operator).domain) :
+    U.conjStarAlgEquiv S.grading y ∈ (LinearPMap.unitaryConj U S.operator).domain := by
+  rw [LinearPMap.mem_unitaryConj_domain_iff] at hy ⊢
+  simpa [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply] using S.grading_mem_domain hy
+
+private theorem conj_grading_apply_operator (U : H ≃ₗᵢ[ℂ] H')
+    (y : (LinearPMap.unitaryConj U S.operator).domain) :
+    (U.conjStarAlgEquiv S.grading) (LinearPMap.unitaryConj U S.operator y) =
+      -LinearPMap.unitaryConj U S.operator
+        ⟨U.conjStarAlgEquiv S.grading y, S.conj_grading_mem_domain U y.2⟩ := by
+  have hy : U.symm (y : H') ∈ S.operator.domain :=
+    (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.2
+  have hsub : (⟨U.symm (U.conjStarAlgEquiv S.grading y),
+      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1
+        (S.conj_grading_mem_domain U y.2)⟩ : S.operator.domain) =
+      ⟨S.grading (U.symm (y : H')), S.grading_mem_domain hy⟩ :=
+    Subtype.ext (by simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply])
+  rw [LinearPMap.unitaryConj_apply, LinearPMap.unitaryConj_apply, hsub,
+    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, U.symm_apply_apply, ← map_neg]
+  exact congrArg U (S.grading_apply_operator ⟨U.symm (y : H'), hy⟩)
+
 /-- **Unitary equivalence**, even version: the grading is transported to `U γ U*`. -/
 def conj (U : H ≃ₗᵢ[ℂ] H') : EvenSpectralTriple A H' where
   toSpectralTriple := S.toSpectralTriple.conj U
@@ -481,27 +502,8 @@ def conj (U : H ≃ₗᵢ[ℂ] H') : EvenSpectralTriple A H' where
   commute_grading_rep a := by
     rw [SpectralTriple.conj_rep_apply]
     exact (S.commute_grading_rep a).map U.conjStarAlgEquiv
-  grading_mem_domain hy := by
-    rw [SpectralTriple.conj_operator, LinearPMap.mem_unitaryConj_domain_iff] at hy ⊢
-    simpa [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply] using S.grading_mem_domain hy
-  grading_apply_operator y := by
-    have hy : U.symm (y : H') ∈ S.operator.domain :=
-      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.2
-    have hγy : (U.conjStarAlgEquiv S.grading) y ∈ (LinearPMap.unitaryConj U S.operator).domain := by
-      rw [LinearPMap.mem_unitaryConj_domain_iff,
-        LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, U.symm_apply_apply]
-      exact S.grading_mem_domain hy
-    have h1 := LinearPMap.unitaryConj_apply U S.operator ⟨y, y.2⟩
-    have h2 := LinearPMap.unitaryConj_apply U S.operator ⟨(U.conjStarAlgEquiv S.grading) y, hγy⟩
-    have hsub : (⟨U.symm ((U.conjStarAlgEquiv S.grading) y),
-        (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 hγy⟩ :
-          S.operator.domain) = ⟨S.grading (U.symm (y : H')), S.grading_mem_domain hy⟩ :=
-      Subtype.ext (by simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply])
-    change (U.conjStarAlgEquiv S.grading) (LinearPMap.unitaryConj U S.operator ⟨y, y.2⟩) =
-      -LinearPMap.unitaryConj U S.operator ⟨(U.conjStarAlgEquiv S.grading) y, hγy⟩
-    rw [h1, h2, hsub, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, U.symm_apply_apply,
-      ← map_neg]
-    exact congrArg U (S.grading_apply_operator ⟨U.symm (y : H'), hy⟩)
+  grading_mem_domain hy := S.conj_grading_mem_domain U hy
+  grading_apply_operator y := S.conj_grading_apply_operator U y
 
 @[simp]
 theorem conj_toSpectralTriple (U : H ≃ₗᵢ[ℂ] H') :
@@ -516,8 +518,7 @@ theorem conj_grading (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).grading = U.conjStar
 @[simp]
 theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (S.conj U).conj U.symm = S := by
   ext1
-  · ext1 a
-    simp
+  · ext1 a; simp
   · exact LinearPMap.unitaryConj_unitaryConj_symm U S.operator
   · simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
 
@@ -530,8 +531,7 @@ theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (S.conj U.symm).conj U = S :=
 @[simp]
 theorem conj_refl : S.conj (LinearIsometryEquiv.refl ℂ H) = S := by
   ext1
-  · ext1 a
-    simp
+  · ext1 a; simp
   · exact LinearPMap.unitaryConj_refl S.operator
   · simp
 
@@ -540,12 +540,9 @@ theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ
     [CompleteSpace H''] (U : H ≃ₗᵢ[ℂ] H') (V : H' ≃ₗᵢ[ℂ] H'') :
     (S.conj U).conj V = S.conj (U.trans V) := by
   ext1
-  · ext1 a
-    ext x
-    simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  · ext1 a; ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
   · exact LinearPMap.unitaryConj_trans U V S.operator
-  · ext x
-    simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+  · ext x; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 
 end Conj
 
@@ -575,11 +572,7 @@ theorem comap_grading (φ : B →⋆ₐ[ℂ] A) : (S.comap φ).grading = S.gradi
 
 @[simp]
 theorem comap_id : S.comap (StarAlgHom.id ℂ A) = S := by
-  ext1
-  · ext1 a
-    rfl
-  · rfl
-  · rfl
+  ext1 <;> first | (ext1 a; rfl) | rfl
 
 theorem comap_comp {C : Type*} [Semiring C] [Algebra ℂ C] [Star C]
     (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) :
@@ -606,7 +599,8 @@ def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[
   commute_grading_rep := hγπ
   grading_mem_domain _ := Submodule.mem_top
   grading_apply_operator x := by
-    change γ (D x) = -D (γ x)
+    rw [SpectralTriple.ofFiniteDimensional_operator_apply,
+      SpectralTriple.ofFiniteDimensional_operator_apply]
     simpa [ContinuousLinearMap.mul_def] using congrArg (fun T : H →L[ℂ] H ↦ T (x : H)) hγD
 
 @[simp]
