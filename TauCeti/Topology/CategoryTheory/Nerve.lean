@@ -39,7 +39,11 @@ of fat classifying spaces, by applying `Φ` to strings of composable arrows. A f
 `Φ s`, `s ∈ [0, 1]`, depending continuously on `s` and the total arrow induces a homotopy
 `TauCeti.fatClassifyingSpaceHomotopy` from the map induced by `Φ 0` to that induced by `Φ 1`.
 If `Φ` is an embedding on total arrows, it induces levelwise embeddings
-(`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`).
+(`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`). Recording all arrows
+`i ⟶ j` (`i ≤ j`) embeds `ComposableArrows C n` into a finite product of copies of `Quiver.Total C`
+(`CategoryTheory.ComposableArrows.isEmbedding_totalArrowTuple`), so both `ComposableArrows C n` and
+`(topologicalNerve C).obj Δ` inherit separation, regularity, countability and metrizability from
+`Quiver.Total C`.
 
 ## References
 
@@ -116,6 +120,36 @@ theorem isEmbedding_mapComposableArrows_obj {Φ : C ⥤ D} (hΦ : IsEmbedding Φ
   · simpa only [totalArrow_mapComposableArrows_obj] using
       congrArg (fun F ↦ totalArrow F i j hij) h
 
+/-- Recording all total arrows `F.totalArrow i j hij` (`i ≤ j`) embeds strings of `n` composable
+arrows into a finite product of copies of `Quiver.Total C`. No continuity of source, target,
+units or composition is needed. -/
+theorem isEmbedding_totalArrowTuple :
+    IsEmbedding fun (F : ComposableArrows C n)
+      (p : (i : Fin (n + 1)) × (j : Fin (n + 1)) × PLift (i ≤ j)) ↦
+        F.totalArrow p.1 p.2.1 p.2.2.down :=
+  ⟨⟨by
+    simp only [instTopologicalSpace, induced_to_pi, iInf_sigma]
+    exact iInf_congr fun _ ↦ iInf_congr fun _ ↦ (iInf_plift_down _).symm⟩,
+    fun _ _ h ↦ ext_of_totalArrow fun i j hij ↦ congrFun h ⟨i, j, ⟨hij⟩⟩⟩
+
+instance instT0Space [T0Space (Quiver.Total C)] : T0Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t0Space
+instance instT1Space [T1Space (Quiver.Total C)] : T1Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t1Space
+instance instT2Space [T2Space (Quiver.Total C)] : T2Space (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.t2Space
+instance instRegularSpace [RegularSpace (Quiver.Total C)] : RegularSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.isInducing.regularSpace
+instance instFirstCountableTopology [FirstCountableTopology (Quiver.Total C)] :
+    FirstCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.firstCountableTopology
+instance instSecondCountableTopology [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.secondCountableTopology
+instance instMetrizableSpace [TopologicalSpace.MetrizableSpace (Quiver.Total C)] :
+    TopologicalSpace.MetrizableSpace (ComposableArrows C n) :=
+  isEmbedding_totalArrowTuple.metrizableSpace
+
 end CategoryTheory.ComposableArrows
 
 namespace TauCeti
@@ -145,6 +179,39 @@ theorem topologicalNerve_map_apply {Δ Δ' : SimplexCategoryᵒᵖ} (f : Δ ⟶ 
 /-- The underlying simplicial set of the topological nerve is the nerve. -/
 theorem topologicalNerve_comp_forget : topologicalNerve C ⋙ forget TopCat = nerve C := (rfl)
 
+section TopologicalNerveInstances
+
+variable (C) (Δ : SimplexCategoryᵒᵖ)
+
+instance [T0Space (Quiver.Total C)] : T0Space ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (T0Space (ComposableArrows C Δ.unop.len))
+instance [T1Space (Quiver.Total C)] : T1Space ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (T1Space (ComposableArrows C Δ.unop.len))
+instance [T2Space (Quiver.Total C)] : T2Space ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (T2Space (ComposableArrows C Δ.unop.len))
+instance [RegularSpace (Quiver.Total C)] : RegularSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (RegularSpace (ComposableArrows C Δ.unop.len))
+instance [CompactSpace (ComposableArrows C Δ.unop.len)] :
+    CompactSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (CompactSpace (ComposableArrows C Δ.unop.len))
+instance [SigmaCompactSpace (ComposableArrows C Δ.unop.len)] :
+    SigmaCompactSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (SigmaCompactSpace (ComposableArrows C Δ.unop.len))
+instance [LindelofSpace (ComposableArrows C Δ.unop.len)] :
+    LindelofSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (LindelofSpace (ComposableArrows C Δ.unop.len))
+instance [FirstCountableTopology (Quiver.Total C)] :
+    FirstCountableTopology ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (FirstCountableTopology (ComposableArrows C Δ.unop.len))
+instance [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (SecondCountableTopology (ComposableArrows C Δ.unop.len))
+instance [TopologicalSpace.MetrizableSpace (Quiver.Total C)] :
+    TopologicalSpace.MetrizableSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (TopologicalSpace.MetrizableSpace (ComposableArrows C Δ.unop.len))
+
+end TopologicalNerveInstances
+
 variable (C)
 
 /-- The fat classifying space of a category whose total arrows carry a topology: the fat
@@ -160,9 +227,8 @@ theorem fatClassifyingSpace.hom_ext {Z : TopCat.{max u v}} {g h : fatClassifying
     (H : ∀ (n : SemiSimplexCategory)
       (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
       (t : SemiSimplexCategory.toTop.obj n),
-        g (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-          h (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t))) : g = h :=
-  functorTensor.hom_ext H
+        g (fatRealization.ι _ n (F, t)) = h (fatRealization.ι _ n (F, t))) : g = h :=
+  fatRealization.hom_ext _ H
 
 variable {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
 
@@ -207,15 +273,13 @@ theorem topologicalNerveMap_comp {E : Type u} [Category.{v} E] [TopologicalSpace
 fat realization of the induced map of topological nerves. -/
 def fatClassifyingSpaceMap (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
     fatClassifyingSpace C ⟶ fatClassifyingSpace D :=
-  functorTensor.map SemiSimplexCategory.toTop
-    (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ))
+  fatRealization.map (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ))
 
 /-- The map of fat classifying spaces induced by a functor is the fat realization of the induced
 map of topological nerves, restricted to the semi-simplicial part. -/
 theorem fatClassifyingSpaceMap_eq (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
     fatClassifyingSpaceMap Φ hΦ =
-      functorTensor.map SemiSimplexCategory.toTop
-        (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) :=
+      fatRealization.map (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) :=
   (rfl)
 
 /-- The map of fat classifying spaces induced by a functor applies the functor to the string of
@@ -225,10 +289,10 @@ theorem fatClassifyingSpaceMap_ι (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunct
     (n : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
-    fatClassifyingSpaceMap Φ hΦ (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n ((Φ.mapComposableArrows _).obj F, t) :=
-  functorTensor.map_ι SemiSimplexCategory.toTop
-    (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) n F t
+    fatClassifyingSpaceMap Φ hΦ (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n ((Φ.mapComposableArrows _).obj F, t) :=
+  fatRealization.map_ι (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) n F
+    t
 
 /-- Two functors that agree on strings of composable arrows induce the same map of fat classifying
 spaces. -/
@@ -237,7 +301,7 @@ theorem fatClassifyingSpaceMap_eq_of_mapComposableArrows_obj {Φ Ψ : C ⥤ D}
     (h : ∀ n F, (Φ.mapComposableArrows n).obj F = (Ψ.mapComposableArrows n).obj F) :
     fatClassifyingSpaceMap Φ hΦ = fatClassifyingSpaceMap Ψ hΨ :=
   fatClassifyingSpace.hom_ext fun n F t ↦ (fatClassifyingSpaceMap_ι Φ hΦ n F t).trans <|
-    (congrArg (fun F ↦ functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) (h _ F)).trans
+    (congrArg (fun F ↦ fatRealization.ι _ n (F, t)) (h _ F)).trans
       (fatClassifyingSpaceMap_ι Ψ hΨ n F t).symm
 
 variable (C) in
@@ -245,7 +309,7 @@ variable (C) in
 theorem fatClassifyingSpaceMap_id :
     fatClassifyingSpaceMap (𝟭 C) (Prefunctor.mapTotal_id (Q := C) ▸ continuous_id) =
       𝟙 (fatClassifyingSpace C) :=
-  functorTensor.map_id SemiSimplexCategory.toTop _
+  fatRealization.map_id
 
 theorem fatClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     [TopologicalSpace (Quiver.Total E)] (Φ : C ⥤ D) (Ψ : D ⥤ E)
@@ -253,8 +317,7 @@ theorem fatClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     fatClassifyingSpaceMap (Φ ⋙ Ψ) (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸
         hΨ.comp hΦ) =
       fatClassifyingSpaceMap Φ hΦ ≫ fatClassifyingSpaceMap Ψ hΨ :=
-  functorTensor.map_comp SemiSimplexCategory.toTop
-    (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ))
+  fatRealization.map_comp (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ))
     (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Ψ hΨ))
 
 /-- A family of functors `Φ s`, `s ∈ [0, 1]`, depending continuously on `s` and the total arrow,
@@ -264,7 +327,7 @@ def fatClassifyingSpaceHomotopy (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2) :
     ContinuousMap.Homotopy (fatClassifyingSpaceMap (Φ 0) (hΦ.comp (.prodMk_right 0))).hom
       (fatClassifyingSpaceMap (Φ 1) (hΦ.comp (.prodMk_right 1))).hom :=
-  functorTensor.homotopy SemiSimplexCategory.toTop
+  fatRealization.homotopy
     (fun s ↦ Functor.whiskerLeft toSimplexCategory.op
       (topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s))))
     fun _ ↦ ComposableArrows.continuous_uncurry_mapComposableArrows_obj hΦ
@@ -274,9 +337,9 @@ theorem fatClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (s : unitInterval) (n : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
-    fatClassifyingSpaceHomotopy Φ hΦ (s, functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n (((Φ s).mapComposableArrows _).obj F, t) :=
-  functorTensor.homotopy_apply_ι SemiSimplexCategory.toTop
+    fatClassifyingSpaceHomotopy Φ hΦ (s, fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n (((Φ s).mapComposableArrows _).obj F, t) :=
+  fatRealization.homotopy_apply_ι
     (fun s ↦ Functor.whiskerLeft toSimplexCategory.op
       (topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s)))) _ s n F t
 

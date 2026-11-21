@@ -47,27 +47,38 @@ and the added rank `n` is positive. A raw level of type (2) carries no such cond
 * `TauCeti.LimitGroup.NTQ.System G Y`: a raw TQ system over `G` in the variables `Y`, with
   `System.equations` and its coordinate group `System.CoordGroup`.
 * `TauCeti.LimitGroup.NTQ.System.IsNondegenerate`: every level is solvable in its raw lower group.
+* `TauCeti.LimitGroup.NTQ.System.conjOverCommute`: the system with lower level `[u, v] = 1` and
+  upper level `x⁻¹ u x u⁻¹ = 1`.
 * `TauCeti.LimitGroup.NTQ.IsAdmissibleCentralizerLevel u U n`: admissible full-centralizer data.
 
 ## Main results
 
 * `TauCeti.LimitGroup.NTQ.System.mem_V_cons`: a solution of `cons S X L` is a solution `w` of `S`
   together with a solution of the top level `L` whose coefficients are evaluated at `w`.
-* `TauCeti.LimitGroup.NTQ.System.finite_equations`: a TQ system is a finite system.
+* `TauCeti.LimitGroup.NTQ.System.finite`, `TauCeti.LimitGroup.NTQ.System.finite_equations`: a TQ
+  system has finitely many variables and is a finite system.
 * `TauCeti.LimitGroup.NTQ.System.coordGroupNilEquiv`: the raw lower group of the bottom level
   is `G`.
+* `TauCeti.LimitGroup.NTQ.System.comap_Rad_cons_empty`: an empty level does not change the radical
+  of the lower system.
 * `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_centralizer`,
   `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_abelian`,
   `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_empty`: levels of types (2)–(4) are solved
   by the trivial point, so only the quadratic levels can make a system degenerate.
+* `TauCeti.LimitGroup.NTQ.System.exists_sumElim_mem_V_cons`,
+  `TauCeti.LimitGroup.NTQ.System.IsNondegenerate.nonempty_V`: over a top level solvable in the raw
+  lower group every solution of the lower system extends, and a nondegenerate system has a
+  solution in `G`.
 * `TauCeti.LimitGroup.NTQ.not_isNondegenerate_commutator_eq_basis`: over `F(a, b)`, the one-level
   system `[x, y] = a` is degenerate, by abelianization.
 * `TauCeti.LimitGroup.NTQ.normalClosure_lt_Rad_commute_basis`: over `F(a, b)`, the radical of the
   nondegenerate one-level system `[x, a] = [x, b] = 1` is strictly larger than the normal closure
   of its equations; its centralizer data `u = 1` is not admissible
   (`TauCeti.LimitGroup.NTQ.not_isAdmissibleCentralizerLevel_one`).
-* `TauCeti.LimitGroup.NTQ.isNondegenerate_conj_over_commute`: the two-level system with lower
-  level `[u, v] = 1` and upper level `x⁻¹ u x u⁻¹ = 1` is nondegenerate.
+* `TauCeti.LimitGroup.NTQ.System.isNondegenerate_conjOverCommute`: the two-level system
+  `TauCeti.LimitGroup.NTQ.System.conjOverCommute`, with lower level `[u, v] = 1` and upper level
+  `x⁻¹ u x u⁻¹ = 1`, is nondegenerate; its solutions are the points at which `u` commutes with `v`
+  and `x` with `u` (`TauCeti.LimitGroup.NTQ.System.mem_V_conjOverCommute`).
 * `TauCeti.LimitGroup.NTQ.isAdmissibleCentralizerLevel_singleton_iff`: `u` with `U = {u}` is
   admissible centralizer data exactly when `u` is not a proper power, `n > 0` and the centralizer
   of `u` is cyclic.
@@ -171,6 +182,17 @@ theorem mem_V_centralizer {U : Set K} {hU : U.Finite} : v ∈ V ι (centralizer 
   simp only [mem_V, Set.forall_mem_range, Prod.forall, Subtype.forall, map_commutatorElement,
     eval_inr, eval_inl, FreeGroup.lift_apply_of, commutatorElement_eq_one_iff_commute]
 
+/-- Over a commutative transitive group `H`, if two coefficients `ι c₀` and `ι c₁`, `c₀, c₁ ∈ U`,
+do not commute, then the only solution of the level of an extension of a centralizer is
+trivial. -/
+theorem eq_one_of_mem_V_centralizer (hH : Group.IsCommTransitive H) {U : Set K} {hU : U.Finite}
+    {c₀ c₁ : K} (hc₀ : c₀ ∈ U) (hc₁ : c₁ ∈ U) (h : ¬Commute (ι c₁) (ι c₀))
+    (hv : v ∈ V ι (centralizer U hU).equations) : v = 1 := by
+  funext x
+  by_contra hx
+  have hv' := (mem_V_centralizer.1 hv).2 x
+  exact h ((Group.isCommTransitive_iff H).1 hH _ (v x) _ hx (hv' c₁ hc₁).symm (hv' c₀ hc₀))
+
 end Level
 
 /-! ### Raw triangular quasi-quadratic systems -/
@@ -207,6 +229,10 @@ theorem equations_cons {Y X : Type v} [Finite X] (S : System G Y) (L : Level (GX
     (cons S X L).equations = Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) '' S.equations ∪
       eval (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr))
         (fun x ↦ inr (FreeGroup.of (Sum.inl x))) '' L.equations := (rfl)
+
+/-- A raw TQ system has finitely many variables. -/
+protected theorem finite {Y : Type v} (S : System G Y) : Finite Y := by
+  induction S <;> infer_instance
 
 /-- A raw TQ system is a finite system of equations. -/
 theorem finite_equations {Y : Type v} (S : System G Y) : S.equations.Finite := by
@@ -258,6 +284,18 @@ noncomputable def coordGroupNilEquiv : (nil : System G PEmpty).CoordGroup ≃* G
 theorem coordGroupNilEquiv_mk (w : GX G PEmpty) :
     coordGroupNilEquiv (w : (nil : System G PEmpty).CoordGroup) = GX.equivOfIsEmpty w := (rfl)
 
+/-- An equation in the lower variables lies in the radical of `cons S X empty` exactly when it
+lies in the radical of `S`: the radical of the system with the free variables `X` pulls back along
+`G[Y] → G[X ⊕ Y]` to the radical of `S`. -/
+@[simp]
+theorem comap_Rad_cons_empty {ι : G →* H} {Y : Type v} (S : System G Y) (X : Type v) [Finite X] :
+    (Rad ι (cons S X .empty).equations).comap
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) = Rad ι S.equations := by
+  ext w
+  simp only [Subgroup.mem_comap, mem_Rad, eval_map, MonoidHom.comp_id]
+  refine ⟨fun h v hv => ?_, fun h v hv => h _ (mem_V_cons.1 hv).1⟩
+  simpa using h (Sum.elim 1 v) (mem_V_cons.2 ⟨by simpa using hv, by simp⟩)
+
 /-- A raw TQ system is *nondegenerate* when each of its levels has a solution in its raw lower
 group: `nil` is nondegenerate, and `cons S X L` is nondegenerate when `S` is and the top level
 `L`, with its coefficients `G[Y]` read in `G_{R_G(S)}` through the quotient map, has a solution in
@@ -295,6 +333,32 @@ theorem isNondegenerate_cons_abelian {Y X : Type v} [Finite X] {S : System G Y} 
 theorem isNondegenerate_cons_empty {Y X : Type v} [Finite X] {S : System G Y} :
     (cons S X .empty).IsNondegenerate ↔ S.IsNondegenerate :=
   isNondegenerate_cons.trans <| and_iff_left <| by simp
+
+/-- If the top level `L` has a solution in the raw lower group, every solution `v` of the lower
+system `S` in `G` extends to a solution `Sum.elim x v` of `cons S X L`. The hypothesis on `L` is
+the top clause of the nondegeneracy of `cons S X L` (`isNondegenerate_cons`); the lower levels need
+not be nondegenerate. -/
+theorem exists_sumElim_mem_V_cons {Y X : Type v} [Finite X] {S : System G Y}
+    {L : Level (GX G Y) X}
+    (hL : (V (QuotientGroup.mk' (Rad (MonoidHom.id G) S.equations)) L.equations).Nonempty)
+    {v : Y → G} (hv : v ∈ V (MonoidHom.id G) S.equations) :
+    ∃ x : X → G, Sum.elim x v ∈ V (MonoidHom.id G) (cons S X L).equations := by
+  obtain ⟨s, hs⟩ := hL
+  -- Evaluation at `v`, as a homomorphism from the raw lower group to `G` over `G[Y]`.
+  let φ : GHom (QuotientGroup.mk' (Rad (MonoidHom.id G) S.equations)) (eval (.id G) v) :=
+    ⟨CoordGroup.evalGHom v hv, CoordGroup.evalGHom_mk hv⟩
+  exact ⟨φ ∘ s, mem_V_cons.2 ⟨by simpa using hv, by simpa using φ.comp_mem_V hs⟩⟩
+
+/-- A nondegenerate system has a solution in `G`. -/
+theorem IsNondegenerate.nonempty_V {Y : Type v} {S : System G Y} (h : S.IsNondegenerate) :
+    (V (MonoidHom.id G) S.equations).Nonempty := by
+  induction S with
+  | nil => exact ⟨PEmpty.elim, by simp⟩
+  | cons S X L ih =>
+    -- Extend a solution of the lower levels by the values there of a solution of the top level.
+    obtain ⟨v, hv⟩ := ih h.1
+    obtain ⟨x, hx⟩ := exists_sumElim_mem_V_cons h.2 hv
+    exact ⟨_, hx⟩
 
 end System
 
@@ -412,23 +476,53 @@ theorem normalClosure_lt_Rad_commute_basis :
     have := mem_Rad.1 ((normalClosure_le_Rad (ι := ι) S.equations) hx) _ hp
     simp at this
 
+namespace System
+
+variable (G : Type*) [Group G]
+
 /-- The two-level system with lower level `[u, v] = 1` (of type (3)) and upper level the standard
 quadratic equation `x⁻¹ u x · u⁻¹ = 1` (orientable of genus zero, with coefficients `c = u` and
-`d = u⁻¹` in the lower variables) is nondegenerate: the lower level is solved in `G` by
+`d = u⁻¹` in the lower variables), in the variables `x = inl ()`, `u = inr (inl 0)` and
+`v = inr (inl 1)`. -/
+def conjOverCommute : System G (Unit ⊕ (Fin 2 ⊕ PEmpty)) :=
+  cons (cons nil (Fin 2) .abelian) Unit
+    (.quadratic (.orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ ()) (by decide)
+      (fun _ ↦ inr (.of (.inl 0)))
+      (fun _ ↦ by simp [map_eq_one_iff _ inr_injective, FreeGroup.of_ne_one])
+      (inr (.of (.inl 0)))⁻¹ (by simp [map_eq_one_iff _ inr_injective, FreeGroup.of_ne_one])))
+
+theorem conjOverCommute_def : conjOverCommute G = cons (cons nil (Fin 2) .abelian) Unit
+    (.quadratic (.orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ ()) (by decide)
+      (fun _ ↦ inr (.of (.inl 0)))
+      (fun _ ↦ by simp [map_eq_one_iff _ inr_injective, FreeGroup.of_ne_one])
+      (inr (.of (.inl 0)))⁻¹ (by simp [map_eq_one_iff _ inr_injective, FreeGroup.of_ne_one]))) :=
+  (rfl)
+
+/-- The system `conjOverCommute` is nondegenerate: the lower level is solved in `G` by
 `u = v = 1`, and the upper level is solved in the coordinate group of the lower level by `x = 1`,
 its coefficients remaining the images of `u` and `u⁻¹` in that group. -/
-theorem isNondegenerate_conj_over_commute {G : Type*} [Group G] :
-    let Q : Quadratic.Standard (GX G (Fin 2 ⊕ PEmpty)) Unit :=
-      .orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ ()) (by decide)
-        (fun _ ↦ inr (.of (.inl 0)))
-        (fun _ ↦ by simp [map_eq_one_iff _ inr_injective, FreeGroup.of_ne_one])
-        (inr (.of (.inl 0)))⁻¹ (by simp [map_eq_one_iff _ inr_injective, FreeGroup.of_ne_one])
-    (System.cons (System.cons System.nil (Fin 2) .abelian) Unit
-      (.quadratic Q)).IsNondegenerate := by
-  intro Q
-  refine System.isNondegenerate_cons.2
-    ⟨System.isNondegenerate_cons_abelian.2 System.isNondegenerate_nil, 1, ?_⟩
-  simp [Q, Quadratic.Standard.toWord_def]
+@[simp]
+theorem isNondegenerate_conjOverCommute : (conjOverCommute G).IsNondegenerate := by
+  rw [conjOverCommute_def]
+  refine isNondegenerate_cons.2 ⟨isNondegenerate_cons_abelian.2 isNondegenerate_nil, 1, ?_⟩
+  simp [Quadratic.Standard.toWord_def]
+
+variable {G} {H : Type*} [Group H] {ι : G →* H}
+
+/-- The solutions of `conjOverCommute` are the points at which `u` commutes with `v` and `x`
+commutes with `u`. -/
+@[simp high]
+theorem mem_V_conjOverCommute {p : Unit ⊕ (Fin 2 ⊕ PEmpty) → H} :
+    p ∈ V ι (conjOverCommute G).equations ↔ Commute (p (.inr (.inl 0))) (p (.inr (.inl 1))) ∧
+      Commute (p (.inl ())) (p (.inr (.inl 0))) := by
+  have key (a b : H) : a⁻¹ * b * a * b⁻¹ = 1 ↔ Commute a b := by
+    simpa [commutatorElement_def] using
+      (commutatorElement_eq_one_iff_commute (g₁ := a⁻¹) (g₂ := b)).trans Commute.inv_left_iff
+  rw [conjOverCommute_def, mem_V_cons, mem_V_cons, Level.mem_V_abelian]
+  simp [Quadratic.Standard.toWord_def, key, Fin.forall_fin_two,
+    Commute.symm_iff (a := p (.inr (.inl 1)))]
+
+end System
 
 end Examples
 

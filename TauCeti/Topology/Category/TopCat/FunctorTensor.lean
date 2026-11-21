@@ -81,7 +81,7 @@ theorem ι_jointly_surjective (p : functorTensor K X) : ∃ d x t, ι K X d (x, 
 
 /-- `functorTensor K X` carries the quotient topology of `Σ d : D, X(d) × K(d)`. -/
 theorem isQuotientMap_sigma :
-    IsQuotientMap fun p : Σ d : D, X.obj (op d) × K.obj d ↦ ι K X p.1 p.2 :=
+    IsQuotientMap fun p : Σ d : D, X.obj (op d) × K.obj d ↦ ι K X p.fst p.snd :=
   isQuotientMap_quot_mk
 
 variable {K X}
@@ -142,7 +142,7 @@ variable {K : D ⥤ TopCat.{u}} {X : Dᵒᵖ ⥤ TopCat.{u}} {Z : Type*} [Topolo
 /-- The universal property of `functorTensor K X`: compatible continuous maps `X(d) × K(d) → Z`
 descend to a continuous map `functorTensor K X → Z`. -/
 def desc : C(functorTensor K X, Z) where
-  toFun := Quot.lift (fun p ↦ g p.1 p.2) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
+  toFun := Quot.lift (fun p ↦ g p.fst p.snd) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
   continuous_toFun := continuous_quot_lift _ (continuous_sigma fun d ↦ (g d).continuous)
 
 @[simp]
@@ -208,7 +208,7 @@ theorem isQuotientMap_reindex (X : Dᵒᵖ ⥤ TopCat.{u}) (hF : Function.Surjec
   refine IsQuotientMap.of_comp (f := σ) (continuous_sigma fun d ↦ (ι _ _ _).continuous.comp
     (((X.map _).hom.continuous.comp continuous_fst).prodMk
       ((K.map _).hom.continuous.comp continuous_snd))) (reindex F K X).hom.continuous ?_
-  have heq : (reindex F K X) ∘ σ = fun p ↦ ι K X p.1 p.2 := funext fun ⟨d, x, t⟩ ↦ by
+  have heq : (reindex F K X) ∘ σ = fun p ↦ ι K X p.fst p.snd := funext fun ⟨d, x, t⟩ ↦ by
     simp only [Function.comp_apply, σ, reindex_ι]
     generalize (hF d).choose = c, (hF d).choose_spec = hcd; subst hcd; simp
   exact heq.symm ▸ isQuotientMap_sigma K X
@@ -286,12 +286,13 @@ variable (K : D ⥤ TopCat.{u}) {X Y : Dᵒᵖ ⥤ TopCat.{u}}
 /-- A levelwise jointly continuous `[0, 1]`-family of natural transformations `φ s : X ⟶ Y` induces
 a homotopy `(s, [x, t]) ↦ [φ s x, t]` from `map K (φ 0)` to `map K (φ 1)`. -/
 def homotopy (φ : unitInterval → (X ⟶ Y))
-    (hφ : ∀ d : D, Continuous fun p : unitInterval × X.obj (op d) ↦ (φ p.1).app (op d) p.2) :
+    (hφ : ∀ d : D,
+      Continuous fun p : unitInterval × X.obj (op d) ↦ (φ p.fst).app (op d) p.snd) :
     ContinuousMap.Homotopy (map K (φ 0)).hom (map K (φ 1)).hom where
-  toFun p := map K (φ p.1) p.2
+  toFun p := map K (φ p.fst) p.snd
   continuous_toFun := (isQuotientMap_sigma K X).continuous_lift_prod_right <| by
     have : Continuous fun q : Σ d : D, (X.obj (op d) × K.obj d) × unitInterval ↦
-        ι K Y q.1 ((φ q.2.2).app (op q.1) q.2.1.1, q.2.1.2) :=
+        ι K Y q.fst ((φ q.snd.snd).app (op q.fst) q.snd.fst.fst, q.snd.fst.snd) :=
       continuous_sigma fun d ↦ (ι K Y d).continuous.comp <|
         ((hφ d).comp (continuous_snd.prodMk (continuous_fst.comp continuous_fst))).prodMk
           (continuous_snd.comp continuous_fst)
@@ -302,7 +303,8 @@ def homotopy (φ : unitInterval → (X ⟶ Y))
 
 @[simp]
 theorem homotopy_apply_ι (φ : unitInterval → (X ⟶ Y))
-    (hφ : ∀ d : D, Continuous fun p : unitInterval × X.obj (op d) ↦ (φ p.1).app (op d) p.2)
+    (hφ : ∀ d : D,
+      Continuous fun p : unitInterval × X.obj (op d) ↦ (φ p.fst).app (op d) p.snd)
     (s : unitInterval) (d : D) (x : X.obj (op d)) (t : K.obj d) :
     homotopy K φ hφ (s, ι K X d (x, t)) = ι K Y d ((φ s).app (op d) x, t) := (rfl)
 
@@ -331,7 +333,7 @@ variable (hinj : ∀ d, Function.Injective (φ.app d))
 include hinj hsat
 
 private def liftPred (W : Set (functorTensor K Y)) : functorTensor K X → Prop :=
-  Quot.lift (fun p ↦ ∃ y, φ.app (op p.1) y = p.2.1 ∧ ι K Y p.1 (y, p.2.2) ∈ W) <| by
+  Quot.lift (fun p ↦ ∃ y, φ.app (op p.fst) y = p.snd.fst ∧ ι K Y p.fst (y, p.snd.snd) ∈ W) <| by
     rintro _ _ ⟨f, x, t⟩; dsimp only
     refine propext ⟨?_, fun ⟨y, hy, hW⟩ ↦
       ⟨Y.map f.op y, (NatTrans.naturality_apply φ f.op y).trans (congrArg (X.map f.op) hy),

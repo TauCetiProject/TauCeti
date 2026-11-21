@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 
@@ -22,7 +23,9 @@ families, for every order `k` and every `1 ≤ p ≤ ∞`, with no boundary regu
 the sup norm on the product, the equivalence has norm at most one and its inverse has norm at most
 the number of sets in the cover. In other words, the finite-cover norm `∑ᵢ ‖u|_{V i}‖` is
 equivalent to the Sobolev norm on `Ω` (`TauCeti.Wkp.norm_le_sum_norm_restrictL`), which is the
-local form of the equivalence of finite-chart norms on a compact manifold.
+local form of the equivalence of finite-chart norms on a compact manifold. In particular, a map
+into `W^{k,p}(Ω)` is a compact operator as soon as its restrictions to the members of a finite
+open cover are (`TauCeti.Wkp.isCompactOperator_of_restrictL`).
 
 Injectivity is `TauCeti.Wkp.ext_of_restrictL_eq`; surjectivity and the bound on the inverse come
 from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
@@ -35,6 +38,10 @@ from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
 * `TauCeti.Wkp.norm_le_sum_norm_restrictL`: `‖u‖ ≤ ∑ᵢ ‖u|_{V i}‖` for a finite open cover.
 * `TauCeti.Wkp.restrictCompatibleEquiv`: `W^{k,p}(Ω) ≃L[ℝ]` compatible families over a finite
   open cover.
+* `TauCeti.Wkp.isCompactOperator_of_restrictL`: compactness of maps into `W^{k,p}(Ω)` is local on
+  a finite open cover.
+* `TauCeti.Wkp.exists_continuousLinearMap_value_ae_eq`: continuous linear maps into the members
+  of a finite open cover with almost everywhere matching values glue to one into `W^{k,p}(Ω)`.
 
 ## References
 
@@ -220,5 +227,51 @@ theorem norm_restrictCompatibleEquiv_symm_le [Fintype ι] {V : ι → Opens E}
   have h := norm_le_card_mul_norm_restrictCompatibleL hle hcov k
     ((restrictCompatibleEquiv hle hcov k).symm w)
   rwa [← restrictCompatibleEquiv_apply hle hcov, ContinuousLinearEquiv.apply_symm_apply] at h
+
+/-- **Compactness is local on a finite open cover.** If finitely many open sets `V i ⊆ Ω` cover
+`Ω`, a map into `W^{k,p}(Ω)` is a compact operator as soon as its restrictions to all `V i` are. -/
+theorem isCompactOperator_of_restrictL [Finite ι] {X : Type*} [TopologicalSpace X]
+    [AddCommMonoid X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+    (hcov : Omega ≤ ⨆ i, V i) {k : ℕ} {f : X → Wkp mu Omega p k}
+    (hf : ∀ i, IsCompactOperator fun x ↦ restrictL (hle i) k (f x)) : IsCompactOperator f := by
+  have := Fintype.ofFinite ι
+  have h := ((IsCompactOperator.pi hf).codRestrict
+    (fun x ↦ restrictL_mem_compatibleFamilies hle k (f x))
+    (isClosed_compatibleFamilies V k)).clm_comp
+      (restrictCompatibleEquiv hle hcov k).symm.toContinuousLinearMap
+  convert h using 1
+  funext x
+  rw [Function.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.eq_symm_apply]
+  exact Subtype.ext (funext fun i ↦ restrictCompatibleEquiv_apply_coe hle hcov k (f x) i)
+
+
+/-- **Continuous linear maps into `W^{k,p}(Ω)` glue over a finite open cover.** Let finitely many
+open sets `V i ⊆ Ω` cover `Ω`, and let `f i : X → W^{k,p}(V i)` be continuous linear maps whose
+values agree, almost everywhere on `V i`, with a function `g x` independent of `i`. Then there is a
+continuous linear map `F : X → W^{k,p}(Ω)` whose values equal `g x` almost everywhere on `Ω`. -/
+theorem exists_continuousLinearMap_value_ae_eq [Finite ι] {X : Type*} [TopologicalSpace X]
+    [AddCommMonoid X] [Module ℝ X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+    (hcov : Omega ≤ ⨆ i, V i) {k : ℕ} (f : ∀ i, X →L[ℝ] Wkp mu (V i) p k) (g : X → E → ℝ)
+    (hf : ∀ i x, (value k (f i x) : E → ℝ) =ᵐ[mu.restrict (V i)] g x) :
+    ∃ F : X →L[ℝ] Wkp mu Omega p k, ∀ x, (value k (F x) : E → ℝ) =ᵐ[mu.restrict Omega] g x := by
+  have := Fintype.ofFinite ι
+  -- The members `f i x` agree on the overlaps, since their values agree with `g x` there.
+  have hcomp (x : X) : (fun i ↦ f i x) ∈ compatibleFamilies mu p V k := fun i j ↦ by
+    have hi : (value k (f i x) : E → ℝ) =ᵐ[mu.restrict (V i ⊓ V j : Opens E)] g x :=
+      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) (hf i x)
+    have hj : (value k (f j x) : E → ℝ) =ᵐ[mu.restrict (V i ⊓ V j : Opens E)] g x :=
+      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_right) (hf j x)
+    exact Wkp.ext k (Lp.ext ((value_restrictL_ae inf_le_left k (f i x)).trans <|
+      hi.trans <| hj.symm.trans (value_restrictL_ae inf_le_right k (f j x)).symm))
+  refine ⟨(restrictCompatibleEquiv hle hcov k).symm.toContinuousLinearMap.comp
+    ((ContinuousLinearMap.pi f).codRestrict _ hcomp), fun x ↦ ?_⟩
+  have hV (i : ι) : (value k ((restrictCompatibleEquiv hle hcov k).symm
+      ⟨fun i ↦ f i x, hcomp x⟩) : E → ℝ) =ᵐ[mu.restrict (V i)] g x := by
+    refine (value_restrictL_ae (hle i) k _).symm.trans ?_
+    rw [restrictL_restrictCompatibleEquiv_symm]
+    exact hf i x
+  have hsub : (Omega : Set E) ⊆ ⋃ i, (V i : Set E) := by
+    simpa only [Opens.coe_iSup] using SetLike.coe_subset_coe.2 hcov
+  exact ae_restrict_of_ae_restrict_of_subset hsub ((ae_restrict_iUnion_iff _ _).2 hV)
 
 end TauCeti.Wkp

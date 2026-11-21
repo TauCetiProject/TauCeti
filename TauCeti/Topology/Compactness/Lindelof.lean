@@ -35,7 +35,7 @@ theorem IsLindelof.prod_of_isCompact {s : Set X} {t : Set Y} (hs : IsLindelof s)
   have hslice (x : s) : ∃ F : Finset ι, ∃ V : Set X,
       IsOpen V ∧ (x : X) ∈ V ∧ V ×ˢ t ⊆ ⋃ i ∈ F, U i := by
     obtain ⟨F, hF⟩ := (isCompact_singleton (x := (x : X)).prod ht).elim_finite_subcover U hUo
-      ((prod_mono (singleton_subset_iff.2 x.2) Subset.rfl).trans hcov)
+      ((prod_mono (singleton_subset_iff.2 x.property) Subset.rfl).trans hcov)
     obtain ⟨V, _, hVo, -, hxV, hWt, hsub⟩ :=
       generalized_tube_lemma isCompact_singleton ht (isOpen_biUnion fun i _ ↦ hUo i) hF
     exact ⟨F, V, hVo, singleton_subset_iff.1 hxV, (prod_mono Subset.rfl hWt).trans hsub⟩

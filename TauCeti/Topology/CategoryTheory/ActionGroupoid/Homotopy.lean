@@ -87,8 +87,8 @@ theorem fatClassifyingSpaceHomotopy_apply_ι {f₀ f₁ : X →ₑ[MonoidHom.id 
     (s : unitInterval) (n : SemiSimplexCategory)
     (F : ComposableArrows (ActionCategory G X) (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
-    fatClassifyingSpaceHomotopy H hH (s, functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n (((ActionCategory.map (MonoidHom.id G)
+    fatClassifyingSpaceHomotopy H hH (s, fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n (((ActionCategory.map (MonoidHom.id G)
         (⟨fun x ↦ H (s, x), hH s⟩ : X →ₑ[MonoidHom.id G] Y)).mapComposableArrows _).obj F, t) :=
   TauCeti.fatClassifyingSpaceHomotopy_apply_ι _ _ s n F t
 
@@ -139,13 +139,11 @@ def fatClassifyingSpaceHomotopyEquivOfContraction (x : X)
 labels of each string of composable arrows and forgets its points. -/
 theorem fatClassifyingSpaceHomotopyEquivOfContraction_apply_ι
     (F : ComposableArrows (ActionCategory G X) (SemiSimplexCategory.toSimplexCategory.obj n).len) :
-    fatClassifyingSpaceHomotopyEquivOfContraction G x H hH
-        (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n
+    fatClassifyingSpaceHomotopyEquivOfContraction G x H hH (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n
         ((nerveEquiv G PUnit.{u + 1} _).symm (PUnit.unit, (nerveEquiv G X _ F).2), t) :=
-  (fatClassifyingSpaceMap_ι _ _ n F t).trans <|
-    congrArg (fun F ↦ functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) <|
-      (nerveEquiv G PUnit.{u + 1} _).eq_symm_apply.2 <| Prod.ext rfl <| funext fun _ ↦ by simp
+  (fatClassifyingSpaceMap_ι _ _ n F t).trans <| congrArg (fun F ↦ fatRealization.ι _ n (F, t)) <|
+    (nerveEquiv G PUnit.{u + 1} _).eq_symm_apply.2 <| Prod.ext rfl <| funext fun _ ↦ by simp
 
 /-- The inverse of the homotopy equivalence `B(G ⋉ X) ≃ₕ B(G ⋉ *)` of a contraction onto a fixed
 point `x` sends a string of composable arrows of `G ⋉ *` to the string at `x` with the same
@@ -154,16 +152,14 @@ theorem fatClassifyingSpaceHomotopyEquivOfContraction_symm_apply_ι
     (F : ComposableArrows (ActionCategory G PUnit.{u + 1})
       (SemiSimplexCategory.toSimplexCategory.obj n).len) :
     (fatClassifyingSpaceHomotopyEquivOfContraction G x H hH).symm
-        (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n
-        ((nerveEquiv G X _).symm (x, (nerveEquiv G PUnit.{u + 1} _ F).2), t) :=
-  (fatClassifyingSpaceMap_ι _ _ n F t).trans <|
-    congrArg (fun F ↦ functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) <|
-      (nerveEquiv G X _).eq_symm_apply.2 <| Prod.ext
-        -- The first point of the image string is the value at that point of the map onto `x`.
-        (by simp only [nerveEquiv_apply, Functor.mapComposableArrows_obj_obj, back_map_obj,
-          constOfMemFixedPoints_apply])
-        (funext fun _ ↦ by simp)
+        (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n ((nerveEquiv G X _).symm (x, (nerveEquiv G PUnit.{u + 1} _ F).2), t) :=
+  (fatClassifyingSpaceMap_ι _ _ n F t).trans <| congrArg (fun F ↦ fatRealization.ι _ n (F, t)) <|
+    (nerveEquiv G X _).eq_symm_apply.2 <| Prod.ext
+      -- The first point of the image string is the value at that point of the map onto `x`.
+      (by simp only [nerveEquiv_apply, Functor.mapComposableArrows_obj_obj, back_map_obj,
+        constOfMemFixedPoints_apply])
+      (funext fun _ ↦ by simp)
 
 section StarConvex
 
@@ -180,10 +176,11 @@ def fatClassifyingSpaceHomotopyEquivOfStarConvex (U : SubMulAction G E)
       fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) :=
   fatClassifyingSpaceHomotopyEquivOfContraction G ⟨0, h0⟩
     { toFun p := ⟨(unitInterval.symm p.1 : ℝ) • (p.2 : E),
-        hU.smul_mem p.2.2 (unitInterval.symm p.1).2.1 (unitInterval.symm p.1).2.2⟩
+        hU.smul_mem p.2.property (unitInterval.symm p.1).property.1
+            (unitInterval.symm p.1).property.2⟩
       continuous_toFun := Continuous.subtype_mk
-        ((continuous_subtype_val.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
-          (continuous_subtype_val.comp continuous_snd)) _
+        ((continuous_subtypeVal.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
+          (continuous_subtypeVal.comp continuous_snd)) _
       map_zero_left _ := Subtype.ext (by simp)
       map_one_left _ := Subtype.ext (by simp) }
     fun s g y ↦ Subtype.ext (smul_comm (unitInterval.symm s : ℝ) g (y : E))
@@ -194,9 +191,8 @@ theorem fatClassifyingSpaceHomotopyEquivOfStarConvex_apply_ι (U : SubMulAction 
     (hU : StarConvex ℝ 0 (U : Set E)) (h0 : (0 : E) ∈ U) (n : SemiSimplexCategory)
     (F : ComposableArrows (ActionCategory G U) (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
-    fatClassifyingSpaceHomotopyEquivOfStarConvex G U hU h0
-        (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n
+    fatClassifyingSpaceHomotopyEquivOfStarConvex G U hU h0 (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n
         ((nerveEquiv G PUnit.{u + 1} _).symm (PUnit.unit, (nerveEquiv G U _ F).2), t) :=
   fatClassifyingSpaceHomotopyEquivOfContraction_apply_ι F
 
@@ -207,9 +203,8 @@ theorem fatClassifyingSpaceHomotopyEquivOfStarConvex_symm_apply_ι (U : SubMulAc
     (F : ComposableArrows (ActionCategory G PUnit.{u + 1})
       (SemiSimplexCategory.toSimplexCategory.obj n).len)
     (t : SemiSimplexCategory.toTop.obj n) :
-    (fatClassifyingSpaceHomotopyEquivOfStarConvex G U hU h0).symm
-        (functorTensor.ι SemiSimplexCategory.toTop _ n (F, t)) =
-      functorTensor.ι SemiSimplexCategory.toTop _ n
+    (fatClassifyingSpaceHomotopyEquivOfStarConvex G U hU h0).symm (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n
         ((nerveEquiv G U _).symm (⟨0, h0⟩, (nerveEquiv G PUnit.{u + 1} _ F).2), t) :=
   fatClassifyingSpaceHomotopyEquivOfContraction_symm_apply_ι F
 

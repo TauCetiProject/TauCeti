@@ -104,7 +104,7 @@ private theorem lift_differential_gelfandTsetlinGenerator_self_apply {n : ℕ}
     (v : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule) :
     UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
         (gelfandTsetlinGenerator ℂ le_rfl r) v =
-      gelfandEigenvalue (fun i : Fin n ↦ (P.1 i n : ℂ)) r • v := by
+      gelfandEigenvalue (fun i : Fin n ↦ (P.val i n : ℂ)) r • v := by
   rw [gelfandTsetlinGenerator_self, lift_differential_rationalWeylRep_gelfandInvariant_apply]
   congr 2
   funext i
@@ -120,7 +120,7 @@ theorem lift_differential_gelfandTsetlinGenerator_apply_of_mem_gtLine {n : ℕ}
     {v : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule} (hv : v ∈ gtLine l P) :
     UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
         (gelfandTsetlinGenerator ℂ hk r) v =
-      gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r • v := by
+      gelfandEigenvalue (fun i : Fin k ↦ (P.val i k : ℂ)) r • v := by
   induction n with
   | zero =>
     obtain rfl := Nat.le_zero.mp hk
@@ -130,7 +130,7 @@ theorem lift_differential_gelfandTsetlinGenerator_apply_of_mem_gtLine {n : ℕ}
     · have hkm : k ≤ m := Nat.lt_succ_iff.mp hk'
       -- The line of `P` is the image of the line of its truncation under an intertwiner `f`.
       obtain ⟨f, hf0⟩ := exists_intertwiningMap_ne_zero_of_mem_interlacingWeights
-        (P.2 ▸ P.1.topWeight_truncate_mem_interlacingWeights)
+        (P.property ▸ P.val.topWeight_truncate_mem_interlacingWeights)
       rw [gtLine_succ l P f hf0] at hv
       obtain ⟨w, hw, rfl⟩ := Submodule.mem_map.mp hv
       -- The generator acts on the restriction to `GL m ℂ` as a generator of `U(𝔤𝔩ₘ)`. Fix the
