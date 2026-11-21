@@ -60,6 +60,8 @@ statement.
   `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
   (`TauCeti.MemWkpLoc.exists_ball_extension`). Local `Lᵖ` membership extends in the same way,
   `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
+* `TauCeti.continuousOn_planarReflection`: with weights of sum one, the reflection of a map
+  continuous up to the real axis is continuous across it.
 * `TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore`: the reflection core
   of an open set `V` (`TopologicalSpace.Opens.reflectionCore`, from
   `TauCeti.Analysis.Complex.ImDilation`), an open set between `V ∩ {0 ≤ im}` and `V`, is stable
@@ -157,6 +159,20 @@ theorem planarReflection_higherReflectionCoeff_two_im :
     (by rw [Polynomial.degree_X]; norm_num)) z.im
   simpa using h
 
+/-- The node dilations map the lower part of `Ω` into its upper part, provided they map the open
+lower part of `Ω` into `Ω`: points of the real axis are fixed. -/
+private theorem mapsTo_imDilation_higherReflectionNode {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (j : Fin k) :
+    MapsTo (imDilation (higherReflectionNode j)) (Ω ∩ {z | z.im ≤ 0}) (Ω ∩ {z | 0 ≤ z.im}) := by
+  rintro z ⟨hzΩ, hz : z.im ≤ 0⟩
+  refine ⟨?_, ?_⟩
+  · rcases hz.lt_or_eq with hz | hz
+    · exact hΩ z hzΩ hz j
+    · rwa [imDilation_of_im_eq_zero _ hz]
+  · simpa [imDilation_apply_im] using
+      mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hz
+
 /-- The reflection of every nonnegative-side `Lᵖ`-on-compacts map is `Lᵖ` on compacts, provided the
 dilations `higherReflectionNode j` map the lower part of `Ω` into `Ω`. -/
 theorem MemLpLoc.planarReflection {p : ℝ≥0∞} {Ω : Set ℂ}
@@ -175,20 +191,38 @@ theorem MemLpLoc.planarReflection {p : ℝ≥0∞} {Ω : Set ℂ}
     refine memLp_finsetSum _ fun j _ => MemLp.const_smul ?_ (d j)
     set K' := K ∩ {z : ℂ | z.im ≤ 0}
     have hK' : IsCompact K' := hK.inter_right (isClosed_le continuous_im continuous_const)
-    have hsub : imDilation (higherReflectionNode j) '' K' ⊆ Ω ∩ {z : ℂ | 0 ≤ z.im} := by
-      rintro _ ⟨z, ⟨hzK, hz⟩, rfl⟩
-      refine ⟨?_, ?_⟩
-      · rcases (show z.im ≤ 0 from hz).lt_or_eq with hz | hz
-        · exact hΩ z (hKΩ hzK) hz j
-        · rw [imDilation_of_im_eq_zero _ hz]
-          exact hKΩ hzK
-      · simpa using mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hz
+    have hsub : imDilation (higherReflectionNode j) '' K' ⊆ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
+      ((mapsTo_imDilation_higherReflectionNode hΩ j).mono_left
+        (inter_subset_inter_left _ hKΩ)).image_subset
     have h := memLpLoc_iff.1 hg _ hsub (hK'.image (imDilation _).continuous)
     rw [← memLp_comp_imDilation_iff (higherReflectionNode_ne_zero j),
       preimage_image_eq _
         (measurableEmbedding_imDilation (higherReflectionNode_ne_zero j)).injective] at h
     refine h.mono_measure (Measure.restrict_mono ?_ le_rfl)
     exact fun z hz => ⟨hz.2, (show z.im < 0 from hz.1).le⟩
+
+/-- **Continuity of the reflection.** If the node dilations map the lower part of `Ω` into `Ω` and
+the weights sum to one, the reflection of a map `g` continuous on `Ω ∩ {0 ≤ im}` is continuous on
+`Ω`: on the real axis every reflected copy takes the value of `g` itself. -/
+theorem continuousOn_planarReflection (hd : ∑ j, d j = 1) {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (hg : ContinuousOn g (Ω ∩ {z | 0 ≤ z.im})) :
+    ContinuousOn (planarReflection d g) Ω := by
+  have heq : planarReflection d g = fun z => if 0 ≤ z.im then g z else
+      ∑ j, d j • g (imDilation (higherReflectionNode j) z) := by
+    funext z
+    split_ifs with hz
+    · exact planarReflection_of_nonneg _ _ hz
+    · exact planarReflection_of_neg _ _ (not_le.1 hz)
+  rw [heq]
+  refine ContinuousOn.if (fun z hz => ?_) ?_ ?_
+  · rw [Complex.frontier_setOfPred_le_im] at hz
+    simp only [imDilation_of_im_eq_zero _ hz.2, ← Finset.sum_smul, hd, one_smul]
+  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
+  · simp_rw [not_le, Complex.closure_setOfPred_im_lt]
+    exact continuousOn_finsetSum _ fun j _ =>
+      (hg.comp (imDilation (higherReflectionNode j)).continuous.continuousOn
+        (mapsTo_imDilation_higherReflectionNode hΩ j)).const_smul _
 
 /-! ### Integration by parts up to the real axis -/
 
@@ -397,16 +431,6 @@ private theorem preimage_imDilation_node {k : ℕ} (j : Fin k) :
   ext z
   simp [mul_pos_iff, higherReflectionNode_neg j, (higherReflectionNode_neg j).not_gt]
 
-/-- The node dilations map `{0 ≤ im} ∩ e⁻¹(Ω)` into `Ω` when they map the lower part of `Ω` into
-`Ω`. -/
-private theorem imDilation_mem_of_im_nonpos {Ω : Set ℂ}
-    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
-    (j : Fin k) {z : ℂ} (hz : z ∈ Ω) (hz0 : z.im ≤ 0) :
-    imDilation (higherReflectionNode j) z ∈ Ω := by
-  rcases hz0.lt_or_eq with hz0 | hz0
-  · exact hΩ z hz hz0 j
-  · rwa [imDilation_of_im_eq_zero _ hz0]
-
 /-- Undoing a node dilation on a function supported in `Ω` gives a function whose support meets
 `{0 ≤ im}` inside `Ω`. -/
 private theorem tsupport_comp_imDilation_inv_subset {Ω : Set ℂ}
@@ -418,7 +442,7 @@ private theorem tsupport_comp_imDilation_inv_subset {Ω : Set ℂ}
   have hw' := tsupport_comp_subset_preimage f (imDilation (higherReflectionNode j)⁻¹).continuous hw
   have hz0 : (imDilation (higherReflectionNode j)⁻¹ w).im ≤ 0 := by
     simpa using mul_nonpos_of_nonpos_of_nonneg (inv_lt_zero.2 hn).le (show (0 : ℝ) ≤ w.im from hw0)
-  have h := imDilation_mem_of_im_nonpos hΩ j (hfΩ hw') hz0
+  have h := (mapsTo_imDilation_higherReflectionNode hΩ j ⟨hfΩ hw', hz0⟩).1
   rwa [imDilation_imDilation, mul_inv_cancel₀ hn.ne, imDilation_one_apply] at h
 
 /-- **Splitting a pairing with the reflection.** Against a compactly supported continuous `f`
