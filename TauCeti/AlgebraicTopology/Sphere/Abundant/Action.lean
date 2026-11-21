@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
-import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
@@ -193,7 +192,6 @@ private theorem exists_forall_apply_eq_zsmul {x₀ : M} (π : C(G, M)) (hπ : �
   let ε₀ := (TopCat.of (p ⁻¹' {x₀})).singularHomology₀ε R
   let one : p ⁻¹' {x₀} := ⟨1, by simp [p, hπ]⟩
   let c₁ := fib.inv (singularHomology₀Section R one (ULift.up 1))
-  have hm : ∀ z : ULift.{0} ℤ, ULift.moduleEquiv (R := ℤ) z = z.down := fun _ ↦ rfl
   refine ⟨fun c ↦ (ε₀ (fib.hom c)).down, c₁, fun T Q hQ c ↦ ?_⟩
   -- On zeroth homology, `Q` is the augmentation followed by multiplication by `Q c₁`.
   have key : fib.inv ≫ Q = ε₀ ≫ ModuleCat.ofHom ((LinearMap.toSpanSingleton ℤ T (Q c₁)).comp
@@ -207,8 +205,10 @@ private theorem exists_forall_apply_eq_zsmul {x₀ : M} (π : C(G, M)) (hπ : �
     obtain ⟨r⟩ := r
     have hr : (ULift.up r : ULift.{0} ℤ) = r • ULift.up 1 := ULift.ext (by simp)
     rw [hr, map_zsmul, map_zsmul]
-    simp [c₁, hm, -LinearMap.toSpanSingleton_apply,
+    simp [c₁, ULift.moduleEquiv_apply, -LinearMap.toSpanSingleton_apply,
       LinearMap.toSpanSingleton_apply_one]
+    -- The two sides differ only in unfolding `fib`, `one` and `R`, and in applying morphisms of
+    -- `ModuleCat` through `ModuleCat.Hom.hom` or `ConcreteCategory.hom`, which agree by definition.
     rfl
   have := ConcreteCategory.congr_hom key (fib.hom c)
   rw [ConcreteCategory.comp_apply, Iso.hom_inv_id_apply] at this
@@ -407,7 +407,7 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_eq_zsmul {B 
     -- unfolds through `ConcreteCategory.hom` on the same carriers, so they only match up to `erw`.
     erw [ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
       ModuleCat.MonoidalCategory.whiskerLeft_apply, LinearMap.toSpanSingleton_apply, one_smul]
-    rfl
+    exact ConcreteCategory.comp_apply cross Φloc _
   have hπρ (h : MulAction.stabilizer G (x₀ : M)) :
       π.comp (ContinuousMap.mulRight (h : G)) = π :=
     ContinuousMap.ext fun g ↦ by simp [hπ, mul_smul, MulAction.mem_stabilizer_iff.1 h.property]
@@ -604,6 +604,5 @@ theorem IsPathConnected.homologyMap_stabilizer_smul_apply {G X B : Type} [Group 
       map_one_left := fun u ↦ by simp }
   have hH := TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
     (f := TopCat.ofHom (ContinuousMap.id _)) (g := TopCat.ofHom _) H R k
-  have hid : TopCat.ofHom (ContinuousMap.id (TauCeti.BasedMap B X b₀ x)) = 𝟙 _ := rfl
-  rw [hid, CategoryTheory.Functor.map_id, HomologicalComplex.homologyMap_id] at hH
+  rw [TopCat.ofHom_id, CategoryTheory.Functor.map_id, HomologicalComplex.homologyMap_id] at hH
   exact (ConcreteCategory.congr_hom hH.symm α).trans (ConcreteCategory.id_apply α)
