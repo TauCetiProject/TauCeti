@@ -10,9 +10,11 @@ public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.AlgebraTower
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
+import Mathlib.FieldTheory.RatFunc.AsPolynomial
 import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
-import Mathlib.RingTheory.Localization.Integral
+import Mathlib.RingTheory.Localization.Algebra
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # Simple transcendental field extensions
@@ -141,30 +143,21 @@ theorem Transcendental.isFractionRing_adjoin_simple {y : F} (hy : Transcendental
     letI := (Polynomial.aeval (R := R) (AdjoinSimple.gen K y)).toAlgebra
     IsFractionRing R[X] K⟮y⟯ := by
   let := (Polynomial.aeval (R := R) (AdjoinSimple.gen K y)).toAlgebra
-  have hinj := IsFractionRing.injective R K
-  have := hinj.isDomain (algebraMap R K)
-  have hcoe (f : R[X]) :
-      (algebraMap R[X] K⟮y⟯ f : F) = Polynomial.aeval y (f.map (algebraMap R K)) := by
-    rw [aeval_map_algebraMap]
-    exact (aeval_algHom_apply ((K⟮y⟯).val.restrictScalars R) (AdjoinSimple.gen K y) f).symm
-  have : FaithfulSMul R[X] K⟮y⟯ := (faithfulSMul_iff_algebraMap_injective _ _).mpr <|
-    (injective_iff_map_eq_zero _).mpr fun f hf ↦ map_injective _ hinj <| by
-      rw [Polynomial.map_zero]
-      exact transcendental_iff.mp hy _ (by rw [← hcoe, hf, ZeroMemClass.coe_zero])
-  refine .of_field _ _ fun z ↦ ?_
-  -- Write `z = r(y) / s(y)` with `r, s ∈ K[X]`, and clear the denominators of `r` and `s`.
-  obtain ⟨r, s, hz⟩ := (mem_adjoin_simple_iff (F := K) z.val).mp z.property
-  obtain ⟨b, hb, hbr⟩ := IsLocalization.integerNormalization_spec (nonZeroDivisors R) (S := K) r
-  obtain ⟨c, hc, hcs⟩ := IsLocalization.integerNormalization_spec (nonZeroDivisors R) (S := K) s
-  refine ⟨C c * IsLocalization.integerNormalization (nonZeroDivisors R) r,
-    C b * IsLocalization.integerNormalization (nonZeroDivisors R) s, Subtype.ext ?_⟩
-  have hb0 : algebraMap K F (algebraMap R K b) ≠ 0 := by
-    simpa [map_ne_zero_iff _ hinj] using nonZeroDivisors.ne_zero hb
-  have hc0 : algebraMap K F (algebraMap R K c) ≠ 0 := by
-    simpa [map_ne_zero_iff _ hinj] using nonZeroDivisors.ne_zero hc
-  rw [IntermediateField.coe_div, hcoe, hcoe, Polynomial.map_mul, Polynomial.map_mul, map_C, map_C,
-    hbr, hcs, hz]
-  simp only [map_mul, aeval_C, Algebra.smul_def, Polynomial.algebraMap_apply]
-  field_simp
+  have := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  -- `K(y)` is a fraction field of `K[X]`, transported from `RatFunc K`.
+  let := (Polynomial.aeval (R := K) (AdjoinSimple.gen K y)).toAlgebra
+  let e : RatFunc K ≃ₐ[K[X]] K⟮y⟯ :=
+    { RatFunc.algEquivOfTranscendental y hy with
+      commutes' := RatFunc.algEquivOfTranscendental_algebraMap y hy }
+  have : IsFractionRing K[X] K⟮y⟯ := IsLocalization.isLocalization_of_algEquiv _ e
+  -- `K[X]` is the localization of `R[X]` at the nonzero constants.
+  let : Algebra R[X] K[X] := Polynomial.algebra R K
+  have : IsScalarTower R[X] K[X] K⟮y⟯ := .of_algebraMap_eq fun f ↦
+    (aeval_map_algebraMap K (AdjoinSimple.gen K y) f).symm
+  have := Polynomial.isLocalization (nonZeroDivisors R) K
+  refine TauCeti.IsFractionRing.of_isLocalization_of_isFractionRing
+    ((nonZeroDivisors R).map C) K[X] _ ?_
+  rintro _ ⟨a, ha, rfl⟩
+  exact mem_nonZeroDivisors_of_ne_zero (C_ne_zero.mpr (nonZeroDivisors.ne_zero ha))
 
 end FractionRing

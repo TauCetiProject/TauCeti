@@ -9,7 +9,10 @@ public import TauCeti.RingTheory.Etale.GenericFiber
 public import TauCeti.RingTheory.IntegralClosure.QuasiFinite
 public import TauCeti.RingTheory.Kaehler.SeparatingLift
 
+import TauCeti.RingTheory.Ideal.MinimalPrime.Polynomial
 import TauCeti.RingTheory.Localization.Finiteness
+import TauCeti.RingTheory.Localization.Integral
+import TauCeti.RingTheory.Unramified.Localization
 
 /-!
 # Finite normalization in a generic fibre smooth of dimension one
@@ -71,12 +74,13 @@ private lemma exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable [IsNoe
       Module.Finite (Localization.Away r) (LocalizedModule.Away r (integralClosure A B)) := by
   have := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   let : Algebra R[X] A := (aeval x).toAlgebra
-  let : Algebra R[X] B := ((algebraMap A B).comp (aeval x).toRingHom).toAlgebra
-  have : IsScalarTower R[X] A B := .of_algebraMap_eq' rfl
+  let : Algebra R[X] B := ((IsScalarTower.toAlgHom R A B).comp (aeval x)).toAlgebra
+  have : IsScalarTower R[X] A B := .of_algebraMap_eq' <| by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
+      ← IsScalarTower.coe_toAlgHom R A B]
+    exact AlgHom.comp_toRingHom _ _
   have : IsScalarTower R R[X] A := .of_algHom (aeval x)
-  have : IsScalarTower R R[X] B := .of_algebraMap_eq' <| by
-    rw [IsScalarTower.algebraMap_eq R A B, IsScalarTower.algebraMap_eq R R[X] A,
-      IsScalarTower.algebraMap_eq R[X] A B, RingHom.comp_assoc]
+  have : IsScalarTower R R[X] B := .of_algHom ((IsScalarTower.toAlgHom R A B).comp (aeval x))
   have : Algebra.FiniteType R[X] A := .of_restrictScalars_finiteType R R[X] A
   have hX (p : Ideal B) [p.IsPrime] :
       algebraMap R[X] p.ResidueField X = algebraMap A p.ResidueField x := by
@@ -85,7 +89,7 @@ private lemma exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable [IsNoe
   have : Module.IsTorsionFree R[X] B := isTorsionFree_polynomial_of_forall_transcendental
     fun p _ hp ↦ hX p ▸ (hsep p hp).1.restrictScalars (IsFractionRing.injective R K)
   have : Algebra.Etale (FractionRing R[X]) (FractionRing R[X] ⊗[R[X]] B) :=
-    etale_tensorProduct_polynomial_of_forall_isSeparable (K := K) fun p _ hp ↦ by
+    etale_tensorProduct_polynomial_of_forall_isSeparable (K := K) fun p _ hp _ ↦ by
       rw [hX p]
       exact hsep p hp
   have := Ring.finite_integralClosure_of_isTorsionFree_of_etale (R := R[X]) (FractionRing R[X]) B
@@ -115,18 +119,16 @@ theorem finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one [IsN
     infer_instance
   refine .of_forall_isMaximal_exists_notMem fun q hq ↦ ?_
   by_cases hπq : algebraMap R A π ∉ q
-  · exact ⟨_, hπq, IsLocalization.Away.finite_localizedModule_integralClosure _⟩
+  · exact ⟨_, hπq, IsLocalization.finite_localizedModule_integralClosure (.powers _)⟩
   rw [not_not] at hπq
   -- At a point of the special fibre, choose a coordinate `x`, quasi-finite at `q` and separating
   -- on every component of the generic fibre `B`.
   let f := Ideal.Quotient.mkₐ R (Ideal.span {algebraMap R A π})
   have hf : Function.Surjective f := Ideal.Quotient.mk_surjective
   have hkerf : RingHom.ker f = Ideal.span {algebraMap R A π} := Ideal.Quotient.mkₐ_ker R _
-  have hker : RingHom.ker f ≤ q := by
-    rwa [hkerf, Ideal.span_le, Set.singleton_subset_iff]
-  have : (q.map f).IsMaximal := hq.map_of_surjective_of_ker_le hf hker
-  have hqf : (q.map f).comap f = q := by
-    rw [Ideal.comap_map_of_surjective' f hf, sup_eq_left.mpr hker]
+  have hπq' : Ideal.span {algebraMap R A π} ≤ q := (Ideal.span_singleton_le_iff_mem q).mpr hπq
+  have : (q.map f).IsMaximal := hq.map_of_surjective_of_ker_le hf (hkerf.trans_le hπq')
+  have hqf : (q.map f).comap f = q := Ideal.comap_map_mk hπq'
   have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing R A
   have : IsNoetherianRing B := IsLocalization.isNoetherianRing (.powers (algebraMap R A π)) B ‹_›
   have : Finite (minimalPrimes B) := (minimalPrimes.finite_of_isNoetherianRing B).to_subtype
@@ -138,19 +140,13 @@ theorem finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one [IsN
   have (i : minimalPrimes B) : Algebra.Transcendental K i.val.ResidueField :=
     (h i.val i.property).1
   have : Algebra.FormallyUnramified A B := .of_isLocalization (.powers (algebraMap R A π))
-  have (i : minimalPrimes B) : Algebra.FormallyUnramified A i.val.ResidueField := by
-    have : Algebra.FormallyUnramified B (Localization.AtPrime i.val) :=
-      .of_isLocalization i.val.primeCompl
-    have : Algebra.FormallyUnramified (Localization.AtPrime i.val) i.val.ResidueField :=
-      .of_surjective (IsScalarTower.toAlgHom _ _ _) IsLocalRing.residue_surjective
-    have : Algebra.FormallyUnramified B i.val.ResidueField := .comp B (Localization.AtPrime i.val) _
-    exact .comp A B _
+  have (i : minimalPrimes B) : Algebra.FormallyUnramified A i.val.ResidueField := .comp A B _
   obtain ⟨x, -, hx, hsep⟩ := exists_quasiFiniteAt_and_forall_isSeparable_adjoin (K := K)
     (fun i : minimalPrimes B ↦ i.val.ResidueField) f hf hπ
     ((f.commutes π).symm.trans (Ideal.Quotient.eq_zero_iff_mem.mpr
       (Ideal.mem_span_singleton_self _))) (q.map f)
-    (by rw [hqf, hkerf, Ideal.span_le, Set.singleton_subset_iff]
-        exact Ideal.mem_map_of_mem _ (show π ∈ q.under R from hπq))
+    (by rw [hqf, hkerf, Ideal.span_singleton_le_iff_mem]
+        exact Ideal.mem_map_of_mem _ ((Ideal.mem_under R q).mpr hπq))
     (fun i ↦ (h i.val i.property).2)
   rw [← hqf]
   exact exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable x _ hx

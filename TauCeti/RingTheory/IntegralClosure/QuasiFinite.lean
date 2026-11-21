@@ -36,17 +36,16 @@ hypothesis enters. This is the route to finiteness of the normalization of a fla
 algebra `A` over a possibly non-excellent discrete valuation ring `R` in its generic fibre
 `B = A[1/π]` when `B` is smooth of relative dimension one over the fraction field `K`. Applying
 these results requires constructing, near each point of the special fibre, a coordinate `x ∈ A`
-such that `A` is quasi-finite over `R[x]`, `B` is torsion-free over `R[x]`, and
-`K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate construction is not supplied here; it is
-carried out in `TauCeti.finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one`.
+such that `A` is quasi-finite over `R[x]` at the chosen point, `B` is torsion-free over `R[x]`,
+and `K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate is constructed by
+`TauCeti.exists_quasiFiniteAt_and_forall_isSeparable_adjoin`, and
+`TauCeti.finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one` applies it.
 
 ## Main results
 
 * `Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosure`: if `A` is of finite
   type over `P` and quasi-finite at a prime `q`, and the integral closure of `P` in `B` is finite,
   then the integral closure of `A` in `B` becomes finite over `A_r` after inverting some `r ∉ q`.
-* `IsLocalization.Away.finite_localizedModule_integralClosure`: the integral closure of `A` in
-  `B = A[1/a]` becomes finite after inverting `a`.
 * `TauCeti.finite_integralClosure_of_quasiFinite`: if moreover `A` is quasi-finite over `P`, the
   integral closure of `A` in `B` is a finite `A`-module.
 * `TauCeti.finite_integralClosure_of_quasiFinite_of_etale`: the case of a Noetherian N-1 domain
@@ -107,27 +106,6 @@ theorem Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosu
     exact LocalizedModule.mk_cancel_common_left (⟨r ^ n, n, rfl⟩ : Submonoid.powers r)
       ⟨r ^ k, k, rfl⟩ c
   exact ⟨hloc ▸ Submodule.localized'_fg _ _ _ (Submodule.fg_span (s.finite_toSet.image incl))⟩
-
-/-- **The integral closure in a localization is finite away from the inverted element.** If
-`B = A[1/a]`, then the integral closure of `A` in `B`, localized at `a`, is a finite module over
-`A[1/a]`. -/
-theorem IsLocalization.Away.finite_localizedModule_integralClosure (a : A)
-    [IsLocalization.Away a B] :
-    Module.Finite (Localization.Away a) (LocalizedModule.Away a (integralClosure A B)) := by
-  let N : Submodule A (integralClosure A B) := Submodule.span A {1}
-  have hloc : Submodule.localized (.powers a) N = ⊤ := by
-    refine Submodule.eq_top_iff'.mpr fun c ↦ ?_
-    induction c using LocalizedModule.induction_on with | h c t =>
-    obtain ⟨⟨b, _, n, rfl⟩, hb⟩ := IsLocalization.surj (Submonoid.powers a) c.val
-    obtain ⟨_, k, rfl⟩ := t
-    refine ⟨_, Submodule.mem_span_singleton.mpr ⟨b, rfl⟩, ⟨a ^ n, n, rfl⟩ * ⟨a ^ k, k, rfl⟩, ?_⟩
-    rw [← IsLocalizedModule.mk_eq_mk']
-    have : b • (1 : integralClosure A B) = (⟨a ^ n, n, rfl⟩ : Submonoid.powers a) • c :=
-      Subtype.ext (by simpa [Algebra.smul_def, Submonoid.smul_def, mul_comm] using hb.symm)
-    rw [this]
-    exact LocalizedModule.mk_cancel_common_left (⟨a ^ n, n, rfl⟩ : Submonoid.powers a)
-      ⟨a ^ k, k, rfl⟩ c
-  exact ⟨hloc ▸ Submodule.localized'_fg _ _ _ (Submodule.fg_span_singleton 1)⟩
 
 namespace TauCeti
 

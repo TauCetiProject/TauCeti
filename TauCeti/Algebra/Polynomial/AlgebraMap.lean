@@ -25,6 +25,9 @@ For an idempotent `e` commuting with `u`, evaluating a polynomial `P` at `u e` o
 splits as `P(u) e + P(0) • (1 - e)` or `P(u) (1 - e) + P(0) • e`
 (`Polynomial.aeval_mul_of_isIdempotentElem`, `Polynomial.aeval_mul_one_sub_of_isIdempotentElem`).
 
+For an `R[X]`-algebra `S` compatible with its `R`-algebra structure, the algebra map `R[X] → S` is
+evaluation at the image of `X` (`Polynomial.algebraMap_eq_aeval`).
+
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
 `A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
 -/
@@ -47,6 +50,13 @@ theorem irreducible_map_iff_of_algEquiv {F K K' : Type*} [CommSemiring F] [Semir
 end TauCeti
 
 namespace Polynomial
+
+/-- For an `R[X]`-algebra `S` whose `R`-algebra structure factors through `R[X]`, the algebra map
+`R[X] → S` is evaluation at the image of `X`. -/
+theorem algebraMap_eq_aeval {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+    [Algebra R[X] S] [IsScalarTower R R[X] S] (f : R[X]) :
+    algebraMap R[X] S f = aeval (algebraMap R[X] S X) f := by
+  rw [← IsScalarTower.coe_toAlgHom' R, aeval_algHom_apply, aeval_X_left_apply]
 
 /-- If `(x - c) e` lies in an ideal `K`, then so does `(p(x) - p(c)) e` for every polynomial `p`,
 since `x - c` divides `p(x) - p(c)`. -/

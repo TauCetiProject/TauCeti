@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.Unramified.Locus
+import Mathlib.RingTheory.Unramified.LocalRing
 
 /-!
 # Unramifiedness at a prime after localizing the base
@@ -19,10 +21,14 @@ have the same local ring, and inverting elements of `R` does not change formal u
 This is what lets a statement about the unramified locus of `S` over `R` be checked after
 localizing the base at a prime, as in inductions on the dimension of the base.
 
+The residue field `κ(p)` of a prime `p` of `S` is formally unramified over `S`, being a quotient of
+the localization `S_p`.
+
 ## Main results
 
 * `Algebra.isUnramifiedAt_localization_iff`: `Sₘ` is unramified over `Rₘ` at `q` iff `S` is
   unramified over `R` at `q ∩ S`.
+* `Algebra.FormallyUnramified.residueField`: `κ(p)` is formally unramified over `S`.
 -/
 
 public section
@@ -50,5 +56,12 @@ theorem isUnramifiedAt_localization_iff (M : Submonoid R) [IsLocalization M Rₘ
     exact .of_equiv e.symm
   · have : FormallyUnramified R (Localization.AtPrime q) := .of_equiv e
     exact FormallyUnramified.of_restrictScalars R _ _
+
+/-- The residue field `κ(p)` of a prime `p` of `S` is formally unramified over `S`: it is a quotient
+of the localization `S_p`, which is formally unramified over `S`. -/
+instance FormallyUnramified.residueField (p : Ideal S) [p.IsPrime] :
+    FormallyUnramified S p.ResidueField :=
+  have : FormallyUnramified S (Localization.AtPrime p) := .of_isLocalization p.primeCompl
+  .comp S (Localization.AtPrime p) _
 
 end Algebra

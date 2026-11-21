@@ -18,6 +18,9 @@ Along an integral algebra, maximal ideals contract to maximal ideals, so the ext
 ideal contained in the Jacobson radical of the contraction of an ideal `J` is contained in the
 Jacobson radical of `J`.
 
+Incomparability over the zero ideal: a prime of a `P`-algebra `B` lying over the zero ideal of `P`
+is minimal as soon as `B ⧸ p` is algebraic over `P` for the minimal primes `p` below it.
+
 ## Main results
 
 * `Ideal.exists_comap_eq_of_isIntegral`: a prime of `S` containing the kernel of `g` is the
@@ -30,6 +33,8 @@ Jacobson radical of `J`.
   rings, the radical of the extended maximal ideal is the maximal ideal of the target.
 * `Ideal.map_le_jacobson_of_isIntegral`: along an integral algebra, the extension of an ideal in
   the Jacobson radical of an ideal `K` lies in the Jacobson radical of any ideal `J` above `K`.
+* `Ideal.mem_minimalPrimes_of_under_eq_bot`: a prime over the zero ideal is minimal when the
+  quotients by the minimal primes below it are algebraic.
 
 ## References
 
@@ -87,6 +92,29 @@ theorem comap_eq_maximalIdeal_of_isIntegral {R : Type*} [CommRing R] [IsLocalRin
     [Algebra R S] [Algebra.IsIntegral R S] (P : Ideal S) [P.IsMaximal] :
     P.comap (algebraMap R S) = IsLocalRing.maximalIdeal R :=
   IsLocalRing.eq_maximalIdeal (IsMaximal.under R P)
+
+/-- **Primes over zero along algebraic components are minimal.** Let `B` be a `P`-algebra and `q`
+a prime of `B` lying over the zero ideal of `P`. If `B ⧸ p` is algebraic over `P` for every minimal
+prime `p ≤ q`, then `q` is a minimal prime: a prime strictly above such a `p` contains a nonzero
+element of `B ⧸ p` algebraic over `P`, and hence a nonzero element of `P`. -/
+theorem mem_minimalPrimes_of_under_eq_bot {P B : Type*} [CommRing P] [CommRing B] [Algebra P B]
+    (q : Ideal B) [q.IsPrime] (hq : q.under P = ⊥)
+    (h : ∀ p ∈ minimalPrimes B, p ≤ q → Algebra.IsAlgebraic P (B ⧸ p)) :
+    q ∈ minimalPrimes B := by
+  obtain ⟨p, hp, hpq⟩ := exists_minimalPrimes_le (bot_le : ⊥ ≤ q)
+  have := hp.1.1
+  suffices q ≤ p from (le_antisymm this hpq) ▸ hp
+  intro d hd
+  by_contra hdp
+  -- The image of `d` in the domain `B ⧸ p` is nonzero and algebraic over `P`.
+  have hd0 : Quotient.mk p d ≠ 0 := by rwa [ne_eq, Quotient.eq_zero_iff_mem]
+  have := h p hp hpq
+  have halg : IsAlgebraic P (Quotient.mk p d) := Algebra.IsAlgebraic.isAlgebraic _
+  obtain ⟨a, ha, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (under_ne_bot_of_algebraic_mem hd0 (mem_map_of_mem _ hd) halg)
+  rw [mem_under, IsScalarTower.algebraMap_apply P B (B ⧸ p), Quotient.algebraMap_eq,
+    mem_quotient_iff_mem hpq, ← mem_under, hq] at ha
+  exact ha0 (mem_bot.mp ha)
 
 end Ideal
 
