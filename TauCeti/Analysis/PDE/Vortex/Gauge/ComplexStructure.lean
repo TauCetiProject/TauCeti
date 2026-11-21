@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
 public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Lp
 
 /-!
 # The gauge-fixed vortex operator is complex linear
@@ -474,31 +474,26 @@ theorem coe_sobolevGaugeFixedKernelAlmostComplexStructure_apply
   AlmostComplexStructure.coe_restrict_apply _ _ _ y
 
 /-- The complex structure `J'` of the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator, acting
-pointwise on `L²(ℂ; ℝ⁴)`, as an almost complex structure. -/
+pointwise on `L²(ℂ; ℝ⁴)`, as an almost complex structure: `TauCeti.AlmostComplexStructure.compLp`
+for `J'`. -/
 def lpTargetAlmostComplexStructure :
-    AlmostComplexStructure (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) where
-  toLinearMap :=
-    targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpₗ 2 μ⊤
-  square_neg := LinearMap.ext fun g ↦ Lp.ext <| by
-    filter_upwards [ContinuousLinearMap.coeFn_compLp
-        targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
-        (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp g),
-      ContinuousLinearMap.coeFn_compLp
-        targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap g,
-      Lp.coeFn_neg g] with z h₁ h₂ h₃
-    simpa [h₁, h₂] using h₃.symm
+    AlmostComplexStructure (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :=
+  AlmostComplexStructure.compLp
+    targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
+    targetAlmostComplexStructure.apply_apply 2 μ⊤
 
-/-- The almost complex structure of `L²(ℂ; ℝ⁴)` is `J'` composed with the classes. -/
+/-- The almost complex structure of `L²(ℂ; ℝ⁴)` is `J'` composed with the classes. This is not a
+`simp` lemma: `μ⊤` mentions `((⊤ : Opens ℂ) : Set ℂ)`, which `simp` rewrites to `Set.univ` inside
+the type, so the left-hand side is not in `simp` normal form. -/
 theorem lpTargetAlmostComplexStructure_apply (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     lpTargetAlmostComplexStructure g =
       targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp g :=
-  (rfl)
+  AlmostComplexStructure.compLp_apply _ _ _ _ g
 
 /-- The almost complex structure of `L²(ℂ; ℝ⁴)` acts by `J'` pointwise. -/
 theorem coeFn_lpTargetAlmostComplexStructure (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    lpTargetAlmostComplexStructure g =ᵐ[μ⊤] fun z ↦ targetComplexStructure (g z) := by
-  rw [lpTargetAlmostComplexStructure_apply]
-  exact ContinuousLinearMap.coeFn_compLp _ g
+    lpTargetAlmostComplexStructure g =ᵐ[μ⊤] fun z ↦ targetComplexStructure (g z) :=
+  AlmostComplexStructure.coeFn_compLp _ _ _ _ g
 
 /-- **The Sobolev realization of `L_x` is complex linear**: it intertwines the almost complex
 structure `J` of `H¹(ℂ)⁴` with the almost complex structure `J'` of `L²(ℂ; ℝ⁴)`. -/
