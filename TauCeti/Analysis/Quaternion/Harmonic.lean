@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Analysis.Quaternion.Kernel
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
@@ -51,6 +51,9 @@ nonempty open set.
 * `TauCeti.LeftFueterOn.laplacian_eq_zero_of_isOpen`,
   `TauCeti.RightFueterOn.laplacian_eq_zero_of_isOpen`: a function that is left or right Fueter
   regular on an open set has vanishing Laplacian at every point of that set.
+* `TauCeti.LeftFueterOn.harmonicAt`, `TauCeti.LeftFueterOn.harmonicOnNhd` (and right
+  counterparts): Fueter regular functions are harmonic in the sense of
+  `InnerProductSpace.HarmonicAt`.
 * `TauCeti.laplacian_cauchyFueterKernel`: the Cauchy–Fueter kernel is harmonic away from its pole.
 
 ## References
@@ -140,6 +143,28 @@ set. -/
 theorem RightFueterOn.laplacian_eq_zero_of_isOpen (hf : RightFueterOn f s) (hs : IsOpen s)
     (hq : q ∈ s) : Δ f q = 0 :=
   hf.laplacian_eq_zero (hs.mem_nhds hq)
+
+/-- A function that is left Fueter regular on a neighbourhood of `q` is harmonic at `q` in the
+sense of `InnerProductSpace.HarmonicAt`. -/
+theorem LeftFueterOn.harmonicAt (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q) :
+    InnerProductSpace.HarmonicAt f q :=
+  ⟨hf.contDiffAt hs, (eventually_mem_nhds_iff.2 hs).mono fun _ hy ↦ hf.laplacian_eq_zero hy⟩
+
+/-- A function that is right Fueter regular on a neighbourhood of `q` is harmonic at `q` in the
+sense of `InnerProductSpace.HarmonicAt`. -/
+theorem RightFueterOn.harmonicAt (hf : RightFueterOn f s) (hs : s ∈ 𝓝 q) :
+    InnerProductSpace.HarmonicAt f q :=
+  ⟨hf.contDiffAt hs, (eventually_mem_nhds_iff.2 hs).mono fun _ hy ↦ hf.laplacian_eq_zero hy⟩
+
+/-- A left Fueter regular function on an open set is harmonic in a neighbourhood of that set. -/
+theorem LeftFueterOn.harmonicOnNhd (hf : LeftFueterOn f s) (hs : IsOpen s) :
+    InnerProductSpace.HarmonicOnNhd f s :=
+  fun _ hq ↦ hf.harmonicAt (hs.mem_nhds hq)
+
+/-- A right Fueter regular function on an open set is harmonic in a neighbourhood of that set. -/
+theorem RightFueterOn.harmonicOnNhd (hf : RightFueterOn f s) (hs : IsOpen s) :
+    InnerProductSpace.HarmonicOnNhd f s :=
+  fun _ hq ↦ hf.harmonicAt (hs.mem_nhds hq)
 
 /-- The Cauchy–Fueter kernel is harmonic away from its pole. -/
 theorem laplacian_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :

@@ -452,9 +452,6 @@ theorem homologyToLim_injective_of_forall_not_rel {j : ι} (hj : ∀ i, ¬c.Rel 
       rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.homologyπ_naturality,
         ConcreteCategory.comp_apply, ← coe_homologyToLim_apply, hx, ZeroMemClass.coe_zero,
         Pi.zero_apply]
-      -- The `n`-th term of the tower `Hⱼ(C)` is `(homologyFunctor j).obj Cₙ`, which unfolds to
-      -- `Hⱼ(Cₙ)`; the two zeros agree definitionally but not syntactically.
-      rfl
     rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.cyclesMap_i,
       ConcreteCategory.comp_apply, (injective_iff_map_eq_zero _).1 (hπ _).1 _ h, map_zero]
   have : C.limComplex.iCycles j y = 0 :=
@@ -566,7 +563,7 @@ theorem homologyToLim_surjective (j : ι) : Function.Surjective (C.homologyToLim
     apply (C.productHomologyEquiv j).injective
     rw [productHomologyEquiv_homologyMap_productComplexShift, LinearEquiv.apply_symm_apply,
       map_zero]
-    exact LinearMap.mem_ker.1 (by rw [← ModuleTower.lim_eq_ker]; exact y.2)
+    exact LinearMap.mem_ker.1 (by rw [← ModuleTower.lim_eq_ker]; exact y.property)
   obtain ⟨x, hx⟩ := (exact_homologyMap_limComplexι_productComplexShift hC j _).1 hy
   refine ⟨x, Subtype.ext ?_⟩
   rw [coe_homologyToLim]
@@ -581,6 +578,19 @@ theorem homologyToLim_bijective {i j : ι} (hij : c.Rel i j)
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, homologyToLim_surjective hC j⟩
   obtain ⟨y, rfl⟩ := (exact_limOneToHomology_homologyToLim hC hij x).1 hx
   rw [Subsingleton.elim y 0, map_zero]
+
+include hC in
+/-- If the shift is surjective in every degree and `lim¹ Hᵢ(Cₙ)` vanishes for every `i` followed
+by `j`, then `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective. -/
+theorem homologyToLim_bijective_of_subsingleton_limOne (j : ι)
+    (h : ∀ i, c.Rel i j → Subsingleton (C.homology i).limOne) :
+    Function.Bijective (C.homologyToLim j) := by
+  by_cases hc : ∃ i, c.Rel i j
+  · obtain ⟨i, hij⟩ := hc
+    have := h i hij
+    exact homologyToLim_bijective hC hij
+  · exact ⟨C.homologyToLim_injective_of_forall_not_rel fun i hij ↦ hc ⟨i, hij⟩,
+      homologyToLim_surjective hC j⟩
 
 end Milnor
 
@@ -597,6 +607,26 @@ theorem transition_comp_homologyMap_π (s : Cone C) (j : ι) (n : ℕ) :
   exact congrArg ModuleCat.Hom.hom ((HomologicalComplex.homologyMap_comp _ _ j).symm.trans
     (congrArg (HomologicalComplex.homologyMap · j) (s.w (homOfLE (Nat.le_succ n)).op)))
 
+/-- The Milnor map composed with the map induced on homology by a comparison `φ : s.pt ⟶ lim C`
+of a cone `s` is the map into `lim Hⱼ(Cₙ)` induced by the legs of `s`. -/
+theorem homologyToLim_comp_homologyMap (s : Cone C) (φ : s.pt ⟶ C.limComplex)
+    (hφ : ∀ n : ℕ, φ ≫ C.limComplexπ n = s.π.app (op n)) (j : ι) :
+    C.homologyToLim j ∘ₗ (HomologicalComplex.homologyMap φ j).hom =
+      (C.homology j).limLift
+        (fun n ↦ (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom)
+        (transition_comp_homologyMap_π s j) := by
+  refine (C.homology j).lim_hom_ext fun n ↦ LinearMap.ext fun x ↦ ?_
+  have h := congrArg (fun g : s.pt ⟶ C.obj (op n) ↦ (HomologicalComplex.homologyMap g j).hom x)
+    (hφ n)
+  simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, ModuleTower.limπ_apply,
+    coe_homologyToLim_apply, h]
+  -- The legs are passed explicitly: the stated family lands in `Hⱼ(Cₙ)`, which equals the tower
+  -- term `(C.homology j).obj (op n)` only definitionally, so unification cannot infer it.
+  exact (LinearMap.congr_fun ((C.homology j).limπ_comp_limLift
+    (fun n ↦ (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom)
+    (transition_comp_homologyMap_π s j) n) x).symm
+
 /-- **Quasi-isomorphisms into the limit of a tower of complexes.** Let `C` be a tower of complexes
 whose shift is surjective in every degree, for instance one whose transitions are surjective in
 every degree. If `s` is a cone over `C` whose legs `s.pt → Cₙ` induce isomorphisms on the
@@ -606,39 +636,27 @@ theorem quasiIso_isLimitLimComplexCone_lift (hC : ∀ i, Function.Surjective (C.
     (s : Cone C) (hs : ∀ j, ∃ N, ∀ n, N ≤ n → QuasiIsoAt (s.π.app (op n)) j) :
     QuasiIso (C.isLimitLimComplexCone.lift s) := by
   let φ : s.pt ⟶ C.limComplex := C.isLimitLimComplexCone.lift s
-  have hφ (n : ℕ) : φ ≫ C.limComplexπ n = s.π.app (op n) := C.isLimitLimComplexCone.fac s (op n)
   have hbij (j : ι) (n : ℕ) (h : QuasiIsoAt (s.π.app (op n)) j) :
       Function.Bijective (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom :=
     (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1 h)
+  have hφ (n : ℕ) : φ ≫ C.limComplexπ n = s.π.app (op n) := C.isLimitLimComplexCone.fac s (op n)
   rw [quasiIso_iff]
   intro j
   rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
-  -- The Milnor map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective.
-  have hlim : Function.Bijective (C.homologyToLim j) := by
-    by_cases hc : ∃ i, c.Rel i j
-    · obtain ⟨i, hij⟩ := hc
-      -- The tower of degree-`i` homology modules has eventually surjective transitions, so its
-      -- `lim¹` vanishes.
-      have : Subsingleton (C.homology i).limOne := by
-        obtain ⟨N, hN⟩ := hs i
-        refine (C.homology i).subsingleton_limOne_of_surjective_of_le N fun n hn y ↦ ?_
-        obtain ⟨x, hx⟩ := (hbij i n (hN n hn)).2 y
-        exact ⟨_, (LinearMap.congr_fun (transition_comp_homologyMap_π s i n) x).trans hx⟩
-      exact homologyToLim_bijective hC hij
-    · exact ⟨C.homologyToLim_injective_of_forall_not_rel fun i hij ↦ hc ⟨i, hij⟩,
-        homologyToLim_surjective hC j⟩
+  -- The Milnor map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective: the tower of degree-`i` homology
+  -- modules has eventually surjective transitions, so its `lim¹` vanishes.
+  have hlim : Function.Bijective (C.homologyToLim j) :=
+    homologyToLim_bijective_of_subsingleton_limOne hC j fun i _ ↦ by
+      obtain ⟨N, hN⟩ := hs i
+      refine (C.homology i).subsingleton_limOne_of_surjective_of_le N fun n hn y ↦ ?_
+      obtain ⟨x, hx⟩ := (hbij i n (hN n hn)).2 y
+      exact ⟨_, (LinearMap.congr_fun (transition_comp_homologyMap_π s i n) x).trans hx⟩
   -- Composed with the Milnor map, the map on homology is the map induced by the legs of `s`.
   let f (n : ℕ) : s.pt.homology j →ₗ[R] (C.homology j).obj (op n) :=
     (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom
   have hcomp : C.homologyToLim j ∘ₗ (HomologicalComplex.homologyMap φ j).hom =
-      (C.homology j).limLift f (transition_comp_homologyMap_π s j) := by
-    refine (C.homology j).lim_hom_ext fun n ↦ LinearMap.ext fun x ↦ ?_
-    rw [ModuleTower.limπ_comp_limLift, LinearMap.comp_apply, LinearMap.comp_apply,
-      ModuleTower.limπ_apply, coe_homologyToLim_apply]
-    have h := congrArg (fun g : s.pt ⟶ C.obj (op n) ↦ (HomologicalComplex.homologyMap g j).hom x)
-      (hφ n)
-    simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h
-    exact h
+      (C.homology j).limLift f (transition_comp_homologyMap_π s j) :=
+    homologyToLim_comp_homologyMap s φ hφ j
   obtain ⟨N, hN⟩ := hs j
   have h := (C.homology j).limLift_bijective_of_le f (transition_comp_homologyMap_π s j) N
     fun n hn ↦ hbij j n (hN n hn)

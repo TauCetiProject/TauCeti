@@ -184,7 +184,7 @@ theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one {A B : GLSympl
           J n ℝ * ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) / 2 := by
   set Ψ : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ ((γ t : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ)
   have hΨc : Continuous Ψ :=
-    Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+    Units.continuous_val.comp (continuous_subtypeVal.comp γ.continuous)
   -- The straightened graph of `γ t` is the graph of the symmetric matrix `graphSymm (γ t)`.
   set S : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ graphSymm (Ψ t) with hSdef
   have hinv : Continuous fun t ↦ (Ψ t + 1)⁻¹ :=
@@ -200,7 +200,7 @@ theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one {A B : GLSympl
   have hreal (t : I) : (δ t : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage = (diagonalStraightening n *
       graphFrame ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage := by
     rw [(hδ t).1, realImage_diagonalStraightening_mul_graphFrame
-      (mem_iff_mem_symplecticGroup.1 (γ t).2) (hγ t)]
+      (mem_iff_mem_symplecticGroup.1 (γ t).property) (hγ t)]
   rw [conleyZehnderIndex_eq_neg_maslovIndex γ δ hreal,
     maslovIndex_eq_signature_sub_of_souriau_eq_cayley δ hSc hS fun t ↦ (hδ t).2, hSdef]
   dsimp only
