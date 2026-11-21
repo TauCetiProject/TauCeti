@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
+import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -24,7 +25,7 @@ that it is compatible with the ideal sheaves of sections: the divisor `[P']` on 
 image of the divisor `[P]` on `E` (`EllipticCurveGeom.ker_pointsPullback_left`). This is what makes
 level structures defined through divisors of points, such as points of exact order `N`, pull back
 along base change; closed subgroup schemes are treated in
-`TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup`.
+`TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Basic`.
 
 ## Main definitions
 
@@ -109,10 +110,10 @@ addition morphism of `E`, of the composites of `x` and `y` with `g`. -/
 theorem mul_left_comp_of_isPullback {Z : Over S'} (x y : Z ⟶ Over.mk E'.structureMap) :
     (x * y).left ≫ g = pullback.lift (x.left ≫ g) (y.left ≫ g)
       (by have hx := Over.w x; have hy := Over.w y; dsimp at hx hy
-          simp [hg.w, reassoc_of% hx, reassoc_of% hy]) ≫ E.addition := by
-  rw [hom_mul_left, Category.assoc, addition_comp_of_isPullback hg h0, ← Category.assoc]
-  congr 1
-  apply pullback.hom_ext <;> simp
+          simp [hg.w, reassoc_of% hx, reassoc_of% hy]) ≫ E.addition :=
+  GroupScheme.mul_left_comp_of_mul_left_comp (G := Over.mk E.structureMap)
+    (G' := Over.mk E'.structureMap) hg.w
+    (by simpa only [mul_left, Over.mk_hom] using addition_comp_of_isPullback hg h0) x y
 
 include hg h0 in
 /-- **Base change carries sums of points to sums of points**, in terms of the group law on points

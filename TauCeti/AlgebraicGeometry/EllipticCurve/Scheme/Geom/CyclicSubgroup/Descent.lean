@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.CyclicSubgroup.Basic
 import TauCeti.AlgebraicGeometry.Descent.Fppf
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroupDescent
-import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Descent
 
 /-!
 # Descent of cyclic subgroups of an elliptic curve

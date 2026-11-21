@@ -10,9 +10,8 @@ public import Mathlib.AlgebraicGeometry.Sites.Fpqc
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
-import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 
 /-!
 # Cyclic subgroups of an elliptic curve

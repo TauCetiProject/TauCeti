@@ -40,7 +40,7 @@ particular along flat surjective ones such as fpqc and fppf covers: such a morph
 through a closed subscheme only if that subscheme is everything. For flat surjective morphisms the
 dominance hypothesis is the instance
 `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`, supplied by importing
-`TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant`.
+`TauCeti.AlgebraicGeometry.Morphisms.Flat.SchemeTheoreticallyDominant`.
 
 Applied to a universal homomorphism `(ℤ/Nℤ)² →* E_H(H)`, of which every homomorphism
 `(ℤ/Nℤ)² →* E_T(T)` is the base change along a unique morphism `T ⟶ H` (for instance the one

@@ -23,7 +23,7 @@ This is the elliptic-curve case of the corresponding statement for group schemes
 `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap`, since `g` is compatible with the group laws
 (`EllipticCurveGeom.addition_comp_of_isPullback`). The converse, along flat surjective base
 changes, is in
-`TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroupDescent`.
+`TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Descent`.
 
 ## Main results
 

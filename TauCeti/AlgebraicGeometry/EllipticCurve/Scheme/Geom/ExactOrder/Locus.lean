@@ -48,7 +48,7 @@ exactly when its base change along such a morphism does
 having exact order `N` descends in particular along fpqc and fppf covers. For flat surjective
 morphisms the dominance hypothesis is the instance
 `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`, supplied by importing
-`TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant`.
+`TauCeti.AlgebraicGeometry.Morphisms.Flat.SchemeTheoreticallyDominant`.
 
 ## Main definitions
 

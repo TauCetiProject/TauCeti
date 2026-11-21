@@ -24,10 +24,13 @@ underlying morphism is the pullback of the original one along the projection
 `G ×_X Y ⟶ G`.
 
 More generally, let `g : G' ⟶ G` be a morphism of group schemes lying over `f : S' ⟶ S` and
-compatible with multiplication, and let `V(D)` be a closed subscheme of `G`. Then `V(D.comap g)`
-is a subgroup scheme of `G'` exactly when `D` vanishes on the identity of `G` along `f`, on
-products of two points of `V(D)` induced from `V(D.comap g)`, and on inverses of points of `V(D)`
-induced from `V(D.comap g)` (`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_le`). In
+compatible with multiplication, let `V(D)` be a closed subscheme of `G`, and let
+`ρ : V(D.comap g) ⟶ V(D)` be induced by `g`. Then `V(D.comap g)` is a subgroup scheme of `G'`
+exactly when `D` vanishes on three morphisms to `G`: the identity of `G` composed with `f`; the
+product of the two points of `G` with values in `V(D.comap g) ×_{S'} V(D.comap g)` obtained by
+composing its two projections with `ρ` and the inclusion of `V(D)` into `G`, which lie over the
+same morphism to `S`; and the inverse of the point `ρ` composed with that inclusion
+(`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_le`). In
 particular the inverse image of a closed subgroup scheme is a closed subgroup scheme
 (`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap`); the converse holds along flat surjective
 base changes (`TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.FlatDescent`).
@@ -113,7 +116,9 @@ include hμ
 group schemes lying over `f : S' ⟶ S` and compatible with multiplication, let `V(D) ⊆ G` be a
 closed subscheme, and let `ρ : V(D.comap g) ⟶ V(D)` be induced by `g`. Then `V(D.comap g)` is a
 subgroup scheme of `G'` exactly when `D` vanishes on the identity of `G` composed with `f`, on the
-product of the two points `ρ ×_f ρ` of `V(D)`, and on the inverse of the point `ρ` of `V(D)`. -/
+product of the two points of `G` with values in `V(D.comap g) ×_{S'} V(D.comap g)` obtained by
+composing its two projections with `ρ` and the inclusion of `V(D)` into `G`, and on the inverse of
+the point `ρ` composed with that inclusion. -/
 theorem exists_grpObj_isMonHom_comap_iff_le :
     (∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ G'.hom)),
       IsMonHom (Over.homMk (D.comap g).subschemeι :

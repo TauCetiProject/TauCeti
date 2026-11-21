@@ -211,8 +211,9 @@ theorem IsEffectiveCartier.of_comap [IsLocallyNoetherian X] {Y : Scheme.{u}}
   -- extension of the stalk of `I` at `x` is the stalk of `I.comap g` at `y`.
   obtain ⟨b, hb, hIb⟩ := h.exists_map_germ_eq_span_singleton ⟨V, hV⟩ hyV
   let _ := (g.stalkMap y).hom.toAlgebra
-  have : Module.FaithfullyFlat (X.presheaf.stalk (g y)) (Y.presheaf.stalk y) :=
-    g.faithfullyFlat_stalkMap y (Flat.stalkMap g y)
+  have : Module.FaithfullyFlat (X.presheaf.stalk (g y)) (Y.presheaf.stalk y) := by
+    rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
+    exact g.faithfullyFlat_stalkMap y (Flat.stalkMap g y)
   refine Module.FaithfullyFlat.exists_isSMulRegular_and_eq_span_singleton_iff.mpr ⟨b, hb, ?_⟩
   have hg : g.appLE U V hVU ≫ Y.presheaf.germ V y hyV =
       X.presheaf.germ U (g y) hxU ≫ g.stalkMap y := by

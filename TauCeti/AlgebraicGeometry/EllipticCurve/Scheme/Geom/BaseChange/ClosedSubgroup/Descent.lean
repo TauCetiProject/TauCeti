@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.FlatDescent
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.SchemeTheoreticallyDominant
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 
 /-!
@@ -20,9 +21,10 @@ soon as its inverse image in `E'` is. No finiteness or flatness hypothesis is pl
 subscheme. The converse holds for any `f`
 (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`).
 
-These are the elliptic-curve cases of `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff` and
-`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`, since `g` is
-compatible with the group laws (`EllipticCurveGeom.addition_comp_of_isPullback`).
+This is the elliptic-curve case of `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff`, since
+`g` is compatible with the group laws (`EllipticCurveGeom.addition_comp_of_isPullback`), and flat
+surjective morphisms are universally scheme-theoretically dominant
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.universally_of_flat_of_surjective`).
 
 ## Main results
 

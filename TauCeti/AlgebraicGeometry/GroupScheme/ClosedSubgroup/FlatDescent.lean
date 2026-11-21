@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.BaseChange
 public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
@@ -20,9 +19,13 @@ square. The inverse image along `g` of a closed subgroup scheme `V(D)` of `G` is
 scheme of `G'` (`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap`). Conversely, if every base
 change of `f` is scheme-theoretically dominant, then `V(D)` is a subgroup scheme as soon as its
 inverse image in `G'` is (`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff`). This applies to
-flat surjective `f` (`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`).
-No finiteness or flatness hypothesis is placed on `V(D)`, and `f` need not be quasi-compact, so
-this is not an instance of effective fpqc descent.
+flat surjective `f`, which is universally scheme-theoretically dominant
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.universally_of_flat_of_surjective`).
+
+No finiteness or flatness hypothesis is placed on `V(D)`, and `f` need not be quasi-compact. The
+result is not an instance of effective descent either: the closed subscheme `V(D)` is already given
+on `G`, and the theorem only reflects its being a subgroup scheme from `G'` to `G`, without
+constructing a descended subscheme from data on `G'`.
 
 Each of the three conditions of the closed-subgroup criterion for `V(D.comap g)`
 (`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_le`) says that `D` vanishes on a morphism
@@ -75,22 +78,5 @@ theorem exists_grpObj_isMonHom_comap_iff
       (D.comap_subschemeι_comp_comp hg.w) (D.comap_subschemeι_comp_comp hg.w)) :=
     hf _ _ _ (hD.flip.pullback_map hD.flip).flip
   simp only [Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant]
-
-/-- **Subgroup schemes descend along flat surjective morphisms.** Let `g : G' ⟶ G` be a morphism
-of group schemes lying over a flat surjective `f : S' ⟶ S`, forming a pullback square with the
-structure morphisms and compatible with multiplication, and let `V(D) ⊆ G` be a closed subscheme.
-Then `V(D)` is a subgroup scheme of `G` exactly when its inverse image in `G'` is a subgroup scheme
-of `G'`. -/
-theorem exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective [Flat f] [Surjective f]
-    (hg : IsPullback g G'.hom G.hom f)
-    (hμ : μ[G'].left ≫ g = pullback.map _ _ _ _ g g f hg.w.symm hg.w.symm ≫ μ[G].left)
-    (D : G.left.IdealSheafData) :
-    (∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ G'.hom)),
-      IsMonHom (Over.homMk (D.comap g).subschemeι :
-        Over.mk ((D.comap g).subschemeι ≫ G'.hom) ⟶ G')) ↔
-      ∃ _ : GrpObj (Over.mk (D.subschemeι ≫ G.hom)),
-        IsMonHom (Over.homMk D.subschemeι : Over.mk (D.subschemeι ≫ G.hom) ⟶ G) :=
-  exists_grpObj_isMonHom_comap_iff
-    (IsSchemeTheoreticallyDominant.universally_of_flat_of_surjective f) hg hμ D
 
 end TauCeti.GroupScheme

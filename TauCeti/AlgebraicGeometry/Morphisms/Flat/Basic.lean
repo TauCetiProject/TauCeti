@@ -8,8 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.RingTheory.Flat.Localization
-public import Mathlib.RingTheory.RingHom.FaithfullyFlat
-import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.RingTheory.Flat.Tower
 
 /-!
@@ -92,6 +90,7 @@ theorem flat_restrict_iff {X Y : Scheme.{u}} (f : X ⟶ Y) (U : Y.Opens) :
 theorem faithfullyFlat_stalkMap {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
     (hf : (f.stalkMap x).hom.Flat) : (f.stalkMap x).hom.FaithfullyFlat := by
   algebraize [(f.stalkMap x).hom]
+  rw [← RingHom.algebraMap_toAlgebra (f.stalkMap x).hom, RingHom.faithfullyFlat_algebraMap_iff]
   have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
     inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
   exact .of_flat_of_isLocalHom
@@ -107,8 +106,9 @@ theorem flat_stalkMap_of_comp {X X' Y : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y)
     exact h
   algebraize [(f.stalkMap (g x')).hom, (g.stalkMap x').hom,
     (g.stalkMap x').hom.comp (f.stalkMap (g x')).hom]
-  have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') :=
-    g.faithfullyFlat_stalkMap x' hg
+  have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') := by
+    rw [← RingHom.faithfullyFlat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
+    exact g.faithfullyFlat_stalkMap x' hg
   exact Module.Flat.of_faithfullyFlat_of_flat _ _ (X'.presheaf.stalk x')
 
 end AlgebraicGeometry.Scheme.Hom
