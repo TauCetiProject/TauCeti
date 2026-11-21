@@ -31,7 +31,7 @@ of the two sheets.
 
 * `TauCeti.DoubleAlong.discDoubleHomeomorph`: the doubled closed disc is `OnePoint ℂ`.
 * `TauCeti.DoubleAlong.discDoubleHomeomorph_swap`: the sheet exchange is the inversion
-  `OnePoint.unitCircleInversion`.
+  `OnePoint.inversion` with centre `0` and radius `1`.
 * `TauCeti.DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere`: the fixed set is the unit
   circle.
 * `TauCeti.DoubleAlong.discNegConjSwap`: the sheet exchange for the gluing by `z ↦ -conj z`,
@@ -67,16 +67,17 @@ inversion in the unit circle on the second. -/
 private noncomputable def discDoubleMap : C(DoubleAlong discBoundary, OnePoint ℂ) :=
   desc discBoundary
     ⟨fun z ↦ ((z : ℂ) : OnePoint ℂ), continuous_coe.comp continuous_subtypeVal⟩
-    ⟨fun z ↦ unitCircleInversion ((z : ℂ) : OnePoint ℂ),
-      unitCircleInversion.continuous.comp (continuous_coe.comp continuous_subtypeVal)⟩
-    fun z ↦ (unitCircleInversion_coe_of_norm_eq_one z.property).symm
+    ⟨fun z ↦ inversion (0 : ℂ) 1 one_ne_zero ((z : ℂ) : OnePoint ℂ),
+      (inversion (0 : ℂ) 1 one_ne_zero).continuous.comp
+        (continuous_coe.comp continuous_subtypeVal)⟩
+    fun z ↦ (inversion_zero_one_coe_of_norm_eq_one z.property).symm
 
 private theorem discDoubleMap_inl (z : closedBall (0 : ℂ) 1) :
     discDoubleMap (inl _ z) = ((z : ℂ) : OnePoint ℂ) :=
   desc_inl _ _ _ _ z
 
 private theorem discDoubleMap_inr (z : closedBall (0 : ℂ) 1) :
-    discDoubleMap (inr _ z) = unitCircleInversion ((z : ℂ) : OnePoint ℂ) :=
+    discDoubleMap (inr _ z) = inversion (0 : ℂ) 1 one_ne_zero ((z : ℂ) : OnePoint ℂ) :=
   desc_inr _ _ _ _ z
 
 private theorem discDoubleMap_injective : Injective discDoubleMap := by
@@ -90,16 +91,16 @@ private theorem discDoubleMap_injective : Injective discDoubleMap := by
     | hr w =>
       rw [discDoubleMap_inl, discDoubleMap_inr] at hpq
       obtain ⟨hw, h⟩ :=
-        (unitCircleInversion_coe_eq_coe_iff (norm_le_one z) (norm_le_one w)).1 hpq.symm
+        (inversion_zero_one_coe_eq_coe_iff (norm_le_one z) (norm_le_one w)).1 hpq.symm
       exact (inl_eq_inr_iff _).2 ⟨Subtype.ext h, mem_discBoundary.2 (h ▸ hw)⟩
   | hr z =>
     induction q using induction_on with
     | hl w =>
       rw [discDoubleMap_inl, discDoubleMap_inr] at hpq
-      obtain ⟨hz, h⟩ := (unitCircleInversion_coe_eq_coe_iff (norm_le_one w) (norm_le_one z)).1 hpq
+      obtain ⟨hz, h⟩ := (inversion_zero_one_coe_eq_coe_iff (norm_le_one w) (norm_le_one z)).1 hpq
       exact (inr_eq_inl_iff _).2 ⟨Subtype.ext h.symm, hz⟩
     | hr w =>
-      rw [discDoubleMap_inr, discDoubleMap_inr, unitCircleInversion.injective.eq_iff,
+      rw [discDoubleMap_inr, discDoubleMap_inr, (inversion (0 : ℂ) 1 one_ne_zero).injective.eq_iff,
         coe_eq_coe] at hpq
       rw [Subtype.ext hpq]
 
@@ -116,7 +117,7 @@ private theorem discDoubleMap_surjective : Surjective discDoubleMap := by
         rw [norm_inv, norm_conj]
         exact inv_le_one_of_one_le₀ hw.le
       refine ⟨inr _ ⟨(conj w)⁻¹, mem_closedBall_zero_iff.2 hu⟩, ?_⟩
-      rw [discDoubleMap_inr, ← unitCircleInversion_coe hw0, unitCircleInversion_unitCircleInversion]
+      rw [discDoubleMap_inr, ← inversion_zero_one_coe_eq_conj_inv hw0, inversion_inversion]
 
 private theorem discDoubleMap_bijective : Bijective discDoubleMap :=
   ⟨discDoubleMap_injective, discDoubleMap_surjective⟩
@@ -138,13 +139,13 @@ theorem discDoubleHomeomorph_inl (z : closedBall (0 : ℂ) 1) :
 
 @[simp]
 theorem discDoubleHomeomorph_inr (z : closedBall (0 : ℂ) 1) :
-    discDoubleHomeomorph (inr _ z) = unitCircleInversion ((z : ℂ) : OnePoint ℂ) := by
+    discDoubleHomeomorph (inr _ z) = inversion (0 : ℂ) 1 one_ne_zero ((z : ℂ) : OnePoint ℂ) := by
   rw [discDoubleHomeomorph_apply, discDoubleMap_inr]
 
 /-- The sheet exchange of the doubled disc is the inversion of the sphere in the unit circle. -/
 @[simp]
 theorem discDoubleHomeomorph_swap (p : DoubleAlong discBoundary) :
-    discDoubleHomeomorph (swap _ p) = unitCircleInversion (discDoubleHomeomorph p) := by
+    discDoubleHomeomorph (swap _ p) = inversion (0 : ℂ) 1 one_ne_zero (discDoubleHomeomorph p) := by
   induction p using induction_on with
   | hl z => simp
   | hr z => simp
@@ -163,13 +164,12 @@ theorem discDoubleHomeomorph_image_fixed_eq_sphere :
     exact ⟨⟨z, mem_closedBall_zero_iff.2 hz.le⟩, hz, rfl⟩
 
 /-- The fixed set of the sheet exchange is carried onto the fixed set of the inversion. -/
-theorem discDoubleHomeomorph_image_fixed_eq_unitCircleInversion_fixed :
+theorem discDoubleHomeomorph_image_fixed_eq_inversion_fixed :
     discDoubleHomeomorph '' {p | swap discBoundary p = p} =
-      {x | unitCircleInversion x = x} := by
+      {x | inversion (0 : ℂ) 1 one_ne_zero x = x} := by
   rw [discDoubleHomeomorph_image_fixed_eq_sphere]
   ext x
-  simp only [mem_image, mem_sphere_zero_iff_norm, mem_ofPred_eq,
-    unitCircleInversion_eq_self_iff]
+  simp only [mem_image, mem_sphere_zero_iff_norm, mem_ofPred_eq, inversion_zero_one_eq_self_iff]
 
 /-! ### Gluing the sheets by `z ↦ -conj z` -/
 
