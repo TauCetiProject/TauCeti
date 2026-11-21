@@ -514,8 +514,10 @@ theorem basis_repr_pow_apply (c : f.JordanChainBasis ι) (k : ℕ) (x : V) (i : 
     rw [LinearMap.comp_apply, c.pow_apply_basis k i' j']
     -- Basis vectors of a different chain have zero coordinates on both sides.
     obtain rfl | hi := eq_or_ne i' i
-    · split_ifs <;> simp [-basis_apply, Finsupp.single_apply, Fin.ext_iff]
-      omega
+    · split_ifs with hj
+      · simp [-basis_apply, Finsupp.single_apply, Fin.ext_iff]
+      · have hj' : (j' : ℕ) ≠ j := by omega
+        simp [-basis_apply, Fin.ext_iff, hj']
     · split_ifs <;> simp [-basis_apply, hi]
   exact LinearMap.congr_fun key x
 

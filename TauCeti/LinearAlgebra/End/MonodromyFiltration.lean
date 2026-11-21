@@ -124,20 +124,37 @@ theorem ker_pow_le_monodromyFiltration (k : ℕ) :
       (by omega))
     simp [Module.End.one_eq_id]
 
+/-- The power `N ^ k` maps `ker N ^ (i + k + 1) ⊓ range N ^ j` onto
+`ker N ^ (i + 1) ⊓ range N ^ (j + k)`. -/
+theorem map_pow_ker_pow_inf_range_pow (i k j : ℕ) :
+    (LinearMap.ker (N ^ (i + k + 1)) ⊓ LinearMap.range (N ^ j)).map (N ^ k) =
+      LinearMap.ker (N ^ (i + 1)) ⊓ LinearMap.range (N ^ (j + k)) := by
+  ext z
+  simp only [mem_map, mem_inf, LinearMap.mem_ker, LinearMap.mem_range]
+  constructor
+  · rintro ⟨_, ⟨hx, y, rfl⟩, rfl⟩
+    refine ⟨?_, y, ?_⟩
+    · rwa [← _root_.mul_apply_eq_comp, ← pow_add, add_right_comm]
+    · rw [← _root_.mul_apply_eq_comp, ← pow_add, add_comm]
+  · rintro ⟨hz, y, rfl⟩
+    refine ⟨(N ^ j) y, ⟨?_, y, rfl⟩, ?_⟩
+    · rw [← _root_.mul_apply_eq_comp, ← pow_add] at hz ⊢
+      rwa [show i + k + 1 + j = i + 1 + (j + k) by ring]
+    · rw [← _root_.mul_apply_eq_comp, ← pow_add, add_comm]
+
 /-- The endomorphism `N` lowers the monodromy filtration by two steps. -/
 theorem map_monodromyFiltration_le (a : ℤ) :
     (N.monodromyFiltration a).map N ≤ N.monodromyFiltration (a - 2) := by
   rw [map_le_iff_le_comap, monodromyFiltration_le_iff]
-  rintro i j rfl x ⟨hx, y, rfl⟩
-  rw [mem_comap]
-  rw [SetLike.mem_coe, LinearMap.mem_ker] at hx
+  rintro i j rfl
   cases i with
-  | zero => simp_all
+  | zero => exact inf_le_left.trans (by simp)
   | succ i =>
-    refine N.ker_pow_inf_range_pow_le_monodromyFiltration_of_eq (i := i) (j := j + 1)
-      (by push_cast; ring) ⟨?_, y, ?_⟩
-    · rw [SetLike.mem_coe, LinearMap.mem_ker, ← _root_.mul_apply_eq_comp, ← pow_succ, hx]
-    · rw [pow_succ', _root_.mul_apply_eq_comp]
+    rw [← map_le_iff_le_comap]
+    have h := N.map_pow_ker_pow_inf_range_pow i 1 j
+    rw [pow_one] at h
+    rw [h]
+    exact N.ker_pow_inf_range_pow_le_monodromyFiltration_of_eq (by push_cast; ring)
 
 /-- The power `N ^ k` lowers the monodromy filtration by `2 k` steps. -/
 theorem map_pow_monodromyFiltration_le (k : ℕ) (a : ℤ) :
@@ -187,15 +204,10 @@ theorem map_pow_monodromyFiltration_sup (r : ℕ) :
   · congr 1
     ring
   rw [monodromyFiltration_le_iff]
-  rintro i j hij x ⟨hx, y, rfl⟩
+  rintro i j hij
   obtain rfl : j = i + r := by omega
-  rw [SetLike.mem_coe, LinearMap.mem_ker] at hx
-  refine ⟨(N ^ i) y, N.ker_pow_inf_range_pow_le_monodromyFiltration_of_eq (i := i + r) (j := i)
-    (by push_cast; ring) ⟨?_, y, rfl⟩, ?_⟩
-  · rw [SetLike.mem_coe, LinearMap.mem_ker, ← _root_.mul_apply_eq_comp, ← pow_add]
-    rw [← _root_.mul_apply_eq_comp, ← pow_add] at hx
-    rwa [show i + r + 1 + i = i + 1 + (i + r) by ring]
-  · rw [← _root_.mul_apply_eq_comp, ← pow_add, add_comm]
+  rw [← N.map_pow_ker_pow_inf_range_pow]
+  exact map_mono (N.ker_pow_inf_range_pow_le_monodromyFiltration_of_eq (by push_cast; ring))
 
 /-- `F` is a monodromy filtration of `N` centred at `c`: a finite increasing filtration, lowered
 by two steps by `N`, such that for every `r ≥ 0` the map `gr_{c + r} → gr_{c - r}` induced by
@@ -268,9 +280,9 @@ theorem unique (hF : N.IsMonodromyFiltration c F) (hG : N.IsMonodromyFiltration 
 
 end IsMonodromyFiltration
 
-/-- The step `r - 1` of the monodromy filtration consists of vectors of the step `r` sent by
-`N ^ r` into the step `-r - 1`. This is the inclusion that holds for every endomorphism; the
-reverse inclusion, injectivity of `gr_r → gr_{-r}`, is
+/-- The step `r - 1` of the monodromy filtration is contained in the set of vectors of the step
+`r` sent by `N ^ r` into the step `-r - 1`. This is the inclusion that holds for every
+endomorphism; the reverse inclusion, injectivity of `gr_r → gr_{-r}`, is
 `Module.End.JordanChainBasis.monodromyFiltration_inf_comap_pow`. -/
 theorem monodromyFiltration_le_inf_comap_pow (r : ℕ) :
     N.monodromyFiltration (r - 1) ≤
