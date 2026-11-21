@@ -1012,11 +1012,13 @@ theorem not_isGeneralPosition_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x
 end Commutators
 
 /-- The trivial point is a solution of every standard quadratic equation without the constant `d`,
-that is, of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` and of `∏ᵢ₌₁ⁿ xᵢ² = 1`. -/
-theorem one_mem_V_of_constant_eq_one (ι : G →* H) {S : Standard G X} (hc : S.constant = 1) :
-    1 ∈ V ι {S.toWord} := by
+that is, of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` and of `∏ᵢ₌₁ⁿ xᵢ² = 1`: the word of the equation evaluates to `1`
+there. -/
+@[simp]
+theorem eval_one_toWord_of_constant_eq_one (ι : G →* H) {S : Standard G X}
+    (hc : S.constant = 1) : eval ι 1 S.toWord = 1 := by
   cases S with
-  | orientable _ hn _ _ inj => exact one_mem_V_orientable ι hn inj
+  | orientable _ hn _ _ inj => exact mem_V.1 (one_mem_V_orientable ι hn inj) _ rfl
   | nonorientable => simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
   | _ => simp_all
 

@@ -43,10 +43,12 @@ In every case the coordinate group embeds, over `G`, in an iterated extension of
 `G`, the free `G`-group `G[X]` embeds in one extension of a centralizer of `G` and `G[X] ∗ ℤ²` in
 one more (`TauCeti.LimitGroup.exists_ice_embedding_GX`,
 `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi_of_exists_ice_embedding`). Every solution
-factors through the maps to these groups described above, so their kernels lie in the radicals,
-and the coordinate groups embed with them
-(`TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_ker_le_Rad`). For abelian `G` the
-embedding is `TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_isMulCommutative`.
+factors through the maps to these groups described above, so their kernels lie in the radicals.
+Iterated extensions of centralizers of `G` are discriminated, hence separated, by `G`
+(`TauCeti.LimitGroup.ICE.isDiscriminatedBy`), so the coordinate groups embed with them
+(`TauCeti.GroupAlgGeom.IsSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad`). For
+abelian `G` the embedding is
+`TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_isMulCommutative`.
 
 These are the cases (4) and (5) of the radicals of consistent standard quadratic equations over a
 freely discriminated group, whose printed formulas in [IFT] omit the relations `x₁ x₂ = 1` and
@@ -96,8 +98,10 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq (hG : IsFullyResiduall
   have := hG.isResiduallyFree.hasUniqueRoots
   let p : X → GX G X :=
     Function.update (fun y => inr (FreeGroup.of y)) (x 1) (inr (FreeGroup.of (x 0)))⁻¹
-  refine exists_ice_embedding_coordGroup_of_ker_le_Rad hG (exists_ice_embedding_GX hG hna X)
-    (evalGHom inl p) (by simp [p, hx.ne zero_ne_one]) fun w hw => mem_Rad.2 fun v hv => ?_
+  obtain ⟨E, _, j, c, e, he⟩ := exists_ice_embedding_GX hG hna X
+  refine ((c.isDiscriminatedBy hG).isSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad
+    (evalGHom inl p) (by simp [p, hx.ne zero_ne_one]) (fun w hw => mem_Rad.2 fun v hv => ?_) e
+    he).elim fun f hf => ⟨E, _, j, c, f, hf.1⟩
   -- By unique roots `v x₁ = (v x₂)⁻¹`, so `v` factors through the substitution.
   have hv₁ : v (x 0) = (v (x 1))⁻¹ := by
     simpa [mul_eq_one_iff_eq_inv, ← inv_pow, (pow_left_injective two_ne_zero).eq_iff] using
@@ -122,11 +126,12 @@ private theorem exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq (hG : IsFullyRe
     (fun i => inr (![a 0, a 1, (a 0 * a 1)⁻¹] i)) fun y => inl (inr (FreeGroup.of y))
   -- `x₁² x₂² x₃²` goes to `a₁² a₂² (a₁ a₂)⁻² = 1` in `ℤ²`.
   have ha : a 0 ^ 2 * a 1 ^ 2 * ((a 0 * a 1)⁻¹) ^ 2 = 1 := by rw [inv_pow, mul_pow, mul_inv_cancel]
-  refine exists_ice_embedding_coordGroup_of_ker_le_Rad hG
-    (exists_ice_embedding_coprod_pi_of_exists_ice_embedding hG hna
-      (exists_ice_embedding_GX hG hna X) 2) (evalGHom _ p)
+  obtain ⟨E, _, j, c, e, he⟩ := exists_ice_embedding_coprod_pi_of_exists_ice_embedding hG hna
+    (exists_ice_embedding_GX hG hna X) 2
+  refine ((c.isDiscriminatedBy hG).isSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad
+    (evalGHom _ p)
     (by simpa [p, hx.extend_apply] using congrArg (inr : _ →* Monoid.Coprod (GX G X) _) ha)
-    fun w hw => mem_Rad.2 fun v hv => ?_
+    (fun w hw => mem_Rad.2 fun v hv => ?_) e he).elim fun f hf => ⟨E, _, j, c, f, hf.1⟩
   -- By Vaught's condition and torsion-freeness, `v x₁`, `v x₂` commute and `v x₁ v x₂ v x₃ = 1`.
   have := hG.isResiduallyFree.isMulTorsionFree
   have hsq : v (x 0) ^ 2 * v (x 1) ^ 2 * v (x 2) ^ 2 = 1 := by simpa using (mem_V.1 hv) _ rfl
@@ -155,7 +160,7 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {S.toWord}) j), Function.Injective f := by
   by_cases hna : IsMulCommutative G
   · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _
-      ⟨1, one_mem_V_of_constant_eq_one _ hc⟩
+      ⟨1, by simp [hc]⟩
   obtain ⟨n, hn, x, inj, rfl⟩ := exists_eq_nonorientable_of_not_isOrientable ho hc
   obtain rfl : n = 2 := by simpa using hg
   exact exists_ice_embedding_coordGroup_sq_mul_sq hG hna inj
@@ -170,7 +175,7 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_three
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {S.toWord}) j), Function.Injective f := by
   by_cases hna : IsMulCommutative G
   · exact exists_ice_embedding_coordGroup_of_isMulCommutative hG.isResiduallyFree _
-      ⟨1, one_mem_V_of_constant_eq_one _ hc⟩
+      ⟨1, by simp [hc]⟩
   obtain ⟨n, hn, x, inj, rfl⟩ := exists_eq_nonorientable_of_not_isOrientable ho hc
   obtain rfl : n = 3 := by simpa using hg
   exact exists_ice_embedding_coordGroup_sq_mul_sq_mul_sq hG hna inj

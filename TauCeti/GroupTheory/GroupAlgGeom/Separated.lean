@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
 public import TauCeti.GroupTheory.GroupAlgGeom.Irreducible.Basic
-public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Iterated
 import Mathlib.GroupTheory.Commutator.Basic
 import TauCeti.GroupTheory.FreeGroup.TwoGenerator
 
@@ -51,10 +50,10 @@ fully residually free group `G`, for a standard quadratic equation of atomic ran
 with a solution in general position, they embed `G_S` in an iterated extension of centralizers
 of `G`, so that `G_S = G_{R(S)}`. The subgroup `N` may be strictly larger than the normal closure
 of the system: over `F(a, b)`, the radical of `x² a²` is the normal closure of `x a`, the ideal of
-the point `x = a⁻¹`. Over a fully residually free `G`, every iterated extension of centralizers
-of `G` is discriminated, hence separated, by `G`. So if `N` is the kernel of a `G`-homomorphism
-`σ` from `G[X]`, with `S ⊆ N ≤ Rad_G(S)`, and the target of `σ` embeds over `G` in an iterated
-extension of centralizers of `G`, then `N = Rad_G(S)` and `G_{R(S)}` embeds in one too.
+the point `x = a⁻¹`. In particular `N` may be the kernel of a `G`-homomorphism `σ` from `G[X]`
+with `S ⊆ N ≤ Rad_H(S)`: if the target of `σ` embeds over `G`, through `e`, in a group separated
+by `H`, then `N = Rad_H(S)` and `G_{R(S)}` embeds in that group, sending the class of each
+`w ∈ G[X]` to `e (σ w)`.
 
 Combined with the characterization of irreducible algebraic sets by discrimination, this gives a
 recognition theorem for discriminated groups: if `H` is equationally Noetherian and `X` is finite,
@@ -123,9 +122,9 @@ also cover systems without solutions, whose coordinate group is trivial.
   `H` gives one of `G_{R(S)}`;
   `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_injective_gHom_coordGroup_of_injective_systemGroup`
   is the same statement for `N = ncl(T)`.
-* `TauCeti.GroupAlgGeom.exists_ice_embedding_coordGroup_of_ker_le_Rad`: over a fully residually
-  free `G`, if `S ⊆ ker σ ≤ Rad(S)` for a `G`-homomorphism `σ : G[X] →* L` and `L` embeds over
-  `G` in an iterated extension of centralizers of `G`, then so does `G_{R(S)}`.
+  `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad` is the same
+  statement for `N = ker σ`, a `G`-homomorphism `σ : G[X] →* L` with `S ⊆ ker σ ≤ Rad_H(S)`
+  whose target embeds over `G` in a group separated by `H`.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl`: for injective
   coefficients, the group of a system prescribing the value of every variable is separated by `H`.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of`: the trivial group
@@ -510,34 +509,20 @@ theorem IsSeparatedBy.exists_injective_gHom_coordGroup_of_injective_systemGroup
   exact fun f hf => h.exists_injective_gHom_coordGroup_of_injective (by simpa using hST)
     (normalClosure_le_normal hTS) f hf
 
-section ICE
-
-open LimitGroup
-
-universe u
-
-/-- Let `G` be fully residually free, and let `σ : G[X] →* L` be a `G`-homomorphism whose kernel
-contains the system `S` and lies in its radical. If `L` embeds over `G` in an iterated extension
-of centralizers of `G`, then so does the coordinate group `G_{R(S)}`. -/
-theorem exists_ice_embedding_coordGroup_of_ker_le_Rad {G : Type u} [Group G]
-    (hG : IsFullyResiduallyFree G) {L : Type*} [Group L] {l : G →* L}
-    (hL : ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j) (f : GHom l j),
-      Function.Injective f)
-    (σ : GHom (inl : G →* GX G X) l) {S : Set (GX G X)} (hS : S ⊆ (σ : GX G X →* L).ker)
-    (hσ : (σ : GX G X →* L).ker ≤ Rad (.id G) S) :
-    ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
-      (f : GHom (CoordGroup.coeff (MonoidHom.id G) S) j), Function.Injective f := by
-  obtain ⟨E, _, j, c, e, he⟩ := hL
-  -- `E` is discriminated, hence separated, by `G`, and `G[X] ⧸ ker σ` embeds in it through `e`, so
-  -- `ker σ` is the radical of `S`.
-  obtain ⟨f, hf, -⟩ :=
-    (c.isDiscriminatedBy hG).isSeparatedBy.exists_injective_gHom_coordGroup_of_injective
-      (hS.trans (subset_Rad _)) hσ
-      ⟨(e : L →* E).comp (QuotientGroup.kerLift _), fun g => by simp [GX.quotientCoeff_apply]⟩
-      (he.comp (QuotientGroup.kerLift_injective _))
-  exact ⟨E, _, j, c, f, hf⟩
-
-end ICE
+/-- Let `σ : G[X] →* L` be a `G`-homomorphism whose kernel contains the system `S` and lies in its
+radical over `H`. If `L` embeds over `G`, through `e`, in a group `K` separated by `H`, then so
+does the coordinate group `G_{R(S)}`, through the embedding sending the class of each `w ∈ G[X]`
+to `e (σ w)`. -/
+theorem IsSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad (h : IsSeparatedBy κ ι)
+    {L : Type*} [Group L] {l : G →* L} (σ : GHom (inl : G →* GX G X) l) {S : Set (GX G X)}
+    (hS : S ⊆ (σ : GX G X →* L).ker) (hσ : (σ : GX G X →* L).ker ≤ Rad ι S) (e : GHom l κ)
+    (he : Function.Injective e) :
+    ∃ f : GHom (CoordGroup.coeff ι S) κ, Function.Injective f ∧
+      ∀ w : GX G X, f (w : CoordGroup ι S) = e (σ w) :=
+  -- `G[X] ⧸ ker σ` embeds in `K` through `e`.
+  h.exists_injective_gHom_coordGroup_of_injective (hS.trans (subset_Rad _)) hσ
+    ⟨(e : L →* K).comp (QuotientGroup.kerLift _), fun g => by simp [GX.quotientCoeff_apply]⟩
+    (he.comp (QuotientGroup.kerLift_injective _))
 
 section Example
 
