@@ -119,7 +119,7 @@ def neighborSetBlockEquiv (B : G.BlockVertex) :
     rcases x with ⟨C | v, hx⟩
     · simp at hx
     · exact ⟨v, by simpa [SimpleGraph.mem_neighborSet] using hx⟩
-  invFun v := ⟨.inr v.1, by simp [SimpleGraph.mem_neighborSet, v.2]⟩
+  invFun v := ⟨.inr v.val, by simp [SimpleGraph.mem_neighborSet, v.property]⟩
   left_inv x := by
     rcases x with ⟨C | v, hx⟩
     · simp at hx
@@ -139,7 +139,7 @@ theorem neighborSetBlockEquiv_apply_coe (B : G.BlockVertex)
 @[simp]
 theorem neighborSetBlockEquiv_symm_apply_coe (B : G.BlockVertex)
     (v : {v : G.CutVertex // (v : V) ∈ (B : Set V)}) :
-    ((G.neighborSetBlockEquiv B).symm v : G.BlockCutVertex) = .inr v.1 := by
+    ((G.neighborSetBlockEquiv B).symm v : G.BlockCutVertex) = .inr v.val := by
   simp [neighborSetBlockEquiv]
 
 /-- The neighborhood of a cut vertex is canonically equivalent to the blocks containing that
@@ -150,7 +150,7 @@ def neighborSetCutVertexEquiv (v : G.CutVertex) :
     rcases x with ⟨B | w, hx⟩
     · exact ⟨B, by simpa [SimpleGraph.mem_neighborSet] using hx⟩
     · simp at hx
-  invFun B := ⟨.inl B.1, by simp [SimpleGraph.mem_neighborSet, B.2]⟩
+  invFun B := ⟨.inl B.val, by simp [SimpleGraph.mem_neighborSet, B.property]⟩
   left_inv x := by
     rcases x with ⟨B | w, hx⟩
     · rfl
@@ -170,7 +170,7 @@ theorem neighborSetCutVertexEquiv_apply_coe (v : G.CutVertex)
 @[simp]
 theorem neighborSetCutVertexEquiv_symm_apply_coe (v : G.CutVertex)
     (B : {B : G.BlockVertex // (v : V) ∈ (B : Set V)}) :
-    ((G.neighborSetCutVertexEquiv v).symm B : G.BlockCutVertex) = .inl B.1 := by
+    ((G.neighborSetCutVertexEquiv v).symm B : G.BlockCutVertex) = .inl B.val := by
   simp [neighborSetCutVertexEquiv]
 
 end SimpleGraph

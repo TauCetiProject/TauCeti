@@ -66,7 +66,7 @@ theorem tsum_discriminantPairingChar_mul_thetaTerm (hL : IsIntegral L)
     have hchar (m : (f ⁻¹' {δ} : Set (dual L))) :
         hL.discriminantPairingChar γ (Submodule.Quotient.mk (m : dual L)) =
           hL.discriminantPairingChar γ δ :=
-      congrArg (hL.discriminantPairingChar γ) m.2
+      congrArg (hL.discriminantPairingChar γ) m.property
     simp_rw [F, hchar]
     rw [tsum_mul_left, tsum_thetaTerm_fiber (dual L) (isIntegral_iff_le_dual.mp hL),
       ← thetaCosetClass_mk, Submodule.Quotient.mk_out]

@@ -94,20 +94,20 @@ theorem _root_.SpectralSpace.isLocallySpectralSpace [SpectralSpace X] :
 theorem IsLocallySpectralSpace.prespectralSpace (hX : IsLocallySpectralSpace X) :
     PrespectralSpace X := by
   let S : Set (Set X) := {U | IsOpen U ∧ SpectralSpace U}
-  let U : S → Opens X := fun s ↦ ⟨s, s.2.1⟩
-  have hU : IsOpenCover U := IsOpenCover.of_sets (fun s ↦ s.2.1) <| by
+  let U : S → Opens X := fun s ↦ ⟨s, s.property.1⟩
+  have hU : IsOpenCover U := IsOpenCover.of_sets (fun s ↦ s.property.1) <| by
     apply eq_univ_iff_forall.mpr
     intro x
     obtain ⟨V, hVo, hxV, hVs⟩ := hX x
     exact mem_iUnion.mpr ⟨⟨V, hVo, hVs⟩, hxV⟩
-  let _ : ∀ s, PrespectralSpace (U s) := fun s ↦ s.2.2.toPrespectralSpace
+  let _ : ∀ s, PrespectralSpace (U s) := fun s ↦ s.property.2.toPrespectralSpace
   exact PrespectralSpace.of_isOpenCover hU
 
 /-- A locally spectral space is quasi-sober. -/
 theorem IsLocallySpectralSpace.quasiSober (hX : IsLocallySpectralSpace X) : QuasiSober X := by
   let S : Set (Set X) := {U | IsOpen U ∧ SpectralSpace U}
-  let _ : ∀ s : S, QuasiSober s := fun s ↦ s.2.2.toQuasiSober
-  apply quasiSober_of_open_cover S (fun s ↦ s.2.1)
+  let _ : ∀ s : S, QuasiSober s := fun s ↦ s.property.2.toQuasiSober
+  apply quasiSober_of_open_cover S (fun s ↦ s.property.1)
   apply eq_univ_iff_forall.mpr
   intro x
   obtain ⟨U, hUo, hxU, hUs⟩ := hX x
@@ -201,7 +201,7 @@ theorem isLocallySpectralMap_id : IsLocallySpectralMap (id : X → X) := by
   let _ : SpectralSpace U := hUs
   let _ : SpectralSpace V := hVs
   have hemb : IsOpenEmbedding (Set.inclusion hUV) :=
-    IsOpenEmbedding.inclusion hUV (hUo.preimage continuous_subtype_val)
+    IsOpenEmbedding.inclusion hUV (hUo.preimage continuous_subtypeVal)
   have heq : hUV.restrict id U V = Set.inclusion hUV := by
     funext x
     rfl
@@ -216,7 +216,7 @@ theorem IsLocallySpectralMap.isSpectralMap [SpectralSpace X] [SpectralSpace Y] {
   have hrest := hf.isSpectralMap_restrict (Set.mapsTo_univ f univ) isOpen_univ isOpen_univ
   refine ⟨hf.continuous, fun s hso hsc ↦ ?_⟩
   let s' : Set (univ : Set Y) := Subtype.val ⁻¹' s
-  have hs'o : IsOpen s' := hso.preimage continuous_subtype_val
+  have hs'o : IsOpen s' := hso.preimage continuous_subtypeVal
   have hs'c : IsCompact s' := by
     rw [IsEmbedding.subtypeVal.isCompact_iff]
     simpa [s'] using hsc
@@ -226,7 +226,7 @@ theorem IsLocallySpectralMap.isSpectralMap [SpectralSpace X] [SpectralSpace Y] {
     rw [← preimage_comp, MapsTo.restrict_commutes, preimage_comp, Subtype.image_preimage_coe,
       univ_inter]
   rw [← heq]
-  exact hpre.image continuous_subtype_val
+  exact hpre.image continuous_subtypeVal
 
 /-- A spectral map from a quasiseparated space is locally spectral. -/
 theorem _root_.IsSpectralMap.isLocallySpectralMap [QuasiSeparatedSpace X] {f : X → Y}
@@ -238,11 +238,11 @@ theorem _root_.IsSpectralMap.isLocallySpectralMap [QuasiSeparatedSpace X] {f : X
   have hiU : IsSpectralMap iU := hUo.isOpenEmbedding_subtypeVal.isSpectralMap
   let g : U → Y := f ∘ iU
   have hg : IsSpectralMap g := hf.comp hiU
-  refine ⟨hg.continuous.subtype_mk fun x ↦ hUV x.2, fun s hso hsc ↦ ?_⟩
+  refine ⟨hg.continuous.subtype_mk fun x ↦ hUV x.property, fun s hso hsc ↦ ?_⟩
   have hs_image_open : IsOpen (Subtype.val '' s : Set Y) :=
     hVo.isOpenEmbedding_subtypeVal.isOpenMap _ hso
   have hs_image_compact : IsCompact (Subtype.val '' s : Set Y) :=
-    hsc.image continuous_subtype_val
+    hsc.image continuous_subtypeVal
   have hpre := hg.isCompact_preimage_of_isOpen hs_image_open hs_image_compact
   have heq : (hUV.restrict f U V) ⁻¹' s = g ⁻¹' (Subtype.val '' s) := by
     conv_lhs => rw [← preimage_image_eq s Subtype.val_injective]
@@ -265,7 +265,7 @@ theorem IsLocallySpectralMap.of_forall_exists {f : X → Y}
   choose U V hUV hUo hVo hxU hUqs hUVs using h
   have hcont (x : X) : ContinuousOn f (U x) := by
     rw [continuousOn_iff_continuous_domRestrict, domRestrict_eq, ← (hUV x).restrict_commutes]
-    exact continuous_subtype_val.comp (hUVs x).continuous
+    exact continuous_subtypeVal.comp (hUVs x).continuous
   have hf : Continuous f := continuous_iff_continuousAt.mpr fun x ↦
     (hcont x).continuousAt ((hUo x).mem_nhds (hxU x))
   refine .of_isSpectralMap_restrict hf fun U₀ V₀ hU₀V₀ hU₀o hV₀o hU₀s hV₀s ↦ ?_

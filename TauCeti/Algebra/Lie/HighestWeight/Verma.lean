@@ -411,9 +411,9 @@ theorem vermaIdeal_eq_span_range_ι_sub_algebraMap :
       (ι K (x : L) : U) - algebraMap K U (borelCharacter H b lam x)) := by
   refine le_antisymm (Submodule.span_le.mpr ?_) (Submodule.span_le.mpr ?_)
   · rintro _ (⟨x, rfl⟩ | ⟨x, hx, rfl⟩)
-    · exact Submodule.subset_span ⟨⟨x, le_borelSubalgebra H b x.2⟩, by
+    · exact Submodule.subset_span ⟨⟨x, le_borelSubalgebra H b x.property⟩, by
         dsimp only
-        rw [borelCharacter_apply_of_mem_cartan H b lam x.2]⟩
+        rw [borelCharacter_apply_of_mem_cartan H b lam x.property]⟩
     · exact Submodule.subset_span ⟨⟨x, positiveNilradical_le_borelSubalgebra H b hx⟩, by
         dsimp only
         rw [borelCharacter_apply_of_mem_positiveNilradical H b lam hx, map_zero, sub_zero]⟩

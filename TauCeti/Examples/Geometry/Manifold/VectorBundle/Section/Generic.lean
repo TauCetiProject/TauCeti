@@ -50,7 +50,7 @@ example (x : OnePoint ℂ) :
       (by simp [Module.finrank_pi_fintype]) (countable_singleton x)
   exact ⟨s, hs, hZ, hx x rfl⟩
 
--- Arbitrary smooth native line bundle on an arbitrary compact complex curve, not trivial data.
+-- A native real smooth bundle with complex line model on an arbitrary compact complex curve.
 example {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
     [T2Space X] [CompactSpace X] [IsManifold 𝓘(ℂ, ℂ) 1 X]
     {L : X → Type*} [∀ x, AddCommGroup (L x)] [∀ x, Module ℝ (L x)]

@@ -160,7 +160,7 @@ noncomputable def monomialGroupRepEvenEquivNegLineCoordinate :
       ((P.monomialGroupRep v).comp (monomialGroupEven Q v).subtype) :=
   .mk (involuteEquiv (Q := (0 : QuadraticForm K P.W))).toLinearEquiv fun g ↦
     LinearMap.ext fun s ↦ by
-      simp [P.spinAction_negLineCoordinate_apply, mem_monomialGroupEven_iff.mp g.2]
+      simp [P.spinAction_negLineCoordinate_apply, mem_monomialGroupEven_iff.mp g.property]
 
 /-- The parity equivalence `P.monomialGroupRepEvenEquivNegLineCoordinate v` is the grade
 involution of `⋀·W`. -/

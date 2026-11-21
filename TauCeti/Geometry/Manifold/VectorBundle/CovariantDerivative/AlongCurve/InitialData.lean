@@ -101,7 +101,7 @@ theorem exists_contMDiffAt_tangentCurve_initialData [I.Boundaryless]
     ∃ σ : 𝕜 → TangentBundle I M,
       σ t = TotalSpace.mk' E p v ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent ∞ σ t ∧
       curveVelocity I (fun r ↦ (σ r).proj) t = u ∧
-      cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).2) t = w := by
+      cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).snd) t = w := by
   obtain ⟨γ, hγt, hγ, hvel⟩ :=
     exists_contMDiffAt_curveVelocity_eq (I := I) (n := ∞) (by simp) p u t
   obtain ⟨V, hV, hVt, hDV⟩ := cov.exists_contMDiffWithinAt_alongCurveWithin_eq

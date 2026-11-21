@@ -79,13 +79,13 @@ omit [Nonempty ι] in
 /-- The stopping time underlying a deterministic time `t` is constantly `t`. -/
 @[simp]
 theorem BoundedStoppingTime.val_const {T t : ι} (ht : t ≤ T) :
-    (BoundedStoppingTime.const (ℱ := ℱ) ht).1 = fun _ : Ω ↦ (t : WithTop ι) :=
+    (BoundedStoppingTime.const (ℱ := ℱ) ht).val = fun _ : Ω ↦ (t : WithTop ι) :=
   (rfl)
 
 omit [NormedAddCommGroup E] in
 /-- Stopping a process at a deterministic time `t ≤ T` gives its value at `t`. -/
 theorem BoundedStoppingTime.stoppedValue_const {T t : ι} (ht : t ≤ T) :
-    stoppedValue X (BoundedStoppingTime.const (ℱ := ℱ) ht).1 = X t := by
+    stoppedValue X (BoundedStoppingTime.const (ℱ := ℱ) ht).val = X t := by
   rw [val_const, MeasureTheory.stoppedValue_const]
 
 omit [Nonempty ι] in
@@ -106,7 +106,7 @@ through the grid. -/
 theorem BoundedStoppingTime.val_ofComp {T : ι} {g : ℕ → ι} (hg : Monotone g) {N : ℕ}
     (hgN : g N ≤ T) {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ)
     (hσN : ∀ ω, σ ω ≤ N) :
-    (BoundedStoppingTime.ofComp hg hgN hσ hσN).1 = fun ω ↦ (σ ω).map g :=
+    (BoundedStoppingTime.ofComp hg hgN hσ hσN).val = fun ω ↦ (σ ω).map g :=
   (rfl)
 
 omit [NormedAddCommGroup E] in
@@ -115,7 +115,7 @@ grid at the grid stopping time. -/
 theorem BoundedStoppingTime.stoppedValue_ofComp {T : ι} {g : ℕ → ι} (hg : Monotone g) {N : ℕ}
     (hgN : g N ≤ T) {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ)
     (hσN : ∀ ω, σ ω ≤ N) :
-    stoppedValue X (BoundedStoppingTime.ofComp hg hgN hσ hσN).1 =
+    stoppedValue X (BoundedStoppingTime.ofComp hg hgN hσ hσN).val =
       stoppedValue (fun k ↦ X (g k)) σ := by
   funext ω
   rw [val_ofComp]
@@ -128,46 +128,46 @@ abbrev FiniteHorizonStoppingTime (ℱ : Filtration ι mΩ) :=
 /-- A stopping time bounded by `T` is bounded by some horizon. -/
 def BoundedStoppingTime.toFiniteHorizonStoppingTime {T : ι}
     (τ : BoundedStoppingTime ℱ T) : FiniteHorizonStoppingTime ℱ :=
-  ⟨τ.1, τ.2.1, T, τ.2.2⟩
+  ⟨τ.val, τ.property.1, T, τ.property.2⟩
 
 omit [Nonempty ι] in
 /-- The inclusion into stopping times bounded by some horizon keeps the stopping time. -/
 @[simp]
 theorem BoundedStoppingTime.val_toFiniteHorizonStoppingTime {T : ι}
-    (τ : BoundedStoppingTime ℱ T) : τ.toFiniteHorizonStoppingTime.1 = τ.1 :=
+    (τ : BoundedStoppingTime ℱ T) : τ.toFiniteHorizonStoppingTime.val = τ.val :=
   (rfl)
 
 /-- A process is of **class D** when its values at bounded stopping times form a uniformly
 integrable family. -/
 def IsClassD (X : ι → Ω → E) (ℱ : Filtration ι mΩ) (μ : Measure Ω) : Prop :=
   UniformIntegrable
-    (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.1) 1 μ
+    (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.val) 1 μ
 
 /-- A process is of **class DL** when, for every horizon `T`, its values at stopping times
 bounded by `T` form a uniformly integrable family. -/
 def IsClassDL (X : ι → Ω → E) (ℱ : Filtration ι mΩ) (μ : Measure Ω) : Prop :=
-  ∀ T : ι, UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.1) 1 μ
+  ∀ T : ι, UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.val) 1 μ
 
 /-- Unfolding class D: the values at bounded stopping times are uniformly integrable. -/
 theorem isClassD_iff : IsClassD X ℱ μ ↔
-    UniformIntegrable (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.1) 1 μ :=
+    UniformIntegrable (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.val) 1 μ :=
   Iff.rfl
 
 /-- Unfolding class DL: for each horizon, the values at stopping times bounded by it are
 uniformly integrable. -/
 theorem isClassDL_iff : IsClassDL X ℱ μ ↔
-    ∀ T : ι, UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.1) 1 μ :=
+    ∀ T : ι, UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.val) 1 μ :=
   Iff.rfl
 
 /-- The values of a process of class D at bounded stopping times are uniformly integrable. -/
 theorem IsClassD.uniformIntegrable (h : IsClassD X ℱ μ) :
-    UniformIntegrable (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.1) 1 μ :=
+    UniformIntegrable (fun τ : FiniteHorizonStoppingTime ℱ ↦ stoppedValue X τ.val) 1 μ :=
   h
 
 /-- The values of a process of class DL at stopping times bounded by `T` are uniformly
 integrable. -/
 theorem IsClassDL.uniformIntegrable (h : IsClassDL X ℱ μ) (T : ι) :
-    UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.1) 1 μ :=
+    UniformIntegrable (fun τ : BoundedStoppingTime ℱ T ↦ stoppedValue X τ.val) 1 μ :=
   h T
 
 /-- The value of a process of class DL at a stopping time bounded by a constant is
@@ -197,9 +197,9 @@ theorem isClassDL_of_ae_isRightContinuous (hM : Martingale M ℱ μ)
     (hcont : ∀ᵐ ω ∂μ, IsRightContinuous (fun t ↦ M t ω)) : IsClassDL M ℱ μ := by
   intro T
   exact ((memLp_one_iff_integrable.2 (hM.integrable T)).uniformIntegrable_condExp le_rfl
-    ENNReal.one_ne_top (fun τ ↦ τ.2.1.measurableSpace_le)).ae_eq fun τ ↦
-      (hM.stoppedValue_ae_eq_condExp_of_le_const_of_ae_isRightContinuous hprog hcont τ.2.1
-        τ.2.2).symm
+    ENNReal.one_ne_top (fun τ ↦ τ.property.1.measurableSpace_le)).ae_eq fun τ ↦
+      (hM.stoppedValue_ae_eq_condExp_of_le_const_of_ae_isRightContinuous hprog hcont τ.property.1
+        τ.property.2).symm
 
 end MeasureTheory.Martingale
 
@@ -221,10 +221,12 @@ theorem isClassD_of_ae_eq_condExp (hprog : IsStronglyProgressive ℱ M)
     exact (condExp_congr_ae (hMξ t)).trans
       ((condExp_condExp_of_le (ℱ.mono hst) (ℱ.le t)).trans (hMξ s).symm)
   refine ((memLp_one_iff_integrable.2 hξ).uniformIntegrable_condExp le_rfl ENNReal.one_ne_top
-    (fun τ ↦ τ.2.1.measurableSpace_le)).ae_eq fun τ ↦ ?_
-  obtain ⟨T, hT⟩ := τ.2.2
-  refine (condExp_condExp_of_le (τ.2.1.measurableSpace_le_of_le_const hT) (ℱ.le T)).symm.trans ?_
+    (fun τ ↦ τ.property.1.measurableSpace_le)).ae_eq fun τ ↦ ?_
+  obtain ⟨T, hT⟩ := τ.property.2
+  refine (condExp_condExp_of_le (τ.property.1.measurableSpace_le_of_le_const hT)
+      (ℱ.le T)).symm.trans ?_
   exact (condExp_congr_ae (hMξ T)).symm.trans
-    (hM.stoppedValue_ae_eq_condExp_of_le_const_of_ae_isRightContinuous hprog hcont τ.2.1 hT).symm
+    (hM.stoppedValue_ae_eq_condExp_of_le_const_of_ae_isRightContinuous hprog hcont τ.property.1
+        hT).symm
 
 end TauCeti

@@ -130,7 +130,7 @@ theorem mem_quotientPointsSubgroup_of_mapsTo_definingSubspace
     have hφ : φ ∘ₗ (I.definingSubspace V).subtype = 0 := by
       ext x
       simpa [φ, Subcomodule.subtype_toLinearMap] using
-        I.counit_eq_zero ((mem_definingSubspace I V x).mp x.2)
+        I.counit_eq_zero ((mem_definingSubspace I V x).mp x.property)
     rw [hφ, TensorProduct.tmul_zero, map_zero, LinearMap.zero_apply]
   have hker : I.toIdeal ≤ RingHom.ker g.ofConv.toRingHom := by
     refine hgen.trans (Ideal.span_le.mpr ?_)

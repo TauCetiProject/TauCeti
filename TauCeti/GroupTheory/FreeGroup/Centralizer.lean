@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.Center
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
+public import TauCeti.Data.List.CommonPrefix
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.Algebra.Group.Torsion
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
@@ -31,7 +32,10 @@ Write the reduced word of `u ≠ 1` as `c ++ v ++ c⁻¹` with `v` cyclically re
 word of `u ^ m` is then `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. If the reduced words of large powers of `u`
 and of `u'` agree on a long enough prefix, reading the common prefix past both conjugators shows
 `u ^ |v'| = u' ^ |v|`; since roots are unique in a free group, commuting with a nonzero power is
-commuting with its base, so `u` and `u'` commute.
+commuting with its base, so `u` and `u'` commute. Consequently, if `u` and `v` do not commute,
+the cancellation in `u ^ m * v ^ n` stays below `‖u‖ ‖v‖` once `m, n ≥ ‖u‖ ‖v‖`, while the
+reduced word of `u ^ m` has at least `m` letters: for large exponents the cancellation is an
+arbitrarily small fraction of the lengths of the powers.
 
 ## Main results
 
@@ -46,6 +50,9 @@ commuting with its base, so `u` and `u'` commute.
   nontrivial element commute with each other.
 * `FreeGroup.commute_of_take_toWord_pow_eq`: if the reduced words of `u ^ L` and `v ^ L` have the
   same first `L` letters for one `L ≥ ‖u‖ ‖v‖`, then `u` and `v` commute.
+* `FreeGroup.exists_forall_commonPrefixLength_lt`: for noncommuting `u` and `v` and every `λ`,
+  `λ` times the cancellation in `u ^ m * v ^ n` is less than the larger of the lengths of `u ^ m`
+  and `v ^ n` for all large `m` and `n`.
 
 ## References
 
@@ -54,6 +61,8 @@ commuting with its base, so `u` and `u'` commute.
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Subgroups of fully residually
   free groups: algorithmic problems*, Contemp. Math. 360 (2004), §5, proof of Lemma 21
   (centralizers of nontrivial elements of a free group are cyclic).
+* [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
+  290 (2005), §7.3, Corollary 13 (cancellation between large powers).
 -/
 
 /- Acknowledgment: the statements of the centralizer results here follow the shape of the
@@ -132,7 +141,7 @@ theorem commute_of_commute {x y z : G} (hy : y ≠ 1) (hxy : Commute x y) (hyz :
   have hyH : y ∈ H := Subgroup.subset_closure (by simp)
   have hcen : (⟨y, hyH⟩ : H) ∈ Subgroup.center H :=
     Subgroup.mem_center_iff.2 fun g ↦
-      Subtype.ext (Subgroup.mem_centralizer_singleton_iff.1 (hle g.2))
+      Subtype.ext (Subgroup.mem_centralizer_singleton_iff.1 (hle g.property))
   have : IsMulCommutative H :=
     isMulCommutative_of_mem_center hcen (by simpa [Subtype.ext_iff] using hy)
   have hxH : x ∈ H := Subgroup.subset_closure (by simp)
@@ -143,8 +152,8 @@ theorem commute_of_commute {x y z : G} (hy : y ≠ 1) (hxy : Commute x y) (hyz :
 theorem isMulCommutative_centralizer {x : G} (hx : x ≠ 1) :
     IsMulCommutative (Subgroup.centralizer {x}) :=
   ⟨⟨fun a b ↦ Subtype.ext <| commute_of_commute hx
-    (Subgroup.mem_centralizer_singleton_iff.1 a.2)
-    (Subgroup.mem_centralizer_singleton_iff.1 b.2).symm⟩⟩
+    (Subgroup.mem_centralizer_singleton_iff.1 a.property)
+    (Subgroup.mem_centralizer_singleton_iff.1 b.property).symm⟩⟩
 
 end IsFreeGroup
 
@@ -249,5 +258,28 @@ theorem commute_of_take_toWord_pow_eq {u v : FreeGroup α} {L : ℕ}
   rw [← Commute.pow_left_iff hq.ne', ← Commute.pow_right_iff hp.ne',
     mul_right_cancel (h₁.symm.trans h₂)]
   exact Commute.refl _
+
+/-- **Cancellation between large powers** ([IFT], Corollary 13). If `u` and `v` do not commute,
+then for every `λ` there are `m₀` and `n₀` such that, for all `m ≥ m₀` and `n ≥ n₀`, `λ` times
+the cancellation in the product `u ^ m * v ^ n` is less than the larger of the lengths of the
+reduced words of `u ^ m` and `v ^ n`. The cancellation is the length of the common prefix of the
+reduced words of `(u ^ m)⁻¹` and `v ^ n`. -/
+theorem exists_forall_commonPrefixLength_lt {u v : FreeGroup α} (huv : ¬Commute u v) (lam : ℕ) :
+    ∃ m₀ n₀ : ℕ, ∀ m ≥ m₀, ∀ n ≥ n₀, lam * List.commonPrefixLength (u ^ m)⁻¹.toWord (v ^ n).toWord <
+      max (u ^ m).toWord.length (v ^ n).toWord.length := by
+  set L := u.norm * v.norm
+  refine ⟨(lam + 1) * L, L, fun m hm n hn => ?_⟩
+  -- The reduced words of `u⁻ᵐ` and `vⁿ` agree on fewer than `L` letters: otherwise those of `u⁻ᴸ`
+  -- and `vᴸ` would agree on their first `L` letters, and `u⁻¹` and `v` would commute.
+  have hc : List.commonPrefixLength (u ^ m)⁻¹.toWord (v ^ n).toWord < L := by
+    by_contra! h
+    obtain ⟨-, -, h⟩ := List.le_commonPrefixLength_iff.1 h
+    rw [← inv_pow, take_toWord_pow_of_le _ ((Nat.le_mul_of_pos_left L lam.succ_pos).trans hm),
+      take_toWord_pow_of_le _ hn] at h
+    exact huv (Commute.inv_left_iff.1 (commute_of_take_toWord_pow_eq (by rw [norm_inv_eq]) h))
+  -- The reduced word of `uᵐ` has at least `m` letters.
+  have hu : u ≠ 1 := by rintro rfl; exact huv (Commute.one_left v)
+  have hum := (length_take_toWord_pow hu le_rfl).ge.trans (List.length_take_le' m (u ^ m).toWord)
+  exact lt_max_of_lt_left (by nlinarith)
 
 end FreeGroup

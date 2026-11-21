@@ -78,8 +78,8 @@ theorem det_eq_of_joined_orthogonalToDiffSphere {A B : Matrix.orthogonalGroup (F
   simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.id_comp,
     Iso.inv_hom_id, ModuleCat.hom_zsmul, ModuleCat.hom_id, LinearMap.smul_apply,
     LinearMap.id_apply, smul_eq_mul, mul_one] at hsign
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.2 with hA | hA <;>
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.2 with hB | hB <;>
+  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
     simp_all
 
 /-- **The isotopy classes of orthogonal transformations of a sphere.** The restrictions of two

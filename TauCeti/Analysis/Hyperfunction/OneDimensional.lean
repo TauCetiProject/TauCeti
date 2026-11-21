@@ -100,7 +100,7 @@ theorem indicator_mem_holomorphicSections {U V : Opens ℂ} (h : U ≤ V) {f : �
 /-- Restriction of holomorphic sections to a smaller open set. -/
 def holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) :
     holomorphicSections V →ₗ[ℂ] holomorphicSections U where
-  toFun f := ⟨(U : Set ℂ).indicator f, indicator_mem_holomorphicSections h f.2⟩
+  toFun f := ⟨(U : Set ℂ).indicator f, indicator_mem_holomorphicSections h f.property⟩
   map_add' f g := Subtype.ext <| funext fun z => by by_cases hz : z ∈ U <;> simp [hz]
   map_smul' c f := Subtype.ext <| funext fun z => by by_cases hz : z ∈ U <;> simp [hz]
 
@@ -113,7 +113,7 @@ theorem coe_holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) (f : holomorphic
 theorem holomorphicRestrict_self (U : Opens ℂ) (f : holomorphicSections U) :
     holomorphicRestrict le_rfl f = f :=
   Subtype.ext <| (coe_holomorphicRestrict _ f).trans <|
-    indicator_eq_self.mpr fun z hz => by_contra fun hzU => hz (f.2.2 z hzU)
+    indicator_eq_self.mpr fun z hz => by_contra fun hzU => hz (f.property.2 z hzU)
 
 @[simp]
 theorem holomorphicRestrict_holomorphicRestrict {U V W : Opens ℂ} (h₁ : U ≤ V) (h₂ : V ≤ W)
@@ -167,12 +167,12 @@ a holomorphic function on `W(U)`. -/
 theorem mem_throughReal_iff {U : Opens ℝ} {f : holomorphicSections nonRealOpen} :
     f ∈ throughReal U ↔
       ∃ g ∈ holomorphicSections (complexNeighborhood U), EqOn g f nonRealOpen := by
-  refine ⟨fun ⟨g, hg⟩ => ⟨g, g.2, fun z hz => ?_⟩, fun ⟨g, hg, hgf⟩ => ⟨⟨g, hg⟩, ?_⟩⟩
+  refine ⟨fun ⟨g, hg⟩ => ⟨g, g.property, fun z hz => ?_⟩, fun ⟨g, hg, hgf⟩ => ⟨⟨g, hg⟩, ?_⟩⟩
   · rw [← hg, coe_holomorphicRestrict, indicator_of_mem hz]
   · refine Subtype.ext (funext fun z => ?_)
     by_cases hz : z ∈ nonRealOpen
     · simp [indicator_of_mem hz, hgf hz]
-    · simp [indicator_of_notMem hz, f.2.2 z hz]
+    · simp [indicator_of_notMem hz, f.property.2 z hz]
 
 /-- A function extending across `V` extends across every smaller `U`. -/
 theorem throughReal_antitone : Antitone throughReal := fun U V h f hf => by
@@ -215,7 +215,7 @@ theorem throughReal_iSup {ι : Sort*} (U : ι → Opens ℝ) :
   refine mem_throughReal_iff.mpr ⟨G, ⟨fun z hz => ?_, fun z hz => ?_⟩, fun z hz => ?_⟩
   · rcases mem_complexNeighborhood_iff.mp hz with him | hre
     · have hGf : EqOn G f nonRealOpen := fun w hw => by simp [G, mem_nonRealOpen_iff.mp hw]
-      exact ((f.2.1.congr hGf).differentiableAt
+      exact ((f.property.1.congr hGf).differentiableAt
         (nonRealOpen.isOpen.mem_nhds him)).differentiableWithinAt
     · obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hre
       have hzi : z ∈ complexNeighborhood (U i) := Or.inr hi
@@ -316,8 +316,8 @@ theorem oneDimBoundaryPresheaf_isSeparated :
     Presheaf.IsSeparated (Opens.grothendieckTopology (TopCat.of ℝ)) oneDimBoundaryPresheaf := by
   intro V S hS q₁ q₂ hq
   let ι := {p : Σ W : Opens (TopCat.of ℝ), W ⟶ V // S p.2}
-  refine eq_of_oneDimBoundaryRestrict_eq (U := fun p : ι => p.1.1) (fun p => leOfHom p.1.2)
-    (fun x hx => ?_) fun p => hq _ p.1.2 p.2
+  refine eq_of_oneDimBoundaryRestrict_eq (U := fun p : ι => p.val.1) (fun p => leOfHom p.val.2)
+    (fun x hx => ?_) fun p => hq _ p.val.2 p.property
   obtain ⟨W, f, hf, hxW⟩ := hS x hx
   exact Opens.mem_iSup.mpr ⟨⟨⟨W, f⟩, hf⟩, hxW⟩
 

@@ -655,7 +655,7 @@ private theorem exists_inclusion_elementarySubgroup_mul_mem_inf
     ∃ x : D.elementarySubgroup K,
       ∃ z ∈ (D.titsSystem K).subgroupB ⊓ (D.titsSystem K).subgroupN,
         Subgroup.inclusion (D.elementarySubgroup_le_extendedElementarySubgroup K) x * z = g := by
-  obtain ⟨e, he, s, hes⟩ := (D.mem_extendedElementarySubgroup_iff K g.1).mp g.2
+  obtain ⟨e, he, s, hes⟩ := (D.mem_extendedElementarySubgroup_iff K g.val).mp g.property
   let z : D.extendedElementarySubgroup K :=
     ⟨D.torusPoints K s, D.torusPoints_mem_extendedElementarySubgroup K s⟩
   have hz : z ∈ (D.titsSystem K).subgroupB ⊓ (D.titsSystem K).subgroupN := by

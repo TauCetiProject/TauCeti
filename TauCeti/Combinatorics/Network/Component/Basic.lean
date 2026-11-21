@@ -42,7 +42,7 @@ def restrictComponent (f : Assignment Q K) : Assignment (Quiver.ComponentHom Q C
 
 @[simp]
 theorem restrictComponent_apply (f : Assignment Q K) {x y : Quiver.ComponentVertex Q C}
-    (e : Q x.1 y.1) : f.restrictComponent C e = f e :=
+    (e : Q x.val y.val) : f.restrictComponent C e = f e :=
   (rfl)
 
 /-- Component restriction preserves the zero assignment. -/
@@ -75,36 +75,36 @@ variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 of that component. -/
 @[simp]
 theorem excessAt_restrictComponent (f : Assignment Q K) (x : Quiver.ComponentVertex Q C) :
-    excessAt (f.restrictComponent C) x = excessAt f x.1 := by
+    excessAt (f.restrictComponent C) x = excessAt f x.val := by
   classical
-  have hin : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q y.1 x.1, f e) =
-      ∑ y : V, ∑ e : Q y x.1, f e := by
+  have hin : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q y.val x.val, f e) =
+      ∑ y : V, ∑ e : Q y x.val, f e := by
     calc
-      _ = ∑ a : Σ y : Quiver.ComponentVertex Q C, Q y.1 x.1, f a.2 :=
-        (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q y.1 x.1) ↦
+      _ = ∑ a : Σ y : Quiver.ComponentVertex Q C, Q y.val x.val, f a.2 :=
+        (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q y.val x.val) ↦
           f e).symm
-      _ = ∑ a : Σ y : V, Q y x.1, f a.2 :=
+      _ = ∑ a : Σ y : V, Q y x.val, f a.2 :=
         by
-          have h (a : Σ y : Quiver.ComponentVertex Q C, Q y.1 x.1) :
+          have h (a : Σ y : Quiver.ComponentVertex Q C, Q y.val x.val) :
               f (Quiver.componentIncomingEquiv C x a).2 = f a.2 := by
             rw [Quiver.componentIncomingEquiv_apply]
           simpa only [h] using
             (Quiver.componentIncomingEquiv C x).sum_comp fun a ↦ f a.2
-      _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := y) (y := x.1) e
-  have hout : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q x.1 y.1, f e) =
-      ∑ y : V, ∑ e : Q x.1 y, f e := by
+      _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := y) (y := x.val) e
+  have hout : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q x.val y.val, f e) =
+      ∑ y : V, ∑ e : Q x.val y, f e := by
     calc
-      _ = ∑ a : Σ y : Quiver.ComponentVertex Q C, Q x.1 y.1, f a.2 :=
-        (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q x.1 y.1) ↦
+      _ = ∑ a : Σ y : Quiver.ComponentVertex Q C, Q x.val y.val, f a.2 :=
+        (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q x.val y.val) ↦
           f e).symm
-      _ = ∑ a : Σ y : V, Q x.1 y, f a.2 :=
+      _ = ∑ a : Σ y : V, Q x.val y, f a.2 :=
         by
-          have h (a : Σ y : Quiver.ComponentVertex Q C, Q x.1 y.1) :
+          have h (a : Σ y : Quiver.ComponentVertex Q C, Q x.val y.val) :
               f (Quiver.componentOutgoingEquiv C x a).2 = f a.2 := by
             rw [Quiver.componentOutgoingEquiv_apply]
           simpa only [h] using
             (Quiver.componentOutgoingEquiv C x).sum_comp fun a ↦ f a.2
-      _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := x.1) (y := y) e
+      _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := x.val) (y := y) e
   simp only [excessAt_def, restrictComponent_apply]
   rw [hin, hout]
 
@@ -116,7 +116,7 @@ theorem IsCirculation.restrictComponent [Fintype V] [∀ x y, Fintype (Q x y)]
     (C : @WeaklyConnectedComponent V ⟨Q⟩) : IsCirculation (f.restrictComponent C) := by
   rw [isCirculation_iff] at hf ⊢
   intro x
-  simpa using hf x.1
+  simpa using hf x.val
 
 section Bounded
 
@@ -129,9 +129,9 @@ namespace ExcessFlow
 /-- Restrict a prescribed-excess assignment to one weakly connected component. -/
 def restrictComponent (f : ExcessFlow lo hi d) :
     ExcessFlow (lo.restrictComponent C) (hi.restrictComponent C)
-      (fun x ↦ d x.1) :=
+      (fun x ↦ d x.val) :=
   ⟨f.val.restrictComponent C,
-    ⟨⟨fun x y e ↦ f.mem_Icc.1 x.1 y.1 e, fun x y e ↦ f.mem_Icc.2 x.1 y.1 e⟩,
+    ⟨⟨fun x y e ↦ f.mem_Icc.1 x.val y.val e, fun x y e ↦ f.mem_Icc.2 x.val y.val e⟩,
       funext fun x ↦ by simp [f.excessAt_eq]⟩⟩
 
 /-- Restriction of a prescribed-excess assignment retains the restricted arrow assignment. -/
@@ -147,11 +147,11 @@ namespace ExcessIntervalFlow
 /-- Restrict an interval-excess assignment to one weakly connected component. -/
 def restrictComponent (f : ExcessIntervalFlow lo hi a b) :
     ExcessIntervalFlow (lo.restrictComponent C) (hi.restrictComponent C)
-      (fun x ↦ a x.1) (fun x ↦ b x.1) :=
+      (fun x ↦ a x.val) (fun x ↦ b x.val) :=
   ⟨f.val.restrictComponent C,
-    ⟨⟨fun x y e ↦ f.mem_Icc.1 x.1 y.1 e, fun x y e ↦ f.mem_Icc.2 x.1 y.1 e⟩,
-      ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 x.1,
-        fun x ↦ by simpa using f.excessAt_mem_Icc.2 x.1⟩⟩⟩
+    ⟨⟨fun x y e ↦ f.mem_Icc.1 x.val y.val e, fun x y e ↦ f.mem_Icc.2 x.val y.val e⟩,
+      ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 x.val,
+        fun x ↦ by simpa using f.excessAt_mem_Icc.2 x.val⟩⟩⟩
 
 /-- Restriction of an interval-excess assignment retains the restricted arrow assignment. -/
 @[simp]
@@ -173,7 +173,7 @@ namespace ExcessFlow
 
 /-- Prescribed excess sums to zero on each weakly connected component. -/
 theorem sum_component_eq_zero [Preorder K] (f : ExcessFlow lo hi d) :
-    ∑ x : Quiver.ComponentVertex Q C, d x.1 = 0 :=
+    ∑ x : Quiver.ComponentVertex Q C, d x.val = 0 :=
   (f.restrictComponent C).sum_eq_zero
 
 end ExcessFlow
@@ -183,13 +183,13 @@ namespace ExcessIntervalFlow
 /-- The lower excess bounds sum to a nonpositive value on each weakly connected component. -/
 theorem sum_component_lower_le_zero [PartialOrder K] [IsOrderedAddMonoid K]
     (f : ExcessIntervalFlow lo hi a b) :
-    ∑ x : Quiver.ComponentVertex Q C, a x.1 ≤ 0 :=
+    ∑ x : Quiver.ComponentVertex Q C, a x.val ≤ 0 :=
   (f.restrictComponent C).sum_le_zero
 
 /-- The upper excess bounds sum to a nonnegative value on each weakly connected component. -/
 theorem zero_le_sum_component_upper [PartialOrder K] [IsOrderedAddMonoid K]
     (f : ExcessIntervalFlow lo hi a b) :
-    0 ≤ ∑ x : Quiver.ComponentVertex Q C, b x.1 :=
+    0 ≤ ∑ x : Quiver.ComponentVertex Q C, b x.val :=
   (f.restrictComponent C).zero_le_sum
 
 end ExcessIntervalFlow
