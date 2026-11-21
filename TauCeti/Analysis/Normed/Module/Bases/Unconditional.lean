@@ -32,8 +32,8 @@ characterizes when a generalized Schauder basis with nontrivial summation filter
 unconditionally convergent expansions. For an `ℕ`-indexed generalized Schauder basis, a bound `C` on
 signed coordinate multipliers over initial segments `Finset.range N` extends with the same
 constant `C` to all finite index sets and all finite coordinate projections, while a bound `K`
-relative to `‖b.proj N x‖` together with `‖b.proj N‖ ≤ M` gives
-`‖GeneralSchauderBasis.proj b A‖ ≤ (1 + K) / 2 * M` (`SchauderBasis.norm_proj_le_of_sign_bound`).
+relative to `‖b.proj (Finset.range N) x‖` together with `‖b.proj (Finset.range N)‖ ≤ M` gives
+`‖b.proj A‖ ≤ (1 + K) / 2 * M` (`GeneralSchauderBasis.norm_proj_le_of_sign_bound`).
 These finite estimates hold for any summation filter; for an unconditional basis of a Banach space
 the bound `C` is supplied by `UnconditionalSchauderBasis.nnNormProjBound`.
 
@@ -245,44 +245,39 @@ theorem norm_proj_finset_le_of_range_signed {C : ℝ}
   simpa [proj_apply] using
     b.norm_sum_signed_coord_smul_le_of_range hC A (ε := 1) (fun _ ↦ by simp) x
 
-end
-
-end GeneralSchauderBasis
-
-namespace SchauderBasis
-
 /-- If signed coordinate multipliers on initial segments satisfy a uniform bound
-`‖∑ i ∈ range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj N x‖` and the initial projections
-have norm at most `M`, then every finite coordinate projection has norm at most
-`(1 + K) / 2 * M`. -/
-theorem norm_proj_le_of_sign_bound {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X]
-    [NormedSpace 𝕜 X] (b : SchauderBasis 𝕜 X) {K M : ℝ}
+`‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj (Finset.range N) x‖` and
+the initial projections have norm at most `M`, then every finite coordinate projection has norm at
+most `(1 + K) / 2 * M`. -/
+theorem norm_proj_le_of_sign_bound {K M : ℝ}
     (hK : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ i, ε i = 1 ∨ ε i = -1) → ∀ x,
-      ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj N x‖)
-    (hM : ∀ N, ‖b.proj N‖ ≤ M) (A : Finset ℕ) :
-    ‖GeneralSchauderBasis.proj b A‖ ≤ (1 + K) / 2 * M := by
+      ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj (Finset.range N) x‖)
+    (hM : ∀ N, ‖b.proj (Finset.range N)‖ ≤ M) (A : Finset ℕ) :
+    ‖b.proj A‖ ≤ (1 + K) / 2 * M := by
   have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 ↦ by
     have h := b.ortho 0 0
     simp [h0] at h
   have hK1 : 1 ≤ K := by
     have h1 := hK 1 (fun _ ↦ 1) (fun _ ↦ Or.inl rfl) (b 0)
     simp only [Finset.range_one, Finset.sum_singleton, RCLike.ofReal_one, one_smul,
-      b.ortho, Pi.single_eq_same, SchauderBasis.proj_apply] at h1
+      b.ortho, Pi.single_eq_same, proj_apply] at h1
     nlinarith
-  have hM0 : 0 ≤ M := (norm_nonneg (b.proj 0)).trans (hM 0)
+  have hM0 : 0 ≤ M := (norm_nonneg (b.proj (Finset.range 0))).trans (hM 0)
   let N := A.sup id + 1
   have hAN : A ⊆ Finset.range N := fun i hi ↦
     Finset.mem_range.2 (Nat.lt_succ_of_le (Finset.le_sup (f := id) hi))
-  refine (GeneralSchauderBasis.proj b A).opNorm_le_bound (by positivity) fun x ↦ ?_
-  calc ‖GeneralSchauderBasis.proj b A x‖
-      ≤ (1 + K) / 2 * ‖b.proj N x‖ :=
-        GeneralSchauderBasis.norm_proj_apply_le_of_sign_bound b hAN (fun ε hε ↦ hK N ε hε x)
+  refine (b.proj A).opNorm_le_bound (by positivity) fun x ↦ ?_
+  calc ‖b.proj A x‖
+      ≤ (1 + K) / 2 * ‖b.proj (Finset.range N) x‖ :=
+        b.norm_proj_apply_le_of_sign_bound hAN (fun ε hε ↦ hK N ε hε x)
     _ ≤ (1 + K) / 2 * (M * ‖x‖) := by
         gcongr
-        exact (b.proj N).le_of_opNorm_le (hM N) x
+        exact (b.proj (Finset.range N)).le_of_opNorm_le (hM N) x
     _ = (1 + K) / 2 * M * ‖x‖ := (mul_assoc _ _ _).symm
 
-end SchauderBasis
+end
+
+end GeneralSchauderBasis
 
 namespace UnconditionalSchauderBasis
 

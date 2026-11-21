@@ -42,9 +42,10 @@ identity, unimodular Haar multipliers are `L²` isometries, and `nnNormProjBound
 
 * `TauCeti.unitInterval.integral_burkholderPhi_haarFun_nonneg`: nonnegativity of the integrated
   Burkholder function on signed Haar partial sums for `2 ≤ p`.
-* `TauCeti.unitInterval.norm_sq_sum_haarBasis_two`,
-  `TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`: Parseval's identity and `L²` isometry
-  of unimodular Haar multipliers.
+* `TauCeti.unitInterval.inner_haarBasis_two`,
+  `TauCeti.unitInterval.norm_sq_sum_haarBasis_two`,
+  `TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`: `L²` inner products, Parseval's
+  identity, and `L²` isometry of unimodular Haar multipliers.
 * `TauCeti.unitInterval.norm_sum_signed_haarBasis_real_le`: real `Lᵖ` sign-transform bound
   `max p.toReal (p.toReal / (p.toReal - 1)) - 1` on signed Haar sums for `1 < p < ∞`.
 * `TauCeti.unitInterval.norm_sum_signed_haarBasis_le`: `Lᵖ(I; 𝕜)` sign-transform bound on signed
@@ -325,6 +326,29 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
 
 /-! ### `L²` orthogonality and unimodular multipliers -/
 
+/-- Inner product of two Haar basis vectors in `L²([0, 1]; 𝕜)`: it vanishes off the diagonal and
+equals the squared `L²` norm `2 ^ (-⌊log₂ j⌋)` on the diagonal. -/
+theorem inner_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (j k : ℕ) :
+    ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 =
+      if j = k then ((2 ^ Nat.log 2 j : ℕ) : 𝕜)⁻¹ else 0 := by
+  rw [L2.inner_def]
+  have hcongr :
+      ∫ x, ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j x, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k x⟫_𝕜 =
+        ((∫ x, haarFun j x * haarFun k x : ℝ) : 𝕜) := by
+    rw [← integral_ofReal]
+    refine integral_congr_ae ?_
+    filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j,
+      coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hj hk
+    rw [hj, hk, RCLike.inner_apply, RCLike.conj_ofReal]
+    push_cast
+    ring
+  rw [hcongr]
+  split_ifs with hjk
+  · subst hjk
+    simp_rw [← sq]
+    rw [integral_haarFun_sq, RCLike.ofReal_inv, RCLike.ofReal_natCast]
+  · simp [hjk]
+
 /-- **Parseval's identity for finite Haar sums in `L²([0, 1]; 𝕜)`.** -/
 theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (A : Finset ℕ) :
     ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ ^ 2 =
@@ -333,28 +357,14 @@ theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜
       ⟪c j • haarBasis 𝕜 2 ENNReal.ofNat_ne_top j,
         c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
     intro j _ k _ hjk
-    have hjk0 :
-        ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
-      rw [L2.inner_def]
-      calc
-        ∫ x, ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j x, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k x⟫_𝕜
-            = ∫ x, ((haarFun j x * haarFun k x : ℝ) : 𝕜) := by
-              refine integral_congr_ae ?_
-              filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j,
-                coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hj hk
-              rw [hj, hk, RCLike.inner_apply, RCLike.conj_ofReal]
-              push_cast
-              ring
-        _ = ((∫ x, haarFun j x * haarFun k x : ℝ) : 𝕜) := integral_ofReal
-        _ = 0 := by rw [integral_haarFun_mul_of_ne hjk, RCLike.ofReal_zero]
-    rw [inner_smul_left, inner_smul_right, hjk0, mul_zero, mul_zero]
+    rw [inner_smul_left, inner_smul_right, inner_haarBasis_two, ite_eq_right hjk, mul_zero,
+      mul_zero]
   rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [norm_smul, mul_pow, ← Lp.integral_norm_sq_eq_norm_sq]
+  rw [norm_smul, mul_pow]
   congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hx
-  rw [hx, RCLike.norm_ofReal, sq_abs]
+  rw [norm_sq_eq_re_inner (𝕜 := 𝕜), inner_haarBasis_two, ite_eq_left rfl, integral_haarFun_sq,
+    ← RCLike.ofReal_natCast, ← RCLike.ofReal_inv, RCLike.ofReal_re]
 
 /-- Unimodular Haar multipliers (`‖u k‖ = 1` for `k ∈ A`, in particular real signs `±1`) are
 `L²` isometries. -/
@@ -642,9 +652,9 @@ theorem norm_proj_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
   have h := (haarBasis ℝ p hp).norm_proj_le_of_sign_bound (M := 1)
     (fun N ε hε g => by
       have hε' : ∀ k, |ε k| = 1 := fun k => (abs_eq zero_le_one).2 (hε k)
-      simpa only [RCLike.ofReal_real_eq_id, id_eq, smul_smul, SchauderBasis.proj_apply] using
+      simpa only [RCLike.ofReal_real_eq_id, id_eq, smul_smul, GeneralSchauderBasis.proj_apply] using
         norm_sum_signed_haarBasis_real_le hp1 hp (fun k => (haarBasis ℝ p hp).coord k g) hε' N)
-    (fun N => by rw [haarBasis_proj]; exact norm_dyadicProj_le ℝ p N) A
+    (fun N => by rw [← SchauderBasis.proj, haarBasis_proj]; exact norm_dyadicProj_le ℝ p N) A
   linarith
 
 /-- Every finite signed coordinate multiplier of the Haar basis on `Lᵖ(I; 𝕜)` (`1 < p < ∞`) has
@@ -678,9 +688,9 @@ theorem norm_proj_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fa
   have h := (haarBasis 𝕜 p hp).norm_proj_le_of_sign_bound (M := 1)
     (fun N ε hε g => by
       have hε' : ∀ k, |ε k| = 1 := fun k => (abs_eq zero_le_one).2 (hε k)
-      simpa only [smul_smul, SchauderBasis.proj_apply] using
+      simpa only [smul_smul, GeneralSchauderBasis.proj_apply] using
         norm_sum_signed_haarBasis_le hp1 hp (fun k => (haarBasis 𝕜 p hp).coord k g) hε' N)
-    (fun N => by rw [haarBasis_proj]; exact norm_dyadicProj_le 𝕜 p N) A
+    (fun N => by rw [← SchauderBasis.proj, haarBasis_proj]; exact norm_dyadicProj_le 𝕜 p N) A
   linarith
 
 /-- **Unconditional convergence of the Haar expansion in `Lᵖ([0, 1]; 𝕜)`**, `1 < p < ∞`. -/

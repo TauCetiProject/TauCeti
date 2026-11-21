@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.Dyadic
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Module.Bases.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -191,6 +190,7 @@ theorem integral_haarFun {n : ℕ} (hn : 0 < n) : ∫ x, haarFun n x = 0 := by
     integral_indicator_one (measurableSet_dyadicCell _), measureReal_def, h0, h1]
 
 /-- The squared `L²` norm of every Haar function `hₙ` is `2 ^ (-⌊log₂ n⌋)` (including `n = 0`). -/
+@[simp]
 theorem integral_haarFun_sq (n : ℕ) :
     ∫ x, haarFun n x ^ 2 = ((2 ^ Nat.log 2 n : ℕ) : ℝ)⁻¹ := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -199,6 +199,7 @@ theorem integral_haarFun_sq (n : ℕ) :
       measureReal_def, volume_dyadicCell hn, ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
 /-- Distinct Haar functions are orthogonal on the unit interval. -/
+@[simp]
 theorem integral_haarFun_mul_of_ne {m n : ℕ} (hmn : m ≠ n) :
     ∫ x, haarFun m x * haarFun n x = 0 := by
   have key {a b : ℕ} (hab : a < b) : ∫ x, haarFun a x * haarFun b x = 0 := by
