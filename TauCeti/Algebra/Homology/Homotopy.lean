@@ -70,6 +70,9 @@ acyclic.
 `Homotopy.f_eq_of_dFrom_eq_zero_of_dTo_eq_zero` says that homotopic maps agree in a degree `i`
 where the differential out of the source and the differential into the target vanish.
 
+`Homotopy.equivSubZero_apply_hom` computes the components of the homotopy from `f - g` to `0`
+that Mathlib's `Homotopy.equivSubZero` builds from a homotopy from `f` to `g`.
+
 `HomotopyEquiv.ofHomotopyRetract` and `HomotopyEquiv.ofHomotopyRetractOfComm` transfer a homotopy
 equivalence `e : HomotopyEquiv K₁ L₁` to a morphism `i₂ : K₂ ⟶ L₂` that is a retract up to homotopy
 of `e.hom`, with transferred inverse `rL ≫ e.inv ≫ jK` and without assuming any homotopy on the
@@ -145,6 +148,14 @@ lemma f_eq_of_dFrom_eq_zero_of_dTo_eq_zero {C : Type u} [Category.{v} C] [Preadd
     {ι : Type*} {c : ComplexShape ι} {K L : HomologicalComplex C c} {g₁ g₂ : K ⟶ L}
     (h : Homotopy g₁ g₂) {i : ι} (hK : K.dFrom i = 0) (hL : L.dTo i = 0) : g₁.f i = g₂.f i := by
   simpa [dNext_eq_dFrom_fromNext, prevD_eq_toPrev_dTo, hK, hL] using h.comm i
+
+/-- The homotopy from `f - g` to `0` obtained from a homotopy from `f` to `g` has the same
+components. -/
+@[simp]
+lemma equivSubZero_apply_hom {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {K L : HomologicalComplex C c} {f g : K ⟶ L}
+    (h : Homotopy f g) : (equivSubZero h).hom = h.hom :=
+  (rfl)
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}

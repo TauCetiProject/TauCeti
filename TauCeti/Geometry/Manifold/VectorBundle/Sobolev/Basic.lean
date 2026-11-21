@@ -73,6 +73,14 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 
 ## Main results
 
+* `TauCeti.SectionChartData.lowerOrdersL_lowerOrdersL`: order inclusions compose.
+* `TauCeti.SectionChartData.chartValueL_eqRec`, `TauCeti.SectionChartData.value_eqRec`:
+  chart and scalar readings respect order transport.
+* `TauCeti.SectionChartData.chartValueL_lowerOrdersL`,
+  `TauCeti.SectionChartData.value_lowerOrdersL`:
+  order inclusions preserve chart data and scalar component values.
+* `TauCeti.SectionChartData.lowerOrdersL_constMapL`: order inclusions commute with constant
+  fibre maps.
 * `TauCeti.SectionChartData.mem_sobolevSections_iff_forall_compatible`: a tuple consists of the
   components of a section exactly when its chart data satisfy the cocycle relations.
 * `TauCeti.SectionChartData.aeTransition_of_differentiableOn`: differentiable chart transitions
@@ -87,6 +95,11 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   map `L` have chart data related by `L`.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
+* `TauCeti.SobolevSection.exists_ae_eq_coord`: every element of `W^{k,p}(V)` consists of the
+  coordinates of a section.
+* `TauCeti.SobolevSection.chartValueL_add_ae_coord`,
+  `TauCeti.SobolevSection.chartValueL_smul_ae_coord`: the chart data of a sum or a multiple are the
+  coordinates of the sum or the multiple of the sections.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
 * `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
@@ -94,6 +107,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
 * `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
   tuple by a scalar function multiplies its chart data by that function.
+* `TauCeti.SectionChartData.chartValueL_ae_congr`: tuples whose chart-`i` components have the same
+  values have the same chart data in chart `i`.
 
 ## References
 
@@ -332,6 +347,18 @@ theorem chartValueL_ae_eq_smul {w w' : C.SobolevData μ p k} {i : Fin C.n} {ψ :
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
 
 variable {C μ p k} in
+/-- Tuples, of any exponents and orders, whose chart-`i` components have the same values almost
+everywhere have the same chart data in chart `i` almost everywhere. -/
+theorem chartValueL_ae_congr {q : ℝ≥0∞} [Fact (1 ≤ q)] {k' : ℕ} {w : C.SobolevData μ p k}
+    {v : C.SobolevData μ q k'} {i : Fin C.n}
+    (h : ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)] Wkp.value k' (v i j)) :
+    C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ q k' i v := by
+  filter_upwards [C.chartValueL_apply_ae μ p k i w, C.chartValueL_apply_ae μ q k' i v,
+    ae_all_iff.2 h] with y hw hv hj
+  rw [hw, hv]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j]
+
+variable {C μ p k} in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
 entries: if the chart data in chart `i` agree with the reading of a section `s`, then the `j`th
 component of that reading in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`,
@@ -352,6 +379,27 @@ theorem chartValueL_lowerOrderL (i : Fin C.n) (w : C.SobolevData μ p (k + 1)) :
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [Wkp.valueL_apply, Wkp.valueL_apply, Wkp.value_succ, Wkp.lowerOrderL_apply]
 
+variable {C μ p k} in
+/-- The chart data of a sum of tuples are almost everywhere the reading of the sum of the
+sections whose readings the chart data of the summands are. -/
+theorem chartValueL_add_ae_coord {w w' : C.SobolevData μ p k} {s t : S} {i : Fin C.n}
+    (hs : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s)
+    (ht : C.chartValueL μ p k i w' =ᵐ[μ.restrict (C.image i)] C.coord i t) :
+    C.chartValueL μ p k i (w + w') =ᵐ[μ.restrict (C.image i)] C.coord i (s + t) := by
+  filter_upwards [hs, ht, ae_restrict_mem (C.image i).isOpen.measurableSet,
+    Lp.coeFn_add (C.chartValueL μ p k i w) (C.chartValueL μ p k i w')] with y hy ht hyU hadd
+  rw [map_add, hadd, Pi.add_apply, hy, ht, C.coord_add i s t y hyU]
+
+variable {C μ p k} in
+/-- The chart data of a multiple of a tuple are almost everywhere the reading of the multiple of
+the section whose reading the chart data of the tuple are. -/
+theorem chartValueL_smul_ae_coord (c : ℝ) {w : C.SobolevData μ p k} {s : S} {i : Fin C.n}
+    (hs : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
+    C.chartValueL μ p k i (c • w) =ᵐ[μ.restrict (C.image i)] C.coord i (c • s) := by
+  filter_upwards [hs, ae_restrict_mem (C.image i).isOpen.measurableSet,
+    Lp.coeFn_smul c (C.chartValueL μ p k i w)] with y hy hyU hsmul
+  rw [map_smul, hsmul, Pi.smul_apply, hy, C.coord_smul i c s y hyU]
+
 /-- The chart-`i'` data of a tuple are related to its chart-`i` data by the coordinate change on
 the overlap of the two charts, almost everywhere. -/
 def Compatible (w : C.SobolevData μ p k) (i i' : Fin C.n) : Prop :=
@@ -368,22 +416,13 @@ section `s` has, in every chart `i`, reading equal almost everywhere on `C.image
 assembled from the chart-`i` components of `w`. -/
 def sobolevSections : Submodule ℝ (C.SobolevData μ p k) where
   carrier := {w | ∃ s : S, ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s}
-  add_mem' {w w'} := by
-    rintro ⟨s, hs⟩ ⟨t, ht⟩
-    refine ⟨s + t, fun i ↦ ?_⟩
-    filter_upwards [hs i, ht i, ae_restrict_mem (C.image i).isOpen.measurableSet,
-      Lp.coeFn_add (C.chartValueL μ p k i w) (C.chartValueL μ p k i w')] with y hy ht hyU hadd
-    rw [map_add, hadd, Pi.add_apply, hy, ht, C.coord_add i s t y hyU]
+  add_mem' := fun ⟨s, hs⟩ ⟨t, ht⟩ ↦
+    ⟨s + t, fun i ↦ chartValueL_add_ae_coord (hs i) (ht i)⟩
   zero_mem' := ⟨0, fun i ↦ by
     filter_upwards [ae_restrict_mem (C.image i).isOpen.measurableSet,
       Lp.coeFn_zero F p (μ.restrict (C.image i))] with y hyU h0
     rw [map_zero, h0, Pi.zero_apply, C.coord_zero i hyU]⟩
-  smul_mem' c w := by
-    rintro ⟨s, hs⟩
-    refine ⟨c • s, fun i ↦ ?_⟩
-    filter_upwards [hs i, ae_restrict_mem (C.image i).isOpen.measurableSet,
-      Lp.coeFn_smul c (C.chartValueL μ p k i w)] with y hy hyU hsmul
-    rw [map_smul, hsmul, Pi.smul_apply, hy, C.coord_smul i c s y hyU]
+  smul_mem' c _ := fun ⟨s, hs⟩ ↦ ⟨c • s, fun i ↦ chartValueL_smul_ae_coord c (hs i)⟩
 
 theorem mem_sobolevSections_iff {w : C.SobolevData μ p k} :
     w ∈ C.sobolevSections μ p k ↔
@@ -510,11 +549,8 @@ theorem exists_continuousLinearMap_chartValueL_ae_eq
   -- The chart data of the assembled tuple are those of `w`, component by component.
   have hchart (w : C.sobolevSections μ p k) (i : Fin C.n) :
       C.chartValueL μ q k' i (fun i m ↦ Φ i m w) =ᵐ[μ.restrict (C.image i)]
-        C.chartValueL μ p k i w := by
-    filter_upwards [C.chartValueL_apply_ae μ q k' i (fun i m ↦ Φ i m w),
-      C.chartValueL_apply_ae μ p k i w, ae_all_iff.2 (hΦ i · w)] with y hq hp hm
-    rw [hq, hp]
-    exact Finset.sum_congr rfl fun m _ ↦ by rw [hm m]
+        C.chartValueL μ p k i w :=
+    chartValueL_ae_congr (hΦ i · w)
   refine ⟨(ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi (Φ i)).codRestrict
     (C.sobolevSections μ q k') fun w ↦ ?_, fun w i ↦ hchart w i⟩
   obtain ⟨s, hs⟩ := C.exists_section μ p k w
@@ -596,10 +632,7 @@ theorem lowerOrdersL_succ (d : ℕ) :
     C.lowerOrdersL μ p k (d + 1) = (C.lowerOrdersL μ p k d).comp (C.lowerOrderL μ p (k + d)) :=
   (rfl)
 
-@[simp]
-theorem lowerOrdersL_one (w : C.sobolevSections μ p (k + 1)) :
-    C.lowerOrdersL μ p k 1 w = C.lowerOrderL μ p k w :=
-  (rfl)
+theorem lowerOrdersL_one : C.lowerOrdersL μ p k 1 = C.lowerOrderL μ p k := by rfl
 
 /-- Forgetting the highest derivatives does not change the chart data. -/
 @[simp]
@@ -616,6 +649,57 @@ theorem chartValuesL_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d))
 theorem lowerOrdersL_injective (d : ℕ) : Function.Injective (C.lowerOrdersL μ p k d) :=
   fun w w' h ↦ C.chartValuesL_injective μ p (k + d) <| by
     simpa using congrArg (C.chartValuesL μ p k) h
+
+/-- Lowering the order preserves the chart reading in each chart. -/
+@[simp]
+theorem chartValueL_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d)) (i : Fin C.n) :
+    C.chartValueL μ p k i (C.lowerOrdersL μ p k d w) = C.chartValueL μ p (k + d) i w := by
+  simpa only [chartValuesL_apply] using congrFun (C.chartValuesL_lowerOrdersL μ p k d w) i
+
+/-- Lowering the order preserves the scalar `Lᵖ` component values. -/
+@[simp]
+theorem value_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d)) (i : Fin C.n)
+    (j : Fin (finrank ℝ F)) :
+    Wkp.value k ((C.lowerOrdersL μ p k d w : C.SobolevData μ p k) i j) =
+      Wkp.value (k + d) ((w : C.SobolevData μ p (k + d)) i j) := by
+  induction d with
+  | zero => rfl
+  | succ d ih =>
+    rw [lowerOrdersL_succ, ContinuousLinearMap.comp_apply, ih, lowerOrderL_apply]
+    exact (Wkp.value_succ (k + d) ((w : C.SobolevData μ p (k + (d + 1))) i j)).symm
+
+/-- Chart data are unchanged by equality transport of the Sobolev order. -/
+@[simp]
+theorem chartValuesL_eqRec {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a) :
+    C.chartValuesL μ p b (h ▸ w) = C.chartValuesL μ p a w := by
+  subst b
+  rfl
+
+/-- A reading in one chart is unchanged by equality transport of the Sobolev order. -/
+@[simp]
+theorem chartValueL_eqRec {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a)
+    (i : Fin C.n) :
+    C.chartValueL μ p b i (h ▸ w : C.sobolevSections μ p b) =
+      C.chartValueL μ p a i w := by
+  simpa only [chartValuesL_apply] using congrFun (C.chartValuesL_eqRec μ p h w) i
+
+/-- Scalar component values are unchanged by equality transport of the Sobolev order. -/
+@[simp]
+theorem value_eqRec {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a)
+    (i : Fin C.n) (j : Fin (finrank ℝ F)) :
+    Wkp.value b (((h ▸ w : C.sobolevSections μ p b) : C.SobolevData μ p b) i j) =
+      Wkp.value a ((w : C.SobolevData μ p a) i j) := by
+  subst b
+  rfl
+
+/-- Order inclusions compose, with the source order reassociated by `Nat.add_assoc`. -/
+@[simp]
+theorem lowerOrdersL_lowerOrdersL (d e : ℕ) (w : C.sobolevSections μ p ((k + d) + e)) :
+    C.lowerOrdersL μ p k d (C.lowerOrdersL μ p (k + d) e w) =
+      C.lowerOrdersL μ p k (d + e) ((Nat.add_assoc k d e) ▸ w) := by
+  apply C.chartValuesL_injective μ p k
+  rw [chartValuesL_lowerOrdersL, chartValuesL_lowerOrdersL,
+    chartValuesL_lowerOrdersL, chartValuesL_eqRec]
 
 section ConstMap
 
@@ -719,15 +803,19 @@ theorem chartValueL_constMapL_ae_coord {L : F →L[ℝ] F} {Ψ : S → S}
       C.coord i (Ψ s) :=
   chartValueL_constMapData_ae_coord (hΨ i s) hw
 
-variable {C} in
-/-- Forgetting the highest derivative commutes with a constant fibre map. -/
-theorem lowerOrderL_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
+/-- Lowering the order commutes with a fibre map read by a constant matrix in every chart. -/
+theorem lowerOrdersL_constMapL (d : ℕ) {L : F →L[ℝ] F} {Ψ : S → S}
     (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
-    (w : C.sobolevSections μ p (k + 1)) :
-    C.lowerOrderL μ p k (constMapL μ p (k + 1) L Ψ hΨ w) =
-      constMapL μ p k L Ψ hΨ (C.lowerOrderL μ p k w) := by
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
-  simp [← Wkp.lowerOrderL_apply]
+    (w : C.sobolevSections μ p (k + d)) :
+    C.lowerOrdersL μ p k d (constMapL μ p (k + d) L Ψ hΨ w) =
+      constMapL μ p k L Ψ hΨ (C.lowerOrdersL μ p k d w) := by
+  apply eq_of_chartValueL_ae_eq
+  intro i
+  rw [chartValueL_lowerOrdersL]
+  have h₁ := chartValueL_constMapL_ae μ p (k + d) hΨ w i
+  have h₂ := chartValueL_constMapL_ae μ p k hΨ (C.lowerOrdersL μ p k d w) i
+  rw [chartValueL_lowerOrdersL] at h₂
+  exact h₁.trans h₂.symm
 
 end ConstMap
 
@@ -1035,6 +1123,39 @@ theorem SobolevSection.eq_of_ae_eq_coord {w w' : SobolevSection A μ p k} {s : �
   SectionChartData.eq_of_ae_eq_coord (s := s)
     (fun i ↦ (hw i).trans (A.sectionChartData_coord_ae_eq μ i s).symm)
     (fun i ↦ (hw' i).trans (A.sectionChartData_coord_ae_eq μ i s).symm)
+
+variable {A μ p k} in
+/-- Every element of `W^{k,p}(V)` consists of the chartwise components of a section, read in the
+charts of `A` as `A.coord i s`. -/
+theorem SobolevSection.exists_ae_eq_coord (w : SobolevSection A μ p k) :
+    ∃ s : ∀ x, V x, ∀ i,
+      A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s := by
+  obtain ⟨s, hs⟩ := SectionChartData.exists_section _ μ p k w
+  exact ⟨s, fun i ↦ (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)⟩
+
+variable {A μ p k} in
+/-- The chart data of a sum are almost everywhere the readings of the sum of the sections. -/
+theorem SobolevSection.chartValueL_add_ae_coord {w w' : SobolevSection A μ p k}
+    {s t : ∀ x, V x} {i : Fin A.n}
+    (hs : A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (ht : A.sectionChartData.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)] A.coord i t) :
+    A.sectionChartData.chartValueL μ p k i (w + w' : SobolevSection A μ p k)
+      =ᵐ[μ.restrict (A.image i)] A.coord i (s + t) :=
+  (SectionChartData.chartValueL_add_ae_coord (hs.trans (A.sectionChartData_coord_ae_eq μ i s).symm)
+    (ht.trans (A.sectionChartData_coord_ae_eq μ i t).symm)).trans
+      (A.sectionChartData_coord_ae_eq μ i (s + t))
+
+variable {A μ p k} in
+/-- The chart data of a multiple are almost everywhere the readings of the multiple of the
+section. -/
+theorem SobolevSection.chartValueL_smul_ae_coord (c : ℝ) {w : SobolevSection A μ p k}
+    {s : ∀ x, V x} {i : Fin A.n}
+    (hs : A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) :
+    A.sectionChartData.chartValueL μ p k i (c • w : SobolevSection A μ p k)
+      =ᵐ[μ.restrict (A.image i)] A.coord i (c • s) :=
+  (SectionChartData.chartValueL_smul_ae_coord c
+    (hs.trans (A.sectionChartData_coord_ae_eq μ i s).symm)).trans
+      (A.sectionChartData_coord_ae_eq μ i (c • s))
 
 end Sobolev
 

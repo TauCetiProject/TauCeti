@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.Isomorphisms
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Finiteness.Finsupp
 import TauCeti.RingTheory.Localization.Module
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # Pseudo-isomorphisms

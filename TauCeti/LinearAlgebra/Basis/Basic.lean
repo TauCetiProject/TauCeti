@@ -59,6 +59,9 @@ vectors indexed by `ι`.
   vector.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
   `b (inr j)` correspond to their values on the basis vectors `b (inl l)`.
+* `Module.Basis.algebraMap_sum_mul_eq_mul` and
+  `Module.Basis.algebraMap_mul_constr_eq_algebraMap_sum`: coordinate-clearing identities for a
+  finite basis over an algebra `F` of a commutative semiring `T`.
 -/
 
 public section
@@ -290,5 +293,43 @@ theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
   (rfl)
 
 end SumInr
+
+section Algebra
+
+/-- Clearing denominators of `b.repr y` by `s` expresses `algebraMap T' F' (ψ s) * φ y` as
+`algebraMap T' F' (∑ j, ψ (a j) * g j)`. -/
+theorem algebraMap_sum_mul_eq_mul
+    {T F M T' F' ι : Type*} [CommSemiring T] [CommSemiring F] [Algebra T F]
+    [Semiring M] [Algebra F M] [CommSemiring T'] [Semiring F'] [Algebra T' F']
+    [Fintype ι] (b : Module.Basis ι F M)
+    (ψ : T →+* T') (g : ι → T') (φ : M →+* F')
+    (hφ_alg : ∀ x, φ (algebraMap F M (algebraMap T F x)) = algebraMap T' F' (ψ x))
+    (hφ_b : ∀ j, φ (b j) = algebraMap T' F' (g j))
+    (y : M) (s : T) (a : ι → T)
+    (ha : ∀ j, algebraMap T F (a j) = s • b.repr y j) :
+    algebraMap T' F' (∑ j, ψ (a j) * g j) = algebraMap T' F' (ψ s) * φ y := by
+  rw [map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have haj : algebraMap T F (a j) = algebraMap T F s * b.repr y j := by
+    simpa only [Algebra.smul_def] using ha j
+  rw [map_mul, ← hφ_alg (a j), haj, map_mul, map_mul, hφ_alg s, ← hφ_b j, mul_assoc,
+    ← map_mul φ, ← Algebra.smul_def (b.repr y j) (b j)]
+
+/-- Evaluating a linear form `b.constr F (algebraMap T F ∘ g)` after clearing denominators of
+`b.repr y` by `s` yields `algebraMap T F (∑ j, a j * g j)`. -/
+theorem algebraMap_mul_constr_eq_algebraMap_sum
+    {T F M ι : Type*} [CommSemiring T] [CommSemiring F] [Algebra T F]
+    [AddCommMonoid M] [Module F M] [Fintype ι] (b : Module.Basis ι F M) (g : ι → T)
+    (y : M) (s : T) (a : ι → T)
+    (ha : ∀ j, algebraMap T F (a j) = s • b.repr y j) :
+    algebraMap T F s * b.constr F (fun j ↦ algebraMap T F (g j)) y =
+      algebraMap T F (∑ j, a j * g j) := by
+  conv_lhs => rw [← b.sum_repr y]
+  rw [map_sum, Finset.mul_sum, map_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [map_smul, b.constr_basis, smul_eq_mul, ← mul_assoc,
+    ← Algebra.smul_def s (b.repr y j), ← ha j, ← map_mul]
+
+end Algebra
 
 end Module.Basis

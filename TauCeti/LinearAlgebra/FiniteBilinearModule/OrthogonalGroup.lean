@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.GroupWithZero.Subgroup
 public import Mathlib.Data.FunLike.Fintype
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 
 /-!
