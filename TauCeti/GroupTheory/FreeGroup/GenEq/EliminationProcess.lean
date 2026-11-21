@@ -249,21 +249,30 @@ private theorem kernelExample_orderEmbOfFin (k : Fin #kernelExample.freeItemsᶜ
 /-- The basic equation of a base of the example holds at a point. -/
 private theorem kernelExample_basicEquation {v : Fin 13 → FreeGroup (Fin 2)}
     (hv : v ∈ V (MonoidHom.id (FreeGroup (Fin 2))) kernelExample.toSystem) (μ : Fin 18) :
-    FreeGroup.lift (Sum.elim v (MonoidHom.id (FreeGroup (Fin 2)) ∘ FreeGroup.of))
-        (FreeGroup.mk (kernelExample.basicEquation μ).1) =
-      FreeGroup.lift (Sum.elim v (MonoidHom.id (FreeGroup (Fin 2)) ∘ FreeGroup.of))
-        (FreeGroup.mk (kernelExample.basicEquation μ).2) :=
+    FreeGroup.lift (Sum.elim v FreeGroup.of) (FreeGroup.mk (kernelExample.basicEquation μ).1) =
+      FreeGroup.lift (Sum.elim v FreeGroup.of) (FreeGroup.mk (kernelExample.basicEquation μ).2) :=
   (mem_V_toSystem_iff _).1 hv _ (kernelExample.basicEquation_mem_equations μ)
 
-/-- The coefficient equation of a constant base of the example holds at a point. -/
+/-- The coefficient equation `hₖ = a` of a constant base of the example holds at a point. -/
 private theorem kernelExample_coeffEquation {v : Fin 13 → FreeGroup (Fin 2)}
-    (hv : v ∈ V (MonoidHom.id (FreeGroup (Fin 2))) kernelExample.toSystem)
-    {b : Fin 13 × Fin 2 × Bool} (hb : b ∈ kernelExample.constBases) :
-    FreeGroup.lift (Sum.elim v (MonoidHom.id (FreeGroup (Fin 2)) ∘ FreeGroup.of))
-        (FreeGroup.mk (kernelExample.coeffEquation b).1) =
-      FreeGroup.lift (Sum.elim v (MonoidHom.id (FreeGroup (Fin 2)) ∘ FreeGroup.of))
-        (FreeGroup.mk (kernelExample.coeffEquation b).2) :=
-  (mem_V_toSystem_iff _).1 hv _ (kernelExample.coeffEquation_mem_equations hb)
+    (hv : v ∈ V (MonoidHom.id (FreeGroup (Fin 2))) kernelExample.toSystem) {k : Fin 13}
+    {a : Fin 2} (hb : (k, a, true) ∈ kernelExample.constBases) :
+    v k = FreeGroup.of a := by
+  simpa using (mem_V_toSystem_iff _).1 hv _ (kernelExample.coeffEquation_mem_equations hb)
+
+/-- The value of the one-item segment `h[i, i + 1]`, for a natural number `i`. -/
+private theorem lift_mk_segment_add_one (Ω : GenEq A) {H : Type*} [Group H]
+    (f : Fin Ω.numItems ⊕ A → H) {i : ℕ} (hi : i < Ω.numItems) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i (i + 1) true)) = f (.inl ⟨i, hi⟩) := by
+  simpa using congrArg (fun w => FreeGroup.lift f (FreeGroup.mk w)) (Ω.segment_succ ⟨i, hi⟩ true)
+
+/-- The value of the two-item segment `h[i, i + 2]`, for a natural number `i`. -/
+private theorem lift_mk_segment_add_two (Ω : GenEq A) {H : Type*} [Group H]
+    (f : Fin Ω.numItems ⊕ A → H) {i : ℕ} (hi : i + 1 < Ω.numItems) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i (i + 2) true)) =
+      f (.inl ⟨i, by omega⟩) * f (.inl ⟨i + 1, hi⟩) := by
+  rw [Ω.lift_mk_segment_eq_mul f (Nat.le_succ i) (Nat.le_succ (i + 1)),
+    lift_mk_segment_add_one, lift_mk_segment_add_one]
 
 /-- `[h₀, a] = 1` at every point: `h₀ a = h₂ h₃`, `h₂ = a`, `h₃ = h₀`. -/
 private theorem kernelExample_commute_zero {v : Fin 13 → FreeGroup (Fin 2)}
@@ -271,15 +280,11 @@ private theorem kernelExample_commute_zero {v : Fin 13 → FreeGroup (Fin 2)}
     Commute (v 0) (FreeGroup.of 0) := by
   have h₀ := kernelExample_basicEquation hv 0
   have h₆ := kernelExample_basicEquation hv 6
-  have c₁ := kernelExample_coeffEquation hv (b := (1, 0, true)) (by decide)
-  have c₂ := kernelExample_coeffEquation hv (b := (2, 0, true)) (by decide)
-  simp only [MonoidHom.coe_id, CompTriple.comp_eq, Fin.isValue, basicEquation_fst, Nat.reduceAdd,
-    Matrix.cons_val_zero, Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.reduceMod, segment_true,
-    List.finRange_succ, List.finRange_zero, List.map_nil, List.map_cons, Fin.succ_zero_eq_one,
-    Fin.succ_one_eq_two, Fin.reduceSucc, List.take_succ_cons, List.take_zero, List.drop_zero,
-    FreeGroup.lift_mk, cond_eq_ite, ↓reduceIte, Sum.elim_inl, List.prod_cons, List.prod_nil,
-    mul_one, basicEquation_snd, Matrix.cons_val_one, List.drop_succ_cons, Matrix.cons_val,
-    Nat.one_mod, coeffEquation_fst, coeffEquation_snd, Sum.elim_inr] at h₀ h₆ c₁ c₂
+  have c₁ := kernelExample_coeffEquation (k := 1) (a := 0) hv (by decide)
+  have c₂ := kernelExample_coeffEquation (k := 2) (a := 0) hv (by decide)
+  simp (disch := decide) only [basicEquation_fst, basicEquation_snd, Matrix.cons_val,
+    Fin.coe_ofNat_eq_mod, Nat.reduceMod, lift_mk_segment_add_one kernelExample,
+    lift_mk_segment_add_two kernelExample, Nat.reduceAdd, Fin.reduceFinMk, Sum.elim_inl] at h₀ h₆
   rw [Commute, SemiconjBy, ← c₁, h₀, c₁, ← c₂, h₆]
 
 /-- `[h₄, b] = 1` at every point: `h₄ b = h₆ h₇`, `h₆ = b`, `h₇ = h₄`. -/
@@ -288,14 +293,11 @@ private theorem kernelExample_commute_four {v : Fin 13 → FreeGroup (Fin 2)}
     Commute (v 4) (FreeGroup.of 1) := by
   have h₂ := kernelExample_basicEquation hv 2
   have h₁₂ := kernelExample_basicEquation hv 12
-  have c₅ := kernelExample_coeffEquation hv (b := (5, 1, true)) (by decide)
-  have c₆ := kernelExample_coeffEquation hv (b := (6, 1, true)) (by decide)
-  simp only [MonoidHom.coe_id, CompTriple.comp_eq, Fin.isValue, basicEquation_fst, Nat.reduceAdd,
-    Matrix.cons_val, Fin.coe_ofNat_eq_mod, Nat.reduceMod, segment_true, List.finRange_succ,
-    List.finRange_zero, List.map_nil, List.map_cons, Fin.succ_zero_eq_one, Fin.succ_one_eq_two,
-    Fin.reduceSucc, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_zero,
-    FreeGroup.lift_mk, cond_eq_ite, ↓reduceIte, Sum.elim_inl, List.prod_cons, List.prod_nil,
-    mul_one, basicEquation_snd, coeffEquation_fst, coeffEquation_snd, Sum.elim_inr] at h₂ h₁₂ c₅ c₆
+  have c₅ := kernelExample_coeffEquation (k := 5) (a := 1) hv (by decide)
+  have c₆ := kernelExample_coeffEquation (k := 6) (a := 1) hv (by decide)
+  simp (disch := decide) only [basicEquation_fst, basicEquation_snd, Matrix.cons_val,
+    Fin.coe_ofNat_eq_mod, Nat.reduceMod, lift_mk_segment_add_one kernelExample,
+    lift_mk_segment_add_two kernelExample, Nat.reduceAdd, Fin.reduceFinMk, Sum.elim_inl] at h₂ h₁₂
   rw [Commute, SemiconjBy, ← c₅, h₂, c₅, ← c₆, h₁₂]
 
 /-- `[h₀, h₄] = 1` at every point: `h₈ h₉ = h₁₀ h₁₁` with `h₈ = h₁₁ = h₀` and `h₉ = h₁₀ = h₄`. -/
@@ -307,12 +309,10 @@ private theorem kernelExample_commute_zero_four {v : Fin 13 → FreeGroup (Fin 2
   have h₁₀ := kernelExample_basicEquation hv 10
   have h₁₄ := kernelExample_basicEquation hv 14
   have h₁₆ := kernelExample_basicEquation hv 16
-  simp only [MonoidHom.coe_id, CompTriple.comp_eq, Fin.isValue, basicEquation_fst, Nat.reduceAdd,
-    Matrix.cons_val, Fin.coe_ofNat_eq_mod, Nat.reduceMod, segment_true, List.finRange_succ,
-    List.finRange_zero, List.map_nil, List.map_cons, Fin.succ_zero_eq_one, Fin.succ_one_eq_two,
-    Fin.reduceSucc, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_zero,
-    FreeGroup.lift_mk, cond_eq_ite, ↓reduceIte, Sum.elim_inl, List.prod_cons, List.prod_nil,
-    mul_one, basicEquation_snd, Nat.zero_mod, Nat.one_mod] at h₄ h₈ h₁₀ h₁₄ h₁₆
+  simp (disch := decide) only [basicEquation_fst, basicEquation_snd, Matrix.cons_val,
+    Fin.coe_ofNat_eq_mod, Nat.reduceMod, lift_mk_segment_add_one kernelExample,
+    lift_mk_segment_add_two kernelExample, Nat.reduceAdd, Fin.reduceFinMk,
+    Sum.elim_inl] at h₄ h₈ h₁₀ h₁₄ h₁₆
   calc v 0 * v 4 = v 8 * v 9 := by rw [h₈, h₁₄]
     _ = v 10 * v 11 := h₄
     _ = v 4 * v 0 := by rw [h₁₆, h₁₀]

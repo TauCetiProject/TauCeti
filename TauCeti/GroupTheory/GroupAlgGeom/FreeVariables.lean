@@ -400,21 +400,33 @@ end CoordGroup
 
 namespace CoordGroup
 
+/-- The `G`-homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` from the free product of the coordinate
+group of a system `S` with the free group on `Y` to the coordinate group of `S` with free
+variables `Y`, induced by the isomorphism `G_S ∗ F(Y) ≃ G_{S'}` of presented groups. -/
+def freeVarsHom (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
+    GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S))
+      (coeff ι (addFreeVars Y S)) :=
+  freeProdMap ι (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp)
+
 /-- The inclusion of the variables induces a homomorphism from the coordinate group of a system
-to the coordinate group of the system with free variables. -/
+to the coordinate group of the system with free variables: the restriction of
+`G_{R(S)} ∗ F(Y) → G_{R(S')}` to the first factor. -/
 def inclFreeVarsHom (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
-    GHom (coeff ι S) (coeff ι (addFreeVars Y S)) :=
-  homOfMapsToWordMap ι (addFreeVars Y S) S (fun x => inr (FreeGroup.of (Sum.inl x)))
-    <| fun v hv => by
-      have h : wordMap ι (fun x : X => (inr (FreeGroup.of (Sum.inl x)) : GX G (X ⊕ Y))) v =
-          v ∘ Sum.inl := funext fun _ => by simp
-      exact h ▸ mem_V_addFreeVars.1 hv
+    GHom (coeff ι S) (coeff ι (addFreeVars Y S)) where
+  toMonoidHom := (freeVarsHom ι Y S : GX (CoordGroup ι S) Y →* CoordGroup ι (addFreeVars Y S)).comp
+    inl
+  map_coeff' := (freeVarsHom ι Y S).map_coeff
+
+@[simp]
+theorem freeVarsHom_inl (q : CoordGroup ι S) :
+    freeVarsHom ι Y S (inl q) = inclFreeVarsHom ι Y S q :=
+  (rfl)
 
 @[simp]
 theorem inclFreeVarsHom_mk (w : GX G X) :
     inclFreeVarsHom ι Y S (w : CoordGroup ι S) =
-      ((inclFreeVars G X Y w : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) :=
-  homOfMapsToWordMap_mk ..
+      ((inclFreeVars G X Y w : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) := by
+  simp [← freeVarsHom_inl, freeVarsHom]
 
 /-- The coordinate group of a system embeds in the coordinate group of the system with free
 variables. -/
@@ -450,20 +462,6 @@ theorem inclFreeVarsHom_toCoordGroup (q : SystemGroup G S) :
         ((SystemGroup.addFreeVarsEquiv Y S).symm (inl q)) := by
   induction q using QuotientGroup.induction_on
   simp
-
-/-- The `G`-homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` from the free product of the coordinate
-group of a system `S` with the free group on `Y` to the coordinate group of `S` with free
-variables `Y`, induced by the isomorphism `G_S ∗ F(Y) ≃ G_{S'}` of presented groups. -/
-def freeVarsHom (ι : G →* H) (Y : Type*) (S : Set (GX G X)) :
-    GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S))
-      (coeff ι (addFreeVars Y S)) :=
-  freeProdMap ι (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp)
-
-@[simp]
-theorem freeVarsHom_inl (q : CoordGroup ι S) :
-    freeVarsHom ι Y S (inl q) = inclFreeVarsHom ι Y S q := by
-  induction q using QuotientGroup.induction_on
-  simp [freeVarsHom]
 
 @[simp]
 theorem freeVarsHom_inr (w : FreeGroup Y) :

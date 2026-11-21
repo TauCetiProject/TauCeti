@@ -415,11 +415,9 @@ private theorem evalWord_append {n : ℕ} (v : Fin n → H) (w w' : List ((Fin n
 private theorem evalWord_restoreWord {n : ℕ} (S : Finset (Fin n)) (v : Fin n → H)
     (w : List ((Fin Sᶜ.card ⊕ A) × Bool)) :
     evalWord ι v (restoreWord S w) = evalWord ι (v ∘ Sᶜ.orderEmbOfFin rfl) w := by
-  induction w with
-  | nil => rw [restoreWord_nil]; rfl
-  | cons x w ih =>
-    rw [← List.singleton_append, restoreWord_append, evalWord_append, evalWord_append, ih]
-    obtain ⟨_ | _, b⟩ := x <;> simp [evalWord]
+  rw [evalWord, evalWord, mk_restoreWord, FreeGroup.lift_map]
+  congr 1
+  ext (_ | _) <;> rfl
 
 variable (Ω) in
 /-- The value of the prefix `h[0, i]` at `v`. -/
