@@ -175,7 +175,7 @@ private def ofFiniteCodimensionOneCycle (C : finiteCodimensionOneCycles X) :
 @[simp]
 private lemma ofFiniteCodimensionOneCycle_apply
     (C : finiteCodimensionOneCycles X) (x : CodimensionOnePoint X) :
-    ofFiniteCodimensionOneCycle C x = C.1 x :=
+    ofFiniteCodimensionOneCycle C x = C.val x :=
   congrFun Finsupp.ofSupportFinite_coe x
 
 /-- Scheme-theoretic Weil divisors are additively equivalent to the finite algebraic cycles
@@ -204,7 +204,7 @@ def equivFiniteCodimensionOneCycles :
         toAlgebraicCycle (ofFiniteCodimensionOneCycle C) x =
             ofFiniteCodimensionOneCycle C ⟨x, hx⟩ :=
           toAlgebraicCycle_apply _ ⟨x, hx⟩
-        _ = C.1 x := ofFiniteCodimensionOneCycle_apply C ⟨x, hx⟩
+        _ = C.val x := ofFiniteCodimensionOneCycle_apply C ⟨x, hx⟩
     · rw [toAlgebraicCycle_apply_of_coheight_ne_one _ _ hx]
       exact (Function.notMem_support.mp fun h ↦ hx (C.property.2.coheight_eq_one h)).symm
   map_add' D E := by
@@ -224,7 +224,7 @@ codimension-one points. -/
 @[simp]
 lemma equivFiniteCodimensionOneCycles_symm_apply_apply
     (C : finiteCodimensionOneCycles X) (x : CodimensionOnePoint X) :
-    equivFiniteCodimensionOneCycles.symm C x = C.1 x :=
+    equivFiniteCodimensionOneCycles.symm C x = C.val x :=
   ofFiniteCodimensionOneCycle_apply C x
 
 end

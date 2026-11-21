@@ -47,7 +47,7 @@ equivalence has no such restriction.
 ## References
 
 The underlying equivalence is `TauCeti.AdditiveGroup.gaScalarTensorBialgEquiv`, itself the
-rank-one case of `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`. See W. C. Waterhouse,
+rank-one case of `SymmetricAlgebra.scalarTensorBialgEquiv`. See W. C. Waterhouse,
 *Introduction to Affine Group Schemes*, §1, and J. S. Milne, *Algebraic Groups* (2017), §2.
 -/
 

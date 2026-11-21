@@ -41,8 +41,8 @@ def affineMulAction : MulAction G V where
     change ρ (g * h) v + b (g * h) = ρ g (ρ h v + b h) + b g
     simp [hb, map_mul, mul_apply_eq_comp, add_assoc]
 
-/-- Evaluation of the affine action. -/
-@[simp]
+/-- Evaluation of the affine action. Not a simp lemma: its left-hand side `g • v` has variable
+types and a non-canonical action, so `simp` would try it on every scalar multiplication. -/
 theorem affineMulAction_smul (g : G) (v : V) :
     letI := ρ.affineMulAction b hb
     g • v = ρ g v + b g :=
@@ -52,7 +52,7 @@ theorem affineMulAction_smul (g : G) (v : V) :
 theorem affineMulAction_smul_sub_smul (g : G) (v w : V) :
     letI := ρ.affineMulAction b hb
     g • v - g • w = ρ g (v - w) := by
-  simp [map_sub]
+  simp [affineMulAction_smul, map_sub]
 
 /-- A point is fixed by an affine transformation exactly when its translation is the
 corresponding coboundary. -/

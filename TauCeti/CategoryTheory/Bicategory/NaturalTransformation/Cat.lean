@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Category.Cat
-public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Equivalence
+public import TauCeti.CategoryTheory.Category.Cat
+import Mathlib.CategoryTheory.Equivalence
 
 /-!
-# Strong transformations into `Cat` with identity components
+# Strong transformations into `Cat` and pointwise equivalences
 
 A strong transformation between pseudofunctors into `Cat` that take the same values on objects
 can have identity components. Its naturality isomorphism at `f` is then determined by a natural
@@ -25,7 +26,16 @@ modification with unitor components from a composite of two such transformations
 arbitrary `1`-morphisms, so that they apply by unification to goals whose `1`-morphisms are values
 of composite pseudofunctors, which `simp` and `rw` do not see through. The same reduction
 handles identity and composite transport cells. The file also evaluates the naturality cell
-of a composite strong transformation on objects, with the Cat endpoints made explicit.
+of a composite strong transformation on objects, with the Cat endpoints made explicit, and
+packages the components of a naturality isomorphism at an object
+(`Pseudofunctor.StrongTrans.naturalityObjIso`).
+
+A strong transformation into `Cat` is an equivalence whenever its component functors are
+equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
+the chosen component quasi-inverses, units, and counits gives
+`StrongTrans.equivalenceOfIsEquivalence`. Its inverse naturality satisfies compatibility with
+those counits; the component equations allow callers to use the equivalence without unfolding
+its construction.
 -/
 
 public section
@@ -141,6 +151,112 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
   exact (congrArg (fun m => m.toNatTrans.app X)
     (categoryStruct_comp_naturality_hom η θ f)).trans h
 
+/-- The component at an object `X` of the naturality isomorphism of a strong transformation
+`η : F ⟶ G` into `Cat` along `f : a ⟶ b`: the image under `η` of the transport of `X` along `f`
+is isomorphic to the transport along `f` of the image of `X` under `η`. -/
+noncomputable def naturalityObjIso {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.app b).toFunctor.obj ((F.map f).toFunctor.obj X) ≅
+      (G.map f).toFunctor.obj ((η.app a).toFunctor.obj X) :=
+  (Cat.Hom.toNatIso (η.naturality f)).app X
+
+@[simp]
+lemma naturalityObjIso_hom {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.naturalityObjIso f X).hom = (η.naturality f).hom.toNatTrans.app X :=
+  (rfl)
+
+@[simp]
+lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
+  (rfl)
+
 end Pseudofunctor.StrongTrans
 
 end CategoryTheory
+
+/-! ### Pointwise equivalences of strong transformations -/
+
+universe w₁ v₁ u₁
+namespace CategoryTheory.Pseudofunctor.StrongTrans
+
+open Bicategory
+
+variable {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}}
+variable (η : F ⟶ G) [∀ a, (η.app a).toFunctor.IsEquivalence]
+
+/-- A strong transformation into `Cat` is an equivalence when each component functor is an
+equivalence. Its inverse has the chosen quasi-inverse component functors; its unit and counit
+are their chosen unit and counit isomorphisms. -/
+-- Expose the record projections so its dependent unit/counit component equations can be stated;
+-- its inverse naturality satisfies compatibility with the component counits.
+@[expose] noncomputable def equivalenceOfIsEquivalence :
+    Bicategory.Equivalence F G :=
+  η.equivalenceMk
+    (fun a => (η.app a).toFunctor.inv.toCatHom)
+    (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso)
+    (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso)
+    (fun a => by
+      apply Iso.ext
+      ext X
+      simpa [leftZigzagIso, leftZigzag, bicategoricalComp] using
+        (η.app a).toFunctor.asEquivalence.functor_unit_comp X)
+
+/-- The forward strong transformation is the original one. -/
+@[simp]
+lemma equivalenceOfIsEquivalence_hom :
+    η.equivalenceOfIsEquivalence.hom = η := (rfl)
+
+/-- The inverse component is the chosen quasi-inverse of the original component. -/
+@[simp]
+lemma equivalenceOfIsEquivalence_inv_app (a : B) :
+    η.equivalenceOfIsEquivalence.inv.app a = (η.app a).toFunctor.inv.toCatHom := (rfl)
+
+-- Keep the unit/counit component equations named: their dependent carriers do not have a
+-- robust common simp normal form in importing modules.
+/-- The forward unit component is the chosen component unit. -/
+lemma equivalenceOfIsEquivalence_unit_hom_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.unit.hom.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso).hom := (rfl)
+
+/-- The inverse unit component is the inverse of the chosen component unit. -/
+lemma equivalenceOfIsEquivalence_unit_inv_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.unit.inv.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso).inv := (rfl)
+
+/-- The forward counit component is the chosen component counit. -/
+lemma equivalenceOfIsEquivalence_counit_hom_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.counit.hom.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso).hom := (rfl)
+
+/-- The inverse counit component is the inverse of the chosen component counit. -/
+lemma equivalenceOfIsEquivalence_counit_inv_as_app (a : B) :
+    η.equivalenceOfIsEquivalence.counit.inv.as.app a =
+      (Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso).inv := (rfl)
+
+/-- Mapping the inverse naturality cell by the target component gives a square compatible
+with the original naturality cell and the component counits. -/
+@[reassoc]
+lemma map_equivalenceOfIsEquivalence_inv_naturality_hom_app_comp
+    {a b : B} (f : a ⟶ b) (X : G.obj a) :
+    (η.app b).toFunctor.map
+        ((η.equivalenceOfIsEquivalence.inv.naturality f).hom.toNatTrans.app X) ≫
+      (η.naturality f).hom.toNatTrans.app ((η.app a).toFunctor.inv.obj X) ≫
+        (G.map f).toFunctor.map ((η.app a).toFunctor.asEquivalence.counit.app X) =
+      (η.app b).toFunctor.asEquivalence.counit.app ((G.map f).toFunctor.obj X) := by
+  have hc := congrArg (fun m => m.toNatTrans.app X)
+    (η.equivalenceOfIsEquivalence.counit.hom.as.naturality f).symm
+  simp only [Cat.Hom₂.comp_app, comp_naturality_hom_app, Cat.whiskerRight_app,
+    Cat.whiskerLeft_app] at hc
+  simp only [categoryStruct_id_naturality_hom, Cat.Hom₂.comp_app,
+    equivalenceOfIsEquivalence_counit_hom_as_app, Cat.Hom.isoMk_hom,
+    NatTrans.toCatHom₂_toNatTrans, Cat.rightUnitor_hom_toNatTrans,
+    Cat.leftUnitor_inv_toNatTrans] at hc
+  dsimp only [comp_app, categoryStruct_id_app, Cat.Hom.comp_toFunctor,
+    Cat.Hom.id_toFunctor, Functor.comp_obj, Functor.id_obj,
+    Functor.rightUnitor_hom_app, Functor.leftUnitor_inv_app] at hc
+  rw [Category.comp_id, Category.assoc] at hc
+  exact hc.trans (Category.comp_id _)
+
+end CategoryTheory.Pseudofunctor.StrongTrans

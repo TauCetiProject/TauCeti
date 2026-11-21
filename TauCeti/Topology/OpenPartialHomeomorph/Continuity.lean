@@ -13,18 +13,23 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 # Continuity and punctured neighbourhoods under open partial homeomorphisms
 
 An open partial homeomorphism identifies a neighbourhood of a point of its source with a
-neighbourhood of its image, so a point of the source is not isolated as soon as its image is not
-(`OpenPartialHomeomorph.nhdsNE_neBot`). For instance, no point in the source of a chart into a
-nontrivially normed field is isolated. Being injective and continuous on its source, it sends the
-punctured neighbourhoods of a point of its source to those of the image
-(`OpenPartialHomeomorph.tendsto_nhdsNE`). Eventual constancy of a map `f` near `x` is likewise
-detected by its chart representative `e' ∘ f ∘ e.symm` near `e x`
+neighbourhood of its image. Being injective there, it maps the punctured neighbourhood filter of a
+point of its source onto that of the image (`OpenPartialHomeomorph.map_nhdsNE_eq`, with the
+one-sided form `OpenPartialHomeomorph.tendsto_nhdsNE`). So a point of the source is not isolated
+as soon as its image is not (`OpenPartialHomeomorph.nhdsNE_neBot`). For instance, no point in the
+source of a chart into a nontrivially normed field is isolated. Eventual constancy of a map `f` near
+`x` is likewise detected by its chart representative `e' ∘ f ∘ e.symm` near `e x`
 (`OpenPartialHomeomorph.not_eventuallyConst_comp_symm`).
 
 A function continuous on the target that is constant on the target off a compact subset of it,
 read through the open partial homeomorphism on its source and extended by that constant, is
 continuous on a Hausdorff domain (`OpenPartialHomeomorph.continuous_ite_source_of_eq_off_compact`).
 This transplants a compactly supported function on a chart to the whole space.
+
+For `u` continuous on `s` and a map `g` continuous on `t`, the coordinate expression
+`g ∘ u ∘ e.symm` is continuous on the part `e.target ∩ e.symm ⁻¹' (s ∩ u ⁻¹' t)` of the target
+(`OpenPartialHomeomorph.continuousOn_comp_comp_symm`), which is open when `s` and `t` are
+(`OpenPartialHomeomorph.isOpen_inter_preimage_symm_inter_preimage`).
 -/
 
 public section
@@ -44,22 +49,31 @@ theorem continuousAt_symm_add {F : Type*} [TopologicalSpace F] [AddCommGroup F]
   refine ContinuousAt.comp (f := fun z : F ↦ φ x + z) ?_ hcont.continuousAt
   simpa using φ.continuousAt_symm (φ.map_source hxφ)
 
-/-- A point of the source of an open partial homeomorphism is not isolated if its image is not. -/
-theorem nhdsNE_neBot (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source)
-    [(𝓝[≠] (e x)).NeBot] : (𝓝[≠] x).NeBot := by
-  have hmap := e.symm.map_nhdsWithin_eq (e.map_source hx) {e x}ᶜ
-  rw [e.left_inv hx] at hmap
-  have hne : (map e.symm (𝓝[≠] (e x))).NeBot := inferInstance
-  refine (hmap ▸ hne).mono (nhdsWithin_mono _ ?_)
-  rintro _ ⟨w, ⟨hw, hwx⟩, rfl⟩ hwx'
-  exact hwx (by rw [← mem_singleton_iff.1 hwx', e.right_inv hw]; exact mem_singleton w)
-
 /-- An open partial homeomorphism sends the punctured neighbourhoods of a point of its source to
 the punctured neighbourhoods of its image. -/
 theorem tendsto_nhdsNE (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source) :
     Tendsto e (𝓝[≠] x) (𝓝[≠] (e x)) :=
   tendsto_nhdsWithin_iff.mpr
     ⟨(e.continuousAt hx).tendsto.mono_left nhdsWithin_le_nhds, e.eventually_ne_nhdsWithin hx⟩
+
+/-- An open partial homeomorphism maps the punctured neighbourhood filter of a point of its source
+onto the punctured neighbourhood filter of its image. This is the analogue of Mathlib's
+`Homeomorph.map_punctured_nhds_eq`. -/
+@[simp]
+theorem map_nhdsNE_eq (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source) :
+    map e (𝓝[≠] x) = 𝓝[≠] (e x) :=
+  -- The proof follows Mathlib's `OpenPartialHomeomorph.map_nhds_eq`, with `tendsto_nhdsNE` in
+  -- place of continuity.
+  le_antisymm (e.tendsto_nhdsNE hx) <|
+    le_map_of_right_inverse
+      (eventually_nhdsWithin_of_eventually_nhds (e.eventually_right_inverse' hx))
+      (by simpa only [e.left_inv hx] using e.symm.tendsto_nhdsNE (e.map_source hx))
+
+/-- A point of the source of an open partial homeomorphism is not isolated if its image is not. -/
+theorem nhdsNE_neBot (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source)
+    [(𝓝[≠] (e x)).NeBot] : (𝓝[≠] x).NeBot := by
+  rw [← map_neBot_iff e, e.map_nhdsNE_eq hx]
+  infer_instance
 
 /-- A function `g` that is continuous on the target of `e` and equal to `c` at the points of the
 target off a compact subset `K` of the target, read through `e` on its source and extended by `c`,
@@ -84,6 +98,23 @@ theorem continuous_ite_source_of_eq_off_compact [T2Space X] (e : OpenPartialHome
     · simp only [hws, ↓reduceIte]
       exact (hgK _ (e.map_source hws) fun hK => hw ⟨e w, hK, e.left_inv hws⟩).symm
     · simp [hws]
+
+/-- If `u` is continuous on an open set `s` and `t` is open, then the points of the target of `e`
+sent by `e.symm` into `s ∩ u ⁻¹' t` form an open set. -/
+theorem isOpen_inter_preimage_symm_inter_preimage (e : OpenPartialHomeomorph X Y) {Z : Type*}
+    [TopologicalSpace Z] {u : X → Z} {s : Set X} {t : Set Z} (hu : ContinuousOn u s)
+    (hs : IsOpen s) (ht : IsOpen t) : IsOpen (e.target ∩ e.symm ⁻¹' (s ∩ u ⁻¹' t)) :=
+  e.isOpen_inter_preimage_symm (hu.isOpen_inter_preimage hs ht)
+
+/-- If `u` is continuous on `s` and `g` is continuous on `t`, then the coordinate expression
+`g ∘ u ∘ e.symm` is continuous on the points of the target of `e` sent by `e.symm` into
+`s ∩ u ⁻¹' t`. -/
+theorem continuousOn_comp_comp_symm (e : OpenPartialHomeomorph X Y) {Z W : Type*}
+    [TopologicalSpace Z] [TopologicalSpace W] {u : X → Z} {g : Z → W} {s : Set X} {t : Set Z}
+    (hg : ContinuousOn g t) (hu : ContinuousOn u s) :
+    ContinuousOn (g ∘ u ∘ e.symm) (e.target ∩ e.symm ⁻¹' (s ∩ u ⁻¹' t)) :=
+  hg.comp (hu.comp (e.continuousOn_symm.mono inter_subset_left) fun _ hz ↦ hz.2.1)
+    fun _ hz ↦ hz.2.2
 
 /-- If `f` is not eventually constant near `x`, then its chart representative `e' ∘ f ∘ e.symm`
 is not eventually constant near `e x`, provided `f ∘ e.symm` maps a neighbourhood of `e x` into

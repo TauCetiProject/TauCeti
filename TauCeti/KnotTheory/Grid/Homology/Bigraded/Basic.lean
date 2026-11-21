@@ -47,14 +47,14 @@ variable [CommSemiring R]
 
 /-- The cycles of `GC⁻` homogeneous of bidegree `g`. -/
 noncomputable def bigradedUnblockedCyclesPiece (g : ℤ × ℤ) :
-    Submodule R (LinearMap.ker (G.1.unblockedDifferential R)) :=
+    Submodule R (LinearMap.ker (G.val.unblockedDifferential R)) :=
   (G.bigradedChainMinusPiece R g).comap
-    ((LinearMap.ker (G.1.unblockedDifferential R)).subtype.restrictScalars R)
+    ((LinearMap.ker (G.val.unblockedDifferential R)).subtype.restrictScalars R)
 
 /-- Homogeneity of a cycle is homogeneity of its underlying chain. -/
 @[simp]
 theorem mem_bigradedUnblockedCyclesPiece {g : ℤ × ℤ}
-    {z : LinearMap.ker (G.1.unblockedDifferential R)} :
+    {z : LinearMap.ker (G.val.unblockedDifferential R)} :
     z ∈ G.bigradedUnblockedCyclesPiece R g ↔
       (z : GridChainMinus R n) ∈ G.bigradedChainMinusPiece R g := Iff.rfl
 
@@ -82,15 +82,15 @@ variable [CharP R 2]
 
 /-- The internal `(O-Maslov, Alexander)` grading of unblocked grid homology. -/
 noncomputable def bigradedUnblockedHomologyGrading :
-    InternalGrading R (G.1.unblockedHomology R) (ℤ × ℤ) :=
+    InternalGrading R (G.val.unblockedHomology R) (ℤ × ℤ) :=
   ((G.bigradedChainMinusGrading R).homology
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
-    (G.1.unblockedDifferential_comp_self_eq_zero R)).map
-      ((G.1.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
+    (G.val.unblockedDifferential_comp_self_eq_zero R)).map
+      ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
 
 /-- The bidegree-`g` piece of `GH⁻`: classes of cycles homogeneous of bidegree `g`. -/
 noncomputable def bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
-    Submodule R (G.1.unblockedHomology R) :=
+    Submodule R (G.val.unblockedHomology R) :=
   (G.bigradedUnblockedHomologyGrading R).piece g
 
 /-- The pieces of the bundled homology grading are the homogeneous homology pieces. -/
@@ -100,28 +100,28 @@ theorem bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
   rw [bigradedUnblockedHomologyPiece]
 
 /-- A class has bidegree `g` exactly when it has a cycle representative of that bidegree. -/
-theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
+theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.val.unblockedHomology R} :
     y ∈ G.bigradedUnblockedHomologyPiece R g ↔
-      ∃ z : LinearMap.ker (G.1.unblockedDifferential R),
+      ∃ z : LinearMap.ker (G.val.unblockedDifferential R),
         (z : GridChainMinus R n) ∈ G.bigradedChainMinusPiece R g ∧
-          G.1.unblockedHomologyClass R z = y := by
+          G.val.unblockedHomologyClass R z = y := by
   rw [bigradedUnblockedHomologyPiece, bigradedUnblockedHomologyGrading,
     InternalGrading.mem_map_piece_iff, InternalGrading.mem_homology_piece_iff]
   simp only [bigradedChainMinusGrading_piece]
   constructor
   · rintro ⟨z, hz, hzy⟩
     refine ⟨z, hz, ?_⟩
-    apply (ModuleCat.mono_iff_injective (G.1.unblockedHomologyIso R).hom).mp inferInstance
+    apply (ModuleCat.mono_iff_injective (G.val.unblockedHomologyIso R).hom).mp inferInstance
     rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass]
     exact hzy
   · rintro ⟨z, hz, rfl⟩
-    exact ⟨z, hz, (G.1.unblockedHomologyIso_hom_unblockedHomologyClass R z).symm⟩
+    exact ⟨z, hz, (G.val.unblockedHomologyIso_hom_unblockedHomologyClass R z).symm⟩
 
 /-- The class of a homogeneous cycle lies in the homology piece of the same bidegree. -/
 theorem unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
-    {z : LinearMap.ker (G.1.unblockedDifferential R)}
+    {z : LinearMap.ker (G.val.unblockedDifferential R)}
     (hz : (z : GridChainMinus R n) ∈ G.bigradedChainMinusPiece R g) :
-    G.1.unblockedHomologyClass R z ∈ G.bigradedUnblockedHomologyPiece R g :=
+    G.val.unblockedHomologyClass R z ∈ G.bigradedUnblockedHomologyPiece R g :=
   (G.mem_bigradedUnblockedHomologyPiece_iff R).mpr ⟨z, hz, rfl⟩
 
 /-- The bigraded homology pieces span `GH⁻`. -/
@@ -143,28 +143,28 @@ theorem isInternal_bigradedUnblockedHomologyPiece :
 /-- Multiplication by a monomial of total degree `d.degree` lowers homology bidegree by
 `(2 * d.degree, d.degree)`. -/
 theorem monomial_smul_mem_bigradedUnblockedHomologyPiece (d : Fin n →₀ ℕ) (a : R)
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
     (monomial d a : MvPolynomial (Fin n) R) • y ∈
       G.bigradedUnblockedHomologyPiece R (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) := by
   rw [bigradedUnblockedHomologyPiece, bigradedUnblockedHomologyGrading,
     InternalGrading.mem_map_piece_iff] at hy ⊢
   -- Use the polynomial-linear quotient isomorphism to transport the monomial action.
-  suffices h : (G.1.unblockedHomologyIso R).hom ((monomial d a) • y) ∈
+  suffices h : (G.val.unblockedHomologyIso R).hom ((monomial d a) • y) ∈
       ((G.bigradedChainMinusGrading R).homology
         (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
-        (G.1.unblockedDifferential_comp_self_eq_zero R)).piece
+        (G.val.unblockedDifferential_comp_self_eq_zero R)).piece
           (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) by exact h
   rw [map_smul, sub_eq_add_neg]
   refine (G.bigradedChainMinusGrading R).smul_mem_homology_piece
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
-    (G.1.unblockedDifferential_comp_self_eq_zero R) (fun p c hc ↦ ?_) hy
+    (G.val.unblockedDifferential_comp_self_eq_zero R) (fun p c hc ↦ ?_) hy
   simp only [bigradedChainMinusGrading_piece] at hc ⊢
   simpa only [sub_eq_add_neg] using G.monomial_smul_mem_bigradedChainMinusPiece d a hc
 
 /-- Multiplication by a grid variable lowers homology bidegree by `(2, 1)`. -/
 theorem X_smul_mem_bigradedUnblockedHomologyPiece (i : Fin n) {g : ℤ × ℤ}
-    {y : G.1.unblockedHomology R} (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
+    {y : G.val.unblockedHomology R} (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
     (X i : MvPolynomial (Fin n) R) • y ∈ G.bigradedUnblockedHomologyPiece R (g - (2, 1)) := by
   have h := G.monomial_smul_mem_bigradedUnblockedHomologyPiece R (Finsupp.single i 1) (1 : R) hy
   rwa [Finsupp.degree_single, Nat.cast_one, mul_one, ← X] at h
@@ -177,25 +177,25 @@ theorem unblockedHomologyEquiv_mem_bigradedPiece_iff
     {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R}
     [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
     (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
-    (he : ∀ c, G'.1.unblockedDifferential R (e c) = e (G.1.unblockedDifferential R c))
-    (f : G.1.unblockedHomology R ≃ₛₗ[σ] G'.1.unblockedHomology R)
-    (hf : ∀ z : LinearMap.ker (G.1.unblockedDifferential R),
-      f (G.1.unblockedHomologyClass R z) = G'.1.unblockedHomologyClass R
-        ⟨e z, G.1.map_mem_ker_unblockedDifferential_of_intertwining R G'.1 e he z.2⟩)
+    (he : ∀ c, G'.val.unblockedDifferential R (e c) = e (G.val.unblockedDifferential R c))
+    (f : G.val.unblockedHomology R ≃ₛₗ[σ] G'.val.unblockedHomology R)
+    (hf : ∀ z : LinearMap.ker (G.val.unblockedDifferential R),
+      f (G.val.unblockedHomologyClass R z) = G'.val.unblockedHomologyClass R
+        ⟨e z, G.val.map_mem_ker_unblockedDifferential_of_intertwining R G'.val e he z.property⟩)
     (hg : ∀ g c, e c ∈ G'.bigradedChainMinusPiece R g ↔
       c ∈ G.bigradedChainMinusPiece R g)
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R} :
     f y ∈
         G'.bigradedUnblockedHomologyPiece R g ↔
       y ∈ G.bigradedUnblockedHomologyPiece R g := by
   constructor
   · intro hy
     obtain ⟨w, hw, hwy⟩ := (G'.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
-    have hz : e.symm w ∈ LinearMap.ker (G.1.unblockedDifferential R) := by
+    have hz : e.symm w ∈ LinearMap.ker (G.val.unblockedDifferential R) := by
       rw [LinearMap.mem_ker]
       apply e.injective
       rw [map_zero, ← he, LinearEquiv.apply_symm_apply]
-      exact LinearMap.mem_ker.mp w.2
+      exact LinearMap.mem_ker.mp w.property
     refine (G.mem_bigradedUnblockedHomologyPiece_iff R).mpr
       ⟨⟨e.symm w, hz⟩, (hg g _).mp (by simpa only [LinearEquiv.apply_symm_apply] using hw), ?_⟩
     apply f.injective

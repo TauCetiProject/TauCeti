@@ -290,7 +290,7 @@ private theorem continuousOn_hurwitzTailIntegral :
   have hbint : Integrable
       (fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ p₀.1.re * Real.exp (-η * t)))
       (volume.restrict (Ioi 1)) :=
-    (integrableOn_rpow_mul_exp_mul_Ioi p₀.1.re (neg_neg_of_pos hη) one_pos).const_mul _
+    (integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos one_pos (Or.inl hη)).const_mul _
   have hcont_t : ∀ᶠ t : ℝ in ae (volume.restrict (Ioi 1)),
       ContinuousAt (fun p : ℂ × ℂ =>
         (t : ℂ) ^ (p.1 - 1) * (Complex.exp (-p.2 * t) / (1 - Complex.exp (-t)))) p₀ := by
@@ -343,7 +343,7 @@ private theorem differentiableAt_hurwitzTailIntegral_right (s₀ : ℂ) {c₀ : 
   have hbint : Integrable
       (fun t : ℝ => (1 - Real.exp (-1))⁻¹ * (t ^ s₀.re * Real.exp (-η * t)))
       (volume.restrict (Ioi 1)) :=
-    (integrableOn_rpow_mul_exp_mul_Ioi s₀.re (neg_neg_of_pos hη) one_pos).const_mul _
+    (integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos one_pos (Or.inl hη)).const_mul _
   have hopen : IsOpen {c : ℂ | η < c.re} := isOpen_lt continuous_const continuous_re
   have hd := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (μ := volume.restrict (Ioi 1))
@@ -709,7 +709,7 @@ theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (
       exact Real.exp_lt_one_iff.mpr (by linarith)
     rw [div_eq_mul_inv, ← tsum_geometric_of_norm_lt_one hlt, ← tsum_mul_left, ← tsum_mul_left]
     refine tsum_congr fun n => ?_
-    simp only [F]; rw [← Complex.exp_nat_mul, ← Complex.exp_add]; congr 2; ring
+    simp only [F]; rw [← Complex.exp_natCast_mul, ← Complex.exp_add]; congr 2; ring
   have hterm : ∀ n : ℕ,
       (∫ t in Ioi (0 : ℝ), F n t) = Complex.Gamma s * ((n : ℂ) + c) ^ (-s) := fun n =>
     Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs_pos

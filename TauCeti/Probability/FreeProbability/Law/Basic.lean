@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
-public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import TauCeti.Probability.Moments.CompactDeterminacy
 
 /-!
@@ -152,7 +149,7 @@ instance (a : A) : IsFiniteMeasure (law φ a) := by
 theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
   by_cases ha : IsSelfAdjoint a
   · rw [law_of_isSelfAdjoint φ ha,
-      Measure.map_apply measurable_subtype_coe (spectrum.isClosed a).measurableSet.compl]
+      Measure.map_apply measurable_subtypeVal (spectrum.isClosed ℝ a).measurableSet.compl]
     simp
   · simp [law_of_not_isSelfAdjoint φ ha]
 
@@ -166,10 +163,6 @@ theorem integrable_law (a : A) (f : ℝ → ℝ)
     (hf : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac) : Integrable f (law φ a) := by
   rw [← restrict_spectrum_law]
   exact hf.integrableOn_compact (ContinuousFunctionalCalculus.isCompact_spectrum a)
-
-/-- Every real polynomial is integrable against the law `μ_a`. -/
-theorem integrable_eval_law (a : A) (p : ℝ[X]) : Integrable (fun x ↦ p.eval x) (law φ a) :=
-  integrable_law φ a (fun x ↦ p.eval x)
 
 /-- Every power `x ^ n` is integrable against the law `μ_a`. -/
 theorem integrable_pow_law (a : A) (n : ℕ) : Integrable (· ^ n) (law φ a) :=
@@ -194,7 +187,7 @@ theorem ofReal_integral_law (f : ℝ → ℝ)
     ((∫ x, f x ∂(law φ a) : ℝ) : ℂ) = φ (cfc f a) := by
   by_cases ha : IsSelfAdjoint a
   · rw [law_of_isSelfAdjoint φ ha,
-      (MeasurableEmbedding.subtype_coe (spectrum.isClosed a).measurableSet).integral_map,
+      (MeasurableEmbedding.subtypeVal (spectrum.isClosed ℝ a).measurableSet).integral_map,
       cfc_apply f a]
     exact ofReal_integral_spectrumLaw φ ha ⟨_, hf.domRestrict⟩
   · simp [law_of_not_isSelfAdjoint φ ha, cfc_apply_of_not_predicate a ha]
@@ -241,7 +234,7 @@ theorem law_cfc (ha : IsSelfAdjoint a) (g : ℝ → ℝ)
     law φ (cfc g a) = (law φ a).map g := by
   have hgm : AEMeasurable g (law φ a) := by
     rw [← restrict_spectrum_law]
-    exact hg.aemeasurable (spectrum.isClosed a).measurableSet
+    exact hg.aemeasurable (spectrum.isClosed ℝ a).measurableSet
   refine (eq_law_iff.2 fun f hf ↦ ?_).symm
   rw [integral_map hgm hf.aestronglyMeasurable, ← cfc_comp f g a]
   exact ofReal_integral_law φ (f ∘ g) (hf.comp_continuousOn hg)
@@ -321,7 +314,7 @@ theorem law_integralPositiveLinearMap_comap_restrict_id {K : Set ℝ} [CompactSp
       ((ContinuousMap.restrict K (ContinuousMap.id ℝ)).realToRCLike ℂ) = μ := by
   have hK : IsCompact K := isCompact_iff_compactSpace.2 ‹_›
   rw [law_integralPositiveLinearMap_realToRCLike]
-  exact (map_comap_subtype_coe hK.measurableSet μ).trans
+  exact (map_comap_subtypeVal hK.measurableSet μ).trans
     (Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hμ))
 
 end Realization

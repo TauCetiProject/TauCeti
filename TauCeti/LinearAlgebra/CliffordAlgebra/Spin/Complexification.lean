@@ -65,7 +65,7 @@ element. -/
 theorem complexConj_reverse_eq_coe_inv (g : spinGroup (Q.baseChange ℂ)) :
     complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) =
       ((spinGroupBaseChangeCongr Complex.conjAe Q g)⁻¹ : spinGroup (Q.baseChange ℂ)) := by
-  conv_lhs => rw [← spinGroup.involute_eq g.2]
+  conv_lhs => rw [← spinGroup.involute_eq g.property]
   simp [← spinGroup.star_eq_inv, complexConj_apply, star_def]
 
 /-- The positive-form adjoint preserves the Spin group of a complexified real quadratic form. -/
@@ -92,7 +92,7 @@ image in the complexified Clifford algebra is a Spin element of `Q_ℂ`. -/
 theorem ofBaseChangeAux_mem_spinGroup_iff [FiniteDimensional ℝ V] (hQ : Q.Nondegenerate)
     {x : CliffordAlgebra Q} :
     ofBaseChangeAux ℂ Q x ∈ spinGroup (Q.baseChange ℂ) ↔ x ∈ spinGroup Q := by
-  refine ⟨fun hx => ?_, fun hx => by simpa using (spinGroupBaseChange (A := ℂ) Q ⟨x, hx⟩).2⟩
+  refine ⟨fun hx => ?_, fun hx => by simpa using (spinGroupBaseChange (A := ℂ) Q ⟨x, hx⟩).property⟩
   have hinj := ofBaseChangeAux_injective (A := ℂ) Q
   rcases subsingleton_or_nontrivial V with hV | hV
   · -- On the zero space the Lipschitz group of `Q_ℂ` is trivial, so `x = 1`.
@@ -129,7 +129,7 @@ theorem mem_range_spinGroupBaseChange_iff [FiniteDimensional ℝ V] (hQ : Q.Nond
       complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) * g = 1 := by
   rw [complexConj_reverse_mul_self_eq_one_iff, complexConj_eq_self_iff]
   refine ⟨fun ⟨h, hg⟩ => ⟨h, by rw [← coe_spinGroupBaseChange_apply, hg]⟩, fun ⟨y, hy⟩ => ?_⟩
-  exact ⟨⟨y, (ofBaseChangeAux_mem_spinGroup_iff hQ).1 (hy ▸ g.2)⟩,
+  exact ⟨⟨y, (ofBaseChangeAux_mem_spinGroup_iff hQ).1 (hy ▸ g.property)⟩,
     Subtype.ext (by rw [coe_spinGroupBaseChange_apply, hy])⟩
 
 end CliffordAlgebra

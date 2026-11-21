@@ -64,7 +64,7 @@ variable {α : Type*} [MeasurableSpace α]
 only to prove the instance below. -/
 private theorem FiniteMeasure.measurable_coe_toMeasure {s : Set α} (hs : MeasurableSet s) :
     Measurable fun ν : FiniteMeasure α => (ν : Measure α) s :=
-  (Measure.measurable_coe hs).comp measurable_subtype_coe
+  (Measure.measurable_coe hs).comp measurable_subtypeVal
 
 /-- **Singletons are measurable in the space of finite measures**, when the σ-algebra on `α` is
 countably generated. -/
@@ -84,7 +84,7 @@ instance FiniteMeasure.instMeasurableSingletonClass [CountablyGenerated α] :
       ext ν
       simp only [Set.mem_singleton_iff, Set.mem_iInter, Set.mem_ofPred_eq]
       refine ⟨fun h s _ => by rw [h], fun h => ?_⟩
-      have := ν.2
+      have := ν.property
       refine Subtype.ext ?_
       exact ext_of_generate_finite 𝒜 hgen
         (fun s hs t ht _ => halg.inter_mem hs ht) (fun s hs => h s hs) (h _ halg.univ_mem)
@@ -100,7 +100,7 @@ instance ProbabilityMeasure.instMeasurableSingletonClass
     MeasurableSingletonClass (ProbabilityMeasure α) where
   measurableSet_singleton μ := by
     have hmap : Measurable (ProbabilityMeasure.toFiniteMeasure (Ω := α)) :=
-      measurable_subtype_coe.subtype_mk
+      measurable_subtypeVal.subtype_mk
     have hpre : ({μ} : Set (ProbabilityMeasure α))
         = ProbabilityMeasure.toFiniteMeasure ⁻¹' {μ.toFiniteMeasure} := by
       ext ν
