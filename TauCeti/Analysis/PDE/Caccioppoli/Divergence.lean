@@ -266,8 +266,8 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
   have e2 : ∫ x in ball y R, W1p.value w x ^ 2 ∂mu =
       ∫ x in ball y R, (W1p.value u x - m) ^ 2 ∂mu := by
     refine integral_congr_ae ?_
-    filter_upwards [W1p.value_add_const_ae uB (-m), W1p.value_restrictL_ae hB u] with x h1 h2
-    rw [h1, h2, sub_eq_add_neg]
+    filter_upwards [W1p.value_restrictL_add_const_ae hB u (-m)] with x hx
+    rw [hx, sub_eq_add_neg]
   rwa [e1, e2] at hcacc
 
 open Filter Metric in

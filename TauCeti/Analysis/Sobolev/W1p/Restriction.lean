@@ -29,6 +29,7 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   `W^{1,p}(U)` for `U ⊆ Ω`.
 * `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
   the value and weak-gradient projections; their `_ae` variants identify representatives.
+* `TauCeti.W1p.value_restrictL_add_const_ae`: the value of a restriction shifted by a constant.
 * `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
   value almost everywhere on the smaller open set.
 * `TauCeti.W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed`: restriction preserves the norm
@@ -202,6 +203,24 @@ theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
   exact Lp.coeFn_LpToLpOfMeasureLeSMul (by simp)
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u)
+
+/-- Restricting `u` to `U` and adding the constant `c` gives the value `u + c` almost everywhere
+on `U`. -/
+theorem W1p.value_restrictL_add_const_ae [IsFiniteMeasure (mu.restrict (U : Set E))]
+    (hU : U ≤ Omega) (u : W1p mu Omega p) (c : ℝ) :
+    ∀ᵐ x ∂mu.restrict U, W1p.value (W1p.restrictL hU u + W1p.const c) x = W1p.value u x + c := by
+  filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) c, W1p.value_restrictL_ae hU u]
+    with x h1 h2
+  rw [h1, h2]
+
+/-- If `u ≥ 0` almost everywhere on `U`, then restricting `u` to `U` and adding the constant `c`
+gives a function bounded below by `c` almost everywhere on `U`. -/
+theorem W1p.le_value_restrictL_add_const_ae [IsFiniteMeasure (mu.restrict (U : Set E))]
+    (hU : U ≤ Omega) {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x)
+    (c : ℝ) : ∀ᵐ x ∂mu.restrict U, c ≤ W1p.value (W1p.restrictL hU u + W1p.const c) x := by
+  filter_upwards [W1p.value_restrictL_add_const_ae hU u c, hu] with x h1 h2
+  rw [h1]
+  linarith
 
 /-- Restricting a test function from `Omega` to `U` preserves its value almost everywhere on
 `U`. -/
