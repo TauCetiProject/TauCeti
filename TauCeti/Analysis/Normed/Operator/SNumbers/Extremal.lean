@@ -40,10 +40,6 @@ theorem hilbertNumber_le (hs : IsSNumberSequence s) {X Y : Type u}
     (T : X →L[𝕜] Y) (n : ℕ) : T.hilbertNumber n ≤ s T n := by
   refine ContinuousLinearMap.hilbertNumber_le_iff.mpr fun A B hA hB ↦ ?_
   rw [← hs.eq_singularValue]
-  have hA' : ‖A‖₊ ≤ 1 := by exact_mod_cast hA
-  have hB' : ‖B‖₊ ≤ 1 := by exact_mod_cast hB
-  calc s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊ := hs.comp_le B T A n
-    _ ≤ 1 * s T n * 1 := by gcongr
-    _ = s T n := by simp
+  exact hs.comp_comp_le_of_norm_le_one B T A n hB hA
 
 end TauCeti.SNumbers.IsSNumberSequence

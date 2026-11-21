@@ -80,12 +80,7 @@ theorem eq_singularValue {H₁ H₂ : Type u}
   rcases le_or_gt c 0 with hc0 | hc_pos
   · exact hc0.trans (NNReal.coe_nonneg _)
   obtain ⟨A, B, hA, hB, hfac⟩ := T.exists_comp_comp_eq_smul_id n hc_pos.le hc
-  have hA' : ‖A‖₊ ≤ 1 := by exact_mod_cast hA
-  have hB' : ‖B‖₊ ≤ 1 := by exact_mod_cast hB
-  have hle : s (B ∘L T ∘L A) n ≤ s T n :=
-    (hs.comp_le B T A n).trans <| by
-      calc ‖B‖₊ * s T n * ‖A‖₊ ≤ 1 * s T n * 1 := by gcongr
-        _ = s T n := by simp
+  have hle := hs.comp_comp_le_of_norm_le_one B T A n hB hA
   rw [hfac, hs.smul, hs.normalize, mul_one, ← NNReal.coe_le_coe, coe_nnNorm, RCLike.norm_ofReal,
     abs_of_pos hc_pos] at hle
   exact hle
