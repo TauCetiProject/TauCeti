@@ -336,7 +336,12 @@ theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimension
     Projective ((totalPair.obj T).singularHomology R d) := by
   have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
     (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
-  exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
+  -- `H_d(A, B)` is the kernel of `H_d(X, B) ⟶ H_d(X, A)`.
+  have : Projective (kernel (TopPair.singularHomologyMap (totalToOuter.app T) R d)) :=
+    Projective.of_iso ((T.singularHomology_exact_total R d).fIsKernel.conePointUniqueUpToIso
+      (limit.isLimit _)) ‹Projective ((innerPair.obj T).singularHomology R d)›
+  exact projective_of_projective_kernel_of_hasProjectiveDimensionLE_one
+    (TopPair.singularHomologyMap (totalToOuter.app T) R d)
 
 /-- **Splitting the homology sequence of a triple.** In a triple `T = (X, A, B)`, if morphisms
 into `Hₙ(X, B)` and `Hₙ₊₁(X, B)` compose with `H_*(X, B) ⟶ H_*(X, A)` to isomorphisms, then
