@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
 import TauCeti.LinearAlgebra.Dual.End
@@ -26,8 +27,11 @@ The equivalence is not canonical. Reversal gives an anti-isomorphism between the
 algebras, and Skolem--Noether identifies it, after linear duality, with conjugation by some linear
 equivalence. Restriction to the Spin group then supplies the desired intertwiner.
 
-## Main result
+## Main results
 
+* `TauCeti.exists_linearEquiv_dual_spinPlus_conj`: in dimension six, a linear equivalence from the
+  dual of the even half-spin module to the odd one intertwines the transposed action of each even
+  Clifford element with the action of its reversal.
 * `TauCeti.exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six`: in dimension six,
   a polarization line vanishes and the odd half-spin representation is equivalent to the dual of
   the even half-spin representation.
@@ -242,7 +246,7 @@ private theorem exists_algEquiv_op_spinPlusAction_reverseEven [NeZero (2 : K)]
 /-- Scalar duality and Skolem--Noether realize reversal as a linear equivalence from the dual of
 the even half-spin module to the odd half-spin module that intertwines the transposed even action
 with the reversed odd action. -/
-private theorem exists_linearEquiv_dual_spinPlus_conj [NeZero (2 : K)]
+theorem exists_linearEquiv_dual_spinPlus_conj [NeZero (2 : K)]
     (P : SpinPolarizationData Q) (hline : P.line = ⊥) (hV : finrank K V = 6) :
     ∃ T : Module.Dual K (spinPlus Q P) ≃ₗ[K] spinMinus Q P, ∀ (x : even Q)
       (φ : Module.Dual K (spinPlus Q P)),

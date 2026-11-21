@@ -24,6 +24,8 @@ actions directly with the full spin action after coercion to the exterior algebr
 
 * `TauCeti.SpinPolarizationData.typeDSpinLieRep`: the spin representation of the split type-`D`
   matrix Lie algebra.
+* `TauCeti.SpinPolarizationData.typeDToEvenLieHom`: its quadratic Clifford realization, as a Lie
+  homomorphism to the even Clifford subalgebra.
 * `TauCeti.SpinPolarizationData.typeDSpinPlusLieRep` and
   `TauCeti.SpinPolarizationData.typeDSpinMinusLieRep`: its restrictions to the two exterior
   parity summands.
@@ -73,8 +75,9 @@ theorem typeDSpinLieRep_apply (hline : P.line = ⊥)
 
 /-! ## The half-spin representations -/
 
-/-- The map from the split type-`D` matrix Lie algebra to the even Clifford subalgebra. -/
-private noncomputable def typeDToEvenLieHom (hline : P.line = ⊥) :
+/-- The quadratic Clifford realization of the split type-`D` matrix Lie algebra, as a Lie
+homomorphism to the even Clifford subalgebra. -/
+noncomputable def typeDToEvenLieHom (hline : P.line = ⊥) :
     LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra.even Q := by
   let f : LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ CliffordAlgebra Q :=
     (quadraticLieSubalgebra Q).incl.comp (P.typeDQuadraticEquiv b hline).toLieHom
@@ -87,15 +90,25 @@ private noncomputable def typeDToEvenLieHom (hline : P.line = ⊥) :
 
 /-- Coercing the even Clifford image of a split type-`D` matrix recovers its quadratic Clifford
 realization. -/
-private theorem coe_typeDToEvenLieHom_apply (hline : P.line = ⊥)
+@[simp]
+theorem coe_typeDToEvenLieHom_apply (hline : P.line = ⊥)
     (x : LieAlgebra.Orthogonal.typeD ι K) :
     ((P.typeDToEvenLieHom b hline x : CliffordAlgebra.even Q) : CliffordAlgebra Q) =
-      (P.typeDQuadraticEquiv b hline x : CliffordAlgebra Q) := rfl
+      (P.typeDQuadraticEquiv b hline x : CliffordAlgebra Q) := by
+  rw [typeDToEvenLieHom]
+  rfl
 
 /-- The split type-`D` matrix Lie algebra acting on the even half-spin summand. -/
 noncomputable def typeDSpinPlusLieRep (hline : P.line = ⊥) :
     LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Module.End K (spinPlus Q P) :=
   (spinPlusAction Q P hline).toLieHom.comp (P.typeDToEvenLieHom b hline)
+
+/-- A split type-`D` matrix acts on the even half-spin summand through its even Clifford
+image. -/
+theorem typeDSpinPlusLieRep_apply (hline : P.line = ⊥) (x : LieAlgebra.Orthogonal.typeD ι K) :
+    P.typeDSpinPlusLieRep b hline x =
+      spinPlusAction Q P hline (P.typeDToEvenLieHom b hline x) := by
+  rw [typeDSpinPlusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply]
 
 /-- After coercion to the exterior algebra, the even half-spin action agrees with the full spin
 action. -/
@@ -111,6 +124,13 @@ theorem coe_typeDSpinPlusLieRep_apply (hline : P.line = ⊥)
 noncomputable def typeDSpinMinusLieRep (hline : P.line = ⊥) :
     LieAlgebra.Orthogonal.typeD ι K →ₗ⁅K⁆ Module.End K (spinMinus Q P) :=
   (spinMinusAction Q P hline).toLieHom.comp (P.typeDToEvenLieHom b hline)
+
+/-- A split type-`D` matrix acts on the odd half-spin summand through its even Clifford
+image. -/
+theorem typeDSpinMinusLieRep_apply (hline : P.line = ⊥) (x : LieAlgebra.Orthogonal.typeD ι K) :
+    P.typeDSpinMinusLieRep b hline x =
+      spinMinusAction Q P hline (P.typeDToEvenLieHom b hline x) := by
+  rw [typeDSpinMinusLieRep, LieHom.comp_apply, AlgHom.toLieHom_apply]
 
 /-- After coercion to the exterior algebra, the odd half-spin action agrees with the full spin
 action. -/

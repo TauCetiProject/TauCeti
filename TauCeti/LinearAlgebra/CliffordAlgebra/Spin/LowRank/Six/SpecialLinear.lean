@@ -169,7 +169,8 @@ private theorem spinSixTransvectionFirstVector_isotropic {i j : Fin 4} (hij : i 
   all_goals
     simp [spinSixTransvectionFirstVector, P.isotropic_W, P.isotropic_W']
 
-private theorem spinSixTransvectionVectors_polar {i j : Fin 4} (hij : i ≠ j) (c : R) :
+/-- The two vectors of an elementary Spin-six transvection lift are orthogonal. -/
+theorem spinSixTransvectionVectors_polar {i j : Fin 4} (hij : i ≠ j) (c : R) :
     QuadraticMap.polar Q (spinSixTransvectionFirstVector P b i j)
       (spinSixTransvectionSecondVector P b i j c) = 0 := by
   fin_cases i <;> fin_cases j
@@ -713,6 +714,14 @@ theorem spinSixTransvectionLift_zero {i j : Fin 4} (hij : i ≠ j) :
   apply spinTransvection_eq_one_of_mem_span
   rw [spinSixTransvectionSecondVector_zero]
   exact Submodule.zero_mem _
+
+/-- The canonical lift is the Clifford element `1 + ι w * ι u` built from its two transvection
+vectors. -/
+theorem coe_spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    (spinSixTransvectionLift P hline b hij c : CliffordAlgebra Q) =
+      1 + ι Q (spinSixTransvectionSecondVector P b i j c) *
+        ι Q (spinSixTransvectionFirstVector P b i j) := by
+  rw [spinSixTransvectionLift, coe_spinTransvection]
 
 private abbrev SpinSixLiftHasMatrix (i j : Fin 4) (hij : i ≠ j) (c : K) : Prop :=
     LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
