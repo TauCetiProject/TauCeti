@@ -13,7 +13,8 @@ public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 
 Dualizing a bialgebra morphism between finite projective bialgebras over a commutative semiring
 gives a morphism in the opposite direction between their convolution duals. Evaluation identifies a
-finite projective bialgebra with its double convolution dual, compatibly with multiplication,
+finite projective algebra with the convolution algebra of its dual coalgebra, and a finite
+projective bialgebra with its double convolution dual, compatibly with multiplication,
 comultiplication, unit, and counit.
 
 These are the algebraic functoriality and involutivity statements needed to promote the finite
@@ -26,6 +27,8 @@ scheme-level duality remains a separate step.
 * `TauCeti.ConvolutionDual.map_id` and `TauCeti.ConvolutionDual.map_comp`: its functoriality laws.
 * `TauCeti.ConvolutionDual.mapEquiv`: the contravariant equivalence induced by a bialgebra
   equivalence.
+* `TauCeti.ConvolutionDual.evalAlgEquiv`: evaluation as an algebra equivalence with the
+  convolution algebra of the dual coalgebra of a finite projective algebra.
 * `TauCeti.ConvolutionDual.evalBialgEquiv`: evaluation as a bialgebra equivalence with the double
   convolution dual.
 * `TauCeti.ConvolutionDual.evalBialgEquiv_naturality`: naturality of evaluation.
@@ -134,10 +137,10 @@ theorem mapEquiv_symm (e : H ≃ₐc[k] K) :
 
 end Map
 
-section Evaluation
+section AlgebraEvaluation
 
 variable (k : Type u) [CommSemiring k]
-variable (H : Type v) [Semiring H] [Bialgebra k H] [Module.Finite k H]
+variable (H : Type v) [Semiring H] [Algebra k H] [Module.Finite k H]
   [Module.Projective k H]
 
 /-- Evaluation into the double convolution dual as a linear equivalence. -/
@@ -187,6 +190,36 @@ private noncomputable def evalAlgHom :
 private theorem evalAlgHom_apply_apply (x : H) (phi : ConvolutionDual k H) :
     (evalAlgHom k H x).ofConv phi = phi.ofConv x :=
   (rfl)
+
+/-- **A finite projective algebra is canonically isomorphic to the convolution algebra of its
+dual coalgebra.**
+
+The equivalence sends `x` to evaluation at `x`. -/
+noncomputable def evalAlgEquiv : H ≃ₐ[k] ConvolutionDual k (ConvolutionDual k H) :=
+  AlgEquiv.ofLinearEquiv (evalLinearEquiv k H) (map_one (evalAlgHom k H))
+    (map_mul (evalAlgHom k H))
+
+/-- The double-dual algebra equivalence evaluates a functional at the original element. -/
+@[simp, grind =]
+theorem evalAlgEquiv_apply_apply (x : H) (phi : ConvolutionDual k H) :
+    (evalAlgEquiv k H x).ofConv phi = phi.ofConv x :=
+  (rfl)
+
+/-- The inverse double-dual algebra equivalence is characterized by evaluation. -/
+@[simp, grind =]
+theorem evalAlgEquiv_symm_apply_apply
+    (Phi : ConvolutionDual k (ConvolutionDual k H)) (phi : ConvolutionDual k H) :
+    phi.ofConv ((evalAlgEquiv k H).symm Phi) = Phi.ofConv phi := by
+  rw [← evalAlgEquiv_apply_apply]
+  simp
+
+end AlgebraEvaluation
+
+section Evaluation
+
+variable (k : Type u) [CommSemiring k]
+variable (H : Type v) [Semiring H] [Bialgebra k H] [Module.Finite k H]
+  [Module.Projective k H]
 
 private theorem convMul_apply_eq_dualDistribEquiv
     (phi psi : ConvolutionDual k H) (x : H) :
