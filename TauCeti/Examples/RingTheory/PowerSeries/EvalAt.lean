@@ -81,13 +81,13 @@ section Translate
 
 open TauCeti.MvPowerSeries
 
-variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
-
 -- `X + 1` cannot be substituted formally: its constant coefficient `1` is not nilpotent.
-example [Nontrivial R] :
+example {R : Type*} [CommRing R] [Nontrivial R] :
     ¬_root_.MvPowerSeries.HasSubst
       (fun _ : Fin 1 ↦ (_root_.MvPowerSeries.X 0 + 1 : _root_.MvPowerSeries (Fin 1) R)) :=
   fun h ↦ not_isNilpotent_one (by simpa using h.const_coeff 0)
+
+variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
 
 -- Analytic translation by `1` is an isometric automorphism of the series restricted at the unit
 -- radius, sending `X` to `X + 1`, although the constant coefficient of `X + 1` is nonzero.
@@ -124,7 +124,7 @@ little theorem, `x ^ p - x` reduces to zero in `𝔽_p`. -/
 theorem norm_evalAt_X_pow_sub_X_le {x : ℚ_[p]} (hx : ‖x‖ ≤ 1) :
     ‖(polynomialToRestricted 1 (Polynomial.X ^ p - Polynomial.X : ℚ_[p][X]) :
       ℚ_[p]⟦X⟧).evalAt x‖ ≤ (p : ℝ)⁻¹ := by
-  set y : ℤ_[p] := ⟨x, hx⟩
+  obtain ⟨y, rfl⟩ : ∃ y : ℤ_[p], (y : ℚ_[p]) = x := ⟨Padic.lift x hx, PadicInt.coe_lift hx⟩
   -- `y ^ p - y` lies in the kernel of the reduction `ℤ_p → 𝔽_p`, the maximal ideal of `ℤ_p`
   have hy : y ^ p - y ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
     rw [← PadicInt.ker_toZMod, RingHom.mem_ker, map_sub, map_pow, ZMod.pow_card, sub_self]
