@@ -891,7 +891,7 @@ theorem exists_weightedNhd_mul_mem [NonarchimedeanRing A] {T : Fin k → Set A}
   classical
   have hUnhds : (U : Set A) ∈ nhds (0 : A) := U.isOpen.mem_nhds U.zero_mem
   obtain ⟨W, hWU⟩ := NonarchimedeanRing.mul_subset U
-  have hx : IsWeightedRestricted T (x : MvPowerSeries (Fin k) A) := x.2
+  have hx : IsWeightedRestricted T (x : MvPowerSeries (Fin k) A) := x.property
   have hF := hx.finite_coeff_notMem W
   obtain ⟨Zx, hZx⟩ := NonarchimedeanAddGroup.exists_openAddSubgroup_forall_mul_mem hF.toFinset
     (fun α ↦ MvPowerSeries.coeff α (x : MvPowerSeries (Fin k) A))
@@ -1206,7 +1206,7 @@ theorem weightedPolynomials_eq_top [NonarchimedeanRing A] [DiscreteTopology A]
   rw [Subring.eq_top_iff']
   intro f
   rw [mem_weightedPolynomials_iff]
-  have h := (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f.2))
+  have h := (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f.property))
     ⟨⊥, isOpen_discrete _⟩
   simpa [weightMul_bot, Filter.eventually_cofinite] using h
 

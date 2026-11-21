@@ -83,16 +83,13 @@ variable {K : Type*} [Field K] [Algebra O K]
 /-! ### The points
 
 `formalPoint` needs the base-changed curve to be elliptic and the structure map to be injective.
-The group law on points needs decidable equality on `K`, which the two declarations that add points
+The group law on points needs decidable equality on `K`, which the declarations that add points
 supply locally by classical reasoning rather than asking it of callers. The first below adds
 nothing, so it needs neither.
 
 The argument runs in two steps: the chord construction identifies the sum with the third point of
 the line, and the formal inverse identifies that point's negation with the point of `F(t₁, t₂)`. -/
 
-variable [(W.baseChange K).IsElliptic] [FaithfulSMul O K]
-
-omit [FaithfulSMul O K] [(W.baseChange K).IsElliptic] in
 /-- **The chord's third point, negated, is the point at the sum's parameter.** The formal inverse
 `F(t₁, t₂) = i(T(t₁, t₂))` is what turns the chord construction into the group law; this is that
 step read off on coordinates. Both nonsingularity proofs are taken rather than built, so the
@@ -120,7 +117,7 @@ private theorem some_formalThirdRootEval_eq_some_formalAddEval {I : Ideal O} (hI
   exact ⟨(W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hET).symm,
     (W.neg_one_div_algebraMap_formalWEval_formalInverseEval hET).symm⟩
 
-omit [(W.baseChange K).IsElliptic] in
+variable [FaithfulSMul O K] in
 open scoped Classical in
 /-- The group law of `W⁄K` at the two parametrised points, each written as an `Affine.Point.some`
 at the coordinates `x = t / w(t)` and `y = -1 / w(t)`. The three nonsingularity proofs are taken
@@ -170,6 +167,8 @@ private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I
   obtain ⟨h₃, hadd⟩ := chord_point_add (W.baseChange K) hq₁ hq₂ hslope hint hrel hwT hA
     hwT0 hxK hn₁ hn₂
   exact hadd.trans (W.some_formalThirdRootEval_eq_some_formalAddEval hI h₁ h₂ h₃ hnF)
+
+variable [(W.baseChange K).IsElliptic] [FaithfulSMul O K]
 
 open scoped Classical in
 /-- **The parametrisation carries the group law**, for two nonzero parameters whose points have

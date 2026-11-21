@@ -123,7 +123,7 @@ theorem term_mul_of_coprime
   · simp
   rw [term_of_ne_zero (mul_ne_zero hm hn), term_of_ne_zero hm, term_of_ne_zero hn,
     hmul hm hn hmn,
-    cast_mul, Complex.natCast_mul_natCast_cpow, mul_div_mul_comm]
+    cast_mul, Complex.natCast_mul_cpow, mul_div_mul_comm]
 
 /-- **The Euler product with quadratic local factors.** Let `a : ℕ → ℂ` satisfy `a 1 = 1`, be
 multiplicative on nonzero coprime arguments, and obey the recurrence
