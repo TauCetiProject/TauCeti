@@ -23,7 +23,9 @@ If `M` and `E` are Hausdorff, the image of each chart is covered by finitely man
 compact closure in a transfer domain, each mapped by the chart coordinate change
 `(A.chart j).symm ≫ₕ A.chart i` into an open set with compact closure in the image of another chart.
 These pieces are built from the shrinking
-`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom` of the chart domains.
+`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom` of the chart domains, and the charts
+they are mapped into may be restricted to any family of charts whose domains still cover the
+manifold.
 
 ## Main definitions
 
@@ -35,7 +37,11 @@ These pieces are built from the shrinking
 * `TauCeti.FiniteBundleAtlas.mem_transferDomain`,
   `TauCeti.FiniteBundleAtlas.overlap_subset_transferDomain`: membership in transfer domains, which
   contain the overlaps of chart domains.
-* `TauCeti.FiniteBundleAtlas.exists_transfer_cover`: the transfer cover of the chart images.
+* `TauCeti.FiniteBundleAtlas.exists_transfer_cover`: the transfer cover of the chart images, and
+  `TauCeti.FiniteBundleAtlas.exists_transfer_cover_of_iUnion_dom_eq` for transfers from a family of
+  charts whose domains cover the manifold, and
+  `TauCeti.FiniteBundleAtlas.exists_transfer_cover_append` for transfers from the charts of one
+  atlas to those of another.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL_transferDomain`: the coordinate change of the
   bundle, read in chart `j`, is `C^n` on the transfer domain.
 -/
@@ -95,6 +101,64 @@ theorem transferDomain_subset_source (i j : Fin A.n) :
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]
   exact ⟨hy.1, hy.2.1⟩
 
+/-- **Transfer cover from a covering family of charts.** Let `σ` pick finitely many charts of a
+finite bundle atlas of a Hausdorff manifold whose domains still cover `M`. Then the image of each
+chart `j` is covered by finitely many open pieces `P l j`, one for each chart `σ l` of the family.
+The piece `P l j` lies in the overlap of the domains of charts `σ l` and `j`, has compact closure
+in the transfer domain, and is mapped by the chart coordinate change into an open set `Q l` with
+compact closure inside the image of chart `σ l`. Chart-`j` data can thus be transferred from the
+charts of the family alone. -/
+theorem exists_transfer_cover_of_iUnion_dom_eq [T2Space E] [T2Space M] {ι : Type*} [Finite ι]
+    (σ : ι → Fin A.n) (hσ : ⋃ l, A.dom (σ l) = univ) :
+    ∃ (P : ι → Fin A.n → Opens E) (Q : ι → Opens E),
+      (∀ l j, (P l j : Set E) ⊆ A.overlap (σ l) j) ∧
+      (∀ l j, IsCompact (closure (P l j : Set E))) ∧
+      (∀ l j, closure (P l j : Set E) ⊆ A.transferDomain (σ l) j) ∧
+      (∀ l, IsCompact (closure (Q l : Set E))) ∧ (∀ l, closure (Q l : Set E) ⊆ A.image (σ l)) ∧
+      (∀ l j, MapsTo ((A.chart j).symm ≫ₕ A.chart (σ l)) (P l j) (Q l)) ∧
+      ∀ j, A.image j ≤ ⨆ l, P l j := by
+  -- A shrinking `D l` of the chart domains of the family, still covering `M`.
+  obtain ⟨D, hDo, hD, hcov⟩ := A.exists_isOpen_closure_subset_dom σ hσ
+  have hDdom (l : ι) : D l ⊆ A.dom (σ l) := subset_closure.trans (hD l)
+  have hKc (l : ι) (j : Fin A.n) :
+      IsCompact (A.chart j '' (closure (A.dom j) ∩ closure (D l))) :=
+    ((A.isCompact_closure_dom j).inter_right isClosed_closure).image_of_continuousOn
+      ((A.chart j).continuousOn.mono (inter_subset_left.trans (A.closure_dom_subset_source j)))
+  have hPK (l : ι) (j : Fin A.n) : A.chart j '' (A.dom j ∩ D l) ⊆
+      A.chart j '' (closure (A.dom j) ∩ closure (D l)) :=
+    image_mono (inter_subset_inter subset_closure subset_closure)
+  have hQc (l : ι) : IsCompact (A.chart (σ l) '' closure (D l)) :=
+    ((A.isCompact_closure_dom (σ l)).of_isClosed_subset isClosed_closure
+      ((hD l).trans subset_closure)).image_of_continuousOn
+      ((A.chart (σ l)).continuousOn.mono ((hD l).trans (A.dom_subset_chart_source (σ l))))
+  refine ⟨fun l j ↦ ⟨A.chart j '' (A.dom j ∩ D l), (A.chart j).isOpen_image_of_subset_source
+      ((A.isOpen_dom j).inter (hDo l)) (inter_subset_left.trans (A.dom_subset_chart_source j))⟩,
+    fun l ↦ ⟨A.chart (σ l) '' D l, (A.chart (σ l)).isOpen_image_of_subset_source (hDo l)
+      ((hDdom l).trans (A.dom_subset_chart_source (σ l)))⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rintro l j _ ⟨x, hx, rfl⟩
+    exact A.mem_overlap.2 ⟨x, ⟨hDdom l hx.2, hx.1⟩, rfl⟩
+  · exact fun l j ↦ (hKc l j).closure_of_subset (hPK l j)
+  · intro l j
+    refine (closure_minimal (hPK l j) (hKc l j).isClosed).trans ?_
+    rintro _ ⟨x, ⟨hx₁, hx₂⟩, rfl⟩
+    have hs := A.closure_dom_subset_source j hx₁
+    refine ⟨(A.chart j).map_source hs, ?_⟩
+    rw [mem_preimage, (A.chart j).left_inv hs]
+    exact ⟨A.dom_subset_chart_source (σ l) (hD l hx₂), A.closure_dom_subset_baseSet j hx₁,
+      A.dom_subset_baseSet (σ l) (hD l hx₂)⟩
+  · exact fun l ↦ (hQc l).closure_of_subset (image_mono subset_closure)
+  · intro l y hy
+    exact A.mem_image.2
+      (image_mono (hD l) (closure_minimal (image_mono subset_closure) (hQc l).isClosed hy))
+  · rintro l j _ ⟨x, ⟨hx₁, hx₂⟩, rfl⟩
+    refine ⟨x, hx₂, ?_⟩
+    rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+      (A.chart j).left_inv (A.dom_subset_chart_source j hx₁)]
+  · intro j y hy
+    obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
+    obtain ⟨l, hl⟩ := hcov x
+    exact Opens.mem_iSup.2 ⟨l, ⟨x, ⟨hx, hl⟩, rfl⟩⟩
+
 /-- **Transfer cover.** For a finite bundle atlas of a Hausdorff manifold, the image of each chart
 `j` is covered by finitely many open pieces `P i j`. The piece `P i j` lies in the overlap of the
 domains of charts `i` and `j`, has compact closure in the transfer domain, and is mapped by the
@@ -106,46 +170,37 @@ theorem exists_transfer_cover [T2Space E] [T2Space M] :
       (∀ i j, closure (P i j : Set E) ⊆ A.transferDomain i j) ∧
       (∀ i, IsCompact (closure (Q i : Set E))) ∧ (∀ i, closure (Q i : Set E) ⊆ A.image i) ∧
       (∀ i j, MapsTo ((A.chart j).symm ≫ₕ A.chart i) (P i j) (Q i)) ∧
-      ∀ j, A.image j ≤ ⨆ i, P i j := by
-  obtain ⟨D, hDo, hD, hcov⟩ := A.exists_isOpen_closure_subset_dom
-  have hDdom (i : Fin A.n) : D i ⊆ A.dom i := subset_closure.trans (hD i)
-  have hKc (i j : Fin A.n) : IsCompact (A.chart j '' (closure (A.dom j) ∩ closure (D i))) :=
-    ((A.isCompact_closure_dom j).inter_right isClosed_closure).image_of_continuousOn
-      ((A.chart j).continuousOn.mono (inter_subset_left.trans (A.closure_dom_subset_source j)))
-  have hPK (i j : Fin A.n) : A.chart j '' (A.dom j ∩ D i) ⊆
-      A.chart j '' (closure (A.dom j) ∩ closure (D i)) :=
-    image_mono (inter_subset_inter subset_closure subset_closure)
-  have hQc (i : Fin A.n) : IsCompact (A.chart i '' closure (D i)) :=
-    ((A.isCompact_closure_dom i).of_isClosed_subset isClosed_closure
-      ((hD i).trans subset_closure)).image_of_continuousOn
-      ((A.chart i).continuousOn.mono ((hD i).trans (A.dom_subset_chart_source i)))
-  refine ⟨fun i j ↦ ⟨A.chart j '' (A.dom j ∩ D i), (A.chart j).isOpen_image_of_subset_source
-      ((A.isOpen_dom j).inter (hDo i)) (inter_subset_left.trans (A.dom_subset_chart_source j))⟩,
-    fun i ↦ ⟨A.chart i '' D i, (A.chart i).isOpen_image_of_subset_source (hDo i)
-      ((hDdom i).trans (A.dom_subset_chart_source i))⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rintro i j _ ⟨x, hx, rfl⟩
-    exact A.mem_overlap.2 ⟨x, ⟨hDdom i hx.2, hx.1⟩, rfl⟩
-  · exact fun i j ↦ (hKc i j).closure_of_subset (hPK i j)
-  · intro i j
-    refine (closure_minimal (hPK i j) (hKc i j).isClosed).trans ?_
-    rintro _ ⟨x, ⟨hx₁, hx₂⟩, rfl⟩
-    have hs := A.closure_dom_subset_source j hx₁
-    refine ⟨(A.chart j).map_source hs, ?_⟩
-    rw [mem_preimage, (A.chart j).left_inv hs]
-    exact ⟨A.dom_subset_chart_source i (hD i hx₂), A.closure_dom_subset_baseSet j hx₁,
-      A.dom_subset_baseSet i (hD i hx₂)⟩
-  · exact fun i ↦ (hQc i).closure_of_subset (image_mono subset_closure)
-  · intro i y hy
-    exact A.mem_image.2
-      (image_mono (hD i) (closure_minimal (image_mono subset_closure) (hQc i).isClosed hy))
-  · rintro i j _ ⟨x, ⟨hx₁, hx₂⟩, rfl⟩
-    refine ⟨x, hx₂, ?_⟩
-    rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      (A.chart j).left_inv (A.dom_subset_chart_source j hx₁)]
-  · intro j y hy
-    obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
-    obtain ⟨i, hi⟩ := hcov x
-    exact Opens.mem_iSup.2 ⟨i, ⟨x, ⟨hx, hi⟩, rfl⟩⟩
+      ∀ j, A.image j ≤ ⨆ i, P i j :=
+  A.exists_transfer_cover_of_iUnion_dom_eq id A.iUnion_dom
+
+/-- **Transfer cover between two atlases.** For two finite bundle atlases `A` and `B` of a
+Hausdorff manifold, the image of each chart `j` of `B` is covered by finitely many open pieces
+`P i j`, one for each chart `i` of `A`. In the union atlas `A.append B`, the piece `P i j` lies in
+the overlap of the domains of the charts `i` of `A` and `j` of `B`, has compact closure in their
+transfer domain, and is mapped by the chart coordinate change into an open set `Q i` inside the
+image of chart `i` of `A`. Chart data for `B` can thus be transferred from chart data for `A`. -/
+theorem exists_transfer_cover_append [T2Space E] [T2Space M] (B : FiniteBundleAtlas E M F V) :
+    ∃ (P : Fin A.n → Fin B.n → Opens E) (Q : Fin A.n → Opens E),
+      (∀ i j, (P i j : Set E) ⊆ (A.append B).overlap (Fin.castAdd B.n i) (Fin.natAdd A.n j)) ∧
+      (∀ i j, IsCompact (closure (P i j : Set E))) ∧
+      (∀ i j, closure (P i j : Set E) ⊆
+        (A.append B).transferDomain (Fin.castAdd B.n i) (Fin.natAdd A.n j)) ∧
+      (∀ i, Q i ≤ A.image i) ∧
+      (∀ i j, MapsTo (((A.append B).chart (Fin.natAdd A.n j)).symm ≫ₕ
+        (A.append B).chart (Fin.castAdd B.n i)) (P i j) (Q i)) ∧
+      (∀ i j, P i j ≤ B.image j) ∧ ∀ j, B.image j ≤ ⨆ i, P i j := by
+  obtain ⟨P, Q, hP, hPc, hPD, -, hQ, hPQ, hcov⟩ :=
+    (A.append B).exists_transfer_cover_of_iUnion_dom_eq (Fin.castAdd B.n)
+      (by simpa using A.iUnion_dom)
+  refine ⟨fun i j ↦ P i (Fin.natAdd A.n j), Q, fun i j ↦ hP i _, fun i j ↦ hPc i _,
+    fun i j ↦ hPD i _, fun i ↦ ?_, fun i j ↦ hPQ i _, fun i j ↦ ?_, fun j ↦ ?_⟩
+  · have h := subset_closure.trans (hQ i)
+    rw [image_append_castAdd] at h
+    exact SetLike.coe_subset_coe.1 h
+  · have h := (hP i (Fin.natAdd A.n j)).trans ((A.append B).overlap_subset_image _ _)
+    rw [image_append_natAdd] at h
+    exact SetLike.coe_subset_coe.1 h
+  · simpa using hcov (Fin.natAdd A.n j)
 
 end FiniteBundleAtlas
 

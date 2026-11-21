@@ -129,16 +129,13 @@ theorem isCompactOperator_lowerOrderL [T2Space M] :
         ((A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i l) :=
     IsCompactOperator.pi fun l ↦ by
       convert (Wkp.isCompactOperator_restrictL_lowerOrderL (hQc i) (hQ i) k).comp_clm
-        ((ContinuousLinearMap.proj l).comp
-          ((ContinuousLinearMap.proj i).comp
-            (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
+        ((ContinuousLinearMap.proj l).comp (A.sectionChartData.componentsL μ p (k + 1) i))
         using 1
       funext w
       simp only [Function.comp_apply, ContinuousLinearMap.coe_comp]
-      -- The inclusion followed by the two projections evaluates `w` at `i` and `l`. This holds
-      -- by definition only, as the index type `Fin A.sectionChartData.n` unfolds to `Fin A.n`.
       exact congrArg _ ((SectionChartData.lowerOrderL_apply _ _ _ _ w i l).trans
-        (Wkp.lowerOrderL_apply k _).symm)
+        ((Wkp.lowerOrderL_apply k _).symm.trans (congrArg _
+          (congrFun (A.sectionChartData.componentsL_apply μ p (k + 1) i w) l).symm)))
   refine SectionChartData.isCompactOperator_of_forall_apply (A.aeTransition_sectionChartData μ)
     fun j m ↦ ?_
   -- The pieces `P i j` cover the image of chart `j`, and on `P i j` the chart-`j` data are
