@@ -91,6 +91,12 @@ defined from it.
 * `ZLattice.instDiscreteTopologyComapDualSpanSubtype`,
   `ZLattice.instIsZLatticeComapDualSpanSubtype`: for a discrete lattice `L` in a
   finite-dimensional space, `L^∨ ∩ span ℝ L` is a full lattice in `span ℝ L`.
+
+## References
+
+* T. Horesh and Y. Karasik, *Equidistribution of primitive lattices in `ℝⁿ`*, Quart. J. Math. 74
+  (2023), 1253–1294, DOI 10.1093/qmath/haad008, Proposition B.5, p.1291, with its pairing proof.
+  This is the source of `ZLattice.dual_map_orthogonalProjectionOnto`.
 -/
 
 public section
