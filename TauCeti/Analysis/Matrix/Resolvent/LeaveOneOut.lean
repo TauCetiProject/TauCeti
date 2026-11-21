@@ -62,10 +62,10 @@ theorem inv_inv_sub_smul_one_apply_self {z : 𝕜} (hz : RCLike.im z ≠ 0) (i :
   rw [h, hsub]
   have hrow : (fun a : {a // a ≠ i} ↦ (A - z • 1) i a) = star fun a : {a // a ≠ i} ↦ A a i := by
     ext a
-    simp [a.2.symm, ← hA.apply i a]
+    simp [a.property.symm, ← hA.apply i a]
   have hcol : (fun a : {a // a ≠ i} ↦ (A - z • 1) a i) = fun a : {a // a ≠ i} ↦ A a i := by
     ext a
-    simp [a.2]
+    simp [a.property]
   rw [hrow, hcol]
   simp
 

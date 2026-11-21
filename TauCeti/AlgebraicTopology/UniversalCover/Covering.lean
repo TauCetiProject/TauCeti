@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.UniversalCover.Basic
 public import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.SeparatedMap
 
 /-!
 # Universal cover: covering map, simple connectedness, universal property
@@ -88,6 +89,11 @@ theorem isCoveringMap [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedS
       ?_).to_isEvenlyCovered_preimage)
     rw [IsOpen.trivializationDiscrete_baseSet]
     exact hxU
+
+/-- The universal cover of a Hausdorff space is Hausdorff. -/
+instance instT2Space [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) [T2Space X] : T2Space (UniversalCover x₀) :=
+  (isCoveringMap x₀).t2Space
 
 /-- Fibers of the universal cover are discrete. -/
 instance discreteTopology_fiber [LocallyPathConnectedSpace X]

@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.Tactic.DeriveFintype
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import Mathlib.Tactic.Group
 
 /-!
@@ -59,6 +60,14 @@ surface glued from two pieces along a boundary curve.
 * `TauCeti.SurfaceGroup.OrientableGenerator.equivSum` and
   `TauCeti.SurfaceGroup.NonorientableGenerator.equivSum`: the generators of the presentations as
   sums of finite types.
+
+## Main results
+
+* `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
+  commute only when they are equal.
+* `TauCeti.SurfaceGroup.Orientable.not_isMulCommutative_of_eulerChar_neg` and
+  `TauCeti.SurfaceGroup.Nonorientable.not_isMulCommutative`: the surface groups of compact surfaces
+  of negative Euler characteristic are not abelian, and neither is `S⁻(g, m)` for `g ≥ 2`.
 
 ## References
 
@@ -392,7 +401,7 @@ def homEquiv :
       {t : (Fin g → G) × (Fin g → G) × (Fin m → G) // orientableWord t.1 t.2.1 t.2.2 = 1} where
   toFun f := ⟨(fun i ↦ f (a g m i), fun i ↦ f (b g m i), fun j ↦ f (peripheral g m j)), by
     rw [← map_orientableWord, orientableWord_a_b_peripheral, map_one]⟩
-  invFun t := lift t.1.1 t.1.2.1 t.1.2.2 t.2
+  invFun t := lift t.val.1 t.val.2.1 t.val.2.2 t.property
   left_inv f := by ext <;> simp
   right_inv t := by ext <;> simp
 
@@ -404,7 +413,41 @@ theorem homEquiv_apply (f : Orientable g m →* G) :
 @[simp]
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin g → G) × (Fin m → G) // orientableWord t.1 t.2.1 t.2.2 = 1}) :
-    homEquiv.symm t = lift t.1.1 t.1.2.1 t.1.2.2 t.2 := (rfl)
+    homEquiv.symm t = lift t.val.1 t.val.2.1 t.val.2.2 t.property := (rfl)
+
+open Equiv in
+/-- The orientable surface group of a surface of negative Euler characteristic is not
+abelian. -/
+theorem not_isMulCommutative_of_eulerChar_neg (h : eulerChar g m < 0) :
+    ¬IsMulCommutative (Orientable g m) := by
+  intro _
+  -- A homomorphism to `Perm (Fin 3)`, given by the universal property, sends two generators to
+  -- noncommuting permutations.
+  have hne : (swap 0 1 * swap 1 2 : Perm (Fin 3)) ≠ swap 1 2 * swap 0 1 := by decide
+  rw [eulerChar_def] at h
+  rcases g with _ | _ | g
+  · -- `p₁ ↦ (01)`, `p₂ ↦ (12)`, `p₃ ↦ ((01)(12))⁻¹`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by lia⟩
+    have hw : orientableWord Fin.elim0 Fin.elim0
+        (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) (Fin.cons (swap 0 1 * swap 1 2)⁻¹ 1)) :
+          Fin (m + 3) → Perm (Fin 3)) = 1 := by
+      simp [orientableWord_def, List.ofFn_succ, mul_assoc]
+    have := congrArg (lift _ _ _ hw) (mul_comm' (peripheral 0 (m + 3) 0) (peripheral 0 (m + 3) 1))
+    exact hne (by simpa using this)
+  · -- `a₁ ↦ (01)`, `b₁ ↦ (12)`, `p₁ ↦ [(01), (12)]⁻¹`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by lia⟩
+    have hw : orientableWord (fun _ : Fin 1 ↦ swap 0 1) (fun _ ↦ swap 1 2)
+        (Fin.cons (swap 0 1 * swap 1 2 * swap 0 1 * swap 1 2)⁻¹ 1 :
+          Fin (m + 1) → Perm (Fin 3)) = 1 := by
+      simp [orientableWord_def, List.ofFn_succ, mul_assoc]
+    have := congrArg (lift _ _ _ hw) (mul_comm' (a 1 (m + 1) 0) (b 1 (m + 1) 0))
+    exact hne (by simpa using this)
+  · -- `a₁ ↦ (01)`, `a₂ ↦ (12)`
+    have hw : orientableWord (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) 1) :
+        Fin (g + 2) → Perm (Fin 3)) 1 (1 : Fin m → Perm (Fin 3)) = 1 := by
+      simp [orientableWord_def, Pi.one_def]
+    have := congrArg (lift _ _ _ hw) (mul_comm' (a (g + 2) m 0) (a (g + 2) m 1))
+    exact hne (by simpa using this)
 
 end Orientable
 
@@ -488,7 +531,7 @@ def homEquiv :
       {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1} where
   toFun f := ⟨(fun i ↦ f (c g m i), fun j ↦ f (peripheral g m j)), by
     rw [← map_nonorientableWord, nonorientableWord_c_peripheral, map_one]⟩
-  invFun t := lift t.1.1 t.1.2 t.2
+  invFun t := lift t.val.1 t.val.2 t.property
   left_inv f := by ext <;> simp
   right_inv t := by ext <;> simp
 
@@ -500,7 +543,57 @@ theorem homEquiv_apply (f : Nonorientable g m →* G) :
 @[simp]
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1}) :
-    homEquiv.symm t = lift t.1.1 t.1.2 t.2 := (rfl)
+    homEquiv.symm t = lift t.val.1 t.val.2 t.property := (rfl)
+
+/-- Two generators `cᵢ` and `cⱼ` of the nonorientable surface group `S⁻(g, m)` commute only when
+they are equal. In particular `S⁻(g, m)` is not commutative for `g ≥ 2`. -/
+@[simp]
+theorem commute_c_iff {i j : Fin g} : Commute (c g m i) (c g m j) ↔ i = j := by
+  classical
+  refine ⟨fun h ↦ by_contra fun hij ↦ ?_, fun h ↦ h ▸ .refl _⟩
+  -- Send `cᵢ` and `cⱼ` to two noncommuting reflections of the dihedral group of order `6` and
+  -- every other generator to `1`. Reflections square to `1`, so the relator is killed.
+  let κ : Fin g → DihedralGroup 3 := fun k ↦
+    if k = i then .sr 0 else if k = j then .sr 1 else 1
+  have hκ (k : Fin g) : κ k ^ 2 = 1 := by
+    simp only [κ]
+    split_ifs <;> simp [sq]
+  have := (h.map (lift κ (fun _ ↦ 1) (by simp [nonorientableWord_def, hκ, List.ofFn_const]))).eq
+  have hne : (DihedralGroup.sr 0 : DihedralGroup 3) * .sr 1 ≠ .sr 1 * .sr 0 := by decide
+  exact hne (by simpa [κ, Ne.symm hij] using this)
+
+open Equiv in
+/-- The nonorientable surface group `S⁻(g, m)` is not abelian when the surface has negative
+Euler characteristic or genus at least two. -/
+theorem not_isMulCommutative (h : 2 ≤ g ∨ eulerChar g m < 0) :
+    ¬IsMulCommutative (Nonorientable g m) := by
+  intro _
+  -- A homomorphism to `Perm (Fin 3)`, given by the universal property, sends two generators to
+  -- noncommuting permutations.
+  have hne : (swap 0 1 * swap 1 2 : Perm (Fin 3)) ≠ swap 1 2 * swap 0 1 := by decide
+  rw [eulerChar_def] at h
+  rcases g with _ | _ | g
+  · -- `p₁ ↦ (01)`, `p₂ ↦ (12)`, `p₃ ↦ ((01)(12))⁻¹`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by lia⟩
+    have hw : nonorientableWord Fin.elim0
+        (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) (Fin.cons (swap 0 1 * swap 1 2)⁻¹ 1)) :
+          Fin (m + 3) → Perm (Fin 3)) = 1 := by
+      simp [nonorientableWord_def, List.ofFn_succ]
+    have := congrArg (lift _ _ hw) (mul_comm' (peripheral 0 (m + 3) 0) (peripheral 0 (m + 3) 1))
+    exact hne (by simpa using this)
+  · -- `c₁ ↦ (01)`, `p₁ ↦ (12)`, `p₂ ↦ (12)`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by lia⟩
+    have hw : nonorientableWord (fun _ : Fin 1 ↦ swap 0 1)
+        (Fin.cons (swap 1 2) (Fin.cons (swap 1 2) 1) : Fin (m + 2) → Perm (Fin 3)) = 1 := by
+      simp [nonorientableWord_def, List.ofFn_succ, Pi.one_def, pow_two]
+    have := congrArg (lift _ _ hw) (mul_comm' (c 1 (m + 2) 0) (peripheral 1 (m + 2) 0))
+    exact hne (by simpa using this)
+  · -- `c₁ ↦ (01)`, `c₂ ↦ (12)`
+    have hw : nonorientableWord (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) 1) :
+        Fin (g + 2) → Perm (Fin 3)) (1 : Fin m → Perm (Fin 3)) = 1 := by
+      simp [nonorientableWord_def, List.ofFn_succ, Pi.one_def, pow_two]
+    have := congrArg (lift _ _ hw) (mul_comm' (c (g + 2) m 0) (c (g + 2) m 1))
+    exact hne (by simpa using this)
 
 end Nonorientable
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Kahler
 import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # Clifford multiplication on the canonical line of an almost Hermitian four-space
@@ -111,7 +112,7 @@ private theorem two_smul_ι_apply_apply_of_bivectorExterior_apply {ψ : positive
   -- `c(v) ψ` is a negative half-spinor.
   have hneg : ρ (chirality Q o) (ρ (ι Q v) ψ) = -ρ (ι Q v) ψ := by
     simpa using map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
-      (by simpa using mem_positiveHalfSpinors.1 ψ.2) v
+      (by simpa using mem_positiveHalfSpinors.1 ψ.property) v
   -- The self-dual form `ω` annihilates it, for the Clifford action on `W` through `ρ`.
   have hzero : ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q v) ψ) = 0 :=
     letI := Module.compHom W ρ.toRingHom
@@ -139,18 +140,8 @@ include hQ hkl he h₀ h₂ in
 theorem ι_apply_apply_of_cliffordProjection_apply_eq_zero {β : positiveHalfSpinors o ρ}
     (hβ : cliffordProjection o ρ J.kahlerForm β = 0) (v : V) :
     ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
-  -- `C(iω) β = -2 β` says `c₂(ω) β = 2 i β`.
-  have hc := congrArg Subtype.val ((cliffordProjection_apply_eq_zero_iff o ρ).1 hβ)
-  rw [coe_cliffordRestriction_apply, Submodule.coe_smul] at hc
-  have hω : ρ (bivectorExterior Q J.kahlerForm) β = (2 * Complex.I) • (β : W) := by
-    calc ρ (bivectorExterior Q J.kahlerForm) β =
-          (-Complex.I) • (Complex.I • ρ (bivectorExterior Q J.kahlerForm) β) := by
-          rw [smul_smul, neg_mul, Complex.I_mul_I, neg_neg, one_smul]
-      _ = (2 * Complex.I) • (β : W) := by
-          rw [hc, smul_smul]
-          congr 1
-          ring
-  have h := two_smul_ι_apply_apply_of_bivectorExterior_apply hQ hkl he h₀ h₂ hω v
+  have h := two_smul_ι_apply_apply_of_bivectorExterior_apply hQ hkl he h₀ h₂
+    (bivectorExterior_apply_of_cliffordProjection_apply_eq_zero o ρ hβ) v
   linear_combination (norm := module) (2⁻¹ : ℂ) • h
 
 /-! ### The Hermitian structure of `v ↦ c(v) ψ` -/
@@ -163,8 +154,7 @@ theorem inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v w : V) :
     ⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ = ((⟪v, w⟫ : ℂ) - ⟪v, J w⟫ * Complex.I) * ‖(ψ : W)‖ ^ 2 := by
   have hre (v w : V) : (⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ).re = ⟪v, w⟫ * ‖(ψ : W)‖ ^ 2 := by
-    rw [re_inner_map_ι_apply_map_ι_apply hρ]
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+    rw [re_inner_map_ι_apply_map_ι_apply hρ, QuadraticMap.polar_eq_neg_two_inner hQ]
     ring
   -- The imaginary part is the real part for `J w`, since `c(J w) ψ = i c(w) ψ`.
   have him : (⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ).im = -⟪v, J w⟫ * ‖(ψ : W)‖ ^ 2 := by
