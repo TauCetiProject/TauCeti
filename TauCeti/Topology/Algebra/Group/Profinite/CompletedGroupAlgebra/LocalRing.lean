@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.LocalRing
-public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Augmentation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
@@ -20,23 +20,18 @@ pro-`p`. No analyticity or finite generation of `Γ` is assumed.
 
 An element of `R[[Γ]]` is a unit exactly when each of its projections to the finite group algebras
 `R[Γ ⧸ U]` is, because the transition maps carry inverses to inverses
-(`isUnit_iff_forall_isUnit_proj`). The augmentation `R[[Γ]] → R` is the common augmentation of
-the projections. When `Γ` is pro-`p`, each `Γ ⧸ U` is a finite `p`-group, so an element of
-`R[Γ ⧸ U]` with unit augmentation is a unit
+(`TauCeti.completedGroupAlgebra.isUnit_iff_forall_isUnit_proj`). The augmentation `R[[Γ]] → R`
+is the common augmentation of the projections
+(`TauCeti.completedGroupAlgebra.augmentation_proj`). When `Γ` is pro-`p`, each `Γ ⧸ U` is a
+finite `p`-group, so an element of `R[Γ ⧸ U]` with unit augmentation is a unit
 (`TauCeti.MonoidAlgebra.isLocalHom_augmentation_of_isPGroup`). Hence the augmentation of
 `R[[Γ]]` is a local homomorphism: an element of `R[[Γ]]` is a unit exactly when its augmentation
 is, and `R[[Γ]]` is local. Conversely, every `R[Γ ⧸ U]` is a quotient of
 `R[[Γ]]`, so it is local when `R[[Γ]]` is, which forces `Γ ⧸ U` to be a `p`-group
 (`TauCeti.MonoidAlgebra.isPGroup_of_isLocalRing`).
 
-## Main definitions
-
-* `TauCeti.completedGroupAlgebra.augmentation R Γ`: the augmentation `R[[Γ]] → R`.
-
 ## Main results
 
-* `TauCeti.completedGroupAlgebra.isUnit_iff_forall_isUnit_proj`: an element of `R[[Γ]]` is a unit
-  exactly when all of its projections are.
 * `TauCeti.completedGroupAlgebra.isLocalHom_augmentation_of_isProP`: for pro-`p` `Γ`, an element
   of `R[[Γ]]` whose augmentation is a unit is a unit.
 * `TauCeti.completedGroupAlgebra.isLocalRing_iff_isProP`: `R[[Γ]]` is local if and only if `Γ`
@@ -58,53 +53,6 @@ namespace completedGroupAlgebra
 universe u v
 
 variable {R : Type u} [CommRing R] {Γ : Type v} [Group Γ] [TopologicalSpace Γ]
-
-/-- **Units of the completed group algebra are detected levelwise.** An element of `R[[Γ]]` is a
-unit exactly when its projection to every finite level `R[Γ ⧸ U]` is a unit. -/
-theorem isUnit_iff_forall_isUnit_proj {x : completedGroupAlgebra R Γ} :
-    IsUnit x ↔ ∀ U, IsUnit (proj R Γ U x) := by
-  refine ⟨fun hx U ↦ hx.map (proj R Γ U), fun hx ↦ ?_⟩
-  -- The levelwise inverses are compatible, since the transition maps are multiplicative.
-  let y := mk R Γ (fun U ↦ ↑(hx U).unit⁻¹) fun U V hUV ↦ by
-    refine (Units.inv_eq_of_mul_eq_one_right ?_).symm
-    rw [IsUnit.unit_spec, ← mapDomain_mapOfLE_proj hUV, ← MonoidAlgebra.mapDomain_mul,
-      IsUnit.mul_val_inv, MonoidAlgebra.mapDomain_one]
-  have hxy : x * y = 1 := ext fun U ↦ by simp [y]
-  have hyx : y * x = 1 := ext fun U ↦ by simp [y]
-  exact ⟨⟨x, y, hxy, hyx⟩, rfl⟩
-
-variable (R Γ) in
-/-- The **augmentation** `R[[Γ]] → R`: the coefficient sum of the projection to any finite level
-`R[Γ ⧸ U]` (`augmentation_proj`), taken at the top level `Γ ⧸ Γ`. It sends every group element
-to `1`. -/
-noncomputable def augmentation : completedGroupAlgebra R Γ →+* R :=
-  (MonoidAlgebra.augmentation R (Γ ⧸ (⊤ : OpenNormalSubgroup Γ).toSubgroup)).comp
-    (proj R Γ ⊤).toRingHom
-
-/-- The augmentation of `R[[Γ]]` is the coefficient sum of the projection to any level. -/
-@[simp]
-theorem augmentation_proj (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ) :
-    MonoidAlgebra.augmentation R (Γ ⧸ U.toSubgroup) (proj R Γ U x) = augmentation R Γ x := by
-  rw [augmentation, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    ← mapDomain_mapOfLE_proj (le_top : U ≤ ⊤) x]
-  exact (RingHom.congr_fun (MonoidAlgebra.augmentation_comp_mapDomainRingHom R
-    (QuotientGroup.mapOfLE (le_top : U ≤ ⊤))) (proj R Γ U x)).symm
-
-/-- The augmentation sends every group element to `1`. -/
-@[simp]
-theorem augmentation_of (γ : Γ) : augmentation R Γ (of R Γ γ) = 1 := by
-  rw [← augmentation_proj ⊤, proj_of, MonoidAlgebra.augmentation_single]
-
-/-- The augmentation is a retraction of the structure map `R → R[[Γ]]`. -/
-@[simp]
-theorem augmentation_algebraMap (r : R) :
-    augmentation R Γ (algebraMap R (completedGroupAlgebra R Γ) r) = r := by
-  rw [← augmentation_proj ⊤, AlgHom.commutes, MonoidAlgebra.coe_algebraMap, Function.comp_apply,
-    MonoidAlgebra.augmentation_single, Algebra.algebraMap_self, RingHom.id_apply]
-
-/-- The augmentation is surjective. -/
-theorem augmentation_surjective : Function.Surjective (augmentation R Γ) :=
-  fun r ↦ ⟨algebraMap R _ r, augmentation_algebraMap r⟩
 
 section FiniteQuotients
 

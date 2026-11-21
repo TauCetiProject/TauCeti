@@ -69,6 +69,8 @@ commutative exactly when `Γ` is (`isMulCommutative_iff`).
 * `TauCeti.completedGroupAlgebra.proj_lift`, `TauCeti.completedGroupAlgebra.algHom_ext`: the
   universal property, an algebra homomorphism into `R[[Γ]]` is determined by its compositions
   with the projections and `lift` has the prescribed ones.
+* `TauCeti.completedGroupAlgebra.isUnit_iff_forall_isUnit_proj`: an element is a unit exactly
+  when all of its projections are.
 * `TauCeti.completedGroupAlgebra.proj_of`: a group element projects to the corresponding basis
   element of the quotient group algebra.
 * `TauCeti.completedGroupAlgebra.isEmbedding_coeffFamily`,
@@ -197,6 +199,21 @@ theorem proj_mk (x : ∀ U : OpenNormalSubgroup Γ, MonoidAlgebra R (Γ ⧸ U.to
     (U : OpenNormalSubgroup Γ) :
     proj R Γ U (mk R Γ x hx) = x U :=
   (rfl)
+
+variable {R Γ} in
+/-- **Units of the completed group algebra are detected levelwise.** An element of `R[[Γ]]` is a
+unit exactly when its projection to every level `R[Γ ⧸ U]` is a unit. -/
+theorem isUnit_iff_forall_isUnit_proj {x : completedGroupAlgebra R Γ} :
+    IsUnit x ↔ ∀ U, IsUnit (proj R Γ U x) := by
+  refine ⟨fun hx U ↦ hx.map (proj R Γ U), fun hx ↦ ?_⟩
+  -- The levelwise inverses are compatible, since the transition maps are multiplicative.
+  let y := mk R Γ (fun U ↦ ↑(hx U).unit⁻¹) fun U V hUV ↦ by
+    refine (Units.inv_eq_of_mul_eq_one_right ?_).symm
+    rw [IsUnit.unit_spec, ← mapDomain_mapOfLE_proj hUV, ← MonoidAlgebra.mapDomain_mul,
+      IsUnit.mul_val_inv, MonoidAlgebra.mapDomain_one]
+  have hxy : x * y = 1 := ext fun U ↦ by simp [y]
+  have hyx : y * x = 1 := ext fun U ↦ by simp [y]
+  exact ⟨⟨x, y, hxy, hyx⟩, rfl⟩
 
 section Lift
 
