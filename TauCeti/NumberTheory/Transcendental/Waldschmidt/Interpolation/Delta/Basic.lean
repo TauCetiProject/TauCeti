@@ -48,6 +48,7 @@ at most the degree of `τ`.
 
 ## Main results
 
+* `TauCeti.map_waldschmidtDelta`: the delta polynomials are compatible with ring homomorphisms.
 * `TauCeti.eval_waldschmidtDelta_mem_range_intCast`: the delta polynomials are integer-valued at
   the points `x` with all `q xᵢ` integral.
 * `TauCeti.waldschmidtDelta_mem_restrictTotalDegree` and
@@ -99,6 +100,19 @@ theorem eval_waldschmidtDelta (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) (x : Fin (
     eval x (waldschmidtDelta q τ) = ∏ i, (((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ)
       (τ i)).comp (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)).eval (x i) := by
   simp only [waldschmidtDelta_def, map_prod, eval_polynomial_aeval, eval_X]
+
+/-- The delta polynomials are compatible with ring homomorphisms: the image of `∏ᵢ Δ(q zᵢ; τᵢ)`
+over `K` is `∏ᵢ Δ(q zᵢ; τᵢ)` over `L`. -/
+@[simp]
+theorem map_waldschmidtDelta {L : Type*} [Field L] [CharZero L] (f : K →+* L) (q : ℤ)
+    (τ : Fin (n + 1) →₀ ℕ) :
+    (waldschmidtDelta (K := K) q τ).map f = waldschmidtDelta q τ := by
+  -- The two ring homomorphisms out of `ℚ` agree.
+  have h : (MvPolynomial.map (σ := Fin (n + 1)) f).comp (C.comp (algebraMap ℚ K)) =
+      C.comp (algebraMap ℚ L) :=
+    RingHom.ext_rat _ _
+  simp [waldschmidtDelta_def, map_prod, Polynomial.aeval_def, Polynomial.hom_eval₂,
+    Polynomial.eval₂_map, h]
 
 /-- **The delta polynomials are integer-valued.** If `q xᵢ` is an integer for every coordinate
 of the point `x`, then `∏ᵢ Δ(q xᵢ; τᵢ)` is an integer. -/
