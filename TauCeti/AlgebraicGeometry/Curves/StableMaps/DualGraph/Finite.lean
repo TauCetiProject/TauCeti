@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Finite
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.DualGraph.Basic
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.DualGraph.Iso
 
 /-!
 # Finitely many combinatorial types of stable maps
@@ -81,24 +81,14 @@ theorem exists_finset_stable_representatives [Fintype ι] (g d : ℕ) :
   obtain ⟨H, hH, ⟨f⟩⟩ := hT G (by omega) (by omega) fun x ↦ by
     rw [← hgenus]
     exact G.genus_le_arithmeticGenus x
-  -- The decoration `D` transported to `H` along `f`.
-  let D' : H.DegreeDecoration := ⟨fun w ↦ D.componentDegree (f.vertexEquiv.symm w)⟩
-  have hD' : ∀ v, D'.componentDegree (f.vertexEquiv v) = D.componentDegree v := fun v ↦ by
-    simp [D']
-  have htotal : D'.totalDegree = D.totalDegree := by
-    rw [totalDegree_def, totalDegree_def, ← f.vertexEquiv.sum_comp]
-    exact sum_congr rfl fun v _ ↦ hD' v
-  have hle : ∀ w, D'.componentDegree w ≤ d := fun w ↦ by
-    have := single_le_sum (fun v _ ↦ Nat.zero_le (D'.componentDegree v)) (mem_univ w)
-    rw [← totalDegree_def, htotal] at this
-    exact this.trans hdeg
-  refine ⟨⟨H, D'⟩, mem_filter.mpr ⟨mem_biUnion.mpr ⟨H, hH, ?_⟩, ?_, ?_, ?_⟩, f, hD'⟩
-  · exact mem_image.mpr ⟨fun w ↦ ⟨D'.componentDegree w, Nat.lt_succ_of_le (hle w)⟩,
+  refine ⟨⟨H, D.transport f⟩, mem_filter.mpr ⟨mem_biUnion.mpr ⟨H, hH, ?_⟩, ?_, ?_, ?_⟩, f,
+    D.componentDegree_transport_vertexEquiv f⟩
+  · refine mem_image.mpr ⟨fun w ↦ ⟨(D.transport f).componentDegree w, Nat.lt_succ_of_le ?_⟩,
       mem_univ _, rfl⟩
-  · refine (isStable_iff D').mpr fun w hw ↦ ?_
-    rw [← f.vertexEquiv.apply_symm_apply w, f.logCanonicalDegree_vertexEquiv]
-    exact (isStable_iff D).mp hD _ hw
+    exact ((D.transport f).componentDegree_le_totalDegree w).trans
+      ((D.totalDegree_transport f).trans_le hdeg)
+  · exact (D.isStable_transport_iff f).mpr hD
   · exact f.arithmeticGenus_eq.symm.trans hgenus
-  · exact htotal.trans_le hdeg
+  · exact (D.totalDegree_transport f).trans_le hdeg
 
 end TauCeti.DualGraph.DegreeDecoration

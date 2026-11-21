@@ -101,6 +101,10 @@ lemma totalDegree_def : D.totalDegree = ∑ v, D.componentDegree v :=
 theorem totalDegree_eq_zero_iff : D.totalDegree = 0 ↔ ∀ v, D.componentDegree v = 0 := by
   simp [totalDegree]
 
+/-- Every component degree is at most the total degree. -/
+theorem componentDegree_le_totalDegree (v : G.Vertex) : D.componentDegree v ≤ D.totalDegree :=
+  single_le_sum (fun w _ ↦ Nat.zero_le (D.componentDegree w)) (mem_univ v)
+
 /-- The weighted log-canonical degree at a vertex:
 `2g(v) - 2 + val(v) + n(v) + 3d(v)`. -/
 def weightedLogCanonicalDegree [Fintype ι] (v : G.Vertex) : ℤ :=
