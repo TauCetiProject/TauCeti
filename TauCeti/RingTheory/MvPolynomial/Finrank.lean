@@ -9,9 +9,8 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
-import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
-import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Dimension of homogeneous and bounded-degree polynomials
@@ -133,19 +132,8 @@ theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
 theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
     [CommSemiring R] [StrongRankCondition R] (n : ℕ) :
     Module.finrank R (homogeneousSubmodule σ R n) = (Fintype.card σ).multichoose n := by
-  classical
-  rw [finrank_homogeneousSubmodule]
-  let e : (↥{d : σ →₀ ℕ | d.degree = n}) ≃
-      (Finset.univ.finsuppAntidiag n : Finset (σ →₀ ℕ)) :=
-    Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
-      simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
-  calc
-    Nat.card (↥{d : σ →₀ ℕ | d.degree = n}) =
-        Nat.card (Finset.univ.finsuppAntidiag n : Finset (σ →₀ ℕ)) := Nat.card_congr e
-    _ = (Fintype.card σ).multichoose n := by
-      rw [Nat.card_eq_fintype_card, Fintype.card_coe,
-        Finset.card_finsuppAntidiag_nat_eq_multichoose]
-      simp
+  rw [finrank_homogeneousSubmodule, Set.coe_ofPred, Finsupp.natCard_degree_eq,
+    Nat.card_eq_fintype_card]
 
 /-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
 `(m + d choose d)`. -/
@@ -154,17 +142,11 @@ theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
     Module.finrank R (restrictTotalDegree σ R m) =
       (m + Fintype.card σ).choose (Fintype.card σ) := by
   classical
-  have hset : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} =
-      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
+  have hset : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s : σ →₀ ℕ | s.degree ≤ m} := by
     ext s
-    simp [Finset.mem_finsuppAntidiag, Finsupp.sum_fintype]
+    simp [Finsupp.degree_eq_sum, Finsupp.sum_fintype]
   rw [restrictTotalDegree, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _), hset,
-    Nat.card_coe_set_eq, Set.ncard_coe_finset, Finset.card_biUnion]
-  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
-  · intro k _ l _ hkl
-    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
-    rw [Finset.mem_finsuppAntidiag] at hk hl
-    exact hk.1.symm.trans hl.1
+    Set.coe_ofPred, Finsupp.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]
