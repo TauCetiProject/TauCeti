@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.Integral
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
+import TauCeti.Geometry.Manifold.VectorField.Chart.Flux
 
 /-!
 # The divergence theorem on a manifold without boundary
@@ -81,75 +82,21 @@ variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {α : M} {X : (x : M) → TangentSpace I x}
 
-/-- The `k`-th coefficient of `ρ X` in the chart frame at `α`, read in coordinates and extended by
-zero off the chart target. Here `ρ` is the chart volume density. -/
-private def chartFlux (α : M) (X : (x : M) → TangentSpace I x)
+private abbrev finChartFlux (α : M) (X : (x : M) → TangentSpace I x)
     (k : Fin (Module.finrank ℝ E)) : E → ℝ :=
-  (extChartAt I α).target.indicator fun z ↦
-    chartVolumeDensity (I := I) α ((extChartAt I α).symm z) *
-      (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k
-        ((extChartAt I α).symm z) (X ((extChartAt I α).symm z))
-
-omit [I.Boundaryless] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The fluxes vanish off the coordinate image of the support of `X`. -/
-private theorem chartFlux_eq_zero (k : Fin (Module.finrank ℝ E)) {z : E}
-    (hz : z ∉ extChartAt I α '' tsupport (α := E) X) : chartFlux α X k z = 0 := by
-  by_cases ht : z ∈ (extChartAt I α).target
-  · have hX : X ((extChartAt I α).symm z) = 0 :=
-      image_eq_zero_of_notMem_tsupport (α := E) fun h ↦
-        hz ⟨_, h, (extChartAt I α).right_inv ht⟩
-    simp only [chartFlux, indicator_of_mem ht, hX, map_zero, mul_zero]
-  · exact indicator_of_notMem ht _
-
-omit [I.Boundaryless] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The fluxes vanish near every point off the compact coordinate image of the support of `X`. -/
-private theorem chartFlux_eventuallyEq_zero (hK : IsCompact (extChartAt I α '' tsupport (α := E) X))
-    (k : Fin (Module.finrank ℝ E)) {z : E}
-    (hz : z ∉ extChartAt I α '' tsupport (α := E) X) : chartFlux α X k =ᶠ[𝓝 z] 0 :=
-  Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hz) fun _ h ↦ chartFlux_eq_zero k h
-
-omit [I.Boundaryless] in
-/-- The product of the chart volume density and a frame coefficient of a `C¹` field is `C¹` on the
-chart source. -/
-private theorem contMDiffOn_chartVolumeDensity_mul_localFrameCoeff
-    (hX : ContMDiff I I.tangent 1 (T% X)) (k : Fin (Module.finrank ℝ E)) :
-    ContMDiffOn I 𝓘(ℝ) 1 (fun y ↦ chartVolumeDensity (I := I) α y *
-      (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y (X y))
-      (chartAt H α).source := by
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  have hs : (trivializationAt E (TangentSpace I) α).baseSet = (chartAt H α).source := by simp
-  have h1 := contMDiffOn_chartVolumeDensity (I := I) (n := 1) α
-  have h2 := contMDiffOn_baseSet_localFrameCoeff (I := I)
-    (e := trivializationAt E (TangentSpace I) α) (Module.finBasis ℝ E) (k := 1) hX.contMDiffOn k
-  rw [hs] at h1 h2
-  exact h1.mul h2
-
-/-- The fluxes of a `C¹` field whose support has compact coordinate image inside the chart target
-are `C¹` on the model space. -/
-private theorem contDiff_chartFlux (hX : ContMDiff I I.tangent 1 (T% X))
-    (hKc : IsCompact (extChartAt I α '' tsupport (α := E) X))
-    (himage : extChartAt I α '' tsupport (α := E) X ⊆ (extChartAt I α).target)
-    (k : Fin (Module.finrank ℝ E)) :
-    ContDiff ℝ 1 (chartFlux α X k) := by
-  have hon : ContDiffOn ℝ 1 (chartFlux α X k) (extChartAt I α).target := by
-    have h := (contMDiffOn_chartVolumeDensity_mul_localFrameCoeff hX k).comp
-      (contMDiffOn_extChartAt_symm (n := 1) α) fun z hz ↦ by
-        rw [mem_preimage, ← extChartAt_source (I := I)]
-        exact (extChartAt I α).map_target hz
-    exact (contMDiffOn_iff_contDiffOn.1 h).congr fun z hz ↦ indicator_of_mem hz _
-  refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
-  by_cases hz : z ∈ (extChartAt I α).target
-  · exact hon.contDiffAt ((isOpen_extChartAt_target α).mem_nhds hz)
-  · exact contDiffAt_const.congr_of_eventuallyEq
-      (chartFlux_eventuallyEq_zero hKc k fun h ↦ hz (himage h))
+  TauCeti.chartFlux (Module.finBasis ℝ E) (chartVolumeDensity (I := I) α) α X k
 
 /-- On the chart target, the coordinate divergence of the fluxes is `ρ div X` read in the chart.
 This is the coordinate formula `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)` written in coordinates. -/
-private theorem sum_fderiv_chartFlux (hX : ContMDiff I I.tangent 1 (T% X)) {z : E}
+private theorem sum_fderiv_finChartFlux (hX : ContMDiff I I.tangent 1 (T% X)) {z : E}
     (hz : z ∈ (extChartAt I α).target) :
-    ∑ k, fderiv ℝ (chartFlux α X k) z (Module.finBasis ℝ E k) =
+    ∑ k, fderiv ℝ (finChartFlux α X k) z (Module.finBasis ℝ E k) =
       chartVolumeDensity (I := I) α ((extChartAt I α).symm z) *
         divergence I X ((extChartAt I α).symm z) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hρ : ContMDiffOn I 𝓘(ℝ) 1 (chartVolumeDensity (I := I) α) (chartAt H α).source := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using
+      contMDiffOn_chartVolumeDensity (I := I) (n := 1) α
   have hy : (extChartAt I α).symm z ∈ (chartAt H α).source := by
     rw [← extChartAt_source (I := I)]
     exact (extChartAt I α).map_target hz
@@ -157,12 +104,12 @@ private theorem sum_fderiv_chartFlux (hX : ContMDiff I I.tangent 1 (T% X)) {z : 
     ((hX _).mdifferentiableAt one_ne_zero)]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [mvfderiv_chartLocalFrame α hy
-    ((contMDiffOn_chartVolumeDensity_mul_localFrameCoeff hX k).contMDiffAt
+    ((contMDiffOn_mul_localFrameCoeff (Module.finBasis ℝ E) hρ hX.contMDiffOn k).contMDiffAt
       ((chartAt H α).open_source.mem_nhds hy) |>.mdifferentiableAt one_ne_zero),
     (extChartAt I α).right_inv hz]
-  have h : chartFlux α X k =ᶠ[𝓝 z] _ :=
+  have h : finChartFlux α X k =ᶠ[𝓝 z] _ :=
     Filter.eventually_of_mem ((isOpen_extChartAt_target α).mem_nhds hz) fun z' hz' ↦
-      indicator_of_mem hz' _
+      chartFlux_apply_of_mem _ _ k hz'
   rw [h.fderiv_eq, Function.comp_def]
 
 variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
@@ -184,14 +131,20 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
     (hX : ContMDiff I I.tangent 1 (T% X)) (hK : IsCompact (tsupport (α := E) X))
     (hKs : tsupport (α := E) X ⊆ (chartAt H α).source) :
     ∫ x, divergence I X x ∂riemannianVolume I M = 0 := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have hKs' : tsupport (α := E) X ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
   have hKc := hK.image_of_continuousOn ((continuousOn_extChartAt α).mono hKs')
   have himage := ((extChartAt I α).mapsTo.mono_left hKs').image_subset
-  have hflux (k : Fin (Module.finrank ℝ E)) := contDiff_chartFlux hX hKc himage k
-  have hfluxc (k : Fin (Module.finrank ℝ E)) : HasCompactSupport (chartFlux α X k) :=
-    HasCompactSupport.intro hKc fun _ hz ↦ chartFlux_eq_zero k hz
+  have hρ : ContMDiffOn I 𝓘(ℝ) 1 (chartVolumeDensity (I := I) α) (chartAt H α).source := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using
+      contMDiffOn_chartVolumeDensity (I := I) (n := 1) α
+  have hflux (k : Fin (Module.finrank ℝ E)) : ContDiff ℝ 1 (finChartFlux α X k) :=
+    contDiffOn_univ.1 <| I.range_eq_univ ▸
+      contDiffOn_chartFlux (Module.finBasis ℝ E) hρ hX.contMDiffOn hKc himage k
+  have hfluxc (k : Fin (Module.finrank ℝ E)) : HasCompactSupport (finChartFlux α X k) :=
+    HasCompactSupport.intro hKc fun _ hz ↦ chartFlux_eq_zero _ _ k hz
   have hint (k : Fin (Module.finrank ℝ E)) :
-      Integrable (fun z ↦ fderiv ℝ (chartFlux α X k) z (Module.finBasis ℝ E k))
+      Integrable (fun z ↦ fderiv ℝ (finChartFlux α X k) z (Module.finBasis ℝ E k))
         (Module.finBasis ℝ E).addHaar :=
     ((hflux k).continuous_fderiv one_ne_zero).clm_apply continuous_const
       |>.integrable_of_hasCompactSupport ((hfluxc k).fderiv_apply ℝ _)
@@ -203,9 +156,9 @@ private theorem integral_divergence_eq_zero_of_tsupport_subset
     ← extChartAt_source (I := I), (extChartAt I α).image_source_eq_target]
   simp_rw [smul_eq_mul]
   rw [setIntegral_congr_fun (isOpen_extChartAt_target α).measurableSet fun z hz ↦
-      (sum_fderiv_chartFlux hX hz).symm,
+      (sum_fderiv_finChartFlux hX hz).symm,
     setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ Finset.sum_eq_zero fun k _ ↦ by
-      rw [(chartFlux_eventuallyEq_zero hKc k fun h ↦ hz (himage h)).fderiv_eq]
+      rw [(chartFlux_eventuallyEq_zero _ _ hKc k fun h ↦ hz (himage h)).fderiv_eq]
       simp,
     integral_finsetSum _ fun k _ ↦ hint k]
   -- Each partial derivative of a compactly supported `C¹` function integrates to zero.
