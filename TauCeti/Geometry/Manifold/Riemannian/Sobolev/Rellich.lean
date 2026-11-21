@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Rellich–Kondrachov theorem on a closed Riemannian manifold
@@ -71,13 +72,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-/-- The squared norm of an element of `L²` is the integral of its squared pointwise norm. -/
-private theorem eNorm_rpow_two_eq_lintegral {α G : Type*} [MeasurableSpace α] {μ : Measure α}
-    [NormedAddCommGroup G] (f : Lp G 2 μ) :
-    ‖f‖ₑ ^ (2 : ℝ) = ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂μ := by
-  simpa only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ← Lp.eNorm_def] using
-    eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero (Lp.aestronglyMeasurable f)
 
 section Local
 
@@ -166,7 +160,7 @@ private theorem exists_isCompactOperator_setLIntegral_le (L : E ≃L[ℝ] F) (p 
     ⟨mem_extChartAt_source p, y₀, mem_ball_self (half_pos hr), L.symm_apply_apply _⟩, V, R, C,
     hC, hR, fun w ↦ (hle _).trans_eq ?_⟩
   -- The integral over `V` of the chart reading of `w` is the squared norm of `R w`.
-  rw [eNorm_rpow_two_eq_lintegral]
+  rw [Lp.eNorm_rpow_two_eq_lintegral]
   congr 1
   refine lintegral_congr_ae ?_
   filter_upwards [hRw w] with y hy
@@ -193,7 +187,7 @@ theorem isCompactOperator_toLp :
   have hD : D ≠ ⊤ := ENNReal.sum_ne_top.2 fun p _ ↦ hC p
   -- The `L²(M)` norm is dominated by the norm of `R'`.
   have hle (w : SobolevH1 I M) : ‖toLp w‖ₑ ^ (2 : ℝ) ≤ D * ‖R' w‖ₑ ^ (2 : ℝ) := by
-    rw [eNorm_rpow_two_eq_lintegral, ← setLIntegral_univ, Finset.sum_mul]
+    rw [Lp.eNorm_rpow_two_eq_lintegral, ← setLIntegral_univ, Finset.sum_mul]
     calc ∫⁻ x in univ, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M
         ≤ ∫⁻ x in ⋃ p : t, U p, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M :=
           lintegral_mono_set hcov
