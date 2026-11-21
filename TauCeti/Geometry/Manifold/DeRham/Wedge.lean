@@ -177,7 +177,7 @@ theorem wedge_mem_compactlySupportedForms_of_left_mem {φ : SmoothForm I M ℝ k
   rw [mem_compactlySupportedForms] at hφ ⊢
   rw [coe_wedge, RoughForm.wedge_def]
   exact hφ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
-    (RoughForm.tsupport_wedgeWith_subset_left _ φ.1 ψ.1)
+    (RoughForm.tsupport_wedgeWith_subset_left _ φ.val ψ.val)
 
 /-- The wedge of a closed smooth form with a compactly supported closed smooth form is
 compactly supported and closed. -/

@@ -110,7 +110,7 @@ theorem integralTopForm_wedge_eq_zero_of_mem_exactForms
     (o : Manifold.Orientation I M (Fin (k + l))) {ψ : SmoothForm I M ℝ k}
     (hψ : ψ ∈ exactForms I M k) {φ : SmoothForm I M ℝ l}
     (hφ : φ ∈ compactlySupportedClosedForms I M l) :
-    integralTopForm o (SmoothForm.wedge ψ φ).1 = 0 :=
+    integralTopForm o (SmoothForm.wedge ψ φ).val = 0 :=
   integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
     (SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hψ hφ)
 

@@ -215,15 +215,15 @@ fibre `{x} × ℂ` is `m` at every point `x` of the support of `θ`, then
 orientation of `ℂ`. -/
 theorem integralTopForm_wedge_mpullback_fst_of_tsupport_subset_chart
     (o : Manifold.Orientation I M (Fin 2)) {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
-    (hT : IsCompact (_root_.tsupport (α := (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) T.1))
+    (hT : IsCompact (_root_.tsupport (α := (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) T.val))
     {θ : SmoothForm I M ℝ 2} {x₀ : M}
-    (hθ : IsCompact (_root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1))
-    (hθx : _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1 ⊆ (chartAt H x₀).source) {m : ℝ}
-    (hm : ∀ x ∈ _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1, RoughForm.fiberFlux T.1 x = m) :
+    (hθ : IsCompact (_root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.val))
+    (hθx : _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.val ⊆ (chartAt H x₀).source) {m : ℝ}
+    (hm : ∀ x ∈ _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.val, RoughForm.fiberFlux T.val x = m) :
     integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
         (by simp [Complex.finrank_real_complex])))
-      (RoughForm.wedge T.1 (SmoothForm.mpullback Prod.fst contMDiff_fst θ).1) =
-      m * integralTopForm o θ.1 := by
+      (RoughForm.wedge T.val (SmoothForm.mpullback Prod.fst contMDiff_fst θ).val) =
+      m * integralTopForm o θ.val := by
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   obtain ⟨l, rfl⟩ := o.exists_lift
@@ -239,13 +239,13 @@ theorem integralTopForm_wedge_mpullback_fst_of_tsupport_subset_chart
     rw [Manifold.OrientationLift.prod_modelOrientation,
       Manifold.OrientationLift.ofHasGroupoid_modelOrientation, ← hb]
     exact (Orientation.prod_basis_orientation b Complex.basisOneI _ _).symm
-  set φ := RoughForm.wedge T.1 (mpullback (I.prod 𝓘(ℝ, ℂ)) I Prod.fst θ.1) with hφ
+  set φ := RoughForm.wedge T.val (mpullback (I.prod 𝓘(ℝ, ℂ)) I Prod.fst θ.val) with hφ
   have hφs : IsSmoothForm (I.prod 𝓘(ℝ, ℂ)) 0 φ := by
     rw [hφ, ← SmoothForm.coe_mpullback (hf := contMDiff_fst), ← SmoothForm.coe_wedge]
     exact (SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst θ)).isSmoothForm.of_le
       (by simp)
   -- The support of `φ` is compact and lies in the product chart at `(x₀, 0)`.
-  have hsupp := tsupport_wedge_mpullback_fst_subset (I := I) T.1 θ.1
+  have hsupp := tsupport_wedge_mpullback_fst_subset (I := I) T.val θ.val
   have hc : IsCompact (_root_.tsupport (α := (E × ℂ) [⋀^Fin (2 + 2)]→L[ℝ] ℝ) φ) :=
     hT.of_isClosed_subset (isClosed_tsupport _) (hsupp.trans inter_subset_left)
   have hs : _root_.tsupport (α := (E × ℂ) [⋀^Fin (2 + 2)]→L[ℝ] ℝ) φ ⊆
@@ -271,7 +271,7 @@ theorem integralTopForm_wedge_mpullback_fst_of_tsupport_subset_chart
     htarget, hmeas, setIntegral_prod _ hint, ← integral_const_mul]
   refine setIntegral_congr_fun (isOpen_extChartAt_target x₀).measurableSet fun a ha ↦ ?_
   simpa only [Measure.restrict_univ] using
-    integral_signAt_mul_mpullback_wedge_eq l h2 T.1 θ.1 x₀ hm ha b
+    integral_signAt_mul_mpullback_wedge_eq l h2 T.val θ.val x₀ hm ha b
 
 end chart
 
@@ -287,27 +287,28 @@ orientation of `ℂ`. -/
 theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [PreconnectedSpace M]
     (o : Manifold.Orientation I M (Fin 2)) {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
     (hT : T ∈ compactlySupportedClosedForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2) {m : ℝ}
-    (hm : ∀ x, RoughForm.fiberFlux T.1 x = m) {β : SmoothForm I M ℝ 2}
+    (hm : ∀ x, RoughForm.fiberFlux T.val x = m) {β : SmoothForm I M ℝ 2}
     (hβ : β ∈ compactlySupportedForms I M 2) :
     integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
         (by simp [Complex.finrank_real_complex])))
-      (SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)).1 =
-      m * integralTopForm o β.1 := by
+      (SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)).val =
+      m * integralTopForm o β.val := by
   set oP := o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
     (by simp [Complex.finrank_real_complex]))
   have hTc := ((mem_compactlySupportedClosedForms _).mp hT).1
   -- Over an empty base, both integrals vanish.
   rcases isEmpty_or_nonempty M with hM | hM
-  · rw [Subsingleton.elim (SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)).1 0,
-      Subsingleton.elim β.1 0, integralTopForm_zero, integralTopForm_zero, mul_zero]
+  · rw [Subsingleton.elim
+        (SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)).val 0,
+      Subsingleton.elim β.val 0, integralTopForm_zero, integralTopForm_zero, mul_zero]
   -- A bump form `θ` of integral one supported in the chart at some point `x₀`.
   obtain ⟨x₀⟩ := hM
   obtain ⟨θ, hθx, hθ⟩ := exists_compactlySupportedClosedForms_integralTopForm_eq_one o x₀
     (chart_source_mem_nhds H x₀)
-  have hθc := ((mem_compactlySupportedClosedForms I).mp θ.2).1
+  have hθc := ((mem_compactlySupportedClosedForms I).mp θ.prop).1
   -- `β - (∫ β) θ` has integral zero, so it is exact.
-  set c := integralTopForm o β.1
-  have hex : β - c • θ.1 ∈ exactForms I M 2 := by
+  set c := integralTopForm o β.val
+  have hex : β - c • θ.val ∈ exactForms I M 2 := by
     refine exactCompactlySupportedForms_le_exactForms I 2
       ((mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero o
         (sub_mem hβ (Submodule.smul_mem _ c hθc))).mpr ?_)
@@ -317,13 +318,13 @@ theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [PreconnectedS
   have h0 := integralTopForm_wedge_eq_zero_of_mem_exactForms oP
     (closedForms.mpullback_mem_exactForms (I := I.prod 𝓘(ℝ, ℂ)) (I' := I)
       (Prod.fst : M × ℂ → M) contMDiff_fst 2
-      ⟨_, mem_closedForms_of_finrank_le I (by simp [o.card_eq.symm]) (β - c • θ.1)⟩ hex) hT
+      ⟨_, mem_closedForms_of_finrank_le I (by simp [o.card_eq.symm]) (β - c • θ.val)⟩ hex) hT
   rw [SmoothForm.wedge_comm_of_even even_two, closedForms.coe_mpullback, map_sub, map_smul,
     map_sub, map_smul] at h0
   set X := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)
-  set Y := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst θ.1)
+  set Y := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst θ.val)
   -- The pairing of `T` with `π^*θ` is computed in the chart at `x₀`.
-  have hY : integralTopForm oP Y.1 = m := by
+  have hY : integralTopForm oP Y.val = m := by
     rw [SmoothForm.coe_wedge, integralTopForm_wedge_mpullback_fst_of_tsupport_subset_chart o
       ((mem_compactlySupportedForms _).mp hTc) ((mem_compactlySupportedForms I).mp hθc) hθx
       (fun x _ ↦ hm x), hθ, mul_one]
@@ -345,13 +346,13 @@ theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ [SigmaCompactS
     [PreconnectedSpace M] (o : Manifold.Orientation I M (Fin 2))
     {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
     (hT : T ∈ compactlySupportedClosedForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2) {m : ℝ}
-    (hm : ∀ x, RoughForm.fiberFlux T.1 x = m) (K : ℝ) {β : SmoothForm I M ℝ 2}
+    (hm : ∀ x, RoughForm.fiberFlux T.val x = m) (K : ℝ) {β : SmoothForm I M ℝ 2}
     (hβ : β ∈ compactlySupportedForms I M 2) (η : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 1) :
     integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
         (by simp [Complex.finrank_real_complex])))
       (SmoothForm.wedge T (K • SmoothForm.mpullback Prod.fst contMDiff_fst β +
-        mextDerivₗ (I.prod 𝓘(ℝ, ℂ)) (F := ℝ) 1 η)).1 =
-      K * m * integralTopForm o β.1 := by
+        mextDerivₗ (I.prod 𝓘(ℝ, ℂ)) (F := ℝ) 1 η)).val =
+      K * m * integralTopForm o β.val := by
   have hTc := ((mem_compactlySupportedClosedForms _).mp hT).1
   set X := SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)
   set Y := SmoothForm.wedge T (mextDerivₗ (I.prod 𝓘(ℝ, ℂ)) (F := ℝ) 1 η) with hY
