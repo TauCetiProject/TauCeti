@@ -18,7 +18,8 @@ symmetry arguments reduce flatness of a morphism to flatness at one point.
 
 The file also states the equational criterion for flatness for a ring homomorphism
 `g : A →+* B`, without an `Algebra A B` instance
-(`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero`). This form applies to endomorphisms such
+(`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero`), together with its two-sided equality form
+`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq`. This form applies to endomorphisms such
 as Frobenius, where `B = A` already carries its own `A`-module structure. It is deduced from
 `Module.Flat.isTrivialRelation_of_sum_smul_eq_zero`.
 
@@ -64,5 +65,50 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq_zero {A B : Type*} [CommRing A] [Co
   obtain ⟨k, a, y, hxy, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero (R := A)
     (M := B) (f := f) (x := x) (by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using h)
   exact ⟨k, a, y, fun j ↦ by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hxy j, ha⟩
+
+/-- If `g : A →+* B` is flat and `∑ i ∈ s, b i * g (x i) = ∑ j ∈ t, b' j * g (x' j)` in `B`,
+then `b` and `b'` factor through a common finite family `c : Fin k → B` via coefficients in `A`
+satisfying the matching `A`-linear relations on `x` and `x'`. -/
+@[stacks 00HK]
+theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRing B]
+    {g : A →+* B} (hg : g.Flat) {ι κ : Type*} {s : Finset ι} {t : Finset κ}
+    {b : ι → B} {b' : κ → B} {x : ι → A} {x' : κ → A}
+    (hsum : ∑ i ∈ s, b i * g (x i) = ∑ j ∈ t, b' j * g (x' j)) :
+    ∃ (k : ℕ) (aL : ι → Fin k → A) (aR : κ → Fin k → A) (c : Fin k → B),
+      (∀ i ∈ s, b i = ∑ l : Fin k, g (aL i l) * c l) ∧
+      (∀ j ∈ t, b' j = ∑ l : Fin k, g (aR j l) * c l) ∧
+      (∀ l : Fin k, ∑ i ∈ s, aL i l * x i = ∑ j ∈ t, aR j l * x' j) := by
+  classical
+  let f : (s : Type _) ⊕ (t : Type _) → A := Sum.elim (fun i ↦ x i.1) (fun j ↦ -x' j.1)
+  let v : (s : Type _) ⊕ (t : Type _) → B := Sum.elim (fun i ↦ b i.1) (fun j ↦ b' j.1)
+  have hrel : ∑ u : (s : Type _) ⊕ (t : Type _), g (f u) * v u = 0 := by
+    rw [Fintype.sum_sum_type]
+    simp only [f, v, Sum.elim_inl, Sum.elim_inr, map_neg, neg_mul, Finset.sum_neg_distrib]
+    have hL : ∑ i : s, g (x i.1) * b i.1 = ∑ i ∈ s, b i * g (x i) := by
+      rw [← Finset.sum_coe_sort s fun i ↦ b i * g (x i)]
+      exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
+    have hR : ∑ j : t, g (x' j.1) * b' j.1 = ∑ j ∈ t, b' j * g (x' j) := by
+      rw [← Finset.sum_coe_sort t fun j ↦ b' j * g (x' j)]
+      exact Finset.sum_congr rfl fun j _ ↦ mul_comm _ _
+    rw [hL, hR, hsum, add_neg_cancel]
+  obtain ⟨k, a, c, hvc, hga⟩ := hg.exists_eq_sum_mul_of_sum_mul_eq_zero hrel
+  refine ⟨k, fun i l ↦ if hi : i ∈ s then a (Sum.inl ⟨i, hi⟩) l else 0,
+    fun j l ↦ if hj : j ∈ t then a (Sum.inr ⟨j, hj⟩) l else 0, c, ?_, ?_, ?_⟩
+  · exact fun i hi ↦ by simpa [v, hi] using hvc (Sum.inl ⟨i, hi⟩)
+  · exact fun j hj ↦ by simpa [v, hj] using hvc (Sum.inr ⟨j, hj⟩)
+  · intro l
+    have hl := hga l
+    rw [Fintype.sum_sum_type] at hl
+    simp only [f, Sum.elim_inl, Sum.elim_inr, neg_mul, Finset.sum_neg_distrib] at hl
+    have h1 : ∑ i : s, x i.1 * a (Sum.inl i) l =
+        ∑ i ∈ s, (if hi : i ∈ s then a (Sum.inl ⟨i, hi⟩) l else 0) * x i := by
+      rw [← Finset.sum_coe_sort s]
+      exact Finset.sum_congr rfl fun i _ ↦ by simp [i.2, mul_comm]
+    have h2 : ∑ j : t, x' j.1 * a (Sum.inr j) l =
+        ∑ j ∈ t, (if hj : j ∈ t then a (Sum.inr ⟨j, hj⟩) l else 0) * x' j := by
+      rw [← Finset.sum_coe_sort t]
+      exact Finset.sum_congr rfl fun j _ ↦ by simp [j.2, mul_comm]
+    rw [h1, h2, ← sub_eq_add_neg, sub_eq_zero] at hl
+    exact hl
 
 end RingHom

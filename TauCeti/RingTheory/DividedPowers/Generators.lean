@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.DividedPowers.Basic
 
 import Mathlib.Algebra.MvPolynomial.Basic
-import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.RingTheory.DividedPowers.RatAlgebra
+import TauCeti.Data.Nat.Choose.Sum
 
 /-!
 # Divided powers from identities on generators
@@ -170,37 +170,6 @@ theorem mul_dpow_mul {a x : A} (hx : x ∈ I)
     _ = a ^ m * a ^ n * (((m + n).choose m : A) * δ.dpow (m + n) x) := by rw [hx_mul m n]
     _ = ((m + n).choose m : A) * (a ^ m * a ^ n * δ.dpow (m + n) x) := by ring
 
-private theorem sum_filter_antidiag_choose {m n a b : ℕ} (hab : a + b = m + n) :
-    ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
-        (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
-      a.choose pq.1.1 * b.choose pq.1.2 = (m + n).choose m := by
-  rw [← hab, Nat.add_choose_eq a b m]
-  have hfilt : ∑ p ∈ antidiagonal m, a.choose p.1 * b.choose p.2 =
-      ∑ p ∈ (antidiagonal m).filter (fun p ↦ p.1 ≤ a ∧ p.2 ≤ b),
-        a.choose p.1 * b.choose p.2 := by
-    symm
-    refine sum_filter_of_ne fun p _ hne ↦ ?_
-    by_contra h
-    rw [not_and_or, not_le, not_le] at h
-    rcases h with h | h
-    · exact hne (by simp [Nat.choose_eq_zero_of_lt h])
-    · exact hne (by simp [Nat.choose_eq_zero_of_lt h])
-  rw [hfilt]
-  refine sum_nbij' (fun pq ↦ pq.1) (fun p ↦ (p, (a - p.1, b - p.2))) ?_ ?_ ?_ ?_ ?_
-  · intro ⟨⟨i, j⟩, ⟨k, l⟩⟩ hpq
-    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
-    omega
-  · intro ⟨i, j⟩ hp
-    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hp ⊢
-    omega
-  · intro ⟨⟨i, j⟩, ⟨k, l⟩⟩ hpq
-    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
-    exact ⟨trivial, by omega, by omega⟩
-  · intro ⟨i, j⟩ _
-    rfl
-  · intro ⟨⟨i, j⟩, ⟨k, l⟩⟩ _
-    rfl
-
 /-- The multiplication identity is stable under sums of elements of `I`. -/
 theorem mul_dpow_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     (hx_mul : ∀ m n, δ.dpow m x * δ.dpow n x = ((m + n).choose m : A) * δ.dpow (m + n) x)
@@ -230,7 +199,7 @@ theorem mul_dpow_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
             (((j + l).choose j : A) * δ.dpow (j + l) y) := by rw [hx_mul i k, hy_mul j l]
       _ = (((i + k).choose i * (j + l).choose j : ℕ) : A) *
             (δ.dpow (i + k) x * δ.dpow (j + l) y) := by push_cast; ring
-  rw [sum_congr rfl hterm, ← sum_mul, ← Nat.cast_sum, sum_filter_antidiag_choose hab']
+  rw [sum_congr rfl hterm, ← sum_mul, ← Nat.cast_sum, sum_filter_antidiagonal_choose hab']
 
 /-- The iteration identity is stable under left scalar multiplication. -/
 theorem dpow_comp_mul {a x : A} (hx : x ∈ I)
