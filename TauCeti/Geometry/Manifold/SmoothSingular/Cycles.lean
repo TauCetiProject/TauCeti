@@ -87,7 +87,8 @@ def smoothIntCyclesMap (hf : ContMDiff I J ∞ f) (k : ℕ) :
     fun z ↦ mem_smoothIntCycles_iff.mpr <| by
       rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, ← LinearMap.comp_apply,
         ← ModuleCat.hom_comp, HomologicalComplex.Hom.comm, ModuleCat.hom_comp,
-        LinearMap.comp_apply, AddSubgroup.coe_subtype, mem_smoothIntCycles_iff.mp z.2, map_zero]
+        LinearMap.comp_apply, AddSubgroup.coe_subtype, mem_smoothIntCycles_iff.mp z.property,
+        map_zero]
 
 /-- The pushforward of a cycle is the pushforward of the underlying chain. -/
 @[simp]

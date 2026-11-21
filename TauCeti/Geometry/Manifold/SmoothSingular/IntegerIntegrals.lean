@@ -183,10 +183,10 @@ forms of positive degree whose integrals over every smooth singular integral cha
 theorem SmoothForm.eq_of_forall_coe_integrationCochain_eq {p : ℕ} (hp : p ≠ 0)
     {φ ψ : SmoothForm I M ℝ p}
     (h : ∀ c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p,
-      ((integrationCochain φ.1).hom c : UnitAddCircle) = (integrationCochain ψ.1).hom c) :
+      ((integrationCochain φ.val).hom c : UnitAddCircle) = (integrationCochain ψ.val).hom c) :
     φ = ψ := by
-  have hφ : IsSmoothForm I 0 φ.1 := φ.isSmoothForm.of_le (by simp)
-  have hψ : IsSmoothForm I 0 ψ.1 := ψ.isSmoothForm.of_le (by simp)
+  have hφ : IsSmoothForm I 0 φ.val := φ.isSmoothForm.of_le (by simp)
+  have hψ : IsSmoothForm I 0 ψ.val := ψ.isSmoothForm.of_le (by simp)
   refine Subtype.ext (sub_eq_zero.mp (RoughForm.eq_zero_of_forall_integral_eq_intCast hp
     (hφ.add hψ.neg) fun σ ↦ ?_))
   -- Test `h` on the chain of the simplex `σ` with coefficient `1`.

@@ -216,7 +216,7 @@ theorem integrationCochain_add [IsManifold I 1 M] {φ ψ : RoughForm I M F p}
 
 /-- Integration takes the sum of two smooth forms to the sum of their cochains. -/
 theorem SmoothForm.integrationCochain_add [IsManifold I 1 M] (φ ψ : SmoothForm I M F p) :
-    integrationCochain (R := R) (φ + ψ).1 = integrationCochain φ.1 + integrationCochain ψ.1 :=
+    integrationCochain (R := R) (φ + ψ).val = integrationCochain φ.val + integrationCochain ψ.val :=
   TauCeti.integrationCochain_add (φ.isSmoothForm.of_le (by simp)) (ψ.isSmoothForm.of_le (by simp))
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
