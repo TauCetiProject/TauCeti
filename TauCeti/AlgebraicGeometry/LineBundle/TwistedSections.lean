@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
+public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GeneratingSections
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
@@ -45,6 +46,8 @@ global section of `F ⊗ Lⁿ`. These global sections generate `F ⊗ Lⁿ`.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection`: for `k > 0`, the
+  nonvanishing locus of `sᵏ` equals that of `s`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus`:
   for an invertible sheaf `L`, `t ↦ t ⊗ eⁿ` is bijective over the nonvanishing locus of `e`.
 * `AlgebraicGeometry.Scheme.Modules.exists_tmulRight_tensorPowSection_eq_zero`: a section over a
@@ -80,6 +83,42 @@ variable {X : Scheme.{u}} (F : X.Modules) {L : X.Modules}
 /-! ### Sections over the nonvanishing locus of a section of a line bundle -/
 
 variable [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
+
+/-- For a positive integer `k`, the nonvanishing locus of the tensor power section `sᵏ` equals the
+nonvanishing locus of `s`. -/
+theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ} (hk : 0 < k) :
+    (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = L.nonvanishingLocus s := by
+  ext x
+  by_cases hxU : x ∈ U
+  · obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
+    let W : X.Opens := U ⊓ V
+    let iWU : W ⟶ U := homOfLE inf_le_left
+    let iWV : W ⟶ V := homOfLE inf_le_right
+    have hxW : x ∈ (W : Set X) := ⟨hxU, hxV⟩
+    let e : Γ(L, W) := L.presheaf.map iWV.op (trivializationGenerator L t)
+    have he : W ≤ L.nonvanishingLocus e := by
+      rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
+      exact le_inf le_rfl inf_le_right
+    obtain ⟨f, hf⟩ := surjective_smul_of_le_nonvanishingLocus he (L.presheaf.map iWU.op s)
+    beta_reduce at hf
+    have hek : W ≤ (tensorPow L k).nonvanishingLocus (tensorPowSection e k) := by
+      rw [le_nonvanishingLocus_iff _ (𝟙 W)]
+      intro W' j
+      simpa only [Category.comp_id] using
+        bijective_smul_tensorPowSection e (fun W'' l ↦ by
+          simpa only [Category.comp_id] using (le_nonvanishingLocus_iff e (𝟙 W)).mp he W'' l)
+          k W' j
+    have hLHS : W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = X.basicOpen f := by
+      rw [← nonvanishingLocus_map iWU, map_tensorPowSection, ← hf, tensorPowSection_smul,
+        nonvanishingLocus_smul, X.basicOpen_pow f hk,
+        inf_eq_left.mpr ((X.basicOpen_le f).trans hek)]
+    have hRHS : W ⊓ L.nonvanishingLocus s = X.basicOpen f := by
+      rw [← nonvanishingLocus_map iWU, ← hf, nonvanishingLocus_smul,
+        inf_eq_left.mpr ((X.basicOpen_le f).trans he)]
+    have hmem := congrArg (fun O : X.Opens ↦ x ∈ (O : Set X)) (hLHS.trans hRHS.symm)
+    simpa only [Opens.coe_inf, Set.mem_inter_iff, hxW, true_and] using iff_of_eq hmem
+  · exact ⟨fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim,
+      fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim⟩
 
 /-- For an invertible sheaf `L` and a section `e` of `L` over `U` that vanishes nowhere on `U`,
 tensoring with `eⁿ` is a bijection `Γ(F, U) → Γ(F ⊗ Lⁿ, U)` for every `n`. -/

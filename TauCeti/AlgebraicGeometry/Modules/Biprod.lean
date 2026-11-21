@@ -27,10 +27,12 @@ hypotheses to stay within the default typeclass search-size bound.
   `AlgebraicGeometry.Scheme.Modules.isLocallyFree_biprod`: the direct sum of two quasi-coherent
   (respectively finite type, finitely presented, locally free) `𝒪ₓ`-modules is again so. In
   particular, direct sums of finite locally free `𝒪ₓ`-modules are finite locally free.
+* `AlgebraicGeometry.Scheme.Modules.hasFiniteBiproducts`: `𝒪ₓ`-modules have finite biproducts.
 * `AlgebraicGeometry.Scheme.Modules.containsZero_isFinitePresentation`,
-  `AlgebraicGeometry.Scheme.Modules.isClosedUnderBinaryProducts_isFinitePresentation` and
-  `AlgebraicGeometry.Scheme.Modules.isClosedUnderFiniteProducts_isFinitePresentation`:
-  finitely presented sheaves contain zero and are closed under binary and finite products.
+  `AlgebraicGeometry.Scheme.Modules.isClosedUnderBinaryProducts_isFinitePresentation`,
+  `AlgebraicGeometry.Scheme.Modules.isClosedUnderFiniteProducts_isFinitePresentation` and
+  `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_biproduct`: finitely presented sheaves
+  contain zero and are closed under binary products, finite products, and finite direct sums.
 -/
 
 public section
@@ -42,6 +44,10 @@ open AlgebraicGeometry CategoryTheory Limits TauCeti
 universe u
 
 variable {X : Scheme.{u}} (M N : X.Modules)
+
+/-- `𝒪ₓ`-modules have finite biproducts, since they form an abelian category. -/
+instance hasFiniteBiproducts (X : Scheme.{u}) : HasFiniteBiproducts X.Modules :=
+  .of_hasFiniteProducts
 
 /-- The direct sum of two quasi-coherent `𝒪ₓ`-modules is quasi-coherent. -/
 instance isQuasicoherent_biprod [M.IsQuasicoherent]
@@ -78,5 +84,13 @@ instance isClosedUnderBinaryProducts_isFinitePresentation (X : Scheme.{u}) :
 /-- Finitely presented sheaves are closed under finite products. -/
 instance isClosedUnderFiniteProducts_isFinitePresentation (X : Scheme.{u}) :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts := .mk'
+
+/-- A finite direct sum of finitely presented `𝒪ₓ`-modules is finitely presented. -/
+instance isFinitePresentation_biproduct {J : Type*} [Finite J] (F : J → X.Modules)
+    [HasBiproduct F] [∀ j, (F j).IsFinitePresentation] :
+    (⨁ F).IsFinitePresentation :=
+  (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+    (biproduct.isoProduct F).symm
+    ((SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_product fun _ ↦ inferInstance)
 
 end AlgebraicGeometry.Scheme.Modules

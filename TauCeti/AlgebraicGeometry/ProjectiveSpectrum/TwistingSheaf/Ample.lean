@@ -7,17 +7,21 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 
 /-!
 # Positivity of twisting sheaves
 
 When degree-one standard opens cover `Proj A`, the nonvanishing locus of the section of
 `𝒪(n)` associated to a homogeneous element `r ∈ Aₙ` is exactly `D₊(r)`. Consequently all
-nonnegative twists are globally generated, and every positive twist is ample if `Proj A`
-is quasi-compact. In particular these conclusions apply to the projective spectrum of the
-symmetric algebra of a finite module, over any commutative ring.
+nonnegative twists are globally generated, every positive twist is ample if `Proj A`
+is quasi-compact, every quasi-coherent module of finite type admits an epimorphism from a finite
+direct sum `⨁_{Fin k} 𝒪(-n)` for all sufficiently large `n`
+(`AlgebraicGeometry.Proj.exists_epi_biproduct_twistingSheaf`). In particular these conclusions apply
+to the projective spectrum of the symmetric algebra of a finite module, over any commutative ring.
 
 This connects the local-fraction construction of twisting sheaves to positivity of line
 bundles. The standard affine opens are the affine nonvanishing loci needed for ampleness,
@@ -33,7 +37,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicGeometry TopologicalSpace
+open CategoryTheory Limits AlgebraicGeometry TopologicalSpace
 
 namespace AlgebraicGeometry.Proj
 
@@ -117,6 +121,28 @@ theorem isAmple_twistingSheaf [CompactSpace (Proj 𝒜)] {n : ℕ} (hn : 0 < n) 
   · rw [twistingSheaf.nonvanishingLocus_toTwistingSheaf f hf hcover]
     exact isAffineOpen_basicOpen 𝒜 _
       (by simpa using SetLike.pow_mem_graded n (hf i)) hn
+
+include f hf hcover in
+/-- **Finite negative-twist presentation on `Proj`.** On a quasi-compact `Proj A` covered by
+degree-one standard opens, every quasi-coherent module `F` of finite type admits an epimorphism
+`(⨁ fun _ : Fin k ↦ 𝒪(-n)) ⟶ F` for all sufficiently large `n : ℕ`. -/
+theorem exists_epi_biproduct_twistingSheaf
+    [CompactSpace (Proj 𝒜)]
+    (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
+    ∃ n₀ : ℕ, ∀ n ≥ n₀,
+      ∃ (k : ℕ) (p : (⨁ fun _ : Fin k ↦ twistingSheaf 𝒜 (-(n : ℤ))) ⟶ F), Epi p := by
+  let L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
+    ⟨twistingSheaf 𝒜 1, isInvertible_twistingSheaf_of_iSup_eq_top f hf hcover 1⟩
+  have hL : (TauCeti.AlgebraicGeometry.LineBundleClass.mk L).IsAmple :=
+    isAmple_twistingSheaf f hf hcover Nat.one_pos
+  obtain ⟨n₀, hn₀⟩ := F.exists_epi_biproduct_of_isAmple L hL
+  refine ⟨n₀, fun n hn ↦ ?_⟩
+  let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
+    ⟨twistingSheaf 𝒜 (-(n : ℤ)), isInvertible_twistingSheaf_of_iSup_eq_top f hf hcover _⟩
+  have hK : TauCeti.AlgebraicGeometry.LineBundleClass.mk K =
+      (TauCeti.AlgebraicGeometry.LineBundleClass.mk L ^ n)⁻¹ := by
+    rw [lineBundleClass_twistingSheaf_eq_zpow f hf hcover (-(n : ℤ)), zpow_neg, zpow_natCast]
+  exact hn₀ n hn K hK
 
 end AlgebraicGeometry.Proj
 

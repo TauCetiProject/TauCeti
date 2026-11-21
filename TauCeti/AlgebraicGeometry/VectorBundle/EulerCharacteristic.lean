@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Semilocal
 public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
+import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.SchemeTheoreticSupport
 
@@ -68,10 +69,8 @@ theorem eulerCharBelow_tensor_pushforward (k : Type u) [Field k] [X.Over (Spec (
     (E : FiniteLocallyFreeSheaf.FixedRank X r) (G : Z.Modules) (n : ℕ) :
     eulerCharBelow k X (E.obj.obj ⊗ (pushforward f).obj G) n =
       r * eulerCharBelow k X ((pushforward f).obj G) n := by
-  -- Instance search finds neither finite biproducts in the abelian categories `Z.Modules` and
-  -- `X.Modules` nor the additivity of `⊗` on `Z.Modules`, which is stated for sheaves of modules.
-  have : HasFiniteBiproducts Z.Modules := Abelian.hasFiniteBiproducts
-  have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
+  -- Instance search does not find the additivity of `⊗` on `Z.Modules`, which is stated for
+  -- sheaves of modules.
   have : MonoidalPreadditive Z.Modules := TauCeti.SheafOfModules.monoidalPreadditive Z.sheaf
   -- `f^* E ≅ 𝒪_Z^r`, written as a biproduct of copies of `𝒪_Z` indexed by `Fin r`.
   obtain ⟨e⟩ := FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isAffine

@@ -42,8 +42,9 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
   compatible with restriction, glue to a unique global section.
 * `AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq`: global sections are determined by
-  their restrictions to the affine opens, and
-  `AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp` composes restriction homomorphisms.
+  their restrictions to the affine opens, `AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp`
+  composes restriction homomorphisms, and `AlgebraicGeometry.Scheme.presheaf_map_top_leTop`
+  identifies restriction along `⊤ ⟶ ⊤` with the identity.
 * `AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover`: a quasi-compact open is covered by
   finitely many affine opens contained in it, in the form used by sheaf gluing.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
@@ -212,6 +213,12 @@ theorem _root_.AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp {V U W : X.Ope
       (X.presheaf.map (homOfLE (hVU.trans hUW)).op).hom := by
   rw [← CommRingCat.hom_comp, ← Functor.map_comp]
   rfl
+
+/-- Restricting sections of the structure sheaf along `⊤ ⟶ ⊤` is the identity morphism. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.presheaf_map_top_leTop (X : Scheme.{u}) :
+    X.presheaf.map (⊤ : X.Opens).leTop.op = 𝟙 _ := by
+  rw [Subsingleton.elim (⊤ : X.Opens).leTop (𝟙 ⊤), op_id, CategoryTheory.Functor.map_id]
 
 /-- **Global sections are determined by their restrictions to the affine opens.** -/
 theorem _root_.AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq (X : Scheme.{u})

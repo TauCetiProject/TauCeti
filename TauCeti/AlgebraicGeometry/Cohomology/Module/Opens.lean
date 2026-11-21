@@ -179,6 +179,21 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_apply (n : �
     cohomologyOnResLinear M n h x = cohomologyOnRes M n h x :=
   (rfl)
 
+/-- Restricting along the reflexive inclusion `U ≤ U` in cohomology is the identity linear map. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_refl (n : ℕ) (U : X.Opens) :
+    cohomologyOnResLinear M n (le_refl U) = LinearMap.id :=
+  LinearMap.ext fun x ↦ ConcreteCategory.congr_hom (cohomologyOnRes_refl M n U) x
+
+/-- Restricting twice in cohomology is restricting along the composite inclusion, as linear
+maps. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_comp (n : ℕ)
+    {U V W : X.Opens} (hUV : U ≤ V) (hVW : V ≤ W) :
+    cohomologyOnResLinear M n hUV ∘ₗ cohomologyOnResLinear M n hVW =
+      cohomologyOnResLinear M n (hUV.trans hVW) :=
+  LinearMap.ext fun x ↦ cohomologyOnRes_comp_apply M n hUV hVW x
+
 /-- The connecting map `Hⁿ⁰(U ⊓ V, M) ⟶ Hⁿ¹(U ⊔ V, M)` of the Mayer-Vietoris sequence, as a linear
 map over global functions. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.mayerVietorisδLinear (U V : X.Opens) (n₀ n₁ : ℕ)

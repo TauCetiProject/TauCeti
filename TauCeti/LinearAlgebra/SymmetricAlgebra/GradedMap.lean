@@ -181,6 +181,11 @@ theorem gradedMap_gradedZeroRingHom (f : M →ₗ[R] M) :
   simp only [GradedRingHom.gradedZeroRingHom_apply_coe, gradedMap_apply, RingHom.id_apply]
   rw [← hr, AlgHom.commutes]
 
+/-- A surjective linear map induces a surjective graded homomorphism of symmetric algebras. -/
+theorem gradedMap_surjective {f : M →ₗ[R] N} (hf : Function.Surjective f) :
+    Function.Surjective (gradedMap R f) := by
+  simpa only [Function.Surjective, gradedMap_apply] using map_surjective R f hf
+
 /-- An algebra homomorphism of symmetric algebras is induced by a unique linear map exactly
 when the images of the generators lie in degree one. -/
 theorem existsUnique_map_eq_iff

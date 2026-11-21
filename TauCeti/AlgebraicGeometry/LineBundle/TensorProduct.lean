@@ -21,10 +21,12 @@ for the trivial line bundle.
 
 * `InvertibleSheaf.tensorProduct` packages the tensor product of two line bundles;
 * `InvertibleSheaf.trivialObjIsoUnit` identifies the trivial line bundle with the monoidal unit;
-* `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf, and
+* `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf,
   `InvertibleSheaf.tensorProductObjIso` identifies it with the monoidal tensor product of the
   underlying sheaves, through `SheafOfModules.tensorProductIso` and
-  `SheafOfModules.tensorUnderlyingIso` (`InvertibleSheaf.tensorProductObjIso_hom`);
+  `SheafOfModules.tensorUnderlyingIso` (`InvertibleSheaf.tensorProductObjIso_hom`), and
+  `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj` records that the monoidal tensor
+  product of two invertible sheaves is invertible;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
   isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
   shows that tensor product respects isomorphism; through `tensorProductObjIso` these transports
@@ -83,6 +85,14 @@ def tensorProductObjIso (L K : InvertibleSheaf X) :
     (tensorProduct L K).obj ≅ L.obj ⊗ K.obj :=
   eqToIso (tensorProduct_obj L K) ≪≫ SheafOfModules.tensorProductIso X.sheaf L.obj K.obj ≪≫
     (L.obj.tensorUnderlyingIso K.obj).symm
+
+/-- The monoidal tensor product of two invertible sheaves is invertible. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj (L K : X.Modules)
+    [SheafOfModules.isInvertible X L] [SheafOfModules.isInvertible X K] :
+    SheafOfModules.isInvertible X (L ⊗ K) :=
+  (SheafOfModules.isInvertible X).prop_of_iso
+    (tensorProductObjIso ⟨L, inferInstance⟩ ⟨K, inferInstance⟩)
+    (tensorProduct ⟨L, inferInstance⟩ ⟨K, inferInstance⟩).property
 
 /-- The sheaf isomorphism underlying transport through the first tensor factor. -/
 def tensorProductCongrLeftIso {L L' K : InvertibleSheaf X} (e : L ≅ L') :
