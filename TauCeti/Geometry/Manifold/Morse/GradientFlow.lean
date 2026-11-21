@@ -36,6 +36,15 @@ for an arbitrary Riemannian metric, of the vector-space theorem
 connected and invariant under the local flow, and `f` is constant on it, so the gradient vanishes
 there.
 
+A trajectory cannot linger where the gradient is long. If `‖grad f‖² ≥ c` along `γ` on `[0, t]`,
+then `f (γ t) ≤ f x - c t` (`TauCeti.comp_maximalIntegralCurve_neg_mgradient_le_sub_mul`). Hence
+if `‖grad f‖² ≥ c` on a band `f⁻¹[a, b]` and `f x ≤ b`, then `f (γ t) < a` as soon as
+`c t > b - a` (`TauCeti.comp_maximalIntegralCurve_neg_mgradient_lt`). On a compact band without
+critical points `‖grad f‖²` has a positive lower bound, so the trajectories of all points of
+`{f ≤ b}` pass below `a` within a common time
+(`TauCeti.exists_forall_comp_maximalIntegralCurve_neg_mgradient_lt`). No nondegeneracy is
+involved: only the critical points in the band matter, not their type elsewhere.
+
 A proper Morse function bounded below traps each forward trajectory in its initial compact
 sublevel, so every forward negative gradient trajectory of such a function converges to a critical
 point (`TauCeti.IsMorse.exists_tendsto_maximalIntegralCurve_neg_mgradient`). The metric is
@@ -57,6 +66,10 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
 * `TauCeti.integrableOn_Ioi_norm_mgradient_sq_maximalIntegralCurve` and
   `TauCeti.integral_Ioi_norm_mgradient_sq_maximalIntegralCurve`: the energy of a forward
   trajectory along which `f` has a limit is finite, and equals the drop of `f`.
+* `TauCeti.comp_maximalIntegralCurve_neg_mgradient_le_sub_mul`,
+  `TauCeti.comp_maximalIntegralCurve_neg_mgradient_lt` and
+  `TauCeti.exists_forall_comp_maximalIntegralCurve_neg_mgradient_lt`: a trajectory crosses a band
+  on which the gradient is bounded away from zero in bounded time.
 * `TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic`: a forward trajectory stays in
   the sublevel of its initial point.
 * `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto`: a forward
@@ -206,6 +219,82 @@ theorem energy_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 
   · ring
   rw [curveVelocity_maximalIntegralCurve_neg_mgradient hf (hab hs), norm_neg]
   exact hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient hf (hab hs)
+
+/-! ### Crossing a band -/
+
+/-- **Linear decrease where the gradient is long.** If `‖grad f‖² ≥ c` along the maximal integral
+curve `γ` of `-grad f` through `x` at all times of `[0, t]`, then `f (γ t) ≤ f x - c t`. -/
+theorem comp_maximalIntegralCurve_neg_mgradient_le_sub_mul (hf : ContMDiff I 𝓘(ℝ) 2 f) {c : ℝ}
+    (ht : t ∈ maximalIntegralCurveInterval (-mgradient I f) x) (ht0 : 0 ≤ t)
+    (hc : ∀ s ∈ Icc 0 t,
+      c ≤ ‖mgradient I f (maximalIntegralCurve (-mgradient I f) x s)‖ ^ 2) :
+    f (maximalIntegralCurve (-mgradient I f) x t) ≤ f x - c * t := by
+  set γ := maximalIntegralCurve (-mgradient I f) x
+  have hsub : Icc 0 t ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
+    ordConnected_maximalIntegralCurveInterval.out (zero_mem_maximalIntegralCurveInterval_of_mem ht)
+      ht
+  -- On `[0, t]` the derivative `-‖grad f (γ s)‖²` of `s ↦ f (γ s)` is at most `-c`.
+  have hderiv : ∀ s ∈ Icc 0 t, HasDerivAt (fun s ↦ f (γ s)) (-‖mgradient I f (γ s)‖ ^ 2) s :=
+    fun s hs ↦ hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf (hsub hs)
+  have h := (convex_Icc 0 t).image_sub_le_mul_sub_of_deriv_le (C := -c)
+    (fun s hs ↦ (hderiv s hs).continuousAt.continuousWithinAt)
+    (fun s hs ↦ (hderiv s (interior_subset hs)).differentiableAt.differentiableWithinAt)
+    (fun s hs ↦ by
+      rw [(hderiv s (interior_subset hs)).deriv]
+      linarith [hc s (interior_subset hs)])
+    0 ⟨le_rfl, ht0⟩ t ⟨ht0, le_rfl⟩ ht0
+  simp only [γ, maximalIntegralCurve_zero] at h
+  linarith
+
+/-- **Crossing a band where the gradient is long.** Suppose that `‖grad f‖² ≥ c` on the band
+`f⁻¹[a, b]` and that `f x ≤ b`. Then at every time `t ≥ 0` of its interval with `c t > b - a`, the
+maximal integral curve of `-grad f` through `x` lies strictly below the level `a`: it cannot stay
+in the band for that long, since there `f` decreases at rate at least `c` along it. -/
+theorem comp_maximalIntegralCurve_neg_mgradient_lt (hf : ContMDiff I 𝓘(ℝ) 2 f) {a b c : ℝ}
+    (hc : ∀ y, a ≤ f y → f y ≤ b → c ≤ ‖mgradient I f y‖ ^ 2) (hx : f x ≤ b)
+    (ht : t ∈ maximalIntegralCurveInterval (-mgradient I f) x) (ht0 : 0 ≤ t)
+    (hct : b - a < c * t) :
+    f (maximalIntegralCurve (-mgradient I f) x t) < a := by
+  have hsub : Icc 0 t ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
+    ordConnected_maximalIntegralCurveInterval.out (zero_mem_maximalIntegralCurveInterval_of_mem ht)
+      ht
+  by_contra! h
+  -- Up to the time `t` the trajectory stays in the band `f⁻¹[a, b]`, since `f` decreases along it.
+  have hband : ∀ s ∈ Icc 0 t,
+      c ≤ ‖mgradient I f (maximalIntegralCurve (-mgradient I f) x s)‖ ^ 2 := by
+    intro s hs
+    have hle : f (maximalIntegralCurve (-mgradient I f) x s) ≤ f x :=
+      mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic hf ⟨hsub hs, hs.1⟩
+    exact hc _ (h.trans (antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf (hsub hs) ht hs.2))
+      (hle.trans hx)
+  linarith [comp_maximalIntegralCurve_neg_mgradient_le_sub_mul hf ht ht0 hband]
+
+/-- **Crossing a compact band without critical points.** If the band `f⁻¹[a, b]` is compact and
+contains no critical point of `f`, there is a time `T` such that, for every point `x` with
+`f x ≤ b`, the maximal integral curve of `-grad f` through `x` lies strictly below the level `a` at
+every time `t ≥ T` of its interval. The time is uniform in `x`: on the band, `‖grad f‖²` is bounded
+below by a positive constant `c`, and any `T > max 0 ((b - a) / c)` will do. -/
+theorem exists_forall_comp_maximalIntegralCurve_neg_mgradient_lt (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    {a b : ℝ} (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ y, a ≤ f y → f y ≤ b → mfderiv I 𝓘(ℝ) f y ≠ 0) :
+    ∃ T, ∀ x, f x ≤ b → ∀ t ∈ maximalIntegralCurveInterval (-mgradient I f) x, T ≤ t →
+      f (maximalIntegralCurve (-mgradient I f) x t) < a := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
+  -- On the compact band, `‖grad f‖²` attains a positive minimum `c`.
+  obtain ⟨c, hc0, hc⟩ : ∃ c > 0, ∀ y, a ≤ f y → f y ≤ b → c ≤ ‖mgradient I f y‖ ^ 2 := by
+    rcases (f ⁻¹' Icc a b).eq_empty_or_nonempty with he | hne
+    · exact ⟨1, one_pos, fun y ha hb ↦ (he.subset (mem_preimage.2 ⟨ha, hb⟩)).elim⟩
+    obtain ⟨y₀, hy₀, hmin⟩ := hcompact.exists_isMinOn hne
+      (continuous_norm_sq_mgradient (hf.of_le one_le_two)).continuousOn
+    have hne₀ : mgradient I f y₀ ≠ 0 := by
+      rw [Ne, mgradient_eq_zero_iff, ← mem_criticalPoints, mem_criticalPoints_iff_mfderiv_eq_zero]
+      exact hreg y₀ hy₀.1 hy₀.2
+    exact ⟨_, pow_pos (norm_pos_iff.2 hne₀) 2, fun y ha hb ↦ isMinOn_iff.1 hmin y ⟨ha, hb⟩⟩
+  refine ⟨max 0 ((b - a) / c) + 1, fun x hx t ht hTt ↦
+    comp_maximalIntegralCurve_neg_mgradient_lt hf hc hx ht ?_ ?_⟩
+  · linarith [le_max_left 0 ((b - a) / c)]
+  · exact (div_lt_iff₀' hc0).1 (by linarith [le_max_right 0 ((b - a) / c)])
 
 variable (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x) {c : ℝ}
   (hc : Tendsto (fun s ↦ f (maximalIntegralCurve (-mgradient I f) x s)) atTop (𝓝 c))
