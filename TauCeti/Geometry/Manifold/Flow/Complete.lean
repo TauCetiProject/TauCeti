@@ -264,13 +264,9 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
   have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun ⟨b, hb⟩ ↦ not_bddAbove_Ici 0
     (BddAbove.mono (Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo hv (hK b)
       fun t ⟨ht, ht0⟩ ↦ hband ht (by rw [abs_of_nonneg ht0]; exact hb ht)) ⟨b, hb⟩)
-  have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
-    have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
-    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
-    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
-      (eventually_notMem_nhdsGT_maximalIntegralCurve hv hglb (hK (-sInf _)))).exists
-    exact htK (hband (hsub ⟨ht.1, ht.2.trans hb⟩)
-      (by rw [abs_of_neg ht.2]; exact neg_le_neg ht.1.le))
+  have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun ⟨a, ha⟩ ↦ not_bddBelow_Iic 0
+    (BddBelow.mono (Iic_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo hv (hK (-a))
+      fun t ⟨ht, ht0⟩ ↦ hband ht (by rw [abs_of_nonpos ht0]; linarith [ha ht])) ⟨a, ha⟩)
   exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
 
 end TauCeti
