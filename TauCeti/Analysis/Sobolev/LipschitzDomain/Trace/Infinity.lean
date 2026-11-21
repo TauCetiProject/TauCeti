@@ -83,7 +83,8 @@ theorem W1p.exists_lipschitzWith_ae_eq_of_isLipschitzDomainWith
     infer_instance
   refine ⟨‖X‖₊, fun u ↦ ⟨preciseRepresentative volume (W1p.value (X u)), ?_, fun x ↦ ?_, ?_⟩⟩
   · refine (W1p.lipschitzWith_preciseRepresentative (X u)).weaken ?_
-    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
+    rw [← NNReal.coe_le_coe]
+    push_cast
     exact (W1p.norm_gradient_le (X u)).trans (X.le_opNorm u)
   · calc ‖preciseRepresentative volume (W1p.value (X u)) x‖ ≤ ‖W1p.value (X u)‖ :=
           Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (W1p.ae_eq_preciseRepresentative (X u))
@@ -228,6 +229,22 @@ theorem W1p.frontierTrace_ofExponentLE_ae_eq_frontierTraceTop {p : ℝ≥0∞} [
   W1p.frontierTrace_ae_eq_frontierTraceTop hp hΩ hb
     (W1p.coeFn_value_ofExponentLE le_top u).eventuallyEq
 
+/-- **A function continuous up to the boundary and vanishing on it has zero trace.** If
+`u ∈ W^{1,∞}(Ω)` agrees almost everywhere on `Ω` with a function `f` continuous on `closure Ω`
+that vanishes on `frontier Ω`, then the trace of `u` is zero. -/
+theorem W1p.frontierTraceTop_eq_zero_of_continuousOn
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u : W1p volume Ω ∞}
+    {f : WithLp 2 (ℝ × E) → ℝ} (hf : ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))))
+    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f)
+    (hf0 : ∀ x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))), f x = 0) :
+    W1p.frontierTraceTop hΩ hb u = 0 := by
+  refine Lp.ext ((W1p.frontierTraceTop_ae_eq_of_continuousOn hΩ hb hf hu).trans ?_)
+  filter_upwards [ae_restrict_mem isClosed_frontier.measurableSet,
+    (Lp.coeFn_zero ℝ ∞ _).symm] with x hxF hx0
+  rw [← hx0]
+  exact hf0 x hxF
+
 /-- **Functions in `W^{1,∞}_0(Ω)` have zero trace.** -/
 theorem W1p.w1p0Submodule_le_ker_frontierTraceTop
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
@@ -239,14 +256,10 @@ theorem W1p.w1p0Submodule_le_ker_frontierTraceTop
   refine w1p0Submodule_subset_of_isClosed (W1p.frontierTraceTop hΩ hb).isClosed_ker
     (fun φ ↦ ?_) hu
   rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-  refine Lp.ext ((W1p.frontierTraceTop_ae_eq_of_continuousOn hΩ hb
-    φ.continuous.continuousOn (W1p.value_ofTestFunctionₗ_ae φ)).trans ?_)
   -- A test function supported in the open set `Ω` vanishes on its frontier.
-  filter_upwards [ae_restrict_mem isClosed_frontier.measurableSet,
-    (Lp.coeFn_zero ℝ ∞ _).symm] with x hxF hx0
-  rw [← hx0]
-  exact image_eq_zero_of_notMem_tsupport fun hxs =>
-    (Ω.isOpen.frontier_eq ▸ hxF).2 (φ.tsupport_subset hxs)
+  exact W1p.frontierTraceTop_eq_zero_of_continuousOn hΩ hb φ.continuous.continuousOn
+    (W1p.value_ofTestFunctionₗ_ae φ) fun x hxF ↦ image_eq_zero_of_notMem_tsupport fun hxs ↦
+      (Ω.isOpen.frontier_eq ▸ hxF).2 (φ.tsupport_subset hxs)
 
 /-- **The kernel of the trace is larger than `W^{1,∞}_0(Ω)`.** On a nonempty bounded Lipschitz
 domain, the closure `W^{1,∞}_0(Ω)` of the test functions is a proper subspace of the kernel of the
@@ -262,13 +275,10 @@ theorem W1p.w1p0Submodule_lt_ker_frontierTraceTop
   obtain ⟨u, hu⟩ := W1p.exists_value_ae_eq_infDist_compl (mu := volume) hb
   have hker : u ∈ LinearMap.ker (W1p.frontierTraceTop hΩ hb).toLinearMap := by
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    refine Lp.ext ((W1p.frontierTraceTop_ae_eq_of_continuousOn hΩ hb
-      (lipschitz_infDist_pt _).continuous.continuousOn hu).trans ?_)
     -- The distance to the complement vanishes on the frontier, which lies outside `Ω`.
-    filter_upwards [ae_restrict_mem isClosed_frontier.measurableSet,
-      (Lp.coeFn_zero ℝ ∞ _).symm] with x hxF hx0
-    rw [← hx0]
-    exact infDist_zero_of_mem (Ω.isOpen.frontier_eq ▸ hxF).2
+    exact W1p.frontierTraceTop_eq_zero_of_continuousOn hΩ hb
+      (lipschitz_infDist_pt _).continuous.continuousOn hu fun x hxF ↦
+        infDist_zero_of_mem (Ω.isOpen.frontier_eq ▸ hxF).2
   refine W1p.notMem_w1p0Submodule_of_value_ae_eq_infDist_compl hne
     (fun h ↦ NormedSpace.unbounded_univ ℝ (WithLp 2 (ℝ × E)) (h ▸ hb)) hu ?_
   rw [← heq] at hker

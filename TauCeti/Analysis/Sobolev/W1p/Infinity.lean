@@ -88,8 +88,8 @@ theorem W1p.one_le_dist_of_value_ae_eq_infDist_compl (hne : (Omega : Set E).None
     filter_upwards [hU, ae_restrict_of_ae
       (norm_fderiv_infDist_ae_eq_indicator (μ := mu) (nonempty_compl.2 hΩ)),
       ae_restrict_mem Omega.isOpen.measurableSet] with x hx hnorm hxΩ
-    rw [← innerSL_apply_norm ℝ, hx, hnorm, Omega.isOpen.isClosed_compl.closure_eq,
-      indicator_of_mem (by simpa using hxΩ), Pi.one_apply]
+    rw [← innerSL_apply_norm ℝ, hx, hnorm]
+    simp [Omega.isOpen.isClosed_compl.closure_eq, hxΩ]
   -- The bound is closed in `v`, so it suffices to test it on test functions.
   refine w1p0Submodule_subset_of_isClosed
     (isClosed_le continuous_const (continuous_const.dist continuous_id)) (fun φ ↦ ?_) hv
