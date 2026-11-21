@@ -12,7 +12,6 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.Indistinguishable
@@ -97,6 +96,7 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
 
 /-- The zero process is an Itô integral of the zero integrand. -/
+@[simp]
 theorem IsItoIntegral.zero : IsItoIntegral ℱ P W 0 0 where
   isStronglyPredictable := stronglyMeasurable_const
   ae_continuous := .of_forall fun _ ↦ continuous_const

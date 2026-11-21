@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -65,6 +66,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   term tending to zero for every `δ > 0` tends to zero.
 * `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
   have upper tails of measure tending to zero.
+* `TauCeti.tendsto_measure_le_lintegral_of_le_two_mul_add`: tail-bound convergence in measure
+  for lower integrals dominated by `2 * f₁ + 2 * f₂`.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -200,6 +203,38 @@ theorem tendsto_measure_lt_of_tendstoInMeasure {f : ι → α → ℝ}
     (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by
       simp only [Set.mem_ofPred_eq] at hx ⊢
       exact hx.le.trans (le_abs_self _)
+
+/-- If `g k s x ≤ 2 * f₁ k s x + 2 * f₂ k s x` pointwise with `f₁ k · x` almost everywhere
+measurable, and both `∫⁻ s, f₁ k s x ∂μ` and `∫⁻ s, f₂ k s x ∂μ` converge to `0` in `ν`-measure,
+then `∫⁻ s, g k s x ∂μ` also converges to `0` in `ν`-measure. -/
+theorem tendsto_measure_le_lintegral_of_le_two_mul_add
+    {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    {f₁ f₂ g : ι → α → β → ℝ≥0∞}
+    (hf₁ : ∀ k x, AEMeasurable (fun s ↦ f₁ k s x) μ)
+    (hle : ∀ k s x, g k s x ≤ 2 * f₁ k s x + 2 * f₂ k s x)
+    (h₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ ν {x | ε ≤ ∫⁻ s, f₁ k s x ∂μ}) l (𝓝 0))
+    (h₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ ν {x | ε ≤ ∫⁻ s, f₂ k s x ∂μ}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun k ↦ ν {x | ε ≤ ∫⁻ s, g k s x ∂μ}) l (𝓝 0) := by
+  have hε4 : (0 : ℝ≥0∞) < ε / 4 := ENNReal.div_pos hε.ne' (by norm_num)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [zero_add] using (h₁ _ hε4).add (h₂ _ hε4)) (fun _ ↦ bot_le) fun k ↦
+    (measure_mono fun x hx ↦ ?_).trans (measure_union_le _ _)
+  have htri : ε ≤ 2 * (∫⁻ s, f₁ k s x ∂μ) + 2 * ∫⁻ s, f₂ k s x ∂μ :=
+    hx.trans ((lintegral_mono (hle k · x)).trans (by
+      rw [lintegral_add_left' ((hf₁ k x).const_mul 2),
+        lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top,
+        lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top]))
+  by_contra hnot
+  obtain ⟨h1, h2⟩ := not_or.mp hnot
+  simp only [Set.mem_ofPred_eq, not_le] at h1 h2
+  have hlt := ENNReal.add_lt_add
+    (ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top h1)
+    (ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top h2)
+  have h4 : (2 : ℝ≥0∞) * (ε / 4) + 2 * (ε / 4) = ε := by
+    calc (2 : ℝ≥0∞) * (ε / 4) + 2 * (ε / 4) = 4 * (ε / 4) := by ring
+      _ = ε := ENNReal.mul_div_cancel (by norm_num) (by norm_num)
+  exact (h4 ▸ hlt).not_ge htri
 
 end TauCeti
 

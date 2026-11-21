@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Process
-public import TauCeti.Probability.BrownianMotion.Integral.Stopping
+public import TauCeti.Probability.BrownianMotion.Integral.Stopping.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.Martingale.ContinuousStopping
-import TauCeti.Probability.Process.StoppingApproximation
 
 /-!
 # Optional stopping for the predictable L² Brownian integral

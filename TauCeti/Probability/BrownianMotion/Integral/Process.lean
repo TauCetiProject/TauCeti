@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.BrownianMotion.Integral.Simple
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
+import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.BrownianMotion.Integral.Square
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.ContinuousLimit
-import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import TauCeti.Probability.Process.TimeIntegral
 
 /-!
@@ -25,10 +24,10 @@ For a filtration-relative Brownian motion `W` and an integrand `H` in
 `TauCeti.BrownianIntegrable ℱ P H`, the finite-horizon terminal maps
 `IsFilteredPreBrownianReal.l2Integral` assemble into a time-indexed stochastic integral process.
 
-First, `eLpNorm_l2Integral_sub_l2Integral` and `eLpNorm_simpleGains_sub_l2Integral` express
-sample-space `L²` distances as ambient time-product `L²` distances, and
-`integral_mul_l2Integral_toPredictableLp` and `integral_sq_l2Integral_toPredictableLp` establish the
-terminal isometries.
+First, `eLpNorm_l2Integral_toPredictableLp_sub_of_le` and
+`norm_l2Integral_toPredictableLp_sub_sq_of_le` express the `L²` norm of increments of
+`t ↦ hW.l2Integral t (hH.toPredictableLp t)`, yielding `L²` continuity in time
+(`continuous_l2Integral_toPredictableLp`).
 
 Second, any adapted modification `I` of `t ↦ hW.l2Integral t (hH.toPredictableLp t)` inherits the
 elementary-approximation `L²` error identity (`eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`,
@@ -39,7 +38,7 @@ cross-isometry `integral_mul_of_ae_eq_l2Integral`, and the square-compensation m
 `martingale_sq_sub_integral_of_ae_eq_l2Integral`. Predictable rectangle restriction and optional
 stopping at raw stopping times are established in
 `TauCeti.Probability.BrownianMotion.Integral.Locality` and
-`TauCeti.Probability.BrownianMotion.Integral.OptionalStopping`.
+`TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral`.
 
 Finally, when `W` has almost surely continuous paths, `exists_continuous_l2Integral` selects a
 strongly predictable, almost surely continuous martingale modification, unique up to
@@ -64,83 +63,155 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
 
-/-- For two `BrownianIntegrable` integrands, the sample-space `L²` distance between their
-finite-horizon `l2Integral` values equals the ambient time-product `L²` distance between the
-integrands. -/
-theorem eLpNorm_l2Integral_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H K : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (T : ℝ≥0) :
+private theorem l2Integral_indicator_Ioc_prod_univ_eq_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    eLpNorm (fun ω ↦ hW.l2Integral T (hH.toPredictableLp T) ω -
-        hW.l2Integral T (hK.toPredictableLp T) ω) 2 P =
-      eLpNorm (fun p ↦ H p.1 p.2 - K p.1 p.2) 2 ((timeMeasure T).prod P) := by
+    hW.l2Integral t ((hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t) =
+      hW.l2Integral t (hH.toPredictableLp t) - hW.l2Integral s (hH.toPredictableLp s) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hsm : StronglyMeasurable[ℱ.predictable] (Function.uncurry H - Function.uncurry K) :=
-    hH.isStronglyPredictable.sub hK.isStronglyPredictable
-  calc
-    eLpNorm (fun ω ↦ hW.l2Integral T (hH.toPredictableLp T) ω -
-        hW.l2Integral T (hK.toPredictableLp T) ω) 2 P
-      = edist (hW.l2Integral T (hH.toPredictableLp T))
-          (hW.l2Integral T (hK.toPredictableLp T)) := (Lp.edist_def _ _).symm
-    _ = edist (hH.toPredictableLp T) (hK.toPredictableLp T) := (hW.l2Integral T).edist_map _ _
-    _ = eLpNorm (Function.uncurry H - Function.uncurry K) 2 (ℱ.predictableMeasure P T) := by
-        rw [Lp.edist_def]
-        exact eLpNorm_congr_ae ((hH.coeFn_toPredictableLp T).sub (hK.coeFn_toPredictableLp T))
-    _ = eLpNorm (fun p ↦ H p.1 p.2 - K p.1 p.2) 2 ((timeMeasure T).prod P) := by
-        rw [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hsm]; rfl
+  have hmem : ∀ᵐ p ∂ℱ.predictableMeasure P t, p ∈ Ioc 0 t ×ˢ univ := by
+    have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P t)
+      (measurableSet_predictable_Ioc_prod 0 t (𝓕 := ℱ) MeasurableSet.univ)
+    simpa only [ℱ.predictableMeasure_restrict, min_self] using hb
+  have hind : (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t =
+      hH.toPredictableLp t - ℱ.predictableMeasureExtendLp P ℝ hst (hH.toPredictableLp s) := by
+    apply Lp.ext
+    filter_upwards
+      [(hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).coeFn_toPredictableLp t,
+      Lp.coeFn_sub (hH.toPredictableLp t)
+        (ℱ.predictableMeasureExtendLp P ℝ hst (hH.toPredictableLp s)),
+      hH.coeFn_toPredictableLp t,
+      ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := ℝ) hst (hH.coeFn_toPredictableLp s),
+      hmem] with ⟨u, ω⟩ h1 hsub ht hs hu
+    rw [h1, hsub]
+    dsimp only [Pi.sub_apply]
+    rw [ht, hs]
+    simp only [Function.uncurry_apply_pair, Set.indicator, Set.mem_prod, Set.mem_Ioc,
+      Set.mem_univ, and_true, hu.1.1, hu.1.2, true_and]
+    by_cases hsu : s < u
+    · simp [hsu, not_le_of_gt hsu]
+    · simp [hsu, not_lt.mp hsu]
+  rw [hind, map_sub, hW.l2Integral_predictableMeasureExtendLp hst]
 
-/-- For a `BrownianIntegrable` process and any square-integrable elementary holding on a
-nondecreasing grid, the sample-space `L²` distance between `Finance.simpleGains` and `l2Integral`
-equals the ambient time-product `L²` distance between `Finance.simpleHolding` and `H`. -/
-theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) (T : ℝ≥0) :
-    eLpNorm (fun ω ↦ Finance.simpleGains τ n a W T ω -
-        hW.l2Integral T (hH.toPredictableLp T) ω) 2 P =
-      eLpNorm (fun p ↦ Finance.simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure T).prod P) := by
+/-- For `s ≤ t`, the sample-space `L²` distance between `hW.l2Integral t (hH.toPredictableLp t)`
+and `hW.l2Integral s (hH.toPredictableLp s)` equals the ambient time-product `L²` norm of `H`
+restricted to `(s, t]`. -/
+theorem eLpNorm_l2Integral_toPredictableLp_sub_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    eLpNorm (fun ω ↦ hW.l2Integral t (hH.toPredictableLp t) ω -
+        hW.l2Integral s (hH.toPredictableLp s) ω) 2 P =
+      eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun u ↦ H u p.2) p.1) 2
+        ((timeMeasure t).prod P) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hS := hW.eLpNorm_l2Integral_sub_l2Integral (BrownianIntegrable.simpleHolding ha ha₂) hH T
-  rw [(BrownianIntegrable.simpleHolding ha ha₂).toPredictableLp_def T] at hS
-  exact (eLpNorm_congr_ae
-    ((hW.coeFn_l2Integral_simpleHolding hτ ha T
-      ((BrownianIntegrable.simpleHolding ha ha₂).memLp_predictableMeasure T)).symm.sub
-      .rfl)).trans hS
+  have hdiff := hW.l2Integral_indicator_Ioc_prod_univ_eq_sub hH hst
+  have hzero := hW.eLpNorm_l2Integral_sub_l2Integral
+    (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))) BrownianIntegrable.zero t
+  rw [BrownianIntegrable.toPredictableLp_zero, map_zero] at hzero
+  refine (eLpNorm_congr_ae ?_).trans (hzero.trans ?_)
+  · filter_upwards [Lp.coeFn_sub (hW.l2Integral t (hH.toPredictableLp t))
+      (hW.l2Integral s (hH.toPredictableLp s)), Lp.coeFn_zero ℝ 2 P] with ω hsub hz
+    have hω := congrArg (fun f : Lp ℝ 2 P ↦ f ω) hdiff
+    rw [hω, hsub, hz]
+    simp
+  · congr 1
+    ext ⟨u, ω⟩
+    by_cases hu : u ∈ Ioc s t <;> simp [hu]
 
-/-- Cross-isometry of the finite-horizon predictable `L²` Brownian integral on
-`BrownianIntegrable` processes. -/
-theorem integral_mul_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H K : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (T : ℝ≥0) :
-    ∫ ω, hW.l2Integral T (hH.toPredictableLp T) ω *
-        hW.l2Integral T (hK.toPredictableLp T) ω ∂P =
-      ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P := by
+/-- For `s ≤ t`, the squared `Lp ℝ 2 P` norm of the increment
+`hW.l2Integral t (hH.toPredictableLp t) - hW.l2Integral s (hH.toPredictableLp s)` equals the
+expected square integral of `H` over `(s, t]`. -/
+theorem norm_l2Integral_toPredictableLp_sub_sq_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    ‖hW.l2Integral t (hH.toPredictableLp t) -
+        hW.l2Integral s (hH.toPredictableLp s)‖ ^ 2 =
+      ∫ p in Ioc s t ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hiso := (hW.l2Integral T).inner_map_map (hH.toPredictableLp T) (hK.toPredictableLp T)
-  have hlhs : ⟪hW.l2Integral T (hH.toPredictableLp T),
-      hW.l2Integral T (hK.toPredictableLp T)⟫_ℝ =
-      ∫ ω, hW.l2Integral T (hH.toPredictableLp T) ω *
-        hW.l2Integral T (hK.toPredictableLp T) ω ∂P := by
-    rw [real_inner_comm, L2.inner_def]; simp only [RCLike.inner_apply, conj_trivial]
-  have hrhs : ⟪hH.toPredictableLp T, hK.toPredictableLp T⟫_ℝ =
-      ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P := by
-    let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    rw [real_inner_comm, L2.inner_def]
-    have hc := integral_congr_ae ((hH.coeFn_toPredictableLp T).mul (hK.coeFn_toPredictableLp T))
-    simp only [RCLike.inner_apply, conj_trivial, Pi.mul_apply] at hc ⊢
-    exact hc.trans (ℱ.integral_predictableMeasure P
-      (hH.isStronglyPredictable.mul hK.isStronglyPredictable) T)
-  exact hlhs.symm.trans (hiso.trans hrhs)
+  have hdiff := hW.l2Integral_indicator_Ioc_prod_univ_eq_sub hH hst
+  rw [← hdiff]
+  let f := hW.l2Integral t
+    ((hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t)
+  have hnorm : ‖f‖ ^ 2 = ∫ ω, f ω ^ 2 ∂P := by
+    rw [← real_inner_self_eq_norm_sq, L2.inner_def]
+    refine integral_congr_ae (.of_forall fun ω ↦ ?_)
+    simp [sq]
+  rw [hnorm, hW.integral_sq_l2Integral_toPredictableLp
+    (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))) t,
+    ← integral_indicator ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ)]
+  refine integral_congr_ae (.of_forall fun ⟨u, ω⟩ ↦ ?_)
+  by_cases hu : u ∈ Ioc s t <;> simp [hu]
 
-/-- Itô isometry of the finite-horizon predictable `L²` Brownian integral on a
-`BrownianIntegrable` process. -/
-theorem integral_sq_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    ∫ ω, hW.l2Integral T (hH.toPredictableLp T) ω ^ 2 ∂P =
-      ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
-  simpa only [sq] using hW.integral_mul_l2Integral_toPredictableLp hH hH T
+/-- The predictable `L²` Brownian integral process `t ↦ hW.l2Integral t (hH.toPredictableLp t)`
+is continuous in `Lp ℝ 2 P`. -/
+theorem continuous_l2Integral_toPredictableLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    Continuous fun t ↦ hW.l2Integral t (hH.toPredictableLp t) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  refine continuous_iff_continuousAt.mpr fun t₀ ↦ ?_
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  let f (t : ℝ≥0) : Lp ℝ 2 P := hW.l2Integral t (hH.toPredictableLp t)
+  let μ := (timeMeasure (t₀ + 1)).prod P
+  let F (t : ℝ≥0) (p : ℝ≥0 × Ω) : ℝ :=
+    (Ioc (min t t₀) (max t t₀) ×ˢ Set.univ).indicator (fun q ↦ H q.1 q.2 ^ 2) p
+  have hsm : StronglyMeasurable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2) :=
+    ((hH.isStronglyPredictable.mono ℱ.predictable_le_prod).pow 2)
+  have ht₀_null : timeMeasure (t₀ + 1) {t₀} = 0 := by
+    rw [timeMeasure_apply (t₀ + 1) (measurableSet_singleton t₀)]
+    exact measure_mono_null (Set.image_mono Set.inter_subset_left) (by simp)
+  have hne : ∀ᵐ p ∂μ, p.1 ≠ t₀ := by
+    have htime : ∀ᵐ u ∂timeMeasure (t₀ + 1), u ≠ t₀ := by
+      rw [ae_iff]
+      convert ht₀_null using 2
+      ext x
+      simp
+    exact (Measure.quasiMeasurePreserving_fst (μ := timeMeasure (t₀ + 1)) (ν := P)).ae htime
+  have hF_lim : Tendsto (fun t ↦ ∫ p, F t p ∂μ) (𝓝 t₀) (𝓝 0) := by
+    have hzero : ∫ _ : ℝ≥0 × Ω, (0 : ℝ) ∂μ = 0 := integral_zero _ _
+    rw [← hzero]
+    refine tendsto_integral_filter_of_dominated_convergence (fun p ↦ H p.1 p.2 ^ 2)
+      (.of_forall fun t ↦
+        (hsm.indicator (measurableSet_Ioc.prod MeasurableSet.univ)).aestronglyMeasurable)
+      (.of_forall fun t ↦ .of_forall fun p ↦ ?_)
+      (hH.memLp_timeMeasure (t₀ + 1)).integrable_sq
+      (hne.mono fun ⟨u, ω⟩ hu ↦ ?_)
+    · rw [Real.norm_of_nonneg (Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)]
+      exact Set.indicator_le' (fun _ _ ↦ le_rfl) (fun _ _ ↦ sq_nonneg _) _
+    · apply tendsto_const_nhds.congr'
+      rcases lt_or_gt_of_ne hu with hlt | hgt
+      · filter_upwards [eventually_gt_nhds hlt] with t ht
+        have hnot : u ∉ Ioc (min t t₀) (max t t₀) := fun h ↦
+          not_lt_of_ge h.1.le (lt_min ht hlt)
+        simp [F, hnot]
+      · filter_upwards [eventually_lt_nhds hgt] with t ht
+        have hnot : u ∉ Ioc (min t t₀) (max t t₀) := fun h ↦
+          not_lt_of_ge h.2 (max_lt ht hgt)
+        simp [F, hnot]
+  have hsq_lim : Tendsto (fun t ↦ ‖f t - f t₀‖ ^ 2) (𝓝 t₀) (𝓝 0) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hF_lim
+      (.of_forall fun t ↦ sq_nonneg _) ?_
+    filter_upwards [eventually_le_nhds (lt_add_one t₀)] with t ht1
+    have hle_int {a b : ℝ≥0} (hb : b ≤ t₀ + 1) :
+        ∫ p in Ioc a b ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure b).prod P ≤
+          ∫ p, (Ioc a b ×ˢ Set.univ).indicator (fun q ↦ H q.1 q.2 ^ 2) p ∂μ := by
+      rw [← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
+      exact integral_mono_measure (Measure.prod_mono (timeMeasure_mono hb) le_rfl)
+        (.of_forall fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
+        ((hH.memLp_timeMeasure (t₀ + 1)).integrable_sq.indicator
+          (measurableSet_Ioc.prod MeasurableSet.univ))
+    by_cases ht : t ≤ t₀
+    · rw [norm_sub_rev, hW.norm_l2Integral_toPredictableLp_sub_sq_of_le hH ht]
+      simpa only [F, min_eq_left ht, max_eq_right ht] using
+        hle_int (le_add_of_nonneg_right zero_le_one)
+    · have ht' := (not_le.mp ht).le
+      rw [hW.norm_l2Integral_toPredictableLp_sub_sq_of_le hH ht']
+      simpa only [F, min_eq_right ht', max_eq_left ht'] using hle_int ht1
+  have hsqrt : Tendsto (fun t ↦ √(‖f t - f t₀‖ ^ 2)) (𝓝 t₀) (𝓝 √0) :=
+    Real.continuous_sqrt.continuousAt.tendsto.comp hsq_lim
+  simpa only [Real.sqrt_sq (norm_nonneg _), Real.sqrt_zero] using hsqrt
 
 section Modification
 
@@ -178,37 +249,6 @@ theorem integral_sq_of_ae_eq_l2Integral
     (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) (T : ℝ≥0) :
     ∫ ω, I T ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure T).prod P := by
   simpa only [sq] using hW.integral_mul_of_ae_eq_l2Integral hH hH hI hI T
-
-/-- For any almost-everywhere representative `X` of `hW.l2Integral T (hH.toPredictableLp T)` and any
-square-integrable elementary holding on a nondecreasing grid, the sample-space `L²` distance
-between `Finance.simpleGains` and `X` equals the ambient time-product `L²` distance between
-`Finance.simpleHolding` and `H`. -/
-theorem eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
-    {X : Ω → ℝ} {T : ℝ≥0} (hX : X =ᵐ[P] hW.l2Integral T (hH.toPredictableLp T))
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    eLpNorm (Finance.simpleGains τ n a W T - X) 2 P =
-      eLpNorm (fun p ↦ Finance.simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure T).prod P) :=
-  (eLpNorm_congr_ae (EventuallyEq.rfl.sub hX)).trans
-    (hW.eLpNorm_simpleGains_sub_l2Integral hH hτ ha ha₂ T)
-
-/-- If elementary holdings converge in ambient time-product `L²` to a family of `BrownianIntegrable`
-integrands `H k`, then their Brownian simple gains converge in sample-space `L²` to any
-representatives `X k` of `hW.l2Integral T ((hH k).toPredictableLp T)`. -/
-theorem tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
-    {ι : Type*} {l : Filter ι} (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H : ι → ℝ≥0 → Ω → ℝ} (hH : ∀ k, BrownianIntegrable ℱ P (H k))
-    {X : ι → Ω → ℝ} {T : ℝ≥0} (hX : ∀ k, X k =ᵐ[P] hW.l2Integral T ((hH k).toPredictableLp T))
-    {τ : ι → ℕ → ℝ≥0} {n : ι → ℕ} {a : ι → ℕ → Ω → ℝ} (hτ : ∀ k, MonotoneOn (τ k) (Iic (n k)))
-    (ha : ∀ k, ∀ i < n k, StronglyMeasurable[ℱ (τ k i)] (a k i))
-    (ha₂ : ∀ k, ∀ i < n k, MemLp (a k i) 2 P) {L : ℝ≥0∞}
-    (hlim : Tendsto (fun k ↦ eLpNorm (fun p ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 -
-      H k p.1 p.2) 2 ((timeMeasure T).prod P)) l (𝓝 L)) :
-    Tendsto (fun k ↦ eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W T - X k) 2 P) l (𝓝 L) :=
-  hlim.congr fun k ↦
-    (hW.eLpNorm_simpleGains_sub_of_ae_eq_l2Integral (hH k) (hX k) (hτ k) (ha k) (ha₂ k)).symm
 
 /-- Any strongly adapted modification of `t ↦ hW.l2Integral t (hH.toPredictableLp t)` is a
 martingale on the original raw filtration. -/
