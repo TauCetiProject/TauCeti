@@ -89,21 +89,8 @@ matching-marginal assumption. -/
 @[simp]
 theorem map_eval_zero_chainMeasure
     (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] :
-    (chainMeasure pi).map (fun x ↦ x 0) = (pi 0).fst := by
-  let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
-  have heval : (fun x : (n : ℕ) → X n ↦ x 0) = e ∘ frestrictLe 0 := by
-    funext x
-    rfl
-  have hprefix : (chainMeasure pi).map (frestrictLe 0) = (pi 0).fst.map e.symm := by
-    simp [chainMeasure, Kernel.trajMeasure, e,
-      MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0),
-      Kernel.traj_map_frestrictLe, Kernel.partialTraj_self, MeasureTheory.Measure.id_comp]
-  calc
-    (chainMeasure pi).map (fun x ↦ x 0)
-        = ((chainMeasure pi).map (frestrictLe 0)).map e := by
-            rw [heval]
-            exact (MeasureTheory.Measure.map_map e.measurable (measurable_frestrictLe 0)).symm
-    _ = (pi 0).fst := by simp [hprefix]
+    (chainMeasure pi).map (fun x ↦ x 0) = (pi 0).fst :=
+  Kernel.map_eval_zero_trajMeasure
 
 /-- The path law has the total mass of the initial plan, even if later marginals do not match. -/
 @[simp]

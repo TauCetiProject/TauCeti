@@ -27,8 +27,8 @@ on `ℕ → S × A` of the state-action process. It is the Ionescu-Tulcea measur
 `Kernel.trajMeasure` started from `dirac s ⊗ₘ π.first` whose step from the history up to time `n`
 is `π.stepKernel τ n`: the next state is drawn from `τ` at the last state-action pair, then the
 next action from `π.next n`. The construction needs no countability; for a Markov decision process
-with transition laws `trans : S → A → PMF S` on a countable state space, `τ` is
-`Kernel.ofPMF (fun p ↦ trans p.1 p.2)`.
+with transition laws `trans : S → A → PMF S` on countable state and action spaces with measurable
+singletons, `τ` is `Kernel.ofPMF (fun p ↦ trans p.1 p.2)`.
 
 ## Main statements
 
