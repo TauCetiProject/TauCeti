@@ -115,6 +115,13 @@ def sphereBallMap : C(closedBall (0 : Fin (m + 2) → ℝ) 1, Sph) :=
   (sigmaCellMap (univ : Set Sph) (m + 2)).comp
     ⟨Sigma.mk (β := fun _ ↦ closedBall (0 : Fin (m + 2) → ℝ) 1) default, continuous_sigmaMk⟩
 
+/-- The map on the ball is the characteristic map of the single top cell. -/
+theorem sphereBallMap_apply (v : closedBall (0 : Fin (m + 2) → ℝ) 1) :
+    letI := TopCat.sphereRelCWComplex h
+    letI := TopCat.uniqueCellSphereRelCWComplex h (n := m + 2) (by omega)
+    sphereBallMap h v = sigmaCellMap (univ : Set Sph) (m + 2) ⟨default, v⟩ :=
+  (rfl)
+
 /-- The characteristic map of the top cell sends the boundary sphere of the ball to the pole. -/
 theorem sphereBallMap_of_norm_eq_one {v : closedBall (0 : Fin (m + 2) → ℝ) 1}
     (hv : ‖(v : Fin (m + 2) → ℝ)‖ = 1) : sphereBallMap h v = spherePolePoint h := by
@@ -147,6 +154,11 @@ theorem sphereCubeMap_apply (d : Fin (m + 2) → I) :
     letI := TopCat.uniqueCellSphereRelCWComplex h (n := m + 2) (by omega)
     sphereCubeMap h d = sigmaCellMap (univ : Set Sph) (m + 2)
       ⟨default, cubeHomeomorphClosedBall (Fin (m + 2)) d⟩ :=
+  (rfl)
+
+/-- The cube map is the map on the ball, read through `TauCeti.cubeHomeomorphClosedBall`. -/
+theorem sphereCubeMap_eq_sphereBallMap (d : Fin (m + 2) → I) :
+    sphereCubeMap h d = sphereBallMap h (cubeHomeomorphClosedBall (Fin (m + 2)) d) :=
   (rfl)
 
 /-- The cube map collapses the boundary of the cube to the pole. -/
@@ -333,6 +345,16 @@ def sphereAttachingCycle :
       (MoorePathFrom.loopPair Sph (spherePolePoint h)).snd).cycles (m + 1) :=
   TopPair.cubicalBoundaryCycleOfCube k (spherePathCube h) (mapsTo_spherePathCube h)
 
+/-- The underlying chain of the attaching cycle is the signed sum of the faces of the path cube,
+`TopPair.cubicalBoundaryChainOfCube`. -/
+@[simp]
+theorem iCycles_sphereAttachingCycle :
+    (((normalizedCubicalChainComplex k).obj
+      (MoorePathFrom.loopPair Sph (spherePolePoint h)).snd).iCycles (m + 1)).hom
+        (sphereAttachingCycle h k) =
+      TopPair.cubicalBoundaryChainOfCube k (spherePathCube h) (mapsTo_spherePathCube h) :=
+  TopPair.iCycles_cubicalBoundaryCycleOfCube ..
+
 /-- The boundary of the path cube is the image of the attaching cycle in the based path space. -/
 theorem boundary_ofCube_spherePathCube :
     NormalizedCubicalChain.boundary (MoorePathFrom Sph (spherePolePoint h)) k (m + 1)
@@ -343,7 +365,7 @@ theorem boundary_ofCube_spherePathCube :
           (MoorePathFrom.loopPair Sph (spherePolePoint h)).snd).iCycles (m + 1)).hom
             (sphereAttachingCycle h k)) :=
   (TopPair.map_cubicalBoundaryChainOfCube k (spherePathCube h) (mapsTo_spherePathCube h)).symm.trans
-    (congrArg _ (TopPair.iCycles_cubicalBoundaryCycleOfCube k _ _).symm)
+    (congrArg _ (iCycles_sphereAttachingCycle h k).symm)
 
 /-- **The Leibniz rule for the product with the path cube**: for a `q`-cycle `z` of the Moore
 loops, the boundary of `z · σ`, for the path cube `σ`, is `(-1) ^ q` times the image of the product
