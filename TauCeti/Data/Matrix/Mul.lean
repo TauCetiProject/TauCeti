@@ -17,7 +17,10 @@ strictly positive. This is the form in which positivity propagates along the pow
 matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
-zero.
+zero. A submatrix of a product can be computed through part of the inner index, provided the
+relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
+their indices: the identity matrix and a product of degree-preserving matrices are
+degree-preserving, and a product of matrices intertwining square matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
 
@@ -31,6 +34,12 @@ out to the left without any commutativity, since the left factor has entries `0`
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
+  through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
+* `Matrix.eq_of_one_apply_ne_zero`: the identity matrix is degree-preserving.
+* `Matrix.mul_mul_eq_mul_mul_of_mul_eq_mul`: if `D₁ * X = X * D₂` and `D₂ * Y = Y * D₃`, then
+  `D₁ * (X * Y) = X * Y * D₃`.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
@@ -89,7 +98,54 @@ theorem left_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A
 theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : A * B ≠ 0) :
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
+/-- The rows `e₁` and columns `e₃` of a matrix product can be computed through the inner indices
+`e₂` alone, when `e₂` is injective and the rows `e₁` of the left factor vanish outside its range.
+For a bijective `e₂` this is `Matrix.submatrix_mul`. -/
+theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K)
+    (B : Matrix n p K) (e₁ : l → m) (e₂ : o → n) (e₃ : q → p) (he₂ : Function.Injective e₂)
+    (hA : ∀ i j, A (e₁ i) j ≠ 0 → j ∈ Set.range e₂) :
+    (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
+  ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
+    (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
+
+/-- **Products preserve degrees.** If the nonzero entries `A i j` and `B j k` of two matrices
+only join indices of the same degree, so do the nonzero entries of `A * B`. -/
+theorem eq_of_mul_apply_ne_zero {G : Type*} {g₁ : m → G} {g₂ : n → G} {g₃ : p → G}
+    {A : Matrix m n K} {B : Matrix n p K} (hA : ∀ i j, A i j ≠ 0 → g₂ j = g₁ i)
+    (hB : ∀ j k, B j k ≠ 0 → g₃ k = g₂ j) (i : m) (k : p) (h : (A * B) i k ≠ 0) :
+    g₃ k = g₁ i := by
+  obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  rw [hB j k (right_ne_zero_of_mul hj), hA i j (left_ne_zero_of_mul hj)]
+
 end NonUnitalNonAssocSemiring
+
+section ZeroOne
+
+variable {R m : Type*} [Zero R] [One R] [DecidableEq m]
+
+/-- **The identity matrix preserves degrees.** The nonzero entries of `1` only join indices of the
+same degree. -/
+theorem eq_of_one_apply_ne_zero {G : Type*} {g : m → G} (i k : m)
+    (h : (1 : Matrix m m R) i k ≠ 0) : g k = g i := by
+  obtain rfl : i = k := by_contra fun hik ↦ h (one_apply_ne hik)
+  rfl
+
+end ZeroOne
+
+section NonUnitalSemiring
+
+variable {R ν₁ ν₂ ν₃ : Type*} [NonUnitalSemiring R]
+
+/-- A product of matrices intertwining square matrices intertwines them: if `D₁ * X = X * D₂` and
+`D₂ * Y = Y * D₃`, then `D₁ * (X * Y) = X * Y * D₃`. This is the analogue of `SemiconjBy.mul_left`
+for rectangular matrices. -/
+theorem mul_mul_eq_mul_mul_of_mul_eq_mul [Fintype ν₁] [Fintype ν₂] [Fintype ν₃]
+    {D₁ : Matrix ν₁ ν₁ R} {D₂ : Matrix ν₂ ν₂ R} {D₃ : Matrix ν₃ ν₃ R} {X : Matrix ν₁ ν₂ R}
+    {Y : Matrix ν₂ ν₃ R} (hX : D₁ * X = X * D₂) (hY : D₂ * Y = Y * D₃) :
+    D₁ * (X * Y) = X * Y * D₃ := by
+  rw [← Matrix.mul_assoc, hX, Matrix.mul_assoc, hY, Matrix.mul_assoc]
+
+end NonUnitalSemiring
 
 section MulZeroOneClass
 

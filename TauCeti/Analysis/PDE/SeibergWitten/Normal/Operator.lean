@@ -218,8 +218,12 @@ theorem flatDirac_eq_zero_and_flatCurvatureDefect_eq_zero_iff
     funext fun q ↦ normalSpinor_apply u₀ x q
   rw [← Submodule.coe_eq_zero, hns, coe_flatDirac_smul_const (normalConnection e x) hα u₀,
     flatCurvatureDefect_eq_zero_iff]
-  exact sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
-    hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ hx
+  have h := sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
+    hQ hkl he h₀ h₂₃ (r := 2⁻¹) (by norm_num) h₂ hρ hu₀ hu₀₁ hx
+  rw [quadraticTwoForm_sqrt_smul o ρ hkl (by norm_num : (0 : ℝ) ≤ 2⁻¹), Submodule.coe_smul,
+    show (2⁻¹ : ℝ) / 4 = 8⁻¹ by norm_num, mul_inv_cancel₀ two_ne_zero,
+    Vortex.coupledEquation_one] at h
+  exact h
 
 omit h₂ in
 /-- Intertwining of `flatGaugeAdjoint` on normal perturbations with `Vortex.gaugeAdjoint x y`. -/

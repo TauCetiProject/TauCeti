@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Data.Fin.Tuple.Sort
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
@@ -57,7 +58,10 @@ The same expansion bounds the norm of the `m`-th coefficient
 `m` have norm at most `B`, it is at most `max 1 B ^ m` times the sum, over the ordered partitions
 `c` of `m`, of `‖q c.length‖`. For a composite `g ∘ f` this bounds the `m`-th derivative by the
 derivatives of `g` of order at most `m` (`ContDiffAt.norm_iteratedFDeriv_comp_le_sum`), keeping
-track of each order separately, as needed for changes of variables in Sobolev spaces.
+track of each order separately, as needed for changes of variables in Sobolev spaces. In
+particular, a `Cᵐ` function on a proper space composed with a `Cᵐ` map that is bounded together
+with its derivatives of order at most `m` has a bounded `m`-th derivative
+(`ContDiff.exists_norm_iteratedFDeriv_comp_le`).
 -/
 
 public section
@@ -819,3 +823,28 @@ theorem ContDiffAt.norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E → F} {
       max 1 B ^ m * ∑ c : OrderedFinpartition m, ‖iteratedFDeriv 𝕜 c.length g (f x)‖ := by
   rw [iteratedFDeriv_comp hg hf le_rfl]
   exact FormalMultilinearSeries.norm_taylorComp_le _ _ hB
+
+/-- **Composites with bounded derivatives.** Let `f` be `Cᵐ`, bounded, with bounded derivatives
+of order at most `m`, and let `g` be `Cᵐ` on a proper space. Then the `m`-th derivative of `g ∘ f`
+is bounded: the derivatives of `g` are bounded on the compact ball containing the range of `f`. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_comp_le [ProperSpace F] {g : F → G} {f : E → F}
+    {m : ℕ} (hg : ContDiff 𝕜 m g) (hf : ContDiff 𝕜 m f)
+    (hb : ∀ n ≤ m, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤ C := by
+  obtain ⟨R, hR⟩ := hb 0 (Nat.zero_le _)
+  obtain ⟨A, -, hA⟩ := hg.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
+    (isCompact_closedBall (0 : F) R) (Set.subset_univ _)
+  have hB (k : ℕ) : ∃ B, ∀ x, k ≤ m → ‖iteratedFDeriv 𝕜 k f x‖ ≤ B := by
+    by_cases hk : k ≤ m
+    · exact (hb k hk).imp fun B hB x _ ↦ hB x
+    · exact ⟨0, fun _ hk' ↦ absurd hk' hk⟩
+  choose B hB using hB
+  set B' := ∑ k ∈ Finset.range (m + 1), |B k|
+  refine ⟨max 1 B' ^ m * ∑ _c : OrderedFinpartition m, A, fun x ↦ ?_⟩
+  have hx : f x ∈ Metric.closedBall (0 : F) R := by simpa using hR x
+  refine (hg.contDiffAt.norm_iteratedFDeriv_comp_le_sum hf.contDiffAt (B := B')
+    fun k _ hkm ↦ ?_).trans ?_
+  · exact (hB k x hkm).trans ((le_abs_self _).trans (Finset.single_le_sum (f := fun k ↦ |B k|)
+      (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (by omega))))
+  · gcongr with c
+    exact hA _ c.length_le _ hx
