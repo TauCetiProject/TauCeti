@@ -25,7 +25,8 @@ makes their Fourier integrals converge uniformly.
 
 * `MeasureTheory.Integrable.continuous_fourier`: `𝓕 f` is continuous for integrable `f`.
 * `MeasureTheory.Integrable.continuous_fourierInv`: `𝓕⁻ f` is continuous for integrable `f`.
-* `Real.fourier_const_smul`, `Real.fourier_neg`: `𝓕 (c • f) = c • 𝓕 f` and `𝓕 (-f) = -𝓕 f`.
+* `Real.fourier_const_smul`, `Real.fourier_neg`: `𝓕 (c • f) = c • 𝓕 f` and `𝓕 (-f) = -𝓕 f`;
+  `Real.fourierInv_const_smul`: `𝓕⁻ (c • f) = c • 𝓕⁻ f`.
 * `MeasureTheory.Integrable.fourier_add`, `MeasureTheory.Integrable.fourier_sub`: the Fourier
   integral is additive on integrable functions.
 * `TauCeti.eLpNorm_fourier_top_le`: `‖𝓕 f‖_∞ ≤ ‖f‖₁`.
@@ -65,6 +66,14 @@ is by definition `VectorFourier.fourierIntegral` for the pairing `innerₗ V`
 (`Real.instFourierTransform`), so this is Mathlib's `VectorFourier.fourierIntegral_const_smul`. -/
 @[simp]
 theorem fourier_const_smul (c : ℂ) (f : V → E) : 𝓕 (c • f) = c • 𝓕 f :=
+  VectorFourier.fourierIntegral_const_smul _ _ _ _ _
+
+/-- The inverse Fourier integral of a function is homogeneous: `𝓕⁻ (c • f) = c • 𝓕⁻ f`. On
+functions, `𝓕⁻` is by definition `VectorFourier.fourierIntegral` for the pairing `-innerₗ V`
+(`Real.instFourierTransformInv`), so this is again Mathlib's
+`VectorFourier.fourierIntegral_const_smul`. -/
+@[simp]
+theorem fourierInv_const_smul (c : ℂ) (f : V → E) : 𝓕⁻ (c • f) = c • 𝓕⁻ f :=
   VectorFourier.fourierIntegral_const_smul _ _ _ _ _
 
 /-- The Fourier integral of `-f` is `-𝓕 f`. -/

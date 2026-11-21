@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Set.OptionRestrict
 public import TauCeti.RepresentationTheory.Crystal.Sigma
+import TauCeti.Data.Option.Basic
 
 /-!
 # Connected components of normal crystals
@@ -97,6 +98,23 @@ theorem dual_graph : c.dual.graph = c.graph := by
   ext x y
   rw [graph_adj_iff, dual_e, ← graph_adj_iff_f]
 
+/-- Elements connected by an iterated raising operator lie in the same connected component of the
+crystal graph. -/
+theorem reachable_of_eIter_eq_some {n : ℕ} (h : c.eIter i n x = some y) :
+    c.graph.Reachable x y := by
+  induction n generalizing x with
+  | zero =>
+    simp only [eIter_zero, Option.some.injEq] at h
+    exact h ▸ SimpleGraph.Reachable.refl _
+  | succ n ih =>
+    obtain ⟨z, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.eIter_succ n x ▸ h)
+    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hy)
+
+/-- Elements connected by an iterated lowering operator lie in the same connected component of the
+crystal graph. -/
+theorem reachable_of_fIter_eq_some {n : ℕ} (h : c.fIter i n x = some y) : c.graph.Reachable x y :=
+  (c.reachable_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
 end Graph
 
 /-! ### Restriction to a union of components -/
@@ -134,12 +152,12 @@ theorem restrict_φ (x : S) : (c.restrict S hS).φ i x = c.φ i x := (rfl)
 
 @[simp]
 theorem restrict_e_eq_some_iff {x y : S} :
-    (c.restrict S hS).e i x = some y ↔ c.e i x = some y.1 :=
+    (c.restrict S hS).e i x = some y ↔ c.e i x = some y.val :=
   Set.optionRestrict_eq_some_iff (hg := fun _ _ h => hS (c.graph_adj_of_e_eq_some h))
 
 @[simp]
 theorem restrict_f_eq_some_iff {x y : S} :
-    (c.restrict S hS).f i x = some y ↔ c.f i x = some y.1 :=
+    (c.restrict S hS).f i x = some y ↔ c.f i x = some y.val :=
   Set.optionRestrict_eq_some_iff (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h))
 
 @[simp]
@@ -149,6 +167,20 @@ theorem unattach_restrict_e (x : S) : ((c.restrict S hS).e i x).unattach = c.e i
 @[simp]
 theorem unattach_restrict_f (x : S) : ((c.restrict S hS).f i x).unattach = c.f i x :=
   Set.unattach_optionRestrict (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h)) x
+
+@[simp]
+theorem unattach_restrict_eIter (n : ℕ) (x : S) :
+    ((c.restrict S hS).eIter i n x).unattach = c.eIter i n x.val := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => simp [eIter_succ, ih]
+
+@[simp]
+theorem unattach_restrict_fIter (n : ℕ) (x : S) :
+    ((c.restrict S hS).fIter i n x).unattach = c.fIter i n x.val := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => simp [fIter_succ, ih]
 
 /-- The crystal graph of a restriction is the induced subgraph. -/
 theorem restrict_graph : (c.restrict S hS).graph = c.graph.induce S := by
@@ -181,6 +213,49 @@ def component (C : c.graph.ConnectedComponent) : NormalCrystal P b C :=
 theorem component_eq_restrict (C : c.graph.ConnectedComponent) :
     c.component C = c.restrict C.supp fun _ _ h hx => C.mem_supp_of_adj_mem_supp hx h := (rfl)
 
+section
+
+variable {c} {C : c.graph.ConnectedComponent} {i : b.support}
+
+@[simp]
+theorem component_wt (x : C) : (c.component C).wt x = c.wt x.val := (rfl)
+
+@[simp]
+theorem component_ε (x : C) : (c.component C).ε i x = c.ε i x.val := (rfl)
+
+@[simp]
+theorem component_φ (x : C) : (c.component C).φ i x = c.φ i x.val := (rfl)
+
+@[simp]
+theorem component_e_eq_some_iff {x y : C} :
+    (c.component C).e i x = some y ↔ c.e i x.val = some y.val :=
+  restrict_e_eq_some_iff
+
+@[simp]
+theorem component_f_eq_some_iff {x y : C} :
+    (c.component C).f i x = some y ↔ c.f i x.val = some y.val :=
+  restrict_f_eq_some_iff
+
+@[simp]
+theorem unattach_component_e (x : C) : ((c.component C).e i x).unattach = c.e i x.val :=
+  unattach_restrict_e x
+
+@[simp]
+theorem unattach_component_f (x : C) : ((c.component C).f i x).unattach = c.f i x.val :=
+  unattach_restrict_f x
+
+@[simp]
+theorem unattach_component_eIter (n : ℕ) (x : C) :
+    ((c.component C).eIter i n x).unattach = c.eIter i n x.val :=
+  unattach_restrict_eIter n x
+
+@[simp]
+theorem unattach_component_fIter (n : ℕ) (x : C) :
+    ((c.component C).fIter i n x).unattach = c.fIter i n x.val :=
+  unattach_restrict_fIter n x
+
+end
+
 /-- The crystal graph of a component is the induced graph on that component. -/
 theorem component_graph (C : c.graph.ConnectedComponent) :
     (c.component C).graph = C.toSimpleGraph :=
@@ -197,7 +272,7 @@ def componentHom (C : c.graph.ConnectedComponent) : StrictHom (c.component C) c 
   c.restrictHom _ _
 
 @[simp]
-theorem componentHom_apply (C : c.graph.ConnectedComponent) (x : C) : c.componentHom C x = x.1 :=
+theorem componentHom_apply (C : c.graph.ConnectedComponent) (x : C) : c.componentHom C x = x.val :=
   (rfl)
 
 end Component
@@ -246,12 +321,12 @@ equivalence `SimpleGraph.ConnectedComponent.isoEquivSupp` of their vertex sets. 
 def StrictIso.componentIso (C : c.graph.ConnectedComponent) :
     StrictIso (c.component C) (d.component (ψ.toGraphIso.connectedComponentEquiv C)) where
   toEquiv := SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C
-  wt_toFun x := ψ.wt_apply x.1
+  wt_toFun x := ψ.wt_apply x.val
   e_toFun i x := by
     -- `isoEquivSupp` acts on vertices as `ψ`, so pushing `Subtype.val` through the required
     -- equality leaves the ambient compatibility `ψ.e_apply`.
-    have hΦ : ∀ y : ↥C, ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun y).1
-        = ψ y.1 := fun _ => rfl
+    have hΦ : ∀ y : ↥C, ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun y).val
+        = ψ y.val := fun _ => rfl
     apply Option.map_injective Subtype.val_injective
     rw [Option.map_map]
     conv_rhs => rw [Option.map_subtype (g := ψ) (fun x _ => rfl)]
@@ -264,14 +339,14 @@ def StrictIso.componentIso (C : c.graph.ConnectedComponent) :
 /-- The underlying map of `StrictIso.componentIso` sends a vertex `x` of `C` to `ψ x.1`. -/
 @[simp]
 theorem StrictIso.componentIso_apply (C : c.graph.ConnectedComponent) (x : C) :
-    (ψ.componentIso C x).1 = ψ x.1 := (rfl)
+    (ψ.componentIso C x).val = ψ x.val := (rfl)
 
 /-- The underlying map of the inverse of `StrictIso.componentIso` sends a vertex `y` of the target
 component to `ψ.symm y.1`. -/
 @[simp]
 theorem StrictIso.componentIso_symm_apply (C : c.graph.ConnectedComponent)
     (y : (ψ.toGraphIso.connectedComponentEquiv C)) :
-    ((ψ.componentIso C).symm y).1 = ψ.symm y.1 := by
+    ((ψ.componentIso C).symm y).val = ψ.symm y.val := by
   apply EquivLike.injective ψ
   rw [← StrictIso.componentIso_apply, StrictIso.apply_symm_apply, StrictIso.apply_symm_apply]
 
@@ -301,7 +376,7 @@ def sigmaComponentsIso : StrictIso (sigma c.component) c where
 
 @[simp]
 theorem sigmaComponentsIso_apply (C : c.graph.ConnectedComponent) (x : C) :
-    c.sigmaComponentsIso ⟨C, x⟩ = x.1 := (rfl)
+    c.sigmaComponentsIso ⟨C, x⟩ = x.val := (rfl)
 
 @[simp]
 theorem sigmaComponentsIso_symm_apply (x : B) :

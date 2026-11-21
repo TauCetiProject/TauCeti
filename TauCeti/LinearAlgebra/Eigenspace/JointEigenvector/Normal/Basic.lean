@@ -163,8 +163,8 @@ theorem map_iInf_eigenspace_unitHom_eq_self_of_nonzeroJointWeightAction_eq
     (N : Subgroup G) [N.Normal] (ρ : G →* Module.End K V) (g : G)
     (χ : {χ : N →* Kˣ // (⨅ n : N, (ρ n).eigenspace (χ n)) ≠ ⊥})
     (hχ : nonzeroJointWeightAction N ρ g χ = χ) :
-    (⨅ n : N, (ρ n).eigenspace (χ.1 n)).map (ρ g) =
-      ⨅ n : N, (ρ n).eigenspace (χ.1 n) := by
+    (⨅ n : N, (ρ n).eigenspace (χ.val n)).map (ρ g) =
+      ⨅ n : N, (ρ n).eigenspace (χ.val n) := by
   rw [map_iInf_eigenspace_unitHom_eq_conjNormal]
   exact congrArg (fun ψ : N →* Kˣ ↦ ⨅ n : N, (ρ n).eigenspace (ψ n))
     (congrArg Subtype.val hχ)
@@ -175,8 +175,8 @@ theorem map_iInf_eigenspace_unitHom_eq_self_of_mem_ker_nonzeroJointWeightAction
     (N : Subgroup G) [N.Normal] (ρ : G →* Module.End K V) (g : G)
     (hg : g ∈ (nonzeroJointWeightAction N ρ).ker)
     (χ : {χ : N →* Kˣ // (⨅ n : N, (ρ n).eigenspace (χ n)) ≠ ⊥}) :
-    (⨅ n : N, (ρ n).eigenspace (χ.1 n)).map (ρ g) =
-      ⨅ n : N, (ρ n).eigenspace (χ.1 n) := by
+    (⨅ n : N, (ρ n).eigenspace (χ.val n)).map (ρ g) =
+      ⨅ n : N, (ρ n).eigenspace (χ.val n) := by
   apply map_iInf_eigenspace_unitHom_eq_self_of_nonzeroJointWeightAction_eq N ρ g χ
   have h := DFunLike.congr_fun ((MonoidHom.mem_ker).mp hg) χ
   simpa using h

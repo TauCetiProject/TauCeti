@@ -816,29 +816,29 @@ abbrev ValidLieTypeIndex : Type _ := {d : LieTypeIndex // d.Valid}
 
 /-- A valid index whose Steinberg map is an odd power of a half-Frobenius: the three Suzuki--Ree
 families together with the Tits group. -/
-abbrev SuzukiReeIndex : Type _ := {d : ValidLieTypeIndex // d.1.UsesHalfFrobenius}
+abbrev SuzukiReeIndex : Type _ := {d : ValidLieTypeIndex // d.val.UsesHalfFrobenius}
 
 /-- A valid index whose Steinberg map uses ordinary Frobenius, possibly composed with a diagram
 automorphism. The Suzuki--Ree and Tits branches are excluded. -/
-abbrev GraphTwistedIndex : Type _ := {d : ValidLieTypeIndex // ¬ d.1.UsesHalfFrobenius}
+abbrev GraphTwistedIndex : Type _ := {d : ValidLieTypeIndex // ¬ d.val.UsesHalfFrobenius}
 
 /-- A valid index whose underlying Dynkin diagram has unimodular Cartan matrix: the six branches
 `E₈(q)`, `F₄(q)`, `G₂(q)`, `²G₂(3^(2m+1))`, `²F₄(2^(2m+1))` and `²F₄(2)'`. These are the diagrams
 on which the Geck weights span the full character lattice
 (`TauCeti.DynkinType.span_range_geckWeight_eq_top_iff`), so this subtype is the domain of the
 lattice results that span buys. -/
-abbrev UnimodularLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.HasUnimodularDiagram}
+abbrev UnimodularLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.HasUnimodularDiagram}
 
 /-- A validated index in one of the two type-A families `A_r(q)` and `²A_r(q)`.
 
 The outer subtype is important: a raw type-A constructor with an excluded rank or field parameter
 is not a `TypeALieIndex`. -/
-abbrev TypeALieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeA}
+abbrev TypeALieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeA}
 
 /-- A validated index in the untwisted type-`C` family `C_r(q)`.
 
 In particular, its rank is at least three and its characteristic is not two. -/
-abbrev TypeCLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeC}
+abbrev TypeCLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeC}
 
 /-- A validated index in the untwisted exceptional family `E₆(q)`.
 
@@ -846,7 +846,7 @@ Every `E₆(q)` is valid, by `TauCeti.LieTypeIndex.valid_E6`, so the outer subty
 here; it is retained so that this family sits inside `TauCeti.ValidLieTypeIndex`, which the
 carrier-valued constructions take. The graph-twisted family `²E₆(q)`, which shares the diagram, is
 not of this subtype. -/
-abbrev TypeE6LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeE6}
+abbrev TypeE6LieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeE6}
 
 /-- A validated index in the graph-twisted exceptional family `²E₆(q)`.
 
@@ -856,7 +856,7 @@ carrier-valued constructions take. The untwisted family `E₆(q)`, which shares 
 this subtype: the two differ by the diagram automorphism their Steinberg maps compose with, and they
 are built on different carriers, since the `E₆` diagram symmetry does not act on the
 `27`-dimensional minuscule one. -/
-abbrev TypeTwistedE6LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeTwistedE6}
+abbrev TypeTwistedE6LieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeTwistedE6}
 
 /-- A validated index in the Suzuki family `²B₂(2^(2m+1))`.
 
@@ -866,7 +866,7 @@ cyclic of order five and is its own centre, so the derived-subgroup recipe colla
 group rather than a simple one, and `²B₂(2)` is not a `SuzukiLieIndex`. The Suzuki--Ree relatives
 `²G₂`, `²F₄` and the Tits group are excluded too; they are the other three constructors of
 `TauCeti.SuzukiReeIndex`. -/
-abbrev SuzukiLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsSuzuki}
+abbrev SuzukiLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsSuzuki}
 
 /-- A validated index on a type-`Dₙ` diagram: the untwisted `Dₙ(q)`, the graph-twisted `²Dₙ(q)`,
 or the triality-twisted `³D₄(q)`.
@@ -876,23 +876,23 @@ off the diagram, while the family enters through the diagram permutation. The un
 graph-twisted families also share their carrier, the spin carrier `TauCeti.TypeDSpinCarrier`; the
 triality-twisted family is built on the tripled carrier `TauCeti.D4Tripled.groupScheme` instead. Its
 rank is at least four, by `TauCeti.TypeDDiagramLieIndex.four_le_rank`. -/
-abbrev TypeDDiagramLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.HasTypeDDiagram}
+abbrev TypeDDiagramLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.HasTypeDDiagram}
 
 /-- A validated index in the untwisted type-`D` family `Dₙ(q)`.
 
 The outer subtype is important: `D₂(q)` and `D₃(q)` are not names on the classification list, their
 diagrams being `A₁ × A₁` and `A₃`, so they are not indices of this subtype. -/
-abbrev TypeDLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeD}
+abbrev TypeDLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeD}
 
 /-- A validated index in the graph-twisted type-`D` family `²Dₙ(q)`, whose Steinberg map twists by
 the exchange of the two fork nodes. Its rank is at least four, for the same reason as for the
 untwisted family. -/
-abbrev TypeTwistedDLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeTwistedD}
+abbrev TypeTwistedDLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeTwistedD}
 
 /-- A validated index in the triality-twisted family `³D₄(q)`, whose Steinberg map twists by the
 order-three symmetry of the `D₄` diagram. Every `³D₄(q)` is valid, by
 `TauCeti.LieTypeIndex.valid_trialityD4`. -/
-abbrev TypeTrialityD4LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeTrialityD4}
+abbrev TypeTrialityD4LieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeTrialityD4}
 
 /-- A validated index built on the rank-two diagram `B₂`: the untwisted family `B₂(q)` and the
 Suzuki family `²B₂(2^(2m+1))`.
@@ -907,11 +907,11 @@ This is diagram-level indexing data only; the carrier both branches share is att
 `B₂(2)`, `B₂(3)` and `²B₂(2)` are excluded from the classification list and are not indices of this
 subtype; those exclusions are the small isomorphisms of Gorenstein--Lyons--Solomon, Number 1, §2.2.
 -/
-abbrev RankTwoBLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.dynkinType = .B 2}
+abbrev RankTwoBLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.dynkinType = .B 2}
 
 /-- A validated index in the untwisted rank-two family `B₂(q)`. The Suzuki family, which shares the
 diagram, is excluded by the outer predicate. -/
-abbrev TypeB2LieIndex : Type _ := {d : RankTwoBLieIndex // ¬d.1.1.UsesHalfFrobenius}
+abbrev TypeB2LieIndex : Type _ := {d : RankTwoBLieIndex // ¬d.val.val.UsesHalfFrobenius}
 
 namespace TypeALieIndex
 
@@ -944,10 +944,10 @@ end TypeALieIndex
 namespace ValidLieTypeIndex
 
 /-- The total Dynkin-diagram map, restricted along the valid-index coercion. -/
-abbrev dynkinType (d : ValidLieTypeIndex) : DynkinType := d.1.dynkinType
+abbrev dynkinType (d : ValidLieTypeIndex) : DynkinType := d.val.dynkinType
 
 /-- Every valid Lie-type index names a valid Dynkin type. -/
-theorem dynkinType_valid (d : ValidLieTypeIndex) : d.1.dynkinType.Valid := by
+theorem dynkinType_valid (d : ValidLieTypeIndex) : d.val.dynkinType.Valid := by
   obtain ⟨d, hvalid⟩ := d
   rw [LieTypeIndex.valid_iff] at hvalid
   obtain ⟨hrange, -⟩ := hvalid
@@ -961,30 +961,30 @@ tabulated independently. -/
 abbrev rank (d : ValidLieTypeIndex) : ℕ := d.dynkinType.rank
 
 /-- The total characteristic map, restricted along the valid-index coercion. -/
-abbrev characteristic (d : ValidLieTypeIndex) : ℕ := d.1.characteristic
+abbrev characteristic (d : ValidLieTypeIndex) : ℕ := d.val.characteristic
 
 /-- The characteristic attached to a valid Lie-type index is prime. -/
 theorem characteristic_prime (d : ValidLieTypeIndex) : d.characteristic.Prime :=
-  d.1.characteristic_prime
+  d.val.characteristic_prime
 
 /-- The total Frobenius-parameter map, restricted along the valid-index coercion. -/
-abbrev fieldOrder (d : ValidLieTypeIndex) : ℕ := d.1.fieldOrder
+abbrev fieldOrder (d : ValidLieTypeIndex) : ℕ := d.val.fieldOrder
 
 /-- The total field-exponent map, restricted along the valid-index coercion. -/
-abbrev fieldExponent (d : ValidLieTypeIndex) : ℕ := d.1.fieldExponent
+abbrev fieldExponent (d : ValidLieTypeIndex) : ℕ := d.val.fieldExponent
 
 /-- The Frobenius parameter of a valid index is the recorded power of its characteristic. -/
 theorem fieldOrder_eq_characteristic_pow (d : ValidLieTypeIndex) :
     d.fieldOrder = d.characteristic ^ d.fieldExponent :=
-  d.1.fieldOrder_eq_characteristic_pow
+  d.val.fieldOrder_eq_characteristic_pow
 
 /-- The field exponent of a valid index is positive. -/
 theorem fieldExponent_pos (d : ValidLieTypeIndex) : 0 < d.fieldExponent :=
-  d.1.fieldExponent_pos
+  d.val.fieldExponent_pos
 
 /-- The Frobenius parameter of a valid index is positive. -/
 theorem fieldOrder_pos (d : ValidLieTypeIndex) : 0 < d.fieldOrder :=
-  d.1.fieldOrder_pos
+  d.val.fieldOrder_pos
 
 end ValidLieTypeIndex
 
@@ -1011,20 +1011,20 @@ theorem exists_eq_of (d : TypeCLieIndex) :
 the type-`C` Cartan matrix at the index's rank. This is the projection of the introduction form
 `TauCeti.TypeCLieIndex.of` through `TauCeti.DynkinType.cartanMatrix_C`, stated on entries rather
 than on matrices because the rank occurs in the index types of the two nodes. -/
-theorem dynkinType_cartanMatrix_apply (d : TypeCLieIndex) (i j : Fin d.1.rank) :
-    d.1.dynkinType.cartanMatrix i j = CartanMatrix.C d.1.rank i j := by
+theorem dynkinType_cartanMatrix_apply (d : TypeCLieIndex) (i j : Fin d.val.rank) :
+    d.val.dynkinType.cartanMatrix i j = CartanMatrix.C d.val.rank i j := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   exact congrFun₂ (DynkinType.cartanMatrix_C rank) i j
 
 /-- The rank of a validated type-`C` index is at least three. -/
-theorem three_le_rank (d : TypeCLieIndex) : 3 ≤ d.1.rank := by
+theorem three_le_rank (d : TypeCLieIndex) : 3 ≤ d.val.rank := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   simpa only [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType,
     LieTypeIndex.dynkinType_C, DynkinType.rank_C] using
       ((inStandardRange_iff _).mp ((valid_iff _).mp hvalid).1).1
 
 /-- A validated type-`C` index has characteristic different from two. -/
-theorem characteristic_ne_two (d : TypeCLieIndex) : d.1.characteristic ≠ 2 := by
+theorem characteristic_ne_two (d : TypeCLieIndex) : d.val.characteristic ≠ 2 := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   simpa only [ValidLieTypeIndex.characteristic, LieTypeIndex.characteristic_C] using
     ((inStandardRange_iff _).mp ((valid_iff _).mp hvalid).1).2
@@ -1039,10 +1039,10 @@ This section follows `ValidLieTypeIndex` rather than sitting beside `TypeALieInd
 namespace RankTwoBLieIndex
 
 /-- An index on the `B₂` diagram names the Dynkin type `B 2`. -/
-@[simp] theorem dynkinType_eq (d : RankTwoBLieIndex) : d.1.dynkinType = .B 2 := d.2
+@[simp] theorem dynkinType_eq (d : RankTwoBLieIndex) : d.val.dynkinType = .B 2 := d.property
 
 /-- An index on the `B₂` diagram has rank two, that being the rank of `B₂`. -/
-@[simp] theorem rank_eq_two (d : RankTwoBLieIndex) : d.1.rank = 2 :=
+@[simp] theorem rank_eq_two (d : RankTwoBLieIndex) : d.val.rank = 2 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 /-- Introduce the untwisted branch `B₂(q)`. -/
@@ -1089,7 +1089,7 @@ theorem exists_eq_of (d : TypeB2LieIndex) :
 
 /-- The field order of an untwisted rank-two type-`B` index is at least four. The two smaller prime
 powers are excluded from the classification list as duplicate representatives. -/
-theorem four_le_fieldOrder (d : TypeB2LieIndex) : 4 ≤ d.1.1.fieldOrder := by
+theorem four_le_fieldOrder (d : TypeB2LieIndex) : 4 ≤ d.val.val.fieldOrder := by
   obtain ⟨q, hvalid, rfl⟩ := d.exists_eq_of
   rw [LieTypeIndex.valid_iff, LieTypeIndex.inStandardRange_iff,
     LieTypeIndex.isDuplicateRepresentative_iff] at hvalid
@@ -1116,30 +1116,30 @@ theorem exists_eq_of (d : SuzukiLieIndex) :
   all_goals exact fun _ hs => ((LieTypeIndex.isSuzuki_iff _).mp hs).elim
 
 /-- The Suzuki family is built on the rank-two diagram `B₂`. -/
-@[simp] theorem dynkinType_eq (d : SuzukiLieIndex) : d.1.dynkinType = .B 2 := by
+@[simp] theorem dynkinType_eq (d : SuzukiLieIndex) : d.val.dynkinType = .B 2 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_suzuki m
 
 /-- The Suzuki family has rank two, that being the rank of `B₂`. -/
-@[simp] theorem rank_eq_two (d : SuzukiLieIndex) : d.1.rank = 2 :=
+@[simp] theorem rank_eq_two (d : SuzukiLieIndex) : d.val.rank = 2 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 /-- The Suzuki family lives in characteristic two. -/
-@[simp] theorem characteristic_eq_two (d : SuzukiLieIndex) : d.1.characteristic = 2 := by
+@[simp] theorem characteristic_eq_two (d : SuzukiLieIndex) : d.val.characteristic = 2 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.characteristic_suzuki m
 
 /-- A Suzuki index is a Suzuki--Ree index: its Steinberg map is an odd power of a
 half-Frobenius. -/
 abbrev toSuzukiReeIndex (d : SuzukiLieIndex) : SuzukiReeIndex :=
-  ⟨d.1, LieTypeIndex.usesHalfFrobenius_of_isSuzuki d.2⟩
+  ⟨d.val, LieTypeIndex.usesHalfFrobenius_of_isSuzuki d.property⟩
 
 /-- A Suzuki index is an index on the rank-two diagram `B₂`. This is the reading through which the
 Suzuki family reaches the carrier data that
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean` attaches to that diagram and that it
 shares with the untwisted family `B₂(q)`, the two differing only in the endomorphism taken of it. -/
 abbrev toRankTwoBLieIndex (d : SuzukiLieIndex) : RankTwoBLieIndex :=
-  ⟨d.1, d.dynkinType_eq⟩
+  ⟨d.val, d.dynkinType_eq⟩
 
 end SuzukiLieIndex
 
@@ -1165,12 +1165,12 @@ theorem exists_eq_of (d : TypeE6LieIndex) : ∃ q : PrimePower, d = of q := by
   all_goals exact fun _ hd => ((LieTypeIndex.isTypeE6_iff _).mp hd).elim
 
 /-- The untwisted family `E₆(q)` is built on the diagram `E₆`. -/
-@[simp] theorem dynkinType_eq (d : TypeE6LieIndex) : d.1.dynkinType = .E6 := by
+@[simp] theorem dynkinType_eq (d : TypeE6LieIndex) : d.val.dynkinType = .E6 := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_E6 q
 
 /-- The untwisted family `E₆(q)` has rank six, that being the rank of `E₆`. -/
-@[simp] theorem rank_eq_six (d : TypeE6LieIndex) : d.1.rank = 6 :=
+@[simp] theorem rank_eq_six (d : TypeE6LieIndex) : d.val.rank = 6 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 end TypeE6LieIndex
@@ -1195,12 +1195,12 @@ theorem exists_eq_of (d : TypeTwistedE6LieIndex) : ∃ q : PrimePower, d = of q 
   all_goals exact fun _ hd => ((LieTypeIndex.isTypeTwistedE6_iff _).mp hd).elim
 
 /-- The graph-twisted family `²E₆(q)` is built on the diagram `E₆`. -/
-@[simp] theorem dynkinType_eq (d : TypeTwistedE6LieIndex) : d.1.dynkinType = .E6 := by
+@[simp] theorem dynkinType_eq (d : TypeTwistedE6LieIndex) : d.val.dynkinType = .E6 := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_twistedE6 q
 
 /-- The graph-twisted family `²E₆(q)` has rank six, that being the rank of `E₆`. -/
-@[simp] theorem rank_eq_six (d : TypeTwistedE6LieIndex) : d.1.rank = 6 :=
+@[simp] theorem rank_eq_six (d : TypeTwistedE6LieIndex) : d.val.rank = 6 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 end TypeTwistedE6LieIndex
@@ -1221,9 +1221,9 @@ rank.**
 
 It is deliberately not a `simp` lemma: the right-hand side mentions the rank, which is itself read
 off the Dynkin type, so the rewrite would reintroduce its own left-hand side. -/
-theorem dynkinType_eq : d.1.dynkinType = .D d.1.rank := by
-  obtain ⟨n, hn⟩ := (LieTypeIndex.hasTypeDDiagram_iff_dynkinType d.1.1).mp d.2
-  have hrank : d.1.rank = n := by
+theorem dynkinType_eq : d.val.dynkinType = .D d.val.rank := by
+  obtain ⟨n, hn⟩ := (LieTypeIndex.hasTypeDDiagram_iff_dynkinType d.val.val).mp d.property
+  have hrank : d.val.rank = n := by
     simp only [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType, hn, DynkinType.rank_D]
   rw [hrank]
   exact hn
@@ -1233,8 +1233,8 @@ entry: it is the type-`D` Cartan matrix at the index's rank. Like
 `TauCeti.TypeCLieIndex.dynkinType_cartanMatrix_apply` it is stated on entries rather than on
 matrices, because the rank occurs in the index types of the two nodes, so the Dynkin-type equation
 `TauCeti.TypeDDiagramLieIndex.dynkinType_eq` cannot be rewritten with directly. -/
-theorem dynkinType_cartanMatrix_apply (i j : Fin d.1.rank) :
-    d.1.dynkinType.cartanMatrix i j = CartanMatrix.D d.1.rank i j := by
+theorem dynkinType_cartanMatrix_apply (i j : Fin d.val.rank) :
+    d.val.dynkinType.cartanMatrix i j = CartanMatrix.D d.val.rank i j := by
   obtain ⟨⟨e, hvalid⟩, he⟩ := d
   -- After reverting the two hypotheses and the two nodes, each of whose types mentions the index,
   -- the constructor split reduces the rank on both sides to the constructor's own rank parameter.
@@ -1248,8 +1248,8 @@ theorem dynkinType_cartanMatrix_apply (i j : Fin d.1.rank) :
 /-- **The rank of a validated index on a type-`D` diagram is at least four.** This is the range on
 which `Dₙ` is a valid Dynkin type, `D₂` being `A₁ × A₁` and `D₃` being `A₃` relabelled, and it is
 the hypothesis the type-`D` spin carrier `TauCeti.TypeDSpinCarrier.groupScheme` takes. -/
-theorem four_le_rank : 4 ≤ d.1.rank :=
-  DynkinType.valid_D.mp (d.dynkinType_eq ▸ d.1.dynkinType_valid)
+theorem four_le_rank : 4 ≤ d.val.rank :=
+  DynkinType.valid_D.mp (d.dynkinType_eq ▸ d.val.dynkinType_valid)
 
 end TypeDDiagramLieIndex
 
@@ -1274,7 +1274,7 @@ theorem exists_eq_of (d : TypeDLieIndex) :
 
 /-- The untwisted family `Dₙ(q)`, regarded as a family on a type-`D` diagram. -/
 abbrev toTypeDDiagramLieIndex (d : TypeDLieIndex) : TypeDDiagramLieIndex :=
-  ⟨d.1, LieTypeIndex.hasTypeDDiagram_of_isTypeD d.2⟩
+  ⟨d.val, LieTypeIndex.hasTypeDDiagram_of_isTypeD d.property⟩
 
 end TypeDLieIndex
 
@@ -1297,7 +1297,7 @@ theorem exists_eq_of (d : TypeTwistedDLieIndex) :
 
 /-- The graph-twisted family `²Dₙ(q)`, regarded as a family on a type-`D` diagram. -/
 abbrev toTypeDDiagramLieIndex (d : TypeTwistedDLieIndex) : TypeDDiagramLieIndex :=
-  ⟨d.1, LieTypeIndex.hasTypeDDiagram_of_isTypeTwistedD d.2⟩
+  ⟨d.val, LieTypeIndex.hasTypeDDiagram_of_isTypeTwistedD d.property⟩
 
 end TypeTwistedDLieIndex
 
@@ -1319,15 +1319,15 @@ theorem exists_eq_of (d : TypeTrialityD4LieIndex) : ∃ q : PrimePower, d = of q
 
 /-- The triality-twisted family `³D₄(q)`, regarded as a family on a type-`D` diagram. -/
 abbrev toTypeDDiagramLieIndex (d : TypeTrialityD4LieIndex) : TypeDDiagramLieIndex :=
-  ⟨d.1, LieTypeIndex.hasTypeDDiagram_of_isTypeTrialityD4 d.2⟩
+  ⟨d.val, LieTypeIndex.hasTypeDDiagram_of_isTypeTrialityD4 d.property⟩
 
 /-- The triality-twisted family `³D₄(q)` is built on the diagram `D₄`. -/
-@[simp] theorem dynkinType_eq (d : TypeTrialityD4LieIndex) : d.1.dynkinType = .D 4 := by
+@[simp] theorem dynkinType_eq (d : TypeTrialityD4LieIndex) : d.val.dynkinType = .D 4 := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_trialityD4 q
 
 /-- The triality-twisted family `³D₄(q)` has rank four, that being the rank of `D₄`. -/
-@[simp] theorem rank_eq_four (d : TypeTrialityD4LieIndex) : d.1.rank = 4 :=
+@[simp] theorem rank_eq_four (d : TypeTrialityD4LieIndex) : d.val.rank = 4 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 end TypeTrialityD4LieIndex
@@ -1373,16 +1373,16 @@ abbrev tits : UnimodularLieIndex :=
   ⟨⟨.tits, by simp⟩, by simp⟩
 
 /-- The underlying untwisted Dynkin diagram of an index with unimodular diagram. -/
-abbrev dynkinType : DynkinType := d.1.dynkinType
+abbrev dynkinType : DynkinType := d.val.dynkinType
 
 /-- That diagram is a valid Dynkin type, so the pinned Geck carrier is available for it. -/
-theorem dynkinType_valid : d.dynkinType.Valid := d.1.dynkinType_valid
+theorem dynkinType_valid : d.dynkinType.Valid := d.val.dynkinType_valid
 
 /-- The underlying Dynkin type of an index with unimodular diagram is one of the three unimodular
 types. -/
 theorem dynkinType_eq_E8_or_eq_F4_or_eq_G2 :
     d.dynkinType = .E8 ∨ d.dynkinType = .F4 ∨ d.dynkinType = .G2 :=
-  (LieTypeIndex.hasUnimodularDiagram_iff_dynkinType d.1.1).mp d.2
+  (LieTypeIndex.hasUnimodularDiagram_iff_dynkinType d.val.val).mp d.property
 
 end UnimodularLieIndex
 

@@ -53,7 +53,7 @@ noncomputable def homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : 
 theorem coe_homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ)
     (s : {s : σ →₀ ℕ // s.degree = n}) :
     ((homogeneousMonomialBasis (R := R) n s : homogeneousSubmodule σ R n) :
-      MvPolynomial σ R) = monomial s.1 1 := by
+      MvPolynomial σ R) = monomial s.val 1 := by
   simp only [homogeneousMonomialBasis, Module.Basis.map_apply]
   exact basisRestrictSupport_apply_coe (s := {d : σ →₀ ℕ | d.degree = n}) s
 
@@ -62,14 +62,14 @@ coefficient. -/
 @[simp]
 theorem homogeneousMonomialBasis_repr_apply {σ R : Type*} [CommSemiring R] (n : ℕ)
     (p : homogeneousSubmodule σ R n) (s : {s : σ →₀ ℕ // s.degree = n}) :
-    (homogeneousMonomialBasis n).repr p s = p.1.coeff s.1 := by
+    (homogeneousMonomialBasis n).repr p s = p.val.coeff s.val := by
   rfl
 
 /-- Mapping the coefficients of the homogeneous polynomials of degree `n` along a ring
 homomorphism `f : R →+* S`, as an `f`-semilinear map. -/
 noncomputable def mapHomogeneousSubmodule {σ R S : Type*} [CommSemiring R] [CommSemiring S]
     (f : R →+* S) (n : ℕ) : homogeneousSubmodule σ R n →ₛₗ[f] homogeneousSubmodule σ S n where
-  toFun p := ⟨map f p, p.2.map f⟩
+  toFun p := ⟨map f p, p.property.map f⟩
   map_add' p q := Subtype.ext (map_add (map f) (p : MvPolynomial σ R) q)
   map_smul' a p := Subtype.ext <| by simp [smul_eq_C_mul]
 
@@ -89,8 +89,8 @@ theorem mapHomogeneousSubmodule_homogeneousMonomialBasis {σ R S : Type*} [CommS
 /-- Exponent vectors of degree `w` in two variables are determined by their value at `0`. -/
 noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
     {s : Fin 2 →₀ ℕ // s.degree = w} ≃ Fin (w + 1) where
-  toFun s := ⟨s.1 0, by
-    have h := s.2
+  toFun s := ⟨s.val 0, by
+    have h := s.property
     rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
     omega⟩
   invFun j := ⟨Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j), by
@@ -98,7 +98,7 @@ noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
     simp
     omega⟩
   left_inv s := by
-    have h := s.2
+    have h := s.property
     rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
     ext i
     fin_cases i
@@ -109,12 +109,12 @@ noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
 /-- The equivalence sends an exponent vector of degree `w` to its value at `0`. -/
 @[simp]
 theorem coe_finsuppDegreeFinTwoEquiv_apply (w : ℕ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
-    (finsuppDegreeFinTwoEquiv w s : ℕ) = s.1 0 :=
+    (finsuppDegreeFinTwoEquiv w s : ℕ) = s.val 0 :=
   (rfl)
 
 @[simp]
 theorem coe_finsuppDegreeFinTwoEquiv_symm (w : ℕ) (j : Fin (w + 1)) :
-    ((finsuppDegreeFinTwoEquiv w).symm j).1 =
+    ((finsuppDegreeFinTwoEquiv w).symm j).val =
       Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j) :=
   (rfl)
 

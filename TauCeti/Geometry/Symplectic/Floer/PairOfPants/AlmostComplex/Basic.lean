@@ -128,7 +128,7 @@ variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t
 /-- The end-weighted structure is tamed by `ω`. -/
 theorem tames_endWeightedAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
     ω.Tames (endWeightedAlmostComplex h₀ J hJ c hc hc₀ w x) :=
-  (h₀.cayleyEquiv.symm _).2
+  (h₀.cayleyEquiv.symm _).property
 
 /-- The Cayley transform of the end-weighted structure, relative to `J₀`, is the weighted sum
 `∑ q, c q w • cayley (J q (t_q(w)) x)`. This characterizes the structure, since the Cayley
@@ -158,11 +158,8 @@ theorem cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
     (x : M) :
     J₀.cayley (endWeightedAlmostComplex h₀ J hJ c hc hc₀ (q.cylindricalEndLift z) x) =
       c q (q.cylindricalEndLift z) • J₀.cayley (J q z.im x) := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
   rw [cayley_endWeightedAlmostComplex, Finset.sum_eq_single q]
-  · have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
-    have hp : J q (z.im + k) = J q z.im := by simpa using hJp.int_mul k z.im
-    rw [him, hp]
+  · rw [apply_im_endCoord_cylindricalEndLift hJp]
   · -- The weights of the other ends vanish, since distinct ends are disjoint.
     intro r _ hr
     by_contra h
@@ -236,11 +233,7 @@ its angular coordinate. -/
 theorem pairOfPantsAlmostComplex_eq_endStructure (h₀ : ω.Compatible J₀)
     {w : ℂ} (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
     pairOfPantsAlmostComplex h₀ J hJ w x = J q (q.endCoord w).im x := by
-  have hne : w ≠ q.endCenter :=
-    q.ne_endCenter_of_re_endCoord_ne_zero (by
-      intro h
-      simp only [h, mul_zero] at hw
-      norm_num at hw)
+  have hne : w ≠ q.endCenter := q.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
   refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ w x)
     (hJ q (q.endCoord w).im x) ?_
   rw [cayley_pairOfPantsAlmostComplex, Finset.sum_eq_single q]
@@ -360,7 +353,7 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
   -- The Cayley transform is smooth: the cutoffs are smooth, and periodicity makes the Cayley
   -- transforms of the end structures smooth functions of the angular coordinate.
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hFp : Function.Periodic
       (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
     simp only [hJp q t]

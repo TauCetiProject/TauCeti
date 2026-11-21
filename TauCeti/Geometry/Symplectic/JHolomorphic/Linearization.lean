@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
-public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Symbol
 
 /-!
 # Local-coordinate Cauchy–Riemann linearization
@@ -25,6 +26,13 @@ formula proves that, for a `C²` curve J-holomorphic near the point, differentia
 source reparametrizations have tangent-valued linearization.
 For square-minus-one structures, the defect equals twice the usual anti-complex-linear part
 composed with the source structure.
+
+At a point where the defect vanishes, the linearization `D ξ` is anti-linear in the source
+direction when `j² = -1` and `J² = -1` near the image point: `D ξ (j v) = -J (D ξ v)`
+(`cauchyRiemannLinearization_comp_eq_neg_comp`). It is complex linear in `ξ` only up to a term
+of order zero: on the lift `y ↦ J (u y) (ξ y)` it equals `J (D ξ v)` plus the coordinate
+expression of the Nijenhuis tensor of `J` on `du v` and `ξ x`
+(`cauchyRiemannLinearization_clm_apply`).
 The geometric linearization follows McDuff–Salamon, *J-holomorphic Curves and Symplectic
 Topology*, Section 3.1. The exchange of map and parameter derivatives uses
 `TauCeti.hasFDerivAt_spatialFDeriv`, based on Mathlib's `ContDiffAt.isSymmSndFDerivAt`.
@@ -114,6 +122,23 @@ theorem cauchyRiemannLinearization_apply (j : U →L[ℝ] U) (J : V → V →L[�
       fderiv ℝ ξ x (j v) - J (u x) (fderiv ℝ ξ x v) -
         fderiv ℝ J (u x) (ξ x) (fderiv ℝ u x v) :=
   (rfl)
+
+/-- At a pseudoholomorphic map, the linearization takes values in complex-antilinear
+maps, even when the target almost complex structure is not integrable. -/
+theorem isComplexAntilinear_cauchyRiemannLinearization
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V} {u : U → V} (ξ : U → V) {x : U}
+    (hj : ∀ v, j (j v) = -v)
+    (hJ : ∀ᶠ y in 𝓝 (u x), ∀ v, J y (J y v) = -v)
+    (hu : cauchyRiemannOperator j J u x = 0) :
+    IsComplexAntilinear j.toLinearMap (J (u x)).toLinearMap
+      (cauchyRiemannLinearization j J u ξ x).toLinearMap := by
+  apply isComplexAntilinear_of_apply
+  intro v
+  simp only [ContinuousLinearMap.coe_coe, cauchyRiemannLinearization_apply,
+    hj, map_neg, fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hu,
+    fderiv_apply_apply_eq_neg_of_eventually_const
+      (hJ.mono fun _ hy ↦ hy (fderiv ℝ u x v)), map_sub, hJ.self_of_nhds]
+  abel
 
 /-- The local-coordinate linearization is additive on differentiable directions. -/
 @[simp]
@@ -252,6 +277,64 @@ theorem cauchyRiemannLinearization_fun_smul
         fderiv ℝ f x (j v) • ξ x - fderiv ℝ f x v • J (u x) (ξ x) := by
   simp only [cauchyRiemannLinearization_apply, fderiv_fun_smul hf hξ, add_apply,
     smul_apply, smulRight_apply, map_add, map_smul, smul_sub]
+  abel
+
+/-- The ambient Leibniz remainder is the intrinsic real Cauchy–Riemann symbol.
+Only the endomorphisms at the evaluation point must agree with the given structures. -/
+theorem cauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbol
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V}
+    (j₀ : AlmostComplexStructure U) (J₀ : AlmostComplexStructure V)
+    (u ξ : U → V) (f : U → ℝ) (x : U)
+    (hj : j.toLinearMap = j₀.toLinearMap) (hJ₀ : (J (u x)).toLinearMap = J₀.toLinearMap)
+    (hf : DifferentiableAt ℝ f x) (hξ : DifferentiableAt ℝ ξ x) :
+    (cauchyRiemannLinearization j J u (fun y ↦ f y • ξ y) x).toLinearMap =
+      f x • (cauchyRiemannLinearization j J u ξ x).toLinearMap +
+        cauchyRiemannSymbol j₀ J₀ (fderiv ℝ f x).toLinearMap (ξ x) := by
+  ext v
+  have hjv : j v = j₀ v := LinearMap.congr_fun hj v
+  have hJξ : J (u x) (ξ x) = J₀ (ξ x) := LinearMap.congr_fun hJ₀ (ξ x)
+  simpa only [LinearMap.add_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
+    cauchyRiemannSymbol_apply, hjv, hJξ, add_sub_assoc] using
+    cauchyRiemannLinearization_fun_smul j J u ξ f x v hf hξ
+
+/-- **Anti-linearity of the linearization.** At a point where the Cauchy–Riemann defect vanishes,
+for `j² = -1` and `J² = -1` near `u x`, the linearization satisfies `D ξ (j v) = -J (D ξ v)`.
+Its zeroth-order term cancels because each derivative of `J` anticommutes with `J`
+(`TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`). -/
+theorem cauchyRiemannLinearization_comp_eq_neg_comp
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V} {u : U → V} {x : U} (ξ : U → V)
+    (hj : ∀ v, j (j v) = -v) (hJsq : ∀ᶠ y in 𝓝 (u x), ∀ w, J y (J y w) = -w)
+    (hhol : cauchyRiemannOperator j J u x = 0) :
+    (cauchyRiemannLinearization j J u ξ x).comp j =
+      -(J (u x)).comp (cauchyRiemannLinearization j J u ξ x) := by
+  ext v
+  simp only [comp_apply, neg_apply, cauchyRiemannLinearization_apply, hj, map_neg, map_sub,
+    fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hhol,
+    fderiv_apply_apply_eq_neg_of_eventually_sq hJsq, hJsq.self_of_nhds]
+  abel
+
+/-- **The linearization on `J ξ`.** At a point where the Cauchy–Riemann defect vanishes, the
+linearization on the lift `y ↦ J (u y) (ξ y)` is `J (D ξ v)` plus a term of order zero in `ξ`:
+with `w = du v` and `J'` the derivative of `J` at `u x`,
+`D (J ξ) v = J (D ξ v) + J' (J w) ξ - J' (J ξ) w + J (J' ξ w) - J (J' w ξ)`.
+The correction is the coordinate expression of the Nijenhuis tensor `N_J (w, ξ x)`
+(`TauCeti.SmoothAlmostComplexStructure.nijenhuis_eq_fderiv`); no `J² = -1` is needed. -/
+theorem cauchyRiemannLinearization_clm_apply
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V} {u : U → V} {x : U} {ξ : U → V}
+    (hu : DifferentiableAt ℝ u x) (hξ : DifferentiableAt ℝ ξ x)
+    (hJ : DifferentiableAt ℝ J (u x)) (hhol : cauchyRiemannOperator j J u x = 0) (v : U) :
+    cauchyRiemannLinearization j J u (fun y ↦ J (u y) (ξ y)) x v =
+      J (u x) (cauchyRiemannLinearization j J u ξ x v) +
+        (fderiv ℝ J (u x) (J (u x) (fderiv ℝ u x v)) (ξ x) -
+          fderiv ℝ J (u x) (J (u x) (ξ x)) (fderiv ℝ u x v) +
+          J (u x) (fderiv ℝ J (u x) (ξ x) (fderiv ℝ u x v)) -
+          J (u x) (fderiv ℝ J (u x) (fderiv ℝ u x v) (ξ x))) := by
+  have hJu : DifferentiableAt ℝ (fun y ↦ J (u y)) x := hJ.comp x hu
+  have hd : fderiv ℝ (fun y ↦ J (u y)) x = (fderiv ℝ J (u x)).comp (fderiv ℝ u x) :=
+    fderiv_comp x hJ hu
+  simp only [cauchyRiemannLinearization_apply, fderiv_clm_apply hJu hξ, hd, add_apply,
+    comp_apply, flip_apply, fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hhol, map_sub,
+    map_add]
   abel
 
 end TauCeti
