@@ -25,6 +25,8 @@ rewritable.
 ## Main definitions
 
 * `TauCeti.QuotientGroup.mapOfLE hVU`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for `V ≤ U`.
+* `MonoidHom.quotientMap hf`: the map on left coset spaces `G ⧸ I → H ⧸ J` induced by
+  `f : G →* H` with `I ≤ J.comap f`, without requiring `I` or `J` to be normal.
 
 ## Main statements
 
@@ -41,6 +43,7 @@ rewritable.
 * `TauCeti.QuotientGroup.closure_range_quotient_mk_eq_top_of_le`: a family generating `G ⧸ N'`
   also generates `G ⧸ N` when `N' ≤ N`.
 * `TauCeti.QuotientGroup.ker_mapOfLE`: its kernel is the image of `U` in `G ⧸ V`.
+* `MonoidHom.quotientMap_mk`: evaluates `MonoidHom.quotientMap` on `QuotientGroup.mk g`.
 
 ## Usage
 
@@ -138,3 +141,23 @@ theorem ker_mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) :
 end QuotientGroup
 
 end TauCeti
+
+namespace MonoidHom
+
+/-- The map on left coset spaces `G ⧸ I → H ⧸ J` induced by a group homomorphism `f : G →* H`
+with `I ≤ J.comap f`, without requiring `I` or `J` to be normal. -/
+def quotientMap {G H : Type*} [Group G] [Group H] (f : G →* H) {I : Subgroup G}
+    {J : Subgroup H} (hf : I ≤ J.comap f) : G ⧸ I → H ⧸ J :=
+  Quotient.map' f fun _ _ hab => by
+    rw [QuotientGroup.leftRel_apply] at hab ⊢
+    rw [← map_inv, ← map_mul]
+    exact hf hab
+
+/-- Evaluation of `MonoidHom.quotientMap` on a left coset `QuotientGroup.mk g`. -/
+@[simp]
+theorem quotientMap_mk {G H : Type*} [Group G] [Group H] (f : G →* H) {I : Subgroup G}
+    {J : Subgroup H} (hf : I ≤ J.comap f) (g : G) :
+    f.quotientMap hf (QuotientGroup.mk g) = QuotientGroup.mk (f g) := by
+  rfl
+
+end MonoidHom

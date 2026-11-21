@@ -456,10 +456,10 @@ theorem surjective_inv_mul_frobeniusPoints {H : Type v} [CommRing H] [_root_.Hop
   let ψ : K ⊗[F] H →ₐc[K] K ⊗[F] H := FiniteField.geometricFrobeniusBialgHom F K H
   let iter : ℕ → (K ⊗[F] H →ₐc[K] K ⊗[F] H) :=
     fun k => Nat.rec (BialgHom.id K _) (fun _ f => ψ.comp f) k
+  have iter_succ (k : ℕ) : iter (k + 1) = ψ.comp (iter k) := rfl
   have hder : TauCeti.derivationComp (B := K) (iter n) = 0 := by
     obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-    change TauCeti.derivationComp (B := K) (ψ.comp (iter m)) = 0
-    rw [TauCeti.derivationComp_comp,
+    rw [iter_succ, TauCeti.derivationComp_comp,
       FiniteField.derivationComp_geometricFrobeniusBialgHom_eq_zero, LinearMap.comp_zero]
   have hsurj := surjective_inv_mul_mapDomain (iter n) hder
   let e := AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)
@@ -473,8 +473,7 @@ theorem surjective_inv_mul_frobeniusPoints {H : Type v} [CommRing H] [_root_.Hop
       simp [iter]
     | succ k ih =>
       intro g'
-      change e.symm (BialgHom.mapDomain (A := K) (ψ.comp (iter k)) g') = _
-      rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply, ih]
+      rw [iter_succ, BialgHom.mapDomain_comp, MonoidHom.comp_apply, ih]
       have h1 : e.symm (BialgHom.mapDomain (A := K) ψ g') =
           FiniteField.frobeniusPoints F 1 (e.symm g') :=
         DFunLike.congr_fun
@@ -575,19 +574,9 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
     have h := hiter (Module.finrank F L)
     rw [hpow1, hc1, map_one] at h
     exact (inv_mul_eq_one.mp h).symm
-  have hmem : bK ∈ (AlgHom.mapValue (H := H) ι).range := by
-    rw [MonoidHom.mem_range, ← MonoidHom.mem_mrange,
-      AlgHom.mem_mrange_mapValue_iff ι.toRingHom.injective]
-    intro h
-    have hcard : Nat.card L = Nat.card F ^ Module.finrank F L := by
-      rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-      exact Module.card_eq_pow_finrank (K := F) (V := L)
-    have hpowL : bK.ofConv h ^ Nat.card L = bK.ofConv h := by
-      rw [hcard, ← FiniteField.frobeniusPoints_apply_apply, hfix]
-    have hrange := (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap (K := L) (L := K)
-      (bK.ofConv h)).mp hpowL
-    simpa [ι, IsScalarTower.coe_toAlgHom'] using hrange
-  obtain ⟨b, hb⟩ := hmem
+  obtain ⟨b, hb⟩ : bK ∈ (AlgHom.mapValue (H := H) ι).range := by
+    rw [FiniteField.range_mapValue]
+    exact hfix
   refine ⟨b, fun γ => ?_⟩
   obtain ⟨n, rfl⟩ := (_root_.FiniteField.bijective_frobeniusAlgEquivOfAlgebraic_pow F L).2 γ
   apply AlgHom.mapValue_injective ι.toRingHom.injective

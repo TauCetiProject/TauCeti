@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FixedPointFree
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import TauCeti.GroupTheory.FixedSubgroup
+public import TauCeti.GroupTheory.QuotientGroup.Map
 
 /-!
 # Surjective Lang maps and fixed lifts
@@ -132,22 +133,6 @@ theorem exists_fixed_mul_of_surjective_inv_mul (F : G →* G) (J : Subgroup G)
   refine ⟨z⁻¹, J.inv_mem hzJ, ?_⟩
   have hFh : F h = h * (z⁻¹ * F z) := eq_mul_of_inv_mul_eq hz.symm
   rw [map_mul, map_inv, hFh, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
-
-/-- The map on left coset spaces `G ⧸ I → H ⧸ J` induced by a group homomorphism `f : G →* H`
-with `I ≤ J.comap f`, without requiring `I` or `J` to be normal. -/
-def quotientMap {H : Type*} [Group H] (f : G →* H) {I : Subgroup G} {J : Subgroup H}
-    (hf : I ≤ J.comap f) : G ⧸ I → H ⧸ J :=
-  Quotient.map' f fun _ _ hab => by
-    rw [QuotientGroup.leftRel_apply] at hab ⊢
-    rw [← map_inv, ← map_mul]
-    exact hf hab
-
-/-- Evaluation of `MonoidHom.quotientMap` on a left coset `QuotientGroup.mk g`. -/
-@[simp]
-theorem quotientMap_mk {H : Type*} [Group H] (f : G →* H) {I : Subgroup G} {J : Subgroup H}
-    (hf : I ≤ J.comap f) (g : G) :
-    f.quotientMap hf (QuotientGroup.mk g) = QuotientGroup.mk (f g) := by
-  rfl
 
 /-- A left coset `gJ` is fixed by the induced endomorphism `F.quotientMap hJF` on `G ⧸ J` if and
 only if the Lang defect `g⁻¹ * F g` lies in `J`. -/

@@ -66,6 +66,8 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
   every morphism of group schemes over `K`.
 * `TauCeti.FiniteField.coe_rationalPointsMulEquiv_mapDomain`: the identification of the fixed
   points with the `K`-points is natural in the group scheme.
+* `TauCeti.FiniteField.range_mapValue`: for a finite field extension `L / K` and `ι : L →ₐ[K] A`
+  into a domain, the points coming from `L`-points are those fixed by the `q ^ [L : K]`-Frobenius.
 * `TauCeti.FiniteField.finite_fixedSubgroup_frobeniusPoints`: for `H` of finite type and `A` a
   domain, the points fixed by a positive iterate of the Frobenius form a finite group.
 * `TauCeti.FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom`:
@@ -301,6 +303,26 @@ theorem coe_rationalPointsMulEquiv_mapDomain {H₁ : Type*} [Semiring H₁] [_ro
   exact DFunLike.congr_fun (BialgHom.mapValue_mapDomain φ (Algebra.ofId K L)).symm f
 
 end Domain
+
+/-- Over a domain `A`, for a finite field extension `L / K` and a `K`-algebra homomorphism
+`ι : L →ₐ[K] A`, the points coming from `L`-points along `ι` are exactly the points fixed by the
+`|K| ^ [L : K]`-Frobenius. -/
+theorem range_mapValue [IsDomain A] {L : Type*} [Field L] [Finite L] [Algebra K L]
+    (ι : L →ₐ[K] A) :
+    (AlgHom.mapValue (H := H) ι).range =
+      fixedSubgroup (frobeniusPoints K (Module.finrank K L)) := by
+  let _ : Algebra L A := ι.toRingHom.toAlgebra
+  have : Fintype L := Fintype.ofFinite L
+  have hcard : Nat.card L = Nat.card K ^ Module.finrank K L := by
+    rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+    exact Module.card_eq_pow_finrank (K := K) (V := L)
+  ext f
+  rw [MonoidHom.mem_range, ← MonoidHom.mem_mrange,
+    AlgHom.mem_mrange_mapValue_iff ι.toRingHom.injective, mem_fixedSubgroup,
+    frobeniusPoints_eq_self_iff]
+  refine forall_congr' fun h => ?_
+  rw [← hcard, pow_natCard_eq_self_iff_mem_range_algebraMap]
+  simp [RingHom.algebraMap_toAlgebra]
 
 /-- **A morphism of group schemes over `K` carries Frobenius-fixed points to Frobenius-fixed
 points.** -/
