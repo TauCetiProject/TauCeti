@@ -233,11 +233,11 @@ theorem MoorePath.isHurewiczFibration_target {X : Type u} [TopologicalSpace X] (
 theorem MoorePathFrom.isHurewiczFibration_endpoint {X : Type u} [TopologicalSpace X] (b : X) :
     IsHurewiczFibration.{w} (MoorePathFrom.endpoint X b) := by
   -- The paths starting in `{b}` are the paths starting at `b`.
-  have h : IsHurewiczFibration.{w} fun γ : MoorePathFrom X b ↦ γ.1.target :=
+  have h : IsHurewiczFibration.{w} fun γ : MoorePathFrom X b ↦ γ.val.target :=
     MoorePath.isHurewiczFibration_target ({b} : Set X)
   convert h using 1
   funext γ
   exact (MoorePathFrom.endpoint_apply γ).trans
-    (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.1 γ.2))
+    (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
 
 end TauCeti

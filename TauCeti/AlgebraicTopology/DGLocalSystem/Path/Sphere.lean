@@ -159,8 +159,8 @@ theorem sphereCubeMap_of_mem_boundary {d : Fin (m + 2) → I}
 the pole to `sphereCubeMap h d`, continuous in `d`. -/
 def sphereCubePaths : C(Fin (m + 2) → I, MoorePath Sph) :=
   (MoorePathPullback.radialPaths
-    ((convex_closedBall (0 : Fin (m + 2) → ℝ) 1).starConvex ballCorner.2) ballCorner.2
-    (sphereBallMap h)
+    ((convex_closedBall (0 : Fin (m + 2) → ℝ) 1).starConvex ballCorner.property)
+    ballCorner.property (sphereBallMap h)
     ⟨MoorePath.refl _, MoorePath.source_refl _,
       (MoorePath.target_refl _).trans (sphereBallMap_of_norm_eq_one h norm_ballCorner).symm⟩).comp
     (cubeHomeomorphClosedBall (Fin (m + 2)))
@@ -170,8 +170,8 @@ of the corner `0` of the cube, starting with the constant path at the pole, read
 theorem sphereCubePaths_apply (d : Fin (m + 2) → I) :
     sphereCubePaths h d = MoorePathPullback.radialPaths
       ((convex_closedBall (0 : Fin (m + 2) → ℝ) 1).starConvex
-        (cubeHomeomorphClosedBall (Fin (m + 2)) 0).2)
-      (cubeHomeomorphClosedBall (Fin (m + 2)) 0).2 (sphereBallMap h)
+        (cubeHomeomorphClosedBall (Fin (m + 2)) 0).property)
+      (cubeHomeomorphClosedBall (Fin (m + 2)) 0).property (sphereBallMap h)
       ⟨MoorePath.refl _, MoorePath.source_refl _, (MoorePath.target_refl _).trans
         (sphereBallMap_of_norm_eq_one h
           ((norm_cubeHomeomorphClosedBall_eq_one_iff 0).2 ⟨0, Or.inl rfl⟩)).symm⟩
@@ -201,15 +201,15 @@ pair of the based paths and the loops. -/
 private def sphereCubePairToLoopPair :
     sphereCubePair h ⟶ MoorePathFrom.loopPair Sph (spherePolePoint h) :=
   TopPair.ofHom (TopCat.ofHom MoorePathPullback.toMoorePathFrom)
-    (TopCat.ofHom ⟨fun x ↦ ⟨x.1.path, x.1.source_path,
-      x.1.target_path.trans (sphereCubeMap_of_mem_boundary h
-        (MoorePathPullback.proj_apply x.1 ▸ x.2))⟩,
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.val.path, x.val.source_path,
+      x.val.target_path.trans (sphereCubeMap_of_mem_boundary h
+        (MoorePathPullback.proj_apply x.val ▸ x.property))⟩,
       MooreLoopSpace.isEmbedding_toMoorePath.continuous_iff.2 (by fun_prop)⟩)
     (by
       ext x
       -- Both composites send `x` to its path, read in the based path space.
       exact MoorePathFrom.ext ((MoorePathFrom.toMoorePath_ofLoop _).trans
-        (MoorePathPullback.toMoorePathFrom_toMoorePath x.1).symm))
+        (MoorePathPullback.toMoorePathFrom_toMoorePath x.val).symm))
 
 /-- The pullback along the cube map is homeomorphic to the pullback along the characteristic map of
 the top cell, the disjoint union over its single cell of the closed unit ball. -/
@@ -225,16 +225,17 @@ private def sphereCubePullbackHomeomorph :
     ⟨Sigma.mk (β := fun _ ↦ closedBall (0 : Fin (m + 2) → ℝ) 1) default, continuous_sigmaMk⟩
   have hinv (y : TopCat.cellPullback (TopCat.ofHom (MoorePathFrom.endpoint Sph (spherePolePoint h)))
       (univ : Set Sph) (m + 2)) :
-      y.1.2.toMoorePath.target = sphereCubeMap h ((cubeHomeomorphClosedBall _).symm y.1.1.2) := by
+      y.val.2.toMoorePath.target =
+        sphereCubeMap h ((cubeHomeomorphClosedBall _).symm y.val.1.2) := by
     obtain ⟨⟨⟨i, v⟩, γ⟩, hy⟩ := y
     obtain rfl := Subsingleton.elim i default
     simpa [sphereCubeMap_apply, MoorePathFrom.endpoint_apply] using hy.symm
   have hto (x : MoorePathPullback (sphereCubeMap h) (spherePolePoint h)) :
-      sigmaCellMap (univ : Set Sph) (m + 2) (ιc (cubeHomeomorphClosedBall _ x.1.1)) =
-        TopCat.ofHom (MoorePathFrom.endpoint Sph (spherePolePoint h)) x.1.2 := by
-    simpa [sphereCubeMap_apply, MoorePathFrom.endpoint_apply, ιc] using x.2.symm
-  { toFun x := ⟨(ιc (cubeHomeomorphClosedBall _ x.1.1), x.1.2), hto x⟩
-    invFun y := ⟨((cubeHomeomorphClosedBall _).symm y.1.1.2, y.1.2), hinv y⟩
+      sigmaCellMap (univ : Set Sph) (m + 2) (ιc (cubeHomeomorphClosedBall _ x.val.1)) =
+        TopCat.ofHom (MoorePathFrom.endpoint Sph (spherePolePoint h)) x.val.2 := by
+    simpa [sphereCubeMap_apply, MoorePathFrom.endpoint_apply, ιc] using x.property.symm
+  { toFun x := ⟨(ιc (cubeHomeomorphClosedBall _ x.val.1), x.val.2), hto x⟩
+    invFun y := ⟨((cubeHomeomorphClosedBall _).symm y.val.1.2, y.val.2), hinv y⟩
     left_inv x := by
       obtain ⟨⟨d, γ⟩, hx⟩ := x
       simp [ιc]
@@ -243,12 +244,12 @@ private def sphereCubePullbackHomeomorph :
       obtain rfl := Subsingleton.elim i default
       simp [ιc]
     continuous_toFun := ((ιc.continuous.comp ((cubeHomeomorphClosedBall _).continuous.comp
-        (continuous_fst.comp continuous_subtype_val))).prodMk
-          (continuous_snd.comp continuous_subtype_val)).subtype_mk hto
+        (continuous_fst.comp continuous_subtypeVal))).prodMk
+          (continuous_snd.comp continuous_subtypeVal)).subtype_mk hto
     continuous_invFun := (((cubeHomeomorphClosedBall _).symm.continuous.comp
         ((continuous_sigma fun _ ↦ continuous_id).comp
-          (continuous_fst.comp continuous_subtype_val))).prodMk
-            (continuous_snd.comp continuous_subtype_val)).subtype_mk hinv }
+          (continuous_fst.comp continuous_subtypeVal))).prodMk
+            (continuous_snd.comp continuous_subtypeVal)).subtype_mk hinv }
 
 /-- **Excision over the top cell**: the projection of the pullback over the cube, relative to its
 part over the boundary, to the pair of the based paths and the loops induces isomorphisms on
@@ -270,8 +271,8 @@ private theorem isIso_homologyMap_sphereCubePairToLoopPair (k : Type) [CommRing 
       (TopPair.ofSubsetMap_fst_apply _ _ x)
   -- The fibre of the end point over the pole is the space of loops.
   let l : TopPair.ofSubset (p ⁻¹' {b}) ⟶ MoorePathFrom.loopPair Sph b :=
-    TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.1.toMoorePath, MoorePathFrom.source x.1,
-        (MoorePathFrom.endpoint_apply x.1).symm.trans x.2⟩,
+    TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.val.toMoorePath, MoorePathFrom.source x.val,
+        (MoorePathFrom.endpoint_apply x.val).symm.trans x.property⟩,
       MooreLoopSpace.isEmbedding_toMoorePath.continuous_iff.2 (by fun_prop)⟩)
       (by
         ext x

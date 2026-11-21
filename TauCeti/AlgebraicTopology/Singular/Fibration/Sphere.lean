@@ -179,7 +179,7 @@ def spherePreimageSkeletonPairIso (hn : 1 ≤ n) :
 lemma spherePreimageSkeletonPairIso_hom_fst_apply (hn : 1 ≤ n)
     (x : letI := sphereRelCWComplex h
       (preimageSkeletonPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
-    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom x = x.1 :=
+    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom x = x.val :=
   TopPair.ofInclusionIsoOfSubset_hom_fst_apply ..
 
 /-- The projection of the pullback over the top cell, read in the pair `(E, F)`, sends a point of
@@ -190,7 +190,7 @@ lemma spherePreimageSkeletonPairIso_hom_fst_cellPullbackPairMap_fst_apply (hn : 
       (cellPullbackPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
     letI := sphereRelCWComplex h
     TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom
-      (TopPair.Hom.fst (cellPullbackPairMap p univ n) x) = x.1.2 :=
+      (TopPair.Hom.fst (cellPullbackPairMap p univ n) x) = x.val.2 :=
   letI := sphereRelCWComplex h
   (spherePreimageSkeletonPairIso_hom_fst_apply ..).trans (coe_cellPullbackPairMap_fst_apply ..)
 
