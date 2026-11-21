@@ -98,6 +98,7 @@ theorem cylinderAreaForm_mem_exactForms :
     refine ⟨SmoothForm.ofFunction r, Subtype.ext ?_⟩
     rw [SmoothForm.coe_mpullback, mextDerivₗ_apply, SmoothForm.coe_ofFunction]
     exact (SmoothForm.mpullback_realLineCoordForm _).symm
+  rw [cylinderAreaForm]
   exact SmoothForm.wedge_mem_exactForms_of_left_mem hdr ((mem_closedForms _ _).mpr
     ((SmoothForm.isClosed_def _).mp
       ((AddCircle.isClosed_timeForm p).mpullback Prod.snd contMDiff_snd)))

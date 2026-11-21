@@ -33,8 +33,7 @@ zero flux but nonzero compactly supported flux (`TauCeti.Geometry.Symplectic.Flu
 On a compact manifold every form is compactly supported and the two fluxes determine each other.
 
 For an exact two-form `σ = dθ` the primitive `θ` need not be compactly supported, but the flux
-form is still `φ₁^* θ - θ` up to the exterior derivative of the function
-`x ↦ ∫₀¹ θ(∂ₜ φ_t x) dt`, which vanishes outside `K`
+form is still `φ₁^* θ - θ` up to the exterior derivative of a function vanishing outside `K`
 (`TauCeti.Diffeotopy.fluxForm_mextDerivₗ_sub_mem_exactCompactlySupportedForms`). Hence the
 compactly supported flux is the class of the compactly supported closed form `φ₁^* θ - θ`
 (`TauCeti.Diffeotopy.compactFlux_mextDerivₗ`), and it depends only on `φ₁`
@@ -44,8 +43,8 @@ ending at the identity has zero compactly supported flux
 compactly supported fluxes of loops of compactly supported symplectomorphisms all vanish.
 
 Similarly, a diffeotopy with a Hamiltonian `F`, read along the motion, has flux form `d g` for
-`g x = ∫₀¹ F (x, t) dt`. If `F` vanishes outside a compact set at every time, so does `g`, and
-the compactly supported flux is zero
+a smooth function `g` vanishing wherever `F (x, ·) = 0`. If `F` vanishes outside a compact set
+at every time, so does `g`, and the compactly supported flux is zero
 (`TauCeti.Diffeotopy.HasHamiltonian.compactFlux_eq_zero`).
 
 ## Main definitions
@@ -196,7 +195,7 @@ theorem compactFlux_refl (σ : closedForms J M 2)
 /-- **The compactly supported flux form of an exact form.** For an exact two-form `dθ` and a
 diffeotopy which is the identity outside a compact set `K`, the flux form differs from
 `φ₁^* θ - θ` by the exterior derivative of a function vanishing outside `K`, namely of `-g` for
-`g x = ∫₀¹ θ(∂ₜ φ_t x) dt`. -/
+the function `g` of `TauCeti.Diffeotopy.exists_fluxForm_mextDerivₗ_eq`. -/
 theorem fluxForm_mextDerivₗ_sub_mem_exactCompactlySupportedForms [R1Space M]
     (θ : SmoothForm J M ℝ 1) {K : Set M} (hK : IsCompact K)
     (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) :
@@ -278,8 +277,8 @@ variable {Φ}
 
 /-- **The flux form of a compactly supported Hamiltonian diffeotopy is compactly supported
 exact.** If `φ_t` has a Hamiltonian `F` for `σ`, read along the motion, which vanishes at every
-time outside a compact set `K`, then the flux form of `φ_t` is the exterior derivative of the
-function `x ↦ ∫₀¹ F (x, t) dt`, which is supported in `K`. -/
+time outside a compact set `K`, then the flux form of `φ_t` is the exterior derivative of a
+function supported in `K`. -/
 theorem HasHamiltonian.fluxForm_mem_exactCompactlySupportedForms [R1Space M]
     {σ : SmoothForm J M ℝ 2} {F : M × unitInterval → ℝ} (h : Φ.HasHamiltonian σ F) {K : Set M}
     (hK : IsCompact K) (hFK : ∀ x ∉ K, ∀ t, F (x, t) = 0) :

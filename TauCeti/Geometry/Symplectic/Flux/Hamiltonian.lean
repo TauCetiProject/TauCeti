@@ -40,10 +40,11 @@ inverse `φ_t⁻¹` the function `(x, t) ↦ -F (φ_t⁻¹ x, t)` is one; and fo
 of a smooth function `f`, run for duration `a`, is Hamiltonian with Hamiltonian
 `(x, t) ↦ a f(x)` (`TauCeti.Diffeotopy.hasHamiltonian_globalFlowDiffeotopy`).
 
-The flux form of a diffeotopy with a Hamiltonian `F` is the exterior derivative of the function
-`x ↦ ∫₀¹ F (x, t) dt` (`TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`), so it
-is exact (`TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`) and Hamiltonian isotopies
-have zero flux (`TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`).
+The flux form of a diffeotopy with a Hamiltonian `F` is the exterior derivative of a smooth
+function vanishing wherever `F (x, ·) = 0`, constructed as `x ↦ ∫₀¹ F (x, t) dt`
+(`TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`), so it is exact
+(`TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`) and Hamiltonian isotopies have zero
+flux (`TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`).
 
 The **Hamiltonian group** `Ham(M, σ)` (`TauCeti.SmoothForm.hamiltonianGroup`) is the group of
 final diffeomorphisms of Hamiltonian diffeotopies. It is a subgroup of the isotopy stabilizer
@@ -74,7 +75,8 @@ vanishes on both ends of the cylinder, so the cochain-homotopy identity of the h
 ## Main results
 
 * `TauCeti.Diffeotopy.HasHamiltonian.exists_fluxForm_eq_mextDerivₗ`: the flux form of a
-  diffeotopy with Hamiltonian `F` is the exterior derivative of `x ↦ ∫₀¹ F (x, t) dt`.
+  diffeotopy with Hamiltonian `F` is `d g` for a smooth function `g` vanishing wherever
+  `F (x, ·) = 0`.
 * `TauCeti.Diffeotopy.HasHamiltonian.fluxForm_mem_exactForms`,
   `TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`: Hamiltonian diffeotopies have exact flux form
   and zero flux.
@@ -218,8 +220,8 @@ private theorem mextDeriv_smulTimeForm_apply (hF : ContMDiff (J.prod (𝓡∂ 1)
     mul_zero, add_zero]
 
 /-- **The flux form of a Hamiltonian diffeotopy.** If `φ_t` has a Hamiltonian `F` for `σ`, read
-along the motion, then the flux form of `φ_t` is `d g` for the smooth function
-`g x = ∫₀¹ F (x, t) dt`, which vanishes at every point `x` with `F (x, t) = 0` for all `t`.
+along the motion, then the flux form of `φ_t` is `d g` for some smooth function `g` vanishing
+at every point `x` with `F (x, t) = 0` for all `t`. The proof takes `g x = ∫₀¹ F (x, t) dt`.
 Neither closedness nor nondegeneracy of `σ` is needed. -/
 theorem HasHamiltonian.exists_fluxForm_eq_mextDerivₗ (h : Φ.HasHamiltonian σ F) :
     ∃ g : SmoothForm J M ℝ 0, (∀ x, (∀ t, F (x, t) = 0) → g.val x = 0) ∧
