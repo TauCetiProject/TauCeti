@@ -409,11 +409,8 @@ theorem ker_heightHessian_eq_ker_ad [Finite ι] (hD : IsRootPlaneDecomposition B
     exact (mul_ne_zero (mul_ne_zero hi (hX i hi)) (hD.pos i (a i).property h).ne') hval
   rw [LinearMap.mem_ker, LieAlgebra.ad_apply, lie_add, lie_sum, ← lie_skew,
     hD.lie_eq_zero hH p.property, neg_zero, zero_add]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [← lie_skew, (hD.isRootPlane i).lie_left]
-  by_cases hi : α i p = 0
-  · simp [hi]
-  · simp [(Subtype.ext (ha i hi) : a i = 0)]
+  exact Finset.sum_eq_zero fun i _ ↦ ((hD.isRootPlane i).lie_eq_zero_iff p (a i)).mpr
+    (or_iff_not_imp_left.mpr fun hi ↦ Subtype.ext (ha i hi))
 
 omit [Fintype ι] in
 /-- **Nondegenerate critical points of a height, characterized.** In a root-plane decomposition
@@ -433,12 +430,9 @@ theorem ker_heightHessian_eq_ker_ad_iff [Finite ι] (hD : IsRootPlaneDecompositi
     obtain ⟨H, hH, b, rfl⟩ := hD.exists_eq_add_sum y
     rw [hD.heightHessian_apply_add_sum p X hH i ⟨v, hv⟩ b, hX, mul_zero, zero_mul, neg_zero,
       LinearMap.zero_apply]
-  rw [h, LinearMap.mem_ker, LieAlgebra.ad_apply, ← lie_skew, neg_eq_zero,
-    (hD.isRootPlane i).lie_left ⟨v, hv⟩ p, neg_eq_zero, smul_eq_zero] at hker
-  rcases hker with h0 | h0
-  · exact hp h0
-  · exact hv0 (congrArg Subtype.val ((map_eq_zero_iff (J i) (hD.isRootPlane i).injective).mp
-      (Submodule.coe_eq_zero.mp h0)))
+  rw [h, LinearMap.mem_ker, LieAlgebra.ad_apply,
+    (hD.isRootPlane i).lie_eq_zero_iff p ⟨v, hv⟩] at hker
+  exact hker.elim hp fun h0 ↦ hv0 (congrArg Subtype.val h0)
 
 end IsRootPlaneDecomposition
 
