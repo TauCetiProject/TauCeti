@@ -62,6 +62,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `LaurentPolynomial.hom_eval₂`: a ring homomorphism commutes with `LaurentPolynomial.eval₂`.
 * `LaurentPolynomial.laurentEval_one_eq_sum`: evaluating a Laurent polynomial at `1` sums its
   coefficients.
+* `LaurentPolynomial.laurentEval_rescale`: evaluating after `T ↦ c T` multiplies the evaluation
+  unit by the image of `c`.
 * `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
@@ -461,6 +463,17 @@ theorem rescale_rescale (c d : Aˣ) (p : A[T;T⁻¹]) :
 @[simp]
 theorem rescale_one : rescale A 1 = AlgHom.id A A[T;T⁻¹] :=
   (laurentEval_unique _ _ (by simp)).symm
+
+/-- Evaluating after rescaling the variable is evaluating at the rescaled unit, even in a
+noncommutative target algebra. -/
+@[simp]
+theorem laurentEval_rescale {B : Type*} [Semiring B] [Algebra A B]
+    (p : A[T;T⁻¹]) (u : Bˣ) (c : Aˣ) :
+    laurentEval u (rescale A c p) =
+      laurentEval (Units.map (algebraMap A B).toMonoidHom c * u) p := by
+  have h := laurentEval_unique (Units.map (algebraMap A B).toMonoidHom c * u)
+    ((laurentEval u).comp (rescale A c)) (by simp [rescale_T])
+  exact DFunLike.congr_fun h p
 
 /-- If `x` commutes with a unit `u` up to the scalar `c`, that is `x u = c u x`, then moving `x`
 past the evaluation of a Laurent polynomial `p` at `u` rescales `p` by `c`. -/
