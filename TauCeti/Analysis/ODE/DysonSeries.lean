@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.Normed.Operator.CompactFamily
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
@@ -531,14 +532,6 @@ theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : 
     one_apply_eq_self, sub_self, map_zero] at h0
   exact sub_eq_zero.1 h0
 
-omit [CompleteSpace X] in
-/-- A continuous path of bounded operators is uniformly bounded on `[0, d]`: some `A ≥ 0` has
-`‖T t v‖ ≤ A ‖v‖` for every `t ∈ [0, d]` and every `v`. -/
-private theorem exists_forall_norm_apply_le_mul_norm {T : ℝ → X →L[ℝ] X} (hT : Continuous T)
-    (d : ℝ) : ∃ A, 0 ≤ A ∧ ∀ t ∈ Icc 0 d, ∀ v : X, ‖T t v‖ ≤ A * ‖v‖ := by
-  obtain ⟨A, hA⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn hT.continuousOn
-  exact ⟨|A|, abs_nonneg A, fun t ht v ↦ (T t).le_of_opNorm_le ((hA t ht).trans (le_abs_self A)) v⟩
-
 /-- **The deviation from the homogeneous solution.** For `d ≥ 0` there is a constant `C ≥ 0`
 such that every solution of `w' = M w + f` with `f` continuous stays within `C ∫₀ᵈ ‖f‖` of the
 solution `t ↦ Ψ(t) (w 0)` of `w' = M w` on `[0, d]`, where `Ψ = dysonSeriesLeft M`. -/
@@ -546,8 +539,12 @@ theorem exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm {M : �
     (hM : Continuous M) (d : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       ∀ t ∈ Icc 0 d, ‖w t - dysonSeriesLeft M t (w 0)‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
-  obtain ⟨A, hA0, hA⟩ := exists_forall_norm_apply_le_mul_norm (continuous_dysonSeriesLeft hM) d
-  obtain ⟨B, hB0, hB⟩ := exists_forall_norm_apply_le_mul_norm (continuous_dysonSeries hM.neg) d
+  obtain ⟨A, hA0, hA⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := d)).exists_forall_norm_apply_le_mul_norm
+      (continuous_dysonSeriesLeft hM).continuousOn
+  obtain ⟨B, hB0, hB⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := d)).exists_forall_norm_apply_le_mul_norm
+      (continuous_dysonSeries hM.neg).continuousOn
   refine ⟨A * B, mul_nonneg hA0 hB0, fun w f hf hw t ht ↦ ?_⟩
   -- By variation of constants, `w t - Ψ(t) (w 0) = Ψ(t) (∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`.
   rw [eq_dysonSeriesLeft_apply_add_integral hM hf hw t, map_add, add_sub_cancel_left]
@@ -568,7 +565,9 @@ theorem exists_forall_norm_le_mul_norm_add_integral_norm {M : ℝ → X →L[ℝ
     (d : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * (‖w 0‖ + ∫ s in 0..d, ‖f s‖) := by
-  obtain ⟨A, hA0, hA⟩ := exists_forall_norm_apply_le_mul_norm (continuous_dysonSeriesLeft hM) d
+  obtain ⟨A, hA0, hA⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := d)).exists_forall_norm_apply_le_mul_norm
+      (continuous_dysonSeriesLeft hM).continuousOn
   obtain ⟨C, -, hdev⟩ := exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm hM d
   refine ⟨max A C, le_max_of_le_left hA0, fun w f hf hw t ht ↦ ?_⟩
   have hI : 0 ≤ ∫ s in 0..d, ‖f s‖ :=
