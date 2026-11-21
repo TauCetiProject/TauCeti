@@ -85,7 +85,7 @@ theorem IsAlgebraicCurvature.abs_apply_orthonormal_le_of_span {r : FourTensor V}
     (hsec : ∀ u v : V, u ∈ Submodule.span ℝ (range f) → v ∈ Submodule.span ℝ (range f) →
       Orthonormal ℝ ![u, v] → a ≤ r ![u, v, u, v] ∧ r ![u, v, u, v] ≤ b) :
     |r ![f 0, f 1, f 2, f 3]| ≤ (2 / 3) * (b - a) := by
-  have hpol := LinearMap.twentyFour_nsmul_apply_eq_of_cyclic_eq_zero (T := toLinearMap₄ r)
+  have hpol := (toLinearMap₄ r).twentyFour_nsmul_apply_eq_of_cyclic_eq_zero
     (fun u v z w ↦ by simpa only [toLinearMap₄_apply] using hr.antisymm_first u v z w)
     (fun u v z w ↦ by simpa only [toLinearMap₄_apply] using hr.antisymm_last u v z w)
     (fun u v z w ↦ by simpa only [toLinearMap₄_apply] using hr.cyclic_eq_zero u v z w)

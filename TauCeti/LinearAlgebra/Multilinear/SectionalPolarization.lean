@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Polarization of curvature-type tensors
@@ -27,8 +29,9 @@ This identity holds over every commutative semiring of scalars and for values in
 that is an additive group. When multiplication by `6` is injective on the values, it can be
 cancelled, so two such tensors with the same values `T(x, y, y, x)` are equal. When `6 ≠ 0` in
 the scalars and unequal scalars act differently on every nonzero value, as over a domain with
-torsion-free values, it is enough to compare these values on linearly independent pairs, that is,
-on the pairs spanning a plane, since both sides vanish on dependent pairs. This is how the
+torsion-free values, it is enough to compare these values on linearly independent pairs, since
+both sides vanish on dependent pairs by `LinearMap.IsAlt.eq_zero_of_not_linearIndependent`. Over
+a field, the linearly independent pairs are the pairs spanning a plane, and this is how the
 sectional curvatures of a Riemannian manifold determine its curvature tensor.
 
 There is also a mixed-difference formula requiring no division. With
@@ -44,12 +47,11 @@ sense, including when `2` or `3` is a zero divisor on the values.
   through the values `T(x, y, y, x)`.
 * `LinearMap.twentyFour_nsmul_apply_eq_of_cyclic_eq_zero`: the mixed-difference polarization,
   expressing `24 • T` through eight such values.
-* `LinearMap.eq_of_cyclic_eq_zero`: two curvature-type tensors with the same values
+* `LinearMap.eq_of_apply_self_eq`: two curvature-type tensors with the same values
   `T(x, y, y, x)` are equal when multiplication by `6` is injective on the values.
-* `LinearMap.apply_apply_apply_apply_eq_zero_of_not_linearIndependent`: `T(x, y, z, w) = 0` for
-  linearly dependent `x, y`.
-* `LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent`: two curvature-type tensors agreeing on
-  `T(x, y, y, x)` for linearly independent pairs are equal.
+* `LinearMap.eq_of_apply_self_eq_of_linearIndependent`: two curvature-type tensors agreeing on
+  `T(x, y, y, x)` for linearly independent pairs are equal, provided `6 ≠ 0` and unequal scalars
+  act differently on every nonzero value.
 
 ## References
 
@@ -60,6 +62,8 @@ sense, including when `2` or `3` is a zero divisor on the values.
   Proposition 16.2.1, p. 154.
   The mixed-difference formula uses `T(x, y, y, x)` rather than Andrews's slot order
   `T(x, y, x, y)` for the sectional-curvature numerator.
+* The module-valued statements with natural-number multiples `6 •` and `24 •` follow Mathlib's
+  `QuadraticMap` API, where `QuadraticMap.polar_self` states `polar Q x x = 2 • Q x`.
 -/
 
 public section
@@ -74,14 +78,14 @@ variable [CommSemiring R] [AddCommGroup N] [Module R N]
 
 section AddCommMonoid
 
-variable [AddCommMonoid M] [Module R M] {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N}
+variable [AddCommMonoid M] [Module R M]
 
 /-- The polarization identity for curvature-type tensors: for a quadrilinear map `T`
 antisymmetric in its first and in its last pair of arguments and satisfying the first Bianchi
-identity, `6 • T(x, y, z, w)` is an explicit combination of values `T(a, b, b, a)`. This recovers
-`T` itself only when multiplication by `6` is injective on the values, see
-`LinearMap.eq_of_cyclic_eq_zero`. -/
-theorem six_nsmul_apply_eq_of_cyclic_eq_zero
+identity, `6 • T(x, y, z, w)` is an explicit combination of values `T(a, b, b, a)`. When
+multiplication by `6` is injective on the values, it can be cancelled to recover `T`, see
+`LinearMap.eq_of_apply_self_eq`. -/
+theorem six_nsmul_apply_eq_of_cyclic_eq_zero (T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N)
     (h₁ : ∀ x y z w, T x y z w = -T y x z w) (h₂ : ∀ x y z w, T x y z w = -T x y w z)
     (h₃ : ∀ x y z w, T x y z w + T y z x w + T z x y w = 0) (x y z w : M) :
     6 • T x y z w =
@@ -102,8 +106,8 @@ theorem six_nsmul_apply_eq_of_cyclic_eq_zero
 /-- Two quadrilinear maps antisymmetric in their first and in their last pair of arguments and
 satisfying the first Bianchi identity are equal as soon as `T₁(x, y, y, x) = T₂(x, y, y, x)` for
 all `x, y`, provided multiplication by `6` is injective on the values. -/
-theorem eq_of_cyclic_eq_zero (h6 : IsSMulRegular N (6 : ℕ))
-    {T₁ T₂ : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N}
+theorem eq_of_apply_self_eq (T₁ : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N)
+    {T₂ : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N} (h6 : IsSMulRegular N (6 : ℕ))
     (h₁ : ∀ x y z w, T₁ x y z w = -T₁ y x z w) (h₂ : ∀ x y z w, T₁ x y z w = -T₁ x y w z)
     (h₃ : ∀ x y z w, T₁ x y z w + T₁ y z x w + T₁ z x y w = 0)
     (h₁' : ∀ x y z w, T₂ x y z w = -T₂ y x z w) (h₂' : ∀ x y z w, T₂ x y z w = -T₂ x y w z)
@@ -111,61 +115,45 @@ theorem eq_of_cyclic_eq_zero (h6 : IsSMulRegular N (6 : ℕ))
     (hT : ∀ x y, T₁ x y y x = T₂ x y y x) : T₁ = T₂ := by
   ext x y z w
   refine h6 ?_
-  simp only [six_nsmul_apply_eq_of_cyclic_eq_zero h₁ h₂ h₃,
-    six_nsmul_apply_eq_of_cyclic_eq_zero h₁' h₂' h₃', hT]
-
-/-- A quadrilinear map antisymmetric in its first pair of arguments has `T(x, y, z, w) = 0`
-whenever `x` and `y` are linearly dependent, provided `2 ≠ 0` and unequal scalars act differently
-on every nonzero value. Over a domain with torsion-free values the latter hypothesis is
-`fun _ ↦ smul_left_injective R`. -/
-theorem apply_apply_apply_apply_eq_zero_of_not_linearIndependent
-    (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) (h2 : (2 : R) ≠ 0)
-    (h₁ : ∀ x y z w, T x y z w = -T y x z w) {x y : M} (hxy : ¬LinearIndependent R ![x, y])
-    (z w : M) : T x y z w = 0 := by
-  -- `T(a, a, z, w) = 0`: it is its own negative, and `2 ≠ 0` cancels against nonzero values.
-  have hdiag (a : M) : T a a z w = 0 := by
-    by_contra ha
-    refine h2 (hN _ ha ?_)
-    simpa only [two_smul, zero_smul, ← eq_neg_iff_add_eq_zero] using h₁ a a z w
-  -- A dependence `s • x + t • y = s' • x + t' • y` with `(s, t) ≠ (s', t')` gives
-  -- `s • T(x, y, z, w) = s' • T(x, y, z, w)` and `t • T(x, y, z, w) = t' • T(x, y, z, w)`.
-  rw [LinearIndependent.pair_iffₛ] at hxy
-  push Not at hxy
-  obtain ⟨s, t, s', t', hst, hne⟩ := hxy
-  by_contra hv
-  refine hne (hN _ hv ?_) (hN _ hv ?_)
-  · simpa only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hdiag, smul_zero,
-      add_zero] using congr(T $hst y z w)
-  · simpa only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hdiag, smul_zero,
-      zero_add] using congr(T x $hst z w)
+  simp only [T₁.six_nsmul_apply_eq_of_cyclic_eq_zero h₁ h₂ h₃,
+    T₂.six_nsmul_apply_eq_of_cyclic_eq_zero h₁' h₂' h₃', hT]
 
 /-- Two quadrilinear maps antisymmetric in their first and in their last pair of arguments and
 satisfying the first Bianchi identity are equal as soon as `T₁(x, y, y, x) = T₂(x, y, y, x)` for
 every linearly independent pair `x, y`, provided `6 ≠ 0` and unequal scalars act differently on
 every nonzero value. Over a field these pairs are the bases of the two-dimensional subspaces. -/
-theorem eq_of_cyclic_eq_zero_of_linearIndependent
+theorem eq_of_apply_self_eq_of_linearIndependent (T₁ : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N)
+    {T₂ : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N}
     (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) (h6 : (6 : R) ≠ 0)
-    {T₁ T₂ : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N}
     (h₁ : ∀ x y z w, T₁ x y z w = -T₁ y x z w) (h₂ : ∀ x y z w, T₁ x y z w = -T₁ x y w z)
     (h₃ : ∀ x y z w, T₁ x y z w + T₁ y z x w + T₁ z x y w = 0)
     (h₁' : ∀ x y z w, T₂ x y z w = -T₂ y x z w) (h₂' : ∀ x y z w, T₂ x y z w = -T₂ x y w z)
     (h₃' : ∀ x y z w, T₂ x y z w + T₂ y z x w + T₂ z x y w = 0)
     (hT : ∀ x y, LinearIndependent R ![x, y] → T₁ x y y x = T₂ x y y x) : T₁ = T₂ := by
-  have h2 : (2 : R) ≠ 0 := fun h ↦ h6 <| by rw [show (6 : R) = 3 * 2 by norm_num, h, mul_zero]
-  -- Multiplication by `6 : ℕ` on the values is multiplication by the scalar `6 ≠ 0`.
-  have h6' : IsSMulRegular N (6 : ℕ) := fun a b hab ↦ by
-    by_contra hne
-    refine h6 (hN _ (sub_ne_zero.2 hne) ?_)
-    simpa only [smul_sub, zero_smul, sub_self, sub_eq_zero, ofNat_smul_eq_nsmul] using hab
-  refine eq_of_cyclic_eq_zero h6' h₁ h₂ h₃ h₁' h₂' h₃' fun x y ↦ ?_
+  have hsix : (6 : R) = 3 * 2 := by norm_num
+  have h2 : (2 : R) ≠ 0 := fun h ↦ h6 <| by rw [hsix, h, mul_zero]
+  -- Multiplication by `6 : ℕ` on the values is the scalar `6 ≠ 0`, which kills no nonzero value.
+  have h6' : IsSMulRegular N (6 : ℕ) := .of_right_eq_zero_of_smul fun n hn ↦ by
+    by_contra hn0
+    exact h6 <| hN n hn0 <| by simpa only [ofNat_smul_eq_nsmul, zero_smul] using hn
+  -- On a dependent pair `x, y`, both sides vanish: by `h₁` and `2 ≠ 0`, the bilinear map
+  -- `(a, b) ↦ T(a, b, y, x)` is alternating.
+  have hdep (T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N) (h₁ : ∀ x y z w, T x y z w = -T y x z w)
+      {x y : M} (hxy : ¬LinearIndependent R ![x, y]) : T x y y x = 0 := by
+    refine IsAlt.eq_zero_of_not_linearIndependent
+      (ω := (T.compr₂ (applyₗ y)).compr₂ (applyₗ x)) (fun a ↦ ?_) hN hxy
+    by_contra ha
+    refine h2 (hN _ ha ?_)
+    simpa only [compr₂_apply, applyₗ_apply_apply, two_smul, zero_smul,
+      ← eq_neg_iff_add_eq_zero] using h₁ a a y x
+  refine T₁.eq_of_apply_self_eq h6' h₁ h₂ h₃ h₁' h₂' h₃' fun x y ↦ ?_
   by_cases hxy : LinearIndependent R ![x, y]
   · exact hT x y hxy
-  · rw [apply_apply_apply_apply_eq_zero_of_not_linearIndependent hN h2 h₁ hxy,
-      apply_apply_apply_apply_eq_zero_of_not_linearIndependent hN h2 h₁' hxy]
+  · rw [hdep T₁ h₁ hxy, hdep T₂ h₁' hxy]
 
 end AddCommMonoid
 
-variable [AddCommGroup M] [Module R M] {T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N}
+variable [AddCommGroup M] [Module R M]
 
 /-- The mixed-difference polarization identity for a curvature-type quadrilinear map.
 Writing `Q(a, b) = T(a, b, b, a)` and
@@ -175,7 +163,7 @@ Writing `Q(a, b) = T(a, b, b, a)` and
 
 Only the two skew symmetries and the first Bianchi identity are needed. In particular this
 formula holds without cancelling `2`, `3`, or `24`, and all its arguments may be dependent. -/
-theorem twentyFour_nsmul_apply_eq_of_cyclic_eq_zero
+theorem twentyFour_nsmul_apply_eq_of_cyclic_eq_zero (T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N)
     (h₁ : ∀ x y z w, T x y z w = -T y x z w) (h₂ : ∀ x y z w, T x y z w = -T x y w z)
     (h₃ : ∀ x y z w, T x y z w + T y z x w + T z x y w = 0) (x y z w : M) :
     24 • T x y z w =

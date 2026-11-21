@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
@@ -74,8 +75,8 @@ theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (z w : V) : r ![u, v, z, w] = 0 := by
   have hAlt : (toLinearMap₄ r).IsAlt := fun a ↦ LinearMap.ext₂ fun c d ↦ by
     rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ a a c d)
-  simpa using congr($(AlternatingMap.map_linearDependent (K := ℝ) (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)
-    hAlt.toAlternatingMap ![u, v] huv) z w)
+  simpa using congr($(hAlt.eq_zero_of_not_linearIndependent
+    (fun _ ↦ smul_left_injective ℝ (M := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)) huv) z w)
 
 /-- An algebraic curvature tensor vanishes on `(u, v, u, v)` for linearly dependent `u, v`. -/
 theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : FourTensor V}
@@ -83,27 +84,27 @@ theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : Fo
     r ![u, v, u, v] = 0 :=
   apply_eq_zero_of_not_linearIndependent_of_antisymm_first huv hr.antisymm_first u v
 
-/-- **Sectional polarization**: algebraic curvature tensors agreeing on all `(u, v, u, v)` agree. -/
-theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
+/-- **Sectional polarization**: algebraic curvature tensors agreeing on all linearly independent
+`(u, v, u, v)` agree. -/
+theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂ : FourTensor V}
     (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
-    (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
-  toLinearMap₄_injective <| LinearMap.eq_of_cyclic_eq_zero
-    (IsSMulRegular.of_ne_zero (by norm_num : (6 : ℕ) ≠ 0))
+    (h : ∀ u v, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
+  toLinearMap₄_injective <| (toLinearMap₄ r₁).eq_of_apply_self_eq_of_linearIndependent
+    (fun _ ↦ smul_left_injective ℝ) (by norm_num)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.antisymm_first ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.antisymm_last ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.cyclic_eq_zero ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₂.antisymm_first ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₂.antisymm_last ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₂.cyclic_eq_zero ..)
-    fun _ _ ↦ by simp only [toLinearMap₄_apply]; rw [hr₁.antisymm_last, hr₂.antisymm_last, h]
+    fun u v huv ↦ by
+      simp only [toLinearMap₄_apply]; rw [hr₁.antisymm_last, hr₂.antisymm_last, h u v huv]
 
-/-- **Sectional polarization**: agreeing on linearly independent `(u, v, u, v)` suffices. -/
-theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂ : FourTensor V}
+/-- **Sectional polarization**: algebraic curvature tensors agreeing on all `(u, v, u, v)` agree. -/
+theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
     (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
-    (h : ∀ u v, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
-  hr₁.eq_of_apply_self_eq hr₂ fun u v ↦ (em _).elim (h u v) fun huv ↦ by
-    rw [hr₁.apply_self_eq_zero_of_not_linearIndependent huv,
-      hr₂.apply_self_eq_zero_of_not_linearIndependent huv]
+    (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
+  hr₁.eq_of_apply_self_eq_of_linearIndependent hr₂ fun u v _ ↦ h u v
 
 /-- Pair-antisymmetric, pair-interchange-symmetric four-tensors (symmetric forms on `⋀[ℝ]^2 V`). -/
 structure IsBivectorSymmetric (r : FourTensor V) : Prop where
