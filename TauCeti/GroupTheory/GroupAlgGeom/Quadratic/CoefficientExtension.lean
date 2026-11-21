@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.CoefficientExtension
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.StandardMap
 import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Surface
-import TauCeti.GroupTheory.HNNExtension
+import TauCeti.GroupTheory.HNNExtension.Basic
 import TauCeti.GroupTheory.PushoutI.Basic
 
 /-!
