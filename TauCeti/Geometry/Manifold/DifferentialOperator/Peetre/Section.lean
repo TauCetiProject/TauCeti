@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 import TauCeti.Geometry.Manifold.DifferentialOperator.Peetre.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalFrameCoeff
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.Topology.VectorBundle.Section
 
 /-!
 # Peetre's theorem for operators between sections of vector bundles
@@ -104,36 +105,28 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
   let c := e.cutoffLocalFrameCoeff b ⟨ρ, ρ.contMDiff⟩ hρ
   obtain ⟨fr', hfr', hfreq⟩ :=
-    e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x₀)
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl
+      (mem_baseSet_trivializationAt F V x₀)
   let fr (i : Fin (finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
   -- Near `x₀`, `ρ = 1` and the global sections `fr i` agree with the local frame of `e`.
   set G := {y | ρ y = 1 ∧ ∀ i, fr' i y = e.localFrame b i y}
   have hG : G ∈ 𝓝 x₀ := ρ.eventuallyEq_one.and (eventually_all.2 hfreq)
   -- The scalar operators `f ↦ P (f • fr i)`, read in the trivialization `e'` of `W`.
   let Q (i : Fin (finrank ℝ F)) : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] M → F' :=
-    { toFun := fun f y ↦ e'.continuousLinearMapAt ℝ y (P (f • fr i) y)
-      map_add' := fun f g ↦ by
-        ext y
-        simp [add_smul]
-      map_smul' := fun a f ↦ by
-        ext y
-        simp [smul_assoc] }
+    (LinearMap.piMap fun y ↦ (e'.continuousLinearMapAt ℝ y).toLinearMap) ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ (fr i)).restrictScalars ℝ
   have hQ (i : Fin (finrank ℝ F)) (f : C^∞⟮I, M; ℝ⟯) (y : M) :
       Q i f y = e'.continuousLinearMapAt ℝ y (P (f • fr i) y) := (rfl)
   set U' := U ∩ e'.baseSet
   have hU' : IsOpen U' := hU.inter e'.open_baseSet
   have hQloc (i : Fin (finrank ℝ F)) (f : C^∞⟮I, M; ℝ⟯) (x : M) (hx : x ∈ U')
       (hf : (f : M → ℝ) =ᶠ[𝓝 x] 0) : Q i f x = 0 := by
-    have hfi : ∀ᶠ y in 𝓝 x, (f • fr i) y = 0 := by
-      filter_upwards [hf] with y hy
-      rw [ContMDiffSection.smul_apply, hy, Pi.zero_apply, zero_smul]
-    rw [hQ, hloc _ x hx.1 hfi, map_zero]
+    rw [hQ, hloc _ x hx.1 (hf.mono fun y hy ↦ by
+      rw [ContMDiffSection.smul_apply, hy, Pi.zero_apply, zero_smul]), map_zero]
   have hQcont (i : Fin (finrank ℝ F)) (f : C^∞⟮I, M; ℝ⟯) : ContinuousOn (Q i f) U' := by
-    refine (continuous_snd.comp_continuousOn (e'.continuousOn.comp
-      ((hcont (f • fr i)).mono inter_subset_left) fun y hy ↦ e'.mem_source.2 hy.2)).congr
-      fun y hy ↦ ?_
-    rw [hQ, Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) e' hy.2,
-      Function.comp_apply, Function.comp_apply]
+    exact ((e'.continuousOn_section_iff inter_subset_right).1
+      ((hcont (f • fr i)).mono inter_subset_left)).congr fun y hy ↦
+        e'.continuousLinearMapAt_apply_of_mem ℝ hy.2 (P (f • fr i) y)
   -- A compact neighbourhood of `x₀` inside `G` on which the scalar theorem applies.
   have hx₀' : x₀ ∈ U' ∩ interior G :=
     ⟨⟨hx₀, mem_baseSet_trivializationAt F' W x₀⟩, mem_interior_iff_mem_nhds.2 hG⟩
@@ -144,20 +137,16 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
   refine ⟨K, mem_interior_iff_mem_nhds.1 hx₀K, Finset.univ.sup r, fun y hy s hs ↦ ?_⟩
   -- Near `y`, `s` is the sum of the `c i s • fr i`.
   have hsum : P s y = ∑ i, P (c i s • fr i) y := by
-    have h := hloc (s - ∑ i, c i s • fr i) y (hKsub hy).1.1 <| by
-      filter_upwards [isOpen_interior.mem_nhds (hKsub hy).2] with z hz
-      rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero]
-      exact e.apply_eq_sum_cutoffLocalFrameCoeff_smul b ⟨ρ, ρ.contMDiff⟩ hρ fr s
-        (interior_subset hz).1 (interior_subset hz).2
+    have h := hloc (s - ∑ i, c i s • fr i) y (hKsub hy).1.1 <|
+      Filter.Eventually.mono (isOpen_interior.mem_nhds (hKsub hy).2) fun z hz ↦
+        sub_eq_zero.mpr (e.apply_eq_sum_cutoffLocalFrameCoeff_smul b ⟨ρ, ρ.contMDiff⟩ hρ fr s
+          (interior_subset hz).1 (interior_subset hz).2)
     rwa [map_sub, map_sum, Pi.sub_apply, Finset.sum_apply, sub_eq_zero] at h
-  rw [hsum]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  have hci : c i s ∈ TauCeti.smoothVanishingIdeal I y ^ (r i + 1) :=
-    Ideal.pow_le_pow_right (Nat.succ_le_succ (Finset.le_sup (Finset.mem_univ i)))
-      ((c i).apply_mem_of_mem_smul_top hs)
-  have h := hr i y hy _ hci
-  rw [hQ] at h
-  rw [← e'.symmL_continuousLinearMapAt (R := ℝ) (hKsub hy).1.2 (P _ y), h, map_zero]
+  refine hsum.trans (Finset.sum_eq_zero fun i _ ↦ ?_)
+  rw [← e'.symmL_continuousLinearMapAt (R := ℝ) (hKsub hy).1.2 (P _ y),
+    ← hQ i, hr i y hy _ (Ideal.pow_le_pow_right
+      (Nat.succ_le_succ (Finset.le_sup (Finset.mem_univ i)))
+      ((c i).apply_mem_of_mem_smul_top hs)), map_zero]
 
 /-- **Peetre's theorem** for operators between sections of vector bundles. Let `V` be a smooth
 real vector bundle of finite rank over a finite-dimensional Hausdorff boundaryless manifold, `W` a
