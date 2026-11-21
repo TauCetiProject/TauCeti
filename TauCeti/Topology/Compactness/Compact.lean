@@ -18,7 +18,9 @@ import TauCeti.Topology.Separation.InvFunOn
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
 ultrafilters of families eventually in a compact set, families whose values tend to the
 cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
-valid near each point of a compact set to one constant valid on all of it.
+valid near each point of a compact set to one constant valid on all of it. Maps converging
+continuously on a compact set eventually map it into any open set containing the image under the
+limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`).
 
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
@@ -264,6 +266,18 @@ theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Spac
     (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
   exact hwU (h w hwS (by simpa [image_singleton] using
     hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
+
+/-- If maps `f i` converge to `g` continuously at every point of a compact set `A`, that is
+`f p.1 p.2 → g a` as `p → (l, a)`, and `g` maps `A` into an open set `t`, then eventually along
+`l` the map `f i` maps `A` into `t`. -/
+theorem _root_.IsCompact.eventually_forall_mem_of_tendsto_prod_nhds {Y ι : Type*}
+    [TopologicalSpace Y] {l : Filter ι} {f : ι → X → Y} {g : X → Y} {A : Set X} {t : Set Y}
+    (hA : IsCompact A) (ht : IsOpen t)
+    (hconv : ∀ a ∈ A, Tendsto (fun p : ι × X ↦ f p.1 p.2) (l ×ˢ 𝓝 a) (𝓝 (g a)))
+    (hmem : ∀ a ∈ A, g a ∈ t) : ∀ᶠ i in l, ∀ a ∈ A, f i a ∈ t := by
+  have h := hA.mem_prod_nhdsSet_of_forall (s := {p : ι × X | f p.1 p.2 ∈ t})
+    fun a ha ↦ (hconv a ha).eventually (ht.mem_nhds (hmem a ha))
+  exact (Filter.Eventually.curry h).mono fun _ hi ↦ hi.self_of_nhdsSet
 
 section TubeLemma
 
