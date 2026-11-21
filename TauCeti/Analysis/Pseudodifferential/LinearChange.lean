@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.Analysis.Pseudodifferential.Quantization
+public import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Continuous
@@ -37,13 +38,21 @@ This file proves the exact formula and that the symbol classes are invariant:
   uniform estimates, smoothing symbols and, for invertible `P`, compact spatial support.
   `TauCeti.Symbol.quantizeSchwartzValue_compProdMap_symm_adjointEquiv` combines this with the
   formula above: written in linear coordinates, the quantization of a symbol of order `m` is the
-  quantization of a symbol of order `m`.
+  quantization of a symbol of order `m`, and
+  `TauCeti.Symbol.quantizeUniformCLM_compProdMap_symm_adjointEquiv` is the same identity for the
+  operator on Schwartz space. For invertible `P` the change of variables is injective and the
+  symbol classes are invariant in both directions (`TauCeti.Symbol.isUniform_compProdMap_iff` and
+  its analogues).
 * `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap`: the estimates for `a ∘ (P × Q)` hold with
   one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded too, as needed for families
   of linear changes of variables such as compact group actions.
+* `TauCeti.Symbol.compProdMap_symm_adjointEquiv_eq_self_iff`: a pseudodifferential operator
+  commutes with the change of coordinates `u ↦ u ∘ A` exactly when its symbol is invariant under
+  `(x, ξ) ↦ (A⁻¹ x, Aᵀ ξ)`.
 * `TauCeti.ClassicalSymbol.compProdMap`: the same change of variables in a classical symbol, whose
   homogeneous terms transform alike (`TauCeti.HomogeneousSymbol.compProdMap`). In particular the
-  principal symbol transforms by the same rule (`TauCeti.ClassicalSymbol.principal_compProdMap`).
+  principal symbol transforms by the same rule (`TauCeti.ClassicalSymbol.principal_compProdMap`),
+  and ellipticity is invariant (`TauCeti.ClassicalSymbol.isElliptic_compProdMap_iff`).
 
 The symbol estimates for `a ∘ (P × Q)` come from the chain rule: a mixed derivative of
 `a ∘ (P × Q)` is a derivative of `a` at `(P x, Q ξ)` along the directions `(P eⱼ, 0)` and
@@ -226,6 +235,43 @@ theorem HasCompactSpatialSupport.compProdMap {a : Symbol n V W m}
   rw [coefficient_compProdMap]
   exact hKa _ (fun hPx => hx ⟨P x, hPx, by simp⟩) _
 
+section Invertible
+
+variable (P Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+
+/-- An invertible linear change of variables is injective on symbols: it is undone by the change of
+variables along `(P⁻¹, Q⁻¹)`. -/
+theorem compProdMap_injective :
+    Function.Injective
+      (compProdMap (V := V) (W := W) (m := m) (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q) :=
+  fun a b h => by
+    simpa using congrArg
+      (compProdMap (P.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q.symm) h
+
+@[simp]
+theorem isUniform_compProdMap_iff {a : Symbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).IsUniform ↔ a.IsUniform :=
+  ⟨fun h => by
+    simpa using IsUniform.compProdMap h (P.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q.symm,
+    fun h => h.compProdMap _ Q⟩
+
+@[simp]
+theorem isSmoothing_compProdMap_iff {a : Symbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).IsSmoothing ↔
+      a.IsSmoothing :=
+  ⟨fun h => by
+    simpa using
+      IsSmoothing.compProdMap h (P.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q.symm,
+    fun h => h.compProdMap _ Q⟩
+
+@[simp]
+theorem hasCompactSpatialSupport_compProdMap_iff {a : Symbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).HasCompactSpatialSupport ↔
+      a.HasCompactSpatialSupport :=
+  ⟨fun h => by simpa using h.compProdMap P.symm Q.symm, fun h => h.compProdMap P Q⟩
+
+end Invertible
+
 end Symbol
 
 namespace ClassicalSymbol
@@ -327,6 +373,22 @@ theorem principal_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n
     (compProdMap P Q a).principal = a.principal.compProdMap P Q :=
   HomogeneousSymbol.ext (funext fun p => by simp)
 
+/-- A linear change of variables preserves ellipticity. -/
+theorem IsElliptic.compProdMap {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) : (compProdMap P Q a).IsElliptic := by
+  rw [isElliptic_def, principal_compProdMap]
+  exact (isElliptic_def.1 ha).compProdMap P Q
+
+/-- **Ellipticity is invariant under invertible linear changes of variables.** -/
+@[simp]
+theorem isElliptic_compProdMap_iff (P Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    {a : ClassicalSymbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).IsElliptic ↔
+      a.IsElliptic := by
+  rw [isElliptic_def, isElliptic_def, principal_compProdMap,
+    HomogeneousSymbol.isElliptic_compProdMap_iff]
+
 end ClassicalSymbol
 
 section Quantization
@@ -392,6 +454,35 @@ theorem Symbol.quantizeSchwartzValue_compProdMap_symm_adjointEquiv {n : ℕ} (a 
           a).coefficient u (A x) =
       quantizeSchwartzValue a.coefficient (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) x :=
   (quantizeSchwartzValue_compCLMOfContinuousLinearEquiv a.coefficient A u x).symm
+
+/-- **Linear change of coordinates for the operator on Schwartz space.** For a symbol `a` with
+uniform estimates, `u ↦ Op(a) (u ∘ A) ∘ A⁻¹` is the quantization of the symbol
+`(y, η) ↦ a(A⁻¹ y, Aᵀ η)`. -/
+theorem Symbol.quantizeUniformCLM_compProdMap_symm_adjointEquiv {n : ℕ} {a : Symbol n V W m}
+    (ha : a.IsUniform) (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    quantizeUniformCLM
+        (Symbol.compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv a)
+        (ha.compProdMap _ _) =
+      SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm ∘L quantizeUniformCLM a ha ∘L
+        SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A := by
+  ext u x
+  simpa using quantizeSchwartzValue_compProdMap_symm_adjointEquiv a A u (A.symm x)
+
+/-- **Invariant operators have invariant symbols.** The quantization of `a` commutes with the
+change of coordinates `u ↦ u ∘ A` exactly when `a` is invariant under the change of variables
+`(y, η) ↦ (A⁻¹ y, Aᵀ η)`. -/
+theorem Symbol.compProdMap_symm_adjointEquiv_eq_self_iff [CompleteSpace V] [CompleteSpace W]
+    {n : ℕ} {a : Symbol n V W m} (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    Symbol.compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv a = a ↔
+      ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n),
+        quantizeSchwartzValue a.coefficient (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) x =
+          quantizeSchwartzValue a.coefficient u (A x) := by
+  refine ⟨fun h u x => ?_, fun h => Symbol.quantizeSchwartzValue_injective
+    (funext fun u => funext fun y => ?_)⟩
+  · rw [← quantizeSchwartzValue_compProdMap_symm_adjointEquiv, h]
+  · have := (quantizeSchwartzValue_compProdMap_symm_adjointEquiv a A u (A.symm y)).trans
+      (h u (A.symm y))
+    rwa [A.apply_symm_apply] at this
 
 end Quantization
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Normalize
+public import TauCeti.Dynamics.Billiard.CotangentGeneratingFunction
 public import TauCeti.Dynamics.Billiard.NextCollision
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Inverse
@@ -68,6 +69,8 @@ is used; the joint smoothness of the billiard map is a separate matter.
 
 ## Main results
 
+* `TauCeti.StrictConvexBilliardTable.generatingFunction_eq_billiardGeneratingFunction`: `S` is the
+  generating function `TauCeti.billiardGeneratingFunction` of the parametrization, in curried form.
 * `TauCeti.StrictConvexBilliardTable.generatingFunction_add_period`: `S(s + L, t + L) = S(s, t)`.
 * `TauCeti.StrictConvexBilliardTable.hasDerivAt_generatingFunction_left`,
   `TauCeti.StrictConvexBilliardTable.hasDerivAt_generatingFunction_right`: the partial derivatives
@@ -229,6 +232,12 @@ def generatingFunction (s t : ℝ) : ℝ :=
 
 theorem generatingFunction_def (s t : ℝ) : χ.generatingFunction s t = -‖χ t - χ s‖ :=
   (rfl)
+
+/-- The generating function of the table is the billiard generating function of its
+parametrization, `TauCeti.billiardGeneratingFunction`, in curried form. -/
+theorem generatingFunction_eq_billiardGeneratingFunction (s t : ℝ) :
+    χ.generatingFunction s t = billiardGeneratingFunction χ (s, t) := by
+  rw [generatingFunction_def, billiardGeneratingFunction_apply]
 
 /-- The generating function is invariant under translating both arguments by the period. -/
 @[simp]

@@ -199,7 +199,7 @@ private lemma eq_zero_of_disjoint_isOpen_cover {W : TopCat.{w}} {U' V' : Set W}
   have : IsEmpty (TopCat.of ↥(U' ∩ V')) := ⟨fun ⟨_, hxU, hxV⟩ ↦ hUV'd.le_bot ⟨hxU, hxV⟩⟩
   have hZeroUV : IsZero ((TopCat.toSSet.obj (TopCat.of ↥(U' ∩ V'))).homology N k) := by
     rw [← singularHomologyFunctor_obj_obj_eq_toSSet_homology]
-    exact isZero_singularHomologyFunctor_of_isEmpty N (TopCat.of ↥(U' ∩ V')) k
+    exact isZero_singularHomology_of_isEmpty N (TopCat.of ↥(U' ∩ V')) k
   have hMV := (TopCat.mayerVietoris_exact₂ N hU'o hV'o hUV' k).mono_g (hZeroUV.eq_of_src _ _)
   let HU := (TopCat.toSSet.obj (TopCat.of ↥U')).homology N k
   let HV := (TopCat.toSSet.obj (TopCat.of ↥V')).homology N k

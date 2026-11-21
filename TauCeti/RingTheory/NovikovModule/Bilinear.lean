@@ -379,9 +379,7 @@ theorem kernelProduct_exists_potential_le_left (b : NovikovModule R F₂) :
     ∃ D, ∀ p₁ p₀, ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + D := by
   obtain ⟨M, hM⟩ := bddAbove_image_support b
   refine ⟨M + C, fun p₁ p₀ h => ?_⟩
-  obtain ⟨p₂, hp₂⟩ : ∃ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 := by
-    by_contra! h'
-    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  obtain ⟨p₂, hp₂⟩ : ∃ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
   have h₂ : F₂ p₂ ≤ M := hM ⟨p₂, left_ne_zero_of_mul hp₂, rfl⟩
   linarith [hn _ _ _ (right_ne_zero_of_mul hp₂)]
 
@@ -393,9 +391,7 @@ theorem kernelProduct_exists_potential_le_right (a : NovikovModule R F₁) :
     ∃ D, ∀ p₂ p₀, ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + D := by
   obtain ⟨M, hM⟩ := bddAbove_image_support a
   refine ⟨M + C, fun p₂ p₀ h => ?_⟩
-  obtain ⟨p₁, hp₁⟩ : ∃ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 := by
-    by_contra! h'
-    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  obtain ⟨p₁, hp₁⟩ : ∃ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
   have h₁ : F₁ p₁ ≤ M := hM ⟨p₁, left_ne_zero_of_mul hp₁, rfl⟩
   linarith [hn _ _ _ (right_ne_zero_of_mul hp₁)]
 
