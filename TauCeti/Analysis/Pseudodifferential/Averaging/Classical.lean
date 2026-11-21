@@ -31,7 +31,9 @@ file shows that averaging preserves the classical symbols, termwise.
   (`TauCeti.HomogeneousSymbol.continuousOn_iteratedFDeriv_transport`), so it is an instance of
   the compact parameter integral `TauCeti.HomogeneousSymbol.integral`. For a left-invariant
   measure it is invariant (`TauCeti.HomogeneousSymbol.transport_average`), and for a probability
-  measure it fixes invariant homogeneous symbols (`TauCeti.HomogeneousSymbol.average_eq_self`).
+  measure it fixes invariant homogeneous symbols (`TauCeti.HomogeneousSymbol.average_eq_self`);
+  for a left-invariant probability measure its fixed points are exactly the invariant
+  homogeneous symbols (`TauCeti.HomogeneousSymbol.average_eq_self_iff`).
 * `TauCeti.ClassicalSymbol.average`: **the average of a classical symbol of order `m` is
   classical of order `m`**. Its full symbol is the average of the full symbol
   (`TauCeti.ClassicalSymbol.toSymbol_average`), so its quantization is the average of the
@@ -42,7 +44,9 @@ file shows that averaging preserves the classical symbols, termwise.
   (`TauCeti.ClassicalSymbol.principal_average_of_forall_transport_eq`), while the lower-order
   terms may change. The average is invariant for a left-invariant measure
   (`TauCeti.ClassicalSymbol.transport_average`) and fixes invariant classical symbols for a
-  probability measure (`TauCeti.ClassicalSymbol.average_eq_self`).
+  probability measure (`TauCeti.ClassicalSymbol.average_eq_self`); for a left-invariant
+  probability measure its fixed points are exactly the invariant classical symbols
+  (`TauCeti.ClassicalSymbol.average_eq_self_iff`).
 
 The point is the uniform control of the remainders. For a cutoff `χ`, the remainder of `g • a`
 after `N` terms is the transport of the remainder of `a`, which satisfies the estimates of order
@@ -97,6 +101,11 @@ theorem coefficient_transport (A : E ≃L[ℝ] E) (e : V ≃L[ℂ] V) (f : W ≃
       (f : W →L[ℂ] W) ∘L a.coefficient (A.symm p.1, A.adjointEquiv p.2) ∘L
         (e.symm : V →L[ℂ] V) :=
   ContinuousLinearMap.ext fun v ↦ by simp [transport]
+
+@[simp]
+theorem transport_zero (A : E ≃L[ℝ] E) (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W) :
+    transport A e f (0 : HomogeneousSymbol E E V W m) = 0 :=
+  HomogeneousSymbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
 
 @[simp]
 theorem transport_add (A : E ≃L[ℝ] E) (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W)
@@ -196,6 +205,10 @@ theorem coefficient_average (a : HomogeneousSymbol E E V W m) (p : E × E) :
         ((σ g).symm : V →L[ℂ] V) ∂μ := by
   simp only [average, coefficient_integral, coefficient_transport]
 
+@[simp]
+theorem average_zero : average μ hρ hσ hτ (0 : HomogeneousSymbol E E V W m) = 0 :=
+  HomogeneousSymbol.ext (funext fun p ↦ by simp)
+
 /-- Averaging is additive. -/
 theorem average_add (a b : HomogeneousSymbol E E V W m) :
     average μ hρ hσ hτ (a + b) = average μ hρ hσ hτ a + average μ hρ hσ hτ b := by
@@ -232,6 +245,13 @@ theorem average_average [MeasurableMul G] [μ.IsMulLeftInvariant] [CompleteSpace
     [IsProbabilityMeasure μ] (a : HomogeneousSymbol E E V W m) :
     average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
   average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
+
+/-- For a left-invariant probability measure, a homogeneous symbol is its own average exactly
+when it is invariant under the action of every `g ∈ G`. -/
+theorem average_eq_self_iff [MeasurableMul G] [μ.IsMulLeftInvariant] [CompleteSpace (V →L[ℂ] W)]
+    [IsProbabilityMeasure μ] {a : HomogeneousSymbol E E V W m} :
+    average μ hρ hσ hτ a = a ↔ ∀ g, transport (ρ g) (σ g) (τ g) a = a :=
+  ⟨fun h g ↦ by rw [← h]; exact transport_average μ hρ hσ hτ a g, average_eq_self μ hρ hσ hτ⟩
 
 end Average
 
@@ -288,6 +308,11 @@ theorem principal_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) 
     (f : W ≃L[ℂ] W) (a : ClassicalSymbol n V W m) :
     (transport A e f a).principal = a.principal.transport A e f :=
   HomogeneousSymbol.ext (funext fun p ↦ by simp)
+
+@[simp]
+theorem transport_zero (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
+    (f : W ≃L[ℂ] W) : transport A e f (0 : ClassicalSymbol n V W m) = 0 :=
+  ext (by simp)
 
 @[simp]
 theorem transport_add (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
@@ -443,6 +468,10 @@ theorem principal_average (a : ClassicalSymbol n V W m) :
     (average μ hρ hσ hτ a).principal = HomogeneousSymbol.average μ hρ hσ hτ a.principal :=
   HomogeneousSymbol.ext (funext fun p ↦ by simp)
 
+@[simp]
+theorem average_zero : average μ hρ hσ hτ (0 : ClassicalSymbol n V W m) = 0 :=
+  ext (by simp)
+
 /-- Averaging is additive. -/
 theorem average_add (a b : ClassicalSymbol n V W m) :
     average μ hρ hσ hτ (a + b) = average μ hρ hσ hτ a + average μ hρ hσ hτ b :=
@@ -474,6 +503,13 @@ theorem average_average [MeasurableMul G] [μ.IsMulLeftInvariant] [CompleteSpace
     [IsProbabilityMeasure μ] (a : ClassicalSymbol n V W m) :
     average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
   average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
+
+/-- For a left-invariant probability measure, a classical symbol is its own average exactly when
+it is invariant under the action of every `g ∈ G`. -/
+theorem average_eq_self_iff [MeasurableMul G] [μ.IsMulLeftInvariant] [CompleteSpace (V →L[ℂ] W)]
+    [IsProbabilityMeasure μ] {a : ClassicalSymbol n V W m} :
+    average μ hρ hσ hτ a = a ↔ ∀ g, transport (ρ g) (σ g) (τ g) a = a :=
+  ⟨fun h g ↦ by rw [← h]; exact transport_average μ hρ hσ hτ a g, average_eq_self μ hρ hσ hτ⟩
 
 /-- **Averaging keeps an invariant principal symbol.** For a probability measure, if the
 principal symbol of `a` is invariant under the action of every `g ∈ G`, the average of `a` has
