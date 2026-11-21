@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
 public import TauCeti.RingTheory.Henselian.Integral
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.DiscreteValuationRing.Invariant
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 /-!
 # Integral closures of henselian discrete valuation rings
@@ -29,7 +32,9 @@ Krull–Akizuki supplies Dedekindness even without separability.
 and any chosen fraction field. `TauCeti.integralClosure.isDiscreteValuationRing` specializes to
 `integralClosure A L`, still allowing a chosen fraction field. The instance
 `TauCeti.integralClosure.isDiscreteValuationRing_fractionRing` uses `FractionRing A`, as do
-Mathlib's integral-closure instances.
+Mathlib's integral-closure instances. For a finite subgroup `H ≤ Gal(L / K)`,
+`TauCeti.isDiscreteValuationRing_integralClosure_fixedField` deduces that
+`integralClosure A (IntermediateField.fixedField H)` is a DVR whenever `integralClosure A L` is.
 
 ## References
 
@@ -81,5 +86,15 @@ instance isDiscreteValuationRing_fractionRing [IsDiscreteValuationRing A]
   isDiscreteValuationRing A (FractionRing A) L
 
 end integralClosure
+
+/-- If `integralClosure A L` is a discrete valuation ring and `H ≤ Gal(L/K)` is finite, then
+`integralClosure A (IntermediateField.fixedField H)` is also a discrete valuation ring. -/
+theorem isDiscreteValuationRing_integralClosure_fixedField
+    (A K L : Type*) [CommRing A] [Field K] [Algebra A K]
+    [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
+    (H : Subgroup (L ≃ₐ[K] L)) [Finite H] [IsDiscreteValuationRing (integralClosure A L)] :
+    _root_.IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
+  _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (fixedPointsIntegralClosureEquiv A K L H)
 
 end TauCeti

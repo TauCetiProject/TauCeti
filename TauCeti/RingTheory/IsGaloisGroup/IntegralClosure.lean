@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Invariant.Galois
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.FieldTheory.Galois.IsGaloisGroup
 import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # Galois groups of integral closures
@@ -30,6 +31,10 @@ finite extension `M / K` and a subgroup `H` of `Gal(M/K)`, with `C` the integral
 in `M ^ H`, the subgroup `H` is a Galois group of `B / C`. The fourth statement records the
 analogous result for the image of `Gal(M/L)` inside `Gal(M/K)` under restriction of scalars.
 
+For a field extension `L / K` and a subgroup `H ≤ Gal(L / K)`, the `H`-fixed subalgebra of
+`integralClosure A L` is canonically `A`-isomorphic to `integralClosure A (fixedField H)`,
+equivariantly along `IsGalois.normalAutEquivQuotient H` when `H` is normal.
+
 ## Main results
 
 * `IsGaloisGroup.of_isIntegralClosure`: a Galois group of `M / L` is a Galois group of the
@@ -46,6 +51,9 @@ analogous result for the image of `Gal(M/L)` inside `Gal(M/K)` under restriction
 * `TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed`: conversely, starting from the
   rings, a domain `B` with a finite Galois group over a Noetherian integrally closed domain `A`
   embedding in `B` is a finite `A`-module.
+* `TauCeti.fixedPointsIntegralClosureEquiv` and `TauCeti.fixedPointsIntegralClosureEquiv_smul`:
+  the canonical equivariant `A`-algebra isomorphism between `(integralClosure A L)^H` and
+  `integralClosure A (L^H)`.
 -/
 
 public section
@@ -198,3 +206,71 @@ theorem TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed (G A B : Type*)
     (integralClosure A (FractionRing B))
   exact TauCeti.IsIntegralClosure.finite_of_injective (C' := integralClosure A (FractionRing B))
     (IsScalarTower.toAlgHom A B (FractionRing B)) (IsFractionRing.injective B (FractionRing B))
+
+namespace TauCeti
+
+section FixedPoints
+
+variable (A K L : Type*) [CommRing A] [Field K] [Algebra A K]
+  [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
+
+/-- For a field extension `L/K` and a subgroup `H ≤ Gal(L/K)`, the `H`-fixed subalgebra of
+`integralClosure A L` is canonically `A`-isomorphic to the integral closure of `A` in the fixed
+field `L^H`. -/
+def fixedPointsIntegralClosureEquiv (H : Subgroup (L ≃ₐ[K] L)) :
+    FixedPoints.subalgebra A (integralClosure A L) H ≃ₐ[A]
+      integralClosure A (IntermediateField.fixedField H) where
+  toFun x :=
+    ⟨⟨((x : integralClosure A L) : L), fun σ ↦ congrArg Subtype.val (x.property σ)⟩, by
+      rw [mem_integralClosure_iff,
+        ← isIntegral_algHom_iff
+          ((IntermediateField.fixedField H).val.restrictScalars A) Subtype.val_injective]
+      exact (x : integralClosure A L).property⟩
+  invFun y :=
+    ⟨⟨((y : IntermediateField.fixedField H) : L), by
+      rw [mem_integralClosure_iff]
+      exact y.property.map ((IntermediateField.fixedField H).val.restrictScalars A)⟩,
+      fun σ ↦ Subtype.ext ((y : IntermediateField.fixedField H).property σ)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+variable {A K L} in
+/-- Coercing the image of `fixedPointsIntegralClosureEquiv` to `L` agrees with the coercion of the
+input. -/
+@[simp]
+theorem coe_fixedPointsIntegralClosureEquiv_apply {H : Subgroup (L ≃ₐ[K] L)}
+    (x : FixedPoints.subalgebra A (integralClosure A L) H) :
+    (((fixedPointsIntegralClosureEquiv A K L H x :
+      integralClosure A (IntermediateField.fixedField H)) :
+      IntermediateField.fixedField H) : L) = ((x : integralClosure A L) : L) :=
+  (rfl)
+
+variable {A K L} in
+/-- Coercing the inverse image under `fixedPointsIntegralClosureEquiv` to `L` agrees with the
+coercion of the input. -/
+@[simp]
+theorem coe_fixedPointsIntegralClosureEquiv_symm_apply {H : Subgroup (L ≃ₐ[K] L)}
+    (y : integralClosure A (IntermediateField.fixedField H)) :
+    (((fixedPointsIntegralClosureEquiv A K L H).symm y : integralClosure A L) : L) =
+      ((y : IntermediateField.fixedField H) : L) :=
+  (rfl)
+
+variable [FiniteDimensional K L] [IsGalois K L]
+
+/-- `fixedPointsIntegralClosureEquiv` is equivariant along `IsGalois.normalAutEquivQuotient H`. -/
+theorem fixedPointsIntegralClosureEquiv_smul (H : Subgroup (L ≃ₐ[K] L)) [H.Normal]
+    (q : (L ≃ₐ[K] L) ⧸ H) (x : FixedPoints.subalgebra A (integralClosure A L) H) :
+    fixedPointsIntegralClosureEquiv A K L H (q • x) =
+      IsGalois.normalAutEquivQuotient H q • fixedPointsIntegralClosureEquiv A K L H x := by
+  induction q using QuotientGroup.induction_on with | _ σ =>
+  refine Subtype.ext (Subtype.ext ?_)
+  rw [coe_fixedPointsIntegralClosureEquiv_apply, Subgroup.coe_mk_smul, integralClosure.coe_smul]
+  simp only [AlgEquiv.smul_def, IsGalois.normalAutEquivQuotient_apply, integralClosure.coe_smul,
+    AlgEquiv.restrictNormalHom_apply, coe_fixedPointsIntegralClosureEquiv_apply]
+
+end FixedPoints
+
+end TauCeti

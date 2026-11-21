@@ -311,6 +311,13 @@ theorem lowerRamificationGroupReal_def (u : ℝ) :
     lowerRamificationGroupReal K L u = lowerRamificationGroup K L ⌈u⌉ :=
   TauCeti.IsLocalRing.ramificationGroupReal_def _ _ u
 
+/-- The real-indexed local-field filtration is the real-indexed ramification filtration of its
+integer ring. -/
+theorem lowerRamificationGroupReal_eq_localRing (u : ℝ) :
+    lowerRamificationGroupReal K L u =
+      TauCeti.IsLocalRing.ramificationGroupReal (L ≃ₐ[K] L) 𝒪[L] u :=
+  (rfl)
+
 variable {K L} in
 /-- Membership in the real-indexed lower ramification groups. -/
 @[simp]
@@ -355,23 +362,24 @@ theorem lowerJump_iff (u : RamificationIndexDomain) :
     LowerJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
       lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u := Iff.rfl
 
+/-- A lower break of a local-field extension agrees with a lower jump of `Gal(L/K)` acting on
+`𝒪[L]`. -/
+theorem lowerJump_iff_localRing (u : RamificationIndexDomain) :
+    LowerJump K L u ↔ TauCeti.IsLocalRing.LowerJump (L ≃ₐ[K] L) 𝒪[L] u := by
+  rw [lowerJump_iff, TauCeti.IsLocalRing.lowerJump_iff]
+  constructor
+  · intro hu v hv
+    have hv' : v ∈ RamificationIndexDomain := u.property.trans hv.le
+    simpa only [lowerRamificationGroupReal_eq_localRing] using hu ⟨v, hv'⟩ (Subtype.mk_lt_mk.2 hv)
+  · intro hu v hv
+    simpa only [lowerRamificationGroupReal_eq_localRing] using hu v (Subtype.coe_lt_coe.2 hv)
+
 /-- Every lower break occurs at an integer index. -/
 theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :
     ∃ i : ℤ, ∃ hi : (-1 : ℝ) ≤ (i : ℝ), u = ⟨i, hi⟩ := by
-  let i := ⌈(u : ℝ)⌉
-  have hu : (u : ℝ) ≤ (i : ℝ) := Int.le_ceil _
-  have hi : (-1 : ℝ) ≤ (i : ℝ) := u.property.trans hu
-  refine ⟨i, hi, ?_⟩
-  rcases eq_or_lt_of_le hu with heq | hlt
-  · exact Subtype.ext heq
-  · have hstrict := (lowerJump_iff K L u).mp h ⟨(i : ℝ), hi⟩
-      (Subtype.mk_lt_mk.mpr hlt)
-    have hsame : lowerRamificationGroupReal K L (i : ℝ) =
-        lowerRamificationGroupReal K L (u : ℝ) := by
-      simp only [lowerRamificationGroupReal_def, Int.ceil_intCast]
-      rfl
-    rw [hsame] at hstrict
-    exact False.elim ((lt_irrefl _) hstrict)
+  have hu := (lowerJump_iff_localRing K L u).1 h
+  have hceil := TauCeti.IsLocalRing.lowerJump_eq_ceil hu
+  exact ⟨⌈(u : ℝ)⌉, u.property.trans_eq hceil, Subtype.ext hceil⟩
 
 /-- At an integer `i ≥ -1`, a lower break is exactly a strict decrease from `G_i` to
 `G_{i+1}`. -/
@@ -379,28 +387,8 @@ theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u)
 theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
     LowerJump K L ⟨i, hi⟩ ↔
       lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
-  constructor
-  · intro h
-    have hi' : (-1 : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by
-      have h : (i : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by push_cast; linarith
-      exact hi.trans h
-    have hsucc : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) < ⟨(i + 1 : ℤ), hi'⟩ := by
-      apply Subtype.mk_lt_mk.mpr
-      exact_mod_cast (by omega : i < i + 1)
-    simpa only [lowerRamificationGroupReal_intCast] using
-      (lowerJump_iff K L _).mp h ⟨(i + 1 : ℤ), hi'⟩ hsucc
-  · intro h
-    apply (lowerJump_iff K L _).mpr
-    intro v hiv
-    have hreal : (i : ℝ) < (v : ℝ) := hiv
-    have hceil : i + 1 ≤ ⌈(v : ℝ)⌉ := by
-      have hlt : i < ⌈(v : ℝ)⌉ := (Int.lt_ceil).2 hreal
-      omega
-    have hle : lowerRamificationGroupReal K L v ≤
-        lowerRamificationGroup K L (i + 1) := by
-      rw [lowerRamificationGroupReal_def]
-      exact lowerRamificationGroup_antitone K L hceil
-    simpa only [Subtype.coe_mk, lowerRamificationGroupReal_intCast] using lt_of_le_of_lt hle h
+  rw [lowerJump_iff_localRing, TauCeti.IsLocalRing.lowerJump_intCast_iff,
+    lowerRamificationGroup_def, lowerRamificationGroup_def]
 
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest

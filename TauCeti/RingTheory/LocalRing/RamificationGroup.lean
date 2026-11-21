@@ -91,6 +91,11 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
+* `TauCeti.IsLocalRing.LowerJump`, `TauCeti.IsLocalRing.lowerJump_intCast_iff`,
+  `TauCeti.IsLocalRing.lowerJump_eq_ceil`, `TauCeti.IsLocalRing.neg_one_le_of_lowerJump`: lower
+  jumps of the filtration.
+* `MulEquiv.ramificationGroup_eq_comap_of_equiv`, `MulEquiv.map_ramificationGroup_of_equiv`:
+  transport of the lower filtration along equivariant ring isomorphisms.
 
 ## References
 
@@ -778,6 +783,49 @@ theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft 
     (hright : u ≤ i) : ramificationGroupReal G S u = ramificationGroup G S i := by
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
 
+/-- A **lower jump** (or lower break): a real index `u` at which `G_u` strictly contains `G_v` for
+every `v > u`. -/
+def LowerJump (u : ℝ) : Prop :=
+  ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
+
+/-- A lower jump is a strict drop of the lower ramification filtration at every later index. -/
+theorem lowerJump_iff (u : ℝ) :
+    LowerJump G S u ↔ ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u :=
+  Iff.rfl
+
+variable {G S} in
+/-- Every lower jump is an integer, equal to its own ceiling. -/
+theorem lowerJump_eq_ceil {u : ℝ} (hu : LowerJump G S u) : u = (⌈u⌉ : ℝ) := by
+  by_contra hne
+  have hlt : u < (⌈u⌉ : ℝ) := lt_of_le_of_ne (Int.le_ceil u) hne
+  have hdrop := hu ⌈u⌉ hlt
+  rw [ramificationGroupReal_intCast, ramificationGroupReal_def] at hdrop
+  exact hdrop.ne rfl
+
+variable {G S} in
+/-- Every lower jump is at least `-1`. -/
+theorem neg_one_le_of_lowerJump {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
+  by_contra hlt
+  push Not at hlt
+  have hceil : ⌈u⌉ ≤ -1 := Int.ceil_le.2 (by push_cast; linarith)
+  have hceil_neg : ⌈(-1 : ℝ)⌉ ≤ -1 := Int.ceil_le.2 (by norm_num)
+  have hdrop := hu (-1) hlt
+  rw [ramificationGroupReal_def, ramificationGroupReal_def,
+    ramificationGroup_eq_top_of_le_neg_one G S hceil,
+    ramificationGroup_eq_top_of_le_neg_one G S hceil_neg] at hdrop
+  exact hdrop.ne rfl
+
+/-- An integer `i` is a lower jump if and only if `G_{i+1} < G_i`. -/
+theorem lowerJump_intCast_iff (i : ℤ) :
+    LowerJump G S (i : ℝ) ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i := by
+  constructor
+  · intro h
+    simpa only [ramificationGroupReal_intCast] using h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith)
+  · intro h v hv
+    rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
+    have hceil : i + 1 ≤ ⌈v⌉ := Int.add_one_le_iff.2 (Int.lt_ceil.2 hv)
+    exact (ramificationGroup_antitone G S hceil).trans_lt h
+
 end Real
 
 section RealDiscreteValuationRing
@@ -816,3 +864,29 @@ theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G)
   simpa only [coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
 
 end Subgroup
+
+namespace MulEquiv
+
+open TauCeti.IsLocalRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+  {G' : Type*} [Group G'] {S' : Type*} [CommRing S'] [IsLocalRing S'] [MulSemiringAction G' S']
+
+/-- An equivariant ring isomorphism identifies the lower ramification groups via preimage. -/
+theorem ramificationGroup_eq_comap_of_equiv (φ : G ≃* G') (f : S ≃+* S')
+    (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x) (i : ℤ) :
+    ramificationGroup G S i = (ramificationGroup G' S' i).comap φ.toMonoidHom :=
+  ramificationGroup_eq_comap_of_comap_maximalIdeal_pow φ.toMonoidHom (f : S →+* S') hf
+    (fun n ↦ by
+      rw [← IsLocalRing.map_ringEquiv_maximalIdeal f, ← Ideal.map_pow]
+      exact Ideal.comap_map_of_bijective (f : S →+* S') f.bijective)
+    (fun _ y ↦ ⟨f.symm y, by simp⟩) i
+
+/-- An equivariant ring isomorphism maps each lower ramification group onto the target one. -/
+theorem map_ramificationGroup_of_equiv (φ : G ≃* G') (f : S ≃+* S')
+    (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x) (i : ℤ) :
+    (ramificationGroup G S i).map φ.toMonoidHom = ramificationGroup G' S' i := by
+  rw [φ.ramificationGroup_eq_comap_of_equiv f hf i,
+    Subgroup.map_comap_eq_self_of_surjective φ.surjective]
+
+end MulEquiv

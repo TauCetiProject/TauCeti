@@ -30,6 +30,8 @@ These statements identify the breaks used by the norm filtration and Hasse–Arf
 public section
 noncomputable section
 
+open ValuativeRel
+
 namespace TauCeti.LocalFieldsRamification
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]

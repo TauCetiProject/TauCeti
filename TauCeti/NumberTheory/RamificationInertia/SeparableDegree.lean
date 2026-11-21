@@ -7,8 +7,11 @@ module
 
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Galois
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import Mathlib.RingTheory.Finiteness.Quotient
 import TauCeti.NumberTheory.RamificationInertia.Galois
+import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 /-!
 # Separable and inseparable residue degrees in Hilbert theory
@@ -36,6 +39,8 @@ specialize to the familiar identities `|I| = e` and `|D| = e * f`.
 * `Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable`: for a separable residue extension,
   the familiar identity `|I| = e` holds without assuming the base residue field is perfect.
 * `Ideal.card_inertia_eq_ramificationIdx_of_isSeparable`: the corresponding upstairs-ideal form.
+* `TauCeti.IsLocalRing.natCard_ramificationGroup_zero_eq_ramificationIdx`: the discrete valuation
+  ring form `#G_0 = e(B/A)` for a separable residue extension.
 
 ## References
 
@@ -141,3 +146,28 @@ theorem card_inertia_eq_ramificationIdx_of_isSeparable (P : Ideal S) [P.IsMaxima
   exact card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G) (P.under R) P
 
 end Ideal
+
+namespace TauCeti.IsLocalRing
+
+open _root_.IsLocalRing
+
+/-- For a faithful finite group action on discrete valuation rings with separable residue
+extension, the zeroth ramification group has order equal to the ramification index. -/
+theorem natCard_ramificationGroup_zero_eq_ramificationIdx (A B : Type*) [CommRing A] [IsDomain A]
+    [IsDiscreteValuationRing A] [CommRing B] [IsDomain B] [IsDiscreteValuationRing B]
+    [Algebra A B] [IsLocalHom (algebraMap A B)]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (G : Type*) [Group G] [Finite G]
+    [MulSemiringAction G B] [SMulCommClass G A B] [Algebra.IsInvariant A B G] [FaithfulSMul G B] :
+    Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
+  have : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
+  have : FaithfulSMul A B := TauCeti.IsDiscreteValuationRing.faithfulSMul_of_isIntegral
+  let : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
+  have : Module.Finite A B := TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
+  have : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
+    ‹Algebra.IsSeparable (ResidueField A) (ResidueField B)›
+  rw [ramificationGroup_zero_eq_inertia,
+    _root_.Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
+      (maximalIdeal A) (maximalIdeal B),
+    _root_.Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
+
+end TauCeti.IsLocalRing

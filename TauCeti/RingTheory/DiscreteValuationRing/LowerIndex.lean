@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
+import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
+import TauCeti.RingTheory.LocalRing.RingHom
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
@@ -26,11 +28,12 @@ comparing Serre's lower index `i_G(σ) = min_x v_B(σ x - x)` (`TauCeti.IsLocalR
 
 `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`,
 
-where `e` is the ramification index of `B` over `B^H`. Neither completeness of `A` nor finiteness
-of its residue field is assumed. Separability enters only through generators: `B` and `B^H` are
-then generated over `A` by single elements `x` and `y`, at which the lower indices are read, and
-`σ y - y` is associated in `B` with `(σ f)(x) = ∏_{τ ∈ H} (x - σ τ x)` for the characteristic
-polynomial `f` of `x` under `H`. Without separability the formula fails.
+where `e` is the ramification index of `B` over `B^H` (and `e = #H_0` by
+`TauCeti.IsLocalRing.natCard_ramificationGroup_zero_eq_ramificationIdx`). Neither completeness of
+`A` nor finiteness of its residue field is assumed. Separability enters only through generators:
+`B` and `B^H` are then generated over `A` by single elements `x` and `y`, at which the lower
+indices are read, and `σ y - y` is associated in `B` with `(σ f)(x) = ∏_{τ ∈ H} (x - σ τ x)` for
+the characteristic polynomial `f` of `x` under `H`. Without separability the formula fails.
 
 The formula is the input to Herbrand's theorem `(G/H)_{φ(u)} = G_u H / H`, which relates the
 lower numbering of `G ⧸ H` to that of `G` through the Herbrand function `φ` of `H`, and hence to
@@ -53,6 +56,10 @@ ring of invariants of a finite group `H` acting faithfully on `B` and `σ` actin
   `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`.
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`: its counting form
   `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` for `σ` of largest lower index `j` in `σ H`.
+* `TauCeti.IsLocalRing.natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum`,
+  `TauCeti.IsLocalRing.natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card`,
+  `TauCeti.IsLocalRing.lowerIndex_mk_ne_top`: the same formulas with `#H_0` in place of `e`, and
+  finiteness of `i_{G/H}(σ H)` when `σ` maximizes a finite `i_G(σ)` in `σ H`.
 
 ## References
 
@@ -164,6 +171,51 @@ theorem ramificationIdx_mul_lowerIndex_mk_eq_sum_card [IsLocalHom (algebraMap A 
     ← sum_min_lowerIndex_natCast (G := H) (S := B) j]
   refine Finset.sum_congr rfl fun τ _ ↦ ?_
   rw [lowerIndex_mul_eq_min_of_le (hσ τ τ.property), lowerIndex_coe, hj]
+
+variable (A B G) in
+/-- **Serre's quotient formula for the lower index** under a separable residue extension:
+`#H_0 · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)` in `ℕ∞`. -/
+theorem natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum [IsLocalHom (algebraMap A B)]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] [Fintype H] (σ : G) :
+    (Nat.card (ramificationGroup H B 0) : ℕ∞) *
+        lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
+      ∑ τ : H, lowerIndex B (σ * (τ : G)) := by
+  set C := FixedPoints.subalgebra A B H
+  have : Algebra.IsSeparable (ResidueField C) (ResidueField B) :=
+    Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField C) (ResidueField B)
+  rw [natCard_ramificationGroup_zero_eq_ramificationIdx C B H, ← finsum_eq_sum_of_fintype]
+  exact ramificationIdx_mul_lowerIndex_mk_eq_finsum A B H σ
+
+variable (A B G) in
+/-- **Serre's lemma** in counting form: if `σ` maximizes `lowerIndex B` in its coset `σ H` and
+`i_G(σ) = j` is finite, then `#H_0 · i_{G/H}(σ H) = ∑_{k < j} #H_k`. -/
+theorem natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card [IsLocalHom (algebraMap A B)]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (σ : G) {j : ℕ}
+    (hj : lowerIndex B σ = j)
+    (hσ : ∀ τ : H, lowerIndex B (σ * (τ : G)) ≤ lowerIndex B σ) :
+    (Nat.card (ramificationGroup H B 0) : ℕ∞) *
+        lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
+      ∑ k ∈ Finset.range j, (Nat.card (ramificationGroup H B k) : ℕ∞) := by
+  set C := FixedPoints.subalgebra A B H
+  have : Algebra.IsSeparable (ResidueField C) (ResidueField B) :=
+    Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField C) (ResidueField B)
+  rw [natCard_ramificationGroup_zero_eq_ramificationIdx C B H]
+  exact ramificationIdx_mul_lowerIndex_mk_eq_sum_card A H hj fun τ hτ ↦ hσ ⟨τ, hτ⟩
+
+variable (A B G) in
+/-- If `σ` maximizes `lowerIndex B` in its coset `σ H` and `i_G(σ) ≠ ⊤`, then `i_{G/H}(σ H) ≠ ⊤`. -/
+theorem lowerIndex_mk_ne_top [IsLocalHom (algebraMap A B)]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (σ : G) (hj : lowerIndex B σ ≠ ⊤)
+    (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
+    lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) ≠ ⊤ := by
+  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 hj
+  intro htop
+  have hsum := natCard_ramificationGroup_zero_mul_lowerIndex_mk_eq_sum_card A B G H σ hj.symm
+    fun τ ↦ hσ τ τ.property
+  have h0 : (Nat.card (ramificationGroup H B 0) : ℕ∞) ≠ 0 := by
+    exact_mod_cast (Nat.card_pos (α := ramificationGroup H B 0)).ne'
+  rw [htop, ENat.mul_top h0, ← Nat.cast_sum] at hsum
+  exact ENat.natCast_ne_top _ hsum.symm
 
 end IsLocalRing
 

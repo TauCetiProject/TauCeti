@@ -10,8 +10,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.RingTheory.LocalRing.RingHom.Basic
-import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # The Herbrand function and upper ramification numbering on a local ring
@@ -49,14 +47,14 @@ These analytic and structural proofs adapt `TauCeti/NumberTheory/LocalField/Herb
 * `TauCeti.IsLocalRing.herbrandOrderIso G S`: `φ` as an order automorphism of `[-1, ∞)`.
 * `TauCeti.IsLocalRing.psiNat G S`: the integral inverse Herbrand function `ψℕ : ℕ → ℕ`.
 * `TauCeti.IsLocalRing.upperRamificationGroup G S v`: the upper ramification group `G^v = G_{ψ(v)}`.
-* `TauCeti.IsLocalRing.LowerJump G S u`, `TauCeti.IsLocalRing.UpperJump G S v`: strict drops of
-  the lower and upper filtrations.
+* `TauCeti.IsLocalRing.UpperJump G S v`: strict drops of the upper filtration.
 
 ## Main results
 
 * `TauCeti.IsLocalRing.herbrandFun_strictMono`, `TauCeti.IsLocalRing.continuous_herbrandFun`,
   `TauCeti.IsLocalRing.concaveOn_herbrandFun`,
-  `TauCeti.IsLocalRing.herbrandFun_of_le_zero`, `TauCeti.IsLocalRing.herbrandFun_of_mem_Icc`,
+  `TauCeti.IsLocalRing.herbrandFun_of_neg_one_le_of_le_zero`,
+  `TauCeti.IsLocalRing.herbrandFun_of_mem_Icc`,
   `TauCeti.IsLocalRing.herbrandFun_natCast`: analytic properties and finite-sum formula for `φ`.
 * `TauCeti.IsLocalRing.herbrandFun_inverseHerbrandFun`,
   `TauCeti.IsLocalRing.inverseHerbrandFun_herbrandFun`,
@@ -73,10 +71,8 @@ These analytic and structural proofs adapt `TauCeti/NumberTheory/LocalField/Herb
   the upper numbering.
 * `TauCeti.IsLocalRing.upperJump_herbrandFun_iff`,
   `TauCeti.IsLocalRing.lowerJump_inverseHerbrandFun_iff`: bijection between lower and upper jumps.
-* `TauCeti.IsLocalRing.herbrandFun_eq_of_equiv`,
-  `TauCeti.IsLocalRing.inverseHerbrandFun_eq_of_equiv`,
-  `TauCeti.IsLocalRing.map_upperRamificationGroup_of_equiv`: transport along equivariant ring
-  isomorphisms.
+* `MulEquiv.herbrandFun_eq_of_equiv`, `MulEquiv.inverseHerbrandFun_eq_of_equiv`,
+  `MulEquiv.map_upperRamificationGroup_of_equiv`: transport along equivariant ring isomorphisms.
 
 ## References
 
@@ -143,20 +139,10 @@ def psiNat (n : ℕ) : ℕ :=
 theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ :=
   (rfl)
 
-/-- A **lower jump** (or lower break): a real index `u` at which `G_u` strictly contains `G_v` for
-every `v > u`. -/
-def LowerJump (u : ℝ) : Prop :=
-  ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
-
 /-- An **upper jump** (or upper break): a real index `v` at which `G^v` strictly contains `G^w`
 for every `w > v`. -/
 def UpperJump (v : ℝ) : Prop :=
   ∀ w : ℝ, v < w → upperRamificationGroup G S w < upperRamificationGroup G S v
-
-/-- A lower jump is a strict drop of the lower ramification filtration at every later index. -/
-theorem lowerJump_iff (u : ℝ) :
-    LowerJump G S u ↔ ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u :=
-  Iff.rfl
 
 /-- An upper jump is a strict drop of the upper ramification filtration at every later index. -/
 theorem upperJump_iff (v : ℝ) :
@@ -181,39 +167,6 @@ theorem mem_upperRamificationGroup_iff {v : ℝ} {σ : G} :
 instance instNormalUpperRamificationGroup (v : ℝ) : (upperRamificationGroup G S v).Normal := by
   rw [upperRamificationGroup_def]
   infer_instance
-
-variable {G S} in
-/-- Every lower jump is an integer, equal to its own ceiling. -/
-theorem lowerJump_eq_ceil {u : ℝ} (hu : LowerJump G S u) : u = (⌈u⌉ : ℝ) := by
-  by_contra hne
-  have hlt : u < (⌈u⌉ : ℝ) := lt_of_le_of_ne (Int.le_ceil u) hne
-  have hdrop := hu ⌈u⌉ hlt
-  rw [ramificationGroupReal_intCast, ramificationGroupReal_def] at hdrop
-  exact hdrop.ne rfl
-
-variable {G S} in
-/-- Every lower jump is at least `-1`. -/
-theorem neg_one_le_of_lowerJump {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
-  by_contra hlt
-  push Not at hlt
-  have hceil : ⌈u⌉ ≤ -1 := Int.ceil_le.2 (by push_cast; linarith)
-  have hceil_neg : ⌈(-1 : ℝ)⌉ ≤ -1 := Int.ceil_le.2 (by norm_num)
-  have hdrop := hu (-1) hlt
-  rw [ramificationGroupReal_def, ramificationGroupReal_def,
-    ramificationGroup_eq_top_of_le_neg_one G S hceil,
-    ramificationGroup_eq_top_of_le_neg_one G S hceil_neg] at hdrop
-  exact hdrop.ne rfl
-
-/-- An integer `i` is a lower jump if and only if `G_{i+1} < G_i`. -/
-theorem lowerJump_intCast_iff (i : ℤ) :
-    LowerJump G S (i : ℝ) ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i := by
-  constructor
-  · intro h
-    simpa only [ramificationGroupReal_intCast] using h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith)
-  · intro h v hv
-    rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
-    have hceil : i + 1 ≤ ⌈v⌉ := Int.add_one_le_iff.2 (Int.lt_ceil.2 hv)
-    exact (ramificationGroup_antitone G S hceil).trans_lt h
 
 end Defs
 
@@ -340,7 +293,7 @@ theorem concaveOn_herbrandFun : ConcaveOn ℝ Set.univ (herbrandFun G S) :=
     herbrandFun_slope_anti_adjacent G S huv hvw
 
 /-- The Herbrand function is the identity on `[-1, 0]`. -/
-theorem herbrandFun_of_le_zero {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
+theorem herbrandFun_of_neg_one_le_of_le_zero {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
     herbrandFun G S u = u := by
   have h := herbrandFun_sub_of_le G S (i := 0) (by simpa using h₁) h₀ (by simp)
   have h0 : (Nat.card (ramificationGroup G S 0) : ℝ) ≠ 0 := by
@@ -351,7 +304,7 @@ theorem herbrandFun_of_le_zero {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
 /-- `φ(-1) = -1`. -/
 @[simp]
 theorem herbrandFun_neg_one : herbrandFun G S (-1) = -1 :=
-  herbrandFun_of_le_zero G S le_rfl (by norm_num)
+  herbrandFun_of_neg_one_le_of_le_zero G S le_rfl (by norm_num)
 
 /-- Below `-1`, the Herbrand function is linear of slope `#G / #G_0`. -/
 theorem herbrandFun_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
@@ -459,21 +412,31 @@ theorem le_inverseHerbrandFun_iff_herbrandFun_le {u v : ℝ} :
     u ≤ inverseHerbrandFun G S v ↔ herbrandFun G S u ≤ v :=
   (herbrandRealOrderIso G S).le_symm_apply
 
+/-- `ψ(v) < u ↔ v < φ(u)`. -/
+theorem inverseHerbrandFun_lt_iff_lt_herbrandFun {v u : ℝ} :
+    inverseHerbrandFun G S v < u ↔ v < herbrandFun G S u :=
+  (herbrandRealOrderIso G S).symm_apply_lt
+
+/-- `u < ψ(v) ↔ φ(u) < v`. -/
+theorem lt_inverseHerbrandFun_iff_herbrandFun_lt {u v : ℝ} :
+    u < inverseHerbrandFun G S v ↔ herbrandFun G S u < v :=
+  (herbrandRealOrderIso G S).lt_symm_apply
+
 /-- The inverse Herbrand function is the identity on `[-1, 0]`. -/
-theorem inverseHerbrandFun_of_le_zero {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
+theorem inverseHerbrandFun_of_neg_one_le_of_le_zero {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
     inverseHerbrandFun G S v = v := by
   have h := inverseHerbrandFun_herbrandFun G S v
-  rwa [herbrandFun_of_le_zero G S h₁ h₀] at h
+  rwa [herbrandFun_of_neg_one_le_of_le_zero G S h₁ h₀] at h
 
 /-- `ψ(0) = 0`. -/
 @[simp]
 theorem inverseHerbrandFun_zero : inverseHerbrandFun G S 0 = 0 :=
-  inverseHerbrandFun_of_le_zero G S (by norm_num) le_rfl
+  inverseHerbrandFun_of_neg_one_le_of_le_zero G S (by norm_num) le_rfl
 
 /-- `ψ(-1) = -1`. -/
 @[simp]
 theorem inverseHerbrandFun_neg_one : inverseHerbrandFun G S (-1) = -1 :=
-  inverseHerbrandFun_of_le_zero G S le_rfl (by norm_num)
+  inverseHerbrandFun_of_neg_one_le_of_le_zero G S le_rfl (by norm_num)
 
 /-- `ψ(v) ≥ -1` if and only if `v ≥ -1`. -/
 @[simp]
@@ -592,18 +555,6 @@ theorem upperRamificationGroup_herbrandFun (u : ℝ) :
     upperRamificationGroup G S (herbrandFun G S u) = ramificationGroupReal G S u := by
   rw [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun]
 
-/-- On `[-1, 0]` the upper and lower numberings agree. -/
-theorem upperRamificationGroup_of_le_zero {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
-    upperRamificationGroup G S v = ramificationGroupReal G S v := by
-  rw [upperRamificationGroup_def, inverseHerbrandFun_of_le_zero G S h₁ h₀]
-
-/-- `G^0 = G_0`. -/
-@[simp]
-theorem upperRamificationGroup_zero :
-    upperRamificationGroup G S 0 = ramificationGroup G S 0 := by
-  rw [upperRamificationGroup_def, inverseHerbrandFun_zero, ← Int.cast_zero,
-    ramificationGroupReal_intCast]
-
 /-- For `v ≤ -1`, `G^v = ⊤`. -/
 theorem upperRamificationGroup_eq_top_of_le_neg_one {v : ℝ} (hv : v ≤ -1) :
     upperRamificationGroup G S v = ⊤ := by
@@ -612,6 +563,22 @@ theorem upperRamificationGroup_eq_top_of_le_neg_one {v : ℝ} (hv : v ≤ -1) :
     rw [← inverseHerbrandFun_neg_one G S]
     exact (inverseHerbrandFun_strictMono G S).monotone hv
   exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by exact_mod_cast hψ))
+
+/-- For `v ≤ 0`, the upper and lower numberings agree. -/
+theorem upperRamificationGroup_of_le_zero {v : ℝ} (h₀ : v ≤ 0) :
+    upperRamificationGroup G S v = ramificationGroupReal G S v := by
+  by_cases h₁ : -1 ≤ v
+  · rw [upperRamificationGroup_def, inverseHerbrandFun_of_neg_one_le_of_le_zero G S h₁ h₀]
+  · have hv : v ≤ -1 := by linarith
+    rw [upperRamificationGroup_eq_top_of_le_neg_one G S hv, ramificationGroupReal_def,
+      ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by exact_mod_cast hv))]
+
+/-- `G^0 = G_0`. -/
+@[simp]
+theorem upperRamificationGroup_zero :
+    upperRamificationGroup G S 0 = ramificationGroup G S 0 := by
+  rw [upperRamificationGroup_def, inverseHerbrandFun_zero, ← Int.cast_zero,
+    ramificationGroupReal_intCast]
 
 /-- The upper ramification filtration is decreasing. -/
 theorem upperRamificationGroup_antitone : Antitone (upperRamificationGroup G S) :=
@@ -640,6 +607,7 @@ theorem exists_forall_upperRamificationGroup_eq_bot [IsNoetherianRing S] [Faithf
 /-- **Subgroup trace in the upper numbering.** For any subgroup `H ≤ G` acting on `S` by
 restriction and any real `u`, `H ∩ G^u = H^{φ_H(ψ_G(u))}`. Neither normality of `H` nor a discrete
 valuation ring structure on `S` is needed. -/
+@[simp]
 theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (u : ℝ) :
     (upperRamificationGroup G S u).subgroupOf H =
       upperRamificationGroup H S (herbrandFun H S (inverseHerbrandFun G S u)) := by
@@ -652,6 +620,7 @@ theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (u : ℝ) :
 @[simp]
 theorem upperJump_herbrandFun_iff (u : ℝ) :
     UpperJump G S (herbrandFun G S u) ↔ LowerJump G S u := by
+  rw [lowerJump_iff]
   constructor
   · intro h v huv
     have h' := h (herbrandFun G S v) (herbrandFun_strictMono G S huv)
@@ -671,31 +640,16 @@ theorem lowerJump_inverseHerbrandFun_iff (v : ℝ) :
 
 end Finite
 
+end TauCeti.IsLocalRing
+
 /-! ### Transport along equivariant ring isomorphisms -/
 
-section Equiv
+namespace MulEquiv
 
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [_root_.IsLocalRing S]
-  [MulSemiringAction G S]
-  {G' : Type*} [Group G'] {S' : Type*} [CommRing S'] [_root_.IsLocalRing S']
-  [MulSemiringAction G' S']
+open TauCeti.IsLocalRing
 
-/-- An equivariant ring isomorphism identifies the lower ramification groups via preimage. -/
-theorem ramificationGroup_eq_comap_of_equiv (φ : G ≃* G') (f : S ≃+* S')
-    (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x) (i : ℤ) :
-    ramificationGroup G S i = (ramificationGroup G' S' i).comap φ.toMonoidHom :=
-  ramificationGroup_eq_comap_of_comap_maximalIdeal_pow φ.toMonoidHom (f : S →+* S') hf
-    (fun n ↦ by
-      rw [← _root_.IsLocalRing.map_ringEquiv_maximalIdeal f, ← Ideal.map_pow]
-      exact Ideal.comap_map_of_bijective (f : S →+* S') f.bijective)
-    (fun _ y ↦ ⟨f.symm y, by simp⟩) i
-
-/-- An equivariant ring isomorphism maps each lower ramification group onto the target one. -/
-theorem map_ramificationGroup_of_equiv (φ : G ≃* G') (f : S ≃+* S')
-    (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x) (i : ℤ) :
-    (ramificationGroup G S i).map φ.toMonoidHom = ramificationGroup G' S' i := by
-  rw [ramificationGroup_eq_comap_of_equiv φ f hf i,
-    Subgroup.map_comap_eq_self_of_surjective φ.surjective]
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+  {G' : Type*} [Group G'] {S' : Type*} [CommRing S'] [IsLocalRing S'] [MulSemiringAction G' S']
 
 /-- An equivariant ring isomorphism preserves the Herbrand function. -/
 theorem herbrandFun_eq_of_equiv (φ : G ≃* G') (f : S ≃+* S')
@@ -703,7 +657,7 @@ theorem herbrandFun_eq_of_equiv (φ : G ≃* G') (f : S ≃+* S')
     herbrandFun G S u = herbrandFun G' S' u := by
   have hcard (i : ℤ) :
       Nat.card (ramificationGroup G S i) = Nat.card (ramificationGroup G' S' i) := by
-    rw [← map_ramificationGroup_of_equiv φ f hf i]
+    rw [← φ.map_ramificationGroup_of_equiv f hf i]
     exact Nat.card_congr (φ.subgroupMap (ramificationGroup G S i)).toEquiv
   rw [herbrandFun_def, herbrandFun_def]
   congr 1 with t
@@ -713,16 +667,14 @@ theorem herbrandFun_eq_of_equiv (φ : G ≃* G') (f : S ≃+* S')
 theorem inverseHerbrandFun_eq_of_equiv (φ : G ≃* G') (f : S ≃+* S')
     (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x) (v : ℝ) :
     inverseHerbrandFun G S v = inverseHerbrandFun G' S' v := by
-  simp only [inverseHerbrandFun_def, herbrandFun_eq_of_equiv φ f hf]
+  simp only [inverseHerbrandFun_def, φ.herbrandFun_eq_of_equiv f hf]
 
 /-- An equivariant ring isomorphism maps each upper ramification group onto the target one. -/
 theorem map_upperRamificationGroup_of_equiv (φ : G ≃* G') (f : S ≃+* S')
     (hf : ∀ (g : G) (x : S), f (g • x) = φ g • f x) (v : ℝ) :
     (upperRamificationGroup G S v).map φ.toMonoidHom = upperRamificationGroup G' S' v := by
   rw [upperRamificationGroup_def, upperRamificationGroup_def,
-    inverseHerbrandFun_eq_of_equiv φ f hf, ramificationGroupReal_def, ramificationGroupReal_def,
-    map_ramificationGroup_of_equiv φ f hf]
+    φ.inverseHerbrandFun_eq_of_equiv f hf, ramificationGroupReal_def, ramificationGroupReal_def,
+    φ.map_ramificationGroup_of_equiv f hf]
 
-end Equiv
-
-end TauCeti.IsLocalRing
+end MulEquiv

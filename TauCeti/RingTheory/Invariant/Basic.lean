@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.RepresentationTheory.Invariants
-public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.Invariant.LocalRing
 import Mathlib.Algebra.Polynomial.Derivative
 import TauCeti.Algebra.BigOperators.Finset.Average
 
@@ -515,14 +515,8 @@ variable {A B G : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B] [Monoid
 /-- The inclusion of the fixed-point subalgebra into `B` is a local homomorphism: an invariant
 element that is a unit of `B` is a unit of the invariants. -/
 instance isLocalHom_algebraMap_subalgebra :
-    IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) := by
-  -- The inverse in `B` of an invariant unit is again invariant.
-  refine ⟨fun c hc ↦ ?_⟩
-  rw [Subalgebra.algebraMap_apply] at hc
-  obtain ⟨d, hd⟩ := hc.exists_right_inv
-  have hfix : ∀ g : G, g • d = d := fun g ↦ hc.mul_left_cancel <| by
-    rw [hd, ← c.property g, ← smul_mul', hd, smul_one]
-  exact IsUnit.of_mul_eq_one (b := ⟨d, hfix⟩) (Subtype.ext hd)
+    IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) B) :=
+  inferInstanceAs (IsLocalHom (FixedPoints.subsemiring B G).subtype)
 
 /-- The fixed-point subalgebra of a local ring is a local ring. -/
 instance isLocalRing_subalgebra [IsLocalRing B] : IsLocalRing (FixedPoints.subalgebra A B G) :=
