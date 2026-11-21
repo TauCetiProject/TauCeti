@@ -68,7 +68,7 @@ theorem SpecMap_polynomialGraph_comp_SpecMap_algebraMap (B : ℕ) :
 /-- For `B ≠ 0` the graph of the base-`B` Kronecker substitution sends the origin of the affine
 line, the spectrum of `Polynomial.constantCoeff`, to the origin of affine `m`-space, the spectrum
 of `MvPolynomial.constantCoeff`. For `B = 0` and `m ≥ 2` it does not, since then `X_1 ↦ 1`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem SpecMap_constantCoeff_comp_SpecMap_polynomialGraph {B : ℕ} (hB : B ≠ 0) :
     Spec.map (CommRingCat.ofHom (Polynomial.constantCoeff (R := R))) ≫
       Spec.map (CommRingCat.ofHom (polynomialGraph R m B)) =

@@ -51,9 +51,10 @@ pulls the graph `T ↦ (T, T²)` back to `z² = (T + 1)²`, two disjoint copies 
 * `AlgebraicGeometry.Scheme.Hom.isIntegral_markedComponent`: for an étale chart it is integral.
 * `AlgebraicGeometry.Scheme.Hom.preimage_snd_basicOpen_subset_preimage_fst`: the principal open
   `D(φ(h))` pulls back into the preimage of `U`.
-* `AlgebraicGeometry.Scheme.Hom.nonempty_preimage_markedComponent`,
-  `AlgebraicGeometry.Scheme.Hom.dense_preimage_markedComponent`: for an étale chart the preimage
-  of `U` in the marked component is nonempty and, for open `U`, dense.
+* `AlgebraicGeometry.Scheme.Hom.nonempty_preimage_markedComponent`: for a universally open chart,
+  such as an étale one, the preimage of `U` in the marked component is nonempty.
+* `AlgebraicGeometry.Scheme.Hom.dense_preimage_markedComponent`: for an étale chart and open `U`,
+  this preimage is dense.
 
 ## References
 
@@ -197,10 +198,10 @@ instance smoothOfRelativeDimension_markedComponent [Etale π] :
       Spec.map (CommRingCat.ofHom (algebraMap k (Polynomial k)))) :=
   inferInstanceAs (SmoothOfRelativeDimension (0 + (0 + 1)) _)
 
-/-- For an étale chart and `φ(h) ≠ 0`, with `φ` the base-`B` Kronecker
-substitution, the marked component meets the preimage of the principal open `D(φ(h))` of the
-affine line: its projection to the line is open and nonempty, and the line is irreducible. -/
-theorem nonempty_preimage_basicOpen_markedComponent [Etale π]
+/-- For a universally open chart, such as an étale one, and `φ(h) ≠ 0`, with `φ` the base-`B`
+Kronecker substitution, the marked component meets the preimage of the principal open `D(φ(h))` of
+the affine line: its projection to the line is open and nonempty, and the line is irreducible. -/
+theorem nonempty_preimage_basicOpen_markedComponent [UniversallyOpen π]
     {h : MvPolynomial (Fin m) k} (hh : polynomialGraph k m B h ≠ 0) :
     (((π.markedComponent hB y hy).ι ≫ pullback.snd _ _) ⁻¹'
       (PrimeSpectrum.basicOpen (polynomialGraph k m B h) :
@@ -208,6 +209,15 @@ theorem nonempty_preimage_basicOpen_markedComponent [Etale π]
   ((π.markedComponent hB y hy).ι ≫ pullback.snd _ _).isOpenMap.denseRange_of_isPreirreducibleSpace
     |>.exists_mem_open (PrimeSpectrum.basicOpen _).isOpen
       ⟨(⊥ : PrimeSpectrum (Polynomial k)), (PrimeSpectrum.mem_basicOpen _ _).mpr hh⟩
+
+/-- If the universally open chart `π`, such as an étale one, maps the complement of `U` into a
+hypersurface `V(h)` with `φ(h) ≠ 0`, `φ` the base-`B` Kronecker substitution, then the preimage of
+`U` in the marked component is nonempty. The marked point itself need not lie in it. -/
+theorem nonempty_preimage_markedComponent [UniversallyOpen π] {h : MvPolynomial (Fin m) k}
+    {U : Set V} (hU : π '' Uᶜ ⊆ PrimeSpectrum.zeroLocus {h}) (hh : polynomialGraph k m B h ≠ 0) :
+    (((π.markedComponent hB y hy).ι ≫ pullback.fst _ _) ⁻¹' U).Nonempty :=
+  (π.nonempty_preimage_basicOpen_markedComponent hB y hy hh).mono fun _ hx ↦
+    π.preimage_snd_basicOpen_subset_preimage_fst B hU hx
 
 variable [Etale π]
 
@@ -221,15 +231,6 @@ instance isIntegral_markedComponent : IsIntegral (π.markedComponent hB y hy).to
       ((π.markedComponent hB y hy).ι ≫ pullback.snd _ _ ≫
         Spec.map (CommRingCat.ofHom (algebraMap k (Polynomial k))))
   TauCeti.AlgebraicGeometry.isIntegral_of_connected_of_isRegularLocalRing_stalk _
-
-/-- If the étale chart `π` maps the complement of `U` into a hypersurface `V(h)` with
-`φ(h) ≠ 0`, `φ` the base-`B` Kronecker substitution, then the preimage of `U` in the marked
-component is nonempty. The marked point itself need not lie in it. -/
-theorem nonempty_preimage_markedComponent {h : MvPolynomial (Fin m) k} {U : Set V}
-    (hU : π '' Uᶜ ⊆ PrimeSpectrum.zeroLocus {h}) (hh : polynomialGraph k m B h ≠ 0) :
-    (((π.markedComponent hB y hy).ι ≫ pullback.fst _ _) ⁻¹' U).Nonempty :=
-  (π.nonempty_preimage_basicOpen_markedComponent hB y hy hh).mono fun _ hx ↦
-    π.preimage_snd_basicOpen_subset_preimage_fst B hU hx
 
 /-- If the étale chart `π` maps the complement of an open `U` into a hypersurface
 `V(h)` with `φ(h) ≠ 0`, `φ` the base-`B` Kronecker substitution, then the preimage of `U` is a
