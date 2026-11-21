@@ -974,9 +974,8 @@ times. -/
 theorem isCompleteVectorField_timeDependentSuspensionField_strictMoserVectorField
     (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 h) :
     IsCompleteVectorField (timeDependentSuspensionField (α.strictMoserVectorField h)) :=
-  isCompleteVectorField_timeDependentSuspensionField
-    (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (by norm_num [hh])) isCompact_univ
-    (by simp)
+  isCompleteVectorField_timeDependentSuspensionField_of_compactSpace
+    (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (by norm_num [hh]))
 
 variable (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ h)
 include hh
