@@ -90,7 +90,7 @@ theorem mem_elementaryUnitaryGroup_of_coe_eq {g : Q.specialIsometryGroup σ}
   · let p : Q.isotropicPoints σ := ⟨Projectivization.mk K v hv0,
       (mk_mem_isotropicPoints_iff hv0).mpr hv⟩
     exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup p
-      ((mem_unitaryTransvectionSubgroup_mk_iff hv0 p.2).mpr ⟨a, hg⟩)
+      ((mem_unitaryTransvectionSubgroup_mk_iff hv0 p.property).mpr ⟨a, hg⟩)
 
 /-- On a transitive isotropic-point action, a normal subgroup containing the unitary transvection
 subgroup of one isotropic point contains the entire elementary unitary group. -/

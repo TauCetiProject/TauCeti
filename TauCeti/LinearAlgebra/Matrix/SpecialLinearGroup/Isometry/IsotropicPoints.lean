@@ -96,7 +96,7 @@ theorem smul_eq_self_of_mem_center_specialIsometryGroup (hσ : Function.Involuti
     calc Q.unitaryTransvection σ (((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v) d
         = ((g : SpecialLinearGroup n K) : Matrix n n K) * Q.unitaryTransvection σ v d *
             (((g : SpecialLinearGroup n K)⁻¹ : SpecialLinearGroup n K) : Matrix n n K) :=
-          (coe_mul_unitaryTransvection_mul_coe_inv g.2 v d).symm
+          (coe_mul_unitaryTransvection_mul_coe_inv g.property v d).symm
       _ = (((g * t' * g⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) :
             Matrix n n K) := by
           simp only [Subgroup.coe_mul, Subgroup.coe_inv, SpecialLinearGroup.coe_mul, t', hta, v]

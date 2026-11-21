@@ -100,8 +100,8 @@ namespace TauCeti.TypeALieIndex
 
 private theorem two_le_and_three_le_fieldOrder_of_valid {r : ℕ} {q : PrimePower}
     (hv : (LieTypeIndex.twistedA r q).Valid) :
-    2 ≤ (ofTwistedA r q hv).1.rank ∧
-      ((ofTwistedA r q hv).1.rank = 2 → 3 ≤ (ofTwistedA r q hv).1.fieldOrder) := by
+    2 ≤ (ofTwistedA r q hv).val.rank ∧
+      ((ofTwistedA r q hv).val.rank = 2 → 3 ≤ (ofTwistedA r q hv).val.fieldOrder) := by
   simpa [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.fieldOrder] using
     (LieTypeIndex.inStandardRange_iff _).mp ((LieTypeIndex.valid_iff _).mp hv).1
 
@@ -109,16 +109,17 @@ private theorem two_le_and_three_le_fieldOrder_of_valid {r : ℕ} {q : PrimePowe
 theorem commutator_specialUnitary_eq_top (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
     commutator (fixedSubgroup
-      ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank)) = ⊤ := by
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank)) = ⊤ := by
   obtain ⟨hr, hq⟩ := two_le_and_three_le_fieldOrder_of_valid hv
-  exact (ofTwistedA r q hv).1.commutator_galoisFieldTwistedFrobenius_eq_top hr hq
+  exact (ofTwistedA r q hv).val.commutator_galoisFieldTwistedFrobenius_eq_top hr hq
 
 /-- **The group attached to `²A_r(q)` is the projective special unitary group `PSU_{r+1}(q)`.** -/
 def projectiveSpecialUnitaryEquivGroup (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
-    fixedSubgroup ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank) ⧸
+    fixedSubgroup
+        ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank) ⧸
       Subgroup.center (fixedSubgroup
-        ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank)) ≃*
+        ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank)) ≃*
       (ofTwistedA r q hv).Group :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect (commutator_specialUnitary_eq_top r q hv)
     (specialUnitaryEquivFixedPoints r q hv)
@@ -128,10 +129,10 @@ def projectiveSpecialUnitaryEquivGroup (r : ℕ) (q : PrimePower)
 theorem projectiveSpecialUnitaryEquivGroup_mk (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid)
     (x : commutator (fixedSubgroup
-      ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank))) :
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) :
     projectiveSpecialUnitaryEquivGroup r q hv (QuotientGroup.mk (s := Subgroup.center _)
         (x : fixedSubgroup
-          ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank))) =
+          ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) =
       ((MulEquiv.commutatorCongr (specialUnitaryEquivFixedPoints r q hv) x :
         commutator (ofTwistedA r q hv).FixedPoints) : (ofTwistedA r q hv).Group) :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
@@ -141,7 +142,7 @@ theorem isSimpleGroup_group_ofTwistedA (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
     IsSimpleGroup (ofTwistedA r q hv).Group := by
   obtain ⟨hr, hq⟩ := two_le_and_three_le_fieldOrder_of_valid hv
-  have := (ofTwistedA r q hv).1.isSimpleGroup_quotient_center_galoisFieldTwistedFrobenius hr hq
+  have := (ofTwistedA r q hv).val.isSimpleGroup_quotient_center_galoisFieldTwistedFrobenius hr hq
   exact (projectiveSpecialUnitaryEquivGroup r q hv).symm.isSimpleGroup
 
 end TauCeti.TypeALieIndex

@@ -143,7 +143,7 @@ private def unitaryTransvectionFun (v : Fin (r + 1) → GaloisField d.characteri
         Matrix (Fin (r + 1)) (Fin (r + 1)) _).unitaryTransvection
           (iterateFrobenius _ d.characteristic d.fieldExponent) v a,
       det_unitaryTransvection ((unitaryForm_apply v v).symm.trans hv) a⟩,
-    mem_fixedSubgroup_of_coe_eq_unitaryTransvection hv a.2 (rfl)⟩
+    mem_fixedSubgroup_of_coe_eq_unitaryTransvection hv a.property (rfl)⟩
 
 variable (d) in
 /-- **The unitary transvections along an isotropic vector.** For a vector `v` of
@@ -234,12 +234,12 @@ theorem range_unitaryTransvectionHom_smul (hv : unitaryForm d r v v = 0)
   simp only [MonoidHom.mem_range]
   constructor
   · rintro ⟨a, rfl⟩
-    refine ⟨Multiplicative.ofAdd ⟨_, mul_mem_unitaryTransvectionScalars a.toAdd.2 ht⟩,
+    refine ⟨Multiplicative.ofAdd ⟨_, mul_mem_unitaryTransvectionScalars a.toAdd.property ht⟩,
       Subtype.ext <| Subtype.ext ?_⟩
     simp only [coe_unitaryTransvectionHom, toAdd_ofAdd, unitaryTransvection_smul, ht_def,
       mul_assoc]
   · rintro ⟨a, rfl⟩
-    refine ⟨Multiplicative.ofAdd ⟨_, mul_mem_unitaryTransvectionScalars a.toAdd.2 ht'⟩,
+    refine ⟨Multiplicative.ofAdd ⟨_, mul_mem_unitaryTransvectionScalars a.toAdd.property ht'⟩,
       Subtype.ext <| Subtype.ext ?_⟩
     simp only [coe_unitaryTransvectionHom, toAdd_ofAdd, unitaryTransvection_smul]
     rw [mul_assoc _ c, ← ht_def, mul_assoc, inv_mul_cancel₀ ht₀, mul_one]

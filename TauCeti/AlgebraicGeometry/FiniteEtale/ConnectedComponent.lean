@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Noetherian
-public import TauCeti.AlgebraicGeometry.Scheme.ConnectedComponent
+public import TauCeti.AlgebraicGeometry.Scheme.Connected.Component
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 

@@ -65,7 +65,8 @@ private theorem unitaryTransvection_single_zero_param_eq_zero (hσ : Function.In
   have he0 := comp_single_dotProduct_typeAGraphConjugator_mulVec_single (σ := σ) (i := 0)
     (by rwa [Fin.rev_zero])
   simpa using (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet he0_ne he0
-    (w := 0) (by simp) a).mp ⟨g.1, g.2, by rwa [siegelTransvection_zero_eq_unitaryTransvection]⟩
+    (w := 0) (by simp) a).mp
+      ⟨g.val, g.property, by rwa [siegelTransvection_zero_eq_unitaryTransvection]⟩
 
 private theorem exists_siegelTransvection_zero_and_coe_inv (hσ : Function.Involutive σ) {r : ℕ}
     (h0r : (0 : Fin (r + 1)) ≠ Fin.last r) {w : Fin (r + 1) → K}
@@ -231,7 +232,7 @@ private theorem unitaryTransvection_single_zero_mem_commutator_two (hσ : Functi
       (((⁅D, h⁆ : (stdUnitMat K 2).specialIsometryGroup σ) :
         Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) := by
     simp only [commutatorElement_def, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul]
-    rw [hhi, Subgroup.coe_inv, hcoe, coe_mul_unitaryTransvection_mul_coe_inv D.2, hDe0,
+    rw [hhi, Subgroup.coe_inv, hcoe, coe_mul_unitaryTransvection_mul_coe_inv D.property, hDe0,
       unitaryTransvection_smul, unitaryTransvection_mul_unitaryTransvection he0, hg]
     congr 1
     calc a = b * (t - 1) := by dsimp only [b]; rw [mul_right_comm, inv_mul_cancel₀ htsub, one_mul]
@@ -267,7 +268,7 @@ theorem commutator_specialIsometryGroup_typeAGraphConjugator_eq_top
   rw [eq_top_iff, ← elementaryUnitaryGroup_typeAGraphConjugator_eq_top hσ htr_r hadm hfield]
   refine elementaryUnitaryGroup_le_of_normal p₀ fun g hg ↦ ?_
   obtain ⟨a, hga⟩ := (mem_unitaryTransvectionSubgroup_mk_iff
-    (Pi.single_ne_zero_iff.mpr one_ne_zero) p₀.2).mp hg
+    (Pi.single_ne_zero_iff.mpr one_ne_zero) p₀.property).mp hg
   rcases eq_or_lt_of_le hr with rfl | hr3
   · obtain ⟨t, ht, ht0, ht1⟩ := hfield.resolve_left (by decide)
     obtain ⟨d, hd0, hd⟩ := hadm

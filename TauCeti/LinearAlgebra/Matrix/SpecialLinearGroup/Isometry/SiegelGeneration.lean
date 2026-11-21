@@ -288,10 +288,10 @@ private theorem inv_mul_mulVec_last_eq_smul {r : ℕ}
       Matrix.SpecialLinearGroup (Fin (r + 1)) K) : Matrix (Fin (r + 1)) (Fin (r + 1)) K) *ᵥ
         Pi.single (Fin.last r) 1 = (t₂ * t₁⁻¹) • Pi.single (Fin.last r) 1 := by
   have hm₁inv : ((m₁⁻¹ : (stdUnitMat K r).specialIsometryGroup σ) :
-      Matrix.SpecialLinearGroup (Fin (r + 1)) K).1 *ᵥ Pi.single 0 1 =
+      Matrix.SpecialLinearGroup (Fin (r + 1)) K).val *ᵥ Pi.single 0 1 =
       t₁⁻¹ • Pi.single (Fin.last r) 1 := by
     have h := congrArg (((m₁⁻¹ : (stdUnitMat K r).specialIsometryGroup σ) :
-      Matrix.SpecialLinearGroup (Fin (r + 1)) K).1 *ᵥ ·) hm₁
+      Matrix.SpecialLinearGroup (Fin (r + 1)) K).val *ᵥ ·) hm₁
     rw [mulVec_mulVec, ← Matrix.SpecialLinearGroup.coe_mul, ← Subgroup.coe_mul, inv_mul_cancel,
       Subgroup.coe_one, Matrix.SpecialLinearGroup.coe_one, one_mulVec, mulVec_smul] at h
     exact ((inv_smul_eq_iff₀ ht₁0).mpr h).symm
@@ -403,11 +403,12 @@ private theorem exists_mem_siegelClosure_mulVec_single_zero_and_last (hσ : Func
   let u₁ := ((n : Matrix.SpecialLinearGroup (Fin (r + 1)) K) :
     Matrix (Fin (r + 1)) (Fin (r + 1)) K) *ᵥ e0
   have hu₁ : (σ ∘ u₁) ⬝ᵥ (Q *ᵥ u₁) = 0 := by
-    rw [comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp n.2), he0]
+    rw [comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp n.property), he0]
   have hσz0 : σ z ≠ 0 := (map_ne_zero σ).mpr hz0
   have hε0 : ε ≠ 0 := pow_ne_zero r (neg_ne_zero.mpr one_ne_zero)
   have hru₁ : (σ ∘ er) ⬝ᵥ (Q *ᵥ u₁) = (σ z)⁻¹ * ε := by
-    have hpres := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp n.2) er e0
+    have hpres :=
+      comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp n.property) er e0
     rw [hner, her0, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul] at hpres
     exact mul_left_cancel₀ hσz0 (by rw [← mul_assoc, mul_inv_cancel₀ hσz0, one_mul]; exact hpres)
   have hu₀ : (σ ∘ ((σ z)⁻¹ • e0)) ⬝ᵥ (Q *ᵥ ((σ z)⁻¹ • e0)) = 0 := by
@@ -524,17 +525,17 @@ private theorem comp_borderVec_dotProduct_typeAGraphConjugator_mulVec {r' : ℕ}
 
 private def borderSL {r' : ℕ} (A : Matrix.SpecialLinearGroup (Fin (r' + 1)) K) :
     Matrix.SpecialLinearGroup (Fin (r' + 2 + 1)) K :=
-  ⟨borderMat A.1, by simp [borderMat, A.2]⟩
+  ⟨borderMat A.val, by simp [borderMat, A.property]⟩
 
 @[simp] private theorem coe_borderSL {r' : ℕ} (A : Matrix.SpecialLinearGroup (Fin (r' + 1)) K) :
-    (borderSL A : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) = borderMat A.1 := rfl
+    (borderSL A : Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) = borderMat A.val := rfl
 
 private theorem borderSL_mem_specialIsometryGroup_iff {r' : ℕ}
     (A : Matrix.SpecialLinearGroup (Fin (r' + 1)) K) :
     borderSL A ∈ (stdUnitMat K (r' + 2)).specialIsometryGroup σ ↔
       A ∈ (stdUnitMat K r').specialIsometryGroup σ := by
   rw [mem_specialIsometryGroup_iff, mem_specialIsometryGroup_iff, coe_borderSL]
-  have htr_map : ((borderMat A.1).map σ)ᵀ = borderMat ((A.1.map σ)ᵀ) := by simp [borderMat]
+  have htr_map : ((borderMat A.val).map σ)ᵀ = borderMat ((A.val.map σ)ᵀ) := by simp [borderMat]
   have hinj : Function.Injective (innerIdx (r' := r')) :=
     (Fin.succ_injective _).comp (Fin.castSucc_injective _)
   have hQ_inner (i j : Fin (r' + 1)) :
@@ -543,16 +544,17 @@ private theorem borderSL_mem_specialIsometryGroup_iff {r' : ℕ}
     rw [typeAGraphConjugator_apply, typeAGraphConjugator_apply, innerIdx_rev]
     simp only [hinj.eq_iff]; by_cases hp : j = i.rev <;> simp [hp, innerIdx, pow_succ]
   have hQB (k l : Fin (r' + 2 + 1)) :
-      (stdUnitMat K (r' + 2) * borderMat A.1) k l = (-1 : K) ^ (k : ℕ) * borderMat A.1 k.rev l := by
+      (stdUnitMat K (r' + 2) * borderMat A.val) k l =
+        (-1 : K) ^ (k : ℕ) * borderMat A.val k.rev l := by
     rw [Matrix.mul_apply]; simp [typeAGraphConjugator_apply]
   have hQA (m j : Fin (r' + 1)) :
-      (stdUnitMat K (r' + 2) * borderMat A.1) (innerIdx m) (innerIdx j) =
-        -((stdUnitMat K r' * A.1) m j) := by
+      (stdUnitMat K (r' + 2) * borderMat A.val) (innerIdx m) (innerIdx j) =
+        -((stdUnitMat K r' * A.val) m j) := by
     rw [hQB, innerIdx_rev, borderMat_innerIdx_innerIdx, Matrix.mul_apply]
     simp [typeAGraphConjugator_apply, innerIdx, pow_succ]
   have hLHS (i j : Fin (r' + 1)) :
-      (((borderMat A.1).map σ)ᵀ * stdUnitMat K (r' + 2) * borderMat A.1)
-        (innerIdx i) (innerIdx j) = -(((A.1.map σ)ᵀ * stdUnitMat K r' * A.1) i j) := by
+      (((borderMat A.val).map σ)ᵀ * stdUnitMat K (r' + 2) * borderMat A.val)
+        (innerIdx i) (innerIdx j) = -(((A.val.map σ)ᵀ * stdUnitMat K r' * A.val) i j) := by
     rw [htr_map, Matrix.mul_assoc, Matrix.mul_apply, sum_fin_border]
     simp only [borderMat_innerIdx_zero, borderMat_innerIdx_last, borderMat_innerIdx_innerIdx,
       zero_mul, zero_add, add_zero, hQA, mul_neg, Finset.sum_neg_distrib]
@@ -573,7 +575,7 @@ private theorem borderSL_mem_specialIsometryGroup_iff {r' : ℕ}
 
 private def borderHom {r' : ℕ} :
     (stdUnitMat K r').specialIsometryGroup σ →* (stdUnitMat K (r' + 2)).specialIsometryGroup σ where
-  toFun g := ⟨borderSL g.1, (borderSL_mem_specialIsometryGroup_iff _).mpr g.2⟩
+  toFun g := ⟨borderSL g.val, (borderSL_mem_specialIsometryGroup_iff _).mpr g.property⟩
   map_one' := Subtype.ext (Subtype.ext (by simp [borderSL, borderMat]))
   map_mul' _ _ := Subtype.ext <| Subtype.ext <| by
     simp [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, borderMat, blockSucc_mul]
@@ -581,7 +583,7 @@ private def borderHom {r' : ℕ} :
 @[simp] private theorem coe_borderHom {r' : ℕ}
     (g : (stdUnitMat K r').specialIsometryGroup σ) :
     ((borderHom g : Matrix.SpecialLinearGroup (Fin (r' + 2 + 1)) K) :
-      Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) = borderMat g.1.1 :=
+      Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) = borderMat g.val.val :=
   rfl
 
 private theorem coe_borderHom_eq_siegelTransvection {r' : ℕ}
@@ -613,7 +615,7 @@ private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
       Matrix (Fin (r' + 2 + 1)) (Fin (r' + 2 + 1)) K) *ᵥ Pi.single (Fin.last (r' + 2)) 1 =
         Pi.single (Fin.last (r' + 2)) 1) :
     g ∈ (borderHom (σ := σ) (r' := r')).range := by
-  let M := g.1.1
+  let M := g.val.val
   let A : Matrix (Fin (r' + 1)) (Fin (r' + 1)) K := fun i j ↦ M (innerIdx i) (innerIdx j)
   have hcol0 (k : Fin (r' + 2 + 1)) : M k 0 = if k = 0 then 1 else 0 := by
     simpa [mulVec, dotProduct, Pi.single_apply] using congrFun hg0 k
@@ -621,7 +623,7 @@ private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
       M k (Fin.last (r' + 2)) = if k = Fin.last (r' + 2) then 1 else 0 := by
     simpa [mulVec, dotProduct, Pi.single_apply] using congrFun hgl k
   have hrow0 (j : Fin (r' + 1)) : M 0 (innerIdx j) = 0 := by
-    have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.2)
+    have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property)
       (Pi.single (Fin.last (r' + 2)) 1) (Pi.single (innerIdx j) 1)
     rw [hgl, comp_single_dotProduct_typeAGraphConjugator_mulVec,
       comp_single_dotProduct_typeAGraphConjugator_mulVec] at hp
@@ -631,7 +633,7 @@ private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
       simp [mulVec, dotProduct, Pi.single_apply]
     exact hM0 ▸ (mul_eq_zero.mp hp).resolve_left (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
   have hrowl (j : Fin (r' + 1)) : M (Fin.last (r' + 2)) (innerIdx j) = 0 := by
-    have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.2)
+    have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property)
       (Pi.single 0 1) (Pi.single (innerIdx j) 1)
     rw [hg0, comp_single_dotProduct_typeAGraphConjugator_mulVec,
       comp_single_dotProduct_typeAGraphConjugator_mulVec] at hp
@@ -645,11 +647,12 @@ private theorem mem_range_borderHom_of_mulVec_single_eq {r' : ℕ}
     (forall_fin_border (by simp [hcol0 (Fin.last (r' + 2)), hlast0])
       (fun j ↦ by simp [hrowl j]) (by simp [hcoll (Fin.last (r' + 2))]))
   have hdetA : A.det = 1 := by
-    have hdetM : (borderMat A).det = 1 := hM ▸ g.1.2
+    have hdetM : (borderMat A).det = 1 := hM ▸ g.val.property
     simpa [borderMat] using hdetM
   let ASL : Matrix.SpecialLinearGroup (Fin (r' + 1)) K := ⟨A, hdetA⟩
-  have hSL : borderSL ASL = g.1 := Subtype.ext hM
-  exact ⟨⟨ASL, (borderSL_mem_specialIsometryGroup_iff ASL).mp (hSL ▸ g.2)⟩, Subtype.ext hSL⟩
+  have hSL : borderSL ASL = g.val := Subtype.ext hM
+  exact ⟨⟨ASL, (borderSL_mem_specialIsometryGroup_iff ASL).mp (hSL ▸ g.property)⟩,
+    Subtype.ext hSL⟩
 
 private theorem siegelClosure_le_comap_borderHom (r' : ℕ) :
     siegelClosure σ r' ≤ (siegelClosure σ (r' + 2)).comap borderHom := by
@@ -699,11 +702,11 @@ private theorem exists_mem_siegelClosure_mul_mulVec_single_zero_and_last
     (i := Fin.last (r₁ + 1)) (by rw [Fin.rev_last]; exact h0r.symm)
   obtain ⟨he0r, -⟩ := comp_single_zero_last_stdUnitMat σ (r₁ + 1)
   have he00 : (Pi.single 0 1 : Fin (r₁ + 2) → K) ≠ 0 := Pi.single_ne_zero_iff.mpr one_ne_zero
-  let ge0 := g.1.1 *ᵥ Pi.single 0 1
+  let ge0 := g.val.val *ᵥ Pi.single 0 1
   have hge0_ne : ge0 ≠ 0 := fun h0 ↦ he00 (Matrix.eq_zero_of_mulVec_eq_zero
     (by rw [Matrix.SpecialLinearGroup.det_coe]; exact one_ne_zero) h0)
   have hge0_iso : (σ ∘ ge0) ⬝ᵥ (Q *ᵥ ge0) = 0 := by
-    rw [comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.2), he0]
+    rw [comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property), he0]
   obtain ⟨⟨h₁, hh₁W⟩, c, hc0, hh₁e0⟩ := exists_elementaryUnitaryGroup_mulVec_eq_smul
     hσ hQ hdet htr hadm hge0_ne he00 hge0_iso he0
   have hh₁ := elementaryUnitaryGroup_le_siegelClosure hσ (r₁ + 1) hh₁W
@@ -714,10 +717,10 @@ private theorem exists_mem_siegelClosure_mul_mulVec_single_zero_and_last
   let y₁ := ((g₁ : Matrix.SpecialLinearGroup (Fin (r₁ + 2)) K) :
     Matrix (Fin (r₁ + 2)) (Fin (r₁ + 2)) K) *ᵥ Pi.single (Fin.last (r₁ + 1)) 1
   have hy₁ : (σ ∘ y₁) ⬝ᵥ (Q *ᵥ y₁) = 0 := by
-    rw [comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g₁.2), her]
+    rw [comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g₁.property), her]
   have hσc0 : σ c ≠ 0 := (map_ne_zero σ).mpr hc0
   have he0y₁ : (σ ∘ Pi.single 0 1) ⬝ᵥ (Q *ᵥ y₁) = (σ c)⁻¹ := by
-    have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g₁.2)
+    have hp := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g₁.property)
       (Pi.single 0 1) (Pi.single (Fin.last (r₁ + 1)) 1)
     rw [hg₁e0, he0r, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul] at hp
     exact mul_left_cancel₀ hσc0 (by rw [mul_inv_cancel₀ hσc0]; exact hp)
@@ -750,7 +753,7 @@ private theorem siegelClosure_one_eq_top (hσ : Function.Involutive σ)
     · have := congrFun hg₂e0 i; fin_cases i <;> simpa [g₂, mulVec, dotProduct] using this
     · have := congrFun hg₂er i; fin_cases i <;> simpa [g₂, mulVec, dotProduct] using this
   have hdet1 : c * (σ c)⁻¹ = 1 := by
-    have hd := g₂.1.2; rwa [hg₂_mat, det_diagonal, Fin.prod_univ_two] at hd
+    have hd := g₂.val.property; rwa [hg₂_mat, det_diagonal, Fin.prod_univ_two] at hd
   have hσc : σ c = c := ((mul_inv_eq_one₀ hσc0).mp hdet1).symm
   have h0r : (0 : Fin 2) ≠ Fin.last 1 := by decide
   obtain ⟨hmem, hdiagW⟩ := diag2n_zero_last_mem_elementaryUnitaryGroup_typeAGraphConjugator

@@ -67,9 +67,9 @@ private theorem siegelTransvection_single_zero_mem_elementary_of_mem_elementary
   have he0 := comp_single_dotProduct_typeAGraphConjugator_mulVec_single (σ := σ) (i := 0)
     (by rwa [Fin.rev_zero])
   have hc₁ := (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet he0_ne he0
-    he0w c₁).mp ⟨g₁.1, g₁.2, hg₁⟩
+    he0w c₁).mp ⟨g₁.val, g₁.property, hg₁⟩
   have hc₂ := (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet he0_ne he0
-    he0w c₂).mp ⟨g₂.1, g₂.2, hg₂⟩
+    he0w c₂).mp ⟨g₂.val, g₂.property, hg₂⟩
   have ha : (c₂ - c₁) + (-1 : K) ^ r * σ (c₂ - c₁) = 0 := by
     rw [map_sub]; linear_combination hc₂ - hc₁
   obtain ⟨t, htW, hta⟩ := exists_mem_elementaryUnitaryGroup_coe_eq hσ hQ he0 ha
@@ -129,8 +129,8 @@ private theorem exists_siegelTransvection_single_zero_mem_elementary_of_exists_f
   exact ⟨k, hkW, _, by
     simp only [k, Subgroup.coe_mul, Subgroup.coe_inv, Matrix.SpecialLinearGroup.coe_mul]
     rw [coe_inv_eq_siegelTransvection_neg he0 he0w₀ hw₀e0 hg₀coe, hg₀coe,
-      coe_mul_siegelTransvection_mul_coe_inv D.2, hDe0, hDw₀, siegelTransvection_smul_left hσ, ht,
-      siegelTransvection_mul_siegelTransvection he0
+      coe_mul_siegelTransvection_mul_coe_inv D.property, hDe0, hDw₀,
+      siegelTransvection_smul_left hσ, ht, siegelTransvection_mul_siegelTransvection he0
         (by rw [mulVec_neg, dotProduct_neg, he0w₀, neg_zero])
         (by rw [TauCeti.map_comp_smul, smul_dotProduct, hw₀e0, smul_zero]),
       hw_eq]⟩
@@ -284,7 +284,8 @@ private theorem exists_conj_coe_eq_siegelTransvection_single_zero (hσ : Functio
     Matrix (Fin (r + 1)) (Fin (r + 1)) K) *ᵥ w)
   let w₂ : Fin (r + 1) → K := w₁ + (-w₁ 0) • Pi.single 0 1
   have hw₁l : w₁ (Fin.last r) = 0 := by
-    have hhw := comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp h.2) u w
+    have hhw :=
+      comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp h.property) u w
     rw [huw, hhu, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul] at hhw
     have h1 := (mul_eq_zero.mp hhw).resolve_left ((map_ne_zero σ).mpr ha0)
     have hpair := comp_single_dotProduct_typeAGraphConjugator_mulVec σ (0 : Fin (r + 1)) w₁
@@ -296,7 +297,7 @@ private theorem exists_conj_coe_eq_siegelTransvection_single_zero (hσ : Functio
   refine ⟨h, w₂, c * a * σ a + w₁ 0 - (-1 : K) ^ r * σ (w₁ 0), by simp [w₂],
     by simp [w₂, hw₁l, h0r.symm], ?_⟩
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, Matrix.SpecialLinearGroup.coe_mul]
-  rw [hg, coe_mul_siegelTransvection_mul_coe_inv h.2, hhu, siegelTransvection_smul_left hσ,
+  rw [hg, coe_mul_siegelTransvection_mul_coe_inv h.property, hhu, siegelTransvection_smul_left hσ,
     hw₁_eq, siegelTransvection_add_smul]
 
 private theorem siegelTransvection_mem_elementary_of_ne_zero (hσ : Function.Involutive σ) {r : ℕ}

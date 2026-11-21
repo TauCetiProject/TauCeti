@@ -122,7 +122,7 @@ theorem commutatorElement_kostantRootSubgroupParam_eq_bracket
     rw [hx, hy, kostantBracketRootSubgroupParam_val]
     exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M
       ((sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie ρ (e i) (e j)))
-      (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni hnj _ _ _ t u
+      (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) _ _ _ t u
   have hyz : Commute y z := by
     apply Units.ext
     simp only [Units.val_mul]

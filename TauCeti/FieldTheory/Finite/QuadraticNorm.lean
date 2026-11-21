@@ -78,9 +78,10 @@ theorem natCard_pow_mul_self_eq {q : ℕ} (hK : Nat.card K = q ^ 2) {c : K}
       _ = c * 1 := by rw [Nat.add_sub_of_le hq1.le, hc, mul_one]
   obtain ⟨b₀, hb₀⟩ := humem
   let e : {b : K // b ^ q * b = c} ≃ (N ⁻¹' {N b₀}) :=
-    { toFun b := ⟨Units.mk0 b.1 (fun h ↦ hc0 (by rw [← b.2, h, mul_zero])),
-        (Units.ext (by simp [N, u, pow_succ, b.2]) : _ = u).trans hb₀.symm⟩
-      invFun b := ⟨b.1, by simpa [N, u, pow_succ] using congrArg Units.val (b.2.trans hb₀)⟩
+    { toFun b := ⟨Units.mk0 b.val (fun h ↦ hc0 (by rw [← b.property, h, mul_zero])),
+        (Units.ext (by simp [N, u, pow_succ, b.property]) : _ = u).trans hb₀.symm⟩
+      invFun b :=
+        ⟨b.val, by simpa [N, u, pow_succ] using congrArg Units.val (b.property.trans hb₀)⟩
       left_inv _ := Subtype.ext rfl
       right_inv _ := Subtype.ext (Units.ext rfl) }
   exact (Nat.card_congr (e.trans (N.fiberEquivKer b₀))).trans hkerN

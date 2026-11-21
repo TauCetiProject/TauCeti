@@ -239,6 +239,13 @@ theorem specialLinearDiagonalCartan_toSubmodule :
     (specialLinearDiagonalCartan r A).toSubmodule = specialLinearDiagonal r A :=
   (rfl)
 
+variable {r A} in
+/-- The difference `Eᵢᵢ - Eⱼⱼ` of diagonal matrix units lies in the diagonal Cartan subalgebra. -/
+theorem singleSubSingle_mem_specialLinearDiagonalCartan (i j : Fin (r + 1)) (a : A) :
+    singleSubSingle i j a ∈ specialLinearDiagonalCartan r A := by
+  rw [← LieSubalgebra.mem_toSubmodule, specialLinearDiagonalCartan_toSubmodule]
+  exact singleSubSingle_mem_specialLinearDiagonal r A i j a
+
 /-- The **simple coroots** `hᵢ = Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁`, as a basis of the diagonal Cartan subalgebra of
 `sl (Fin (r + 1)) A`: `TauCeti.specialLinearCorootBasis` read on the Lie subalgebra. -/
 noncomputable def specialLinearDiagonalCartanBasis :
@@ -257,8 +264,8 @@ theorem specialLinearDiagonalCartanBasis_apply (i : Fin r) :
 instance : IsLieAbelian (specialLinearDiagonalCartan r A) where
   trivial X Y := Subtype.ext <| Subtype.ext <| by
     simpa using lie_eq_zero_of_isDiag
-      ((mem_specialLinearDiagonalCartan_iff r A X).mp X.2)
-      ((mem_specialLinearDiagonalCartan_iff r A Y).mp Y.2)
+      ((mem_specialLinearDiagonalCartan_iff r A X).mp X.property)
+      ((mem_specialLinearDiagonalCartan_iff r A Y).mp Y.property)
 
 /-- The diagonal Cartan subalgebra of `sl` is self-normalizing outside rank one, and in rank one
 once multiplication by `2` is injective. Bracketing a normalizing matrix with `E_aa - E_cc` scales

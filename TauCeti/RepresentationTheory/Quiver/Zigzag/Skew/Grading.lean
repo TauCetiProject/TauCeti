@@ -154,7 +154,7 @@ noncomputable def skewZigzagGradedAlgebra : GradedAlgebra (skewZigzagGrade k G c
 theorem skewZigzagGrade_eq_span_range (n : ℕ) :
     skewZigzagGrade k G c n = Submodule.span k
       (Set.range fun p : {p : Quiver.TotalPath (DoubledQuiver G) // p.2.2.length = n} =>
-        skewZigzagMk k G c (ofPath p.1)) := by
+        skewZigzagMk k G c (ofPath p.val)) := by
   rw [skewZigzagGrade, TauCeti.GradedAlgebra.quotientPiece_eq_span_image _ _
     (PathAlgebra.grade_eq_span_range k (DoubledQuiver G) n), ← Set.range_comp']
   simp only [← skewZigzagMk_apply]

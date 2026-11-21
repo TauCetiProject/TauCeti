@@ -108,7 +108,7 @@ theorem globalNormSubgroup_kummerLayer_sUnits {S : Finset (HeightOneSpectrum (�
   have haux : (auxiliaryKummerIdeleClassSubgroup S ∅ p).index =
       p ^ (S.card + Fintype.card (InfinitePlace K)) := by
     simpa using index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card (T := ∅) Fact.out
-      (by simp) hcl hpS fun b ↦ ⟨1, funext fun v ↦ absurd v.2 (by simp)⟩
+      (by simp) hcl hpS fun b ↦ ⟨1, funext fun v ↦ absurd v.property (by simp)⟩
   have hnorm : (globalNormSubgroup K V).index = Module.finrank K M := by
     rw [hVM, Subgroup.index_eq_card, card_ideleClassNormQuotient]
   have hdeg : Module.finrank K M = p ^ (S.card + Fintype.card (InfinitePlace K)) := by
