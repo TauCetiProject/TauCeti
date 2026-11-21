@@ -55,9 +55,7 @@ assumed, except surjectivity when transferring a global lower curvature bound to
   `TauCeti.IsRiemannianSubmersion.curvatureTensor_eq_mfderiv_horizontalLift_add`: the horizontal
   part of `R_M` and the pushforward formula for `R_N`.
 * `TauCeti.IsRiemannianSubmersion.riemannCurvatureTensor_eq_horizontalLift_add`,
-  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_of_mem_orthogonal_ker`,
-  `TauCeti.IsRiemannianSubmersion.riemannCurvatureTensor_of_mem_orthogonal_ker`,
-  `TauCeti.IsRiemannianSubmersion.riemannCurvatureTensor_mfderiv`, and
+  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_of_mem_orthogonal_ker`, and
   `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_self_of_mem_orthogonal_ker`: O'Neill's
   `(0, 4)` horizontal curvature equations.
 * `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv`,
@@ -338,34 +336,6 @@ theorem inner_curvatureTensor_of_mem_orthogonal_ker
     h.horizontalLift_mfderiv_of_mem x hw, h.horizontalLift_mfderiv_of_mem x hz,
     riemannCurvatureTensor_apply, riemannCurvatureTensor_apply] at hcurv
   linarith
-
-/-- **O'Neill's `(0, 4)` horizontal curvature equation on horizontal tangent vectors.** -/
-theorem riemannCurvatureTensor_of_mem_orthogonal_ker
-    {u v w z : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ)
-    (hv : v ∈ (mfderiv I J f x).kerᗮ) (hw : w ∈ (mfderiv I J f x).kerᗮ)
-    (hz : z ∈ (mfderiv I J f x).kerᗮ) :
-    (leviCivitaConnection I M).riemannCurvatureTensor x u v w z =
-      (leviCivitaConnection J N).riemannCurvatureTensor (f x)
-          (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x w) (mfderiv I J f x z) +
-        2 * ⟪h.oneillA x u v, h.oneillA x w z⟫_ℝ -
-        ⟪h.oneillA x v w, h.oneillA x u z⟫_ℝ +
-        ⟪h.oneillA x u w, h.oneillA x v z⟫_ℝ := by
-  simpa only [riemannCurvatureTensor_apply] using
-    h.inner_curvatureTensor_of_mem_orthogonal_ker hu hv hw hz
-
-/-- The `(0, 4)` Riemann curvature tensor of the base expressed on differentials of horizontal
-vectors. -/
-theorem riemannCurvatureTensor_mfderiv
-    {u v w z : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ)
-    (hv : v ∈ (mfderiv I J f x).kerᗮ) (hw : w ∈ (mfderiv I J f x).kerᗮ)
-    (hz : z ∈ (mfderiv I J f x).kerᗮ) :
-    (leviCivitaConnection J N).riemannCurvatureTensor (f x)
-        (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x w) (mfderiv I J f x z) =
-      (leviCivitaConnection I M).riemannCurvatureTensor x u v w z -
-        2 * ⟪h.oneillA x u v, h.oneillA x w z⟫_ℝ +
-        ⟪h.oneillA x v w, h.oneillA x u z⟫_ℝ -
-        ⟪h.oneillA x u w, h.oneillA x v z⟫_ℝ := by
-  linarith [h.riemannCurvatureTensor_of_mem_orthogonal_ker hu hv hw hz]
 
 /-! ### Sectional curvature of horizontal planes -/
 
