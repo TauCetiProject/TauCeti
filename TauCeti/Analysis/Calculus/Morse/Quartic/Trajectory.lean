@@ -143,6 +143,15 @@ private theorem mul_self_eq_one_of_ne (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i 
     (hpq : ∀ i, p i ≠ q i → p i = 0) {i : ι} (h : p i ≠ q i) : q i * q i = 1 := by
   rcases eq_neg_one_or_eq_one_of_ne hq hpq h with h' | h' <;> norm_num [h']
 
+/-- If `q` is a critical point of the quartic and `p` agrees with `q` off its zero coordinates,
+then `p` is a critical point too. -/
+theorem forall_eq_neg_one_or_eq_zero_or_eq_one_left
+    (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0) :
+    ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1 := fun i ↦ by
+  by_cases h : p i = q i
+  · exact h ▸ hq i
+  · exact .inr (.inl (hpq i h))
+
 /-- The time shifts of the point with time shifts `τ` are `τ`. -/
 @[simp]
 theorem quarticTimeShift_quarticTrajectoryPoint (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)

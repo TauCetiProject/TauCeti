@@ -42,15 +42,6 @@ namespace TauCeti
 
 variable {ι : Type*} {p q : ι → ℝ}
 
-/-- If `q` is a critical point of the quartic and `p` agrees with `q` off its zero coordinates,
-then `p` is a critical point too. -/
-private theorem forall_eq_neg_one_or_eq_zero_or_eq_one_left
-    (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0) :
-    ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1 := fun i ↦ by
-  by_cases h : p i = q i
-  · exact h ▸ hq i
-  · exact .inr (.inl (hpq i h))
-
 /-- **The translation action is free**: for `p ≠ q`, the flow moves every point of a trajectory
 from `p` to `q` for every nonzero time. -/
 theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_self_iff
