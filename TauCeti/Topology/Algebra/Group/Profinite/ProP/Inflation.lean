@@ -134,7 +134,7 @@ theorem inflH2MaximalProP_injective :
   let eR : ZMod p ≃+ FixedPoints.addSubgroup R (ZMod p) :=
     AddSubgroup.topEquiv.symm.trans (AddEquiv.addSubgroupCongr
       (fixedPoints_addSubgroup_eq_top_of_smul_eq (ZMod p) R htrivG).symm)
-  have heR (m : ZMod p) : (eR m).1 = m := by simp [eR]
+  have heR (m : ZMod p) : (eR m).val = m := by simp [eR]
   have hequiv : ∀ (q : G ⧸ R) (m : ZMod p),
       eR ((ContinuousMulEquiv.refl (G ⧸ R)) q • m) = q • eR m := by
     intro q m

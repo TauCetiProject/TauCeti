@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
@@ -13,12 +16,15 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology of the singular
-simplicial set and the map it induces.
+simplicial set and the map it induces, also applied to a class
+(`TauCeti.singularHomologyFunctor_obj_map_hom_apply`).
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
-(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
+(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`),
+and the vanishing of the singular homology of the empty space
+(`TauCeti.isZero_singularHomology_of_isEmpty`).
 A commuting square of continuous maps gives a commuting square of homology maps
 (`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
 -/
@@ -65,6 +71,17 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
 
+/-- The map of the singular homology functor applied to a class `μ` typed in `SSet.homology` of
+the singular simplicial set, rewritten as the simplicial homology map. The left side applies a
+map out of the homology functor's object to `μ`, which agrees with `SSet.homology` only after
+unfolding; the right side is well typed as stated, so later rewrites can match it syntactically. -/
+theorem singularHomologyFunctor_obj_map_hom_apply {Λ : Type*} [Ring Λ] (L : ModuleCat.{w} Λ)
+    {X Y : TopCat.{w}} (f : X ⟶ Y) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj X).homology L k : ModuleCat.{w} Λ)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj L).map f).hom μ =
+      (SSet.homologyMap (TopCat.toSSet.map f) L k).hom μ :=
+  (rfl)
+
 /-- A commuting square of continuous maps gives a commuting square of the simplicial homology maps
 of the singular simplicial sets. -/
 lemma homologyMap_toSSet_ofHom_comp_comm [CategoryWithHomology C] (n : ℕ)
@@ -102,6 +119,16 @@ lemma ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_ho
   -- The constant-set isomorphism evaluates a simplex at an arbitrary point of the topological
   -- `0`-simplex, which is the unique point there.
   exact congrArg _ (congrArg (TopCat.toSSetObjEquiv X _ σ) (Subsingleton.elim _ _))
+
+/-- **The singular homology of the empty space vanishes** in every degree, for arbitrary
+coefficients: there are no singular simplices, so the singular chain complex is zero. -/
+theorem isZero_singularHomology_of_isEmpty [CategoryWithHomology C] (X : TopCat.{w}) [IsEmpty X]
+    (n : ℕ) : IsZero (((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X) := by
+  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
+    ((TopCat.toSSet.obj X).isZero_chainComplex R)
 
 end TauCeti
 

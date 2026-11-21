@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.Determinant.Andreief
 public import TauCeti.MeasureTheory.Integral.Kernel.FiniteRank
 import TauCeti.MeasureTheory.Measure.WithDensity
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import Mathlib.Analysis.Matrix.MeasurableSpace
 
 /-!
@@ -207,7 +207,7 @@ theorem integral_determinantalEnsemble {F : Type*} [NormedAddCommGroup F] [Norme
     ∫ x, f x ∂determinantalEnsemble μ φ =
       ∫ x, determinantalDensity φ x • f x ∂Measure.pi (fun _ ↦ μ) := by
   rw [determinantalEnsemble_def]
-  exact Probability.integral_withDensity_ofReal (aemeasurable_determinantalDensity hφ)
+  exact MeasureTheory.integral_withDensity_ofReal (aemeasurable_determinantalDensity hφ)
     (.of_forall (determinantalDensity_nonneg φ)) f
 
 /-- Integrability for the ensemble is integrability after multiplication by its density. -/
@@ -216,7 +216,7 @@ theorem integrable_determinantalEnsemble_iff {F : Type*} [NormedAddCommGroup F]
     Integrable f (determinantalEnsemble μ φ) ↔
       Integrable (fun x ↦ determinantalDensity φ x • f x) (Measure.pi fun _ ↦ μ) := by
   rw [determinantalEnsemble_def]
-  exact Probability.integrable_withDensity_ofReal_iff (aemeasurable_determinantalDensity hφ)
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (aemeasurable_determinantalDensity hφ)
     (.of_forall (determinantalDensity_nonneg φ))
 
 omit [MeasurableSpace E] in

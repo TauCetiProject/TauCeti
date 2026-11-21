@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
 # Diagonal and off-diagonal decomposition of `RCLike` matrix quadratic forms
@@ -22,6 +24,11 @@ The form of a diagonal matrix is the weighted sum `∑ i, d i * ‖v i‖ ^ 2`
 sum for the coordinates of `Bᴴ *ᵥ v`
 (`Matrix.star_dotProduct_mul_diagonal_mul_conjTranspose_mulVec`). With `B` the eigenvector
 unitary of a Hermitian matrix, the latter expands a quadratic form over the eigenbasis.
+
+A Hermitian matrix is determined by its quadratic form: if `star v ⬝ᵥ A *ᵥ v = 0` for every `v`,
+then `A = 0` (`Matrix.IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff`). This is
+polarization for Hermitian forms, read from Mathlib's
+`LinearMap.IsSymmetric.inner_map_self_eq_zero` through `Matrix.toEuclideanLin`.
 -/
 
 public section
@@ -60,5 +67,18 @@ theorem re_star_dotProduct_mulVec_eq_sum_diag_add (A : Matrix n n 𝕜) (v : n �
       (∑ i, RCLike.re (A i i) * ‖v i‖ ^ 2) + RCLike.re (star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v) := by
   rw [A.star_dotProduct_mulVec_eq_sum_diag_add v, map_add, map_sum]
   simp [RCLike.mul_re]
+
+omit [DecidableEq n] in
+/-- **Polarization for Hermitian matrices.** A Hermitian matrix over `ℝ` or `ℂ` whose quadratic
+form `star v ⬝ᵥ A *ᵥ v` vanishes identically is zero. -/
+theorem IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) : (∀ v, star v ⬝ᵥ A *ᵥ v = 0) ↔ A = 0 := by
+  classical
+  refine ⟨fun h => ?_, fun h v => by simp [h]⟩
+  refine toEuclideanLin.injective ?_
+  rw [map_zero, ← (isSymmetric_toEuclideanLin_iff.mpr hA).inner_map_self_eq_zero]
+  intro x
+  rw [inner_eq_zero_symm, EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm]
+  simpa using h x
 
 end Matrix

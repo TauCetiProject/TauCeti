@@ -116,7 +116,7 @@ theorem range_precomp_precomp_subtypeL (S : Submodule 𝕜 E) :
   constructor
   · rintro ⟨Φ, rfl⟩
     simp only [ContinuousLinearMap.coe_coe, ← coe_bidualEquivDoubleAnnihilator]
-    exact (S.bidualEquivDoubleAnnihilator Φ).2
+    exact (S.bidualEquivDoubleAnnihilator Φ).property
   · intro hΨ
     refine ⟨S.bidualEquivDoubleAnnihilator.symm ⟨Ψ, hΨ⟩, ?_⟩
     simp only [ContinuousLinearMap.coe_coe, ← coe_bidualEquivDoubleAnnihilator,
