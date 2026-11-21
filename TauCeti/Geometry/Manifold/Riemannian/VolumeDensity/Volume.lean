@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
 public import TauCeti.MeasureTheory.Measure.Glue
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -47,8 +46,6 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals, and
   `TauCeti.setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: where it is at
   most `m`, Riemannian integrals over a chart preimage are at most `m` times coordinate integrals.
-* `TauCeti.continuousOn_chartVolumeDensity_extChartAt_symm`: the chart density read in coordinates
-  is continuous on the chart target.
 * `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
   function supported in the chart preimage of an open coordinate set, and
   `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset`, the resulting upper bound
@@ -143,21 +140,6 @@ theorem setIntegral_riemannianVolume_of_subset {F : Type*} [NormedAddCommGroup F
           ∂(Module.finBasis ℝ E).addHaar := by
   rw [← Measure.restrict_restrict_of_subset hs, riemannianVolume_restrict_source,
     setIntegral_chartRiemannianVolume α hs', inter_eq_left.2 (by rwa [extChartAt_source])]
-
-omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
-/-- The chart density read in coordinates, `y ↦ ρ_α (φ_α⁻¹ y)`, is continuous on the chart
-target. -/
-theorem continuousOn_chartVolumeDensity_extChartAt_symm (α : M) :
-    ContinuousOn (fun y ↦ chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
-      (extChartAt I α).target := by
-  have : IsManifold I ((0 : WithTop ℕ∞) + 1) M := by
-    simpa using (inferInstance : IsManifold I 1 M)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  refine (contMDiffOn_chartVolumeDensity (I := I) (n := 0) α).continuousOn.comp
-    (continuousOn_extChartAt_symm α) fun y hy ↦ ?_
-  rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source (I := I)]
-  exact (extChartAt I α).map_target hy
 
 /-- **Integration in coordinates over an open coordinate set**: for an open set `Ω` of the chart
 target, the integral of `φ` over the chart preimage of `Ω` is the integral over `Ω` of `φ` read in

@@ -72,6 +72,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace M] [BorelSpace M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
+/-- The squared norm of an element of `L²` is the integral of its squared pointwise norm. -/
+private theorem eNorm_rpow_two_eq_lintegral {α G : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup G] (f : Lp G 2 μ) :
+    ‖f‖ₑ ^ (2 : ℝ) = ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂μ := by
+  simpa only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ← Lp.eNorm_def] using
+    eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero (Lp.aestronglyMeasurable f)
+
 section Local
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -111,7 +118,8 @@ private theorem exists_setLIntegral_le_mul_setLIntegral_comp (L : E ≃L[ℝ] F)
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hc0), fun g ↦ ?_⟩
   -- Changing variables along `L⁻¹`, the integral over `W` is `c⁻¹` times that over `V`.
   set e := L.symm.toHomeomorph.toMeasurableEquiv
-  have he : (e : F → E) = L.symm := rfl
+  have he : (e : F → E) = L.symm := by
+    rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph]
   have hcoord : (c : ℝ≥0∞) * ∫⁻ z in W, g ((extChartAt I p).symm z)
       ∂(Module.finBasis ℝ E).addHaar = ∫⁻ y in V, g ((extChartAt I p).symm (L.symm y)) := by
     rw [← smul_eq_mul, ← lintegral_smul_measure, ← Measure.restrict_smul, ← hc, ← he,
@@ -158,9 +166,7 @@ private theorem exists_isCompactOperator_setLIntegral_le (L : E ≃L[ℝ] F) (p 
     ⟨mem_extChartAt_source p, y₀, mem_ball_self (half_pos hr), L.symm_apply_apply _⟩, V, R, C,
     hC, hR, fun w ↦ (hle _).trans_eq ?_⟩
   -- The integral over `V` of the chart reading of `w` is the squared norm of `R w`.
-  have h2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero (Lp.aestronglyMeasurable (R w))
-  simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ← Lp.eNorm_def] at h2
-  rw [h2]
+  rw [eNorm_rpow_two_eq_lintegral]
   congr 1
   refine lintegral_congr_ae ?_
   filter_upwards [hRw w] with y hy
@@ -187,10 +193,7 @@ theorem isCompactOperator_toLp :
   have hD : D ≠ ⊤ := ENNReal.sum_ne_top.2 fun p _ ↦ hC p
   -- The `L²(M)` norm is dominated by the norm of `R'`.
   have hle (w : SobolevH1 I M) : ‖toLp w‖ₑ ^ (2 : ℝ) ≤ D * ‖R' w‖ₑ ^ (2 : ℝ) := by
-    have h2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
-      (Lp.aestronglyMeasurable (toLp w))
-    simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ← Lp.eNorm_def] at h2
-    rw [h2, ← setLIntegral_univ, Finset.sum_mul]
+    rw [eNorm_rpow_two_eq_lintegral, ← setLIntegral_univ, Finset.sum_mul]
     calc ∫⁻ x in univ, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M
         ≤ ∫⁻ x in ⋃ p : t, U p, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M :=
           lintegral_mono_set hcov
@@ -205,13 +208,13 @@ theorem isCompactOperator_toLp :
           gcongr
   refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow (T₀ := R'.toLinearMap) hR' R'
     (T := (toLp : SobolevH1 I M →L[ℝ] Lp ℝ 2 (riemannianVolume I M)).toLinearMap)
-    (C := √D.toReal) le_rfl zero_lt_one fun w ↦ ?_
+    (C := (D ^ (2⁻¹ : ℝ)).toReal) le_rfl zero_lt_one fun w ↦ ?_
   simp only [ContinuousLinearMap.coe_coe, sub_zero, Real.rpow_one, Real.rpow_zero, mul_one]
-  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top hD (by simp)) (hle w)
-  simp only [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_eNorm] at h
-  rw [← Real.sqrt_sq (norm_nonneg (toLp w)), ← Real.sqrt_sq (norm_nonneg (R' w)), ← Real.sqrt_mul
-    ENNReal.toReal_nonneg]
-  exact Real.sqrt_le_sqrt (by simpa only [Real.rpow_two] using h)
+  have h : ‖toLp w‖ₑ ≤ D ^ (2⁻¹ : ℝ) * ‖R' w‖ₑ := by
+    rw [← ENNReal.rpow_le_rpow_iff two_pos, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
+      ENNReal.rpow_inv_rpow two_ne_zero]
+    exact hle w
+  simpa only [ENNReal.toReal_mul, toReal_eNorm] using ENNReal.toReal_mono (by finiteness) h
 
 /-- **Compact Sobolev embeddings on a closed manifold.** On a compact manifold without boundary of
 dimension `n > 2` with a continuous Riemannian metric, the Sobolev embedding `H¹(M) → L^q(M)` is a
@@ -249,12 +252,12 @@ theorem isCompactOperator_toLpOfLE {q : ℝ≥0∞} [Fact (1 ≤ q)] (hn : 2 < f
     linarith
   refine isCompactOperator_toLp.of_forall_ae_eq_of_interpolation (toLpOfLE hn le_rfl) hθ0 hθ1 ?_
     (fun w ↦ by rw [coeFn_toLpOfLE]) fun w ↦ by rw [coeFn_toLpOfLE, coeFn_toLpOfLE]
-  rw [hqa, ← ENNReal.ofReal_inv_of_pos ha0, ← ENNReal.ofReal_inv_of_pos (by positivity),
-    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_inv_of_pos zero_lt_two,
-    ← ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_mul hθ0,
-    ← ENNReal.ofReal_add (by positivity) (by positivity)]
-  congr 1
-  field_simp
-  ring
+  have h : a⁻¹ = (1 - (n / 2 - n / a)) * 2⁻¹ + (n / 2 - n / a) * (2 * n / (n - 2))⁻¹ := by
+    field_simp
+    ring
+  rw [hqa, ← ENNReal.ofReal_inv_of_pos ha0, h,
+    ENNReal.ofReal_add (mul_nonneg (by linarith) (by norm_num)) (by positivity),
+    ENNReal.ofReal_mul (by linarith), ENNReal.ofReal_mul hθ0, ENNReal.ofReal_inv_of_pos two_pos,
+    ENNReal.ofReal_inv_of_pos (by positivity), ENNReal.ofReal_ofNat]
 
 end TauCeti.Manifold.SobolevH1
