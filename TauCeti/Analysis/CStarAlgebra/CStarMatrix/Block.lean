@@ -12,9 +12,9 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Connected.PathConnected
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Block calculus, norms, reindexing, and rotations for C⋆-matrices
@@ -32,7 +32,7 @@ C⋆-algebra `A`.
   `norm_conjTranspose_mul_self`, `norm_self_mul_conjTranspose`, `norm_conjTranspose`,
   `conjTranspose_mul_self_nonneg`, `self_mul_conjTranspose_nonneg`: block/rectangular norms and
   positivity.
-* `permUnitary`, `permUnitaryHom`, `permUnitary_conj`, `blockRotation`, `blockRotationPath`,
+* `permUnitaryHom`, `permUnitary_conj`, `blockRotation`, `blockRotationPath`,
   `blockRotation_pi_div_two_conj`, `joined_one_blockRotation`: permutation and rotation unitaries.
 
 ## References
@@ -62,11 +62,6 @@ variable {l m n o R A B C : Type*}
 
 @[simp] theorem ofMatrix_conjTranspose [Star A] (M : Matrix m n A) :
     ofMatrix Mᴴ = (ofMatrix M).conjTranspose := (rfl)
-
-protected theorem mul_assoc [Fintype m] [Fintype n] [NonUnitalSemiring A]
-    (L : CStarMatrix l m A) (M : CStarMatrix m n A) (N : CStarMatrix n o A) :
-    L * M * N = L * (M * N) :=
-  Matrix.mul_assoc (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N)
 
 @[simp] protected theorem one_mul [Fintype m] [DecidableEq m] [NonAssocSemiring A]
     (M : CStarMatrix m n A) : (1 : CStarMatrix m m A) * M = M :=
@@ -349,15 +344,6 @@ variable {R m n A B C : Type*} [Fintype n] [Semiring R]
 theorem mapₙₐ_comp (g : B →⋆ₙₐ[R] C) (f : A →⋆ₙₐ[R] B) :
     mapₙₐ (n := n) (g.comp f) = (mapₙₐ (n := n) g).comp (mapₙₐ (n := n) f) := by ext; rfl
 
-theorem mapₙₐ_injective {f : A →⋆ₙₐ[R] B} (hf : Function.Injective f) :
-    Function.Injective (mapₙₐ (n := n) f) := map_injective hf
-
-theorem mapₙₐ_fromBlocks [Fintype m] (f : A →⋆ₙₐ[R] B) (M₁₁ : CStarMatrix m m A)
-    (M₁₂ : CStarMatrix m n A) (M₂₁ : CStarMatrix n m A) (M₂₂ : CStarMatrix n n A) :
-    mapₙₐ f (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
-      fromBlocks (mapₙₐ f M₁₁) (M₁₂.map f) (M₂₁.map f) (mapₙₐ f M₂₂) :=
-  fromBlocks_map f M₁₁ M₁₂ M₂₁ M₂₂
-
 end MapNA
 
 section MapA
@@ -387,16 +373,6 @@ def mapₐ (f : A →⋆ₐ[R] B) : CStarMatrix n n A →⋆ₐ[R] CStarMatrix n
 theorem mapₐ_comp (g : B →⋆ₐ[R] C) (f : A →⋆ₐ[R] B) :
     mapₐ (n := n) (g.comp f) = (mapₐ (n := n) g).comp (mapₐ (n := n) f) := by ext; rfl
 
-theorem mapₐ_injective {f : A →⋆ₐ[R] B} (hf : Function.Injective f) :
-    Function.Injective (mapₐ (n := n) f) := map_injective hf
-
-@[simp] theorem mapₐ_fromBlocks [Fintype m] [DecidableEq m] (f : A →⋆ₐ[R] B)
-    (M₁₁ : CStarMatrix m m A) (M₁₂ : CStarMatrix m n A)
-    (M₂₁ : CStarMatrix n m A) (M₂₂ : CStarMatrix n n A) :
-    mapₐ f (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
-      fromBlocks (mapₐ f M₁₁) (M₁₂.map f) (M₂₁.map f) (mapₐ f M₂₂) :=
-  fromBlocks_map f M₁₁ M₁₂ M₂₁ M₂₂
-
 end MapA
 
 end Homomorphisms
@@ -408,15 +384,16 @@ section UnitalCFC
 variable {n A : Type*} [Fintype n] [DecidableEq n] [CStarAlgebra A]
   [PartialOrder A] [StarOrderedRing A]
 
+/-! Like the non-unital case in `CStarMatrix.lean`, the unital real continuous functional calculus
+of `CStarMatrix n n A` is not found by instance search because `CStarMatrix.instAlgebra` gives the
+entrywise `ℝ`-algebra rather than `Algebra.complexToReal` used by
+`IsSelfAdjoint.instContinuousFunctionalCalculus`. Once this instance is registered,
+`Nonneg.instContinuousFunctionalCalculus` synthesizes the `ℝ≥0` instance automatically. -/
+
 /-- Unital real continuous functional calculus on `CStarMatrix n n A`. -/
 instance instContinuousFunctionalCalculusReal :
     ContinuousFunctionalCalculus ℝ (CStarMatrix n n A) IsSelfAdjoint :=
   IsSelfAdjoint.instContinuousFunctionalCalculus
-
-/-- Unital nonnegative real continuous functional calculus on `CStarMatrix n n A`. -/
-instance instContinuousFunctionalCalculusNNReal :
-    ContinuousFunctionalCalculus ℝ≥0 (CStarMatrix n n A) (0 ≤ ·) :=
-  Nonneg.instContinuousFunctionalCalculus
 
 end UnitalCFC
 
@@ -446,18 +423,6 @@ theorem norm_hMul_le (V : CStarMatrix l m A) (W : CStarMatrix m n A) :
     ‖fromBlocks M 0 0 N‖ = max ‖M‖ ‖N‖ := by
   simpa [Prod.norm_def] using NonUnitalStarAlgHom.norm_map (blockDiagNonUnitalStarAlgHom ℂ m n A)
     (blockDiagNonUnitalStarAlgHom_injective (R := ℂ)) (M, N)
-
-/-- Embedding into the upper-left corner preserves the C⋆-norm. -/
-theorem norm_fromBlocks_zero₁₂_zero₂₁_zero₂₂ (M : CStarMatrix m m A) :
-    ‖fromBlocks M (0 : CStarMatrix m n A) (0 : CStarMatrix n m A) (0 : CStarMatrix n n A)‖ =
-      ‖M‖ :=
-  NonUnitalStarAlgHom.norm_map (inlCornerHom ℂ m n A) (inlCornerHom_injective (R := ℂ)) M
-
-/-- Embedding into the lower-right corner preserves the C⋆-norm. -/
-theorem norm_fromBlocks_zero₁₁_zero₁₂_zero₂₁ (N : CStarMatrix n n A) :
-    ‖fromBlocks (0 : CStarMatrix m m A) (0 : CStarMatrix m n A) (0 : CStarMatrix n m A) N‖ =
-      ‖N‖ :=
-  NonUnitalStarAlgHom.norm_map (inrCornerHom ℂ m n A) (inrCornerHom_injective (R := ℂ)) N
 
 /-- Embedding a rectangular matrix into the upper-right off-diagonal block preserves the norm. -/
 @[simp] theorem norm_fromBlocks_zero₁₁_zero₂₁_zero₂₂ (V : CStarMatrix m n A) :
@@ -508,16 +473,18 @@ theorem norm_fromBlocks_zero₁₁_zero₁₂_zero₂₁ (N : CStarMatrix n n A)
 @[simp] theorem norm_conjTranspose_mul_self (V : CStarMatrix m n A) :
     ‖V.conjTranspose * V‖ = ‖V‖ * ‖V‖ := by
   simpa only [fromBlocks_star, star_zero, conjTranspose_zero, fromBlocks_mul, CStarMatrix.mul_zero,
-    CStarMatrix.zero_mul, add_zero, zero_add, norm_fromBlocks_zero₁₁_zero₁₂_zero₂₁,
-    norm_fromBlocks_zero₁₁_zero₂₁_zero₂₂] using CStarRing.norm_star_mul_self
+    CStarMatrix.zero_mul, add_zero, zero_add, norm_fromBlocks_zero₁₂_zero₂₁, norm_zero,
+    max_eq_right (norm_nonneg _), norm_fromBlocks_zero₁₁_zero₂₁_zero₂₂] using
+    CStarRing.norm_star_mul_self
       (x := fromBlocks (0 : CStarMatrix m m A) V 0 (0 : CStarMatrix n n A))
 
 /-- Rectangular C⋆-identity `‖V * Vᴴ‖ = ‖V‖ * ‖V‖`. -/
 @[simp] theorem norm_self_mul_conjTranspose (V : CStarMatrix m n A) :
     ‖V * V.conjTranspose‖ = ‖V‖ * ‖V‖ := by
   simpa only [fromBlocks_star, star_zero, conjTranspose_zero, fromBlocks_mul, CStarMatrix.mul_zero,
-    CStarMatrix.zero_mul, add_zero, zero_add, norm_fromBlocks_zero₁₂_zero₂₁_zero₂₂,
-    norm_fromBlocks_zero₁₁_zero₂₁_zero₂₂] using CStarRing.norm_self_mul_star
+    CStarMatrix.zero_mul, add_zero, zero_add, norm_fromBlocks_zero₁₂_zero₂₁, norm_zero,
+    max_eq_left (norm_nonneg _), norm_fromBlocks_zero₁₁_zero₂₁_zero₂₂] using
+    CStarRing.norm_self_mul_star
       (x := fromBlocks (0 : CStarMatrix m m A) V 0 (0 : CStarMatrix n n A))
 
 /-- Conjugate transpose is isometric on rectangular C⋆-matrices. -/
@@ -543,30 +510,13 @@ theorem self_mul_conjTranspose_nonneg (V : CStarMatrix m n A) : 0 ≤ V * V.conj
 theorem norm_mapₙₐ [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
     {f : A →⋆ₙₐ[ℂ] B} (hf : Function.Injective f) (M : CStarMatrix n n A) :
     ‖mapₙₐ f M‖ = ‖M‖ :=
-  NonUnitalStarAlgHom.norm_map (mapₙₐ f) (mapₙₐ_injective hf) M
+  NonUnitalStarAlgHom.norm_map (mapₙₐ f) (CStarMatrix.map_injective hf) M
 
 /-- Reindexing a square C⋆-matrix preserves its norm. -/
 @[simp] theorem norm_reindexₐ (e : m ≃ n) (M : CStarMatrix m m A) :
     ‖reindexₐ ℂ A e M‖ = ‖M‖ := StarAlgEquiv.norm_map (reindexₐ ℂ A e) M
 
 end Norms
-
-section Topology
-
-variable {m n A B : Type*} [NonUnitalCStarAlgebra A]
-
-/-- A map into `CStarMatrix m n A` is continuous iff every entry function is continuous. -/
-theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → CStarMatrix m n A} :
-    Continuous f ↔ ∀ i j, Continuous fun x => f x i j := by
-  change Continuous (fun x i j => f x i j) ↔ _
-  simp only [continuous_pi_iff]
-
-/-- Applying a continuous map entrywise to C⋆-matrices is continuous. -/
-theorem continuous_map [NonUnitalCStarAlgebra B] {f : A → B} (hf : Continuous f) :
-    Continuous (fun M : CStarMatrix m n A => M.map f) :=
-  continuous_iff.mpr fun i j => hf.comp ((continuous_iff.mp continuous_id) i j)
-
-end Topology
 
 /-! ### Reindexing, associativity, commutativity, and permutation unitaries -/
 
@@ -593,30 +543,21 @@ section PermUnitary
 
 variable [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
 
-/-- The permutation unitary implementing `reindexₐ R A σ` by conjugation. -/
-def permUnitary (σ : Equiv.Perm n) : unitary (CStarMatrix n n A) :=
-  ⟨ofMatrix (σ⁻¹.permMatrix A), by
-    constructor <;>
-    · apply ofMatrix.symm.injective
-      simp [Matrix.conjTranspose_permMatrix, ← Matrix.permMatrix_mul]⟩
-
-@[simp] theorem coe_permUnitary (σ : Equiv.Perm n) :
-    (permUnitary (A := A) σ : CStarMatrix n n A) = ofMatrix (σ⁻¹.permMatrix A) := (rfl)
-
 /-- Permutation unitaries form a group homomorphism
 `Equiv.Perm n →* unitary (CStarMatrix n n A)`. -/
-def permUnitaryHom : Equiv.Perm n →* unitary (CStarMatrix n n A) where
-  toFun := permUnitary
-  map_one' := Subtype.ext <| ofMatrix.symm.injective <| by simp [Matrix.permMatrix_one]
-  map_mul' _ _ := Subtype.ext <| ofMatrix.symm.injective <| by
-    simp [_root_.mul_inv_rev, Matrix.permMatrix_mul]
+def permUnitaryHom : Equiv.Perm n →* unitary (CStarMatrix n n A) :=
+  (Unitary.map (⟨(ofMatrixRingEquiv : Matrix n n A ≃+* CStarMatrix n n A).toMonoidHom,
+    fun _ => rfl⟩ : Matrix n n A →⋆* CStarMatrix n n A)).toMonoidHom.comp
+    Matrix.permutationUnitary
 
-/-- Conjugation by `permUnitary σ` agrees with `reindexₐ R A σ`. -/
+/-- Conjugation by `permUnitaryHom σ` agrees with `reindexₐ R A σ`. -/
 theorem permUnitary_conj [Semiring R] [Module R A] (σ : Equiv.Perm n) (M : CStarMatrix n n A) :
-    (permUnitary (A := A) σ : CStarMatrix n n A) * M *
-        star (permUnitary (A := A) σ : CStarMatrix n n A) = reindexₐ R A σ M := by
+    (permUnitaryHom (A := A) σ : CStarMatrix n n A) * M *
+        star (permUnitaryHom (A := A) σ : CStarMatrix n n A) = reindexₐ R A σ M := by
   ext i j
-  simp only [coe_permUnitary, star_eq_conjTranspose, ← ofMatrix_conjTranspose,
+  have hcoe : (permUnitaryHom (A := A) σ : CStarMatrix n n A) = ofMatrix (σ⁻¹.permMatrix A) :=
+    congrArg ofMatrix (Matrix.coe_permutationUnitary σ)
+  simp only [hcoe, star_eq_conjTranspose, ← ofMatrix_conjTranspose,
     Matrix.conjTranspose_permMatrix, inv_inv, reindexₐ_apply]
   change ((σ⁻¹.permMatrix A * ofMatrix.symm M) * σ.permMatrix A) i j = M (σ.symm i) (σ.symm j)
   rw [Equiv.Perm.permMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
@@ -688,11 +629,12 @@ variable [CStarAlgebra A]
 
 /-- The block rotation map `θ ↦ blockRotation θ` is continuous on
 `CStarMatrix (n ⊕ n) (n ⊕ n) A`. -/
-theorem continuous_blockRotation : Continuous (blockRotation (n := n) (A := A)) :=
-  Continuous.subtype_mk (continuous_iff.mpr fun i j => by
-    rcases i with i | i <;> rcases j with j | j <;>
-      simp only [fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁, fromBlocks_apply₂₂,
-        neg_apply, smul_apply] <;> fun_prop) _
+theorem continuous_blockRotation : Continuous (blockRotation (n := n) (A := A)) := by
+  refine Continuous.subtype_mk ?_ _
+  change Continuous fun θ : ℝ => Matrix.fromBlocks
+    (Real.cos θ • (1 : Matrix n n A)) (-(Real.sin θ • 1))
+    (Real.sin θ • 1) (Real.cos θ • 1)
+  exact Continuous.matrix_fromBlocks (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop)
 
 /-- The continuous path `t ↦ blockRotation (t * θ)` joining `1` to `blockRotation θ`. -/
 noncomputable def blockRotationPath (θ : ℝ) :
