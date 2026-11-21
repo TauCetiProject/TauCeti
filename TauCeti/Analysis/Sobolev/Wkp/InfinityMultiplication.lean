@@ -181,13 +181,6 @@ private theorem norm_value_mulAux_le (k : ℕ) (u w : Wkp mu Omega ∞ k) :
     (value_mulAux k u w)).trans
     (mul_le_mul (norm_value_le k u) (norm_value_le k w) (norm_nonneg _) (norm_nonneg _))
 
-/-- Convergence in `W^{k,∞}(Ω)` gives convergence of the values in `L^∞(Ω)`. -/
-private theorem tendsto_value {k : ℕ} {w : ℕ → Wkp mu Omega ∞ k} {z : Wkp mu Omega ∞ k}
-    (hw : Tendsto w atTop (𝓝 z)) : Tendsto (fun n => value k (w n)) atTop (𝓝 (value k z)) := by
-  have h := ((valueL k).continuous.tendsto z).comp hw
-  rw [valueL_apply] at h
-  exact h.congr fun n => valueL_apply k (w n)
-
 /-- If `w n → z` in `W^{k,∞}(Ω)`, then the values of the products `u (w n)` converge in `L^∞` to
 the value of `u z`. -/
 private theorem tendsto_value_mulAux (k : ℕ) (u : Wkp mu Omega ∞ k) {w : ℕ → Wkp mu Omega ∞ k}
