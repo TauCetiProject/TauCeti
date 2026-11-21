@@ -459,8 +459,8 @@ private theorem sub_apply_evalZero_add_endpointMap_eq_zero (S : C(AddCircle T, E
     exact hg
   have hd := (twistedLinearOperator_eq_iff _ _ w g).1 hw
   have key := (forall_add_eq_smul_iff_smul_one_sub_apply_eq (AddCircle.continuous_comp_coe S)
-    (AddCircle.periodic_comp_coe S) (mem_twistedContinuous.1 g.2).1
-    (mem_twistedContinuous.1 g.2).2 hd).1 (mem_twistedContDiff.1 w.2).2
+    (AddCircle.periodic_comp_coe S) (mem_twistedContinuous.1 g.property).1
+    (mem_twistedContinuous.1 g.property).2 hd).1 (mem_twistedContDiff.1 w.property).2
   have h0 : evalZero T (toH1 E T w) = (w : ℝ → E) 0 := by
     rw [evalZero_apply, toContinuousMap_toH1, ← AddCircle.coe_zero,
       twistedContinuousOneEquiv_apply, Submodule.coe_inclusion]

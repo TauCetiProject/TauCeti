@@ -150,7 +150,7 @@ private theorem exists_coprod_eq_zero_and_eq (hr : Function.Surjective r)
   obtain ⟨k, hk⟩ := eK.surjective ⟨r e₁, hrk⟩
   refine ⟨e₀ - e₁ + k, w, ?_, ?_⟩
   · rw [map_add, add_right_comm, hz, zero_add]
-    exact k.2
+    exact k.property
   · rw [map_add, map_sub, ← heK, hk, sub_add_cancel]
 
 variable [CompleteSpace E] [CompleteSpace F]
@@ -192,7 +192,7 @@ private theorem exists_kerEquiv (hK : ∀ e w, T e + σ w = 0 → A (r e) + M w 
   refine ⟨(kerEquivOfProd _ _ h).toLinearEquiv.symm.trans
     (kerEquivOfProd _ _ (isInvertible_prod_coprod_id_fst A)).toLinearEquiv, fun x ↦ ?_,
     by ext x; simp⟩
-  have hx := hK (x : E × W).1 (x : E × W).2 (by simpa using x.2)
+  have hx := hK (x : E × W).1 (x : E × W).2 (by simpa using x.property)
   have h₁ : (kerEquivOfProd _ _ h).toLinearEquiv.symm x = r (x : E × W).1 :=
     kerEquivOfProd_symm_apply h x
   rw [LinearEquiv.trans_apply, h₁, ContinuousLinearEquiv.coe_toLinearEquiv,
