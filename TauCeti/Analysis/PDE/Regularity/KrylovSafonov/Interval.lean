@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Interval
 import TauCeti.Analysis.PDE.Regularity.Hessian.Interval
 import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The Krylov–Safonov estimate in dimension one
@@ -99,8 +100,8 @@ theorem abs_deriv_preciseRepresentative_sub_le_of_abs_mul_iteratedGradient_le
         deriv (preciseRepresentative volume (Wkp.value 2 u)) x| ≤
       (∫ t in x..y, f t) / lam := by
   have hDint : IntervalIntegrable (fun t => Wkp.iteratedGradient 1 u t 1) volume x y :=
-    Wkp.intervalIntegrable_iteratedGradient_one_Ioo u (Ioo_subset_Icc_self hx)
-      (Ioo_subset_Icc_self hy)
+    (Wkp.integrableOn_iteratedGradient_one_Ioo u).intervalIntegrable_of_mem_Icc
+      (Ioo_subset_Icc_self hx) (Ioo_subset_Icc_self hy)
   rw [Wkp.deriv_preciseRepresentative_sub_deriv_eq_integral u hx hy,
     ← intervalIntegral.integral_div]
   exact (abs_integral_le_integral_abs hxy).trans
@@ -122,17 +123,15 @@ private theorem abs_deriv_preciseRepresentative_sub_le_integral_div {σ f : ℝ 
     exact hu.mono fun _ h => (abs_nonneg _).trans h
   have hfi : IntervalIntegrable f volume a b :=
     (intervalIntegrable_iff_integrableOn_Ioo_of_le (hx.1.trans hx.2).le).2 hf
-  have hfs {y z : ℝ} (hy : y ∈ Ioo a b) (hz : z ∈ Ioo a b) (hyz : y ≤ z) :
-      IntervalIntegrable f volume y z :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le hyz).2
-      (hf.mono_set (Ioo_subset_Ioo hy.1.le hz.2.le))
+  have hfs {y z : ℝ} (hy : y ∈ Ioo a b) (hz : z ∈ Ioo a b) : IntervalIntegrable f volume y z :=
+    hf.intervalIntegrable_of_mem_Icc (Ioo_subset_Icc_self hy) (Ioo_subset_Icc_self hz)
   rcases le_total x y with hxy | hyx
   · rw [abs_sub_comm]
     exact (abs_deriv_preciseRepresentative_sub_le_of_abs_mul_iteratedGradient_le hlam hσ hu
-      hx hy hxy (hfs hx hy hxy)).trans
+      hx hy hxy (hfs hx hy)).trans
       (div_le_div_of_nonneg_right (integral_mono_interval hx.1.le hxy hy.2.le hf0 hfi) hlam.le)
   · exact (abs_deriv_preciseRepresentative_sub_le_of_abs_mul_iteratedGradient_le hlam hσ hu
-      hy hx hyx (hfs hy hx hyx)).trans
+      hy hx hyx (hfs hy hx)).trans
       (div_le_div_of_nonneg_right (integral_mono_interval hy.1.le hyx hx.2.le hf0 hfi) hlam.le)
 
 /-- **The derivative bound in the one-dimensional Krylov–Safonov estimate.** Let `σ ≥ λ > 0`

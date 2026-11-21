@@ -16,6 +16,7 @@ import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
@@ -89,14 +90,6 @@ theorem integrableOn_iteratedGradient_one_Ioo (u : Wkp volume ⟨Ioo a b, isOpen
   have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
     Real.isFiniteMeasure_restrict_Ioo a b
   exact ((Lp.memLp (iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
-
-/-- The weak second derivative `u''` of `u ∈ W^{2,p}(a, b)` is interval integrable between any
-two points of `[a, b]`. -/
-theorem intervalIntegrable_iteratedGradient_one_Ioo (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2)
-    {x y : ℝ} (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) :
-    IntervalIntegrable (fun t => iteratedGradient 1 u t 1) volume x y :=
-  intervalIntegrable_iff.2 (((integrableOn_iteratedGradient_one_Ioo u).congr_set_ae
-    Ioo_ae_eq_Icc.symm).mono_set (uIoc_subset_uIcc.trans (uIcc_subset_Icc hx hy)))
 
 /-- The weak derivative of `u ∈ W^{2,p}(a, b)` with first-order part in `W^{1,p}_0(a, b)` is
 bounded almost everywhere by twice the `L¹` norm of the weak Hessian: it is a constant plus the
@@ -352,7 +345,8 @@ theorem deriv_preciseRepresentative_sub_deriv_eq_integral
   have hab : a < b := hx.1.trans hx.2
   have hD (z : ℝ) (hz : z ∈ Ioo a b) :
       IntervalIntegrable (fun t => iteratedGradient 1 u t 1) volume a z :=
-    intervalIntegrable_iteratedGradient_one_Ioo u (left_mem_Icc.2 hab.le) (Ioo_subset_Icc_self hz)
+    (integrableOn_iteratedGradient_one_Ioo u).intervalIntegrable_of_mem_Icc
+      (left_mem_Icc.2 hab.le) (Ioo_subset_Icc_self hz)
   obtain ⟨k, -, -, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
   rw [(h y hy).deriv, (h x hx).deriv, add_sub_add_left_eq_sub,
     integral_interval_sub_left (hD y hy) (hD x hx)]
