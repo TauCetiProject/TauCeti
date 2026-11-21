@@ -174,23 +174,6 @@ open Matrix
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 omit [DecidableEq ι] in
-/-- A directional derivative of a compactly supported Schwartz function times an `L²` function is
-integrable. -/
-private theorem integrable_lineDeriv_mul {φ : 𝓢(EuclideanSpace ℝ ι, ℝ)} (hφ : HasCompactSupport φ)
-    (v : EuclideanSpace ℝ ι) (f : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι))) :
-    Integrable (fun x => lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v * f x) := by
-  have hfun : (fun x => lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v) =
-      fun x => fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v :=
-    funext fun x => φ.differentiableAt.lineDeriv_eq_fderiv
-  have hcont : Continuous fun x => lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v :=
-    (∂_{v} φ).continuous.congr fun x => SchwartzMap.lineDerivOp_apply _ φ x
-  have hsupp : HasCompactSupport fun x => lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v := by
-    rw [hfun]
-    exact hφ.fderiv_apply (𝕜 := ℝ) _
-  exact ((Lp.memLp f).locallyIntegrable (by norm_num)).integrable_smul_left_of_hasCompactSupport
-    hcont hsupp
-
-omit [DecidableEq ι] in
 /-- **The weak equation as an identity of tempered distributions.** If `u ∈ H¹(ℝⁿ)` solves
 `-div (A ∇u) = -div G` weakly for a constant matrix `A` and `G ∈ L²`, then, writing `Dⱼ` and `Gⱼ`
 for the components of `∇u` and `G` and `cⱼ` for the `j`-th column of `A`,
@@ -229,7 +212,9 @@ private theorem sum_lineDerivOp_eq_of_forall_energyFormH1_eq {A : Matrix ι ι �
     rw [hx, innerSL_apply_apply, smul_eq_mul]
   have hint : ∀ j, Integrable (fun x =>
       lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (EuclideanSpace.basisFun ι ℝ j) * Gc j x) :=
-    fun j => integrable_lineDeriv_mul hφ _ (Gc j)
+    fun j => by
+      simpa [hψ] using integrable_lineDeriv_smul_of_locallyIntegrableOn
+        (((Lp.memLp (Gc j)).locallyIntegrable (by norm_num)).locallyIntegrableOn _) ψ _
   rw [Finset.sum_congr rfl fun j _ => hl j, h, ← integral_finsetSum _ fun j _ => hint j]
   refine integral_congr_ae ?_
   filter_upwards [ae_all_iff.2 hGc] with x hx
