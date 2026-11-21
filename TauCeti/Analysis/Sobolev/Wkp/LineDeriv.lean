@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -53,6 +54,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn`: the same on an open
   subdomain `V ≤ Ω`, for any `u ∈ W^{1,p}(V)` whose weak gradient agrees on `V` with that of a
   function on `Ω` whose gradient components are weakly differentiable.
+* `TauCeti.Wkp.norm_iteratedGradient_one_le_sum`: the `Lᵖ` norm of the weak Hessian is at most
+  the sum of the `Lᵖ` norms of the derivatives `∂ᵢ ⟪∇u, eⱼ⟫`.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
 * `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
   everywhere.
@@ -484,6 +487,52 @@ theorem W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn {ι : Type
   refine ⟨hGm.toLp G, ((hG.mono hV).congr_ae ?_).congr_ae_deriv hGm.coeFn_toLp.symm⟩
   filter_upwards [hgrad] with x hx
   rw [hx]
+
+/-- **The weak Hessian is controlled by its entries.** Let `U ∈ W^{2,p}(Ω)` and fix an orthonormal
+basis `e` of `E`. If `gᵢⱼ ∈ Lᵖ(Ω)` is a weak derivative in the direction `eᵢ` of the component
+`⟪∇U, eⱼ⟫` of the weak gradient, then the `Lᵖ` norm of the weak Hessian of `U` is at most
+`∑ᵢ ∑ⱼ ‖gᵢⱼ‖`. Together with `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`, this
+bounds the norm in `W^{2,p}(Ω)` of a function by the norms of its componentwise second weak
+derivatives. -/
+theorem Wkp.norm_iteratedGradient_one_le_sum {ι : Type*} [Fintype ι] (U : Wkp mu Omega p 2)
+    (b : OrthonormalBasis ι ℝ E) {g : ι → ι → Lp ℝ p (mu.restrict Omega)}
+    (hg : ∀ i j, HasWeakLineDerivOn mu Omega
+      (fun x => ⟪W1p.gradient (Wkp.lowerOrder 1 U) x, b j⟫_ℝ) (g i j) (b i)) :
+    ‖Wkp.iteratedGradient 1 U‖ ≤ ∑ i, ∑ j, ‖g i j‖ := by
+  -- The entries `⟪D²U eᵢ, eⱼ⟫` of the weak Hessian are the given derivatives `gᵢⱼ`.
+  have hH := Wkp.hasWeakFDerivOn_iteratedGradient 0 U
+  rw [Wkp.iteratedGradient_zero] at hH
+  have hent : ∀ i j, (fun x => ⟪Wkp.iteratedGradient 1 U x (b i), b j⟫_ℝ) =ᵐ[mu.restrict Omega]
+      g i j := fun i j =>
+    HasWeakLineDerivOn.ae_eq (by simpa only [innerSL_apply_apply, real_inner_comm] using
+      (hH.hasWeakLineDerivOn (b i)).clm_comp (innerSL ℝ (b j))) (hg i j)
+  -- Pointwise, the operator norm is at most the sum of the absolute values of the entries.
+  have hpt : ∀ᵐ x ∂mu.restrict Omega,
+      ‖Wkp.iteratedGradient 1 U x‖ ≤ ‖∑ i, ∑ j, ‖g i j x‖‖ := by
+    filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hent i j] with x hx
+    rw [Real.norm_of_nonneg (by positivity)]
+    refine ((Wkp.iteratedGradient 1 U x).opNorm_le_sum_norm_apply_orthonormalBasis b).trans
+      (Finset.sum_le_sum fun i _ => ?_)
+    rw [← innerSL_apply_norm ℝ]
+    refine ((innerSL ℝ (Wkp.iteratedGradient 1 U x (b i))).opNorm_le_sum_norm_apply_orthonormalBasis
+      b).trans_eq (Finset.sum_congr rfl fun j _ => ?_)
+    rw [innerSL_apply_apply, hx i j]
+  -- Integrate, using the triangle inequality in `Lᵖ` for the finite sums.
+  have hsum : eLpNorm (fun x => ∑ i, ∑ j, ‖g i j x‖) p (mu.restrict Omega) ≤
+      ∑ i, ∑ j, eLpNorm (g i j) p (mu.restrict Omega) := by
+    have h₁ := eLpNorm_sum_le (μ := mu.restrict Omega) (s := Finset.univ)
+      (f := fun i x => ∑ j, ‖g i j x‖) (Fact.out : 1 ≤ p)
+    rw [Finset.sum_fn] at h₁
+    refine h₁.trans (Finset.sum_le_sum fun i _ => ?_)
+    have h₂ := eLpNorm_sum_le (μ := mu.restrict Omega) (s := Finset.univ)
+      (f := fun j x => ‖g i j x‖) (Fact.out : 1 ≤ p)
+    rw [Finset.sum_fn] at h₂
+    exact h₂.trans_eq (Finset.sum_congr rfl fun j _ => eLpNorm_norm _ (Lp.aestronglyMeasurable _))
+  rw [Lp.norm_def]
+  refine (ENNReal.toReal_mono (by simp [ENNReal.sum_eq_top, Lp.eLpNorm_ne_top])
+    ((eLpNorm_mono_ae (Lp.aestronglyMeasurable _) hpt).trans hsum)).trans_eq ?_
+  simp only [ENNReal.toReal_sum fun _ _ => ENNReal.sum_ne_top.2 fun _ _ => Lp.eLpNorm_ne_top _,
+    ENNReal.toReal_sum fun _ _ => Lp.eLpNorm_ne_top _, Lp.norm_def]
 
 /-! ### Symmetry of the weak Hessian -/
 
