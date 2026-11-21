@@ -58,10 +58,10 @@ theorem ContMDiffWithinAt.associatedBundleTotalSpaceMap (f : F →[G] F')
   have hx₀ := mem_baseSet_trivializationAt G P (y x₀).proj
   have hcoord := hf.comp_contMDiffWithinAt x₀ hy.2
   refine hcoord.congr_of_eventuallyEq ?_
-    (congrArg Prod.snd (trivializationAt_totalSpaceMap f hx₀ (y x₀).2))
+    (congrArg Prod.snd (trivializationAt_totalSpaceMap f hx₀ (y x₀).snd))
   filter_upwards [hy.1.continuousWithinAt
     ((trivializationAt G P (y x₀).proj).open_baseSet.mem_nhds hx₀)] with x hx
-  exact congrArg Prod.snd (trivializationAt_totalSpaceMap f hx (y x).2)
+  exact congrArg Prod.snd (trivializationAt_totalSpaceMap f hx (y x).snd)
 
 /-- Applying a `C^n` equivariant fibre map preserves families `C^n` at a point. -/
 theorem ContMDiffAt.associatedBundleTotalSpaceMap (f : F →[G] F')

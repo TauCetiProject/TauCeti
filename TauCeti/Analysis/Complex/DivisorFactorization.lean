@@ -111,11 +111,11 @@ theorem exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp {U : Set ℂ} {g L₁ L
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hloc
   have hBsub : Metric.ball z₀ r ⊆ U := fun w hw ↦ (hball (Metric.mem_ball.mp hw)).1
   have hball_eq : EqOn L₁ (fun w ↦ L₂ w + k * (2 * Real.pi * I)) (Metric.ball z₀ r) :=
-    eqOn_of_eqOn_exp_comp Metric.isOpen_ball (convex_ball z₀ r).isPreconnected
-      (hL₁.mono hBsub) ((hL₂.add_const _).mono hBsub)
-      (g := fun w ↦ exp (L₂ w))
-      (fun w hw ↦ mul_left_cancel₀ (hball (Metric.mem_ball.mp hw)).2 (heq (hBsub hw)))
-      (fun w _ ↦ exp_eq_exp_iff_exists_int.mpr ⟨k, rfl⟩)
+    ((hL₁.mono hBsub).continuousOn).eqOn_of_eqOn_exp_comp
+      ((hL₂.add_const _).mono hBsub).continuousOn
+      (convex_ball z₀ r).isPreconnected
+      (fun w hw ↦ (mul_left_cancel₀ (hball (Metric.mem_ball.mp hw)).2 (heq (hBsub hw))).trans
+        (exp_eq_exp_iff_exists_int.mpr ⟨k, rfl⟩).symm)
       (Metric.mem_ball_self hr) hk
   exact (hL₁.analyticOnNhd hUo).eqOn_of_preconnected_of_eventuallyEq
     ((hL₂.add_const _).analyticOnNhd hUo) hUc hz₀U
@@ -207,7 +207,7 @@ theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)
   have hconn : IsConnected (closedBall z₀ R) :=
     (convex_closedBall z₀ R).isConnected ⟨z₀, hz₀R⟩
   obtain ⟨g, hg, hg0, hfg⟩ := hf.meromorphicOn.extract_zeros_poles
-    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.2)
+    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.property)
     (D.finiteSupport (isCompact_closedBall z₀ R))
   -- The divisor on the small disc is the restriction of `D`, so `0 ≤ D' ≤ D`.
   have hD' (ρ : ℂ) : D' ρ = if ρ ∈ closedBall z₀ r then D ρ else 0 := by

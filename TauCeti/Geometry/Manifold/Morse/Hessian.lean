@@ -220,9 +220,7 @@ theorem IsManifoldNondegenerateCriticalPoint.criticalHessian_ne_zero [Nontrivial
 the dual of the tangent space. -/
 theorem criticalHessian_isInvertible_of_injective [FiniteDimensional ℝ E]
     (h : Injective (criticalHessian I f x)) : (criticalHessian I f x).IsInvertible :=
-  -- `TangentSpace I x` is by definition the model space `E`, so the finite-dimensional result
-  -- for the normed space `E` applies; matrix and subspace proofs go through this lemma.
-  ContinuousLinearMap.isInvertible_of_injective (E := E) h
+  ContinuousLinearMap.isInvertible_of_injective h
 
 /-! ### Matrix and subspace descriptions -/
 
@@ -286,10 +284,8 @@ theorem _root_.Module.Basis.criticalHessian_isInvertible_iff_det_ne_zero
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
     (criticalHessian I f x).IsInvertible ↔ (b.criticalHessianMatrix f).det ≠ 0 := by
   have : FiniteDimensional ℝ (TangentSpace I x) := b.finiteDimensional_of_finite
-  -- `b` is also a basis of the model space `E`, which is `TangentSpace I x` by definition.
-  have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
   rw [Module.Basis.criticalHessianMatrix, ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
-  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm (E := E)
+  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm
 
 end Matrix
 
@@ -482,6 +478,17 @@ theorem isManifoldNondegenerateCriticalPoint_iff_criticalHessian :
   · refine ⟨hsmooth.1 hf, ?_, hinv⟩
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
 
+/-- On a finite-dimensional boundaryless manifold, a critical point of a function which is `C²`
+there is nondegenerate as soon as its critical Hessian is nondegenerate: the only tangent vector `a`
+with `Hess f(x)(a, b) = 0` for every `b` is `a = 0`. -/
+theorem IsManifoldNondegenerateCriticalPoint.of_nondegenerate_criticalHessian
+    [FiniteDimensional ℝ E] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hcrit : x ∈ criticalPoints I f)
+    (h : ∀ a, (∀ b, criticalHessian I f x a b = 0) → a = 0) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
+  isManifoldNondegenerateCriticalPoint_iff_criticalHessian.2 ⟨hf,
+    TauCeti.mem_criticalPoints.1 hcrit, criticalHessian_isInvertible_of_injective
+      ((injective_iff_map_eq_zero _).2 fun a ha ↦ h a fun b ↦ by simp [ha])⟩
+
 section Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -574,7 +581,7 @@ theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 2 M]
     (hf.contDiffAt_comp_extChartAt_symm.fderiv_right
       (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
   -- Near `x`, `df(extend w)` is the coordinate expression of `df` along `w`, read in the chart.
-  rw [(Manifold.mvfderiv_extend_eventuallyEq (hf.of_le one_le_two) w).mvfderiv_eq,
+  rw [(Manifold.mvfderiv_extend_eventuallyEq f BoundarylessManifold.isInteriorPoint w).mvfderiv_eq,
     mvfderiv_comp_apply_of_differentiableAt (hDg.clm_apply (differentiableAt_const w))
       (mdifferentiableAt_extChartAt (mem_chart_source H x)),
     mvfderiv_apply_of_eventuallyEq_extChartAt EventuallyEq.rfl, criticalHessian_def]
@@ -904,11 +911,10 @@ theorem criticalHessian_trivializationAt_symm_apply [IsManifold I 2 M] {x₀ : M
   rw [criticalHessian_apply_eq_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx hf
     hcrit, ← extChartAt, hcoord, hcoord]
 
-/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless
-finite-dimensional manifold, if `f` is `C²` at `x`, then at every critical point of `f` near `x`
-the Morse index is at least the Morse index at `x`. The point `x` need not be critical, nor
-nondegenerate. -/
-theorem eventually_manifoldMorseIndex_le [FiniteDimensional ℝ E] [IsManifold I 2 M]
+/-- **The Morse index is lower semicontinuous on the critical set.** On a boundaryless manifold,
+if `f` is `C²` at `x`, then at every critical point of `f` near `x` the Morse index is at least
+the Morse index at `x`. The point `x` need not be critical, nor nondegenerate. -/
+theorem eventually_manifoldMorseIndex_le [IsManifold I 2 M]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → manifoldMorseIndex I f x ≤ manifoldMorseIndex I f y := by
   -- Both indices are read in the preferred chart at `x`: at `x` by definition, and at nearby

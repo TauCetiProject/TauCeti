@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
-public import TauCeti.Analysis.Complex.CanonicalProduct.WeierstrassFactor
+public import TauCeti.Analysis.Complex.CanonicalProduct.ElementaryFactor
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.DivisorFactorization
-import TauCeti.Analysis.Complex.InfiniteProduct
+import TauCeti.Analysis.Complex.InfiniteProd
 import TauCeti.Analysis.Normed.Module.MultipliableUniformlyOn
 import TauCeti.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
@@ -21,7 +22,7 @@ import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 
 Given an arbitrary index family `a : ι → ℂ` (possibly repeated according to multiplicity) and
 genera `p : ι → ℕ` such that `∑' i, (R / ‖a i‖) ^ (p i + 1) < ∞` for every `R > 0`, the unordered
-primary product `∏' i, Complex.elementaryFactor (p i) (z / a i)` converges uniformly on compact
+primary product `∏' i, Complex.weierstrassFactor (p i) (z / a i)` converges uniformly on compact
 sets and locally uniformly on `ℂ` to an entire function normalized to `1` at `0`. When every
 `a i ≠ 0`, its zeros are precisely the values `a i`, and at every `z : ℂ` its analytic order of
 vanishing equals `{i | a i = z}.ncard`; both `‖a i‖ → ∞` along `Filter.cofinite` and finiteness of
@@ -47,22 +48,22 @@ without any growth hypothesis on `f`.
 * `Complex.tendsto_norm_cofinite_atTop_of_summable_div_pow`: summability of
   `(R / ‖a i‖) ^ (p i + 1)` for all `R > 0` (with `a i ≠ 0`) forces `‖a i‖ → ∞` along
   `Filter.cofinite`.
-* `Complex.hasProdUniformlyOn_elementaryFactor_div`,
-  `Complex.hasProdLocallyUniformlyOn_elementaryFactor_div`,
-  `Complex.differentiable_tprod_elementaryFactor_div`: compact-uniform and locally uniform
-  convergence and entirety of `∏' i, elementaryFactor (p i) (z / a i)`.
-* `Complex.analyticOrderAt_tprod_elementaryFactor_div`,
-  `Complex.divisor_tprod_elementaryFactor_div`: exact zero-order and whole-plane divisor formulas
+* `Complex.hasProdUniformlyOn_weierstrassFactor_div`,
+  `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div`,
+  `Complex.differentiable_tprod_weierstrassFactor_div`: compact-uniform and locally uniform
+  convergence and entirety of `∏' i, weierstrassFactor (p i) (z / a i)`.
+* `Complex.analyticOrderAt_tprod_weierstrassFactor_div`,
+  `Complex.divisor_tprod_weierstrassFactor_div`: exact zero-order and whole-plane divisor formulas
   in terms of fiber cardinalities `{i | a i = z}.ncard`.
-* `Complex.hasProdLocallyUniformlyOn_elementaryFactor_div_comp_equiv`,
-  `Complex.hasProdUniformlyOn_elementaryFactor_div_pow`,
-  `Complex.hasProdLocallyUniformlyOn_elementaryFactor_div_pow`,
-  `Complex.analyticOrderAt_tprod_elementaryFactor_div_pow_of_injective`,
-  `Complex.divisor_tprod_elementaryFactor_div_pow_eq_zero`: invariance under equivalences and
+* `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div_comp_equiv`,
+  `Complex.hasProdUniformlyOn_weierstrassFactor_div_pow`,
+  `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div_pow`,
+  `Complex.analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective`,
+  `Complex.divisor_tprod_weierstrassFactor_div_pow_eq_zero`: invariance under equivalences and
   grouped finite multiplicity fibers.
-* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow_of_summable`:
+* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable`:
   exponential factorization of an entire function against any admissible genus assignment `p`.
-* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow`: Weierstrass's entire
+* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow`: Weierstrass's entire
   factorization theorem for an arbitrary nonzero entire function without growth hypotheses.
 
 ## References
@@ -100,17 +101,17 @@ theorem tendsto_norm_cofinite_atTop_of_summable_div_pow (ha : ∀ i, a i ≠ 0)
     (one_le_div ha_pos).mpr (hlt.le.trans (le_max_left B 1))
   exact lt_irrefl (1 : ℝ) ((one_le_pow₀ h1).trans_lt hi)
 
-private theorem exists_summable_cofinite_elementaryFactor_div_sub_one
-    (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) :
-    ∀ K ⊆ (Set.univ : Set ℂ), IsCompact K → ∃ v : ι → ℝ, Summable v ∧
-      ∀ᶠ i in cofinite, ∀ z ∈ K, ‖elementaryFactor (p i) (z / a i) - 1‖ ≤ v i := by
-  intro K _ hK
+private theorem summableUniformlyOn_norm_weierstrassFactor_div_sub_one
+    (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1))
+    {K : Set ℂ} (hK : IsCompact K) :
+    SummableUniformlyOn (fun i z ↦ ‖weierstrassFactor (p i) (z / a i) - 1‖) K := by
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn continuous_id.continuousOn
   let R : ℝ := max M 1
   have hR : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right M 1)
-  refine ⟨fun i ↦ (R / ‖a i‖) ^ (p i + 1), hsum R hR, ?_⟩
+  refine (HasSumUniformlyOn.of_norm_le_summable_eventually (hsum R hR) ?_).summableUniformlyOn
   filter_upwards [(hsum R hR).tendsto_cofinite_zero.eventually (gt_mem_nhds zero_lt_one)]
     with i hi z hz
+  rw [norm_norm]
   by_cases hai : a i = 0
   · simp [hai]
   · have hzR : ‖z‖ ≤ R := (hM z hz).trans (le_max_left M 1)
@@ -121,64 +122,63 @@ private theorem exists_summable_cofinite_elementaryFactor_div_sub_one
     have hquot_le : ‖z / a i‖ ≤ R / ‖a i‖ := by
       rw [norm_div]
       exact div_le_div_of_nonneg_right hzR ha_pos.le
-    exact (norm_elementaryFactor_sub_one_le (p i) (hquot_le.trans hRle)).trans
+    exact (norm_weierstrassFactor_sub_one_le (p i) (hquot_le.trans hRle)).trans
       (pow_le_pow_left₀ (norm_nonneg _) hquot_le _)
 
 /-- On every compact set `K ⊆ ℂ`, the variable-genus primary product
-`∏' i, elementaryFactor (p i) (z / a i)` converges uniformly. -/
-theorem hasProdUniformlyOn_elementaryFactor_div
+`∏' i, weierstrassFactor (p i) (z / a i)` converges uniformly. -/
+theorem hasProdUniformlyOn_weierstrassFactor_div
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1))
     {K : Set ℂ} (hK : IsCompact K) :
-    HasProdUniformlyOn (fun i z ↦ elementaryFactor (p i) (z / a i))
-      (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i)) K := by
-  obtain ⟨v, hv, hbound⟩ :=
-    exists_summable_cofinite_elementaryFactor_div_sub_one hsum K (subset_univ K) hK
-  have hcts : ∀ i, ContinuousOn (fun z ↦ elementaryFactor (p i) (z / a i) - 1) K := fun i ↦
+    HasProdUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i))
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i)) K := by
+  have htail := summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum hK
+  have hcts : ∀ i, ContinuousOn (fun z ↦ weierstrassFactor (p i) (z / a i) - 1) K := fun i ↦
     (by fun_prop :
-      Differentiable ℂ fun z ↦ elementaryFactor (p i) (z / a i) - 1).continuous.continuousOn
-  simpa only [add_sub_cancel] using hv.hasProdUniformlyOn_one_add hK hbound hcts
+      Differentiable ℂ fun z ↦ weierstrassFactor (p i) (z / a i) - 1).continuous.continuousOn
+  simpa only [add_sub_cancel] using htail.hasProdUniformlyOn_one_add_of_isCompact hK hcts
 
 /-- The variable-genus primary product converges locally uniformly on `ℂ`. -/
-theorem hasProdLocallyUniformlyOn_elementaryFactor_div
+theorem hasProdLocallyUniformlyOn_weierstrassFactor_div
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) :
-    HasProdLocallyUniformlyOn (fun i z ↦ elementaryFactor (p i) (z / a i))
-      (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i)) Set.univ :=
+    HasProdLocallyUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i))
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i)) Set.univ :=
   hasProdLocallyUniformlyOn_of_forall_compact isOpen_univ fun _ _ hK ↦
-    hasProdUniformlyOn_elementaryFactor_div hsum hK
+    hasProdUniformlyOn_weierstrassFactor_div hsum hK
 
 /-- Reindexing by an equivalence preserves locally uniform convergence of the primary product to
 the same limit function on `ℂ`. -/
-theorem hasProdLocallyUniformlyOn_elementaryFactor_div_comp_equiv {κ : Type*} (e : κ ≃ ι)
+theorem hasProdLocallyUniformlyOn_weierstrassFactor_div_comp_equiv {κ : Type*} (e : κ ≃ ι)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) :
-    HasProdLocallyUniformlyOn (fun k z ↦ elementaryFactor (p (e k)) (z / a (e k)))
-      (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i)) Set.univ :=
-  e.hasProdLocallyUniformlyOn_iff.mpr (hasProdLocallyUniformlyOn_elementaryFactor_div hsum)
+    HasProdLocallyUniformlyOn (fun k z ↦ weierstrassFactor (p (e k)) (z / a (e k)))
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i)) Set.univ :=
+  e.hasProdLocallyUniformlyOn_iff.mpr (hasProdLocallyUniformlyOn_weierstrassFactor_div hsum)
 
 /-- A variable-genus Weierstrass primary product is entire. -/
 @[fun_prop]
-theorem differentiable_tprod_elementaryFactor_div
+theorem differentiable_tprod_weierstrassFactor_div
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) :
-    Differentiable ℂ (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i)) := by
+    Differentiable ℂ (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i)) := by
   rw [← differentiableOn_univ]
   have h := TauCeti.differentiableOn_tprod_one_add isOpen_univ
-    (u := fun i z ↦ elementaryFactor (p i) (z / a i) - 1) (fun i ↦ by fun_prop)
-    (exists_summable_cofinite_elementaryFactor_div_sub_one hsum)
+    (u := fun i z ↦ weierstrassFactor (p i) (z / a i) - 1) (fun i ↦ by fun_prop)
+    (fun _ _ hK ↦ summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum hK)
   simpa only [add_sub_cancel] using h
 
-/-- At each `z : ℂ`, the deviations `‖elementaryFactor (p i) (z / a i) - 1‖` are summable. -/
-theorem summable_norm_elementaryFactor_div_sub_one
+/-- At each `z : ℂ`, the deviations `‖weierstrassFactor (p i) (z / a i) - 1‖` are summable. -/
+theorem summable_norm_weierstrassFactor_div_sub_one
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    Summable fun i ↦ ‖elementaryFactor (p i) (z / a i) - 1‖ :=
-  TauCeti.summable_norm_of_forall_compact
-    (exists_summable_cofinite_elementaryFactor_div_sub_one hsum) (mem_univ z)
+    Summable fun i ↦ ‖weierstrassFactor (p i) (z / a i) - 1‖ :=
+  (summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum isCompact_singleton).summable
+    (mem_singleton z)
 
 /-- The primary product vanishes at `z` if and only if `z` occurs in the root family `a`. -/
-theorem tprod_elementaryFactor_div_eq_zero_iff (ha : ∀ i, a i ≠ 0)
+theorem tprod_weierstrassFactor_div_eq_zero_iff (ha : ∀ i, a i ≠ 0)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    (∏' i, elementaryFactor (p i) (z / a i)) = 0 ↔ ∃ i, a i = z := by
-  have h := TauCeti.tprod_one_add_eq_zero_iff
-    (exists_summable_cofinite_elementaryFactor_div_sub_one hsum) (mem_univ z)
-  simp only [add_sub_cancel, elementaryFactor_eq_zero_iff] at h
+    (∏' i, weierstrassFactor (p i) (z / a i)) = 0 ↔ ∃ i, a i = z := by
+  have h := (summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum
+    (isCompact_singleton (x := z))).tprod_one_add_eq_zero_iff (mem_singleton z)
+  simp only [add_sub_cancel, weierstrassFactor_eq_zero_iff] at h
   refine h.trans (exists_congr fun i ↦ ?_)
   rw [div_eq_one_iff_eq (ha i), eq_comm]
 
@@ -186,31 +186,31 @@ theorem tprod_elementaryFactor_div_eq_zero_iff (ha : ∀ i, a i ≠ 0)
 theorem finite_setOf_eq_of_summable_div_pow (ha : ∀ i, a i ≠ 0)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
     {i | a i = z}.Finite := by
-  have hf := TauCeti.finite_one_add_eq_zero
-    (exists_summable_cofinite_elementaryFactor_div_sub_one hsum) (mem_univ z)
-  refine hf.subset fun i hi ↦ ?_
-  simp only [mem_ofPred_eq, add_sub_cancel, elementaryFactor_eq_zero_iff]
+  have hf := (summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum
+    (isCompact_singleton (x := z))).finite_setOf_exists_mem_one_add_eq_zero
+  refine hf.subset fun i hi ↦ ⟨z, mem_singleton z, ?_⟩
+  simp only [add_sub_cancel, weierstrassFactor_eq_zero_iff]
   rw [div_eq_one_iff_eq (ha i)]
   exact hi.symm
 
 /-- **Exact zero multiplicities of variable-genus primary products.** At every `z : ℂ`, the
-analytic order of `∏' i, elementaryFactor (p i) (w / a i)` equals `{i | a i = z}.ncard`. -/
-theorem analyticOrderAt_tprod_elementaryFactor_div (ha : ∀ i, a i ≠ 0)
+analytic order of `∏' i, weierstrassFactor (p i) (w / a i)` equals `{i | a i = z}.ncard`. -/
+theorem analyticOrderAt_tprod_weierstrassFactor_div (ha : ∀ i, a i ≠ 0)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    analyticOrderAt (fun w ↦ ∏' i, elementaryFactor (p i) (w / a i)) z =
+    analyticOrderAt (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) z =
       ({i | a i = z}.ncard : ℕ∞) := by
   have hord := TauCeti.analyticOrderAt_tprod_one_add isOpen_univ
-    (u := fun i w ↦ elementaryFactor (p i) (w / a i) - 1) (fun i ↦ by fun_prop)
-    (exists_summable_cofinite_elementaryFactor_div_sub_one hsum) (mem_univ z)
+    (u := fun i w ↦ weierstrassFactor (p i) (w / a i) - 1) (fun i ↦ by fun_prop)
+    (fun _ _ hK ↦ summableUniformlyOn_norm_weierstrassFactor_div_sub_one hsum hK) (mem_univ z)
   simp only [add_sub_cancel] at hord
   rw [hord]
   have hf := finite_setOf_eq_of_summable_div_pow ha hsum z
-  have hcongr : (∑ᶠ i, analyticOrderAt (fun w ↦ elementaryFactor (p i) (w / a i)) z) =
-      ∑ᶠ i, (if a i = z then (1 : ℕ∞) else 0) := by
-    refine finsum_congr fun i ↦ ?_
-    rw [analyticOrderAt_elementaryFactor_div (p i) (ha i) z]
+  have hcongr : (∑' i, analyticOrderAt (fun w ↦ weierstrassFactor (p i) (w / a i)) z) =
+      ∑' i, (if a i = z then (1 : ℕ∞) else 0) := by
+    refine tsum_congr fun i ↦ ?_
+    rw [analyticOrderAt_weierstrassFactor_div (p i) (ha i) z]
     simp only [eq_comm]
-  rw [hcongr, finsum_eq_sum_of_support_subset _ fun i hi ↦ hf.mem_toFinset.mpr ?_]
+  rw [hcongr, tsum_eq_sum (s := hf.toFinset) fun i hi ↦ ?_]
   · have hsum_one : (∑ i ∈ hf.toFinset, if a i = z then (1 : ℕ∞) else 0) = hf.toFinset.card := by
       calc
         _ = ∑ _i ∈ hf.toFinset, (1 : ℕ∞) :=
@@ -219,18 +219,20 @@ theorem analyticOrderAt_tprod_elementaryFactor_div (ha : ∀ i, a i ≠ 0)
               simp [hiz]
         _ = hf.toFinset.card := by simp
     rw [hsum_one, ← Set.ncard_eq_toFinset_card _ hf]
-  · simpa using hi
+  · rw [ite_eq_right]
+    intro hiz
+    exact hi (hf.mem_toFinset.mpr hiz)
 
 /-- Whole-plane divisor of a variable-genus Weierstrass primary product. -/
-theorem divisor_tprod_elementaryFactor_div (ha : ∀ i, a i ≠ 0)
+theorem divisor_tprod_weierstrassFactor_div (ha : ∀ i, a i ≠ 0)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    MeromorphicOn.divisor (fun w ↦ ∏' i, elementaryFactor (p i) (w / a i)) Set.univ z =
+    MeromorphicOn.divisor (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) Set.univ z =
       ({i | a i = z}.ncard : ℤ) := by
-  have hd := differentiable_tprod_elementaryFactor_div hsum
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' i, elementaryFactor (p i) (w / a i)) Set.univ :=
+  have hd := differentiable_tprod_weierstrassFactor_div hsum
+  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) Set.univ :=
     fun w _ ↦ hd.analyticAt w
   rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt z) (mem_univ z),
-    analyticOrderNatAt, analyticOrderAt_tprod_elementaryFactor_div ha hsum z, ENat.toNat_natCast]
+    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div ha hsum z, ENat.toNat_natCast]
 
 end Unweighted
 
@@ -246,61 +248,61 @@ private theorem summable_sigma_div_pow (m : ι → ℕ)
 
 /-- Grouping finite multiplicity fibers `Fin (m i)` over `Σ i, Fin (m i)` preserves the value of
 the primary product. -/
-theorem tprod_elementaryFactor_div_pow_eq_sigma
+theorem tprod_weierstrassFactor_div_pow_eq_sigma
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    (∏' i, elementaryFactor (p i) (z / a i) ^ m i) =
-      ∏' q : Σ i, Fin (m i), elementaryFactor (p q.1) (z / a q.1) := by
+    (∏' i, weierstrassFactor (p i) (z / a i) ^ m i) =
+      ∏' q : Σ i, Fin (m i), weierstrassFactor (p q.1) (z / a q.1) := by
   have hσ := summable_sigma_div_pow m hm
-  have hp : Multipliable (fun q : Σ i, Fin (m i) ↦ elementaryFactor (p q.1) (z / a q.1)) :=
-    ((hasProdUniformlyOn_elementaryFactor_div
+  have hp : Multipliable (fun q : Σ i, Fin (m i) ↦ weierstrassFactor (p q.1) (z / a q.1)) :=
+    ((hasProdUniformlyOn_weierstrassFactor_div
       (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
       hσ isCompact_singleton).hasProd (mem_singleton z)).multipliable
   rw [hp.tprod_sigma' fun _ ↦ Multipliable.of_finite]
   simp [tprod_fintype]
 
 /-- Weighted primary products with natural multiplicities converge uniformly on compact sets. -/
-theorem hasProdUniformlyOn_elementaryFactor_div_pow
+theorem hasProdUniformlyOn_weierstrassFactor_div_pow
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1))
     {K : Set ℂ} (hK : IsCompact K) :
-    HasProdUniformlyOn (fun i z ↦ elementaryFactor (p i) (z / a i) ^ m i)
-      (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i) ^ m i) K := by
-  have h := (hasProdUniformlyOn_elementaryFactor_div
+    HasProdUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i) ^ m i)
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) K := by
+  have h := (hasProdUniformlyOn_weierstrassFactor_div
     (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
     (summable_sigma_div_pow m hm) hK).sigma_of_finite
   simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← tprod_elementaryFactor_div_pow_eq_sigma hm] using h
+    ← tprod_weierstrassFactor_div_pow_eq_sigma hm] using h
 
 /-- Weighted primary products with natural multiplicities converge locally uniformly on `ℂ`. -/
-theorem hasProdLocallyUniformlyOn_elementaryFactor_div_pow
+theorem hasProdLocallyUniformlyOn_weierstrassFactor_div_pow
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) :
-    HasProdLocallyUniformlyOn (fun i z ↦ elementaryFactor (p i) (z / a i) ^ m i)
-      (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i) ^ m i) Set.univ := by
-  have h := (hasProdLocallyUniformlyOn_elementaryFactor_div
+    HasProdLocallyUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i) ^ m i)
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) Set.univ := by
+  have h := (hasProdLocallyUniformlyOn_weierstrassFactor_div
     (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
     (summable_sigma_div_pow m hm)).sigma_of_finite
   simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← tprod_elementaryFactor_div_pow_eq_sigma hm] using h
+    ← tprod_weierstrassFactor_div_pow_eq_sigma hm] using h
 
 /-- A weighted variable-genus primary product is entire. -/
 @[fun_prop]
-theorem differentiable_tprod_elementaryFactor_div_pow
+theorem differentiable_tprod_weierstrassFactor_div_pow
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) :
-    Differentiable ℂ (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i) ^ m i) := by
-  have heq : (fun z ↦ ∏' i, elementaryFactor (p i) (z / a i) ^ m i) =
-      fun z ↦ ∏' q : Σ i, Fin (m i), elementaryFactor (p q.1) (z / a q.1) :=
-    funext (tprod_elementaryFactor_div_pow_eq_sigma hm)
+    Differentiable ℂ (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) := by
+  have heq : (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) =
+      fun z ↦ ∏' q : Σ i, Fin (m i), weierstrassFactor (p q.1) (z / a q.1) :=
+    funext (tprod_weierstrassFactor_div_pow_eq_sigma hm)
   rw [heq]
-  exact differentiable_tprod_elementaryFactor_div
+  exact differentiable_tprod_weierstrassFactor_div
     (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
     (summable_sigma_div_pow m hm)
 
 /-- A weighted primary product vanishes at `z` if and only if some root `a i = z` has nonzero
 multiplicity `m i`. -/
-theorem tprod_elementaryFactor_div_pow_eq_zero_iff (ha : ∀ i, m i ≠ 0 → a i ≠ 0)
+theorem tprod_weierstrassFactor_div_pow_eq_zero_iff (ha : ∀ i, m i ≠ 0 → a i ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    (∏' i, elementaryFactor (p i) (z / a i) ^ m i) = 0 ↔ ∃ i, m i ≠ 0 ∧ a i = z := by
-  rw [tprod_elementaryFactor_div_pow_eq_sigma hm,
-    tprod_elementaryFactor_div_eq_zero_iff
+    (∏' i, weierstrassFactor (p i) (z / a i) ^ m i) = 0 ↔ ∃ i, m i ≠ 0 ∧ a i = z := by
+  rw [tprod_weierstrassFactor_div_pow_eq_sigma hm,
+    tprod_weierstrassFactor_div_eq_zero_iff
       (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
       (fun q ↦ ha q.1 (Nat.ne_zero_of_lt q.2.isLt)) (summable_sigma_div_pow m hm)]
   constructor
@@ -310,118 +312,99 @@ theorem tprod_elementaryFactor_div_pow_eq_zero_iff (ha : ∀ i, m i ≠ 0 → a 
     exact ⟨⟨i, ⟨0, Nat.pos_of_ne_zero hmi⟩⟩, hi⟩
 
 /-- Analytic order of a weighted primary product in terms of its sigma multiplicity fiber. -/
-theorem analyticOrderAt_tprod_elementaryFactor_div_pow (ha : ∀ i, m i ≠ 0 → a i ≠ 0)
+theorem analyticOrderAt_tprod_weierstrassFactor_div_pow (ha : ∀ i, m i ≠ 0 → a i ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
-    analyticOrderAt (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) z =
+    analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) z =
       ({q : Σ j, Fin (m j) | a q.1 = z}.ncard : ℕ∞) := by
-  have heq : (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) =
-      fun w ↦ ∏' q : Σ j, Fin (m j), elementaryFactor (p q.1) (w / a q.1) :=
-    funext (tprod_elementaryFactor_div_pow_eq_sigma hm)
+  have heq : (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) =
+      fun w ↦ ∏' q : Σ j, Fin (m j), weierstrassFactor (p q.1) (w / a q.1) :=
+    funext (tprod_weierstrassFactor_div_pow_eq_sigma hm)
   rw [heq]
-  exact analyticOrderAt_tprod_elementaryFactor_div
+  exact analyticOrderAt_tprod_weierstrassFactor_div
     (a := fun q : Σ j, Fin (m j) ↦ a q.1) (p := fun q : Σ j, Fin (m j) ↦ p q.1)
     (fun q ↦ ha q.1 (Nat.ne_zero_of_lt q.2.isLt)) (summable_sigma_div_pow m hm) z
 
 /-- When `a` is injective and `a i ≠ 0` whenever `m i ≠ 0`, the analytic order of the weighted
 primary product at `a i` is the prescribed multiplicity `m i`. -/
-theorem analyticOrderAt_tprod_elementaryFactor_div_pow_of_injective
+theorem analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective
+    (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1))
-    (hinj : Function.Injective a) {i : ι} (hai : m i ≠ 0 → a i ≠ 0) :
-    analyticOrderAt (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) (a i) = m i := by
+    (hinj : Function.Injective a) (i : ι) :
+    analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) (a i) = m i := by
   classical
-  have heq : (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) =
-      fun w ↦ ∏' q : Σ j, Fin (m j), elementaryFactor (p q.1) (w / a q.1) :=
-    funext (tprod_elementaryFactor_div_pow_eq_sigma hm)
-  have hord := TauCeti.analyticOrderAt_tprod_one_add isOpen_univ
-    (u := fun (q : Σ j, Fin (m j)) w ↦ elementaryFactor (p q.1) (w / a q.1) - 1)
-    (fun _ ↦ by fun_prop)
-    (exists_summable_cofinite_elementaryFactor_div_sub_one
-      (a := fun q : Σ j, Fin (m j) ↦ a q.1) (p := fun q : Σ j, Fin (m j) ↦ p q.1)
-      (summable_sigma_div_pow m hm)) (mem_univ (a i))
-  simp only [add_sub_cancel] at hord
-  rw [heq, hord]
-  have hterm (q : Σ j, Fin (m j)) :
-      analyticOrderAt (fun w ↦ elementaryFactor (p q.1) (w / a q.1)) (a i) =
-        if q.1 = i then 1 else 0 := by
-    have hmul : (fun w ↦ elementaryFactor (p q.1) (w / a q.1)) =
-        fun w ↦ elementaryFactor (p q.1) ((a q.1)⁻¹ * w) := by
-      ext w; rw [div_eq_inv_mul]
-    rw [hmul, analyticOrderAt_elementaryFactor_mul]
-    refine if_congr ⟨fun h ↦ ?_, fun h ↦ ?_⟩ rfl rfl
-    · have haq : a q.1 ≠ 0 := fun ha0 ↦ by simp [ha0] at h
-      exact hinj ((inv_mul_eq_one₀ haq).mp h)
-    · rw [h]
-      exact inv_mul_cancel₀ (hai (h ▸ Nat.ne_zero_of_lt q.2.isLt))
   let s : Finset (Σ j, Fin (m j)) := Finset.univ.map ⟨Sigma.mk i, sigma_mk_injective⟩
-  rw [finsum_congr hterm, finsum_eq_sum_of_support_subset _ fun q hq ↦ ?_]
-  · calc
-      (∑ q ∈ s, if q.1 = i then (1 : ℕ∞) else 0) = ∑ _q ∈ s, (1 : ℕ∞) :=
-        Finset.sum_congr rfl fun q hq ↦ by
-          obtain ⟨k, _, rfl⟩ := Finset.mem_map.mp hq
-          simp
-      _ = m i := by simp [s]
-  · have hqi : q.1 = i := by simpa using hq
-    exact Finset.mem_map.mpr ⟨hqi ▸ q.2, Finset.mem_univ _, by cases q; cases hqi; rfl⟩
+  have hs : ∀ q : Σ j, Fin (m j), a q.1 = a i ↔ q ∈ s := by
+    rintro ⟨j, k⟩
+    simp only [s, Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.coeFn_mk]
+    constructor
+    · intro hj
+      obtain rfl : j = i := hinj hj
+      exact ⟨k, rfl⟩
+    · rintro ⟨l, heq⟩
+      cases heq
+      rfl
+  rw [analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm (a i)]
+  have hset : {q : Σ j, Fin (m j) | a q.1 = a i} = (s : Set (Σ j, Fin (m j))) := by
+    ext q
+    exact hs q
+  rw [hset, Set.ncard_coe_finset]
+  simp [s]
 
 /-- Outside the active roots (`∀ j, m j ≠ 0 → a j ≠ z`), a weighted primary product has analytic
 order `0`. -/
-theorem analyticOrderAt_tprod_elementaryFactor_div_pow_eq_zero
+theorem analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero
+    (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) {z : ℂ}
     (hz : ∀ j, m j ≠ 0 → a j ≠ z) :
-    analyticOrderAt (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) z = 0 := by
-  have h0 : (∏' j, elementaryFactor (p j) (z / a j) ^ m j) ≠ 0 := by
-    rw [tprod_elementaryFactor_div_pow_eq_sigma hm]
-    have h := TauCeti.tprod_one_add_eq_zero_iff
-      (u := fun (q : Σ j, Fin (m j)) w ↦ elementaryFactor (p q.1) (w / a q.1) - 1)
-      (exists_summable_cofinite_elementaryFactor_div_sub_one
-        (a := fun q : Σ j, Fin (m j) ↦ a q.1) (p := fun q : Σ j, Fin (m j) ↦ p q.1)
-        (summable_sigma_div_pow m hm)) (mem_univ z)
-    simp only [add_sub_cancel, elementaryFactor_eq_zero_iff] at h
-    rw [ne_eq, h]
-    rintro ⟨⟨j, k⟩, hj⟩
-    have haj : a j ≠ 0 := fun ha0 ↦ by simp [ha0] at hj
-    exact hz j (Nat.ne_zero_of_lt k.isLt) ((div_eq_one_iff_eq haj).mp hj).symm
-  exact ((differentiable_tprod_elementaryFactor_div_pow hm).analyticAt
+    analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) z = 0 := by
+  have h0 : (∏' j, weierstrassFactor (p j) (z / a j) ^ m j) ≠ 0 := by
+    rw [ne_eq, tprod_weierstrassFactor_div_pow_eq_zero_iff ha hm]
+    rintro ⟨j, hmj, hj⟩
+    exact hz j hmj hj
+  exact ((differentiable_tprod_weierstrassFactor_div_pow hm).analyticAt
     z).analyticOrderAt_eq_zero.mpr h0
 
 /-- Whole-plane divisor of a weighted variable-genus primary product. -/
-theorem divisor_tprod_elementaryFactor_div_pow (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
+theorem divisor_tprod_weierstrassFactor_div_pow (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) (z : ℂ) :
-    MeromorphicOn.divisor (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) Set.univ z =
+    MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z =
       ({q : Σ j, Fin (m j) | a q.1 = z}.ncard : ℤ) := by
-  have hd := differentiable_tprod_elementaryFactor_div_pow hm
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) Set.univ :=
+  have hd := differentiable_tprod_weierstrassFactor_div_pow hm
+  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ :=
     fun w _ ↦ hd.analyticAt w
   rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt z) (mem_univ z),
-    analyticOrderNatAt, analyticOrderAt_tprod_elementaryFactor_div_pow ha hm z,
+    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm z,
     ENat.toNat_natCast]
 
-/-- When `a` is injective and `a i ≠ 0` whenever `m i ≠ 0`, the whole-plane divisor of the
+/-- When `a` is injective and `a j ≠ 0` whenever `m j ≠ 0`, the whole-plane divisor of the
 weighted primary product at `a i` is the prescribed multiplicity `m i`. -/
-theorem divisor_tprod_elementaryFactor_div_pow_of_injective
+theorem divisor_tprod_weierstrassFactor_div_pow_of_injective
+    (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1))
-    (hinj : Function.Injective a) {i : ι} (hai : m i ≠ 0 → a i ≠ 0) :
-    MeromorphicOn.divisor (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) Set.univ (a i) =
+    (hinj : Function.Injective a) (i : ι) :
+    MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ (a i) =
       (m i : ℤ) := by
-  have hd := differentiable_tprod_elementaryFactor_div_pow hm
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) Set.univ :=
+  have hd := differentiable_tprod_weierstrassFactor_div_pow hm
+  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ :=
     fun w _ ↦ hd.analyticAt w
   rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt (a i)) (mem_univ (a i)),
-    analyticOrderNatAt, analyticOrderAt_tprod_elementaryFactor_div_pow_of_injective hm hinj hai,
+    analyticOrderNatAt,
+    analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective ha hm hinj i,
     ENat.toNat_natCast]
 
 /-- Outside the active roots (`∀ j, m j ≠ 0 → a j ≠ z`), a weighted primary product has
 whole-plane divisor `0`. -/
-theorem divisor_tprod_elementaryFactor_div_pow_eq_zero
+theorem divisor_tprod_weierstrassFactor_div_pow_eq_zero
+    (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) {z : ℂ}
     (hz : ∀ j, m j ≠ 0 → a j ≠ z) :
     MeromorphicOn.divisor
-      (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) Set.univ z = 0 := by
-  have hd := differentiable_tprod_elementaryFactor_div_pow hm
-  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, elementaryFactor (p j) (w / a j) ^ m j) Set.univ :=
+      (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z = 0 := by
+  have hd := differentiable_tprod_weierstrassFactor_div_pow hm
+  have hana : AnalyticOnNhd ℂ (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ :=
     fun w _ ↦ hd.analyticAt w
   rw [hana.meromorphicOn.divisor_eq_analyticOrderNatAt (hd.analyticAt z) (mem_univ z),
-    analyticOrderNatAt, analyticOrderAt_tprod_elementaryFactor_div_pow_eq_zero hm hz,
+    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero ha hm hz,
     ENat.toNat_zero, Nat.cast_zero]
 
 end Weighted
@@ -435,25 +418,26 @@ namespace Differentiable
 entire function `g` (unique up to `2 * π * I * ℤ`) such that
 `f z = z ^ (analyticOrderNatAt f 0) * exp (g z) * ∏' a, E_{p a}(z / a) ^ (analyticOrderNatAt f a)`
 for all `z : ℂ`. -/
-theorem exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow_of_summable {f : ℂ → ℂ}
+theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable {f : ℂ → ℂ}
     (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) {p : {a : ℂ // a ≠ 0 ∧ f a = 0} → ℕ}
     (hm_sum : ∀ R : ℝ, 0 < R → Summable fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦
       (analyticOrderNatAt f a : ℝ) * (R / ‖(a : ℂ)‖) ^ (p a + 1)) :
     ∃ g : ℂ → ℂ, Differentiable ℂ g ∧
       (∀ z, f z = z ^ analyticOrderNatAt f 0 * Complex.exp (g z) *
         ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
-          elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a) ∧
+          weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) ∧
       ∀ g' : ℂ → ℂ, Differentiable ℂ g' →
         (∀ z, f z = z ^ analyticOrderNatAt f 0 * Complex.exp (g' z) *
           ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
-            elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
+            weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
         ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
   obtain ⟨z₀, hz₀⟩ := hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
   set m₀ := analyticOrderNatAt f 0
   let Z := {a : ℂ // a ≠ 0 ∧ f a = 0}
-  let P : ℂ → ℂ := fun z ↦ ∏' a : Z, elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a
-  have hP_diff : Differentiable ℂ P := differentiable_tprod_elementaryFactor_div_pow hm_sum
+  let P : ℂ → ℂ := fun z ↦
+    ∏' a : Z, weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a
+  have hP_diff : Differentiable ℂ P := differentiable_tprod_weierstrassFactor_div_pow hm_sum
   let F : ℂ → ℂ := fun z ↦ z ^ m₀ * P z
   have hF_diff : Differentiable ℂ F := (differentiable_id.pow m₀).mul hP_diff
   have hft_ne_top (z : ℂ) : analyticOrderAt f z ≠ ⊤ :=
@@ -476,11 +460,11 @@ theorem exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow_of_summable {f 
       rw [hpow_z, zero_add]
       by_cases hfz : f z = 0
       · let a₀ : Z := ⟨z, hz, hfz⟩
-        simpa [P, a₀] using (analyticOrderAt_tprod_elementaryFactor_div_pow_of_injective
-          hm_sum Subtype.val_injective (i := a₀) fun _ ↦ a₀.2.1).symm
+        simpa [P, a₀] using (analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective
+          (fun a _ ↦ a.property.1) hm_sum Subtype.val_injective a₀).symm
       · have hPz : analyticOrderAt P z = 0 :=
-          analyticOrderAt_tprod_elementaryFactor_div_pow_eq_zero hm_sum fun a _ ha ↦
-            hfz (ha ▸ a.2.2)
+          analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero (fun a _ ↦ a.property.1) hm_sum
+            fun a _ ha ↦ hfz (ha ▸ a.property.2)
         rw [hPz, analyticOrderNatAt, (hf.analyticAt z).analyticOrderAt_eq_zero.mpr hfz,
           ENat.toNat_zero, Nat.cast_zero]
   obtain ⟨g, hg, hfg, huniq⟩ :=
@@ -496,24 +480,24 @@ such that the weighted primary product over its nonzero zeros converges locally 
 and
 `f z = z ^ (analyticOrderNatAt f 0) * exp (g z) * ∏' a, E_{p a}(z / a) ^ (analyticOrderNatAt f a)`
 for all `z : ℂ`, with no growth hypothesis on `f`. -/
-theorem exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow {f : ℂ → ℂ}
+theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow {f : ℂ → ℂ}
     (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) :
     ∃ (p : {a : ℂ // a ≠ 0 ∧ f a = 0} → ℕ) (g : ℂ → ℂ),
       (∀ R : ℝ, 0 < R → Summable fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦
         (analyticOrderNatAt f a : ℝ) * (R / ‖(a : ℂ)‖) ^ (p a + 1)) ∧
       HasProdLocallyUniformlyOn
         (fun (a : {a : ℂ // a ≠ 0 ∧ f a = 0}) z ↦
-          elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a)
+          weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a)
         (fun z ↦ ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
-          elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a) Set.univ ∧
+          weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) Set.univ ∧
       Differentiable ℂ g ∧
       (∀ z, f z = z ^ analyticOrderNatAt f 0 * Complex.exp (g z) *
         ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
-          elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a) ∧
+          weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) ∧
       ∀ g' : ℂ → ℂ, Differentiable ℂ g' →
         (∀ z, f z = z ^ analyticOrderNatAt f 0 * Complex.exp (g' z) *
           ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
-            elementaryFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
+            weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
         ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
   obtain ⟨z₀, hz₀⟩ := hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
@@ -525,14 +509,14 @@ theorem exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow {f : ℂ → �
       refine (Set.finite_image_iff Subtype.val_injective.injOn).mp ?_
       exact (hfa.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ z₀) hz₀
         (isCompact_closedBall 0 R) (subset_univ _)).subset fun w ⟨a, haR, hwa⟩ ↦
-          ⟨mem_closedBall_zero_iff.mpr (hwa ▸ haR), hwa ▸ a.2.2⟩
+          ⟨mem_closedBall_zero_iff.mpr (hwa ▸ haR), hwa ▸ a.property.2⟩
     have hlt : ∀ᶠ a : {a : ℂ // a ≠ 0 ∧ f a = 0} in cofinite, R < ‖(a : ℂ)‖ := by
       simpa only [eventually_cofinite, not_lt] using hfin
     exact hlt.mono fun _ h ↦ h.le
   obtain ⟨p, hm_sum⟩ := hnorm_atTop.exists_summable_mul_div_pow fun a ↦ analyticOrderNatAt f a
   obtain ⟨g, hg, hfg, huniq⟩ :=
-    hf.exists_eq_pow_mul_exp_mul_tprod_elementaryFactor_div_pow_of_summable ⟨z₀, hz₀⟩ hm_sum
-  exact ⟨p, g, hm_sum, hasProdLocallyUniformlyOn_elementaryFactor_div_pow hm_sum, hg, hfg, huniq⟩
+    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable ⟨z₀, hz₀⟩ hm_sum
+  exact ⟨p, g, hm_sum, hasProdLocallyUniformlyOn_weierstrassFactor_div_pow hm_sum, hg, hfg, huniq⟩
 
 end Differentiable
 
@@ -542,12 +526,12 @@ end Differentiable
 analytic order `2` at `1` (the fiber cardinality of `Fin 2`, rather than the cardinality `1` of
 the distinct support). -/
 example :
-    (∀ z : ℂ, (∏' _i : Fin 2, elementaryFactor 0 (z / 1)) = (1 - z) ^ 2) ∧
-      analyticOrderAt (fun z : ℂ ↦ ∏' _i : Fin 2, elementaryFactor 0 (z / 1)) 1 = 2 := by
+    (∀ z : ℂ, (∏' _i : Fin 2, weierstrassFactor 0 (z / 1)) = (1 - z) ^ 2) ∧
+      analyticOrderAt (fun z : ℂ ↦ ∏' _i : Fin 2, weierstrassFactor 0 (z / 1)) 1 = 2 := by
   have ha : ∀ _i : Fin 2, (1 : ℂ) ≠ 0 := fun _ ↦ one_ne_zero
   have hsum : ∀ R : ℝ, 0 < R → Summable fun _i : Fin 2 ↦ (R / ‖(1 : ℂ)‖) ^ (0 + 1) :=
     fun _ _ ↦ Summable.of_finite
   refine ⟨fun z ↦ ?_, ?_⟩
   · rw [tprod_fintype]
     simp [sq]
-  · simpa using analyticOrderAt_tprod_elementaryFactor_div ha hsum 1
+  · simpa using analyticOrderAt_tprod_weierstrassFactor_div ha hsum 1

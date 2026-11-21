@@ -108,7 +108,7 @@ lemma objEquiv_nonDegenerateEquiv_succ (k i : Fin (p + 1)) (hi : k ≤ i) :
 /-- The vertices of a nondegenerate `(p + 1)`-simplex of `Δ[p] ⊗ Δ[1]` are distinct. -/
 lemma injective_objEquiv_nonDegenerateEquiv (k : Fin (p + 1)) :
     Function.Injective (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val) :=
-  (prodStdSimplex.nonDegenerate_iff_injective_objEquiv _).1 (nonDegenerateEquiv k).2
+  (prodStdSimplex.nonDegenerate_iff_injective_objEquiv _).1 (nonDegenerateEquiv k).property
 
 end prodStdSimplex₁
 
