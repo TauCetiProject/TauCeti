@@ -286,22 +286,6 @@ section FiniteDimensional
 
 variable [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 G]
 
-omit [FiniteDimensional 𝕜 G] in
-/-- **The index read in a kernel chart.** If `(D₂, q)` is a kernel chart of `T`, with
-finite-dimensional kernel and cokernel, then `dim ker T + dim Λ = dim G + dim coker T`, that is,
-the index of `T` is `dim G - dim Λ`. -/
-theorem finrank_ker_add_finrank_eq_of_isInvertible_prod_coprod
-    (h : ((T.coprod D₂).prod q).IsInvertible) [FiniteDimensional 𝕜 T.ker]
-    [FiniteDimensional 𝕜 (F ⧸ T.range)] :
-    finrank 𝕜 T.ker + finrank 𝕜 Λ = finrank 𝕜 G + finrank 𝕜 (F ⧸ T.range) := by
-  have hk := finrank_ker_coprod_add_finrank_range_parameterToCoker T D₂
-  have hc := finrank_quotient_range_coprod_add_finrank_range_parameterToCoker T D₂
-  have hG := (kerEquivOfProd _ q h).toLinearEquiv.finrank_eq
-  have : Subsingleton (F ⧸ (T.coprod D₂).range) := Submodule.Quotient.subsingleton_iff.2
-    (LinearMap.range_eq_top.2 (surjective_of_isInvertible_prod h))
-  rw [Module.finrank_zero_of_subsingleton] at hc
-  omega
-
 variable [FiniteDimensional 𝕜 Λ'] [FiniteDimensional 𝕜 G']
 
 /-- **The kernel chart of a direct sum reads the direct sum isomorphism.** In the direct sum
