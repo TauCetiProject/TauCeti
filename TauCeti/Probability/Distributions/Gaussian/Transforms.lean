@@ -99,6 +99,40 @@ theorem lintegral_ofReal_exp_mul_dual (L : StrongDual ℝ E) (t : ℝ)
 
 end IsGaussian
 
+namespace iIndepFun
+
+variable {Ω γ : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : γ → Ω → ℝ}
+  {μ : γ → ℝ} {v : γ → NNReal}
+
+/-- The moment-generating function of a linear combination `∑ i ∈ s, y i * X i` of independent
+real Gaussian variables `X i ∼ N(μ i, v i)` is that of the Gaussian law with mean
+`∑ i ∈ s, y i * μ i` and variance `∑ i ∈ s, v i * y i ^ 2`. -/
+theorem mgf_sum_mul_gaussianReal (hInd : iIndepFun X P)
+    (hLaw : ∀ i, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (s : Finset γ) (y : γ → ℝ)
+    (r : ℝ) :
+    mgf (fun ω ↦ ∑ i ∈ s, y i * X i ω) P r =
+      Real.exp (r * ∑ i ∈ s, y i * μ i + r ^ 2 / 2 * ∑ i ∈ s, (v i : ℝ) * y i ^ 2) := by
+  -- The scaled variables are still independent, so the mgf factors over the summands.
+  have h := (hInd.comp (fun i x ↦ y i * x) fun i ↦ measurable_const_mul (y i)).mgf_sum₀
+    (fun i ↦ (hLaw i).aemeasurable.const_mul (y i)) s (t := r)
+  simp only [Function.comp_def, Finset.sum_fn] at h
+  rw [h, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib, Real.exp_sum]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [mgf_const_mul, mgf_gaussianReal (hLaw i)]
+  ring_nf
+
+/-- A linear combination `∑ i ∈ s, y i * X i` of independent real Gaussian variables has
+finite exponential moments of every real order `r`: `ω ↦ exp (r * ∑ i ∈ s, y i * X i ω)` is
+integrable. -/
+theorem integrable_exp_mul_sum_mul_gaussianReal (hInd : iIndepFun X P)
+    (hLaw : ∀ i, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (s : Finset γ) (y : γ → ℝ)
+    (r : ℝ) :
+    Integrable (fun ω ↦ Real.exp (r * ∑ i ∈ s, y i * X i ω)) P :=
+  have := hInd.isProbabilityMeasure
+  mgf_pos_iff.mp (hInd.mgf_sum_mul_gaussianReal hLaw s y r ▸ Real.exp_pos _)
+
+end iIndepFun
+
 end ProbabilityTheory
 
 open ProbabilityTheory
@@ -143,6 +177,19 @@ theorem gaussian_x_exp_integrable (a : ℝ) :
     have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
       simp
     simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
+
+/-- The moment-generating function of a linear form `g ↦ y ⬝ᵥ g` under a finite product of
+real Gaussian laws `gaussianReal (μ l) (v l)`, that is, for a vector of independent Gaussian
+coordinates. -/
+theorem mgf_dotProduct_pi_gaussianReal {γ : Type*} [Fintype γ] (y μ : γ → ℝ) (v : γ → ℝ≥0)
+    (r : ℝ) :
+    mgf (fun g : γ → ℝ ↦ y ⬝ᵥ g) (Measure.pi fun l ↦ gaussianReal (μ l) (v l)) r =
+      Real.exp (r * (y ⬝ᵥ μ) + r ^ 2 / 2 * ∑ l, (v l : ℝ) * y l ^ 2) := by
+  -- The coordinate projections are independent, with the factor laws as their laws.
+  have hInd : iIndepFun (fun l (g : γ → ℝ) ↦ g l) (Measure.pi fun l ↦ gaussianReal (μ l) (v l)) :=
+    iIndepFun_pi fun _ ↦ aemeasurable_id
+  simpa only [dotProduct] using hInd.mgf_sum_mul_gaussianReal
+    (fun l ↦ (measurePreserving_eval (fun l ↦ gaussianReal (μ l) (v l)) l).hasLaw) Finset.univ y r
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
