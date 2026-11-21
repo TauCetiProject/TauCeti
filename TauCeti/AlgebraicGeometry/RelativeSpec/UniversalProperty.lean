@@ -165,7 +165,7 @@ private lemma liftChart_relativeSpecToBase (φ : A ⟶ q.pushforwardStructureAlg
   let ι := chart A U
   let a : Γ(X, U.toOpens) ⟶ CommRingCat.of Γ(A.X, U.toOpens) :=
     A.toSectionsPresheaf.app (op U.toOpens)
-  have hU : IsAffineOpen U.toOpens := U.2
+  have hU : IsAffineOpen U.toOpens := U.property
   have hι : ι ≫ A.relativeSpecToBase = Spec.map a ≫ hU.fromSpec :=
     A.relativeSpecCover_f_relativeSpecToBase U
   have hring : a ≫ liftSections φ U = q.app U.toOpens :=
@@ -349,9 +349,10 @@ gives `CommMon.relativeSpecLift`. No hypothesis on `q` is needed. -/
 def relativeSpecHomEquiv :
     {t : T ⟶ A.relativeSpec // t ≫ A.relativeSpecToBase = q} ≃
       (A ⟶ q.pushforwardStructureAlgebra) where
-  toFun t := A.relativeSpecPushforwardIso.inv ≫ Scheme.Hom.pushforwardStructureAlgebraMap t.1 t.2
+  toFun t := A.relativeSpecPushforwardIso.inv ≫ Scheme.Hom.pushforwardStructureAlgebraMap t.val
+      t.property
   invFun φ := ⟨relativeSpecLift φ, relativeSpecLift_relativeSpecToBase φ⟩
-  left_inv t := Subtype.ext (relativeSpecLift_relativeSpecPushforwardIso_inv_comp t.1 t.2)
+  left_inv t := Subtype.ext (relativeSpecLift_relativeSpecPushforwardIso_inv_comp t.val t.property)
   right_inv := relativeSpecPushforwardIso_inv_pushforwardStructureAlgebraMap_relativeSpecLift
 
 /-- The algebra map of a morphism over `X` is pullback of regular functions along it. -/
@@ -359,13 +360,14 @@ def relativeSpecHomEquiv :
 lemma relativeSpecHomEquiv_apply
     (t : {t : T ⟶ A.relativeSpec // t ≫ A.relativeSpecToBase = q}) :
     A.relativeSpecHomEquiv q t =
-      A.relativeSpecPushforwardIso.inv ≫ Scheme.Hom.pushforwardStructureAlgebraMap t.1 t.2 :=
+      A.relativeSpecPushforwardIso.inv ≫ Scheme.Hom.pushforwardStructureAlgebraMap t.val t.property
+          :=
   (rfl)
 
 /-- The morphism over `X` of an algebra map is its lift. -/
 @[simp]
 lemma relativeSpecHomEquiv_symm_apply_coe (φ : A ⟶ q.pushforwardStructureAlgebra) :
-    ((A.relativeSpecHomEquiv q).symm φ).1 = relativeSpecLift φ :=
+    ((A.relativeSpecHomEquiv q).symm φ).val = relativeSpecLift φ :=
   (rfl)
 
 /-- The algebra map of the identity of `Spec_X A` is the inverse identification of `A` with the
@@ -399,8 +401,8 @@ lemma relativeSpecLift_comp (f : B ⟶ A) (φ : A ⟶ q.pushforwardStructureAlge
 relative-spectrum map of `f : B ⟶ A` corresponds to precomposing the algebra map with `f`. -/
 lemma relativeSpecHomEquiv_comp_relativeSpecMap (f : B ⟶ A)
     (t : {t : T ⟶ A.relativeSpec // t ≫ A.relativeSpecToBase = q}) :
-    B.relativeSpecHomEquiv q ⟨t.1 ≫ relativeSpecMap f, by
-        rw [Category.assoc, relativeSpecMap_relativeSpecToBase, t.2]⟩ =
+    B.relativeSpecHomEquiv q ⟨t.val ≫ relativeSpecMap f, by
+        rw [Category.assoc, relativeSpecMap_relativeSpecToBase, t.property]⟩ =
       f ≫ A.relativeSpecHomEquiv q t := by
   rw [← Equiv.eq_symm_apply]
   refine Subtype.ext ?_
@@ -504,7 +506,7 @@ lemma relativeSpecPullbackHomEquiv_apply (A : QuasicoherentAlgebra X) (q : T ⟶
 @[simp]
 lemma relativeSpecPullbackHomEquiv_symm_apply_coe (A : QuasicoherentAlgebra X) (q : T ⟶ X)
     (φ : ((QuasicoherentAlgebra.pullback q).obj A).obj ⟶ CommMon.trivial T.Modules) :
-    ((relativeSpecPullbackHomEquiv A q).symm φ).1 =
+    ((relativeSpecPullbackHomEquiv A q).symm φ).val =
       CommMon.relativeSpecLift (QuasicoherentAlgebra.pullbackHomEquiv q A _ φ) :=
   (rfl)
 
@@ -515,8 +517,8 @@ lemma relativeSpecPullbackHomEquiv_symm_pullback_map_comp {B A : QuasicoherentAl
     (a : B ⟶ A) (q : T ⟶ X)
     (φ : ((QuasicoherentAlgebra.pullback q).obj A).obj ⟶ CommMon.trivial T.Modules) :
     ((relativeSpecPullbackHomEquiv B q).symm
-        (((QuasicoherentAlgebra.pullback q).map a).hom ≫ φ)).1 =
-      ((relativeSpecPullbackHomEquiv A q).symm φ).1 ≫ CommMon.relativeSpecMap a.hom := by
+        (((QuasicoherentAlgebra.pullback q).map a).hom ≫ φ)).val =
+      ((relativeSpecPullbackHomEquiv A q).symm φ).val ≫ CommMon.relativeSpecMap a.hom := by
   rw [relativeSpecPullbackHomEquiv_symm_apply_coe, relativeSpecPullbackHomEquiv_symm_apply_coe,
     QuasicoherentAlgebra.pullbackHomEquiv_naturality_left]
   exact CommMon.relativeSpecLift_comp a.hom _

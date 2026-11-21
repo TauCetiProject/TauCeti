@@ -206,7 +206,7 @@ theorem abv_coeff_det_le (A : Matrix n n (MvPolynomial σ R)) {B : ℕ} {C : S}
       ≤ ∑ τ : Perm n, v ((∏ i, A (τ i) i).coeff t) := by
         rw [det_apply, coeff_sum]
         refine (v.sum_le _ _).trans_eq (sum_congr rfl fun τ _ ↦ ?_)
-        rw [coeff_smul, v.map_units_int_smul]
+        rw [AddMonoidAlgebra.coeff_smul_apply, v.map_units_int_smul]
     _ ≤ ∑ _τ : Perm n, (B * C) ^ Fintype.card n := sum_le_sum fun τ _ ↦ by
         refine (abv_coeff_prod_le _ (fun i _ ↦ hA (τ i) i) t).trans ?_
         rw [← card_univ, ← prod_const]
@@ -225,7 +225,7 @@ theorem abv_coeff_det_le_of_isNonarchimedean (A : Matrix n n (MvPolynomial σ R)
   have hne : (univ : Finset (Perm n)).Nonempty := univ_nonempty
   rw [det_apply, coeff_sum]
   refine (hv.apply_sum_le_sup hne).trans (sup'_le hne _ fun τ _ ↦ ?_)
-  rw [coeff_smul, v.map_units_int_smul, ← card_univ, ← prod_const]
+  rw [AddMonoidAlgebra.coeff_smul_apply, v.map_units_int_smul, ← card_univ, ← prod_const]
   exact abv_coeff_prod_le_of_isNonarchimedean _ hv (fun i _ ↦ hA (τ i) i) t
 
 end Matrix

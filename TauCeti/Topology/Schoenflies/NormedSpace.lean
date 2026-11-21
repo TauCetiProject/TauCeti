@@ -154,7 +154,7 @@ carrying `ball (0 : E) 1` onto `filledHull (range f) \ range f`. -/
 theorem exists_isClosedEmbedding_closedBall_filledHull (hf : IsLocallyBicollared f)
     (hinj : Injective f) :
     ∃ g : closedBall (0 : E) 1 → E, IsClosedEmbedding g ∧
-      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.2⟩ = f x) ∧
+      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.property⟩ = f x) ∧
       range g = filledHull (range f) ∧
       (∀ z : closedBall (0 : E) 1,
         (z : E) ∈ ball (0 : E) 1 ↔ g z ∈ filledHull (range f) \ range f) := by
@@ -166,16 +166,16 @@ theorem exists_isClosedEmbedding_closedBall_filledHull (hf : IsLocallyBicollared
     fun x ↦ ?_, by rw [range_comp, h.symm.surjective.range_eq, image_univ, Subtype.range_coe],
     fun z ↦ ?_⟩
   · have hxmem : f x ∈ filledHull (range f) := subset_filledHull (mem_range_self x)
-    have hxeq : h ⟨f x, hxmem⟩ = ⟨x, sphere_subset_closedBall x.2⟩ :=
+    have hxeq : h ⟨f x, hxmem⟩ = ⟨x, sphere_subset_closedBall x.property⟩ :=
       Subtype.ext (hh_inv ⟨f x, hxmem⟩ x rfl)
     simpa [g] using congrArg (Subtype.val ∘ h.symm) hxeq.symm
   · have hz_norm : (z : E) ∈ ball (0 : E) 1 ↔ (z : E) ∉ sphere (0 : E) 1 := by
       rw [mem_ball_zero_iff, mem_sphere_zero_iff_norm]
-      exact (mem_closedBall_zero_iff.1 z.2).lt_iff_ne
+      exact (mem_closedBall_zero_iff.1 z.property).lt_iff_ne
     have hiff := hh_sph (h.symm z)
     rw [h.apply_symm_apply] at hiff
     rw [hz_norm, hiff]
-    exact ⟨fun hn ↦ ⟨(h.symm z).2, hn⟩, fun hz ↦ hz.2⟩
+    exact ⟨fun hn ↦ ⟨(h.symm z).property, hn⟩, fun hz ↦ hz.2⟩
 
 /-- **The bounded inside `filledHull (range f) \ range f` is path-connected.** -/
 theorem isPathConnected_filledHull_sdiff_range (hf : IsLocallyBicollared f) (hinj : Injective f) :
@@ -189,7 +189,7 @@ theorem isPathConnected_filledHull_sdiff_range (hf : IsLocallyBicollared f) (hin
     ext y
     constructor
     · rintro ⟨x, rfl⟩
-      exact (hg_ball (ι x)).1 x.2
+      exact (hg_ball (ι x)).1 x.property
     · intro hy
       obtain ⟨z, rfl⟩ := hg_range ▸ hy.1
       exact ⟨⟨z, (hg_ball z).2 hy⟩, rfl⟩
@@ -249,7 +249,7 @@ closed embedding `g : closedBall (0 : E) 1 → E` with range `filledHull (range 
 `ball (0 : E) 1` onto `filledHull (range f) \ range f`. -/
 theorem exists_isClosedEmbedding_closedBall_filledHull (hf : IsLocallyFlat H ℝ f) :
     ∃ g : closedBall (0 : E) 1 → E, IsClosedEmbedding g ∧
-      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.2⟩ = f x) ∧
+      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.property⟩ = f x) ∧
       range g = filledHull (range f) ∧
       (∀ z : closedBall (0 : E) 1,
         (z : E) ∈ ball (0 : E) 1 ↔ g z ∈ filledHull (range f) \ range f) :=

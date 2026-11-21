@@ -148,8 +148,8 @@ private theorem apply_add_add_apply_add_add {𝔪 : Submodule ℝ 𝔤}
     (v v' : ω.ReducedSpace (ω.orthogonal (LinearMap.range ρ))) :
     ω (ρ a + ρ b + s v) (ρ a' + ρ b' + s v') =
       ν ⁅b, b'⁆ + ω.reduction (ω.orthogonal (LinearMap.range ρ)) v v' := by
-  have hK (m : 𝔪) (ζ : 𝔤) : ω (ρ m) (ρ ζ) = 0 := apply_eq_zero_of_mem hρ h𝔪' m.2 ζ
-  have hρU (ξ : 𝔤) (u : ω.orthogonal (LinearMap.range ρ)) : ω (ρ ξ) u = 0 := u.2 _ ⟨ξ, rfl⟩
+  have hK (m : 𝔪) (ζ : 𝔤) : ω (ρ m) (ρ ζ) = 0 := apply_eq_zero_of_mem hρ h𝔪' m.property ζ
+  have hρU (ξ : 𝔤) (u : ω.orthogonal (LinearMap.range ρ)) : ω (ρ ξ) u = 0 := u.property _ ⟨ξ, rfl⟩
   have hUρ (ξ : 𝔤) (u : ω.orthogonal (LinearMap.range ρ)) : ω u (ρ ξ) = 0 :=
     ω.isRefl.eq_zero (hρU ξ u)
   have h₁ : ω (s v) (s v') = ω.reduction _ v v' := by
@@ -172,11 +172,11 @@ private theorem injective_coprod :
   simp only [LinearMap.mem_ker, LinearMap.coprod_apply, LinearMap.comp_apply,
     Submodule.subtype_apply, ← map_add] at h
   have hab : (a : 𝔤) + b ∈ (lieAnnihilator ℝ 𝔤 ν).toSubmodule := ker_le_lieAnnihilator hρ h
-  have hb' := sub_mem hab (h𝔪' ▸ Submodule.mem_sup_right a.2)
+  have hb' := sub_mem hab (h𝔪' ▸ Submodule.mem_sup_right a.property)
   rw [add_sub_cancel_left] at hb'
-  have hb : (b : 𝔤) = 0 := Submodule.disjoint_def.1 h𝔮.disjoint _ hb' b.2
+  have hb : (b : 𝔤) = 0 := Submodule.disjoint_def.1 h𝔮.disjoint _ hb' b.property
   rw [hb, add_zero] at h
-  have ha : (a : 𝔤) = 0 := Submodule.disjoint_def.1 h𝔪 _ h a.2
+  have ha : (a : 𝔤) = 0 := Submodule.disjoint_def.1 h𝔪 _ h a.property
   rw [Submodule.coe_eq_zero.1 ha, Submodule.coe_eq_zero.1 hb]
   rfl
 

@@ -58,14 +58,14 @@ def boundedContinuousFunctionEquiv :
     monotone' := fun _ _ h => OrderHomClass.mono m
       (UCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff.2 h) },
     (congrArg m ((UCB.discreteAlgEquiv G).symm.map_one)).trans m.map_one⟩
-  invFun m := mk₀ (m.1.toLinearMap ∘ₗ (UCB.discreteAlgEquiv G).toLinearMap)
+  invFun m := mk₀ (m.val.toLinearMap ∘ₗ (UCB.discreteAlgEquiv G).toLinearMap)
     (fun f hf => by
       simp only [LinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap,
         AlgEquiv.toLinearMap_apply]
-      exact map_nonneg m.1 (by
+      exact map_nonneg m.val (by
         simpa only [UCB.discreteAlgEquiv_apply, ZeroMemClass.coe_zero] using
           (Subtype.coe_le_coe.2 hf)))
-    (by simpa using m.2)
+    (by simpa using m.property)
   left_inv m := by
     ext f
     rw [mk₀_apply]
@@ -80,21 +80,21 @@ def boundedContinuousFunctionEquiv :
 
 @[simp]
 theorem boundedContinuousFunctionEquiv_apply (m : Mean G) (f : G →ᵇ ℝ) :
-    (boundedContinuousFunctionEquiv G m).1 f = m ((UCB.discreteAlgEquiv G).symm f) :=
+    (boundedContinuousFunctionEquiv G m).val f = m ((UCB.discreteAlgEquiv G).symm f) :=
   (rfl)
 
 @[simp]
 theorem boundedContinuousFunctionEquiv_symm_apply
     (m : {m : (G →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1}) (f : UCB G) :
-    (boundedContinuousFunctionEquiv G).symm m f = m.1 (f : G →ᵇ ℝ) := by
+    (boundedContinuousFunctionEquiv G).symm m f = m.val (f : G →ᵇ ℝ) := by
   simp [boundedContinuousFunctionEquiv]
 
 /-- The correspondence of means preserves and reflects left invariance. -/
 theorem isLeftInvariant_iff_boundedContinuousFunction (m : Mean G) :
     m.IsLeftInvariant ↔ ∀ (g : G) (f : G →ᵇ ℝ),
-      (boundedContinuousFunctionEquiv G m).1
+      (boundedContinuousFunctionEquiv G m).val
           (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) =
-        (boundedContinuousFunctionEquiv G m).1 f := by
+        (boundedContinuousFunctionEquiv G m).val f := by
   rw [isLeftInvariant_iff]
   constructor
   · intro hm g f
@@ -149,8 +149,8 @@ theorem amenable_iff_exists_boundedContinuousFunction_mean :
   rw [amenable_iff]
   constructor
   · rintro ⟨m, hm⟩
-    exact ⟨(Mean.boundedContinuousFunctionEquiv G m).1,
-      (Mean.boundedContinuousFunctionEquiv G m).2,
+    exact ⟨(Mean.boundedContinuousFunctionEquiv G m).val,
+      (Mean.boundedContinuousFunctionEquiv G m).property,
       (m.isLeftInvariant_iff_boundedContinuousFunction).1 hm⟩
   · rintro ⟨m, h₁, hm⟩
     refine ⟨(Mean.boundedContinuousFunctionEquiv G).symm ⟨m, h₁⟩, ?_⟩

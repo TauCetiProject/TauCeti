@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.IsAdjoinRoot
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.Ideal
 
 /-!
@@ -289,7 +289,7 @@ noncomputable def coeffEquivAffineLineDivisor :
 /-- The forward coefficient chart is the zero scheme of the monic polynomial with the given lower
 coefficients. -/
 lemma coeffEquivAffineLineDivisor_apply (c : Fin n → R) :
-    (coeffEquivAffineLineDivisor R n c).1 = (monicOfCoeff c).zeroIdealSheaf :=
+    (coeffEquivAffineLineDivisor R n c).val = (monicOfCoeff c).zeroIdealSheaf :=
   (rfl)
 
 /-- The inverse chart recovers the lower coefficients of any monic equation of the divisor. -/
@@ -299,7 +299,7 @@ lemma coeffEquivAffineLineDivisor_symm_apply
       IsFinite (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))) ∧
       (D.subschemeι ≫ Spec.map (CommRingCat.ofHom (algebraMap R R[X]))).finrank =
         fun _ ↦ n})
-    {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) (hpD : p.zeroIdealSheaf = D.1) :
+    {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) (hpD : p.zeroIdealSheaf = D.val) :
     (coeffEquivAffineLineDivisor R n).symm D = fun i : Fin n ↦ p.coeff i := by
   nontriviality R
   apply (coeffEquivAffineLineDivisor R n).injective
@@ -313,9 +313,9 @@ the zero ring. -/
 -- attribute here would fail `simpNF`.
 lemma comap_coeffEquivAffineLineDivisor {S : Type u} [CommRing S] (φ : R →+* S)
     (c : Fin n → R) :
-    (coeffEquivAffineLineDivisor R n c).1.comap
+    (coeffEquivAffineLineDivisor R n c).val.comap
         (Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom φ))) =
-      (coeffEquivAffineLineDivisor S n (fun i ↦ φ (c i))).1 := by
+      (coeffEquivAffineLineDivisor S n (fun i ↦ φ (c i))).val := by
   simp only [coeffEquivAffineLineDivisor_apply, zeroIdealSheaf_map, map_monicOfCoeff]
 
 end TauCeti.Polynomial

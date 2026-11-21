@@ -133,7 +133,7 @@ theorem poissonMeasure_tilted_mul (r : ℝ≥0) (t : ℝ) :
   rw [tilted_singleton, hZ, poissonMeasure_singleton, poissonMeasure_singleton,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
-  rw [NNReal.coe_mul, Real.coe_toNNReal _ (exp_pos t).le, mul_pow, ← exp_nat_mul]
+  rw [NNReal.coe_mul, Real.coe_toNNReal _ (exp_pos t).le, mul_pow, ← exp_natCast_mul]
   rw [show -(r * exp t : ℝ) = -r - r * (exp t - 1) by ring, exp_sub, mul_comm (n : ℝ) t]
   field_simp
 
@@ -145,9 +145,9 @@ theorem binomial_tilted_mul (n : ℕ) (p : I) (t : ℝ) {q : I}
     (hq : (q : ℝ) = p * exp t / (1 - p + p * exp t)) :
     (binomial n p).tilted (fun k ↦ t * k) = binomial n q := by
   have hD : 0 < 1 - (p : ℝ) + p * exp t := by
-    rcases p.2.1.eq_or_lt with hp | hp
+    rcases p.property.1.eq_or_lt with hp | hp
     · simp [← hp]
-    · linarith [p.2.2, mul_pos hp (exp_pos t)]
+    · linarith [p.property.2, mul_pos hp (exp_pos t)]
   have hZ : ∫ k, exp (t * k) ∂binomial n p = (1 - p + p * exp t) ^ n := by
     simp [← pgf_binomial, pgf_exp, mgf]
   have hq' : 1 - (q : ℝ) = (1 - p) / (1 - p + p * exp t) := by
@@ -160,7 +160,7 @@ theorem binomial_tilted_mul (n : ℕ) (p : I) (t : ℝ) {q : I}
   congr 1
   rcases lt_or_ge n k with hk | hk
   · simp [Nat.choose_eq_zero_of_lt hk]
-  rw [hq', hq, div_pow, div_pow, mul_comm t, exp_nat_mul,
+  rw [hq', hq, div_pow, div_pow, mul_comm t, exp_natCast_mul,
     show n = k + (n - k) by omega, pow_add, Nat.add_sub_cancel_left]
   field_simp
   ring

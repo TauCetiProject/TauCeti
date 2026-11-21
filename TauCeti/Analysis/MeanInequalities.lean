@@ -346,7 +346,8 @@ theorem Lq_le_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : �
       ENNReal.ofReal_sum_of_nonneg fun i hi ↦ rpow_nonneg (hf i hi) r]
     congr 1
     rw [← Finset.sum_coe_sort s]
-    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg (hf i i.2) hr.le).symm
+    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg
+        (hf i i.property) hr.le).symm
   have h := ENNReal.Lq_le_Lp_tsum (fun i : s ↦ ENNReal.ofReal (f i)) hp hpq
   rw [← hofReal hq, ← hofReal hp] at h
   exact (ENNReal.ofReal_le_ofReal_iff (rpow_nonneg (Finset.sum_nonneg fun i hi ↦
