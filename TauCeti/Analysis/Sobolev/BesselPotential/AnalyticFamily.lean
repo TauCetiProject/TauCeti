@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.Complex.WeaklyHolomorphic
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
@@ -100,6 +101,7 @@ variable {hp : 1 < p} {hp_top : p ≠ ∞}
 
 /-- For `re w ≤ 0`, `besselPotentialNonposCLM hp hp_top w` acts on the underlying tempered
 distributions as the Fourier multiplier with symbol `⟨ξ⟩ ^ w`. -/
+@[simp]
 theorem toDistr_besselPotentialNonposCLM {w : ℂ} (hw : w.re ≤ 0) (u : H^{0, p}(E, F)) :
     (besselPotentialNonposCLM hp hp_top w u).toDistr =
       fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w) u.toDistr := by
@@ -164,13 +166,6 @@ private theorem norm_besselPotentialCLM_sub_apply_le (w w₀ : ℂ) (x : E) :
     SchwartzMap.smulLeftCLM_apply_apply (TauCeti.hasTemperateGrowth_japaneseBracketCpow w₀),
     sub_smul]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- `‖⟨ξ⟩ ^ z‖ ≤ 1` for `re z ≤ 0`. -/
-private theorem norm_japaneseBracketCpow_le_one {z : ℂ} (hz : z.re ≤ 0) (ξ : E) :
-    ‖TauCeti.japaneseBracketCpow z ξ‖ ≤ 1 := by
-  rw [TauCeti.norm_japaneseBracketCpow]
-  exact Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg ξ]) (by linarith)
-
 omit [CompleteSpace F] in
 /-- `∫ ‖(⟨ξ⟩ ^ w - ⟨ξ⟩ ^ {w₀}) 𝓕 ψ ξ‖ dξ` tends to `0` as `w → w₀` with `re w ≤ 0`. -/
 private theorem tendsto_integral_norm_japaneseBracketCpow_sub_smul {w₀ : ℂ} (hw₀ : w₀.re ≤ 0) :
@@ -193,8 +188,8 @@ private theorem tendsto_integral_norm_japaneseBracketCpow_sub_smul {w₀ : ℂ} 
     rw [norm_norm, norm_smul]
     gcongr
     linarith [norm_sub_le (TauCeti.japaneseBracketCpow w ξ) (TauCeti.japaneseBracketCpow w₀ ξ),
-      norm_japaneseBracketCpow_le_one (hw : w.re ≤ 0) ξ,
-      norm_japaneseBracketCpow_le_one hw₀ ξ]
+      TauCeti.norm_japaneseBracketCpow_le_one (hw : w.re ≤ 0) ξ,
+      TauCeti.norm_japaneseBracketCpow_le_one hw₀ ξ]
   · exact ((((hcont ξ).sub continuous_const).smul continuous_const).norm.tendsto' w₀ _
       (by simp)).mono_left nhdsWithin_le_nhds
 
@@ -210,27 +205,6 @@ private theorem exists_eLpNorm_besselPotentialCLM_le (hp : 1 < p) (hp_top : p �
     ← SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
     ← besselPotentialNonposCLM_toBesselPotentialSpaceCLM (hp := hp) (hp_top := hp_top) hw]
   exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact hC w hw)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F]
-  [Fact (1 ≤ p)] in
-/-- An exponent strictly between `r` and `∞` is an interpolated exponent:
-`1 / p = (1 - θ) / r + θ / ∞` for some `0 < θ ≤ 1`. -/
-private theorem exists_inv_eq_ofReal_mul_inv_add {r : ℝ≥0∞} (hr₁ : 1 < r) (hrp : r < p)
-    (hp_top : p ≠ ∞) : ∃ θ : ℝ, 0 < θ ∧ θ ≤ 1 ∧
-      p⁻¹ = ENNReal.ofReal (1 - θ) * r⁻¹ + ENNReal.ofReal θ * ∞⁻¹ := by
-  have hr_top : r ≠ ∞ := (hrp.trans_le le_top).ne
-  have hr₀ : r ≠ 0 := (zero_lt_one.trans hr₁).ne'
-  have hrp' : r.toReal < p.toReal := (ENNReal.toReal_lt_toReal hr_top hp_top).2 hrp
-  have hr0' : 0 < r.toReal := ENNReal.toReal_pos hr₀ hr_top
-  refine ⟨1 - r.toReal / p.toReal, ?_, ?_, ?_⟩
-  · rw [sub_pos, div_lt_one (hr0'.trans hrp')]
-    exact hrp'
-  · rw [sub_le_self_iff]
-    positivity
-  · rw [ENNReal.inv_top, mul_zero, add_zero, sub_sub_cancel,
-      ENNReal.ofReal_div_of_pos (hr0'.trans hrp'), ENNReal.ofReal_toReal hr_top,
-      ENNReal.ofReal_toReal hp_top, div_eq_mul_inv, mul_comm r, mul_assoc,
-      ENNReal.mul_inv_cancel hr₀ hr_top, mul_one]
 
 omit [CompleteSpace F] [Fact (1 ≤ p)] in
 /-- The interpolation step: a Schwartz function `g` with `‖g‖_r ≤ M` and `‖g‖_∞ ≤ I` has
@@ -260,10 +234,7 @@ private theorem toReal_eLpNorm_besselPotentialCLM_sub_le {r : ℝ≥0∞} (hr : 
       volume).toReal ≤
       C * (2 + ‖w₀‖) ^ (finrank ℝ E / 2 + 1) * (eLpNorm ψ r volume).toReal +
         C * (1 + ‖w₀‖) ^ (finrank ℝ E / 2 + 1) * (eLpNorm ψ r volume).toReal := by
-  have h₁ : ‖w‖ ≤ 1 + ‖w₀‖ := by
-    have := norm_le_norm_add_norm_sub' w w₀
-    rw [Metric.mem_closedBall, dist_eq_norm] at hw₁
-    linarith
+  have h₁ : ‖w‖ ≤ ‖w₀‖ + 1 := norm_le_of_mem_closedBall hw₁
   have hsub := eLpNorm_sub_le (μ := volume) (p := r)
     (f := ⇑(SchwartzMap.besselPotentialCLM w ψ))
     (g := ⇑(SchwartzMap.besselPotentialCLM w₀ ψ)) hr
@@ -295,7 +266,8 @@ theorem _root_.SchwartzMap.continuousOn_toBesselPotentialSpaceCLM_besselPotentia
   obtain ⟨r, hr₁, hrp⟩ := exists_between hp
   have : Fact (1 ≤ r) := ⟨hr₁.le⟩
   have hr_top : r ≠ ∞ := (hrp.trans_le le_top).ne
-  obtain ⟨θ, hθ₀, hθ₁, hpθ⟩ := exists_inv_eq_ofReal_mul_inv_add hr₁ hrp hp_top
+  obtain ⟨θ, ⟨hθ₀, hθ₁⟩, hpθ⟩ :=
+    TauCeti.exists_inv_eq_of_mem_Ioo (zero_lt_one.trans hr₁).ne' ⟨hrp, hp_top.lt_top⟩
   obtain ⟨C, hC⟩ := exists_eLpNorm_besselPotentialCLM_le (E := E) (F := F) hr₁ hr_top
   set N := finrank ℝ E / 2 + 1
   -- A bound on the `Lʳ` norms near `w₀`.
@@ -312,7 +284,7 @@ theorem _root_.SchwartzMap.continuousOn_toBesselPotentialSpaceCLM_besselPotentia
     set g := SchwartzMap.besselPotentialCLM w ψ - SchwartzMap.besselPotentialCLM w₀ ψ
     have hgr : (eLpNorm g r volume).toReal ≤ M :=
       toReal_eLpNorm_besselPotentialCLM_sub_le ψ hr₁.le hC hw hw₀ hw₁
-    exact toReal_eLpNorm_le_rpow_mul_rpow g hθ₀ hθ₁ hpθ (by positivity)
+    exact toReal_eLpNorm_le_rpow_mul_rpow g hθ₀ hθ₁.le hpθ (by positivity)
       (integral_nonneg fun _ ↦ norm_nonneg _) hgr (norm_besselPotentialCLM_sub_apply_le ψ w w₀)
   refine squeeze_zero' (.of_forall fun _ ↦ ENNReal.toReal_nonneg) hbound ?_
   have hlim := ((tendsto_integral_norm_japaneseBracketCpow_sub_smul ψ hw₀).rpow_const
@@ -373,11 +345,7 @@ private theorem exists_tendstoLocallyUniformlyOn (u : H^{0, p}(E, F)) :
     inter_mem_nhdsWithin _ (Metric.closedBall_mem_nhds w₀ zero_lt_one), ?_⟩
   filter_upwards [eventually_ge_atTop n₀] with n hn w hw
   rw [dist_eq_norm, ← map_sub]
-  have hw₁ : ‖w‖ ≤ 1 + ‖w₀‖ := by
-    have := norm_le_norm_add_norm_sub' w w₀
-    have h := hw.2
-    rw [Metric.mem_closedBall, dist_eq_norm] at h
-    linarith
+  have hw₁ : ‖w‖ ≤ ‖w₀‖ + 1 := norm_le_of_mem_closedBall hw.2
   have hun : ‖u - SchwartzMap.toBesselPotentialSpaceCLM 0 p (ψ n)‖ < ε / B := by
     rw [← dist_eq_norm]
     refine (hψ n).trans (lt_of_le_of_lt ?_ hn₀)

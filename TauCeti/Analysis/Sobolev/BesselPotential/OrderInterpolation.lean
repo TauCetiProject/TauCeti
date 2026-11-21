@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
 public import TauCeti.Analysis.Sobolev.BesselPotential.AnalyticFamily
 public import TauCeti.Analysis.Sobolev.BesselPotential.ExponentInterpolation
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
+import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
+import TauCeti.Data.ENNReal.InterpolatedExponent
 
 /-!
 # Complex interpolation of Bessel-potential spaces of different orders
@@ -74,6 +76,8 @@ noncomputable section
 
 open MeasureTheory Module Set Filter Topology TemperedDistribution Complex
 open Complex.HadamardThreeLines
+open TauCeti.Complex.HadamardThreeLines (stripGaussian stripGaussian_self norm_stripGaussian
+  differentiable_stripGaussian)
 open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace BoundedContinuousFunction ZeroAtInfty
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -90,43 +94,13 @@ open BesselPotentialSpace
 
 section Preliminaries
 
-omit [CompleteSpace F] in
-/-- `J^{-s} J^s u = u`. -/
-private theorem fourierMultiplierCLM_japaneseBracketCpow_neg_besselPotential (s : ℝ)
-    (u : 𝓢'(E, F)) :
-    fourierMultiplierCLM F (japaneseBracketCpow (-s : ℂ)) (besselPotential E F s u) = u := by
-  rw [besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow,
-    fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow,
-    add_neg_cancel, fourierMultiplierCLM_japaneseBracketCpow_zero]
-
-variable (E F) in
-/-- The isometry `J^s : H^{s,p} ≃ H^{0,p}`. -/
-private def toOrderZero (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] : H^{s, p}(E, F) ≃ₗᵢ[ℂ] H^{0, p}(E, F) :=
-  (toLpₗᵢ E F s p).trans (toLpₗᵢ E F 0 p).symm
-
-private theorem toDistr_toOrderZero {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) :
-    (toOrderZero E F s p u).toDistr = fourierMultiplierCLM F (japaneseBracketCpow (s : ℂ))
-      u.toDistr := by
-  have h : (toOrderZero E F s p u).toDistr = besselPotential E F (-0) u.toLp := by
-    simp [toOrderZero]
-  rw [h, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply,
-    ← u.bessel_toDistr_eq_toLp, besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow]
-
-private theorem toDistr_toOrderZero_symm {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{0, p}(E, F)) :
-    ((toOrderZero E F s p).symm u).toDistr =
-      fourierMultiplierCLM F (japaneseBracketCpow (-s : ℂ)) u.toDistr := by
-  have h := toDistr_toOrderZero (s := s) ((toOrderZero E F s p).symm u)
-  rw [LinearIsometryEquiv.apply_symm_apply] at h
-  rw [h, fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow,
-    add_neg_cancel, fourierMultiplierCLM_japaneseBracketCpow_zero]
-
 /-- The operator `J^{-b} J^w J^a : H^{a,q} → H^{b,q}` for `re w ≤ 0`, used both on the boundary
 lines and inside the strip. Its distribution is `J^{a - b + w} u`. -/
 private def shiftedFamily {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q) (hq_top : q ≠ ∞) (a b : ℝ)
     (w : ℂ) : H^{a, q}(E, F) →L[ℂ] H^{b, q}(E, F) :=
-  ((toOrderZero E F b q).symm.toContinuousLinearEquiv : H^{0, q}(E, F) →L[ℂ] H^{b, q}(E, F)) ∘L
+  ((toOrderZeroₗᵢ E F b q).symm.toContinuousLinearEquiv : H^{0, q}(E, F) →L[ℂ] H^{b, q}(E, F)) ∘L
     besselPotentialNonposCLM hq hq_top w ∘L
-      ((toOrderZero E F a q).toContinuousLinearEquiv : H^{a, q}(E, F) →L[ℂ] H^{0, q}(E, F))
+      ((toOrderZeroₗᵢ E F a q).toContinuousLinearEquiv : H^{a, q}(E, F) →L[ℂ] H^{0, q}(E, F))
 
 private theorem toDistr_shiftedFamily {q : ℝ≥0∞} [Fact (1 ≤ q)] {hq : 1 < q} {hq_top : q ≠ ∞}
     {a b : ℝ} {w : ℂ} (hw : w.re ≤ 0) (u : H^{a, q}(E, F)) :
@@ -134,10 +108,13 @@ private theorem toDistr_shiftedFamily {q : ℝ≥0∞} [Fact (1 ≤ q)] {hq : 1 
       fourierMultiplierCLM F (japaneseBracketCpow (a + w - b)) u.toDistr := by
   simp only [shiftedFamily, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-  rw [toDistr_toOrderZero_symm, toDistr_besselPotentialNonposCLM hw, toDistr_toOrderZero,
+  rw [toDistr_toOrderZeroₗᵢ_symm, toDistr_besselPotentialNonposCLM hw, toDistr_toOrderZeroₗᵢ,
+    besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow,
+    besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow,
     fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow,
     fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow]
   congr 3
+  push_cast
   ring
 
 /-- `(b + a |t|) ^ N exp (-t²) ≤ (b + a) ^ N exp (N² / 4)` for `a, b ≥ 0`: the Gaussian beats
@@ -173,23 +150,21 @@ private theorem exists_norm_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)] (
 private theorem continuousOn_shiftedFamily_apply {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q)
     (hq_top : q ≠ ∞) (a b : ℝ) (u : H^{a, q}(E, F)) :
     ContinuousOn (fun w ↦ shiftedFamily hq hq_top a b w u) {w | w.re ≤ 0} :=
-  ((toOrderZero E F b q).symm.continuous.comp_continuousOn
+  ((toOrderZeroₗᵢ E F b q).symm.continuous.comp_continuousOn
     (continuousOn_besselPotentialNonposCLM_apply _))
 
 private theorem differentiableOn_shiftedFamily_apply {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q)
     (hq_top : q ≠ ∞) (a b : ℝ) (u : H^{a, q}(E, F)) :
     DifferentiableOn ℂ (fun w ↦ shiftedFamily hq hq_top a b w u) {w | w.re < 0} :=
-  ((toOrderZero E F b q).symm.toContinuousLinearEquiv : H^{0, q}(E, F) →L[ℂ] H^{b, q}(E, F)
+  ((toOrderZeroₗᵢ E F b q).symm.toContinuousLinearEquiv : H^{0, q}(E, F) →L[ℂ] H^{b, q}(E, F)
     ).differentiable.comp_differentiableOn (differentiableOn_besselPotentialNonposCLM_apply _)
 
 /-- On the closed unit strip, `‖exp ((z - θ)²)‖ ≤ e exp (-(im z)²)` for `0 ≤ θ ≤ 1`. -/
-private theorem norm_exp_sub_sq_le {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1) {z : ℂ}
+private theorem norm_stripGaussian_one_le {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1) {z : ℂ}
     (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖cexp ((z - θ) ^ 2)‖ ≤ Real.exp 1 * Real.exp (-z.im ^ 2) := by
-  rw [Complex.norm_exp, ← Real.exp_add, Real.exp_le_exp]
+    ‖stripGaussian 1 θ z‖ ≤ Real.exp 1 * Real.exp (-z.im ^ 2) := by
+  rw [norm_stripGaussian, ← Real.exp_add, Real.exp_le_exp]
   have hz' : z.re ∈ Icc (0 : ℝ) 1 := hz
-  simp only [sq, Complex.mul_re, Complex.sub_re, Complex.ofReal_re, Complex.sub_im,
-    Complex.ofReal_im, sub_zero]
   nlinarith [hz'.1, hz'.2, hθ.1, hθ.2]
 
 /-- On the closed unit strip, `‖exp (δ z² + ω z)‖ ≤ exp (δ + |ω|)`. -/
@@ -223,7 +198,7 @@ private theorem isBounded_aux {W₀ : Type*} [NormedAddCommGroup W₀] [NormedSp
     (ι : H^{b, q}(E, F) →L[ℂ] W₀) {c κ : ℝ} (hc : c ∈ Icc (0 : ℝ) 1)
     (hcl : ∀ x ∈ Icc (0 : ℝ) 1, (x - c) * κ ≤ 0) (u : H^{a, q}(E, F)) {δ : ℝ} (hδ : 0 < δ)
     (ω : ℝ) {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1) :
-    Bornology.IsBounded ((fun z ↦ cexp ((z - θ) ^ 2) • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+    Bornology.IsBounded ((fun z ↦ stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
       ι (shiftedFamily hq hq_top a b ((z - c) * κ) u)) '' verticalClosedStrip 0 1) := by
   set ν : ℂ → ℂ := fun z ↦ (z - c) * κ
   have hre (z : ℂ) : (ν z).re = (z.re - c) * κ := by simp [ν]
@@ -252,11 +227,11 @@ private theorem isBounded_aux {W₀ : Type*} [NormedAddCommGroup W₀] [NormedSp
     nlinarith [abs_nonneg κ, abs_nonneg z.im]
   rw [norm_smul, norm_smul]
   have hg := add_mul_abs_pow_mul_exp_neg_sq_le (abs_nonneg κ) (by positivity : 0 ≤ 1 + |κ|) N z.im
-  calc ‖cexp ((z - θ) ^ 2)‖ * (‖cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z)‖ * ‖f z‖)
+  calc ‖stripGaussian 1 θ z‖ * (‖cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z)‖ * ‖f z‖)
       ≤ Real.exp 1 * Real.exp (-z.im ^ 2) * (Real.exp (δ + |ω|) *
           (‖ι‖ * (C * ((1 + |κ| + |κ| * |z.im|) ^ N) * ‖u‖))) := by
         gcongr
-        · exact norm_exp_sub_sq_le hθ hz
+        · exact norm_stripGaussian_one_le hθ hz
         · exact norm_exp_mul_sq_add_mul_le hδ ω hz
     _ = Real.exp 1 * Real.exp (δ + |ω|) * (‖ι‖ * (C * ((1 + |κ| + |κ| * |z.im|) ^ N *
           Real.exp (-z.im ^ 2)) * ‖u‖)) := by ring
@@ -271,9 +246,9 @@ private theorem diffContOnCl_and_isBounded_aux {W₀ : Type*} [NormedAddCommGrou
     (hcl : ∀ x ∈ Icc (0 : ℝ) 1, (x - c) * κ ≤ 0)
     (hop : κ = 0 ∨ ∀ x ∈ Ioo (0 : ℝ) 1, (x - c) * κ < 0) (u : H^{a, q}(E, F)) {δ : ℝ}
     (hδ : 0 < δ) (ω : ℝ) {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1) :
-    DiffContOnCl ℂ (fun z ↦ cexp ((z - θ) ^ 2) • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+    DiffContOnCl ℂ (fun z ↦ stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
         ι (shiftedFamily hq hq_top a b ((z - c) * κ) u)) (verticalStrip 0 1) ∧
-      Bornology.IsBounded ((fun z ↦ cexp ((z - θ) ^ 2) • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+      Bornology.IsBounded ((fun z ↦ stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
         ι (shiftedFamily hq hq_top a b ((z - c) * κ) u)) '' verticalClosedStrip 0 1) := by
   set ν : ℂ → ℂ := fun z ↦ (z - c) * κ
   have hν : Differentiable ℂ ν := (differentiable_id.sub_const _).mul_const _
@@ -293,9 +268,8 @@ private theorem diffContOnCl_and_isBounded_aux {W₀ : Type*} [NormedAddCommGrou
           fun z hz ↦ (hre z).trans_lt (hop _ hz))
   have hdc : DiffContOnCl ℂ f (verticalStrip 0 1) :=
     ⟨hfd, by rwa [TauCeti.Complex.HadamardThreeLines.closure_verticalStrip zero_lt_one]⟩
-  have he₁ : Differentiable ℂ fun z : ℂ ↦ cexp ((z - θ) ^ 2) := by fun_prop
   have he₂ : Differentiable ℂ fun z : ℂ ↦ cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) := by fun_prop
-  exact ⟨he₁.diffContOnCl.smul (he₂.diffContOnCl.smul hdc),
+  exact ⟨(differentiable_stripGaussian 1 θ).diffContOnCl.smul (he₂.diffContOnCl.smul hdc),
     isBounded_aux hq hq_top ι hc hcl u hδ ω hθ⟩
 
 /-- `‖T t‖ ≤ K` for the boundary operators `T t = exp ((x + i t - θ)²) J^{-b} J^{i t κ} J^a`. -/
@@ -304,7 +278,7 @@ private theorem norm_exp_smul_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)]
       ‖(shiftedFamily hq hq_top a b w : H^{a, q}(E, F) →L[ℂ] H^{b, q}(E, F))‖ ≤
         C * (1 + ‖w‖) ^ (finrank ℝ E / 2 + 1)) {θ x : ℝ} (hθ : θ ∈ Icc (0 : ℝ) 1)
     (hx : x ∈ Icc (0 : ℝ) 1) (a b κ t : ℝ) :
-    ‖cexp ((x + (t : ℂ) * I - θ) ^ 2) • (shiftedFamily hq hq_top a b ((t : ℂ) * I * κ) :
+    ‖stripGaussian 1 θ (x + (t : ℂ) * I) • (shiftedFamily hq hq_top a b ((t : ℂ) * I * κ) :
       H^{a, q}(E, F) →L[ℂ] H^{b, q}(E, F))‖ ≤ Real.exp 1 * (C * ((1 + |κ|) ^ (finrank ℝ E / 2 + 1) *
         Real.exp ((finrank ℝ E / 2 + 1 : ℕ) ^ 2 / 4))) := by
   set N := finrank ℝ E / 2 + 1
@@ -313,13 +287,13 @@ private theorem norm_exp_smul_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)]
   have hn : ‖(t : ℂ) * I * κ‖ = |κ| * |t| := by
     simp [Complex.norm_real, mul_comm]
   rw [norm_smul]
-  have h1 := norm_exp_sub_sq_le hθ hz
+  have h1 := norm_stripGaussian_one_le hθ hz
   simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re, Complex.I_re,
     Complex.I_im, mul_zero, mul_one, zero_add, add_zero] at h1
   have h2 := hC a b ((t : ℂ) * I * κ) (by simp)
   rw [hn] at h2
   have h3 := add_mul_abs_pow_mul_exp_neg_sq_le (abs_nonneg κ) zero_le_one N t
-  calc ‖cexp ((x + (t : ℂ) * I - θ) ^ 2)‖ * ‖shiftedFamily hq hq_top a b ((t : ℂ) * I * κ)‖
+  calc ‖stripGaussian 1 θ (x + (t : ℂ) * I)‖ * ‖shiftedFamily hq hq_top a b ((t : ℂ) * I * κ)‖
       ≤ Real.exp 1 * Real.exp (-t ^ 2) * (C * (1 + |κ| * |t|) ^ N) := by gcongr
     _ = Real.exp 1 * (C * ((1 + |κ| * |t|) ^ N * Real.exp (-t ^ 2))) := by ring
     _ ≤ _ := by gcongr
@@ -327,7 +301,7 @@ private theorem norm_exp_smul_shiftedFamily_le {q : ℝ≥0∞} [Fact (1 ≤ q)]
 /-- The boundary operator `exp ((x + i t - θ)²) J^{-b} J^{i t κ} J^a : H^{a,q} → H^{b,q}`. -/
 private def boundaryOp {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : 1 < q) (hq_top : q ≠ ∞)
     (a b κ x θ t : ℝ) : H^{a, q}(E, F) →L[ℂ] H^{b, q}(E, F) :=
-  cexp (((x : ℝ) + (t : ℂ) * I - θ) ^ 2) • shiftedFamily hq hq_top a b ((t : ℂ) * I * κ)
+  stripGaussian 1 θ ((x : ℝ) + (t : ℂ) * I) • shiftedFamily hq hq_top a b ((t : ℂ) * I * κ)
 
 /-- Boundary traces given by uniformly bounded operator families `T₀ t`, `T₁ t` applied to the
 traces of `G` have norm at most the bound times the norm of `G`. -/
@@ -355,7 +329,8 @@ private theorem continuous_boundaryOp_apply_smul {q : ℝ≥0∞} [Fact (1 ≤ q
     (hq_top : q ≠ ∞) (a b κ x θ : ℝ) {c : ℝ → ℂ} (hc : Continuous c) (v : H^{a, q}(E, F)) :
     Continuous fun t ↦ boundaryOp hq hq_top a b κ x θ t (c t • v) := by
   simp only [boundaryOp, smul_apply, map_smul]
-  exact hc.smul ((by fun_prop : Continuous fun t : ℝ ↦ cexp (((x : ℝ) + (t : ℂ) * I - θ) ^ 2)).smul
+  exact hc.smul (((differentiable_stripGaussian 1 θ).continuous.comp
+    (by fun_prop : Continuous fun t : ℝ ↦ (x : ℂ) + (t : ℂ) * I)).smul
     ((continuousOn_shiftedFamily_apply hq hq_top a b v).comp_continuous
       (by fun_prop : Continuous fun t : ℝ ↦ (t : ℂ) * I * κ) fun t ↦ by simp))
 
@@ -435,7 +410,7 @@ private theorem exists_isBoundedStripFunction_expGaussianTrace {p₀ p₁ : ℝ�
     (hbd : Bornology.IsBounded (Ψ '' verticalClosedStrip 0 1))
     (hΨ : ∀ z ∈ verticalClosedStrip 0 1,
       (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ z) =
-      cexp ((z - θ) ^ 2) • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+      stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
         fourierMultiplierCLM F (japaneseBracketCpow (a₀ + z * ((a₁ - b₁) - (a₀ - b₀) : ℝ) - b₀))
           ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr) :
     ∃ g : (ℝ →ᵇ H^{b₀, p₀}(E, F)) × (ℝ →ᵇ H^{b₁, p₁}(E, F)),
@@ -488,8 +463,7 @@ private theorem exists_isBoundedStripFunction_expGaussianTrace {p₀ p₁ : ℝ�
     rw [hΨ _ (by simpa [verticalClosedStrip] using hθ), X.stripEval_expGaussianTrace hδ ω x
       (by simpa [verticalClosedStrip] using hθ), map_smul, map_smul, sumSpaceEmbed_fstToSum]
     simp only [X, besselPotentialSpace_embed₀_apply,
-      besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow, sub_self, ne_eq,
-      OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, Complex.exp_zero, one_smul]
+      besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow, stripGaussian_self, one_smul]
     congr 3
     rw [hκ_def]
     push_cast
@@ -506,7 +480,7 @@ private theorem exists_besselPotentialSpace_complexMethod_map_aux {p₀ p₁ : �
       ∃ Ψ : ℂ → (besselPotentialSpace E F b₀ p₀ b₁ p₁).SumSpace,
         DiffContOnCl ℂ Ψ (verticalStrip 0 1) ∧ Bornology.IsBounded (Ψ '' verticalClosedStrip 0 1) ∧
         ∀ z ∈ verticalClosedStrip 0 1, (besselPotentialSpace E F b₀ p₀ b₁ p₁).sumSpaceEmbed (Ψ z) =
-          cexp ((z - θ) ^ 2) • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
+          stripGaussian 1 θ z • cexp ((δ : ℂ) * z ^ 2 + (ω : ℂ) * z) •
             fourierMultiplierCLM F (japaneseBracketCpow (a₀ + z * ((a₁ - b₁) - (a₀ - b₀) : ℝ) - b₀))
               ((besselPotentialSpace E F a₀ p₀ a₁ p₁).interFst x).toDistr) :
     ∃ T : (besselPotentialSpace E F a₀ p₀ a₁ p₁).ComplexMethodSpace θ →L[ℂ]
@@ -630,24 +604,13 @@ section Identification
 
 variable {s₀ s₁ : ℝ} {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)] {θ : ℝ}
 
-omit [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)] in
-/-- The interpolated exponent `1 / p = (1 - θ) / p₀ + θ / p₁` of finite exponents is finite. -/
-private theorem ne_top_of_inv_eq (hθ : θ ∈ Ioo (0 : ℝ) 1) (hp₀_top : p₀ ≠ ∞)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) : p ≠ ∞ := by
-  intro h
-  rw [h, ENNReal.inv_top, eq_comm, add_eq_zero, mul_eq_zero, ENNReal.ofReal_eq_zero,
-    ENNReal.inv_eq_zero] at hp
-  rcases hp.1 with h₁ | h₁
-  · linarith [hθ.2]
-  · exact hp₀_top h₁
-
 variable (E F s₀ s₁ p₀ p₁) in
 /-- **Complex interpolation of Bessel-potential spaces** (Bergh–Löfström, Theorem 6.4.5 (7)). For
 `1 < p₀, p₁ < ∞`, `0 < θ < 1`, real orders `s₀, s₁` and the interpolated parameters
 `s_θ = (1 - θ) s₀ + θ s₁` and `1 / p = (1 - θ) / p₀ + θ / p₁`, Calderón's complex interpolation
 space `[H^{s₀,p₀}, H^{s₁,p₁}]_θ` is isomorphic to `H^{s_θ,p}`, by an isomorphism that keeps the
 underlying tempered distribution. -/
-theorem exists_besselPotentialSpace_complexMethod_continuousLinearEquiv (hp₀ : 1 < p₀)
+private theorem exists_besselPotentialSpace_complexMethod_continuousLinearEquiv (hp₀ : 1 < p₀)
     (hp₀_top : p₀ ≠ ∞) (hp₁ : 1 < p₁) (hp₁_top : p₁ ≠ ∞) (hθ : θ ∈ Ioo (0 : ℝ) 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) :
     ∃ e : (besselPotentialSpace E F s₀ p₀ s₁ p₁).ComplexMethodSpace θ ≃L[ℂ]
@@ -657,7 +620,7 @@ theorem exists_besselPotentialSpace_complexMethod_continuousLinearEquiv (hp₀ :
   set C := besselPotentialSpace E F s₀ p₀ s₁ p₁
   set D := besselPotentialSpace E F 0 p₀ 0 p₁
   set sθ := (1 - θ) * s₀ + θ * s₁
-  have hp_top := ne_top_of_inv_eq hθ hp₀_top hp
+  have hp_top : p ≠ ∞ := fun h ↦ hp₀_top ((eq_top_iff_of_inv_eq hθ hp).1 h).1
   set eD := besselPotentialSpaceOfOrderComplexMethodEquiv E F 0 p₀ p₁ hθ hp hp_top
   -- `J^{s_θ}` maps `[H^{s₀,p₀}, H^{s₁,p₁}]_θ` to `[L^{p₀}, L^{p₁}]_θ`, and `J^{-s_θ}` back.
   obtain ⟨TB, hTB⟩ := exists_besselPotentialSpace_complexMethod_map (E := E) (F := F) hp₀
@@ -669,27 +632,25 @@ theorem exists_besselPotentialSpace_complexMethod_continuousLinearEquiv (hp₀ :
   rw [hB] at hTB
   rw [hA] at hTA
   set f : C.ComplexMethodSpace θ →L[ℂ] H^{sθ, p}(E, F) :=
-    ((toOrderZero E F sθ p).symm.toContinuousLinearEquiv : H^{0, p}(E, F) →L[ℂ] _) ∘L
+    ((toOrderZeroₗᵢ E F sθ p).symm.toContinuousLinearEquiv : H^{0, p}(E, F) →L[ℂ] _) ∘L
       (eD.toContinuousLinearEquiv : D.ComplexMethodSpace θ →L[ℂ] _) ∘L TB
   set g : H^{sθ, p}(E, F) →L[ℂ] C.ComplexMethodSpace θ :=
     TA ∘L (eD.symm.toContinuousLinearEquiv : H^{0, p}(E, F) →L[ℂ] _) ∘L
-      ((toOrderZero E F sθ p).toContinuousLinearEquiv : H^{sθ, p}(E, F) →L[ℂ] _)
-  have hJ := fourierMultiplierCLM_japaneseBracketCpow_neg_besselPotential (E := E) (F := F) sθ
+      ((toOrderZeroₗᵢ E F sθ p).toContinuousLinearEquiv : H^{sθ, p}(E, F) →L[ℂ] _)
   have hf (u : C.ComplexMethodSpace θ) :
       (f u).toDistr = C.sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
     simp only [f, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    rw [toDistr_toOrderZero_symm, toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply,
-      hTB, hJ]
+    rw [toDistr_toOrderZeroₗᵢ_symm, toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply,
+      hTB, besselPotential_besselPotential_apply, add_neg_cancel, besselPotential_zero,
+      ContinuousLinearMap.id_apply]
   have hg (v : H^{sθ, p}(E, F)) :
       C.sumSpaceEmbed (ComplexMethodSpace.toSum (g v)) = v.toDistr := by
     simp only [g, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       LinearIsometryEquiv.coe_toContinuousLinearEquiv]
     rw [hTA, sumSpaceEmbed_toSum_besselPotentialSpaceOfOrderComplexMethodEquiv_symm_apply,
-      toDistr_toOrderZero, besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow,
-      fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow]
-    push_cast
-    rw [add_neg_cancel, fourierMultiplierCLM_japaneseBracketCpow_zero]
+      toDistr_toOrderZeroₗᵢ, besselPotential_besselPotential_apply, add_neg_cancel,
+      besselPotential_zero, ContinuousLinearMap.id_apply]
   refine ⟨ContinuousLinearEquiv.ofContinuousLinearMap f g (ContinuousLinearMap.ext fun v ↦ ?_)
     (ContinuousLinearMap.ext fun u ↦ ?_), hf⟩
   · exact BesselPotentialSpace.ext (by simp [hf, hg])

@@ -63,6 +63,8 @@ holomorphy in `z`.
   (`BesselPotentialSpace.besselPotentialCLM_besselPotentialCLM`) and order `0` acting as the
   identity (`BesselPotentialSpace.besselPotentialCLM_zero`), and
   `BesselPotentialSpace.exists_norm_besselPotentialCLM_le` its norm bound `C (1 + |im z|) ^ N`.
+* `BesselPotentialSpace.toOrderZeroₗᵢ`: the real-order Bessel potential `J^s` as an isometry
+  `H^{s,p}(E, F) ≃ₗᵢ[ℂ] H^{0,p}(E, F)`.
 
 ## References
 
@@ -118,6 +120,7 @@ theorem besselPotential_fourierMultiplierCLM_japaneseBracketCpow (s : ℝ) (z : 
 
 /-- The Fourier multiplier with symbol `⟨ξ⟩ ^ 0 = 1` is the identity: `J^0 u = u` on tempered
 distributions. -/
+@[simp]
 theorem fourierMultiplierCLM_japaneseBracketCpow_zero (u : 𝓢'(E, F)) :
     fourierMultiplierCLM F (TauCeti.japaneseBracketCpow (0 : ℂ)) u = u := by
   have h : TauCeti.japaneseBracketCpow (0 : ℂ) = fun _ : E ↦ (1 : ℂ) :=
@@ -250,6 +253,31 @@ theorem besselPotentialCLM_besselPotentialCLM (hp : 1 < p) (hp_top : p ≠ ∞) 
   rw [toDistr_copy _ (by rw [Complex.add_re]; ring), toDistr_besselPotentialCLM,
     toDistr_besselPotentialCLM, toDistr_besselPotentialCLM,
     fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow]
+
+variable (E F) in
+/-- The Bessel potential `J^s` as a linear isometry equivalence
+`H^{s,p}(E, F) ≃ₗᵢ[ℂ] H^{0,p}(E, F)`: both spaces are identified with `Lᵖ` by
+`BesselPotentialSpace.toLpₗᵢ`. -/
+def toOrderZeroₗᵢ (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] : H^{s, p}(E, F) ≃ₗᵢ[ℂ] H^{0, p}(E, F) :=
+  (toLpₗᵢ E F s p).trans (toLpₗᵢ E F 0 p).symm
+
+/-- `toOrderZeroₗᵢ` acts on the underlying tempered distributions as the Bessel potential `J^s`. -/
+@[simp]
+theorem toDistr_toOrderZeroₗᵢ (u : H^{s, p}(E, F)) :
+    (toOrderZeroₗᵢ E F s p u).toDistr = besselPotential E F s u.toDistr := by
+  have h : (toOrderZeroₗᵢ E F s p u).toDistr = besselPotential E F (-0) u.toLp := by
+    simp [toOrderZeroₗᵢ]
+  rw [h, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply,
+    ← u.bessel_toDistr_eq_toLp]
+
+/-- The inverse of `toOrderZeroₗᵢ` acts on the underlying tempered distributions as the Bessel
+potential `J^{-s}`. -/
+@[simp]
+theorem toDistr_toOrderZeroₗᵢ_symm (u : H^{0, p}(E, F)) :
+    ((toOrderZeroₗᵢ E F s p).symm u).toDistr = besselPotential E F (-s) u.toDistr := by
+  have h : ((toOrderZeroₗᵢ E F s p).symm u).toDistr = besselPotential E F (-s) u.toLp := by
+    simp [toOrderZeroₗᵢ]
+  rw [h, ← u.bessel_toDistr_eq_toLp, besselPotential_zero, ContinuousLinearMap.id_apply]
 
 /-- On Schwartz functions, `besselPotentialCLM hp hp_top z` is the Bessel potential
 `SchwartzMap.besselPotentialCLM z` of complex order. -/

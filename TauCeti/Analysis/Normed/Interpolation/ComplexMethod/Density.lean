@@ -492,21 +492,10 @@ theorem exists_map_of_forall_elementaryStripTraces [CompleteSpace X₀]
   have hΦJ : ∀ g, J (Φ g) = L (C.sumSpaceEmbed (C.stripEval θ g)) := fun g ↦
     hdense.induction_on g (isClosed_eq (by fun_prop) (by fun_prop)) fun G ↦ by
       simpa [hΦ] using hφ G
-  refine ⟨ComplexMethodSpace.lift Φ fun g hg ↦ hJ (by simp [hΦJ, hg]), ?_, fun u ↦ ?_⟩
-  · refine ContinuousLinearMap.opNorm_le_bound _ hK fun u ↦ ?_
-    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-    obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 (lt_add_of_pos_right ‖u‖ (div_pos hε (by linarith :
-      (0 : ℝ) < K + 1)))
-    calc ‖lift Φ _ (mk θ g)‖ = ‖Φ g‖ := by rw [lift_mk]
-      _ ≤ K * ‖g‖ := hΦn g
-      _ ≤ K * (‖mk θ g‖ + ε / (K + 1)) := by gcongr
-      _ ≤ K * ‖mk θ g‖ + ε := by
-        rw [mul_add, mul_div_assoc']
-        gcongr
-        rw [div_le_iff₀ (by linarith)]
-        nlinarith
-  · obtain ⟨g, rfl⟩ := mk_surjective u
-    simpa [J] using hΦJ g
+  refine ⟨ComplexMethodSpace.lift Φ fun g hg ↦ hJ (by simp [hΦJ, hg]),
+    opNorm_le_of_norm_apply_mk_le hK fun g ↦ by simpa using hΦn g, fun u ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  simpa [J] using hΦJ g
 
 end ElementaryMap
 
