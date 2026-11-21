@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
 import TauCeti.LinearAlgebra.RootSystem.Reduced
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 import TauCeti.RepresentationTheory.LSPath.OrbitStable
 import TauCeti.RepresentationTheory.LSPath.Realization
 
@@ -114,6 +113,41 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
     rw [hbond]
     exact hC i
 
+private theorem length_transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b lam')
+    (hbond : ∀ x y : P.weylGroup,
+      P.reflectionBond b (x • lam') (y • lam') = P.reflectionBond b (x • lam) (y • lam))
+    (π : LSPath P b lam) : (transport hJ hbond π).length = π.length := (rfl)
+
+private theorem dir_transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b lam')
+    (hbond : ∀ x y : P.weylGroup,
+      P.reflectionBond b (x • lam') (y • lam') = P.reflectionBond b (x • lam) (y • lam))
+    (π : LSPath P b lam) (j : Fin ((transport hJ hbond π).length + 1)) :
+    ((transport hJ hbond π).dir j).val =
+      (π.dir (j.cast (congrArg (· + 1) (length_transport hJ hbond π)))).val := (rfl)
+
+private theorem time_transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b lam')
+    (hbond : ∀ x y : P.weylGroup,
+      P.reflectionBond b (x • lam') (y • lam') = P.reflectionBond b (x • lam) (y • lam))
+    (π : LSPath P b lam) (k : Fin ((transport hJ hbond π).length + 2)) :
+    (transport hJ hbond π).time k =
+      π.time (k.cast (congrArg (· + 2) (length_transport hJ hbond π))) := (rfl)
+
+private theorem list_ofFn_dir_eq {lam : M} {π π' : LSPath P b lam} (hlen : π.length = π'.length)
+    (hdir : ∀ j : Fin (π.length + 1),
+      (π.dir j).val = (π'.dir (j.cast (congrArg (· + 1) hlen))).val) :
+    List.ofFn π.dir = List.ofFn π'.dir :=
+  List.ext_getElem (by simp only [List.length_ofFn, hlen]) fun i hi _ ↦ by
+    simp only [List.getElem_ofFn]
+    exact Subtype.ext (hdir ⟨i, by simpa only [List.length_ofFn] using hi⟩)
+
+private theorem list_ofFn_time_eq {lam : M} {π π' : LSPath P b lam} (hlen : π.length = π'.length)
+    (htime : ∀ k : Fin (π.length + 2),
+      π.time k = π'.time (k.cast (congrArg (· + 2) hlen))) :
+    List.ofFn π.time = List.ofFn π'.time :=
+  List.ext_getElem (by simp only [List.length_ofFn, hlen]) fun i hi _ ↦ by
+    simp only [List.getElem_ofFn]
+    exact htime ⟨i, by simpa only [List.length_ofFn] using hi⟩
+
 /-- **Central transport of Lakshmibai–Seshadri paths between shapes differing by a central weight.**
 -/
 noncomputable def centralTransportOfEq {lam lam' : M} (χ : M)
@@ -123,17 +157,24 @@ noncomputable def centralTransportOfEq {lam lam' : M} (χ : M)
     fun x y ↦ h ▸ reflectionBond_smul_add hχ lam x y
   invFun := transport (h ▸ wallIndices_add_of_forall_coroot'_eq_zero hχ)
     fun x y ↦ h ▸ (reflectionBond_smul_add hχ lam x y).symm
-  left_inv _ := rfl
-  right_inv _ := rfl
+  left_inv π := LSPath.ext
+    (list_ofFn_dir_eq rfl fun j ↦ (dir_transport _ _ _ j).trans (dir_transport _ _ π _))
+    (list_ofFn_time_eq rfl fun k ↦ (time_transport _ _ _ k).trans (time_transport _ _ π _))
+  right_inv π := LSPath.ext
+    (list_ofFn_dir_eq rfl fun j ↦ (dir_transport _ _ _ j).trans (dir_transport _ _ π _))
+    (list_ofFn_time_eq rfl fun k ↦ (time_transport _ _ _ k).trans (time_transport _ _ π _))
 
 @[simp]
 theorem centralTransportOfEq_zero {lam : M}
     (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0) (h : lam + 0 = lam) :
-    centralTransportOfEq (0 : M) h0 h = Equiv.refl (LSPath P b lam) := (rfl)
-
-theorem centralTransportOfEq_zero_apply {lam : M}
-    (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0) (h : lam + 0 = lam) (π : LSPath P b lam) :
-    centralTransportOfEq (0 : M) h0 h π = π := (rfl)
+    centralTransportOfEq (0 : M) h0 h = Equiv.refl (LSPath P b lam) :=
+  Equiv.ext fun π ↦ LSPath.ext
+    (list_ofFn_dir_eq rfl fun j ↦ by
+      dsimp only [centralTransportOfEq, Equiv.coe_fn_mk, Equiv.refl_apply] at j ⊢
+      rw [dir_transport])
+    (list_ofFn_time_eq rfl fun k ↦ by
+      dsimp only [centralTransportOfEq, Equiv.coe_fn_mk, Equiv.refl_apply] at k ⊢
+      rw [time_transport])
 
 @[simp]
 theorem centralTransportOfEq_trans {lam₁ lam₂ lam₃ χ ψ : M}
@@ -141,7 +182,14 @@ theorem centralTransportOfEq_trans {lam₁ lam₂ lam₃ χ ψ : M}
     (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) (h₂ : lam₂ + ψ = lam₃) :
     (centralTransportOfEq χ hχ h₁).trans (centralTransportOfEq ψ hψ h₂) =
       centralTransportOfEq (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero])
-        (by rw [← add_assoc, h₁, h₂]) := (rfl)
+        (by rw [← add_assoc, h₁, h₂]) :=
+  Equiv.ext fun π ↦ LSPath.ext
+    (list_ofFn_dir_eq rfl fun j ↦ by
+      dsimp only [Equiv.trans_apply, centralTransportOfEq, Equiv.coe_fn_mk] at j ⊢
+      rw [dir_transport, dir_transport, dir_transport]; rfl)
+    (list_ofFn_time_eq rfl fun k ↦ by
+      dsimp only [Equiv.trans_apply, centralTransportOfEq, Equiv.coe_fn_mk] at k ⊢
+      rw [time_transport, time_transport, time_transport]; rfl)
 
 @[simp]
 theorem centralTransportOfEq_trans_apply {lam₁ lam₂ lam₃ χ ψ : M}
@@ -149,14 +197,22 @@ theorem centralTransportOfEq_trans_apply {lam₁ lam₂ lam₃ χ ψ : M}
     (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0) (h₂ : lam₂ + ψ = lam₃) (π : LSPath P b lam₁) :
     centralTransportOfEq ψ hψ h₂ (centralTransportOfEq χ hχ h₁ π) =
       centralTransportOfEq (χ + ψ) (fun i hi ↦ by rw [map_add, hχ i hi, hψ i hi, add_zero])
-        (by rw [← add_assoc, h₁, h₂]) π := (rfl)
+        (by rw [← add_assoc, h₁, h₂]) π :=
+  Equiv.ext_iff.mp (centralTransportOfEq_trans hχ h₁ hψ h₂) π
 
 @[simp]
 theorem centralTransportOfEq_symm {lam lam' χ : M}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (h : lam + χ = lam') :
     (centralTransportOfEq χ hχ h).symm =
       centralTransportOfEq (-χ) (fun i hi ↦ by rw [map_neg, hχ i hi, neg_zero])
-        (by rw [← h, add_neg_cancel_right]) := (rfl)
+        (by rw [← h, add_neg_cancel_right]) :=
+  Equiv.ext fun π ↦ LSPath.ext
+    (list_ofFn_dir_eq rfl fun j ↦ by
+      dsimp only [centralTransportOfEq, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk] at j ⊢
+      rw [dir_transport, dir_transport]; rfl)
+    (list_ofFn_time_eq rfl fun k ↦ by
+      dsimp only [centralTransportOfEq, Equiv.coe_fn_symm_mk, Equiv.coe_fn_mk] at k ⊢
+      rw [time_transport, time_transport]; rfl)
 
 variable (χ : M) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) {lam : M}
 
@@ -165,11 +221,9 @@ coroots, a Lakshmibai–Seshadri path of shape `λ` is, with the same directions
 shape `λ + χ`: adding `χ` changes neither the walls through `λ` nor the bonds of `W / W_λ`. On the
 realized paths this adds the linear path `t ↦ t χ` to the presentation by directions and breaks
 (`TauCeti.LSPath.timed_centralTransport`). -/
+@[expose]
 noncomputable def centralTransport : LSPath P b lam ≃ LSPath P b (lam + χ) :=
   centralTransportOfEq χ hχ rfl
-
-theorem centralTransport_eq_centralTransportOfEq :
-    centralTransport (P := P) (b := b) (lam := lam) χ hχ = centralTransportOfEq χ hχ rfl := (rfl)
 
 variable (π : LSPath P b lam)
 
@@ -313,9 +367,13 @@ theorem toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamber P b
     (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) :
     (centralTransport χ hχ π).toPLPath 𝕜 f =
       PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
-        (π.toPLPath 𝕜 f) :=
-  toPLPath_centralTransport χ hχ π 𝕜 f hlam (injOn_range_smul_of_coroot' hF lam)
-    (pairwise_not_sameRay_range_smul hF lam)
+        (π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
+  have := P.finite_weylGroup_of_base b
+  have hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
+    rw [Set.range_comp' f fun w : P.weylGroup ↦ w • lam]
+    exact P.pairwise_not_sameRay_image_orbit_weylGroup_of_base b hF lam
+  exact toPLPath_centralTransport χ hχ π 𝕜 f hlam (injOn_orbit_weylGroup_of_coroot' hF lam) hS
 
 theorem toPLPath_centralTransportOfEq_of_coroot' {lam' : M} (h : lam + χ = lam')
     (hlam : lam ∈ dominantChamber P b) {F : b.support → Module.Dual 𝕜 V}
@@ -332,11 +390,16 @@ theorem lower_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamb
     PLPath.lower (F i) (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
       (PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f)).map
         (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
+  have := P.flip_isReduced
+  have := P.finite_weylGroup_of_base b
   have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.val (hF i) lam
   rw [MulAction.orbit, ← Set.range_comp] at hS
+  have hray : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
+    rw [Set.range_comp' f fun w : P.weylGroup ↦ w • lam]
+    exact P.pairwise_not_sameRay_image_orbit_weylGroup_of_base b hF lam
   rw [toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF]
-  exact PLPath.lower_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS
-    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.val i.property, Int.cast_zero])
+  exact PLPath.lower_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS hray
+    (by rw [hF i χ, hχ i.val i.property, Int.cast_zero])
 
 /-- **Raising commutes with central transport of realized LS paths.** -/
 theorem raise_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamber P b)
@@ -345,11 +408,16 @@ theorem raise_toPLPath_centralTransport_of_coroot' (hlam : lam ∈ dominantChamb
     PLPath.raise (F i) (f (P.root i)) ((centralTransport χ hχ π).toPLPath 𝕜 f) =
       (PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f)).map
         (PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)) := by
+  have := P.flip_isReduced
+  have := P.finite_weylGroup_of_base b
   have hS := P.mapsTo_preReflection_image_orbit_weylGroup i.val (hF i) lam
   rw [MulAction.orbit, ← Set.range_comp] at hS
+  have hray : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
+    rw [Set.range_comp' f fun w : P.weylGroup ↦ w • lam]
+    exact P.pairwise_not_sameRay_image_orbit_weylGroup_of_base b hF lam
   rw [toPLPath_centralTransport_of_coroot' χ hχ π 𝕜 f hlam hF]
-  exact PLPath.raise_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS
-    (pairwise_not_sameRay_range_smul hF lam) (by rw [hF i χ, hχ i.val i.property, Int.cast_zero])
+  exact PLPath.raise_shiftDistinguished (π.hasDistinguished_toPLPath 𝕜 f) hS hray
+    (by rw [hF i χ, hχ i.val i.property, Int.cast_zero])
 
 theorem lower_toPLPath_centralTransportOfEq_of_coroot' {lam' : M} (h : lam + χ = lam')
     (hlam : lam ∈ dominantChamber P b) {F : b.support → Module.Dual 𝕜 V}

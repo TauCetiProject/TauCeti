@@ -297,78 +297,80 @@ private theorem linked_raiseList (hlam : lam ∈ dominantChamber P b)
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V]
 
-/-- **The rational data of a raising step.** If Littelmann's raising operator `e_αᵢ` is defined on
-the path of an LS path `π` of dominant shape, it is presented by the raised list
-`TauCeti.LSPath.raiseList` of the directions and durations of `π`, for a window `[j₀, k₁ - 1]` and
-a cut `θ` satisfying the hypotheses of `TauCeti.LSPath.linked_raiseList`. -/
-private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b lam)
-    (hlam : lam ∈ dominantChamber P b) (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
-    (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
-    (h1 : (π.toPLPath 𝕜 f).minHeight F ≤ -1) :
-    ∃ (j₀ k₁ : ℕ) (hj₀k₁ : j₀ < k₁) (hk₁ : k₁ ≤ π.dirDurations.length) (θ : ℚ) (z : ℤ),
-      (π.toPLPath 𝕜 f).minHeight F = z ∧
-      0 ≤ θ ∧ θ ≤ 1 ∧
-      (∀ k (hk : k < π.dirDurations.length), j₀ ≤ k → k < k₁ →
-        P.coroot' i (π.dirDurations[k].1 • lam) < 0) ∧
-      (∀ k (hk : k < π.dirDurations.length), j₀ < k → k < k₁ →
-        ¬∃ m : ℤ, ((π.dirDurations.take k).map Prod.snd).sum *
-          P.coroot' i (π.dirDurations[k].1 • lam) = m) ∧
-      (∀ k (hk : k < π.dirDurations.length), k = k₁ →
-        0 ≤ P.coroot' i (π.dirDurations[k].1 • lam)) ∧
-      (∃ m : ℤ, (((π.dirDurations.take j₀).map Prod.snd).sum +
-        θ * (π.dirDurations[j₀]'(by omega)).2) *
-          P.coroot' i ((π.dirDurations[j₀]'(by omega)).1 • lam) = m) ∧
-      ((π.dirDurations.take k₁).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum = z ∧
-      (∀ k, j₀ ≤ k → k < k₁ →
-        ((π.dirDurations.take (k + 1)).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum <
-          ((π.dirDurations.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum) ∧
-      (((π.dirDurations.take j₀).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum +
-        θ * ((π.dirDurations[j₀]'(by omega)).2 *
-          (P.coroot' i ((π.dirDurations[j₀]'(by omega)).1 • lam) : ℚ)) = z + 1) ∧
-      ((π.dirDurations.take (j₀ + 1)).map fun p ↦
-        p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum ≤ z + 1 ∧
-      (∀ k ≤ j₀, (z : ℚ) + 1 ≤
-        ((π.dirDurations.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum) ∧
-      PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = some (PLPath.ofSegments 𝕜
-        ((raiseList b i π.dirDurations j₀ k₁ (π.dirDurations[j₀]'(by omega)).1
-          (π.dirDurations[j₀]'(by omega)).2 θ).map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam))) := by
-  obtain ⟨j₀', k₁, θ, hj₀k₁, hk₁s, hθ₀, hθ₁, hmin, hfall, hcross, hbefore, hrai⟩ :=
-    π.exists_raise_toPLPath_eq hlam f i F hF (f (P.root i)) h1
-  obtain ⟨z, hz⟩ := π.exists_minHeight_eq_intCast hlam f i F hF
-  have hminH : (π.toPLPath 𝕜 f).minHeight F =
-      PLPath.listMinHeight F (π.dirDurations.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)) := by
+/-- Purely rational specification of a raising cut `(j₀, k₁, θ)` on an LS path `π` along `αᵢ` at
+minimum height `z`. -/
+private structure RaiseCut (π : LSPath P b lam) (i : b.support) (z : ℤ)
+    (j₀ k₁ : ℕ) (θ : ℚ) : Prop where
+  hj₀k₁ : j₀ < k₁
+  hk₁ : k₁ ≤ π.dirDurations.length
+  hθ₀ : 0 ≤ θ
+  hθ₁ : θ ≤ 1
+  hneg : ∀ k (hk : k < π.dirDurations.length), j₀ ≤ k → k < k₁ →
+    P.coroot' i (π.dirDurations[k].1 • lam) < 0
+  hint : ∀ k (hk : k < π.dirDurations.length), j₀ < k → k < k₁ →
+    ¬∃ m : ℤ, ((π.dirDurations.take k).map Prod.snd).sum *
+      P.coroot' i (π.dirDurations[k].1 • lam) = m
+  hright : ∀ k (hk : k < π.dirDurations.length), k = k₁ →
+    0 ≤ P.coroot' i (π.dirDurations[k].1 • lam)
+  hcut : ∃ m : ℤ, (((π.dirDurations.take j₀).map Prod.snd).sum +
+    θ * (π.dirDurations[j₀]'(by omega)).2) *
+      P.coroot' i ((π.dirDurations[j₀]'(by omega)).1 • lam) = m
+  hgtk₁ : ((π.dirDurations.take k₁).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum = z
+  hfall : ∀ k, j₀ ≤ k → k < k₁ →
+    ((π.dirDurations.take (k + 1)).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum <
+      ((π.dirDurations.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum
+  hcross : ((π.dirDurations.take j₀).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum +
+      θ * ((π.dirDurations[j₀]'(by omega)).2 *
+        (P.coroot' i ((π.dirDurations[j₀]'(by omega)).1 • lam) : ℚ)) = z + 1
+  hcut_le : ((π.dirDurations.take (j₀ + 1)).map fun p ↦
+    p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum ≤ z + 1
+  habove : ∀ k ≤ j₀, (z : ℚ) + 1 ≤
+    ((π.dirDurations.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum
+
+/-- **The rational data of a raising step.** When the integral minimum simple-coroot height is at
+most `-1`, there is a purely rational cut `(j₀, k₁, θ)` satisfying `RaiseCut`. -/
+private theorem exists_raiseCut (π : LSPath P b lam) (hlam : lam ∈ dominantChamber P b)
+    (i : b.support) {z : ℤ}
+    (hz : (π.toPLPath ℚ ((Algebra.linearMap ℤ ℚ).comp (P.coroot' i.val)).toAddMonoidHom).minHeight
+      (LinearMap.id : Module.Dual ℚ ℚ) = z)
+    (hzle : z ≤ -1) :
+    ∃ j₀ k₁ θ, RaiseCut π i z j₀ k₁ θ := by
+  let f₀ : M →+ ℚ := ((Algebra.linearMap ℤ ℚ).comp (P.coroot' i.val)).toAddMonoidHom
+  let F₀ : Module.Dual ℚ ℚ := LinearMap.id
+  have hF₀ : ∀ m, F₀ (f₀ m) = (P.coroot' i m : ℚ) := fun _ ↦ rfl
+  have h1 : (π.toPLPath ℚ f₀).minHeight F₀ ≤ -1 := by rw [hz]; exact_mod_cast hzle
+  obtain ⟨j₀', k₁, θ, hj₀k₁, hk₁s, hθ₀, hθ₁, hmin, hfall, hcross, hbefore, -⟩ :=
+    π.exists_raise_toPLPath_eq hlam f₀ i F₀ hF₀ (f₀ (P.root i)) h1
+  have hminH : (π.toPLPath ℚ f₀).minHeight F₀ =
+      PLPath.listMinHeight F₀ (π.dirDurations.map fun p ↦ p.2 • f₀ (p.1 • lam)) := by
     rw [toPLPath_def, PLPath.minHeight_ofSegments, map_snd_timed]
-  rw [map_snd_timed] at hmin hfall hcross hbefore hrai
+    simp only [Rat.cast_id]
+  rw [map_snd_timed] at hmin hfall hcross hbefore
+  simp only [Rat.cast_id] at hmin hfall hcross hbefore
   set D := π.dirDurations
-  set seg : P.weylGroup × ℚ → V := fun p ↦ (p.2 : 𝕜) • f (p.1 • lam) with hseg
+  set seg : P.weylGroup × ℚ → ℚ := fun p ↦ p.2 • f₀ (p.1 • lam)
   set H : P.weylGroup → ℚ := fun w ↦ (P.coroot' i (w • lam) : ℚ)
-  set hgt : ℕ → ℚ := fun k ↦ ((D.take k).map fun p ↦ p.2 * H p.1).sum with hhgt
-  have hHdef : ∀ w, H w = (P.coroot' i (w • lam) : ℚ) := fun _ ↦ rfl
-  set j₀ : ℕ := (j₀' : ℕ) with hj₀
+  set hgt : ℕ → ℚ := fun k ↦ ((D.take k).map fun p ↦ p.2 * H p.1).sum
+  set j₀ : ℕ := (j₀' : ℕ)
   have hlen : D.length = π.length + 1 := length_dirDurations π
   have hj₀lt : j₀ < D.length := by rw [hlen]; exact j₀'.isLt
   have hk₁ : k₁ ≤ D.length := hlen ▸ hk₁s
-  set τ := (π.dir j₀').val with hτ
-  set d := π.duration j₀' with hd
+  set τ := (π.dir j₀').val
+  set d := π.duration j₀'
   have hDj₀ : D[j₀] = (τ, d) := by rw [getElem_dirDurations]
   have hdpos : ∀ k (hk : k < D.length), 0 < D[k].2 := fun k hk ↦ by
     rw [getElem_dirDurations]; exact π.duration_pos _
-  -- Heights of the realization at the vertices are the rational heights of the encoding.
-  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) :=
-    apply_sum_take_map_smul D f F (P.coroot' i) hF
+  -- Heights of the rational realization at the vertices equal `hgt`.
+  have hHF : ∀ k, F₀ ((D.map seg).take k).sum = hgt k :=
+    apply_sum_take_map_smul D f₀ F₀ (P.coroot' i) hF₀
   have hgt_succ : ∀ k (hk : k < D.length), hgt (k + 1) = hgt k + D[k].2 * H D[k].1 := by
     intro k hk
     simp only [hgt, List.map_take]
     rw [List.sum_take_succ _ _ (by simpa using hk), List.getElem_map]
-  have hFseg : F ((d : 𝕜) • f (τ • lam)) = ((d * H τ : ℚ) : 𝕜) := by simp [H, hF]
-  /- The rational heights: `hgt k₁ = z` is the minimum, the height falls strictly from `j₀` to
-  `k₁`, and the piece reaches `z + 1` at the fraction `θ` of the segment `j₀`. -/
-  have hgtk₁ : hgt k₁ = z := by
-    rw [hHF, hz] at hmin
-    exact_mod_cast hmin
+  have hFseg : F₀ (d • f₀ (τ • lam)) = d * H τ := rfl
+  have hgtk₁ : hgt k₁ = z := by rwa [hHF, hz] at hmin
   have hfall' : ∀ k, j₀ ≤ k → k < k₁ → hgt (k + 1) < hgt k := fun k hj₀k hkk ↦ by
-    have := hfall k hj₀k hkk
-    rwa [hHF, hHF, Rat.cast_lt] at this
+    simpa only [hHF] using hfall k hj₀k hkk
   have hnegH : ∀ k (hk : k < D.length), j₀ ≤ k → k < k₁ → H D[k].1 < 0 := fun k hk hj₀k hkk ↦ by
     have := hfall' k hj₀k hkk
     rw [hgt_succ k hk] at this
@@ -376,12 +378,10 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
   have hdH : d * H τ < 0 := by
     have := hnegH j₀ hj₀lt le_rfl hj₀k₁
     rw [hDj₀] at this
-    exact mul_neg_of_pos_of_neg (by rw [hd]; exact π.duration_pos _) this
+    exact mul_neg_of_pos_of_neg (π.duration_pos _) this
   have hθd : θ * (d * H τ) = z + 1 - hgt j₀ := by
     rw [hHF, hz, hFseg] at hcross
-    have hc : hgt j₀ + θ * (d * H τ) = z + 1 := by exact_mod_cast hcross
     linarith
-  -- The heights strictly between `j₀` and `k₁` lie strictly between `z` and `z + 1`.
   have hanti : ∀ m k, j₀ ≤ k → k + m ≤ k₁ → hgt (k + m) ≤ hgt k := by
     intro m
     induction m with
@@ -400,11 +400,9 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
     · have h₂ := hanti (k - (j₀ + 1)) (j₀ + 1) (by omega) (by omega)
       rw [show j₀ + 1 + (k - (j₀ + 1)) = k by omega, hgt_succ j₀ hj₀lt, hDj₀] at h₂
       nlinarith
-  -- At the vertex `k₁` the height is minimal, so the segment after it does not fall.
   have hrightH : ∀ k (hk : k < D.length), k = k₁ → 0 ≤ H D[k].1 := fun k hk hkk ↦ by
-    have hle := PLPath.listMinHeight_le_apply_sum_take (f := F) (D.map seg) (k + 1)
+    have hle := PLPath.listMinHeight_le_apply_sum_take (f := F₀) (D.map seg) (k + 1)
     rw [← hminH, hz, hHF] at hle
-    have hle' : (z : ℚ) ≤ hgt (k + 1) := by exact_mod_cast hle
     have := hgt_succ k hk
     subst hkk
     rw [hgtk₁] at this
@@ -416,80 +414,61 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
     · rw [heq, hgtk₁]; linarith
     · exact (hbetween (j₀ + 1) (by omega) hlt).2.le
   have habove_rat : ∀ k ≤ j₀, (z : ℚ) + 1 ≤ hgt k := fun k hk ↦ by
-    have := hbefore k hk
-    rw [hz, hHF] at this
-    exact_mod_cast this
-  refine ⟨j₀, k₁, hj₀k₁, hk₁, θ, z, hz, hθ₀, hθ₁.le, fun k hk hj₀k hkk ↦ ?_,
+    rw [← hz]; simpa only [hHF] using hbefore k hk
+  refine ⟨j₀, k₁, θ, ⟨hj₀k₁, hk₁, hθ₀, hθ₁.le, fun k hk hj₀k hkk ↦ ?_,
     fun k hk hj₀k hkk ↦ ?_, fun k hk hkk ↦ ?_, ?_, hgtk₁, hfall', hcross_rat, hcut_rat,
-    habove_rat, ?_⟩
-  · have := hnegH k hk hj₀k hkk
-    rw [hHdef] at this
-    exact_mod_cast this
-  · -- The height at the break is strictly between the integers `z` and `z + 1`.
-    obtain ⟨h₁, h₂⟩ := hbetween k hj₀k hkk
+    habove_rat⟩⟩
+  · have := hnegH k hk hj₀k hkk; dsimp only [D, H] at this; exact_mod_cast this
+  · obtain ⟨h₁, h₂⟩ := hbetween k hj₀k hkk
     exact π.linked_dirDurations.not_exists_sum_take_mul_eq_intCast hlam (P.coroot' i) hk h₁ h₂
-  · have := hrightH k hk hkk
-    rw [hHdef] at this
-    exact_mod_cast this
-  · -- The height at the cut is the integer `z + 1`.
-    have hcut : hgt j₀ + θ * (D[j₀].2 * H D[j₀].1) = ((z + 1 : ℤ) : ℚ) := by
+  · have := hrightH k hk hkk; dsimp only [D, H] at this; exact_mod_cast this
+  · have hcut : hgt j₀ + θ * (D[j₀].2 * H D[j₀].1) = ((z + 1 : ℤ) : ℚ) := by
       push_cast; exact hcross_rat
     exact π.linked_dirDurations.exists_sum_take_add_mul_mul_eq_intCast hlam (P.coroot' i) hj₀lt θ
       hcut
-  · rw [hrai, hDj₀]
-    congr 2
-    simp only [raiseList, hseg, List.map_append, List.map_cons, List.map_map, List.map_take,
-      List.map_drop, Function.comp_def, preReflection_smul_apply f i F hF, Rat.cast_mul,
-      Rat.cast_sub, Rat.cast_one, D]
 
-private theorem raise_toPLPath_eq_some_of_raiseList (π : LSPath P b lam) (f : M →+ V)
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
+  [Module 𝕜 V]
+
+private theorem raise_toPLPath_eq_some_of_raiseCut (π : LSPath P b lam) (f : M →+ V)
     (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
     {z : ℤ} (hz : (π.toPLPath 𝕜 f).minHeight F = z)
-    {j₀ k₁ : ℕ} (hj₀k₁ : j₀ < k₁) (hk₁ : k₁ ≤ π.dirDurations.length) {θ : ℚ}
-    (hgtk₁ : ((π.dirDurations.take k₁).map fun p ↦
-      p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum = z)
-    (hfall : ∀ k, j₀ ≤ k → k < k₁ →
-      ((π.dirDurations.take (k + 1)).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum <
-        ((π.dirDurations.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum)
-    (hcross : ((π.dirDurations.take j₀).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum +
-        θ * ((π.dirDurations[j₀]'(by omega)).2 *
-          (P.coroot' i ((π.dirDurations[j₀]'(by omega)).1 • lam) : ℚ)) = z + 1)
-    (hcut : ((π.dirDurations.take (j₀ + 1)).map fun p ↦
-      p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum ≤ z + 1)
-    (habove : ∀ k ≤ j₀, (z : ℚ) + 1 ≤
-      ((π.dirDurations.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum)
+    {j₀ k₁ : ℕ} {θ : ℚ} (hcut : RaiseCut π i z j₀ k₁ θ)
     {π' : LSPath P b lam}
     (hπ' : π'.toPLPath 𝕜 f = PLPath.ofSegments 𝕜
-      ((raiseList b i π.dirDurations j₀ k₁ (π.dirDurations[j₀]'(by omega)).1
-        (π.dirDurations[j₀]'(by omega)).2 θ).map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam))) :
+      ((raiseList b i π.dirDurations j₀ k₁
+        (π.dirDurations[j₀]'(lt_of_lt_of_le hcut.hj₀k₁ hcut.hk₁)).1
+        (π.dirDurations[j₀]'(lt_of_lt_of_le hcut.hj₀k₁ hcut.hk₁)).2 θ).map
+          fun p ↦ (p.2 : 𝕜) • f (p.1 • lam))) :
     PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = some (π'.toPLPath 𝕜 f) := by
   set D := π.dirDurations
   set seg : P.weylGroup × ℚ → V := fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)
   have hHF := apply_sum_take_map_smul (lam := lam) D f F (P.coroot' i) hF
   have hminF : PLPath.listMinHeight F (D.map seg) = z := by
     rwa [toPLPath_def, PLPath.minHeight_ofSegments, map_snd_timed] at hz
-  have hj₀ : j₀ < D.length := by omega
+  have hj₀ : j₀ < D.length := lt_of_lt_of_le hcut.hj₀k₁ hcut.hk₁
   have hsegj₀ : (D.map seg)[j₀]'(by simpa using hj₀) = (D[j₀].2 : 𝕜) • f (D[j₀].1 • lam) := by
     simp [seg]
   rw [toPLPath_def, map_snd_timed, PLPath.raise_ofSegments_eq_of_strictly_falling
-    (k₀ := j₀) (k₁ := k₁) (θ := (θ : 𝕜)) hj₀k₁ (by simp only [List.length_map]; exact hk₁)]
+    (k₀ := j₀) (k₁ := k₁) (θ := (θ : 𝕜)) hcut.hj₀k₁
+    (by simp only [List.length_map]; exact hcut.hk₁)]
   · rw [hπ']
     congr 2
     simp only [raiseList, seg, List.map_append, List.map_cons, List.map_map,
       List.map_take, List.map_drop, Function.comp_def, List.getElem_map,
       preReflection_smul_apply f i F hF, smul_smul, Rat.cast_mul, Rat.cast_sub, Rat.cast_one]
   · rw [hminF, hHF]
-    exact_mod_cast hgtk₁
+    exact_mod_cast hcut.hgtk₁
   · intro k hjk hkk₁
     rw [hHF, hHF, Rat.cast_lt]
-    exact hfall k hjk hkk₁
+    exact hcut.hfall k hjk hkk₁
   · rw [hminF, hHF, hsegj₀, map_smul, hF, smul_eq_mul]
-    exact_mod_cast hcross
+    exact_mod_cast hcut.hcross
   · rw [hminF, hHF]
-    exact_mod_cast hcut
+    exact_mod_cast hcut.hcut_le
   · intro k hk
     rw [hminF, hHF]
-    exact_mod_cast habove k hk
+    exact_mod_cast hcut.habove k hk
 
 /-- **Realization-independent action of Littelmann's raising operator on LS encodings.** In any
 two ordered-field realizations with simple-coroot forms, raising `π` along `αᵢ` either fails in
@@ -505,24 +484,28 @@ theorem raise_toPLPath_eq_none_and_eq_none_or_exists_eq_some {𝕜₁ V₁ 𝕜�
       ∃ π' : LSPath P b lam,
         PLPath.raise F₁ (f₁ (P.root i)) (π.toPLPath 𝕜₁ f₁) = some (π'.toPLPath 𝕜₁ f₁) ∧
           PLPath.raise F₂ (f₂ (P.root i)) (π.toPLPath 𝕜₂ f₂) = some (π'.toPLPath 𝕜₂ f₂) := by
-  obtain ⟨z, hz₁, hz₂⟩ := π.exists_minHeight_eq_intCast_and_eq_intCast hlam i f₁ F₁ hF₁ f₂ F₂ hF₂
+  let f₀ : M →+ ℚ := ((Algebra.linearMap ℤ ℚ).comp (P.coroot' i.val)).toAddMonoidHom
+  let F₀ : Module.Dual ℚ ℚ := LinearMap.id
+  have hF₀ : ∀ m, F₀ (f₀ m) = (P.coroot' i m : ℚ) := fun _ ↦ rfl
+  obtain ⟨z, hz₀, hz₁⟩ := π.exists_minHeight_eq_intCast_and_eq_intCast hlam i f₀ F₀ hF₀ f₁ F₁ hF₁
+  obtain ⟨z', hz₀', hz₂⟩ := π.exists_minHeight_eq_intCast_and_eq_intCast hlam i f₀ F₀ hF₀ f₂ F₂ hF₂
+  have hz_eq : z' = z := Int.cast_injective (α := ℚ) (hz₀'.symm.trans hz₀)
+  subst z'
   by_cases h1 : (π.toPLPath 𝕜₁ f₁).minHeight F₁ ≤ -1
   · right
-    obtain ⟨j₀, k₁, hj₀k₁, hk₁, θ, z', hz', hθ₀, hθ₁, hneg, hint, hright, hcut,
-        hgtk₁, hfall, hcross, hcut_rat, habove, -⟩ :=
-      exists_raise_toPLPath_eq_ofSegments_raiseList π hlam f₁ i F₁ hF₁ h1
-    obtain rfl : z = z' := Int.cast_injective (α := 𝕜₁) (hz₁.symm.trans hz')
+    have hzle : z ≤ -1 := by rw [hz₁] at h1; exact_mod_cast h1
+    obtain ⟨j₀, k₁, θ, hcut⟩ := exists_raiseCut π hlam i hz₀ hzle
     obtain ⟨hL, hLmin⟩ := linked_raiseList hlam π.linked_dirDurations
-      (fun _ hp ↦ π.isMinimalCosetRep_of_mem_dirDurations hp) i hj₀k₁ hk₁ θ hneg hint hright hcut
+      (fun _ hp ↦ π.isMinimalCosetRep_of_mem_dirDurations hp) i hcut.hj₀k₁ hcut.hk₁ θ
+      hcut.hneg hcut.hint hcut.hright hcut.hcut
+    have hj₀ : j₀ < π.dirDurations.length := lt_of_lt_of_le hcut.hj₀k₁ hcut.hk₁
     let π' : LSPath P b lam := ofLinked _ hLmin
       (fun _ hp ↦ nonneg_of_mem_raiseList i (fun _ hp ↦ (π.pos_of_mem_dirDurations hp).le)
-        (π.pos_of_mem_dirDurations (List.getElem_mem (by omega))).le hθ₀ hθ₁ hp)
-      (by rw [sum_map_snd_raiseList i (by omega) hj₀k₁, sum_map_snd_dirDurations]) hL
+        (π.pos_of_mem_dirDurations (List.getElem_mem hj₀)).le hcut.hθ₀ hcut.hθ₁ hp)
+      (by rw [sum_map_snd_raiseList i hj₀ hcut.hj₀k₁, sum_map_snd_dirDurations]) hL
     exact ⟨π',
-      raise_toPLPath_eq_some_of_raiseList π f₁ i F₁ hF₁ hz₁ hj₀k₁ hk₁ hgtk₁ hfall hcross
-        hcut_rat habove (toPLPath_ofLinked f₁ _ _ _ _ _),
-      raise_toPLPath_eq_some_of_raiseList π f₂ i F₂ hF₂ hz₂ hj₀k₁ hk₁ hgtk₁ hfall hcross
-        hcut_rat habove (toPLPath_ofLinked f₂ _ _ _ _ _)⟩
+      raise_toPLPath_eq_some_of_raiseCut π f₁ i F₁ hF₁ hz₁ hcut (toPLPath_ofLinked f₁ _ _ _ _ _),
+      raise_toPLPath_eq_some_of_raiseCut π f₂ i F₂ hF₂ hz₂ hcut (toPLPath_ofLinked f₂ _ _ _ _ _)⟩
   · left
     have hlt : (-1 : ℤ) < z := by rw [hz₁] at h1; exact_mod_cast not_le.mp h1
     exact ⟨PLPath.raise_eq_none_iff.mpr (by rw [hz₁]; exact_mod_cast hlt),
@@ -566,3 +549,31 @@ theorem isCrystalSet_range_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M 
     exact π.exists_toPLPath_eq_of_lower_eq_some hlam f i (F i) (hF i) h
 
 end TauCeti.LSPath
+
+namespace TauCeti
+
+open RootPairing
+
+section CrystalAdmissibility
+
+variable {ι X Y 𝕜 V : Type*} [AddCommGroup X] [AddCommGroup Y]
+  {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
+  [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
+  {f : X →+ V} {F : b.support → Module.Dual 𝕜 V}
+
+/-- Every realized Lakshmibai–Seshadri path of dominant shape is an integral path. -/
+theorem LSPath.isIntegralPath_toPLPath (π : LSPath P b lam) (hlam : lam ∈ dominantChamber P b)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    PLPath.IsIntegralPath b f F (π.toPLPath 𝕜 f) :=
+  (LSPath.isCrystalSet_range_toPLPath hlam f hF).subset_isIntegralPath ⟨π, rfl⟩
+
+/-- **Every straight path along a dominant weight is an integral path.** -/
+theorem PLPath.isIntegralPath_straight_of_mem_dominantChamber (hlam : lam ∈ dominantChamber P b)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    PLPath.IsIntegralPath b f F (PLPath.straight 𝕜 (f lam)) :=
+  LSPath.toPLPath_straight (P := P) (b := b) (lam := lam) 𝕜 f ▸
+    (LSPath.straight lam).isIntegralPath_toPLPath hlam hF
+
+end CrystalAdmissibility
+
+end TauCeti

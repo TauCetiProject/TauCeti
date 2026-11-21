@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Crystal.Basic
+public import TauCeti.RepresentationTheory.Crystal.Component
 
 /-!
 # Words of crystal operators
@@ -154,14 +154,18 @@ theorem StrictHom.fWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : Normal
   | nil => simp
   | cons i w ih => rw [fWord_cons, fWord_cons, ψ.f_apply]; cases c.f i x <;> simp [ih]
 
-@[simp]
-theorem StrictIso.eWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
-    (ψ : StrictIso c d) (w : List b.support) (x : B) : d.eWord w (ψ x) = (c.eWord w x).map ψ := by
-  simpa using ψ.toStrictHom.eWord_apply w x
+/-- Elements connected by a raising word are reachable in the crystal graph. -/
+theorem reachable_of_eWord_eq_some {w : List b.support} {x y : B} (h : c.eWord w x = some y) :
+    c.graph.Reachable x y := by
+  induction w generalizing x with
+  | nil => rw [eWord_nil] at h; exact Option.some.inj h ▸ .rfl
+  | cons i w ih =>
+    obtain ⟨_, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.eWord_cons i w x ▸ h)
+    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hy)
 
-@[simp]
-theorem StrictIso.fWord_apply {B' : Type*} {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
-    (ψ : StrictIso c d) (w : List b.support) (x : B) : d.fWord w (ψ x) = (c.fWord w x).map ψ := by
-  simpa using ψ.toStrictHom.fWord_apply w x
+/-- Elements connected by a lowering word are reachable in the crystal graph. -/
+theorem reachable_of_fWord_eq_some {w : List b.support} {x y : B} (h : c.fWord w x = some y) :
+    c.graph.Reachable x y := by
+  simpa only [dual_graph] using c.dual.reachable_of_eWord_eq_some (w := w) (by simpa)
 
 end TauCeti.NormalCrystal

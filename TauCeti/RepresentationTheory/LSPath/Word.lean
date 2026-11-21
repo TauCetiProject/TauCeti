@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.LSPath.Crystal.Basic
 public import TauCeti.RepresentationTheory.LSPath.OrbitStable
 public import TauCeti.RepresentationTheory.LSPath.PartialInverse
-public import TauCeti.RepresentationTheory.LSPath.StringLength
 import TauCeti.LinearAlgebra.RootSystem.Height
 import Mathlib.Algebra.Order.Archimedean.Basic
 
@@ -177,6 +177,37 @@ theorem apply_endpoint_of_raiseWord_eq_some {g : Dual 𝕜 V} (hg : ∀ i, g (x 
     g ρ.endpoint = g π.endpoint + (w.length : 𝕜) := by
   rw [endpoint_of_raiseWord_eq_some h, map_add, map_list_sum, List.map_map]
   simp [Function.comp_def, hg]
+
+end TauCeti.PLPath
+
+namespace TauCeti.PLPath
+
+open Module Relation
+
+variable {ι X Y 𝕜 V : Type*} [AddCommGroup X] [AddCommGroup Y]
+  {P : RootDatum ι X Y} {b : P.Base}
+  [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
+  {f : X →+ V} {F : b.support → Dual 𝕜 V}
+
+/-- A defined simple-root raising word gives a finite walk of root steps. -/
+theorem reflTransGen_rootStep_of_raiseWord_eq_some {w : List b.support} {π ρ : PLPath 𝕜 V}
+    (h : raiseWord F (fun i : b.support ↦ f (P.root i)) w π = some ρ) :
+    ReflTransGen (RootStep b f F) π ρ := by
+  induction w generalizing π with
+  | nil => rw [raiseWord_nil] at h; exact Option.some.inj h ▸ .refl
+  | cons i w ih =>
+    obtain ⟨_, hσ, hρ⟩ := Option.bind_eq_some_iff.mp (raiseWord_cons i w π ▸ h)
+    exact .head (.of_raise_eq_some hσ) (ih hρ)
+
+/-- A defined simple-root lowering word gives a finite walk of root steps. -/
+theorem reflTransGen_rootStep_of_lowerWord_eq_some {w : List b.support} {π ρ : PLPath 𝕜 V}
+    (h : lowerWord F (fun i : b.support ↦ f (P.root i)) w π = some ρ) :
+    ReflTransGen (RootStep b f F) π ρ := by
+  induction w generalizing π with
+  | nil => rw [lowerWord_nil] at h; exact Option.some.inj h ▸ .refl
+  | cons i w ih =>
+    obtain ⟨_, hσ, hρ⟩ := Option.bind_eq_some_iff.mp (lowerWord_cons i w π ▸ h)
+    exact .head (.of_lower_eq_some hσ) (ih hρ)
 
 end TauCeti.PLPath
 

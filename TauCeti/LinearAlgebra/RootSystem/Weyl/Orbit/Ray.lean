@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.Ray
+import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
 # Rays and translates of Weyl orbits of weights
@@ -36,9 +39,10 @@ under which the root operators preserve paths with velocities in `f (W λ)`; see
 * `RootPairing.mapsTo_preReflection_image_orbit_weylGroup`: the image `f (W λ)` of a Weyl orbit
   in a vector space is stable under the reflection in an image root `f αᵢ`, along a linear form
   agreeing with the coroot `αᵢ^∨`.
-* `RootPairing.pairwise_not_sameRay_image_orbit_weylGroup_of_closure_eq_top` and
-  `RootPairing.pairwise_not_sameRay_image_orbit_weylGroup`: when the Weyl group is finite and
-  generating root reflections are realized by linear forms agreeing with their coroots, no two
+* `RootPairing.pairwise_not_sameRay_image_orbit_weylGroup_of_closure_eq_top`,
+  `RootPairing.pairwise_not_sameRay_image_orbit_weylGroup`, and
+  `RootPairing.pairwise_not_sameRay_image_orbit_weylGroup_of_base`: when the Weyl group is finite
+  and generating root reflections are realized by linear forms agreeing with their coroots, no two
   distinct points of a realized Weyl orbit `f (W λ)` lie in the same ray.
 -/
 
@@ -91,7 +95,7 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N] (P : RootPair
 
 /-- An additive map `f` from the weight lattice intertwines the reflection `s_i` in the root `αᵢ`
 with the reflection in the image root `f αᵢ` along a linear form `F` agreeing with the coroot
-`αᵢ^∨` on the weight lattice. -/
+`αᵢ^∨`. -/
 theorem map_reflection_eq_preReflection (i : ι) {F : Module.Dual 𝕜 V}
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (m : M) :
     f (P.reflection i m) = Module.preReflection (f (P.root i)) F (f m) := by
@@ -120,36 +124,35 @@ theorem pairwise_not_sameRay_image_orbit_weylGroup_of_closure_eq_top
   have htwo (i : s) : F i (f (P.root i)) = 2 := by
     simpa only [P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat] using hF i (P.root i)
   let r (i : s) : V ≃ₗ[𝕜] V := Module.reflection (htwo i)
-  let G : Subgroup (V ≃ₗ[𝕜] V) := Subgroup.closure (Set.range r)
-  have hstep (i : s) (m : M) : r i • f m = f (weylGroup.ofIdx P i • m) := by
-    rw [weylGroup.ofIdx_smul, Equiv.reflection_smul, P.map_reflection_eq_preReflection i (hF i)]
-    rfl
-  have hWG (w : P.weylGroup) : ∃ g : G, ∀ m : M, f (w • m) = g • f m := by
-    induction (hs ▸ Subgroup.mem_top w : w ∈ Subgroup.closure (weylGroup.ofIdx P '' s))
-      using Subgroup.closure_induction with
+  let H : Subgroup (P.weylGroup × (V ≃ₗ[𝕜] V)) :=
+    Subgroup.closure (Set.range fun i : s ↦ (weylGroup.ofIdx P i, r i))
+  let G : Subgroup (V ≃ₗ[𝕜] V) := H.map (MonoidHom.snd P.weylGroup (V ≃ₗ[𝕜] V))
+  have hH_intertwine {wg : P.weylGroup × (V ≃ₗ[𝕜] V)} (hwg : wg ∈ H) (m : M) :
+      wg.2 • f m = f (wg.1 • m) := by
+    induction hwg using Subgroup.closure_induction generalizing m with
     | mem _ hx =>
-      rcases hx with ⟨i, hi, rfl⟩
-      exact ⟨⟨r ⟨i, hi⟩, Subgroup.subset_closure (Set.mem_range_self _)⟩,
-        fun m ↦ (hstep ⟨i, hi⟩ m).symm⟩
-    | one => exact ⟨1, fun _ ↦ by simp⟩
-    | mul _ _ _ _ ihx ihy =>
-      rcases ihx with ⟨g₁, hg₁⟩; rcases ihy with ⟨g₂, hg₂⟩
-      exact ⟨g₁ * g₂, fun m ↦ by rw [mul_smul, hg₁, hg₂, mul_smul]⟩
-    | inv _ _ ihx =>
-      rcases ihx with ⟨g, hg⟩; exact ⟨g⁻¹, fun m ↦ by rw [eq_inv_smul_iff, ← hg, smul_inv_smul]⟩
-  have hGW (g : V ≃ₗ[𝕜] V) (hg : g ∈ G) : ∃ w : P.weylGroup, ∀ m : M, g • f m = f (w • m) := by
-    induction hg using Subgroup.closure_induction with
-    | mem _ hg => rcases hg with ⟨i, rfl⟩; exact ⟨weylGroup.ofIdx P i, hstep i⟩
-    | one => exact ⟨1, fun _ ↦ by simp⟩
-    | mul _ _ _ _ ih₁ ih₂ =>
-      rcases ih₁ with ⟨w₁, hw₁⟩; rcases ih₂ with ⟨w₂, hw₂⟩
-      exact ⟨w₁ * w₂, fun m ↦ by rw [mul_smul, hw₂, hw₁, mul_smul]⟩
+      rcases hx with ⟨i, rfl⟩
+      rw [weylGroup.ofIdx_smul, Equiv.reflection_smul, P.map_reflection_eq_preReflection i (hF i)]
+      rfl
+    | one => simp
+    | mul _ _ _ _ ih₁ ih₂ => simp only [Prod.snd_mul, Prod.fst_mul, mul_smul, ih₂, ih₁]
     | inv _ _ ih =>
-      rcases ih with ⟨w, hw⟩; exact ⟨w⁻¹, fun m ↦ by rw [inv_smul_eq_iff, hw, smul_inv_smul]⟩
+      simp only [Prod.snd_inv, Prod.fst_inv]
+      rw [inv_smul_eq_iff, ih, smul_inv_smul]
+  have hfst : H.map (MonoidHom.fst P.weylGroup (V ≃ₗ[𝕜] V)) = ⊤ := by
+    rw [MonoidHom.map_closure, ← hs]
+    congr 1
+    ext w
+    simp
   have horbit : f '' MulAction.orbit P.weylGroup lam = MulAction.orbit G (f lam) := by
-    ext; constructor
-    · rintro ⟨_, ⟨w, rfl⟩, rfl⟩; obtain ⟨g, hg⟩ := hWG w; exact ⟨g, (hg lam).symm⟩
-    · rintro ⟨⟨g, hg⟩, rfl⟩; obtain ⟨w, hw⟩ := hGW g hg; exact ⟨w • lam, ⟨w, rfl⟩, (hw lam).symm⟩
+    ext v
+    constructor
+    · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
+      obtain ⟨⟨w', g⟩, hwg, hww'⟩ := Subgroup.mem_map.mp (hfst ▸ Subgroup.mem_top w)
+      obtain rfl : w' = w := hww'
+      exact ⟨⟨g, ⟨(w', g), hwg, rfl⟩⟩, hH_intertwine hwg lam⟩
+    · rintro ⟨⟨g, wg, hwg, hgg'⟩, rfl⟩
+      exact ⟨wg.1 • lam, ⟨wg.1, rfl⟩, hgg' ▸ (hH_intertwine hwg lam).symm⟩
   have hfin : (MulAction.orbit G (f lam)).Finite := horbit ▸ (Set.finite_range _).image f
   rw [horbit]
   exact fun _ hu _ hv huv h ↦ huv (h.eq_of_mem_orbit hu hv hfin)
@@ -167,6 +170,19 @@ theorem pairwise_not_sameRay_image_orbit_weylGroup
   | mem i => exact Subgroup.subset_closure ⟨i, trivial, rfl⟩
   | one => exact one_mem _
   | mul x y hx hy ihx ihy => exact Submonoid.mk_mul_mk _ x y hx hy ▸ mul_mem ihx ihy
+
+/-- When `W` is finite and the simple root reflections of a base `b` are realized along linear
+forms agreeing with the simple coroots, no two distinct points of `f (W λ)` lie in the same ray. -/
+theorem pairwise_not_sameRay_image_orbit_weylGroup_of_base
+    [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Finite ι] [P.IsReduced] [Finite P.weylGroup]
+    (b : P.Base) {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) (lam : M) :
+    (f '' MulAction.orbit P.weylGroup lam).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
+  refine P.pairwise_not_sameRay_image_orbit_weylGroup_of_closure_eq_top (s := (b.support : Set ι))
+    ?_ hF lam
+  convert (TauCeti.weylGroup_eq_closure_simple P b).symm
+  ext w
+  simp
 
 end Realization
 

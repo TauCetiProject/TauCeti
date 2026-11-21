@@ -128,6 +128,11 @@ theorem distinguished_of_lower_eq_some (hp : IsDistinguished S p)
 
 /-! ### The raising operator -/
 
+omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+private theorem mapsTo_preReflection_neg (hS : MapsTo (preReflection x f) S S) :
+    MapsTo (preReflection x f) (-S) (-S) := fun _ hu ↦ by
+  simpa [Set.mem_neg, map_neg] using hS (Set.mem_neg.1 hu)
+
 /-- **Raising preserves distinguished presentations.** If `S` is stable under the reflection
 `s = preReflection x f` and `π` has a distinguished presentation for `S`, so does `e_α π`. -/
 theorem hasDistinguished_of_raise_eq_some (h : HasDistinguished S π)
@@ -135,10 +140,7 @@ theorem hasDistinguished_of_raise_eq_some (h : HasDistinguished S π)
     HasDistinguished S π' := by
   rw [raise_def, Option.map_eq_some_iff] at hπ
   obtain ⟨ρ, hρ, rfl⟩ := hπ
-  -- The set `-S` is stable under the linear reflection `s` too.
-  have hS' : MapsTo (preReflection x f) (-S) (-S) := fun u hu ↦ by
-    simpa [Set.mem_neg, map_neg] using hS (Set.mem_neg.1 hu)
-  simpa using (hasDistinguished_of_lower_eq_some h.reverse hS' hρ).reverse
+  simpa using (hasDistinguished_of_lower_eq_some h.reverse (mapsTo_preReflection_neg hS) hρ).reverse
 
 /-! ### Commutation of root operators with central shifts -/
 
@@ -157,8 +159,8 @@ theorem lower_shiftDistinguished (h : HasDistinguished S π)
   · simp only [Option.map_some, Function.comp_def]
     have hΓd := isDistinguished_segments_of_lower_eq_some hS hp.isTimed hp.duration_eq_one
       hp.slope_mem hΓ
-    rw [show Γ.map (LinearMap.snd 𝕜 𝕜 V) = ofSegments 𝕜 (Γ.segments.map Prod.snd) by simp [map_def],
-      shiftDistinguished_ofSegments hΓd hS']
+    conv_rhs => simp only [map_def, LinearMap.coe_snd]
+    rw [shiftDistinguished_ofSegments hΓd hS']
     conv_lhs => rw [(ofSegments_segments Γ).symm, shiftGraph_ofSegments]
     simp [map_ofSegments]
 
@@ -167,10 +169,8 @@ theorem raise_shiftDistinguished (h : HasDistinguished S π)
     (hS : MapsTo (preReflection x f) S S) (hS' : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v)
     {χ : V} (hχ : f χ = 0) :
     raise f x (shiftDistinguished S χ π) = (raise f x π).map (shiftDistinguished S χ) := by
-  have hS_neg : MapsTo (preReflection x f) (-S) (-S) := fun _ hu ↦ by
-    simpa [Set.mem_neg, map_neg] using hS (Set.mem_neg.1 hu)
-  have hS'_neg : (-S).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := fun _ hu _ hv huv hray ↦
-    hS' (Set.mem_neg.1 hu) (Set.mem_neg.1 hv) (neg_inj.ne.mpr huv) (sameRay_neg_iff.mpr hray)
+  have hS_neg := mapsTo_preReflection_neg hS
+  have hS'_neg := pairwise_not_sameRay_neg hS'
   rw [raise_def, reverse_shiftDistinguished h hS' χ,
     lower_shiftDistinguished h.reverse hS_neg hS'_neg (by simp [hχ]),
     Option.map_map, raise_def, Option.map_map]

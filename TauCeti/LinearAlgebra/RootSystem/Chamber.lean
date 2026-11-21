@@ -159,6 +159,19 @@ lemma mem_dominantChamber (x : M) :
 lemma mem_openDominantChamber (x : M) :
     x ∈ openDominantChamber P b ↔ ∀ i ∈ b.support, 0 < P.coroot' i x := Iff.rfl
 
+/-- Every weight annihilating the simple coroots lies in the closed dominant chamber. -/
+lemma mem_dominantChamber_of_forall_coroot'_eq_zero {x : M}
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) :
+    x ∈ dominantChamber P b :=
+  fun i hi ↦ (hx i hi).ge
+
+/-- Translating a dominant weight by a weight annihilating the simple coroots preserves
+dominance. -/
+lemma mem_dominantChamber_add_of_forall_coroot'_eq_zero {x y : M}
+    (hx : x ∈ dominantChamber P b) (hy : ∀ i ∈ b.support, P.coroot' i y = 0) :
+    x + y ∈ dominantChamber P b :=
+  fun i hi ↦ by rw [map_add, hy i hi, add_zero]; exact hx i hi
+
 /-- **An automorphism carries the closed dominant chamber of a base to that of the transported
 base.** -/
 theorem smul_dominantChamber (g : P.Aut) :

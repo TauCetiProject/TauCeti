@@ -236,4 +236,34 @@ theorem existsUnique_mem_orbit_inter_dominantChamber [P.IsRootSystem] (x : M) :
   letI := RootPairing.finite_weylGroup P
   existsUnique_mem_orbit_inter_dominantChamber_of_finite_weylGroup P b x
 
+section Realization
+
+/-- When linear forms on `V` agree with the simple coroots, `f` is injective on every Weyl orbit
+`W λ`. -/
+theorem injOn_orbit_weylGroup_of_coroot' {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
+    {P : _root_.RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [Finite P.weylGroup]
+    [P.IsReduced] [P.flip.IsReduced] [Field 𝕜] [CharZero 𝕜] [AddCommGroup V] [Module 𝕜 V]
+    {f : M →+ V} {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) m, F i (f m) = (P.coroot' i m : 𝕜)) (lam : M) :
+    Set.InjOn f (MulAction.orbit P.weylGroup lam) := by
+  have hsmul (w : P.weylGroup) {x y : M} (hxy : f x = f y) : f (w • x) = f (w • y) := by
+    obtain ⟨l, rfl⟩ := exists_wordProd_eq P b w
+    induction l generalizing x y with
+    | nil => simpa using hxy
+    | cons i l ih =>
+      have hrefl {z : M} : f (P.reflection i z) = f z - (F i (f z)) • f (P.root i) := by
+        simp [P.reflection_apply, hF, Int.cast_smul_eq_zsmul]
+      rw [wordProd_cons, mul_smul, mul_smul, weylGroup.ofIdx_smul, weylGroup.ofIdx_smul,
+        Equiv.reflection_smul, Equiv.reflection_smul, hrefl, hrefl, ih hxy]
+  rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ h₁₂
+  obtain ⟨w, hw⟩ := exists_mem_dominantChamber_of_finite_weylGroup P b (w₁ • lam)
+  have hw₂ : w • (w₂ • lam) ∈ dominantChamber P b := (mem_dominantChamber P b _).mpr fun i hi ↦ by
+    have hpair : (P.coroot' i (w • (w₁ • lam)) : 𝕜) = (P.coroot' i (w • (w₂ • lam)) : 𝕜) := by
+      rw [← hF ⟨i, hi⟩, ← hF ⟨i, hi⟩, hsmul w h₁₂]
+    exact (Int.cast_injective hpair).symm ▸ (mem_dominantChamber P b _).mp hw i hi
+  simpa using congrArg (w⁻¹ • ·) (subsingleton_orbit_inter_dominantChamber P b lam
+    ⟨⟨w * w₁, mul_smul w w₁ lam⟩, hw⟩ ⟨⟨w * w₂, mul_smul w w₂ lam⟩, hw₂⟩)
+
+end Realization
+
 end TauCeti
