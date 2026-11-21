@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.ExhaustionComparison
-public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Functoriality
 import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.QuasiIso
 import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 import TauCeti.Topology.Compactness.SigmaCompact
@@ -52,9 +51,6 @@ base change is in
 
 ## Main declarations
 
-* `TopPair.locallyFiniteChainComplexCoefficientMap_comp_locallyFiniteChainComplexToRelative` and
-  `TopPair.locallyFiniteChainComplexMap_comp_locallyFiniteChainComplexToRelative`: naturality of
-  relative classes of locally finite chains under coefficient morphisms and proper maps of pairs.
 * `TauCeti.LocalCoefficientSystem.excisionRelativeChainComplexTowerMap` and
   `TauCeti.LocalCoefficientSystem.quasiIso_limComplexMap_excisionRelativeChainComplexTowerMap`: the
   levelwise excision map of towers and its quasi-isomorphism on limit complexes.
@@ -83,123 +79,6 @@ open CategoryTheory Limits Opposite SimplexCategory Topology
 open scoped Simplicial
 
 universe u v w
-
-namespace TopPair
-
-open TauCeti TauCeti.LocalCoefficientSystem
-
-variable {R : Type u} [Ring R]
-
-section ToRelativeNaturality
-
-/-- Taking relative classes of locally finite chains commutes with morphisms of local coefficient
-systems. -/
-@[reassoc]
-theorem locallyFiniteChainComplexCoefficientMap_comp_locallyFiniteChainComplexToRelative
-    (P : TopPair.{v}) {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K)
-    (hP : IsCompact (Set.range P.map)ᶜ) :
-    locallyFiniteChainComplexCoefficientMap η ≫ P.locallyFiniteChainComplexToRelative K hP =
-      P.locallyFiniteChainComplexToRelative L hP ≫ P.twistedChainComplexCoefficientMap η := by
-  ext k : 1
-  rw [← cancel_epi (eqToHom (locallyFiniteChainComplex_X L k).symm)]
-  refine ModuleCat.hom_ext <| LinearMap.ext fun c ↦
-    P.twistedChainComplex_ext_coeff K fun σ hσ ↦ ?_
-  have hL : (P.twistedChainComplexCoefficientMap η).f k ≫ P.twistedChainComplexCoeff K σ hσ =
-      P.twistedChainComplexCoeff L σ hσ ≫ η.app (initialVertex σ) := by
-    apply (cancel_epi ((P.twistedChainComplexπ L).f k)).1
-    have hπ := congrArg (fun φ ↦ φ.f k)
-      (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η)
-    simp only [HomologicalComplex.comp_f] at hπ
-    rw [← Category.assoc, hπ, Category.assoc, P.twistedChainComplexπ_f_twistedChainComplexCoeff,
-      P.twistedChainComplexπ_f_twistedChainComplexCoeff_assoc]
-    refine LocalCoefficientSystem.twistedChainComplex_hom_ext L fun τ ↦ ?_
-    rw [ιTwistedChainComplex_twistedChainComplexCoefficientMap_f_assoc]
-    by_cases hτ : τ = σ
-    · subst hτ
-      simp [ιTwistedChainComplex_twistedChainComplexCoeff]
-    · simp [ιTwistedChainComplex_twistedChainComplexCoeff_of_ne, hτ]
-  simp only [HomologicalComplex.comp_f, locallyFiniteChainComplexCoefficientMap_f,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply]
-  rw [P.twistedChainComplexCoeff_locallyFiniteChainComplexToRelative_f_apply K hP _ σ hσ,
-    ModuleCat.hom_ofHom, coe_locallyFiniteChainsCoefficientMap_apply]
-  have h1 := congrArg (fun f ↦ f.hom (((P.locallyFiniteChainComplexToRelative L hP).f k).hom
-    ((eqToHom (locallyFiniteChainComplex_X L k).symm).hom c))) hL
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h1
-  rw [h1, P.twistedChainComplexCoeff_locallyFiniteChainComplexToRelative_f_apply L hP c σ hσ]
-
-/-- Pushing a locally finite chain forward along a proper map of pairs commutes with taking
-relative classes modulo subspaces with compact complements. -/
-@[reassoc]
-theorem locallyFiniteChainComplexMap_comp_locallyFiniteChainComplexToRelative
-    {P Q : TopPair.{v}} (g : P ⟶ Q)
-    (hg : IsProperMap (Hom.fst g).hom) (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
-    (hP : IsCompact (Set.range P.map)ᶜ) (hQ : IsCompact (Set.range Q.map)ᶜ) :
-    locallyFiniteChainComplexMap (Hom.fst g) hg L ≫ Q.locallyFiniteChainComplexToRelative L hQ =
-      P.locallyFiniteChainComplexToRelative
-          ((LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) hP ≫
-        TopPair.twistedChainComplexMap g L := by
-  -- Check equality degreewise and coefficientwise on each simplex `ρ` of `Q` not contained in
-  -- `Set.range Q.map`: represent the relative class of `c` on `P` as the projection of its finite
-  -- restriction to simplices meeting `(Set.range P.map)ᶜ`, push that finite sum forward along `g`,
-  -- and verify that every simplex `σ` contributing to the `ρ`-coefficient lies in that finite set.
-  ext k : 1
-  rw [← cancel_epi (eqToHom (locallyFiniteChainComplex_X _ k).symm)]
-  refine ModuleCat.hom_ext <| LinearMap.ext fun c ↦
-    Q.twistedChainComplex_ext_coeff L fun ρ hρ ↦ ?_
-  simp only [HomologicalComplex.comp_f, locallyFiniteChainComplexMap_f, Category.assoc,
-    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
-    ModuleCat.hom_ofHom]
-  rw [Q.twistedChainComplexCoeff_locallyFiniteChainComplexToRelative_f_apply L hQ _ ρ hρ,
-    coe_locallyFiniteChainsMap_apply]
-  have hright : ((P.locallyFiniteChainComplexToRelative _ hP).f k).hom
-      ((eqToHom (locallyFiniteChainComplex_X _ k).symm).hom c) =
-      ((P.twistedChainComplexπ _).f k).hom
-        (∑ σ ∈ ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset,
-          (ιTwistedChainComplex _ k σ).hom (c.1 σ)) := by
-    refine P.twistedChainComplex_ext_coeff _ fun τ hτ ↦ ?_
-    rw [P.twistedChainComplexCoeff_locallyFiniteChainComplexToRelative_f_apply _ hP c τ hτ,
-      P.twistedChainComplexCoeff_twistedChainComplexπ_f_apply _ τ hτ,
-      twistedChainComplexCoeff_sum_ιTwistedChainComplex_apply]
-    intro hnot
-    by_contra hc0
-    exact hnot (((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).mem_toFinset.2
-      ⟨hc0, Set.inter_compl_nonempty_iff.2 hτ⟩)
-  rw [hright, TopPair.twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
-    Q.twistedChainComplexCoeff_twistedChainComplexπ_f_apply L ρ hρ, map_sum, map_sum]
-  simp only [twistedChainComplexMap_f_ι_apply]
-  refine finsum_eq_sum_of_support_subset _ fun σ hσ ↦ ?_
-  rw [Function.mem_support] at hσ
-  rw [Finset.mem_coe, Set.Finite.mem_toFinset]
-  refine ⟨fun hc0 ↦ hσ ?_, ?_⟩
-  · -- `((pullback (Hom.fst g).hom).obj L).obj (initialVertex σ)` is definitionally
-    -- `L.obj (initialVertex ((TopCat.toSSet.map (Hom.fst g)).app (op ⦋k⦌) σ))`, since `pullback`
-    -- composes with `FundamentalGroupoid.map` and `initialVertex` commutes with `toSSet.map`.
-    have hc0' :
-        (c.1 σ :
-          L.obj (initialVertex ((TopCat.toSSet.map (Hom.fst g)).app (op ⦋k⦌) σ))) = 0 := hc0
-    trans (L.twistedChainComplexCoeff ρ).hom
-        ((L.ιTwistedChainComplex k _).hom
-          (0 : L.obj (initialVertex ((TopCat.toSSet.map (Hom.fst g)).app (op ⦋k⦌) σ))))
-    · exact congrArg (fun x ↦ (L.twistedChainComplexCoeff ρ).hom
-        ((L.ιTwistedChainComplex k _).hom x)) hc0'
-    · simp
-  rw [Set.inter_compl_nonempty_iff]
-  intro hsub
-  have hEq : (TopCat.toSSet.map (Hom.fst g)).app _ σ = ρ := by
-    by_contra hne
-    exact hσ (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
-  apply hρ
-  rw [← hEq, TopCat.simplexMap_app, ContinuousMap.coe_comp, Set.range_comp]
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨y, hy⟩ := hsub hx
-  exact ⟨Hom.snd g y, by
-    have hw := congrArg (fun f : P.snd ⟶ Q.fst ↦ f y) (Hom.w g)
-    simpa [hy] using hw⟩
-
-end ToRelativeNaturality
-
-end TopPair
 
 namespace TauCeti.LocalCoefficientSystem
 
