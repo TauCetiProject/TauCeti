@@ -380,23 +380,14 @@ section RegularMatrix
 
 variable [TauCeti.AlgebraicGeometry.IsRegular X]
 
-include h₀ h₁ in
-/-- Local wrapper around `specialFiberIntersectionMatrix_isSymm` to avoid repeatedly unfolding
-`SpecialFiberCohomologyFiniteDimensional` in the kernel. -/
-private lemma specialFiberIntersectionMatrix_isSymm_of :
-    (toBase.specialFiberIntersectionMatrix hX hη).IsSymm :=
-  toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁
-
-include h₀ h₁ in
 /-- The weight `w_j` of `C_j` divides every entry `a_{ij}` in column `j` of the intersection
 matrix. -/
 theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix_right (i j) :
     (toBase.specialFiberWeight ((mem_toFinset _).mp j.property) : ℤ) ∣
       toBase.specialFiberIntersectionMatrix hX hη i j := by
-  rw [(toBase.specialFiberIntersectionMatrix_isSymm_of hX hη h₀ h₁).apply j i]
+  rw [(toBase.specialFiberIntersectionMatrix_isSymm hX hη).apply j i]
   exact toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hX hη j i
 
-include h₀ h₁ in
 /-- Multiplying column `j` of `specialFiberWeightedIntersectionMatrix` by `w_j` recovers
 `specialFiberIntersectionMatrix`. -/
 theorem specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight (i j) :
@@ -404,7 +395,7 @@ theorem specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight (i j) :
         (toBase.specialFiberWeight ((mem_toFinset _).mp j.property) : ℤ) =
       toBase.specialFiberIntersectionMatrix hX hη i j :=
   Int.ediv_mul_cancel
-    (toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix_right hX hη h₀ h₁ i j)
+    (toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix_right hX hη i j)
 
 /-- **Multidegree of a component line bundle.** The multidegree of `[𝒪_X(C_i)]` is the `i`-th row
 of `specialFiberWeightedIntersectionMatrix`. -/
@@ -415,7 +406,7 @@ theorem specialFiberMultidegree_inv_mk_toInvertibleSheaf (i) :
       toBase.specialFiberWeightedIntersectionMatrix hX hη i := funext fun j ↦ by
   rw [specialFiberMultidegree_apply, toMul_ofMul,
     ← toBase.specialFiberIntersectionMatrix_apply hX hη j i,
-    (toBase.specialFiberIntersectionMatrix_isSymm_of hX hη h₀ h₁).apply i j,
+    (toBase.specialFiberIntersectionMatrix_isSymm hX hη).apply i j,
     specialFiberWeightedIntersectionMatrix_apply]
 
 /-- Simp normal form of `specialFiberMultidegree_inv_mk_toInvertibleSheaf` after
@@ -543,7 +534,6 @@ section Connected
 
 variable [Flat toBase] {π : R}
 
-include h₀ h₁ in
 /-- On a regular proper flat model with connected special fibre, an integer vector `v` in the left
 kernel of `specialFiberWeightedIntersectionMatrix` is a rational multiple of the multiplicity
 vector `m`. -/
@@ -562,8 +552,8 @@ private lemma exists_rat_mul_specialFiberMultiplicity_of_vecMul_eq_zero
     rw [Pi.zero_apply, zero_mul, Matrix.vecMul, dotProduct, Finset.sum_mul] at hw
     rw [Matrix.mulVec, dotProduct, Pi.zero_apply, ← hw]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [(toBase.specialFiberIntersectionMatrix_isSymm_of hX hη h₀ h₁).apply i j,
-      ← toBase.specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight hX hη h₀ h₁ i j,
+    rw [(toBase.specialFiberIntersectionMatrix_isSymm hX hη).apply i j,
+      ← toBase.specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight hX hη i j,
       mul_comm _ (v i), ← mul_assoc]
   have hmul : (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → ℚ) *ᵥ
       (fun j ↦ (v j : ℚ)) = 0 := funext fun j ↦ by
@@ -571,7 +561,7 @@ private lemma exists_rat_mul_specialFiberMultiplicity_of_vecMul_eq_zero
       (RingHom.map_mulVec (Int.castRingHom ℚ)
         (toBase.specialFiberIntersectionMatrix hX hη) v j).symm
   exact (toBase.dotProduct_mulVec_specialFiberIntersectionMatrix_eq_zero_iff
-    hX hη h₀ h₁ hπ hreg hconn (fun j ↦ (v j : ℚ))).mp (by rw [hmul, dotProduct_zero])
+    hX hη hπ hreg hconn (fun j ↦ (v j : ℚ))).mp (by rw [hmul, dotProduct_zero])
 
 /-- **Isotropic vertical kernel on a connected special fibre.** On a regular proper flat model with
 connected special fibre `X_s = ∑_i m_i C_i`, any model line-bundle class `a` that is trivial on
@@ -591,7 +581,7 @@ theorem exists_dvd_specialFiberMultiplicity_and_pow_eq_one
   obtain ⟨v, rfl⟩ := (toBase.pullback_genericFiberι_eq_one_iff_of_isRegular K hX hη).mp haK
   rw [toBase.specialFiberMultidegree_prod_zpow hX hη h₀ h₁ v] at ha0
   obtain ⟨c, hc⟩ := toBase.exists_rat_mul_specialFiberMultiplicity_of_vecMul_eq_zero
-    hX hη h₀ h₁ hπ hconn ha0
+    hX hη hπ hconn ha0
   have hrel (j) : v j * (c.den : ℤ) = c.num * (toBase.specialFiberMultiplicity π j : ℤ) :=
     Int.cast_injective (α := ℚ) <| by
       rw [Int.cast_mul, Int.cast_mul, Int.cast_natCast, Int.cast_natCast, hc j, mul_right_comm,
