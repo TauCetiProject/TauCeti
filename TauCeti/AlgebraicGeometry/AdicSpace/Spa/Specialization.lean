@@ -94,10 +94,11 @@ theorem isClosed_reductionSpectrum (Aplus : Subring A) : IsClosed (reductionSpec
 
 /-! ### The specialization map -/
 
-/-- The **specialization map** `Spa(A, A⁺) → Spec(A⁺/A°°)`, sending `x` to the prime
-`{a ∈ A⁺ : |a(x)| < 1}` of `A⁺` (Gleason, Definition 4.1): the centre of `x` on `A⁺`. It lies in
-the reduction spectrum because a continuous valuation is strictly below `1` at every
-topologically nilpotent element. -/
+/-- The **specialization map** `Spa(A, A⁺) → reductionSpectrum A⁺ ⊆ Spec A⁺`, sending `x` to
+the prime `{a ∈ A⁺ : |a(x)| < 1}` of `A⁺` (Gleason, Definition 4.1): the centre of `x` on `A⁺`.
+It lies in the reduction spectrum because a continuous valuation is strictly below `1` at every
+topologically nilpotent element. For a ring of integral elements of a Huber ring the reduction
+spectrum is `Spec(A⁺/A°°)`. -/
 noncomputable def specialization {Aplus : Subring A} (x : spa Aplus) : reductionSpectrum Aplus :=
   ⟨⟨Valuation.centerIdeal Aplus (x : Spv A).valuation
       (fun a ↦ valuation_le_one_of_mem_spa x.property a.property),
@@ -123,14 +124,16 @@ theorem mem_specialization_asIdeal_iff {Aplus : Subring A} (x : spa Aplus) (a : 
 /-- Off its specialization, a point of `Spa(A, A⁺)` takes the value `1`. -/
 theorem notMem_specialization_asIdeal_iff {Aplus : Subring A} (x : spa Aplus) (a : Aplus) :
     a ∉ (specialization x : PrimeSpectrum Aplus).asIdeal ↔ (x : Spv A).valuation a = 1 := by
-  rw [mem_specialization_asIdeal_iff, not_lt]
-  exact ⟨(valuation_le_one_of_mem_spa x.property a.property).antisymm, Eq.ge⟩
+  rw [specialization_asIdeal, Valuation.notMem_centerIdeal_iff,
+    Algebra.algebraMap_ofSubsemiring_apply]
 
 /-- **The preimage of `D(a)` under specialization is the locus `{x : |a(x)| = 1}`.** -/
 theorem specialization_preimage_basicOpen {Aplus : Subring A} (a : Aplus) :
     specialization ⁻¹' (Subtype.val ⁻¹' (PrimeSpectrum.basicOpen a : Set (PrimeSpectrum Aplus))) =
       {x : spa Aplus | (x : Spv A).valuation a = 1} := by
   ext x
+  rw [Set.mem_preimage, Set.mem_preimage, SetLike.mem_coe, PrimeSpectrum.mem_basicOpen,
+    Set.mem_ofPred_eq]
   exact notMem_specialization_asIdeal_iff x a
 
 /-- The basic opens `D(a)` of `Spec A⁺`, traced on the reduction spectrum, form a basis of its
@@ -180,7 +183,7 @@ theorem specialization_spaComap {φ : A →+* B} (hφ : Continuous φ) {Aplus : 
       PrimeSpectrum.comap (φ.restrict Aplus Bplus hplus) (specialization x) := by
   ext a
   rw [PrimeSpectrum.comap_asIdeal, Ideal.mem_comap, mem_specialization_asIdeal_iff,
-    mem_specialization_asIdeal_iff, spaComap_val]
+    mem_specialization_asIdeal_iff, spaComap_val, RingHom.coe_restrict_apply]
   exact (valuation_map_lt_one_iff rfl (a : A)).symm
 
 end TauCeti.ValuationSpectrum
