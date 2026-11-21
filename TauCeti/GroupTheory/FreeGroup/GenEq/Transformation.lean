@@ -182,7 +182,7 @@ transformation gives a point of `Ω*` in `F(A)`: a group solution of `Ω`. -/
 theorem solution_backward (T : Transformation Ω) (i : T.ι) (U' : (T.target i).Solution) :
     (fun k => U'.toHom (T.hom i ((inr (FreeGroup.of k) : GX (FreeGroup A) (Fin Ω.numItems)) :
       Ω.coordGroup))) ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := by
-  convert (CoordGroup.homEquiv _ _ (U'.toHom.comp (T.hom i))).2 using 1
+  convert (CoordGroup.homEquiv _ _ (U'.toHom.comp (T.hom i))).property using 1
   ext k
   simp
 
@@ -251,23 +251,23 @@ formally consistent, so no transfer is lost. -/
 @[expose] def ofFamily : Transformation Ω where
   ι := {k // (target k).IsFormallyConsistent}
   finite := inferInstance
-  target i := target i.1
-  isFormallyConsistent_target i := i.2
-  hom i := hom i.1
-  hom_surjective i := hom_surjective i.1
+  target i := target i.val
+  isFormallyConsistent_target i := i.property
+  hom i := hom i.val
+  hom_surjective i := hom_surjective i.val
   transfer U := ⟨⟨(transfer U).1, (transfer U).2.isFormallyConsistent⟩, (transfer U).2⟩
   toHom_transfer := toHom_transfer
 
 /-- The successors of `ofFamily` are the formally consistent members of the family. -/
 @[simp]
 theorem ofFamily_target (i : (ofFamily target hom hom_surjective transfer toHom_transfer).ι) :
-    (ofFamily target hom hom_surjective transfer toHom_transfer).target i = target i.1 :=
+    (ofFamily target hom hom_surjective transfer toHom_transfer).target i = target i.val :=
   (rfl)
 
 /-- The homomorphisms of `ofFamily` are those of the family. -/
 @[simp]
 theorem ofFamily_hom (i : (ofFamily target hom hom_surjective transfer toHom_transfer).ι) :
-    (ofFamily target hom hom_surjective transfer toHom_transfer).hom i = hom i.1 :=
+    (ofFamily target hom hom_surjective transfer toHom_transfer).hom i = hom i.val :=
   (rfl)
 
 /-- `ofFamily` transfers every solution to the member of the family chosen by the given

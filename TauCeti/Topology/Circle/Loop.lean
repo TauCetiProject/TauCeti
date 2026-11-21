@@ -37,6 +37,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle_surjective`, `TauCeti.unitToCircle_eq_one_iff`,
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
+* `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
+  `unitToCircle` are equal.
 * `Path.toCircle_unitToCircle`, `Path.toCircle_exp`: `unitToCircle t = exp (2πit)` goes to `γ t`.
 * `Path.toCircle_one`: the point `1` goes to the base point.
 -/
@@ -53,7 +55,7 @@ namespace TauCeti
 `1 ∈ Circle` and mapping `(0, 1)` bijectively onto `Circle \ {1}`. -/
 def unitToCircle : C(I, Circle) where
   toFun t := Circle.exp (2 * Real.pi * t)
-  continuous_toFun := Circle.exp.continuous.comp (continuous_const.mul continuous_subtype_val)
+  continuous_toFun := Circle.exp.continuous.comp (continuous_const.mul continuous_subtypeVal)
 
 theorem unitToCircle_apply (t : I) : unitToCircle t = Circle.exp (2 * Real.pi * t) :=
   (rfl)
@@ -85,8 +87,8 @@ theorem unitToCircle_eq_one_iff (t : I) : unitToCircle t = 1 ↔ t = 0 ∨ t = 1
     obtain ⟨n, hn⟩ := h
     have hp : (2 * Real.pi) ≠ 0 := by positivity
     have htn : (t : ℝ) = n := mul_left_cancel₀ hp (by linarith)
-    have h0 : 0 ≤ n := by exact_mod_cast (htn ▸ t.2.1 : (0 : ℝ) ≤ n)
-    have h1 : n ≤ 1 := by exact_mod_cast (htn ▸ t.2.2 : (n : ℝ) ≤ 1)
+    have h0 : 0 ≤ n := by exact_mod_cast (htn ▸ t.property.1 : (0 : ℝ) ≤ n)
+    have h1 : n ≤ 1 := by exact_mod_cast (htn ▸ t.property.2 : (n : ℝ) ≤ 1)
     have hn01 : n = 0 ∨ n = 1 := by omega
     rcases hn01 with rfl | rfl
     · exact Or.inl (Subtype.ext (by simpa using htn))
@@ -100,25 +102,32 @@ theorem eq_or_of_unitToCircle_eq {s t : I} (h : unitToCircle s = unitToCircle t)
   obtain ⟨m, hm⟩ := h
   have hp : (2 * Real.pi) ≠ 0 := by positivity
   have hst : (s : ℝ) = t + m := mul_left_cancel₀ hp (by linarith)
-  have hm1 : (-1 : ℝ) ≤ m := by linarith [s.2.1, t.2.2]
-  have hm2 : (m : ℝ) ≤ 1 := by linarith [s.2.2, t.2.1]
+  have hm1 : (-1 : ℝ) ≤ m := by linarith [s.property.1, t.property.2]
+  have hm2 : (m : ℝ) ≤ 1 := by linarith [s.property.2, t.property.1]
   have hm1' : -1 ≤ m := by exact_mod_cast hm1
   have hm2' : m ≤ 1 := by exact_mod_cast hm2
   have hcases : m = -1 ∨ m = 0 ∨ m = 1 := by omega
   rcases hcases with rfl | rfl | rfl
   · right; left
     push_cast at hst
-    exact ⟨Subtype.ext (by simpa using (by linarith [s.2.1, t.2.2] : (s : ℝ) = 0)),
-      Subtype.ext (by simpa using (by linarith [s.2.1, t.2.2] : (t : ℝ) = 1))⟩
+    exact ⟨Subtype.ext (by simpa using (by linarith [s.property.1, t.property.2] : (s : ℝ) = 0)),
+      Subtype.ext (by simpa using (by linarith [s.property.1, t.property.2] : (t : ℝ) = 1))⟩
   · left
     push_cast at hst
     exact Subtype.ext (by linarith)
   · right; right
     push_cast at hst
-    exact ⟨Subtype.ext (by simpa using (by linarith [s.2.2, t.2.1] : (s : ℝ) = 1)),
-      Subtype.ext (by simpa using (by linarith [s.2.2, t.2.1] : (t : ℝ) = 0))⟩
+    exact ⟨Subtype.ext (by simpa using (by linarith [s.property.2, t.property.1] : (s : ℝ) = 1)),
+      Subtype.ext (by simpa using (by linarith [s.property.2, t.property.1] : (t : ℝ) = 0))⟩
 
 end TauCeti
+
+/-- Two maps out of the circle agreeing on every `unitToCircle t = exp (2πit)` are equal. -/
+theorem ContinuousMap.ext_unitToCircle {X : Type*} [TopologicalSpace X] {f g : C(Circle, X)}
+    (h : ∀ t, f (TauCeti.unitToCircle t) = g (TauCeti.unitToCircle t)) : f = g := by
+  ext1 w
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective w
+  exact h t
 
 namespace Path
 
@@ -141,11 +150,11 @@ theorem toCircle_unitToCircle (γ : Path x x) (t : I) :
     rw [TauCeti.unitToCircle_apply, Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply,
       AddCircle.toCircle_apply_mk, div_one]
   rw [toCircle, ContinuousMap.coe_mk, Function.comp_apply, h]
-  rcases eq_or_lt_of_le t.2.2 with ht | ht
+  rcases eq_or_lt_of_le t.property.2 with ht | ht
   · have ht' : t = 1 := Subtype.ext ht
     rw [ht, AddCircle.coe_period, ← AddCircle.coe_zero (p := (1 : ℝ)),
       AddCircle.liftIco_zero_coe_apply ⟨le_rfl, zero_lt_one⟩, γ.extend_zero, ht', γ.target]
-  · rw [AddCircle.liftIco_zero_coe_apply ⟨t.2.1, ht⟩, γ.extend_extends']
+  · rw [AddCircle.liftIco_zero_coe_apply ⟨t.property.1, ht⟩, γ.extend_extends']
 
 /-- The point `exp (2πit)` of the circle goes to `γ t`. -/
 theorem toCircle_exp (γ : Path x x) (t : I) :

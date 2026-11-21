@@ -9,7 +9,6 @@ public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Reduction
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.RingTheory.AdicCompletion.Noetherian
@@ -29,37 +28,46 @@ Since `M (n + 1)` is quasi-coherent, its pullback along `ι n` has global sectio
 `(R ⧸ I ^ (n + 1)) ⊗ Γ(M (n + 1)) = Γ(M (n + 1)) ⧸ I ^ (n + 1) Γ(M (n + 1))`, so the tower is an
 `I`-adic system; its first term is finite, being the sections of a finitely presented module on an
 affine scheme (`isFiniteAdicSystem_sectionsTower_obj`). Morphisms of coherent formal modules on
-`spf I` are the morphisms of these towers, so `finiteSectionsTower I` is fully faithful for any
-commutative ring `R`.
+`spf I` are exactly the morphisms of these towers: global sections identify quasi-coherent modules
+on an affine scheme with modules over its ring, and a family of linear maps compatible with the
+transitions of the towers is compatible with the reduction isomorphisms. Thus
+`finiteSectionsTower I` is an additive, fully faithful functor from coherent formal modules on
+`spf I` to `I`-adic systems with finite first term, for any commutative ring `R`.
 
 When every quotient `R ⧸ I ^ (n + 1)` is Noetherian — in particular when `I` is finitely generated
 and `R ⧸ I` is Noetherian (`essSurj_finiteSectionsTower_of_fg`), or when `R` is Noetherian — every
-finite `I`-adic system `(Mₙ)` arises in this way: `I ^ (n + 1)` annihilates `Mₙ`, so
-`(R ⧸ I ^ (n + 1)) ⊗[R] Mₙ` is a finite — hence finitely presented — `(R ⧸ I ^ (n + 1))`-module
-whose associated sheaf has global sections `Mₙ`, and the transitions of `(Mₙ)` lift to reduction
-isomorphisms (`essSurj_finiteSectionsTower`). Conversely, essential surjectivity of
-`finiteSectionsTower I` forces every `R ⧸ I ^ (n + 1)` to be Noetherian
-(`essSurj_finiteSectionsTower_iff`, `isEquivalence_finiteSectionsTower_iff`). Consequently, without
-Noetherianity essential surjectivity fails even for `I = ⊥`: over `k[x₀, x₁, …]` (`k` nontrivial),
-`finiteSectionsTower ⊥` is not essentially surjective
-(`not_essSurj_finiteSectionsTower_mvPolynomial`).
+finite `I`-adic system `(Mₙ)` arises in this way: `Mₙ` is a finite, hence finitely presented,
+module over `R ⧸ I ^ (n + 1)`, and the pullback of the associated sheaf `Mₙ₊₁~` to
+`Spec (R ⧸ I ^ (n + 1))` is the sheaf associated with `Mₙ₊₁ ⧸ I ^ (n + 1) Mₙ₊₁ ≅ Mₙ`, so the
+sheaves `Mₙ~` form a coherent formal module with tower of sections `(Mₙ)`
+(`essSurj_finiteSectionsTower`). Conversely, essential surjectivity of `finiteSectionsTower I`
+forces every `R ⧸ I ^ (n + 1)` to be Noetherian (`essSurj_finiteSectionsTower_iff`,
+`isEquivalence_finiteSectionsTower_iff`). Consequently, without Noetherianity essential surjectivity
+fails even for `I = ⊥`: over `k[x₀, x₁, …]` (`k` nontrivial), `finiteSectionsTower ⊥` is not
+essentially surjective (`not_essSurj_finiteSectionsTower_mvPolynomial`).
 
-Combining `finiteSectionsTower I` with the equivalence between finite `R`-modules and finite
-`I`-adic systems (`TauCeti.ModuleTower.finiteReductionEquiv`) proves Stacks, Lemma 30.23.1
-(`CoherentFormalModule.spfEquiv`, `Spf.coherentFormalModuleEquiv`): over an `I`-adically complete
-Noetherian ring `R`, coherent formal modules on `spf I` are equivalent to finite `R`-modules, with
-inverse functor `finiteSectionsLim I` taking the inverse limit of levelwise global sections.
+When `R` is moreover `I`-adically complete and Noetherian, finite `I`-adic systems are the
+reductions of finite `R`-modules (`TauCeti.ModuleTower.finiteReductionEquiv`), giving the
+equivalence `CoherentFormalModule.spfEquiv` for `spf I`, and
+`CoherentFormalModule.spfEquivFGModuleCat` for a Noetherian adic ring `A` (`Spf A`) (Stacks,
+Lemma 30.23.1). Applied to the completion `Â` of a Noetherian ring along an ideal, this describes
+the coherent formal modules on `Spf Â`.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.sectionsTower`,
-  `finiteSectionsTower`: the tower of global sections of the levels of a coherent formal module on
-  `spf I`, and its lift to `I`-adic systems with finite first term.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.sectionsTower`: the tower
+  of global sections of the levels of a coherent formal module on `spf I`.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.finiteSectionsTower`: the
+  same functor, valued in `I`-adic systems with finite first term.
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.sectionsLim`,
   `finiteSectionsLim`: the inverse limit `lim Γ(M n)` of levelwise global sections.
-* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.spfEquiv`,
-  `TauCeti.AlgebraicGeometry.Spf.coherentFormalModuleEquiv`: equivalence between finite modules over
-  a Noetherian `I`-adically complete ring and coherent formal modules on its formal spectrum.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.spfEquiv`: equivalence
+  between finite modules over a Noetherian `I`-adically complete ring and coherent formal modules on
+  `spf I`.
+* `CoherentFormalModule.spfEquivFGModuleCat`: for an adic ring `A` with noetherian
+  underlying ring, the equivalence between coherent formal modules on `Spf A` and finite
+  `A`-modules, with `spfEquivFGModuleCatFunctorCompFiniteReductionIso` identifying the
+  tower of sections with the reduction of the corresponding module.
 
 ## Main results
 
@@ -230,9 +238,15 @@ instance : (sectionsTower I).Full where
       (hN₁ := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation (M.obj (n + 1)))
       (M.transitionIso n).hom (N.transitionIso n).hom (f (n + 1)) (f n)).1 h
 
+/-- Taking the tower of global sections is additive. -/
 instance : (sectionsTower I).Additive where
-  map_add {_ _ _ _} := NatTrans.ext <| funext fun ⟨_⟩ ↦
-    ModuleCat.hom_ext <| LinearMap.ext fun _ ↦ rfl
+  map_add {M N f g} := by
+    ext ⟨n⟩ : 2
+    have : (moduleSpecΓFunctor (R := CommRingCat.of (R ⧸ I ^ (n + 1)))).Additive :=
+      (moduleSpecΓFunctor (R := _)).additive_of_preserves_binary_products
+    exact (congrArg (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).map
+      (moduleSpecΓFunctor.map_add (f := f.app n) (g := g.app n))).trans
+        (Functor.map_add _)
 
 /-- The tower of global sections of a coherent formal module on `spf I`, as an `I`-adic system with
 finite first term (`isFiniteAdicSystem_sectionsTower_obj`). It is additive and fully faithful, and
@@ -245,9 +259,9 @@ is an equivalence if and only if every quotient `R ⧸ I ^ (n + 1)` is Noetheria
 def finiteSectionsTower : CoherentFormalModule (spf I) ⥤ ModuleTower.FiniteAdicSystem.{u} I :=
   (ModuleTower.isFiniteAdicSystem I).lift (sectionsTower I) (isFiniteAdicSystem_sectionsTower_obj I)
 
-instance : (finiteSectionsTower I).Additive where
-  map_add {_ _ f g} :=
-    (ModuleTower.isFiniteAdicSystem I).hom_ext ((sectionsTower I).map_add (f := f) (g := g))
+/-- Taking global sections valued in finite adic systems is additive. -/
+instance : (finiteSectionsTower I).Additive :=
+  inferInstanceAs ((ModuleTower.isFiniteAdicSystem I).lift _ _).Additive
 
 instance : (finiteSectionsTower I).Full :=
   inferInstanceAs ((ModuleTower.isFiniteAdicSystem I).lift _ _).Full
@@ -255,229 +269,108 @@ instance : (finiteSectionsTower I).Full :=
 instance : (finiteSectionsTower I).Faithful :=
   inferInstanceAs ((ModuleTower.isFiniteAdicSystem I).lift _ _).Faithful
 
-end
+/-! ### Finite adic systems are towers of sections
 
-/-! ### Essential surjectivity on `spf I` -/
+Let `(Mₙ)` be an `I`-adic system with `M₀` finite over a noetherian ring `R`. Each `Mₙ` is killed by
+`I ^ (n + 1)`, so it is a finite, hence finitely presented, module over `R ⧸ I ^ (n + 1)`, and its
+associated sheaf `Mₙ~` is a finitely presented module on `Spec (R ⧸ I ^ (n + 1))`. The pullback of
+`Mₙ₊₁~` along `Spec (R ⧸ I ^ (n + 1)) ⟶ Spec (R ⧸ I ^ (n + 2))` is the sheaf associated with
+`(R ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁ = Mₙ₊₁ ⧸ I ^ (n + 1) Mₙ₊₁`, which the transition identifies with `Mₙ`.
+These sheaves therefore form a coherent formal module on `spf I` whose tower of global sections is
+`(Mₙ)`, so `finiteSectionsTower I` is essentially surjective.
+-/
 
-noncomputable section
+section EssSurj
 
-variable {R : Type u} [CommRing R]
+variable {I} {F : ModuleTower.{u} R} (hF : F.IsAdicSystem I)
 
-private def spfLiftModule (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    ModuleCat.{u} (R ⧸ I ^ (n + 1)) :=
-  (ModuleCat.extendScalars (Ideal.Quotient.mk (I ^ (n + 1)))).obj (F.obj.obj (op n))
+open ModuleTower.IsAdicSystem
 
-private instance finite_spfLiftModule (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I)
-    (n : ℕ) :
-    Module.Finite (R ⧸ I ^ (n + 1)) (spfLiftModule I F n) :=
-  Module.Finite.equiv
-    (ModuleCat.extendScalarsAlgebraMapIso (S := R ⧸ I ^ (n + 1))
-      (F.obj.obj (op n))).symm.toLinearEquiv
+variable [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))] [Module.Finite R (F.obj (op 0))]
 
-private abbrev spfLiftSheaf (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    (Spec (CommRingCat.of (R ⧸ I ^ (n + 1)))).Modules :=
-  tilde (R := .of (R ⧸ I ^ (n + 1))) (spfLiftModule I F n)
+/-- The coherent formal module on `spf I` whose `n`-th level is the sheaf associated with the
+`n`-th term `Mₙ` of an `I`-adic system with `M₀` finite, when `R ⧸ I ^ (n + 1)` is noetherian.
+Its reduction isomorphisms are `ι n ^* Mₙ₊₁~ ≅ ((R ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁)~ ≅ Mₙ~`. -/
+private def ofAdicSystem : CoherentFormalModule (spf I) where
+  obj n := tilde (levelModule hF n)
+  isFinitePresentation n :=
+    (ModuleCat.isFinitePresentation_tilde_iff (R := CommRingCat.of (R ⧸ I ^ (n + 1))) _).2
+      (finitePresentation_levelModule hF n)
+  transitionIso n :=
+    (tildeFunctorCompPullbackIso (CommRingCat.ofHom (Ideal.Quotient.factor
+      (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))))).app (levelModule hF (n + 1)) ≪≫
+      have := (ConcreteCategory.isIso_iff_bijective _).2 (levelReduction_bijective hF n)
+      (tilde.functor _).mapIso (asIso (levelReduction hF n))
 
-private lemma isFinitePresentation_spfLiftSheaf (I : Ideal R)
-    (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) [IsNoetherianRing (R ⧸ I ^ (n + 1))] :
-    (spfLiftSheaf I F n).IsFinitePresentation := by
-  have : Module.FinitePresentation (R ⧸ I ^ (n + 1)) (spfLiftModule I F n) :=
-    Module.finitePresentation_of_finite (R ⧸ I ^ (n + 1)) (spfLiftModule I F n)
-  exact isFinitePresentation_tilde (R := .of (R ⧸ I ^ (n + 1))) (spfLiftModule I F n)
+private lemma ofAdicSystem_transitionIso_hom (n : ℕ) :
+    ((ofAdicSystem hF).transitionIso n).hom =
+      (tildeFunctorCompPullbackIso (CommRingCat.ofHom (Ideal.Quotient.factor
+        (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))))).hom.app
+          (levelModule hF (n + 1)) ≫ tilde.map (levelReduction hF n) :=
+  (rfl)
 
-private lemma isIso_extendRestrictUnit_spfLift (I : Ideal R)
-    (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    IsIso ((ModuleCat.extendRestrictScalarsAdj (Ideal.Quotient.mk (I ^ (n + 1)))).unit.app
-      (F.obj.obj (op n))) := by
-  have hF := ((ModuleTower.isFiniteAdicSystem_iff I _).1 F.property).1
-  rw [ModuleCat.isIso_extendRestrictScalarsAdj_unit_app_iff_of_surjective
-    Ideal.Quotient.mk_surjective, Ideal.mk_ker]
-  exact hF.pow_smul_top_eq_bot n
-
-private def spfLiftSectionIso (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    F.obj.obj (op n) ≅
-      (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).obj
-        (moduleSpecΓFunctor.obj (spfLiftSheaf I F n)) :=
-  letI := isIso_extendRestrictUnit_spfLift I F n
-  asIso ((ModuleCat.extendRestrictScalarsAdj (Ideal.Quotient.mk (I ^ (n + 1)))).unit.app
-    (F.obj.obj (op n))) ≪≫
+/-- The term `Mₙ` of the adic system is the module of global sections of the `n`-th level of
+`ofAdicSystem hF`, through the unit `M ⟶ Γ(M~)`. -/
+private def sectionsIso (n : ℕ) :
+    F.obj (op n) ≅ ((sectionsTower I).obj (ofAdicSystem hF)).obj (op n) :=
+  letI := (isTorsionBySet_obj hF n).module
+  haveI := (isTorsionBySet_obj hF n).isScalarTower (S := R)
+  (ModuleCat.restrictScalarsAlgebraMapIso (R := R)
+    (S := R ⧸ I ^ (n + 1)) (F.obj (op n))).symm ≪≫
     (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).mapIso
-      ((tilde.toTildeΓNatIso (R := .of (R ⧸ I ^ (n + 1)))).app (spfLiftModule I F n))
+    ((tilde.toTildeΓNatIso (R := CommRingCat.of (R ⧸ I ^ (n + 1)))).app (levelModule hF n))
 
-private def spfLiftTransitionQuotMap (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I)
-    (n : ℕ) :
-    moduleSpecΓFunctor.obj (spfLiftSheaf I F (n + 1)) ⟶
-      (ModuleCat.restrictScalars
-        (Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).obj
-        (moduleSpecΓFunctor.obj (spfLiftSheaf I F n)) :=
-  letI := (Ideal.Quotient.mk (I ^ (n + 1 + 1))).full_restrictScalars Ideal.Quotient.mk_surjective
-  (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1 + 1)))).preimage
-    (((spfLiftSectionIso I F (n + 1)).inv ≫
-        F.obj.map (homOfLE (Nat.le_succ n)).op ≫
-        (spfLiftSectionIso I F n).hom) ≫
-      (ModuleCat.restrictScalarsComp'App (Ideal.Quotient.mk (I ^ (n + 1 + 1))) _
-        (Ideal.Quotient.mk (I ^ (n + 1)))
-        (Ideal.Quotient.factor_comp_mk
-          (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))).symm _).hom)
+private lemma sectionsIso_hom_apply (n : ℕ) (x : F.obj (op n)) :
+    (sectionsIso hF n).hom.hom x =
+      (tilde.toTildeΓNatIso (R := CommRingCat.of (R ⧸ I ^ (n + 1)))).hom.app
+        (levelModule hF n) x := by
+  let := (isTorsionBySet_obj hF n).module
+  have := (isTorsionBySet_obj hF n).isScalarTower (S := R)
+  exact (ModuleCat.comp_apply _ _ x).trans <|
+    (ModuleCat.restrictScalars.map_apply (Ideal.Quotient.mk (I ^ (n + 1))) _ _).trans <|
+      congrArg _ (ModuleCat.restrictScalarsAlgebraMapIso_inv_apply (R := R)
+        (S := R ⧸ I ^ (n + 1)) (F.obj (op n)) x)
 
-private lemma map_spfLiftTransitionQuotMap (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I)
-    (n : ℕ) :
-    (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1 + 1)))).map
-        (spfLiftTransitionQuotMap I F n) =
-      ((spfLiftSectionIso I F (n + 1)).inv ≫
-          F.obj.map (homOfLE (Nat.le_succ n)).op ≫
-          (spfLiftSectionIso I F n).hom) ≫
-        (ModuleCat.restrictScalarsComp'App (Ideal.Quotient.mk (I ^ (n + 1 + 1))) _
-          (Ideal.Quotient.mk (I ^ (n + 1)))
-          (Ideal.Quotient.factor_comp_mk
-            (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))).symm _).hom := by
-  have := (Ideal.Quotient.mk (I ^ (n + 1 + 1))).full_restrictScalars Ideal.Quotient.mk_surjective
-  exact Functor.map_preimage _ _
+/-- The isomorphisms `sectionsIso hF n` are compatible with the transitions. -/
+private lemma sectionsTower_ofAdicSystem_transition (n : ℕ) (x : F.obj (op (n + 1))) :
+    ((sectionsTower I).obj (ofAdicSystem hF)).transition n ((sectionsIso hF (n + 1)).hom.hom x) =
+      (sectionsIso hF n).hom.hom (F.transition n x) := by
+  rw [sectionsTower_obj_transition_apply, ofAdicSystem_transitionIso_hom,
+    sectionsIso_hom_apply, sectionsIso_hom_apply]
+  exact (moduleSpecΓFunctor_map_comp_tilde_map (CommRingCat.ofHom (Ideal.Quotient.factor
+    (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))) (levelReduction hF n)
+      x).trans
+    (congrArg ((tilde.toTildeΓNatIso (R := CommRingCat.of (R ⧸ I ^ (n + 1)))).hom.app
+      (levelModule hF n)).hom (levelReduction_one_tmul hF n x))
 
-private lemma spfLiftTransitionQuotMap_apply (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I)
-    (n : ℕ) (x : moduleSpecΓFunctor.obj (spfLiftSheaf I F (n + 1))) :
-    (spfLiftTransitionQuotMap I F n x : moduleSpecΓFunctor.obj (spfLiftSheaf I F n)) =
-      (spfLiftSectionIso I F n).hom
-        (F.obj.transition n ((spfLiftSectionIso I F (n + 1)).inv x)) := by
-  rw [ModuleTower.transition_def]
-  exact congrArg (fun f ↦ (f x : moduleSpecΓFunctor.obj (spfLiftSheaf I F n)))
-    (map_spfLiftTransitionQuotMap I F n)
+/-- The isomorphism from the adic system to the tower of global sections of `ofAdicSystem hF`. -/
+private def sectionsHom : F ⟶ (sectionsTower I).obj (ofAdicSystem hF) :=
+  NatTrans.ofOpSequence (fun n ↦ (sectionsIso hF n).hom) fun n ↦ by
+    ext x
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleTower.map_hom_eq_transitionOfLE,
+      ModuleTower.transitionOfLE_succ]
+    exact (sectionsTower_ofAdicSystem_transition hF n x).symm
 
-private lemma spfLiftTransitionQuotMap_surjective (I : Ideal R)
-    (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    Function.Surjective (spfLiftTransitionQuotMap I F n) := by
-  have hF := ((ModuleTower.isFiniteAdicSystem_iff I _).1 F.property).1
-  intro y
-  let y' : (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).obj
-      (moduleSpecΓFunctor.obj (spfLiftSheaf I F n)) := y
-  obtain ⟨w, hw⟩ := hF.transition_surjective n ((spfLiftSectionIso I F n).inv y')
-  refine ⟨(spfLiftSectionIso I F (n + 1)).hom w, ?_⟩
-  exact (spfLiftTransitionQuotMap_apply I F n _).trans
-    ((congrArg (fun z ↦ (spfLiftSectionIso I F n).hom (F.obj.transition n z))
-      ((spfLiftSectionIso I F (n + 1)).hom_inv_id_apply w)).trans
-      ((congrArg (spfLiftSectionIso I F n).hom hw).trans
-        ((spfLiftSectionIso I F n).inv_hom_id_apply y')))
+private instance : IsIso (sectionsHom hF) :=
+  have (n : ℕᵒᵖ) : IsIso ((sectionsHom hF).app n) := (sectionsIso hF n.unop).isIso_hom
+  NatIso.isIso_of_isIso_app _
 
-private lemma ker_spfLiftTransitionQuotMap (I : Ideal R)
-    (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    LinearMap.ker (spfLiftTransitionQuotMap I F n).hom =
-      RingHom.ker (Ideal.Quotient.factor
-        (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))) • ⊤ := by
-  have hF := ((ModuleTower.isFiniteAdicSystem_iff I _).1 F.property).1
-  let M₁ := moduleSpecΓFunctor.obj (spfLiftSheaf I F (n + 1))
-  let : Module R M₁ := Module.compHom M₁ (Ideal.Quotient.mk (I ^ (n + 1 + 1)))
-  have : IsScalarTower R (R ⧸ I ^ (n + 1 + 1)) M₁ :=
-    IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  refine Submodule.restrictScalars_injective R (R ⧸ I ^ (n + 1 + 1)) M₁ ?_
-  rw [Ideal.Quotient.factor_ker, ← Ideal.Quotient.algebraMap_eq,
-    Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
-  let e : F.obj.obj (op (n + 1)) ≃ₗ[R] M₁ := (spfLiftSectionIso I F (n + 1)).toLinearEquiv
-  have htop : Submodule.map (e : _ →ₗ[R] _)
-      (I ^ (n + 1) • (⊤ : Submodule R (F.obj.obj (op (n + 1))))) =
-      I ^ (n + 1) • (⊤ : Submodule R M₁) := by
-    rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
-  ext x
-  rw [Submodule.restrictScalars_mem, LinearMap.mem_ker, ← htop, Submodule.mem_map_equiv,
-    ← hF.ker_transition n, LinearMap.mem_ker]
-  exact ⟨fun hx ↦ (spfLiftSectionIso I F n).toLinearEquiv.injective
-      (((spfLiftTransitionQuotMap_apply I F n x).symm.trans hx).trans (map_zero _).symm),
-    fun hx ↦ (spfLiftTransitionQuotMap_apply I F n x).trans
-      ((congrArg (spfLiftSectionIso I F n).hom hx).trans (map_zero _))⟩
-
-private lemma isIso_spfLiftTransitionExt (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I)
-    (n : ℕ) :
-    IsIso (((ModuleCat.extendRestrictScalarsAdj
-        (Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).homEquiv
-        _ _).symm (spfLiftTransitionQuotMap I F n)) :=
-  (ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_iff_of_surjective
-      (Ideal.Quotient.factor_surjective _) (spfLiftTransitionQuotMap I F n)).2
-    ⟨spfLiftTransitionQuotMap_surjective I F n, ker_spfLiftTransitionQuotMap I F n⟩
-
-private def spfLiftTransitionIso (I : Ideal R) (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    (Scheme.Modules.pullback
-      (Spec.map (CommRingCat.ofHom
-        (Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))))).obj
-      (spfLiftSheaf I F (n + 1)) ≅ spfLiftSheaf I F n :=
-  letI := isIso_spfLiftTransitionExt I F n
-  Scheme.Modules.isoOfModuleSpecΓIso
-    (((CommRingCat.ofHom (Ideal.Quotient.factor
-        (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).moduleSpecΓPullbackIso
-        (spfLiftSheaf I F (n + 1))).symm ≪≫
-      asIso (((ModuleCat.extendRestrictScalarsAdj
-        (Ideal.Quotient.factor
-          (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).homEquiv _ _).symm
-        (spfLiftTransitionQuotMap I F n)))
-
-private abbrev spfLift (I : Ideal R) [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))]
-    (F : ModuleTower.FiniteAdicSystem.{u} I) :
-    CoherentFormalModule (spf I) where
-  obj := spfLiftSheaf I F
-  isFinitePresentation n := isFinitePresentation_spfLiftSheaf I F n
-  transitionIso := spfLiftTransitionIso I F
-
-private lemma sectionsTower_spfLift_transition (I : Ideal R)
-    [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))]
-    (F : ModuleTower.FiniteAdicSystem.{u} I) (n : ℕ) :
-    ((sectionsTower I).obj (spfLift I F)).map (homOfLE (Nat.le_succ n)).op =
-      (spfLiftSectionIso I F (n + 1)).inv ≫
-        F.obj.map (homOfLE (Nat.le_succ n)).op ≫
-        (spfLiftSectionIso I F n).hom := by
-  simp only [sectionsTower, Functor.ofOpSequence_map_homOfLE_succ, spfLift]
-  have := isIso_spfLiftTransitionExt I F n
-  have hadj : (CommRingCat.ofHom (Ideal.Quotient.factor
-        (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1))))).moduleSpecΓPullbackAdjoint
-        (spfLiftTransitionIso I F n).hom = spfLiftTransitionQuotMap I F n := by
-    let φ := Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := I) (Nat.le_succ (n + 1)))
-    let e := (CommRingCat.ofHom φ).moduleSpecΓPullbackIso (spfLiftSheaf I F (n + 1))
-    let g := ((ModuleCat.extendRestrictScalarsAdj φ).homEquiv
-      (moduleSpecΓFunctor.obj (spfLiftSheaf I F (n + 1)))
-      (moduleSpecΓFunctor.obj (spfLiftSheaf I F n))).symm (spfLiftTransitionQuotMap I F n)
-    refine ModuleCat.hom_ext <| LinearMap.ext fun x ↦ ?_
-    refine (CommRingCat.Hom.moduleSpecΓPullbackAdjoint_apply
-      (CommRingCat.ofHom φ) (spfLiftTransitionIso I F n).hom x).trans ?_
-    have hmap := Scheme.Modules.moduleSpecΓFunctor_map_isoOfModuleSpecΓIso_hom (e.symm ≪≫ asIso g)
-    have h1 := (CommRingCat.Hom.moduleSpecΓPullback_app_one_tmul
-      (CommRingCat.ofHom φ) (spfLiftSheaf I F (n + 1)) x).symm
-    rw [← CommRingCat.Hom.moduleSpecΓPullbackIso_hom] at h1
-    let t : (ModuleCat.extendScalars φ).obj (moduleSpecΓFunctor.obj (spfLiftSheaf I F (n + 1))) :=
-      (1 : R ⧸ I ^ (n + 1)) ⊗ₜ[R ⧸ I ^ (n + 1 + 1), φ] x
-    let u := e.hom t
-    refine (congrArg (moduleSpecΓFunctor.map (spfLiftTransitionIso I F n).hom) h1).trans ?_
-    refine (congrArg (fun f ↦ f.hom u) hmap).trans ?_
-    exact (congrArg g (e.hom_inv_id_apply t)).trans
-      ((ModuleCat.extendRestrictScalarsAdj_homEquiv_apply g x).symm.trans
-        (congrArg (fun h ↦ h.hom x)
-          (((ModuleCat.extendRestrictScalarsAdj φ).homEquiv _ _).apply_symm_apply
-            (spfLiftTransitionQuotMap I F n))))
-  rw [hadj, map_spfLiftTransitionQuotMap, Category.assoc, Iso.hom_inv_id, Category.comp_id]
+end EssSurj
 
 /-- When every quotient `R ⧸ I ^ (n + 1)` is Noetherian — in particular when `R` is Noetherian —
 every `I`-adic system with finite first term is the global-sections tower of a coherent formal
 module on `spf I`. No `I`-adic completeness assumption on `R` is needed. -/
-instance essSurj_finiteSectionsTower (I : Ideal R) [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))] :
+instance essSurj_finiteSectionsTower [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))] :
     (finiteSectionsTower I).EssSurj where
   mem_essImage F := by
-    let e : (sectionsTower I).obj (spfLift I F) ≅ F.obj :=
-      { hom := NatTrans.ofOpSequence (fun n ↦ (spfLiftSectionIso I F n).inv) fun n ↦
-          (congrArg (· ≫ (spfLiftSectionIso I F n).inv)
-            (sectionsTower_spfLift_transition I F n)).trans <|
-            ModuleCat.hom_ext <| LinearMap.ext fun x ↦
-              (spfLiftSectionIso I F n).hom_inv_id_apply _
-        inv := NatTrans.ofOpSequence (fun n ↦ (spfLiftSectionIso I F n).hom) fun n ↦
-          ((congrArg ((spfLiftSectionIso I F (n + 1)).hom ≫ ·)
-            (sectionsTower_spfLift_transition I F n)).trans <|
-            ModuleCat.hom_ext <| LinearMap.ext fun x ↦
-              congrArg
-                (fun y ↦ (spfLiftSectionIso I F n).hom
-                  ((F.obj.map (homOfLE (Nat.le_succ n)).op) y))
-                ((spfLiftSectionIso I F (n + 1)).hom_inv_id_apply x)).symm
-        hom_inv_id := by
-          ext ⟨n⟩ : 2
-          exact (spfLiftSectionIso I F n).inv_hom_id
-        inv_hom_id := by
-          ext ⟨n⟩ : 2
-          exact (spfLiftSectionIso I F n).hom_inv_id }
-    exact ⟨spfLift I F, ⟨(ModuleTower.isFiniteAdicSystem I).isoMk e⟩⟩
+    obtain ⟨hF, hF₀⟩ := (ModuleTower.isFiniteAdicSystem_iff I _).1 F.property
+    exact ⟨ofAdicSystem hF, ⟨ObjectProperty.isoMk _ (asIso (sectionsHom hF)).symm⟩⟩
+
+end
+
+noncomputable section
+
+variable {R : Type u} [CommRing R]
 
 /-- When `I` is finitely generated and `R ⧸ I` is Noetherian, every quotient `R ⧸ I ^ (n + 1)` is
 Noetherian, so `finiteSectionsTower I` is essentially surjective without global Noetherianity or
@@ -569,20 +462,74 @@ theorem not_essSurj_finiteSectionsTower_mvPolynomial (k : Type u) [CommRing k] [
 
 /-- The inverse limit `lim Γ(M n)` of the levelwise global sections of a coherent formal module on
 `spf I`. -/
+-- `@[expose]` is forced by dependent typing: `sectionsLim_map` and `limπ_sectionsLim_map` need
+-- `(sectionsLim I).obj M` to reduce to `ModuleCat.of R ((sectionsTower I).obj M).lim`.
+@[expose]
 def sectionsLim (I : Ideal R) : CoherentFormalModule (spf I) ⥤ ModuleCat.{u} R :=
   sectionsTower I ⋙ ModuleTower.limFunctor R
 
 instance (I : Ideal R) : (sectionsLim I).Additive :=
   inferInstanceAs (sectionsTower I ⋙ ModuleTower.limFunctor R).Additive
 
+/-- `sectionsLim I` is the composition of `sectionsTower I` with `ModuleTower.limFunctor R`. -/
+theorem sectionsLim_eq (I : Ideal R) :
+    sectionsLim I = sectionsTower I ⋙ ModuleTower.limFunctor R :=
+  (rfl)
+
+/-- On objects, `sectionsLim I` sends `M` to the inverse limit of `(sectionsTower I).obj M`. -/
+@[simp]
+theorem sectionsLim_obj (I : Ideal R) (M : CoherentFormalModule (spf I)) :
+    (sectionsLim I).obj M = ModuleCat.of R ((sectionsTower I).obj M).lim :=
+  (rfl)
+
+/-- On morphisms, `sectionsLim I` sends `f` to the induced map on inverse limits. -/
+@[simp]
+theorem sectionsLim_map (I : Ideal R) {M N : CoherentFormalModule (spf I)} (f : M ⟶ N) :
+    (sectionsLim I).map f =
+      ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((sectionsTower I).map f)) :=
+  (rfl)
+
+/-- The `n`-th projection of `(sectionsLim I).map f` is global sections of `f.app n`. -/
+theorem limπ_sectionsLim_map (I : Ideal R) {M N : CoherentFormalModule (spf I)} (f : M ⟶ N)
+    (n : ℕ) (x : (sectionsLim I).obj M) :
+    ((sectionsTower I).obj N).limπ n ((sectionsLim I).map f x) =
+      moduleSpecΓFunctor.map (f.app n) (((sectionsTower I).obj M).limπ n x) :=
+  LinearMap.congr_fun (TauCeti.ModuleTower.limπ_comp_limMap ((sectionsTower I).map f) n) x
+
 /-- Over an `I`-adically precomplete ring, the inverse limit `lim Γ(M n)` of a coherent formal
 module on `spf I` as a finite `R`-module (`ModuleTower.finiteLim`). -/
+-- `@[expose]` is forced by dependent typing: `finiteSectionsLim_map_hom` needs
+-- `((finiteSectionsLim I).obj M).obj` to reduce to `ModuleCat.of R ((sectionsTower I).obj M).lim`.
+@[expose]
 def finiteSectionsLim (I : Ideal R) [IsPrecomplete I R] :
     CoherentFormalModule (spf I) ⥤ FGModuleCat.{u} R :=
   finiteSectionsTower I ⋙ ModuleTower.finiteLim I
 
 instance (I : Ideal R) [IsPrecomplete I R] : (finiteSectionsLim I).Additive :=
   inferInstanceAs (finiteSectionsTower I ⋙ ModuleTower.finiteLim I).Additive
+
+/-- `finiteSectionsLim I` is the composition of `finiteSectionsTower I` with
+`ModuleTower.finiteLim I`. -/
+theorem finiteSectionsLim_eq (I : Ideal R) [IsPrecomplete I R] :
+    finiteSectionsLim I = finiteSectionsTower I ⋙ ModuleTower.finiteLim I :=
+  (rfl)
+
+/-- On objects, the underlying module of `(finiteSectionsLim I).obj M` is the inverse limit of
+`(sectionsTower I).obj M`. -/
+@[simp]
+theorem finiteSectionsLim_obj_obj (I : Ideal R) [IsPrecomplete I R]
+    (M : CoherentFormalModule (spf I)) :
+    ((finiteSectionsLim I).obj M).obj = ModuleCat.of R ((sectionsTower I).obj M).lim :=
+  (rfl)
+
+/-- On morphisms, the underlying `ModuleCat` morphism of `(finiteSectionsLim I).map f` is
+`ModuleTower.limMap ((sectionsTower I).map f)`. -/
+@[simp]
+theorem finiteSectionsLim_map_hom (I : Ideal R) [IsPrecomplete I R]
+    {M N : CoherentFormalModule (spf I)} (f : M ⟶ N) :
+    ((finiteSectionsLim I).map f).hom =
+      ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((sectionsTower I).map f)) :=
+  (rfl)
 
 /-- **Coherent formal modules on `spf I` over a complete Noetherian ring** (Stacks, Lemma 30.23.1):
 for an `I`-adically complete Noetherian ring `R`, coherent formal modules on `spf I` are equivalent
@@ -602,23 +549,71 @@ end
 
 end TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
 
-namespace TauCeti.AlgebraicGeometry.Spf
+/-! ### Coherent formal modules on the formal spectrum of a noetherian adic ring -/
+
+namespace TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
 
 open AdicThickeningSystem
 
-/-- **Coherent formal modules on `Spf A`** (Stacks, Lemma 30.23.1): for a Noetherian adic ring `A`,
-coherent formal modules on `Spf A` are equivalent to finite `A`-modules via finite `I`-adic systems
-and inverse-limit global sections. -/
-@[stacks 087W]
-noncomputable def coherentFormalModuleEquiv (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
-    FGModuleCat.{u} A.carrier ≌ CoherentFormalModule (Spf A) :=
-  CoherentFormalModule.spfEquiv A.ideal
+/-- **Coherent formal modules on `Spf A` are finite `A`-modules** (Stacks, Lemma 30.23.1): for an
+adic ring `A` whose underlying ring is noetherian, the coherent formal modules on `Spf A` are
+equivalent to the finite `A`-modules. A coherent formal module `(Mₙ)` corresponds to a finite
+module `M` whose reductions `M ⧸ I ^ (n + 1) M` are the global sections `Γ(Mₙ)`
+(`spfEquivFGModuleCatFunctorCompFiniteReductionIso`). For the `I`-adic completion `Â` of a
+noetherian ring along an ideal `I`, this identifies coherent formal modules on `Spf Â` with finite
+`Â`-modules. -/
+-- The forward module must reduce to the limit in the type of the projection formula below.
+@[expose, stacks 087W]
+noncomputable def spfEquivFGModuleCat (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
+    CoherentFormalModule (Spf A) ≌ FGModuleCat.{u} A.carrier :=
+  (CoherentFormalModule.finiteSectionsTower A.ideal).asEquivalence.trans
+    (ModuleTower.finiteReductionEquiv A.ideal).symm
 
+/-- Under `spfEquivFGModuleCat A`, the tower of global sections of a coherent formal
+module on `Spf A` is the reduction `(M ⧸ I ^ (n + 1) M)ₙ` of the corresponding finite `A`-module
+`M`. -/
+noncomputable def spfEquivFGModuleCatFunctorCompFiniteReductionIso (A : AdicRing.{u})
+    [IsNoetherianRing A.carrier] :
+    (spfEquivFGModuleCat A).functor ⋙ ModuleTower.finiteReduction A.ideal ≅
+      CoherentFormalModule.finiteSectionsTower A.ideal :=
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _ (ModuleTower.finiteReductionEquiv A.ideal).counitIso ≪≫
+      Functor.rightUnitor _
+
+/-- The equivalence takes the inverse limit of the tower of global sections. -/
 @[simp]
-theorem coherentFormalModuleEquiv_inverse (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
-    (coherentFormalModuleEquiv A).inverse =
-      CoherentFormalModule.finiteSectionsLim A.ideal :=
-  CoherentFormalModule.spfEquiv_inverse A.ideal
+theorem spfEquivFGModuleCat_functor (A : AdicRing.{u})
+    [IsNoetherianRing A.carrier] :
+    (spfEquivFGModuleCat A).functor =
+      CoherentFormalModule.finiteSectionsTower A.ideal ⋙ ModuleTower.finiteLim A.ideal := (rfl)
 
-end TauCeti.AlgebraicGeometry.Spf
+/-- The reductions-to-sections comparison is induced by the projections from the inverse limit. -/
+@[simp]
+theorem spfEquivFGModuleCatFunctorCompFiniteReductionIso_hom_app_reductionπ
+    (A : AdicRing.{u}) [IsNoetherianRing A.carrier] (M : CoherentFormalModule (Spf A))
+    (n : ℕ) (x : ((CoherentFormalModule.sectionsTower A.ideal).obj M).lim) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.ObjectProperty.ι_obj,
+      FGModuleCat.obj_carrier]
+    (((spfEquivFGModuleCatFunctorCompFiniteReductionIso A).hom.app M).hom.app
+      (op n)).hom (ModuleTower.reductionπ A.ideal _ n x) =
+        ((CoherentFormalModule.sectionsTower A.ideal).obj M).limπ n x := by
+  exact ModuleTower.finiteReductionEquiv_counitIso_hom_app_reductionπ A.ideal
+    ((finiteSectionsTower A.ideal).obj M) n x
 
+/-- The inverse equivalence associates to a finite module a coherent formal module whose
+sections are its reductions. -/
+noncomputable def spfEquivFGModuleCatInverseCompFiniteSectionsTowerIso
+    (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
+    (spfEquivFGModuleCat A).inverse ⋙
+      CoherentFormalModule.finiteSectionsTower A.ideal ≅ ModuleTower.finiteReduction A.ideal :=
+  Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft _
+    (CoherentFormalModule.finiteSectionsTower A.ideal).asEquivalence.counitIso ≪≫
+      Functor.rightUnitor _
+
+/-- The equivalence with finite modules preserves addition of morphisms. -/
+instance (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
+    (spfEquivFGModuleCat A).functor.Additive := by
+  exact inferInstanceAs (CoherentFormalModule.finiteSectionsTower A.ideal ⋙
+    ModuleTower.finiteLim A.ideal).Additive
+
+end TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule

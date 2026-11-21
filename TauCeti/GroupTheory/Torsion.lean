@@ -57,6 +57,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
   makes the `p`-primary component trivial.
+* `AddEquiv.primaryComponent_eq_bot_iff`: an additive equivalence preserves the triviality of
+  the `p`-primary component.
 * `TauCeti.AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent`: a `p`-primary element killed
   by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
@@ -111,7 +113,7 @@ def torsionMulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
   invFun t := ⟨e.symm (ofAdd (0, t.toAdd)), (mem_torsion_iff_of_mulEquiv hT e).2 (by simp)⟩
   left_inv x :=
     Subtype.ext (e.symm_apply_eq.2 (Multiplicative.ext
-      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.2).symm rfl)))
+      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.property).symm rfl)))
   right_inv t := by simp
   map_mul' x y := by simp
 
@@ -174,7 +176,7 @@ theorem isCyclic_torsion_of_mulEquiv [IsAddCyclic T] (e : A ≃* Multiplicative 
       map_one' := by simp
       map_mul' := fun x y ↦ by simp } fun x y hxy ↦ ?_
   have hfst (z : torsion A) : (e z).toAdd.1 = 0 := by
-    have h := e.toMonoidHom.isOfFinOrder ((CommGroup.mem_torsion _).1 z.2)
+    have h := e.toMonoidHom.isOfFinOrder ((CommGroup.mem_torsion _).1 z.property)
     rw [MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd (e z), isOfFinOrder_ofAdd_iff] at h
     exact (isOfFinAddOrder_iff_eq_zero _).1 (by simpa using h.fst)
   refine Subtype.ext (e.injective (Multiplicative.ext (Prod.ext ?_ ?_)))
@@ -230,6 +232,13 @@ theorem primaryComponent_eq_bot_of_injective_nsmul
     rw [← smul_iterate]
     exact hp.iterate m
   exact hpPow (by simpa using hm)
+
+/-- An additive equivalence preserves the triviality of the `p`-primary component: the
+`p`-primary component of `M` is trivial exactly when that of `N` is. -/
+theorem _root_.AddEquiv.primaryComponent_eq_bot_iff {N : Type*} [AddCommGroup N] (e : M ≃+ N) :
+    AddCommGroup.primaryComponent M p = ⊥ ↔ AddCommGroup.primaryComponent N p = ⊥ := by
+  simp only [AddSubgroup.eq_bot_iff_forall, AddCommGroup.mem_primaryComponent, e.surjective.forall,
+    ← map_nsmul, map_eq_zero_iff e e.injective]
 
 /-- A `p`-primary element killed by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 Here `p` need not be prime. -/

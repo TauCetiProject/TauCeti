@@ -82,11 +82,11 @@ theorem mem_morseBrokenTrajectorySet_neg {p r : criticalPoints 𝓘(ℝ, E) f}
       (Set.equivOfEq criticalPoints_neg x.1, x.2.2, x.2.1) ∈ hX.morseBrokenTrajectorySet p r := by
   -- At each critical point the Morse indices of `-f` and `f` add up to the dimension.
   have hp := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    p.2).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    p.property).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   have hr := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    r.2).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    r.property).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   have hq := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    (by simpa using x.1.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    (by simpa using x.1.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   simp only [mem_morseBrokenTrajectorySet, Set.equivOfEq_apply]
   rw [hX.neg_morseTrajectorySlice hf, hX.neg_morseTrajectorySlice hf]
   constructor
@@ -120,9 +120,9 @@ theorem morseBoundaryCoeff_neg (q p : criticalPoints 𝓘(ℝ, E) (-f)) :
         (Set.equivOfEq criticalPoints_neg q) := by
   -- At each critical point the Morse indices of `-f` and `f` add up to the dimension.
   have hp := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    (by simpa using p.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    (by simpa using p.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   have hq := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-    (by simpa using q.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    (by simpa using q.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   simp only [Set.equivOfEq_apply]
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
   · rw [(h.neg hf).morseBoundaryCoeff_eq_ncard hf.neg (by omega),

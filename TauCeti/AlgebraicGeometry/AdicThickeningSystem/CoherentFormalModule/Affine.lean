@@ -32,8 +32,9 @@ Transporting the section-tower functors along `specIso J` yields:
   for any finitely generated ideal `J` with `R ⧸ J` Noetherian — and in particular for any ideal `J`
   of a Noetherian ring `R` — coherent formal modules on `(Spec R)/V(J)` are equivalent to finite
   modules over the `J`-adic completion `AdicCompletion J R`, combining
-  `specIsoSpfCompletion J fg : (Spec R)/V(J) ≅ Spf R̂` with `Spf.coherentFormalModuleEquiv` and
-  Noetherianity of `AdicCompletion J R` (`Ideal.isNoetherianRing_adicCompletion_of_fg`).
+  `specIsoSpfCompletion J fg : (Spec R)/V(J) ≅ Spf R̂` with
+  `CoherentFormalModule.spfEquivFGModuleCat` and Noetherianity of `AdicCompletion J R`
+  (`Ideal.isNoetherianRing_adicCompletion_of_fg`).
 
 ## Main definitions
 
@@ -70,6 +71,9 @@ variable {R : Type u} [CommRing R]
 /-- The tower of levelwise global sections of a coherent formal module on the formal completion of
 `Spec R` along `V(J)`, obtained by transporting `CoherentFormalModule.sectionsTower J` across
 `specIso J`. -/
+-- `@[expose]` is needed so `(specSectionsLim J).obj M` and
+-- `((specFiniteSectionsTower J).obj M).obj` reduce to `(specSectionsTower J).obj M` below.
+@[expose]
 def specSectionsTower (J : Ideal R) :
     CoherentFormalModule
         ((Spec (CommRingCat.of R)).formalCompletion
@@ -89,8 +93,40 @@ instance (J : Ideal R) : (specSectionsTower J).Faithful :=
   inferInstanceAs (CoherentFormalModule.pullback (specIso J).inv ⋙
     CoherentFormalModule.sectionsTower J).Faithful
 
+/-- `specSectionsTower J` is the composition of `CoherentFormalModule.pullback (specIso J).inv`
+with `CoherentFormalModule.sectionsTower J`. -/
+theorem specSectionsTower_eq (J : Ideal R) :
+    specSectionsTower J =
+      CoherentFormalModule.pullback (specIso J).inv ⋙ CoherentFormalModule.sectionsTower J :=
+  (rfl)
+
+/-- On objects, `specSectionsTower J` evaluates `(CoherentFormalModule.sectionsTower J).obj` on the
+pullback along `(specIso J).inv`. -/
+@[simp]
+theorem specSectionsTower_obj (J : Ideal R)
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))) :
+    (specSectionsTower J).obj M =
+      (CoherentFormalModule.sectionsTower J).obj
+        ((CoherentFormalModule.pullback (specIso J).inv).obj M) :=
+  (rfl)
+
+/-- On morphisms, `specSectionsTower J` evaluates `(CoherentFormalModule.sectionsTower J).map` on
+the pullback along `(specIso J).inv`. -/
+@[simp]
+theorem specSectionsTower_map (J : Ideal R)
+    {M N : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))} (f : M ⟶ N) :
+    (specSectionsTower J).map f =
+      (CoherentFormalModule.sectionsTower J).map
+        ((CoherentFormalModule.pullback (specIso J).inv).map f) :=
+  (rfl)
+
 /-- The global-sections tower of a coherent formal module on `(Spec R)/V(J)`, valued in `J`-adic
 systems of `R`-modules with finite first term. -/
+-- `@[expose]` is needed so `specFiniteSectionsTower_map_hom` reduces
+-- `((specFiniteSectionsTower J).obj M).obj`.
+@[expose]
 def specFiniteSectionsTower (J : Ideal R) :
     CoherentFormalModule
         ((Spec (CommRingCat.of R)).formalCompletion
@@ -109,6 +145,33 @@ instance (J : Ideal R) : (specFiniteSectionsTower J).Full :=
 instance (J : Ideal R) : (specFiniteSectionsTower J).Faithful :=
   inferInstanceAs (CoherentFormalModule.pullback (specIso J).inv ⋙
     CoherentFormalModule.finiteSectionsTower J).Faithful
+
+/-- `specFiniteSectionsTower J` is the composition of
+`CoherentFormalModule.pullback (specIso J).inv` with
+`CoherentFormalModule.finiteSectionsTower J`. -/
+theorem specFiniteSectionsTower_eq (J : Ideal R) :
+    specFiniteSectionsTower J =
+      CoherentFormalModule.pullback (specIso J).inv ⋙
+        CoherentFormalModule.finiteSectionsTower J :=
+  (rfl)
+
+/-- On objects, the underlying tower of `(specFiniteSectionsTower J).obj M` is
+`(specSectionsTower J).obj M`. -/
+@[simp]
+theorem specFiniteSectionsTower_obj_obj (J : Ideal R)
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))) :
+    ((specFiniteSectionsTower J).obj M).obj = (specSectionsTower J).obj M :=
+  (rfl)
+
+/-- On morphisms, the underlying tower morphism of `(specFiniteSectionsTower J).map f` is
+`(specSectionsTower J).map f`. -/
+@[simp]
+theorem specFiniteSectionsTower_map_hom (J : Ideal R)
+    {M N : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))} (f : M ⟶ N) :
+    ((specFiniteSectionsTower J).map f).hom = (specSectionsTower J).map f :=
+  (rfl)
 
 /-- When every quotient `R ⧸ J ^ (n + 1)` is Noetherian — in particular when `R` is Noetherian —
 taking levelwise global sections identifies coherent formal modules on `(Spec R)/V(J)` with
@@ -151,6 +214,8 @@ theorem not_essSurj_specFiniteSectionsTower_mvPolynomial (k : Type u) [CommRing 
 
 /-- The inverse limit of levelwise global sections of a coherent formal module on
 `(Spec R)/V(J)`. -/
+-- `@[expose]` is needed so `specSectionsLim_map` reduces `(specSectionsLim J).obj M`.
+@[expose]
 def specSectionsLim (J : Ideal R) :
     CoherentFormalModule
         ((Spec (CommRingCat.of R)).formalCompletion
@@ -162,8 +227,36 @@ instance (J : Ideal R) : (specSectionsLim J).Additive :=
   inferInstanceAs (CoherentFormalModule.pullback (specIso J).inv ⋙
     CoherentFormalModule.sectionsLim J).Additive
 
+/-- `specSectionsLim J` is the composition of `CoherentFormalModule.pullback (specIso J).inv`
+with `CoherentFormalModule.sectionsLim J`. -/
+theorem specSectionsLim_eq (J : Ideal R) :
+    specSectionsLim J =
+      CoherentFormalModule.pullback (specIso J).inv ⋙ CoherentFormalModule.sectionsLim J :=
+  (rfl)
+
+/-- On objects, `specSectionsLim J` sends `M` to the inverse limit of
+`(specSectionsTower J).obj M`. -/
+@[simp]
+theorem specSectionsLim_obj (J : Ideal R)
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))) :
+    (specSectionsLim J).obj M = ModuleCat.of R ((specSectionsTower J).obj M).lim :=
+  (rfl)
+
+/-- On morphisms, `specSectionsLim J` sends `f` to the induced map on inverse limits. -/
+@[simp]
+theorem specSectionsLim_map (J : Ideal R)
+    {M N : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))} (f : M ⟶ N) :
+    (specSectionsLim J).map f =
+      ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((specSectionsTower J).map f)) :=
+  (rfl)
+
 /-- Over a `J`-adically precomplete ring `R`, the inverse limit of levelwise global sections of a
 coherent formal module on `(Spec R)/V(J)` as a finite `R`-module. -/
+-- `@[expose]` is needed so `specFiniteSectionsLim_map_hom` reduces
+-- `((specFiniteSectionsLim J).obj M).obj`.
+@[expose]
 def specFiniteSectionsLim (J : Ideal R) [IsPrecomplete J R] :
     CoherentFormalModule
         ((Spec (CommRingCat.of R)).formalCompletion
@@ -174,6 +267,34 @@ def specFiniteSectionsLim (J : Ideal R) [IsPrecomplete J R] :
 instance (J : Ideal R) [IsPrecomplete J R] : (specFiniteSectionsLim J).Additive :=
   inferInstanceAs (CoherentFormalModule.pullback (specIso J).inv ⋙
     CoherentFormalModule.finiteSectionsLim J).Additive
+
+/-- `specFiniteSectionsLim J` is the composition of
+`CoherentFormalModule.pullback (specIso J).inv` with
+`CoherentFormalModule.finiteSectionsLim J`. -/
+theorem specFiniteSectionsLim_eq (J : Ideal R) [IsPrecomplete J R] :
+    specFiniteSectionsLim J =
+      CoherentFormalModule.pullback (specIso J).inv ⋙
+        CoherentFormalModule.finiteSectionsLim J :=
+  (rfl)
+
+/-- On objects, the underlying module of `(specFiniteSectionsLim J).obj M` is the inverse limit
+of `(specSectionsTower J).obj M`. -/
+@[simp]
+theorem specFiniteSectionsLim_obj_obj (J : Ideal R) [IsPrecomplete J R]
+    (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))) :
+    ((specFiniteSectionsLim J).obj M).obj = ModuleCat.of R ((specSectionsTower J).obj M).lim :=
+  (rfl)
+
+/-- On morphisms, the underlying `ModuleCat` morphism of `(specFiniteSectionsLim J).map f` is
+`ModuleTower.limMap ((specSectionsTower J).map f)`. -/
+@[simp]
+theorem specFiniteSectionsLim_map_hom (J : Ideal R) [IsPrecomplete J R]
+    {M N : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
+      (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)))} (f : M ⟶ N) :
+    ((specFiniteSectionsLim J).map f).hom =
+      ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((specSectionsTower J).map f)) :=
+  (rfl)
 
 /-- **Coherent formal modules on `(Spec R)/V(J)` over a complete Noetherian ring** (Stacks,
 Lemma 30.23.1): when `R` is Noetherian and `J`-adically complete, coherent formal modules on the
@@ -190,7 +311,7 @@ def coherentFormalModuleEquivSpecSelf (J : Ideal R) [IsNoetherianRing R] [IsAdic
 theorem coherentFormalModuleEquivSpecSelf_inverse (J : Ideal R) [IsNoetherianRing R]
     [IsAdicComplete J R] :
     (coherentFormalModuleEquivSpecSelf J).inverse = specFiniteSectionsLim J := by
-  simp [coherentFormalModuleEquivSpecSelf, specFiniteSectionsLim]
+  simp [coherentFormalModuleEquivSpecSelf, specFiniteSectionsLim_eq]
 
 /-- **Coherent formal modules on `(Spec R)/V(J)` for a finitely generated ideal with Noetherian
 quotient** (Stacks, Lemma 30.23.1): if `J` is finitely generated and `R ⧸ J` is Noetherian, then
@@ -203,7 +324,7 @@ def coherentFormalModuleEquivSpecOfFG (J : Ideal R) (fg : J.FG) [IsNoetherianRin
         ((Spec (CommRingCat.of R)).formalCompletion
           (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))) :=
   letI := Ideal.isNoetherianRing_adicCompletion_of_fg J fg
-  (Spf.coherentFormalModuleEquiv (AdicRing.completion J fg)).trans
+  (CoherentFormalModule.spfEquivFGModuleCat (AdicRing.completion J fg)).symm.trans
     (CoherentFormalModule.pullbackEquiv (specIsoSpfCompletion J fg))
 
 /-- **Coherent formal modules on `(Spec R)/V(J)` over a Noetherian ring** (Stacks, Lemma 30.23.1):

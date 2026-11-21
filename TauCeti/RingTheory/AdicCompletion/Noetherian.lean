@@ -64,12 +64,12 @@ private theorem le_span_of_forall_exists_sub_mem_pow [IsAdicComplete I R] {ι : 
       x - ∑ i, c i * g i ∈ J ⊓ I ^ (n + 1)) :
     J ≤ Ideal.span (Set.range g) := by
   intro x hx
-  choose c hc hrem using fun n (y : ↥(J ⊓ I ^ n)) ↦ h n y.1 y.2
+  choose c hc hrem using fun n (y : ↥(J ⊓ I ^ n)) ↦ h n y.val y.property
   -- The remainders after `n` correction steps, and the accumulated coefficients.
   let y : ∀ n, ↥(J ⊓ I ^ n) := fun n ↦
-    Nat.rec ⟨x, hx, by simp⟩ (fun n yn ↦ ⟨yn.1 - ∑ i, c n yn i * g i, hrem n yn⟩) n
+    Nat.rec ⟨x, hx, by simp⟩ (fun n yn ↦ ⟨yn.val - ∑ i, c n yn i * g i, hrem n yn⟩) n
   let s : ℕ → ι → R := fun k i ↦ ∑ n ∈ Finset.range k, c n (y n) i
-  have hs (k : ℕ) : x - ∑ i, s k i * g i = (y k).1 := by
+  have hs (k : ℕ) : x - ∑ i, s k i * g i = (y k).val := by
     induction k with
     | zero => simp [s, y]
     | succ k ih =>
@@ -92,11 +92,11 @@ private theorem le_span_of_forall_exists_sub_mem_pow [IsAdicComplete I R] {ι : 
     rw [SModEq.sub_mem, sub_zero, smul_eq_mul, Ideal.mul_top]
     have hLk (i : ι) : s (k + D) i - L i ∈ I ^ k := by
       simpa [SModEq.sub_mem] using hL i k
-    have : x - ∑ i, L i * g i = (y (k + D)).1 + ∑ i, (s (k + D) i - L i) * g i := by
+    have : x - ∑ i, L i * g i = (y (k + D)).val + ∑ i, (s (k + D) i - L i) * g i := by
       rw [← hs (k + D)]
       simp [sub_mul, Finset.sum_sub_distrib]
     rw [this]
-    exact add_mem (Ideal.pow_le_pow_right (Nat.le_add_right k D) (y (k + D)).2.2)
+    exact add_mem (Ideal.pow_le_pow_right (Nat.le_add_right k D) (y (k + D)).property.2)
       (Ideal.sum_mem _ fun i _ ↦ Ideal.mul_mem_right _ _ (hLk i))
   rw [sub_eq_zero] at hx
   rw [hx, Ideal.mem_span_range_iff_exists_fun]
@@ -188,7 +188,7 @@ theorem isNoetherianRing_of_isAdicComplete (I : Ideal R) (hI : I.FG) [IsAdicComp
   -- Each generator `t` has a degree `d t` and a value congruent to some `g t ∈ J`.
   have hT (t : T) : ∃ d, (t : MvPolynomial (Fin r) R).IsHomogeneous d ∧
       ∃ g ∈ J, aeval f (t : MvPolynomial (Fin r) R) - g ∈ Ideal.span (Set.range f) ^ (d + 1) := by
-    obtain ⟨d, hd, hmem⟩ := hTS t.2
+    obtain ⟨d, hd, hmem⟩ := hTS t.property
     obtain ⟨g, hg, e, he, hge⟩ := Submodule.mem_sup.mp hmem
     exact ⟨d, hd, g, hg, by rwa [← hge, add_sub_cancel_left]⟩
   choose d hd g hgJ hge using hT

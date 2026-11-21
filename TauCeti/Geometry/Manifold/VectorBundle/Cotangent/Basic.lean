@@ -26,9 +26,14 @@ projection is a submersion by `Bundle.isSubmersion_proj`, the zero section is sm
 `Bundle.contMDiff_zeroSection`, and the fibrewise addition and scalar multiplication are the vector
 space structures of the fibres.
 
-This file computes the charts in coordinates. The preferred chart at a covector over `x₀` sends a
-covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M` at `x₀`
-(`TauCeti.CotangentBundle.extChartAt_apply`, `TauCeti.CotangentBundle.extChartAt_symm_apply`).
+This file computes the trivializations and charts in coordinates. The canonical trivialization at
+`x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
+(`TauCeti.CotangentBundle.trivializationAt_mk_snd`), and it is the identity over `x` itself
+(`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
+`TauCeti.CotangentBundle.symmL_trivializationAt_self`). The preferred chart at a covector over
+`x₀` sends a covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M`
+at `x₀` (`TauCeti.CotangentBundle.extChartAt_apply`,
+`TauCeti.CotangentBundle.extChartAt_symm_apply`).
 Consequently, a change of base chart `φ = φ₁ ∘ φ₀⁻¹` acts on cotangent coordinates by
 
 `(q, p) ↦ (φ q, p ∘ (dφ_q)⁻¹)`,
@@ -86,7 +91,7 @@ variable {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [Chart
 
 /-- Two covectors are equal if they have the same base point and take the same values. -/
 theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
-    (h : ∀ v : TangentSpace I z.proj, z.2 v = w.2 v) : z = w := by
+    (h : ∀ v : TangentSpace I z.proj, z.snd v = w.snd v) : z = w := by
   obtain ⟨x, p⟩ := z
   obtain ⟨y, q⟩ := w
   obtain rfl : x = y := hproj
@@ -109,12 +114,32 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I 
     ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
   exact congrArg p (Manifold.symmL_trivializationAt_self x v)
 
+/-- The canonical trivialization at `x` reads a covector at `y` as its precomposition with the
+inverse of the tangent trivialization at `x`, from model vectors to tangent vectors at `y`. -/
+theorem trivializationAt_mk_snd (x y : M) (p : TangentSpace I y →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x ⟨y, p⟩).2 =
+      p ∘L (trivializationAt E (TangentSpace I) x).symmL 𝕜 y := by
+  ext v
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
+
+/-- The inverse of the canonical trivialization at `x` sends a model covector to itself, read as
+a covector at `x`. -/
+theorem symmL_trivializationAt_self (x : M) (p : E →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x).symmL 𝕜 x p = p :=
+  -- `p` is read as a covector at `x`, whose coordinates at `x` are itself.
+  (congrArg _ (continuousLinearMapAt_trivializationAt_self (I := I) x p).symm).trans
+    (Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _
+      (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
+        (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x) p)
+
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/
 theorem extChartAt_apply (z₀ z : CotangentBundle I M) :
     extChartAt (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) z₀ z =
       (extChartAt I z₀.proj z.proj,
-        z.2 ∘L (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜 z.proj) := by
+        z.snd ∘L (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜 z.proj) := by
   simp [ContinuousLinearMap.inCoordinates]
 
 /-- The inverse of the preferred chart of the cotangent bundle at `z₀` sends a point `q` of the
@@ -262,7 +287,7 @@ private theorem contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates {Ψ : X → 
     (hd : ContMDiffAt IX 𝓘(𝕜, E →L[𝕜] E') m
       (inTangentCoordinates I J g (fun z ↦ f z (g z)) (fun z ↦ mfderiv I J (f z) (g z)) z₀) z₀) :
     ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J (f z) (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z)) :
         CotangentBundle I M)) z₀ := by
   rw [contMDiffAt_hom_bundle] at hΨ ⊢
   refine ⟨hg, (hΨ.2.clm_comp hd).congr_of_eventuallyEq ?_⟩
@@ -290,7 +315,7 @@ theorem contMDiffAt_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → 
     (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
     (hf : ContMDiffAt I J n f (g z₀)) (hmn : m + 1 ≤ n) :
     ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J f (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J f (g z)) :
         CotangentBundle I M)) z₀ :=
   -- Differentiating `f` on its own source needs no `C¹` structure on the parameter space.
   contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates (f := fun _ ↦ f) hΨg hΨ hg
@@ -303,7 +328,7 @@ theorem contMDiff_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → M}
     (hΨ : ContMDiff IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ) (hg : ContMDiff IX I m g)
     (hf : ContMDiff I J n f) (hmn : m + 1 ≤ n) :
     ContMDiff IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J f (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J f (g z)) :
         CotangentBundle I M)) :=
   fun z ↦ contMDiffAt_mk_comp_mfderiv hΨg (hΨ z) (hg z) (hf (g z)) hmn
 
@@ -318,7 +343,7 @@ theorem contMDiffAt_mk_comp_mfderiv_uncurry [IsManifold IX 1 X] {Ψ : X → Cota
     (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
     (hf : ContMDiffAt (IX.prod I) J n (Function.uncurry f) (z₀, g z₀)) (hmn : m + 1 ≤ n) :
     ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J (f z) (g z)) :
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z)) :
         CotangentBundle I M)) z₀ :=
   contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates hΨg hΨ hg
     (hf.continuousAt.comp (f := fun z ↦ (z, g z)) (continuousAt_id.prodMk hg.continuousAt))
