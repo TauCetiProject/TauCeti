@@ -319,8 +319,8 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
     have := hpos σ hσ
     positivity
 
-/-- For any interval avoiding `0`, an antiderivative of `t ↦ (log t) ^ k / t` is
-`t ↦ (log t) ^ (k + 1) / (k + 1)`. -/
+/-- When the interval `[[a, b]]` avoids `0`, the interval integral
+`∫ t in a..b, (log t) ^ k / t` evaluates to `((log b) ^ (k + 1) - (log a) ^ (k + 1)) / (k + 1)`. -/
 theorem integral_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
     ∫ t : ℝ in a..b, Real.log t ^ k / t =
       (Real.log b ^ (k + 1) - Real.log a ^ (k + 1)) / (k + 1 : ℝ) := by
@@ -337,8 +337,8 @@ theorem integral_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.u
     exact (((Real.continuousAt_log (hne t ht)).pow k).div continuousAt_id
       (hne t ht)).continuousWithinAt
 
-/-- For any interval avoiding `0`, an antiderivative of `t ↦ (-log t) ^ k / t` is
-`t ↦ -(-log t) ^ (k + 1) / (k + 1)`. -/
+/-- When the interval `[[a, b]]` avoids `0`, the interval integral `∫ t in a..b, (-log t) ^ k / t`
+evaluates to `((-log a) ^ (k + 1) - (-log b) ^ (k + 1)) / (k + 1)`. -/
 theorem integral_neg_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
     ∫ t : ℝ in a..b, (-Real.log t) ^ k / t =
       ((-Real.log a) ^ (k + 1) - (-Real.log b) ^ (k + 1)) / (k + 1 : ℝ) := by

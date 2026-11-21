@@ -67,9 +67,10 @@ Specifically:
   `TauCeti.Polylog.not_exists_continuousOn_eqOn_polylog`: cut discontinuity on `(1, ∞)` for
   `1 ≤ n` and non-existence of a continuous extension on `ℂ ∖ {0, 1}`.
 * `TauCeti.Polylog.blochWigner`, `TauCeti.Polylog.blochWigner_zero`,
-  `TauCeti.Polylog.blochWigner_one`, `TauCeti.Polylog.blochWigner_of_ne`,
-  `TauCeti.Polylog.blochWigner_eq`, and `TauCeti.Polylog.continuous_blochWigner`:
-  the Bloch–Wigner dilogarithm, its endpoint and formula identities, and its continuity on `ℂ`.
+  `TauCeti.Polylog.blochWigner_one`, `TauCeti.Polylog.blochWigner_eq`,
+  `TauCeti.Polylog.blochWigner_ofReal`, and `TauCeti.Polylog.continuous_blochWigner`:
+  the Bloch–Wigner dilogarithm, its endpoint, formula, and real-axis vanishing identities, and
+  its continuity on `ℂ`.
 
 ## References
 
@@ -130,7 +131,7 @@ theorem continuousAt_polylog_of_im_ne_zero_or_re_le_one {n : ℤ} {z : ℂ} (hn 
     · exact (analyticAt_polylog_neg_nat 0 (hn.resolve_right (by decide))).continuousAt
     · have hz1 : z ≠ 1 := hn.resolve_right (by decide)
       have hslit : 1 - z ∈ Complex.slitPlane :=
-        Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz hz1
+        z.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz hz1
       rw [Int.ofNat_eq_natCast, zero_add, Nat.cast_one,
         (funext polylog_one : polylog 1 = fun w ↦ -Complex.log (1 - w))]
       exact ((continuousAt_clog hslit).comp (by fun_prop)).neg
@@ -377,6 +378,48 @@ theorem not_exists_continuousOn_eqOn_polylog {n : ℤ} (hn : 1 ≤ n) :
   exact not_continuousAt_of_eqOn_polylog_of_one_lt hn (x := 3) (by norm_num) hg_eq
     (hg_cont.continuousAt (hopen.mem_nhds (by norm_num)))
 
+/-- The Bloch–Wigner dilogarithm `D(z) = Im Li₂(z) + Arg(1 - z) log ‖z‖`, with
+`D(0) = D(1) = 0`. -/
+noncomputable def blochWigner (z : ℂ) : ℝ :=
+  if z = 0 ∨ z = 1 then 0 else (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖
+
+/-- At `0`, the Bloch–Wigner dilogarithm vanishes. -/
+@[simp]
+theorem blochWigner_zero : blochWigner 0 = 0 := by
+  simp [blochWigner]
+
+/-- At `1`, the Bloch–Wigner dilogarithm vanishes. -/
+@[simp]
+theorem blochWigner_one : blochWigner 1 = 0 := by
+  simp [blochWigner]
+
+/-- On all of `ℂ`, `blochWigner z` equals `(polylog 2 z).im + (1 - z).arg * Real.log ‖z‖`. -/
+theorem blochWigner_eq (z : ℂ) :
+    blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖ := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · simp
+  rcases eq_or_ne z 1 with rfl | hz1
+  · simpa using (polylog_ofReal_im 2 (le_refl 1)).symm
+  simp [blochWigner, hz0, hz1]
+
+/-- On the real axis, the Bloch–Wigner dilogarithm vanishes identically. -/
+@[simp]
+theorem blochWigner_ofReal (x : ℝ) : blochWigner x = 0 := by
+  rcases le_or_gt x 1 with hx | hx
+  · rw [blochWigner_eq, polylog_ofReal_im 2 hx]
+    have harg : (1 - (x : ℂ)).arg = 0 := by
+      simpa using Complex.arg_ofReal_of_nonneg (sub_nonneg.mpr hx)
+    simp [harg]
+  · rw [blochWigner_eq]
+    have him2 : (polylog 2 (x : ℂ)).im = -Real.pi * Real.log x := by
+      simpa using im_polylog_of_one_lt (n := 2) (by norm_num) hx
+    have hargx : (1 - (x : ℂ)).arg = Real.pi := by
+      simpa using Complex.arg_ofReal_of_neg (sub_neg.mpr hx)
+    have hlogx : Real.log ‖(x : ℂ)‖ = Real.log x := by
+      rw [Complex.norm_real, Real.norm_of_nonneg (zero_lt_one.trans hx).le]
+    rw [him2, hargx, hlogx]
+    ring
+
 /-- Cancellation of jumps across `(1, ∞)` in weight two:
 `(polylog 2 w).im + (1 - w).arg * log ‖w‖` is continuous at real `x > 1`. -/
 private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm_of_one_lt {x : ℝ} (hx : 1 < x) :
@@ -387,13 +430,10 @@ private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm_of_one_lt {x : �
     (Real.continuousAt_log (norm_ne_zero_iff.mpr hx0)).comp continuous_norm.continuousAt
   have him2 : (polylog 2 (x : ℂ)).im = -Real.pi * Real.log x := by
     simpa using im_polylog_of_one_lt (n := 2) (by norm_num) hx
-  have hargx : (1 - (x : ℂ)).arg = Real.pi := by
-    simpa using Complex.arg_ofReal_of_neg (sub_neg.mpr hx)
   have hlogx : Real.log ‖(x : ℂ)‖ = Real.log x := by
     rw [Complex.norm_real, Real.norm_of_nonneg (zero_lt_one.trans hx).le]
   have hDx : D x = 0 := by
-    simp only [D, him2, hargx, hlogx]
-    ring
+    simp [D, ← blochWigner_eq]
   have hunion : {w : ℂ | w.im ≤ 0} ∪ {w : ℂ | 0 < w.im} = univ := by
     ext w
     exact ⟨fun _ ↦ trivial, fun _ ↦ le_or_gt w.im 0⟩
@@ -471,42 +511,13 @@ private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm (z : ℂ) :
         · exact Or.inl him
         · exact Or.inr (le_of_not_gt fun hgt ↦ hcut ⟨him, hgt⟩)
       have hslit : 1 - z ∈ Complex.slitPlane :=
-        Complex.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz_off hz1
+        z.one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one hz_off hz1
       have hli : ContinuousAt (fun w : ℂ ↦ (polylog 2 w).im) z :=
         Complex.continuous_im.continuousAt.comp
           (continuousAt_polylog_of_im_ne_zero_or_re_le_one (Or.inr le_rfl) hz_off)
       have harg : ContinuousAt (fun w : ℂ ↦ (1 - w).arg) z :=
         (Complex.continuousAt_arg hslit).comp (by fun_prop)
       exact hli.add (harg.mul hlog_norm)
-
-/-- The Bloch–Wigner dilogarithm `D(z) = Im Li₂(z) + Arg(1 - z) log ‖z‖`, with
-`D(0) = D(1) = 0`. -/
-noncomputable def blochWigner (z : ℂ) : ℝ :=
-  if z = 0 ∨ z = 1 then 0 else (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖
-
-/-- At `0`, the Bloch–Wigner dilogarithm vanishes. -/
-@[simp]
-theorem blochWigner_zero : blochWigner 0 = 0 := by
-  simp [blochWigner]
-
-/-- At `1`, the Bloch–Wigner dilogarithm vanishes. -/
-@[simp]
-theorem blochWigner_one : blochWigner 1 = 0 := by
-  simp [blochWigner]
-
-/-- Away from `0` and `1`, `blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖`. -/
-theorem blochWigner_of_ne {z : ℂ} (hz0 : z ≠ 0) (hz1 : z ≠ 1) :
-    blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖ := by
-  simp [blochWigner, hz0, hz1]
-
-/-- On all of `ℂ`, `blochWigner z` equals `(polylog 2 z).im + (1 - z).arg * Real.log ‖z‖`. -/
-theorem blochWigner_eq (z : ℂ) :
-    blochWigner z = (polylog 2 z).im + (1 - z).arg * Real.log ‖z‖ := by
-  rcases eq_or_ne z 0 with rfl | hz0
-  · simp
-  rcases eq_or_ne z 1 with rfl | hz1
-  · simpa using (polylog_ofReal_im 2 (le_refl 1)).symm
-  exact blochWigner_of_ne hz0 hz1
 
 /-- The Bloch–Wigner dilogarithm is continuous on all of `ℂ` (including `0`, `1`, and the cut
 `(1, ∞)`). -/

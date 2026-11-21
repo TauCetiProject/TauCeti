@@ -255,7 +255,7 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
 /-- For `z` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`) and `t ∈ [0, 1]`, the radial
 point `1 - t * z` never lies on the open negative real axis, so its principal argument is not
 `π`. -/
-theorem arg_one_sub_ofReal_mul_ne_pi {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
+theorem arg_one_sub_ofReal_mul_ne_pi (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
     (ht : t ∈ Set.Icc (0 : ℝ) 1) : ((1 : ℂ) - (t : ℂ) * z).arg ≠ π := by
   rw [ne_eq, arg_eq_pi_iff]
   rintro ⟨hre, him⟩
@@ -269,10 +269,10 @@ theorem arg_one_sub_ofReal_mul_ne_pi {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) 
 
 /-- For `z ≠ 1` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`), the point `1 - z` lies in
 the open slit plane `Complex.slitPlane`. -/
-theorem one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1)
+theorem one_sub_mem_slitPlane_of_im_ne_zero_or_re_le_one (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1)
     (hz1 : z ≠ 1) : 1 - z ∈ slitPlane :=
   mem_slitPlane_iff_arg.mpr
-    ⟨by simpa using arg_one_sub_ofReal_mul_ne_pi hz (Set.right_mem_Icc.mpr zero_le_one),
+    ⟨by simpa using z.arg_one_sub_ofReal_mul_ne_pi hz (Set.right_mem_Icc.mpr zero_le_one),
       sub_ne_zero.mpr hz1.symm⟩
 
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
