@@ -49,6 +49,8 @@ pure tensors over a finite spanning family of the right factor.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
+* `TensorProduct.mk_one_eq_rTensor_comp_lid_symm`: the map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is the
+  structure map `R → A` tensored with `M`.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
 
@@ -420,5 +422,13 @@ trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
+
+variable (M) in
+/-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is `(Algebra.linearMap R A).rTensor M` composed with the
+identification `M ≃ R ⊗[R] M`. -/
+theorem mk_one_eq_rTensor_comp_lid_symm (A : Type*) [Semiring A] [Algebra R A] :
+    mk R A M 1 = (Algebra.linearMap R A).rTensor M ∘ₗ (TensorProduct.lid R M).symm.toLinearMap := by
+  ext
+  simp
 
 end TensorProduct

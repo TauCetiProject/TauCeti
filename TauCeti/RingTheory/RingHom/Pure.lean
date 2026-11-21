@@ -33,10 +33,14 @@ injectivity survive base change; it is the condition in the direct summand theor
   `RingHom.IsPure.of_comp`: pure ring maps are injective, contain the identities, are closed
   under composition, and if `g ∘ f` is pure then so is `f`.
 * `RingHom.IsPure.algebraMap_tensorProduct`: purity is stable under base change.
+* `RingHom.IsPure.of_bijective`, `RingHom.IsPure.containsIdentities`,
+  `RingHom.IsPure.stableUnderComposition`, `RingHom.IsPure.respectsIso`,
+  `RingHom.IsPure.isStableUnderBaseChange`: the same laws as properties of ring homomorphisms.
 * `RingHom.FaithfullyFlat.isPure`, `RingHom.faithfullyFlat_iff_flat_and_isPure`: a ring map is
   faithfully flat iff it is flat and pure.
 * `Module.Flat.of_isPure_algebraMap_of_flat`, `RingHom.Flat.of_comp_of_isPure`: if `R → T` is
-  flat and factors through `R → S` with `S → T` pure, then `R → S` is flat.
+  flat and factors through `R → S` with `S → T` pure, then `R → S` is flat. This is the ring
+  form of `LinearMap.IsPure.flat_of_flat`.
 
 ## References
 
@@ -70,19 +74,12 @@ section Algebra
 
 variable [Algebra R S]
 
-/-- The map `P → S ⊗[R] P`, `p ↦ 1 ⊗ p`, is `(Algebra.linearMap R S).rTensor P` composed with the
-identification `P ≃ R ⊗[R] P`. -/
-private theorem tensorProduct_mk_eq (P : Type*) [AddCommGroup P] [Module R P] :
-    TensorProduct.mk R S P 1 =
-      (Algebra.linearMap R S).rTensor P ∘ₗ (TensorProduct.lid R P).symm.toLinearMap := by
-  ext
-  simp
-
 /-- If `R → S` is pure, then `P → S ⊗[R] P`, `p ↦ 1 ⊗ p`, is injective for every `R`-module `P`,
 in any universe. -/
 theorem IsPure.injective_tensorProduct_mk (h : (algebraMap R S).IsPure) (P : Type*)
     [AddCommGroup P] [Module R P] : Function.Injective (TensorProduct.mk R S P 1) := by
-  rw [tensorProduct_mk_eq, LinearMap.coe_comp, LinearEquiv.coe_coe, EquivLike.injective_comp]
+  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    EquivLike.injective_comp]
   exact (isPure_algebraMap_iff.mp h).rTensor_injective P
 
 /-- `R → S` is pure if and only if `P → S ⊗[R] P`, `p ↦ 1 ⊗ p`, is injective for every
@@ -94,24 +91,17 @@ theorem isPure_algebraMap_iff_forall_injective :
   rw [isPure_algebraMap_iff, LinearMap.isPure_iff]
   intro P _ _
   have := H P
-  rw [tensorProduct_mk_eq, LinearMap.coe_comp, LinearEquiv.coe_coe,
+  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
     EquivLike.injective_comp] at this
   exact (LinearMap.lTensor_inj_iff_rTensor_inj P _).mpr this
-
-/-- The map `R' → R' ⊗[R] S` is `(Algebra.linearMap R S).lTensor R'` composed with the
-identification `R' ≃ R' ⊗[R] R`. -/
-private theorem algebraMap_tensorProduct_eq (R' : Type*) [CommRing R'] [Algebra R R'] :
-    ⇑(algebraMap R' (R' ⊗[R] S)) =
-      (Algebra.linearMap R S).lTensor R' ∘ (TensorProduct.rid R R').symm := by
-  ext
-  simp [Algebra.TensorProduct.algebraMap_apply]
 
 /-- If `R → S` is pure, then `R' → R' ⊗[R] S` is injective for every commutative `R`-algebra `R'`,
 in any universe. -/
 theorem IsPure.injective_algebraMap_tensorProduct (h : (algebraMap R S).IsPure) (R' : Type*)
     [CommRing R'] [Algebra R R'] : Function.Injective (algebraMap R' (R' ⊗[R] S)) := by
-  rw [algebraMap_tensorProduct_eq, EquivLike.injective_comp]
-  exact (isPure_algebraMap_iff.mp h).lTensor_injective R'
+  have := (isPure_algebraMap_iff.mp h).lTensor_injective R'
+  rw [← Algebra.TensorProduct.linearMap_comp_rid, LinearMap.coe_comp] at this
+  exact this.of_comp_right (Algebra.TensorProduct.rid R R R').surjective
 
 /-- `R → S` is pure if and only if `R' → R' ⊗[R] S` is injective for every commutative
 `R`-algebra `R'`. For the converse, an `R`-module `P` is a direct summand of the trivial
@@ -146,6 +136,14 @@ theorem IsPure.algebraMap_tensorProduct (h : (algebraMap R S).IsPure) (R' : Type
 
 end Algebra
 
+/-- In a tower `R → S → T`, the structure map `R → T` is the composite of `R → S` and `S → T`, as
+`R`-linear maps. -/
+private theorem linearMap_eq_restrictScalars_comp (T : Type*) [CommRing T] [Algebra R S]
+    [Algebra S T] [Algebra R T] [IsScalarTower R S T] :
+    Algebra.linearMap R T = (Algebra.linearMap S T).restrictScalars R ∘ₗ Algebra.linearMap R S := by
+  ext
+  simp
+
 namespace IsPure
 
 /-- A pure ring homomorphism is injective. -/
@@ -163,22 +161,38 @@ theorem id : (RingHom.id R).IsPure := by
 /-- The composite of pure ring homomorphisms is pure. -/
 theorem comp {f : R →+* S} {g : S →+* T} (hf : f.IsPure) (hg : g.IsPure) : (g.comp f).IsPure := by
   algebraize [f, g, g.comp f]
-  have : Algebra.linearMap R T =
-      (Algebra.linearMap S T).restrictScalars R ∘ₗ Algebra.linearMap R S := by
-    ext
-    simp
-  rw [← algebraMap_toAlgebra (g.comp f), isPure_algebraMap_iff, this]
+  rw [← algebraMap_toAlgebra (g.comp f), isPure_algebraMap_iff,
+    linearMap_eq_restrictScalars_comp (S := S)]
   exact (LinearMap.IsPure.restrictScalars hg).comp hf
 
 /-- If `g ∘ f` is pure, then `f` is pure. -/
 theorem of_comp {f : R →+* S} {g : S →+* T} (h : (g.comp f).IsPure) : f.IsPure := by
   algebraize [f, g, g.comp f]
-  have : Algebra.linearMap R T =
-      (Algebra.linearMap S T).restrictScalars R ∘ₗ Algebra.linearMap R S := by
-    ext
-    simp
-  rw [← algebraMap_toAlgebra (g.comp f), isPure_algebraMap_iff, this] at h
+  rw [← algebraMap_toAlgebra (g.comp f), isPure_algebraMap_iff,
+    linearMap_eq_restrictScalars_comp (S := S)] at h
   exact h.of_comp
+
+/-- A bijective ring homomorphism is pure. -/
+theorem of_bijective {f : R →+* S} (hf : Function.Bijective f) : f.IsPure := by
+  algebraize [f]
+  rw [← algebraMap_toAlgebra f, isPure_algebraMap_iff]
+  exact (LinearEquiv.ofBijective (Algebra.linearMap R S) hf).isPure
+
+/-- Identities are pure. -/
+theorem containsIdentities : ContainsIdentities IsPure := RingHom.IsPure.id
+
+/-- Pure ring homomorphisms are closed under composition. -/
+theorem stableUnderComposition : StableUnderComposition IsPure := by
+  introv R hf hg
+  exact hf.comp hg
+
+/-- Purity is invariant under composing with ring isomorphisms. -/
+theorem respectsIso : RespectsIso IsPure :=
+  stableUnderComposition.respectsIso fun e ↦ of_bijective e.bijective
+
+/-- Purity is stable under base change. -/
+theorem isStableUnderBaseChange : IsStableUnderBaseChange IsPure :=
+  .mk respectsIso fun _ _ _ _ _ _ _ _ h ↦ h.algebraMap_tensorProduct _
 
 end IsPure
 
@@ -209,21 +223,8 @@ variable (R S T : Type*) [CommRing R] [CommRing S] [CommRing T] [Algebra R S] [A
 
 /-- **Flatness descends along pure maps.** If `T` is flat over `R` and `S → T` is pure, then `S`
 is flat over `R`. -/
-theorem of_isPure_algebraMap_of_flat (h : (algebraMap S T).IsPure) [Flat R T] : Flat R S := by
-  rw [iff_lTensor_injectiveₛ]
-  intro P _ _ N
-  -- `T ⊗[S] (S ⊗[R] -)` is identified with `T ⊗[R] -` by `cancelBaseChange`, naturally.
-  have key := LinearMap.congr_fun
-    (AlgebraTensorModule.lTensor_comp_cancelBaseChange R S S (M := T) N.subtype)
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    AlgebraTensorModule.coe_lTensor] at key
-  intro x y hxy
-  apply h.injective_tensorProduct_mk (S ⊗[R] N)
-  apply (AlgebraTensorModule.cancelBaseChange R S S T N).injective
-  apply lTensor_preserves_injective_linearMap N.subtype Subtype.val_injective
-  simp only [TensorProduct.mk_apply, key, LinearMap.lTensor_tmul]
-  rw [← AlgebraTensorModule.coe_lTensor (A := S)] at hxy
-  rw [hxy]
+theorem of_isPure_algebraMap_of_flat (h : (algebraMap S T).IsPure) [Flat R T] : Flat R S :=
+  ((RingHom.isPure_algebraMap_iff.mp h).restrictScalars (R := R)).flat_of_flat
 
 end Module.Flat
 

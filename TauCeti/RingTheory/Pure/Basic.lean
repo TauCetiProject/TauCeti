@@ -47,6 +47,8 @@ tensoring with a module in any universe (`LinearMap.IsPure.lTensor_injective`).
   flat cokernel is pure, and the cokernel of a pure map into a flat module is flat; so an
   injective map into a flat module is pure exactly when its cokernel is flat
   (`LinearMap.isPure_iff_flat_of_exact`, `Submodule.isPure_subtype_iff_flat`).
+* `LinearMap.IsPure.flat_of_flat`: flatness descends along pure maps; the source of a pure map
+  into a flat module is flat.
 * `Ideal.pure_iff_isPure_subtype`: an ideal is pure in Mathlib's sense (`R ⧸ I` flat) exactly
   when its inclusion into `R` is a pure map.
 
@@ -292,6 +294,17 @@ theorem IsPure.flat_of_exact [Module.Flat R N] (hf : f.IsPure) (hfg : Function.E
 theorem isPure_iff_flat_of_exact [Module.Flat R N] (hf : Function.Injective f)
     (hfg : Function.Exact f g) (hg : Function.Surjective g) : f.IsPure ↔ Module.Flat R P :=
   ⟨fun h ↦ h.flat_of_exact hfg hg, fun _ ↦ isPure_of_exact_of_flat hf hfg hg⟩
+
+/-- **Flatness descends along pure maps.** If `M → N` is pure and `N` is flat, then `M` is flat:
+for an ideal `I`, the map `M ⊗ I → M ⊗ R` followed by the injection `M ⊗ R → N ⊗ R` agrees with
+the injection `M ⊗ I → N ⊗ I → N ⊗ R`. -/
+theorem IsPure.flat_of_flat [Module.Flat R N] (hf : f.IsPure) : Module.Flat R M := by
+  rw [Module.Flat.iff_lTensor_injective']
+  intro I
+  refine Function.Injective.of_comp (f := f.rTensor R) ?_
+  rw [← coe_comp, rTensor_comp_lTensor, ← lTensor_comp_rTensor, coe_comp]
+  exact (Module.Flat.lTensor_preserves_injective_linearMap _ I.injective_subtype).comp
+    (hf.rTensor_injective I)
 
 end Flat
 

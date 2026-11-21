@@ -16,7 +16,8 @@ import TauCeti.RingTheory.RingHom.Pure
 These examples test the notions of pure linear maps and pure ring homomorphisms:
 
 * split injections such as `ℤ → ℤ × ℤ` and `R → R[X]` are pure, and so is every faithfully flat
-  ring map, such as `ℤ → ℤ[X]`;
+  ring map, such as `R → R[X]` for nontrivial `R`; the base change `S → S ⊗[R] R[X]` is pure
+  too;
 * multiplication by `2` on `ℤ` is injective but not pure: after tensoring with `ℤ ⧸ 2` it becomes
   the zero map on a nonzero module;
 * `ℤ → ℚ` is injective and flat but not pure: `(ℤ ⧸ 2) ⊗ ℚ = 0`.
@@ -30,22 +31,19 @@ open TensorProduct Polynomial
 example : (LinearMap.inl ℤ ℤ ℤ).IsPure :=
   LinearMap.isPure_of_comp_eq_id (g := LinearMap.fst ℤ ℤ ℤ) (LinearMap.fst_comp_inl ℤ ℤ ℤ)
 
-/-- The inclusion of the constants `R → R[X]` is pure, being split by the constant coefficient. -/
-example (R : Type*) [CommRing R] : (algebraMap R R[X]).IsPure :=
-  RingHom.isPure_algebraMap_iff.mpr <|
+/-- The inclusion of the constants `R → R[X]` is pure, being split by the constant coefficient,
+and so is its base change `S → S ⊗[R] R[X]` along any `R → S`. -/
+example (R : Type*) [CommRing R] :
+    (algebraMap R R[X]).IsPure ∧
+      ∀ (S : Type*) [CommRing S] [Algebra R S], (algebraMap S (S ⊗[R] R[X])).IsPure :=
+  have h : (algebraMap R R[X]).IsPure := RingHom.isPure_algebraMap_iff.mpr <|
     LinearMap.isPure_of_comp_eq_id (g := lcoeff R 0) (by ext; simp)
+  ⟨h, fun S _ _ ↦ h.algebraMap_tensorProduct S⟩
 
 /-- A faithfully flat ring map is pure; here the constants `R → R[X]` again, through faithful
 flatness of a free module of positive rank. -/
 example (R : Type*) [CommRing R] [Nontrivial R] : (algebraMap R R[X]).IsPure :=
   RingHom.FaithfullyFlat.isPure (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
-
-/-- Base change of the pure map `R → R[X]` along `R → S` gives the pure map
-`S → S ⊗[R] R[X]`. -/
-example (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] :
-    (algebraMap S (S ⊗[R] R[X])).IsPure :=
-  (RingHom.isPure_algebraMap_iff.mpr <|
-    LinearMap.isPure_of_comp_eq_id (g := lcoeff R 0) (by ext; simp)).algebraMap_tensorProduct S
 
 /-! ### Injective maps that are not pure -/
 
@@ -62,9 +60,7 @@ example : ¬ ((2 : ℤ) • LinearMap.id : ℤ →ₗ[ℤ] ℤ).IsPure := by
     simpa using congrArg (TensorProduct.rid ℤ (ZMod 2)) h0
   apply hne
   apply h.lTensor_injective (ZMod 2)
-  rw [map_zero, LinearMap.lTensor_tmul, LinearMap.smul_apply, LinearMap.id_apply, tmul_smul,
-    smul_tmul']
-  simp [show (2 : ZMod 2) = 0 from rfl]
+  simp [smul_tmul', -smul_eq_mul, -zsmul_eq_mul, show (2 : ℤ) • (1 : ZMod 2) = 0 by decide]
 
 /-- `ℤ → ℚ` is injective and flat. -/
 example : Function.Injective (algebraMap ℤ ℚ) ∧ (algebraMap ℤ ℚ).Flat :=
@@ -77,5 +73,5 @@ example : ¬ (algebraMap ℤ ℚ).IsPure := by
   intro h
   have h1 : TensorProduct.mk ℤ ℚ (ZMod 2) 1 1 = 0 := by
     rw [TensorProduct.mk_apply, show (1 : ℚ) = (2 : ℤ) • (1 / 2 : ℚ) by norm_num, smul_tmul]
-    simp [show (2 : ZMod 2) = 0 from rfl]
+    simp [show (2 : ZMod 2) = 0 by decide]
   exact one_ne_zero (h.injective_tensorProduct_mk (ZMod 2) (h1.trans (map_zero _).symm))
