@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
+import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.FlatDescent
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -26,6 +28,11 @@ image of the divisor `[P]` on `E` (`EllipticCurveGeom.ker_pointsPullback_left`),
 image of a closed subgroup scheme of `E` is a closed subgroup scheme of `E'`
 (`EllipticCurveGeom.exists_grpObj_isMonHom_comap`). This is what makes level structures defined
 through divisors of points, such as points of exact order `N`, pull back along base change.
+Conversely, when `f` is flat and surjective, a closed subscheme of `E` is a subgroup scheme as soon
+as its inverse image in `E'` is
+(`EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`), with no finiteness
+or flatness hypothesis on the subscheme; this is the elliptic-curve case of
+`TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`.
 
 ## Main definitions
 
@@ -62,6 +69,9 @@ through divisors of points, such as points of exact order `N`, pull back along b
   is the inverse image of the ideal sheaf of `P` along `g`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
   a closed subgroup scheme of `E` along `g` is a closed subgroup scheme of `E'`.
+* `EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`:
+  over a flat surjective `f`, a closed subscheme of `E` is a subgroup scheme exactly when its
+  inverse image in `E'` is.
 
 ## References
 
@@ -385,6 +395,30 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
       simp [i, i', neg_comp_of_isPullback hg h0, reassoc_of% hρ]
     rw [key]
     exact hj.trans (Scheme.Hom.le_ker_comp _ _)
+
+include hg h0 in
+/-- **Subgroup schemes descend along flat surjective morphisms.** Let `g : E' ⟶ E` be a morphism
+of elliptic curves lying over a flat surjective `f : S' ⟶ S`, forming a pullback square with the
+structure morphisms and carrying the zero section of `E'` to that of `E`, and let `V(D) ⊆ E` be a
+closed subscheme, with no finiteness or flatness hypothesis. Then `V(D)` is a subgroup scheme of
+`E` exactly when its inverse image in `E'` is a subgroup scheme of `E'`. The forward direction is
+`EllipticCurveGeom.exists_grpObj_isMonHom_comap`, which needs no hypothesis on `f`; this is the
+elliptic-curve case of `TauCeti.GroupScheme.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`.
+-/
+theorem exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective (D : E.carrier.IdealSheafData)
+    [Flat f] [Surjective f] :
+    (∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ E'.structureMap)),
+      IsMonHom (Over.homMk (D.comap g).subschemeι :
+        Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap)) ↔
+      ∃ _ : GrpObj (Over.mk (D.subschemeι ≫ E.structureMap)),
+        IsMonHom (Over.homMk D.subschemeι :
+          Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap) :=
+  GroupScheme.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective
+    (G := Over.mk E.structureMap) (G' := Over.mk E'.structureMap) hg
+    (by rw [one_left, one_left, h0])
+    -- the two sides differ only by `Over.mk_hom` inside `pullback.map`
+    (by rw [mul_left, mul_left, addition_comp_of_isPullback hg h0]; rfl)
+    (by rw [inv_left, inv_left, neg_comp_of_isPullback hg h0]) D
 
 end EllipticCurveGeom
 

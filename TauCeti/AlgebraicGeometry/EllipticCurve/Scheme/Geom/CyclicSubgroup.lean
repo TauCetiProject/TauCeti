@@ -12,7 +12,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import TauCeti.AlgebraicGeometry.Descent.MorphismProperty
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Locus
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
@@ -243,7 +242,11 @@ include hg h0 in
 morphism `f : S' ⟶ S` locally of finite presentation, forming a pullback square with the structure
 morphisms and carrying the zero section of `E'` to that of `E`. Then the ideal sheaf `I` cuts out a
 cyclic subgroup of `E` of order `N` exactly when its inverse image along `g` cuts out a cyclic
-subgroup of `E'` of order `N`. -/
+subgroup of `E'` of order `N`.
+
+Finiteness, flatness and finite presentation of the subgroup descend along `f` by Mathlib's
+fpqc-to-fppf descent instance in `Mathlib.AlgebraicGeometry.Morphisms.FlatDescent`, which removes
+the quasi-compactness hypothesis of fpqc descent for Zariski-local properties. -/
 theorem isCyclicSubgroup_comap_iff [Surjective f] [Flat f]
     [LocallyOfFinitePresentation f] {I : E.carrier.IdealSheafData} {N : ℕ} :
     E'.IsCyclicSubgroup (I.comap g) N ↔ E.IsCyclicSubgroup I N := by
@@ -263,17 +266,22 @@ theorem isCyclicSubgroup_comap_iff [Surjective f] [Flat f]
     (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)
   observe : MorphismProperty.DescendsAlong @LocallyOfFinitePresentation
     (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)
+  have : (@IsFinite ⊓ @Flat : MorphismProperty Scheme.{u}).DescendsAlong
+      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
+    MorphismProperty.DescendsAlong.inf
+  have : MorphismProperty.DescendsAlong
+      (@IsFinite ⊓ @Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u})
+      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
+    MorphismProperty.DescendsAlong.inf
   have hf : (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) f :=
     ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
-  have : IsFinite (I.subschemeι ≫ E.structureMap) :=
-    MorphismProperty.of_isPullback_of_descendsAlong hsub hf h.isFinite
-  have : Flat (I.subschemeι ≫ E.structureMap) :=
-    MorphismProperty.of_isPullback_of_descendsAlong hsub hf h.flat
-  have : LocallyOfFinitePresentation (I.subschemeι ≫ E.structureMap) :=
-    MorphismProperty.of_isPullback_of_descendsAlong hsub hf h.locallyOfFinitePresentation
+  obtain ⟨⟨_, _⟩, _⟩ : (@IsFinite ⊓ @Flat ⊓ @LocallyOfFinitePresentation :
+      MorphismProperty Scheme.{u}) (I.subschemeι ≫ E.structureMap) :=
+    MorphismProperty.of_isPullback_of_descendsAlong hsub hf
+      ⟨⟨h.isFinite, h.flat⟩, h.locallyOfFinitePresentation⟩
   refine
     { exists_grpObj_isMonHom :=
-        (exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective I hg h0).mp
+        (exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective hg h0 I).mp
           h.exists_grpObj_isMonHom
       isFinite := inferInstance
       flat := inferInstance
@@ -282,23 +290,18 @@ theorem isCyclicSubgroup_comap_iff [Surjective f] [Flat f]
       exists_cover := ?_ }
   · obtain ⟨s', rfl⟩ := f.surjective s
     rw [← I.finrank_comap_of_isPullback _ g _ f hg, h.finrank_eq]
-  -- Compose an fppf covering of `S'` on which the inverse image is generated with `f`.
+  -- Refine the singleton fppf covering by `f` by an fppf covering of `S'` on which the inverse
+  -- image is generated.
   obtain ⟨𝒰, h𝒰⟩ := h.exists_cover
-  obtain ⟨hcov, hprop⟩ := (Scheme.presieve₀_mem_precoverage_iff
-    (P := @Flat ⊓ @LocallyOfFinitePresentation) 𝒰.toPreZeroHypercover).mp 𝒰.mem₀
-  refine ⟨Scheme.Cover.mkOfCovers 𝒰.I₀ 𝒰.X (fun i ↦ 𝒰.f i ≫ f) (fun s ↦ ?_) fun i ↦ ?_,
-    fun i ↦ ?_⟩
-  · obtain ⟨s', rfl⟩ := f.surjective s
-    obtain ⟨i, t, rfl⟩ := hcov s'
-    exact ⟨i, t, rfl⟩
-  · obtain ⟨_, _⟩ := hprop i
-    exact ⟨inferInstance, inferInstance⟩
-  · obtain ⟨E₁, g₁, hg₁, h0₁, P, hP, hI⟩ := h𝒰 i
-    have h0₂ : E₁.zero ≫ g₁ ≫ g = (𝒰.f i ≫ f) ≫ E.zero := by
-      rw [reassoc_of% h0₁, h0, Category.assoc]
-    refine ⟨E₁, g₁ ≫ g, hg₁.paste_horiz hg, h0₂, P, hP, ?_⟩
-    rw [Scheme.IdealSheafData.comap_comp]
-    exact hI
+  refine ⟨Precoverage.ZeroHypercover.bind (J := Scheme.fppfPrecoverage)
+    (f.cover (P := (@Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u}))
+      ⟨inferInstance, inferInstance⟩) fun _ ↦ 𝒰, fun ⟨_, i⟩ ↦ ?_⟩
+  obtain ⟨E₁, g₁, hg₁, h0₁, P, hP, hI⟩ := h𝒰 i
+  have h0₂ : E₁.zero ≫ g₁ ≫ g = (𝒰.f i ≫ f) ≫ E.zero := by
+    rw [reassoc_of% h0₁, h0, Category.assoc]
+  refine ⟨E₁, g₁ ≫ g, hg₁.paste_horiz hg, h0₂, P, hP, ?_⟩
+  rw [Scheme.IdealSheafData.comap_comp]
+  exact hI
 
 end BaseChange
 

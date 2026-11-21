@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
@@ -15,12 +14,12 @@ import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 Let `g : Y ⟶ X` be a flat surjective morphism of schemes. Taking inverse images along `g` reflects
 inclusion of ideal sheaves on `X` (`comap_le_comap_iff_of_flat_of_surjective`), so it is injective
-(`comap_injective_of_flat_of_surjective`): two closed subschemes of `X`, for instance two effective
-Cartier divisors, are equal as soon as their inverse images in `Y` are. This is the uniqueness half
-of faithfully flat descent of closed subschemes, and it needs neither quasi-compactness of `g` nor
-any finiteness hypothesis on the ideal sheaves. Equalities of closed subschemes after a flat
-surjective base change, which is how scheme-theoretic conditions such as Drinfeld level
-structures are stated, therefore already hold before it.
+(`comap_injective_of_flat_of_surjective`, `comap_inj_of_flat_of_surjective`): two closed
+subschemes of `X`, for instance two effective Cartier divisors, are equal as soon as their inverse
+images in `Y` are. This is the uniqueness half of faithfully flat descent of closed subschemes, and
+it needs neither quasi-compactness of `g` nor any finiteness hypothesis on the ideal sheaves.
+Equalities of closed subschemes after a flat surjective base change, which is how scheme-theoretic
+conditions such as Drinfeld level structures are stated, therefore already hold before it.
 
 The proof is stalkwise. A point `x` of `X` is the image of a point `y` of `Y`, the local
 homomorphism `𝒪_{X,x} ⟶ 𝒪_{Y,y}` is flat and hence faithfully flat, and the stalk ideal of the
@@ -31,7 +30,8 @@ is checked on stalks (`Scheme.IdealSheafData.le_iff_forall_stalkIdeal_le`).
 
 Since `f.ker` is the largest ideal sheaf whose inverse image along `f` vanishes, it follows that a
 flat surjective morphism is scheme-theoretically dominant
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`, in
+`TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant`).
 
 ## Main results
 
@@ -39,8 +39,8 @@ flat surjective morphism is scheme-theoretically dominant
   images along a flat surjective morphism reflect inclusion.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_injective_of_flat_of_surjective`: inverse images
   along a flat surjective morphism are injective.
-* `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`: a flat surjective
-  morphism is scheme-theoretically dominant.
+* `AlgebraicGeometry.Scheme.IdealSheafData.comap_inj_of_flat_of_surjective`: two ideal sheaves are
+  equal exactly when their inverse images along a flat surjective morphism are.
 
 ## References
 
@@ -84,18 +84,11 @@ theorem comap_injective_of_flat_of_surjective : Function.Injective (comap · g) 
   fun _ _ h ↦ le_antisymm ((comap_le_comap_iff_of_flat_of_surjective g).mp h.le)
     ((comap_le_comap_iff_of_flat_of_surjective g).mp h.ge)
 
+/-- **Two ideal sheaves are equal exactly when their inverse images along a flat surjective
+morphism are.** -/
+@[simp]
+theorem comap_inj_of_flat_of_surjective {I J : X.IdealSheafData} :
+    I.comap g = J.comap g ↔ I = J :=
+  (comap_injective_of_flat_of_surjective g).eq_iff
+
 end AlgebraicGeometry.Scheme.IdealSheafData
-
-namespace AlgebraicGeometry
-
-/-- **A flat surjective morphism is scheme-theoretically dominant**: its scheme-theoretic image is
-the whole target. -/
-instance IsSchemeTheoreticallyDominant.of_flat_of_surjective {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [Flat f] [Surjective f] : IsSchemeTheoreticallyDominant f where
-  ker_eq_bot := by
-    refine Scheme.IdealSheafData.comap_injective_of_flat_of_surjective f ?_
-    dsimp only
-    rw [Scheme.IdealSheafData.comap_bot, ← Scheme.IdealSheafData.map_bot]
-    exact le_bot_iff.mp (Scheme.IdealSheafData.comap_map_le ⊥ f)
-
-end AlgebraicGeometry

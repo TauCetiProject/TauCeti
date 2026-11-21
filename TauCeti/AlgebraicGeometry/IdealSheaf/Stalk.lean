@@ -162,22 +162,19 @@ theorem stalkIdeal_eq_map_localization (I : X.IdealSheafData) (U : X.affineOpens
 exactly when its stalk ideal is contained in the other's at every point. -/
 theorem le_iff_forall_stalkIdeal_le {I J : X.IdealSheafData} :
     I ≤ J ↔ ∀ x, I.stalkIdeal x ≤ J.stalkIdeal x := by
-  refine ⟨fun h ↦ stalkIdeal_mono h, fun h U ↦ ?_⟩
-  have hU : IsAffineOpen U.val := U.property
-  -- Every maximal ideal of `Γ(X, U)` is the prime ideal of a point of `U`, at which the stalk
-  -- ideals are the localized section ideals.
-  refine Ideal.le_of_localization_maximal fun P hP ↦ ?_
-  have hmem : hU.fromSpec ⟨P, hP.isPrime⟩ ∈ U.val := by
-    rw [← SetLike.mem_coe, ← hU.range_fromSpec]
-    exact Set.mem_range_self _
-  obtain ⟨x, hx⟩ : ∃ x : U.val, (hU.primeIdealOf x).asIdeal = P :=
-    ⟨⟨_, hmem⟩, congrArg PrimeSpectrum.asIdeal
-      (hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf ⟨_, hmem⟩))⟩
-  subst hx
-  have hIJ := h x.val
-  rw [I.stalkIdeal_eq_map_localization U x.val x.property,
-    J.stalkIdeal_eq_map_localization U x.val x.property] at hIJ
-  exact (Ideal.relIsoOfBijective _ (AlgEquiv.bijective _)).symm.le_iff_le.mp hIJ
+  refine ⟨fun h ↦ stalkIdeal_mono h, fun h ↦ le_of_comap_Spec_isLocalRing fun R _ _ φ ↦ ?_⟩
+  -- `φ` factors through `Spec 𝒪_{X,x}` at the image `x` of the closed point, and on an affine
+  -- neighbourhood of `x` the inverse images along `Spec 𝒪_{X,x} ⟶ X` are the stalk ideals.
+  let x := φ (IsLocalRing.closedPoint R)
+  let U : X.affineOpens := ⟨_, isAffineOpen_opensRange (X.affineCover.f (X.affineCover.idx x))⟩
+  have hxU : x ∈ U.val := X.affineCover.covers x
+  have heq : X.fromSpecStalk x = Spec.map (X.presheaf.germ U.val x hxU) ≫ U.property.fromSpec :=
+    (U.property.fromSpecStalk_eq_fromSpecStalk hxU).symm
+  rw [← Scheme.Spec_stalkClosedPointTo_fromSpecStalk φ, heq, ← Category.assoc, ← Spec.map_comp]
+  refine (comap_SpecMap_fromSpec_le_iff U.property _).mpr ?_
+  rw [CommRingCat.hom_comp, ← Ideal.map_map, ← Ideal.map_map, ← stalkIdeal_eq_map,
+    ← stalkIdeal_eq_map]
+  exact Ideal.map_mono (h x)
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

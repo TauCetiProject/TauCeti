@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
-public import TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.IdealSheaf.WeilRestriction
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
@@ -41,15 +41,12 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 (`EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`). No hypothesis is placed on
 `S`, which may be nonreduced, and `N` need not be invertible on it.
 
-A flat surjective morphism factors through a closed subscheme only if that subscheme is everything
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`). Both conditions
-therefore descend along flat surjective morphisms, in particular along fpqc and fppf covers. A
-closed subscheme, with no finiteness or flatness hypothesis, is a subgroup scheme exactly when its
-base change is (`EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`): each
-of the three conditions of the closed-subgroup criterion says that a family lies in the closed
-subscheme, and its parameter scheme changes by a flat surjective base change. A point has exact
-order `N` exactly when its base change does
-(`EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_flat_of_surjective`).
+A scheme-theoretically dominant morphism, for instance a flat surjective one
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`), factors through a
+closed subscheme only if that subscheme is everything. A point therefore has exact order `N`
+exactly when its base change along such a morphism does
+(`EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant`), so
+having exact order `N` descends in particular along fpqc and fppf covers.
 
 ## Main definitions
 
@@ -67,9 +64,8 @@ order `N` exactly when its base change does
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`:
   the universal property of the exact-order locus; `isOfExactOrder_iff_exactOrderLocus_le_ker` is
   its special case for `S`-points of `E`.
-* `EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective` and
-  `EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_flat_of_surjective`: being a subgroup
-  scheme and having exact order `N` descend along flat surjective morphisms.
+* `EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant`: having
+  exact order `N` descends along scheme-theoretically dominant, e.g. flat surjective, morphisms.
 
 ## References
 
@@ -153,64 +149,10 @@ theorem subgroupLocus_le_ker_iff (hg : IsPullback g E'.structureMap E.structureM
 
 end SubgroupLocus
 
-/-! ### Descent of subgroup schemes -/
+/-! ### Exact order is a closed condition -/
 
 variable {E} {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
   {f : S' ⟶ S}
-
-/-- **Subgroup schemes descend along flat surjective morphisms** (Katz–Mazur, 1.3.7). Let
-`g : E' ⟶ E` be a morphism of elliptic curves lying over a flat surjective `f : S' ⟶ S`, forming a
-pullback square with the structure morphisms and carrying the zero section of `E'` to that of `E`,
-and let `V(D) ⊆ E` be a closed subscheme. Then `V(D)` is a subgroup scheme of `E` exactly when its
-inverse image in `E'` is a subgroup scheme of `E'`. -/
-theorem exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective (D : E.carrier.IdealSheafData)
-    [Flat f] [Surjective f] (hg : IsPullback g E'.structureMap E.structureMap f)
-    (h0 : E'.zero ≫ g = f ≫ E.zero) :
-    (∃ _ : GrpObj (Over.mk ((D.comap g).subschemeι ≫ E'.structureMap)),
-      IsMonHom (Over.homMk (D.comap g).subschemeι :
-        Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap)) ↔
-      ∃ _ : GrpObj (Over.mk (D.subschemeι ≫ E.structureMap)),
-        IsMonHom (Over.homMk D.subschemeι :
-          Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap) := by
-  let i' : Over.mk ((D.comap g).subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap :=
-    Over.homMk (D.comap g).subschemeι
-  let i : Over.mk (D.subschemeι ≫ E.structureMap) ⟶ Over.mk E.structureMap :=
-    Over.homMk D.subschemeι
-  have : IsClosedImmersion i'.left := inferInstanceAs (IsClosedImmersion (D.comap g).subschemeι)
-  have : IsClosedImmersion i.left := inferInstanceAs (IsClosedImmersion D.subschemeι)
-  -- `ρ : V(D.comap g) ⟶ V(D)` is the base change of `V(D)` along `f`
-  let ρ := subschemeMap (D.comap g) D g (D.le_map_comap g)
-  have hρ : ρ ≫ D.subschemeι = (D.comap g).subschemeι ≫ g := subschemeMap_subschemeι _ _ _ _
-  have hD := D.isPullback_subschemeMap_comap E.structureMap hg
-  rw [GroupScheme.exists_grpObj_isMonHom_iff_ker_le i',
-    GroupScheme.exists_grpObj_isMonHom_iff_ker_le i,
-    show i'.left.ker = D.comap g from ker_subschemeι _, show i.left.ker = D from ker_subschemeι _]
-  simp only [i', i, Over.comp_left, one_left, mul_left, inv_left, Over.homMk_left,
-    Over.tensorHom_left, Over.tensorObj_left, Over.mk_hom]
-  -- Each condition says that a family lies in `V(D)`; such a condition descends along a flat
-  -- surjective base change of its parameter scheme, since that change is scheme-theoretically
-  -- dominant.
-  have key {X' X : Scheme.{u}} (p : X' ⟶ X) [Flat p] [Surjective p] {φ' : X' ⟶ E'.carrier}
-      {φ : X ⟶ E.carrier} (w : φ' ≫ g = p ≫ φ) : D.comap g ≤ φ'.ker ↔ D ≤ φ.ker := by
-    rw [← le_map_iff_comap_le, map_ker, w, Scheme.Hom.ker_comp, p.ker_eq_bot, map_bot]
-  refine and_congr (key f (by simpa using h0)) (and_congr ?_ ?_)
-  · -- sums of two points of `V(D)` lie in `V(D)`
-    have hDD := hD.flip.pullback_map hD.flip
-    have : Flat (pullback.map _ _ _ _ ρ ρ f hD.flip.w hD.flip.w) :=
-      MorphismProperty.of_isPullback hDD ‹_›
-    have : Surjective (pullback.map _ _ _ _ ρ ρ f hD.flip.w hD.flip.w) :=
-      MorphismProperty.of_isPullback hDD ‹_›
-    refine key (pullback.map _ _ _ _ ρ ρ f hD.flip.w hD.flip.w) ?_
-    rw [Category.assoc, addition_comp_of_isPullback hg h0, ← Category.assoc, ← Category.assoc]
-    congr 1
-    apply pullback.hom_ext <;> simp [hρ]
-  · -- negatives of points of `V(D)` lie in `V(D)`
-    have : Flat ρ := MorphismProperty.of_isPullback hD.flip ‹_›
-    have : Surjective ρ := MorphismProperty.of_isPullback hD.flip ‹_›
-    refine key ρ ?_
-    rw [Category.assoc, neg_comp_of_isPullback hg h0, reassoc_of% hρ]
-
-/-! ### Exact order is a closed condition -/
 
 /-- **Having exact order `N` is a closed condition on the base** (Katz–Mazur, 1.6.2). For a pullback
 square of elliptic curves over `f : S' ⟶ S` and an `S`-point `P` of `E`, the base change of `P`
@@ -245,10 +187,14 @@ theorem isOfExactOrder_iff_subgroupLocus_eq_bot (P : 𝟙_ (Over S) ⟶ Over.mk 
   rw [← le_bot_iff, ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 S),
     ← isOfExactOrder_pointsPullback_iff (.id_horiz E.structureMap) (by simp), pointsPullback_id]
 
-/-- **Points of exact order `N` descend along flat surjective morphisms** (Katz–Mazur, §1.4). For a
-pullback square of elliptic curves over a flat surjective `f : S' ⟶ S`, an `S`-point `P` of `E` has
-exact order `N` exactly when its base change to `E'` does. -/
-theorem isOfExactOrder_pointsPullback_iff_of_flat_of_surjective [Flat f] [Surjective f]
+/-- **Points of exact order `N` descend along scheme-theoretically dominant morphisms**
+(Katz–Mazur, §1.4). For a pullback square of elliptic curves over a scheme-theoretically dominant
+`f : S' ⟶ S`, for instance a flat surjective one, an `S`-point `P` of `E` has exact order `N` in
+the sense of Drinfeld (`EllipticCurveGeom.IsOfExactOrder`) exactly when its base change to `E'`
+does. -/
+@[simp]
+theorem isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant
+    [IsSchemeTheoreticallyDominant f]
     (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero)
     (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) :
     E'.IsOfExactOrder (pointsPullback hg h0 P) N ↔ E.IsOfExactOrder P N := by

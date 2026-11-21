@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
-public import TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.IdealSheaf.IncidenceLocus
 
 /-!
@@ -34,9 +34,11 @@ Drinfeld basis (`EllipticCurveGeom.isDrinfeldBasis_pointsPullback_baseChange_sub
 hypothesis is placed on `S`, which may be nonreduced, and `N` need not be invertible on it: the
 condition is scheme-theoretic, not a condition on geometric fibres.
 
-Being a Drinfeld basis descends along flat surjective morphisms, in particular along fpqc and
-fppf covers (`EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff_of_flat_of_surjective`): a flat
-surjective morphism factors through a closed subscheme only if that subscheme is everything.
+Being a Drinfeld basis descends along scheme-theoretically dominant morphisms
+(`EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff_of_isSchemeTheoreticallyDominant`), in
+particular along flat surjective ones
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`) such as fpqc and fppf
+covers: such a morphism factors through a closed subscheme only if that subscheme is everything.
 
 Applied to a universal homomorphism `(ℤ/Nℤ)² →* E_H(H)`, of which every homomorphism
 `(ℤ/Nℤ)² →* E_T(T)` is the base change along a unique morphism `T ⟶ H` (for instance the one
@@ -57,8 +59,8 @@ out by the Drinfeld-basis locus.
   `φ` is a Drinfeld basis exactly when its locus is all of `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.drinfeldBasisLocus_pointsPullback`: the locus
   commutes with base change.
-* `EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff_of_flat_of_surjective`: being a Drinfeld
-  basis descends along flat surjective morphisms.
+* `EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff_of_isSchemeTheoreticallyDominant`: being
+  a Drinfeld basis descends along scheme-theoretically dominant, e.g. flat surjective, morphisms.
 
 ## References
 
@@ -154,12 +156,14 @@ theorem drinfeldBasisLocus_pointsPullback (hg : IsPullback g E'.structureMap E.s
   · rw [MonoidHom.coe_comp, pointsDivisor_pointsPullback]
   · exact ker_torsionι_left_of_isPullback _ hg h0
 
-/-- **Drinfeld bases descend along flat surjective morphisms** (Katz–Mazur, §3.1). Let `g : E' ⟶ E`
-be a morphism of elliptic curves lying over a flat surjective `f : S' ⟶ S`, forming a pullback
-square with the structure morphisms and carrying the zero section of `E'` to that of `E`. Then
-`φ : (ℤ/Nℤ)² →* E(S)` is a Drinfeld basis of `E[N]` exactly when its base change to `E'` is a
-Drinfeld basis of `E'[N]`. -/
-theorem isDrinfeldBasis_pointsPullback_iff_of_flat_of_surjective [Flat f] [Surjective f]
+/-- **Drinfeld bases descend along scheme-theoretically dominant morphisms** (Katz–Mazur, §3.1).
+Let `g : E' ⟶ E` be a morphism of elliptic curves lying over a scheme-theoretically dominant
+`f : S' ⟶ S`, for instance a flat surjective one, forming a pullback square with the structure
+morphisms and carrying the zero section of `E'` to that of `E`. Then `φ : (ℤ/Nℤ)² →* E(S)` is a
+Drinfeld basis of `E[N]` exactly when its base change to `E'` is a Drinfeld basis of `E'[N]`. -/
+@[simp]
+theorem isDrinfeldBasis_pointsPullback_iff_of_isSchemeTheoreticallyDominant
+    [IsSchemeTheoreticallyDominant f]
     (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero)
     (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
     E'.IsDrinfeldBasis N ((pointsPullback hg h0).comp φ) ↔ E.IsDrinfeldBasis N φ := by

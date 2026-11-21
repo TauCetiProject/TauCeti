@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+import TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import Mathlib.RingTheory.RingHom.Injective
 
@@ -33,7 +36,11 @@ scheme-theoretically dominant morphism stays so after corestriction along an ope
 containing its image
 (`AlgebraicGeometry.IsOpenImmersion.isSchemeTheoreticallyDominant_lift`). The scheme-theoretic
 image of a scheme-theoretically dominant morphism is its whole target
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`). A flat surjective morphism is
+scheme-theoretically dominant
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`), because inverse images
+of ideal sheaves along it are injective
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_injective_of_flat_of_surjective`).
 -/
 
 public section
@@ -146,5 +153,12 @@ instance IsOpenImmersion.isSchemeTheoreticallyDominant_lift {W V Z : Scheme.{u}}
     (H : Set.range u ⊆ Set.range v) :
     IsSchemeTheoreticallyDominant (IsOpenImmersion.lift v u H) :=
   IsSchemeTheoreticallyDominant.of_isPullback (IsOpenImmersion.isPullback_lift_id u v H).flip
+
+/-- **A flat surjective morphism is scheme-theoretically dominant**: its scheme-theoretic image is
+the whole target. -/
+instance IsSchemeTheoreticallyDominant.of_flat_of_surjective (f : X ⟶ Y) [Flat f]
+    [Surjective f] : IsSchemeTheoreticallyDominant f where
+  ker_eq_bot := Scheme.IdealSheafData.comap_injective_of_flat_of_surjective f <|
+    f.comap_ker_self.trans (Scheme.IdealSheafData.comap_bot ..).symm
 
 end AlgebraicGeometry
