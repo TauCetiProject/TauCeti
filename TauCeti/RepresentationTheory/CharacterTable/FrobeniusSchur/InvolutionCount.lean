@@ -52,7 +52,9 @@ required: nothing here uses the trichotomy, so the values `ν₂` takes are irre
 * `TauCeti.ClassFunction.card_squareRoot_eq_sum_frobeniusSchurIndicator`: **the involution-counting
   formula** `#{g : g² = x} = ∑_χ ν₂(χ) χ(x)`, over a complete family of irreducibles.
 * `TauCeti.frobeniusSchurIndicatorRow`: the indicator of the `i`-th row of `TauCeti.characterTable`,
-  and `TauCeti.frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable` reading it off the table.
+  and `TauCeti.frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable` reading it off the table;
+  the trivial row has indicator `1`
+  (`TauCeti.frobeniusSchurIndicatorRow_eq_one_of_irreducibleCharacter_eq_one`).
 * `TauCeti.card_squareRoot_eq_sum_frobeniusSchurIndicatorRow_mul_characterTable`: the same formula
   read off the rows of `TauCeti.characterTable`, and
   `TauCeti.card_squareRoot_one_eq_sum_frobeniusSchurIndicatorRow_mul_characterDegree` its value at
@@ -109,7 +111,7 @@ square roots of `x` when there are finitely many, and `Nat.card`'s junk value `0
 finiteness of `G` is needed. -/
 @[simp]
 theorem squareRootCount_apply (x : G) :
-    (squareRootCount k G).1 x = (Nat.card {g : G // g * g = x} : k) :=
+    (squareRootCount k G).val x = (Nat.card {g : G // g * g = x} : k) :=
   (rfl)
 
 end Count
@@ -141,7 +143,7 @@ theorem characterPairing_ofCharacter_squareRootCount_eq_frobeniusSchurIndicator
       (Finset.filter_congr fun g _ => (inv_eq_iff_eq_inv (a := g * g) (b := x)).symm)
   rw [characterPairing_apply, Representation.frobeniusSchurIndicator_def]
   refine congrArg _ ?_
-  calc ∑ x : G, (ofCharacter ρ).1 x * (squareRootCount k G).1 x⁻¹
+  calc ∑ x : G, (ofCharacter ρ).val x * (squareRootCount k G).val x⁻¹
       = ∑ x : G, ∑ _g ∈ {g ∈ Finset.univ | (g * g)⁻¹ = x}, ρ.character x := by
         refine Finset.sum_congr rfl fun x _ => ?_
         rw [ofCharacter_apply, squareRootCount_apply, hcard x, Finset.sum_const, nsmul_eq_mul,
@@ -215,6 +217,17 @@ theorem frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable
       (Nat.card G : k)⁻¹ * ∑ g : G, characterTable k G i (ConjClasses.mk (g ^ 2)) := by
   rw [frobeniusSchurIndicatorRow_def, Representation.frobeniusSchurIndicator_def]
   simp
+
+variable {G} in
+/-- **The trivial row has Frobenius-Schur indicator `1`**: a row of the character table whose
+character is the constant `1` averages to `1` over the squares. -/
+theorem frobeniusSchurIndicatorRow_eq_one_of_irreducibleCharacter_eq_one
+    {i : Fin (Nat.card (ConjClasses G))} (hi : irreducibleCharacter k i = fun _ => 1) :
+    frobeniusSchurIndicatorRow k i = 1 := by
+  rw [frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable]
+  simp only [characterTable_apply, hi, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
+    ← Nat.card_eq_fintype_card]
+  exact inv_mul_cancel_of_invertible _
 
 variable {G} in
 /-- **The row indicator takes only the values `1`, `0` and `-1`** for a finite group over an

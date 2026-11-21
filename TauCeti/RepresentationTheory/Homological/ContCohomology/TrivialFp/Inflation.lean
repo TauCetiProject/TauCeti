@@ -44,7 +44,7 @@ theorem cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2
     (htrivG : ∀ (g : G) (m : ZMod p), g • m = m)
     (htrivQ : ∀ (q : G ⧸ N) (m : ZMod p), q • m = m)
     (e : ZMod p ≃+ FixedPoints.addSubgroup N (ZMod p))
-    (he : ∀ m, (e m).1 = m)
+    (he : ∀ m, (e m).val = m)
     (hequiv : ∀ (q : G ⧸ N) (m : ZMod p),
       e ((ContinuousMulEquiv.refl (G ⧸ N)) q • m) = q • e m)
     (x : cohomFp p (G ⧸ N) 2) :

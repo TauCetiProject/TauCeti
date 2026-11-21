@@ -71,11 +71,12 @@ open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 universe w v u t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Field k] [Linear k C]
-  [HasExt.{w} C]
 
 namespace ExactStructure.FiniteResolution
 
 /-! ### Alternating Hom dimension of a finite resolution -/
+
+section HomEuler
 
 variable {E : ExactStructure C} {P : ObjectProperty C} {X Y : C}
 
@@ -89,14 +90,12 @@ noncomputable def homEuler (k : Type t) [Field k] [Linear k C] (Y : C) {X : C}
     (r : E.FiniteResolution P X) : ℤ :=
   r.foldAlternating fun Z _ ↦ (Module.finrank k (Z ⟶ Y) : ℤ)
 
-omit [HasExt.{w} C] in
 /-- A length-zero resolution has Hom-Euler characteristic equal to its Hom dimension. -/
 @[simp]
 theorem homEuler_base (hX : P X) :
     (base (E := E) hX).homEuler k Y = Module.finrank k (X ⟶ Y) :=
   foldAlternating_base _ hX
 
-omit [HasExt.{w} C] in
 /-- Prepending a resolving term subtracts the Hom-Euler characteristic of the remaining
 resolution from the Hom dimension of that term. -/
 @[simp]
@@ -107,7 +106,6 @@ theorem homEuler_step {K Q : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X) (zero : i
 
 /-! ### Euler-admissibility along a projective resolution -/
 
-omit [HasExt.{w} C] in
 /-- A finite resolution by projectives bounds the projective dimension of the resolved object by
 its length. -/
 theorem hasProjectiveDimensionLT (r : (ExactStructure.abelian C).FiniteResolution P X)
@@ -116,6 +114,12 @@ theorem hasProjectiveDimensionLT (r : (ExactStructure.abelian C).FiniteResolutio
   (ObjectProperty.hasFiniteResolutionOfLength.monotone
     (fun Y hY ↦ (ExactStructure.abelian_isProjective_iff Y).1 (hproj Y hY)) X
     r.hasFiniteResolutionOfLength).hasProjectiveDimensionLE
+
+end HomEuler
+
+section HasExt
+
+variable [HasExt.{w} C] {P : ObjectProperty C} {X Y : C}
 
 /-- The `Ext` groups out of an object with a finite projective resolution vanish from degree
 `r.length + 1` on. Only projectivity of the `P`-objects is used; no Hom-finiteness is needed. -/
@@ -173,7 +177,10 @@ theorem extEuler_eq_homEuler
       rw [homEuler_step, ← ih]
       omega
 
-omit [HasExt.{w} C] in
+end HasExt
+
+variable {P : ObjectProperty C} {X Y : C}
+
 /-- The alternating Hom dimension is the same along any two finite resolutions of `X` taken along
 object properties whose objects are projective and have finite-dimensional Hom spaces into `Y`. -/
 theorem homEuler_eq_homEuler {P' : ObjectProperty C}

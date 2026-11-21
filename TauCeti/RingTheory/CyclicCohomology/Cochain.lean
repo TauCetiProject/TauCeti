@@ -170,14 +170,14 @@ private theorem contractNth_update_comp_val [Mul A] {n : ℕ} (j : Fin (n + 1)) 
     (k : Fin (n + 2)) (x : A) :
     Fin.contractNth j.castSucc (· * ·) (update (fun m : Fin (n + 2) ↦ b m) k x) =
       update (fun m : Fin (n + 1) ↦ natContract j b m)
-        ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩
+        ⟨natContractPos j k, natContractPos_lt j.isLt k.isLt⟩
         (natContract j (update b k x) (natContractPos j k)) := by
   have hupd : update (fun m : Fin (n + 2) ↦ b m) k x = fun m : Fin (n + 2) ↦ update b k x m :=
     (update_comp_eq_of_injective b Fin.val_injective k x).symm
   rw [hupd, contractNth_comp_val]
   funext m
   by_cases hm : (m : ℕ) = natContractPos j k
-  · obtain rfl : m = ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩ := Fin.ext hm
+  · obtain rfl : m = ⟨natContractPos j k, natContractPos_lt j.isLt k.isLt⟩ := Fin.ext hm
     rw [update_self, Fin.val_castSucc]
   · rw [update_of_ne (fun h ↦ hm (congrArg Fin.val h)), Fin.val_castSucc,
       natContract_update_of_ne hm]
@@ -268,12 +268,12 @@ theorem hochschildFace_succ_comp_finRotate_symm (i : Fin (n + 1)) (a : Fin (n + 
     rw [Fin.succ_last, hochschildFace_last_comp_val, hochschildFace_castSucc_comp_val,
       comp_finRotate_symm_comp_val]
     funext k
-    exact natContract_natRotate_natRotate b (Nat.le_of_lt_succ k.2)
+    exact natContract_natRotate_natRotate b (Nat.le_of_lt_succ k.isLt)
   | cast i =>
     rw [Fin.succ_castSucc, hochschildFace_castSucc_comp_val, hochschildFace_castSucc_comp_val,
       comp_finRotate_symm_comp_val]
     funext k
-    exact natContract_succ_natRotate i.2 b k
+    exact natContract_succ_natRotate i.isLt b k
 
 /-- A multiplicative map commutes with the Hochschild faces. -/
 theorem comp_hochschildFace {B F : Type*} [Mul B] [FunLike F A B] [MulHomClass F A B] (f : F)
@@ -343,12 +343,13 @@ theorem hochschildFace_hochschildFace [Semigroup A] {i j : Fin (n + 2)} (hij : i
       rw [hochschildFace_last_comp_val, hochschildFace_castSucc_comp_val,
         hochschildFace_last_comp_val]
       funext k
-      exact natContract_natRotate_natContract_natRotate b (Nat.le_of_lt_succ k.2)
+      exact natContract_natRotate_natContract_natRotate b (Nat.le_of_lt_succ k.isLt)
     | cast i =>
       rw [hochschildFace_castSucc_comp_val, hochschildFace_castSucc_comp_val,
         hochschildFace_last_comp_val]
       funext k
-      exact natContract_natContract_natRotate (Nat.le_of_lt_succ i.2) b (Nat.le_of_lt_succ k.2)
+      exact natContract_natContract_natRotate (Nat.le_of_lt_succ i.isLt) b
+          (Nat.le_of_lt_succ k.isLt)
   | cast j =>
     induction i using Fin.lastCases with
     | last => exact absurd hij (not_le.2 (Fin.castSucc_lt_last j))
@@ -860,6 +861,18 @@ end Coboundary
 
 /-! ### Pullback of cochains -/
 
+/-- Each Hochschild coface commutes with pulling cochains back along a nonunital algebra
+homomorphism. -/
+theorem hochschildCoface_compLinearMap {R A B M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A]
+    [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalNonAssocSemiring B]
+    [Module R B] [IsScalarTower R B B] [SMulCommClass R B B] [AddCommMonoid M] [Module R M]
+    [SMulCommClass R R M] {n : ℕ} (f : A →ₙₐ[R] B) (i : Fin (n + 2))
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M) :
+    hochschildCoface R A M i (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) =
+      (hochschildCoface R B M i φ).compLinearMap fun _ ↦ (f : A →ₗ[R] B) := by
+  ext a; simp only [hochschildCoface_apply, MultilinearMap.compLinearMap_apply]
+  exact congrArg φ (comp_hochschildFace f i a)
+
 section Pullback
 
 variable {R A B C M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
@@ -884,7 +897,7 @@ def cyclicCochainsMap (f : A →ₗ[R] B) (n : ℕ) :
     cyclicCochains R B M n →ₗ[R] cyclicCochains R A M n where
   toFun φ := ⟨(φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M).compLinearMap fun _ ↦
       f,
-    compLinearMap_mem_cyclicCochains f φ.2⟩
+    compLinearMap_mem_cyclicCochains f φ.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 

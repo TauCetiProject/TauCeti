@@ -547,25 +547,25 @@ continuously on location and scale. -/
 theorem continuous_foldedNormalMeasure :
     Continuous (Y := ProbabilityMeasure ℝ) (fun p : ℝ × Ioi (0 : ℝ) ↦
       (⟨foldedNormalMeasure p.1 p.2,
-        isProbabilityMeasure_foldedNormalMeasure p.1 p.2.2⟩ : ProbabilityMeasure ℝ)) := by
+        isProbabilityMeasure_foldedNormalMeasure p.1 p.2.property⟩ : ProbabilityMeasure ℝ)) := by
   have hparam : Continuous fun p : ℝ × Ioi (0 : ℝ) ↦
       (p.1, (((p.2 : ℝ) ^ 2).toNNReal : ℝ≥0)) :=
     continuous_fst.prodMk (continuous_real_toNNReal.comp
-      ((continuous_subtype_val.comp continuous_snd).pow 2))
+      ((continuous_subtypeVal.comp continuous_snd).pow 2))
   have h := (ProbabilityMeasure.continuous_map continuous_abs).comp
     (continuous_gaussianReal.comp hparam)
   refine h.congr fun p ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
   simp only [Function.comp_apply, ProbabilityMeasure.toMeasure_map,
     Measure.coe_toProbabilityMeasure, ProbabilityMeasure.coe_mk,
-    foldedNormalMeasure_of_scale_pos p.2.2]
+    foldedNormalMeasure_of_scale_pos p.2.property]
 
 /-- As the positive scale `s → 0`, `foldedNormalMeasure m s` converges weakly to the point mass at
 `|m|`. -/
 theorem tendsto_foldedNormalMeasure_nhdsGT_zero_dirac (m : ℝ) :
     Tendsto (β := ProbabilityMeasure ℝ)
       (fun s : Ioi (0 : ℝ) ↦
-        (⟨foldedNormalMeasure m s, isProbabilityMeasure_foldedNormalMeasure m s.2⟩ :
+        (⟨foldedNormalMeasure m s, isProbabilityMeasure_foldedNormalMeasure m s.property⟩ :
           ProbabilityMeasure ℝ))
       (comap ((↑) : Ioi (0 : ℝ) → ℝ) (𝓝 0))
       (𝓝 (Measure.dirac |m|).toProbabilityMeasure) := by
@@ -585,7 +585,7 @@ theorem tendsto_foldedNormalMeasure_nhdsGT_zero_dirac (m : ℝ) :
     exact (hcont.tendsto 0).comp tendsto_comap
   refine hlim.congr fun s ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
-  simp [F, ProbabilityMeasure.toMeasure_map, foldedNormalMeasure_of_scale_pos s.2]
+  simp [F, ProbabilityMeasure.toMeasure_map, foldedNormalMeasure_of_scale_pos s.property]
 
 end TauCeti.Probability
 
