@@ -18,10 +18,11 @@ the normal class `v` is read as its orthogonal representative. The total differe
 therefore invertible at every zero normal vector. These statements supply the linear input
 to the inverse function theorem, without asserting injectivity away from the zero section.
 
-Both statements are instances of a general computation for a vector bundle `V → B`: along the
-zero section, the differential of `p ↦ exp_{b p.proj} (L p.proj p.2)`, for a map `b : B → N` and
-fibrewise linear maps `L x : V x → T_{b x} N`, sends `(u, v)` to `db u + L v`
-(`TauCeti.Bundle.mfderiv_riemannianExp_fiberwise_zeroSection_apply`).
+The differential formula is an instance of a general computation for a vector bundle `V → B`:
+along the zero section, the differential of `p ↦ exp_{b p.proj} (L p.proj p.2)`, for a map
+`b : B → N` and fibrewise linear maps `L x : V x → T_{b x} N`, sends `(u, v)` to `db u + L v`
+(`TauCeti.Bundle.mfderiv_riemannianExp_fiberwise_zeroSection_apply`). Invertibility also uses
+that the normal representatives complement the image of `df`.
 
 ## References
 
