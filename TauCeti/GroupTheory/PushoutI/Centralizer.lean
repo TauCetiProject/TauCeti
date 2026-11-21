@@ -84,15 +84,14 @@ open Function
 
 namespace Monoid.PushoutI
 
-section Factor
-
-open Subgroup
+section General
 
 variable {ι : Type*} {G : ι → Type*} {H : Type*} [∀ i, Group (G i)] [Group H]
   {φ : ∀ i, H →* G i}
 
 /-! ### Centralizers of elements of a factor -/
 
+open Subgroup in
 /-- **Centralizers of factor elements away from the amalgamated subgroup.** If an element `g` of
 a factor `G i` of an amalgamated product of groups is not conjugate in `G i` into the amalgamated
 subgroup, then its centralizer in the amalgamated product is its centralizer in `G i`. -/
@@ -114,13 +113,6 @@ theorem centralizer_of_eq_map (hφ : ∀ i, Injective (φ i)) {i : ι} {g : G i}
       simp [mul_assoc]
   · rw [mem_comap, mem_centralizer_singleton_iff, commute_iff_eq, ← map_mul, ← map_mul,
       (mem_centralizer_singleton_iff.1 hk).eq]
-
-end Factor
-
-section General
-
-variable {ι : Type*} {G : ι → Type*} {H : Type*} [∀ i, Group (G i)] [Group H]
-  {φ : ∀ i, H →* G i}
 
 /-! ### Letters as elements of the amalgamated product -/
 
