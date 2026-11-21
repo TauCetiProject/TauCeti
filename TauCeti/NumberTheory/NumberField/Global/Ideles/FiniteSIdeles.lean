@@ -109,8 +109,8 @@ theorem mem_finiteSIdeles_iff {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
       ∀ v ∉ S, finiteIdeleSemilocalHom L v a ∈ semilocalIntegralUnits L v := by
   simp only [mem_finiteSIdeles_iff_valued_eq_one, mem_semilocalIntegralUnits_iff,
     semilocalEquiv_finiteIdeleSemilocalHom]
-  refine ⟨fun h v hv w ↦ h w.1 ?_, fun h w hw ↦ h _ hw ⟨w, inferInstance⟩⟩
-  rwa [under_eq_iff_liesOver.mpr w.2]
+  refine ⟨fun h v hv w ↦ h w.val ?_, fun h w hw ↦ h _ hw ⟨w, inferInstance⟩⟩
+  rwa [under_eq_iff_liesOver.mpr w.property]
 
 omit [NumberField K] in
 /-- **An idele is an `S`-idele exactly when its finite part is a finite `S`-idele.** -/
@@ -140,8 +140,8 @@ instance finiteSIdelesMulDistribMulAction :
   letI : MulDistribMulAction (L ≃ₐ[K] L) (FiniteAdeleRing (𝒪 L) L)ˣ :=
     Units.mulDistribMulActionRight
   letI : SMul (L ≃ₐ[K] L) (finiteSIdeles L S) :=
-    ⟨fun σ a ↦ ⟨Units.map (GlobalNumberFields.finiteAdeleGaloisAction K L σ : _ →* _) a.1,
-      map_finiteAdeleGaloisAction_mem_finiteSIdeles σ a.2⟩⟩
+    ⟨fun σ a ↦ ⟨Units.map (GlobalNumberFields.finiteAdeleGaloisAction K L σ : _ →* _) a.val,
+      map_finiteAdeleGaloisAction_mem_finiteSIdeles σ a.property⟩⟩
   -- Unfold the transported action on units; `Units.coe_map` then matches the `SMul` above.
   exact Subtype.coe_injective.mulDistribMulAction (finiteSIdeles L S).subtype fun σ a ↦
     Units.ext <| by
@@ -166,8 +166,8 @@ abbrev finiteSIdelesRep : Rep ℤ (L ≃ₐ[K] L) :=
 `v ∈ S` and of the integral semi-local units `∏_{w ∣ v} 𝒪_wˣ` for `v ∉ S`, as an integral
 representation of `Aut(L/K)`. -/
 abbrev finiteSIdelesPiRep : Rep ℤ (L ≃ₐ[K] L) :=
-  Rep.pi (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.1)
-    (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.1))
+  Rep.pi (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.val)
+    (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.val))
 
 variable {L S} in
 /-- The semi-local component at a place `v` of a finite `S`-idele, as a morphism of
@@ -177,7 +177,7 @@ private def finiteSIdelesToSemilocalUnits (v : HeightOneSpectrum (𝒪 K)) :
   Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
     ((finiteIdeleSemilocalHom L v).comp (finiteSIdeles L S).subtype).toAdditive.toIntLinearMap
     fun σ a ↦ congrArg Additive.ofMul
-      (finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction v σ a.toMul.1)
+      (finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction v σ a.toMul.val)
 
 variable {L S} in
 /-- The semi-local component at a place `v ∉ S` of a finite `S`-idele, which is integral, as a
@@ -187,28 +187,29 @@ private def finiteSIdelesToSemilocalIntegralUnits (v : HeightOneSpectrum (𝒪 K
   Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
     (((finiteIdeleSemilocalHom L v).comp (finiteSIdeles L S).subtype).codRestrict
       (semilocalIntegralUnits L v)
-      fun a ↦ mem_finiteSIdeles_iff.1 a.2 v hv).toAdditive.toIntLinearMap
+      fun a ↦ mem_finiteSIdeles_iff.1 a.property v hv).toAdditive.toIntLinearMap
     fun σ a ↦ congrArg Additive.ofMul
-      (Subtype.ext (finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction v σ a.toMul.1))
+      (Subtype.ext (finiteIdeleSemilocalHom_map_finiteAdeleGaloisAction v σ a.toMul.val))
 
 /-- The semi-local components of a finite `S`-idele, as a morphism to the product of the
 semi-local factors. -/
 private def finiteSIdelesPiHom : finiteSIdelesRep L S ⟶ finiteSIdelesPiRep L S :=
   Rep.piLift fun
-    | Sum.inl v => finiteSIdelesToSemilocalUnits v.1
-    | Sum.inr v => finiteSIdelesToSemilocalIntegralUnits v.1 v.2
+    | Sum.inl v => finiteSIdelesToSemilocalUnits v.val
+    | Sum.inr v => finiteSIdelesToSemilocalIntegralUnits v.val v.property
 
 private theorem finiteSIdelesPiHom_apply_inl (a : finiteSIdeles L S) (v : S) :
     (finiteSIdelesPiHom L S).hom (Additive.ofMul a) (Sum.inl v) =
-      (Additive.ofMul (finiteIdeleSemilocalHom L v.1 a) :
-        Additive (v.1.adicCompletion K ⊗[K] L)ˣ) :=
+      (Additive.ofMul (finiteIdeleSemilocalHom L v.val a) :
+        Additive (v.val.adicCompletion K ⊗[K] L)ˣ) :=
   Rep.piLift_hom_apply _ _ _
 
 private theorem finiteSIdelesPiHom_apply_inr (a : finiteSIdeles L S)
     (v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S}) :
     (finiteSIdelesPiHom L S).hom (Additive.ofMul a) (Sum.inr v) =
-      (Additive.ofMul ⟨finiteIdeleSemilocalHom L v.1 a, mem_finiteSIdeles_iff.1 a.2 v.1 v.2⟩ :
-        Additive (semilocalIntegralUnits L v.1)) :=
+      (Additive.ofMul ⟨finiteIdeleSemilocalHom L v.val a, mem_finiteSIdeles_iff.1 a.property v.val
+          v.property⟩ :
+        Additive (semilocalIntegralUnits L v.val)) :=
   Rep.piLift_hom_apply _ _ _
 
 private theorem finiteSIdelesPiHom_injective :
@@ -237,10 +238,10 @@ private theorem finiteSIdelesPiHom_surjective :
   let y (v : HeightOneSpectrum (𝒪 K)) : (v.adicCompletion K ⊗[K] L)ˣ :=
     if hv : v ∈ S then
       Additive.toMul (z (Sum.inl ⟨v, hv⟩) : Additive (v.adicCompletion K ⊗[K] L)ˣ)
-    else (Additive.toMul (z (Sum.inr ⟨v, hv⟩) : Additive (semilocalIntegralUnits L v))).1
+    else (Additive.toMul (z (Sum.inr ⟨v, hv⟩) : Additive (semilocalIntegralUnits L v))).val
   have hy (v : HeightOneSpectrum (𝒪 K)) (hv : v ∉ S) : y v ∈ semilocalIntegralUnits L v := by
     simp only [y, hv, dite_false]
-    exact (Additive.toMul (z (Sum.inr ⟨v, hv⟩) : Additive (semilocalIntegralUnits L v))).2
+    exact (Additive.toMul (z (Sum.inr ⟨v, hv⟩) : Additive (semilocalIntegralUnits L v))).property
   have ha : finiteIdeleOfSemilocalUnits y
       (S.eventually_cofinite_notMem.mono hy) ∈ finiteSIdeles L S :=
     mem_finiteSIdeles_iff.2 fun v hv ↦ by
@@ -271,8 +272,8 @@ def finiteSIdelesPiIso : finiteSIdelesRep L S ≅ finiteSIdelesPiRep L S :=
 @[simp]
 theorem finiteSIdelesPiIso_hom_apply_inl (a : finiteSIdeles L S) (v : S) :
     (finiteSIdelesPiIso L S).hom.hom (Additive.ofMul a) (Sum.inl v) =
-      (Additive.ofMul (finiteIdeleSemilocalHom L v.1 a) :
-        Additive (v.1.adicCompletion K ⊗[K] L)ˣ) :=
+      (Additive.ofMul (finiteIdeleSemilocalHom L v.val a) :
+        Additive (v.val.adicCompletion K ⊗[K] L)ˣ) :=
   finiteSIdelesPiHom_apply_inl L S a v
 
 /-- The factor of `finiteSIdelesPiIso` at a place `v ∉ S` is the semi-local component, which is
@@ -281,8 +282,9 @@ integral. -/
 theorem finiteSIdelesPiIso_hom_apply_inr (a : finiteSIdeles L S)
     (v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S}) :
     (finiteSIdelesPiIso L S).hom.hom (Additive.ofMul a) (Sum.inr v) =
-      (Additive.ofMul ⟨finiteIdeleSemilocalHom L v.1 a, mem_finiteSIdeles_iff.1 a.2 v.1 v.2⟩ :
-        Additive (semilocalIntegralUnits L v.1)) :=
+      (Additive.ofMul ⟨finiteIdeleSemilocalHom L v.val a, mem_finiteSIdeles_iff.1 a.property v.val
+          v.property⟩ :
+        Additive (semilocalIntegralUnits L v.val)) :=
   finiteSIdelesPiHom_apply_inr L S a v
 
 end SIdeles

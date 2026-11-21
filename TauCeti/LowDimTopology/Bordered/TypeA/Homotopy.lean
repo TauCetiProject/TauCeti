@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.TypeA
+public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 
 /-!
 # Homotopic morphisms of type `A` modules induce homotopic maps of box tensor products

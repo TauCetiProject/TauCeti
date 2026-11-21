@@ -57,7 +57,7 @@ lemma exists_mem_nhds_finite_inter_support_ord (r : W.functionFieldˣ) (z : W) :
       (Set.nonempty_coe_sort.mp hU) ⟨z, hzV⟩
     exact ⟨⟨⟨x, hxV⟩, hxU⟩⟩
   refine ⟨V, V.isOpen.mem_nhds hzV, ((CodimensionOnePoint.finite_setOfPred_notMem
-    ((Scheme.Opens.ι V) ⁻¹ᵁ U)).image fun x ↦ (Scheme.Opens.ι V) x.1).subset ?_⟩
+    ((Scheme.Opens.ι V) ⁻¹ᵁ U)).image fun x ↦ (Scheme.Opens.ι V) x.val).subset ?_⟩
   rintro x ⟨hxV, hx⟩
   have hx1 : coheight x = 1 := by
     by_contra h

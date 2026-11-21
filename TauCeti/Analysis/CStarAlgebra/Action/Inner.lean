@@ -49,7 +49,7 @@ def cstarAction (h : selfAdjoint A) : CStarAction (Multiplicative ℝ) A where
           Commute.expUnitary_add (((Commute.refl (h : A)).smul_left _).smul_right _), map_mul] }
   continuous_orbit a := by
     have hu : Continuous fun t : Multiplicative ℝ => (expUnitary (t.toAdd • h) : A) :=
-      continuous_subtype_val.comp (continuous_expUnitary.comp (by fun_prop))
+      continuous_subtypeVal.comp (continuous_expUnitary.comp (by fun_prop))
     exact (hu.mul continuous_const).mul hu.star
 
 /-- The inner dynamics of a self-adjoint element is conjugation by `expUnitary`. -/
@@ -110,6 +110,6 @@ theorem generator_cstarAction_domain (h : selfAdjoint A) : (cstarAction h).gener
 `a ↦ i [h, a]`. -/
 theorem generator_cstarAction (h : selfAdjoint A) (a : (cstarAction h).generator.domain) :
     (cstarAction h).generator a = I • ((h : A) * a - a * h) :=
-  (cstarAction h).generator_eq_of_hasDerivAt a.2 (hasDerivAt_cstarAction_zero h a)
+  (cstarAction h).generator_eq_of_hasDerivAt a.property (hasDerivAt_cstarAction_zero h a)
 
 end selfAdjoint

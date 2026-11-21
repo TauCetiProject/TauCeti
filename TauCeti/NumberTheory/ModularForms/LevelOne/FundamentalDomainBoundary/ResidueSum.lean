@@ -71,9 +71,9 @@ theorem hasCauchyPV_fdBoundary_residue_sum (hH : 1 < H) {f : ℂ → ℂ} {S : F
     (fun t ht => hUdom (fdBoundary_mem_coe_truncatedFundamentalDomain hH.le
       (by rwa [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht)))
     ((isNullHomologous_fdBoundary hH.le).mono hUdom)
-    (fun s t ht heq => absurd heq (hne s s.2 t ht))
-    (fun s k _ _ t ht heq => absurd heq (hne s s.2 t ht))
-    (fun s k _ _ t ht heq => absurd heq (hne s s.2 t ht))
+    (fun s t ht heq => absurd heq (hne s s.property t ht))
+    (fun s k _ _ t ht heq => absurd heq (hne s s.property t ht))
+    (fun s k _ _ t ht heq => absurd heq (hne s s.property t ht))
   have hsum : ∑ s ∈ S, windingNumber (fdBoundary H) 0 5 s * residue f s =
       -∑ s ∈ S, residue f s := by
     rw [← Finset.sum_neg_distrib]

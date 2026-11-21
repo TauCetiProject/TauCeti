@@ -89,9 +89,9 @@ theorem map_coe_uniformSphereMeasure_of_finrank_eq_one (hdim : Module.finrank �
       (1 / 2 : ℝ≥0∞) • Measure.dirac (e : E) +
         (1 / 2 : ℝ≥0∞) • Measure.dirac (-(e : E)) := by
   rw [uniformSphereMeasure_eq_of_finrank_eq_one hdim e]
-  rw [Measure.map_add _ _ measurable_subtype_coe,
-    Measure.map_smul _ measurable_subtype_coe.aemeasurable,
-    Measure.map_smul _ measurable_subtype_coe.aemeasurable]
+  rw [Measure.map_add _ _ measurable_subtypeVal,
+    Measure.map_smul _ measurable_subtypeVal.aemeasurable,
+    Measure.map_smul _ measurable_subtypeVal.aemeasurable]
   simp
 
 /-- The coordinate of a uniform one-dimensional sphere point along a unit vector is Rademacher.
