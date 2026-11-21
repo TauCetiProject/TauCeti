@@ -8,9 +8,13 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.MeasureTheory.Function.Holder
+public import TauCeti.Analysis.Sobolev.BesselPotential.ComplexOrder
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The density pairing of the Bessel-potential spaces `H^{s,p}` and `H^{-s,q}`
@@ -36,6 +40,10 @@ For `p = 2` and a complex Hilbert space `F`, the pairing of `H^s(E, F)` with `H^
 operators to distributions by transposition. The pairing is bilinear, not sesquilinear: no complex
 conjugation is involved, and the identification is complex-linear.
 
+The sesquilinear counterpart is the `L²` inner product: for Schwartz functions `a` and `b` with
+values in a complex Hilbert space, the inner product of the `L²` parts of `a ∈ H^{-r}` and
+`b ∈ H^r` is `∫ ⟪a, b⟫`, so `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
+
 ## Main declarations
 
 * `ContinuousLinearMap.besselPotentialPairing B s p q`: the density pairing
@@ -48,10 +56,25 @@ conjugation is involved, and the identification is complex-linear.
   continuous bilinear map with this property.
 * `BesselPotentialSpace.toDistr_apply_eq_besselPotentialPairing`: the distribution `u` acts on a
   scalar Schwartz function `ψ` by `u ψ = ⟨u, ψ⟩`.
+* `BesselPotentialSpace.norm_toDistr_apply_le`: hence `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`.
 * `BesselPotentialSpace.dualEquiv`: the isometric isomorphism
   `H^{-s}(E, F⋆) ≃ₗᵢ[ℂ] (H^s(E, F))⋆` given by the density pairing, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
   `BesselPotentialSpace.dualEquiv_toBesselPotentialSpaceCLM`.
+* `SchwartzMap.inner_toLp_toBesselPotentialSpaceCLM_neg`,
+  `SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm`: the `L²` pairing
+  of `H^{-r}` and `H^r` on Schwartz functions, and `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`: conversely, a bound
+  `|∫ ⟪a, v⟫| ≤ C ‖v‖_{H^r}` for all Schwartz `v` gives `‖a‖_{H^{-r}} ≤ C`.
+* `SchwartzMap.inner_toLp_besselPotentialCLM_left`: the Bessel potentials `J^a` of real order are
+  symmetric for the `L²` inner product of Schwartz functions.
+* `BesselPotentialSpace.inner_inclusion_toBesselPotentialSpaceCLM`,
+  `BesselPotentialSpace.norm_inner_inclusion_le`: for `m ≤ r`, the `H^m` inner product of
+  `Y ∈ H^r` with a Schwartz function `φ` is `⟪Y, J^{2 (m - r)} φ⟫_{H^r}`, hence bounded by
+  `‖φ‖_{H^{2m - r}} ‖Y‖_{H^r}`.
+* `BesselPotentialSpace.exists_inclusion_eq_and_norm_le`: conversely, an element of `H^m` whose
+  `H^m` inner products with Schwartz functions `φ` are bounded by `M ‖φ‖_{H^{2m - r}}` lies in
+  `H^r`, with norm at most `M`.
 
 ## References
 
@@ -169,6 +192,18 @@ theorem toDistr_apply_eq_besselPotentialPairing {s : ℝ} (u : H^{s, p}(E, F)) (
   rw [hx]
   simp
 
+variable (q) in
+/-- The distribution underlying `u ∈ H^{s,p}(E, F)` is bounded on scalar Schwartz functions by the
+dual norm: `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`. -/
+theorem norm_toDistr_apply_le {s : ℝ} (u : H^{s, p}(E, F)) (ψ : 𝓢(E, ℂ)) :
+    ‖u.toDistr ψ‖ ≤ ‖u‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ‖ := by
+  rw [toDistr_apply_eq_besselPotentialPairing q]
+  refine (ContinuousLinearMap.norm_besselPotentialPairing_le _ s u _).trans ?_
+  rw [mul_assoc]
+  refine mul_le_of_le_one_left (by positivity) ?_
+  rw [ContinuousLinearMap.opNorm_flip]
+  exact ContinuousLinearMap.opNorm_lsmul_le
+
 end Distribution
 
 section Dual
@@ -272,5 +307,172 @@ theorem dualEquiv_toBesselPotentialSpaceCLM {s : ℝ} (ψ : 𝓢(E, StrongDual �
   simp [dualEquiv_apply]
 
 end Dual
+
+end BesselPotentialSpace
+
+namespace SchwartzMap
+
+section L2Pairing
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The `L²` pairing of `H^{-r}` and `H^r`.** For Schwartz functions `a` and `b`, the `L²` inner
+product of the `L²` parts of `a ∈ H^{-r}` and `b ∈ H^r` is `∫ ⟪a, b⟫`, for every real `r`. -/
+theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
+    ⟪(toBesselPotentialSpaceCLM (-r) 2 a).toLp, (toBesselPotentialSpaceCLM r 2 b).toLp⟫_ℂ =
+      ∫ x, ⟪a x, b x⟫_ℂ := by
+  rw [toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM,
+    inner_toL2_toL2_eq _ _ volume, ← integral_inner_fourier_fourier,
+    ← integral_inner_fourier_fourier a b]
+  congr 1
+  funext ξ
+  -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` multiply to `1`.
+  have hw : (1 + ‖ξ‖ ^ 2) ^ (-r / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) = 1 :=
+    TauCeti.one_add_norm_sq_rpow_neg_mul_rpow ξ r
+  simp only [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
+  rw [smulLeftCLM_apply_apply (by fun_prop), smulLeftCLM_apply_apply (by fun_prop)]
+  rw [inner_smul_left, inner_smul_right, ← mul_assoc]
+  simp [← Complex.ofReal_mul, hw]
+
+/-- **Duality of `H^{-r}` and `H^r` under the `L²` pairing**:
+`|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}` for Schwartz functions `a` and `b`. -/
+theorem norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (r : ℝ)
+    (a b : 𝓢(E, F)) :
+    ‖∫ x, ⟪a x, b x⟫_ℂ‖ ≤
+      ‖toBesselPotentialSpaceCLM (-r) 2 a‖ * ‖toBesselPotentialSpaceCLM r 2 b‖ := by
+  rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, ← BesselPotentialSpace.norm_toLp_eq,
+    ← BesselPotentialSpace.norm_toLp_eq (toBesselPotentialSpaceCLM r 2 b)]
+  exact norm_inner_le_norm _ _
+
+/-- **The `H^{-r}` norm by duality.** If `‖∫ ⟪a, v⟫‖ ≤ C ‖v‖_{H^r}` for every Schwartz function
+`v`, then `‖a‖_{H^{-r}} ≤ C`: the bound is attained at `v = J^{-2r} a`. -/
+theorem norm_toBesselPotentialSpaceCLM_neg_le_of_forall (r : ℝ) (a : 𝓢(E, F)) {C : ℝ}
+    (hC : 0 ≤ C)
+    (h : ∀ v : 𝓢(E, F), ‖∫ x, ⟪a x, v x⟫_ℂ‖ ≤ C * ‖toBesselPotentialSpaceCLM r 2 v‖) :
+    ‖toBesselPotentialSpaceCLM (-r) 2 a‖ ≤ C := by
+  -- Test against `v = J^{-2r} a`, which realizes the `H^{-r}` norm of `a` in the pairing.
+  set v := besselPotentialCLM ((-2 * r : ℝ) : ℂ) a
+  set N := ‖toBesselPotentialSpaceCLM (-r) 2 a‖
+  have hvN : ‖toBesselPotentialSpaceCLM r 2 v‖ = N := by
+    rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
+      show r + -2 * r = -r by ring]
+  have hvL : (toBesselPotentialSpaceCLM r 2 v).toLp =
+      (toBesselPotentialSpaceCLM (-r) 2 a).toLp := by
+    rw [toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
+      toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
+      besselPotentialCLM_besselPotentialCLM_apply,
+      show ((-2 * r : ℝ) : ℂ) + (r : ℂ) = ((-r : ℝ) : ℂ) by push_cast; ring]
+  have hpair : ∫ x, ⟪a x, v x⟫_ℂ = ((N ^ 2 : ℝ) : ℂ) := by
+    rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, hvL, inner_self_eq_norm_sq_to_K,
+      BesselPotentialSpace.norm_toLp_eq]
+    norm_cast
+  have hv := h v
+  rw [hpair, hvN, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at hv
+  -- `N ^ 2 ≤ C N`, so `N ≤ C`.
+  rcases (norm_nonneg _ : 0 ≤ N).eq_or_lt with h0 | h0
+  · exact (show N = 0 from h0.symm) ▸ hC
+  · nlinarith
+
+/-- Bessel potentials of real order are symmetric for the `L²` inner product of Schwartz
+functions: `⟪J^a X, Y⟫_{L²} = ⟪X, J^a Y⟫_{L²}`. -/
+theorem inner_toLp_besselPotentialCLM_left (a : ℝ) (X Y : 𝓢(E, F)) :
+    ⟪(besselPotentialCLM (a : ℂ) X).toLp 2, Y.toLp 2⟫_ℂ =
+      ⟪X.toLp 2, (besselPotentialCLM (a : ℂ) Y).toLp 2⟫_ℂ := by
+  -- Both sides are `∫ ⟪J^a X, Y⟫`, read in the `H^0`–`H^0` and the `H^{-a}`–`H^a` pairings.
+  have h0 := inner_toLp_toBesselPotentialSpaceCLM_neg 0 (besselPotentialCLM (a : ℂ) X) Y
+  have ha := inner_toLp_toBesselPotentialSpaceCLM_neg a (besselPotentialCLM (a : ℂ) X) Y
+  simp only [toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
+    besselPotentialCLM_besselPotentialCLM_apply, Complex.ofReal_neg, neg_zero, Complex.ofReal_zero,
+    add_neg_cancel, besselPotentialCLM_zero, ContinuousLinearMap.id_apply] at h0 ha
+  rw [h0, ha]
+
+end L2Pairing
+
+end SchwartzMap
+
+namespace BesselPotentialSpace
+
+section Inclusion
+
+open SchwartzMap
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- For `Y ∈ H^r` and `m ≤ r`, the `H^m` inner product of `Y` with a Schwartz function `φ` is the
+`H^r` inner product of `Y` with `J^{2 (m - r)} φ`. -/
+theorem inner_inclusion_toBesselPotentialSpaceCLM {m r : ℝ} (h : m ≤ r) (Y : H^{r}(E, F))
+    (φ : 𝓢(E, F)) :
+    ⟪inclusion h Y, toBesselPotentialSpaceCLM m 2 φ⟫_ℂ =
+      ⟪Y, toBesselPotentialSpaceCLM r 2 (besselPotentialCLM ((2 * (m - r) : ℝ) : ℂ) φ)⟫_ℂ := by
+  refine (denseRange_toBesselPotentialSpaceCLM (p := 2) r ENNReal.ofNat_ne_top).induction_on Y
+    (isClosed_eq (by fun_prop) (by fun_prop)) fun ψ ↦ ?_
+  -- Write `J^m ψ = J^{m - r} (J^r ψ)` and move `J^{m - r}` to the other side.
+  have hψ : besselPotentialCLM (m : ℂ) ψ =
+      besselPotentialCLM ((m - r : ℝ) : ℂ) (besselPotentialCLM (r : ℂ) ψ) := by
+    simp
+  rw [inclusion_toBesselPotentialSpaceCLM, ← inner_toLp_toLp, ← inner_toLp_toLp]
+  simp only [toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM]
+  rw [hψ, inner_toLp_besselPotentialCLM_left, besselPotentialCLM_besselPotentialCLM_apply,
+    besselPotentialCLM_besselPotentialCLM_apply,
+    show (m : ℂ) + ((m - r : ℝ) : ℂ) = ((2 * (m - r) : ℝ) : ℂ) + r by push_cast; ring]
+
+/-- For `x ∈ H^s` and `m ≤ s`, the `H^m` inner product of a Schwartz function `φ` with `x` is
+bounded by `‖φ‖_{H^{2m - s}} ‖x‖_{H^s}`. -/
+theorem norm_inner_inclusion_le {m s : ℝ} (h : m ≤ s) (φ : 𝓢(E, F)) (x : H^{s}(E, F)) :
+    ‖⟪toBesselPotentialSpaceCLM m 2 φ, inclusion h x⟫_ℂ‖ ≤
+      ‖toBesselPotentialSpaceCLM (2 * m - s) 2 φ‖ * ‖x‖ := by
+  rw [norm_inner_symm, inner_inclusion_toBesselPotentialSpaceCLM]
+  refine (norm_inner_le_norm _ _).trans_eq ?_
+  rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
+    show s + 2 * (m - s) = 2 * m - s by ring, mul_comm]
+
+/-- **A duality criterion for `H^r`.** Let `m ≤ r` and `M ≥ 0`. If the `H^m` inner products of
+`y ∈ H^m` with Schwartz functions `φ` are bounded by `M ‖φ‖_{H^{2m - r}}`, then `y` lies in `H^r`,
+with norm at most `M`. -/
+theorem exists_inclusion_eq_and_norm_le {m r M : ℝ} (hmr : m ≤ r) (hM : 0 ≤ M)
+    (y : H^{m}(E, F))
+    (hy : ∀ φ : 𝓢(E, F), ‖⟪toBesselPotentialSpaceCLM m 2 φ, y⟫_ℂ‖ ≤
+      M * ‖toBesselPotentialSpaceCLM (2 * m - r) 2 φ‖) :
+    ∃ Y : H^{r}(E, F), inclusion hmr Y = y ∧ ‖Y‖ ≤ M := by
+  -- The functional `χ ↦ ⟪y, J^{2 (r - m)} χ⟫_{H^m}` is bounded in the `H^r` norm.
+  let L : 𝓢(E, F) →ₗ[ℂ] ℂ :=
+    { toFun χ := ⟪y, toBesselPotentialSpaceCLM m 2
+        (besselPotentialCLM ((2 * (r - m) : ℝ) : ℂ) χ)⟫_ℂ
+      map_add' χ χ' := by simp [inner_add_right]
+      map_smul' a χ := by simp [inner_smul_right] }
+  have hL (χ : 𝓢(E, F)) : ‖L χ‖ ≤ M * ‖toBesselPotentialSpaceCLM r 2 χ‖ := by
+    -- `L χ` is by definition the inner product `⟪y, J^{2 (r - m)} χ⟫_{H^m}`.
+    change ‖⟪y, _⟫_ℂ‖ ≤ _
+    rw [norm_inner_symm]
+    refine (hy _).trans_eq ?_
+    rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
+      show 2 * m - r + 2 * (r - m) = r by ring]
+  have hdense := denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) (p := 2) r
+    ENNReal.ofNat_ne_top
+  set Λ := L.extendOfNorm (toBesselPotentialSpaceCLM r 2).toLinearMap
+  have hΛ (χ : 𝓢(E, F)) : Λ (toBesselPotentialSpaceCLM r 2 χ) = L χ :=
+    LinearMap.extendOfNorm_eq hdense ⟨M, hL⟩ χ
+  -- By the Riesz representation theorem in `H^r`, `Λ` is the inner product with some `Y`.
+  set Y := (InnerProductSpace.toDual ℂ H^{r}(E, F)).symm Λ
+  refine ⟨Y, ?_, ?_⟩
+  · have hd (w : H^{m}(E, F)) : ⟪inclusion hmr Y - y, w⟫_ℂ = 0 := by
+      refine (denseRange_toBesselPotentialSpaceCLM (p := 2) m ENNReal.ofNat_ne_top).induction_on
+        w (isClosed_eq (by fun_prop) continuous_const) fun φ ↦ ?_
+      rw [inner_sub_left, inner_inclusion_toBesselPotentialSpaceCLM,
+        InnerProductSpace.toDual_symm_apply, hΛ]
+      -- Unfold `L`; the two Bessel potentials then cancel.
+      change ⟪y, toBesselPotentialSpaceCLM m 2 (besselPotentialCLM ((2 * (r - m) : ℝ) : ℂ)
+        (besselPotentialCLM ((2 * (m - r) : ℝ) : ℂ) φ))⟫_ℂ - _ = 0
+      rw [besselPotentialCLM_besselPotentialCLM_apply, ← Complex.ofReal_add,
+        show 2 * (m - r) + 2 * (r - m) = 0 by ring, Complex.ofReal_zero, besselPotentialCLM_zero,
+        ContinuousLinearMap.id_apply, sub_self]
+    exact sub_eq_zero.1 (inner_self_eq_zero.1 (hd _))
+  · rw [LinearIsometryEquiv.norm_map]
+    exact LinearMap.opNorm_extendOfNorm_le hdense hM hL
+
+end Inclusion
 
 end BesselPotentialSpace

@@ -164,7 +164,7 @@ theorem prod {φ : Subring.unitClosedBall K →+* R} {M₁ M₂ : Type*} [AddCom
     hM₂ (N.map (LinearMap.snd R M₁ M₂)) hd0 hd1
   obtain ⟨S₂, hS₂⟩ := hN₂'fg
   have hlift : ∀ z : S₂, ∃ w ∈ N, w.2 = (z : M₂) := fun z ↦ by
-    obtain ⟨w, hw, hwz⟩ := hN₂'le (hS₂ ▸ Submodule.subset_span z.2)
+    obtain ⟨w, hw, hwz⟩ := hN₂'le (hS₂ ▸ Submodule.subset_span z.property)
     exact ⟨w, hw, hwz⟩
   choose liftF hliftN hlift_snd using hlift
   let L : Finset (M₁ × M₂) := Finset.univ.image liftF

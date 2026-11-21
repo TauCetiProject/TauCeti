@@ -119,7 +119,7 @@ theorem unitClosedBallMapHom_unitClosedBallCoeffHom (π : Tate σ →ₐ[K] A)
     π.unitClosedBallMapHom
         (TauCeti.MvPowerSeries.unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1) c) =
       ⟨algebraMap K A c,
-        π.algebraMap_mem_map_unitClosedBall (Subring.mem_unitClosedBall.mp c.2)⟩ :=
+        π.algebraMap_mem_map_unitClosedBall (Subring.mem_unitClosedBall.mp c.property)⟩ :=
   Subtype.ext <| by
     rw [coe_unitClosedBallMapHom, TauCeti.MvPowerSeries.coe_unitClosedBallCoeffHom]
     exact π.commutes (c : K)
@@ -256,7 +256,7 @@ theorem continuous_unitClosedBallMapHom (hA : IsAffinoidAlgebra K A) (π : Tate 
   have := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
   exact continuous_induced_rng.mpr <| by
     simpa only [Function.comp_def, AlgHom.coe_unitClosedBallMapHom] using
-      (hA.continuous_algHom π).comp continuous_subtype_val
+      (hA.continuous_algHom π).comp continuous_subtypeVal
 
 /-- Over a complete nontrivially normed ultrametric field `K`, for any affinoid algebra `A` carrying
 a complete ultrametric `K`-algebra norm and any `π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A`, composing

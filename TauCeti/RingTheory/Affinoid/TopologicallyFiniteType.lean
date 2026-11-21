@@ -141,7 +141,7 @@ theorem Huber.exists_surjective_algHom_map_unitClosedBall_eq {n : ℕ}
       (Subring.unitClosedBall (Tate (Fin n))).map π.toRingHom = A₀ := by
   have hrange : (A₀.subtype.comp φ).range = A₀ := by
     ext a
-    refine ⟨fun ⟨w, hw⟩ ↦ hw ▸ (φ w).2, fun ha ↦ ?_⟩
+    refine ⟨fun ⟨w, hw⟩ ↦ hw ▸ (φ w).property, fun ha ↦ ?_⟩
     obtain ⟨w, hw⟩ := hφ_surj ⟨a, ha⟩
     exact ⟨w, congrArg Subtype.val hw⟩
   obtain ⟨π, ⟨hπ_ball, hπ_map⟩, -⟩ :=

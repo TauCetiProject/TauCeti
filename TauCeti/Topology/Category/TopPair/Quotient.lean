@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopPair
+public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 
 /-!
@@ -22,6 +23,12 @@ invariants with reduced invariants of a quotient, including pairs with empty sub
 
 The construction uses Mathlib's topological pushouts and their preservation by the forgetful
 functor to types.
+
+When the ambient space is compact, so is the quotient
+(`TopPair.compactSpace_ordinaryPairQuotient`), and a map onto a Hausdorff space that collapses
+exactly the subspace, is injective off it and reaches every point except possibly the image of the
+subspace induces a homeomorphism from the quotient (`TopPair.ordinaryPairQuotientHomeomorph`).
+This is how concrete quotients, such as spheres obtained by collapsing cubes, are recognized.
 
 ## References
 
@@ -63,6 +70,20 @@ def ordinaryPairQuotientBasepoint (P : TopPair.{u}) : P.ordinaryPairQuotient :=
 lemma ordinaryPairQuotientπ_map (P : TopPair.{u}) (b : P.snd) :
     P.ordinaryPairQuotientπ (P.map b) = P.ordinaryPairQuotientBasepoint :=
   ConcreteCategory.congr_hom (pushout.condition (f := P.map) (g := quotientPointMap P)) b
+
+/-- **The pointed quotient is a pushout.** It is the pushout of the inclusion of the subspace and
+the map from the subspace to a point, with the collapse map and the basepoint as the two maps into
+it. -/
+lemma isPushout_ordinaryPairQuotient (P : TopPair.{u}) :
+    IsPushout P.map (TopCat.ofHom (ContinuousMap.const P.snd PUnit.unit))
+      P.ordinaryPairQuotientπ
+      (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} P.ordinaryPairQuotientBasepoint)) := by
+  -- The added point is the image of the unique point of `PUnit`.
+  have h : quotientPointIncl P =
+      TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} P.ordinaryPairQuotientBasepoint) := by
+    ext ⟨⟩
+    rfl
+  exact h ▸ IsPushout.of_hasPushout P.map (quotientPointMap P)
 
 /-- Every point of the quotient is either the basepoint or the image of an ambient point. -/
 lemma exists_ordinaryPairQuotientπ_or_eq_basepoint (P : TopPair.{u}) (z : P.ordinaryPairQuotient) :
@@ -156,6 +177,21 @@ lemma isQuotientMap_ordinaryPairQuotient (P : TopPair.{u}) :
     refine (TauCeti.TopCat.isClosed_iff_of_isPushout sq s).trans ?_
     simp only [isClosed_sum_iff]
     constructor <;> intro h <;> exact ⟨h.1, h.2⟩
+
+/-- When the subspace is nonempty, the collapse map alone is a quotient map: the added point is
+then the image of any point of the subspace. -/
+lemma isQuotientMap_ordinaryPairQuotientπ (P : TopPair.{u}) [Nonempty P.snd] :
+    IsQuotientMap P.ordinaryPairQuotientπ := by
+  obtain ⟨b⟩ := ‹Nonempty P.snd›
+  refine isQuotientMap_iff_isClosed.2 ⟨fun z => ?_, fun s => ⟨fun hs => ?_, fun hs => ?_⟩⟩
+  · obtain h | rfl := P.exists_ordinaryPairQuotientπ_or_eq_basepoint z
+    · exact h
+    · exact ⟨P.map b, P.ordinaryPairQuotientπ_map b⟩
+  · exact hs.preimage P.ordinaryPairQuotientπ.hom.continuous
+  · refine (P.isQuotientMap_ordinaryPairQuotient.isClosed_preimage).1 ?_
+    refine isClosed_sum_iff.2 ⟨hs, ?_⟩
+    -- The other summand is a point.
+    exact isClosed_discrete _
 
 /-- Maps out of the quotient are determined by the ambient space and the basepoint. -/
 @[ext]
@@ -294,5 +330,89 @@ lemma ordinaryPairQuotientFunctor_obj (P : TopPair.{u}) :
 @[simp]
 lemma ordinaryPairQuotientFunctor_map {P Q : TopPair.{u}} (f : P ⟶ Q) :
     ordinaryPairQuotientFunctor.map f = ordinaryPairQuotientMap f := (rfl)
+
+section Homeomorph
+
+variable (P : TopPair.{u})
+
+/-- The pointed quotient of a pair with compact ambient space is compact. -/
+instance compactSpace_ordinaryPairQuotient [CompactSpace P.fst] :
+    CompactSpace P.ordinaryPairQuotient :=
+  P.isQuotientMap_ordinaryPairQuotient.surjective.compactSpace
+    P.isQuotientMap_ordinaryPairQuotient.continuous
+
+variable {Y : TopCat.{u}} (f : P.fst ⟶ Y) (y : Y)
+
+/-- **A map recognizing the pointed quotient is bijective.** If `f` sends exactly the subspace to
+`y`, is injective off the subspace and reaches every point other than `y`, then the map it induces
+from the pointed quotient, sending the basepoint to `y`, is bijective. When the subspace is empty,
+`y` is the point that `f` misses. -/
+theorem ordinaryPairQuotientDesc_bijective (hy : ∀ x, f x = y ↔ x ∈ Set.range P.map)
+    (hinj : ∀ x x', x ∉ Set.range P.map → f x = f x' → x = x')
+    (hsurj : ∀ z, z ≠ y → ∃ x, f x = z) :
+    Function.Bijective (P.ordinaryPairQuotientDesc f y fun b ↦ (hy _).2 ⟨b, rfl⟩) := by
+  set g := P.ordinaryPairQuotientDesc f y fun b ↦ (hy _).2 ⟨b, rfl⟩
+  have hgπ (x : P.fst) : g (P.ordinaryPairQuotientπ x) = f x :=
+    ordinaryPairQuotientπ_desc_apply _ _ _ _ x
+  have hgb : g P.ordinaryPairQuotientBasepoint = y := ordinaryPairQuotientDesc_basepoint _ _ _ _
+  -- Every point of the quotient is the image of a point off the subspace, or the basepoint.
+  have key (z : P.ordinaryPairQuotient) :
+      (∃ x ∉ Set.range P.map, P.ordinaryPairQuotientπ x = z) ∨
+        z = P.ordinaryPairQuotientBasepoint := by
+    rcases P.exists_ordinaryPairQuotientπ_or_eq_basepoint z with ⟨x, rfl⟩ | h
+    · by_cases hx : x ∈ Set.range P.map
+      · exact Or.inr ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx)
+      · exact Or.inl ⟨x, hx, rfl⟩
+    · exact Or.inr h
+  refine ⟨fun z w h ↦ ?_, fun z ↦ ?_⟩
+  · rcases key z with ⟨x, hx, rfl⟩ | rfl <;> rcases key w with ⟨x', hx', rfl⟩ | rfl
+    · rw [hgπ, hgπ] at h
+      rw [hinj x x' hx h]
+    · rw [hgπ, hgb] at h
+      exact absurd ((hy x).1 h) hx
+    · rw [hgπ, hgb] at h
+      exact absurd ((hy x').1 h.symm) hx'
+    · rfl
+  · by_cases hz : z = y
+    · exact ⟨_, hgb.trans hz.symm⟩
+    · obtain ⟨x, rfl⟩ := hsurj z hz
+      exact ⟨_, hgπ x⟩
+
+variable [CompactSpace P.fst] [T2Space Y]
+
+/-- **Recognizing a pointed quotient.** Let `(X, B)` be a pair with `X` compact and let
+`f : X → Y` be a continuous map to a Hausdorff space which sends exactly `B` to `y`, is injective
+off `B`, and reaches every point other than `y`. Then `f` induces a homeomorphism from the
+pointed quotient `X / B` onto `Y`, sending the basepoint to `y`
+(`TopPair.ordinaryPairQuotientHomeomorph_π`,
+`TopPair.ordinaryPairQuotientHomeomorph_basepoint`). When `B` is empty, `Y` is `X` with the
+added point `y`. -/
+def ordinaryPairQuotientHomeomorph (hy : ∀ x, f x = y ↔ x ∈ Set.range P.map)
+    (hinj : ∀ x x', x ∉ Set.range P.map → f x = f x' → x = x')
+    (hsurj : ∀ z, z ≠ y → ∃ x, f x = z) :
+    P.ordinaryPairQuotient ≃ₜ Y :=
+  Continuous.homeoOfEquivCompactToT2
+    (f := Equiv.ofBijective _ (P.ordinaryPairQuotientDesc_bijective f y hy hinj hsurj))
+    (P.ordinaryPairQuotientDesc f y fun b ↦ (hy _).2 ⟨b, rfl⟩).hom.continuous
+
+variable {f y}
+
+/-- The homeomorphism recognizing the pointed quotient is `f` on the image of the ambient space. -/
+@[simp]
+lemma ordinaryPairQuotientHomeomorph_π (hy : ∀ x, f x = y ↔ x ∈ Set.range P.map)
+    (hinj : ∀ x x', x ∉ Set.range P.map → f x = f x' → x = x')
+    (hsurj : ∀ z, z ≠ y → ∃ x, f x = z) (x : P.fst) :
+    P.ordinaryPairQuotientHomeomorph f y hy hinj hsurj (P.ordinaryPairQuotientπ x) = f x :=
+  ordinaryPairQuotientπ_desc_apply _ _ _ _ x
+
+/-- The homeomorphism recognizing the pointed quotient sends the basepoint to `y`. -/
+@[simp]
+lemma ordinaryPairQuotientHomeomorph_basepoint (hy : ∀ x, f x = y ↔ x ∈ Set.range P.map)
+    (hinj : ∀ x x', x ∉ Set.range P.map → f x = f x' → x = x')
+    (hsurj : ∀ z, z ≠ y → ∃ x, f x = z) :
+    P.ordinaryPairQuotientHomeomorph f y hy hinj hsurj P.ordinaryPairQuotientBasepoint = y :=
+  ordinaryPairQuotientDesc_basepoint _ _ _ _
+
+end Homeomorph
 
 end TopPair

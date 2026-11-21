@@ -103,7 +103,7 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
           ∀ w, ‖stdComplexSymplecticForm.hamiltonianFlow H hX 1 w - w‖ ≤ C * D * r := by
   cases nonempty_fintype ι
   -- A smooth cutoff `G₁` of the identity, vanishing on `[r² / 9, ∞)`, with bounded derivative.
-  obtain ⟨G₁, hG₁, -, hG₁R', hG₁d⟩ := exists_contDiff_cutoff_id (by positivity : 0 < r ^ 2 / 18)
+  obtain ⟨G₁, hG₁, -, hG₁R', hG₁d⟩ := exists_contDiff_cutoff_id
     (by nlinarith : r ^ 2 / 18 < r ^ 2 / 9)
   have hG₁R (s : ℝ) (hs : r ^ 2 / 9 ≤ s) : G₁ s = 0 := hG₁R' s (hs.trans (le_abs_self s))
   have hG₁c : HasCompactSupport G₁ :=

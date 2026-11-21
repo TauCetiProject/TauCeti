@@ -305,6 +305,21 @@ theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_polynomialToRestri
   rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom,
     ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
 
+/-- The completed Gauss comparison commutes with the coefficient algebra maps. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).toRingHom.comp
+        (algebraMap R (restrictedMvPowerSeriesCompletion n R)) =
+      algebraMap R (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1)) :=
+  RingHom.ext fun _ ↦ by simp
+
+/-- The inverse completed Gauss comparison commutes with the coefficient algebra maps. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm.toRingHom.comp
+        (algebraMap R (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1))) =
+      algebraMap R (restrictedMvPowerSeriesCompletion n R) := by
+  rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap, ← RingHom.comp_assoc,
+    RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
+
 /-- The completed Tate algebra over a complete nonarchimedean normed domain is a domain. -/
 instance isDomain_restrictedMvPowerSeriesCompletion [IsDomain R] :
     IsDomain (restrictedMvPowerSeriesCompletion n R) :=
@@ -596,7 +611,7 @@ theorem _root_.RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion 
     simp only [Subring.mem_map, RingHom.mem_range]
     refine ⟨fun ⟨f, hf, hfa⟩ ↦ ⟨e.symm ⟨f, hf⟩, by
         simpa only [← hfa, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using (hπ_eq ⟨f, hf⟩).symm⟩,
-      fun ⟨w, hw⟩ ↦ ⟨e w, (e w).2, by
+      fun ⟨w, hw⟩ ↦ ⟨e w, (e w).property, by
         simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, e.symm_apply_apply, hw] using
           hπ_eq (e w)⟩⟩
   exact ⟨π, ⟨hπ_eq, hmap⟩, fun π' ⟨hπ', _⟩ ↦ hπ_uniq π' fun f ↦ by

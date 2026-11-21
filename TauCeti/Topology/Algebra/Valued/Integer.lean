@@ -74,6 +74,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   `TauCeti.isDiscreteValuationRing_integer_iff_exists_forall_norm_le`: `𝒪[K]` is a discrete
   valuation ring if and only if it is noetherian, if and only if some `ρ < 1` bounds all norms
   strictly below `1`.
+* `TauCeti.isOpen_maximalIdeal_integer`: for any valued field `K`, the maximal ideal `𝓂[K]` of
+  `𝒪[K]` is open.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
   is not finitely generated.
 -/
@@ -81,7 +83,7 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
 public section
 
 open IsLocalRing Bornology
-open scoped NormedField
+open scoped NormedField Valued
 
 namespace Valued
 
@@ -308,14 +310,14 @@ theorem coe_integerUnitClosedBallEquiv_symm (x : Subring.unitClosedBall K) :
 theorem continuous_integerUnitClosedBallEquiv :
     Continuous (integerUnitClosedBallEquiv (K := K)) :=
   continuous_induced_rng.mpr <| by
-    simpa only [Function.comp_def, coe_integerUnitClosedBallEquiv] using continuous_subtype_val
+    simpa only [Function.comp_def, coe_integerUnitClosedBallEquiv] using continuous_subtypeVal
 
 /-- The inverse of `integerUnitClosedBallEquiv` is continuous for the subspace topologies inherited
 from `K`. -/
 theorem continuous_integerUnitClosedBallEquiv_symm :
     Continuous (integerUnitClosedBallEquiv (K := K)).symm :=
   continuous_induced_rng.mpr <| by
-    simpa only [Function.comp_def, coe_integerUnitClosedBallEquiv_symm] using continuous_subtype_val
+    simpa only [Function.comp_def, coe_integerUnitClosedBallEquiv_symm] using continuous_subtypeVal
 
 /-- **Principal ideal containment from norm comparison in `𝒪[K]`.** For `x, c, y ∈ 𝒪[K]`, if
 `‖(c : K)‖ ≤ ‖(x : K)‖` then `c • y ∈ Ideal.span {x}`. -/
@@ -348,6 +350,15 @@ theorem isDiscreteValuationRing_integer_iff_exists_forall_norm_le :
     fun _ ↦ isNoetherianRing_of_ringEquiv _ (integerUnitClosedBallEquiv (K := K)).symm⟩
 
 end NontriviallyNormedField
+
+/-- The maximal ideal `𝓂[K]` of the valuation ring `𝒪[K]` of a valued field is open, being the
+open unit ball around `0`. -/
+theorem isOpen_maximalIdeal_integer {K : Type*} [Field K] {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀] [Valued K Γ₀] : IsOpen (𝓂[K] : Set 𝒪[K]) := by
+  convert (Valued.isOpen_ball K 1).preimage (continuous_subtypeVal : Continuous ((↑) : 𝒪[K] → K))
+  ext x
+  simp [Valued.maximalIdeal, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
+    Valuation.Integer.not_isUnit_iff_valuation_lt_one]
 
 variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
 

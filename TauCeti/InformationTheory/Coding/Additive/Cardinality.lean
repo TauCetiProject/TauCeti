@@ -37,24 +37,24 @@ variable {A ι : Type*} [AddCommGroup A]
 /-- Restriction of codewords to the retained coordinates, with codomain the punctured code. -/
 def punctureHom (C : AdditiveCode A ι) (s : Set ι) : C →+ puncture C s :=
   ((AddMonoidHom.pi fun i : s ↦ Pi.evalAddMonoidHom (fun _ : ι ↦ A) i).domRestrict C)
-    |>.codRestrict (puncture C s) fun x ↦ mem_puncture.mpr ⟨x.1, x.2, fun _ ↦ rfl⟩
+    |>.codRestrict (puncture C s) fun x ↦ mem_puncture.mpr ⟨x.val, x.property, fun _ ↦ rfl⟩
 
 /-- Restriction computes by evaluating the original word at the retained coordinate. -/
 @[simp]
 theorem punctureHom_apply (C : AdditiveCode A ι) (s : Set ι) (x : C) (i : s) :
-    (punctureHom C s x : s → A) i = x.1 i := (rfl)
+    (punctureHom C s x : s → A) i = x.val i := (rfl)
 
 /-- Every punctured word is the restriction of a codeword. -/
 theorem punctureHom_surjective (C : AdditiveCode A ι) (s : Set ι) :
     Function.Surjective (punctureHom C s) := by
   intro y
-  obtain ⟨x, hx, hxy⟩ := mem_puncture.mp y.2
+  obtain ⟨x, hx, hxy⟩ := mem_puncture.mp y.property
   exact ⟨⟨x, hx⟩, Subtype.ext (funext hxy)⟩
 
 /-- Restriction is zero exactly when the word is zero on the retained coordinates. -/
 @[simp]
 theorem punctureHom_eq_zero (C : AdditiveCode A ι) (s : Set ι) (x : C) :
-    punctureHom C s x = 0 ↔ ∀ i : s, x.1 i = 0 := by
+    punctureHom C s x = 0 ↔ ∀ i : s, x.val i = 0 := by
   simp only [Subtype.ext_iff, funext_iff,
     punctureHom_apply, ZeroMemClass.coe_zero, Pi.zero_apply]
 
@@ -62,25 +62,25 @@ theorem punctureHom_eq_zero (C : AdditiveCode A ι) (s : Set ι) (x : C) :
 The inverse extends the shortened word by zero. -/
 noncomputable def kerPunctureEquivShorten (C : AdditiveCode A ι) (s : Set ι) :
     (punctureHom C sᶜ).ker ≃+ shorten C s where
-  toFun x := ⟨fun i ↦ x.1.1 i, mem_shorten.mpr
-    ⟨x.1.1, x.1.2, fun i hi ↦
-      (punctureHom_eq_zero C sᶜ x.1).mp (AddMonoidHom.mem_ker.mp x.2) ⟨i, hi⟩,
+  toFun x := ⟨fun i ↦ x.val.val i, mem_shorten.mpr
+    ⟨x.val.val, x.val.property, fun i hi ↦
+      (punctureHom_eq_zero C sᶜ x.val).mp (AddMonoidHom.mem_ker.mp x.property) ⟨i, hi⟩,
       fun _ ↦ rfl⟩⟩
-  invFun y := ⟨⟨Subtype.val.extend y.1 0, mem_shorten_iff_extend_mem.mp y.2⟩,
+  invFun y := ⟨⟨Subtype.val.extend y.val 0, mem_shorten_iff_extend_mem.mp y.property⟩,
     AddMonoidHom.mem_ker.mpr ((punctureHom_eq_zero C sᶜ _).mpr fun i ↦
-      (Function.extend_val_apply' i.2).trans (Pi.zero_apply _))⟩
+      (Function.extend_val_apply' i.property).trans (Pi.zero_apply _))⟩
   left_inv x := by
     apply Subtype.ext
     apply Subtype.ext
     funext i
     by_cases hi : i ∈ s
-    · exact Subtype.val_injective.extend_apply (fun j : s ↦ x.1.1 j) (0 : ι → A) ⟨i, hi⟩
+    · exact Subtype.val_injective.extend_apply (fun j : s ↦ x.val.val j) (0 : ι → A) ⟨i, hi⟩
     · exact (Function.extend_val_apply' hi).trans
-        (((punctureHom_eq_zero C sᶜ x.1).mp (AddMonoidHom.mem_ker.mp x.2) ⟨i, hi⟩).symm)
+        (((punctureHom_eq_zero C sᶜ x.val).mp (AddMonoidHom.mem_ker.mp x.property) ⟨i, hi⟩).symm)
   right_inv y := by
     apply Subtype.ext
     funext i
-    exact Subtype.val_injective.extend_apply y.1 (0 : ι → A) i
+    exact Subtype.val_injective.extend_apply y.val (0 : ι → A) i
   map_add' _ _ := by
     apply Subtype.ext
     rfl
@@ -89,13 +89,13 @@ noncomputable def kerPunctureEquivShorten (C : AdditiveCode A ι) (s : Set ι) :
 @[simp]
 theorem kerPunctureEquivShorten_apply (C : AdditiveCode A ι) (s : Set ι)
     (x : (punctureHom C sᶜ).ker) (i : s) :
-    (kerPunctureEquivShorten C s x : s → A) i = x.1.1 i := (rfl)
+    (kerPunctureEquivShorten C s x : s → A) i = x.val.val i := (rfl)
 
 /-- The inverse kernel equivalence extends the shortened word by zero. -/
 @[simp]
 theorem coe_kerPunctureEquivShorten_symm_apply (C : AdditiveCode A ι) (s : Set ι)
     (y : shorten C s) :
-    ((kerPunctureEquivShorten C s).symm y).1.1 = Subtype.val.extend y.1 0 := (rfl)
+    ((kerPunctureEquivShorten C s).symm y).val.val = Subtype.val.extend y.val 0 := (rfl)
 
 /-- The cardinalities of shortening on `s` and puncturing on `sᶜ` multiply to that of the code.
 The coordinates in each set are retained. No finiteness assumption is needed for `Nat.card`. -/
@@ -141,7 +141,7 @@ theorem natCard_le_natCard_puncture_mul_pow (C : AdditiveCode A ι)
     Nat.card C ≤ Nat.card (puncture C s) * Nat.card A ^ Nat.card ↥sᶜ := by
   rw [← natCard_puncture_mul_natCard_shorten_compl C s]
   apply Nat.mul_le_mul_left
-  exact (Nat.card_le_card_of_injective (fun x : shorten C sᶜ ↦ x.1)
+  exact (Nat.card_le_card_of_injective (fun x : shorten C sᶜ ↦ x.val)
     Subtype.val_injective).trans_eq Nat.card_fun
 
 /-- Shortening decreases cardinality by at most the number of words on the deleted coordinates
@@ -151,7 +151,7 @@ theorem natCard_le_natCard_shorten_mul_pow (C : AdditiveCode A ι)
     Nat.card C ≤ Nat.card (shorten C s) * Nat.card A ^ Nat.card ↥sᶜ := by
   rw [← natCard_shorten_mul_natCard_puncture_compl C s]
   apply Nat.mul_le_mul_left
-  exact (Nat.card_le_card_of_injective (fun x : puncture C sᶜ ↦ x.1)
+  exact (Nat.card_le_card_of_injective (fun x : puncture C sᶜ ↦ x.val)
     Subtype.val_injective).trans_eq Nat.card_fun
 
 end TauCeti.AdditiveCode

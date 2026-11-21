@@ -120,7 +120,7 @@ def unitBallIdeal : Ideal (Subring.unitClosedBall R) where
   add_mem' hx hy := (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hx hy)
   zero_mem' := by simp
   smul_mem' a x hx := (norm_mul_le (a : R) x).trans_lt
-    ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.mp a.2)).trans_lt hx)
+    ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.mp a.property)).trans_lt hx)
 
 variable {R} in
 /-- An element of the closed unit ball lies in the open-ball ideal exactly when its norm is less
@@ -158,7 +158,7 @@ theorem exists_norm_lt_one_forall_norm_le_of_fg (h : (unitBallIdeal R).FG) :
     (fun x y _ _ hx hy ↦ ?_) (fun b x _ hx ↦ ?_) haS
   · simpa using (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hx hy)
   · simpa using (norm_mul_le _ _).trans
-      ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.1 b.2)).trans hx)
+      ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.1 b.property)).trans hx)
 
 end UnitBallIdeal
 
@@ -171,7 +171,8 @@ theorem _root_.Ideal.eq_bot_or_exists_mem_forall_mul_norm_le_unitClosedBall
     I = ⊥ ∨ ∃ g ∈ I, 0 < ‖(g : R)‖ ∧ ∀ f ∈ I, r * ‖(f : R)‖ ≤ ‖(g : R)‖ := by
   set S : Set ℝ := (fun f : Subring.unitClosedBall R ↦ ‖(f : R)‖) '' (I : Set _)
   have hSne : S.Nonempty := ⟨0, 0, I.zero_mem, by simp⟩
-  have hSbdd : BddAbove S := ⟨1, by rintro _ ⟨f, -, rfl⟩; exact Subring.mem_unitClosedBall.mp f.2⟩
+  have hSbdd : BddAbove S :=
+    ⟨1, by rintro _ ⟨f, -, rfl⟩; exact Subring.mem_unitClosedBall.mp f.property⟩
   set α := sSup S
   have hα0 : 0 ≤ α := le_csSup_of_le hSbdd ⟨0, I.zero_mem, rfl⟩ (by simp)
   rcases hα0.eq_or_lt with hα | hα
@@ -262,7 +263,8 @@ theorem unitBallIdeal_le_jacobson_bot : unitBallIdeal R ≤ Ideal.jacobson ⊥ :
   refine Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_unitClosedBall_of_norm_sub_one_lt ?_
   rw [mem_unitBallIdeal] at hx
   simpa using (norm_mul_le (x : R) y).trans_lt
-    ((mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.2)).trans_lt hx)
+    ((mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.property)).trans_lt
+        hx)
 
 /-- **Unit lifting.** The reduction map from the unit ball to its quotient by the open-ball ideal
 is a local homomorphism: an element of the unit ball whose reduction is a unit is itself a unit
@@ -284,11 +286,11 @@ norm less than one, such as a nonzero scalar of small norm, is therefore not a u
 ball. -/
 theorem isUnit_unitClosedBall_iff {x : Subring.unitClosedBall R} :
     IsUnit x ↔ IsUnit (x : R) ∧ ‖(x : R)‖ = 1 := by
-  have hx1 : ‖(x : R)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.2
+  have hx1 : ‖(x : R)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.property
   constructor
   · rintro ⟨v, rfl⟩
     have hb1 : ‖((v⁻¹ : (Subring.unitClosedBall R)ˣ) : R)‖ ≤ 1 :=
-      Subring.mem_unitClosedBall.mp (v⁻¹ : (Subring.unitClosedBall R)ˣ).1.2
+      Subring.mem_unitClosedBall.mp (v⁻¹ : (Subring.unitClosedBall R)ˣ).val.property
     have hmul : ‖(v : R)‖ * ‖((v⁻¹ : (Subring.unitClosedBall R)ˣ) : R)‖ = 1 := by
       rw [← norm_mul, ← Subring.coe_mul, v.mul_inv, Subring.coe_one, norm_one]
     exact ⟨v.isUnit.map (Subring.unitClosedBall R).subtype,
@@ -320,7 +322,7 @@ instance isLocalRing_unitClosedBall : IsLocalRing (Subring.unitClosedBall K) := 
   refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦ ?_
   simp only [isUnit_unitClosedBall_iff_norm_eq_one]
   push_cast
-  have hx1 : ‖(x : K)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.2
+  have hx1 : ‖(x : K)‖ ≤ 1 := Subring.mem_unitClosedBall.mp x.property
   rcases hx1.eq_or_lt with hx | hx
   · exact .inl hx
   · exact .inr (norm_one_sub_of_norm_lt_one hx)
@@ -331,7 +333,7 @@ theorem _root_.Subring.unitClosedBall.dvd_iff_norm_le {a b : Subring.unitClosedB
     b ∣ a ↔ ‖(a : K)‖ ≤ ‖(b : K)‖ := by
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
   · rw [hc, Subring.coe_mul, norm_mul]
-    exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp c.2)
+    exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp c.property)
   · rcases eq_or_ne (b : K) 0 with hb | hb
     · have ha : (a : K) = 0 := norm_le_zero_iff.mp (by simpa [hb] using h)
       exact ⟨0, Subtype.ext (by simp [ha])⟩
@@ -352,7 +354,7 @@ theorem maximalIdeal_unitClosedBall :
     IsLocalRing.maximalIdeal (Subring.unitClosedBall K) = unitBallIdeal K := by
   ext x
   rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, isUnit_unitClosedBall_iff_norm_eq_one,
-    mem_unitBallIdeal, (Subring.mem_unitClosedBall.mp x.2).lt_iff_ne]
+    mem_unitBallIdeal, (Subring.mem_unitClosedBall.mp x.property).lt_iff_ne]
 
 /-- Over an ultrametric normed field the open-ball ideal is maximal, so the reduction
 `K⁰ ⧸ K⁰⁰` is a field (`Ideal.Quotient.field`). -/
@@ -369,7 +371,7 @@ theorem isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow {π : K} (hπ0 : 0 <
   have hnat (x : Subring.unitClosedBall K) (hx : x ≠ 0) : ∃ n : ℕ, ‖(x : K)‖ = ‖π‖ ^ n := by
     obtain ⟨k, hk⟩ := hdisc x fun h ↦ hx (Subtype.ext h)
     have hk0 : 0 ≤ k := (zpow_le_one_iff_right_of_lt_one₀ hπ0 hπ1).1
-      (hk ▸ Subring.mem_unitClosedBall.1 x.2)
+      (hk ▸ Subring.mem_unitClosedBall.1 x.property)
     exact ⟨k.toNat, by rw [hk, ← zpow_natCast, Int.toNat_of_nonneg hk0]⟩
   refine ⟨fun I ↦ ⟨?_⟩⟩
   classical
@@ -488,7 +490,7 @@ theorem _root_.Subring.unitClosedBall.smul_mem_span_singleton_of_norm_le
     c • y ∈ Ideal.span {x} :=
   Ideal.mem_span_singleton.mpr <| Subring.unitClosedBall.dvd_iff_norm_le.mpr <| by
     simpa only [smul_eq_mul, Subring.coe_mul, norm_mul] using
-      (mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.2)).trans hc
+      (mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.property)).trans hc
 
 end Field
 

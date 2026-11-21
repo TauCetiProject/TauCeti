@@ -120,16 +120,17 @@ instance isNoetherianRing_isRestricted_subring_unitClosedBall [CompleteSpace K] 
     refine isNoetherianRing_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
       fun x y hx ↦ ?_
     have hxK : (x : K) ≠ 0 := fun h ↦ hx (Subtype.ext h)
-    have hx1 : ‖(x : K)‖ = 1 := (Subring.mem_unitClosedBall.mp x.2).antisymm <| not_lt.mp fun hlt ↦
-      hxK (norm_le_zero_iff.mp ((hπ _ hlt).trans (by simp)))
+    have hx1 : ‖(x : K)‖ = 1 :=
+      (Subring.mem_unitClosedBall.mp x.property).antisymm <| not_lt.mp fun hlt ↦
+        hxK (norm_le_zero_iff.mp ((hπ _ hlt).trans (by simp)))
     obtain ⟨q, hq⟩ := Subring.unitClosedBall.dvd_iff_norm_le.mpr
-      ((Subring.mem_unitClosedBall.mp y.2).trans_eq hx1.symm)
+      ((Subring.mem_unitClosedBall.mp y.property).trans_eq hx1.symm)
     exact ⟨q, 0, by rw [add_zero, mul_comm, hq], by simp, Or.inl rfl⟩
   · -- `0 < ‖π‖ < 1`, so nonzero elements of `K°` have norm `‖π‖ ^ n` for a unique `n : ℕ`.
     have hπpos : 0 < ‖π‖ := norm_pos_iff.mpr hπ0
     have hnat (x : O) (hx : x ≠ 0) : ∃ n : ℕ, ‖(x : K)‖ = ‖π‖ ^ n :=
       exists_norm_eq_pow_of_forall_norm_le_of_norm_le_one hπpos hπ1 hπ
-        (fun h ↦ hx (Subtype.ext h)) (Subring.mem_unitClosedBall.mp x.2)
+        (fun h ↦ hx (Subtype.ext h)) (Subring.mem_unitClosedBall.mp x.property)
     let deg : O → ℕ := fun x ↦ if hx : x = 0 then 0 else Nat.find (hnat x hx)
     have hdeg_spec {x : O} (hx : x ≠ 0) : ‖(x : K)‖ = ‖π‖ ^ deg x := by
       simpa [deg, hx] using Nat.find_spec (hnat x hx)
@@ -276,7 +277,7 @@ private noncomputable def optionTruncHom (σ : Type*) (s : ℕ) :
         intro m
         simp only [p, PowerSeries.coeff_mk, one_pow, mul_one]
         split_ifs with hm
-        · exact Subring.mem_unitClosedBall.mp (u ⟨m, hm⟩).2
+        · exact Subring.mem_unitClosedBall.mp (u ⟨m, hm⟩).property
         · simp⟩
   map_add' u₁ u₂ := Subtype.ext <|
     (restrictedOptionEquiv (σ := σ) (R := K) (c := fun _ ↦ 1)).injective <| Subtype.ext <|
@@ -305,7 +306,7 @@ private theorem exists_optionTruncHom_eq {σ : Type*} {s : ℕ}
     Subring.mem_unitClosedBall.mpr <| by
       have hle := TauCeti.PowerSeries.norm_coeff_mul_pow_le Riter (k : ℕ)
       rw [one_pow, mul_one, norm_restrictedOptionEquiv] at hle
-      exact hle.trans (Subring.mem_unitClosedBall.mp rd.2)⟩, ?_⟩
+      exact hle.trans (Subring.mem_unitClosedBall.mp rd.property)⟩, ?_⟩
   apply Subtype.ext
   apply (restrictedOptionEquiv (σ := σ) (R := K) (c := fun _ ↦ 1)).injective
   apply Subtype.ext
@@ -347,8 +348,8 @@ private theorem exists_mul_add_optionTruncHom_of_isMulDistinguished [CompleteSpa
     ⟨((d : K) * a⁻¹) • q, Subring.mem_unitClosedBall.mpr hqd_le⟩
   have hrd_le : ‖(d : K) • r‖ ≤ 1 := by
     rw [norm_smul]
-    exact (mul_le_of_le_one_left (norm_nonneg r) (Subring.mem_unitClosedBall.mp d.2)).trans
-      (hr_norm.trans (Subring.mem_unitClosedBall.mp h.2))
+    exact (mul_le_of_le_one_left (norm_nonneg r) (Subring.mem_unitClosedBall.mp d.property)).trans
+      (hr_norm.trans (Subring.mem_unitClosedBall.mp h.property))
   let rd : Subring.unitClosedBall (Tate (Option σ)) :=
     ⟨(d : K) • r, Subring.mem_unitClosedBall.mpr hrd_le⟩
   obtain ⟨u, hrem_u⟩ := exists_optionTruncHom_eq rd fun t ht ↦ by
