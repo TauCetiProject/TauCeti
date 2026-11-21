@@ -73,6 +73,12 @@ argument, and the relative-frontier nowhere-density and local-membership lemmas,
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
 Original copyright (c) 2026 Mei contributors; original author: Codex.
+
+`ContinuousAffineEquiv.pairwise_disjoint_intrinsicInterior_image`,
+`ContinuousAffineEquiv.pairwise_disjoint_intrinsicInterior_of_image`, and
+`ContinuousAffineEquiv.pairwise_disjoint_intrinsicInterior_of_image_reindex` record that a
+continuous affine equivalence preserves and reflects pairwise disjointness of intrinsic interiors
+(including under injective reindexing).
 -/
 
 public section
@@ -644,3 +650,47 @@ theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ 
     exact (this (by simpa [B, g] using hwP)).elim
 
 end Convex
+
+namespace ContinuousAffineEquiv
+
+/-- A continuous affine equivalence preserves pairwise disjointness of intrinsic interiors. -/
+theorem pairwise_disjoint_intrinsicInterior_image {𝕜 V W P Q ι : Type*} [Ring 𝕜]
+    [AddCommGroup V] [AddCommGroup W] [Module 𝕜 V] [Module 𝕜 W]
+    [TopologicalSpace P] [TopologicalSpace Q] [AddTorsor V P] [AddTorsor W Q]
+    (e : P ≃ᴬ[𝕜] Q) {S : ι → Set P}
+    (hS : Pairwise fun i j => Disjoint (intrinsicInterior 𝕜 (S i)) (intrinsicInterior 𝕜 (S j))) :
+    Pairwise fun i j =>
+      Disjoint (intrinsicInterior 𝕜 (e '' S i)) (intrinsicInterior 𝕜 (e '' S j)) := by
+  intro i j hij
+  rw [e.intrinsicInterior_image, e.intrinsicInterior_image]
+  exact Set.disjoint_image_of_injective e.injective (hS hij)
+
+/-- A continuous affine equivalence reflects pairwise disjointness of intrinsic interiors. -/
+theorem pairwise_disjoint_intrinsicInterior_of_image {𝕜 V W P Q ι : Type*} [Ring 𝕜]
+    [AddCommGroup V] [AddCommGroup W] [Module 𝕜 V] [Module 𝕜 W]
+    [TopologicalSpace P] [TopologicalSpace Q] [AddTorsor V P] [AddTorsor W Q]
+    (e : P ≃ᴬ[𝕜] Q) {S : ι → Set P}
+    (hS : Pairwise fun i j =>
+      Disjoint (intrinsicInterior 𝕜 (e '' S i)) (intrinsicInterior 𝕜 (e '' S j))) :
+    Pairwise fun i j => Disjoint (intrinsicInterior 𝕜 (S i)) (intrinsicInterior 𝕜 (S j)) := by
+  intro i j hij
+  rw [← Set.disjoint_image_iff e.injective, ← e.intrinsicInterior_image,
+    ← e.intrinsicInterior_image]
+  exact hS hij
+
+/-- Pairwise disjointness of intrinsic interiors transfers back along a continuous affine
+equivalence and an injective reindexing `f : ι → ι'`. -/
+theorem pairwise_disjoint_intrinsicInterior_of_image_reindex {𝕜 V W P Q ι ι' : Type*} [Ring 𝕜]
+    [AddCommGroup V] [AddCommGroup W] [Module 𝕜 V] [Module 𝕜 W]
+    [TopologicalSpace P] [TopologicalSpace Q] [AddTorsor V P] [AddTorsor W Q]
+    (e : P ≃ᴬ[𝕜] Q) {S : ι → Set P} {S' : ι' → Set Q} {f : ι → ι'}
+    (hf : Function.Injective f) (hS : ∀ i, S' (f i) = e '' S i)
+    (hS' : Pairwise fun i' j' =>
+      Disjoint (intrinsicInterior 𝕜 (S' i')) (intrinsicInterior 𝕜 (S' j'))) :
+    Pairwise fun i j => Disjoint (intrinsicInterior 𝕜 (S i)) (intrinsicInterior 𝕜 (S j)) :=
+  e.pairwise_disjoint_intrinsicInterior_of_image fun i j hij => by
+    dsimp only
+    rw [← hS i, ← hS j]
+    exact hS' (hf.ne hij)
+
+end ContinuousAffineEquiv
