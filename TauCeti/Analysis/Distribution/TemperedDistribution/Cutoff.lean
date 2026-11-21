@@ -157,7 +157,7 @@ theorem eq_cutoffTempered_of_forall [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ
 
 /-- **Cutoff independence.** The tempered distribution `φ T` only depends on the germ of `φ` along
 the support of `T`. -/
-theorem cutoffTempered_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
+theorem cutoffTempered_congr (T : 𝓓'(Ω, ℂ)) {φ φ' : 𝓓(Ω, ℂ)}
     (h : (φ : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] φ') : T.cutoffTempered φ = T.cutoffTempered φ' := by
   ext ψ
   rw [cutoffTempered_def, cutoffTempered_def]
@@ -279,7 +279,7 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ 
     set v := m 0
     set R := ∂^{Fin.tail m} (T.cutoffTempered χ)
     have hfd : (fun x ↦ fderiv ℝ φ x v) = ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) :=
-      funext fun x ↦ (TestFunction.lineDerivOp_apply_eq_fderiv φ v x).symm
+      (TestFunction.coe_lineDerivOp_eq_fderiv φ v).symm
     have hL : TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (∂_{v} R) =
         ∂_{v} (TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) R) -
           TemperedDistribution.smulLeftCLM ℂ ⇑(∂_{v} φ : 𝓓(Ω, ℂ)) R := by

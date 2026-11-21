@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
-import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Geometry.Manifold.Morse.Deformation.Attachment
 
 /-!
 # Crossing a critical value between regular levels attaches cells
@@ -41,9 +41,10 @@ inclusion `M_{c+ε} → M_b` is a homotopy equivalence across the band `f⁻¹[c
 (`TauCeti.exists_sublevelHomotopyEquiv`). Third, the retraction `r` is a homotopy equivalence with
 homotopy inverse the inclusion (`ContinuousMap.HomotopyEquiv.ofRetraction`), and attaching cells
 is homotopy invariant under a change of base
-(`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`): attaching the cells to
-`M_a` along `r ∘ α` is homotopy equivalent to attaching them to `M_{c-ε}` along `α`, by a map which
-is the inclusion on `M_a`.
+(`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`): attaching the cells to `M_a` along
+`r ∘ α` is homotopy equivalent to attaching them to `M_{c-ε}` along `α`, by a map which is the
+inclusion on `M_a`. These last two steps move any attachment across regular collars
+(`TauCeti.exists_homotopyEquiv_pushout_comp_sublevelRetraction`).
 
 This is the step by which the sublevels of a Morse function are built cell by cell along a
 sequence of regular levels separating its critical values.
@@ -155,46 +156,31 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
                     hε.le (hball p) (hψ p)).hom)) z) : M) = z := by
   set k := fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦ manifoldMorseIndex I f p
   have hδ : 0 < min (c - a) (b - c) := lt_min (by linarith) (by linarith)
-  have hsub {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc hs ht))
   have hδa := min_le_left (c - a) (b - c)
   have hδb := min_le_right (c - a) (b - c)
   obtain ⟨ε, hε, hεδ, ψ, hψd, hψp, hball, hψ, g, hg, hΦ⟩ :=
-    hf.exists_morseCellAttachment_deformation (c := c) hδ (hsub (by linarith) (by linarith))
+    hf.exists_morseCellAttachment_deformation (c := c) hδ
+      (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+        (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
   have hεa : a ≤ c - ε := by linarith
   have hεb : c + ε ≤ b := by linarith
-  -- Points of the two collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` are not critical.
-  have hreg {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) (hst : t < c ∨ c < s) :
-      ∀ x, s ≤ f x → f x ≤ t → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x hsx hxt h0 ↦ by
-    have := hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0) ⟨by linarith, by linarith⟩
-    rcases hst with hst | hst <;> linarith
-  obtain ⟨r, hr, ⟨R⟩⟩ := exists_sublevelDeformation hf.contMDiff hεa (hsub le_rfl (by linarith))
-    (hreg le_rfl (by linarith) (Or.inl (by linarith)))
-  obtain ⟨e₂, he₂⟩ := exists_sublevelHomotopyEquiv hf.contMDiff hεb (hsub (by linarith) le_rfl)
-    (hreg (by linarith) le_rfl (Or.inr (by linarith)))
-  refine ⟨ε, hε, hεa, hεb, ψ, hψd, hψp, hball, hψ, r, fun x hx ↦ ?_, ?_⟩
-  · have h := hr ⟨x, hx⟩
-    rw [show sublevelInclusion f a (c - ε) hεa ⟨x, hx⟩ = x from
-      Subtype.ext (coe_sublevelInclusion_apply f hεa _)] at h
-    rw [h]
   set α := fun p ↦ ((ψ p).toOpenPartialHomeomorph.morseAttachingMap manifoldMorseIndex_le_finrank
     hε.le (hball p) (hψ p)).hom
   -- Attaching the cells to `M_{c-ε}` gives a space homotopy equivalent to `M_{c+ε}`.
   obtain ⟨e₁, he₁⟩ := exists_homotopyEquiv_sigmaDiskAdjunctionSpace_of_leftInverse
     (fun p ↦ (ψ p).toOpenPartialHomeomorph) k _ hε.le hball hψ hg hΦ.homotopic.symm
-  -- Change the base of the attachment from `M_{c-ε}` to `M_a` along `r`, a homotopy equivalence
-  -- with homotopy inverse the inclusion.
-  rw [sublevelInclusion_eq_inclusion] at hr R
-  let er := (ContinuousMap.HomotopyEquiv.ofRetraction _ r hr R.toHomotopy).symm
-  obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_relCWAdjunctionSpace
-    (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))) (sigmaDiskAttachingMap α)
-  have her : er.toFun = r :=
-    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ r hr _)
-  rw [ContinuousMap.sigmaDiskAttachingMap_comp, ← her]
-  refine ⟨E.symm.trans (e₁.trans e₂), fun z ↦ ?_⟩
-  rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, hE, he₂,
-    he₁]
-  exact ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ r hr _ z
+  -- Move the attachment across the collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]`.
+  obtain ⟨r, hr, H⟩ :=
+    exists_homotopyEquiv_pushout_comp_sublevelRetraction_of_isCompact_preimage_Icc hf.contMDiff
+      hεa (by linarith) hεb hcompact fun x hx hxab ↦ by
+        rw [hcrit x hx hxab]
+        exact ⟨by linarith, by linarith⟩
+    (relCWBaseInclusion (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))))
+    (isEmbedding_relCWBaseInclusion _) (hasHomotopyExtensionProperty_range_relCWBaseInclusion _)
+    (TopCat.ofHom (sigmaDiskAttachingMap α)) e₁ he₁
+  rw [← TopCat.ofHom_comp] at H
+  refine ⟨ε, hε, hεa, hεb, ψ, hψd, hψp, hball, hψ, r, hr, ?_⟩
+  rw [ContinuousMap.sigmaDiskAttachingMap_comp]
+  exact H
 
 end TauCeti
