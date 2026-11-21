@@ -69,12 +69,14 @@ theorem contMDiffAt_flip_section
     ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y).flip) x := by
   rw [contMDiffAt_section_iff] at hb ⊢
-  -- The unbundled bound avoids identifying the normed and seminormed structures on hom spaces.
-  have hflip : IsBoundedLinearMap 𝕜 (fun c : F →L[𝕜] F →L[𝕜] G ↦ c.flip) :=
-    { map_add := fun c d ↦ by ext v w; simp
-      map_smul := fun a c ↦ by ext v w; simp
-      bound := ⟨1, by norm_num, fun c ↦ by simp⟩ }
-  have h := hflip.contDiff.comp_contMDiffAt hb
+  have hflip : ContDiff 𝕜 n
+      (ContinuousLinearMap.flip : (F →L[𝕜] F →L[𝕜] G) → F →L[𝕜] F →L[𝕜] G) := by
+    let _ : NormedAddCommGroup (F →L[𝕜] F →L[𝕜] G) := ContinuousLinearMap.toNormedAddCommGroup
+    let _ : NormedSpace 𝕜 (F →L[𝕜] F →L[𝕜] G) := ContinuousLinearMap.toNormedSpace
+    convert (ContinuousLinearMap.flipₗᵢ 𝕜 F F G).toContinuousLinearEquiv.contDiff
+      (𝕜 := 𝕜) (n := n) using 1
+    simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearMap.coe_flipₗᵢ]
+  have h := hflip.comp_contMDiffAt hb
   refine h.congr_of_eventuallyEq ?_
   filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
     (mem_baseSet_trivializationAt F V x)] with y hy

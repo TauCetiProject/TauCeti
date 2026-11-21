@@ -46,9 +46,14 @@ manifold differential of a function to tangent vectors whose base point varies.
   tangent-bundle coordinate expressions of vector fields.
 * `VectorField.mpullbackWithin_extChartAt_symm_self`: at the chart centre, the inverse-chart
   pullback is the value of the field.
-* `VectorField.mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq`: a vector
+* `VectorField.mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq` and
+  `VectorField.mpullbackWithin_extChartAt_symm_target_trivializationAt_symm_eventuallyEq`: a vector
   field with constant coordinates in the tangent-bundle trivialization at `x` pulls back to a
-  constant field near the chart centre.
+  constant field near the chart centre and on the chart target.
+* `TangentBundle.mdifferentiableAt_trivializationAt_symm` and
+  `TangentBundle.trivializationAt_symm_extChartAt_symm`: differentiability of a constant-coordinate
+  trivialization section on its chart source and its identification with the inverse-chart
+  differential on the chart target.
 * `VectorField.mpullback_extChartAt_symm_apply_eq_mfderiv`: where the model range is a
   neighbourhood, the inverse-chart pullback is the image of the field under the differential of
   the chart.
@@ -348,6 +353,55 @@ theorem mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq (x : 
     (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u) hy
   rw [(extChartAt I x).right_inv hz] at h
   rw [h, Trivialization.apply_mk_symm _ hy']
+
+open scoped Topology in
+/-- Along the inverse of the extended chart at `x₀`, restricted to `(extChartAt I x₀).target`, the
+vector field with constant coordinates `u` in the tangent-bundle trivialization at `x₀` pulls back
+to the constant field `u` near any `z` within `(extChartAt I x₀).target`. -/
+theorem mpullbackWithin_extChartAt_symm_target_trivializationAt_symm_eventuallyEq
+    (x₀ : M) {z : E} (u : E) :
+    VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm
+      (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u) (extChartAt I x₀).target
+      =ᶠ[𝓝[(extChartAt I x₀).target] z] fun ζ ↦ (u : TangentSpace 𝓘(𝕜, E) ζ) := by
+  filter_upwards [self_mem_nhdsWithin] with ζ hζt
+  simp only [VectorField.mpullbackWithin_apply,
+    mfderivWithin_congr_set (extChartAt_target_eventuallyEqSet_of_mem hζt)]
+  have h := mpullbackWithin_extChartAt_symm_apply
+    (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u) ((extChartAt I x₀).map_target hζt)
+  rw [(extChartAt I x₀).right_inv hζt] at h
+  have hζb : (extChartAt I x₀).symm ζ ∈
+      (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by
+    simpa [extChartAt_source] using (extChartAt I x₀).map_target hζt
+  exact h.trans (congrArg Prod.snd (Trivialization.apply_mk_symm _ hζb u))
+
+/-- The vector field with constant coordinates `u` in the tangent-bundle trivialization at `x₀`
+is differentiable at every point `y` of the chart source at `x₀`. -/
+theorem _root_.TangentBundle.mdifferentiableAt_trivializationAt_symm [IsManifold I 2 M] (x₀ : M)
+    {y : M} (hy : y ∈ (chartAt H x₀).source) (u : E) :
+    MDifferentiableAt I I.tangent
+      (T% (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u)) y := by
+  let _ : IsManifold I (1 + 1) M := by simpa only [one_add_one_eq_two] using ‹IsManifold I 2 M›
+  set t := trivializationAt E (TangentSpace I) x₀
+  have hyb : y ∈ t.baseSet := by simpa [t] using hy
+  refine (t.mdifferentiableAt_section_iff I (fun q ↦ t.symm q u) hyb).2 ?_
+  exact (mdifferentiableAt_const (c := u)).congr_of_eventuallyEq <| by
+    filter_upwards [t.open_baseSet.mem_nhds hyb] with q hq
+    exact congrArg Prod.snd (t.apply_mk_symm hq u)
+
+/-- On the target of the extended chart at `x₀`, the inverse trivialization of `TM` at `x₀` equals
+the differential of `(extChartAt I x₀).symm` within `range I`. -/
+theorem _root_.TangentBundle.trivializationAt_symm_extChartAt_symm (x₀ : M)
+    {z : E} (hz : z ∈ (extChartAt I x₀).target) (u : E) :
+    (trivializationAt E (TangentSpace I) x₀).symm ((extChartAt I x₀).symm z) u =
+      mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z u := by
+  have hy : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
+    simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
+  have hyb : (extChartAt I x₀).symm z ∈
+      (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by simpa using hy
+  rw [← Trivialization.symmL_apply (R := 𝕜) _ hyb]
+  have hL := TangentBundle.symmL_trivializationAt (I := I) hy
+  rw [(extChartAt I x₀).right_inv hz] at hL
+  exact congrArg (fun L : E →L[𝕜] TangentSpace I ((extChartAt I x₀).symm z) ↦ L u) hL
 
 open scoped Topology in
 /-- The pullback of a vector field along an inverse extended chart, at the image of a point `y` of

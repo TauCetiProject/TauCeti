@@ -8,20 +8,28 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Killing.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.IntegralCurve
 public import TauCeti.Geometry.Manifold.Flow.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Maximal
+public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Pullback
+import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Killing.LieDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Flow
 
 /-!
-# Metric conservation in variations through Killing trajectories
+# Metric conservation in variations and local flows of Killing fields
 
-The transverse velocity `V(t) = ∂q F(0,t)` of a family of integral curves of `X` satisfies
-`D_t V = ∇_V X`. Consequently its squared norm has derivative `2⟨∇_V X,V⟩`.
-For a Killing field this derivative vanishes, so transverse lengths are conserved on each
-connected time interval. Applied to `F(q,t) = flowOf X t (c q)`, this is the metric-preservation
-calculation for the local flow, with its actual domain of existence retained.
+This file proves two metric-conservation results for a Killing vector field `X` on a `C¹`
+Riemannian manifold:
 
-The variational equation is supplied by
-`CovariantDerivative.alongCurve_curveVelocity_eq_covariantDerivative`; the Killing equation
-is `TauCeti.Manifold.IsKillingField.inner_covariantDerivative_eq_neg`.
+1. **Variations through integral curves:** the transverse velocity `V(t) = ∂q F(0, t)` of a `C²`
+   family of integral curves of `X` satisfies `D_t V = ∇_V X`, so its squared norm has derivative
+   `2 ⟪∇_V X, V⟫ = 0` and transverse lengths are constant on each connected time interval
+   (`IsKillingField.hasDerivAt_inner_variationField_self`,
+   `IsKillingField.norm_variationField_eq`).
+2. **Local flows act by local isometries:** since the Lie derivative of the metric along `X`
+   vanishes (`IsKillingField.mlieDerivBilin_inner_eq_zero`), the pullback variation formula for
+   covariant two-tensors (`mpullbackBilin_flowOf_apply_eq_of_mlieDerivBilin_eq_zero`) shows that
+   `flowOf X t` preserves the metric tensor wherever `(t, x) ∈ flowDomain X`
+   (`IsKillingField.mpullbackBilin_flowOf_inner_eq`), immediately yielding inner-product and norm
+   preservation (`IsKillingField.inner_mfderiv_flowOf`, `IsKillingField.norm_mfderiv_flowOf`).
 
 ## References
 
@@ -41,7 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [RiemannianBundle (TangentSpace I : M → Type _)]
-  [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+  [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)]
   {X : Π x : M, TangentSpace I x} {F : ℝ → ℝ → M} {t : ℝ}
 
 /-- In a family of integral curves of a Killing field, the squared length of the transverse
@@ -83,73 +91,35 @@ section Flow
 
 variable [I.Boundaryless]
 
-private theorem IsKillingField.norm_variationField_flowOf (h : IsKillingField I X)
-    {c : ℝ → M} (hc : ContMDiffAt 𝓘(ℝ) I 2 c 0) (ht : (t, c 0) ∈ flowDomain X) :
-    ‖variationField I (fun q r ↦ flowOf X r (c q)) t‖ = ‖curveVelocity I c 0‖ := by
-  have hX : CMDiff 1 (T% X) := h.contMDiff.of_le (by simp)
-  have hX₂ : CMDiff 2 (T% X) := h.contMDiff.of_le (by simp)
-  let F (q r : ℝ) := flowOf X r (c q)
-  have hF (r : ℝ) (hr : r ∈ maximalIntegralCurveInterval X (c 0)) :
-      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, r) :=
-    contMDiffAt_flowOf_comp (by norm_num) hX₂
-      (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt
-      (hc.comp (0, r) (contMDiff_iff_contDiff.mpr contDiff_fst).contMDiffAt)
-      (mem_flowDomain.mpr hr)
-  have hcurve (r : ℝ) (hr : r ∈ maximalIntegralCurveInterval X (c 0)) :
-      ∀ᶠ q in 𝓝 0, curveVelocity I (F q) r = X (F q r) := by
-    have hdom : ∀ᶠ q in 𝓝 0, (r, c q) ∈ flowDomain X :=
-      (continuousAt_const.prodMk hc.continuousAt).preimage_mem_nhds
-        ((isOpen_flowDomain hX).mem_nhds (mem_flowDomain.mpr hr))
-    filter_upwards [hdom] with q hq
-    have htime : {s | (s, c q) ∈ flowDomain X} ∈ 𝓝 r := by
-      simpa only [mem_flowDomain, ofPred_mem_eq] using
-        isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp hq)
-    have hderiv := ((isMIntegralCurveOn_flowOf hX (c q)).isMIntegralCurveAt htime).hasMFDerivAt
-    simpa only [curveVelocityWithin_univ, F] using
-      curveVelocityWithin_eq_of_hasMFDerivWithinAt hderiv.hasMFDerivWithinAt
-        uniqueDiffWithinAt_univ
-  have heq := h.norm_variationField_eq isOpen_maximalIntegralCurveInterval
-    isPreconnected_maximalIntegralCurveInterval hF hcurve (mem_flowDomain.mp ht)
-      (mem_flowDomain.mp (mem_flowDomain_zero hX (c 0)))
-  have hzero : (fun q ↦ F q 0) = c := funext fun q ↦ flowOf_zero _ (c q)
-  simp only [variationField_apply] at heq
-  rw [hzero] at heq
-  -- Rewriting the velocity curve does not rewrite the base point of its dependent fibre norm.
-  rw [show F 0 0 = c 0 from flowOf_zero _ (c 0)] at heq
-  simpa only [variationField_apply, F] using heq
-
-/-- The differential of the maximal flow of a Killing field preserves tangent norms wherever
-that flow exists. No completeness of the vector field or the Riemannian metric is assumed. -/
-@[simp] theorem IsKillingField.norm_mfderiv_flowOf (h : IsKillingField I X) {p : M}
-    (ht : (t, p) ∈ flowDomain X) (v : TangentSpace I p) :
-    ‖mfderiv I I (flowOf X t) p v‖ = ‖v‖ := by
-  -- A local geodesic realizes the arbitrary tangent vector `v` at `p`.
-  obtain ⟨s, hs, c, hgeo⟩ := exists_geodesicCurveOnFrom p v
-  have hc0 := hgeo.base_eq
-  have hc := hgeo.isGeodesicCurveOn.contMDiffOn.contMDiffAt hs
-  have hvel : curveVelocity I c 0 = v := by
-    simpa only [curveVelocityWithin_univ] using
-      curveVelocityWithin_eq_of_hasMFDerivWithinAt
-        (hgeo.hasMFDerivAt_zero hs).hasMFDerivWithinAt uniqueDiffWithinAt_univ
-  have hflow : MDifferentiableAt I I (flowOf X t) p := by
-    have hf := contMDiffAt_flowOf_comp (by simp) h.contMDiff contMDiffAt_const contMDiffAt_id ht
-    exact hf.mdifferentiableAt (by simp)
-  have heq := h.norm_variationField_flowOf hc (by simpa only [hc0] using ht)
-  have hmap : curveVelocity I ((flowOf X t) ∘ c) 0 =
-      mfderiv I I (flowOf X t) (c 0) (curveVelocity I c 0) := by
-    simpa only [curveVelocityWithin_univ] using
-      curveVelocityWithin_map (by simpa only [hc0] using hflow) uniqueDiffWithinAt_univ
-        (hc.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
-  rw [variationField_apply, ← Function.comp_def, hmap, hc0, hvel] at heq
-  exact heq
+/-- **Local flows of Killing fields act by local isometries:** the maximal flow of a Killing field
+pulls back the Riemannian metric to itself wherever `(t, x) ∈ flowDomain X`. -/
+theorem IsKillingField.mpullbackBilin_flowOf_inner_eq (h : IsKillingField I X) {x : M}
+    (hx : (t, x) ∈ flowDomain X) :
+    mpullbackBilin I I (flowOf X t) RiemannianBundle.g.inner x = RiemannianBundle.g.inner x := by
+  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
+  let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
+  exact mpullbackBilin_flowOf_apply_eq_of_mlieDerivBilin_eq_zero
+    (h.contMDiff.of_le (by simp))
+    (Bundle.mdifferentiable_riemannianBundle_inner (IB := I) (F := E) (V := TangentSpace I))
+    h.mlieDerivBilin_inner_eq_zero hx
 
 /-- The maximal flow of a Killing field preserves the Riemannian inner product on tangent
 vectors at every point of its domain of existence. -/
 @[simp] theorem IsKillingField.inner_mfderiv_flowOf (h : IsKillingField I X) {p : M}
     (ht : (t, p) ∈ flowDomain X) (v w : TangentSpace I p) :
     inner ℝ (mfderiv I I (flowOf X t) p v) (mfderiv I I (flowOf X t) p w) = inner ℝ v w := by
-  simp only [real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
-    ← map_add, h.norm_mfderiv_flowOf ht]
+  have heq := congr($(h.mpullbackBilin_flowOf_inner_eq ht) v w)
+  rw [mpullbackBilin_apply] at heq
+  -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
+  exact heq
+
+/-- The differential of the maximal flow of a Killing field preserves tangent norms wherever
+that flow exists. No completeness of the vector field or the Riemannian metric is assumed. -/
+@[simp] theorem IsKillingField.norm_mfderiv_flowOf (h : IsKillingField I X) {p : M}
+    (ht : (t, p) ∈ flowDomain X) (v : TangentSpace I p) :
+    ‖mfderiv I I (flowOf X t) p v‖ = ‖v‖ := by
+  simpa only [real_inner_self_eq_norm_sq, Real.sqrt_sq_eq_abs, abs_norm] using
+    congrArg Real.sqrt (h.inner_mfderiv_flowOf ht v v)
 
 end Flow
 

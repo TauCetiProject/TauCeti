@@ -89,14 +89,9 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)) y) :
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
       (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y)
-      (mlieDerivForm (X t) α y) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  exact hasDerivAt_mpullback_of_eq_id (ψ := timeDependentFlowOf X t) (V := X t) y
-    (Eventually.of_forall (timeDependentFlowOf_self X t))
-    (contMDiffAt_uncurry_timeDependentFlowOf (n := 2) one_le_two hX
-      (mem_timeDependentFlowDomain_self hX₁ t y))
-    (Eventually.of_forall fun x ↦
-      hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x)) hα
+      (mlieDerivForm (X t) α y) t :=
+  (PullbackAction.roughForm I M F k).hasDerivAt_timeDependentFlowOf_self hX (s := fun _ ↦ α) t y
+    (fun hid hsmooth hvel ↦ hasDerivAt_mpullback_of_eq_id y hid hsmooth hvel hα)
 
 /-- **Lie derivatives along time-dependent flows.** For a jointly `C²` time-dependent vector field
 `X` with complete suspension and a form `α` differentiable at `φ_{s,t} x`, the pullbacks
@@ -107,17 +102,8 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)) (timeDependentFlowOf X s t x)) :
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
       (fun u ↦ mpullback I I (timeDependentFlowOf X s u) α x)
-      (mpullback I I (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  have hsmooth (a b : ℝ) : MDifferentiable I I (timeDependentFlowOf X a b) :=
-    ((contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX).comp
-      ((contMDiff_const (c := (a, b))).prodMk contMDiff_id)).mdifferentiable (by norm_num)
-  -- By the composition law, `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}`, so the derivative at `t` is read at
-  -- the base time of the flow from `t`.
-  exact hasDerivAt_mpullback_of_eq_comp (χ := timeDependentFlowOf X t)
-    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦
-      (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
-    (hsmooth s t x) (Eventually.of_forall fun u ↦ hsmooth t u _)
+      (mpullback I I (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x) t :=
+  (PullbackAction.roughForm I M F k).hasDerivAt_timeDependentFlowOf hc hX (b := fun _ ↦ α) s t x
     (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
 
 /-- **Invariance of forms under time-dependent flows.** For a jointly `C²` time-dependent vector
@@ -127,23 +113,10 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
     (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z))) :
     (∀ s t, mpullback I I (timeDependentFlowOf X s t) α = α) ↔
-      ∀ t, mlieDerivForm (X t) α = 0 := by
-  have hid (s : ℝ) : mpullback I I (timeDependentFlowOf X s s) α = α := by
-    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
-    rw [h, mpullback_id]
-  constructor
-  · -- The pullbacks by the flow from `t` are constant, so their velocity at `t` vanishes.
-    intro h t
-    funext y
-    have hd := hasDerivAt_mpullback_timeDependentFlowOf_self hX t y (hα y)
-    have hconst : (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y) = fun _ ↦ α y :=
-      funext fun u ↦ congrFun (h t u) y
-    rw [hconst] at hd
-    exact hd.unique (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) t (α y))
-  · -- With vanishing Lie derivatives, the pullbacks by the flow from `s` are constant.
-    intro h s t
-    rw [mpullback_eq_of_forall_mlieDerivForm_eq_zero
-      (fun u x ↦ hasDerivAt_mpullback_timeDependentFlowOf hc hX s u x (hα _)) h t s, hid s]
+      ∀ t, mlieDerivForm (X t) α = 0 :=
+  (PullbackAction.roughForm I M F k).forall_pull_timeDependentFlowOf_eq_self_iff hc hX
+    (L := fun V ↦ mlieDerivForm V α)
+    (fun t y ↦ hasDerivAt_mpullback_timeDependentFlowOf_self hX t y (hα y))
 
 /-- **Time-dependent flows preserve closed forms with closed contractions.** For a jointly `C²`
 time-dependent vector field `X` with complete suspension and a differentiable closed form `β`
