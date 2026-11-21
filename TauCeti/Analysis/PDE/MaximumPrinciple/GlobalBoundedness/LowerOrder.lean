@@ -126,48 +126,27 @@ private theorem half_mul_norm_gradient_posPartAbove_sq_le_of_drift
     (energyFormH1_posPartAbove_self_le hcoeff hc_ae hl u).trans
       (hu ⟨w, hw0⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u))
   -- Ellipticity: `λ ‖∇w‖² - β ∫ ‖∇w‖ |w| ≤ a(w, w)`.
-  have hint₁ : Integrable (fun x ↦ ‖W1p.gradient w x‖ ^ 2) ν :=
-    (Lp.memLp (W1p.gradient w)).norm.integrable_sq
-  have hint₂ : Integrable (fun x ↦ ‖W1p.gradient w x‖ * ‖W1p.value w x‖) ν :=
-    (Lp.memLp (W1p.gradient w)).norm.integrable_mul (Lp.memLp (W1p.value w)).norm
-  have hlow : lam * ‖W1p.gradient w‖ ^ 2 -
-      beta * ∫ x, ‖W1p.gradient w x‖ * ‖W1p.value w x‖ ∂ν ≤ energyFormH1 a b c w w := by
-    have hle := integral_mono_ae ((hint₁.const_mul lam).sub (hint₂.const_mul beta))
-      (integrable_energyIntegrand_jetField hcoeff w w)
-      (ae_sub_le_energyIntegrand_jetField h hb_bound hc_nonneg w)
-    simp only [Pi.sub_apply] at hle
-    rw [integral_sub (hint₁.const_mul lam) (hint₂.const_mul beta), integral_const_mul,
-      integral_const_mul, W1p.integral_norm_gradient_sq_eq_norm_gradient_sq,
-      ← energyFormH1_def] at hle
-    exact hle
-  -- Hölder's inequality on `A = {u > l}`, off which `w` vanishes, and the Sobolev inequality.
-  have hs0 : (0 : ℝ) < s := by linarith
-  have hsob := hS w hw0
-  have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
-  have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ := by
-    have := ENNReal.toReal_mono (by finiteness) hsob
-    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
+  have hlow := mul_norm_gradient_sq_sub_le_energyFormH1_self h hcoeff hb_bound hc_nonneg w
+  -- Hölder's inequality on `A = {u > l}`, off which `∇w` vanishes, and the Sobolev inequality.
   set A := {x | l < W1p.value u x}
-  have hwA : ∀ᵐ x ∂ν, x ∉ A → ‖W1p.value w x‖ = 0 := by
-    filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u] with x hx hxA
-    rw [hx, max_eq_right (sub_nonpos.2 (not_lt.1 hxA)), norm_zero]
-  have hholder := (Real.le_norm_self _).trans <|
-    MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow (r := 2)
-      two_pos (by exact_mod_cast hs0) (by rw [NNReal.coe_ofNat]; linarith [inv_anti₀ two_pos hs])
-      (by simpa using (Lp.memLp (W1p.gradient w)).norm) hwLp.norm (measure_ne_top ν A) hwA
-  simp only [smul_eq_mul] at hholder
-  rw [eLpNorm_norm _ (Lp.aestronglyMeasurable _), eLpNorm_norm _ hwLp.aestronglyMeasurable,
-    ENNReal.coe_ofNat, ← Lp.norm_def, NNReal.coe_ofNat,
-    show 1 - (2 : ℝ)⁻¹ - (s : ℝ)⁻¹ = 2⁻¹ - (s : ℝ)⁻¹ by ring] at hholder
+  have hgA : ∀ᵐ x ∂ν, W1p.gradient w x ≠ 0 → x ∈ A := by
+    filter_upwards [W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hx hne
+    by_contra hxA
+    exact hne (by rw [hx, indicator_of_notMem hxA])
+  have hs' : (2 : ℝ≥0∞) ≤ s := by
+    have : (2 : ℝ≥0) ≤ s := by exact_mod_cast hs
+    exact_mod_cast this
+  have hholder := integral_norm_gradient_mul_norm_value_le hs' (hS w hw0)
+    (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable)
+    (measure_ne_top ν A) hgA
+  rw [ENNReal.coe_toReal] at hholder
   -- Absorb the drift term.
   set X := ‖W1p.gradient w‖
   set mA := ν.real A
   have hdrift : beta * ∫ x, ‖W1p.gradient w x‖ * ‖W1p.value w x‖ ∂ν ≤
       beta * S * mA ^ (2⁻¹ - (s : ℝ)⁻¹) * X ^ 2 := by
     calc beta * ∫ x, ‖W1p.gradient w x‖ * ‖W1p.value w x‖ ∂ν
-        ≤ beta * (X * (S * X) * mA ^ (2⁻¹ - (s : ℝ)⁻¹)) := by
-          gcongr
-          exact hholder.trans (by gcongr)
+        ≤ beta * (X * (S * X * mA ^ (2⁻¹ - (s : ℝ)⁻¹))) := by gcongr
       _ = beta * S * mA ^ (2⁻¹ - (s : ℝ)⁻¹) * X ^ 2 := by ring
   nlinarith [mul_le_mul_of_nonneg_right hsmall (sq_nonneg X)]
 
@@ -480,6 +459,22 @@ private theorem key_ineq {lam beta κ G G' e Fn g B P : ℝ} (hlam : 0 < lam) (h
     linarith
   linarith
 
+/-- The pointwise inequality of the transformation where `v = Φ(w) - l` is positive. With
+`v = h > 0`, `0 < G ≤ 1/(2κ)`, `3/4 G² ≤ G' ≤ 1/(4κ²)`, `λ e² ≤ Q`, `|B| ≤ β e`, `|P| ≤ F e` and
+`m ≥ 0`, the density `λ (G e)²` of the transformed energy is at most the transformed data tested
+against `v`, plus the density of `a(u, θ)` for `θ = G h`, minus the data tested against `θ`. -/
+private theorem key_ineq_density {lam beta κ G G' h e Fn g B P Q m : ℝ} (hlam : 0 < lam)
+    (hκ : 0 < κ) (hG : 0 < G) (hGle : G ≤ (2 * κ)⁻¹) (hGd : 3 / 4 * G ^ 2 ≤ G')
+    (hGd' : G' ≤ (4 * κ ^ 2)⁻¹) (hh : 0 < h) (hQ : lam * e ^ 2 ≤ Q) (hB : |B| ≤ beta * e)
+    (hP : |P| ≤ Fn * e) (hm : 0 ≤ m) :
+    lam * (G * e) ^ 2 ≤
+      (beta ^ 2 / lam + κ⁻¹ * |g| + (lam * κ ^ 2)⁻¹ * Fn ^ 2) * h - G * (G * P) +
+        ((G' * h + G * G) * Q + B * (G * h) + m) - (g * (G * h) - (G' * h + G * G) * P) := by
+  have hkey := key_ineq (g := g) hlam hκ hG.le hGle hGd hGd' hB hP
+  have hG'0 : 0 ≤ G' := le_trans (by positivity) hGd
+  nlinarith [mul_nonneg hh.le hkey, mul_nonneg (mul_nonneg hG'0 hh.le) (sub_nonneg.2 hQ),
+    mul_nonneg (sq_nonneg G) (sub_nonneg.2 hQ)]
+
 omit [DecidableEq ι] in
 /-- The test function `θ = (G(w) (Φ(w) - l))⁺` of the transformation, for `0 ≤ w ≤ M`,
 `w ∈ H¹₀(Ω)` and `l ≥ 0`: it lies in `H¹₀(Ω)`, is bounded by `M/(4κ²)`, and its gradient is
@@ -571,7 +566,7 @@ weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ g + ∂ᵢ
 
 The proof tests the subsolution inequality against `θ = G(w) v`, a function of `w`. Where `v > 0`,
 `∇θ = (G'(w) v + G(w)²) ∇w` and `∇v = G(w) ∇w`, so the principal part of `a(u, θ)` is that of
-`a(z, v)` plus `G'(w) v ⟨a ∇w, ∇w⟩`, which absorbs the drift (`key_ineq`). -/
+`a(z, v)` plus `G'(w) v ⟨a ∇w, ∇w⟩`, which absorbs the drift (`key_ineq_density`). -/
 private theorem mul_norm_gradient_posPartAbove_sq_le_of_driftTransform
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -718,19 +713,15 @@ private theorem mul_norm_gradient_posPartAbove_sq_le_of_driftTransform
         (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (hb_bound x hx)
           (norm_nonneg _))
       have hPF : |⟪F x, e⟫| ≤ ‖F x‖ * ‖e‖ := abs_real_inner_le_norm _ _
-      have hkey := key_ineq (g := g x) hlam hκ hG.le
-        (driftWeight_le hκ hA t) (mul_driftWeight_sq_le_driftWeightDeriv hκ hw0x hwAx)
-        (driftWeightDeriv_le hκ t) hB hPF
-      have hG'0 : 0 ≤ G' :=
-        le_trans (by positivity) (mul_driftWeight_sq_le_driftWeightDeriv hκ hw0x hwAx)
       have hcu : 0 ≤ c x * W1p.value u x * (G * h') := by
         have := hc_nonneg x hx
         rw [hut]
         positivity
       simp only [norm_smul, Real.norm_of_nonneg hG.le, real_inner_smul_left, real_inner_smul_right,
         map_smul, smul_apply, smul_eq_mul, Real.norm_eq_abs (g x)]
-      nlinarith [mul_nonneg hh.le hkey, mul_nonneg (mul_nonneg hG'0 hh.le) (sub_nonneg.2 hQ),
-        mul_nonneg (sq_nonneg G) (sub_nonneg.2 hQ)]
+      exact key_ineq_density hlam hκ hG (driftWeight_le hκ hA t)
+        (mul_driftWeight_sq_le_driftWeightDeriv hκ hw0x hwAx) (driftWeightDeriv_le hκ t) hh hQ hB
+        hPF hcu
     · -- Otherwise `Φ(t) ≤ l`, so `v`, `θ` and their gradients vanish at `x`.
       have hΦl : driftTransform A κ t ≤ l := by
         by_contra hlt
@@ -958,16 +949,12 @@ private theorem exists_ae_driftTransform_le [Nonempty ι] {q : ℝ≥0} (hq : 2 
   set m := mu.real (Omega : Set (EuclideanSpace ℝ ι))
   have hm : 0 ≤ m := measureReal_nonneg
   have hP₁ : m ^ (2 / (n : ℝ) - 2 / (q : ℝ)) = (m ^ ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)) ^ 2 := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hm]
-    congr 1
-    push_cast
-    ring
+    rw [← Real.rpow_mul_natCast hm]
+    ring_nf
   have hP₂ : m ^ (2 / (q : ℝ)) * m ^ (2 / (n : ℝ) - 2 / (q : ℝ)) = (m ^ (n : ℝ)⁻¹) ^ 2 := by
     rw [← Real.rpow_add' hm (by rw [add_sub_cancel]; positivity), add_sub_cancel,
-      ← Real.rpow_natCast, ← Real.rpow_mul hm]
-    congr 1
-    push_cast
-    ring
+      ← Real.rpow_mul_natCast hm]
+    ring_nf
   set Gq := (eLpNorm g (q / 2 : ℝ≥0) ν).toReal
   set Fq := (eLpNorm F q ν).toReal
   set P₁ := m ^ ((n : ℝ)⁻¹ - (q : ℝ)⁻¹)
