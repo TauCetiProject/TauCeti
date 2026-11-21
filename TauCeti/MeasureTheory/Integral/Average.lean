@@ -120,6 +120,9 @@ applied to an integrable function that is almost everywhere at least `a`.
   best constant, with no loss.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
+* `TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`: among the multiples
+  of `ν`, the projection of the average of `f` over `s ⊆ t` is no farther from `f` on `s` than any
+  multiple of `ν` is from `f` on `t`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
@@ -948,6 +951,20 @@ theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
     rw [sub_smul]; abel
   rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]
   exact le_add_of_nonneg_right (sq_nonneg _)
+
+/-- **The best constant on a line, on nested sets.** Let `s ⊆ t` with `μ t < ∞` and let `f` be
+square integrable on `t`. The square mean distance on `s` from `f` to the projection
+`(⟪f_s, ν⟫ / ‖ν‖²) ν` of its average `f_s` is at most the square mean distance on `t` from `f` to
+any multiple `c ν`. -/
+theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset {t : Set X} (hst : s ⊆ t)
+    (ht : μ t ≠ ⊤) (hf : MemLp f 2 (μ.restrict t)) (ν : F) (c : ℝ) :
+    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
+      ∫ x in t, ‖f x - c • ν‖ ^ 2 ∂μ :=
+  (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le
+    (ne_top_of_le_ne_top ht (measure_mono hst))
+    (hf.mono_measure (Measure.restrict_mono hst le_rfl)) ν c).trans
+    (setIntegral_mono_set (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _)
+      (ae_of_all _ fun _ => by positivity) hst.eventuallySubset)
 
 end InnerProduct
 

@@ -939,11 +939,11 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
       (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
         le_rfl)) ν
   refine le_mul_div_pow_mul_of_le (n + 2) (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0
-    hρr hI (by positivity) (fun hsmall => ?_) ((hmin t).trans (setIntegral_mono_set
-      ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-        (inter_subset_left.trans hball) measure_ball_inter_ne_top _)
-      (Filter.Eventually.of_forall fun _ => by positivity)
-      (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr)))))
+    hρr hI (by positivity) (fun hsmall => ?_)
+    (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset
+      (inter_subset_inter_left _ (ball_subset_ball hρr)) measure_ball_inter_ne_top
+      ((Lp.memLp (W1p.gradient u)).mono_measure
+        (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)) ν t)
   obtain ⟨B, M, w, hB, hB', hw, hT, hM, hodd, hR⟩ :=
     exists_boundaryReflection hlam hA hA' hν hH hz hball hu0 hu
   have : 0 < κ := add_pos_of_pos_of_nonneg one_pos (div_nonneg hLam hlam.le)

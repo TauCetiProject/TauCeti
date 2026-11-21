@@ -545,7 +545,11 @@ section MorreyDecay
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {g : E → F} {Ω : Set E} {c : ℝ≥0} {z : E}
+  {Ω : Set E} {c : ℝ≥0} {z : E}
+
+section NormedSpace
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F}
 
 /-- **Mean oscillation from square mean oscillation.** Let `c > 0`, let `Ω` have density at least
 `c` in `closedBall z t`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C V ((t / R)ⁿ (t / R)^{2κ})`, where
@@ -611,10 +615,12 @@ private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hs : 0 < s) (h
     (μ.addHaar_real_ball_div_addHaar_real_ball z z hR hs)] at h2
   exact (mul_le_mul_of_nonneg_right h2 (sq_nonneg _)).trans h1
 
-variable [CompleteSpace F]
+end NormedSpace
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F] {g : E → F}
 
 /-- **Bounded averages from Campanato decay.** Let `κ > 0`, `θ ∈ (0, 1]` and `c > 0`. Let `Ω` have
-density at least `c` in the closed balls `closedBall z t`, `0 < t ≤ R`, let `g` be square
+density at least `c` in the closed balls `closedBall z t`, `0 < t ≤ θ R`, let `g` be square
 integrable on `ball z R ∩ Ω` with `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`, and let
 `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C₂ V (t / R)^{n+2κ}` for `0 < t ≤ θ R`, where `g_t` is the average of
 `g` over `ball z t ∩ Ω` and `n` is the dimension. Then for `0 < t ≤ θ R`,
@@ -623,7 +629,8 @@ constant of Campanato's estimate
 (`TauCeti.MeasureTheory.norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le`). -/
 private lemma sq_norm_setAverage_ball_inter_le {κ θ C₂ R V t : ℝ} (hκ : 0 < κ) (hθ : 0 < θ)
     (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) (hc : 0 < c)
-    (hdens : ∀ t, 0 < t → t ≤ R → (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
+    (hdens : ∀ t, 0 < t → t ≤ θ * R →
+      (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
     (hg : MemLp g 2 (μ.restrict (ball z R ∩ Ω))) (hR : 0 < R)
     (hΦR : ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V)
     (hψ : ∀ t, 0 < t → t ≤ θ * R →
@@ -650,9 +657,9 @@ private lemma sq_norm_setAverage_ball_inter_le {κ θ C₂ R V t : ℝ} (hκ : 0
     (f := g) (M := √(C₂ * W / c) * R ^ (-κ)) hκ hc
     (by rw [IntegrableOn, μ.restrict_restrict_closedBall_eq_restrict_ball_inter]
         exact (hgr _ hθR).integrableOn_of_subset one_le_two subset_rfl measure_ball_inter_ne_top)
-    (fun r hr hrθ => hdens r hr (hrθ.trans hθR))
+    hdens
     (fun r hr hrθ => setAverage_closedBall_restrict_norm_sub_le hc hR hr
-      (hdens r hr (hrθ.trans hθR)) (hgr r (hrθ.trans hθR)) (hψ r hr hrθ)) ht htθ le_rfl
+      (hdens r hr hrθ) (hgr r (hrθ.trans hθR)) (hψ r hr hrθ)) ht htθ le_rfl
   simp only [μ.restrict_restrict_closedBall_eq_restrict_ball_inter] at hcamp
   have hθκ : R ^ (-κ) * (θ * R) ^ κ ≤ 1 := by
     rw [← Real.div_rpow_eq_rpow_neg_mul_rpow hθR0.le hR]
@@ -663,7 +670,7 @@ private lemma sq_norm_setAverage_ball_inter_le {κ θ C₂ R V t : ℝ} (hκ : 0
     exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_right (Real.sqrt_nonneg _) hθκ) hcc)
   -- The average at radius `θ R` is controlled by `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`.
   have hmθ : ‖⨍ y in ball z (θ * R) ∩ Ω, g y ∂μ‖ ^ 2 ≤ W / (c * θ ^ finrank ℝ E) := by
-    have h := mul_sq_norm_setAverage_ball_inter_le hθR0 hθR hR (hdens _ hθR0 hθR) hg hΦR
+    have h := mul_sq_norm_setAverage_ball_inter_le hθR0 hθR hR (hdens _ hθR0 le_rfl) hg hΦR
     rw [mul_div_cancel_right₀ θ hR.ne'] at h
     rw [div_div, le_div_iff₀ (by positivity)]
     exact (le_of_eq (by ring)).trans h
@@ -681,7 +688,7 @@ private lemma sq_norm_setAverage_ball_inter_le {κ θ C₂ R V t : ℝ} (hκ : 0
 /-- **Morrey decay from Campanato decay, on a set with the measure density property.** Let
 `κ > 0`, `θ ∈ (0, 1]`, `C₂ ≥ 0` and `c > 0`, and let `n` be the dimension. There is `C₃`,
 depending only on `n`, `κ`, `θ`, `C₂` and `c`, such that the following holds. Let `Ω` have density
-at least `c` in the closed balls `closedBall z t`, `0 < t ≤ R`, that is
+at least `c` in the closed balls `closedBall z t`, `0 < t ≤ θ R`, that is
 `c μ(B(z, t)) ≤ μ(B(z, t) ∩ Ω)`, let `g` be square integrable on `ball z R ∩ Ω` with
 `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C₂ V (t / R)^{n+2κ}` for
 `0 < t ≤ θ R`, where `g_t` is the average of `g` over `ball z t ∩ Ω`. Then
@@ -695,7 +702,7 @@ at a flat boundary (`Ω` a half-space, `c = 1 / 2`). -/
 theorem exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow {κ θ C₂ : ℝ} (hκ : 0 < κ)
     (hθ : 0 < θ) (hθ1 : θ ≤ 1) (hC₂ : 0 ≤ C₂) (hc : 0 < c) :
     ∃ C₃ : ℝ, 0 ≤ C₃ ∧ ∀ {Ω : Set E} {g : E → F} {z : E} {R V : ℝ},
-      (∀ t, 0 < t → t ≤ R → (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω)) →
+      (∀ t, 0 < t → t ≤ θ * R → (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω)) →
       MemLp g 2 (μ.restrict (ball z R ∩ Ω)) → 0 < R → ∫ x in ball z R ∩ Ω, ‖g x‖ ^ 2 ∂μ ≤ V →
       (∀ t, 0 < t → t ≤ θ * R →
         ∫ x in ball z t ∩ Ω, ‖g x - ⨍ y in ball z t ∩ Ω, g y ∂μ‖ ^ 2 ∂μ ≤

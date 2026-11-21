@@ -358,29 +358,6 @@ end Comparison
 
 section HalfBall
 
-variable {H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {ν z : EuclideanSpace ℝ (Fin (n + 1))}
-
-variable {U : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-  {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-
-/-- The distance `∫_{B_s ∩ H} ‖g - p_s‖²` of `g` to the multiples of `ν` on a half-ball is at most
-the distance `∫_{B_t ∩ H} ‖g - c ν‖²` on a larger half-ball to any multiple of `ν`. -/
-private theorem setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le
-    (hg : MemLp g 2 (volume.restrict U)) {s t : ℝ} (hst : s ≤ t) (hball : ball z t ⊆ U)
-    (c : ℝ) :
-    ∫ x in ball z s ∩ H, ‖g x - (⟪⨍ y in ball z s ∩ H, g y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ≤
-      ∫ x in ball z t ∩ H, ‖g x - c • ν‖ ^ 2 := by
-  have hsub : ball z s ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z t ∩ H :=
-    inter_subset_inter_left _ (ball_subset_ball hst)
-  have ht : volume (ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
-    measure_ball_inter_ne_top
-  refine (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (ne_top_of_le_ne_top ht
-    (measure_mono hsub)) (hg.mono_measure (Measure.restrict_mono
-      (hsub.trans (inter_subset_left.trans hball)) le_rfl)) ν c).trans ?_
-  exact setIntegral_mono_set (hg.integrableOn_norm_sub_sq_of_subset
-      (inter_subset_left.trans hball) ht _) (ae_of_all _ fun _ => by positivity)
-    hsub.eventuallySubset
-
 /-- **Morrey decay with the full exponent from Campanato decay, at a flat boundary.** Let `κ > 0`
 and `θ ∈ (0, 1]`. There is `C₃`, depending only on `n`, `κ`, `θ` and `C₂`, such that the following
 holds. Let `z` lie on the boundary hyperplane of `H = {x | c₀ < ⟪x, ν⟫}`, let `g` be square
@@ -527,21 +504,23 @@ private theorem exists_setIntegral_ball_inter_norm_gradient_sub_le_rpow {α : �
   refine ⟨C, hC, ?_⟩
   intro U H u a G f s ν z c₀ R V Ka KG h hz hν hH hzc haK hGK hu0 hu hf hball hR hM hD hΦR hΦ
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
-  have hg := Lp.memLp (W1p.gradient u)
+  have hg : ∀ r ≤ R, MemLp (W1p.gradient u) 2 (volume.restrict (ball z r ∩ H)) := fun r hr =>
+    (Lp.memLp (W1p.gradient u)).mono_measure
+      (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hr).trans hball)) le_rfl)
   exact hit (φ := fun t => ∫ x in ball z t ∩ H, ‖W1p.gradient u x -
       (⟪⨍ y in ball z t ∩ H, W1p.gradient u y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2)
     (Φ := fun t => ∫ x in ball z t ∩ H, ‖W1p.gradient u x‖ ^ 2)
     (D := fun r => r ^ (2 * (α : ℝ)) * ((KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) +
       4 * r ^ 2 * ∫ x in ball z r ∩ H, f x ^ 2) hR (div_nonneg Ka.property h.pos.le)
     (by rw [div_mul_eq_mul_div]; exact div_le_div_of_nonneg_right hM h.pos.le)
-    (fun s _ t ht hst => setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le hg hst
-      ((ball_subset_ball (ht.2.trans hθR)).trans hball) _)
+    (fun s _ t ht hst => setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset
+      (inter_subset_inter_left _ (ball_subset_ball hst)) measure_ball_inter_ne_top
+      (hg t (ht.2.trans hθR)) ν _)
     (fun t _ => setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
       fun _ _ => by positivity)
-    ((setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le hg le_rfl
-      ((ball_subset_ball hθR).trans hball) 0).trans (by
-        simpa only [zero_smul, sub_zero] using
-          (hg.monotoneOn_setIntegral_ball_inter_norm_sq (H := H) hball hθR le_rfl hθR).trans hΦR))
+    ((setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset
+      (inter_subset_inter_left _ (ball_subset_ball hθR)) measure_ball_inter_ne_top
+      (hg R le_rfl) ν 0).trans (by simpa only [zero_smul, sub_zero] using hΦR))
     (fun t _ => setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
       fun _ _ => by positivity) hΦ (fun r hr hrθ => hD r hr (hrθ.trans hθR))
     fun ρ r hρ hρr hrθ => (hcomp h hz hα hν hH hzc (haK.mono (ball_subset_ball (hrθ.trans hθR)))
