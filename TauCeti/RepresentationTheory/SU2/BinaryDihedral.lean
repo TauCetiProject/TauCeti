@@ -200,10 +200,17 @@ theorem coe_binaryDihedralRotation_eq_toComplexMatrix :
 theorem coe_binaryDihedralRotation_inv_eq_toComplexMatrix :
     (((binaryDihedralRotation n)⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
       Quaternion.toComplexMatrix ⟨Real.cos (π / n), -Real.sin (π / n), 0, 0⟩ := by
-  rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star,
-    coe_binaryDihedralRotation_eq_toComplexMatrix, ← map_star]
+  rw [Quaternion.coe_inv_eq_toComplexMatrix_star (coe_binaryDihedralRotation_eq_toComplexMatrix n)]
   congr 1
   ext <;> simp
+
+/-- The rotation generator `r = diag (exp (πi/4), exp (-πi/4))` of the binary dihedral group of
+order sixteen is the quaternion `(1 + i) / √2`. -/
+theorem coe_binaryDihedralRotation_four_eq_toComplexMatrix :
+    (binaryDihedralRotation 4 : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix ⟨1 / √2, 1 / √2, 0, 0⟩ := by
+  rw [coe_binaryDihedralRotation_eq_toComplexMatrix, Nat.cast_ofNat, Real.cos_pi_div_four,
+    Real.sin_pi_div_four, Real.sqrt_div_self']
 
 /-- Squaring the rotation generator at level `2n` gives the rotation generator at level `n`. -/
 theorem binaryDihedralRotation_two_mul_sq :

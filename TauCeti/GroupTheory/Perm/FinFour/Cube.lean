@@ -9,7 +9,6 @@ public import Mathlib.Data.Sym.Sym2
 public import Mathlib.GroupTheory.Perm.Cycle.Concrete
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Monomial
 import Mathlib.Data.Sym.Card
@@ -569,8 +568,7 @@ instance : Finite cubeRotationGroup :=
 /-- **The rotation group of the cube has `24` elements.** -/
 @[simp]
 theorem natCard_cubeRotationGroup : Nat.card cubeRotationGroup = 24 := by
-  rw [Nat.card_congr cubeRotationEquiv.toEquiv, Nat.card_eq_fintype_card, Fintype.card_perm,
-    Fintype.card_fin]
+  rw [Nat.card_congr cubeRotationEquiv.toEquiv, Nat.card_perm, Nat.card_fin]
   decide
 
 /-! ### Embedding into special orthogonal groups -/
@@ -595,10 +593,10 @@ theorem map_mem_specialOrthogonalGroup_of_mem_cubeRotationGroup {R : Type*} [Com
 
 /-- The embedding of the cube rotation group into `SO(3, ℤ)`. -/
 private def cubeRotationToIntSpecialOrthogonalGroup :
-    cubeRotationGroup →* Matrix.specialOrthogonalGroup (Fin 3) ℤ where
-  toFun A := ⟨A.val, mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup A.property⟩
-  map_one' := Subtype.ext rfl
-  map_mul' _ _ := Subtype.ext rfl
+    cubeRotationGroup →* Matrix.specialOrthogonalGroup (Fin 3) ℤ :=
+  (SpecialLinearGroup.coeMonoidHom.comp cubeRotationGroup.subtype).codRestrict
+    (Matrix.specialOrthogonalGroup (Fin 3) ℤ) fun A =>
+      mem_specialOrthogonalGroup_int_of_mem_cubeRotationGroup A.property
 
 /-- **The homomorphism from the rotation group of the cube into `SO(3, R)`**, sending each integer
 signed permutation matrix to its image in `Matrix.specialOrthogonalGroup (Fin 3) R`. It is

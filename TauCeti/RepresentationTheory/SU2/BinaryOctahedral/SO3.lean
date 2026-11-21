@@ -41,15 +41,6 @@ namespace TauCeti.SU2
 
 open Quaternion
 
-private theorem coe_torusHom_neg_one : (torusHom (-1) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
-  rw [← weylElement_inv_sq_eq_torusHom_neg_one, coe_weylElement_inv_sq]
-
-private theorem ker_toSO3_eq_pair : (toSO3.ker : Set SU2) = {1, torusHom (-1)} := by
-  ext g
-  rw [SetLike.mem_coe, MonoidHom.mem_ker, toSO3_eq_one_iff]
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, ← Subtype.coe_inj, OneMemClass.coe_one,
-    coe_torusHom_neg_one]
-
 /-- The kernel `{1, -1}` of the double cover `SU(2) →* SO(3)` lies in the binary octahedral
 subgroup. -/
 theorem ker_toSO3_le_binaryOctahedralSubgroup : toSO3.ker ≤ binaryOctahedralSubgroup := by
@@ -57,15 +48,6 @@ theorem ker_toSO3_le_binaryOctahedralSubgroup : toSO3.ker ≤ binaryOctahedralSu
   rcases (ker_toSO3_eq_pair ▸ hg : g ∈ ({1, torusHom (-1)} : Set SU2)) with rfl | rfl
   · exact binaryOctahedralSubgroup.one_mem
   · exact torusHom_neg_one_mem_binaryOctahedralSubgroup
-
-private theorem natCard_ker_toSO3 : Nat.card toSO3.ker = 2 := by
-  have hne : (1 : SU2) ≠ torusHom (-1) := by
-    rw [← map_one torusHom, ne_eq, torusHom_injective.eq_iff]
-    intro h
-    have := congrArg (fun z : Circle => (z : ℂ)) h
-    norm_num at this
-  change Nat.card (toSO3.ker : Set SU2) = 2
-  rw [ker_toSO3_eq_pair, Nat.card_coe_set_eq, Set.ncard_pair hne]
 
 /-- The binary octahedral subgroup is the full preimage of its `SO(3)` image under the double
 cover `toSO3`. -/
@@ -131,12 +113,11 @@ theorem map_toSO3_binaryOctahedralSubgroup :
     · exact toSO3_binaryDihedralRotation_four_mem_range
     · exact toSO3_binaryTetrahedralOmega_mem_range
   have hcard : Nat.card (cubeRotationToSpecialOrthogonalGroup ℝ).range = 24 := by
-    rw [← Nat.card_congr
-      (MonoidHom.ofInjective (cubeRotationToSpecialOrthogonalGroup_injective ℝ)).toEquiv,
+    rw [← SetLike.coe_sort_coe, MonoidHom.coe_range,
+      Nat.card_range_of_injective (cubeRotationToSpecialOrthogonalGroup_injective ℝ),
       natCard_cubeRotationGroup]
   have : Finite (cubeRotationToSpecialOrthogonalGroup ℝ).range :=
-    Finite.of_equiv _
-      (MonoidHom.ofInjective (cubeRotationToSpecialOrthogonalGroup_injective ℝ)).toEquiv
+    (Set.finite_range _).to_subtype
   exact Subgroup.eq_of_le_of_card_ge hle (by rw [hcard, natCard_map_toSO3_binaryOctahedralSubgroup])
 
 /-- **The binary octahedral subgroup is the full preimage of the real cube rotation group under

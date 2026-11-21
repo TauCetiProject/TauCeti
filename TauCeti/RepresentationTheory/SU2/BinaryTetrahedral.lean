@@ -256,6 +256,25 @@ theorem binaryDihedralSubgroup_two_le_binaryTetrahedralSubgroup :
     congr 1
     ext <;> simp
 
+/-- The eighth-turn generator `τ = (1 + i) / √2` does not belong to the binary tetrahedral
+subgroup. -/
+theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
+    binaryDihedralRotation 4 ∉ binaryTetrahedralSubgroup := by
+  intro h
+  obtain ⟨v, hv⟩ := mem_binaryTetrahedralSubgroup_iff_exists_int.mp h
+  rw [coe_binaryDihedralRotation_four_eq_toComplexMatrix] at hv
+  have hre := congrArg QuaternionAlgebra.re (toComplexMatrix_injective hv)
+  dsimp only at hre
+  have hv0 : v 0 * v 0 = 2 := by
+    have hsq : ((1 : ℝ) / √2) ^ 2 = ((v 0 : ℝ) / 2) ^ 2 := by rw [hre]
+    rw [div_pow, one_pow, Real.sq_sqrt zero_le_two, div_pow] at hsq
+    have : ((v 0 * v 0 : ℤ) : ℝ) = 2 := by push_cast; linear_combination -4 * hsq
+    exact_mod_cast this
+  have h1 : -1 ≤ v 0 := by nlinarith
+  have h2 : v 0 ≤ 1 := by nlinarith
+  rcases (by omega : v 0 = -1 ∨ v 0 = 0 ∨ v 0 = 1) with h0 | h0 | h0 <;>
+    rw [h0] at hv0 <;> norm_num at hv0
+
 /-! ### Generators -/
 
 /-- The element `ω = (-1 + i + j + k) / 2` of the binary tetrahedral group, of order three. -/

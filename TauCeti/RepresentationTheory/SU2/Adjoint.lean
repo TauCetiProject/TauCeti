@@ -319,6 +319,18 @@ theorem toSO3_eq_one_iff (g : SU2) :
     · exact ⟨1, by rw [h, one_smul]⟩
     · exact ⟨-1, by rw [h, neg_one_smul]⟩
 
+/-- The kernel of the double cover `SU(2) → SO(3)` as the two-element set `{1, torusHom (-1)}`. -/
+theorem ker_toSO3_eq_pair : (toSO3.ker : Set SU2) = {1, torusHom (-1)} := by
+  ext g
+  rw [SetLike.mem_coe, MonoidHom.mem_ker, toSO3_eq_one_iff]
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, ← Subtype.coe_inj, OneMemClass.coe_one,
+    coe_torusHom_neg_one]
+
+/-- The kernel of the double cover `SU(2) → SO(3)` has cardinality `2`. -/
+theorem natCard_ker_toSO3 : Nat.card toSO3.ker = 2 := by
+  rw [← SetLike.coe_sort_coe, ker_toSO3_eq_pair, Nat.card_coe_set_eq,
+    Set.ncard_pair torusHom_neg_one_ne_one.symm]
+
 /-- `i σ(x)` lies in `SU(2)` for a unit vector `x`. -/
 private theorem smul_pauli_mem_specialUnitaryGroup {x : Fin 3 → ℝ} (hx : x ⬝ᵥ x = 1) :
     I • pauli x ∈ specialUnitaryGroup (Fin 2) ℂ := by

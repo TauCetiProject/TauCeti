@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.SU2.BinaryTetrahedral
 import Mathlib.GroupTheory.IndexNormal
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 
@@ -278,7 +277,7 @@ noncomputable def binaryOctahedralSubgroup : Subgroup SU2 where
     · exact .inl (inv_mem hg)
     refine .inr
       (exists_mem_binaryOctahedralCosetCoords_of_coe_eq (w := ![w 0, -w 1, -w 2, -w 3]) ?_)
-    rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, hg, ← map_star]
+    rw [coe_inv_eq_toComplexMatrix_star hg]
     congr 1
     ext <;> simp [neg_div]
 
@@ -382,23 +381,6 @@ instance : (binaryTetrahedralSubgroup.subgroupOf binaryOctahedralSubgroup).Norma
 
 /-! ### Generators, coset action, and presentation -/
 
-/-- The rotation generator `r = diag (exp (πi/4), exp (-πi/4))` of the binary dihedral group of
-order sixteen is the quaternion `(1 + i) / √2`. -/
-theorem coe_binaryDihedralRotation_four_eq_toComplexMatrix :
-    (binaryDihedralRotation 4 : Matrix (Fin 2) (Fin 2) ℂ) =
-      toComplexMatrix ⟨1 / √2, 1 / √2, 0, 0⟩ := by
-  rw [coe_binaryDihedralRotation_eq_toComplexMatrix, Nat.cast_ofNat, Real.cos_pi_div_four,
-    Real.sin_pi_div_four, Real.sqrt_div_self']
-
-/-- In quaternion coordinates the inverse of `binaryDihedralRotation 4` is `(1 - i) / √2`. -/
-private theorem coe_binaryDihedralRotation_four_inv_eq_toComplexMatrix :
-    (((binaryDihedralRotation 4)⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
-      toComplexMatrix ⟨1 / √2, -1 / √2, 0, 0⟩ := by
-  rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star,
-    coe_binaryDihedralRotation_four_eq_toComplexMatrix, ← map_star]
-  congr 1
-  ext <;> simp [neg_div]
-
 @[simp]
 theorem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup :
     binaryDihedralRotation 4 ∈ binaryOctahedralSubgroup := by
@@ -406,16 +388,6 @@ theorem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup :
   rw [coe_binaryDihedralRotation_four_eq_toComplexMatrix]
   congr 1
   ext <;> simp
-
-/-- The eighth-turn generator `τ = (1 + i) / √2` does not belong to the binary tetrahedral
-subgroup. -/
-theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
-    binaryDihedralRotation 4 ∉ binaryTetrahedralSubgroup := by
-  intro h
-  obtain ⟨v, -, hv⟩ := mem_binaryTetrahedralSubgroup_iff.mp h
-  rw [coe_binaryDihedralRotation_four_eq_toComplexMatrix] at hv
-  exact toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords (v := v) (w := ![1, 1, 0, 0])
-    (by decide) (hv.symm.trans (by simp))
 
 /-- The central involution `-1 = torusHom (-1)` belongs to the binary octahedral subgroup. -/
 @[simp]
@@ -497,8 +469,7 @@ theorem binaryOctahedralSubgroup_eq_closure_pair :
     apply Subtype.ext
     have hωinv : ((binaryTetrahedralOmega⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
         toComplexMatrix ⟨-1 / 2, -1 / 2, -1 / 2, -1 / 2⟩ := by
-      rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, coe_binaryTetrahedralOmega,
-        ← map_star]
+      rw [coe_inv_eq_toComplexMatrix_star coe_binaryTetrahedralOmega]
       congr 1
       ext <;> simp [neg_div]
     rw [Submonoid.coe_mul, Submonoid.coe_mul, hωinv, coe_binaryDihedralRotation_eq_toComplexMatrix,
@@ -519,10 +490,12 @@ theorem binaryOctahedralSubgroup_eq_closure_pair :
 theorem coe_binaryDihedralRotation_four_inv_mul_binaryTetrahedralOmega :
     (((binaryDihedralRotation 4)⁻¹ * binaryTetrahedralOmega : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix ⟨0, 1 / √2, 1 / √2, 0⟩ := by
-  rw [Submonoid.coe_mul, coe_binaryDihedralRotation_four_inv_eq_toComplexMatrix,
+  rw [Submonoid.coe_mul, coe_binaryDihedralRotation_inv_eq_toComplexMatrix 4,
     coe_binaryTetrahedralOmega, ← map_mul]
   congr 1
-  ext <;> simp <;> ring
+  ext <;>
+    simp [Real.cos_pi_div_four, Real.sin_pi_div_four, Real.sqrt_div_self', neg_div] <;>
+    ring
 
 /-- The presentation relation `(τ⁻¹ ω)² = -1` complementing `τ⁴ = -1` and `ω³ = 1`. -/
 theorem binaryDihedralRotation_four_inv_mul_binaryTetrahedralOmega_sq :
@@ -535,8 +508,7 @@ theorem binaryDihedralRotation_four_inv_mul_binaryTetrahedralOmega_sq :
   have hsq : (⟨0, 1 / √2, 1 / √2, 0⟩ : ℍ[ℝ]) ^ 2 = -1 := by
     rw [Quaternion.sq_eq_neg_normSq.mpr rfl, hnorm, Quaternion.coe_one]
   rw [SubmonoidClass.coe_pow, coe_binaryDihedralRotation_four_inv_mul_binaryTetrahedralOmega,
-    ← map_pow, hsq, ← weylElement_inv_sq_eq_torusHom_neg_one, coe_weylElement_inv_sq, map_neg,
-    map_one]
+    ← map_pow, hsq, map_neg, map_one, ← coe_torusHom_neg_one]
 
 /-- The presentation element `τ⁻¹ ω = (i + j) / √2` has exact order `4`. -/
 @[simp]
@@ -549,10 +521,8 @@ theorem orderOf_binaryDihedralRotation_four_inv_mul_binaryTetrahedralOmega :
     rw [sq, pow_mul, hsq, ← map_pow]
     simp
   have hne : u ^ (2 ^ 1) ≠ 1 := by
-    rw [pow_one, hsq, ← map_one torusHom, ne_eq, torusHom_injective.eq_iff]
-    intro h
-    have := congrArg (fun z : Circle => (z : ℂ)) h
-    norm_num at this
+    rw [pow_one, hsq]
+    exact torusHom_neg_one_ne_one
   exact orderOf_eq_prime_pow hne h4
 
 /-! ### Element orders and non-isomorphism with cyclic and dicyclic groups -/

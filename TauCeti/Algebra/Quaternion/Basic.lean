@@ -100,8 +100,7 @@ theorem pow_three_eq_of_sq_eq {q : ℍ[R]} {r : R} (hq : q ^ 2 = r • q - 1) :
 /-- A quaternion satisfying `q ^ 2 = r • q - 1` with `r ^ 2 = 1` has `q ^ 6 = 1`. -/
 theorem pow_six_eq_one_of_sq_eq {q : ℍ[R]} {r : R}
     (hq : q ^ 2 = r • q - 1) (hr : r ^ 2 = 1) : q ^ 6 = 1 := by
-  have h3 : q ^ 3 = -(r • 1) := by
-    rw [pow_three_eq_of_sq_eq hq, hr, sub_self, zero_smul, zero_sub]
+  have h3 : q ^ 3 = -(r • 1) := by simp [pow_three_eq_of_sq_eq hq, hr]
   calc q ^ 6 = (q ^ 3) ^ 2 := by rw [← pow_mul]
     _ = (-(r • (1 : ℍ[R]))) ^ 2 := by rw [h3]
     _ = (r ^ 2) • (1 : ℍ[R]) := by rw [neg_sq, sq, smul_mul_smul_comm, mul_one, ← sq]
@@ -110,8 +109,7 @@ theorem pow_six_eq_one_of_sq_eq {q : ℍ[R]} {r : R}
 /-- A quaternion satisfying `q ^ 2 = r • q - 1` with `r ^ 2 = 2` has `q ^ 8 = 1`. -/
 theorem pow_eight_eq_one_of_sq_eq {q : ℍ[R]} {r : R}
     (hq : q ^ 2 = r • q - 1) (hr : r ^ 2 = 2) : q ^ 8 = 1 := by
-  have h3 : q ^ 3 = q - r • 1 := by
-    rw [pow_three_eq_of_sq_eq hq, hr, show (2 : R) - 1 = 1 by ring, one_smul]
+  have h3 : q ^ 3 = q - r • 1 := by norm_num [pow_three_eq_of_sq_eq hq, hr]
   have h4 : q ^ 4 = -1 := by
     calc q ^ 4 = q ^ 3 * q := pow_succ q 3
       _ = (q - r • 1) * q := by rw [h3]

@@ -275,6 +275,14 @@ theorem coe_unitaryEquivSpecialUnitaryGroup_symm_apply
       (M : Matrix (Fin 2) (Fin 2) ℂ) :=
   congrArg Subtype.val (unitaryEquivSpecialUnitaryGroup.apply_symm_apply M)
 
+/-- If a special unitary matrix `g` is the matrix of a quaternion `q`, then its inverse `g⁻¹` is
+the matrix of `star q`. -/
+theorem coe_inv_eq_toComplexMatrix_star {g : Matrix.specialUnitaryGroup (Fin 2) ℂ} {q : ℍ[ℝ]}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix q) :
+    ((g⁻¹ : Matrix.specialUnitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
+      toComplexMatrix (star q) := by
+  rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, hg, ← map_star]
+
 end Quaternion
 
 end
