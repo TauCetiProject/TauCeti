@@ -114,6 +114,26 @@ theorem wedgeGain_pos {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l < n, 0 < μ l) (
     exact mul_pos (div_pos (hμ _ (by omega)) (hμ _ hk)) hP
   · rwa [wedgeGain_of_not_forall_le h]
 
+/-- For constant nonzero minima `b` the gain `b / b` is `1`, so the minima attached to `T` are
+`b ^ #T`. -/
+@[simp]
+theorem wedgeGain_const {k : ℕ} {b : ℝ} (hb : b ≠ 0) (σ : Fin n ≃ κ) (T : Finset κ) :
+    wedgeGain k (fun _ ↦ b) σ T = b ^ T.card := by
+  rw [wedgeGain_def, div_self hb, ite_self, one_mul, prod_const]
+
+/-- The minima attached to a nonempty set of forms, with the gain, depend only on the first `n`
+minima: every `σ.symm t` is below `n`, and so are `k` and `k - 1` when `T` lies in the top
+block. -/
+theorem wedgeGain_congr {k : ℕ} {μ μ' : ℕ → ℝ} (h : ∀ l < n, μ l = μ' l) (σ : Fin n ≃ κ)
+    {T : Finset κ} (hT : T.Nonempty) : wedgeGain k μ σ T = wedgeGain k μ' σ T := by
+  have hP : ∏ t ∈ T, μ (σ.symm t) = ∏ t ∈ T, μ' (σ.symm t) :=
+    prod_congr rfl fun t _ ↦ h _ (σ.symm t).isLt
+  by_cases hk : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)
+  · obtain ⟨t, ht⟩ := hT
+    have hkn : k < n := (hk t ht).trans_lt (σ.symm t).isLt
+    rw [wedgeGain_of_forall_le hk, wedgeGain_of_forall_le hk, hP, h k hkn, h (k - 1) (by omega)]
+  · rw [wedgeGain_of_not_forall_le hk, wedgeGain_of_not_forall_le hk, hP]
+
 /-- Replacing nonnegative minima `f` by `b · f ^ a`, for `b ≠ 0`, turns the minima attached to
 `T`, with the gain on the top block, into `b ^ #T` times their `a`-th power. -/
 theorem wedgeGain_const_mul_rpow {k : ℕ} {b : ℝ} (hb : b ≠ 0) {f : ℕ → ℝ} (hf : ∀ l, 0 ≤ f l)
@@ -136,14 +156,15 @@ theorem wedgeGain_eq_prod_update {k : ℕ} {μ : ℕ → ℝ} (hμ : μ k ≠ 0)
     (hk : k < n) {T : Finset κ} (hkT : σ ⟨k, hk⟩ ∈ T) (hT : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)) :
     wedgeGain k μ σ T = ∏ t ∈ T, Function.update μ k (μ (k - 1)) (σ.symm t) := by
   classical
-  have hinj : Function.Injective fun t ↦ (σ.symm t : ℕ) := Fin.val_injective.comp σ.symm.injective
-  have hupd (t : κ) : Function.update μ k (μ (k - 1)) (σ.symm t) =
-      Function.update (fun t ↦ μ (σ.symm t)) (σ ⟨k, hk⟩) (μ (k - 1)) t := by
-    simpa only [Equiv.symm_apply_apply] using
-      Function.update_apply_of_injective μ hinj (σ ⟨k, hk⟩) (μ (k - 1)) t
-  rw [prod_congr rfl fun t _ ↦ hupd t, prod_update_of_mem hkT, sdiff_singleton_eq_erase,
-    wedgeGain_of_forall_le hT, ← mul_prod_erase _ _ hkT, Equiv.symm_apply_apply, ← mul_assoc,
-    div_mul_cancel₀ _ hμ]
+  set t₀ := σ ⟨k, hk⟩
+  calc wedgeGain k μ σ T = μ (k - 1) / μ k * (μ k * ∏ t ∈ T.erase t₀, μ (σ.symm t)) := by
+        rw [wedgeGain_of_forall_le hT, ← mul_prod_erase _ _ hkT, Equiv.symm_apply_apply]
+    _ = μ (k - 1) * ∏ t ∈ T.erase t₀, μ (σ.symm t) := by
+        rw [← mul_assoc, div_mul_cancel₀ _ hμ]
+    _ = ∏ t ∈ T, Function.update μ k (μ (k - 1)) (σ.symm t) := by
+        rw [← mul_prod_erase _ _ hkT, Equiv.symm_apply_apply, Function.update_self]
+        refine congrArg _ (prod_congr rfl fun t ht ↦ (Function.update_of_ne ?_ _ _).symm)
+        exact fun h ↦ ne_of_mem_erase ht (σ.symm_apply_eq.1 (Fin.ext h))
 
 /-- The product over the `p`-subsets `T` of the constant times the minima attached to `T` is
 `C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k`, for `0 < p` and `k + p = card κ`, with

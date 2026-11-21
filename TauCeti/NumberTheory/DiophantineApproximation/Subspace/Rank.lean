@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
 
-import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
-
 /-!
 # The rank of an approximation domain
 

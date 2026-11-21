@@ -38,8 +38,8 @@ is the product of the `μ (σ v⁻¹ t)` over `t ∈ T`, times the gain `μ (k -
 in the top block of `σ v`. The constant and the gain are absorbed into the exponent:
 `wedgeExponent c p k σ μ C Q` is `∑ t ∈ T, c v t + logb Q (C · g v T)` at the archimedean
 absolute values and `∑ t ∈ T, c v t` at the nonarchimedean ones, where no constant and no gain
-occur. Then these Plücker vectors lie
-in `approxDomain S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ μ C Q) Q`
+occur. Then, for `0 < Q` and `Q ≠ 1` (so that `logb Q` inverts `Q ^ ·`), these Plücker vectors
+lie in `approxDomain S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ μ C Q) Q`
 (`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`), with `C` depending only on
 `K` and `ι`.
 
@@ -48,29 +48,29 @@ the `p`-subsets and, for `0 < p` and `k + p = N`, exactly one subset is the top 
 `C` and the minima `μ l`, `l < N`, are nonzero, `approxWeight S₀ (wedgeExponent …)` is
 `e · approxWeight S₀ c` plus `[K : ℚ]` times
 `logb Q (C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k)`, with `M = N.choose p`
-(`TauCeti.NumberField.approxWeight_wedgeExponent`). When `μ` are the successive minima,
-Minkowski's second theorem bounds `Q ^ approxWeight S₀ c · ∏ l, μ l ^ [K : ℚ]` by a constant, so
+(`TauCeti.NumberField.approxWeight_wedgeExponent`); this additive identity needs no condition on
+`Q`. When `μ` are the successive minima, `0 < Q`, `Q ≠ 1` and `0 < C`, Minkowski's second theorem
+bounds `Q ^ approxWeight S₀ c · ∏ l, μ l ^ [K : ℚ]` by a constant, so
 `Q ^ approxWeight` of the wedge exponents is at most a constant times
 `(μ (k - 1) / μ k) ^ [K : ℚ]` (`TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`): a
 large jump between consecutive minima makes the wedge domain small.
 
 The exponents above carry a bijection at every infinite place, because the minima enter every
-infinite place. `TauCeti.NumberField.exists_balance` first moves the minima of a minimal family
-to one infinite place `w₀`: the local factors become `C₂ · μ l ^ (d / mult w₀)` at `w₀`,
-`d = [K : ℚ]`, and `C₂` at the other infinite places, for a constant `C₂ ≥ 1` depending only on
-`K`. Then only the bijection at `w₀` matters: there is `C`, depending only on `K` and `ι`, such
-that the Plücker vectors of the corrected family indexed by `p`-subsets meeting the first `k`
+infinite place. `TauCeti.NumberField.exists_balance` first moves the minima of a minimal family to
+one infinite place `w₀`: the local factors become `C₂ · μ l ^ (d / mult w₀)` at `w₀`, `d = [K : ℚ]`,
+and `C₂` at the other infinite places, for a constant `C₂ ≥ 1` depending only on `K`. Then only the
+bijection at `w₀` matters: there is `C`, depending only on `K` and `ι`, such that, for `0 < Q` and
+`Q ≠ 1`, the Plücker vectors of the corrected family indexed by `p`-subsets meeting the first `k`
 indices lie in the approximation domain of the wedge forms with the exponents
-`wedgeExponentAt c p k w₀ σ μ C Q`, which are
-`∑ t ∈ T, c v t + logb Q C` at the archimedean `v ≠ w₀` and carry the minima, raised to
-`d / mult w₀`, at `w₀` alone
-(`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeExponentAt`). The corrected family
-still spans `V(Q)` by its first `finrank K V(Q)` members. For `0 < p` and positive minima
-`μ l`, `l < N`, moving the minima does not change the weight, since `mult w₀ · (d / mult w₀) = d`
-is the total multiplicity of the infinite places
-(`TauCeti.NumberField.approxWeight_wedgeExponentAt`), so the same jump bound holds
-(`TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`). When `μ k ≠ 0`, on a set of forms
-in the top block containing the form `σ k`, in particular on the top block itself for `0 < p` and
+`wedgeExponentAt c p k w₀ σ μ C Q`, which are `∑ t ∈ T, c v t + logb Q C` at the archimedean
+`v ≠ w₀` and carry the minima, raised to `d / mult w₀`, at `w₀` alone
+(`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeExponentAt`). The corrected family still
+spans `V(Q)` by its first `finrank K V(Q)` members. For `0 < p` and positive minima `μ l`, `l < N`,
+moving the minima does not change the weight, since `mult w₀ · (d / mult w₀) = d` is the total
+multiplicity of the infinite places (`TauCeti.NumberField.approxWeight_wedgeExponentAt`), so the
+same jump bound holds for `0 < Q`, `Q ≠ 1` and `0 < C`
+(`TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`). When `μ k ≠ 0`, on a set of forms in
+the top block containing the form `σ k`, in particular on the top block itself for `0 < p` and
 `k + p = card ι`, the gain cancels the minimum `μ k`, so the minima attached to it are a product
 with `μ k` replaced by `μ (k - 1)` (`TauCeti.wedgeGain_eq_prod_update`).
 
@@ -82,23 +82,24 @@ with `μ k` replaced by `μ (k - 1)` (`TauCeti.wedgeGain_eq_prod_update`).
 
 ## Main results
 
-* `TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`: the Plücker vectors of the
-  corrected minimal vectors indexed by `p`-subsets meeting the first `k` indices lie in the wedge
-  domain.
+* `TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`: for `0 < Q` and `Q ≠ 1`, the
+  Plücker vectors of the corrected minimal vectors indexed by `p`-subsets meeting the first `k`
+  indices lie in the wedge domain.
 * `TauCeti.NumberField.approxWeight_wedgeExponent` and
   `TauCeti.NumberField.rpow_approxWeight_wedgeExponent`: for `0 < p`, `k + p = card ι` and a
-  nonzero constant and minima (positive for the power), the exact weight of the wedge domain.
-* `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: for the successive minima, `0 < p`
-  and `k + p = card ι`, `Q` raised to the weight of the wedge domain is at most a constant times
-  `(μ (k - 1) / μ k) ^ [K : ℚ]`.
+  nonzero constant and minima, the exact weight of the wedge domain; for the power, the constant
+  and the minima are positive, `0 < Q` and `Q ≠ 1`.
+* `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: for the successive minima, `0 < p`,
+  `k + p = card ι`, `0 < C`, `0 < Q` and `Q ≠ 1`, `Q` raised to the weight of the wedge domain is at
+  most a constant times `(μ (k - 1) / μ k) ^ [K : ℚ]`.
 * `TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeExponentAt`: with the minima at one
-  infinite place, the Plücker vectors of a corrected minimal family indexed by `p`-subsets meeting
-  the first `k` indices lie in the wedge domain at that place.
+  infinite place and for `0 < Q` and `Q ≠ 1`, the Plücker vectors of a corrected minimal family
+  indexed by `p`-subsets meeting the first `k` indices lie in the wedge domain at that place.
 * `TauCeti.NumberField.approxWeight_wedgeExponentAt`: for `0 < p` and positive minima, its weight
   is that of the wedge domain `wedgeExponent` with one bijection.
-* `TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`: for the successive minima, `0 < p`
-  and `k + p = card ι`, `Q` raised to its weight is at most a constant times
-  `(μ (k - 1) / μ k) ^ [K : ℚ]`.
+* `TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`: for the successive minima, `0 < p`,
+  `k + p = card ι`, `0 < C`, `0 < Q` and `Q ≠ 1`, `Q` raised to its weight is at most a constant
+  times `(μ (k - 1) / μ k) ^ [K : ℚ]`.
 
 ## References
 
@@ -163,6 +164,13 @@ theorem wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v)
     wedgeExponent c p k σ μ C Q v T = ∑ t ∈ (T : Finset ι), c v t +
       Real.logb Q (C * wedgeGain k μ (σ v) T) := by
   simp [wedgeExponent_def, hv]
+
+/-- For `0 < p`, the wedge exponents depend only on the minima `μ l`, `l < card ι`. -/
+theorem wedgeExponent_congr (hp : 0 < p) {μ' : ℕ → ℝ} (h : ∀ l < Fintype.card ι, μ l = μ' l) :
+    wedgeExponent c p k σ μ C Q = wedgeExponent c p k σ μ' C Q := by
+  ext v T
+  rw [wedgeExponent_def, wedgeExponent_def,
+    wedgeGain_congr h (σ v) (card_pos.1 (by rw [card_eq T]; exact hp))]
 
 /-- At an archimedean absolute value, for `0 < Q ≠ 1`, `0 < C`, `0 < p` and positive minima
 `μ l`, `l < card ι`, `Q` raised to the wedge exponent of `T` is the constant times the product of
@@ -480,11 +488,10 @@ and `∑ t ∈ T, c v t + logb Q (C · g ^ (d / mult w₀))` at `w₀`, where `d
 `g = wedgeGain k μ σ T` is the product of the `μ (σ.symm t)` over `t ∈ T`, multiplied by
 `μ (k - 1) / μ k` when every `σ.symm t` is at least `k`.
 
-The wedge bound holds for the constant `C` of
-`exists_plucker_mem_approxDomain_wedgeExponentAt`, not for an arbitrary one: for that `C`, the
-Plücker vectors of the family corrected after `exists_balance` moves the minima to `w₀`, indexed
-by `p`-subsets meeting the first `k` indices, lie in the approximation domain with these
-exponents. That family has the local factors
+The wedge bound holds for the constant `C` of `exists_plucker_mem_approxDomain_wedgeExponentAt`, not
+for an arbitrary one: for that `C` and for `0 < Q` and `Q ≠ 1`, the Plücker vectors of the family
+corrected after `exists_balance` moves the minima to `w₀`, indexed by `p`-subsets meeting the first
+`k` indices, lie in the approximation domain with these exponents. That family has the local factors
 `C₂ · μ l ^ (d / mult w₀)` at `w₀` and `C₂` at the other infinite places, so the minima enter at
 `w₀` alone and one bijection suffices. The balancing factor `C₂` contributes `C₂ ^ p` to the bound
 of a `p`-fold wedge, and this is absorbed into that `C`, which is uniform in `p ≤ card ι`. -/
@@ -536,6 +543,14 @@ theorem wedgeExponentAt_of_not_isNonarchimedean_of_ne (hv : ¬IsNonarchimedean v
     wedgeExponentAt c p k w₀ τ μ C Q v T = ∑ t ∈ (T : Finset ι), c v t + Real.logb Q C := by
   simp [wedgeExponentAt_def, hv, hw]
 
+/-- For `0 < p`, the exponents of the wedge domain at `w₀` depend only on the minima `μ l`,
+`l < card ι`. -/
+theorem wedgeExponentAt_congr (hp : 0 < p) {μ' : ℕ → ℝ} (h : ∀ l < Fintype.card ι, μ l = μ' l) :
+    wedgeExponentAt c p k w₀ τ μ C Q = wedgeExponentAt c p k w₀ τ μ' C Q := by
+  ext v T
+  rw [wedgeExponentAt_def, wedgeExponentAt_def,
+    wedgeGain_congr h τ (card_pos.1 (by rw [card_eq T]; exact hp))]
+
 /-- At `w₀`, for `0 < Q ≠ 1`, `0 < C`, `0 < p` and positive minima `μ l`, `l < card ι`, `Q`
 raised to the exponent of `T` is the constant times the `d / mult w₀`-th power of the product of
 the minima attached to `T` (with the gain on the top block) times the product of the bounds
@@ -585,7 +600,7 @@ private theorem le_rpow_wedgeExponentAt {w₀ : InfinitePlace K} {μ' : Absolute
     ring
   · rw [rpow_wedgeExponentAt_of_not_isNonarchimedean_of_ne v.not_isNonarchimedean
       (fun h ↦ hv (Subtype.ext h)) hQ hQ₁ (by positivity)]
-    simp only [wedgeGain_def, hne v hv, div_self hC₂₀.ne', ite_self, one_mul, prod_const, card_eq]
+    rw [funext (hne v hv), wedgeGain_const hC₂₀.ne', card_eq]
     calc _ = (C₀ * C₂ ^ p) * ∏ t ∈ (T : Finset ι), Q ^ c v.val t := by ring
       _ ≤ _ := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hpow hC₀.le) hP
 
@@ -679,34 +694,44 @@ theorem approxWeight_wedgeExponentAt (S₀ : Finset (FinitePlace K)) (c : Absolu
   set G : Set.powersetCard ι p → ℝ := fun T ↦ wedgeGain k μ σ T
   have hG (T : Set.powersetCard ι p) : 0 < G T :=
     wedgeGain_pos hμ σ (card_pos.1 (by rw [card_eq T]; exact hp))
+  set B : InfinitePlace K → Set.powersetCard ι p → ℝ :=
+    fun v T ↦ ∑ t ∈ (T : Finset ι), c v.val t + Real.logb Q C
   -- Both exponents split off `logb Q (G T)`, weighted `a` at `w₀` alone and `1` everywhere.
   have hAt (v : InfinitePlace K) (T : Set.powersetCard ι p) :
       wedgeExponentAt c p k w₀ σ μ C Q v.val T =
-        ∑ t ∈ (T : Finset ι), c v.val t + Real.logb Q C +
-          (if v = w₀ then a else 0) * Real.logb Q (G T) := by
+        B v T + (if v = w₀ then a else 0) * Real.logb Q (G T) := by
     by_cases hv : v = w₀
     · subst hv
       rw [wedgeExponentAt_self, Real.logb_mul hC (Real.rpow_pos_of_pos (hG T) _).ne',
-        Real.logb_rpow_eq_mul_logb_of_pos (hG T)]
-      simp only [↓reduceIte]
-      ring
+        Real.logb_rpow_eq_mul_logb_of_pos (hG T), ite_eq_left rfl, ← add_assoc]
     · rw [wedgeExponentAt_of_not_isNonarchimedean_of_ne v.not_isNonarchimedean
-        fun h ↦ hv (Subtype.ext h)]
-      simp only [hv, ↓reduceIte, zero_mul, add_zero]
+        fun h ↦ hv (Subtype.ext h), ite_eq_right hv, zero_mul, add_zero]
   have hW (v : InfinitePlace K) (T : Set.powersetCard ι p) :
-      wedgeExponent c p k (fun _ ↦ σ) μ C Q v.val T =
-        ∑ t ∈ (T : Finset ι), c v.val t + Real.logb Q C + 1 * Real.logb Q (G T) := by
+      wedgeExponent c p k (fun _ ↦ σ) μ C Q v.val T = B v T + 1 * Real.logb Q (G T) := by
     rw [wedgeExponent_of_not_isNonarchimedean v.not_isNonarchimedean,
       Real.logb_mul hC (hG T).ne', one_mul, add_assoc]
   have hfin (v : FinitePlace K) (T : Set.powersetCard ι p) :
       wedgeExponentAt c p k w₀ σ μ C Q v.val T = wedgeExponent c p k (fun _ ↦ σ) μ C Q v.val T := by
     rw [wedgeExponentAt_of_isNonarchimedean v.add_le, wedgeExponent_of_isNonarchimedean v.add_le]
+  -- Weights of total multiplicity `[K : ℚ]` contribute `[K : ℚ]` times the sum of the
+  -- `logb Q (G T)`.
+  have hsplit (w : InfinitePlace K → ℝ)
+      (hw : ∑ v : InfinitePlace K, (v.mult : ℝ) * w v = finrank ℚ K) :
+      ∑ v : InfinitePlace K, (v.mult : ℝ) *
+          ∑ T : Set.powersetCard ι p, (B v T + w v * Real.logb Q (G T)) =
+        ∑ v : InfinitePlace K, (v.mult : ℝ) * ∑ T : Set.powersetCard ι p, B v T +
+          finrank ℚ K * ∑ T : Set.powersetCard ι p, Real.logb Q (G T) := by
+    rw [← hw, sum_mul]
+    simp only [sum_add_distrib, ← mul_sum, mul_add, mul_assoc]
   -- The weight `a` at `w₀` alone carries the total multiplicity `[K : ℚ]` of the infinite places.
   have hw₀ : ∑ v : InfinitePlace K, (v.mult : ℝ) * (if v = w₀ then a else 0) = finrank ℚ K := by
     simp only [mul_ite, mul_zero, sum_ite_eq', mem_univ, ↓reduceIte]
     exact mul_div_cancel₀ _ (Nat.cast_ne_zero.2 InfinitePlace.mult_ne_zero)
-  simp only [approxWeight_def, hAt, hW, hfin, sum_add_distrib, ← mul_sum, mul_add, ← mul_assoc,
-    ← sum_mul, mul_one, hw₀, ← Nat.cast_sum, InfinitePlace.sum_mult_eq]
+  have hw₁ : ∑ v : InfinitePlace K, (v.mult : ℝ) * 1 = finrank ℚ K := by
+    simp only [mul_one, ← Nat.cast_sum, InfinitePlace.sum_mult_eq]
+  rw [approxWeight_def, approxWeight_def]
+  simp only [hAt, hW, hfin]
+  rw [hsplit _ hw₀, hsplit _ hw₁]
 
 /-- **The wedge domain at `w₀` of the successive minima is small after a large jump.** Let `μ` be
 the successive minima over `K` of an approximation domain of level `0 < Q ≠ 1` with forms

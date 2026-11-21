@@ -210,32 +210,19 @@ theorem finite_setOf_gauge_le [Finite ι] (Λ : Submodule (𝓞 K) (ι → K))
 
 section Lattice
 
-open scoped Classical in
-/-- Below `#ι`, the dilates of `B` contain the images of `l + 1` vectors of `Λ` independent
-over `K`: a full lattice `Λ.mixedImage` forces `Λ` to span `ι → K`, and `B` absorbs any finite
+omit [NumberField K] [Fintype ι] in
+/-- Below the rank `finrank K (span K Λ)`, some dilate of an absorbent `B` contains the images of
+`l + 1` vectors of `Λ` independent over `K`: such vectors exist, and `B` absorbs any finite
 family. -/
-private theorem exists_mem_smul [DiscreteTopology Λ.mixedImage]
-    [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
-    (hB : 0 ∈ interior (B : Set (ι → mixedSpace K)))
-    (hl : l < Fintype.card ι) :
+private theorem exists_mem_smul [Finite ι] {B : Set (ι → mixedSpace K)} (hB : Absorbent ℝ B)
+    (hl : l < finrank K (Submodule.span K (Λ : Set (ι → K)))) :
     ∃ t : ℝ, 0 < t ∧ ∃ x : Fin (l + 1) → ι → K, LinearIndependent K x ∧
-      ∀ k, x k ∈ Λ ∧ (fun j ↦ mixedEmbedding K (x k j)) ∈ t • (B : Set (ι → mixedSpace K)) := by
-  have hspan : Submodule.span K (Λ : Set (ι → K)) = ⊤ :=
-    Submodule.span_real_mixedImage_eq_top_iff.1 IsZLattice.span_top
-  obtain ⟨x, hx, hxΛ⟩ : ∃ x : Fin (l + 1) → ι → K, LinearIndependent K x ∧ ∀ k, x k ∈ Λ := by
-    refine Submodule.le_finrank_span_iff_exists_linearIndependent.1 ?_
-    rw [hspan, finrank_top, Module.finrank_fintype_fun_eq_card]
-    exact hl
-  set g := fun k ↦ gauge (B : Set (ι → mixedSpace K)) (fun j ↦ mixedEmbedding K (x k j))
-  have hg : ∀ k, g k ≤ ∑ k, g k := fun k ↦
-    Finset.single_le_sum (f := g) (fun k _ ↦ gauge_nonneg _) (Finset.mem_univ k)
-  have ht : 0 < 1 + ∑ k, g k := by
-    have := Finset.sum_nonneg fun k (_ : k ∈ Finset.univ) ↦ gauge_nonneg (s := (B : Set _))
-      (fun j ↦ mixedEmbedding K (x k j))
-    linarith
-  refine ⟨1 + ∑ k, g k, ht, x, hx, fun k ↦ ⟨hxΛ k, ?_⟩⟩
-  rw [← ConvexBody.gauge_le_iff_mem_smul hB ht]
-  linarith [hg k]
+      ∀ k, x k ∈ Λ ∧ (fun j ↦ mixedEmbedding K (x k j)) ∈ t • B := by
+  obtain ⟨x, hx, hxΛ⟩ : ∃ x : Fin (l + 1) → ι → K, LinearIndependent K x ∧ ∀ k, x k ∈ Λ :=
+    Submodule.le_finrank_span_iff_exists_linearIndependent.1 hl
+  obtain ⟨r, hr, hrB⟩ :=
+    (hB.absorbs_finite (Set.finite_range fun k j ↦ mixedEmbedding K (x k j))).exists_pos
+  exact ⟨r, hr, x, hx, fun k ↦ ⟨hxΛ k, hrB r (Real.le_norm_self r) ⟨k, rfl⟩⟩⟩
 
 open scoped Classical in
 /-- **Each successive minimum over `K` is attained.** Among the finitely many independent
@@ -252,7 +239,10 @@ private theorem exists_gauge_le_successiveMinimum
   set S := {t : ℝ | 0 < t ∧ ∃ x : Fin (l + 1) → ι → K, LinearIndependent K x ∧
     ∀ k, x k ∈ Λ ∧ (fun j ↦ mixedEmbedding K (x k j)) ∈ t • (B : Set (ι → mixedSpace K))}
   have hm : m = sInf S := successiveMinimum_def Λ B l
-  have hS : S.Nonempty := exists_mem_smul (Λ := Λ) hB hl
+  have hS : S.Nonempty := by
+    refine exists_mem_smul (absorbent_nhds_zero (mem_interior_iff_mem_nhds.1 hB)) ?_
+    rwa [Submodule.span_real_mixedImage_eq_top_iff.1 IsZLattice.span_top, finrank_top,
+      Module.finrank_fintype_fun_eq_card]
   set G := fun y : ι → K ↦ gauge (B : Set (ι → mixedSpace K)) (fun j ↦ mixedEmbedding K (y j))
   -- The candidate families, made of vectors of gauge at most `m + 1`, are finitely many.
   set P : Set (Fin (l + 1) → ι → K) :=
@@ -308,20 +298,15 @@ omit [NumberField K] [Fintype ι] in
 /-- The successive minima over `K` with respect to an absorbent set `B` are nondecreasing below
 the rank `finrank K (span K Λ)`: some dilate of `B` holds that many vectors of `Λ` independent over
 `K`, and an independent family restricts to its initial segments, so the admissible dilations only
-shrink as the index grows. Neither discreteness nor compactness is needed. The minima are not
-monotone on all of `ℕ`, since they vanish from `#ι` on (`Submodule.successiveMinimum_of_card_le`).
--/
+shrink as the index grows. Neither discreteness nor compactness is needed. From the rank on there
+is no such family and the minima vanish, so monotonicity on all of `ℕ` fails as soon as some
+minimum below the rank is positive (compare `Submodule.successiveMinimum_of_card_le`). -/
 theorem monotoneOn_successiveMinimum [Finite ι] {B : Set (ι → mixedSpace K)} (hB : Absorbent ℝ B) :
     MonotoneOn (successiveMinimum Λ B)
       (Set.Iio (finrank K (Submodule.span K (Λ : Set (ι → K))))) := by
   intro i _ j hj hij
-  obtain ⟨x, hx, hxΛ⟩ : ∃ x : Fin (j + 1) → ι → K, LinearIndependent K x ∧ ∀ k, x k ∈ Λ :=
-    Submodule.le_finrank_span_iff_exists_linearIndependent.1 hj
-  obtain ⟨r, hr, hrB⟩ :=
-    (hB.absorbs_finite (Set.finite_range fun k j ↦ mixedEmbedding K (x k j))).exists_pos
   rw [successiveMinimum_def, successiveMinimum_def]
-  refine csInf_le_csInf ⟨0, fun _ ht ↦ ht.1.le⟩
-    ⟨r, hr, x, hx, fun k ↦ ⟨hxΛ k, hrB r (Real.le_norm_self r) ⟨k, rfl⟩⟩⟩ ?_
+  refine csInf_le_csInf ⟨0, fun _ ht ↦ ht.1.le⟩ (exists_mem_smul hB hj) ?_
   rintro t ⟨ht, y, hy, hyB⟩
   exact ⟨ht, y ∘ Fin.castLE (by omega), hy.comp _ (Fin.castLE_injective _), fun k ↦ hyB _⟩
 

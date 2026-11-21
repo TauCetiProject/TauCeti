@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Covolume
-public import Mathlib.Analysis.Convex.Body
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproximationDomain
@@ -69,8 +68,6 @@ on `ι → K` are written as `LinearMap.det (LinearMap.pi (L v))`.
 * `TauCeti.NumberField.covolume_approxLattice`: for `0 < Q`, the covolume of
   `(approxModule S₀ L c Q).mixedImage` is
   `(∏ v ∈ S₀, v (det (L v)) * ∏ i, (v.floorValue (Q ^ c v.1 i))⁻¹) * covol (𝓞 K) ^ card ι`.
-* `TauCeti.NumberField.exists_convexBody_eq_approxBody`: for `0 < Q` and forms independent at
-  the infinite places, `approxBody L c Q` is a convex body with `0` in its interior.
 * `TauCeti.NumberField.volume_approxBody` and `TauCeti.NumberField.volume_real_approxBody`: the
   `ℝ≥0∞`- and `ℝ`-valued volumes of `approxBody L c Q`.
 * `TauCeti.NumberField.approxConst_eq_discr`: `approxConst S₀ L` expressed in terms of `discr K`.
@@ -616,18 +613,6 @@ theorem volume_real_approxBody_pos {L : AbsoluteValue K ℝ → ι → Dual K (�
   · exact mul_pos (pow_pos zero_lt_two _) (pow_pos Real.pi_pos _)
   · exact inv_pos.mpr (InfinitePlace.pos_iff.mpr (hL v).det_pi_ne_zero)
   · exact Finset.prod_pos fun i _ ↦ Real.rpow_pos_of_pos hQ _
-
-/-- For forms independent at every infinite place and `0 < Q`, the approximation body
-`approxBody L c Q` is a convex body with `0` in its interior. This packages the body for the
-convex-body API of successive minima over `K`. -/
-theorem exists_convexBody_eq_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hL : ∀ w : InfinitePlace K, LinearIndependent K (L w.val)) (c : AbsoluteValue K ℝ → ι → ℝ)
-    {Q : ℝ} (hQ : 0 < Q) :
-    ∃ B : ConvexBody (ι → mixedSpace K), (B : Set (ι → mixedSpace K)) = approxBody L c Q ∧
-      0 ∈ interior (B : Set (ι → mixedSpace K)) :=
-  ⟨⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hL c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩, rfl,
-    mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)⟩
 
 end Volume
 
