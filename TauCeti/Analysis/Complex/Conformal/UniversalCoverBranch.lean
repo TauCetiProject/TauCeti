@@ -242,9 +242,6 @@ theorem universalCoverBranch_eq_of_analyticOnNhd {U : Set ℂ} {z₀ : U} {f₀ 
   rcases p with ⟨z, q⟩; induction q with
   | mk γ => exact H.universalCoverBranch_eq_of_analyticAt γ (fun t => hF _ (γ t).property) hF0
 
-private theorem toPath_fromPath {X : Type*} [TopologicalSpace X] {x₀ : X}
-    (q : Path.Homotopic.Quotient x₀ x₀) : (FundamentalGroup.fromPath q).toPath = q := rfl
-
 /-- **Monodromy along a single loop.** -/
 theorem universalCoverBranch_inv_smul_of_loop {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) {γ : Path z₀ z₀} {f : I → ℂ → E}
@@ -255,7 +252,8 @@ theorem universalCoverBranch_inv_smul_of_loop {U : Set ℂ} {z₀ : U} {f₀ : �
       Φ (H.universalCoverBranch p) := by
   rcases p with ⟨z, q⟩; induction q with | mk δ =>
     obtain ⟨g, hg, hg0, hval⟩ := H.exists_isAnalyticContinuationAlong_universalCoverBranch δ
-    rw [UniversalCover.inv_smul_mk, toPath_fromPath, ← Path.Homotopic.Quotient.mk_trans, hval]
+    rw [UniversalCover.inv_smul_mk, FundamentalGroup.toPath_fromPath,
+      ← Path.Homotopic.Quotient.mk_trans, hval]
     exact H.universalCoverBranch_trans hf hf0 (hg.analyticAt_comp fun _ _ => hΦ _ (mem_univ _))
       ((hg0.fun_comp Φ).trans hf1.symm)
 

@@ -30,6 +30,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 
 * `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
+* `FundamentalGroup.toPath_fromPath`: converting a loop homotopy class to `FundamentalGroup` and
+  back is the identity.
 * `FundamentalGroup.fromPath_mk_out`: every element of the fundamental group is the class of a
   chosen representative loop.
 * `FundamentalGroup.mapOfEq_comp`: the induced map of a composite is the composite of the
@@ -85,6 +87,13 @@ theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topo
     (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
     map (g.comp f) x = (map g (f x)).comp (map f x) :=
   MonoidHom.ext fun p ↦ End.ext (FundamentalGroupoid.map_comp_map g f p.asHom)
+
+/-- Converting a path-homotopy class of loops to the fundamental group and back is the identity. -/
+@[simp]
+theorem toPath_fromPath {X : Type*} [TopologicalSpace X] {x : X}
+    (q : Path.Homotopic.Quotient x x) :
+    toPath (fromPath q) = q :=
+  rfl
 
 /-- Every element of the fundamental group is the class of a chosen representative loop. -/
 @[simp]
