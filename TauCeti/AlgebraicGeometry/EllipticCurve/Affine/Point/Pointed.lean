@@ -267,8 +267,9 @@ theorem coe_units_smul :
 
 /-- The unit `d` multiplies the marked point by any integer representative of `d`. -/
 theorem coe_units_smul_of_intCast_eq {n : ℤ} (hn : (n : ZMod N) = d) :
-    ((d • Y : exactOrder F N) : PointedWeierstrassCurve F) = ⟨Y.val.curve, n • Y.val.point⟩ :=
-  mk_inj.mpr (zsmul_point_eq_of_intCast_eq Y.val Y.property (by rw [ZMod.coe_valMinAbs, hn]))
+    ((d • Y : exactOrder F N) : PointedWeierstrassCurve F) = ⟨Y.val.curve, n • Y.val.point⟩ := by
+  rw [coe_units_smul, mk_inj]
+  exact zsmul_point_eq_of_intCast_eq Y.val Y.property (by rw [ZMod.coe_valMinAbs, hn])
 
 /-- The units modulo `N` act on the elliptic curves with a point of exact order `N` by
 multiplying the marked point. -/

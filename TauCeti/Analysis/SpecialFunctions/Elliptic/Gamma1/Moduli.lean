@@ -268,11 +268,12 @@ theorem smul_mk_zsmul_weierstrassPoint_one_div {γ : SL(2, ℤ)} (hγ : γ ∈ G
           PointedWeierstrassCurve ℂ) =
       (γ • z).pointedWeierstrassCurve N := by
   have hD : γ 1 1 • z.periodPair.weierstrassPoint (1 / N) =
-      z.periodPair.weierstrassPoint (denom γ z / N) := by
-    rw [← PeriodPair.weierstrassPointHom_apply, ← map_zsmul, PeriodPair.weierstrassPointHom_apply,
-      ← weierstrassPoint_div_eq_weierstrassPoint_denom_div (m := 0) (n := γ 1 1)
-        (by simpa using Gamma0_mem.mp hγ) rfl, zsmul_eq_mul, Int.cast_zero, zero_mul, zero_add,
-      mul_one_div]
+      z.periodPair.weierstrassPoint (denom γ z / N) := calc
+    _ = z.periodPair.weierstrassPoint (((0 : ℤ) * z + γ 1 1) / N) := by
+      rw [← PeriodPair.weierstrassPointHom_apply, ← map_zsmul, PeriodPair.weierstrassPointHom_apply]
+      simp [zsmul_eq_mul, div_eq_mul_inv]
+    _ = _ := weierstrassPoint_div_eq_weierstrassPoint_denom_div
+      (by simpa using Gamma0_mem.mp hγ) rfl
   rw [hD, smul_mk_weierstrassPoint_denom_div]
 
 /-- **Lowering the level on `E_z`**: `M` times the point of `1 / (N M)` is the point of `1 / N`. -/
