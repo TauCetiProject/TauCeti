@@ -353,7 +353,7 @@ theorem posDef_efficientInformationMatrix_iff {P : Measure X} {ι : Type*} (N : 
 
 /-- Enlarging the nuisance set from `N` to `N'` lowers the efficient information matrix by the Gram
 matrix of the projection difference `(Π_{N'} - Π_N) ℓ`. -/
-theorem efficientInformationMatrix_sub_of_subset {P : Measure X} {ι : Type*}
+theorem efficientInformationMatrix_sub_eq_gram_of_subset {P : Measure X} {ι : Type*}
     {N N' : Set (Lp ℝ 2 P)} (h : N ⊆ N') (ℓ : ι → Lp ℝ 2 P) :
     efficientInformationMatrix P N ℓ - efficientInformationMatrix P N' ℓ =
       Matrix.gram ℝ (fun i ↦ (tangentSpace P N').toSubmodule.starProjection (ℓ i) -
@@ -384,16 +384,16 @@ order. -/
 theorem posSemidef_efficientInformationMatrix_sub_of_subset {P : Measure X} {ι : Type*}
     {N N' : Set (Lp ℝ 2 P)} (h : N ⊆ N') (ℓ : ι → Lp ℝ 2 P) :
     (efficientInformationMatrix P N ℓ - efficientInformationMatrix P N' ℓ).PosSemidef := by
-  rw [efficientInformationMatrix_sub_of_subset h]
+  rw [efficientInformationMatrix_sub_eq_gram_of_subset h]
   exact Matrix.posSemidef_gram ℝ _
 
 /-- Information loss: `I - I_eff` is the Gram matrix of the projections of the scores onto the
 nuisance tangent space. -/
-theorem informationMatrix_sub_efficientInformationMatrix {P : Measure X} {ι : Type*}
+theorem informationMatrix_sub_efficientInformationMatrix_eq_gram {P : Measure X} {ι : Type*}
     (N : Set (Lp ℝ 2 P)) (ℓ : ι → Lp ℝ 2 P) :
     informationMatrix P ℓ - efficientInformationMatrix P N ℓ =
       Matrix.gram ℝ (fun i ↦ (tangentSpace P N).toSubmodule.starProjection (ℓ i)) := by
-  have h := efficientInformationMatrix_sub_of_subset (Set.empty_subset N) ℓ
+  have h := efficientInformationMatrix_sub_eq_gram_of_subset (Set.empty_subset N) ℓ
   simpa only [efficientInformationMatrix_empty, tangentSpace_empty,
     ClosedSubmodule.toSubmodule_bot, Submodule.starProjection_bot, zero_apply, sub_zero] using h
 
@@ -401,7 +401,7 @@ theorem informationMatrix_sub_efficientInformationMatrix {P : Measure X} {ι : T
 theorem posSemidef_informationMatrix_sub_efficientInformationMatrix {P : Measure X} {ι : Type*}
     (N : Set (Lp ℝ 2 P)) (ℓ : ι → Lp ℝ 2 P) :
     (informationMatrix P ℓ - efficientInformationMatrix P N ℓ).PosSemidef := by
-  rw [informationMatrix_sub_efficientInformationMatrix]
+  rw [informationMatrix_sub_efficientInformationMatrix_eq_gram]
   exact Matrix.posSemidef_gram ℝ _
 
 /-- Adaptation criterion: the efficient information matrix equals the full information matrix if
@@ -413,7 +413,7 @@ theorem efficientInformationMatrix_eq_informationMatrix_iff {P : Measure X} {ι 
   refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
   · have hzero : (informationMatrix P ℓ - efficientInformationMatrix P N ℓ) i i = 0 := by
       rw [h, sub_self, Matrix.zero_apply]
-    rw [informationMatrix_sub_efficientInformationMatrix, Matrix.gram_apply,
+    rw [informationMatrix_sub_efficientInformationMatrix_eq_gram, Matrix.gram_apply,
       inner_self_eq_zero, Submodule.starProjection_apply_eq_zero_iff,
       mem_orthogonal_tangentSpace_iff] at hzero
     exact hzero

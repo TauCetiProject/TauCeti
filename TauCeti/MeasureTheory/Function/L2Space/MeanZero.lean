@@ -45,8 +45,9 @@ bounded continuous mean-zero functions are dense in `L²₀(P)`.
 * `MeasureTheory.Measure.starProjection_meanZeroL2_eq_sub_const_average`,
   `MeasureTheory.Measure.starProjection_meanZeroL2`: the orthogonal projection onto `L²₀(P)`
   subtracts the average (the mean on a probability space).
-* `MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq`: the squared `L²` norm of the
-  projection onto `L²₀(P)` equals the variance on a probability space.
+* `MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance`:
+  the squared `L²` norm of the projection onto `L²₀(P)` equals the variance on a probability
+  space.
 * `MeasureTheory.Measure.meanZeroL2_subset_closure_bounded`,
   `MeasureTheory.Measure.meanZeroL2_subset_closure_boundedContinuous`: density of bounded and
   bounded continuous mean-zero elements in `L²₀(P)`.
@@ -136,7 +137,8 @@ theorem starProjection_meanZeroL2 {P : Measure X} [IsProbabilityMeasure P] (f : 
 
 /-- On a probability space, the squared `L²` norm of the projection onto `L²₀(P)` is the
 variance. -/
-theorem norm_starProjection_meanZeroL2_sq {P : Measure X} [IsProbabilityMeasure P] (f : Lp ℝ 2 P) :
+theorem norm_starProjection_meanZeroL2_sq_eq_variance {P : Measure X} [IsProbabilityMeasure P]
+    (f : Lp ℝ 2 P) :
     ‖(meanZeroL2 P).starProjection f‖ ^ 2 = variance (f : X → ℝ) P := by
   rw [starProjection_meanZeroL2, variance_eq_norm_sub_const_sq]
 
