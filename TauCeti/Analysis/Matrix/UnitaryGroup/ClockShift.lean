@@ -10,8 +10,11 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import Mathlib.LinearAlgebra.Determinant
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.Star.Basic
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Matrix.Normal
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.LinearAlgebra.UnitaryGroup
@@ -163,21 +166,27 @@ theorem clockUnitary_shiftUnitary_phase_conj {r : ℕ} [NeZero r] {ζ : ℂ} (h�
   intro P
   set C := clockUnitary hζ
   set S := shiftUnitary r
-  have hconj_comm {X Y : unitaryGroup (Fin r) ℂ} (hc : Commute X Y) :
-      (X : Matrix (Fin r) (Fin r) ℂ) * (Y : Matrix (Fin r) (Fin r) ℂ) *
-        star (X : Matrix (Fin r) (Fin r) ℂ) = Y := by
-    rw [← UnitaryGroup.inv_val X, ← Submonoid.coe_mul, ← Submonoid.coe_mul]
-    exact congrArg Subtype.val (by rw [hc.eq, mul_inv_cancel_right])
   have hsplit (X Y M : Matrix (Fin r) (Fin r) ℂ) :
       (X * Y) * M * (star Y * star X) = X * (Y * M * star Y) * star X := by
     simp only [Matrix.mul_assoc]
+  have hCq :
+      (((C ^ q : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
+          (C : Matrix (Fin r) (Fin r) ℂ) *
+          star ((C ^ q : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) = C :=
+    (commute_unitary_iff_star_right_conjugate (C ^ q).property).mp
+      (((Commute.refl C).pow_left q).map (unitaryGroup (Fin r) ℂ).subtype)
+  have hSp :
+      ((((S⁻¹ ^ p : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) *
+          (S : Matrix (Fin r) (Fin r) ℂ) *
+          star ((S⁻¹ ^ p : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) = S :=
+    (commute_unitary_iff_star_right_conjugate (S⁻¹ ^ p).property).mp
+      (((Commute.refl S).inv_left.pow_left p).map (unitaryGroup (Fin r) ℂ).subtype)
   constructor
   · simp only [P, Submonoid.coe_mul, star_mul, Matrix.mul_smul, Matrix.smul_mul]
     rw [hsplit, shiftUnitary_inv_pow_conj_clockUnitary hζ p, Matrix.mul_smul, Matrix.smul_mul,
-      hconj_comm ((Commute.refl C).pow_left q), smul_smul, mul_comm α (ζ ^ p)]
+      hCq, smul_smul, mul_comm α (ζ ^ p)]
   · simp only [P, Submonoid.coe_mul, star_mul, Matrix.mul_smul, Matrix.smul_mul]
-    rw [hsplit, hconj_comm ((Commute.refl S).inv_left.pow_left p),
-      clockUnitary_pow_conj_shiftUnitary hζ q, smul_smul, mul_comm b (ζ ^ q)]
+    rw [hsplit, hSp, clockUnitary_pow_conj_shiftUnitary hζ q, smul_smul, mul_comm b (ζ ^ q)]
 
 /-- Given `A₁ = diagonal d` and `B₁` in `U(r)` with `A₁ * B₁ = ζ • (B₁ * A₁)`, the orbit vectors
 `vNat m = B₁^m *ᵥ e₀` are unit eigenvectors of `A₁` with eigenvalues `ζ^m * d 0`, pairwise
@@ -342,11 +351,8 @@ theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r] {ζ : �
   obtain ⟨hαu, hv_eig, hv_orth, hv_norm, hVu⟩ := eigenvectorOrbit_mem_unitary hζ hA₁ hrel
   let α : Circle := ⟨d 0, mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary hαu)⟩
   obtain ⟨β, hv_r⟩ := eigenvectorOrbit_return hζ hv_orth hv_norm hVu
-  obtain ⟨θ, hθ⟩ := Circle.exp_surjective β
-  let b : Circle := Circle.exp (θ / r)
-  have hbpow : (b : ℂ) ^ r = β := by
-    rw [← Circle.coe_pow, ← Circle.exp_natCast_mul,
-      mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne r)), hθ]
+  obtain ⟨b, hb⟩ := β.exists_pow_nat_eq (NeZero.ne r)
+  have hbpow : (b : ℂ) ^ r = β := by rw [← Circle.coe_pow, hb]
   let Dmat : Matrix (Fin r) (Fin r) ℂ :=
     diagonal fun k : Fin r => ((b⁻¹ : Circle) : ℂ) ^ k.val
   have hDu : Dmat ∈ unitaryGroup (Fin r) ℂ := by
@@ -400,15 +406,13 @@ theorem exists_unitary_conj_to_clock_shift {r : ℕ} [NeZero r] {ζ : ℂ}
   let B₁ : unitaryGroup (Fin r) ℂ := U₁⁻¹ * B * U₁
   have hrel₁ : (A₁ : Matrix (Fin r) (Fin r) ℂ) * (B₁ : Matrix (Fin r) (Fin r) ℂ) =
       ζ • ((B₁ : Matrix (Fin r) (Fin r) ℂ) * (A₁ : Matrix (Fin r) (Fin r) ℂ)) := by
-    have hconjMul (X Y : Matrix (Fin r) (Fin r) ℂ) :
-        (star U₁mat * X * U₁mat) * (star U₁mat * Y * U₁mat) = star U₁mat * (X * Y) * U₁mat := by
-      calc (star U₁mat * X * U₁mat) * (star U₁mat * Y * U₁mat)
-          = star U₁mat * X * (U₁mat * star U₁mat) * Y * U₁mat := by simp only [Matrix.mul_assoc]
-        _ = star U₁mat * (X * Y) * U₁mat := by
-            rw [mem_unitaryGroup_iff.mp hU₁u, Matrix.mul_one]
-            simp only [Matrix.mul_assoc]
-    simp only [A₁, B₁, Submonoid.coe_mul, UnitaryGroup.inv_val, U₁]
-    rw [hconjMul, hconjMul, hrel, Matrix.mul_smul, Matrix.smul_mul]
+    let φ := Unitary.conjStarAlgAut ℂ (Matrix (Fin r) (Fin r) ℂ) U₁⁻¹
+    have hφ (X : unitaryGroup (Fin r) ℂ) :
+        ((U₁⁻¹ * X * U₁ : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = φ X := by
+      simp only [φ, Submonoid.coe_mul, Unitary.conjStarAlgAut_apply, UnitaryGroup.inv_val,
+        star_star]
+    rw [show A₁ = U₁⁻¹ * A * U₁ from rfl, show B₁ = U₁⁻¹ * B * U₁ from rfl,
+      hφ A, hφ B, ← map_mul, hrel, map_smul, map_mul]
   have hA₁ : (A₁ : Matrix (Fin r) (Fin r) ℂ) = diagonal d := by
     simpa only [A₁, Submonoid.coe_mul, UnitaryGroup.inv_val, U₁] using hd
   obtain ⟨W, α, b, hWA, hWB⟩ := exists_unitary_conj_diagonal_to_clock_shift hζ hA₁ hrel₁
@@ -445,16 +449,16 @@ theorem exists_pow_mul_eq_of_unitary_conj_specialUnitaryGroup {r : ℕ} [NeZero 
       (U : Matrix (Fin r) (Fin r) ℂ) = s • (M : Matrix (Fin r) (Fin r) ℂ))
     (h2 : (X₀ : Matrix (Fin r) (Fin r) ℂ) = c • (M : Matrix (Fin r) (Fin r) ℂ)) :
     ∃ k < r, ζ ^ k * s = c := by
-  have hdetU : (star (U : Matrix (Fin r) (Fin r) ℂ)).det * (U : Matrix (Fin r) (Fin r) ℂ).det =
-      1 := by
-    rw [← det_mul, mem_unitaryGroup_iff'.mp U.property, det_one]
   have hdetM : (M : Matrix (Fin r) (Fin r) ℂ).det ≠ 0 := fun h0 => by
     have hnorm := CStarRing.norm_of_mem_unitary (det_of_mem_unitary M.property)
     rw [h0, norm_zero] at hnorm
     exact zero_ne_one hnorm
   have hd1 : s ^ r * (M : Matrix (Fin r) (Fin r) ℂ).det = 1 := by
-    simpa [det_mul, det_smul, (mem_specialUnitaryGroup_iff.mp X.property).2, hdetU] using
-      (congrArg det h1).symm
+    have hdet1 := congrArg det h1
+    rw [det_conj_of_mul_eq_one (mem_unitaryGroup_iff'.mp U.property)
+        (mem_unitaryGroup_iff.mp U.property),
+      (mem_specialUnitaryGroup_iff.mp X.property).2, det_smul, Fintype.card_fin] at hdet1
+    exact hdet1.symm
   have hd2 : c ^ r * (M : Matrix (Fin r) (Fin r) ℂ).det = 1 := by
     simpa [det_smul, (mem_specialUnitaryGroup_iff.mp X₀.property).2] using (congrArg det h2).symm
   have hpow : (c * s⁻¹) ^ r = 1 := by

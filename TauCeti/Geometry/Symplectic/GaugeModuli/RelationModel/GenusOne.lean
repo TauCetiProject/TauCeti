@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.GaugeModuli.RelationModel.Basic
-public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
+public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Analysis.Matrix.UnitaryGroup.ClockShift
@@ -33,11 +33,10 @@ As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` an
 `relationModuli r ζ g` for every positive genus `g ≥ 1`, triviality of the central-twist
 `H¹(T²; μ_r)` action at genus one (`TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one`),
 and hence non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
-(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_genus_one`), specializing to `r = 2`, `ζ = -1`
-(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_rankTwo_genus_one`). Explicit rank-two checks
-confirm that the pair `(rankTwoClock, TauCeti.SU2.weylElement⁻¹)` satisfies `⁅A, B⁆ = -1`
-(`TauCeti.GaugeModuli.rankTwoPair_mem_relationSet`), whereas at the non-coprime parameter `r = 2`,
-`ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
+(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_genus_one`). Explicit rank-two checks
+confirm that the pair `(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)`
+satisfies `⁅A, B⁆ = -1` (`TauCeti.GaugeModuli.rankTwoPair_mem_relationSet`), whereas at the
+non-coprime parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
 (`TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`) and the `SU(2)` action admits
 non-central stabilizers (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self`).
 
@@ -46,9 +45,6 @@ non-central stabilizers (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_
 * `TauCeti.GaugeModuli.psuOrbitHomeomorphGenusOne`: for a primitive `r`-th root of unity `ζ`
   and any basepoint `x₀ : relationSet r ζ 1`, the orbit homeomorphism
   `PSU(r) ≃ₜ relationSet r ζ 1`.
-* `TauCeti.GaugeModuli.rankTwoClock`: the diagonal matrix `diag(i, -i) ∈ SU(2)`, defined as
-  `TauCeti.SU2.torusExp (Real.pi / 2)` (paired with `TauCeti.SU2.weylElement⁻¹` for `r = 2`,
-  `ζ = -1`).
 
 ## Main results
 
@@ -63,9 +59,7 @@ non-central stabilizers (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_
 * `TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one` and
   `TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_genus_one`: the central-twist action is
   trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
-* `TauCeti.GaugeModuli.coe_rankTwoClock`, `TauCeti.GaugeModuli.rankTwoPair_mem_relationSet`,
-  `TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_rankTwo_genus_one`,
-  `TauCeti.GaugeModuli.rankTwoClock_notMem_center`,
+* `TauCeti.GaugeModuli.rankTwoPair_mem_relationSet`,
   `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self`, and
   `TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`: explicit rank-two checks
   for `ζ = -1` and the non-coprime contrast `ζ = 1`.
@@ -105,21 +99,21 @@ so the genus-one moduli space `relationModuli r ζ 1` is a single point. -/
 theorem relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r) :
     Nonempty (relationModuli r ζ 1) ∧ Subsingleton (relationModuli r ζ 1) := by
   obtain ⟨x⟩ := nonempty_relationSet_genus_one r ζ hζ
-  refine ⟨⟨Quotient.mk _ x⟩, ?_⟩
+  refine ⟨⟨Quotient.mk _ x⟩, (MulAction.pretransitive_iff_subsingleton_quotient
+    (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ 1)).mp ⟨fun y z => ?_⟩⟩
   rcases Nat.eq_zero_or_pos r with rfl | hr
-  · exact inferInstance
+  · exact ⟨1, Subsingleton.elim _ _⟩
   have : NeZero r := ⟨by omega⟩
-  obtain ⟨_, _, A₀, B₀, hA₀, hB₀, hAB₀⟩ := Matrix.exists_clock_shift_specialUnitaryGroup hζ
-  let x₀ : relationSet r ζ 1 := ⟨fun _ => (A₀, B₀), by simpa [mem_relationSet_one_iff] using hAB₀⟩
-  have hconj (y : relationSet r ζ 1) :
-      (Quotient.mk _ y : relationModuli r ζ 1) = Quotient.mk _ x₀ := by
-    rw [quotient_mk_relationModuli_eq_iff]
-    obtain ⟨u, huA, huB⟩ := Matrix.exists_specialUnitaryGroup_conj_to_clock_shift hζ hA₀ hB₀
-      (y.val 0).1 (y.val 0).2 (mem_relationSet_one_iff.mp y.property)
-    refine ⟨u, funext fun j => ?_⟩
-    fin_cases j
-    exact Prod.ext huA huB
-  exact ⟨fun a b => Quotient.inductionOn₂ a b fun y z => (hconj y).trans (hconj z).symm⟩
+  obtain ⟨_, _, A₀, B₀, hA₀, hB₀, _⟩ := Matrix.exists_clock_shift_specialUnitaryGroup hζ
+  obtain ⟨u, hu₁, hu₂⟩ := Matrix.exists_specialUnitaryGroup_conj_to_clock_shift hζ hA₀ hB₀
+    (y.val 0).1 (y.val 0).2 (mem_relationSet_one_iff.mp y.property)
+  obtain ⟨v, hv₁, hv₂⟩ := Matrix.exists_specialUnitaryGroup_conj_to_clock_shift hζ hA₀ hB₀
+    (z.val 0).1 (z.val 0).2 (mem_relationSet_one_iff.mp z.property)
+  refine ⟨ConjAct.toConjAct (v⁻¹ * u), Subtype.ext <| funext fun j => ?_⟩
+  obtain rfl : j = 0 := Subsingleton.elim _ _
+  simp only [coe_conjAct_smul_relationSet, Pi.smul_apply, map_mul, map_inv, mul_smul]
+  exact Prod.ext (by rw [Prod.smul_fst, Prod.smul_fst, hu₁, inv_smul_eq_iff, hv₁])
+    (by rw [Prod.smul_snd, Prod.smul_snd, hu₂, inv_smul_eq_iff, hv₂])
 
 /-- At genus one, for a primitive `r`-th root of unity `ζ`, `relationModuli r ζ 1` is simply
 connected. -/
@@ -137,22 +131,20 @@ private theorem bijective_psu_smul_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimi
     (x₀ : relationSet r ζ 1) :
     Function.Bijective (fun p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range => p • x₀) := by
-  constructor
-  · intro p q hpq
-    dsimp only at hpq
-    have hfix : (q⁻¹ * p) • x₀ = x₀ := by
-      rw [mul_smul, hpq, inv_smul_smul]
-    have h1 : q⁻¹ * p = 1 := (psu_smul_relationSet_eq_self_iff hζ x₀ (q⁻¹ * p)).mp hfix
-    exact (inv_mul_eq_one.mp h1).symm
-  · intro x
-    have : Subsingleton (relationModuli r ζ 1) := (relationModuli_genus_one r ζ hζ).2
-    have hq : (Quotient.mk _ x₀ : relationModuli r ζ 1) = Quotient.mk _ x :=
-      Subsingleton.elim _ _
-    obtain ⟨u, hu⟩ := (quotient_mk_relationModuli_eq_iff x₀ x).mp hq
-    refine ⟨toPSL.rangeRestrict u, ?_⟩
-    dsimp only
-    rw [toPSL_rangeRestrict_smul_relationSet]
-    exact Subtype.ext hu
+  have : MulAction.IsPretransitive (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
+      (relationSet r ζ 1) :=
+    (MulAction.pretransitive_iff_subsingleton_quotient _ _).mpr
+      (relationModuli_genus_one r ζ hζ).2
+  have : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) := ⟨fun x y => by
+    obtain ⟨u, hu⟩ :=
+      MulAction.exists_smul_eq (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) x y
+    exact ⟨toPSL.rangeRestrict (ConjAct.ofConjAct u), by
+      simpa [toPSL_rangeRestrict_smul_relationSet] using hu⟩⟩
+  have : IsCancelSMul (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
+    isCancelSMul_iff_stabilizer_eq_bot.mpr (stabilizer_psu_relationSet_eq_bot hζ)
+  exact ⟨fun _ _ => IsCancelSMul.right_cancel _ _ x₀, MulAction.surjective_smul _ x₀⟩
 
 /-- **Genus-one orbit homeomorphism.** For a primitive `r`-th root of unity `ζ` and any basepoint
 `x₀ : relationSet r ζ 1`, the effective `PSU(r)` action induces a homeomorphism
@@ -248,85 +240,66 @@ end GenusOneTheorems
 
 section RankTwoChecks
 
-/-- The diagonal matrix `diag(i, -i) ∈ SU(2)`, defined via `TauCeti.SU2.torusExp`. -/
-noncomputable def rankTwoClock : Matrix.specialUnitaryGroup (Fin 2) ℂ :=
-  TauCeti.SU2.torusExp (Real.pi / 2)
-
-/-- The underlying matrix of `rankTwoClock` is `diag(i, -i)`. -/
-@[simp]
-theorem coe_rankTwoClock :
-    (rankTwoClock : Matrix (Fin 2) (Fin 2) ℂ) = Matrix.diagonal ![Complex.I, -Complex.I] := by
-  rw [rankTwoClock, TauCeti.SU2.coe_torusExp]
-  congr 1
-  ext i
-  fin_cases i <;> simp [Complex.exp_neg, Complex.exp_pi_div_two_mul_I]
-
-/-- For `r = 2`, `ζ = -1`, the pair `(rankTwoClock, TauCeti.SU2.weylElement⁻¹)` satisfies
-`⁅A, B⁆ = -1` and hence belongs to `relationSet 2 (-1) 1`. -/
+/-- For `r = 2`, `ζ = -1`, the pair
+`(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)` satisfies `⁅A, B⁆ = -1` and
+hence belongs to `relationSet 2 (-1) 1`. -/
 theorem rankTwoPair_mem_relationSet :
-    (fun _ : Fin 1 => (rankTwoClock, TauCeti.SU2.weylElement⁻¹)) ∈ relationSet 2 (-1) 1 := by
-  rw [mem_relationSet_one_iff, Matrix.specialUnitaryGroup.commutatorElement_eq_smul_one_iff]
-  have hinv : rankTwoClock * TauCeti.SU2.weylElement⁻¹ =
-      TauCeti.SU2.weylElement⁻¹ * rankTwoClock⁻¹ := by
-    rw [rankTwoClock, TauCeti.SU2.torusExp_def, ← map_inv]
-    exact TauCeti.SU2.torusHom_mul_weylElement_inv (Circle.exp (Real.pi / 2))
-  have hneg : ((rankTwoClock⁻¹ : TauCeti.SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
-      -(rankTwoClock : Matrix (Fin 2) (Fin 2) ℂ) := by
-    rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, coe_rankTwoClock,
-      Matrix.star_eq_conjTranspose, Matrix.diagonal_conjTranspose, Matrix.diagonal_neg]
-    congr 1
-    ext i
-    fin_cases i <;> simp
-  have hval : (rankTwoClock : Matrix (Fin 2) (Fin 2) ℂ) *
-      ((TauCeti.SU2.weylElement⁻¹ : TauCeti.SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
-      ((TauCeti.SU2.weylElement⁻¹ : TauCeti.SU2) : Matrix (Fin 2) (Fin 2) ℂ) *
-        ((rankTwoClock⁻¹ : TauCeti.SU2) : Matrix (Fin 2) (Fin 2) ℂ) := by
-    simpa only [Submonoid.coe_mul] using congrArg Subtype.val hinv
-  rw [hval, hneg, Matrix.mul_neg, neg_one_smul]
-
-/-- The central-twist `H¹(T²; ℤ/2)` action on `relationModuli 2 (-1) 1` is not free. -/
-theorem exists_ne_one_centerTwist_fix_rankTwo_genus_one :
-    ∃ (ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) ×
-        Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ))
-      (q : relationModuli 2 (-1) 1), ε ≠ 1 ∧ ε • q = q :=
-  exists_ne_one_centerTwist_fix_genus_one le_rfl (IsPrimitiveRoot.neg_one 0 two_ne_zero.symm)
-
-/-- `rankTwoClock` is not central in `SU(2)`. Since it commutes with `1 ∈ relationSet 2 1 g`,
-this shows that the primitive-root hypothesis cannot be omitted from
-`relationSet_stabilizer_central`. -/
-theorem rankTwoClock_notMem_center :
-    rankTwoClock ∉ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) := by
-  rw [TauCeti.SU2.mem_center_iff]
-  rintro (h | h) <;>
-    · have h00 := congr_fun₂ h 0 0
-      simp [Complex.ext_iff] at h00
+    (fun _ : Fin 1 => (TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)) ∈
+      relationSet 2 (-1) 1 := by
+  rw [mem_relationSet_one_iff]
+  have hconj :
+      TauCeti.SU2.weylElement⁻¹ * (TauCeti.SU2.binaryDihedralRotation 2)⁻¹ *
+        TauCeti.SU2.weylElement = TauCeti.SU2.binaryDihedralRotation 2 := by
+    simpa [mul_assoc] using
+      congrArg Inv.inv (TauCeti.SU2.weylElement_inv_conj_binaryDihedralRotation 2)
+  have hcomm :
+      ⁅TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹⁆ =
+        TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by
+    calc ⁅TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹⁆
+        = TauCeti.SU2.binaryDihedralRotation 2 *
+            (TauCeti.SU2.weylElement⁻¹ * (TauCeti.SU2.binaryDihedralRotation 2)⁻¹ *
+              TauCeti.SU2.weylElement) := by simp [commutatorElement_def, mul_assoc]
+      _ = TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by rw [hconj, sq]
+  rw [hcomm, TauCeti.SU2.coe_binaryDihedralRotation_pow_self, neg_one_smul]
 
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, the simultaneous `SU(2)`-conjugation action on
-`relationSet 2 1 g` admits non-central stabilizers (for example `rankTwoClock` fixes the trivial
-tuple `1`). -/
+`relationSet 2 1 g` admits non-central stabilizers (for example
+`TauCeti.SU2.binaryDihedralRotation 2` fixes the trivial tuple `1`). -/
 theorem exists_notMem_center_conjAct_smul_eq_self (g : ℕ) :
     ∃ (u : Matrix.specialUnitaryGroup (Fin 2) ℂ) (x : relationSet 2 1 g),
       u ∉ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) ∧
-        ConjAct.toConjAct u • x = x :=
-  ⟨rankTwoClock, ⟨1, one_mem_relationSet 2 g⟩, rankTwoClock_notMem_center,
+        ConjAct.toConjAct u • x = x := by
+  refine ⟨TauCeti.SU2.binaryDihedralRotation 2, ⟨1, one_mem_relationSet 2 g⟩, ?_,
     Subtype.ext (smul_one _)⟩
+  rw [TauCeti.SU2.mem_center_iff]
+  intro hmem
+  have hsq : ((TauCeti.SU2.binaryDihedralRotation 2 ^ 2 : TauCeti.SU2) :
+      Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
+    rcases hmem with h | h <;> simp [sq, Submonoid.coe_mul, h]
+  rw [TauCeti.SU2.coe_binaryDihedralRotation_pow_self] at hsq
+  exact absurd (congr_fun₂ hsq 0 0) (by norm_num)
 
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, `g = 1`, the moduli space `relationModuli 2 1 1`
-is not a subsingleton (distinguishing the classes of `(1, 1)` and `(rankTwoClock, 1)`). -/
+is not a subsingleton (distinguishing the classes of `(1, 1)` and
+`(TauCeti.SU2.binaryDihedralRotation 2, 1)`). -/
 theorem not_subsingleton_relationModuli_two_one_one : ¬ Subsingleton (relationModuli 2 1 1) := by
   intro hsub
   let x₁ : relationSet 2 1 1 := ⟨1, one_mem_relationSet 2 1⟩
-  let x₂ : relationSet 2 1 1 := ⟨fun _ => (rankTwoClock, 1), by
+  let x₂ : relationSet 2 1 1 := ⟨fun _ => (TauCeti.SU2.binaryDihedralRotation 2, 1), by
     rw [mem_relationSet_one_iff]
     simp⟩
   have heq : (Quotient.mk _ x₁ : relationModuli 2 1 1) = Quotient.mk _ x₂ :=
     Subsingleton.elim _ _
   obtain ⟨u, hu⟩ := (quotient_mk_relationModuli_eq_iff x₁ x₂).mp heq
-  have h0 : ConjAct.toConjAct u • (1 : Matrix.specialUnitaryGroup (Fin 2) ℂ) = rankTwoClock :=
+  have h0 : ConjAct.toConjAct u • (1 : Matrix.specialUnitaryGroup (Fin 2) ℂ) =
+      TauCeti.SU2.binaryDihedralRotation 2 :=
     congrArg Prod.fst (congrFun hu 0)
   rw [smul_one] at h0
-  have h00 := congr_fun₂ (congrArg Subtype.val h0) 0 0
-  simp [Complex.ext_iff] at h00
+  have hsq : ((TauCeti.SU2.binaryDihedralRotation 2 ^ 2 : TauCeti.SU2) :
+      Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
+    rw [← h0, one_pow, OneMemClass.coe_one]
+  rw [TauCeti.SU2.coe_binaryDihedralRotation_pow_self] at hsq
+  exact absurd (congr_fun₂ hsq 0 0) (by norm_num)
 
 end RankTwoChecks
 

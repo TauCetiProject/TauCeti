@@ -382,12 +382,8 @@ private noncomputable def restrictDet {r : ℕ} (V : Submodule ℂ (Fin r → �
 /-- The restricted determinant homomorphism evaluates to `1` on group commutators. -/
 private theorem restrictDet_commutatorElement {r : ℕ} (V : Submodule ℂ (Fin r → ℂ))
     (A B : invariantSubmoduleSubgroup V) : restrictDet V ⁅A, B⁆ = 1 := by
-  rw [commutatorElement_def, map_mul, map_mul, map_mul]
-  have hA : restrictDet V A * restrictDet V A⁻¹ = 1 := by
-    rw [← map_mul, mul_inv_cancel, map_one]
-  have hB : restrictDet V B * restrictDet V B⁻¹ = 1 := by
-    rw [← map_mul, mul_inv_cancel, map_one]
-  linear_combination (restrictDet V B * restrictDet V B⁻¹) * hA + hB
+  rw [← MonoidHom.coe_toHomUnits (restrictDet V), map_commutatorElement,
+    (Commute.all _ _).commutator_eq, Units.val_one]
 
 /-- **Irreducibility of coprime twisted representations.** For a primitive `r`-th root of unity
 `ζ`, no proper nontrivial subspace of `ℂ^r` is invariant under all entries `(x j).1` and
@@ -447,14 +443,11 @@ theorem exists_eq_smul_one_of_commute_relationSet {r : ℕ} {ζ : ℂ}
           Module.End.eigenspace (Matrix.toLin' M) μ) ∧
       (∀ v ∈ Module.End.eigenspace (Matrix.toLin' M) μ,
         Matrix.toLin' ((x j).2 : Matrix (Fin r) (Fin r) ℂ) v ∈
-          Module.End.eigenspace (Matrix.toLin' M) μ) := fun j => by
-    constructor <;> intro v hv
-    · rw [Module.End.mem_eigenspace_iff] at hv ⊢
-      simp only [Matrix.toLin'_apply] at hv ⊢
-      rw [Matrix.mulVec_mulVec, (hM j).1.eq, ← Matrix.mulVec_mulVec, hv, Matrix.mulVec_smul]
-    · rw [Module.End.mem_eigenspace_iff] at hv ⊢
-      simp only [Matrix.toLin'_apply] at hv ⊢
-      rw [Matrix.mulVec_mulVec, (hM j).2.eq, ← Matrix.mulVec_mulVec, hv, Matrix.mulVec_smul]
+          Module.End.eigenspace (Matrix.toLin' M) μ) := fun j =>
+    ⟨Module.End.mapsTo_genEigenspace_of_comm
+        ((hM j).1.map (Matrix.toLinAlgEquiv' (R := ℂ) (n := Fin r))) μ 1,
+     Module.End.mapsTo_genEigenspace_of_comm
+        ((hM j).2.map (Matrix.toLinAlgEquiv' (R := ℂ) (n := Fin r))) μ 1⟩
   have htop : Module.End.eigenspace (Matrix.toLin' M) μ = ⊤ :=
     (eq_bot_or_eq_top_of_invariant_relationSet hζ hx _ hinv).resolve_left hne
   refine ⟨μ, Matrix.toLin'.injective <| LinearMap.ext fun v => ?_⟩
