@@ -6,58 +6,73 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Elementary.Lonely.Basic
+-- The examples reuse the private test equations `equalItems` and `tiedExample`.
 import all TauCeti.GroupTheory.FreeGroup.GenEq.Elementary.Lonely.Basic
 import all TauCeti.GroupTheory.FreeGroup.GenEq.Tied
-import Mathlib.Data.Fin.VecNotation
 
 /-!
 # Removal of a lonely base: solutions
 
 Let `μ` be a lonely base of a generalised equation `Ω` and let `Ω′ = Ω.removeLonely μ h` be the
 generalised equation obtained from `Ω` by the elementary transformation ET4
-(Kharlampovich–Myasnikov, §5.1), which removes `μ` and `Δ(μ)` together with the section `σ(μ)`;
-the substitution `π` sends an item of `μ` to the word of its segment of `Δ(μ)` and induces an
-`F(A)`-isomorphism `F_{R(Ω)} → F_{R(Ω′)}` (`TauCeti.GenEq.removeLonelyHom`). This file transfers
-solutions along ET4 in both directions.
+(Kharlampovich–Myasnikov, §5.1), which removes `μ` and `Δ(μ)` together with the section `σ(μ)`.
+The *matched word* of an item `hₖ` of `μ` is `h[b(k), b(k + 1)]` when `ε(μ) = ε(Δμ)` and the
+formal inverse `h[b(k + 1), b(k)]⁻¹` otherwise, where `b(i)` is the boundary of `Δ(μ)` tied to `i`
+(`TauCeti.GenEq.tiedSegment`). The substitution `π` sends an item of `μ` to its matched word and
+induces, when `Ω` is formally consistent, an `F(A)`-isomorphism `F_{R(Ω)} → F_{R(Ω′)}`
+(`TauCeti.GenEq.removeLonelyHom`). This file transfers solutions along ET4 in both directions.
 
-* A solution `U` of `Ω` restricts to a solution of `Ω′` (`TauCeti.GenEq.Solution.removeLonely`),
-  and the homomorphism `F_{R(Ω′)} → F(A)` of the restriction composed with `π` is the homomorphism
-  of `U` (`TauCeti.GenEq.toHom_comp_removeLonelyHom`): the triangle in the source's definition of
-  an elementary transformation commutes.
-* Conversely, the solutions of `Ω` are exactly the solutions of `Ω′` for which the word of the
-  former place of `Δ(μ)` is reduced as written (`TauCeti.GenEq.solutionEquivRemoveLonely`); the
-  word of an item of `μ` is then the word of its segment of `Δ(μ)`, and the homomorphism of the
-  solution of `Ω` is that of the solution of `Ω′` composed with `π`.
+* A solution `U` of `Ω` restricts to a solution of `Ω′` (`TauCeti.GenEq.Solution.removeLonely`):
+  the words of the items outside `μ` are kept. If `Ω` is formally consistent, the homomorphism
+  `F_{R(Ω′)} → F(A)` of the restriction precomposed with `π` is the homomorphism of `U`
+  (`TauCeti.GenEq.toHom_comp_removeLonelyHom`): the triangle in the source's definition of an
+  elementary transformation commutes.
+* Conversely, if `Ω` is formally consistent, the solutions of `Ω` are exactly the solutions of
+  `Ω′` for which the word of the former place of `Δ(μ)` is reduced as written
+  (`TauCeti.GenEq.Solution.IsReducedOnDual`, `TauCeti.GenEq.solutionEquivRemoveLonely`,
+  `TauCeti.GenEq.Solution.mem_range_removeLonely_iff`). An item of `μ` then carries its matched
+  word evaluated at the solution of `Ω′`, and the homomorphism of the solution of `Ω` is that of
+  the solution of `Ω′` precomposed with `π`.
 
-The source states only the forward transfer. The converse needs the condition on `Δ(μ)`: after
-`π`, the words of the items of `μ` may cancel with each other, and the second example at the end
-of the file is a solution of `Ω′` which is not the restriction of a solution of `Ω`. The first
-example treats the equation `h₀ = h₁`: removing its lonely base keeps the remaining item
-unconstrained, and every solution of the result comes from a solution of `h₀ = h₁`.
+The source states only the forward transfer. The backward equivalence follows the treatment of
+ET3 in `TauCeti.GenEq.solutionEquivRemovePair`: the remark after ET3 in §5.1 asserts that ET1–ET3
+preserve the solutions themselves, which fails for ET3 unless a word is reduced as written, and
+the same reducedness condition appears here. What is new for ET4 is the lifting along `π`, which
+gives the items of `μ` their matched words. The condition on `Δ(μ)` is needed: after `π`, the
+words of the items of `μ` may cancel with each other, and the second example at the end of the
+file is a solution of `Ω′` which is not the restriction of a solution of `Ω`. The first example
+treats the equation `h₀ = h₁`: removing its lonely base keeps the remaining item unconstrained,
+and every solution of the result comes from a solution of `h₀ = h₁`.
 
-Under a solution, the boundaries tied to the two end-points of a constant item are adjacent
-(`TauCeti.GenEq.Solution.adjacent_of_mem_constBases`). So the last condition of
+Under a solution, the boundaries tied to the two end-points of an item with a one-letter word,
+for instance a constant item, are adjacent
+(`TauCeti.GenEq.Solution.adjacent_of_length_word_eq_one_of_isTiedTo`). So the last condition of
 `TauCeti.GenEq.IsLonely`, which the source does not state, holds as soon as `Ω` has a solution
 (`TauCeti.GenEq.Solution.isLonely`).
 
 ## Main definitions
 
 * `TauCeti.GenEq.Solution.removeLonely`: the restriction of a solution of `Ω` to `Ω′`.
-* `TauCeti.GenEq.solutionEquivRemoveLonely`: the solutions of `Ω` as the solutions of `Ω′` that
-  make the word of the former place of `Δ(μ)` reduced as written.
+* `TauCeti.GenEq.Solution.IsReducedOnDual`: a solution of `Ω′` makes the word of the former place
+  of `Δ(μ)` reduced as written.
+* `TauCeti.GenEq.solutionEquivRemoveLonely`: for a formally consistent `Ω`, the solutions of `Ω`
+  as the solutions of `Ω′` that make the word of the former place of `Δ(μ)` reduced as written.
 
 ## Main results
 
 * `TauCeti.GenEq.toHom_comp_removeLonelyHom`,
   `TauCeti.GenEq.solutionEquivRemoveLonely_symm_apply_toHom`: the solutions of `Ω` and `Ω′`
   corresponding to each other are related by `π` at the level of coordinate groups.
+* `TauCeti.GenEq.Solution.mem_range_removeLonely_iff`: the restrictions of the solutions of a
+  formally consistent `Ω` are the solutions of `Ω′` that are reduced on the former place of
+  `Δ(μ)`.
 * `TauCeti.GenEq.Solution.isLonely`: if `Ω` has a solution, the source's conditions for ET4
   together with `Δ(μ) ≠ μ` imply that `μ` is lonely.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §5.1, the definition of elementary transformations and ET4.
+  (2005), §5.1, the definition of elementary transformations, the remark after ET3, and ET4.
 * O. Kharlampovich, A. Myasnikov, *Effective JSJ decompositions*, Contemp. Math. 378 (2005),
   §5.1, ET4.
 -/
@@ -90,68 +105,45 @@ theorem Solution.isLonely (U : Ω.Solution) (hd : Ω.dual μ ≠ μ)
 
 variable (h : Ω.IsLonely μ) (hΩ : Ω.IsFormallyConsistent)
 
-/-! ### Words reduced as written -/
-
-/-- Both sides of a coefficient equation are reduced as written after substituting reduced words:
-one is the word of an item, the other a single letter. -/
-private theorem isReduced_substituteVars_coeffEquation {W : Fin Ω.numItems → List (A × Bool)}
-    (hW : ∀ k, FreeGroup.IsReduced (W k)) (b : Fin Ω.numItems × (A × Bool)) :
-    FreeGroup.IsReduced (substituteVars W (Ω.coeffEquation b).1) ∧
-      FreeGroup.IsReduced (substituteVars W (Ω.coeffEquation b).2) := by
-  rw [coeffEquation_fst, coeffEquation_snd, FreeGroup.substituteVars_singleton_inl,
-    FreeGroup.substituteVars_singleton_inr]
-  exact ⟨hW b.1, .singleton⟩
-
-/-! ### The substitution `π` at a point -/
-
-/-- `π` evaluated at the point of a solution of `Ω′` substitutes its words into the word
-`removeLonelyList`. -/
-private theorem wordMap_removeLonelyWord_point (U : (Ω.removeLonely μ h).Solution)
-    (k : Fin Ω.numItems) :
-    wordMap (MonoidHom.id (FreeGroup A)) (Ω.removeLonelyWord μ h) U.point k =
-      FreeGroup.mk (substituteVars U.word (Ω.removeLonelyList μ h k)) := by
-  rw [wordMap_removeLonelyWord_apply, MonoidHom.coe_id, Function.id_comp,
-    ← EqIneqSystem.eval_eq_lift, Solution.eval_point_mk]
-
-/-- The restriction of the point of a solution of `Ω` to the items outside `μ` is a point of
-`Ω′*`. -/
-private theorem point_comp_mem_V (U : Ω.Solution) :
-    (fun j ↦ FreeGroup.mk (U.word ((Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j))) ∈
-      V (MonoidHom.id (FreeGroup A)) (Ω.removeLonely μ h).toSystem := by
-  simpa only [Function.comp_def, Solution.point_apply] using
-    comp_mem_V_removeLonely h U.isFormallyConsistent U.point_mem_V
-
 /-! ### The forward transfer -/
 
-/-- After substituting the words of a solution `U` of `Ω`, the equations of `Ω′`, read in the
-items of `Ω`, are reduced as written: they are equations of `Ω`, or coefficient equations. -/
-private theorem isReduced_subst_restrict (U : Ω.Solution) :
-    ∀ e ∈ (Ω.removeLonely μ h).equations,
-      FreeGroup.IsReduced (substituteVars (U.word ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl) e.1) ∧
-        FreeGroup.IsReduced (substituteVars (U.word ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl) e.2) := by
+/-- After substituting the words of a solution of `Ω`, both sides of every equation of `Ω` with the
+constant bases of `μ` moved are reduced as written: they are equations of `Ω`, or coefficient
+equations. -/
+private theorem isReduced_subst_moveConstBases (U : Ω.Solution) :
+    ∀ e ∈ (Ω.moveConstBases μ).equations,
+      FreeGroup.IsReduced (substituteVars U.word e.1) ∧
+        FreeGroup.IsReduced (substituteVars U.word e.2) := by
   intro e he
-  have he' := image_equations_deleteItems_subset h.disjoint_baseItems_removePair ⟨e, he, rfl⟩
-  simp only [← substituteVars_restoreWord, ← restoreEquation_fst, ← restoreEquation_snd]
-  rcases Ω.equations_moveConstBases_subset_union μ (equations_removeBases_subset _ he') with
-    he'' | ⟨b, -, hb⟩
-  · exact U.isReduced_subst _ he''
-  · rw [← hb]
-    exact isReduced_substituteVars_coeffEquation U.isReduced_word b
+  rcases Ω.equations_moveConstBases_subset_union μ he with he | ⟨b, -, rfl⟩
+  · exact U.isReduced_subst e he
+  · exact Ω.isReduced_substituteVars_coeffEquation U.isReduced_word b
 
 namespace Solution
 
 /-- A solution of `Ω` restricts to a solution of `Ω′ = Ω.removeLonely μ h`, the generalised
-equation obtained by removing a lonely base `μ` (ET4): the words of the items outside `μ` are
-kept. -/
+equation obtained by removing a lonely base `μ` (ET4): it remains a solution when the constant
+bases of `μ` are moved and when `μ` and `Δ(μ)` are removed, and the items of `μ` are then
+deleted. The words of the items outside `μ` are kept. -/
 noncomputable def removeLonely (U : Ω.Solution) : (Ω.removeLonely μ h).Solution :=
-  ofMemV (U.word ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl) (fun _ ↦ U.isReduced_word _)
-    (fun _ ↦ U.word_ne_nil _) (isReduced_subst_restrict h U) (point_comp_mem_V h U)
+  ((ofMemV (Ω := Ω.moveConstBases μ) U.word U.isReduced_word U.word_ne_nil
+    (isReduced_subst_moveConstBases U)
+    (funext U.point_apply ▸ mem_V_moveConstBases h U.isFormallyConsistent U.point_mem_V)).removePair
+      μ).deleteItems h.disjoint_baseItems_removePair
 
 /-- The restricted solution keeps the words of the items outside `μ`. -/
 @[simp]
 theorem removeLonely_word (U : Ω.Solution) (k : Fin (Ω.baseItems μ)ᶜ.card) :
     (U.removeLonely h).word k = U.word ((Ω.baseItems μ)ᶜ.orderEmbOfFin rfl k) := by
-  rw [removeLonely, ofMemV_word, Function.comp_apply]
+  simp [removeLonely]
+
+/-- The point of the restricted solution is the restriction of the point to the items outside
+`μ`. -/
+@[simp]
+theorem removeLonely_point (U : Ω.Solution) :
+    (U.removeLonely h).point = U.point ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl := by
+  ext k
+  simp
 
 end Solution
 
@@ -159,14 +151,11 @@ end Solution
 private theorem wordMap_point_removeLonely (U : Ω.Solution) :
     wordMap (MonoidHom.id (FreeGroup A)) (Ω.removeLonelyWord μ h) (U.removeLonely h).point =
       U.point := by
-  have : (U.removeLonely h).point = U.point ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl :=
-    funext fun j ↦ by
-      rw [Function.comp_apply, Solution.point_apply, Solution.point_apply,
-        Solution.removeLonely_word]
-  rw [this, wordMap_removeLonelyWord_comp h U.isFormallyConsistent U.point_mem_V]
+  rw [Solution.removeLonely_point,
+    wordMap_removeLonelyWord_comp h U.isFormallyConsistent U.point_mem_V]
 
 /-- **ET4 transfers solutions.** The homomorphism `F_{R(Ω′)} → F(A)` of the restriction of a
-solution `U` of `Ω` to `Ω′ = Ω.removeLonely μ h`, composed with the isomorphism
+solution `U` of `Ω` to `Ω′ = Ω.removeLonely μ h`, precomposed with the isomorphism
 `π : F_{R(Ω)} → F_{R(Ω′)}`, is the homomorphism of `U`. -/
 theorem toHom_comp_removeLonelyHom (U : Ω.Solution) :
     (U.removeLonely h).toHom.comp (removeLonelyHom h hΩ) = U.toHom := by
@@ -176,52 +165,67 @@ theorem toHom_comp_removeLonelyHom (U : Ω.Solution) :
   rw [GHom.coe_comp, Function.comp_apply, removeLonelyHom_inr_of, Solution.toHom_mk,
     Solution.toHom_inr_of, this, Solution.point_apply]
 
+/-! ### Solutions reduced on the former place of `Δ(μ)` -/
+
+/-- A solution `U` of `Ω′ = Ω.removeLonely μ h` is *reduced on the dual* when it makes the word of
+the segment of `Ω′` which replaces `Δ(μ)` reduced as written. For a formally consistent `Ω` these
+are exactly the restrictions of the solutions of `Ω`
+(`TauCeti.GenEq.Solution.mem_range_removeLonely_iff`). -/
+def Solution.IsReducedOnDual (U : (Ω.removeLonely μ h).Solution) : Prop :=
+  FreeGroup.IsReduced (substituteVars U.word ((Ω.removeLonely μ h).segment
+    ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
+    ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true))
+
+/-- Being reduced on the dual, unfolded. -/
+theorem Solution.isReducedOnDual_iff (U : (Ω.removeLonely μ h).Solution) :
+    U.IsReducedOnDual h ↔ FreeGroup.IsReduced (substituteVars U.word ((Ω.removeLonely μ h).segment
+      ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
+      ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true)) :=
+  Iff.rfl
+
+/-- The restriction of a solution of `Ω` is reduced on the former place of `Δ(μ)`: there it carries
+the word of `Δ(μ)`. -/
+theorem Solution.isReducedOnDual_removeLonely (U : Ω.Solution) :
+    (U.removeLonely h).IsReducedOnDual h := by
+  have hw : (U.removeLonely h).word = U.word ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl :=
+    funext (removeLonely_word h U)
+  rw [isReducedOnDual_iff, hw, ← substituteVars_restoreWord,
+    restoreWord_segment_removeLonely h le_rfl le_rfl]
+  exact U.isReduced_substituteVars_segment _
+
 /-! ### Telescoping along `μ` -/
 
 include h hΩ in
-/-- If the word of every item of `μ` is the word of its segment of `Δ(μ)`, then the word of
-`h[α(μ), p]` is the word of `h[α(Δμ), b(p)]` when `ε(μ) = ε(Δμ)`, and the formal inverse of the
-word of `h[b(p), β(Δμ)]` otherwise, for every boundary `p` of `μ` tied to `b(p)`. -/
+/-- If the word of every item of `μ` is its matched word, then for every boundary `p` of `μ` the
+word of `h[α(μ), p]` is the word of `h[α(Δμ), b(p)]` when `ε(μ) = ε(Δμ)`, and the formal inverse of
+the word of `h[b(p), β(Δμ)]` otherwise. -/
 private theorem substituteVars_segment_left_eq {W : Fin Ω.numItems → List (A × Bool)}
     (hW : ∀ k ∈ Ω.baseItems μ, W k = substituteVars W (Ω.tiedSegment μ k))
-    {p : Fin (Ω.numItems + 1)} (h₁ : Ω.left μ ≤ p) (h₂ : p ≤ Ω.right μ) :
+    (p : Fin (Ω.numItems + 1)) (h₁ : Ω.left μ ≤ p) (h₂ : p ≤ Ω.right μ) :
     substituteVars W (Ω.segment (Ω.left μ) p true) =
       if Ω.sign μ = Ω.sign (Ω.dual μ) then
         substituteVars W (Ω.segment (Ω.left (Ω.dual μ)) (Ω.tiedBoundary μ p) true)
       else FreeGroup.invRev
         (substituteVars W (Ω.segment (Ω.tiedBoundary μ p) (Ω.right (Ω.dual μ)) true)) := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le (Fin.le_def.1 h₁)
-  induction m generalizing p with
-  | zero =>
-    obtain rfl : p = Ω.left μ := Fin.ext (by lia)
-    rw [tiedBoundary_left]
+  refine base_induction ?_ (fun k hk ih ↦ ?_) p h₁ h₂
+  · rw [tiedBoundary_left]
     split_ifs <;> simp [Ω.segment_eq_nil_of_le le_rfl]
-  | succ m ih =>
-    have := Fin.le_def.1 h₂
-    have := Fin.is_le (Ω.right μ)
-    let k : Fin Ω.numItems := ⟨Ω.left μ + m, by lia⟩
-    have hk : k ∈ Ω.baseItems μ := Ω.mem_baseItems.2 ⟨by simp [k], by simp only [k]; lia⟩
-    have hp : p = k.succ := Fin.ext (by simp [k]; lia)
-    have ih := ih (p := k.castSucc) (Fin.le_def.2 (by simp [k]))
-      (Fin.le_def.2 (by simp [k]; lia)) (by simp [k])
-    have hc := isTiedTo_castSucc h hk
-    have hs := isTiedTo_succ h hk
-    rw [Fin.val_castSucc] at ih
-    rw [hp, Fin.val_succ, ← Ω.segment_append (j := k) (k := (k : ℕ) + 1) (by simp [k])
-      (by lia), substituteVars_append, ih, Ω.segment_succ k true,
-      FreeGroup.substituteVars_singleton_inl, hW k hk, tiedSegment]
-    split_ifs with hσ
-    · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_eq hσ hc hs k.castSucc_lt_succ)
-      rw [min_eq_left hlt.le, max_eq_right hlt.le, decide_eq_true hσ, ← substituteVars_append,
-        Ω.segment_append hc.left_dual_le hlt.le]
-    · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_ne hσ hc hs k.castSucc_lt_succ)
-      rw [min_eq_right hlt.le, max_eq_left hlt.le, decide_eq_false hσ, segment_false,
-        FreeGroup.substituteVars_invRev, ← FreeGroup.invRev_append, ← substituteVars_append,
-        Ω.segment_append hlt.le hc.le_right_dual]
+  have hc := h.isTiedTo_tiedBoundary (left_le_castSucc_of_mem_baseItems hk)
+    (k.castSucc_lt_succ.le.trans (succ_le_right_of_mem_baseItems hk))
+  rw [Fin.val_castSucc] at ih
+  rw [Fin.val_succ, ← Ω.segment_append (j := k) (k := (k : ℕ) + 1)
+    (left_le_castSucc_of_mem_baseItems hk) (Nat.le_succ _), substituteVars_append, ih,
+    Ω.segment_succ k true, FreeGroup.substituteVars_singleton_inl, hW k hk]
+  split_ifs with hσ
+  · rw [tiedSegment_of_sign_eq h hΩ hk hσ, ← substituteVars_append,
+      Ω.segment_append hc.left_dual_le (tiedBoundary_castSucc_lt_succ_of_sign_eq h hΩ hk hσ).le]
+  · rw [tiedSegment_of_sign_ne h hΩ hk hσ, segment_false, FreeGroup.substituteVars_invRev,
+      ← FreeGroup.invRev_append, ← substituteVars_append,
+      Ω.segment_append (tiedBoundary_succ_lt_castSucc_of_sign_ne h hΩ hk hσ).le hc.le_right_dual]
 
 include h hΩ in
-/-- If the word of every item of `μ` is the word of its segment of `Δ(μ)` and the word of `Δ(μ)` is
-reduced as written, then every factor of the words of `μ` and `Δ(μ)` is reduced as written. -/
+/-- If the word of every item of `μ` is its matched word and the word of `Δ(μ)` is reduced as
+written, then every factor of the words of `μ` and `Δ(μ)` is reduced as written. -/
 private theorem isReduced_substituteVars_segment_of_mem_pair {W : Fin Ω.numItems → List (A × Bool)}
     (hW : ∀ k ∈ Ω.baseItems μ, W k = substituteVars W (Ω.tiedSegment μ k))
     (hred : FreeGroup.IsReduced
@@ -231,7 +235,7 @@ private theorem isReduced_substituteVars_segment_of_mem_pair {W : Fin Ω.numItem
     FreeGroup.IsReduced (substituteVars W (Ω.segment i j true)) := by
   rcases Finset.mem_insert.1 hν with rfl | hν
   · -- The word of `μ` is the word of `Δ(μ)` or its formal inverse.
-    have hμ := substituteVars_segment_left_eq h hΩ hW (Ω.left_lt_right ν).le le_rfl
+    have hμ := substituteVars_segment_left_eq h hΩ hW _ (Ω.left_lt_right ν).le le_rfl
     rw [tiedBoundary_right] at hμ
     refine Ω.isReduced_substituteVars_segment_of_le_of_le ?_ hi hj
     split_ifs at hμ <;> rw [hμ]
@@ -240,9 +244,9 @@ private theorem isReduced_substituteVars_segment_of_mem_pair {W : Fin Ω.numItem
     exact Ω.isReduced_substituteVars_segment_of_le_of_le hred hi hj
 
 include hΩ in
-/-- Words for the items of `Ω` that restrict to a solution of `Ω′`, give each item of `μ` the word
-of its segment of `Δ(μ)`, are reduced, and make the word of `Δ(μ)` reduced as written, make both
-sides of every equation of `Ω` reduced as written. -/
+/-- Reduced words for the items of `Ω` that restrict to a solution of `Ω′`, give each item of `μ`
+its matched word, and make the word of `Δ(μ)` reduced as written, make both sides of every equation
+of `Ω` reduced as written. -/
 private theorem isReduced_subst_lift {W : Fin Ω.numItems → List (A × Bool)}
     (hW : ∀ k ∈ Ω.baseItems μ, W k = substituteVars W (Ω.tiedSegment μ k))
     (hred : FreeGroup.IsReduced
@@ -257,14 +261,13 @@ private theorem isReduced_subst_lift {W : Fin Ω.numItems → List (A × Bool)}
   intro e he
   rcases Ω.equations_subset_union_moveConstBases μ he with he | ⟨b, -, rfl⟩
   swap
-  · exact isReduced_substituteVars_coeffEquation hW' b
+  · exact Ω.isReduced_substituteVars_coeffEquation hW' b
   rcases equations_subset_union_removeBases _ he with he | ⟨ν, hν, rfl⟩ | ⟨c, ⟨hc, hν⟩, rfl⟩
   · rcases equations_subset_union_deleteItems h.disjoint_baseItems_removePair he with
       ⟨e', he', rfl⟩ | ⟨b, -, rfl⟩
     · simpa only [restoreEquation_fst, restoreEquation_snd, substituteVars_restoreWord] using
         hrest e' he'
-    · simpa only [coeffEquation_removeBases, coeffEquation_moveConstBases] using
-        isReduced_substituteVars_coeffEquation hW' b
+    · exact ((Ω.moveConstBases μ).removePair μ).isReduced_substituteVars_coeffEquation hW' b
   · rw [basicEquation_moveConstBases, basicEquation_fst, basicEquation_snd]
     exact ⟨(isReduced_substituteVars_segment_iff ..).2 (hseg hν le_rfl le_rfl),
       (isReduced_substituteVars_segment_iff ..).2 (hseg (Ω.dual_mem_pair μ ν hν) le_rfl le_rfl)⟩
@@ -280,8 +283,8 @@ private theorem isReduced_subst_lift {W : Fin Ω.numItems → List (A × Bool)}
 
 /-! ### The backward transfer -/
 
-/-- The words of the items of `Ω` obtained from a solution `U` of `Ω′` through `π`: the word of
-an item of `μ` is the word of its segment of `Δ(μ)`, that of another item its word in `U`. -/
+/-- The words of the items of `Ω` obtained from a solution `U` of `Ω′` through `π`: an item of `μ`
+receives its matched word evaluated at `U`, another item its word in `U`. -/
 private noncomputable def liftWord (U : (Ω.removeLonely μ h).Solution) (k : Fin Ω.numItems) :
     List (A × Bool) :=
   substituteVars U.word (Ω.removeLonelyList μ h k)
@@ -301,93 +304,84 @@ private theorem liftWord_comp : liftWord h U ∘ (Ω.baseItems μ)ᶜ.orderEmbOf
 
 /-- Substituting the words of `U` into a word of `Ω′` is substituting the lifted words into that
 word read in the items of `Ω`. -/
-private theorem substituteVars_eq_liftWord
+private theorem substituteVars_eq_substituteVars_restoreWord
     (w : List ((Fin (Ω.removeLonely μ h).numItems ⊕ A) × Bool)) :
     substituteVars U.word w = substituteVars (liftWord h U) (restoreWord (Ω.baseItems μ) w) := by
   rw [substituteVars_restoreWord, liftWord_comp]
 
-/-- The lifted word of an item of `μ` is the lifted word of its segment of `Δ(μ)`. -/
+/-- The lifted word of an item of `μ` is its matched word evaluated at the lifted words. -/
 private theorem liftWord_of_mem {k : Fin Ω.numItems} (hk : k ∈ Ω.baseItems μ) :
     liftWord h U k = substituteVars (liftWord h U) (Ω.tiedSegment μ k) := by
-  rw [liftWord, substituteVars_eq_liftWord, restoreWord_removeLonelyList_of_mem h hk, tiedSegment]
+  rw [liftWord, substituteVars_eq_substituteVars_restoreWord,
+    restoreWord_removeLonelyList_of_mem h hk]
 
 variable {U} in
-/-- If `U` makes the word of the former place of `Δ(μ)` reduced as written, the lifted words make
-the word of `Δ(μ)` reduced as written. -/
-private theorem isReduced_liftWord_dual (hU : FreeGroup.IsReduced (substituteVars U.word
-    ((Ω.removeLonely μ h).segment ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
-      ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true))) :
+/-- If `U` is reduced on the former place of `Δ(μ)`, the lifted words make the word of `Δ(μ)`
+reduced as written. -/
+private theorem isReduced_substituteVars_liftWord_dual_segment (hU : U.IsReducedOnDual h) :
     FreeGroup.IsReduced (substituteVars (liftWord h U)
       (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)) := by
-  rwa [substituteVars_eq_liftWord, restoreWord_segment_removeLonely h le_rfl le_rfl] at hU
+  rwa [Solution.isReducedOnDual_iff, substituteVars_eq_substituteVars_restoreWord,
+    restoreWord_segment_removeLonely h le_rfl le_rfl] at hU
 
 variable {U} in
-/-- The lifted words are reduced: the word of an item of `μ` is a factor of the word of `Δ(μ)`. -/
-private theorem isReduced_liftWord (hU : FreeGroup.IsReduced (substituteVars U.word
-    ((Ω.removeLonely μ h).segment ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
-      ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true))) (k : Fin Ω.numItems) :
+/-- The lifted words are reduced: the word of an item of `μ` is a factor of the word of `Δ(μ)` or
+the formal inverse of one. -/
+private theorem isReduced_liftWord (hU : U.IsReducedOnDual h) (k : Fin Ω.numItems) :
     FreeGroup.IsReduced (liftWord h U k) := by
   by_cases hk : k ∈ Ω.baseItems μ
-  · rw [liftWord_of_mem h U hk, tiedSegment, isReduced_substituteVars_segment_iff]
-    exact Ω.isReduced_substituteVars_segment_of_le_of_le (isReduced_liftWord_dual h hU)
-      (tiedSegment_bounds h hk).1 (tiedSegment_bounds h hk).2
+  · rw [liftWord_of_mem h U hk]
+    exact isReduced_substituteVars_tiedSegment h
+      (isReduced_substituteVars_liftWord_dual_segment h hU) hk
   · obtain ⟨j, rfl⟩ : ∃ j, (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j = k :=
       ⟨_, Finset.orderEmbOfFin_collapse hk⟩
     rw [liftWord_orderEmbOfFin]
     exact U.isReduced_word j
 
 include hΩ in
-/-- The lifted words are nonempty: the segment of `Δ(μ)` matched with an item of `μ` is
-nonempty. -/
+/-- The lifted words are nonempty: the matched word of an item of `μ` is nonempty. -/
 private theorem liftWord_ne_nil (k : Fin Ω.numItems) : liftWord h U k ≠ [] := by
   by_cases hk : k ∈ Ω.baseItems μ
-  · refine U.substituteVars_word_ne_nil fun hnil ↦ ?_
-    have := congrArg List.length (restoreWord_removeLonelyList_of_mem h hk)
-    rw [hnil, restoreWord_nil, List.length_nil, length_segment] at this
-    have := min_lt_max_tiedBoundary h hΩ hk
-    have := (tiedSegment_bounds h hk).2
-    have := Fin.is_le (Ω.right (Ω.dual μ))
-    lia
+  · refine U.substituteVars_word_ne_nil fun hnil ↦ tiedSegment_ne_nil h hΩ hk ?_
+    rw [← restoreWord_removeLonelyList_of_mem h hk, hnil, restoreWord_nil]
   · obtain ⟨j, rfl⟩ : ∃ j, (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j = k :=
       ⟨_, Finset.orderEmbOfFin_collapse hk⟩
     rw [liftWord_orderEmbOfFin]
     exact U.word_ne_nil j
 
+/-- `π` evaluated at the point of `U` is the tuple of the lifted words. -/
+private theorem wordMap_removeLonelyWord_point (k : Fin Ω.numItems) :
+    wordMap (MonoidHom.id (FreeGroup A)) (Ω.removeLonelyWord μ h) U.point k =
+      FreeGroup.mk (liftWord h U k) := by
+  rw [wordMap_removeLonelyWord_apply, MonoidHom.coe_id, Function.id_comp,
+    ← EqIneqSystem.eval_eq_lift, Solution.eval_point_mk, liftWord]
+
 include hΩ in
 /-- The lifted words form the point `π(U)` of `Ω*`. -/
 private theorem mem_V_liftWord :
     (fun k ↦ FreeGroup.mk (liftWord h U k)) ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := by
-  have : (fun k ↦ FreeGroup.mk (liftWord h U k)) =
-      wordMap (MonoidHom.id (FreeGroup A)) (Ω.removeLonelyWord μ h) U.point :=
-    funext fun k ↦ (wordMap_removeLonelyWord_point h U k).symm
-  rw [this]
+  rw [← funext (wordMap_removeLonelyWord_point h U)]
   exact mapsTo_wordMap_removeLonely h hΩ _ U.point_mem_V
 
 end Backward
 
 include hΩ in
-/-- **ET4 on solutions.** The solutions of `Ω` are the solutions of `Ω′ = Ω.removeLonely μ h` for
-which the word of the former place of `Δ(μ)` is reduced as written. A solution of `Ω` is sent to
-its restriction; the word of an item of `μ` is recovered as the word of its segment of `Δ(μ)`. -/
+/-- **ET4 on solutions.** If `Ω` is formally consistent, its solutions are the solutions of
+`Ω′ = Ω.removeLonely μ h` that are reduced on the former place of `Δ(μ)`. A solution of `Ω` is sent
+to its restriction; conversely, an item of `μ` receives its matched word evaluated at the solution
+of `Ω′`. -/
 noncomputable def solutionEquivRemoveLonely :
-    Ω.Solution ≃ {U : (Ω.removeLonely μ h).Solution //
-      FreeGroup.IsReduced (substituteVars U.word ((Ω.removeLonely μ h).segment
-        ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
-        ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true))} where
-  toFun U := ⟨U.removeLonely h, by
-    have hw : (U.removeLonely h).word = U.word ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl :=
-      funext (Solution.removeLonely_word h U)
-    rw [hw, ← substituteVars_restoreWord, restoreWord_segment_removeLonely h le_rfl le_rfl]
-    exact U.isReduced_substituteVars_segment _⟩
+    Ω.Solution ≃ {U : (Ω.removeLonely μ h).Solution // U.IsReducedOnDual h} where
+  toFun U := ⟨U.removeLonely h, U.isReducedOnDual_removeLonely h⟩
   invFun U := Solution.ofMemV (liftWord h U.val) (isReduced_liftWord h U.property)
     (liftWord_ne_nil h hΩ U.val)
     (isReduced_subst_lift h hΩ (fun _ ↦ liftWord_of_mem h U.val)
-      (isReduced_liftWord_dual h U.property) (isReduced_liftWord h U.property)
-      (by rw [liftWord_comp]; exact U.val.isReduced_subst))
+      (isReduced_substituteVars_liftWord_dual_segment h U.property)
+      (isReduced_liftWord h U.property) (by rw [liftWord_comp]; exact U.val.isReduced_subst))
     (mem_V_liftWord h hΩ U.val)
   left_inv U := Solution.point_injective <| funext fun k ↦ by
-    rw [Solution.point_apply, Solution.ofMemV_word, liftWord,
-      ← wordMap_removeLonelyWord_point, wordMap_point_removeLonely]
+    rw [Solution.point_apply, Solution.ofMemV_word, ← wordMap_removeLonelyWord_point,
+      wordMap_point_removeLonely]
   right_inv U := Subtype.ext <| Solution.ext <| funext fun j ↦ by
     rw [Solution.removeLonely_word, Solution.ofMemV_word, liftWord_orderEmbOfFin]
 
@@ -399,28 +393,46 @@ theorem solutionEquivRemoveLonely_apply_coe (U : Ω.Solution) :
 
 section Symm
 
-variable (U : {U : (Ω.removeLonely μ h).Solution //
-  FreeGroup.IsReduced (substituteVars U.word ((Ω.removeLonely μ h).segment
-    ((Ω.baseItems μ).collapse (Ω.left (Ω.dual μ)))
-    ((Ω.baseItems μ).collapse (Ω.right (Ω.dual μ))) true))})
+variable (U : {U : (Ω.removeLonely μ h).Solution // U.IsReducedOnDual h})
 
-/-- The inverse of ET4 on solutions gives an item of `Ω` the word of its image under `π`: the word
-of its segment of `Δ(μ)` for an item of `μ`, its own word otherwise. -/
+/-- The inverse of ET4 on solutions gives an item of `Ω` the word of its image under `π`: its
+matched word evaluated at `U` for an item of `μ`, its own word otherwise. -/
 @[simp]
 theorem solutionEquivRemoveLonely_symm_apply_word (k : Fin Ω.numItems) :
     ((solutionEquivRemoveLonely h hΩ).symm U).word k =
       substituteVars U.val.word (Ω.removeLonelyList μ h k) :=
   congrFun (Solution.ofMemV_word ..) k
 
+/-- The inverse of ET4 on solutions sends the point of a solution `U` of `Ω′` to its image under
+`π`. -/
+@[simp]
+theorem solutionEquivRemoveLonely_symm_apply_point :
+    ((solutionEquivRemoveLonely h hΩ).symm U).point =
+      wordMap (MonoidHom.id (FreeGroup A)) (Ω.removeLonelyWord μ h) U.val.point :=
+  funext fun k ↦ by
+    rw [Solution.point_apply, solutionEquivRemoveLonely_symm_apply_word,
+      wordMap_removeLonelyWord_point, liftWord]
+
 /-- **ET4 on solutions, backward.** The solution of `Ω` corresponding to a solution `U` of `Ω′`
-that makes the word of the former place of `Δ(μ)` reduced as written has the homomorphism
-`F_{R(Ω)} → F(A)` of `U` composed with `π : F_{R(Ω)} → F_{R(Ω′)}`. -/
+that is reduced on the former place of `Δ(μ)` has as homomorphism the homomorphism
+`U.toHom : F_{R(Ω′)} → F(A)` precomposed with `π : F_{R(Ω)} → F_{R(Ω′)}`. -/
 theorem solutionEquivRemoveLonely_symm_apply_toHom :
     ((solutionEquivRemoveLonely h hΩ).symm U).toHom = U.val.toHom.comp (removeLonelyHom h hΩ) := by
   conv_rhs => rw [← (solutionEquivRemoveLonely h hΩ).apply_symm_apply U]
   exact (toHom_comp_removeLonelyHom h hΩ _).symm
 
 end Symm
+
+include hΩ in
+/-- If `Ω` is formally consistent, the restrictions of the solutions of `Ω` to
+`Ω′ = Ω.removeLonely μ h` are exactly the solutions of `Ω′` that are reduced on the former place
+of `Δ(μ)`. -/
+theorem Solution.mem_range_removeLonely_iff (U : (Ω.removeLonely μ h).Solution) :
+    U ∈ Set.range (Solution.removeLonely h) ↔ U.IsReducedOnDual h := by
+  refine ⟨?_, fun hU ↦ ⟨(solutionEquivRemoveLonely h hΩ).symm ⟨U, hU⟩, ?_⟩⟩
+  · rintro ⟨U, rfl⟩
+    exact U.isReducedOnDual_removeLonely h
+  · rw [← solutionEquivRemoveLonely_apply_coe h hΩ, Equiv.apply_symm_apply]
 
 /-! ### Examples -/
 
@@ -440,11 +452,11 @@ example (U' : (equalItems.removeLonely 0 isLonely_equalItems).Solution) :
     rw [numItems_removeLonely_equalItems]
     exact one_pos
   -- The former place of `Δ(μ)` is the remaining item, whose word is reduced.
-  refine ⟨(solutionEquivRemoveLonely isLonely_equalItems hΩ).symm ⟨U', ?_⟩, ?_⟩
-  · rw [h₁, h₂, (equalItems.removeLonely 0 isLonely_equalItems).segment_succ ⟨0, hn⟩,
-      FreeGroup.substituteVars_singleton_inl]
-    exact U'.isReduced_word _
-  · rw [← solutionEquivRemoveLonely_apply_coe _ hΩ, Equiv.apply_symm_apply]
+  refine (Solution.mem_range_removeLonely_iff isLonely_equalItems hΩ U').2 ?_
+  rw [Solution.isReducedOnDual_iff, h₁, h₂,
+    (equalItems.removeLonely 0 isLonely_equalItems).segment_succ ⟨0, hn⟩,
+    FreeGroup.substituteVars_singleton_inl]
+  exact U'.isReduced_word _
 
 /-- The base `μ = [0, 2]` of `h₀h₁ = h₂h₃`, `h₀ = h₂` is lonely. -/
 private theorem isLonely_tiedExample : (tiedExample true).IsLonely 0 where
@@ -491,9 +503,8 @@ example : ∃ U' : ((tiedExample true).removeLonely 0 isLonely_tiedExample).Solu
     rw [hS, Finset.collapse_def]
     decide
   -- The restriction of `U` makes the word `h₂h₃` of the former place of `Δ(μ)` reduced.
-  have := (solutionEquivRemoveLonely isLonely_tiedExample (isFormallyConsistent_tiedExample true)
-    U).property
-  rw [solutionEquivRemoveLonely_apply_coe, hU, h₁, h₂,
+  have := U.isReducedOnDual_removeLonely isLonely_tiedExample
+  rw [Solution.isReducedOnDual_iff, hU, h₁, h₂,
     ← ((tiedExample true).removeLonely 0 isLonely_tiedExample).segment_append (j := 0 + 1)
       (Nat.zero_le _) (Nat.le_succ _),
     ((tiedExample true).removeLonely 0 isLonely_tiedExample).segment_succ ⟨0, one_pos.trans hn⟩,

@@ -51,9 +51,11 @@ segments.
   identification as reduced words under a graphical solution.
 * `TauCeti.GenEq.Solution.prefixLength_of_isTiedTo`: a tie `(p, q)` of `μ` as an identity between
   the positions of `p` and `q` in the words of a solution.
-* `TauCeti.GenEq.Solution.adjacent_of_mem_constBases`: under a solution, the boundaries to which
-  the two end-points of a constant item are tied through the same base are adjacent. For ties by
-  boundary connections this is condition 5 of formal consistency (Definition 10(5)).
+* `TauCeti.GenEq.Solution.adjacent_of_length_word_eq_one_of_isTiedTo`,
+  `TauCeti.GenEq.Solution.adjacent_of_mem_constBases`: under a solution, the boundaries to which
+  the two end-points of an item with a one-letter word, for instance a constant item, are tied
+  through the same base are adjacent. For a constant item and ties by boundary connections this is
+  condition 5 of formal consistency (Definition 10(5)).
 
 ## References
 
@@ -459,6 +461,14 @@ theorem Solution.prefixLength_of_isTiedTo (U : Ω.Solution) (h : Ω.IsTiedTo μ 
   · exact U.prefixLength_boundary h
   all_goals split_ifs <;> lia
 
+/-- Under a solution, the boundaries to which the two end-points of an item carrying a one-letter
+word are tied through the same base are adjacent. -/
+theorem Solution.adjacent_of_length_word_eq_one_of_isTiedTo (U : Ω.Solution) {k : Fin Ω.numItems}
+    (hk : (U.word k).length = 1) (hq : Ω.IsTiedTo μ k.castSucc q) (hq' : Ω.IsTiedTo μ k.succ q') :
+    (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q :=
+  U.adjacent_of_length_word_eq_one_of_prefixLength_eq hk (U.prefixLength_of_isTiedTo hq)
+    (U.prefixLength_of_isTiedTo hq')
+
 /-- In a generalised equation with a solution, the boundaries to which the two end-points of a
 constant item are tied through the same base are adjacent: the item carries a word of one letter.
 For ties by boundary connections this is condition 5 of formal consistency; here the end-points of
@@ -466,8 +476,8 @@ the base are allowed as well. -/
 theorem Solution.adjacent_of_mem_constBases (U : Ω.Solution) {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) (hq : Ω.IsTiedTo μ b.1.castSucc q)
     (hq' : Ω.IsTiedTo μ b.1.succ q') : (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q :=
-  U.adjacent_of_prefixLength_of_mem_constBases hb (U.prefixLength_of_isTiedTo hq)
-    (U.prefixLength_of_isTiedTo hq')
+  U.adjacent_of_length_word_eq_one_of_isTiedTo
+    (by rw [U.word_of_mem_constBases hb, List.length_singleton]) hq hq'
 
 /-! ### Examples -/
 
