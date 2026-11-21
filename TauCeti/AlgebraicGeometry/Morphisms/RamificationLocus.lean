@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # The ramification, non-étale and branch loci of a morphism of schemes
@@ -298,14 +299,12 @@ theorem support_subset_ramificationLocus_specMap (φ : R →+* S) {A : Type*} [C
   let : Module R M := Module.compHom M (algebraMap R S)
   have : IsScalarTower R S M := IsScalarTower.of_compHom R S M
   -- Vanishing on the image of `φ` makes `D` linear over `R`, which acts on `M` through `φ`.
-  let D' : Derivation R S M := Derivation.mk'
-    { toFun := D, map_add' := D.map_add, map_smul' := fun r s ↦ by
-        simp [Algebra.smul_def, D.leibniz, RingHom.algebraMap_toAlgebra, hφ]; rfl }
-      fun a b ↦ D.leibniz a b
+  let D' : Derivation R S M := D.ofMapAlgebraMap fun r ↦ by
+    rw [RingHom.algebraMap_toAlgebra, hφ]
   have hsurj : Function.Surjective D'.liftKaehlerDifferential := by
     rw [← LinearMap.range_eq_top, eq_top_iff, ← hD, Submodule.span_le]
     rintro _ ⟨s, rfl⟩
-    exact ⟨KaehlerDifferential.D R S s, D'.liftKaehlerDifferential_comp_D s⟩
+    exact ⟨KaehlerDifferential.D R S s, by simp [D']⟩
   refine (Module.support_subset_of_surjective _ hsurj).trans ?_
   rw [Scheme.Hom.ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support,
     compl_compl]
