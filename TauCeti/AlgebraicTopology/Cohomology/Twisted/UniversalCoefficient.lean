@@ -34,12 +34,13 @@ for the twisted cochains `Hom(C(X; L), M)`, with the twisted Kronecker map
   homology module `Hₙ(X; L)` already makes the Kronecker map bijective in degree `n + 1`
   (`TauCeti.LocalCoefficientSystem.twistedKronecker_bijective_succ_of_projective_homology`).
 
-The same statements hold for the relative twisted cohomology of a pair `(X, A)`, in the namespace
-`TopPair`. With the vanishing of relative homology below a degree this gives the bottom degree of
-relative cohomology: if `Hⱼ(X, A; L) = 0` for `j < n`, then `Hⁿ(X, A; L, M)` is
-`Hom(Hₙ(X, A; L), M)` (`TopPair.twistedKronecker_bijective_of_projective_homology_lt`). For the Thom
-pair `(E, E₀)` of a real vector bundle of rank `r`, whose relative homology with any local
-coefficients vanishes below `r`, this identifies `Hʳ(E, E₀; L, M)` with `Hom(Hᵣ(E, E₀; L), M)`
+The same statements, except the naturality of the first map, hold for the relative twisted
+cohomology of a pair `(X, A)`, in the namespace `TopPair`. With the vanishing of relative homology
+below a degree this gives the bottom degree of relative cohomology: if `Hⱼ(X, A; L) = 0` for
+`j < n`, then `Hⁿ(X, A; L, M)` is `Hom(Hₙ(X, A; L), M)`
+(`TopPair.twistedKronecker_bijective_of_projective_homology_lt`). For the Thom pair `(E, E₀)` of a
+real vector bundle of rank `r`, whose relative homology with any local coefficients vanishes below
+`r`, this identifies `Hʳ(E, E₀; L, M)` with `Hom(Hᵣ(E, E₀; L), M)`
 (`TauCeti.thomPairTwistedCohomologyFinrankEquiv`); with `L` the orientation system pulled back to
 `E`, this is the degree of a Thom class with orientation-twisted coefficients.
 
@@ -65,7 +66,10 @@ which it reduces for a constant system with fibre `R`
   statements, its naturality, the section
   `TauCeti.LocalCoefficientSystem.twistedKroneckerSection` and the splitting
   `TauCeti.LocalCoefficientSystem.twistedUniversalCoefficientEquiv`.
-* The relative forms in the namespace `TopPair`, with the same names.
+* The relative forms in the namespace `TopPair`, with the same names; the naturality lemmas
+  `TauCeti.LocalCoefficientSystem.twistedExtToCohomology_twistedHomologyCoefficientMap` and
+  `TauCeti.LocalCoefficientSystem.twistedExtToCohomology_twistedHomologyMap` are stated only in the
+  absolute case.
 
 ## References
 
