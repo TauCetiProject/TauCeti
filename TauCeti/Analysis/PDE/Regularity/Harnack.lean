@@ -183,6 +183,14 @@ private theorem ae_ae_le_mul_of_setAverage_le {f : EuclideanSpace ℝ ι → ℝ
         rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
         field_simp
 
+/-- **The limit `δ → 0`.** If `g ≤ C (f + δ)` almost everywhere for every `δ = 1/(k + 1)`, then
+`g ≤ C f` almost everywhere. -/
+private theorem ae_le_mul_of_forall_ae_le_mul_add_one_div {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f g : α → ℝ} {C : ℝ}
+    (h : ∀ k : ℕ, ∀ᵐ x ∂μ, g x ≤ C * (f x + 1 / ((k : ℝ) + 1))) : ∀ᵐ x ∂μ, g x ≤ C * f x := by
+  filter_upwards [ae_all_iff.2 h] with x hx
+  simpa using ge_of_tendsto' ((tendsto_one_div_add_atTop_nhds_zero_nat.const_add _).const_mul C) hx
+
 /-! ### Lower-order terms -/
 
 /-- On the doubled ball the dimensionless lower-order quantities are bounded in terms of `σ`: if
@@ -365,15 +373,8 @@ private theorem exists_setAverage_add_const_rpow_rpow_inv_le_mul_lowerOrder [Non
   have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
   have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hum : AEStronglyMeasurable (W1p.value u) (mu.restrict Omega) := Lp.aestronglyMeasurable _
-  set w := W1p.restrictL hU u + W1p.const δ
-  have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value w y = W1p.value u y + δ := by
-    filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ,
-      W1p.value_restrictL_ae hU u] with y h1 h2
-    rw [h1, h2]
-  have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y := by
-    filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hball hu0] with y h1 h2
-    rw [h1]
-    linarith
+  have hu0U := ae_restrict_of_ae_restrict_of_subset hball hu0
+  have hwv := W1p.value_restrictL_add_const_ae hU u δ
   have hc' : AEStronglyMeasurable
       (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
       (mu.restrict Omega) :=
@@ -391,12 +392,11 @@ private theorem exists_setAverage_add_const_rpow_rpow_inv_le_mul_lowerOrder [Non
     (ha.mono_measure (Measure.restrict_mono hball le_rfl))
     (hb.mono_measure (Measure.restrict_mono hball le_rfl))
     (hc'.mono_measure (Measure.restrict_mono hball le_rfl)) (fun x hx => hbβ x (hball hx)) hcγ'
-    (energyFormH1_restrictL_add_const_nonneg_mass hU hu
-      (ae_restrict_of_ae_restrict_of_subset hball hu0) hδ0) hδ0 hδw (x₀ := x₀) (r := r)
-    subset_rfl hβr hγr
+    (energyFormH1_restrictL_add_const_nonneg_mass hU hu hu0U hδ0) hδ0
+    (W1p.le_value_restrictL_add_const_ae hU hu0U δ) (x₀ := x₀) (r := r) subset_rfl hβr hγr
   have hwvr := ae_restrict_of_ae_restrict_of_subset hrU hwv
   refine ⟨hint.congr_fun_ae (hwvr.mono fun y hy => congrArg (· ^ s) hy), ?_⟩
-  have e : ⨍ y in ball x₀ r, W1p.value w y ^ s ∂mu =
+  have e : ⨍ y in ball x₀ r, W1p.value (W1p.restrictL hU u + W1p.const δ) y ^ s ∂mu =
       ⨍ y in ball x₀ r, (W1p.value u y + δ) ^ s ∂mu :=
     average_congr (hwvr.mono fun y hy => congrArg (· ^ s) hy)
   filter_upwards [hH, hwvr] with x hx hwx
@@ -460,9 +460,7 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder [Nonempty ι]
     exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu0r.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hs.le)).trans hx
   -- Let `δ → 0`.
-  filter_upwards [ae_all_iff.2 hk] with x hx
-  simpa using ge_of_tendsto'
-    ((tendsto_one_div_add_atTop_nhds_zero_nat.const_add _).const_mul C) hx
+  exact ae_le_mul_of_forall_ae_le_mul_add_one_div hk
 
 /-- **Moser's Harnack inequality with lower-order terms.** Let `n ≥ 1` be the dimension and let
 `σ` be real. There is `C > 0`, depending only on `λ`, `Λ`, `σ`, the dimension and the
@@ -579,19 +577,14 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
     intro k
     set δ : ℝ := 1 / ((k : ℝ) + 1)
     have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
-    set w := W1p.restrictL hU u + W1p.const δ
-    have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value w y = W1p.value u y + δ :=
-      ((W1p.value_add_const_ae _ δ).and (W1p.value_restrictL_ae hU u)).mono fun y h => by
-        rw [h.1, h.2]
-    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y :=
-      (hwv.and (ae_restrict_of_ae_restrict_of_subset hball hu0)).mono fun y h =>
-        (le_add_of_nonneg_left h.2).trans_eq h.1.symm
+    have hwv := W1p.value_restrictL_add_const_ae hU u δ
     -- The case `b = 0`, `c = 0` of the estimate with lower-order terms.
     have hH := hpos (b := 0) (c := 0) (beta := 0) (gamma := 0) (h.mono_set hball)
       (ha.mono_measure (Measure.restrict_mono hball le_rfl)) aestronglyMeasurable_const
       aestronglyMeasurable_const (by simp) (by simp)
-      (energyFormH1_restrictL_add_const_nonneg hU hu δ) hδ0 hδw (x₀ := x₀) (r := r) subset_rfl
-      (by simp) (by simp)
+      (energyFormH1_restrictL_add_const_nonneg hU hu δ) hδ0
+      (W1p.le_value_restrictL_add_const_ae hU (ae_restrict_of_ae_restrict_of_subset hball hu0) δ)
+      (x₀ := x₀) (r := r) subset_rfl (by simp) (by simp)
     rw [average_congr ((ae_restrict_of_ae_restrict_of_subset h2U hwv).mono fun y hy =>
       congrArg (· ^ p₀) hy)] at hH
     -- The average of `u^{p₀}` is at most that of `(u + δ)^{p₀}`.
@@ -600,9 +593,7 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
     exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu02.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hp₀.le)).trans (hx.trans_eq (by rw [hwx]))
   -- Let `δ → 0`.
-  filter_upwards [ae_all_iff.2 hδ] with x hx
-  simpa using ge_of_tendsto'
-    ((tendsto_one_div_add_atTop_nhds_zero_nat.const_add _).const_mul C) hx
+  exact ae_le_mul_of_forall_ae_le_mul_add_one_div hδ
 
 /-- **Moser's weak Harnack inequality.** Let `n ≥ 1` be the dimension. For every exponent `s > 0`
 with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3` and `s` arbitrary when `n ≤ 2`, there
