@@ -58,6 +58,8 @@ at `k = 2`, where `log k > 0`.
 * `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
 * `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
   `[0, ∞)`.
+* `TauCeti.intervalIntegrable_mul_sum_Icc`: weighted by a function continuous on `[1, ∞)`, the
+  step function is interval integrable between any two reals.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -105,6 +107,25 @@ theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGrou
 theorem locallyIntegrableOn_sum_Icc_natFloor {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) (m : ℕ) :
     LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.Icc m ⌊t⌋₊, c k) (Ici 0) := by
   simpa using locallyIntegrableOn_mul_sum_Icc c le_rfl (m := m) (locallyIntegrableOn_const 1)
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k`, weighted by a function continuous
+on `[1, ∞)`, is interval integrable between any two reals: it vanishes below `1`. -/
+theorem intervalIntegrable_mul_sum_Icc {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {f : ℝ → 𝕜}
+    (hf : ContinuousOn f (Ici 1)) (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) volume a b := by
+  have key (b : ℝ) :
+      IntervalIntegrable (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) volume 1 b := by
+    rcases le_or_gt 1 b with hb | hb
+    · exact (intervalIntegrable_iff_integrableOn_Icc_of_le hb).mpr <|
+        integrableOn_mul_sum_Icc c zero_le_one (hf.mono Icc_subset_Ici_self).integrableOn_Icc
+    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Ioc_of_le hb.le).mpr ?_)
+      have h₀ : IntegrableOn (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) (Ioo b 1) :=
+        integrableOn_zero.congr_fun (fun t ht ↦ by simp [Nat.floor_eq_zero.mpr ht.2])
+          measurableSet_Ioo
+      have h := (IntegrableOn.of_measure_zero (f := fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k)
+        (Real.volume_singleton (a := 1))).union h₀
+      rwa [← insert_eq, insert_right_Ioo hb] at h
+  exact (key a).symm.trans (key b)
 
 /-! ### The comparison weight -/
 
