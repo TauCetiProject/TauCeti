@@ -147,6 +147,12 @@ private theorem apply_eq_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p.1) -
     (z w : ℂ) : F (z, w) = (z - (u w).1, f z - (u w).2) := by
   rw [hF, Prod.mk_sub_mk]
 
+/-- The map `F (z, w) = (z, f z) - u w` vanishes at every point `((u w).1, w)` where the disc `u`
+meets the graph of `f`. -/
+private theorem apply_eq_zero_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p.1) - u p.2)
+    {w : ℂ} (h : f (u w).1 = (u w).2) : F ((u w).1, w) = 0 := by
+  rw [apply_eq_of_apply_eq_graph_sub hF, h, sub_self, sub_self, Prod.mk_zero_zero]
+
 /-- Near the meeting point `((u w₀).1, w₀)`, the solutions of `F p = (0, -ε)` are the points
 `((u w).1, w)` of the disc with `(u w).2 - f (u w).1 = ε`. -/
 private theorem setOf_apply_eq_eq_image (hF : ∀ p, F p = (p.1, f p.1) - u p.2) (w₀ : ℂ) (r : ℝ)
@@ -172,8 +178,8 @@ private theorem eq_of_mem_closedBall_of_apply_eq (hF : ∀ p, F p = (p.1, f p.1)
     p = ((u w₀).1, w₀) := by
   obtain ⟨z, w⟩ := p
   rw [← closedBall_prod_same, mem_prod] at hp
-  rw [apply_eq_of_apply_eq_graph_sub hF, apply_eq_of_apply_eq_graph_sub hF, h, sub_self, sub_self,
-    Prod.mk.injEq, sub_eq_zero, sub_eq_zero] at hFp
+  rw [apply_eq_zero_of_apply_eq_graph_sub hF h, apply_eq_of_apply_eq_graph_sub hF] at hFp
+  simp only [Prod.mk_eq_zero, sub_eq_zero] at hFp
   obtain ⟨rfl, hfw⟩ := hFp
   obtain rfl : w = w₀ := by
     by_contra hne
@@ -217,9 +223,8 @@ private theorem localIndex_eq_zero_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1
     exact fun heq ↦ hw (congrArg Prod.snd heq)
   refine htend.frequently (Eventually.frequently ?_)
   filter_upwards [nhdsWithin_le_nhds hconst] with w hw
-  rw [apply_eq_of_apply_eq_graph_sub hF, apply_eq_of_apply_eq_graph_sub hF,
-    (sub_eq_zero.1 hw).symm, h]
-  simp only [sub_self]
+  rw [apply_eq_zero_of_apply_eq_graph_sub hF (sub_eq_zero.1 hw).symm,
+    apply_eq_zero_of_apply_eq_graph_sub hF h]
 
 variable (hn : finrank ℝ (ℂ × ℂ) = n)
 
@@ -235,7 +240,7 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
     (hgood : ∀ w ∈ ball w₀ r, AnalyticAt ℂ u w ∧ AnalyticAt ℂ f (u w).1)
     (ha : ContinuousAt (fun w ↦ (u w).1) w₀) :
     o.localIndex o F ((u w₀).1, w₀) = analyticOrderNatAt (fun w ↦ (u w).2 - f (u w).1) w₀ := by
-  have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := by rw [h, sub_self]
+  have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := sub_eq_zero.2 h.symm
   -- The first coordinate of `u` maps the ball of radius `r'` into the ball of radius `r`. The map
   -- `F` stays `δ₂` away from `0` on the sphere of radius `r`, and below `δ₃` and `δ₄` the
   -- solutions of `φ w = ε` in the balls of radius `r` and `min r' r` are counted by the order.
@@ -265,9 +270,8 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
       huw.differentiableAt (hder w hw fun h' ↦ norm_pos_iff.1 hε (by rw [← hφw, h', hφ₀]))
   choose! L hL using hreg
   have hy : ‖((0 : ℂ), -ε) - F ((u w₀).1, w₀)‖ < δ₂ := by
-    rw [apply_eq_of_apply_eq_graph_sub hF, sub_self, h, sub_self, Prod.mk_zero_zero, sub_zero,
-      Prod.norm_def, norm_zero, norm_neg, max_eq_right (norm_nonneg _)]
-    exact hεδ.trans_le ((min_le_left _ _).trans (min_le_left _ _))
+    rw [apply_eq_zero_of_apply_eq_graph_sub hF h, sub_zero]
+    simpa [Prod.norm_def] using hεδ.trans_le ((min_le_left _ _).trans (min_le_left _ _))
   rw [o.localIndex_eq_ncard_of_hasFDerivAt hn hr hδ₂ hδ₂le
     (fun p hp ↦ eq_of_mem_closedBall_of_apply_eq hF h hiso (ball_subset_closedBall hp)) hy
     (fun p hp hFp ↦ (hL p hp hFp).1) (fun p hp hFp ↦ (hL p hp hFp).2), hS,
@@ -293,7 +297,7 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub
     (hF : ∀ p, F p = (p.1, f p.1) - u p.2) {w₀ : ℂ} (hf : AnalyticAt ℂ f (u w₀).1)
     (hu : AnalyticAt ℂ u w₀) (h : f (u w₀).1 = (u w₀).2) :
     o.localIndex o F ((u w₀).1, w₀) = analyticOrderNatAt (fun w ↦ (u w).2 - f (u w).1) w₀ := by
-  have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := by rw [h, sub_self]
+  have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := sub_eq_zero.2 h.symm
   have hφa := analyticAt_snd_sub_comp_fst hf hu
   rcases hφa.eventually_eq_or_eventually_ne (analyticAt_const (v := (0 : ℂ))) with hconst | hisol
   · rw [o.localIndex_eq_zero_of_apply_eq_graph_sub hF h hu.continuousAt hconst, analyticOrderNatAt,
@@ -331,7 +335,7 @@ theorem localIndex_eq_one_iff_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p
     (h : f (u w₀).1 = (u w₀).2) :
     o.localIndex o F ((u w₀).1, w₀) = 1 ↔
       LinearIndependent ℂ ![((1 : ℂ), deriv f (u w₀).1), deriv u w₀] := by
-  have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := by rw [h, sub_self]
+  have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := sub_eq_zero.2 h.symm
   have key := (analyticAt_snd_sub_comp_fst hf hu).analyticOrderAt_sub_eq_one_iff_deriv_ne_zero
   simp only [hφ₀, sub_zero] at key
   rw [(hasDerivAt_snd_sub_comp_fst hf.differentiableAt hu.differentiableAt).deriv] at key
@@ -357,7 +361,7 @@ theorem two_le_localIndex_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p.1) 
     rcases ENat.toNat_eq_zero.1 hzero with h₀ | htop
     · rcases analyticOrderAt_eq_zero.1 h₀ with h₀ | h₀
       · exact h₀ (analyticAt_snd_sub_comp_fst hf hu)
-      · exact h₀ (by rw [h, sub_self])
+      · exact h₀ (sub_eq_zero.2 h.symm)
     · exact hiso ((analyticOrderAt_eq_top.1 htop).mono fun w hw ↦ sub_eq_zero.1 hw)
   rw [o.localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub hn hF hf hu h] at hne₁ ⊢
   omega
