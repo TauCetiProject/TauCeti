@@ -102,6 +102,20 @@ theorem cone_single_of_not {v : ι} {n : ℕ} (c : RealizationCell K n)
     cone R v n (single c a) = 0 := by
   simp [cone, h]
 
+/-- Every cell in the support of a cone is the cone on a cell of the original chain that can be
+coned off. -/
+theorem exists_eq_cone_of_mem_support_cone {v : ι} {n : ℕ} {z : OrderedSimplicialChain K R n}
+    {d : RealizationCell K (n + 1)} (hd : d ∈ (cone R v n z).support) :
+    ∃ e ∈ z.support, ∃ (hlt : ∀ x ∈ e.val.val, x < v) (hK : insert v e.val.val ∈ K),
+      d = e.cone v hlt hK := by
+  classical
+  rw [← z.sum_single, Finsupp.sum, map_sum] at hd
+  obtain ⟨e, he, hd⟩ := Finsupp.mem_support_finsetSum _ hd
+  by_cases h : (∀ x ∈ e.val.val, x < v) ∧ insert v e.val.val ∈ K
+  · rw [cone_single e h.1 h.2] at hd
+    exact ⟨e, he, h.1, h.2, Finset.mem_singleton.mp (Finsupp.support_single_subset hd)⟩
+  · simp [cone_single_of_not e h] at hd
+
 end Semiring
 
 variable {R : Type v} [Ring R]

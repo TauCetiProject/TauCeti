@@ -33,8 +33,17 @@ Completeness of the scalar field is essential: for the canonical `ℚ`-linear in
 `T : ℚ →L[ℚ] ℝ`, `rank T = 1` gives `a₁(T) = 0`, whereas `T.fromCompletion` identifies with the
 identity on `ℝ`, whose `ℚ`-rank is uncountable and so has `a₁ = 1`.
 
+Completeness of `𝕜` is not needed to compare the two extensions themselves: when `F` is complete
+and Hausdorff, `T.completion` and `T.fromCompletion` factor through one another via the
+contractions `Completion.toComplL` and `(id 𝕜 F).fromCompletion`, so
+`aₙ(T.fromCompletion) = aₙ(T.completion)` over any nontrivially normed field
+(`ContinuousLinearMap.singularValue_fromCompletion_eq_completion`).
+
 ## Main declarations
 
+* `ContinuousLinearMap.singularValue_fromCompletion_eq_completion`: for complete Hausdorff `F`,
+  `T.fromCompletion.singularValue n = T.completion.singularValue n` over any nontrivially normed
+  field.
 * `ContinuousLinearMap.singularValue_completion`: over a complete scalar field,
   `T.completion.singularValue n = T.singularValue n`.
 * `ContinuousLinearMap.singularValue_fromCompletion`: over a complete scalar field,
@@ -63,6 +72,39 @@ open scoped NNReal
 
 namespace ContinuousLinearMap
 
+section FromCompletion
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [T0Space F] [CompleteSpace F]
+
+/-- When the codomain is complete and Hausdorff, the one-sided extension `T.fromCompletion` and
+the two-sided extension `T.completion` have the same approximation numbers over any nontrivially
+normed field: each factors through the other via a contraction. -/
+theorem singularValue_fromCompletion_eq_completion (T : E →L[𝕜] F) (n : ℕ) :
+    T.fromCompletion.singularValue n = T.completion.singularValue n := by
+  refine le_antisymm ?_ ?_
+  · have hfac : T.fromCompletion =
+        (ContinuousLinearMap.id 𝕜 F).fromCompletion ∘L T.completion :=
+      fromCompletion_unique _ _ fun x ↦ by simp
+    have hnorm : ‖(ContinuousLinearMap.id 𝕜 F).fromCompletion‖₊ ≤ 1 := by
+      rw [← NNReal.coe_le_coe, coe_nnNorm, norm_fromCompletion]
+      exact_mod_cast norm_id_le
+    rw [hfac]
+    exact (((ContinuousLinearMap.id 𝕜 F).fromCompletion).singularValue_comp_le_left
+      T.completion n).trans (mul_le_of_le_one_left' hnorm)
+  · have hfac : T.completion =
+        (Completion.toComplL : F →L[𝕜] Completion F) ∘L T.fromCompletion :=
+      (fromCompletion_unique ((Completion.toComplL : F →L[𝕜] Completion F) ∘L T) T.completion
+        fun x ↦ by simp).symm.trans (fromCompletion_unique _ _ fun x ↦ by simp)
+    have hnorm : ‖(Completion.toComplL : F →L[𝕜] Completion F)‖₊ ≤ 1 := by
+      exact_mod_cast (Completion.toComplₗᵢ : F →ₗᵢ[𝕜] Completion F).norm_toContinuousLinearMap_le
+    rw [hfac]
+    exact ((Completion.toComplL : F →L[𝕜] Completion F).singularValue_comp_le_left
+      T.fromCompletion n).trans (mul_le_of_le_one_left' hnorm)
+
+end FromCompletion
+
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -88,27 +130,8 @@ theorem singularValue_completion (T : E →L[𝕜] F) (n : ℕ) :
 to the completion of its domain preserves all approximation numbers. -/
 @[simp]
 theorem singularValue_fromCompletion [T0Space F] [CompleteSpace F] (T : E →L[𝕜] F) (n : ℕ) :
-    T.fromCompletion.singularValue n = T.singularValue n := by
-  rw [← T.singularValue_completion]
-  refine le_antisymm ?_ ?_
-  · have hfac : T.fromCompletion =
-        (ContinuousLinearMap.id 𝕜 F).fromCompletion ∘L T.completion :=
-      fromCompletion_unique _ _ fun x ↦ by simp
-    have hnorm : ‖(ContinuousLinearMap.id 𝕜 F).fromCompletion‖₊ ≤ 1 := by
-      rw [← NNReal.coe_le_coe, coe_nnNorm, norm_fromCompletion]
-      exact_mod_cast norm_id_le
-    rw [hfac]
-    exact (((ContinuousLinearMap.id 𝕜 F).fromCompletion).singularValue_comp_le_left
-      T.completion n).trans (mul_le_of_le_one_left' hnorm)
-  · have hfac : T.completion =
-        (Completion.toComplL : F →L[𝕜] Completion F) ∘L T.fromCompletion :=
-      (fromCompletion_unique ((Completion.toComplL : F →L[𝕜] Completion F) ∘L T) T.completion
-        fun x ↦ by simp).symm.trans (fromCompletion_unique _ _ fun x ↦ by simp)
-    have hnorm : ‖(Completion.toComplL : F →L[𝕜] Completion F)‖₊ ≤ 1 := by
-      exact_mod_cast (Completion.toComplₗᵢ : F →ₗᵢ[𝕜] Completion F).norm_toContinuousLinearMap_le
-    rw [hfac]
-    exact ((Completion.toComplL : F →L[𝕜] Completion F).singularValue_comp_le_left
-      T.fromCompletion n).trans (mul_le_of_le_one_left' hnorm)
+    T.fromCompletion.singularValue n = T.singularValue n :=
+  (T.singularValue_fromCompletion_eq_completion n).trans (T.singularValue_completion n)
 
 /-- Over a complete scalar field, composing a bounded linear map with the canonical embedding of
 its codomain into the completion preserves all approximation numbers. -/

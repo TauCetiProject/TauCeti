@@ -10,8 +10,6 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
-import Mathlib.Tactic
-
 /-!
 # Verma modules of `U_q(sl₂)`
 

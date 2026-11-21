@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.CovariancePerturbation
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 public import Mathlib.Probability.IdentDistrib
 
+import TauCeti.Probability.RandomMatrix.Frobenius
+
 /-!
 # Bounded approximation of sample covariance matrices
 
@@ -100,27 +102,12 @@ theorem
         ∂((Y ω).sampleCovariance.spectralMeasure
           (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)‖}
       ≤ (K : ℝ) ^ 2 * (∫ ω, ‖Z ω‖ ^ 2 ∂Q) / ε ^ 2 := by
-  have hsq (ω : Ω) : ‖X ω - Y ω‖ ^ 2 = ∑ i, ∑ j, ‖X ω i j - Y ω i j‖ ^ 2 := by
-    simp only [Matrix.frobenius_norm_def, ← Real.sqrt_eq_rpow, Real.rpow_two]
-    exact Real.sq_sqrt (by positivity)
-  have hint (i : p) (j : n) : Integrable (fun ω ↦ ‖X ω i j - Y ω i j‖ ^ 2) P :=
-    ((hid i j).memLp_iff.mpr hZ).norm.integrable_sq
-  have hXY : Integrable (fun ω ↦ ‖X ω - Y ω‖ ^ 2) P := by
-    simp_rw [hsq]
-    exact integrable_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j
-  have heq : ∫ ω, ‖X ω - Y ω‖ ^ 2 ∂P =
-      (Fintype.card p * Fintype.card n : ℝ) * ∫ ω, ‖Z ω‖ ^ 2 ∂Q := by
-    have heach (i : p) (j : n) :
-        ∫ ω, ‖X ω i j - Y ω i j‖ ^ 2 ∂P = ∫ ω, ‖Z ω‖ ^ 2 ∂Q :=
-      ((hid i j).comp (by fun_prop : Measurable (fun z : 𝕜 ↦ ‖z‖ ^ 2))).integral_eq
-    simp_rw [hsq]
-    rw [integral_finsetSum _ (fun i _ ↦
-      integrable_finsetSum _ fun j _ ↦ hint i j)]
-    simp_rw [integral_finsetSum _ (fun j _ ↦ hint _ j), heach]
-    simp [mul_assoc]
+  have hXY : Integrable (fun ω ↦ ‖X ω - Y ω‖ ^ 2) P :=
+    integrable_frobenius_norm_sq (X := fun ω ↦ X ω - Y ω) fun i j ↦
+      (hid i j).memLp_iff.mpr hZ
   have h :=
     measureReal_norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_ge_le X Y hXY hf hε
-  rw [heq] at h
+  rw [integral_frobenius_norm_sq_of_identDistrib (X := fun ω ↦ X ω - Y ω) hid] at h
   cases isEmpty_or_nonempty n
   · exact h.trans (by
       simp only [Fintype.card_eq_zero, CharP.cast_eq_zero, mul_zero, zero_mul, div_zero]
