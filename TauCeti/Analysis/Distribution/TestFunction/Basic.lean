@@ -22,6 +22,8 @@ infinite-dimensional space every test function is zero (Riesz).
 
 ## Main declarations
 
+* `TestFunction.isCompact_preimage_tsupport`: the preimage of a test function's support in
+  its open domain is compact.
 * `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
   function is zero.
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
@@ -50,6 +52,12 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- The preimage of a test function's support in the domain subtype `Ω` is compact. -/
+theorem isCompact_preimage_tsupport (φ : 𝓓^{n}(Ω, F)) :
+    IsCompact ((↑) ⁻¹' tsupport φ : Set Ω) :=
+  Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
+    (by simpa using φ.tsupport_subset)
 
 /-- On an infinite-dimensional space every test function is zero: a nonzero continuous function
 with compact support forces finite dimension (Riesz,

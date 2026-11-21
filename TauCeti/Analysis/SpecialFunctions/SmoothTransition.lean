@@ -93,6 +93,8 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   `ψ ((n + 1) (f - t))` converge pointwise to the indicator of `{f > t}`.
 * `Real.smoothTransition.enorm_sub_indicator_le_one`: `ψ y` differs from the indicator of any set
   by at most `1`.
+* `Real.smoothTransition.abs_intervalIntegral_mul_le`: integrating a function against `ψ ∘ f`
+  is bounded in absolute value by the integral of its absolute value.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
@@ -101,6 +103,7 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
   when `u` is.
+* `ContDiff.smoothTransition_mul_sub`: `ψ (c (t - u))` is `C^n` when `u` is.
 * `TauCeti.positiveCutoff`: the cutoff of `g` near zero.
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
@@ -560,6 +563,20 @@ theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition
   · simp [← h]
   · exact (h.trans_le (le_add_one_sub x)).ne'
 
+/-- Integrating a function against a composition with `Real.smoothTransition` is bounded in
+absolute value by the integral of its absolute value. -/
+theorem abs_intervalIntegral_mul_le {g f : ℝ → ℝ} {a b : ℝ}
+    (hg : IntervalIntegrable g volume a b) :
+    |∫ t in a..b, g t * smoothTransition (f t)| ≤ ∫ t in uIoc a b, |g t| := by
+  rw [← Real.norm_eq_abs]
+  refine (intervalIntegral.norm_integral_le_integral_norm_uIoc
+    (f := fun t => g t * smoothTransition (f t))).trans ?_
+  refine integral_mono_of_nonneg (ae_of_all _ fun _ => norm_nonneg _)
+    (intervalIntegrable_iff.1 hg.abs) (ae_of_all _ fun t => ?_)
+  dsimp only
+  rw [Real.norm_eq_abs, abs_mul]
+  exact mul_le_of_le_one_right (abs_nonneg _) (abs_le_one _)
+
 end Real.smoothTransition
 
 /-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,
@@ -605,6 +622,12 @@ theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricS
   ((Real.smoothTransition.contDiff (n := 1)).comp
     (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
     |>.comp_locallyLipschitzOn hu
+
+/-- If `u` is `C^n`, then `ψ (c (t - u))` is `C^n` for the smooth transition function `ψ`. -/
+theorem ContDiff.smoothTransition_mul_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {u : E → ℝ} (hu : ContDiff ℝ n u) (c t : ℝ) :
+    ContDiff ℝ n fun x => Real.smoothTransition (c * (t - u x)) :=
+  Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_const.sub hu))
 
 namespace TauCeti
 
