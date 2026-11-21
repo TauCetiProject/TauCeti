@@ -143,6 +143,23 @@ lemma ext_to {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 
   rw [← Category.comp_id f, ← Category.comp_id g, ← id_X φ p q hpq, Preadditive.comp_add,
     Preadditive.comp_add, reassoc_of% h₁, reassoc_of% h₂]
 
+/-- The first map of a short complex of cochain complexes lifts to the mapping cocone
+of its second map, using the zero null-homotopy. -/
+@[expose]
+noncomputable def liftShortComplex (S : ShortComplex (CochainComplex C ℤ)) :
+    S.X₁ ⟶ mappingCocone S.g := lift S.g S.f 0 (by simp)
+
+/-- The first projection of the short-complex lift is the first map of the short complex. -/
+@[reassoc (attr := simp)]
+lemma liftShortComplex_fst (S : ShortComplex (CochainComplex C ℤ)) :
+    liftShortComplex S ≫ fst S.g = S.f := lift_fst _ _ _ _
+
+/-- The second projection of the short-complex lift vanishes in every degree. -/
+@[reassoc (attr := simp)]
+lemma liftShortComplex_f_snd_v (S : ShortComplex (CochainComplex C ℤ))
+    (p q : ℤ) (hpq : p + -1 = q) : (liftShortComplex S).f p ≫ (snd S.g).v p q hpq = 0 :=
+  (lift_f_snd_v _ _ _ _ p q hpq).trans (Cochain.zero_v ..)
+
 end
 
 section Abelian
@@ -305,6 +322,43 @@ noncomputable def mappingCoconeFunctorFst : mappingCoconeFunctor τ ⟶ F where
 theorem mappingCoconeFunctorFst_app (X : D) :
     (mappingCoconeFunctorFst τ).app X = mappingCocone.fst (τ.app X) :=
   (rfl)
+
+end CategoryTheory.NatTrans
+
+namespace CochainComplex.mappingCocone
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+
+/-- The short-complex lift into a mapping cocone is natural in morphisms of short complexes. -/
+@[reassoc]
+lemma liftShortComplex_naturality {S T : ShortComplex (CochainComplex C ℤ)} (f : S ⟶ T) :
+    f.τ₁ ≫ liftShortComplex T =
+      liftShortComplex S ≫ (NatTrans.mappingCoconeFunctor ShortComplex.π₂Toπ₃).map f := by
+  let m : mappingCocone S.g ⟶ mappingCocone T.g :=
+    (NatTrans.mappingCoconeFunctor ShortComplex.π₂Toπ₃).map f
+  have hfst : (f.τ₁ ≫ liftShortComplex T) ≫ fst T.g = (liftShortComplex S ≫ m) ≫ fst T.g := by
+    have hm : m ≫ fst T.g = fst S.g ≫ f.τ₂ :=
+      shiftFunctor_map_mappingCone_map_comp_fst S.g T.g f.τ₂ f.τ₃ f.comm₂₃.symm
+    simp only [Category.assoc, liftShortComplex_fst, hm, liftShortComplex_fst_assoc]
+    exact f.comm₁₂
+  have h (p : ℤ) : (f.τ₁ ≫ liftShortComplex T).f p = (liftShortComplex S ≫ m).f p := by
+    apply ext_to T.g p (p + -1) rfl
+    · exact HomologicalComplex.congr_hom hfst p
+    · have hm : m.f p ≫ (snd T.g).v p (p + -1) rfl =
+          (snd S.g).v p (p + -1) rfl ≫ f.τ₃.f (p + -1) :=
+        shiftFunctor_map_mappingCone_map_f_snd_v S.g T.g f.τ₂ f.τ₃ f.comm₂₃.symm p
+      simp only [HomologicalComplex.comp_f, Category.assoc, liftShortComplex_f_snd_v, hm,
+        liftShortComplex_f_snd_v_assoc, comp_zero, zero_comp]
+  exact HomologicalComplex.hom_ext _ _ h
+
+end CochainComplex.mappingCocone
+
+namespace CategoryTheory.NatTrans
+
+open CochainComplex TauCeti
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+  {D : Type*} [Category* D] {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
 
 variable [HasShift D ℤ] [F.CommShift ℤ] [G.CommShift ℤ] [NatTrans.CommShift τ ℤ]
 

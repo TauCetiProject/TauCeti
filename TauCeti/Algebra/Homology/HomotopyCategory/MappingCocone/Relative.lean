@@ -65,6 +65,16 @@ lemma relativeCoordinates_apply (p q : ℤ) (hpq : p + -1 = q) (x : (mappingCoco
   exact congrArg (fun y : L.X (p + -1) × K.X p ↦ (y.2, -y.1))
     (homotopyCofiber.XEquiv_apply f (by simp : (ComplexShape.up ℤ).Rel (p + -1) p) x)
 
+/-- In relative coordinates the short-complex lift sends `a` to `(S.f a, 0)`. -/
+@[simp]
+lemma relativeCoordinates_liftShortComplex (S : ShortComplex (CochainComplex (ModuleCat.{v} R) ℤ))
+    (p q : ℤ) (hpq : p + -1 = q) (a : S.X₁.X p) :
+    relativeCoordinates S.g p q hpq ((liftShortComplex S).f p a) = (S.f.f p a, 0) := by
+  rw [relativeCoordinates_apply]
+  apply Prod.ext
+  · exact congrArg (fun g ↦ g a) (HomologicalComplex.congr_hom (liftShortComplex_fst S) p)
+  · simp [← ModuleCat.comp_apply]
+
 lemma relativeCoordinates_symm_apply (p q : ℤ) (hpq : p + -1 = q) (x : K.X p × L.X q) :
     (relativeCoordinates f p q hpq).symm x = (inl f).v p p (add_zero p) x.1 -
       (inr f).1.v q p (by omega) x.2 := by

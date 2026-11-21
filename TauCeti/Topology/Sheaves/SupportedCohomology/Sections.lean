@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Module
 public import TauCeti.Topology.Sheaves.LocalCohomology.Basic
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.Sites.Limits
 import TauCeti.Topology.Sheaves.Flasque.Locality
 
@@ -280,6 +281,11 @@ def supportedSubmoduleSectionsι (W : Opens X) :
   naturality {F G} f := congrArg (fun g : F.supportedSubmoduleSheaf S ⟶ G ↦
     g.hom.app (op W)) (supportedSubmoduleFunctor_map_ι S f)
 
+/-- At a sheaf `F`, the inclusion on supported sections is evaluation of the sheaf inclusion. -/
+lemma supportedSubmoduleSectionsι_app (W : Opens X)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (supportedSubmoduleSectionsι S W).app F = (F.supportedSubmoduleι S).hom.app (op W) := (rfl)
+
 -- Rewrite before evaluation simplifies the bundled section objects.
 @[simp↓]
 lemma supportedSubmoduleSectionsι_app_apply (W : Opens X)
@@ -288,12 +294,44 @@ lemma supportedSubmoduleSectionsι_app_apply (W : Opens X)
     (supportedSubmoduleSectionsι S W).app F s = s.val :=
   F.supportedSubmoduleι_hom_app_apply S (op W) s
 
+/-- Supported sections vanish on restriction to the open complement of the support. -/
+lemma supportedSubmoduleSectionsι_comp_complInclusion (W : Opens X) :
+    supportedSubmoduleSectionsι (R := R) S W ≫
+      (sheafSections _ (ModuleCat.{u} R)).map (S.complInclusion W).op = 0 := by
+  ext F s
+  exact (F.mem_supportedSubmodule_iff).1 s.property
+
+/-- The inclusion of supported sections and restriction to the complement form a short exact
+sequence at any sheaf whose restriction map is an epimorphism. -/
+lemma shortExact_supportedSubmoduleSectionsι (W : Opens X)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (h : Epi (F.obj.map (S.complInclusion W).op)) :
+    (ShortComplex.mk ((supportedSubmoduleSectionsι S W).app F)
+      (F.obj.map (S.complInclusion W).op)
+      (NatTrans.congr_app (supportedSubmoduleSectionsι_comp_complInclusion (R := R) S W) F)
+    ).ShortExact := by
+  refine .mk' ?_ ?_ h
+  · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
+    simpa only [supportedSubmoduleSectionsι_app] using
+      (range_supportedSubmoduleι_hom_app F S (op W)).trans
+        (Submodule.ext fun _ ↦ F.mem_supportedSubmodule_iff)
+  · exact (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
+
 /-- Restriction of supported sections, natural in the coefficient sheaf. -/
 def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
     supportedSubmoduleSectionsFunctor (R := R) S W ⟶
       supportedSubmoduleSectionsFunctor S W' :=
   Functor.whiskerLeft (supportedSubmoduleFunctor S)
     ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
+
+/-- The inclusion of supported sections into all sections commutes with restriction. -/
+@[reassoc (attr := simp)]
+lemma supportedSubmoduleSectionsRestrict_ι {W' W : Opens X} (i : W' ⟶ W) :
+    supportedSubmoduleSectionsRestrict (R := R) S i ≫ supportedSubmoduleSectionsι S W' =
+      supportedSubmoduleSectionsι S W ≫ (sheafSections _ (ModuleCat.{u} R)).map i.op := by
+  apply NatTrans.ext
+  funext F
+  exact (F.supportedSubmoduleι S).hom.naturality i.op
 
 /-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
 -- Rewrite before evaluation simplifies the bundled section object.
