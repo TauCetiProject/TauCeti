@@ -32,6 +32,8 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
+* `TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric`: `₂F₁ a b c` is represented on the open
+  unit ball around `0` by the scalar power series `ordinaryHypergeometricCoefficient a b c`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
@@ -92,16 +94,24 @@ theorem one_le_radius_ordinaryHypergeometricSeries (a b c : 𝕂) :
       rw [hc, ordinaryHypergeometric_radius_top_of_neg_nat₃]
       exact le_top
 
+/-- On the open unit ball around `0`, `₂F₁(a, b; c; ·)` is represented by its scalar power series
+with coefficients `ordinaryHypergeometricCoefficient a b c`, for all parameters. -/
+theorem hasFPowerSeriesOnBall_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) :
+    HasFPowerSeriesOnBall (₂F₁ a b c : 𝔸 → 𝔸)
+      (FormalMultilinearSeries.ofScalars 𝔸 (ordinaryHypergeometricCoefficient a b c)) 0 1 := by
+  unfold ordinaryHypergeometric
+  rw [← ordinaryHypergeometricSeries]
+  exact ((ordinaryHypergeometricSeries 𝔸 a b c).hasFPowerSeriesOnBall
+    (zero_lt_one.trans_le (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c))).mono
+    zero_lt_one (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c)
+
 /-- The ordinary hypergeometric function `₂F₁(a, b; c; ·)` is analytic on the open unit ball, for
 all parameters. -/
 theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) :
     AnalyticOnNhd 𝕂 (₂F₁ a b c : 𝔸 → 𝔸) (Metric.ball 0 1) := by
   intro x hx
-  have h1 := one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c
-  exact ((ordinaryHypergeometricSeries 𝔸 a b c).hasFPowerSeriesOnBall
-    (zero_lt_one.trans_le h1)).analyticAt_of_mem
-      (Metric.eball_subset_eball h1 (by
-        simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx))
+  exact (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 a b c).analyticAt_of_mem
+    (by simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx)
 
 section Terminating
 
