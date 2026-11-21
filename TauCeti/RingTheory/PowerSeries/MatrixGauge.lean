@@ -98,17 +98,23 @@ section CommRing
 
 variable [CommRing R] [Fintype m] [Fintype n]
 
+/-- The `k`-th coefficient matrix of `Y A - B Y` is `∑_{i + j = k} (Yᵢ Aⱼ - Bⱼ Yᵢ)`. -/
+private theorem map_coeff_mul_sub_mul (A : Matrix m m R⟦X⟧) (B : Matrix n n R⟦X⟧)
+    (Y : Matrix n m R⟦X⟧) (k : ℕ) :
+    (Y * A - B * Y).map (coeff k) = ∑ p ∈ antidiagonal k,
+      (Y.map (coeff p.1) * A.map (coeff p.2) - B.map (coeff p.2) * Y.map (coeff p.1)) := by
+  rw [Matrix.map_sub _ (map_sub _), map_coeff_matrix_mul, map_coeff_matrix_mul,
+    ← Nat.sum_antidiagonal_swap (f := fun p ↦ B.map (coeff p.1) * Y.map (coeff p.2)),
+    ← sum_sub_distrib]
+  simp only [Prod.fst_swap, Prod.snd_swap]
+
 /-- The coefficient form of `Y' = Y A - B Y`:
 `(k + 1) Yₖ₊₁ = ∑_{i + j = k} (Yᵢ Aⱼ - Bⱼ Yᵢ)`. -/
 private theorem nsmul_map_coeff_succ_eq_sum {A : Matrix m m R⟦X⟧} {B : Matrix n n R⟦X⟧}
     {Y : Matrix n m R⟦X⟧} (hY : Y.map d⁄dX = Y * A - B * Y) (k : ℕ) :
     (k + 1) • Y.map (coeff (k + 1)) = ∑ p ∈ antidiagonal k,
       (Y.map (coeff p.1) * A.map (coeff p.2) - B.map (coeff p.2) * Y.map (coeff p.1)) := by
-  rw [← map_coeff_map_derivative, hY, Matrix.map_sub _ (map_sub _), map_coeff_matrix_mul,
-    map_coeff_matrix_mul,
-    ← Nat.sum_antidiagonal_swap (f := fun p ↦ B.map (coeff p.1) * Y.map (coeff p.2)),
-    ← sum_sub_distrib]
-  simp only [Prod.fst_swap, Prod.snd_swap]
+  rw [← map_coeff_map_derivative, hY, map_coeff_mul_sub_mul]
 
 /-- A solution of `Y' = Y A - B Y` with vanishing constant term vanishes, if `R` has unique
 division by positive integers. -/
@@ -157,8 +163,7 @@ private theorem nsmul_solutionCoeff_succ (A : Matrix m m R⟦X⟧) (B : Matrix n
         B.map (coeff p.2) * solutionCoeff A B Y₀ p.1) := by
   rw [solutionCoeff, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul,
     mul_inv_cancel₀ (by positivity), one_smul, Nat.sum_antidiagonal_eq_sum_range_succ_mk,
-    ← Fin.sum_univ_eq_sum_range (fun i ↦ solutionCoeff A B Y₀ i * A.map (coeff (k - i)) -
-      B.map (coeff (k - i)) * solutionCoeff A B Y₀ i)]
+    Finset.sum_range]
 
 /-- **Existence for `Y' = Y A - B Y`.** Over a `ℚ`-algebra, the linear differential equation
 `Y' = Y A - B Y` for matrices of power series has a solution with any prescribed constant term. -/
@@ -170,11 +175,8 @@ theorem exists_map_derivative_eq_mul_sub_mul (A : Matrix m m R⟦X⟧) (B : Matr
     ext i j
     simp [Y]
   refine ⟨Y, matrix_ext fun k ↦ ?_, by rw [← coeff_zero_eq_constantCoeff, hY 0, solutionCoeff]⟩
-  rw [map_coeff_map_derivative, Matrix.map_sub _ (map_sub _), map_coeff_matrix_mul,
-    map_coeff_matrix_mul,
-    ← Nat.sum_antidiagonal_swap (f := fun p ↦ B.map (coeff p.1) * Y.map (coeff p.2)),
-    ← sum_sub_distrib, hY, nsmul_solutionCoeff_succ]
-  simp only [hY, Prod.fst_swap, Prod.snd_swap]
+  rw [map_coeff_map_derivative, map_coeff_mul_sub_mul, hY, nsmul_solutionCoeff_succ]
+  simp only [hY]
 
 /-- **Regular formal connections are determined by their fibre at the origin.** Over a
 `ℚ`-algebra `R`, possibly nonreduced, let `A` and `B` be connection matrices over `R⟦X⟧`. Taking
