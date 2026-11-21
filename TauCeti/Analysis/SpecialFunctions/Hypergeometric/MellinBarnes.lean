@@ -14,7 +14,7 @@ import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
-import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
+import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex

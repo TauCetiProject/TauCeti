@@ -30,6 +30,11 @@ For angles `α, β > 0` and `γ ≥ 0` with
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
 hyperbolic scale in the matrix representations of triangle groups.
+
+For complex arguments, `(Complex.sin z).re = Real.sin z.re * Real.cosh z.im` (`Complex.sin_re`),
+which yields the vertical-line lower bound `|Real.sin z.re| * Real.cosh z.im ≤ ‖Complex.sin z‖`
+(`Complex.abs_sin_re_mul_cosh_im_le_norm_sin`) and the reciprocal exponential decay bound
+`‖(Complex.sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|)` (`Complex.norm_inv_sin_le`).
 -/
 
 public section
@@ -212,3 +217,39 @@ theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < 
   field_simp
 
 end TauCeti
+
+namespace Complex
+
+/-- The real part of the complex sine is `Real.sin z.re * Real.cosh z.im`. -/
+theorem sin_re (z : ℂ) : (sin z).re = Real.sin z.re * Real.cosh z.im := by
+  conv_lhs => rw [← re_add_im z]
+  rw [sin_add, sin_mul_I, cos_mul_I]
+  simp [sin_ofReal_re, cosh_ofReal_re]
+
+/-- The modulus of `Complex.sin z` is at least `|Real.sin z.re| * Real.cosh z.im`, the magnitude
+of its real part. -/
+theorem abs_sin_re_mul_cosh_im_le_norm_sin (z : ℂ) :
+    |Real.sin z.re| * Real.cosh z.im ≤ ‖sin z‖ := by
+  calc |Real.sin z.re| * Real.cosh z.im
+      = |(sin z).re| := by rw [sin_re, abs_mul, abs_of_pos (Real.cosh_pos _)]
+    _ ≤ ‖sin z‖ := abs_re_le_norm (sin z)
+
+/-- Whenever `Real.sin z.re ≠ 0`, the reciprocal of `Complex.sin z` decays exponentially in
+`|z.im|`: `‖(Complex.sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|)`. -/
+theorem norm_inv_sin_le {z : ℂ} (hz : Real.sin z.re ≠ 0) :
+    ‖(sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|) := by
+  have hsin_pos : 0 < |Real.sin z.re| := abs_pos.mpr hz
+  have hcosh : Real.exp |z.im| / 2 ≤ Real.cosh z.im := by
+    rw [Real.cosh_eq]
+    linarith [Real.exp_abs_le z.im]
+  have hge : |Real.sin z.re| * Real.exp |z.im| / 2 ≤ ‖sin z‖ :=
+    calc |Real.sin z.re| * Real.exp |z.im| / 2
+        = |Real.sin z.re| * (Real.exp |z.im| / 2) := by ring
+      _ ≤ |Real.sin z.re| * Real.cosh z.im := by gcongr
+      _ ≤ ‖sin z‖ := abs_sin_re_mul_cosh_im_le_norm_sin z
+  rw [norm_inv]
+  refine ((inv_le_inv₀ (lt_of_lt_of_le (by positivity) hge) (by positivity)).mpr hge).trans_eq ?_
+  rw [Real.exp_neg]
+  field_simp [hsin_pos.ne']
+
+end Complex

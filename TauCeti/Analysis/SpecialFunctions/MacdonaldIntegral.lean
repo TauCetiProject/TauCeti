@@ -79,7 +79,7 @@ at `p = 1 / (n + 2)` and `ζ = 2p z^{(n + 2)/2}`. That representation is not pro
 
 The Mellin-inversion proof of `Complex.mellinInv_Gamma_mul_Gamma_add` follows that of
 `Complex.mellinInv_Gamma_mul_Gamma_sub` in
-`TauCeti/Analysis/SpecialFunctions/Gamma/MellinBarnes.lean`, and the holomorphy proof of
+`TauCeti/Analysis/SpecialFunctions/Gamma/MellinBarnes/Basic.lean`, and the holomorphy proof of
 `Complex.differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi` follows that of
 `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi` in
 `TauCeti/Analysis/SpecialFunctions/Gamma/IntegralComplexRate.lean`.
