@@ -56,8 +56,7 @@ The three main results are:
   serves at every time. If `γ` has bounded range, it suffices that `V'` be uniformly continuous on
   balls around `0`
   (`TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range`), for instance
-  continuous on a proper space
-  (`TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous`).
+  continuous on a proper space.
 * **Higher regularity** (`TauCeti.WeakDerivStep.contDiffAt_trajectorySection`). If `γ` is
   continuous with bounded range and `V` is uniformly `C^{n+1}` (`TauCeti.UniformContDiffOn`) on a
   set that `γ + ξ₀` stays a fixed distance inside, then the section is `C^{n+1}` at `ξ₀`. Its
@@ -66,7 +65,7 @@ The three main results are:
   affine map into bounded continuous paths, on which the superposition operator `f ↦ -V' ∘ f` is
   `Cⁿ` (`BoundedContinuousFunction.contDiffAt_of_forall_apply_eq`). On a proper space a `Cⁿ`
   field, `n ≤ ∞`, therefore gives a `Cⁿ` section
-  (`TauCeti.WeakDerivStep.contDiff_trajectorySection_of_contDiff`). The Sard--Smale theorem asks
+  (`TauCeti.WeakDerivStep.contDiff_boundedTrajectorySection`). The Sard--Smale theorem asks
   for this finite-order regularity of a Fredholm map, above its index.
 
 Strict differentiability is what the implicit function theorem needs: when the trajectory operator
@@ -103,14 +102,10 @@ gives `IsIntegralCurve.exists_openPartialHomeomorph_setOf_isIntegralCurve_neg_gr
   trajectory operator.
 * `TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range`: the same along
   a reference path with bounded range.
-* `TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous`:
-  the same for a continuous derivative on a proper space.
 * `TauCeti.WeakDerivStep.contDiffAt_trajectorySection`: it is `C^{n+1}` at `ξ₀` when `V` is
   uniformly `C^{n+1}` near `γ + ξ₀`.
 * `TauCeti.WeakDerivStep.contDiff_trajectorySection`: it is `C^{n+1}` when `V` is uniformly
   `C^{n+1}` on all of `F`.
-* `TauCeti.WeakDerivStep.contDiff_trajectorySection_of_contDiff`: on a proper space, it is `Cⁿ`
-  when `V` is.
 * `TauCeti.WeakDerivStep.boundedTrajectorySection`: the section of a locally Lipschitz field
   around a bounded path, with its pointwise formula
   `TauCeti.WeakDerivStep.boundedTrajectorySection_apply_ae`.
@@ -121,8 +116,9 @@ gives `IsIntegralCurve.exists_openPartialHomeomorph_setOf_isIntegralCurve_neg_gr
 * `TauCeti.WeakDerivStep.boundedTrajectorySection_eq_iff_isIntegralCurve` and
   `TauCeti.WeakDerivStep.boundedTrajectorySection_eq_zero_iff`: its level sets are trajectories.
 * `TauCeti.WeakDerivStep.hasStrictFDerivAt_boundedTrajectorySection`: its strict derivative is the
-  trajectory operator, for a field with continuous derivative.
-* `TauCeti.WeakDerivStep.contDiff_boundedTrajectorySection`: it is `Cⁿ` when `V` is.
+  trajectory operator, for a field with continuous derivative on a proper space.
+* `TauCeti.WeakDerivStep.contDiff_boundedTrajectorySection`: on a proper space, it is `Cⁿ` when
+  `V` is.
 
 ## References
 
@@ -495,23 +491,6 @@ theorem hasStrictFDerivAt_trajectorySection_of_isBounded_range (hV : LipschitzWi
   rw [dist_zero_right]
   linarith [norm_add_apply_le hC ξc t]
 
-/-- **The linearization along a bounded reference path, continuous case.** On a proper
-space, a continuous derivative `V'` is uniformly continuous on balls, so
-`TauCeti.WeakDerivStep.hasStrictFDerivAt_trajectorySection_of_isBounded_range` applies. -/
-theorem hasStrictFDerivAt_trajectorySection_of_isBounded_range_of_continuous [ProperSpace F]
-    (hV : LipschitzWith K V) (hγ : AEStronglyMeasurable γ volume)
-    (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞) {V' : F → F →L[ℝ] F}
-    (hV' : ∀ x, HasFDerivAt V (V' x) x) (hV'c : Continuous V')
-    {ξ₀ : WeakDerivStep volume ⊤ p
-      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
-    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun t ↦ -V' (γ t + toZeroAtInfty (F := F) hp ξ₀ t)) :
-    HasStrictFDerivAt (trajectorySection V γ hV hγ hp) (trajectoryOperator AL) ξ₀ :=
-  hasStrictFDerivAt_trajectorySection_of_isBounded_range hV hγ hb hp hV'
-    (fun r ↦ ((isCompact_closedBall 0 r).uniformContinuousOn_of_continuous
-      hV'c.continuousOn).mono ball_subset_closedBall) hAL
-
 /-! ### Higher regularity -/
 
 /-- For a continuous reference path `γ` with bounded range, `ξ ↦ γ + ξ` is a smooth map from
@@ -599,32 +578,6 @@ theorem contDiff_trajectorySection (hV : LipschitzWith K V) (hγ : Continuous γ
     ContDiff ℝ (n + 1) (trajectorySection V γ hV hγ.aestronglyMeasurable hp) :=
   contDiff_iff_contDiffAt.2 fun _ ↦
     contDiffAt_trajectorySection hV hγ hb hp hVn one_pos fun _ ↦ subset_univ _
-
-/-- **The trajectory section of a `Cⁿ` field is `Cⁿ`.** On a proper space, let `V` be a Lipschitz
-vector field which is `Cⁿ` for some `n ≤ ∞`, and let `γ` be a continuous reference path with
-bounded range. Then the trajectory section is `Cⁿ`. -/
-theorem contDiff_trajectorySection_of_contDiff [ProperSpace F] (hV : LipschitzWith K V)
-    (hγ : Continuous γ) (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞) {n : ℕ∞}
-    (hVn : ContDiff ℝ n V) :
-    ContDiff ℝ n (trajectorySection V γ hV hγ.aestronglyMeasurable hp) := by
-  -- Continuity holds for every Lipschitz field (`lipschitzWith_trajectorySection`). For each
-  -- `m + 1 ≤ n`, along each Sobolev path `ξ₀` the field is uniformly `C^{m+1}` on a compact ball
-  -- containing a neighbourhood of `γ + ξ₀` (`ContDiffOn.uniformContDiffOn`), so
-  -- `contDiffAt_trajectorySection` applies.
-  refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
-  rcases m with _ | m
-  · exact contDiff_zero.2 (lipschitzWith_trajectorySection hV _ hp).continuous
-  refine contDiff_iff_contDiffAt.2 fun ξ₀ ↦ ?_
-  -- The path `γ + ξ₀` lies in the ball of radius `R - 1` about `0`.
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hb
-  set R := C + ‖toZeroAtInfty (F := F) hp ξ₀‖ + 1
-  have hVs : UniformContDiffOn ℝ (m + 1) V (closedBall 0 R) :=
-    ((hVn.of_le (by exact_mod_cast hm)).contDiffOn (s := ball 0 (R + 1))).uniformContDiffOn
-      isOpen_ball (closedBall_subset_ball (lt_add_one R)) (isCompact_closedBall 0 R)
-  refine contDiffAt_trajectorySection hV hγ hb hp hVs one_pos fun t ↦
-    ball_subset_closedBall.trans (closedBall_subset_closedBall' ?_)
-  rw [dist_zero_right]
-  linarith [norm_add_apply_le hC (toZeroAtInfty (F := F) hp ξ₀) t]
 
 /-! ### Locally Lipschitz fields along bounded paths -/
 
@@ -740,14 +693,15 @@ theorem boundedTrajectorySection_eq_trajectorySection (hV : LipschitzWith K V)
 /-- **Cutting the field off.** Around each Sobolev path `ξ₀`, the trajectory section of a locally
 Lipschitz field `V` is the trajectory section of the globally Lipschitz field obtained by
 precomposing `V` with the radial retraction onto a closed ball of radius `R + 2`, where `γ` and
-`γ + ξ₀` stay in the closed ball of radius `R`. -/
+`γ + ξ₀` stay in the closed ball of radius `R`, so that the unit balls around `γ + ξ₀` lie in the
+open ball of radius `R + 2`. -/
 private theorem exists_lipschitzWith_boundedTrajectorySection_eq (hV : LocallyLipschitz V)
     (hγ : AEStronglyMeasurable γ volume) (hb : Bornology.IsBounded (range γ)) (hp : p ≠ ∞)
     (ξ₀ : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ∃ (R : ℝ) (K : ℝ≥0) (W : F → F) (hW : LipschitzWith K W),
       EqOn W V (closedBall 0 (R + 2)) ∧ (∀ t, ‖γ t‖ ≤ R) ∧
-      (∀ t, ‖γ t + toZeroAtInfty (F := F) hp ξ₀ t‖ ≤ R) ∧
+      (∀ t, ball (γ t + toZeroAtInfty (F := F) hp ξ₀ t) 1 ⊆ ball 0 (R + 2)) ∧
       ∀ ξ ∈ ball ξ₀ (1 / 2),
         boundedTrajectorySection V γ hV hγ hb hp ξ = trajectorySection W γ hW hγ hp ξ := by
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hb
@@ -760,16 +714,17 @@ private theorem exists_lipschitzWith_boundedTrajectorySection_eq (hV : LocallyLi
   have hWV : EqOn (V ∘ radialRetraction (C + ‖ξc₀‖ + 2)) V (closedBall 0 (C + ‖ξc₀‖ + 2)) :=
     fun x hx ↦ by
       rw [Function.comp_apply, radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hx)]
-  refine ⟨C + ‖ξc₀‖, K * 2, _, hK.comp_radialRetraction hR, hWV, hγR,
-    fun t ↦ norm_add_apply_le hC ξc₀ t, fun ξ hξ ↦ ?_⟩
+  have hball (t : ℝ) : ball (γ t + ξc₀ t) 1 ⊆ ball 0 (C + ‖ξc₀‖ + 2) := by
+    refine ball_subset_ball' ?_
+    rw [dist_zero_right]
+    linarith [norm_add_apply_le hC ξc₀ t]
+  refine ⟨C + ‖ξc₀‖, K * 2, _, hK.comp_radialRetraction hR, hWV, hγR, hball, fun ξ hξ ↦ ?_⟩
   -- Paths `1 / 2`-close to `ξ₀` have continuous representatives `1`-close to that of `ξ₀`.
   have hz : ‖toZeroAtInfty (F := F) hp ξ - ξc₀‖ < 1 :=
     norm_toZeroAtInfty_sub_lt hp (by rw [← dist_eq_norm]; linarith [mem_ball.1 hξ])
-  refine boundedTrajectorySection_eq_trajectorySection_of_eqOn hV hγ hb hp _ hWV
+  exact boundedTrajectorySection_eq_trajectorySection_of_eqOn hV hγ hb hp _ hWV
     (fun t ↦ mem_closedBall_zero_iff.2 (by linarith [hγR t])) fun t ↦ ball_subset_closedBall
-      (ball_subset_ball' ?_ (add_apply_mem_ball_add_apply (γ := γ) hz t))
-  rw [dist_zero_right]
-  linarith [norm_add_apply_le hC ξc₀ t]
+      (hball t (add_apply_mem_ball_add_apply (γ := γ) hz t))
 
 /-- The trajectory section of a locally Lipschitz field around a bounded path is locally
 Lipschitz: near each `ξ₀` it is the trajectory section of a globally Lipschitz field. -/
@@ -810,7 +765,8 @@ theorem boundedTrajectorySection_eq_iff_isIntegralCurve (hV : LocallyLipschitz V
     mem_closedBall_zero_iff.2 (by linarith)
   rw [hS ξ (mem_ball_self (by norm_num)), trajectorySection_eq_iff_isIntegralCurve hW hγ hp hγ'
     hγ'c (by filter_upwards [hc] with s hs; rw [hs, hWV (hmem (hγR s))]) ξ]
-  exact forall_congr' fun t ↦ by simp only [Pi.add_apply, hWV (hmem (hξR t))]
+  exact forall_congr' fun t ↦ by
+    simp only [Pi.add_apply, hWV (ball_subset_closedBall (hξR t (mem_ball_self one_pos)))]
 
 /-- **Zeros of the trajectory section of a locally Lipschitz field are trajectories.** Let `γ` be
 an integral curve of a locally Lipschitz field `V` with bounded range. A Sobolev path `ξ` is a zero
@@ -849,11 +805,8 @@ theorem hasStrictFDerivAt_boundedTrajectorySection (hV : LocallyLipschitz V)
       (eventually_of_mem (isOpen_ball.mem_nhds hx) fun y hy ↦ hWV (ball_subset_closedBall hy))
   refine (hasStrictFDerivAt_trajectorySection hW hγ hp hW'
     (((isCompact_closedBall (0 : F) (R + 2)).uniformContinuousOn_of_continuous
-      hV'c.continuousOn).mono ball_subset_closedBall) one_pos (fun t ↦ ball_subset_ball' ?_)
-      hAL).congr_of_eventuallyEq
+      hV'c.continuousOn).mono ball_subset_closedBall) one_pos hξR hAL).congr_of_eventuallyEq
     (eventually_of_mem (ball_mem_nhds ξ₀ (by norm_num)) fun ξ hξ ↦ (hS ξ hξ).symm)
-  rw [dist_zero_right]
-  linarith [hξR t]
 
 /-- **The trajectory section of a locally Lipschitz `Cⁿ` field is `Cⁿ`.** On a proper space, let
 `V` be a locally Lipschitz vector field which is `Cⁿ` for some `n ≤ ∞`, and let `γ` be a
@@ -876,11 +829,8 @@ theorem contDiff_boundedTrajectorySection (hV : LocallyLipschitz V) (hγ : Conti
   have hWs : UniformContDiffOn ℝ (m + 1) W (ball 0 (R + 2)) :=
     (hVs.mono ball_subset_closedBall).congr isOpen_ball fun x hx ↦
       (hWV (ball_subset_closedBall hx)).symm
-  refine (contDiffAt_trajectorySection hW hγ hb hp hWs one_pos fun t ↦ ball_subset_ball' ?_
-    ).congr_of_eventuallyEq
+  exact (contDiffAt_trajectorySection hW hγ hb hp hWs one_pos hξR).congr_of_eventuallyEq
     (eventually_of_mem (ball_mem_nhds ξ₀ (by norm_num)) fun ξ hξ ↦ hS ξ hξ)
-  rw [dist_zero_right]
-  linarith [hξR t]
 
 end LocallyLipschitz
 

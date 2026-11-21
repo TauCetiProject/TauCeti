@@ -150,6 +150,13 @@ theorem memLp_top_hessianOperator_comp (hf : ContDiff ℝ 2 f) (hγ : Continuous
       ⟨((hH.tendsto q).comp htop).isBigO_one ℝ, ((hH.tendsto p).comp hbot).isBigO_one ℝ⟩)
   exact memLp_top_of_bound hcont.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)
 
+/-- For a `C²` function, the negative gradient field `-∇f` is `C¹`, hence locally Lipschitz, so
+its trajectory section `TauCeti.WeakDerivStep.boundedTrajectorySection` around a path with bounded
+range is defined. -/
+theorem locallyLipschitz_neg_gradient {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hn : 2 ≤ n) :
+    LocallyLipschitz (-∇ f) :=
+  (hf.gradient_right (m := 1) (by rwa [one_add_one_eq_two])).neg.locallyLipschitz
+
 end ContDiff
 
 section TrajectorySection
@@ -170,7 +177,7 @@ theorem ContDiff.hasStrictFDerivAt_boundedTrajectorySection_neg_gradient (hf : C
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator f (γ s + toZeroAtInfty (F := E) hr ξ₀ s)) :
     HasStrictFDerivAt (boundedTrajectorySection (-∇ f) γ
-      (hf.gradient_right (m := 1) (by norm_num)).neg.locallyLipschitz hγ hb hr)
+      (hf.locallyLipschitz_neg_gradient le_rfl) hγ hb hr)
       (trajectoryOperator AL) ξ₀ := by
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
   refine hasStrictFDerivAt_boundedTrajectorySection _ hγ hb hr
@@ -187,10 +194,9 @@ theorem ContDiff.contDiff_boundedTrajectorySection_neg_gradient {n : ℕ∞}
     (hf : ContDiff ℝ (n + 2) f) (hγ : Continuous γ) (hb : Bornology.IsBounded (range γ))
     {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr : r ≠ ∞) :
     ContDiff ℝ (n + 1) (boundedTrajectorySection (-∇ f) γ
-      (hf.gradient_right (m := 1) (by simp [one_add_one_eq_two])).neg.locallyLipschitz
-      hγ.aestronglyMeasurable hb hr) := by
+      (hf.locallyLipschitz_neg_gradient le_add_self) hγ.aestronglyMeasurable hb hr) := by
   have h := contDiff_boundedTrajectorySection (n := n + 1)
-    (hf.gradient_right (m := 1) (by simp [one_add_one_eq_two])).neg.locallyLipschitz hγ hb hr
+    (hf.locallyLipschitz_neg_gradient le_add_self) hγ hb hr
     (hf.gradient_right (m := ((n + 1 : ℕ∞) : WithTop ℕ∞))
       (by push_cast; exact le_of_eq (by ring))).neg
   exact_mod_cast h
@@ -569,8 +575,7 @@ theorem exists_openPartialHomeomorph_setOf_isIntegralCurve_neg_gradient
   -- The range of `γ` is bounded, and at `ξ₀ = 0` the coefficient is the Hessian along `γ`.
   have hb : Bornology.IsBounded (range γ) :=
     hγ.continuous.isBounded_range_iff_isBigO_atTop_atBot.2 ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩
-  have hV : LocallyLipschitz (-∇ f) :=
-    (hf.gradient_right (m := 1) (by norm_num)).neg.locallyLipschitz
+  have hV := hf.locallyLipschitz_neg_gradient le_rfl
   have hS := hf.hasStrictFDerivAt_boundedTrajectorySection_neg_gradient
     hγ.continuous.aestronglyMeasurable hb (r := 2) ENNReal.ofNat_ne_top (ξ₀ := 0) (by
       filter_upwards [hAL] with s hs
