@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
-public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Topology.Homotopy.Basic
 
 /-!
@@ -92,16 +92,8 @@ end SeminormedAddCommGroup
 section NormedSpace
 
 variable {M V : Type*} [TopologicalSpace M] [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-  (e : OpenPartialHomeomorph M V) {b : M} (hb : b ∈ e.source) {ε : ℝ} (hε₀ : 0 < ε)
-  (hε : ball (e b) ε ⊆ e.target)
-
-/-- The scaling `v ↦ (1 - t) • v`, for `t ∈ [0, 1]`, maps the ball of radius `ε` about `0` to
-itself. -/
-private lemma smul_mem_ball_zero (t : unitInterval) (v : ball (0 : V) ε) :
-    (1 - (t : ℝ)) • (v : V) ∈ ball (0 : V) ε := by
-  rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 t.2.2)]
-  exact (mul_le_of_le_one_left (norm_nonneg _) (sub_le_self _ t.2.1)).trans_lt
-    (mem_ball_zero_iff.1 v.2)
+  (e : OpenPartialHomeomorph M V) {b : M} (hb : b ∈ e.source) {ε : ℝ}
+  (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε)
 
 include hb in
 /-- **The straight-line contraction of a chart ball onto its centre.** At time `t` it sends `x` to
@@ -113,7 +105,9 @@ def chartBallContraction :
       (ContinuousMap.const (chartBall e b ε) ⟨b, e.mem_chartBall_self hb hε₀⟩) where
   toFun tx := (chartBallHomeomorph e hε).symm
     ⟨(1 - (tx.1 : ℝ)) • (chartBallHomeomorph e hε tx.2 : V),
-      smul_mem_ball_zero tx.1 (chartBallHomeomorph e hε tx.2)⟩
+      balanced_ball_zero.smul_mem
+        (by rw [Real.norm_of_nonneg (sub_nonneg.2 tx.1.2.2)]; exact sub_le_self _ tx.1.2.1)
+        (chartBallHomeomorph e hε tx.2).2⟩
   continuous_toFun := (chartBallHomeomorph e hε).symm.continuous.comp <|
     ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
       (continuous_subtype_val.comp ((chartBallHomeomorph e hε).continuous.comp
@@ -123,7 +117,7 @@ def chartBallContraction :
 
 @[simp]
 lemma coe_chartBallContraction_apply (t : unitInterval) (x : chartBall e b ε) :
-    (chartBallContraction e hb hε₀ hε (t, x) : M) = e.symm ((1 - (t : ℝ)) • (e x - e b) + e b) :=
+    (chartBallContraction e hb hε hε₀ (t, x) : M) = e.symm ((1 - (t : ℝ)) • (e x - e b) + e b) :=
   (rfl)
 
 end NormedSpace
