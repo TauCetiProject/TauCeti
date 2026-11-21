@@ -508,16 +508,16 @@ theorem stickelbergerScaled_mem_stickelbergerIdeal (m : ℕ) [NeZero m] :
 multiplier `x ∈ J_m` to the unique integral element `y` satisfying `ι(y) = ι(x) θ_m`. -/
 noncomputable def stickelbergerMul (m : ℕ) [NeZero m] :
     stickelbergerDenominatorIdeal m →ₗ[MonoidAlgebra ℤ (ZMod m)ˣ] MonoidAlgebra ℤ (ZMod m)ˣ where
-  toFun x := Classical.choose (mem_stickelbergerDenominatorIdeal.mp x.2)
+  toFun x := Classical.choose (mem_stickelbergerDenominatorIdeal.mp x.property)
   map_add' x₁ x₂ := integralGroupRingCast_injective m <| by
-    rw [map_add, Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (x₁ + x₂).2),
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₁.2),
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₂.2)]
+    rw [map_add, Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (x₁ + x₂).property),
+      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₁.property),
+      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x₂.property)]
     simp [add_mul]
   map_smul' r x := integralGroupRingCast_injective m <| by
     simp only [smul_eq_mul, RingHom.id_apply, map_mul,
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (r • x).2),
-      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.2)]
+      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp (r • x).property),
+      Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.property)]
     rw [Submodule.coe_smul_of_tower, smul_eq_mul, map_mul, mul_assoc]
 
 /-- `stickelbergerMul` represents multiplication by `θ_m` after extending scalars to `ℚ`. -/
@@ -526,7 +526,7 @@ theorem integralGroupRingCast_stickelbergerMul {m : ℕ} [NeZero m]
     (x : stickelbergerDenominatorIdeal m) :
     integralGroupRingCast m (stickelbergerMul m x) =
       integralGroupRingCast m x * stickelberger m :=
-  Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.2)
+  Classical.choose_spec (mem_stickelbergerDenominatorIdeal.mp x.property)
 
 /-- Uniqueness characterization of `TauCeti.stickelbergerMul`. -/
 theorem stickelbergerMul_eq_iff {m : ℕ} [NeZero m]
