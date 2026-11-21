@@ -323,14 +323,9 @@ private theorem isoModSerre_hurewiczModuleCatHom_of_map {X Z : Type} [Topologica
 modulo `P`. -/
 private theorem isoModSerre_hurewiczModuleCatHom_of_subsingleton {X : Type} [TopologicalSpace X]
     {x : X} {n : ℕ} (hX : ∀ k < n + 2, Subsingleton (π_ k X x)) :
-    P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom X x n) := by
-  have : IsIso (HomotopyGroup.hurewiczModuleCatHom X x n) :=
-    (ConcreteCategory.isIso_iff_bijective _).2 <| by
-      convert (HomotopyGroup.hurewiczAddEquiv hX).bijective using 1
-      funext a
-      exact (HomotopyGroup.hurewiczModuleCatHom_apply X x n a).trans
-        (HomotopyGroup.hurewiczAddEquiv_apply_eq_hurewiczIntHom hX a).symm
-  exact P.isoModSerre_of_isIso _
+    P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom X x n) :=
+  have := HomotopyGroup.isIso_hurewiczModuleCatHom hX
+  P.isoModSerre_of_isIso _
 
 /-- The Hurewicz map of a path-connected space `Z` is an isomorphism modulo `P` as soon as it is
 for every Hausdorff path-connected space with the homotopy groups of `Z`: the CW approximation of

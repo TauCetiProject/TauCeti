@@ -749,6 +749,7 @@ lemma hurewiczModuleCatHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : �
 /-- **Naturality of the Hurewicz morphism**: for a based map `f : (X, x) → (Y, y)`, the square
 formed by `f_* : πₙ₊₂(X, x) → πₙ₊₂(Y, y)`, `f_* : Hₙ₊₂(X; ℤ) → Hₙ₊₂(Y; ℤ)` and the two Hurewicz
 morphisms commutes. -/
+@[reassoc]
 theorem hurewiczModuleCatHom_naturality {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
     {x : X} {y : Y} (f : C(X, Y)) (hf : f x = y) (n : ℕ) :
     ModuleCat.ofHom (mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap ≫
