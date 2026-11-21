@@ -79,6 +79,16 @@ variable {R S : Type*}
     p.reverse.eval 1 = p.eval 1 :=
   eval_one_reflect p p.natDegree
 
+/-- Reversal preserves divisibility by polynomials with left-regular leading coefficient. -/
+theorem reverse_dvd_reverse_of_isLeftRegular_leadingCoeff [Semiring R] {p q : R[X]}
+    (hp : IsLeftRegular p.leadingCoeff) (h : p ∣ q) : p.reverse ∣ q.reverse := by
+  obtain ⟨a, rfl⟩ := h
+  by_cases ha : a = 0
+  · simp [ha]
+  have hlead : p.leadingCoeff * a.leadingCoeff ≠ 0 :=
+    fun hz ↦ ha (leadingCoeff_eq_zero.mp (hp.mul_left_eq_zero_iff.mp hz))
+  exact ⟨a.reverse, reverse_mul hlead⟩
+
 /-- Evaluating a reflection at the inverse of an invertible point, then multiplying on the right
 by the bound's power of that point, recovers the original evaluation. The coefficients need
 not commute with each other or with the evaluation point. -/
