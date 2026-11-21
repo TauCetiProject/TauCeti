@@ -471,11 +471,11 @@ theorem fderiv_fderiv_smul_const_apply {P : E → 𝕜} {x : E} (hP : ContDiffAt
     (u w : E) :
     fderiv 𝕜 (fderiv 𝕜 fun y ↦ P y • v) x u w = fderiv 𝕜 (fderiv 𝕜 P) x u w • v := by
   have hfd : fderiv 𝕜 (fun y ↦ P y • v) =ᶠ[𝓝 x]
-      fun y ↦ (ContinuousLinearMap.smulRightL 𝕜 E F).flip v (fderiv 𝕜 P y) := by
+      fun y ↦ (StrongDual.smulRightL 𝕜 E F).flip v (fderiv 𝕜 P y) := by
     filter_upwards [hP.eventually (by simp)] with y hy
     exact fderiv_smul_const (hy.differentiableAt (by simp)) v
   rw [hfd.fderiv_eq, fderiv_fun_comp x
-    ((ContinuousLinearMap.smulRightL 𝕜 E F).flip v).differentiableAt
+    ((StrongDual.smulRightL 𝕜 E F).flip v).differentiableAt
     (hP.hasFDerivAt_fderiv le_rfl).differentiableAt]
   simp
 

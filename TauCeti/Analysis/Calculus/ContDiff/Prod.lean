@@ -14,7 +14,9 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 If a map `H` on a product is smooth near every point of `s ×ˢ I`, then each of its slices
 `H (·, t)` with `t ∈ I` is smooth on `s` (`TauCeti.contDiffOn_comp_prodMk_left`). For instance,
-the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`.
+the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`. Likewise, a field
+`J z x` that is smooth near the graph of a map `u` smooth on `s` gives a map `z ↦ J z (u z)`
+smooth on `s` (`TauCeti.contDiffOn_comp_graph`).
 
 For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 `(q, y) ↦ fderiv (F (q, ·)) y` is smooth jointly (`ContDiffAt.fderiv_slice`), smoothness persists
@@ -53,6 +55,13 @@ smooth on `s`. -/
 theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n H p) {t : G}
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
+
+/-- **Composition with a graph**: a field `J z x` that is `Cⁿ` near the graph of a map `u` which is
+`Cⁿ` on `s` gives a map `z ↦ J z (u z)` that is `Cⁿ` on `s`. -/
+theorem contDiffOn_comp_graph {J : E → G → F} {u : E → G}
+    (hJ : ∀ z ∈ s, ContDiffAt 𝕜 n (fun p : E × G ↦ J p.1 p.2) (z, u z))
+    (hu : ContDiffOn 𝕜 n u s) : ContDiffOn 𝕜 n (fun z ↦ J z (u z)) s :=
+  fun z hz ↦ (hJ z hz).comp₂_contDiffWithinAt contDiffWithinAt_id (hu z hz)
 
 end TauCeti
 

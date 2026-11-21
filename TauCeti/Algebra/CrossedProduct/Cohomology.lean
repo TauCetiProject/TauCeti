@@ -111,7 +111,7 @@ theorem cohomologyClass_eq_iff : z.cohomologyClass = w.cohomologyClass ↔ z.Coh
       exact toMul_ofMul _
     rwa [heq] at hb
   · intro h
-    exact (coboundariesOfIsMulCoboundary₂ h).2
+    exact (coboundariesOfIsMulCoboundary₂ h).property
 
 /-- The explicit cohomologous relation is equality of second cohomology classes. -/
 @[simp]
@@ -132,7 +132,7 @@ theorem exists_cohomologyClass_eq
   | _ y =>
       let z : TwoCocycle K L :=
         { toFun := fun σ τ => Additive.toMul (y (σ, τ))
-          isMulCocycle₂ := isMulCocycle₂_of_mem_cocycles₂ _ y.2 }
+          isMulCocycle₂ := isMulCocycle₂_of_mem_cocycles₂ _ y.property }
       refine ⟨z, ?_⟩
       rw [cohomologyClass_def]
       apply congrArg (H2π (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))

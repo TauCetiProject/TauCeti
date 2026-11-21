@@ -115,8 +115,8 @@ the additive group of `L`, is trivial. -/
 noncomputable instance H1ofAutUnique : Unique (H1 (Rep.ofAlgebraAut K L)) where
   default := 0
   uniq := fun a => H1_induction_on a fun x => (H1π_eq_zero_iff _).2 <| by
-    refine (coboundariesOfIsCoboundary₁ ?_).2
-    exact isCoboundary₁_of_isCocycle₁_of_aut x.1 (isCocycle₁_of_mem_cocycles₁ _ x.2)
+    refine (coboundariesOfIsCoboundary₁ ?_).property
+    exact isCoboundary₁_of_isCocycle₁_of_aut x.val (isCocycle₁_of_mem_cocycles₁ _ x.property)
 
 end FiniteExtension
 
@@ -148,7 +148,7 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscret
   -- An element of `L` fixed by `U` lies in `F`.
   have hmem (m : FixedPoints.addSubgroup U.toSubgroup (ForcedDiscrete L)) :
       (ForcedDiscrete.addEquiv L).symm m ∈ F :=
-    (IntermediateField.mem_fixedField_iff _ _).2 fun σ hσ => m.2 ⟨σ, hσ⟩
+    (IntermediateField.mem_fixedField_iff _ _).2 fun σ hσ => m.property ⟨σ, hσ⟩
   -- The cocycle `f`, transported to `Gal(F/K) → F`.
   let g : Gal(F/K) → F := fun τ => ⟨_, hmem (f (e.symm τ))⟩
   have hg_apply (q : Gal(L/K) ⧸ U.toSubgroup) :
@@ -167,7 +167,7 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscret
   obtain ⟨β, hβ⟩ := isCoboundary₁_of_isCocycle₁_of_aut g hg
   refine ⟨⟨ForcedDiscrete.addEquiv L (β : L), fun σ => ?_⟩, fun q => ?_⟩
   · simpa [Subgroup.smul_def] using
-      (IntermediateField.mem_fixedField_iff _ _).1 β.2 σ σ.2
+      (IntermediateField.mem_fixedField_iff _ _).1 β.property σ σ.property
   · obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective q
     refine Subtype.ext ?_
     rw [← (ForcedDiscrete.addEquiv L).apply_symm_apply (f _), ← hg_apply, ← hβ]
@@ -183,7 +183,7 @@ theorem subsingleton_H1_forcedDiscrete : Subsingleton (H1 Gal(L/K) (ForcedDiscre
     | H z =>
       exact H1pi_eq_zero_iff.2 (mem_B1_iff.2
         (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscrete U
-          (mem_Z1_iff.1 z.2).2))
+          (mem_Z1_iff.1 z.property).2))
 
 /-- **The additive Hilbert 90 for explicit cocycles.** For a Galois extension `L/K`, finite or
 not, every locally constant `1`-cocycle `f : Gal(L/K) → L`, that is

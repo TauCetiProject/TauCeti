@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.Module.Defs
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
 /-!
@@ -199,42 +197,29 @@ theorem isGreatest_norm_inner (x : E) :
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a : A) (x : E) :
     inner A (a • x) (a • x) =
-      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  rw [inner_op_smul_left, inner_op_smul_right, star_mul, hs', ← hs]
-  noncomm_ring
+      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) :=
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The inner product of `a x - x` with itself is `(a |x| - |x|) (a |x| - |x|)⋆`, where
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_sub_self (a : A) (x : E) :
     inner A (a • x - x) (a • x - x) =
       (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) *
-        star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  simp only [inner_sub_left, inner_sub_right, inner_op_smul_left, inner_op_smul_right, star_sub,
-    star_mul, hs', ← hs]
-  noncomm_ring
+        star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) :=
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x` is the norm of `a |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
-protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_smul, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x - x` is the norm of `a |x| - |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 theorem norm_smul_sub_self (a : A) (x : E) :
-    ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_sub_self, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+    ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded: `‖a x‖ ≤ ‖a‖ ‖x‖`. -/
-protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ := by
-  rw [CStarModule.norm_smul]
-  refine (norm_mul_le _ _).trans_eq ?_
-  rw [CFC.norm_sqrt _ inner_self_nonneg, ← norm_eq_sqrt_norm_inner_self]
+protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_le (NonUnitalStarAlgHom.id ℂ A) a x
 
 end Norm
 
@@ -327,7 +312,7 @@ end Essential
 
 section Paschke
 
-open scoped Ring
+open scoped ComplexOrder Ring
 
 omit [StarOrderedRing A] in
 /-- The diagonal inner product of `u.fst • z + u.snd • z` embeds into `Unitization ℂ A` as
@@ -371,7 +356,7 @@ private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedA
     simpa only [hTy, hv_sa.star_eq] using inr_inner_unitization_smul v (T x)
   -- The majorant `q ≤ b` forces `⟪y, y⟫_A = √(b⁻¹) q √(b⁻¹) ≤ 1`, hence `‖y‖² ≤ 1`.
   have hvqv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ q :=
-    hv_sa.conjugate_nonneg (Unitization.inr_nonneg _ inner_self_nonneg)
+    hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ inner_self_nonneg)
   have hvqv_le : CFC.conjSqrt b⁻¹ʳ q ≤ 1 :=
     (CFC.conjSqrt_le_conjSqrt hxb).trans_eq (CFC.conjSqrt_ringInverse_self b hb)
   have hy_norm_sq : ‖y‖ ^ 2 ≤ 1 := by
@@ -379,7 +364,7 @@ private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedA
     exact (CStarAlgebra.norm_le_one_iff_of_nonneg _ hvqv_nonneg).mpr hvqv_le
   -- Boundedness of `T` on the normalized vector `y` bounds `√(b⁻¹) p √(b⁻¹)` by `‖T‖²`.
   have hvpv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ p :=
-    hv_sa.conjugate_nonneg (Unitization.inr_nonneg _ inner_self_nonneg)
+    hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ inner_self_nonneg)
   have hvpv_norm : ‖CFC.conjSqrt b⁻¹ʳ p‖ ≤ ‖T‖ ^ 2 := by
     rw [← hTy_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A]
     calc ‖T y‖ ^ 2 ≤ (‖T‖ * ‖y‖) ^ 2 := by gcongr; exact T.le_opNorm y
@@ -399,9 +384,9 @@ theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [
     [CStarModule A F] (T : E →L[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
     inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
   -- Pass to `Unitization ℂ A`, regularize `⟪x, x⟫_A` by `+ ε`, and let `ε → 0⁺`.
-  rw [← Unitization.inr_le_inr_iff, Unitization.inr_smul]
+  rw [← Unitization.inr_le_inr_iff ℂ, Unitization.inr_smul]
   set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
-  have hq : 0 ≤ q := Unitization.inr_nonneg _ inner_self_nonneg
+  have hq : 0 ≤ q := Unitization.inr_nonneg ℂ _ inner_self_nonneg
   have hle (ε : ℝ) (hε : 0 < ε) :
       (inner A (T x) (T x) : Unitization ℂ A) ≤
         ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε) := by

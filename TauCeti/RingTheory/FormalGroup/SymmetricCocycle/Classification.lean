@@ -413,7 +413,7 @@ theorem exists_eq_smul_lazardCocycle {n : ℕ} (hn : n ≠ 0) {f : MvPolynomial 
     ∃ r : R, f = r • lazardCocycle n R := by
   obtain ⟨r, hr⟩ := (isSymmetricCocycleCoeff_coeff hs hf n).exists_eq_nsmul
   refine ⟨r, MvPolynomial.ext _ _ fun d => ?_⟩
-  rw [coeff_smul, coeff_lazardCocycle, smul_eq_mul]
+  rw [AddMonoidAlgebra.coeff_smul_apply, coeff_lazardCocycle, smul_eq_mul]
   by_cases hd : d 0 + d 1 = n
   · have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (n - d 0) := by
       ext x

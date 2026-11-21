@@ -144,7 +144,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     refine lt_of_le_of_lt (iSup_le fun f ↦ ?_) (ENNReal.ofReal_lt_top (r := R))
     rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal
-      (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.2)))
+      (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.property)))
   by_contra hne
   rw [unifIntegrable_iff] at hne
   push Not at hne
@@ -166,7 +166,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_toMeasurable _ _) le_rfl))
   -- By Šmulian's theorem, a subsequence converges weakly.
   obtain ⟨f, τ, hτ, hlim⟩ := TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hA
-    (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).2
+    (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).property
   set h : ℕ → α → 𝕜 := fun k x ↦ (i (τ k) : α → 𝕜) x - (f : α → 𝕜) x
   have hh (k : ℕ) : Integrable (h k) μ := (L1.integrable_coeFn _).sub (L1.integrable_coeFn f)
   have hset (S : Set α) (_ : MeasurableSet S) :
@@ -219,13 +219,15 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable {A : Set 
       IsBounded A ∧ UnifIntegrable (fun f : A ↦ (f : α → 𝕜)) 1 μ := by
   rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable]
   refine ⟨fun h ↦ ⟨isBounded_iff_forall_norm_le.2
-    ⟨(⨆ f : A, eLpNorm (f : α → 𝕜) 1 μ).toReal, fun f hf ↦ ?_⟩, h.1⟩, fun ⟨hA, hui⟩ ↦ ?_⟩
+    ⟨(⨆ f : A, eLpNorm (f : α → 𝕜) 1 μ).toReal, fun f hf ↦ ?_⟩, h.unifIntegrable⟩, fun ⟨hA,
+        hui⟩ ↦ ?_⟩
   · rw [Lp.norm_def]
-    exact ENNReal.toReal_mono h.2.ne (le_iSup (fun f : A ↦ eLpNorm (f : α → 𝕜) 1 μ) ⟨f, hf⟩)
+    exact ENNReal.toReal_mono h.iSup_eLpNorm_lt.ne (le_iSup (fun f : A ↦ eLpNorm (f : α → 𝕜) 1 μ)
+        ⟨f, hf⟩)
   · obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA
     refine ⟨hui, lt_of_le_of_lt (iSup_le fun f ↦ ?_) (ENNReal.ofReal_lt_top (r := R))⟩
     rw [← Lp.eNorm_def, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hR f f.2)
+    exact ENNReal.ofReal_le_ofReal (hR f f.property)
 
 /-- **Dunford–Pettis theorem**, classical form. For a finite measure, a subset `A` of scalar `L¹`
 has weakly compact closure exactly when it is norm bounded and the integrals of `‖f‖` are
@@ -263,6 +265,6 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_forall_setIntegral_le
     obtain ⟨δ, hδ, hδA⟩ := hA ε' hε'pos
     refine ⟨ENNReal.ofReal δ, ENNReal.ofReal_pos.2 hδ, fun f s hs hμs ↦ ?_⟩
     rw [heq]
-    exact (ENNReal.ofReal_le_ofReal (hδA f f.2 s hs hμs)).trans hε'
+    exact (ENNReal.ofReal_le_ofReal (hδA f f.property s hs hμs)).trans hε'
 
 end MeasureTheory.Lp
