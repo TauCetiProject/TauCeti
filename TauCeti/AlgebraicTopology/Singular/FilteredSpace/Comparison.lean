@@ -20,12 +20,15 @@ the components of `α` at `Y` and at the `X q` are quasi-isomorphisms, then so i
 of this morphism, including those at `⊥` and `⊤`
 (`TauCeti.quasiIso_chainFiltrationMap_app_of_quasiIso`), and it induces an isomorphism of the
 spectral objects of the two filtrations (`TauCeti.chainFiltrationSpectralObjectIso`), hence of
-their spectral sequences, abutments and filtrations of the abutments.
+their spectral sequences on every page (`TauCeti.chainFiltrationSpectralSequenceIso`), abutments
+and filtrations of the abutments. No boundedness or exhaustiveness assumption on the filtration is
+needed.
 
 ## Main definitions
 
 * `TauCeti.chainFiltrationSpectralObjectIso`: the isomorphism of spectral objects induced by a
   natural transformation by quasi-isomorphisms.
+* `TauCeti.chainFiltrationSpectralSequenceIso`: the induced isomorphism of spectral sequences.
 
 ## References
 
@@ -82,6 +85,23 @@ objects induced by `TauCeti.chainFiltrationMap` for `α` and the identity of `Y`
 lemma chainFiltrationSpectralObjectIso_hom :
     (chainFiltrationSpectralObjectIso α hX).hom =
       CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx) :=
+  (rfl)
+
+/-- **A natural transformation of chain functors by quasi-isomorphisms identifies the spectral
+sequences of a filtered space on every page.** The spectral sequences of the filtrations of `F(Y)`
+and `G(Y)` by the `F(X q)` and `G(X q)` are isomorphic through `α`. -/
+def chainFiltrationSpectralSequenceIso :
+    chainFiltrationSpectralSequence F hX ≅ chainFiltrationSpectralSequence G hX :=
+  asIso (Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
+    (chainFiltrationSpectralObjectIso α hX).hom)
+
+/-- The isomorphism `TauCeti.chainFiltrationSpectralSequenceIso α hX` is the morphism of spectral
+sequences induced by `TauCeti.chainFiltrationMap` for `α` and the identity of `Y`. -/
+@[simp]
+lemma chainFiltrationSpectralSequenceIso_hom :
+    (chainFiltrationSpectralSequenceIso α hX).hom =
+      Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
+        (CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx)) :=
   (rfl)
 
 end TauCeti

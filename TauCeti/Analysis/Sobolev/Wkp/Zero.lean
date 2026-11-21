@@ -423,7 +423,7 @@ theorem Wkp0.denseRange_ofTestFunctionₗ (k : ℕ) :
   intro u
   rw [closure_subtype, ← Set.range_comp]
   have hu : (u : Wkp mu Omega p k) ∈
-      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.2
+      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.property
   rw [coe_wkp0Submodule] at hu
   simpa only [Function.comp_def, Wkp0.coe_ofTestFunctionₗ] using hu
 
@@ -444,7 +444,7 @@ def Wkp0.lowerOrderL (k : ℕ) : Wkp0 mu Omega p (k + 1) →L[ℝ] Wkp0 mu Omega
     (wkp0Submodule mu Omega p k).toSubmodule
     (fun u => by
       rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Wkp.lowerOrderL_apply k]
-      exact Wkp.lowerOrder_mem_wkp0Submodule k u.2)
+      exact Wkp.lowerOrder_mem_wkp0Submodule k u.property)
 
 /-- The zero-boundary lower-order projection is the usual Sobolev projection. -/
 -- The dependent successor index prevents this rule from matching in `simp`.
