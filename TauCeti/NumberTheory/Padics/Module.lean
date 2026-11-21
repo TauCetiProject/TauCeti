@@ -284,7 +284,7 @@ def _root_.LinearMap.padicIntCodRestrict (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
   toFun x := ⟨Φ x, by
     obtain ⟨y, hy⟩ := Submodule.mem_one.mp (h x)
     rw [← hy]
-    exact y.2⟩
+    exact y.property⟩
   map_add' x y := Subtype.ext (map_add Φ x y)
   map_smul' c x := Subtype.ext (map_smul Φ c x)
 

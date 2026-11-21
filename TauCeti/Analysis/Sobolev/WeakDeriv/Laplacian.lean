@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -26,11 +27,11 @@ Laplacian on `Ω`. In particular a function harmonic on `Ω` is *weakly harmonic
 every test function `φ` on `Ω`. This is the form in which harmonicity enters integral arguments
 such as the mean-value property, where the test functions are radial.
 
-The two integrations by parts are the defining identities of the weak derivative
-`TauCeti.HasWeakLineDerivOn`, applied to `u` and to its first directional derivative, both of
-which are classical derivatives and hence weak ones
-(`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`). No boundary term appears because the test
-function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
+The two integrations by parts in one direction are
+`TauCeti.integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply` for scalar
+multiplication, which needs `u` to be `C²` only near the support of the test function. No boundary
+term appears because the test function is compactly supported in `Ω`, and no regularity of `∂Ω` is
+used.
 
 ## Main declarations
 
@@ -75,35 +76,22 @@ theorem _root_.ContDiffOn.integral_fderiv_fderiv_smul_eq_integral_smul_fderiv_fd
     (hu : ContDiffOn ℝ 2 u Ω) (φ : 𝓓(Ω, ℝ)) (v : E) :
     ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y v) x v • u x ∂μ =
       ∫ x, (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y v) x v ∂μ := by
-  by_cases hF : CompleteSpace F
-  swap
-  · rw [integral_of_not_completeSpace hF, integral_of_not_completeSpace hF]
-  have := hF
   have hΩ : IsOpen (Ω : Set E) := Ω.isOpen
-  set g : E → F := fun y ↦ fderiv ℝ u y v with _
-  have hu1 : ContDiffOn ℝ 1 (fderiv ℝ u) Ω := hu.fderiv_of_isOpen hΩ (by norm_num)
-  have hg : ContDiffOn ℝ 1 g Ω := hu1.clm_apply contDiffOn_const
-  have hu_loc : LocallyIntegrableOn u Ω μ := hu.continuousOn.locallyIntegrableOn hΩ.measurableSet
-  have hg_loc : LocallyIntegrableOn g Ω μ := hg.continuousOn.locallyIntegrableOn hΩ.measurableSet
-  have hg'_loc : LocallyIntegrableOn (fun x ↦ fderiv ℝ g x v) Ω μ :=
-    (hu.continuousOn_fderiv_fderiv_apply hΩ v).locallyIntegrableOn hΩ.measurableSet
-  -- Both `u` and `∂ᵥu` are classically, hence weakly, differentiable on `Ω`.
-  have h1 : HasWeakLineDerivOn μ Ω u g v :=
-    hasWeakLineDerivOn_of_hasLineDerivAt hu_loc hg_loc fun x hx ↦
-      ((hu.differentiableOn (by norm_num)).differentiableAt
-        (hΩ.mem_nhds hx)).hasFDerivAt.hasLineDerivAt v
-  have h2 : HasWeakLineDerivOn μ Ω g (fun x ↦ fderiv ℝ g x v) v :=
-    hasWeakLineDerivOn_of_hasLineDerivAt hg_loc hg'_loc fun x hx ↦
-      ((hg.differentiableOn one_ne_zero).differentiableAt
-        (hΩ.mem_nhds hx)).hasFDerivAt.hasLineDerivAt v
-  have e1 := h1.integral_lineDeriv_smul_eq_neg_integral_smul (TestFunction.lineDerivCLM ℝ v φ)
-  have e2 := h2.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  rw [TestFunction.coe_lineDerivCLM] at e1
-  simp_rw [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv] at e1
-  have hφ1 : ∀ y, lineDeriv ℝ (φ : E → ℝ) y v = fderiv ℝ (φ : E → ℝ) y v := fun y ↦
-    (φ.contDiff.differentiable (by simp) y).lineDeriv_eq_fderiv
-  simp_rw [hφ1] at e1 e2
-  rw [e1, e2, neg_neg]
+  have hφ : ContDiff ℝ 2 (φ : E → ℝ) := φ.contDiff.of_le (by simp)
+  have h := integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply (μ := μ)
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip
+    (fun x hx ↦ hu.contDiffAt (hΩ.mem_nhds (φ.tsupport_subset hx))) hφ φ.hasCompactSupport v v
+  simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.lsmul_apply] at h
+  -- The iterated directional derivatives are second derivatives wherever `φ` does not vanish.
+  have hφ₂ : ∀ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y v) x v =
+      fderiv ℝ (fderiv ℝ (φ : E → ℝ)) x v v := fun x ↦ by
+    simp [(hφ.contDiffAt.hasFDerivAt_fderiv_apply le_rfl v).fderiv]
+  have hu₂ : ∀ x, (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y v) x v =
+      (φ : E → ℝ) x • fderiv ℝ (fderiv ℝ u) x v v := fun x ↦ by
+    by_cases hx : x ∈ (Ω : Set E)
+    · simp [((hu.contDiffAt (hΩ.mem_nhds hx)).hasFDerivAt_fderiv_apply le_rfl v).fderiv]
+    · simp [φ.zero_on_compl hx]
+  simp only [hφ₂, hu₂, h]
 
 end NormedSpace
 

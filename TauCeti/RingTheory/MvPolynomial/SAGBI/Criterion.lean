@@ -186,7 +186,7 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     ring
   rw [heq] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent,
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
       Finsupp.weight_apply, ← Finsupp.linearCombination_apply] at hw
     have hwδ : A w ≠ δ := fun h ↦ hw (by simp [A, a, h])
     have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])

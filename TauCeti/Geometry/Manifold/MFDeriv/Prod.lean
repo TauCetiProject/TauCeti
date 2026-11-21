@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -27,8 +28,8 @@ fields on a product manifold.
 
 * `TauCeti.mfderiv_comp_fst` and `TauCeti.mfderiv_comp_snd`: the derivative of a map that factors
   through a projection.
-* `TauCeti.mfderiv_snd_apply`: the derivative of the second projection takes the second component
-  of a tangent vector.
+* `TauCeti.mfderiv_fst_apply` and `TauCeti.mfderiv_snd_apply`: the derivatives of the projections
+  take the corresponding component of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply`: the derivative of a separated sum
@@ -49,6 +50,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mvfderiv_diag_eq_add`: the derivative of `x ↦ S(x, x)` is the sum of the two
+  partial derivatives of `S` on the diagonal.
 * `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
   differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
@@ -56,9 +59,15 @@ fields on a product manifold.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
+* `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
+  chart acts on each component through the derivative of the inverse chart of that factor.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
+* `MDifferentiableAt.injective_mfderiv_fst_prod_iff`: the differential of a
+  parameter-preserving map is injective exactly when the differential of its slice is.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
+* `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
+  differentiable jointly is differentiable in each variable separately.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -127,6 +136,16 @@ theorem mfderiv_comp_snd (g : N → M'') (p : M × N) :
     -- Both zeros live in the same space of linear maps, up to the index of the target tangent
     -- space.
     rfl
+
+/-- The derivative of the first projection sends a tangent vector on a product to its first
+component. -/
+theorem mfderiv_fst_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
+    mfderiv (I.prod J) I Prod.fst p v = v.1 := by
+  rw [mfderiv_fst]
+  -- `ContinuousLinearMap.fst` is the first projection by definition. Its domain, the product of
+  -- the coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.coe_fst'` cannot be rewritten here.
+  rfl
 
 /-- The derivative of the second projection sends a tangent vector on a product to its second
 component. -/
@@ -292,6 +311,24 @@ theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x :
     -- The zero map evaluates to zero; the product tangent space is the product of the factors.
     rfl
 
+/-- **The differential on the diagonal.** If `S` is differentiable at `(q, q)`, the differential
+of `ψ(x) = S(x, x)` at `q` is the sum `d₁S(q, q) + d₂S(q, q)` of the partial differentials. -/
+theorem mvfderiv_diag_eq_add {S : M × M → F} {q : M}
+    (hS : MDifferentiableAt (I.prod I) 𝓘(𝕜, F) S (q, q)) :
+    mvfderiv I (fun x ↦ S (x, x)) q =
+      mvfderiv I (fun x ↦ S (x, q)) q + mvfderiv I (fun x ↦ S (q, x)) q := by
+  have hdiag : MDifferentiableAt I (I.prod I) (fun x : M ↦ (x, x)) q :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_id
+  refine ContinuousLinearMap.ext fun v : E ↦ ?_
+  -- `ψ` is `S` composed with the diagonal, whose differential is `v ↦ (v, v)`.
+  refine (mvfderiv_comp_apply (g := S) (f := fun x : M ↦ (x, x)) q hS hdiag v).trans ?_
+  have hd : mfderiv I (I.prod I) (fun x : M ↦ (x, x)) q =
+      (mfderiv I I (@id M) q).prod (mfderiv I I (@id M) q) :=
+    mfderiv_prodMk (f := id) (g := id) mdifferentiableAt_id mdifferentiableAt_id
+  rw [hd, mfderiv_id]
+  -- `(id.prod id) v` is `(v, v)` in the product tangent space.
+  exact (hS.mvfderiv_prod_eq_add_apply (v, v)).trans (add_apply _ _ v).symm
+
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
 theorem _root_.HasDerivAt.mvfderiv_comp_fst_apply {g : 𝕜 → F} {g' : F} {p : 𝕜 × N}
@@ -355,6 +392,35 @@ theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M}
 
 end ProdMap
 
+section ExtChartAt
+
+open Set
+
+/-- **The derivative of the inverse of a product chart.** On the target of the preferred chart of
+`M × N` at `p`, the derivative of its inverse sends `(v, w)` to the pair of the derivatives of the
+inverse charts of `M` at `p.1` and of `N` at `p.2`, applied to `v` and to `w`. -/
+theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold J 1 N]
+    {p : M × N} {z : E × E'} (hz : z ∈ (extChartAt (I.prod J) p).target) (v : E × E') :
+    mfderivWithin 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm (range (I.prod J)) z v =
+      (mfderivWithin 𝓘(𝕜, E) I (extChartAt I p.1).symm (range I) z.1 v.1,
+        mfderivWithin 𝓘(𝕜, E') J (extChartAt J p.2).symm (range J) z.2 v.2) := by
+  have hz' : z.1 ∈ (extChartAt I p.1).target ∧ z.2 ∈ (extChartAt J p.2).target := by
+    rwa [extChartAt_prod_target, mem_prod] at hz
+  have hsymm : (extChartAt (I.prod J) p).symm =
+      Prod.map (extChartAt I p.1).symm (extChartAt J p.2).symm :=
+    funext (extChartAt_prod_symm_apply p)
+  rw [hsymm, ModelWithCorners.range_prod, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
+    mfderivWithin_prodMap (mdifferentiableWithinAt_extChartAt_symm hz'.1)
+      (mdifferentiableWithinAt_extChartAt_symm hz'.2)
+      (I.uniqueDiffOn _ (extChartAt_target_subset_range _ hz'.1)).uniqueMDiffWithinAt
+      (J.uniqueDiffOn _ (extChartAt_target_subset_range _ hz'.2)).uniqueMDiffWithinAt]
+  -- `ContinuousLinearMap.prodMap` acts componentwise by definition; rewriting with
+  -- `ContinuousLinearMap.coe_prodMap'` fails, because the product of the model tangent spaces is
+  -- the tangent space of the product only up to definitional unfolding.
+  rfl
+
+end ExtChartAt
+
 end TauCeti
 
 section ParameterPreserving
@@ -369,6 +435,35 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M M' N : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace M'] [ChartedSpace H' M'] [TopologicalSpace N] [ChartedSpace G N]
   {f : M × M' → N} {p : M × M'}
+
+/-- For a differentiable map on a product of manifolds with corners, the differential of the
+parameter-preserving map is injective if and only if the differential of its slice is injective.
+No finite-dimensionality assumption is needed. -/
+theorem MDifferentiableAt.injective_mfderiv_fst_prod_iff
+    (hf : MDifferentiableAt (I.prod I') J f p) :
+    Function.Injective (mfderiv (I.prod I') (I.prod J) (fun q ↦ (q.1, f q)) p) ↔
+      Function.Injective (mfderiv I' J (fun x ↦ f (p.1, x)) p.2) := by
+  rw [injective_iff_map_eq_zero, injective_iff_map_eq_zero]
+  constructor
+  · intro h v hv
+    have hfv : mfderiv (I.prod I') J f p (0, v) = 0 := by
+      have hfirst : mfderiv I J (fun x ↦ f (x, p.2)) p.1 (0 : TangentSpace I p.1) = 0 :=
+        map_zero _
+      -- The product tangent space and its coordinate tangent spaces use the same model vectors.
+      exact (mfderiv_prod_eq_add_apply hf).trans
+        ((congrArg₂ (· + ·) hfirst hv).trans (zero_add _))
+    have hprod : mfderiv (I.prod I') (I.prod J) (fun q ↦ (q.1, f q)) p (0, v) = 0 := by
+      rw [mfderiv_prodMk mdifferentiableAt_fst hf, mfderiv_fst]
+      -- Product tangent spaces are the products of the coordinate model spaces by definition.
+      exact Prod.ext rfl hfv
+    exact congrArg Prod.snd (h _ hprod)
+  · intro h v hv
+    rw [mfderiv_prodMk mdifferentiableAt_fst hf, mfderiv_fst] at hv
+    have h₁ : v.1 = (0 : TangentSpace I p.1) := congrArg Prod.fst hv
+    have h₂ : mfderiv (I.prod I') J f p v = 0 := congrArg Prod.snd hv
+    rw [mfderiv_prod_eq_add_apply hf] at h₂
+    simp only [h₁, map_zero, zero_add] at h₂
+    exact Prod.ext h₁ (h _ h₂)
 
 /-- The differential of a parameter-preserving map has a continuous linear left inverse
 if and only if the differential of its slice at the fixed parameter does.
@@ -390,6 +485,35 @@ theorem MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff
   exact (congrArg ContinuousLinearMap.HasLeftInverse hslice.symm).to_iff
 
 end ParameterPreserving
+
+section Curry
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' G : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'}
+  {J : ModelWithCorners 𝕜 F G}
+  {M M' N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H' M'] [TopologicalSpace N] [ChartedSpace G N]
+  {f : M → M' → N} {x : M} {y : M'}
+
+/-- A curried function differentiable jointly at `(x, y)` is differentiable in the first variable
+at `x`. -/
+theorem MDifferentiableAt.curry_left
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
+    MDifferentiableAt I J (fun x ↦ f x y) x :=
+  hf.comp (f := fun x' : M ↦ (x', y)) x (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+
+/-- A curried function differentiable jointly at `(x, y)` is differentiable in the second variable
+at `y`. -/
+theorem MDifferentiableAt.curry_right
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
+    MDifferentiableAt I' J (fun y ↦ f x y) y :=
+  hf.comp (f := fun y' : M' ↦ (x, y')) y (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+
+end Curry
 
 section Coordinates
 

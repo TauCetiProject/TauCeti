@@ -66,7 +66,7 @@ theorem fg_adjoin_iff_exists_finset_subset_adjoin_eq {s : Set A} :
     rintro ⟨T, hT⟩
     classical
     choose u hus htu using fun t : T ↦
-      mem_adjoin_iff_exists_finset_subset.1 (hT ▸ Algebra.subset_adjoin t.2)
+      mem_adjoin_iff_exists_finset_subset.1 (hT ▸ Algebra.subset_adjoin t.property)
     have hsub : ((T.attach.biUnion u : Finset A) : Set A) ⊆ s := by
       intro x hx
       obtain ⟨t, -, hxt⟩ := Finset.mem_biUnion.1 hx

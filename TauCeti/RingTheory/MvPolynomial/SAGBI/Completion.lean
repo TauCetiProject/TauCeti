@@ -370,10 +370,10 @@ private theorem linearCombination_stageLift_lt {n M : ℕ} {S : Set ((ι n →�
     (hPδ : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) w ≼[m] δ)
     (hgA : ∀ j, ∀ x ∈ (g j).support,
       Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) x +
-        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) j.1.1 = δ)
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) j.val.1 = δ)
     (hQ'Mlt : ∀ p ∈ g.support, ∀ y ∈ (Q'M p).support,
       Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) y ≺[m]
-        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) p.1.1)
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) p.val.1)
     {w : ι M →₀ ℕ}
     (hw : w ∈ (rename τ₀ (P - weightedHomogeneousComponent (fun i ↦ m.degree (c n i)) δ P) +
       g.sum fun p q ↦ rename τ₀ q * Q'M p).support) :
@@ -416,18 +416,18 @@ private theorem exists_stage_aeval_eq_support_lt (h : m.IsFairSAGBISequence c)
   set a := fun i ↦ m.degree (c n i)
   obtain ⟨S, hS, hfair⟩ := h.fair n
   have hS' : TauCeti.toricIdeal k a =
-      Ideal.span (Set.range fun p : S ↦ monomial p.1.1 (1 : k) - monomial p.1.2 1) := by
+      Ideal.span (Set.range fun p : S ↦ monomial p.val.1 (1 : k) - monomial p.val.2 1) := by
     rw [hS, Set.image_eq_range]
   obtain ⟨g, hgP₀, hgA⟩ :=
     exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent (h.monic n) hS' hPδ hδ
   have hsub (p : S) : ∃ (M : ℕ) (Q' : MvPolynomial (ι M) k),
-      aeval (c M) Q' = aeval (c n) (monomial p.1.1 (1 : k) - monomial p.1.2 1) ∧
+      aeval (c M) Q' = aeval (c n) (monomial p.val.1 (1 : k) - monomial p.val.2 1) ∧
       ∀ w ∈ Q'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) w ≺[m]
-        Finsupp.linearCombination ℕ a p.1.1 := by
-    obtain ⟨N, -, M, hNM, Q, r, hs, hr⟩ := hfair p.1 p.2
-    have huv : Finsupp.linearCombination ℕ a p.1.1 = Finsupp.linearCombination ℕ a p.1.2 :=
+        Finsupp.linearCombination ℕ a p.val.1 := by
+    obtain ⟨N, -, M, hNM, Q, r, hs, hr⟩ := hfair p.val p.property
+    have huv : Finsupp.linearCombination ℕ a p.val.1 = Finsupp.linearCombination ℕ a p.val.2 :=
       (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1
-        (hS ▸ Ideal.subset_span ⟨p.1, p.2, rfl⟩)
+        (hS ▸ Ideal.subset_span ⟨p.val, p.property, rfl⟩)
     obtain ⟨Q', hQ'c, hQ'lt⟩ := h.exists_aeval_eq_support_lt_of_isSubduction hNM huv hs hr
     exact ⟨M, Q', hQ'c, hQ'lt⟩
   choose Mfn Qfn hQfnc hQfnlt using hsub
@@ -544,7 +544,7 @@ theorem exists_isSAGBIBasis_of_fg (h : m.IsFairSAGBISequence c)
       (e : σ →₀ ℕ) ∈ AddSubmonoid.closure (Set.range fun i ↦ m.degree (c n i)) := by
     intro e
     have he : (e : σ →₀ ℕ) ∈ m.leadingExponents (Algebra.adjoin k (Set.range (c 0))) :=
-      hE ▸ AddSubmonoid.subset_closure e.2
+      hE ▸ AddSubmonoid.subset_closure e.property
     obtain ⟨f, hf, hf0, hfe⟩ := mem_leadingExponents_iff.1 he
     obtain ⟨n, hn⟩ := h.exists_degree_mem_closure hf hf0
     exact ⟨n, hfe ▸ hn⟩
@@ -653,14 +653,14 @@ private noncomputable def nextBatchStage (m : MonomialOrder σ) {c₀ : ι₀ �
   haveI : Finite S.Idx := S.instFinite
   let B := m.chosenToricBinomials S.family
   let sub (p : B) :=
-    m.chosenSubductionPair S.family (aeval S.family (monomial p.1.1 (1 : k) - monomial p.1.2 1))
+    m.chosenSubductionPair S.family (aeval S.family (monomial p.val.1 (1 : k) - monomial p.val.2 1))
   let κ := {p : B // (sub p).2 ≠ 0}
   { Idx := S.Idx ⊕ κ
     instFinite := inferInstance
-    family := Sum.elim S.family (m.monicNormalize ∘ fun l ↦ (sub l.1).2)
+    family := Sum.elim S.family (m.monicNormalize ∘ fun l ↦ (sub l.val).2)
     retract := S.retract.comp
-      (m.subductionRetract (fun l : κ ↦ monomial l.1.1.1 (1 : k) - monomial l.1.1.2 1)
-        (fun l ↦ (sub l.1).1) (fun l ↦ (sub l.1).2)) }
+      (m.subductionRetract (fun l : κ ↦ monomial l.val.val.1 (1 : k) - monomial l.val.val.2 1)
+        (fun l ↦ (sub l.val).1) (fun l ↦ (sub l.val).2)) }
 
 private noncomputable def batchStageSeq (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k) :
     ℕ → BatchStage c₀
@@ -749,19 +749,19 @@ theorem exists_sagbiCompletion_succ (c₀ : ι₀ → MvPolynomial σ k) (n : �
             monomial p.1 (1 : k) - monomial p.2 1) '' (B : Set _)) ∧
       ((∀ i, m.sagbiCompletionFamily c₀ n i ≠ 0) →
         ∀ p : B, m.IsSubduction (m.sagbiCompletionFamily c₀ n)
-          (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.1.1 (1 : k) - monomial p.1.2 1))
+          (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.val.1 (1 : k) - monomial p.val.2 1))
           (Q p) (r p)) ∧
       (∀ i, e (Sum.inl i) = m.sagbiCompletionIndexInclusion c₀ n i) ∧
       m.sagbiCompletionFamily c₀ (n + 1) ∘ e =
-        Sum.elim (m.sagbiCompletionFamily c₀ n) (m.monicNormalize ∘ fun l ↦ r l.1) ∧
+        Sum.elim (m.sagbiCompletionFamily c₀ n) (m.monicNormalize ∘ fun l ↦ r l.val) ∧
       (m.sagbiCompletionRetract c₀ (n + 1)).comp (rename e) =
         (m.sagbiCompletionRetract c₀ n).comp
           (m.subductionRetract
-            (fun l : {p : B // r p ≠ 0} ↦ monomial l.1.1.1 (1 : k) - monomial l.1.1.2 1)
-            (fun l ↦ Q l.1) (fun l ↦ r l.1)) := by
+            (fun l : {p : B // r p ≠ 0} ↦ monomial l.val.val.1 (1 : k) - monomial l.val.val.2 1)
+            (fun l ↦ Q l.val) (fun l ↦ r l.val)) := by
   let B := m.chosenToricBinomials (m.sagbiCompletionFamily c₀ n)
   let sub (p : B) := m.chosenSubductionPair (m.sagbiCompletionFamily c₀ n)
-    (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.1.1 (1 : k) - monomial p.1.2 1))
+    (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.val.1 (1 : k) - monomial p.val.2 1))
   let e : m.sagbiCompletionIndex c₀ n ⊕ {p : B // (sub p).2 ≠ 0} ≃
       m.sagbiCompletionIndex c₀ (n + 1) := Equiv.refl _
   refine ⟨B, fun p ↦ (sub p).1, fun p ↦ (sub p).2, e, m.chosenToricBinomials_span _,
@@ -829,7 +829,7 @@ theorem monic_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ i)) (n : ℕ)
     rw [← Function.comp_apply (f := m.sagbiCompletionFamily c₀ (n + 1)), hfam]
     cases x with
     | inl j => rw [Sum.elim_inl]; exact ih j
-    | inr l => rw [Sum.elim_inr, Function.comp_apply]; exact m.monic_monicNormalize l.2
+    | inr l => rw [Sum.elim_inr, Function.comp_apply]; exact m.monic_monicNormalize l.property
 
 /-- Every stage's presentation retraction `m.sagbiCompletionRetract c₀ n` is surjective. -/
 theorem sagbiCompletionRetract_surjective (c₀ : ι₀ → MvPolynomial σ k) (n : ℕ) :
@@ -853,7 +853,7 @@ theorem aeval_comp_sagbiCompletionRetract (hc₀ : ∀ i, m.Monic (c₀ i)) (n :
   | succ n ih =>
     obtain ⟨B, Q, r, e, -, hsub, -, hfam, hret⟩ := m.exists_sagbiCompletion_succ c₀ n
     have hs := fun l : {p : B // r p ≠ 0} ↦
-      hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.1
+      hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.val
     have hcomp : ((aeval c₀).comp (m.sagbiCompletionRetract c₀ (n + 1))).comp (rename e) =
         aeval (m.sagbiCompletionFamily c₀ (n + 1) ∘ e) := by
       rw [AlgHom.comp_assoc, hret, ← AlgHom.comp_assoc, ih,
@@ -872,7 +872,7 @@ theorem isFairSAGBISequence_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ 
   subset_adjoin n := by
     obtain ⟨B, Q, r, e, -, hsub, -, hfam, -⟩ := m.exists_sagbiCompletion_succ c₀ n
     have hs := fun l : {p : B // r p ≠ 0} ↦
-      hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.1
+      hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.val
     have hadj : Algebra.adjoin k (Set.range (m.sagbiCompletionFamily c₀ (n + 1))) =
         Algebra.adjoin k (Set.range (m.sagbiCompletionFamily c₀ n)) := by
       rw [← e.surjective.range_comp, hfam]

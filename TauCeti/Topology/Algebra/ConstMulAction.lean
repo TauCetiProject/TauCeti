@@ -24,9 +24,9 @@ import TauCeti.Topology.Compactness.Compact
 This file records generic instances for actions on a topological space that typeclass search
 cannot otherwise reach, and continuity of maps equal to fixed-element scalar actions.
 A trivial action, fixing every point, is jointly continuous for any topologies.
-A continuous monoid action on a Hausdorff space has closed fixed sets, and a group action with
-continuous orbit maps on a `T₁` space has closed point stabilisers. If every orbit of a group
-action is open, then every orbit is also closed.
+A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
+of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
+point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
@@ -45,6 +45,8 @@ set the orbit projection is an open embedding.
 * `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
   equivariant map; in particular (`SubMulAction.properlyDiscontinuousSMul`) it is inherited by
   every invariant subspace.
+* `Function.Injective.properlyDiscontinuousSMul`: proper discontinuity pulls back along an
+  injective map of acting types that is compatible with the actions.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
@@ -92,6 +94,13 @@ theorem continuousSMul_of_forall_smul_eq_self {G M : Type*} [TopologicalSpace G]
 theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSpace X]
     [T2Space X] [ContinuousConstSMul M X] (g : M) : IsClosed (MulAction.fixedBy X g) :=
   isClosed_eq (continuous_const_smul g) continuous_id
+
+/-- The common fixed set of a monoid acting continuously on a Hausdorff space is closed. -/
+theorem isClosed_fixedPoints_of_continuousConstSMul {M X : Type*} [Monoid M]
+    [MulAction M X] [TopologicalSpace X] [T2Space X] [ContinuousConstSMul M X] :
+    IsClosed (MulAction.fixedPoints M X) := by
+  rw [MulAction.fixed_eq_iInter_fixedBy]
+  exact isClosed_iInter isClosed_fixedBy
 
 /-- The stabilizer of a point is closed when its orbit map `g ↦ g • x` is continuous and points
 are closed: it is the preimage of `{x}` under the orbit map. -/
@@ -147,10 +156,10 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpe
     IsOpenEmbedding
       (U.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
     (MulAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
-  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.2 y.2 hxy)
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.property y.property hxy)
 
 end DisjointTranslates
 
@@ -182,10 +191,10 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_vadd (hU_open : IsOpe
     IsOpenEmbedding
       (U.domRestrict (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
     (AddAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
-  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.2 y.2 hxy)
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.property y.property hxy)
 
 end DisjointTranslatesAdd
 
@@ -283,13 +292,13 @@ theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [To
     let φ : H → (ConjAct.toConjAct g • H : _root_.Subgroup G) := fun k ↦
       ⟨g * k * g⁻¹, by
         simpa [ConjAct.toConjAct_smul] using
-          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.2⟩
+          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.property⟩
     refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := H)
       (hK.image (continuous_const_smul g⁻¹)) (hL.image (continuous_const_smul g⁻¹))).image
         φ).subset ?_
     intro k hk
     have hk' : g⁻¹ * k * g ∈ H := by
-      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.property
       rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
     refine ⟨⟨g⁻¹ * k * g, hk'⟩, ?_, Subtype.ext (by simp [φ, mul_assoc])⟩
     -- a point `x ∈ K` with `k • x ∈ L` gives `g⁻¹ • x ∈ g⁻¹ • K` moved into `g⁻¹ • L`
@@ -317,12 +326,29 @@ theorem Continuous.properlyDiscontinuousSMul {G X Y : Type*} [TopologicalSpace X
     rintro g ⟨_, ⟨x, hx, rfl⟩, hxL⟩
     exact ⟨f (g • x), ⟨f x, ⟨x, hx, rfl⟩, (hsmul g x).symm⟩, ⟨g • x, hxL, rfl⟩⟩
 
+/-- **Proper discontinuity pulls back along injective maps of acting types.** If `f : M → N` is
+injective, each `m` acts as `f m` does, and `N` acts properly discontinuously on `X`, then so does
+`M`: the elements of `M` moving a compact `K` to meet a compact `L` form the preimage under `f` of
+the finitely many such elements of `N`. -/
+@[to_additive
+/-- **Proper discontinuity pulls back along injective maps of acting types.** If `f : M → N` is
+injective, each `m` acts as `f m` does, and `N` acts properly discontinuously on `X`, then so does
+`M`. -/]
+theorem Function.Injective.properlyDiscontinuousSMul {M N X : Type*} [TopologicalSpace X]
+    [SMul M X] [SMul N X] [ProperlyDiscontinuousSMul N X] {f : M → N} (hf : Injective f)
+    (hsmul : ∀ (m : M) (x : X), f m • x = m • x) : ProperlyDiscontinuousSMul M X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := N) hK hL).preimage
+      hf.injOn).subset ?_
+    rintro m ⟨_, ⟨x, hx, rfl⟩, hxL⟩
+    exact ⟨m • x, ⟨x, hx, hsmul m x⟩, hxL⟩
+
 namespace SubMulAction
 
 /-- A properly discontinuous action remains properly discontinuous on every invariant subspace. -/
 theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
     [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S :=
-  continuous_subtype_val.properlyDiscontinuousSMul fun _ _ ↦ rfl
+  continuous_subtypeVal.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
 end SubMulAction
 
@@ -336,13 +362,13 @@ carrier. That form does not drive typeclass search, so a count through `Nat.card
 junk value `0` on an infinite type — has to bridge to `Finite` by hand at each use. This does it
 once, for every properly discontinuous action.
 
-For an action of a subgroup of `GL(2, ℝ)` no further instance is needed: Mathlib's
-`Subgroup.IsArithmetic.properlyDiscontinuous` supplies proper discontinuity for an arithmetic
-`𝒢 ≤ GL(2, ℝ)`, and the image of a finite-index `Γ ≤ SL(2, ℤ)` is arithmetic, so both shapes
-reach `Finite` through this instance alone. The stabiliser of a point under `SL(2, ℤ)` itself is
-*not* one of those shapes — `SL(2, ℤ)` is a type, not a `Subgroup (GL (Fin 2) ℝ)`, so there is no
-`ProperlyDiscontinuousSMul SL(2, ℤ) ℍ` to apply — and stays with the hand-proved
-`TauCeti.ModularGroup.finite_stabilizer`. -/
+The modular stabilisers need no further instance: Mathlib's
+`Subgroup.IsArithmetic.properlyDiscontinuous` makes an arithmetic `𝒢 ≤ GL(2, ℝ)` act properly
+discontinuously on `ℍ`, and `TauCeti.ModularGroup.properlyDiscontinuousSMul` does the same for
+`SL(2, ℤ)` itself. Its module, `TauCeti.NumberTheory.ModularForms.ProperlyDiscontinuous`, also
+re-exports `Mathlib.Topology.Algebra.Group.DiscontinuousSubgroup`, whose instance passes proper
+discontinuity to every subgroup, so with that import the point stabilisers of `SL(2, ℤ)` and of
+each of its subgroups reach `Finite` through this instance. -/
 @[to_additive
 /-- **A properly discontinuous additive action has finite point stabilisers**, as a `Finite`
 instance. Mathlib's `ProperlyDiscontinuousVAdd.finite_stabilizer` states it as `Set.Finite` of

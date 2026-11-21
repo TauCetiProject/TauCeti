@@ -101,7 +101,7 @@ theorem exists_smul_aeval_monomial_cancel (hb : ∀ i, b i ≠ 0)
     rw [m.degree_aeval_monomial_one_of_ne_zero hb]
     simpa [Finsupp.linearCombination_apply, Function.comp_def] using hu.symm
   refine ⟨u, m.leadingCoeff f / m.leadingCoeff (aeval b (monomial u (1 : k))), hdegree, ?_⟩
-  rw [coeff_smul, ← hdegree, ← leadingCoeff, smul_eq_mul]
+  rw [AddMonoidAlgebra.coeff_smul_apply, ← hdegree, ← leadingCoeff, smul_eq_mul]
   exact div_mul_cancel₀ _ (m.leadingCoeff_ne_zero_iff.2 (aeval_monomial_one_ne_zero hb u))
 
 /-- Over a field, every polynomial has a subduction certificate with respect to any family

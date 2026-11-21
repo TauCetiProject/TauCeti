@@ -36,7 +36,7 @@ theorem continuous_cliffordNorm : Continuous (cliffordNorm Q) := by
     apply (isClosedEmbedding_algebraMap Q).isEmbedding.continuous_iff.mpr
     have hval : Continuous (fun x : lipschitzGroup Q =>
         (((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))) :=
-      Units.continuous_val.comp continuous_subtype_val
+      Units.continuous_val.comp continuous_subtypeVal
     convert ((continuous_reverse Q).comp hval).mul hval using 1
     funext x
     exact (reverse_mul_self_eq_algebraMap_cliffordNorm x).symm
