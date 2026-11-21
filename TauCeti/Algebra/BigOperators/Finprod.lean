@@ -51,6 +51,9 @@ element commutes with `finsum` even when the support is infinite.
   family has finite multiplicative support jointly in both variables.
 * `TauCeti.finprod_mem_eq_prod_filter_of_mulSupport_subset`: a product over `s` of a family
   supported in a finset `t` is the product over the elements of `t` that lie in `s`.
+* `TauCeti.hasFiniteMulSupport_of_forall_eq_one` and
+  `TauCeti.hasFiniteSupport_of_forall_eq_zero`: a sequence on `ℕ` whose values from `K` onwards
+  are `1` (or `0`) has finite multiplicative (or additive) support.
 * `TauCeti.finprod_eq_prod_range_of_forall_eq_one` and
   `TauCeti.finsum_eq_sum_range_of_forall_eq_zero`: a product over `ℕ` whose factors from `K`
   onwards are `1` equals the finite product over `Finset.range K`, and likewise for sums.
@@ -240,6 +243,13 @@ theorem finprod_mem_eq_prod_filter_of_mulSupport_subset (f : α → M) (s : Set 
     ext x
     simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
     exact ⟨fun h ↦ ⟨⟨ht h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
+
+/-- A sequence on `ℕ` whose values from `K` onwards are `1` has finite multiplicative support. -/
+@[to_additive /-- A sequence on `ℕ` whose values from `K` onwards are `0` has finite support. -/]
+theorem hasFiniteMulSupport_of_forall_eq_one {M : Type*} [One M] {f : ℕ → M} (K : ℕ)
+    (hf : ∀ i : ℕ, K ≤ i → f i = 1) : HasFiniteMulSupport f :=
+  (Finset.finite_toSet (Finset.range K)).subset fun i hi ↦ by
+    simpa only [Finset.mem_coe, Finset.mem_range] using lt_of_not_ge fun hle ↦ hi (hf i hle)
 
 /-- A product over `ℕ` whose factors from `K` onwards are `1` equals the finite product over
 `Finset.range K`. -/

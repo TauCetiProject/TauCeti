@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Vertex.Axioms
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Algebra.BigOperators.Finset.Range
-import Mathlib.Algebra.Module.Rat
 
 /-!
 # Skew symmetry in formal vertex algebras
