@@ -131,6 +131,17 @@ theorem cylinderAction_const (σ : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
     rectangleIntegral_comp_fst σ (fun _ ↦ x) _ _
   rw [cylinderAction_def, h, zero_sub]
 
+/-- **Normalizing a Hamiltonian shifts the action.** Adding a function `c` of time to the
+Hamiltonian subtracts its time average `∫₀¹ c` from the action of the loop `t ↦ u (0, t)` measured
+against `u`. -/
+theorem cylinderAction_add_const (σ : RoughForm I M ℝ 2) {H : ℝ → M → ℝ} {c : ℝ → ℝ}
+    (u : ℝ × ℝ → M)
+    (hH : IntervalIntegrable (fun t ↦ H t (u (0, t))) MeasureTheory.volume 0 1)
+    (hc : IntervalIntegrable c MeasureTheory.volume 0 1) :
+    cylinderAction σ (fun t x ↦ H t x + c t) u = cylinderAction σ H u - ∫ t in 0..1, c t := by
+  rw [cylinderAction_def, cylinderAction_def, intervalIntegral.integral_add hH hc]
+  ring
+
 section Continuous
 
 variable [IsManifold I 1 M] {σ : RoughForm I M ℝ 2}
