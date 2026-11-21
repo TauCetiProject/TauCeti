@@ -19,7 +19,9 @@ transpose of `A`: `WF(A_* (χ T))` lies over `A (supp χ)`, in the directions `�
 or `(x, Aᵀ η) ∈ WF(T)` for some `x ∈ supp χ` with `A x` the base point
 (`Distribution.waveFrontSet_cutoffPushforwardCLM_subset`). For a fixed set `Γ`, the distributions
 with wave front set in `Γ` are therefore all sent into one fixed target set
-`TauCeti.pushforwardCone (supp χ) A Γ`, which depends on `Γ` and `supp χ` but not on `T`:
+`TauCeti.pushforwardCone (supp χ) A Γ`, which depends on `Γ` and `supp χ` but not on `T`
+(`Distribution.waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone`, in
+`TauCeti.Analysis.Distribution.WaveFrontSet.Pushforward`):
 
 `{(A x, η) | x ∈ supp χ, (x, Aᵀ η) ∈ Γ, or η ≠ 0 and Aᵀ η = 0}`.
 
@@ -37,9 +39,10 @@ target, localized Fourier transforms of `A_* (χ T)` are those of `T` at the tra
 with the pulled-back cutoff `χ (f ∘ A)` (`Distribution.localFourier_cutoffPushforwardCLM`). If
 some point of `supp χ` is mapped into `supp f`, the admissibility of `(f, V, N)` forces `Aᵀ` to
 have no zeros on `V \ {0}`; on the closed cone `V` it is then bounded below, `‖η‖ ≤ c ‖Aᵀ η‖`
-(`TauCeti.exists_norm_le_mul_norm_apply_of_isClosed`), and the image `Aᵀ V` is again a closed cone
-(`TauCeti.isClosed_image_of_isClosed`), admissible for `Γ` with the cutoff `χ (f ∘ A)`
-(`TauCeti.WaveFrontSeminormIndex.cutoffPushforward`). This gives
+(`ContinuousLinearMap.exists_norm_le_mul_norm_apply_of_isClosed_cone_of_apply_eq_zero_imp`), and
+the image `Aᵀ V` is again a closed cone
+(`ContinuousLinearMap.isClosed_image_of_isClosed_cone_of_apply_eq_zero_imp`), admissible for `Γ`
+with the cutoff `χ (f ∘ A)` (`TauCeti.WaveFrontSeminormIndex.cutoffPushforward`). This gives
 
 `‖A_* (χ T)‖_{f,V,N} ≤ (1 + c) ^ N ‖T‖_{χ (f ∘ A), Aᵀ V, N}`
 
@@ -48,10 +51,6 @@ cutoff vanishes and so does the seminorm.
 
 ## Main declarations
 
-* `TauCeti.pushforwardCone K A Γ`: the target set of covectors `(A x, η)`, `x ∈ K`, with
-  `(x, Aᵀ η) ∈ Γ`, or `η ≠ 0` and `Aᵀ η = 0`.
-* `Distribution.waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone`: the pushforward of a
-  distribution with wave front set in `Γ` has wave front set in `pushforwardCone (supp χ) A Γ`.
 * `TauCeti.WaveFrontSeminormIndex.cutoffPushforward`: the seminorm data `(χ (f ∘ A), Aᵀ V, N)` on
   `Ω` for the seminorm data `(f, V, N)` on `Ω'`.
 * `TauCeti.WaveFrontSpace.cutoffPushforwardCLM`: the pushforward
@@ -80,62 +79,6 @@ namespace TauCeti
 
 variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-
-/-! ### The target set of covectors -/
-
-/-- The covectors `(A x, η)` with `x ∈ K` such that `(x, Aᵀ η) ∈ Γ`, or `η ≠ 0` and `Aᵀ η = 0`.
-For `K = supp χ` it contains the wave front set of the pushforward `A_* (χ T)` of every
-distribution `T` with wave front set in `Γ`
-(`Distribution.waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone`). When `Γ` contains no
-zero covectors, it consists of the nonzero covectors `(A x, η)`, `x ∈ K`, with
-`(x, Aᵀ η) ∈ Γ ∪ (K × {0})`. -/
-def pushforwardCone (K : Set E) (A : E →L[ℝ] E') (Γ : Set (E × E)) : Set (E' × E') :=
-  {p | ∃ x ∈ K, A x = p.1 ∧ ((x, (A†) p.2) ∈ Γ ∨ (p.2 ≠ 0 ∧ (A†) p.2 = 0))}
-
-@[simp]
-theorem mem_pushforwardCone {K : Set E} {A : E →L[ℝ] E'} {Γ : Set (E × E)} {p : E' × E'} :
-    p ∈ pushforwardCone K A Γ ↔
-      ∃ x ∈ K, A x = p.1 ∧ ((x, (A†) p.2) ∈ Γ ∨ (p.2 ≠ 0 ∧ (A†) p.2 = 0)) :=
-  Iff.rfl
-
-/-- `pushforwardCone K A Γ` is monotone in `K` and in `Γ`. -/
-theorem pushforwardCone_mono {K K' : Set E} {A : E →L[ℝ] E'} {Γ Γ' : Set (E × E)} (hK : K ⊆ K')
-    (hΓ : Γ ⊆ Γ') : pushforwardCone K A Γ ⊆ pushforwardCone K' A Γ' :=
-  fun _ ⟨x, hx, hxp, h⟩ ↦ ⟨x, hK hx, hxp, h.imp_left fun h ↦ hΓ h⟩
-
-/-- Over a point `A x` with `x ∈ K`, a frequency `η` outside `pushforwardCone K A Γ` has
-`(x, Aᵀ η) ∉ Γ`, and `Aᵀ η ≠ 0` unless `η = 0`. -/
-theorem notMem_and_eq_zero_of_notMem_pushforwardCone {K : Set E} {A : E →L[ℝ] E'}
-    {Γ : Set (E × E)} {x : E} (hx : x ∈ K) {η : E'} (h : (A x, η) ∉ pushforwardCone K A Γ) :
-    (x, (A†) η) ∉ Γ ∧ ((A†) η = 0 → η = 0) :=
-  ⟨fun hΓ ↦ h ⟨x, hx, rfl, .inl hΓ⟩, fun h0 ↦ by_contra fun hη ↦ h ⟨x, hx, rfl, .inr ⟨hη, h0⟩⟩⟩
-
-end TauCeti
-
-namespace Distribution
-
-open TauCeti
-
-variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-  {Ω : Opens E} {Ω' : Opens E'}
-
-/-- **The wave front set of a pushforward lies in a fixed set.** If the wave front set of `T` lies
-in `Γ`, the wave front set of the pushforward `A_* (χ T)` lies in `pushforwardCone (supp χ) A Γ`,
-a set independent of `T`. -/
-theorem waveFrontSet_cutoffPushforwardCLM_subset_pushforwardCone (χ : 𝓓(Ω, ℝ))
-    (A : E →L[ℝ] E') {Γ : Set (E × E)} {T : 𝓓'(Ω, ℂ)} (hT : T.waveFrontSet ⊆ Γ) :
-    (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
-      pushforwardCone (tsupport χ) A Γ := fun p hp ↦ by
-  obtain ⟨x, hx, hxp, h⟩ := waveFrontSet_cutoffPushforwardCLM_subset A T hp
-  exact ⟨x, hx.1, hxp, h.symm.imp (fun h ↦ hT h) fun h ↦ ⟨(mem_waveFrontSet_iff.1 hp).2.1, h⟩⟩
-
-end Distribution
-
-namespace TauCeti
-
-variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {Ω : Opens E} {Ω' : Opens E'} {Γ : Set (E × E)}
 
 /-! ### Transport of the seminorm data -/
@@ -149,8 +92,8 @@ theorem eq_zero_of_adjoint_apply_eq_zero {χ : 𝓓(Ω, ℝ)} {A : E →L[ℝ] E
     (i : WaveFrontSeminormIndex Ω' (pushforwardCone (tsupport χ) A Γ)) {x : E}
     (hx : x ∈ tsupport χ) (hAx : A x ∈ tsupport i.cutoff) {η : E'} (hη : η ∈ i.cone)
     (h0 : (A†) η = 0) : η = 0 :=
-  (notMem_and_eq_zero_of_notMem_pushforwardCone hx
-    (disjoint_left.1 i.disjoint (mk_mem_prod hAx hη))).2 h0
+  eq_zero_of_adjoint_apply_eq_zero_of_notMem_pushforwardCone hx
+    (disjoint_left.1 i.disjoint (mk_mem_prod hAx hη)) h0
 
 /-- The data `(χ (f ∘ A), Aᵀ V, N)` on `Ω` of a seminorm of `𝓓'_Γ(Ω)`, for the data
 `i = (f, V, N)` of a seminorm of `𝓓'_{Γ'}(Ω')`, `Γ' = pushforwardCone (supp χ) A Γ`. The cone is
@@ -172,11 +115,12 @@ def cutoffPushforward (χ : 𝓓(Ω, ℝ)) (A : E →L[ℝ] E')
     obtain ⟨hxχ, hAx⟩ := tsupport_cutoffCompCLM_subset _ hx
     -- Over `A x`, the transpose `Aᵀ` has no zeros on the nonzero frequencies of the cone, so it
     -- maps the closed cone to a closed set.
-    have hclosed : IsClosed ((A†) '' i.cone) := isClosed_image_of_isClosed i.isClosed_cone
-      i.smul_mem_cone (A†) fun _ hη h0 ↦ i.eq_zero_of_adjoint_apply_eq_zero hxχ hAx hη h0
+    have hclosed : IsClosed ((A†) '' i.cone) :=
+      (A†).isClosed_image_of_isClosed_cone_of_apply_eq_zero_imp i.isClosed_cone i.smul_mem_cone
+        fun _ hη h0 ↦ i.eq_zero_of_adjoint_apply_eq_zero hxχ hAx hη h0
     obtain ⟨η, hη, rfl⟩ := hclosed.closure_eq ▸ hξ
-    exact (notMem_and_eq_zero_of_notMem_pushforwardCone hxχ
-      (disjoint_left.1 i.disjoint (mk_mem_prod hAx hη))).1 hΓ
+    exact notMem_of_notMem_pushforwardCone hxχ
+      (disjoint_left.1 i.disjoint (mk_mem_prod hAx hη)) hΓ
 
 @[simp]
 theorem cutoffPushforward_cutoff (χ : 𝓓(Ω, ℝ)) (A : E →L[ℝ] E')
@@ -212,12 +156,6 @@ private def cutoffPushforwardₗ (χ : 𝓓(Ω, ℝ)) (A : E →L[ℝ] E') :
   map_add' _ _ := ext (by simp)
   map_smul' _ _ := ext (by ext; simp)
 
-private theorem toDistribution_cutoffPushforwardₗ (χ : 𝓓(Ω, ℝ)) (A : E →L[ℝ] E')
-    (u : WaveFrontSpace Ω Γ) :
-    (cutoffPushforwardₗ (Ω' := Ω') χ A u).toDistribution =
-      Distribution.cutoffPushforwardCLM χ A A.contDiff.contDiffOn u.toDistribution :=
-  toDistribution_mk _ _
-
 /-- **The seminorms of a pushforward.** For every seminorm `‖·‖_{f,V,N}` of
 `𝓓'_{Γ'}(Ω')`, `Γ' = pushforwardCone (supp χ) A Γ`, there is `C ≥ 0` with
 `‖A_* (χ T)‖_{f,V,N} ≤ C ‖T‖_{χ (f ∘ A), Aᵀ V, N}` for every `T ∈ 𝓓'_Γ(Ω)`: one can take
@@ -228,8 +166,9 @@ private theorem exists_seminorm_cutoffPushforwardₗ_le (χ : 𝓓(Ω, ℝ)) (A 
       C * WaveFrontSpace.seminorm (i.cutoffPushforward χ A) u := by
   by_cases h : ∃ x ∈ tsupport χ, A x ∈ tsupport i.cutoff
   · obtain ⟨x, hx, hAx⟩ := h
-    obtain ⟨c, hc, hle⟩ := exists_norm_le_mul_norm_apply_of_isClosed i.isClosed_cone
-      i.smul_mem_cone (A†) fun _ hη h0 ↦ i.eq_zero_of_adjoint_apply_eq_zero hx hAx hη h0
+    obtain ⟨c, hc, hle⟩ :=
+      (A†).exists_norm_le_mul_norm_apply_of_isClosed_cone_of_apply_eq_zero_imp i.isClosed_cone
+        i.smul_mem_cone fun _ hη h0 ↦ i.eq_zero_of_adjoint_apply_eq_zero hx hAx hη h0
     refine ⟨(1 + c) ^ i.order, by positivity, fun u ↦
       seminorm_le_bound i _ (by positivity) fun η hη ↦ ?_⟩
     have hη' : 1 + ‖η‖ ≤ (1 + c) * (1 + ‖(A†) η‖) := by
@@ -239,7 +178,8 @@ private theorem exists_seminorm_cutoffPushforwardₗ_le (χ : 𝓓(Ω, ℝ)) (A 
           ‖(cutoffPushforwardₗ χ A u).toDistribution.localFourier i.cutoff η‖
         = (1 + ‖η‖) ^ i.order *
             ‖u.toDistribution.localFourier (i.cutoffPushforward χ A).cutoff ((A†) η)‖ := by
-          rw [toDistribution_cutoffPushforwardₗ, localFourier_cutoffPushforwardCLM,
+          simp only [cutoffPushforwardₗ, LinearMap.coe_mk, AddHom.coe_mk, toDistribution_mk]
+          rw [localFourier_cutoffPushforwardCLM,
             WaveFrontSeminormIndex.cutoffPushforward_cutoff]
       _ ≤ ((1 + c) * (1 + ‖(A†) η‖)) ^ i.order *
             ‖u.toDistribution.localFourier (i.cutoffPushforward χ A).cutoff ((A†) η)‖ := by
@@ -261,7 +201,8 @@ private theorem exists_seminorm_cutoffPushforwardₗ_le (χ : 𝓓(Ω, ℝ)) (A 
     refine ⟨0, le_rfl, fun u ↦ ?_⟩
     rw [zero_mul]
     refine seminorm_le_bound i _ le_rfl fun η _ ↦ ?_
-    rw [toDistribution_cutoffPushforwardₗ, localFourier_cutoffPushforwardCLM, hψ,
+    simp only [cutoffPushforwardₗ, LinearMap.coe_mk, AddHom.coe_mk, toDistribution_mk]
+    rw [localFourier_cutoffPushforwardCLM, hψ,
       localFourier_zero_cutoff, norm_zero, mul_zero]
 
 /-- **Continuity of the pushforward in the normal topology.** For a linear map `A` and a test
@@ -276,7 +217,7 @@ def cutoffPushforwardCLM (χ : 𝓓(Ω, ℝ)) (A : E →L[ℝ] E') :
       have h : ⇑(toDistribution ∘ₗ cutoffPushforwardₗ (Γ := Γ) (Ω' := Ω') χ A) =
           Distribution.cutoffPushforwardCLM χ A A.contDiff.contDiffOn ∘ toDistribution := by
         funext u
-        exact toDistribution_cutoffPushforwardₗ χ A u
+        exact toDistribution_mk _ _
       rw [h]
       exact (Distribution.cutoffPushforwardCLM χ A A.contDiff.contDiffOn).continuous.comp
         continuous_toDistribution) fun i ↦ by
@@ -290,7 +231,7 @@ theorem toDistribution_cutoffPushforwardCLM (χ : 𝓓(Ω, ℝ)) (A : E →L[ℝ
     (u : WaveFrontSpace Ω Γ) :
     (cutoffPushforwardCLM (Ω' := Ω') χ A u).toDistribution =
       Distribution.cutoffPushforwardCLM χ A A.contDiff.contDiffOn u.toDistribution :=
-  toDistribution_cutoffPushforwardₗ χ A u
+  toDistribution_mk _ _
 
 /-- **The seminorms of a pushforward.** For every seminorm `‖·‖_{f,V,N}` of
 `𝓓'_{Γ'}(Ω')`, `Γ' = pushforwardCone (supp χ) A Γ`, there is `C ≥ 0` with
