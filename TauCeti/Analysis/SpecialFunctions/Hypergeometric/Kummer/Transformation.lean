@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 import Mathlib.Data.Nat.Choose.Cast
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
