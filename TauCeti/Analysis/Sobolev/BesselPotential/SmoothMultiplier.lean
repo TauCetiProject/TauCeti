@@ -257,14 +257,16 @@ noncomputable def applyLeftEquiv (hp : 1 < p) (hp_top : p ≠ ∞) {A : E → F 
     (hBA : ∀ x, B x ∘L A x = ContinuousLinearMap.id ℂ F)
     (hAB : ∀ x, A x ∘L B x = ContinuousLinearMap.id ℂ G) :
     H^{k, p}(E, F) ≃L[ℂ] H^{k, p}(E, G) :=
-  ContinuousLinearEquiv.equivOfInverse (applyLeftCLM hp hp_top hA hAbd)
+  ContinuousLinearEquiv.ofContinuousLinearMap (applyLeftCLM hp hp_top hA hAbd)
     (applyLeftCLM hp hp_top hB hBbd)
-    (fun u ↦ ext <| by
-      rw [toDistr_applyLeftCLM, toDistr_applyLeftCLM, applyLeftCLM_applyLeftCLM_apply hA hB,
-        funext hBA, applyLeftCLM_id_apply])
-    fun u ↦ ext <| by
-      rw [toDistr_applyLeftCLM, toDistr_applyLeftCLM, applyLeftCLM_applyLeftCLM_apply hB hA,
-        funext hAB, applyLeftCLM_id_apply]
+    (ContinuousLinearMap.ext fun u ↦ ext <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, toDistr_applyLeftCLM,
+        toDistr_applyLeftCLM, applyLeftCLM_applyLeftCLM_apply hB hA, funext hAB,
+        applyLeftCLM_id_apply])
+    (ContinuousLinearMap.ext fun u ↦ ext <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, toDistr_applyLeftCLM,
+        toDistr_applyLeftCLM, applyLeftCLM_applyLeftCLM_apply hA hB, funext hBA,
+        applyLeftCLM_id_apply])
 
 @[simp]
 theorem applyLeftEquiv_apply (hp : 1 < p) (hp_top : p ≠ ∞) {A : E → F →L[ℂ] G}
