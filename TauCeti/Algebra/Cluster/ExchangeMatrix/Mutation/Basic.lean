@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 
 /-!
 # Matrix mutation
