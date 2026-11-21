@@ -123,9 +123,8 @@ theorem IsNPositive.map_mul_of_map_mul_star_self_eq (hφ : IsNPositive 2 φ) (h1
     {a : A} (ha : φ (a * star a) = φ a * star (φ a)) (b : A) : φ (a * b) = φ a * φ b := by
   have ha' : φ (star (star a) * star a) = star (φ (star a)) * φ (star a) := by
     rw [star_star, hφ.map_star two_pos, star_star, ha]
-  have := congrArg star (hφ.map_mul_of_map_star_mul_self_eq h1 ha' (star b))
-  rwa [← star_mul, hφ.map_star two_pos, star_star, hφ.map_star two_pos, hφ.map_star two_pos,
-    star_mul, star_star, star_star] at this
+  simpa [← hφ.map_star two_pos] using
+    congrArg star (hφ.map_mul_of_map_star_mul_self_eq h1 ha' (star b))
 
 /-- The **multiplicative domain** of a unital `2`-positive map `φ`: the closed unital star
 subalgebra of the elements `a` with `φ(a⋆a) = φ(a)⋆ φ(a)` and `φ(aa⋆) = φ(a) φ(a)⋆`. By
