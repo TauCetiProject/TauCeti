@@ -83,7 +83,7 @@ lemma range_map_f_le {J : Type*} [Category* J] [Quiver.IsThin J]
 section Map
 
 variable {A' B' : HomologicalComplex (ModuleCat.{v} R) c} (ψ : B' ⟶ A') (u : B ⟶ B') (v : A ⟶ A')
-  (w : φ ≫ v = u ≫ ψ)
+  (w : u ≫ ψ = φ ≫ v)
 
 /-- The map `cokernel φ ⟶ cokernel ψ` induced by `v`, on representatives. -/
 lemma cokernel_map_f_cokernel_π_f_apply (i : ι) (y : A.X i) :

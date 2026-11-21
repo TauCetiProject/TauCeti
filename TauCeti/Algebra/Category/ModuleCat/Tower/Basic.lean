@@ -365,14 +365,14 @@ theorem exists_limπ_eq_of_forall_exists_transition_eq (P : ∀ k, F.obj (op k) 
   -- Lifts `g j ∈ A_{n + j}` of `x`, each chosen as a preimage of the previous one.
   let g : ∀ j, {y : F.obj (op (n + j)) // P (n + j) y} := fun j ↦
     Nat.rec (motive := fun j ↦ {y : F.obj (op (n + j)) // P (n + j) y}) ⟨x, hx⟩
-      (fun j y ↦ ⟨f (n + j) y.1 y.2, hfP _ _ _⟩) j
-  have hg (j : ℕ) : F.transition (n + j) (g (j + 1)).1 = (g j).1 := hf _ _ _
-  have hgx (j : ℕ) : F.transitionOfLE (Nat.le_add_right n j) (g j).1 = x := by
+      (fun j y ↦ ⟨f (n + j) y.val y.property, hfP _ _ _⟩) j
+  have hg (j : ℕ) : F.transition (n + j) (g (j + 1)).val = (g j).val := hf _ _ _
+  have hgx (j : ℕ) : F.transitionOfLE (Nat.le_add_right n j) (g j).val = x := by
     induction j with
     | zero => exact LinearMap.congr_fun (F.transitionOfLE_refl n) x
     | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
-  refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k).1, F.mem_lim.2 fun k ↦ ?_⟩,
-    (F.limπ_apply n _).trans (hgx n)⟩
+  refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k).val,
+    F.mem_lim.2 fun k ↦ ?_⟩, (F.limπ_apply n _).trans (hgx n)⟩
   rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
 
 /-- If every transition map of a tower is surjective, then so is every projection

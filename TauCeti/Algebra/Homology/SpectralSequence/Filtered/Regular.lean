@@ -102,7 +102,7 @@ variable (G : EInt ⥤ CochainComplex (ModuleCat.{v} R) ℤ)
 representatives in `G_a`. -/
 private lemma homologyMap_cokernelMap_moduleCatKerHomologyClass {s s' a : EInt} (f : s ⟶ a)
     (g : s' ⟶ a)
-    (u : s ⟶ s') (v : a ⟶ a) (w : G.map f ≫ G.map v = G.map u ≫ G.map g) (n : ℤ)
+    (u : s ⟶ s') (v : a ⟶ a) (w : G.map u ≫ G.map g = G.map f ≫ G.map v) (n : ℤ)
     (y : (G.obj a).X n)
     (hy : ((cokernel (G.map f)).d n (n + 1)) ((cokernel.π (G.map f)).f n y) = 0)
     (hy' : ((cokernel (G.map g)).d n (n + 1)) ((cokernel.π (G.map g)).f n y) = 0) :
@@ -190,18 +190,18 @@ private theorem exists_homologyMap_cokernelMap_eq {a n : ℤ}
   obtain ⟨c₀, hc₀⟩ := exists_isCokernelRep G _ (ξ (a - (0 : ℕ)) (by omega))
   -- The successive representatives, and their limit `L` in `G_a`.
   choose next hnext using step
-  obtain ⟨seq, -, hseqs⟩ : ∃ seq : (k : ℕ) → {c // Rep k c}, (seq 0).1 = c₀ ∧
-      ∀ k, (seq (k + 1)).1 = next k (seq k).1 (seq k).2 :=
-    ⟨fun k ↦ Nat.rec ⟨c₀, hc₀⟩ (fun k c ↦ ⟨next k c.1 c.2, (hnext k c.1 c.2).1⟩) k, rfl,
-      fun _ ↦ rfl⟩
-  obtain ⟨L, hL⟩ := hc.exists_limit (fun k ↦ (seq k).1) fun k ↦ by
+  obtain ⟨seq, -, hseqs⟩ : ∃ seq : (k : ℕ) → {c // Rep k c}, (seq 0).val = c₀ ∧
+      ∀ k, (seq (k + 1)).val = next k (seq k).val (seq k).property :=
+    ⟨fun k ↦ Nat.rec ⟨c₀, hc₀⟩
+      (fun k c ↦ ⟨next k c.val c.property, (hnext k c.val c.property).1⟩) k, rfl, fun _ ↦ rfl⟩
+  obtain ⟨L, hL⟩ := hc.exists_limit (fun k ↦ (seq k).val) fun k ↦ by
     rw [hseqs]
     exact (hnext k _ _).2
   -- `L` is a cocycle: its boundary lies in every `G_{a-k}`.
   have hdL : (G.obj a).d n (n + 1) L = 0 := hs _ fun k ↦ by
-    rw [← sub_add_cancel L (seq k).1, map_add]
+    rw [← sub_add_cancel L (seq k).val, map_add]
     refine add_mem ?_
-      ((HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff _ n (n + 1) _).1 (seq k).2.1)
+      ((HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff _ n (n + 1) _).1 (seq k).property.1)
     obtain ⟨z, hz⟩ := hL k
     exact ⟨(G.obj _).d n (n + 1) z, by rw [← HomologicalComplex.Hom.comm_apply, hz]⟩
   have hL₀ : ((cokernel (G.map (homOfLE (bot_le : (⊥ : EInt) ≤ a)))).d n (n + 1))
@@ -213,14 +213,15 @@ private theorem exists_homologyMap_cokernelMap_eq {a n : ℤ}
   obtain ⟨k, rfl⟩ : ∃ k : ℕ, s = a - k := ⟨(a - s).toNat, by omega⟩
   -- Modulo `G_{a-k}`, `L` and the `k`th representative agree.
   have hLk : (cokernel.π (G.map (homOfLE (WithBotTop.coe_le_coe.2 hs)))).f n L =
-      (cokernel.π (G.map (homOfLE (WithBotTop.coe_le_coe.2 hs)))).f n (seq k).1 := by
+      (cokernel.π (G.map (homOfLE (WithBotTop.coe_le_coe.2 hs)))).f n (seq k).val := by
     rw [← sub_eq_zero, ← map_sub, HomologicalComplex.cokernel_π_f_apply_eq_zero_iff]
     exact hL k
   have hLk' : ((cokernel (G.map (homOfLE (WithBotTop.coe_le_coe.2 hs)))).d n (n + 1))
       ((cokernel.π (G.map (homOfLE (WithBotTop.coe_le_coe.2 hs)))).f n L) = 0 := by
     rw [hLk]
-    exact (seq k).2.1
-  rw [homologyMap_cokernelMap_moduleCatKerHomologyClass G _ _ u v w n L hL₀ hLk', ← (seq k).2.2]
+    exact (seq k).property.1
+  rw [homologyMap_cokernelMap_moduleCatKerHomologyClass G _ _ u v w n L hL₀ hLk',
+    ← (seq k).property.2]
   congr 2
 
 variable [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)]
