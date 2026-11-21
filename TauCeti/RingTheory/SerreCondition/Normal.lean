@@ -38,9 +38,11 @@ which are reduced by `(R_0)` and `(S_1)` and hence domains
   have height one.
 * `TauCeti.isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two`: a Noetherian ring
   satisfying `(R_1)` and `(S_2)` is integrally closed in its total ring of fractions.
-* `TauCeti.satisfiesSerreR_one_of_forall_isIntegrallyClosed` and
-  `TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed`: a Noetherian normal ring satisfies
-  `(R_1)` and `(S_2)`.
+* `TauCeti.satisfiesSerreR_one_of_forall_isIntegrallyClosed`,
+  `TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed`,
+  `TauCeti.satisfiesSerreR_one_of_isIntegrallyClosed`, and
+  `TauCeti.satisfiesSerreS_two_of_isIntegrallyClosed`: a Noetherian normal ring (and in particular a
+  Noetherian integrally closed domain) satisfies `(R_1)` and `(S_2)`.
 * `TauCeti.forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two`:
   **Serre's criterion**, a Noetherian ring is normal if and only if it satisfies `(R_1)` and
   `(S_2)`.
@@ -228,12 +230,18 @@ theorem forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satis
       ⟨hR'.mono zero_le_one, hS'.mono one_le_two⟩
   exact ⟨IsLocalRing.isDomain_of_isIntegrallyClosed, ‹_›⟩
 
-end TauCeti
+/-- A Noetherian integrally closed domain satisfies Serre's condition `(R_1)`. -/
+theorem satisfiesSerreR_one_of_isIntegrallyClosed [IsDomain R] [IsIntegrallyClosed R] :
+    Ring.SatisfiesSerreR 1 R :=
+  satisfiesSerreR_one_of_forall_isIntegrallyClosed fun p _ ↦
+    ⟨inferInstance, isIntegrallyClosed_of_isLocalization _ p.primeCompl
+      p.primeCompl_le_nonZeroDivisors⟩
 
-/-- A Noetherian integrally closed domain, such as `ℤ` or a polynomial ring over a field, satisfies
-`(R_1)` and `(S_2)`. -/
-example [IsDomain R] [IsIntegrallyClosed R] :
-    Ring.SatisfiesSerreR 1 R ∧ Module.SatisfiesSerreS 2 R R :=
-  TauCeti.forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two.1
-    fun p _ ↦ ⟨inferInstance,
-      isIntegrallyClosed_of_isLocalization _ p.primeCompl p.primeCompl_le_nonZeroDivisors⟩
+/-- A Noetherian integrally closed domain satisfies Serre's condition `(S_2)`. -/
+theorem satisfiesSerreS_two_of_isIntegrallyClosed [IsDomain R] [IsIntegrallyClosed R] :
+    Module.SatisfiesSerreS 2 R R :=
+  satisfiesSerreS_two_of_forall_isIntegrallyClosed fun p _ ↦
+    ⟨inferInstance, isIntegrallyClosed_of_isLocalization _ p.primeCompl
+      p.primeCompl_le_nonZeroDivisors⟩
+
+end TauCeti
