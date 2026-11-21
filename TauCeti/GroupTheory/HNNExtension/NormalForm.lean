@@ -19,10 +19,10 @@ Then `t ^ u * a * (t ^ u)⁻¹ = toSubgroupEquiv φ u a` for every `a ∈ toSubg
 
 Britton's lemma (Mathlib's `HNNExtension.ReducedWord.map_fst_eq_and_of_prod_eq`) controls when the
 product `w` of a reduced word `h * t ^ u * ⋯` conjugates an element `c` of `G` back into `G`: if
-`w⁻¹ * c * w ∈ G`, then `h⁻¹ * c * h ∈ toSubgroup A B (-u)`. If moreover `A` and `B` are
-malnormal in `G` and no nontrivial element of `B` is conjugate in `G` into `A`, then no reduced
-word `w` such that `t ^ u * w` is still reduced satisfies `w⁻¹ * x * w ∈ G` for a nontrivial
-`x ∈ toSubgroup A B u`.
+`w⁻¹ * c * w ∈ G`, then `h⁻¹ * c * h ∈ toSubgroup A B (-u)`. Consequently, if `toSubgroup A B u`
+is malnormal in `G` and no nontrivial element of `B` is conjugate in `G` into `A`, then
+`w⁻¹ * x * w ∉ G` for every nontrivial `x ∈ toSubgroup A B u` and every reduced word `w` with at
+least one stable letter such that `t ^ u * w` is still reduced.
 
 ## Main results
 
@@ -37,9 +37,10 @@ word `w` such that `t ^ u * w` is still reduced satisfies `w⁻¹ * x * w ∈ G`
   with the same head.
 * `HNNExtension.head_inv_mul_mul_head_mem_toSubgroup`: if `w = h * t ^ u * ⋯` is reduced and
   `w⁻¹ * c * w ∈ G`, then `h⁻¹ * c * h ∈ toSubgroup A B (-u)`.
-* `HNNExtension.prod_inv_mul_mul_prod_notMem_range`: for malnormal, non-conjugate associated
-  subgroups, `w⁻¹ * x * w ∉ G` for every nontrivial `x ∈ toSubgroup A B u` and every nonempty
-  reduced word `w` such that `t ^ u * w` is reduced.
+* `HNNExtension.prod_inv_mul_mul_prod_notMem_range`: if `toSubgroup A B u` is malnormal and no
+  nontrivial element of `B` is conjugate into `A`, then `w⁻¹ * x * w ∉ G` for every nontrivial
+  `x ∈ toSubgroup A B u` and every reduced word `w` with at least one stable letter such that
+  `t ^ u * w` is reduced.
 
 ## References
 
@@ -119,13 +120,13 @@ theorem head_inv_mul_mul_head_mem_toSubgroup {w : NormalWord.ReducedWord G A B} 
     group
 
 /-- Let `x` be a nontrivial element of the associated subgroup of `t ^ u`, and `w` the product of
-a reduced word `h * t ^ u' * ⋯` such that `t ^ u * w` is still reduced. If `A` and `B` are
-malnormal and no nontrivial element of `B` is conjugate into `A`, then `w⁻¹ * x * w` is not in the
-base group. -/
-theorem prod_inv_mul_mul_prod_notMem_range (hA : TauCeti.IsTISubgroup A)
-    (hB : TauCeti.IsTISubgroup B) (hAB : ∀ g : G, ∀ b ∈ B, g * b * g⁻¹ ∈ A → b = 1) {u : ℤˣ}
-    {x : G} (hx : x ∈ toSubgroup A B u) (hx1 : x ≠ 1) {w : NormalWord.ReducedWord G A B}
-    {u' : ℤˣ} {g : G} {L : List (ℤˣ × G)} (hw : w.toList = (u', g) :: L)
+a reduced word `h * t ^ u' * ⋯` such that `t ^ u * w` is still reduced. If the associated subgroup
+of `t ^ u` is malnormal and no nontrivial element of `B` is conjugate into `A`, then `w⁻¹ * x * w`
+is not in the base group. -/
+theorem prod_inv_mul_mul_prod_notMem_range (hAB : ∀ g : G, ∀ b ∈ B, g * b * g⁻¹ ∈ A → b = 1)
+    {u : ℤˣ} (hTI : TauCeti.IsTISubgroup (toSubgroup A B u)) {x : G} (hx : x ∈ toSubgroup A B u)
+    (hx1 : x ≠ 1) {w : NormalWord.ReducedWord G A B} {u' : ℤˣ} {g : G} {L : List (ℤˣ × G)}
+    (hw : w.toList = (u', g) :: L)
     (hred : w.head ∈ toSubgroup A B u → u = u') :
     (w.prod φ)⁻¹ * of x * w.prod φ ∉ (of : G →* HNNExtension G A B φ).range := by
   -- `h⁻¹ * x * h` lies in the associated subgroup of `t ^ (-u')`. This contradicts the hypothesis
@@ -137,7 +138,7 @@ theorem prod_inv_mul_mul_prod_notMem_range (hA : TauCeti.IsTISubgroup A)
   · subst hu
     exact hx1 (eq_one_of_mul_mul_inv_mem_toSubgroup_neg hAB (g := w.head⁻¹) hx
       (by simpa using hx₂))
-  · refine hx1 ((isTISubgroup_toSubgroup hA hB u).eq_one (g := w.head⁻¹)
+  · refine hx1 (hTI.eq_one (g := w.head⁻¹)
       (by simpa using fun hb => hu (hred hb).symm) hx ?_)
     rw [Int.units_ne_iff_eq_neg.1 hu, neg_neg] at hx₂
     simpa using hx₂

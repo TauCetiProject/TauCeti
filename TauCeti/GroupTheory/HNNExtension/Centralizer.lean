@@ -102,8 +102,8 @@ private theorem toList_eq_nil_of_prod_inv_mul_mul_prod_eq (hA : TauCeti.IsTISubg
     refine hx₁1 (eq_one_of_mul_mul_inv_mem_toSubgroup_neg hAA' (g := w.head⁻¹ * b⁻¹) hx₁ ?_)
     rw [← of_injective φ hz] at hx₀
     simpa [mul_assoc] using hx₀
-  · exact prod_inv_mul_mul_prod_notMem_range hA hA' hAA' hx₁ hx₁1 (w := z) hL'
-      (fun hb => hchain.1 (u', b') (by simp [hL']) hb) ⟨x, hz.symm⟩
+  · exact prod_inv_mul_mul_prod_notMem_range hAA' (isTISubgroup_toSubgroup hA hA' u) hx₁ hx₁1
+      (w := z) hL' (fun hb => hchain.1 (u', b') (by simp [hL']) hb) ⟨x, hz.symm⟩
 
 variable (φ) in
 /-- **Centralizers in an HNN extension with malnormal, non-conjugate associated subgroups.** If

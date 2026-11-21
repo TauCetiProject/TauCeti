@@ -28,8 +28,8 @@ words. In particular a letter of `G i` lies in another factor only if it lies in
 subgroup. If `g` is a letter outside the amalgamated subgroup and `w` the product of a reduced list
 not starting in the factor of `g`, then `w⁻¹ * g * w` is again the product of a reduced list. If
 instead `h ≠ 1` lies in the amalgamated subgroup and this subgroup is malnormal in the factor of
-the first letter `k` of `w`, then `k⁻¹ * h * k` is a letter outside it, and the same applies to
-`w⁻¹ * h * w`.
+the first letter `k` of `w`, then `k⁻¹ * h * k` is a letter outside it, and `w⁻¹ * h * w` is
+again the product of a reduced list.
 
 ## Main results
 
@@ -48,10 +48,10 @@ the first letter `k` of `w`, then `k⁻¹ * h * k` is a letter outside it, and t
   list that does not start in the factor of `g` is not in the amalgamated subgroup.
 * `Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_of`: if moreover the list is
   nonempty, this conjugate lies in no factor.
-* `Monoid.PushoutI.list_prod_inv_mul_base_mul_list_prod_notMem_range`: if the amalgamated subgroup
-  is malnormal in every factor other than `G i`, the product `w` of a nonempty reduced list not
-  starting in `G i` satisfies `w⁻¹ * h * w ∉ G i` for every nontrivial `h` in the amalgamated
-  subgroup.
+* `Monoid.PushoutI.list_prod_inv_mul_base_mul_list_prod_notMem_range`: if the first letter of a
+  reduced list lies in a factor `G j` other than `G i`, and the amalgamated subgroup is malnormal in
+  `G j`, the product `w` of the list satisfies `w⁻¹ * h * w ∉ G i` for every nontrivial `h` in the
+  amalgamated subgroup.
 
 ## References
 
@@ -252,33 +252,29 @@ theorem list_prod_inv_mul_of_mul_list_prod_notMem_range_of (hφ : ∀ i, Injecti
   have := List.length_pos_of_ne_nil hL
   omega
 
-/-- In an amalgamated product of groups, let `w` be the product of a nonempty list of letters,
-consecutive ones from different factors and none of them in the amalgamated subgroup, whose first
-letter is not in `G i`, and suppose that the amalgamated subgroup is malnormal in every factor other
-than `G i`. Then `w⁻¹ * h * w` is not in `G i` for any nontrivial `h` in the amalgamated
-subgroup. -/
-theorem list_prod_inv_mul_base_mul_list_prod_notMem_range (hφ : ∀ i, Injective (φ i)) {i : ι}
-    (hH : ∀ j, j ≠ i → TauCeti.IsTISubgroup (φ j).range) {L : List (Σ i, G i)} (hL : L ≠ [])
-    (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range)
-    (hi : ∀ l ∈ L.head?, l.1 ≠ i) {h : H} (h1 : h ≠ 1) :
-    (L.map fun l => of l.1 l.2).prod⁻¹ * base φ h * (L.map fun l => of l.1 l.2).prod ∉
-      (of (φ := φ) i).range := by
-  -- The first letter `k` of `w` lies in a factor `G j` with `j ≠ i`, where `k⁻¹ * h * k` is
-  -- outside the amalgamated subgroup by malnormality.
-  obtain ⟨⟨j, k⟩, L₁, rfl⟩ := List.exists_cons_of_ne_nil hL
-  have hji : j ≠ i := hi _ rfl
+/-- In an amalgamated product of groups, let `w` be the product of a list of letters, consecutive
+ones from different factors and none of them in the amalgamated subgroup, whose first letter `k`
+lies in a factor `G j` other than `G i`, and suppose that the amalgamated subgroup is malnormal in
+`G j`. Then `w⁻¹ * h * w` is not in `G i` for any nontrivial `h` in the amalgamated subgroup. -/
+theorem list_prod_inv_mul_base_mul_list_prod_notMem_range (hφ : ∀ i, Injective (φ i)) {i j : ι}
+    (hji : j ≠ i) (hH : TauCeti.IsTISubgroup (φ j).range) {k : G j} {L : List (Σ i, G i)}
+    (hc : (⟨j, k⟩ :: L).IsChain fun l l' => l.1 ≠ l'.1)
+    (hred : ∀ l ∈ ⟨j, k⟩ :: L, l.2 ∉ (φ l.1).range) {h : H} (h1 : h ≠ 1) :
+    ((⟨j, k⟩ :: L).map fun l => of l.1 l.2).prod⁻¹ * base φ h *
+      ((⟨j, k⟩ :: L).map fun l => of l.1 l.2).prod ∉ (of (φ := φ) i).range := by
+  -- By malnormality, `k⁻¹ * h * k` is a letter of `G j` outside the amalgamated subgroup.
   have hm : k⁻¹ * φ j h * k ∉ (φ j).range := by
-    simpa using (hH j hji).conj_notMem (g := k⁻¹) (by simpa using hred _ List.mem_cons_self)
+    simpa using hH.conj_notMem (g := k⁻¹) (by simpa using hred _ List.mem_cons_self)
       ⟨h, rfl⟩ ((map_ne_one_iff _ (hφ j)).2 h1)
-  have hconj : ((⟨j, k⟩ :: L₁).map fun l => of (φ := φ) l.1 l.2).prod⁻¹ * base φ h *
-      ((⟨j, k⟩ :: L₁).map fun l => of l.1 l.2).prod = (L₁.map fun l => of (φ := φ) l.1 l.2).prod⁻¹ *
-        of j (k⁻¹ * φ j h * k) * (L₁.map fun l => of l.1 l.2).prod := by
+  have hconj : ((⟨j, k⟩ :: L).map fun l => of (φ := φ) l.1 l.2).prod⁻¹ * base φ h *
+      ((⟨j, k⟩ :: L).map fun l => of l.1 l.2).prod = (L.map fun l => of (φ := φ) l.1 l.2).prod⁻¹ *
+        of j (k⁻¹ * φ j h * k) * (L.map fun l => of l.1 l.2).prod := by
     rw [← of_apply_eq_base φ j]
     simp [mul_assoc]
   rw [hconj]
-  rcases eq_or_ne L₁ [] with rfl | hL₁
+  rcases eq_or_ne L [] with rfl | hL
   · simpa using mt (of_mem_range_of_iff hφ hji).1 hm
-  · exact list_prod_inv_mul_of_mul_list_prod_notMem_range_of hφ hL₁ (List.isChain_cons.1 hc).2
+  · exact list_prod_inv_mul_of_mul_list_prod_notMem_range_of hφ hL (List.isChain_cons.1 hc).2
       (fun l hl => hred l (List.mem_cons_of_mem _ hl)) hm
       (fun l hl => ((List.isChain_cons.1 hc).1 l hl).symm)
 

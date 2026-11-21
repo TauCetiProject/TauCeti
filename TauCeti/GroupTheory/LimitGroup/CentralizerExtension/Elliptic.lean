@@ -14,17 +14,19 @@ public import TauCeti.GroupTheory.PushoutI.Centralizer
 Let `u` be an element of a group `G`, `C = C_G(u)` its centralizer and
 `E = G(u, ℤⁿ) = G ∗_C (C × ℤⁿ)` the extension of that centralizer. An element of `E` that is
 conjugate into one of the two factors `G` and `C × ℤⁿ` is *elliptic* (it fixes a vertex of the
-Bass–Serre tree of the amalgam). This file computes the centralizers of the elliptic elements:
+Bass–Serre tree of the amalgam); the other elements of `E` are *hyperbolic*. This file computes
+the centralizers of two kinds of elliptic elements:
 
 1. an element `g ∈ G` that is not conjugate in `G` into `C` has the same centralizer in `E` as in
    `G`, for every group `G`;
 2. if `C` is malnormal in `G`, the centralizer in `E` of a nonidentity element of the factor
-   `C × ℤⁿ` whose first coordinate is central in `C` is that whole factor. When `C` is moreover
-   abelian (as it is for `u ≠ 1` in a CSA group), this applies to every nonidentity element of
-   the factor.
+   `C × ℤⁿ` whose first coordinate is central in `C` is that whole factor.
 
-Every nonidentity elliptic element is conjugate to an element of one of these two kinds, and
-centralizers of conjugate elements are conjugate. The remaining elements of `E` are hyperbolic.
+When `C` is abelian, every nonidentity elliptic element is conjugate in `E` to an element of one of
+these two kinds: an element of `G` that is conjugate in `G` into `C` is conjugate in `E` to an
+element of the factor `C × ℤⁿ`. Since centralizers of conjugate elements are conjugate, the two
+computations give the centralizers of all nonidentity elliptic elements when `C` is abelian and
+malnormal in `G`, as it is for `u ≠ 1` in a CSA group. Hyperbolic elements are not treated here.
 
 For a basis element `a` of a free group `F` and `n = 1`, the centralizer of the new letter `t` in
 `F(a, ℤ) = ⟨F, t | [a, t] = 1⟩` is `⟨a, t⟩ ≅ ℤ²`, and the centralizer of another basis

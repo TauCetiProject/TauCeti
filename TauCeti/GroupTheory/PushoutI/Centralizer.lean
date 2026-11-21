@@ -121,9 +121,10 @@ theorem centralizer_of_eq_map_of_isTISubgroup (hφ : ∀ j, Injective (φ j)) {i
   by_cases hgr : a⁻¹ * g * a ∈ (φ i).range
   · obtain ⟨h, hh⟩ := hgr
     have hg' : a⁻¹ * g * a ≠ 1 := by simpa [mul_assoc, inv_mul_eq_one] using hg
+    obtain ⟨⟨j, k⟩, L, rfl⟩ := List.exists_cons_of_ne_nil hL
     rw [← hh, of_apply_eq_base]
-    exact list_prod_inv_mul_base_mul_list_prod_notMem_range hφ hH hL hc hred hhead
-      fun h1 => hg' (by rw [← hh, h1, map_one])
+    exact list_prod_inv_mul_base_mul_list_prod_notMem_range hφ (hhead _ rfl) (hH j (hhead _ rfl))
+      hc hred fun h1 => hg' (by rw [← hh, h1, map_one])
   · exact list_prod_inv_mul_of_mul_list_prod_notMem_range_of hφ hL hc hred hgr hhead
 
 /-! ### Examples -/
