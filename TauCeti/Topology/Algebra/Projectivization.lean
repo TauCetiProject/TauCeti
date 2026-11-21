@@ -160,10 +160,10 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃SL[σ] W) 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm (e : V ≃SL[σ] W) :
     e.mapProjectivization.symm = e.symm.mapProjectivization := by
-  apply Homeomorph.toEquiv_injective
-  simpa only [Homeomorph.symm, ContinuousLinearEquiv.toEquiv_mapProjectivization,
-    ContinuousLinearEquiv.toLinearEquiv_symm] using
-    LinearEquiv.mapProjectivization_symm e.toLinearEquiv
+  ext p
+  rw [← Homeomorph.coe_symm_toEquiv, ContinuousLinearEquiv.toEquiv_mapProjectivization,
+    LinearEquiv.mapProjectivization_symm, ← ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← ContinuousLinearEquiv.toEquiv_mapProjectivization, Homeomorph.coe_toEquiv]
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm_apply_apply (e : V ≃SL[σ] W)
