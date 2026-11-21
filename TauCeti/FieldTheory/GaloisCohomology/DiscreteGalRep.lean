@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
@@ -15,30 +14,29 @@ public import TauCeti.Topology.Algebra.MulAction.Discrete
 /-!
 # Discrete Galois modules as `GalRep n F` objects
 
-Local class field theory states its finiteness and Euler-characteristic theorems for bundled
-representations `A : TauCeti.ClassFieldTheory.GalRep n F`, that is, objects of
-`TopRep (ZMod n) (Field.absoluteGaloisGroup F)` with Mathlib's `continuousCohomology`. Arithmetic
-applications—such as Kummer modules, elliptic-curve torsion, and unramified local duality—instead
-work with discrete `AbsoluteGaloisGroup F`-modules `M` (either already equipped with a
-`Module (ZMod n) M` instance or merely killed by `n`) and explicit low-degree cohomology `H⁰`,
-`H¹`, `H²`.
+Continuous Galois cohomology on `Field.absoluteGaloisGroup F` uses bundled representations
+`A : TauCeti.GalRep n F`, that is, objects of `TopRep (ZMod n) (Field.absoluteGaloisGroup F)` with
+Mathlib's `continuousCohomology`. Arithmetic applications—such as Kummer modules, elliptic-curve
+torsion, and unramified local duality—instead work with discrete `AbsoluteGaloisGroup F`-modules
+`M` (either already equipped with a `Module (ZMod n) M` instance or merely killed by `n`) and
+explicit low-degree cohomology `H⁰`, `H¹`, `H²`.
 
 This file builds the shared bridge between the two for an arbitrary field `F`:
 
-* `TauCeti.ClassFieldTheory.GalRep`: `TopRep (ZMod n) (Field.absoluteGaloisGroup F)`.
-* `TauCeti.ClassFieldTheory.galRepOfZModModule`: restricts the Galois action on a discrete
-  `ZMod n`-module `M` along `TauCeti.absoluteGaloisGroupRestrictEquiv F` to obtain an object of
-  `GalRep n F`, together with `galRepOfZModModuleEquiv`, `galRepOfZModModuleEquiv_smul`, and
+* `TauCeti.GalRep`: `TopRep (ZMod n) (Field.absoluteGaloisGroup F)`.
+* `TauCeti.galRepOfZModModule`: restricts the Galois action on a discrete `ZMod n`-module `M` along
+  `TauCeti.absoluteGaloisGroupRestrictEquiv F` to obtain an object of `GalRep n F`, together with
+  `galRepOfZModModuleEquiv`, `galRepOfZModModuleEquiv_smul`, and
   `galRepOfZModModuleH0Equiv` / `H1Equiv` / `H2Equiv`.
-* `TauCeti.ClassFieldTheory.galRepOfDiscreteModule`: specializes `galRepOfZModModule` to an
-  unbundled discrete `AbsoluteGaloisGroup F`-module killed by `n` via `AddCommGroup.zmodModule`,
-  together with `galRepOfDiscreteModuleEquiv`, `galRepOfDiscreteModuleEquiv_smul`, and
+* `TauCeti.galRepOfDiscreteModule`: specializes `galRepOfZModModule` to an unbundled discrete
+  `AbsoluteGaloisGroup F`-module killed by `n` via `AddCommGroup.zmodModule`, together with
+  `galRepOfDiscreteModuleEquiv`, `galRepOfDiscreteModuleEquiv_smul`, and
   `galRepOfDiscreteModuleH0Equiv` / `H1Equiv` / `H2Equiv`.
 -/
 
 public noncomputable section
 
-namespace TauCeti.ClassFieldTheory
+namespace TauCeti
 
 open CategoryTheory ContCohomology
 
@@ -206,8 +204,7 @@ end ZModModule
 section Unbundled
 
 variable (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
-  (hM : ∀ x : M, n • x = 0)
+  [DistribMulAction (AbsoluteGaloisGroup F) M] (hM : ∀ x : M, n • x = 0)
 
 /-- **Bundle an unbundled discrete `G_F`-module killed by `n` as an object of `GalRep n F`**,
 equipping `M` with its `ZMod n`-module structure via `AddCommGroup.zmodModule hM` and
@@ -216,26 +213,9 @@ def galRepOfDiscreteModule : GalRep n F :=
   letI : Module (ZMod n) M := AddCommGroup.zmodModule hM
   galRepOfZModModule n F M
 
-/-- `galRepOfDiscreteModule n F M hM` is smooth and discrete. -/
-theorem isSmoothDiscrete_galRepOfDiscreteModule :
-    IsSmoothDiscrete (ZMod n) (galRepOfDiscreteModule n F M hM) := by
-  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
-  exact isSmoothDiscrete_galRepOfZModModule n F M
-
 /-- The carrier of `galRepOfDiscreteModule n F M hM` has the discrete topology. -/
 instance : DiscreteTopology (galRepOfDiscreteModule n F M hM).V :=
-  (isSmoothDiscrete_galRepOfDiscreteModule n F M hM).discreteTopology
-
-/-- `Fact` instance for `isSmoothDiscrete_galRepOfDiscreteModule`. -/
-instance : Fact (IsSmoothDiscrete (ZMod n) (galRepOfDiscreteModule n F M hM)) :=
-  ⟨isSmoothDiscrete_galRepOfDiscreteModule n F M hM⟩
-
-attribute [local instance] TopRep.distribMulAction
-
-/-- The action of `Field.absoluteGaloisGroup F` on `galRepOfDiscreteModule n F M hM` is
-continuous. -/
-instance : ContinuousSMul (Field.absoluteGaloisGroup F) (galRepOfDiscreteModule n F M hM).V :=
-  (isSmoothDiscrete_galRepOfDiscreteModule n F M hM).continuousSMul
+  inferInstanceAs (DiscreteTopology M)
 
 /-- The coefficient dictionary `M ≃+ (galRepOfDiscreteModule n F M hM).V`. -/
 def galRepOfDiscreteModuleEquiv : M ≃+ (galRepOfDiscreteModule n F M hM).V :=
@@ -246,7 +226,6 @@ def galRepOfDiscreteModuleEquiv : M ≃+ (galRepOfDiscreteModule n F M hM).V :=
 instance [Finite M] : Finite (galRepOfDiscreteModule n F M hM).V :=
   Finite.of_equiv M (galRepOfDiscreteModuleEquiv n F M hM).toEquiv
 
-omit [ContinuousSMul (AbsoluteGaloisGroup F) M] in
 /-- **The coefficient dictionary is equivariant**: `g ∈ Field.absoluteGaloisGroup F` acts on
 `galRepOfDiscreteModule n F M hM` as its restriction to the separable closure acts on `M`. -/
 @[simp]
@@ -255,6 +234,8 @@ theorem galRepOfDiscreteModuleEquiv_smul (g : Field.absoluteGaloisGroup F) (x : 
       (galRepOfDiscreteModule n F M hM).ρ g (galRepOfDiscreteModuleEquiv n F M hM x) := by
   let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
   exact galRepOfZModModuleEquiv_smul n F M g x
+
+attribute [local instance] TopRep.distribMulAction
 
 /-- **Degree-zero cohomology comparison** between explicit `H⁰(G_F, M)` and
 `continuousCohomology 0 (galRepOfDiscreteModule n F M hM)`. -/
@@ -278,6 +259,24 @@ theorem galRepOfDiscreteModuleH0Equiv_apply (x : H0 (AbsoluteGaloisGroup F) M) :
               (TopRep.distribMulAction_smul _ g _).symm) x)) := by
   let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
   exact galRepOfZModModuleH0Equiv_apply n F M x
+
+variable [ContinuousSMul (AbsoluteGaloisGroup F) M]
+
+/-- `galRepOfDiscreteModule n F M hM` is smooth and discrete when `G_F` acts continuously on
+`M`. -/
+theorem isSmoothDiscrete_galRepOfDiscreteModule :
+    IsSmoothDiscrete (ZMod n) (galRepOfDiscreteModule n F M hM) := by
+  let _ : Module (ZMod n) M := AddCommGroup.zmodModule hM
+  exact isSmoothDiscrete_galRepOfZModModule n F M
+
+/-- `Fact` instance for `isSmoothDiscrete_galRepOfDiscreteModule`. -/
+instance : Fact (IsSmoothDiscrete (ZMod n) (galRepOfDiscreteModule n F M hM)) :=
+  ⟨isSmoothDiscrete_galRepOfDiscreteModule n F M hM⟩
+
+/-- The action of `Field.absoluteGaloisGroup F` on `galRepOfDiscreteModule n F M hM` is
+continuous. -/
+instance : ContinuousSMul (Field.absoluteGaloisGroup F) (galRepOfDiscreteModule n F M hM).V :=
+  (isSmoothDiscrete_galRepOfDiscreteModule n F M hM).continuousSMul
 
 /-- **Degree-one cohomology comparison** between explicit `H¹(G_F, M)` and
 `continuousCohomology 1 (galRepOfDiscreteModule n F M hM)`. -/
@@ -323,4 +322,4 @@ theorem galRepOfDiscreteModuleH2Equiv_apply (x : H2 (AbsoluteGaloisGroup F) M) :
 
 end Unbundled
 
-end TauCeti.ClassFieldTheory
+end TauCeti

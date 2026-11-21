@@ -20,11 +20,14 @@ nonarchimedean local field, including at places dividing `n`.
 The kernels of the maps to point-coefficient cohomology satisfy the same vanishing
 (`kerH1WeilPairing_eq_zero_of_mem_ker`). These kernels define the Selmer local conditions,
 so the result applies over both finite and infinite completions of a number field.
-Over a nonarchimedean local field, the unramified subgroups `φ.unramifiedKerCohomology` and
-`φ.dual.unramifiedKerCohomology` are likewise orthogonal under both the Weil cup product and local
-Tate duality (`kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology` and
-`localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology`), since `H²(G_K ⧸ I_K, μ_n^{I_K})`
-vanishes (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`).
+Over a nonarchimedean local field, the unramified subgroups `W.unramifiedTorsionCohomology m`,
+`φ.unramifiedKerCohomology`, and `φ.dual.unramifiedKerCohomology` are likewise orthogonal under
+both the Weil cup product and local Tate duality
+(`WeierstrassCurve.torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology`,
+`WeierstrassCurve.localTateWeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology`,
+`TauCeti.Isogeny.kerH1WeilPairing_eq_zero_of_mem_unramifiedKerCohomology`, and
+`TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_unramifiedKerCohomology`), since
+`H²(G_K ⧸ I_K, μ_n^{I_K})` vanishes (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`).
 Orthogonality is the input needed to identify the two local conditions as exact annihilators;
 equality with the annihilators additionally requires an order calculation.
 
@@ -43,6 +46,51 @@ reduce the cup product to the multiplication-by-`n` Kummer images, whose isotrop
 public section
 
 noncomputable section
+
+namespace WeierstrassCurve
+
+open TauCeti TauCeti.ContCohomology
+
+section Unramified
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] (W : WeierstrassCurve K) [W.IsElliptic]
+  {m : ℕ} (hm : IsUnit (m : K))
+
+/-- **Unramified `m`-torsion cohomology is isotropic for the Weil cup product** over any
+nonarchimedean local field in which `m` is invertible; no good-reduction hypothesis is required
+and the residue characteristic may divide `m`. -/
+theorem torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology
+    {a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
+    (ha : a ∈ W.unramifiedTorsionCohomology m) (hb : b ∈ W.unramifiedTorsionCohomology m) :
+    W.torsionH1WeilPairing m hm a b = 0 := by
+  have := hm.neZero_natCast
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1] at ha hb
+  rw [W.torsionH1WeilPairing_eq_explicitCup11 m hm]
+  exact (W.torsionCoeffWeilPairing m hm).explicitCup11_eq_zero_of_mem_unramifiedH1
+    continuous_of_discreteTopology (W.torsionCoeffWeilPairing_smul m hm) ha hb
+
+end Unramified
+
+section UnramifiedLocalTate
+
+variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] (W : WeierstrassCurve K) [W.IsElliptic]
+  {m : ℕ} (hm : IsUnit (m : K))
+
+/-- **Unramified `m`-torsion cohomology is isotropic for the local Tate pairing** over any
+nonarchimedean local field in which `m` is invertible; no good-reduction hypothesis is required
+and the residue characteristic may divide `m`. -/
+theorem localTateWeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology
+    {a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
+    (ha : a ∈ W.unramifiedTorsionCohomology m) (hb : b ∈ W.unramifiedTorsionCohomology m) :
+    W.localTateWeilPairing m hm a b = 0 := by
+  rw [localTateWeilPairing_apply,
+    W.torsionH1WeilPairing_eq_zero_of_mem_unramifiedTorsionCohomology hm ha hb, map_zero, map_zero]
+
+end UnramifiedLocalTate
+
+end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 

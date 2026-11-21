@@ -110,11 +110,9 @@ kernel cohomology at any nonarchimedean local field `L i` where `W₁⁄(L i)` h
 theorem kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup
     (hdeg : (φ.degree : 𝓀[L i]) ≠ 0)
     {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} (hc : c ∈ φ.selmerGroup τ) :
-    φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).unramifiedKerCohomology := by
-  have hloc : φ.kerRes (τ i) c ∈ (φ.selmerStructure τ).localCondition i := by
-    rw [selmerStructure_localCondition, AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl]
-    exact (W₁.mem_shafarevichTateGroup_iff τ).1 ((φ.mem_selmerGroup_iff τ).1 hc) i
-  exact φ.localCondition_selmerStructure_le_unramifiedKerCohomology τ i hdeg hloc
+    φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).unramifiedKerCohomology :=
+  φ.localCondition_selmerStructure_le_unramifiedKerCohomology τ i hdeg
+    ((φ.mem_selmerGroup_iff_forall_kerRes_mem_localCondition τ).1 hc i)
 
 end ArbitraryFamily
 
@@ -204,12 +202,12 @@ theorem eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
   obtain ⟨_, _⟩ := hT₁ v hv
   exact φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hTdeg v hv)
 
-/-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain.** If
-`W₁` and `W₂` have good reduction outside `S` and no prime outside `S` divides `deg φ`, then a
-class in `H¹(G_K, E₁[φ])` belongs to `Sel_φ` (relative to all height-one completions) if and only
-if it is unramified outside `S` and satisfies the local condition at the primes in `S`. When `S`
-is finite, this reduces `Sel_φ` to finitely many local conditions outside the unramified
-locus. -/
+/-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain with
+finite residue fields at every height-one prime.** If `W₁` and `W₂` have good reduction outside
+`S` and no prime outside `S` divides `deg φ`, then a class in `H¹(G_K, E₁[φ])` belongs to
+`Sel_φ` (relative to all height-one completions) if and only if it is unramified outside `S` and
+satisfies the local condition at the primes in `S`. When `S` is finite, this reduces `Sel_φ` to
+finitely many local conditions outside the unramified locus. -/
 theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_mem
     {S : Set (HeightOneSpectrum R)}
     (hgood₁ : ∀ v ∉ S, ∃ _ : IsIntegral 𝒪[v.adicCompletion K] (W₁⁄(v.adicCompletion K)),
@@ -221,14 +219,10 @@ theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_mem
     c ∈ φ.selmerGroup τ ↔
       c ∈ φ.unramifiedOutsideKerCohomology τ S ∧
         ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
-  have hmem : c ∈ φ.selmerGroup τ ↔
-      ∀ v, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
-    simp only [mem_selmerGroup_iff, mem_shafarevichTateGroup_iff, pointRes_kerCoeffIncl,
-      selmerStructure_localCondition, AddMonoidHom.mem_ker]
   refine ⟨fun hc ↦ ⟨φ.selmerGroup_le_unramifiedOutsideKerCohomology τ hgood₁ hS hc,
-    fun v _ ↦ hmem.mp hc v⟩, ?_⟩
+    fun v _ ↦ (φ.mem_selmerGroup_iff_forall_kerRes_mem_localCondition τ).1 hc v⟩, ?_⟩
   rintro ⟨hur, hloc⟩
-  rw [hmem]
+  rw [mem_selmerGroup_iff_forall_kerRes_mem_localCondition]
   intro v
   by_cases hv : v ∈ S
   · exact hloc v hv

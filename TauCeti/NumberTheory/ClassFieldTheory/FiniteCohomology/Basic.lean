@@ -18,7 +18,7 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 # Finiteness of `H⁰` and `H¹` of a finite Galois module over a local field
 
 Let `F` be a nonarchimedean local field, `n` a natural number invertible in `F`, and `A` a finite
-smooth discrete `G_F`-module killed by `n`, an object of `TauCeti.ClassFieldTheory.GalRep n F`.
+smooth discrete `G_F`-module killed by `n`, an object of `TauCeti.GalRep n F`.
 This file proves that the continuous cohomology groups `H⁰(G_F, A)` and `H¹(G_F, A)` are finite
 (`TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`).
 

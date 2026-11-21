@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
+public import TauCeti.FieldTheory.GaloisCohomology.DiscreteGalRep
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
-public import TauCeti.NumberTheory.ClassFieldTheory.DiscreteGalRep
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
@@ -64,7 +64,8 @@ corresponding cardinality equality.
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.GalRep n F`: coefficient objects `TopRep (ZMod n) G_F`.
+* `TauCeti.GalRep n F`: coefficient objects `TopRep (ZMod n) G_F`
+  (`TauCeti/FieldTheory/GaloisCohomology/DiscreteGalRep.lean`).
 * `TauCeti.ClassFieldTheory.muNRep n F`: the roots of unity `μₙ(Fˢ)` as a coefficient object.
 * `TauCeti.ClassFieldTheory.kummerCoeffEquivMuNRep`: the identification of its underlying module
   with `TauCeti.KummerCoeff F n`.

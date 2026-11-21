@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 
 import TauCeti.Algebra.Module.ZMod.Annihilator
-import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Explicit
+import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Theorem
 import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
 import TauCeti.RepresentationTheory.Homological.ContCohomology.TopologicallyFinitelyGenerated
 

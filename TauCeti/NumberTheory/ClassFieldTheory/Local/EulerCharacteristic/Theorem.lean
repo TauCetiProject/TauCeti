@@ -144,6 +144,42 @@ theorem natCard_H1_eq_mul (M : Type) [AddCommGroup M] [TopologicalSpace M]
     ← hc₀, ← hc₁, ← hc₂] at h
   exact h
 
+section ExplicitPrimeToP
+
+open ContCohomology
+
+/-- **Prime-to-`p` local Euler characteristic on explicit cohomology (by order).** For any finite
+discrete `G_K`-module `M` over a finite extension `K` of `ℚ_p` with `p ∤ #M`,
+`#H¹(G_K, M) = #H⁰(G_K, M) · #H²(G_K, M)`. -/
+theorem natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd
+    {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] [FinitePadicExtension K p]
+    (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
+    [Finite M] (hpM : ¬ p ∣ Nat.card M) :
+    Nat.card (H1 (AbsoluteGaloisGroup K) M) =
+      Nat.card (H0 (AbsoluteGaloisGroup K) M) * Nat.card (H2 (AbsoluteGaloisGroup K) M) := by
+  rw [natCard_H1_eq_mul p K M, Nat.padicValNat_def,
+    multiplicity_eq_zero_of_not_dvd hpM, mul_zero, pow_zero, mul_one]
+
+/-- **Prime-to-`p` local Euler characteristic on explicit cohomology (by exponent).** If `M` is a
+finite discrete `G_K`-module over a finite extension `K` of `ℚ_p` killed by `n` with `p ∤ n`, then
+`#H¹(G_K, M) = #H⁰(G_K, M) · #H²(G_K, M)`. -/
+theorem natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd_exponent
+    {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] [FinitePadicExtension K p]
+    {n : ℕ} (hpn : ¬ p ∣ n)
+    (M : Type) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
+    [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Nat.card (H1 (AbsoluteGaloisGroup K) M) =
+      Nat.card (H0 (AbsoluteGaloisGroup K) M) * Nat.card (H2 (AbsoluteGaloisGroup K) M) := by
+  refine natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd p M fun hpM ↦ ?_
+  obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card' p hpM
+  exact hpn (hx ▸ addOrderOf_dvd_of_nsmul_eq_zero (hM x))
+
+end ExplicitPrimeToP
+
 /-- **Dimension form of Tate's local Euler characteristic formula.** For a finite smooth
 discrete `𝔽_p`-module, `dim H¹ = dim H⁰ + dim H² + [F : ℚ_p] dim A`. -/
 theorem eulerCharacteristic_finrank_fp (A : GalRep p F) (hA : Finite A.V)

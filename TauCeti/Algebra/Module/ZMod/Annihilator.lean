@@ -120,8 +120,17 @@ theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod [Finite N] (he : Fun
   rw [mul_comm, hcard, Nat.card_congr (Equiv.ofBijective e he),
     TauCeti.natCard_addMonoidHom_zmod hN]
 
-/-- Transport of `eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod` to a pairing
-`d : M →+ N →+ C` valued in a group `C` equipped with `eC : C ≃+ ZMod n`. -/
+private theorem ker_compl₂_addEquiv_comp {A B C D : Type*} [AddCommGroup A] [AddCommGroup B]
+    [AddCommGroup C] [AddCommGroup D] (e : C ≃+ D) (f : A →+ B →+ C) (H : AddSubgroup B) :
+    ((e.addMonoidHomCongrRight.toAddMonoidHom.comp f).compl₂ H.subtype).ker =
+      (f.compl₂ H.subtype).ker :=
+  AddMonoidHom.ker_comp_of_injective (f.compl₂ H.subtype) e.addMonoidHomCongrRight.toAddMonoidHom
+    e.addMonoidHomCongrRight.injective
+
+/-- For finite `N` killed by `n ≠ 0`, a group `C` equipped with `eC : C ≃+ ZMod n`, and a
+pairing `d : M →+ N →+ C` whose left adjoint is bijective, a subgroup `U ≤ M` equals the
+annihilator of `H ≤ N` if and only if `U` is orthogonal to `H` and
+`Nat.card U * Nat.card H = Nat.card M`. -/
 theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEquiv_zmod
     {C : Type*} [AddCommGroup C] [Finite N] (d : M →+ N →+ C) (eC : C ≃+ ZMod n)
     (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (U : AddSubgroup M) (H : AddSubgroup N) :
@@ -129,26 +138,22 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEqui
       (∀ x ∈ U, ∀ y ∈ H, d x y = 0) ∧ Nat.card U * Nat.card H = Nat.card M := by
   let e : M →+ N →+ ZMod n := eC.addMonoidHomCongrRight.toAddMonoidHom.comp d
   have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
-  have hker : (e.compl₂ H.subtype).ker = (d.compl₂ H.subtype).ker := by
-    ext x
-    simp [e, AddMonoidHom.ext_iff]
-  rw [← hker, e.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod he hN]
+  rw [← ker_compl₂_addEquiv_comp eC d H,
+    e.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod he hN]
   simp [e]
 
-/-- Double-annihilator theorem for a finite pairing `d : M →+ N →+ C` valued in `C ≃+ ZMod n`. -/
+/-- **Double-annihilator theorem for `C`-valued pairings (`C ≃+ ZMod n`).** For finite `N` killed
+by `n ≠ 0` and a pairing `d : M →+ N →+ C` whose left adjoint is bijective, the annihilator under
+`d.flip` of the annihilator of `H ≤ N` is `H` itself. -/
 theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod
     {C : Type*} [AddCommGroup C] [Finite N] (d : M →+ N →+ C) (eC : C ≃+ ZMod n)
     (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
     (d.flip.compl₂ (d.compl₂ H.subtype).ker.subtype).ker = H := by
   let e : M →+ N →+ ZMod n := eC.addMonoidHomCongrRight.toAddMonoidHom.comp d
   have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
-  have hker : (e.compl₂ H.subtype).ker = (d.compl₂ H.subtype).ker := by
-    ext x
-    simp [e, AddMonoidHom.ext_iff]
-  have hker' : (e.flip.compl₂ (d.compl₂ H.subtype).ker.subtype).ker =
-      (d.flip.compl₂ (d.compl₂ H.subtype).ker.subtype).ker := by
-    ext y
-    simp [e, AddMonoidHom.ext_iff]
-  rw [← hker', ← hker, e.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod he hN]
+  have hflip : e.flip = eC.addMonoidHomCongrRight.toAddMonoidHom.comp d.flip := by ext; rfl
+  rw [← ker_compl₂_addEquiv_comp eC d.flip (d.compl₂ H.subtype).ker, ← hflip,
+    ← ker_compl₂_addEquiv_comp eC d H,
+    e.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod he hN]
 
 end AddMonoidHom

@@ -191,18 +191,29 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 Dedekind domain with finite residue field `A ⧸ u`, if `V` has good reduction and `m ∉ u`, then
 `im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, E[m])`. -/
 theorem range_kummerMap_eq_unramifiedTorsionCohomology
-    (hmU : IsUnit (m : u.adicCompletion F)) (hm : (m : A) ∉ u.asIdeal) :
-    (V.kummerMap m hmU).range = V.unramifiedTorsionCohomology m := by
+    (hm : (m : A) ∉ u.asIdeal) :
+    (V.kummerMap m (by
+      have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
+        rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
+        exact hm
+      have hmo := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[u.adicCompletion F])).mp
+        (by simpa using hmres)
+      simpa using hmo.map (algebraMap 𝒪[u.adicCompletion F] (u.adicCompletion F)))).range =
+      V.unramifiedTorsionCohomology m := by
   cases Subsingleton.elim ‹DecidableEq (u.adicCompletion F)›
     (fun a b ↦ Classical.propDecidable (a = b))
   classical
   have : V.IsElliptic := by
     rw [← baseChange_integralModel_eq 𝒪[u.adicCompletion F] V]
     infer_instance
-  have : NeZero m := NeZero.of_neZero_natCast (u.adicCompletion F) (h := ⟨hmU.ne_zero⟩)
   have hmres : (m : 𝓀[u.adicCompletion F]) ≠ 0 := by
     rw [Ne, ringChar.spec, u.ringChar_residueField_adicCompletion_dvd_iff]
     exact hm
+  have hmU : IsUnit (m : u.adicCompletion F) := by
+    have hmo := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[u.adicCompletion F])).mp
+      (by simpa using hmres)
+    simpa using hmo.map (algebraMap 𝒪[u.adicCompletion F] (u.adicCompletion F))
+  have : NeZero m := NeZero.of_neZero_natCast (u.adicCompletion F) (h := ⟨hmU.ne_zero⟩)
   apply AddSubgroup.eq_of_le_of_card_ge (V.range_kummerMap_le_unramifiedTorsionCohomology m hmres)
   rw [V.natCard_unramifiedTorsionCohomology m, ← AddSubgroup.index_ker, V.ker_kummerMap m hmU,
     V.index_range_nsmul_eq_natCard_torsionBy u hm]

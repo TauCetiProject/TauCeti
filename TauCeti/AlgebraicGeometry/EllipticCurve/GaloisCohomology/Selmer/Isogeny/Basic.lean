@@ -153,6 +153,14 @@ all places this is `Sel_φ(E₁/K)` (Silverman X.4). -/
 def selmerGroup : AddSubgroup (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :=
   (φ.selmerStructure τ).selmerGroup
 
+/-- **Local-condition characterization of `Sel_φ`**: a class in `H¹(G_K, E₁(Kˢ)[φ])` is
+`φ`-Selmer exactly when its restriction to every `L i` lies in the local condition of
+`φ.selmerStructure τ` at `i`. -/
+theorem mem_selmerGroup_iff_forall_kerRes_mem_localCondition
+    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    c ∈ φ.selmerGroup τ ↔ ∀ i, φ.kerRes (τ i) c ∈ (φ.selmerStructure τ).localCondition i := by
+  simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization]
+
 /-- **Silverman's description of `Sel_φ`**: a class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly
 when its image in `H¹(G_K, E₁(Kˢ))` lies in the Shafarevich–Tate group of `W₁`. -/
 @[simp]
@@ -160,9 +168,8 @@ theorem mem_selmerGroup_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCo
     c ∈ φ.selmerGroup τ ↔
       explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c ∈
         W₁.shafarevichTateGroup τ := by
-  simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
-    selmerStructure_localCondition, AddMonoidHom.mem_ker, mem_shafarevichTateGroup_iff,
-    pointRes_kerCoeffIncl]
+  simp only [mem_selmerGroup_iff_forall_kerRes_mem_localCondition, selmerStructure_localCondition,
+    AddMonoidHom.mem_ker, mem_shafarevichTateGroup_iff, pointRes_kerCoeffIncl]
 
 /-- Imposing the local conditions along a subfamily `τ ∘ f` of the localisations gives a larger
 `φ`-Selmer group. -/
@@ -178,8 +185,8 @@ theorem mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
     [∀ i, DecidableEq (L i)] {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
     c ∈ φ.selmerGroup τ ↔ ∀ i, φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).kummerMap.range := by
-  simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
-    selmerStructure_localCondition, range_kummerMap]
+  simp only [mem_selmerGroup_iff_forall_kerRes_mem_localCondition, selmerStructure_localCondition,
+    range_kummerMap]
 
 /-! ### The kernel of `φ` on the Shafarevich–Tate group -/
 
