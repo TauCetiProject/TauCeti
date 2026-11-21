@@ -316,11 +316,9 @@ theorem exists_not_isOfFinAddOrder_homology_basedMap_sphere {m : ℕ}
       (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm).app _ ≪≫
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo Φ)
-  refine ⟨e.hom.hom (1 : ℤ), fun h ↦ ?_⟩
-  obtain ⟨k, hk, hk0⟩ := isOfFinAddOrder_iff_zsmul_eq_zero.1 h
-  rw [← map_zsmul, ← map_zero e.hom.hom] at hk0
   have hinj : Function.Injective e.hom.hom := (ModuleCat.mono_iff_injective _).1 inferInstance
-  exact hk (by simpa using hinj hk0)
+  exact ⟨e.hom.hom 1, (hinj.isOfFinAddOrder_iff (f := e.hom.hom.toAddMonoidHom)).not.2
+    (not_isOfFinAddOrder_of_isAddTorsionFree one_ne_zero)⟩
 
 end DoubleLoop
 
