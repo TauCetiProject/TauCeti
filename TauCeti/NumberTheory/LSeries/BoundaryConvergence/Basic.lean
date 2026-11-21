@@ -46,6 +46,8 @@ representation and the split of the range of integration used in Mathlib's
   half-plane.
 * `TauCeti.LSeries.tendsto_sum_Icc_div_add`, `tendsto_sum_Icc_div_smul`,
   `tendsto_sum_Icc_div_neg`, `tendsto_sum_Icc_div_sub`: linearity of ordered limits.
+* `TauCeti.LSeries.sum_range_add_one_LSeries_term_one`, `re_sum_ofReal_div_natCast`: finite
+  partial-sum identities for `LSeries.term a 1` and real parts of complex harmonic sums.
 
 ## References
 
@@ -125,6 +127,23 @@ theorem eqOn_of_LSeriesHasSum {a : ℕ → ℂ} {σ : ℝ} {F G : ℂ → ℂ}
   EqOn.of_subset_closure (s := {s : ℂ | σ < s.re})
     (fun s hs ↦ (hFa s hs).LSeries_eq.symm.trans (hGa s hs).LSeries_eq) hF hG
     (fun _ hs ↦ mem_ofPred.mpr (le_of_lt hs)) (by rw [closure_setOfPred_lt_re])
+
+/-- Partial sums of `LSeries.term a 1` over `range (N + 1)` equal ordered harmonic sums over
+`Icc 1 N`. -/
+theorem sum_range_add_one_LSeries_term_one (a : ℕ → ℂ) (N : ℕ) :
+    ∑ n ∈ Finset.range (N + 1), LSeries.term a 1 n = ∑ n ∈ Finset.Icc 1 N, a n / (n : ℂ) := by
+  rw [Finset.sum_range_eq_add_Ico _ N.succ_pos, LSeries.term_zero, zero_add,
+    Nat.succ_eq_add_one, Finset.Ico_add_one_right_eq_Icc]
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  rw [LSeries.term_of_ne_zero (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1),
+    Complex.cpow_one]
+
+/-- The real part of a finite harmonic sum of real coefficients is the real harmonic sum. -/
+theorem re_sum_ofReal_div_natCast (a : ℕ → ℝ) (s : Finset ℕ) :
+    (∑ n ∈ s, (a n : ℂ) / (n : ℂ)).re = ∑ n ∈ s, a n / (n : ℝ) := by
+  rw [Complex.re_sum]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [← Complex.ofReal_natCast, ← Complex.ofReal_div, Complex.ofReal_re]
 
 section Linearity
 

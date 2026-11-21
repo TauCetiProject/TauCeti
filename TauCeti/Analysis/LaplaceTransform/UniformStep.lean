@@ -17,10 +17,10 @@ For a uniform step function `t ↦ c ⌊t / h⌋₊` of step length `h > 0`:
   and, for bounded `c` and `0 < re z`, the full Laplace transform on `[0, ∞)`
   (`integral_floor_div_mul_cexp_neg_mul`) factor as the entire single-step integral
   `∫ u in 0..h, exp (-z * u)` times the power series of `c` evaluated at `exp (-h * z)`;
-* when the power series of `c` has a disc-algebra sum `P` (continuous on `closedBall 0 1`,
-  holomorphic on `ball 0 1`), `exists_continuousOn_integral_floor_div_mul_cexp_neg_mul` transfers
-  `P` to a continuous extension on `0 ≤ re z` that is holomorphic on `0 < re z` and agrees there
-  with the Laplace transform of `t ↦ c ⌊t / h⌋₊`.
+* when the power series of `c` has a sum `P` continuous on `closedBall 0 1` agreeing with
+  `∑' n, c n * w ^ n` on `ball 0 1`, `exists_continuousOn_integral_floor_div_mul_cexp_neg_mul`
+  transfers `P` to a continuous extension on `0 ≤ re z` that is holomorphic on `0 < re z` and
+  agrees there with the Laplace transform of `t ↦ c ⌊t / h⌋₊`.
 -/
 
 public section
@@ -29,6 +29,15 @@ open Filter MeasureTheory Set Metric
 open scoped Topology Complex Interval
 
 namespace TauCeti
+
+private theorem norm_cexp_neg_mul (h : ℝ) (z : ℂ) :
+    ‖cexp (-(h : ℂ) * z)‖ = Real.exp (-h * z.re) := by
+  rw [Complex.norm_exp, ← Complex.ofReal_neg, Complex.re_ofReal_mul]
+
+private theorem norm_cexp_neg_mul_lt_one {h : ℝ} (hh : 0 < h) {z : ℂ} (hz : 0 < z.re) :
+    ‖cexp (-(h : ℂ) * z)‖ < 1 := by
+  rw [norm_cexp_neg_mul]
+  exact Real.exp_lt_one_iff.mpr (by nlinarith)
 
 /-- **Truncated Laplace transform of a uniform step function.** For `h > 0`, `c : ℕ → ℂ`,
 `N : ℕ`, and `z : ℂ`, the Laplace integral of `t ↦ c ⌊t / h⌋₊` over `[0, N * h]` factors as the
@@ -87,9 +96,7 @@ theorem integral_floor_div_mul_cexp_neg_mul {c : ℕ → ℂ} {M : ℝ} (hbound 
   have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ c ⌊t / h⌋₊) (volume.restrict (Ici 0)) :=
     (measurable_from_nat.comp (measurable_id.div_const h).nat_floor).aestronglyMeasurable
   have hint := integrableOn_mul_cexp_neg_mul hmeas (fun t _ ↦ hbound _) hz
-  have hnorm_lt : ‖cexp (-(h : ℂ) * z)‖ < 1 := by
-    rw [Complex.norm_exp, ← Complex.ofReal_neg, Complex.re_ofReal_mul]
-    exact Real.exp_lt_one_iff.mpr (by nlinarith)
+  have hnorm_lt : ‖cexp (-(h : ℂ) * z)‖ < 1 := norm_cexp_neg_mul_lt_one hh hz
   have hsumm : Summable fun n : ℕ ↦ c n * cexp (-(h : ℂ) * z) ^ n := by
     refine Summable.of_norm_bounded
       ((summable_geometric_of_lt_one (norm_nonneg _) hnorm_lt).mul_left M) fun n ↦ ?_
@@ -108,13 +115,12 @@ theorem integral_floor_div_mul_cexp_neg_mul {c : ℕ → ℂ} {M : ℝ} (hbound 
 
 /-- **Half-plane transfer of a disc-algebra power series via a uniform step function.** For
 `h > 0`, a bounded sequence `c : ℕ → ℂ`, and a function `P : ℂ → ℂ` continuous on `closedBall 0 1`
-and holomorphic on `ball 0 1` with power series `∑' n, c n * w ^ n = P w` on `ball 0 1`, the
-Laplace transform `z ↦ ∫ t in Ici 0, c ⌊t / h⌋₊ * exp (-z * t)` extends continuously to
-`0 ≤ re z` and holomorphically to `0 < re z`. -/
+with power series `∑' n, c n * w ^ n = P w` on `ball 0 1`, the Laplace transform
+`z ↦ ∫ t in Ici 0, c ⌊t / h⌋₊ * exp (-z * t)` extends continuously to `0 ≤ re z` and
+holomorphically to `0 < re z`. -/
 theorem exists_continuousOn_integral_floor_div_mul_cexp_neg_mul
     {c : ℕ → ℂ} {M : ℝ} (hbound : ∀ n, ‖c n‖ ≤ M) {h : ℝ} (hh : 0 < h) {P : ℂ → ℂ}
     (hP_cont : ContinuousOn P (closedBall 0 1))
-    (hP_diff : DifferentiableOn ℂ P (ball 0 1))
     (hP_sum : ∀ w : ℂ, ‖w‖ < 1 → HasSum (fun n ↦ c n * w ^ n) (P w)) :
     ∃ G : ℂ → ℂ,
       ContinuousOn G {z : ℂ | 0 ≤ z.re} ∧
@@ -125,24 +131,18 @@ theorem exists_continuousOn_integral_floor_div_mul_cexp_neg_mul
   have hK_diff : Differentiable ℂ K := by
     simpa [K] using
       differentiable_intervalIntegral_mul_cexp_neg_mul (f := fun _ : ℝ ↦ (1 : ℂ)) (a := 0) (b := h)
-  have hre (z : ℂ) : (-(h : ℂ) * z).re = -h * z.re := by
-    rw [← Complex.ofReal_neg, Complex.re_ofReal_mul]
-  refine ⟨G, ?_, ?_, ?_⟩
-  · refine hK_diff.continuous.continuousOn.mul
-      (hP_cont.comp (by fun_prop : Continuous fun z : ℂ ↦ cexp (-(h : ℂ) * z)).continuousOn
-        fun z (hz : 0 ≤ z.re) ↦ ?_)
-    rw [mem_closedBall_zero_iff, Complex.norm_exp, hre]
-    exact Real.exp_le_one_iff.mpr (by nlinarith)
-  · refine hK_diff.differentiableOn.mul
-      (hP_diff.comp
-        (by fun_prop : Differentiable ℂ fun z : ℂ ↦ cexp (-(h : ℂ) * z)).differentiableOn
-        fun z (hz : 0 < z.re) ↦ ?_)
-    rw [mem_ball_zero_iff, Complex.norm_exp, hre]
-    exact Real.exp_lt_one_iff.mpr (by nlinarith)
-  · intro z hz
-    have hnorm : ‖cexp (-(h : ℂ) * z)‖ < 1 := by
-      rw [Complex.norm_exp, hre]
-      exact Real.exp_lt_one_iff.mpr (by nlinarith)
-    rw [integral_floor_div_mul_cexp_neg_mul hbound hh hz, (hP_sum _ hnorm).tsum_eq]
+  have hG_eq : ∀ z : ℂ, 0 < z.re → G z = ∫ t in Ici (0 : ℝ), c ⌊t / h⌋₊ * cexp (-z * t) := by
+    intro z hz
+    rw [integral_floor_div_mul_cexp_neg_mul hbound hh hz,
+      (hP_sum _ (norm_cexp_neg_mul_lt_one hh hz)).tsum_eq]
+  have hlap_diff : DifferentiableOn ℂ
+      (fun z : ℂ ↦ ∫ t in Ici (0 : ℝ), c ⌊t / h⌋₊ * cexp (-z * t)) {z : ℂ | 0 < z.re} :=
+    differentiableOn_integral_mul_cexp_neg_mul (f := fun t : ℝ ↦ c ⌊t / h⌋₊) (fun t _ ↦ hbound _)
+  refine ⟨G, ?_, hlap_diff.congr fun z hz ↦ hG_eq z hz, hG_eq⟩
+  refine hK_diff.continuous.continuousOn.mul
+    (hP_cont.comp (by fun_prop : Continuous fun z : ℂ ↦ cexp (-(h : ℂ) * z)).continuousOn
+      fun z (hz : 0 ≤ z.re) ↦ ?_)
+  rw [mem_closedBall_zero_iff, norm_cexp_neg_mul]
+  exact Real.exp_le_one_iff.mpr (by nlinarith)
 
 end TauCeti

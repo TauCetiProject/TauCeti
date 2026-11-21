@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
+import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 
 /-!
 # Uniform bounds on Dirichlet sine sums
@@ -22,7 +22,7 @@ The argument proceeds in three elementary steps:
   `|∑ j ∈ Finset.Icc 1 n, sin (j * θ)| ≤ (sin (θ / 2))⁻¹` for `0 < θ < 2 * π`, and hence
   `|∑ j ∈ Finset.Icc 1 n, sin (j * θ)| ≤ π / θ` on `(0, π]` via Jordan's inequality
   (`Real.mul_le_sin`).
-* Summation by parts (`Finset.sum_Ioc_by_parts`) bounds every tail over `Finset.Ioc K m` by
+* Abel's tail estimate (`TauCeti.abs_sum_Ioc_mul_le`) bounds every tail over `Finset.Ioc K m` by
   `2 * (π / θ) / (K + 1)`.
 * For `θ ∈ (0, π]`, splitting `Finset.Icc 1 m` at `K = min m ⌊1 / θ⌋₊` bounds the initial block
   using `|sin (j * θ)| ≤ j * θ` by `1` and the tail by `2 * π`. Reducing an arbitrary real `θ`
@@ -92,10 +92,6 @@ theorem abs_sum_Icc_sin_le_pi_div {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ ≤ π) (
 sawtooth sine series over `Ioc K m` has absolute value at most `2 * (π / θ) / (K + 1)`. -/
 theorem abs_sum_Ioc_sin_div_le {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ ≤ π) (K m : ℕ) :
     |∑ j ∈ Ioc K m, sin (j * θ) / j| ≤ 2 * (π / θ) / (K + 1 : ℝ) := by
-  by_cases hKm : K < m
-  swap
-  · rw [Ioc_eq_empty hKm, sum_empty, abs_zero]
-    positivity
   have hG (n : ℕ) : |∑ i ∈ range n, sin (i * θ)| ≤ π / θ := by
     cases n with
     | zero =>
@@ -104,53 +100,17 @@ theorem abs_sum_Ioc_sin_div_le {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ ≤ π) (K m
     | succ n =>
       rw [sum_range_succ_sin_eq_sum_Icc]
       exact abs_sum_Icc_sin_le_pi_div hθ0 hθ n
-  have hparts := sum_Ioc_by_parts (f := fun j : ℕ ↦ (j : ℝ)⁻¹)
-    (g := fun j : ℕ ↦ sin (j * θ)) hKm
-  simp only [smul_eq_mul, inv_mul_eq_div] at hparts
-  rw [hparts]
-  set B := π / θ
-  have hm_pos : (0 : ℝ) < m := Nat.cast_pos.mpr (Nat.zero_lt_of_lt hKm)
-  have hK1_pos : (0 : ℝ) < (K + 1 : ℕ) := Nat.cast_pos.mpr (Nat.succ_pos K)
-  have hIoc : Ioc K (m - 1) = Ico (K + 1) m := by
-    ext j
-    simp only [mem_Ioc, mem_Ico]
-    omega
-  -- Bound the Abel sum by telescoping `j⁻¹ - (j + 1)⁻¹` over `Ico (K + 1) m`.
-  have hterm3 : |∑ j ∈ Ioc K (m - 1),
-      (((j + 1 : ℕ) : ℝ)⁻¹ - (j : ℝ)⁻¹) * ∑ i ∈ range (j + 1), sin (i * θ)| ≤
-      (((K + 1 : ℕ) : ℝ)⁻¹ - (m : ℝ)⁻¹) * B := by
-    calc _ ≤ ∑ j ∈ Ioc K (m - 1),
-            |(((j + 1 : ℕ) : ℝ)⁻¹ - (j : ℝ)⁻¹) * ∑ i ∈ range (j + 1), sin (i * θ)| :=
-          abs_sum_le_sum_abs _ _
-      _ ≤ ∑ j ∈ Ioc K (m - 1), ((j : ℝ)⁻¹ - ((j + 1 : ℕ) : ℝ)⁻¹) * B := by
-          refine sum_le_sum fun j hj ↦ ?_
-          have hj_pos : (0 : ℝ) < j := Nat.cast_pos.mpr (Nat.zero_lt_of_lt (mem_Ioc.mp hj).1)
-          have hdec : ((j + 1 : ℕ) : ℝ)⁻¹ ≤ (j : ℝ)⁻¹ :=
-            inv_anti₀ hj_pos (by exact_mod_cast Nat.le_succ j)
-          rw [abs_mul, abs_of_nonpos (sub_nonpos.mpr hdec), neg_sub]
-          exact mul_le_mul_of_nonneg_left (hG _) (sub_nonneg.mpr hdec)
-      _ = (∑ j ∈ Ico (K + 1) m, ((j : ℝ)⁻¹ - ((j + 1 : ℕ) : ℝ)⁻¹)) * B := by
-          rw [hIoc, ← sum_mul]
-      _ = (((K + 1 : ℕ) : ℝ)⁻¹ - (m : ℝ)⁻¹) * B := by
-          have htel := sum_Ico_sub (f := fun j : ℕ ↦ (j : ℝ)⁻¹) (Nat.succ_le_of_lt hKm)
-          rw [← neg_sub, ← htel, ← sum_neg_distrib]
-          congr 1
-          exact sum_congr rfl fun _ _ ↦ by ring
-  -- Combine the boundary terms and Abel sum; the `B / m` contributions cancel.
-  calc _ ≤ |(∑ i ∈ range (m + 1), sin (i * θ)) / (m : ℝ)| +
-            |(∑ i ∈ range (K + 1), sin (i * θ)) / ((K + 1 : ℕ) : ℝ)| +
-            |∑ j ∈ Ioc K (m - 1),
-              (((j + 1 : ℕ) : ℝ)⁻¹ - (j : ℝ)⁻¹) * ∑ i ∈ range (j + 1), sin (i * θ)| :=
-          (abs_sub _ _).trans (add_le_add (abs_sub _ _) le_rfl)
-    _ ≤ B / m + B / (K + 1 : ℕ) + (((K + 1 : ℕ) : ℝ)⁻¹ - (m : ℝ)⁻¹) * B := by
-          gcongr
-          · rw [abs_div, abs_of_pos hm_pos]
-            exact div_le_div_of_nonneg_right (hG _) hm_pos.le
-          · rw [abs_div, abs_of_pos hK1_pos]
-            exact div_le_div_of_nonneg_right (hG _) hK1_pos.le
-    _ = 2 * B / (K + 1 : ℝ) := by
-          push_cast
-          ring
+  have habel := abs_sum_Ioc_mul_le (f := fun j : ℕ ↦ (j : ℝ)⁻¹)
+    (g := fun j : ℕ ↦ sin (j * θ)) (B := π / θ) (K := K) (m := m)
+    (by positivity) (fun _ ↦ by positivity)
+    (fun j hj ↦ inv_anti₀ (Nat.cast_pos.mpr (by grind)) (by exact_mod_cast Nat.le_succ j))
+    (by positivity) (fun n _ ↦ hG n)
+  calc |∑ j ∈ Ioc K m, sin (j * θ) / j|
+      = |∑ j ∈ Ioc K m, (j : ℝ)⁻¹ * sin (j * θ)| := by
+        congr 1
+        exact sum_congr rfl fun j _ ↦ by rw [div_eq_inv_mul]
+    _ ≤ 2 * ((K + 1 : ℕ) : ℝ)⁻¹ * (π / θ) := habel
+    _ = 2 * (π / θ) / (K + 1 : ℝ) := by push_cast; ring
 
 /-- **Uniform Gibbs–Fejér bound on `(0, π]`.** -/
 private theorem abs_sum_Icc_sin_div_le_of_pos_of_le_pi (m : ℕ) {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ ≤ π) :

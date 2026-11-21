@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
 # Bounds in ordered topological spaces
@@ -37,6 +38,8 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
 * `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
   monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
   meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
+* `TauCeti.not_tendsto_nhds_of_forall_exists_le`: an unbounded-above sequence `ℕ → α` converges to
+  no limit in `α`.
 -/
 
 public section
@@ -141,5 +144,15 @@ theorem monotone_of_tendsto_section [Preorder ι] [LinearOrder κ] [Preorder α]
       (Eventually.of_forall fun y ↦ hθ y hij)
 
 end BoundarySection
+
+/-- An unbounded-above sequence `ℕ → α` converges to no limit in `α`. -/
+theorem not_tendsto_nhds_of_forall_exists_le {α : Type*} [LinearOrder α] [NoMaxOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] {u : ℕ → α}
+    (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) (a : α) : ¬ Tendsto u atTop (𝓝 a) := by
+  intro h
+  obtain ⟨B, hB⟩ := h.bddAbove_range
+  obtain ⟨B', hBB'⟩ := exists_gt B
+  obtain ⟨n, hn⟩ := hu B'
+  exact (hBB'.trans_le hn).not_ge (hB ⟨n, rfl⟩)
 
 end TauCeti

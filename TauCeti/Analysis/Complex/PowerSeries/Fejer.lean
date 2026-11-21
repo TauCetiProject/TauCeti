@@ -129,14 +129,6 @@ theorem abs_fejerPolyCoeff_le_one (m n : ℕ) : |fejerPolyCoeff m n| ≤ 1 := by
     exact inv_le_one_of_one_le₀ hpos
   · simp
 
-private theorem sum_range_eq_sum_Icc_sub {α : Type*} [AddCommMonoid α] (f : ℕ → α) (m : ℕ) :
-    ∑ n ∈ range m, f n = ∑ j ∈ Icc 1 m, f (m - j) := by
-  have href := sum_Ico_reflect (fun j ↦ f (m - j)) 0 (by omega : m ≤ m + 1)
-  simp only [Nat.add_sub_cancel_left, tsub_zero, Nat.Ico_zero_eq_range,
-    Ico_add_one_right_eq_Icc] at href
-  rw [← href]
-  exact sum_congr rfl fun n hn ↦ congrArg f (Nat.sub_sub_self (mem_range.mp hn).le).symm
-
 /-- Power-series expansion of `fejerPoly m w` in terms of `fejerPolyCoeff m`. -/
 theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
     fejerPoly m w = ∑ n ∈ range (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n := by
@@ -150,7 +142,12 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
   -- Match the lower half `n < m` with `j = m - n ∈ Icc 1 m`.
   have hlo : ∑ n ∈ range m, (fejerPolyCoeff m n : ℂ) * w ^ n =
       ∑ j ∈ Icc 1 m, w ^ (m - j) / (j : ℂ) := by
-    rw [sum_range_eq_sum_Icc_sub]
+    have href :=
+      (sum_Ico_reflect (fun n ↦ (fejerPolyCoeff m n : ℂ) * w ^ n) 1 (m := m + 1) (n := m)
+        le_rfl).symm
+    simp only [Nat.sub_self, Nat.add_sub_cancel, Nat.Ico_zero_eq_range,
+      Ico_add_one_right_eq_Icc] at href
+    rw [href]
     refine sum_congr rfl fun j hj ↦ ?_
     have hmem := mem_Icc.mp hj
     rw [fejerPolyCoeff_of_lt (by omega : m - j < m), Nat.sub_sub_self hmem.2,
@@ -159,7 +156,9 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
   have hhi : ∑ n ∈ Ico (m + 1) (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n =
       -∑ j ∈ Icc 1 m, w ^ (m + j) / (j : ℂ) := by
     have hshift := (sum_Ico_add (fun n ↦ (fejerPolyCoeff m n : ℂ) * w ^ n) 1 (m + 1) m).symm
-    rw [add_comm 1 m, show m + 1 + m = 2 * m + 1 by ring] at hshift
+    have hlo_ep : 1 + m = m + 1 := by omega
+    have hhi_ep : m + 1 + m = 2 * m + 1 := by omega
+    rw [hlo_ep, hhi_ep] at hshift
     rw [hshift, Ico_add_one_right_eq_Icc, ← sum_neg_distrib]
     refine sum_congr rfl fun j hj ↦ ?_
     have hmem := mem_Icc.mp hj
@@ -173,7 +172,10 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
 /-- The sum of the first `m` coefficients of `fejerPoly m` equals the `m`-th harmonic number. -/
 theorem sum_range_fejerPolyCoeff (m : ℕ) :
     ∑ n ∈ range m, fejerPolyCoeff m n = (harmonic m : ℝ) := by
-  rw [harmonic_eq_sum_Icc, sum_range_eq_sum_Icc_sub]
+  have href := (sum_Ico_reflect (fejerPolyCoeff m) 1 (m := m + 1) (n := m) le_rfl).symm
+  simp only [Nat.sub_self, Nat.add_sub_cancel, Nat.Ico_zero_eq_range,
+    Ico_add_one_right_eq_Icc] at href
+  rw [harmonic_eq_sum_Icc, href]
   simp only [Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
   refine sum_congr rfl fun j hj ↦ ?_
   have hmem := mem_Icc.mp hj
@@ -205,14 +207,12 @@ theorem fejerPoly_exp_mul_I (m : ℕ) (θ : ℝ) :
     ring
   have hsin : exp (-((j : ℂ) * θ * I)) - exp ((j : ℂ) * θ * I) =
       -2 * I * ((Real.sin (j * θ) : ℝ) : ℂ) := by
-    have hmul : (((j : ℝ) * θ : ℝ) : ℂ) * I = (j : ℂ) * θ * I := by push_cast; ring
-    rw [ofReal_sin, Complex.sin]
-    simp only [neg_mul, hmul]
+    have h := congrArg (· * -I) (Complex.two_sin (((j : ℝ) * θ : ℝ) : ℂ))
+    rw [← ofReal_sin, ofReal_mul, ofReal_natCast, mul_assoc _ I (-I), mul_neg I I, I_mul_I,
+      neg_neg, mul_one, neg_mul] at h
     calc exp (-((j : ℂ) * θ * I)) - exp ((j : ℂ) * θ * I)
-        = -(I ^ 2) * (exp (-((j : ℂ) * θ * I)) - exp ((j : ℂ) * θ * I)) := by
-          rw [I_sq]
-          ring
-      _ = -(2 * I * ((exp (-((j : ℂ) * θ * I)) - exp ((j : ℂ) * θ * I)) * I / 2)) := by ring
+        = 2 * ((Real.sin (j * θ) : ℝ) : ℂ) * -I := h.symm
+      _ = -2 * I * ((Real.sin (j * θ) : ℝ) : ℂ) := by ring
   rw [h1, h2, ← mul_sub, hsin, ofReal_div, ofReal_natCast]
   ring
 
@@ -344,8 +344,7 @@ private theorem sum_range_fejerStart_mul_pow (K : ℕ) (w : ℂ) :
   induction K with
   | zero => simp [fejerStart]
   | succ K ih =>
-    rw [range_eq_Ico, ← sum_Ico_consecutive _ (Nat.zero_le _)
-      (fejerStart_strictMono (Nat.lt_succ_self K)).le, ← range_eq_Ico, ih,
+    rw [← sum_range_add_sum_Ico _ (fejerStart_strictMono (Nat.lt_succ_self K)).le, ih,
       sum_Ico_fejerSeriesCoeff_mul_pow, sum_range_succ]
 
 private theorem sum_range_fejerStart_add_fejerDeg (K : ℕ) :
@@ -359,9 +358,8 @@ private theorem sum_range_fejerStart_add_fejerDeg (K : ℕ) :
   -- The initial half of block `K` contributes `(2⁻¹) ^ K * harmonic (fejerDeg K)`.
   have hsplit : ∑ n ∈ range (fejerStart K + fejerDeg K), fejerSeriesCoeff n =
       (∑ n ∈ range (fejerStart K), fejerSeriesCoeff n) +
-      ∑ n ∈ Ico (fejerStart K) (fejerStart K + fejerDeg K), fejerSeriesCoeff n := by
-    rw [range_eq_Ico, ← sum_Ico_consecutive _ (Nat.zero_le _) (Nat.le_add_right _ _),
-      ← range_eq_Ico]
+      ∑ n ∈ Ico (fejerStart K) (fejerStart K + fejerDeg K), fejerSeriesCoeff n :=
+    (sum_range_add_sum_Ico _ (Nat.le_add_right _ _)).symm
   have hhalf : ∑ n ∈ Ico (fejerStart K) (fejerStart K + fejerDeg K), fejerSeriesCoeff n =
       (2 : ℝ)⁻¹ ^ K * (harmonic (fejerDeg K) : ℝ) := by
     rw [sum_Ico_eq_sum_range, Nat.add_sub_cancel_left, ← sum_range_fejerPolyCoeff, mul_sum]

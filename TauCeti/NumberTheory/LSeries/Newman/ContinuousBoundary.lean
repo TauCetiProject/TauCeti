@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.Complex.PowerSeries.Fejer
 import TauCeti.Analysis.LaplaceTransform.UniformStep
 import TauCeti.NumberTheory.LSeries.Newman.Tauberian
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Continuous boundary values do not force Laplace convergence
@@ -58,13 +59,13 @@ theorem exists_bounded_continuousOn_laplace_not_tendsto_intervalIntegral :
       (∀ L : ℂ, ¬ Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, (f t : ℂ)) atTop (𝓝 L)) ∧
       (∀ (Ω : Set ℂ) (G' : ℂ → ℂ), IsOpen Ω → {z : ℂ | 0 ≤ z.re} ⊆ Ω →
         (∀ z : ℂ, 0 < z.re → G' z = G z) → ¬ DifferentiableOn ℂ G' Ω) := by
-  obtain ⟨c, P, hc_bound, hc_zero, hP_cont, hP_diff, hP_sum, hc_unb⟩ :=
+  obtain ⟨c, P, hc_bound, hc_zero, hP_cont, _, hP_sum, hc_unb⟩ :=
     exists_continuousOn_closedBall_hasSum_unbounded_sum_range
   set f : ℝ → ℝ := fun t ↦ c ⌊t⌋₊
   have hc_norm : ∀ n, ‖(c n : ℂ)‖ ≤ 1 := fun n ↦ by
     simpa [Complex.norm_real, Real.norm_eq_abs] using hc_bound n
   obtain ⟨G, hG_cont, hG_diff, hG_eq⟩ :=
-    exists_continuousOn_integral_floor_div_mul_cexp_neg_mul hc_norm one_pos hP_cont hP_diff hP_sum
+    exists_continuousOn_integral_floor_div_mul_cexp_neg_mul hc_norm one_pos hP_cont hP_sum
   have hmeas : Measurable f := measurable_from_nat.comp Nat.measurable_floor
   have hf_bound : ∀ t : ℝ, |f t| ≤ 1 := fun t ↦ hc_bound ⌊t⌋₊
   have hG_laplace : ∀ z : ℂ, 0 < z.re → G z = ∫ t in Ici (0 : ℝ), (f t : ℂ) * cexp (-z * t) := by
@@ -78,13 +79,10 @@ theorem exists_bounded_continuousOn_laplace_not_tendsto_intervalIntegral :
     simpa [f, intervalIntegral.integral_ofReal, Complex.ofReal_sum] using hstep
   have hnot : ∀ L : ℂ, ¬ Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, (f t : ℂ)) atTop (𝓝 L) := by
     intro L hL
-    have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range N, c n) atTop (𝓝 L.re) := by
-      refine ((Complex.continuous_re.tendsto L).comp
-        (hL.comp tendsto_natCast_atTop_atTop)).congr fun N ↦ ?_
-      simp [intervalIntegral.integral_ofReal, hint_nat]
-    obtain ⟨B, hB⟩ := hre.bddAbove_range
-    obtain ⟨N, hN⟩ := hc_unb (B + 1)
-    linarith [hB ⟨N, rfl⟩]
+    have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range N, c n) atTop (𝓝 L.re) :=
+      ((Complex.continuous_re.tendsto L).comp (hL.comp tendsto_natCast_atTop_atTop)).congr
+        fun N ↦ by simp [intervalIntegral.integral_ofReal, hint_nat]
+    exact TauCeti.not_tendsto_nhds_of_forall_exists_le hc_unb L.re hre
   refine ⟨f, G, hmeas, hf_bound, hc_zero.comp tendsto_nat_floor_atTop, hG_cont, hG_diff,
     hG_laplace, fun B ↦ ?_, hnot, fun Ω G' hΩ hsub heq hG' ↦ ?_⟩
   · obtain ⟨N, hN⟩ := hc_unb B
