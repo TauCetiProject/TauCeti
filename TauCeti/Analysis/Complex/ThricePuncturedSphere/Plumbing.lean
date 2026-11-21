@@ -74,6 +74,11 @@ maps on the plumbed sphere is computed.
   `Puncture.realChart_plumbingMap_mem_plumbedSphere`:
   the part `s_q ≤ L/2` of `S` and the image of the part `-s_∞ ≤ L/2` of `S'` lie in the
   four-punctured sphere, also in real coordinates.
+* `Puncture.plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le`: for `L > 1` the plumbing
+  map of a finite end `q` carries the whole part `-s_∞ ≤ L/2` of the plane, including `0` and `1`,
+  to the capped puncture `c_q` or into `ℂ ∖ {0, 1}`;
+  `Puncture.plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le` is the consequence `ψ_L(w) ≠ 0` for
+  the end at `1`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -581,6 +586,35 @@ theorem plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ 
   rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw.1]
   rw [endSign_inf, neg_one_mul] at hwL
   linarith
+
+/-- The plumbing map `ψ_L` of a finite end `q`, for `L > 1`, carries every point of the inserted
+plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to the capped puncture `c_q` or a point
+of `ℂ ∖ {0, 1}`: points of the disc `‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of
+`c_q`, away from the other finite puncture, and the other points land in the plumbed
+four-punctured sphere. -/
+theorem plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (hq : q ≠ inf) (hL : 1 < L)
+    {w : ℂ} (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) :
+    q.plumbingMap L w = q.endCenter ∨ q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1 := by
+  by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
+  · have h := (norm_sub_endCenter_div_plumbingFactor_le_iff hq L 1).1
+      (by rwa [plumbingMap_sub_endCenter_div_plumbingFactor, mul_one])
+    have hexp : Real.exp (-(2 * π * (L - 1))) < 1 :=
+      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+    have hlt : ‖q.plumbingMap L w - q.endCenter‖ < 1 := by linarith
+    refine (eq_or_ne _ _).imp id fun hc ↦ ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩ <;>
+      [rw [h0] at hc hlt; rw [h1] at hc hlt] <;> cases q <;> simp_all
+  · have h1 : (1 : ℝ) ≤ 2 * Real.exp (2 * π) := by
+      linarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+    exact Or.inr (plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq (by linarith)
+      ⟨fun h ↦ hw (by rw [h, norm_zero]; positivity),
+        fun h ↦ hw (by rw [h, norm_one]; exact h1)⟩ hwL).1
+
+/-- The plumbing map `ψ_L` of the end at `1`, for `L > 1`, carries every point of the inserted
+plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to a nonzero point. -/
+theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 1 < L) {w : ℂ}
+    (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 :=
+  (plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (by simp) hL hwL).elim
+    (fun h ↦ by simp [h]) And.left
 
 /-- The plumbing map carries a point of the inserted thrice-punctured sphere outside the circle
 `s_∞ = -L/2` into the plumbed four-punctured sphere, in real coordinates. -/
