@@ -212,7 +212,7 @@ private theorem contMDiff_descendEndomorphism_family {K : Λ → SmoothAlmostCom
       (fun r : Λ × TangentBundle I' N ↦ (r.1, tangentMap I' I s r.2)) (l₀, w₀) :=
     contMDiffAt_fst.prodMk (hTs.comp (l₀, w₀) contMDiffAt_snd)
   have hK' : ContMDiff (IΛ.prod I.tangent) I.tangent ∞
-      (fun r : Λ × TangentBundle I M ↦ TotalSpace.mk' E r.2.proj (K r.1 r.2.proj r.2.2)) :=
+      (fun r : Λ × TangentBundle I M ↦ TotalSpace.mk' E r.2.proj (K r.1 r.2.proj r.2.snd)) :=
     (hKs.comp (contMDiff_fst.prodMk ((contMDiff_proj (TangentSpace I)).comp
       contMDiff_snd))).clm_bundle_apply contMDiff_snd
   have hC := ((hq.contMDiff.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt).comp (l₀, w₀)

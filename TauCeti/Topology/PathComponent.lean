@@ -44,12 +44,12 @@ variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 homotopic in the path component. -/
 theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
     {a b : pathComponent x₀} {γ δ : Path a b}
-    (h : (γ.map continuous_subtype_val).Homotopic
-      (δ.map continuous_subtype_val)) :
+    (h : (γ.map continuous_subtypeVal).Homotopic
+      (δ.map continuous_subtypeVal)) :
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
-  have hγmem : ∀ t, (γ.map continuous_subtype_val) t ∈ pathComponent x₀ := fun t =>
-    (γ t).2
+  have hγmem : ∀ t, (γ.map continuous_subtypeVal) t ∈ pathComponent x₀ := fun t =>
+    (γ t).property
   have hmem : ∀ p : I × I, H p ∈ pathComponent x₀ := fun p =>
     Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)

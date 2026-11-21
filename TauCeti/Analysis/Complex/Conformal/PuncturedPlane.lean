@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Topology.Compactification.OnePoint.CrossRatio
+public import TauCeti.Topology.Compactification.OnePoint.CrossRatio.Basic
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.Conformal.EntireInjection
 

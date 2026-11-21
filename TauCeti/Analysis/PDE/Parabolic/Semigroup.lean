@@ -32,7 +32,10 @@ of `∂ₜu + L u = g` on `(t₀, t₁)` with `g` integrable with values in `L²
 
 (`TauCeti.PDE.eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual`). For
 `g = 0` it says that every weak solution with initial value `u₀` is the orbit
-`t ↦ e^{-(t - t₀)L} u₀`.
+`t ↦ e^{-(t - t₀)L} u₀`. Conversely, every orbit of the semigroup of a bounded coercive form on a
+Gelfand triple with separable `V` is the continuous representative of a weak solution
+(`IsCoercive.exists_hasWeakLineDerivOn_gelfandDual_ae_eq_realOperator_formSemigroup` in
+`TauCeti.Analysis.PDE.Parabolic.Autonomous`).
 
 The generator is `-TauCeti.PDE.dirichletOperator` (`TauCeti.PDE.dirichletSemigroup_generator`),
 so the description of the Dirichlet realization in `TauCeti.Analysis.PDE.Spectrum.Operator`

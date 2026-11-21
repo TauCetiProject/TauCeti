@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.Artin
 public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
 # The simply laced Artin presentation of a graph
@@ -23,7 +24,8 @@ distinct indices exactly when their entry is not `2`, that is, when the correspo
 reflections do not commute. Entries `0`, which encode infinite order, are edges too. This forgets
 the edge labels, and on simply laced matrices it inverts the first construction
 (`SimpleGraph.graph_coxeterMatrix`). Simple reflections whose indices are not adjacent in the
-Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`).
+Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`), and indices in distinct connected
+components of the Coxeter graph have entry `2` (`CoxeterMatrix.eq_two_of_connectedComponentMk_ne`).
 -/
 
 public section
@@ -116,6 +118,17 @@ def graph : SimpleGraph B where
 
 @[simp]
 theorem graph_adj {i j : B} : M.graph.Adj i j ↔ i ≠ j ∧ M i j ≠ 2 := Iff.rfl
+
+/-- Indices in distinct connected components of the Coxeter graph have Coxeter matrix entry `2`:
+their simple reflections commute. -/
+theorem eq_two_of_connectedComponentMk_ne {i j : B}
+    (h : M.graph.connectedComponentMk i ≠ M.graph.connectedComponentMk j) : M i j = 2 := by
+  by_contra hij
+  refine h ?_
+  by_cases hne : i = j
+  · rw [hne]
+  · exact SimpleGraph.ConnectedComponent.connectedComponentMk_eq_of_adj
+      (M.graph_adj.mpr ⟨hne, hij⟩)
 
 end CoxeterMatrix
 

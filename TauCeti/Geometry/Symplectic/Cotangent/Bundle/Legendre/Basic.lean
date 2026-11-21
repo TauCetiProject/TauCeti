@@ -144,7 +144,7 @@ sends a tangent vector `v` at `x` to the covector at `x` given by the derivative
 restriction of `L` to the tangent space `T_x M`. -/
 def legendreMap (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) : CotangentBundle I M :=
   TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj
-    (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2)
+    (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.snd)
 
 /-- The Legendre map covers the identity of the base. -/
 @[simp]
@@ -154,14 +154,14 @@ theorem proj_legendreMap (L : TangentBundle I M → 𝕜) (v : TangentBundle I M
 
 /-- The covector `FL(v)` is the derivative at `v` of `L` restricted to the fibre through `v`. -/
 theorem legendreMap_snd (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
-    (legendreMap L v).2 = fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2 :=
+    (legendreMap L v).snd = fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.snd :=
   (rfl)
 
 /-- The Legendre transform of `v` is the covector at the base point of `v` given by the derivative
 of `L` restricted to the fibre through `v`. -/
 theorem legendreMap_def (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
     legendreMap L v = TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj
-      (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2) :=
+      (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.snd) :=
   (rfl)
 
 /-- **The Legendre map in a trivialization.** Read in a trivialization `e` of the tangent bundle,
@@ -169,7 +169,7 @@ the covector `FL(v)` is the derivative of `u ↦ L(e⁻¹(x, u))` at the fibre c
 private theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle I M → 𝕜)
     {x₀ : M} {v : TangentBundle I M}
     (hv : v.proj ∈ (trivializationAt E (TangentSpace I) x₀).baseSet) :
-    ((legendreMap L v).2 ∘L (trivializationAt E (TangentSpace I) x₀).symmL 𝕜 v.proj :
+    ((legendreMap L v).snd ∘L (trivializationAt E (TangentSpace I) x₀).symmL 𝕜 v.proj :
         E →L[𝕜] 𝕜) =
       fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj
         ((trivializationAt E (TangentSpace I) x₀).symmL 𝕜 v.proj u)))
@@ -182,10 +182,10 @@ private theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle
       (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) ∘ A.symm := by
     funext u
     simp [← hA]
-  have hv2 : A.symm (e v).2 = v.2 := e.symm_proj_apply v hv
+  have hv2 : A.symm (e v).2 = v.snd := e.symm_proj_apply v hv
   rw [hfun, A.symm.comp_right_fderiv, hv2]
   ext u
-  exact congrArg (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2)
+  exact congrArg (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.snd)
     (congrFun hA u).symm
 
 /-- **The Legendre map is smooth.** If the Lagrangian `L` is `C^n`, its Legendre map is `C^m`
@@ -227,11 +227,11 @@ theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜
 /-- The **energy** `E_L(v) = FL(v)(v) - L(v)` of a Lagrangian `L`, where `FL` is its Legendre
 map. -/
 def lagrangianEnergy (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) : 𝕜 :=
-  (legendreMap L v).2 v.2 - L v
+  (legendreMap L v).snd v.snd - L v
 
 /-- The energy is the Legendre map paired with the velocity, minus the Lagrangian. -/
 theorem lagrangianEnergy_apply (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
-    lagrangianEnergy L v = (legendreMap L v).2 v.2 - L v :=
+    lagrangianEnergy L v = (legendreMap L v).snd v.snd - L v :=
   (rfl)
 
 /-- Subtracting a potential, a function of the base point only, does not change the Legendre
@@ -260,7 +260,7 @@ theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M →
     ContMDiff I.tangent 𝓘(𝕜, 𝕜) m (lagrangianEnergy L) := by
   -- Apply the covector `FL(v)` to `v` as sections of bundles over `TM`, then read off the scalar.
   exact fun v ↦ ((contMDiff_legendreMap hL hmn v).clm_bundle_apply_scalar
-    (v := fun v : TangentBundle I M ↦ v.2) (contMDiff_id v)).sub
+    (v := fun v : TangentBundle I M ↦ v.snd) (contMDiff_id v)).sub
       (hL.of_le (le_self_add.trans hmn) v)
 
 end LegendreMap
@@ -277,18 +277,18 @@ derivative at `v` of the restriction of `L` to the tangent space `T_x M`. It is 
 (`TauCeti.fiberHessian_eq_fderiv_legendreMap`). -/
 def fiberHessian (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
     TangentSpace I v.proj →L[𝕜] TangentSpace I v.proj →L[𝕜] 𝕜 :=
-  fderiv 𝕜 (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w))) v.2
+  fderiv 𝕜 (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w))) v.snd
 
 /-- The fibre Hessian is the second derivative of the Lagrangian restricted to a fibre. -/
 theorem fiberHessian_def (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
-    fiberHessian L v = fderiv 𝕜 (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w))) v.2 :=
+    fiberHessian L v = fderiv 𝕜 (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w))) v.snd :=
   (rfl)
 
 /-- The fibre Hessian is the derivative of the Legendre map along the fibre: on `T_x M` the
 Legendre map is the derivative of `L`, so its derivative at `v` is the fibre Hessian. -/
 theorem fiberHessian_eq_fderiv_legendreMap (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
     fiberHessian L v =
-      fderiv 𝕜 (fun w : E ↦ ((legendreMap L (TotalSpace.mk' E v.proj w)).2 : E →L[𝕜] 𝕜)) v.2 :=
+      fderiv 𝕜 (fun w : E ↦ ((legendreMap L (TotalSpace.mk' E v.proj w)).snd : E →L[𝕜] 𝕜)) v.snd :=
   (rfl)
 
 /-- Subtracting a potential, a function of the base point only, does not change the fibre
@@ -367,14 +367,15 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
         ).continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) := by
   have hn1 : 1 + 1 ≤ n := by simpa [one_add_one_eq_two] using hn
   -- The line through `v` in its fibre, in the direction `w`.
-  let γ : 𝕜 → TangentBundle I M := fun r ↦ TotalSpace.mk' E v.proj (v.2 + r • w)
+  let γ : 𝕜 → TangentBundle I M := fun r ↦ TotalSpace.mk' E v.proj (v.snd + r • w)
   have hγ : HasMFDerivAt 𝓘(𝕜) I.tangent γ 0 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
       ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w)) :=
-    TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul (F := E) (V := TangentSpace I) v.proj v.2 w
+    TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul (F := E) (V := TangentSpace I) v.proj v.snd
+        w
   have hγ0 : γ 0 = v := by simp [γ]
   -- The fibre `TangentSpace I v.proj` is `E` by definition: `a₀` and `b` are `v.2` and `w` read
   -- as vectors of `E`, so that `HasFDerivAt.hasLineDerivAt` on `E` applies to them.
-  let a₀ : E := v.2
+  let a₀ : E := v.snd
   let b : E := w
   -- On the fibre through `v`, the Legendre map is the derivative `D` of the restricted
   -- Lagrangian, whose own derivative at `v` is the fibre Hessian `Hs`, read on `E`.
@@ -424,7 +425,7 @@ theorem mvfderiv_lagrangianEnergy_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 
     (hn : 2 ≤ n) (v : TangentBundle I M) (u : TangentSpace I v.proj) :
     mvfderiv I.tangent (lagrangianEnergy L) v
       ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj u) =
-      fiberHessian L v u v.2 := by
+      fiberHessian L v u v.snd := by
   have hn1 : 1 + 1 ≤ n := by simpa [one_add_one_eq_two] using hn
   obtain ⟨x, a⟩ := v
   -- On the fibre over `x`, `E_L(w) = D(w)(w) - f(w)` for `f = L|_{T_x M}` and `D = df`.
@@ -585,8 +586,8 @@ theorem cartanForm_eq_mpullback {L : TangentBundle I M → ℝ}
 @[simp]
 theorem cartanForm_apply {L : TangentBundle I M → ℝ} (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
     (v : TangentBundle I M) (ξ : Fin 1 → TangentSpace I.tangent v) :
-    (cartanForm L hL).1 v ξ =
-      (legendreMap L v).2 (mfderiv I.tangent I (π E (TangentSpace I)) v (ξ 0)) := by
+    (cartanForm L hL).val v ξ =
+      (legendreMap L v).snd (mfderiv I.tangent I (π E (TangentSpace I)) v (ξ 0)) := by
   have hcomp := mfderiv_comp v
     ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
     ((contMDiff_legendreMap (m := ∞) hL le_rfl v).mdifferentiableAt (by simp))
@@ -595,7 +596,7 @@ theorem cartanForm_apply {L : TangentBundle I M → ℝ} (hL : ContMDiff I.tange
     funext (proj_legendreMap L)
   rw [hπ] at hcomp
   rw [cartanForm, SmoothForm.mpullback_apply, CotangentBundle.liouvilleForm_apply]
-  exact congrArg (legendreMap L v).2 (DFunLike.congr_fun hcomp (ξ 0)).symm
+  exact congrArg (legendreMap L v).snd (DFunLike.congr_fun hcomp (ξ 0)).symm
 
 /-- Subtracting a potential, a function of the base point only, does not change the Cartan
 one-form. -/
@@ -663,13 +664,13 @@ given by a family `g` of bilinear forms on the tangent spaces and potential ener
 Riemannian metric `g` is its `inner` field. -/
 def mechanicalLagrangian (g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
     (V : M → ℝ) (v : TangentBundle I M) : ℝ :=
-  2⁻¹ * g v.proj v.2 v.2 - V v.proj
+  2⁻¹ * g v.proj v.snd v.snd - V v.proj
 
 /-- The mechanical Lagrangian is kinetic minus potential energy. -/
 theorem mechanicalLagrangian_apply
     (g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (V : M → ℝ)
     (v : TangentBundle I M) :
-    mechanicalLagrangian g V v = 2⁻¹ * g v.proj v.2 v.2 - V v.proj :=
+    mechanicalLagrangian g V v = 2⁻¹ * g v.proj v.snd v.snd - V v.proj :=
   (rfl)
 
 /-- **A mechanical Lagrangian is `C^n`** when its kinetic form `g`, as a section of the bundle
@@ -682,10 +683,10 @@ theorem contMDiff_mechanicalLagrangian [IsManifold I 1 M] {n : WithTop ℕ∞}
     (hV : ContMDiff I 𝓘(ℝ) n V) :
     ContMDiff I.tangent 𝓘(ℝ) n (mechanicalLagrangian g V) := by
   have hq : ContMDiff I.tangent (I.prod 𝓘(ℝ)) n (fun v : TangentBundle I M ↦
-      TotalSpace.mk' ℝ (E := Trivial M ℝ) v.proj (g v.proj v.2 v.2)) :=
+      TotalSpace.mk' ℝ (E := Trivial M ℝ) v.proj (g v.proj v.snd v.snd)) :=
     ContMDiff.clm_bundle_apply₂ (F₁ := E) (F₂ := E) (hg.comp (contMDiff_proj _)) contMDiff_id
       contMDiff_id
-  have hq' : ContMDiff I.tangent 𝓘(ℝ) n (fun v : TangentBundle I M ↦ g v.proj v.2 v.2) :=
+  have hq' : ContMDiff I.tangent 𝓘(ℝ) n (fun v : TangentBundle I M ↦ g v.proj v.snd v.snd) :=
     fun v ↦ (contMDiffAt_totalSpace_iff.1 (hq v)).2
   have hhalf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n (fun t : ℝ ↦ 2⁻¹ * t) :=
     (contDiff_const.mul contDiff_id).contMDiff
@@ -697,12 +698,12 @@ symmetric `g` it sends `v` to the covector `g(v, ·)`. -/
 theorem legendreMap_mechanicalLagrangian_snd
     {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
     (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
-    (legendreMap (mechanicalLagrangian g V) v).2 = g v.proj v.2 := by
+    (legendreMap (mechanicalLagrangian g V) v).snd = g v.proj v.snd := by
   rw [legendreMap_snd]
   simp only [mechanicalLagrangian_apply]
   -- `g v.proj` and `v.2` are read on the model space `E`.
   set B : E →L[ℝ] E →L[ℝ] ℝ := g v.proj
-  set y : E := v.2
+  set y : E := v.snd
   refine (((B.hasFDerivAt_apply_self y).const_mul 2⁻¹).sub_const (V v.proj)).fderiv.trans ?_
   ext u
   -- Retype the right side on the model space too, so that both sides share their atoms.
@@ -716,7 +717,7 @@ theorem legendreMap_mechanicalLagrangian_snd
 theorem legendreMap_mechanicalLagrangian
     {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
     (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
-    legendreMap (mechanicalLagrangian g V) v = TotalSpace.mk' (E →L[ℝ] ℝ) v.proj (g v.proj v.2) :=
+    legendreMap (mechanicalLagrangian g V) v = TotalSpace.mk' (E →L[ℝ] ℝ) v.proj (g v.proj v.snd) :=
   TotalSpace.ext rfl (heq_of_eq (legendreMap_mechanicalLagrangian_snd hg V v))
 
 /-- **The energy of a mechanical Lagrangian** is the total energy `½ g(v, v) + V(x)`, kinetic plus
@@ -725,12 +726,12 @@ potential. -/
 theorem lagrangianEnergy_mechanicalLagrangian
     (g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (V : M → ℝ)
     (v : TangentBundle I M) :
-    lagrangianEnergy (mechanicalLagrangian g V) v = 2⁻¹ * g v.proj v.2 v.2 + V v.proj := by
+    lagrangianEnergy (mechanicalLagrangian g V) v = 2⁻¹ * g v.proj v.snd v.snd + V v.proj := by
   rw [lagrangianEnergy_apply, legendreMap_snd]
   simp only [mechanicalLagrangian_apply]
   -- `g v.proj` and `v.2` are read on the model space `E`.
   set B : E →L[ℝ] E →L[ℝ] ℝ := g v.proj
-  set y : E := v.2
+  set y : E := v.snd
   have hd := (((B.hasFDerivAt_apply_self y).const_mul 2⁻¹).sub_const (V v.proj)).fderiv
   refine (congrArg (fun f : E →L[ℝ] ℝ ↦ f y - (2⁻¹ * B y y - V v.proj)) hd).trans ?_
   -- Retype the right side on the model space too, so that both sides share their atoms.
@@ -744,8 +745,8 @@ theorem cartanForm_mechanicalLagrangian_apply [IsManifold I ∞ M]
     (hg : ∀ x v w, g x v w = g x w v) {V : M → ℝ}
     (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ (mechanicalLagrangian g V)) (v : TangentBundle I M)
     (ξ : Fin 1 → TangentSpace I.tangent v) :
-    (cartanForm (mechanicalLagrangian g V) hL).1 v ξ =
-      g v.proj v.2 (mfderiv I.tangent I (π E (TangentSpace I)) v (ξ 0)) := by
+    (cartanForm (mechanicalLagrangian g V) hL).val v ξ =
+      g v.proj v.snd (mfderiv I.tangent I (π E (TangentSpace I)) v (ξ 0)) := by
   rw [cartanForm_apply, legendreMap_mechanicalLagrangian_snd hg]
   -- The two sides differ only in the fibre in which `g v` is typed.
   rfl
@@ -758,7 +759,7 @@ theorem fiberHessian_mechanicalLagrangian
     fiberHessian (mechanicalLagrangian g V) v = g v.proj := by
   -- On the fibre `T_x M`, the Legendre map is the linear map `g x`.
   have h : (fun w : E ↦ ((legendreMap (mechanicalLagrangian g V)
-      (TotalSpace.mk' E v.proj w)).2 : E →L[ℝ] ℝ)) = g v.proj :=
+      (TotalSpace.mk' E v.proj w)).snd : E →L[ℝ] ℝ)) = g v.proj :=
     funext fun w ↦ legendreMap_mechanicalLagrangian_snd hg V (TotalSpace.mk' E v.proj w)
   rw [fiberHessian_eq_fderiv_legendreMap, h]
   exact (g v.proj).fderiv
@@ -821,7 +822,7 @@ theorem extChartAt_legendreMap_extChartAt_symm (L : TangentBundle I M → ℝ) (
 `w` with coordinates `y` is `∂_u ℓ(y)(y.2)`, for the local Lagrangian `ℓ = L ∘ (chart at v)⁻¹`. -/
 theorem legendreMap_snd_extChartAt_symm (L : TangentBundle I M → ℝ)
     (v : TangentBundle I M) {y : E × E} (hy : y ∈ (extChartAt I.tangent v).target) :
-    (legendreMap L ((extChartAt I.tangent v).symm y)).2 ((extChartAt I.tangent v).symm y).2 =
+    (legendreMap L ((extChartAt I.tangent v).symm y)).snd ((extChartAt I.tangent v).symm y).snd =
       (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y).2 y.2 := by
   obtain ⟨hb, hw2⟩ := Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd v hy
   set w := (extChartAt I.tangent v).symm y
@@ -829,7 +830,7 @@ theorem legendreMap_snd_extChartAt_symm (L : TangentBundle I M → ℝ)
   have h := congrArg Prod.snd (extChartAt_legendreMap_extChartAt_symm L v hy)
   rw [CotangentBundle.extChartAt_apply] at h
   rw [← h, ← hw2]
-  exact congrArg (legendreMap L w).2
+  exact congrArg (legendreMap L w).snd
     ((Trivialization.symmL_apply e hb _).trans (e.symm_proj_apply w hb)).symm
 
 end Chart

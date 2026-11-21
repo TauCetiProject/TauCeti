@@ -8,6 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.LinearIndependent.Extend
+
 /-!
 # Linear functionals and hyperplanes
 
@@ -65,6 +68,9 @@ and so separate points.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
   `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
   coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
+* `Module.Dual.span_range_proj` and `LinearIndependent.exists_linearIndependent_sumElim_proj`: the
+  coordinate forms span the dual of `Rⁱ`, so over a field a linearly independent family of forms
+  extends by coordinate forms to a basis of the dual.
 * `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
   evaluating linear forms `l` on `ι → R` against vectors `x` multiplies `Matrix.of x` on the right
   by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`, so for `#ι` forms and `#ι` vectors its determinant
@@ -176,7 +182,7 @@ theorem linearIndependent_sub_div_smul (f : Dual K V) {ι : Type*} {X : ι → V
     (c := Function.update (fun i ↦ -(f (X i) / f (X j))) j 0) (Function.update_self _ _ _)).2 hX
   convert h.comp Subtype.val Subtype.val_injective using 1
   ext i
-  simp [Function.update_of_ne i.2, sub_eq_add_neg]
+  simp [Function.update_of_ne i.property, sub_eq_add_neg]
 
 /-- If `X` is a family of `finrank K V` linearly independent vectors and `f (X j) ≠ 0`, the vectors
 `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, span the kernel of `f`. Together with
@@ -258,6 +264,16 @@ theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module
   exact LinearMap.dualMap_surjective_of_injective hf
 
 end Field
+
+/-- The coordinate forms span the dual of `R^ι`. -/
+theorem span_range_proj {R ι : Type*} [CommSemiring R] [Finite ι] :
+    Submodule.span R (Set.range fun j : ι ↦ (LinearMap.proj j : Dual R (ι → R))) = ⊤ := by
+  classical
+  have := Fintype.ofFinite ι
+  have h : (fun j : ι ↦ (LinearMap.proj j : Dual R (ι → R))) = (Pi.basisFun R ι).dualBasis := by
+    ext j x
+    simp
+  rw [h, Basis.span_eq]
 
 end Module.Dual
 
@@ -401,6 +417,25 @@ theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
   choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
     (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
   exact ⟨a, ha⟩
+
+open Finset in
+/-- A linearly independent family `f` of forms on `Kⁱ` extends by coordinate forms to a basis of
+the dual: for some finset `u` of coordinates, `Sum.elim f (proj ∘ (↑) : u → _)` is linearly
+independent and has `card ι` members. -/
+theorem exists_linearIndependent_sumElim_proj {K ι τ : Type*} [Field K] [Fintype ι] [Fintype τ]
+    {f : τ → Module.Dual K (ι → K)} (hf : LinearIndependent K f) :
+    ∃ u : Finset ι, LinearIndependent K
+        (Sum.elim f fun j : u ↦ (LinearMap.proj (j : ι) : Module.Dual K (ι → K))) ∧
+      Fintype.card τ + #u = Fintype.card ι := by
+  classical
+  obtain ⟨u, hli, hspan⟩ := hf.exists_linearIndependent_sumElim Module.Dual.span_range_proj
+  refine ⟨u.toFinset, ?_, ?_⟩
+  · convert hli.comp (Sum.map id (Equiv.subtypeEquivRight fun j ↦ Set.mem_toFinset))
+      (Sum.map_injective.mpr ⟨Function.injective_id, Equiv.injective _⟩) using 1
+    ext (k | j) <;> rfl
+  · have hcard := Module.finrank_eq_card_basis (Basis.mk hli hspan.ge)
+    rw [Subspace.dual_finrank_eq, Module.finrank_fintype_fun_eq_card, Fintype.card_sum] at hcard
+    rw [hcard, Set.toFinset_card]
 
 /-- `#ι` linearly independent forms on `Kⁱ` assemble into a bijective endomorphism
 `LinearMap.pi l`. -/

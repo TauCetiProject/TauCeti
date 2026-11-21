@@ -296,23 +296,24 @@ def cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
     C(cyclicDiscreteEnergyStrictSublevel (X := X) τ c,
       cyclicDiscreteEnergyStrictSublevel (X := X)
         (Fin.cons (τ 0) (Fin.cons s (Fin.tail τ)) : Fin (n + 2) → ℝ) c) where
-  toFun q := ⟨Fin.cons (q.1 0) q.1, mem_cyclicDiscreteEnergyStrictSublevel.mpr <| by
+  toFun q := ⟨Fin.cons (q.val 0) q.val, mem_cyclicDiscreteEnergyStrictSublevel.mpr <| by
     rw [cyclicDiscreteEnergy_cons_self]
-    exact q.2⟩
+    exact q.property⟩
   continuous_toFun :=
-    (isEmbedding_cons_apply_zero.continuous.comp continuous_subtype_val).subtype_mk _
+    (isEmbedding_cons_apply_zero.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_cyclicDiscreteEnergyRepeatFirst_apply (τ : Fin (n + 1) → ℝ) (s c : ℝ)
     (q : cyclicDiscreteEnergyStrictSublevel (X := X) τ c) :
-    (cyclicDiscreteEnergyRepeatFirst τ s c q : Fin (n + 2) → X) = Fin.cons (q.1 0) q.1 :=
+    (cyclicDiscreteEnergyRepeatFirst τ s c q : Fin (n + 2) → X) = Fin.cons (q.val 0) q.val :=
   (rfl)
 
 /-- Repeating the base vertex is an embedding of energy carriers: forgetting the first vertex is a
 continuous left inverse on tuples. -/
 theorem isEmbedding_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
     Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) :=
-  isEmbedding_cons_apply_zero.restrict fun q hq ↦ (cyclicDiscreteEnergyRepeatFirst τ s c ⟨q, hq⟩).2
+  isEmbedding_cons_apply_zero.restrict fun q hq ↦
+    (cyclicDiscreteEnergyRepeatFirst τ s c ⟨q, hq⟩).property
 
 /-- The range of the map repeating the base vertex: the closed chains of the target carrier whose
 first two vertices agree. Their tails automatically lie in the source carrier, since repeating the
@@ -337,7 +338,7 @@ theorem isClosedEmbedding_cyclicDiscreteEnergyRepeatFirst [T2Space X] (τ : Fin 
     (s c : ℝ) : Topology.IsClosedEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) := by
   refine ⟨isEmbedding_cyclicDiscreteEnergyRepeatFirst τ s c, ?_⟩
   rw [range_cyclicDiscreteEnergyRepeatFirst]
-  exact (isClosed_eq (continuous_apply 1) (continuous_apply 0)).preimage continuous_subtype_val
+  exact (isClosed_eq (continuous_apply 1) (continuous_apply 0)).preimage continuous_subtypeVal
 
 /-! ### Forgetting and inserting vertices -/
 
@@ -431,10 +432,11 @@ def cyclicDiscreteEnergyForgetMap (ht : StrictMono t)
     (hτ' : ∀ k : Fin (m + 1), t (r k.succ) - t (r k.castSucc) = τ' (k + 1)) (c : ℝ) :
     C(cyclicDiscreteEnergyStrictSublevel (X := X) τ c,
       cyclicDiscreteEnergyStrictSublevel (X := X) τ' c) where
-  toFun q := ⟨cyclicDiscreteEnergyForget r q.1,
-    (cyclicDiscreteEnergy_cyclicDiscreteEnergyForget_le ht hτ h0 hlast hτ' q.1).trans_lt q.2⟩
+  toFun q := ⟨cyclicDiscreteEnergyForget r q.val,
+    (cyclicDiscreteEnergy_cyclicDiscreteEnergyForget_le ht hτ h0 hlast hτ' q.val).trans_lt
+      q.property⟩
   continuous_toFun :=
-    ((continuous_cyclicDiscreteEnergyForget r).comp continuous_subtype_val).subtype_mk _
+    ((continuous_cyclicDiscreteEnergyForget r).comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_cyclicDiscreteEnergyForgetMap_apply (ht : StrictMono t)
@@ -444,7 +446,7 @@ theorem coe_cyclicDiscreteEnergyForgetMap_apply (ht : StrictMono t)
     (hτ' : ∀ k : Fin (m + 1), t (r k.succ) - t (r k.castSucc) = τ' (k + 1)) (c : ℝ)
     (q : cyclicDiscreteEnergyStrictSublevel (X := X) τ c) :
     (cyclicDiscreteEnergyForgetMap ht hτ h0 hlast hτ' c q : Fin (m + 1) → X) =
-      cyclicDiscreteEnergyForget r q.1 :=
+      cyclicDiscreteEnergyForget r q.val :=
   (rfl)
 
 /-- The identity selection induces the identity on the energy carrier. -/
@@ -454,7 +456,7 @@ theorem cyclicDiscreteEnergyForgetMap_refl (ht : StrictMono t)
     cyclicDiscreteEnergyForgetMap ht hτ (r := RelEmbedding.refl (· ≤ ·)) rfl rfl hτ c =
       ContinuousMap.id (cyclicDiscreteEnergyStrictSublevel (X := X) τ c) := by
   ext q : 2
-  exact cyclicDiscreteEnergyForget_refl q.1
+  exact cyclicDiscreteEnergyForget_refl q.val
 
 /-- The continuous maps between energy carriers commute with further vertex-forgetting. -/
 @[simp]
@@ -472,7 +474,7 @@ theorem cyclicDiscreteEnergyForgetMap_trans {l : ℕ} {τ'' : Fin (l + 1) → �
         (by rw [RelEmbedding.trans_apply, hs0, hr0])
         (by rw [RelEmbedding.trans_apply, hslast, hrlast]) hτ'' c := by
   ext q : 2
-  exact cyclicDiscreteEnergyForget_trans r s q.1
+  exact cyclicDiscreteEnergyForget_trans r s q.val
 
 /-- **Geodesic insertion for closed chains.** In a geodesic space, for times `t` and a selection
 `r` retaining the first and last slots, every coarse closed chain is obtained by forgetting

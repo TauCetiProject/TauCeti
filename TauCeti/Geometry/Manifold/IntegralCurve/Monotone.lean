@@ -148,7 +148,7 @@ theorem apply_eq_of_mfderiv_apply_eq_zero {F H' N : Type*} [NormedAddCommGroup F
   have hlc : IsLocallyConstant (s.domRestrict (g ∘ γ)) := by
     rw [IsLocallyConstant.iff_eventually_eq]
     rintro ⟨u, hu⟩
-    exact (continuous_subtype_val.tendsto (⟨u, hu⟩ : s)).eventually (hloc u hu)
+    exact (continuous_subtypeVal.tendsto (⟨u, hu⟩ : s)).eventually (hloc u hu)
   have : PreconnectedSpace s := Subtype.preconnectedSpace hs'
   exact hlc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
 
