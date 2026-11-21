@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Set.OptionRestrict
 public import TauCeti.RepresentationTheory.Crystal.Sigma
+public import TauCeti.RepresentationTheory.Crystal.Word
 import TauCeti.Data.Option.Basic
 
 /-!
@@ -114,6 +115,25 @@ theorem reachable_of_eIter_eq_some {n : ℕ} (h : c.eIter i n x = some y) :
 crystal graph. -/
 theorem reachable_of_fIter_eq_some {n : ℕ} (h : c.fIter i n x = some y) : c.graph.Reachable x y :=
   (c.reachable_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
+/-- Elements connected by a raising word lie in the same connected component of the crystal
+graph. -/
+theorem reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
+    c.graph.Reachable x y := by
+  induction w generalizing x with
+  | nil =>
+    rw [c.eWord_nil] at h
+    obtain rfl := Option.some.inj h
+    exact .rfl
+  | cons i w ih =>
+    obtain ⟨z, hz, hzw⟩ := Option.bind_eq_some_iff.mp (c.eWord_cons i w x ▸ h)
+    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hzw)
+
+/-- Elements connected by a lowering word lie in the same connected component of the crystal
+graph. -/
+theorem reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
+    c.graph.Reachable x y :=
+  (c.reachable_of_eWord_eq_some (c.fWord_eq_some_iff.mp h)).symm
 
 end Graph
 

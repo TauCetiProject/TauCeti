@@ -42,13 +42,17 @@ construction.
 
 * `TauCeti.PLPath.dilationToNormalCrystalSimilarityHom_injective`: injectivity of dilation into
   `normalCrystal hf hF`.
-* `TauCeti.PLPath.embedHom_compSimilarityHom_dilationSimilarityHom`,
+* `TauCeti.PLPath.dilationSimilarityHom_compStrictHom_inclusionHom`,
+  `TauCeti.PLPath.inclusionHom_compSimilarityHom_dilationSimilarityHom`,
+  `TauCeti.PLPath.dilationToNormalCrystalSimilarityHom_compStrictHom_inclusionHom`,
+  `TauCeti.PLPath.embedHom_compSimilarityHom_dilationSimilarityHom`,
   `TauCeti.PLPath.toStrictHom_dilationSimilarityHom_one`,
   `TauCeti.PLPath.toStrictHom_dilationToNormalCrystalSimilarityHom_one`,
   `TauCeti.PLPath.dilationSimilarityHom_comp`,
-  `TauCeti.PLPath.reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply`: factorization
-  through `embedHom`, reduction at `n = 1` to `inclusionHom` and `embedHom`, multiplicative
-  composition, and agreement on underlying paths with `reverseIso` on dualized dilation.
+  `TauCeti.PLPath.reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply`: compatibility with
+  `inclusionHom` and `embedHom`, reduction at `n = 1` to `inclusionHom` and `embedHom`,
+  multiplicative composition, and agreement on underlying paths with `reverseIso` on dualized
+  dilation.
 * `TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath_of_isolated`,
   `TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath`: for every
   `1 < n`, integrality of the `n`-dilation of `π` and `π.endpoint = 0` do not imply integrality of
@@ -102,6 +106,41 @@ theorem dilationToNormalCrystalSimilarityHom_injective (hf : Function.Injective 
     (hmap : ∀ ⦃π⦄, π ∈ S → IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id))) :
     Function.Injective (dilationToNormalCrystalSimilarityHom hf hF hS hn hmap) :=
   dilationSimilarityHom_injective hf hF hS isCrystalSet_setOf_isIntegralPath hn hmap
+
+/-- Precomposing `dilationSimilarityHom` with `inclusionHom` restricts the source set. -/
+theorem dilationSimilarityHom_compStrictHom_inclusionHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S T U : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (hU : IsCrystalSet b f F U) (hST : S ⊆ T) {n : ℕ} (hn : 0 < n)
+    (hTU : ∀ ⦃π⦄, π ∈ T → π.map ((n : 𝕜) • LinearMap.id) ∈ U) :
+    (dilationSimilarityHom hf hF hT hU hn hTU).compStrictHom
+        (inclusionHom (hf := hf) (hF := hF) hS hT hST) =
+      dilationSimilarityHom hf hF hS hU hn (fun _ hπ ↦ hTU (hST hπ)) :=
+  NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Postcomposing `dilationSimilarityHom` with `inclusionHom` enlarges the target set. -/
+theorem inclusionHom_compSimilarityHom_dilationSimilarityHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S T U : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (hU : IsCrystalSet b f F U) (hTU : T ⊆ U) {n : ℕ} (hn : 0 < n)
+    (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) :
+    (inclusionHom (hf := hf) (hF := hF) hT hU hTU).compSimilarityHom
+        (dilationSimilarityHom hf hF hS hT hn hST) =
+      dilationSimilarityHom hf hF hS hU hn (fun _ hπ ↦ hTU (hST hπ)) :=
+  NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Precomposing `dilationToNormalCrystalSimilarityHom` with `inclusionHom` restricts the source
+set. -/
+theorem dilationToNormalCrystalSimilarityHom_compStrictHom_inclusionHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S T : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    (hST : S ⊆ T) {n : ℕ} (hn : 0 < n)
+    (hmap : ∀ ⦃π⦄, π ∈ T → IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id))) :
+    (dilationToNormalCrystalSimilarityHom hf hF hT hn hmap).compStrictHom
+        (inclusionHom (hf := hf) (hF := hF) hS hT hST) =
+      dilationToNormalCrystalSimilarityHom hf hF hS hn (fun _ hπ ↦ hmap (hST hπ)) :=
+  dilationSimilarityHom_compStrictHom_inclusionHom hf hF hS hT
+    isCrystalSet_setOf_isIntegralPath hST hn hmap
 
 /-- Postcomposing `dilationSimilarityHom` with `embedHom` gives
 `dilationToNormalCrystalSimilarityHom`. -/
