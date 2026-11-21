@@ -60,8 +60,7 @@ surjective
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
 (`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
-and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`,
-and `ContinuousLinearEquiv.norm_le_norm_symm_mul_norm` for a continuous linear equivalence),
+and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
@@ -403,13 +402,6 @@ theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUni
   calc
     ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
     _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
-
-/-- A continuous linear equivalence is bounded below by the reciprocal of the norm of its inverse:
-`‖x‖ ≤ ‖e⁻¹‖ ‖e x‖`. -/
-theorem _root_.ContinuousLinearEquiv.norm_le_norm_symm_mul_norm {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (e : E ≃L[𝕜] F) (x : E) :
-    ‖x‖ ≤ ‖(e.symm : F →L[𝕜] E)‖ * ‖e x‖ := by
-  simpa using (e.symm : F →L[𝕜] E).le_opNorm (e x)
 
 /-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
 `Ring.inverse A = 0` and the bound is trivial. -/

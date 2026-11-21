@@ -427,8 +427,8 @@ theorem norm_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] 
 `‖ξ‖ ≤ ‖A⁻¹‖ ‖Aᵀ ξ‖`, since `(Aᵀ)⁻¹ = (A⁻¹)ᵀ` has the norm of `A⁻¹`. -/
 theorem norm_le_norm_symm_mul_norm_adjointEquiv [CompleteSpace E] [CompleteSpace F]
     (A : E ≃L[𝕜] F) (ξ : F) : ‖ξ‖ ≤ ‖(A.symm : F →L[𝕜] E)‖ * ‖A.adjointEquiv ξ‖ := by
-  simpa only [adjointEquiv_symm, norm_adjointEquiv] using
-    A.adjointEquiv.norm_le_norm_symm_mul_norm ξ
+  simpa only [coe_nnNorm, adjointEquiv_symm, norm_adjointEquiv] using
+    A.adjointEquiv.antilipschitzWith.le_mul_norm (map_zero _) ξ
 
 /-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
 operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/

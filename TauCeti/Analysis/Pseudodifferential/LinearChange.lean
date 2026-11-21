@@ -147,7 +147,7 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
   obtain ⟨B, hB, h⟩ := exists_bound_mixedDeriv_comp_prodMap (m := m) hf (le_max_left 1 _) C α β
   exact ⟨B, hB, h P Q (le_max_of_le_right (le_max_left _ _))
     (le_max_of_le_right (le_max_of_le_right (le_max_left _ _)))
-    fun ξ => (Q.norm_le_norm_symm_mul_norm ξ).trans (mul_le_mul_of_nonneg_right
+    fun ξ => (Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ).trans (mul_le_mul_of_nonneg_right
       (le_max_of_le_right (le_max_of_le_right (le_max_right _ _))) (norm_nonneg _))⟩
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear
@@ -287,7 +287,7 @@ private theorem isSmoothing_compProdMap_cutoffSymbol_sub
   have hQ : 2 ≤ ‖Q ξ‖ := by
     have h1 : ‖ξ‖ ≤ c * ‖Q ξ‖ :=
       calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-            Q.norm_le_norm_symm_mul_norm ξ
+            Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ
         _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_right _ _
     nlinarith
   simp [χ.apply_eq_one_of_two_le_norm hQ,
