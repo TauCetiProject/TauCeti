@@ -267,7 +267,7 @@ theorem not_isUnit_cubeRootTwoIdeal : ¬ IsUnit (cubeRootTwoIdeal hα hK) := by
     refine FractionalIdeal.mul_induction_on hz (fun y hy x hx => ?_) ?_
     · refine exists_even_coords_mul hα hK x (fun y' hy' => ?_) hy
       obtain ⟨r, hr⟩ := (FractionalIdeal.mem_one_iff _).mp (hAB ▸ mul_mem_mul hy' hx)
-      exact hr ▸ r.2
+      exact hr ▸ r.property
     · rintro _ _ ⟨a, b, c, rfl⟩ ⟨a', b', c', rfl⟩
       exact ⟨a + a', b + b', c + c', by push_cast; ring⟩
   -- But `1 ∈ A * B = 1`, and `1` has odd constant coordinate.

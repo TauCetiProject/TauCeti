@@ -9,13 +9,15 @@ public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Rotate
 
+import Mathlib.Data.List.Flatten
 import TauCeti.Data.Fin.Basic
 
 /-!
 # Transporting list rotations
 
-This file records how list rotations act on their finite index types and interact with filtering,
-and how the permutation formed by a list interacts with mapping by an equivalence.
+This file records how list rotations act on their finite index types and interact with filtering
+and with powers of words, and how the permutation formed by a list interacts with mapping by an
+equivalence.
 
 These lemmas transport a cyclic order, and the successor permutation it induces, across a
 renaming of indices. They are needed when comparing a combinatorial construction built from a
@@ -23,7 +25,9 @@ list with the same construction built from a cyclic rotation of that list: filte
 by the same predicate gives cyclically rotated sublists, which therefore form the same
 permutation, and renaming the entries by an equivalence conjugates that permutation. For
 example, `TauCeti.KnotTheory.BraidWord.Cyclic` uses them to identify the closures of cyclically
-rotated braid words.
+rotated braid words. Separately, rotating a power of a word gives a power of the rotated word:
+in the combinatorics of words of Lyndon and Schützenberger, a cyclic conjugate of a power is used
+throughout as a power of a cyclic conjugate.
 
 ## Main results
 
@@ -39,6 +43,15 @@ rotated braid words.
 * `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 * `List.apply_rotate_of_append_singleton`: a function of lists that is unchanged by moving the
   first entry to the end is invariant under every rotation.
+* `List.rotate_flatten_replicate`: rotating the power `wⁿ = (replicate n w).flatten` of a word
+  gives the `n`-th power of the same rotation of `w`.
+* `List.exists_isRotated_flatten_replicate_of_append_eq`: a cyclic conjugate of a power of a word
+  is a power of a cyclic conjugate of that word.
+
+## References
+
+* R. C. Lyndon, M. P. Schützenberger, *The equation `a^M = b^N c^P` in a free group*, Michigan
+  Math. J. 9 (1962), 289–298.
 -/
 
 public section
@@ -56,7 +69,7 @@ def rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
 original list. -/
 theorem getElem_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ)
     (j : Fin (l.rotate k).length) :
-    (l.rotate k)[j.1] = l[(l.rotateIndexEquiv k j).1] := by
+    (l.rotate k)[j.val] = l[(l.rotateIndexEquiv k j).val] := by
   rw [getElem_rotate]
   congr 1
   simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
@@ -193,5 +206,30 @@ theorem apply_rotate_of_append_singleton {α β : Type*} (f : List α → β)
       rw [rotate_nil, ih]
     · rw [h] at ih
       rw [rotate_cons_succ, rotate_zero, hf, ih]
+
+/-- Rotating the power `wⁿ = (replicate n w).flatten` by `k` gives the `n`-th power of the rotation
+of `w` by `k`. -/
+@[simp]
+theorem rotate_flatten_replicate {α : Type*} (w : List α) (n k : ℕ) :
+    (replicate n w).flatten.rotate k = (replicate n (w.rotate k)).flatten := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [← rotate_rotate, ih, ← rotate_rotate]
+    -- It remains to rotate a power of `v := w.rotate k` by one letter.
+    rcases n with _ | n
+    · simp
+    obtain _ | ⟨c, v⟩ := w.rotate k
+    · simp
+    -- This is the identity `(c v)ⁿ c = c (v c)ⁿ`.
+    simpa [replicate_succ] using (append_flatten_map_append (replicate n v) [c]).symm
+
+/-- A cyclic rotation of a power is a power of a cyclic rotation: if `wⁿ = s ++ t`, then
+`t ++ s = w'ⁿ` for a cyclic rotation `w'` of `w`. -/
+theorem exists_isRotated_flatten_replicate_of_append_eq {α : Type*} {w s t : List α} {n : ℕ}
+    (h : (replicate n w).flatten = s ++ t) : ∃ w' : List α, w' ~r w ∧
+      t ++ s = (replicate n w').flatten :=
+  ⟨w.rotate s.length, IsRotated.forall w _,
+    by rw [← rotate_append_length_eq, ← h, rotate_flatten_replicate]⟩
 
 end List

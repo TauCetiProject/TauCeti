@@ -62,14 +62,14 @@ theorem exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one (I : Ideal 
 private def sIntegerResidue (I : Ideal R)
     (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K) : R ⧸ I :=
   Ideal.Quotient.mk I (I.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
-    (fun v hv ↦ x.2 v (by simpa using hv))).choose
+    (fun v hv ↦ x.property v (by simpa using hv))).choose
 
 private theorem exists_sIntegerResidue_eq (I : Ideal R)
     (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K) :
     ∃ a b : R, b - 1 ∈ I ∧ algebraMap R K a = algebraMap R K b * (x : K) ∧
       sIntegerResidue I x = Ideal.Quotient.mk I a := by
   obtain ⟨b, hb, hab⟩ := (I.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
-    (fun v hv ↦ x.2 v (by simpa using hv))).choose_spec
+    (fun v hv ↦ x.property v (by simpa using hv))).choose_spec
   exact ⟨_, b, hb, hab, rfl⟩
 
 private theorem sIntegerResidue_eq (I : Ideal R)

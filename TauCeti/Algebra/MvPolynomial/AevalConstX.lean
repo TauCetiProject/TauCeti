@@ -23,6 +23,8 @@ variables, `Tᵢ ↦ aᵢ X`, the coefficient of `X` in the image of `p * Tᵢ` 
   through `R[X]`.
 * `MvPolynomial.aeval_const_X_surjective`: sending every variable to `X` is surjective
   onto `R[X]` when there is at least one variable.
+* `MvPolynomial.eval_aeval_const_X`: evaluating `aeval (Function.const σ Polynomial.X) p` at `w`
+  equals evaluating `p` at the diagonal point `Function.const σ w`.
 * `MvPolynomial.coeff_one_aeval_C_mul_X_mul_X`: the coefficient of `X` after substituting
   `Tᵢ ↦ aᵢ X` in `p * Tᵢ`.
 -/
@@ -50,6 +52,16 @@ theorem aeval_const_X_surjective [Nonempty σ] :
   let c : σ := Classical.arbitrary σ
   ⟨Polynomial.aeval (X c) q, by
     rw [← Polynomial.aeval_algHom_apply, aeval_X, Polynomial.aeval_X_left_apply]⟩
+
+/-- Evaluating the diagonal specialization `aeval (Function.const σ Polynomial.X) p` at `w` equals
+evaluating `p` at the constant tuple `Function.const σ w`. -/
+@[simp]
+theorem eval_aeval_const_X (w : R) (p : MvPolynomial σ R) :
+    (aeval (Function.const σ (Polynomial.X : Polynomial R)) p).eval w =
+      eval (Function.const σ w) p := by
+  rw [← Function.const_def (y := w)]
+  simpa [Polynomial.aeval_X, Polynomial.coe_aeval_eq_eval, aeval_eq_eval] using
+    comp_aeval_apply (f := Function.const σ (Polynomial.X : Polynomial R)) (Polynomial.aeval w) p
 
 /-- For the substitution `Tᵢ ↦ aᵢ X` of `R[Tᵢ : i ∈ σ]` into `R[X]`, the coefficient of `X` in
 the image of `p * Tᵢ` is `aᵢ` times the constant coefficient of `p`. -/

@@ -89,7 +89,7 @@ theorem PowerBasis.roots_map_minpoly_eq_map_algHom {R S E : Type*} [CommRing R] 
     (Multiset.le_iff_subset hrnodup).2 (by
       intro x hx
       obtain ⟨i, _, rfl⟩ := Multiset.mem_map.mp hx
-      exact (pb.liftEquiv' (e i)).2)
+      exact (pb.liftEquiv' (e i)).property)
   refine (Multiset.eq_of_le_of_card_le hle ?_).symm
   rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   exact (card_roots' _).trans (by

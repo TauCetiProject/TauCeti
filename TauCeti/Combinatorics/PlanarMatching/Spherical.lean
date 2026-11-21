@@ -58,9 +58,9 @@ section SphericalHelpers
 
 private theorem orbitCount_mul_revPerm_eq_two_mul :
     ∀ (n : ℕ) (x : PlanarMatching (n + n)),
-      orbitCount (x.1.val * Fin.revPerm) = 2 * glueCircles 0 n (pv x)
+      orbitCount (x.val.val * Fin.revPerm) = 2 * glueCircles 0 n (pv x)
   | 0, x => by
-    have h1 : x.1.val * Fin.revPerm = (1 : Perm (Fin 0)) := Subsingleton.elim _ _
+    have h1 : x.val.val * Fin.revPerm = (1 : Perm (Fin 0)) := Subsingleton.elim _ _
     rw [h1, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
     rfl
   | n + 1, x => by
@@ -69,8 +69,9 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
     let a : Fin (n + n + 1) := ⟨n, by omega⟩
     let y : PlanarMatching (n + n) := x'.contract a
     have ih := orbitCount_mul_revPerm_eq_two_mul n y
-    have hcast : orbitCount (x.1.val * Fin.revPerm) = orbitCount (x'.1.val * Fin.revPerm) := by
-      have hconj : (finCongr hdim).permCongr (x.1.val * Fin.revPerm) = x'.1.val * Fin.revPerm := by
+    have hcast : orbitCount (x.val.val * Fin.revPerm) = orbitCount (x'.val.val * Fin.revPerm) := by
+      have hconj :
+          (finCongr hdim).permCongr (x.val.val * Fin.revPerm) = x'.val.val * Fin.revPerm := by
         ext i
         simp only [Equiv.permCongr_apply, Perm.mul_apply, x', coe_cast_apply,
           PerfectMatching.congr_val, Fin.revPerm_apply]
@@ -88,9 +89,9 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
       change glueCircles 0 n (contractFn a (pv x')) + circleInd n (pv x') = _
       rw [pv_contract_eq]
     rw [hgc, Nat.mul_add, ← ih]
-    set σ : Perm (Fin (n + n + 2)) := x'.1.val
+    set σ : Perm (Fin (n + n + 2)) := x'.val.val
     set τ : Perm (Fin (n + n + 2)) := Fin.revPerm
-    set σ' : Perm (Fin (n + n)) := y.1.val
+    set σ' : Perm (Fin (n + n)) := y.val.val
     set τ' : Perm (Fin (n + n)) := Fin.revPerm
     set A : Fin (n + n + 2) := a.castSucc
     set B : Fin (n + n + 2) := a.succ
@@ -147,7 +148,7 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
     have hci : circleInd n (pv x') = if σ A = B then 1 else 0 := by
       unfold circleInd
       rw [pv_of_lt x' (by omega : n < n + n + 2)]
-      have hiff : ((x'.1.val ⟨n, by omega⟩ : Fin (n + n + 2)) : ℕ) = n + 1 ↔ σ A = B := by
+      have hiff : ((x'.val.val ⟨n, by omega⟩ : Fin (n + n + 2)) : ℕ) = n + 1 ↔ σ A = B := by
         rw [Fin.ext_iff]; rfl
       simp only [hiff]
     rw [hci]
@@ -155,7 +156,7 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
     -- Case 2: `σ A ≠ B`, so `σ * τ = (π * swap p A) * swap q B` merges two fixed points.
     by_cases hAB : σ A = B
     · rw [ite_eq_left hAB]
-      have hBA : σ B = A := by rw [← hAB, x'.1.apply_apply]
+      have hBA : σ B = A := by rw [← hAB, x'.val.apply_apply]
       have heq : σ * τ = π := by
         ext z
         by_cases hzA : z = A
@@ -165,17 +166,17 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
         obtain ⟨i, rfl⟩ := hsurj_skip z hzA hzB
         rw [hπ_val, Perm.mul_apply]
         have h1 : σ (τ (skip a i)) ≠ A := fun h => by
-          have h' : τ (skip a i) = B := x'.1.val.injective (h.trans hBA.symm)
+          have h' : τ (skip a i) = B := x'.val.val.injective (h.trans hBA.symm)
           exact skip_ne_castSucc a i (Fin.revPerm.injective (h'.trans hτA.symm))
         have h2 : σ (τ (skip a i)) ≠ B := fun h => by
-          have h' : τ (skip a i) = A := x'.1.val.injective (h.trans hAB.symm)
+          have h' : τ (skip a i) = A := x'.val.val.injective (h.trans hAB.symm)
           exact skip_ne_succ a i (Fin.revPerm.injective (h'.trans hτB.symm))
         rw [ite_eq_right h1, ite_eq_right h2]
       rw [heq]; omega
     · rw [ite_eq_right hAB]
-      have hBA : σ B ≠ A := fun h => hAB (by rw [← h, x'.1.apply_apply])
-      have huA : σ A ≠ A := x'.1.apply_ne A
-      have hvB : σ B ≠ B := x'.1.apply_ne B
+      have hBA : σ B ≠ A := fun h => hAB (by rw [← h, x'.val.apply_apply])
+      have huA : σ A ≠ A := x'.val.apply_ne A
+      have hvB : σ B ≠ B := x'.val.apply_ne B
       have hAB_ne : A ≠ B := by simp [A, B, Fin.ext_iff]
       have huv : σ A ≠ σ B := fun h => hAB_ne (σ.injective h)
       set p := τ (σ A)
@@ -187,11 +188,11 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
       have hpq : p ≠ q := fun h => huv (τ.injective h)
       have hπp : π p = σ B := by
         obtain ⟨i, hi⟩ := hsurj_skip p hpA hpB
-        rw [← hi, hπ_val, hi, show τ p = σ A from hττ (σ A), x'.1.apply_apply,
+        rw [← hi, hπ_val, hi, show τ p = σ A from hττ (σ A), x'.val.apply_apply,
           ite_eq_left rfl]
       have hπq : π q = σ A := by
         obtain ⟨i, hi⟩ := hsurj_skip q hqA hqB
-        rw [← hi, hπ_val, hi, show τ q = σ B from hττ (σ B), x'.1.apply_apply,
+        rw [← hi, hπ_val, hi, show τ q = σ B from hττ (σ B), x'.val.apply_apply,
           ite_eq_right hAB_ne.symm, ite_eq_left rfl]
       have hprod : σ * τ = (π * swap p A) * swap q B := by
         ext z
@@ -201,17 +202,17 @@ private theorem orbitCount_mul_revPerm_eq_two_mul :
         by_cases hzB : z = B
         · rw [hzB, hτB, swap_apply_right, swap_apply_of_ne_of_ne hpq.symm hqA, hπq]
         by_cases hzp : z = p
-        · rw [hzp, show τ p = σ A from hττ (σ A), x'.1.apply_apply,
+        · rw [hzp, show τ p = σ A from hττ (σ A), x'.val.apply_apply,
             swap_apply_of_ne_of_ne hpq hpB, swap_apply_left, hπ_A]
         by_cases hzq : z = q
-        · rw [hzq, show τ q = σ B from hττ (σ B), x'.1.apply_apply,
+        · rw [hzq, show τ q = σ B from hττ (σ B), x'.val.apply_apply,
             swap_apply_left, swap_apply_of_ne_of_ne hpB.symm hAB_ne.symm, hπ_B]
         obtain ⟨i, rfl⟩ := hsurj_skip z hzA hzB
         rw [swap_apply_of_ne_of_ne hzq hzB, swap_apply_of_ne_of_ne hzp hzA, hπ_val]
         have h1 : σ (τ (skip a i)) ≠ A := fun h => hzp (by
-          rw [show p = τ (σ A) from rfl, ← h, x'.1.apply_apply, hττ])
+          rw [show p = τ (σ A) from rfl, ← h, x'.val.apply_apply, hττ])
         have h2 : σ (τ (skip a i)) ≠ B := fun h => hzq (by
-          rw [show q = τ (σ B) from rfl, ← h, x'.1.apply_apply, hττ])
+          rw [show q = τ (σ B) from rfl, ← h, x'.val.apply_apply, hττ])
         rw [ite_eq_right h1, ite_eq_right h2]
       have h1 := orbitCount_mul_swap_add_one (τ := π) hπ_A hpA
       have hπ1_B : (π * swap p A) B = B := by
@@ -247,19 +248,19 @@ private theorem glueCircles_rotate_pow_half (n : ℕ) (x : PlanarMatching (n + n
   have h1 := orbitCount_mul_revPerm_eq_two_mul n ((rotate (n + n) ^ n) x)
   have h2 := orbitCount_mul_revPerm_eq_two_mul n x
   set r : Perm (Fin (n + n)) := finRotate (n + n) ^ n
-  have hconj : ((rotate (n + n) ^ n) x).1.val * Fin.revPerm =
-      r * (x.1.val * Fin.revPerm) * r⁻¹ := by
+  have hconj : ((rotate (n + n) ^ n) x).val.val * Fin.revPerm =
+      r * (x.val.val * Fin.revPerm) * r⁻¹ := by
     rw [coe_rotate_pow_apply, PerfectMatching.congr_val]
-    have hconj_val : r.permCongr x.1.val = r * x.1.val * r⁻¹ := rfl
+    have hconj_val : r.permCongr x.val.val = r * x.val.val * r⁻¹ := rfl
     rw [hconj_val]
     have hcomm' : r⁻¹ * Fin.revPerm = Fin.revPerm * r⁻¹ := by
       calc r⁻¹ * Fin.revPerm = r⁻¹ * (Fin.revPerm * r) * r⁻¹ := by group
         _ = r⁻¹ * (r * Fin.revPerm) * r⁻¹ := by rw [← hcomm]
         _ = Fin.revPerm * r⁻¹ := by group
-    calc r * x.1.val * r⁻¹ * Fin.revPerm
-        = r * x.1.val * (r⁻¹ * Fin.revPerm) := by group
-      _ = r * x.1.val * (Fin.revPerm * r⁻¹) := by rw [hcomm']
-      _ = r * (x.1.val * Fin.revPerm) * r⁻¹ := by group
+    calc r * x.val.val * r⁻¹ * Fin.revPerm
+        = r * x.val.val * (r⁻¹ * Fin.revPerm) := by group
+      _ = r * x.val.val * (Fin.revPerm * r⁻¹) := by rw [hcomm']
+      _ = r * (x.val.val * Fin.revPerm) * r⁻¹ := by group
   rw [hconj, orbitCount_conj] at h1
   omega
 
@@ -293,8 +294,11 @@ theorem leftClosure_eq_rightClosure (f : TLDiagram n n) :
         f.matching).append (nested n)) =
         pv (f.matching.append (nested n)) := by
       rw [pv_append_eq, pv_append_eq, pv_cast_eq, Nat.zero_add]
+    have haddL := glueFn_add 0 n n (pv (((PlanarMatching.rotate (n + n) ^ n) f.matching).append
+      (nested n)))
+    have haddR := glueFn_add 0 n n (pv (f.matching.append (nested n)))
     simp only [circles_comp, circles_nestedCap, matching_nestedCap, glueMiddleCircles_eq,
-      Nat.zero_add, hcastL, hcastR, glueCircles_add, hL.1, hL.2, hR.1, hR.2,
+      Nat.zero_add, hcastL, hcastR, haddL.2, haddR.2, hL.1, hL.2, hR.1, hR.2,
       glueCircles_rotate_pow_half]
 
 

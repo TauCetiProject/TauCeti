@@ -315,7 +315,7 @@ theorem isClosedEmbedding_constContractible :
   toIsEmbedding := isClosedEmbedding_const.isEmbedding.codRestrict _ _
   isClosed_range := by
     rw [constContractible, Set.range_codRestrict]
-    exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtype_val
+    exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtypeVal
 
 variable (X) in
 /-- Basepoint evaluation `𝓛₀X → X` on contractible free Moore loops. -/
@@ -324,7 +324,7 @@ def basepointContractible : C(contractibleLoops X, X) :=
 
 @[simp]
 theorem basepointContractible_apply (γ : contractibleLoops X) :
-    basepointContractible X γ = γ.1.basepoint :=
+    basepointContractible X γ = γ.val.basepoint :=
   (rfl)
 
 variable (X) in

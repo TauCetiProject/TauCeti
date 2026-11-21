@@ -34,9 +34,9 @@ namespace TauCeti.AlgebraicGeometry.Spec
 for a set `s` generating the unit ideal of `R`. -/
 theorem hom_ext_of_span_eq_top {R : Type u} [CommRing R] (s : Set R) (hs : Ideal.span s = ⊤)
     {X : Scheme.{u}} {f g : Spec (.of R) ⟶ X}
-    (h : ∀ a : s, Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away a.1))) ≫ f =
-      Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away a.1))) ≫ g) : f = g :=
-  (Scheme.affineOpenCoverOfSpanRangeEqTop (R := .of R) (fun a : s ↦ a.1)
+    (h : ∀ a : s, Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away a.val))) ≫ f =
+      Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away a.val))) ≫ g) : f = g :=
+  (Scheme.affineOpenCoverOfSpanRangeEqTop (R := .of R) (fun a : s ↦ a.val)
     (by rwa [Subtype.range_coe])).openCover.hom_ext _ _ h
 
 end TauCeti.AlgebraicGeometry.Spec

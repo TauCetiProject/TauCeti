@@ -42,11 +42,11 @@ variable (d : ReeF4LieIndex)
 
 /-- The exceptional endomorphism of the Ree F4 ambient carrier. -/
 def halfFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  F4ShortRoot.PrimeField.specialIsogeny d.1.Closure
+  F4ShortRoot.PrimeField.specialIsogeny d.val.Closure
 
 /-- The half-Frobenius is the characteristic-two carrier's special isogeny. -/
 theorem halfFrobenius_def :
-    d.halfFrobenius = F4ShortRoot.PrimeField.specialIsogeny d.1.Closure := by rfl
+    d.halfFrobenius = F4ShortRoot.PrimeField.specialIsogeny d.val.Closure := by rfl
 
 /-- The half-Frobenius squares to the prime-field Frobenius. -/
 @[simp] theorem halfFrobenius_halfFrobenius (g : d.AmbientGroup) :
@@ -55,7 +55,7 @@ theorem halfFrobenius_def :
     F4ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
 /-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
-theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
+theorem isogenyExponent_inl_finCongr (i : Fin d.val.rank) :
     F4ShortRoot.isogenyExponent (.inl (finCongr d.rank_eq_four i)) =
       d.toSuzukiReeIndex.exponent i := by
   rw [exponent_eq]
@@ -64,8 +64,8 @@ theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
   exact h (finCongr d.rank_eq_four i)
 
 /-- The half-Frobenius has the index's own root permutation and long/short exponents. -/
-@[simp] theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+@[simp] theorem halfFrobenius_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.halfFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
@@ -77,8 +77,8 @@ theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
 /-- The exceptional endomorphism reverses negative simple roots with the indexed source-root
 exponent: one on the long roots and two on the short roots. -/
 @[simp]
-theorem halfFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem halfFrobenius_negativeSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.halfFrobenius (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
@@ -90,12 +90,12 @@ theorem halfFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
 
 /-- The Steinberg endomorphism is the recorded odd power of the exceptional endomorphism. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup :=
-  HPow.hPow (α := Monoid.End d.AmbientGroup) d.halfFrobenius d.1.fieldExponent
+  HPow.hPow (α := Monoid.End d.AmbientGroup) d.halfFrobenius d.val.fieldExponent
 
 /-- The Steinberg map is the recorded power in the monoid of endomorphisms. -/
 theorem steinberg_def :
     d.steinberg = HPow.hPow (α := Monoid.End d.AmbientGroup)
-      d.halfFrobenius d.1.fieldExponent := by rfl
+      d.halfFrobenius d.val.fieldExponent := by rfl
 
 /-- The square of the Steinberg endomorphism is the field-order Frobenius. -/
 @[simp] theorem steinberg_steinberg (g : d.AmbientGroup) :
@@ -104,12 +104,12 @@ theorem steinberg_def :
   exact d.toSuzukiReeIndex.pow_fieldExponent_pow_fieldExponent d.halfFrobenius_halfFrobenius g
 
 /-- The odd iterate exchanges the numbered roots with the prescribed parameter power. -/
-@[simp] theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+@[simp] theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^
-          (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
+          (d.val.characteristic ^ d.toSuzukiReeIndex.halfExponent *
             d.toSuzukiReeIndex.exponent i))) :=
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
     (x := fun j t => d.simpleRootSubgroup j t)
@@ -118,12 +118,12 @@ theorem steinberg_def :
 /-- The Ree Steinberg map has parameter exponent `p^m * aᵢ` on each negative simple root,
 where `aᵢ` is the exceptional exponent at the source node. -/
 @[simp]
-theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^
-          (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
+          (d.val.characteristic ^ d.toSuzukiReeIndex.halfExponent *
             d.toSuzukiReeIndex.exponent i))) := by
   rw [steinberg_def]
   exact d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm

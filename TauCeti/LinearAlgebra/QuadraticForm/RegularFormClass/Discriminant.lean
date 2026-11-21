@@ -9,7 +9,7 @@ public import TauCeti.Data.Nat.Choose.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 
 /-!
 # The discriminant and the signed discriminant of a regular quadratic form
@@ -66,6 +66,9 @@ is killed by two.
 * `TauCeti.RegularFormClass.exists_eq_mk_neg_neg_mul`: a rank-three class with trivial
   discriminant has a presentation `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.signedDiscr_mk_rankOne`: `d±⟨a⟩ = squareClass a`.
+* `TauCeti.RegularFormClass.discr_natCast` and `TauCeti.RegularFormClass.signedDiscr_natCast`:
+  the sum of `n` squares `n⟨1⟩` has trivial discriminant and signed discriminant
+  `C(n,2) • squareClass (-1)`.
 * `TauCeti.RegularFormClass.discr_hyperbolicClass` and
   `TauCeti.RegularFormClass.signedDiscr_hyperbolicClass`: the discriminant of a hyperbolic plane
   is the class of `-1`, and its signed discriminant is trivial.
@@ -166,6 +169,16 @@ theorem discr_nsmul (n : ℕ) (x : RegularFormClass K) : discr (n • x) = n •
 theorem discr_one : discr (1 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.one_def, discr_mk]
   simp
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial discriminant. -/
+@[simp]
+theorem discr_natCast (n : ℕ) : discr (n : RegularFormClass K) = 0 := by
+  rw [← nsmul_one, discr_nsmul, discr_one, nsmul_zero]
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial discriminant, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem discr_ofNat (n : ℕ) [n.AtLeastTwo] : discr (ofNat(n) : RegularFormClass K) = 0 :=
+  discr_natCast n
 
 /-- **The discriminant of a tensor product**: `d(q ⊗ r) = n • d(q) + m • d(r)` for `q` of
 rank `m` and `r` of rank `n`, in the additively written square-class group. -/
@@ -301,6 +314,22 @@ theorem signedDiscr_one : signedDiscr (1 : RegularFormClass K) = 0 := by
 theorem signedDiscr_mk_rankOne (a : Kˣ) :
     signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = squareClass a := by
   rw [signedDiscr_eq_discr_of_rank_le_one (by rw [rank_mk]), discr_mk, Fin.prod_univ_one]
+
+/-- The sum of `n` squares `n⟨1⟩` has signed discriminant `C(n,2) • squareClass (-1)`: only the
+sign correction survives. -/
+@[simp]
+theorem signedDiscr_natCast (n : ℕ) :
+    signedDiscr (n : RegularFormClass K) = n.choose 2 • squareClass (-1 : Kˣ) := by
+  rw [signedDiscr_eq_sign_add_discr, rank_natCast, discr_natCast]
+  exact add_zero (n.choose 2 • squareClass (-1 : Kˣ))
+
+/-- The sum of `n` squares `n⟨1⟩` has signed discriminant `C(n,2) • squareClass (-1)`, for a
+numeral `n ≥ 2`. -/
+@[simp]
+theorem signedDiscr_ofNat (n : ℕ) [n.AtLeastTwo] :
+    signedDiscr (ofNat(n) : RegularFormClass K) =
+      (ofNat(n) : ℕ).choose 2 • squareClass (-1 : Kˣ) :=
+  signedDiscr_natCast n
 
 /-- **The signed discriminant of an orthogonal sum**:
 `d±(q ⊥ r) = mn • squareClass (-1) + d±(q) + d±(r)` for `q` of rank `m` and `r` of rank

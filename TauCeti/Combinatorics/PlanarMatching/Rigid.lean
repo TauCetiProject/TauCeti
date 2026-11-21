@@ -112,13 +112,17 @@ instance exactPairingSelf (X : TLDiagCat) : ExactPairing X X where
   evaluation' := nestedCap X.as
   coevaluation_evaluation' := by
     refine hom_ext ?_
-    rw [associator_inv_eq, rightUnitor_hom_eq, leftUnitor_inv_eq, eqToHom_trans, diagram_eqToHom,
+    rw [associator_inv, rightUnitor_hom, leftUnitor_inv, eqToHom_trans, diagram_eqToHom,
       diagram_comp, diagram_eqToHom_comp, diagram_whiskerLeft, diagram_whiskerRight,
       diagram_nestedCup, diagram_nestedCap]
-    exact TLDiagram.zigzag_right X.as
+    have hcast : TLDiagram.cast (Nat.add_zero X.as).symm (Nat.zero_add X.as).symm
+        (TLDiagram.id X.as) =
+        TLDiagram.cast rfl (by omega : X.as + 0 = 0 + X.as) (TLDiagram.id (X.as + 0)) := by
+      rw [← TLDiagram.cast_id (Nat.add_zero X.as).symm, TLDiagram.cast_cast]
+    exact (TLDiagram.zigzag_right X.as).trans hcast
   evaluation_coevaluation' := by
     refine hom_ext ?_
-    rw [associator_hom_eq, leftUnitor_hom_eq, rightUnitor_inv_eq, eqToHom_trans, diagram_eqToHom,
+    rw [associator_hom, leftUnitor_hom, rightUnitor_inv, eqToHom_trans, diagram_eqToHom,
       diagram_comp, diagram_eqToHom_comp, diagram_whiskerRight, diagram_whiskerLeft,
       diagram_nestedCup, diagram_nestedCap]
     have hcast : TLDiagram.cast (Nat.zero_add X.as).symm (Nat.add_zero X.as).symm
@@ -168,7 +172,7 @@ theorem diagram_rightAdjointMate {X Y : TLDiagCat} (f : X ⟶ Y) :
       (Y ◁ (η_ X X ≫ f ▷ X) ≫ (α_ Y Y X).inv ≫ ε_ Y Y ▷ X) ≫ (λ_ X).hom := by
     simp only [rightAdjointMate, MonoidalCategory.whiskerLeft_comp, Category.assoc]
     rfl
-  rw [h, rightUnitor_inv_eq, associator_inv_eq, leftUnitor_hom_eq, diagram_eqToHom_comp,
+  rw [h, rightUnitor_inv, associator_inv, leftUnitor_hom, diagram_eqToHom_comp,
     diagram_comp_eqToHom, TLDiagram.cast_cast, diagram_comp, diagram_eqToHom_comp,
     diagram_whiskerLeft, diagram_comp, diagram_whiskerRight, diagram_whiskerRight,
     coevaluation_eq_nestedCup, evaluation_eq_nestedCap, diagram_nestedCup, diagram_nestedCap]
@@ -218,8 +222,8 @@ theorem rightDualTensorIso_eq (X Y : TLDiagCat) :
         Y ◁ (nestedCap X.as ▷ Y) ≫
         eqToHom (congrArg of (by omega : Y.as + (0 + Y.as) = Y.as + Y.as)) ≫
         nestedCap Y.as := by
-    simp [ExactPairing.tensor_evaluation, monoidalComp, associator_hom_eq, associator_inv_eq,
-      leftUnitor_hom_eq, whiskerLeft_eqToHom, eqToHom_trans, evaluation_eq_nestedCap]
+    simp [ExactPairing.tensor_evaluation, monoidalComp, associator_hom, associator_inv,
+      leftUnitor_hom, whiskerLeft_eqToHom, eqToHom_trans, evaluation_eq_nestedCap]
   rw [hev, ← Category.assoc (eqToHom _ ▷ _), eqToHom_whiskerRight,
     eqToHom_trans, diagram_eqToHom_comp, diagram_comp, diagram_eqToHom_comp, diagram_whiskerLeft,
     diagram_whiskerRight, diagram_nestedCap, diagram_nestedCap,
@@ -240,8 +244,8 @@ theorem rightDualUnitIso_eq :
       exactPairingUnit]
   -- Unfold `(𝟙_ TLDiagCat)ᘁ = 𝟙_ TLDiagCat` and the unit pairing evaluation `(ρ_ _).hom`.
   change nestedCap 0 = (Iso.refl (𝟙_ TLDiagCat)).hom ▷ 𝟙_ TLDiagCat ≫ (ρ_ (𝟙_ TLDiagCat)).hom
-  rw [nestedCap_zero, Iso.refl_hom, id_whiskerRight, Category.id_comp, rightUnitor_hom_eq]
-  simp
+  rw [nestedCap_zero, Iso.refl_hom, id_whiskerRight, Category.id_comp, rightUnitor_hom]
+  simp; rfl
 
 /-! ### Pivotal and spherical structure -/
 

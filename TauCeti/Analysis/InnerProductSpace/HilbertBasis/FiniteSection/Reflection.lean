@@ -68,6 +68,13 @@ theorem finiteReflection_basis (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (i : Fin 
     LinearIsometryEquiv.coe_coe'', LinearIsometryEquiv.piLpCongrLeft_single,
     Fin.revPerm_apply, finiteInclusion_single]
 
+/-- Reflection sends the basis vector with index `i ≤ n` to the basis vector with index
+`n - i`. -/
+@[simp]
+theorem finiteReflection_basis_of_le (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) {i : ℕ}
+    (hi : i ≤ n) : b.finiteReflection n (b i) = b (n - i) := by
+  simpa using b.finiteReflection_basis n ⟨i, by omega⟩
+
 /-- A finite reflection annihilates basis vectors beyond its finite section. -/
 @[simp]
 theorem finiteReflection_basis_eq_zero (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) {i : ℕ}

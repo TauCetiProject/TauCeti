@@ -5,49 +5,53 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PlanarMatching.Associativity
+public import TauCeti.Combinatorics.PlanarMatching.Compose
 import all TauCeti.Combinatorics.PlanarMatching.Glue
 import all TauCeti.Combinatorics.PlanarMatching.Associativity
 
 /-!
-# Horizontal tensor product of Temperley–Lieb diagrams
+# The tensor product of Temperley–Lieb diagrams
 
-Two Temperley–Lieb diagrams `f : n₁ → m₁` and `g : n₂ → m₂` are tensored horizontally by placing
-`g` to the right of `f`, yielding `TauCeti.TLDiagram.tensor f g : TLDiagram (n₁ + n₂) (m₁ + m₂)`.
-In the counterclockwise boundary numbering (`0, …, n - 1` along the bottom from left to right and
-`n, …, n + m - 1` along the top from right to left), placing `g` to the right of `f` inserts the
-entire boundary of `g` as a contiguous interval `[n₁, n₁ + n₂ + m₂)` between the bottom and top
-boundaries of `f`, shifting the top points of `f` by `n₂ + m₂`. On matchings this is the insertion
-operation `TauCeti.PlanarMatching.insert`; on circles it adds the circle counts.
+The tensor product `f.tensor g : TLDiagram (n + n') (m + m')` of two Temperley–Lieb diagrams
+`f : n → m` and `g : n' → m'` places `g` to the right of `f` and keeps the circles of both.
 
-The interchange law `TauCeti.TLDiagram.tensor_comp` says that horizontal tensoring commutes with
-vertical gluing:
-`(f₁.tensor g₁).comp (f₂.tensor g₂) = (f₁.comp f₂).tensor (g₁.comp g₂)`.
-In the juxtaposition of `f₁ ⊗ g₁` and `f₂ ⊗ g₂`, the `m₁` glued pairs of `f₁` and `f₂` lie
-strictly between the inserted blocks `g₁` and `g₂`; contracting them first leaves `f₁ ≫ f₂` and
-brings `g₁` and `g₂` together into a single contiguous block, after which the remaining `m₂`
-contractions glue `g₁` and `g₂` inside that block without disturbing `f₁ ≫ f₂`.
+In the counterclockwise numbering of the boundary, the points of `f.tensor g` are, in order, the
+`n` bottom points of `f`, the `n'` bottom points of `g`, the `m'` top points of `g` (from right to
+left) and the `m` top points of `f` (from right to left). So the boundary of `g` is a block of
+consecutive points inserted into the boundary of `f` between its bottom and its top points, and the
+matching of `f.tensor g` is `TauCeti.PlanarMatching.insertBlock f.matching g.matching`: the arcs of
+`g` on the block, and the arcs of `f` around it.
+
+The tensor product is functorial for composition, `TauCeti.TLDiagram.tensor_comp_tensor` (the
+interchange law), sends identities to identities, and is associative and unital up to the
+transports `TauCeti.TLDiagram.cast` along the equalities of the numbers of points. These are the
+laws behind the strict monoidal structure of the Temperley–Lieb diagram category.
 
 ## Main definitions
 
-* `TauCeti.PlanarMatching.insert`: inserting a planar matching as a contiguous block inside another.
-* `TauCeti.TLDiagram.cast`: transporting a diagram along equalities of its bottom and top sizes.
-* `TauCeti.TLDiagram.tensor`: horizontal juxtaposition of Temperley–Lieb diagrams.
+* `TauCeti.PlanarMatching.insertBlock x y`: the planar matching `y` inserted as a block of
+  consecutive points into the planar matching `x`.
+* `TauCeti.TLDiagram.tensor f g`: the tensor product of Temperley–Lieb diagrams, `g` to the right
+  of `f`.
 
 ## Main results
 
-* `TauCeti.TLDiagram.tensor_id_id`: tensoring identity diagrams gives an identity diagram.
-* `TauCeti.TLDiagram.tensor_comp`: the interchange law between tensoring and composition.
-* `TauCeti.TLDiagram.tensor_assoc`: associativity of horizontal tensoring up to `cast`.
-* `TauCeti.TLDiagram.mk_nested_zero_tensor`, `TauCeti.TLDiagram.tensor_mk_nested_zero`: tensoring
-  with empty diagrams adds their circle counts on either side, giving left and right unit laws
-  `TauCeti.TLDiagram.id_zero_tensor` and `TauCeti.TLDiagram.tensor_id_zero`.
+* `TauCeti.TLDiagram.tensor_comp_tensor`: the interchange law
+  `(f₁ ⊗ f₂) ≫ (g₁ ⊗ g₂) = (f₁ ≫ g₁) ⊗ (f₂ ≫ g₂)`, for the matchings and for the circles.
+* `TauCeti.TLDiagram.id_tensor_id`: the tensor product of identity diagrams is an identity
+  diagram.
+* `TauCeti.TLDiagram.tensor_assoc`, `TauCeti.TLDiagram.id_zero_tensor`,
+  `TauCeti.TLDiagram.tensor_id_zero`: associativity and unitality of the tensor product.
 
 ## Implementation notes
 
-As in `TauCeti.Combinatorics.PlanarMatching.Associativity`, the interchange and associativity
-proofs work on the `ℕ → ℕ` partner functions `pv` and the contraction recursion `glueFn` /
-`glueCircles`, using `import all` on `Glue` and `Associativity`.
+The proofs work with partner functions `ℕ → ℕ`, as in
+`TauCeti.Combinatorics.PlanarMatching.Associativity`, whose private machinery this file imports
+with `import all`. Composing two tensor products glues two blocks of nested pairs: the pairs between
+the top of `f₁` and the bottom of `g₁`, which lie between the two inserted blocks of `f₂` and `g₂`,
+and the pairs between the top of `f₂` and the bottom of `g₂`, inside the merged inserted block. The
+interchange law reduces to the fact that contracting a pair of consecutive points commutes with
+inserting a block, whether the pair lies before the block, after it, or inside it.
 
 ## References
 
@@ -56,928 +60,627 @@ proofs work on the `ℕ → ℕ` partner functions `pv` and the contraction recu
 
 public section
 
-open Equiv
-
 namespace TauCeti
 
 namespace PlanarMatching
 
-/-! ### Inserting a planar matching into another -/
+/-! ### Inserting a block, on partner functions -/
 
-section Insert
+/-- The partner function of a matching with partner function `φ` into which a block with partner
+function `ψ` on `l` points is inserted before position `c`. -/
+private def insFn (c l : ℕ) (φ ψ : ℕ → ℕ) (q : ℕ) : ℕ :=
+  if q < c then ins c l (φ q) else if q < c + l then c + ψ (q - c) else ins c l (φ (q - l))
 
-variable {k l : ℕ}
+private theorem ins_of_lt {c l v : ℕ} (h : v < c) : ins c l v = v := by
+  simp [ins, h]
 
-/-- The bijection `Fin k ⊕ Fin l ≃ Fin (k + l)` inserting `Fin l` as the contiguous block
-`[c, c + l)` inside `Fin k`. -/
-private def insertEquiv (c : ℕ) (hc : c ≤ k) (l : ℕ) : Fin k ⊕ Fin l ≃ Fin (k + l) where
-  toFun
-    | .inl i => if (i : ℕ) < c then ⟨i, by omega⟩ else ⟨i + l, by omega⟩
-    | .inr j => ⟨c + j, by omega⟩
-  invFun a :=
-    if h₁ : (a : ℕ) < c then .inl ⟨a, by omega⟩
-    else if h₂ : (a : ℕ) < c + l then .inr ⟨a - c, by omega⟩
-    else .inl ⟨a - l, by omega⟩
-  left_inv
-    | .inl i => by
-      dsimp only
-      by_cases h : (i : ℕ) < c
-      · rw [ite_eq_left h, dite_eq_left h]
-      · rw [ite_eq_right h, dite_eq_right (by dsimp only; omega),
-          dite_eq_right (by dsimp only; omega)]
-        congr 1; exact Fin.ext (by dsimp only; omega)
-    | .inr j => by
-      dsimp only
-      rw [dite_eq_right (by omega), dite_eq_left (by omega)]
-      congr 1; exact Fin.ext (by dsimp only; omega)
-  right_inv a := by
-    dsimp only
-    by_cases h₁ : (a : ℕ) < c
-    · rw [dite_eq_left h₁]; dsimp only; rw [ite_eq_left h₁]
-    by_cases h₂ : (a : ℕ) < c + l
-    · rw [dite_eq_right h₁, dite_eq_left h₂]; exact Fin.ext (by dsimp only; omega)
-    · rw [dite_eq_right h₁, dite_eq_right h₂]; dsimp only
-      rw [ite_eq_right (by omega)]
-      exact Fin.ext (by dsimp only; omega)
+private theorem ins_of_le {c l v : ℕ} (h : c ≤ v) : ins c l v = v + l := by
+  simp [ins, Nat.not_lt.mpr h]
 
-private theorem insertEquiv_inl_lt {c : ℕ} {hc : c ≤ k} (i : Fin k) (hi : (i : ℕ) < c) :
-    (insertEquiv c hc l (.inl i) : ℕ) = i := by
-  simp [insertEquiv, hi]
+private theorem ins_injective (c l : ℕ) : Function.Injective (ins c l) := by
+  intro u v h
+  simp only [ins] at h
+  split_ifs at h <;> omega
 
-private theorem insertEquiv_inl_ge {c : ℕ} {hc : c ≤ k} (i : Fin k) (hi : c ≤ (i : ℕ)) :
-    (insertEquiv c hc l (.inl i) : ℕ) = i + l := by
-  simp [insertEquiv, Nat.not_lt.mpr hi]
+private theorem ins_lt_ins_iff {c l u v : ℕ} : ins c l u < ins c l v ↔ u < v := by
+  simp only [ins]
+  split_ifs <;> omega
 
-private theorem insertEquiv_inr {c : ℕ} {hc : c ≤ k} (j : Fin l) :
-    (insertEquiv c hc l (.inr j) : ℕ) = c + j := (rfl)
-
-private theorem insertEquiv_inl_lt_inl_iff {c : ℕ} {hc : c ≤ k} (i₁ i₂ : Fin k) :
-    insertEquiv c hc l (.inl i₁) < insertEquiv c hc l (.inl i₂) ↔ i₁ < i₂ := by
-  simp only [Fin.lt_def, insertEquiv, Equiv.coe_fn_mk]
-  split_ifs <;> dsimp only <;> omega
-
-private theorem insertEquiv_inr_lt_inr_iff {c : ℕ} {hc : c ≤ k} (j₁ j₂ : Fin l) :
-    insertEquiv c hc l (.inr j₁) < insertEquiv c hc l (.inr j₂) ↔ j₁ < j₂ := by
-  simp only [Fin.lt_def, insertEquiv_inr]
-  omega
-
-/-- The involution obtained by inserting the arcs of `y` at position `c` inside `x`. -/
-private def insertPerm (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l) :
-    Perm (Fin (k + l)) :=
-  (insertEquiv c hc l).permCongr (x.1.val.sumCongr y.1.val)
-
-private theorem insertPerm_inl (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l)
-    (i : Fin k) :
-    insertPerm c hc x y (insertEquiv c hc l (.inl i)) = insertEquiv c hc l (.inl (x.1.val i)) := by
-  simp [insertPerm]
-
-private theorem insertPerm_inr (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l)
-    (j : Fin l) :
-    insertPerm c hc x y (insertEquiv c hc l (.inr j)) = insertEquiv c hc l (.inr (y.1.val j)) := by
-  simp [insertPerm]
-
-private theorem isPerfectMatching_insertPerm (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) : IsPerfectMatching (insertPerm c hc x y) := by
-  refine isPerfectMatching_iff.mpr ⟨fun a => ?_, fun a => ?_⟩
-  · obtain ⟨s, rfl⟩ := (insertEquiv c hc l).surjective a
-    cases s with
-    | inl i => rw [insertPerm_inl, insertPerm_inl, x.1.apply_apply]
-    | inr j => rw [insertPerm_inr, insertPerm_inr, y.1.apply_apply]
-  · obtain ⟨s, rfl⟩ := (insertEquiv c hc l).surjective a
-    cases s with
-    | inl i =>
-      rw [insertPerm_inl]
-      intro h
-      exact x.1.apply_ne i (Sum.inl.inj ((insertEquiv c hc l).injective h))
-    | inr j =>
-      rw [insertPerm_inr]
-      intro h
-      exact y.1.apply_ne j (Sum.inr.inj ((insertEquiv c hc l).injective h))
-
-private theorem isNoncrossingMatching_insertPerm (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) : (insertPerm c hc x y).IsNoncrossingMatching := by
-  rw [Equiv.Perm.isNoncrossingMatching_iff]
-  intro a b hab hb hlt
-  obtain ⟨sa, rfl⟩ := (insertEquiv c hc l).surjective a
-  obtain ⟨sb, rfl⟩ := (insertEquiv c hc l).surjective b
-  cases sa with
-  | inl i =>
-    cases sb with
-    | inl i' =>
-      rw [insertPerm_inl] at hb
-      rw [insertPerm_inl, insertPerm_inl] at hlt
-      rw [insertEquiv_inl_lt_inl_iff] at hab hb hlt
-      exact Equiv.Perm.isNoncrossingMatching_iff.mp x.2 hab hb hlt
-    | inr j' =>
-      rw [insertPerm_inl] at hb
-      rw [insertPerm_inl, insertPerm_inr] at hlt
-      simp only [Fin.lt_def, insertEquiv, Equiv.coe_fn_mk] at hab hb hlt
-      split_ifs at hab hb hlt <;> dsimp only at hab hb hlt <;> omega
-  | inr j =>
-    cases sb with
-    | inl i' =>
-      rw [insertPerm_inr] at hb
-      rw [insertPerm_inr, insertPerm_inl] at hlt
-      simp only [Fin.lt_def, insertEquiv, Equiv.coe_fn_mk] at hab hb hlt
-      split_ifs at hab hb hlt <;> dsimp only at hab hb hlt <;> omega
-    | inr j' =>
-      rw [insertPerm_inr] at hb
-      rw [insertPerm_inr, insertPerm_inr] at hlt
-      rw [insertEquiv_inr_lt_inr_iff] at hab hb hlt
-      exact Equiv.Perm.isNoncrossingMatching_iff.mp y.2 hab hb hlt
-
-/-- **Insertion** of planar matchings: `insert c hc x y` places the arcs of `y` on the contiguous
-block `c, …, c + l - 1`, and keeps the arcs of `x` on the remaining points `0, …, c - 1` and
-`c + l, …, k + l - 1`. -/
-def insert (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l) :
-    PlanarMatching (k + l) :=
-  ⟨⟨insertPerm c hc x y, isPerfectMatching_insertPerm c hc x y⟩,
-    isNoncrossingMatching_insertPerm c hc x y⟩
-
-/-- On the inserted block `c, …, c + l - 1`, `insert c hc x y` acts as `y`, shifted by `c`. -/
-theorem insert_val_block (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l)
-    (j : Fin l) :
-    (insert c hc x y).1.val ⟨c + j, by omega⟩ = ⟨c + y.1.val j, by omega⟩ :=
-  insertPerm_inr c hc x y j
-
-/-- On a point before the insertion position `c`, `insert c hc x y` keeps the partner in `x`,
-shifting it up by `l` if it lies at or past `c`. -/
-theorem coe_insert_val_of_lt (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l)
-    {q : ℕ} (hq : q < c) :
-    ((insert c hc x y).1.val ⟨q, by omega⟩ : ℕ) =
-      if (x.1.val ⟨q, by omega⟩ : ℕ) < c then (x.1.val ⟨q, by omega⟩ : ℕ)
-      else (x.1.val ⟨q, by omega⟩ : ℕ) + l := by
-  have harg : (⟨q, by omega⟩ : Fin (k + l)) = insertEquiv c hc l (.inl ⟨q, by omega⟩) :=
-    Fin.ext (by rw [insertEquiv_inl_lt ⟨q, by omega⟩ hq])
-  -- Expose the underlying `insertPerm` definition to rewrite with `insertPerm_inl`.
-  change (insertPerm c hc x y ⟨q, by omega⟩ : ℕ) = _
-  rw [harg, insertPerm_inl]
-  split_ifs with h
-  · exact insertEquiv_inl_lt _ h
-  · exact insertEquiv_inl_ge _ (Nat.le_of_not_lt h)
-
-/-- On a point inside the inserted block `[c, c + l)`, `insert c hc x y` shifts the partner in `y`
-by `c`. -/
-theorem coe_insert_val_of_le_of_lt (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) {q : ℕ} (h₁ : c ≤ q) (h₂ : q < c + l) :
-    ((insert c hc x y).1.val ⟨q, by omega⟩ : ℕ) = c + (y.1.val ⟨q - c, by omega⟩ : ℕ) := by
-  have harg : (⟨q, by omega⟩ : Fin (k + l)) = ⟨c + (⟨q - c, by omega⟩ : Fin l), by omega⟩ :=
-    Fin.ext (by dsimp only; omega)
-  rw [harg, insert_val_block]
-
-/-- On a point past the inserted block, `insert c hc x y` shifts the point down by `l`, takes its
-partner in `x`, and shifts it back up by `l` if it lies at or past `c`. -/
-theorem coe_insert_val_of_le (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching l)
-    {q : ℕ} (h₁ : c + l ≤ q) (h₂ : q < k + l) :
-    ((insert c hc x y).1.val ⟨q, by omega⟩ : ℕ) =
-      if (x.1.val ⟨q - l, by omega⟩ : ℕ) < c then (x.1.val ⟨q - l, by omega⟩ : ℕ)
-      else (x.1.val ⟨q - l, by omega⟩ : ℕ) + l := by
-  have harg : (⟨q, by omega⟩ : Fin (k + l)) = insertEquiv c hc l (.inl ⟨q - l, by omega⟩) :=
-    Fin.ext (by rw [insertEquiv_inl_ge ⟨q - l, by omega⟩ (by dsimp only; omega)]; dsimp only; omega)
-  -- Expose the underlying `insertPerm` definition to rewrite with `insertPerm_inl`.
-  change (insertPerm c hc x y ⟨q, by omega⟩ : ℕ) = _
-  rw [harg, insertPerm_inl]
-  split_ifs with h
-  · exact insertEquiv_inl_lt _ h
-  · exact insertEquiv_inl_ge _ (Nat.le_of_not_lt h)
-
-/-- Inserting `y` at the very end of `x` is the juxtaposition `x.append y`. -/
-theorem insert_self_eq_append (x : PlanarMatching k) (y : PlanarMatching l) :
-    insert k le_rfl x y = x.append y := by
-  refine ext_pv fun q hq => ?_
-  rw [pv_of_lt _ hq]
-  by_cases h₁ : q < k
-  · rw [coe_insert_val_of_lt _ _ _ _ h₁, ite_eq_left (x.1.val ⟨q, h₁⟩).isLt, pv_append_left _ _ h₁,
-      pv_of_lt _ h₁]
-  · rw [coe_insert_val_of_le_of_lt _ _ _ _ (by omega) (by omega),
-      pv_append_right _ _ (by omega) hq, pv_of_lt _ (by omega)]
-
-/-- Inserting `y` at the start of `x` is the juxtaposition `y.append x`, cast to `k + l`. -/
-theorem insert_zero_eq_append (x : PlanarMatching k) (y : PlanarMatching l) :
-    insert 0 (Nat.zero_le k) x y = cast (Nat.add_comm l k) (y.append x) := by
-  refine ext_pv fun q hq => ?_
-  rw [pv_of_lt _ hq, pv_cast]
-  by_cases h₁ : q < l
-  · rw [coe_insert_val_of_le_of_lt _ _ _ _ (Nat.zero_le q) (by omega), Nat.zero_add,
-      pv_append_left _ _ h₁, pv_of_lt _ h₁]
-    congr 2
-  · rw [coe_insert_val_of_le _ _ _ _ (by omega) hq, ite_eq_right (Nat.not_lt_zero _),
-      pv_append_right _ _ (by omega) (by omega), pv_of_lt _ (by omega), Nat.add_comm]
-
-/-- Inserting an empty matching leaves `x` unchanged. -/
-@[simp]
-theorem insert_zero_right (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k) (y : PlanarMatching 0) :
-    insert c hc x y = x := by
-  refine ext_pv fun q hq => ?_
-  rw [pv_of_lt _ hq, pv_of_lt _ hq]
+/-- Every number is either outside the inserted block or inside it. -/
+private theorem exists_eq_ins_or_add (c l q : ℕ) :
+    (∃ u, q = ins c l u) ∨ ∃ v < l, q = c + v := by
   by_cases h₁ : q < c
-  · rw [coe_insert_val_of_lt _ _ _ _ h₁]; split_ifs <;> omega
-  · rw [coe_insert_val_of_le _ _ _ _ (by omega) (by omega)]
-    simp only [Nat.sub_zero, Nat.add_zero, ite_self]
-
-/-- Inserting `y` into an empty matching returns `y`, cast along `0 + l = l`. -/
-@[simp]
-theorem insert_zero_left (x : PlanarMatching 0) (y : PlanarMatching l) :
-    insert 0 le_rfl x y = cast (Nat.zero_add l).symm y := by
-  refine ext_pv fun q hq => ?_
-  rw [pv_of_lt _ hq, pv_cast, pv_of_lt _ (by omega),
-    coe_insert_val_of_le_of_lt _ _ _ _ (Nat.zero_le q) (by omega), Nat.zero_add]
-  congr 2
-
-/-- Inserting the nested matching on `2m` points into the middle of the nested matching on `2n`
-points yields the nested matching on `2(n + m)` points. -/
-theorem insert_nested_nested (n m : ℕ) :
-    insert n (Nat.le_add_right n n) (nested n) (nested m) =
-      cast (by omega) (nested (n + m)) := by
-  refine ext_pv fun q hq => ?_
-  rw [pv_of_lt _ hq, pv_cast, pv_nested _ (by omega)]
-  by_cases h₁ : q < n
-  · rw [coe_insert_val_of_lt _ _ _ _ h₁]
-    simp only [nested_val, Fin.revPerm_apply, Fin.val_rev]
-    split_ifs <;> omega
-  by_cases h₂ : q < n + (m + m)
-  · rw [coe_insert_val_of_le_of_lt _ _ _ _ (by omega) h₂]
-    simp only [nested_val, Fin.revPerm_apply, Fin.val_rev]
-    omega
-  · rw [coe_insert_val_of_le _ _ _ _ (by omega) hq]
-    simp only [nested_val, Fin.revPerm_apply, Fin.val_rev]
-    split_ifs <;> omega
-
-end Insert
-
-/-! ### Partner-function arithmetic for insertion and contractions -/
-
-section PartnerOps
-
-/-- Shifting a boundary point of an outer matching past an inserted block of length `l` at `c`. -/
-private def shiftIns (c l q : ℕ) : ℕ :=
-  if q < c then q else q + l
-
-/-- Inserting a partner function `ψ` of size `l` at position `c ≤ k` inside `φ` of size `k`. -/
-private def insertFn (c k l : ℕ) (φ ψ : ℕ → ℕ) (q : ℕ) : ℕ :=
-  if q < c then shiftIns c l (φ q)
-  else if q < c + l then c + ψ (q - c)
-  else if q < k + l then shiftIns c l (φ (q - l))
-  else q
-
-private theorem insertFn_of_lt {c k l q : ℕ} (φ ψ : ℕ → ℕ) (h : q < c) :
-    insertFn c k l φ ψ q = shiftIns c l (φ q) := by
-  simp [insertFn, h]
-
-private theorem insertFn_of_le_of_lt {c k l q : ℕ} (φ ψ : ℕ → ℕ) (h₁ : c ≤ q) (h₂ : q < c + l) :
-    insertFn c k l φ ψ q = c + ψ (q - c) := by
-  simp [insertFn, Nat.not_lt.mpr h₁, h₂]
-
-private theorem insertFn_of_le_of_lt' {c k l q : ℕ} (φ ψ : ℕ → ℕ) (h₁ : c + l ≤ q)
-    (h₂ : q < k + l) :
-    insertFn c k l φ ψ q = shiftIns c l (φ (q - l)) := by
-  simp [insertFn, show ¬q < c by omega, Nat.not_lt.mpr h₁, h₂]
-
-private theorem insertFn_of_ge {c k l q : ℕ} (hc : c ≤ k) (φ ψ : ℕ → ℕ) (h : k + l ≤ q) :
-    insertFn c k l φ ψ q = q := by
-  simp [insertFn, show ¬q < c by omega, show ¬q < c + l by omega, Nat.not_lt.mpr h]
-
-private theorem pv_insert_eq {k l : ℕ} (c : ℕ) (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) :
-    pv (insert c hc x y) = insertFn c k l (pv x) (pv y) := by
-  funext q
-  by_cases h₁ : q < c
-  · rw [insertFn_of_lt _ _ h₁, pv_of_lt _ (by omega), coe_insert_val_of_lt _ _ _ _ h₁,
-      pv_of_lt _ (by omega), shiftIns]
+  · exact .inl ⟨q, (ins_of_lt h₁).symm⟩
   by_cases h₂ : q < c + l
-  · rw [insertFn_of_le_of_lt _ _ (by omega) h₂, pv_of_lt _ (by omega),
-      coe_insert_val_of_le_of_lt _ _ _ _ (by omega) h₂, pv_of_lt _ (by omega)]
-  by_cases h₃ : q < k + l
-  · rw [insertFn_of_le_of_lt' _ _ (by omega) h₃, pv_of_lt _ h₃,
-      coe_insert_val_of_le _ _ _ _ (by omega) h₃, pv_of_lt _ (by omega), shiftIns]
-  · rw [insertFn_of_ge hc _ _ (by omega), pv_of_le _ (by omega)]
+  · exact .inr ⟨q - c, by omega, by omega⟩
+  · exact .inl ⟨q - l, by rw [ins_of_le (by omega)]; omega⟩
 
-/-- Splitting a block of `j₁ + j₂` nested contractions into its inner `j₂` contractions followed by
-its outer `j₁` contractions. -/
-private theorem glueFn_add (n j₁ j₂ : ℕ) (φ : ℕ → ℕ) :
-    glueFn n (j₁ + j₂) φ = glueFn n j₁ (glueFn (n + j₁) j₂ φ) := by
-  induction j₂ generalizing φ with
-  | zero => rfl
-  | succ j₂ ih =>
-    rw [← Nat.add_assoc, glueFn, glueFn, Nat.add_assoc, ih]
+private theorem insFn_ins (c l : ℕ) (φ ψ : ℕ → ℕ) (u : ℕ) :
+    insFn c l φ ψ (ins c l u) = ins c l (φ u) := by
+  by_cases hu : u < c
+  · simp only [ins_of_lt hu, insFn, hu, ↓reduceIte]
+  · rw [ins_of_le (show c ≤ u by omega)]
+    simp only [insFn, show ¬u + l < c by omega, show ¬u + l < c + l by omega, ↓reduceIte,
+      Nat.add_sub_cancel]
 
-/-- Splitting the circle count of `j₁ + j₂` nested contractions into the inner `j₂` and outer `j₁`
-contractions. -/
-private theorem glueCircles_add (n j₁ j₂ : ℕ) (φ : ℕ → ℕ) :
-    glueCircles n (j₁ + j₂) φ =
-      glueCircles n j₁ (glueFn (n + j₁) j₂ φ) + glueCircles (n + j₁) j₂ φ := by
-  induction j₂ generalizing φ with
-  | zero => simp [glueFn, glueCircles]
-  | succ j₂ ih =>
-    rw [← Nat.add_assoc, glueCircles, glueFn, glueCircles, Nat.add_assoc, ih]
+private theorem insFn_add {c l : ℕ} (φ ψ : ℕ → ℕ) {v : ℕ} (hv : v < l) :
+    insFn c l φ ψ (c + v) = c + ψ v := by
+  simp only [insFn, show ¬c + v < c by omega, show c + v < c + l by omega, ↓reduceIte,
+    Nat.add_sub_cancel_left]
+
+/-- The arcs of a planar matching do not interleave, read on its partner function. -/
+private theorem pv_not_lt {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hr : r < K) (hqr : q < r)
+    (hrq : r < pv x q) : ¬ pv x q < pv x r := by
+  have hq : q < K := hqr.trans hr
+  rw [pv_of_lt x hq] at hrq
+  rw [pv_of_lt x hq, pv_of_lt x hr]
+  exact fun h => Equiv.Perm.isNoncrossingMatching_iff.mp x.property
+    (Fin.lt_def.mpr hqr : (⟨q, hq⟩ : Fin K) < ⟨r, hr⟩) (Fin.lt_def.mpr hrq) (Fin.lt_def.mpr h)
+
+/-! ### Inserting a block -/
+
+variable {a b l : ℕ}
+
+private theorem ins_lt_iff {u : ℕ} : ins a l u < a + l + b ↔ u < a + b := by
+  simp only [ins]
+  split_ifs <;> omega
+
+private theorem insFn_lt (x : PlanarMatching (a + b)) (y : PlanarMatching l) {q : ℕ}
+    (hq : q < a + l + b) : insFn a l (pv x) (pv y) q < a + l + b := by
+  rcases exists_eq_ins_or_add a l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins, ins_lt_iff]
+    exact pv_lt x (ins_lt_iff.mp hq)
+  · have := pv_lt y hv
+    rw [insFn_add _ _ hv]
     omega
 
-private theorem shiftIns_unskipN_of_lt {c l a w : ℕ} (ha : a + 1 < c) (hw₁ : w ≠ a)
-    (hw₂ : w ≠ a + 1) :
-    unskipN a (shiftIns c l w) = shiftIns (c - 2) l (unskipN a w) := by
-  simp only [unskipN, shiftIns]
-  split_ifs <;> omega
+/-- The involution underlying `TauCeti.PlanarMatching.insertBlock`. -/
+private def insertFun (x : PlanarMatching (a + b)) (y : PlanarMatching l) (i : Fin (a + l + b)) :
+    Fin (a + l + b) :=
+  ⟨insFn a l (pv x) (pv y) i, insFn_lt x y i.isLt⟩
 
-private theorem shiftIns_unskipN_of_ge {c l a w : ℕ} (hca : c ≤ a) (hw₁ : w ≠ a)
-    (hw₂ : w ≠ a + 1) :
-    unskipN (a + l) (shiftIns c l w) = shiftIns c l (unskipN a w) := by
-  simp only [unskipN, shiftIns]
-  split_ifs <;> omega
+private theorem insFn_insFn (x : PlanarMatching (a + b)) (y : PlanarMatching l) (q : ℕ) :
+    insFn a l (pv x) (pv y) (insFn a l (pv x) (pv y) q) = q := by
+  rcases exists_eq_ins_or_add a l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins, insFn_ins, pv_pv_eq]
+  · rw [insFn_add _ _ hv, insFn_add _ _ (pv_lt y hv), pv_pv_eq]
 
-private theorem rejoin_insertFn_of_lt {c k l a w : ℕ} (φ ψ : ℕ → ℕ) (ha : a + 1 < c) :
-    rejoin (insertFn c k l φ ψ) a (shiftIns c l w) = shiftIns c l (rejoin φ a w) := by
-  have e₁ : insertFn c k l φ ψ a = shiftIns c l (φ a) := insertFn_of_lt _ _ (by omega)
-  have e₂ : insertFn c k l φ ψ (a + 1) = shiftIns c l (φ (a + 1)) := insertFn_of_lt _ _ ha
-  unfold rejoin
-  rw [e₁, e₂]
-  by_cases h₁ : w = a
-  · subst h₁; simp [shiftIns, show w < c by omega]
-  by_cases h₂ : w = a + 1
-  · subst h₂; simp [shiftIns, ha]
-  · have hne₁ : shiftIns c l w ≠ a := by simp only [shiftIns]; split_ifs <;> omega
-    have hne₂ : shiftIns c l w ≠ a + 1 := by simp only [shiftIns]; split_ifs <;> omega
-    simp [h₁, h₂, hne₁, hne₂]
+private theorem insertFun_involutive (x : PlanarMatching (a + b)) (y : PlanarMatching l) :
+    Function.Involutive (insertFun x y) := fun i =>
+  Fin.ext (insFn_insFn x y i)
 
-private theorem rejoin_insertFn_of_ge {c k l a w : ℕ} (φ ψ : ℕ → ℕ) (hca : c ≤ a)
-    (ha : a + 1 < k) :
-    rejoin (insertFn c k l φ ψ) (a + l) (shiftIns c l w) = shiftIns c l (rejoin φ a w) := by
-  have e₁ : insertFn c k l φ ψ (a + l) = shiftIns c l (φ a) := by
-    rw [insertFn_of_le_of_lt' _ _ (by omega) (by omega), Nat.add_sub_cancel]
-  have e₂ : insertFn c k l φ ψ (a + l + 1) = shiftIns c l (φ (a + 1)) := by
-    rw [insertFn_of_le_of_lt' _ _ (by omega) (by omega), show a + l + 1 - l = a + 1 by omega]
-  unfold rejoin
-  rw [e₁, e₂]
-  by_cases h₁ : w = a
-  · subst h₁; simp [shiftIns, Nat.not_lt.mpr hca]
-  by_cases h₂ : w = a + 1
-  · subst h₂
-    simp only [shiftIns, show ¬a + 1 < c by omega, ite_false, show a + 1 ≠ a by omega,
-      show a + 1 + l = a + l + 1 by omega, show a + l + 1 ≠ a + l by omega, ite_true]
-  · have hne₁ : shiftIns c l w ≠ a + l := by simp only [shiftIns]; split_ifs <;> omega
-    have hne₂ : shiftIns c l w ≠ a + l + 1 := by simp only [shiftIns]; split_ifs <;> omega
-    simp [h₁, h₂, hne₁, hne₂]
+private theorem insFn_ne (x : PlanarMatching (a + b)) (y : PlanarMatching l) {q : ℕ}
+    (hq : q < a + l + b) : insFn a l (pv x) (pv y) q ≠ q := by
+  rcases exists_eq_ins_or_add a l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins]
+    exact fun h => pv_ne x (ins_lt_iff.mp hq) (ins_injective a l h)
+  · rw [insFn_add _ _ hv]
+    exact fun h => pv_ne y hv (by omega)
 
-/-- Contracting a pair strictly before an inserted block commutes with insertion. -/
-private theorem contractFn_insertFn_left {c k l : ℕ} (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) {a : ℕ} (ha : a + 1 < c) :
-    contractFn a (insertFn c k l (pv x) (pv y)) =
-      insertFn (c - 2) (k - 2) l (contractFn a (pv x)) (pv y) := by
+private theorem insertFun_ne (x : PlanarMatching (a + b)) (y : PlanarMatching l)
+    (i : Fin (a + l + b)) : insertFun x y i ≠ i := fun h =>
+  insFn_ne x y i.isLt (congrArg Fin.val h)
+
+/-- The arcs of an inserted block do not interleave with each other or with the arcs around it. -/
+private theorem insFn_not_lt (x : PlanarMatching (a + b)) (y : PlanarMatching l) {q r : ℕ}
+    (hr : r < a + l + b) (hqr : q < r) (hrq : r < insFn a l (pv x) (pv y) q) :
+    ¬ insFn a l (pv x) (pv y) q < insFn a l (pv x) (pv y) r := by
+  rcases exists_eq_ins_or_add a l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩ <;>
+    rcases exists_eq_ins_or_add a l r with ⟨u', rfl⟩ | ⟨v', hv', rfl⟩
+  · -- Two arcs around the block: read them in the matching `x`.
+    simp only [insFn_ins, ins_lt_ins_iff] at hqr hrq ⊢
+    exact pv_not_lt x (ins_lt_iff.mp hr) hqr hrq
+  · -- An arc around the block ending after a point of the block ends after the whole block.
+    have := pv_lt y hv'
+    rw [insFn_ins] at hrq ⊢
+    rw [insFn_add _ _ hv']
+    simp only [ins] at hqr hrq ⊢
+    split_ifs at hqr hrq ⊢ <;> omega
+  · -- An arc of the block cannot reach past a point after the block.
+    have := pv_lt y hv
+    rw [insFn_add _ _ hv] at hrq
+    simp only [ins] at hqr hrq
+    split_ifs at hqr hrq <;> omega
+  · -- Two arcs of the block: read them in the matching `y`.
+    rw [insFn_add _ _ hv] at hrq ⊢
+    rw [insFn_add _ _ hv']
+    have := pv_not_lt y hv' (by omega) (by omega : v' < pv y v)
+    omega
+
+/-- **Inserting a block**: the planar matching `y` of `l` points inserted into the planar matching
+`x` of `a + b` points, between its first `a` and its last `b` points. The points `a, …, a + l - 1`
+of the result carry the arcs of `y`, and the other points the arcs of `x`, the last `b` of them
+shifted by `l`. -/
+def insertBlock (x : PlanarMatching (a + b)) (y : PlanarMatching l) : PlanarMatching (a + l + b) :=
+  ⟨PerfectMatching.ofInvolutive (insertFun_involutive x y) (insertFun_ne x y),
+    Equiv.Perm.isNoncrossingMatching_iff.mpr fun i j hij hji => by
+      simp only [PerfectMatching.ofInvolutive_apply, Fin.lt_def] at hij hji ⊢
+      exact insFn_not_lt x y j.isLt hij hji⟩
+
+private theorem pv_insertBlock (x : PlanarMatching (a + b)) (y : PlanarMatching l) :
+    pv (x.insertBlock y) = insFn a l (pv x) (pv y) := by
   funext q
+  by_cases hq : q < a + l + b
+  · rw [pv_of_lt _ hq]
+    exact congrArg Fin.val (PerfectMatching.ofInvolutive_apply _ _ ⟨q, hq⟩)
+  · rw [pv_of_le (x.insertBlock y) (show a + l + b ≤ q by omega)]
+    simp only [insFn, show ¬q < a by omega, show ¬q < a + l by omega, ↓reduceIte]
+    rw [pv_of_le x (show a + b ≤ q - l by omega), ins_of_le (show a ≤ q - l by omega)]
+    omega
+
+/-- Inserting a block keeps the arcs of the inserted matching, shifted by `a`. -/
+@[simp]
+theorem insertBlock_val_castAdd_natAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
+    (j : Fin l) :
+    (x.insertBlock y).val.val (Fin.castAdd b (Fin.natAdd a j)) =
+      Fin.castAdd b (Fin.natAdd a (y.val.val j)) := by
+  ext
+  rw [← pv_coe, pv_insertBlock]
+  simp only [Fin.val_castAdd, Fin.val_natAdd]
+  rw [insFn_add _ _ j.isLt, pv_coe]
+
+/-- Inserting a block keeps the arcs of the outer matching at its first `a` points: the partner of
+such a point is shifted past the block when it is one of the last `b` points. -/
+@[simp]
+theorem coe_insertBlock_val_castAdd_castAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
+    (i : Fin a) :
+    ((x.insertBlock y).val.val (Fin.castAdd b (Fin.castAdd l i)) : ℕ) =
+      if (x.val.val (Fin.castAdd b i) : ℕ) < a then (x.val.val (Fin.castAdd b i) : ℕ)
+      else (x.val.val (Fin.castAdd b i) : ℕ) + l := by
+  have h := insFn_ins a l (pv x) (pv y) i
+  rw [ins_of_lt i.isLt] at h
+  rw [← pv_coe, pv_insertBlock]
+  simp only [Fin.val_castAdd]
+  rw [h, ← Fin.val_castAdd b i, pv_coe, ins]
+
+/-- Inserting a block keeps the arcs of the outer matching at its last `b` points, shifted by `l`:
+the partner of such a point is shifted past the block when it is one of the last `b` points. -/
+@[simp]
+theorem coe_insertBlock_val_natAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
+    (j : Fin b) :
+    ((x.insertBlock y).val.val (Fin.natAdd (a + l) j) : ℕ) =
+      if (x.val.val (Fin.natAdd a j) : ℕ) < a then (x.val.val (Fin.natAdd a j) : ℕ)
+      else (x.val.val (Fin.natAdd a j) : ℕ) + l := by
+  have h := insFn_ins a l (pv x) (pv y) (a + j)
+  rw [ins_of_le (show a ≤ a + j by omega)] at h
+  rw [← pv_coe, pv_insertBlock]
+  simp only [Fin.val_natAdd]
+  rw [show a + l + j = a + j + l by omega, h, ← Fin.val_natAdd a j, pv_coe, ins]
+
+/-! ### Contracting a pair next to or inside an inserted block -/
+
+private theorem contractFn_apply (a : ℕ) (φ : ℕ → ℕ) (q : ℕ) :
+    contractFn a φ q = unskipN a (rejoin φ a (φ (skipN a q))) := by
   have hs : skipN a q ≠ a ∧ skipN a q ≠ a + 1 := by simp only [skipN]; split_ifs <;> omega
-  simp only [contractFn, erasePair_apply, splice_of_ne _ hs.1 hs.2]
-  by_cases h₁ : q < c - 2
-  · have hsk : skipN a q < c := by simp only [skipN]; split_ifs <;> omega
-    have hne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : a < k))
-      (pv_ne x (by omega : a + 1 < k)) hs.1 hs.2
-    rw [splice_of_ne _ hs.1 hs.2] at hne
-    rw [insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ hsk, erasePair_apply,
-      splice_of_ne _ hs.1 hs.2, rejoin_insertFn_of_lt _ _ ha,
-      shiftIns_unskipN_of_lt ha hne.1 hne.2]
-  by_cases h₂ : q < c - 2 + l
-  · have hsk : skipN a q = q + 2 := skipN_of_le (by omega)
-    have hsub : q - (c - 2) = q + 2 - c := by omega
-    rw [hsk, insertFn_of_le_of_lt _ _ (by omega) h₂,
-      insertFn_of_le_of_lt _ _ (by omega) (by omega), hsub,
-      rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
-    omega
-  by_cases h₃ : q < k - 2 + l
-  · have hsk : skipN a q = q + 2 := skipN_of_le (by omega)
-    have hsk' : skipN a (q - l) = q + 2 - l := by simp only [skipN]; split_ifs <;> omega
-    have hneq : q + 2 - l ≠ a ∧ q + 2 - l ≠ a + 1 := by omega
-    have hne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : a < k))
-      (pv_ne x (by omega : a + 1 < k)) hneq.1 hneq.2
-    rw [splice_of_ne _ hneq.1 hneq.2] at hne
-    rw [hsk, insertFn_of_le_of_lt' _ _ (by omega) h₃,
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega), erasePair_apply, hsk',
-      splice_of_ne _ hneq.1 hneq.2, rejoin_insertFn_of_lt _ _ ha,
-      shiftIns_unskipN_of_lt ha hne.1 hne.2]
-  · have hsk : skipN a q = q + 2 := skipN_of_le (by omega)
-    rw [hsk, insertFn_of_ge hc _ _ (by omega), insertFn_of_ge (by omega) _ _ (by omega),
-      rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
-    omega
+  rw [contractFn, erasePair_apply, splice_of_ne _ hs.1 hs.2]
 
-private theorem circleInd_insertFn_left {c k l : ℕ} (φ ψ : ℕ → ℕ) {a : ℕ} (ha : a + 1 < c) :
-    circleInd a (insertFn c k l φ ψ) = circleInd a φ := by
-  rw [circleInd, insertFn_of_lt _ _ (by omega), circleInd]
-  simp only [shiftIns]
-  split_ifs <;> omega
+/-- Contracting a pair of consecutive points never produces a point of that pair, for a
+fixed-point-free involution. -/
+private theorem rejoin_ne {K : ℕ} (x : PlanarMatching K) {c q : ℕ} (hc : c + 1 < K) :
+    rejoin (pv x) c (pv x (skipN c q)) ≠ c ∧ rejoin (pv x) c (pv x (skipN c q)) ≠ c + 1 := by
+  have hs : skipN c q ≠ c ∧ skipN c q ≠ c + 1 := by simp only [skipN]; split_ifs <;> omega
+  have h := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < K)) (pv_ne x hc) hs.1 hs.2
+  rwa [splice_of_ne _ hs.1 hs.2] at h
 
-/-- Contracting a pair strictly after an inserted block commutes with insertion. -/
-private theorem contractFn_insertFn_right {c k l : ℕ} (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) {a : ℕ} (hca : c ≤ a) (ha : a + 1 < k) :
-    contractFn (a + l) (insertFn c k l (pv x) (pv y)) =
-      insertFn c (k - 2) l (contractFn a (pv x)) (pv y) := by
-  funext q
-  have hs : skipN (a + l) q ≠ a + l ∧ skipN (a + l) q ≠ a + l + 1 := by
-    simp only [skipN]; split_ifs <;> omega
-  simp only [contractFn, erasePair_apply, splice_of_ne _ hs.1 hs.2]
-  by_cases h₁ : q < c
-  · have hsk : skipN (a + l) q = q := skipN_of_lt (by omega)
-    have hsk' : skipN a q = q := skipN_of_lt (by omega)
-    have hneq : q ≠ a ∧ q ≠ a + 1 := by omega
-    have hne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : a < k))
-      (pv_ne x (by omega : a + 1 < k)) hneq.1 hneq.2
-    rw [splice_of_ne _ hneq.1 hneq.2] at hne
-    rw [hsk, insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁, erasePair_apply, hsk',
-      splice_of_ne _ hneq.1 hneq.2, rejoin_insertFn_of_ge _ _ hca ha,
-      shiftIns_unskipN_of_ge hca hne.1 hne.2]
-  by_cases h₂ : q < c + l
-  · have hsk : skipN (a + l) q = q := skipN_of_lt (by omega)
-    have hyv := pv_lt y (by omega : q - c < l)
-    rw [hsk, insertFn_of_le_of_lt _ _ (by omega) h₂, insertFn_of_le_of_lt _ _ (by omega) h₂,
-      rejoin_of_ne _ (by omega) (by omega), unskipN_of_lt (by omega)]
-  by_cases h₃ : q < k - 2 + l
-  · have hsk : skipN (a + l) q = skipN a (q - l) + l := by
-      simp only [skipN]; split_ifs <;> omega
-    have hsk_ge : c ≤ skipN a (q - l) := by simp only [skipN]; split_ifs <;> omega
-    have hsk_lt : skipN a (q - l) < k := by simp only [skipN]; split_ifs <;> omega
-    have hneq : skipN a (q - l) ≠ a ∧ skipN a (q - l) ≠ a + 1 := by
-      simp only [skipN]; split_ifs <;> omega
-    have hne := splice_ne (pv_pv_eq x) (pv_ne x (by omega : a < k))
-      (pv_ne x (by omega : a + 1 < k)) hneq.1 hneq.2
-    rw [splice_of_ne _ hneq.1 hneq.2] at hne
-    rw [hsk, insertFn_of_le_of_lt' _ _ (by omega) h₃,
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega), Nat.add_sub_cancel, erasePair_apply,
-      splice_of_ne _ hneq.1 hneq.2, rejoin_insertFn_of_ge _ _ hca ha,
-      shiftIns_unskipN_of_ge hca hne.1 hne.2]
-  · have hsk : skipN (a + l) q = q + 2 := skipN_of_le (by omega)
-    rw [hsk, insertFn_of_ge hc _ _ (by omega), insertFn_of_ge (by omega) _ _ (by omega),
-      rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
-    omega
+/-- **Contracting a pair inside the block** is contracting it in the inserted matching. -/
+private theorem contractFn_insFn_add {c j : ℕ} (φ : ℕ → ℕ) (y : PlanarMatching l)
+    (hj : j + 2 ≤ l) :
+    contractFn (c + j) (insFn c l φ (pv y)) = insFn c (l - 2) φ (contractFn j (pv y)) ∧
+      circleInd (c + j) (insFn c l φ (pv y)) = circleInd j (pv y) := by
+  have e₁ := insFn_add (c := c) φ (pv y) (by omega : j < l)
+  have e₂ := insFn_add (c := c) φ (pv y) (by omega : j + 1 < l)
+  rw [← Nat.add_assoc] at e₂
+  refine ⟨funext fun q => ?_, ?_⟩
+  · rcases exists_eq_ins_or_add c (l - 2) q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+    · rw [contractFn_apply, insFn_ins,
+        show skipN (c + j) (ins c (l - 2) u) = ins c l u by
+          simp only [skipN, ins]; split_ifs <;> omega,
+        insFn_ins]
+      generalize φ u = w
+      rw [rejoin_of_ne _ (by simp only [ins]; split_ifs <;> omega)
+        (by simp only [ins]; split_ifs <;> omega)]
+      simp only [unskipN, ins]
+      split_ifs <;> omega
+    · have hs : skipN (c + j) (c + v) = c + skipN j v := by
+        simp only [skipN]; split_ifs <;> omega
+      have hs' : skipN j v < l := by simp only [skipN]; split_ifs <;> omega
+      have hw := pv_lt y hs'
+      have := pv_lt y (show j < l by omega)
+      have := pv_lt y (show j + 1 < l by omega)
+      have hr := rejoin_ne y (c := j) (q := v) (by omega)
+      rw [contractFn_apply, hs, insFn_add _ _ hs', insFn_add _ _ hv, contractFn_apply]
+      generalize pv y (skipN j v) = w at hw hr
+      simp only [rejoin, unskipN, e₁, e₂] at hr ⊢
+      split_ifs at hr ⊢ <;> omega
+  · rw [circleInd, circleInd, e₁]
+    simp only [Nat.add_assoc, Nat.add_left_cancel_iff]
 
-private theorem circleInd_insertFn_right {c k l : ℕ} (φ ψ : ℕ → ℕ) {a : ℕ} (hca : c ≤ a)
-    (ha : a + 1 < k) :
-    circleInd (a + l) (insertFn c k l φ ψ) = circleInd a φ := by
-  rw [circleInd, insertFn_of_le_of_lt' _ _ (by omega) (by omega), Nat.add_sub_cancel, circleInd]
-  simp only [shiftIns]
-  split_ifs <;> omega
+/-- Rejoining at a pair of consecutive points outside the inserted block is rejoining at the
+corresponding pair of the outer matching. -/
+private theorem rejoin_insFn_ins {c l j j' : ℕ} (φ ψ : ℕ → ℕ) (h₁ : ins c l j = j')
+    (h₂ : ins c l (j + 1) = j' + 1) (w : ℕ) :
+    rejoin (insFn c l φ ψ) j' (ins c l w) = ins c l (rejoin φ j w) := by
+  by_cases hw₁ : w = j
+  · rw [hw₁, h₁, rejoin_of_eq_left _ rfl, ← h₂, insFn_ins, rejoin_of_eq_left _ rfl]
+  by_cases hw₂ : w = j + 1
+  · rw [hw₂, h₂, rejoin_of_eq_right _ rfl, ← h₁, insFn_ins, rejoin_of_eq_right _ rfl]
+  rw [rejoin_of_ne _ hw₁ hw₂, rejoin_of_ne _ (fun h => hw₁ (ins_injective c l (h.trans h₁.symm)))
+    (fun h => hw₂ (ins_injective c l (h.trans h₂.symm)))]
 
-private theorem splice_insertFn_inner {c k l : ℕ} (φ : ℕ → ℕ) (y : PlanarMatching l) {a z : ℕ}
-    (ha : a + 1 < l) (hz : z < l) :
-    splice (c + a) (insertFn c k l φ (pv y)) (c + z) = c + splice a (pv y) z := by
-  by_cases hza : z = a
-  · rw [splice_of_eq_left _ (by omega), splice_of_eq_left _ hza, Nat.add_assoc]
-  by_cases hza' : z = a + 1
-  · rw [splice_of_eq_right _ (by omega), splice_of_eq_right _ hza']
-  have e₀ : insertFn c k l φ (pv y) (c + z) = c + pv y z := by
-    rw [insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
-  have e₁ : insertFn c k l φ (pv y) (c + a) = c + pv y a := by
-    rw [insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left]
-  have e₂ : insertFn c k l φ (pv y) (c + a + 1) = c + pv y (a + 1) := by
-    rw [insertFn_of_le_of_lt _ _ (by omega) (by omega), show c + a + 1 - c = a + 1 by omega]
-  rw [splice_of_ne _ (by omega) (by omega), splice_of_ne _ hza hza', e₀]
-  unfold rejoin
-  rw [e₁, e₂]
-  split_ifs <;> omega
-
-/-- Contracting a pair inside an inserted block commutes with insertion. -/
-private theorem contractFn_insertFn_inner {c k l : ℕ} (hc : c ≤ k) (x : PlanarMatching k)
-    (y : PlanarMatching l) {a : ℕ} (ha : a + 1 < l) :
-    contractFn (c + a) (insertFn c k l (pv x) (pv y)) =
-      insertFn c k (l - 2) (pv x) (contractFn a (pv y)) := by
-  funext q
-  simp only [contractFn, erasePair_apply]
-  by_cases h₁ : q < c
-  · have hsk : skipN (c + a) q = q := skipN_of_lt (by omega)
-    rw [hsk, splice_of_ne _ (by omega) (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁]
-    have hne : shiftIns c l (pv x q) ≠ c + a ∧ shiftIns c l (pv x q) ≠ c + a + 1 := by
-      simp only [shiftIns]; split_ifs <;> omega
-    rw [rejoin_of_ne _ hne.1 hne.2]
-    simp only [shiftIns, unskipN]
+/-- **Contracting a pair before the block** is contracting it in the outer matching. -/
+private theorem contractFn_insFn_of_lt {K c j : ℕ} (x : PlanarMatching K) (ψ : ℕ → ℕ)
+    (hj : j ≤ c) (hc : c + 2 ≤ K) :
+    contractFn j (insFn (c + 2) l (pv x) ψ) = insFn c l (contractFn j (pv x)) ψ ∧
+      circleInd j (insFn (c + 2) l (pv x) ψ) = circleInd j (pv x) := by
+  have e₁ := insFn_ins (c + 2) l (pv x) ψ j
+  rw [ins_of_lt (show j < c + 2 by omega)] at e₁
+  refine ⟨funext fun q => ?_, ?_⟩
+  · rcases exists_eq_ins_or_add c l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+    · have hs : skipN j (ins c l u) = ins (c + 2) l (skipN j u) := by
+        simp only [skipN, ins]; split_ifs <;> omega
+      have hw := rejoin_ne x (c := j) (q := u) (by omega)
+      rw [contractFn_apply, hs, insFn_ins, insFn_ins, contractFn_apply]
+      generalize pv x (skipN j u) = w at hw
+      rw [rejoin_insFn_ins _ _ (ins_of_lt (show j < c + 2 by omega))
+        (ins_of_lt (show j + 1 < c + 2 by omega))]
+      generalize rejoin (pv x) j w = w' at hw
+      simp only [unskipN, ins]
+      split_ifs <;> omega
+    · rw [contractFn_apply, show skipN j (c + v) = c + 2 + v by
+          simp only [skipN]; split_ifs <;> omega, insFn_add _ _ hv, insFn_add _ _ hv,
+        rejoin_of_ne _ (show c + 2 + ψ v ≠ j by omega) (show c + 2 + ψ v ≠ j + 1 by omega),
+        unskipN_of_le (show j ≤ c + 2 + ψ v by omega)]
+      omega
+  · rw [circleInd, circleInd, e₁]
+    simp only [ins]
     split_ifs <;> omega
-  by_cases h₂ : q < c + (l - 2)
-  · have hsk : skipN (c + a) q = c + skipN a (q - c) := by
-      simp only [skipN]; split_ifs <;> omega
-    have hs₁ : skipN a (q - c) < l := by simp only [skipN]; split_ifs <;> omega
-    have hs₂ : skipN a (q - c) ≠ a ∧ skipN a (q - c) ≠ a + 1 := by
-      simp only [skipN]; split_ifs <;> omega
-    have hw := splice_ne (pv_pv_eq y) (pv_ne y (by omega : a < l)) (pv_ne y (by omega : a + 1 < l))
-      hs₂.1 hs₂.2
-    rw [hsk, splice_insertFn_inner _ _ ha hs₁, insertFn_of_le_of_lt _ _ (by omega) h₂,
-      erasePair_apply]
-    generalize splice a (pv y) (skipN a (q - c)) = w at hw
-    simp only [unskipN]
-    split_ifs <;> omega
-  by_cases h₃ : q < k + (l - 2)
-  · have hsk : skipN (c + a) q = q + 2 := skipN_of_le (by omega)
-    have hsub : q + 2 - l = q - (l - 2) := by omega
-    rw [hsk, splice_of_ne _ (by omega) (by omega), insertFn_of_le_of_lt' _ _ (by omega) h₃,
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega), hsub]
-    have hne : shiftIns c l (pv x (q - (l - 2))) ≠ c + a ∧
-        shiftIns c l (pv x (q - (l - 2))) ≠ c + a + 1 := by
-      simp only [shiftIns]; split_ifs <;> omega
-    rw [rejoin_of_ne _ hne.1 hne.2]
-    simp only [shiftIns, unskipN]
-    split_ifs <;> omega
-  · have hsk : skipN (c + a) q = q + 2 := skipN_of_le (by omega)
-    rw [hsk, splice_of_ne _ (by omega) (by omega), insertFn_of_ge hc _ _ (by omega),
-      insertFn_of_ge hc _ _ (by omega), rejoin_of_ne _ (by omega) (by omega),
-      unskipN_of_le (by omega)]
-    omega
 
-private theorem circleInd_insertFn_inner {c k l : ℕ} (φ ψ : ℕ → ℕ) {a : ℕ} (ha : a + 1 < l) :
-    circleInd (c + a) (insertFn c k l φ ψ) = circleInd a ψ := by
-  rw [circleInd, insertFn_of_le_of_lt _ _ (by omega) (by omega), Nat.add_sub_cancel_left,
-    circleInd]
-  simp only [Nat.add_assoc, Nat.add_left_cancel_iff]
+/-- **Contracting a pair after the block** is contracting it in the outer matching. -/
+private theorem contractFn_insFn_of_le {K c j : ℕ} (x : PlanarMatching K) (y : PlanarMatching l)
+    (hj : c ≤ j) (hK : j + 2 ≤ K) :
+    contractFn (j + l) (insFn c l (pv x) (pv y)) = insFn c l (contractFn j (pv x)) (pv y) ∧
+      circleInd (j + l) (insFn c l (pv x) (pv y)) = circleInd j (pv x) := by
+  have e₁ := insFn_ins c l (pv x) (pv y) j
+  rw [ins_of_le hj] at e₁
+  refine ⟨funext fun q => ?_, ?_⟩
+  · rcases exists_eq_ins_or_add c l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+    · have hs : skipN (j + l) (ins c l u) = ins c l (skipN j u) := by
+        simp only [skipN, ins]; split_ifs <;> omega
+      have hw := rejoin_ne x (c := j) (q := u) (by omega)
+      rw [contractFn_apply, hs, insFn_ins, insFn_ins, contractFn_apply]
+      generalize pv x (skipN j u) = w at hw
+      rw [rejoin_insFn_ins _ _ (ins_of_le hj)
+        (by rw [ins_of_le (show c ≤ j + 1 by omega)]; omega)]
+      generalize rejoin (pv x) j w = w' at hw
+      simp only [unskipN, ins]
+      split_ifs <;> omega
+    · have := pv_lt y hv
+      rw [contractFn_apply, show skipN (j + l) (c + v) = c + v by
+          simp only [skipN]; split_ifs <;> omega, insFn_add _ _ hv, insFn_add _ _ hv,
+        rejoin_of_ne _ (show c + pv y v ≠ j + l by omega)
+          (show c + pv y v ≠ j + l + 1 by omega),
+        unskipN_of_lt (show c + pv y v < j + l by omega)]
+  · rw [circleInd, circleInd, e₁]
+    simp only [ins]
+    split_ifs <;> omega
 
-private theorem glueFn_insertFn_left {n l : ℕ} (y : PlanarMatching l) :
-    ∀ (m c K : ℕ) (x : PlanarMatching K), n + 2 * m ≤ c → c ≤ K →
-      glueFn n m (insertFn c K l (pv x) (pv y)) =
-        insertFn (c - 2 * m) (K - 2 * m) l (glueFn n m (pv x)) (pv y) ∧
-      glueCircles n m (insertFn c K l (pv x) (pv y)) = glueCircles n m (pv x)
-  | 0, c, K, x, _, _ => ⟨rfl, rfl⟩
-  | m + 1, c, K, x, hnc, hcK => by
-    obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := n + m) (by omega)
-    obtain ⟨ih₁, ih₂⟩ := glueFn_insertFn_left (n := n) y m (c - 2) (K - 2) x' (by omega) (by omega)
-    have hc' : c - 2 - 2 * m = c - 2 * (m + 1) := by omega
-    have hK' : K - 2 - 2 * m = K - 2 * (m + 1) := by omega
+/-! ### Gluing next to or inside an inserted block -/
+
+/-- Gluing a block of nested pairs splits into gluing its `i` innermost pairs, then its `j`
+outermost ones. -/
+private theorem glueFn_add (c j : ℕ) :
+    ∀ (i : ℕ) (φ : ℕ → ℕ), glueFn c (j + i) φ = glueFn c j (glueFn (c + j) i φ) ∧
+      glueCircles c (j + i) φ = glueCircles (c + j) i φ + glueCircles c j (glueFn (c + j) i φ)
+  | 0, φ => ⟨rfl, by simp [glueCircles, glueFn]⟩
+  | i + 1, φ => by
+    obtain ⟨ih₁, ih₂⟩ := glueFn_add c j i (contractFn (c + (j + i)) φ)
+    rw [← Nat.add_assoc j i 1]
     simp only [glueFn, glueCircles]
-    rw [contractFn_insertFn_left hcK x y (by omega), ← hx', ih₁, ih₂,
-      circleInd_insertFn_left _ _ (by omega), hc', hK']
+    rw [Nat.add_assoc c j i, ih₁, ih₂]
+    exact ⟨rfl, by omega⟩
+
+/-- Gluing a block of nested pairs inside an inserted block is gluing them in the inserted
+matching. -/
+private theorem glueFn_insFn_add {c d : ℕ} (φ : ℕ → ℕ) :
+    ∀ (j M : ℕ) (y : PlanarMatching M), d + 2 * j ≤ M →
+      glueFn (c + d) j (insFn c M φ (pv y)) = insFn c (M - 2 * j) φ (glueFn d j (pv y)) ∧
+      glueCircles (c + d) j (insFn c M φ (pv y)) = glueCircles d j (pv y)
+  | 0, M, y, _ => ⟨rfl, rfl⟩
+  | j + 1, M, y, hM => by
+    obtain ⟨y', hy'⟩ := exists_pv_eq_contractFn y (a := d + j) (by omega)
+    obtain ⟨h₁, h₂⟩ := contractFn_insFn_add (c := c) φ y (j := d + j) (by omega)
+    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_add (c := c) (d := d) φ j (M - 2) y' (by omega)
+    simp only [glueFn, glueCircles]
+    rw [show c + d + j = c + (d + j) by omega, h₁, ← hy', ih₁, h₂, ih₂,
+      show M - 2 - 2 * j = M - 2 * (j + 1) by omega]
     exact ⟨rfl, rfl⟩
 
-private theorem glueFn_insertFn_right {c l : ℕ} (y : PlanarMatching l) :
-    ∀ (m n K : ℕ) (x : PlanarMatching K), c ≤ n → n + 2 * m ≤ K →
-      glueFn (n + l) m (insertFn c K l (pv x) (pv y)) =
-        insertFn c (K - 2 * m) l (glueFn n m (pv x)) (pv y) ∧
-      glueCircles (n + l) m (insertFn c K l (pv x) (pv y)) = glueCircles n m (pv x)
-  | 0, n, K, x, _, _ => ⟨rfl, rfl⟩
-  | m + 1, n, K, x, hcn, hK => by
-    obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := n + m) (by omega)
-    obtain ⟨ih₁, ih₂⟩ := glueFn_insertFn_right (c := c) y m n (K - 2) x' hcn (by omega)
-    have hK' : K - 2 - 2 * m = K - 2 * (m + 1) := by omega
-    have ha : n + l + m = n + m + l := by omega
+/-- Gluing a block of nested pairs before an inserted block is gluing them in the outer
+matching. -/
+private theorem glueFn_insFn_of_lt {c : ℕ} (ψ : ℕ → ℕ) :
+    ∀ (j K : ℕ) (x : PlanarMatching K), c + 2 * j ≤ K →
+      glueFn c j (insFn (c + 2 * j) l (pv x) ψ) = insFn c l (glueFn c j (pv x)) ψ ∧
+      glueCircles c j (insFn (c + 2 * j) l (pv x) ψ) = glueCircles c j (pv x)
+  | 0, K, x, _ => ⟨rfl, rfl⟩
+  | j + 1, K, x, hK => by
+    obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := c + j) (by omega)
+    obtain ⟨h₁, h₂⟩ := contractFn_insFn_of_lt (l := l) (c := c + 2 * j) x ψ (j := c + j)
+      (by omega) (by omega)
+    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_of_lt (c := c) ψ j (K - 2) x' (by omega)
     simp only [glueFn, glueCircles]
-    rw [ha, contractFn_insertFn_right (by omega) x y (by omega) (by omega), ← hx', ih₁, ih₂,
-      circleInd_insertFn_right _ _ (by omega) (by omega), hK']
+    rw [show c + 2 * (j + 1) = c + 2 * j + 2 by omega, h₁, ← hx', ih₁, h₂, ih₂]
     exact ⟨rfl, rfl⟩
 
-private theorem glueFn_insertFn_inner {c K : ℕ} (hc : c ≤ K) (x : PlanarMatching K) :
-    ∀ (m n L : ℕ) (y : PlanarMatching L), n + 2 * m ≤ L →
-      glueFn (c + n) m (insertFn c K L (pv x) (pv y)) =
-        insertFn c K (L - 2 * m) (pv x) (glueFn n m (pv y)) ∧
-      glueCircles (c + n) m (insertFn c K L (pv x) (pv y)) = glueCircles n m (pv y)
-  | 0, n, L, y, _ => ⟨rfl, rfl⟩
-  | m + 1, n, L, y, hL => by
-    obtain ⟨y', hy'⟩ := exists_pv_eq_contractFn y (a := n + m) (by omega)
-    obtain ⟨ih₁, ih₂⟩ := glueFn_insertFn_inner hc x m n (L - 2) y' (by omega)
-    have hL' : L - 2 - 2 * m = L - 2 * (m + 1) := by omega
+/-- Gluing a block of nested pairs after an inserted block is gluing them in the outer
+matching. -/
+private theorem glueFn_insFn_of_le {c : ℕ} (y : PlanarMatching l) :
+    ∀ (j K : ℕ) (x : PlanarMatching K), c + 2 * j ≤ K →
+      glueFn (c + l) j (insFn c l (pv x) (pv y)) = insFn c l (glueFn c j (pv x)) (pv y) ∧
+      glueCircles (c + l) j (insFn c l (pv x) (pv y)) = glueCircles c j (pv x)
+  | 0, K, x, _ => ⟨rfl, rfl⟩
+  | j + 1, K, x, hK => by
+    obtain ⟨x', hx'⟩ := exists_pv_eq_contractFn x (a := c + j) (by omega)
+    obtain ⟨h₁, h₂⟩ := contractFn_insFn_of_le x y (c := c) (j := c + j) (by omega) (by omega)
+    obtain ⟨ih₁, ih₂⟩ := glueFn_insFn_of_le (c := c) y j (K - 2) x' (by omega)
     simp only [glueFn, glueCircles]
-    rw [Nat.add_assoc c n m, contractFn_insertFn_inner hc x y (by omega), ← hy', ih₁, ih₂,
-      circleInd_insertFn_inner _ _ (by omega), hL']
+    rw [show c + l + j = c + j + l by omega, h₁, ← hx', ih₁, h₂, ih₂]
     exact ⟨rfl, rfl⟩
 
-/-- Juxtaposing two inserted partner functions inserts the first block into the juxtaposed outer
-functions and then inserts the second block. -/
-private theorem appendFn_insertFn_insertFn {c₁ k₁ l₁ c₂ k₂ l₂ : ℕ} (h₁ : c₁ ≤ k₁) (h₂ : c₂ ≤ k₂)
-    {φ₁ φ₂ ψ₁ ψ₂ : ℕ → ℕ} (hφ₁ : ∀ q < k₁, φ₁ q < k₁) (hφ₂ : ∀ q < k₂, φ₂ q < k₂)
-    (hψ₁ : ∀ q < l₁, ψ₁ q < l₁) (hψ₂ : ∀ q < l₂, ψ₂ q < l₂) :
-    appendFn (k₁ + l₁) (k₂ + l₂) (insertFn c₁ k₁ l₁ φ₁ ψ₁) (insertFn c₂ k₂ l₂ φ₂ ψ₂) =
-      insertFn (k₁ + l₁ + c₂) (k₁ + k₂ + l₁) l₂
-        (insertFn c₁ (k₁ + k₂) l₁ (appendFn k₁ k₂ φ₁ φ₂) ψ₁) ψ₂ := by
-  funext q
-  by_cases ha : q < c₁
-  · have := hφ₁ q (by omega)
-    rw [appendFn_of_lt _ _ (by omega), insertFn_of_lt _ _ ha, insertFn_of_lt _ _ (by omega),
-      insertFn_of_lt _ _ ha, appendFn_of_lt _ _ (by omega)]
-    simp only [shiftIns]; split_ifs <;> omega
-  by_cases hb : q < c₁ + l₁
-  · have := hψ₁ (q - c₁) (by omega)
-    rw [appendFn_of_lt _ _ (by omega), insertFn_of_le_of_lt _ _ (by omega) hb,
-      insertFn_of_lt _ _ (by omega), insertFn_of_le_of_lt _ _ (by omega) hb]
-    simp only [shiftIns]; split_ifs <;> omega
-  by_cases hc : q < k₁ + l₁
-  · have := hφ₁ (q - l₁) (by omega)
-    rw [appendFn_of_lt _ _ hc, insertFn_of_le_of_lt' _ _ (by omega) hc,
-      insertFn_of_lt _ _ (by omega), insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-      appendFn_of_lt _ _ (by omega)]
-    simp only [shiftIns]; split_ifs <;> omega
-  by_cases hd : q < k₁ + l₁ + c₂
-  · have := hφ₂ (q - (k₁ + l₁)) (by omega)
-    have hsub : q - l₁ - k₁ = q - (k₁ + l₁) := by omega
-    rw [appendFn_of_le_of_lt _ _ (by omega) (by omega), insertFn_of_lt _ _ (by omega),
-      insertFn_of_lt _ _ hd, insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
-    simp only [shiftIns]; split_ifs <;> omega
-  by_cases he : q < k₁ + l₁ + c₂ + l₂
-  · have := hψ₂ (q - (k₁ + l₁ + c₂)) (by omega)
-    have hsub : q - (k₁ + l₁) - c₂ = q - (k₁ + l₁ + c₂) := by omega
-    rw [appendFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt _ _ (by omega) he, hsub]
-    omega
-  by_cases hf : q < k₁ + l₁ + (k₂ + l₂)
-  · have := hφ₂ (q - (k₁ + l₁) - l₂) (by omega)
-    have hsub : q - l₂ - l₁ - k₁ = q - (k₁ + l₁) - l₂ := by omega
-    rw [appendFn_of_le_of_lt _ _ (by omega) hf,
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
-    simp only [shiftIns]; split_ifs <;> omega
-  · rw [appendFn_of_le _ _ (by omega), insertFn_of_ge (by omega) _ _ (by omega)]
+/-! ### Identities between insertions -/
 
-/-- Inserting two blocks side by side at `c` and `c + l₁` is the same as inserting their
-juxtaposition at `c`. -/
-private theorem insertFn_insertFn_adjacent {c k l₁ l₂ : ℕ} (hc : c ≤ k)
-    {φ ψ₁ ψ₂ : ℕ → ℕ} (hφ : ∀ q < k, φ q < k) (hψ₁ : ∀ q < l₁, ψ₁ q < l₁)
-    (hψ₂ : ∀ q < l₂, ψ₂ q < l₂) :
-    insertFn (c + l₁) (k + l₁) l₂ (insertFn c k l₁ φ ψ₁) ψ₂ =
-      insertFn c k (l₁ + l₂) φ (appendFn l₁ l₂ ψ₁ ψ₂) := by
+/-- Inserting two blocks at the same place is inserting their juxtaposition. -/
+private theorem insFn_insFn_eq {c l' : ℕ} (φ : ℕ → ℕ) (y : PlanarMatching l)
+    (z : PlanarMatching l') :
+    insFn c l (insFn c l' φ (pv z)) (pv y) = insFn c (l + l') φ (appendFn l l' (pv y) (pv z)) := by
   funext q
-  by_cases ha : q < c
-  · have := hφ q (by omega)
-    rw [insertFn_of_lt _ _ (by omega), insertFn_of_lt _ _ ha, insertFn_of_lt _ _ ha]
-    simp only [shiftIns]; split_ifs <;> omega
-  by_cases hb : q < c + l₁
-  · have := hψ₁ (q - c) (by omega)
-    rw [insertFn_of_lt _ _ hb, insertFn_of_le_of_lt _ _ (by omega) hb,
-      insertFn_of_le_of_lt _ _ (by omega) (by omega), appendFn_of_lt _ _ (by omega)]
-    simp only [shiftIns]; split_ifs <;> omega
-  by_cases hc' : q < c + l₁ + l₂
-  · have := hψ₂ (q - (c + l₁)) (by omega)
-    have hsub : q - c - l₁ = q - (c + l₁) := by omega
-    rw [insertFn_of_le_of_lt _ _ (by omega) hc',
-      insertFn_of_le_of_lt _ _ (by omega) (by omega),
-      appendFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
-    omega
-  by_cases hd : q < k + l₁ + l₂
-  · have := hφ (q - (l₁ + l₂)) (by omega)
-    have hsub : q - l₂ - l₁ = q - (l₁ + l₂) := by omega
-    rw [insertFn_of_le_of_lt' _ _ (by omega) hd,
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-      insertFn_of_le_of_lt' _ _ (by omega) (by omega), hsub]
-    simp only [shiftIns]; split_ifs <;> omega
-  · rw [insertFn_of_ge (by omega) _ _ (by omega), insertFn_of_ge hc _ _ (by omega)]
+  rcases exists_eq_ins_or_add c (l + l') q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins, show ins c (l + l') u = ins c l (ins c l' u) by
+        simp only [ins]; split_ifs <;> omega,
+      insFn_ins, insFn_ins]
+    simp only [ins]
+    split_ifs <;> omega
+  · rw [insFn_add _ _ hv]
+    by_cases hvl : v < l
+    · rw [insFn_add _ _ hvl, appendFn_of_lt _ _ hvl]
+    · have := pv_lt z (show v - l < l' by omega)
+      rw [show c + v = ins c l (c + (v - l)) by
+          rw [ins_of_le (show c ≤ c + (v - l) by omega)]; omega,
+        insFn_ins, insFn_add _ _ (show v - l < l' by omega),
+        appendFn_of_le_of_lt _ _ (show l ≤ v by omega) hv,
+        ins_of_le (show c ≤ c + pv z (v - l) by omega)]
+      omega
 
-end PartnerOps
+/-- Juxtaposing two matchings with inserted blocks is inserting the blocks into the
+juxtaposition. -/
+private theorem appendFn_insFn_insFn {n m p l' : ℕ} (x : PlanarMatching (n + m))
+    (y : PlanarMatching l) (x' : PlanarMatching (m + p)) (y' : PlanarMatching l') :
+    appendFn (n + l + m) (m + l' + p) (insFn n l (pv x) (pv y)) (insFn m l' (pv x') (pv y')) =
+      insFn n l (insFn (n + 2 * m) l' (appendFn (n + m) (m + p) (pv x) (pv x')) (pv y'))
+        (pv y) := by
+  funext q
+  rcases exists_eq_ins_or_add n l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins]
+    rcases exists_eq_ins_or_add (n + 2 * m) l' u with ⟨w, rfl⟩ | ⟨t, ht, rfl⟩
+    · rw [insFn_ins]
+      by_cases hw₁ : w < n + m
+      · -- A point of the bottom of the first matching.
+        have := pv_lt x hw₁
+        rw [ins_of_lt (show w < n + 2 * m by omega), appendFn_of_lt _ _ hw₁,
+          ins_of_lt (show pv x w < n + 2 * m by omega),
+          appendFn_of_lt (l := m + l' + p) _ _
+            (show ins n l w < n + l + m by simp only [ins]; split_ifs <;> omega),
+          insFn_ins]
+      by_cases hw₂ : w < n + m + (m + p)
+      · -- A point of the top of the second matching.
+        have := pv_lt x' (show w - (n + m) < m + p by omega)
+        rw [appendFn_of_le_of_lt _ _ (show n + m ≤ w by omega) hw₂,
+          appendFn_of_le_of_lt (k := n + l + m) (l := m + l' + p) _ _
+            (show n + l + m ≤ ins n l (ins (n + 2 * m) l' w) by
+              simp only [ins]; split_ifs <;> omega)
+            (show ins n l (ins (n + 2 * m) l' w) < n + l + m + (m + l' + p) by
+              simp only [ins]; split_ifs <;> omega),
+          show ins n l (ins (n + 2 * m) l' w) - (n + l + m) =
+            ins m l' (w - (n + m)) by simp only [ins]; split_ifs <;> omega,
+          insFn_ins]
+        simp only [ins]
+        split_ifs <;> omega
+      · -- A point beyond both matchings.
+        rw [appendFn_of_le (k := n + m) (l := m + p) _ _ (show n + m + (m + p) ≤ w by omega),
+          appendFn_of_le (k := n + l + m) (l := m + l' + p) _ _
+            (show n + l + m + (m + l' + p) ≤ ins n l (ins (n + 2 * m) l' w) by
+              simp only [ins]; split_ifs <;> omega)]
+    · -- A point of the block inserted into the second matching.
+      have := pv_lt y' ht
+      rw [insFn_add _ _ ht, ins_of_le (show n ≤ n + 2 * m + pv y' t by omega),
+        ins_of_le (show n ≤ n + 2 * m + t by omega),
+        appendFn_of_le_of_lt (k := n + l + m) (l := m + l' + p) _ _
+          (show n + l + m ≤ n + 2 * m + t + l by omega)
+          (show n + 2 * m + t + l < n + l + m + (m + l' + p) by omega),
+        show n + 2 * m + t + l - (n + l + m) = m + t by omega, insFn_add _ _ ht]
+      omega
+  · -- A point of the block inserted into the first matching.
+    rw [insFn_add _ _ hv, appendFn_of_lt (l := m + l' + p) _ _ (show n + v < n + l + m by omega),
+      insFn_add _ _ hv]
+
+/-- Inserting a block into a matching with an inserted block, at a point of the first block, is
+inserting the block into the first block. -/
+private theorem insFn_insFn_assoc {n n' l' : ℕ} (φ : ℕ → ℕ) (ψ : ℕ → ℕ)
+    (z : PlanarMatching l') (hn' : n' ≤ l) :
+    insFn (n + n') l' (insFn n l φ ψ) (pv z) = insFn n (l + l') φ (insFn n' l' ψ (pv z)) := by
+  funext q
+  rcases exists_eq_ins_or_add n (l + l') q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins, show ins n (l + l') u = ins (n + n') l' (ins n l u) by
+        simp only [ins]; split_ifs <;> omega, insFn_ins, insFn_ins]
+    simp only [ins]
+    split_ifs <;> omega
+  · rw [insFn_add _ _ hv]
+    rcases exists_eq_ins_or_add n' l' v with ⟨w, rfl⟩ | ⟨t, ht, rfl⟩
+    · have hw : w < l := by simp only [ins] at hv; split_ifs at hv <;> omega
+      rw [insFn_ins, show n + ins n' l' w = ins (n + n') l' (n + w) by
+          simp only [ins]; split_ifs <;> omega, insFn_ins, insFn_add _ _ hw]
+      simp only [ins]
+      split_ifs <;> omega
+    · rw [insFn_add _ _ ht, ← Nat.add_assoc, insFn_add _ _ ht]
+      omega
 
 end PlanarMatching
 
-/-! ### Casting and horizontal tensoring of Temperley–Lieb diagrams -/
-
 namespace TLDiagram
 
-section Cast
+open PlanarMatching
 
-variable {n m n' m' n'' m'' : ℕ}
+variable {n m p n' m' p' n'' m'' : ℕ}
 
-/-- Transport of Temperley–Lieb diagrams along equalities `n = n'` and `m = m'` of the numbers of
-bottom and top boundary points. -/
-def cast (hn : n = n') (hm : m = m') : TLDiagram n m ≃ TLDiagram n' m' where
-  toFun f := ⟨PlanarMatching.cast (congrArg₂ (· + ·) hn hm) f.matching, f.circles⟩
-  invFun f := ⟨PlanarMatching.cast (congrArg₂ (· + ·) hn.symm hm.symm) f.matching, f.circles⟩
-  left_inv f := by subst hn hm; simp
-  right_inv f := by subst hn hm; simp
-
-@[simp]
-theorem matching_cast (hn : n = n') (hm : m = m') (f : TLDiagram n m) :
-    (cast hn hm f).matching = PlanarMatching.cast (congrArg₂ (· + ·) hn hm) f.matching := (rfl)
-
-@[simp]
-theorem circles_cast (hn : n = n') (hm : m = m') (f : TLDiagram n m) :
-    (cast hn hm f).circles = f.circles := (rfl)
-
-@[simp]
-theorem cast_refl (hn : n = n) (hm : m = m) : cast hn hm = Equiv.refl (TLDiagram n m) := by
-  ext f <;> simp
-
-@[simp]
-theorem cast_symm (hn : n = n') (hm : m = m') : (cast hn hm).symm = cast hn.symm hm.symm := by
-  subst hn hm; simp
-
-@[simp]
-theorem cast_cast (hn : n = n') (hm : m = m') (hn' : n' = n'') (hm' : m' = m'')
-    (f : TLDiagram n m) :
-    cast hn' hm' (cast hn hm f) = cast (hn.trans hn') (hm.trans hm') f := by
-  subst hn hm hn' hm'; simp
-
-@[simp]
-theorem cast_id (hn : n = n') : cast hn hn (id n) = id n' := by
-  subst hn; simp
-
-theorem cast_comp (hn : n = n') (hp : m' = m'') (f : TLDiagram n m) (g : TLDiagram m m') :
-    cast hn hp (f.comp g) = (cast hn rfl f).comp (cast rfl hp g) := by
-  subst hn hp; simp
-
-theorem comp_cast_mid (hm : m = m') (f : TLDiagram n m) (g : TLDiagram m' n') :
-    (cast rfl hm f).comp g = f.comp (cast hm.symm rfl g) := by
-  subst hm; simp
-
-theorem cast_verticalReflect (hn : n = n') (hm : m = m') (f : TLDiagram n m) :
-    cast hm hn (verticalReflect n m f) = verticalReflect n' m' (cast hn hm f) := by
-  subst hn hm; simp
-
-theorem cast_reflect (hn : n = n') (hm : m = m') (f : TLDiagram n m) :
-    cast hn hm (reflect n m f) = reflect n' m' (cast hn hm f) := by
-  subst hn hm; simp
-
-end Cast
-
-section Tensor
-
-variable {n₁ m₁ n₂ m₂ n₃ m₃ p₁ p₂ : ℕ}
-
-/-- **Horizontal tensor product of Temperley–Lieb diagrams**: `f.tensor g` places `g : n₂ → m₂`
-to the right of `f : n₁ → m₁`. In the counterclockwise boundary numbering, the boundary of `g` is
-inserted as a contiguous block between the bottom and top boundaries of `f`, and the circle counts
-are added. -/
-def tensor (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂) : TLDiagram (n₁ + n₂) (m₁ + m₂) where
-  matching := PlanarMatching.cast (by omega)
-    (PlanarMatching.insert n₁ (Nat.le_add_right n₁ m₁) f.matching g.matching)
+/-- The **tensor product** of Temperley–Lieb diagrams `f : n → m` and `g : n' → m'`: the diagram
+`n + n' → m + m'` with `g` placed to the right of `f`. Its matching inserts the matching of `g`
+between the bottom and the top points of `f`, and its circles are those of `f` and of `g`. -/
+def tensor (f : TLDiagram n m) (g : TLDiagram n' m') : TLDiagram (n + n') (m + m') where
+  matching := PlanarMatching.cast (by omega) (f.matching.insertBlock g.matching)
   circles := f.circles + g.circles
 
+/-- The matching of a tensor product: the matching of the right factor inserted as a block into
+that of the left factor. -/
 @[simp]
-theorem matching_tensor (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂) :
-    (f.tensor g).matching = PlanarMatching.cast (by omega)
-      (PlanarMatching.insert n₁ (Nat.le_add_right n₁ m₁) f.matching g.matching) := (rfl)
+theorem matching_tensor (f : TLDiagram n m) (g : TLDiagram n' m') :
+    (f.tensor g).matching = PlanarMatching.cast (by omega) (f.matching.insertBlock g.matching) :=
+  (rfl)
 
+/-- The circles of a tensor product are those of both factors. -/
 @[simp]
-theorem circles_tensor (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂) :
+theorem circles_tensor (f : TLDiagram n m) (g : TLDiagram n' m') :
     (f.tensor g).circles = f.circles + g.circles := (rfl)
 
-open PlanarMatching in
-private theorem pv_tensor (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂) :
-    pv (f.tensor g).matching =
-      insertFn n₁ (n₁ + m₁) (n₂ + m₂) (pv f.matching) (pv g.matching) := by
-  rw [matching_tensor, pv_cast_eq, pv_insert_eq]
-
-/-- Tensoring two identity diagrams gives the identity diagram on the combined strands. -/
+/-- Transporting the left factor of a tensor product transports the tensor product. -/
 @[simp]
-theorem tensor_id_id (n₁ n₂ : ℕ) : (id n₁).tensor (id n₂) = id (n₁ + n₂) := by
-  ext : 1
-  · simp only [matching_tensor, matching_id, PlanarMatching.insert_nested_nested,
-      PlanarMatching.cast_cast, PlanarMatching.cast_refl, Equiv.refl_apply]
-  · simp
+theorem cast_tensor {n₁ m₁ : ℕ} (hn : n = n₁) (hm : m = m₁) (f : TLDiagram n m)
+    (g : TLDiagram n' m') :
+    (TLDiagram.cast hn hm f).tensor g = TLDiagram.cast (by rw [hn]) (by rw [hm]) (f.tensor g) := by
+  subst hn hm
+  simp
 
-open PlanarMatching in
-/-- **The interchange law** for Temperley–Lieb diagrams: horizontal tensoring commutes with
-vertical composition, for both the matchings and the circle counts. -/
-theorem tensor_comp (f₁ : TLDiagram n₁ m₁) (g₁ : TLDiagram n₂ m₂)
-    (f₂ : TLDiagram m₁ p₁) (g₂ : TLDiagram m₂ p₂) :
-    (f₁.tensor g₁).comp (f₂.tensor g₂) = (f₁.comp f₂).tensor (g₁.comp g₂) := by
-  have happ := appendFn_insertFn_insertFn (Nat.le_add_right n₁ m₁) (Nat.le_add_right m₁ p₁)
-    (fun q hq => pv_lt f₁.matching hq) (fun q hq => pv_lt f₂.matching hq)
-    (fun q hq => pv_lt g₁.matching hq) (fun q hq => pv_lt g₂.matching hq)
-  set F : PlanarMatching (n₁ + m₁ + (m₁ + p₁)) := f₁.matching.append f₂.matching
-  set G : PlanarMatching (n₂ + m₂ + (m₂ + p₂)) := g₁.matching.append g₂.matching
-  set Fg₁ : PlanarMatching (n₁ + m₁ + (m₁ + p₁) + (n₂ + m₂)) :=
-    insert n₁ (by omega) F g₁.matching
-  have hFg₁ : pv Fg₁ = insertFn n₁ (n₁ + m₁ + (m₁ + p₁)) (n₂ + m₂) (pv F) (pv g₁.matching) := by
-    rw [pv_insert_eq]
-  have hL := glueFn_insertFn_left (n := n₁ + (n₂ + m₂)) g₂.matching m₁
-    (n₁ + m₁ + (n₂ + m₂) + m₁) (n₁ + m₁ + (m₁ + p₁) + (n₂ + m₂)) Fg₁ (by omega) (by omega)
-  have hR := glueFn_insertFn_right (c := n₁) g₁.matching m₁ n₁ (n₁ + m₁ + (m₁ + p₁)) F
-    le_rfl (by omega)
-  have hI := glueFn_insertFn_inner (c := n₁) (Nat.le_add_right n₁ p₁) (f₁.comp f₂).matching m₂ n₂
-    (n₂ + m₂ + (m₂ + p₂)) G (by omega)
-  have hadj := insertFn_insertFn_adjacent (c := n₁) (Nat.le_add_right n₁ p₁)
-    (fun q hq => pv_lt (f₁.comp f₂).matching hq)
-    (fun q hq => pv_lt g₁.matching hq) (fun q hq => pv_lt g₂.matching hq)
-  have hstart : pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching) =
-      insertFn (n₁ + m₁ + (n₂ + m₂) + m₁) (n₁ + m₁ + (m₁ + p₁) + (n₂ + m₂)) (m₂ + p₂)
-        (pv Fg₁) (pv g₂.matching) := by
-    rw [pv_append_eq, pv_tensor, pv_tensor, hFg₁, pv_append_eq]
-    have e₁ : n₁ + n₂ + (m₁ + m₂) = n₁ + m₁ + (n₂ + m₂) := by omega
-    have e₂ : m₁ + m₂ + (p₁ + p₂) = m₁ + p₁ + (m₂ + p₂) := by omega
-    rw [e₁, e₂, happ]
-  have hmid_fn : glueFn (n₁ + (n₂ + m₂)) m₁
-      (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching)) =
-      insertFn n₁ (n₁ + p₁) (n₂ + m₂ + (m₂ + p₂)) (pv (f₁.comp f₂).matching) (pv G) := by
-    rw [hstart, hL.1, hFg₁, hR.1]
-    have e₁ : n₁ + m₁ + (n₂ + m₂) + m₁ - 2 * m₁ = n₁ + (n₂ + m₂) := by omega
-    have e₂ : n₁ + m₁ + (m₁ + p₁) + (n₂ + m₂) - 2 * m₁ = n₁ + p₁ + (n₂ + m₂) := by omega
-    have e₃ : n₁ + m₁ + (m₁ + p₁) - 2 * m₁ = n₁ + p₁ := by omega
-    rw [e₁, e₂, e₃, ← pv_glueMiddle m₁ F, ← matching_comp, hadj, ← pv_append_eq]
-  have hmid_c : glueCircles (n₁ + (n₂ + m₂)) m₁
-      (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching)) =
-      glueCircles n₁ m₁ (pv F) := by
-    rw [hstart, hL.2, hFg₁, hR.2]
-  have hsplit_fn : glueFn (n₁ + n₂) (m₁ + m₂)
-      (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching)) =
-      insertFn n₁ (n₁ + p₁) (n₂ + p₂) (pv (f₁.comp f₂).matching) (pv (g₁.comp g₂).matching) := by
-    rw [show glueFn (n₁ + n₂) (m₁ + m₂) = glueFn (n₁ + n₂) (m₂ + m₁) by rw [Nat.add_comm m₁ m₂],
-      glueFn_add, show n₁ + n₂ + m₂ = n₁ + (n₂ + m₂) by omega, hmid_fn, hI.1,
-      show n₂ + m₂ + (m₂ + p₂) - 2 * m₂ = n₂ + p₂ by omega, ← pv_glueMiddle m₂ G, ← matching_comp]
-  have hsplit_c : glueCircles (n₁ + n₂) (m₁ + m₂)
-      (pv ((f₁.tensor g₁).matching.append (f₂.tensor g₂).matching)) =
-      glueCircles n₂ m₂ (pv G) + glueCircles n₁ m₁ (pv F) := by
-    rw [show glueCircles (n₁ + n₂) (m₁ + m₂) = glueCircles (n₁ + n₂) (m₂ + m₁) by
-        rw [Nat.add_comm m₁ m₂],
-      glueCircles_add, show n₁ + n₂ + m₂ = n₁ + (n₂ + m₂) by omega, hmid_fn, hmid_c, hI.2]
+/-- Transporting the right factor of a tensor product transports the tensor product. -/
+@[simp]
+theorem tensor_cast {n₁ m₁ : ℕ} (hn : n' = n₁) (hm : m' = m₁) (f : TLDiagram n m)
+    (g : TLDiagram n' m') :
+    f.tensor (TLDiagram.cast hn hm g) = TLDiagram.cast (by rw [hn]) (by rw [hm]) (f.tensor g) := by
+  subst hn hm
+  simp
+
+private theorem pv_matching_tensor (f : TLDiagram n m) (g : TLDiagram n' m') :
+    pv (f.tensor g).matching = insFn n (n' + m') (pv f.matching) (pv g.matching) := by
+  rw [matching_tensor, pv_cast_eq, pv_insertBlock]
+
+/-- **The interchange law**: stacking two tensor products is the tensor product of the stacks,
+`(f₁ ⊗ f₂) ≫ (g₁ ⊗ g₂) = (f₁ ≫ g₁) ⊗ (f₂ ≫ g₂)`. Both sides have the same matching and close the
+same circles. -/
+theorem tensor_comp_tensor (f₁ : TLDiagram n m) (f₂ : TLDiagram n' m') (g₁ : TLDiagram m p)
+    (g₂ : TLDiagram m' p') :
+    (f₁.tensor f₂).comp (g₁.tensor g₂) = (f₁.comp g₁).tensor (f₂.comp g₂) := by
+  -- The juxtaposition of the two tensor products is that of `f₁` and `g₁`, with the blocks of
+  -- `f₂` and `g₂` inserted.
+  have hL : pv ((f₁.tensor f₂).matching.append (g₁.tensor g₂).matching) =
+      insFn n (n' + m') (insFn (n + 2 * m) (m' + p')
+        (appendFn (n + m) (m + p) (pv f₁.matching) (pv g₁.matching)) (pv g₂.matching))
+        (pv f₂.matching) := by
+    rw [pv_append_eq, pv_matching_tensor, pv_matching_tensor,
+      show n + n' + (m + m') = n + (n' + m') + m by omega,
+      show m + m' + (p + p') = m + (m' + p') + p by omega,
+      appendFn_insFn_insFn f₁.matching f₂.matching g₁.matching g₂.matching]
+  -- Gluing the `m` pairs between `f₁` and `g₁`, which lie after the block of `f₂`…
+  have hB := glueFn_insFn_of_le (c := n) f₂.matching m (n + 2 * m + (m' + p') + p)
+    ((PlanarMatching.cast (k' := n + 2 * m + p) (by omega)
+      (f₁.matching.append g₁.matching)).insertBlock g₂.matching) (by omega)
+  -- … and before the block of `g₂`, …
+  have hC := glueFn_insFn_of_lt (c := n) (l := m' + p') (pv g₂.matching) m (n + m + (m + p))
+    (f₁.matching.append g₁.matching) (by omega)
+  -- … then the `m'` pairs between `f₂` and `g₂`, inside the merged block.
+  have hD := glueFn_insFn_add (c := n) (d := n')
+    (pv (glueMiddle m (f₁.matching.append g₁.matching))) m' (n' + m' + (m' + p'))
+    (f₂.matching.append g₂.matching) (by omega)
+  have hE := glueFn_add (n + n') m' m
+    (insFn n (n' + m') (insFn (n + 2 * m) (m' + p')
+      (appendFn (n + m) (m + p) (pv f₁.matching) (pv g₁.matching)) (pv g₂.matching))
+      (pv f₂.matching))
+  simp only [pv_insertBlock, pv_cast_eq, pv_append_eq] at hB
+  simp only [pv_append_eq] at hC
+  simp only [pv_glueMiddle, pv_append_eq] at hD
+  rw [show n + n' + m' = n + (n' + m') by omega, hB.1, hB.2, hC.1, hC.2, insFn_insFn_eq, hD.1,
+    hD.2, show n' + m' + (m' + p') - 2 * m' = n' + p' by omega] at hE
   ext : 1
   · apply eq_of_pv_eq
-    rw [matching_comp, pv_glueMiddle, pv_tensor, hsplit_fn]
+    rw [matching_comp, pv_glueMiddle, hL,
+      show glueFn (n + n') (m + m') = glueFn (n + n') (m' + m) by rw [Nat.add_comm m m'], hE.1,
+      pv_matching_tensor]
+    simp only [matching_comp, pv_glueMiddle, pv_append_eq]
   · simp only [circles_comp, circles_tensor, glueMiddleCircles_eq]
-    rw [hsplit_c]
-    dsimp only [F, G]
+    rw [hL, show glueCircles (n + n') (m + m') = glueCircles (n + n') (m' + m) by
+      rw [Nat.add_comm m m'], hE.2]
+    simp only [pv_append_eq]
     omega
 
-open PlanarMatching in
-/-- Horizontal tensoring is associative, up to casting along `Nat.add_assoc`. -/
-theorem tensor_assoc (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂) (h : TLDiagram n₃ m₃) :
-    cast (Nat.add_assoc n₁ n₂ n₃) (Nat.add_assoc m₁ m₂ m₃) ((f.tensor g).tensor h) =
-      f.tensor (g.tensor h) := by
+/-- The tensor product of identity diagrams is an identity diagram: `n` straight strands next to
+`n'` straight strands are `n + n'` straight strands. -/
+@[simp]
+theorem id_tensor_id (n n' : ℕ) : (id n).tensor (id n') = id (n + n') := by
   ext : 1
   · apply eq_of_pv_eq
-    rw [matching_cast, pv_cast_eq, pv_tensor, pv_tensor, pv_tensor, pv_tensor]
+    rw [pv_matching_tensor]
+    simp only [matching_id]
     funext q
-    by_cases h₁ : q < n₁
-    · have := pv_lt f.matching (by omega : q < n₁ + m₁)
-      rw [insertFn_of_lt _ _ (by omega), insertFn_of_lt _ _ h₁, insertFn_of_lt _ _ h₁]
-      simp only [shiftIns]; split_ifs <;> omega
-    by_cases h₂ : q < n₁ + n₂
-    · have := pv_lt g.matching (by omega : q - n₁ < n₂ + m₂)
-      rw [insertFn_of_lt _ _ h₂, insertFn_of_le_of_lt _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt _ _ (by omega) (by omega), insertFn_of_lt _ _ (by omega)]
-      simp only [shiftIns]; split_ifs <;> omega
-    by_cases h₃ : q < n₁ + n₂ + (n₃ + m₃)
-    · have := pv_lt h.matching (by omega : q - (n₁ + n₂) < n₃ + m₃)
-      have hsub : q - n₁ - n₂ = q - (n₁ + n₂) := by omega
-      rw [insertFn_of_le_of_lt _ _ (by omega) h₃,
-        insertFn_of_le_of_lt _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt _ _ (by omega) (by omega), hsub]
+    rcases exists_eq_ins_or_add n (n' + n') q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+    · rw [insFn_ins]
+      by_cases hu : u < n + n
+      · rw [pv_nested _ hu, pv_nested (n + n') (show ins n (n' + n') u < n + n' + (n + n') by
+          simp only [ins]; split_ifs <;> omega)]
+        simp only [ins]
+        split_ifs <;> omega
+      · rw [pv_of_le (nested n) (show n + n ≤ u by omega), pv_of_le (nested (n + n'))
+          (show n + n' + (n + n') ≤ ins n (n' + n') u by
+            simp only [ins]; split_ifs <;> omega)]
+    · rw [insFn_add _ _ hv, pv_nested _ hv,
+        pv_nested (n + n') (show n + v < n + n' + (n + n') by omega)]
       omega
-    by_cases h₄ : q < n₁ + n₂ + (n₃ + m₃) + m₂
-    · have := pv_lt g.matching (by omega : q - (n₃ + m₃) - n₁ < n₂ + m₂)
-      have hsub : q - n₁ - (n₃ + m₃) = q - (n₃ + m₃) - n₁ := by omega
-      rw [insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt' _ _ (by omega) (by omega), hsub]
-      simp only [shiftIns]; split_ifs <;> omega
-    by_cases h₅ : q < n₁ + n₂ + (n₃ + m₃) + m₂ + m₁
-    · have := pv_lt f.matching (by omega : q - (n₃ + m₃) - (n₂ + m₂) < n₁ + m₁)
-      have hsub : q - (n₃ + m₃) - (n₂ + m₂) = q - (n₂ + n₃ + (m₂ + m₃)) := by omega
-      rw [insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt' _ _ (by omega) (by omega),
-        insertFn_of_le_of_lt' _ _ (by omega) (by omega), hsub]
-      simp only [shiftIns]; split_ifs <;> omega
-    · rw [insertFn_of_ge (by omega) _ _ (by omega), insertFn_of_ge (by omega) _ _ (by omega)]
-  · simp [Nat.add_assoc]
-
-/-- Tensoring a diagram on the left with `k` closed circles keeps the matching and adds `k`
-circles. -/
-theorem mk_nested_zero_tensor (k : ℕ) (f : TLDiagram n₁ m₁) :
-    cast (Nat.zero_add n₁) (Nat.zero_add m₁)
-      ((⟨PlanarMatching.nested 0, k⟩ : TLDiagram 0 0).tensor f) =
-      ⟨f.matching, k + f.circles⟩ := by
-  ext : 1
-  · simp only [matching_cast, matching_tensor, PlanarMatching.insert_zero_left,
-      PlanarMatching.cast_cast, PlanarMatching.cast_refl, Equiv.refl_apply]
   · simp
 
-/-- Tensoring a diagram on the right with `k` closed circles keeps the matching and adds `k`
-circles. -/
-theorem tensor_mk_nested_zero (f : TLDiagram n₁ m₁) (k : ℕ) :
-    f.tensor (⟨PlanarMatching.nested 0, k⟩ : TLDiagram 0 0) =
-      ⟨f.matching, f.circles + k⟩ := by
+/-- **Associativity of the tensor product**: `(f ⊗ g) ⊗ h` is `f ⊗ (g ⊗ h)`, transported along the
+associativity of the numbers of points. -/
+theorem tensor_assoc (f : TLDiagram n m) (g : TLDiagram n' m') (h : TLDiagram n'' m'') :
+    (f.tensor g).tensor h = TLDiagram.cast (Nat.add_assoc n n' n'').symm
+      (Nat.add_assoc m m' m'').symm (f.tensor (g.tensor h)) := by
   ext : 1
-  · simp only [matching_tensor, PlanarMatching.insert_zero_right,
-      PlanarMatching.cast_refl, Equiv.refl_apply]
+  · apply eq_of_pv_eq
+    rw [matching_cast, pv_cast_eq]
+    simp only [pv_matching_tensor]
+    rw [insFn_insFn_assoc (l := n' + m') _ _ h.matching (by omega),
+      show n' + m' + (n'' + m'') = n' + n'' + (m' + m'') by omega]
+  · simp only [circles_tensor, circles_cast]
+    omega
+
+/-- The empty diagram on the left is a unit for the tensor product. -/
+@[simp]
+theorem id_zero_tensor (f : TLDiagram n m) :
+    (id 0).tensor f = TLDiagram.cast (Nat.zero_add n).symm (Nat.zero_add m).symm f := by
+  ext : 1
+  · apply eq_of_pv_eq
+    rw [matching_cast, pv_cast_eq, pv_matching_tensor, matching_id]
+    funext q
+    rcases exists_eq_ins_or_add 0 (n + m) q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+    · rw [insFn_ins, pv_of_le (nested 0) (show 0 + 0 ≤ u by omega),
+        ins_of_le (Nat.zero_le u), pv_of_le f.matching (show n + m ≤ u + (n + m) by omega)]
+    · rw [insFn_add _ _ hv]
+      simp only [Nat.zero_add]
   · simp
 
-/-- The empty identity diagram `id 0` is a left unit for horizontal tensoring. -/
+/-- The empty diagram on the right is a unit for the tensor product. -/
 @[simp]
-theorem id_zero_tensor (f : TLDiagram n₁ m₁) :
-    cast (Nat.zero_add n₁) (Nat.zero_add m₁) ((id 0).tensor f) = f := by
-  have h0 : id 0 = ⟨PlanarMatching.nested 0, 0⟩ := TLDiagram.ext (matching_id 0) (circles_id 0)
-  rw [h0, mk_nested_zero_tensor]
-  exact TLDiagram.ext rfl (Nat.zero_add _)
-
-/-- The empty identity diagram `id 0` is a right unit for horizontal tensoring. -/
-@[simp]
-theorem tensor_id_zero (f : TLDiagram n₁ m₁) : f.tensor (id 0) = f := by
-  have h0 : id 0 = ⟨PlanarMatching.nested 0, 0⟩ := TLDiagram.ext (matching_id 0) (circles_id 0)
-  rw [h0, tensor_mk_nested_zero]
-  exact TLDiagram.ext rfl (Nat.add_zero _)
-
-/-- Casting commutes with horizontal tensoring. -/
-theorem cast_tensor {n₁' m₁' n₂' m₂' : ℕ} (hn₁ : n₁ = n₁') (hm₁ : m₁ = m₁')
-    (hn₂ : n₂ = n₂') (hm₂ : m₂ = m₂') (f : TLDiagram n₁ m₁) (g : TLDiagram n₂ m₂) :
-    cast (congrArg₂ (· + ·) hn₁ hn₂) (congrArg₂ (· + ·) hm₁ hm₂) (f.tensor g) =
-      (cast hn₁ hm₁ f).tensor (cast hn₂ hm₂ g) := by
-  subst hn₁ hm₁ hn₂ hm₂; simp
-
-end Tensor
+theorem tensor_id_zero (f : TLDiagram n m) : f.tensor (id 0) = f := by
+  ext : 1
+  · apply eq_of_pv_eq
+    rw [pv_matching_tensor]
+    funext q
+    by_cases hq : q < n <;> simp [insFn, ins, hq]
+  · simp
 
 end TLDiagram
-
-/-- Horizontal tensoring is noncommutative: `cap ⊗ id 1` (joining bottom points `0` and `1`) is
-distinct from `id 1 ⊗ cap` (joining bottom points `1` and `2`). -/
-example :
-    TLDiagram.cast rfl (Nat.zero_add 1) (TLDiagram.cap.tensor (TLDiagram.id 1)) ≠
-      TLDiagram.cast (Nat.add_comm 1 2) (Nat.add_zero 1)
-        ((TLDiagram.id 1).tensor TLDiagram.cap) := by
-  intro h
-  have h0 := congrArg (fun D : TLDiagram 3 1 => PlanarMatching.pv D.matching 0) h
-  rw [TLDiagram.matching_cast, TLDiagram.matching_cast, PlanarMatching.pv_cast,
-    PlanarMatching.pv_cast, TLDiagram.pv_tensor, TLDiagram.pv_tensor,
-    PlanarMatching.insertFn_of_lt _ _ (by omega), PlanarMatching.insertFn_of_lt _ _ (by omega),
-    TLDiagram.matching_id, PlanarMatching.pv_nested _ (by omega),
-    PlanarMatching.pv_of_lt _ (by omega), TLDiagram.cap_matching_val] at h0
-  simp only [PlanarMatching.shiftIns] at h0
-  exact absurd h0 (by decide)
 
 end TauCeti
