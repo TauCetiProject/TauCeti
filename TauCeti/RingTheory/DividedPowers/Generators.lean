@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.DividedPowers.Basic
 
 import Mathlib.Algebra.MvPolynomial.Basic
 import Mathlib.RingTheory.DividedPowers.RatAlgebra
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
+import TauCeti.Data.Finsupp.Single
 import TauCeti.Data.Nat.Choose.Sum
 
 /-!
@@ -39,8 +41,9 @@ determining those coefficients via `DividedPowers.RatAlgebra.dividedPowers` on `
 
 * `TauCeti.AdditivePowers.mul_dpow_add`: stability of the multiplication identity under sums.
 * `TauCeti.AdditivePowers.dpow_comp_add`: stability of the iteration identity under sums.
-* `TauCeti.AdditivePowers.toDividedPowers_unique`: uniqueness of a `DividedPowers I` with the
-  same underlying operations as an `AdditivePowers I`.
+* `TauCeti.AdditivePowers.toDividedPowers_toAdditivePowers` and
+  `DividedPowers.toAdditivePowers_toDividedPowers`: round-trip identities between `AdditivePowers`
+  and `DividedPowers`.
 
 ## References
 
@@ -159,15 +162,14 @@ theorem prod_dpow {ι : Type*} {s : Finset ι} {f : ι → ℕ} {x : A} (hx : x 
     ring
 
 /-- The multiplication identity is stable under left scalar multiplication. -/
-theorem mul_dpow_mul {a x : A} (hx : x ∈ I)
-    (hx_mul : ∀ m n, δ.dpow m x * δ.dpow n x = ((m + n).choose m : A) * δ.dpow (m + n) x)
-    (m n : ℕ) :
+theorem mul_dpow_mul {a x : A} (hx : x ∈ I) {m n : ℕ}
+    (hx_mul : δ.dpow m x * δ.dpow n x = ((m + n).choose m : A) * δ.dpow (m + n) x) :
     δ.dpow m (a * x) * δ.dpow n (a * x) = ((m + n).choose m : A) * δ.dpow (m + n) (a * x) := by
   rw [δ.dpow_mul hx, δ.dpow_mul hx, δ.dpow_mul hx, pow_add]
   calc
     a ^ m * δ.dpow m x * (a ^ n * δ.dpow n x)
       = a ^ m * a ^ n * (δ.dpow m x * δ.dpow n x) := by ring
-    _ = a ^ m * a ^ n * (((m + n).choose m : A) * δ.dpow (m + n) x) := by rw [hx_mul m n]
+    _ = a ^ m * a ^ n * (((m + n).choose m : A) * δ.dpow (m + n) x) := by rw [hx_mul]
     _ = ((m + n).choose m : A) * (a ^ m * a ^ n * δ.dpow (m + n) x) := by ring
 
 /-- The multiplication identity is stable under sums of elements of `I`. -/
@@ -202,12 +204,10 @@ theorem mul_dpow_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
   rw [sum_congr rfl hterm, ← sum_mul, ← Nat.cast_sum, sum_filter_antidiagonal_choose hab']
 
 /-- The iteration identity is stable under left scalar multiplication. -/
-theorem dpow_comp_mul {a x : A} (hx : x ∈ I)
-    (hx_comp : ∀ m n, n ≠ 0 →
-      δ.dpow m (δ.dpow n x) = (Nat.uniformBell m n : A) * δ.dpow (m * n) x)
-    {m n : ℕ} (hn : n ≠ 0) :
+theorem dpow_comp_mul {a x : A} (hx : x ∈ I) {m n : ℕ} (hn : n ≠ 0)
+    (hx_comp : δ.dpow m (δ.dpow n x) = (Nat.uniformBell m n : A) * δ.dpow (m * n) x) :
     δ.dpow m (δ.dpow n (a * x)) = (Nat.uniformBell m n : A) * δ.dpow (m * n) (a * x) := by
-  rw [δ.dpow_mul hx, δ.dpow_mul (δ.dpow_mem hn hx), δ.dpow_mul hx, hx_comp m n hn, ← pow_mul,
+  rw [δ.dpow_mul hx, δ.dpow_mul (δ.dpow_mem hn hx), δ.dpow_mul hx, hx_comp, ← pow_mul,
     mul_comm n m]
   ring
 
@@ -259,19 +259,8 @@ private theorem dpow_mul_dpow_pair {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     ring
 
 private theorem degX_add_degY {m n : ℕ} {k : Sym (ℕ × ℕ) m} (hk : k ∈ (antidiagonal n).sym m) :
-    degX n k + degY n k = m * n := by
-  simp only [degX, degY, ← sum_add_distrib, ← mul_add]
-  have hsum : ∑ p ∈ antidiagonal n, Multiset.count p k * (p.1 + p.2) =
-      (∑ p ∈ antidiagonal n, Multiset.count p k) * n := by
-    rw [sum_mul]
-    exact sum_congr rfl fun p hp ↦ by rw [mem_antidiagonal.mp hp]
-  rw [hsum]
-  have hcard : ∑ p ∈ antidiagonal n, Multiset.count p k = m := by
-    have hsub : ∀ p ∈ (k : Multiset (ℕ × ℕ)), p ∈ antidiagonal n := fun p hp ↦
-      mem_sym_iff.mp hk p hp
-    rw [Multiset.sum_count_eq_card hsub]
-    exact k.prop
-  rw [hcard]
+    degX n k + degY n k = m * n :=
+  Finset.Nat.sum_count_mul_fst_add_sum_count_mul_snd_antidiagonal hk
 
 private theorem dpow_comp_add_eq_sum {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     (hx_mul : ∀ m n, δ.dpow m x * δ.dpow n x = ((m + n).choose m : A) * δ.dpow (m + n) x)
@@ -320,28 +309,15 @@ private theorem coeff_ratDpow_X_mul_Y
     (γ.dpow a (MvPolynomial.X 0) * γ.dpow b (MvPolynomial.X 1)).coeff
         (Finsupp.single 0 c + Finsupp.single 1 d) =
       if (a, b) = (c, d) then (a.factorial : ℚ)⁻¹ * (b.factorial : ℚ)⁻¹ else 0 := by
-  have h01 : (0 : Fin 2) ≠ 1 := by decide
-  have h10 : (1 : Fin 2) ≠ 0 := by decide
   have hx0 : (MvPolynomial.X 0 : MvPolynomial (Fin 2) ℚ) ∈ (⊤ : Ideal _) := trivial
   have hx1 : (MvPolynomial.X 1 : MvPolynomial (Fin 2) ℚ) ∈ (⊤ : Ideal _) := trivial
   rw [DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul _ γ hx0,
     DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul _ γ hx1,
     Ring.inverse_eq_inv', MvPolynomial.X_pow_eq_monomial,
     MvPolynomial.X_pow_eq_monomial, smul_mul_smul_comm, MvPolynomial.monomial_mul_monomial,
-    mul_one, AddMonoidAlgebra.coeff_smul, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul,
-    MvPolynomial.coeff_monomial]
-  have hiff : Finsupp.single (0 : Fin 2) a + Finsupp.single 1 b =
-      Finsupp.single 0 c + Finsupp.single 1 d ↔ (a, b) = (c, d) := by
-    constructor
-    · intro h
-      have h0 := congrFun (congrArg DFunLike.coe h) 0
-      have h1 := congrFun (congrArg DFunLike.coe h) 1
-      simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
-        Finsupp.single_eq_of_ne h10, Finsupp.single_eq_of_ne h01, add_zero, zero_add] at h0 h1
-      exact Prod.ext h0 h1
-    · rintro ⟨rfl, rfl⟩
-      rfl
-  simp [hiff]
+    mul_one, MvPolynomial.smul_eq_C_mul, MvPolynomial.coeff_C_mul, MvPolynomial.coeff_monomial]
+  simp only [Finsupp.single_add_single_eq_single_add_single_iff (by decide : (0 : Fin 2) ≠ 1),
+    ← Prod.mk.injEq, mul_ite, mul_one, mul_zero]
 
 private theorem compSumCoeff_eq_uniformBell {m n : ℕ} (hn : n ≠ 0) {r : ℕ × ℕ}
     (hr : r ∈ antidiagonal (m * n)) :
@@ -406,7 +382,7 @@ private theorem mul_dpow_of_span {S : Set A} (hS : I = Ideal.span S)
   · intro x y hx' hy' ihx ihy m n
     exact δ.mul_dpow_add (hS ▸ hx') (hS ▸ hy') ihx ihy m n
   · intro a x hx' ihx m n
-    exact δ.mul_dpow_mul (hS ▸ hx') ihx m n
+    exact δ.mul_dpow_mul (hS ▸ hx') (ihx m n)
 
 private theorem dpow_comp_of_span {S : Set A} (hS : I = Ideal.span S)
     (hmul : ∀ m n, ∀ s ∈ S,
@@ -430,7 +406,7 @@ private theorem dpow_comp_of_span {S : Set A} (hS : I = Ideal.span S)
     exact δ.dpow_comp_add (hS ▸ hx') (hS ▸ hy') (hall_mul x (hS ▸ hx'))
       (hall_mul y (hS ▸ hy')) ihx ihy hn
   · intro a x hx' ihx m n hn
-    exact δ.dpow_comp_mul (hS ▸ hx') ihx hn
+    exact δ.dpow_comp_mul (hS ▸ hx') hn (ihx m n hn)
 
 /-- Promote an additive divided-power candidate on `I = Ideal.span S` to a `DividedPowers I`
 structure by checking the multiplication and positive-inner-index iteration identities only on the
@@ -461,28 +437,15 @@ theorem toDividedPowers_dpow {S : Set A} (hS : I = Ideal.span S)
     (n : ℕ) (x : A) :
     (δ.toDividedPowers hS hmul hcomp).dpow n x = δ.dpow n x := (rfl)
 
-/-- Any `DividedPowers I` structure agreeing with `δ` on `I` equals `δ.toDividedPowers`. -/
-theorem toDividedPowers_unique {S : Set A} (hS : I = Ideal.span S)
+/-- Forgetting a promoted additive divided-power candidate recovers it. -/
+@[simp]
+theorem toDividedPowers_toAdditivePowers {S : Set A} (hS : I = Ideal.span S)
     (hmul : ∀ m n, ∀ s ∈ S,
       δ.dpow m s * δ.dpow n s = ((m + n).choose m : A) * δ.dpow (m + n) s)
     (hcomp : ∀ m n, n ≠ 0 → ∀ s ∈ S,
-      δ.dpow m (δ.dpow n s) = (Nat.uniformBell m n : A) * δ.dpow (m * n) s)
-    (hI : DividedPowers I) (h : ∀ n, ∀ x ∈ I, hI.dpow n x = δ.dpow n x) :
-    hI = δ.toDividedPowers hS hmul hcomp :=
-  DividedPowers.ext hI _ fun n x hx ↦ h n x hx
-
-/-- `toDividedPowers` is independent of the chosen generating set and identity proofs. -/
-theorem toDividedPowers_congr {S S' : Set A} (hS : I = Ideal.span S) (hS' : I = Ideal.span S')
-    (hmul : ∀ m n, ∀ s ∈ S,
-      δ.dpow m s * δ.dpow n s = ((m + n).choose m : A) * δ.dpow (m + n) s)
-    (hcomp : ∀ m n, n ≠ 0 → ∀ s ∈ S,
-      δ.dpow m (δ.dpow n s) = (Nat.uniformBell m n : A) * δ.dpow (m * n) s)
-    (hmul' : ∀ m n, ∀ s ∈ S',
-      δ.dpow m s * δ.dpow n s = ((m + n).choose m : A) * δ.dpow (m + n) s)
-    (hcomp' : ∀ m n, n ≠ 0 → ∀ s ∈ S',
       δ.dpow m (δ.dpow n s) = (Nat.uniformBell m n : A) * δ.dpow (m * n) s) :
-    δ.toDividedPowers hS hmul hcomp = δ.toDividedPowers hS' hmul' hcomp' :=
-  DividedPowers.ext _ _ fun _ _ _ ↦ rfl
+    (δ.toDividedPowers hS hmul hcomp).toAdditivePowers = δ :=
+  ext fun n x _ ↦ by rw [DividedPowers.toAdditivePowers_dpow, δ.toDividedPowers_dpow]
 
 end Generators
 
@@ -502,6 +465,6 @@ theorem toAdditivePowers_toDividedPowers (hI : DividedPowers I) {S : Set A} (hS 
       hI.toAdditivePowers.dpow m (hI.toAdditivePowers.dpow n s) =
         (Nat.uniformBell m n : A) * hI.toAdditivePowers.dpow (m * n) s) :
     hI.toAdditivePowers.toDividedPowers hS hmul hcomp = hI :=
-  (hI.toAdditivePowers.toDividedPowers_unique hS hmul hcomp hI fun _ _ _ ↦ rfl).symm
+  DividedPowers.ext _ _ fun _ _ _ ↦ rfl
 
 end DividedPowers
