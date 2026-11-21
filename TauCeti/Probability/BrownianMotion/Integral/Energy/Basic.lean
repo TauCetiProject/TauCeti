@@ -8,21 +8,22 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Analysis.Normed.Group.Real
-import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 
 /-!
 # Elementary Brownian isometry in the predictable energy measure
 
-At every finite observation horizon `T`, the second moment of an elementary Brownian gain equals
-the lower square-energy integral of its holding against `(Probability.timeMeasure T).prod P` (and,
-equivalently, against `ℱ.predictableMeasure P T`), yielding `L²` membership and the `eLpNorm`
-isometry for single strategies and differences of strategies. This identifies the finite-grid
-isometry with the native predictable `L²` norm used for completion, without introducing an integral
-operator or assuming that the general stochastic integral exists.
+At every finite observation horizon `T`, the second moment of an elementary Brownian gain on a
+nondecreasing grid equals the lower square-energy integral of its holding against
+`(Probability.timeMeasure T).prod P` (`lintegral_enorm_sq_simpleGains_timeMeasure`,
+`eLpNorm_simpleGains_eq`), while at the terminal grid date `τ n` this isometry is also expressed
+against the trimmed predictable measure `ℱ.predictableMeasure P (τ n)`
+(`lintegral_enorm_sq_simpleGains`). This identifies the finite-grid isometry with the native
+predictable `L²` norm used for completion, without introducing an integral operator or assuming
+that the general stochastic integral exists.
 
 Heights need only be square integrable and measurable at their left endpoints.
-The grid may be empty or have repeated dates; Brownian path regularity and usual
-conditions on the filtration are not needed.
+The grid must be nondecreasing (`MonotoneOn τ (Iic n)`), though it may be empty or have repeated
+dates; Brownian path regularity and usual conditions on the filtration are not needed.
 
 ## References
 
@@ -118,51 +119,5 @@ theorem eLpNorm_simpleGains_eq (hW : IsFilteredPreBrownianReal ℱ W P) (hτ : M
       ((isStronglyPredictable_simpleHolding ha).mono ℱ.predictable_le_prod).aestronglyMeasurable]
   simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat, Function.uncurry_def,
     hW.lintegral_enorm_sq_simpleGains_timeMeasure hτ ha ha₂ T]
-
-/-- `L²`-seminorm form of the elementary Brownian isometry for the difference of two
-square-integrable left-measurable simple strategies at an arbitrary observation time `T`. -/
-theorem eLpNorm_simpleGains_sub_eq (hW : IsFilteredPreBrownianReal ℱ W P)
-    {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ℝ≥0} {a₁ a₂ : ℕ → Ω → ℝ}
-    (hτ₁ : MonotoneOn τ₁ (Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Iic n₂))
-    (ha₁ : ∀ i < n₁, StronglyMeasurable[ℱ (τ₁ i)] (a₁ i))
-    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j))
-    (ha₁₂ : ∀ i < n₁, MemLp (a₁ i) 2 P) (ha₂₂ : ∀ j < n₂, MemLp (a₂ j) 2 P) (T : ℝ≥0) :
-    eLpNorm (simpleGains τ₁ n₁ a₁ W T - simpleGains τ₂ n₂ a₂ W T) 2 P =
-      eLpNorm (fun p ↦ simpleHolding τ₁ n₁ a₁ p.1 p.2 - simpleHolding τ₂ n₂ a₂ p.1 p.2) 2
-        ((timeMeasure T).prod P) := by
-  obtain ⟨m, σ, b, -, hσ, hbm, hbb, hhold, hgains⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
-    ((range n₁).disjSum (range n₂)) (Sum.elim τ₁ τ₂)
-    (Sum.elim (fun j ↦ τ₁ (j + 1)) fun j ↦ τ₂ (j + 1)) (Sum.elim a₁ fun j ω ↦ -a₂ j ω) (by
-      rintro (i | j) hij <;>
-        simp only [inl_mem_disjSum, inr_mem_disjSum, Finset.mem_range] at hij
-      · exact ha₁ i hij
-      · exact (ha₂ j hij).neg)
-  have hdom : MemLp (fun ω ↦ ∑ i ∈ (range n₁).disjSum (range n₂),
-      ‖Sum.elim a₁ (fun j ω ↦ -a₂ j ω) i ω‖) 2 P :=
-    memLp_finsetSum _ fun i hi ↦ by
-      rcases mem_disjSum.mp hi with ⟨i', hi', rfl⟩ | ⟨j', hj', rfl⟩
-      · exact (ha₁₂ i' (Finset.mem_range.mp hi')).norm
-      · simpa only [Sum.elim_inr, norm_neg] using (ha₂₂ j' (Finset.mem_range.mp hj')).norm
-  have hb₂ (k : ℕ) (hk : k < m) : MemLp (b k) 2 P :=
-    hdom.mono' ((hbm k hk).mono (ℱ.le _)).aestronglyMeasurable (.of_forall (hbb k hk))
-  have hge : simpleGains σ m b W T = simpleGains τ₁ n₁ a₁ W T - simpleGains τ₂ n₂ a₂ W T :=
-    funext fun ω ↦ by
-      simp only [Pi.sub_apply]
-      rw [hgains W T ω, sum_disjSum, simpleGains_def, simpleGains_def, sub_eq_add_neg,
-        ← sum_neg_distrib]
-      simp only [Sum.elim_inl, Sum.elim_inr]
-      congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
-      · simp [hτ₁ (Finset.mem_range.mp hj).le (Finset.mem_range.mp hj) (Nat.le_succ j)]
-      · simp [hτ₂ (Finset.mem_range.mp hj).le (Finset.mem_range.mp hj) (Nat.le_succ j)]
-  have hhe : Function.uncurry (simpleHolding σ m b) =
-      fun p ↦ simpleHolding τ₁ n₁ a₁ p.1 p.2 - simpleHolding τ₂ n₂ a₂ p.1 p.2 :=
-    funext fun ⟨s, ω⟩ ↦ by
-      dsimp only [Function.uncurry]
-      rw [hhold s ω, sum_disjSum, simpleHolding_def, simpleHolding_def, sub_eq_add_neg,
-        ← sum_neg_distrib]
-      simp only [Sum.elim_inl, Sum.elim_inr]
-      congr 1; refine sum_congr rfl fun j _ ↦ ?_
-      by_cases hs : s ∈ Ioc (τ₂ j) (τ₂ (j + 1)) <;> simp [hs]
-  rw [← hge, ← hhe, hW.eLpNorm_simpleGains_eq hσ.monotoneOn hbm hb₂ T]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

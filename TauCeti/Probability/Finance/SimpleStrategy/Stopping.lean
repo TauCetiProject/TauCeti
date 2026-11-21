@@ -22,8 +22,6 @@ holding `1_{t ≤ dyadicCeilTime k (τ ω)}` times the original holding on `(0, 
 
 * `TauCeti.Finance.exists_simpleHolding_simpleGains_dyadicCeilTime`: common deterministic-grid
   representation of a simple strategy stopped at `dyadicCeilTime k ∘ τ` on `(0, T]`.
-* `TauCeti.Finance.simpleHolding_max_eq`, `simpleGains_max_eq`: post-`u` grid shift and multiplier
-  identities for `simpleHolding` and `simpleGains`.
 
 ## References
 
@@ -41,13 +39,8 @@ namespace TauCeti.Finance
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {τ : Ω → WithTop ℝ≥0}
 
-private noncomputable def dyadicGrid (k j : ℕ) : ℝ≥0 := (j : ℝ≥0) / 2 ^ k
-
 private noncomputable def dyadicStopHeight (τ : Ω → WithTop ℝ≥0) (k j : ℕ) (ω : Ω) : ℝ :=
   if (dyadicGrid k j : WithTop ℝ≥0) < dyadicCeilTime k (τ ω) then 1 else 0
-
-private theorem strictMono_dyadicGrid (k : ℕ) : StrictMono (dyadicGrid k) :=
-  fun _ _ hij ↦ div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) (by positivity)
 
 private theorem stronglyMeasurable_dyadicStopHeight (hτ : IsStoppingTime ℱ τ) (k j : ℕ) :
     StronglyMeasurable[ℱ (dyadicGrid k j)] (dyadicStopHeight τ k j) :=
@@ -64,8 +57,9 @@ private theorem simpleHolding_dyadicStopHeight {T t : ℝ≥0} (ht : t ∈ Ioc 0
   have hj1 : j + 1 = ⌈t * 2 ^ k⌉₊ := Nat.sub_add_cancel hpos
   have hjM : j < ⌈T * 2 ^ k⌉₊ :=
     lt_of_lt_of_le (by omega) (Nat.ceil_mono (mul_le_mul_of_nonneg_right ht.2 (by positivity)))
-  have hmem : t ∈ Ioc (dyadicGrid k j) (dyadicGrid k (j + 1)) :=
-    ⟨(div_lt_iff₀ (by positivity)).2 (Nat.lt_ceil.1 (by omega)),
+  have hmem : t ∈ Ioc (dyadicGrid k j) (dyadicGrid k (j + 1)) := by
+    simp only [dyadicGrid_def]
+    exact ⟨(div_lt_iff₀ (by positivity)).2 (Nat.lt_ceil.1 (by omega)),
       (le_div_iff₀ (by positivity)).2 (hj1 ▸ Nat.le_ceil _)⟩
   rw [simpleHolding_of_mem_Ioc ((strictMono_dyadicGrid k).monotone.monotoneOn _) hjM hmem,
     dyadicStopHeight]
@@ -75,7 +69,7 @@ private theorem simpleHolding_dyadicStopHeight {T t : ℝ≥0} (ht : t ∈ Ioc 0
     simp only [dyadicCeilTime_top]
     exact propext (iff_of_true (WithTop.coe_lt_top _) le_top)
   | coe s =>
-    simp only [dyadicCeilTime_coe, WithTop.coe_lt_coe, WithTop.coe_le_coe, dyadicGrid]
+    simp only [dyadicCeilTime_coe, WithTop.coe_lt_coe, WithTop.coe_le_coe, dyadicGrid_def]
     rw [div_lt_div_iff_of_pos_right (by positivity), le_div_iff₀ (by positivity), Nat.cast_lt,
       ← Nat.ceil_le, ← hj1]
     exact propext (by omega)
@@ -86,8 +80,10 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
       MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω := by
   let M : ℕ := ⌈T * 2 ^ k⌉₊
   let f (j : ℕ) : ℝ := G (min (dyadicGrid k j) s) ω
-  have hf0 : f 0 = 0 := by simp [f, dyadicGrid, hG0]
-  have hsM : s ≤ dyadicGrid k M := hs.trans ((le_div_iff₀ (by positivity)).2 (Nat.le_ceil _))
+  have hf0 : f 0 = 0 := by simp [f, hG0]
+  have hsM : s ≤ dyadicGrid k M := by
+    rw [dyadicGrid_def]
+    exact hs.trans ((le_div_iff₀ (by positivity)).2 (Nat.le_ceil _))
   rw [simpleGains_def]
   rcases le_or_gt (s : WithTop ℝ≥0) (dyadicCeilTime k (τ ω)) with hle | hgt
   · have hfM : f M = G s ω := by simp [f, min_eq_right hsM]
@@ -104,7 +100,7 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
     | coe u =>
       let r : ℕ := ⌈u * 2 ^ k⌉₊
       have hρ : dyadicCeilTime k (τ ω) = (dyadicGrid k r : WithTop ℝ≥0) := by
-        rw [hτω, dyadicCeilTime_coe]; rfl
+        rw [hτω, dyadicCeilTime_coe, dyadicGrid_def]
       have hrs : dyadicGrid k r < s := WithTop.coe_lt_coe.mp (hρ ▸ hgt)
       have hrM : r ≤ M := ((strictMono_dyadicGrid k).lt_iff_lt.mp (hrs.trans_le hsM)).le
       have hfr : f r = MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω := by
@@ -164,38 +160,5 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
     simp_rw [← Fin.sum_univ_eq_sum_range] at hg
     rw [hgains X s ω, Fintype.sum_prod_type, ← hg,
       simpleGains_dyadicStopHeight hs (simpleGains_of_le hσ bot_le X ω) k]
-
-/-- Shifting every grid date up to `max (σ i) u` and scaling heights by `ξ` restricts
-`simpleHolding` to `(u, ∞)` and multiplies by `ξ` pointwise. -/
-theorem simpleHolding_max_eq {ι : Type*} [LinearOrder ι] {n : ℕ} {σ : ℕ → ι} {a : ℕ → Ω → ℝ}
-    (u : ι) (ξ : Ω → ℝ) (s : ι) (ω : Ω) :
-    simpleHolding (fun i ↦ max (σ i) u) n (fun i ω ↦ ξ ω * a i ω) s ω =
-      (Ioi u).indicator (fun _ ↦ ξ ω * simpleHolding σ n a s ω) s := by
-  have hmem (i : ℕ) : s ∈ Ioc (max (σ i) u) (max (σ (i + 1)) u) ↔
-      u < s ∧ s ∈ Ioc (σ i) (σ (i + 1)) := by
-    simp only [Set.mem_Ioc, max_lt_iff, le_max_iff]
-    exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ ↦ ⟨h2, h1, h3.resolve_right h2.not_ge⟩,
-      fun ⟨h2, h1, h3⟩ ↦ ⟨⟨h1, h2⟩, Or.inl h3⟩⟩
-  by_cases hs : u < s <;> simp [simpleHolding_def, Set.indicator_apply, hmem, hs, mul_sum]
-
-/-- Shifting every grid date up to `max (σ i) u` and scaling heights by `ξ` gives the post-`u`
-gains increment multiplied by `ξ` against any price path `X`. -/
-theorem simpleGains_max_eq {ι : Type*} [LinearOrder ι] {n : ℕ} {σ : ℕ → ι} {a : ℕ → Ω → ℝ}
-    (u : ι) (ξ : Ω → ℝ) (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
-    simpleGains (fun i ↦ max (σ i) u) n (fun i ω ↦ ξ ω * a i ω) X t ω =
-      ξ ω * (simpleGains σ n a X t ω - simpleGains σ n a X (min u t) ω) := by
-  have hpair (s : ι) :
-      X (min (max s u) t) ω + X (min s (min u t)) ω = X (min s t) ω + X (min u t) ω := by
-    have hmin : min (min s t) (min u t) = min s (min u t) := by
-      rw [min_assoc, min_left_comm]; exact min_eq_right (min_le_of_right_le (min_le_right u t))
-    rw [min_max_distrib_right, ← hmin]
-    rcases le_total (min s t) (min u t) with h | h <;> simp [h, add_comm]
-  simp only [simpleGains_def, mul_sum, ← sum_sub_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  have hdiff : X (min (max (σ (i + 1)) u) t) ω - X (min (max (σ i) u) t) ω =
-      (X (min (σ (i + 1)) t) ω - X (min (σ i) t) ω) -
-        (X (min (σ (i + 1)) (min u t)) ω - X (min (σ i) (min u t)) ω) := by
-    linarith [hpair (σ (i + 1)), hpair (σ i)]
-  rw [hdiff]; ring
 
 end TauCeti.Finance

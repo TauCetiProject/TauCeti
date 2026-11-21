@@ -263,6 +263,50 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
 
+/-- Scaling a strategy pointwise by a sample-space factor scales its gains at each sample point. -/
+theorem simpleGains_mul_left (τ : ℕ → ι) (n : ℕ) (ξ : Ω → ℝ) (a : ℕ → Ω → ℝ)
+    (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleGains τ n (fun i ω ↦ ξ ω * a i ω) X t ω = ξ ω * simpleGains τ n a X t ω :=
+  simpleGains_smul τ n (ξ ω) a X t ω
+
+/-- Scaling a strategy pointwise by a sample-space factor scales its holding at each sample
+point. -/
+theorem simpleHolding_mul_left (τ : ℕ → ι) (n : ℕ) (ξ : Ω → ℝ) (a : ℕ → Ω → ℝ)
+    (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun i ω ↦ ξ ω * a i ω) t ω = ξ ω * simpleHolding τ n a t ω :=
+  simpleHolding_smul τ n (ξ ω) a t ω
+
+/-- Shifting every grid date up to `max (τ i) u` and scaling heights by `ξ` restricts
+`simpleHolding` to `(u, ∞)` and multiplies by `ξ` pointwise. -/
+theorem simpleHolding_max_eq (u : ι) (ξ : Ω → ℝ) (s : ι) (ω : Ω) :
+    simpleHolding (fun i ↦ max (τ i) u) n (fun i ω ↦ ξ ω * a i ω) s ω =
+      (Set.Ioi u).indicator (fun _ ↦ ξ ω * simpleHolding τ n a s ω) s := by
+  have hmem (i : ℕ) : s ∈ Set.Ioc (max (τ i) u) (max (τ (i + 1)) u) ↔
+      u < s ∧ s ∈ Set.Ioc (τ i) (τ (i + 1)) := by
+    simp only [Set.mem_Ioc, max_lt_iff, le_max_iff]
+    exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ ↦ ⟨h2, h1, h3.resolve_right h2.not_ge⟩,
+      fun ⟨h2, h1, h3⟩ ↦ ⟨⟨h1, h2⟩, Or.inl h3⟩⟩
+  by_cases hs : u < s <;> simp [simpleHolding_def, Set.indicator_apply, hmem, hs, mul_sum]
+
+/-- Shifting every grid date up to `max (τ i) u` and scaling heights by `ξ` gives the post-`u`
+gains increment multiplied by `ξ` against any price path `X`. -/
+theorem simpleGains_max_eq (u : ι) (ξ : Ω → ℝ) (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleGains (fun i ↦ max (τ i) u) n (fun i ω ↦ ξ ω * a i ω) X t ω =
+      ξ ω * (simpleGains τ n a X t ω - simpleGains τ n a X (min u t) ω) := by
+  have hpair (s : ι) :
+      X (min (max s u) t) ω + X (min s (min u t)) ω = X (min s t) ω + X (min u t) ω := by
+    have hmin : min (min s t) (min u t) = min s (min u t) := by
+      rw [min_assoc, min_left_comm]; exact min_eq_right (min_le_of_right_le (min_le_right u t))
+    rw [min_max_distrib_right, ← hmin]
+    rcases le_total (min s t) (min u t) with h | h <;> simp [h, add_comm]
+  simp only [simpleGains_def, mul_sum, ← sum_sub_distrib]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hdiff : X (min (max (τ (i + 1)) u) t) ω - X (min (max (τ i) u) t) ω =
+      (X (min (τ (i + 1)) t) ω - X (min (τ i) t) ω) -
+        (X (min (τ (i + 1)) (min u t)) ω - X (min (τ i) (min u t)) ω) := by
+    linarith [hpair (τ (i + 1)), hpair (τ i)]
+  rw [hdiff]; ring
+
 /-! ### Measurability -/
 
 section Measurability

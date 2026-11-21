@@ -13,7 +13,6 @@ import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Approximation by bounded finite-grid holdings
@@ -254,31 +253,6 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
 end MeasureTheory.IsStronglyPredictable
 
 namespace TauCeti.BrownianIntegrable
-
-/-- Left-measurable `L²` heights on any finite deterministic grid produce an integrand in the
-expected-square-energy domain `BrownianIntegrable ℱ P`, for any `SFinite` measure `P` and with no
-monotonicity assumption on the grid. -/
-theorem simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-    {P : Measure Ω} [SFinite P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (ha₂ : ∀ j < n, MemLp (a j) 2 P) :
-    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) where
-  isStronglyPredictable := Finance.isStronglyPredictable_simpleHolding ha
-  memLp T := by
-    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
-    exact (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
-      (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)
-
-/-- Bounded left-measurable heights on any finite deterministic grid produce an integrand in
-`BrownianIntegrable ℱ P` on a finite measure space `P`. -/
-theorem simpleHolding_of_bdd {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-    {P : Measure Ω} [IsFiniteMeasure P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j < n, ∃ C, ∀ ω, ‖a j ω‖ ≤ C) :
-    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
-  simpleHolding ha fun j hj ↦
-    let ⟨C, hC⟩ := hb j hj
-    MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
 
 /-- One sequence of bounded, left-measurable finite-grid holdings approximates an
 expected-square-integrable predictable process in L² on every finite horizon. The same

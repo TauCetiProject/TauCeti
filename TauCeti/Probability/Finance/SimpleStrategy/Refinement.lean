@@ -219,23 +219,10 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
       (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω - simpleHolding σ m b t ω) ∧
       ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
         simpleGains τ n a X t ω - simpleGains σ m b X t ω := by
-  obtain ⟨N, ρ, c, hρ₀, hρ, hc, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
-    ((range n).disjSum (range m)) (Sum.elim τ σ) (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1))
-    (Sum.elim a fun j ω ↦ -b j ω) (by
-      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
-      · exact ha j hj
-      · exact (hb j hj).neg)
+  obtain ⟨N, ρ, c, hρ₀, hρ, hc, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_add ℱ hτ hσ
+    ha (b := (-1 : ℝ) • b) fun j hj ↦ (hb j hj).const_mul (-1)
   refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
-  · rw [hhold, sum_disjSum, simpleHolding_def, simpleHolding_def, sub_eq_add_neg,
-      ← sum_neg_distrib]
-    simp only [Sum.elim_inl, Sum.elim_inr]
-    congr 1
-    refine sum_congr rfl fun j _ ↦ ?_
-    by_cases ht : t ∈ Set.Ioc (σ j) (σ (j + 1)) <;> simp [ht]
-  · rw [hgain, sum_disjSum, simpleGains_def, simpleGains_def, sub_eq_add_neg, ← sum_neg_distrib]
-    simp only [Sum.elim_inl, Sum.elim_inr]
-    congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
-    · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
-    · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
+  · rw [hhold t ω, simpleHolding_smul, neg_one_mul, ← sub_eq_add_neg]
+  · rw [hgain X t ω, simpleGains_smul, neg_one_mul, ← sub_eq_add_neg]
 
 end TauCeti.Finance

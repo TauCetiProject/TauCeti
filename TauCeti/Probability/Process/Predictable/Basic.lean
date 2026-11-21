@@ -66,6 +66,26 @@ theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
   simpa [S, indicator_apply] using
     (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
 
+/-- A height known at `s`, extended by zero outside `(s, ∞)`, is predictable. -/
+theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioi_predictable
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s : ι) {a : Ω → E}
+    (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioi s).indicator (fun _ ↦ a p.2) p.1) := by
+  classical
+  let : MeasurableSpace Ω := ℱ s
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let S : Set (ι × Ω) := Ioi s ×ˢ univ
+  have hS : MeasurableSet S := measurableSet_predictable_Ioi_prod MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨Ioi s ×ˢ A, measurableSet_predictable_Ioi_prod hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  simpa [S, indicator_apply] using
+    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+
 section Arithmetic
 
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]
@@ -86,6 +106,19 @@ theorem MeasureTheory.IsStronglyPredictable.mul [Mul E] [ContinuousMul E]
   -- Uncurrying respects pointwise multiplication; predictability is strong measurability.
   unfold IsStronglyPredictable at *
   exact hH.mul hK
+
+/-- Multiplying a strongly predictable process after `u` by an `ℱ u`-measurable random variable
+and extending by zero up to `u` preserves strong predictability. -/
+theorem MeasureTheory.IsStronglyPredictable.indicator_Ioi_mul
+    {ι : Type*} [LinearOrder ι] [OrderBot ι] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    [MulZeroClass E] [ContinuousMul E] (hH : IsStronglyPredictable ℱ H)
+    {u : ι} {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ u] ξ) :
+    IsStronglyPredictable ℱ (fun t ω ↦ (Ioi u).indicator (fun s ↦ ξ ω * H s ω) t) := by
+  have hξ_pred : IsStronglyPredictable ℱ (fun t ω ↦ (Ioi u).indicator (fun _ ↦ ξ ω) t) :=
+    ℱ.stronglyMeasurable_indicator_Ioi_predictable u hξ
+  convert hξ_pred.mul hH using 1
+  ext t ω
+  by_cases ht : u < t <;> simp [ht]
 
 /-- Inversion, with zero sent to zero, preserves strong predictability. -/
 theorem MeasureTheory.IsStronglyPredictable.inv₀ [GroupWithZero E] [ContinuousInv₀ E]

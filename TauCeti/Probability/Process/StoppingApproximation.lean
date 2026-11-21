@@ -157,11 +157,25 @@ theorem tendsto_dyadicCeilTime (u : WithTop ℝ≥0) :
       ((WithTop.continuous_coe.tendsto u).comp hu)
       (fun n => le_dyadicCeilTime n u) (fun n => (dyadicCeilTime_lt n u).le)
 
+/-- The nonnegative dyadic grid of mesh `2⁻ⁿ`. -/
+def dyadicGrid (n k : ℕ) : ℝ≥0 := (k : ℝ≥0) / 2 ^ n
+
+/-- Explicit formula for the dyadic grid of mesh `2⁻ⁿ`. -/
+theorem dyadicGrid_def (n k : ℕ) : dyadicGrid n k = (k : ℝ≥0) / 2 ^ n := by rw [dyadicGrid]
+
+/-- The dyadic grid of mesh `2⁻ⁿ` starts at zero. -/
+@[simp]
+theorem dyadicGrid_zero (n : ℕ) : dyadicGrid n 0 = 0 := by simp [dyadicGrid]
+
+/-- The dyadic grid of mesh `2⁻ⁿ` is strictly increasing. -/
+theorem strictMono_dyadicGrid (n : ℕ) : StrictMono (dyadicGrid n) :=
+  fun _ _ hij => div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) (by positivity)
+
 /-- Every rounded random time has countable range, even if the original time does not. -/
 theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0) (n : ℕ) :
     (range fun ω => dyadicCeilTime n (τ ω)).Countable := by
   refine ((Set.countable_range (fun k : ℕ =>
-    (((k : ℝ≥0) / 2 ^ n : ℝ≥0) : WithTop ℝ≥0))).insert ⊤).mono ?_
+    (dyadicGrid n k : WithTop ℝ≥0))).insert ⊤).mono ?_
   rintro _ ⟨ω, rfl⟩
   dsimp only
   cases h : τ ω with
@@ -169,6 +183,27 @@ theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0
   | coe t =>
     rw [dyadicCeilTime_coe]
     exact mem_insert_of_mem _ ⟨_, rfl⟩
+
+/-- Clipping the upward dyadic approximation of any random time at a deterministic horizon `T`
+leaves only finitely many values in `ℝ≥0`. -/
+theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
+    (τ : Ω → WithTop ℝ≥0) (n : ℕ) (T : ℝ≥0) :
+    (range fun ω => (min (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω))).untopA).Finite := by
+  refine ((Set.finite_Iio ⌈T * 2 ^ n⌉₊).image (dyadicGrid n) |>.insert T).subset ?_
+  rintro _ ⟨ω, rfl⟩
+  dsimp only
+  rcases le_or_gt (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)) with hle | hgt
+  · left
+    rw [min_eq_left hle, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+  · cases hτω : τ ω with
+    | top => rw [hτω, dyadicCeilTime_top] at hgt; exact (not_top_lt hgt).elim
+    | coe u =>
+      right
+      rw [hτω] at hgt
+      rw [dyadicCeilTime_coe] at hgt ⊢
+      rw [min_eq_right hgt.le, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+      exact ⟨⌈u * 2 ^ n⌉₊, Nat.lt_ceil.mpr ((div_lt_iff₀ (by positivity)).mp
+        (WithTop.coe_lt_coe.mp hgt)), rfl⟩
 
 /-- Rounding cannot turn a finite time into infinity. -/
 @[simp]

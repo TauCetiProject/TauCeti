@@ -8,8 +8,9 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.MeasureTheory.Integral.Indicator
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Data.ENNReal.Mul
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.Moments.Chebyshev
 
 /-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
@@ -51,9 +52,11 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   bounded function preserves convergence in measure without measurability or finiteness.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
-* `MeasureTheory.tendsto_measure_ge_of_ne_top`, `tendsto_measure_lintegral_enorm_add_sq`,
-  `tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm`: `ℝ≥0∞` threshold reduction and
-  convergence in measure of slice square lower integrals `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
+* `MeasureTheory.tendsto_measure_ge_of_ne_top`, `tendsto_measure_ge_of_ae_eventually_le`,
+  `tendsto_measure_lintegral_enorm_sq_bdd_mul`, `tendsto_measure_lintegral_enorm_add_sq`,
+  `tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm`: `ℝ≥0∞` threshold reduction,
+  finite-measure transfer, and convergence in measure of slice square lower integrals
+  `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -99,7 +102,7 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 variable {α ι E : Type*} {m : MeasurableSpace α} {μ : Measure α} {l : Filter ι}
 
@@ -549,9 +552,62 @@ theorem tendsto_measure_ge_of_ne_top {α ι : Type*} {mα : MeasurableSpace α} 
       measure_mono fun _ hx ↦ (le_top : (1 : ℝ≥0∞) ≤ ∞).trans hx
   · exact h ε hε htop
 
-/-- If the slice square lower integrals `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ` and
-`y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` both converge to `0` in `ν`-measure along `l`, then so does the
-slice square lower integral of `f i + g i`. -/
+/-- On a finite measure space, convergence in measure to `0` of measurable `ℝ≥0∞`-valued errors
+transfers along any countably generated filter to another measurable error family that is
+eventually dominated by it almost everywhere. -/
+theorem tendsto_measure_ge_of_ae_eventually_le {α ι : Type*} {mα : MeasurableSpace α}
+    {μ : Measure α} [IsFiniteMeasure μ] {l : Filter ι} [l.IsCountablyGenerated]
+    {E F : ι → α → ℝ≥0∞} (hE : ∀ i, Measurable (E i)) (hF : ∀ i, Measurable (F i))
+    {ε : ℝ≥0∞} (hlim : Tendsto (fun i ↦ μ {x | ε ≤ F i x}) l (𝓝 0))
+    (hle : ∀ᵐ x ∂μ, ∀ᶠ i in l, E i x ≤ F i x) :
+    Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0) := by
+  let B (i : ι) : Set α := {x | ε ≤ E i x} \ {x | ε ≤ F i x}
+  have hB : Tendsto (fun i ↦ μ (B i)) l (𝓝 0) := by
+    simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure (As := B) l
+      MeasurableSet.empty
+      (fun i ↦ (measurableSet_le measurable_const (hE i)).diff
+        (measurableSet_le measurable_const (hF i)))
+      (hle.mono fun x hx ↦ hx.mono fun i hi ↦ by
+        simp only [B, Set.mem_sdiff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
+          not_and, not_not]
+        exact fun hεE ↦ hεE.trans hi)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [add_zero] using hlim.add hB) (fun _ ↦ zero_le) fun i ↦
+    (measure_mono fun x hx ↦ by simp only [B, Set.mem_union, Set.mem_sdiff]; tauto).trans
+      (measure_union_le _ _)
+
+/-- If `‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ` with `ξ` uniformly norm-bounded and the slice square
+lower integrals `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` converge to `0` in `ν`-measure along `l`, then so
+do the slice square lower integrals of `f i`. Neither measurability nor finiteness of `μ` or `ν`
+is needed. -/
+theorem tendsto_measure_lintegral_enorm_sq_bdd_mul {α β ι E F G : Type*}
+    {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
+    [ENorm E] [ENorm F] [SeminormedAddCommGroup G] {l : Filter ι}
+    {f : ι → α → β → E} {g : ι → α → β → F} {ξ : β → G} {C : ℝ}
+    (hC : ∀ y, ‖ξ y‖ ≤ C)
+    (he : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
+    (hle : ∀ i x y, ‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  let M : NNReal := ⟨max C 1, by positivity⟩
+  have hM0 : (M : ℝ≥0∞) ≠ 0 :=
+    ENNReal.coe_ne_zero.mpr (NNReal.coe_pos.mp (lt_of_lt_of_le zero_lt_one (le_max_right _ _))).ne'
+  have hξM (y : β) : ‖ξ y‖ₑ ≤ M := by
+    rw [eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]; exact (hC y).trans (le_max_left _ _)
+  refine tendsto_measure_ge_of_ne_top (fun ε hε _ ↦ ?_) hε
+  have hM2_pos : (0 : ℝ≥0∞) < (M : ℝ≥0∞) ^ 2 := sq (M : ℝ≥0∞) ▸ ENNReal.mul_pos hM0 hM0
+  have hM2_top : (M : ℝ≥0∞) ^ 2 ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (he (ε / (M : ℝ≥0∞) ^ 2) (ENNReal.div_pos hε.ne' hM2_top))
+    (fun _ ↦ zero_le) fun i ↦ measure_mono fun y hy ↦ ?_
+  rw [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (Or.inl hM2_pos.ne') (Or.inl hM2_top), mul_comm]
+  exact hy.trans <| (lintegral_mono fun x ↦ ((pow_le_pow_left' (hle i x y) 2).trans_eq
+    (mul_pow _ _ 2)).trans (mul_le_mul_of_nonneg_right (pow_le_pow_left' (hξM y) 2)
+      zero_le)).trans_eq (lintegral_const_mul' _ _ hM2_top)
+
+/-- If eventually in `l`, for every `y`, the squared norm `x ↦ ‖f i x y‖ₑ ^ 2` of the first
+slice is `μ`-almost-everywhere measurable, and the slice square lower integrals
+`y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ` and `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` both converge to `0` in
+`ν`-measure along `l`, then so does the slice square lower integral of `f i + g i`. -/
 theorem tendsto_measure_lintegral_enorm_add_sq {α β ι E : Type*}
     {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
     [SeminormedAddCommGroup E] {l : Filter ι} {f g : ι → α → β → E}
@@ -569,17 +625,18 @@ theorem tendsto_measure_lintegral_enorm_add_sq {α β ι E : Type*}
       (.of_forall fun _ ↦ zero_le) (hf.mono fun i hi ↦ (measure_mono fun y hy ↦ ?_).trans
         (measure_union_le _ _))
     have hbd : (∫⁻ x, ‖f i x y + g i x y‖ₑ ^ 2 ∂μ) ≤
-        2 * (∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ) + 2 * (∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ) :=
-      (lintegral_mono fun x ↦ (pow_le_pow_left' (eNorm_add_le _ _) 2).trans
-        (ENNReal.add_sq_le _ _)).trans_eq <| by
-          rw [lintegral_const_mul' _ _ (by norm_num), lintegral_add_left' (hi y), mul_add]
+        2 * ((∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ) + ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ) := by
+      simpa only [Pi.zero_apply, sub_zero, sub_neg_eq_add, eNorm_neg] using
+        TauCeti.lintegral_enorm_sub_sq_le_two_mul (f := (f i · y)) (g := fun x ↦ -g i x y)
+          (h := 0) (by simpa only [Pi.zero_apply, sub_zero] using hi y)
     by_contra hnot
     simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
-    have h4 : (2 : ℝ≥0∞) * (ε / 4) + 2 * (ε / 4) = ε := by
-      rw [← add_mul, two_add_two_eq_four, ENNReal.mul_div_cancel (by norm_num) (by norm_num)]
-    exact (hy.trans hbd).not_gt <| (ENNReal.add_lt_add
-      (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num) hnot.1)
-      (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num) hnot.2)).trans_eq h4) hε
+    have h4 : (2 : ℝ≥0∞) * (ε / 4 + ε / 4) = ε := by
+      rw [mul_add, ← add_mul, two_add_two_eq_four,
+        ENNReal.mul_div_cancel (by norm_num) (by norm_num)]
+    exact (hy.trans hbd).not_gt <|
+      (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num)
+        (ENNReal.add_lt_add hnot.1 hnot.2)).trans_eq h4) hε
 
 /-- Convergence of `f i` to `0` in `L²(μ.prod ν)` implies convergence of the slice square lower
 integrals `y ↦ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ` to `0` in `ν`-measure, along any filter and for any
@@ -603,8 +660,8 @@ theorem tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm {α β ι E : Type
       rw [← lintegral_prod_symm _ hm]
       simpa only [NNReal.coe_ofNat, ENNReal.rpow_two, ENNReal.coe_ofNat] using
         (eLpNorm_nnreal_pow_eq_lintegral (p := (2 : NNReal)) (by norm_num) hi).symm
-    rw [← hmean, ← one_mul (ν _), ← ENNReal.inv_mul_cancel hε.ne' htop, mul_assoc]
-    exact mul_le_mul_right (mul_meas_ge_le_lintegral₀ hm.lintegral_prod_left' ε) _) hε
+    exact (MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left' hε.ne' htop).trans_eq
+      (by rw [hmean, div_eq_mul_inv, mul_comm])) hε
 
 end MeasureTheory
 
