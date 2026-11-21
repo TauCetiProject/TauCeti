@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
@@ -38,6 +39,8 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps, and
   `TauCeti.BalancedExtension.congr` for `R`-linear equivalences.
 * `TauCeti.BalancedExtension.lid`: extension along the identity, `R ⊗_R P ≃ P`.
+* `TauCeti.BalancedExtension.moduleBase`: for an `A`-algebra `S`, the `A`-action on `S ⊗_R P`
+  restricted from the `S`-action; it is not an instance.
 * `TauCeti.BalancedExtension.cancelBaseChange`: extension along a composite,
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
@@ -303,6 +306,37 @@ theorem congrRingHom_tmul {g : R →+* S} (h : f = g) (s : S) (p : P) :
     congrRingHom h (tmul f s p) = tmul g s p := by
   subst g
   rfl
+
+@[simp]
+theorem congrRingHom_symm {g : R →+* S} (h : f = g) :
+    (congrRingHom h).symm = congrRingHom (P := P) h.symm := by
+  subst g
+  rfl
+
+section CentralAction
+
+/-- Scalars acting compatibly with the destination ring act on the first factor of `S ⊗_R P`. -/
+@[simp]
+theorem smul_tmul' {C : Type*} [SMul C S] [SMul C (BalancedExtension f P)]
+    [IsScalarTower C S (BalancedExtension f P)] (c : C) (s : S) (p : P) :
+    c • tmul f s p = tmul f (c • s) p := by
+  rw [tmul_eq_smul_one_tmul, ← smul_assoc, ← tmul_eq_smul_one_tmul]
+
+variable (A : Type*) [CommSemiring A] [Algebra A S]
+
+variable (f P) in
+/-- The `A`-action on `S ⊗_R P` restricted from the `S`-action, for an `A`-algebra `S`. As with
+`TauCeti.CentralBaseChange.module`, it is not an instance; activate it locally when needed. -/
+noncomputable abbrev moduleBase : Module A (BalancedExtension f P) :=
+  Module.restrictScalars A S _
+
+attribute [local instance low] moduleBase
+
+/-- Restricting the destination action to an `A`-algebra structure forms a scalar tower. -/
+instance : IsScalarTower A S (BalancedExtension f P) :=
+  IsScalarTower.restrictScalars A S _
+
+end CentralAction
 
 section Identity
 

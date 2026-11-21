@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-public import TauCeti.RingTheory.DedekindDomain.LocallyFree.Basic
+public import TauCeti.RingTheory.DedekindDomain.LocallyFree.ScalarChange
 
 /-!
 # The locally free class group of an order
@@ -36,9 +36,10 @@ Extension of scalars along a ring homomorphism `f : Λ →+* Λ'`, for instance 
 `Λ` into a maximal order `Λ'`, sends `c(M, n)` to `c(Λ' ⊗_Λ M, n)`. Restricted to `Cl(Λ)` this is
 `TauCeti.LocallyFree.classGroupK0Map`, valued in `K₀(Λ')`; its kernel is the *kernel group*
 `D(Λ)`. The kernel depends only on the map into `K₀(Λ')`, of which `Cl(Λ')` is a subgroup.
-For morphisms of algebras finite over the central base, the subgroup-valued map
-`TauCeti.LocallyFree.classGroupMap` is constructed in
-`TauCeti.RingTheory.DedekindDomain.LocallyFree.ScalarChange`.
+For a morphism `f : Λ →ₐ[A] Γ` of `A`-algebras whose destination `Γ` is finite over `A` (the
+source need not be), extension of scalars preserves locally free lattices of every rank
+(`TauCeti.LocallyFree.IsLocallyFreeOfRank.extendScalars`), so it restricts to the
+subgroup-valued map `TauCeti.LocallyFree.classGroupMap A K f : Cl(Λ) → Cl(Γ)`.
 
 ## Main definitions
 
@@ -47,6 +48,8 @@ For morphisms of algebras finite over the central base, the subgroup-valued map
 * `TauCeti.LocallyFree.classGroupK0Map A K f`: extension of scalars `Cl(Λ) → K₀(Λ')` along
   `f : Λ →+* Λ'`.
 * `TauCeti.LocallyFree.kernelGroup A K f`: its kernel, the kernel group `D(Λ)`.
+* `TauCeti.LocallyFree.classGroupMap A K f`: extension of scalars `Cl(Λ) → Cl(Γ)` along a
+  morphism `f : Λ →ₐ[A] Γ` of `A`-algebras with `Γ` finite over `A`.
 
 ## Main results
 
@@ -60,11 +63,16 @@ For morphisms of algebras finite over the central base, the subgroup-valued map
 * `TauCeti.LocallyFree.classOf_mem_classGroup` and `TauCeti.LocallyFree.classGroup_le_iff`: if
   `A` is not a field, the classes of locally free lattices lie in `Cl(Λ)` and generate it.
 * `TauCeti.LocallyFree.classGroup_eq_bot`: over a field, `Cl(Λ)` is trivial.
-* `TauCeti.LocallyFree.classGroupK0Map_classOf`: extension of scalars sends `[M] - n[Λ]` to
+* `TauCeti.FiniteProjectiveModules.map_extendScalars_classOf` and
+  `TauCeti.LocallyFree.classGroupK0Map_classOf`: extension of scalars sends `[M] - n[Λ]` to
   `[Λ' ⊗_Λ M] - n[Λ']`.
 * `TauCeti.LocallyFree.classOf_mem_kernelGroup_iff`: the class of a locally free lattice `M` lies
   in the kernel group exactly when `Λ' ⊗_Λ M` is stably free.
 * `TauCeti.LocallyFree.kernelGroup_id`: the kernel group of the identity is trivial.
+* `TauCeti.LocallyFree.classGroupMap_classOf`, `TauCeti.LocallyFree.classGroupMap_id`, and
+  `TauCeti.LocallyFree.classGroupMap_comp`: the generator formula and functoriality of the
+  subgroup-valued map.
+* `TauCeti.LocallyFree.ker_classGroupMap`: the kernel of `Cl(Λ) → Cl(Γ)` is the kernel group.
 
 ## References
 
@@ -73,6 +81,8 @@ For morphisms of algebras finite over the central base, the subgroup-valued map
   Remark 20.7.13, for the identification of the stable class group with a subgroup of `K₀`.
 * F. Ferri and C. Greither, *Tame Galois module structure revisited*, Introduction, pp. 2–3, for
   the kernel group.
+* A. Fröhlich, *Arithmetic and Galois module structure for tame extensions*, Appendix VI,
+  Proposition 2, and Appendix VII, Proposition 1, for the map `Cl(Λ) → Cl(Γ)`.
 -/
 
 public section
@@ -148,11 +158,12 @@ theorem classGroupK0Map_apply (x : classGroup A K Λ) :
 
 variable {A K}
 
-/-- If `A` is not a field, extension of scalars sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`. -/
-theorem classGroupK0Map_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
-    classGroupK0Map A K f ⟨classOf Λ M n, classOf_mem_classGroup hA h⟩ =
+/-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every
+finitely generated projective `Λ`-module `M`. -/
+theorem _root_.TauCeti.FiniteProjectiveModules.map_extendScalars_classOf :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (classOf Λ M n) =
       classOf Λ' (BalancedExtension f M) n := by
-  rw [classGroupK0Map_apply, Subtype.coe_mk, classOf_def, classOf_def, map_sub, map_nsmul,
+  rw [classOf_def, classOf_def, map_sub, map_nsmul,
     SplitK0.map_of, SplitK0.map_of,
     SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' (BalancedExtension f M),
       finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _),
@@ -161,6 +172,12 @@ theorem classGroupK0Map_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K 
       finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)
       ((BalancedExtension.congr f (LinearEquiv.funUnique (Fin 1) Λ Λ).symm).trans
         ((BalancedExtension.piScalarRight f (Fin 1)).trans (LinearEquiv.funUnique (Fin 1) Λ' Λ')))]
+
+/-- If `A` is not a field, extension of scalars sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`. -/
+theorem classGroupK0Map_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
+    classGroupK0Map A K f ⟨classOf Λ M n, classOf_mem_classGroup hA h⟩ =
+      classOf Λ' (BalancedExtension f M) n :=
+  map_extendScalars_classOf f
 
 variable (A K) in
 /-- The *kernel group* `D(Λ)`: the kernel of extension of scalars `Cl(Λ) → K₀(Λ')` along
@@ -181,20 +198,110 @@ theorem classOf_mem_kernelGroup_iff (hA : ¬IsField A) (h : IsLocallyFreeOfRank 
       ∃ k : ℕ, Nonempty ((BalancedExtension f M × (Fin k → Λ')) ≃ₗ[Λ'] (Fin (n + k) → Λ')) := by
   rw [kernelGroup, AddMonoidHom.mem_ker, classGroupK0Map_classOf f hA h, classOf_eq_zero_iff]
 
+variable (Λ) in
+/-- Extension of scalars along the identity is the identity on split `K₀`, since it is
+isomorphic to the identity functor, `Λ ⊗_Λ P ≃ P`. -/
+private theorem map_extendScalars_id :
+    SplitK0.map.{u, u} (RingHom.id Λ).finiteProjectiveModulesExtendScalars = AddMonoidHom.id _ := by
+  rw [SplitK0.map_congr.{u, u} (G := 𝟭 _) fun P ↦
+    ⟨ObjectProperty.isoMk _ (eqToIso ((RingHom.id Λ).finiteProjectiveModulesExtendScalars_obj_obj
+      P) ≪≫ (BalancedExtension.lid Λ P.obj).toModuleIso)⟩, SplitK0.map_id]
+
+/-- Extension of scalars along a composite is the composite on split `K₀`, through
+`Λ'' ⊗_Λ P ≃ Λ'' ⊗_Λ' (Λ' ⊗_Λ P)`. -/
+private theorem map_extendScalars_comp {Λ'' : Type u} [Ring Λ''] (g : Λ' →+* Λ'') :
+    SplitK0.map.{u, u} (g.comp f).finiteProjectiveModulesExtendScalars =
+      (SplitK0.map.{u, u} g.finiteProjectiveModulesExtendScalars).comp
+        (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars) := by
+  rw [← SplitK0.map_comp]
+  exact SplitK0.map_congr fun P ↦
+    ⟨ObjectProperty.isoMk _ (eqToIso ((g.comp f).finiteProjectiveModulesExtendScalars_obj_obj
+      P) ≪≫ (BalancedExtension.cancelBaseChange f g).symm.toModuleIso ≪≫
+        (BalancedExtension.congr g (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj
+          P)).symm.toLinearEquiv).toModuleIso ≪≫
+        eqToIso (g.finiteProjectiveModulesExtendScalars_obj_obj _).symm)⟩
+
 variable (A K Λ) in
 /-- The kernel group of the identity is trivial. -/
 @[simp]
 theorem kernelGroup_id : kernelGroup A K (RingHom.id Λ) = ⊥ := by
-  -- Extension of scalars along the identity is isomorphic to the identity functor, `Λ ⊗_Λ P ≃ P`.
-  have hmap : SplitK0.map.{u, u} (RingHom.id Λ).finiteProjectiveModulesExtendScalars =
-      AddMonoidHom.id _ := by
-    rw [SplitK0.map_congr.{u, u} (G := 𝟭 _) fun P ↦
-      ⟨ObjectProperty.isoMk _ (eqToIso ((RingHom.id Λ).finiteProjectiveModulesExtendScalars_obj_obj
-        P) ≪≫ (BalancedExtension.lid Λ P.obj).toModuleIso)⟩, SplitK0.map_id]
   ext x
-  rw [mem_kernelGroup_iff, hmap, AddMonoidHom.id_apply, AddSubgroup.mem_bot,
+  rw [mem_kernelGroup_iff, map_extendScalars_id, AddMonoidHom.id_apply, AddSubgroup.mem_bot,
     ZeroMemClass.coe_eq_zero]
 
 end ClassGroup
+
+section ClassGroupMap
+
+attribute [local instance low] BalancedExtension.moduleBase
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A] {K : Type*} [Field K] [Algebra A K]
+  [IsFractionRing A K] {Λ Γ : Type u} [Ring Λ] [Ring Γ] [Algebra A Λ] [Algebra A Γ]
+  [Module.Finite A Γ] (f : Λ →ₐ[A] Γ)
+
+/-- Scalar extension sends the locally free class subgroup into the destination subgroup. -/
+theorem classGroupK0Map_mem_classGroup (x : classGroup A K Λ) :
+    classGroupK0Map A K (RingHomClass.toRingHom f) x ∈ classGroup A K Γ := by
+  classical
+  by_cases hA : IsField A
+  · have hx : x = 0 := Subtype.ext (by simpa [classGroup_eq_bot K Λ hA] using x.property)
+    simp [hx]
+  have hle : classGroup A K Λ ≤ (classGroup A K Γ).comap
+      (SplitK0.map.{u, u} (RingHomClass.toRingHom f).finiteProjectiveModulesExtendScalars) := by
+    rw [classGroup_le_iff hA]
+    intro M _ _ _ _ _ _ n h
+    rw [AddSubgroup.mem_comap]
+    rw [map_extendScalars_classOf]
+    exact classOf_mem_classGroup hA (h.extendScalars f)
+  simpa only [classGroupK0Map_apply, AddSubgroup.mem_comap] using hle x.property
+
+variable (A K) in
+/-- Extension of scalars on locally free class groups, for a morphism of algebras whose
+destination is finite over the central Dedekind base. This includes inclusions of orders. -/
+noncomputable def classGroupMap : classGroup A K Λ →+ classGroup A K Γ :=
+  (classGroupK0Map A K (RingHomClass.toRingHom f)).codRestrict (classGroup A K Γ)
+    (classGroupK0Map_mem_classGroup f)
+
+/-- The class-group map agrees with scalar extension in ambient projective `K₀`. -/
+@[simp]
+theorem coe_classGroupMap (x : classGroup A K Λ) :
+    (classGroupMap A K f x : SplitK0.{u} (finiteProjectiveModules Γ).FullSubcategory) =
+      classGroupK0Map A K (RingHomClass.toRingHom f) x := (rfl)
+
+variable {M : Type u} [AddCommGroup M] [Module A M] [Module Λ M] [IsScalarTower A Λ M]
+  [Module.Finite Λ M] [Module.Projective Λ M] {n : ℕ}
+
+/-- Extension of scalars sends the reduced class of `M` to the reduced class of `Γ ⊗_Λ M`. -/
+theorem classGroupMap_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
+    classGroupMap A K f ⟨FiniteProjectiveModules.classOf Λ M n, classOf_mem_classGroup hA h⟩ =
+      ⟨FiniteProjectiveModules.classOf Γ (BalancedExtension (RingHomClass.toRingHom f) M) n,
+        classOf_mem_classGroup hA (h.extendScalars f)⟩ :=
+  Subtype.ext (classGroupK0Map_classOf (RingHomClass.toRingHom f) hA h)
+
+/-- The kernel of the subgroup-valued scalar map is the kernel group, as computed in `K₀`. -/
+@[simp]
+theorem ker_classGroupMap :
+    (classGroupMap A K f).ker = kernelGroup A K (RingHomClass.toRingHom f) :=
+  AddMonoidHom.ker_codRestrict _ _ _
+
+variable (A K Λ) in
+/-- Extension of scalars along the identity is the identity of `Cl(Λ)`. -/
+@[simp]
+theorem classGroupMap_id [Module.Finite A Λ] :
+    classGroupMap A K (AlgHom.id A Λ) = AddMonoidHom.id _ :=
+  AddMonoidHom.ext fun x ↦ Subtype.ext <| by
+    rw [coe_classGroupMap, classGroupK0Map_apply, AlgHom.id_toRingHom, map_extendScalars_id,
+      AddMonoidHom.id_apply, AddMonoidHom.id_apply]
+
+/-- Extension of scalars along a composite is the composite of the class-group maps. -/
+@[simp]
+theorem classGroupMap_comp {Γ' : Type u} [Ring Γ'] [Algebra A Γ'] [Module.Finite A Γ']
+    (g : Γ →ₐ[A] Γ') :
+    classGroupMap A K (g.comp f) = (classGroupMap A K g).comp (classGroupMap A K f) :=
+  AddMonoidHom.ext fun x ↦ Subtype.ext <| by
+    simp only [coe_classGroupMap, AddMonoidHom.comp_apply, classGroupK0Map_apply,
+      AlgHom.comp_toRingHom, map_extendScalars_comp]
+
+end ClassGroupMap
 
 end TauCeti.LocallyFree
