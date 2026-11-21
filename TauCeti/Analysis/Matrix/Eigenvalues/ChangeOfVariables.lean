@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.Diagonalization
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralCoordinates
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 

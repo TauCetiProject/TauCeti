@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.Matrix.SkewAdjoint
-public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
+public import TauCeti.Analysis.Matrix.SelfAdjoint
 import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
