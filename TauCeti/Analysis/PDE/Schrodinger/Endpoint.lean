@@ -172,11 +172,6 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_endpoint
     intro h
     rw [h, ENNReal.inv_zero, ENNReal.toReal_top, mul_zero, add_zero] at hr
     linarith
-  have hrtop : r ≠ ∞ := by
-    intro h
-    rw [h, ENNReal.inv_top, ENNReal.toReal_zero] at hrinv
-    have : (Module.finrank ℝ E : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos hn'
-    linarith
   have hr2 : 2 ≤ r := ENNReal.two_le_of_toReal_inv_le hr0 (by
     rw [hrinv]; linarith [inv_pos.2 (two_pos.trans hn')])
   -- Test against `L^{r'}` with `r'` the Hölder conjugate of `r`.
@@ -185,6 +180,6 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_endpoint
     (r' := (1 - r⁻¹)⁻¹) hn hr
   exact ⟨C, fun f ↦ (continuous_phasePropagator_apply laplacianSymbol f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := 2) (r' := (1 - r⁻¹)⁻¹)
-      ENNReal.ofNat_ne_top hrtop hr2 fun G hG _ ↦ hC f G hG⟩
+      ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ hC f G hG⟩
 
 end TauCeti
