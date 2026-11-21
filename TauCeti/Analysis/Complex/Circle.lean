@@ -68,6 +68,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   is differentiable.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
+* `Circle.continuous_toUnits`: continuity of the inclusion `Circle → ℂˣ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 -/
 
@@ -374,6 +375,11 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 /-- Every point of `Circle` belongs to `unitary ℂ`. -/
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
+/-- The inclusion `Circle.toUnits : Circle → ℂˣ` is continuous. -/
+@[fun_prop]
+theorem continuous_toUnits : Continuous toUnits :=
+  Units.continuous_iff.2 ⟨continuous_subtypeVal, continuous_subtypeVal.inv₀ coe_ne_zero⟩
 
 end Circle
 

@@ -133,22 +133,31 @@ noncomputable def multiplicativeGroupDiagonal :
 /-- **The diagonal `𝔾ₘ → Res_{B/A} 𝔾ₘ` on points.** Precomposing a point `x` of `𝔾ₘ` over `T` with
 `WeilRestriction.multiplicativeGroupDiagonal` gives the unit `1 ⊗ r` of `B ⊗[A] T`, where `r` is
 the unit of `T` attached to `x`. -/
+@[simp↓]
 theorem multiplicativeGroupPoints_mapDomain_multiplicativeGroupDiagonal
     (x : WithConv (A[T;T⁻¹] →ₐ[A] T)) :
     multiplicativeGroupPoints A B T (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) =
       Units.map (Algebra.TensorProduct.includeRight : T →ₐ[A] B ⊗[A] T).toMonoidHom
         (MultiplicativeGroup.pointsMulEquiv x) := by
   ext
-  rw [multiplicativeGroupDiagonal, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
-    multiplicativeGroupPoints, MulEquiv.trans_apply, pointsMulEquiv_mapDomain_mapBialgHom,
-    pointsMulEquiv_mapDomain_diagonal, MultiplicativeGroup.pointsMulEquiv_apply,
-    laurentEvalEquiv_symm_apply, BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
-    TauCeti.AlgHom.ofConv_pointsLTensor]
-  have hT : ((AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm.toBialgHom
-      (LaurentPolynomial.T 1)) = (1 : B) ⊗ₜ[A] LaurentPolynomial.T 1 :=
+  have hpt :
+      (multiplicativeGroupPoints A B T
+          (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) : B ⊗[A] T) =
+        Algebra.TensorProduct.lTensor (R := A) (S := B) B x.ofConv
+          ((AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm
+            (LaurentPolynomial.T 1)) := by
+    rw [multiplicativeGroupDiagonal, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+      multiplicativeGroupPoints, MulEquiv.trans_apply, pointsMulEquiv_mapDomain_mapBialgHom,
+      pointsMulEquiv_mapDomain_diagonal, MultiplicativeGroup.pointsMulEquiv_apply,
+      laurentEvalEquiv_symm_apply, BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
+      TauCeti.AlgHom.ofConv_pointsLTensor, BialgHom.coe_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
+      BialgEquiv.coe_toBialgHom]
+  have hT :
+      (AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm (LaurentPolynomial.T 1) =
+        (1 : B) ⊗ₜ[A] LaurentPolynomial.T 1 :=
     AddMonoidAlgebra.scalarTensorBialgEquiv_symm_single A B (1 : ℤ) (1 : B)
-  rw [BialgHom.coe_toAlgHom, hT]
-  simp [MultiplicativeGroup.pointsMulEquiv_apply]
+  rw [hpt, hT]
+  simp
 
 /-- The unit of `B ⊗[A] U` classifying a bialgebra map `WeilRestriction A B B[T;T⁻¹] →ₐc[A] U`
 is group-like over `B`. -/

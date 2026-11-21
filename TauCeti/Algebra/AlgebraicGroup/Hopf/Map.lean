@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 
 /-!
 # Functoriality in the coordinate Hopf algebra
@@ -33,6 +34,8 @@ For a commutative Hopf algebra `H`, this is the contravariant functoriality of
 * `BialgHom.mapValue_mapDomain`: pre-composition in the coordinate algebra commutes with
   post-composition in the value algebra.
 * `BialgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
+* `BialgHom.mapDomain_antipodeBialgHom`: pre-composition by the antipode bialgebra endomorphism
+  is convolution inversion.
 
 The convolution-preservation proof is the bialgebra-morphism version of Mathlib's
 `AlgHom.convMul_comp_bialgHom_distrib`, from `Mathlib.RingTheory.Bialgebra.Convolution`.
@@ -205,6 +208,23 @@ lemma _root_.BialgHom.mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithC
   exact algHom_inv_apply f (φ h)
 
 end Hopf
+
+section AntipodeBialgHom
+
+variable [CommSemiring H₁] [_root_.HopfAlgebra R H₁] [Coalgebra.IsCocomm R H₁]
+variable [CommSemiring A] [Algebra R A]
+
+/-- Pre-composition by the antipode bialgebra endomorphism is convolution inversion on points. -/
+@[simp↓]
+lemma _root_.BialgHom.mapDomain_antipodeBialgHom (f : WithConv (H₁ →ₐ[R] A)) :
+    mapDomain (TauCeti.HopfAlgebra.antipodeBialgHom (R := R) (A := H₁)) f = f⁻¹ := by
+  apply WithConv.ofConv_injective
+  ext x
+  rw [mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
+    TauCeti.HopfAlgebra.antipodeBialgHom_toAlgHom]
+  exact (algHom_inv_apply f x).symm
+
+end AntipodeBialgHom
 
 end AlgHom
 end TauCeti

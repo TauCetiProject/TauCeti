@@ -64,11 +64,11 @@ shrinking part.
   functors comes from, with `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` its
   defining property, `TauCeti.CommHopfAlgCat.homOfPointsMap_mapPointsFunctor` the converse
   recovery law, `TauCeti.CommHopfAlgCat.homOfPointsMap_id` and
-  `TauCeti.CommHopfAlgCat.homOfPointsMap_comp` its functoriality,
-  `TauCeti.CommHopfAlgCat.isoOfPointsIso` the recovered isomorphism from a natural isomorphism
-  of points functors, and `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap` its action on
-  arbitrary-universe points. This is the form in which fullness is used downstream, where a
-  group-scheme morphism is built from its natural action on points.
+  `TauCeti.CommHopfAlgCat.homOfPointsMap_comp` its functoriality, and
+  `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap` /
+  `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap_of_natural` its action on arbitrary-universe
+  points. This is the form in which fullness is used downstream, where a group-scheme morphism is
+  built from its natural action on points.
 * `TauCeti.CommHopfAlgCat.essImage_pointsFunctor`: the essential image consists exactly of
   group functors with corepresentable underlying functor.
 
@@ -621,32 +621,6 @@ theorem homOfPointsMap_comp {H K L : _root_.CommHopfAlgCat.{u} R}
     simp only [CommHopfAlgCat.Hom.mapPointsFunctor_comp, mapPointsFunctor_homOfPointsMap]
   exact Quiver.Hom.op_inj (Functor.map_injective _ h)
 
-/-- Recover a coordinate Hopf-algebra isomorphism `K ≅ H` from a natural isomorphism of
-group-valued points functors `pointsFunctor H ≅ pointsFunctor K`. -/
-@[expose] noncomputable def isoOfPointsIso {H K : _root_.CommHopfAlgCat.{u} R}
-    (e : HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
-      HopfAlgebra.pointsFunctor (R := R) (H := K)) : K ≅ H where
-  hom := homOfPointsMap e.hom
-  inv := homOfPointsMap e.inv
-  hom_inv_id := by rw [← homOfPointsMap_comp, e.inv_hom_id, homOfPointsMap_id]
-  inv_hom_id := by rw [← homOfPointsMap_comp, e.hom_inv_id, homOfPointsMap_id]
-
-/-- The forward morphism of `isoOfPointsIso e` is `homOfPointsMap e.hom`. -/
-@[simp]
-theorem isoOfPointsIso_hom {H K : _root_.CommHopfAlgCat.{u} R}
-    (e : HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
-      HopfAlgebra.pointsFunctor (R := R) (H := K)) :
-    (isoOfPointsIso e).hom = homOfPointsMap e.hom :=
-  rfl
-
-/-- The inverse morphism of `isoOfPointsIso e` is `homOfPointsMap e.inv`. -/
-@[simp]
-theorem isoOfPointsIso_inv {H K : _root_.CommHopfAlgCat.{u} R}
-    (e : HopfAlgebra.pointsFunctor (R := R) (H := H) ≅
-      HopfAlgebra.pointsFunctor (R := R) (H := K)) :
-    (isoOfPointsIso e).inv = homOfPointsMap e.inv :=
-  rfl
-
 /-- Evaluating the coordinate morphism `homOfPointsMap α` at the identity point `id_H` recovers
 the component `α.app (CommAlgCat.of R H)` on `id_H`. -/
 theorem mapDomain_homOfPointsMap_id {H K : _root_.CommHopfAlgCat.{u} R}
@@ -674,6 +648,20 @@ theorem mapDomain_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
     (BialgHom.mapValue_mapDomain (homOfPointsMap α).hom g.ofConv).symm (toConv (AlgHom.id R H))
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, hg, mapDomain_homOfPointsMap_id] at hnat
   exact hnat.symm
+
+/-- Precomposing an `S`-point `g` with `homOfPointsMap α` acts by a pointwise family `ψS`
+whenever `α` agrees at `id_H` with a point `pH` whose `mapValue` along `g` is `ψS g`. -/
+theorem mapDomain_homOfPointsMap_of_natural {H K : _root_.CommHopfAlgCat.{u} R}
+    (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
+      HopfAlgebra.pointsFunctor (R := R) (H := K))
+    {S : Type*} [CommRing S] [Algebra R S]
+    (pH : WithConv (K →ₐ[R] H))
+    (ψS : WithConv (H →ₐ[R] S) → WithConv (K →ₐ[R] S))
+    (hid : α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)) = pH)
+    (hnat : ∀ g : WithConv (H →ₐ[R] S), AlgHom.mapValue (H := K) g.ofConv pH = ψS g)
+    (g : WithConv (H →ₐ[R] S)) :
+    BialgHom.mapDomain (homOfPointsMap α).hom g = ψS g := by
+  rw [mapDomain_homOfPointsMap, hid, hnat]
 
 /-- Precomposition by `unopUnop` turns representability on a double opposite into
 corepresentability. This is the type-valued variance correction underlying the essential-image

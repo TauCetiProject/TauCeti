@@ -240,13 +240,10 @@ noncomputable def normBialgHom :
       rw [← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom
           (R := k) (H := Algebra.WeilRestriction k k' k'[T;T⁻¹]),
         ← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom (R := k) (H := k[T;T⁻¹]),
-        toConv_ofConv, toConv_comp_normHom, map_one, map_one, map_one])
-    (WithConv.toConv_injective <| by
-      rw [TauCeti.Bialgebra.toConv_comp_comulAlgHom,
-        Algebra.TensorProduct.map_comp_includeLeft, Algebra.TensorProduct.map_comp_includeRight,
-        ← ofConv_toConv (Bialgebra.comulAlgHom k _),
-        TauCeti.Bialgebra.comulPoint_eq_include_mul, toConv_comp_normHom, toConv_comp_normHom,
-        toConv_comp_normHom, map_mul, map_mul, map_mul])
+        toConv_ofConv]
+      simp only [toConv_comp_normHom, map_one])
+    (TauCeti.Bialgebra.map_comp_comulAlgHom_of_mul (normHom k k') fun f g ↦ by
+      simp only [toConv_comp_normHom, map_mul])
 
 variable (k k') in
 /-- The algebra homomorphism underlying `TauCeti.NormTorus.normBialgHom` is `normHom`. -/
@@ -258,6 +255,7 @@ theorem normBialgHom_toAlgHom :
 
 /-- **The norm bialgebra homomorphism on points.** Precomposing a point `f` of `Res_{k'/k} 𝔾ₘ` over
 `R` with `normBialgHom k k'` gives the norm of the unit of `k' ⊗[k] R` attached to `f`. -/
+@[simp↓]
 theorem pointsMulEquiv_mapDomain_normBialgHom
     (f : WithConv (Algebra.WeilRestriction k k' k'[T;T⁻¹] →ₐ[k] R)) :
     MultiplicativeGroup.pointsMulEquiv (BialgHom.mapDomain (normBialgHom k k') f) =

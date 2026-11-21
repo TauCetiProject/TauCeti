@@ -200,11 +200,15 @@ noncomputable def tensorProductComplexAlgEquiv : A ⊗[ℝ] ℂ ≃ₐ[A] A × A
 
 variable {A}
 
+/-- Applying `tensorProductComplexAlgEquiv A` commutes the tensor factors `A ⊗[ℝ] ℂ` to `ℂ ⊗[ℝ] A`
+and applies `TauCeti.complexTensorProductEquivProd A`. -/
 theorem tensorProductComplexAlgEquiv_apply (x : A ⊗[ℝ] ℂ) :
     tensorProductComplexAlgEquiv A x =
       complexTensorProductEquivProd A (Algebra.TensorProduct.comm ℝ A ℂ x) :=
   (rfl)
 
+/-- On a pure tensor `a ⊗ₜ z`, `tensorProductComplexAlgEquiv A` evaluates to the pair
+`(a * algebraMap ℂ A z, a * algebraMap ℂ A (conj z))`. -/
 @[simp]
 theorem tensorProductComplexAlgEquiv_tmul (a : A) (z : ℂ) :
     tensorProductComplexAlgEquiv A (a ⊗ₜ[ℝ] z) =
