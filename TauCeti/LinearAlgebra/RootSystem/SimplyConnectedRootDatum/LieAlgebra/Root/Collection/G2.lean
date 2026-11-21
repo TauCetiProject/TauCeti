@@ -62,20 +62,6 @@ local macro "g2_table" : tactic => `(tactic|
    try dsimp +instances only [numRoots, rank]
    decide))
 
-private theorem g2_positive_root_sum_pairs : ∀ i j : Fin 6, i < j →
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
-        Set.range (G2.simplyConnectedRootDatum ht).root →
-    (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 0 ∧ j = 3) ∨
-      (i = 1 ∧ j = 4) ∨ (i = 2 ∧ j = 3) := by
-  g2_table
-
-private theorem g2_positive_root_add_ne_zero : ∀ i j : Fin 6,
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ≠ 0 := by
-  simp only [ne_eq, funext_iff, Pi.add_apply, Pi.zero_apply]
-  g2_table
-
 private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (hij : i < j)
     (u v : A) :
     ⁅chevalleyRootSubgroup ρ M hM hnil (Fin.castAdd 6 i) A (Multiplicative.ofAdd u),
@@ -105,7 +91,7 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
   by_cases hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
       (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∈
         Set.range (G2.simplyConnectedRootDatum ht).root
-  · rcases g2_positive_root_sum_pairs i j hij hsum with
+  · rcases index_pair_of_root_add_mem_range_root_g2 ht i j hij hsum with
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · -- State the equality through X: elaboration normalizes both the formula's coefficient/
@@ -134,7 +120,7 @@ private theorem g2_positive_commutator_mem (A : CommAlgCat ℤ) (i j : Fin 6) (h
     · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
     · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
   · have hc := commute_chevalleyRootSubgroup ρ M hM hnil hsum
-      (g2_positive_root_add_ne_zero i j) A u v
+      (root_add_root_ne_zero_g2 ht i j) A u v
     rw [commutatorElement_def, hc]
     simp
 

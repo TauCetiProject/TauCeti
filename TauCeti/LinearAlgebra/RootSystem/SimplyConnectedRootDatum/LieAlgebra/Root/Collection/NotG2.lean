@@ -43,16 +43,6 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid}
 
--- Compare root strings rationally, but retain integral equations for the group formulas.
-private theorem root_rationalRootSystem_eq_nsmul_add_iff
-    (a c d : Fin t.numRoots) (n : ℕ) :
-    (t.rationalRootSystem ht).root d =
-        n • (t.rationalRootSystem ht).root a + (t.rationalRootSystem ht).root c ↔
-      (t.simplyConnectedRootDatum ht).root d =
-        n • (t.simplyConnectedRootDatum ht).root a + (t.simplyConnectedRootDatum ht).root c := by
-  simpa only [Int.cast_natCast, Nat.cast_smul_eq_nsmul, natCast_zsmul, add_comm] using
-    t.root_rationalRootSystem_eq_add_zsmul_iff ht a c d n
-
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
   (M : AddSubgroup V)
@@ -102,7 +92,7 @@ private theorem commutator_mem_higher_roots
   -- A root sum has either no double string or exactly one orientation of a double string.
   by_cases hsum : P.root α + P.root β ∈ Set.range P.root
   · obtain ⟨γ, hγ⟩ := hsum
-    have hγZ := (root_rationalRootSystem_eq_nsmul_add_iff α β γ 1).mp (by simpa using hγ)
+    have hγZ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mp (by simpa using hγ)
     simp only [one_nsmul] at hγZ
     have hdouble {a c d : Fin t.numRoots}
         (ha : a ∈ posRoots P b) (hc : c ∈ posRoots P b)
@@ -121,7 +111,7 @@ private theorem commutator_mem_higher_roots
     by_cases ha : 2 • (t.simplyConnectedRootDatum ht).root α +
         (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root
     · obtain ⟨δ, hδ⟩ := ha
-      have hδQ := (root_rationalRootSystem_eq_nsmul_add_iff α β δ 2).mpr hδ
+      have hδQ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ
       rw [commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
         ρ M hM hnil hne hγZ (by rw [hδ, hγZ]; module)]
       exact H.mul_mem (hmem hα hβ rfl hγ _) (hdouble hα hβ rfl hγ hδQ _)
@@ -136,7 +126,7 @@ private theorem commutator_mem_higher_roots
           ρ M hM hnil hne (hγZ.trans (add_comm _ _)) (by rw [hδ, hγZ]; module)]
         exact H.mul_mem (hmem hβ hα (max_comm _ _) hγ' _)
           (hdouble hβ hα (max_comm _ _) hγ'
-            ((root_rationalRootSystem_eq_nsmul_add_iff β α δ 2).mpr hδ) _)
+            ((t.root_rationalRootSystem_eq_nsmul_add_iff ht β α δ 2).mpr hδ) _)
       · rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil hγZ ha
           (by simpa only [add_comm] using hb)]
         exact hmem hα hβ rfl hγ _
@@ -145,8 +135,9 @@ private theorem commutator_mem_higher_roots
         (t.simplyConnectedRootDatum ht).root β ∉
           Set.range (t.simplyConnectedRootDatum ht).root := by
       rintro ⟨γ, hγ⟩
-      exact hsum ⟨γ, by simpa only [one_nsmul] using
-        (root_rationalRootSystem_eq_nsmul_add_iff α β γ 1).mpr (by simpa only [one_nsmul] using hγ)⟩
+      exact hsum ⟨γ, by
+        simpa only [one_nsmul] using (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mpr
+          (by simpa only [one_nsmul] using hγ)⟩
     have hzero : (t.simplyConnectedRootDatum ht).root α +
         (t.simplyConnectedRootDatum ht).root β ≠ 0 := by
       intro hz
