@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.Algebra.Homology.Homotopy
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic

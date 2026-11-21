@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Period
 public import TauCeti.Geometry.Manifold.DeRham.Circle
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 
-import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
 
 /-!
