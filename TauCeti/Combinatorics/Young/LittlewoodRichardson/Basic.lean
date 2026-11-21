@@ -124,28 +124,28 @@ variable {inner outer μ : YoungDiagram}
 /-- **The entries in row `i` of a Littlewood–Richardson tableau are at most `i`.** Row `i` is read
 from the right, so its first letter is its largest entry; the rows above contain only smaller
 letters, so a first letter `m > i` would occur in the reading word before any `m - 1`. -/
-theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.1 i j ≤ i := by
+theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.val i j ≤ i := by
   induction i using Nat.strong_induction_on generalizing j with
   | _ i ih =>
   by_cases hc : (i, j) ∈ outer.cells \ inner.cells
   swap
-  · rw [T.1.zeros_of_notMem_sdiff hc]
+  · rw [T.val.zeros_of_notMem_sdiff hc]
     exact Nat.zero_le _
   rw [Finset.mem_sdiff, YoungDiagram.mem_cells, YoungDiagram.mem_cells,
     YoungDiagram.mem_iff_lt_rowLen, YoungDiagram.mem_iff_lt_rowLen, not_lt] at hc
   have hlt : inner.rowLen i < outer.rowLen i := by omega
   have hlast : (i, outer.rowLen i - 1) ∈ outer := YoungDiagram.mem_iff_lt_rowLen.mpr (by omega)
-  refine (T.1.row_weak_of_le (by omega) hlast).trans ?_
+  refine (T.val.row_weak_of_le (by omega) hlast).trans ?_
   -- The letters read before row `i` are all smaller than `i`.
-  have hsmall : ∀ x ∈ (List.range i).flatMap T.1.rowReadingWord, x < i := by
+  have hsmall : ∀ x ∈ (List.range i).flatMap T.val.rowReadingWord, x < i := by
     intro x hx
     obtain ⟨r, hr, hx⟩ := List.mem_flatMap.mp hx
-    obtain ⟨j', -, -, rfl⟩ := T.1.mem_rowReadingWord.mp hx
+    obtain ⟨j', -, -, rfl⟩ := T.val.mem_rowReadingWord.mp hx
     exact (ih r (List.mem_range.mp hr) j').trans_lt (List.mem_range.mp hr)
   by_contra hm
   rw [not_le] at hm
-  have hpre := List.isLatticeWord_iff.mp T.2.2 _
-    (T.1.flatMap_range_append_prefix_readingWord hlt) (T.1 i (outer.rowLen i - 1) - 1)
+  have hpre := List.isLatticeWord_iff.mp T.property.2 _
+    (T.val.flatMap_range_append_prefix_readingWord hlt) (T.val i (outer.rowLen i - 1) - 1)
   -- In that prefix the first letter `m` of row `i` occurs once and `m - 1` not at all.
   rw [Nat.sub_add_cancel (by omega), List.count_append, List.count_append,
     List.count_singleton_self,
@@ -156,7 +156,7 @@ theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.1 i j ≤ i := b
 
 /-- In a Littlewood–Richardson tableau, row `r` contains no letter strictly larger than `r`. -/
 theorem rowCount_eq_zero_of_lt (T : LRTableau inner outer μ) {r k : ℕ} (h : r < k) :
-    T.1.rowCount r k = 0 := by
+    T.val.rowCount r k = 0 := by
   rw [SkewSemistandardYoungTableau.rowCount_def, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
   intro j _ hjk
   have := T.entry_le r j
@@ -166,16 +166,16 @@ theorem rowCount_eq_zero_of_lt (T : LRTableau inner outer μ) {r k : ℕ} (h : r
 `ν / λ` and content `μ` forces `|ν| = |λ| + |μ|`. -/
 theorem card_eq (T : LRTableau inner outer μ) : outer.card = inner.card + μ.card := by
   have hle : inner.card ≤ outer.card :=
-    Finset.card_le_card (YoungDiagram.cells_subset_iff.mpr T.1.le)
-  have hsum : (T.1.content.sum fun _ m => m) = μ.card := by
-    have hs : T.1.content.support ⊆ Finset.range (μ.colLen 0) := by
+    Finset.card_le_card (YoungDiagram.cells_subset_iff.mpr T.val.le)
+  have hsum : (T.val.content.sum fun _ m => m) = μ.card := by
+    have hs : T.val.content.support ⊆ Finset.range (μ.colLen 0) := by
       intro k hk
-      rw [Finsupp.mem_support_iff, T.2.1] at hk
+      rw [Finsupp.mem_support_iff, T.property.1] at hk
       exact Finset.mem_range.mpr
         (not_le.mp fun h => hk (YoungDiagram.rowLen_eq_zero_of_colLen_le h))
-    rw [Finsupp.sum_of_support_subset _ hs _ fun _ _ => rfl, T.2.1]
+    rw [Finsupp.sum_of_support_subset _ hs _ fun _ _ => rfl, T.property.1]
     exact (YoungDiagram.card_eq_sum_range_rowLen μ le_rfl).symm
-  have := T.1.sum_content
+  have := T.val.sum_content
   omega
 
 /-- The highest-weight tableau, whose `i`-th row consists of `i`s, is a Littlewood–Richardson
@@ -205,25 +205,25 @@ def highestWeight (μ : YoungDiagram) : LRTableau ⊥ μ μ :=
 `0` off `μ`. -/
 @[simp]
 theorem highestWeight_apply (μ : YoungDiagram) (i j : ℕ) :
-    (highestWeight μ).1 i j = if (i, j) ∈ μ then i else 0 := by
+    (highestWeight μ).val i j = if (i, j) ∈ μ then i else 0 := by
   simp [highestWeight]
 
 /-- A Littlewood–Richardson tableau of straight shape `outer / ⊥` is the highest-weight tableau of
 shape `outer`: its entries in row `i` are at least `i`, columns being strict, and at most `i`. -/
 theorem botEquiv_eq_highestWeight (T : LRTableau ⊥ outer μ) :
-    botEquiv outer T.1 = SemistandardYoungTableau.highestWeight outer := by
+    botEquiv outer T.val = SemistandardYoungTableau.highestWeight outer := by
   ext i j
   rw [SemistandardYoungTableau.highestWeight_apply, botEquiv_apply]
   split_ifs with h
   · exact le_antisymm (T.entry_le i j)
-      (by simpa using SemistandardYoungTableau.le_entry (botEquiv outer T.1) h)
-  · exact T.1.zeros h
+      (by simpa using SemistandardYoungTableau.le_entry (botEquiv outer T.val) h)
+  · exact T.val.zeros h
 
 /-- **A Littlewood–Richardson tableau of straight shape has its shape as content**: there is one
 of shape `outer / ⊥` and content `μ` only if `outer = μ`. -/
 theorem outer_eq_content (T : LRTableau ⊥ outer μ) : outer = μ := by
   refine YoungDiagram.rowLen_injective ?_
-  rw [← T.2.1, ← content_botEquiv, botEquiv_eq_highestWeight,
+  rw [← T.property.1, ← content_botEquiv, botEquiv_eq_highestWeight,
     SemistandardYoungTableau.content_highestWeight]
 
 /-- The highest-weight tableau is the only Littlewood–Richardson tableau of straight shape
@@ -238,8 +238,8 @@ shape `outer / inner` and content `⊥` only if `outer = inner`. -/
 theorem outer_eq_inner (T : LRTableau inner outer ⊥) : outer = inner := by
   have hcard := T.card_eq
   simp only [YoungDiagram.card, YoungDiagram.cells_bot, Finset.card_empty, add_zero] at hcard
-  have hsub := YoungDiagram.cells_subset_iff.mpr T.1.le
-  refine le_antisymm (YoungDiagram.cells_subset_iff.mp ?_) T.1.le
+  have hsub := YoungDiagram.cells_subset_iff.mpr T.val.le
+  refine le_antisymm (YoungDiagram.cells_subset_iff.mp ?_) T.val.le
   rw [Finset.eq_of_subset_of_card_le hsub hcard.le]
 
 /-- The empty tableau is the only Littlewood–Richardson tableau of shape `μ / μ` and content
@@ -260,25 +260,25 @@ instance (μ : YoungDiagram) : Unique (LRTableau μ μ ⊥) where
       · intro i _
         simp [rowReadingWord_def]⟩
   uniq T := Subtype.ext <| SkewSemistandardYoungTableau.ext fun i j =>
-    T.1.zeros_of_notMem_sdiff (by simp)
+    T.val.zeros_of_notMem_sdiff (by simp)
 
 /-- Reindex a Littlewood–Richardson tableau along equalities of its inner, outer, and content
 shapes without changing any cell entry. -/
 def congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
     (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂) :
     LRTableau inner₁ outer₁ μ₁ ≃ LRTableau inner₂ outer₂ μ₂ where
-  toFun T := ⟨⟨T.1.entry, hinner ▸ houter ▸ T.1.le,
-    fun h₁ h₂ h₃ => T.1.row_weak' h₁ (hinner ▸ h₂) (houter ▸ h₃),
-    fun h₁ h₂ h₃ => T.1.col_strict' h₁ (hinner ▸ h₂) (houter ▸ h₃),
-    fun h => T.1.zeros_inner' (hinner ▸ h),
-    fun h => T.1.zeros' (houter ▸ h)⟩,
-    by subst hinner; subst houter; subst hμ; exact T.2⟩
-  invFun T := ⟨⟨T.1.entry, hinner.symm ▸ houter.symm ▸ T.1.le,
-    fun h₁ h₂ h₃ => T.1.row_weak' h₁ (hinner.symm ▸ h₂) (houter.symm ▸ h₃),
-    fun h₁ h₂ h₃ => T.1.col_strict' h₁ (hinner.symm ▸ h₂) (houter.symm ▸ h₃),
-    fun h => T.1.zeros_inner' (hinner.symm ▸ h),
-    fun h => T.1.zeros' (houter.symm ▸ h)⟩,
-    by subst hinner; subst houter; subst hμ; exact T.2⟩
+  toFun T := ⟨⟨T.val.entry, hinner ▸ houter ▸ T.val.le,
+    fun h₁ h₂ h₃ => T.val.row_weak' h₁ (hinner ▸ h₂) (houter ▸ h₃),
+    fun h₁ h₂ h₃ => T.val.col_strict' h₁ (hinner ▸ h₂) (houter ▸ h₃),
+    fun h => T.val.zeros_inner' (hinner ▸ h),
+    fun h => T.val.zeros' (houter ▸ h)⟩,
+    by subst hinner; subst houter; subst hμ; exact T.property⟩
+  invFun T := ⟨⟨T.val.entry, hinner.symm ▸ houter.symm ▸ T.val.le,
+    fun h₁ h₂ h₃ => T.val.row_weak' h₁ (hinner.symm ▸ h₂) (houter.symm ▸ h₃),
+    fun h₁ h₂ h₃ => T.val.col_strict' h₁ (hinner.symm ▸ h₂) (houter.symm ▸ h₃),
+    fun h => T.val.zeros_inner' (hinner.symm ▸ h),
+    fun h => T.val.zeros' (houter.symm ▸ h)⟩,
+    by subst hinner; subst houter; subst hμ; exact T.property⟩
   left_inv _ := Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
   right_inv _ := Subtype.ext (SkewSemistandardYoungTableau.ext fun _ _ => rfl)
 
@@ -305,20 +305,20 @@ def congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
 @[simp] theorem congr_apply {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
     (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂)
     (T : LRTableau inner₁ outer₁ μ₁) (i j : ℕ) :
-    (congr hinner houter hμ T).1 i j = T.1 i j := (rfl)
+    (congr hinner houter hμ T).val i j = T.val i j := (rfl)
 
 /-- `LRTableau.congr` preserves every row-count multiplicity. -/
 @[simp] theorem rowCount_congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
     (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂)
     (T : LRTableau inner₁ outer₁ μ₁) (i k : ℕ) :
-    (congr hinner houter hμ T).1.rowCount i k = T.1.rowCount i k := by
+    (congr hinner houter hμ T).val.rowCount i k = T.val.rowCount i k := by
   subst hinner; subst houter; subst hμ; rfl
 
 /-- `LRTableau.congr` preserves the content of a Littlewood–Richardson tableau. -/
 @[simp] theorem content_congr {inner₁ inner₂ outer₁ outer₂ μ₁ μ₂ : YoungDiagram}
     (hinner : inner₁ = inner₂) (houter : outer₁ = outer₂) (hμ : μ₁ = μ₂)
     (T : LRTableau inner₁ outer₁ μ₁) :
-    (congr hinner houter hμ T).1.content = T.1.content := by
+    (congr hinner houter hμ T).val.content = T.val.content := by
   subst hinner; subst houter; subst hμ; rfl
 
 end LRTableau
@@ -327,7 +327,7 @@ end LRTableau
 `inner ≤ outer`. -/
 theorem isEmpty_lrTableau_of_not_le {inner outer μ : YoungDiagram} (h : ¬inner ≤ outer) :
     IsEmpty (LRTableau inner outer μ) :=
-  ⟨fun T => h T.1.le⟩
+  ⟨fun T => h T.val.le⟩
 
 /-- There are no Littlewood–Richardson tableaux of shape `outer / inner` and content `μ` unless
 `|outer| = |inner| + |μ|`. -/
@@ -340,13 +340,13 @@ theorem isEmpty_lrTableau_of_card_ne {inner outer μ : YoungDiagram}
 the alphabet `{0, …, ℓ(outer) - 1}`. -/
 instance (inner outer μ : YoungDiagram) : Finite (LRTableau inner outer μ) := by
   refine Finite.of_injective (β := outer.cells → Fin (outer.colLen 0))
-    (fun T c => ⟨T.1 c.1.1 c.1.2, (T.entry_le _ _).trans_lt
-      (YoungDiagram.lt_colLen_zero_of_mem ((YoungDiagram.mem_cells _).mp c.2))⟩) ?_
+    (fun T c => ⟨T.val c.val.1 c.val.2, (T.entry_le _ _).trans_lt
+      (YoungDiagram.lt_colLen_zero_of_mem ((YoungDiagram.mem_cells _).mp c.property))⟩) ?_
   intro T T' h
   refine Subtype.ext (SkewSemistandardYoungTableau.ext fun i j => ?_)
   by_cases hc : (i, j) ∈ outer
   · exact congrArg Fin.val (congrFun h ⟨(i, j), (YoungDiagram.mem_cells _).mpr hc⟩)
-  · rw [T.1.zeros hc, T'.1.zeros hc]
+  · rw [T.val.zeros hc, T'.val.zeros hc]
 
 open scoped Classical in
 /-- **The Littlewood–Richardson coefficient `c^ν_{∅ μ}`** is `1` if `ν = μ` and `0` otherwise, as

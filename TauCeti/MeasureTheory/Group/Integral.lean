@@ -29,6 +29,10 @@ For a right-invariant `s`-finite measure `μ`, integrating `z ↦ f (x * g z)` o
 against an `s`-finite measure `ν` (or over a set `s`) and then `x` against `μ` factors out
 `ν univ` (or `ν s`) times `∫⁻ x, f x ∂μ` by Tonelli's theorem and right-translation invariance.
 
+For a translation-invariant measure, the row and column integrals of a convolution kernel
+`k (ξ - ζ)` with integrable `k ≥ 0` all equal `∫ k`; these are the bounds that Schur's test asks
+of the kernel.
+
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
@@ -49,6 +53,9 @@ invariance.
   `TauCeti.lintegral_setLIntegral_mul_right`, `TauCeti.lintegral_setLIntegral_add_right`,
   `TauCeti.lintegral_setLIntegral_div_right`, `TauCeti.lintegral_setLIntegral_sub_right`:
   factoring out the parameter measure when integrating right-translated lower Lebesgue integrals.
+* `TauCeti.lintegral_ofReal_sub_left_eq_ofReal_integral`,
+  `TauCeti.lintegral_ofReal_sub_right_eq_ofReal_integral`: the row and column integrals of a
+  convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
 -/
@@ -172,6 +179,30 @@ theorem lintegral_setLIntegral_div_right [MeasurableInv G] (hf : AEMeasurable f 
   rw [lintegral_lintegral_div_right hf hg, Measure.restrict_apply_univ]
 
 end LIntegral
+
+section ConvolutionKernel
+
+variable {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] {μ : Measure G}
+  {k : G → ℝ}
+
+/-- **The row integrals of a convolution kernel.** For a measure invariant under translation and
+negation, every row integral `∫⁻ ζ, k (ξ - ζ)` of the kernel `k (ξ - ζ)` of an integrable `k ≥ 0`
+equals `∫ k`. -/
+theorem lintegral_ofReal_sub_left_eq_ofReal_integral [μ.IsAddLeftInvariant] [MeasurableNeg G]
+    [μ.IsNegInvariant] (hk : Integrable k μ) (hk0 : 0 ≤ᵐ[μ] k) (ξ : G) :
+    ∫⁻ ζ, ENNReal.ofReal (k (ξ - ζ)) ∂μ = ENNReal.ofReal (∫ η, k η ∂μ) := by
+  rw [lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ,
+    ofReal_integral_eq_lintegral_ofReal hk hk0]
+
+/-- **The column integrals of a convolution kernel.** For a right-invariant measure, every column
+integral `∫⁻ ξ, k (ξ - ζ)` of the kernel `k (ξ - ζ)` of an integrable `k ≥ 0` equals `∫ k`. -/
+theorem lintegral_ofReal_sub_right_eq_ofReal_integral [μ.IsAddRightInvariant]
+    (hk : Integrable k μ) (hk0 : 0 ≤ᵐ[μ] k) (ζ : G) :
+    ∫⁻ ξ, ENNReal.ofReal (k (ξ - ζ)) ∂μ = ENNReal.ofReal (∫ η, k η ∂μ) := by
+  rw [lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ,
+    ofReal_integral_eq_lintegral_ofReal hk hk0]
+
+end ConvolutionKernel
 
 section SMulSet
 

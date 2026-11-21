@@ -33,9 +33,12 @@ of the model (`TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPa
 * `TauCeti.IsMorse.exists_relCWComplex_singularHomology_iso_sublevelPair`: the relative CW model of
   a regular band is finite and has the relative singular homology of the sublevel pair
   `(M_b, M_a)`.
-* `TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul`: the Morse
-  polynomial identity of a sublevel pair with compact band, with the coefficients of the quotient
-  polynomial the ranks of the cellular differentials of a relative CW model.
+* `TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul` and
+  `IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul_of_manifoldMorseIndex_le`:
+  the Morse polynomial identity of a sublevel pair with compact band (at any degree `n` with no
+  critical point of index `n + 1` in `(a, b]`, and in particular for `n ≥ d` when critical indices
+  are bounded by `d`), with the coefficients of the quotient polynomial the ranks of the cellular
+  differentials of a relative CW model.
 
 ## References
 
@@ -55,7 +58,7 @@ open scoped ContDiff ContinuousMap Manifold Polynomial
 
 universe u v w
 
-namespace TauCeti
+namespace TauCeti.IsMorse
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
@@ -67,7 +70,7 @@ closed embedding `j : M_a → X` of the sublevel `M_a = {f ≤ a}`, and a finite
 relative to the image of `j`, whose `m`-cells correspond to the critical points of index `m` with
 values in `(a, b]`, such that the relative singular homology of this CW pair is that of the
 sublevel pair `(M_b, M_a)`, for coefficients in any abelian category with coproducts. -/
-theorem IsMorse.exists_relCWComplex_singularHomology_iso_sublevelPair (hf : IsMorse I f)
+theorem exists_relCWComplex_singularHomology_iso_sublevelPair (hf : IsMorse I f)
     {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (j : C({x | f x ≤ a}, X))
@@ -102,15 +105,15 @@ theorem IsMorse.exists_relCWComplex_singularHomology_iso_sublevelPair (hf : IsMo
   exact ⟨asIso (TopPair.singularHomologyMap φ R n)⟩
 
 /-- **The Morse polynomial identity of a sublevel pair, with cellular coefficients.** Let `f` be a
-Morse function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then there is a
-finite relative CW complex `(W, B)` whose relative `m`-cells correspond to the critical points of
-index `m` with values in `(a, b]`, such that for every finite-dimensional module `V` over a division
-ring `k` and every `n ≥ dim M`, writing `cᵢ` for the number of these critical points of index `i`
-and `bᵢ = dim Hᵢ(M_b, M_a; V)`,
-`∑ᵢ₌₀ⁿ cᵢ dim V · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)`, where the coefficient of `tⁱ` in `Q` is the rank
-of the cellular differential of `(W, B)` with coefficients in `V` from degree `i + 1` to degree `i`.
--/
-theorem IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (hf : IsMorse I f)
+Morse function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then there is a finite
+relative CW complex `(W, B)` whose relative `m`-cells correspond to the critical points of index
+`m` with values in `(a, b]`, such that for every finite-dimensional module `V` over a division ring
+`k` and every `n` for which no critical point in `(a, b]` has index `n + 1` (in particular, every
+`n ≥ dim M`), writing `cᵢ` for the number of these critical points of index `i` and
+`bᵢ = dim Hᵢ(M_b, M_a; V)`, `∑ᵢ₌₀ⁿ cᵢ dim V · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)`, where the
+coefficient of `tⁱ` in `Q` is the rank of the cellular differential of `(W, B)` with coefficients in
+`V` from degree `i + 1` to degree `i`. -/
+theorem exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (hf : IsMorse I f)
     {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) :
     ∃ (W : Type u) (_ : TopologicalSpace W) (_ : T2Space W) (B : Set W)
@@ -119,7 +122,7 @@ theorem IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (
       (∀ m, Nonempty (cell (univ : Set W) m ≃
         ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m})) ∧
       ∀ {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V] {n : ℕ},
-        finrank ℝ E ≤ n →
+        (∀ x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b, manifoldMorseIndex I f x ≠ n + 1) →
         ∑ i ∈ Finset.range (n + 1), monomial i
             ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard *
               finrank k V) =
@@ -127,19 +130,54 @@ theorem IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (
             monomial i (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k)) +
             (1 + X) * ∑ i ∈ Finset.range n, monomial i (finrank k
               (LinearMap.range ((cellularChainComplex (univ : Set W) V).d (i + 1) i).hom)) := by
-  obtain ⟨W, _, _, j, _, -, hfin, c, hH⟩ :=
+  obtain ⟨W, instTop, instT2, j, instCW, -, hfin, c, hH⟩ :=
     hf.exists_relCWComplex_singularHomology_iso_sublevelPair hab hcompact ha hb
-  refine ⟨W, _, ‹_›, range j, ‹_›, hfin, c, fun V _ n hn ↦ ?_⟩
-  -- There are finitely many relative cells, and none above the dimension of `M`.
+  refine ⟨W, instTop, instT2, range j, instCW, hfin, c, ?_⟩
+  intro k _ V _ n hno
   have hcell (i : ℕ) : Finite (cell (univ : Set W) i) := FiniteType.finite_cell i
-  have hn' : IsEmpty (cell (univ : Set W) (n + 1)) :=
-    (c (n + 1)).some.isEmpty_congr.2 ⟨fun x ↦ by
-      have := x.2.2 ▸ manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x.1)
-      lia⟩
-  have h := sum_range_monomial_natCard_cell_mul_finrank_eq (univ : Set W) V (fun i _ ↦ hcell i) hn'
+  have hempty : IsEmpty (cell (univ : Set W) (n + 1)) :=
+    (c (n + 1)).some.isEmpty_congr.2 ⟨fun x ↦ hno x.val x.property.1 x.property.2⟩
+  have h := sum_range_monomial_natCard_cell_mul_finrank_eq (univ : Set W) V (fun i _ ↦ hcell i)
+    hempty
   simp only [Nat.card_congr (c _).some, Nat.card_coe_set_eq] at h
   rw [h]
   congr 1
   exact Finset.sum_congr rfl fun i _ ↦ by rw [(hH V i).some.toLinearEquiv.finrank_eq]
 
-end TauCeti
+/-- **Index-bounded Morse polynomial identity of a sublevel pair, with cellular coefficients.** Let
+`f` be a Morse function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`, such that every
+critical point of `f` with value in `(a, b]` has Morse index at most `d`. Then there is a finite
+relative CW complex `(W, B)` with no relative cells above dimension `d`, whose relative `m`-cells
+correspond to the critical points of index `m` in `(a, b]`, such that for every finite-dimensional
+module `V` over a division ring `k` and every `n ≥ d`, writing `cᵢ` for the number of these critical
+points of index `i` and `bᵢ = dim Hᵢ(M_b, M_a; V)`,
+`∑ᵢ₌₀ⁿ cᵢ dim V · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)`, where the coefficient of `tⁱ` in `Q` is the
+rank of the cellular differential of `(W, B)` with coefficients in `V` from degree `i + 1` to
+degree `i`. -/
+theorem exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hidx : ∀ x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b, manifoldMorseIndex I f x ≤ d) :
+    ∃ (W : Type u) (_ : TopologicalSpace W) (_ : T2Space W) (B : Set W)
+      (_ : RelCWComplex (univ : Set W) B),
+      RelCWComplex.Finite (univ : Set W) ∧
+      (∀ m, Nonempty (cell (univ : Set W) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m})) ∧
+      (∀ m, d < m → IsEmpty (cell (univ : Set W) m)) ∧
+      ∀ {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V] {n : ℕ},
+        d ≤ n →
+        ∑ i ∈ Finset.range (n + 1), monomial i
+            ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard *
+              finrank k V) =
+          ∑ i ∈ Finset.range (n + 1),
+            monomial i (finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k)) +
+            (1 + X) * ∑ i ∈ Finset.range n, monomial i (finrank k
+              (LinearMap.range ((cellularChainComplex (univ : Set W) V).d (i + 1) i).hom)) := by
+  obtain ⟨W, instTop, instT2, B, instCW, hfin, c, hpoly⟩ :=
+    hf.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul hab hcompact ha hb
+  exact ⟨W, instTop, instT2, B, instCW, hfin, c,
+    fun m hm ↦ (c m).some.isEmpty_congr.2 ⟨fun x ↦
+        ((x.property.2 ▸ hidx x.val x.property.1).trans_lt hm).false⟩,
+    fun {k} _ V _ {n} hn ↦ hpoly V fun x hx ↦ ((hidx x hx).trans_lt (Nat.lt_succ_of_le hn)).ne⟩
+
+end TauCeti.IsMorse

@@ -164,8 +164,8 @@ more than `n` rows are zero. -/
 theorem nonempty_equiv_tprod_weylRepOfShape (lam μ : YoungDiagram) :
     Nonempty (Representation.Equiv ((weylRepOfShape ℂ n lam).tprod (weylRepOfShape ℂ n μ))
       (Representation.directSum fun p : Σ ν : (lam.card + μ.card).Partition,
-          {T : BoundedSSYT n μ // T.1.IsYamanouchi lam ∧
-            ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i} =>
+          {T : BoundedSSYT n μ // T.val.IsYamanouchi lam ∧
+            ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i} =>
         weylRepOfShape ℂ n (ofPartition p.1))) := by
   refine nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
     (isPolynomialRep_weylRepOfShape n lam).isRationalRep
@@ -194,9 +194,9 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
     Nonempty (Representation.Equiv ((rationalWeylRep ℂ n l).tprod (rationalWeylRep ℂ n m))
       (Representation.directSum fun p : Σ ν : {ν : (l.detShiftShape.card +
             m.detShiftShape.card).Partition // (ofPartition ν).colLen 0 ≤ n},
-          {T : BoundedSSYT n m.detShiftShape // T.1.IsYamanouchi l.detShiftShape ∧
-            ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i} =>
-        rationalWeylRep ℂ n ((weightOfShape n (ofPartition p.1.1)).shift
+          {T : BoundedSSYT n m.detShiftShape // T.val.IsYamanouchi l.detShiftShape ∧
+            ∀ i, l.detShiftShape.rowLen i + T.val.content i = (ofPartition ν.val).rowLen i} =>
+        rationalWeylRep ℂ n ((weightOfShape n (ofPartition p.1.val)).shift
           (l.detShift + m.detShift)))) := by
   refine nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
     (isRationalRep_rationalWeylRep n l) (isRationalRep_rationalWeylRep n m) ?_ fun t => ?_
@@ -211,7 +211,7 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
   rw [diagramSchurPoly_mul_diagramSchurPoly, sum_nsmul_diagramSchurPoly_eq_sum_colLen_le, map_sum,
     mul_sum, Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ν => ?_
-  simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.2, sum_const, card_univ,
+  simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.property, sum_const, card_univ,
     Fintype.card_subtype, map_nsmul, mul_smul_comm]
 
 open CategoryTheory MonoidalCategory in
@@ -223,17 +223,17 @@ private theorem finrank_hom_tprod_rationalWeylFDRep_eq_sum (l m γ : DominantWei
         (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n l ⊗ rationalWeylFDRep ℂ n m) =
       ∑ ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
           (ofPartition ν).colLen 0 ≤ n},
-        if γ = (weightOfShape n (ofPartition ν.1)).shift (l.detShift + m.detShift) then
-          Nat.card {T : BoundedSSYT n m.detShiftShape // T.1.IsYamanouchi l.detShiftShape ∧
-            ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i}
+        if γ = (weightOfShape n (ofPartition ν.val)).shift (l.detShift + m.detShift) then
+          Nat.card {T : BoundedSSYT n m.detShiftShape // T.val.IsYamanouchi l.detShiftShape ∧
+            ∀ i, l.detShiftShape.rowLen i + T.val.content i = (ofPartition ν.val).rowLen i}
         else 0 := by
   classical
   let ι := Σ ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
       (ofPartition ν).colLen 0 ≤ n},
-    {T : BoundedSSYT n m.detShiftShape // T.1.IsYamanouchi l.detShiftShape ∧
-      ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i}
+    {T : BoundedSSYT n m.detShiftShape // T.val.IsYamanouchi l.detShiftShape ∧
+      ∀ i, l.detShiftShape.rowLen i + T.val.content i = (ofPartition ν.val).rowLen i}
   let w : ι → DominantWeight n := fun p =>
-    (weightOfShape n (ofPartition p.1.1)).shift (l.detShift + m.detShift)
+    (weightOfShape n (ofPartition p.1.val)).shift (l.detShift + m.detShift)
   let _ (p : ι) : AddCommGroup (weylModuleOfShape ℂ n (w p).detShiftShape).toSubmodule :=
     inferInstance
   obtain ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n l m
@@ -258,7 +258,7 @@ private theorem finrank_hom_tprod_rationalWeylFDRep_eq_sum (l m γ : DominantWei
   simp_rw [hdim]
   rw [Fintype.sum_sigma]
   refine Finset.sum_congr rfl fun ν _ => ?_
-  by_cases h : γ = (weightOfShape n (ofPartition ν.1)).shift (l.detShift + m.detShift)
+  by_cases h : γ = (weightOfShape n (ofPartition ν.val)).shift (l.detShift + m.detShift)
   · simp [w, h, Nat.card_eq_fintype_card]
   · simp [w, h]
 
@@ -282,10 +282,10 @@ theorem finrank_hom_tprod_rationalWeylFDRep (l m γ : DominantWeight n) :
     have hγ₀ : γ₀.IsPolynomial := γ.isPolynomial_shift_of_zero_le_detShift_add (by omega)
     have hw_iff (ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
         (ofPartition ν).colLen 0 ≤ n}) :
-        γ = (weightOfShape n (ofPartition ν.1)).shift (l.detShift + m.detShift) ↔
-          γ₀.shape = ofPartition ν.1 := by
-      refine ⟨fun h => by subst h; simp [γ₀, shape_weightOfShape ν.2], fun h => ?_⟩
-      have h' : γ₀ = weightOfShape n (ofPartition ν.1) := by
+        γ = (weightOfShape n (ofPartition ν.val)).shift (l.detShift + m.detShift) ↔
+          γ₀.shape = ofPartition ν.val := by
+      refine ⟨fun h => by subst h; simp [γ₀, shape_weightOfShape ν.property], fun h => ?_⟩
+      have h' : γ₀ = weightOfShape n (ofPartition ν.val) := by
         rw [← h, weightOfShape_shape hγ₀]
       simpa [γ₀] using congrArg (fun x : DominantWeight n =>
         x.shift (l.detShift + m.detShift)) h'
@@ -294,7 +294,7 @@ theorem finrank_hom_tprod_rationalWeylFDRep (l m γ : DominantWeight n) :
           (ofPartition ν).colLen 0 ≤ n} :=
         ⟨γ₀.shape.toPartition hcard, by simp⟩
       rw [Finset.sum_eq_single ν₀]
-      · have hpos : γ = (weightOfShape n (ofPartition ν₀.1)).shift (l.detShift + m.detShift) :=
+      · have hpos : γ = (weightOfShape n (ofPartition ν₀.val)).shift (l.detShift + m.detShift) :=
           (hw_iff ν₀).mpr (by simp [ν₀])
         simp only [hpos, ↓reduceIte]
         simpa [ν₀] using natCard_boundedSSYT_isYamanouchi_eq_natCard_lrTableau
@@ -327,14 +327,14 @@ multiplicity the Littlewood–Richardson coefficient `c^ν_{λμ} = Nat.card (LR
 theorem nonempty_equiv_tprod_weylRepOfShape_lrTableau (lam μ : YoungDiagram) :
     Nonempty (Representation.Equiv ((weylRepOfShape ℂ n lam).tprod (weylRepOfShape ℂ n μ))
       (Representation.directSum fun p : Σ ν : {ν : (lam.card + μ.card).Partition //
-            (ofPartition ν).colLen 0 ≤ n}, LRTableau lam (ofPartition ν.1) μ =>
-        weylRepOfShape ℂ n (ofPartition p.1.1))) := by
+            (ofPartition ν).colLen 0 ≤ n}, LRTableau lam (ofPartition ν.val) μ =>
+        weylRepOfShape ℂ n (ofPartition p.1.val))) := by
   let _ (ν : (lam.card + μ.card).Partition) : Fintype (LRTableau lam (ofPartition ν) μ) :=
     Fintype.ofFinite _
   refine nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
     (isPolynomialRep_weylRepOfShape n lam).isRationalRep
     (isPolynomialRep_weylRepOfShape n μ).isRationalRep ?_ fun t => ?_
-  · exact fun p => (isPolynomialRep_weylRepOfShape n (ofPartition p.1.1)).isRationalRep
+  · exact fun p => (isPolynomialRep_weylRepOfShape n (ofPartition p.1.val)).isRationalRep
   rw [char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
     char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, ← eval_mul,
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
@@ -355,28 +355,28 @@ theorem nonempty_lieModuleEquiv_tensorProduct_glIrreducible {lam μ : YoungDiagr
     Nonempty ((glIrreducible n fun i ↦ (lam.rowLen i : ℂ)) ⊗[ℂ]
         (glIrreducible n fun i ↦ (μ.rowLen i : ℂ)) ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
       ⨁ p : Σ ν : {ν : (lam.card + μ.card).Partition // (ofPartition ν).colLen 0 ≤ n},
-          LRTableau lam (ofPartition ν.1) μ,
-        glIrreducible n fun i ↦ ((ofPartition p.1.1).rowLen i : ℂ)) := by
+          LRTableau lam (ofPartition ν.val) μ,
+        glIrreducible n fun i ↦ ((ofPartition p.1.val).rowLen i : ℂ)) := by
   let ι := Σ ν : {ν : (lam.card + μ.card).Partition // (ofPartition ν).colLen 0 ≤ n},
-    LRTableau lam (ofPartition ν.1) μ
-  let _ (p : ι) : AddCommGroup (weylModuleOfShape ℂ n (ofPartition p.1.1)).toSubmodule :=
+    LRTableau lam (ofPartition ν.val) μ
+  let _ (p : ι) : AddCommGroup (weylModuleOfShape ℂ n (ofPartition p.1.val)).toSubmodule :=
     inferInstance
   let _ : AddCommGroup (weylModuleOfShape ℂ n lam).toSubmodule := inferInstance
   let _ : AddCommGroup (weylModuleOfShape ℂ n μ).toSubmodule := inferInstance
   have hlam' := (isPolynomialRep_weylRepOfShape n lam).isRationalRep
   have hμ' := (isPolynomialRep_weylRepOfShape n μ).isRationalRep
-  have hν (p : ι) := (isPolynomialRep_weylRepOfShape n (ofPartition p.1.1)).isRationalRep
+  have hν (p : ι) := (isPolynomialRep_weylRepOfShape n (ofPartition p.1.val)).isRationalRep
   obtain ⟨φ⟩ := nonempty_equiv_tprod_weylRepOfShape_lrTableau n lam μ
   obtain ⟨e₁⟩ := nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible hlam
   obtain ⟨e₂⟩ := nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible hμ
-  have e (p : ι) := (nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible p.1.2).some
+  have e (p : ι) := (nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible p.1.property).some
   -- Differentiate: `L(λ) ⊗ L(μ) ≅ 𝕊^λ ⊗ 𝕊^μ ≅ ⨁ 𝕊^ν ≅ ⨁ L(ν)`, the two middle modules carrying the
   -- differentials of the tensor product and of the direct sum.
   let _ := LieRingModule.compLieHom
     ((weylModuleOfShape ℂ n lam).toSubmodule ⊗[ℂ] (weylModuleOfShape ℂ n μ).toSubmodule)
     (hlam'.tprod hμ').differential
   let _ := LieRingModule.compLieHom
-    (⨁ p : ι, (weylModuleOfShape ℂ n (ofPartition p.1.1)).toSubmodule)
+    (⨁ p : ι, (weylModuleOfShape ℂ n (ofPartition p.1.val)).toSubmodule)
     (IsRationalRep.directSum hν).differential
   exact ⟨((hlam'.tprodLieModuleEquiv hμ' e₁ e₂).symm.trans
     (IsRationalRep.lieModuleEquivOfEquiv (hlam'.tprod hμ') (IsRationalRep.directSum hν) φ)).trans
@@ -406,18 +406,18 @@ theorem isotypicMultiplicity_tensorProduct_glIrreducible {lam μ ν : YoungDiagr
   rw [LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv e,
     LieModule.isotypicMultiplicity_directSum _ fun p ↦
       have := hirr ν
-      have := hirr (ofPartition p.1.1)
+      have := hirr (ofPartition p.1.val)
       TauCeti.LieModule.finite_lieModuleHom_of_isIrreducible,
     Fintype.sum_sigma]
   have hterm (ν' : {ν' : (lam.card + μ.card).Partition // (ofPartition ν').colLen 0 ≤ n}) :
       LieModule.isotypicMultiplicity ℂ (Matrix (Fin n) (Fin n) ℂ)
-          (glIrreducible n fun i ↦ ((ofPartition ν'.1).rowLen i : ℂ))
+          (glIrreducible n fun i ↦ ((ofPartition ν'.val).rowLen i : ℂ))
           (glIrreducible n fun i ↦ (ν.rowLen i : ℂ)) =
-        if ofPartition ν'.1 = ν then 1 else 0 := by
+        if ofPartition ν'.val = ν then 1 else 0 := by
     have := hirr ν
-    have := hirr (ofPartition ν'.1)
+    have := hirr (ofPartition ν'.val)
     rw [LieModule.isotypicMultiplicity_def, TauCeti.LieModule.finrank_lieModuleHom]
-    exact if_congr ((nonempty_lieModuleEquiv_glIrreducible_rowLen_iff hν ν'.2).trans eq_comm)
+    exact if_congr ((nonempty_lieModuleEquiv_glIrreducible_rowLen_iff hν ν'.property).trans eq_comm)
       rfl rfl
   simp only [hterm, sum_const, card_univ, ← Nat.card_eq_fintype_card, smul_eq_mul, mul_ite,
     mul_one, mul_zero]

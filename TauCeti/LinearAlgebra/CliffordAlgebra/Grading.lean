@@ -182,7 +182,7 @@ variable {R : Type u} {M : Type v} {I : Type w} [CommRing R] [AddCommGroup M] [M
   rw [CliffordAlgebra.evenOdd]
   refine Submodule.mem_iSup_of_mem ⟨s.card, rfl⟩ ?_
   have h := (b.exteriorPower s.card
-    (⟨s, rfl⟩ : Set.powersetCard I s.card)).2
+    (⟨s, rfl⟩ : Set.powersetCard I s.card)).property
   rw [← ExteriorAlgebra.basis_eq_coe_basis] at h
   exact h
 
