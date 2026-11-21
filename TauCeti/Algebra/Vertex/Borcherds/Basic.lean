@@ -9,11 +9,9 @@ public import TauCeti.Algebra.Vertex.Axioms
 public import TauCeti.Algebra.Vertex.Dong
 public import TauCeti.Algebra.Vertex.Borcherds.Field
 import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.RingTheory.Binomial
-import Mathlib.Algebra.Module.Rat
 
 /-!
-# Integer field products, skew symmetry, and the Borcherds identity
+# Integer field products and the Borcherds identity
 
 Let `A : FormalVertexAxioms R V` be a formal vertex algebra over a commutative ring `R`. While the
 axioms of `FormalVertexAxioms` are division-free, recovering the negative modes of a field on the
@@ -25,34 +23,33 @@ uniqueness (`FormalVertexAxioms.eq_field_of_lie_translation_ncoeff`) identify th
 state–field map on every integer mode product `(a₍ₙ₎ b)` (`n : ℤ`) with the `n`-th field product
 `VertexOperator.nthProduct n (A.field a) (A.field b)`. From this and the field-level Borcherds
 identity (`TauCeti.Algebra.Vertex.Borcherds.Field`), we deduce the Borcherds commutator and iterate
-formulas, the state-level Borcherds identity, and skew symmetry.
+formulas and the state-level Borcherds identity.
 
 ## Main results
 
 * `TauCeti.FormalVertexAxioms.field_ncoeff_apply`: state–field correspondence
-  `Y(a₍ₙ₎ b, z) = Y(a, z)₍ₙ₎ Y(b, z)` for all `n : ℤ` under `[HasUniqueDiv V]`.
-* `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum`: the Borcherds commutator formula
+  `Y(a₍ₙ₎ b, z) = Y(a, z)₍ₙ₎ Y(b, z)` for all `n : ℤ` under `[HasUniqueDiv V]`, together with the
+  specializations `field_ncoeff_neg_one_apply`, `field_ncoeff_natCast_apply`,
+  `field_ncoeff_zero_apply`, and `field_ncoeff_neg_succ_apply`.
+* `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum` and
+  `TauCeti.FormalVertexAxioms.lie_ncoeff_field_finsum`: the Borcherds commutator formula
   `⁅a₍ₘ₎, b₍ₙ₎⁆ = ∑_{j < N} (m choose j) (a₍ⱼ₎ b)₍ₘ₊ₙ₋ⱼ₎`, its `m = 0` specialization
   `TauCeti.FormalVertexAxioms.lie_ncoeff_zero_field` (`⁅a₍₀₎, b₍ₙ₎⁆ = (a₍₀₎ b)₍ₙ₎`), and the
   derivation identity `TauCeti.FormalVertexAxioms.ncoeff_zero_field_ncoeff_apply`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_sum`: the Borcherds iterate formula
+* `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply_apply_eq_sum` and
+  `TauCeti.FormalVertexAxioms.ncoeff_field_ncoeff_apply`: the Borcherds iterate formula
   for `((a₍ₙ₎ b)₍q₎) c`.
 * `TauCeti.FormalVertexAxioms.borcherds_finsum`, `TauCeti.FormalVertexAxioms.borcherds`, and
   `TauCeti.FormalVertexAxioms.exists_borcherds`: the full three-parameter Borcherds identity for
   all `m, n, q : ℤ` under `[HasUniqueDiv V]`, deduced from the field-level identity
   `VertexOperator.IsLocalOfOrder.borcherds_finsum`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_vacuum` and
-  `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`: skew symmetry of `a₍ₙ₎ b`
-  in division-free form and in Kac's exponential form over `ℚ`, together with
-  `TauCeti.FormalVertexAxioms.ncoeff_zero_field_apply_add_mem_range_translation`
-  (`a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range T`).
 
 ## References
 
 * R. E. Borcherds, *Vertex algebras, Kac-Moody algebras, and the Monster*, Proc. Nat. Acad. Sci.
   U.S.A. 83 (1986), 3068–3071, §4.
-* V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §4.2 (skew symmetry), §4.5 (Theorem 4.5,
-  state–field correspondence for `n`-th products), and §4.8 (Theorem 4.8, the Borcherds identity).
+* V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §4.5 (Theorem 4.5, state–field correspondence
+  for `n`-th products) and §4.8 (Theorem 4.8, the Borcherds identity).
 * H. Li, *Local systems of vertex operators, vertex superalgebras and modules*, J. Pure Appl.
   Algebra 109 (1996), 143–195, Proposition 3.2.7.
 * E. Frenkel, D. Ben-Zvi, *Vertex Algebras and Algebraic Curves*, 2nd ed., §3.2–3.3.
@@ -104,6 +101,12 @@ theorem field_ncoeff_zero_apply [HasUniqueDiv V] (a b : V) :
     A.field (((A.field a)[[0]]) b) = nonnegResidueProduct 0 (A.field a) (A.field b) := by
   rw [A.field_ncoeff_apply, nthProduct_zero]
 
+/-- For `k : ℕ`, `Y(a₍₋ₖ₋₁₎ b, z)` is `:(∂_z^{(k)} Y(a, z)) Y(b, z):`. -/
+theorem field_ncoeff_neg_succ_apply [HasUniqueDiv V] (a b : V) (k : ℕ) :
+    A.field (((A.field a)[[-(k : ℤ) - 1]]) b) =
+      normalOrder (hasseDeriv k (A.field a)) (A.field b) := by
+  rw [A.field_ncoeff_apply, nthProduct_neg_natCast_sub_one]
+
 /-! ### Borcherds commutator and iterate formulas -/
 
 /-- **Borcherds commutator formula.** For any cutoff `N : ℕ` above which `a₍ⱼ₎ b = 0`,
@@ -118,6 +121,16 @@ theorem lie_ncoeff_field_eq_sum [HasUniqueDiv V] (a b : V) (m n : ℤ) {N : ℕ}
   symm
   refine sum_subset (range_mono (le_max_left N L)) fun j _ hj ↦ ?_
   simp [hN j (by simp only [mem_range] at hj; omega)]
+
+/-- **Borcherds commutator formula** in `finsum` form, independent of a chosen locality bound. -/
+theorem lie_ncoeff_field_finsum [HasUniqueDiv V] (a b : V) (m n : ℤ) :
+    ⁅(A.field a)[[m]], (A.field b)[[n]]⁆ =
+      ∑ᶠ i : ℕ, Ring.choose m i • (A.field (((A.field a)[[(i : ℤ)]]) b))[[m + n - i]] := by
+  obtain ⟨N, h⟩ := A.exists_isLocalOfOrder a b
+  have hN (j : ℕ) (hj : N ≤ j) : ((A.field a)[[(j : ℤ)]]) b = 0 :=
+    A.ncoeff_field_apply_eq_zero_of_isLocalOfOrder h hj
+  rw [A.lie_ncoeff_field_eq_sum a b m n hN, eq_comm]
+  exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hN i hi]
 
 /-- The `0`-th mode `a₍₀₎` commutes with `Y(b, z)` by `[a₍₀₎, b₍ₙ₎] = (a₍₀₎ b)₍ₙ₎`. -/
 @[simp]
@@ -147,6 +160,16 @@ theorem ncoeff_field_ncoeff_apply_apply_eq_sum [HasUniqueDiv V] (a b c : V) (n q
         (((A.field a)[[n - j]]) (((A.field b)[[q + j]]) c) -
           Int.negOnePow n • ((A.field b)[[n + q - j]]) (((A.field a)[[(j : ℤ)]]) c)) := by
   rw [A.field_ncoeff_apply, ncoeff_nthProduct_apply_eq_sum n (A.field a) (A.field b) q c ha hb]
+
+/-- **Mode iterate / associativity formula** (`m = 0` case of the Borcherds identity) in `finsum`
+form: `((a₍ₙ₎ b)₍ᵣ₎) c = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (a₍ₙ₋ᵢ₎ (b₍ᵣ₊ᵢ₎ c) - (-1)ⁿ b₍ₙ₊ᵣ₋ᵢ₎ (a₍ᵢ₎ c))`
+for all `a, b, c : V` and all integers `n, r : ℤ`. -/
+theorem ncoeff_field_ncoeff_apply [HasUniqueDiv V] (a b c : V) (n r : ℤ) :
+    ((A.field (((A.field a)[[n]]) b))[[r]]) c =
+      ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
+        (((A.field a)[[n - i]]) (((A.field b)[[r + i]]) c) -
+          (n.negOnePow : ℤ) • ((A.field b)[[n + r - i]]) (((A.field a)[[(i : ℤ)]]) c)) := by
+  rw [A.field_ncoeff_apply, ncoeff_nthProduct_apply]
 
 /-! ### The full Borcherds identity -/
 
@@ -204,128 +227,6 @@ theorem exists_borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) :
   have hab : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
       ((A.field a)[[n + j]]) b = 0 := fun j hj ↦ hPab _ (by omega)
   exact ⟨_, ha, hb, hab, A.borcherds a b c m n q ha hb hab⟩
-
-/-! ### Skew symmetry -/
-
-/-- **Skew symmetry (division-free form).** Over any module with unique divisibility, for any
-cutoff `K : ℕ` above which `b₍ₙ₊ⱼ₎ a = 0`,
-`a₍ₙ₎ b = ∑_{j < K} (-1)^{n + j + 1} (b₍ₙ₊ⱼ₎ a)₍₋ⱼ₋₁₎|0⟩`. -/
-theorem ncoeff_field_apply_eq_sum_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) {K : ℕ}
-    (hba : ∀ j : ℕ, K ≤ j → ((A.field b)[[n + j]]) a = 0) :
-    ((A.field a)[[n]]) b =
-      ∑ j ∈ range K, Int.negOnePow (n + j + 1) •
-        ((A.field (((A.field b)[[n + j]]) a))[[-j - 1]]) A.vacuum := by
-  have h := A.borcherds b a A.vacuum (-1) n 0 (K := 1) (L := K)
-    (fun j hj ↦ A.ncoeff_field_apply_vacuum_of_nonneg b _ (by omega))
-    (fun j _ ↦ A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega)) hba
-  simp only [range_one, sum_singleton, Nat.cast_zero, pow_zero, Ring.choose_zero_right, one_smul,
-    sub_zero, add_zero, A.ncoeff_field_apply_vacuum_of_nonneg a 0 le_rfl, map_zero,
-    A.ncoeff_neg_one_field_apply_vacuum, zero_sub] at h
-  have hinv := congrArg (fun x : V ↦ -(Int.negOnePow n • x)) h
-  simp only [smul_neg, neg_neg, smul_smul, Int.units_mul_self, one_smul, smul_sum,
-    ← sum_neg_distrib] at hinv
-  rw [hinv]
-  refine sum_congr rfl fun j _ ↦ ?_
-  rw [Ring.choose_neg_one, ← Int.coe_negOnePow_natCast, ← Units.smul_def,
-    show (-1 : ℤ) - j = -(j : ℤ) - 1 by ring, Int.negOnePow_succ, Units.neg_smul,
-    Int.negOnePow_add, mul_smul]
-
-/-- **Skew symmetry (`e^{zT}` form).** Over a `ℚ`-module, for any cutoff `K : ℕ` above which
-`b₍ₙ₊ⱼ₎ a = 0`, `a₍ₙ₎ b = ∑_{j < K} (-1)^{n + j + 1} (j!)⁻¹ • Tʲ (b₍ₙ₊ⱼ₎ a)`. -/
-theorem ncoeff_field_apply_eq_sum_translation_pow [Module ℚ V] (a b : V) (n : ℤ) {K : ℕ}
-    (hba : ∀ j : ℕ, K ≤ j → ((A.field b)[[n + j]]) a = 0) :
-    ((A.field a)[[n]]) b =
-      ∑ j ∈ range K, Int.negOnePow (n + j + 1) • (j.factorial : ℚ)⁻¹ •
-        (A.translation ^ j) (((A.field b)[[n + j]]) a) := by
-  have : HasUniqueDiv V := .of_module_rat V
-  rw [A.ncoeff_field_apply_eq_sum_vacuum a b n hba]
-  refine sum_congr rfl fun j _ ↦ ?_
-  rw [A.ncoeff_field_apply_vacuum_neg]
-
-/-- Over a `ℚ`-module, the `0`-th product is skew-symmetric modulo `T(V)`:
-`a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`. Together with `ncoeff_zero_field_ncoeff_apply`,
-`ncoeff_field_translation`, and `translation_ncoeff_apply`, this supplies the identities needed for
-the induced Lie bracket on `V / T(V)`. -/
-theorem ncoeff_zero_field_apply_add_mem_range_translation [Module ℚ V] (a b : V) :
-    ((A.field a)[[0]]) b + ((A.field b)[[0]]) a ∈ LinearMap.range A.translation := by
-  obtain ⟨P, hP⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero a
-  rw [A.ncoeff_field_apply_eq_sum_translation_pow a b 0 (K := P + 1)
-      (fun j hj ↦ by simpa using hP j (by omega)),
-    sum_range_succ']
-  simp only [Nat.cast_zero, add_zero, zero_add, Int.negOnePow_one, Units.neg_smul, one_smul,
-    Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_apply_eq_self, neg_add_cancel_right]
-  refine Submodule.sum_mem (LinearMap.range A.translation) fun j _ ↦ ?_
-  refine ⟨Int.negOnePow (((j + 1 : ℕ) : ℤ) + 1) • ((j + 1).factorial : ℚ)⁻¹ •
-      (A.translation ^ j) (((A.field b)[[(j + 1 : ℕ)]]) a), ?_⟩
-  simp only [Units.smul_def]
-  rw [map_zsmul, map_rat_smul, pow_succ', mul_apply_eq_comp]
-
-/-- Without division, `k!` times the `k`-th Hasse derivative of `Y(a, z)` is `Y(Tᵏ a, z)`. -/
-theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
-    k.factorial • hasseDeriv k (A.field a) = A.field ((A.translation ^ k) a) := by
-  rw [← iterate_derivative_eq_factorial_smul_hasseDeriv, A.field_pow_translation]
-
-/-- The field of `a₍₋ₖ₋₁₎|0⟩` is the `k`-th Hasse derivative of `Y(a, z)`. -/
-@[simp]
-theorem field_ncoeff_neg_succ_apply_vacuum [HasUniqueDiv V] (a : V) (k : ℕ) :
-    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) :=
-  (A.eq_field_of_lie_translation_ncoeff
-    (fun c ↦ let ⟨N, hN⟩ := A.exists_isLocalOfOrder a c; ⟨N + k, hN.hasseDeriv_left k⟩)
-    (lie_ncoeff_hasseDeriv (A.lie_translation_ncoeff a) k)
-    (ncoeff_neg_one_hasseDeriv k (A.field a) ▸ rfl)).symm
-
-/-- For `k : ℕ`, `Y(a₍₋ₖ₋₁₎ b, z)` is `:(∂_z^{(k)} Y(a, z)) Y(b, z):`. -/
-theorem field_ncoeff_neg_succ_apply [HasUniqueDiv V] (a b : V) (k : ℕ) :
-    A.field (((A.field a)[[-(k : ℤ) - 1]]) b) =
-      normalOrder (hasseDeriv k (A.field a)) (A.field b) := by
-  rw [A.field_ncoeff_apply, nthProduct_neg_natCast_sub_one]
-
-/-- **Borcherds commutator formula** in `finsum` form, independent of a chosen locality bound. -/
-theorem lie_ncoeff_field_finsum [HasUniqueDiv V] (a b : V) (m n : ℤ) :
-    ⁅(A.field a)[[m]], (A.field b)[[n]]⁆ =
-      ∑ᶠ i : ℕ, Ring.choose m i • (A.field (((A.field a)[[(i : ℤ)]]) b))[[m + n - i]] := by
-  obtain ⟨N, h⟩ := A.exists_isLocalOfOrder a b
-  have hN (j : ℕ) (hj : N ≤ j) : ((A.field a)[[(j : ℤ)]]) b = 0 :=
-    A.ncoeff_field_apply_eq_zero_of_isLocalOfOrder h hj
-  rw [A.lie_ncoeff_field_eq_sum a b m n hN, eq_comm]
-  exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hN i hi]
-
-/-- **Mode iterate / associativity formula** (`m = 0` case of the Borcherds identity) in `finsum`
-form: `((a₍ₙ₎ b)₍ᵣ₎) c = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (a₍ₙ₋ᵢ₎ (b₍ᵣ₊ᵢ₎ c) - (-1)ⁿ b₍ₙ₊ᵣ₋ᵢ₎ (a₍ᵢ₎ c))`
-for all `a, b, c : V` and all integers `n, r : ℤ`. -/
-theorem ncoeff_field_ncoeff_apply [HasUniqueDiv V] (a b c : V) (n r : ℤ) :
-    ((A.field (((A.field a)[[n]]) b))[[r]]) c =
-      ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
-        (((A.field a)[[n - i]]) (((A.field b)[[r + i]]) c) -
-          (n.negOnePow : ℤ) • ((A.field b)[[n + r - i]]) (((A.field a)[[(i : ℤ)]]) c)) := by
-  rw [A.field_ncoeff_apply, ncoeff_nthProduct_apply]
-
-/-- **Skew symmetry (division-free `finsum` form):**
-`a₍ₙ₎ b = ∑ᶠ i : ℕ, -(-1)ⁿ⁺ⁱ (b₍ₙ₊ᵢ₎ a)₍₋ᵢ₋₁₎|0⟩`. -/
-theorem ncoeff_field_apply_skewSymmetry_vacuum [HasUniqueDiv V] (a b : V) (n : ℤ) :
-    ((A.field a)[[n]]) b =
-      ∑ᶠ i : ℕ, (-((n + i).negOnePow : ℤ)) •
-        ((A.field (((A.field b)[[n + i]]) a))[[-(i : ℤ) - 1]]) A.vacuum := by
-  obtain ⟨K, hK⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero a
-  let M := ((K : ℤ) - n).toNat
-  have hba (j : ℕ) (hj : M ≤ j) : ((A.field b)[[n + j]]) a = 0 := hK (n + j) (by omega)
-  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := M) fun i hi ↦ by
-      simp [hba i hi],
-    A.ncoeff_field_apply_eq_sum_vacuum a b n hba]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [Int.negOnePow_succ, Units.neg_smul, Units.smul_def, neg_smul,
-    show -(i : ℤ) - 1 = -i - 1 by omega]
-
-/-- **Skew symmetry (`ℚ`-algebra `finsum` form):**
-`a₍ₙ₎ b = ∑ᶠ i : ℕ, -(-1)ⁿ⁺ⁱ (i!)⁻¹ Tⁱ (b₍ₙ₊ᵢ₎ a)`. -/
-theorem ncoeff_field_apply_skewSymmetry [Algebra ℚ R] (a b : V) (n : ℤ) :
-    ((A.field a)[[n]]) b =
-      ∑ᶠ i : ℕ, (-((n + i).negOnePow : ℤ)) •
-        (algebraMap ℚ R (i.factorial : ℚ)⁻¹ • (A.translation ^ i) (((A.field b)[[n + i]]) a)) := by
-  let : Module ℚ V := Module.compHom V (algebraMap ℚ R)
-  have : HasUniqueDiv V := .of_module_rat V
-  rw [A.ncoeff_field_apply_skewSymmetry_vacuum a b n]
-  exact finsum_congr fun i ↦ by rw [A.ncoeff_field_neg_succ_apply_vacuum]
 
 end FormalVertexAxioms
 

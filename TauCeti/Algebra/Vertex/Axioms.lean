@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.Derivative
+public import TauCeti.Algebra.Vertex.HasseDeriv
 public import Mathlib.Algebra.Lie.OfAssociative
 
 /-!
@@ -42,12 +42,17 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   `TauCeti.FormalVertexAxioms.ncoeff_field_apply_translation`:
   `a₍ₙ₎ (T b) = T (a₍ₙ₎ b) + n a₍ₙ₋₁₎ b`.
 * `TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`:
-  `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, and `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg` its
-  form `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
+  `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg`, and
+  `TauCeti.FormalVertexAxioms.ncoeff_field_neg_succ_apply_vacuum`:
+  `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
 * `TauCeti.FormalVertexAxioms.eq_of_ncoeff_apply_vacuum_eq`: Goddard's uniqueness theorem, a field
   local to every `Y(a,z)` is determined by its values on the vacuum.
-* `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
-  `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
+* `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq` and
+  `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation_ncoeff`: uniqueness of a field `B`
+  agreeing with `Y(b,z)` on the vacuum or at `B₍₋₁₎|0⟩ = b` under translation covariance.
+* `TauCeti.FormalVertexAxioms.factorial_smul_hasseDeriv_field` and
+  `TauCeti.FormalVertexAxioms.field_ncoeff_neg_succ_apply_vacuum`:
+  `k! • ∂_z^{(k)} Y(a, z) = Y(Tᵏ a, z)` and `Y(a₍₋ₖ₋₁₎|0⟩, z) = ∂_z^{(k)} Y(a, z)`.
 
 ## References
 
@@ -258,6 +263,20 @@ theorem eq_field_of_lie_translation_ncoeff [HasUniqueDiv V] {B : VertexOperator 
   A.eq_field_of_ncoeff_apply_vacuum_eq hloc
     (ncoeff_apply_eq_of_lie_of_neg_one_eq A.translation_vacuum hcov (A.lie_translation_ncoeff b)
       (hb.trans (A.ncoeff_neg_one_field_apply_vacuum b).symm))
+
+/-- Without division, `k!` times the `k`-th Hasse derivative of `Y(a, z)` is `Y(Tᵏ a, z)`. -/
+theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
+    k.factorial • hasseDeriv k (A.field a) = A.field ((A.translation ^ k) a) := by
+  rw [← iterate_derivative_eq_factorial_smul_hasseDeriv, A.field_pow_translation]
+
+/-- The field of `a₍₋ₖ₋₁₎|0⟩` is the `k`-th Hasse derivative of `Y(a, z)`. -/
+@[simp]
+theorem field_ncoeff_neg_succ_apply_vacuum [HasUniqueDiv V] (a : V) (k : ℕ) :
+    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) :=
+  (A.eq_field_of_lie_translation_ncoeff
+    (fun c ↦ let ⟨N, hN⟩ := A.exists_isLocalOfOrder a c; ⟨N + k, hN.hasseDeriv_left k⟩)
+    (lie_ncoeff_hasseDeriv (A.lie_translation_ncoeff a) k)
+    (ncoeff_neg_one_hasseDeriv k (A.field a) ▸ rfl)).symm
 
 end FormalVertexAxioms
 

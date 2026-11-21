@@ -143,12 +143,7 @@ theorem lie_ncoeff_eq_sum_nthProduct {A B : VertexOperator R V} {N : ℕ}
     (h : A.IsLocalOfOrder B N) (m n : ℤ) :
     ⁅A[[m]], B[[n]]⁆ =
       ∑ j ∈ range N, Ring.choose m j • (nthProduct (j : ℤ) A B)[[m + n - j]] := by
-  have hc := congrFun (congrFun h.commutatorDistribution_eq_sum_deltaTerm m) n
-  rw [Finset.sum_apply, Finset.sum_apply, commutatorDistribution_apply] at hc
-  rw [Ring.lie_def, hc]
-  refine sum_congr rfl fun j _ ↦ ?_
-  rw [nthProduct_natCast, FormalDistribution.deltaTerm_apply,
-    ncoeff_nonnegResidueProduct_eq_residue]
+  simpa only [nthProduct_natCast] using h.lie_ncoeff m n
 
 end IsLocalOfOrder
 
@@ -423,7 +418,8 @@ identity. -/
 theorem nthProduct_idField_left (n : ℤ) (B : VertexOperator R V) :
     nthProduct n (idField : VertexOperator R V) B = if n = -1 then B else 0 := by
   rcases le_or_gt 0 n with hn | hn
-  · simp [nthProduct_of_nonneg hn, show n ≠ -1 by omega]
+  · have hne : n ≠ -1 := by omega
+    simp [nthProduct_of_nonneg hn, hne]
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
     cases k with
     | zero => simp

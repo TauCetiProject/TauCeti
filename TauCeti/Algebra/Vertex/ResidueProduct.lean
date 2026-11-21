@@ -165,9 +165,10 @@ theorem IsLocalOfOrder.lie_ncoeff {A B : VertexOperator R V} {N : ℕ}
     (h : A.IsLocalOfOrder B N) (m n : ℤ) :
     ⁅A[[m]], B[[n]]⁆ =
       ∑ j ∈ range N, Ring.choose m j • (nonnegResidueProduct j A B)[[m + n - j]] := by
-  have hexp := congrFun (congrFun h.commutatorDistribution_eq_sum_deltaTerm m) n
-  simp only [commutatorDistribution_apply, Finset.sum_apply, FormalDistribution.deltaTerm_apply,
-    FormalDistribution.residue_apply, FormalDistribution.mulSub_pow_apply, zero_add] at hexp
-  rw [Ring.lie_def, hexp]; exact sum_congr rfl fun j _ ↦ by rw [ncoeff_nonnegResidueProduct]
+  have hc := congrFun (congrFun h.commutatorDistribution_eq_sum_deltaTerm m) n
+  rw [Finset.sum_apply, Finset.sum_apply, commutatorDistribution_apply] at hc
+  rw [Ring.lie_def, hc]
+  refine sum_congr rfl fun j _ ↦ ?_
+  rw [FormalDistribution.deltaTerm_apply, ncoeff_nonnegResidueProduct_eq_residue]
 
 end VertexOperator

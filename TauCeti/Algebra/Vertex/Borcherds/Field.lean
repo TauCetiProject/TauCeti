@@ -61,16 +61,18 @@ private def borcherdsRHS (A B : VertexOperator R V) (v : V) (m n r : ℤ) : V :=
 private theorem borcherdsLHS_eq_sum {A B : VertexOperator R V} {v : V} {m n r : ℤ} {M : ℕ}
     (hM : ∀ i : ℕ, M ≤ i → nthProduct (n + i) A B = 0) :
     borcherdsLHS A B v m n r =
-      ∑ i ∈ range M, Ring.choose m i • ((nthProduct (n + i) A B)[[m + r - i]]) v :=
-  TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hM i hi]
+      ∑ i ∈ range M, Ring.choose m i • ((nthProduct (n + i) A B)[[m + r - i]]) v := by
+  unfold borcherdsLHS
+  exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hM i hi]
 
 private theorem borcherdsRHS_eq_sum {A B : VertexOperator R V} {v : V} {m n r : ℤ} {M : ℕ}
     (hB : ∀ i : ℕ, M ≤ i → (B[[r + i]]) v = 0) (hA : ∀ i : ℕ, M ≤ i → (A[[m + i]]) v = 0) :
     borcherdsRHS A B v m n r =
       ∑ i ∈ range M, ((-1 : ℤ) ^ i * Ring.choose n i) •
         ((A[[m + n - i]]) ((B[[r + i]]) v) -
-          (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[m + i]]) v)) :=
-  TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hB i hi, hA i hi]
+          (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[m + i]]) v)) := by
+  unfold borcherdsRHS
+  exact TauCeti.finsum_eq_sum_range_of_forall_eq_zero fun i hi ↦ by simp [hB i hi, hA i hi]
 
 private theorem borcherdsLHS_add_one {A B : VertexOperator R V} {N : ℕ}
     (h : A.IsLocalOfOrder B N) (v : V) (m n r : ℤ) :
@@ -78,9 +80,8 @@ private theorem borcherdsLHS_add_one {A B : VertexOperator R V} {N : ℕ}
       borcherdsLHS A B v m n (r + 1) + borcherdsLHS A B v m (n + 1) r := by
   let M := ((N : ℤ) - n).toNat
   have hcut (q : ℤ) (hq : n ≤ q) (K : ℕ) (hK : M ≤ K) :
-      ∀ i : ℕ, K ≤ i → nthProduct (q + i) A B = 0 := fun i hi ↦ by
-    rw [nthProduct_of_nonneg (by omega)]
-    exact h.nonnegResidueProduct_eq_zero (by omega)
+      ∀ i : ℕ, K ≤ i → nthProduct (q + i) A B = 0 := fun i hi ↦
+    h.nthProduct_eq_zero (by omega)
   rw [borcherdsLHS_eq_sum (M := M + 1) (hcut n le_rfl (M + 1) (by omega)),
     borcherdsLHS_eq_sum (M := M + 1) (hcut n le_rfl (M + 1) (by omega)),
     borcherdsLHS_eq_sum (M := M) (hcut (n + 1) (by omega) M le_rfl),
@@ -136,22 +137,20 @@ private theorem borcherdsRHS_add_one (A B : VertexOperator R V) (v : V) (m n r :
     have hidx : n + 1 + r - (i : ℤ) = n + (r + 1) - i := by omega
     simp only [Int.negOnePow_succ, Units.val_neg, neg_smul, smul_neg, hidx]
 
-private theorem borcherds_eq_of_zero {A B : VertexOperator R V} {N : ℕ}
-    (h : A.IsLocalOfOrder B N) {v : V}
-    (h0n : ∀ q s : ℤ, borcherdsLHS A B v 0 q s = borcherdsRHS A B v 0 q s)
-    (hm0 : ∀ p s : ℤ, borcherdsLHS A B v p 0 s = borcherdsRHS A B v p 0 s)
-    (m n r : ℤ) : borcherdsLHS A B v m n r = borcherdsRHS A B v m n r := by
-  let D (p q s : ℤ) := borcherdsLHS A B v p q s - borcherdsRHS A B v p q s
-  have hrec (p q s : ℤ) : D (p + 1) q s = D p q (s + 1) + D p (q + 1) s := by
-    simp only [D, borcherdsLHS_add_one h, borcherdsRHS_add_one]
-    abel
+/-- An additive-group-valued function on `ℤ × ℤ × ℤ` satisfying the Pascal recurrence
+`D (p + 1) q s = D p q (s + 1) + D p (q + 1) s` and vanishing on the two axes `p = 0` and
+`q = 0` vanishes everywhere. -/
+private theorem eq_zero_of_recurrence {G : Type*} [AddCommGroup G] (D : ℤ → ℤ → ℤ → G)
+    (hrec : ∀ p q s : ℤ, D (p + 1) q s = D p q (s + 1) + D p (q + 1) s)
+    (h0n : ∀ q s : ℤ, D 0 q s = 0) (hm0 : ∀ p s : ℤ, D p 0 s = 0) (m n r : ℤ) :
+    D m n r = 0 := by
   have hm0' (k : ℕ) : ∀ q s : ℤ, D k q s = 0 := by
     induction k with
-    | zero => exact fun q s ↦ sub_eq_zero.mpr (h0n q s)
+    | zero => exact h0n
     | succ k ih => exact fun q s ↦ by rw [Nat.cast_succ, hrec, ih, ih, add_zero]
   have hn0' (l : ℕ) : ∀ p s : ℤ, D p l s = 0 := by
     induction l with
-    | zero => exact fun p s ↦ sub_eq_zero.mpr (hm0 p s)
+    | zero => exact hm0
     | succ l ih =>
       intro p s
       have h' := hrec p l s
@@ -159,11 +158,11 @@ private theorem borcherds_eq_of_zero {A B : VertexOperator R V} {N : ℕ}
       simpa [Nat.cast_succ] using h'
   have hneg (k : ℕ) : ∀ (l : ℕ) (s : ℤ), D (-(k : ℤ)) (-(l : ℤ)) s = 0 := by
     induction k with
-    | zero => exact fun l s ↦ by simpa [D] using sub_eq_zero.mpr (h0n _ s)
+    | zero => exact fun l s ↦ by simpa using h0n _ s
     | succ k ihk =>
       intro l
       induction l with
-      | zero => exact fun s ↦ by simpa [D] using sub_eq_zero.mpr (hm0 _ s)
+      | zero => exact fun s ↦ by simpa using hm0 _ s
       | succ l ihl =>
         intro s
         have h' := hrec (-((k + 1 : ℕ) : ℤ)) (-((l + 1 : ℕ) : ℤ)) (s - 1)
@@ -171,7 +170,6 @@ private theorem borcherds_eq_of_zero {A B : VertexOperator R V} {N : ℕ}
         have hl : -((l + 1 : ℕ) : ℤ) + 1 = -(l : ℤ) := by omega
         rw [hk, hl, sub_add_cancel, ihk (l + 1) (s - 1), ihl (s - 1), add_zero] at h'
         exact h'.symm
-  suffices hD : D m n r = 0 from sub_eq_zero.mp hD
   rcases le_or_gt 0 m with hm | hm
   · lift m to ℕ using hm
     exact hm0' m n r
@@ -181,6 +179,18 @@ private theorem borcherds_eq_of_zero {A B : VertexOperator R V} {N : ℕ}
   have hm' : -((-m).toNat : ℤ) = m := by omega
   have hn' : -((-n).toNat : ℤ) = n := by omega
   simpa only [hm', hn'] using hneg (-m).toNat (-n).toNat r
+
+private theorem borcherds_eq_of_zero {A B : VertexOperator R V} {N : ℕ}
+    (h : A.IsLocalOfOrder B N) {v : V}
+    (h0n : ∀ q s : ℤ, borcherdsLHS A B v 0 q s = borcherdsRHS A B v 0 q s)
+    (hm0 : ∀ p s : ℤ, borcherdsLHS A B v p 0 s = borcherdsRHS A B v p 0 s)
+    (m n r : ℤ) : borcherdsLHS A B v m n r = borcherdsRHS A B v m n r := by
+  refine sub_eq_zero.mp <| eq_zero_of_recurrence
+    (fun p q s ↦ borcherdsLHS A B v p q s - borcherdsRHS A B v p q s)
+    (fun p q s ↦ ?_) (fun q s ↦ sub_eq_zero.mpr (h0n q s))
+    (fun p s ↦ sub_eq_zero.mpr (hm0 p s)) m n r
+  simp only [borcherdsLHS_add_one h, borcherdsRHS_add_one]
+  abel
 
 /-- **Field-level Borcherds identity** in `finsum` form, over any commutative ring: for mutually
 local fields `A, B` (local of order `N`), any `v : V`, and all integers `m, n, r : ℤ`,
@@ -192,6 +202,8 @@ theorem IsLocalOfOrder.borcherds_finsum {A B : VertexOperator R V} {N : ℕ}
       ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
         ((A[[m + n - i]]) ((B[[r + i]]) v) -
           (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[m + i]]) v)) := by
+  suffices borcherdsLHS A B v m n r = borcherdsRHS A B v m n r by
+    simpa only [borcherdsLHS, borcherdsRHS] using this
   refine borcherds_eq_of_zero h (fun q s ↦ ?_) (fun p s ↦ ?_) m n r
   · rw [borcherdsLHS, finsum_eq_single _ 0 (fun i hi ↦ by
       simp [Ring.choose_zero_pos ℤ (Nat.pos_of_ne_zero hi)])]
@@ -200,9 +212,7 @@ theorem IsLocalOfOrder.borcherds_finsum {A B : VertexOperator R V} {N : ℕ}
       simp [Ring.choose_zero_pos ℤ (Nat.pos_of_ne_zero hi)])]
     have hL : borcherdsLHS A B v p 0 s = (⁅A[[p]], B[[s]]⁆) v := by
       rw [h.lie_ncoeff_eq_sum_nthProduct p s, LinearMap.sum_apply,
-        borcherdsLHS_eq_sum (M := N) fun i hi ↦ by
-          rw [zero_add, nthProduct_natCast]
-          exact h.nonnegResidueProduct_eq_zero hi]
+        borcherdsLHS_eq_sum (M := N) fun i hi ↦ h.nthProduct_eq_zero (by omega)]
       exact sum_congr rfl fun i _ ↦ by simp only [zero_add, LinearMap.smul_apply]
     simpa [Ring.lie_def, mul_apply_eq_comp] using hL
 
@@ -221,14 +231,13 @@ theorem IsLocalOfOrder.borcherds {A B : VertexOperator R V} {N : ℕ}
   obtain ⟨N₂, hN₂⟩ := B.exists_forall_ncoeff_apply_eq_zero v
   obtain ⟨N₃, hN₃⟩ := A.exists_forall_ncoeff_apply_eq_zero v
   let M := max ((N : ℤ) - n).toNat (max ((N₂ : ℤ) - r).toNat ((N₃ : ℤ) - m).toNat)
-  have hcut (i : ℕ) (hi : M ≤ i) : nthProduct (n + i) A B = 0 := by
-    rw [nthProduct_of_nonneg (by omega)]
-    exact h.nonnegResidueProduct_eq_zero (by omega)
+  have hcut (i : ℕ) (hi : M ≤ i) : nthProduct (n + i) A B = 0 :=
+    h.nthProduct_eq_zero (by omega)
   refine ⟨M, fun i hi ↦ by simp [hcut i hi],
     fun i hi ↦ ⟨by simp [hN₂ (r + i) (by omega)], by simp [hN₃ (m + i) (by omega)]⟩, ?_⟩
   rw [← borcherdsLHS_eq_sum hcut,
     ← borcherdsRHS_eq_sum (fun _ _ ↦ hN₂ _ (by omega)) (fun _ _ ↦ hN₃ _ (by omega))]
-  exact h.borcherds_finsum v m n r
+  simpa only [borcherdsLHS, borcherdsRHS] using h.borcherds_finsum v m n r
 
 end BorcherdsField
 
