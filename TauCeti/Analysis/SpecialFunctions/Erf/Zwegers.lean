@@ -11,6 +11,7 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Zwegers' error-function kernel
@@ -167,19 +168,11 @@ theorem zwegersE_ofReal_re_lt_one (x : ℝ) : (zwegersE x).re < 1 := by
 (`TauCeti.zwegersBeta_eq_erfc`); for `t < 0` the integrand vanishes on `(t, 0]` and the value is
 `β(0) = 1`. -/
 def zwegersBeta (t : ℝ) : ℝ :=
-  ∫ u in Ioi t, u ^ (-(1 / 2 : ℝ)) * rexp (-π * u)
+  ∫ u in Ioi t, u ^ (-1 / 2 : ℝ) * rexp (-π * u)
 
 /-- The defining tail integral of `TauCeti.zwegersBeta`. -/
 theorem zwegersBeta_def (t : ℝ) :
-    zwegersBeta t = ∫ u in Ioi t, u ^ (-(1 / 2 : ℝ)) * rexp (-π * u) := (rfl)
-
-/-- The integrand's power is `u ^ (-1/2) = 1 / √u` for every real `u`: both sides vanish for
-`u ≤ 0`. -/
-private theorem rpow_neg_half_eq_inv_sqrt (u : ℝ) : u ^ (-(1 / 2 : ℝ)) = (√u)⁻¹ := by
-  rcases lt_or_ge u 0 with hu | hu
-  · rw [Real.sqrt_eq_zero_of_nonpos hu.le, inv_zero, Real.rpow_def_of_neg hu,
-      show -(1 / 2 : ℝ) * π = -(π / 2) by ring, Real.cos_neg, Real.cos_pi_div_two, mul_zero]
-  · rw [Real.rpow_neg hu, ← Real.sqrt_eq_rpow]
+    zwegersBeta t = ∫ u in Ioi t, u ^ (-1 / 2 : ℝ) * rexp (-π * u) := (rfl)
 
 /-- The substitution `u = s² / π` turns the tail integral into a Gaussian tail. -/
 private theorem zwegersBeta_eq_erfc_of_nonneg {t : ℝ} (ht : 0 ≤ t) :
@@ -214,8 +207,8 @@ private theorem zwegersBeta_eq_erfc_of_nonneg {t : ℝ} (ht : 0 ≤ t) :
   refine setIntegral_congr_fun measurableSet_Ioi fun s hs => ?_
   have hs0 : 0 < s := ha0.trans_lt hs
   have hπ : √π ≠ 0 := by positivity
-  have hroot : (s ^ 2 / π) ^ (-(1 / 2 : ℝ)) = √π / s := by
-    rw [rpow_neg_half_eq_inv_sqrt, Real.sqrt_div (sq_nonneg s), Real.sqrt_sq hs0.le, inv_div]
+  have hroot : (s ^ 2 / π) ^ (-1 / 2 : ℝ) = √π / s := by
+    rw [← Real.inv_sqrt_eq_rpow, Real.sqrt_div (sq_nonneg s), Real.sqrt_sq hs0.le, inv_div]
   simp only [smul_eq_mul, hroot, abs_of_pos (by positivity : 0 < 2 * s / π)]
   rw [show -π * (s ^ 2 / π) = -s ^ 2 by field_simp]
   field_simp
@@ -231,7 +224,7 @@ theorem zwegersBeta_eq_erfc (t : ℝ) : zwegersBeta t = Real.erfc √(π * t) :=
   rw [Real.sqrt_eq_zero_of_nonpos (by nlinarith [pi_pos]), ← h0, zwegersBeta_def, zwegersBeta_def]
   refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioi
     (Ioi_subset_Ioi ht.le) fun u hu => ?_
-  rw [rpow_neg_half_eq_inv_sqrt, Real.sqrt_eq_zero_of_nonpos (not_lt.1 hu.2), inv_zero, zero_mul]
+  rw [← Real.inv_sqrt_eq_rpow, Real.sqrt_eq_zero_of_nonpos (not_lt.1 hu.2), inv_zero, zero_mul]
 
 /-- The tail at the origin is the full Gaussian integral: `β(0) = 1`. -/
 @[simp]
@@ -251,7 +244,7 @@ theorem zwegersBeta_le_one (t : ℝ) : zwegersBeta t ≤ 1 := by
 /-- The derivative of the tail is minus its integrand, away from `0`. For `t < 0` both sides
 vanish: `β` is constant there and `t ^ (-1/2) = 0` for Mathlib's power of a negative base. -/
 theorem hasDerivAt_zwegersBeta {t : ℝ} (ht : t ≠ 0) :
-    HasDerivAt zwegersBeta (-(t ^ (-(1 / 2 : ℝ)) * rexp (-π * t))) t := by
+    HasDerivAt zwegersBeta (-(t ^ (-1 / 2 : ℝ) * rexp (-π * t))) t := by
   rw [show zwegersBeta = fun t => Real.erfc √(π * t) from funext zwegersBeta_eq_erfc]
   have h : HasDerivAt (fun t => Real.erfc √(π * t))
       (-(2 / √π * rexp (-√(π * t) ^ 2)) * (1 / (2 * √(π * t)) * (π * 1))) t :=
@@ -259,13 +252,13 @@ theorem hasDerivAt_zwegersBeta {t : ℝ} (ht : t ≠ 0) :
       ((Real.hasDerivAt_sqrt (mul_ne_zero pi_pos.ne' ht)).comp t ((hasDerivAt_id t).const_mul π))
   convert h using 1
   rcases ht.lt_or_gt with ht | ht
-  · rw [Real.sqrt_eq_zero_of_nonpos (mul_neg_of_pos_of_neg pi_pos ht).le, rpow_neg_half_eq_inv_sqrt,
+  · rw [Real.sqrt_eq_zero_of_nonpos (mul_neg_of_pos_of_neg pi_pos ht).le, ← Real.inv_sqrt_eq_rpow,
       Real.sqrt_eq_zero_of_nonpos ht.le]
     simp
   have hπt : 0 < π * t := by positivity
   have hπ : √π ≠ 0 := by positivity
   have ht' : √t ≠ 0 := by positivity
-  rw [Real.sq_sqrt hπt.le, rpow_neg_half_eq_inv_sqrt, Real.sqrt_mul pi_pos.le]
+  rw [Real.sq_sqrt hπt.le, ← Real.inv_sqrt_eq_rpow, Real.sqrt_mul pi_pos.le]
   field_simp
   rw [Real.sq_sqrt pi_pos.le]
 
@@ -275,22 +268,22 @@ theorem zwegersBeta_le_exp_div {x : ℝ} (hx : 0 < x) :
   have hexp : IntegrableOn (fun u : ℝ => rexp (-π * u)) (Ioi x) :=
     integrableOn_exp_mul_Ioi (neg_lt_zero.2 pi_pos) x
   have hbound (u : ℝ) (hu : u ∈ Ioi x) :
-      u ^ (-(1 / 2 : ℝ)) * rexp (-π * u) ≤ x ^ (-(1 / 2 : ℝ)) * rexp (-π * u) :=
+      u ^ (-1 / 2 : ℝ) * rexp (-π * u) ≤ x ^ (-1 / 2 : ℝ) * rexp (-π * u) :=
     mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos hx (le_of_lt hu) (by norm_num))
       (exp_pos _).le
-  have hint : IntegrableOn (fun u : ℝ => u ^ (-(1 / 2 : ℝ)) * rexp (-π * u)) (Ioi x) := by
-    refine (hexp.const_mul (x ^ (-(1 / 2 : ℝ)))).mono' ?_ ?_
+  have hint : IntegrableOn (fun u : ℝ => u ^ (-1 / 2 : ℝ) * rexp (-π * u)) (Ioi x) := by
+    refine (hexp.const_mul (x ^ (-1 / 2 : ℝ))).mono' ?_ ?_
     · refine ContinuousOn.aestronglyMeasurable (fun u hu => ?_) measurableSet_Ioi
       exact ((Real.continuousAt_rpow_const _ _ (Or.inl (hx.trans hu).ne')).mul
         (by fun_prop)).continuousWithinAt
     · refine ae_restrict_of_forall_mem measurableSet_Ioi fun u hu => ?_
       rw [Real.norm_of_nonneg (by have := hx.trans hu; positivity)]
       exact hbound u hu
-  calc zwegersBeta x ≤ ∫ u in Ioi x, x ^ (-(1 / 2 : ℝ)) * rexp (-π * u) :=
+  calc zwegersBeta x ≤ ∫ u in Ioi x, x ^ (-1 / 2 : ℝ) * rexp (-π * u) :=
         setIntegral_mono_on hint (hexp.const_mul _) measurableSet_Ioi hbound
     _ = rexp (-π * x) / (π * √x) := by
       rw [integral_const_mul, integral_exp_mul_Ioi (neg_lt_zero.2 pi_pos),
-        rpow_neg_half_eq_inv_sqrt]
+        ← Real.inv_sqrt_eq_rpow]
       have hπ : π ≠ 0 := pi_pos.ne'
       have hx' : √x ≠ 0 := by positivity
       field_simp
