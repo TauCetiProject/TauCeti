@@ -105,14 +105,6 @@ theorem toContinuousLinearMap_dqEquiv : dqEquiv.toContinuousLinearMap = dq :=
 theorem dqEquiv_apply (h : Fin 4 → ℝ) : dqEquiv h = dq h :=
   (rfl)
 
-@[simp]
-theorem dq_dqEquiv_symm (q : ℍ) : dq (dqEquiv.symm q) = q :=
-  dqEquiv.apply_symm_apply q
-
-@[simp]
-theorem dqEquiv_symm_dq (x : Fin 4 → ℝ) : dqEquiv.symm (dq x) = x :=
-  dqEquiv.symm_apply_apply x
-
 theorem dq_apply (h : Fin 4 → ℝ) : dq h = ⟨h 0, h 1, h 2, h 3⟩ :=
   (rfl)
 

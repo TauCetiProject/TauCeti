@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Quaternion.Estimates
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Quaternion.Forms
 
 /-!
-# Measurability, decay bounds, and box boundary sums of Cauchy–Fueter kernel potentials
+# Decay bounds and box boundary sums of Cauchy–Fueter kernel potentials
 
-This file complements `TauCeti.Analysis.Quaternion.Estimates` with additional properties of
-iterated derivatives of Cauchy–Fueter kernel potentials:
+This file complements `TauCeti.Analysis.Quaternion.Estimates` with decay bounds and boundary-sum
+differentiation formulas for Cauchy–Fueter kernel potentials:
 
-* `TauCeti.aestronglyMeasurable_iteratedFDeriv_cauchyFueterKernel_right`: `AEStronglyMeasurable`
-  of the `m`-th pole derivative `z ↦ iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) p` for any
-  `AEStronglyMeasurable` pole map `φ`, without any pole-avoidance hypothesis.
-* `TauCeti.exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le`,
+* `ContinuousLinearMap.exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le`,
   `TauCeti.exists_norm_iteratedFDeriv_integral_cauchyFueterKernel_mul_le`,
   `TauCeti.exists_norm_iteratedFDeriv_integral_mul_cauchyFueterKernel_le`: uniform
   `C / δ ^ (3 + m) * ∫ z, ‖g z‖ ∂μ` decay bounds on the `m`-th derivative of general bilinear,
@@ -32,8 +31,8 @@ iterated derivatives of Cauchy–Fueter kernel potentials:
   `TauCeti.iteratedFDeriv_integral_mul_cauchyFueterKernel_of_mem_ball`,
   `TauCeti.iteratedFDeriv_integral_mul_cauchyFueterKernel`: specialized smoothness and iterated
   derivative formulas for left and right Cauchy–Fueter potentials with quaternion-module actions.
-* `TauCeti.contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel`,
-  `TauCeti.iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel`,
+* `ContinuousLinearMap.contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel`,
+  `ContinuousLinearMap.iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel`,
   `TauCeti.contDiffAt_boxBoundarySum_cauchyFueterKernel_left`,
   `TauCeti.contDiffAt_boxBoundarySum_cauchyFueterKernel_right`,
   `TauCeti.iteratedFDeriv_boxBoundarySum_cauchyFueterKernel_left`,
@@ -54,7 +53,7 @@ open scoped ContDiff Quaternion Topology
 
 namespace TauCeti
 
-/-! ### Measurability, decay bounds, and specialized left/right kernel potentials -/
+/-! ### Decay bounds and specialized left/right kernel potentials -/
 
 section KernelPotentials
 
@@ -64,72 +63,44 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
   {G E : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- For an a.e. strongly measurable pole map `φ : X → ℍ`, the `m`-th derivative of
-`cauchyFueterKernel (φ z)` at any point `p : ℍ` is a.e. strongly measurable. No pole-avoidance
-hypothesis is needed. -/
-theorem aestronglyMeasurable_iteratedFDeriv_cauchyFueterKernel_right
-    {φ : X → ℍ} (hφ : AEStronglyMeasurable φ μ) (m : ℕ) (p : ℍ) :
-    AEStronglyMeasurable (fun z ↦ iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) p) μ := by
-  have : TopologicalSpace.PseudoMetrizableSpace (ℍ [×m]→L[ℝ] ℍ) :=
-    @PseudoEMetricSpace.pseudoMetrizableSpace (ℍ [×m]→L[ℝ] ℍ) _
-  let K₀ : (Fin 4 → ℝ) → (ℍ [×m]→L[ℝ] ℍ) :=
-    fun u ↦ iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel y 0) (dq u)
-  have hK₀_cont : ContinuousOn K₀ {0}ᶜ := by
-    intro u hu
-    have hdu : dq u ≠ 0 := by
-      intro h0
-      exact hu (by simpa [h0] using (dqEquiv_symm_dq u).symm)
-    exact (((contDiffAt_cauchyFueterKernel (q₀ := 0) (by simpa using hdu)
-      (n := m)).continuousAt_iteratedFDeriv le_rfl).comp dq.continuous.continuousAt
-      |>.continuousWithinAt)
-  have hK₀_meas : StronglyMeasurable K₀ :=
-    hK₀_cont.stronglyMeasurable_of_countable_compl (by simp)
-  have hcoord : AEMeasurable (fun z ↦ dqEquiv.symm (φ z - p)) μ :=
-    (dqEquiv.symm.continuous.comp_aestronglyMeasurable
-      ((continuous_sub_right p).comp_aestronglyMeasurable hφ)).aemeasurable
-  have hcomp : AEStronglyMeasurable (fun z ↦ (-1 : ℝ) ^ m • K₀ (dqEquiv.symm (φ z - p))) μ :=
-    ContinuousConstSMul.continuous_const_smul ((-1 : ℝ) ^ m) |>.comp_aestronglyMeasurable
-      (hK₀_meas.aestronglyMeasurable.comp_aemeasurable hcoord)
-  refine hcomp.congr (ae_of_all _ fun z ↦ ?_)
-  simp only [K₀, dq_dqEquiv_symm, iteratedFDeriv_cauchyFueterKernel_right]
-
 /-- Uniform decay bound on the `m`-th derivative of a bilinearly weighted Cauchy–Fueter kernel
 potential in terms of the separation scale `δ` and the `L¹` norm of `g`. The constant depends only
 on the bilinear pairing `B` and the maximum order `N`, uniformly across all measurable spaces
 `X : Type u` and measures `μ` on `X`. -/
-theorem exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le
+theorem
+    _root_.ContinuousLinearMap.exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le
     (B : G →L[ℝ] ℍ →L[ℝ] E) (N : ℕ) :
     ∃ C : ℝ, 0 < C ∧ ∀ m ≤ N, ∀ {X : Type u} [MeasurableSpace X] {μ : Measure X}
       {φ : X → ℍ} {g : X → G} {q₀ : ℍ} {δ : ℝ},
         AEStronglyMeasurable φ μ → Integrable g μ → 0 < δ → (∀ᵐ z ∂μ, δ ≤ ‖φ z - q₀‖) →
         ‖iteratedFDeriv ℝ m (fun q ↦ ∫ z, B (g z) (cauchyFueterKernel (φ z) q) ∂μ) q₀‖ ≤
           C / δ ^ (3 + m) * ∫ z, ‖g z‖ ∂μ := by
-  obtain ⟨K, hK_pos, hK⟩ := B.isBoundedBilinearMap.bound
+  let : NormedSpace ℝ ℍ := inferInstance
   obtain ⟨C, hC, hbound⟩ :=
     exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_le_norm_sub N
-  refine ⟨K * C, mul_pos hK_pos hC, fun m hm {X _ μ φ g q₀ δ} hφ hg hδ₀ hδ ↦ ?_⟩
+  refine ⟨(‖B‖ + 1) * C, mul_pos (by positivity) hC, fun m hm {X _ μ φ g q₀ δ} hφ hg hδ₀ hδ ↦ ?_⟩
   have hcomm := iteratedFDeriv_integral_bilin_cauchyFueterKernel B.flip hφ hg hδ m
     (mem_ball_self hδ₀)
   simp only [ContinuousLinearMap.flip_apply] at hcomm
   rw [hcomm]
   refine (norm_integral_le_of_norm_le
-    (hg.norm.const_mul (K * C / δ ^ (3 + m))) ?_).trans_eq (integral_const_mul _ _)
+    (hg.norm.const_mul ((‖B‖ + 1) * C / δ ^ (3 + m))) ?_).trans_eq (integral_const_mul _ _)
   filter_upwards [hδ] with z hz
   have hne : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le hz))
   have hfn : (fun p ↦ B (g z) (cauchyFueterKernel (φ z) p)) =
       B (g z) ∘ cauchyFueterKernel (φ z) := by
     funext p
     simp [Function.comp_apply]
-  rw [hfn, (B (g z)).iteratedFDeriv_comp_left
-    (contDiffAt_cauchyFueterKernel_right hne (n := m)) le_rfl]
-  calc ‖(B (g z)).compContinuousMultilinearMap
-          (iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q₀)‖
-      ≤ ‖B (g z)‖ * ‖iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q₀‖ :=
-        (B (g z)).norm_compContinuousMultilinearMap_le _
-    _ ≤ (K * ‖g z‖) * (C / δ ^ (3 + m)) :=
-        mul_le_mul ((B (g z)).opNorm_le_bound (by positivity) (hK (g z)))
+  calc ‖iteratedFDeriv ℝ m (fun p ↦ B (g z) (cauchyFueterKernel (φ z) p)) q₀‖
+      = ‖iteratedFDeriv ℝ m (B (g z) ∘ cauchyFueterKernel (φ z)) q₀‖ := by rw [hfn]
+    _ ≤ ‖B (g z)‖ * ‖iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) q₀‖ :=
+        (B (g z)).norm_iteratedFDeriv_comp_left
+          (contDiffAt_cauchyFueterKernel_right hne (n := m)) le_rfl
+    _ ≤ ((‖B‖ + 1) * ‖g z‖) * (C / δ ^ (3 + m)) :=
+        mul_le_mul ((B.le_opNorm (g z)).trans
+          (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right zero_le_one) (norm_nonneg _)))
           (hbound m hm hδ₀ hz) (norm_nonneg _) (by positivity)
-    _ = K * C / δ ^ (3 + m) * ‖g z‖ := by ring
+    _ = (‖B‖ + 1) * C / δ ^ (3 + m) * ‖g z‖ := by ring
 
 /-- Smoothness on `ball q₀ δ` of a left Cauchy–Fueter kernel potential
 `q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ`. -/
@@ -249,8 +220,8 @@ theorem exists_norm_iteratedFDeriv_integral_cauchyFueterKernel_mul_le (N : ℕ) 
         ‖iteratedFDeriv ℝ m (fun q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ) q₀‖ ≤
           C / δ ^ (3 + m) * ∫ z, ‖g z‖ ∂μ := by
   simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] using
-    exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le.{u}
-      (ContinuousLinearMap.mul ℝ ℍ).flip N
+    ContinuousLinearMap.exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le.{u}
+      ((ContinuousLinearMap.mul ℝ ℍ).flip) N
 
 /-- Uniform decay bound on the `m`-th derivative of a right Cauchy–Fueter kernel potential
 `q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ`. The constant depends only on the maximum order `N`,
@@ -262,7 +233,7 @@ theorem exists_norm_iteratedFDeriv_integral_mul_cauchyFueterKernel_le (N : ℕ) 
         ‖iteratedFDeriv ℝ m (fun q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ) q₀‖ ≤
           C / δ ^ (3 + m) * ∫ z, ‖g z‖ ∂μ := by
   simpa only [ContinuousLinearMap.mul_apply'] using
-    exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le.{u}
+    ContinuousLinearMap.exists_norm_iteratedFDeriv_integral_bilinear_cauchyFueterKernel_le.{u}
       (ContinuousLinearMap.mul ℝ ℍ) N
 
 end KernelPotentials
@@ -275,7 +246,7 @@ section BoundaryRepresentations
 of a coordinate box, whenever the pole map is a.e. strongly measurable on each face, each face
 weight is integrable on its face, and each face is positively separated from `q₀` almost
 everywhere. -/
-theorem contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel
     {d : ℕ} {a b : Fin (d + 1) → ℝ}
     {G E : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -307,7 +278,7 @@ theorem contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel
 
 /-- Differentiating a bilinearly weighted Cauchy–Fueter kernel boundary sum over the faces of a
 coordinate box at any point `q₀` positively separated almost everywhere from each face. -/
-theorem iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
+theorem _root_.ContinuousLinearMap.iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
     {d : ℕ} {a b : Fin (d + 1) → ℝ}
     {G E : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -328,29 +299,32 @@ theorem iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
       boxBoundarySum a b
         (fun i x ↦ (B (w i x)).compContinuousMultilinearMap
           (iteratedFDeriv ℝ m (cauchyFueterKernel (φ x)) q₀)) := by
-  have hface_cd (i : Fin (d + 1)) {c : ℝ} (hc : c = a i ∨ c = b i) :
-      ContDiffAt ℝ m
-        (fun q ↦ ∫ u in Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
-          B (w i (i.insertNth c u)) (cauchyFueterKernel (φ (i.insertNth c u)) q)) q₀ := by
-    obtain ⟨δ, hδ₀, hδ⟩ := hsep i hc
-    simpa only [ContinuousLinearMap.flip_apply] using
-      (contDiffAt_integral_bilin_cauchyFueterKernel (n := ⊤) B.flip
-        (hφ i hc) (hw i hc) hδ (mem_ball_self hδ₀)).of_le (by simp)
-  have hface_deriv (i : Fin (d + 1)) {c : ℝ} (hc : c = a i ∨ c = b i) :
-      iteratedFDeriv ℝ m
-          (fun q ↦ ∫ u in Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
-            B (w i (i.insertNth c u)) (cauchyFueterKernel (φ (i.insertNth c u)) q)) q₀ =
+  choose δ₁ hδ₁₀ hδ₁ using fun i ↦ hsep i (Or.inr rfl)
+  choose δ₀ hδ₀₀ hδ₀ using fun i ↦ hsep i (Or.inl rfl)
+  have h := B.flip.iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
+    (ι := Fin (d + 1)) (α := fun _ ↦ Fin d → ℝ)
+    (μ := fun i ↦ volume.restrict (Icc (a ∘ i.succAbove) (b ∘ i.succAbove))) 1
+    (φ₁ := fun i u ↦ φ (i.insertNth (b i) u)) (φ₀ := fun i u ↦ φ (i.insertNth (a i) u))
+    (fun i ↦ hφ i (Or.inr rfl)) (fun i ↦ hφ i (Or.inl rfl))
+    (w₁ := fun i u ↦ w i (i.insertNth (b i) u)) (w₀ := fun i u ↦ w i (i.insertNth (a i) u))
+    (fun i ↦ hw i (Or.inr rfl)) (fun i ↦ hw i (Or.inl rfl))
+    hδ₁ hδ₀ m (fun i ↦ mem_ball_self (hδ₁₀ i)) (fun i ↦ mem_ball_self (hδ₀₀ i))
+  simp only [one_smul, ContinuousLinearMap.flip_apply] at h
+  simp only [boxBoundarySum_def]
+  rw [h]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hface {c : ℝ} {δ : ℝ} (hδ_pos : 0 < δ)
+      (hδ_ae : ∀ᵐ u ∂volume.restrict (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)),
+        δ ≤ ‖φ (i.insertNth c u) - q₀‖) :
+      ∫ u in Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
+          iteratedFDeriv ℝ m
+            (fun y ↦ B (w i (i.insertNth c u)) (cauchyFueterKernel (φ (i.insertNth c u)) y)) q₀ =
         ∫ u in Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
           (B (w i (i.insertNth c u))).compContinuousMultilinearMap
             (iteratedFDeriv ℝ m (cauchyFueterKernel (φ (i.insertNth c u))) q₀) := by
-    obtain ⟨δ, hδ₀, hδ⟩ := hsep i hc
-    have hcomm := iteratedFDeriv_integral_bilin_cauchyFueterKernel B.flip
-      (hφ i hc) (hw i hc) hδ m (mem_ball_self hδ₀)
-    simp only [ContinuousLinearMap.flip_apply] at hcomm
-    rw [hcomm]
     refine integral_congr_ae ?_
-    filter_upwards [hδ] with u hu
-    have hne : φ (i.insertNth c u) ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le hu))
+    filter_upwards [hδ_ae] with u hu
+    have hne : φ (i.insertNth c u) ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ_pos.trans_le hu))
     have hfn : (fun p ↦ B (w i (i.insertNth c u)) (cauchyFueterKernel (φ (i.insertNth c u)) p)) =
         B (w i (i.insertNth c u)) ∘ cauchyFueterKernel (φ (i.insertNth c u)) := by
       funext p
@@ -358,12 +332,7 @@ theorem iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
     rw [hfn]
     exact (B (w i (i.insertNth c u))).iteratedFDeriv_comp_left
       (contDiffAt_cauchyFueterKernel_right hne (n := m)) le_rfl
-  simp only [boxBoundarySum_def]
-  rw [iteratedFDeriv_fun_sum_apply fun i _ ↦
-    (hface_cd i (Or.inr rfl)).sub (hface_cd i (Or.inl rfl))]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [fun_iteratedFDeriv_sub_apply (hface_cd i (Or.inr rfl)) (hface_cd i (Or.inl rfl)),
-    hface_deriv i (Or.inr rfl), hface_deriv i (Or.inl rfl)]
+  rw [hface (hδ₁₀ i) (hδ₁ i), hface (hδ₀₀ i) (hδ₀ i)]
 
 /-- Compactness supplies a positive separation distance from `q₀` to any closed `dq`-box face that
 does not contain `q₀`. -/
@@ -393,12 +362,13 @@ theorem contDiffAt_boxBoundarySum_cauchyFueterKernel_left
     ContDiffAt ℝ n
       (fun q ↦ boxBoundarySum a b
         (fun i x ↦ cauchyFueterKernel (dq x) q * dq (Pi.single i 1) * g (dq x))) q₀ := by
-  have h := contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel (n := n)
-    (a := a) (b := b) (ContinuousLinearMap.mul ℝ ℍ).flip
-    (φ := dq) (w := fun i x ↦ dq (Pi.single i 1) * g (dq x)) (q₀ := q₀)
-    (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
-    (fun i _ hc ↦ (hg i hc).const_mul _)
-    (fun i _ hc ↦ exists_pos_le_norm_dq_insertNth_sub hq₀ i hc)
+  have h :=
+    ContinuousLinearMap.contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel
+      ((ContinuousLinearMap.mul ℝ ℍ).flip) (n := n) (a := a) (b := b)
+      (φ := dq) (w := fun i x ↦ dq (Pi.single i 1) * g (dq x)) (q₀ := q₀)
+      (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
+      (fun i _ hc ↦ (hg i hc).const_mul _)
+      (fun i _ hc ↦ exists_pos_le_norm_dq_insertNth_sub hq₀ i hc)
   simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply', mul_assoc] using h
 
 /-- Smoothness at any point `q₀` off the eight closed faces of a coordinate box of the right
@@ -413,8 +383,8 @@ theorem contDiffAt_boxBoundarySum_cauchyFueterKernel_right
     ContDiffAt ℝ n
       (fun q ↦ boxBoundarySum a b
         (fun i x ↦ g (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q)) q₀ := by
-  have h := contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel (n := n)
-    (a := a) (b := b) (ContinuousLinearMap.mul ℝ ℍ)
+  have h := (ContinuousLinearMap.mul ℝ ℍ).contDiffAt_boxBoundarySum_bilinear_cauchyFueterKernel
+    (n := n) (a := a) (b := b)
     (φ := dq) (w := fun i x ↦ g (dq x) * dq (Pi.single i 1)) (q₀ := q₀)
     (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
     (fun i _ hc ↦ (hg i hc).mul_const _)
@@ -436,12 +406,13 @@ theorem iteratedFDeriv_boxBoundarySum_cauchyFueterKernel_left
       boxBoundarySum a b
         (fun i x ↦ MulOpposite.op (dq (Pi.single i 1) * g (dq x)) •
           iteratedFDeriv ℝ m (cauchyFueterKernel (dq x)) q₀) := by
-  have h := iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
-    (a := a) (b := b) (ContinuousLinearMap.mul ℝ ℍ).flip
-    (φ := dq) (w := fun i x ↦ dq (Pi.single i 1) * g (dq x)) (q₀ := q₀) m
-    (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
-    (fun i _ hc ↦ (hg i hc).const_mul _)
-    (fun i _ hc ↦ exists_pos_le_norm_dq_insertNth_sub hq₀ i hc)
+  have h :=
+    ContinuousLinearMap.iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
+      ((ContinuousLinearMap.mul ℝ ℍ).flip) (a := a) (b := b)
+      (φ := dq) (w := fun i x ↦ dq (Pi.single i 1) * g (dq x)) (q₀ := q₀) m
+      (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
+      (fun i _ hc ↦ (hg i hc).const_mul _)
+      (fun i _ hc ↦ exists_pos_le_norm_dq_insertNth_sub hq₀ i hc)
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] at h
   have hfn :
       (fun i x ↦ ((ContinuousLinearMap.mul ℝ ℍ).flip (dq (Pi.single i 1) * g (dq x)))
@@ -469,8 +440,8 @@ theorem iteratedFDeriv_boxBoundarySum_cauchyFueterKernel_right
       boxBoundarySum a b
         (fun i x ↦ (g (dq x) * dq (Pi.single i 1)) •
           iteratedFDeriv ℝ m (cauchyFueterKernel (dq x)) q₀) := by
-  have h := iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
-    (a := a) (b := b) (ContinuousLinearMap.mul ℝ ℍ)
+  have h := (ContinuousLinearMap.mul ℝ ℍ).iteratedFDeriv_boxBoundarySum_bilinear_cauchyFueterKernel
+    (a := a) (b := b)
     (φ := dq) (w := fun i x ↦ g (dq x) * dq (Pi.single i 1)) (q₀ := q₀) m
     (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
     (fun i _ hc ↦ (hg i hc).mul_const _)

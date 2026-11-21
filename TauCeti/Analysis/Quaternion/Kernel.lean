@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.Quaternion.Fueter
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -273,6 +274,37 @@ theorem iteratedFDeriv_cauchyFueterKernel_right (m : ℕ) (q q₀ : ℍ) :
     (fun x ↦ cauchyFueterKernel (q + x) 0),
     iteratedFDeriv_comp_add_left (f := fun x ↦ cauchyFueterKernel x 0)]
   simp [sub_eq_add_neg]
+
+open MeasureTheory TauCeti.Quaternion in
+/-- For an a.e. strongly measurable pole map `φ : X → ℍ`, the `m`-th derivative of
+`cauchyFueterKernel (φ z)` at any point `p : ℍ` is a.e. strongly measurable. No pole-avoidance
+hypothesis is needed. -/
+theorem aestronglyMeasurable_iteratedFDeriv_cauchyFueterKernel_right
+    {X : Type*} [MeasurableSpace X] {μ : Measure X}
+    {φ : X → ℍ} (hφ : AEStronglyMeasurable φ μ) (m : ℕ) (p : ℍ) :
+    AEStronglyMeasurable (fun z ↦ iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) p) μ := by
+  have : TopologicalSpace.PseudoMetrizableSpace (ℍ [×m]→L[ℝ] ℍ) :=
+    @PseudoEMetricSpace.pseudoMetrizableSpace (ℍ [×m]→L[ℝ] ℍ) _
+  let K₀ : (Fin 4 → ℝ) → (ℍ [×m]→L[ℝ] ℍ) :=
+    fun u ↦ iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel y 0) (dq u)
+  have hK₀_cont : ContinuousOn K₀ {0}ᶜ := by
+    intro u hu
+    have hdu : dq u ≠ 0 := fun h0 ↦ hu (dq_injective (by simpa using h0))
+    exact (((contDiffAt_cauchyFueterKernel (q₀ := 0) (by simpa using hdu)
+      (n := m)).continuousAt_iteratedFDeriv le_rfl).comp dq.continuous.continuousAt
+      |>.continuousWithinAt)
+  have hK₀_meas : StronglyMeasurable K₀ :=
+    hK₀_cont.stronglyMeasurable_of_countable_compl (by simp)
+  have hcoord : AEMeasurable (fun z ↦ dqEquiv.symm (φ z - p)) μ :=
+    (dqEquiv.symm.continuous.comp_aestronglyMeasurable
+      ((continuous_sub_right p).comp_aestronglyMeasurable hφ)).aemeasurable
+  have hcomp : AEStronglyMeasurable (fun z ↦ (-1 : ℝ) ^ m • K₀ (dqEquiv.symm (φ z - p))) μ :=
+    ContinuousConstSMul.continuous_const_smul ((-1 : ℝ) ^ m) |>.comp_aestronglyMeasurable
+      (hK₀_meas.aestronglyMeasurable.comp_aemeasurable hcoord)
+  refine hcomp.congr (ae_of_all _ fun z ↦ ?_)
+  have hdq : dq (dqEquiv.symm (φ z - p)) = φ z - p := by
+    rw [← dqEquiv_apply, dqEquiv.apply_symm_apply]
+  simp only [K₀, hdq, iteratedFDeriv_cauchyFueterKernel_right]
 
 /-- Uniform bounds through any prescribed finite order for spatial derivatives of
 the kernel, with a positive constant independent of the pole and evaluation point. -/

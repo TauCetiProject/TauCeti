@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Quaternion.Cauchy.Representation
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Algebra.Quaternion.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Star
 import TauCeti.Analysis.Quaternion.Reflection
 
 /-!
@@ -51,8 +52,8 @@ Fueter regularity on the open cube, and `‖f‖ ≤ M` on the eight three-dimen
 Taking `r = R / 2` inscribes the cube in `Metric.closedBall q₀ R` (since `√4 · (R / 2) = R`),
 yielding universal ball bounds `TauCeti.exists_leftFueter_iteratedFDeriv_ball_bound`,
 `TauCeti.leftFueter_iteratedFDeriv_bound`, and—by isometric reflection invariance
-`TauCeti.norm_iteratedFDeriv_star_star`—their right-regular counterparts with the identical
-dimension-only constants.
+(`TauCeti.norm_iteratedFDeriv_star`, `TauCeti.norm_iteratedFDeriv_comp_star`)—their right-regular
+counterparts with the identical dimension-only constants.
 
 ## Main declarations
 
@@ -189,68 +190,10 @@ end ParametricKernelIntegral
 
 /-! ### Differentiated Cauchy–Fueter representations on boxes and affine parallelepipeds -/
 
-/-- Open-ball inclusion and uniform face-separation around an interior point `dq x₀` of a coordinate
-box in `ℍ`. -/
-private theorem exists_ball_subset_dq_open_box {a b x₀ : Fin 4 → ℝ}
-    (ha : ∀ i, a i < x₀ i) (hb : ∀ i, x₀ i < b i) :
-    ∃ δ > 0, (∀ y ∈ ball (dq x₀) δ, ∃ x ∈ pi univ (fun i ↦ Ioo (a i) (b i)), dq x = y) ∧
-      ∀ (i : Fin 4) {c : ℝ}, (c = a i ∨ c = b i) → ∀ u : Fin 3 → ℝ,
-        δ ≤ ‖dq (i.insertNth c u) - dq x₀‖ := by
-  let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
-  have he (x : Fin 4 → ℝ) : dq x = e x := congrFun coe_dq x
-  let U := pi univ fun i ↦ Ioo (a i) (b i)
-  have hU : IsOpen U := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
-  have hx₀ : x₀ ∈ U := mem_pi.mpr fun i _ ↦ ⟨ha i, hb i⟩
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.mp (e.isOpenMap U hU) (e x₀) (mem_image_of_mem e hx₀)
-  refine ⟨δ, hδ, fun y hy ↦ ?_, fun i {c} hc' u ↦ ?_⟩
-  · obtain ⟨x, hx, hxy⟩ := hball (by simpa only [he] using hy)
-    exact ⟨x, hx, by simpa [he] using hxy⟩
-  · by_contra hn
-    obtain ⟨y, hy, heq⟩ := hball
-      (by simpa only [mem_ball, dist_eq_norm, he] using lt_of_not_ge hn)
-    have hy' : y = i.insertNth c u := e.injective heq
-    have hi := mem_pi.mp hy i (mem_univ i)
-    rw [hy', Fin.insertNth_apply_same] at hi
-    rcases hc' with rfl | rfl
-    · exact lt_irrefl _ hi.1
-    · exact lt_irrefl _ hi.2
-
-/-- Open-ball inclusion and uniform face-separation around an interior point `dq x₀` of an affine
-parallelepiped in `ℍ`. -/
-private theorem exists_ball_subset_dq_open_affine
-    (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)) {p x₀ : Fin 4 → ℝ}
-    (hx₀ : L.symm (x₀ - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1) :
-    ∃ δ > 0,
-      (∀ y ∈ ball (dq x₀) δ, ∃ x : Fin 4 → ℝ,
-        L.symm (x - p) ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1) ∧ dq x = y) ∧
-      ∀ (j : Fin 4) {c : ℝ}, (c = 0 ∨ c = 1) → ∀ u : Fin 3 → ℝ,
-        δ ≤ ‖dq (p + L (j.insertNth c u)) - dq x₀‖ := by
-  let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
-  let A := L.toHomeomorph.trans (Homeomorph.addLeft p)
-  let U := pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1
-  have he (x : Fin 4 → ℝ) : dq x = e x := congrFun coe_dq x
-  have hU : IsOpen U := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
-  have hpole : x₀ ∈ A '' U := ⟨L.symm (x₀ - p), hx₀, by simp [A]⟩
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.mp (e.isOpenMap _ (A.isOpenMap _ hU))
-    (e x₀) (mem_image_of_mem e hpole)
-  refine ⟨δ, hδ, fun y hy ↦ ?_, fun j {c} hc' u ↦ ?_⟩
-  · obtain ⟨x, ⟨v, hv, hvx⟩, hxy⟩ := hball (by simpa only [he] using hy)
-    have hx_eq : x = p + L v := by simpa [A] using hvx.symm
-    exact ⟨x, by simpa [hx_eq, U] using hv, by simpa [he] using hxy⟩
-  · by_contra hn
-    obtain ⟨y, ⟨v, hv, hvq⟩, hyq⟩ := hball
-      (by simpa only [mem_ball, dist_eq_norm, he] using lt_of_not_ge hn)
-    have hy' : y = p + L (j.insertNth c u) := e.injective hyq
-    have hv' : v = j.insertNth c u := A.injective (by simpa [A, hy'] using hvq)
-    have hj := mem_pi.mp hv j (mem_univ j)
-    rw [hv', Fin.insertNth_apply_same] at hj
-    rcases hc' with rfl | rfl
-    · exact lt_irrefl _ hj.1
-    · exact lt_irrefl _ hj.2
-
 /-- Differentiating a scalar-rescaled finite sum of upper-minus-lower separated bilinear
-Cauchy–Fueter integrals commutes with the sum and with every face integral. -/
-private theorem iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
+Cauchy–Fueter integrals commutes with the sum and with every face integral, allowing
+face-specific separation radii `δ₁ i` and `δ₀ i`. -/
+theorem _root_.ContinuousLinearMap.iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
     {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
     {μ : ∀ i, Measure (α i)} {G E : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -261,10 +204,10 @@ private theorem iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
     {w₁ w₀ : ∀ i, α i → G}
     (hw₁ : ∀ i, Integrable (w₁ i) (μ i))
     (hw₀ : ∀ i, Integrable (w₀ i) (μ i))
-    {q₀ : ℍ} {δ : ℝ}
-    (hδ₁ : ∀ i, ∀ᵐ z ∂μ i, δ ≤ ‖φ₁ i z - q₀‖)
-    (hδ₀ : ∀ i, ∀ᵐ z ∂μ i, δ ≤ ‖φ₀ i z - q₀‖)
-    (m : ℕ) {q : ℍ} (hq : q ∈ ball q₀ δ) :
+    {q₀ : ℍ} {δ₁ δ₀ : ι → ℝ}
+    (hδ₁ : ∀ i, ∀ᵐ z ∂μ i, δ₁ i ≤ ‖φ₁ i z - q₀‖)
+    (hδ₀ : ∀ i, ∀ᵐ z ∂μ i, δ₀ i ≤ ‖φ₀ i z - q₀‖)
+    (m : ℕ) {q : ℍ} (hq₁ : ∀ i, q ∈ ball q₀ (δ₁ i)) (hq₀ : ∀ i, q ∈ ball q₀ (δ₀ i)) :
     iteratedFDeriv ℝ m
       (fun y ↦ c • ∑ i : ι,
         ((∫ z, B (cauchyFueterKernel (φ₁ i z) y) (w₁ i z) ∂μ i) -
@@ -273,16 +216,16 @@ private theorem iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
       ((∫ z, iteratedFDeriv ℝ m (fun y ↦ B (cauchyFueterKernel (φ₁ i z) y) (w₁ i z)) q ∂μ i) -
         ∫ z, iteratedFDeriv ℝ m (fun y ↦ B (cauchyFueterKernel (φ₀ i z) y) (w₀ i z)) q ∂μ i) := by
   have hcd₁ (i : ι) :=
-    contDiffAt_integral_bilin_cauchyFueterKernel B (hφ₁ i) (hw₁ i) (hδ₁ i) hq (n := m)
+    contDiffAt_integral_bilin_cauchyFueterKernel B (hφ₁ i) (hw₁ i) (hδ₁ i) (hq₁ i) (n := m)
   have hcd₀ (i : ι) :=
-    contDiffAt_integral_bilin_cauchyFueterKernel B (hφ₀ i) (hw₀ i) (hδ₀ i) hq (n := m)
+    contDiffAt_integral_bilin_cauchyFueterKernel B (hφ₀ i) (hw₀ i) (hδ₀ i) (hq₀ i) (n := m)
   rw [iteratedFDeriv_const_smul_apply' (ContDiffAt.sum fun i _ ↦ (hcd₁ i).sub (hcd₀ i)),
     iteratedFDeriv_fun_sum_apply fun i _ ↦ (hcd₁ i).sub (hcd₀ i)]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [fun_iteratedFDeriv_sub_apply (hcd₁ i) (hcd₀ i),
-    iteratedFDeriv_integral_bilin_cauchyFueterKernel B (hφ₁ i) (hw₁ i) (hδ₁ i) m hq,
-    iteratedFDeriv_integral_bilin_cauchyFueterKernel B (hφ₀ i) (hw₀ i) (hδ₀ i) m hq]
+    iteratedFDeriv_integral_bilin_cauchyFueterKernel B (hφ₁ i) (hw₁ i) (hδ₁ i) m (hq₁ i),
+    iteratedFDeriv_integral_bilin_cauchyFueterKernel B (hφ₀ i) (hw₀ i) (hδ₀ i) m (hq₀ i)]
 
 /-- Bilinear differentiation under the box Cauchy–Fueter boundary representation. -/
 private theorem iteratedFDeriv_cauchyFueter_box_bilin {a b x₀ : Fin 4 → ℝ} {f : ℍ → ℍ}
@@ -296,11 +239,11 @@ private theorem iteratedFDeriv_cauchyFueter_box_bilin {a b x₀ : Fin 4 → ℝ}
       (fun i u ↦ iteratedFDeriv ℝ m
         (fun y ↦ B (cauchyFueterKernel (dq u) y) (w i u)) (dq x₀)) := by
   have hab : a ≤ b := fun i ↦ (ha i).le.trans (hb i).le
-  obtain ⟨δ, hδ, hball, hdist⟩ := exists_ball_subset_dq_open_box ha hb
+  obtain ⟨δ, hδ, hball, hdist⟩ := exists_ball_subset_and_le_norm_box_face ha hb
   have hfeq : f =ᶠ[𝓝 (dq x₀)] fun y ↦ (1 / (2 * Real.pi ^ 2)) • boxBoundarySum a b
       (fun i u ↦ B (cauchyFueterKernel (dq u) y) (w i u)) := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hδ)] with y hy
-    obtain ⟨x, hx, rfl⟩ := hball y hy
+    obtain ⟨x, hx, rfl⟩ := hball hy
     exact hrep x hx
   have hface_int (i : Fin 4) {c : ℝ} (hc' : c ∈ Icc (a i) (b i)) :
       IntegrableOn (fun u : Fin 3 → ℝ ↦ w i (i.insertNth c u))
@@ -309,13 +252,14 @@ private theorem iteratedFDeriv_cauchyFueter_box_bilin {a b x₀ : Fin 4 → ℝ}
       Fin.insertNth_mem_Icc.mpr ⟨hc', hu⟩).integrableOn_compact isCompact_Icc
   rw [(hfeq.iteratedFDeriv ℝ m).eq_of_nhds]
   simp only [boxBoundarySum_def]
-  exact iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel B _
+  exact B.iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel _
     (fun _ ↦ Continuous.aestronglyMeasurable (by fun_prop))
     (fun _ ↦ Continuous.aestronglyMeasurable (by fun_prop))
     (fun i ↦ hface_int i (right_mem_Icc.2 (hab i)))
     (fun i ↦ hface_int i (left_mem_Icc.2 (hab i)))
-    (fun i ↦ Eventually.of_forall (hdist i (Or.inr rfl)))
-    (fun i ↦ Eventually.of_forall (hdist i (Or.inl rfl))) m (mem_ball_self hδ)
+    (fun i ↦ Eventually.of_forall (hdist i _ (Or.inr rfl)))
+    (fun i ↦ Eventually.of_forall (hdist i _ (Or.inl rfl))) m
+    (fun _ ↦ mem_ball_self hδ) (fun _ ↦ mem_ball_self hδ)
 
 /-- Bilinear differentiation under the affine Cauchy–Fueter boundary representation. -/
 private theorem iteratedFDeriv_cauchyFueter_affine_bilin
@@ -340,7 +284,7 @@ private theorem iteratedFDeriv_cauchyFueter_affine_bilin
           iteratedFDeriv ℝ m (fun y ↦
             B (cauchyFueterKernel (dq (p + L (j.insertNth 0 u))) y)
               (w j (j.insertNth 0 u))) (dq x₀)) := by
-  obtain ⟨δ, hδ, hball, hdist⟩ := exists_ball_subset_dq_open_affine L hx₀
+  obtain ⟨δ, hδ, hball, hdist⟩ := exists_ball_subset_and_le_norm_affine_face (a := 0) (b := 1) hx₀
   have hfeq : f =ᶠ[𝓝 (dq x₀)] fun y ↦ (1 / (2 * Real.pi ^ 2)) • ∑ j : Fin 4,
       ((∫ u in Icc (0 : Fin 3 → ℝ) 1,
           B (cauchyFueterKernel (dq (p + L (j.insertNth 1 u))) y)
@@ -349,21 +293,22 @@ private theorem iteratedFDeriv_cauchyFueter_affine_bilin
           B (cauchyFueterKernel (dq (p + L (j.insertNth 0 u))) y)
             (w j (j.insertNth 0 u))) := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hδ)] with y hy
-    obtain ⟨x, hvx, rfl⟩ := hball y hy
-    exact hrep x hvx
+    obtain ⟨_, ⟨v, hv, rfl⟩, rfl⟩ := hball hy
+    exact hrep (p + L v) (by simpa using hv)
   have hface_int (j : Fin 4) {c : ℝ} (hmem : c ∈ Icc (0 : ℝ) 1) :
       IntegrableOn (fun u : Fin 3 → ℝ ↦ w j (j.insertNth c u)) (Icc 0 1) :=
     ((hw j).comp (by fun_prop) fun u hu ↦
       Fin.insertNth_mem_Icc.mpr ⟨hmem, hu⟩).integrableOn_compact isCompact_Icc
   rw [(hfeq.iteratedFDeriv ℝ m).eq_of_nhds]
-  exact iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
-    (μ := fun _ ↦ volume.restrict (Icc (0 : Fin 3 → ℝ) 1)) B _
+  exact B.iteratedFDeriv_smul_sum_sub_integral_bilin_cauchyFueterKernel
+    (μ := fun _ ↦ volume.restrict (Icc (0 : Fin 3 → ℝ) 1)) _
     (fun _ ↦ Continuous.aestronglyMeasurable (by fun_prop))
     (fun _ ↦ Continuous.aestronglyMeasurable (by fun_prop))
     (fun j ↦ hface_int j (right_mem_Icc.2 zero_le_one))
     (fun j ↦ hface_int j (left_mem_Icc.2 zero_le_one))
-    (fun j ↦ Eventually.of_forall (hdist j (Or.inr rfl)))
-    (fun j ↦ Eventually.of_forall (hdist j (Or.inl rfl))) m (mem_ball_self hδ)
+    (fun j ↦ Eventually.of_forall (hdist j _ (Or.inr rfl)))
+    (fun j ↦ Eventually.of_forall (hdist j _ (Or.inl rfl))) m
+    (fun _ ↦ mem_ball_self hδ) (fun _ ↦ mem_ball_self hδ)
 
 /-- Differentiated left Cauchy–Fueter representation on a coordinate box: for every interior point
 `x₀ ∈ ∏ i, Ioo (a i) (b i)` and order `m`, `iteratedFDeriv ℝ m f (dq x₀)` is `1 / (2π²)` times the
@@ -654,7 +599,7 @@ theorem exists_rightFueter_iteratedFDeriv_ball_bound (m : ℕ) :
     rw [_root_.norm_star]
     exact hM (star q) (hcb_star q hq)
   have hbound := hleft hR hc_refl hf_refl hM_refl
-  rwa [norm_iteratedFDeriv_star_star, star_star] at hbound
+  rwa [norm_iteratedFDeriv_star, norm_iteratedFDeriv_comp_star, star_star] at hbound
 
 /-- Universal interior derivative estimate for left Fueter regular functions on a domain containing
 `closedBall q₀ R` (`R > 0`): for each order `m`, a constant `C > 0` depending only on `m` bounds

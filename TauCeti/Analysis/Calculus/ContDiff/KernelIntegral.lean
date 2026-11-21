@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.ParametricIntegral
 
 /-!
 # Smoothness and Taylor series of separated translation-kernel integrals
@@ -180,8 +181,14 @@ theorem hasFTaylorSeriesUpToOn_integral_bilin_kernel_sub
         (fun y m ↦ ∫ z, iteratedFDeriv ℝ m (fun p ↦ B (K (φ z - p)) (w z)) y ∂μ)
         (ball q₀ r) := by
     choose C hC using fun i : ℕ ↦ hK_bd i (sub_pos.2 hr)
-    refine hasFTaylorSeriesUpToOn_integral_of_le_bound (bound := fun i z ↦ (‖B‖ * C i) * ‖w z‖)
-      isOpen_ball ?_ ?_ (fun i _ ↦ hw.norm.const_mul _) ?_
+    refine hasFTaylorSeriesUpToOn_integral_of_dominated (bound := fun i z ↦ (‖B‖ * C i) * ‖w z‖)
+      isOpen_ball ?_ ?_ ?_ (fun i _ ↦ hw.norm.const_mul _)
+    · filter_upwards [hδ] with z hz y hy
+      have hy_lt : ‖y - q₀‖ < r := by simpa [mem_ball, dist_eq_norm] using hy
+      have hne : φ z ≠ y := fun heq ↦ by linarith [heq ▸ hz]
+      exact ((B.flip (w z)).contDiff.contDiffAt.comp y
+        ((hK (φ z - y) (sub_ne_zero.2 hne)).comp y
+          (contDiffAt_const.sub contDiffAt_id))).contDiffWithinAt
     · intro y hy i _
       exact aestronglyMeasurable_iteratedFDeriv_bilin_kernel_sub
         B hK hφ hw.aestronglyMeasurable hδ i (ball_subset_ball hr.le hy)
@@ -195,15 +202,6 @@ theorem hasFTaylorSeriesUpToOn_integral_bilin_kernel_sub
       exact (norm_iteratedFDeriv_bilin_kernel_sub_le B hK hne (w z) i).trans
         (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (hC i _ hsep) (norm_nonneg B))
           (norm_nonneg (w z)))
-    · filter_upwards [hδ] with z hz
-      have hcd : ContDiffOn ℝ ∞ (fun p ↦ B (K (φ z - p)) (w z)) (ball q₀ r) := fun y hy ↦ by
-        have hy_lt : ‖y - q₀‖ < r := by simpa [mem_ball, dist_eq_norm] using hy
-        have hne : φ z ≠ y := fun heq ↦ by linarith [heq ▸ hz]
-        exact ((B.flip (w z)).contDiff.contDiffAt.comp y
-          ((hK (φ z - y) (sub_ne_zero.2 hne)).comp y
-            (contDiffAt_const.sub contDiffAt_id))).contDiffWithinAt
-      exact (hcd.ftaylorSeriesWithin isOpen_ball.uniqueDiffOn).congr_series fun m _ y hy ↦
-        iteratedFDerivWithin_of_isOpen m isOpen_ball hy
   refine (hasFTaylorSeriesUpToOn_top_iff' le_rfl).2 ⟨fun y hy ↦ ?_, fun m y hy ↦ ?_⟩
   · have hy_lt : ‖y - q₀‖ < δ := by simpa [mem_ball, dist_eq_norm] using hy
     exact (hloc ((‖y - q₀‖ + δ) / 2) (by linarith)).zero_eq y
