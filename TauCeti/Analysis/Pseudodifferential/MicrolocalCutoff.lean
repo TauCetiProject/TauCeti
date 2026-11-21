@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Normalize
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-import TauCeti.Analysis.Pseudodifferential.Symbol.CutoffInverse
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Topology.Constructions.SumProd
 
@@ -247,7 +247,7 @@ frequency, and vanishes unless `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`. It i
 cutoff `χ(ξ / R)`; this makes it vanish outside a set `{x ∈ U, ξ ∈ Γ, ‖ξ‖ ≥ R}` on which a symbol
 is elliptic, as microlocal parametrix symbols require
 (`TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`). -/
-theorem exists_microlocalCutoff [CompleteSpace V] {K U F Γ : Set (CoordinateSpace n)}
+theorem exists_microlocalCutoff {K U F Γ : Set (CoordinateSpace n)}
     (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (hF : IsClosed F)
     (hFcone : ∀ r : ℝ, 0 < r → ∀ ξ ∈ F, r • ξ ∈ F) (hΓ : IsOpen Γ)
     (hΓcone : ∀ r : ℝ, 0 < r → ∀ ξ ∈ Γ, r • ξ ∈ Γ) (hFΓ : ∀ ξ ∈ F, ξ ≠ 0 → ξ ∈ Γ) (R : ℝ) :
@@ -259,12 +259,18 @@ theorem exists_microlocalCutoff [CompleteSpace V] {K U F Γ : Set (CoordinateSpa
   set R₁ := max R 1
   have hR₁ : 0 < R₁ := lt_max_of_lt_right one_pos
   set χ : FrequencyCutoff (CoordinateSpace n) := default
-  set d := (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).cutoffInverse χ R₁
-    (fun _ _ _ ↦ by rw [coefficient_const]; exact ⟨.refl ℂ V, rfl⟩)
-    (fun _ _ ↦ ⟨1, fun _ _ _ _ ↦ by simp [coefficient_const, ContinuousLinearMap.norm_id_le]⟩)
+  set d : Symbol n V V 0 := ofFrequency (fun ξ ↦ χ (R₁⁻¹ • ξ) • ContinuousLinearMap.id ℂ V)
+    ((χ.contDiff.comp (contDiff_const_smul _)).smul contDiff_const) fun k ↦ by
+      obtain ⟨C, -, hC⟩ := χ.exists_norm_iteratedFDeriv_comp_inv_smul_le k
+      simpa only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, zero_sub,
+        neg_div] using ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
+          ((ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.id ℂ V))
+          (g := fun ξ ↦ χ (R₁⁻¹ • ξ))
+          ((χ.contDiff.comp (contDiff_const_smul _)).of_le (mod_cast le_top))
+          ⟨C, hC R₁ (le_max_right R 1)⟩
   have hd (p : CoordinateSpace n × CoordinateSpace n) :
-      d.coefficient p = χ (R₁⁻¹ • p.2) • ContinuousLinearMap.id ℂ V := by
-    simp [d, coefficient_cutoffInverse]
+      d.coefficient p = χ (R₁⁻¹ • p.2) • ContinuousLinearMap.id ℂ V :=
+      coefficient_ofFrequency _ _ p
   refine ⟨inclusion (by norm_num) (d.comp c₀.toSymbol), fun p hp ↦ ?_, 2 * R₁ + 2,
     fun x hx ξ hξ hR ↦ ?_⟩
   · simp only [coefficient_inclusion, coefficient_comp, hd, ContinuousLinearMap.smul_comp,

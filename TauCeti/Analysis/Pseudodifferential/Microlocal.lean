@@ -46,8 +46,10 @@ Together with the microlocal parametrix this gives **microlocal elliptic regular
 elliptic at the large frequencies of an open cone `Γ` over a neighbourhood of `x₀`, and `Op(a) u`
 is `H^{s - m}` in the frequencies of `Γ`, then the cut-off distributions `φ u`, for `φ` supported
 near `x₀`, are `H^s` in an open cone around each frequency of `Γ`
-(`TauCeti.Symbol.HasCompactSpatialSupport.exists_forall_memLp_smul_fourier_toLp_smulLeftCLM`).
-This is the inclusion `WF_s(u) ⊆ WF_{s - m}(Op(a) u) ∪ Char(a)` on the Fourier side.
+(`Symbol.HasCompactSpatialSupport.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM`).
+This is a Fourier-side estimate from which the inclusion `WF_s(u) ⊆ WF_{s - m}(Op(a) u) ∪ Char(a)`
+follows after localizing `Op(a) u` in position; its restatement through
+`Distribution.IsMicrolocallySobolevAt` is not yet done.
 
 ## The argument
 
@@ -96,7 +98,7 @@ The first term is `H^s` near `ξ₀` by the microlocal Sobolev mapping, the seco
   shift for cut-off distributions microlocally `H^s` at a point.
 * `Symbol.HasCompactSpatialSupport.memLp_smul_fourier_toLp_quantizeSobolev_of_coefficient_eq_zero`:
   `Op(a) u` is `H^s` for every `s` in the frequencies where `a` vanishes conically.
-* `TauCeti.Symbol.HasCompactSpatialSupport.exists_forall_memLp_smul_fourier_toLp_smulLeftCLM`:
+* `Symbol.HasCompactSpatialSupport.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM`:
   microlocal elliptic regularity on `H^t`.
 
 ## References
@@ -532,11 +534,9 @@ private theorem HasCompactSpatialSupport.exists_toDistr_smulLeftCLM_eq
             (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t u)).toDistr +
               (P.quantizeSobolev hP t u).toDistr - (r.quantizeSobolev hr t u).toDistr := by
   have hφ' : ContDiff ℝ ∞ (φ : CoordinateSpace n → ℂ) := φ.smooth ⊤
-  have hΦ : ContDiff ℝ ∞ fun x ↦ φ x • ContinuousLinearMap.id ℂ V := hφ'.smul contDiff_const
   -- The symbols `e = φ`, `e₁ = φ c` and `q = φ b`.
-  set e := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) hΦ
-  have he : e.HasCompactSpatialSupport := (hasCompactSpatialSupport_ofSpatial_iff hΦ).2
-    hφ.smul_right
+  set e := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) (hφ'.smul contDiff_const)
+  have he : e.HasCompactSpatialSupport := hasCompactSpatialSupport_ofSpatial_smul_id hφ
   set e₁ : Symbol n V V 0 := Symbol.inclusion (by norm_num) (e.comp c)
   have he₁ : e₁.HasCompactSpatialSupport := (he.comp_right c).inclusion _
   have hce₁ (x ξ : CoordinateSpace n) : e₁.coefficient (x, ξ) = φ x • c.coefficient (x, ξ) := by
@@ -639,7 +639,7 @@ representatives `𝓕 (Op(a) u).toLp = ⟨ξ⟩ ^ (t - m) 𝓕 (Op(a) u)` and `�
 so the weights are `⟨ξ⟩ ^ (s - t)` on both sides. Thus an elliptic operator gains back
 microlocally the `m` orders of regularity that it loses
 (`TauCeti.Symbol.HasCompactSpatialSupport.memLp_smul_fourier_toLp_quantizeSobolev`). -/
-theorem HasCompactSpatialSupport.exists_forall_memLp_smul_fourier_toLp_smulLeftCLM
+theorem HasCompactSpatialSupport.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM
     (ha : a.HasCompactSpatialSupport) {x₀ : CoordinateSpace n}
     {U : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) {Γ : Set (CoordinateSpace n)} (hΓ : IsOpen Γ)
     (hcone : ∀ r : ℝ, 0 < r → ∀ ξ ∈ Γ, r • ξ ∈ Γ) {ξ₀ : CoordinateSpace n} (hξ₀ : ξ₀ ∈ Γ) {R : ℝ}
