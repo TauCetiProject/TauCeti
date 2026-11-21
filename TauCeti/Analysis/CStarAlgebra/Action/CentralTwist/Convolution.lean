@@ -31,8 +31,8 @@ with `support (f *_ω g) ⊆ support f * support g`, giving a `ℂ`-bilinear map
 `C_c(G, A)`. When `μ` is left-invariant, the `2`-cocycle identity makes `ω.convolution μ`
 associative, unitary norm preservation gives `∫ ‖f *_ω g‖ ≤ (∫ ‖f‖) * ∫ ‖g‖`, and `ω.involution`
 is involutive (using `α'_s(ω(s⁻¹, s)) = ω(s, s⁻¹)`), reverses products
-`(f *_ω g)^{*_ω} = g^{*_ω} *_ω f^{*_ω}`, and preserves the `L¹` norm of any Haar measure. No
-unitality, separability, second countability, or σ-finiteness is assumed.
+`(f *_ω g)^{*_ω} = g^{*_ω} *_ω f^{*_ω}`, and preserves the `L¹` norm of any left-invariant measure
+finite on compact sets. No unitality, separability, second countability, or σ-finiteness is assumed.
 
 ## Main definitions
 
@@ -51,7 +51,7 @@ unitality, separability, second countability, or σ-finiteness is assumed.
 * `TauCeti.CStarAction.CentralCocycle.integral_norm_convolution_le`: `L¹` submultiplicativity.
 * `TauCeti.CStarAction.CentralCocycle.involution_involution`: involutivity of `ω.involution`.
 * `TauCeti.CStarAction.CentralCocycle.integral_norm_involution`: `L¹` isometry of `ω.involution`
-  against a Haar measure.
+  against a left-invariant measure finite on compact sets.
 * `TauCeti.CStarAction.CentralCocycle.involution_convolution`:
   `ω.involution (ω.convolution μ f g) = ω.convolution μ (ω.involution g) (ω.involution f)`.
 
@@ -388,9 +388,10 @@ theorem tsupport_involution (f : C_c(G, A)) :
   rw [tsupport, ω.support_involution, ← α.support_twistedInvolution, ← tsupport,
     α.tsupport_twistedInvolution]
 
-/-- Against any Haar measure, `ω.involution` preserves the `L¹` norm. -/
+/-- Against any left-invariant measure finite on compact sets, `ω.involution` preserves the `L¹`
+norm. -/
 theorem integral_norm_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
-    [μ.IsHaarMeasure] (f : C_c(G, A)) :
+    [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
     ∫ s, ‖ω.involution f s‖ ∂μ = ∫ s, ‖f s‖ ∂μ := by
   simp_rw [norm_involution_apply, ← smul_eq_mul]
   exact integral_modularCharacter_smul_inv_eq_self f.continuous.norm f.hasCompactSupport.norm

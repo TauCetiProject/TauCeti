@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Algebra
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Covariant
 public import TauCeti.Analysis.CStarAlgebra.Completion
-public import Mathlib.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Analysis.Normed.Operator.Completion
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Integrated L¹ representations of twisted covariant pairs
@@ -23,7 +24,7 @@ integrated form `P.integratedOperator μ` of a twisted covariant pair
 * `CentralCovariantPair.integratedOperatorCLM`, `CentralCovariantPair.integratedNonUnitalAlgHom`,
   and `CentralCovariantPair.integratedOperatorL1` (for left-invariant `μ` finite on compacts);
 * `CentralCovariantPair.integratedStarAlgHom` and `CentralCovariantPair.integratedStarAlgHomL1`
-  (additionally preserving `ω.involution` for Haar measures);
+  (additionally preserving `ω.involution` for left-invariant Borel `μ` finite on compacts);
 * `CentralCovariantPair.equivCovariantRepresentation`: canonical equivalence between
   `CentralCovariantPair H α 1` and nondegenerate `CovariantRepresentation α H`.
 
@@ -98,12 +99,7 @@ def integratedOperatorL1 :
   map_smul' := map_smul _
   map_zero' := map_zero _
   map_add' := map_add _
-  map_mul' x y := by
-    induction x, y using Completion.induction_on₂ with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f g => simp only [← Completion.coe_mul', ContinuousLinearMap.fromCompletion_apply_coe,
-        integratedOperatorCLM_apply, TwistedConvolutionAlgebra.ofConv_mul,
-        integratedOperator_convolution]
+  map_mul' := (P.integratedOperatorCLM μ).fromCompletion_mul fun f g => by simp
 
 @[simp] theorem integratedOperatorL1_coe (f : TwistedConvolutionAlgebra ω μ) :
     P.integratedOperatorL1 μ f = P.integratedOperator μ f.ofConv := by
@@ -113,13 +109,10 @@ def integratedOperatorL1 :
   (P.integratedOperatorCLM μ).fromCompletion.continuous
 
 theorem norm_integratedOperatorL1_le (x : Completion (TwistedConvolutionAlgebra ω μ)) :
-    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-  | ih f =>
-    simpa only [integratedOperatorL1_coe, Completion.norm_coe, one_mul,
-      integratedOperatorCLM_apply] using
-      (P.integratedOperatorCLM μ).le_of_opNorm_le (P.norm_integratedOperatorCLM_le μ) f
+    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
+  ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le
+    ((ContinuousLinearMap.norm_fromCompletion _).trans_le (P.norm_integratedOperatorCLM_le μ))
+    x).trans_eq (one_mul _)
 
 end Multiplication
 
@@ -128,7 +121,7 @@ end Normed
 section Star
 
 variable [MeasurableSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
-  (μ : Measure G) [μ.IsHaarMeasure]
+  (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on
 `TwistedConvolutionAlgebra ω μ`. -/
@@ -150,15 +143,8 @@ theorem norm_integratedStarAlgHom_le_norm (f : TwistedConvolutionAlgebra ω μ) 
 
 /-- The L¹ integrated form preserves the `⋆`-involution on the twisted L¹ completion. -/
 @[simp] theorem integratedOperatorL1_star (x : Completion (TwistedConvolutionAlgebra ω μ)) :
-    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
-  induction x using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq
-      ((P.continuous_integratedOperatorL1 μ).comp continuous_star)
-      (continuous_star.comp (P.continuous_integratedOperatorL1 μ))
-  | ih f =>
-    rw [← Completion.coe_star, P.integratedOperatorL1_coe, P.integratedOperatorL1_coe,
-      TwistedConvolutionAlgebra.ofConv_star, P.integratedOperator_involution]
+    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) :=
+  (P.integratedOperatorCLM μ).fromCompletion_star (fun f => by simp) x
 
 /-- Extension by continuity of the integrated ⋆-representation to
 `Completion (TwistedConvolutionAlgebra ω μ)`. -/

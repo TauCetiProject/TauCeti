@@ -33,9 +33,9 @@ projective law combine into the algebraic identity `P.pi (f r) U_r P.pi (g t) U_
 P.pi (f r * α_r(g t) * ω(r, t)) U_{r * t}` (`CentralCovariantPair.pi_mul_unitaryMap_mul`). When `μ`
 is left-invariant, compact-support Fubini together with left-translation invariance makes
 `P.integratedOperator μ` multiplicative for `twistedConvolution`
-(`centralIntegrated_twistedConvolution`). Against any Haar measure, the modular factor in
-`ω.involution` cancels Haar inversion so that `P.integratedOperator μ` sends `ω.involution` to the
-operator adjoint.
+(`centralIntegrated_twistedConvolution`). Against any left-invariant measure finite on compact sets,
+the modular factor in `ω.involution` cancels Haar inversion so that `P.integratedOperator μ` sends
+`ω.involution` to the operator adjoint.
 
 For the trivial cocycle `ω = 1`, `CentralCovariantPair H α 1` corresponds bijectively to
 nondegenerate `CovariantRepresentation α H` with matching integrated forms, while
@@ -62,7 +62,8 @@ nondegenerate `CovariantRepresentation α H` with matching integrated forms, whi
   `TauCeti.CStarAction.centralIntegrated_twistedConvolution`: multiplicativity under
   `twistedConvolution` for left-invariant `μ`.
 * `TauCeti.CStarAction.CentralCovariantPair.integratedOperator_involution`:
-  `P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f)` for Haar `μ`.
+  `P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f)` for left-invariant
+  `μ` finite on compact sets.
 
 ## References
 
@@ -401,11 +402,11 @@ theorem pi_involution_mul_unitaryMap (f : C_c(G, A)) (s : G) :
   rw [← P.pi.multiplierExtension_mul_eq_fst P.nondegenerate, mul_assoc, ← P.unitaryMap_mul_pi,
     ← mul_assoc, ← P.star_unitaryMap_inv, map_star, ← star_mul]
 
-/-- Against any Haar measure, the integrated form of a twisted covariant pair sends the
-cocycle-twisted involution `ω.involution` to the operator adjoint. -/
+/-- Against any left-invariant measure finite on compact sets, the integrated form of a twisted
+covariant pair sends the cocycle-twisted involution `ω.involution` to the operator adjoint. -/
 @[simp]
 theorem integratedOperator_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
-    [μ.IsHaarMeasure] (f : C_c(G, A)) :
+    [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
     P.integratedOperator μ (ω.involution f) = star (P.integratedOperator μ f) := by
   rw [ContinuousLinearMap.star_eq_adjoint]
   refine (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun v w => ?_

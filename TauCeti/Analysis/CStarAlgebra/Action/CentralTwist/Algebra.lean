@@ -292,12 +292,8 @@ variable [IsFiniteMeasureOnCompacts μ] [IsTopologicalGroup G] [LocallyCompactSp
 /-- For a left-invariant measure, the `ω`-twisted involution is an `L¹` isometry:
 `‖star f‖ = ‖f‖`. -/
 theorem norm_star (f : TwistedConvolutionAlgebra ω μ) : ‖star f‖ = ‖f‖ := by
-  have h :
-      ∫ s, ‖ω.involution f.ofConv s‖ ∂μ = ∫ s, ‖α.twistedInvolution f.ofConv s‖ ∂μ := by
-    simp only [CentralCocycle.norm_involution_apply, CStarAction.norm_twistedInvolution_apply]
-  rw [norm_eq_integral_norm, ofConv_star, h, ← ConvolutionAlgebra.norm_toConv (α := α),
-    ConvolutionAlgebra.toConv_twistedInvolution, ConvolutionAlgebra.norm_star,
-    ConvolutionAlgebra.norm_toConv, norm_eq_integral_norm]
+  rw [norm_eq_integral_norm, ofConv_star, ω.integral_norm_involution μ f.ofConv,
+    norm_eq_integral_norm]
 
 instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) := ⟨fun f => (norm_star f).le⟩
 

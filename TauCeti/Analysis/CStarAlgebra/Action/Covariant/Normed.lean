@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Completion
+public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
-public import Mathlib.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Contractive integrated representations
@@ -97,11 +98,7 @@ def integratedOperatorL1 :
   map_smul' := map_smul _
   map_zero' := map_zero _
   map_add' := map_add _
-  map_mul' x y := by
-    induction x, y using Completion.induction_on₂ with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f g => simp only [← Completion.coe_mul', ContinuousLinearMap.fromCompletion_apply_coe,
-        integratedOperatorCLM_apply, ConvolutionAlgebra.ofConv_mul, integratedOperator_convolution]
+  map_mul' := (P.integratedOperatorCLM μ).fromCompletion_mul fun f g => by simp
 
 /-- On compactly supported coefficients the L¹ integrated form is the integrated form. -/
 @[simp]
@@ -116,13 +113,10 @@ theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ)
 
 /-- The L¹ integrated form is a contraction: `‖(π ⋊ U)(x)‖ ≤ ‖x‖₁` on the twisted L¹ algebra. -/
 theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ)) :
-    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-  | ih f =>
-    simpa only [integratedOperatorL1_coe, Completion.norm_coe, one_mul,
-      integratedOperatorCLM_apply] using (P.integratedOperatorCLM μ).le_of_opNorm_le
-        (P.norm_integratedOperatorCLM_le μ) f
+    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
+  ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le
+    ((ContinuousLinearMap.norm_fromCompletion _).trans_le (P.norm_integratedOperatorCLM_le μ))
+    x).trans_eq (one_mul _)
 
 end Multiplication
 

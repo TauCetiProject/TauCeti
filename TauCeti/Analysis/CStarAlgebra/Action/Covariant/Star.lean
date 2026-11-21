@@ -109,14 +109,10 @@ theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
 @[simp]
 theorem integratedOperatorL1_star (x : Completion (ConvolutionAlgebra α μ)) :
     P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
-  induction x using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq
-      ((P.continuous_integratedOperatorL1 μ).comp continuous_star)
-      (continuous_star.comp (P.continuous_integratedOperatorL1 μ))
-  | ih f =>
-    rw [← Completion.coe_star, P.integratedOperatorL1_coe, P.integratedOperatorL1_coe,
-      ConvolutionAlgebra.ofConv_star, P.integratedOperator_twistedInvolution]
+  have h : ⇑(P.integratedOperatorL1 μ) = (P.integratedOperatorCLM μ).fromCompletion :=
+    Completion.ext (P.continuous_integratedOperatorL1 μ)
+      (P.integratedOperatorCLM μ).fromCompletion.continuous fun f => by simp
+  simpa only [h] using (P.integratedOperatorCLM μ).fromCompletion_star (fun f => by simp) x
 
 /-- The integrated form on `Completion (ConvolutionAlgebra α μ)` bundled as a nonunital complex
 `⋆`-algebra homomorphism. -/
