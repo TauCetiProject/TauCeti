@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Primitive
-public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic

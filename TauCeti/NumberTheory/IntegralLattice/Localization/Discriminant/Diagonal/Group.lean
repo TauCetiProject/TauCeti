@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.Rank
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
-import TauCeti.Algebra.Group.Primary.Generators
+import TauCeti.GroupTheory.FiniteAbelian.PrimePowerRank
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.Padics.PadicIntegers
 

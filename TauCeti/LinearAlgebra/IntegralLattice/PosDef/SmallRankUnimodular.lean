@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Isotropic
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.UnitLattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.UnitNorm

@@ -195,6 +195,12 @@ theorem discriminantQuadraticModule_quadratic (L : IntegralLattice V)
     (L.discriminantQuadraticModule hL).quadratic x = L.discriminantQuadraticMap hL x :=
   rfl
 
+/-- The pairing of the discriminant quadratic module is the discriminant pairing. -/
+theorem discriminantQuadraticModule_pairing (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) (x y : L.DiscriminantGroup) :
+    (L.discriminantQuadraticModule hL).pairing x y = L.discriminantPairing x y :=
+  rfl
+
 /-- The polar finite bilinear module of the discriminant quadratic module is the existing
 discriminant bilinear module. -/
 theorem discriminantQuadraticModule_toFiniteBilinearModule (L : IntegralLattice V)
@@ -209,6 +215,17 @@ theorem restrict_discriminantQuadraticModule_toFiniteBilinearModule (L : Integra
     [L.IsNondegenerate] (hL : L.IsEven) (H : AddSubgroup (L.discriminantQuadraticModule hL)) :
     ((L.discriminantQuadraticModule hL).restrict H).toFiniteBilinearModule =
       L.discriminantBilinearModule.restrict H :=
+  rfl
+
+/-- Restricting the discriminant quadratic module to its `n`-primary component has polar finite
+bilinear module equal to the restriction of the discriminant bilinear module to its `n`-primary
+component. -/
+theorem restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule
+    (L : IntegralLattice V) [L.IsNondegenerate] (hL : L.IsEven) (n : ℕ) :
+    ((L.discriminantQuadraticModule hL).restrict
+      (AddCommGroup.primaryComponent (L.discriminantQuadraticModule hL) n)).toFiniteBilinearModule =
+      L.discriminantBilinearModule.restrict
+        (AddCommGroup.primaryComponent L.discriminantBilinearModule n) :=
   rfl
 
 /-- The cardinality of the discriminant quadratic module is that of the discriminant group. -/

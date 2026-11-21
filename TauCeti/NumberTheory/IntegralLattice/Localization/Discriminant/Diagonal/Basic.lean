@@ -8,8 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
-public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.DiagonalGroup
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal.Group
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.Padics.RatCast
 
@@ -41,7 +40,7 @@ classification of `L_p` at odd primes by its discriminant form (Nikulin, Corolla
 ## Implementation notes
 
 The additive isomorphism `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p` is proved in
-`TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.DiagonalGroup` via the dual
+`TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal.Group` via the dual
 representatives `diagonalDualVec` of `p^{-kᵢ} bᵢ`. Representatives in `Lᵛ` of these classes pair by
 rational numbers that differ from `δᵢⱼ uᵢ p^{-kᵢ}` by `p`-adic integers, and a rational number
 with `p`-power denominator that is a `p`-adic integer is an integer

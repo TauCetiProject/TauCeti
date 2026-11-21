@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
-public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Isotropic
 import TauCeti.Algebra.Group.Primary.Card
@@ -93,7 +93,7 @@ theorem isLagrangian_evenSublattice_primaryComponent_two [L.IsNondegenerate]
   have hH2_iso : A₂.toFiniteBilinearModule.IsIsotropic H₂ :=
     A₂.toFiniteBilinearModule.isIsotropic_def.mpr fun x hx y hy ↦
       (A.restrict_pairing _ x y).trans <|
-        (N.discriminantBilinearModule_pairing x.val y.val).trans <|
+        (N.discriminantQuadraticModule_pairing L.isEven_evenSublattice x.val y.val).trans <|
           (IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero M₀).mp hI
             x.val hx y.val hy
   exact FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq A₂.toFiniteBilinearModule

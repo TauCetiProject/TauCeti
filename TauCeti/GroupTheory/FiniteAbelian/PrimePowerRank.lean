@@ -7,6 +7,11 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.Data.ZMod.Basic
+public import TauCeti.GroupTheory.Rank
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Algebra.Module.SpanRank
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
@@ -18,7 +23,8 @@ import Mathlib.LinearAlgebra.Pi
 A finite abelian group killed by `p ^ k`, of order `p ^ (r * k)`, and with exactly `p ^ r`
 elements killed by `p` is the product of `r` cyclic groups of order `p ^ k`.  This is the
 homogeneous prime-power case of the structure theorem for finite abelian groups, and the
-rank-two case is recorded separately.
+rank-two case is recorded separately. On a finite product `∏ᵢ ℤ/pᵏⁱ`, `AddGroup.rank` equals
+`#{i | kᵢ ≠ 0}`.
 
 The criterion is useful when the total order and the first torsion layer are easier to count than
 explicit generators.  It determines both the number of cyclic factors and their exponents.
@@ -27,12 +33,14 @@ explicit generators.  It determines both the number of cyclic factors and their 
 
 * `TauCeti.AddCommGroup.nonempty_addEquiv_pi_zmod_primePow`: the rank-`r` characterisation.
 * `TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow`: the rank-two case.
+* `TauCeti.AddCommGroup.rank_pi_zmod_pow`: `AddGroup.rank` of `∏ᵢ ℤ/pᵏⁱ` is `#{i | kᵢ ≠ 0}`.
 -/
 
 public section
 
 namespace TauCeti.AddCommGroup
 
+open Finset
 open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
@@ -115,6 +123,58 @@ theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
     Nonempty (G ≃+ ZMod (p ^ k) × ZMod (p ^ k)) :=
   (nonempty_addEquiv_pi_zmod_primePow hp hpow hcard hcardp).map fun e ↦
     e.trans (LinearEquiv.finTwoArrow ℕ (ZMod (p ^ k))).toAddEquiv
+
+/-- The minimal number of generators of a finite product `∏ᵢ ℤ/pᵏⁱ` is the number of nonzero
+exponents `kᵢ ≠ 0`. -/
+theorem rank_pi_zmod_pow {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] (k : ι → ℕ) :
+    AddGroup.rank (∀ i, ZMod (p ^ k i)) = #{i | k i ≠ 0} := by
+  classical
+  have hp : p.Prime := Fact.out
+  have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ hp.ne_zero⟩
+  rw [AddGroup.rank_eq_spanFinrank_top]
+  apply le_antisymm
+  · -- Single-coordinate generators on `{i // k i ≠ 0}` span the product, as `ZMod 1` is trivial.
+    let g : {i // k i ≠ 0} → ∀ i, ZMod (p ^ k i) := fun j ↦ Pi.single j.val 1
+    have hspan : Submodule.span ℤ (Set.range g) = ⊤ := by
+      refine top_unique fun x _ ↦ ?_
+      rw [← Finset.univ_sum_single x]
+      refine Submodule.sum_mem _ fun i _ ↦ ?_
+      by_cases hi : k i = 0
+      · have : Subsingleton (ZMod (p ^ k i)) := by rw [hi, pow_zero]; infer_instance
+        rw [Subsingleton.elim (x i) 0, Pi.single_zero]
+        exact Submodule.zero_mem _
+      · have hx : Pi.single i (x i) = ((x i).val : ℤ) • g ⟨i, hi⟩ := by
+          ext j
+          by_cases hji : j = i
+          · subst hji
+            simp [g]
+          · simp [g, hji]
+        rw [hx]
+        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨⟨i, hi⟩, rfl⟩)
+    rw [← hspan]
+    refine (Submodule.spanFinrank_span_le_ncard_of_finite (Set.finite_range g)).trans ?_
+    calc (Set.range g).ncard ≤ Fintype.card {i // k i ≠ 0} := by
+          simpa [Nat.card_eq_fintype_card] using Set.ncard_image_le (f := g) (s := Set.univ)
+      _ = #{i | k i ≠ 0} := Fintype.card_subtype _
+  · -- Reducing the nontrivial coordinates modulo `p` maps onto the `𝔽_p`-vector space `𝔽_p^S`.
+    let π : (∀ i, ZMod (p ^ k i)) →ₗ[ℤ] ({i // k i ≠ 0} → ZMod p) :=
+      LinearMap.pi fun j ↦
+        ((ZMod.castHom (dvd_pow_self p j.property) (ZMod p)).toAddMonoidHom.toIntLinearMap).comp
+          (LinearMap.proj j.val)
+    have hsurj : Function.Surjective π := fun y ↦ by
+      refine ⟨fun i ↦ if hi : k i ≠ 0 then ((y ⟨i, hi⟩).val : ZMod (p ^ k i)) else 0, ?_⟩
+      ext ⟨i, hi⟩
+      simp [π, hi]
+    have hle := Submodule.spanFinrank_map_le_of_fg π (Module.Finite.fg_top (R := ℤ))
+    rw [Submodule.map_top, LinearMap.range_eq_top.mpr hsurj] at hle
+    calc #{i | k i ≠ 0} = Fintype.card {i // k i ≠ 0} := (Fintype.card_subtype _).symm
+      _ = Module.finrank (ZMod p) ({i // k i ≠ 0} → ZMod p) := (Module.finrank_pi (ZMod p)).symm
+      _ = (⊤ : Submodule (ZMod p) ({i // k i ≠ 0} → ZMod p)).spanFinrank :=
+          Module.finrank_eq_spanFinrank_of_free
+      _ = (⊤ : Submodule ℤ ({i // k i ≠ 0} → ZMod p)).spanFinrank :=
+          (Submodule.spanFinrank_restrictScalars_eq
+            (ZMod.ringHom_surjective (algebraMap ℤ (ZMod p))) ⊤).symm
+      _ ≤ (⊤ : Submodule ℤ (∀ i, ZMod (p ^ k i))).spanFinrank := hle
 
 end TauCeti.AddCommGroup
 

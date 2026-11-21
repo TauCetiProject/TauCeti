@@ -79,6 +79,25 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module 
 
 /-! ### Reduction of the genus to `p = 2` and the discriminant form -/
 
+private theorem discriminant_eq_of_isometry
+    {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
+    (f : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
+    L.discriminant = M.discriminant := by
+  simpa only [natCard_discriminantBilinearModule, natCard_discriminantGroup] using
+    Nat.card_congr f.toAddEquiv.toEquiv
+
+private noncomputable def evenSublatticePrimaryBilinearIsometry
+    (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime] (hp : Odd p) :
+    FiniteBilinearModule.Isometry
+      (L.evenSublattice.discriminantBilinearModule.restrict
+        (primaryComponent L.evenSublattice.discriminantBilinearModule p))
+      (L.discriminantBilinearModule.restrict
+        (primaryComponent L.discriminantBilinearModule p)) :=
+  primaryDiscriminantBilinearIsometry
+    (L.evenSublattice.localInclusionIsometryEquiv L p L.evenSublattice_form
+      L.evenSublattice_carrier_le
+      (L.not_dvd_relIndex_evenSublattice_of_odd hp (Fact.out : p.Prime).ne_one))
+
 /-- **Genus characterization up to dyadic equivalence.** Two nondegenerate integral lattices lie in
 one genus if and only if they have the same real signature, isometric dyadic localizations `L_2` and
 `M_2`, and isometric discriminant bilinear modules. -/
@@ -93,9 +112,7 @@ theorem sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantBilinearM
   refine ⟨fun h ↦ ⟨h.signature_eq, h.localIntegralForm_equivalent 2,
     h.nonempty_isometry_discriminantBilinearModule⟩, ?_⟩
   rintro ⟨hsig, h2, ⟨f⟩⟩
-  have hdisc : L.discriminant = M.discriminant := by
-    simpa only [natCard_discriminantBilinearModule, natCard_discriminantGroup] using
-      Nat.card_congr f.toAddEquiv.toEquiv
+  have hdisc := discriminant_eq_of_isometry f
   have hdet := L.determinant_eq_of_signature_eq_of_discriminant_eq hsig hdisc
   refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ ?_⟩
   by_cases hp2 : p = 2
@@ -141,9 +158,7 @@ theorem sameGenus_iff_of_odd_discriminant
   refine ⟨fun h ↦ ⟨h.signature_eq, h.isEven_iff,
     h.nonempty_isometry_discriminantBilinearModule⟩, ?_⟩
   rintro ⟨hsig, heven, ⟨f⟩⟩
-  have hdisc : L.discriminant = M.discriminant := by
-    simpa only [natCard_discriminantBilinearModule, natCard_discriminantGroup] using
-      Nat.card_congr f.toAddEquiv.toEquiv
+  have hdisc := discriminant_eq_of_isometry f
   have hdet := L.determinant_eq_of_signature_eq_of_discriminant_eq hsig hdisc
   have hL2 : IsUnit (L.determinant : ℤ_[2]) :=
     L.odd_discriminant_iff_isUnit_determinant_padicInt_two.mp hodd
@@ -168,14 +183,8 @@ theorem sameGenus_iff_of_odd_discriminant
     Nat.not_even_iff_odd.mpr hodd
       (even_iff_two_dvd.mpr (h2 ▸ Nat.dvd_of_mem_primeFactors hp))
   have hp_odd : Odd p := hp_prime.odd_of_ne_two hp_ne_two
-  let eL := primaryDiscriminantBilinearIsometry
-    (L.evenSublattice.localInclusionIsometryEquiv L p L.evenSublattice_form
-      L.evenSublattice_carrier_le
-      (L.not_dvd_relIndex_evenSublattice_of_odd hp_odd hp_prime.ne_one))
-  let eM := primaryDiscriminantBilinearIsometry
-    (M.evenSublattice.localInclusionIsometryEquiv M p M.evenSublattice_form
-      M.evenSublattice_carrier_le
-      (M.not_dvd_relIndex_evenSublattice_of_odd hp_odd hp_prime.ne_one))
+  let eL := evenSublatticePrimaryBilinearIsometry L hp_odd
+  let eM := evenSublatticePrimaryBilinearIsometry M hp_odd
   have hquad : Nonempty (FiniteQuadraticModule.Isometry
       ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
         (primaryComponent
@@ -186,10 +195,10 @@ theorem sameGenus_iff_of_odd_discriminant
     rw [FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd
         ((L.evenSublattice.discriminantQuadraticModule
           L.isEven_evenSublattice).odd_natCard_restrict_primaryComponent hp_odd),
-      L.evenSublattice.restrict_discriminantQuadraticModule_toFiniteBilinearModule
-        L.isEven_evenSublattice,
-      M.evenSublattice.restrict_discriminantQuadraticModule_toFiniteBilinearModule
-        M.isEven_evenSublattice]
+      L.evenSublattice.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule
+        L.isEven_evenSublattice p,
+      M.evenSublattice.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule
+        M.isEven_evenSublattice p]
     exact ⟨eL.trans ((f.restrictPrimaryComponent p).trans eM.symm)⟩
   exact hquad.some.gaussSign_eq
 

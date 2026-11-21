@@ -6,11 +6,11 @@ Authors: Wentao Li, The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
-public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
+public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
 import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum.AffineLagrangian
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
-import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublatticeDiscriminant
+import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Discriminant
 
 /-!
 # Van der Blij's characteristic-norm congruence

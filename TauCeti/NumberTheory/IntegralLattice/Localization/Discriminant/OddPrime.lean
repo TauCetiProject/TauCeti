@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.Algebra.Group.Even
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -17,7 +18,7 @@ import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
-import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
+import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -90,6 +91,23 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module 
 
 /-! ### Assembling an integral `ℤ_p`-isometry from fiberwise unit-diagonal equivalences -/
 
+private noncomputable def unitApprInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) : ℤ :=
+  ((u : ℤ_[p]).appr (max k 1) : ℤ)
+
+private theorem pow_dvd_sub_unitApprInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
+    (p : ℤ_[p]) ^ k ∣ (u : ℤ_[p]) - unitApprInt u k := by
+  simpa only [unitApprInt, Int.cast_natCast] using
+    (u : ℤ_[p]).dvd_sub_appr_of_le (le_max_left k 1)
+
+private theorem dvd_sub_unitApprInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
+    (p : ℤ_[p]) ∣ (u : ℤ_[p]) - unitApprInt u k := by
+  simpa only [unitApprInt, Int.cast_natCast] using
+    (u : ℤ_[p]).dvd_sub_appr_of_ne_zero (by simp)
+
+private theorem isCoprime_unitApprInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
+    IsCoprime (p : ℤ) (unitApprInt u k) :=
+  (((u : ℤ_[p]).coprime_appr_iff (n := max k 1) (by simp)).mpr u.isUnit).isCoprime
+
 /-- Given two diagonal Jordan forms of the same rank at an odd prime `p` whose `p`-primary
 discriminant bilinear modules are isometric, `k` and `l` agree up to a permutation `σ` and every
 positive-scale fiber has square unit product. -/
@@ -108,16 +126,12 @@ private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
       ∀ m, 0 < m → IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i)) := by
   classical
   have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp
-  let θL (i : Fin n) : ℤ := ((u i : ℤ_[p]).appr (max (k i) 1) : ℤ)
-  let θM (i : Fin n) : ℤ := ((v i : ℤ_[p]).appr (max (l i) 1) : ℤ)
-  have hL_pow (i : Fin n) : (p : ℤ_[p]) ^ k i ∣ (u i : ℤ_[p]) - θL i := by
-    simpa only [θL, Int.cast_natCast] using
-      (u i : ℤ_[p]).dvd_sub_appr_of_le (le_max_left (k i) 1)
-  have hM_pow (i : Fin n) : (p : ℤ_[p]) ^ l i ∣ (v i : ℤ_[p]) - θM i := by
-    simpa only [θM, Int.cast_natCast] using
-      (v i : ℤ_[p]).dvd_sub_appr_of_le (le_max_left (l i) 1)
-  obtain ⟨fL⟩ := L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu hL_pow
-  obtain ⟨fM⟩ := M.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv hM_pow
+  let θL (i : Fin n) : ℤ := unitApprInt (u i) (k i)
+  let θM (i : Fin n) : ℤ := unitApprInt (v i) (l i)
+  obtain ⟨fL⟩ := L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu
+    fun i ↦ pow_dvd_sub_unitApprInt (u i) (k i)
+  obtain ⟨fM⟩ := M.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv
+    fun i ↦ pow_dvd_sub_unitApprInt (v i) (l i)
   obtain ⟨fLM⟩ := hdisc
   have hodd_card : Odd (Nat.card (FiniteQuadraticModule.pi fun i ↦
       FiniteQuadraticModule.oddCyclic (p ^ k i) hp_odd.pow (θL i))) := by
@@ -133,8 +147,8 @@ private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
     (FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_card).mpr
       ⟨fL.trans (fLM.trans fM.symm)⟩
   have hclass := (FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff hp_odd k l
-    (fun i ↦ (((u i : ℤ_[p]).coprime_appr_iff (by positivity)).mpr (u i).isUnit).isCoprime)
-    (fun i ↦ (((v i : ℤ_[p]).coprime_appr_iff (by positivity)).mpr (v i).isUnit).isCoprime)).mp
+    (fun i ↦ isCoprime_unitApprInt (u i) (k i))
+    (fun i ↦ isCoprime_unitApprInt (v i) (l i))).mp
     hquad
   obtain ⟨σ, hσ⟩ :=
     Function.exists_perm_of_occCount_eq_of_ne (u := k) (v := l) (z := 0) fun m hm ↦ by
@@ -151,10 +165,8 @@ private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
     {i : Fin n | k i = m} {j : Fin n | l j = m}
     (fun i ↦ (u i : ℤ_[p])) (fun j ↦ (v j : ℤ_[p])) θL θM
     (fun i _ ↦ (u i).isUnit) (fun j _ ↦ (v j).isUnit)
-    (fun i _ ↦ by simpa only [θL, Int.cast_natCast] using
-      (u i : ℤ_[p]).dvd_sub_appr_of_ne_zero (by positivity))
-    (fun j _ ↦ by simpa only [θM, Int.cast_natCast] using
-      (v j : ℤ_[p]).dvd_sub_appr_of_ne_zero (by positivity))).mpr (hclass m hm).2
+    (fun i _ ↦ dvd_sub_unitApprInt (u i) (k i))
+    (fun j _ ↦ dvd_sub_unitApprInt (v j) (l j))).mpr (hclass m hm).2
 
 /-- Once two diagonal Jordan forms match up to `σ` and agree in square class on every fiber `m`,
 the localized integral forms are isometric over `ℤ_p`. -/
@@ -282,9 +294,8 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModul
     ((Fact.out : p.Prime).odd_of_ne_two hp)
   rw [L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp,
     FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
-    L.restrict_discriminantQuadraticModule_toFiniteBilinearModule hL,
-    M.restrict_discriminantQuadraticModule_toFiniteBilinearModule hM]
-  rfl
+    L.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hL p,
+    M.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hM p]
 
 /-! ### Minimal-rank uniqueness at odd primes (Nikulin Theorem 1.9.1) -/
 
@@ -352,8 +363,7 @@ theorem localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_rank
     ((Fact.out : p.Prime).odd_of_ne_two hp)
   rw [L.localIntegralForm_equivalent_iff_of_finrank_eq_rank M hp hLrank hMrank,
     FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
-    L.restrict_discriminantQuadraticModule_toFiniteBilinearModule hL,
-    M.restrict_discriminantQuadraticModule_toFiniteBilinearModule hM]
-  rfl
+    L.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hL p,
+    M.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hM p]
 
 end TauCeti.IntegralLattice

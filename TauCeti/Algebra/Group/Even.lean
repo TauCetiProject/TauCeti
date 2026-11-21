@@ -17,7 +17,9 @@ A unit square factor does not change whether an element is a square
 
 If all but the last entries of two finite families agree modulo squares, agreement of their
 products modulo squares determines the last entry. This is useful when prescribing the last
-coefficient of a diagonal quadratic form from its determinant.
+coefficient of a diagonal quadratic form from its determinant. Similarly, if the full product over
+a finset and every fiber away from a value `z` are squares in a commutative group, the remaining
+fiber `k i = z` is also a square (`Finset.isSquare_prod_filter_of_isSquare_prod`).
 -/
 
 public section
@@ -46,3 +48,30 @@ theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : Is
   refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
   have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
   rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
+
+namespace Finset
+
+/-- In a commutative group, if the product of `w` over `s` is a square and its product over every
+fiber `k i = m` with `m ≠ z` is a square, then its product over the fiber `k i = z` is a square. -/
+theorem isSquare_prod_filter_of_isSquare_prod {G ι α : Type*} [CommGroup G] [DecidableEq α]
+    (s : Finset ι) (k : ι → α) (w : ι → G) (z : α)
+    (hfull : IsSquare (∏ i ∈ s, w i))
+    (hne : ∀ m, m ≠ z → IsSquare (∏ i ∈ s with k i = m, w i)) :
+    IsSquare (∏ i ∈ s with k i = z, w i) := by
+  let P : Finset α := (s.image k).erase z
+  have hsplit :
+      ∏ i ∈ s, w i = (∏ i ∈ s with k i = z, w i) * ∏ m ∈ P, ∏ i ∈ s with k i = m, w i := by
+    have hpart := (Finset.prod_fiberwise_of_maps_to (s := s) (g := k) (t := insert z P)
+      (fun i hi ↦ by
+        by_cases hkz : k i = z
+        · simp [hkz]
+        · exact Finset.mem_insert_of_mem
+            (Finset.mem_erase.mpr ⟨hkz, Finset.mem_image_of_mem k hi⟩))
+      w).symm
+    rw [hpart, Finset.prod_insert (Finset.notMem_erase z _)]
+  have hP_sq : IsSquare (∏ m ∈ P, ∏ i ∈ s with k i = m, w i) :=
+    Finset.isSquare_prod _ fun m hm ↦ hne m (Finset.ne_of_mem_erase hm)
+  rw [hsplit] at hfull
+  simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
+
+end Finset
