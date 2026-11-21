@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Kaehler.Basic
+public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.MapSemilinear
 public import TauCeti.LinearAlgebra.ExteriorPower.Noetherian
-public import TauCeti.RingTheory.Kaehler.MapSemilinear
-import Mathlib.RingTheory.Finiteness.Finsupp
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
@@ -19,8 +17,7 @@ Let `D : Derivation R A M` be an `R`-derivation whose image spans `M` over `A`. 
 twisted `A`-module `TwistedExt D = M × ⋀[A]^2 M` with `a • (m, ω) = (a • m, D a ∧ m + a • ω)`
 receives an `A`-linear lift of `derTwistedExt D`, its second component extends uniquely to a
 square-zero degree-`+1` graded `R`-derivation on `ExteriorAlgebra A M`, with no bases, smoothness,
-or characteristic hypotheses. Specialising to `KaehlerDifferential.D R A` gives
-`KaehlerDifferential.exteriorDeriv R A q : ⋀[A]^q Ω[A⁄R] →ₗ[R] ⋀[A]^(q + 1) Ω[A⁄R]`.
+or characteristic hypotheses.
 -/
 
 public section
@@ -127,26 +124,6 @@ instance : IsScalarTower R A (TwistedExt D) := IsScalarTower.of_algebraMap_smul 
   exact Subtype.ext <| by simp [algebraMap_smul]
 end TwistedExt
 
-section DerTwistedExt
-variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
-  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-
-/-- **The canonical `R`-derivation `A → TwistedExt D`**, sending `a` to `(D a, 0)`. -/
-noncomputable def derTwistedExt (D : Derivation R A M) : Derivation R A (TwistedExt D) where
-  toFun a := ⟨D a, 0⟩
-  map_add' _ _ := TwistedExt.ext (by simp) (by simp)
-  map_smul' _ _ := TwistedExt.ext (by simp) (by simp)
-  map_one_eq_zero' := TwistedExt.ext (by simp) rfl
-  leibniz' _ _ := TwistedExt.ext (by simp [D.leibniz]) <| Subtype.ext <| by
-    simp [ExteriorAlgebra.ι_add_mul_swap]
-@[simp] theorem fst_derTwistedExt (D : Derivation R A M) (a : A) :
-    (D.derTwistedExt a).fst = D a := (rfl)
-@[simp] theorem snd_derTwistedExt (D : Derivation R A M) (a : A) :
-    (D.derTwistedExt a).snd = 0 := (rfl)
-end DerTwistedExt
-
-/-! ### Construction of the graded exterior derivative -/
-
 section TwistedAlg
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M]
@@ -216,13 +193,26 @@ private noncomputable instance : Algebra A (TwistedAlg D) :=
     (algebraMap A (TwistedAlg D) a).snd = ExteriorAlgebra.ι A (D a) := (rfl)
 
 end TwistedAlg
-
 end TwistedAlg
 
-section ExteriorDeriv
+/-! ### Construction of the graded exterior derivative -/
 
+section ExteriorDeriv
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+
+/-- **The canonical `R`-derivation `A → TwistedExt D`**, sending `a` to `(D a, 0)`. -/
+noncomputable def derTwistedExt (D : Derivation R A M) : Derivation R A (TwistedExt D) where
+  toFun a := ⟨D a, 0⟩
+  map_add' _ _ := TwistedExt.ext (by simp) (by simp)
+  map_smul' _ _ := TwistedExt.ext (by simp) (by simp)
+  map_one_eq_zero' := TwistedExt.ext (by simp) rfl
+  leibniz' _ _ := TwistedExt.ext (by simp [D.leibniz]) <| Subtype.ext <| by
+    simp [ExteriorAlgebra.ι_add_mul_swap]
+@[simp] theorem fst_derTwistedExt (D : Derivation R A M) (a : A) :
+    (D.derTwistedExt a).fst = D a := (rfl)
+@[simp] theorem snd_derTwistedExt (D : Derivation R A M) (a : A) :
+    (D.derTwistedExt a).snd = 0 := (rfl)
 
 omit [IsScalarTower R A M] in
 private theorem eq_zero_of_gradedDeriv {B N : Type*} [CommRing B] [AddCommGroup N] [Module B N]
@@ -441,8 +431,9 @@ noncomputable def exteriorDeriv (q : ℕ) : ⋀[A]^q M →ₗ[R] ⋀[A]^(q + 1) 
 theorem oneEquiv_exteriorDeriv_zero (ω : ⋀[A]^0 M) :
     exteriorPower.oneEquiv A M (D.exteriorDeriv u hspan hu 0 ω) =
       D (exteriorPower.zeroEquiv A M ω) := by
-  conv_lhs => rw [← (exteriorPower.zeroEquiv A M).symm_apply_apply ω, exteriorDeriv_zero_symm,
-    LinearEquiv.apply_symm_apply]
+  conv_lhs =>
+    rw [← (exteriorPower.zeroEquiv A M).symm_apply_apply ω, exteriorDeriv_zero_symm]
+  exact LinearEquiv.apply_symm_apply _ _
 @[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q M) :
     D.exteriorDeriv u hspan hu (q + 1) (D.exteriorDeriv u hspan hu q ω) = 0 :=
   Subtype.ext (D.exteriorAlgebraDeriv_exteriorAlgebraDeriv u hspan hu ω.1)
@@ -492,62 +483,3 @@ theorem mapSemilinear_exteriorDeriv {B N : Type*} [CommRing B] [Algebra R B]
 
 end ExteriorDeriv
 end Derivation
-
-/-! ### Algebraic exterior derivative on Kähler differentials -/
-
-namespace KaehlerDifferential
-variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A]
-
-/-- **The algebraic exterior derivative on `ExteriorAlgebra A Ω[A⁄R]`.** -/
-noncomputable def exteriorAlgebraDeriv :
-    ExteriorAlgebra A Ω[A⁄R] →ₗ[R] ExteriorAlgebra A Ω[A⁄R] :=
-  (D R A).exteriorAlgebraDeriv (D R A).derTwistedExt.liftKaehlerDifferential
-    (span_range_derivation R A) (D R A).derTwistedExt.liftKaehlerDifferential_comp_D
-
-/-- **The `q`-th algebraic exterior derivative `⋀[A]^q Ω[A⁄R] →ₗ[R] ⋀[A]^(q + 1) Ω[A⁄R]`.** -/
-noncomputable def exteriorDeriv (q : ℕ) : ⋀[A]^q Ω[A⁄R] →ₗ[R] ⋀[A]^(q + 1) Ω[A⁄R] :=
-  (D R A).exteriorDeriv (D R A).derTwistedExt.liftKaehlerDifferential
-    (span_range_derivation R A) (D R A).derTwistedExt.liftKaehlerDifferential_comp_D q
-
-variable {R A}
-@[simp] theorem coe_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    (exteriorDeriv R A q ω : ExteriorAlgebra A Ω[A⁄R]) = exteriorAlgebraDeriv R A ω.1 := (rfl)
-@[simp] theorem exteriorDeriv_zero_symm (a : A) :
-    exteriorDeriv R A 0 ((exteriorPower.zeroEquiv A Ω[A⁄R]).symm a) =
-      (exteriorPower.oneEquiv A Ω[A⁄R]).symm (D R A a) :=
-  Derivation.exteriorDeriv_zero_symm _ _ _ _ a
-@[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    exteriorDeriv R A (q + 1) (exteriorDeriv R A q ω) = 0 :=
-  Derivation.exteriorDeriv_exteriorDeriv_apply _ _ _ _ q ω
-theorem exteriorDeriv_smul (q : ℕ) (a : A) (ω : ⋀[A]^q Ω[A⁄R]) :
-    exteriorDeriv R A q (a • ω) =
-      TauCeti.ExteriorAlgebra.wedgeLeft (D R A a) q ω + a • exteriorDeriv R A q ω :=
-  Derivation.exteriorDeriv_smul _ _ _ _ q a ω
-@[simp] theorem exteriorDeriv_ιMulti_comp_D {q : ℕ} (b : Fin q → A) :
-    exteriorDeriv R A q (exteriorPower.ιMulti A q (D R A ∘ b)) = 0 :=
-  Derivation.exteriorDeriv_ιMulti_comp_D _ _ _ _ b
-theorem exteriorDeriv_smul_ιMulti_comp_D {q : ℕ} (a : A) (b : Fin q → A) :
-    exteriorDeriv R A q (a • exteriorPower.ιMulti A q (D R A ∘ b)) =
-      exteriorPower.ιMulti A (q + 1) (Fin.cons (D R A a) (D R A ∘ b)) :=
-  Derivation.exteriorDeriv_smul_ιMulti_comp_D _ _ _ _ a b
-/-- Universal naturality of `KaehlerDifferential.exteriorDeriv` along a semilinear map sending
-`D R A a` to `D' (f a)`. -/
-theorem mapSemilinear_exteriorDeriv_of_derivation {B N : Type*} [CommRing B] [Algebra R B]
-    [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
-    (D' : Derivation R B N) (u' : N →ₗ[B] Derivation.TwistedExt D')
-    (hspan' : Submodule.span B (Set.range D') = ⊤) (hu' : ∀ b, u' (D' b) = D'.derTwistedExt b)
-    (f : A →ₐ[R] B) (g : Ω[A⁄R] →ₛₗ[f.toRingHom] N) (hg : ∀ a, g (D R A a) = D' (f a))
-    (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    exteriorPower.mapSemilinear (q + 1) g (exteriorDeriv R A q ω) =
-      D'.exteriorDeriv u' hspan' hu' q (exteriorPower.mapSemilinear q g ω) :=
-  Derivation.mapSemilinear_exteriorDeriv _ _ _ _ D' u' hspan' hu' f g hg q ω
-theorem mapSemilinear_exteriorDeriv {B : Type*} [CommRing B] [Algebra R B]
-    (f : A →ₐ[R] B) (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
-    exteriorPower.mapSemilinear (q + 1) (KaehlerDifferential.mapSemilinear f)
-        (exteriorDeriv R A q ω) =
-      exteriorDeriv R B q
-        (exteriorPower.mapSemilinear q (KaehlerDifferential.mapSemilinear f) ω) :=
-  mapSemilinear_exteriorDeriv_of_derivation _ _ _ _ f (KaehlerDifferential.mapSemilinear f)
-    (KaehlerDifferential.mapSemilinear_D f) q ω
-
-end KaehlerDifferential

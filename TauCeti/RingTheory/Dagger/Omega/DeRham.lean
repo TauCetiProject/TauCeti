@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import TauCeti.RingTheory.Dagger.Omega.Map
 public import TauCeti.RingTheory.Derivation.ExteriorDerivative
+public import TauCeti.RingTheory.Kaehler.ExteriorDerivative
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -38,7 +39,6 @@ namespace TauCeti.Dagger.Omega
 /-! ### Exterior derivative, de Rham complex, and cohomology -/
 
 section DeRham
-
 variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [IsNoetherian A (Omega R A)]
 
 /-- **The graded exterior derivative on `ExteriorAlgebra A (Omega R A)`.** -/
@@ -175,7 +175,6 @@ theorem deRhamComplex_d_eq_zero_of_mem_closedForms (q : ℕ) {ω : ⋀[A]^q (Ome
   (HomologicalComplex.moduleCat_d_inv_eq_zero_iff _ _ (deRhamComplex_d R A) ω).mpr hω
 
 namespace deRhamCohomology
-
 /-- The cycle-class map from closed `q`-forms to `deRhamCohomology R A q`. -/
 def mk (q : ℕ) : closedForms R A q →ₗ[R] deRhamCohomology R A q :=
   (deRhamComplex R A).moduleCatCohomologyClassOfIso (fun q ↦ ⋀[A]^q (Omega R A))
@@ -214,7 +213,6 @@ def zeroEquivClosedForms : closedForms R A 0 ≃ₗ[R] deRhamCohomology R A 0 :=
   LinearEquiv.ofBijective (mk R A 0) ⟨mk_zero_injective R A, mk_surjective R A 0⟩
 @[simp] theorem zeroEquivClosedForms_apply (ω : closedForms R A 0) :
     zeroEquivClosedForms R A ω = mk R A 0 ω := (rfl)
-
 end deRhamCohomology
 
 /-- If every closed `q`-form is exact, then `deRhamCohomology R A q` is subsingleton. -/
@@ -238,7 +236,6 @@ end DeRham
 /-! ### Functoriality along homomorphisms of dagger algebras -/
 
 section Functoriality
-
 variable {K A B C : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CommRing A] [CommRing B] [CommRing C] [Algebra K A] [Algebra K B] [Algebra K C]
   [IsDaggerAlgebra K A] [IsDaggerAlgebra K B] [IsDaggerAlgebra K C]
@@ -279,7 +276,6 @@ theorem exteriorDeriv_comp_formsMap (f : A →ₐ[K] B) (q : ℕ) :
   LinearMap.ext (exteriorDeriv_formsMap f q)
 
 namespace closedForms
-
 /-- Pullback of closed overconvergent `q`-forms along `f : A →ₐ[K] B`. -/
 def map (f : A →ₐ[K] B) (q : ℕ) : closedForms K A q →ₗ[K] closedForms K B q :=
   ((formsMap f q).domRestrict (closedForms K A q)).codRestrict (closedForms K B q) fun ω ↦ by
@@ -296,11 +292,9 @@ theorem map_mem_exactForms (f : A →ₐ[K] B) : ∀ (q : ℕ) (ω : closedForms
     ω.1 ∈ exactForms K A q → (map f q ω).1 ∈ exactForms K B q
   | 0, ω, hω => by rw [exactForms_zero, Submodule.mem_bot] at hω ⊢; rw [coe_map, hω, map_zero]
   | q + 1, _, ⟨η, hη⟩ => ⟨formsMap f q η, by rw [exteriorDeriv_formsMap, hη]; rfl⟩
-
 end closedForms
 
 namespace deRhamCohomology
-
 /-- Covariant functoriality of `deRhamCohomology` along `f : A →ₐ[K] B`. -/
 def map (f : A →ₐ[K] B) (q : ℕ) : deRhamCohomology K A q →ₗ[K] deRhamCohomology K B q :=
   (LinearMap.liftOfSurjective (R := K) (M := closedForms K A q) (M₂ := deRhamCohomology K A q)
@@ -327,20 +321,16 @@ def equivOfAlgEquiv (e : A ≃ₐ[K] B) (q : ℕ) :
     equivOfAlgEquiv e q c = map e.toAlgHom q c := (rfl)
 @[simp] theorem equivOfAlgEquiv_symm_apply (e : A ≃ₐ[K] B) (q : ℕ) (c : deRhamCohomology K B q) :
     (equivOfAlgEquiv e q).symm c = map e.symm.toAlgHom q c := (rfl)
-
 end deRhamCohomology
-
 end Functoriality
 
 section ComplexFunctoriality
-
 universe u v
 variable {K : Type u} {A B C : Type v} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CommRing A] [CommRing B] [CommRing C] [Algebra K A] [Algebra K B] [Algebra K C]
   [IsDaggerAlgebra K A] [IsDaggerAlgebra K B] [IsDaggerAlgebra K C]
 
 namespace deRhamComplex
-
 /-- The cochain map `deRhamComplex K A ⟶ deRhamComplex K B` induced by `f : A →ₐ[K] B`. -/
 def map (f : A →ₐ[K] B) : deRhamComplex K A ⟶ deRhamComplex K B :=
   CochainComplex.ofHom
@@ -371,20 +361,19 @@ theorem homologyMap_map (f : A →ₐ[K] B) (q : ℕ) :
   refine (HomologicalComplex.moduleCatCohomologyClassOfIso_eq_homologyπ _ _ _ _ _ _ _ ?_).symm
   rw [HomologicalComplex.iCycles_moduleCatCyclesMk]
   simpa using ConcreteCategory.congr_hom (map_f f q) ((deRhamComplexXIso K A q).inv ω.1)
-
 end deRhamComplex
-
 end ComplexFunctoriality
 
 /-! ### Vanishing above the number of variables and explicit calculations -/
 
-/-- When `Omega R A` is subsingleton, all positive-degree forms and cohomology groups vanish. -/
+/-- When `Omega R A` is subsingleton, all positive-degree forms vanish. -/
 theorem subsingleton_forms_succ_of_subsingleton {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] [Subsingleton (Omega R A)] (q : ℕ) : Subsingleton (⋀[A]^(q + 1) (Omega R A)) :=
   exteriorPower.subsingleton_of_span_eq_top_of_card_lt
     (IsEmpty.elim (α := Empty) inferInstance)
     (eq_top_iff.mpr fun x _ ↦ Subsingleton.elim x 0 ▸ zero_mem _) (q + 1) (by simp)
 
+/-- When `Omega R A` is subsingleton, all positive-degree de Rham cohomology groups vanish. -/
 theorem subsingleton_deRhamCohomology_succ_of_subsingleton {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] [Subsingleton (Omega R A)] (q : ℕ) :
     Subsingleton (deRhamCohomology R A (q + 1)) :=
