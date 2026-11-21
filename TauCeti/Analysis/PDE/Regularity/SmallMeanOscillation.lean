@@ -725,13 +725,14 @@ private theorem ofReal_inv_mul_eLpNorm_ball_le {p q : ℝ≥0}
   set V : ℝ≥0 :=
     (volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toNNReal ^ ((n : ℝ) + 1)⁻¹
   have hq0 : (0 : ℝ) < q := inv_pos.1 (hpq ▸ by positivity)
+  have hexp : 1 / (q : ℝ) - 1 / p = ((n + 1 : ℕ) : ℝ)⁻¹ := by
+    rw [one_div, one_div, hpq]; push_cast; ring
   have hfac : (R ^ Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) *
       volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) ^ (1 / (q : ℝ) - 1 / p) =
       R * V := by
-    rw [finrank_euclideanSpace_fin, one_div, one_div, hpq, add_sub_cancel_left,
-      Real.mul_rpow (by positivity) measureReal_nonneg,
-      ← Nat.cast_succ, Real.pow_rpow_inv_natCast hR.le n.succ_ne_zero, NNReal.coe_rpow,
-      measureReal_def, ENNReal.coe_toNNReal_eq_toReal, Nat.cast_succ]
+    rw [finrank_euclideanSpace_fin, hexp, Real.mul_rpow (by positivity) measureReal_nonneg,
+      Real.pow_rpow_inv_natCast hR.le n.succ_ne_zero]
+    simp [V, measureReal_def, ENNReal.coe_toNNReal_eq_toReal]
   have hH := Measure.eLpNorm_ball_le_mul_rpow volume (x₀ := x₀) (p := p) hq0
     (by exact_mod_cast hqp) hG
   rw [hfac, ENNReal.ofReal_mul hR.le] at hH
@@ -756,20 +757,13 @@ private theorem mul_add_mul_add_le_mul_add {CW CD V : ℝ≥0} {c₀ Lam R : ℝ
   set ρ := ENNReal.ofReal R⁻¹
   have hk : ENNReal.ofReal (c₀ * R⁻¹) = κ * ρ := ENNReal.ofReal_mul hc₀
   have hk' : ENNReal.ofReal (Lam * (c₀ * R⁻¹)) = L * (κ * ρ) := by
-    rw [ENNReal.ofReal_mul hLam, hk, ENNReal.ofReal.eq_1]
+    rw [ENNReal.ofReal_mul hLam, hk, ← ENNReal.ofNNReal_toNNReal]
   have h1 : (1 : ℝ≥0) ≤ 1 + κ * (L + CD + CD * L) := le_self_add
-  have h2 : L * κ ≤ 1 + κ * (L + CD + CD * L) := calc
-    L * κ = κ * L := mul_comm _ _
-    _ ≤ κ * (L + CD + CD * L) := by gcongr; exact le_self_add.trans le_self_add
-    _ ≤ _ := le_add_self
-  have h3 : CD * κ ≤ 1 + κ * (L + CD + CD * L) := calc
-    CD * κ = κ * CD := mul_comm _ _
-    _ ≤ κ * (L + CD + CD * L) := by gcongr; exact le_add_self.trans le_self_add
-    _ ≤ _ := le_add_self
-  have h4 : CD * L * κ ≤ 1 + κ * (L + CD + CD * L) := calc
-    CD * L * κ = κ * (CD * L) := mul_comm _ _
-    _ ≤ κ * (L + CD + CD * L) := by gcongr; exact le_add_self
-    _ ≤ _ := le_add_self
+  have hκ {t : ℝ≥0} (ht : t ≤ L + CD + CD * L) : t * κ ≤ 1 + κ * (L + CD + CD * L) := by
+    rw [mul_comm]; exact (by gcongr : κ * t ≤ κ * _).trans le_add_self
+  have h2 := hκ (le_self_add.trans le_self_add : L ≤ _)
+  have h3 := hκ (le_add_self.trans le_self_add : CD ≤ _)
+  have h4 := hκ (le_add_self : CD * L ≤ _)
   set K : ℝ≥0 := 1 + κ * (L + CD + CD * L)
   rw [hk, hk', ENNReal.ofReal_one]
   calc (CW : ℝ≥0∞) * ((1 * X + L * (κ * ρ) * Y) + CD * (κ * ρ * Z + L * (κ * ρ) * W))
