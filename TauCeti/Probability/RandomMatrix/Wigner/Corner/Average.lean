@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.RandomMatrix.Wigner.CornerEnumeration
+public import TauCeti.Probability.RandomMatrix.Wigner.Corner.Enumeration
 import TauCeti.Algebra.BigOperators.Finset.Pairs
+import TauCeti.Data.Nat.Choose.Basic
 import Mathlib.Probability.StrongLaw
 public import Mathlib.Analysis.Matrix.Normed
 
@@ -77,8 +78,8 @@ theorem ae_tendsto_sum_strictUpperFin_div {Ω : Type*} [MeasurableSpace Ω] {P :
   have hd : Tendsto (fun n : ℕ ↦ n.choose 2) atTop atTop := by
     refine tendsto_atTop_mono' _ ?_ tendsto_id
     filter_upwards [eventually_ge_atTop (3 : ℕ)] with n hn
-    have hs : ((n - 1) + 1).choose 2 = (n - 1).choose 2 + (n - 1) := by
-      rw [Nat.choose_succ_succ, Nat.choose_one_right, add_comm]
+    have hs := Nat.add_choose_two (n - 1) 1
+    simp only [Nat.choose_eq_zero_of_lt (by decide : 1 < 2), add_zero, Nat.mul_one] at hs
     have hp : 1 ≤ (n - 1).choose 2 := Nat.choose_pos (by omega)
     rw [Nat.sub_add_cancel (by omega : 1 ≤ n)] at hs
     dsimp only [id_eq]

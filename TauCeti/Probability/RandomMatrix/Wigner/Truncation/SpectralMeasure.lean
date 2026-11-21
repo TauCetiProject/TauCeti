@@ -32,8 +32,9 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-variable [IsProbabilityMeasure P] {X : Ω → ℂ} (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0)
-  (hd : ∀ ij, IdentDistrib (ξ ij) X P P)
+variable {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'}
+  [IsProbabilityMeasure P] {X : Ω' → ℂ} (hX : MemLp X 2 Q)
+  (hmean : ∫ ω, X ω ∂Q = 0) (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
 
 include hd hX hmean
 
@@ -47,7 +48,7 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
       (wignerMatrix_isHermitian ξ η ω _) : Measure ℝ)) -
       ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
         (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian _ η ω _) : Measure ℝ)‖ ^ 2 ∂P ≤
-      (K : ℝ) ^ 2 * ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
+      (K : ℝ) ^ 2 * ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q := by
   refine (integral_norm_integral_spectralMeasure_sub_sq_le _ _
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
     (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
@@ -70,7 +71,7 @@ theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
       ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
         (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian _ η ω _) : Measure ℝ)‖} ≤
       ENNReal.ofReal ((K : ℝ) ^ 2 / ε ^ 2 *
-        ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P) := by
+        ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q) := by
   refine (measure_norm_integral_spectralMeasure_sub_ge_le _ _
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
     (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
@@ -82,7 +83,8 @@ theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
       (by positivity : 0 ≤ (K : ℝ) ^ 2 / ε ^ 2)
 
 /-- Bounded centered off-diagonal approximation is valid in probability, uniformly over
-all positive matrix sizes, for every Lipschitz spectral statistic. -/
+all positive matrix sizes, for every Lipschitz spectral statistic when the upper entries
+have a common centered, square-integrable law. -/
 theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun R : ℝ≥0 ↦ ⨆ n : ℕ,
@@ -92,7 +94,7 @@ theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTrunc
           (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian _ η ω _) : Measure ℝ)‖})
       atTop (𝓝 0) := by
   have ht : Tendsto (fun R : ℝ≥0 ↦ ENNReal.ofReal ((K : ℝ) ^ 2 / ε ^ 2 *
-      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P))
+      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q))
       atTop (𝓝 0) := by
     simpa only [mul_zero, ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal
       (hX.tendsto_integral_indicator_norm_sq.const_mul ((K : ℝ) ^ 2 / ε ^ 2))

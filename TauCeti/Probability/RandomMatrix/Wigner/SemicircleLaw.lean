@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
-import TauCeti.Probability.RandomMatrix.Wigner.CornerAverage
-import TauCeti.Probability.RandomMatrix.Centering
-import TauCeti.Probability.RandomMatrix.Diagonal
+import TauCeti.Probability.RandomMatrix.Wigner.Corner.Average
+import TauCeti.Probability.RandomMatrix.Wigner.Centering.SpectralMeasure
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Data.Nat.Choose.Cast

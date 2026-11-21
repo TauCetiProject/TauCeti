@@ -9,7 +9,7 @@ public import Mathlib.Probability.IdentDistrib
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
-import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Integral.TailSum
 
 /-!
 # Identically distributed random variables

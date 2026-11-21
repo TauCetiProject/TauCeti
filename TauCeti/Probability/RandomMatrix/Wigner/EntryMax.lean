@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 import TauCeti.Probability.IdentDistrib
-import TauCeti.Probability.RandomMatrix.Wigner.CornerEnumeration
+import TauCeti.Probability.RandomMatrix.Wigner.Corner.Enumeration
 
 /-!
 # Maximum entry of a Wigner corner

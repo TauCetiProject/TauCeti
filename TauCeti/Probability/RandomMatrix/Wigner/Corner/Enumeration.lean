@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # Column enumeration of strictly upper Wigner entries
@@ -20,9 +21,6 @@ noncomputable section
 
 namespace TauCeti
 
-private theorem choose_two_succ (j : ℕ) : (j + 1).choose 2 = j.choose 2 + j := by
-  rw [Nat.choose_succ_succ, Nat.choose_one_right, add_comm]
-
 private theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
     ij.val.2.choose 2 + ij.val.1 < n.choose 2 ↔ ij.val.2 < n := by
   constructor
@@ -31,7 +29,10 @@ private theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
     exact (Nat.choose_mono 2 h).trans (Nat.le_add_right _ _)
   · intro h
     calc
-      _ < (ij.val.2 + 1).choose 2 := by rw [choose_two_succ]; exact Nat.add_lt_add_left ij.prop _
+      _ < (ij.val.2 + 1).choose 2 := by
+        rw [Nat.add_choose_two, Nat.choose_eq_zero_of_lt (by decide : 1 < 2), add_zero,
+          Nat.mul_one]
+        exact Nat.add_lt_add_left ij.prop _
       _ ≤ _ := Nat.choose_mono 2 h
 
 /-- The column-by-column enumeration of strictly upper-triangular indices. -/
@@ -57,7 +58,8 @@ def strictUpperEquivNat : StrictUpper ≃ ℕ := by
         omega
       · refine ⟨⟨(0, j + 1), Nat.zero_lt_succ _⟩, ?_⟩
         dsimp only
-        rw [choose_two_succ, add_zero]
+        simp only [Nat.add_choose_two, Nat.choose_eq_zero_of_lt (by decide : 1 < 2),
+          add_zero, Nat.mul_one]
         omega
 
 /-- The index of a strictly upper entry is the size of the preceding columns plus its row. -/
@@ -79,7 +81,8 @@ private theorem wignerUpperIndex_strictUpperFinOfIndex {n : ℕ} (ij : StrictUpp
     (hj : ij.val.2 < n) : wignerUpperIndex (strictUpperFinOfIndex ij hj) = ij := by
   exact Subtype.ext (wignerUpperIndex_val _)
 
-private def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2) where
+/-- The column-order enumeration restricted to strictly upper entries of a finite corner. -/
+def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2) where
   toFun ij := ⟨strictUpperEquivNat (wignerUpperIndex ij),
     (strictUpperEquivNat_lt_choose_iff _ _).2 (by simp)⟩
   invFun k := strictUpperFinOfIndex (strictUpperEquivNat.symm k)
@@ -95,6 +98,12 @@ private def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2
     apply Fin.ext
     exact (congrArg strictUpperEquivNat (wignerUpperIndex_strictUpperFinOfIndex _ _)).trans
       (strictUpperEquivNat.apply_symm_apply k)
+
+/-- The finite enumeration gives the same index as the infinite column enumeration. -/
+@[simp]
+theorem strictUpperFinEquiv_apply_val (n : ℕ) (ij : StrictUpperFin n) :
+    (strictUpperFinEquiv n ij).val = strictUpperEquivNat (wignerUpperIndex ij) :=
+  (rfl)
 
 /-- A sum over a finite strictly upper corner is the sum over the corresponding prefix
 of the column-order enumeration. -/

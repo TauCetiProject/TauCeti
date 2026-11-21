@@ -23,14 +23,15 @@ open scoped Topology NNReal Matrix.Norms.L2Operator
 
 namespace TauCeti.Probability
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
+  {P : Measure Ω} {Q : Measure Ω'}
 
 /-- Removing the diagonal changes the normalized operator norm by a quantity tending
 to zero almost surely for identically distributed diagonal entries of finite second moment.
 No independence is required. -/
 theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
-    (hid : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P) :
+    {Y : Ω' → ℝ} (hid : ∀ i, IdentDistrib (η i) Y P Q) (hη : MemLp Y 2 Q) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖wignerMatrix ξ η (n + 1) ω -
       wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω‖) atTop (𝓝 0) := by
   have hs : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ)) atTop atTop :=

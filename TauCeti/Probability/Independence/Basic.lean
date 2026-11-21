@@ -42,7 +42,8 @@ variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
 open scoped Classical in
 /-- For a finite array of events, each row consisting of independent events with measures at
 most `p`, the measure that some row contains at least `q` occurring events is bounded by
-`p ^ q` times the total number of `q`-element subsets of rows. -/
+`p ^ q` times the sum, over rows, of the number of `q`-element subsets of entry indices
+in that row. -/
 theorem measure_exists_le_card_filter_mem_le {κ : ι → Type*} [Fintype ι]
     [∀ i, Fintype (κ i)] (E : (i : ι) → κ i → Set Ω) (hE : ∀ i, iIndepSet (E i) μ)
     {p : ℝ≥0∞} (hp : ∀ i j, μ (E i j) ≤ p) (q : ℕ) :

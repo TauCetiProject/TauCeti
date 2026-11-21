@@ -130,24 +130,25 @@ theorem tsum_meas_l2_opNorm_ge_lt_top_of_integral_re_trace_pow_two_mul_le {N : �
       meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul (hA n hn) _ (hint n hn) (hs.trans hr)
     exact (hle.trans_lt ENNReal.ofReal_lt_top).ne
 
-/-- For each threshold `r > s > 0`, where `s` is the exponential trace scale, a trace estimate
-of sufficiently large logarithmic order gives an almost-sure eventual upper norm bound.
-The moment orders and polynomial prefactors may depend on the threshold. -/
+/-- For each threshold `r > s > 0`, a trace estimate of sufficiently large logarithmic order
+at exponential scale `s ≤ t < r` gives an almost-sure eventual upper norm bound.
+The scale, moment orders and polynomial prefactors may depend on the threshold. -/
 theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
     {s : ℝ} (hs : 0 < s)
-    (htrace : ∀ r > s, ∃ (B C d : ℝ) (k : ℕ → ℕ), d + 1 < 2 * B * Real.log (r / s) ∧
+    (htrace : ∀ r > s, ∃ (t B C d : ℝ) (k : ℕ → ℕ), s ≤ t ∧ t < r ∧
+      d + 1 < 2 * B * Real.log (r / t) ∧
       (∀ᶠ n : ℕ in atTop, B * Real.log (n + 1) ≤ (k n : ℝ)) ∧
       (∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ (2 * k n)).trace) P) ∧
       (∀ᶠ n : ℕ in atTop, (∫ ω, RCLike.re ((A n ω) ^ (2 * k n)).trace ∂P) ≤
-        C * (n + 1 : ℝ) ^ d * s ^ (2 * k n))) :
+        C * (n + 1 : ℝ) ^ d * t ^ (2 * k n))) :
     ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r := by
   have h (j : ℕ) : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ‖A n ω‖ < s + 1 / (j + 1) := by
     have hr : s < s + 1 / (j + 1) := lt_add_of_pos_right _ (by positivity)
-    obtain ⟨B, C, d, k, hB, hk, hi, hb⟩ := htrace _ hr
+    obtain ⟨t, B, C, d, k, hst, htr, hB, hk, hi, hb⟩ := htrace _ hr
     obtain ⟨b, hsum, h⟩ :=
       exists_tsum_lt_top_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
-        hA hi hs hr hB hk hb
+        hA hi (hs.trans_le hst) htr hB hk hb
     simpa only [Set.mem_ofPred_eq, not_le] using
       TauCeti.MeasureTheory.ae_eventually_notMem_of_eventually_measure_le hsum h
   filter_upwards [ae_all_iff.2 h] with ω hω

@@ -15,7 +15,6 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 -- Proof-only: a subsequence of functions with vanishing integrals tends to `0` a.e.
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
-import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
 
 /-!
 # Layer-cake formulas for products, distances, and moments
@@ -120,35 +119,6 @@ open scoped ENNReal NNReal symmDiff
 namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- The measures of the strict superlevel sets at positive integer thresholds of an
-integrable real function have finite sum, even on an infinite measure space. -/
-theorem _root_.MeasureTheory.Integrable.tsum_measure_mem_Ioi_nat_succ_lt_top
-    {μ : Measure α} {g : α → ℝ} (hint : Integrable g μ) :
-    (∑' i : ℕ, μ {x | g x ∈ Ioi ((i + 1 : ℕ) : ℝ)}) < ∞ := by
-  let f := hint.aemeasurable.mk g
-  calc
-    _ = ∑' i : ℕ, μ {x | ((i + 1 : ℕ) : ℝ) < f x} := by
-      refine tsum_congr fun i ↦ measure_congr ?_
-      filter_upwards [hint.aemeasurable.ae_eq_mk] with x hx
-      have hx' : g x = f x := hx
-      simp only [mem_Ioi, hx']
-    _ = ∫⁻ x, ({i : ℕ | ((i + 1 : ℕ) : ℝ) < f x}.encard : ℝ≥0∞) ∂μ :=
-      (lintegral_encard_setOf_eq_tsum μ fun _ ↦
-        measurableSet_lt measurable_const hint.aemeasurable.measurable_mk).symm
-    _ ≤ ∫⁻ x, ENNReal.ofReal ‖g x‖ ∂μ := by
-      apply lintegral_mono_ae
-      filter_upwards [hint.aemeasurable.ae_eq_mk] with x hx
-      have hcount : {i : ℕ | ((i + 1 : ℕ) : ℝ) < f x}.encard ≤ (⌊‖g x‖⌋₊ : ℕ∞) := by
-        rw [← Set.Nat.encard_range]
-        exact Set.encard_mono fun i (hi : ((i + 1 : ℕ) : ℝ) < f x) ↦
-          Nat.lt_of_succ_le (Nat.le_floor (hi.le.trans (hx ▸ Real.le_norm_self (g x))))
-      exact (ENat.toENNReal_mono hcount).trans (by
-        rw [ENat.toENNReal_coe, ← ENNReal.ofReal_natCast]
-        exact ENNReal.ofReal_le_ofReal (Nat.floor_le (norm_nonneg _)))
-    _ < ∞ := by
-      rw [← ofReal_integral_eq_lintegral_ofReal hint.norm (.of_forall fun _ ↦ norm_nonneg _)]
-      exact ENNReal.ofReal_lt_top
 
 /-- **Two-function layer cake.** The integral of the product of two nonnegative functions is the
 double integral of the measures of the intersections of their strict superlevel sets:

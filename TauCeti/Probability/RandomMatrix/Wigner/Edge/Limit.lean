@@ -37,61 +37,65 @@ open scoped Topology ENNReal NNReal Matrix.Norms.L2Operator
 
 namespace ProbabilityTheory.iIndepFun
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
+variable {Ω Ω' Ω'' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] [MeasurableSpace Ω'']
+  {P : Measure Ω} {Q : Measure Ω'} {S : Measure Ω''}
+  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {X : Ω' → ℂ} {Y : Ω'' → ℝ}
 
 local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 
 /-- To prove both Wigner edge limits under a finite fourth moment, it suffices to bound the
 expected real trace of the `2*k`-th powers of the zero-diagonal centered truncations at radius
-`(n+1)^a`, with `a > 1/4`, by a polynomial in the sequence index times `4^k`. At each threshold
-`r > 2`, the order may depend on `r` and `n`, with `k n ≥ B * log (n + 1)` eventually and
-`2 * B * log (r/2) > d+1` for the polynomial exponent `d`. -/
+`(n+1)^a`, with `a > 1/4`, by a polynomial in the sequence index times `t^(2*k)`. At each threshold
+`r > 2`, the scale `2 ≤ t < r` and the orders `k n` may depend on `r`. The orders satisfy
+`k n ≥ B * log (n + 1)` eventually and `2 * B * log (r/t) > d+1` for polynomial exponent `d`. -/
 theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_two_mul_le
-    (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) (ξ e₀) P P)
-    (hξ : MemLp (ξ e₀) 4 P) (hmean : ∫ ω, ξ e₀ ω ∂P = 0)
-    (hvar : ∫ ω, ‖ξ e₀ ω‖ ^ 2 ∂P = 1)
-    (hd : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P)
+    (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
+    (hξ : MemLp X 4 Q) (hmean : ∫ ω, X ω ∂Q = 0) (hvar : ∫ ω, ‖X ω‖ ^ 2 ∂Q = 1)
+    (hd : ∀ i, IdentDistrib (η i) Y P S) (hη : MemLp Y 2 S)
     {a : ℝ} (ha : 1 / 4 < a)
-    (htrace : ∀ r > (2 : ℝ), ∃ (B C d : ℝ) (k : ℕ → ℕ), d + 1 < 2 * B * Real.log (r / 2) ∧
+    (htrace : ∀ r > (2 : ℝ), ∃ (t B C d : ℝ) (k : ℕ → ℕ), 2 ≤ t ∧ t < r ∧
+      d + 1 < 2 * B * Real.log (r / t) ∧
       (∀ᶠ n : ℕ in atTop, B * Real.log (n + 1) ≤ (k n : ℝ)) ∧
       (∀ᶠ n : ℕ in atTop, (∫ ω, ((wignerMatrix (fun ij ↦
         TauCeti.Probability.centeredTruncation (ξ ij) P
           ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
         (fun _ _ ↦ 0) (n + 1) ω ^ (2 * k n)).trace).re ∂P) ≤
-        C * (n + 1 : ℝ) ^ d * (2 : ℝ) ^ (2 * k n))) :
+        C * (n + 1 : ℝ) ^ d * t ^ (2 * k n))) :
     ∀ᵐ ω ∂P,
       Tendsto (fun n : ℕ ↦ (wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ ⊥)
         atTop (𝓝 2) ∧
       Tendsto (fun n : ℕ ↦ (wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ ⊤)
         atTop (𝓝 (-2)) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
-  let R (n : ℕ) : ℝ≥0 := ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩
   let B (n : ℕ) (ω : Ω) :=
-    wignerMatrix (fun ij ↦ TauCeti.Probability.centeredTruncation (ξ ij) P (R n))
+    wignerMatrix (fun ij ↦ TauCeti.Probability.centeredTruncation (ξ ij) P
+      ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
       (fun _ _ ↦ 0) (n + 1) ω
   let Z (n : ℕ) (ω : Ω) := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω
-  have hB n ω : (B n ω).IsHermitian := wignerMatrix_isHermitian _ _ _ _
   have hZ n ω : (Z n ω).IsHermitian := wignerMatrix_isHermitian _ _ _ _
   have hnorm : ∀ᵐ ω ∂P, ∀ r > (2 : ℝ), ∀ᶠ n in atTop, ‖B n ω‖ < r := by
-    apply ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
-      (.of_forall fun n ↦ .of_forall (hB n)) (by norm_num)
+    apply ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le (A := B)
+      (.of_forall fun n ↦ .of_forall fun ω ↦ wignerMatrix_isHermitian _ _ ω (n + 1)) (by norm_num)
     intro r hr
-    obtain ⟨b, C, d, k, hb, hk, htrace'⟩ := htrace r hr
-    refine ⟨b, C, d, k, hb, hk, .of_forall fun n ↦ ?_, ?_⟩
+    obtain ⟨t, b, C, d, k, ht, htr, hb, hk, htrace'⟩ := htrace r hr
+    refine ⟨t, b, C, d, k, ht, htr, hb, hk, .of_forall fun n ↦ ?_, ?_⟩
     · have hi : Integrable (fun ω ↦ ((B n ω) ^ (2 * k n)).trace) P :=
         integrable_trace_pow_wignerMatrix (fun ij _ ↦
           (hid ij).aestronglyMeasurable_fst.memLp_centeredTruncation _) (fun _ _ ↦ memLp_const 0)
       exact hi.re
-    · simpa only [B, R, RCLike.re_to_complex] using htrace'
+    · simpa only [B, RCLike.re_to_complex] using htrace'
   have happrox : ∀ᵐ ω ∂P, Tendsto (fun n ↦ ‖Z n ω - B n ω‖) atTop (𝓝 0) := by
-    simpa only [B, Z, R] using ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
-      (η := fun _ _ ↦ 0) (fun _ ↦
-        (hind.precomp Subtype.val_injective).wignerMatrix_row_apply_of_ne)
-      hid hξ hmean (fun _ ↦ IdentDistrib.refl aemeasurable_const)
-      (memLp_const 0) ha
-  have hweak := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
-    hind hid (hξ.mono_exponent (by norm_num)) hmean 1 (by simpa using hvar)
+    simpa only [B, Z] using
+      ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation_zero
+        (η := fun _ _ ↦ 0) (Y := fun _ : Ω ↦ 0) (fun _ ↦
+          (hind.precomp Subtype.val_injective).wignerMatrix_row_apply_of_ne)
+        hid hξ hmean (fun _ ↦ IdentDistrib.refl aemeasurable_const) (memLp_const 0) ha
+  have hweak := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp hind
+    (fun ij ↦ (hid ij).trans (hid e₀).symm)
+    (((hid e₀).symm.memLp_snd hξ).mono_exponent (by norm_num))
+    ((hid e₀).integral_eq.trans hmean) 1 (by
+      simpa only [Function.comp_apply, NNReal.coe_one] using
+        ((hid e₀).comp (measurable_norm.pow_const 2)).integral_eq.trans hvar)
   have hdiag := ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
   filter_upwards [hnorm, happrox, hweak, hdiag] with ω hn hdiff hw hdω
   have hZnorm r (hr : 2 < r) : ∀ᶠ n in atTop, ‖Z n ω‖ < r := by

@@ -278,18 +278,20 @@ theorem norm_wignerMatrix_apply_self_sq (i : Fin n) :
   simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv, Complex.norm_real,
     Real.norm_eq_abs, inv_pow, sq_abs, Real.sq_sqrt (Nat.cast_nonneg n)]
 
+private theorem norm_inv_ofReal_sqrt_natCast (n : ℕ) :
+    ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
+  rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+
 /-- The norm of an off-diagonal Wigner entry is the norm of the corresponding upper
 coordinate multiplied by the inverse square root of the matrix size. -/
 theorem norm_wignerMatrix_apply_of_ne {i j : Fin n} (h : i ≠ j) :
     ‖wignerMatrix ξ η n ω i j‖ = (Real.sqrt n)⁻¹ *
       ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne h)⟩ ω‖ := by
-  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
-    rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
   rcases lt_or_gt_of_ne (Fin.val_ne_of_ne h) with hij | hij
-  · simp only [wignerMatrix_apply_of_lt _ _ _ hij, norm_mul, hn,
+  · simp only [wignerMatrix_apply_of_lt _ _ _ hij, norm_mul, norm_inv_ofReal_sqrt_natCast,
       min_eq_left hij.le, max_eq_right hij.le]
-  · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, norm_star, hn,
-      min_eq_right hij.le, max_eq_left hij.le]
+  · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, norm_star,
+      norm_inv_ofReal_sqrt_natCast, min_eq_right hij.le, max_eq_left hij.le]
 
 /-- An off-diagonal Wigner entry exceeds the normalized cutoff in norm exactly when
 its corresponding upper coordinate exceeds the unnormalized cutoff in norm. -/
@@ -663,10 +665,8 @@ theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
     ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ k ∂P ≤ (Real.sqrt n)⁻¹ ^ k * B := by
   by_cases h : i = j
   · subst j
-    have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
-      simp [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hc, Complex.norm_real,
-      integral_const_mul]
+    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv_ofReal_sqrt_natCast,
+      Complex.norm_real, integral_const_mul]
     exact mul_le_mul_of_nonneg_left (hη _ i.isLt) (by positivity)
   · simp only [norm_wignerMatrix_apply_of_ne _ _ _ h, mul_pow, integral_const_mul]
     exact mul_le_mul_of_nonneg_left (hξ _ (max_lt i.isLt j.isLt)) (by positivity)

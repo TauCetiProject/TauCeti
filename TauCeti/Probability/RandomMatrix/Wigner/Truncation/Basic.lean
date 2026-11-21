@@ -14,7 +14,8 @@ public import TauCeti.Probability.Moments.CenteredTruncation
 
 Replacing the upper entries by their centered truncations gives bounded centered entries
 without changing their independence or identical distribution. The expected normalized squared
-Frobenius error is at most the discarded second absolute moment of one entry.
+Frobenius error is at most the discarded second absolute moment when the upper entries
+have a common centered, square-integrable law on a probability space.
 
 The diagonal is kept unchanged: it needs no moment assumption and may depend on the upper
 entries. Independence is needed only to assert independence of the approximating coordinates,
@@ -47,7 +48,7 @@ variable {Ω : Type*} {ξ : StrictUpper → Ω → ℂ}
 
 /-- The discarded part of a zero-diagonal Wigner corner is exactly the entrywise
 hard threshold at the cutoff divided by the square root of the dimension. -/
-theorem wignerMatrix_sub_indicator_eq_hardThreshold {n : ℕ}
+theorem wignerMatrix_zero_sub_indicator_eq_hardThreshold {n : ℕ}
     (r : ℝ≥0) (ω : Ω) :
     wignerMatrix ξ (fun _ _ ↦ 0) n ω -
       wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ r}.indicator (ξ ij)) (fun _ _ ↦ 0) n ω =
@@ -102,7 +103,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper �
 
 /-- Every normalized entry of a zero-diagonal centered truncated Wigner corner on a
 probability space has norm at most twice the cutoff divided by the square root of the dimension. -/
-theorem norm_wignerMatrix_centeredTruncation_apply_le [IsProbabilityMeasure P] {n : ℕ}
+theorem norm_wignerMatrix_centeredTruncation_zero_apply_le [IsProbabilityMeasure P] {n : ℕ}
     (R : ℝ≥0) (ω : Ω) (i j : Fin n) :
     ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) (fun _ _ ↦ 0) n ω i j‖ ≤
       2 * (R : ℝ) / Real.sqrt n := by
@@ -116,7 +117,7 @@ theorem norm_wignerMatrix_centeredTruncation_apply_le [IsProbabilityMeasure P] {
 /-- In a zero-diagonal centered truncated Wigner corner on a probability space with
 square-integrable upper entries, the absolute entry moment of order `k+2` is bounded
 by the upper-entry second-moment bound divided by the dimension, times `(2 * R / √n)^k`. -/
-theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
+theorem integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le
     [IsProbabilityMeasure P] {n : ℕ} {M : ℝ} (hM : 0 ≤ M)
     (hLp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P)
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ M)
@@ -139,7 +140,7 @@ theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
 /-- In a zero-diagonal centered truncated Wigner corner on a probability space, if the upper
 entries share a square-integrable law, the absolute entry moment of order `k+2` is bounded by
 `(2 * R / √n)^k` times the common second moment divided by the dimension. -/
-theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le_of_identDistrib
+theorem integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le_of_identDistrib
     {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} {X : Ω' → ℂ}
     [IsProbabilityMeasure P] {n : ℕ}
     (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P Q)
@@ -147,7 +148,8 @@ theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le_of_identDistr
     ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
       (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
       (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂Q) / n) :=
-  integral_norm_wignerMatrix_centeredTruncation_apply_pow_le (integral_nonneg fun _ ↦ sq_nonneg _)
+  integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le
+    (integral_nonneg fun _ ↦ sq_nonneg _)
     (fun ij hij ↦ (hid ij hij).symm.memLp_snd hX)
     (fun ij hij ↦ ((hid ij hij).comp
       (by fun_prop : Measurable (fun z : ℂ ↦ ‖z‖ ^ 2))).integral_eq.le) R i j k
@@ -159,8 +161,9 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-variable [IsProbabilityMeasure P] {X : Ω → ℂ} (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0)
-  (hd : ∀ ij, IdentDistrib (ξ ij) X P P)
+variable {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'}
+  [IsProbabilityMeasure P] {X : Ω' → ℂ} (hX : MemLp X 2 Q)
+  (hmean : ∫ ω, X ω ∂Q = 0) (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
 
 include hd hX
 
@@ -178,22 +181,26 @@ theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq (R : ℝ≥0) (n 
 include hmean
 
 /-- Uniform normalized mean-square approximation by bounded centered upper entries.
-The bound is the second absolute moment discarded outside the cutoff. -/
+For upper entries with a common centered, square-integrable law on a probability space,
+the bound is the second absolute moment discarded outside the cutoff. -/
 theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
     (R : ℝ≥0) (n : ℕ) :
     (n + 1 : ℝ)⁻¹ * ∫ ω, ‖wignerMatrix ξ η (n + 1) ω -
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω‖ ^ 2 ∂P ≤
-        ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
+        ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂Q := by
   have hm (ij : StrictUpper) : MemLp (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω) 2 P :=
     ((hd ij).symm.memLp_snd hX).sub
       (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R)
   rw [integral_norm_wignerMatrix_sub_sq hm
     (fun ij ↦ (((hd ij).sub_centeredTruncation R).comp
       (measurable_norm.pow_const 2)).integral_eq)]
-  have he : 0 ≤ ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P :=
+  have : IsProbabilityMeasure Q := ⟨by
+    simpa only [Set.preimage_univ, measure_univ] using
+      ((hd ⟨(0, 1), by decide⟩).measure_mem_eq (s := Set.univ) MeasurableSet.univ).symm⟩
+  have he : 0 ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q :=
     integral_nonneg fun _ ↦ sq_nonneg _
   calc
-    _ ≤ ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P := by
+    _ ≤ ∫ ω, ‖X ω - centeredTruncation X Q R ω‖ ^ 2 ∂Q := by
       have hc : (n : ℝ) / (n + 1) ≤ 1 := by
         exact (div_le_one (by positivity)).mpr (by linarith)
       simpa only [div_eq_inv_mul, mul_assoc, Function.comp_def] using
