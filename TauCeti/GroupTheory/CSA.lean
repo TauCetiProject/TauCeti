@@ -15,7 +15,8 @@ public import TauCeti.GroupTheory.TrivialIntersection
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
 particular, commutation is transitive through a nonidentity element: the centralizer of a
-nonidentity element is abelian, and every entry of a list of nonidentity elements in which
+nonidentity element is abelian, every subset of it containing a nonidentity element has the same
+centralizer, and every entry of a list of nonidentity elements in which
 consecutive entries commute commutes with the product of the list. In a torsion-free
 commutative-transitive group roots are unique, no nonidentity element is conjugate to its
 inverse, and in the nonabelian case every nonidentity conjugacy class is infinite. In a
@@ -155,6 +156,17 @@ theorem IsCommTransitive.commute_of_mem_centralizer_singleton (hG : IsCommTransi
     (hh : h ∈ Subgroup.centralizer {d}) : Commute g h :=
   have := isCommTransitive_iff_centralizer_isMulCommutative.1 hG d hd
   setLike_mul_comm hg hh
+
+/-- In a commutative-transitive group, a subset of the centralizer of `d ≠ 1` that contains a
+nonidentity element has the same centralizer as `d`. -/
+theorem IsCommTransitive.centralizer_eq_centralizer_singleton (hG : IsCommTransitive G)
+    {d g : G} {S : Set G} (hd : d ≠ 1) (hS : S ⊆ Subgroup.centralizer {d}) (hgS : g ∈ S)
+    (hg : g ≠ 1) : Subgroup.centralizer S = Subgroup.centralizer {d} := by
+  refine le_antisymm (fun h hh ↦ Subgroup.mem_centralizer_singleton_iff.2 ?_) fun h hh ↦
+    Subgroup.mem_centralizer_iff.2 fun s hs ↦ (hG.commute_of_mem_centralizer_singleton hd (hS hs)
+      hh).eq
+  exact (isCommTransitive_iff G).1 hG _ _ _ hg (Subgroup.mem_centralizer_iff.1 hh g hgS).symm
+    (Subgroup.mem_centralizer_singleton_iff.1 (hS hgS))
 
 /-- In a commutative-transitive group, every entry of a `Commute`-chain of nonidentity elements
 commutes with the product of the chain. -/

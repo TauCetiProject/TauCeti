@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
+public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
 import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
@@ -26,17 +27,20 @@ each other and with the elements of `C` ([IFT], Theorem 2 (7); [VAR-I], Corollar
 Proposition 8 (4)). The proof follows [VAR-I]:
 
 * At every solution all atoms commute with each other, so they lie in the abelian centralizer
-  `C_G(d)`, and `C = C_G(d)`. Consecutive atoms commute, and commutation is transitive through
+  `C_G(d)`, and `C = C_G(d)` (`Group.IsCommTransitive.centralizer_eq_centralizer_singleton`).
+  Consecutive atoms commute, and commutation is transitive through
   nonidentity elements. A square `xₖ²` may be trivial, but then moving the values of the `xₖ`
   with trivial square to the front gives another solution, in which the nontrivial atoms are
   consecutive.
 * So, by malnormality of `C_G(d)`, every solution sends `uⱼ` into `C_G(d)` and `zⱼ⁻¹ cⱼ zⱼ` to
   `a(zⱼ)⁻¹ cⱼ a(zⱼ)`, and by uniqueness of roots it satisfies `x₁ ⋯ xₙ = a(x₁) ⋯ a(xₙ)`. Conversely
   every solution of the system solves `S`: the equation and the system have the same solutions.
-* The group of the system embeds over `G` in the free product of the extension
+* The group of the system embeds over `G`, as a retract, in the free product of the extension
   `G(d, ℤ^{m + n})` of the centralizer of `d` with the free group on the variables, by
   `zⱼ ↦ a(zⱼ) tⱼ` and `x_k ↦ a(x_k) t_{m+k}`, the image of `x₁` being corrected so that the product
-  relation holds. This group is discriminated by `G`
+  relation holds. This needs only `C = C_G(d)` and distinct variables
+  (`TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_gHom_systemGroup_commutativeSystem`). The
+  free product is discriminated by `G`
   (`TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy_inl_comp_of`), so the radical of the
   system is its normal closure.
 
@@ -57,7 +61,10 @@ the variables of `S`. Over `G = ℤ`, the commutator `⁅y, g⁆` with a variabl
 
 ## Main results
 
+* `TauCeti.GroupAlgGeom.Quadratic.mem_commutativeSystem_iff`: the relators of the system.
 * `TauCeti.GroupAlgGeom.Quadratic.mem_V_commutativeSystem_iff`: the solutions of the system.
+* `TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_gHom_systemGroup_commutativeSystem`: the
+  group of the system is a retract over `G` of `G(d, ℤ^{m + n}) ∗ F(X)` when `C = C_G(d)`.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_orientableCoeff_zero_of_forall_isCommutative`:
   the radical of `c₁^{z₁} ⋯ c_m^{z_m} d = 1` when all its solutions are commutative.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_nonorientableCoeff_of_forall_isCommutative`:
@@ -102,6 +109,47 @@ def commutativeSystem {n m : ℕ} (x : Fin n → X) (z : Fin m → X) (c : Fin m
     Set.image2 (fun k h ↦ ⁅ξ k, inl h⁆) Set.univ C ∪
     Set.image2 (fun j h ↦ ⁅υ j, inl h⁆) Set.univ C
 
+/-- `commutativeSystem x z c a` unfolded: the relator `x₁ ⋯ xₙ a(xₙ)⁻¹ ⋯ a(x₁)⁻¹` and the five
+families of commutators. -/
+theorem commutativeSystem_def {n m : ℕ} (x : Fin n → X) (z : Fin m → X) (c : Fin m → G)
+    (a : X → G) :
+    commutativeSystem x z c a =
+      {(List.ofFn fun k ↦ (inr (FreeGroup.of (x k)) : GX G X)).prod *
+          inl ((List.ofFn fun k ↦ a (x k)).prod)⁻¹} ∪
+        (Set.range fun p : Fin n × Fin n ↦
+          ⁅(inr (FreeGroup.of (x p.1)) : GX G X), inr (FreeGroup.of (x p.2))⁆) ∪
+        (Set.range fun p : Fin m × Fin n ↦
+          ⁅inl (a (z p.1))⁻¹ * inr (FreeGroup.of (z p.1)), inr (FreeGroup.of (x p.2))⁆) ∪
+        (Set.range fun p : Fin m × Fin m ↦ ⁅inl (a (z p.1))⁻¹ * inr (FreeGroup.of (z p.1)),
+          inl (a (z p.2))⁻¹ * inr (FreeGroup.of (z p.2))⁆) ∪
+        Set.image2 (fun k h ↦ ⁅(inr (FreeGroup.of (x k)) : GX G X), inl h⁆) Set.univ
+          (centralizer (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪
+            Set.range fun k ↦ a (x k)) : Set G) ∪
+        Set.image2 (fun j h ↦ ⁅(inl (a (z j))⁻¹ * inr (FreeGroup.of (z j)) : GX G X), inl h⁆)
+          Set.univ
+          (centralizer (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪
+            Set.range fun k ↦ a (x k)) : Set G) :=
+  (rfl)
+
+/-- The relators of `commutativeSystem x z c a`: `x₁ ⋯ xₙ a(xₙ)⁻¹ ⋯ a(x₁)⁻¹` and the commutators
+of the `x_k` and the `uⱼ = a(zⱼ)⁻¹ zⱼ` with each other and with the elements of the centralizer
+`C`. -/
+theorem mem_commutativeSystem_iff {n m : ℕ} {x : Fin n → X} {z : Fin m → X} {c : Fin m → G}
+    {a : X → G} {w : GX G X} :
+    w ∈ commutativeSystem x z c a ↔
+      w = (List.ofFn fun k ↦ (inr (FreeGroup.of (x k)) : GX G X)).prod *
+          inl ((List.ofFn fun k ↦ a (x k)).prod)⁻¹ ∨
+        (∃ k l, ⁅(inr (FreeGroup.of (x k)) : GX G X), inr (FreeGroup.of (x l))⁆ = w) ∨
+        (∃ j k, ⁅inl (a (z j))⁻¹ * inr (FreeGroup.of (z j)), inr (FreeGroup.of (x k))⁆ = w) ∨
+        (∃ i j, ⁅inl (a (z i))⁻¹ * inr (FreeGroup.of (z i)),
+          inl (a (z j))⁻¹ * inr (FreeGroup.of (z j))⁆ = w) ∨
+        (∃ k, ∃ h ∈ centralizer (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪
+          Set.range fun k ↦ a (x k)), ⁅(inr (FreeGroup.of (x k)) : GX G X), inl h⁆ = w) ∨
+        ∃ j, ∃ h ∈ centralizer (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪
+          Set.range fun k ↦ a (x k)), ⁅inl (a (z j))⁻¹ * inr (FreeGroup.of (z j)), inl h⁆ = w := by
+  simp only [commutativeSystem_def, Set.mem_union, Set.mem_singleton_iff, Set.mem_range,
+    Prod.exists, Set.mem_image2, Set.mem_univ, true_and, SetLike.mem_coe, or_assoc]
+
 /-- A point `v` solves `commutativeSystem x z c a` exactly when `v(x₁) ⋯ v(xₙ) = a(x₁) ⋯ a(xₙ)`
 and the `v(x_k)` and the `a(zⱼ)⁻¹ v(zⱼ)` commute with each other and with the elements of the
 centralizer `C`. -/
@@ -118,7 +166,7 @@ theorem mem_V_commutativeSystem_iff {H : Type*} [Group H] (ι : G →* H) {n m :
       ∀ j, ∀ h ∈ centralizer
         (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)),
           Commute ((ι (a (z j)))⁻¹ * v (z j)) (ι h) := by
-  simp only [commutativeSystem, V_union, Set.mem_inter_iff, mem_V, Set.mem_singleton_iff,
+  simp only [commutativeSystem_def, V_union, Set.mem_inter_iff, mem_V, Set.mem_singleton_iff,
     forall_eq, Set.forall_mem_range, Set.forall_mem_image2, Set.mem_univ, true_implies,
     SetLike.mem_coe, Prod.forall, map_mul, map_inv, map_list_prod, List.map_ofFn,
     Function.comp_def, eval_inl, eval_inr_of, map_commutatorElement,
@@ -249,16 +297,9 @@ private theorem centralizer_eq_of_mem_V (hG : IsCommTransitive G) (hd : d ≠ 1)
       · simp [h _ (.inr ⟨k, rfl⟩)]
       · exact h _ (.inl ⟨j, rfl⟩)
     simpa [h1] using mem_V_sqConjWord_iff.1 ha
-  have hgd : g ∈ centralizer {d} := by
-    rcases hg with ⟨j, rfl⟩ | ⟨k, rfl⟩
-    exacts [hb j, hs k]
-  refine le_antisymm (fun h hh ↦ mem_centralizer_singleton_iff.2 ?_) fun h hh ↦ ?_
-  · exact ((isCommTransitive_iff G).1 hG _ _ _ hg1 (mem_centralizer_iff.1 hh g hg).symm
-      (mem_centralizer_singleton_iff.1 hgd)).eq
-  · rw [mem_centralizer_iff]
-    rintro _ (⟨j, rfl⟩ | ⟨k, rfl⟩)
-    exacts [(hG.commute_of_mem_centralizer_singleton hd (hb j) hh).eq,
-      (hG.commute_of_mem_centralizer_singleton hd (hs k) hh).eq]
+  refine hG.centralizer_eq_centralizer_singleton hd ?_ hg hg1
+  rintro _ (⟨j, rfl⟩ | ⟨k, rfl⟩)
+  exacts [hb j, hs k]
 
 /-! ### The equation and the system have the same solutions -/
 
@@ -320,6 +361,23 @@ private theorem mem_V_of_mem_V_commutativeSystem (hG : IsCommTransitive G) (hd :
 
 /-! ### The group of the system embeds in an extension of a centralizer -/
 
+/-- If the centralizer `C` of the system is `C_G(d)`, the `a(x_k)` commute with `C_G(d)`. -/
+private theorem commute_of_centralizer_eq
+    (hC : centralizer
+      (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
+        centralizer {d})
+    (k : Fin n) {h : G} (hh : h ∈ centralizer {d}) : Commute (a (x k)) h :=
+  mem_centralizer_iff.1 (hC.ge hh) _ (.inr ⟨k, rfl⟩)
+
+/-- If the centralizer `C` of the system is `C_G(d)`, the `a(x_k)` lie in `C_G(d)`. -/
+private theorem mem_centralizer_of_centralizer_eq
+    (hC : centralizer
+      (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
+        centralizer {d})
+    (k : Fin n) : a (x k) ∈ centralizer {d} :=
+  mem_centralizer_singleton_iff.2 <|
+    commute_of_centralizer_eq hC k (mem_centralizer_singleton_iff.2 (.refl d))
+
 /-- The exponents in `ℤ^{m + n}` of the new letters in the image of `x_k`: the letter `t_{m+k}`,
 and for `k = 0` also the inverse of the product of all of them, so that they add up to `0`. -/
 private def xExp (m n : ℕ) (k : Fin n) : Fin (m + n) → Multiplicative ℤ :=
@@ -352,19 +410,18 @@ private theorem extPoint_z (inj : (Sum.elim x z).Injective) (hs : ∀ k, a (x k)
   inj.extend_apply _ _ (.inr j)
 
 /-- `extPoint` solves the system. -/
-private theorem mem_V_extPoint (hG : IsCommTransitive G) (hd : d ≠ 1)
-    (inj : (Sum.elim x z).Injective) (hs : ∀ k, a (x k) ∈ centralizer {d})
+private theorem mem_V_extPoint (inj : (Sum.elim x z).Injective)
+    (hs : ∀ k, a (x k) ∈ centralizer {d})
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d}) :
     extPoint x z a hs ∈ V (inl.comp CentralizerExt.of) (commutativeSystem x z c a) := by
-  -- Everything in the image of `C_G(d) × ℤ^{m + n}` commutes.
-  have hcomm (p q : centralizer {d} × (Fin (m + n) → Multiplicative ℤ)) :
+  -- Elements of the image of `C_G(d) × ℤ^{m + n}` commute when their `C_G(d)` parts do.
+  have hcomm {p q : centralizer {d} × (Fin (m + n) → Multiplicative ℤ)}
+      (h : Commute (p.1 : G) q.1) :
       Commute (inl (CentralizerExt.ofProd p) : GX (CentralizerExt d (m + n)) X)
         (inl (CentralizerExt.ofProd q)) :=
-    ((Commute.prod (Subtype.ext
-      (hG.commute_of_mem_centralizer_singleton hd p.1.property q.1.property).eq)
-      (Commute.all _ _)).map _).map _
+    ((Commute.prod (Subtype.ext h.eq) (Commute.all _ _)).map _).map _
   have hz (j : Fin m) : ((inl.comp CentralizerExt.of) (a (z j)))⁻¹ * extPoint x z a hs (z j) =
       inl (CentralizerExt.ofProd (1, Pi.mulSingle (Fin.castAdd n j) (.ofAdd 1))) := by
     rw [extPoint_z inj, MonoidHom.comp_apply, map_mul, ← CentralizerExt.ofProd_mulSingle]
@@ -379,11 +436,11 @@ private theorem mem_V_extPoint (hG : IsCommTransitive G) (hd : d ≠ 1)
       simp [extPoint_x inj, List.map_ofFn, Function.comp_def]
     rw [hx, ← map_list_prod, ← Prod.mk.eta (p := List.prod _)]
     simp [prod_xExp, List.map_ofFn, Function.comp_def, List.prod_ofFn]
-  · rw [extPoint_x inj, extPoint_x inj]; exact hcomm _ _
-  · rw [hz, extPoint_x inj]; exact hcomm _ _
-  · rw [hz, hz]; exact hcomm _ _
-  · rw [extPoint_x inj, hι hh]; exact hcomm _ _
-  · rw [hz, hι hh]; exact hcomm _ _
+  · rw [extPoint_x inj, extPoint_x inj]; exact hcomm (commute_of_centralizer_eq hC k (hs l))
+  · rw [hz, extPoint_x inj]; exact hcomm (.one_left _)
+  · rw [hz, hz]; exact hcomm (.one_left _)
+  · rw [extPoint_x inj, hι hh]; exact hcomm (commute_of_centralizer_eq hC k hh)
+  · rw [hz, hι hh]; exact hcomm (.one_left _)
 
 /-- The images of the new letters under the homomorphism `G(d, ℤ^{m + n}) → H` given by a solution
 `v` of the system: the `a(zⱼ)⁻¹ v(zⱼ)`, then the `a(x_k)⁻¹ v(x_k)`. -/
@@ -397,14 +454,13 @@ private theorem commute_letterVals {H : Type*} [Group H] {ι : G →* H} {v : X 
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d})
-    (hG : IsCommTransitive G) (hd : d ≠ 1) (hs : ∀ k, a (x k) ∈ centralizer {d})
     {h : G} (hh : h ∈ centralizer {d}) (i : Fin (m + n)) :
     Commute (ι h) (letterVals ι x z a v i) := by
   rw [mem_V_commutativeSystem_iff, hC] at hv
   refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) i
   · simpa [letterVals] using (hv.2.2.2.2.2 j h hh).symm
   · simpa [letterVals] using
-      ((hG.commute_of_mem_centralizer_singleton hd hh (hs k)).map ι).inv_right.mul_right
+      ((commute_of_centralizer_eq hC k hh).symm.map ι).inv_right.mul_right
         (hv.2.2.2.2.1 k h hh).symm
 
 /-- At a solution of the system, the elements `letterVals` commute with each other. -/
@@ -413,10 +469,9 @@ private theorem commute_letterVals_letterVals {H : Type*} [Group H] {ι : G →*
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d})
-    (hG : IsCommTransitive G) (hd : d ≠ 1) (hs : ∀ k, a (x k) ∈ centralizer {d})
     (i i' : Fin (m + n)) : Commute (letterVals ι x z a v i) (letterVals ι x z a v i') := by
-  have hι {h : G} (hh : h ∈ centralizer {d}) (i : Fin (m + n)) :=
-    commute_letterVals hv hC hG hd hs hh i
+  have hs := mem_centralizer_of_centralizer_eq hC
+  have hι {h : G} (hh : h ∈ centralizer {d}) (i : Fin (m + n)) := commute_letterVals hv hC hh i
   rw [mem_V_commutativeSystem_iff, hC] at hv
   obtain ⟨-, h2, h3, h4, h5, h6⟩ := hv
   refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) i
@@ -430,8 +485,8 @@ private theorem commute_letterVals_letterVals {H : Type*} [Group H] {ι : G →*
     simpa [letterVals] using (hι (hs k) i').inv_left.mul_left hx
 
 /-- Every solution `v` of the system in a group `H` factors through `extPoint`. -/
-private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTransitive G)
-    (hd : d ≠ 1) (inj : (Sum.elim x z).Injective) (hs : ∀ k, a (x k) ∈ centralizer {d})
+private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (inj : (Sum.elim x z).Injective)
+    (hs : ∀ k, a (x k) ∈ centralizer {d})
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d})
@@ -440,8 +495,8 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTran
       ψ.comp (eval (inl.comp CentralizerExt.of) (extPoint x z a hs)) = eval ι v := by
   classical
   set τ := letterVals ι x z a v
-  have hτ := commute_letterVals_letterVals hv hC hG hd hs
-  let ψK := CentralizerExt.lift ι τ hτ fun _ hh i ↦ commute_letterVals hv hC hG hd hs hh i
+  have hτ := commute_letterVals_letterVals hv hC
+  let ψK := CentralizerExt.lift ι τ hτ fun _ hh i ↦ commute_letterVals hv hC hh i
   have hψK (p : centralizer {d} × (Fin (m + n) → Multiplicative ℤ)) :
       ψK (CentralizerExt.ofProd p) = ι p.1 * zpowersPiHom τ hτ p.2 :=
     CentralizerExt.lift_ofProd _ _ _ _ p
@@ -453,9 +508,8 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTran
     have h1 := ((mem_V_commutativeSystem_iff ι x z c a v).1 hv).1
     rw [hx, ← map_list_prod, MonoidHom.comp_apply, hψK] at h1
     simpa [Subgroup.val_list_prod, List.map_ofFn, Function.comp_def, List.prod_ofFn] using h1
-  refine ⟨lift ψK (FreeGroup.lift v), hom_ext (MonoidHom.ext fun g ↦ ?_)
+  refine ⟨lift ψK (FreeGroup.lift v), hom_ext (MonoidHom.ext fun g ↦ by simp [ψK])
     (FreeGroup.ext_hom _ _ fun y ↦ ?_)⟩
-  · simp [ψK, CentralizerExt.lift_of _ _ _ _ g]
   simp only [MonoidHom.comp_apply, eval_inr_of]
   by_cases hy : ∃ p, Sum.elim x z p = y
   · obtain ⟨k | j, rfl⟩ := hy
@@ -471,28 +525,33 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTran
       simp [τ, letterVals]
   · simp [extPoint, Function.extend_apply' _ _ _ hy]
 
-/-- The group of the system is separated by `G`. -/
-private theorem isSeparatedBy_coeff_commutativeSystem (hG : IsFullyResiduallyFree G)
-    (hna : ¬IsMulCommutative G) (inj : (Sum.elim x z).Injective) (hd : d ≠ 1)
-    (hs : ∀ k, a (x k) ∈ centralizer {d})
+/-- If the centralizer `C` of the system is the centralizer of `d`, the group of the system
+`commutativeSystem x z c a` is a retract over `G` of the free product `G(d, ℤ^{m + n}) ∗ F(X)` of
+the extension of the centralizer of `d` with the free group on the variables: there are
+`G`-homomorphisms `f` from the system group to `G(d, ℤ^{m + n}) ∗ F(X)` and `ψ` back with
+`ψ ∘ f = id`. In particular `f` embeds the system group over `G`. -/
+theorem exists_leftInverse_gHom_systemGroup_commutativeSystem (inj : (Sum.elim x z).Injective)
     (hC : centralizer
       (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪ Set.range fun k ↦ a (x k)) =
         centralizer {d}) :
-    IsSeparatedBy (SystemGroup.coeff (commutativeSystem x z c a)) (.id G) := by
+    ∃ (f : GHom (SystemGroup.coeff (commutativeSystem x z c a))
+        (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d (m + n)) X))
+      (ψ : GHom (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d (m + n)) X)
+        (SystemGroup.coeff (commutativeSystem x z c a))), Function.LeftInverse ψ f := by
   set T := commutativeSystem x z c a
+  have hs := mem_centralizer_of_centralizer_eq hC
   -- The generic point of `G_T` solves `T`, so it factors through `extPoint`.
   let ξ : X → SystemGroup G T := fun y ↦ ((inr (FreeGroup.of y) : GX G X) : SystemGroup G T)
   have hξ : eval (SystemGroup.coeff T) ξ = QuotientGroup.mk' (normalClosure T) :=
     hom_ext (MonoidHom.ext fun _ ↦ by simp) (FreeGroup.ext_hom _ _ fun _ ↦ by simp [ξ])
-  obtain ⟨ψ, hψ⟩ := exists_comp_eval_extPoint hG.isCommTransitive hd inj hs hC (v := ξ) <|
-    mem_V.2 fun t ht ↦ by
-      rw [hξ, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
-      exact subset_normalClosure ht
-  refine (CentralizerExt.isDiscriminatedBy_inl_comp_of hG hna hd).isSeparatedBy.of_injective
-    (SystemGroup.evalGHom _ (mem_V_extPoint hG.isCommTransitive hd inj hs hC))
-    (Function.LeftInverse.injective (g := ψ) fun w ↦ ?_)
-  obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective w
-  simpa [hξ] using DFunLike.congr_fun hψ w
+  obtain ⟨ψ, hψ⟩ := exists_comp_eval_extPoint inj hs hC (v := ξ) <| mem_V.2 fun t ht ↦ by
+    rw [hξ, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
+    exact subset_normalClosure ht
+  refine ⟨SystemGroup.evalGHom _ (mem_V_extPoint inj hs hC), ⟨ψ, fun g ↦ ?_⟩, fun w ↦ ?_⟩
+  · simpa using DFunLike.congr_fun hψ (inl g)
+  · obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective w
+    rw [SystemGroup.evalGHom_mk, GHom.coe_mk]
+    simpa [hξ] using DFunLike.congr_fun hψ w
 
 /-! ### The radical -/
 
@@ -504,12 +563,15 @@ private theorem Rad_sqConjWord_eq_normalClosure (hG : IsFullyResiduallyFree G)
   have hT := hG.isCommTransitive
   have hs := mem_centralizer_of_mem_V hG inj hc hall ha
   have hb := conj_mem_centralizer_of_mem_V hT inj hc hall ha
+  -- The group of the system embeds over `G` in a group discriminated by `G`.
+  obtain ⟨f, _, hf⟩ := exists_leftInverse_gHom_systemGroup_commutativeSystem inj
+    (centralizer_eq_of_mem_V hT hd ha hs hb)
   refine (SystemGroup.isSeparatedBy_coeff_iff_of_subset (fun w hw ↦ mem_Rad.2 fun v hv ↦ ?_)
     fun t ht ↦ mem_Rad.2 fun v hv ↦ mem_V.1 (mem_V_commutativeSystem_of_mem_V hG hc hd ha hs hb
       hv (mem_centralizer_of_mem_V hG inj hc hall hv)
       (conj_mem_centralizer_of_mem_V hT inj hc hall hv)) t ht).1
-    (isSeparatedBy_coeff_commutativeSystem hG hna inj hd hs
-      (centralizer_eq_of_mem_V hT hd ha hs hb))
+    ((CentralizerExt.isDiscriminatedBy_inl_comp_of hG hna hd).isSeparatedBy.of_injective f
+      hf.injective)
   rw [Set.mem_singleton_iff.1 hw]
   exact mem_V.1 (mem_V_of_mem_V_commutativeSystem hT hd ha hs hb hv) _ rfl
 
