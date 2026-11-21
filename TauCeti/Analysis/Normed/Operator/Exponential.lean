@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
@@ -48,6 +49,10 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (t • B) x - x = ∫₀ᵗ exp (u • B) (B x) du` for the orbits of a real bounded operator.
 * `ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt`: a continuous function on `[0, ∞)`
   with right derivative `A (z t)` is the linear flow `t ↦ exp (t • A) (z 0)` of its initial value.
+* `NormedSpace.exp_conj_continuousLinearEquiv` and
+  `NormedSpace.exp_conj_continuousLinearEquiv_of_finiteDimensional`: the operator exponential
+  commutes with conjugation by a continuous linear equivalence into a topological vector space
+  whose endomorphism ring carries a Hausdorff topological-ring topology.
 -/
 
 public section
@@ -243,5 +248,61 @@ theorem eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
 end Real
 
 end ContinuousLinearMap
+
+namespace NormedSpace
+
+/-- **Conjugation invariance of the operator exponential**: if conjugation by a continuous linear
+equivalence `e : E ≃L[𝕜] F` from a Banach space `E` to a topological vector space `F` is continuous
+into a Hausdorff topological-ring topology on `F →L[𝕜] F`, then `NormedSpace.exp` commutes with
+conjugation by `e`. -/
+theorem exp_conj_continuousLinearEquiv {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousConstSMul 𝕜 F]
+    [TopologicalSpace (F →L[𝕜] F)] [IsTopologicalRing (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
+    (e : E ≃L[𝕜] F)
+    (hcont : Continuous fun S : E →L[𝕜] E ↦
+      e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap))
+    (B : E →L[𝕜] E) :
+    exp (e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap)) =
+      e.toContinuousLinearMap.comp ((exp B).comp e.symm.toContinuousLinearMap) := by
+  let conj : (E →L[𝕜] E) →ₐ[𝕜] (F →L[𝕜] F) :=
+    { toFun S := e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap)
+      map_one' := by ext x; simp
+      map_mul' S T := by ext x; simp [mul_apply_eq_comp]
+      map_zero' := by ext x; simp
+      map_add' S T := by ext x; simp
+      commutes' r := by ext x; simp [Algebra.algebraMap_eq_smul_one] }
+  have hsum : HasSum (fun n : ℕ ↦ ((Nat.factorial n : 𝕜)⁻¹) • conj B ^ n) (conj (exp B)) := by
+    have h1 : HasSum (fun n : ℕ ↦ conj (((Nat.factorial n : 𝕜)⁻¹) • B ^ n)) (conj (exp B)) :=
+      (exp_series_hasSum_exp' (𝕂 := 𝕜) B).map conj.toAddMonoidHom hcont
+    simpa only [map_smul, map_pow] using h1
+  rw [exp_eq_tsum 𝕜]
+  exact hsum.tsum_eq
+
+/-- **Conjugation invariance of the operator exponential in finite dimension**: for a continuous
+linear equivalence `e : E ≃L[𝕜] F` from a finite-dimensional normed space `E` over a complete
+nontrivially normed field `𝕜` of characteristic zero to a topological vector space `F`,
+`NormedSpace.exp` commutes with conjugation by `e` for any Hausdorff topological-ring and
+topological-module topology on `F →L[𝕜] F`. -/
+theorem exp_conj_continuousLinearEquiv_of_finiteDimensional {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousConstSMul 𝕜 F]
+    [TopologicalSpace (F →L[𝕜] F)] [IsTopologicalRing (F →L[𝕜] F)]
+    [ContinuousSMul 𝕜 (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
+    (e : E ≃L[𝕜] F) (B : E →L[𝕜] E) :
+    exp (e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap)) =
+      e.toContinuousLinearMap.comp ((exp B).comp e.symm.toContinuousLinearMap) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let conjL : (E →L[𝕜] E) →ₗ[𝕜] (F →L[𝕜] F) :=
+    { toFun S := e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap)
+      map_add' S T := by ext x; simp
+      map_smul' r S := by ext x; simp }
+  exact exp_conj_continuousLinearEquiv e conjL.continuous_of_finiteDimensional B
+
+end NormedSpace
 
 end
