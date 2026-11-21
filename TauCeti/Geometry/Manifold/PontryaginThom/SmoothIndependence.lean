@@ -144,6 +144,10 @@ theorem transitionFDeriv_eq_fderiv {τ₀ τ₁ : S × V → M} {x : S} (hn : n 
       (ContinuousLinearMap.snd ℝ E V ∘L dφ ∘L ContinuousLinearMap.inr ℝ E V) 0 :=
     ((hasMFDerivAt_snd _).comp (0 : V) (hφ.hasMFDerivAt.comp (0 : V) hslice)).hasFDerivAt
   refine .trans (ContinuousLinearMap.ext fun v ↦ ?_) hd.fderiv.symm
+  -- This is `transitionFDeriv_apply` with the differentials retyped as the model-space maps `d₀`,
+  -- `d₁`. Rewriting with it instead leaves `inverse` at the `TangentSpace` types and `d₀` at
+  -- `E × V`, a goal that is not type-correct at the transparency `rw` uses, so it cannot then use
+  -- `hτ₁`; `change` performs the retyping by unfolding `TangentSpace` to the model space.
   change (d₀.inverse (d₁ (0, v))).2 = _
   simp [hτ₁, hinv.inverse_apply_self]
 

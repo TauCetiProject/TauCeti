@@ -300,7 +300,7 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
 
 /-- Two invertible maps `d₀, d₁ : M₁ × M₂ → N` which agree on the first factor have mutually
 inverse diagonal blocks `snd ∘ d₀⁻¹ ∘ d₁ ∘ inr` and `snd ∘ d₁⁻¹ ∘ d₀ ∘ inr : M₂ → M₂`, since
-`d₀⁻¹ ∘ d₁` preserves the first coordinate. This is how the normal parts of the differentials of
+`d₀⁻¹ ∘ d₁` restricts to the identity on `M₁`. This is how the normal parts of the differentials of
 two tubes around the same map are compared. -/
 theorem IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr {N : Type*}
     [TopologicalSpace N] [AddCommGroup N] [Module R N] {d₀ d₁ : M₁ × M₂ →L[R] N}
@@ -308,12 +308,12 @@ theorem IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr {N
     (snd R M₁ M₂ ∘L d₀.inverse ∘L d₁ ∘L inr R M₁ M₂) ∘L
       (snd R M₁ M₂ ∘L d₁.inverse ∘L d₀ ∘L inr R M₁ M₂) = .id R M₂ :=
   ContinuousLinearMap.ext fun v ↦ by
+    have hbase (a : M₁) : d₀ (a, 0) = d₁ (a, 0) := by simpa using DFunLike.congr_fun h a
     -- Write `w = d₁⁻¹ (d₀ (0, v))`; removing its base part, `d₁ (0, w.2) = d₀ ((0, v) - (w.1, 0))`.
     have hw : d₁ (0, (d₁.inverse (d₀ (0, v))).2) =
         d₀ ((0, v) - ((d₁.inverse (d₀ (0, v))).1, 0)) := by
-      rw [map_sub, show d₀ ((d₁.inverse (d₀ (0, v))).1, 0) = d₁ ((d₁.inverse (d₀ (0, v))).1, 0)
-        from DFunLike.congr_fun h _, eq_sub_iff_add_eq, ← map_add, Prod.mk_add_mk, zero_add,
-        add_zero, Prod.mk.eta, h₁.self_apply_inverse]
+      rw [map_sub, hbase, eq_sub_iff_add_eq, ← map_add]
+      simp [h₁.self_apply_inverse]
     simp [hw, h₀.inverse_apply_self]
 
 end FstPreserving
