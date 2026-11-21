@@ -83,45 +83,20 @@ variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} {s : ℝ}
 representatives of the real elements `u j` of `H^s(ℂ)`. For `s > 1` it is the continuous field
 almost everywhere equal to `u` (`coeFn_inclusionLp_ae_eq_continuousRepField`), and the field
 of `A_m^s` with real coordinates `u` is `x_m + continuousRepField u`
-(`SobolevFieldSpace.coe_ofRealSubRef`). It is real-linear in `u` (`continuousRepField_zero`,
-`continuousRepField_add`, `continuousRepField_smul`). -/
-def continuousRepField {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
-    ℂ → EuclideanSpace ℝ (Fin 4) :=
-  fun z ↦ WithLp.toLp 2 fun j ↦ continuousRep (u j) z
+(`SobolevFieldSpace.coe_ofRealSubRef`). It is real-linear in `u`. -/
+def continuousRepField {h : 0 ≤ s} :
+    (Fin 4 → realSubmodule ℂ h) →ₗ[ℝ] ℂ → EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.pi fun z ↦ (WithLp.linearEquiv 2 ℝ (Fin 4 → ℝ)).symm.toLinearMap ∘ₗ
+    LinearMap.pi fun j ↦ LinearMap.proj z ∘ₗ continuousRep ∘ₗ LinearMap.proj j
 
 @[simp]
 theorem continuousRepField_apply {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) (z : ℂ)
     (j : Fin 4) : continuousRepField u z j = continuousRep (u j) z :=
   (rfl)
 
-@[simp]
-theorem continuousRepField_zero {h : 0 ≤ s} :
-    continuousRepField (0 : Fin 4 → realSubmodule ℂ h) = 0 := by
-  ext z j
-  simp
-
-@[simp]
-theorem continuousRepField_add {h : 0 ≤ s} (u v : Fin 4 → realSubmodule ℂ h) :
-    continuousRepField (u + v) = continuousRepField u + continuousRepField v := by
-  ext z j
-  simp
-
-@[simp]
-theorem continuousRepField_sub {h : 0 ≤ s} (u v : Fin 4 → realSubmodule ℂ h) :
-    continuousRepField (u - v) = continuousRepField u - continuousRepField v := by
-  ext z j
-  simp
-
-@[simp]
-theorem continuousRepField_smul {h : 0 ≤ s} (c : ℝ) (u : Fin 4 → realSubmodule ℂ h) :
-    continuousRepField (c • u) = c • continuousRepField u := by
-  ext z j
-  simp
-
 /-- For `s > 1`, real coordinates are determined by their field. -/
 theorem continuousRepField_injective (hs : 1 < s) {h : 0 ≤ s} :
-    Function.Injective
-      (continuousRepField : (Fin 4 → realSubmodule ℂ h) → ℂ → EuclideanSpace ℝ (Fin 4)) := by
+    Function.Injective (continuousRepField (h := h)) := by
   intro u v huv
   funext j
   exact continuousRep_injective (finrank_real_complex_lt_two_mul hs)

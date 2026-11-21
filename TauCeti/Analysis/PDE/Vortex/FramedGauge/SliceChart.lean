@@ -271,11 +271,10 @@ private theorem exists_mem_ker_continuousRepField_eq (y : gaugeFixedKernel x₀)
 def kerRealSobolevGaugeFixedOperatorEquiv :
     (realSobolevGaugeFixedOperator f m hk (x₀.realSubRef _)).ker ≃ₗ[ℝ] gaugeFixedKernel x₀ :=
   LinearEquiv.ofBijective
-    { toFun := fun v : (realSobolevGaugeFixedOperator f m hk (x₀.realSubRef _)).ker ↦
-        ⟨continuousRepField (v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le),
-          continuousRepField_mem_gaugeFixedKernel hk x₀ hmem v.property⟩
-      map_add' := fun v w ↦ Subtype.ext (by simp [continuousRepField_add])
-      map_smul' := fun c v ↦ Subtype.ext (by simp [continuousRepField_smul]) }
+    ((continuousRepField ∘ₗ
+      (realSobolevGaugeFixedOperator f m hk (x₀.realSubRef _)).ker.subtype).codRestrict
+        (gaugeFixedKernel x₀) fun v ↦
+          continuousRepField_mem_gaugeFixedKernel hk x₀ hmem v.property)
     ⟨fun _ _ hvw ↦ Subtype.ext (continuousRepField_injective (by norm_cast; omega)
       (congrArg Subtype.val hvw)),
     fun y ↦
@@ -471,7 +470,7 @@ theorem coulombSliceMap_realSubRef_eq_zero_iff (hk : 2 ≤ k)
       (x.realSubRef _ - x₀.realSubRef _) = 0 ↔ gaugeAdjoint x₀ (x - x₀) = 0 := by
     rw [← (continuousRep_injective (finrank_real_complex_lt_two_mul (Nat.one_lt_cast.2 hk))).eq_iff,
       continuousRep_realSobolevGaugeAdjoint hk]
-    simp only [continuousRepField_sub, hx, map_zero,
+    simp only [map_sub, hx, map_zero,
       SobolevFieldSpace.referenceField_add_continuousRepField_realSubRef hs]
   rw [coulombSliceMap_apply, Prod.mk_eq_zero, hgauge, realSobolevEquation_realSubRef_eq_zero_iff]
 
