@@ -11,9 +11,10 @@ import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.LinearAlgebra.Dimension.Localization
 -- Proof-only: torsion modules have rank zero.
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
+import TauCeti.Algebra.CharP.Two
 
 /-!
-# Linear maps between finitely generated abelian groups of equal rank
+# Homomorphisms of finitely generated abelian groups
 
 An injective `ℤ`-linear map `f : M → N` into a finitely generated abelian group of the same
 rank has image of finite index `c`, so `c • y` lies in the image of `f` for every `y : N`.
@@ -25,6 +26,11 @@ The index of the image of a `ℤ`-linear map between free abelian groups is the 
 the determinant of `f` in any bases of `M` and `N` indexed by the same finite type; a
 non-injective `f` has image of infinite index (index `0`) and determinant `0`.
 
+A homomorphism from a free abelian group of finite rank `r` is determined freely by its values on
+a basis, so there are `|A| ^ r` homomorphisms to an abelian group `A`. In particular a free
+abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a nonzero `ι` and any
+`χ` other than `0` and `ι`, they are `0`, `ι`, `χ` and `χ + ι`.
+
 ## Main results
 
 * `LinearMap.exists_comp_eq_nsmul_id_of_injective`: an injective map between finitely generated
@@ -33,19 +39,27 @@ non-injective `f` has image of infinite index (index `0`) and determinant `0`.
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
+* `TauCeti.natCard_addMonoidHom_eq_pow_finrank`: a free abelian group of finite rank `r` has
+  `Nat.card A ^ r` homomorphisms to `A`; they are finite in number when `A` is finite
+  (`TauCeti.finite_addMonoidHom`).
+* `TauCeti.nodup_addMonoidHom_zmod_two`: for a nonzero `ι : G →+ ℤ/2` and a `χ` other than `0`
+  and `ι`, the homomorphisms `0`, `ι`, `χ` and `χ + ι` are pairwise distinct.
+* `TauCeti.univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two`,
+  `TauCeti.addMonoidHom_zmod_two_eq_zero_or_eq_or_eq_or_eq_add_of_finrank_eq_two`: a free abelian
+  group of rank two has four homomorphisms to `ℤ/2`, namely `0`, `ι`, `χ` and `χ + ι` for any
+  nonzero `ι` and any `χ` other than `0` and `ι`.
 -/
 
 public section
 
 namespace LinearMap
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
-omit [Module.Free ℤ N] in
 /-- An injective `ℤ`-linear map into a finitely generated abelian group of the same rank
 has an inverse up to multiplication by a nonzero natural number `c`. -/
-theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Function.Injective f)
-    (hrank : Module.finrank ℤ M = Module.finrank ℤ N) :
+theorem exists_comp_eq_nsmul_id_of_injective [Module.Finite ℤ N] {f : M →ₗ[ℤ] N}
+    (hf : Function.Injective f) (hrank : Module.finrank ℤ M = Module.finrank ℤ N) :
     ∃ c : ℕ, c ≠ 0 ∧ ∃ g : N →ₗ[ℤ] M, f ∘ₗ g = c • LinearMap.id ∧ g ∘ₗ f = c • LinearMap.id := by
   have : Finite (N ⧸ range f) := by
     have hq := (range f).finrank_quotient_add_finrank
@@ -64,7 +78,6 @@ theorem exists_comp_eq_nsmul_id_of_injective {f : M →ₗ[ℤ] N} (hf : Functio
   apply hf
   simpa using congr($hfg (f x))
 
-omit [Module.Free ℤ N] [Module.Finite ℤ N] in
 /-- **The index of the image of a map is the absolute value of its determinant**: for bases `b` of
 `M` and `c` of `N` indexed by the same finite type, the image of a `ℤ`-linear map `f : M → N` has
 index `|det (toMatrix b c f)|`. A non-injective `f` has image of infinite index, hence index `0`,
@@ -102,3 +115,61 @@ theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableE
   exact congr(c.repr $(LinearEquiv.ofInjective_apply f (h := hf) (b j)) i)
 
 end LinearMap
+
+namespace TauCeti
+
+/-- A free abelian group of finite rank `r` has `Nat.card A ^ r` additive homomorphisms to an
+abelian group `A`, one for each choice of values on a basis. -/
+theorem natCard_addMonoidHom_eq_pow_finrank (M A : Type*) [AddCommGroup M] [AddCommGroup A]
+    [Module.Free ℤ M] [Module.Finite ℤ M] :
+    Nat.card (M →+ A) = Nat.card A ^ Module.finrank ℤ M := by
+  rw [Nat.card_congr ((addMonoidHomLequivInt ℤ).toEquiv.trans
+    ((Module.finBasis ℤ M).constr ℤ).symm.toEquiv), Nat.card_fun, Nat.card_fin]
+
+/-- A free abelian group of finite rank has finitely many homomorphisms to a finite abelian
+group. -/
+instance finite_addMonoidHom (M A : Type*) [AddCommGroup M] [AddCommGroup A] [Module.Free ℤ M]
+    [Module.Finite ℤ M] [Finite A] : Finite (M →+ A) :=
+  Nat.finite_of_card_ne_zero <| by
+    rw [natCard_addMonoidHom_eq_pow_finrank]
+    exact pow_ne_zero _ Nat.card_pos.ne'
+
+/-- For a nonzero homomorphism `ι` to `ℤ/2` and a `χ` other than `0` and `ι`, the homomorphisms
+`0`, `ι`, `χ` and `χ + ι` are pairwise distinct. -/
+theorem nodup_addMonoidHom_zmod_two {G : Type*} [AddCommGroup G] {ι χ : G →+ ZMod 2}
+    (hι : ι ≠ 0) (hχ₀ : χ ≠ 0) (hχι : χ ≠ ι) : [0, ι, χ, χ + ι].Nodup := by
+  simp [add_eq_zero_iff_eq_of_charTwo (ZMod 2), hι, hχ₀, hχι, hχι.symm,
+    eq_comm (a := (0 : G →+ ZMod 2))]
+
+section RankTwo
+
+variable {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+
+/-- A lattice of rank two, such as `H₁` of a torus, has four homomorphisms to `ℤ/2`. -/
+theorem natCard_addMonoidHom_zmod_two_of_finrank_eq_two (h : Module.finrank ℤ Λ = 2) :
+    Nat.card (Λ →+ ZMod 2) = 4 := by
+  rw [natCard_addMonoidHom_eq_pow_finrank, h, Nat.card_zmod]
+  norm_num
+
+/-- On a lattice of rank two, the homomorphisms to `ℤ/2` are `0`, `ι`, `χ` and `χ + ι` for a
+nonzero `ι` and a `χ` other than `0` and `ι`. -/
+theorem univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two [Fintype (Λ →+ ZMod 2)]
+    [DecidableEq (Λ →+ ZMod 2)] (h : Module.finrank ℤ Λ = 2) {ι χ : Λ →+ ZMod 2} (hι : ι ≠ 0)
+    (hχ₀ : χ ≠ 0) (hχι : χ ≠ ι) :
+    (Finset.univ : Finset (Λ →+ ZMod 2)) = {0, ι, χ, χ + ι} := by
+  refine (Finset.eq_univ_of_card _ ?_).symm
+  rw [← Nat.card_eq_fintype_card, natCard_addMonoidHom_zmod_two_of_finrank_eq_two h]
+  simpa using List.toFinset_card_of_nodup (nodup_addMonoidHom_zmod_two hι hχ₀ hχι)
+
+/-- On a lattice of rank two, if `ι` is a nonzero homomorphism to `ℤ/2` and `χ` is neither `0`
+nor `ι`, every homomorphism to `ℤ/2` is `0`, `ι`, `χ` or `χ + ι`. -/
+theorem addMonoidHom_zmod_two_eq_zero_or_eq_or_eq_or_eq_add_of_finrank_eq_two
+    (h : Module.finrank ℤ Λ = 2) {ι χ : Λ →+ ZMod 2} (hι : ι ≠ 0) (hχ₀ : χ ≠ 0) (hχι : χ ≠ ι)
+    (ψ : Λ →+ ZMod 2) : ψ = 0 ∨ ψ = ι ∨ ψ = χ ∨ ψ = χ + ι := by
+  classical
+  let _ := Fintype.ofFinite (Λ →+ ZMod 2)
+  simpa [univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two h hι hχ₀ hχι] using Finset.mem_univ ψ
+
+end RankTwo
+
+end TauCeti

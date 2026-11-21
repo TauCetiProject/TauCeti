@@ -87,9 +87,10 @@ subgroup `jacobsonRadical W Z` of the morphisms `W ⟶ Z`. -/
 @[expose] def radicalFunctor (Z : C) : Cᵒᵖ ⥤ AddCommGrpCat.{v} where
   obj W := .of (jacobsonRadical W.unop Z)
   map k := AddCommGrpCat.ofHom (((Preadditive.leftComp Z k.unop).comp
-    (jacobsonRadical _ Z).subtype).codRestrict _ fun h ↦ comp_mem_jacobsonRadical_left k.unop h.2)
-  map_id _ := AddCommGrpCat.ext fun h ↦ Subtype.ext (Category.id_comp h.1)
-  map_comp _ _ := AddCommGrpCat.ext fun h ↦ Subtype.ext (Category.assoc _ _ h.1)
+    (jacobsonRadical _ Z).subtype).codRestrict _ fun h ↦ comp_mem_jacobsonRadical_left k.unop
+        h.property)
+  map_id _ := AddCommGrpCat.ext fun h ↦ Subtype.ext (Category.id_comp h.val)
+  map_comp _ _ := AddCommGrpCat.ext fun h ↦ Subtype.ext (Category.assoc _ _ h.val)
 
 /-- The inclusion `rad(-, Z) ⟶ (-, Z)`. -/
 def radicalFunctorι (Z : C) : radicalFunctor Z ⟶ preadditiveYoneda.obj Z where
@@ -99,13 +100,14 @@ def radicalFunctorι (Z : C) : radicalFunctor Z ⟶ preadditiveYoneda.obj Z wher
 /-- The functor `rad(-, Z)` acts on morphisms by precomposition. -/
 @[simp]
 theorem radicalFunctor_map_apply (Z : C) {W W' : Cᵒᵖ} (k : W ⟶ W') (h : jacobsonRadical W.unop Z) :
-    (radicalFunctor Z).map k h = ⟨k.unop ≫ h.1, comp_mem_jacobsonRadical_left k.unop h.2⟩ :=
+    (radicalFunctor Z).map k h = ⟨k.unop ≫ h.val, comp_mem_jacobsonRadical_left k.unop h.property⟩
+        :=
   rfl
 
 /-- The inclusion `rad(-, Z) ⟶ (-, Z)` sends a radical morphism to itself. -/
 @[simp]
 theorem radicalFunctorι_app_apply (Z : C) (W : Cᵒᵖ) (h : jacobsonRadical W.unop Z) :
-    (radicalFunctorι Z).app W h = h.1 :=
+    (radicalFunctorι Z).app W h = h.val :=
   (rfl)
 
 instance (Z : C) : Mono (radicalFunctorι Z) := by
@@ -138,8 +140,8 @@ theorem exists_eq_radicalFunctorLift {Y Z : C} (p : preadditiveYoneda.obj Y ⟶ 
     ∃ (g : Y ⟶ Z) (hg : g ∈ jacobsonRadical Y Z), p = radicalFunctorLift g hg := by
   -- By the Yoneda lemma `p` is determined by the image of `𝟙 Y`, a radical morphism `Y ⟶ Z`.
   let g : jacobsonRadical Y Z := p.app (op Y) (𝟙 Y)
-  refine ⟨g.1, g.2, preadditiveYoneda_obj_hom_ext (Subtype.ext ?_)⟩
-  exact (Category.id_comp g.1).symm
+  refine ⟨g.val, g.property, preadditiveYoneda_obj_hom_ext (Subtype.ext ?_)⟩
+  exact (Category.id_comp g.val).symm
 
 /-- The **simple functor** `S_Z = (-, Z) / rad(-, Z)`, read as the functor
 `W ↦ Hom_{C/rad}(W, Z)` of the quotient of `C` by its radical. It is simple when `End Z` is local
@@ -352,7 +354,7 @@ theorem exists_iso_simpleFunctor_of_epi [Simple F] {Z : C} [IsLocalRing (End Z)]
     rw [← Category.id_comp p, ← preadditiveYoneda.map_id, ← IsIso.inv_hom_id (𝟙 Z - r),
       Functor.map_comp, Category.assoc, h0, comp_zero]
   obtain ⟨e, he⟩ : ∃ e : simpleFunctor Z ⟶ F, simpleFunctorπ Z ≫ e = p :=
-    ⟨_, (CokernelCofork.IsColimit.desc' (shortExact_radicalFunctor Z).gIsCokernel p hrad).2⟩
+    ⟨_, (CokernelCofork.IsColimit.desc' (shortExact_radicalFunctor Z).gIsCokernel p hrad).property⟩
   have hene : e ≠ 0 := fun h ↦ hp (by rw [← he, h, comp_zero])
   have := simple_comp_preadditiveYoneda_obj_quotientFunctor_jacobsonRadicalIdeal Z
   have : Mono e := mono_of_ne_zero_from_simple hene
