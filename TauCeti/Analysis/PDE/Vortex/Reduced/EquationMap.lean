@@ -18,7 +18,7 @@ import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import TauCeti.Analysis.PDE.Vortex.Reduced.Sobolev
 import TauCeti.Analysis.Polynomial.Sobolev
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
-import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Basic
 
 /-!
 # The reduced vortex equation as a smooth map between Sobolev spaces and of the divisor

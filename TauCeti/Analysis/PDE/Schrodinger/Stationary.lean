@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -21,6 +20,7 @@ import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
 import TauCeti.Analysis.Sobolev.W1p.Density
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
