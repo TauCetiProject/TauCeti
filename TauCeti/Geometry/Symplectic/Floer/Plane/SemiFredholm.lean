@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Linearization
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 
 /-!
@@ -36,10 +37,10 @@ kernel and closed range once `D_u` is realized on Sobolev spaces.
   into an end piece and a core piece by smooth cutoffs of the plane. On the end piece the end
   estimate applies, on the core piece the `L²` estimate of a Cauchy–Riemann operator with
   domain-dependent compatible structure
-  (`TauCeti.SymplecticForm.exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset`), and
+  (`TauCeti.SymplecticForm.exists_setIntegral_norm_fderiv_sq_le_floerLinearization`), and
   the cutoffs cost only `L²` norms of `ξ` on a compact disc, by the Leibniz rule
   `D_u (β ξ) = β D_u ξ + (∂s β) ξ + J ((∂t β) ξ)`
-  (`TauCeti.SymplecticForm.floerLinearization_fun_smul`).
+  (`TauCeti.SymplecticForm.exists_integral_norm_floerLinearization_smul_sq_le`).
 * `exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy` is the semi-Fredholm
   estimate along a finite-energy PSS plane whose ends converge to nondegenerate orbits, with
   structures cylindrical on the end, for which the end estimate is
@@ -69,134 +70,6 @@ namespace TauCeti.SymplecticForm
 open Floer Floer.PSSPlane
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- The discs `‖w‖ ≤ r` of the plane, in real coordinates, are compact. -/
-private theorem isCompact_setOf_norm_equivRealProdCLM_symm_le (r : ℝ) :
-    IsCompact {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ r} := by
-  simpa [Metric.closedBall] using (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage).2
-    (isCompact_closedBall (0 : ℂ) r)
-
-/-- **A cutoff of a disc.** For `a < b` there is a smooth function `ψ` on the plane with values in
-`[0, 1]`, equal to `1` near the disc `‖w‖ ≤ a` and to `0` near `‖w‖ ≥ b`, whose derivative is
-bounded and vanishes off the disc `‖w‖ ≤ b`. -/
-private theorem exists_contDiff_disc_cutoff {a b : ℝ} (hab : a < b) :
-    ∃ ψ : ℝ × ℝ → ℝ, ContDiff ℝ 2 ψ ∧ (∀ z, ψ z ∈ Icc 0 1) ∧
-      (∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → ψ =ᶠ[𝓝 z] 1) ∧
-      (∀ z, b ≤ ‖Complex.equivRealProdCLM.symm z‖ → ψ =ᶠ[𝓝 z] 0) ∧
-      (∀ z ∉ {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, fderiv ℝ ψ z = 0) ∧
-        ∃ M, ∀ z, ‖fderiv ℝ ψ z‖ ≤ M := by
-  have hν : Continuous fun z : ℝ × ℝ ↦ ‖Complex.equivRealProdCLM.symm z‖ :=
-    Complex.equivRealProdCLM.symm.continuous.norm
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψc, hψU⟩ :=
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_eventuallyEq_one
-      (isOpen_lt hν continuous_const) fun z (hz : _ ≤ a) ↦ (show _ < b from hz.trans_lt hab)
-  -- Points with `‖w‖ ≥ b` lie outside the support of `ψ`.
-  have hψ0 (z : ℝ × ℝ) (hz : b ≤ ‖Complex.equivRealProdCLM.symm z‖) : ψ =ᶠ[𝓝 z] 0 :=
-    notMem_tsupport_iff_eventuallyEq.1 fun h ↦ (hψU h : _ < b).not_ge hz
-  obtain ⟨M, hM⟩ := (hψ.continuous_fderiv (by simp)).bounded_above_of_compact_support
-    (hψc.fderiv ℝ)
-  refine ⟨ψ, hψ.of_le (by simp), fun z ↦ hψ01 (mem_range_self z), hψ1, hψ0, fun z hz ↦ ?_, M, hM⟩
-  rw [mem_ofPred_eq, not_le] at hz
-  rw [(hψ0 z hz.le).fderiv_eq]
-  simp
-
-/-- **The cost of a cutoff, pointwise.** If `β` takes values in `[0, 1]` and `β` and `ξ` are
-differentiable at `z`, then at `z`
-
-`‖D_u (β ξ)‖² ≤ 2 ‖D_u ξ‖² + 2 (‖dβ‖ (‖e_s‖ + ‖J(z, u z)‖ ‖e_t‖))² ‖ξ‖²`,
-
-where `e_s`, `e_t` are the coordinate directions of the domain. -/
-private theorem norm_floerLinearization_smul_sq_le (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
-    {β : ℝ × ℝ → ℝ} (hβ : DifferentiableAt ℝ β z) (hβ1 : β z ∈ Icc 0 1)
-    (hξ : DifferentiableAt ℝ ξ z) :
-    ‖ω.floerLinearization J Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
-      2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (‖fderiv ℝ β z‖ *
-        (‖stdComplexLineReal‖ + ‖J z (u z)‖ * ‖stdComplexLineImag‖)) ^ 2 * ‖ξ z‖ ^ 2 := by
-  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hβ hξ, add_assoc]
-  set σ := fderiv ℝ β z stdComplexLineReal • ξ z +
-    J z (u z) (fderiv ℝ β z stdComplexLineImag • ξ z)
-  have hσ : ‖σ‖ ≤ ‖fderiv ℝ β z‖ *
-      (‖stdComplexLineReal‖ + ‖J z (u z)‖ * ‖stdComplexLineImag‖) * ‖ξ z‖ := by
-    have h₁ : ‖fderiv ℝ β z stdComplexLineReal • ξ z‖ ≤
-        ‖fderiv ℝ β z‖ * ‖stdComplexLineReal‖ * ‖ξ z‖ := by
-      rw [norm_smul]
-      gcongr
-      exact (fderiv ℝ β z).le_opNorm _
-    have h₂ : ‖J z (u z) (fderiv ℝ β z stdComplexLineImag • ξ z)‖ ≤
-        ‖J z (u z)‖ * (‖fderiv ℝ β z‖ * ‖stdComplexLineImag‖ * ‖ξ z‖) := by
-      refine ((J z (u z)).le_opNorm _).trans ?_
-      rw [norm_smul]
-      gcongr
-      exact (fderiv ℝ β z).le_opNorm _
-    exact (norm_add_le _ _).trans ((add_le_add h₁ h₂).trans_eq (by ring))
-  have hβz : ‖β z • ω.floerLinearization J Ks Kt u ξ z‖ ≤
-      ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hβ1.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) hβ1.2
-  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + ‖σ‖) ^ 2 := by
-        gcongr; exact (norm_add_le _ _).trans (by gcongr)
-    _ ≤ 2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * ‖σ‖ ^ 2 :=
-        add_sq_le.trans_eq (by ring)
-    _ ≤ _ := by
-        rw [mul_assoc, ← mul_pow]
-        gcongr
-
-/-- **The cost of a cutoff.** Let `β` be a `C¹` function with values in `[0, 1]` whose derivative
-is bounded and vanishes off a compact set `K`. Then multiplying a `C¹` section `ξ` of compact
-support by `β` changes the `L²` norm of `D_u ξ` by at most an `L²` norm of `ξ` over `K`:
-`∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/
-private theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Icc 0 1) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) {M : ℝ}
-    (hM : ∀ z, ‖fderiv ℝ β z‖ ≤ M) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ →
-      ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
-          (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
-        2 * (∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u ξ z‖ ^ 2) + C * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
-  have hJu : Continuous fun z ↦ J' z (u z) :=
-    continuous_iff_continuousAt.2 fun z ↦ ContinuousAt.comp (f := fun z ↦ (z, u z))
-      (hJ z).continuousAt (continuousAt_id.prodMk hu.continuous.continuousAt)
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hJu.continuousOn
-  set c := max M 0 * (‖stdComplexLineReal‖ + max B 0 * ‖stdComplexLineImag‖)
-  refine ⟨2 * c ^ 2, by positivity, fun ξ hξ hξc ↦ ?_⟩
-  have hD (η : ℝ × ℝ → V) (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) :
-      Integrable fun z ↦ ‖ω.floerLinearization J' Ks Kt u η z‖ ^ 2 :=
-    Continuous.integrable_of_hasCompactSupport
-      (f := fun z ↦ ‖ω.floerLinearization J' Ks Kt u η z‖ ^ 2)
-      ((ω.continuous_floerLinearization (J := J') hJ hKs hKt hu hη).norm.pow 2) ((hηc.mono'
-        ((subset_tsupport _).trans (ω.tsupport_floerLinearization_subset J' Ks Kt u η))).comp_left
-          (g := fun v : V ↦ ‖v‖ ^ 2) (by simp))
-  have hind : Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
-    (integrable_indicator_iff hK.measurableSet).2
-      ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
-  -- The cutoff error is at most `c ‖ξ‖` on `K`, and vanishes off `K`.
-  have hpt (z : ℝ × ℝ) : ‖ω.floerLinearization J' Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
-      2 * ‖ω.floerLinearization J' Ks Kt u ξ z‖ ^ 2 +
-        2 * c ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z := by
-    refine (norm_floerLinearization_smul_sq_le ω J' Ks Kt u ξ (hβ.differentiable one_ne_zero z)
-      (hβ1 z) (hξ.differentiable one_ne_zero z)).trans ?_
-    by_cases hz : z ∈ K
-    · rw [indicator_of_mem hz]
-      gcongr
-      exact mul_le_mul ((hM z).trans (le_max_left _ _))
-        (by gcongr; exact (hB z hz).trans (le_max_left _ _)) (by positivity) (le_max_right _ _)
-    · simp [hβK z hz, indicator_of_notMem hz]
-  calc _ ≤ ∫ z, (2 * ‖ω.floerLinearization J' Ks Kt u ξ z‖ ^ 2 +
-        2 * c ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) :=
-        integral_mono (hD _ (hβ.smul hξ) (hξc.mono' ((subset_tsupport _).trans
-          (tsupport_smul_subset_right _ _)))) (((hD ξ hξ hξc).const_mul 2).add
-            (hind.const_mul _)) hpt
-    _ = _ := by
-        rw [integral_add ((hD ξ hξ hξc).const_mul 2) (hind.const_mul _), integral_const_mul,
-          integral_const_mul, integral_indicator hK.measurableSet]
 
 omit [FiniteDimensional ℝ V] in
 /-- On the cylinder of the end, the `W^{1,2}` energy density of the lift of a `C¹` section with
@@ -345,9 +218,11 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
     Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
   -- A cutoff `β = 1 - ψ` vanishing near `‖w‖ ≤ exp (2π Re)` and equal to `1` near
   -- `‖w‖ ≥ exp (2π (Re + 1))`.
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK, M, hM⟩ := exists_contDiff_disc_cutoff hlt
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK, M, hM⟩ :=
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_sublevel
+      Complex.equivRealProdCLM.symm.continuous.norm hlt
   set β : ℝ × ℝ → ℝ := fun z ↦ 1 - ψ z
-  have hβ : ContDiff ℝ 2 β := contDiff_const.sub hψ
+  have hβ : ContDiff ℝ 2 β := (contDiff_const.sub hψ).of_le (by simp)
   have hβ01 (z : ℝ × ℝ) : β z ∈ Icc 0 1 := ⟨by simp [β, (hψ01 z).2], by simp [β, (hψ01 z).1]⟩
   have hβ0 (z : ℝ × ℝ) (hz : _ ≤ Real.exp (2 * π * Re)) : β =ᶠ[𝓝 z] 0 :=
     (hψ1 z hz).mono fun z' h ↦ by simp [β, show ψ z' = 1 from h]
@@ -355,13 +230,14 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
     (hψ0 z hz).mono fun z' h ↦ by simp [β, show ψ z' = 0 from h]
   have hdβ (z : ℝ × ℝ) : fderiv ℝ β z = -fderiv ℝ ψ z :=
     fderiv_const_sub 1
-  obtain ⟨C₁, -, herr⟩ := exists_integral_norm_floerLinearization_smul_sq_le ω hJ hKs hKt hu
+  obtain ⟨C₁, -, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
     (hβ.of_le one_le_two) hβ01 (isCompact_setOf_norm_equivRealProdCLM_symm_le _)
-    (fun z hz ↦ by rw [hdβ, hψK z hz, neg_zero]) (M := M) fun z ↦ by rw [hdβ, norm_neg]; exact hM z
+    (fun z hz ↦ by rw [hdβ, hψK z (not_le.1 hz), neg_zero]) (M := M)
+    fun z ↦ by rw [hdβ, norm_neg]; exact hM z
   refine ⟨max Ce 0 * max 2 C₁, by positivity, fun ξ hξ hξc ↦ ?_⟩
   -- The cut-off section `β ξ` is supported in the part `‖w‖ > exp (2π Re)` of the end.
-  have hξ₁c : HasCompactSupport fun w ↦ β w • ξ w :=
-    hξc.mono' ((subset_tsupport _).trans (tsupport_smul_subset_right _ _))
+  have hξ₁c : HasCompactSupport fun w ↦ β w • ξ w := hξc.smul_left
   have hξ₁r : tsupport (fun w ↦ β w • ξ w) ⊆
       {z | Real.exp (2 * π * Re) < ‖Complex.equivRealProdCLM.symm z‖} := fun z hz ↦ by
     rw [mem_ofPred_eq]
@@ -384,50 +260,6 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
         refine (herr (hξ.of_le one_le_two) hξc).trans ?_
         nlinarith [le_max_left 2 C₁, le_max_right 2 C₁]
 
-/-- **The `L²` estimate on a compact set.** If `J` is compatible along `u`, then on sections
-supported in a compact set `K` the operator `D_u` controls the derivatives in `L²`, up to the `L²`
-norm on `K`: `∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C (∫ ‖D_u η‖² + ∫_K ‖η‖²)`. This is the `L²` estimate of a
-Cauchy–Riemann operator with domain-dependent compatible structure, for `D_u = ∂s + J ∂t + C`. -/
-private theorem exists_setIntegral_norm_fderiv_sq_le_floerLinearization (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    (hc : ∀ z, ω.Compatible (J z (u z))) {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
-      ∫ z in K, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
-        C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u η z‖ ^ 2) + ∫ z in K, ‖η z‖ ^ 2) := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
-  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
-  obtain ⟨C, hC, hcore⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset
-    (μ := volume) (J := fun z ↦ J z (u z)) hK (fun z _ ↦ hc z)
-    (continuous_iff_continuousAt.2 fun z ↦ ContinuousAt.comp (f := fun z ↦ (z, u z))
-      (hJ z).continuousAt (continuousAt_id.prodMk hu.continuous.continuousAt)).continuousOn
-    (ω.continuousOn_floerLinearizationCoeff (J := J') (fun z _ ↦ hJ z) (fun z _ ↦ hKs z)
-      (fun z _ ↦ hKt z) fun z _ ↦ hu.contDiffAt)
-  refine ⟨C, hC, fun η hη hηK ↦ ?_⟩
-  have hD : Continuous fun z ↦ ‖ω.floerLinearization J' Ks Kt u η z‖ ^ 2 :=
-    ((ω.continuous_floerLinearization (J := J') hJ hKs hKt hu (hη.of_le one_le_two)).norm.pow 2)
-  have hη2 : Continuous fun z ↦ ‖η z‖ ^ 2 := hη.continuous.norm.pow 2
-  -- `∂s η + J ∂t η + C η` is `D η`, and `∫_K ‖D η‖² ≤ ∫ ‖D η‖²`.
-  have hDeq (z : ℝ × ℝ) : fderiv ℝ η z stdComplexLineReal +
-      J z (u z) (fderiv ℝ η z stdComplexLineImag) +
-        ω.floerLinearizationCoeff J' Ks Kt u z (η z) =
-      ω.floerLinearization J' Ks Kt u η z := by
-    simp only [floerLinearization_eq_add, J', LinearMap.coe_toContinuousLinearMap']
-  have h := hcore hη hηK
-  simp only [hDeq] at h
-  rw [integral_add (hD.continuousOn.integrableOn_compact hK)
-    (hη2.continuousOn.integrableOn_compact hK)] at h
-  have hηc : HasCompactSupport η := hK.of_isClosed_subset (isClosed_tsupport η) hηK
-  refine h.trans (mul_le_mul_of_nonneg_left (add_le_add_left (setIntegral_le_integral
-    (hD.integrable_of_hasCompactSupport ((hηc.mono'
-      ((subset_tsupport _).trans (ω.tsupport_floerLinearization_subset J' Ks Kt u η))).comp_left
-        (g := fun v : V ↦ ‖v‖ ^ 2) (by simp)))
-    (Eventually.of_forall fun _ ↦ by positivity)) _) hC)
-
 /-- **The estimate on a disc.** If `J` is compatible along `u`, then for `a < b` the operator `D_u`
 controls the `W^{1,2}` norm on the disc `‖w‖ ≤ a` of every section of compact support, up to an
 `L²` norm on the disc `‖w‖ ≤ b`. -/
@@ -448,14 +280,16 @@ private theorem exists_setIntegral_le_of_core (ω : SymplecticForm V)
   set K := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}
   have hK : IsCompact K := isCompact_setOf_norm_equivRealProdCLM_symm_le b
   -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
-  obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK, M, hM⟩ := exists_contDiff_disc_cutoff hab
-  obtain ⟨C₁, hC₁, herr⟩ := exists_integral_norm_floerLinearization_smul_sq_le ω hJ hKs hKt hu
-    (hβ.of_le one_le_two) hβ01 hK hβK hM
+  obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK, M, hM⟩ :=
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
+      Complex.equivRealProdCLM.symm.continuous.norm hab
+  obtain ⟨C₁, hC₁, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le (J := J') hJ hKs
+    hKt hu (hβ.of_le (by simp)) hβ01 hK (fun z hz ↦ hβK z (not_le.1 hz)) hM
   obtain ⟨C₀, hC₀, hcore⟩ :=
     exists_setIntegral_norm_fderiv_sq_le_floerLinearization ω hJ hKs hKt hu hc hK
   refine ⟨C₀ * (C₁ + 3) + 1, by positivity, fun ξ hξ hξc ↦ ?_⟩
   set ξ₀ : ℝ × ℝ → V := fun w ↦ β w • ξ w
-  have hξ₀ : ContDiff ℝ 2 ξ₀ := hβ.smul hξ
+  have hξ₀ : ContDiff ℝ 2 ξ₀ := (hβ.of_le (by simp)).smul hξ
   have hξ₀K : tsupport ξ₀ ⊆ K := fun z hz ↦ by
     rw [mem_ofPred_eq]
     exact (not_le.1 fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hβ0 z h)

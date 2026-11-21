@@ -24,7 +24,9 @@ a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
 
 Finally, a function on a product that is eventually constant near a point has eventually constant
 slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
-`Filter.EventuallyEq.prodMk_left_nhds`).
+`Filter.EventuallyEq.prodMk_left_nhds`), and a function on a product that is continuous at every
+point of the graph of a continuous map restricts to a continuous map on that graph
+(`TauCeti.continuous_comp_prodMk_of_continuousAt`).
 -/
 
 public section
@@ -79,6 +81,13 @@ theorem Filter.EventuallyEq.prodMk_left_nhds {X Y A : Type*} [TopologicalSpace X
 namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- If `F` is continuous at every point `(x, u x)` of the graph of a continuous map `u`, then
+`x ↦ F (x, u x)` is continuous. -/
+theorem continuous_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z] {F : X × Y → Z}
+    {u : X → Y} (hF : ∀ x, ContinuousAt F (x, u x)) (hu : Continuous u) :
+    Continuous fun x ↦ F (x, u x) :=
+  continuous_iff_continuousAt.2 fun x ↦ (hF x).comp₂ continuousAt_id hu.continuousAt
 
 /-- A subset of a product has empty interior if its vertical fibres over a dense set of base
 points have empty interior. -/
