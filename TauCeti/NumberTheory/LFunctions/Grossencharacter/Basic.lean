@@ -60,6 +60,8 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 ## Main results
 
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
+* `TauCeti.LFunctions.Grossencharacter.infiniteComponent_eq_of_infinityType_eq_of_isComplex`:
+  presentations with equal algebraic infinity types agree at every complex place.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent`,
   `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`,
@@ -209,6 +211,26 @@ theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHe
 theorem toHeckeCharacter_injective :
     Function.Injective (toHeckeCharacter : Grossencharacter K 𝔪 → HeckeCharacter K) :=
   fun _ _ ↦ ext
+
+/-- Two presentations with the same algebraic infinity type have the same archimedean component at
+every complex place: their continuous infinity types agree on the identity component, which
+determines the complex components completely. -/
+theorem infiniteComponent_eq_of_infinityType_eq_of_isComplex {𝔪 𝔫 : Modulus K}
+    {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.infinityType = ψ.infinityType) {w : InfinitePlace K} (hw : w.IsComplex) :
+    χ.toHeckeCharacter.infiniteComponent w = ψ.toHeckeCharacter.infiniteComponent w := by
+  have hagree := χ.agreesOnIdentityComponent.trans (h ▸ ψ.agreesOnIdentityComponent.symm)
+  obtain ⟨_, hce, hkf⟩ := (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp hagree
+  have hc : χ.toHeckeCharacter.complexComponent ⟨w, hw⟩ =
+      ψ.toHeckeCharacter.complexComponent ⟨w, hw⟩ := by
+    rw [HeckeCharacter.complexComponent_eq, HeckeCharacter.complexComponent_eq,
+      congrFun hce ⟨w, hw⟩, congrFun hkf ⟨w, hw⟩]
+  let e := Units.mapContinuousMulEquiv
+    (NumberField.InfinitePlace.Completion.continuousMulEquivComplexOfIsComplex hw)
+  refine ContinuousMonoidHom.ext fun u ↦ ?_
+  have hu := DFunLike.congr_fun hc (e u)
+  rwa [HeckeCharacter.complexComponent_apply, HeckeCharacter.complexComponent_apply,
+    e.symm_apply_apply] at hu
 
 /-! ### The finite conductor of a presentation -/
 
