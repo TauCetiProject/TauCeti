@@ -166,17 +166,18 @@ example :
   exact fun w ↦ zeroOneLowerOrdersL_zero w
 
 example :
-    ∀ w : SobolevSection A.tangentHom μ ∞ (k + d),
+    ∀ w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ ∞ (k + d),
       zeroOneLowerOrdersL A μ ∞ k d (zeroOnePartSobolevL A μ ∞ (k + d) w) =
-        zeroOnePartSobolevL A μ ∞ k (A.tangentHom.sectionChartData.lowerOrdersL μ ∞ k d w) := by
+        zeroOnePartSobolevL A μ ∞ k
+          ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL μ ∞ k d w) := by
   exact fun w ↦ zeroOneLowerOrdersL_zeroOnePartSobolevL d w
 
 -- At loss one, the inclusion forgets the highest derivative.
 example (p : ℝ≥0∞) [Fact (1 ≤ p)]
     (w : zeroOneSobolevSections A μ p (k + 1)) :
-    (zeroOneLowerOrdersL A μ p k 1 w : SobolevSection A.tangentHom μ p k) =
-      A.tangentHom.sectionChartData.lowerOrderL μ p k w := by
-  rw [coe_zeroOneLowerOrdersL, A.tangentHom.sectionChartData.lowerOrdersL_one μ p k]
+    (zeroOneLowerOrdersL A μ p k 1 w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrderL μ p k w := by
+  rw [coe_zeroOneLowerOrdersL, (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL_one μ p k]
 
 -- Both orders of one-step composition are instances of native transitivity.
 example (p : ℝ≥0∞) [Fact (1 ≤ p)]
@@ -193,10 +194,11 @@ example (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 -- The same one-step inclusion commutes with the actual native projection.
 example (p : ℝ≥0∞) [Fact (1 ≤ p)]
-    (w : SobolevSection A.tangentHom μ p (k + 1)) :
+    (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p (k + 1)) :
     zeroOneLowerOrdersL A μ p k 1 (zeroOnePartSobolevL A μ p (k + 1) w) =
-      zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrderL μ p k w) := by
-  simpa only [A.tangentHom.sectionChartData.lowerOrdersL_one μ p k] using
+      zeroOnePartSobolevL A μ p k
+        ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrderL μ p k w) := by
+  simpa only [(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL_one μ p k] using
     zeroOneLowerOrdersL_zeroOnePartSobolevL (A := A) (μ := μ) (p := p) (k := k) 1 w
 
 example (p : ℝ≥0∞) [Fact (1 ≤ p)] [T2Space M]
@@ -222,6 +224,6 @@ theorem exists_emptyAtlas_zeroOneLowerOrdersL_eq_zero
   apply Subtype.ext
   apply SectionChartData.eq_of_chartValueL_ae_eq
   intro i
-  exact ((emptyAtlas ℂ).tangentHom.center i).elim
+  exact (((emptyAtlas ℂ).tangentHom 𝓘(ℝ, ℂ)).center i).elim
 
 end TauCeti.Examples.RellichOrders
