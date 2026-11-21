@@ -99,15 +99,10 @@ private theorem isRegularLocalRing_of_flat_frobenius_of_isAdicComplete [IsLocalR
   -- The perfection of `φ` is a surjection onto `R_perf` from the perfection of a regular ring.
   let f : PerfectClosure P₀ p →+* PerfectClosure R p :=
     PerfectRing.lift (PerfectClosure.of P₀ p) ((PerfectClosure.of R p).comp φ) p
-  have hf : Function.Surjective f := fun x ↦ by
+  have hf : Function.Surjective f := PerfectRing.lift_surjective _ _ p fun x ↦ by
     obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem (PerfectClosure.of R p) p x
     obtain ⟨z, rfl⟩ := hφ y
-    refine ⟨(iterateFrobeniusEquiv (PerfectClosure P₀ p) p n).symm (PerfectClosure.of P₀ p z), ?_⟩
-    apply (iterateFrobeniusEquiv (PerfectClosure R p) p n).injective
-    rw [iterateFrobeniusEquiv_apply, iterateFrobeniusEquiv_apply, iterateFrobenius_def,
-      iterateFrobenius_def, ← hy, ← map_pow, ← iterateFrobenius_def, ← iterateFrobeniusEquiv_apply,
-      RingEquiv.apply_symm_apply]
-    exact PerfectRing.lift_comp_apply _ _ p z
+    exact ⟨n, z, hy⟩
   have hd : ringKrullDim P₀ ≤ (maximalIdeal P₀).spanFinrank :=
     (IsRegularLocalRing.spanFinrank_maximalIdeal (R := P₀)).ge
   -- `R → R_perf` is faithfully flat.
@@ -141,18 +136,11 @@ Frobenius endomorphism is flat is a regular ring (Bhatt–Scholze, Corollary 11.
 @[stacks 0EC0 "flatness of Frobenius implies regularity"]
 theorem IsRegularRing.of_flat_frobenius [IsNoetherianRing R] (h : (frobenius R p).Flat) :
     IsRegularRing R := by
-  refine isRegularRing_iff.mpr fun J _ ↦ ?_
-  have : CharP (Localization.AtPrime J) p := (CharP.charP_iff_prime_eq_zero hp.out).2 <| by
-    rw [← map_natCast (algebraMap R _), CharP.cast_eq_zero, map_zero]
-  -- Frobenius of `R_J` is induced by Frobenius of `R`, since `a ^ p ∈ J` exactly when `a ∈ J`.
-  have hQ : J = J.comap (frobenius R p) := by
-    ext a
-    exact (‹J.IsPrime›.pow_mem_iff_mem p hp.out.pos).symm
-  have hcomp : Localization.localRingHom J J (frobenius R p) hQ =
-      frobenius (Localization.AtPrime J) p :=
-    IsLocalization.ringHom_ext J.primeCompl <| RingHom.ext fun a ↦ by
-      simp [Localization.localRingHom_to_map, frobenius_def]
-  exact IsRegularLocalRing.of_flat_frobenius p (hcomp ▸ h.localRingHom J J hQ)
+  refine isRegularRing_iff.mpr fun J hJ ↦ ?_
+  have := charP_localization_atPrime p J
+  have h' := h.localRingHom J J (hJ.comap_frobenius p).symm
+  rw [localRingHom_frobenius] at h'
+  exact IsRegularLocalRing.of_flat_frobenius p h'
 
 /-- **Kunz's theorem, local form.** A Noetherian local ring of prime characteristic `p` is a
 regular local ring exactly when its Frobenius endomorphism is flat. -/

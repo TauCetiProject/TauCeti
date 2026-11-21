@@ -30,7 +30,8 @@ ideal of the source to a regular sequence is flat (`RingHom.Flat.of_isWeaklyRegu
 gives the local case `TauCeti.IsRegularLocalRing.flat_frobenius`. This replaces the appeal to
 miracle flatness in the Stacks proof: the dimension count is only needed to see that the powers
 form a regular sequence. Flatness is local on the target, and Frobenius commutes with
-localization, so the local case gives the global one.
+localization (`TauCeti.localRingHom_frobenius`, using `Ideal.IsPrime.comap_frobenius`), so the
+local case gives the global one.
 
 The theorems are stated for an exponential characteristic `p`, so that in characteristic zero,
 where `p = 1` and Frobenius is the identity, they hold trivially.
@@ -61,7 +62,26 @@ open IsLocalRing Ideal RingTheory.Sequence
 
 variable {R : Type*} [CommRing R] (p : ℕ) [ExpChar R p]
 
+/-- A prime ideal is its own preimage under Frobenius, since `a ^ p ∈ J` exactly when `a ∈ J`. -/
+theorem Ideal.IsPrime.comap_frobenius {J : Ideal R} (hJ : J.IsPrime) :
+    J.comap (frobenius R p) = J :=
+  Ideal.ext fun _ ↦ hJ.pow_mem_iff_mem p (expChar_pos R p)
+
 namespace TauCeti
+
+omit [ExpChar R p] in
+/-- Localizing a ring of prime characteristic `p` at a prime ideal preserves the characteristic. -/
+theorem charP_localization_atPrime [Fact p.Prime] [CharP R p] (J : Ideal R) [J.IsPrime] :
+    CharP (Localization.AtPrime J) p :=
+  (CharP.charP_iff_prime_eq_zero Fact.out).2 <| by
+    rw [← map_natCast (algebraMap R _), CharP.cast_eq_zero, map_zero]
+
+/-- Frobenius of `R` induces Frobenius of the localization `R_J` at a prime ideal `J`. -/
+theorem localRingHom_frobenius (J : Ideal R) [J.IsPrime] [ExpChar (Localization.AtPrime J) p]
+    (hJ : J = J.comap (frobenius R p)) :
+    Localization.localRingHom J J (frobenius R p) hJ = frobenius (Localization.AtPrime J) p :=
+  IsLocalization.ringHom_ext J.primeCompl <| RingHom.ext fun a ↦ by
+    simp [Localization.localRingHom_to_map, frobenius_def]
 
 /-- **Frobenius of a regular local ring is flat.** In a regular local ring of exponential
 characteristic `p`, the `p`-th powers of a regular system of parameters form a regular sequence,
@@ -89,20 +109,14 @@ theorem IsRegularRing.flat_frobenius [IsRegularRing R] : (frobenius R p).Flat :=
   · exact RingHom.Flat.of_bijective (f := frobenius R 1)
       ⟨fun a b h ↦ by simpa [frobenius_def] using h, fun a ↦ ⟨a, by simp [frobenius_def]⟩⟩
   refine RingHom.Flat.ofLocalizationPrime _ fun J hJ ↦ ?_
-  -- Frobenius of `R` induces Frobenius of `R_J`, since `a ^ p ∈ J` exactly when `a ∈ J`.
-  have hQ : J.comap (frobenius R p) = J.comap (RingHom.id R) := by
-    ext a
-    exact hJ.pow_mem_iff_mem p hp.pos
-  have : CharP (Localization.AtPrime J) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast (algebraMap R _), CharP.cast_eq_zero, map_zero]
-  have : ExpChar (Localization.AtPrime J) p := .prime hp
-  have hcomp : Localization.localRingHom _ J (frobenius R p) rfl =
-      (frobenius (Localization.AtPrime J) p).comp
-        (Localization.localRingHom _ J (RingHom.id R) hQ) :=
-    IsLocalization.ringHom_ext (J.comap (frobenius R p)).primeCompl <| RingHom.ext fun a ↦ by
-      simp [Localization.localRingHom_to_map, frobenius_def]
-  rw [hcomp]
-  exact (RingHom.Flat.localRingHom (RingHom.Flat.id R) J _ hQ).comp
-    (IsRegularLocalRing.flat_frobenius p)
+  have := Fact.mk hp
+  have := charP_localization_atPrime p J
+  -- `Flat.ofLocalizationPrime` localizes the source at `J.comap (frobenius R p)`, which is `J`.
+  suffices ∀ (I : Ideal R) [I.IsPrime] (hI : I = J.comap (frobenius R p)),
+      (Localization.localRingHom I J _ hI).Flat from this _ rfl
+  rintro I _ hI
+  obtain rfl : I = J := hI.trans (hJ.comap_frobenius p)
+  rw [localRingHom_frobenius]
+  exact IsRegularLocalRing.flat_frobenius p
 
 end TauCeti
