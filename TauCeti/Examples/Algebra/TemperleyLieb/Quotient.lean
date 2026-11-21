@@ -96,8 +96,8 @@ theorem markov_check_one_unit :
 /-- Unnormalized and normalized Markov trace values of `e_0 * p_1` on `3` strands. -/
 theorem markov_check_two_generator :
     let x : htr.Quotient 2 := Ideal.Quotient.mk (htr.traceRadical 2) (e (δ : ℂ) 0)
-    htr.positiveQuotientTrace hδ 3 (htr.jonesStrandIncl hδ 2 x * htr.jonesProjection 1) = 1 ∧
-      htr.normalizedQuotientTrace hδ 3 (htr.jonesStrandIncl hδ 2 x * htr.jonesProjection 1) =
+    htr.positiveQuotientTrace hδ 3 (htr.jonesStrandIncl 2 x * htr.jonesProjection 1) = 1 ∧
+      htr.normalizedQuotientTrace hδ 3 (htr.jonesStrandIncl 2 x * htr.jonesProjection 1) =
         (δ : ℂ)⁻¹ ^ 3 := by
   intro x; have h1 := htr.positiveQuotientTrace_jonesStrandIncl_mul_jonesProjection hδ x
   have he : tr 2 (e (δ : ℂ) 0) = (δ : ℂ) := by

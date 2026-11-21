@@ -24,7 +24,9 @@ The radical and quotient trace are the general constructions `LinearMap.traceRad
 and `LinearMap.quotientTrace`; this file supplies the `IsMarkovTrace.traceRadical` and
 `IsMarkovTrace.Quotient` shorthands together with their tower-specific properties.
 The strand maps `quotientStrandIncl` start at one strand, as does `TemperleyLieb.strandIncl`,
-while `comap_traceRadical_strandInclAll` extends the radical pullback to `n = 0` for unit `δ`.
+while `traceRadical_le_comap_strandInclAll` descends at every `n ≥ 0` and
+`comap_traceRadical_strandInclAll` extends the exact radical pullback to `n = 0` whenever
+multiplication by `δ` is injective (requiring no hypothesis at successor levels).
 
 ## References
 
@@ -80,21 +82,42 @@ theorem comap_traceRadical_strandIncl (n : ℕ) :
           htr.map_strandIncl_mul_e_last_mul, mul_assoc, hx (a * b)]
     exact fun y ↦ LinearMap.congr_fun hf y
 
-/-- When `δ` is a unit, `strandInclAll n` pulls back the trace radical exactly for every `n ≥ 0`. -/
+/-- Adding a straight strand maps `htr.traceRadical n` into `htr.traceRadical (n + 1)` at every
+level `n ≥ 0`, with no hypothesis on `δ`. -/
+theorem traceRadical_le_comap_strandInclAll (n : ℕ) :
+    htr.traceRadical n ≤
+      Ideal.comap (strandInclAll (R := R) (δ := δ) n) (htr.traceRadical (n + 1)) := by
+  cases n with
+  | zero =>
+    intro x hx
+    rw [mem_traceRadical_iff] at hx
+    have h0 := hx 1
+    rw [eq_algebraMap_aug_zero x, Algebra.algebraMap_eq_smul_one, mul_one, map_smul,
+      htr.map_one, pow_zero, smul_eq_mul, mul_one] at h0
+    rw [Ideal.mem_comap, strandInclAll_zero, h0, map_zero]
+    exact (htr.traceRadical 1).zero_mem
+  | succ n =>
+    rw [strandInclAll_succ]
+    exact (htr.comap_traceRadical_strandIncl n).ge
+
+/-- `strandInclAll n` pulls back the trace radical exactly at every successor level unconditionally,
+and at level `0` whenever multiplication by `δ` is injective. -/
 @[simp]
-theorem comap_traceRadical_strandInclAll (hδ : IsUnit δ) (n : ℕ) :
+theorem comap_traceRadical_strandInclAll (n : ℕ)
+    (hδ : n = 0 → Function.Injective (δ * ·)) :
     Ideal.comap (strandInclAll (R := R) (δ := δ) n) (htr.traceRadical (n + 1)) =
       htr.traceRadical n := by
   cases n with
   | zero =>
-    ext x; simp only [Ideal.mem_comap, mem_traceRadical_iff]; refine ⟨fun hx _ ↦ ?_, fun hx _ ↦ ?_⟩
-    · have h1 := hx 1
-      simp only [strandInclAll_zero, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
-        map_smul, htr.map_one, zero_add, pow_one, smul_eq_mul] at h1
-      rw [eq_algebraMap_aug_zero x, hδ.mul_left_eq_zero.mp h1, map_zero, zero_mul, map_zero]
-    · have h0 := hx 1
-      rw [eq_algebraMap_aug_zero x, Algebra.algebraMap_eq_smul_one, mul_one, map_smul,
-        htr.map_one, pow_zero, smul_eq_mul, mul_one] at h0; simp [h0]
+    ext x
+    refine ⟨fun hx ↦ ?_, fun hx ↦ htr.traceRadical_le_comap_strandInclAll 0 hx⟩
+    rw [Ideal.mem_comap, mem_traceRadical_iff] at hx
+    have h1 := hx 1
+    simp only [strandInclAll_zero, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
+      map_smul, htr.map_one, zero_add, pow_one, smul_eq_mul] at h1
+    have haug : aug x = 0 := (hδ rfl) (by simpa [mul_comm] using h1)
+    rw [eq_algebraMap_aug_zero x, haug, map_zero]
+    exact (htr.traceRadical 0).zero_mem
   | succ n => rw [strandInclAll_succ]; exact htr.comap_traceRadical_strandIncl n
 
 /-- Strand inclusion preserves and reflects trace-radical membership. -/

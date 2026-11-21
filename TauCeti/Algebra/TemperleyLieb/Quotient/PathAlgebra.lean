@@ -17,8 +17,9 @@ Restricting `TauCeti.Algebra.TemperleyLieb.PathModel` to genuine `n`-step walks 
 decomposing by their endpoint in `G.walkEndpoints v₀ n` extends the path model to arbitrary locally
 finite graphs: `PathAlgebra K G v₀ n`, one-step extension homomorphisms `walkExtend` /
 `walkStarExtend` (injective when no reachable vertex is a dead end), Temperley–Lieb
-(`⋆`-)representations `walkRep` / `walkStarRep` and `walkRep_surjective`, the conditional
-expectation `walkExpect`, and the Markov trace `walkTrace` / `isMarkovTrace_walkTrace`.
+(`⋆`-)representations `walkRep` / `walkStarRep` and `walkRep_surjective`, the weighted last-step
+closure map `walkExpect` (a unital conditional expectation when `r` is nowhere zero, `δ ≠ 0`, and
+`r ^ 2` is a `δ`-eigenvector), and the Markov trace `walkTrace` / `isMarkovTrace_walkTrace`.
 
 ## References
 
@@ -218,8 +219,11 @@ end WalkTraceBasic
 section WalkExpect
 variable {K : Type*} [Field K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
   [G.LocallyFinite] (v₀ : V) (r : V → K) (δ : K)
-/-- Conditional expectation `PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n` closing the
-final step of walks from `u` across `v ∈ G.neighborFinset u` with weight `δ⁻¹ * (r v / r u) ^ 2`. -/
+/-- Weighted last-step closure `PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n` closing
+the final step of walks from `u` across `v ∈ G.neighborFinset u` with weight
+`δ⁻¹ * (r v / r u) ^ 2`. It is always a `walkExtend`-bimodule map, and is a unital conditional
+expectation (retracting `walkExtend`) when `r` is nowhere zero, `δ ≠ 0`, and `r ^ 2` is a
+`δ`-eigenvector of `G`'s adjacency matrix. -/
 def walkExpect {n : ℕ} : PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n where
   toFun Y u := Matrix.of fun p q ↦
     δ⁻¹ * ∑ v ∈ (G.neighborFinset u.val).attach, (r v.val / r u.val) ^ 2 *

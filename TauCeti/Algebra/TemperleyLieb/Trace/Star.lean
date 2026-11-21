@@ -22,10 +22,11 @@ or invertibility assumptions on the parameter.
 
 Together with `LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, the adjoint
 identity shows that the trace radical is star-stable (`IsMarkovTrace.instIsStarTraceRadical`) and
-is precisely the kernel of the Hermitian form, so strand inclusion induces injective `⋆`-algebra
+is precisely the kernel of the Hermitian form, so strand inclusion induces `⋆`-algebra
 homomorphisms `IsMarkovTrace.quotientStrandStarAlgHom` between the algebraic trace quotients
-whenever `δ` is a unit. Positivity and the identification of that kernel with the zero-length
-vectors are separate questions.
+at every level `n ≥ 0` without hypotheses on `δ` (injective at every successor level, and at
+level `0` whenever multiplication by `δ` is injective). Positivity and the identification of that
+kernel with the zero-length vectors are separate questions.
 
 ## References
 
@@ -101,12 +102,11 @@ variable {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMarkovTra
 instance instIsStarTraceRadical (n : ℕ) : (htr.traceRadical n).IsStar :=
   htr.isStar_traceRadical n
 
-/-- Unital `⋆`-algebra strand inclusion `htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`),
-defined whenever `δ` is a unit. -/
-def quotientStrandStarAlgHom (hδ : IsUnit δ) (n : ℕ) :
+/-- Unital `⋆`-algebra strand inclusion `htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`). -/
+def quotientStrandStarAlgHom (n : ℕ) :
     htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1) :=
   { Ideal.quotientMapₐ (htr.traceRadical (n + 1)) (strandInclAll n)
-      (htr.comap_traceRadical_strandInclAll hδ n).ge with
+      (htr.traceRadical_le_comap_strandInclAll n) with
     map_star' x := by
       obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
       simp only [AlgHom.toFun_eq_coe, Ideal.Quotient.star_mk, Ideal.quotient_map_mkₐ,
@@ -114,21 +114,23 @@ def quotientStrandStarAlgHom (hδ : IsUnit δ) (n : ℕ) :
 
 /-- `quotientStrandStarAlgHom` acts on representatives by `strandInclAll`. -/
 @[simp]
-theorem quotientStrandStarAlgHom_mk (hδ : IsUnit δ) (n : ℕ) (x : TemperleyLieb R δ n) :
-    htr.quotientStrandStarAlgHom hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+theorem quotientStrandStarAlgHom_mk (n : ℕ) (x : TemperleyLieb R δ n) :
+    htr.quotientStrandStarAlgHom n (Ideal.Quotient.mk (htr.traceRadical n) x) =
       Ideal.Quotient.mk (htr.traceRadical (n + 1)) (strandInclAll n x) :=
   Ideal.quotient_map_mkₐ _ _ _
 
-/-- The `⋆`-algebra strand map between trace-radical quotients is injective for unit `δ`. -/
-theorem quotientStrandStarAlgHom_injective (hδ : IsUnit δ) (n : ℕ) :
-    Function.Injective (htr.quotientStrandStarAlgHom hδ n) :=
-  Ideal.quotientMap_injective' (H := (htr.comap_traceRadical_strandInclAll hδ n).ge)
-    (htr.comap_traceRadical_strandInclAll hδ n).le
+/-- The `⋆`-algebra strand map between trace-radical quotients is injective at every successor
+level, and at level `0` whenever multiplication by `δ` is injective. -/
+theorem quotientStrandStarAlgHom_injective (n : ℕ)
+    (hδ : n = 0 → Function.Injective (δ * ·)) :
+    Function.Injective (htr.quotientStrandStarAlgHom n) :=
+  Ideal.quotientMap_injective' (H := htr.traceRadical_le_comap_strandInclAll n)
+    (htr.comap_traceRadical_strandInclAll n hδ).le
 
 /-- The algebraic quotient trace scales by `δ` along `quotientStrandStarAlgHom`. -/
 @[simp]
-theorem quotientTrace_quotientStrandStarAlgHom (hδ : IsUnit δ) (n : ℕ) (x : htr.Quotient n) :
-    (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) (htr.quotientStrandStarAlgHom hδ n x) =
+theorem quotientTrace_quotientStrandStarAlgHom (n : ℕ) (x : htr.Quotient n) :
+    (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) (htr.quotientStrandStarAlgHom n x) =
       δ * (tr n).quotientTrace (htr.map_mul_comm n) x := by
   obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x; rw [htr.quotientStrandStarAlgHom_mk]
   exact (LinearMap.quotientTrace_mk _ _ _).trans <| (htr.map_strandInclAll n _).trans <|

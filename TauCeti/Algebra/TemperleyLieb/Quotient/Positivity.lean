@@ -174,9 +174,9 @@ theorem quotientPathAlgebraEquiv_quotientStrandIncl {n : ℕ} (x : htr.Quotient 
     (htr.quotientPathAlgebraEquiv_mk G v₀ hr hrs hδ hf hf₀ hadj (strandIncl a)).trans
       (walkRep_strandIncl hr hδ a)
 /-- `quotientPathAlgebraEquiv` intertwines `quotientStrandStarAlgHom` with `walkExtend`. -/
-theorem quotientPathAlgebraEquiv_quotientStrandStarAlgHom (hδu : IsUnit δ) (n : ℕ)
-    (x : htr.Quotient n) : htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 1)
-      (htr.quotientStrandStarAlgHom hδu n x) =
+theorem quotientPathAlgebraEquiv_quotientStrandStarAlgHom (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 1)
+      (htr.quotientStrandStarAlgHom n x) =
       walkExtend G v₀ (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj n x) := by
   obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x; simp
 omit [DecidableRel G.Adj] in
