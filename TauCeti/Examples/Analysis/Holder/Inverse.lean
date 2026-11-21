@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Beltrami.HigherHolder
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Analysis.Holder.JetBounds
 import Mathlib.Tactic.FunProp
 import Mathlib.Tactic.NormNum
@@ -31,35 +32,37 @@ open scoped Topology NNReal ContDiff
 
 namespace TauCeti.Examples.HolderInverse
 
-private theorem isInvertible_smul_id {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] {c : 𝕜} (hc : c ≠ 0) :
-    (c • ContinuousLinearMap.id 𝕜 V).IsInvertible := by
-  refine ⟨ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := V) (Units.mk0 c hc), ?_⟩
-  ext x
-  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.smulLeft_apply_apply,
-    Units.smul_def,
-    Units.val_mk0, smul_apply, ContinuousLinearMap.id_apply]
-
 /-- The actual logarithm has a native `C^{m+1,α}` reading near `exp 1`. -/
 theorem logarithm_reading (m : ℕ) {α : ℝ≥0} (hα : α ≤ 1) :
     ∃ r > 0, ball (Real.exp 1) r ⊆ Ioi 0 ∧
       ∃ g : CkHolderSpaceOn (m + 1) α ⟨ball (Real.exp 1) r, isOpen_ball⟩ ℝ,
         ∀ x, g x = Real.log x := by
+  have he : ⇑Real.expPartialHomeomorph = Real.exp :=
+    funext Real.expPartialHomeomorph_apply
   have hC : ContDiffOn ℝ (m + 2) Real.exp univ := Real.contDiff_exp.contDiffOn
   obtain ⟨K, hK⟩ := hC.exists_holderOnWith_iteratedFDeriv isOpen_univ hα
     (isCompact_closedBall (1 : ℝ) 1) (subset_univ _)
+  have hC' : ContDiffOn ℝ (m + 1) Real.expPartialHomeomorph (closedBall 1 1) := by
+    rw [he]
+    exact Real.contDiff_exp.contDiffOn
+  have hK' : HolderOnWith K α (iteratedFDeriv ℝ (m + 1) Real.expPartialHomeomorph)
+      (closedBall 1 1) := by simpa only [he] using hK
   have hd : fderiv ℝ Real.exp 1 = Real.exp 1 • ContinuousLinearMap.id ℝ ℝ :=
     ((hasFDerivAt_id (1 : ℝ)).exp).fderiv
   have hinv : (fderiv ℝ Real.expPartialHomeomorph 1).IsInvertible := by
-    rw [show (Real.expPartialHomeomorph : ℝ → ℝ) = Real.exp from rfl, hd]
-    exact isInvertible_smul_id (Real.exp_ne_zero 1)
-  obtain ⟨r, hr, hrt, g, hg⟩ := Real.expPartialHomeomorph.exists_ckHolderSpaceOn_symm
-    (by trivial : (1 : ℝ) ∈ Real.expPartialHomeomorph.source)
-    Real.contDiff_exp.contDiffOn hα (closedBall_mem_nhds (1 : ℝ) (by norm_num : (0 : ℝ) < 1))
-    hK hinv
-  exact ⟨r, hr, hrt, g, hg⟩
+    rw [he, hd]
+    exact (ContinuousLinearMap.isInvertible_smul_iff (Real.exp_ne_zero 1)).2
+      (ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ ℝ))
+  have ha : (1 : ℝ) ∈ Real.expPartialHomeomorph.source := by
+    simpa only [Real.expPartialHomeomorph_source] using (mem_univ (1 : ℝ))
+  have h := Real.expPartialHomeomorph.exists_ckHolderSpaceOn_symm ha hC' hα
+    (closedBall_mem_nhds 1 (by norm_num : (0 : ℝ) < 1)) hK' hinv
+  have hinverse : ⇑Real.expPartialHomeomorph.symm = Real.log :=
+    funext Real.expPartialHomeomorph_symm_apply
+  rw [he, Real.expPartialHomeomorph_target, hinverse] at h
+  exact h
 
-/-- The logarithm reading evaluates to the nonzero centre `1`. -/
+/-- The logarithm reading takes the value `1` at the centre `exp 1`. -/
 theorem logarithm_reading_at_centre (m : ℕ) {α : ℝ≥0} (hα : α ≤ 1) :
     ∃ r > 0, ∃ g : CkHolderSpaceOn (m + 1) α ⟨ball (Real.exp 1) r, isOpen_ball⟩ ℝ,
       ∃ h : Real.exp 1 ∈ ball (Real.exp 1) r, g ⟨Real.exp 1, h⟩ = 1 := by
@@ -87,7 +90,7 @@ theorem exponential_derivatives_differ : fderiv ℝ Real.exp 0 ≠ fderiv ℝ Re
   have he : Real.exp 0 = Real.exp 1 := by simpa using h'
   exact (by norm_num : (0 : ℝ) ≠ 1) (Real.exp_injective he)
 
-/-- A nonconstant operator family is singular away from the base point. -/
+/-- A nonconstant operator family, invertible at `0` but singular at `-1`. -/
 def affineFamily (x : ℝ) : ℝ →L[ℝ] ℝ := (1 + x) • ContinuousLinearMap.id ℝ ℝ
 
 /-- The family is invertible at the base point. -/
@@ -152,18 +155,6 @@ theorem higherHolder_inverse_reading (k : ℕ) {α : ℝ≥0} (hα : 0 < α) (h�
   refine ⟨h, hh, hn, e, hc, he, hpde, ?_⟩
   simpa only [he] using ⟨ρ, hρ, hρt, g, hg⟩
 
-private theorem holder_iteratedFDeriv_const {P V : Type*}
-    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (n : ℕ) (α : ℝ≥0) (v : V) :
-    HolderOnWith 0 α (iteratedFDeriv ℝ n (fun _ : P ↦ v)) univ := by
-  cases n with
-  | zero =>
-    simp only [iteratedFDeriv_zero_eq_comp]
-    exact HolderWith.const.holderOnWith univ
-  | succ n =>
-    rw [iteratedFDeriv_succ_const]
-    exact HolderWith.zero.holderOnWith univ
-
 universe u v w
 
 /-- The continuous linear identification of two independently lifted complex lines. -/
@@ -180,13 +171,18 @@ theorem lifted_inverse_reading (n : ℕ) {α : ℝ≥0} (hα : α ≤ 1) :
   let L := liftedLineEquiv.{v, w}
   have hC : ContDiffOn ℝ n (fun _ : ULift.{u} ℝ ↦ (L : ULift.{v} ℂ →L[ℂ] ULift.{w} ℂ)) univ :=
     contDiffOn_const
+  have hconst : HolderOnWith 0 α
+      (iteratedFDeriv ℝ n (fun _ : ULift.{u} ℝ ↦
+        (L : ULift.{v} ℂ →L[ℂ] ULift.{w} ℂ))) univ :=
+    (holderWith_iteratedFDeriv_const (𝕜 := ℝ) (E' := ULift.{u} ℝ)
+      n α (L : ULift.{v} ℂ →L[ℂ] ULift.{w} ℂ)).holderOnWith univ
   obtain ⟨r, hr, _, _, g, hg⟩ := hC.exists_ckHolderSpaceOn_clm_inverse (a := 0) Filter.univ_mem
-    hα (holder_iteratedFDeriv_const n α _) ContinuousLinearMap.isInvertible_equiv
+    hα hconst ContinuousLinearMap.isInvertible_equiv
   refine ⟨r, hr, g, fun x ↦ ?_⟩
   rw [hg, ContinuousLinearMap.inverse_equiv]
   exact L.symm_apply_apply _
 
-/-- The countably infinite-dimensional complex Banach coefficient space. -/
+/-- The infinite-dimensional separable complex Hilbert space `ℓ²(ℕ)`. -/
 abbrev CoefficientSpace := lp (fun _ : ℕ ↦ ℂ) 2
 
 /-- An invertible, nonconstant complex-linear family on the infinite coefficient space. -/
@@ -233,7 +229,8 @@ theorem infinite_parameter_inverse_reading (n : ℕ) :
   let L := ContinuousLinearEquiv.refl ℂ ℂ
   have hC : ContDiffOn ℝ n (fun _ : CoefficientSpace ↦ (L : ℂ →L[ℂ] ℂ)) univ := contDiffOn_const
   obtain ⟨r, hr, _, _, g, hg⟩ := hC.exists_ckHolderSpaceOn_clm_inverse (a := 0) Filter.univ_mem
-    le_rfl (holder_iteratedFDeriv_const n 1 _) ContinuousLinearMap.isInvertible_equiv
+    le_rfl ((holderWith_iteratedFDeriv_const (𝕜 := ℝ) n 1 _).holderOnWith univ)
+    ContinuousLinearMap.isInvertible_equiv
   refine ⟨r, hr, g, fun x ↦ ?_⟩
   rw [hg, ContinuousLinearMap.inverse_equiv]
   simp only [L, ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_coe,
@@ -248,7 +245,8 @@ theorem zero_fibre_inverse_reading (n : ℕ) :
   have hC : ContDiffOn ℝ n (fun _ : ℝ ↦ (L : (Fin 0 → ℂ) →L[ℂ] (Fin 0 → ℂ))) univ :=
     contDiffOn_const
   obtain ⟨r, hr, _, _, g, hg⟩ := hC.exists_ckHolderSpaceOn_clm_inverse (a := 0) Filter.univ_mem
-    (by norm_num : (0 : ℝ≥0) ≤ 1) (holder_iteratedFDeriv_const n 0 _)
+    (by norm_num : (0 : ℝ≥0) ≤ 1)
+    ((holderWith_iteratedFDeriv_const (𝕜 := ℝ) n 0 _).holderOnWith univ)
     ContinuousLinearMap.isInvertible_equiv
   exact ⟨r, hr, g, fun x ↦ (hg x).trans (Subsingleton.elim _ _)⟩
 
@@ -259,7 +257,8 @@ theorem zero_parameter_inverse_reading (n : ℕ) :
   let L := ContinuousLinearEquiv.refl ℂ ℂ
   have hC : ContDiffOn ℝ n (fun _ : Fin 0 → ℝ ↦ (L : ℂ →L[ℂ] ℂ)) univ := contDiffOn_const
   obtain ⟨r, hr, _, _, g, hg⟩ := hC.exists_ckHolderSpaceOn_clm_inverse (a := 0) Filter.univ_mem
-    le_rfl (holder_iteratedFDeriv_const n 1 _) ContinuousLinearMap.isInvertible_equiv
+    le_rfl ((holderWith_iteratedFDeriv_const (𝕜 := ℝ) n 1 _).holderOnWith univ)
+    ContinuousLinearMap.isInvertible_equiv
   refine ⟨r, hr, g, mem_ball_self hr, ?_⟩
   rw [hg, ContinuousLinearMap.inverse_equiv]
   simp only [L, ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_coe,
@@ -271,14 +270,38 @@ theorem identity_domain_inverse_reading (m : ℕ) {α : ℝ≥0} (hα : α ≤ 1
     ∃ r > 0, ball a r ⊆ U ∧
       ∃ g : CkHolderSpaceOn (m + 1) α ⟨ball a r, isOpen_ball⟩ ℝ, ∀ x, g x = x := by
   let e := OpenPartialHomeomorph.ofSet U hU
-  have hC : ContDiffOn ℝ (m + 2) e univ := contDiff_id.contDiffOn
+  have hpartial : e.toPartialEquiv = PartialEquiv.ofSet U :=
+    OpenPartialHomeomorph.ofSet_toPartialEquiv hU
+  have he : ⇑e = id := by
+    calc
+      ⇑e = ⇑e.toPartialEquiv := (OpenPartialHomeomorph.coe_toPartialEquiv e).symm
+      _ = ⇑(PartialEquiv.ofSet U) :=
+        congrArg (fun f : PartialEquiv ℝ ℝ ↦ (f : ℝ → ℝ)) hpartial
+      _ = id := PartialEquiv.ofSet_coe U
+  have hsource : e.source = U := OpenPartialHomeomorph.ofSet_source U hU
+  have htarget : e.target = U := OpenPartialHomeomorph.ofSet_target U hU
+  have hsymmObj : e.symm = e := OpenPartialHomeomorph.ofSet_symm hU
+  have hsymm : ⇑e.symm = id :=
+    (congrArg (fun f : OpenPartialHomeomorph ℝ ℝ ↦ (f : ℝ → ℝ)) hsymmObj).trans he
+  have hC : ContDiffOn ℝ (m + 2) e univ := by
+    rw [he]
+    exact contDiff_id.contDiffOn
   obtain ⟨K, hK⟩ := hC.exists_holderOnWith_iteratedFDeriv isOpen_univ hα
     (isCompact_closedBall a 1) (subset_univ _)
-  have hd : HasFDerivAt e (ContinuousLinearMap.id ℝ ℝ) a := hasFDerivAt_id a
-  have hinv : (fderiv ℝ e a).IsInvertible := ⟨ContinuousLinearEquiv.refl ℝ ℝ, hd.fderiv.symm⟩
-  obtain ⟨r, hr, hrt, g, hg⟩ := e.exists_ckHolderSpaceOn_symm ha contDiff_id.contDiffOn hα
+  have hd : HasFDerivAt e (ContinuousLinearMap.id ℝ ℝ) a := by
+    rw [he]
+    exact hasFDerivAt_id a
+  have hinv : (fderiv ℝ e a).IsInvertible := by
+    rw [hd.fderiv]
+    exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ ℝ)
+  have ha' : a ∈ e.source := by simpa only [hsource] using ha
+  have hC' : ContDiffOn ℝ (m + 1) e (closedBall a 1) := by
+    rw [he]
+    exact contDiff_id.contDiffOn
+  have h := e.exists_ckHolderSpaceOn_symm ha' hC' hα
     (closedBall_mem_nhds a (by norm_num : (0 : ℝ) < 1)) hK hinv
-  exact ⟨r, hr, hrt, g, hg⟩
+  rw [he, htarget, hsymm, id_eq] at h
+  exact h
 
 /-- The empty original source is allowed without a nonemptiness hypothesis. -/
 theorem empty_domain_inverse_reading (m : ℕ) {α : ℝ≥0} (hα : α ≤ 1) :

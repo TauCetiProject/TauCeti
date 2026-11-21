@@ -13,8 +13,6 @@ import TauCeti.Analysis.Holder.IsBigO
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import Mathlib.Tactic.FunProp
-import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
@@ -46,84 +44,6 @@ open Set Filter Metric TopologicalSpace
 open scoped NNReal Topology ContDiff
 
 universe uP uV uW u𝕜 uE uF
-
-private theorem exists_ball_jet_bounds_holder
-    {P : Type uP} {V : Type uV} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup V] [NormedSpace ℝ V] {f : P → V} {s : Set P} {a : P}
-    {n : ℕ} {α C : ℝ≥0} (hf : ContDiffOn ℝ n f s) (hs : IsOpen s) (ha : a ∈ s)
-    (hα : α ≤ 1) (hH : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
-    ∃ r > 0, ball a r ⊆ s ∧ ∃ M H : ℝ≥0,
-      (∀ j ≤ n, ∀ x ∈ ball a r, ‖iteratedFDeriv ℝ j f x‖ ≤ M) ∧
-      ∀ j ≤ n, HolderOnWith H α (iteratedFDeriv ℝ j f) (ball a r) := by
-  obtain ⟨r, hr, A, hA⟩ := (hf.contDiffAt (hs.mem_nhds ha)).exists_ball_bound_iteratedFDeriv
-  obtain ⟨t, ht, hts⟩ := Metric.isOpen_iff.mp hs a ha
-  let ρ := min r t
-  have hρ : 0 < ρ := lt_min hr ht
-  have hrs : ball a ρ ⊆ s := (ball_subset_ball (min_le_right r t)).trans hts
-  have hbound : ∀ j ≤ n, ∀ x ∈ ball a ρ, ‖iteratedFDeriv ℝ j f x‖ ≤ A.toNNReal := by
-    intro j hj x hx
-    exact (hA j hj x (ball_subset_ball (min_le_left r t) hx)).trans (Real.le_coe_toNNReal A)
-  refine ⟨ρ, hρ, hrs, A.toNNReal, max C (3 * A.toNNReal), hbound, fun j hj ↦ ?_⟩
-  rcases hj.lt_or_eq with hj | rfl
-  · have h := (hf.mono hrs).holderOnWith_iteratedFDeriv_of_lt isOpen_ball (convex_ball a ρ)
-      hj hα (hbound j hj.le) (hbound (j + 1) hj)
-    apply h.mono_const
-    calc A.toNNReal + 2 * A.toNNReal = 3 * A.toNNReal := by ring
-         _ ≤ max C (3 * A.toNNReal) := le_max_right _ _
-  · exact (hH.mono hrs).mono_const (le_max_left _ _)
-
-private theorem exists_ball_holder_iteratedFDeriv_bilinear
-    {P A B G : Type*}
-    [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (L : A →L[ℝ] B →L[ℝ] G) {n : ℕ} {α C D : ℝ≥0} {f : P → A} {g : P → B}
-    {s : Set P} {a : P} (hs : IsOpen s) (ha : a ∈ s) (hα : α ≤ 1)
-    (hf : ContDiffOn ℝ n f s) (hg : ContDiffOn ℝ n g s)
-    (hfH : HolderOnWith C α (iteratedFDeriv ℝ n f) s)
-    (hgH : HolderOnWith D α (iteratedFDeriv ℝ n g) s) :
-    ∃ r > 0, ball a r ⊆ s ∧ ∃ K : ℝ≥0,
-      HolderOnWith K α (iteratedFDeriv ℝ n (fun x ↦ L (f x) (g x))) (ball a r) := by
-  obtain ⟨r, hr, hrs, M, H, hfb, hfH'⟩ := exists_ball_jet_bounds_holder hf hs ha hα hfH
-  obtain ⟨t, ht, _, N, K, hgb, hgH'⟩ := exists_ball_jet_bounds_holder hg hs ha hα hgH
-  let ρ := min r t
-  have hρr : ball a ρ ⊆ ball a r := ball_subset_ball (min_le_left r t)
-  have hρt : ball a ρ ⊆ ball a t := ball_subset_ball (min_le_right r t)
-  have hρs := hρr.trans hrs
-  exact ⟨ρ, lt_min hr ht, hρs, _, L.holderOnWith_iteratedFDeriv_comp₂
-    (hf.mono hρs) (hg.mono hρs) isOpen_ball
-    (fun j hj x hx ↦ hfb j hj x (hρr hx)) (fun j hj x hx ↦ hgb j hj x (hρt hx))
-    (fun j hj ↦ (hfH' j hj).mono hρr) (fun j hj ↦ (hgH' j hj).mono hρt)⟩
-
-private theorem exists_ball_holder_lower_jet
-    {P : Type uP} {V : Type uV} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup V] [NormedSpace ℝ V] {f : P → V} {a : P} {n : ℕ} {α : ℝ≥0}
-    (hf : ContDiffAt ℝ (n + 1) f a) (hα : α ≤ 1) :
-    ∃ r > 0, ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ n f) (ball a r) := by
-  have h : ContDiffAt ℝ 1 (iteratedFDeriv ℝ n f) a :=
-    hf.iteratedFDeriv_right (by simp [add_comm])
-  exact (h.isBigO_sub_dist_rpow one_ne_zero hα).exists_holderOnWith_ball
-
-private theorem exists_ball_holder_nested_bilinear
-    {P A B G D : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup D] [NormedSpace ℝ D]
-    (L₁ : A →L[ℝ] B →L[ℝ] G) (L₂ : B →L[ℝ] G →L[ℝ] D)
-    {n : ℕ} {α C K : ℝ≥0} {f : P → A} {g : P → B} {s : Set P} {a : P}
-    (hs : IsOpen s) (ha : a ∈ s) (hα : α ≤ 1)
-    (hf : ContDiffOn ℝ n f s) (hg : ContDiffOn ℝ n g s)
-    (hfH : HolderOnWith C α (iteratedFDeriv ℝ n f) s)
-    (hgH : HolderOnWith K α (iteratedFDeriv ℝ n g) s) :
-    ∃ r > 0, ball a r ⊆ s ∧ ∃ N : ℝ≥0,
-      HolderOnWith N α (iteratedFDeriv ℝ n (fun x ↦ L₂ (g x) (L₁ (f x) (g x))))
-        (ball a r) := by
-  have hG : ContDiffOn ℝ n (fun x ↦ L₁ (f x) (g x)) s :=
-    L₁.isBoundedBilinearMap.contDiff.comp_contDiffOn (hf.prodMk hg)
-  obtain ⟨r, hr, hrs, C₁, h₁⟩ := exists_ball_holder_iteratedFDeriv_bilinear L₁ hs ha hα
-    hf hg hfH hgH
-  obtain ⟨t, ht, htr, C₂, h₂⟩ := exists_ball_holder_iteratedFDeriv_bilinear L₂ isOpen_ball
-    (mem_ball_self hr) hα (hg.mono hrs) (hG.mono hrs) (hgH.mono hrs) h₁
-  exact ⟨t, ht, htr.trans hrs, C₂, h₂⟩
 
 /-- An invertible family that is `α`-Hölder with constant `C`, with inverse norms bounded by
 `M`, has inverse `α`-Hölder constant `M * C * M`. No completeness is needed. -/
@@ -202,10 +122,17 @@ private theorem exists_ball_holder_fderiv_clm_inverse
   have hInv : ContDiffOn ℝ (k + 1) I s := hH.clm_inverse hinv
   have hInvk : ContDiffOn ℝ k I s := hInv.of_le (by simp)
   have hDH : ContDiffOn ℝ k (fderiv ℝ H) s := hH.fderiv_of_isOpen hs (by simp)
-  obtain ⟨t, ht, hts, C₂, h₂⟩ := exists_ball_holder_nested_bilinear
-    (P := P) (A := P →L[ℝ] V →L[𝕜] W) (B := W →L[𝕜] V)
-    (G := P →L[ℝ] W →L[𝕜] W) (D := P →L[ℝ] W →L[𝕜] V)
-    B A (f := fderiv ℝ H) (g := I) hs ha hα hDH hInvk hD hI
+  -- Control `DH ∘ H⁻¹` first, then compose on the left by `H⁻¹`.
+  obtain ⟨r, hr, hrs, hG, C₁, h₁⟩ :=
+    ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂
+      (P := P) (A := P →L[ℝ] V →L[𝕜] W) (B := W →L[𝕜] V)
+      (G := P →L[ℝ] W →L[𝕜] W) B (hs.mem_nhds ha) hα hDH hInvk hD hI
+  obtain ⟨t, ht, htr, _, C₂, h₂⟩ :=
+    ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂
+      (P := P) (A := W →L[𝕜] V) (B := P →L[ℝ] W →L[𝕜] W)
+      (G := P →L[ℝ] W →L[𝕜] V) A (ball_mem_nhds a hr) hα
+        (hInvk.mono hrs) hG (hI.mono hrs) h₁
+  have hts := htr.trans hrs
   have heq (x : P) (hx : x ∈ s) : fderiv ℝ I x = -Q x := by
     exact fderiv_clm_inverse_precomp
       ((hH.differentiableOn (by simp) x hx).differentiableAt (hs.mem_nhds hx)) (hinv x hx)
@@ -227,23 +154,26 @@ private theorem exists_ball_holder_clm_inverse_on
   have hI := hH.clm_inverse hinv
   rcases n with _ | k
   · obtain ⟨r, hr, M, hb⟩ := (hI.contDiffAt (hs.mem_nhds ha)).exists_ball_bound_iteratedFDeriv
-    obtain ⟨t, ht, hts⟩ := Metric.isOpen_iff.mp hs a ha
-    let ρ := min r t
-    have hρs : ball a ρ ⊆ s := (ball_subset_ball (min_le_right r t)).trans hts
+    obtain ⟨ρ, hρ, hρrs⟩ := Metric.eventually_nhds_iff_ball.mp
+      (Filter.Eventually.and (ball_mem_nhds a hr) (hs.mem_nhds ha))
+    have hρs : ball a ρ ⊆ s := fun x hx ↦ (hρrs x hx).2
     have hb' : ∀ x ∈ ball a ρ, ‖(H x).inverse‖ ≤ M.toNNReal := by
       intro x hx
-      simpa using (hb 0 le_rfl x (ball_subset_ball (min_le_left r t) hx)).trans
+      simpa using (hb 0 le_rfl x (hρrs x hx).1).trans
         (Real.le_coe_toNNReal M)
     have hD' := (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp hD).mono hρs
-    exact ⟨ρ, lt_min hr ht, hρs, _, TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mpr
+    exact ⟨ρ, hρ, hρs, _, TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mpr
       (hD'.clm_inverse_of_norm_le (fun x hx ↦ hinv x (hρs hx)) hb')⟩
-  · obtain ⟨r, hr, D, hIr⟩ := exists_ball_holder_lower_jet (hI.contDiffAt (hs.mem_nhds ha)) hα
-    obtain ⟨t, ht, hts⟩ := Metric.isOpen_iff.mp hs a ha
-    let ρ := min r t
-    have hρr : ball a ρ ⊆ ball a r := ball_subset_ball (min_le_left r t)
-    have hρs : ball a ρ ⊆ s := (ball_subset_ball (min_le_right r t)).trans hts
+  · have hLower : ContDiffAt ℝ 1 (iteratedFDeriv ℝ k (fun x ↦ (H x).inverse)) a :=
+      (hI.contDiffAt (hs.mem_nhds ha)).iteratedFDeriv_right (by simp [add_comm])
+    obtain ⟨r, hr, D, hIr⟩ :=
+      (hLower.isBigO_sub_dist_rpow one_ne_zero hα).exists_holderOnWith_ball
+    obtain ⟨ρ, hρ, hρrs⟩ := Metric.eventually_nhds_iff_ball.mp
+      (Filter.Eventually.and (ball_mem_nhds a hr) (hs.mem_nhds ha))
+    have hρr : ball a ρ ⊆ ball a r := fun x hx ↦ (hρrs x hx).1
+    have hρs : ball a ρ ⊆ s := fun x hx ↦ (hρrs x hx).2
     obtain ⟨u, hu, hus, K, hK⟩ := exists_ball_holder_fderiv_clm_inverse isOpen_ball
-      (mem_ball_self (lt_min hr ht)) hα (hH.mono hρs) (fun x hx ↦ hinv x (hρs hx))
+      (mem_ball_self hρ) hα (hH.mono hρs) (fun x hx ↦ hinv x (hρs hx))
       ((TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mp hD).mono hρs) (hIr.mono hρr)
     exact ⟨u, hu, hus.trans hρs, K, TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mpr hK⟩
 
@@ -268,23 +198,6 @@ theorem ContDiffOn.exists_holderOnWith_iteratedFDeriv_clm_inverse
 
 end OperatorFamily
 
-private theorem exists_ckHolderSpaceOn_ball
-    {P : Type uP} {V : Type uV} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup V] [NormedSpace ℝ V] {φ : P → V} {s : Set P} {a : P}
-    {n : ℕ} {α C : ℝ≥0} (hf : ContDiffOn ℝ n φ s) (hs : IsOpen s) (ha : a ∈ s)
-    (hα : α ≤ 1) (hH : HolderOnWith C α (iteratedFDeriv ℝ n φ) s) :
-    ∃ r > 0, ball a r ⊆ s ∧
-      ∃ g : TauCeti.CkHolderSpaceOn n α ⟨ball a r, isOpen_ball⟩ V,
-        ∀ x, g x = φ x := by
-  obtain ⟨ρ, hρ, hρs, M, _, hb, _⟩ := exists_ball_jet_bounds_holder hf hs ha hα hH
-  let Ω : Opens P := ⟨ball a ρ, isOpen_ball⟩
-  have hbound : ∀ j ≤ n, ∃ A, ∀ x : Ω, ‖iteratedFDeriv ℝ j φ x‖ ≤ A :=
-    fun j hj ↦ ⟨(M : ℝ), fun x ↦ hb j hj x x.property⟩
-  have hholder : MemHolder α (fun x : Ω ↦ iteratedFDeriv ℝ n φ x) :=
-    ⟨C, fun x y ↦ hH x (hρs x.property) y (hρs y.property)⟩
-  exact ⟨ρ, hρ, hρs, TauCeti.CkHolderSpaceOn.ofContDiffOn φ (hf.mono hρs) hbound hholder,
-    fun x ↦ TauCeti.CkHolderSpaceOn.ofContDiffOn_apply φ (hf.mono hρs) hbound hholder x⟩
-
 /-- The inverse family lies in `CkHolderSpaceOn n α` on a ball about the base point, with
 values `(H x).inverse`. -/
 theorem ContDiffOn.exists_ckHolderSpaceOn_clm_inverse
@@ -302,21 +215,8 @@ theorem ContDiffOn.exists_ckHolderSpaceOn_clm_inverse
         ∀ x, g x = (H x).inverse := by
   obtain ⟨r, hr, hrs, hInv, hC, K, hK⟩ :=
     hH.exists_holderOnWith_iteratedFDeriv_clm_inverse hs hα hD hinv
-  obtain ⟨t, ht, htr, g, hg⟩ := exists_ckHolderSpaceOn_ball hC isOpen_ball (mem_ball_self hr) hα hK
+  obtain ⟨t, ht, htr, g, hg⟩ := hC.exists_ckHolderSpaceOn_ball (ball_mem_nhds _ hr) hα hK
   exact ⟨t, ht, htr.trans hrs, fun x hx ↦ hInv x (htr hx), g, hg⟩
-
-private theorem contDiffOn_symm_on_preimage
-    {E : Type uE} {F : Type uF} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace E]
-    {m : ℕ} (e : OpenPartialHomeomorph E F) {s : Set E}
-    (he : ContDiffOn ℝ (m + 1) e s) (hs : IsOpen s)
-    (hinv : ∀ x ∈ s, (fderiv ℝ e x).IsInvertible) :
-    ContDiffOn ℝ (m + 1) e.symm (e.target ∩ e.symm ⁻¹' s) := by
-  intro y hy
-  have hc := he.contDiffAt (hs.mem_nhds hy.2)
-  obtain ⟨L, hL⟩ := hinv (e.symm y) hy.2
-  refine (e.contDiffAt_symm hy.1 (f₀' := L) ?_ hc).contDiffWithinAt
-  simpa only [hL] using (hc.differentiableAt (by simp)).hasFDerivAt
 
 /-- The actual inverse of a finite-order Hölder local diffeomorphism is locally Hölder of
 that same order. -/
@@ -344,17 +244,18 @@ theorem OpenPartialHomeomorph.exists_holderOnWith_iteratedFDeriv_symm
     refine ⟨e.map_source ha, ?_⟩
     simpa only [mem_preimage, e.left_inv ha] using (mem_ball_self hr : a ∈ ball a r)
   have hg : ContDiffOn ℝ (m + 1) e.symm U :=
-    contDiffOn_symm_on_preimage e (heS.mono hrs) isOpen_ball hrinv
+    e.contDiffOn_symm_inter_preimage isOpen_ball ((heS.mono hrs).mono inter_subset_right)
+      (fun x hx ↦ hrinv x hx.2)
   let H : E → F →L[ℝ] E := fun x ↦ (fderiv ℝ e x).inverse
   have hKw : HolderOnWith K α (iteratedFDerivWithin ℝ m H (ball a r)) (ball a r) :=
     hK.congr fun x hx ↦ (iteratedFDerivWithin_of_isOpen m isOpen_ball hx).symm
   obtain ⟨t, ht, N, hN⟩ := TauCeti.exists_holderOnWith_iteratedFDerivWithin_comp
     hα (hU.mem_nhds haU) isOpen_ball.uniqueDiffOn hg hFI (fun _ hy ↦ hy.2)
     self_mem_nhdsWithin hKw
-  obtain ⟨u, hu, huU⟩ := Metric.isOpen_iff.mp hU (e a) haU
-  let ρ := min t u
-  have hρt : ball (e a) ρ ⊆ ball (e a) t := ball_subset_ball (min_le_left t u)
-  have hρU : ball (e a) ρ ⊆ U := (ball_subset_ball (min_le_right t u)).trans huU
+  obtain ⟨ρ, hρ, hρtU⟩ := Metric.eventually_nhds_iff_ball.mp
+    (Filter.Eventually.and (ball_mem_nhds (e a) ht) (hU.mem_nhds haU))
+  have hρt : ball (e a) ρ ⊆ ball (e a) t := fun y hy ↦ (hρtU y hy).1
+  have hρU : ball (e a) ρ ⊆ U := fun y hy ↦ (hρtU y hy).2
   have heq (y : F) (hy : y ∈ U) : H (e.symm y) = fderiv ℝ e.symm y := by
     have hd := (heS.mono hrs).contDiffAt (isOpen_ball.mem_nhds hy.2)
     have hds := hg.contDiffAt (hU.mem_nhds hy)
@@ -367,7 +268,7 @@ theorem OpenPartialHomeomorph.exists_holderOnWith_iteratedFDeriv_symm
     have hev : H ∘ e.symm =ᶠ[𝓝 y] fderiv ℝ e.symm :=
       Filter.Eventually.mono (hU.mem_nhds (hρU hy)) fun z hz ↦ heq z hz
     exact (hev.iteratedFDeriv ℝ m).eq_of_nhds
-  exact ⟨ρ, lt_min ht hu, fun y hy ↦ (hρU hy).1, hg.mono hρU, N,
+  exact ⟨ρ, hρ, fun y hy ↦ (hρU hy).1, hg.mono hρU, N,
     TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mpr htop⟩
 
 /-- The inverse chart lies in `CkHolderSpaceOn (m + 1) α` on a ball about the image point,
@@ -384,5 +285,5 @@ theorem OpenPartialHomeomorph.exists_ckHolderSpaceOn_symm
         ∀ x, g x = e.symm x := by
   obtain ⟨r, hr, hrt, hC, K, hK⟩ :=
     e.exists_holderOnWith_iteratedFDeriv_symm ha he hα hs hH hinv
-  obtain ⟨t, ht, htr, g, hg⟩ := exists_ckHolderSpaceOn_ball hC isOpen_ball (mem_ball_self hr) hα hK
+  obtain ⟨t, ht, htr, g, hg⟩ := hC.exists_ckHolderSpaceOn_ball (ball_mem_nhds _ hr) hα hK
   exact ⟨t, ht, htr.trans hrt, g, hg⟩
