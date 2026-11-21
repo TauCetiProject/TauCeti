@@ -149,7 +149,7 @@ private theorem exists_trivialization_stiefelProj_euclidean (n k : ℕ)
     have : ContinuousSMul (Matrix.unitaryGroup (Fin (1 + n)) ℝ)
         (finiteOrthonormalFrame ℝ (k + 1) (1 + n)) :=
       ⟨finiteOrthonormalFrame.continuous_unitaryMap⟩
-    let φ₁ := finiteOrthonormalFrame.sphereHomeomorph (1 + n)
+    let φ₁ := finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n)
     let φk := stiefel.finiteOrthonormalFrameHomeomorph (k + 1) (1 + n)
     obtain ⟨c, hcq⟩ := exists_trivialization_unitaryFrameMap (𝕜 := ℝ) (r := 1) (m := n) (φ₁.symm q)
     let f₀ := finiteOrthonormalFrame.standard ℝ (Nat.le_add_right 1 n)

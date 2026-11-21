@@ -26,12 +26,10 @@ modification with unitor components from a composite of two such transformations
 arbitrary `1`-morphisms, so that they apply by unification to goals whose `1`-morphisms are values
 of composite pseudofunctors, which `simp` and `rw` do not see through. The same reduction
 handles identity and composite transport cells. The file also evaluates the naturality cell
-of a composite strong transformation on objects, with the Cat endpoints made explicit,
-packages the components of a naturality isomorphism and of an invertible modification at an
-object (`Pseudofunctor.StrongTrans.naturalityObjIso`, `Pseudofunctor.StrongTrans.isoAppApp`),
-and reduces `StrongTrans.naturality_naturality` and the naturality condition of a modification
-into `Cat` to their components on objects (`StrongTrans.naturality_naturality_app`,
-`StrongTrans.naturality_app_iff`, `StrongTrans.comp_naturality_app_iff`).
+of a composite strong transformation on objects, with the Cat endpoints made explicit, and
+packages the components of a naturality isomorphism at an object
+(`Pseudofunctor.StrongTrans.naturalityObjIso`). It also conjugates pullbacks of morphisms by
+the naturality isomorphisms of a strong transformation.
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
@@ -175,63 +173,17 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
 
-/-- The component at an object `X` of the component at `a` of an invertible modification
-`e : η ≅ θ` between strong transformations into `Cat`. Its `hom` and `inv` are the components of
-`e.hom` and `e.inv` themselves, so that they are reducibly equal to them. -/
-@[simps]
-abbrev isoAppApp {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}} {η θ : F ⟶ G}
-    (e : η ≅ θ) (a : B) (X : F.obj a) :
-    (η.app a).toFunctor.obj X ≅ (θ.app a).toFunctor.obj X where
-  hom := (e.hom.as.app a).toNatTrans.app X
-  inv := (e.inv.as.app a).toNatTrans.app X
-  hom_inv_id := congrArg (fun m => (m.as.app a).toNatTrans.app X) e.hom_inv_id
-  inv_hom_id := congrArg (fun m => (m.as.app a).toNatTrans.app X) e.inv_hom_id
-
-/-- The condition `StrongTrans.naturality_naturality` for a strong transformation into `Cat`, on
-objects. -/
-lemma naturality_naturality_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
-    {F H : B ⥤ᵖ Cat.{v, w}} (σ : F ⟶ H) {a b : B} {f g : a ⟶ b} (η : f ⟶ g) (X : F.obj a) :
-    (σ.app b).toFunctor.map ((F.map₂ η).toNatTrans.app X) ≫
-        (σ.naturality g).hom.toNatTrans.app X =
-      (σ.naturality f).hom.toNatTrans.app X ≫
-        (H.map₂ η).toNatTrans.app ((σ.app a).toFunctor.obj X) := by
-  have h := congrArg (fun m => m.toNatTrans.app X) (σ.naturality_naturality η)
-  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-  exact h
-
-/-- The naturality condition of a modification, for a family of `2`-morphisms between strong
-transformations into `Cat`, holds if and only if it holds on objects. -/
-lemma naturality_app_iff {B : Type u₁} [Bicategory.{w₁, v₁} B] {F H : B ⥤ᵖ Cat.{v, w}}
-    {σ τ : F ⟶ H} {a b : B} (f : a ⟶ b) (Γa : σ.app a ⟶ τ.app a) (Γb : σ.app b ⟶ τ.app b) :
-    F.map f ◁ Γb ≫ (τ.naturality f).hom = (σ.naturality f).hom ≫ Γa ▷ H.map f ↔
-      ∀ X : F.obj a, Γb.toNatTrans.app ((F.map f).toFunctor.obj X) ≫
-          (τ.naturality f).hom.toNatTrans.app X =
-        (σ.naturality f).hom.toNatTrans.app X ≫
-          (H.map f).toFunctor.map (Γa.toNatTrans.app X) := by
-  refine ⟨fun h X => ?_, fun h => ?_⟩
-  · simpa using congrArg (fun m => m.toNatTrans.app X) h
-  · ext X
-    simpa using h X
-
-/-- The naturality condition of a modification, for a family of `2`-morphisms between two
-composite strong transformations into `Cat`, holds if and only if it holds on objects, where the
-naturality cells of the composites are evaluated by `comp_naturality_hom_app`. -/
-lemma comp_naturality_app_iff {B : Type u₁} [Bicategory.{w₁, v₁} B]
-    {F G₁ G₂ H : B ⥤ᵖ Cat.{v, w}} {η₁ : F ⟶ G₁} {θ₁ : G₁ ⟶ H} {η₂ : F ⟶ G₂} {θ₂ : G₂ ⟶ H}
-    {a b : B} (f : a ⟶ b) (Γa : (η₁ ≫ θ₁).app a ⟶ (η₂ ≫ θ₂).app a)
-    (Γb : (η₁ ≫ θ₁).app b ⟶ (η₂ ≫ θ₂).app b) :
-    F.map f ◁ Γb ≫ ((η₂ ≫ θ₂).naturality f).hom =
-        ((η₁ ≫ θ₁).naturality f).hom ≫ Γa ▷ H.map f ↔
-      ∀ X : F.obj a, Γb.toNatTrans.app ((F.map f).toFunctor.obj X) ≫
-          (θ₂.app b).toFunctor.map ((η₂.naturality f).hom.toNatTrans.app X) ≫
-            (θ₂.naturality f).hom.toNatTrans.app ((η₂.app a).toFunctor.obj X) =
-        (θ₁.app b).toFunctor.map ((η₁.naturality f).hom.toNatTrans.app X) ≫
-          (θ₁.naturality f).hom.toNatTrans.app ((η₁.app a).toFunctor.obj X) ≫
-            (H.map f).toFunctor.map (Γa.toNatTrans.app X) := by
-  rw [naturality_app_iff]
-  simp only [comp_naturality_hom_app]
-  -- `Category.assoc` is applied by unification: the middle objects agree only up to unfolding.
-  exact forall_congr' fun X => Eq.congr_right (Category.assoc _ _ _)
+/-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`
+turns the image under `η.app b` of the pullback of a morphism `φ` into the pullback of the image
+of `φ` under `η.app a`. -/
+@[reassoc]
+lemma naturality_naturality_1 {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) {a b : B} (f : a ⟶ b) {X Y : F.obj a} (φ : X ⟶ Y) :
+    (η.naturality f).inv.toNatTrans.app X ≫
+        (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) ≫
+          (η.naturality f).hom.toNatTrans.app Y =
+      (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
+  NatIso.naturality_1 (Cat.Hom.toNatIso (η.naturality f)) φ
 
 end Pseudofunctor.StrongTrans
 
