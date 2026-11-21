@@ -345,10 +345,10 @@ private theorem exists_hasFPowerSeriesOnBall_setIntegral_Icc
     ∃ P : FormalMultilinearSeries ℝ ℍ ℍ,
       HasFPowerSeriesOnBall (fun q ↦ ∫ u in Icc a b, F (cauchyFueterKernel (γ u) q) (g u))
         P q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
-  let γ' : C(Icc a b, ℍ) := ⟨fun z ↦ γ z.1, hγ.domRestrict⟩
+  let γ' : C(Icc a b, ℍ) := ⟨fun z ↦ γ z.val, hγ.domRestrict⟩
   have hne : ∀ z : Icc a b, γ' z ≠ q₀ :=
-    fun z ↦ sub_ne_zero.1 (norm_pos_iff.1 (hδ₀.trans_le (hδ z.1 z.2)))
-  obtain ⟨P, hP⟩ := hF γ' hne (fun z ↦ hδ z.1 z.2)
+    fun z ↦ sub_ne_zero.1 (norm_pos_iff.1 (hδ₀.trans_le (hδ z.val z.property)))
+  obtain ⟨P, hP⟩ := hF γ' hne (fun z ↦ hδ z.val z.property)
     ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp
       (hg.integrableOn_compact (μ := volume) isCompact_Icc))
   exact ⟨P, hP.congr fun q _ ↦
@@ -440,8 +440,7 @@ theorem LeftFueterOn.hasFPowerSeriesOnBall_affine
     mem_pi_Ioo_of_norm_dq_sub_lt (a := 0) (b := 1) (p := p) L.toLinearMap
       (fun i ↦ (hx₀ i (mem_univ i)).1) (fun i ↦ (hx₀ i (mem_univ i)).2)
       (by simpa using hδ) (by simpa using hlt)
-  rw [left_cauchyFueter_affine (x₀ := x) hL hc
-    (fun u hu _ ↦ leftFueterOn_iff.mp hf _ (mem_image_of_mem _ (mem_image_of_mem _ hu))) hmem]
+  rw [left_cauchyFueter_affine (x₀ := x) hL hc (hf.mono sdiff_subset) hmem]
   simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
     mul_assoc, ContinuousLinearEquiv.coe_coe]
 
@@ -479,8 +478,7 @@ theorem RightFueterOn.hasFPowerSeriesOnBall_affine
     mem_pi_Ioo_of_norm_dq_sub_lt (a := 0) (b := 1) (p := p) L.toLinearMap
       (fun i ↦ (hx₀ i (mem_univ i)).1) (fun i ↦ (hx₀ i (mem_univ i)).2)
       (by simpa using hδ) (by simpa using hlt)
-  rw [right_cauchyFueter_affine (x₀ := x) hL hc
-    (fun u hu _ ↦ rightFueterOn_iff.mp hf _ (mem_image_of_mem _ (mem_image_of_mem _ hu))) hmem]
+  rw [right_cauchyFueter_affine (x₀ := x) hL hc (hf.mono sdiff_subset) hmem]
   simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
     ContinuousLinearEquiv.coe_coe]
 

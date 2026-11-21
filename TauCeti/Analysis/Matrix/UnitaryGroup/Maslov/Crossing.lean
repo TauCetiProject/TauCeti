@@ -91,7 +91,7 @@ theorem maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley {U V : unita
   have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
   -- The localization axiom: the index is half the change of the signature of `A`.
   have hloc := maslovIndex_eq_signature_sub_of_souriau_eq_cayley γ (A := fun t : I ↦ A t)
-    (hAc.comp_continuous continuous_subtype_val fun t ↦ t.2) (fun t ↦ hA t t.2) hγ
+    (hAc.comp_continuous continuous_subtypeVal fun t ↦ t.property) (fun t ↦ hA t t.property) hγ
   simp only [Icc.coe_one, Icc.coe_zero] at hloc
   -- The signature formula for the bilinear forms of `A`.
   have hsig :=

@@ -37,13 +37,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- A smooth one-form has the same hyperplanes as a nowhere-zero smooth one-form exactly when it
 is a unique nowhere-zero smooth multiple of it. This applies, in particular, to local defining
 forms restricted to an overlap. -/
-theorem kerDistribution_eq_iff_existsUnique_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
+theorem kerDistribution_eq_iff_existsUnique_fun_smul (hα : ∀ x, α.val x ≠ 0) :
     β.kerDistribution = α.kerDistribution ↔
       ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, f x ≠ 0) ∧
-        ∀ x, β.1 x = f x • α.1 x := by
+        ∀ x, β.val x = f x • α.val x := by
   constructor
   · intro hker
-    have hle (x : M) : RoughForm.ker α.1 x ≤ RoughForm.ker β.1 x := by
+    have hle (x : M) : RoughForm.ker α.val x ≤ RoughForm.ker β.val x := by
       intro v hv
       simpa only [RoughForm.mem_ker, ← mem_kerDistribution, hker] using hv
     obtain ⟨f, ⟨hf, hmul⟩, huniq⟩ := existsUnique_fun_smul_of_ker_le hα hle

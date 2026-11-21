@@ -209,27 +209,28 @@ variable {u u' : B.graph.V}
 
 /-- The twisting element of an arrow `f : u ⟶ u'` is the label `f_α`, read in `A_[u]`. -/
 theorem toHom_twistArrow (f : u ⟶ u') : B.toHom.twistArrow f = MulEquiv.cast (M := 𝔸.vertexGroup)
-    ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1) := by
+    ((B.typ.map_src f.val).trans (congrArg B.typ.mapV f.property.1)) (B.labelα f.val) := by
   simp only [Hom.twistArrow_def, toHom_twist, MulEquiv.cast_apply, cast_cast]
 
 /-- The inverse of the twisting element of the reverse of an arrow `f : u ⟶ u'` is the label
 `f_ω`, read in `A_[u']`: this is `δ_{f⁻¹}⁻¹ = f_ω`. -/
 theorem inv_toHom_twistArrow_reverse (f : u ⟶ u') : (B.toHom.twistArrow (Quiver.reverse f))⁻¹ =
-    MulEquiv.cast (M := 𝔸.vertexGroup) ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2))
-      (B.labelω f.1) := by
-  rw [B.toHom.twistArrow_eq_cast _ (e' := B.graph.rev f.1) (by simp)
-    (congrArg B.toHom.graph.mapV ((B.graph.src_rev f.1).trans f.2.2))]
+    MulEquiv.cast (M := 𝔸.vertexGroup) ((B.typ.map_tgt _ f.val).trans
+        (congrArg B.typ.mapV f.property.2))
+      (B.labelω f.val) := by
+  rw [B.toHom.twistArrow_eq_cast _ (e' := B.graph.rev f.val) (by simp)
+    (congrArg B.toHom.graph.mapV ((B.graph.src_rev f.val).trans f.property.2))]
   simp only [toHom_twist, labelω_def, map_inv, MulEquiv.cast_apply, cast_cast]
 
 /-- The path map of the morphism defined by an `𝔸`-graph reads an arrow `f` as its label: the
 letters `f_α, [f], f_ω`. -/
 theorem toHom_mapPath_ofDart (f : u ⟶ u') : B.toHom.mapPath (Path.ofDart f) =
     ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
-      ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1))).cons
+      ((B.typ.map_src f.val).trans (congrArg B.typ.mapV f.property.1)) (B.labelα f.val))).cons
       (Letter.dart (Quiver.Hom.cast (B.typ.toPrefunctor_obj u) (B.typ.toPrefunctor_obj u')
         (B.typ.toPrefunctor.map f)))).cons
       (Letter.vertex (MulEquiv.cast (M := 𝔸.vertexGroup)
-        ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2)) (B.labelω f.1))) := by
+        ((B.typ.map_tgt _ f.val).trans (congrArg B.typ.mapV f.property.2)) (B.labelω f.val))) := by
   rw [Hom.mapPath_ofDart, toHom_twistArrow, inv_toHom_twistArrow_reverse]
   -- The transported image arrows under `B.toHom.graph` and under `B.typ` agree by `toHom_graph`,
   -- which `rw` cannot apply under the dependent endpoints of the letters.
@@ -242,7 +243,7 @@ theorem toHom_mapLetter_dart_eq (f : B.graph.E)
     {d : B.typ.mapV (B.graph.src f) ⟶ B.typ.mapV (B.graph.tgt f)}
     {h : 𝔸.vertexGroup (B.typ.mapV (B.graph.tgt f))}
     (hg : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f) = g)
-    (hd : B.typ.mapE f = d.1)
+    (hd : B.typ.mapE f = d.val)
     (hh : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f) = h) :
     B.toHom.mapLetter (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
       ((Path.ofVertex g).comp (Path.ofDart d)).comp (Path.ofVertex h) := by
@@ -263,7 +264,7 @@ theorem toHom_mapPath_ofDart_eq (f : B.graph.E)
     {d : B.typ.mapV (B.graph.src f) ⟶ B.typ.mapV (B.graph.tgt f)}
     {h : 𝔸.vertexGroup (B.typ.mapV (B.graph.tgt f))}
     (hg : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f) = g)
-    (hd : B.typ.mapE f = d.1)
+    (hd : B.typ.mapE f = d.val)
     (hh : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f) = h) :
     B.toHom.mapPath (Path.ofDart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
       ((Path.ofVertex g).comp (Path.ofDart d)).comp (Path.ofVertex h) := by
@@ -453,7 +454,7 @@ theorem IsFinite.finite_V (h : B.IsFinite) : Finite B.graph.V := by
     B.base z
   cases p with
   | nil => exact Set.mem_insert _ _
-  | cons _ e => exact Set.mem_insert_of_mem _ ⟨e.1, e.2.2⟩
+  | cons _ e => exact Set.mem_insert_of_mem _ ⟨e.val, e.property.2⟩
 
 open scoped Classical in
 /-- The rank of the vertex group `B_z`, the minimal number of generators, or `0` when it is not

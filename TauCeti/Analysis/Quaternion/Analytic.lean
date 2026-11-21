@@ -570,8 +570,9 @@ theorem exists_hasFPowerSeriesOnBall_setIntegral_cauchyFueterKernel_mul (hS : Is
         (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
   have : CompactSpace S := isCompact_iff_compactSpace.mp hS
   let φ : C(S, ℍ) := ⟨S.domRestrict ψ, hψ.domRestrict⟩
-  have hφ (z : S) : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le (hδ z z.2)))
-  exact ⟨_, (hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul φ hφ hδ₀ (fun z ↦ hδ z z.2)
+  have hφ (z : S) : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le (hδ z z.property)))
+  exact ⟨_, (hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul φ hφ hδ₀
+      (fun z ↦ hδ z z.property)
     ((integrableOn_iff_comap_subtypeVal hSm).mp hg)).congr fun q _ ↦
       integral_subtype_comap hSm fun x ↦ cauchyFueterKernel (ψ x) q * g x⟩
 
@@ -586,8 +587,9 @@ theorem exists_hasFPowerSeriesOnBall_setIntegral_mul_cauchyFueterKernel (hS : Is
         (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
   have : CompactSpace S := isCompact_iff_compactSpace.mp hS
   let φ : C(S, ℍ) := ⟨S.domRestrict ψ, hψ.domRestrict⟩
-  have hφ (z : S) : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le (hδ z z.2)))
-  exact ⟨_, (hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel φ hφ hδ₀ (fun z ↦ hδ z z.2)
+  have hφ (z : S) : φ z ≠ q₀ := sub_ne_zero.mp (norm_pos_iff.mp (hδ₀.trans_le (hδ z z.property)))
+  exact ⟨_, (hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel φ hφ hδ₀
+      (fun z ↦ hδ z z.property)
     ((integrableOn_iff_comap_subtypeVal hSm).mp hg)).congr fun q _ ↦
       integral_subtype_comap hSm fun x ↦ g x * cauchyFueterKernel (ψ x) q⟩
 
@@ -611,13 +613,14 @@ theorem hasFPowerSeriesOnBall_sum_integral_cauchyFueterKernel_mul
     HasFPowerSeriesOnBall
       (fun q ↦ ∑ i ∈ I, ∫ z, cauchyFueterKernel (φ i z) q * g i z ∂μ i)
       (∑ i ∈ I.attach, ((ContinuousLinearMap.mul ℝ ℍ).continuousMapIntegralCLM
-        (hg i.1 i.2)).compFormalMultilinearSeries
-          (cauchyFueterKernelSeries (φ i.1) (hφ i.1 i.2)))
+        (hg i.val i.property)).compFormalMultilinearSeries
+          (cauchyFueterKernelSeries (φ i.val) (hφ i.val i.property)))
       q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) :=
   (I.attach.hasFPowerSeriesOnBall_fun_sum
     (ENNReal.ofReal_pos.2 (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀))
     fun i _ ↦ hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul
-      (φ i.1) (hφ i.1 i.2) hδ₀ (hδ i.1 i.2) (hg i.1 i.2)).congr fun q _ ↦
+      (φ i.val) (hφ i.val i.property) hδ₀ (hδ i.val i.property) (hg i.val i.property)).congr fun q _
+          ↦
     I.sum_attach fun i ↦ ∫ z, cauchyFueterKernel (φ i z) q * g i z ∂μ i
 
 /-- Quantitative power-series expansion on `eball q₀ ((√2 - 1) δ)` of a finite sum of right
@@ -630,13 +633,14 @@ theorem hasFPowerSeriesOnBall_sum_integral_mul_cauchyFueterKernel
     HasFPowerSeriesOnBall
       (fun q ↦ ∑ i ∈ I, ∫ z, g i z * cauchyFueterKernel (φ i z) q ∂μ i)
       (∑ i ∈ I.attach, ((ContinuousLinearMap.mul ℝ ℍ).flip.continuousMapIntegralCLM
-        (hg i.1 i.2)).compFormalMultilinearSeries
-          (cauchyFueterKernelSeries (φ i.1) (hφ i.1 i.2)))
+        (hg i.val i.property)).compFormalMultilinearSeries
+          (cauchyFueterKernelSeries (φ i.val) (hφ i.val i.property)))
       q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) :=
   (I.attach.hasFPowerSeriesOnBall_fun_sum
     (ENNReal.ofReal_pos.2 (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀))
     fun i _ ↦ hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel
-      (φ i.1) (hφ i.1 i.2) hδ₀ (hδ i.1 i.2) (hg i.1 i.2)).congr fun q _ ↦
+      (φ i.val) (hφ i.val i.property) hδ₀ (hδ i.val i.property) (hg i.val i.property)).congr fun q _
+          ↦
     I.sum_attach fun i ↦ ∫ z, g i z * cauchyFueterKernel (φ i z) q ∂μ i
 
 /-- A finite sum of left Cauchy–Fueter face potentials is real analytic at every point outside
@@ -712,8 +716,8 @@ private abbrev BoxFaceDomain (a b : Fin 4 → ℝ) (p : Fin 4 × Bool) : Type :=
 face at `b p.1`, `false` for the back face at `a p.1`). -/
 private noncomputable def boxFaceChart (a b : Fin 4 → ℝ) (p : Fin 4 × Bool) :
     C(BoxFaceDomain a b p, ℍ) :=
-  ⟨fun z ↦ dq (p.1.insertNth (cond p.2 (b p.1) (a p.1)) z.1),
-    dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtype_val)⟩
+  ⟨fun z ↦ dq (p.1.insertNth (cond p.2 (b p.1) (a p.1)) z.val),
+    dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtypeVal)⟩
 
 private theorem integrable_comp_boxFaceChart {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
     (hf : ∀ i : Fin 4,
@@ -773,8 +777,8 @@ private theorem le_norm_boxFaceChart_sub {a b : Fin 4 → ℝ} {q₀ : ℍ} {δ 
     (p : Fin 4 × Bool) (z : BoxFaceDomain a b p) :
     δ ≤ ‖boxFaceChart a b p z - q₀‖ := by
   rcases p with ⟨i, (_ | _)⟩
-  · simpa only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_false] using (hδ i z.1 z.2).1
-  · simpa only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_true] using (hδ i z.1 z.2).2
+  · simpa only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_false] using (hδ i z.val z.property).1
+  · simpa only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_true] using (hδ i z.val z.property).2
 
 private theorem boxFaceChart_ne_of_pos {a b : Fin 4 → ℝ} {q₀ : ℍ} {δ : ℝ} (hδ₀ : 0 < δ)
     (hδ : ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
@@ -794,9 +798,9 @@ private theorem notMem_iUnion_range_boxFaceChart {a b : Fin 4 → ℝ} {q₀ : �
   simp only [mem_iUnion, Finset.mem_univ, mem_range, exists_prop, true_and] at h
   rcases h with ⟨⟨i, (_ | _)⟩, z, hzq⟩
   · simp only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_false] at hzq
-    exact (hq₀ i z.1 z.2).1 hzq
+    exact (hq₀ i z.val z.property).1 hzq
   · simp only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_true] at hzq
-    exact (hq₀ i z.1 z.2).2 hzq
+    exact (hq₀ i z.val z.property).2 hzq
 
 /-- Quantitative `HasFPowerSeriesOnBall` expansion on `eball q₀ ((√2 - 1) * δ)` of the left
 Cauchy–Fueter box boundary potential for a facewise-integrable density `f` when every face of

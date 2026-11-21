@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Algebra.Group.Subgroup.Order
 import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 import Mathlib.Order.Atoms.Finite
+import Mathlib.Tactic.Group
 
 /-!
 # Open subgroups of compact groups
@@ -36,8 +37,10 @@ an open subgroup is closed, so it is compact.
 Every proper open subgroup of a compact group lies in a maximal open subgroup. This follows
 by passing to a finite quotient by an open normal subgroup contained in the given subgroup.
 
-The normal core of an open subgroup of finite index is itself open, so such a subgroup contains an
-open normal subgroup of finite index. This needs no compactness.
+The normal core of an open subgroup is open as soon as its normalizer has finite index; so an open
+subgroup of finite index contains an open normal subgroup of finite index, and every open normal
+subgroup of an open subgroup of finite index contains an open normal subgroup of the ambient group.
+This needs no compactness.
 
 ## Main results
 
@@ -47,9 +50,12 @@ open normal subgroup of finite index. This needs no compactness.
   compact group is compact.
 * `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
   continuous homomorphism has finite index.
-* `OpenSubgroup.isOpen_normalCore`: the normal core of an open subgroup of finite index is open.
+* `Subgroup.isOpen_normalCore`: the normal core of an open subgroup whose normalizer has finite
+  index is open; `OpenSubgroup.isOpen_normalCore` is the case of an open subgroup of finite index.
 * `OpenSubgroup.exists_openNormalSubgroup_le`: an open subgroup of finite index
   contains an open normal subgroup of finite index.
+* `OpenNormalSubgroup.exists_le_map_subtype`: an open normal subgroup of an open subgroup of
+  finite index contains an open normal subgroup of the ambient group.
 * `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: a proper open subgroup of a compact group
   lies in a maximal open subgroup.
 -/
@@ -120,13 +126,40 @@ section NormalCore
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
-/-- The normal core of an open subgroup of finite index is open: it is closed, being an
-intersection of closed conjugates, and has finite index. -/
-@[to_additive /-- The normal core of an open additive subgroup of finite index is open: it is
-closed, being an intersection of closed conjugates, and has finite index. -/]
+/-- The normal core of an open subgroup `K` whose normalizer has finite index is open. For
+representatives `t` of the finitely many right cosets of the normalizer, every conjugate of `K`
+is one of the open subgroups `t⁻¹ K t`, so the normal core is a finite intersection of open
+sets. -/
+@[to_additive /-- The normal core of an open additive subgroup `K` whose normalizer has finite
+index is open. For representatives `t` of the finitely many right cosets of the normalizer, every
+conjugate of `K` is one of the open subgroups `-t + K + t`, so the normal core is a finite
+intersection of open sets. -/]
+theorem Subgroup.isOpen_normalCore {K : Subgroup G} (hK : IsOpen (K : Set G))
+    [(normalizer (K : Set G)).FiniteIndex] : IsOpen (K.normalCore : Set G) := by
+  let N := normalizer (K : Set G)
+  have : Finite (Quotient (QuotientGroup.rightRel N)) :=
+    Finite.of_equiv _ (QuotientGroup.quotientRightRelEquivQuotientLeftRel N).symm
+  -- The finitely many conditions `t * x * t⁻¹ ∈ K`, for `t` a representative of a right coset
+  -- of the normalizer, are open and hold at `1`.
+  have hmem : ⋂ q : Quotient (QuotientGroup.rightRel N),
+      (fun x ↦ q.out * x * q.out⁻¹) ⁻¹' (K : Set G) ∈ nhds (1 : G) :=
+    Filter.iInter_mem.mpr fun q ↦ (hK.preimage ((continuous_mul_const _).comp
+      (continuous_const_mul _))).mem_nhds (by simp)
+  refine K.normalCore.isOpen_of_mem_nhds (Filter.mem_of_superset hmem fun x hx b ↦ ?_)
+  -- Write `b = n * t` with `n` in the normalizer and `t` the chosen representative of `N * b`.
+  let q : Quotient (QuotientGroup.rightRel N) := Quotient.mk _ b
+  have hn : b * q.out⁻¹ ∈ N := QuotientGroup.rightRel_apply.mp (Quotient.mk_out b)
+  have hx' : q.out * x * q.out⁻¹ ∈ K := Set.mem_iInter.mp hx q
+  have := (mem_normalizer_iff.mp hn _).mp hx'
+  rwa [show b * q.out⁻¹ * (q.out * x * q.out⁻¹) * (b * q.out⁻¹)⁻¹ = b * x * b⁻¹ by group] at this
+
+/-- The normal core of an open subgroup of finite index is open. -/
+@[to_additive /-- The normal core of an open additive subgroup of finite index is open. -/]
 theorem OpenSubgroup.isOpen_normalCore (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] :
     IsOpen (U.toSubgroup.normalCore : Set G) :=
-  Subgroup.isOpen_of_isClosed_of_finiteIndex _ (Subgroup.normalCore_isClosed _ U.isClosed)
+  have : (Subgroup.normalizer (U.toSubgroup : Set G)).FiniteIndex :=
+    Subgroup.finiteIndex_of_le Subgroup.le_normalizer
+  U.toSubgroup.isOpen_normalCore U.isOpen
 
 /-- An open subgroup of finite index contains an open normal subgroup of finite index, namely its
 normal core. -/
@@ -137,5 +170,27 @@ theorem OpenSubgroup.exists_openNormalSubgroup_le (U : OpenSubgroup G)
     ∃ N : OpenNormalSubgroup G, N.toSubgroup ≤ U.toSubgroup ∧ N.toSubgroup.FiniteIndex :=
   ⟨{ toSubgroup := U.toSubgroup.normalCore, isOpen' := U.isOpen_normalCore },
     Subgroup.normalCore_le _, inferInstance⟩
+
+/-- An open normal subgroup `W` of an open subgroup `H` of finite index contains an open normal
+subgroup of the ambient group, namely the normal core of the image of `W`. No compactness is
+needed: `H` normalizes the image of `W`, so its normalizer has finite index. -/
+@[to_additive /-- An open normal additive subgroup `W` of an open additive subgroup `H` of finite
+index contains an open normal additive subgroup of the ambient group, namely the normal core of
+the image of `W`. -/]
+theorem OpenNormalSubgroup.exists_le_map_subtype {H : Subgroup G} (hH : IsOpen (H : Set G))
+    [H.FiniteIndex] (W : OpenNormalSubgroup H) :
+    ∃ V : OpenNormalSubgroup G, V.toSubgroup ≤ W.toSubgroup.map H.subtype := by
+  let K := W.toSubgroup.map H.subtype
+  have hK : IsOpen (K : Set G) := by
+    rw [Subgroup.coe_map]
+    exact hH.isOpenMap_subtypeVal _ W.isOpen
+  have hHK : H ≤ Subgroup.normalizer (K : Set G) :=
+    calc H = (⊤ : Subgroup H).map H.subtype := by
+          rw [← MonoidHom.range_eq_map, Subgroup.range_subtype]
+      _ = (Subgroup.normalizer (W.toSubgroup : Set H)).map H.subtype := by
+          rw [Subgroup.normalizer_eq_top]
+      _ ≤ _ := Subgroup.le_normalizer_map _
+  have : (Subgroup.normalizer (K : Set G)).FiniteIndex := Subgroup.finiteIndex_of_le hHK
+  exact ⟨{ toSubgroup := K.normalCore, isOpen' := K.isOpen_normalCore hK }, K.normalCore_le⟩
 
 end NormalCore

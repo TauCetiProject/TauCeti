@@ -103,7 +103,7 @@ private theorem starArmsEquiv_apply {B : Type*} (c : B)
     (f : ∀ i, (e i).toSimpleGraph ≃g
       pathGraph (Nat.card ↑(ConnectedComponent.supp (e i))))
     (v : (i : Fin 3) × Fin (Nat.card ↑(ConnectedComponent.supp (e i)))) :
-    (starArmsEquiv c G e f v).1 = ((f v.1).symm v.2).1.1 :=
+    (starArmsEquiv c G e f v).val = ((f v.1).symm v.2).val.val :=
   rfl
 
 private noncomputable def starVertexEquiv {B : Type*} (c : B)
@@ -131,7 +131,7 @@ private theorem starVertexEquiv_some {B : Type*} (c : B)
     (f : ∀ i, (e i).toSimpleGraph ≃g
       pathGraph (Nat.card ↑(ConnectedComponent.supp (e i))))
     (v : (i : Fin 3) × Fin (Nat.card ↑(ConnectedComponent.supp (e i)))) :
-    starVertexEquiv c G e f (some v) = ((f v.1).symm v.2).1.1 := by
+    starVertexEquiv c G e f (some v) = ((f v.1).symm v.2).val.val := by
   classical
   dsimp only [starVertexEquiv]
   rw [Equiv.trans_apply, Equiv.optionCongr_apply, Option.map_some, Equiv.optionSubtypeNe_some,
@@ -140,8 +140,8 @@ private theorem starVertexEquiv_some {B : Type*} (c : B)
 @[simp] private theorem connectedComponent_toSimpleGraph_adj {V : Type*}
     {G : SimpleGraph V} {s : Set V} (C : (G.induce s).ConnectedComponent)
     (u v : ↑C.supp) :
-    C.toSimpleGraph.Adj u v ↔ G.Adj u.1.1 v.1.1 :=
-  (C.toSimpleGraph_adj u.2 v.2).trans induce_adj
+    C.toSimpleGraph.Adj u v ↔ G.Adj u.val.val v.val.val :=
+  (C.toSimpleGraph_adj u.property v.property).trans induce_adj
 
 private theorem degree_toSimpleGraph_le_one_of_adj_branch {B : Type*} [Fintype B]
     {G : SimpleGraph B} [DecidableRel G.Adj] (c : B) (hdeg : ∀ x, G.degree x ≤ 3)
@@ -161,21 +161,21 @@ private theorem degree_toSimpleGraph_le_one_of_adj_branch {B : Type*} [Fintype B
     rw [← card_neighborFinset_eq_degree, Finset.one_lt_card] at htwo
     obtain ⟨a, ha, b, hb, hab⟩ := htwo
     rw [mem_neighborFinset, connectedComponent_toSimpleGraph_adj] at ha hb
-    have hxa : G.Adj x a.1.1 := ha
-    have hxb : G.Adj x b.1.1 := hb
+    have hxa : G.Adj x a.val.val := ha
+    have hxb : G.Adj x b.val.val := hb
     have hc_mem : c ∈ G.neighborFinset x := by
       rw [mem_neighborFinset]
       exact hcx.symm
-    have ha_mem : a.1.1 ∈ G.neighborFinset x := by simp [hxa]
-    have hb_mem : b.1.1 ∈ G.neighborFinset x := by simp [hxb]
-    have hca : c ≠ a.1.1 := fun hca ↦
-      (Set.mem_compl_singleton_iff.mp a.1.property) hca.symm
-    have hcb : c ≠ b.1.1 := fun hcb ↦
-      (Set.mem_compl_singleton_iff.mp b.1.property) hcb.symm
-    have hab' : a.1.1 ≠ b.1.1 := fun hab' ↦ hab (Subtype.ext (Subtype.ext hab'))
+    have ha_mem : a.val.val ∈ G.neighborFinset x := by simp [hxa]
+    have hb_mem : b.val.val ∈ G.neighborFinset x := by simp [hxb]
+    have hca : c ≠ a.val.val := fun hca ↦
+      (Set.mem_compl_singleton_iff.mp a.val.property) hca.symm
+    have hcb : c ≠ b.val.val := fun hcb ↦
+      (Set.mem_compl_singleton_iff.mp b.val.property) hcb.symm
+    have hab' : a.val.val ≠ b.val.val := fun hab' ↦ hab (Subtype.ext (Subtype.ext hab'))
     have hthree : 2 < G.degree x := by
       rw [← card_neighborFinset_eq_degree, Finset.two_lt_card]
-      exact ⟨c, hc_mem, a.1.1, ha_mem, b.1.1, hb_mem, hca, hcb, hab'⟩
+      exact ⟨c, hc_mem, a.val.val, ha_mem, b.val.val, hb_mem, hca, hcb, hab'⟩
     have hxle := hdeg x
     have hx3 : G.degree x = 3 := by omega
     exact (G.ne_of_adj hcx) (huniq hx3).symm
@@ -186,15 +186,15 @@ private theorem apply_eq_chainEntry_of_component_iso {B : Type*}
     (hadj : ∀ i j, (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0) (hsl : A.IsSimplyLaced) {c : B}
     (C : ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
     (f : C.toSimpleGraph ≃g pathGraph (Nat.card ↑C.supp)) (v w : ↑C.supp) :
-    A v.1.1 w.1.1 = chainEntry (f v) (f w) := by
-  let A' : Matrix ↑C.supp ↑C.supp ℤ := fun x y ↦ A x.1.1 y.1.1
-  have hdiag' : ∀ x : ↑C.supp, A' x x = 2 := fun x ↦ hdiag x.1.1
+    A v.val.val w.val.val = chainEntry (f v) (f w) := by
+  let A' : Matrix ↑C.supp ↑C.supp ℤ := fun x y ↦ A x.val.val y.val.val
+  have hdiag' : ∀ x : ↑C.supp, A' x x = 2 := fun x ↦ hdiag x.val.val
   have hsl' : A'.IsSimplyLaced := fun {x y} hxy ↦
     hsl fun heq ↦ hxy (Subtype.ext (Subtype.ext heq))
   have hadj' : ∀ x y : ↑C.supp, C.toSimpleGraph.Adj x y ↔ x ≠ y ∧ A' x y ≠ 0 := by
     intro x y
     rw [connectedComponent_toSimpleGraph_adj, hadj]
-    exact ⟨fun ⟨hne, hA⟩ ↦ ⟨fun heq ↦ hne (congrArg (fun z : ↑C.supp ↦ z.1.1) heq), hA⟩,
+    exact ⟨fun ⟨hne, hA⟩ ↦ ⟨fun heq ↦ hne (congrArg (fun z : ↑C.supp ↦ z.val.val) heq), hA⟩,
       fun ⟨hne, hA⟩ ↦ ⟨fun heq ↦ hne (Subtype.ext (Subtype.ext heq)), hA⟩⟩
   exact apply_eq_chainEntry_of_iso_pathGraph hdiag' hsl' hadj' f v w
 
@@ -204,9 +204,9 @@ in `C` is `q` and `f` sends `q` to `0`. -/
 private theorem adj_center_iff_of_component_iso {B : Type*} {G : SimpleGraph B} {c : B}
     {C : (G.induce ({c}ᶜ : Set B)).ConnectedComponent}
     (f : C.toSimpleGraph ≃g pathGraph (Nat.card ↑C.supp)) (q : ↑C.supp) (hfq : (f q : ℕ) = 0)
-    (hcq : G.Adj c q.1.1) (hnb : ∀ y : ↑C.supp, G.Adj c y.1.1 → y = q)
+    (hcq : G.Adj c q.val.val) (hnb : ∀ y : ↑C.supp, G.Adj c y.val.val → y = q)
     (t : Fin (Nat.card ↑C.supp)) :
-    G.Adj c (f.symm t).1.1 ↔ (t : ℕ) = 0 := by
+    G.Adj c (f.symm t).val.val ↔ (t : ℕ) = 0 := by
   constructor
   · intro hct
     calc
@@ -225,11 +225,12 @@ private theorem apply_eq_zero_of_component_ne {B : Type*} {A : Matrix B B ℤ}
     {ι : Type*} (e : ι → ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
     (he : Function.Injective e) {i j : ι} (hij : i ≠ j)
     (v : ↑(ConnectedComponent.supp (e i))) (w : ↑(ConnectedComponent.supp (e j))) :
-    A v.1.1 w.1.1 = 0 := by
+    A v.val.val w.val.val = 0 := by
   by_contra hA
-  have hvw : v.1 ≠ w.1 := fun hvw ↦ hij <| he <|
+  have hvw : v.val ≠ w.val := fun hvw ↦ hij <| he <|
     v.property.symm.trans ((congrArg _ hvw).trans w.property)
-  have hadjG : (diagramGraph A).Adj v.1.1 w.1.1 := (hadj _ _).mpr ⟨fun h ↦ hvw (Subtype.ext h), hA⟩
+  have hadjG : (diagramGraph A).Adj v.val.val w.val.val := (hadj _ _).mpr ⟨fun h ↦ hvw
+      (Subtype.ext h), hA⟩
   have hcomp := ConnectedComponent.connectedComponentMk_eq_of_adj (induce_adj.mpr hadjG)
   exact hij (he (v.property.symm.trans (hcomp.trans w.property)))
 
@@ -247,7 +248,7 @@ private theorem apply_eq_starCartanMatrix_of_components (hdiag : ∀ i, A i i = 
     (eC : Fin 3 ≃ ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
     (f : ∀ i, (eC i).toSimpleGraph ≃g pathGraph (Nat.card ↑(ConnectedComponent.supp (eC i))))
     (hcenter : ∀ (i : Fin 3) (t : Fin (Nat.card ↑(ConnectedComponent.supp (eC i)))),
-      (diagramGraph A).Adj c ((f i).symm t).1.1 ↔ (t : ℕ) = 0) (i j : B) :
+      (diagramGraph A).Adj c ((f i).symm t).val.val ↔ (t : ℕ) = 0) (i j : B) :
     A i j = starCartanMatrix (fun k ↦ Nat.card ↑(ConnectedComponent.supp (eC k)))
       ((starVertexEquiv c (diagramGraph A) eC f).symm i)
       ((starVertexEquiv c (diagramGraph A) eC f).symm j) := by
@@ -263,7 +264,7 @@ private theorem apply_eq_starCartanMatrix_of_components (hdiag : ∀ i, A i i = 
       exact (hsl ((diagramGraph A).ne_of_adj hadj')).resolve_left ((hadj _ _).mp hadj').2
     · rw [ite_eq_right hw]
       by_contra hA
-      exact hw ((hcenter w.1 w.2).mp <| (hadj _ _).mpr ⟨fun hcw ↦ ((f w.1).symm w.2).1.property
+      exact hw ((hcenter w.1 w.2).mp <| (hadj _ _).mpr ⟨fun hcw ↦ ((f w.1).symm w.2).val.property
         (Set.mem_singleton_iff.mpr hcw.symm), hA⟩)
   · simp only [starVertexEquiv_none, starVertexEquiv_some, starCartanMatrix_some_none]
     by_cases hv : (v.2 : ℕ) = 0
@@ -273,7 +274,7 @@ private theorem apply_eq_starCartanMatrix_of_components (hdiag : ∀ i, A i i = 
         ((hadj _ _).mp hadj'.symm).2
     · rw [ite_eq_right hv]
       by_contra hA
-      exact hv ((hcenter v.1 v.2).mp <| ((hadj _ _).mpr ⟨fun hvc ↦ ((f v.1).symm v.2).1.property
+      exact hv ((hcenter v.1 v.2).mp <| ((hadj _ _).mpr ⟨fun hvc ↦ ((f v.1).symm v.2).val.property
         (Set.mem_singleton_iff.mpr hvc), hA⟩).symm)
   · rcases v with ⟨i, v⟩
     rcases w with ⟨j, w⟩
@@ -334,14 +335,14 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced [Deci
       (exists_iso_pathGraph_apply_eq_zero (q i) (hqdeg i) (heC i))
   let ℓ : Fin 3 → ℕ := fun i ↦ Nat.card ↑(ConnectedComponent.supp (eC i))
   have hnb (i : Fin 3) (y : ↑(ConnectedComponent.supp (eC i))) :
-      G.Adj c y.1.1 → y = q i := fun hy ↦ by
-    have hzn : (⟨y.1.1, hy⟩ : ↑(G.neighborSet c)) = n i := by
+      G.Adj c y.val.val → y = q i := fun hy ↦ by
+    have hzn : (⟨y.val.val, hy⟩ : ↑(G.neighborSet c)) = n i := by
       apply (TauCeti.IsTree.neighborSetEquivConnectedComponentCompl htree c).injective
       rw [TauCeti.IsTree.neighborSetEquivConnectedComponentCompl_apply]
       exact y.property.trans (Equiv.apply_symm_apply _ _).symm
-    exact Subtype.ext (Subtype.ext (congrArg (fun z : ↑(G.neighborSet c) ↦ z.1) hzn))
+    exact Subtype.ext (Subtype.ext (congrArg (fun z : ↑(G.neighborSet c) ↦ z.val) hzn))
   have hcenter (i : Fin 3) (t : Fin (ℓ i)) :
-      G.Adj c ((f i).symm t).1.1 ↔ (t : ℕ) = 0 :=
+      G.Adj c ((f i).symm t).val.val ↔ (t : ℕ) = 0 :=
     adj_center_iff_of_component_iso (f i) (q i) (hfq i) (hcn i) (hnb i) t
   refine ⟨ℓ, (starVertexEquiv c G eC f).symm, ?_,
     (starVertexEquiv c G eC f).symm_apply_eq.mpr (starVertexEquiv_none c G eC f),
@@ -417,7 +418,7 @@ theorem existsUnique_dynkinType_of_isSimplyLaced_of_degree_eq_three (b : P.Base)
     (hsl : b.cartanMatrix.IsSimplyLaced) {c : b.support}
     (hc : (diagramGraph b.cartanMatrix).degree c = 3) :
     ∃! t : DynkinType, t.Valid ∧ HasCartanType P b t := by
-  have : Nonempty ι := ⟨c.1⟩
+  have : Nonempty ι := ⟨c.val⟩
   obtain ⟨t, ⟨ht, e, he⟩, -⟩ :=
     (isFiniteType_cartanMatrix b).existsUnique_dynkinType_of_isSimplyLaced_of_degree_eq_three
       (connected_diagramGraph_cartanMatrix b) hsl hc

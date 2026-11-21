@@ -394,7 +394,7 @@ noncomputable def parameterDerivation :
     Derivation K (Level K d) (Level K d) where
   toFun y := (ringEquivLaurentSeries K d).symm
     (derivative K (ringEquivLaurentSeries K d y))
-  map_add' y z := by simp
+  map_add' y z := by simp only [map_add]
   map_smul' c y := by
     apply (ringEquivLaurentSeries K d).injective
     simp [Algebra.smul_def, laurentSeries_algebraMap_mul_eq_smul]

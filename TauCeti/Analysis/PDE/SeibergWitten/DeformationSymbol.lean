@@ -461,10 +461,10 @@ def deformationSelfDualComplexStructure :
         fun p ↦ by
           rw [Module.End.mem_eigenspace_iff, one_smul]
           exact hodgeStar_deformationComplexStructure_snd hkl he h₀ h₂
-            ((Module.End.mem_eigenspace_iff.1 p.2.2).trans (one_smul _ _)))
+            ((Module.End.mem_eigenspace_iff.1 p.2.property).trans (one_smul _ _)))
   square_neg := LinearMap.ext fun p ↦ by
     have hp : o.hodgeStar hkl (p.2 : ⋀[ℝ]^2 V) = p.2 :=
-      (Module.End.mem_eigenspace_iff.1 p.2.2).trans (one_smul _ _)
+      (Module.End.mem_eigenspace_iff.1 p.2.property).trans (one_smul _ _)
     have h := deformationComplexStructure_deformationComplexStructure hkl he h₀ h₂
       (p := (p.1, (p.2 : ⋀[ℝ]^2 V))) hp
     exact Prod.ext (Prod.mk.inj h).1 (Subtype.ext (Prod.mk.inj h).2)

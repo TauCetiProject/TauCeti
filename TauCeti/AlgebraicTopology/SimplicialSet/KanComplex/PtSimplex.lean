@@ -356,8 +356,8 @@ noncomputable def homotopy : Homotopy q p where
     -- constant (`stdSimplex_map_comp_map_eq_const`).
     rw [Subcomplex.ofSimplex_ι, comp_const, comp_const]
     refine hom_ext_uliftYoneda fun ⟨d⟩ φ ↦ ?_
-    let a : Δ[n] _⦋d⦌ := (yonedaEquiv φ).1.1
-    have ha : a ∈ (∂Δ[n]).obj _ := (yonedaEquiv φ).1.2
+    let a : Δ[n] _⦋d⦌ := (yonedaEquiv φ).1.val
+    have ha : a ∈ (∂Δ[n]).obj _ := (yonedaEquiv φ).1.property
     have : φ ≫ ∂Δ[n].ι ▷ Δ[1] ≫ prodStdSimplex₁.collapse n =
         stdSimplex.map (SimplexCategory.Hom.mk ((prodStdSimplex₁.collapseOrderHom n).comp
           ((stdSimplex.objEquiv a).toOrderHom.prod
