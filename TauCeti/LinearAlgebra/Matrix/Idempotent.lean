@@ -32,6 +32,8 @@ so direct sums of modules correspond to block sums of idempotents.
 
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
+* `IsIdempotentElem.mem_range_mulVecLin_iff`: over a commutative semiring, likewise for column
+  vectors.
 * `IsIdempotentElem.linearMap_apply_eq_vecMul`: a linear map out of this range is right
   multiplication by the matrix of its values on the rows.
 * `Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`: the ranges of two idempotent matrices are
@@ -221,6 +223,24 @@ theorem coe_rangeVecMulLinearFromBlocksEquiv_symm_apply (e : Matrix ι ι' A) (f
 end Matrix
 
 end Idempotent
+
+section CommIdempotent
+
+variable {A : Type*} [CommSemiring A] {ι : Type*} [Fintype ι]
+
+/-- Over a commutative semiring, multiplication of column vectors by an idempotent matrix is an
+idempotent endomorphism. -/
+theorem IsIdempotentElem.mulVecLin {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IsIdempotentElem e.mulVecLin := by
+  rw [IsIdempotentElem, Module.End.mul_eq_comp, ← mulVecLin_mul, he.eq]
+
+/-- The range of multiplication of column vectors by an idempotent matrix `e` consists of the
+column vectors fixed by `e`. -/
+theorem IsIdempotentElem.mem_range_mulVecLin_iff {e : Matrix ι ι A} (he : IsIdempotentElem e)
+    {v : ι → A} : v ∈ range e.mulVecLin ↔ e *ᵥ v = v :=
+  he.mulVecLin.mem_range_iff
+
+end CommIdempotent
 
 namespace Module.Finite
 

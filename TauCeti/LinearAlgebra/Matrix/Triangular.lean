@@ -8,9 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.LinearAlgebra.Projection.Nilpotent
 import TauCeti.Order.Preorder.Finite
 
 /-!
@@ -22,8 +24,10 @@ consumers keep needing: on the diagonal, a product of triangular matrices multip
 entrywise, because `∑ k, A i k * B k i` has a single surviving term — and consequences of
 that, such as the diagonal of an inverse. It also proves uniqueness of a lower-triangular Gram
 factor with positive diagonal, defines upper-unitriangular matrices, and proves that strictly
-upper-triangular matrices are nilpotent. A nonzero submodule invariant under a family of strictly
-upper-triangular matrices contains a nonzero vector annihilated by the whole family.
+upper-triangular matrices are nilpotent, as are, more generally, matrices vanishing wherever a
+ranking of the indices (not necessarily injective) fails to increase strictly. A nonzero
+submodule invariant under a family of strictly upper-triangular matrices contains a nonzero vector
+annihilated by the whole family.
 
 The diagonal results are stated directly for `Matrix.IsUpperTriangular` and
 `Matrix.IsLowerTriangular` rather than through membership in the Borel subalgebra, since there is
@@ -72,6 +76,14 @@ Lie-algebra theory.
   matrices are closed under products and natural powers.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
+* `Matrix.blockDiagonalPart` — the entries of a matrix between indices of equal rank for a
+  ranking `b`, and `Matrix.BlockTriangular.isIdempotentElem_blockDiagonalPart`: it is idempotent
+  for a block triangular idempotent, and `Matrix.BlockTriangular.bijOn_range_blockDiagonalPart`:
+  the idempotent maps the range of its block-diagonal part bijectively onto its own range.
+* `Matrix.isNilpotent_of_apply_eq_zero_of_le` — more generally, a matrix vanishing wherever a
+  ranking of its indices does not strictly increase is nilpotent; by
+  `Matrix.BlockTriangular.mul_apply_eq_zero_of_le` and its primed form, this condition survives
+  multiplication by block triangular matrices on either side.
 * `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
   product with an upper-triangular right factor leaves the earlier columns of the product
   unchanged.
@@ -238,7 +250,155 @@ theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrde
     _root_.IsNilpotent M :=
   ⟨Fintype.card m, pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero htri hdiag⟩
 
+variable {α : Type*} [LinearOrder α] {b : m → α}
+
+/-- The product of a matrix that is block triangular for a ranking `b` with one that vanishes
+wherever `b` does not strictly increase from row to column again vanishes there. -/
+theorem BlockTriangular.mul_apply_eq_zero_of_le [Fintype m] {M N : Matrix m m S}
+    (hM : M.BlockTriangular b) (hN : ∀ ⦃i j⦄, b j ≤ b i → N i j = 0) ⦃i j : m⦄
+    (hij : b j ≤ b i) : (M * N) i j = 0 := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun l _ ↦ ?_
+  rcases lt_or_ge (b l) (b i) with h | h
+  · rw [hM h, zero_mul]
+  · rw [hN (hij.trans h), mul_zero]
+
+/-- The product of a matrix that vanishes wherever a ranking `b` does not strictly increase from
+row to column with one that is block triangular for `b` again vanishes there. -/
+theorem BlockTriangular.mul_apply_eq_zero_of_le' [Fintype m] {M N : Matrix m m S}
+    (hN : N.BlockTriangular b) (hM : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) ⦃i j : m⦄
+    (hij : b j ≤ b i) : (M * N) i j = 0 := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun l _ ↦ ?_
+  rcases lt_or_ge (b j) (b l) with h | h
+  · rw [hN h, mul_zero]
+  · rw [hM (h.trans hij), zero_mul]
+
+/-- A matrix that vanishes wherever a ranking `b` of its indices does not strictly increase from
+row to column has vanishing power at the size of the matrix. This is strict block triangularity
+for `b`; the ranking need not be injective. -/
+theorem pow_card_eq_zero_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {M : Matrix m m S}
+    (h : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) : M ^ Fintype.card m = 0 := by
+  classical
+  -- Rank each index by the number of indices strictly below it; `M` strictly raises this rank.
+  let ρ : m → ℕ := fun i ↦ (Finset.univ.filter fun k ↦ b k < b i).card
+  have hρ {i j : m} (hij : b i < b j) : ρ i < ρ j := by
+    refine Finset.card_lt_card ⟨fun k hk ↦ ?_, fun hsub ↦ ?_⟩
+    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
+      exact hk.trans hij
+    · exact lt_irrefl _
+        (Finset.mem_filter.1 (hsub (Finset.mem_filter.2 ⟨Finset.mem_univ _, hij⟩))).2
+  have hρlt (j : m) : ρ j < Fintype.card m :=
+    Finset.card_lt_card ⟨Finset.subset_univ _, fun hsub ↦ by simpa using hsub (Finset.mem_univ j)⟩
+  have key (r : ℕ) : ∀ i j, ρ j < ρ i + r → (M ^ r) i j = 0 := by
+    induction r with
+    | zero =>
+      intro i j hij
+      rw [pow_zero, one_apply_ne]
+      rintro rfl
+      omega
+    | succ r ih =>
+      intro i j hij
+      rw [pow_succ, Matrix.mul_apply]
+      refine Finset.sum_eq_zero fun l _ ↦ ?_
+      by_cases hl : ρ l < ρ i + r
+      · rw [ih i l hl, zero_mul]
+      · rw [h (le_of_not_gt fun hlj ↦ by have := hρ hlj; omega), mul_zero]
+  ext i j
+  exact key _ i j (by have := hρlt j; omega)
+
+/-- A matrix that vanishes wherever a ranking `b` of its indices does not strictly increase from
+row to column is nilpotent. -/
+theorem isNilpotent_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {M : Matrix m m S}
+    (h : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) : _root_.IsNilpotent M :=
+  ⟨Fintype.card m, pow_card_eq_zero_of_apply_eq_zero_of_le h⟩
+
 end Nilpotence
+
+section BlockDiagonalPart
+
+variable {S α : Type*} {b : m → α}
+
+/-- The block-diagonal part of a matrix for a ranking `b` of its indices: the entries between
+indices of equal rank, with all other entries replaced by zero. -/
+def blockDiagonalPart [Zero S] [DecidableEq α] (M : Matrix m m S) (b : m → α) : Matrix m m S :=
+  of fun i j ↦ if b i = b j then M i j else 0
+
+@[simp]
+theorem blockDiagonalPart_apply [Zero S] [DecidableEq α] (M : Matrix m m S) (b : m → α) (i j : m) :
+    M.blockDiagonalPart b i j = if b i = b j then M i j else 0 :=
+  (rfl)
+
+variable [LinearOrder α]
+
+theorem blockTriangular_blockDiagonalPart [Zero S] (M : Matrix m m S) :
+    (M.blockDiagonalPart b).BlockTriangular b :=
+  fun _ _ h ↦ by simp [h.ne']
+
+/-- For a block triangular matrix, the difference from its block-diagonal part vanishes wherever
+the ranking does not strictly increase from row to column. -/
+theorem BlockTriangular.sub_blockDiagonalPart_apply_eq_zero_of_le [AddGroup S] {M : Matrix m m S}
+    (hM : M.BlockTriangular b) ⦃i j : m⦄ (hij : b j ≤ b i) :
+    (M - M.blockDiagonalPart b) i j = 0 := by
+  rcases hij.lt_or_eq with h | h
+  · simp [hM h, h.ne']
+  · simp [h]
+
+/-- The block-diagonal part of a block triangular idempotent matrix is idempotent. -/
+theorem BlockTriangular.isIdempotentElem_blockDiagonalPart [Semiring S] [Fintype m]
+    {M : Matrix m m S}
+    (hM : M.BlockTriangular b) (hMM : IsIdempotentElem M) :
+    IsIdempotentElem (M.blockDiagonalPart b) := by
+  rw [IsIdempotentElem]
+  ext i j
+  rw [Matrix.mul_apply, blockDiagonalPart_apply]
+  split_ifs with hij
+  · -- Only the indices `l` of the rank of `i` and `j` contribute to `(M * M) i j`.
+    conv_rhs => rw [← hMM.eq, Matrix.mul_apply]
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    rw [blockDiagonalPart_apply, blockDiagonalPart_apply]
+    by_cases hl : b i = b l
+    · rw [ite_eq_left hl, ite_eq_left (hl ▸ hij)]
+    · rw [ite_eq_right hl, zero_mul]
+      rcases lt_or_gt_of_ne hl with h | h
+      · rw [hM (show b j < b l from hij ▸ h), mul_zero]
+      · rw [hM h, zero_mul]
+  · refine Finset.sum_eq_zero fun l _ ↦ ?_
+    rw [blockDiagonalPart_apply, blockDiagonalPart_apply]
+    split_ifs with h1 h2 <;> simp_all
+
+/-- A block triangular idempotent matrix maps the range of its block-diagonal part bijectively
+onto its own range: the two idempotents differ by a matrix strictly raising the rank, which is
+nilpotent after multiplication by block triangular matrices on both sides. -/
+theorem BlockTriangular.bijOn_range_blockDiagonalPart {R : Type*} [CommRing R] [Fintype m]
+    {M : Matrix m m R} (hM : M.BlockTriangular b) (hMM : IsIdempotentElem M) :
+    Set.BijOn M.mulVecLin (LinearMap.range (M.blockDiagonalPart b).mulVecLin)
+      (LinearMap.range M.mulVecLin) := by
+  classical
+  set M₀ := M.blockDiagonalPart b
+  have hM₀ : M₀.BlockTriangular b := blockTriangular_blockDiagonalPart M
+  have hM₀M₀ : IsIdempotentElem M₀ := hM.isIdempotentElem_blockDiagonalPart hMM
+  have hN := hM.sub_blockDiagonalPart_apply_eq_zero_of_le
+  have hnil₁ : _root_.IsNilpotent (M₀ * M * M₀ - M₀) := by
+    have : M₀ * M * M₀ - M₀ = M₀ * (M - M₀) * M₀ := by
+      rw [mul_sub, sub_mul, hM₀M₀.eq, hM₀M₀.eq]
+    rw [this]
+    exact isNilpotent_of_apply_eq_zero_of_le
+      (hM₀.mul_apply_eq_zero_of_le' (hM₀.mul_apply_eq_zero_of_le hN))
+  have hnil₂ : _root_.IsNilpotent (M * M₀ * M - M) := by
+    have : M * M₀ * M - M = -(M * (M - M₀) * M) := by
+      rw [mul_sub, sub_mul, hMM.eq, hMM.eq, neg_sub]
+    rw [this]
+    exact (isNilpotent_of_apply_eq_zero_of_le
+      (hM.mul_apply_eq_zero_of_le' (hM.mul_apply_eq_zero_of_le hN))).neg
+  have hlin (N : Matrix m m R) : toLinAlgEquiv' N = N.mulVecLin :=
+    LinearMap.ext fun v ↦ by rw [toLinAlgEquiv'_apply, mulVecLin_apply]
+  rw [← hlin, ← hlin]
+  refine LinearMap.IsIdempotentElem.bijOn_range_of_isNilpotent (hMM.map _) (hM₀M₀.map _) ?_ ?_
+  · simpa only [map_sub, map_mul] using hnil₁.map (toLinAlgEquiv' (R := R) (n := m))
+  · simpa only [map_sub, map_mul] using hnil₂.map (toLinAlgEquiv' (R := R) (n := m))
+
+end BlockDiagonalPart
 
 variable [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
   {A B : Matrix n n R}
