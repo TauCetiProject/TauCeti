@@ -34,6 +34,8 @@ functions are the constants, which is why Hölder exponents are taken in `(0, 1]
 * `HolderOnWith.eq_of_one_lt`: a function `r`-Hölder on a preconnected open set, with `r > 1`, is
   constant there.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
+* `ContDiffOn.exists_holderOnWith_comp`: a map `C¹` on a compact convex set, after a Hölder map
+  with values in that set, is Hölder with the same exponent.
 -/
 
 public section
@@ -147,3 +149,16 @@ theorem ContDiffOn.exists_holderOnWith {E F : Type*} [NormedAddCommGroup E] [Nor
   obtain ⟨M, hM⟩ := hs'.exists_bound_of_continuousOn hg.continuousOn
   exact ⟨_, hK.holderOnWith_of_norm_le (M := M.toNNReal)
     (fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)) hα⟩
+
+/-- A `C¹` map after an `r`-Hölder map is `r`-Hölder: if `f` is `r`-Hölder on `s` with values in
+a compact convex set `t`, then `g ∘ f` is `r`-Hölder on `s` for every map `g` that is `C¹` on `t`,
+since `g` is Lipschitz there. -/
+theorem ContDiffOn.exists_holderOnWith_comp {X E F : Type*} [PseudoEMetricSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F}
+    {t : Set E} (hg : ContDiffOn ℝ 1 g t) (ht : Convex ℝ t) (ht' : IsCompact t) {f : X → E}
+    {s : Set X} {C r : ℝ≥0} (hf : HolderOnWith C r f s) (hft : MapsTo f s t) :
+    ∃ K, HolderOnWith K r (g ∘ f) s := by
+  obtain ⟨Kg, hKg⟩ := hg.exists_lipschitzOnWith one_ne_zero ht ht'
+  have h := (holderOnWith_one.2 hKg).comp hf hft
+  rw [one_mul] at h
+  exact ⟨_, h⟩
