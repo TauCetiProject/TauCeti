@@ -15,15 +15,17 @@ public import Mathlib.RingTheory.OreLocalization.OreSet
 Let `k` be a commutative ring and `α` a factor set on a group `G`. If `G` has Følner sets and the
 twisted group algebra `k_α[G]` has no zero divisors, then `k_α[G]` satisfies the left and the
 right Ore conditions (`TauCeti.TwistedMonoidAlgebra.exists_mul_eq_mul_of_hasFoelnerSets` and
-`TauCeti.TwistedMonoidAlgebra.exists_mul_eq_mul_of_hasFoelnerSets'`), so its nonzero elements form
-a left Ore set (`TauCeti.TwistedMonoidAlgebra.oreSetNonZeroDivisors`). Every commutative group has
-Følner sets, so for commutative `G` this is an instance, and Mathlib's `OreLocalization` of
-`k_α[G]` at its nonzero divisors is then a division ring. This applies to the based quantum torus
-`TauCeti.QuantumTorus R L u Λ` of a torsion-free lattice `L` over a domain `R`, which is a domain
-by the unique-product argument of `TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors`: its
-Ore localization is its skew field of fractions.
+`TauCeti.TwistedMonoidAlgebra.exists_mul_eq_mul_of_hasFoelnerSets'`), so its submonoid of
+non-zero-divisors, which consists of the nonzero elements when `k_α[G]` is nontrivial, is a left
+Ore set (`TauCeti.TwistedMonoidAlgebra.oreSetNonZeroDivisors`). Every commutative group has
+Følner sets, so for commutative `G` this is an instance, and when `k_α[G]` is moreover nontrivial,
+Mathlib's `OreLocalization` of `k_α[G]` at its non-zero-divisors is a division ring. This
+applies to the based quantum torus `TauCeti.QuantumTorus R L u Λ` of a torsion-free lattice `L`
+over a domain `R`, which is a domain by the unique-product argument of
+`TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors`: its Ore localization is its skew field of
+fractions.
 
-The argument is a dimension count. Multiplication of supports satisfies
+The argument is a dimension count over a nontrivial `k`. Multiplication of supports satisfies
 `supp (f g) ⊆ supp f · supp g` (`TauCeti.TwistedMonoidAlgebra.support_repr_mul_subset`). If a
 finite `S ⊆ G` satisfies `|S A| < 2 |S|` for `A = supp r ∪ supp s`, the `k`-linear map
 `(x, y) ↦ x r - y s` from pairs supported in `S` (a free module of rank `2 |S|`) to elements
@@ -66,8 +68,8 @@ section Ring
 
 variable {k G : Type*} [CommRing k] [Monoid G] {α : G → G → kˣ} [IsFactorSet α]
 
-/-- If a linear map sends pairs from the span of `S` into the span of `T` and `|T| < 2|S|`,
-it kills a nonzero pair from the span of `S`. -/
+/-- Over a nontrivial `k`, if a linear map sends pairs from the span of `S` into the span of `T`
+and `|T| < 2|S|`, it kills a nonzero pair from the span of `S`. -/
 private theorem exists_ne_zero_map_eq_zero [Nontrivial k] {S T : Finset G}
     (φ : twistedMonoidAlgebra k G α × twistedMonoidAlgebra k G α →ₗ[k] twistedMonoidAlgebra k G α)
     (hφ : ∀ x ∈ span k (basis k G α '' S), ∀ y ∈ span k (basis k G α '' S),
@@ -100,8 +102,8 @@ private theorem exists_ne_zero_map_eq_zero [Nontrivial k] {S T : Finset G}
   rw [finrank_prod, finrank_finsupp_self, Fintype.card_coe] at this
   omega
 
-/-- **Counting form of the left Ore condition.** If `|S (supp f ∪ supp g)| < 2|S|` for a finite
-`S ⊆ G`, then `x f = y g` for some pair `(x, y) ≠ 0`. -/
+/-- **Counting form of the left Ore condition.** Over a nontrivial `k`, if
+`|S (supp f ∪ supp g)| < 2|S|` for a finite `S ⊆ G`, then `x f = y g` for some pair `(x, y) ≠ 0`. -/
 theorem exists_mul_eq_mul_of_card_lt [Nontrivial k] [DecidableEq G]
     (f g : twistedMonoidAlgebra k G α) {S : Finset G}
     (hS : #(S * (((basis k G α).repr f).support ∪ ((basis k G α).repr g).support)) < 2 * #S) :
@@ -119,8 +121,8 @@ theorem exists_mul_eq_mul_of_card_lt [Nontrivial k] [DecidableEq G]
     (fun x hx y hy ↦ sub_mem (hmul hx f subset_union_left) (hmul hy g subset_union_right)) hS
   exact ⟨x, y, hxy, sub_eq_zero.1 h⟩
 
-/-- **Counting form of the right Ore condition.** If `|(supp f ∪ supp g) S| < 2|S|` for a finite
-`S ⊆ G`, then `f x = g y` for some pair `(x, y) ≠ 0`. -/
+/-- **Counting form of the right Ore condition.** Over a nontrivial `k`, if
+`|(supp f ∪ supp g) S| < 2|S|` for a finite `S ⊆ G`, then `f x = g y` for some pair `(x, y) ≠ 0`. -/
 theorem exists_mul_eq_mul_of_card_lt' [Nontrivial k] [DecidableEq G]
     (f g : twistedMonoidAlgebra k G α) {S : Finset G}
     (hS : #((((basis k G α).repr f).support ∪ ((basis k G α).repr g).support) * S) < 2 * #S) :
@@ -180,8 +182,9 @@ theorem exists_mul_eq_mul_of_hasFoelnerSets' (hG : HasFoelnerSets G)
   rw [hx, h, Prod.mk_zero_zero]
 
 open nonZeroDivisors in
-/-- The nonzero elements of a twisted group algebra without zero divisors over a group with
-Følner sets form a left Ore set. -/
+/-- The non-zero-divisors of a twisted group algebra without zero divisors over a group with
+Følner sets form a left Ore set. When the algebra is nontrivial, these are its nonzero
+elements. -/
 @[instance_reducible]
 noncomputable def oreSetNonZeroDivisors (hG : HasFoelnerSets G) :
     OreLocalization.OreSet (twistedMonoidAlgebra k G α)⁰ :=
@@ -200,8 +203,9 @@ variable {k G : Type*} [CommRing k] [CommGroup G] {α : G → G → kˣ} [IsFact
   [NoZeroDivisors (twistedMonoidAlgebra k G α)]
 
 open nonZeroDivisors in
-/-- The nonzero elements of a twisted group algebra of a commutative group without zero divisors
-form a left Ore set, so its Ore localization is a division ring. -/
+/-- The non-zero-divisors of a twisted group algebra of a commutative group without zero divisors
+form a left Ore set. When the algebra is nontrivial, these are its nonzero elements and its Ore
+localization at them is a division ring. -/
 noncomputable instance : OreLocalization.OreSet (twistedMonoidAlgebra k G α)⁰ :=
   oreSetNonZeroDivisors (HasFoelnerSets.of_commGroup G)
 
