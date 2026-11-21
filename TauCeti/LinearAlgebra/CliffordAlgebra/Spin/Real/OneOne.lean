@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Arsinh
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RootsOfUnity
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Real.OneOne
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.NoncommCoprod
 
@@ -53,6 +54,10 @@ in which `a + b z` is the matrix `!![a, b; b, a]` and the even elements are exac
   `a + b z` with `a² - b² = 1`.
 * `CliffordAlgebra.mem_realCliffordSpinGroup_one_one_iff_exists_cosh_sinh`: `Spin(1, 1)` consists
   of the elements `± (cosh t + sinh t z)`.
+* `CliffordAlgebra.negOrthogonal_notMem_range_spinToOrthogonal_realCliffordForm_one_one`: the
+  Spin group does not reach `-1 ∈ SO(1, 1)`, which the volume element `z` of the even full
+  Clifford cover realizes (`CliffordAlgebra.realCliffordOneOneVolumeFullCover`); `z` has reverse
+  norm `-1`, so it is not in the Spin group.
 
 ## References
 
@@ -258,5 +263,23 @@ theorem ker_realCliffordSpinOneOneSign :
 /-- Both signs occur in `Spin(1, 1)`. -/
 theorem realCliffordSpinOneOneSign_surjective : Function.Surjective realCliffordSpinOneOneSign :=
   fun ζ ↦ ⟨realCliffordSpinOneOneEquiv (ζ, 1), by simp⟩
+
+/-! ### The volume element in the full cover -/
+
+/-- The volume element of `Cliff(1, 1)` is not in the Spin group: its reverse norm is `-1`. -/
+theorem realCliffordOneOneVolumeFullCover_notMem_range_spinToCliffordFullCover :
+    realCliffordOneOneVolumeFullCover ∉ (spinToCliffordFullCover (realCliffordForm 1 1)).range := by
+  rw [mem_range_spinToCliffordFullCover_iff, cliffordNorm_realCliffordOneOneVolumeFullCover]
+  exact fun h ↦ by norm_num [Units.ext_iff] at h
+
+/-- **The Spin group of `Cliff(1, 1)` does not reach `-1`.** The isometry `-1` of the split plane
+lies in `SO(1, 1)` and is the action of the volume element of the even full cover, but the only
+elements of the full cover acting by it are `±z`, of reverse norm `-1`. -/
+theorem negOrthogonal_notMem_range_spinToOrthogonal_realCliffordForm_one_one :
+    (realCliffordForm 1 1).negOrthogonal ∉ (spinToOrthogonal (realCliffordForm 1 1)).range := by
+  rw [← cliffordFullCoverToOrthogonal_realCliffordOneOneVolumeFullCover, ← Subgroup.mem_comap,
+    comap_range_spinToOrthogonal (nondegenerate_realCliffordForm 1 1)
+      fun h ↦ absurd h.nonneg (by norm_num)]
+  exact realCliffordOneOneVolumeFullCover_notMem_range_spinToCliffordFullCover
 
 end CliffordAlgebra
