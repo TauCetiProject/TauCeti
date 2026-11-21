@@ -46,11 +46,14 @@ and semistable when none has negative degree; `TauCeti.DualGraph.IsStable` and
 * `TauCeti.DualGraph.IsStable.card_vertex_le` and `TauCeti.DualGraph.IsStable.card_edge_le`:
   a stable graph of genus `g` with `n` markings has at most `2g - 2 + n` vertices and at most
   `3g - 3 + n` edges.
+* `TauCeti.DualGraph.isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge`: in the
+  stable range `2g - 2 + n > 0`, a graph is stable exactly when no vertex is a rational tail with
+  at most one marking or an unmarked rational bridge; in particular
+  (`TauCeti.DualGraph.isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge_of_isEmpty`)
+  an unmarked graph of arithmetic genus at least two is stable exactly when it has neither
+  rational tails nor rational bridges.
 * `TauCeti.DualGraph.isSemistable_iff_forall_not_isRationalTail`: an unmarked graph of
-  arithmetic genus at least one is semistable exactly when it has no rational tails, and
-  `TauCeti.DualGraph.isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge`: an
-  unmarked graph of arithmetic genus at least two is stable exactly when it has neither rational
-  tails nor rational bridges.
+  arithmetic genus at least one is semistable exactly when it has no rational tails.
 * `TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos`: a vertex of
   nonpositive log-canonical degree other than the only vertex is a rational tail with at most one
   marking or an unmarked rational bridge.
@@ -72,8 +75,9 @@ distinct half-edges, even for a loop. Valence counts half-edges, which is what m
 contribute two, matching the two points of the normalization lying over a self-node.
 
 Rational tails and rational bridges are defined without reference to markings, as in the
-unpointed theory of the Stacks Project; the characterizations of stability through them are
-stated for unmarked graphs.
+unpointed theory of the Stacks Project; the markings enter the characterization of stability
+through them as separate conditions, and the characterization of semistability is stated for
+unmarked graphs.
 
 ## References
 
@@ -203,6 +207,12 @@ def toSimpleGraph : SimpleGraph G.Vertex :=
 lemma toSimpleGraph_adj {v w : G.Vertex} : G.toSimpleGraph.Adj v w ↔ v ≠ w ∧ G.Adj v w := by
   rw [toSimpleGraph, SimpleGraph.fromEdgeSet_adj, adj_iff_mem_range_ends, and_comm]
 
+/-- The edges of the underlying simple graph are the ends of the edges of `G` that are not
+loops. -/
+@[simp]
+lemma toSimpleGraph_edgeSet : G.toSimpleGraph.edgeSet = Set.range G.ends \ Sym2.diagSet := by
+  rw [toSimpleGraph, SimpleGraph.edgeSet_fromEdgeSet]
+
 /-- The simple graph underlying a dual graph is connected. -/
 theorem toSimpleGraph_connected : G.toSimpleGraph.Connected where
   preconnected v w := by
@@ -250,7 +260,7 @@ theorem card_vertex_le_card_edge_add_one :
   refine hconn.trans (Nat.add_le_add_right ?_ 1)
   -- Every edge of the underlying simple graph is the pair of ends of an edge of `G`.
   have hsub : G.toSimpleGraph.edgeSet ⊆ Set.range G.ends :=
-    (SimpleGraph.edgeSet_fromEdgeSet _).trans_subset Set.sdiff_subset
+    G.toSimpleGraph_edgeSet.trans_subset Set.sdiff_subset
   calc Nat.card G.toSimpleGraph.edgeSet
       ≤ Nat.card (Set.range G.ends) := Nat.card_mono (Set.toFinite _) hsub
     _ ≤ Nat.card G.Edge := Finite.card_range_le G.ends
@@ -527,6 +537,15 @@ theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos [Fintype
         exact .inr ⟨G.isRationalBridge_iff.mpr ⟨hg, h, hloop⟩, hm⟩
   · exact absurd hval hval₀
 
+/-- In the stable range `2g - 2 + n > 0`, a vertex of nonpositive log-canonical degree is not the
+only vertex: the only vertex has log-canonical degree `2g - 2 + n`. -/
+private lemma exists_ne_of_logCanonicalDegree_nonpos [Fintype ι]
+    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) {v : G.Vertex}
+    (hv : G.logCanonicalDegree v ≤ 0) : ∃ w, w ≠ v := by
+  by_contra! h
+  have := G.logCanonicalDegree_eq_of_forall_eq h
+  omega
+
 /-- In the stable range `2g - 2 + n > 0`, a vertex of log-canonical degree zero is a rational tail
 carrying exactly one marking or an unmarked rational bridge. -/
 theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_eq_zero [Fintype ι]
@@ -534,24 +553,12 @@ theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_eq_zero [Fintyp
     (hv : G.logCanonicalDegree v = 0) :
     (G.IsRationalTail v ∧ G.numMarkings v = 1) ∨
       (G.IsRationalBridge v ∧ ∀ i, G.marking i ≠ v) := by
-  -- If `v` were the only vertex, its log-canonical degree would be `2g - 2 + n`.
-  have hw : ∃ w, w ≠ v := by
-    by_contra! h
-    have := G.logCanonicalDegree_eq_of_forall_eq h
-    omega
-  rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv.le hw with
+  rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv.le
+      (exists_ne_of_logCanonicalDegree_nonpos hrange hv.le) with
     ⟨ht, -⟩ | hb
   · have := ht.logCanonicalDegree_eq
     exact .inl ⟨ht, by omega⟩
   · exact .inr hb
-
-/-- If a vertex of valence two carries a loop, that loop is the only edge, and twice the
-arithmetic genus is `2 g(v) + 2`. -/
-private lemma two_mul_arithmeticGenus_of_valence_eq_two_of_loop {v : G.Vertex}
-    (hv : G.valence v = 2) {e : G.Edge} (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) :
-    2 * G.arithmeticGenus = 2 * G.genus v + 2 := by
-  have hloop := endpoint_eq_iff_eq_of_valence_eq_two hv he₀ he₁
-  rw [G.two_mul_arithmeticGenus_of_forall_endpoint_zero_eq_iff fun e' ↦ by rw [hloop, hloop], hv]
 
 /-- An unmarked graph of arithmetic genus at least one is semistable exactly when it has no
 rational tails. -/
@@ -569,30 +576,32 @@ theorem isSemistable_iff_forall_not_isRationalTail [Fintype ι] [IsEmpty ι]
       omega
     · exact hG v ⟨hgv, hval⟩
 
+/-- In the stable range `2g - 2 + n > 0`, a graph is stable exactly when no vertex is a rational
+tail with at most one marking or an unmarked rational bridge. -/
+theorem isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge [Fintype ι]
+    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) :
+    G.IsStable ↔ ∀ v, ¬ (G.IsRationalTail v ∧ G.numMarkings v ≤ 1) ∧
+      ¬ (G.IsRationalBridge v ∧ ∀ i, G.marking i ≠ v) := by
+  refine ⟨fun hG v ↦ ?_, fun hG v ↦ not_le.mp fun hv ↦ ?_⟩
+  · -- Such tails and bridges have log-canonical degree `-1 + n(v) ≤ 0` and `0`.
+    have := hG v
+    refine ⟨fun ⟨ht, hm⟩ ↦ ?_, fun ⟨hb, hm⟩ ↦ ?_⟩
+    · rw [ht.logCanonicalDegree_eq] at this
+      omega
+    · rw [hb.logCanonicalDegree_eq, G.numMarkings_eq_zero_iff.mpr hm] at this
+      omega
+  · rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv
+      (exists_ne_of_logCanonicalDegree_nonpos hrange hv) with h | h
+    exacts [(hG v).1 h, (hG v).2 h]
+
 /-- An unmarked graph of arithmetic genus at least two is stable exactly when it has neither
 rational tails nor rational bridges. -/
-theorem isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge [Fintype ι] [IsEmpty ι]
-    (hg : 2 ≤ G.arithmeticGenus) :
+theorem isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge_of_isEmpty [Fintype ι]
+    [IsEmpty ι] (hg : 2 ≤ G.arithmeticGenus) :
     G.IsStable ↔ ∀ v, ¬ G.IsRationalTail v ∧ ¬ G.IsRationalBridge v := by
-  refine ⟨fun hG v ↦ ?_, fun hG v ↦ ?_⟩
-  · -- Unmarked rational tails and bridges have log-canonical degree `-1` and `0`.
-    have := hG v
-    refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩ <;>
-      rw [hv.logCanonicalDegree_eq, numMarkings_of_isEmpty] at this <;> omega
-  · by_contra hnonpos
-    rcases G.logCanonicalDegree_nonpos_iff.mp (not_lt.mp hnonpos) with ⟨hgv, hval⟩ | ⟨hgv, hval, -⟩
-    · rw [numMarkings_of_isEmpty, add_zero] at hval
-      interval_cases h : G.valence v
-      · have := two_mul_arithmeticGenus_of_valence_eq_zero h
-        omega
-      · exact (hG v).1 ⟨hgv, h⟩
-      · by_cases hloop : ∃ e, G.endpoint e 0 = v ∧ G.endpoint e 1 = v
-        · obtain ⟨e, he₀, he₁⟩ := hloop
-          have := two_mul_arithmeticGenus_of_valence_eq_two_of_loop h he₀ he₁
-          omega
-        · exact (hG v).2 ⟨hgv, h, fun e he₀ he₁ ↦ hloop ⟨e, he₀, he₁⟩⟩
-    · have := two_mul_arithmeticGenus_of_valence_eq_zero hval
-      omega
+  rw [isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge
+    (by rw [Fintype.card_eq_zero]; omega)]
+  simp
 
 /-! ### Reindexing the markings -/
 
