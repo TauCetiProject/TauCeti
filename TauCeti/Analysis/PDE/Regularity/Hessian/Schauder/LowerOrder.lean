@@ -89,7 +89,7 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-- The Hölder constant of the lower-order part `b · ∇u + c u` on a set `s`, in terms of the
 Hölder constants and bounds of `u`, `Du`, `b` and `c` on `s`. -/
-private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b : E → E}
+theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b : E → E}
     {c : E → ℝ} {α H₀ H₁ N₀ N₁ Lb Mb Lc Mc : ℝ≥0} (hu : HolderOnWith H₀ α u s)
     (hDu : HolderOnWith H₁ α (fderiv ℝ u) s) (hu0 : ∀ x ∈ s, |u x| ≤ N₀)
     (hDu0 : ∀ x ∈ s, ‖fderiv ℝ u x‖ ≤ N₁) (hb : HolderOnWith Lb α b s)

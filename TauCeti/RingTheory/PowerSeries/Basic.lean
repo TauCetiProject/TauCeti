@@ -16,7 +16,8 @@ import Mathlib.Algebra.CharP.Algebra
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
 `A` over which `S` is an algebra: evaluation at `X = 0`. Since `C : R →+* R⟦X⟧` is injective,
-`R⟦X⟧` also inherits characteristic `p` and characteristic zero from `R`.
+`R⟦X⟧` also inherits characteristic `p` and characteristic zero from `R`. It also records how a
+change of coefficients `map f` acts on the constant coefficient.
 
 ## Main definitions
 
@@ -27,6 +28,8 @@ homomorphism. This file records it as a homomorphism of `A`-algebras for any com
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
 * `PowerSeries.instCharP`, `PowerSeries.instCharZero`: `R⟦X⟧` inherits characteristic from `R`.
+* `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
+  coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 -/
 
 public section
@@ -77,5 +80,17 @@ instance instCharZero [CharZero R] : CharZero R⟦X⟧ :=
   charZero_of_injective_ringHom C_injective
 
 end Characteristic
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S]
+
+/-- A change of coefficients `map f` acts on the constant coefficient by `f`. -/
+@[simp]
+theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
+    constantCoeff (map f φ) = f (constantCoeff φ) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply]
+
+end Map
 
 end PowerSeries
