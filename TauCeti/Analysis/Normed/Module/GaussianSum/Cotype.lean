@@ -7,16 +7,13 @@ module
 
 public import TauCeti.Analysis.Normed.Module.GaussianSum.Basic
 public import TauCeti.Analysis.Normed.Module.RademacherSum.TypeCotype
-public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 import TauCeti.Analysis.Normed.Module.GaussianSum.Comparison
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Probability.Distributions.Gaussian.L2
-import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
-# Gaussian cotype and the `2`-summing norm of maps out of a Euclidean space
+# Gaussian cotype
 
 A real normed space `Y` has *Gaussian cotype `q` with constant `C`* if every finite family `y`
 in `Y` satisfies `‖y‖_q ≤ C G₂(y)`, where `G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2)` is the Gaussian
@@ -34,14 +31,6 @@ and integrate. Since every coefficient has second moment `1`, the left side inte
 `‖y‖₂²`, and since the Gaussian law is invariant under sign changes, the right side integrates
 to `C² G₂(y)²`.
 
-Gaussian cotype `2` bounds the `2`-summing norm of every operator `U` from a finite-dimensional
-real inner product space with orthonormal basis `(eᵢ)` into `Y`: `π₂(U) ≤ C G₂(U eᵢ)`. Indeed,
-for a family `x` of weak `ℓ²` norm `w`, every functional `f` satisfies
-`∑ₖ f(U xₖ)² ≤ w² ‖f ∘ U‖² = ∑ᵢ f(w U eᵢ)²`, so Gaussian comparison under weak quadratic
-domination gives `G₂(U xₖ) ≤ w G₂(U eᵢ)`, and Gaussian cotype bounds `‖(U xₖ)‖₂` by `C` times
-the former. This is the first step of the proof that the `2`-summing norm of such an operator
-into a space of cotype `2` is controlled by the Rademacher average of the `U eᵢ` alone.
-
 ## Main declarations
 
 * `TauCeti.HasGaussianCotype`: Gaussian cotype `q` with constant `C`.
@@ -56,9 +45,6 @@ into a space of cotype `2` is controlled by the Rademacher average of the `U e�
   with the same constant.
 * `TauCeti.hasGaussianCotype_two_of_innerProductSpace`: inner product spaces have Gaussian cotype
   `2` with constant `1`.
-* `ContinuousLinearMap.summingENorm_two_le_of_hasGaussianCotype`,
-  `ContinuousLinearMap.summingENorm_two_le_of_hasCotype`: `π₂(U) ≤ C G₂(U eᵢ)` for an operator
-  `U` out of a finite-dimensional real inner product space with orthonormal basis `(eᵢ)`.
 
 ## References
 
@@ -208,13 +194,9 @@ theorem HasGaussianCotype.of_map (h : HasGaussianCotype F q C) (f : 𝓕)
 /-- Gaussian cotype passes along linear isometries with the same constant; in particular it passes
 to subspaces, through `Submodule.subtypeₗᵢ`. -/
 theorem HasGaussianCotype.of_linearIsometry {R : Type*} [Semiring R] [Module R Y] [Module R F]
-    (h : HasGaussianCotype F q C) (f : Y →ₗᵢ[R] F) : HasGaussianCotype Y q C := fun n y ↦ by
-  have hG := gaussianSecondMoment_map_le f (M := 1) (fun x ↦ by simp) y
-  have hy : ‖WithLp.toLp q fun i ↦ f (y i)‖ = ‖WithLp.toLp q y‖ :=
-    le_antisymm (PiLp.norm_mono fun i ↦ by simp) (PiLp.norm_mono fun i ↦ by simp)
-  rw [one_mul] at hG
-  rw [← hy]
-  exact (h n _).trans (by gcongr)
+    (h : HasGaussianCotype F q C) (f : Y →ₗᵢ[R] F) : HasGaussianCotype Y q C := by
+  simpa only [one_mul, mul_one] using
+    h.of_map f (K := 1) (M := 1) (fun x ↦ by simp [f.norm_map]) (fun x ↦ by simp [f.norm_map])
 
 /-- Gaussian cotype passes along a bounded linear equivalence `U`, the constant being multiplied by
 `‖U⁻¹‖ ‖U‖`. -/
@@ -251,14 +233,15 @@ theorem HasCotype.hasGaussianCotype_two (h : HasCotype Y 2 C) : HasGaussianCotyp
   calc ‖WithLp.toLp 2 y‖ ^ 2
       = ∫ g : EuclideanSpace ℝ (Fin n), ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2
           ∂stdGaussian (EuclideanSpace ℝ (Fin n)) := by
-        -- Each Gaussian coefficient `gᵢ = ⟪eᵢ, g⟫` has second moment `1`.
-        have hg (i : Fin n) (g : EuclideanSpace ℝ (Fin n)) :
-            g i = inner ℝ (EuclideanSpace.single i 1) g := by
-          simp [EuclideanSpace.inner_single_left]
-        simp_rw [PiLp.norm_sq_eq_of_L2, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, hg]
+        have heq (g : EuclideanSpace ℝ (Fin n)) :
+            ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2 =
+              ∑ i, inner ℝ (EuclideanSpace.single i (1 : ℝ)) g ^ 2 * ‖y i‖ ^ 2 := by
+          simp [PiLp.norm_sq_eq_of_L2, norm_smul, mul_pow]
+        simp_rw [heq]
         rw [integral_finsetSum _ fun i _ ↦
           ((Probability.memLp_inner_stdGaussian _ 2 (by simp)).integrable_sq).mul_const _]
-        simp [integral_mul_const, Probability.integral_sq_inner_stdGaussian]
+        simp_rw [integral_mul_const, Probability.integral_sq_inner_stdGaussian]
+        simp [PiLp.norm_sq_eq_of_L2]
     _ ≤ ∫ g : EuclideanSpace ℝ (Fin n), (C : ℝ) ^ 2 *
           Finset.univ.expect fun ε : Fin n → ℤˣ ↦ ‖∑ i, g i • ε i • y i‖ ^ 2
           ∂stdGaussian (EuclideanSpace ℝ (Fin n)) := by
@@ -285,47 +268,3 @@ theorem hasGaussianCotype_two_of_innerProductSpace : HasGaussianCotype H 2 1 :=
 end InnerProductSpace
 
 end TauCeti
-
-namespace ContinuousLinearMap
-
-open TauCeti
-
-variable {ι E Y : Type*} [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [NormedAddCommGroup Y] [NormedSpace ℝ Y] {C : ℝ≥0}
-
-/-- **The `2`-summing norm under Gaussian cotype.** If `Y` has Gaussian cotype `2` with constant
-`C`, then every operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into
-`Y` satisfies `π₂(U) ≤ C G₂(U eᵢ)`. -/
-theorem summingENorm_two_le_of_hasGaussianCotype (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E)
-    (h : HasGaussianCotype Y 2 C) :
-    U.summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment fun i ↦ U (b i)) := by
-  refine (summingENorm_le_ofReal_iff (mul_nonneg C.property (gaussianSecondMoment_nonneg _))).2 ?_
-  intro n x
-  set w := weakLpNorm (𝕜 := ℝ) 2 x
-  have hw : 0 ≤ w := apply_nonneg _ _
-  -- Every functional has a smaller square sum on `(U xₖ)ₖ` than on `(w • U eᵢ)ᵢ`.
-  have hdom (f : StrongDual ℝ Y) :
-      ∑ k, |f (U (x k))| ^ 2 ≤ ∑ i, |f (w • U (b i))| ^ 2 := by
-    have hf := sum_norm_eval_rpow_le_weakLpNorm (𝕜 := ℝ) 2 (by simp) x (f.comp U)
-    simp only [ENNReal.toReal_ofNat, Real.rpow_two, comp_apply, Real.norm_eq_abs] at hf
-    refine hf.trans_eq ?_
-    rw [mul_pow, b.norm_dual, Finset.mul_sum]
-    simp [w, mul_pow]
-  calc ‖WithLp.toLp 2 fun k ↦ U (x k)‖
-      ≤ C * gaussianSecondMoment fun k ↦ U (x k) := h.norm_toLp_le _
-    _ ≤ C * gaussianSecondMoment fun i ↦ w • U (b i) := by
-      gcongr
-      exact gaussianSecondMoment_le_of_weakTwo_le _ _ hdom
-    _ = C * gaussianSecondMoment (fun i ↦ U (b i)) * w := by
-      rw [gaussianSecondMoment_smul, abs_of_nonneg hw]
-      ring
-
-/-- **The `2`-summing norm under cotype `2`.** If `Y` has Rademacher cotype `2` with constant
-`C`, then every operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into
-`Y` satisfies `π₂(U) ≤ C G₂(U eᵢ)`. -/
-theorem summingENorm_two_le_of_hasCotype (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E)
-    (h : HasCotype Y 2 C) :
-    U.summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment fun i ↦ U (b i)) :=
-  U.summingENorm_two_le_of_hasGaussianCotype b h.hasGaussianCotype_two
-
-end ContinuousLinearMap

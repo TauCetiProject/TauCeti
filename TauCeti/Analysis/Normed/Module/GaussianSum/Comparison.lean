@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.GaussianSum.Basic
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Module.GaussianSum.WeakTwo
 
 import TauCeti.Probability.Distributions.Gaussian.Defect
@@ -105,8 +106,8 @@ theorem gaussianSecondMoment_le_of_weakTwo_le (x : ι → Y) (y : κ → Y)
   obtain ⟨D, hD, hxy⟩ := exists_contraction_of_weakTwo_le x y h
   let U : EuclideanSpace ℝ κ →L[ℝ] Y :=
     (EuclideanSpace.basisFun κ ℝ).toBasis.constrL y
-  have hU (g : EuclideanSpace ℝ κ) : U g = ∑ j, g j • y j := by
-    simp [U, Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+  have hU (g : EuclideanSpace ℝ κ) : U g = ∑ j, g j • y j :=
+    EuclideanSpace.basisFun_toBasis_constrL_apply y g
   rw [gaussianSecondMoment_def, gaussianSecondMoment_def]
   apply Real.sqrt_le_sqrt
   simpa only [hU, ← hxy] using
@@ -135,8 +136,15 @@ theorem gaussianSecondMoment_units_smul (ε : ι → ℤˣ) (x : ι → Y) :
     norm_units_zsmul]
 
 /-- Padding a finite family with zeros does not change its Gaussian second moment. -/
+@[simp]
 theorem gaussianSecondMoment_sumElim_zero (x : ι → Y) :
     gaussianSecondMoment (Sum.elim x (0 : κ → Y)) = gaussianSecondMoment x :=
+  gaussianSecondMoment_eq_of_weakTwo_eq _ _ fun f ↦ by simp [Fintype.sum_sum_type]
+
+/-- Padding a finite family on the left with zeros does not change its Gaussian second moment. -/
+@[simp]
+theorem gaussianSecondMoment_zero_sumElim (y : κ → Y) :
+    gaussianSecondMoment (Sum.elim (0 : ι → Y) y) = gaussianSecondMoment y :=
   gaussianSecondMoment_eq_of_weakTwo_eq _ _ fun f ↦ by simp [Fintype.sum_sum_type]
 
 /-- The Gaussian second moment of a concatenated family is at most the sum of the Gaussian second
@@ -145,12 +153,7 @@ theorem gaussianSecondMoment_sumElim_le (x : ι → Y) (y : κ → Y) :
     gaussianSecondMoment (Sum.elim x y) ≤ gaussianSecondMoment x + gaussianSecondMoment y := by
   have hsplit : Sum.elim x y = Sum.elim x (0 : κ → Y) + Sum.elim (0 : ι → Y) y := by
     ext k; cases k <;> simp
-  have hright : gaussianSecondMoment (Sum.elim (0 : ι → Y) y) = gaussianSecondMoment y := by
-    have heq : Sum.elim (0 : ι → Y) y = Sum.elim y (0 : ι → Y) ∘ Equiv.sumComm ι κ := by
-      ext k; cases k <;> simp
-    rw [heq, gaussianSecondMoment_comp_equiv, gaussianSecondMoment_sumElim_zero]
   rw [hsplit]
-  exact (gaussianSecondMoment_add_le _ _).trans_eq
-    (by rw [gaussianSecondMoment_sumElim_zero, hright])
+  simpa using gaussianSecondMoment_add_le (Sum.elim x (0 : κ → Y)) (Sum.elim (0 : ι → Y) y)
 
 end TauCeti

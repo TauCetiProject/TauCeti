@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
-import Mathlib.Probability.Distributions.Gaussian.Fernique
-import TauCeti.Probability.Distributions.Gaussian.MixedMoments
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
+
+import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Probability.Distributions.Gaussian.MixedMoments
+import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 
 /-!
 # The Gaussian embedding into `L²` and its clipping error
@@ -27,6 +31,11 @@ Grothendieck's inequality. The construction also works in dimension zero.
 We use Mathlib's basis-independent `ProbabilityTheory.stdGaussian`,
 `IsGaussian.memLp_dual`, and the real Gaussian even-moment formula, rather than introducing
 a second finite Gaussian probability space.
+
+We also provide `Lᵖ` membership and coordinate-tail second moment identities for coordinatewise
+masks (`PiLp.coordIndicator`, `EuclideanSpace.truncVec`, `EuclideanSpace.tailVec`) under
+`stdGaussian (EuclideanSpace ℝ ι)`: `memLp_comp_coordIndicator`, `memLp_comp_truncVec`,
+`memLp_comp_tailVec`, and `integral_sq_apply_tailVec`.
 
 ## References
 
@@ -165,5 +174,154 @@ theorem norm_sub_clippedGaussianL2_le_of_norm_le_one {x : E} (hx : ‖x‖ ≤ 1
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
   rw [div_pow, Real.sq_sqrt (by norm_num), mul_pow]
   exact (norm_sub_clippedGaussianL2_sq_le_of_norm_le_one hx hM).trans_eq (by ring)
+
+section TailMoments
+
+open scoped BigOperators
+
+variable {ι : Type*} [Fintype ι]
+
+private theorem memLp_comp_of_norm_le {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (U : EuclideanSpace ℝ ι →L[ℝ] Y) {f : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hf : Measurable f) (hnorm : ∀ g, ‖f g‖ ≤ ‖g‖) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (fun g : EuclideanSpace ℝ ι ↦ U (f g)) p (stdGaussian (EuclideanSpace ℝ ι)) := by
+  have hmeas : AEStronglyMeasurable (fun g : EuclideanSpace ℝ ι ↦ U (f g))
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+    (U.continuous.comp_stronglyMeasurable hf.stronglyMeasurable).aestronglyMeasurable
+  refine ((IsGaussian.memLp_id _ p hp).norm.const_mul ‖U‖).mono' hmeas
+    (Filter.Eventually.of_forall fun g ↦ ?_)
+  exact (U.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hnorm g) (norm_nonneg U))
+
+/-- Composing a bounded linear map `U` on real Euclidean space with a measurable coordinate mask
+belongs to every finite `Lᵖ` space under the standard Gaussian measure. -/
+theorem memLp_comp_coordIndicator {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (U : EuclideanSpace ℝ ι →L[ℝ] Y) {s : Set ℝ} (hs : MeasurableSet s)
+    {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (fun g : EuclideanSpace ℝ ι ↦ U (PiLp.coordIndicator s g)) p
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+  memLp_comp_of_norm_le U (PiLp.measurable_coordIndicator hs) (PiLp.norm_coordIndicator_le s) hp
+
+/-- Composing a bounded linear map `U` on real Euclidean space with coordinate truncation belongs
+to every finite `Lᵖ` space under the standard Gaussian measure. -/
+theorem memLp_comp_truncVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (fun g : EuclideanSpace ℝ ι ↦ U (EuclideanSpace.truncVec t g)) p
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+  memLp_comp_of_norm_le U (EuclideanSpace.measurable_truncVec t)
+    (EuclideanSpace.norm_truncVec_le t) hp
+
+/-- Composing a bounded linear map `U` on real Euclidean space with coordinate tail masking belongs
+to every finite `Lᵖ` space under the standard Gaussian measure. -/
+theorem memLp_comp_tailVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (fun g : EuclideanSpace ℝ ι ↦ U (EuclideanSpace.tailVec t g)) p
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+  memLp_comp_of_norm_le U (EuclideanSpace.measurable_tailVec t)
+    (EuclideanSpace.norm_tailVec_le t) hp
+
+/-- The product of two coordinates of the Gaussian tail vector `EuclideanSpace.tailVec` is
+integrable under the standard Gaussian measure. -/
+theorem integrable_tailVec_mul (t : ℝ) (i j : ι) :
+    Integrable (fun g : EuclideanSpace ℝ ι ↦
+        EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j)
+      (stdGaussian (EuclideanSpace ℝ ι)) := by
+  have hmeas : Measurable (fun g : EuclideanSpace ℝ ι ↦
+        EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j) :=
+    ((PiLp.continuous_apply 2 _ i).measurable.comp (EuclideanSpace.measurable_tailVec t)).mul
+      ((PiLp.continuous_apply 2 _ j).measurable.comp (EuclideanSpace.measurable_tailVec t))
+  refine (IsGaussian.memLp_two_id.integrable_norm_pow (by norm_num)).mono'
+    hmeas.aestronglyMeasurable (Filter.Eventually.of_forall fun g ↦ ?_)
+  have hi : |EuclideanSpace.tailVec t g i| ≤ ‖g‖ :=
+    (PiLp.norm_apply_le (EuclideanSpace.tailVec t g) i).trans (EuclideanSpace.norm_tailVec_le t g)
+  have hj : |EuclideanSpace.tailVec t g j| ≤ ‖g‖ :=
+    (PiLp.norm_apply_le (EuclideanSpace.tailVec t g) j).trans (EuclideanSpace.norm_tailVec_le t g)
+  simp only [Real.norm_eq_abs, abs_mul, id_eq, sq]
+  exact mul_le_mul hi hj (abs_nonneg _) (norm_nonneg _)
+
+/-- Distinct coordinates of the Gaussian tail vector `EuclideanSpace.tailVec` are uncorrelated
+under the standard Gaussian measure. -/
+theorem integral_tailVec_mul_of_ne (t : ℝ) {i j : ι} (hij : i ≠ j) :
+    ∫ g, EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j
+        ∂stdGaussian (EuclideanSpace ℝ ι) = 0 := by
+  classical
+  let ε : ι → ℤˣ := Pi.mulSingle i (-1)
+  have hmeas : Measurable (fun g : EuclideanSpace ℝ ι ↦
+        EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j) :=
+    ((PiLp.continuous_apply 2 _ i).measurable.comp (EuclideanSpace.measurable_tailVec t)).mul
+      ((PiLp.continuous_apply 2 _ j).measurable.comp (EuclideanSpace.measurable_tailVec t))
+  have hneg :
+      ∫ g, EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j
+          ∂stdGaussian (EuclideanSpace ℝ ι) =
+        -(∫ g, EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j
+          ∂stdGaussian (EuclideanSpace ℝ ι)) := by
+    rw [← integral_neg]
+    conv_lhs =>
+      rw [← stdGaussian_map_units_smul ε,
+        integral_map (μ := stdGaussian (EuclideanSpace ℝ ι)) (by fun_prop)
+          hmeas.aestronglyMeasurable]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+    dsimp only
+    rw [EuclideanSpace.tailVec_units_smul, EuclideanSpace.tailVec_units_smul]
+    simp only [ε, Pi.mulSingle_eq_same, Pi.mulSingle_eq_of_ne hij.symm, Units.smul_def,
+      Units.val_neg, Units.val_one, neg_smul, one_smul, EuclideanSpace.tailVec_apply]
+    split_ifs <;> ring
+  linarith
+
+/-- Each coordinate of `EuclideanSpace.tailVec t` has second moment equal to the one-dimensional
+Gaussian tail second moment. -/
+theorem integral_tailVec_sq (t : ℝ) (i : ι) :
+    ∫ g, EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g i
+        ∂stdGaussian (EuclideanSpace ℝ ι) =
+      ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
+  classical
+  have hs : MeasurableSet {r : ℝ | t < |r|} :=
+    measurableSet_lt measurable_const continuous_abs.measurable
+  have hnorm : ‖EuclideanSpace.single i (1 : ℝ)‖ = 1 := by simp
+  have hfun : (fun g : EuclideanSpace ℝ ι ↦
+        EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g i) =
+      fun g ↦ Set.indicator {r : ℝ | t < |r|} (fun r ↦ r ^ 2)
+        ⟪g, EuclideanSpace.single i (1 : ℝ)⟫_ℝ := by
+    ext g
+    simp [Set.indicator_apply]
+    split_ifs <;> ring
+  rw [hfun, ← integral_map (by fun_prop)
+      (Measurable.indicator (by fun_prop) hs).aestronglyMeasurable,
+    map_inner_stdGaussian_of_norm_eq_one hnorm, integral_indicator hs]
+
+/-- On a real continuous linear functional `f`, the expected squared value on `tailVec t g`
+equals `‖f‖²` times the one-dimensional Gaussian tail second moment. -/
+theorem integral_sq_apply_tailVec (f : StrongDual ℝ (EuclideanSpace ℝ ι)) (t : ℝ) :
+    ∫ g, |f (EuclideanSpace.tailVec t g)| ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) =
+      ‖f‖ ^ 2 * ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
+  classical
+  have hexpand (v : EuclideanSpace ℝ ι) :
+      f v = ∑ i, v i * f (EuclideanSpace.basisFun ι ℝ i) := by
+    conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr v]
+    simp only [map_sum, map_smul, smul_eq_mul, EuclideanSpace.basisFun_repr]
+  have hsq (g : EuclideanSpace ℝ ι) : |f (EuclideanSpace.tailVec t g)| ^ 2 =
+      ∑ i, ∑ j, (f (EuclideanSpace.basisFun ι ℝ i) * f (EuclideanSpace.basisFun ι ℝ j)) *
+        (EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j) := by
+    rw [sq_abs, hexpand, sq, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  simp_rw [hsq]
+  rw [integral_finsetSum _ fun i _ ↦
+    integrable_finsetSum _ fun j _ ↦ (integrable_tailVec_mul t i j).const_mul _]
+  have hinner (i : ι) :
+      ∫ g, ∑ j, (f (EuclideanSpace.basisFun ι ℝ i) * f (EuclideanSpace.basisFun ι ℝ j)) *
+          (EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g j)
+          ∂stdGaussian (EuclideanSpace ℝ ι) =
+        f (EuclideanSpace.basisFun ι ℝ i) ^ 2 *
+          ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
+    rw [integral_finsetSum _ fun j _ ↦ (integrable_tailVec_mul t i j).const_mul _]
+    simp_rw [integral_const_mul]
+    rw [Finset.sum_eq_single i
+        (fun j _ hji ↦ by rw [integral_tailVec_mul_of_ne t hji.symm, mul_zero])
+        (fun hi ↦ (hi (Finset.mem_univ i)).elim),
+      integral_tailVec_sq t i, sq]
+  simp_rw [hinner, ← Finset.sum_mul, ← (EuclideanSpace.basisFun ι ℝ).norm_dual f]
+
+end TailMoments
 
 end TauCeti.Probability

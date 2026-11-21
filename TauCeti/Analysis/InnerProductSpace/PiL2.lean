@@ -71,6 +71,12 @@ Borel measurable structure on the scalar field.
   first factor of the splitting along `j < m`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
+* `EuclideanSpace.basisFun_toBasis_constrL_apply`:
+  `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` expands as `∑ i, g i • y i`.
+* `PiLp.coordIndicator`: coordinatewise masking of a `PiLp` vector onto a set, with additivity,
+  measurability, norm, and sign-equivariance laws.
+* `EuclideanSpace.truncVec` and `EuclideanSpace.tailVec`: coordinatewise truncation to `[-t, t]`
+  and its complementary tail on `EuclideanSpace ℝ ι`.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
   `LinearIsometryEquiv.map_starProjection_apply`, and
   `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
@@ -540,6 +546,13 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
 
 end finCastLE
 
+/-- Expanding `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` as a coordinate linear
+combination. -/
+theorem basisFun_toBasis_constrL_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (y : ι → Y) (g : EuclideanSpace 𝕜 ι) :
+    (EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g = ∑ i, g i • y i := by
+  simp [Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+
 end EuclideanSpace
 
 namespace TauCeti
@@ -617,7 +630,128 @@ variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] {F : ι �
     ⟪w, PiLp.single 2 i v⟫_𝕜 = ⟪w i, v⟫_𝕜 := by
   rw [← inner_conj_symm, inner_single_left, inner_conj_symm]
 
+section coordIndicator
+
+open scoped ENNReal
+
+variable {p : ℝ≥0∞} {ι' : Type*}
+
+open Classical in
+/-- Coordinatewise masking of a `PiLp` vector onto a set `s : Set ℝ`. -/
+def coordIndicator (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) : PiLp p fun _ : ι' ↦ ℝ :=
+  WithLp.toLp p fun i ↦ if g i ∈ s then g i else 0
+
+open Classical in
+@[simp]
+theorem coordIndicator_apply (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) (i : ι') :
+    coordIndicator s g i = if g i ∈ s then g i else 0 := by
+  simp [coordIndicator]
+
+/-- Masking onto `s` and onto `sᶜ` partition a `PiLp` vector into two summands. -/
+theorem coordIndicator_add_compl (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) :
+    coordIndicator s g + coordIndicator sᶜ g = g := by
+  ext i
+  by_cases h : g i ∈ s <;> simp [h]
+
+/-- Coordinatewise masking onto a measurable set is measurable. -/
+theorem measurable_coordIndicator [Countable ι'] {s : Set ℝ} (hs : MeasurableSet s) :
+    Measurable (coordIndicator (p := p) (ι' := ι') s) := by
+  refine (PiLp.continuous_toLp p (fun _ : ι' ↦ ℝ)).measurable.comp (Measurable.of_eval fun i ↦ ?_)
+  exact Measurable.ite ((PiLp.continuous_apply p (fun _ : ι' ↦ ℝ) i).measurable hs)
+    (PiLp.continuous_apply p (fun _ : ι' ↦ ℝ) i).measurable measurable_const
+
+/-- Coordinatewise masking onto a set does not increase the `Lᵖ` norm. -/
+theorem norm_coordIndicator_le [Fintype ι'] (s : Set ℝ) (g : PiLp p fun _ : ι' ↦ ℝ) :
+    ‖coordIndicator s g‖ ≤ ‖g‖ := by
+  refine PiLp.norm_mono fun i ↦ ?_
+  simp only [coordIndicator_apply, Real.norm_eq_abs]
+  split_ifs <;> simp
+
+/-- Coordinatewise masking onto a symmetric set commutes with coordinatewise sign flips. -/
+theorem coordIndicator_units_smul {s : Set ℝ} (hs : ∀ r, -r ∈ s ↔ r ∈ s)
+    (ε : ι' → ℤˣ) (g : PiLp p fun _ : ι' ↦ ℝ) (i : ι') :
+    coordIndicator s (WithLp.toLp p fun j ↦ ε j • g j) i = ε i • coordIndicator s g i := by
+  classical
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [coordIndicator_apply, h, hs]
+
+end coordIndicator
+
 end PiLp
+
+namespace EuclideanSpace
+
+section Truncation
+
+variable {ι : Type*}
+
+/-- Coordinatewise truncation of a real Euclidean vector to `[-t, t]`. -/
+def truncVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | |r| ≤ t} g
+
+/-- Coordinatewise tail of a real Euclidean vector outside `[-t, t]`. -/
+def tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | t < |r|} g
+
+@[simp]
+theorem truncVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    truncVec t g i = if |g i| ≤ t then g i else 0 := by
+  simp [truncVec]
+
+@[simp]
+theorem tailVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    tailVec t g i = if t < |g i| then g i else 0 := by
+  simp [tailVec]
+
+/-- Splitting a real Euclidean vector into its coordinatewise truncation and tail. -/
+theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g + tailVec t g = g := by
+  have hcompl : {r : ℝ | |r| ≤ t}ᶜ = {r : ℝ | t < |r|} := by
+    ext r
+    simp [not_le]
+  simpa only [truncVec, tailVec, hcompl] using
+    PiLp.coordIndicator_add_compl {r : ℝ | |r| ≤ t} g
+
+/-- Coordinatewise truncation is measurable. -/
+theorem measurable_truncVec [Countable ι] (t : ℝ) : Measurable (truncVec (ι := ι) t) := by
+  unfold truncVec
+  exact PiLp.measurable_coordIndicator (measurableSet_le continuous_abs.measurable measurable_const)
+
+/-- Coordinatewise tail masking is measurable. -/
+theorem measurable_tailVec [Countable ι] (t : ℝ) : Measurable (tailVec (ι := ι) t) := by
+  unfold tailVec
+  exact PiLp.measurable_coordIndicator (measurableSet_lt measurable_const continuous_abs.measurable)
+
+/-- Coordinatewise truncation commutes with coordinatewise sign flips. -/
+theorem truncVec_units_smul (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    truncVec t (WithLp.toLp 2 fun j ↦ ε j • g j) i = ε i • truncVec t g i :=
+  PiLp.coordIndicator_units_smul (fun r ↦ by simp) ε g i
+
+/-- Coordinatewise tail masking commutes with coordinatewise sign flips. -/
+theorem tailVec_units_smul (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    tailVec t (WithLp.toLp 2 fun j ↦ ε j • g j) i = ε i • tailVec t g i :=
+  PiLp.coordIndicator_units_smul (fun r ↦ by simp) ε g i
+
+/-- Coordinatewise truncation does not increase the Euclidean norm. -/
+theorem norm_truncVec_le [Fintype ι] (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    ‖truncVec t g‖ ≤ ‖g‖ :=
+  PiLp.norm_coordIndicator_le _ g
+
+/-- Coordinatewise tail masking does not increase the Euclidean norm. -/
+theorem norm_tailVec_le [Fintype ι] (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    ‖tailVec t g‖ ≤ ‖g‖ :=
+  PiLp.norm_coordIndicator_le _ g
+
+/-- Each coordinate of `EuclideanSpace.truncVec t g` has absolute value at most `t` when `0 ≤ t`. -/
+theorem abs_truncVec_apply_le {t : ℝ} (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :
+    |truncVec t g i| ≤ t := by
+  simp only [truncVec_apply]
+  split_ifs with h
+  · exact h
+  · simpa using ht
+
+end Truncation
+
+end EuclideanSpace
 
 namespace LinearIsometryEquiv
 

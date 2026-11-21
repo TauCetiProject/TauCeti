@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Topology.Instances.RealVectorSpace
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Probability.Distributions.Gaussian.L2
 
 /-!
@@ -49,8 +48,8 @@ theorem memLp_gaussianSum (x : ι → Y) (p : ℝ≥0∞) (hp : p ≠ ∞) :
       (stdGaussian (EuclideanSpace ℝ ι)) := by
   let T : EuclideanSpace ℝ ι →L[ℝ] Y :=
     (EuclideanSpace.basisFun ι ℝ).toBasis.constrL x
-  have hT (g : EuclideanSpace ℝ ι) : T g = ∑ i, g i • x i := by
-    simp [T, Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+  have hT (g : EuclideanSpace ℝ ι) : T g = ∑ i, g i • x i :=
+    EuclideanSpace.basisFun_toBasis_constrL_apply x g
   simpa only [Function.comp_def, id_eq, hT] using
     T.comp_memLp' (IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp)
 
@@ -110,22 +109,13 @@ theorem gaussianSecondMoment_of_isEmpty [IsEmpty ι] (x : ι → Y) :
 /-- The Gaussian second moment satisfies the triangle inequality. -/
 theorem gaussianSecondMoment_add_le (x y : ι → Y) :
     gaussianSecondMoment (x + y) ≤ gaussianSecondMoment x + gaussianSecondMoment y := by
-  have hx := memLp_gaussianSum x 2 (by simp)
-  have hy := memLp_gaussianSum y 2 (by simp)
-  have hxy : (fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • (x + y) i) =
-      (fun g ↦ ∑ i, g i • x i) + (fun g ↦ ∑ i, g i • y i) := by
-    ext g
-    simp [Pi.add_apply, smul_add, Finset.sum_add_distrib]
-  have hle : eLpNorm ((fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • x i) +
-        fun g ↦ ∑ i, g i • y i) 2 (stdGaussian (EuclideanSpace ℝ ι)) ≤
-      eLpNorm (fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • x i) 2 (stdGaussian (EuclideanSpace ℝ ι)) +
-      eLpNorm (fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • y i) 2 (stdGaussian (EuclideanSpace ℝ ι)) :=
-    eLpNorm_add_le one_le_two
-  rw [← hxy, (memLp_gaussianSum (x + y) 2 (by simp)).eLpNorm_two_eq_ofReal_sqrt_integral,
-    hx.eLpNorm_two_eq_ofReal_sqrt_integral, hy.eLpNorm_two_eq_ofReal_sqrt_integral,
-    ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _),
-    ENNReal.ofReal_le_ofReal_iff (add_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))] at hle
-  exact hle
+  have hxy (g : EuclideanSpace ℝ ι) : ∑ i, g i • (x + y) i =
+      ((fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • x i) +
+        (fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • y i)) g := by
+    simp [smul_add, Finset.sum_add_distrib]
+  simp only [gaussianSecondMoment_def, hxy]
+  exact (memLp_gaussianSum x 2 (by simp)).sqrt_integral_norm_add_sq_le
+    (memLp_gaussianSum y 2 (by simp))
 
 /-- A bounded additive map `f` with `‖f y‖ ≤ M * ‖y‖` multiplies Gaussian second moments by at most
 `M`. -/

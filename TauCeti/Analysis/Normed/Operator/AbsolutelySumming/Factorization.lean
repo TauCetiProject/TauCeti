@@ -59,7 +59,7 @@ namespace WeakDual
 
 section evalLp
 
-variable (ν : Measure (toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1)) [IsFiniteMeasure ν]
+variable (ν : Measure (closedBall 𝕜 E 1)) [IsFiniteMeasure ν]
 
 variable (p) in
 /-- The canonical operator `jₚ : E →L[𝕜] Lᵖ(ν)` sending `x` to the class of `f ↦ f x`, for a
@@ -77,8 +77,7 @@ theorem coeFn_evalLp (x : E) : evalLp p ν x =ᵐ[ν] fun f ↦ (f : WeakDual �
 theorem norm_evalLp_apply (hp : p ≠ ∞) (x : E) :
     ‖evalLp p ν x‖ = (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
   have hp0 : p ≠ 0 := (one_pos.trans_le Fact.out).ne'
-  have hmem : MemLp (fun f : toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1 ↦
-      (f : WeakDual 𝕜 E) x) p ν :=
+  have hmem : MemLp (fun f : closedBall 𝕜 E 1 ↦ (f : WeakDual 𝕜 E) x) p ν :=
     (Lp.memLp (evalLp p ν x)).ae_eq (coeFn_evalLp ν x)
   rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_evalLp ν x),
     hmem.eLpNorm_eq_integral_rpow_norm hp0 hp, ENNReal.toReal_ofReal (by positivity), one_div]
@@ -87,7 +86,7 @@ end evalLp
 
 /-- For a probability measure `ν`, the canonical operator `jₚ` is a contraction. -/
 theorem norm_evalLp_le
-    (ν : Measure (toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1)) [IsProbabilityMeasure ν] :
+    (ν : Measure (closedBall 𝕜 E 1)) [IsProbabilityMeasure ν] :
     ‖(evalLp p ν : E →L[𝕜] Lp 𝕜 p ν)‖ ≤ 1 := by
   refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
   calc
@@ -112,7 +111,7 @@ probability measure `ν` on the weak-star compact dual unit ball. -/
 theorem summingENorm_le_ofReal_iff_exists_norm_le_mul_norm_evalLp (hp : p ≠ ∞)
     {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
     T.summingENorm p ≤ ENNReal.ofReal C ↔
-      ∃ (ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1))
+      ∃ (ν : Measure (WeakDual.closedBall 𝕜 E 1))
         (_ : IsProbabilityMeasure ν), ν.Regular ∧
           ∀ x, ‖T x‖ ≤ C * ‖WeakDual.evalLp p ν x‖ := by
   simp only [WeakDual.norm_evalLp_apply _ hp, summingENorm_le_ofReal_iff_exists_isProbabilityMeasure
@@ -131,7 +130,7 @@ that `T = S ∘ jₚ`. -/
 theorem summingENorm_le_ofReal_iff_exists_eq_comp_rangeRestrict (hp : p ≠ ∞)
     {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
     T.summingENorm p ≤ ENNReal.ofReal C ↔
-      ∃ (ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1))
+      ∃ (ν : Measure (WeakDual.closedBall 𝕜 E 1))
         (_ : IsProbabilityMeasure ν), ν.Regular ∧
           ∃ S : LinearMap.range (WeakDual.evalLp p ν : E →ₗ[𝕜] Lp 𝕜 p ν) →L[𝕜] F,
             ‖S‖ ≤ C ∧ T = S.comp (WeakDual.evalLp p ν).rangeRestrict := by
@@ -145,7 +144,7 @@ weak-star compact dual unit ball and an operator `S` of norm at most `C` on the 
 theorem summingENorm_le_ofReal_iff_exists_eq_comp_codRestrict_topologicalClosure
     [CompleteSpace F] (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
     T.summingENorm p ≤ ENNReal.ofReal C ↔
-      ∃ (ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1))
+      ∃ (ν : Measure (WeakDual.closedBall 𝕜 E 1))
         (_ : IsProbabilityMeasure ν), ν.Regular ∧
           ∃ S : (LinearMap.range (WeakDual.evalLp p ν : E →ₗ[𝕜] Lp 𝕜 p ν)).topologicalClosure
               →L[𝕜] F,
