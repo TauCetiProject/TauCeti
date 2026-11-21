@@ -40,6 +40,10 @@ theorem choiMatrix_apply {m n R : Type*} [DecidableEq n] [Zero R] [One R]
     (Φ : Matrix n n R → Matrix m m R) (p q : n × m) :
     choiMatrix Φ p q = Φ (Matrix.single p.fst q.fst 1) p.snd q.snd := (rfl)
 
+-- The proof uses no distributivity, but it needs the zero of the sums and the zero
+-- absorbed by multiplication to be the same element. Separate instances
+-- `[AddCommMonoid R] [MulZeroOneClass R]` give two unrelated zeros, and Mathlib has
+-- no class weaker than `NonAssocSemiring` that shares them.
 /-- The Choi matrix of `X ↦ K * X * Kᴴ` is the outer product of the vectorized operator
 with its entrywise conjugate. -/
 theorem choiMatrix_mul_mul_conjTranspose {m n R : Type*} [Fintype n] [DecidableEq n]
