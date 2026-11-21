@@ -47,10 +47,14 @@ localization arguments need.
 * `TauCeti.W1p.contDiffSMul`: the product `ψ u`, as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.value_contDiffSMul_ae` and `TauCeti.W1p.gradient_contDiffSMul_ae`: its two
   components, `ψ u` and `ψ ∇u + u ∇ψ`.
+* `TauCeti.W1p.eLpNorm_le_eLpNorm_value_contDiffSMul`: if `ψ = 1` on `s ⊆ Ω`, the `L^q(s)` norm
+  of `u` is at most the `L^q(Ω)` norm of `ψ u`.
 * `TauCeti.W1p.norm_contDiffSMul_le`: the bound `‖ψ u‖ ≤ 2 M ‖u‖`.
 * `TauCeti.W1p.contDiffSMulL`: the same map, bundled as a continuous linear operator.
 * `TauCeti.W1p.norm_gradient_contDiffSMul_sq_le`: at exponent two, the weighted bound
   `‖∇(ψ u)‖₂² ≤ 2 ∫ ψ² ‖∇u‖² + 2 ∫ ‖∇ψ‖² u²`.
+* `TauCeti.W1p.eLpNorm_smul_gradient_add_smul_le`: the bound
+  `‖ψ ∇u + u ∇ψ‖_p ≤ P ‖∇u‖_p + N ‖u‖_p` with separate bounds `|ψ| ≤ P` and `‖∇ψ‖ ≤ N`.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule`: it preserves `W^{1,p}_0(Ω)`, the closure of
   `C_c^∞(Ω)`; `TauCeti.W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule` is the form for a
   compactly supported cutoff, with no bounds to supply.
@@ -138,6 +142,23 @@ theorem W1p.value_contDiffSMul_ae (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
         = psi x • W1p.value u x := by
   rw [W1p.contDiffSMul, W1p.value_mk]
   exact MemLp.coeFn_toLp _
+
+/-- If a cutoff `ψ` equals `1` on a measurable set `s ⊆ Ω` and `f` agrees almost everywhere with
+`u`, then the `L^q(s)` norm of `f` is at most the `L^q(Ω)` norm of `ψ u`. -/
+theorem W1p.eLpNorm_le_eLpNorm_value_contDiffSMul (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    {u : W1p mu Omega p} {f : E → ℝ} (huf : W1p.value u =ᵐ[mu.restrict Omega] f) {s : Set E}
+    (hs : s ⊆ Omega) (hsm : MeasurableSet s) (hpsi1 : EqOn psi 1 s) (q : ENNReal) :
+    eLpNorm f q (mu.restrict s) ≤
+      eLpNorm (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)) q (mu.restrict Omega) := by
+  calc eLpNorm f q (mu.restrict s)
+      = eLpNorm (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)) q (mu.restrict s) := by
+        refine eLpNorm_congr_ae ?_
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset hs
+            (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u),
+          ae_restrict_of_ae_restrict_of_subset hs huf, ae_restrict_mem hsm] with x h1 h2 hx
+        rw [h1, ← h2, hpsi1 hx, Pi.one_apply, one_smul]
+    _ ≤ _ := eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)
 
 /-- **The Leibniz rule in `W^{1,p}(Ω)`**: the weak gradient of `ψ u` is `ψ ∇u + u ∇ψ`. -/
 theorem W1p.gradient_contDiffSMul_ae (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
@@ -298,6 +319,40 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
     abs_nonneg (psi x), abs_nonneg (W1p.value u x), norm_nonneg (W1p.gradient u x),
     norm_nonneg (∇ psi x),
     sq_nonneg (|psi x| * ‖W1p.gradient u x‖ - |W1p.value u x| * ‖∇ psi x‖)]
+
+/-- **The `Lᵖ` Leibniz bound with separate constants.** If `|ψ| ≤ P` and `‖∇ψ‖ ≤ N` on `Ω`, the
+gradient `ψ ∇u + u ∇ψ` of `ψ u` satisfies
+
+`‖ψ ∇u + u ∇ψ‖_{Lᵖ(Ω)} ≤ P ‖∇u‖_{Lᵖ(Ω)} + N ‖u‖_{Lᵖ(Ω)}`.
+
+Unlike `TauCeti.W1p.norm_contDiffSMul_le`, the bounds on `ψ` and on `∇ψ` enter separately. This is
+the form that estimates on a ball of radius `r` need, where a cutoff has `|ψ| ≤ 1` but `‖∇ψ‖` of
+order `1 / r`. -/
+theorem W1p.eLpNorm_smul_gradient_add_smul_le (hpsi : ContDiff ℝ ∞ psi) {P N : ℝ} (hP0 : 0 ≤ P)
+    (hN0 : 0 ≤ N) (hP : ∀ x ∈ Omega, |psi x| ≤ P) (hN : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ N)
+    (u : W1p mu Omega p) :
+    eLpNorm (fun x => psi x • W1p.gradient u x + W1p.value u x • ∇ psi x) p (mu.restrict Omega) ≤
+      ENNReal.ofReal (P * ‖W1p.gradient u‖ + N * ‖W1p.value u‖) := by
+  have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
+  have h1 : eLpNorm (fun x => psi x • W1p.gradient u x) p (mu.restrict Omega) ≤
+      ENNReal.ofReal P * eLpNorm (W1p.gradient u) p (mu.restrict Omega) :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul (f := fun x => psi x • W1p.gradient u x)
+      (hpsi.continuous.aestronglyMeasurable.smul (Lp.aestronglyMeasurable _))
+      (hmem.mono fun x hx => by
+        rw [norm_smul, Real.norm_eq_abs]
+        exact mul_le_mul_of_nonneg_right (hP x hx) (norm_nonneg _)) _
+  have h2 : eLpNorm (fun x => W1p.value u x • ∇ psi x) p (mu.restrict Omega) ≤
+      ENNReal.ofReal N * eLpNorm (W1p.value u) p (mu.restrict Omega) :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul (f := fun x => W1p.value u x • ∇ psi x)
+      ((Lp.aestronglyMeasurable (W1p.value u)).smul
+        (ContDiff.continuous_gradient hpsi (by simp)).aestronglyMeasurable)
+      (hmem.mono fun x hx => by
+        rw [norm_smul, mul_comm]
+        exact mul_le_mul_of_nonneg_right (hN x hx) (norm_nonneg _)) _
+  refine (eLpNorm_add_le (Fact.out : 1 ≤ p)).trans ((add_le_add h1 h2).trans_eq ?_)
+  simp only [← Lp.eNorm_def, ← ofReal_norm]
+  rw [← ENNReal.ofReal_mul hP0, ← ENNReal.ofReal_mul hN0,
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
 
 /-! ### The zero-boundary subspace is preserved -/
 

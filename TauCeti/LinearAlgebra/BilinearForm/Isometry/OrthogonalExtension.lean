@@ -150,7 +150,8 @@ noncomputable def isometryGroupExtend (ι : B' →bᵢ B) (hB : B.IsSymm) (hB' :
       (extendAux ι hB' ((g⁻¹ : isometryGroup B') : W ≃ₗ[K] W))
       (by rw [← extendAux_mul, mul_inv_cancel, extendAux_one])
       (by rw [← extendAux_mul, inv_mul_cancel, extendAux_one]),
-    mem_isometryGroup_iff.mpr (isIsometry_extendAux ι hB hB' (mem_isometryGroup.mp g.2)).apply⟩
+    mem_isometryGroup_iff.mpr (isIsometry_extendAux ι hB hB'
+        (mem_isometryGroup.mp g.property)).apply⟩
   map_one' := by
     ext v
     exact LinearMap.congr_fun (extendAux_one ι hB') v

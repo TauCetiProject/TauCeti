@@ -55,15 +55,15 @@ variable {𝕜 X M B F Y : Type*} {E : B → Type*}
 
 variable
   (hf : ∀ z, HasStrictFDerivAt
-    (fun y ↦ (e z ⟨b ((chartAt X z.1).symm y), s ((chartAt X z.1).symm y)⟩).2)
-    (D z) (chartAt X z.1 z.1))
+    (fun y ↦ (e z ⟨b ((chartAt X z.val).symm y), s ((chartAt X z.val).symm y)⟩).2)
+    (D z) (chartAt X z.val z.val))
   (hsurj : ∀ z, Function.Surjective (D z))
   (hker : ∀ z, (D z).ker.ClosedComplemented)
   (K : ∀ z, (D z).ker ≃L[𝕜] Y)
 
 private noncomputable def sectionZeroAmbientChart (z : ↥{y | s y = 0}) :
     OpenPartialHomeomorph M (F × (D z).ker) :=
-  ((chartAt X z.1).restrOpen (interior (b ⁻¹' (e z).baseSet)) isOpen_interior).trans
+  ((chartAt X z.val).restrOpen (interior (b ⁻¹' (e z).baseSet)) isOpen_interior).trans
     (((hf z).implicitToOpenPartialHomeomorphOfComplemented _ _
       (LinearMap.range_eq_top.2 (hsurj z)) (hker z)).restrOpen
       ((hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z)) (hker z))
@@ -77,7 +77,7 @@ private theorem sectionZeroAmbientChart_fst (z : ↥{y | s y = 0}) {y : M}
   rw [sectionZeroAmbientChart, OpenPartialHomeomorph.trans_apply,
     OpenPartialHomeomorph.coe_restrOpen,
     (hf z).implicitToOpenPartialHomeomorphOfComplemented_fst]
-  rw [OpenPartialHomeomorph.coe_restrOpen, (chartAt X z.1).left_inv hy.1.1]
+  rw [OpenPartialHomeomorph.coe_restrOpen, (chartAt X z.val).left_inv hy.1.1]
 
 private theorem sectionZeroAmbientChart_slice_mem (z : ↥{y | s y = 0})
     {k : (D z).ker} (hk : (0, k) ∈ (sectionZeroAmbientChart hf hsurj hker z).target) :
@@ -121,8 +121,8 @@ trivialization domains, whose coordinates belong to the regular implicit-functio
 @[simp]
 theorem sectionZeroChartAt_source (z : ↥{y | s y = 0}) :
     (sectionZeroChartAt hf hsurj hker K z).source =
-      Subtype.val ⁻¹' (((chartAt X z.1).source ∩ interior (b ⁻¹' (e z).baseSet)) ∩
-        (chartAt X z.1) ⁻¹'
+      Subtype.val ⁻¹' (((chartAt X z.val).source ∩ interior (b ⁻¹' (e z).baseSet)) ∩
+        (chartAt X z.val) ⁻¹'
           (((hf z).implicitToOpenPartialHomeomorphOfComplemented _ _
             (LinearMap.range_eq_top.2 (hsurj z)) (hker z)).source ∩
             (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z)) (hker z))) := by
@@ -133,7 +133,7 @@ theorem sectionZeroChartAt_source (z : ↥{y | s y = 0}) :
 /-- The preferred chart reads source-chart displacement through the kernel projection. -/
 theorem sectionZeroChartAt_apply (z w : ↥{y | s y = 0}) :
     sectionZeroChartAt hf hsurj hker K z w =
-      K z (Classical.choose (hker z) (chartAt X z.1 w.1 - chartAt X z.1 z.1)) := by
+      K z (Classical.choose (hker z) (chartAt X z.val w.val - chartAt X z.val z.val)) := by
   rw [sectionZeroChartAt, OpenPartialHomeomorph.transHomeomorph_apply,
     Function.comp_apply, ContinuousLinearEquiv.coe_toHomeomorph,
     OpenPartialHomeomorph.subtypeCoord_apply, sectionZeroAmbientChart,
@@ -151,8 +151,8 @@ theorem mem_sectionZeroChartAt_target_iff (z : ↥{y | s y = 0}) (k : Y) :
       (0, (K z).symm k) ∈ Φ.target ∧
         Φ.symm (0, (K z).symm k) ∈ (hf z).implicitCoordSource
           (LinearMap.range_eq_top.2 (hsurj z)) (hker z) ∧
-        Φ.symm (0, (K z).symm k) ∈ (chartAt X z.1).target ∧
-        (chartAt X z.1).symm (Φ.symm (0, (K z).symm k)) ∈ interior (b ⁻¹' (e z).baseSet) := by
+        Φ.symm (0, (K z).symm k) ∈ (chartAt X z.val).target ∧
+        (chartAt X z.val).symm (Φ.symm (0, (K z).symm k)) ∈ interior (b ⁻¹' (e z).baseSet) := by
   rw [sectionZeroChartAt, OpenPartialHomeomorph.transHomeomorph_target,
     OpenPartialHomeomorph.subtypeCoord_target]
   simp only [sectionZeroAmbientChart, OpenPartialHomeomorph.trans_target,
@@ -167,7 +167,7 @@ to the inverse implicit coordinates on the zero slice. -/
 theorem coe_sectionZeroChartAt_symm_apply (z : ↥{y | s y = 0}) {k : Y}
     (hk : k ∈ (sectionZeroChartAt hf hsurj hker K z).target) :
     ((sectionZeroChartAt hf hsurj hker K z).symm k : M) =
-      (chartAt X z.1).symm
+      (chartAt X z.val).symm
         (((hf z).implicitToOpenPartialHomeomorphOfComplemented _ _
           (LinearMap.range_eq_top.2 (hsurj z)) (hker z)).symm
         (0, (K z).symm k)) := by
@@ -187,8 +187,8 @@ theorem sectionZeroChartAt_symm_mem_source_and_baseSet_and_implicitCoordSource
     (z : ↥{y | s y = 0}) {k : Y}
     (hk : k ∈ (sectionZeroChartAt hf hsurj hker K z).target) :
     let y := ((sectionZeroChartAt hf hsurj hker K z).symm k : M)
-    y ∈ (chartAt X z.1).source ∧ b y ∈ (e z).baseSet ∧
-      chartAt X z.1 y ∈ (hf z).implicitCoordSource
+    y ∈ (chartAt X z.val).source ∧ b y ∈ (e z).baseSet ∧
+      chartAt X z.val y ∈ (hf z).implicitCoordSource
         (LinearMap.range_eq_top.2 (hsurj z)) (hker z) := by
   have h := (sectionZeroChartAt hf hsurj hker K z).map_target hk
   rw [sectionZeroChartAt_source] at h
@@ -201,15 +201,15 @@ theorem sectionZeroChartAt_apply_self (z : ↥{y | s y = 0}) :
   rw [sectionZeroChartAt_apply]
   simp
 
-variable (hb : ∀ z : ↥{y | s y = 0}, ContinuousAt b z.1)
-  (he : ∀ z, b z.1 ∈ (e z).baseSet)
+variable (hb : ∀ z : ↥{y | s y = 0}, ContinuousAt b z.val)
+  (he : ∀ z, b z.val ∈ (e z).baseSet)
 
 include hb he in
 /-- Every zero lies in the source of its preferred chart. -/
 theorem mem_sectionZeroChartAt_source (z : ↥{y | s y = 0}) :
     z ∈ (sectionZeroChartAt hf hsurj hker K z).source := by
   rw [sectionZeroChartAt_source]
-  exact ⟨⟨mem_chart_source X z.1,
+  exact ⟨⟨mem_chart_source X z.val,
     mem_interior_iff_mem_nhds.2 ((hb z).preimage_mem_nhds
       ((e z).open_baseSet.mem_nhds (he z)))⟩,
     (hf z).mem_implicitToOpenPartialHomeomorphOfComplemented_source _ _,

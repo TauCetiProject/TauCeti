@@ -199,7 +199,7 @@ theorem holomorphicHull_eq_empty (Ω K : Set ℂ) : holomorphicHull Ω K = ∅ �
 @[simp]
 theorem holomorphicHull_nonempty_iff (Ω K : Set ℂ) :
     (holomorphicHull Ω K).Nonempty ↔ (K ∩ Ω).Nonempty := by
-  rw [nonempty_iff_ne_empty, nonempty_iff_ne_empty, ne_eq, ne_eq, holomorphicHull_eq_empty,
+  rw [← ne_empty_iff_nonempty, ← ne_empty_iff_nonempty, ne_eq, ne_eq, holomorphicHull_eq_empty,
     disjoint_iff_inter_eq_empty]
 
 /-- Points of `K` outside `Ω` do not affect `holomorphicHull Ω K`. -/
@@ -301,7 +301,7 @@ theorem infEDist_le_edist_of_mem_holomorphicHull {Ω K : Set ℂ} {z ζ : ℂ}
   -- Test against `w ↦ (w - ζ)⁻¹`, which is holomorphic on `Ω`.
   by_contra hlt
   rw [not_le] at hlt
-  have hKne : K.Nonempty := nonempty_iff_ne_empty.mpr fun h ↦ by simp [h] at hz
+  have hKne : K.Nonempty := ne_empty_iff_nonempty.mp fun h ↦ by simp [h] at hz
   have hzζ : z ≠ ζ := fun h ↦ hζ (h ▸ holomorphicHull_subset_left Ω K hz)
   have hd_pos : 0 < dist z ζ := dist_pos.mpr hzζ
   have hm_ne_top : infEDist ζ K ≠ ∞ := infEDist_ne_top hKne

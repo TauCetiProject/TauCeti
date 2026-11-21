@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Sobolev.BesselPotential.Conj
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -27,14 +28,26 @@ continuous real representative `BesselPotentialSpace.continuousRep F`
 `BesselPotentialSpace.continuousRep_eq_of_ae_eq`), by the Sobolev embedding into continuous
 functions. It lies in the real `H^s` functions `TemperedDistribution.realSobolevFunctions E s 2`
 and is `ℝ`-linear in `F` (`BesselPotentialSpace.continuousRep` is a linear map), and it
-determines `F` (`BesselPotentialSpace.continuousRep_injective`).
+determines `F` (`BesselPotentialSpace.continuousRep_injective`). Above `s > n + dim E / 2` it is a
+`Cⁿ` function (`BesselPotentialSpace.contDiff_continuousRep`).
+
+Complex conjugation of the `L²` function is a real-linear isometric involution
+`BesselPotentialSpace.conjCLM` of `H^s(E)` (`BesselPotentialSpace.norm_conjCLM`,
+`BesselPotentialSpace.conjCLM_conjCLM`), conjugate-linear over `ℂ`
+(`BesselPotentialSpace.conjCLM_smul`), by `TemperedDistribution.MemSobolev.of_ae_eq_conj`; the
+real elements are its fixed points (`BesselPotentialSpace.mem_realSubmodule_iff_conjCLM_eq`). The
+real part `(F + conj F) / 2` is therefore a bounded real-linear projection
+`BesselPotentialSpace.realPartCLM` of `H^s(E)` onto the real subspace
+(`BesselPotentialSpace.realPartCLM_coe`). Composing with it turns a smooth map into `H^s(E)` that
+takes real values into a smooth map into the real subspace, with the same order of smoothness,
+analytic included.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Module TemperedDistribution
+open MeasureTheory Module TemperedDistribution ComplexConjugate
 open scoped SchwartzMap BesselPotentialSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -88,7 +101,7 @@ theorem exists_continuous_ae_eq_of_mem_realSubmodule (hs : finrank ℝ E < 2 * s
   -- everywhere.
   have him : (fun z ↦ (g z).im) = fun _ ↦ (0 : ℝ) := by
     refine (Continuous.ae_eq_iff_eq volume (by fun_prop) continuous_const).1 ?_
-    filter_upwards [(mem_realSubmodule_iff h).1 F.2, hg] with z hz hz'
+    filter_upwards [(mem_realSubmodule_iff h).1 F.property, hg] with z hz hz'
     rw [← hz', hz]
   refine ⟨fun z ↦ (g z).re, by fun_prop, ?_⟩
   filter_upwards [hg] with z hz
@@ -161,7 +174,7 @@ representative. -/
 theorem continuousRep_injective (hs : finrank ℝ E < 2 * s) :
     Function.Injective (continuousRep : realSubmodule E h → E → ℝ) := by
   intro F G hFG
-  refine Subtype.ext (inclusionLp_injective h (Lp.ext ?_))
+  refine Subtype.ext (ext_of_ae_eq_inclusionLp h ?_)
   filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hs F,
     coeFn_inclusionLp_ae_eq_continuousRep hs G] with z hF hG
   rw [hF, hG, hFG]
@@ -171,5 +184,140 @@ theorem continuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
     (F : realSubmodule E h) : continuousRep F ∈ realSobolevFunctions E s 2 :=
   mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion h (F : H^{s}(E)))
     (by simpa using coeFn_inclusionLp_ae_eq_continuousRep hs F)
+
+/-- Above the threshold `s > n + dim E / 2`, the continuous representative of a real element of
+`H^s(E)` is a `Cⁿ` function. -/
+theorem contDiff_continuousRep {n : ℕ} (hs : finrank ℝ E + 2 * n < 2 * s)
+    (F : realSubmodule E h) : ContDiff ℝ n (continuousRep F) := by
+  have hs' : (finrank ℝ E : ℝ) < 2 * s := by
+    linarith [show (0 : ℝ) ≤ 2 * n by positivity]
+  exact contDiff_of_mem_realSobolevFunctions hs (continuousRep_mem_realSobolevFunctions hs' F)
+    (continuous_continuousRep hs' F)
+
+/-! ### Complex conjugation and the real part -/
+
+/-- The element of `H^s(E)` whose `L²` function is the conjugate of that of `F`. -/
+private def conjAux (h : 0 ≤ s) (F : H^{s}(E)) : H^{s}(E) :=
+  (MemSobolev.of_ae_eq_conj (memSobolev_toLp_inclusion h F) (u' := star (inclusion h F).toLp)
+    (Lp.coeFn_star _)).toBesselPotentialSpace
+
+private theorem coeFn_inclusionLp_conjAux (F : H^{s}(E)) :
+    inclusionLp h (conjAux h F) =ᵐ[volume] fun z ↦ conj (inclusionLp h F z) := by
+  rw [conjAux, ← toLp_inclusion, toLp_inclusion_toBesselPotentialSpace h _ rfl, toLp_inclusion]
+  exact Lp.coeFn_star _
+
+private theorem conjAux_smul (c : ℂ) (F : H^{s}(E)) :
+    conjAux h (c • F) = conj c • conjAux h F :=
+  ext_of_ae_eq_inclusionLp h <| by
+    filter_upwards [coeFn_inclusionLp_conjAux (h := h) (c • F),
+      coeFn_inclusionLp_conjAux (h := h) F, Lp.coeFn_smul c (inclusionLp h F),
+      Lp.coeFn_smul (conj c) (inclusionLp h (conjAux h F))] with z h₁ h₂ h₃ h₄
+    simp only [(inclusionLp h).map_smul, h₁, h₂, h₃, h₄, Pi.smul_apply, smul_eq_mul, map_mul]
+
+private theorem norm_conjAux (F : H^{s}(E)) : ‖conjAux h F‖ = ‖F‖ :=
+  (MemSobolev.norm_toBesselPotentialSpace_of_ae_eq_conj (memSobolev_toLp_inclusion h F)
+    (Lp.coeFn_star _) _).trans
+    (congrArg norm (toBesselPotentialSpace_memSobolev_toLp_inclusion h F))
+
+variable (E h) in
+/-- **Complex conjugation on `H^s(E)`**, `0 ≤ s`: the element whose `L²` function is the complex
+conjugate of the `L²` function of `F` (`coeFn_inclusionLp_conjCLM`). It is a real-linear isometry
+(`norm_conjCLM`). -/
+def conjCLM : H^{s}(E) →L[ℝ] H^{s}(E) :=
+  LinearMap.mkContinuous
+    { toFun := conjAux h
+      map_add' F G := ext_of_ae_eq_inclusionLp h <| by
+        filter_upwards [coeFn_inclusionLp_conjAux (h := h) (F + G),
+          coeFn_inclusionLp_conjAux (h := h) F, coeFn_inclusionLp_conjAux (h := h) G,
+          Lp.coeFn_add (inclusionLp h (conjAux h F)) (inclusionLp h (conjAux h G)),
+          Lp.coeFn_add (inclusionLp h F) (inclusionLp h G)] with z h₁ h₂ h₃ h₄ h₅
+        simp only [map_add, h₁, h₂, h₃, h₄, h₅, Pi.add_apply]
+      map_smul' c F := by
+        rw [RingHom.id_apply, ← Complex.coe_smul, ← Complex.coe_smul, conjAux_smul,
+          Complex.conj_ofReal] }
+    1 fun F ↦ (norm_conjAux F).le.trans (one_mul _).symm.le
+
+/-- The `L²` function of `conjCLM E h F` is the complex conjugate of the `L²` function of `F`. -/
+theorem coeFn_inclusionLp_conjCLM (F : H^{s}(E)) :
+    inclusionLp h (conjCLM E h F) =ᵐ[volume] fun z ↦ conj (inclusionLp h F z) :=
+  coeFn_inclusionLp_conjAux F
+
+/-- Complex conjugation is an isometry of `H^s(E)`. -/
+@[simp]
+theorem norm_conjCLM (F : H^{s}(E)) : ‖conjCLM E h F‖ = ‖F‖ :=
+  norm_conjAux F
+
+/-- Complex conjugation is an isometry of `H^s(E)`. -/
+theorem isometry_conjCLM : Isometry (conjCLM E h) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_conjCLM
+
+/-- Complex conjugation on `H^s(E)` is conjugate-linear over `ℂ`. -/
+@[simp]
+theorem conjCLM_smul (c : ℂ) (F : H^{s}(E)) : conjCLM E h (c • F) = conj c • conjCLM E h F :=
+  conjAux_smul (h := h) c F
+
+/-- Complex conjugation on `H^s(E)` is an involution. -/
+@[simp]
+theorem conjCLM_conjCLM (F : H^{s}(E)) : conjCLM E h (conjCLM E h F) = F :=
+  ext_of_ae_eq_inclusionLp h <| by
+    filter_upwards [coeFn_inclusionLp_conjCLM (h := h) (conjCLM E h F),
+      coeFn_inclusionLp_conjCLM (h := h) F] with z h₁ h₂
+    rw [h₁, h₂, Complex.conj_conj]
+
+/-- Complex conjugation fixes the real elements of `H^s(E)`. -/
+@[simp]
+theorem conjCLM_coe (F : realSubmodule E h) : conjCLM E h (F : H^{s}(E)) = F :=
+  ext_of_ae_eq_inclusionLp h <| by
+    filter_upwards [coeFn_inclusionLp_conjCLM (h := h) (F : H^{s}(E)),
+      (mem_realSubmodule_iff h).1 F.property] with z h₁ h₂
+    rw [h₁, Complex.conj_eq_iff_im.2 h₂]
+
+/-- An element of `H^s(E)` is real exactly when complex conjugation fixes it. -/
+theorem mem_realSubmodule_iff_conjCLM_eq {F : H^{s}(E)} :
+    F ∈ realSubmodule E h ↔ conjCLM E h F = F := by
+  refine ⟨fun hF ↦ conjCLM_coe ⟨F, hF⟩, fun hF ↦ (mem_realSubmodule_iff h).2 ?_⟩
+  filter_upwards [coeFn_inclusionLp_conjCLM (h := h) F] with z hz
+  rw [hF] at hz
+  exact Complex.conj_eq_iff_im.1 hz.symm
+
+private theorem norm_two_inv_smul_add_conjCLM_le (F : H^{s}(E)) :
+    ‖(2⁻¹ : ℂ) • (F + conjCLM E h F)‖ ≤ ‖F‖ := by
+  rw [norm_smul, norm_inv, Complex.norm_two]
+  calc 2⁻¹ * ‖F + conjCLM E h F‖ ≤ 2⁻¹ * (‖F‖ + ‖conjCLM E h F‖) := by
+        gcongr; exact norm_add_le _ _
+    _ = ‖F‖ := by rw [norm_conjCLM]; ring
+
+private theorem two_inv_smul_add_conjCLM_mem (F : H^{s}(E)) :
+    (2⁻¹ : ℂ) • (F + conjCLM E h F) ∈ realSubmodule E h := by
+  have h2 : (2⁻¹ : ℂ) = ((2⁻¹ : ℝ) : ℂ) := by norm_num
+  rw [mem_realSubmodule_iff_conjCLM_eq, h2, Complex.coe_smul, (conjCLM E h).map_smul, map_add,
+    conjCLM_conjCLM, add_comm]
+
+variable (E h) in
+/-- **The real part** `(F + conj F) / 2` of `F ∈ H^s(E)`, `0 ≤ s`: a bounded real-linear
+projection of `H^s(E)` onto its real elements (`realPartCLM_coe`). -/
+def realPartCLM : H^{s}(E) →L[ℝ] realSubmodule E h :=
+  ContinuousLinearMap.codRestrict
+    (LinearMap.mkContinuous
+      { toFun F := (2⁻¹ : ℂ) • (F + conjCLM E h F)
+        map_add' F G := by
+          rw [map_add]
+          module
+        map_smul' c F := by
+          rw [RingHom.id_apply, (conjCLM E h).map_smul, ← smul_add, smul_comm] }
+      1 fun F ↦ (norm_two_inv_smul_add_conjCLM_le F).trans (one_mul _).symm.le)
+    (realSubmodule E h) two_inv_smul_add_conjCLM_mem
+
+/-- The real part of `F` is `(F + conj F) / 2`. -/
+theorem coe_realPartCLM (F : H^{s}(E)) :
+    (realPartCLM E h F : H^{s}(E)) = (2⁻¹ : ℂ) • (F + conjCLM E h F) :=
+  (rfl)
+
+/-- The real part fixes the real elements of `H^s(E)`. -/
+@[simp]
+theorem realPartCLM_coe (F : realSubmodule E h) : realPartCLM E h (F : H^{s}(E)) = F := by
+  ext1
+  rw [coe_realPartCLM, conjCLM_coe]
+  module
 
 end BesselPotentialSpace

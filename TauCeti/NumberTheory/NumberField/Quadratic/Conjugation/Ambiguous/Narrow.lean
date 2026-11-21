@@ -104,7 +104,7 @@ theorem mk0_map_ringOfIntegersQuadraticConj_eq_inv (hmin : minpoly ℤ θ = X ^ 
       hnatAbs, Ideal.map_span, Set.image_singleton, hn]
   have hne : algebraMap ℤ (𝓞 K) n ≠ 0 := by
     intro h0
-    refine mem_nonZeroDivisors_iff_ne_zero.mp (I * J).2 ?_
+    refine mem_nonZeroDivisors_iff_ne_zero.mp (I * J).property ?_
     rw [hspan, h0, Ideal.span_singleton_eq_bot.mpr rfl, Ideal.zero_eq_bot]
   refine mk0_eq_one_of_isTotallyPositive hne ?_ hspan
   have hpos : 0 < n := lt_of_le_of_ne (Int.natCast_nonneg _) fun h0 => hne (by rw [← h0]; simp)
@@ -154,7 +154,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one
   classical
   obtain ⟨J, rfl⟩ := mk0_surjective C
   set σ := ringOfIntegersQuadraticConj hmin hgen with _
-  have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.2
+  have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.property
   have hJm0 : Ideal.map σ (J : Ideal (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.map_eq_bot_iff_of_injective σ.injective,
       ← Ideal.zero_eq_bot]
@@ -323,7 +323,7 @@ theorem mk0_mem_closure_of_map_eq_self (hmin : minpoly ℤ θ = X ^ 2 - C d)
   classical
   obtain ⟨α, hα0, hαpos, s, hs, hIeq⟩ :=
     exists_isTotallyPositive_and_eq_span_singleton_mul_prod_of_map_eq_self hmin hgen hprime hover
-      (mem_nonZeroDivisors_iff_ne_zero.mp I.2) hI
+      (mem_nonZeroDivisors_iff_ne_zero.mp I.property) hI
   -- The totally positive factor, as an element of the monoid of nonzero ideals.
   set A : (Ideal (𝓞 K))⁰ := ⟨Ideal.span {α}, mem_nonZeroDivisors_iff_ne_zero.mpr (by
     simpa [Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot] using hα0)⟩ with hA

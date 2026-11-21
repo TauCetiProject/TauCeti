@@ -17,7 +17,9 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
 An invariant normal subgroup of the first factor is normal in the full semidirect product
 (`Subgroup.normal_map_inl`). When `D` is a complement of the normal subgroup `N`, the inverse
 of Mathlib's isomorphism `SemidirectProduct.mulEquivSubgroup : N ⋊ D ≃* G` is the unique
-decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
+decomposition `g = n * d` of `Subgroup.IsComplement.equiv`. More generally, when `K` normalizes
+`H` and the two meet trivially, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`, with no
+normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
 
 ## Main results
 
@@ -36,13 +38,16 @@ decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
   `SemidirectProduct.surjective_monoidHomSubgroup_iff`, and
   `SemidirectProduct.bijective_monoidHomSubgroup_iff`: injectivity, surjectivity, and bijectivity
   criteria for `SemidirectProduct.monoidHomSubgroup`.
+* `SemidirectProduct.mulEquivSup`: when moreover `H ⊓ K = ⊥`, multiplication is an isomorphism
+  `H ⋊ K ≃* H ⊔ K`.
 * `SemidirectProduct.mulEquivSubgroup_symm_trans_equivProd`,
   `SemidirectProduct.toEquiv_mulEquivSubgroup`, and
   `SemidirectProduct.toEquiv_mulEquivSubgroup_symm`: for a complement `D` of a normal subgroup `N`,
   `SemidirectProduct.mulEquivSubgroup` and `Subgroup.IsComplement.equiv` are mutually inverse
   modulo `SemidirectProduct.equivProd`.
 * `SemidirectProduct.mulEquivSubgroup_symm_apply_left`,
-  `SemidirectProduct.mulEquivSubgroup_symm_apply_right`, and
+  `SemidirectProduct.mulEquivSubgroup_symm_apply_right`,
+  `SemidirectProduct.mulEquivSubgroup_symm_eq_inl_mul_inr`, and
   `SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm`: projections and quotient description
   of `(SemidirectProduct.mulEquivSubgroup h).symm`.
 -/
@@ -105,7 +110,7 @@ theorem range_monoidHomSubgroup (hLE : K ≤ Subgroup.normalizer (H : Set G)) :
     fun t ht => ⟨inr ⟨t, ht⟩, by simp⟩)
   rintro _ ⟨x, rfl⟩
   rw [monoidHomSubgroup_apply]
-  exact Subgroup.mul_mem_sup x.left.2 x.right.2
+  exact Subgroup.mul_mem_sup x.left.property x.right.property
 
 /-- The kernel of the projection of a semidirect product to the acting group, together with the
 image of the acting group, generates the semidirect product. -/
@@ -167,6 +172,13 @@ theorem toEquiv_mulEquivSubgroup :
 theorem toEquiv_mulEquivSubgroup_symm :
     (mulEquivSubgroup h).symm.toEquiv = h.equiv.trans equivProd.symm :=
   congrArg Equiv.symm (toEquiv_mulEquivSubgroup h)
+
+/-- `(SemidirectProduct.mulEquivSubgroup h).symm` decomposes an element into the product of its
+left and right subgroup components inside the semidirect product. -/
+theorem mulEquivSubgroup_symm_eq_inl_mul_inr (g : G) :
+    (mulEquivSubgroup h).symm g = inl (h.equiv g).1 * inr (h.equiv g).2 := by
+  rw [← inl_left_mul_inr_right ((mulEquivSubgroup h).symm g), mulEquivSubgroup_symm_apply_left,
+    mulEquivSubgroup_symm_apply_right]
 
 /-- On the normal factor, `(SemidirectProduct.mulEquivSubgroup h).symm` agrees with
 `SemidirectProduct.inl`. -/
@@ -265,6 +277,24 @@ theorem surjective_monoidHomSubgroup_iff :
 theorem bijective_monoidHomSubgroup_iff :
     Function.Bijective (monoidHomSubgroup hLE) ↔ H.IsComplement' K :=
   equivProd.bijective_comp fun x : H × K => (x.1 : G) * x.2
+
+/-- **A semidirect product of two subgroups meeting trivially is their join.** If `K` normalizes
+`H` and `H ⊓ K = ⊥`, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`. -/
+noncomputable def mulEquivSup (h : H ⊓ K = ⊥) :
+    H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K ≃* ↥(H ⊔ K) :=
+  (MonoidHom.ofInjective ((injective_monoidHomSubgroup_iff hLE).mpr (disjoint_iff.mpr h))).trans
+    (MulEquiv.subgroupCongr (range_monoidHomSubgroup hLE))
+
+@[simp]
+theorem coe_mulEquivSup_apply (h : H ⊓ K = ⊥)
+    (x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) :
+    (mulEquivSup hLE h x : G) = x.left * x.right :=
+  monoidHomSubgroup_apply hLE x
+
+/-- The two components of the inverse of `mulEquivSup` multiply back to the given element. -/
+theorem left_mul_right_mulEquivSup_symm_apply (h : H ⊓ K = ⊥) (g : ↥(H ⊔ K)) :
+    (((mulEquivSup hLE h).symm g).left : G) * ((mulEquivSup hLE h).symm g).right = g := by
+  rw [← coe_mulEquivSup_apply hLE h, MulEquiv.apply_symm_apply]
 
 variable {D : Type*} [Group D]
 variable (f : H →* D) (g : K →* D)

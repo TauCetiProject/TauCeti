@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import TauCeti.AlgebraicTopology.Disk
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 
 /-!
 # The cohomology of `Sᵈ⁺¹ × Y`
@@ -51,7 +51,9 @@ Then:
   a `k`-linear equivalence `Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M) ≃ Hⁿ⁺ᵈ⁺¹(Y; M) × Hⁿ(Y; M)` whose inverse is
   `(b, c) ↦ pr₂^* b + pr₁^* θ ⌣ pr₂^* c` (`TopCat.singularCohomologySphereProdSlantEquiv`). This
   is the analogue, for an arbitrary coefficient module `M`, of the equivalence
-  `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`;
+  `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`; combining it with
+  `TopCat.singularCohomologySphereZeroProdEquiv` at `d = 0` gives the uniform decomposition
+  `TopCat.singularCohomologySphereTopProdEquiv` across all `d ≥ 0`;
 * for a map `γ : Sᵈ⁺¹ ⟶ X` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`, the two components of `(γ × 𝟙)^* φ` are the
   restriction of `φ` to the slice `{γ x₀} × Y`, since the slant product by a point is restriction
   (`TopCat.singularSlant_singularHomology₀Section`), and, by naturality, the slant product
@@ -92,11 +94,14 @@ through the isomorphism of these coefficient modules, which is not made here.
 For the circle `S¹` (`d = 0`), with `k = M = ℤ` and `n = 1` this is the integral decomposition
 `H²(S¹ × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ (θ ⌣ pr₂^* H¹(Y; ℤ))` of the second cohomology of a product
 with a circle, torsion included; `θ` generates `H¹(S¹; ℤ)`. Under `S¹ ≅ ℝ / ℤ`, `θ` corresponds
-to `±[ds]` for the angular form `ds`, with the sign fixed by orientations; that identification is
-not made here. Its cross quotient `H¹(Y; ℤ)` is torsion-free, which the following makes precise for
-any coefficient change. A map `g : M ⟶ M'` of coefficient modules which is injective induces an
-injective map `H¹(Y; M) → H¹(Y; M')`, because `H₀(Y; k)` is free and so
-`H¹(Y; M) = Hom(H₁(Y; k), M)`
+to `±[ds]` for the angular form `ds`, with the sign fixed by orientations. The module
+`TauCeti.AlgebraicTopology.Cohomology.AddCircle` states the decomposition directly on
+`(ℝ / pℤ) × Y` with the angular class `θ_p = AddCircle.angularClass p` in place of `θ`,
+oriented by `⟨θ_p, [ℝ / pℤ]⟩ = 1` for the circuit class `[ℝ / pℤ]`
+(`TopCat.singularCohomologyAddCircleProdSlantEquiv`). The cross quotient `H¹(Y; ℤ)` is
+torsion-free, which the following makes precise for any coefficient change. A map `g : M ⟶ M'`
+of coefficient modules which is injective induces an injective map `H¹(Y; M) → H¹(Y; M')`,
+because `H₀(Y; k)` is free and so `H¹(Y; M) = Hom(H₁(Y; k), M)`
 (`TopCat.injective_homologyMap_linearYonedaObjMap_one`). Since slant
 products commute with coefficient changes (`TopCat.singularSlant_linearYonedaObjMap`), a class
 `φ ∈ H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` whose image in `H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M')` is pulled back from `Y` is itself
@@ -327,6 +332,59 @@ theorem singularCohomologyMap_tensorHom_eq_singularCohomologyMap_snd_add_singula
     singularCohomologySphereProdSlantEquiv_singularCohomologyMap_tensorHom,
     singularCohomologySphereProdSlantEquiv_symm_apply]
 
+/-- **The cohomology of `Sᵈ × Y` across all sphere dimensions `d ≥ 0`**: a `k`-linear equivalence
+`Hⁿ⁺ᵈ(Sᵈ × Y; M) ≃ Hⁿ⁺ᵈ(Y; M) × Hⁿ(Y; M)`, given by `TopCat.singularCohomologySphereZeroProdEquiv`
+for `d = 0` and `TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasePoint d` for
+`d + 1`. In every dimension `d ≥ 0`, its inverse sends `(b, c)` to `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`,
+where `θ ∈ Hᵈ(Sᵈ; k)` is `TauCeti.singularCohomologyTopCatSphereTopClass`. -/
+def singularCohomologySphereTopProdEquiv (Y : TopCat.{w}) :
+    (d : ℕ) → (n : ℕ) →
+      (sphere.{w} d ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ≃ₗ[k]
+        Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
+          Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n
+  | 0, n => singularCohomologySphereZeroProdEquiv M Y n
+  | d + 1, n => singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasePoint d) n
+
+/-- For `d = 0`, `TopCat.singularCohomologySphereTopProdEquiv` is
+`TopCat.singularCohomologySphereZeroProdEquiv`. -/
+@[simp]
+lemma singularCohomologySphereTopProdEquiv_zero (Y : TopCat.{w}) (n : ℕ) :
+    singularCohomologySphereTopProdEquiv M Y 0 n =
+      singularCohomologySphereZeroProdEquiv M Y n :=
+  (rfl)
+
+/-- For `d + 1`, `TopCat.singularCohomologySphereTopProdEquiv` is
+`TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasePoint d`. -/
+@[simp]
+lemma singularCohomologySphereTopProdEquiv_succ (Y : TopCat.{w}) (d n : ℕ) :
+    singularCohomologySphereTopProdEquiv M Y (d + 1) n =
+      singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasePoint d) n :=
+  (rfl)
+
+/-- For every `d ≥ 0`, the inverse of `TopCat.singularCohomologySphereTopProdEquiv` sends `(b, c)`
+to `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`, where `θ = TauCeti.singularCohomologyTopCatSphereTopClass k d`. -/
+@[simp]
+lemma singularCohomologySphereTopProdEquiv_symm_apply (Y : TopCat.{w}) (d n : ℕ)
+    (bc : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
+      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+    (singularCohomologySphereTopProdEquiv M Y d n).symm bc =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + d) bc.1 +
+        (sphere.{w} d ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
+          d n (n + d) (add_comm d n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) d
+            (TauCeti.singularCohomologyTopCatSphereTopClass k d))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2) := by
+  cases d with
+  | zero =>
+    rw [singularCohomologySphereTopProdEquiv_zero,
+      singularCohomologySphereZeroProdEquiv_symm_apply,
+      TauCeti.singularCohomologyTopCatSphereTopClass_zero]
+    rfl
+  | succ d =>
+    rw [singularCohomologySphereTopProdEquiv_succ,
+      singularCohomologySphereProdSlantEquiv_symm_apply,
+      TauCeti.singularCohomologyTopCatSphereTopClass_succ]
+
 end Sphere
 
 section Coefficients
@@ -371,7 +429,6 @@ theorem mem_range_singularCohomologyMap_snd_sphere_one_add_of_injective (Y : Top
     φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
         (M := M) (CartesianMonoidalCategory.snd (sphere.{w} (d + 1)) Y)
         (1 + (d + 1))).hom := by
-  have : Module.Free k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Free k k)
   exact mem_range_singularCohomologyMap_snd_sphere_of_injective (n := 1) Y g
     (Y.injective_homologyMap_linearYonedaObjMap_one g hg) φ hφ
 
@@ -445,7 +502,6 @@ theorem singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace
           ((-1 : ℤ) ^ ((d + 1) * (p + (d + 1)))) •
             (TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q (p + q + (d + 1))
               (by omega) bc.1 bc'.2) := by
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
   have := ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
     (M := M) (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) hn hpq)
   rw [singularCohomologySphereProdSlantEquiv_singularCup]
@@ -508,7 +564,6 @@ theorem singularCup_self_eq_two_smul_of_compactSpace
           (by omega)
           (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).1
           (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).2) := by
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
   have := ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
     (M := M) (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) hn hnp)
   rw [← map_smul, LinearEquiv.eq_symm_apply, singularCohomologySphereProdSlantEquiv_singularCup_self

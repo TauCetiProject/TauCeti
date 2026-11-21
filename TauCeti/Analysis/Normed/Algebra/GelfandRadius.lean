@@ -16,6 +16,11 @@ The Gelfand radius `gelfandRadius a` of an element of a normed ring is the limit
 `‖a ^ k‖ ^ (1 / k)`. A nonzero idempotent has Gelfand radius one, whatever its norm, since all
 of its positive powers coincide with it.
 
+In a unital complex Banach algebra, Gelfand's spectral radius formula implies that if
+`spectrum ℂ a` lies inside an open extended ball `Metric.eball z₀ r` of radius at most the
+convergence radius of a scalar formal power series `p`, then `∑ ‖p.coeff n • (a - z₀)^n‖`
+converges.
+
 A nonunital algebra has no powers `a ^ 0`, so its Gelfand radius is computed in the ℓ¹
 unitization `WithLp 1 (Unitization ℂ A)`, into which `A` embeds isometrically. Gelfand's formula
 holds there: the spectral radius of `a`, the supremum of the moduli of its quasispectrum, is the
@@ -33,6 +38,8 @@ of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.ebal
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
 * `IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse`: a lower bound on the Gelfand radius
   of elements of the corner `p R p`.
+* `TauCeti.summable_norm_smul_sub_pow_of_le_radius`: absolute convergence of a formal power series
+  evaluated at `a - z₀` whenever `spectrum ℂ a` lies in `Metric.eball z₀ r` with `r ≤ p.radius`.
 * `TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr`: Gelfand's formula for a nonunital complex
   Banach algebra, through its ℓ¹ unitization.
 * `FormalMultilinearSeries.summable_norm_coeff_smul_pow_of_gelfandRadius_lt`: absolute convergence
@@ -109,7 +116,7 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
   · convert summable_zero with k
     rw [Subsingleton.elim (p.coeff k • (a - algebraMap ℂ A z₀) ^ k) 0, norm_zero]
   set b := a - algebraMap ℂ A z₀
-  obtain ⟨w, hw, hsr⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
+  obtain ⟨w, hw, hsr⟩ := spectrum.exists_eNorm_eq_spectralRadius b
   have hw_mem : w + z₀ ∈ spectrum ℂ a := by
     rwa [spectrum.add_mem_iff, neg_add_eq_sub]
   have hlt : ENNReal.ofReal (gelfandRadius b) < p.radius := by
@@ -121,6 +128,37 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
 end FormalMultilinearSeries
 
 namespace TauCeti
+
+/-- If `spectrum ℂ a` lies in the open extended ball `Metric.eball z₀ r` and `r` does not exceed
+the convergence radius of a formal power series `p : FormalMultilinearSeries ℂ ℂ ℂ`, then
+`∑ ‖p.coeff n • (a - z₀)^n‖` converges. -/
+theorem summable_norm_smul_sub_pow_of_le_radius {A : Type*} [NormedRing A] [NormedAlgebra ℂ A]
+    [CompleteSpace A] (a : A) {p : FormalMultilinearSeries ℂ ℂ ℂ}
+    {z₀ : ℂ} {r : ℝ≥0∞} (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) (hr : r ≤ p.radius) :
+    Summable fun n => ‖p.coeff n • (a - algebraMap ℂ A z₀) ^ n‖ := by
+  let b := a - algebraMap ℂ A z₀
+  rcases subsingleton_or_nontrivial A with hsub | hnt
+  · exact summable_zero.congr fun n => by
+      rw [Subsingleton.elim (p.coeff n • b ^ n) 0, norm_zero]
+  · obtain ⟨w, hw, hw_eq⟩ := spectrum.exists_eNorm_eq_spectralRadius b
+    have hzw : z₀ + w ∈ spectrum ℂ a :=
+      (add_comm z₀ w).symm ▸ spectrum.add_mem_iff.mpr (by simpa [b, neg_add_eq_sub] using hw)
+    have hw_lt : (‖w‖₊ : ℝ≥0∞) < r := by
+      have hmem := ha hzw
+      rwa [Metric.mem_eball, edist_nndist, nnDist_eq_nnNorm, add_sub_cancel_left] at hmem
+    have hspec : spectralRadius ℂ b < r := hw_eq ▸ hw_lt
+    obtain ⟨ρ, hρ_gt, hρ_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hspec
+    rw [spectrum.spectralRadius_eq_gelfandRadius,
+      ENNReal.ofReal_lt_coe_iff (gelfandRadius_nonneg b)] at hρ_gt
+    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt b hρ_gt
+    have hpsum : Summable fun n => ‖p.coeff n‖ * (ρ : ℝ) ^ n := by
+      simpa only [FormalMultilinearSeries.norm_apply_eq_norm_coef] using
+        p.summable_norm_mul_pow (hρ_lt.trans_le hr)
+    refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_) (hpsum.mul_left C)
+    rw [norm_smul]
+    calc ‖p.coeff n‖ * ‖b ^ n‖
+        ≤ ‖p.coeff n‖ * (C * (ρ : ℝ) ^ n) := mul_le_mul_of_nonneg_left (hC n) (norm_nonneg _)
+      _ = C * (‖p.coeff n‖ * (ρ : ℝ) ^ n) := by ring
 
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A] [IsScalarTower ℂ A A]
   [SMulCommClass ℂ A A] [CompleteSpace A]

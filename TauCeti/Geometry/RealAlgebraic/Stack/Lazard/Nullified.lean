@@ -154,14 +154,14 @@ noncomputable def lazardDelineationNullifiedExample :
   strictMono_root _ := Subsingleton.strictMono _
   exponent _ := Finsupp.single 1 1
   lazardExponent_eq _ x :=
-    lazardExponent_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2
+    lazardExponent_optionEquivRight_rename_lazardNullifiedExample x.property.1 x.property.2
   multiplicity _ _ := 1
   rootMultiplicity_root _ _ x := by
-    rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2,
+    rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.property.1 x.property.2,
       ← Polynomial.C_1, ← sub_neg_eq_add, ← Polynomial.C_neg, Polynomial.rootMultiplicity_X_sub_C]
     simp
   exists_root_eq _ x _ t ht := by
-    rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.2.1 x.2.2] at ht
+    rw [lazardEval_optionEquivRight_rename_lazardNullifiedExample x.property.1 x.property.2] at ht
     refine ⟨0, ?_⟩
     have := ht.eq_zero
     simp only [Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_one] at this
