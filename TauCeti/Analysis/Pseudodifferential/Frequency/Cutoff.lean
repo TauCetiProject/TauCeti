@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import Mathlib.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Frequency cutoffs
@@ -26,6 +29,10 @@ the symbol calculus needs:
 * `FrequencyCutoff.ofContDiffBump`: `1 - f` is a frequency cutoff for a smooth bump `f` with
   `1 ≤ f.rIn` and `f.rOut ≤ 2`, so frequency cutoffs exist whenever `E` has smooth bump functions
   (for instance in every inner product space and every finite-dimensional space);
+* `FrequencyCutoff.ofSmoothTransition`: on an inner product space, the explicit cutoff
+  `ξ ↦ smoothTransition (‖ξ‖ - 1)`, built from the flat function `t ↦ exp (-1 / t)`;
+* on a nontrivial space a cutoff takes every value in `[0, 1]`
+  (`FrequencyCutoff.range_eq_Icc`); in particular it cannot jump from `0` to `1`;
 * every iterated derivative of a cutoff vanishes on the closed unit ball, and every iterated
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
@@ -116,6 +123,18 @@ theorem le_one (ξ : E) : χ ξ ≤ 1 :=
 theorem norm_le_one (ξ : E) : ‖χ ξ‖ ≤ 1 := by
   rw [Real.norm_of_nonneg (χ.nonneg ξ)]
   exact χ.le_one ξ
+
+/-- On a nontrivial space a frequency cutoff takes every value in `[0, 1]`: along a ray it is
+continuous from the value `0` at radius `1` to the value `1` at radius `2`. -/
+theorem range_eq_Icc [Nontrivial E] : range χ = Icc 0 1 := by
+  refine Subset.antisymm (range_subset_iff.2 fun ξ ↦ ⟨χ.nonneg ξ, χ.le_one ξ⟩) fun c hc ↦ ?_
+  obtain ⟨v, hv⟩ := exists_norm_eq E zero_le_one
+  have hcont : ContinuousOn (fun t : ℝ ↦ χ (t • v)) (Icc 1 2) :=
+    (χ.continuous.comp (continuous_id.smul continuous_const)).continuousOn
+  have h₁ : χ ((1 : ℝ) • v) = 0 := χ.apply_eq_zero_of_norm_le_one (by simp [hv])
+  have h₂ : χ ((2 : ℝ) • v) = 1 := χ.apply_eq_one_of_two_le_norm (by simp [norm_smul, hv])
+  obtain ⟨t, -, ht⟩ := intermediate_value_Icc one_le_two hcont (by rwa [h₁, h₂])
+  exact ⟨t • v, ht⟩
 
 /-- A frequency cutoff vanishes near every point of the open unit ball. -/
 theorem eventuallyEq_zero_of_norm_lt_one {ξ : E} (hξ : ‖ξ‖ < 1) : (χ : E → ℝ) =ᶠ[𝓝 ξ] 0 := by
@@ -302,6 +321,35 @@ theorem ofContDiffBump_apply [HasContDiffBump E] (f : ContDiffBump (0 : E)) (h�
 /-- Frequency cutoffs exist on every space with smooth bump functions. -/
 noncomputable instance [HasContDiffBump E] : Inhabited (FrequencyCutoff E) :=
   ⟨ofContDiffBump ⟨1, 2, one_pos, one_lt_two⟩ le_rfl le_rfl⟩
+
+section SmoothTransition
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- On an inner product space, `ξ ↦ smoothTransition (‖ξ‖ - 1)` is a frequency cutoff. With the
+flat function `h t = exp (-1 / t)` for `t > 0` and `h t = 0` for `t ≤ 0` (`expNegInvGlue`), it is
+`h (‖ξ‖ - 1) / (h (‖ξ‖ - 1) + h (2 - ‖ξ‖))`. -/
+noncomputable def ofSmoothTransition : FrequencyCutoff F where
+  toFun ξ := Real.smoothTransition (‖ξ‖ - 1)
+  contDiff' := by
+    rw [contDiff_iff_contDiffAt]
+    intro ξ
+    rcases eq_or_ne ξ 0 with rfl | hξ
+    · refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+      filter_upwards [ball_mem_nhds (0 : F) one_pos] with η hη
+      exact Real.smoothTransition.zero_of_nonpos (by linarith [mem_ball_zero_iff.1 hη])
+    · exact Real.smoothTransition.contDiffAt.comp ξ ((contDiffAt_norm ℝ hξ).sub contDiffAt_const)
+  eq_zero_of_norm_le_one' _ hξ := Real.smoothTransition.zero_of_nonpos (by linarith)
+  eq_one_of_two_le_norm' _ hξ := Real.smoothTransition.one_of_one_le (by linarith)
+  nonneg' _ := Real.smoothTransition.nonneg _
+  le_one' _ := Real.smoothTransition.le_one _
+
+@[simp]
+theorem ofSmoothTransition_apply (ξ : F) :
+    ofSmoothTransition ξ = Real.smoothTransition (‖ξ‖ - 1) :=
+  (rfl)
+
+end SmoothTransition
 
 /-- The pointwise product of two frequency cutoffs is a frequency cutoff. -/
 instance : Mul (FrequencyCutoff E) where

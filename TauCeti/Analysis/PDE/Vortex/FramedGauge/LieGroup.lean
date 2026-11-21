@@ -82,28 +82,27 @@ theorem exists_norm_subOne_expGauge_sub_smul_le (hs : 1 < s) :
   have h : 0 ≤ s := zero_le_one.trans hs.le
   have hd := finrank_real_complex_lt_two_mul hs
   -- The `L²` function `U = i G` and its `H^s` element `i G`.
-  set X := (inclusion h (G : H^{s}(ℂ))).toLp with hXe
-  have hX : MemSobolev s 2 (X : 𝓢'(ℂ, ℂ)) := memSobolev_toLp_inclusion h _
+  set X := inclusionLp h (G : H^{s}(ℂ)) with hXe
+  have hX : MemSobolev s 2 (X : 𝓢'(ℂ, ℂ)) := memSobolev_inclusionLp h _
   have hU := hX.toTemperedDistribution_smul I
   have hUG : hU.toBesselPotentialSpace = I • (G : H^{s}(ℂ)) := by
     rw [hX.toBesselPotentialSpace_toTemperedDistribution_smul I hU,
-      toBesselPotentialSpace_memSobolev_toLp_inclusion]
+      toBesselPotentialSpace_memSobolev_inclusionLp]
   have hnorm : ‖hU.toBesselPotentialSpace‖ = ‖G‖ := by
     rw [hUG, norm_smul, norm_I, one_mul, Submodule.norm_coe]
   obtain ⟨hsum, hle⟩ := summable_and_tsum_norm_expRemainderCoeff_le
     (mul_nonneg hC (norm_nonneg hU.toBesselPotentialSpace))
   -- The remainder series of `U` defines an `H^s` element `v` with the majorant bound.
   obtain ⟨v, hv, hvs, hvle⟩ := hpow hU hsum
-  have hXG : X =ᵐ[volume] fun z ↦ (continuousRep G z : ℂ) := by
-    simp only [X, toLp_inclusion]
-    exact coeFn_inclusionLp_ae_eq_continuousRep hd G
+  have hXG : X =ᵐ[volume] fun z ↦ (continuousRep G z : ℂ) :=
+    coeFn_inclusionLp_ae_eq_continuousRep hd G
   -- `v + i G = exp (i G) - 1`, by comparing `L²` functions.
   have hveq : hvs.toBesselPotentialSpace + I • (G : H^{s}(ℂ)) = subOne (expGauge hs G) := by
     refine toLp_inclusion_injective h (Lp.ext ?_)
     filter_upwards [coeFn_toLp_inclusion_add h hvs.toBesselPotentialSpace (I • (G : H^{s}(ℂ))),
       coeFn_toLp_inclusion_smul h I (G : H^{s}(ℂ)), coeFn_toLp_inclusion_subOne_expGauge hs h G,
       hv, Lp.coeFn_smul I X, hXG] with z h₁ h₂ h₃ h₄ h₅ h₆
-    rw [← hXe] at h₂
+    rw [toLp_inclusion h (G : H^{s}(ℂ)), ← hXe] at h₂
     rw [h₁, Pi.add_apply, h₂, toLp_inclusion_toBesselPotentialSpace h hvs rfl, Pi.smul_apply,
       h₃]
     rw [h₅, Pi.smul_apply, h₆] at h₄

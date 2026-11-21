@@ -44,6 +44,8 @@ sends `C¹` maps to continuous maps when `J` and `A` are continuous.
   `TauCeti.equivRealProdCLM_I`.
 * `TauCeti.fderiv_comp_equivRealProdCLM_one` and `TauCeti.fderiv_comp_equivRealProdCLM_I`: read
   in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
+* `ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le`: the value of a map
+  `A : ℝ × ℝ →L[ℝ] V` on `(0, 1)` is within `‖A - (σ, τ) ↦ τ X‖` of `X`.
 * `LinearMap.apply_stdComplexLine` and `ContinuousLinearMap.apply_stdComplexLine`: a real-linear
   map is determined by its values on the coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
@@ -149,6 +151,17 @@ lemma fderiv_comp_equivRealProdCLM_I {E : Type*} [NormedAddCommGroup E] [NormedS
       fderiv ℝ u (Complex.equivRealProdCLM y) stdComplexLineImag := by
   rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, equivRealProdCLM_I]
+
+/-- Applying a map `A : ℝ × ℝ →L[ℝ] V` to `(0, 1)` and subtracting `X` costs at most the distance of
+`A` from `(σ, τ) ↦ τ X`. -/
+theorem _root_.ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (A : ℝ × ℝ →L[ℝ] V) (X : V) :
+    ‖A stdComplexLineImag - X‖ ≤ ‖A - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight X‖ := by
+  have h : A stdComplexLineImag - X =
+      (A - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight X) stdComplexLineImag := by
+    simp [stdComplexLineImag_eq]
+  rw [h]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans_eq (by simp [stdComplexLineImag_eq])
 
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=
