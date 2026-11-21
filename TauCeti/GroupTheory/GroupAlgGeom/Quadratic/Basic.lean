@@ -1026,10 +1026,6 @@ private theorem prod_wordLetters (S : Standard G X) :
   cases S <;>
     simp [wordLetters, atomBlocks, toWord_def, Function.comp_def, hcomm, hsq, hconj, mul_assoc]
 
-private theorem sumElim_inl_ne_inr {α β : Type*} {f : α → X} {g : β → X}
-    (inj : (Sum.elim f g).Injective) (a : α) (b : β) : f a ≠ g b :=
-  fun h => by have := @inj (.inl a) (.inr b) h; simp at this
-
 private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
     (f : Fin n → List (G ⊕ X × Bool)) (z : Fin m → X) (c : Fin m → G) {d : G}
     (hne : ∀ i, f i ≠ []) (hred : ∀ i, GX.IsReduced (f i)) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1)
@@ -1067,15 +1063,15 @@ private theorem isCyclicallyReduced_orientableCoeff {n m : ℕ} {x y : Fin n →
   refine isCyclicallyReduced_ofFn_append_conjLetters (fun i => commLetters (x i) (y i)) z c
     (by simp [commLetters]) (fun i => ?_) hc hd
     (by simp [commLetters]) (by simp [commLetters]) fun s₁ s₂ hs => ?_
-  · have hxy := sumElim_inl_ne_inr hinj₁ i i
+  · have hxy := (Sum.elim_injective.1 hinj₁).2.2 i i
     simp [commLetters, hxy, hxy.symm]
   · rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
       simp only [Sum.elim_inl, Sum.elim_inr, commLetters, conjLetters, List.getLast?_cons_cons,
         List.getLast?_singleton, List.head?_cons, Option.mem_def, Option.some.injEq,
         forall_eq', GX.combines_inr_inr]
-    · rintro ⟨h, -⟩; exact sumElim_inl_ne_inr hinj₁ i₂ i₁ h.symm
-    · rintro ⟨h, -⟩; exact sumElim_inl_ne_inr inj (.inr i₁) j₂ h
-    · rintro ⟨h, -⟩; exact sumElim_inl_ne_inr inj (.inl i₂) j₁ h.symm
+    · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 hinj₁).2.2 i₂ i₁ h.symm
+    · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 inj).2.2 (.inr i₁) j₂ h
+    · rintro ⟨h, -⟩; exact (Sum.elim_injective.1 inj).2.2 (.inl i₂) j₁ h.symm
     · rintro ⟨h, -⟩; exact hs (congrArg Sum.inr ((Sum.elim_injective.1 inj).2.1 h))
 
 private theorem isCyclicallyReduced_nonorientableCoeff {n m : ℕ} {x : Fin n → X} {z : Fin m → X}
@@ -1093,18 +1089,24 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     GX.IsCyclicallyReduced (wordLetters S) := by
   cases S with
   | orientable n hn x y inj =>
-    have hxy (i j : Fin n) : y i ≠ x j := (sumElim_inl_ne_inr inj j i).symm
-    refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, commLetters]) ?_ ?_
+    have hxy (i j : Fin n) : y i ≠ x j := ((Sum.elim_injective.1 inj).2.2 j i).symm
+    refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, commLetters]) ?_ ?_ ?_
     · simp only [atomBlocks, List.mem_ofFn, forall_exists_index, forall_apply_eq_imp_iff]
       intro i; simp [commLetters, hxy i i, (hxy i i).symm]
-    · intro l₁ hl₁ l₂ hl₂
-      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁; obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
+    · exact List.isChain_iff_getElem.2 fun i hi => by
+        simp [atomBlocks, commLetters, hxy _ _]
+    · intro _ l₁ hl₁ l₂ hl₂
+      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl₁)
+      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl₂)
       simp [commLetters, hxy i j]
   | nonorientable n hn x inj =>
     refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, sqLetters])
-      (by simp [atomBlocks, sqLetters]) fun l₁ hl₁ l₂ hl₂ => ?_
-    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁; obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
-    simp [sqLetters]
+      (by simp [atomBlocks, sqLetters]) ?_ ?_
+    · exact List.isChain_iff_getElem.2 fun i hi => by simp [atomBlocks, sqLetters]
+    · intro _ l₁ hl₁ l₂ hl₂
+      obtain ⟨i, rfl⟩ := List.mem_ofFn.1 (List.mem_of_getLast? hl₁)
+      obtain ⟨j, rfl⟩ := List.mem_ofFn.1 (List.mem_of_head? hl₂)
+      simp [sqLetters]
   | orientableCoeff _ _ hnm _ _ _ inj _ hc _ hd =>
     exact isCyclicallyReduced_orientableCoeff hnm inj hc hd
   | nonorientableCoeff _ _ hn _ _ inj _ hc _ hd =>
@@ -1129,12 +1131,12 @@ theorem occurrences_toWord_of_mem_vars {S : Standard G X} {x : X} (hx : x ∈ S.
       GX.countVar_nil, add_zero] <;> exact h2.trans hle
   cases S with
   | orientable n hn a b inj =>
-    have hab (i : Fin n) : a i ≠ b i := sumElim_inl_ne_inr inj i i
+    have hab (i : Fin n) : a i ≠ b i := (Sum.elim_injective.1 inj).2.2 i i
     obtain ⟨i | i, rfl⟩ := hx
     · exact ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, by simp [commLetters, (hab i).symm]⟩
     · exact ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, by simp [commLetters, hab i]⟩
   | orientableCoeff n m hnm a b z inj c hc d hd =>
-    have hab (i : Fin n) : a i ≠ b i := sumElim_inl_ne_inr (Sum.elim_injective.1 inj).1 i i
+    have hab (i : Fin n) : a i ≠ b i := (Sum.elim_injective.1 (Sum.elim_injective.1 inj).1).2.2 i i
     obtain ⟨(i | i) | j, rfl⟩ := hx
     · exact ⟨_, List.mem_append_left _ (List.mem_ofFn.2 ⟨i, rfl⟩),
         by simp [commLetters, (hab i).symm]⟩

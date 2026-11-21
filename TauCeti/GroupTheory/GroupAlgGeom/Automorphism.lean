@@ -205,6 +205,12 @@ theorem transvection_inr_of_of_ne (h : y ≠ x) :
     transvection x a b ha hb (inr (FreeGroup.of y)) = inr (FreeGroup.of y) := by
   simp [transvection_apply, h]
 
+/-- Evaluation of the transvection `x ↦ a x b` on any variable generator. -/
+theorem transvection_inr_of (y : X) :
+    transvection x a b ha hb (inr (FreeGroup.of y)) =
+      if y = x then a * inr (FreeGroup.of x) * b else inr (FreeGroup.of y) := by
+  split_ifs with h <;> simp [transvection_apply, h]
+
 /-- A transvection of the variable `x` fixes the words in which `x` does not occur. -/
 @[simp]
 theorem transvection_apply_of_mem_avoiding (hc : c ∈ avoiding x) :
@@ -290,6 +296,12 @@ theorem invertVar_inr_of_self (x : X) :
 theorem invertVar_inr_of_of_ne (h : y ≠ x) :
     invertVar G x (inr (FreeGroup.of y)) = inr (FreeGroup.of y) := by
   simp [invertVar_apply, h]
+
+/-- Evaluation of the inversion `x ↦ x⁻¹` on any variable generator. -/
+theorem invertVar_inr_of (x y : X) :
+    invertVar G x (inr (FreeGroup.of y)) =
+      if y = x then (inr (FreeGroup.of x))⁻¹ else inr (FreeGroup.of y) := by
+  split_ifs with h <;> simp [invertVar_apply, h]
 
 /-- Inverting the variable `x` fixes the words in which `x` does not occur. -/
 @[simp]
@@ -409,6 +421,83 @@ theorem apply_inl_of_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ element
   | one => rfl
   | mul f f' _ _ hf hf' => simp [hf, hf']
   | inv f _ hf => simpa [MulEquiv.symm_apply_eq] using hf.symm
+
+/-- Every elementary automorphism is a finite product of transvections and variable
+inversions. Since each generator is closed under inversion, the inverse `f⁻¹` is likewise the
+product `(fs.map (·⁻¹)).reverse.prod` of the inverted generators in reverse order. -/
+theorem mem_elementaryAut_iff_exists_list {f : MulAut (GX G X)} :
+    f ∈ elementaryAut G X ↔
+      ∃ fs : List (MulAut (GX G X)), f = fs.prod ∧
+        ∀ φ ∈ fs,
+          (∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x) (hb : b ∈ avoiding x),
+            φ = transvection x a b ha hb) ∨
+          ∃ x : X, φ = invertVar G x := by
+  refine ⟨fun hf => ?_, ?_⟩
+  · rw [elementaryAut_eq_closure] at hf
+    induction hf using Subgroup.closure_induction with
+    | mem φ hφ => exact ⟨[φ], by simp, by simpa [eq_comm] using hφ⟩
+    | one => exact ⟨[], by simp, by simp⟩
+    | mul _ _ _ _ h₁ h₂ =>
+      obtain ⟨fs₁, rfl, hfs₁⟩ := h₁
+      obtain ⟨fs₂, rfl, hfs₂⟩ := h₂
+      exact ⟨fs₁ ++ fs₂, by simp, fun φ hφ => by
+        rcases List.mem_append.1 hφ with hφ | hφ <;> [exact hfs₁ φ hφ; exact hfs₂ φ hφ]⟩
+    | inv _ _ h =>
+      obtain ⟨fs, rfl, hfs⟩ := h
+      refine ⟨(fs.map (·⁻¹)).reverse, ?_, fun φ hφ => ?_⟩
+      · suffices ∀ l : List (MulAut (GX G X)), l.prod⁻¹ = (l.map (·⁻¹)).reverse.prod from this fs
+        intro l
+        induction l with
+        | nil => simp
+        | cons ψ l ih => simp [ih, mul_inv_rev]
+      · obtain ⟨ψ, hψ, rfl⟩ := List.mem_map.1 (List.mem_reverse.1 hφ)
+        rcases hfs ψ hψ with ⟨x, a, b, ha, hb, rfl⟩ | ⟨x, rfl⟩
+        · exact .inl ⟨x, a⁻¹, b⁻¹, inv_mem ha, inv_mem hb, transvection_inv ha hb⟩
+        · exact .inr ⟨x, invertVar_inv x⟩
+  · rintro ⟨fs, rfl, hfs⟩
+    induction fs with
+    | nil => exact one_mem _
+    | cons φ fs ih =>
+      refine mul_mem ?_ (ih fun ψ hψ => hfs ψ (List.mem_cons_of_mem _ hψ))
+      rcases hfs φ List.mem_cons_self with ⟨x, a, b, ha, hb, rfl⟩ | ⟨x, rfl⟩
+      · exact transvection_mem_elementaryAut x ha hb
+      · exact invertVar_mem_elementaryAut x
+
+/-- Elimination principle for `elementaryAut G X`: to prove a property of every elementary
+automorphism, it suffices to prove it for `1`, for every `transvection`, for every `invertVar`,
+and for products. -/
+@[elab_as_elim]
+theorem elementaryAut_induction {motive : (f : MulAut (GX G X)) → f ∈ elementaryAut G X → Prop}
+    (one : motive 1 (one_mem _))
+    (transvection : ∀ (x : X) (a b : GX G X) (ha : a ∈ avoiding x) (hb : b ∈ avoiding x),
+      motive (GX.transvection x a b ha hb) (transvection_mem_elementaryAut x ha hb))
+    (invertVar : ∀ x : X, motive (GX.invertVar G x) (invertVar_mem_elementaryAut x))
+    (mul : ∀ f g (hf : f ∈ elementaryAut G X) (hg : g ∈ elementaryAut G X),
+      motive f hf → motive g hg → motive (f * g) (mul_mem hf hg))
+    {f : MulAut (GX G X)} (hf : f ∈ elementaryAut G X) : motive f hf := by
+  obtain ⟨fs, rfl, hfs⟩ := mem_elementaryAut_iff_exists_list.1 hf
+  suffices h : ∀ (fs : List (MulAut (GX G X))),
+      (∀ φ ∈ fs,
+        (∃ (x : X) (a b : GX G X) (ha : a ∈ avoiding x) (hb : b ∈ avoiding x),
+          φ = GX.transvection x a b ha hb) ∨
+        ∃ x : X, φ = GX.invertVar G x) →
+      ∀ (hm : fs.prod ∈ elementaryAut G X), motive fs.prod hm from
+    h fs hfs hf
+  intro fs
+  induction fs with
+  | nil => intro _ _; exact one
+  | cons φ fs ih =>
+    intro hfs _hm
+    have hφmem : φ ∈ elementaryAut G X := by
+      rcases hfs φ List.mem_cons_self with ⟨x, a, b, ha, hb, rfl⟩ | ⟨x, rfl⟩
+      · exact transvection_mem_elementaryAut x ha hb
+      · exact invertVar_mem_elementaryAut x
+    have hfsmem : fs.prod ∈ elementaryAut G X :=
+      mem_elementaryAut_iff_exists_list.2 ⟨fs, rfl, fun ψ hψ => hfs ψ (List.mem_cons_of_mem _ hψ)⟩
+    refine mul φ fs.prod hφmem hfsmem ?_ (ih (fun ψ hψ => hfs ψ (List.mem_cons_of_mem _ hψ)) hfsmem)
+    rcases hfs φ List.mem_cons_self with ⟨x, a, b, ha, hb, rfl⟩ | ⟨x, rfl⟩
+    · exact transvection x a b ha hb
+    · exact invertVar x
 
 /-- Simultaneous transvections: for a finite set `Y` of variables and words `a y`, `b y` in which
 no variable of `Y` occurs, there is an elementary automorphism with `y ↦ a y * y * b y` for every

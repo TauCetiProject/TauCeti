@@ -831,21 +831,35 @@ theorem isCyclicallyReduced_append_comm {l₁ l₂ : List (G ⊕ X × Bool)} :
     intro l₂ h
     simpa using ih (l₂ ++ [a]) (by simpa using h.append_singleton)
 
-/-- A flatten of nonempty reduced words whose boundary letters (including wrap-around) never
-combine is cyclically reduced. -/
+/-- A flatten of nonempty reduced words whose consecutive boundary letters do not combine, and
+whose last and first letters do not combine when the flattened word has at least two letters, is
+cyclically reduced. -/
 theorem isCyclicallyReduced_flatten_of_blocks {blocks : List (List (G ⊕ X × Bool))}
     (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, IsReduced l)
-    (hwrap : ∀ l₁ ∈ blocks, ∀ l₂ ∈ blocks,
-      ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) :
+    (hchain : blocks.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b)
+    (hwrap : 2 ≤ blocks.flatten.length →
+      ∀ l₁ ∈ blocks.getLast?, ∀ l₂ ∈ blocks.head?,
+        ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) :
     IsCyclicallyReduced blocks.flatten := by
-  refine isCyclicallyReduced_iff.2 ⟨isReduced_flatten hne hred ?_, fun a b m hm => ?_⟩
-  · exact List.isChain_iff_getElem.2 fun _ _ => hwrap _ (List.getElem_mem _) _ (List.getElem_mem _)
-  · obtain ⟨l₂, hl₂, ha⟩ := List.exists_of_findSome?_eq_some
-      (by rw [← List.head?_flatten, hm]; rfl : blocks.findSome? List.head? = some a)
-    obtain ⟨l₁, hl₁, hlast⟩ := List.exists_of_findSome?_eq_some
-      (by rw [← List.getLast?_flatten, hm, ← List.cons_append, List.getLast?_concat] :
-        blocks.reverse.findSome? List.getLast? = some b)
-    exact hwrap l₁ (List.mem_reverse.1 hl₁) l₂ hl₂ b hlast a ha
+  refine isCyclicallyReduced_iff.2 ⟨isReduced_flatten hne hred hchain, fun a b m hm => ?_⟩
+  rcases blocks with _ | ⟨l₀, rest⟩
+  · simp at hm
+  have hlen : 2 ≤ (l₀ :: rest).flatten.length := by simp [hm]
+  have ha : a ∈ l₀.head? := by
+    have h := congrArg List.head? hm
+    rw [List.flatten_cons, List.head?_append_of_ne_nil _ (hne _ List.mem_cons_self)] at h
+    simpa using h
+  obtain ⟨l₁, hl₁⟩ := Option.isSome_iff_exists.1
+    (List.getLast?_isSome.2 (List.cons_ne_nil l₀ rest))
+  have hlast : (l₀ :: rest).flatten = (l₀ :: rest).dropLast.flatten ++ l₁ := by
+    conv_lhs => rw [← List.dropLast_append_getLast (List.cons_ne_nil l₀ rest)]
+    simp [(List.getLast_eq_iff_getLast?_eq_some (List.cons_ne_nil l₀ rest)).2 hl₁]
+  have hb : b ∈ l₁.getLast? := by
+    have h := congrArg List.getLast? (hlast.symm.trans hm)
+    rw [List.getLast?_append_of_ne_nil _ (hne l₁ (List.mem_of_getLast? hl₁)),
+      ← List.cons_append, List.getLast?_append_of_ne_nil _ (by simp)] at h
+    simpa using h
+  exact hwrap hlen l₁ hl₁ l₀ rfl b hb a ha
 
 /-- Appending a nontrivial coefficient `.inl d` to a flatten of nonempty reduced words whose
 boundaries do not combine and whose outer letters are variables yields a cyclically reduced
@@ -856,23 +870,38 @@ theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × 
     (hhead : ∀ l ∈ blocks, ∀ b ∈ l.head?, ∀ g, b ≠ .inl g)
     (hlast : ∀ l ∈ blocks, ∀ a ∈ l.getLast?, ∀ g, a ≠ .inl g) (hd : d ≠ 1) :
     IsCyclicallyReduced (blocks.flatten ++ [.inl d]) := by
-  rcases blocks with _ | ⟨l₀', rest_blocks⟩
-  · simpa using hd
-  have hr := isReduced_flatten hne hred hchain
-  have hfn : (l₀' :: rest_blocks).flatten ≠ [] := fun h =>
-    hne l₀' List.mem_cons_self (List.flatten_eq_nil_iff.1 h l₀' List.mem_cons_self)
-  obtain ⟨a, rest, hf⟩ := List.exists_cons_of_ne_nil hfn
-  have ha_eq : List.findSome? List.head? (l₀' :: rest_blocks) = some a := by
-    rw [← List.head?_flatten, hf]; rfl
-  obtain ⟨l₀, hl₀, ha⟩ := List.exists_of_findSome?_eq_some ha_eq
-  rw [hf, List.cons_append, isCyclicallyReduced_cons_append, ← List.cons_append, ← hf,
-    isReduced_append]
-  refine ⟨⟨hr, isReduced_singleton_inl.2 hd, fun u hu v hv => ?_⟩, ?_⟩
-  · rw [Option.mem_def, List.getLast?_flatten] at hu
-    obtain ⟨l₁, hl₁, hu'⟩ := List.exists_of_findSome?_eq_some hu
-    obtain rfl : .inl d = v := by simpa using hv
-    rcases u with g | _; exacts [absurd rfl (hlast l₁ (List.mem_reverse.1 hl₁) _ hu' g), by simp]
-  · rcases a with g | _; exacts [absurd rfl (hhead l₀ hl₀ _ ha g), by simp]
+  have hfl : blocks.flatten ++ [(.inl d : G ⊕ X × Bool)] =
+      (blocks ++ [[(.inl d : G ⊕ X × Bool)]]).flatten := by simp
+  rw [hfl]
+  refine isCyclicallyReduced_flatten_of_blocks ?_ ?_ ?_ ?_
+  · intro l hl
+    rcases List.mem_append.1 hl with hl | hl
+    · exact hne l hl
+    · obtain rfl : l = [.inl d] := by simpa using hl
+      simp
+  · intro l hl
+    rcases List.mem_append.1 hl with hl | hl
+    · exact hred l hl
+    · obtain rfl : l = [.inl d] := by simpa using hl
+      simpa using hd
+  · rw [List.isChain_append]
+    refine ⟨hchain, List.isChain_singleton _, fun l₁ hl₁ l₂ hl₂ a ha b hb => ?_⟩
+    obtain rfl : [.inl d] = l₂ := by simpa using hl₂
+    obtain rfl : .inl d = b := by simpa using hb
+    rcases a with g | _
+    · exact absurd rfl (hlast l₁ (List.mem_of_getLast? hl₁) (.inl g) ha g)
+    · simp
+  · intro hlen l₁ hl₁ l₂ hl₂ a ha b hb
+    rcases blocks with _ | ⟨l₀, rest⟩
+    · simp at hlen
+    obtain rfl : [.inl d] = l₁ := by
+      rw [List.getLast?_append_of_ne_nil _ (by simp)] at hl₁
+      simpa using hl₁
+    obtain rfl : l₀ = l₂ := by simpa using hl₂
+    obtain rfl : .inl d = a := by simpa using ha
+    rcases b with g | _
+    · exact absurd rfl (hhead _ List.mem_cons_self (.inl g) hb g)
+    · simp
 
 end Cyclic
 

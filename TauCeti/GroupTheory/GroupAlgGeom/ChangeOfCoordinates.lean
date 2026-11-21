@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
+import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Changes of coordinates in equations over groups
@@ -377,13 +378,6 @@ theorem mem_V_singleton_iff_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') (v :
   rw [← hw', V_singleton_conj, ← Set.image_singleton, mem_V_image_mulEquiv_iff ι φ hφ]
 
 include hφ in
-/-- A `G`-isomorphism followed by conjugation preserves consistency of a single equation. -/
-theorem nonempty_V_singleton_iff_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
-    (V ι {w}).Nonempty ↔ (V ι {w'}).Nonempty := by
-  simp_rw [← Set.nonempty_coe_sort]
-  exact (equivVOfConjMulEquiv ι φ hφ hw').nonempty_congr
-
-include hφ in
 /-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` carries the radical of `{w}` to the radical of any
 conjugate `w' = u * φ w * u⁻¹` of `φ w`. -/
 theorem Rad_singleton_of_conj_mulEquiv (hw' : u * φ w * u⁻¹ = w') :
@@ -399,36 +393,6 @@ theorem eq_conj_inl_of_conj_mulEquiv_eq_inl {c : G} (hφc : φ (inl c) = inl c)
     _ = (φ.symm u)⁻¹ * inl c * ((φ.symm u)⁻¹)⁻¹ := by
       rw [hw', map_mul, map_mul, map_inv, φ.symm_apply_eq.2 hφc.symm, inv_inv]
 
-include hφ in
-/-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` that remains
-nontrivial in `H` has no solutions in `H`. -/
-theorem V_singleton_eq_empty_of_conj_mulEquiv_inl {c : G} (hw' : u * φ w * u⁻¹ = inl c)
-    (hc : ι c ≠ 1) : V ι {w} = ∅ := by
-  rw [eq_conj_inl_of_conj_mulEquiv_eq_inl φ (hφ c) hw', V_singleton_conj,
-    V_singleton_inl_eq_empty hc]
-
-include hφ in
-/-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` that remains
-nontrivial in `H` has radical `⊤`. -/
-theorem Rad_singleton_eq_top_of_conj_mulEquiv_inl {c : G} (hw' : u * φ w * u⁻¹ = inl c)
-    (hc : ι c ≠ 1) : Rad ι {w} = ⊤ :=
-  Rad_eq_top_of_V_eq_empty (V_singleton_eq_empty_of_conj_mulEquiv_inl ι φ hφ hw' hc)
-
-include hφ in
-/-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` with `ι c = 1`
-(in particular `c = 1`) is satisfied by every point of `H^X`. -/
-theorem V_singleton_eq_univ_of_conj_mulEquiv_inl {c : G} (hw' : u * φ w * u⁻¹ = inl c)
-    (hc : ι c = 1) : V ι {w} = Set.univ := by
-  rw [eq_conj_inl_of_conj_mulEquiv_eq_inl φ (hφ c) hw', V_singleton_conj,
-    V_singleton_inl_eq_univ hc]
-
-include hφ in
-/-- An equation carried by a `G`-isomorphism and conjugation to a coefficient `c` with `ι c = 1`
-has radical `I ι Set.univ`. -/
-theorem Rad_singleton_eq_I_univ_of_conj_mulEquiv_inl {c : G} (hw' : u * φ w * u⁻¹ = inl c)
-    (hc : ι c = 1) : Rad ι {w} = I ι Set.univ := by
-  rw [Rad_def, V_singleton_eq_univ_of_conj_mulEquiv_inl ι φ hφ hw' hc]
-
 namespace CoordGroup
 
 /-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` followed by conjugation `u * φ w * u⁻¹ = w'` induces an
@@ -436,38 +400,78 @@ isomorphism from the coordinate group of `{w}` to that of `{w'}`, given by `φ` 
 representatives. -/
 noncomputable def mulEquivOfConjMulEquiv (hw' : u * φ w * u⁻¹ = w') :
     CoordGroup ι {w} ≃* CoordGroup ι {w'} :=
-  QuotientGroup.congr _ _ φ (Rad_singleton_of_conj_mulEquiv ι φ hφ hw').symm
+  (imageMulEquiv ι φ hφ {w}).trans
+    (QuotientGroup.quotientMulEquivOfEq (by rw [Set.image_singleton, ← hw', Rad_singleton_conj]))
 
 @[simp]
 theorem mulEquivOfConjMulEquiv_mk (hw' : u * φ w * u⁻¹ = w') (t : GX G X) :
-    mulEquivOfConjMulEquiv ι φ hφ hw' (t : CoordGroup ι {w}) = (φ t : CoordGroup ι {w'}) :=
-  QuotientGroup.congr_mk _ _ _ _ t
+    mulEquivOfConjMulEquiv ι φ hφ hw' (t : CoordGroup ι {w}) = (φ t : CoordGroup ι {w'}) := by
+  simp [mulEquivOfConjMulEquiv]
 
 @[simp]
 theorem mulEquivOfConjMulEquiv_symm_mk (hw' : u * φ w * u⁻¹ = w') (t : GX G Y) :
     (mulEquivOfConjMulEquiv ι φ hφ hw').symm (t : CoordGroup ι {w'}) =
       (φ.symm t : CoordGroup ι {w}) := by
-  simp [mulEquivOfConjMulEquiv]
+  have hq : (QuotientGroup.quotientMulEquivOfEq
+      (by rw [Set.image_singleton, ← hw', Rad_singleton_conj] :
+        Rad ι (φ '' {w}) = Rad ι {w'})).symm (t : CoordGroup ι {w'}) =
+      (t : CoordGroup ι (φ '' {w})) :=
+    (MulEquiv.symm_apply_eq _).2 (QuotientGroup.quotientMulEquivOfEq_mk _ _).symm
+  rw [mulEquivOfConjMulEquiv, MulEquiv.symm_trans_apply, hq, imageMulEquiv_symm_mk]
 
 /-- The coordinate-group isomorphism induced by a `G`-isomorphism and conjugation commutes with
 the coefficient maps. -/
 theorem mulEquivOfConjMulEquiv_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
     mulEquivOfConjMulEquiv ι φ hφ hw' (coeff ι {w} g) = coeff ι {w'} g := by
-  simp [coeff_apply, hφ]
+  rw [mulEquivOfConjMulEquiv, MulEquiv.trans_apply, imageMulEquiv_coeff, coeff_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, coeff_apply]
 
 /-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism and conjugation commutes
 with the coefficient maps. -/
 theorem mulEquivOfConjMulEquiv_symm_coeff (hw' : u * φ w * u⁻¹ = w') (g : G) :
     (mulEquivOfConjMulEquiv ι φ hφ hw').symm (coeff ι {w'} g) = coeff ι {w} g := by
-  rw [MulEquiv.symm_apply_eq, mulEquivOfConjMulEquiv_coeff]
+  have hq : (QuotientGroup.quotientMulEquivOfEq
+      (by rw [Set.image_singleton, ← hw', Rad_singleton_conj] :
+        Rad ι (φ '' {w}) = Rad ι {w'})).symm (coeff ι {w'} g) =
+      coeff ι (φ '' {w}) g := by
+    rw [MulEquiv.symm_apply_eq]
+    simp only [coeff_apply, QuotientGroup.quotientMulEquivOfEq_mk]
+  rw [mulEquivOfConjMulEquiv, MulEquiv.symm_trans_apply, hq, imageMulEquiv_symm_coeff]
 
-include hφ in
-/-- If `ι` is injective and the transformed equation `w' = u * φ w * u⁻¹` has a solution in `H`,
-the coefficient map into the coordinate group of `{w}` is injective. -/
-theorem coeff_injective_of_conj_mulEquiv (hι : Function.Injective ι)
-    (hw' : u * φ w * u⁻¹ = w') (hV : (V ι {w'}).Nonempty) :
-    Function.Injective (coeff ι {w}) :=
-  coeff_injective hι ((nonempty_V_singleton_iff_of_conj_mulEquiv ι φ hφ hw').2 hV)
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation sends a
+coordinate `x` of the generic point of `{w}` to the class of the word `φ x`. -/
+@[simp]
+theorem mulEquivOfConjMulEquiv_genericPoint (hw' : u * φ w * u⁻¹ = w') (x : X) :
+    mulEquivOfConjMulEquiv ι φ hφ hw' (genericPoint ι {w} x) =
+      (φ (inr (FreeGroup.of x)) : CoordGroup ι {w'}) := by
+  simp [genericPoint_apply]
+
+/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation
+sends a coordinate `y` of the generic point of `{w'}` to the class of the word `φ⁻¹ y`. -/
+@[simp]
+theorem mulEquivOfConjMulEquiv_symm_genericPoint (hw' : u * φ w * u⁻¹ = w') (y : Y) :
+    (mulEquivOfConjMulEquiv ι φ hφ hw').symm (genericPoint ι {w'} y) =
+      (φ.symm (inr (FreeGroup.of y)) : CoordGroup ι {w}) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation sends the
+generic point of `{w}` to the image of the generic point of `{w'}` under the word map of `φ`. -/
+@[simp]
+theorem mulEquivOfConjMulEquiv_comp_genericPoint (hw' : u * φ w * u⁻¹ = w') :
+    ⇑(mulEquivOfConjMulEquiv ι φ hφ hw') ∘ genericPoint ι {w} =
+      wordMap (coeff ι {w'}) (fun x => φ (inr (FreeGroup.of x))) (genericPoint ι {w'}) := by
+  funext x
+  simp
+
+/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism `φ` and conjugation
+sends the generic point of `{w'}` to the image of the generic point of `{w}` under the word map
+of `φ⁻¹`. -/
+@[simp]
+theorem mulEquivOfConjMulEquiv_symm_comp_genericPoint (hw' : u * φ w * u⁻¹ = w') :
+    ⇑(mulEquivOfConjMulEquiv ι φ hφ hw').symm ∘ genericPoint ι {w'} =
+      wordMap (coeff ι {w}) (fun y => φ.symm (inr (FreeGroup.of y))) (genericPoint ι {w}) := by
+  funext y
+  simp
 
 end CoordGroup
 
