@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
 
+import TauCeti.LinearAlgebra.Dimension.Submodule
+
 /-!
 # The rank of an approximation domain
 
@@ -15,6 +17,9 @@ The rank of the span of an approximation domain is the number of its successive 
 `K` that are at most one. Any family realizing those minima spans the domain with its first
 `r` vectors, where `r` is this rank. These statements let arguments about the dimensions and
 spans of domains use the geometry of their successive minima without choosing a new basis.
+In one direction no hypothesis is needed: every minimum below the rank is at most one, for all
+forms and every real level. For a positive level and independent forms, the minima below the
+ambient dimension are positive.
 
 The threshold is non-strict: vectors on the boundary of the closed approximation body belong
 to the domain. Only indices below the ambient dimension are counted, since later successive
@@ -57,6 +62,35 @@ theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
   · rw [hcoe]
     exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
   · rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
+
+/-- The successive minima over `K` of an approximation domain of positive level, with forms
+independent at the infinite places and at `S₀`, are positive below the ambient dimension. -/
+theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
+    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
+  rw [← hcoe]
+  exact Submodule.successiveMinimum_pos hB hl
+
+/-- **The minima below the rank of an approximation domain are at most one**: if `l` is less
+than the rank of the span of `approxDomain S₀ L c Q`, then its `l`-th successive minimum over `K`
+is at most `1`, since the domain holds `l + 1` linearly independent points. This holds for every
+real level and all forms. -/
+theorem successiveMinimum_le_one_of_lt_finrank_approxSpan {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ} {Q : ℝ}
+    {l : ℕ} (hl : l < finrank K (approxSpan S₀ L c Q)) :
+    (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 := by
+  rw [approxSpan_eq_span] at hl
+  obtain ⟨x, hx, hxD⟩ := Submodule.le_finrank_span_iff_exists_linearIndependent.1 hl
+  refine Submodule.successiveMinimum_le one_pos hx (fun i ↦ approxDomain_subset_approxModule
+    (hxD i)) fun i ↦ ?_
+  rw [one_smul, mixedEmbedding_mem_approxBody_iff]
+  exact (mem_approxDomain.1 (hxD i)).1
 
 open scoped Classical in
 /-- The rank of an approximation domain of positive level is the number of its successive
