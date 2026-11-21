@@ -52,7 +52,7 @@ of `j` are handled as follows.
   `TauCeti.Symbol.IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`; so on the
   tempered distribution of an `Lᵖ` function the quantization of such a piece is an `Lᵖ` function,
   bounded by the row and column integrals of its kernel
-  (`TauCeti.Symbol.exists_quantizeTempered_eq_and_norm_le`).
+  (`TauCeti.Symbol.IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le`).
   So `‖Op(a) Δₖ u‖_p ≤ C ‖Δₖ u‖_p`, and `j = k` follows.
 * **High output frequencies, `j > k`.** A derivative falls either on the input or on the position
   variable of the symbol, `∂_v Op(a) = Op(a) ∂_v + Op(∂_{x, v} a)`
@@ -93,7 +93,7 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-! ### Dyadic pieces -/
+/-! ### Cutoffs in the angular frequency -/
 
 section Dyadic
 
@@ -132,70 +132,6 @@ private theorem inhomogeneousLittlewoodPaley_twoPiDilate (φ : ContDiffBump (0 :
   · simp [twoPiDilate_apply]
   · simp only [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, twoPiDilate_apply,
       smul_comm ((2 * Real.pi)⁻¹ : ℝ)]
-
-variable (ψ : ContDiffBump (0 : CoordinateSpace n)) {a : Symbol n ℂ ℂ 0}
-
-/-- The `j`-th Littlewood–Paley piece of `a`, which has bounded frequency support, as a symbol of
-order `-(n + 1)`, where its kernel is integrable. -/
-private def dyadicPiece (a : Symbol n ℂ ℂ 0) (j : ℕ) : Symbol n ℂ ℂ (-(n + 1)) :=
-  ofBoundedFrequencySupport (a.littlewoodPaleyPiece ψ j).coefficient
-    (a.littlewoodPaleyPiece ψ j).contDiff_coefficient (2 ^ j * ψ.rOut)
-    fun x _ hξ ↦ a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm ψ x hξ
-
-private theorem coefficient_dyadicPiece (a : Symbol n ℂ ℂ 0) (j : ℕ) :
-    (dyadicPiece ψ a j).coefficient = (a.littlewoodPaleyPiece ψ j).coefficient :=
-  coefficient_ofBoundedFrequencySupport _ _ _ _
-
-private theorem isUniform_dyadicPiece (ha : a.IsUniform) (j : ℕ) :
-    (dyadicPiece ψ a j).IsUniform :=
-  (ha.littlewoodPaleyPiece ψ j).ofBoundedFrequencySupport _ _
-
-/-- **The dyadic pieces are uniformly bounded on `Lᵖ`.** For a uniform symbol `a` of order `0`,
-the quantizations of its Littlewood–Paley pieces act on `Lᵖ` functions, `1 ≤ p ≤ ∞`, with norms
-bounded independently of the piece and of `p`. -/
-private theorem IsUniform.exists_quantizeTempered_dyadicPiece_eq_and_norm_le (ha : a.IsUniform) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℕ) {p : ℝ≥0∞} [Fact (1 ≤ p)]
-      (f : Lp F p (volume : Measure (CoordinateSpace n))),
-      ∃ v : Lp F p (volume : Measure (CoordinateSpace n)),
-        quantizeTempered F (dyadicPiece ψ a j) (isUniform_dyadicPiece ψ ha j) f = v ∧
-          ‖v‖ ≤ C * ‖f‖ := by
-  obtain ⟨C₀, hC₀, hreal⟩ := exists_quantizeTempered_eq_and_norm_le (F := F) (n := n)
-  obtain ⟨c₀, hc₀, h₀⟩ := ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le ψ [] []
-  choose c hc h₁ using fun i : Fin n ↦
-    ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le ψ [] (List.replicate (n + 1) i)
-  set c' := c₀ + ∑ i, c i
-  have hc' : 0 ≤ c' := add_nonneg hc₀ (Finset.sum_nonneg fun i _ ↦ hc i)
-  refine ⟨C₀ * c', by positivity, fun j {p} _ f ↦ ?_⟩
-  have h2 : (0 : ℝ) < 2 ^ j := by positivity
-  have hrpow (t : ℕ) : ((2 : ℝ) ^ j) ^ (t : ℝ) = (2 ^ j) ^ t := Real.rpow_natCast _ t
-  have h₀' (x : CoordinateSpace n) :
-      ∫ ξ, ‖(dyadicPiece ψ a j).coefficient (x, ξ)‖ ≤ c' * (2 ^ j) ^ n := by
-    rw [coefficient_dyadicPiece]
-    have := h₀ j x
-    simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero, zero_add,
-      hrpow] at this
-    refine this.trans ?_
-    gcongr
-    exact le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ hc i)
-  have h₁' (x : CoordinateSpace n) (i : Fin n) :
-      ∫ ξ, ‖mixedDeriv [] (List.replicate (n + 1) i) (dyadicPiece ψ a j).coefficient x ξ‖ ≤
-        c' * (2 ^ j) ^ n * ((2 ^ j)⁻¹) ^ (n + 1) := by
-    rw [coefficient_dyadicPiece]
-    have := h₁ i j x
-    rw [List.length_replicate, show (0 : ℝ) - ((n + 1 : ℕ) : ℝ) + n = ((-1 : ℤ) : ℝ) by
-      push_cast; ring, Real.rpow_intCast] at this
-    refine this.trans ?_
-    rw [show c' * (2 ^ j : ℝ) ^ n * ((2 ^ j)⁻¹) ^ (n + 1) = c' * (2 ^ j : ℝ) ^ (-1 : ℤ) by
-      rw [zpow_neg_one, inv_pow, pow_succ]
-      field_simp]
-    gcongr
-    exact (Finset.single_le_sum (fun i _ ↦ hc i) (Finset.mem_univ i)).trans
-      (le_add_of_nonneg_left hc₀)
-  obtain ⟨v, hv, hvn⟩ := hreal (isUniform_dyadicPiece ψ ha j) (by linarith)
-    (inv_pos.2 h2) h₀' h₁' f
-  refine ⟨v, hv, hvn.trans_eq ?_⟩
-  rw [inv_pow]
-  field_simp
 
 /-! ### Blocks -/
 
@@ -256,24 +192,25 @@ private theorem IsUniform.exists_quantizeTempered_eq_and_norm_le_of_isVanishingO
         quantizeTempered F a ha f = v ∧ ‖v‖ ≤ C * ‖f‖ := by
   obtain ⟨L, hL⟩ := exists_tsupport_enlargedLittlewoodPaley_sub_one_subset φ
   obtain ⟨C, hC, hpiece⟩ :=
-    ha.exists_quantizeTempered_dyadicPiece_eq_and_norm_le (F := F) (twoPiDilate φ)
+    ha.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le (F := F) (twoPiDilate φ)
   refine ⟨2 * L * C, by positivity, fun k {p} _ f hf ↦ ?_⟩
   set g : CoordinateSpace n → ℂ := fun ζ ↦ ((φ.enlargedLittlewoodPaley L k ζ : ℝ) : ℂ)
   have hg : g.HasTemperateGrowth := φ.hasTemperateGrowth_ofReal_enlargedLittlewoodPaley L k
   have hgf : fourierMultiplierCLM F g (f : 𝓢'(CoordinateSpace n, F)) = f :=
     fourierMultiplierCLM_eq_self_of_isVanishingOn hf hg (hL k)
   set s := Finset.Ico (k + 1 - L) (k + L)
-  have hb (i : ℕ) := isUniform_dyadicPiece (twoPiDilate φ) ha i
+  have hb (i : ℕ) := ha.littlewoodPaleyPieceLow (twoPiDilate φ) i
   have hq : quantizeTempered F a ha (f : 𝓢'(CoordinateSpace n, F)) =
-      ∑ i ∈ s, quantizeTempered F (dyadicPiece (twoPiDilate φ) a i) (hb i) f := by
+      ∑ i ∈ s, quantizeTempered F (a.littlewoodPaleyPieceLow (twoPiDilate φ) i) (hb i) f := by
     conv_lhs => rw [← hgf]
     rw [ha.quantizeTempered_fourierMultiplierCLM (IsUniform.sum fun i _ ↦ hb i) hg ?_,
       quantizeTempered_sum hb s, sum_apply]
     intro x ξ
-    simp only [coefficient_sum, Finset.sum_apply, coefficient_dyadicPiece,
+    simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPieceLow,
       coefficient_littlewoodPaleyPiece, inhomogeneousLittlewoodPaley_twoPiDilate, g,
       ContDiffBump.enlargedLittlewoodPaley_apply, ← Finset.sum_smul, Complex.coe_smul, s]
   choose v hv hvn using fun i ↦ hpiece i f
+  simp only [Real.rpow_zero, mul_one] at hvn
   refine ⟨∑ i ∈ s, v i, ?_, ?_⟩
   · rw [hq, Lp.toTemperedDistribution_sum]
     exact Finset.sum_congr rfl fun i _ ↦ hv i

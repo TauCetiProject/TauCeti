@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Lp.Basic
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
+import TauCeti.Analysis.Pseudodifferential.AlmostOrthogonality
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
@@ -29,6 +31,9 @@ are allowed, the scalar symbol acting on `F` by multiplication.
 * `TauCeti.Symbol.exists_quantizeTempered_eq_and_norm_le`: `Op(b)` maps the tempered distribution
   of an `Lᵖ` function to the tempered distribution of an `Lᵖ` function, of norm at most
   `C A Rⁿ ‖f‖_p`.
+* `TauCeti.Symbol.IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le`: the
+  same for the Littlewood–Paley pieces of a uniform symbol of order `m`, with the bound
+  `C (2^j)^m ‖f‖_p` of `TauCeti.Symbol.IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le`.
 -/
 
 public section
@@ -206,6 +211,31 @@ private theorem integrable_smul_quantizationKernel (hb : b.IsUniform) (hm : m < 
     exact integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _) (hx.const_mul _)
       (ae_of_all _ fun y ↦ hpt x y)
 
+/-- On the tempered distribution of an `Lᵖ` function, the quantization of a scalar symbol `b` of
+order `m < -n` is the quantization on `Lᵖ(ℝⁿ; F)` of `b` acting on `F` by multiplication. -/
+private theorem quantizeTempered_toTemperedDistribution (hb : b.IsUniform) (hm : m < -n)
+    (f : Lp F p (volume : Measure (CoordinateSpace n))) :
+    quantizeTempered F b hb (f : 𝓢'(CoordinateSpace n, F)) =
+      ((b.map (scalarCLM F)).quantizeLp p hm (hb.map _) f : 𝓢'(CoordinateSpace n, F)) := by
+  ext φ
+  rw [quantizeTempered_apply_apply, Lp.toTemperedDistribution_apply,
+    Lp.toTemperedDistribution_apply]
+  calc ∫ y, transposeUniformCLM b hb φ y • f y
+      = ∫ y, (∫ x, φ x * quantizationKernel b.coefficient x y 1) • f y := by
+        refine integral_congr_ae ?_
+        filter_upwards [hb.transposeUniformCLM_ae_eq_integral hm φ] with y hy
+        rw [hy]
+    _ = ∫ y, ∫ x, (φ x * quantizationKernel b.coefficient x y 1) • f y := by
+        simp_rw [integral_smul_const]
+    _ = ∫ x, ∫ y, (φ x * quantizationKernel b.coefficient x y 1) • f y :=
+        (integral_integral_swap (integrable_smul_quantizationKernel hb hm φ f)).symm
+    _ = ∫ x, φ x • (b.map (scalarCLM F)).quantizeLp p hm (hb.map _) f x := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_quantizeLp (a := b.map (scalarCLM F)) (hm := hm)
+          (ha := hb.map _) f] with x hx
+        rw [hx, ← integral_smul]
+        simp_rw [quantizationKernel_map_scalarCLM_apply hm, smul_smul]
+
 /-- **Quantization of `Lᵖ` functions.** Let `b` be a uniform symbol of order `m < -n`. For
 `1 ≤ p ≤ ∞` and `f ∈ Lᵖ(ℝⁿ; F)`, the quantization of the tempered distribution of `f` is the
 tempered distribution of an `Lᵖ` function `v`. If `∫ ‖b(x, ξ)‖ dξ ≤ A` and
@@ -230,36 +260,46 @@ theorem exists_quantizeTempered_eq_and_norm_le :
       exact Subsingleton.elim _ _)
     rw [hf, Lp.toTemperedDistribution_zero, map_zero]
   set T := (b.map (scalarCLM F)).quantizeLp p hm (hb.map _)
-  refine ⟨T f, ?_, ?_⟩
-  · ext φ
-    rw [quantizeTempered_apply_apply, Lp.toTemperedDistribution_apply,
-      Lp.toTemperedDistribution_apply]
-    calc ∫ y, transposeUniformCLM b hb φ y • f y
-        = ∫ y, (∫ x, φ x * quantizationKernel b.coefficient x y 1) • f y := by
-          refine integral_congr_ae ?_
-          filter_upwards [hb.transposeUniformCLM_ae_eq_integral hm φ] with y hy
-          rw [hy]
-      _ = ∫ y, ∫ x, (φ x * quantizationKernel b.coefficient x y 1) • f y := by
-          simp_rw [integral_smul_const]
-      _ = ∫ x, ∫ y, (φ x * quantizationKernel b.coefficient x y 1) • f y :=
-          (integral_integral_swap (integrable_smul_quantizationKernel hb hm φ f)).symm
-      _ = ∫ x, φ x • T f x := by
-          refine integral_congr_ae ?_
-          filter_upwards [coeFn_quantizeLp (a := b.map (scalarCLM F)) (hm := hm)
-            (ha := hb.map _) f] with x hx
-          rw [hx, ← integral_smul]
-          simp_rw [quantizationKernel_map_scalarCLM_apply hm, smul_smul]
-  · have h₀' (x) : ∫ ξ, ‖(b.map (scalarCLM F)).coefficient (x, ξ)‖ ≤ A := by
-      simpa only [coefficient_map, norm_scalarCLM_apply] using h₀ x
-    have h₁' (x j) : ∫ ξ, ‖mixedDeriv [] (List.replicate (n + 1) j)
-        (b.map (scalarCLM F)).coefficient x ξ‖ ≤ A * R ^ (n + 1) := by
-      rw [show (b.map (scalarCLM F)).coefficient = scalarCLM F ∘ b.coefficient from
-        funext (coefficient_map _ b)]
-      simp_rw [(scalarCLM F).mixedDeriv_comp_left b.contDiff_coefficient, norm_scalarCLM_apply]
-      exact h₁ x j
-    refine (T.le_opNorm f).trans ?_
-    gcongr
-    exact (norm_quantizeLp_le hR h₀' h₁').trans_eq (by ring)
+  refine ⟨T f, quantizeTempered_toTemperedDistribution hb hm f, ?_⟩
+  have h₀' (x) : ∫ ξ, ‖(b.map (scalarCLM F)).coefficient (x, ξ)‖ ≤ A := by
+    simpa only [coefficient_map, norm_scalarCLM_apply] using h₀ x
+  have h₁' (x j) : ∫ ξ, ‖mixedDeriv [] (List.replicate (n + 1) j)
+      (b.map (scalarCLM F)).coefficient x ξ‖ ≤ A * R ^ (n + 1) := by
+    rw [show (b.map (scalarCLM F)).coefficient = scalarCLM F ∘ b.coefficient from
+      funext (coefficient_map _ b)]
+    simp_rw [(scalarCLM F).mixedDeriv_comp_left b.contDiff_coefficient, norm_scalarCLM_apply]
+    exact h₁ x j
+  refine (T.le_opNorm f).trans ?_
+  gcongr
+  exact (norm_quantizeLp_le hR h₀' h₁').trans_eq (by ring)
+
+/-- **The Littlewood–Paley pieces on `Lᵖ` functions.** For a uniform symbol `a` of order `m` there
+is `C` such that, for `1 ≤ p ≤ ∞` and `f ∈ Lᵖ(ℝⁿ; F)`, the quantization of the `j`-th
+Littlewood–Paley piece of `a` maps the tempered distribution of `f` to the tempered distribution of
+an `Lᵖ` function `v` with `‖v‖_p ≤ C (2^j)^m ‖f‖_p`. -/
+theorem IsUniform.exists_quantizeTempered_littlewoodPaleyPieceLow_eq_and_norm_le
+    (ψ : ContDiffBump (0 : CoordinateSpace n)) {a : Symbol n ℂ ℂ m} (ha : a.IsUniform) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℕ) {p : ℝ≥0∞} [Fact (1 ≤ p)]
+      (f : Lp F p (volume : Measure (CoordinateSpace n))),
+      ∃ v : Lp F p (volume : Measure (CoordinateSpace n)),
+        quantizeTempered F (a.littlewoodPaleyPieceLow ψ j) (ha.littlewoodPaleyPieceLow ψ j)
+            (f : 𝓢'(CoordinateSpace n, F)) = v ∧
+          ‖v‖ ≤ C * ((2 : ℝ) ^ j) ^ m * ‖f‖ := by
+  obtain ⟨C, hC, h⟩ := (ha.map (scalarCLM F)).exists_norm_quantizeLittlewoodPaleyPiece_le ψ
+  refine ⟨C, hC, fun j {p} _ f ↦ ⟨quantizeLittlewoodPaleyPiece p ψ _ (ha.map _) j f, ?_,
+    (ContinuousLinearMap.le_opNorm _ f).trans (by gcongr; exact h p j)⟩⟩
+  have hcoef : ((a.littlewoodPaleyPieceLow ψ j).map (scalarCLM F)).coefficient =
+      ((a.map (scalarCLM F)).littlewoodPaleyPiece ψ j).coefficient := by
+    ext x : 1
+    simp only [coefficient_map, coefficient_littlewoodPaleyPieceLow,
+      coefficient_littlewoodPaleyPiece, map_smul]
+  rw [quantizeTempered_toTemperedDistribution _ (by linarith)]
+  congr 1
+  refine Lp.ext ?_
+  filter_upwards [coeFn_quantizeLp (hm := (by linarith : (-(n + 1) : ℝ) < -n))
+    (ha := (ha.littlewoodPaleyPieceLow ψ j).map (scalarCLM F)) f,
+    coeFn_quantizeLittlewoodPaleyPiece ψ (ha := ha.map (scalarCLM F)) j f] with x h₁ h₂
+  rw [h₁, h₂, hcoef]
 
 end Symbol
 

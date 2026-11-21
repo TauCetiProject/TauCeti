@@ -116,21 +116,6 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
   (φ : ContDiffBump (0 : CoordinateSpace n))
 
-/-- The `j`-th Littlewood–Paley piece of a symbol, as a symbol of order `-(n + 1)`: its frequency
-support is bounded, so it is a symbol of every order. -/
-private def littlewoodPaleyPieceLow (a : Symbol n V W m) (j : ℕ) : Symbol n V W (-(n + 1)) :=
-  ofBoundedFrequencySupport (a.littlewoodPaleyPiece φ j).coefficient
-    (a.littlewoodPaleyPiece φ j).contDiff_coefficient (2 ^ j * φ.rOut)
-    fun x _ hξ ↦ a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ
-
-private theorem coefficient_littlewoodPaleyPieceLow (a : Symbol n V W m) (j : ℕ) :
-    (a.littlewoodPaleyPieceLow φ j).coefficient = (a.littlewoodPaleyPiece φ j).coefficient :=
-  coefficient_ofBoundedFrequencySupport _ _ _ _
-
-private theorem IsUniform.littlewoodPaleyPieceLow {a : Symbol n V W m} (ha : a.IsUniform)
-    (j : ℕ) : (a.littlewoodPaleyPieceLow φ j).IsUniform :=
-  (ha.littlewoodPaleyPiece φ j).ofBoundedFrequencySupport _ _
-
 variable (p) in
 /-- The quantization of the `j`-th Littlewood–Paley piece `ψⱼ(ξ) a(x, ξ)` of a uniform symbol
 `a`, as a bounded operator `Lᵖ(ℝⁿ; V) → Lᵖ(ℝⁿ; W)` for `1 ≤ p ≤ ∞`: the piece has bounded
@@ -164,11 +149,12 @@ theorem coeFn_quantizeLittlewoodPaleyPiece_toLp [CompleteSpace V] [CompleteSpace
   exact coeFn_quantizeLp_toLp u
 
 /-- **Uniform bounds for the Littlewood–Paley pieces.** For a uniform symbol `a` of order `m`, the
-quantization of the `j`-th piece has norm at most `C (2^j)^m` on every `Lᵖ`, with `C`
-independent of `j`. For `m = 0` the pieces are uniformly bounded: these are the diagonal estimates
-of the almost-orthogonality argument for the `L²` boundedness of `Op(a)`. -/
+quantization of the `j`-th piece has norm at most `C (2^j)^m` on every `Lᵖ`, `1 ≤ p ≤ ∞`, with
+`C` independent of `j` and `p`. For `m = 0` the pieces are uniformly bounded: these are the
+diagonal estimates of the almost-orthogonality argument for the `L²` boundedness of `Op(a)`. -/
 theorem IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le (ha : a.IsUniform) :
-    ∃ C, 0 ≤ C ∧ ∀ j, ‖quantizeLittlewoodPaleyPiece p φ a ha j‖ ≤ C * ((2 : ℝ) ^ j) ^ m := by
+    ∃ C, 0 ≤ C ∧ ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ),
+      ‖quantizeLittlewoodPaleyPiece p φ a ha j‖ ≤ C * ((2 : ℝ) ^ j) ^ m := by
   -- The integrated dyadic estimates give the hypotheses of the scale-invariant bound
   -- `norm_quantizeLp_le` with `A = D (2^j)^(m + n)` and `R = 2^{-j}`, so `‖Tⱼ‖ ≲ A Rⁿ`.
   obtain ⟨C₀, hC₀, h₀⟩ := ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] []
@@ -184,7 +170,7 @@ theorem IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le (ha : a.IsUniform)
     have : 0 ≤ ∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹ :=
       integral_nonneg fun w ↦ by positivity
     positivity
-  refine ⟨K * D, mul_nonneg hK (hC₀.trans hD₀), fun j ↦ ?_⟩
+  refine ⟨K * D, mul_nonneg hK (hC₀.trans hD₀), fun p _ j ↦ ?_⟩
   have ht : (0 : ℝ) < 2 ^ j := by positivity
   have hpow (k : ℕ) : (((2 : ℝ) ^ j)⁻¹) ^ k = ((2 : ℝ) ^ j) ^ (-(k : ℝ)) := by
     rw [Real.rpow_neg ht.le, Real.rpow_natCast, inv_pow]
