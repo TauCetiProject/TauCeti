@@ -106,8 +106,9 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
   simp only [NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one,
     ← mul_assoc] at htail
   rw [hr₁, hr₂, ← min_mul_of_nonneg _ _ hd.le, ← mul_assoc] at htail
-  simpa only [Matrix.minorQuadraticError_eq_sub_sum_diag, Matrix.minorResolvent_def,
-    ← Finset.mul_sum, Matrix.trace, Matrix.diag, Fintype.card_fin, Nat.cast_succ, div_eq_inv_mul]
+  simpa only [Matrix.minorQuadraticError_def, Matrix.minorResolvent_def, Fintype.card_fin,
+    Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_add, Complex.ofReal_one,
+    Complex.ofReal_natCast, Nat.cast_succ, div_eq_inv_mul]
     using htail
 
 omit [MeasurableSpace Ω] in

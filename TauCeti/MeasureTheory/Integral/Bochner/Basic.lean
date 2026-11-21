@@ -340,7 +340,8 @@ theorem setIntegral_Icc_update_add_setIntegral_Icc_update {ι E : Type*} [Fintyp
 
 namespace MeasureTheory
 
-/-- The integral of the norm of a sum is bounded by the sum of the integrals of the norms. -/
+/-- For integrable `f` and `g`, the integral of the norm of their sum is bounded by the sum of
+the integrals of their norms. -/
 theorem _root_.MeasureTheory.Integrable.integral_norm_add_le {Ω E : Type*} [MeasurableSpace Ω]
     [SeminormedAddCommGroup E] {μ : Measure Ω} {f g : Ω → E}
     (hf : Integrable f μ) (hg : Integrable g μ) :

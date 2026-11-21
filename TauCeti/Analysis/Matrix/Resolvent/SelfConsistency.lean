@@ -62,13 +62,6 @@ theorem minorQuadraticError_eq_sub_sum_diag (A : Matrix n n ℂ) (i : n) (z : �
   rw [minorQuadraticError_def]
   simp only [Complex.ofReal_div, Complex.ofReal_natCast, Matrix.trace, Matrix.diag, Finset.mul_sum]
 
-/-- At fixed index, spectral parameter and trace coefficient, the minor quadratic error
-is measurable in the matrix. -/
-@[fun_prop] theorem measurable_minorQuadraticError (i : n) (z : ℂ) (v : ℝ≥0) :
-    Measurable (fun A : Matrix n n ℂ ↦ A.minorQuadraticError i z v) := by
-  simp only [minorQuadraticError_def, dotProduct, mulVec, Pi.star_apply, trace, diag]
-  fun_prop
-
 end Matrix
 
 namespace Matrix.IsHermitian

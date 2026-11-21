@@ -88,24 +88,25 @@ theorem norm_sq {Ω E F : Type*} [MeasurableSpace Ω] [SeminormedAddGroup E]
     IndepFun (fun ω ↦ ‖X ω‖ ^ 2) (fun ω ↦ ‖Y ω‖ ^ 2) P :=
   h.comp (continuous_norm.pow 2).measurable (continuous_norm.pow 2).measurable
 
-/-- A variable dominated in norm by the product of the norms of two independent
-square-integrable variables is square integrable. -/
+/-- An a.e. strongly measurable variable is square integrable if its norm is bounded a.e.
+by the product of the norms of two independent square-integrable variables. -/
 theorem memLp_two_of_norm_le_mul {Ω E F G : Type*} [MeasurableSpace Ω]
     [SeminormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
     [SeminormedAddCommGroup F] [MeasurableSpace F] [OpensMeasurableSpace F]
     [NormedAddCommGroup G] {P : Measure Ω} {X : Ω → E} {Y : Ω → F} {Z : Ω → G}
     (h : IndepFun X Y P)
     (hX : MemLp X 2 P) (hY : MemLp Y 2 P) (hZ : AEStronglyMeasurable Z P)
-    (hbound : ∀ ω, ‖Z ω‖ ≤ ‖X ω‖ * ‖Y ω‖) : MemLp Z 2 P := by
+    (hbound : ∀ᵐ ω ∂P, ‖Z ω‖ ≤ ‖X ω‖ * ‖Y ω‖) : MemLp Z 2 P := by
   refine (memLp_two_iff_integrable_sq_norm hZ).2 ?_
   have hX₂ := hX.congr_eNorm hX.aestronglyMeasurable.norm
     (.of_forall fun ω ↦ (eNorm_norm (X ω)).symm)
   have hY₂ := hY.congr_eNorm hY.aestronglyMeasurable.norm
     (.of_forall fun ω ↦ (eNorm_norm (Y ω)).symm)
   refine (h.norm_sq.integrable_mul hX₂.integrable_sq hY₂.integrable_sq).mono'
-    (hZ.norm.pow 2) (.of_forall fun ω ↦ ?_)
+    (hZ.norm.pow 2) ?_
+  filter_upwards [hbound] with ω hω
   rw [Real.norm_of_nonneg (sq_nonneg _), Pi.mul_apply, ← mul_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (hbound ω) 2
+  exact pow_le_pow_left₀ (norm_nonneg _) hω 2
 
 /-- The product of independent square-integrable variables is square integrable. -/
 theorem memLp_two_mul {Ω R : Type*} [MeasurableSpace Ω] [NormedRing R]
@@ -113,7 +114,7 @@ theorem memLp_two_mul {Ω R : Type*} [MeasurableSpace Ω] [NormedRing R]
     {P : Measure Ω} {X Y : Ω → R} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
     MemLp (X * Y) 2 P :=
   h.memLp_two_of_norm_le_mul hX hY (hX.aestronglyMeasurable.mul hY.aestronglyMeasurable)
-    (fun ω ↦ norm_mul_le (X ω) (Y ω))
+    (.of_forall fun ω ↦ norm_mul_le (X ω) (Y ω))
 
 /-- The product of the star of one variable and an independent variable is square integrable
 when both variables are square integrable. -/
@@ -122,7 +123,7 @@ theorem memLp_two_star_mul {Ω R : Type*} [MeasurableSpace Ω] [NormedRing R]
     {P : Measure Ω} {X Y : Ω → R} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
     MemLp (fun ω ↦ star (X ω) * Y ω) 2 P :=
   h.memLp_two_of_norm_le_mul hX hY (hX.star.aestronglyMeasurable.mul hY.aestronglyMeasurable)
-    (fun ω ↦ by simpa only [norm_star] using norm_mul_le (star (X ω)) (Y ω))
+    (.of_forall fun ω ↦ by simpa only [norm_star] using norm_mul_le (star (X ω)) (Y ω))
 
 /-- For independent variables, the totalized Bochner integral of the squared product norm is
 the product of the squared-norm integrals. For square-integrable variables these are their
@@ -138,8 +139,9 @@ theorem integral_norm_mul_sq_eq_mul_integral {Ω R : Type*} [MeasurableSpace Ω]
     ((continuous_norm.pow 2).measurable.comp_aemeasurable hX).aestronglyMeasurable
     ((continuous_norm.pow 2).measurable.comp_aemeasurable hY).aestronglyMeasurable
 
-/-- An integrable bound for the mean norms of sections also bounds the mean norm of the
-joint evaluation at independent variables. -/
+/-- Suppose the sections are integrable for almost every first coordinate under its law.
+An integrable bound on their mean norms then bounds the mean norm of the integrable joint
+evaluation at the two independent variables. -/
 theorem integrable_and_integral_norm_comp_prodMk_le_of_sections {Ω α β E : Type*}
     [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
     [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] [SecondCountableTopology E]

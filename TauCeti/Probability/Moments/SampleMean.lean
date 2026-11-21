@@ -79,8 +79,8 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
     (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
     (fun i hi j hj hij ↦ hcross i hi j hj hij.symm)
 
-/-- For centered, pairwise independent square-integrable variables, a common second-moment
-bound controls the mean norm of their sum. -/
+/-- For centered, pairwise independent square-integrable variables on a probability space,
+a common second-moment bound controls the mean norm of their sum. -/
 theorem integral_norm_sum_le_of_pairwise_indepFun [IsProbabilityMeasure μ]
     {X : ι → Ω → E} {s : Finset ι} (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
     (hmean : ∀ i ∈ s, μ[X i] = 0) (hindep : Set.Pairwise ↑s fun i j ↦ X i ⟂ᵢ[μ] X j)

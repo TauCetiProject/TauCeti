@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
-public import TauCeti.Analysis.Matrix.MeasurableSpace
 
 /-!
 # Leave-one-out formula for Hermitian resolvents
@@ -36,7 +35,6 @@ public section
 
 noncomputable section
 
-open MeasureTheory
 open scoped Matrix.Norms.L2Operator
 
 namespace Matrix
@@ -60,14 +58,6 @@ theorem minorResolvent_def (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
 
 end
 
-/-- The minor resolvent at a fixed parameter is measurable, including at singular shifts. -/
-@[fun_prop]
-theorem measurable_minorResolvent [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
-    [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜] [MeasurableInv 𝕜]
-    (i : n) (z : 𝕜) : Measurable (fun A : Matrix n n 𝕜 ↦ A.minorResolvent i z) := by
-  simp only [minorResolvent_def]
-  exact Measurable.inv ((continuous_id.matrix_submatrix _ _).measurable.sub_const _)
-
 end Matrix
 
 namespace Matrix.IsHermitian
@@ -76,6 +66,24 @@ variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   {A : Matrix n n 𝕜} (hA : A.IsHermitian)
 
 include hA
+
+/-- At a nonreal parameter, the shifted Hermitian principal submatrix times its resolvent
+is the identity. -/
+@[simp]
+theorem submatrix_sub_smul_one_mul_minorResolvent {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
+    (A.submatrix (↑) (↑) - z • 1) * A.minorResolvent i z = 1 := by
+  rw [minorResolvent_def]
+  exact mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp
+    ((hA.submatrix (Subtype.val : {j // j ≠ i} → n)).isUnit_sub_smul_one_of_im_ne_zero hz))
+
+/-- At a nonreal parameter, the Hermitian minor resolvent times the shifted principal submatrix
+is the identity. -/
+@[simp]
+theorem minorResolvent_mul_submatrix_sub_smul_one {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
+    A.minorResolvent i z * (A.submatrix (↑) (↑) - z • 1) = 1 := by
+  rw [minorResolvent_def]
+  exact nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).mp
+    ((hA.submatrix (Subtype.val : {j // j ≠ i} → n)).isUnit_sub_smul_one_of_im_ne_zero hz))
 
 /-- The Euclidean operator norm of a Hermitian principal-minor resolvent is at most
 the reciprocal of the absolute imaginary part of the nonreal parameter. -/

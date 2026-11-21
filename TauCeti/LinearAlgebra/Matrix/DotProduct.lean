@@ -24,6 +24,9 @@ transform the dot products `x' ⬝ᵥ y'` and `x ⬝ᵥ y` into each other. For 
 matrix of a special isogeny acting on roots and coroots, this is the rule by which the Cartan
 integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §11).
 
+Over a ring, the bilinear form of a matrix with its diagonal removed is the sum over
+ordered off-diagonal index pairs.
+
 ## Main results
 
 * `Matrix.apply_last_eq_of_dotProduct_eq_zero`: if `w ⬝ᵥ v = 0` and the last coordinate of `w` is
@@ -41,6 +44,23 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 public section
 
 open Matrix
+
+/-- The zero-diagonal part of a matrix bilinear form is its sum over ordered off-diagonal pairs. -/
+theorem Matrix.dotProduct_mulVec_sub_diagonal_eq_sum_offDiag {n 𝕜 : Type*}
+    [Fintype n] [DecidableEq n] [Ring 𝕜] (A : Matrix n n 𝕜) (u v : n → 𝕜) :
+    u ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
+      ∑ p ∈ (Finset.univ : Finset n).offDiag, u p.1 * A p.1 p.2 * v p.2 := by
+  let f (p : n × n) := u p.1 * (A - diagonal A.diag) p.1 p.2 * v p.2
+  have he : u ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
+      ∑ p ∈ (Finset.univ : Finset n) ×ˢ (Finset.univ : Finset n), f p := by
+    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm, Finset.sum_product]
+  rw [he, ← Finset.diag_union_offDiag, Finset.sum_union (Finset.disjoint_diag_offDiag _),
+    Finset.sum_diag]
+  simp only [f, Matrix.sub_apply, diagonal_apply_eq, diag_apply, sub_self, mul_zero, zero_mul,
+    Finset.sum_const_zero, zero_add]
+  exact Finset.sum_congr rfl fun _ hp ↦ by
+    rw [diagonal_apply_ne _ (Finset.mem_offDiag.mp hp).2.2, sub_zero]
+
 
 /-- `n` linearly independent linear forms on `K ^ n` do not all vanish at a nonzero point. -/
 theorem LinearIndependent.exists_dotProduct_ne_zero {K ι : Type*} [Field K] [Fintype ι]
