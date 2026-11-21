@@ -318,18 +318,16 @@ theorem isSheafFor_presentationLimitPresheaf_comp_iff_of_pairOfDefinition
     {W : Opens ↥(spa Aplus)} (R : Presieve W) :
     R.IsSheafFor (presentationLimitPresheaf Q₁ Aplus ⋙ G) ↔
       R.IsSheafFor (presentationLimitPresheaf Q₂ Aplus ⋙ G) := by
-  have hid : spaComapTopHom (RingHom.id A) continuous_id (fun (_ : A) (ha : _ ∈ Aplus) ↦ ha) =
-      𝟙 (TopCat.of ↥(spa Aplus)) :=
-    TopCat.ext fun v ↦ congrFun (spaComap_id Aplus) v
   let eG := Functor.isoWhiskerRight
     (presentationLimitPresheafIsoPushforward (P := Q₁) (P' := Q₂) (Aplus := Aplus) (Bplus := Aplus)
       (RingHom.id A) continuous_id (fun _ ha ↦ ha) (RingHom.id A) continuous_id
       (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ha ↦ ha) ≪≫
-    NatIso.ofComponents
-      (fun U ↦ (presentationLimitPresheaf Q₂ Aplus).mapIso (eqToIso (by rw [hid]; rfl)))
-      (fun {U₁ U₂} g ↦ by
-        dsimp [TopCat.Presheaf.pushforward]
-        rw [← Functor.map_comp, ← Functor.map_comp]; congr 1))
+    eqToIso (congrArg
+      (fun f : TopCat.of ↥(spa Aplus) ⟶ TopCat.of ↥(spa Aplus) ↦
+        (TopCat.Presheaf.pushforward _ f).obj (presentationLimitPresheaf Q₂ Aplus))
+      (spaComapTopHom_id (Aplus := Aplus))) ≪≫
+    TopCat.Presheaf.Pushforward.id (X := TopCat.of ↥(spa Aplus))
+      (presentationLimitPresheaf Q₂ Aplus))
     G
   exact ⟨Presieve.isSheafFor_iso eG, Presieve.isSheafFor_iso eG.symm⟩
 

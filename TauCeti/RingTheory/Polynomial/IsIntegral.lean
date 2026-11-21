@@ -116,8 +116,8 @@ theorem isIntegrallyClosedIn_polynomial_iff_isReduced {R : Type*} [CommRing R] :
       rwa [ne_eq, Ideal.Quotient.eq_zero_iff_mem]
     have hmap_deg : (f.map q).natDegree = f.natDegree :=
       natDegree_map_eq_iff.mpr (Or.inl hq_lc)
-    have hmap_lc : (f.map q).leadingCoeff = q f.leadingCoeff := by
-      rw [leadingCoeff, leadingCoeff, hmap_deg, coeff_map]
+    have hmap_lc : (f.map q).leadingCoeff = q f.leadingCoeff :=
+      leadingCoeff_map_of_leadingCoeff_ne_zero q hq_lc
     have hmap_int : IsIntegral (R ⧸ P) (f.map q) :=
       hf.map_of_comp_eq q (Polynomial.mapRingHom q) (by ext; simp)
     exact Polynomial.transcendental (f.map q) (hmap_deg ▸ hdeg)

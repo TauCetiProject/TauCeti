@@ -126,11 +126,6 @@ instance : Category.{u} CAff.{u} where
   comp_id f := Pair.Hom.id_comp f
   assoc f g h := (Pair.Hom.comp_assoc h g f).symm
 
-/-- Morphisms in `CAff` are determined by their underlying ring homomorphisms. -/
-@[ext]
-theorem hom_ext {X Y : CAff.{u}} {f g : X ⟶ Y} (h : f.toRingHom = g.toRingHom) : f = g :=
-  Pair.Hom.ext h
-
 @[simp]
 theorem id_toRingHom (X : CAff.{u}) : (𝟙 X : X ⟶ X).toRingHom = RingHom.id X.ring :=
   Pair.Hom.toRingHom_id X.pair
@@ -161,8 +156,8 @@ def isoMk {X Y : CAff.{u}} (e : X.ring ≃+* Y.ring) (he : Continuous e) (he' : 
     { toRingHom := e.symm.toRingHom
       continuous_toRingHom := he'
       map_mem_plus b hb := (hplus (e.symm b)).mpr (by simpa using hb) }
-  hom_inv_id := by ext x; simp
-  inv_hom_id := by ext y; simp
+  hom_inv_id := Pair.Hom.ext (by ext x; simp)
+  inv_hom_id := Pair.Hom.ext (by ext y; simp)
 
 @[simp]
 theorem isoMk_hom_toRingHom {X Y : CAff.{u}} (e : X.ring ≃+* Y.ring) (he : Continuous e)
@@ -220,11 +215,8 @@ def ringPresheaf : (CAff.{u}ᵒᵖ)ᵒᵖ ⥤ CommRingCat.{u} where
 morphism `op Y ⟶ op X` (given by `φ : X ⟶ Y`) to `φ.toRingHom : X.ring → Y.ring`. -/
 -- exposed so that `globalSections.obj (op (op X))` is definitionally `X.ring`
 @[expose]
-def globalSections : (CAff.{u}ᵒᵖ)ᵒᵖ ⥤ Type u where
-  obj X := (unop (unop X)).ring
-  map f := TypeCat.ofHom f.unop.unop.toRingHom
-  map_id _ := by ext x; simp
-  map_comp _ _ := by ext x; simp
+def globalSections : (CAff.{u}ᵒᵖ)ᵒᵖ ⥤ Type u :=
+  ringPresheaf ⋙ forget CommRingCat
 
 @[simp]
 theorem globalSections_obj (X : CAff.{u}) : globalSections.obj (op (op X)) = X.ring :=
@@ -332,7 +324,7 @@ theorem eval_affineLineVar (X : CAff.{u}) (a : X.ring) :
 @[simp]
 theorem eval_comp {X Y : CAff.{u}} (a : X.ring) (f : X ⟶ Y) :
     eval X a ≫ f = eval Y (f.toRingHom a) := by
-  apply hom_ext
+  apply Pair.Hom.ext
   refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
     affineLineRingEquiv.surjective).mp ?_
   rw [comp_toRingHom, RingHom.comp_assoc, eval_toRingHom_comp_affineLineRingEquiv,
@@ -346,7 +338,7 @@ noncomputable def evalEquiv (X : CAff.{u}) : X.ring ≃ (affineLine.{u} ⟶ X) w
   invFun f := f.toRingHom affineLineVar
   left_inv a := eval_affineLineVar X a
   right_inv f := by
-    apply hom_ext
+    apply Pair.Hom.ext
     refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
       affineLineRingEquiv.surjective).mp ?_
     rw [eval_toRingHom_comp_affineLineRingEquiv]
