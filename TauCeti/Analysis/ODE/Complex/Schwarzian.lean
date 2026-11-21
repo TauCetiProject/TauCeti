@@ -35,8 +35,8 @@ linear differential equation whose solution quotients recover the inverse.
 
 ## Main results
 
-* `TauCeti.LinearEquation.IsSolution.schwarzian_div`: the Schwarzian of a quotient of independent
-  solutions of `y'' + Q y = 0` is `2 Q`.
+* `TauCeti.LinearEquation.IsSolution.schwarzian_div`: the Schwarzian of `y₁ / y₂` is `2 Q` at each
+  point where the Wronskian of the solutions `y₁, y₂` of `y'' + Q y = 0` is nonzero and `y₂ ≠ 0`.
 * `TauCeti.LinearEquation.isSolution_ofSchwarzian_inv` and
   `TauCeti.LinearEquation.isSolution_ofSchwarzian_div`: `1 / s` and `w / s` solve the Schwarzian
   equation of `w` when `s ^ 2 = w'`.
@@ -174,12 +174,10 @@ satisfy `y'' + (1 / 2) * S(w) * y = 0` there. -/
 theorem isSolution_ofSchwarzian_iff :
     (ofSchwarzian w hw hw').IsSolution y ↔
       AnalyticOnNhd ℂ y U ∧ ∀ z ∈ U, deriv (deriv y) z + schwarzian w z / 2 * y z = 0 := by
-  rw [isSolution_iff]
+  rw [isSolution_iff_deriv_deriv]
   refine and_congr_right fun _ ↦ forall₂_congr fun z hz ↦ ?_
-  simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_zero,
-    iteratedDeriv_one, extend_ofSchwarzian_coeff_zero hz, ofSchwarzian_coeff_one,
+  simp only [extend_ofSchwarzian_coeff_zero hz, ofSchwarzian_coeff_one,
     HolomorphicFunctions.extend_zero, Pi.zero_apply, zero_mul, add_zero]
-  rw [iteratedDeriv_succ, iteratedDeriv_one]
 
 /-- The quotient of two solutions of the Schwarzian equation of `w` with nonvanishing Wronskian
 has the same Schwarzian derivative as `w`, wherever its denominator does not vanish. -/
@@ -246,7 +244,7 @@ On a simply connected domain `U`, if `w` is holomorphic with `w' ≠ 0`, then th
 `v₁, v₂` of `y'' + (1 / 2) * S(w) * y = 0` on `U` with `v₂ ≠ 0`, `w = v₁ / v₂` and Wronskian
 `v₁ v₂' - v₁' v₂ = -1` on `U`; namely `v₁ = w / s` and `v₂ = 1 / s` for a holomorphic square root
 `s` of `w'`. In particular `v₁` and `v₂` are linearly independent solutions
-(`TauCeti.LinearEquation.linearIndependent_of_wronskian_ne_zero`). -/
+(`TauCeti.LinearEquation.IsSolution.linearIndependent_of_wronskian_ne_zero`). -/
 theorem exists_isSolution_ofSchwarzian (hU : IsSimplyConnected (U : Set ℂ)) :
     ∃ v₁ v₂ : ℂ → ℂ, (ofSchwarzian w hw hw').IsSolution v₁ ∧
       (ofSchwarzian w hw hw').IsSolution v₂ ∧
