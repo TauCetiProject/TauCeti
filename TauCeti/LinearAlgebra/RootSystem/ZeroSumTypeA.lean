@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.A
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.Map
-public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
+public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!

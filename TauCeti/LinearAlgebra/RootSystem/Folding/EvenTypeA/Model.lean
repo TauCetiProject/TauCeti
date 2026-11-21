@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.B
-public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
+public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.ZeroSumTypeA
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 

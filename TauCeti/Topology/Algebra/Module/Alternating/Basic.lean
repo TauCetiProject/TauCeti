@@ -41,6 +41,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   `A` and then along `B` is pulling back along `A.comp B`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_snd_apply`: the two-form
   `pr₁^* ω₁ + pr₂^* ω₂` on a product evaluated on two vectors.
+* `ContinuousAlternatingMap.map_linearDependent`: an alternating map vanishes on linearly
+  dependent families.
 -/
 
 public section
@@ -186,6 +188,14 @@ theorem compContinuousLinearMap_fst_add_snd_apply (ω₁ : V [⋀^Fin 2]→L[R] 
   simp [h₁, h₂]
 
 end Prod
+
+/-- A continuous alternating map vanishes on a linearly dependent family. -/
+theorem map_linearDependent {R M N ι : Type*} [Ring R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    [Module.IsTorsionFree R N] (f : M [⋀^ι]→L[R] N) (v : ι → M) (h : ¬LinearIndependent R v) :
+    f v = 0 := by
+  rw [← coe_toAlternatingMap]
+  exact f.toAlternatingMap.map_linearDependent v h
 
 end ContinuousAlternatingMap
 

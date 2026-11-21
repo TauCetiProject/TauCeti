@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 

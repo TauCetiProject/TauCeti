@@ -142,8 +142,7 @@ private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix 
     ext i
     fin_cases i <;> simp [Matrix.adjugate_fin_two, Matrix.mulVec, dotProduct, hc]
   simp only [infinityEval, LinearMap.comp_apply, hinf, evalCusp_infty, binaryFormAdjugateRep_apply,
-    coe_binaryFormRep_apply, eval_linearSubst, hv, ((mem_homogeneousSubmodule _ _).1
-        P.property).eval_smul,
+    eval_binaryFormRep_apply, hv, ((mem_homogeneousSubmodule _ _).1 P.property).eval_smul,
     LinearMap.smul_apply, smul_eq_mul]
 
 /-- The linear extension of `infinityEval` to `R[ℳₙ]`. -/
@@ -222,8 +221,7 @@ private theorem sum_reps_evalCusp_toGL_smul_zero (hn : n ≠ 0) (hw : Even w) :
         ![(((0 : ℚ).num : ℤ) : R), (((0 : ℚ).den : ℕ) : R)] := by
       ext i
       fin_cases i <;> simp [coe_S, Matrix.mulVec, dotProduct]
-    rw [LinearMap.comp_apply, evalCusp_infty, coe_binaryFormRep_apply, eval_linearSubst, hv,
-      evalCusp_coe]
+    rw [LinearMap.comp_apply, evalCusp_infty, eval_binaryFormRep_apply, hv, evalCusp_coe]
   simp_rw [evalCusp_toGL_smul_zero hn]
   rw [← hval, ← LinearMap.smul_comp, ← infinityEvalAction_upperTriangularSum hn hw, ← hS, hsum]
   ext P
