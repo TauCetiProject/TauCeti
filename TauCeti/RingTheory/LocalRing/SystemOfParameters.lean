@@ -120,6 +120,7 @@ theorem eq_nil_of_ringKrullDim_eq_zero (h : IsSystemOfParameters R xs)
 end IsSystemOfParameters
 
 /-- The empty list is a system of parameters exactly when the local ring has dimension zero. -/
+@[simp]
 theorem isSystemOfParameters_nil_iff :
     IsSystemOfParameters R ([] : List R) ↔ ringKrullDim R = 0 := by
   refine ⟨fun h ↦ by simpa using h.length_eq.symm, fun h0 ↦ ⟨by simp [h0], ?_⟩⟩
@@ -138,7 +139,7 @@ theorem exists_isSystemOfParameters [IsNoetherianRing R] :
   have hof : ofList s.toList = span (s : Set R) := by simp [ofList]
   refine ⟨s.toList, ⟨?_, ?_⟩⟩
   · rw [Finset.length_toList, ← maximalIdeal_height_eq_ringKrullDim, ← hcard]
-    rfl
+    norm_cast
   · rw [hof]
     refine le_antisymm ((radical_mono hmin.1.2).trans_eq (maximalIdeal.isMaximal R).isPrime.radical)
       fun x hx ↦ ?_

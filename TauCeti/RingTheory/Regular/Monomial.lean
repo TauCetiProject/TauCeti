@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.LinearAlgebra.Quotient.Map
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # The monomial property of regular sequences
@@ -33,7 +34,8 @@ modules, go into it.
 * If `x :: ys` is weakly regular on `M`, then so is `xᵏ :: ys` for `k ≥ 1`
   (`RingTheory.Sequence.IsWeaklyRegular.pow_cons`). This follows from the previous point by
   induction on `k`, through the short exact sequences
-  `0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0` whose first map is multiplication by `xᵏ`.
+  `0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M → 0` whose first map is multiplication by `xᵏ`
+  (`QuotSMulTop.mulPow`).
 
 For `x :: ys` and the product `P` of `ys`, a relation `xⁿ Pⁿ m ∈ (xⁿ⁺¹, ysⁿ⁺¹) M` is first read in
 `M ⧸ xⁿ⁺¹ M`, on which `ys` is weakly regular, and induction gives `xⁿ m ∈ (xⁿ⁺¹, ys) M`. The
@@ -86,50 +88,6 @@ theorem isWeaklyRegular_of_exact {f : M →ₗ[R] M'} {g : M' →ₗ[R] M''} (hf
     rw [LinearMap.map_zero, LinearMap.exact_zero_iff_injective] at hex
     exact ih hex (QuotSMulTop.map_exact r hfg hg) (QuotSMulTop.map_surjective r hg) h.2 h''.2
 
-variable (M) in
-/-- Multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`. -/
-private noncomputable def mulPow (x : R) (k : ℕ) :
-    QuotSMulTop x M →ₗ[R] QuotSMulTop (x ^ (k + 1)) M :=
-  mapQ _ _ (LinearMap.lsmul R M (x ^ k)) fun _ hm ↦ by
-    obtain ⟨m, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hm
-    simpa [smul_smul, ← pow_succ'] using
-      smul_mem_pointwise_smul m (x ^ (k + 1)) (⊤ : Submodule R M) mem_top
-
-private theorem mulPow_mk (x : R) (k : ℕ) (m : M) :
-    mulPow M x k (Submodule.Quotient.mk m) = Submodule.Quotient.mk (x ^ k • m) :=
-  rfl
-
-private theorem pow_succ_smul_top_le (x : R) (k : ℕ) :
-    x ^ (k + 1) • (⊤ : Submodule R M) ≤ x ^ k • ⊤ := fun _ hm ↦ by
-  obtain ⟨m, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hm
-  rw [pow_succ, mul_smul]
-  exact smul_mem_pointwise_smul _ _ ⊤ mem_top
-
-private theorem mulPow_injective {x : R} (hx : IsSMulRegular M x) (k : ℕ) :
-    Injective (mulPow M x k) := by
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-  intro y hy
-  induction y using Submodule.Quotient.induction_on with | H m => ?_
-  rw [mulPow_mk, Submodule.Quotient.mk_eq_zero] at hy
-  obtain ⟨m', -, hm'⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hy
-  rw [pow_succ, mul_smul] at hm'
-  rw [(hx.pow k).eq_iff.1 hm'.symm, Submodule.Quotient.mk_eq_zero]
-  exact smul_mem_pointwise_smul _ _ ⊤ mem_top
-
-private theorem exact_mulPow (x : R) (k : ℕ) :
-    Exact (mulPow M x k) (factor (pow_succ_smul_top_le (M := M) x k)) := by
-  intro y
-  induction y using Submodule.Quotient.induction_on with | H m => ?_
-  rw [← mkQ_apply, factor_mk, mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  refine ⟨fun hm ↦ ?_, ?_⟩
-  · obtain ⟨m', -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hm
-    exact ⟨Submodule.Quotient.mk m', mulPow_mk x k m'⟩
-  · rintro ⟨y, hy⟩
-    induction y using Submodule.Quotient.induction_on with | H m' => ?_
-    rw [mulPow_mk, mkQ_apply, Submodule.Quotient.eq] at hy
-    have := sub_mem (smul_mem_pointwise_smul m' (x ^ k) ⊤ mem_top) (pow_succ_smul_top_le x k hy)
-    rwa [sub_sub_cancel] at this
-
 /-- Raising the first element of a weakly regular sequence to a positive power keeps it weakly
 regular: if `x :: ys` is weakly regular on `M`, so is `xᵏ :: ys` for every `k ≠ 0`. This is the
 first-element case of Matsumura, Theorem 16.1; no finiteness of `M` is needed. -/
@@ -143,8 +101,8 @@ theorem IsWeaklyRegular.pow_cons {x : R} {ys : List R} (h : IsWeaklyRegular M (x
     rw [zero_add, pow_one]
     exact h.2
   | succ j ih =>
-    exact isWeaklyRegular_of_exact (mulPow_injective h.1 (j + 1)) (exact_mulPow x (j + 1))
-      (factor_surjective _) h.2 (ih (Nat.succ_ne_zero j))
+    exact isWeaklyRegular_of_exact (QuotSMulTop.mulPow_injective h.1 (j + 1))
+      (QuotSMulTop.exact_mulPow x (j + 1)) (factor_surjective _) h.2 (ih (Nat.succ_ne_zero j))
 
 /-- The colon step of the monomial property: if `x` is `M`-regular and `ys` is weakly regular on
 `M ⧸ xᵏ M`, then `xᵏ m ∈ (xᵏ⁺¹, ys) M` implies `m ∈ (x, ys) M`. -/
@@ -155,12 +113,12 @@ private theorem mem_sup_of_pow_smul_mem {x : R} (hx : IsSMulRegular M x) {ys : L
   -- Reduce `0 → M ⧸ x M → M ⧸ xᵏ⁺¹ M → M ⧸ xᵏ M` modulo `ys`; it stays exact on the left.
   have hex := map_first_exact_on_four_term_right_exact_of_isSMulRegular_last
     (f₁ := (0 : PUnit.{1} →ₗ[R] QuotSMulTop x M))
-    ((LinearMap.exact_zero_iff_injective _ _).2 (mulPow_injective hx k)) (exact_mulPow x k)
-    (factor_surjective _) hys
+    ((LinearMap.exact_zero_iff_injective _ _).2 (QuotSMulTop.mulPow_injective hx k))
+    (QuotSMulTop.exact_mulPow x k) (factor_surjective _) hys
   rw [mapQ_zero, LinearMap.exact_zero_iff_injective] at hex
   rw [← Submodule.Quotient.mk_mem_smul_top_iff, ← Submodule.Quotient.mk_eq_zero]
-  refine hex (?_ : _ = mapQ _ _ _ _ 0)
-  rw [map_zero, mapQ_apply, mulPow_mk, Submodule.Quotient.mk_eq_zero,
+  refine (injective_iff_map_eq_zero _).1 hex _ ?_
+  rw [mapQ_apply, QuotSMulTop.mulPow_mk, Submodule.Quotient.mk_eq_zero,
     Submodule.Quotient.mk_mem_smul_top_iff]
   exact hm
 

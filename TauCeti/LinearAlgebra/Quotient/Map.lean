@@ -34,6 +34,7 @@ theorem Quotient.mk_mem_map_mkQ_iff {p p' : Submodule R M} (h : p ≤ p') (x : M
   rw [← mkQ_apply, ← mem_comap, comap_map_mkQ, sup_eq_right.2 h]
 
 /-- The class of `x` in `M ⧸ p` lies in `I (M ⧸ p)` exactly when `x ∈ p + I M`. -/
+@[simp]
 theorem Quotient.mk_mem_smul_top_iff {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     {p : Submodule R M} {I : Ideal R} {x : M} :
     (Quotient.mk x : M ⧸ p) ∈ I • (⊤ : Submodule R (M ⧸ p)) ↔ x ∈ p ⊔ I • ⊤ := by
