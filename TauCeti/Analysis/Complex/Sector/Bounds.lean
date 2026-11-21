@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Norm and argument bounds in complex sectors
@@ -219,37 +220,23 @@ theorem abs_arg_one_add_lt_of_norm_lt_sin {u : ℂ} {δ : ℝ}
   have hre_lt : |u.re| < 1 :=
     (abs_re_le_norm u).trans_lt (hu.trans_le (Real.sin_le_one δ))
   have hre_pos : 0 < (1 + u).re := by simp; linarith [(abs_lt.mp hre_lt).1]
-  have hne : 1 + u ≠ 0 := fun h => by simp [h] at hre_pos
   have harg_pi : |(1 + u).arg| < Real.pi / 2 :=
     abs_arg_lt_pi_div_two_iff.mpr (.inl hre_pos)
-  have hu_sq : u.re ^ 2 + u.im ^ 2 < Real.sin δ ^ 2 := by
-    have h1 : ‖u‖ ^ 2 < Real.sin δ ^ 2 := sq_lt_sq' (by linarith [norm_nonneg u]) hu
-    rwa [Complex.sq_norm, normSq_apply, ← sq, ← sq] at h1
-  have h1u_sq : ‖1 + u‖ ^ 2 = (1 + u.re) ^ 2 + u.im ^ 2 := by
-    rw [Complex.sq_norm, normSq_apply]; simp [sq]
-  have him_sq : u.im ^ 2 < ‖1 + u‖ ^ 2 * Real.sin δ ^ 2 := by
-    rw [h1u_sq]
-    by_cases hcos : Real.cos δ = 0
-    · have hs1 : Real.sin δ ^ 2 = 1 := by
-        nlinarith [Real.sin_sq_add_cos_sq δ]
-      have hpos : 0 < (1 + u.re) ^ 2 := sq_pos_of_pos (by simpa using hre_pos)
-      nlinarith
-    · have hc_pos : 0 < Real.cos δ ^ 2 := sq_pos_of_ne_zero hcos
-      nlinarith [mul_lt_mul_of_pos_right hu_sq hc_pos, Real.sin_sq_add_cos_sq δ,
-        sq_nonneg (u.re + Real.sin δ ^ 2)]
-  have hsin_arg_sq : (‖1 + u‖ * Real.sin |(1 + u).arg|) ^ 2 = u.im ^ 2 := by
-    have hns := norm_mul_sin_arg (1 + u)
-    simp only [add_im, one_im, zero_add] at hns
-    rcases le_total 0 (1 + u).arg with ha | ha
-    · rw [abs_of_nonneg ha, hns]
-    · rw [abs_of_nonpos ha, Real.sin_neg, mul_neg, neg_sq, hns]
-  have hn_pos : 0 < ‖1 + u‖ := norm_pos_iff.mpr hne
+  have hu_sq : Real.sin (1 + u).arg ^ 2 ≤ ‖u‖ ^ 2 := by
+    have h1 := norm_circleMap_sub_circleMap_sq 0 ‖1 + u‖ 1 (1 + u).arg 0
+    rw [circleMap_zero_norm_arg, show circleMap 0 1 0 = 1 by simp [circleMap_zero],
+      add_sub_cancel_left, one_pow, mul_one, sub_zero] at h1
+    have hcs := Real.sin_sq_add_cos_sq (1 + u).arg
+    nlinarith [sq_nonneg (‖1 + u‖ - Real.cos (1 + u).arg)]
   have hsin_lt : Real.sin |(1 + u).arg| < Real.sin δ := by
-    have hsq_lt : (Real.sin |(1 + u).arg|) ^ 2 < Real.sin δ ^ 2 := by
-      nlinarith [sq_pos_of_pos hn_pos]
-    have hnn : 0 ≤ Real.sin |(1 + u).arg| :=
+    have hsq : Real.sin |(1 + u).arg| ^ 2 < Real.sin δ ^ 2 := by
+      rw [← sq_abs (Real.sin (1 + u).arg),
+        Real.abs_sin_eq_sin_abs_of_abs_le_pi (abs_arg_le_pi _)] at hu_sq
+      exact hu_sq.trans_lt (sq_lt_sq' (by linarith [norm_nonneg u]) hu)
+    have hnn₁ : 0 ≤ Real.sin |(1 + u).arg| :=
       Real.sin_nonneg_of_nonneg_of_le_pi (abs_nonneg _) (by linarith [Real.pi_pos])
-    nlinarith [norm_nonneg u]
+    have hnn₂ : 0 ≤ Real.sin δ := Real.sin_nonneg_of_nonneg_of_le_pi hδ₀ (by linarith [Real.pi_pos])
+    nlinarith
   by_contra! hge
   exact (Real.strictMonoOn_sin.le_iff_le
     ⟨by linarith [hδ₀, Real.pi_pos], hδ₁⟩
