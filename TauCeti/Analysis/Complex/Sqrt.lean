@@ -13,8 +13,9 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
-involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and packages the principal square
+involving sums of principal roots. The file also records the values `√i = e^{π i / 4}`,
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the negation laws
+`√(-z) = ∓i √z` on the open upper and lower half-planes, and packages the principal square
 root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
 -/
 
@@ -54,6 +55,24 @@ theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)�
     sqrt_eq_exp hτ₀, hlog, log_neg_I, log_I, ← exp_neg, ← exp_add]
   congr 1
   ring
+
+/-- In the open upper half-plane, negating rotates the principal square root by `-i`:
+`√(-z) = -i √z`. -/
+theorem sqrt_neg_of_im_pos {z : ℂ} (hz : 0 < z.im) : sqrt (-z) = -I * sqrt z := by
+  rw [sqrt_eq_real_add_ite, sqrt_eq_real_add_ite]
+  simp only [norm_neg, neg_re, neg_im, sub_neg_eq_add, ← sub_eq_add_neg, hz.le, ↓reduceIte,
+    not_le.mpr (neg_lt_zero.mpr hz)]
+  ring_nf
+  simp
+
+/-- In the open lower half-plane, negating rotates the principal square root by `i`:
+`√(-z) = i √z`. -/
+theorem sqrt_neg_of_im_neg {z : ℂ} (hz : z.im < 0) : sqrt (-z) = I * sqrt z := by
+  have h := sqrt_neg_of_im_pos (z := -z) (by simpa)
+  rw [neg_neg] at h
+  rw [h]
+  ring_nf
+  simp
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

@@ -15,7 +15,8 @@ import TauCeti.Data.ZMod.Divisibility
 This file adds to Mathlib's `ZMod.χ₄` and `ZMod.χ₈` the facts that `χ₄` is odd and `χ₈` is even,
 in the form used under reflection `b ↦ b'` with `n ∣ b + b'`, together with `χ₄ a ^ 2 = 1` for odd
 `a`, the normalization `a * χ₄ a ≡ 1 (mod 4)` for odd integers, the description of the
-zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd integers.
+zeros of `χ₈`, and the classical supplement formulas `χ₄ a = (-1) ^ ((a - 1) / 2)` and
+`χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd integers.
 
 ## Main statements
 
@@ -24,6 +25,7 @@ zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd int
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
 * `ZMod.χ₈_intCast_eq_zero_iff`: `χ₈ a = 0` exactly when `a` is even.
+* `ZMod.χ₄_intCast_eq_negOnePow`: `χ₄ a = (-1) ^ ((a - 1) / 2)` for odd `a`.
 * `ZMod.χ₈_intCast_eq_negOnePow`: `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd `a`.
 -/
 
@@ -69,6 +71,19 @@ theorem int_mul_χ₄_modEq_one {m : ℤ} (hm : Odd m) : m * χ₄ m ≡ 1 [ZMOD
 theorem χ₈_intCast_eq_zero_iff (a : ℤ) : χ₈ a = 0 ↔ 2 ∣ a := by
   rw [χ₈_int_eq_if_mod_eight, Int.dvd_iff_emod_eq_zero]
   split_ifs <;> simp_all
+
+/-- For odd `a`, `χ₄ a = (-1) ^ ((a - 1) / 2)`, the classical form of the first supplement to
+quadratic reciprocity. -/
+theorem χ₄_intCast_eq_negOnePow {a : ℤ} (ha : Odd a) :
+    (χ₄ a : ℤ) = ((a - 1) / 2).negOnePow := by
+  obtain ⟨k, rfl⟩ := ha
+  have hdiv : (2 * k + 1 - 1) / 2 = k := by omega
+  rw [hdiv, χ₄_int_eq_if_mod_four]
+  rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
+  · rw [Int.negOnePow_even _ ⟨m, rfl⟩]
+    split_ifs <;> first | rfl | omega
+  · rw [Int.negOnePow_odd _ ⟨m, rfl⟩]
+    split_ifs <;> first | rfl | omega
 
 /-- For odd `a`, `χ₈ a = (-1) ^ ((a² - 1) / 8)`, the classical form of the second supplement to
 quadratic reciprocity. -/
