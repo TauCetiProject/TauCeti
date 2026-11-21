@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Group.List
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Interval
 public import TauCeti.Data.Finset.Sort
+import TauCeti.Algebra.BigOperators.Group.List
 
 /-!
 # Free cumulants
@@ -158,11 +158,11 @@ variable [CommRing R] [Monoid A]
 inversion of the block moments on the lattice of noncrossing partitions:
 `κ_π(a) = ∑_{σ ≤ π} μ(σ, π) φ_σ(a)`. -/
 def partitionCumulant (φ : A → R) (a : α → A) (π : NoncrossingPartition s) : R :=
-  ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.1
+  ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.val
 
 /-- Unfolding of the free cumulant of a noncrossing partition. -/
 theorem partitionCumulant_def (φ : A → R) (a : α → A) (π : NoncrossingPartition s) :
-    partitionCumulant φ a π = ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.1 := by
+    partitionCumulant φ a π = ∑ σ ∈ Iic π, mu R σ π * partitionMoment φ a σ.val := by
   rw [partitionCumulant]
 
 /-- The *free cumulant* `κ_s(a)` of the word `(a_i)_{i ∈ s}`: the cumulant of the partition of
@@ -191,16 +191,16 @@ variable (φ : A → R) (a : α → A)
 /-- The *moment–cumulant formula*: the block moment of a noncrossing partition `π` is the sum of
 the free cumulants of the noncrossing partitions refining `π`. -/
 theorem sum_Iic_partitionCumulant (π : NoncrossingPartition s) :
-    ∑ σ ∈ Iic π, partitionCumulant φ a σ = partitionMoment φ a π.1 := by
+    ∑ σ ∈ Iic π, partitionCumulant φ a σ = partitionMoment φ a π.val := by
   simp_rw [partitionCumulant_def]
-  exact sum_Iic_sum_Iic_mu_mul (fun σ : NoncrossingPartition s => partitionMoment φ a σ.1) π
+  exact sum_Iic_sum_Iic_mu_mul (fun σ : NoncrossingPartition s => partitionMoment φ a σ.val) π
 
 /-- The free cumulants are the only family satisfying the moment–cumulant formula
 `∑_{σ ≤ π} c_σ = φ_π(a)`. -/
 theorem eq_partitionCumulant_of_forall_sum_Iic (c : NoncrossingPartition s → R)
-    (hc : ∀ π, ∑ σ ∈ Iic π, c σ = partitionMoment φ a π.1) : c = partitionCumulant φ a := by
+    (hc : ∀ π, ∑ σ ∈ Iic π, c σ = partitionMoment φ a π.val) : c = partitionCumulant φ a := by
   funext π
-  rw [moebius_inversion_bot c (fun σ => partitionMoment φ a σ.1) (fun σ => (hc σ).symm) π,
+  rw [moebius_inversion_bot c (fun σ => partitionMoment φ a σ.val) (fun σ => (hc σ).symm) π,
     partitionCumulant_def]
 
 /-- The free cumulant of the partition into singletons is the product of the individual
@@ -214,7 +214,7 @@ theorem partitionCumulant_bot :
 moments weighted by the Möbius function, `κ_s(a) = ∑_{π ∈ NC(s)} μ(π, 1_s) φ_π(a)`. -/
 theorem freeCumulant_eq_sum_mu_mul_partitionMoment (s : Finset α) :
     freeCumulant φ a s =
-      ∑ π : NoncrossingPartition s, mu R π ⊤ * partitionMoment φ a π.1 := by
+      ∑ π : NoncrossingPartition s, mu R π ⊤ * partitionMoment φ a π.val := by
   rw [freeCumulant_def, partitionCumulant_def, Iic_top]
 
 /-- Elements with the same scalar moments have the same free cumulants on constant words. -/
@@ -281,59 +281,61 @@ theorem freeCumulant_const_of_card_eq_two (x : A) {B : Finset α} (hB : #B = 2) 
 /-- The free cumulants are *multiplicative*: the free cumulant of a noncrossing partition is the
 product of the free cumulants of the words read along its parts, `κ_π(a) = ∏_{B ∈ π} κ_B(a)`. -/
 theorem partitionCumulant_eq_prod_freeCumulant (π : NoncrossingPartition s) :
-    partitionCumulant φ a π = ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+    partitionCumulant φ a π = ∏ B ∈ π.val.parts, freeCumulant φ a B := by
   -- Strong induction on `#s`, and for fixed `s` well-founded induction on `π ∈ NC(s)`.
   induction hn : #s using Nat.strong_induction_on generalizing s with | _ n ih =>
   induction π using WellFoundedLT.induction with | _ π ihπ =>
-  by_cases hlt : ∀ B ∈ π.1.parts, #B < n
+  by_cases hlt : ∀ B ∈ π.val.parts, #B < n
   · -- Every part `B` of `π` is smaller than `s`, so by induction the moment of the word along
     -- `B` is the sum over `NC(B)` of products of free cumulants; factoring over the parts of `π`
     -- turns the block moment of `π` into the sum over `σ ≤ π` of the products for `σ`. Comparing
     -- with the moment–cumulant formula, whose terms for `σ < π` agree by induction, leaves the
     -- term `σ = π`.
-    have h : partitionMoment φ a π.1 = ∑ σ ∈ Iic π, ∏ B ∈ σ.1.parts, freeCumulant φ a B := by
+    have h : partitionMoment φ a π.val = ∑ σ ∈ Iic π, ∏ B ∈ σ.val.parts, freeCumulant φ a B := by
       rw [NoncrossingPartition.sum_Iic_prod_parts_eq_prod_sum, partitionMoment_def]
       refine prod_congr rfl fun B hB => ?_
-      rw [apply_prod_eq_sum_partitionCumulant φ a (π.1.nonempty_of_mem_parts hB)]
+      rw [apply_prod_eq_sum_partitionCumulant φ a (π.val.nonempty_of_mem_parts hB)]
       exact sum_congr rfl fun τ _ => ih #B (hlt B hB) τ rfl
     rw [← sum_Iic_partitionCumulant, Iic_eq_cons_Iio, sum_cons, sum_cons,
       sum_congr rfl fun σ hσ => ihπ σ (mem_Iio.1 hσ)] at h
     exact add_right_cancel h
   · -- Otherwise some part of `π` is all of `s`, so `π` is the partition into one part.
-    obtain ⟨B, hB, hnB⟩ : ∃ B ∈ π.1.parts, n ≤ #B := by simpa using hlt
-    have hBs : B = s := eq_of_subset_of_card_le (π.1.le hB) (hn ▸ hnB)
+    obtain ⟨B, hB, hnB⟩ : ∃ B ∈ π.val.parts, n ≤ #B := by simpa using hlt
+    have hBs : B = s := eq_of_subset_of_card_le (π.val.le hB) (hn ▸ hnB)
     subst hBs
     have hπ : π = ⊤ :=
-      Subtype.ext <| (π.1.eq_top_of_mem_parts hB).trans NoncrossingPartition.coe_top.symm
+      Subtype.ext <| (π.val.eq_top_of_mem_parts hB).trans NoncrossingPartition.coe_top.symm
     rw [hπ, NoncrossingPartition.coe_top,
-      Finpartition.parts_top (π.1.nonempty_of_mem_parts hB).ne_empty, prod_singleton,
+      Finpartition.parts_top (π.val.nonempty_of_mem_parts hB).ne_empty, prod_singleton,
       freeCumulant_def]
 
 /-- The *moment–cumulant formula* in multiplicative form: the block moment of a noncrossing
 partition `π` is the sum, over the noncrossing partitions `σ` refining `π`, of the products of
 the free cumulants along the parts of `σ`. -/
 theorem partitionMoment_eq_sum_prod_freeCumulant (π : NoncrossingPartition s) :
-    partitionMoment φ a π.1 = ∑ σ ∈ Iic π, ∏ B ∈ σ.1.parts, freeCumulant φ a B := by
+    partitionMoment φ a π.val = ∑ σ ∈ Iic π, ∏ B ∈ σ.val.parts, freeCumulant φ a B := by
   simp_rw [← sum_Iic_partitionCumulant, partitionCumulant_eq_prod_freeCumulant]
 
 /-- The *moment–cumulant formula* for a nonempty word in multiplicative form:
 `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑_{π ∈ NC(s)} ∏_{B ∈ π} κ_B(a)` for `s = {i₁ < ⋯ < iₙ}`. -/
 theorem apply_prod_eq_sum_prod_freeCumulant (hs : s.Nonempty) :
     φ ((s.sort.map a).prod) =
-      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, freeCumulant φ a B := by
   simp_rw [apply_prod_eq_sum_partitionCumulant φ a hs, partitionCumulant_eq_prod_freeCumulant]
 
 /-- The *moment–cumulant formula* for a word `a₁, …, aₙ` with `n ≥ 1` in multiplicative form:
 `φ (a₁ * ⋯ * aₙ) = ∑_{π ∈ NC(n)} ∏_{B ∈ π} κ_B(a₁, …, aₙ)`. -/
 theorem apply_prod_ofFn_eq_sum_prod_freeCumulant {n : ℕ} (hn : n ≠ 0) (a : Fin n → A) :
     φ (List.ofFn a).prod =
-      ∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+      ∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.val.parts, freeCumulant φ a B
+          := by
   simp_rw [apply_prod_ofFn_eq_sum_partitionCumulant φ hn a, partitionCumulant_eq_prod_freeCumulant]
 
 /-- The *moment–cumulant formula* for the powers of a single element: for nonempty `s`,
 `φ (x ^ #s) = ∑_{π ∈ NC(s)} ∏_{B ∈ π} κ_B(x, …, x)`. -/
 theorem apply_pow_card_eq_sum_prod_freeCumulant (x : A) (hs : s.Nonempty) :
-    φ (x ^ #s) = ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, freeCumulant φ (fun _ => x) B := by
+    φ (x ^ #s) = ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, freeCumulant φ (fun _ => x) B
+        := by
   simpa [List.map_const', List.prod_replicate] using
     apply_prod_eq_sum_prod_freeCumulant φ (fun _ => x) hs
 
@@ -343,14 +345,14 @@ are given by the moment–cumulant formula for a sequence `c`, that is
 `κ_s(x, …, x) = c #s`. -/
 theorem freeCumulant_const_eq_of_forall_apply_pow {x : A} (c : ℕ → R) (hs : s.Nonempty)
     (h : ∀ t ⊆ s, t.Nonempty →
-      φ (x ^ #t) = ∑ π : NoncrossingPartition t, ∏ B ∈ π.1.parts, c #B) :
+      φ (x ^ #t) = ∑ π : NoncrossingPartition t, ∏ B ∈ π.val.parts, c #B) :
     freeCumulant φ (fun _ => x) s = c #s := by
   -- The multiplicative family `π ↦ ∏_{B ∈ π} c #B` satisfies the moment–cumulant formula, so it
   -- is the family of free cumulants.
   have hc := eq_partitionCumulant_of_forall_sum_Iic φ (fun _ => x)
-    (fun π : NoncrossingPartition s => ∏ B ∈ π.1.parts, c #B) fun π => by
+    (fun π : NoncrossingPartition s => ∏ B ∈ π.val.parts, c #B) fun π => by
       rw [NoncrossingPartition.sum_Iic_prod_parts_eq_prod_sum, partitionMoment_const]
-      exact prod_congr rfl fun B hB => (h B (π.1.le hB) (π.1.nonempty_of_mem_parts hB)).symm
+      exact prod_congr rfl fun B hB => (h B (π.val.le hB) (π.val.nonempty_of_mem_parts hB)).symm
   rw [freeCumulant_def, ← congrFun hc ⊤, NoncrossingPartition.coe_top,
     Finpartition.parts_top hs.ne_empty, prod_singleton]
 
@@ -359,15 +361,15 @@ theorem freeCumulant_const_eq_of_forall_apply_pow {x : A} (c : ℕ → R) (hs : 
 every nonempty `X = {i₁ < ⋯ < iₖ} ⊆ s`, then `κ_s(a) = f s` for nonempty `s`. -/
 theorem freeCumulant_eq_of_forall_apply_prod_eq_sum_prod (f : Finset α → R)
     (hf : ∀ X ⊆ s, X.Nonempty →
-      φ ((X.sort.map a).prod) = ∑ π : NoncrossingPartition X, ∏ C ∈ π.1.parts, f C)
+      φ ((X.sort.map a).prod) = ∑ π : NoncrossingPartition X, ∏ C ∈ π.val.parts, f C)
     (hs : s.Nonempty) : freeCumulant φ a s = f s := by
   -- The multiplicative family `π ↦ ∏_{C ∈ π} f C` satisfies the moment–cumulant formula, since
   -- each lower interval of `NC(s)` factors over the parts.
-  have h := eq_partitionCumulant_of_forall_sum_Iic φ a (fun π => ∏ C ∈ π.1.parts, f C)
+  have h := eq_partitionCumulant_of_forall_sum_Iic φ a (fun π => ∏ C ∈ π.val.parts, f C)
     fun π => by
       rw [NoncrossingPartition.sum_Iic_prod_parts_eq_prod_sum, partitionMoment_def]
       exact prod_congr rfl fun C hC =>
-        (hf C (π.1.le hC) (π.1.nonempty_of_mem_parts hC)).symm
+        (hf C (π.val.le hC) (π.val.nonempty_of_mem_parts hC)).symm
   rw [freeCumulant_def, ← h]
   dsimp only
   rw [NoncrossingPartition.coe_top, Finpartition.parts_top hs.ne_empty, prod_singleton]
@@ -377,34 +379,34 @@ of parts, the noncrossing partitions having `{i}` as a part contribute the formu
 with the weight shifted by one, when `φ 1 = 1` and the letter at `i` is the unit. -/
 private theorem sum_filter_singleton_mem_parts_prod_freeCumulant_mul (h1 : φ 1 = 1) {i : α}
     (hai : a i = 1) (hi : i ∈ s) (w : ℕ → R) :
-    ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
-      (∏ B ∈ π.1.parts, freeCumulant φ a B) * w #π.1.parts =
+    ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∈ π.val.parts,
+      (∏ B ∈ π.val.parts, freeCumulant φ a B) * w #π.val.parts =
         ∑ τ : NoncrossingPartition (s.erase i),
-          (∏ B ∈ τ.1.parts, freeCumulant φ a B) * w (#τ.1.parts + 1) := by
+          (∏ B ∈ τ.val.parts, freeCumulant φ a B) * w (#τ.val.parts + 1) := by
   rw [sum_subtype _ fun π => by rw [mem_filter, and_iff_right (mem_univ π)]]
   refine Fintype.sum_equiv (NoncrossingPartition.singletonPartEquiv hi) _ _ fun π => ?_
-  rw [NoncrossingPartition.parts_singletonPartEquiv_apply, ← mul_prod_erase _ _ π.2,
+  rw [NoncrossingPartition.parts_singletonPartEquiv_apply, ← mul_prod_erase _ _ π.property,
     freeCumulant_singleton, hai, h1, one_mul,
-    card_erase_add_one π.2]
+    card_erase_add_one π.property]
 
 /-- In the multiplicative moment–cumulant formula for a set `s` of at least two positions, the
 noncrossing partitions not having `{i}` as a part contribute only `κ_s(a)`, provided every
 cumulant `κ_t(a)` with `i ∈ t ⊂ s` and `1 < #t` vanishes. -/
 private theorem sum_filter_singleton_notMem_parts_prod_freeCumulant {i : α} (hi : i ∈ s)
     (hs : 1 < #s) (hvan : ∀ t ⊂ s, i ∈ t → 1 < #t → freeCumulant φ a t = 0) :
-    ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∉ π.1.parts,
-      ∏ B ∈ π.1.parts, freeCumulant φ a B = freeCumulant φ a s := by
-  have htop : (⊤ : NoncrossingPartition s).1.parts = {s} := by
+    ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∉ π.val.parts,
+      ∏ B ∈ π.val.parts, freeCumulant φ a B = freeCumulant φ a s := by
+  have htop : (⊤ : NoncrossingPartition s).val.parts = {s} := by
     rw [NoncrossingPartition.coe_top, Finpartition.parts_top (card_pos.1 (by omega)).ne_empty]
   refine (sum_eq_single_of_mem ⊤ (mem_filter.2 ⟨mem_univ _, fun h => ?_⟩)
     fun π hπ hπtop => ?_).trans (by rw [htop, prod_singleton])
   · rw [htop, mem_singleton] at h
     rw [← h, card_singleton] at hs
     exact lt_irrefl 1 hs
-  · have hpart := π.1.part_mem.2 hi
-    have hipart := π.1.mem_part_self.2 hi
+  · have hpart := π.val.part_mem.2 hi
+    have hipart := π.val.mem_part_self.2 hi
     refine prod_eq_zero hpart (hvan _ ?_ hipart ?_)
-    · refine ssubset_of_subset_of_ne (π.1.le hpart) fun hps => hπtop ?_
+    · refine ssubset_of_subset_of_ne (π.val.le hpart) fun hps => hπtop ?_
       exact Subtype.ext <| (Finpartition.eq_top_of_mem_parts (by rwa [hps] at hpart)).trans
         NoncrossingPartition.coe_top.symm
     · obtain ⟨x, hx⟩ | hnt := Finset.Nonempty.exists_eq_singleton_or_nontrivial ⟨i, hipart⟩
@@ -432,7 +434,7 @@ theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i
   simp only [mul_one] at hone
   rw [apply_prod_eq_sum_prod_freeCumulant φ a hs',
     apply_prod_eq_sum_prod_freeCumulant φ a (hs'.mono (erase_subset i s)),
-    ← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
+    ← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.val.parts,
     hone,
     sum_filter_singleton_notMem_parts_prod_freeCumulant φ a hi hs
       fun t ht hit hlt => ih _ (hn ▸ card_lt_card ht) hit hlt rfl] at h
@@ -443,17 +445,17 @@ theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i
 `∑_{π ∈ NC(s)} κ_π(a) w(#π) = ∑_{τ ∈ NC(s ∖ {i})} κ_τ(a) w(#τ + 1)`. -/
 theorem sum_prod_freeCumulant_mul_eq_sum_erase_of_apply_eq_one (h1 : φ 1 = 1) {i : α}
     (hai : a i = 1) (hi : i ∈ s) (w : ℕ → R) :
-    ∑ π : NoncrossingPartition s, (∏ B ∈ π.1.parts, freeCumulant φ a B) * w #π.1.parts =
+    ∑ π : NoncrossingPartition s, (∏ B ∈ π.val.parts, freeCumulant φ a B) * w #π.val.parts =
       ∑ τ : NoncrossingPartition (s.erase i),
-        (∏ B ∈ τ.1.parts, freeCumulant φ a B) * w (#τ.1.parts + 1) := by
-  rw [← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
+        (∏ B ∈ τ.val.parts, freeCumulant φ a B) * w (#τ.val.parts + 1) := by
+  rw [← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.val.parts,
     sum_filter_singleton_mem_parts_prod_freeCumulant_mul φ a h1 hai hi w, add_eq_left]
   -- A partition in which `i` is not a part of its own has a cumulant of order at least two through
   -- the unit letter, which vanishes.
   refine sum_eq_zero fun π hπ => ?_
-  have hipart := π.1.mem_part_self.2 hi
-  have hne : π.1.part i ≠ {i} := fun he => (mem_filter.1 hπ).2 (he ▸ π.1.part_mem.2 hi)
-  rw [prod_eq_zero (π.1.part_mem.2 hi) (freeCumulant_eq_zero_of_apply_eq_one φ a h1 hai hipart
+  have hipart := π.val.mem_part_self.2 hi
+  have hne : π.val.part i ≠ {i} := fun he => (mem_filter.1 hπ).2 (he ▸ π.val.part_mem.2 hi)
+  rw [prod_eq_zero (π.val.part_mem.2 hi) (freeCumulant_eq_zero_of_apply_eq_one φ a h1 hai hipart
     (one_lt_card_iff_nontrivial.2 ((nontrivial_iff_ne_singleton hipart).2 hne))), zero_mul]
 
 end Cumulant
@@ -467,7 +469,7 @@ variable [CommRing R] [Monoid A] (φ : A → R) {β : Type*} [LinearOrder β] {t
 block moments of two words: if `φ_π(a) = φ_{e π}(b)` for every `π`, then
 `κ_π(a) = κ_{e π}(b)`. -/
 theorem partitionCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o NoncrossingPartition t)
-    (h : ∀ π, partitionMoment φ a π.1 = partitionMoment φ b (e π).1)
+    (h : ∀ π, partitionMoment φ a π.val = partitionMoment φ b (e π).val)
     (π : NoncrossingPartition s) : partitionCumulant φ a π = partitionCumulant φ b (e π) := by
   refine (congrFun (eq_partitionCumulant_of_forall_sum_Iic φ a
     (fun π => partitionCumulant φ b (e π)) fun π => ?_) π).symm
@@ -477,7 +479,7 @@ theorem partitionCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o Noncro
 /-- Free cumulants of two words agree when an order isomorphism `NC(s) ≃o NC(t)` matches their
 block moments. -/
 theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o NoncrossingPartition t)
-    (h : ∀ π, partitionMoment φ a π.1 = partitionMoment φ b (e π).1) :
+    (h : ∀ π, partitionMoment φ a π.val = partitionMoment φ b (e π).val) :
     freeCumulant φ a s = freeCumulant φ b t := by
   rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
 

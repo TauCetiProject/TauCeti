@@ -24,7 +24,7 @@ strongly measurable from the increments exactly when they are so from the observ
 This specializes `TauCeti.aestronglyMeasurable_comap_fin_succ_iff_increments`.
 
 For the L² pullback range characterization and Hermite expansions of observation-measurable
-claims on grids starting at zero, import `TauCeti/Probability/BrownianMotion/Hermite.lean`.
+claims on grids starting at zero, import `TauCeti/Probability/BrownianMotion/Hermite/Basic.lean`.
 For general increment-measurable claims, import
 `TauCeti/Probability/Distributions/Gaussian/Hermite/Pi/Pullback.lean` and apply
 `ProbabilityTheory.HasLaw.hasSum_gaussianVectorHermite_of_aestronglyMeasurable` to

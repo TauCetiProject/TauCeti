@@ -43,6 +43,8 @@ two-irreducible dimension count.
   equivalent exactly when some morphism between them is nonzero.
 * `TauCeti.LieModule.finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv`: inequivalent
   irreducible Lie modules have a zero-dimensional morphism space over any commutative ring.
+* `TauCeti.LieModule.nonempty_linearEquiv_lieModuleHom_swap`: the morphisms `M → N` and `N → M`
+  between irreducible Lie modules span isomorphic spaces.
 * `TauCeti.LieModule.finite_lieModuleHom_of_isIrreducible`: the morphism space from an irreducible
   Lie module that is Noetherian over the base ring to any irreducible is finitely generated.
 * `TauCeti.LieModule.finrank_lieModuleHom_self`: **the endomorphisms of a finite-dimensional
@@ -151,6 +153,18 @@ theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
       subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
     exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))
       fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
+
+/-- **The morphisms `M → N` and `N → M` between irreducible Lie modules span isomorphic
+spaces**, over any commutative ring. -/
+theorem nonempty_linearEquiv_lieModuleHom_swap [_root_.LieModule R L M] :
+    Nonempty ((M →ₗ⁅R,L⁆ N) ≃ₗ[R] (N →ₗ⁅R,L⁆ M)) := by
+  by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
+  · exact ⟨(h.some.congrRight (M := M)).symm.trans (h.some.congrLeft (P := M))⟩
+  · have hempty : IsEmpty (M ≃ₗ⁅R,L⁆ N) := not_nonempty_iff.mp h
+    have := subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv hempty
+    have := subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv
+      ⟨fun e : N ≃ₗ⁅R,L⁆ M ↦ hempty.elim e.symm⟩
+    exact ⟨LinearEquiv.ofSubsingleton _ _⟩
 
 end CommRing
 

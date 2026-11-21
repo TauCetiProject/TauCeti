@@ -82,14 +82,14 @@ point at the place of `P`. For an isogeny this is the point under `P`
 (`pointMap_ofIsogeny_eq_iff`), and the zero morphism sends every point to `O`. -/
 noncomputable def pointMap (f : Hom W₁ W₂) (P : W₁.Point) : W₂.Point :=
   (Point.equivBaseChangeSelf W₂).symm
-    (reductionOfDegreeEqOne W₂ (W₁.pointEquivDegreeOnePlace P).2 f.tautologicalPoint)
+    (reductionOfDegreeEqOne W₂ (W₁.pointEquivDegreeOnePlace P).property f.tautologicalPoint)
 
 /-- **The image of `P` is the point congruent to the tautological point** at the place of `P`. -/
 theorem pointMap_eq_iff {f : Hom W₁ W₂} {P : W₁.Point} {Q : W₂.Point} :
     f.pointMap P = Q ↔
       f.tautologicalPoint - Point.baseChange (W' := W₂) F W₁.FunctionField
           (Point.equivBaseChangeSelf W₂ Q) ∈
-        polePoints W₂ (W₁.pointEquivDegreeOnePlace P).1 := by
+        polePoints W₂ (W₁.pointEquivDegreeOnePlace P).val := by
   rw [pointMap, AddEquiv.symm_apply_eq, reductionOfDegreeEqOne_eq_iff]
 
 /-- **The zero morphism sends every point to `O`.** -/
@@ -125,7 +125,7 @@ theorem nsmul_pointMap (n : ℕ) (f : Hom W₁ W₂) (P : W₁.Point) :
 /-- **Every morphism sends `O` to `O`.** -/
 @[simp]
 theorem pointMap_zero (f : Hom W₁ W₂) : f.pointMap 0 = 0 := by
-  have h0 : (W₁.pointEquivDegreeOnePlace 0).1 = Place.infinity W₁ :=
+  have h0 : (W₁.pointEquivDegreeOnePlace 0).val = Place.infinity W₁ :=
     coe_pointEquivDegreeOnePlace_zero W₁
   rw [pointMap_eq_iff, h0, (Point.equivBaseChangeSelf W₂).map_zero, map_zero, sub_zero]
   exact tautologicalPoint_mem_polePoints f
@@ -144,9 +144,9 @@ variable (φ : Isogeny W₁ W₂)
 /-- **An isogeny sends a point to the point under it.** If the place of `P` restricts along `φ^*`
 to the place of `Q`, then `φ` sends `P` to `Q`. -/
 theorem pointMap_ofIsogeny_of_isEquiv {P : W₁.Point} {Q : W₂.Point}
-    (h : (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
+    (h : (((W₁.pointEquivDegreeOnePlace P).val.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-        (W₂.pointEquivDegreeOnePlace Q).1.valuation) :
+        (W₂.pointEquivDegreeOnePlace Q).val.valuation) :
     (ofIsogeny φ).pointMap P = Q := by
   rw [pointMap_eq_iff, tautologicalPoint_ofIsogeny, Isogeny.tautologicalPoint_eq_map_genericPoint,
     genericPoint_eq_some, Point.map_some]
@@ -169,24 +169,24 @@ theorem pointMap_ofIsogeny_of_isEquiv {P : W₁.Point} {Q : W₂.Point}
 /-- **The place of the image of `P` is the restriction of the place of `P`** along the pullback of
 the isogeny, expressed as equivalence of valuations. -/
 theorem isEquiv_comap_pointMap_ofIsogeny (P : W₁.Point) :
-    (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
+    (((W₁.pointEquivDegreeOnePlace P).val.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-        (W₂.pointEquivDegreeOnePlace ((ofIsogeny φ).pointMap P)).1.valuation := by
+        (W₂.pointEquivDegreeOnePlace ((ofIsogeny φ).pointMap P)).val.valuation := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
-  let v := (W₁.pointEquivDegreeOnePlace P).1
+  let v := (W₁.pointEquivDegreeOnePlace P).val
   -- the restriction of a rational place is rational
   have hv : (v.restrict F W₂.FunctionField).degree = 1 := by
     have hle := Place.degree_restrict_le F W₂.FunctionField v
     have hpos := (v.restrict F W₂.FunctionField).one_le_degree_of_isFunctionField
       W₂.isFunctionField
-    have hdeg : v.degree = 1 := (W₁.pointEquivDegreeOnePlace P).2
+    have hdeg : v.degree = 1 := (W₁.pointEquivDegreeOnePlace P).property
     omega
   let Q := (W₂.pointEquivDegreeOnePlace).symm ⟨v.restrict F W₂.FunctionField, hv⟩
-  have hQ : (W₂.pointEquivDegreeOnePlace Q).1 = v.restrict F W₂.FunctionField := by simp [Q]
+  have hQ : (W₂.pointEquivDegreeOnePlace Q).val = v.restrict F W₂.FunctionField := by simp [Q]
   have he : (v.valuation.comap (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-      (W₂.pointEquivDegreeOnePlace Q).1.valuation :=
+      (W₂.pointEquivDegreeOnePlace Q).val.valuation :=
     (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField v _).mp hQ.symm
   rwa [pointMap_ofIsogeny_of_isEquiv φ he]
 
@@ -194,9 +194,9 @@ theorem isEquiv_comap_pointMap_ofIsogeny (P : W₁.Point) :
 along its pullback. -/
 theorem pointMap_ofIsogeny_eq_iff {P : W₁.Point} {Q : W₂.Point} :
     (ofIsogeny φ).pointMap P = Q ↔
-      (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
+      (((W₁.pointEquivDegreeOnePlace P).val.valuation).comap
         (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-          (W₂.pointEquivDegreeOnePlace Q).1.valuation :=
+          (W₂.pointEquivDegreeOnePlace Q).val.valuation :=
   ⟨fun h ↦ h ▸ isEquiv_comap_pointMap_ofIsogeny φ P, pointMap_ofIsogeny_of_isEquiv φ⟩
 
 /-- **An isogeny sends `P` to `Q` exactly when the place of `P` restricts to the place of `Q`.** -/
@@ -204,8 +204,8 @@ theorem pointMap_ofIsogeny_eq_iff_restrict {P : W₁.Point} {Q : W₂.Point} :
     letI := φ.fieldPullback.toRingHom.toAlgebra
     letI := φ.finiteDimensional_functionField fun _ ↦ rfl
     (ofIsogeny φ).pointMap P = Q ↔
-      (W₁.pointEquivDegreeOnePlace P).1.restrict F W₂.FunctionField =
-        (W₂.pointEquivDegreeOnePlace Q).1 := by
+      (W₁.pointEquivDegreeOnePlace P).val.restrict F W₂.FunctionField =
+        (W₂.pointEquivDegreeOnePlace Q).val := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
   exact (pointMap_ofIsogeny_eq_iff φ).trans
@@ -255,11 +255,11 @@ theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Po
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
-  let place : W₁.Point → Place F W₁.FunctionField := fun P ↦ (W₁.pointEquivDegreeOnePlace P).1
+  let place : W₁.Point → Place F W₁.FunctionField := fun P ↦ (W₁.pointEquivDegreeOnePlace P).val
   have hplace : Set.InjOn place {P | (ofIsogeny φ).pointMap P = Q} := fun _ _ _ _ h ↦
     (W₁.pointEquivDegreeOnePlace).injective (Subtype.ext h)
   refine Set.Finite.of_finite_image (Set.Finite.subset
-    (Place.finite_setOf_restrict_eq F W₂.FunctionField (W₂.pointEquivDegreeOnePlace Q).1) ?_)
+    (Place.finite_setOf_restrict_eq F W₂.FunctionField (W₂.pointEquivDegreeOnePlace Q).val) ?_)
     hplace
   rintro _ ⟨P, hP, rfl⟩
   exact (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).mpr

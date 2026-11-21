@@ -19,9 +19,11 @@ import TauCeti.Topology.Compactification.OnePoint.Stabilizer
 Point stabilizers for the action of `PGL(2, K)` on `OnePoint K` are amenable for
 every group topology: transitivity identifies each with the stabilizer of infinity,
 and `OnePoint.pglStabilizerInftyEquiv` identifies the latter with the affine group.
-The stabilizers in `GL(2, K)` are amenable too, since the kernel of the projection
-to `PGL(2, K)` is central. Thus every subgroup of `GL(2, K)` has amenable point
-stabilizers, including subgroups of `SL(2, ℤ)` acting on the real projective line.
+The stabilizers in `PSL(2, K)` and `GL(2, K)` are amenable too: `PSL(2, K)` embeds
+into `PGL(2, K)` compatibly with the action, and the kernel of the projection from
+`GL(2, K)` to `PGL(2, K)` is central. Thus every subgroup of `GL(2, K)` or `PSL(2, K)`
+has amenable point stabilizers, including subgroups of `SL(2, ℤ)` acting on the real
+projective line.
 
 We first establish amenability with the discrete topology; the subgroup transfer
 then applies to every group topology on the represented group.
@@ -79,6 +81,22 @@ theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
   have : TauCeti.Amenable φ.ker := TauCeti.Amenable.of_injective ψ hψ
   exact TauCeti.Amenable.of_ker_le_range φ.ker.subtype φ (by simp)
 
+/-- Every projective-special-linear point stabilizer is amenable for every group topology. -/
+theorem amenable_psl_stabilizer [TopologicalSpace PSL(2, K)] [IsTopologicalGroup PSL(2, K)]
+    (x : OnePoint K) : TauCeti.Amenable (stabilizer PSL(2, K) x) := by
+  apply TauCeti.Amenable.of_discrete
+  let : TopologicalSpace (stabilizer PSL(2, K) x) := ⊥
+  let : DiscreteTopology (stabilizer PSL(2, K) x) := ⟨rfl⟩
+  let : TopologicalSpace PGL(2, K) := ⊥
+  let : DiscreteTopology PGL(2, K) := ⟨rfl⟩
+  have := amenable_pgl_stabilizer x
+  let φ : stabilizer PSL(2, K) x →* stabilizer PGL(2, K) x :=
+    (ProjectiveSpecialLinearGroup.toPGL.subgroupComap _).comp
+      (MulEquiv.subgroupCongr (comap_toPGL_stabilizer x).symm).toMonoidHom
+  refine TauCeti.Amenable.of_injective φ ?_
+  exact (ProjectiveSpecialLinearGroup.toPGL.subgroupComap_injective _
+    ProjectiveSpecialLinearGroup.toPGL_injective).comp (MulEquiv.injective _)
+
 end OnePoint
 
 namespace MonoidHom
@@ -93,6 +111,18 @@ theorem amenable_comap_onePoint_stabilizer {K : Type*} [Field K] [DecidableEq K]
   let : TopologicalSpace (GL (Fin 2) K) := ⊥
   let : DiscreteTopology (GL (Fin 2) K) := ⟨rfl⟩
   have := OnePoint.amenable_gl_stabilizer x
+  exact TauCeti.Amenable.of_injective (φ.subgroupComap _)
+    (φ.subgroupComap_injective _ hφ)
+
+/-- An injective projective-special-linear representation has amenable projective-line point
+stabilizers, for every group topology on the represented group. -/
+theorem amenable_comap_onePoint_psl_stabilizer {K : Type*} [Field K] [DecidableEq K]
+    {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] (φ : G →* PSL(2, K)) (hφ : Function.Injective φ)
+    (x : OnePoint K) : TauCeti.Amenable ((stabilizer PSL(2, K) x).comap φ) := by
+  let : TopologicalSpace PSL(2, K) := ⊥
+  let : DiscreteTopology PSL(2, K) := ⟨rfl⟩
+  have := OnePoint.amenable_psl_stabilizer x
   exact TauCeti.Amenable.of_injective (φ.subgroupComap _)
     (φ.subgroupComap_injective _ hφ)
 
