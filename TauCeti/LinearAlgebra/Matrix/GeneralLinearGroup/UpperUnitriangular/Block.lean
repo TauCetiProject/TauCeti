@@ -325,8 +325,8 @@ def blockDiagonalConj : (ι → GL n R) →* MulAut (blockUpperUnitriangularGrou
 @[simp]
 theorem coe_blockDiagonalConj_apply (g : ι → GL n R) (u : blockUpperUnitriangularGroup n ι R) :
     ((blockDiagonalConj g u : blockUpperUnitriangularGroup n ι R) : GL (n × ι) R) =
-      blockDiagonalGL n ι R g * u * (blockDiagonalGL n ι R g)⁻¹ :=
-  (rfl)
+      blockDiagonalGL n ι R g * u * (blockDiagonalGL n ι R g)⁻¹ := by
+  simp [blockDiagonalConj]
 
 /-- The adjacent block trace of a Levi conjugate: the block `u_(i,j)` is replaced by
 `gᵢ u_(i,j) gⱼ⁻¹`, which has the trace of `gⱼ⁻¹ gᵢ u_(i,j)`. -/
