@@ -23,6 +23,8 @@ to `t` and then to the preimage of `s`, yields canonically homeomorphic nested s
 * `Homeomorph.Set.subtypePreimageComm_apply`: pointwise evaluation of `subtypePreimageComm`.
 * `Homeomorph.Set.subtypePreimageComm_symm`: the inverse of `subtypePreimageComm s t` is
   `subtypePreimageComm t s`.
+* `Homeomorph.Set.subtypePreimageComm_trans_subtypePreimageComm`: composing
+  `subtypePreimageComm s t` with `subtypePreimageComm t s` is the identity homeomorphism.
 -/
 
 public section
@@ -51,6 +53,13 @@ theorem subtypePreimageComm_apply (s t : Set X) (y : (Subtype.val : s → X) ⁻
 @[simp]
 theorem subtypePreimageComm_symm (s t : Set X) :
     (subtypePreimageComm s t).symm = subtypePreimageComm t s := by
+  rfl
+
+/-- Composing `Homeomorph.Set.subtypePreimageComm s t` with
+`Homeomorph.Set.subtypePreimageComm t s` is the identity homeomorphism. -/
+@[simp]
+theorem subtypePreimageComm_trans_subtypePreimageComm (s t : Set X) :
+    (subtypePreimageComm s t).trans (subtypePreimageComm t s) = Homeomorph.refl _ := by
   rfl
 
 end Homeomorph.Set

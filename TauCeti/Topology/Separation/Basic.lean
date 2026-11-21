@@ -28,11 +28,13 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [T1Space Y] {f 
 
 /-- Any map into a `T₁` space lifts generalizations, since specializations in the target are
 equalities. -/
+@[simp]
 theorem generalizingMap_of_t1Space : GeneralizingMap f :=
   fun x _ hx ↦ ⟨x, specializes_rfl, (specializes_iff_eq.mp hx).symm⟩
 
 /-- Any map into a `T₁` space lifts specializations, since specializations in the target are
 equalities. -/
+@[simp]
 theorem specializingMap_of_t1Space : SpecializingMap f :=
   fun x _ hx ↦ ⟨x, specializes_rfl, specializes_iff_eq.mp hx⟩
 
