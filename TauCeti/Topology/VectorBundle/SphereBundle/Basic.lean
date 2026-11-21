@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+import Mathlib.Analysis.Normed.Module.Ball.Action
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -483,8 +485,8 @@ theorem sphereBundleNeg_sphereBundleNeg (v : sphereBundle F E) :
 theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v ≠ v := fun h ↦ by
   obtain ⟨⟨b, x⟩, hx⟩ := v
   have h₂ : -x = x := TotalSpace.mk_inj.1 (congrArg Subtype.val h)
-  have := HasUniqueDiv.of_isTorsionFree ℝ (E b)
-  exact snd_ne_zero_of_mem_sphereBundle hx (neg_eq_self.1 h₂)
+  exact ne_neg_of_mem_unit_sphere ℝ ⟨x, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 hx)⟩
+    (Subtype.ext h₂.symm)
 
 /-- If the model fibre is nonzero, the unit sphere bundle has a unit vector over every point. -/
 theorem sphereBundleProj_surjective [Nontrivial F] : Function.Surjective (sphereBundleProj F E) :=
@@ -503,14 +505,10 @@ theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq (hF : Module.finrank ℝ
   obtain ⟨⟨b, x⟩, hx⟩ := v
   obtain ⟨⟨b', y⟩, hy⟩ := w
   obtain rfl : b' = b := by simpa only [sphereBundleProj_apply] using h
-  -- In the line `E b`, `y = c • x` with `|c| = 1`.
-  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' x (snd_ne_zero_of_mem_sphereBundle hx)).1
-    ((VectorBundle.finrank_eq ℝ F E _).trans hF) y
-  have hc : |c| = 1 := by
-    simpa [norm_smul, mem_sphereBundle.1 hx] using mem_sphereBundle.1 hy
-  rcases (abs_eq zero_le_one).1 hc with rfl | rfl
-  · exact .inl (Subtype.ext (by simp))
-  · exact .inr (Subtype.ext (by simp))
+  rcases eq_or_eq_neg_of_norm_eq_of_finrank_eq_one ((VectorBundle.finrank_eq ℝ F E _).trans hF)
+    ((mem_sphereBundle.1 hy).trans (mem_sphereBundle.1 hx).symm) with h | h
+  · exact .inl (Subtype.ext (congrArg (TotalSpace.mk _) h))
+  · exact .inr (Subtype.ext (congrArg (TotalSpace.mk _) h))
 
 end Neg
 
