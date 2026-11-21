@@ -29,6 +29,8 @@ following Mathlib style.
   `aestronglyMeasurable_energyIntegrand_apply`, and
   `aestronglyMeasurable_energyIntegrand_apply₂`: scalar evaluations on fixed or measurable jet
   fields are measurable.
+* `aestronglyMeasurable_matrixBilinearForm`: a measurable coefficient field gives a measurable
+  field of matrix bilinear forms.
 * `aestronglyMeasurable_matrixBilinearForm_apply`: the principal part `a(x)(η(x), ξ(x))` on
   measurable vector fields is measurable.
 -/
@@ -115,6 +117,14 @@ lemma aestronglyMeasurable_energyIntegrand_apply₂ {a : α → Matrix n n ℝ}
     exact (continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
       (continuous_snd.comp continuous_snd)
   exact hcont.comp_aestronglyMeasurable (hform.prodMk (hU.prodMk hV))
+
+/-- An a.e. strongly measurable coefficient field gives an a.e. strongly measurable field of
+matrix bilinear forms. -/
+lemma aestronglyMeasurable_matrixBilinearForm {a : α → Matrix n n ℝ}
+    (ha : AEStronglyMeasurable a μ) :
+    AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) μ := by
+  simpa only [matrixBilinearFormLinear_apply] using
+    matrixBilinearFormLinear.continuous.comp_aestronglyMeasurable ha
 
 /-- An a.e. strongly measurable field of matrix bilinear forms gives an a.e. strongly measurable
 scalar field `x ↦ a(x)(η(x), ξ(x))` on a.e. strongly measurable vector fields `η`, `ξ`. -/

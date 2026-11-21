@@ -87,6 +87,9 @@ bounds.
   bound has bounded range.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
+* `MeasureTheory.memLp_and_eLpNorm_le_of_norm_le_add`: a function vanishing off a measurable set
+  `s` and dominated there by `c₁ ‖g₁‖ + c₂ ‖g₂‖` with `g₁, g₂ ∈ Lʳ(s)` lies in `Lʳ`, with the
+  matching norm bound.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
@@ -590,6 +593,38 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
   rw [← ENNReal.toReal_sum fun i _ => (hg i).eLpNorm_ne_top]
   exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun i _ => (hg i).eLpNorm_ne_top)
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
+
+/-- An `Lʳ` bound for a function vanishing off a measurable set `s`: if `‖f‖ ≤ c₁ ‖g₁‖ + c₂ ‖g₂‖`
+on `s` with `c₁, c₂ ≥ 0` and `g₁, g₂ ∈ Lʳ(s)`, then `f ∈ Lʳ` with
+`‖f‖_r ≤ c₁ ‖g₁‖_{r,s} + c₂ ‖g₂‖_{r,s}`. -/
+theorem memLp_and_eLpNorm_le_of_norm_le_add {G₁ G₂ : Type*} [NormedAddCommGroup G₁]
+    [NormedAddCommGroup G₂] (hs : MeasurableSet s) {r : ℝ≥0∞} (hr : 1 ≤ r) {f : X → F}
+    {g₁ : X → G₁} {g₂ : X → G₂} {c₁ c₂ : ℝ} (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (hf0 : ∀ x ∉ s, f x = 0)
+    (hg₁ : MemLp g₁ r (μ.restrict s)) (hg₂ : MemLp g₂ r (μ.restrict s))
+    (hfg : ∀ x ∈ s, ‖f x‖ ≤ c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) :
+    MemLp f r μ ∧ eLpNorm f r μ ≤
+      ENNReal.ofReal c₁ * eLpNorm g₁ r (μ.restrict s) +
+        ENNReal.ofReal c₂ * eLpNorm g₂ r (μ.restrict s) := by
+  have hsupp : Function.support f ⊆ s := fun x hx => by_contra fun h => hx (hf0 x h)
+  have hg : MemLp (fun x => c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) r (μ.restrict s) :=
+    (hg₁.norm.const_mul c₁).add (hg₂.norm.const_mul c₂)
+  have hle : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ ‖c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖‖ :=
+    ae_restrict_of_forall_mem hs fun x hx => (hfg x hx).trans (Real.le_norm_self _)
+  have hfs : MemLp f r (μ.restrict s) := hg.of_le hf hle
+  refine ⟨by simpa only [Set.indicator_eq_self.2 hsupp] using
+    (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 hfs, ?_⟩
+  have hfm : AEStronglyMeasurable f μ := by
+    simpa only [Set.indicator_eq_self.2 hsupp] using
+      (aestronglyMeasurable_indicator_iff hs).2 hf
+  rw [← eLpNorm_restrict_eq_of_support_subset hfm hsupp]
+  refine (eLpNorm_mono_ae hf hle).trans ((eLpNorm_add_le (f := fun x => c₁ * ‖g₁ x‖)
+    (g := fun x => c₂ * ‖g₂ x‖) hr).trans_eq ?_)
+  congr 1
+  · exact (eLpNorm_const_smul c₁ (fun x => ‖g₁ x‖) r _).trans
+      (by rw [Real.eNorm_of_nonneg hc₁]; congr 1; exact eLpNorm_norm g₁ hg₁.aestronglyMeasurable)
+  · exact (eLpNorm_const_smul c₂ (fun x => ‖g₂ x‖) r _).trans
+      (by rw [Real.eNorm_of_nonneg hc₂]; congr 1; exact eLpNorm_norm g₂ hg₂.aestronglyMeasurable)
 
 end Restrict
 

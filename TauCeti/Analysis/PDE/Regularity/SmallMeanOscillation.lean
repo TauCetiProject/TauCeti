@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.PDE.FundamentalSolution.Divergence
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # The `W^{1,p}` estimate for coefficients of small mean oscillation
@@ -88,7 +89,7 @@ for every constant `m`, where `1 / q = 1 / p + 1 / (n + 1)`
 to one on `B(x₀, R/2)` and supported in `B`, the function `ζ (u - m)` lies in `H¹(ℝ^{n+1})`, and
 testing the equation of `u` with `ζ φ` shows that it solves
 
-`-∂ᵢ(aⁱʲ ∂ⱼ(ζ (u - m))) = -div (ζ G + (u - m) aᵀ∇ζ) + ⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫`.
+`-∂ᵢ(aⁱʲ ∂ⱼ(ζ (u - m))) = -div (ζ G + (u - m) a ∇ζ) + ⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫`.
 
 The scalar term is supported in `B` and bounded in `L^q` by `R⁻¹ (‖G‖_{L^q(B)} + Λ ‖∇u‖_{L^q(B)})`,
 so it is the divergence of a field bounded in `Lᵖ` by the same quantity
@@ -399,87 +400,62 @@ end Localization
 
 section Interior
 
-/-- A function vanishing off a closed set `K ⊆ S`, a.e. strongly measurable on `S` and dominated on
-`K` by a function integrable there, is integrable. -/
-private theorem integrable_of_forall_notMem_eq_zero_of_norm_le {F : Type*} [NormedAddCommGroup F]
-    {S K : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hK : IsClosed K) (hKS : K ⊆ S)
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → F} {g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hf : AEStronglyMeasurable f (volume.restrict S)) (hg : IntegrableOn g K)
-    (hf0 : ∀ x ∉ K, f x = 0) (hfg : ∀ x ∈ K, ‖f x‖ ≤ g x) : Integrable f := by
-  rw [← integrableOn_iff_integrable_of_support_subset (s := K)
-    fun x hx => by_contra fun h => hx (hf0 x h)]
-  exact hg.mono' (hf.mono_measure (Measure.restrict_mono hKS le_rfl))
-    (ae_restrict_of_forall_mem hK.measurableSet hfg)
-
 /-- Bounds on a compact set for a cutoff `ζ`, a smooth function `φ`, a third smooth function `ψ`
 and their gradients. -/
 private theorem exists_forall_mem_abs_le_and_norm_gradient_le
     {ζ φ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hζ : ContDiff ℝ (⊤ : ℕ∞) ζ) (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hψ : ContDiff ℝ (⊤ : ℕ∞) ψ)
     {K : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hK : IsCompact K) :
-    ∃ M, ∀ x ∈ K, |ζ x| ≤ M ∧ ‖∇ ζ x‖ ≤ M ∧ |φ x| ≤ M ∧ ‖∇ φ x‖ ≤ M ∧ ‖∇ ψ x‖ ≤ M := by
+    ∃ M, (∀ x ∈ K, |ζ x| ≤ M) ∧ (∀ x ∈ K, ‖∇ ζ x‖ ≤ M) ∧ (∀ x ∈ K, |φ x| ≤ M) ∧
+      (∀ x ∈ K, ‖∇ φ x‖ ≤ M) ∧ ∀ x ∈ K, ‖∇ ψ x‖ ≤ M := by
   obtain ⟨M₁, h₁⟩ := hK.exists_bound_of_continuousOn hζ.continuous.continuousOn
   obtain ⟨M₂, h₂⟩ := hK.exists_bound_of_continuousOn (hζ.continuous_gradient (by simp)).continuousOn
   obtain ⟨M₃, h₃⟩ := hK.exists_bound_of_continuousOn hφ.continuous.continuousOn
   obtain ⟨M₄, h₄⟩ := hK.exists_bound_of_continuousOn (hφ.continuous_gradient (by simp)).continuousOn
   obtain ⟨M₅, h₅⟩ := hK.exists_bound_of_continuousOn (hψ.continuous_gradient (by simp)).continuousOn
-  refine ⟨max (max (max M₁ M₂) (max M₃ M₄)) M₅, fun x hx => ⟨?_, ?_, ?_, ?_, ?_⟩⟩
+  refine ⟨max (max (max M₁ M₂) (max M₃ M₄)) M₅, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_,
+    fun x hx => ?_, fun x hx => ?_⟩
   · exact (Real.norm_eq_abs _ ▸ h₁ x hx).trans (by simp)
   · exact (h₂ x hx).trans (by simp)
   · exact (Real.norm_eq_abs _ ▸ h₃ x hx).trans (by simp)
   · exact (h₄ x hx).trans (by simp)
   · exact (h₅ x hx).trans (by simp)
 
-/-- The pointwise bound `|a(x)(η, ξ)| ≤ Λ ‖η‖ ‖ξ‖`. -/
-private theorem abs_matrixBilinearForm_le
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {Lam : ℝ} (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
-    (x η ξ : EuclideanSpace ℝ (Fin (n + 1))) :
-    |matrixBilinearForm (a x) η ξ| ≤ Lam * ‖η‖ * ‖ξ‖ :=
-  ((matrixBilinearForm (a x)).le_opNorm₂ η ξ).trans (by gcongr; exact hbd x)
-
 /-- The terms of the equation of a cutoff solution that involve `∇u` are integrable. -/
 private theorem integrable_cutoff_terms_gradient
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
     (ha : AEStronglyMeasurable a volume)
-    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (u : W1p volume Ω 2) {K : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hK : IsCompact K) (hKΩ : K ⊆ Ω) {ζ φ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hφ : Continuous φ) {M : ℝ}
-    (hM : ∀ x ∈ K, |ζ x| ≤ M ∧ ‖∇ ζ x‖ ≤ M ∧ |φ x| ≤ M ∧ ‖∇ φ x‖ ≤ M ∧ ‖∇ ψ x‖ ≤ M)
+    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hLam : 0 ≤ Lam)
+    {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Ω 2)
+    {K : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    {ζ φ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hφ : Continuous φ) {M : ℝ}
+    (hgζM : ∀ x ∈ K, ‖∇ ζ x‖ ≤ M) (hφM : ∀ x ∈ K, |φ x| ≤ M) (hgψM : ∀ x ∈ K, ‖∇ ψ x‖ ≤ M)
     (hgζ0 : ∀ x ∉ K, ∇ ζ x = 0) (hgψ0 : ∀ x ∉ K, ∇ ψ x = 0) :
     Integrable (fun x => matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x)) ∧
       Integrable (fun x => matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x) * φ x) := by
-  have hBa : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume := by
-    simpa [Function.comp_def] using
-      (matrixBilinearFormLinear (n := Fin (n + 1))).continuous.comp_aestronglyMeasurable ha
+  have hBa := aestronglyMeasurable_matrixBilinearForm ha
   have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
   have hguK : IntegrableOn (fun x => ‖W1p.gradient u x‖) K :=
     (((Lp.memLp (W1p.gradient u)).mono_measure
       (Measure.restrict_mono hKΩ le_rfl)).integrable one_le_two).norm
   have hgum := (Lp.aestronglyMeasurable (W1p.gradient u)).mono_measure
     (Measure.restrict_mono_set volume hKΩ)
-  have hLam : 0 ≤ Lam := (norm_nonneg (matrixBilinearForm (a 0))).trans (hbd 0)
-  refine ⟨integrable_of_forall_notMem_eq_zero_of_norm_le hK.isClosed subset_rfl
+  refine ⟨integrable_of_forall_notMem_eq_zero_of_norm_le hK.measurableSet
     (aestronglyMeasurable_matrixBilinearForm_apply hBa.restrict
       (measurable_gradient ψ).aestronglyMeasurable hgum) (hguK.const_mul (Lam * M))
-    (fun x hx => by simp [hgψ0 x hx]) fun x hx => ?_,
-    integrable_of_forall_notMem_eq_zero_of_norm_le hK.isClosed subset_rfl
+    (fun x hx => by simp [hgψ0 x hx]) fun x hx =>
+      (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hbd x) (hgψM x hx) le_rfl,
+    integrable_of_forall_notMem_eq_zero_of_norm_le hK.measurableSet
     ((aestronglyMeasurable_matrixBilinearForm_apply hBa.restrict
       (measurable_gradient ζ).aestronglyMeasurable hgum).mul hφ.aestronglyMeasurable)
     (hguK.const_mul (Lam * M * M)) (fun x hx => by simp [hgζ0 x hx]) fun x hx => ?_⟩
-  · obtain ⟨-, -, -, -, h5⟩ := hM x hx
-    rw [Real.norm_eq_abs]
-    calc _ ≤ Lam * ‖∇ ψ x‖ * ‖W1p.gradient u x‖ := abs_matrixBilinearForm_le hbd x _ _
-      _ ≤ Lam * M * ‖W1p.gradient u x‖ := by gcongr
-  · obtain ⟨h1, h2, h3, -, -⟩ := hM x hx
-    have hM0 : 0 ≤ M := (abs_nonneg _).trans h1
-    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-    calc |matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)| * |φ x|
-        ≤ (Lam * ‖∇ ζ x‖ * ‖W1p.gradient u x‖) * M :=
-          mul_le_mul (abs_matrixBilinearForm_le hbd x _ _) h3 (abs_nonneg _) (by positivity)
-      _ ≤ (Lam * M * ‖W1p.gradient u x‖) * M := by gcongr
-      _ = Lam * M * M * ‖W1p.gradient u x‖ := by ring
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hgζM x hx)
+  rw [norm_mul, Real.norm_eq_abs (φ x)]
+  calc ‖matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)‖ * |φ x|
+      ≤ (Lam * M * ‖W1p.gradient u x‖) * M :=
+        mul_le_mul ((matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hbd x) (hgζM x hx) le_rfl)
+          (hφM x hx) (abs_nonneg _) (by positivity)
+    _ = Lam * M * M * ‖W1p.gradient u x‖ := by ring
 
 /-- The term of the equation of a cutoff solution that involves `u - m` is integrable. -/
 private theorem integrable_cutoff_term_value
@@ -487,65 +463,56 @@ private theorem integrable_cutoff_term_value
     (ha : AEStronglyMeasurable a volume)
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (u : W1p volume Ω 2) {K : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hK : IsCompact K) (hKΩ : K ⊆ Ω) {ζ φ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {M : ℝ}
-    (hM : ∀ x ∈ K, |ζ x| ≤ M ∧ ‖∇ ζ x‖ ≤ M ∧ |φ x| ≤ M ∧ ‖∇ φ x‖ ≤ M ∧ ‖∇ ψ x‖ ≤ M)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) {ζ φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {M : ℝ}
+    (hgζM : ∀ x ∈ K, ‖∇ ζ x‖ ≤ M) (hgφM : ∀ x ∈ K, ‖∇ φ x‖ ≤ M)
     (hgζ0 : ∀ x ∉ K, ∇ ζ x = 0) (m : ℝ) :
     Integrable (fun x => (W1p.value u x - m) * matrixBilinearForm (a x) (∇ φ x) (∇ ζ x)) := by
-  have hBa : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume := by
-    simpa [Function.comp_def] using
-      (matrixBilinearFormLinear (n := Fin (n + 1))).continuous.comp_aestronglyMeasurable ha
   have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
   have hvuK : IntegrableOn (fun x => |W1p.value u x - m|) K :=
     ((((Lp.memLp (W1p.value u)).mono_measure
       (Measure.restrict_mono hKΩ le_rfl)).integrable one_le_two).sub (integrable_const m)).abs
-  refine integrable_of_forall_notMem_eq_zero_of_norm_le hK.isClosed subset_rfl
+  refine integrable_of_forall_notMem_eq_zero_of_norm_le hK.measurableSet
     ((((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
       (Measure.restrict_mono_set volume hKΩ)).sub aestronglyMeasurable_const).mul
-        (aestronglyMeasurable_matrixBilinearForm_apply hBa.restrict
+        (aestronglyMeasurable_matrixBilinearForm_apply
+          (aestronglyMeasurable_matrixBilinearForm ha).restrict
           (measurable_gradient φ).aestronglyMeasurable
           (measurable_gradient ζ).aestronglyMeasurable)) (hvuK.mul_const (Lam * M * M))
     (fun x hx => by simp [hgζ0 x hx]) fun x hx => ?_
-  obtain ⟨h1, h2, -, h4, -⟩ := hM x hx
-  have hM0 : 0 ≤ M := (abs_nonneg _).trans h1
-  have hLam : 0 ≤ Lam := (norm_nonneg (matrixBilinearForm (a 0))).trans (hbd 0)
-  rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-  calc |W1p.value u x - m| * |matrixBilinearForm (a x) (∇ φ x) (∇ ζ x)|
-      ≤ |W1p.value u x - m| * (Lam * ‖∇ φ x‖ * ‖∇ ζ x‖) := by
-        gcongr
-        exact abs_matrixBilinearForm_le hbd x _ _
-    _ ≤ |W1p.value u x - m| * (Lam * M * M) := by gcongr
+  rw [norm_mul, Real.norm_eq_abs (W1p.value u x - m)]
+  exact mul_le_mul_of_nonneg_left
+    ((matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hbd x) (hgφM x hx) (hgζM x hx))
+    (abs_nonneg _)
 
 /-- The terms of the equation of a cutoff solution that involve the datum `G` are integrable. -/
 private theorem integrable_cutoff_terms_datum
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     {B K : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hK : IsCompact K)
-    (hKB : K ⊆ B) (hG : IntegrableOn G B) {ζ φ ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hζ : Continuous ζ) (hφ : Continuous φ)
-    {M : ℝ} (hM : ∀ x ∈ K, |ζ x| ≤ M ∧ ‖∇ ζ x‖ ≤ M ∧ |φ x| ≤ M ∧ ‖∇ φ x‖ ≤ M ∧ ‖∇ ψ x‖ ≤ M)
+    (hKB : K ⊆ B) (hG : IntegrableOn G B) {ζ φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hζ : Continuous ζ) (hφ : Continuous φ) {M : ℝ} (hζM : ∀ x ∈ K, |ζ x| ≤ M)
+    (hgζM : ∀ x ∈ K, ‖∇ ζ x‖ ≤ M) (hφM : ∀ x ∈ K, |φ x| ≤ M) (hgφM : ∀ x ∈ K, ‖∇ φ x‖ ≤ M)
     (hζ0 : ∀ x ∉ K, ζ x = 0) (hgζ0 : ∀ x ∉ K, ∇ ζ x = 0) :
     Integrable (fun x => ζ x * ⟪G x, ∇ φ x⟫_ℝ) ∧ Integrable (fun x => ⟪G x, ∇ ζ x⟫_ℝ * φ x) := by
   have hGK : IntegrableOn (fun x => ‖G x‖) K := (hG.mono_set hKB).norm
-  refine ⟨integrable_of_forall_notMem_eq_zero_of_norm_le hK.isClosed hKB
-    (hζ.aestronglyMeasurable.mul
-      (hG.aestronglyMeasurable.inner (measurable_gradient φ).aestronglyMeasurable))
+  refine ⟨integrable_of_forall_notMem_eq_zero_of_norm_le hK.measurableSet
+    ((hζ.aestronglyMeasurable.mul
+      (hG.aestronglyMeasurable.inner (measurable_gradient φ).aestronglyMeasurable)).mono_set hKB)
     (hGK.const_mul (M * M)) (fun x hx => by simp [hζ0 x hx]) fun x hx => ?_,
-    integrable_of_forall_notMem_eq_zero_of_norm_le hK.isClosed hKB
-    ((hG.aestronglyMeasurable.inner (measurable_gradient ζ).aestronglyMeasurable).mul
-      hφ.aestronglyMeasurable)
+    integrable_of_forall_notMem_eq_zero_of_norm_le hK.measurableSet
+    (((hG.aestronglyMeasurable.inner (measurable_gradient ζ).aestronglyMeasurable).mul
+      hφ.aestronglyMeasurable).mono_set hKB)
     (hGK.const_mul (M * M)) (fun x hx => by simp [hgζ0 x hx]) fun x hx => ?_⟩
-  · obtain ⟨h1, -, -, h4, -⟩ := hM x hx
-    have hM0 : 0 ≤ M := (abs_nonneg _).trans h1
+  · have hM0 : 0 ≤ M := (abs_nonneg _).trans (hζM x hx)
     rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
     calc |ζ x| * |⟪G x, ∇ φ x⟫_ℝ| ≤ M * (‖G x‖ * ‖∇ φ x‖) :=
-          mul_le_mul h1 (abs_real_inner_le_norm _ _) (abs_nonneg _) hM0
-      _ ≤ M * (‖G x‖ * M) := by gcongr
+          mul_le_mul (hζM x hx) (abs_real_inner_le_norm _ _) (abs_nonneg _) hM0
+      _ ≤ M * (‖G x‖ * M) := by gcongr; exact hgφM x hx
       _ = M * M * ‖G x‖ := by ring
-  · obtain ⟨h1, h2, h3, -, -⟩ := hM x hx
-    have hM0 : 0 ≤ M := (abs_nonneg _).trans h1
+  · have hM0 : 0 ≤ M := (abs_nonneg _).trans (hφM x hx)
     rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
     calc |⟪G x, ∇ ζ x⟫_ℝ| * |φ x| ≤ (‖G x‖ * ‖∇ ζ x‖) * M :=
-          mul_le_mul (abs_real_inner_le_norm _ _) h3 (abs_nonneg _) (by positivity)
-      _ ≤ (‖G x‖ * M) * M := by gcongr
+          mul_le_mul (abs_real_inner_le_norm _ _) (hφM x hx) (abs_nonneg _) (by positivity)
+      _ ≤ (‖G x‖ * M) * M := by gcongr; exact hgζM x hx
       _ = M * M * ‖G x‖ := by ring
 
 /-- **The equation tested with `ζ φ`.** For a smooth cutoff `ζ` with compact support in `Ω` and a
@@ -567,7 +534,7 @@ private theorem integral_matrixBilinearForm_gradient_mul_eq
   set ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ζ x * φ x
   have hψK : tsupport ψ ⊆ tsupport ζ := tsupport_mul_subset_left
   let ψΩ : 𝓓(Ω, ℝ) := ⟨ψ, hζ.mul hφ, hζc.mul_right, hψK.trans hζΩ⟩
-  have hcoe : (ψΩ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = ψ := rfl
+  have hcoe : (ψΩ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = ψ := TestFunction.coe_mk
   have hgψ0 : ∀ x ∉ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), ∇ ψ x = 0 := fun x hx =>
     gradient_of_notMem_tsupport fun h => hx (hζΩ (hψK h))
   have h1 : ∫ x, matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x) =
@@ -580,8 +547,8 @@ private theorem integral_matrixBilinearForm_gradient_mul_eq
   rw [h1, hu ψΩ, hcoe, ← integral_add i4 i5,
     setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [hgψ0 x hx]]
   refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  simp only [ψ, gradient_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x),
-    inner_add_right, real_inner_smul_right]
+  simp only [ψ, gradient_fun_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x),
+    conj_trivial, inner_add_right, real_inner_smul_right]
   ring
 
 /-- **The equation of a cutoff solution.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in
@@ -597,6 +564,7 @@ integrand on the right is integrable. -/
 private theorem integral_matrixBilinearForm_cutoff_eq
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
     (ha : AEStronglyMeasurable a volume) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    (hLam : 0 ≤ Lam)
     {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Ω 2)
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     {B : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hBΩ : B ⊆ Ω)
@@ -617,19 +585,20 @@ private theorem integral_matrixBilinearForm_cutoff_eq
   have hKΩ : K ⊆ Ω := hζB.trans hBΩ
   set gu : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
   set ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ζ x * φ x
-  have hgradψ : ∀ x, ∇ ψ x = ζ x • ∇ φ x + φ x • ∇ ζ x := fun x =>
-    gradient_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x)
-  obtain ⟨M, hM⟩ := exists_forall_mem_abs_le_and_norm_gradient_le hζ hφ (hζ.mul hφ)
-    (K := K) hζc.isCompact
+  have hgradψ : ∀ x, ∇ ψ x = ζ x • ∇ φ x + φ x • ∇ ζ x := fun x => by
+    simpa only [conj_trivial] using
+      gradient_fun_mul (hζ.differentiable (by simp) x) (hφ.differentiable (by simp) x)
+  obtain ⟨M, hζM, hgζM, hφM, hgφM, hgψM⟩ :=
+    exists_forall_mem_abs_le_and_norm_gradient_le hζ hφ (hζ.mul hφ) (K := K) hζc.isCompact
   have hζ0 : ∀ x ∉ K, ζ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
   have hgζ0 : ∀ x ∉ K, ∇ ζ x = 0 := fun x hx => gradient_of_notMem_tsupport hx
   have hgψ0 : ∀ x ∉ K, ∇ ψ x = 0 := fun x hx =>
     gradient_of_notMem_tsupport fun h => hx (tsupport_mul_subset_left h)
-  obtain ⟨i1, i2⟩ := integrable_cutoff_terms_gradient ha hbd u hζc.isCompact hKΩ hφ.continuous hM
-    hgζ0 hgψ0
-  have i3 := integrable_cutoff_term_value ha hbd u hζc.isCompact hKΩ hM hgζ0 m
+  obtain ⟨i1, i2⟩ := integrable_cutoff_terms_gradient ha hbd hLam u hζc.isCompact hKΩ
+    hφ.continuous hgζM hφM hgψM hgζ0 hgψ0
+  have i3 := integrable_cutoff_term_value ha hbd u hζc.isCompact hKΩ hgζM hgφM hgζ0 m
   obtain ⟨i4, i5⟩ := integrable_cutoff_terms_datum hζc.isCompact hζB hG hζ.continuous
-    hφ.continuous hM hζ0 hgζ0
+    hφ.continuous hζM hgζM hφM hgφM hζ0 hgζ0
   have e3 := integral_matrixBilinearForm_gradient_mul_eq u hu hζ hζc hKΩ hφ i4 i5
   have e1 : ∫ x, matrixBilinearForm (a x) (∇ φ x) (ζ x • gu x + (W1p.value u x - m) • ∇ ζ x) =
       (∫ x, matrixBilinearForm (a x) (∇ ψ x) (gu x)) -
@@ -649,86 +618,16 @@ private theorem integral_matrixBilinearForm_cutoff_eq
   rw [e1, e2, integral_add i4 i3, e3]
   ring
 
-/-- An `Lʳ` bound for a function vanishing off a measurable set `B`: if `‖f‖ ≤ c₁ ‖g₁‖ + c₂ ‖g₂‖`
-on `B` with `g₁, g₂ ∈ Lʳ(B)`, then `f ∈ Lʳ` with `‖f‖_r ≤ c₁ ‖g₁‖_{r,B} + c₂ ‖g₂‖_{r,B}`. -/
-private theorem memLp_and_eLpNorm_le_of_norm_le_add {F G₁ G₂ : Type*} [NormedAddCommGroup F]
-    [NormedAddCommGroup G₁] [NormedAddCommGroup G₂] {B : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hB : MeasurableSet B) {r : ℝ≥0∞} (hr : 1 ≤ r) {f : EuclideanSpace ℝ (Fin (n + 1)) → F}
-    {g₁ : EuclideanSpace ℝ (Fin (n + 1)) → G₁} {g₂ : EuclideanSpace ℝ (Fin (n + 1)) → G₂}
-    {c₁ c₂ : ℝ} (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂) (hf : AEStronglyMeasurable f (volume.restrict B))
-    (hf0 : ∀ x ∉ B, f x = 0) (hg₁ : MemLp g₁ r (volume.restrict B))
-    (hg₂ : MemLp g₂ r (volume.restrict B)) (hfg : ∀ x ∈ B, ‖f x‖ ≤ c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) :
-    MemLp f r volume ∧ eLpNorm f r volume ≤
-      ENNReal.ofReal c₁ * eLpNorm g₁ r (volume.restrict B) +
-        ENNReal.ofReal c₂ * eLpNorm g₂ r (volume.restrict B) := by
-  have hsupp : Function.support f ⊆ B := fun x hx => by_contra fun h => hx (hf0 x h)
-  have hg : MemLp (fun x => c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) r (volume.restrict B) :=
-    (hg₁.norm.const_mul c₁).add (hg₂.norm.const_mul c₂)
-  have hle : ∀ᵐ x ∂volume.restrict B, ‖f x‖ ≤ ‖c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖‖ :=
-    ae_restrict_of_forall_mem hB fun x hx => (hfg x hx).trans (Real.le_norm_self _)
-  have hfB : MemLp f r (volume.restrict B) := hg.of_le hf hle
-  refine ⟨by simpa only [indicator_eq_self.2 hsupp] using
-    (memLp_indicator_iff_restrict hB.nullMeasurableSet).2 hfB, ?_⟩
-  have hfm : AEStronglyMeasurable f volume := by
-    simpa only [indicator_eq_self.2 hsupp] using
-      (aestronglyMeasurable_indicator_iff hB).2 hf
-  rw [← eLpNorm_restrict_eq_of_support_subset hfm hsupp]
-  refine (eLpNorm_mono_ae hf hle).trans ((eLpNorm_add_le (f := fun x => c₁ * ‖g₁ x‖)
-    (g := fun x => c₂ * ‖g₂ x‖) hr).trans_eq ?_)
-  congr 1
-  · exact (eLpNorm_const_smul c₁ (fun x => ‖g₁ x‖) r _).trans
-      (by rw [Real.eNorm_of_nonneg hc₁]; congr 1; exact eLpNorm_norm g₁ hg₁.aestronglyMeasurable)
-  · exact (eLpNorm_const_smul c₂ (fun x => ‖g₂ x‖) r _).trans
-      (by rw [Real.eNorm_of_nonneg hc₂]; congr 1; exact eLpNorm_norm g₂ hg₂.aestronglyMeasurable)
-
-/-- **A cutoff of a local Sobolev function.** For `u ∈ H¹(Ω)`, a smooth cutoff `ζ` with compact
-support in `Ω` and a constant `m`, the function `ζ (u - m)`, extended by zero, lies in `H¹(ℝⁿ)`,
-with weak gradient `ζ ∇u + (u - m) ∇ζ`. -/
-private theorem exists_w1p_gradient_ae_eq_cutoff {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (u : W1p volume Ω 2) {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hζ : ContDiff ℝ (⊤ : ℕ∞) ζ)
-    (hζc : HasCompactSupport ζ) (hζΩ : tsupport ζ ⊆ Ω) (m : ℝ) :
-    ∃ v : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
-      ∀ᵐ x, W1p.gradient v x = ζ x • W1p.gradient u x + (W1p.value u x - m) • ∇ ζ x := by
-  obtain ⟨M₁, hM₁⟩ := hζ.continuous.bounded_above_of_compact_support hζc
-  obtain ⟨M₂, hM₂⟩ := (hζ.continuous_gradient (by simp)).bounded_above_of_compact_support
-    hζc.gradient
-  set M := max M₁ M₂
-  have hM : 0 ≤ M := (norm_nonneg _).trans ((hM₁ 0).trans (le_max_left _ _))
-  have hζM : ∀ x ∈ (Ω : Set _), |ζ x| ≤ M := fun x _ => (hM₁ x).trans (le_max_left _ _)
-  have hgM : ∀ x ∈ (Ω : Set _), ‖∇ ζ x‖ ≤ M := fun x _ => (hM₂ x).trans (le_max_right _ _)
-  have hw := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hζ hM hζM hgM
-    hζc hζΩ u
-  let ζT : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ) := ⟨ζ, hζ, hζc, subset_univ _⟩
-  refine ⟨(W1p0.extendByZeroL le_top ⟨_, hw⟩ : W1p volume ⊤ 2) -
-    m • W1p.ofTestFunctionₗ volume ⊤ 2 ζT, ?_⟩
-  have h1 := W1p.gradient_extendByZeroL_contDiffSMul_ae le_top hζ hM hζM hgM u hw
-  have h2 := W1p.gradient_sub_ae (W1p0.extendByZeroL le_top ⟨_, hw⟩ : W1p volume ⊤ 2)
-    (m • W1p.ofTestFunctionₗ volume ⊤ 2 ζT)
-  have h3 := W1p.gradient_smul_ae m (W1p.ofTestFunctionₗ volume ⊤ 2 ζT)
-  simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2 h3
-  filter_upwards [h1, h2, h3, W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) ζT]
-    with x h1 h2 h3 h4
-  rw [h2, Pi.sub_apply, h1, h3, Pi.smul_apply, h4]
-  by_cases hx : x ∈ (Ω : Set _)
-  · rw [indicator_of_mem hx, sub_smul, add_sub_assoc]
-    rfl
-  · have hxK : x ∉ tsupport ζ := fun h => hx (hζΩ h)
-    have hζT : (ζT : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = ζ := rfl
-    rw [indicator_of_notMem hx, image_eq_zero_of_notMem_tsupport hxK, hζT,
-      gradient_of_notMem_tsupport hxK]
-    simp
-
-/-- The vector `(aᵀ ∇ζ)`, representing `η ↦ ⟪η, a ∇ζ⟫`, the divergence datum that a cutoff `ζ`
+/-- The vector `a ∇ζ`, representing `η ↦ ⟪η, a ∇ζ⟫`, the divergence datum that a cutoff `ζ`
 contributes to the equation of `ζ (u - m)`, is a.e. strongly measurable. -/
 private theorem aestronglyMeasurable_toDual_symm_transpose
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume) (ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) :
     AEStronglyMeasurable (fun x => (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm
       (matrixBilinearForm (a x).transpose (∇ ζ x))) volume := by
-  have hBa : AEStronglyMeasurable (fun x => matrixBilinearForm (a x).transpose) volume := by
-    simpa [Function.comp_def] using
-      (matrixBilinearFormLinear (n := Fin (n + 1))).continuous.comp_aestronglyMeasurable
-        ((continuous_id.matrix_transpose).comp_aestronglyMeasurable ha)
+  have hBa : AEStronglyMeasurable (fun x => matrixBilinearForm (a x).transpose) volume :=
+    aestronglyMeasurable_matrixBilinearForm
+      ((continuous_id.matrix_transpose).comp_aestronglyMeasurable ha)
   have hc : Continuous fun q : (EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ]
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin (n + 1)) =>
         (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm (q.1 q.2) :=
@@ -739,10 +638,11 @@ private theorem aestronglyMeasurable_toDual_symm_transpose
 `integral_matrixBilinearForm_cutoff_eq`, let `v ∈ H¹(ℝⁿ)` have weak gradient
 `ζ ∇u + (u - m) ∇ζ`, and let `H` be a locally integrable field whose divergence is minus the scalar
 datum `⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫`. Then `v` solves `-∂ᵢ(aⁱʲ ∂ⱼv) = -div G'` on the whole space, with
-`G' = ζ G + (u - m) aᵀ∇ζ + H`; the vector `aᵀ∇ζ` represents `η ↦ ⟪η, a ∇ζ⟫`. -/
+`G' = ζ G + (u - m) a ∇ζ + H`; the vector `a ∇ζ` represents `η ↦ ⟪η, a ∇ζ⟫`. -/
 private theorem energyFormH1_eq_integral_inner_of_cutoff
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
     (ha : AEStronglyMeasurable a volume) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    (hLam : 0 ≤ Lam)
     {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Ω 2)
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     {B : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hBΩ : B ⊆ Ω) (hG : IntegrableOn G B)
@@ -762,8 +662,8 @@ private theorem energyFormH1_eq_integral_inner_of_cutoff
       ∫ x, ⟪ζ x • G x + (W1p.value u x - m) • (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm
         (matrixBilinearForm (a x).transpose (∇ ζ x)) + H x,
           ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-  obtain ⟨hint, heq⟩ := integral_matrixBilinearForm_cutoff_eq ha hbd u hBΩ hG hu hζ hζc hζB m
-    φ.contDiff
+  obtain ⟨hint, heq⟩ := integral_matrixBilinearForm_cutoff_eq ha hbd hLam u hBΩ hG hu hζ hζc hζB
+    m φ.contDiff
   have hφ1 : ContDiff ℝ 1 (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) :=
     φ.contDiff.of_le (by exact_mod_cast le_top)
   have hHi : Integrable fun x => ⟪H x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
@@ -817,8 +717,7 @@ private theorem mul_add_mul_add_le_mul_add {CW CD : ℝ≥0} {c₀ Lam R : ℝ} 
   set ρ := ENNReal.ofReal R⁻¹
   have hk : ENNReal.ofReal (c₀ * R⁻¹) = κ * ρ := ENNReal.ofReal_mul hc₀
   have hk' : ENNReal.ofReal (Lam * (c₀ * R⁻¹)) = L * (κ * ρ) := by
-    rw [ENNReal.ofReal_mul hLam, hk]
-    rfl
+    rw [ENNReal.ofReal_mul hLam, hk, ENNReal.ofReal]
   have h1 : (1 : ℝ≥0) ≤ 1 + κ * (L + CD + CD * L) := le_self_add
   have h2 : L * κ ≤ 1 + κ * (L + CD + CD * L) := by
     rw [mul_comm]
@@ -867,7 +766,8 @@ private theorem exists_cutoff_ball :
 private theorem memLp_and_eLpNorm_le_scalarDatum
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
       (ha : AEStronglyMeasurable a volume)
-    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hLam : 0 ≤ Lam)
+    {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       (u : W1p volume Ω 2) {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     {B : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hB : MeasurableSet B) {q : ℝ≥0∞} (hq : 1 ≤ q)
       {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {k : ℝ} (hk : 0 ≤ k)
@@ -883,30 +783,26 @@ private theorem memLp_and_eLpNorm_le_scalarDatum
           ENNReal.ofReal (Lam * k) * eLpNorm
             (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) q
             (volume.restrict B) := by
-  have hLam : 0 ≤ Lam := (norm_nonneg (matrixBilinearForm (a 0))).trans (hbd 0)
-  have hBa : AEStronglyMeasurable (fun x => matrixBilinearForm (a x)) volume := by
-    simpa [Function.comp_def] using
-      (matrixBilinearFormLinear (n := Fin (n + 1))).continuous.comp_aestronglyMeasurable ha
   refine memLp_and_eLpNorm_le_of_norm_le_add (f := fun x =>
       ⟪G x, ∇ ζ x⟫_ℝ - matrixBilinearForm (a x) (∇ ζ x) (W1p.gradient u x)) hB hq hk
     (mul_nonneg hLam hk)
     ((hGq.aestronglyMeasurable.inner (measurable_gradient ζ).aestronglyMeasurable).sub
-      (aestronglyMeasurable_matrixBilinearForm_apply hBa.restrict
+      (aestronglyMeasurable_matrixBilinearForm_apply
+        (aestronglyMeasurable_matrixBilinearForm ha).restrict
         (measurable_gradient ζ).aestronglyMeasurable hgq.aestronglyMeasurable))
     (fun x hx => by simp [hgζ0 x hx]) hGq hgq fun x _ => ?_
   refine (norm_sub_le _ _).trans (add_le_add ((abs_real_inner_le_norm _ _).trans ?_)
-    ((Real.norm_eq_abs _ ▸ abs_matrixBilinearForm_le hbd x _ _).trans ?_))
-  · rw [mul_comm]
-    exact mul_le_mul_of_nonneg_right (hgζk x) (norm_nonneg _)
-  · gcongr
-    exact hgζk x
+    ((matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le (hbd x) (hgζk x) le_rfl))
+  rw [mul_comm]
+  exact mul_le_mul_of_nonneg_right (hgζk x) (norm_nonneg _)
 
-/-- The divergence datum `ζ G + (u - m) aᵀ∇ζ` of a cutoff solution lies in `Lᵖ`, with norm at
+/-- The divergence datum `ζ G + (u - m) a ∇ζ` of a cutoff solution lies in `Lᵖ`, with norm at
 most `‖G‖_{p,B} + Λ k ‖u - m‖_{p,B}` when `|ζ| ≤ 1`, `‖∇ζ‖ ≤ k` and `ζ` is supported in `B`. -/
 private theorem memLp_and_eLpNorm_le_divergenceDatum
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
       (ha : AEStronglyMeasurable a volume)
-    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) (hLam : 0 ≤ Lam)
+    {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       (u : W1p volume Ω 2) {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     {B : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hB : MeasurableSet B) {p : ℝ≥0∞} (hp : 1 ≤ p)
       {ζ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
@@ -923,19 +819,11 @@ private theorem memLp_and_eLpNorm_le_divergenceDatum
           ENNReal.ofReal 1 * eLpNorm G p (volume.restrict B) +
             ENNReal.ofReal (Lam * k) * eLpNorm (fun x => W1p.value u x - m) p
               (volume.restrict B) := by
-  have hLam : 0 ≤ Lam := (norm_nonneg (matrixBilinearForm (a 0))).trans (hbd 0)
   have hwle : ∀ x, ‖(toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm
-      (matrixBilinearForm (a x).transpose (∇ ζ x))‖ ≤ Lam * k :=
-    fun x => by
-      have hT : ‖matrixBilinearForm (a x).transpose‖ = ‖matrixBilinearForm (a x)‖ := by
-        rw [← ContinuousLinearMap.opNorm_flip (matrixBilinearForm (a x))]
-        congr 1
-        ext η ξ
-        exact matrixBilinearForm_transpose_apply _ _ _
-      rw [LinearIsometryEquiv.norm_map]
-      refine ((matrixBilinearForm (a x).transpose).le_opNorm _).trans ?_
-      rw [hT]
-      exact mul_le_mul (hbd x) (hgζk x) (norm_nonneg _) hLam
+      (matrixBilinearForm (a x).transpose (∇ ζ x))‖ ≤ Lam * k := fun x => by
+    rw [LinearIsometryEquiv.norm_map]
+    exact (matrixBilinearForm (a x).transpose).le_of_opNorm_le_of_le
+      ((norm_matrixBilinearForm_transpose (a x)).trans_le (hbd x)) (hgζk x)
   refine memLp_and_eLpNorm_le_of_norm_le_add (f := fun x => ζ x • G x + (W1p.value u x - m) •
       (toDual ℝ (EuclideanSpace ℝ (Fin (n + 1)))).symm (matrixBilinearForm (a x).transpose (∇ ζ x)))
     hB hp zero_le_one (mul_nonneg hLam hk)
@@ -1036,12 +924,10 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
     ring
   obtain ⟨CW, δ, hδ, hW⟩ := exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
     (n := n) (p := (p : ℝ≥0∞)) (by exact_mod_cast hp) ENNReal.coe_ne_top lam Lam
-  obtain ⟨CD, hD⟩ := exists_eLpNorm_le_and_integral_inner_gradient_eq
-      (E := EuclideanSpace ℝ (Fin (n + 1))) volume hq1 hpq'
+  obtain ⟨CD, hD⟩ := exists_eLpNorm_le_and_integral_inner_gradient_eq volume hq1 hpq'
   obtain ⟨c₀, hc₀, hcut⟩ := exists_cutoff_ball (n := n)
   refine ⟨CW * (1 + c₀.toNNReal * (Lam.toNNReal + CD + CD * Lam.toNNReal)), δ, hδ,
     fun {a r₀} ha hbd hosc Ω u G m x₀ R hR hRr₀ hball hu hgp hvp hGp => ?_⟩
-  have hBm : MeasurableSet (ball x₀ R) := measurableSet_ball
   have : IsFiniteMeasure (volume.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast one_le_two.trans hp.le
@@ -1054,27 +940,29 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
     gradient_of_notMem_tsupport fun h => hx (hζB h)
   have hvum := hvp.sub (memLp_const m)
   -- The scalar datum, in `L^q`, is the divergence of a field `H ∈ Lᵖ`.
-  obtain ⟨hhq, hhle⟩ := memLp_and_eLpNorm_le_scalarDatum ha hbd u hBm (by exact_mod_cast hq1.le)
-    (by positivity) hgζk hgζ0 (hgp.mono_exponent hqp') (hGp.mono_exponent hqp')
+  obtain ⟨hhq, hhle⟩ := memLp_and_eLpNorm_le_scalarDatum ha hbd hLam u measurableSet_ball
+    (by exact_mod_cast hq1.le) (by positivity) hgζk hgζ0 (hgp.mono_exponent hqp')
+    (hGp.mono_exponent hqp')
   obtain ⟨H, -, hHle, hHh⟩ := hD _ hhq (HasCompactSupport.intro hζc fun x hx => by
     simp [gradient_of_notMem_tsupport hx])
   have hHp : MemLp H p volume :=
     hHle.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hhq.eLpNorm_lt_top)
-  obtain ⟨hG₁p, hG₁le⟩ := memLp_and_eLpNorm_le_divergenceDatum ha hbd u (G := G) hBm hp1
-    hζ.continuous hζle (by positivity) hgζk hζ0 hgζ0 m hvum hGp
+  obtain ⟨hG₁p, hG₁le⟩ := memLp_and_eLpNorm_le_divergenceDatum ha hbd hLam u (G := G)
+    measurableSet_ball hp1 hζ.continuous hζle (by positivity) hgζk hζ0 hgζ0 m hvum hGp
   -- The whole-space estimate for the cutoff `ζ (u - m)`.
-  obtain ⟨v, hv⟩ := exists_w1p_gradient_ae_eq_cutoff u hζ hζc (hζB.trans hball) m
+  obtain ⟨v, hv⟩ := W1p.exists_top_gradient_ae_eq_contDiffSMul_sub_const (by norm_num) u hζ hζc
+    (hζB.trans hball) m
   have hWv := hW ha hbd hosc x₀ v _ (by
       filter_upwards [hv] with x hx hxr
       have hxB : x ∉ ball x₀ R := fun hxB => hxr (ball_subset_ball (by linarith) hxB)
       rw [hx, hζ0 x hxB, hgζ0 x hxB, zero_smul, smul_zero, add_zero])
-    (energyFormH1_eq_integral_inner_of_cutoff ha hbd u hball (hGp.integrable hp1) hu hζ hζc hζB m
-      hv (hHp.locallyIntegrable hp1) hHh)
-    ((memLp_one_iff_integrable.1 (memLp_cutoff_gradient u hBm le_rfl hζ.continuous hζle
-      (by positivity) hgζk hζ0 hgζ0 m (hgp.mono_exponent hp1) (hvum.mono_exponent hp1))).congr
+    (energyFormH1_eq_integral_inner_of_cutoff ha hbd hLam u hball (hGp.integrable hp1) hu hζ hζc
+      hζB m hv (hHp.locallyIntegrable hp1) hHh)
+    ((memLp_one_iff_integrable.1 (memLp_cutoff_gradient u measurableSet_ball le_rfl hζ.continuous
+      hζle (by positivity) hgζk hζ0 hgζ0 m (hgp.mono_exponent hp1) (hvum.mono_exponent hp1))).congr
         (hv.mono fun x hx => hx.symm))
-    ((memLp_cutoff_gradient u hBm hp1 hζ.continuous hζle (by positivity) hgζk hζ0 hgζ0 m hgp
-      hvum).ae_eq (hv.mono fun x hx => hx.symm)) (hG₁p.add hHp)
+    ((memLp_cutoff_gradient u measurableSet_ball hp1 hζ.continuous hζle (by positivity) hgζk hζ0
+      hgζ0 m hgp hvum).ae_eq (hv.mono fun x hx => hx.symm)) (hG₁p.add hHp)
   -- On `B(x₀, R/2)` the cutoff is one, so the gradient there is `∇u`.
   refine ((eLpNorm_gradient_le_of_ae_eq_cutoff u measurableSet_ball hv hζ1 p).trans
     (hWv.trans (mul_le_mul_right (eLpNorm_add_le hp1) _))).trans
