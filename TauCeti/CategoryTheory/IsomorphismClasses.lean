@@ -94,11 +94,4 @@ theorem isomorphismClasses_map_surjective (F : C ⥤ D) [F.EssSurj] :
     exact ⟨Quotient.mk _ (F.objPreimage y),
       (F.isomorphismClasses_map_mk _).trans (Quotient.sound ⟨F.objObjPreimageIso y⟩)⟩
 
-/-- An essentially surjective full functor reflecting isomorphisms induces a bijection on
-isomorphism classes. -/
-theorem isomorphismClasses_map_bijective (F : C ⥤ D) [F.Full] [F.EssSurj]
-    [F.ReflectsIsomorphisms] :
-    Function.Bijective (isomorphismClasses.map F.toCatHom) :=
-  ⟨F.isomorphismClasses_map_injective, F.isomorphismClasses_map_surjective⟩
-
 end CategoryTheory.Functor

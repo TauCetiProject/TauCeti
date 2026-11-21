@@ -74,13 +74,6 @@ theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F
     (F.isomorphismClasses_map_comp_mk.symm ▸
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
 
-/-- The identity functor induces a quotient map on isomorphism classes. -/
-theorem isQuotientMap_isomorphismClasses_map_id :
-    IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom) := by
-  rw [isomorphismClasses_map_id]
-  exact .id
-
 /-- Composing functors whose induced maps on isomorphism classes are quotient maps gives a
 quotient map on isomorphism classes. -/
 theorem isQuotientMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
