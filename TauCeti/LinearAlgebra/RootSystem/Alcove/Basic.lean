@@ -734,7 +734,7 @@ theorem Base.openAlcoveFace_nonempty_iff {J : Set (Option b.support)} :
     else 0
   have hsome (i : b.support) :
       b.affineSimpleRoot (some i) x = if (some i : Option b.support) ∈ J then 0 else c⁻¹ := by
-    simpa [i.2] using hx i i.2
+    simpa [i.property] using hx i i.property
   -- The null-root relation `a₀(x) + ∑ᵢ mᵢ aᵢ(x) = 1` together with `c * c⁻¹ = 1` forces `a₀(x)`
   -- to match the same piecewise formula `(if none ∈ J then 0 else c⁻¹)`.
   have hnone :

@@ -416,9 +416,9 @@ theorem finite_affinePointStabilizer_of_finite_weylGroup [Finite P.weylGroup] (x
     Finite.of_surjective _ ((Equiv.coweightHom P).domRestrict P.weylGroup).rangeRestrict_surjective
   let φ : P.affinePointStabilizer x →
       MonoidHom.range ((Equiv.coweightHom P).domRestrict P.weylGroup) :=
-    fun f ↦ ⟨MulOpposite.op f.1.linear, hop_mem (P.mem_affineWeylGroup_iff.mp f.2.1).1⟩
+    fun f ↦ ⟨MulOpposite.op f.val.linear, hop_mem (P.mem_affineWeylGroup_iff.mp f.property.1).1⟩
   refine Finite.of_injective φ fun f g h ↦ Subtype.ext ?_
-  exact P.linearHom_injOn_affinePointStabilizer x f.2 g.2
+  exact P.linearHom_injOn_affinePointStabilizer x f.property g.property
     (MulOpposite.op_injective (congrArg Subtype.val h))
 
 /-- For a finite root system, every point stabilizer in the affine Weyl group is finite. -/
