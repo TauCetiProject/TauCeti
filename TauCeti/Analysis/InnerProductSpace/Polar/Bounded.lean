@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Modulus
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -29,9 +28,8 @@ The adjoint of the polar factor inverts it on the modulus, `U† T = |T|`, and c
 moduli into each other, `|T†| = T U† = U |T| U†`. Consequently the polar factor of `T†` is `U†`,
 and `T = |T†| U` is the left polar decomposition. When `T` is injective the polar factor is an
 isometry, and when `T` is injective with dense range (in particular when `T` is invertible) the
-polar factor is a linear isometric equivalence `E ≃ₗᵢ[𝕜] F`; for invertible endomorphisms it
-coincides with the continuous-functional-calculus polar unitary `Units.polarUnitary`. When `|T|`
-is invertible, `U = T |T|⁻¹`, so `U` depends continuously on `T`.
+polar factor is a linear isometric equivalence `E ≃ₗᵢ[𝕜] F`. When `|T|` is invertible,
+`U = T |T|⁻¹`, so `U` depends continuously on `T`.
 
 ## Main declarations
 
@@ -51,9 +49,8 @@ is invertible, `U = T |T|⁻¹`, so `U` depends continuously on `T`.
   `ContinuousLinearEquiv.polarLinearIsometryEquiv`: `U` bundled as a linear isometric equivalence
   `E ≃ₗᵢ[𝕜] F` for injective dense-range operators, invertible operators, and continuous linear
   equivalences, giving `TauCeti.nonempty_linearIsometryEquiv_iff_continuousLinearEquiv`.
-* `ContinuousLinearMap.polarFactor_mem_unitary`, `Units.coe_polarUnitary_eq_polarFactor`:
-  `T.polarFactor` is unitary for injective dense-range endomorphisms and coincides with the CFC
-  polar unitary `g.polarUnitary` for `g : (E →L[𝕜] E)ˣ`.
+* `ContinuousLinearMap.polarFactor_mem_unitary`: `T.polarFactor` is unitary for injective
+  dense-range endomorphisms.
 * `ContinuousLinearMap.eq_polarFactor_iff`: uniqueness of the polar factor.
 * `ContinuousLinearMap.polarFactor_smul`: the polar factor of `c T` is `(c / ‖c‖) U`.
 * `ContinuousLinearMap.modulus_adjoint`: `|T†| = T U†`.
@@ -294,21 +291,6 @@ unitary equivalence. -/
 theorem _root_.TauCeti.nonempty_linearIsometryEquiv_iff_continuousLinearEquiv :
     Nonempty (E ≃ₗᵢ[𝕜] F) ↔ Nonempty (E ≃L[𝕜] F) :=
   ⟨fun ⟨e⟩ ↦ ⟨e.toContinuousLinearEquiv⟩, fun ⟨e⟩ ↦ ⟨e.polarLinearIsometryEquiv⟩⟩
-
-/-- For an invertible endomorphism `g : (E →L[𝕜] E)ˣ`, the continuous-functional-calculus polar
-unitary `g.polarUnitary` agrees with the Hilbert-space polar factor `(g : E →L[𝕜] E).polarFactor`,
-under any compatible real algebra structure on `E →L[𝕜] E`. -/
-theorem _root_.Units.coe_polarUnitary_eq_polarFactor [Algebra ℝ (E →L[𝕜] E)]
-    [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] (g : (E →L[𝕜] E)ˣ) :
-    (g.polarUnitary : E →L[𝕜] E) = (g : E →L[𝕜] E).polarFactor := by
-  have hg : (g : E →L[𝕜] E).IsInvertible :=
-    ContinuousLinearMap.isInvertible_iff_isUnit.2 g.isUnit
-  let v : unitary (E →L[𝕜] E) :=
-    ⟨(g : E →L[𝕜] E).polarFactor,
-      ContinuousLinearMap.polarFactor_mem_unitary hg.injective hg.surjective.denseRange⟩
-  exact congrArg Subtype.val <|
-    g.polarUnitary_eq_of_mul_eq' (g : E →L[𝕜] E).modulus_nonneg (v := v)
-      (g : E →L[𝕜] E).polarFactor_comp_modulus
 
 variable {T} in
 /-- **Uniqueness of the polar factor.** A bounded operator `V` with `V |T| = T` that vanishes on

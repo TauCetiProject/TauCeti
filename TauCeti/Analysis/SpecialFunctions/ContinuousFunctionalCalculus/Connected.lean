@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Topology.Algebra.Star.Unitary
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.Normed.Ring.Units
+import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
 # Polar paths and path-connectedness of groups of units via the continuous functional calculus
@@ -154,7 +153,7 @@ theorem pathConnectedSpace_of_unitary [PathConnectedSpace (unitary A)] :
 theorem isPathConnected_isUnit_of_unitary [PathConnectedSpace (unitary A)] :
     IsPathConnected {a : A | IsUnit a} :=
   have := pathConnectedSpace_of_unitary (A := A)
-  TauCeti.isPathConnected_isUnit_iff.2 this
+  (Units.isOpenEmbedding_val (R := A)).isEmbedding.isPathConnected_isUnit_iff.2 this
 
 end Units
 
