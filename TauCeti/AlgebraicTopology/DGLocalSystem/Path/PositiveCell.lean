@@ -112,7 +112,7 @@ private theorem exists_boundary_eq_of_sum_leftAct_sub_boundary_mem {q : ℕ}
             (q + (m + 1)) u :=
       normalizedCubicalChainComplex_obj_d_apply (R := R) (cellPathPullbackPair b C (m + 1)).fst
         (q + (m + 1)) u
-    rw [TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, range_cellPathPullbackPair_map,
+    rw [TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, TopPair.range_ofSubset_map,
       normalizedCubicalChainComplexXEquiv_apply, hd]
     exact hu⟩
   rw [← map_sum, LinearEquiv.map_eq_zero_iff] at h0
@@ -155,7 +155,7 @@ private theorem exists_sub_sum_leftAct_sub_boundary_mem {q : ℕ}
   obtain ⟨μ, hμ⟩ := TopPair.exists_isCubicalRepresentative_of_d_mem
     (P := cellPathPullbackPair b C (m + 1)) (n := q + (m + 1)) u (by
       rw [show q + (m + 1) - 1 = q + m by omega,
-        TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, range_cellPathPullbackPair_map,
+        TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, TopPair.range_ofSubset_map,
         normalizedCubicalChainComplexXEquiv_apply, hd]
       exact hu)
   set ν := (cellPathPullbackHomologyEquiv γ R q).symm μ
@@ -177,7 +177,7 @@ private theorem exists_sub_sum_leftAct_sub_boundary_mem {q : ℕ}
         NormalizedCubicalChain.boundary (cellPathPullbackPair b C (m + 1)).fst R (q + (m + 1)) v :=
     normalizedCubicalChainComplex_obj_d_apply (R := R) (cellPathPullbackPair b C (m + 1)).fst
       (q + (m + 1)) v
-  rw [TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, range_cellPathPullbackPair_map,
+  rw [TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, TopPair.range_ofSubset_map,
     normalizedCubicalChainComplexXEquiv_apply, hd'] at hv
   exact hv
 
@@ -200,7 +200,7 @@ private theorem exists_sub_boundary_mem_of_lt {p : ℕ} (hp : p < m + 1)
       (p + 1) p v =
         NormalizedCubicalChain.boundary (cellPathPullbackPair b C (m + 1)).fst R p v :=
     normalizedCubicalChainComplex_obj_d_apply (R := R) (cellPathPullbackPair b C (m + 1)).fst p v
-  rw [TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, range_cellPathPullbackPair_map,
+  rw [TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff, TopPair.range_ofSubset_map,
     normalizedCubicalChainComplexXEquiv_apply, hd] at hv
   exact hv
 
@@ -287,7 +287,7 @@ private theorem boundary_ofCube_cellSectionCube_mem (j : cell C (m + 1)) :
   have hc : Set.MapsTo (cellSectionCube C (m + 1) γ j) (Cube.boundary (Fin (m + 1)))
       (Set.range (cellPathPullbackPair b C (m + 1)).map) := by
     intro d hd
-    refine (Set.ext_iff.1 (range_cellPathPullbackPair_map (b := b) (C := C) (m + 1)) _).2 ?_
+    refine TopPair.range_ofSubset_map.ge ?_
     have h : MoorePathPullback.proj (sigmaCellMap C (m + 1)) b (cellSectionCube C (m + 1) γ j d) ∈
         {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1} := by
       rw [MoorePathPullback.proj_apply, point_cellSectionCube, cellCubeMap_apply,
@@ -301,7 +301,7 @@ private theorem boundary_ofCube_cellSectionCube_mem (j : cell C (m + 1)) :
     rw [← NormalizedCubicalChain.range_map_eq_supportedIn_range R
       (cellPathPullbackPair b C (m + 1)).isEmbedding_map.isInducing]
     exact ⟨_, TopPair.map_cubicalBoundaryChainOfCube R _ hc⟩
-  rw [range_cellPathPullbackPair_map] at h
+  rw [TopPair.range_ofSubset_map] at h
   exact h
 
 /-- The boundary of the chain of an `(m + 1)`-cell lies over the `m`-skeleton: it is the chain of
@@ -474,7 +474,7 @@ private theorem exists_sub_linearCombination_sub_differential_mem {i : ℤ}
           normalizedCubicalChainComplex_obj_d_apply (R := R) (cellPathPullbackPair b C (m + 1)).fst
             p r
         rw [Nat.add_sub_cancel, TopPair.mem_range_normalizedCubicalChainComplex_map_f_iff,
-          range_cellPathPullbackPair_map, normalizedCubicalChainComplexXEquiv_apply, hd]
+          TopPair.range_ofSubset_map, normalizedCubicalChainComplexXEquiv_apply, hd]
         rw [cubicalChainModuleDifferential_lof_succ,
           cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hdr
         exact hdr)

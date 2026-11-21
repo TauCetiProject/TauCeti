@@ -349,14 +349,6 @@ abbrev cellPathPullbackPair (n : ℕ) : TopPair.{0} :=
   TopPair.ofSubset (X := TopCat.of (MoorePathPullback (sigmaCellMap C n) b))
     (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1})
 
-/-- The subspace of the pair `TauCeti.cellPathPullbackPair` is the part of the pullback over the
-boundary spheres. -/
-theorem range_cellPathPullbackPair_map (n : ℕ) :
-    Set.range (cellPathPullbackPair b C n).map =
-      MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1} := by
-  rw [TopPair.ofSubset_map]
-  exact Subtype.range_coe
-
 variable (b C) in
 /-- The pullback `Pⱼ` of the based Moore path fibration to the disk of the `n`-cell `j`, read on
 the cube through `TauCeti.cellCubeMap`, relative to its part `∂Pⱼ` over the boundary of the cube. -/
