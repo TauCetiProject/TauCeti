@@ -173,6 +173,20 @@ theorem quantizeTempered_zero : quantizeTempered F (0 : Symbol n ℂ ℂ m) isUn
   have h := quantizeTempered_smul (F := F) (isUniform_zero (n := n) (m := m) (V := ℂ) (W := ℂ)) 0
   exact (quantizeTempered_congr _ _ (by simp)).trans (h.trans (zero_smul _ _))
 
+/-- `Op(a)` on tempered distributions is additive in the symbol, for finite sums. -/
+theorem quantizeTempered_sum {ι : Type*} {a : ι → Symbol n ℂ ℂ m} (ha : ∀ i, (a i).IsUniform)
+    (s : Finset ι) :
+    quantizeTempered F (∑ i ∈ s, a i) (IsUniform.sum fun i _ ↦ ha i) =
+      ∑ i ∈ s, quantizeTempered F (a i) (ha i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    exact (quantizeTempered_congr _ (isUniform_zero (m := m)) (by simp)).trans
+      (by rw [quantizeTempered_zero, Finset.sum_empty])
+  | insert i s hi ih =>
+    conv_rhs => rw [Finset.sum_insert hi, ← ih, ← quantizeTempered_add]
+    exact quantizeTempered_congr _ _ (by rw [Finset.sum_insert hi])
+
 /-- A constant symbol `T` acts on tempered distributions as multiplication by `T 1`; in particular
 the symbol `1` acts as the identity. -/
 theorem quantizeTempered_const (T : ℂ →L[ℂ] ℂ) :
@@ -192,6 +206,32 @@ theorem lineDerivOp_quantizeTempered (a : Symbol n ℂ ℂ m) (ha : a.IsUniform)
   simp only [TemperedDistribution.lineDerivOp_apply_apply, quantizeTempered_apply_apply, map_neg,
     transposeUniformCLM_lineDerivOp, neg_sub, map_sub, add_apply]
   abel
+
+/-- **Commutator with a directional derivative.** `∂_v (Op(a) T) = Op(a) (∂_v T) + Op(∂_{x, v} a) T`
+for every tempered distribution `T` and every direction `v`. -/
+theorem lineDerivOp_quantizeTempered_eq_add {a : Symbol n ℂ ℂ m} (ha : a.IsUniform)
+    (v : CoordinateSpace n) (T : 𝓢'(CoordinateSpace n, F)) :
+    ∂_{v} (quantizeTempered F a ha T) =
+      quantizeTempered F a ha (∂_{v} T) +
+        quantizeTempered F (lineSpatialDeriv v a) (ha.lineSpatialDeriv v) T := by
+  have hv : v = ∑ j, v j • EuclideanSpace.single j (1 : ℝ) := by
+    ext i
+    simp [Pi.single_apply]
+  have hd (S : 𝓢'(CoordinateSpace n, F)) :
+      ∂_{v} S = ∑ j, ((v j : ℝ) : ℂ) • ∂_{EuclideanSpace.single j (1 : ℝ)} S := by
+    ext φ
+    conv_lhs => rw [hv]
+    simp only [TemperedDistribution.lineDerivOp_apply_apply, LineDeriv.lineDerivOp_left_sum,
+      LineDeriv.lineDerivOp_left_smul, ← smul_neg, sum_apply, smul_apply, ← Complex.coe_smul,
+      map_smul]
+  have hq : quantizeTempered F (lineSpatialDeriv v a) (ha.lineSpatialDeriv v) =
+      ∑ j, ((v j : ℝ) : ℂ) • quantizeTempered F (spatialDeriv j a) (ha.spatialDeriv j) := by
+    rw [← Finset.sum_congr rfl fun j _ ↦ quantizeTempered_smul (ha.spatialDeriv j) _,
+      ← quantizeTempered_sum (fun j ↦ (ha.spatialDeriv j).smul _) Finset.univ]
+    exact quantizeTempered_congr _ _ (by rw [lineSpatialDeriv_apply])
+  rw [hd, hd, hq, map_sum]
+  simp only [map_smul, lineDerivOp_quantizeTempered, smul_add, Finset.sum_add_distrib, sum_apply,
+    smul_apply]
 
 /-- **Composition with a derivative on the right.** `Op(a) (∂_v T) = i Op(a ⟪ξ, v⟫) T` for every
 tempered distribution `T`. -/
@@ -264,20 +304,6 @@ theorem IsUniform.quantizeTempered_fourierMultiplierCLM {a : Symbol n ℂ ℂ m}
     TemperedDistribution.fourierMultiplierCLM_apply_apply_transpose, ← hS,
     ContinuousLinearMap.comp_apply]
 
-/-- `Op(a)` on tempered distributions is additive in the symbol, for finite sums. -/
-theorem quantizeTempered_sum {ι : Type*} {a : ι → Symbol n ℂ ℂ m} (ha : ∀ i, (a i).IsUniform)
-    (s : Finset ι) :
-    quantizeTempered F (∑ i ∈ s, a i) (IsUniform.sum fun i _ ↦ ha i) =
-      ∑ i ∈ s, quantizeTempered F (a i) (ha i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    exact (quantizeTempered_congr _ (isUniform_zero (m := m)) (by simp)).trans
-      (by rw [quantizeTempered_zero, Finset.sum_empty])
-  | insert i s hi ih =>
-    conv_rhs => rw [Finset.sum_insert hi, ← ih, ← quantizeTempered_add]
-    exact quantizeTempered_congr _ _ (by rw [Finset.sum_insert hi])
-
 /-- **Reduction to order zero.** For a uniform symbol `a` of order `m`,
 `Op(a) = Op(a ⟨ξ / 2π⟩ ^ (-m)) ∘ J^m` on tempered distributions, where `J^m` is the Bessel
 potential of order `m` and the first factor is a uniform symbol of order `0`. -/
@@ -302,29 +328,6 @@ theorem IsUniform.quantizeTempered_eq_comp_besselPotential {a : Symbol n ℂ ℂ
   rw [TemperedDistribution.besselPotential]
   exact (IsUniform.quantizeTempered_fourierMultiplierCLM (F := F)
     ((ha.comp (isUniform_besselPotential _)).inclusion _) ha hg hab T).symm
-
-/-- **Commutator with a directional derivative.** `∂_v (Op(a) T) = Op(a) (∂_v T) + Op(∂_{x, v} a) T`
-for every tempered distribution `T` and every direction `v`. -/
-theorem lineDerivOp_quantizeTempered_eq_add {a : Symbol n ℂ ℂ m} (ha : a.IsUniform)
-    (v : CoordinateSpace n) (T : 𝓢'(CoordinateSpace n, F)) :
-    ∂_{v} (quantizeTempered F a ha T) =
-      quantizeTempered F a ha (∂_{v} T) +
-        quantizeTempered F (lineSpatialDeriv v a) (ha.lineSpatialDeriv v) T := by
-  have hv : v = ∑ j, v j • EuclideanSpace.single j (1 : ℝ) := by
-    ext i
-    simp [Pi.single_apply]
-  have hd (S : 𝓢'(CoordinateSpace n, F)) :
-      ∂_{v} S = ∑ j, v j • ∂_{EuclideanSpace.single j (1 : ℝ)} S := by
-    conv_lhs => rw [hv]
-    simp only [LineDeriv.lineDerivOp_left_sum, LineDeriv.lineDerivOp_left_smul]
-  have hq : quantizeTempered F (lineSpatialDeriv v a) (ha.lineSpatialDeriv v) =
-      ∑ j, ((v j : ℝ) : ℂ) • quantizeTempered F (spatialDeriv j a) (ha.spatialDeriv j) := by
-    rw [← Finset.sum_congr rfl fun j _ ↦ quantizeTempered_smul (ha.spatialDeriv j) _,
-      ← quantizeTempered_sum (fun j ↦ (ha.spatialDeriv j).smul _) Finset.univ]
-    exact quantizeTempered_congr _ _ (by rw [lineSpatialDeriv_apply])
-  rw [hd, hd, hq, map_sum]
-  simp only [ContinuousLinearMap.map_smul_of_tower, lineDerivOp_quantizeTempered, smul_add,
-    Finset.sum_add_distrib, sum_apply, smul_apply, Complex.coe_smul]
 
 end Multiplier
 
