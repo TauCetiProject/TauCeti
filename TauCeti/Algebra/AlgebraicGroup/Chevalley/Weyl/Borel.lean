@@ -239,9 +239,7 @@ private theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one
     simpa only [Matrix.GeneralLinearGroup.map_apply] using
       apply_eq_zero_of_commute_diagonal hcomm (fun h => hs'' (Units.ext h))
 
-/-- Over a field, the positive point subgroup intersects the Weyl subgroup trivially. -/
-@[simp]
-theorem positivePoints_inf_weylSubgroup_eq_bot :
+private theorem positivePoints_inf_weylSubgroup_eq_bot :
     D.positivePoints K ⊓ D.weylSubgroup K = ⊥ := by
   refine eq_bot_iff.mpr ?_
   intro u hu
@@ -270,10 +268,7 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
       D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive K hu'P hwprod']
   exact D.eq_one_of_mem_positivePoints_of_weylProjection_eq_one K huP huW hproj
 
-/-- Over any field, the intersection of the Borel-type subgroup and the Weyl subgroup of a
-Chevalley datum is precisely the image of its actual torus. -/
-@[simp]
-theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
+private theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
     D.borelSubgroup K ⊓ D.weylSubgroup K = (D.torusPoints K).range := by
   apply le_antisymm
   · intro g hg
@@ -300,20 +295,6 @@ theorem mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup
     n ∈ D.borelSubgroup K ↔ n ∈ (D.torusPoints K).range := by
   rw [← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints K, Subgroup.mem_inf]
   exact (and_iff_left hn).symm
-
-/-- Inside the points of a Chevalley datum over any field, the Weyl subgroup meets the positive
-unipotent subgroup trivially. -/
-@[simp]
-theorem weylSubgroup_inf_positivePoints_eq_bot :
-    D.weylSubgroup K ⊓ D.positivePoints K = ⊥ := by
-  rw [inf_comm, D.positivePoints_inf_weylSubgroup_eq_bot]
-
-/-- Over any field, the intersection of the Weyl subgroup and the positive Borel subgroup of a
-Chevalley datum is the actual weight-lattice torus. -/
-@[simp]
-theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
-    D.weylSubgroup K ⊓ D.borelSubgroup K = (D.torusPoints K).range := by
-  rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints]
 
 /-- Any element of the Weyl subgroup that also belongs to the positive Borel subgroup has trivial
 Weyl projection. -/
