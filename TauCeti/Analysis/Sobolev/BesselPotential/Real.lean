@@ -28,8 +28,10 @@ continuous real representative `BesselPotentialSpace.continuousRep F`
 `BesselPotentialSpace.continuousRep_eq_of_ae_eq`), by the Sobolev embedding into continuous
 functions. It lies in the real `H^s` functions `TemperedDistribution.realSobolevFunctions E s 2`
 and is `ℝ`-linear in `F` (`BesselPotentialSpace.continuousRep` is a linear map), and it
-determines `F` (`BesselPotentialSpace.continuousRep_injective`). Above `s > n + dim E / 2` it is a
-`Cⁿ` function (`BesselPotentialSpace.contDiff_continuousRep`).
+determines `F` (`BesselPotentialSpace.continuousRep_injective`). Convergence in `H^s` makes the
+continuous representatives converge uniformly
+(`BesselPotentialSpace.tendstoUniformly_continuousRep`). Above `s > n + dim E / 2` the continuous
+representative is a `Cⁿ` function (`BesselPotentialSpace.contDiff_continuousRep`).
 
 Complex conjugation of the `L²` function is a real-linear isometric involution
 `BesselPotentialSpace.conjCLM` of `H^s(E)` (`BesselPotentialSpace.norm_conjCLM`,
@@ -48,7 +50,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module TemperedDistribution ComplexConjugate
-open scoped SchwartzMap BesselPotentialSpace
+open scoped SchwartzMap BesselPotentialSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -184,6 +186,26 @@ theorem continuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
     (F : realSubmodule E h) : continuousRep F ∈ realSobolevFunctions E s 2 :=
   mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion h (F : H^{s}(E)))
     (by simpa using coeFn_inclusionLp_ae_eq_continuousRep hs F)
+
+/-- **Continuous representatives converge uniformly.** Above the Sobolev threshold
+`s > dim E / 2`, if real elements `F` of `H^s(E)` tend to `F₀` in `H^s`, their continuous
+representatives tend uniformly to that of `F₀`. -/
+theorem tendstoUniformly_continuousRep (hs : finrank ℝ E < 2 * s) (F₀ : realSubmodule E h) :
+    TendstoUniformly (fun F : realSubmodule E h ↦ continuousRep F) (continuousRep F₀) (𝓝 F₀) := by
+  have hae (F : realSubmodule E h) :
+      (inclusion h (F : H^{s}(E))).toLp =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) := by
+    rw [toLp_inclusion]
+    exact coeFn_inclusionLp_ae_eq_continuousRep hs F
+  have hT := tendstoUniformly_of_tendsto_toBesselPotentialSpace hs
+    (fun F : realSubmodule E h ↦ memSobolev_toLp_inclusion h (F : H^{s}(E)))
+    (memSobolev_toLp_inclusion h (F₀ : H^{s}(E))) (l := 𝓝 F₀)
+    (by simpa only [toBesselPotentialSpace_memSobolev_toLp_inclusion] using
+      continuous_subtypeVal.tendsto F₀)
+    (fun F ↦ Complex.continuous_ofReal.comp (continuous_continuousRep hs F))
+    (Complex.continuous_ofReal.comp (continuous_continuousRep hs F₀)) hae (hae F₀)
+  rw [Metric.tendstoUniformly_iff] at hT ⊢
+  simpa only [Function.comp_apply, Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real,
+    Real.dist_eq, Real.norm_eq_abs] using hT
 
 /-- Above the threshold `s > n + dim E / 2`, the continuous representative of a real element of
 `H^s(E)` is a `Cⁿ` function. -/
