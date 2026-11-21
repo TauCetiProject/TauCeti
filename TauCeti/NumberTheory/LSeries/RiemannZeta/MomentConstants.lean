@@ -136,7 +136,7 @@ private theorem summable_log_zetaMomentLocalFactor (k : ℝ) :
       fun p ↦ ?_
     rw [rpow_neg (Nat.cast_nonneg _), inv_pow, rpow_two]
   refine hsum.of_norm_bounded fun p ↦ ?_
-  have hp : (2 : ℝ) ≤ p := by exact_mod_cast p.2.two_le
+  have hp : (2 : ℝ) ≤ p := by exact_mod_cast p.property.two_le
   rw [Real.norm_eq_abs]
   exact hC _ (by positivity) (by rw [inv_le_comm₀ (by linarith) (by norm_num)]; linarith)
 
@@ -145,7 +145,7 @@ private theorem summable_log_zetaMomentLocalFactor (k : ℝ) :
 /-- The reciprocal of a prime lies strictly inside the unit interval. -/
 private theorem abs_inv_prime_lt_one (p : Nat.Primes) : |(p : ℝ)⁻¹| < 1 := by
   rw [abs_inv, Nat.abs_cast]
-  exact inv_lt_one_of_one_lt₀ (by exact_mod_cast p.2.one_lt)
+  exact inv_lt_one_of_one_lt₀ (by exact_mod_cast p.property.one_lt)
 
 /-- The arithmetic factor `a(k) = ∏_p (1 - 1/p)^(k²) ∑_j c_k(j)² p⁻ʲ` of the zeta moment
 conjecture, with `c_k(j) = (k)_j / j!`, as an unordered product over the primes. The product
