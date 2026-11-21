@@ -15,6 +15,11 @@ of `ComplexShape.down ℕ` into `ComplexShape.up ℤ`. This file records the sam
 `ComplexShape.embeddingDownNat : n ↦ -n`, which agrees with `embeddingUpIntLE 0` only up to
 `0 - n = -n`.
 
+The upper boundary of an embedding is where good truncation along it replaces the components
+of a complex by cycles. The lemma here reduces every upper-boundary condition for good truncation
+along `embeddingDownNat`, that is for `τ_{≥ 0}` of a cochain complex indexed by `ℤ`, to the single
+degree `0`.
+
 ## Main results
 
 * `ComplexShape.boundaryLE_embeddingDownNat_iff`: the boundary of `embeddingDownNat` is `0`.

@@ -88,8 +88,9 @@ lemma truncLE'ToRestriction_f_eq_iso_hom_iCycles_iso_inv {i : ι} {i' : ι'} (hi
   rw [truncLE'ToRestriction, unopFunctor_map_f, Quiver.Hom.unop_op, Quiver.Hom.op_unop,
     K.op.restrictionToTruncGE'_f_eq_iso_hom_pOpcycles_iso_inv e.op rfl
       (by rwa [ComplexShape.Embedding.op_boundaryGE_iff])]
-  -- Both restriction isomorphisms are identities, `truncLE'XIsoCycles` is the opposite of
-  -- `truncGE'XIsoOpcycles` followed by `opcyclesOpIso`, and `h` rewrites `K.op.pOpcycles`.
+  -- Both restriction isomorphisms are identities, `truncLE'XIsoCycles` is the unop of the
+  -- inverse of `truncGE'XIsoOpcycles` followed by the unop of the inverse of `opcyclesOpIso`,
+  -- and `h` rewrites `K.op.pOpcycles`.
   simp only [restriction_X, ComplexShape.Embedding.op_f, op_X, restrictionXIso, eqToIso_refl,
     Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, h, Category.assoc,
     truncLE'XIsoCycles, Iso.trans_hom, Iso.symm_hom, Iso.unop_inv, op_comp, Opposite.op_unop,
