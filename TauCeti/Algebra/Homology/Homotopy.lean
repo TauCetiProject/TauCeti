@@ -21,6 +21,9 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
+`Homotopy.compLeftRightOfEq` transports a chain homotopy by precomposition and postcomposition
+along given factorizations of the endpoints.
+
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
 complexes.  A chain homotopy between morphisms `L ⟶ L'` whose components send the image of `u`
@@ -109,6 +112,29 @@ lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
   simp [compSquare]
 
 end Squares
+
+/-- Transport a chain homotopy `H : Homotopy f' g'` by precomposition with `u : K ⟶ K'` and
+postcomposition with `v : L' ⟶ L`, rewriting the endpoints along `hf : f = u ≫ f' ≫ v` and
+`hg : g = u ≫ g' ≫ v`. -/
+@[no_expose]
+def compLeftRightOfEq {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι}
+    {K L K' L' : HomologicalComplex C c} {f g : K ⟶ L} {f' g' : K' ⟶ L'}
+    (H : Homotopy f' g') (u : K ⟶ K') (v : L' ⟶ L)
+    (hf : f = u ≫ f' ≫ v) (hg : g = u ≫ g' ≫ v) :
+    Homotopy f g :=
+  (Homotopy.ofEq hf).trans (((H.compRight v).compLeft u).trans (Homotopy.ofEq hg.symm))
+
+/-- The components of `Homotopy.compLeftRightOfEq` are obtained by precomposing with `u` and
+postcomposing with `v`. -/
+@[simp]
+lemma compLeftRightOfEq_hom {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι}
+    {K L K' L' : HomologicalComplex C c} {f g : K ⟶ L} {f' g' : K' ⟶ L'}
+    (H : Homotopy f' g') (u : K ⟶ K') (v : L' ⟶ L)
+    (hf : f = u ≫ f' ≫ v) (hg : g = u ≫ g' ≫ v) (p q : ι) :
+    (H.compLeftRightOfEq u v hf hg).hom p q = u.f p ≫ H.hom p q ≫ v.f q := by
+  simp [compLeftRightOfEq]
 
 /-- On cycles, the difference of homotopic maps factors through the preceding target term.
 This identity does not require exactness of either complex. -/

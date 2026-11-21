@@ -235,6 +235,19 @@ lemma inclusionN_app_comp_PInfty (X : SimplicialObject C) :
     inclusionN.app X ≫ PInfty = inclusionN.app X :=
   counitIso_hom_app_N₁_obj_f_comp_PInfty X
 
+/-- `N.map f` is obtained by restricting `(alternatingFaceMapComplex C).map f` to normalized
+chains via `inclusionN` and projecting back via `PInftyToN`. -/
+lemma N_map_eq_inclusionN_comp_PInftyToN {X Y : SimplicialObject C} (f : X ⟶ Y) :
+    N.map f = inclusionN.app X ≫ (alternatingFaceMapComplex C).map f ≫ PInftyToN.app Y := by
+  rw [PInftyToN.naturality, inclusionN_app_comp_PInftyToN_app_assoc]
+
+/-- The projection `PInfty` followed by `(alternatingFaceMapComplex C).map f` factors through
+`N.map f` via `PInftyToN` and `inclusionN`. -/
+lemma PInfty_comp_alternatingFaceMapComplex_map_eq {X Y : SimplicialObject C} (f : X ⟶ Y) :
+    PInfty ≫ (alternatingFaceMapComplex C).map f =
+      PInftyToN.app X ≫ N.map f ≫ inclusionN.app Y := by
+  rw [inclusionN.naturality, PInftyToN_app_comp_inclusionN_app_assoc]
+
 /-- The normalized chain functor is a retract of the alternating face map complex functor, with
 inclusion `CategoryTheory.Idempotents.DoldKan.inclusionN` and projection
 `CategoryTheory.Idempotents.DoldKan.PInftyToN`. -/
