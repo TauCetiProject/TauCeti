@@ -11,16 +11,18 @@ public import Mathlib.Probability.Martingale.Convergence
 /-!
 # Series of square-integrable martingale differences
 
-A sequence `Y s` of real functions is a sequence of martingale differences for a filtration `ℱ`
-if each `Y s` is `ℱ (s + 1)`-measurable with `μ[Y s | ℱ s] = 0`; its partial sums
-`∑_{s < t} Y s` form a martingale. When the `Y s` are square-integrable they are orthogonal in
-`L²`, so the second moment of a partial sum is the sum of the second moments of its terms. If
-these second moments are summable, the martingale is bounded in `L²`, hence in `L¹`, and the
-almost everywhere martingale convergence theorem shows that the series `∑ Y s` converges almost
-everywhere.
+A sequence `Y s` of functions with values in a real Banach space is a sequence of martingale
+differences for a filtration `ℱ` if each `Y s` is `ℱ (s + 1)`-measurable with
+`μ[Y s | ℱ s] = 0`; its partial sums `∑_{s < t} Y s` form a martingale. When the `Y s` are
+real-valued and square-integrable they are orthogonal in `L²`, so the second moment of a partial
+sum is the sum of the second moments of its terms. If these second moments are summable, the
+martingale is bounded in `L²`, hence in `L¹`, and the almost everywhere martingale convergence
+theorem shows that the series `∑ Y s` converges almost everywhere.
 
 ## Main results
 
+* `MeasureTheory.condExp_smul_eq_zero_of_condExp_eq_zero`: a measurable factor times a
+  martingale difference is again a martingale difference.
 * `MeasureTheory.martingale_sum_range`: the partial sums of martingale differences form a
   martingale.
 * `MeasureTheory.integral_sq_sum_range`: the second moment of a partial sum of square-integrable
@@ -37,17 +39,27 @@ open scoped ENNReal
 namespace MeasureTheory
 
 variable {Ω : Type*} {m₀ : MeasurableSpace Ω} {μ : Measure Ω} {ℱ : Filtration ℕ m₀}
-  {Y : ℕ → Ω → ℝ}
+
+/-- If `μ[g | m] = 0` and `f` is `m`-measurable, then `μ[f • g | m] = 0`: a measurable factor
+times a martingale difference is again a martingale difference. -/
+theorem condExp_smul_eq_zero_of_condExp_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {m : MeasurableSpace Ω} {f : Ω → ℝ} {g : Ω → E}
+    (hf : AEStronglyMeasurable[m] f μ) (hfg : Integrable (f • g) μ) (hg : Integrable g μ)
+    (hcg : μ[g | m] =ᵐ[μ] 0) : μ[f • g | m] =ᵐ[μ] 0 := by
+  filter_upwards [condExp_smul_of_aestronglyMeasurable_left hf hfg hg, hcg] with ω h₁ h₂
+  simp [h₁, h₂]
 
 /-- A partial sum of a sequence whose `s`-th term is `ℱ (s + 1)`-measurable is measurable at the
 time of its last term. -/
-theorem stronglyMeasurable_sum_range (hY : ∀ s, StronglyMeasurable[ℱ (s + 1)] (Y s)) (t : ℕ) :
+theorem stronglyMeasurable_sum_range {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
+    [ContinuousAdd M] {Y : ℕ → Ω → M} (hY : ∀ s, StronglyMeasurable[ℱ (s + 1)] (Y s)) (t : ℕ) :
     StronglyMeasurable[ℱ t] fun ω ↦ ∑ s ∈ range t, Y s ω :=
   Finset.stronglyMeasurable_fun_sum _ fun s hs ↦
     (hY s).mono (ℱ.mono (Nat.succ_le_of_lt (mem_range.1 hs)))
 
 /-- The partial sums of integrable martingale differences form a martingale. -/
-theorem martingale_sum_range [IsFiniteMeasure μ]
+theorem martingale_sum_range {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] [IsFiniteMeasure μ] {Y : ℕ → Ω → E}
     (hY : ∀ s, StronglyMeasurable[ℱ (s + 1)] (Y s)) (hint : ∀ s, Integrable (Y s) μ)
     (hc : ∀ s, μ[Y s | ℱ s] =ᵐ[μ] 0) :
     Martingale (fun t ω ↦ ∑ s ∈ range t, Y s ω) ℱ μ :=
@@ -58,6 +70,8 @@ theorem martingale_sum_range [IsFiniteMeasure μ]
         simp [sum_range_succ]
       rw [h]
       exact hc t
+
+variable {Y : ℕ → Ω → ℝ}
 
 /-- **Orthogonality of martingale differences.** The second moment of a partial sum of
 square-integrable martingale differences is the sum of their second moments. -/
@@ -71,14 +85,13 @@ theorem integral_sq_sum_range [IsFiniteMeasure μ]
     have hS : MemLp (fun ω ↦ ∑ s ∈ range t, Y s ω) 2 μ := memLp_finsetSum _ fun s _ ↦ hL2 s
     have hSY : Integrable (fun ω ↦ (∑ s ∈ range t, Y s ω) * Y t ω) μ :=
       hS.integrable_mul (hL2 t)
-    -- The cross term vanishes: pull the `ℱ t`-measurable partial sum out of `μ[Y t | ℱ t]`.
+    -- The cross term vanishes: pull the `ℱ t`-measurable partial sum out of `μ[Y t | ℱ t]`
+    -- (for real functions `f • g` is `f * g` by `smul_eq_mul`).
     have hcross : ∫ ω, (∑ s ∈ range t, Y s ω) * Y t ω ∂μ = 0 := by
-      have h := condExp_mul_of_stronglyMeasurable_left (stronglyMeasurable_sum_range hY t) hSY
-        ((hL2 t).integrable one_le_two)
       rw [← integral_condExp (ℱ.le t)]
-      refine integral_eq_zero_of_ae ?_
-      filter_upwards [h, hc t] with ω h₁ h₂
-      exact h₁.trans (by simp [h₂])
+      exact integral_eq_zero_of_ae (condExp_smul_eq_zero_of_condExp_eq_zero
+        (stronglyMeasurable_sum_range hY t).aestronglyMeasurable hSY
+        ((hL2 t).integrable one_le_two) (hc t))
     calc ∫ ω, (∑ s ∈ range (t + 1), Y s ω) ^ 2 ∂μ
         = ∫ ω, ((∑ s ∈ range t, Y s ω) ^ 2 + 2 * ((∑ s ∈ range t, Y s ω) * Y t ω) +
             Y t ω ^ 2) ∂μ := by

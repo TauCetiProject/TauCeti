@@ -145,11 +145,12 @@ private lemma memLp_truncStep_mul (hα : Adapted ℱ α) (hw : ∀ t, Measurable
 private lemma condExp_truncStep_mul [IsFiniteMeasure P] (hα : Adapted ℱ α)
     (hw : ∀ t, Measurable[ℱ (t + 1)] (w t)) (hw₂ : ∀ t, MemLp (w t) 2 P)
     (hw_condExp : ∀ t, P[w t | ℱ t] =ᵐ[P] 0) (k s : ℕ) :
-    P[fun ω ↦ truncStep P ℱ α w k s ω * w s ω | ℱ s] =ᵐ[P] 0 := by
-  filter_upwards [condExp_mul_of_stronglyMeasurable_left (stronglyMeasurable_truncStep hα k s)
+    P[fun ω ↦ truncStep P ℱ α w k s ω * w s ω | ℱ s] =ᵐ[P] 0 :=
+  -- For real functions `f • g` is `f * g` by `smul_eq_mul`.
+  condExp_smul_eq_zero_of_condExp_eq_zero
+    (stronglyMeasurable_truncStep hα k s).aestronglyMeasurable
     ((memLp_truncStep_mul hα hw hw₂ k s).integrable one_le_two)
-    ((hw₂ s).integrable one_le_two), hw_condExp s] with ω h₁ h₂
-  exact h₁.trans (by simp [h₂])
+    ((hw₂ s).integrable one_le_two) (hw_condExp s)
 
 /-- The second moment of a truncated noise term is at most `k` times that of the truncated
 step. -/
