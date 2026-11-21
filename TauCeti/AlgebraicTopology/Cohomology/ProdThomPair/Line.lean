@@ -137,18 +137,18 @@ theorem singularCohomologyZeroEval_prodThomPairPuncturedLineClass
 /-! ### The two sides of the zero section -/
 
 /-- The section `b ↦ (b, e⁻¹ t)` of the projection `B × (F ∖ {0}) → B` for `t ≠ 0`, landing on
-the side of the zero section of the sign of `t`. -/
+the side of the zero section of the sign of `t`. It is the section
+`TauCeti.prodThomPairPuncturedSection` at the point `e⁻¹ t`. -/
 def prodThomPairPuncturedLineSection (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ)
     (ht : t ≠ 0) : TopCat.of B ⟶ (prodThomPair B F).snd :=
-  TopCat.ofHom ⟨fun b ↦ ⟨(b, e.symm (EuclideanSpace.single 0 t)), by simpa using ht⟩,
-    by fun_prop⟩
+  prodThomPairPuncturedSection B (e.symm (EuclideanSpace.single 0 t)) (by simpa using ht)
 
 /-- The section `TauCeti.prodThomPairPuncturedLineSection` sends `b` to `(b, e⁻¹ t)`. -/
 @[simp]
 theorem coe_prodThomPairPuncturedLineSection_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
     (t : ℝ) (ht : t ≠ 0) (b : B) :
     (prodThomPairPuncturedLineSection e t ht b).val = (b, e.symm (EuclideanSpace.single 0 t)) :=
-  (rfl)
+  prodThomPairPuncturedSection_apply _ _ b
 
 /-- `TauCeti.prodThomPairPuncturedLineSection` is a section of the projection
 `B × (F ∖ {0}) → B`. -/
@@ -156,7 +156,7 @@ theorem coe_prodThomPairPuncturedLineSection_apply (e : F ≃L[ℝ] EuclideanSpa
 theorem prodThomPairPuncturedLineSection_comp_prodThomPairPuncturedProj
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (t : ℝ) (ht : t ≠ 0) :
     prodThomPairPuncturedLineSection (B := B) e t ht ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-  TopCat.ext fun _ ↦ prodThomPairPuncturedProj_apply F _
+  prodThomPairPuncturedSection_comp_prodThomPairPuncturedProj _ _
 
 /-- Restricting a class pulled back from the base to either side gives back the class. -/
 private theorem singularCohomologyMap_prodThomPairPuncturedLineSection_prodThomPairPuncturedProj
@@ -208,7 +208,8 @@ private theorem prodThomPairPuncturedLineSection_comp_sphereZeroProdMap
   refine TopCat.ext fun b ↦ ?_
   have key : prodThomPairPuncturedHomotopyEquiv B e (prodThomPairPuncturedLineSection e t ht b) =
       (s, b) := by
-    refine Prod.ext (ULift.ext (Subtype.ext ?_)) (prodThomPairPuncturedHomotopyEquiv_apply_snd e _)
+    refine Prod.ext (ULift.ext (Subtype.ext ?_)) ((prodThomPairPuncturedHomotopyEquiv_apply_snd e
+      _).trans (congrArg Prod.fst (coe_prodThomPairPuncturedLineSection_apply e t ht b)))
     rw [coe_prodThomPairPuncturedHomotopyEquiv_apply_fst,
       coe_prodThomPairPuncturedLineSection_apply]
     simp [hs, h1]
