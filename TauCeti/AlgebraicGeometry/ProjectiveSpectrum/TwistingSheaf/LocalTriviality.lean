@@ -170,7 +170,7 @@ theorem toTwistingSheaf_eq_smul_chartGenerator (n : ℕ) (r : 𝒜 n)
 theorem toTwistingSheaf_eq_chartGenerator_one :
     toTwistingSheaf 𝒜 Nat.cast_one U ⟨f, hf⟩ = chartGenerator 1 f hf U hU := by
   refine ext fun x ↦ ?_
-  let := x.1.isPrime
+  let := x.val.isPrime
   rw [toTwistingSheaf_apply_apply, chartGenerator_apply]
   apply Localization.mk_eq_mk_iff.mpr
   apply Localization.r_of_eq

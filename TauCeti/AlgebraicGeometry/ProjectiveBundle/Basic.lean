@@ -216,7 +216,7 @@ instance epi_universalQuotient : Epi (universalQuotient S E) := by
   -- `y` lies in the standard open `D₊(b)` of a section `b` of degree one
   obtain ⟨⟨_, hb⟩, hyb⟩ := TopologicalSpace.Opens.mem_iSup.mp
     ((Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top _ (CommMon.isGeneratedInDegreeOne_iff.mp
-      (isGeneratedInDegreeOne_gradedSymmetricAlgebra _) U.toOpens U.2)).ge (Set.mem_univ y))
+      (isGeneratedInDegreeOne_gradedSymmetricAlgebra _) U.toOpens U.property)).ge (Set.mem_univ y))
   obtain ⟨b, rfl⟩ := DirectSum.mem_summand.mp hb
   -- `b` is the image of a section `e` of `E`
   let φ := (eqToIso (gradedSymmetricAlgebra_obj_obj_X ⟨E, inferInstance⟩ 1) ≪≫
