@@ -91,7 +91,7 @@ noncomputable def ι (i : D.data.J) : D.piece i ⟶ D.glued :=
   InducedCategory.homMk (D.data.toGlueData.ι i)
 
 @[simp]
-theorem forget_ι (i : D.data.J) :
+theorem forgetToLocallyRingedSpace_map_ι (i : D.data.J) :
     forgetToLocallyRingedSpace.map (D.ι i) = D.data.toGlueData.ι i := (rfl)
 
 /-- The canonical inclusions are open immersions on the underlying locally ringed spaces. -/
@@ -109,16 +109,26 @@ variable {Y : FormalScheme.{u}}
 
 /-- Descend morphisms from the pieces that agree on every supplied overlap. -/
 noncomputable def desc (f : ∀ i, D.piece i ⟶ Y)
-    (hf : ∀ i j, D.data.f i j ≫ (f i).hom =
-      D.data.t i j ≫ D.data.f j i ≫ (f j).hom) : D.glued ⟶ Y :=
-  InducedCategory.homMk <| Multicoequalizer.desc _ _ (fun i ↦ (f i).hom)
+    (hf : ∀ i j, D.data.f i j ≫ forgetToLocallyRingedSpace.map (f i) =
+      D.data.t i j ≫ D.data.f j i ≫ forgetToLocallyRingedSpace.map (f j)) : D.glued ⟶ Y :=
+  InducedCategory.homMk <| Multicoequalizer.desc _ _ (fun i ↦ forgetToLocallyRingedSpace.map (f i))
     (fun ⟨i, j⟩ ↦ (hf i j).trans (Category.assoc _ _ _).symm)
+
+/-- Forgetting the formal atlas recovers the multicoequalizer descent map. -/
+@[simp]
+theorem forgetToLocallyRingedSpace_map_desc (f : ∀ i, D.piece i ⟶ Y)
+    (hf : ∀ i j, D.data.f i j ≫ forgetToLocallyRingedSpace.map (f i) =
+      D.data.t i j ≫ D.data.f j i ≫ forgetToLocallyRingedSpace.map (f j)) :
+    forgetToLocallyRingedSpace.map (D.desc f hf) =
+      Multicoequalizer.desc D.data.toGlueData.diagram Y.toLocallyRingedSpace
+        (fun i ↦ forgetToLocallyRingedSpace.map (f i))
+        (fun ⟨i, j⟩ ↦ (hf i j).trans (Category.assoc _ _ _).symm) := (rfl)
 
 /-- The descended morphism restricts to the specified morphism on each piece. -/
 @[reassoc (attr := simp)]
 theorem ι_desc (f : ∀ i, D.piece i ⟶ Y)
-    (hf : ∀ i j, D.data.f i j ≫ (f i).hom =
-      D.data.t i j ≫ D.data.f j i ≫ (f j).hom) (i : D.data.J) :
+    (hf : ∀ i j, D.data.f i j ≫ forgetToLocallyRingedSpace.map (f i) =
+      D.data.t i j ≫ D.data.f j i ≫ forgetToLocallyRingedSpace.map (f j)) (i : D.data.J) :
     D.ι i ≫ D.desc f hf = f i := by
   apply InducedCategory.hom_ext
   exact Multicoequalizer.π_desc D.data.toGlueData.diagram Y.toLocallyRingedSpace _ _ i
@@ -143,15 +153,46 @@ The body is exposed so its pieces retain the original index type and locally rin
   data := E.toLocallyRingedSpaceGlueData
   local_spf i := (E.U i).toFormalScheme.local_spf
 
+/-- The formal atlas leaves the underlying gluing data unchanged. -/
+@[simp]
+theorem toFormalSchemeGlueData_data (E : Scheme.GlueData.{u}) :
+    E.toFormalSchemeGlueData.data = E.toLocallyRingedSpaceGlueData := (rfl)
+
+/-- Each piece is the original scheme regarded as a formal scheme. -/
+@[simp]
+theorem toFormalSchemeGlueData_piece (E : Scheme.GlueData.{u}) (i : E.J) :
+    E.toFormalSchemeGlueData.piece i = (E.U i).toFormalScheme := (rfl)
+
 /-- Gluing schemes commutes with their inclusion into formal schemes. -/
-noncomputable def formalGluedIso (E : Scheme.GlueData.{u}) :
+noncomputable def isoFormalScheme (E : Scheme.GlueData.{u}) :
     FormalScheme.ofScheme.obj E.glued ≅ E.toFormalSchemeGlueData.glued :=
   InducedCategory.isoMk E.isoLocallyRingedSpace
 
-/-- The scheme comparison uses the original comparison of locally ringed spaces. -/
+/-- The forward scheme comparison uses the original comparison of locally ringed spaces. -/
 @[simp]
-theorem forget_formalGluedIso_hom (E : Scheme.GlueData.{u}) :
-    FormalScheme.forgetToLocallyRingedSpace.map E.formalGluedIso.hom =
+theorem forgetToLocallyRingedSpace_map_isoFormalScheme_hom (E : Scheme.GlueData.{u}) :
+    FormalScheme.forgetToLocallyRingedSpace.map E.isoFormalScheme.hom =
       E.isoLocallyRingedSpace.hom := (rfl)
+
+/-- The inverse scheme comparison uses the inverse of the original comparison. -/
+@[simp]
+theorem forgetToLocallyRingedSpace_map_isoFormalScheme_inv (E : Scheme.GlueData.{u}) :
+    FormalScheme.forgetToLocallyRingedSpace.map E.isoFormalScheme.inv =
+      E.isoLocallyRingedSpace.inv := (rfl)
+
+/-- The forward comparison sends each scheme inclusion to the corresponding formal inclusion. -/
+@[reassoc (attr := simp)]
+theorem ι_isoFormalScheme_hom (E : Scheme.GlueData.{u}) (i : E.J) :
+    FormalScheme.ofScheme.map (E.ι i) ≫ E.isoFormalScheme.hom = E.toFormalSchemeGlueData.ι i := by
+  apply FormalScheme.forgetToLocallyRingedSpace.map_injective
+  -- The comparison and inclusions were lifted from the original locally ringed-space maps.
+  exact E.toGlueData.ι_gluedIso_hom Scheme.forgetToLocallyRingedSpace i
+
+/-- The inverse comparison recovers the original scheme inclusion on each piece. -/
+@[reassoc (attr := simp)]
+theorem ι_isoFormalScheme_inv (E : Scheme.GlueData.{u}) (i : E.J) :
+    E.toFormalSchemeGlueData.ι i ≫ E.isoFormalScheme.inv = FormalScheme.ofScheme.map (E.ι i) := by
+  apply FormalScheme.forgetToLocallyRingedSpace.map_injective
+  exact E.ι_isoLocallyRingedSpace_inv i
 
 end AlgebraicGeometry.Scheme.GlueData
