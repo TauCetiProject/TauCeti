@@ -183,7 +183,7 @@ theorem mk_notMem_circlesAt_of_notMem {x : Fin (4 * n)}
 private noncomputable def unchangedCircleMap
     (C : {C : D.CrossingCircle s // C ∉ D.circlesAt s c}) :
     {C : D.CrossingCircle t // C ∉ D.circlesAt t c} :=
-  ⟨⟦C.1.out⟧, D.mk_notMem_circlesAt_of_notMem hst (by rw [Quotient.out_eq]; exact C.2)⟩
+  ⟨⟦C.val.out⟧, D.mk_notMem_circlesAt_of_notMem hst (by rw [Quotient.out_eq]; exact C.property)⟩
 
 private theorem unchangedCircleMap_mk {x : Fin (4 * n)}
     (hx : (⟦x⟧ : D.CrossingCircle s) ∉ D.circlesAt s c) :

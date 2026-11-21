@@ -136,8 +136,8 @@ theorem finite_continuousCohomology_of_prime_ge_two (hn : (n : F) ≠ 0) (A : Ga
   have : V.Normal := (hUW ▸ W.isNormal' : U.Normal).map _ e.symm.surjective
   let ψ : U ≃ₜ* V :=
     { e.symm.toMulEquiv.subgroupMap U with
-      continuous_toFun := continuous_induced_rng.2 (e.symm.continuous.comp continuous_subtype_val)
-      continuous_invFun := continuous_induced_rng.2 (e.continuous.comp continuous_subtype_val) }
+      continuous_toFun := continuous_induced_rng.2 (e.symm.continuous.comp continuous_subtypeVal)
+      continuous_invFun := continuous_induced_rng.2 (e.continuous.comp continuous_subtypeVal) }
   have hV : IsOpen (V : Set (Field.absoluteGaloisGroup F)) :=
     e.symm.isOpenMap _ (galoisSubgroup F L L.val).isOpen
   have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact

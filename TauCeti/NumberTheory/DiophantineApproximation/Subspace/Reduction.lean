@@ -70,12 +70,12 @@ theorem exists_forall_approxProd_le_imp (Sinf : Finset (InfinitePlace K))
     (hε : 0 < ε) :
     ∃ (S₀ : Finset (FinitePlace K)) (L' : AbsoluteValue K ℝ → ι → Dual K (ι → K))
       (T : Finset (AbsoluteValue K ℝ → ι → ℝ)) (Q₀ : ℝ),
-      Sfin ⊆ S₀ ∧ (∀ v ∈ Sinf, L' v.1 = L v.1) ∧ (∀ v ∈ Sfin, L' v.1 = L v.1) ∧
-      (∀ v : InfinitePlace K, v ∉ Sinf → ∀ i, L' v.1 i = LinearMap.proj i) ∧
-      (∀ v ∈ S₀, v ∉ Sfin → ∀ i, L' v.1 i = LinearMap.proj i) ∧
+      Sfin ⊆ S₀ ∧ (∀ v ∈ Sinf, L' v.val = L v.val) ∧ (∀ v ∈ Sfin, L' v.val = L v.val) ∧
+      (∀ v : InfinitePlace K, v ∉ Sinf → ∀ i, L' v.val i = LinearMap.proj i) ∧
+      (∀ v ∈ S₀, v ∉ Sfin → ∀ i, L' v.val i = LinearMap.proj i) ∧
       (∀ c ∈ T, approxWeight S₀ c ≤ -(ε / 2)) ∧
       ∀ x : ι → K, x ≠ 0 → Q₀ ≤ mulHeight x →
-        (∀ (v : InfinitePlace K) (i : ι), L' v.1 i x ≠ 0) → (∀ v ∈ S₀, ∀ i, L' v.1 i x ≠ 0) →
+        (∀ (v : InfinitePlace K) (i : ι), L' v.val i x ≠ 0) → (∀ v ∈ S₀, ∀ i, L' v.val i x ≠ 0) →
         approxProd Sinf Sfin id L x ≤ mulHeight x ^ (-(Fintype.card ι : ℝ) - ε) →
         ∃ a : K, a ≠ 0 ∧ ∃ c ∈ T, a • x ∈ approxDomain S₀ L' c (mulHeight x) := by
   classical
@@ -89,19 +89,19 @@ theorem exists_forall_approxProd_le_imp (Sinf : Finset (InfinitePlace K))
     ⟨v.maximalIdeal, hSS' (mem_image_of_mem _ hv), FinitePlace.mk_maximalIdeal v⟩
   -- keep `L` at the places of `Sinf` and `Sfin`, and put the coordinate forms everywhere else;
   -- this is consistent since an infinite place is archimedean and a finite place is not
-  have hne (v : InfinitePlace K) (u : FinitePlace K) : v.1 ≠ u.1 := fun h ↦
+  have hne (v : InfinitePlace K) (u : FinitePlace K) : v.val ≠ u.val := fun h ↦
     v.not_isNonarchimedean (h ▸ fun x y ↦ u.add_le x y)
   set L' : AbsoluteValue K ℝ → ι → Dual K (ι → K) := fun v ↦
-    if (∃ u ∈ Sinf, u.1 = v) ∨ ∃ u ∈ Sfin, u.1 = v then L v else fun i ↦ LinearMap.proj i
-  have hL'inf : ∀ v ∈ Sinf, L' v.1 = L v.1 := fun v hv ↦ ite_eq_left (Or.inl ⟨v, hv, rfl⟩)
-  have hL'fin : ∀ v ∈ Sfin, L' v.1 = L v.1 := fun v hv ↦ ite_eq_left (Or.inr ⟨v, hv, rfl⟩)
-  have hL'inf' : ∀ v : InfinitePlace K, v ∉ Sinf → ∀ i, L' v.1 i = LinearMap.proj i := by
+    if (∃ u ∈ Sinf, u.val = v) ∨ ∃ u ∈ Sfin, u.val = v then L v else fun i ↦ LinearMap.proj i
+  have hL'inf : ∀ v ∈ Sinf, L' v.val = L v.val := fun v hv ↦ ite_eq_left (Or.inl ⟨v, hv, rfl⟩)
+  have hL'fin : ∀ v ∈ Sfin, L' v.val = L v.val := fun v hv ↦ ite_eq_left (Or.inr ⟨v, hv, rfl⟩)
+  have hL'inf' : ∀ v : InfinitePlace K, v ∉ Sinf → ∀ i, L' v.val i = LinearMap.proj i := by
     intro v hv i
     refine congrFun (ite_eq_right ?_) i
     rintro (⟨u, hu, huv⟩ | ⟨u, -, huv⟩)
     · exact hv (Subtype.ext huv ▸ hu)
     · exact hne v u huv.symm
-  have hL'fin' : ∀ v ∈ S₀, v ∉ Sfin → ∀ i, L' v.1 i = LinearMap.proj i := by
+  have hL'fin' : ∀ v ∈ S₀, v ∉ Sfin → ∀ i, L' v.val i = LinearMap.proj i := by
     intro v _ hv i
     refine congrFun (ite_eq_right ?_) i
     rintro (⟨u, -, huv⟩ | ⟨u, hu, huv⟩)

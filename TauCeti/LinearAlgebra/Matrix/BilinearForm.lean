@@ -60,6 +60,9 @@ the diagonal condition remains necessary in characteristic two.
   commutative ring.
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
+* `Matrix.toBilin_apply_basis`, `Matrix.toBilin_one_apply`, `Matrix.nondegenerate_toBilin_one`,
+  `Matrix.toBilin_one_apply_self_nonneg`: evaluation on basis vectors, coordinate dot-product
+  formula, nondegeneracy, and diagonal nonnegativity for the identity-matrix form in a finite basis.
 * `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
   commutative ring.
 * `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
@@ -113,6 +116,45 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
     [Nontrivial R] : (toBilin' (1 : Matrix n n R)).IsAlt ↔ IsEmpty n := by
   refine ⟨fun h => ⟨fun i => by simpa using h (Pi.single i 1)⟩, fun hn x => ?_⟩
   simp [Subsingleton.elim x 0]
+
+/-- Evaluating `Matrix.toBilin b A` on basis vectors `b i` and `b j` recovers the matrix entry
+`A i j`. -/
+theorem toBilin_apply_basis {n R M : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis n R M) (A : Matrix n n R) (i j : n) :
+    Matrix.toBilin b A (b i) (b j) = A i j := by
+  rw [← LinearMap.BilinForm.toMatrix_apply b, LinearMap.BilinForm.toMatrix_toBilin]
+
+/-- The standard bilinear form attached to the identity matrix in a finite basis `b` evaluates to
+the coordinate dot product `∑ i, b.repr x i * b.repr y i`. -/
+theorem toBilin_one_apply {n R M : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis n R M) (x y : M) :
+    Matrix.toBilin b (1 : Matrix n n R) x y = ∑ i, b.repr x i * b.repr y i := by
+  simp only [Matrix.toBilin_apply, Matrix.one_apply, mul_ite, mul_one, mul_zero, ite_mul,
+    zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+
+/-- The standard bilinear form attached to the identity matrix in a finite basis is
+nondegenerate. -/
+theorem nondegenerate_toBilin_one {n R M : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis n R M) :
+    (Matrix.toBilin b (1 : Matrix n n R)).Nondegenerate := by
+  refine ⟨fun x hx ↦ b.repr.injective ?_, fun y hy ↦ b.repr.injective ?_⟩
+  · ext i
+    have hi := hx (b i)
+    rw [toBilin_one_apply] at hi
+    simpa [Finsupp.single_apply] using hi
+  · ext i
+    have hi := hy (b i)
+    rw [toBilin_one_apply] at hi
+    simpa [Finsupp.single_apply] using hi
+
+/-- Over a linearly ordered commutative ring, the identity-matrix bilinear form in a finite basis
+has nonnegative diagonal values. -/
+theorem toBilin_one_apply_self_nonneg {n R M : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [LinearOrder R] [IsOrderedRing R] [AddCommMonoid M] [Module R M]
+    (b : Module.Basis n R M) (x : M) :
+    0 ≤ Matrix.toBilin b (1 : Matrix n n R) x x := by
+  rw [toBilin_one_apply]
+  exact Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _
 
 section BilinearAlternation
 
@@ -273,7 +315,7 @@ theorem toMatrix_collectedBasis {M o : Type*} [AddCommMonoid M] [Module R M] [Fi
   · subst hii
     simp [Matrix.blockDiagonal'_apply_eq, toMatrix_apply]
   · rw [Matrix.blockDiagonal'_apply_ne _ _ _ hii]
-    exact horth _ _ hii _ (d i a).2 _ (d i' a').2
+    exact horth _ _ hii _ (d i a).property _ (d i' a').property
 
 /-- If two forms are pairwise orthogonal across a family of submodules `P i` of which `M` is the
 internal direct sum, and their Gram matrices in bases `d i` of the `P i` multiply to `c • 1`, then
@@ -313,7 +355,7 @@ theorem exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal {M : Type*} {o 
       B.toMatrix b * D.toMatrix b = c • 1 := by
   have : Finite {i // N i ≠ ⊥} := hfin.to_subtype
   have : Fintype {i // N i ≠ ⊥} := Fintype.ofFinite _
-  choose α _ _ d hd using fun i : {i // N i ≠ ⊥} ↦ hd i i.2
+  choose α _ _ d hd using fun i : {i // N i ≠ ⊥} ↦ hd i i.property
   have hP : DirectSum.IsInternal fun i : {i // N i ≠ ⊥} ↦ N i :=
     DirectSum.isInternal_ne_bot_iff.mpr hN
   refine ⟨_, inferInstance, inferInstance, hP.collectedBasis d,
@@ -335,9 +377,9 @@ theorem exists_basis_restrict_biSup_toMatrix_mul_toMatrix_eq_smul {M : Type*} {o
         c • 1 := by
   classical
   have : Fintype s := hs.fintype
-  choose α _ _ d hd using fun i : s ↦ hd i i.2
+  choose α _ _ d hd using fun i : s ↦ hd i i.property
   set A := ⨆ i ∈ s, N i
-  have hle (i : s) : N i ≤ A := le_biSup N i.2
+  have hle (i : s) : N i ≤ A := le_biSup N i.property
   -- Transport the bases of the `N i` into `A`.
   let d' (i : s) : Basis (α i) R ((N i).comap A.subtype) :=
     (d i).map (Submodule.comapSubtypeEquivOfLe (hle i)).symm

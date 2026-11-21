@@ -29,6 +29,11 @@ piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_i
 For a function in `Lᵖ` on each piece, the same subadditivity holds for the real-valued norm
 `lpNorm` (`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 
+Comparisons between two functions on each summand also pass to a countable sum of measures
+(`MeasureTheory.eLpNorm_sum_measure_le_mul_of_forall_le`). Unlike subadditivity, this keeps the
+constant unchanged and works at every exponent, including `∞`; it therefore glues estimates
+on disjoint measurable pieces without a loss depending on the number of pieces.
+
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
 `lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`). In particular, if `ψ = 1` on `t`,
 the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
@@ -36,6 +41,8 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
 
 ## Main declarations
 
+* `MeasureTheory.eLpNorm_sum_measure_le_mul_of_forall_le`: scaled comparisons pass to a countable
+  sum of measures, with no loss in the constant.
 * `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
 * `MeasureTheory.lpNorm_restrict_le_lpNorm_smul`: comparing `lpNorm` across a cutoff.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
@@ -55,6 +62,49 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- Scaled comparisons of `Lᵖ` seminorms on each summand pass to a countable sum of measures,
+for every exponent, including `0` and `∞`. The functions may have different codomains with
+extended norms, and no measurability assumptions are needed. -/
+theorem eLpNorm_sum_measure_le_mul_of_forall_le {α ι E F : Type*} [MeasurableSpace α]
+    [Countable ι] [TopologicalSpace E] [ENorm E]
+    [TopologicalSpace.PseudoMetrizableSpace E] [TopologicalSpace F] [ENorm F]
+    {f : α → E} {g : α → F} {p c : ℝ≥0∞} (μ : ι → Measure α)
+    (h : ∀ i, eLpNorm f p (μ i) ≤ c * eLpNorm g p (μ i)) :
+    eLpNorm f p (Measure.sum μ) ≤ c * eLpNorm g p (Measure.sum μ) := by
+  by_cases hg : c * eLpNorm g p (Measure.sum μ) = ∞
+  · simp [hg]
+  have hfm : ∀ i, AEStronglyMeasurable f (μ i) := fun i ↦
+    aestronglyMeasurable_of_eLpNorm_ne_top <| ne_top_of_le_ne_top hg <|
+      (h i).trans (mul_le_mul_right (eLpNorm_mono_measure g (Measure.le_sum μ i)) c)
+  have hf := aestronglyMeasurable_sum_measure_iff.2 hfm
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp [eLpNorm_exponent_zero hf]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [eLpNorm_exponent_top hf]
+    apply eLpNormEssSup_le_of_ae_eNorm_bound
+    exact Measure.ae_sum_iff.2 fun i ↦
+      (eNorm_ae_le_eLpNormEssSup f (μ i)).mono fun x hx ↦
+        hx.trans <| eLpNormEssSup_le_eLpNorm_top.trans <|
+          (h i).trans (mul_le_mul_right (eLpNorm_mono_measure g (Measure.le_sum μ i)) c)
+  have hr := ENNReal.toReal_pos hp0 hp
+  have hpow {v : α → E} {ν : Measure α} (hv : AEStronglyMeasurable v ν) :
+      eLpNorm v p ν ^ p.toReal = ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂ν := by
+    rw [eLpNorm_eq_eLpNorm' hp0 hp hv, lintegral_rpow_eNorm_eq_rpow_eLpNorm' hr]
+  rw [← ENNReal.rpow_le_rpow_iff hr, hpow hf, lintegral_sum_measure]
+  by_cases hc : c = 0
+  · simp only [hc, zero_mul, ENNReal.zero_rpow_of_pos hr] at h ⊢
+    exact le_of_eq <| tsum_eq_zero_iff.2 fun i ↦ by
+      rw [← hpow (hfm i), nonpos_iff_eq_zero.1 (h i), ENNReal.zero_rpow_of_pos hr]
+  have hgm : AEStronglyMeasurable g (Measure.sum μ) :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (p := p) fun htop ↦ hg (by simp [htop, hc])
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le, eLpNorm_eq_eLpNorm' hp0 hp hgm,
+    ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' hr, lintegral_sum_measure, ← ENNReal.tsum_mul_left]
+  exact tsum_le_tsum fun i ↦ by
+    rw [← hpow (hfm i), lintegral_rpow_eNorm_eq_rpow_eLpNorm' hr,
+      ← eLpNorm_eq_eLpNorm' hp0 hp (hgm.mono_measure (Measure.le_sum μ i)),
+      ← ENNReal.mul_rpow_of_nonneg _ _ hr.le]
+    exact ENNReal.rpow_le_rpow (h i) hr.le
 
 /-- The `p`-th power of the `Lᵖ` seminorm is subadditive under adding measures. For `p = 0` or
 `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No measurability is assumed: if the

@@ -51,7 +51,7 @@ noncomputable def rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) 
   letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   comap (Presentation.completionLocObjCommRingCatIso p).hom.hom
     ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
-      ⟨x, mem_spaBasicOpen.mp hx⟩).1
+      ⟨x, mem_spaBasicOpen.mp hx⟩).val
 
 /-- The point of `A⟨p⟩` determined by `x ∈ R(p)` is the preimage of `x` under
 `spaCompletedLocalizationHomeomorph`, pulled back along `completionLocObjCommRingCatIso`. -/
@@ -63,7 +63,7 @@ theorem rationalLocalizationPoint_def (hP : P.ringOfDefinition ≤ Aplus) (p : P
     rationalLocalizationPoint hP p x hx =
       comap (Presentation.completionLocObjCommRingCatIso p).hom.hom
         ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
-          ⟨x, mem_spaBasicOpen.mp hx⟩).1 := by
+          ⟨x, mem_spaBasicOpen.mp hx⟩).val := by
   rw [rationalLocalizationPoint]
 
 /-- **The rational point lies over `x`**: pulled back along the structure map `A → A⟨p⟩`, the
@@ -89,7 +89,7 @@ theorem comap_rationalLocalizationPoint (hP : P.ringOfDefinition ≤ Aplus) (p :
   rw [Homeomorph.apply_symm_apply] at hw
   rw [rationalLocalizationPoint, comap_hom_comap_hom, Category.assoc, Iso.inv_hom_id,
     Category.comp_id, CommRingCat.hom_ofHom]
-  have hxw := congrArg (fun y ↦ y.1.1) hw
+  have hxw := congrArg (fun y ↦ y.val.val) hw
   simp only [spaLocToRationalSubset_val, spaComapLoc_val] at hxw
   exact hxw.symm
 
@@ -110,9 +110,9 @@ private theorem comap_ringHomOfRationalSubsetSubset_symm (hP : P.ringOfDefinitio
     comap (ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
         q.num q.den _ q.hasDenominatorPower h)
       ((spaCompletedLocalizationHomeomorph P Aplus hP q.num q.den _ q.hasDenominatorPower).symm
-        ⟨x, mem_spaBasicOpen.mp hx⟩).1 =
+        ⟨x, mem_spaBasicOpen.mp hx⟩).val =
       ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _ p.hasDenominatorPower).symm
-        ⟨x, h (mem_spaBasicOpen.mp hx)⟩).1 := by
+        ⟨x, h (mem_spaBasicOpen.mp hx)⟩).val := by
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
