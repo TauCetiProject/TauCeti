@@ -73,6 +73,14 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 
 ## Main results
 
+* `TauCeti.SectionChartData.lowerOrdersL_lowerOrdersL`: order inclusions compose.
+* `TauCeti.SectionChartData.chartValueL_eqRec`, `TauCeti.SectionChartData.value_eqRec`:
+  chart and scalar readings respect order transport.
+* `TauCeti.SectionChartData.chartValueL_lowerOrdersL`,
+  `TauCeti.SectionChartData.value_lowerOrdersL`:
+  order inclusions preserve chart data and scalar component values.
+* `TauCeti.SectionChartData.lowerOrdersL_constMapL`: order inclusions commute with constant
+  fibre maps.
 * `TauCeti.SectionChartData.mem_sobolevSections_iff_forall_compatible`: a tuple consists of the
   components of a section exactly when its chart data satisfy the cocycle relations.
 * `TauCeti.SectionChartData.aeTransition_of_differentiableOn`: differentiable chart transitions
@@ -624,10 +632,7 @@ theorem lowerOrdersL_succ (d : ℕ) :
     C.lowerOrdersL μ p k (d + 1) = (C.lowerOrdersL μ p k d).comp (C.lowerOrderL μ p (k + d)) :=
   (rfl)
 
-@[simp]
-theorem lowerOrdersL_one (w : C.sobolevSections μ p (k + 1)) :
-    C.lowerOrdersL μ p k 1 w = C.lowerOrderL μ p k w :=
-  (rfl)
+theorem lowerOrdersL_one : C.lowerOrdersL μ p k 1 = C.lowerOrderL μ p k := by rfl
 
 /-- Forgetting the highest derivatives does not change the chart data. -/
 @[simp]
@@ -644,6 +649,57 @@ theorem chartValuesL_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d))
 theorem lowerOrdersL_injective (d : ℕ) : Function.Injective (C.lowerOrdersL μ p k d) :=
   fun w w' h ↦ C.chartValuesL_injective μ p (k + d) <| by
     simpa using congrArg (C.chartValuesL μ p k) h
+
+/-- Lowering the order preserves the chart reading in each chart. -/
+@[simp]
+theorem chartValueL_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d)) (i : Fin C.n) :
+    C.chartValueL μ p k i (C.lowerOrdersL μ p k d w) = C.chartValueL μ p (k + d) i w := by
+  simpa only [chartValuesL_apply] using congrFun (C.chartValuesL_lowerOrdersL μ p k d w) i
+
+/-- Lowering the order preserves the scalar `Lᵖ` component values. -/
+@[simp]
+theorem value_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d)) (i : Fin C.n)
+    (j : Fin (finrank ℝ F)) :
+    Wkp.value k ((C.lowerOrdersL μ p k d w : C.SobolevData μ p k) i j) =
+      Wkp.value (k + d) ((w : C.SobolevData μ p (k + d)) i j) := by
+  induction d with
+  | zero => rfl
+  | succ d ih =>
+    rw [lowerOrdersL_succ, ContinuousLinearMap.comp_apply, ih, lowerOrderL_apply]
+    exact (Wkp.value_succ (k + d) ((w : C.SobolevData μ p (k + (d + 1))) i j)).symm
+
+/-- Chart data are unchanged by equality transport of the Sobolev order. -/
+@[simp]
+theorem chartValuesL_eqRec {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a) :
+    C.chartValuesL μ p b (h ▸ w) = C.chartValuesL μ p a w := by
+  subst b
+  rfl
+
+/-- A reading in one chart is unchanged by equality transport of the Sobolev order. -/
+@[simp]
+theorem chartValueL_eqRec {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a)
+    (i : Fin C.n) :
+    C.chartValueL μ p b i (h ▸ w : C.sobolevSections μ p b) =
+      C.chartValueL μ p a i w := by
+  simpa only [chartValuesL_apply] using congrFun (C.chartValuesL_eqRec μ p h w) i
+
+/-- Scalar component values are unchanged by equality transport of the Sobolev order. -/
+@[simp]
+theorem value_eqRec {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a)
+    (i : Fin C.n) (j : Fin (finrank ℝ F)) :
+    Wkp.value b (((h ▸ w : C.sobolevSections μ p b) : C.SobolevData μ p b) i j) =
+      Wkp.value a ((w : C.SobolevData μ p a) i j) := by
+  subst b
+  rfl
+
+/-- Order inclusions compose, with the source order reassociated by `Nat.add_assoc`. -/
+@[simp]
+theorem lowerOrdersL_lowerOrdersL (d e : ℕ) (w : C.sobolevSections μ p ((k + d) + e)) :
+    C.lowerOrdersL μ p k d (C.lowerOrdersL μ p (k + d) e w) =
+      C.lowerOrdersL μ p k (d + e) ((Nat.add_assoc k d e) ▸ w) := by
+  apply C.chartValuesL_injective μ p k
+  rw [chartValuesL_lowerOrdersL, chartValuesL_lowerOrdersL,
+    chartValuesL_lowerOrdersL, chartValuesL_eqRec]
 
 section ConstMap
 
@@ -747,15 +803,19 @@ theorem chartValueL_constMapL_ae_coord {L : F →L[ℝ] F} {Ψ : S → S}
       C.coord i (Ψ s) :=
   chartValueL_constMapData_ae_coord (hΨ i s) hw
 
-variable {C} in
-/-- Forgetting the highest derivative commutes with a constant fibre map. -/
-theorem lowerOrderL_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
+/-- Lowering the order commutes with a fibre map read by a constant matrix in every chart. -/
+theorem lowerOrdersL_constMapL (d : ℕ) {L : F →L[ℝ] F} {Ψ : S → S}
     (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
-    (w : C.sobolevSections μ p (k + 1)) :
-    C.lowerOrderL μ p k (constMapL μ p (k + 1) L Ψ hΨ w) =
-      constMapL μ p k L Ψ hΨ (C.lowerOrderL μ p k w) := by
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
-  simp [← Wkp.lowerOrderL_apply]
+    (w : C.sobolevSections μ p (k + d)) :
+    C.lowerOrdersL μ p k d (constMapL μ p (k + d) L Ψ hΨ w) =
+      constMapL μ p k L Ψ hΨ (C.lowerOrdersL μ p k d w) := by
+  apply eq_of_chartValueL_ae_eq
+  intro i
+  rw [chartValueL_lowerOrdersL]
+  have h₁ := chartValueL_constMapL_ae μ p (k + d) hΨ w i
+  have h₂ := chartValueL_constMapL_ae μ p k hΨ (C.lowerOrdersL μ p k d w) i
+  rw [chartValueL_lowerOrdersL] at h₂
+  exact h₁.trans h₂.symm
 
 end ConstMap
 

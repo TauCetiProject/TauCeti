@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Stabilizer
+public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Pi.Basic
 import TauCeti.RepresentationTheory.Quotient
 
@@ -18,25 +20,24 @@ and conjugation by group elements. This file supplies the remaining structural i
 compute vector stabilizers across standard constructions on representations:
 
 * subrepresentations (`Subrepresentation.stabilizer_toRepresentation`), injective intertwining maps
-  (`Representation.IntertwiningMap.stabilizer_eq_of_injective`), and equivalences
+  (`Representation.IntertwiningMap.stabilizer_apply_of_injective`), and equivalences
   (`Representation.Equiv.stabilizer_apply`);
 * restriction along a group homomorphism (`Representation.stabilizer_comp`), trivial and
   subsingleton representations, binary and arbitrary products (`Representation.stabilizer_prod`,
   `Representation.stabilizer_pi`), and quotients (`Representation.le_stabilizer_quotient_mk`,
   `Subrepresentation.le_stabilizer_quotient_mk`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
-  `Representation.stabilizer_leftRegular_single`, `Representation.finite_stabilizer_leftRegular`,
-  trivial subgroup restrictions `Representation.isTrivial_comp_subtype_iff` and
-  `Representation.le_stabilizer_of_isTrivial_comp_subtype`, and coset permutation modules
-  `A[G ⧸ N]`);
-* the Galois-style correspondence `H ≤ ρ.stabilizer v ↔ v ∈ invariants (ρ.comp H.subtype)`
-  linking stabilizers to subgroup invariants
-  (`Representation.le_stabilizer_iff_mem_invariants_comp_subtype`).
+  `Representation.stabilizer_leftRegular_single`, `Representation.finite_stabilizer_leftRegular`),
+  trivial subgroup restrictions (`Representation.isTrivial_comp_subtype_iff` and
+  `Representation.le_stabilizer_of_isTrivial_comp_subtype`), and coset permutation modules
+  `A[G ⧸ N]`;
+* the Galois-style correspondence `v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v`
+  linking stabilizers to subgroup invariants (`Representation.mem_invariants_comp_subtype_iff`).
 
 ## Main results
 
 * `Subrepresentation.stabilizer_toRepresentation`
-* `Representation.IntertwiningMap.stabilizer_eq_of_injective`
+* `Representation.IntertwiningMap.stabilizer_apply_of_injective`
 * `Representation.Equiv.stabilizer_apply`
 * `Representation.stabilizer_comp`
 * `Representation.stabilizer_prod` and `Representation.stabilizer_pi`
@@ -45,7 +46,7 @@ compute vector stabilizers across standard constructions on representations:
 * `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`
-* `Representation.le_stabilizer_iff_mem_invariants_comp_subtype`
+* `Representation.mem_invariants_comp_subtype_iff`
 -/
 
 public section
@@ -54,15 +55,15 @@ open scoped MonoidAlgebra
 
 namespace Subrepresentation
 
-/-- Restricting a representation to a subrepresentation leaves the stabilizer of each vector
-unchanged. -/
+/-- The stabilizer of a vector of a subrepresentation is its stabilizer in the ambient
+representation. -/
 @[simp]
 theorem stabilizer_toRepresentation {A G V : Type*} [Semiring A] [Group G]
-    [AddCommMonoid V] [Module A V] {ρ : Representation A G V} (S : Subrepresentation ρ)
-    (v : S.toSubmodule) :
-    S.toRepresentation.stabilizer v = ρ.stabilizer (v : V) := by
+    [AddCommMonoid V] [Module A V] {ρ : Representation A G V} (ρ' : Subrepresentation ρ)
+    (v : ρ'.toSubmodule) : ρ'.toRepresentation.stabilizer v = ρ.stabilizer v := by
   ext g
-  simp [Subrepresentation.toRepresentation_apply_coe]
+  rw [Representation.mem_stabilizer, Representation.mem_stabilizer,
+    Subrepresentation.toRepresentation_apply_coe]
 
 /-- Taking the quotient by a subrepresentation can only enlarge the stabilizer of a vector. -/
 theorem le_stabilizer_quotient_mk {A G V : Type*} [Ring A] [Group G]
@@ -80,26 +81,24 @@ section Semiring
 
 variable {A G H V W : Type*} [Semiring A] [Group G] [Group H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- The carrier of `ρ.stabilizer v` is `{g : G | ρ g v = v}`. -/
 theorem coe_stabilizer (ρ : Representation A G V) (v : V) :
     ((ρ.stabilizer v : Subgroup G) : Set G) = {g : G | ρ g v = v} :=
   (rfl)
 
-/-- An injective intertwining map preserves the stabilizer of every vector. -/
-theorem IntertwiningMap.stabilizer_eq_of_injective {ρ : Representation A G V}
-    {σ : Representation A G W} (f : ρ.IntertwiningMap σ) (hf : Function.Injective f) (v : V) :
-    σ.stabilizer (f v) = ρ.stabilizer v := by
-  refine le_antisymm (fun g hg ↦ ?_) (f.stabilizer_le v)
-  rw [mem_stabilizer] at hg ⊢
-  exact hf ((IntertwiningMap.isIntertwining _ _ f g v).trans hg)
+/-- The stabilizers of an injective intertwining map agree with those of its source. -/
+theorem IntertwiningMap.stabilizer_apply_of_injective (f : ρ.IntertwiningMap σ)
+    (hf : Function.Injective f) (v : V) : σ.stabilizer (f v) = ρ.stabilizer v := by
+  ext g
+  rw [mem_stabilizer, mem_stabilizer, ← f.isIntertwining, hf.eq_iff]
 
 /-- An equivalence of representations preserves vector stabilizers. -/
 @[simp]
-theorem Equiv.stabilizer_apply {ρ : Representation A G V} {σ : Representation A G W}
-    (e : ρ.Equiv σ) (v : V) :
+theorem Equiv.stabilizer_apply (e : ρ.Equiv σ) (v : V) :
     σ.stabilizer (e v) = ρ.stabilizer v :=
-  e.toIntertwiningMap.stabilizer_eq_of_injective e.injective v
+  e.toIntertwiningMap.stabilizer_apply_of_injective e.injective v
 
 /-- Restricting a representation along a group homomorphism pulls back vector stabilizers. -/
 @[simp]
@@ -128,7 +127,7 @@ theorem stabilizer_eq_top_of_subsingleton (ρ : Representation A G V) [Subsingle
 component stabilizers. -/
 @[simp]
 theorem stabilizer_prod (ρ : Representation A G V) (σ : Representation A G W) (x : V × W) :
-    (ρ.prod σ).stabilizer x = ρ.stabilizer x.1 ⊓ σ.stabilizer x.2 := by
+    (ρ.prod σ).stabilizer x = ρ.stabilizer x.fst ⊓ σ.stabilizer x.snd := by
   ext g
   simp [Prod.ext_iff]
 
@@ -153,13 +152,13 @@ theorem le_stabilizer_ofMulAction_single (x : X) (a : A) :
   rw [mem_stabilizer]
   simp [MulAction.mem_stabilizer_iff.mp hg]
 
-/-- In a permutation representation `A[X]`, the stabilizer of a nonzero monomial `single x a` is
-the point stabilizer of `x` in `G`. -/
-@[simp]
-theorem stabilizer_ofMulAction_single (x : X) {a : A} (ha : a ≠ 0) :
-    (ofMulAction A G X).stabilizer (MonoidAlgebra.single x a) = MulAction.stabilizer G x := by
+/-- The stabilizer of a basis vector of a permutation representation is the stabilizer of the
+point, for nonzero coefficient. -/
+theorem stabilizer_ofMulAction_single (x : X) {r : A} (hr : r ≠ 0) :
+    (ofMulAction A G X).stabilizer (MonoidAlgebra.single x r) = MulAction.stabilizer G x := by
   ext g
-  simp [MonoidAlgebra.single_left_inj ha]
+  rw [mem_stabilizer, ofMulAction_single, MonoidAlgebra.single_left_inj hr,
+    MulAction.mem_stabilizer_iff]
 
 end MulAction
 
@@ -167,7 +166,8 @@ end MulAction
 stabilizer. -/
 theorem stabilizer_leftRegular_single (g : G) {a : A} (ha : a ≠ 0) :
     (leftRegular A G).stabilizer (MonoidAlgebra.single g a) = ⊥ := by
-  simp [ha]
+  rw [leftRegular, stabilizer_ofMulAction_single _ ha]
+  simp
 
 /-- **Every nonzero vector in the left regular representation has finite stabilizer.** -/
 theorem finite_stabilizer_leftRegular {x : A[G]} (hx : x ≠ 0) :
@@ -216,13 +216,13 @@ end Ring
 section CommRing
 
 variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
+  {ρ : Representation A G V}
 
-/-- A subgroup `H ≤ G` fixes a vector `v` (that is, `H ≤ ρ.stabilizer v`) if and only if `v` lies
-in the `H`-invariants `invariants (ρ.comp H.subtype)`. -/
-theorem le_stabilizer_iff_mem_invariants_comp_subtype (ρ : Representation A G V)
-    (H : Subgroup G) (v : V) :
-    H ≤ ρ.stabilizer v ↔ v ∈ invariants (ρ.comp H.subtype) := by
-  simp [IsConcreteLE.le_iff]
+/-- A vector is invariant under the restriction of `ρ` to a subgroup `H` exactly when `H` lies in
+its stabilizer. -/
+theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
+    v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v := by
+  simp [mem_invariants, IsConcreteLE.le_iff]
 
 end CommRing
 

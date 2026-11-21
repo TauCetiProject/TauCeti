@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.IsLocalHomeomorph
+public import Mathlib.Topology.LocalAtTarget
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Topology.SeparatedMap
 
@@ -16,7 +17,10 @@ public import TauCeti.Topology.SeparatedMap
 # Local homeomorphisms: path-connectedness, local inverses, fiber sums, products, base change
 
 A map that is a local homeomorphism at each point of an open set sends that set to an open set.
-Being a local homeomorphism at a point only depends on the germ of the map there.
+Being a local homeomorphism at a point only depends on the germ of the map there. A continuous
+closed map that sends the preimage of an open set bijectively onto it restricts to a homeomorphism
+there, so it is a local homeomorphism on that preimage; this is how the local degree of a map of
+spheres is read at a point with a single preimage nearby.
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -45,6 +49,8 @@ groupoid.
   set.
 * `IsLocalHomeomorphOn.congr_of_eventuallyEq`: being a local homeomorphism at a point depends only
   on the germ of the map there.
+* `IsClosedMap.isLocalHomeomorphOn_preimage`: a continuous closed map that sends the preimage of
+  an open set bijectively onto it is a local homeomorphism on that preimage.
 * `IsLocalHomeomorph.locallyPathConnectedSpace`: the domain of a local homeomorphism into a
   locally path-connected space is locally path-connected.
 * `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
@@ -88,6 +94,23 @@ theorem _root_.IsLocalHomeomorphOn.congr_of_eventuallyEq {f g : E → B} {s : Se
   refine ⟨e.restrOpen U hUo, by simpa using ⟨hxe, hxU⟩, fun z hz ↦ ?_⟩
   rw [OpenPartialHomeomorph.restrOpen_source] at hz
   rw [← hfgU z hz.2, he, OpenPartialHomeomorph.coe_restrOpen]
+
+/-- **A closed map is a local homeomorphism over an open set it covers bijectively.** If a
+continuous closed map `f` sends the preimage of an open set `V` bijectively onto `V`, then it
+restricts to a homeomorphism `f⁻¹(V) ≃ₜ V`, so it is a local homeomorphism at every point of
+`f⁻¹(V)`. Every continuous map from a compact space to a Hausdorff space is closed, so for such a
+map it suffices that each point of `V` have exactly one preimage. -/
+theorem _root_.IsClosedMap.isLocalHomeomorphOn_preimage {f : E → B} (hf : Continuous f)
+    (hcl : IsClosedMap f) {V : Set B} (hV : IsOpen V) (hbij : Set.BijOn f (f ⁻¹' V) V) :
+    IsLocalHomeomorphOn f (f ⁻¹' V) := by
+  -- The restriction `f⁻¹(V) → V` is a continuous closed bijection, hence a homeomorphism.
+  -- `V.restrictPreimage f` is by definition `(mapsTo_preimage f V).restrict`, which is the map
+  -- `hbij.mapsTo.restrict` that `Set.BijOn.bijective` proves bijective.
+  have hres : Function.Bijective (V.restrictPreimage f) := hbij.bijective
+  let e := (Equiv.ofBijective _ hres).toHomeomorphOfContinuousClosed
+    hf.restrictPreimage (hcl.restrictPreimage V)
+  exact (isLocalHomeomorphOn_iff_isOpenEmbedding_restrict _).2 fun x hx ↦
+    ⟨f ⁻¹' V, (hV.preimage hf).mem_nhds hx, hV.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding⟩
 
 /-- **A local homeomorphism with locally path-connected codomain has locally path-connected
 domain.** In particular the total space of a covering of a locally path-connected space is
