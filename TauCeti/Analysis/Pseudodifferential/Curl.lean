@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.DeRhamSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The principal symbol of the curl in dimension three
@@ -81,7 +82,7 @@ private def curlLinear {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ
 
 private theorem curlLinear_apply {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [FiniteDimensional ℝ E] [Fact (finrank ℝ E = 3)] (o : Orientation ℝ E (Fin 3))
-    (h : 2 + 1 = finrank ℝ E) (ξ : E) :
+    (h : 2 + 1 = finrank ℝ E := (Fact.out : finrank ℝ E = 3).symm) (ξ : E) :
     curlLinear o ξ = Complex.I • (LinearMap.toContinuousLinearMap
       ((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ
         ExteriorAlgebra.wedgeLeft ξ 1)).complexifyL2 := by
@@ -104,22 +105,24 @@ def curl : HomogeneousSymbol X E (WithLp 2 (Complexification (⋀[ℝ]^1 E)))
 variable {X o}
 
 /-- The value of the symbol of the curl at `(x, ξ)` is the complexification of `i ⋆ (ξ ∧ ·)`. -/
-theorem coefficient_curl (h : 2 + 1 = finrank ℝ E) (p : X × E) :
+@[simp]
+theorem coefficient_curl (p : X × E) :
     (curl X o).coefficient p = Complex.I • (LinearMap.toContinuousLinearMap
-      ((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ
+      ((o.hodgeStar (k := 2) (l := 1) (Fact.out : finrank ℝ E = 3).symm :
+          ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ
         ExteriorAlgebra.wedgeLeft p.2 1)).complexifyL2 := by
-  rw [curl, coefficient_ofLinear, curlLinear_apply o h]
+  rw [curl, coefficient_ofLinear, curlLinear_apply o]
 
 /-- **The curl is `⋆ d` on `1`-forms**: its symbol is the complexified Hodge star
 `⋀² E → ⋀¹ E` composed with the symbol of the exterior derivative on `1`-forms. -/
-theorem coefficient_curl_eq_comp (h : 2 + 1 = finrank ℝ E) (p : X × E) :
+theorem coefficient_curl_eq_comp (p : X × E) :
     (curl X o).coefficient p =
-      (LinearMap.toContinuousLinearMap (o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E)).complexifyL2 ∘L
+      (LinearMap.toContinuousLinearMap
+        (o.hodgeStar (k := 2) (l := 1) (Fact.out : finrank ℝ E = 3).symm :
+          ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E)).complexifyL2 ∘L
         (extDeriv X E 1).coefficient p := by
-  rw [coefficient_curl h, coefficient_extDeriv, ContinuousLinearMap.comp_smul,
-    ← ContinuousLinearMap.complexifyL2_comp]
-  -- `LinearMap.toContinuousLinearMap` of a composition is the composition, by definition.
-  rfl
+  rw [coefficient_curl, coefficient_extDeriv, ContinuousLinearMap.comp_smul,
+    ← ContinuousLinearMap.complexifyL2_comp, LinearMap.toContinuousLinearMap_comp]
 
 /-- **The symbol of the curl is self-adjoint**: `(i ξ × ·)† = -i (-ξ × ·)`. -/
 @[simp]
@@ -134,7 +137,7 @@ theorem adjoint_curl : (curl X o).adjoint = curl X o := by
         -((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ ExteriorAlgebra.wedgeLeft p.2 1) := by
     rw [o.adjoint_hodgeStar_comp_wedgeLeft p.2 (k := 1) h, pow_one]
     exact neg_one_smul ℝ _
-  rw [coefficient_adjoint, coefficient_curl h, ContinuousLinearMap.adjoint.map_smulₛₗ,
+  rw [coefficient_adjoint, coefficient_curl, ContinuousLinearMap.adjoint.map_smulₛₗ,
     ContinuousLinearMap.adjoint_complexifyL2, ← LinearMap.adjoint_toContinuousLinearMap, hskew]
   simp
 
@@ -143,7 +146,7 @@ theorem adjoint_curl : (curl X o).adjoint = curl X o := by
 theorem curl_comp_extDeriv_zero : (curl X o).comp (extDeriv X E 0) = 0 := by
   ext1
   funext p
-  rw [coefficient_comp, coefficient_curl_eq_comp (Fact.out : finrank ℝ E = 3).symm,
+  rw [coefficient_comp, coefficient_curl_eq_comp,
     ContinuousLinearMap.comp_assoc, ← coefficient_comp, extDeriv_comp_extDeriv]
   simp
 
@@ -173,7 +176,7 @@ theorem adjoint_curl_comp_curl :
       ContinuousLinearMap.complexifyL2_id]
   ext1
   funext p
-  simp only [coefficient_comp, coefficient_adjoint, coefficient_curl_eq_comp h,
+  simp only [coefficient_comp, coefficient_adjoint, coefficient_curl_eq_comp,
     ContinuousLinearMap.adjoint_comp]
   rw [ContinuousLinearMap.comp_assoc,
     ← ContinuousLinearMap.comp_assoc _ _ ((extDeriv X E 1).coefficient p), hS,
@@ -256,6 +259,15 @@ def curl : ClassicalSymbol n (WithLp 2 (Complexification (⋀[ℝ]^1 (Coordinate
 @[simp]
 theorem principal_curl : (curl o).principal = HomogeneousSymbol.curl _ o := by
   rw [curl, principal_ofLinear, HomogeneousSymbol.curl]
+
+/-- The full symbol of the curl is `i ⋆ (ξ ∧ ·)`, the symbol `i ξ × ·`, at every point. -/
+@[simp]
+theorem coefficient_toSymbol_curl (p : CoordinateSpace n × CoordinateSpace n) :
+    (curl o).toSymbol.coefficient p = Complex.I • (LinearMap.toContinuousLinearMap
+      ((o.hodgeStar (k := 2) (l := 1) (Fact.out : finrank ℝ (CoordinateSpace n) = 3).symm :
+          ⋀[ℝ]^2 (CoordinateSpace n) →ₗ[ℝ] ⋀[ℝ]^1 (CoordinateSpace n)) ∘ₗ
+        ExteriorAlgebra.wedgeLeft p.2 1)).complexifyL2 := by
+  rw [curl, coefficient_toSymbol_ofLinear, curlLinear_apply o]
 
 /-- **The curl is a pseudodifferential operator**: on Schwartz input the quantization of
 `ClassicalSymbol.curl` is the curl `u ↦ ∑ⱼ ⋆ (eⱼ ∧ ∂ⱼ u)`, with no smoothing remainder. -/

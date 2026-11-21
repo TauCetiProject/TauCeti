@@ -198,9 +198,11 @@ theorem inner_hodgeStar_wedgeLeft (u : V) {k l : ℕ} (hkl : k + 1 + l = finrank
   -- the star with `koszulDifferential_hodgeStar`.
   rw [o.inner_hodgeStar_left hkl (by omega : l + (k + 1) = finrank ℝ V),
     inner_wedgeLeft_eq_inner_koszulDifferential, o.koszulDifferential_hodgeStar u _ hlk,
-    real_inner_smul_right, ← mul_assoc, ← pow_add,
-    show (k + 1) * l + l = k * l + 2 * l by ring, pow_add, pow_mul]
-  simp
+    real_inner_smul_right, ← mul_assoc]
+  -- The sign is `(-1) ^ ((k + 1) l) (-1) ^ l = (-1) ^ (k l)`.
+  have hsign : (-1 : ℝ) ^ ((k + 1) * l) * (-1) ^ l = (-1) ^ (k * l) := by
+    rcases Nat.even_or_odd l with hl | hl <;> simp [add_mul, pow_add, hl.neg_one_pow]
+  rw [hsign]
 
 /-- **The adjoint of `⋆(u ∧ ·)`**: on `⋀ᵏ V` with `k + 1 + k = finrank ℝ V`, the map
 `x ↦ ⋆(u ∧ x)` is symmetric for even `k` and skew-adjoint for odd `k`. In dimension three, on

@@ -355,7 +355,7 @@ private theorem differentialSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V 
   congr 1
   simp only [EuclideanSpace.inner_single_right, one_mul, RCLike.conj_to_real, Finset.prod_const,
     Finset.card_univ, Fintype.card_fin, pow_one]
-  rw [mul_right_comm, mul_neg, Complex.I_mul_I, neg_neg, one_mul]
+  linear_combination -(p.2.ofLp j : ℂ) * Complex.I_mul_I
 
 /-- **First-order operators with constant coefficients are pseudodifferential operators.** On
 Schwartz input, the quantization of `ClassicalSymbol.ofLinear L` is `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`, with no
