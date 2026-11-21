@@ -27,7 +27,6 @@ canonically isomorphic to the right dual `(F.obj X)ᘁ` of its image
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
 preserve the pivotal structure. They are also natural in the functor: a monoidal natural
-<<<<<<< HEAD
 transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`, and dually for left
 duals. Moreover, for any exact pairing `(X, Y)` in `C`, the explicit mate of `τ_X` is a two-sided
 inverse to `τ_Y`, so every monoidal natural transformation between strong monoidal functors out of
@@ -37,11 +36,6 @@ a left or right rigid category is an isomorphism
 the component of a monoidal natural transformation `F ⟶ G` at one member of an exact pairing
 determines its component at the other (`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
 `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`).
-=======
-transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`. Likewise the image
-`F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
-(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations.
->>>>>>> origin/main
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
 `κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 

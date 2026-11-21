@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
-public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.ProjectObj
+public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Evaluation
 public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Basic
 
 /-!
@@ -291,12 +291,12 @@ theorem as_leftDual (X : S.FreeRigid) : (ᘁX).as = X.as.leftDual := rfl
 /-- Interpreting a formal rigid object expression via the generating objects of `S.FreeRigid`
 recovers the object wrapping that expression. -/
 @[simp]
-theorem projectObj_of_eq (X : RigidObject S.Obj) :
-    RigidObject.projectObj (of (S := S)) X = ⟨X⟩ := by
+theorem eval_of_eq (X : RigidObject S.Obj) :
+    RigidObject.eval (of (S := S)) X = ⟨X⟩ := by
   induction X with
   | of _ | unit => rfl
-  | tensor _ _ ihX ihY => dsimp only [RigidObject.projectObj]; rw [ihX, ihY]; rfl
-  | rightDual _ ih | leftDual _ ih => dsimp only [RigidObject.projectObj]; rw [ih]; rfl
+  | tensor _ _ ihX ihY => dsimp only [RigidObject.eval]; rw [ihX, ihY]; rfl
+  | rightDual _ ih | leftDual _ ih => dsimp only [RigidObject.eval]; rw [ih]; rfl
 
 /-- The morphism of `S.FreeRigid` represented by a formal morphism expression. -/
 abbrev homMk {X Y : S.FreeRigid} (f : Hom X.as Y.as) : X ⟶ Y := ⟦f⟧
@@ -421,9 +421,11 @@ variable (S : TensorSignature.{u, v})
 theorem projectObj_of_eq (W : FreeMonoidalCategory S.Obj) :
     FreeMonoidalCategory.projectObj
         (fun a : S.Obj ↦ DualitySignature.FreeRigid.of (S := S.toDualitySignature) a) W =
-      ⟨W.toRigidObject⟩ :=
-  (RigidObject.projectObj_toRigidObject _ W).symm.trans
-    (DualitySignature.FreeRigid.projectObj_of_eq (S := S.toDualitySignature) W.toRigidObject)
+      ⟨W.toRigidObject⟩ := by
+  induction W with
+  | of _ => simp [FreeMonoidalCategory.projectObj]; rfl
+  | unit => simp [FreeMonoidalCategory.projectObj]; rfl
+  | tensor _ _ ihX ihY => simp [FreeMonoidalCategory.projectObj, ihX, ihY]; rfl
 
 /-- The canonical strong monoidal functor embedding the free monoidal category on a tensor signature
 `S` into the free rigid category on `S.toDualitySignature`, obtained by the universal lift of

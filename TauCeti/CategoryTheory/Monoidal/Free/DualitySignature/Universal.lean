@@ -52,13 +52,13 @@ variable {S : DualitySignature.{u, v}}
 section Lift
 
 variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [RigidCategory D] (fo : S.Obj → D)
-  (fc : ∀ g : S.Coupon, RigidObject.projectObj fo (S.src g) ⟶ RigidObject.projectObj fo (S.tgt g))
+  (fc : ∀ g : S.Coupon, RigidObject.eval fo (S.src g) ⟶ RigidObject.eval fo (S.tgt g))
 
 /-- Interpret a formal morphism expression in `D`, given interpretations `fo` of generating objects
 and `fc` of coupons. Auxiliary definition for `FreeRigid.liftMap`. -/
 private noncomputable def liftMapAux :
     ∀ {X Y : RigidObject S.Obj}, Hom X Y →
-      (RigidObject.projectObj fo X ⟶ RigidObject.projectObj fo Y)
+      (RigidObject.eval fo X ⟶ RigidObject.eval fo Y)
   | _, _, Hom.id _ => 𝟙 _
   | _, _, Hom.α_hom _ _ _ => (α_ _ _ _).hom
   | _, _, Hom.α_inv _ _ _ => (α_ _ _ _).inv
@@ -67,17 +67,17 @@ private noncomputable def liftMapAux :
   | _, _, Hom.ρ_hom _ => (ρ_ _).hom
   | _, _, Hom.ρ_inv _ => (ρ_ _).inv
   | _, _, Hom.rightCoevaluation X =>
-    η_ (RigidObject.projectObj fo X) ((RigidObject.projectObj fo X)ᘁ)
+    η_ (RigidObject.eval fo X) ((RigidObject.eval fo X)ᘁ)
   | _, _, Hom.rightEvaluation X =>
-    ε_ (RigidObject.projectObj fo X) ((RigidObject.projectObj fo X)ᘁ)
+    ε_ (RigidObject.eval fo X) ((RigidObject.eval fo X)ᘁ)
   | _, _, Hom.leftCoevaluation X =>
-    η_ (ᘁ(RigidObject.projectObj fo X)) (RigidObject.projectObj fo X)
+    η_ (ᘁ(RigidObject.eval fo X)) (RigidObject.eval fo X)
   | _, _, Hom.leftEvaluation X =>
-    ε_ (ᘁ(RigidObject.projectObj fo X)) (RigidObject.projectObj fo X)
+    ε_ (ᘁ(RigidObject.eval fo X)) (RigidObject.eval fo X)
   | _, _, Hom.coupon g => fc g
   | _, _, Hom.comp f g => liftMapAux f ≫ liftMapAux g
-  | _, _, Hom.whiskerLeft X p => RigidObject.projectObj fo X ◁ liftMapAux p
-  | _, _, Hom.whiskerRight p X => liftMapAux p ▷ RigidObject.projectObj fo X
+  | _, _, Hom.whiskerLeft X p => RigidObject.eval fo X ◁ liftMapAux p
+  | _, _, Hom.whiskerRight p X => liftMapAux p ▷ RigidObject.eval fo X
   | _, _, Hom.tensor f g => liftMapAux f ⊗ₘ liftMapAux g
 
 /-- The interpretation of formal morphism expressions respects the monoidal and zigzag axioms. -/
@@ -107,19 +107,19 @@ private theorem liftMapAux_sound {X Y : RigidObject S.Obj} {f g : Hom X Y} (h : 
   | pentagon => exact MonoidalCategory.pentagon _ _ _ _
   | triangle => exact MonoidalCategory.triangle _ _
   | right_coevaluation_evaluation X =>
-    exact ExactPairing.coevaluation_evaluation _ ((RigidObject.projectObj fo X)ᘁ)
+    exact ExactPairing.coevaluation_evaluation _ ((RigidObject.eval fo X)ᘁ)
   | right_evaluation_coevaluation X =>
-    exact ExactPairing.evaluation_coevaluation _ ((RigidObject.projectObj fo X)ᘁ)
+    exact ExactPairing.evaluation_coevaluation _ ((RigidObject.eval fo X)ᘁ)
   | left_coevaluation_evaluation X =>
-    exact ExactPairing.coevaluation_evaluation (ᘁ(RigidObject.projectObj fo X)) _
+    exact ExactPairing.coevaluation_evaluation (ᘁ(RigidObject.eval fo X)) _
   | left_evaluation_coevaluation X =>
-    exact ExactPairing.evaluation_coevaluation (ᘁ(RigidObject.projectObj fo X)) _
+    exact ExactPairing.evaluation_coevaluation (ᘁ(RigidObject.eval fo X)) _
 
 /-- The interpretation of morphisms of `S.FreeRigid`, given the images `fo` of generating objects
 and `fc` of coupons. This is the morphism map of `FreeRigid.lift`; compute it via the `lift_map_*`
 lemmas. -/
 noncomputable def liftMap {X Y : S.FreeRigid} (f : X ⟶ Y) :
-    RigidObject.projectObj fo X.as ⟶ RigidObject.projectObj fo Y.as :=
+    RigidObject.eval fo X.as ⟶ RigidObject.eval fo Y.as :=
   Quotient.lift (liftMapAux fo fc) (fun _ _ h ↦ liftMapAux_sound fo fc h) f
 
 theorem liftMap_id (X : S.FreeRigid) : liftMap fo fc (𝟙 X) = 𝟙 _ := by rfl
@@ -132,7 +132,7 @@ theorem liftMap_comp {X Y Z : S.FreeRigid} (f : X ⟶ Y) (g : Y ⟶ Z) :
 category `D`, determined by the images `fo` of generating objects and `fc` of coupons. Its unit,
 tensor and dual comparison isomorphisms are all identities. -/
 @[expose] noncomputable def lift : S.FreeRigid ⥤ D where
-  obj X := RigidObject.projectObj fo X.as
+  obj X := RigidObject.eval fo X.as
   map := liftMap fo fc
   map_id := liftMap_id fo fc
   map_comp := liftMap_comp fo fc
