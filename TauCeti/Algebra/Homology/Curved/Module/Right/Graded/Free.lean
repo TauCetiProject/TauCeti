@@ -294,6 +294,18 @@ def freeObj : CurvedDGRightModuleCat.{uR, uA, uM} h where
   differential := freeDifferential h V
   isCurvedDGRightModule := isCurvedDGRightModule_freeCarrier h V
 
+/-- The `R`-linear equivalence identifying the carrier of `freeObj h V` with `V × V`. -/
+def freeEquiv : freeObj h V ≃ₗ[R] V × V :=
+  freeProdLinearEquiv h V
+
+/-- An element of `freeObj h V` has degree `p` iff its two components lie in `V_p` and
+`V_{p - 1}`. -/
+@[simp]
+theorem mem_freeObj_grading_iff {p : ℤ} {x : freeObj h V} :
+    x ∈ (freeObj h V).grading p ↔
+      (freeEquiv h V x).1 ∈ V.grading.piece p ∧ (freeEquiv h V x).2 ∈ V.grading.piece (p - 1) :=
+  mem_freeInternalGrading_piece_iff h V p x
+
 /-- The right `A`-linear generator inclusion `V →ₗ[Aᵐᵒᵖ] freeObj h V`. -/
 def freeι : V →ₗ[Aᵐᵒᵖ] freeObj h V where
   toFun v := (⟨v, 0⟩ : FreeCarrier h V)
@@ -304,6 +316,18 @@ def freeι : V →ₗ[Aᵐᵒᵖ] freeObj h V where
       change z • v = z • v - op (d z.unop) • V.grading.koszulTwist 1 (0 : V)
       simp)
     (smul_zero z).symm
+
+/-- Evaluating `freeEquiv` on `freeι h V v` gives `(v, 0)`. -/
+@[simp]
+theorem freeEquiv_freeι (v : V) : freeEquiv h V (freeι h V v) = (v, 0) :=
+  (rfl)
+
+/-- Evaluating `freeEquiv` on `(freeObj h V).differential x` swaps and twists the components. -/
+@[simp]
+theorem freeEquiv_differential (x : freeObj h V) :
+    freeEquiv h V ((freeObj h V).differential x) =
+      (op w • (freeEquiv h V x).2, (freeEquiv h V x).1) :=
+  (rfl)
 
 /-- The canonical graded right-linear unit inclusion `V ⟶ toGradedModuleCat (freeObj h V)`. -/
 def freeUnit : V ⟶ toGradedModuleCat (freeObj h V) :=
@@ -327,6 +351,11 @@ def freeProj : toGradedModuleCat (freeObj h V) ⟶ V.shiftObj 1 :=
       rw [toGradedModuleCat_piece] at hx
       rw [add_zero, V.mem_shiftObj_piece_iff]
       exact ((mem_freeInternalGrading_piece_iff h V p x).mp hx).2)
+
+/-- The projection `freeProj h V` extracts the second component of `freeEquiv h V x`. -/
+@[simp]
+theorem freeProj_apply (x : freeObj h V) : (freeProj h V).hom x = (freeEquiv h V x).2 :=
+  (rfl)
 
 /-- The unit inclusion into `freeObj h V` followed by the projection to `V{1}` is zero. -/
 @[reassoc (attr := simp)]

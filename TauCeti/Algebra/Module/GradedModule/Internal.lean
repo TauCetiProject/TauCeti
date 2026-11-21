@@ -174,6 +174,27 @@ theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ι → Submodule R M)
   Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
     (Subsingleton.elim _ _))
 
+/-- If `ℳ` contains `1` in degree zero, so does `(ofDecomposition ℳ).piece`. -/
+instance (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    [One M] [Zero ι] [SetLike.GradedOne ℳ] :
+    SetLike.GradedOne (ofDecomposition ℳ).piece where
+  one_mem := by
+    rw [ofDecomposition_piece]
+    exact SetLike.GradedOne.one_mem
+
+/-- If `ℳ` is closed under graded multiplication, so is `(ofDecomposition ℳ).piece`. -/
+instance (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    [Mul M] [Add ι] [SetLike.GradedMul ℳ] :
+    SetLike.GradedMul (ofDecomposition ℳ).piece where
+  mul_mem {_ _ _ _} ha hb := by
+    rw [ofDecomposition_piece] at ha hb ⊢
+    exact SetLike.GradedMul.mul_mem ha hb
+
+/-- If `ℳ` forms a graded monoid, so does `(ofDecomposition ℳ).piece`. -/
+instance (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    [Monoid M] [AddMonoid ι] [SetLike.GradedMonoid ℳ] :
+    SetLike.GradedMonoid (ofDecomposition ℳ).piece where
+
 /-- The homogeneous elements of an internally graded module span it over any scalar semiring
 acting on the total module. No compatibility between that action and the grading is needed. -/
 theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]

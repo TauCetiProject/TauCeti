@@ -153,6 +153,13 @@ theorem piece_eq_bot_of_surjective (f : M ⟶ N)
   rw [add_zero, _root_.DirectSum.decompose_of_mem_same N.grading.piece hy, hx, map_zero] at h
   exact h.symm
 
+/-- Morphisms of graded modules commute with the Koszul twist. -/
+@[simp]
+theorem koszulTwist_hom_apply (f : M ⟶ N) (q : ℤ) (x : M) :
+    N.grading.koszulTwist q (f.hom x) = f.hom (M.grading.koszulTwist q x) := by
+  simpa only [LinearMap.restrictScalars_apply, mul_zero, Int.negOnePow_zero, Units.val_one,
+    Int.cast_one, one_smul] using (f.isHomogeneous.restrictScalars k).koszulTwist_apply q x
+
 end Hom
 
 section Linear

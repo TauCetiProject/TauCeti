@@ -56,6 +56,11 @@ theorem toGradedModuleCat_piece (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (p :
     (toGradedModuleCat M).grading.piece p = M.grading p :=
   congrFun (InternalGrading.ofDecomposition_piece M.grading) p
 
+/-- The internal grading of `toGradedModuleCat M` is `InternalGrading.ofDecomposition M.grading`. -/
+theorem toGradedModuleCat_grading (M : CurvedDGRightModuleCat.{uR, uA, uM} h) :
+    (toGradedModuleCat M).grading = InternalGrading.ofDecomposition M.grading :=
+  (rfl)
+
 /-- A right-linear map is homogeneous of degree `p` for the underlying graded modules exactly when
 it is a cochain of degree `p` between the curved modules. -/
 theorem isHomogeneous_toGradedModuleCat_iff

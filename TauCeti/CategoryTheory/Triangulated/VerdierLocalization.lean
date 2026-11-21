@@ -62,8 +62,13 @@ consequences for Verdier quotients:
 * `CategoryTheory.ObjectProperty.TrWLocalization.exists_map_comp_eq_map` and
   `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
   out of an object approximated by morphisms `δᵢ` as above, and their kernel.
-* `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE`: when `P ≤ Q`
-  and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence.
+* `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE` and
+  `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff`: when
+  `P ≤ Q` and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence, and for thick
+  triangulated `P ≤ Q` it is a localized equivalence if and only if `P = Q`.
+* `CategoryTheory.ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`:
+  for thick triangulated `P ≤ Q`, the comparison functor between Verdier localizations is an
+  equivalence if and only if `P = Q`.
 
 ## References
 
@@ -218,6 +223,40 @@ theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE {h : P ≤ Q} (h' : Q �
     (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence := by
   obtain rfl := le_antisymm h h'
   exact inferInstanceAs (LocalizerMorphism.id P.trW).IsLocalizedEquivalence
+
+/-- When `P` is a thick triangulated subcategory of a triangulated category and `P ≤ Q`,
+`trWLocalizerMorphismOfLE h` is a localized equivalence if and only if `P = Q`. -/
+theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff
+    [IsTriangulated C] [P.IsTriangulated] [P.IsStableUnderRetracts] (h : P ≤ Q) :
+    (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence ↔ P = Q := by
+  refine ⟨fun hEqv ↦ le_antisymm h fun X hX ↦ ?_, fun hEq ↦ ?_⟩
+  · have : ((trWLocalizerMorphismOfLE h).functor ⋙ Q.trW.Q).IsLocalization P.trW :=
+      LocalizerMorphism.IsLocalizedEquivalence.isLocalization (trWLocalizerMorphismOfLE h) Q.trW.Q
+    have : Q.trW.Q.IsLocalization P.trW :=
+      Functor.IsLocalization.of_iso (W := P.trW)
+        (Functor.isoWhiskerRight (eqToIso (trWLocalizerMorphismOfLE_functor h)) Q.trW.Q ≪≫
+          Functor.leftUnitor Q.trW.Q)
+    let : Preadditive Q.trW.Localization := Localization.preadditive Q.trW.Q P.trW
+    have : Q.trW.Q.Additive := Localization.functor_additive Q.trW.Q P.trW
+    exact (TrWLocalization.isZero_obj_iff P Q.trW.Q X).1
+      (TrWLocalization.isZero_obj Q Q.trW.Q hX)
+  · exact isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
+
+/-- When `P` is a thick triangulated subcategory of a triangulated category and `P ≤ Q`, the
+comparison functor induced by `trWLocalizerMorphismOfLE h` between Verdier localizations at `P` and
+`Q` is an equivalence if and only if `P = Q`. -/
+theorem isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
+    [IsTriangulated C] [P.IsTriangulated] [P.IsStableUnderRetracts] (h : P ≤ Q)
+    {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
+    (L₁ : C ⥤ D₁) [L₁.IsLocalization P.trW]
+    (L₂ : C ⥤ D₂) [L₂.IsLocalization Q.trW] :
+    ((trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂).IsEquivalence ↔ P = Q :=
+  ⟨fun _ ↦ (isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff h).1
+    (LocalizerMorphism.IsLocalizedEquivalence.mk' (trWLocalizerMorphismOfLE h) L₁ L₂
+      ((trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂)),
+   fun hEq ↦ by
+     have := isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
+     infer_instance⟩
 
 end ObjectProperty
 
