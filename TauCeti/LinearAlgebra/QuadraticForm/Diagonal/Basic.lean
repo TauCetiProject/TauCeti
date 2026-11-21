@@ -27,7 +27,8 @@ of squares.
 * `QuadraticMap.nondegenerate_weightedSumSquares`: over a ring in which two is invertible, a
   diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
-* `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
+* `QuadraticMap.smul_weightedSumSquares` and `QuadraticMap.neg_weightedSumSquares`: scaling or
+  negating a diagonal form scales or negates its weights.
 * `QuadraticMap.weightedSumSquares_apply_single`, `QuadraticMap.isOrtho_weightedSumSquares_single`,
   and `QuadraticMap.isOrthoᵢ_associated_weightedSumSquares`: single-coordinate evaluation and
   orthogonality of distinct coordinate vectors and of the standard coordinate basis `Pi.basisFun`.
@@ -185,6 +186,15 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
       = QuadraticMap.weightedSumSquares R fun i => ((w i : R)) := by
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
+
+/-- Scaling a weighted sum of squares scales its weights. -/
+theorem _root_.QuadraticMap.smul_weightedSumSquares {S T : Type*} [Monoid S] [Monoid T]
+    [DistribMulAction S R] [SMulCommClass S R R]
+    [DistribMulAction T R] [SMulCommClass T R R]
+    [SMul S T] [IsScalarTower S T R] (c : S) (w : ι → T) :
+    c • QuadraticMap.weightedSumSquares R w = QuadraticMap.weightedSumSquares R (c • w) := by
+  ext x
+  simp [Finset.smul_sum, smul_assoc]
 
 /-- Evaluate a diagonal form on a single-coordinate vector `Pi.single i x`.
 

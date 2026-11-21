@@ -30,6 +30,8 @@ when the product `m * n` of the dimensions is even, and reverses it when `m * n`
 
 A product `Prod.map f g` of maps preserving orientations at `p.1` and at `p.2` preserves the
 product orientations at `p` (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.prodMap`).
+So does a product of maps reversing orientations at `p.1` and at `p.2`, since the two reversals
+cancel (`TauCeti.Manifold.Orientation.IsOrientationReversingAt.prodMap`).
 
 ## References
 
@@ -74,9 +76,9 @@ def prod (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n)) 
     compatible := ?_ }
   · intro α
     exact ((o.locallyConstant_sign α.1).comp_continuous
-      ((continuous_fst.comp continuous_subtype_val).subtype_mk _)).mul
+      ((continuous_fst.comp continuous_subtypeVal).subtype_mk _)).mul
         ((o'.locallyConstant_sign α.2).comp_continuous
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk _))
   · intro α β x hα hβ
     have h₁ := o.compatible α.1 β.1 x.1 (left α ⟨x, hα⟩).property
       (left β ⟨x, hβ⟩).property
@@ -259,6 +261,17 @@ theorem IsOrientationPreservingAt.prodMap {o : Orientation I M (Fin m)}
     rfl
   · rw [orientationAt_prod, orientationAt_prod, Prod.map_fst, Prod.map_snd, ← h, ← h']
     exact _root_.Orientation.map_prod _ _ _ _ e.toLinearEquiv e'.toLinearEquiv
+
+/-- A product of maps reversing orientations at `p.1` and at `p.2` preserves the product
+orientations at `p`: the two reversals cancel. -/
+theorem IsOrientationReversingAt.prodMap {o : Orientation I M (Fin m)}
+    {o' : Orientation I' M' (Fin n)} {q : Orientation J N (Fin m)} {q' : Orientation J' N' (Fin n)}
+    {f : M → N} {g : M' → N'} {p : M × M'} (hf : IsOrientationReversingAt o q f p.1)
+    (hg : IsOrientationReversingAt o' q' g p.2) :
+    IsOrientationPreservingAt (o.prod o') (q.prod q') (Prod.map f g) p := by
+  rw [← prod_neg_neg q q']
+  exact ((isOrientationPreservingAt_neg_right _ _ _ _).2 hf).prodMap
+    ((isOrientationPreservingAt_neg_right _ _ _ _).2 hg)
 
 end ProdMap
 

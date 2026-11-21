@@ -815,12 +815,14 @@ restricts to isomorphisms `e₀ : X₀ ≃L[𝕜] Y₀` and `e₁ : X₁ ≃L[�
 norms of the endpoint isomorphisms and of their inverses bound its norm and the norm of its
 inverse by `norm_map_le`; if `e₀` and `e₁` preserve norms, so does it (`norm_mapEquiv`). -/
 def mapEquiv : C.KMethodSpace θ q ≃L[𝕜] D.KMethodSpace θ q :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (map e.toLinearMap (T₀ := e₀.toContinuousLinearMap) (T₁ := e₁.toContinuousLinearMap) he₀ he₁)
     (map e.symm.toLinearMap (T₀ := e₀.symm.toContinuousLinearMap)
       (T₁ := e₁.symm.toContinuousLinearMap) (symm_apply_fstToSum he₀) (symm_apply_sndToSum he₁))
-    (leftInverse_map _ _ _ _ _ _ e.symm_apply_apply)
-    (leftInverse_map _ _ _ _ _ _ e.apply_symm_apply)
+    (ContinuousLinearMap.ext fun x ↦ by
+      simpa using leftInverse_map _ _ _ _ _ _ e.apply_symm_apply x)
+    (ContinuousLinearMap.ext fun x ↦ by
+      simpa using leftInverse_map _ _ _ _ _ _ e.symm_apply_apply x)
 
 theorem mapEquiv_apply (u : C.KMethodSpace θ q) :
     mapEquiv e he₀ he₁ u =

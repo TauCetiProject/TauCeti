@@ -148,7 +148,7 @@ theorem contMDiff_toGL {k : ℕ∞ω} :
 
 /-- The special linear group is an analytic Lie group over its scalar field. -/
 instance instLieGroup : LieGroup 𝓘(𝕜, Model n 𝕜) ω (SpecialLinearGroup n 𝕜) := by
-  have hi := (isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).1
+  have hi := (isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).isImmersion
   exact
     { contMDiff_mul := (ContMDiff.iff_comp_isImmersion hi).2 ⟨continuous_mul, by
         refine (Units.contMDiff_val.comp
@@ -183,8 +183,8 @@ theorem range_mvfderiv_subtypeVal_one :
           (mfderiv 𝓘(𝕜, Matrix n n 𝕜) 𝓘(𝕜, 𝕜) det 1).ker :=
       hr.range_mfderiv_eq_ker_mfderiv
       (g := fun A : SpecialLinearGroup n 𝕜 ↦ (A : Matrix n n 𝕜)) (p := 1)
-      (.of_forall fun A ↦ A.2)
-      ((isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).1.mfderiv_injective (by simp) 1)
+      (.of_forall fun A ↦ A.property)
+      ((isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).isImmersion.mfderiv_injective (by simp) 1)
       (by
         simp only [Module.finrank_matrix, Module.finrank_self, Module.finrank_fin_fun, Model]
         have hdim := hr.finrank_ker_mfderiv_add_finrank
