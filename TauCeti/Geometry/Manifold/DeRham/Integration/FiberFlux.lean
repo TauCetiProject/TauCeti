@@ -31,10 +31,12 @@ two-form `T` on `M × ℂ` has a **fibre flux** through each normal fibre `{x} �
 
 (`TauCeti.RoughForm.fiberFlux`), the total mass of the normal slice `μ_x` of
 `TauCeti.Analysis.Calculus.DifferentialForm.SliceMoment` at `x`. In Taubes's analysis of
-Seiberg–Witten solutions concentrating along `C`, `T` is the dilated cutoff curvature current,
-which is closed and has flux `m` through every fibre; its mass is controlled by its pairing with
-a taming form `Ω = K π^*β + dη`, where `β` is an area form on the curve and `π : M × ℂ → M` the
-projection. This file proves that this pairing is topological:
+Seiberg–Witten solutions concentrating along `C`, the role of `T` is played by the dilated cutoff
+curvature current, whose mass is controlled by its pairing with a taming form `Ω = K π^*β + dη`,
+where `β` is an area form on the curve and `π : M × ℂ → M` the projection. The results here apply
+to that current once it is identified with a smooth compactly supported closed two-form with
+constant fibre flux `m`; that identification is not done here. For such a `T` this file proves
+that the pairing is topological:
 
 `∫_{M × ℂ} T ∧ (K π^*β + dη) = K m ∫_M β`
 
