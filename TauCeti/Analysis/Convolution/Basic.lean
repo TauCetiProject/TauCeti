@@ -113,6 +113,9 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `(ψ ⋆ f) x` is bounded by a `ψ`-weighted integral of the increments `‖f x - f w‖ₑ`.
 * `MeasureTheory.enorm_convolution_lsmul_sub_convolution_lsmul_le`: the increments of `ψ ⋆ f` are
   bounded by a `ψ`-weighted integral of the increments of the translates of `f`.
+* `MeasureTheory.setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul`: for an integrable
+  a.e.-nonnegative kernel `K` and `d ≤ᵐ g + e` with `e ≥ᵐ 0` and `g ≤ 0` a.e. on `s`, the set
+  integral of `K ⋆ d` over `s` is at most `∫ ‖K ⋆ g - g‖ + (∫ K) * ∫ e`.
 -/
 
 public section
@@ -610,6 +613,57 @@ theorem enorm_sub_convolution_lsmul_le_mul_lintegral [CompleteSpace F] (hψ : Co
     simp [h0]
 
 end Increments
+
+/-- **Set-integral bound for a convolution under a split upper bound.** If `K` is an integrable
+a.e.-nonnegative kernel, `d ≤ᵐ g + e` with `e ≥ᵐ 0`, and `g ≤ 0` almost everywhere on `s`, then
+the set integral of `K ⋆ d` over `s` is at most the `L¹` mollification error `∫ ‖K ⋆ g - g‖`
+plus `(∫ K) * ∫ e`. -/
+theorem setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul
+    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+    {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+    {K d g e : G → ℝ} (hK : Integrable K μ) (hK0 : 0 ≤ᵐ[μ] K)
+    (hd : Integrable d μ) (hg : Integrable g μ) (he : Integrable e μ) (he0 : 0 ≤ᵐ[μ] e)
+    {s : Set G} (hg0 : ∀ᵐ z ∂μ.restrict s, g z ≤ 0) (hde : ∀ᵐ y ∂μ, d y ≤ g y + e y) :
+    ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] d) z ∂μ ≤
+      (∫ z, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ) + (∫ t, K t ∂μ) * ∫ y, e y ∂μ := by
+  have hKd : Integrable (K ⋆[lsmul ℝ ℝ, μ] d) μ := hK.integrable_convolution (lsmul ℝ ℝ) hd
+  have hKg : Integrable (K ⋆[lsmul ℝ ℝ, μ] g) μ := hK.integrable_convolution (lsmul ℝ ℝ) hg
+  have hKe : Integrable (K ⋆[lsmul ℝ ℝ, μ] e) μ := hK.integrable_convolution (lsmul ℝ ℝ) he
+  have hae : (K ⋆[lsmul ℝ ℝ, μ] d) ≤ᵐ[μ] fun z ↦
+      (K ⋆[lsmul ℝ ℝ, μ] g) z + (K ⋆[lsmul ℝ ℝ, μ] e) z := by
+    filter_upwards [(hK.convolution_integrand (lsmul ℝ ℝ) hd).prod_right_ae,
+      (hK.convolution_integrand (lsmul ℝ ℝ) hg).prod_right_ae,
+      (hK.convolution_integrand (lsmul ℝ ℝ) he).prod_right_ae] with z hdz hgz hez
+    rw [convolution_def, convolution_def, convolution_def, ← integral_add hgz hez]
+    refine integral_mono_ae hdz (hgz.add hez) ?_
+    filter_upwards [hK0, (quasiMeasurePreserving_sub_left_of_right_invariant μ z).ae hde]
+      with t ht hle
+    simpa only [Pi.add_apply, lsmul_apply, smul_eq_mul, mul_add] using
+      mul_le_mul_of_nonneg_left hle ht
+  have h1 : ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] d) z ∂μ ≤
+      (∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] g) z ∂μ) + ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] e) z ∂μ := by
+    rw [← integral_add hKg.integrableOn hKe.integrableOn]
+    exact integral_mono_ae hKd.integrableOn (hKg.add hKe).integrableOn (ae_restrict_of_ae hae)
+  have h2 : ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] g) z ∂μ ≤
+      ∫ z, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ := by
+    calc ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] g) z ∂μ
+        ≤ ∫ z in s, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ :=
+          integral_mono_ae hKg.integrableOn (hKg.sub hg).norm.integrableOn <|
+            hg0.mono fun z hz ↦ by
+              dsimp only
+              rw [Real.norm_eq_abs]
+              linarith [le_abs_self ((K ⋆[lsmul ℝ ℝ, μ] g) z - g z)]
+      _ ≤ ∫ z, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ :=
+          setIntegral_le_integral (hKg.sub hg).norm (.of_forall fun _ ↦ norm_nonneg _)
+  have h3 : ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] e) z ∂μ ≤ (∫ t, K t ∂μ) * ∫ y, e y ∂μ := by
+    have hconv : ∫ z, (K ⋆[lsmul ℝ ℝ, μ] e) z ∂μ = (∫ t, K t ∂μ) * ∫ y, e y ∂μ := by
+      simpa using MeasureTheory.integral_convolution (lsmul ℝ ℝ) hK he
+    rw [← hconv]
+    refine setIntegral_le_integral hKe (.of_forall fun z ↦ integral_nonneg_of_ae ?_)
+    filter_upwards [hK0, (quasiMeasurePreserving_sub_left_of_right_invariant μ z).ae he0]
+      with t ht he_t
+    simpa only [Pi.zero_apply, lsmul_apply, smul_eq_mul] using mul_nonneg ht he_t
+  linarith
 
 section Reflection
 

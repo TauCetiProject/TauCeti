@@ -29,6 +29,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.intervalIntegral.norm_integral_sub_integral_le_of_norm_le_const_ae`: changing the
+  endpoints of an interval integral of a function bounded a.e. by `C` on the endpoint intervals
+  changes the integral by at most `C * (|c - a| + |d - b|)`.
 * `TauCeti.intervalIntegral.norm_sub_smul_sub_integral_le`: bounding
   `‖(v - u) • c - ∫ t in u..v, g t‖` by `C * |v - u|` when `‖c - g t‖ ≤ C` on `uIoc u v`.
 * `TauCeti.intervalIntegral.sum_integral_lineMap_div`: splitting an interval integral over `a..b`
@@ -176,6 +179,20 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
       (∫ t in t₁..t₂, (g t - g' t)),
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+/-- Changing the endpoints of an interval integral of a function bounded a.e. by `C` on the
+endpoint intervals `uIoc a c` and `uIoc b d` changes the integral by at most
+`C * (|c - a| + |d - b|)`. -/
+theorem norm_integral_sub_integral_le_of_norm_le_const_ae {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {a b c d C : ℝ}
+    (hab : IntervalIntegrable f volume a b) (hcd : IntervalIntegrable f volume c d)
+    (hac : IntervalIntegrable f volume a c)
+    (hCac : ∀ᵐ x, x ∈ uIoc a c → ‖f x‖ ≤ C) (hCbd : ∀ᵐ x, x ∈ uIoc b d → ‖f x‖ ≤ C) :
+    ‖(∫ t in a..b, f t) - ∫ t in c..d, f t‖ ≤ C * (|c - a| + |d - b|) := by
+  rw [_root_.intervalIntegral.integral_interval_sub_interval_comm hab hcd hac, mul_add]
+  exact (norm_sub_le _ _).trans (add_le_add
+    (_root_.intervalIntegral.norm_integral_le_of_norm_le_const_ae hCac)
+    (_root_.intervalIntegral.norm_integral_le_of_norm_le_const_ae hCbd))
 
 /-- Approximating an interval integral by a constant value `c` incurs error at most `C * |v - u|`
 whenever `‖c - g t‖ ≤ C` on `uIoc u v`. -/

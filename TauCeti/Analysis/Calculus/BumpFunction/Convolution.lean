@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -23,8 +24,10 @@ upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
 Normalized-bump convolution also preserves a uniform bound on a function
-(`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
-differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
+(`ContDiffBump.norm_normed_convolution_le`), a uniform `L²`-product bound on a pair of functions
+(`ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le`), and its Lipschitz
+constant, since it averages the differences of translates
+(`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
 For `K`-Lipschitz data, the pointwise approximation error is at most `K * ρ.rOut`
 (`LipschitzWith.dist_normed_convolution_le`).
 
@@ -336,6 +339,71 @@ theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGrou
   simpa only [convolution_def, lsmul_apply, Real.norm_of_nonneg (ρ.nonneg_normed _),
     ρ.integral_normed, one_mul] using
     TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed hM x
+
+/-- Convolution with a nonnegative normalized bump preserves a uniform `L²`-product bound
+`‖f₁ y‖² + ‖f₂ y‖² ≤ M`. -/
+theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le
+    {G F₁ F₂ : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    {f₁ : G → F₁} {f₂ : G → F₂} (ρ : ContDiffBump (0 : G)) {M : ℝ}
+    (hM : ∀ y, ‖f₁ y‖ ^ 2 + ‖f₂ y‖ ^ 2 ≤ M) (x : G) :
+    ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖ ^ 2 + ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖ ^ 2 ≤ M := by
+  have hM0 : 0 ≤ M := (add_nonneg (sq_nonneg _) (sq_nonneg _)).trans (hM x)
+  set A := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖
+  set B := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖
+  have hA0 : 0 ≤ A := norm_nonneg _
+  have hB0 : 0 ≤ B := norm_nonneg _
+  have hf₁ (y : G) : ‖f₁ y‖ ≤ √M :=
+    Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₂ y‖])
+  have hf₂ (y : G) : ‖f₂ y‖ ≤ √M :=
+    Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₁ y‖])
+  by_cases h1 : Integrable (fun t => ρ.normed μ t • f₁ (x - t)) μ
+  · by_cases h2 : Integrable (fun t => ρ.normed μ t • f₂ (x - t)) μ
+    · have h1n : Integrable (fun t => ρ.normed μ t * ‖f₁ (x - t)‖) μ := by
+        simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h1.norm
+      have h2n : Integrable (fun t => ρ.normed μ t * ‖f₂ (x - t)‖) μ := by
+        simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h2.norm
+      have hA_le : A ≤ ∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ := by
+        simpa only [A, convolution_def, lsmul_apply, norm_smul,
+          Real.norm_of_nonneg (ρ.nonneg_normed _)] using
+          norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₁ (x - t))
+      have hB_le : B ≤ ∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ := by
+        simpa only [B, convolution_def, lsmul_apply, norm_smul,
+          Real.norm_of_nonneg (ρ.nonneg_normed _)] using
+          norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₂ (x - t))
+      rw [← Real.sq_sqrt hM0,
+        TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le hA0 hB0 (Real.sqrt_nonneg M)]
+      intro c s hc0 hs0 hcs
+      calc c * A + s * B
+          ≤ c * (∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ) +
+              s * (∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ) :=
+            add_le_add (mul_le_mul_of_nonneg_left hA_le hc0)
+              (mul_le_mul_of_nonneg_left hB_le hs0)
+        _ = ∫ t, ρ.normed μ t * (c * ‖f₁ (x - t)‖ + s * ‖f₂ (x - t)‖) ∂μ := by
+            rw [← integral_const_mul, ← integral_const_mul,
+              ← integral_add (h1n.const_mul c) (h2n.const_mul s)]
+            exact integral_congr_ae (.of_forall fun t => by ring)
+        _ ≤ ∫ t, ρ.normed μ t * √M ∂μ := by
+            refine integral_mono (((h1n.const_mul c).add (h2n.const_mul s)).congr
+              (.of_forall fun t => by simp only [Pi.add_apply]; ring))
+              (ρ.integrable_normed.mul_const √M) fun t =>
+                mul_le_mul_of_nonneg_left
+                  ((TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le (norm_nonneg _)
+                    (norm_nonneg _) (Real.sqrt_nonneg M)).1
+                      ((hM (x - t)).trans_eq (Real.sq_sqrt hM0).symm) c s hc0 hs0 hcs)
+                  (ρ.nonneg_normed t)
+        _ = √M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+    · have hB : B = 0 := by
+        simp only [B, convolution_def, lsmul_apply, integral_undef h2, norm_zero]
+      rw [hB, zero_pow two_ne_zero, add_zero]
+      exact (pow_le_pow_left₀ hA0 (ρ.norm_normed_convolution_le hf₁ x) 2).trans_eq
+        (Real.sq_sqrt hM0)
+  · have hA : A = 0 := by
+      simp only [A, convolution_def, lsmul_apply, integral_undef h1, norm_zero]
+    rw [hA, zero_pow two_ne_zero, zero_add]
+    exact (pow_le_pow_left₀ hB0 (ρ.norm_normed_convolution_le hf₂ x) 2).trans_eq
+      (Real.sq_sqrt hM0)
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/

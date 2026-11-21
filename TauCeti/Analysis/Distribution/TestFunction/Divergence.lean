@@ -28,6 +28,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 
 * `TestFunction.divergenceCLM`: the divergence `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`.
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
+* `TestFunction.tsupport_divergenceCLM_subset`: the divergence of a test vector field is supported
+  in the support of the field.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
@@ -74,6 +76,14 @@ noncomputable def divergenceCLM : 𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ) :=
 theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
     divergenceCLM φ x = LinearMap.trace ℝ E (fderiv ℝ (φ : E → E) x : E →ₗ[ℝ] E) := by
   simp [divergenceCLM]
+
+/-- The divergence of a test vector field is supported in the support of the field. -/
+theorem tsupport_divergenceCLM_subset (φ : 𝓓(Ω, E)) :
+    tsupport (divergenceCLM φ) ⊆ tsupport φ := by
+  have h : ⇑(divergenceCLM φ) = TauCeti.traceCLM ℝ E ∘ fderiv ℝ (φ : E → E) :=
+    funext fun x => by rw [divergenceCLM_apply, Function.comp_apply, TauCeti.traceCLM_apply]
+  rw [h]
+  exact (tsupport_comp_subset (map_zero _) _).trans (tsupport_fderiv_subset ℝ)
 
 /-- The divergence of a test vector field extended from `Ω'` to a larger open set `Ω` is the
 divergence of the original field. -/
