@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+public import Mathlib.Geometry.Manifold.HasGroupoid
+import Mathlib.Analysis.Complex.Tietze
 import Mathlib.Topology.Homotopy.Affine
 
 /-!
@@ -58,8 +60,12 @@ proper map whose fibre over a point of a connected target is a single such point
   local homeomorphism has local index `±1`.
 * `TauCeti.HomologicalOrientation.degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn`: a proper
   map with a one-point fibre, at whose point it is a local homeomorphism, has degree `±1`.
-* `TauCeti.HomologicalOrientation.localIndex_addRight`: translations of a finite-dimensional real
-  normed space have local index one, being properly homotopic to the identity.
+* `TauCeti.HomologicalOrientation.degree_addRight`: translations of a finite-dimensional real
+  normed space have degree one, being properly homotopic to the identity, and so local index one
+  (`TauCeti.HomologicalOrientation.localIndex_addRight`).
+* `TauCeti.HomologicalOrientation.exists_eventuallyEq_and_localIndex_comap_eq`: the local index
+  of a map read in open coordinates `j : M → E`, `k : N → F` of finite-dimensional real normed
+  spaces is that of a map `E → F` agreeing with the coordinate expression near the point.
 
 ## References
 
@@ -90,7 +96,7 @@ omit [T2Space M] [T2Space N] in
 of `f` is a map of pairs `(U, U ∖ {x}) → (N, N ∖ {y})`. -/
 private theorem restrict_preimage_subset (f : C(M, N)) {x : M} {y : N} {U : Set M} (hx : x ∈ U)
     (hU : ∀ z ∈ U, f z = y → z = x) : f.restrict U ⁻¹' {y} ⊆ {⟨x, hx⟩} :=
-  fun z hz ↦ Subtype.ext (hU z z.2 (by simpa using hz))
+  fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))
 
 /-- The image of the local orientation `o x` under the restriction of `f` to an open neighbourhood
 `U` of `x` meeting the fibre of `f` through `y` only in `x`, computed through the excision
@@ -155,7 +161,7 @@ restriction of `f` carries the local orientation `o x` to the local index times 
 theorem localHomologyMap_restrict_localOrientationEquiv_symm (f : C(M, N)) {x : M} {y : N}
     (hxy : f x = y) {U : Set M} (hUo : IsOpen U) (hx : x ∈ U) (hU : ∀ z ∈ U, f z = y → z = x) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (f.restrict U) (S := {⟨x, hx⟩}) (T := {y})
-        (fun z hz ↦ Subtype.ext (hU z z.2 (by simpa using hz))) n
+        (fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))) n
         ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ n).symm (o x)).val =
       o.localIndex o' f x • (o' y).val := by
   subst hxy
@@ -177,7 +183,7 @@ theorem localIndex_eq_iff (f : C(M, N)) {x : M} {y : N} (hxy : f x = y) {U : Set
     (hUo : IsOpen U) (hx : x ∈ U) (hU : ∀ z ∈ U, f z = y → z = x) {c : ℤ} :
     o.localIndex o' f x = c ↔
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (f.restrict U) (S := {⟨x, hx⟩}) (T := {y})
-          (fun z hz ↦ Subtype.ext (hU z z.2 (by simpa using hz))) n
+          (fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))) n
           ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ n).symm (o x)).val =
         c • (o' y).val := by
   rw [o.localHomologyMap_restrict_localOrientationEquiv_symm o' f hxy hUo hx hU]
@@ -204,7 +210,7 @@ theorem localIndex_congr {f g : C(M, N)} {x : M} (hfg : f =ᶠ[𝓝 x] g) :
     have hgU : ∀ z ∈ U ∩ W, g z = f x → z = x := fun z hz hgz ↦
       hU z hz.1 ((hWfg z hz.2).trans hgz)
     have hrestrict : g.restrict (U ∩ W) = f.restrict (U ∩ W) :=
-      ContinuousMap.ext fun z ↦ (hWfg z z.2.2).symm
+      ContinuousMap.ext fun z ↦ (hWfg z z.property.2).symm
     rw [eq_comm, o.localIndex_eq_iff o' hF g hfgx.symm (hUo.inter hWo) (mem_inter hxU hxW) hgU,
       ← o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl (hUo.inter hWo)
         (mem_inter hxU hxW) hfU]
@@ -247,6 +253,71 @@ theorem localIndex_neg_right (f : C(M, N)) (x : M) :
     rw [o.localIndex_of_frequently_eq (-o') f h', o.localIndex_of_frequently_eq o' f h', neg_zero]
 
 include hF in
+/-- **The local index in the whole source.** If `x` is the only point of `M` sent to `y = f x`,
+the local index of `f` at `x` is the integer `c` such that `f` carries the local orientation `o x`
+to `c • o' y`, with no isolating neighbourhood to choose. -/
+theorem localIndex_eq_iff_of_preimage_subset (f : C(M, N)) {x : M} {y : N} (hxy : f x = y)
+    (h : f ⁻¹' {y} ⊆ {x}) {c : ℤ} :
+    o.localIndex o' f x = c ↔
+      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f h n (o x).val = c • (o' y).val := by
+  have hincl : (⟨Subtype.val, continuous_subtypeVal⟩ : C((univ : Set M), M)) ⁻¹' {x} ⊆
+      {⟨x, mem_univ x⟩} := fun z hz ↦ Subtype.ext hz
+  rw [o.localIndex_eq_iff o' hF f hxy isOpen_univ (mem_univ x) fun z _ hz ↦ h hz,
+    ← isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
+      ⟨x, mem_univ x⟩ (o x) hincl, ← ConcreteCategory.comp_apply, localHomologyMap_comp]
+  rfl
+
+/-- **The local index only depends on the orientations at the point and its image**: if `o` and
+`p` agree at `x`, and `o'` and `p'` agree at `f x`, the two local indices of `f` at `x` agree. The
+orientations `p` and `p'` may be read in other model spaces. -/
+theorem localIndex_eq_localIndex_of_apply_eq {E' F' : Type} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [ChartedSpace E' M] [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [ChartedSpace F' N]
+    {p : HomologicalOrientation M E' n} {p' : HomologicalOrientation N F' n} (f : C(M, N))
+    {x : M} (hx : o x = p x) (hy : o' (f x) = p' (f x)) :
+    o.localIndex o' f x = p.localIndex p' f x := by
+  simp only [localIndex, localIndexClass, hx, hy]
+
+include hE hF in
+/-- **A nonzero local index detects the local orientation of the source.** If `f` has the same
+nonzero local index at `x` for the source orientations `o` and `p`, then `o` and `p` agree at `x`:
+otherwise `p x = -o x`, and the two local indices would be negatives of each other. -/
+theorem apply_eq_of_localIndex_eq_left {E' : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [FiniteDimensional ℝ E'] [ChartedSpace E' M] {p : HomologicalOrientation M E' n}
+    (f : C(M, N)) {x : M} (h : o.localIndex o' f x = p.localIndex o' f x)
+    (h0 : o.localIndex o' f x ≠ 0) : o x = p x := by
+  subst hE
+  rcases IsLocalOrientation.eq_or_eq_neg
+      (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+      (o x).property (p x).property with h' | h'
+  · exact Subtype.ext h'.symm
+  · have hneg : p.localIndex o' f x = -o.localIndex o' f x := by
+      rw [← (-o).localIndex_eq_localIndex_of_apply_eq o' f
+        (Subtype.ext (h'.trans (LocalOrientation.coe_neg _).symm)).symm rfl,
+        localIndex_neg_left o o' hF]
+    omega
+
+include hF in
+/-- **A nonzero local index detects the local orientation of the target.** If `f` has the same
+nonzero local index at `x` for the target orientations `o'` and `p'`, then `o'` and `p'` agree at
+`f x`: otherwise `p' (f x) = -o' (f x)`, and the two local indices would be negatives of each
+other. -/
+theorem apply_eq_of_localIndex_eq_right {F' : Type} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    [FiniteDimensional ℝ F'] [ChartedSpace F' N] {p' : HomologicalOrientation N F' n}
+    (f : C(M, N)) {x : M} (h : o.localIndex o' f x = o.localIndex p' f x)
+    (h0 : o.localIndex o' f x ≠ 0) : o' (f x) = p' (f x) := by
+  subst hF
+  rcases IsLocalOrientation.eq_or_eq_neg
+      (singularHomologyComplSingletonFinrankIso _ (chartAt F (f x)) (mem_chart_source F (f x)))
+      (o' (f x)).property (p' (f x)).property with h' | h'
+  · exact Subtype.ext h'.symm
+  · have hneg : o.localIndex p' f x = -o.localIndex o' f x := by
+      rw [← o.localIndex_eq_localIndex_of_apply_eq (-o') f rfl
+        (Subtype.ext (h'.trans (LocalOrientation.coe_neg _).symm)).symm,
+        localIndex_neg_right o o' rfl]
+    omega
+
+include hF in
 /-- **The local index is natural under open embeddings.** Let `j : M → M'` and `k : N → N'` be
 open embeddings, and let `f : M → N` and `g : M' → N'` satisfy `g ∘ j = k ∘ f` near `x`. Then the
 local index of `f` at `x`, for the orientations pulled back along `j` and `k`, is the local index
@@ -274,8 +345,8 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
       rw [hU z hz (hk.injective hgz)]
     -- `j` identifies `U` with `j '' U`, compatibly with the local orientations at `x` and `j x`.
     let ψ : C(↥(W ∩ W₁), ↥(j '' (W ∩ W₁))) :=
-      ⟨fun z ↦ ⟨j z, mem_image_of_mem j z.2⟩,
-        (hj.continuous.comp continuous_subtype_val).subtype_mk _⟩
+      ⟨fun z ↦ ⟨j z, mem_image_of_mem j z.property⟩,
+        (hj.continuous.comp continuous_subtypeVal).subtype_mk _⟩
     have hψ : IsOpenEmbedding ψ :=
       (IsOpenEmbedding.of_comp_iff ψ hU'o.isOpenEmbedding_subtypeVal).1
         (hj.comp hUo.isOpenEmbedding_subtypeVal)
@@ -303,7 +374,7 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
     -- The two composites `W ∩ W₁ → N'` agree.
     have e : (g.restrict (j '' (W ∩ W₁))).comp ⟨ψ, hψ.continuous⟩ =
         (⟨k, hk.continuous⟩ : C(N, N')).comp (f.restrict (W ∩ W₁)) :=
-      ContinuousMap.ext fun z ↦ hW₁ z z.2.2
+      ContinuousMap.ext fun z ↦ hW₁ z z.property.2
     -- Both composites act on local homology as the composites of the induced maps.
     have hc : ∀ {P Q : Type} [TopologicalSpace P] [TopologicalSpace Q] (a : C(↥(W ∩ W₁), P))
         (b : C(P, Q)) {S : Set P} {T : Set Q} (ha : a ⁻¹' S ⊆ {⟨x, hxU⟩}) (hb : b ⁻¹' T ⊆ S) z,
@@ -333,15 +404,15 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
 omit [T2Space M] in
 /-- The complement of `S ∖ {x}` meets `S` only in `x`. -/
 private theorem compl_diff_preimage_subset (S : Set M) (x : M) :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' S ⊆
+    (⟨Subtype.val, continuous_subtypeVal⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' S ⊆
       {⟨x, fun h ↦ h.2 rfl⟩} :=
-  fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.2 ⟨hz, h⟩)
+  fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.property ⟨hz, h⟩)
 
 /-- The local orientation at a point `x` of a finite set `S`, pushed forward from the complement of
 `S ∖ {x}` to a class of `Hₙ(M, M ∖ S)`. -/
 private def compClass {S : Set M} (hS : S.Finite) (x : M) :
     localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S n :=
-  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
+  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtypeVal⟩
     (compl_diff_preimage_subset S x) n
     (((hS.sdiff.isClosed.isOpen_compl).isOpenEmbedding_subtypeVal.localOrientationEquiv
       ⟨x, fun h ↦ h.2 rfl⟩ n).symm (o x)).val
@@ -361,14 +432,11 @@ private theorem localHomologyRestriction_compClass_of_ne {S : Set M} (hS : S.Fin
     (hx' : x' ∈ S) (hxx' : x ≠ x') :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx') n
       (o.compClass hS x) = 0 := by
-  have hempty : (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' {x'} ⊆ ∅ :=
-    fun z (hz : (z : M) = x') ↦ z.2 ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
-  rw [compClass, ← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
-    ← localHomologyRestriction_comp_localHomologyMap _ _ (empty_subset _) hempty,
-    ConcreteCategory.comp_apply,
-    (isZero_localHomology_empty (A := ModuleCat.{0} ℤ) _ n).eq_of_tgt
-      (localHomologyRestriction _ (empty_subset _) n) 0]
-  simp
+  rw [compClass, ← ConcreteCategory.comp_apply,
+    localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range _ _ _ hx' ?_]
+  · simp
+  rintro ⟨z, hz : (z : M) = x'⟩
+  exact z.property ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
 
 /-- The classes of the points of a finite set `S` sum to the fundamental class along `S`. -/
 private theorem sum_compClass {S : Set M} (hS : S.Finite) :
@@ -439,7 +507,7 @@ theorem localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn {f : C(M, N)} {s 
   let w := hU.localOrientationEquiv ⟨x, hxe⟩ n
     ((e.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hxe⟩ n).symm (o x))
   have hw := hU.localHomologyMap_localOrientationEquiv_symm ⟨x, hxe⟩ w
-    (fun z hz ↦ Subtype.ext (hfib z z.2 hz))
+    (fun z hz ↦ Subtype.ext (hfib z z.property hz))
   rw [Equiv.symm_apply_apply] at hw
   have key (c : ℤ) (hc : w.val = c • (o' (f x)).val) : o.localIndex o' f x = c :=
     (o.localIndex_eq_iff o' hF f rfl e.open_source hxe hfib).2 (hw.trans hc)
@@ -468,12 +536,10 @@ namespace HomologicalOrientation
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
 
-include hE in
-/-- Translations preserve every orientation of a finite-dimensional real normed space: the
-translation by `v` has local index `1` at every point, since it is properly homotopic to the
-identity. -/
+/-- **Translations have degree one.** The translation by `v` of a finite-dimensional real normed
+space is properly homotopic to the identity, so its degree is that of the identity. -/
 @[simp]
-theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v) x = 1 := by
+theorem degree_addRight (v : E) : o.degree o hE (ContinuousMap.addRight v) = 1 := by
   -- The straight-line homotopy from the identity to the translation is proper: it is the
   -- projection `[0, 1] × E → E` composed with the homeomorphism `(t, y) ↦ (t, y + t v)`.
   have hH : IsProperMap (ContinuousMap.Homotopy.affine (ContinuousMap.id E)
@@ -491,11 +557,129 @@ theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v
       simp [Φ, AffineMap.lineMap_apply_module', add_comm]
     rw [h]
     exact isProperMap_snd_of_compactSpace.comp Φ.isProperMap
-  have hdeg := o.degree_eq_of_homotopy o hE hE (ContinuousMap.Homotopy.affine _ _) hH
-  rw [degree_id] at hdeg
+  rw [← o.degree_eq_of_homotopy o hE hE (ContinuousMap.Homotopy.affine _ _) hH, degree_id]
+
+include hE in
+/-- Translations preserve every orientation of a finite-dimensional real normed space: the
+translation by `v` has local index `1` at every point, since it has degree one. -/
+@[simp]
+theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v) x = 1 := by
   have hfib : ContinuousMap.addRight v ⁻¹' {x + v} = {x} := by ext; simp
   rw [← o.localDegree_eq_localIndex o hE hE _ hfib,
-    o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap, ← hdeg]
+    o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap, o.degree_addRight hE]
+
+include hE in
+/-- **The translated identity chart preserves every orientation.** The identity chart of `E`,
+followed by the translation taking `z` to the origin, carries the local orientation `o z` to
+`o 0`: translations have local index `1`. -/
+theorem localHomologyMap_refl_sub_localOrientationEquiv_symm (z : E) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : (OpenPartialHomeomorph.refl E).source ↦ OpenPartialHomeomorph.refl E x -
+            OpenPartialHomeomorph.refl E z,
+          (OpenPartialHomeomorph.refl E).continuousOn.domRestrict.sub continuous_const⟩ :
+          C((OpenPartialHomeomorph.refl E).source, E)) (S := {⟨z, mem_univ z⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext ((OpenPartialHomeomorph.refl E).injOn x.property (mem_univ z)
+            (sub_eq_zero.1 hx))) n
+        (((OpenPartialHomeomorph.refl E).open_source.isOpenEmbedding_subtypeVal
+          |>.localOrientationEquiv ⟨z, mem_univ z⟩ n).symm (o z)).val =
+      (o 0).val := by
+  have h := o.localIndex_addRight hE (-z) z
+  rw [o.localIndex_eq_iff o hE (ContinuousMap.addRight (-z)) (y := 0) (add_neg_cancel z)
+    (OpenPartialHomeomorph.refl E).open_source (mem_univ z)
+    (fun x _ hx ↦ neg_add_eq_zero.1 ((add_comm _ _).trans hx) |>.symm), one_smul] at h
+  refine Eq.trans ?_ h
+  -- The translated chart is the restriction of the translation by `-z` to the chart source.
+  have e : (⟨fun x : (OpenPartialHomeomorph.refl E).source ↦ OpenPartialHomeomorph.refl E x -
+      OpenPartialHomeomorph.refl E z,
+      (OpenPartialHomeomorph.refl E).continuousOn.domRestrict.sub continuous_const⟩ :
+        C((OpenPartialHomeomorph.refl E).source, E)) =
+      (ContinuousMap.addRight (-z)).restrict (OpenPartialHomeomorph.refl E).source :=
+    ContinuousMap.ext fun x ↦ sub_eq_add_neg _ _
+  exact ConcreteCategory.congr_hom (localHomologyMap_congr _ e _ n) _
+
+include hE in
+/-- **Comparing a chart orientation with a restricted orientation.** Let `φ` be a chart of `M`
+with values in `E`, and `V` an open neighbourhood of `z` inside its source. If `φ`, followed by the
+translation taking `φ z` to the origin, carries the local orientation `oM z` to `o 0`, then the
+orientation of `V` pulled back from `o` along `φ` agrees at `z` with the orientation of `V`
+restricted from `oM`: the translated chart has local index `1` at `z` for both. -/
+theorem comap_apply_eq_of_localHomologyMap_chart_sub {M : Type} [TopologicalSpace M] [T2Space M]
+    [ChartedSpace E M] (oM : HomologicalOrientation M E n) (φ : OpenPartialHomeomorph M E)
+    {z : M} (V : TopologicalSpace.Opens M) (hz : z ∈ V) (hVφ : (V : Set M) ⊆ φ.source)
+    (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
+          C(φ.source, E)) (S := {⟨z, hVφ hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext (φ.injOn x.property (hVφ hz) (sub_eq_zero.1 hx))) n
+        ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hVφ hz⟩
+          n).symm (oM z)).val =
+      (o 0).val)
+    (hj : IsOpenEmbedding (fun x : V ↦ φ x)) :
+    (o.comap hj) ⟨z, hz⟩ = (oM.comap V.isOpenEmbedding') ⟨z, hz⟩ := by
+  let W : TopologicalSpace.Opens M := ⟨φ.source, φ.open_source⟩
+  let incl : V → W := fun x ↦ ⟨x.val, hVφ x.property⟩
+  have hincl : IsOpenEmbedding incl :=
+    (IsOpenEmbedding.of_comp_iff _ W.isOpenEmbedding').1 V.isOpenEmbedding'
+  -- The translated chart `τ` on the source of `φ` has local index `1` at `z` for `oM`, by `hφ`, ...
+  let τ : C(W, E) := ⟨fun x ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
+  have hτ : (oM.comap W.isOpenEmbedding').localIndex o τ ⟨z, hVφ hz⟩ = 1 := by
+    rw [localIndex_eq_iff_of_preimage_subset _ o hE τ (x := ⟨z, hVφ hz⟩) (sub_self _)
+      (fun x hx ↦ Subtype.ext (φ.injOn x.property (hVφ hz) (sub_eq_zero.1 (hx : φ x - φ z = 0)))),
+      one_smul, comap_apply]
+    exact hφ
+  -- ... so does its restriction to `V`, for the orientation of `V` restricted from `oM` ...
+  let τV : C(V, E) := τ.comp ⟨incl, hincl.continuous⟩
+  have hτV : (oM.comap V.isOpenEmbedding').localIndex o τV ⟨z, hz⟩ = 1 := by
+    have h := localIndex_comap hE (oM.comap W.isOpenEmbedding') o hincl IsOpenEmbedding.id
+      (f := τV) (g := τ) (x := ⟨z, hz⟩) (.of_forall fun _ ↦ rfl)
+    rw [comap_comap, comap_id, comap_congr _ _ V.isOpenEmbedding' rfl] at h
+    exact h.trans hτ
+  -- ... and for the orientation pulled back along `φ`, since translations preserve orientation.
+  have hτj : (o.comap hj).localIndex o τV ⟨z, hz⟩ = 1 := by
+    have h := localIndex_comap hE o o hj IsOpenEmbedding.id (f := τV)
+      (g := ContinuousMap.addRight (-φ z)) (x := ⟨z, hz⟩)
+      (.of_forall fun _ ↦ (sub_eq_add_neg _ _).symm)
+    rwa [comap_id, localIndex_addRight o hE] at h
+  exact apply_eq_of_localIndex_eq_left _ o hE hE τV (hτj.trans hτV.symm)
+    (by rw [hτj]; exact one_ne_zero)
+
+variable {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  (o' : HomologicalOrientation F F n) (hF : finrank ℝ F = n)
+
+include hF in
+/-- **The local index in open coordinates is that of a map of the ambient spaces.** Let
+`j : M → E` and `k : N → F` be open embeddings into finite-dimensional real normed spaces, oriented
+by `o` and `o'`, and let `f : M → N` be given near `x` in these coordinates by `φ : E → F`, so that
+`φ (j z) = k (f z)` near `x`. Then there is a continuous map `G : E → F` agreeing with `φ` near
+`j x` whose local index at `j x` is the local index of `f` at `x`, for the orientations pulled back
+along `j` and `k`. -/
+theorem exists_eventuallyEq_and_localIndex_comap_eq {M N : Type} [TopologicalSpace M] [T2Space M]
+    [ChartedSpace E M] [TopologicalSpace N] [T2Space N] [ChartedSpace F N] {j : M → E}
+    (hj : IsOpenEmbedding j) {k : N → F} (hk : IsOpenEmbedding k) {f : C(M, N)} {φ : E → F}
+    {x : M} (hφ : ∀ᶠ z in 𝓝 x, φ (j z) = k (f z)) :
+    ∃ G : C(E, F), G =ᶠ[𝓝 (j x)] φ ∧
+      (o.comap hj).localIndex (o'.comap hk) f x = o.localIndex o' G (j x) := by
+  -- On an open neighbourhood `W` of `x` where `φ ∘ j = k ∘ f`, `φ` is continuous on `j '' W`.
+  obtain ⟨W, hW, hWo, hxW⟩ := eventually_nhds_iff.1 hφ
+  have hφc : ContinuousOn φ (j '' W) := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact (hj.continuousAt_iff.1 ((hk.continuous.comp f.continuous).continuousAt.congr
+      (eventually_of_mem (hWo.mem_nhds hz) fun y hy ↦ (hW y hy).symm))).continuousWithinAt
+  -- Extend `φ` from a closed ball about `j x` inside `j '' W` to a continuous map `G : E → F`, by
+  -- Tietze's theorem; `G` agrees with `φ` near `j x`, and so `G ∘ j` agrees with `k ∘ f` near `x`.
+  obtain ⟨ε, hε, hεW⟩ := Metric.isOpen_iff.1 (hj.isOpenMap W hWo) (j x) (mem_image_of_mem j hxW)
+  have hB : Metric.closedBall (j x) (ε / 2) ⊆ j '' W :=
+    (Metric.closedBall_subset_ball (half_lt_self hε)).trans hεW
+  obtain ⟨G, hG⟩ := ContinuousMap.exists_restrict_eq Metric.isClosed_closedBall
+    ⟨_, (hφc.mono hB).domRestrict⟩
+  have hGφ : G =ᶠ[𝓝 (j x)] φ :=
+    eventually_of_mem (Metric.closedBall_mem_nhds _ (half_pos hε)) fun z hz ↦
+      congrArg (· ⟨z, hz⟩) hG
+  exact ⟨G, hGφ, localIndex_comap hF o o' hj hk
+    ((((hj.continuous.tendsto x).eventually hGφ).and hφ).mono fun z hz ↦ hz.1.trans hz.2)⟩
 
 end HomologicalOrientation
 

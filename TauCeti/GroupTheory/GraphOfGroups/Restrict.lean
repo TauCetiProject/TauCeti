@@ -63,11 +63,11 @@ variable (𝔸) in
 reversal: it is the identity on each vertex group and sends each dart to itself. -/
 def restrictInclusion (hT : ∀ e ∈ T', (e : Γ.E) ∈ T ∨ Γ.rev e ∈ T) :
     π₁Tree (𝔸.restrict S hS) T' →* π₁Tree 𝔸 T :=
-  lift (fun v => of T v) (fun e => edge T e.1)
+  lift (fun v => of T v) (fun e => edge T e.val)
     (fun e he => (hT e he).elim edge_eq_one edge_eq_one_of_rev_mem)
-    (fun e => edge_rev (T := T) e.1) fun e c => by
+    (fun e => edge_rev (T := T) e.val) fun e c => by
       rw [restrict_ω_apply, restrict_α_apply]
-      exact edge_mul_of_ω_mul_edge_inv e.1 _
+      exact edge_mul_of_ω_mul_edge_inv e.val _
 
 section restrictInclusion
 
@@ -82,7 +82,7 @@ variable (hT : ∀ e ∈ T', (e : Γ.E) ∈ T ∨ Γ.rev e ∈ T)
   lift_comp_of ..
 
 @[simp] theorem restrictInclusion_edge (e : (Γ.restrict S hS).E) :
-    restrictInclusion 𝔸 hT (edge T' e) = edge T e.1 :=
+    restrictInclusion 𝔸 hT (edge T' e) = edge T e.val :=
   lift_edge ..
 
 /-- The homomorphism induced by the inclusion of a subgraph is surjective when every dart outside
@@ -90,7 +90,7 @@ the subgraph lies in `T` up to reversal. -/
 theorem restrictInclusion_surjective (hST : ∀ e ∉ S, e ∈ T ∨ Γ.rev e ∈ T) :
     Function.Surjective (restrictInclusion 𝔸 hT) := by
   have hrange : (restrictInclusion 𝔸 hT).range =
-      (⨆ v, (of T v).range) ⊔ Subgroup.closure (Set.range fun e : S => edge T e.1) :=
+      (⨆ v, (of T v).range) ⊔ Subgroup.closure (Set.range fun e : S => edge T e.val) :=
     range_lift ..
   rw [← MonoidHom.range_eq_top, eq_top_iff, ← iSup_range_of_sup_closure_range_edge, hrange]
   refine sup_le_sup_left ((Subgroup.closure_le _).2 ?_) _
@@ -103,9 +103,9 @@ end restrictInclusion
 
 /-- The defining relation of a dart of the restriction, in terms of the boundary maps of `𝔸`. -/
 private theorem edge_mul_of_ω_mul_edge_inv_restrict (e : (Γ.restrict S hS).E)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    edge T' e * of (𝔸 := 𝔸.restrict S hS) T' (Γ.tgt e.1) (𝔸.ω e.1 c) * (edge T' e)⁻¹ =
-      of (𝔸 := 𝔸.restrict S hS) T' (Γ.src e.1) (𝔸.α e.1 c) := by
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    edge T' e * of (𝔸 := 𝔸.restrict S hS) T' (Γ.tgt e.val) (𝔸.ω e.val c) * (edge T' e)⁻¹ =
+      of (𝔸 := 𝔸.restrict S hS) T' (Γ.src e.val) (𝔸.α e.val c) := by
   have h := edge_mul_of_ω_mul_edge_inv (𝔸 := 𝔸.restrict S hS) (T := T') e
     ((MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e)).symm c)
   rwa [restrict_ω_apply, restrict_α_apply, MulEquiv.apply_symm_apply] at h

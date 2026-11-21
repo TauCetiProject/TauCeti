@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Category.CompactlyGenerated.Basic
+public import TauCeti.Topology.Convenient.CompactlyGenerated
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 
 /-!
@@ -203,8 +203,8 @@ theorem isWeakHomotopyEquivalence_generatedByCounit
 spaces whose original topology is not compactly generated. The test-space universe is
 independent of the universe of the target. -/
 theorem isWeakHomotopyEquivalence_compactlyGeneratedCounit (X : TopCat.{u}) :
-    (CompactlyGenerated.adjCounit.{v, u}.app X).hom.IsWeakHomotopyEquivalence := by
-  simpa only [CompactlyGenerated.adjCounit_app_hom] using!
-    isWeakHomotopyEquivalence_withGeneratedByTopology_counit_compHaus.{u, v} (X := X)
+    ContinuousMap.IsWeakHomotopyEquivalence
+      ((GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{v} ↦ K)).app X).hom :=
+  isWeakHomotopyEquivalence_generatedByCounit _ X
 
 end TauCeti

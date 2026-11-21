@@ -36,9 +36,8 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {k R : Type u} [CommRing k] [CommRing R] [IsLocalRing R] [IsArtinianRing R]
   [Algebra k R] (E : EllipticCurveGeom (Spec (.of R)))
-  (p : ℕ) [Fact p.Prime] [CharP k p] [CharP R p]
+  (p : ℕ) [Fact p.Prime] [CharP R p]
 
-omit [CharP k p] in
 /-- Every sufficiently high Frobenius twist of an elliptic curve over an Artinian local
 algebra with residue field `k` is pointed-isomorphic over the base to a curve defined over `k`.
 The curve over `k` is allowed to depend on the iterate. -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Compactness.CompactlyCoherentSpace
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 import Mathlib.Topology.Instances.Shrink
 
@@ -15,23 +14,16 @@ import Mathlib.Topology.Instances.Shrink
 Mathlib's `TopologicalSpace.compactlyGenerated X` is the topology on `X` coinduced by continuous
 maps from compact Hausdorff spaces in `Type u`, and `UCompactlyGeneratedSpace.{u} X` asserts that
 the topology of `X` agrees with `TopologicalSpace.compactlyGenerated.{u} X` (with `u` independent
-of the universe of `X`). This file provides basic continuity, transfer, and recognition lemmas for
-`TopologicalSpace.compactlyGenerated.{u}`, `UCompactlyGeneratedSpace.{u}`, and `CompHaus.{u}` test
-maps:
+of the universe of `X`). This file provides basic continuity and transfer lemmas:
 
 * `TauCeti.continuous_compactlyGenerated_iff`: a map out of
   `TopologicalSpace.compactlyGenerated.{u} X` is continuous if and only if its composites with the
   continuous maps from compact Hausdorff spaces in `Type u` are, complementing Mathlib's
   `continuous_from_compactlyGenerated`.
-* `IsCompact.exists_compHaus_homeomorph` and `IsCompact.exists_compHaus_isCompact_image_eq`: every
-  `u`-small Hausdorff compact subset is homeomorphic to a compact Hausdorff space in `Type u`, and
-  in particular is the image of a compact subset of a compact Hausdorff space in `Type u` under a
-  continuous map.
+* `IsCompact.exists_compHaus_homeomorph`: every `u`-small Hausdorff compact subset is homeomorphic
+  to a compact Hausdorff space in `Type u`.
 * `Homeomorph.uCompactlyGeneratedSpace` and `Homeomorph.uCompactlyGeneratedSpace_iff`:
   `u`-compact generation transfers across homeomorphisms between arbitrary universes.
-* `TauCeti.uCompactlyGeneratedSpace_of_compactlyCoherentSpace`: every `u`-small Hausdorff
-  compactly coherent space (in particular every `u`-small Hausdorff weakly locally compact space or
-  `CompactlyGeneratedSpace`) is `u`-compactly generated.
 -/
 
 public section
@@ -47,16 +39,6 @@ theorem IsCompact.exists_compHaus_homeomorph {Y : Type w} [TopologicalSpace Y] {
   have : CompactSpace (Shrink.{u} K) := e.compactSpace
   have : T2Space (Shrink.{u} K) := e.t2Space
   exact ⟨CompHaus.of (Shrink.{u} K), ⟨e.symm⟩⟩
-
-/-- Every `u`-small Hausdorff compact subset is the image of a compact subset of a compact
-Hausdorff space in `Type u` under a continuous map. -/
-theorem IsCompact.exists_compHaus_isCompact_image_eq {Y : Type w} [TopologicalSpace Y]
-    {K : Set Y} (hK : IsCompact K) [T2Space K] [Small.{u} K] :
-    ∃ (S : CompHaus.{u}) (L : Set S) (f : C(S, Y)), IsCompact L ∧ f '' L = K := by
-  obtain ⟨S, ⟨e⟩⟩ := hK.exists_compHaus_homeomorph.{u}
-  refine ⟨S, Set.univ, ⟨Subtype.val ∘ e, continuous_subtype_val.comp e.continuous⟩,
-    isCompact_univ, ?_⟩
-  ext x; simpa using (e.surjective.exists (p := fun z : K ↦ (z : Y) = x)).symm
 
 namespace Homeomorph
 
@@ -87,16 +69,5 @@ theorem continuous_compactlyGenerated_iff {X : Type w} [TopologicalSpace X] {Y :
   refine ⟨fun hf S g => ?_, continuous_from_compactlyGenerated f⟩
   rw [TopologicalSpace.compactlyGenerated, continuous_coinduced_dom, continuous_sigma_iff] at hf
   exact hf ⟨S, g⟩
-
-/-- A `u`-small Hausdorff compactly coherent space is `u`-compactly generated. -/
-instance (priority := 100) uCompactlyGeneratedSpace_of_compactlyCoherentSpace {X : Type w}
-    [TopologicalSpace X] [Small.{u} X] [T2Space X] [CompactlyCoherentSpace X] :
-    UCompactlyGeneratedSpace.{u} X := by
-  refine uCompactlyGeneratedSpace_of_isOpen fun s hs ↦
-    CompactlyCoherentSpace.isOpen_iff.2 fun K hK ↦ ?_
-  obtain ⟨S, ⟨e⟩⟩ := hK.exists_compHaus_homeomorph.{u}
-  convert (hs S ⟨Subtype.val ∘ e, continuous_subtype_val.comp e.continuous⟩).preimage
-    e.symm.continuous
-  ext x; simp
 
 end TauCeti

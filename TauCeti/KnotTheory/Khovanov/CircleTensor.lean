@@ -371,7 +371,7 @@ with element `l₀`. -/
 private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
     Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
-  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.property)⟩
 
 private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
