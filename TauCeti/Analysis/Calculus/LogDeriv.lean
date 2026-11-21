@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Calculus.Deriv.Parity
 
 /-!
 # Analyticity and parity of logarithmic derivatives
@@ -15,15 +16,14 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 The logarithmic derivative of an analytic function is analytic where the function is nonzero; the
 variable and value fields may differ provided the value field is complete.
 
-Over a nontrivially normed field of characteristic zero, the derivative `deriv f 0` and logarithmic
-derivative `logDeriv f 0` of any even function `f` (`Function.Even f`) vanish at `0`, with no
-differentiability or nonvanishing hypothesis (by Lean's totalization of `deriv` and division).
+The logarithmic derivative of the derivative, `logDeriv (deriv f) = f'' / f'` (the pre-Schwarzian
+derivative of `f`), is unchanged by an affine normalisation `w ↦ (w - c) / b` of the target:
+`TauCeti.logDeriv_deriv_sub_div_const`.
 
-## Main results
-
-* `AnalyticAt.logDeriv`: `logDeriv f` is analytic at `x` when `f` is analytic at `x` and `f x ≠ 0`.
-* `Function.Even.deriv_zero`: `deriv f 0 = 0` when `f.Even`.
-* `Function.Even.logDeriv_zero`: `logDeriv f 0 = 0` when `f.Even`.
+Over a nontrivially normed field of characteristic zero, the logarithmic derivative `logDeriv f 0`
+of any even function `f` (`Function.Even f`) vanishes at `0` (`Function.Even.logDeriv_zero`), with
+no differentiability or nonvanishing hypothesis (by `Function.Even.deriv_zero` and Lean's
+totalization of division).
 -/
 
 public section
@@ -36,21 +36,25 @@ protected theorem AnalyticAt.logDeriv {𝕜 𝕝 : Type*} [NontriviallyNormedFie
     AnalyticAt 𝕜 (logDeriv f) x :=
   hf.deriv.div hf hx
 
-/-- The derivative of an even function vanishes at `0` over a field of characteristic zero,
-with no differentiability assumption (by totalization of `deriv`). -/
-theorem Function.Even.deriv_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : f.Even) : deriv f 0 = 0 := by
-  have hneg : deriv (fun x ↦ f (-x)) 0 = -deriv f 0 := by
-    simpa only [neg_zero] using deriv_comp_neg (f := f) (x := (0 : 𝕜))
-  rw [funext hf] at hneg
-  have htwo : (2 : 𝕜) • deriv f 0 = 0 := by
-    rw [two_smul]
-    exact add_eq_zero_iff_eq_neg.mpr hneg
-  exact (smul_eq_zero.mp htwo).resolve_left two_ne_zero
-
 /-- The logarithmic derivative of an even function vanishes at `0` over a field of characteristic
 zero, with no differentiability or nonvanishing assumption. -/
 theorem Function.Even.logDeriv_zero {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
     [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] {f : 𝕜 → 𝕜'} (hf : f.Even) :
     logDeriv f 0 = 0 := by
   rw [logDeriv_apply, hf.deriv_zero, zero_div]
+
+namespace TauCeti
+
+/-- The logarithmic derivative of the derivative (the pre-Schwarzian derivative) is unchanged by
+the affine normalisation `w ↦ (w - c) / b` of the target, for `b ≠ 0`. -/
+theorem logDeriv_deriv_sub_div_const {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] (f : 𝕜 → 𝕜') (c : 𝕜') {b : 𝕜'} (hb : b ≠ 0)
+    (z : 𝕜) :
+    logDeriv (deriv fun z => (f z - c) / b) z = logDeriv (deriv f) z := by
+  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
+    ext z
+    simp only [deriv_div_const, deriv_sub_const]
+  rw [hderiv]
+  simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+
+end TauCeti

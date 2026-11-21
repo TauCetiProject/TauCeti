@@ -49,6 +49,10 @@ Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 
 In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
 vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
+
+Over an ordered semiring, iterated formal derivatives preserve nonnegativity of coefficients and
+hence take nonnegative values at nonnegative points (`Polynomial.coeff_iterate_derivative_nonneg`,
+`Polynomial.eval_iterate_derivative_nonneg`).
 -/
 
 public section
@@ -267,5 +271,22 @@ theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [
     derivative^[k] f = 0 := by
   rw [iterate_derivative_eq_factorial_smul_sum, ← Nat.cast_smul_eq_nsmul R,
     Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
+
+/-- Every iterated formal derivative of a polynomial with nonnegative coefficients also has
+nonnegative coefficients. -/
+theorem coeff_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k d : ℕ) :
+    0 ≤ (derivative^[k] p).coeff d := by
+  rw [coeff_iterate_derivative]
+  exact nsmul_nonneg (hp (d + k)) _
+
+/-- Evaluating any iterated formal derivative of a polynomial with nonnegative coefficients at a
+nonnegative element yields a nonnegative value. -/
+theorem eval_iterate_derivative_nonneg {R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k : ℕ) {x : R} (hx : 0 ≤ x) :
+    0 ≤ (derivative^[k] p).eval x := by
+  rw [eval_eq_sum]
+  exact Finset.sum_nonneg fun d _ ↦
+    mul_nonneg (coeff_iterate_derivative_nonneg hp k d) (pow_nonneg hx d)
 
 end Polynomial

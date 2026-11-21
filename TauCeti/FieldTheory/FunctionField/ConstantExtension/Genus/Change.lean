@@ -187,12 +187,12 @@ private noncomputable def localMap (P : Place k F) :
     ((LinearMap.mulLeft k' (algebraMap F F' (s P))).comp
       (riemannRochSpace (Divisor.conorm k' F' D)).subtype).codRestrict _ fun z ↦ by
         simpa [Algebra.smul_def] using
-          (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
+          (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
 
 private theorem localMap_apply (P : Place k F) (z : riemannRochSpace (Divisor.conorm k' F' D)) :
     localMap hF' hs0 hs P z = Submodule.Quotient.mk ⟨algebraMap F F' (s P) * z, by
       simpa [Algebra.smul_def] using
-        (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P⟩ :=
+        (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P⟩ :=
   (rfl)
 
 private theorem localMap_eq_zero_iff (P : Place k F) (z : riemannRochSpace
@@ -254,11 +254,11 @@ private theorem pi_localMap_surjective
     have hle := P.constantSpanIntegers_le_integralClosureSubmodule k' F' (hloc P)
     by_cases hP : P ∈ S
     · rw [dite_eq_left hP] at hle
-      simpa using add_mem hle (y' ⟨P, hP⟩).2
+      simpa using add_mem hle (y' ⟨P, hP⟩).property
     · rwa [dite_eq_right hP, sub_zero] at hle
   refine ⟨⟨z, hzmem⟩, funext fun P ↦ ?_⟩
   have hP := hloc P
-  rw [dite_eq_left P.2] at hP
+  rw [dite_eq_left P.property] at hP
   rw [LinearMap.pi_apply, ← hy' P]
   simp only [localMap, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply]
   rw [Submodule.Quotient.eq]
@@ -274,7 +274,7 @@ private theorem span_le_ker_pi_localMap (S : Finset (Place k F)) :
   funext P
   rw [LinearMap.pi_apply, Pi.zero_apply, localMap_eq_zero_iff]
   have hspan : Submodule.span k' (algebraMap F F' '' riemannRochSpace D) ≤
-      (P.1.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
+      (P.val.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
     refine Submodule.span_le.2 ?_
     rintro _ ⟨f, hf, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulLeft_apply, ← map_mul]
@@ -299,7 +299,7 @@ private theorem ker_pi_localMap_le_span (S : Finset (Place k F))
     · rw [← localMap_eq_zero_iff hF' hs0 hs]
       simpa using congrFun hz ⟨P, hP⟩
     · rw [hreg P hP]
-      exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
+      exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
   -- so the coordinates of `z` lie in `L(D)`
   have hcoord (j) : c.repr z j ∈ riemannRochSpace D := by
     refine mem_riemannRochSpace_iff.2 fun P ↦ (Place.mul_mem_integers_iff (hs0 P) (hs P)).1 ?_

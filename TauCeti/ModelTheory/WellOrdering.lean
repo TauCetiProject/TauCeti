@@ -513,7 +513,7 @@ end Member
 variable (φ lt) in
 /-- **Marker's consistency property**: its members are the sets `base φ lt ∪ σ` for the pairs
 `(Q, σ)` of `Member`. -/
-private noncomputable def chainProperty : ConsistencyProperty L where
+private def chainProperty : ConsistencyProperty L where
   sets := chainSets.{u, v, w} φ lt
   no_falsum := by
     rintro _ ⟨Q, σ, hm, rfl⟩ hbot
@@ -648,7 +648,6 @@ universe, carrying an `lt`-chain indexed by the rationals. The language is arbit
 theorem exists_model_relChain_rat (h : HasWellOrderedChains.{u, v, w} φ lt) :
     ∃ (M : Type w') (_ : L.Structure M), Nonempty M ∧ Countable M ∧ SentenceInf.Realize φ M ∧
       ∃ f : ℚ → M, RelChain lt f := by
-  classical
   let F : Set (Σ n, L.Functions n) := φ.functionsIn
   let R : Set (Σ n, L.Relations n) := insert ⟨2, lt⟩ φ.relationsIn
   have : Countable F := φ.functionsIn_countable.to_subtype
@@ -661,16 +660,13 @@ theorem exists_model_relChain_rat (h : HasWellOrderedChains.{u, v, w} φ lt) :
     obtain ⟨M, _, hne, hφ, f, hf⟩ := h α hα
     let := ι.reduct M
     refine ⟨M, inferInstance, hne, ?_, f, fun x y hxy => ?_⟩
-    · simpa only [φ₀, SentenceInf.realize_def, FormulaInf.realize_def, realize_restrictSymbols]
-        using hφ
+    · exact (SentenceInf.realize_restrictSymbols φ _ _).2 hφ
     · exact (ι.map_onRelation lt₀ _).mp (hlt₀ ▸ hf x y hxy)
   obtain ⟨N, _, hne, hc, hφ, f, hf⟩ := exists_model_relChain_rat_of_countable.{u, v, w, w'} h₀
-  have : Inhabited N := Classical.inhabited_of_nonempty hne
-  let : L.Structure N := ι.defaultExpansion N
-  have : ι.IsExpansionOn N := (symbSublangIncl_injective F R).isExpansionOn_default N
+  have : Nonempty N := hne
+  let : L.Structure N := expandSymbStructure F R N
   refine ⟨N, inferInstance, hne, hc, ?_, f, fun x y hxy => ?_⟩
-  · simpa only [φ₀, SentenceInf.realize_def, FormulaInf.realize_def, realize_restrictSymbols]
-      using hφ
+  · exact (SentenceInf.realize_restrictSymbols φ _ _).1 hφ
   · exact hlt₀ ▸ (ι.map_onRelation lt₀ _).mpr (hf x y hxy)
 
 /-! ### Boundedness -/
@@ -741,7 +737,7 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
   have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
     simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
   let f : α.ToType → M := fun a => ToType.mk
-    ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩
+    ⟨(ToType.toOrd a).val, (ToType.toOrd a).property.trans_le (Order.le_succ α)⟩
   have hc : Countable M :=
     Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
   exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2

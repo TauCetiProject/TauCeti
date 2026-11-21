@@ -54,9 +54,9 @@ namespace TauCeti
 
 variable {f g : ℂ → ℂ}
 
-private theorem mulSupport_weierstrassFactorOne_pow_subset_ne_zero (f : ℂ → ℂ) (z : ℂ) :
+private theorem mulSupport_weierstrassFactor_one_pow_subset_ne_zero (f : ℂ → ℂ) (z : ℂ) :
     Function.mulSupport (fun ρ : ℂ ↦
-      weierstrassFactorOne (ρ⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ⊆
+      weierstrassFactor 1 (ρ⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ⊆
       {ρ : ℂ | ρ ≠ 0} := by
   intro ρ hρ
   rw [Set.mem_ofPred_eq]
@@ -67,10 +67,10 @@ private theorem mulSupport_weierstrassFactorOne_pow_subset_ne_zero (f : ℂ → 
 unchanged, because the totalized factor at `ρ = 0` is `E₁(0⁻¹ * z) = 1`. -/
 theorem divisorProductOne_eq_tprod_ne_zero (f : ℂ → ℂ) (z : ℂ) :
     divisorProductOne f z = ∏' ρ : {ρ : ℂ // ρ ≠ 0},
-      weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
+      weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
   rw [divisorProductOne_eq_tprod]
   exact (tprod_subtype_eq_of_mulSupport_subset
-    (mulSupport_weierstrassFactorOne_pow_subset_ne_zero f z)).symm
+    (mulSupport_weierstrassFactor_one_pow_subset_ne_zero f z)).symm
 
 /-- Factoring out `z ^ m` from an entire function leaves `divisorProductOne` unchanged. -/
 theorem divisorProductOne_eq_of_eq_pow_mul (hg : Differentiable ℂ g)
@@ -81,18 +81,18 @@ theorem divisorProductOne_eq_of_eq_pow_mul (hg : Differentiable ℂ g)
   rw [divisorProductOne_eq_tprod_ne_zero, divisorProductOne_eq_tprod_ne_zero]
   refine tprod_congr fun ρ ↦ ?_
   rw [hga.divisor_eq_of_eq_sub_pow_smul_of_ne
-    (fun w ↦ by simpa only [sub_zero, smul_eq_mul] using hfg w) ρ.2]
+    (fun w ↦ by simpa only [sub_zero, smul_eq_mul] using hfg w) ρ.property]
 
 /-- Pointwise convergence on `ℂ` of the genus-one canonical product over `{ρ : ℂ // ρ ≠ 0}` for any
 entire function `f` of order less than two. -/
 theorem OrderLE.hasProd_divisorProductOne_ne_zero {A : ℝ}
     (h : OrderLE f A) (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
     HasProd (fun ρ : {ρ : ℂ // ρ ≠ 0} ↦
-      weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^
+      weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^
         (MeromorphicOn.divisor f Set.univ ρ).toNat)
       (divisorProductOne f z) :=
   (hasProd_subtype_iff_of_mulSupport_subset
-    (mulSupport_weierstrassFactorOne_pow_subset_ne_zero f z)).mpr
+    (mulSupport_weierstrassFactor_one_pow_subset_ne_zero f z)).mpr
     (hasProd_divisorProductOne (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z)
 
 /-- Locally uniform convergence on `ℂ` of the genus-one canonical product over the nonzero divisor
@@ -102,28 +102,28 @@ theorem OrderLE.hasProdLocallyUniformlyOn_divisorProductOne_ne_zero {A : ℝ}
     (h : OrderLE f A) (hf : Differentiable ℂ f) (hA : A < 2) :
     HasProdLocallyUniformlyOn
       (fun (ρ : {ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0}) z ↦
-        weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^
-          (MeromorphicOn.divisor f Set.univ ρ.1).toNat)
+        weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^
+          (MeromorphicOn.divisor f Set.univ ρ.val).toNat)
       (divisorProductOne f) Set.univ := by
   have hsum_full := h.summable_divisor_toNat_mul_norm_inv_sq hf hA
   have hsum : Summable
       (fun ρ : {ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0} ↦
-        ((MeromorphicOn.divisor f Set.univ ρ.1).toNat : ℝ) * ‖((ρ : ℂ))⁻¹‖ ^ 2) :=
+        ((MeromorphicOn.divisor f Set.univ ρ.val).toNat : ℝ) * ‖((ρ : ℂ))⁻¹‖ ^ 2) :=
     hsum_full.subtype _
-  refine (hasProdLocallyUniformlyOn_weierstrassFactorOne_pow
+  refine (hasProdLocallyUniformlyOn_weierstrassFactor_one_pow
     (fun ρ : {ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0} ↦ ((ρ : ℂ))⁻¹)
-    (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ.1).toNat) hsum).congr_right fun z _ ↦ ?_
+    (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ.val).toNat) hsum).congr_right fun z _ ↦ ?_
   dsimp only
   rw [divisorProductOne_eq_tprod_ne_zero]
   let j : {ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0} → {ρ : ℂ // ρ ≠ 0} :=
-    fun ρ ↦ ⟨ρ.1.1, ρ.2⟩
+    fun ρ ↦ ⟨ρ.val.val, ρ.property⟩
   have hj : Function.Injective j := fun r t hrt ↦
     Subtype.ext (Subtype.ext (congrArg (Subtype.val : {ρ : ℂ // ρ ≠ 0} → ℂ) hrt))
   exact hj.tprod_eq (f := fun ρ : {ρ : ℂ // ρ ≠ 0} ↦
-    weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) fun ρ hρ ↦ by
+    weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) fun ρ hρ ↦ by
       by_contra hnot
-      have hnot_supp : ρ.1 ∉ (MeromorphicOn.divisor f Set.univ).support := fun hs ↦
-        hnot ⟨⟨⟨ρ.1, hs⟩, ρ.2⟩, rfl⟩
+      have hnot_supp : ρ.val ∉ (MeromorphicOn.divisor f Set.univ).support := fun hs ↦
+        hnot ⟨⟨⟨ρ.val, hs⟩, ρ.property⟩, rfl⟩
       rw [Function.notMem_support] at hnot_supp
       exact hρ (by simp [hnot_supp])
 
