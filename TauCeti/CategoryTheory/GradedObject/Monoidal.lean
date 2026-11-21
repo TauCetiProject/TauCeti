@@ -198,6 +198,14 @@ lemma isIso_ιTensorObj_of_isZero_left [AddMonoid I] [IsLeftCancelAdd I] [Monoid
     simp
   · exact ((tensorRight _).map_isZero (hX i' hi)).eq_of_src _ _
 
+/-- If `Y` vanishes in every degree `j` with `i + j = n` for some `i`, the tensor product of graded
+objects vanishes in degree `n`. -/
+lemma isZero_tensorObj_of_isZero_right [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
+    (X Y : GradedObject I C) [HasTensor X Y] [∀ i, (tensorLeft (X i)).PreservesZeroMorphisms]
+    {n : I} (hY : ∀ i j, i + j = n → IsZero (Y j)) : IsZero (tensorObj X Y n) :=
+  (IsZero.iff_id_eq_zero _).2 <| tensorObj_ext _ _ fun i j h ↦
+    ((tensorLeft (X i)).map_isZero (hY i j h)).eq_of_src _ _
+
 section SuccRight
 
 variable [AddRightCancelMonoid I] [One I] [HasZeroMorphisms C] [MonoidalCategory C]
