@@ -86,7 +86,10 @@ theorem norm_wedge_le_norm_mul_norm (α : E [⋀^Fin 1]→L[ℝ] ℝ) (ψ : E [�
       (ContinuousLinearMap.mul ℝ ℝ).continuous₂ α ψ (w 0) (Fin.tail w) fun i ↦ by
         rw [Fin.tail, hαw, hAc]
         simp
-    rw [← wedge_def, Matrix.vecCons, Fin.cons_self_tail] at h
+    have hcons : Matrix.vecCons (w 0) (Fin.tail w) = w := by
+      funext i
+      cases i using Fin.cases <;> simp [Fin.tail]
+    rw [← wedge_def, hcons] at h
     simpa [f, Function.comp_def] using h
   have hα : ‖α ![w 0]‖ ≤ ‖α‖ := by simpa [hw.norm_eq_one] using α.le_opNorm ![w 0]
   have hψ : ‖ψ (Fin.tail w)‖ ≤ ‖ψ‖ := by
@@ -101,11 +104,11 @@ theorem norm_wedgePow_succ_le (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) :
     ‖ω.wedgePow (m + 1)‖ ≤ (m + 1) * ‖ω‖ * ‖ω.wedgePow m‖ := by
   refine opNorm_le_bound _ (by positivity) fun v ↦ ?_
   obtain ⟨u, w, rfl⟩ : ∃ (u : E) (w : Fin (2 * m + 1) → E), v = Matrix.vecCons u w :=
-    ⟨v 0, Fin.tail v, (Fin.cons_self_tail v).symm⟩
+    ⟨vecHead v, vecTail v, (Matrix.cons_head_tail v).symm⟩
   have hprod : ∏ i, ‖(w ∘ Fin.cast (Nat.add_comm 1 (2 * m))) i‖ = ∏ i, ‖w i‖ :=
     Fintype.prod_equiv (finCongr (Nat.add_comm 1 (2 * m))) _ _ fun i ↦ rfl
   have hprod' : ∏ i : Fin (2 * (m + 1)), ‖Matrix.vecCons u w i‖ = ‖u‖ * ∏ i, ‖w i‖ :=
-    Fin.prod_univ_succ (fun i : Fin (2 * m + 1 + 1) ↦ ‖Matrix.vecCons u w i‖)
+    (Fin.prod_univ_succ (fun i : Fin (2 * m + 1 + 1) ↦ ‖Matrix.vecCons u w i‖)).trans (by simp)
   rw [wedgePow_succ_apply_vecCons, ← wedge_def, hprod']
   calc ‖((m : ℝ) + 1) * (curryLeftTopological (n := 1) ω u).wedge (ω.wedgePow m)
           (w ∘ Fin.cast (Nat.add_comm 1 (2 * m)))‖

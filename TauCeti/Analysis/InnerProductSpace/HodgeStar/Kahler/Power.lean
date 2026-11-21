@@ -87,8 +87,9 @@ def complexRealFrame (u : Fin r → V) : Fin (2 * r) → V :=
 reindexed by `Fin (2 * r)` through `finProdFinEquiv`. -/
 theorem complexRealFrame_eq_comp (u : Fin r → V) :
     J.complexRealFrame u = (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) ∘
-      (finCongr (Nat.mul_comm 2 r)).trans finProdFinEquiv.symm :=
-  (rfl)
+      (finCongr (Nat.mul_comm 2 r)).trans finProdFinEquiv.symm := by
+  funext k
+  simp [complexRealFrame, finCongr_apply]
 
 /-- The even-indexed vectors of the frame of `u` are the vectors of `u`. -/
 @[simp]
@@ -145,7 +146,8 @@ end ComplexRealFrame
 variable [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)
 
 /-- The **normalized Kähler power** `ω ^ r / r!`, the real `2r`-form given by the `r`-th wedge
-power of the Kähler form `ω(u, w) = ⟪J u, w⟫` divided by `r!`. -/
+power of the alternating form of the Kähler two-vector `J.kahlerForm`, divided by `r!`. When `J`
+is orthogonal, `ω` is the two-form `ω(u, w) = ⟪J u, w⟫`. -/
 def kahlerPowerForm (r : ℕ) : V [⋀^Fin (2 * r)]→L[ℝ] ℝ :=
   (r.factorial : ℝ)⁻¹ • (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r
 
@@ -187,7 +189,7 @@ theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu :
   -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
   have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
       r.factorial := by
-    rw [complexRealFrame_eq_comp, Equiv.coe_trans, Function.comp_def]
+    unfold complexRealFrame
     exact h
   rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul, h',
     inv_mul_cancel₀ (by positivity)]
