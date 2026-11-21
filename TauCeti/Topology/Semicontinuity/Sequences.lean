@@ -421,14 +421,11 @@ theorem seqLowerSemicontinuousOn_iff_forall_le_of_le :
 to sequential closedness of every relative sublevel `{x ∈ s | f x ≤ b}` in the ambient space. -/
 theorem _root_.IsSeqClosed.seqLowerSemicontinuousOn_iff_isSeqClosed_sublevel (hs : IsSeqClosed s) :
     SeqLowerSemicontinuousOn f s ↔ ∀ b, IsSeqClosed {x ∈ s | f x ≤ b} := by
-  rw [seqLowerSemicontinuousOn_iff_isSeqClosed_subtype]
-  refine forall_congr' fun b ↦ ⟨fun hb u z hu hlim ↦ ?_, fun hb v ⟨z, hz⟩ hv hlim ↦ ?_⟩
+  rw [seqLowerSemicontinuousOn_iff_forall_le_of_le]
+  refine forall_congr' fun b ↦ ⟨fun hb u z hu hlim ↦ ?_, fun hb u z hu _hz hlim ↦ ?_⟩
   · have hz : z ∈ s := hs (fun n ↦ (hu n).1) hlim
-    refine ⟨hz, ?_⟩
-    have hv : Tendsto (fun n ↦ (⟨u n, (hu n).1⟩ : s)) atTop (𝓝 ⟨z, hz⟩) :=
-      tendsto_subtype_rng.2 hlim
-    exact hb (fun n ↦ (hu n).2) hv
-  · exact (hb (fun n ↦ ⟨(v n).property, hv n⟩) ((continuous_subtypeVal.tendsto _).comp hlim)).2
+    exact ⟨hz, hb u z hu hz hlim⟩
+  · exact (hb hu hlim).2
 
 /-- On a sequentially closed set `s`, each relative sublevel `{x ∈ s | f x ≤ b}` of a sequentially
 lower semicontinuous function is sequentially closed. -/
@@ -867,46 +864,40 @@ theorem SeqLowerSemicontinuous.inf {γ : Type*} [LinearOrder γ] {f g : X → γ
 
 /-- The pointwise supremum of a family of functions sequentially lower semicontinuous within `s`
 at `x` into a conditionally complete linear order is sequentially lower semicontinuous within `s`
-at `x`, provided the family is bounded above at `x` and eventually in `𝓝[s] x`. -/
+at `x`, provided the family is eventually bounded above along every sequence in `s` converging to
+`x`. -/
 theorem seqLowerSemicontinuousWithinAt_ciSup {ι : Sort*} {γ : Type*}
     [ConditionallyCompleteLinearOrder γ] {f : ι → X → γ}
-    (hbddx : BddAbove (range fun i ↦ f i x))
-    (hbdd : ∀ᶠ y in 𝓝[s] x, BddAbove (range fun i ↦ f i y))
+    (hbdd : ∀ ⦃u : ℕ → X⦄, (∀ n, u n ∈ s) → Tendsto u atTop (𝓝 x) →
+      ∀ᶠ n in atTop, BddAbove (range fun i ↦ f i (u n)))
     (hf : ∀ i, SeqLowerSemicontinuousWithinAt (f i) s x) :
     SeqLowerSemicontinuousWithinAt (fun z ↦ ⨆ i, f i z) s x := by
-  intro u hu hlim
-  let F : ι → ℕ∞ → γ := fun i k ↦ ENat.recTopCoe (f i x) (fun n ↦ f i (u n)) k
-  have hF (i : ι) : LowerSemicontinuousAt (F i) ⊤ :=
-    ENat.lowerSemicontinuousAt_top_iff.2 (hf i hu hlim)
-  have hFbdd : ∀ᶠ k in 𝓝 ⊤, BddAbove (range fun i ↦ F i k) := by
-    have hev : ∀ᶠ n : ℕ in atTop, BddAbove (range fun i ↦ f i (u n)) :=
-      (tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall hu⟩).eventually hbdd
-    exact (ENat.semicontinuousAt_top_iff
-      (r := fun k (_ : Unit) ↦ BddAbove (range fun i ↦ F i k))).2
-      (fun _ _ ↦ by simpa only [F, ENat.recTopCoe_natCast] using hev) ()
-      (by simpa only [F, ENat.recTopCoe_top] using hbddx)
-  simpa only [F, ENat.recTopCoe_top, ENat.recTopCoe_natCast] using
-    ENat.lowerSemicontinuousAt_top_iff.1 (lowerSemicontinuousAt_ciSup hFbdd hF)
+  cases isEmpty_or_nonempty ι
+  · simpa only [iSup_of_empty'] using seqLowerSemicontinuousWithinAt_const
+  · intro u hu hlim y hy
+    obtain ⟨i, hi⟩ := exists_lt_of_lt_ciSup hy
+    filter_upwards [hf i hu hlim y hi, hbdd hu hlim] with n hn hnbdd
+    exact hn.trans_le (le_ciSup hnbdd i)
 
 /-- The pointwise supremum of a family of functions sequentially lower semicontinuous within `s`
 at `x` into a complete linear order is sequentially lower semicontinuous within `s` at `x`. -/
 theorem seqLowerSemicontinuousWithinAt_iSup {ι : Sort*} {γ : Type*} [CompleteLinearOrder γ]
     {f : ι → X → γ} (hf : ∀ i, SeqLowerSemicontinuousWithinAt (f i) s x) :
     SeqLowerSemicontinuousWithinAt (fun z ↦ ⨆ i, f i z) s x :=
-  seqLowerSemicontinuousWithinAt_ciSup (OrderTop.bddAbove _)
-    (Eventually.of_forall fun _ ↦ OrderTop.bddAbove _) hf
+  seqLowerSemicontinuousWithinAt_ciSup
+    (fun _ _ _ ↦ Eventually.of_forall fun _ ↦ OrderTop.bddAbove _) hf
 
 /-- The pointwise supremum of a family of functions sequentially lower semicontinuous at `x` into
 a conditionally complete linear order is sequentially lower semicontinuous at `x`, provided the
-family is eventually bounded above near `x`. -/
+family is eventually bounded above along every sequence converging to `x`. -/
 theorem seqLowerSemicontinuousAt_ciSup {ι : Sort*} {γ : Type*}
     [ConditionallyCompleteLinearOrder γ] {f : ι → X → γ}
-    (hbdd : ∀ᶠ y in 𝓝 x, BddAbove (range fun i ↦ f i y))
+    (hbdd : ∀ ⦃u : ℕ → X⦄, Tendsto u atTop (𝓝 x) →
+      ∀ᶠ n in atTop, BddAbove (range fun i ↦ f i (u n)))
     (hf : ∀ i, SeqLowerSemicontinuousAt (f i) x) :
     SeqLowerSemicontinuousAt (fun z ↦ ⨆ i, f i z) x := by
   rw [← seqLowerSemicontinuousWithinAt_univ_iff]
-  rw [← nhdsWithin_univ] at hbdd
-  exact seqLowerSemicontinuousWithinAt_ciSup (hbdd.self_of_nhdsWithin (mem_univ x)) hbdd
+  exact seqLowerSemicontinuousWithinAt_ciSup (fun _ _ hlim ↦ hbdd hlim)
     fun i ↦ (hf i).seqLowerSemicontinuousWithinAt univ
 
 /-- The pointwise supremum of a family of functions sequentially lower semicontinuous at `x` into
@@ -914,7 +905,7 @@ a complete linear order is sequentially lower semicontinuous at `x`. -/
 theorem seqLowerSemicontinuousAt_iSup {ι : Sort*} {γ : Type*} [CompleteLinearOrder γ]
     {f : ι → X → γ} (hf : ∀ i, SeqLowerSemicontinuousAt (f i) x) :
     SeqLowerSemicontinuousAt (fun z ↦ ⨆ i, f i z) x :=
-  seqLowerSemicontinuousAt_ciSup (Eventually.of_forall fun _ ↦ OrderTop.bddAbove _) hf
+  seqLowerSemicontinuousAt_ciSup (fun _ _ ↦ Eventually.of_forall fun _ ↦ OrderTop.bddAbove _) hf
 
 /-- The pointwise supremum of a family of sequentially lower semicontinuous functions on `s` into
 a conditionally complete linear order is sequentially lower semicontinuous on `s`, provided the
@@ -924,8 +915,8 @@ theorem seqLowerSemicontinuousOn_ciSup {ι : Sort*} {γ : Type*}
     (hbdd : ∀ x ∈ s, BddAbove (range fun i ↦ f i x))
     (hf : ∀ i, SeqLowerSemicontinuousOn (f i) s) :
     SeqLowerSemicontinuousOn (fun z ↦ ⨆ i, f i z) s :=
-  fun x hx ↦ seqLowerSemicontinuousWithinAt_ciSup (hbdd x hx)
-    (eventually_nhdsWithin_of_forall hbdd) fun i ↦ hf i x hx
+  fun x hx ↦ seqLowerSemicontinuousWithinAt_ciSup
+    (fun _ hu _ ↦ Eventually.of_forall fun n ↦ hbdd _ (hu n)) fun i ↦ hf i x hx
 
 /-- The pointwise supremum of a family of sequentially lower semicontinuous functions on `s` into
 a complete linear order is sequentially lower semicontinuous on `s`. -/
@@ -942,7 +933,8 @@ theorem seqLowerSemicontinuous_ciSup {ι : Sort*} {γ : Type*}
     (hbdd : ∀ x, BddAbove (range fun i ↦ f i x))
     (hf : ∀ i, SeqLowerSemicontinuous (f i)) :
     SeqLowerSemicontinuous (fun z ↦ ⨆ i, f i z) :=
-  fun x ↦ seqLowerSemicontinuousAt_ciSup (Eventually.of_forall hbdd) fun i ↦ hf i x
+  fun x ↦ seqLowerSemicontinuousAt_ciSup (fun _ _ ↦ Eventually.of_forall fun _ ↦ hbdd _)
+    fun i ↦ hf i x
 
 /-- The pointwise supremum of a family of sequentially lower semicontinuous functions into a
 complete linear order is sequentially lower semicontinuous. -/
@@ -999,15 +991,13 @@ theorem _root_.Equiv.seqLowerSemicontinuousOn_image_iff_forall_le_of_tendsto {X 
       ∀ (u : ℕ → X) (x : X) (r : ℝ), (∀ n, u n ∈ s) → x ∈ s →
         Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e x)) → Tendsto (f ∘ u) atTop (𝓝 r) →
         f x ≤ r := by
-  let : TopologicalSpace X := TopologicalSpace.induced e inferInstance
-  have hind : IsInducing e := ⟨rfl⟩
-  have heq : SeqLowerSemicontinuousOn (fun y ↦ f (e.symm y)) (e '' s) ↔
-      SeqLowerSemicontinuousOn f s := by
-    simp only [e.seqLowerSemicontinuousOn_image_iff, seqLowerSemicontinuousOn_iff,
-      seqLowerSemicontinuousWithinAt_iff, hind.tendsto_nhds_iff]
-    exact ⟨fun h x hx _ hu ↦ h _ x hu hx, fun h u x hu hx ↦ h x hx hu⟩
-  rw [heq, seqLowerSemicontinuousOn_iff_forall_le_of_tendsto hb]
-  simp only [hind.tendsto_nhds_iff]
+  have hb' : BddBelow ((fun y ↦ f (e.symm y)) '' (e '' s)) := by
+    simpa only [← image_image, e.symm_image_image] using hb
+  rw [seqLowerSemicontinuousOn_iff_forall_le_of_tendsto hb',
+    (Equiv.arrowCongr (Equiv.refl ℕ) e).surjective.forall]
+  simp_rw [e.surjective.forall]
+  simp only [Equiv.arrowCongr_apply, Equiv.refl_symm, Equiv.coe_refl, Function.comp_def,
+    id_eq, e.injective.mem_set_image, e.symm_apply_apply]
   rfl
 
 section SeqCompact
