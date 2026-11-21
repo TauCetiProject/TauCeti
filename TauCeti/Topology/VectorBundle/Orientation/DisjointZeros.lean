@@ -13,9 +13,9 @@ public import TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv
 
 Let `E₁`, `E₂` and `E₃` be oriented real vector bundles of rank `n + 1` over a base `B`, with
 continuous sections `s₁`, `s₂` and `s₃`. Suppose that the zeros of `s₁` and `s₂` lie in disjoint
-closed sets `Z₁` and `Z₂`, those of `s₃` in `Z₁ ∪ Z₂`, and that near each `Zᵢ` the section `s₃`
-*is* `sᵢ`: off `Z₂` an orientation-preserving fibrewise isomorphism `E₁ ≃ E₃` carries `s₁` to `s₃`,
-and off `Z₁` one `E₂ ≃ E₃` carries `s₂` to `s₃`. Then
+closed sets `Z₁` and `Z₂`, and that near each `Zᵢ` the section `s₃` *is* `sᵢ`: off `Z₂` an
+orientation-preserving fibrewise isomorphism `E₁ ≃ E₃` carries `s₁` to `s₃`, and off `Z₁` one
+`E₂ ≃ E₃` carries `s₂` to `s₃`. Then
 
 `e(E₃) = e(E₁) + e(E₂)`
 
@@ -126,7 +126,7 @@ theorem singularCohomologyMap_interPairMapOfSubset_thomClass {s₁ : ∀ b, E₁
       (thomPairMapOfFiberwise_fst_apply _ _).symm
     rw [thomPairMapOfNeZero_fst_apply (X := V) ⟨_, hσ⟩ hσ₀ b,
       TopPair.excisionMap_fst_apply (X := TopCat.of B) V Z₁ᶜ b]
-    rfl
+    exact congrArg (TotalSpace.mk' F₁ b.val) (ContinuousLinearEquiv.refl_apply ℝ (E₁ b.val) _).symm
   have h₃ : TopPair.interPairMapOfSubset (X := TopCat.of B) (B := Z₁ᶜ) hV ≫
       thomPairMapOfNeZero ⟨_, hs₃⟩ hZ₃ =
       thomPairMapOfNeZero ⟨_, hσ⟩ hσ₀ ≫ thomPairMapOfFiberwise (φ := fun b ↦ φ (g b)) hφ' := by
@@ -158,8 +158,8 @@ variable {F₂ : Type w} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] {E₂ 
   (o₂ : VectorBundleOrientation F₂ E₂ (Fin (n + 1))) (hF₂ : finrank ℝ F₂ = n + 1)
 
 /-- **Euler classes from sections with disjoint zero sets.** Let `s₁`, `s₂` and `s₃` be continuous
-sections of oriented bundles `E₁`, `E₂` and `E₃` of rank `n + 1`, nonzero off `Z₁`, off `Z₂` and off
-`Z₁ ∪ Z₂` respectively, for disjoint closed sets `Z₁` and `Z₂`. Suppose that off `Z₂`
+sections of oriented bundles `E₁`, `E₂` and `E₃` of rank `n + 1`, with `s₁` nonzero off `Z₁` and
+`s₂` nonzero off `Z₂`, for disjoint closed sets `Z₁` and `Z₂`. Suppose that off `Z₂`
 orientation-preserving fibrewise isomorphisms `φ₁ b : E₁ b ≃ E₃ b`, continuous on the total space
 there, carry `s₁` to `s₃`, and that off `Z₁` such isomorphisms `φ₂ b : E₂ b ≃ E₃ b` carry `s₂` to
 `s₃`. Then `e(E₃) = e(E₁) + e(E₂)`. -/
@@ -168,7 +168,7 @@ theorem eulerClass_eq_add_of_disjoint {Z₁ Z₂ : Set B} (hZ₁ : IsClosed Z₁
     (hs₁₀ : ∀ b ∉ Z₁, s₁ b ≠ 0) {s₂ : ∀ b, E₂ b}
     (hs₂ : Continuous fun b ↦ TotalSpace.mk' F₂ b (s₂ b)) (hs₂₀ : ∀ b ∉ Z₂, s₂ b ≠ 0)
     {s₃ : ∀ b, E₃ b} (hs₃ : Continuous fun b ↦ TotalSpace.mk' F₃ b (s₃ b))
-    (hs₃₀ : ∀ b ∉ Z₁ ∪ Z₂, s₃ b ≠ 0) {φ₁ : ∀ b, E₁ b ≃L[ℝ] E₃ b}
+    {φ₁ : ∀ b, E₁ b ≃L[ℝ] E₃ b}
     (hφ₁ : ContinuousOn (fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₃ v.proj (φ₁ v.proj v.snd))
       (π F₁ E₁ ⁻¹' Z₂ᶜ))
     (ho₁ : ∀ b ∉ Z₂, Orientation.map (Fin (n + 1)) (φ₁ b).toLinearEquiv (o₁ b) = o₃ b)
@@ -178,6 +178,9 @@ theorem eulerClass_eq_add_of_disjoint {Z₁ Z₂ : Set B} (hZ₁ : IsClosed Z₁
     (ho₂ : ∀ b ∉ Z₁, Orientation.map (Fin (n + 1)) (φ₂ b).toLinearEquiv (o₂ b) = o₃ b)
     (hs₂₃ : ∀ b ∉ Z₁, φ₂ b (s₂ b) = s₃ b) :
     o₃.eulerClass hF₃ = o₁.eulerClass hF₁ + o₂.eulerClass hF₂ := by
+  -- Off `Z₁ ∪ Z₂` the section `s₃` is the image of `s₁ ≠ 0` under `φ₁`.
+  have hs₃₀ : ∀ b ∉ Z₁ ∪ Z₂, s₃ b ≠ 0 := fun b hb ↦ hs₁₃ b (fun h ↦ hb (Or.inr h)) ▸
+    (φ₁ b).toLinearEquiv.map_ne_zero_iff.2 (hs₁₀ b fun h ↦ hb (Or.inl h))
   -- Off `Z₂` the class of `s₃` agrees with that of `s₁`, and off `Z₁` with that of `s₂`.
   have hV₁ : (Z₂ᶜ ∩ Z₁ᶜ : Set B) ⊆ (Z₁ ∪ Z₂)ᶜ :=
     ((Set.inter_comm Z₂ᶜ Z₁ᶜ).trans (Set.compl_union Z₁ Z₂).symm).subset

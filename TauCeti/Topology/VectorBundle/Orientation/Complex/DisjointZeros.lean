@@ -13,8 +13,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.DisjointZeros
 
 Let `L₁`, `L₂` and `L₃` be complex line bundles over a base `B`, with continuous sections `s₁`,
 `s₂` and `s₃`. Suppose that the zeros of `s₁` and `s₂` lie in disjoint closed sets `Z₁` and `Z₂`,
-those of `s₃` in `Z₁ ∪ Z₂`, and that off `Z₂` complex-linear isomorphisms `L₁ ≃ L₃` carry `s₁` to
-`s₃`, and off `Z₁` complex-linear isomorphisms `L₂ ≃ L₃` carry `s₂` to `s₃`. Then
+and that off `Z₂` complex-linear isomorphisms `L₁ ≃ L₃` carry `s₁` to `s₃`, and off `Z₁`
+complex-linear isomorphisms `L₂ ≃ L₃` carry `s₂` to `s₃`. Then
 
 `c₁(L₃) = c₁(L₁) + c₁(L₂)`
 
@@ -76,31 +76,9 @@ local instance instVectorBundleRealDisjointZeros₂ : VectorBundle ℝ F₂ E₂
 local instance instVectorBundleRealDisjointZeros₃ : VectorBundle ℝ F₃ E₃ :=
   VectorBundle.restrictScalars ℝ ℂ F₃ E₃
 
-/-- A complex-linear isomorphism of fibres, as a real-linear one. -/
-private abbrev realFiberEquiv {b : B} (φ : E₁ b ≃L[ℂ] E₃ b) : E₁ b ≃L[ℝ] E₃ b :=
-  { φ.toLinearEquiv.restrictScalars ℝ with
-    continuous_toFun := φ.continuous
-    continuous_invFun := φ.symm.continuous }
-
-/-- A complex-linear isomorphism of fibres carries the canonical orientation, reindexed by
-`Fin (2r + 2)`, to the canonical orientation. -/
-private theorem map_reindex_complex (hF₁ : finrank ℂ F₁ = r + 1) (hF₃ : finrank ℂ F₃ = r + 1)
-    {b : B} (φ : E₁ b ≃L[ℂ] E₃ b) :
-    Orientation.map (Fin (2 * r + 1 + 1)) (realFiberEquiv φ).toLinearEquiv
-        (VectorBundleOrientation.reindex (finCongr (by omega))
-          (VectorBundleOrientation.complex F₁ E₁) b) =
-      VectorBundleOrientation.reindex (finCongr (by omega))
-        (VectorBundleOrientation.complex F₃ E₃) b := by
-  rw [VectorBundleOrientation.reindex_apply, VectorBundleOrientation.reindex_apply,
-    Orientation.map_reindex]
-  refine (congrArg _ (VectorBundleOrientation.map_complex (F := F₃) (E := E₃) (F' := F₁) (E' := E₁)
-    φ.toLinearEquiv)).trans ?_
-  rw [← Orientation.reindex_trans]
-  exact congrArg (Orientation.reindex ℝ _ · _) (Equiv.ext fun _ ↦ by simp)
-
 /-- **Euler classes of complex bundles from sections with disjoint zero sets.** Let `s₁`, `s₂` and
 `s₃` be continuous sections of complex vector bundles `E₁`, `E₂` and `E₃` of complex rank `r + 1`,
-nonzero off `Z₁`, off `Z₂` and off `Z₁ ∪ Z₂` respectively, for disjoint closed sets `Z₁` and `Z₂`.
+with `s₁` nonzero off `Z₁` and `s₂` nonzero off `Z₂`, for disjoint closed sets `Z₁` and `Z₂`.
 If off `Z₂` complex-linear isomorphisms `φ₁ b : E₁ b ≃ E₃ b`, continuous on the total space there,
 carry `s₁` to `s₃`, and off `Z₁` such isomorphisms `φ₂ b : E₂ b ≃ E₃ b` carry `s₂` to `s₃`, then
 `e(E₃) = e(E₁) + e(E₂)`. -/
@@ -110,8 +88,7 @@ theorem complexEulerClass_eq_add_of_disjoint (hF₁ : finrank ℂ F₁ = r + 1)
     (hs₁ : Continuous fun b ↦ TotalSpace.mk' F₁ b (s₁ b)) (hs₁₀ : ∀ b ∉ Z₁, s₁ b ≠ 0)
     {s₂ : ∀ b, E₂ b} (hs₂ : Continuous fun b ↦ TotalSpace.mk' F₂ b (s₂ b))
     (hs₂₀ : ∀ b ∉ Z₂, s₂ b ≠ 0) {s₃ : ∀ b, E₃ b}
-    (hs₃ : Continuous fun b ↦ TotalSpace.mk' F₃ b (s₃ b)) (hs₃₀ : ∀ b ∉ Z₁ ∪ Z₂, s₃ b ≠ 0)
-    {φ₁ : ∀ b, E₁ b ≃L[ℂ] E₃ b}
+    (hs₃ : Continuous fun b ↦ TotalSpace.mk' F₃ b (s₃ b)) {φ₁ : ∀ b, E₁ b ≃L[ℂ] E₃ b}
     (hφ₁ : ContinuousOn (fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₃ v.proj (φ₁ v.proj v.snd))
       (π F₁ E₁ ⁻¹' Z₂ᶜ))
     (hs₁₃ : ∀ b ∉ Z₂, φ₁ b (s₁ b) = s₃ b) {φ₂ : ∀ b, E₂ b ≃L[ℂ] E₃ b}
@@ -121,13 +98,18 @@ theorem complexEulerClass_eq_add_of_disjoint (hF₁ : finrank ℂ F₁ = r + 1)
     complexEulerClass F₃ E₃ hF₃ = complexEulerClass F₁ E₁ hF₁ + complexEulerClass F₂ E₂ hF₂ := by
   rw [complexEulerClass_def, complexEulerClass_def, complexEulerClass_def]
   exact VectorBundleOrientation.eulerClass_eq_add_of_disjoint _ _ _ _ _ _ hZ₁ hZ₂ hZ hs₁ hs₁₀
-    hs₂ hs₂₀ hs₃ hs₃₀ (φ₁ := fun b ↦ realFiberEquiv (φ₁ b)) hφ₁
-    (fun b _ ↦ map_reindex_complex hF₁ hF₃ (φ₁ b)) hs₁₃ (φ₂ := fun b ↦ realFiberEquiv (φ₂ b)) hφ₂
-    (fun b _ ↦ map_reindex_complex hF₂ hF₃ (φ₂ b)) hs₂₃
+    hs₂ hs₂₀ hs₃ (φ₁ := fun b ↦ (φ₁ b).restrictScalars' ℝ)
+    (by simpa only [ContinuousLinearEquiv.coe_restrictScalars'] using hφ₁)
+    (fun b _ ↦ VectorBundleOrientation.map_reindex_complex hF₃ hF₁ (φ₁ b))
+    (by simpa only [ContinuousLinearEquiv.coe_restrictScalars'] using hs₁₃)
+    (φ₂ := fun b ↦ (φ₂ b).restrictScalars' ℝ)
+    (by simpa only [ContinuousLinearEquiv.coe_restrictScalars'] using hφ₂)
+    (fun b _ ↦ VectorBundleOrientation.map_reindex_complex hF₃ hF₂ (φ₂ b))
+    (by simpa only [ContinuousLinearEquiv.coe_restrictScalars'] using hs₂₃)
 
 /-- **Additivity of the first Chern class from sections with disjoint zero sets.** Let `s₁`, `s₂`
-and `s₃` be continuous sections of complex line bundles `L₁`, `L₂` and `L₃`, nonzero off `Z₁`, off
-`Z₂` and off `Z₁ ∪ Z₂` respectively, for disjoint closed sets `Z₁` and `Z₂`. If off `Z₂`
+and `s₃` be continuous sections of complex line bundles `L₁`, `L₂` and `L₃`, with `s₁` nonzero off
+`Z₁` and `s₂` nonzero off `Z₂`, for disjoint closed sets `Z₁` and `Z₂`. If off `Z₂`
 complex-linear isomorphisms `L₁ b ≃ L₃ b`, continuous on the total space there, carry `s₁` to `s₃`,
 and off `Z₁` complex-linear isomorphisms `L₂ b ≃ L₃ b` carry `s₂` to `s₃`, then
 `c₁(L₃) = c₁(L₁) + c₁(L₂)`. For `L₃ = L₁ ⊗ L₂` and `s₃ = s₁ ⊗ s₂` these isomorphisms are
@@ -138,8 +120,7 @@ theorem lineFirstChernClass_eq_add_of_disjoint (hF₁ : finrank ℂ F₁ = 1)
     (hs₁ : Continuous fun b ↦ TotalSpace.mk' F₁ b (s₁ b)) (hs₁₀ : ∀ b ∉ Z₁, s₁ b ≠ 0)
     {s₂ : ∀ b, E₂ b} (hs₂ : Continuous fun b ↦ TotalSpace.mk' F₂ b (s₂ b))
     (hs₂₀ : ∀ b ∉ Z₂, s₂ b ≠ 0) {s₃ : ∀ b, E₃ b}
-    (hs₃ : Continuous fun b ↦ TotalSpace.mk' F₃ b (s₃ b)) (hs₃₀ : ∀ b ∉ Z₁ ∪ Z₂, s₃ b ≠ 0)
-    {φ₁ : ∀ b, E₁ b ≃L[ℂ] E₃ b}
+    (hs₃ : Continuous fun b ↦ TotalSpace.mk' F₃ b (s₃ b)) {φ₁ : ∀ b, E₁ b ≃L[ℂ] E₃ b}
     (hφ₁ : ContinuousOn (fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₃ v.proj (φ₁ v.proj v.snd))
       (π F₁ E₁ ⁻¹' Z₂ᶜ))
     (hs₁₃ : ∀ b ∉ Z₂, φ₁ b (s₁ b) = s₃ b) {φ₂ : ∀ b, E₂ b ≃L[ℂ] E₃ b}
@@ -149,7 +130,7 @@ theorem lineFirstChernClass_eq_add_of_disjoint (hF₁ : finrank ℂ F₁ = 1)
     lineFirstChernClass F₃ E₃ hF₃ =
       lineFirstChernClass F₁ E₁ hF₁ + lineFirstChernClass F₂ E₂ hF₂ := by
   rw [lineFirstChernClass_def, lineFirstChernClass_def, lineFirstChernClass_def]
-  exact complexEulerClass_eq_add_of_disjoint hF₁ hF₂ hF₃ hZ₁ hZ₂ hZ hs₁ hs₁₀ hs₂ hs₂₀ hs₃ hs₃₀ hφ₁
+  exact complexEulerClass_eq_add_of_disjoint hF₁ hF₂ hF₃ hZ₁ hZ₂ hZ hs₁ hs₁₀ hs₂ hs₂₀ hs₃ hφ₁
     hs₁₃ hφ₂ hs₂₃
 
 end TauCeti

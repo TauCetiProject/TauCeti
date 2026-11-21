@@ -46,6 +46,8 @@ it induces a map of pairs `TopPair.interPairMap g hA hB : (A, A ∩ B) ⟶ (A', 
 in `g`, which together with `TopPair.ofSubsetMap g hB : (X, B) ⟶ (Y, B')` forms a commutative
 square with the excision maps (`TopPair.interPairMap_comp_excisionMap`), so the excision
 isomorphisms are natural in the data.
+More generally, for `A ∩ B ⊆ C` the inclusion `(A, A ∩ B) ⟶ (X, C)` is
+`TopPair.interPairMapOfSubset`; for `C = B` it is the excision map.
 Compatibility with the connecting morphism of the pair is `TopPair.singularHomologyδ_naturality`
 applied to the excision map.
 
@@ -312,6 +314,41 @@ lemma interPairMap_comp_excisionMap :
   ext : 2
   · exact Subtype.ext (by simp)
   · exact (interPairMap_fst_apply g hA hB _).trans (ofSubsetMap_fst_apply g hB _).symm
+
+/-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, C)` for `A ∩ B ⊆ C`. For `C = B` it is the excision
+map `TopPair.excisionMap A B` (`TopPair.interPairMapOfSubset_eq_excisionMap`). -/
+def interPairMapOfSubset {C : Set X} (h : A ∩ B ⊆ C) : interPair A B ⟶ ofSubset C :=
+  ofSubsetMap (X := TopCat.of A) (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    fun x hx ↦ h ⟨x.property, hx⟩
+
+@[simp]
+lemma interPairMapOfSubset_fst_apply {C : Set X} (h : A ∩ B ⊆ C) (x : (interPair A B).fst) :
+    Hom.fst (interPairMapOfSubset h) x = x.val :=
+  ofSubsetMap_fst_apply (X := TopCat.of A) _ _ x
+
+@[simp]
+lemma interPairMapOfSubset_snd_apply {C : Set X} (h : A ∩ B ⊆ C) (x : (interPair A B).snd) :
+    (Hom.snd (interPairMapOfSubset h) x).val = x.val.val :=
+  ofSubsetMap_snd_apply (X := TopCat.of A) _ _ x
+
+lemma interPairMapOfSubset_fst {C : Set X} (h : A ∩ B ⊆ C) :
+    Hom.fst (interPairMapOfSubset h) = TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :=
+  ofSubsetMap_fst (X := TopCat.of A) _ _
+
+@[simp]
+lemma interPairMapOfSubset_eq_excisionMap :
+    interPairMapOfSubset (Set.inter_subset_right : A ∩ B ⊆ B) = excisionMap A B :=
+  hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (interPairMapOfSubset_fst_apply _ x).trans (excisionMap_fst_apply A B x).symm)
+
+/-- Following the inclusion `(A, A ∩ B) ⟶ (X, C)` by the restriction `(X, C) ⟶ (X, C')` is the
+inclusion `(A, A ∩ B) ⟶ (X, C')`. -/
+@[simp]
+lemma interPairMapOfSubset_comp_ofSubsetMap_id {C C' : Set X} (h : A ∩ B ⊆ C)
+    (hC : Set.MapsTo (𝟙 X) C C') :
+    interPairMapOfSubset h ≫ ofSubsetMap (𝟙 X) hC =
+      interPairMapOfSubset (h.trans fun _ hx ↦ hC hx) :=
+  ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
 
 omit hA hB in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let

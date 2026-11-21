@@ -174,6 +174,15 @@ theorem isIso_singularCohomologyMap_excisionMap_of_isClosed_subset {U K : Set X}
   exact isIso_singularCohomologyMap_excisionMap R k M U Kᶜ
     (TauCeti.interior_union_interior_compl_eq_univ hU hK hKU) n
 
+/-- **Excision onto a neighbourhood is injective.** If `U` is open and contains the closed set
+`K`, a class of `Hⁿ(X, X ∖ K)` is determined by its restriction to `(U, U ∖ K)`. -/
+theorem injective_singularCohomologyMap_excisionMap_of_isClosed_subset {U K : Set X}
+    (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
+    Function.Injective
+      (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (excisionMap U Kᶜ) n) := by
+  have := isIso_singularCohomologyMap_excisionMap_of_isClosed_subset R k M hU hK hKU n
+  exact ConcreteCategory.injective_of_mono_of_preservesPullback _
+
 variable (R k M) in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
 `L₂ ⊆ L₁ ⊆ U` be closed. The restriction `Hⁿ(U, U ∖ L₂) ⟶ Hⁿ(U, U ∖ L₁)` is an isomorphism
