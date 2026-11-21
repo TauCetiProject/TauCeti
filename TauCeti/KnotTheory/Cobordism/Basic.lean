@@ -692,7 +692,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
     · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS
 
 /-- The part of the glued surface over the slab `Sⁿ × [0, 1]` is compact. -/
-private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
+private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsCompact {x | (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1} := by
   -- Gluing in `C` only changes the points of `S` above height `1 - c`, and keeps their heights
@@ -773,7 +773,7 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
   toFun := glueFun C S hc
   isSmoothEmbedding := ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_glueFun C hc hS),
     isEmbedding_glueFun C hc hS⟩
-  isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc hc₂ hS
+  isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc (hc₂.trans (by norm_num)) hS
   exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂
   exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hS
 

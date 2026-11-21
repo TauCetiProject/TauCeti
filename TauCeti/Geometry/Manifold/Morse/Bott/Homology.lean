@@ -186,7 +186,7 @@ theorem SmoothEmbedding.exists_isIso_singularHomologyMap_iUnion_negativeDiscBund
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     exists_sublevel_union_iUnion_negativeDiscBundle_deformation hn h hfs hc hd hdim g
   refine ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
-  obtain ⟨hD, r, -, ⟨G⟩⟩ := hmain ε ⟨hε, hεε₀⟩ hcompact hcrit
+  obtain ⟨hD, -, r, -, ⟨G⟩⟩ := hmain ε ⟨hε, hεε₀⟩ hcompact hcrit
   -- Each disc bundle lies in the critical sublevel, since the normal Hessian is negative on the
   -- negative normal spaces.
   have hA : {y | f y ≤ c - ε} ∪

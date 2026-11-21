@@ -11,12 +11,13 @@ public import TauCeti.Probability.BrownianMotion.Integral.Square
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
 public import TauCeti.Probability.Process.AccumulatedEnergy
 public import TauCeti.MeasureTheory.Measure.NNReal
+import TauCeti.Probability.BrownianMotion.Integral.Simple
+import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Martingale.LpLimit
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
-import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 
@@ -105,154 +106,7 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   {W H K I J : ℝ≥0 → Ω → ℝ}
 
-/-! ### Private helpers for elementary L² identification and energy Markov bounds -/
-
-private theorem lp_norm_sq {α : Type*} {_m : MeasurableSpace α} {ν : Measure α} (g : Lp ℝ 2 ν) :
-    ‖g‖ ^ 2 = ∫ x, g x ^ 2 ∂ν := by
-  rw [← real_inner_self_eq_norm_sq, L2.inner_def]
-  simp only [RCLike.inner_apply, conj_trivial, sq]
-
-private theorem stronglyMeasurable_Ioc_prod (s u : ℝ≥0) {ξ : Ω → ℝ}
-    (hξ : StronglyMeasurable[ℱ s] ξ) :
-    StronglyMeasurable[ℱ.predictable]
-      (fun p : ℝ≥0 × Ω ↦ (Ioc s u).indicator (fun _ ↦ ξ p.snd) p.fst) := by
-  have h := Finance.isStronglyPredictable_simpleHolding (τ := fun j ↦ if j = 0 then s else u)
-    (n := 1) (a := fun _ ↦ ξ) (fun j hj ↦ by cases Nat.lt_one_iff.mp hj; simpa using hξ)
-  change StronglyMeasurable[ℱ.predictable] _ at h
-  convert h using 1
-  ext ⟨t, ω⟩; simp [Finance.simpleHolding_def]
-
-private theorem memLp_Ioc_prod_predictableMeasure [SFinite P] (T s u : ℝ≥0)
-    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
-    MemLp (fun p : ℝ≥0 × Ω ↦ (Ioc s u).indicator (fun _ ↦ ξ p.snd) p.fst) 2
-      (ℱ.predictableMeasure P T) := by
-  convert Finance.memLp_simpleHolding_predictableMeasure (τ := fun j ↦ if j = 0 then s else u)
-    (n := 1) (a := fun _ ↦ ξ) (fun j hj ↦ by cases Nat.lt_one_iff.mp hj; simpa using hξ)
-    (fun _ _ ↦ hξ₂) T using 1
-  ext ⟨t, ω⟩; simp [Finance.simpleHolding_def]
-
-private theorem coeFn_l2Integral_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
-    (T s u : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    hW.l2Integral T ((memLp_Ioc_prod_predictableMeasure T s u hξ hξ₂).toLp _) =ᵐ[P]
-      fun ω ↦ ξ ω * (W (max s (min u T)) ω - W s ω) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let μ := P.trim (ℱ.le s)
-  have hmem (f : Lp ℝ 2 μ) : MemLp (f : Ω → ℝ) 2 P := by
-    rw [memLp_iff, ← eLpNorm_trim (ℱ.le s) (Lp.stronglyMeasurable f)]
-    exact (Lp.memLp f).eLpNorm_lt_top
-  let lift (f : Lp ℝ 2 μ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    (memLp_Ioc_prod_predictableMeasure T s u (Lp.stronglyMeasurable f) (hmem f)).toLp _
-  have hlift_fn (f : Lp ℝ 2 μ) : (lift f : ℝ≥0 × Ω → ℝ) =ᵐ[ℱ.predictableMeasure P T]
-      fun p ↦ (Ioc s u).indicator (fun _ ↦ f p.snd) p.fst :=
-    (memLp_Ioc_prod_predictableMeasure T s u (Lp.stronglyMeasurable f) (hmem f)).coeFn_toLp
-  let L₁ (f : Lp ℝ 2 μ) : Lp ℝ 2 P := hW.l2Integral T (lift f)
-  let L₂ (f : Lp ℝ 2 μ) : Lp ℝ 2 P :=
-    (hW.memLp_mul_sub (le_max_left s (min u T)) (Lp.stronglyMeasurable f) (hmem f)).toLp
-      (fun ω ↦ f ω * (W (max s (min u T)) ω - W s ω))
-  have hL₂_fn (f : Lp ℝ 2 μ) : (L₂ f : Ω → ℝ) =ᵐ[P]
-      fun ω ↦ f ω * (W (max s (min u T)) ω - W s ω) :=
-    (hW.memLp_mul_sub (le_max_left s (min u T)) (Lp.stronglyMeasurable f) (hmem f)).coeFn_toLp
-  have hdist_trim (f g : Lp ℝ 2 μ) : dist f g ^ 2 = ∫ ω, (f ω - g ω) ^ 2 ∂P := by
-    rw [dist_eq_norm, lp_norm_sq]
-    exact (integral_trim (μ := P) (ℱ.le s) ((Lp.stronglyMeasurable (f - g)).pow 2)).symm.trans <|
-      integral_congr_ae <| (ae_eq_of_ae_eq_trim (Lp.coeFn_sub f g)).mono fun _ h ↦ by
-        rw [Pi.pow_apply, h, Pi.sub_apply]
-  have hlift_ae {a b : Ω → ℝ} (ha : StronglyMeasurable[ℱ s] a) (hb : StronglyMeasurable[ℱ s] b)
-      (hab : a =ᵐ[P] b) :
-      (fun p : ℝ≥0 × Ω ↦ (Ioc s u).indicator (fun _ ↦ a p.snd) p.fst) =ᵐ[ℱ.predictableMeasure P T]
-        fun p ↦ (Ioc s u).indicator (fun _ ↦ b p.snd) p.fst := by
-    rw [ℱ.predictableMeasure_def]
-    exact StronglyMeasurable.ae_eq_trim_of_stronglyMeasurable ℱ.predictable_le_prod
-      (stronglyMeasurable_Ioc_prod s u ha) (stronglyMeasurable_Ioc_prod s u hb) <|
-      (hab.comp_tendsto
-        (Measure.quasiMeasurePreserving_snd (μ := timeMeasure T) (ν := P)).tendsto_ae).mono
-        fun p hp ↦ by dsimp only [Function.comp_apply] at hp ⊢; rw [hp]
-  have hL₁_cont : Continuous L₁ := (hW.l2Integral T).continuous.comp <|
-    (LipschitzWith.of_dist_le_mul (K := Real.toNNReal (Real.sqrt (T : ℝ))) fun f g ↦
-      le_of_sq_le_sq (by
-        rw [Real.coe_toNNReal _ (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt T.coe_nonneg,
-          hdist_trim, dist_eq_norm, lp_norm_sq]
-        have hpred : IsStronglyPredictable ℱ
-            (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ f ω - g ω) t ^ 2) :=
-          (stronglyMeasurable_Ioc_prod s u (ξ := fun ω ↦ f ω - g ω)
-            ((Lp.stronglyMeasurable f).sub (Lp.stronglyMeasurable g))).pow 2
-        have hcongr : (fun p : ℝ≥0 × Ω ↦ (lift f - lift g) p ^ 2) =ᵐ[ℱ.predictableMeasure P T]
-            Function.uncurry (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ f ω - g ω) t ^ 2) := by
-          filter_upwards [Lp.coeFn_sub (lift f) (lift g), hlift_fn f, hlift_fn g] with p hsub hf hg
-          rw [hsub, Pi.sub_apply, hf, hg]; dsimp only [Function.uncurry]
-          by_cases ht : p.fst ∈ Ioc s u <;> simp [ht]
-        rw [integral_congr_ae hcongr, ℱ.integral_predictableMeasure P hpred T]
-        have hfg_int : Integrable (fun p : ℝ≥0 × Ω ↦ (f p.snd - g p.snd) ^ 2)
-            ((timeMeasure T).prod P) :=
-          (((hmem f).sub (hmem g)).comp_snd (timeMeasure T)).integrable_sq
-        calc ∫ p, (Ioc s u).indicator (fun _ ↦ f p.snd - g p.snd) p.fst ^ 2 ∂(timeMeasure T).prod P
-            ≤ ∫ p, (f p.snd - g p.snd) ^ 2 ∂(timeMeasure T).prod P :=
-              integral_mono
-                (hfg_int.mono' (hpred.mono ℱ.predictable_le_prod).aestronglyMeasurable <|
-                  Eventually.of_forall fun p ↦ by
-                    by_cases ht : p.fst ∈ Ioc s u <;> simp [ht, sq_nonneg])
-                hfg_int (fun p ↦ by by_cases ht : p.fst ∈ Ioc s u <;> simp [ht, sq_nonneg])
-          _ = (T : ℝ) * ∫ ω, (f ω - g ω) ^ 2 ∂P := by
-              rw [integral_prod _ hfg_int]; simp [integral_const, smul_eq_mul, Measure.real_def])
-      (by positivity)).continuous
-  have hL₂_cont : Continuous L₂ := by
-    let c : ℝ := (max s (min u T) : ℝ≥0) - (s : ℝ)
-    have hc : 0 ≤ c := sub_nonneg.mpr (NNReal.coe_le_coe.mpr (le_max_left s (min u T)))
-    refine (LipschitzWith.of_dist_le_mul (K := Real.toNNReal (Real.sqrt c)) fun f g ↦
-      le_of_sq_le_sq ?_ (by positivity)).continuous
-    rw [Real.coe_toNNReal _ (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt hc, hdist_trim,
-      dist_eq_norm, lp_norm_sq]
-    have hcongr : (fun ω ↦ (L₂ f - L₂ g) ω ^ 2) =ᵐ[P]
-        fun ω ↦ ((f ω - g ω) * (W (max s (min u T)) ω - W s ω)) ^ 2 := by
-      filter_upwards [Lp.coeFn_sub (L₂ f) (L₂ g), hL₂_fn f, hL₂_fn g] with ω hsub hf hg
-      rw [hsub, Pi.sub_apply, hf, hg, ← sub_mul]
-    have hsm : StronglyMeasurable[ℱ s] (fun ω ↦ f ω - g ω) :=
-      (Lp.stronglyMeasurable f).sub (Lp.stronglyMeasurable g)
-    rw [integral_congr_ae hcongr, hW.integral_sq_mul_sub (le_max_left s (min u T)) hsm, mul_comm]
-  have hL₁_add (f g : Lp ℝ 2 μ) : L₁ (f + g) = L₁ f + L₁ g := by
-    change hW.l2Integral T (lift (f + g)) = hW.l2Integral T (lift f) + hW.l2Integral T (lift g)
-    rw [← map_add]; refine congrArg (hW.l2Integral T) (Lp.ext ?_)
-    filter_upwards [hlift_fn (f + g), Lp.coeFn_add (lift f) (lift g), hlift_fn f, hlift_fn g,
-      hlift_ae (Lp.stronglyMeasurable (f + g))
-        ((Lp.stronglyMeasurable f).add (Lp.stronglyMeasurable g))
-        (ae_eq_of_ae_eq_trim (Lp.coeFn_add f g))] with p h1 h2 hf hg hadd
-    rw [h1, h2, Pi.add_apply, hf, hg, hadd]; by_cases ht : p.fst ∈ Ioc s u <;> simp [ht]
-  have hL₂_add (f g : Lp ℝ 2 μ) : L₂ (f + g) = L₂ f + L₂ g := Lp.ext <| by
-    filter_upwards [hL₂_fn (f + g), Lp.coeFn_add (L₂ f) (L₂ g), hL₂_fn f, hL₂_fn g,
-      ae_eq_of_ae_eq_trim (Lp.coeFn_add f g)] with ω h1 h2 hf hg hadd
-    rw [h1, h2, Pi.add_apply, hf, hg, hadd, Pi.add_apply, add_mul]
-  have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
-  have heq_all : ∀ f : Lp ℝ 2 μ, L₁ f = L₂ f :=
-    @Lp.induction Ω ℝ (ℱ s) _ 2 μ _ (by norm_num) (fun f ↦ L₁ f = L₂ f)
-      (fun c A hA _ ↦ by
-        let g : Lp ℝ 2 μ := indicatorConstLp 2 hA (measure_ne_top μ A) c
-        have hgA : (g : Ω → ℝ) =ᵐ[P] A.indicator (fun _ ↦ c) :=
-          ae_eq_of_ae_eq_trim (indicatorConstLp_coeFn (p := 2) (hs := hA)
-            (hμs := measure_ne_top μ A) (c := c))
-        have hlift : lift g = indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s u hA)
-            (measure_ne_top _ _) c := Lp.ext <| by
-          filter_upwards [hlift_fn g,
-            hlift_ae (Lp.stronglyMeasurable g) (stronglyMeasurable_const.indicator hA) hgA,
-            indicatorConstLp_coeFn (p := 2) (hs := measurableSet_predictable_Ioc_prod s u hA)
-              (hμs := measure_ne_top (ℱ.predictableMeasure P T) _) (c := c)] with p h1 h2 h3
-          rw [h1, h2, h3]
-          by_cases ht : p.fst ∈ Ioc s u <;> by_cases hω : p.snd ∈ A <;> simp [ht, hω]
-        apply Lp.ext; change (hW.l2Integral T (lift g) : Ω → ℝ) =ᵐ[P] L₂ g; rw [hlift]
-        filter_upwards [hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T s u hA c,
-          hL₂_fn g, hgA] with ω h1 h2 h3
-        rw [h1, h2, h3])
-      (fun _ _ _ _ _ h1 h2 ↦ by rw [hL₁_add, hL₂_add, h1, h2])
-      (isClosed_eq hL₁_cont hL₂_cont)
-  have hξμ : MemLp ξ 2 μ := by
-    rw [memLp_iff, eLpNorm_trim (ℱ.le s) hξ]; exact hξ₂.eLpNorm_lt_top
-  let fξ : Lp ℝ 2 μ := hξμ.toLp ξ
-  have hfξ : (fξ : Ω → ℝ) =ᵐ[P] ξ := ae_eq_of_ae_eq_trim hξμ.coeFn_toLp
-  have hlift_eq : (memLp_Ioc_prod_predictableMeasure T s u hξ hξ₂).toLp _ = lift fξ := Lp.ext <|
-    ((memLp_Ioc_prod_predictableMeasure T s u hξ hξ₂).coeFn_toLp.trans
-      (hlift_ae hξ (Lp.stronglyMeasurable fξ) hfξ.symm)).trans (hlift_fn fξ).symm
-  rw [hlift_eq]; change (L₁ fξ : Ω → ℝ) =ᵐ[P] _; rw [heq_all fξ]
-  exact (hL₂_fn fξ).trans (hfξ.mono fun _ h ↦ by dsimp only; rw [h])
+/-! ### Private helpers for energy Markov bounds and L² identification -/
 
 private theorem tendsto_measure_lintegral_eNorm_sq_of_tendsto_eLpNorm [SFinite P]
     {F : ℕ → ℝ≥0 → Ω → ℝ} {T : ℝ≥0}
@@ -285,66 +139,7 @@ private theorem tendsto_measure_lintegral_eNorm_sq_of_tendsto_eLpNorm [SFinite P
     (by simpa only [ENNReal.zero_div] using ENNReal.Tendsto.div_const hsq (.inr hε.ne'))
     (fun _ ↦ zero_le) hbound
 
-private theorem martingale_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (ha₁ : ∀ j < n, Integrable (a j) P) :
-    Martingale (Finance.simpleGains τ n a W) ℱ P := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  induction n with
-  | zero =>
-    convert martingale_zero ℝ ℱ P using 1
-    ext t ω; simp [Finance.simpleGains_def]
-  | succ n ih =>
-    convert (ih (hτ.mono (Iic_subset_Iic.mpr n.le_succ))
-        (fun j hj ↦ ha j (hj.trans n.lt_succ_self))
-        (fun j hj ↦ ha₁ j (hj.trans n.lt_succ_self))).add
-      (hW.martingale_mul_sub_min (hτ (by simp) (by simp) n.le_succ)
-        (ha n n.lt_succ_self) (ha₁ n n.lt_succ_self)) using 1
-    ext t ω; simp [Finance.simpleGains_def, Finset.sum_range_succ]
-
 /-! ### Identification with the terminal L² integral and moments -/
-
-/-- On a monotone deterministic grid with square-integrable left-measurable heights, the terminal
-`L²` Brownian integral agrees almost surely with the elementary gains process. -/
-theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Iic n))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (ha₂ : ∀ j < n, MemLp (a j) 2 P) (T : ℝ≥0) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    hW.l2Integral T ((Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).toLp _) =ᵐ[P]
-      Finance.simpleGains τ n a W T := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hterm (j : ℕ) (hj : j < n) :=
-    memLp_Ioc_prod_predictableMeasure T (τ j) (τ (j + 1)) (ha j hj) (ha₂ j hj)
-  let f : ℕ → Lp ℝ 2 (ℱ.predictableMeasure P T) := fun j ↦
-    if hj : j < n then (hterm j hj).toLp _ else 0
-  have hsum : (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).toLp
-      (Function.uncurry (Finance.simpleHolding τ n a)) = ∑ j ∈ Finset.range n, f j := Lp.ext <| by
-    have hterms : ∀ j ∈ Finset.range n, (f j : ℝ≥0 × Ω → ℝ) =ᵐ[ℱ.predictableMeasure P T]
-        fun p ↦ (Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ a j p.snd) p.fst := fun j hj ↦ by
-      simp only [f, dite_eq_left (Finset.mem_range.mp hj)]
-      exact (hterm j (Finset.mem_range.mp hj)).coeFn_toLp
-    filter_upwards [(Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T).coeFn_toLp,
-      Lp.coeFn_finsetSum (s := Finset.range n) f, eventuallyEq_sum hterms] with p hp0 hp hps
-    rw [hp0, hp, hps]; simp [Function.uncurry_def, Finance.simpleHolding_def]
-  rw [hsum, map_sum]
-  have heach : ∀ j ∈ Finset.range n, (hW.l2Integral T (f j) : Ω → ℝ) =ᵐ[P]
-      fun ω ↦ a j ω * (W (min (τ (j + 1)) T) ω - W (min (τ j) T) ω) := fun j hj ↦ by
-    have hj' := Finset.mem_range.mp hj
-    have hle : τ j ≤ τ (j + 1) := hτ (mem_Iic.mpr hj'.le) (mem_Iic.mpr hj') (Nat.le_succ j)
-    simp only [f, dite_eq_left hj']
-    refine (coeFn_l2Integral_Ioc hW T (τ j) (τ (j + 1)) (ha j hj') (ha₂ j hj')).mono fun ω hω ↦
-      hω.trans ?_
-    by_cases hT : τ j ≤ T
-    · rw [min_eq_left hT, max_eq_right (le_min hle hT)]
-    · have hT' : T ≤ τ j := (not_le.mp hT).le
-      simp [min_eq_right hT', min_eq_right (hT'.trans hle), max_eq_left hT']
-  filter_upwards [Lp.coeFn_finsetSum (s := Finset.range n) (fun j ↦ hW.l2Integral T (f j)),
-    eventuallyEq_sum heach] with ω hω hsumω
-  rw [hω, hsumω]; simp [Finance.simpleGains_def]
 
 private theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : BrownianIntegrable ℱ P H) {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
@@ -363,7 +158,8 @@ private theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianRe
       = edist (hW.l2Integral T fK) (hW.l2Integral T fH) := by
         rw [Lp.edist_def]
         exact eLpNorm_congr_ae
-          ((hW.coeFn_l2Integral_simpleHolding hτ ha ha₂ T).symm.sub EventuallyEq.rfl)
+          ((hW.coeFn_l2Integral_simpleHolding hτ ha T
+            (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)).symm.sub EventuallyEq.rfl)
     _ = eLpNorm (⇑fK - ⇑fH) 2 (ℱ.predictableMeasure P T) := by
         rw [(hW.l2Integral T).isometry.edist_eq, Lp.edist_def]
     _ = eLpNorm (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding τ n a p.fst p.snd - H p.fst p.snd) 2
@@ -484,10 +280,11 @@ theorem martingale_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI_adapt : StronglyAdapted ℱ I) :
     Martingale I ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, hτ, ha, -, ha₂, -, -, hL2⟩ := hW.exists_simpleHolding_approx hH
+  obtain ⟨n, τ, a, C, hτ, ha, hC, -, -, -, hL2⟩ := hW.exists_simpleHolding_approx hH
   refine martingale_of_tendsto_eLpNorm_one
-    (fun k ↦ hW.martingale_simpleGains (hτ k) (ha k)
-      (fun j hj ↦ (ha₂ k j hj).integrable one_le_two))
+    (fun k ↦ hW.martingale.simpleGains_of_bdd (hτ k) (ha k)
+      fun j hj ↦ ⟨C k, Eventually.of_forall fun ω ↦ by
+        simpa only [Real.norm_eq_abs] using hC k j hj ω⟩)
     hI_adapt fun t ↦ TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm one_le_two <|
       (hL2 t).congr fun k ↦
         eLpNorm_congr_ae (EventuallyEq.rfl.sub (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).symm)
@@ -589,10 +386,11 @@ theorem exists_isItoIntegral_of_brownianIntegrable (hW : IsFilteredPreBrownianRe
     ∃ I : ℝ≥0 → Ω → ℝ,
       IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, hτ, ha, -, ha₂, -, hE, hL2⟩ := hW.exists_simpleHolding_approx hH
+  obtain ⟨n, τ, a, C, hτ, ha, hC, ha₂, -, hE, hL2⟩ := hW.exists_simpleHolding_approx hH
   let M (k : ℕ) : ℝ≥0 → Ω → ℝ := Finance.simpleGains (τ k) (n k) (a k) W
   have hMmem (k : ℕ) (t : ℝ≥0) : MemLp (M k t) 2 P :=
-    (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ k) (ha k) (ha₂ k) t)
+    (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ k) (ha k) t
+      (Finance.memLp_simpleHolding_predictableMeasure (ha k) (ha₂ k) t))
   have hMcau (t : ℝ≥0) : CauchySeq (fun k ↦ (hMmem k t).toLp (M k t)) :=
     Tendsto.cauchySeq
       (x := hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))) <| by
@@ -602,8 +400,9 @@ theorem exists_isItoIntegral_of_brownianIntegrable (hW : IsFilteredPreBrownianRe
   have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨one_le_two⟩
   obtain ⟨I, hImart, hIpred, hIL2, _, ⟨_, _, hIpath⟩⟩ :=
     exists_continuous_martingale_of_cauchySeq_Lp
-      (fun k ↦ hW.martingale_simpleGains (hτ k) (ha k)
-        (fun j hj ↦ (ha₂ k j hj).integrable one_le_two))
+      (fun k ↦ hW.martingale.simpleGains_of_bdd (hτ k) (ha k)
+        fun j hj ↦ ⟨C k, Eventually.of_forall fun ω ↦ by
+          simpa only [Real.norm_eq_abs] using hC k j hj ω⟩)
       (fun k ↦ (isItoIntegral_simpleGains hcont (hτ k) (ha k)).ae_continuous)
       hMmem hMcau
   exact ⟨I, ⟨hH.isStronglyPredictable, hIpath.mono fun _ h ↦ h.left, fun t ↦

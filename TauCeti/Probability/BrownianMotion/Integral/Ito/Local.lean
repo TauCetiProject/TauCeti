@@ -9,6 +9,8 @@ public import TauCeti.Probability.BrownianMotion.Integral.Ito.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Stopping
 public import Mathlib.Probability.Process.LocalProperty
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
+import TauCeti.Probability.BrownianMotion.Integral.Locality
+import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.Process.ElementaryDensity
 import TauCeti.Probability.Process.Patching
 import TauCeti.Probability.Process.Stopping
@@ -180,156 +182,6 @@ theorem IsItoIntegral.of_stoppedProcess [IsFiniteMeasure P]
 
 namespace IsFilteredPreBrownianReal
 
-private def indCLM {α : Type*} {_m : MeasurableSpace α} {μ : Measure α}
-    {s : Set α} (hs : MeasurableSet s) : Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 μ :=
-  LinearMap.mkContinuous
-    { toFun := fun f ↦ ((Lp.memLp f).indicator hs.nullMeasurableSet).toLp (s.indicator f)
-      map_add' := fun f g ↦ Lp.ext <| by
-        filter_upwards [((Lp.memLp (f + g)).indicator hs.nullMeasurableSet).coeFn_toLp,
-          ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp,
-          ((Lp.memLp g).indicator hs.nullMeasurableSet).coeFn_toLp,
-          Lp.coeFn_add f g,
-          Lp.coeFn_add (((Lp.memLp f).indicator hs.nullMeasurableSet).toLp _)
-            (((Lp.memLp g).indicator hs.nullMeasurableSet).toLp _)] with x hfg hf hg h1 h2
-        rw [hfg, h2, Pi.add_apply, hf, hg]; by_cases hx : x ∈ s
-        · simp only [indicator_of_mem hx, h1, Pi.add_apply]
-        · simp only [indicator_of_notMem hx, add_zero]
-      map_smul' := fun c f ↦ Lp.ext <| by
-        filter_upwards [((Lp.memLp (c • f)).indicator hs.nullMeasurableSet).coeFn_toLp,
-          ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp,
-          Lp.coeFn_smul c f,
-          Lp.coeFn_smul c (((Lp.memLp f).indicator hs.nullMeasurableSet).toLp _)]
-          with x hcf hf h1 h2
-        rw [RingHom.id_apply, hcf, h2, Pi.smul_apply, hf]; by_cases hx : x ∈ s
-        · simp only [indicator_of_mem hx, h1, Pi.smul_apply]
-        · simp only [indicator_of_notMem hx, smul_zero] }
-    1 fun f ↦ by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, one_mul, Lp.norm_def]
-      rw [eLpNorm_congr_ae ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp]
-      exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f) (eLpNorm_indicator_le _ hs.nullMeasurableSet)
-
-private theorem coeFn_indCLM {α : Type*} {_m : MeasurableSpace α} {μ : Measure α}
-    {s : Set α} (hs : MeasurableSet s) (f : Lp ℝ 2 μ) :
-    (indCLM hs f : α → ℝ) =ᵐ[μ] s.indicator f :=
-  ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp
-
-private theorem predictableMeasure_le [SFinite P] {u T : ℝ≥0} (hu : u ≤ T) :
-    ℱ.predictableMeasure P u ≤ ℱ.predictableMeasure P T := by
-  rw [← min_eq_left hu, ← ℱ.predictableMeasure_restrict P T u]
-  exact Measure.restrict_le_self
-
-private def resCLM (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) [SFinite P]
-    {u T : ℝ≥0} (hu : u ≤ T) :
-    Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ] Lp ℝ 2 (ℱ.predictableMeasure P u) :=
-  let hle := predictableMeasure_le (ℱ := ℱ) (P := P) hu
-  LinearMap.mkContinuous
-    { toFun := fun f ↦ ((Lp.memLp f).mono_measure hle).toLp f
-      map_add' := fun f g ↦ Lp.ext <| by
-        filter_upwards [((Lp.memLp (f + g)).mono_measure hle).coeFn_toLp,
-          ((Lp.memLp f).mono_measure hle).coeFn_toLp,
-          ((Lp.memLp g).mono_measure hle).coeFn_toLp,
-          hle.absolutelyContinuous.ae_eq (Lp.coeFn_add f g),
-          Lp.coeFn_add (((Lp.memLp f).mono_measure hle).toLp f)
-            (((Lp.memLp g).mono_measure hle).toLp g)] with x hfg hf hg h1 h2
-        rw [hfg, h2, Pi.add_apply, hf, hg, h1, Pi.add_apply]
-      map_smul' := fun c f ↦ Lp.ext <| by
-        filter_upwards [((Lp.memLp (c • f)).mono_measure hle).coeFn_toLp,
-          ((Lp.memLp f).mono_measure hle).coeFn_toLp,
-          hle.absolutelyContinuous.ae_eq (Lp.coeFn_smul c f),
-          Lp.coeFn_smul c (((Lp.memLp f).mono_measure hle).toLp f)] with x hcf hf h1 h2
-        rw [RingHom.id_apply, hcf, h2, Pi.smul_apply, hf, h1, Pi.smul_apply] }
-    1 fun f ↦ by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, one_mul, Lp.norm_def]
-      rw [eLpNorm_congr_ae ((Lp.memLp f).mono_measure hle).coeFn_toLp]
-      exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top f) (eLpNorm_mono_measure _ hle)
-
-private theorem coeFn_resCLM [SFinite P] {u T : ℝ≥0} (hu : u ≤ T)
-    (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
-    (resCLM ℱ P hu f : ℝ≥0 × Ω → ℝ) =ᵐ[ℱ.predictableMeasure P u] f :=
-  ((Lp.memLp f).mono_measure (predictableMeasure_le hu)).coeFn_toLp
-
-private theorem l2Integral_indCLM_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ W P)
-    {a b T : ℝ≥0} (hab : a ≤ b) (hbT : b ≤ T) {A : Set Ω} (hA : MeasurableSet[ℱ a] A)
-    (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    hW.l2Integral T (indCLM (measurableSet_predictable_Ioc_prod a b hA) f) =
-      indCLM (ℱ.le a _ hA)
-        (hW.l2Integral b (resCLM ℱ P hbT f) -
-          hW.l2Integral a (resCLM ℱ P (hab.trans hbT) f)) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let J : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ] Lp ℝ 2 P :=
-    (hW.l2Integral T).toContinuousLinearMap.comp
-      (indCLM (measurableSet_predictable_Ioc_prod a b hA))
-  let K : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ] Lp ℝ 2 P :=
-    (indCLM (ℱ.le a _ hA)).comp
-      ((hW.l2Integral b).toContinuousLinearMap.comp (resCLM ℱ P hbT) -
-        (hW.l2Integral a).toContinuousLinearMap.comp (resCLM ℱ P (hab.trans hbT)))
-  suffices hJK : J = K from congrArg (fun L ↦ L f) hJK
-  refine ContinuousLinearMap.ext_indicatorConstLp_Ioc_prod_predictableMeasure T
-    fun s t hst _ B hB ↦ ?_
-  let hAB : MeasurableSet[ℱ (max a s)] (A ∩ B) :=
-    (ℱ.mono (le_max_left a s) _ hA).inter (ℱ.mono (le_max_right a s) _ hB)
-  have hset : Ioc a b ×ˢ A ∩ (Ioc s t ×ˢ B) = Ioc (max a s) (min b t) ×ˢ (A ∩ B) := by
-    rw [prod_inter_prod, Ioc_inter_Ioc]
-  have hind : indCLM (measurableSet_predictable_Ioc_prod a b hA)
-      (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hB)
-        (measure_ne_top (ℱ.predictableMeasure P T) _) (1 : ℝ)) =
-      indicatorConstLp 2 (measurableSet_predictable_Ioc_prod (max a s) (min b t) hAB)
-        (measure_ne_top (ℱ.predictableMeasure P T) _) 1 := by
-    refine Lp.ext <| (coeFn_indCLM _ _).trans <|
-      EventuallyEq.trans ?_ indicatorConstLp_coeFn.symm
-    filter_upwards [indicatorConstLp_coeFn (p := 2)
-      (hs := measurableSet_predictable_Ioc_prod s t hB)
-      (hμs := measure_ne_top (ℱ.predictableMeasure P T) _) (c := (1 : ℝ))] with p h2
-    classical
-    rw [← hset, indicator_apply, indicator_apply, h2, indicator_apply]
-    by_cases hp1 : p ∈ Ioc a b ×ˢ A
-    · by_cases hp2 : p ∈ Ioc s t ×ˢ B <;> simp [hp1, hp2]
-    · simp [hp1]
-  have hres {u : ℝ≥0} (hu : u ≤ T) :
-      resCLM ℱ P hu (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hB)
-        (measure_ne_top _ _) (1 : ℝ)) =
-      indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hB) (measure_ne_top _ _) 1 :=
-    Lp.ext <| (coeFn_resCLM hu _).trans
-      (((predictableMeasure_le hu).absolutelyContinuous.ae_eq indicatorConstLp_coeFn).trans
-        indicatorConstLp_coeFn.symm)
-  apply Lp.ext
-  change (hW.l2Integral T (indCLM _ _) : Ω → ℝ) =ᵐ[P]
-    (indCLM (ℱ.le a _ hA) (hW.l2Integral b (resCLM ℱ P hbT _) -
-      hW.l2Integral a (resCLM ℱ P (hab.trans hbT) _)) : Ω → ℝ)
-  rw [hind, hres hbT, hres (hab.trans hbT)]
-  let gb := hW.l2Integral b (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hB)
-    (measure_ne_top _ _) (1 : ℝ))
-  let ga := hW.l2Integral a (indicatorConstLp 2 (measurableSet_predictable_Ioc_prod s t hB)
-    (measure_ne_top _ _) (1 : ℝ))
-  filter_upwards [hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T (max a s) (min b t) hAB 1,
-    coeFn_indCLM (ℱ.le a _ hA) (gb - ga), Lp.coeFn_sub gb ga,
-    hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod b s t hB 1,
-    hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod a s t hB 1] with ω hL hR1 hR2 hRb hRa
-  rw [hL, hR1]
-  by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B
-  · rw [indicator_of_mem hωA, indicator_of_mem (⟨hωA, hωB⟩ : ω ∈ A ∩ B), one_mul, hR2,
-      Pi.sub_apply, hRb, hRa, indicator_of_mem hωB, one_mul, one_mul,
-      min_eq_left ((min_le_left b t).trans hbT)]
-    rcases le_or_gt b s with hbs | hsb
-    · simp [max_eq_right (hab.trans hbs), min_eq_left (hbs.trans hst.le),
-        min_eq_right (hbs.trans hst.le), min_eq_right ((hab.trans hbs).trans hst.le),
-        max_eq_left hbs, max_eq_left (hab.trans hbs)]
-    · rcases le_or_gt t a with hta | hat
-      · simp [max_eq_left (hst.le.trans hta), min_eq_right (hta.trans hab),
-          min_eq_left (hta.trans hab), min_eq_left hta, max_eq_left hta, max_eq_right hst.le]
-      · have h1 : max (max a s) (min b t) = min b t :=
-          max_eq_right (max_le (le_min hab hat.le) (le_min hsb.le hst.le))
-        have h2 : max s (min t b) = min b t := by
-          rw [min_comm t b]; exact max_eq_right (le_min hsb.le hst.le)
-        have h3 : max s (min t a) = max a s := by rw [min_eq_right hat.le, max_comm]
-        rw [h1, h2, h3]; ring
-  · rw [indicator_of_mem hωA, indicator_of_notMem (fun h : ω ∈ A ∩ B ↦ hωB h.right), hR2,
-      Pi.sub_apply, hRb, hRa]
-    simp [hωB]
-  · simp [hωA, hωB]
-  · simp [hωA, hωB]
-
 private theorem coe_le_dyadicCeilTime_iff_gt_dyadic (m k : ℕ) {t : ℝ≥0}
     (ht : t ∈ Ioc ((k : ℝ≥0) / 2 ^ m) (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m)) (u : WithTop ℝ≥0) :
     (t : WithTop ℝ≥0) ≤ dyadicCeilTime m u ↔
@@ -351,6 +203,7 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
     hW.l2Integral T (((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T).toLp _) =ᵐ[P]
       stoppedProcess I (fun ω ↦ dyadicCeilTime m (τ ω)) T := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime m (τ ω)
   have hσ : IsStoppingTime ℱ σ := hτ.dyadicCeilTime m
   let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
@@ -368,7 +221,9 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
   let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
   let piece (k : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
     if hk : k < N then
-      indCLM (measurableSet_predictable_Ioc_prod (t k) (t (k + 1)) (hA_meas k hk)) fH
+      ((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
+        (hA_meas k hk)).nullMeasurableSet).toLp
+          ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH)
     else 0
   have hsum_Lp :
       ((hH.ite_le hσ).memLp_predictableMeasure T).toLp _ = ∑ k ∈ Finset.range N, piece k := by
@@ -378,22 +233,20 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
       intro k hk
       have hk' := Finset.mem_range.mp hk
       simp only [piece, dite_eq_left hk']
-      filter_upwards [coeFn_indCLM (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
-        (hA_meas k hk')) fH, (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp hHp
+      filter_upwards [((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
+        (hA_meas k hk')).nullMeasurableSet).coeFn_toLp,
+        (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp hHp
       dsimp only [fH] at hp ⊢; simp only [hp, indicator_apply, hHp]
-    have hIoc : ∀ᵐ p : ℝ≥0 × Ω ∂ℱ.predictableMeasure P T, p.fst ∈ Ioc 0 T := by
-      simpa only [ℱ.predictableMeasure_restrict, min_self, mem_prod, mem_univ, and_true] using
-        ae_restrict_mem (μ := ℱ.predictableMeasure P T)
-          (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
+    have hIoc := ℱ.ae_mem_Ioc_prod_predictableMeasure P T
     filter_upwards [((hH.ite_le hσ).memLp_predictableMeasure T).coeFn_toLp, hIoc,
       Lp.coeFn_finsetSum (s := Finset.range N) piece, eventuallyEq_sum hterms]
       with ⟨s, ω⟩ hL hsT hsum htms
     rw [hL, hsum, htms]
     simp only [Finset.sum_apply, Function.uncurry_apply_pair]
     let k₀ : ℕ := ⌈s * 2 ^ m⌉₊ - 1
-    have hceil_pos : 0 < ⌈s * 2 ^ m⌉₊ := Nat.ceil_pos.mpr (mul_pos hsT.left h2pos)
+    have hceil_pos : 0 < ⌈s * 2 ^ m⌉₊ := Nat.ceil_pos.mpr (mul_pos hsT.left.left h2pos)
     have hk₀ : k₀ ∈ Finset.range N := Finset.mem_range.mpr <| by
-      have : ⌈s * 2 ^ m⌉₊ ≤ N := Nat.ceil_mono (mul_le_mul_of_nonneg_right hsT.right h2pos.le)
+      have : ⌈s * 2 ^ m⌉₊ ≤ N := Nat.ceil_mono (mul_le_mul_of_nonneg_right hsT.left.right h2pos.le)
       omega
     have hsk₀ : s ∈ Ioc (d k₀) (d (k₀ + 1)) :=
       ⟨(div_lt_iff₀ h2pos).mpr (Nat.lt_ceil.mp (Nat.sub_lt hceil_pos zero_lt_one)),
@@ -401,7 +254,8 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
           simpa only [k₀, Nat.sub_add_cancel hceil_pos] using Nat.le_ceil _)⟩
     rw [Finset.sum_eq_single k₀]
     · have hst : s ∈ Ioc (t k₀) (t (k₀ + 1)) :=
-        ⟨by rw [ht_eq k₀ (Finset.mem_range.mp hk₀)]; exact hsk₀.left, le_min hsk₀.right hsT.right⟩
+        ⟨by rw [ht_eq k₀ (Finset.mem_range.mp hk₀)]; exact hsk₀.left,
+          le_min hsk₀.right hsT.left.right⟩
       have hiff := coe_le_dyadicCeilTime_iff_gt_dyadic m k₀ hsk₀ (τ ω)
       by_cases hc : (s : WithTop ℝ≥0) ≤ σ ω
       · rw [ite_eq_left hc, indicator_of_mem (mem_prod.mpr ⟨hst, hiff.mp hc⟩)]; rfl
@@ -417,23 +271,71 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
     · exact fun hnot ↦ (hnot hk₀).elim
   rw [hsum_Lp, map_sum]
   have hresH {u : ℝ≥0} (hu : u ≤ T) :
-      resCLM ℱ P hu fH = (hH.memLp_predictableMeasure u).toLp (Function.uncurry H) :=
-    Lp.ext <| (coeFn_resCLM hu fH).trans
-      (((predictableMeasure_le hu).absolutelyContinuous.ae_eq
+      ℱ.predictableMeasureRestrictLp P ℝ hu fH =
+        (hH.memLp_predictableMeasure u).toLp (Function.uncurry H) :=
+    Lp.ext <| (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := ℝ) hu fH).trans
+      (((ℱ.predictableMeasure_mono P hu).absolutelyContinuous.ae_eq
         ((hH.memLp_predictableMeasure T).coeFn_toLp)).trans
         (hH.memLp_predictableMeasure u).coeFn_toLp.symm)
   have heach : ∀ k ∈ Finset.range N, (hW.l2Integral T (piece k) : Ω → ℝ) =ᵐ[P]
       (A k).indicator (fun ω ↦ I (t (k + 1)) ω - I (t k) ω) := fun k hk ↦ by
     have hk' := Finset.mem_range.mp hk
     simp only [piece, dite_eq_left hk']
-    rw [hW.l2Integral_indCLM_Ioc_prod (ht_mono k.le_succ) (min_le_right _ _) (hA_meas k hk') fH,
-      hresH (min_le_right _ _), hresH ((ht_mono k.le_succ).trans (min_le_right _ _))]
+    have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T (t k) (t (k + 1)) (hA_meas k hk') fH
+    have hbT : t (k + 1) ≤ T := min_le_right _ _
+    have haT : t k ≤ T := (ht_mono k.le_succ).trans hbT
+    have hstrip :
+        ((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
+          (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).toLp
+            ((Ioc (t k) (t (k + 1)) ×ˢ univ).indicator fH) =
+          ℱ.predictableMeasureExtendLp P ℝ hbT (ℱ.predictableMeasureRestrictLp P ℝ hbT fH) -
+            ℱ.predictableMeasureExtendLp P ℝ haT (ℱ.predictableMeasureRestrictLp P ℝ haT fH) := by
+      apply Lp.ext
+      filter_upwards [((Lp.memLp fH).indicator (measurableSet_predictable_Ioc_prod (t k) (t (k + 1))
+          (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).coeFn_toLp,
+        Lp.coeFn_sub
+          (ℱ.predictableMeasureExtendLp P ℝ hbT (ℱ.predictableMeasureRestrictLp P ℝ hbT fH))
+          (ℱ.predictableMeasureExtendLp P ℝ haT (ℱ.predictableMeasureRestrictLp P ℝ haT fH)),
+        ℱ.coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp P (𝕜 := ℝ) hbT fH,
+        ℱ.coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp P (𝕜 := ℝ) haT fH,
+        ℱ.ae_mem_Ioc_prod_predictableMeasure P T] with p hp hsub hpb hpa hpT
+      rw [hp, hsub, Pi.sub_apply, hpb, hpa]
+      rcases le_or_gt p.fst (t k) with h2 | h2
+      · have h1 : p.fst ≤ t (k + 1) := h2.trans (ht_mono k.le_succ)
+        have hn : p ∉ Ioc (t k) (t (k + 1)) ×ˢ (univ : Set Ω) :=
+          fun h ↦ h2.not_gt (mem_prod.mp h).left.left
+        have hm1 : p ∈ Ioc 0 (t (k + 1)) ×ˢ (univ : Set Ω) :=
+          mem_prod.mpr ⟨⟨hpT.left.left, h1⟩, mem_univ _⟩
+        have hm0 : p ∈ Ioc 0 (t k) ×ˢ (univ : Set Ω) :=
+          mem_prod.mpr ⟨⟨hpT.left.left, h2⟩, mem_univ _⟩
+        rw [indicator_of_notMem hn, indicator_of_mem hm1, indicator_of_mem hm0, sub_self]
+      · by_cases h1 : p.fst ≤ t (k + 1)
+        · have hm : p ∈ Ioc (t k) (t (k + 1)) ×ˢ (univ : Set Ω) :=
+            mem_prod.mpr ⟨⟨h2, h1⟩, mem_univ _⟩
+          have hm1 : p ∈ Ioc 0 (t (k + 1)) ×ˢ (univ : Set Ω) :=
+            mem_prod.mpr ⟨⟨hpT.left.left, h1⟩, mem_univ _⟩
+          have hn0 : p ∉ Ioc 0 (t k) ×ˢ (univ : Set Ω) :=
+            fun h ↦ h2.not_ge (mem_prod.mp h).left.right
+          rw [indicator_of_mem hm, indicator_of_mem hm1, indicator_of_notMem hn0, sub_zero]
+        · have hn : p ∉ Ioc (t k) (t (k + 1)) ×ˢ (univ : Set Ω) :=
+            fun h ↦ h1 (mem_prod.mp h).left.right
+          have hn1 : p ∉ Ioc 0 (t (k + 1)) ×ˢ (univ : Set Ω) :=
+            fun h ↦ h1 (mem_prod.mp h).left.right
+          have hn0 : p ∉ Ioc 0 (t k) ×ˢ (univ : Set Ω) :=
+            fun h ↦ h1 ((mem_prod.mp h).left.right.trans (ht_mono k.le_succ))
+          rw [indicator_of_notMem hn, indicator_of_notMem hn1, indicator_of_notMem hn0, sub_self]
+    rw [hstrip, map_sub, hW.l2Integral_predictableMeasureExtendLp hbT,
+      hW.l2Integral_predictableMeasureExtendLp haT, hresH hbT, hresH haT] at hloc
     let g1 := hW.l2Integral (t (k + 1)) ((hH.memLp_predictableMeasure _).toLp (Function.uncurry H))
     let g0 := hW.l2Integral (t k) ((hH.memLp_predictableMeasure _).toLp (Function.uncurry H))
-    filter_upwards [coeFn_indCLM (ℱ.le _ _ (hA_meas k hk')) (g1 - g0), Lp.coeFn_sub g1 g0,
+    filter_upwards [hloc, Lp.coeFn_sub g1 g0,
       hW.ae_eq_l2Integral_of_isItoIntegral hH hI (t (k + 1)),
       hW.ae_eq_l2Integral_of_isItoIntegral hH hI (t k)] with ω h1 h2 hI1 hI0
-    dsimp only [g1, g0] at h1 h2; simp only [h1, indicator_apply, h2, Pi.sub_apply, hI1, hI0]
+    dsimp only [g1, g0] at h1 h2
+    rw [h1]
+    by_cases hω : ω ∈ A k
+    · simp only [indicator_of_mem hω, h2, Pi.sub_apply, hI1, hI0]
+    · simp only [indicator_of_notMem hω]
   filter_upwards [Lp.coeFn_finsetSum (s := Finset.range N) (fun k ↦ hW.l2Integral T (piece k)),
     eventuallyEq_sum heach, hI.eval_zero_ae_eq_zero] with ω hω hsumω hI0
   rw [hω, hsumω, Finset.sum_apply]

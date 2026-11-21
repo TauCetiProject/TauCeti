@@ -139,17 +139,9 @@ private theorem measurable_simpleHolding (τ : ℕ → ℝ≥0) (n : ℕ) (a : �
 private theorem lintegral_eNorm_sq_le_of_add {f g : ℝ≥0 → ℝ} (t : ℝ≥0) (hf : Measurable f) :
     (∫⁻ s, ‖f s + g s‖ₑ ^ 2 ∂timeMeasure t) ≤
       2 * (∫⁻ s, ‖f s‖ₑ ^ 2 ∂timeMeasure t) + 2 * (∫⁻ s, ‖g s‖ₑ ^ 2 ∂timeMeasure t) := by
-  calc
-    _ ≤ ∫⁻ s, 2 * ‖f s‖ₑ ^ 2 + 2 * ‖g s‖ₑ ^ 2 ∂timeMeasure t := lintegral_mono fun s ↦ by
-      have h := ENNReal.ofReal_le_ofReal (norm_sub_sq_le_two_mul (f s) (-g s) 0)
-      simp only [sub_neg_eq_add, sub_zero, norm_neg,
-        ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
-        ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _),
-        ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, ENNReal.ofReal_ofNat] at h
-      simpa only [mul_add] using h
-    _ = _ := by
-      rw [lintegral_add_left ((hf.eNorm.pow_const 2).const_mul 2),
-        lintegral_const_mul' _ _ (by norm_num), lintegral_const_mul' _ _ (by norm_num)]
+  simpa only [Pi.zero_apply, Pi.neg_apply, sub_neg_eq_add, sub_zero, eNorm_neg, mul_add] using
+    lintegral_enorm_sub_sq_le_two_mul (μ := timeMeasure t) (f := f) (g := -g) (h := 0)
+      (by simpa only [Pi.zero_apply, sub_zero] using (hf.eNorm.pow_const 2).aemeasurable)
 
 private theorem tendsto_measure_lintegral_add_sq {f g h : ℕ → ℝ≥0 → Ω → ℝ} (t : ℝ≥0)
     (hf : ∀ k ω, Measurable (fun s ↦ f k s ω))
@@ -196,32 +188,44 @@ private theorem exists_simpleHolding_add_common
         Finance.simpleHolding τ₁ n₁ a₁ s ω + Finance.simpleHolding τ₂ n₂ a₂ s ω) ∧
       ∀ (X : ℝ≥0 → Ω → ℝ) s ω, Finance.simpleGains τ n b X s ω =
         Finance.simpleGains τ₁ n₁ a₁ X s ω + Finance.simpleGains τ₂ n₂ a₂ X s ω := by
-  let l : Fin n₁ ⊕ Fin n₂ → ℝ≥0 := Sum.elim (fun i ↦ τ₁ i.val) (fun j ↦ τ₂ j.val)
-  let u : Fin n₁ ⊕ Fin n₂ → ℝ≥0 := Sum.elim (fun i ↦ τ₁ (i.val + 1)) (fun j ↦ τ₂ (j.val + 1))
-  let h : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim (fun i ↦ a₁ i.val) (fun j ↦ a₂ j.val)
-  have hlu : ∀ i : Fin n₁ ⊕ Fin n₂, l i ≤ u i := by
-    rintro (i | j)
-    · exact hτ₁ (mem_Iic.mpr i.isLt.le) (mem_Iic.mpr i.isLt) (Nat.le_succ _)
-    · exact hτ₂ (mem_Iic.mpr j.isLt.le) (mem_Iic.mpr j.isLt) (Nat.le_succ _)
-  obtain ⟨n, τ, b, -, hτ, hb, -, hhold, hgain⟩ :=
-    Finance.exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u h fun i _ ↦
-      match i with | .inl i => ha₁ i.val i.isLt | .inr j => ha₂ j.val j.isLt
+  obtain ⟨n, τ, b, -, hτ, hb, hhold, hgain⟩ :=
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ₁ hτ₂ ha₁
+      (b := (-1 : ℝ) • a₂) (fun j hj ↦ (ha₂ j hj).const_mul (-1))
   refine ⟨n, τ, b, hτ.monotoneOn, hb, fun s ω ↦ ?_, fun X s ω ↦ ?_⟩
-  · rw [hhold s ω, Fintype.sum_sum_type]; simp only [l, u, h, Sum.elim_inl, Sum.elim_inr]
-    rw [Fin.sum_univ_eq_sum_range (f := fun i ↦
-        (Ioc (τ₁ i) (τ₁ (i + 1))).indicator (fun _ ↦ a₁ i ω) s),
-      Fin.sum_univ_eq_sum_range (f := fun j ↦
-        (Ioc (τ₂ j) (τ₂ (j + 1))).indicator (fun _ ↦ a₂ j ω) s),
-      ← Finance.simpleHolding_def, ← Finance.simpleHolding_def]
-  · rw [hgain X s ω, Finset.sum_congr rfl fun i _ ↦ ite_eq_left (hlu i), Fintype.sum_sum_type]
-    simp only [l, u, h, Sum.elim_inl, Sum.elim_inr]
-    rw [Fin.sum_univ_eq_sum_range (f := fun i ↦
-        a₁ i ω * (X (min (τ₁ (i + 1)) s) ω - X (min (τ₁ i) s) ω)),
-      Fin.sum_univ_eq_sum_range (f := fun j ↦
-        a₂ j ω * (X (min (τ₂ (j + 1)) s) ω - X (min (τ₂ j) s) ω)),
-      ← Finance.simpleGains_def, ← Finance.simpleGains_def]
+  · simpa only [sub_eq_add_neg, Finance.simpleHolding_smul, neg_one_mul, neg_neg] using
+      hhold s ω
+  · simpa only [sub_eq_add_neg, Finance.simpleGains_smul, neg_one_mul, neg_neg] using
+      hgain X s ω
 
 /-! ### Uniqueness, basic properties, and closure of `IsItoIntegral` -/
+
+/-- At a fixed horizon `t`, any limit in probability of elementary gains whose left-measurable
+simple holdings converge to `H` in pathwise square energy in probability agrees almost surely
+with every Itô integral of `H`. Neither boundedness of the heights nor path continuity of `W`
+is required. -/
+theorem IsFilteredPreBrownianReal.ae_eq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0} {Y : Ω → ℝ}
+    {n₂ : ℕ → ℕ} {τ₂ : ℕ → ℕ → ℝ≥0} {a₂ : ℕ → ℕ → Ω → ℝ}
+    (hτ₂ : ∀ k, MonotoneOn (τ₂ k) (Iic (n₂ k)))
+    (ha₂ : ∀ k j, j < n₂ k → StronglyMeasurable[ℱ (τ₂ k j)] (a₂ k j))
+    (hE₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure t}) atTop (𝓝 0))
+    (hL₂ : TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ₂ k) (n₂ k) (a₂ k) W t) atTop Y) :
+    I t =ᵐ[P] Y := by
+  obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, hE₁, hL₁⟩ := hI.exists_approx t
+  choose N ρ c _ hρ hc hhold hgain using fun k ↦
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ₁ k) (hτ₂ k) (ha₁ k) (ha₂ k)
+  have henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω‖ₑ ^ 2 ∂timeMeasure t})
+        atTop (𝓝 0) := by
+    simp_rw [hhold]
+    exact tendsto_measure_le_lintegral_sub hI.isStronglyPredictable
+      (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha₁ k)) t hE₁ hE₂
+  have hdiff0 := (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
+    henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
+  exact (tendstoInMeasure_ae_unique (TendstoInMeasure.sub hL₁ hL₂) hdiff0).mono
+    fun _ hω ↦ sub_eq_zero.mp hω
 
 /-- **Uniqueness of the Itô integral.** Against a pre-Brownian motion relative to the
 filtration, two Itô integrals of the same integrand are indistinguishable. Neither path
@@ -229,30 +233,8 @@ continuity of the integrator nor usual conditions on the filtration are needed. 
 theorem isItoIntegral_unique (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) : I ≡ᵐ[P] J := by
   refine indist_of_forall_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦ ?_
-  obtain ⟨n, τ, a, hτ, ha, hKH, hKI⟩ := hI.exists_approx t
-  obtain ⟨m, σ, b, hσ, hb, hLH, hLJ⟩ := hJ.exists_approx t
-  choose N ρ c _ hρ hc hhold hgain using fun k ↦
-    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ k) (hσ k) (ha k) (hb k)
-  -- On a common grid, the difference of the approximations has vanishing elementary integral.
-  have hdiff : TendstoInMeasure P (fun k ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω -
-      Finance.simpleGains (σ k) (m k) (b k) W t ω) atTop (fun _ ↦ 0) := by
-    have henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-        ∫⁻ s, ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω‖ₑ ^ 2 ∂timeMeasure t})
-          atTop (𝓝 0) := by
-      simp_rw [hhold]
-      exact tendsto_measure_le_lintegral_sub hI.isStronglyPredictable
-        (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k)) t hKH hLH
-    exact (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
-      henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
-  -- Compare almost surely convergent subsequences of the three sequences.
-  obtain ⟨ns, hns, hK⟩ := hKI.exists_seq_tendsto_ae
-  obtain ⟨ns', hns', hL⟩ := (hLJ.comp hns.tendsto_atTop).exists_seq_tendsto_ae
-  obtain ⟨ns'', hns'', hD⟩ :=
-    ((hdiff.comp hns.tendsto_atTop).comp hns'.tendsto_atTop).exists_seq_tendsto_ae
-  filter_upwards [hK, hL, hD] with ω hKω hLω hDω
-  have hsub := (hKω.comp (hns'.tendsto_atTop.comp hns''.tendsto_atTop)).sub
-    (hLω.comp hns''.tendsto_atTop)
-  exact sub_eq_zero.mp (tendsto_nhds_unique hsub hDω)
+  obtain ⟨n, τ, a, hτ, ha, hKH, hKI⟩ := hJ.exists_approx t
+  exact hW.ae_eq_of_isItoIntegral hI hτ ha hKH hKI
 
 /-- An Itô integral may be replaced by any indistinguishable process. -/
 theorem IsItoIntegral.congr (hI : IsItoIntegral ℱ P W H I) (hIJ : I ≡ᵐ[P] J) :
@@ -475,34 +457,6 @@ end IsItoIntegral
 /-! ### Fixed-time identification and integrand congruence against a filtered pre-Brownian motion -/
 
 namespace IsFilteredPreBrownianReal
-
-/-- At a fixed horizon `t`, any limit in probability of elementary gains whose left-measurable
-simple holdings converge to `H` in pathwise square energy in probability agrees almost surely
-with every Itô integral of `H`. Neither boundedness of the heights nor path continuity of `W`
-is required. -/
-theorem ae_eq_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0} {Y : Ω → ℝ}
-    {n₂ : ℕ → ℕ} {τ₂ : ℕ → ℕ → ℝ≥0} {a₂ : ℕ → ℕ → Ω → ℝ}
-    (hτ₂ : ∀ k, MonotoneOn (τ₂ k) (Iic (n₂ k)))
-    (ha₂ : ∀ k j, j < n₂ k → StronglyMeasurable[ℱ (τ₂ k j)] (a₂ k j))
-    (hE₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-      ∫⁻ s, ‖Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure t}) atTop (𝓝 0))
-    (hL₂ : TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ₂ k) (n₂ k) (a₂ k) W t) atTop Y) :
-    I t =ᵐ[P] Y := by
-  obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, hE₁, hL₁⟩ := hI.exists_approx t
-  choose N ρ c _ hρ hc hhold hgain using fun k ↦
-    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ₁ k) (hτ₂ k) (ha₁ k) (ha₂ k)
-  have henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-      ∫⁻ s, ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω‖ₑ ^ 2 ∂timeMeasure t})
-        atTop (𝓝 0) := by
-    simp_rw [hhold]
-    exact tendsto_measure_le_lintegral_sub hI.isStronglyPredictable
-      (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha₁ k)) t hE₁ hE₂
-  have hdiff0 := (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
-    henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
-  exact (tendstoInMeasure_ae_unique (TendstoInMeasure.sub hL₁ hL₂) hdiff0).mono
-    fun _ hω ↦ sub_eq_zero.mp hω
 
 /-- **Product-a.e. integrand congruence.** Against a filtered pre-Brownian motion, Itô
 integrals of predictable integrands that agree `dt × P`-almost everywhere on every finite

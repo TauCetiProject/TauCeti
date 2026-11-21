@@ -16,8 +16,8 @@ monoids `G i`, the principal stage `Πʳ i, [G i, B i]_[𝓟 (T : Set ι)ᶜ]` s
 monoid isomorphism `TauCeti.prodContinuousMulEquivPrincipal` from
 `(Π i : T, G i) × (Π i : {i // i ∉ T}, B i)`. Composing with the principal inclusion into
 `Πʳ i, [G i, B i]` yields `TauCeti.levelMonoidHom`, which is always a topological embedding and is
-an open embedding when each `B i` is open. Every declaration has an additive counterpart via
-`@[to_additive]`.
+an open embedding when `B i` is open for every `i ∉ T`. Every declaration has an additive
+counterpart via `@[to_additive]`.
 
 ## Main definitions and results
 
@@ -26,8 +26,9 @@ an open embedding when each `B i` is open. Every declaration has an additive cou
   coordinate and `.symm` projection lemmas.
 * `TauCeti.levelMonoidHom`, `TauCeti.range_levelMonoidHom`: canonical monoid homomorphism into
   `Πʳ i, [G i, B i]` and its range `{x | ∀ i ∉ T, x i ∈ B i}`.
-* `TauCeti.isEmbedding_levelMonoidHom`, `TauCeti.isOpenEmbedding_levelMonoidHom`: topological and
-  open embedding properties of `levelMonoidHom`.
+* `TauCeti.isEmbedding_levelMonoidHom`, `TauCeti.isOpenEmbedding_levelMonoidHom_of_isOpen`,
+  `TauCeti.isOpenEmbedding_levelMonoidHom`: topological and open embedding properties of
+  `levelMonoidHom`; openness of `B i` is only needed outside `T`.
 * `TauCeti.image_levelMonoidHom_pi_prod_univ`: image of `(Set.univ.pi ...) ×ˢ Set.univ` under
   `levelMonoidHom B T` is `RestrictedProduct.box C` when `C i = B i` outside `T`.
 -/
@@ -173,15 +174,25 @@ theorem isEmbedding_levelMonoidHom : IsEmbedding (levelMonoidHom B T) :=
 theorem continuous_levelMonoidHom : Continuous (levelMonoidHom B T) :=
   (isEmbedding_levelMonoidHom B T).continuous
 
+/-- When the reference subobjects `B i` are open for every `i ∉ T`, `levelMonoidHom B T` is an
+open topological embedding into `Πʳ i, [G i, B i]`; no openness is needed at the indices in `T`. -/
+@[to_additive /-- When the reference additive subobjects `B i` are open for every `i ∉ T`,
+`levelAddMonoidHom B T` is an open topological embedding into `Πʳ i, [G i, B i]`; no openness is
+needed at the indices in `T`. -/]
+theorem isOpenEmbedding_levelMonoidHom_of_isOpen (hB : ∀ i ∉ T, IsOpen (B i : Set (G i))) :
+    IsOpenEmbedding (levelMonoidHom B T) :=
+  (isOpenEmbedding_inclusion_principal_of_forall_mem
+    (le_principal_iff.mpr T.finite_toSet.compl_mem_cofinite)
+    fun i hi ↦ hB i (Finset.mem_coe.not.mp hi)).comp
+    (prodContinuousMulEquivPrincipal B T).toHomeomorph.isOpenEmbedding
+
 /-- When each reference subobject `B i` is open, `levelMonoidHom B T` is an open topological
 embedding into `Πʳ i, [G i, B i]`. -/
 @[to_additive /-- When each reference additive subobject `B i` is open, `levelAddMonoidHom B T` is
 an open topological embedding into `Πʳ i, [G i, B i]`. -/]
 theorem isOpenEmbedding_levelMonoidHom [hBopen : Fact (∀ i, IsOpen (B i : Set (G i)))] :
     IsOpenEmbedding (levelMonoidHom B T) :=
-  (isOpenEmbedding_inclusion_principal hBopen.out
-    (le_principal_iff.mpr T.finite_toSet.compl_mem_cofinite)).comp
-    (prodContinuousMulEquivPrincipal B T).toHomeomorph.isOpenEmbedding
+  isOpenEmbedding_levelMonoidHom_of_isOpen B T fun i _ ↦ hBopen.out i
 
 /-- For any family of sets `C : ∀ i, Set (G i)` agreeing with `B i` outside `T`, the image of
 `(Set.univ.pi fun i : T ↦ C i.1) ×ˢ Set.univ` under `levelMonoidHom B T` is `box C`. -/
