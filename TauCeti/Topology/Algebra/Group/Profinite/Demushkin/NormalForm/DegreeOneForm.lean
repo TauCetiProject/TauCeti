@@ -552,7 +552,7 @@ theorem exists_continuousMulEquiv_freeProPGen_zero_eq_inv_mul_demushkinWordNeTwo
   set f : freeProP p (Fin n) →ₜ* freeProP p (Fin n) :=
     (e : freeProP p (Fin n) →ₜ* freeProP p (Fin n))
   have hmem : f r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
-    f.toMonoidHom.map_pLowerCentralSeries_le f.continuous 1 ⟨r, r.2, rfl⟩
+    f.toMonoidHom.map_pLowerCentralSeries_le f.continuous 1 ⟨r, r.property, rfl⟩
   have hr' : gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩ =
       gradedMap p f.toMonoidHom f.continuous 1 (gradedMk p (freeProP p (Fin n)) 1 r) := by
     rw [gradedMap_gradedMk]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
 # Recognizing a second exterior power
@@ -30,9 +31,12 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
 * `LinearMap.IsAlt.exteriorSquareEquiv_ιMulti`: the isomorphism sends `x ∧ y` to `ω x y`.
 * `LinearMap.IsAlt.exteriorSquareEquiv_symm_apply`: its inverse sends the basis vector indexed by
   `i < j` to `b i ∧ b j`.
-* `exteriorPower.ιMulti_two_add_right` and `exteriorPower.ιMulti_two_smul_right`: the wedge
-  `u ∧ w` of two vectors is linear in `w`.
-* `exteriorPower.ιMulti_two_smul_left`: the wedge `u ∧ w` is homogeneous in `u`.
+* `exteriorPower.ιMulti_two_add_left`, `exteriorPower.ιMulti_two_add_right`,
+  `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`,
+  `exteriorPower.ιMulti_two_neg_right`, and `exteriorPower.ιMulti_two_swap`: the wedge `u ∧ w`
+  of two vectors is bilinear and antisymmetric.
+* `exteriorPower.linearMap_ext_ιMulti_two`: linear maps out of `⋀²M` are determined on pure wedges
+  `u ∧ v`.
 -/
 
 public section
@@ -40,6 +44,11 @@ public section
 namespace exteriorPower
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The wedge `u ∧ w` is additive in `u`. -/
+theorem ιMulti_two_add_left (u u' w : M) :
+    ιMulti R 2 ![u + u', w] = ιMulti R 2 ![u, w] + ιMulti R 2 ![u', w] :=
+  Subtype.ext <| by simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail, add_mul]
 
 /-- The wedge `u ∧ w` is additive in `w`. -/
 theorem ιMulti_two_add_right (u w w' : M) :
@@ -59,6 +68,23 @@ theorem ιMulti_two_smul_left (u w : M) (c : R) :
   apply Subtype.ext
   simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
 
+/-- The wedge `u ∧ w` changes sign when `w` is negated. -/
+theorem ιMulti_two_neg_right (u w : M) :
+    ιMulti R 2 ![u, -w] = -ιMulti R 2 ![u, w] := by
+  apply Subtype.ext
+  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+/-- The wedge `u ∧ w` is antisymmetric: `w ∧ u = -(u ∧ w)`. -/
+theorem ιMulti_two_swap (u w : M) :
+    ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
+  simpa using (ιMulti R 2).map_swap ![u, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+/-- Two linear maps out of `⋀[R]^2 M` agree if they agree on all pure wedges `u ∧ v`. -/
+theorem linearMap_ext_ιMulti_two {N : Type*} [AddCommGroup N] [Module R N]
+    {f g : ⋀[R]^2 M →ₗ[R] N}
+    (h : ∀ u v : M, f (ιMulti R 2 ![u, v]) = g (ιMulti R 2 ![u, v])) : f = g :=
+  linearMap_ext <| AlternatingMap.ext fun v ↦ by rw [← FinVec.etaExpand_eq v]; exact h (v 0) (v 1)
+
 end exteriorPower
 
 namespace LinearMap.IsAlt
@@ -72,9 +98,9 @@ indexed by a linearly ordered type, and `c` a basis of `N` indexed by the pairs 
 `ω x y` (`LinearMap.IsAlt.exteriorSquareEquiv_ιMulti`), is an isomorphism. -/
 noncomputable def exteriorSquareEquiv (hω : ω.IsAlt) (b : Module.Basis ι R M)
     (c : Module.Basis {ij : ι × ι // ij.1 < ij.2} R N)
-    (hc : ∀ ij, ω (b ij.1.1) (b ij.1.2) = c ij) : ⋀[R]^2 M ≃ₗ[R] N :=
+    (hc : ∀ ij, ω (b ij.val.1) (b ij.val.2) = c ij) : ⋀[R]^2 M ≃ₗ[R] N :=
   LinearEquiv.ofLinearMap (exteriorPower.alternatingMapLinearEquiv hω.toAlternatingMap)
-    (c.constr R fun ij ↦ exteriorPower.ιMulti R 2 ![b ij.1.1, b ij.1.2])
+    (c.constr R fun ij ↦ exteriorPower.ιMulti R 2 ![b ij.val.1, b ij.val.2])
     (c.ext fun ij ↦ by
       simp [Module.Basis.constr_basis, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, hc])
     (exteriorPower.linearMap_ext <| b.ext_alternating fun v hv ↦ by
@@ -98,7 +124,7 @@ noncomputable def exteriorSquareEquiv (hω : ω.IsAlt) (b : Module.Basis ι R M)
 @[simp]
 theorem exteriorSquareEquiv_ιMulti (hω : ω.IsAlt) (b : Module.Basis ι R M)
     (c : Module.Basis {ij : ι × ι // ij.1 < ij.2} R N)
-    (hc : ∀ ij, ω (b ij.1.1) (b ij.1.2) = c ij) (v : Fin 2 → M) :
+    (hc : ∀ ij, ω (b ij.val.1) (b ij.val.2) = c ij) (v : Fin 2 → M) :
     hω.exteriorSquareEquiv b c hc (exteriorPower.ιMulti R 2 v) = ω (v 0) (v 1) := by
   simp [exteriorSquareEquiv, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
 
@@ -106,9 +132,9 @@ theorem exteriorSquareEquiv_ιMulti (hω : ω.IsAlt) (b : Module.Basis ι R M)
 @[simp]
 theorem exteriorSquareEquiv_symm_apply (hω : ω.IsAlt) (b : Module.Basis ι R M)
     (c : Module.Basis {ij : ι × ι // ij.1 < ij.2} R N)
-    (hc : ∀ ij, ω (b ij.1.1) (b ij.1.2) = c ij) (ij : {ij : ι × ι // ij.1 < ij.2}) :
+    (hc : ∀ ij, ω (b ij.val.1) (b ij.val.2) = c ij) (ij : {ij : ι × ι // ij.1 < ij.2}) :
     (hω.exteriorSquareEquiv b c hc).symm (c ij) =
-      exteriorPower.ιMulti R 2 ![b ij.1.1, b ij.1.2] := by
+      exteriorPower.ιMulti R 2 ![b ij.val.1, b ij.val.2] := by
   simp [exteriorSquareEquiv, Module.Basis.constr_basis]
 
 end LinearMap.IsAlt

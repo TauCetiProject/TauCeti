@@ -9,18 +9,21 @@ public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Moments.MGFAnalytic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 
 /-!
 # Basic properties of sub-Gaussian moment-generating functions
 
 Under a zero or probability measure, the quadratic MGF bound forces a sub-Gaussian random
 variable to have mean zero and bounds its second moment by the variance proxy. The bound is
-monotone in the proxy.
+monotone in the proxy and, under any measure, bounds the first absolute moment by `√(2c)`. By
+Fatou's lemma, an almost everywhere limit of sub-Gaussian random variables with a common variance
+proxy is sub-Gaussian with the same proxy.
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory Real
+open Filter MeasureTheory ProbabilityTheory Real
 open scoped NNReal Topology
 
 namespace ProbabilityTheory.HasSubgaussianMGF
@@ -88,5 +91,72 @@ theorem integral_sq_le {Ω : Type*} [MeasurableSpace Ω]
     ((he 0).continuousAt.sub (differentiableAt_mgf (hm 0)).continuousAt) hmin
   rw [hsecond.deriv] at hnonneg
   linarith
+
+/-- The first absolute moment of a sub-Gaussian random variable is at most `√(2c)`. -/
+theorem integral_abs_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) : ∫ x, |X x| ∂μ ≤ sqrt (2 * c) := by
+  by_cases hc : c = 0
+  · subst c
+    simpa using (integral_congr_ae <|
+      h.ae_eq_zero_of_hasSubgaussianMGF_zero.fun_comp abs).le
+  have hc' : 0 < (c : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
+  let t : ℝ := sqrt (2 / c)
+  have ht : 0 < t := sqrt_pos.2 (div_pos (by norm_num) hc')
+  have ht2 : (c : ℝ) * t ^ 2 / 2 = 1 := by
+    dsimp [t]
+    rw [sq_sqrt (by positivity)]
+    field_simp
+  have hts : t * sqrt (2 * c) = 2 := by
+    rw [← sqrt_mul (by positivity : 0 ≤ 2 / (c : ℝ))]
+    field_simp
+    apply (sqrt_eq_iff_eq_sq (by norm_num) (by norm_num)).2
+    norm_num
+  -- Normalize the exponential comparison at the scale of the variance proxy.
+  have hpoint (x : Ω) :
+      t * |X x| ≤ (exp (t * X x) + exp ((-t) * X x)) * exp (-1) := by
+    calc t * |X x|
+        ≤ exp (t * |X x| - 1) := by simpa using add_one_le_exp (t * |X x| - 1)
+      _ = exp |t * X x| * exp (-1) := by rw [abs_mul, abs_of_pos ht, ← exp_add, sub_eq_add_neg]
+      _ ≤ (exp (t * X x) + exp ((-t) * X x)) * exp (-1) := by
+        simpa only [neg_mul] using mul_le_mul_of_nonneg_right (exp_abs_le (t * X x))
+          (exp_pos (-1)).le
+  have hbound : t * ∫ x, |X x| ∂μ ≤ 2 := by
+    calc t * ∫ x, |X x| ∂μ
+        ≤ (mgf X μ t + mgf X μ (-t)) * exp (-1) := by
+          simpa only [Pi.add_apply, integral_const_mul, integral_mul_const,
+            integral_add (h.integrable_exp_mul t) (h.integrable_exp_mul (-t)), mgf] using
+            integral_mono (h.integrable.abs.const_mul t)
+              (((h.integrable_exp_mul t).add (h.integrable_exp_mul (-t))).mul_const
+                (exp (-1))) hpoint
+      _ ≤ (exp (c * t ^ 2 / 2) + exp (c * (-t) ^ 2 / 2)) * exp (-1) :=
+        mul_le_mul_of_nonneg_right (add_le_add (h.mgf_le t) (h.mgf_le (-t)))
+          (exp_pos (-1)).le
+      _ = 2 := by rw [neg_sq, ht2, ← two_mul, mul_assoc, ← exp_add]; norm_num
+  exact (mul_le_mul_iff_right₀ ht).1 (hbound.trans_eq hts.symm)
+
+/-- An almost everywhere limit, along a countably generated filter, of random variables that are
+frequently sub-Gaussian with variance proxy `c` is sub-Gaussian with variance proxy `c`. -/
+theorem of_tendsto {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {l : Filter ι}
+    [l.IsCountablyGenerated] {X : ι → Ω → ℝ} {Y : Ω → ℝ} {c : ℝ≥0}
+    (h : ∃ᶠ i in l, HasSubgaussianMGF (X i) c μ)
+    (hlim : ∀ᵐ ω ∂μ, Tendsto (fun i ↦ X i ω) l (𝓝 (Y ω))) : HasSubgaussianMGF Y c μ := by
+  obtain ⟨u, hu, hX⟩ := exists_seq_forall_of_frequently h
+  -- Apply Fatou's lemma to the exponentials along a sequence of sub-Gaussian terms.
+  have hexp (t : ℝ) :
+      ∀ᵐ ω ∂μ, Tendsto (fun n ↦ exp (t * X (u n) ω)) atTop (𝓝 (exp (t * Y ω))) :=
+    hlim.mono fun ω hω ↦ ((hω.comp hu).const_mul t).rexp
+  have hint (t : ℝ) : ∀ᶠ n in atTop, Integrable (fun ω ↦ exp (t * X (u n) ω)) μ :=
+    .of_forall fun n ↦ (hX n).integrable_exp_mul t
+  have hpos (t : ℝ) : ∀ᶠ n in atTop, 0 ≤ᵐ[μ] fun ω ↦ exp (t * X (u n) ω) :=
+    .of_forall fun _ ↦ .of_forall fun _ ↦ (exp_pos _).le
+  have hbound (t : ℝ) :
+      ∃ᶠ n in atTop, ∫ ω, exp (t * X (u n) ω) ∂μ ≤ exp (c * t ^ 2 / 2) :=
+    .of_forall fun n ↦ by
+      rw [← mgf]
+      exact (hX n).mgf_le t
+  refine ⟨fun t ↦ TauCeti.integrable_of_tendsto_of_integral_le (hint t) (hpos t) (hexp t)
+    (hbound t), fun t ↦ ?_⟩
+  rw [mgf]
+  exact TauCeti.integral_le_of_tendsto_of_integral_le (hint t) (hpos t) (hexp t) (hbound t)
 
 end ProbabilityTheory.HasSubgaussianMGF

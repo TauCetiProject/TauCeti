@@ -57,15 +57,15 @@ private theorem exists_local_recoloring [Fintype κ] (hε : 0 < ε)
   · refine ⟨S, rfl, fun _ ↦ rfl, fun hAB ↦ ?_⟩
     exact ⟨(h.resolve_left hAB).mono (by linarith), fun c ↦ by simp [hε.le]⟩
   · have hAB : (A : Finset V) ≠ B := fun heq ↦ h (Or.inl (Subtype.ext heq))
-    have hdisj : Disjoint A.1 B.1 := P.disjoint A.2 B.2 hAB
-    have hnonempty : ((A.1 ×ˢ B.1).filter fun p ↦ p.1 ≠ p.2).Nonempty := by
+    have hdisj : Disjoint A.val B.val := P.disjoint A.property B.property hAB
+    have hnonempty : ((A.val ×ˢ B.val).filter fun p ↦ p.1 ≠ p.2).Nonempty := by
       rw [filter_ne_product_of_disjoint hdisj]
-      exact (P.nonempty_of_mem_parts A.2).product (P.nonempty_of_mem_parts B.2)
+      exact (P.nonempty_of_mem_parts A.property).product (P.nonempty_of_mem_parts B.property)
     obtain ⟨T, hrev, -, hreg, hdens⟩ := S.exists_recoloring_isRegularPair hdisj
       (p := fun c ↦ (pairColorDensity S c A B : ℝ))
       (fun c ↦ by exact_mod_cast pairColorDensity_nonneg S c A B)
       (by exact_mod_cast sum_pairColorDensity S A B hnonempty) hε
-      (hsize A A.2) (hsize B B.2)
+      (hsize A A.property) (hsize B B.property)
     exact ⟨T, hrev, fun hh ↦ (h hh).elim, fun _ ↦ ⟨hreg, hdens⟩⟩
 
 variable (order : LinearOrder P.parts) (T : P.parts → P.parts → PairColorSystem κ V)
@@ -73,26 +73,26 @@ variable (order : LinearOrder P.parts) (T : P.parts → P.parts → PairColorSys
 private theorem exists_cellwise_recoloring
     (hrev : ∀ A B, (T A B).rev = S.rev) :
     ∃ R : PairColorSystem κ V, R.rev = S.rev ∧
-      ∀ A B : P.parts, order.le A B → ∀ x ∈ A.1, ∀ y ∈ B.1,
+      ∀ A B : P.parts, order.le A B → ∀ x ∈ A.val, ∀ y ∈ B.val,
         R.colorOfPair x y = (T A B).colorOfPair x y := by
   classical
   let : LinearOrder P.parts := order
   let : LE P.parts := order.toLE
   let cell (x : V) : P.parts := ⟨P.part x, P.part_mem.2 (mem_univ x)⟩
-  have hcell (A : P.parts) {x : V} (hx : x ∈ A.1) : cell x = A :=
-    Subtype.ext (P.part_eq_of_mem A.2 hx)
+  have hcell (A : P.parts) {x : V} (hx : x ∈ A.val) : cell x = A :=
+    Subtype.ext (P.part_eq_of_mem A.property hx)
   -- The minimum and maximum select the same local system in both orientations.
   let R : PairColorSystem κ V :=
-    { color := fun p ↦ (T (min (cell p.1.1) (cell p.1.2))
-        (max (cell p.1.1) (cell p.1.2))).color p
+    { color := fun p ↦ (T (min (cell p.val.1) (cell p.val.2))
+        (max (cell p.val.1) (cell p.val.2))).color p
       rev := S.rev
       rev_involutive := S.rev_involutive
       color_rev := fun p ↦ by
         dsimp only [Prod.fst_swap, Prod.snd_swap]
-        rw [min_comm (cell p.1.2), max_comm (cell p.1.2)]
+        rw [min_comm (cell p.val.2), max_comm (cell p.val.2)]
         rw [(T _ _).color_rev, hrev] }
   refine ⟨R, rfl, fun A B hAB x hx y hy ↦ ?_⟩
-  have hlocal (A B : P.parts) (hAB : A ≤ B) {x y : V} (hx : x ∈ A.1) (hy : y ∈ B.1) :
+  have hlocal (A B : P.parts) (hAB : A ≤ B) {x y : V} (hx : x ∈ A.val) (hy : y ∈ B.val) :
       R.colorOfPair x y = (T A B).colorOfPair x y := by
     by_cases hxy : x = y
     · simp [hxy]
@@ -101,7 +101,7 @@ private theorem exists_cellwise_recoloring
   exact hlocal A B hAB hx hy
 
 variable (R : PairColorSystem κ V)
-  (hlocal : ∀ A B : P.parts, order.le A B → ∀ x ∈ A.1, ∀ y ∈ B.1,
+  (hlocal : ∀ A B : P.parts, order.le A B → ∀ x ∈ A.val, ∀ y ∈ B.val,
     R.colorOfPair x y = (T A B).colorOfPair x y)
 
 include hlocal in
@@ -112,7 +112,7 @@ private theorem recoloring_agrees (hRrev : R.rev = S.rev)
   let : LinearOrder P.parts := order
   let : LE P.parts := order.toLE
   let cell (x : V) : P.parts := ⟨P.part x, P.part_mem.2 (mem_univ x)⟩
-  have hk (A B : P.parts) (hx : x ∈ A.1) (hy : y ∈ B.1) (hAB : A ≤ B)
+  have hk (A B : P.parts) (hx : x ∈ A.val) (hy : y ∈ B.val) (hAB : A ≤ B)
       (hgood : A = B ∨ S.IsRegularPair ε A B) : R.colorOfPair x y = S.colorOfPair x y := by
     rw [hlocal A B hAB x hx y hy, hkeep A B hgood]
   have hgood : cell x = cell y ∨ S.IsRegularPair ε (cell x) (cell y) :=
@@ -133,8 +133,8 @@ private theorem regular_density_of_cellwise (hRrev : R.rev = S.rev)
       ∀ c, |(pairColorDensity R c A B : ℝ) - pairColorDensity S c A B| ≤ ε := by
   let : LinearOrder P.parts := order
   let : LE P.parts := order.toLE
-  have hdensity (A B : P.parts) (hAB : A ≤ B) {s t : Finset V} (hs : s ⊆ A.1)
-      (ht : t ⊆ B.1) (c : κ) : pairColorDensity R c s t = pairColorDensity (T A B) c s t :=
+  have hdensity (A B : P.parts) (hAB : A ≤ B) {s t : Finset V} (hs : s ⊆ A.val)
+      (ht : t ⊆ B.val) (c : κ) : pairColorDensity R c s t = pairColorDensity (T A B) c s t :=
     pairColorDensity_congr (fun x hx y hy ↦ hlocal A B hAB x (hs hx) y (ht hy)) c
   have hregular (A B : P.parts) (hAB : A ≤ B) (hne : A ≠ B) :
       R.IsRegularPair (2 * ε) A B := by
