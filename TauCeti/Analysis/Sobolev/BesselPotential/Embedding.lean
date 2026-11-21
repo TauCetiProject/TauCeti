@@ -14,6 +14,7 @@ import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -42,6 +43,9 @@ weak-derivative space `W^{k,2}(ℝⁿ)` with `2k > n` the continuous representat
 and boundedly on the function, so that
 
 `sup_x |u(x)| ≤ C ‖u‖_{W^{k,2}}`.
+
+For a `Cᵏ` function `f` with square-integrable derivatives through order `k` this reads
+`sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂`.
 
 ## The Fourier argument
 
@@ -120,6 +124,9 @@ spaces.
   a Sobolev function to its unique continuous representative.
 * `TauCeti.Wkp.toZeroAtInfty_injective`: the continuous representative determines the Sobolev
   function.
+* `TauCeti.exists_norm_le_mul_sum_lpNorm_iteratedFDeriv`: the bound
+  `sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` for `Cᵏ` functions `f` with square-integrable derivatives
+  through order `k`, `2k > n`.
 
 ## References
 
@@ -680,5 +687,25 @@ theorem toZeroAtInfty_injective (hk : finrank ℝ E < 2 * k) :
   toZeroAtInftyOfExists_injective _
 
 end Wkp
+
+/-- **The Sobolev embedding for classical functions.** If `2k > dim E`, there is a constant `C`
+such that every function `f` that is `Cᵏ` on `E` with square-integrable derivatives through
+order `k` satisfies `|f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` at every point. -/
+theorem exists_norm_le_mul_sum_lpNorm_iteratedFDeriv {k : ℕ} (hk : finrank ℝ E < 2 * k) :
+    ∃ C, ∀ f : E → ℝ, ContDiff ℝ k f → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) →
+      ∀ x, ‖f x‖ ≤ C * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
+  set S := Wkp.toZeroAtInfty (E := E) hk
+  refine ⟨‖S‖, fun f hf hmem x ↦ ?_⟩
+  obtain ⟨u, hu, hnorm⟩ := Wkp.exists_value_ae_eq_and_norm_le hf hmem
+  -- The continuous representative of `u` is `f` itself, since both are continuous.
+  have hSf : ⇑(S u) = f :=
+    Continuous.ae_eq_iff_eq volume (S u).continuous hf.continuous |>.1 <|
+      (Wkp.value_ae_eq_toZeroAtInfty hk u).symm.trans hu
+  calc ‖f x‖ = ‖S u x‖ := by rw [hSf]
+    _ ≤ ‖S u‖ := by
+      rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
+      exact (S u).toBCF.norm_coe_le_norm x
+    _ ≤ ‖S‖ * ‖u‖ := S.le_opNorm u
+    _ ≤ ‖S‖ * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by gcongr
 
 end TauCeti
