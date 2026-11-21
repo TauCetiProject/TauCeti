@@ -486,15 +486,16 @@ theorem map_elementarySubgroup_le_elementarySubgroup :
   ext (p | p) (q | q) <;>
     simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
-/-- **Whitehead's lemma.** For an invertible matrix `u`, the block diagonal matrix `u ⊕ u⁻¹` is
-elementary: it is the product of six block unipotent matrices,
-`u ⊕ u⁻¹ = U(u) L(-u⁻¹) U(u) U(-1) L(1) U(-1)`. -/
+/-- The Whitehead factorization of `u ⊕ u⁻¹` into six block unipotent matrices. -/
+theorem fromBlocksGL_inv_eq (u : GL m A) :
+    fromBlocksGL (u, u⁻¹) = upperBlockGL (u : Matrix m m A) * lowerBlockGL (-↑u⁻¹) *
+      upperBlockGL (u : Matrix m m A) * upperBlockGL (-1) * lowerBlockGL 1 * upperBlockGL (-1) :=
+  Units.ext (by simp [fromBlocks_multiply])
+
+/-- **Whitehead's lemma.** The block diagonal matrix `u ⊕ u⁻¹` is elementary. -/
 theorem fromBlocksGL_inv_mem_elementarySubgroup (u : GL m A) :
     fromBlocksGL (u, u⁻¹) ∈ elementarySubgroup (m ⊕ m) A := by
-  have h : fromBlocksGL (u, u⁻¹) = upperBlockGL (u : Matrix m m A) * lowerBlockGL (-↑u⁻¹) *
-      upperBlockGL (u : Matrix m m A) * upperBlockGL (-1) * lowerBlockGL 1 * upperBlockGL (-1) :=
-    Units.ext (by simp [fromBlocks_multiply])
-  rw [h]
+  rw [fromBlocksGL_inv_eq]
   refine mul_mem (mul_mem (mul_mem (mul_mem (mul_mem ?_ ?_) ?_) ?_) ?_) ?_ <;>
     first
     | exact upperBlockGL_mem_elementarySubgroup _
