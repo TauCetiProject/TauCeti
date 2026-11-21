@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
+public import TauCeti.AlgebraicTopology.Cellular.Map
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 
 /-!
@@ -22,7 +23,11 @@ local degrees of the attaching maps.
   induces isomorphisms on relative singular homology in every degree.
 * The inclusion of pairs `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, Xⁿ ∖ {x})` sends the summand of `i` in the cellular
   chain group to the local class, and the summand of every other `n`-cell to zero, because the
-  closed cells of the other `n`-cells miss `x`.
+  closed cells of the other `n`-cells miss `x`. With ring coefficients, this recovers the `i`-th
+  cellular coordinate of any `n`-chain (`TauCeti.cellularChainBasis_repr_eq_inv_cellLocalClass`)
+  and implies that a cellular map sending `openCell n i` into `skeletonLT C' n ∪ openCell n i'`
+  maps the cellular basis vector of `i` to a scalar multiple of that of `i'`
+  (`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`).
 * Hence, with coefficients in a ring, pushing the reduced fundamental class of the boundary sphere
   of an `(n + 1)`-cell `j` through its attaching map into `Hₙ(Xⁿ)`, and then into
   `Hₙ(Xⁿ, Xⁿ ∖ {x})`, gives the incidence coefficient `[j : i]` times the local class of `i` at
@@ -58,6 +63,14 @@ local homology is constant along convex sets in a chart
 * `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton` and
   `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne`:
   the local homology at `x` reads off the coefficient of `i` in the cellular chain group.
+* `TauCeti.singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul` and
+  `TauCeti.cellularChainBasis_repr_eq_inv_cellLocalClass`: reading cellular coordinates of an
+  `n`-chain in local homology.
+* `TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem`,
+  `TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne`, and
+  `TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`: off-cell vanishing and scalar action
+  on cellular basis vectors for cellular maps carrying an open `n`-cell into the union of the
+  `(n - 1)`-skeleton and another open `n`-cell.
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
@@ -636,6 +649,39 @@ lemma singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne
       hx hj]
   rfl
 
+/-- At a point `x` of the open `n`-cell `i`, the map from the `n`-th cellular chain group to the
+local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` sends any chain `c` to its `i`-th cellular coordinate times the
+local class of `i` at `x`. -/
+theorem singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
+    (c : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
+    TopPair.singularHomologyMap
+        (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
+        (ModuleCat.of R R) n c =
+      ((cellularChainBasis C R n).repr c i) • cellLocalClass C (ModuleCat.of R R) x hx 1 := by
+  conv_lhs => rw [← (cellularChainBasis C R n).linearCombination_repr c]
+  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single i]
+  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self]
+  · intro l _ hl
+    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
+      hx hl, smul_zero]
+  · intro hi
+    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
+
+/-- The `i`-th cellular coordinate of an `n`-chain `c` is recovered from its image in the local
+homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at any point `x` of the open `n`-cell `i`, via the inverse of
+`TauCeti.cellLocalClass`. -/
+theorem cellularChainBasis_repr_eq_inv_cellLocalClass {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
+    (c : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
+    (cellularChainBasis C R n).repr c i =
+      inv (cellLocalClass C (ModuleCat.of R R) x hx)
+        (TopPair.singularHomologyMap
+          (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
+          (ModuleCat.of R R) n c) := by
+  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx c, map_smul,
+    ← ModuleCat.comp_apply, IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one]
+
 /-- **Incidence numbers are local degrees of attaching maps.** Send the reduced fundamental class
 of the boundary sphere of an `(n + 1)`-cell `j` through its attaching map into `Hₙ(Xⁿ)`, and then
 into the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at a point `x` of the open `n`-cell `i`. The result is
@@ -658,16 +704,8 @@ theorem singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul {i : cell 
   -- The two presentations of the `n`-skeleton agree only up to unfolding, so `hπ` is used as a
   -- term rather than rewritten.
   refine hπ.symm.trans ?_
-  rw [← (cellularChainBasis C R n).linearCombination_repr (skeletonPairπ C (ModuleCat.of R R) n a),
-    ← cellularBoundaryColumn_eq_attaching, Finsupp.linearCombination_apply, map_finsuppSum,
-    Finsupp.sum, Finset.sum_eq_single i]
-  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self,
-      cellularBoundaryColumn_apply]
-  · intro l _ hl
-    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
-      hx hl, smul_zero]
-  · intro hi
-    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
+  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx,
+    ← cellularBoundaryColumn_eq_attaching, cellularBoundaryColumn_apply]
 
 /-- **The incidence numbers are the local degrees of the attaching maps.** For a point `x` of
 the open `n`-cell `i` and an `(n + 1)`-cell `j`, the incidence coefficient of `i` in the cellular
@@ -722,5 +760,129 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
   rfl
 
 end Ring
+
+section CellularMap
+
+open Metric Set
+
+variable {Y : Type w} [TopologicalSpace Y] [T2Space Y] {D' : Set Y}
+  (C' : Set Y) [RelCWComplex C' D'] (R : Type w) [Ring R]
+
+/-- If a cellular map `f` sends the closed `n`-cell `i` into the complement of `x`, then the
+characteristic pair map of `i` followed by `f` and the projection to local homology at `x`
+factors through `X'ⁿ ∖ {x}` and therefore induces zero on `Hₙ`. -/
+private theorem singularHomologyMap_characteristicCellPairMap_comp_eq_zero
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ} {i : cell C n}
+    (x : skeletonObj C' (n + 1)) (hx : (x : Y) ∉ (skeletonLT C' (n : ℕ∞) : Set Y))
+    (hmiss : ∀ z (hz : z ∈ closedCell n i), (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ≠ x) :
+    TopPair.singularHomologyMap
+        (characteristicCellPairMap C i ≫ skeletonPairMap C C' hf n ≫
+          skeletonPairToComplSingleton C' x hx) (ModuleCat.of R R) n = 0 := by
+  set Φ := characteristicCellPairMap C i ≫ skeletonPairMap C C' hf n ≫
+    skeletonPairToComplSingleton C' x hx
+  have hfst : TopPair.Hom.fst Φ = cellDiskHom i ≫ skeletonMap C C' hf (n + 1) := by
+    -- `(TopPair.ofSubset _).fst` unfolds to `skeletonObj C' (n + 1)` only at `default`
+    -- transparency, so `erw` discharges the trailing identity on that object.
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, characteristicCellPairMap_fst,
+      skeletonPairMap_fst, skeletonPairToComplSingleton_fst]
+    erw [Category.comp_id]
+    rfl
+  have hnotEq (p : TopCat.disk.{w} n) :
+      (TopPair.Hom.fst Φ p : skeletonObj C' (n + 1)) ≠ x := by
+    intro hp
+    have hclosed : map n i (diskHomeomorphClosedBall n p) ∈ closedCell n i :=
+      ⟨_, (diskHomeomorphClosedBall n p).property, rfl⟩
+    have key : ∀ (a b : X) (ha : a ∈ C) (hb : b ∈ C),
+        a = b → (f ⟨a, ha⟩ : Y) = (f ⟨b, hb⟩ : Y) := by rintro a _ _ _ rfl; rfl
+    have hval : (f ⟨_, closedCell_subset_complex n i hclosed⟩ : Y) = x :=
+      (key _ _ _ _ (coe_cellDiskHom_apply i p).symm).trans <|
+        (congrArg Subtype.val (skeletonMap_apply C C' hf (n + 1) (cellDiskHom i p))).symm.trans <|
+          congrArg Subtype.val ((ConcreteCategory.congr_hom hfst p).symm.trans hp)
+    exact hmiss _ hclosed hval
+  exact TopPair.singularHomologyMap_eq_zero_of_fac Φ (ModuleCat.of R R)
+    (TopCat.ofHom ⟨fun p ↦ ⟨TopPair.Hom.fst Φ p, hnotEq p⟩,
+      (TopPair.Hom.fst Φ).hom.continuous.subtype_mk _⟩) rfl n
+
+/-- If a cellular map `f` sends the open `n`-cell `i` into the complement of a point `x` of the
+open `n`-cell `k`, then the `k`-th cellular coordinate of the image of the basis vector of `i`
+under `f` vanishes. The frontier of `i` needs no hypothesis: it lies in the `(n - 1)`-skeleton,
+which `f` keeps away from `x`. -/
+theorem cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
+    {i : cell C n} {k : cell C' n} (x : skeletonObj C' (n + 1)) (hx : (x : Y) ∈ openCell n k)
+    (hmiss : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ≠ x) :
+    (cellularChainBasis C' R n).repr
+        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n
+          (cellularChainBasis C R n i)) k = 0 := by
+  have hmiss' : ∀ z (hz : z ∈ closedCell n i),
+      (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ≠ x := by
+    intro z hz hzx
+    rcases (cellFrontier_union_openCell_eq_closedCell n i ▸ hz :
+      z ∈ cellFrontier n i ∪ openCell n i) with hfr | hop
+    · have hskel := hf n (show (⟨z, closedCell_subset_complex n i hz⟩ : C) ∈
+          {y : C | y.val ∈ skeletonLT C (n : ℕ∞)} from cellFrontier_subset_skeletonLT n i hfr)
+      exact notMem_skeletonLT_of_mem_openCell n hx (hzx ▸ hskel)
+    · exact hmiss z hop hzx
+  have hcomp :
+      Sigma.ι (fun _ : cell C n ↦ ModuleCat.of R R) i ≫
+          (cellularChainGroupIso C (ModuleCat.of R R) n).inv ≫
+          cellularChainGroupMap C C' hf (ModuleCat.of R R) n ≫
+          TopPair.singularHomologyMap
+            (skeletonPairToComplSingleton C' x (notMem_skeletonLT_of_mem_openCell n hx))
+            (ModuleCat.of R R) n ≫
+          inv (cellLocalClass C' (ModuleCat.of R R) x hx) = 0 := by
+    rw [ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap_assoc,
+      cellularChainGroupMap_def, ← TopPair.singularHomologyMap_comp_assoc,
+      ← TopPair.singularHomologyMap_comp_assoc, Category.assoc,
+      singularHomologyMap_characteristicCellPairMap_comp_eq_zero C C' R hf x _ hmiss',
+      zero_comp, comp_zero]
+  rw [cellularChainBasis_repr_eq_inv_cellLocalClass C' R x hx, cellularChainBasis_apply,
+    ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    ← ModuleCat.comp_apply, hcomp]
+  rfl
+
+/-- If a cellular map `f` sends the open `n`-cell `i` into the union of the `(n - 1)`-skeleton and
+the open `n`-cell `i'`, then for every other `n`-cell `k ≠ i'` the `k`-th cellular coordinate of
+the image of the basis vector of `i` under `f` vanishes. -/
+theorem cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
+    {i : cell C n} {i' k : cell C' n}
+    (hi : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ∈
+      (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') (hk : k ≠ i') :
+    (cellularChainBasis C' R n).repr
+        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n
+          (cellularChainBasis C R n i)) k = 0 := by
+  let x : skeletonObj C' (n + 1) := ⟨map n k 0, map_mem_skeletonLT_succ k (by simp)⟩
+  have hx : (x : Y) ∈ openCell n k := ⟨0, mem_ball_zero_iff.2 (by simp), rfl⟩
+  refine cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem C C' R hf x hx
+    fun z hz hzx ↦ ?_
+  rcases hi z hz with hskel | hopen
+  · exact notMem_skeletonLT_of_mem_openCell n hx (hzx ▸ hskel)
+  · have hdisj : Disjoint (openCell n k) (openCell n i') :=
+      disjoint_openCell_of_ne fun h ↦ hk (eq_of_heq (Sigma.mk.inj_iff.1 h).2)
+    exact hdisj.notMem_of_mem_left hx (hzx ▸ hopen)
+
+/-- **A cellular map carrying the open cell of `i` into the union of the `(n - 1)`-skeleton and the
+open cell of `i'` sends the cellular basis vector of `i` to a scalar multiple of the cellular
+basis vector of `i'`.** -/
+theorem cellularChainGroupMap_cellularChainBasis_eq_smul
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
+    {i : cell C n} {i' : cell C' n}
+    (hi : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ∈
+      (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') :
+    cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i) =
+      ((cellularChainBasis C' R n).repr
+        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) i') •
+        cellularChainBasis C' R n i' := by
+  apply (cellularChainBasis C' R n).repr.injective
+  rw [map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one]
+  ext k
+  by_cases hk : k = i'
+  · subst hk
+    rw [Finsupp.single_eq_same]
+  · rw [Finsupp.single_eq_of_ne hk]
+    exact cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne C C' R hf hi hk
+
+end CellularMap
 
 end TauCeti

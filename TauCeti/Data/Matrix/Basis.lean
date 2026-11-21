@@ -22,6 +22,8 @@ expands a linear map on matrices along the matrix units.
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
 associativity.
+
+Two off-diagonal matrix units witness that transposition does not preserve all products.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -60,6 +62,20 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- Transposition does not preserve all products of square matrices over a nontrivial semiring
+when there are at least two indices. -/
+public theorem Matrix.not_forall_transpose_mul (n R : Type*) [Fintype n] [Nontrivial n]
+    [NonAssocSemiring R] [Nontrivial R] :
+    ¬ ∀ x y : Matrix n n R, (x * y).transpose = x.transpose * y.transpose := by
+  classical
+  obtain ⟨i, j, hij⟩ := exists_pair_ne n
+  intro h
+  -- The matrix units at `(i, j)` and `(j, i)` multiply to the unit at `(i, i)` in one order and
+  -- to the unit at `(j, j)` in the other, so the `(i, i)` entries differ.
+  have hii := congrArg (fun m : Matrix n n R ↦ m i i)
+    (h (Matrix.single i j 1) (Matrix.single j i 1))
+  simp [Matrix.transpose_single, hij] at hii
 
 public section
 namespace Matrix

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.AmbientGroup
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.Graph.Steinberg
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 
 /-!
 # Graph-twisted Steinberg maps on the canonical ambient group

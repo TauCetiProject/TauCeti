@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.AlgebraicClosure
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
 public import TauCeti.RingTheory.Valuation.IsTrivialOn
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
@@ -444,9 +444,15 @@ theorem isUnit_iff_ord_eq_zero {x : P.integers} (hx : (x : F) ≠ 0) :
 /-- **Existence half of Stichtenoth, Theorem 1.1.6(b)**: relative to a prime element `t` for
 `P`, every nonzero `f : F` is `t ^ (ord_P f)` times a unit of `𝒪_P`. -/
 theorem exists_eq_zpow_mul_unit {t : F} (ht : P.valuation.IsUniformizer t) {f : F} (hf : f ≠ 0) :
-    ∃ u : P.integersˣ, f = t ^ P.ord f * (u : F) :=
-  Valuation.exists_eq_zpow_mul_unit_of_surjective
-    P.valuation P.valuation_surjective ht hf
+    ∃ u : P.integersˣ, f = t ^ P.ord f * (u : F) := by
+  have ht1 : P.ord t = 1 := P.isUniformizer_iff_ord_eq_one.mp ht
+  have ht0 : t ≠ 0 := fun h ↦ by simp [h] at ht1
+  have htv : P.valuation.ord ((Units.mk0 t ht0 : Fˣ) : F) = 1 := by
+    simpa only [Units.val_mk0, ord_valuation] using ht1
+  rw [P.integers_def]
+  refine ⟨P.valuation.unitPartUnits (Units.mk0 t ht0) htv (Units.mk0 f hf), ?_⟩
+  simpa only [ord_valuation, Units.val_mk0] using
+    (P.valuation.unitPartUnits_eq_iff (Units.mk0 t ht0) htv (Units.mk0 f hf) _).mp rfl
 
 end Discrete
 
