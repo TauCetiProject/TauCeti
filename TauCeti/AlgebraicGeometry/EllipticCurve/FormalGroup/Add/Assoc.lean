@@ -280,10 +280,9 @@ private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoe
     exact one_ne_zero hc
   · rw [map_pow, hq, zero_pow hd, smul_zero]
 
-variable [IsFractionRing (MvPowerSeries σ O) KK]
-
-/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: the
-localization map of a fraction field is injective, so it cannot introduce a zero.
+variable [FaithfulSMul (MvPowerSeries σ O) KK] in
+/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: a
+faithful algebra map is injective, so it cannot introduce a zero.
 
 Every parametrized point of this file needs its `w`-coordinate invertible in `KK`, so this is the
 form `subst_formalW_ne_zero` is actually used in. -/
@@ -293,7 +292,9 @@ theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
   have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
   have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   exact W.subst_formalW_ne_zero hq hq0
-    (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
+    (FaithfulSMul.algebraMap_injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
+
+variable [IsFractionRing (MvPowerSeries σ O) KK]
 
 /-- The affine coordinates `(q / w(q), -1 / w(q))` of the parametrized point `θ(q)` define a
 nonsingular point of `fracCurve W σ KK`. -/

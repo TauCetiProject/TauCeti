@@ -13,10 +13,12 @@ import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
+import TauCeti.MeasureTheory.Function.Lp.SequenceValued
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 
@@ -44,10 +46,10 @@ At `p = 2` the first inequality is stated for finite sums of blocks as
 
 ## The argument for `‖S f‖_p ≤ C ‖f‖_p`
 
-The truncation `f ↦ (Δ₀ f, …, Δₙ f)` is a bounded operator `L²(V, F) → L²(V, ℓ²(F))` and the
-inequality is the Calderón–Zygmund theorem for it, applied uniformly in `n`
-(`TauCeti.exists_eLpNorm_le_of_hormander`), followed by monotone convergence as `n → ∞`
-(`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`).
+The truncation `f ↦ (Δ₀ f, …, Δₙ f)` (`MeasureTheory.Lp.lpPi`) is a bounded operator
+`L²(V, F) → L²(V, ℓ²(F))` and the inequality is the Calderón–Zygmund theorem for it, applied
+uniformly in `n` (`TauCeti.exists_eLpNorm_le_of_hormander`), followed by monotone convergence as
+`n → ∞` (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`).
 
 * **`L²` bound.** Write `T` for the truncation; its adjoint is `T† (gⱼ) = ∑ⱼ Δⱼ gⱼ`. The
   operator `T† T = ∑_{j ≤ n} Δⱼ²` on `L²(V, F)` is the multiplier with symbol `∑_{j ≤ n} ψⱼ²`,
@@ -81,6 +83,14 @@ which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_Ico_mul_le`)
 (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`), and Hölder's
 inequality and the first inequality at the exponent `q` give
 `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
+
+## Homogeneous blocks
+
+The last section bounds a single block of the homogeneous partition
+(`ContDiffBump.littlewoodPaley`, `j ∈ ℤ`), the `L²` multiplier `Pⱼ` with symbol `ψⱼ`, on every
+`Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
+(`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
+(`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`).
 
 ## References
 
@@ -228,7 +238,7 @@ private theorem exists_setIntegral_norm_kernel_sub_sub_le [Nontrivial V] :
 
 /-! ### The truncated square function as a vector-valued operator -/
 
-/-- The kernel `v ↦ ((𝓕⁻ ψⱼ) (x - y) v)ⱼ` of `sqFun φ n`. -/
+/-- The kernel `v ↦ ((𝓕⁻ ψⱼ) (x - y) v)ⱼ` of `Lp.lpPi 2 (Finset.range (n + 1)) (block φ)`. -/
 private def sqKernel (n : ℕ) (x y : V) : F →L[ℝ] lp (fun _ : ℕ ↦ F) 2 :=
   ∑ j ∈ Finset.range (n + 1),
     (lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).comp
@@ -303,14 +313,8 @@ private theorem eq_toLp_symbol {j : ℕ} {m : Lp ℂ ∞ (volume : Measure V)}
     m = (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume :=
   Lp.ext (hm.trans (coeFn_toLp_symbol φ j).symm)
 
-/-- The truncated square function operator `f ↦ (Δ₀ f, …, Δₙ f)` from `L²(V, F)` to
-`L²(V, ℓ²(F))`. -/
-private def sqFun (n : ℕ) :
-    Lp F 2 (volume : Measure V) →L[ℝ] Lp (lp (fun _ : ℕ ↦ F) 2) 2 (volume : Measure V) :=
-  ∑ j ∈ Finset.range (n + 1),
-    (lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).compLpL 2 volume ∘L block φ j
-
-/-- The operator `(gⱼ) ↦ ∑_{j ≤ n} Δⱼ gⱼ`, the adjoint of `sqFun φ n`. -/
+/-- The operator `(gⱼ) ↦ ∑_{j ≤ n} Δⱼ gⱼ`, the adjoint of
+`Lp.lpPi 2 (Finset.range (n + 1)) (block φ)`. -/
 private def sqFunAdj (n : ℕ) :
     Lp (lp (fun _ : ℕ ↦ F) 2) 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V) :=
   ∑ j ∈ Finset.range (n + 1),
@@ -322,21 +326,10 @@ private theorem coeFn_block (j : ℕ) (f : Lp F 2 (volume : Measure V)) :
       fun x ↦ ∫ z, 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) (x - z) • f z :=
   (φ.inhomogeneousLittlewoodPaleySchwartz j).coeFn_fourierMultiplierCLM_toLp f
 
-private theorem coeFn_sqFun (n : ℕ) (f : Lp F 2 (volume : Measure V)) :
-    sqFun φ n f =ᵐ[volume] fun x ↦ ∑ j ∈ Finset.range (n + 1), lp.single 2 j (block φ j f x) := by
-  have hj := ae_all_iff.2 fun j : ℕ ↦
-    ((lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).coeFn_compLpL (block φ j f))
-  filter_upwards [Lp.coeFn_fun_finsetSum (Finset.range (n + 1)) fun j ↦
-    (lp.singleContinuousLinearMap ℝ (fun _ : ℕ ↦ F) 2 j).compLpL 2 volume (block φ j f), hj]
-    with x hx hjx
-  rw [sqFun, sum_apply]
-  simp only [comp_apply]
-  rw [hx]
-  exact Finset.sum_congr rfl fun j _ ↦ hjx j
-
 private theorem ae_sqFun_eq_integral (n : ℕ) (f : Lp F 2 (volume : Measure V)) :
-    ∀ᵐ x, sqFun φ n f x = ∫ z, sqKernel φ n x z (f z) := by
-  filter_upwards [coeFn_sqFun φ n f, ae_all_iff.2 fun j ↦ coeFn_block φ j f] with x hx hjx
+    ∀ᵐ x, Lp.lpPi 2 (Finset.range (n + 1)) (block φ) f x = ∫ z, sqKernel φ n x z (f z) := by
+  filter_upwards [Lp.coeFn_lpPi 2 (Finset.range (n + 1)) (block φ) f,
+    ae_all_iff.2 fun j ↦ coeFn_block φ j f] with x hx hjx
   rw [hx]
   simp only [sqKernel, sum_apply, coe_comp, Function.comp_apply, lsmul_apply,
     lp.singleContinuousLinearMap_apply]
@@ -381,36 +374,25 @@ private theorem isSelfAdjoint_fourierMultiplierCLM_toLp_symbol (j : ℕ) :
   Lp.isSelfAdjoint_fourierMultiplierCLM
     (Lp.star_eq_self_of_ae_eq_ofReal (coeFn_toLp_symbol φ j))
 
-private theorem inner_block_left (j : ℕ) (f g : Lp F 2 (volume : Measure V)) :
+private theorem adjoint_block (j : ℕ) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-    inner ℝ (block φ j f) g = inner ℝ f (block φ j g) := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner]
-  exact congrArg RCLike.re ((isSelfAdjoint_fourierMultiplierCLM_toLp_symbol φ j).isSymmetric f g)
+    adjoint (block (F := F) φ j) = block φ j := by
+  rw [block, L2.adjoint_restrictScalars,
+    (isSelfAdjoint_fourierMultiplierCLM_toLp_symbol φ j).adjoint_eq]
 
-private theorem adjoint_sqFun (n : ℕ) :
+private theorem adjoint_lpPi_block (n : ℕ) :
     letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-    adjoint (sqFun (F := F) φ n) = sqFunAdj φ n := by
+    adjoint (Lp.lpPi 2 (Finset.range (n + 1)) (block (F := F) φ)) = sqFunAdj φ n := by
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  refine ((eq_adjoint_iff _ _).2 fun g f ↦ ?_).symm
-  simp only [sqFunAdj, sqFun, sum_apply, comp_apply, sum_inner, inner_sum]
+  rw [Lp.adjoint_lpPi, sqFunAdj]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [inner_block_left, L2.inner_evalCLM_compLpL]
+  rw [adjoint_block]
 
-/-- Coordinate `j ≤ n` of `sqFun φ n f` is `Δⱼ f`. -/
-private theorem evalCLM_compLpL_sqFun {n j : ℕ} (hj : j ∈ Finset.range (n + 1))
-    (f : Lp F 2 (volume : Measure V)) :
-    (lp.evalCLM ℝ (fun _ : ℕ ↦ F) 2 j).compLpL 2 volume (sqFun φ n f) = block φ j f := by
-  apply Lp.ext
-  filter_upwards [(lp.evalCLM ℝ (fun _ : ℕ ↦ F) 2 j).coeFn_compLpL (sqFun φ n f),
-    coeFn_sqFun φ n f] with x h₁ h₂
-  rw [h₁, h₂, lp.evalCLM_apply, lp.coeFn_sum, Finset.sum_apply]
-  simp [hj]
-
-private theorem sqFunAdj_sqFun (n : ℕ) (f : Lp F 2 (volume : Measure V)) :
-    sqFunAdj φ n (sqFun φ n f) = ∑ j ∈ Finset.range (n + 1), block φ j (block φ j f) := by
+private theorem sqFunAdj_lpPi_block (n : ℕ) (f : Lp F 2 (volume : Measure V)) :
+    sqFunAdj φ n (Lp.lpPi 2 (Finset.range (n + 1)) (block φ) f) =
+      ∑ j ∈ Finset.range (n + 1), block φ j (block φ j f) := by
   simp only [sqFunAdj, sum_apply, comp_apply]
-  exact Finset.sum_congr rfl fun j hj ↦ by rw [evalCLM_compLpL_sqFun φ hj]
+  exact Finset.sum_congr rfl fun j hj ↦ congrArg _ (Lp.evalCLM_compLp_lpPi 2 (block φ) hj f)
 
 /-- The symbol `∑ⱼ ψⱼ²` of `∑ⱼ Δⱼ²` is bounded uniformly in the set of indices. -/
 private theorem exists_norm_sum_toLp_symbol_smul_le :
@@ -465,22 +447,24 @@ private theorem exists_sum_norm_block_sq_le :
 
 /-- **The `L²` bound**, uniformly in the truncation: `‖(Δ₀ f, …, Δₙ f)‖ ≤ √L ‖f‖`. -/
 private theorem exists_norm_sqFun_apply_le :
-    ∃ L : ℝ, 0 ≤ L ∧ ∀ (n : ℕ) (f : Lp F 2 (volume : Measure V)), ‖sqFun φ n f‖ ≤ √L * ‖f‖ := by
+    ∃ L : ℝ, 0 ≤ L ∧
+      ∀ (n : ℕ) (f : Lp F 2 (volume : Measure V)),
+        ‖Lp.lpPi 2 (Finset.range (n + 1)) (block φ) f‖ ≤ √L * ‖f‖ := by
   obtain ⟨L, hL0, hL⟩ := exists_sum_norm_block_sq_le (F := F) φ
   refine ⟨L, hL0, fun n f ↦ ?_⟩
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
   rw [mul_pow, Real.sq_sqrt hL0, ← real_inner_self_eq_norm_sq, ← adjoint_inner_right,
-    adjoint_sqFun, sqFunAdj_sqFun, inner_sum]
+    adjoint_lpPi_block, sqFunAdj_lpPi_block, inner_sum]
   refine le_of_eq_of_le (Finset.sum_congr rfl fun j _ ↦ ?_) (hL _ f)
-  rw [← inner_block_left, real_inner_self_eq_norm_sq]
+  rw [← real_inner_self_eq_norm_sq, ← adjoint_inner_right, adjoint_block]
 
 /-- **The Calderón–Zygmund bound for the truncated square functions**, uniformly in the
 truncation. -/
 private theorem exists_eLpNorm_sqFun_le [Nontrivial V] {p : ℝ≥0∞} (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ (n : ℕ) (f : Lp F 2 (volume : Measure V)),
-      eLpNorm (sqFun φ n f) p volume ≤ C * eLpNorm f p volume := by
+      eLpNorm (Lp.lpPi 2 (Finset.range (n + 1)) (block φ) f) p volume ≤ C * eLpNorm f p volume := by
   -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   obtain ⟨B, -, hB⟩ := exists_setIntegral_norm_kernel_sub_sub_le φ
@@ -489,17 +473,18 @@ private theorem exists_eLpNorm_sqFun_le [Nontrivial V] {p : ℝ≥0∞} (hp : 1 
     (K := lp (fun _ : ℕ ↦ F) 2) (M := ENNReal.ofReal √L) (B := ENNReal.ofReal B)
     (B' := ENNReal.ofReal B) ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top
     hp hp_top
-  refine ⟨C, fun n f ↦ hC (sqFun φ n) (sqKernel φ n) (sqKernelAdj φ n) ?_
+  refine ⟨C, fun n f ↦ hC (Lp.lpPi 2 (Finset.range (n + 1)) (block φ)) (sqKernel φ n)
+    (sqKernelAdj φ n) ?_
     (stronglyMeasurable_sqKernel φ n) (stronglyMeasurable_sqKernelAdj φ n)
     (setLIntegral_enorm_sub_le_of_norm_sub_le (kernel φ n).integrable (norm_sqKernel_sub_le φ n)
       (hB n))
     (setLIntegral_enorm_sub_le_of_norm_sub_le (kernel φ n).integrable
       (norm_sqKernelAdj_sub_le φ n) (hB n))
     (fun g _ _ _ ↦ (ae_sqFun_eq_integral φ n g).mono fun _ hx _ ↦ hx)
-    (fun g _ _ _ ↦ (adjoint_sqFun (F := F) φ n) ▸
+    (fun g _ _ _ ↦ (adjoint_lpPi_block (F := F) φ n) ▸
       (ae_sqFunAdj_eq_integral φ n g).mono fun _ hx _ ↦ hx)
     f⟩
-  rw [← ofReal_norm (sqFun φ n)]
+  rw [← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal (opNorm_le_bound _ (Real.sqrt_nonneg _) (hL n))
 
 end LittlewoodPaleySquare
@@ -542,7 +527,7 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le [Nontrivial V]
   rw [eLpNorm_iSup_eq_iSup_eLpNorm hmeas (.of_forall hmono)]
   refine iSup_le fun n ↦ (eLpNorm_mono_eNorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
   -- Pointwise, `G n` is the `ℓ²` norm of `(Δ₀ f, …, Δₙ f)`.
-  filter_upwards [coeFn_sqFun φ n f] with x hx
+  filter_upwards [Lp.coeFn_lpPi 2 (Finset.range (n + 1)) (block φ) f] with x hx
   rw [hx, eNorm_eq_self, lp.enorm_sum_single]
 
 open LittlewoodPaleySquare in
@@ -807,3 +792,61 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
         ring
 
 end TauCeti
+
+/-! ### Homogeneous Littlewood–Paley blocks on `Lᵖ` -/
+
+namespace ContDiffBump
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  (φ : ContDiffBump (0 : V))
+
+variable [MeasurableSpace V] [BorelSpace V]
+
+/-- Every symbol in `L^∞` almost everywhere equal to `ψⱼ` is the class of the Schwartz
+cutoff. -/
+private theorem eq_toLp_littlewoodPaleySchwartz {j : ℤ} {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    m = (littlewoodPaleySchwartz φ j).toLp ∞ :=
+  Lp.ext <| hm.trans <| by
+    filter_upwards [(littlewoodPaleySchwartz φ j).coeFn_toLp ∞ volume] with ξ h
+    rw [h, coe_littlewoodPaleySchwartz]
+
+/-- The kernel `𝓕⁻ ψⱼ` of a homogeneous Littlewood–Paley block is a Schwartz function, so it lies
+in every `Lᵖ`. -/
+theorem memLp_fourierInv_littlewoodPaley (j : ℤ) (p : ℝ≥0∞) :
+    MemLp (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))) p volume := by
+  rw [← coe_littlewoodPaleySchwartz, ← SchwartzMap.fourierInv_coe]
+  exact (𝓕⁻ (littlewoodPaleySchwartz φ j)).memLp p volume
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The homogeneous Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in the scale.** For
+every symbol `m ∈ L^∞` almost everywhere equal to `ψⱼ`, `j ∈ ℤ`, every `f ∈ L²(V, F)` and every
+`1 ≤ p ≤ ∞`, `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p`, where `Pⱼ` is the `L²` Fourier multiplier with symbol
+`m`: `Pⱼ` is convolution with `𝓕⁻ ψⱼ`, a dilate of `𝓕⁻ ψ₀` with the same `L¹` norm. -/
+theorem eLpNorm_fourierMultiplierCLM_littlewoodPaley_le {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    (f : Lp F 2 (volume : Measure V)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (Lp.fourierMultiplierCLM F m f) p volume ≤
+      eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume * eLpNorm f p volume := by
+  rw [eq_toLp_littlewoodPaleySchwartz φ hm]
+  refine ((littlewoodPaleySchwartz φ j).eLpNorm_fourierMultiplierCLM_toLp_le f hp).trans_eq ?_
+  have h : (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) =
+      fun ξ ↦ (fun η ↦ (φ.littlewoodPaley 0 η : ℂ)) (((2 : ℝ) ^ j)⁻¹ • ξ) :=
+    funext fun ξ ↦ by rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
+  rw [coe_littlewoodPaleySchwartz, h, TauCeti.eLpNorm_fourierInv_comp_inv_smul
+    (fun η ↦ (φ.littlewoodPaley 0 η : ℂ)) (zpow_pos two_pos j)]
+  simp
+
+/-- The homogeneous Littlewood–Paley block `Pⱼ` has norm at most `1` on `L²`. -/
+theorem norm_fourierMultiplierCLM_littlewoodPaley_le {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    ‖Lp.fourierMultiplierCLM (E := V) F m‖ ≤ 1 := by
+  refine (Lp.norm_fourierMultiplierCLM_le m).trans ?_
+  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable m)]
+  exact ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound
+    (hm.mono fun ξ h ↦ by
+      rw [h, Complex.norm_real, Real.norm_eq_abs]
+      exact φ.abs_littlewoodPaley_le_one j ξ))
+
+end ContDiffBump

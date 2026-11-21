@@ -28,9 +28,8 @@ Mathlib substitutes a power series `b` with nilpotent constant coefficient into 
 
 Over a ring without zero divisors, substituting a series `φ` of zero constant coefficient
 multiplies orders: `ord (f (φ)) = ord φ * ord f`. Mathlib records only the inequality
-`PowerSeries.le_order_subst`. For any nonzero, possibly multivariate series `φ` of zero constant
-coefficient, substitution into `R⟦X⟧` has trivial kernel, which extends substitution to Laurent
-series by passing to fraction fields. Injectivity
+`PowerSeries.le_order_subst`. The equality shows that substitution of a nonzero such `φ` is
+injective, which is what extends it to Laurent series by passing to fraction fields. Injectivity
 of polynomial evaluation means such a `φ` is transcendental; over a field `K` it follows that the
 power series algebraic over `K` are the constants.
 
@@ -73,6 +72,9 @@ of a completed group algebra attached to two topological generators.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
+* `PowerSeries.HasSubst.sub_one`: `f - 1` can be substituted when `constantCoeff f = 1`.
+* `PowerSeries.constantCoeff_subst_of_constantCoeff_zero'`: univariate `PowerSeries.constantCoeff`
+  form of `constantCoeff_subst_of_constantCoeff_zero`.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
@@ -81,9 +83,10 @@ of a completed group algebra attached to two topological generators.
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
-* `PowerSeries.subst_eq_zero_iff`, `PowerSeries.subst_ne_zero`: substitution of a nonzero
-  (possibly multivariate) series `φ` of zero constant coefficient into `R⟦X⟧` has trivial kernel.
-* `PowerSeries.toNat_order_ne_zero`: such a univariate `φ` has positive integer order.
+* `PowerSeries.subst_eq_zero_iff` and `PowerSeries.substAlgHom_injective`: substitution of a
+  nonzero substitutable `q` (of zero constant coefficient) over a faithful algebra without zero
+  divisors has trivial kernel and is injective.
+* `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
 * `PowerSeries.isIntegrallyClosedIn`: a field `K` is integrally closed in `K⟦X⟧`.
@@ -157,6 +160,12 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
   simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- If `f` has constant coefficient `1`, then `f - 1` has zero constant coefficient and can be
+substituted into any power series. -/
+theorem HasSubst.sub_one {R : Type*} [CommRing R] {f : R⟦X⟧} (hf : constantCoeff f = 1) :
+    HasSubst (f - 1) :=
+  .of_constantCoeff_zero' (by simp [hf])
 
 /-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
 @[simp]
@@ -250,27 +259,33 @@ theorem order_subst (hφ : constantCoeff φ = 0) (f : R⟦X⟧) :
   rw [subst_mul ha, subst_pow ha, subst_X ha, order_mul, order_pow, hg, add_zero, nsmul_eq_mul,
     coe_toNat_order hf, mul_comm]
 
-/-- Substituting a nonzero (possibly multivariate) power series `φ` of zero constant coefficient
-into `R⟦X⟧` sends only `0` to `0`. -/
-theorem subst_eq_zero_iff {σ : Type*} {φ : MvPowerSeries σ R}
-    (hφ : MvPowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} :
-    f.subst φ = 0 ↔ f = 0 := by
-  refine ⟨fun h ↦ by_contra fun hf ↦ ?_, fun h ↦ by simp [h]⟩
-  have hs : HasSubst φ := .of_constantCoeff_zero hφ
-  rw [← X_pow_order_mul_divXPowOrder (f := f), subst_mul hs, subst_pow hs, subst_X hs] at h
-  rcases mul_eq_zero.mp h with hpow | hdiv
-  · exact pow_ne_zero _ hφ₀ hpow
-  · have hc := congrArg MvPowerSeries.constantCoeff hdiv
-    rw [map_zero, constantCoeff_subst_of_constantCoeff_zero hφ,
-      Algebra.algebraMap_self_apply] at hc
-    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf hc
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient over a
+faithful `R`-algebra without zero divisors into `R⟦X⟧` sends only `0` to `0`. -/
+theorem subst_eq_zero_iff {R S : Type*} [CommRing R] [CommRing S] [NoZeroDivisors S]
+    [Algebra R S] [FaithfulSMul R S] {σ : Type*} {q : MvPowerSeries σ S}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) {f : R⟦X⟧} :
+    f.subst q = 0 ↔ f = 0 := by
+  have hs : HasSubst q := .of_constantCoeff_zero hq
+  refine ⟨fun hf ↦ ?_, fun hf ↦ by simp [hf]⟩
+  by_contra hf₀
+  nth_rw 1 [← f.X_pow_order_mul_divXPowOrder] at hf
+  rw [subst_mul hs, subst_pow hs, subst_X hs] at hf
+  rcases mul_eq_zero.mp hf with hpow | hg
+  · exact pow_ne_zero _ hq₀ hpow
+  · have hc := congrArg MvPowerSeries.constantCoeff hg
+    rw [map_zero, constantCoeff_subst_of_constantCoeff_zero hq,
+      map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R S)] at hc
+    exact (constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf₀) hc
 
-/-- Substituting a nonzero (possibly multivariate) power series `φ` of zero constant coefficient
-into a nonzero univariate power series yields a nonzero series. -/
-theorem subst_ne_zero {σ : Type*} {φ : MvPowerSeries σ R}
-    (hφ : MvPowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} (hf : f ≠ 0) :
-    f.subst φ ≠ 0 :=
-  (subst_eq_zero_iff hφ hφ₀).not.mpr hf
+/-- Substituting a nonzero substitutable multivariate power series `q` over a faithful `R`-algebra
+without zero divisors into `R⟦X⟧` is injective. -/
+theorem substAlgHom_injective {R S : Type*} [CommRing R] [CommRing S] [NoZeroDivisors S]
+    [Algebra R S] [FaithfulSMul R S] {σ : Type*} {q : MvPowerSeries σ S}
+    (hq : HasSubst q) (hq₀ : q ≠ 0) :
+    Function.Injective (substAlgHom (R := R) hq) :=
+  (injective_iff_map_eq_zero _).mpr fun _ hf ↦ by
+    rw [coe_substAlgHom] at hf
+    exact (subst_eq_zero_iff hq.eq_zero hq₀).mp hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/
@@ -284,6 +299,12 @@ theorem transcendental_of_constantCoeff_eq_zero (hφ : constantCoeff φ = 0) (h�
 section Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- A variant of `constantCoeff_subst_of_constantCoeff_zero` using `PowerSeries.constantCoeff`
+instead of `MvPowerSeries.constantCoeff`. -/
+theorem constantCoeff_subst_of_constantCoeff_zero' {a : S⟦X⟧} (ha : constantCoeff a = 0)
+    (f : R⟦X⟧) : constantCoeff (f.subst a) = algebraMap R S (constantCoeff f) := by
+  rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero (by rwa [← constantCoeff_eq])]
 
 /-- The linear coefficient of `f (a)`, for `a` of zero constant coefficient, is the product of
 the linear coefficients of `f` and `a`. -/
@@ -497,19 +518,11 @@ theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R�
       MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
     rw [subst_sub hS, subst_sub hS, subst_X hS, X_subst, hCs]
     ring
-  have hC : MvPowerSeries.homogeneousComponent n
-      (MvPowerSeries.C (algebraMap R S (constantCoeff φ)) : MvPowerSeries Unit S) = 0 := by
-    refine MvPowerSeries.ext fun d ↦ ?_
-    simp only [MvPowerSeries.coeff_homogeneousComponent, MvPowerSeries.coeff_C, map_zero]
-    split_ifs with h₁ h₂
-    · subst h₂
-      simp at h₁
-      exact absurd h₁.symm hn₀
-    all_goals rfl
   rw [hsplit, map_add, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
     homogeneousComponent_subst_left_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
-    Algebra.algebraMap_self, RingHom.id_apply, hC, add_zero]
+    Algebra.algebraMap_self, RingHom.id_apply,
+    MvPowerSeries.homogeneousComponent_C_of_ne_zero hn₀, add_zero]
 
 end Algebra
 

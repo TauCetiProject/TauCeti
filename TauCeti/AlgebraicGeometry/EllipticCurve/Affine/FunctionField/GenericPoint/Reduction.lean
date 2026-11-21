@@ -10,8 +10,11 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.DegreeOneReduction
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
 -- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: intermediate field where two field homomorphisms agree modulo a valuation.
+import TauCeti.RingTheory.Valuation.EqMod
 
 /-!
 # The reduction of the generic point
@@ -30,7 +33,9 @@ reduction of such points is computed from: an isogeny's action on points in part
 Transporting a point along a homomorphism of fields `f : F →+* K` is compatible with places: the
 place of the transported point restricts along `FunctionField.map W f` to the place of the point
 (`WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`), so reduction at the two places can be
-compared.
+compared. Along `ι : F → F(W)`, the function-field embedding `FunctionField.map W ι` and the scalar
+embedding `algebraMap F(W) (F(W))(W)` agree to first order at the place of `W.genericPoint`
+(`WeierstrassCurve.Affine.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one`).
 
 ## Main results
 
@@ -41,9 +46,9 @@ compared.
   at the place of `P`.
 * `WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`: the place of a point transported along
   a field homomorphism `f` restricts along `FunctionField.map W f` to the place of the point.
-* `WeierstrassCurve.Affine.valuation_pointPlace_functionFieldMap_sub_lt_one`: at the diagonal
-  place of `genericPoint` on `W⁄F(W)`, `FunctionField.map W (algebraMap F F(W))` agrees with
-  `algebraMap F(W) _` to first order.
+* `WeierstrassCurve.Affine.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one`:
+  `FunctionField.map W ι` and `algebraMap F(W) (F(W))(W)` agree modulo the place of
+  `W.genericPoint`.
 * `WeierstrassCurve.Affine.map_mem_polePoints_smul_iff` and
   `WeierstrassCurve.Affine.reductionOfDegreeEqOne_smul_map`: reduction commutes with field
   automorphisms and their action on places.
@@ -122,62 +127,34 @@ theorem isEquiv_comap_pointPlace_map {x y : F} (h : W.Equation x y) :
   rw [Place.valuation_ofPrime, ← h𝔭]
   exact he.symm
 
-/-- **At the diagonal place of `W.genericPoint` on `W⁄F(W)`, the second-factor embedding
-`FunctionField.map W (algebraMap F F(W))` agrees with `algebraMap F(W) _` to first order on every
-element of `F(W)`.** -/
-theorem valuation_pointPlace_functionFieldMap_sub_lt_one
-    (heq : (W.map (algebraMap F W.FunctionField)).Equation W.genericX W.genericY)
+/-- **Along `ι : F → F(W)`, the function-field embedding `FunctionField.map W ι` and the scalar
+embedding `algebraMap F(W) (F(W))(W)` agree to first order at the place of `W.genericPoint`.** -/
+theorem valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one
     (z : W.FunctionField) :
     (Place.ofPrime W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField
-      (CoordinateRing.pointPlace heq)).valuation
+      (CoordinateRing.pointPlace (W := W.map (algebraMap F W.FunctionField))
+        W.equation_genericX_genericY)).valuation
         (FunctionField.map W (algebraMap F W.FunctionField) z -
-          algebraMap W.FunctionField _ z) < 1 := by
-  obtain ⟨r, s, hs_mem, rfl⟩ := IsFractionRing.div_surjective (A := W.CoordinateRing) z
-  set L := W.FunctionField
-  set ι := algebraMap F L
-  set v := (Place.ofPrime L (W.map ι).FunctionField (CoordinateRing.pointPlace heq)).valuation
-  set w := FunctionField.map W ι
-  set c := algebraMap L (W.map ι).FunctionField
-  set r' : L := algebraMap W.CoordinateRing L r
-  set s' : L := algebraMap W.CoordinateRing L s
-  have heq' : ((W.map ι)⁄L).toAffine.Equation W.genericX W.genericY := by
-    change ((W.map ι).map (algebraMap L L)).Equation W.genericX W.genericY
-    rw [Algebra.algebraMap_self]
-    exact heq
-  have heval : (CoordinateRing.evalAlgHom heq').toRingHom.comp (CoordinateRing.map W ι) =
-      algebraMap W.CoordinateRing L := by
-    refine CoordinateRing.ringHom_ext W (fun a ↦ ?_) ?_ ?_
-    · simp only [RingHom.comp_apply, CoordinateRing.map_algebraMap, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe, AlgHom.commutes]
-      exact (IsScalarTower.algebraMap_apply F W.CoordinateRing L a).symm
-    · simp [genericX_def]; rfl
-    · simp [genericY_def]; rfl
-  have hcoord (t : W.CoordinateRing) :
-      v (w (algebraMap W.CoordinateRing L t) - c (algebraMap W.CoordinateRing L t)) < 1 := by
-    rw [FunctionField.map_algebraMap_coordinateRing,
-      IsScalarTower.algebraMap_apply L (W.map ι).CoordinateRing (W.map ι).FunctionField,
-      ← map_sub, Place.valuation_ofPrime_algebraMap_lt_one_iff,
-      CoordinateRing.pointPlace_asIdeal, CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero heq',
-      map_sub, AlgHom.commutes, sub_eq_zero]
-    exact congrArg (fun f : W.CoordinateRing →+* L ↦ f t) heval
-  have hr := hcoord r
-  have hs := hcoord s
-  have hs0 : s' ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hs_mem
-  have hcs : v (c s') = 1 := Valuation.IsTrivialOn.eq_one (v := v) s' hs0
-  have hws : v (w s') = 1 := by
-    have hsplit : w s' = (w s' - c s') + c s' := by ring
-    rw [hsplit, v.map_add_eq_of_lt_right (hs.trans_eq hcs.symm), hcs]
-  have hws0 : w s' ≠ 0 := fun h ↦ by simp [h] at hws
-  have hcs0 : c s' ≠ 0 := (map_ne_zero_iff c c.injective).mpr hs0
-  have hquot : w (r' / s') - c (r' / s') =
-      ((w r' - c r') * c s' - c r' * (w s' - c s')) / (w s' * c s') := by
-    rw [map_div₀, map_div₀]; field_simp [hws0, hcs0]; ring
-  rw [hquot, map_div₀, Valuation.map_mul, hws, hcs, mul_one, div_one]
-  refine (v.map_sub _ _).trans_lt (max_lt ?_ ?_)
-  · rw [Valuation.map_mul, hcs, mul_one]; exact hr
-  · rw [Valuation.map_mul]
-    exact Right.mul_lt_one_of_le_of_lt
-      (Valuation.IsTrivialOn.valuation_algebraMap_le_one v r') hs
+          algebraMap W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField z) <
+      1 := by
+  let ι := algebraMap F W.FunctionField
+  let v := (Place.ofPrime W.FunctionField (W.map ι).FunctionField
+    (CoordinateRing.pointPlace (W := W.map ι) W.equation_genericX_genericY)).valuation
+  let S := v.eqModIntermediateField F (FunctionField.map W ι) (algebraMap W.FunctionField _)
+    (Valuation.IsTrivialOn.valuation_algebraMap_le_one v)
+    fun c ↦ by
+      rw [FunctionField.map_algebraMap, sub_self, map_zero]
+      exact zero_lt_one
+  have hX : W.genericX ∈ S := by
+    rw [Valuation.mem_eqModIntermediateField, FunctionField.map_genericX]
+    exact valuation_pointPlace_genericX_sub_lt_one (W.map ι) W.equation_genericX_genericY
+  have hY : W.genericY ∈ S := by
+    rw [Valuation.mem_eqModIntermediateField, FunctionField.map_genericY]
+    exact valuation_pointPlace_genericY_sub_lt_one (W.map ι) W.equation_genericX_genericY
+  have htop : S = ⊤ :=
+    top_unique (W.adjoin_genericX_genericY_eq_top ▸
+      IntermediateField.adjoin_le_iff.mpr (Set.pair_subset hX hY))
+  exact Valuation.mem_eqModIntermediateField.mp (htop ▸ IntermediateField.mem_top)
 
 end BaseChange
 
@@ -215,7 +192,7 @@ variable [DecidableEq F]
 /-- **The generic point reduces to `P` at the place of `P`.** -/
 @[simp]
 theorem reductionOfDegreeEqOne_genericPoint (P : W.Point) :
-    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).2 (genericPoint W) =
+    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).property (genericPoint W) =
       Point.equivBaseChangeSelf W P := by
   rw [reductionOfDegreeEqOne_eq_iff]
   rcases P with _ | ⟨x, y, h⟩
