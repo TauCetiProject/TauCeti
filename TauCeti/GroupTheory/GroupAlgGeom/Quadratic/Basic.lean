@@ -780,6 +780,14 @@ theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
 theorem ncard_vars_of_not_isOrientable (h : ¬S.IsOrientable) : S.vars.ncard = S.atomicRank := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective]
 
+/-- A non-orientable standard quadratic equation without the constant `d` is of type (3),
+`∏ᵢ₌₁ⁿ xᵢ² = 1`. -/
+theorem exists_eq_nonorientable_of_not_isOrientable (ho : ¬S.IsOrientable)
+    (hc : S.constant = 1) : ∃ n hn x inj, S = nonorientable n hn x inj := by
+  cases S with
+  | nonorientable n hn x inj => exact ⟨n, hn, x, inj, rfl⟩
+  | _ => simp_all [IsOrientable]
+
 /-- The Euler characteristic of a standard quadratic equation is `2 - κ(S)`. -/
 theorem eulerChar_eq_two_sub_kappa (S : Standard G X) : S.eulerChar = 2 - S.kappa := by
   cases S <;> simp <;> lia
@@ -946,7 +954,7 @@ theorem isCommutative_comp_iff {K : Type*} [Group K] {ιK : G →* K} (f : GHom 
 
 end Solutions
 
-/-! ### Solutions of the commutator equations -/
+/-! ### Solutions of the equations without coefficients -/
 
 section Commutators
 
@@ -1002,6 +1010,15 @@ theorem not_isGeneralPosition_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x
   h.not_isCommutative (by simp) (isCommutative_of_mem_V_genusTwo inj hv)
 
 end Commutators
+
+/-- The trivial point is a solution of every standard quadratic equation without the constant `d`,
+that is, of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` and of `∏ᵢ₌₁ⁿ xᵢ² = 1`. -/
+theorem one_mem_V_of_constant_eq_one (ι : G →* H) {S : Standard G X} (hc : S.constant = 1) :
+    1 ∈ V ι {S.toWord} := by
+  cases S with
+  | orientable _ hn _ _ inj => exact one_mem_V_orientable ι hn inj
+  | nonorientable => simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
+  | _ => simp_all
 
 end Standard
 

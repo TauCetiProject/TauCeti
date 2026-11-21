@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Iterated
 import TauCeti.GroupTheory.Coprod.Reduced
+import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Transport
 
 /-!
 # Free products with free and free abelian groups embed in extensions of centralizers
@@ -24,7 +25,11 @@ For `K = G` the second one embeds the free `G`-group `G[X] = G ∗ F(X)` on a co
 over `G` in the single extension `G(u, ℤ)`. Over a nonabelian fully residually free group `H`, an
 element `u` that is not a proper power and an element `g ∉ C_H(u)` exist by root reduction, so
 `H[X]` and `H ∗ ℤⁿ` embed over `H` in one admissible extension of a centralizer of `H`. These are
-the free and the free abelian levels of a normalized tower over `H`.
+the free and the free abelian levels of a normalized tower over `H`. More generally, a group `K`
+that embeds over `H` in an iterated extension of centralizers of `H` is nonabelian and fully
+residually free, so `K ∗ ℤⁿ` embeds over `K` in an iterated extension of centralizers of `K`;
+composing the two embeddings (`TauCeti.LimitGroup.ICE.exists_embedding_comp`) embeds `K ∗ ℤⁿ`
+over `H` in an iterated extension of centralizers of `H`. For `K = H[X]` this embeds `H[X] ∗ ℤⁿ`.
 
 ## Main results
 
@@ -34,6 +39,8 @@ the free and the free abelian levels of a normalized tower over `H`.
 * `TauCeti.LimitGroup.exists_ice_embedding_GX`: `H[X]` embeds over `H` in an ICE group over `H`.
 * `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi`: `H ∗ ℤⁿ` embeds over `H` in an ICE group
   over `H`.
+* `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi_of_exists_ice_embedding`: if `K` embeds over
+  `H` in an ICE group over `H`, so does `K ∗ ℤⁿ`.
 
 ## Implementation notes
 
@@ -390,5 +397,24 @@ theorem exists_ice_embedding_GX (hH : IsFullyResiduallyFree H) (hH' : ¬IsMulCom
     ⟨coprodFreeGroupLift u (.id H) (fun x => e x + 1) g (0 : Fin 1), fun h => by simp⟩,
     coprodFreeGroupLift_injective 0 Function.injective_id (fun x y h => he (by simpa using h))
       (fun x => by omega) (hH.isCSA.centralizer_isTISubgroup u) hg⟩
+
+/-- Over a nonabelian fully residually free group `H`, if a group `K` embeds, over `H`, in an
+iterated extension of centralizers of `H`, then so does the free product `K ∗ ℤⁿ` of `K` and a free
+abelian group of rank `n`. -/
+theorem exists_ice_embedding_coprod_pi_of_exists_ice_embedding (hH : IsFullyResiduallyFree H)
+    (hH' : ¬IsMulCommutative H) {K : Type*} [Group K] {κ : H →* K}
+    (hK : ∃ (E : Type u) (_ : Group E) (j : H →* E) (_ : ICE H E j) (f : GHom κ j),
+      Function.Injective f) (n : ℕ) :
+    ∃ (E : Type u) (_ : Group E) (j : H →* E) (_ : ICE H E j)
+      (f : GHom ((inl : K →* Monoid.Coprod K (Fin n → Multiplicative ℤ)).comp κ) j),
+      Function.Injective f := by
+  obtain ⟨E, _, j, c, e, he⟩ := hK
+  -- `K` embeds in `E`, so it is fully residually free, and it contains `H`, so it is nonabelian.
+  have hκ : Function.Injective κ := fun a b h => c.injective <| by
+    rw [← e.map_coeff, ← e.map_coeff, h]
+  obtain ⟨E', _, j', c', g, hg⟩ := exists_ice_embedding_coprod_pi
+    ((c.isFullyResiduallyFree hH).of_injective he)
+    (fun _ => hH' <| .of_comm fun a b => hκ <| by rw [map_mul, map_mul, mul_comm']) n
+  exact ICE.exists_embedding_comp hH c e he c' g hg
 
 end TauCeti.LimitGroup
