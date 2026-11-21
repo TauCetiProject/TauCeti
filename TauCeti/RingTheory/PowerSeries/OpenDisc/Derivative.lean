@@ -47,9 +47,10 @@ valid for inner series `g` with arbitrary (possibly non-nilpotent) constant term
 
 ## Main results
 
-* `TauCeti.PowerSeries.OnOpenDisc.hasseDeriv_comp` and
-  `TauCeti.PowerSeries.OnOpenDisc.hasseDeriv_mul`: composition law and noncommutative Leibniz rule
-  for Hasse derivatives on an open disc.
+* `TauCeti.PowerSeries.OnOpenDisc.hasseDeriv_comp`,
+  `TauCeti.PowerSeries.OnOpenDisc.hasseDeriv_comm`, and
+  `TauCeti.PowerSeries.OnOpenDisc.hasseDeriv_mul`: composition law, commutativity, and
+  noncommutative Leibniz rule for Hasse derivatives on an open disc.
 * `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_hasseDeriv_le`,
   `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_hasseDeriv`,
   `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_derivative_le`, and
@@ -114,6 +115,13 @@ theorem hasseDeriv_polynomialHom (k : ℕ) (p : Polynomial R) :
       OnOpenDisc.polynomialHom (p.hasseDeriv k) :=
   Subtype.ext (by simp)
 
+/-- Positive Hasse derivatives vanish on constant open-disc series, over any normed ring. -/
+theorem hasseDeriv_C {k : ℕ} (hk : 0 < k) (a : R) :
+    hasseDeriv (R₀ := R₀) k (OnOpenDisc.polynomialHom (Polynomial.C a)) = 0 :=
+  Subtype.ext <| by
+    rw [coe_hasseDeriv, OnOpenDisc.coe_polynomialHom, Polynomial.coe_C,
+      PowerSeries.hasseDeriv_C hk, ZeroMemClass.coe_zero]
+
 /-- Positive Hasse derivatives vanish on `1`. -/
 theorem hasseDeriv_apply_one {k : ℕ} (hk : 0 < k) :
     hasseDeriv k (1 : OnOpenDisc.subring R R₀) = 0 :=
@@ -138,6 +146,11 @@ theorem hasseDeriv_comp (k l : ℕ) :
 theorem hasseDeriv_hasseDeriv (k l : ℕ) (f : OnOpenDisc.subring R R₀) :
     hasseDeriv k (hasseDeriv l f) = (k + l).choose k • hasseDeriv (k + l) f :=
   LinearMap.congr_fun (hasseDeriv_comp k l) f
+
+/-- Hasse derivatives of any two orders commute on open-disc series. -/
+theorem hasseDeriv_comm (k l : ℕ) (f : OnOpenDisc.subring R R₀) :
+    hasseDeriv k (hasseDeriv l f) = hasseDeriv l (hasseDeriv k f) := by
+  rw [hasseDeriv_hasseDeriv, hasseDeriv_hasseDeriv, add_comm l k, Nat.choose_symm_add]
 
 /-- **The Leibniz rule for Hasse derivatives on an open disc**, with factors in their original
 order so that `R` need not be commutative. -/
@@ -238,6 +251,11 @@ theorem factorial_smul_hasseDeriv (k : ℕ) (f : OnOpenDisc.subring R R₀) :
     k.factorial • hasseDeriv k f = derivative^[k] f :=
   Subtype.ext (by simpa using PowerSeries.factorial_smul_hasseDeriv k (f : R⟦X⟧))
 
+/-- Formal differentiation commutes with every Hasse derivative on an open disc. -/
+theorem derivative_hasseDeriv (k : ℕ) (f : OnOpenDisc.subring R R₀) :
+    derivative (hasseDeriv k f) = hasseDeriv k (derivative f) := by
+  rw [← hasseDeriv_one_apply, ← hasseDeriv_one_apply, hasseDeriv_comm]
+
 /-- On polynomials, `derivative` agrees with `Polynomial.derivative`. -/
 @[simp]
 theorem derivative_polynomialHom (p : Polynomial R) :
@@ -313,6 +331,12 @@ theorem continuous_derivative : Continuous (derivative (R := R) (R₀ := R₀)) 
   uniformContinuous_derivative.continuous
 
 variable [CompleteSpace R]
+
+/-- The `k`th coefficient of a Taylor translate on an open disc is the value at the centre of the
+`k`th open-disc Hasse derivative. -/
+theorem coeff_taylorHom {a : R} (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) (k : ℕ) :
+    coeff k (taylorHom ha f : R⟦X⟧) = (hasseDeriv k f : R⟦X⟧).evalAt a := by
+  rw [coe_taylorHom, coeff_taylor, coe_hasseDeriv]
 
 /-- **Hasse derivatives commute with Taylor translation** on an open disc. -/
 theorem hasseDeriv_taylorHom {a : R} (ha : ‖a‖ < R₀) (k : ℕ) (f : OnOpenDisc.subring R R₀) :

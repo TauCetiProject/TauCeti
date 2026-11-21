@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Gluing distributions and currents on an open cover
@@ -120,9 +121,8 @@ theorem eq_of_forall_comp_monoCLM_eq (hU : ⨆ i, U i = Ω) {S S' : 𝓓^{n}(Ω,
       simpa [← SetLike.mem_coe, ← hU, Opens.coe_iSup] using hx
     refine ⟨U i, (U i).isOpen, hi, fun φ hφ ↦ ?_⟩
     -- A test on `Ω` supported in `U i` is the extension of a test on `U i`.
-    let ψ : 𝓓^{n}(U i, F) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩
-    have hψ : monoCLM ℝ ψ = φ := TestFunction.ext fun y ↦ by simp [ψ, hU ▸ le_iSup U i]
-    simpa [hψ, sub_eq_zero] using DFunLike.congr_fun (h i) ψ
+    obtain ⟨ψ, rfl⟩ := exists_monoCLM_eq_of_tsupport_subset (hU ▸ le_iSup U i) hφ
+    simpa [sub_eq_zero] using DFunLike.congr_fun (h i) ψ
 
 variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [LocallyConvexSpace ℝ V]
 

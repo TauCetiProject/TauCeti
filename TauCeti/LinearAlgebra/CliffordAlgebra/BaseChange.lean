@@ -24,9 +24,9 @@ extension of scalars, and it records the universal property of the scalar extens
 `R`-algebra map out of `Cℓ(M, Q)` into an `A`-algebra, such as a real Clifford action on a complex
 vector space, extends uniquely to an `A`-algebra map out of `Cℓ(A ⊗ M, Q_A)`. Finally, on the
 tensor carrier `A ⊗[R] Cℓ(M, Q)` of Mathlib's `CliffordAlgebra.equivBaseChange`, it records the
-inverse-map forms of Mathlib's involution and reversal laws for `CliffordAlgebra.toBaseChange`, and
-identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension of the grading of
-`Cℓ(M, Q)`.
+inverse-map forms of Mathlib's involution and reversal laws for `CliffordAlgebra.toBaseChange`,
+its naturality in quadratic isometries, and identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with
+the scalar extension of the grading of `Cℓ(M, Q)`.
 
 ## Main results
 
@@ -45,6 +45,10 @@ identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension
   correspond to `A`-algebra maps `Cℓ(A ⊗ M, Q_A) → B`; `CliffordAlgebra.eq_liftBaseChange_iff`
   characterizes the extension `CliffordAlgebra.liftBaseChange` by its restriction along
   `CliffordAlgebra.ofBaseChangeAux`.
+* `CliffordAlgebra.ofBaseChange_map_map` and `CliffordAlgebra.toBaseChange_map`: under
+  `CliffordAlgebra.ofBaseChange` and `CliffordAlgebra.toBaseChange`, the algebra map induced by
+  the extension `f.baseChange A` of a quadratic isometry `f` corresponds to the scalar extension
+  `A ⊗ map f` of the algebra map induced by `f`.
 * `CliffordAlgebra.ofBaseChange_map_involute` and `CliffordAlgebra.ofBaseChange_map_reverse`:
   under `CliffordAlgebra.ofBaseChange`, the grade involution and reversal of the right tensor
   factor become those of `Cℓ(A ⊗ M, Q_A)`.
@@ -161,6 +165,45 @@ theorem _root_.QuadraticMap.Isometry.ofBaseChangeAux_map {N : Type*} [AddCommGro
   | ι m => simp
   | add z w hz hw => simp only [map_add, hz, hw]
   | mul z w hz hw => simp only [map_mul, hz, hw]
+
+/-- Under `CliffordAlgebra.ofBaseChange`, the scalar extension `A ⊗ map f` of the algebra map
+induced by a quadratic isometry `f` is the algebra map induced by the extended isometry
+`f.baseChange A`. -/
+theorem ofBaseChange_comp_map_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q') :
+    (ofBaseChange A Q').comp (Algebra.TensorProduct.lTensor A (map f)) =
+      (map (f.baseChange A)).comp (ofBaseChange A Q) := by
+  ext v
+  simp
+
+/-- Pointwise form of `CliffordAlgebra.ofBaseChange_comp_map_map`. -/
+@[simp]
+theorem ofBaseChange_map_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q')
+    (z : A ⊗[R] CliffordAlgebra Q) :
+    ofBaseChange A Q' (Algebra.TensorProduct.lTensor (S := A) A (map f) z) =
+      map (f.baseChange A) (ofBaseChange A Q z) :=
+  DFunLike.congr_fun (ofBaseChange_comp_map_map f) z
+
+/-- Under `CliffordAlgebra.toBaseChange`, the algebra map induced by the extended isometry
+`f.baseChange A` is the scalar extension `A ⊗ map f` of the algebra map induced by `f`. Since the
+forward map of `CliffordAlgebra.equivBaseChange` is `toBaseChange`, this is the naturality square
+of `equivBaseChange`. -/
+@[simp]
+theorem toBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q')
+    (x : CliffordAlgebra (Q.baseChange A)) :
+    toBaseChange A Q' (map (f.baseChange A) x) =
+      Algebra.TensorProduct.lTensor (S := A) A (map f) (toBaseChange A Q x) := by
+  rw [← toBaseChange_ofBaseChange A Q' (Algebra.TensorProduct.lTensor (S := A) A (map f) _),
+    ofBaseChange_map_map, ofBaseChange_toBaseChange]
+
+/-- Algebra-map form of `CliffordAlgebra.toBaseChange_map`. -/
+theorem toBaseChange_comp_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q') :
+    (toBaseChange A Q').comp (map (f.baseChange A)) =
+      (Algebra.TensorProduct.lTensor A (map f)).comp (toBaseChange A Q) :=
+  AlgHom.ext (toBaseChange_map f)
 
 section ScalarTower
 

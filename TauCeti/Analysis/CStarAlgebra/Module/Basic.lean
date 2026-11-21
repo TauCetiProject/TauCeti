@@ -30,6 +30,9 @@ Riesz theorem.
 
 ## Main declarations
 
+* `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
+  `CStarModule.inner_neg_right'`: zero and negation inner-product identities without
+  `[StarModule ℂ A]`.
 * `CStarModule.inner_map_polarization`, `CStarModule.inner_polarization`: polarization identities
   expressing `⟪S x, T y⟫_A` and `⟪x, y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
@@ -88,6 +91,51 @@ lemma unop_inner_op_smul_right (a : A) (x y : E) :
 
 end Right
 
+section NoStarModule
+
+variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Left zero inner product `⟪0, y⟫_A = 0`, without requiring `[StarModule ℂ A]` (compare
+Mathlib's `CStarModule.inner_zero_left`). -/
+@[simp]
+theorem inner_zero_left' {y : E} : inner A (0 : E) y = 0 := by
+  simpa using inner_add_left (A := A) (x := (0 : E)) (y := 0) (z := y)
+
+/-- Right zero inner product `⟪x, 0⟫_A = 0`, without requiring `[StarModule ℂ A]` (compare
+Mathlib's `CStarModule.inner_zero_right`). -/
+@[simp]
+theorem inner_zero_right' {x : E} : inner A x (0 : E) = 0 := by
+  simpa using inner_add_right (A := A) (x := x) (y := (0 : E)) (z := 0)
+
+/-- Left negation inner product `⟪-x, y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
+(compare Mathlib's `CStarModule.inner_neg_left`). -/
+@[simp]
+theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← inner_add_left, neg_add_cancel, inner_zero_left']
+
+/-- Right negation inner product `⟪x, -y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
+(compare Mathlib's `CStarModule.inner_neg_right`). -/
+@[simp]
+theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← inner_add_right, neg_add_cancel, inner_zero_right']
+
+/-- Vectors are determined by their inner products against all vectors in the first slot. -/
+theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
+  apply sub_eq_zero.mp
+  apply (inner_self (A := A)).mp
+  rw [sub_eq_add_neg, inner_add_right, inner_neg_right', h, add_neg_cancel]
+
+/-- Vectors are determined by their inner products against all vectors in the second slot. -/
+theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
+  apply ext_inner_left (A := A)
+  intro z
+  simpa using congrArg star (h z)
+
+end NoStarModule
+
 variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
@@ -112,18 +160,6 @@ lemma inner_polarization (x y : E) :
       I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) :=
   inner_map_polarization (LinearMap.id : E →ₗ[ℂ] E) (LinearMap.id : E →ₗ[ℂ] E) x y
 
-/-- Vectors are determined by their inner products against all vectors in the first slot. -/
-theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
-  apply sub_eq_zero.mp
-  apply (inner_self (A := A)).mp
-  simp [inner_sub_right, h]
-
-/-- Vectors are determined by their inner products against all vectors in the second slot. -/
-theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
-  apply ext_inner_left (A := A)
-  intro z
-  simpa using congrArg star (h z)
-
 /-- Complex-linear endomorphisms of a C⋆-module are determined by their diagonal inner products
 `⟪x, T x⟫_A`. -/
 theorem eq_of_forall_inner_map_self {M : Type*} [FunLike M E E] [LinearMapClass M ℂ E E]
@@ -144,6 +180,7 @@ theorem inner_map_map_iff_forall_inner_map_map_self {F M : Type*} [AddCommGroup 
     rw [inner_map_polarization (A := A) U U x y, inner_polarization (A := A) x y]
     simp only [h]⟩
 
+omit [StarModule ℂ A] in
 /-- Any plain function from a C⋆-module into a type with an `A`-valued inner product that preserves
 the `A`-valued inner product is injective. -/
 theorem injective_of_inner_map_map {F : Type*} [Inner A F] {f : E → F}
