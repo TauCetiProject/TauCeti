@@ -30,7 +30,7 @@ continuous functionals, so that it applies to any set of states.
   are equal, by density of the finite domain of `L`.
 * `edist_apply_le_mul_stateEDist`: the evaluation estimate
   `|φ a - ψ a| ≤ L a * L.stateEDist φ ψ` for functionals agreeing at `e`.
-* `stateEDist_anti`, `stateEDist_smul`: a larger seminorm gives a smaller distance, and
+* `stateEDist_antitone`, `stateEDist_smul`: a larger seminorm gives a smaller distance, and
   rescaling `L` by `t` divides the distance by `t`.
 * `stateEDist_comap_le` and `stateEDist_comap`: pulling `L` back along a linear map does not
   increase the distance of the pulled-back functionals, and preserves it for surjective maps;
@@ -48,6 +48,13 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
+/-- Evaluating two linear maps at `r • a` scales their extended distance by `‖r‖ₑ`. -/
+theorem edist_map_smul {𝕜 E G H : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [SeminormedAddCommGroup G] [Module 𝕜 G] [NormSMulClass 𝕜 G] [FunLike H E G]
+    [LinearMapClass H 𝕜 E G] (φ ψ : H) (r : 𝕜) (a : E) :
+    edist (φ (r • a)) (ψ (r • a)) = ‖r‖ₑ * edist (φ a) (ψ a) := by
+  rw [map_smul, map_smul, edist_smul₀, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
+
 namespace ExtendedLipschitzSeminorm
 
 variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {e : E}
@@ -63,10 +70,6 @@ theorem stateEDist_def (φ ψ : WeakDual ℝ E) :
   (rfl)
 
 variable {L M}
-
-private theorem edist_apply_smul (φ ψ : WeakDual ℝ E) (r : ℝ) (a : E) :
-    edist (φ (r • a)) (ψ (r • a)) = ‖r‖ₑ * edist (φ a) (ψ a) := by
-  rw [map_smul, map_smul, edist_smul₀, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
 
 theorem edist_apply_le_stateEDist (ha : L a ≤ 1) : edist (φ a) (ψ a) ≤ L.stateEDist φ ψ :=
   le_iSup₂ (f := fun a (_ : L a ≤ 1) => edist (φ a) (ψ a)) a ha
@@ -92,13 +95,14 @@ theorem stateEDist_triangle (φ ψ χ : WeakDual ℝ E) :
 /-- Functionals with different values at `e` are at infinite state distance: `L` vanishes on
 every multiple of `e`, while `|φ (r • e) - ψ (r • e)|` is unbounded in `r`. -/
 theorem stateEDist_eq_top_of_apply_ne (h : φ e ≠ ψ e) : L.stateEDist φ ψ = ∞ := by
-  have hd : 0 < |φ e - ψ e| := abs_pos.2 (sub_ne_zero.2 h)
+  have hd : φ e - ψ e ≠ 0 := sub_ne_zero.2 h
   refine ENNReal.eq_top_of_forall_nnreal_le fun x => ?_
-  refine le_of_eq_of_le ?_
-    (edist_apply_le_stateEDist ((L.map_smul_self (x / |φ e - ψ e|)).trans_le zero_le_one))
-  rw [edist_apply_smul, edist_dist, Real.dist_eq, Real.eNorm_eq_ofReal_abs,
-    ← ENNReal.ofReal_mul (abs_nonneg _), abs_div, abs_abs, div_mul_cancel₀ _ hd.ne',
-    NNReal.abs_eq, ENNReal.ofReal_coe_nnreal]
+  set r := (x : ℝ) / (φ e - ψ e)
+  have hx : φ (r • e) - ψ (r • e) = x := by
+    simp only [r, map_smul, smul_eq_mul, ← mul_sub, div_mul_cancel₀ _ hd]
+  calc (x : ℝ≥0∞) = edist (φ (r • e)) (ψ (r • e)) := by
+        rw [edist_dist, Real.dist_eq, hx, NNReal.abs_eq, ENNReal.ofReal_coe_nnreal]
+    _ ≤ L.stateEDist φ ψ := edist_apply_le_stateEDist ((L.map_smul_self r).trans_le zero_le_one)
 
 /-- The evaluation estimate for elements of finite seminorm. -/
 private theorem edist_apply_le_mul_stateEDist_of_ne_top (h : φ e = ψ e) (ha : L a ≠ ∞) :
@@ -113,7 +117,7 @@ private theorem edist_apply_le_mul_stateEDist_of_ne_top (h : φ e = ψ e) (ha : 
       ENNReal.ofReal_toReal ha, ENNReal.inv_mul_cancel ha₀ ha]
   have hb : edist (φ (t⁻¹ • a)) (ψ (t⁻¹ • a)) ≤ L.stateEDist φ ψ :=
     edist_apply_le_stateEDist (by rw [L.map_smul_eq_mul, hLt])
-  rw [edist_apply_smul] at hb
+  rw [edist_map_smul] at hb
   calc edist (φ a) (ψ a) = L a * (‖t⁻¹‖ₑ * edist (φ a) (ψ a)) := by
         rw [← mul_assoc, mul_comm (L a), hLt, one_mul]
     _ ≤ L a * L.stateEDist φ ψ := by gcongr
@@ -141,7 +145,7 @@ theorem edist_apply_le_mul_stateEDist (h : φ e = ψ e) (a : E) :
 
 /-- A larger extended Lipschitz seminorm has a smaller unit ball, hence a smaller state
 distance. -/
-theorem stateEDist_anti (φ ψ : WeakDual ℝ E) :
+theorem stateEDist_antitone (φ ψ : WeakDual ℝ E) :
     Antitone fun L : ExtendedLipschitzSeminorm e => L.stateEDist φ ψ :=
   fun _ _ hLM => stateEDist_le_iff.2 fun _ ha => edist_apply_le_stateEDist ((hLM _).trans ha)
 
@@ -150,7 +154,7 @@ theorem stateEDist_smul (t : ℝ≥0) (ht : t ≠ 0) (φ ψ : WeakDual ℝ E) :
     (L.smul t ht).stateEDist φ ψ = L.stateEDist φ ψ / t := by
   have hφψ (s : ℝ≥0) (a : E) : edist (φ ((s : ℝ) • a)) (ψ ((s : ℝ) • a)) =
       s * edist (φ a) (ψ a) := by
-    rw [edist_apply_smul, NNReal.eNorm_eq]
+    rw [edist_map_smul, NNReal.eNorm_eq]
   refine le_antisymm (stateEDist_le_iff.2 fun a ha => ?_) ?_
   · rw [smul_apply] at ha
     rw [ENNReal.le_div_iff_mul_le (by simpa using Or.inl ht) (by simp), mul_comm, ← hφψ]
@@ -163,8 +167,7 @@ theorem stateEDist_smul (t : ℝ≥0) (ht : t ≠ 0) (φ ψ : WeakDual ℝ E) :
     rw [← hta, hφψ, mul_comm]
     gcongr
     refine edist_apply_le_stateEDist ?_
-    rwa [smul_apply, L.map_smul_eq_mul, NNReal.eNorm_eq, ← mul_assoc, ← ENNReal.coe_mul,
-      mul_inv_cancel₀ ht, ENNReal.coe_one, one_mul]
+    simpa [L.map_smul_eq_mul, ← mul_assoc, ENNReal.mul_inv_cancel, ht] using ha
 
 variable [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {f : F}
 

@@ -350,9 +350,19 @@ theorem sup_apply (a : E) : L.sup M h a = max (L a) (M a) :=
 theorem domain_sup : (L.sup M h).domain = L.domain ⊓ M.domain :=
   Submodule.ext fun a => by simp
 
-theorem le_sup_left : L ≤ L.sup M h := fun a => le_max_left (L a) (M a)
+protected theorem le_sup_left : L ≤ L.sup M h := fun a => le_max_left (L a) (M a)
 
-theorem le_sup_right : M ≤ L.sup M h := fun a => le_max_right (L a) (M a)
+protected theorem le_sup_right : M ≤ L.sup M h := fun a => le_max_right (L a) (M a)
+
+/-- The maximum `L.sup M h` is the least extended Lipschitz seminorm above `L` and `M`. -/
+protected theorem sup_le {N : ExtendedLipschitzSeminorm e} (hL : L ≤ N) (hM : M ≤ N) :
+    L.sup M h ≤ N :=
+  fun a => max_le (hL a) (hM a)
+
+protected theorem sup_le_iff {N : ExtendedLipschitzSeminorm e} :
+    L.sup M h ≤ N ↔ L ≤ N ∧ M ≤ N :=
+  ⟨fun hN => ⟨(L.le_sup_left M h).trans hN, (L.le_sup_right M h).trans hN⟩,
+    fun hLM => L.sup_le M h hLM.1 hLM.2⟩
 
 end Sup
 
@@ -386,7 +396,7 @@ theorem comap_apply (T : F →ₗ[ℝ] E) (hT : T f = e) (hker : LinearMap.ker T
 @[simp]
 theorem domain_comap (T : F →ₗ[ℝ] E) (hT : T f = e) (hker : LinearMap.ker T ≤ ℝ ∙ f)
     (hdense : Dense (T ⁻¹' L.domain)) : (L.comap T hT hker hdense).domain = L.domain.comap T :=
-  (rfl)
+  Submodule.ext fun _ => Iff.rfl
 
 /-- The transport of an extended Lipschitz seminorm along a continuous linear equivalence
 `T : F ≃L[ℝ] E` sending `f` to `e`. -/
