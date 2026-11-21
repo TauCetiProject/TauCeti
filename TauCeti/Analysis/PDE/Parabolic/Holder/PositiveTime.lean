@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.UniformlyContinuousData
 import TauCeti.Analysis.Matrix.QuadraticBounds
-import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous
 
 /-!
 # Parabolic Schauder estimates at positive times
