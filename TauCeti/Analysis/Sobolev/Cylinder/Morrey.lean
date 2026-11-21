@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Morrey.Basic
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
@@ -36,11 +36,11 @@ converge in `Lᵖ` converge uniformly.
 The proof applies the Morrey potential estimate on the unit ball `B` about `z`
 (`TauCeti.enorm_sub_setAverage_le_of_starConvex_of_finrank_lt`), which bounds `ξ z` minus the
 mean of `ξ` over `B` by the `Lᵖ(B)` norm of the derivative of `ξ`. The mean itself is bounded by
-the `Lᵖ(B)` norm of `ξ` (Hölder's inequality). In the sup norm of `ℝ × ℝ` the ball `B` is a
-square of side two, which lies in two consecutive strips `ℝ × [τ, τ + 1]`. For a function of
-period one in `t` the integral over each of them equals the integral over `ℝ × [0, 1]`
-(`TauCeti.setLIntegral_univ_prod_Icc_add_eq_of_periodic`), so the `Lᵖ(B)` norm of a periodic
-section is at most twice its `Lᵖ` norm on the strip
+the `Lᵖ(B)` norm of `ξ` (Hölder's inequality, `TauCeti.enorm_setAverage_le`). In the sup norm
+of `ℝ × ℝ` the ball `B` is a square of side two, which lies in two consecutive strips
+`ℝ × [τ, τ + 1]`. For a function of period one in `t` the integral over each of them equals the
+integral over `ℝ × [0, 1]` (`TauCeti.setLIntegral_univ_prod_Icc_add_eq_of_periodic`), so the
+`Lᵖ(B)` norm of a periodic section is at most twice its `Lᵖ` norm on the strip
 (`TauCeti.CylinderSobolev.eLpNorm_restrict_ball_le_two_mul_of_periodic`).
 
 This is the Sobolev embedding that turns the `Lᵖ` form of the quadratic estimate for the Floer
@@ -113,21 +113,6 @@ theorem eLpNorm_restrict_ball_le_two_mul_of_periodic {f : ℝ × ℝ → E} (hf 
               ENNReal.rpow_le_rpow_of_exponent_le one_le_two hp1
           _ = 2 := ENNReal.rpow_one 2
 
-/-- The mean of a function over a set of finite measure is bounded by its `Lᵖ` norm there, for
-`1 ≤ p`. -/
-private theorem enorm_setAverage_le {u : ℝ × ℝ → V} {B : Set (ℝ × ℝ)}
-    (hu : AEStronglyMeasurable u (volume.restrict B)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    ‖⨍ y in B, u y‖ₑ ≤
-      (volume B)⁻¹ * volume B ^ (1 - 1 / p.toReal) * eLpNorm u p (volume.restrict B) := by
-  rw [setAverage_eq']
-  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
-  rw [lintegral_smul_measure, smul_eq_mul, mul_assoc]
-  refine mul_le_mul_right ?_ _
-  have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hu
-  rw [eLpNorm_one_eq_lintegral_eNorm hu, Measure.restrict_apply_univ, ENNReal.toReal_one,
-    div_one] at h
-  rwa [mul_comm]
-
 /-- The `Lᵖ` norm of the derivative of a `C¹` map is at most twice the `Lᵖ` norm of its jet. -/
 private theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ)
     (μ : Measure (ℝ × ℝ)) (p : ℝ≥0∞) : eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ := by
@@ -155,12 +140,10 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   set c₀ : ℝ≥0∞ := ENNReal.ofReal (1 ^ finrank ℝ (ℝ × ℝ) / finrank ℝ (ℝ × ℝ)) / m *
     ENNReal.ofReal ((finrank ℝ (ℝ × ℝ) * volume.real (ball (0 : ℝ × ℝ) 1) * (p - 1) /
       (p - finrank ℝ (ℝ × ℝ))) ^ (1 - 1 / (p : ℝ)) * 1 ^ (1 - finrank ℝ (ℝ × ℝ) / (p : ℝ)))
-  set c₁ : ℝ≥0∞ := m⁻¹ * m ^ (1 - 1 / (p : ℝ))
+  set c₁ : ℝ≥0∞ := m ^ (-(p : ℝ)⁻¹)
   have hc₀ : c₀ ≠ ∞ := ENNReal.mul_ne_top (ENNReal.div_ne_top ENNReal.ofReal_ne_top hm0)
     ENNReal.ofReal_ne_top
-  have hc₁ : c₁ ≠ ∞ := ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 hm0)
-    (ENNReal.rpow_ne_top_of_nonneg
-    (by simpa using inv_le_one_of_one_le₀ (by exact_mod_cast hp1 : (1 : ℝ) ≤ p)) hmtop)
+  have hc₁ : c₁ ≠ ∞ := ENNReal.rpow_ne_top_of_ne_zero hm0 hmtop
   refine ⟨((2 * c₀ + c₁) * 2).toNNReal, fun {ξ} hξ hper z ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (by finiteness)]
   -- The jet on the unit ball is controlled by the jet on the strip.
@@ -177,8 +160,8 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   have hval : eLpNorm ξ p (volume.restrict (ball z 1)) ≤
       eLpNorm (jet ξ) p (volume.restrict (ball z 1)) :=
     eLpNorm_mono hξ.continuous.aestronglyMeasurable (norm_le_norm_jet ξ)
-  have hmean := enorm_setAverage_le hξ.continuous.aestronglyMeasurable (B := ball z 1) (p := p)
-    (by exact_mod_cast hp1)
+  have hmean := TauCeti.enorm_setAverage_le (mu := volume) (s := ball z 1) (f := ξ)
+    (p := p) (by exact_mod_cast hp1) ENNReal.coe_ne_top
   rw [hm, ENNReal.coe_toReal] at hmean
   set N := eLpNorm (jet ξ) p (volume.restrict (ball z 1))
   calc ‖ξ z‖ₑ = ‖(ξ z - ⨍ y in ball z 1, ξ y) + ⨍ y in ball z 1, ξ y‖ₑ := by
