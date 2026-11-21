@@ -170,11 +170,6 @@ theorem normalCoord_im (v : V) : (normalCoord e v).im = ⟪e 3, v⟫ := by
 theorem normalCoord_apply (v : V) : normalCoord e v = ⟪e 2, v⟫ + ⟪e 3, v⟫ * I := by
   apply Complex.ext <;> simp
 
-/-- The normal coordinate of `e₂` is `1`. -/
-@[simp]
-theorem normalCoord_apply_two : normalCoord e (e 2) = 1 := by
-  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 2)]
-
 /-- The normal coordinate of `e₀` is `0`. -/
 @[simp]
 theorem normalCoord_apply_zero : normalCoord e (e 0) = 0 := by
@@ -186,6 +181,11 @@ theorem normalCoord_apply_zero : normalCoord e (e 0) = 0 := by
 theorem normalCoord_apply_one : normalCoord e (e 1) = 0 := by
   apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 1),
     e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 1)]
+
+/-- The normal coordinate of `e₂` is `1`. -/
+@[simp]
+theorem normalCoord_apply_two : normalCoord e (e 2) = 1 := by
+  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 2)]
 
 /-- The normal coordinate of `e₃` is `i`. -/
 @[simp]
@@ -202,6 +202,17 @@ theorem normalCoord_apply_apply (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3)
   have h3 : ⟪e 3, J v⟫ = ⟪e 2, v⟫ := by
     rw [← hJ, h₃, J.apply_apply, inner_neg_neg]
   apply Complex.ext <;> simp [h2, h3]
+
+/-- **Chain rule through the normal coordinate**: the derivative of a function of the normal
+coordinate `z` along `v` is its derivative at `z(y)` along `z(v)`. -/
+theorem fderiv_comp_normalCoord_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {c : ℂ → F} {y : V} (hc : DifferentiableAt ℝ c (normalCoord e y)) (v : V) :
+    fderiv ℝ (fun y' ↦ c (normalCoord e y')) y v =
+      fderiv ℝ c (normalCoord e y) (normalCoord e v) := by
+  have h : HasFDerivAt (fun y' ↦ c (normalCoord e y'))
+      ((fderiv ℝ c (normalCoord e y)).comp (normalCoord e)) y :=
+    hc.hasFDerivAt.comp y (normalCoord e).hasFDerivAt
+  rw [h.fderiv, ContinuousLinearMap.comp_apply]
 
 variable (e) in
 /-- The **base-independent connection** `b₁(z) ds + b₂(z) dt` on `V = ℂ_base × ℂ_normal` pulled
@@ -238,10 +249,10 @@ covariant derivative of the plane field in the normal direction. -/
 theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoord e y)) (v : V) :
     covariantDeriv (normalConnection e x) (Vortex.sectionValue x ∘ normalCoord e) y v =
       Vortex.covariantDerivative x (normalCoord e y) (normalCoord e v) := by
-  have hd := ((Vortex.differentiableAt_sectionValue_of_differentiableAt hx).hasFDerivAt.comp y
-    (normalCoord e).hasFDerivAt).fderiv
-  rw [covariantDeriv_apply, Vortex.covariantDerivative_apply, hd, normalConnection_apply]
-  simp
+  rw [covariantDeriv_apply, Vortex.covariantDerivative_apply, Function.comp_def,
+    fderiv_comp_normalCoord_apply (Vortex.differentiableAt_sectionValue_of_differentiableAt hx),
+    normalConnection_apply]
+  simp only [Complex.real_smul, smul_eq_mul]
   ring
 
 /-- **The covariant derivative of a pulled-back section has the plane covariant derivative as its
@@ -256,6 +267,14 @@ theorem sum_norm_covariantDeriv_normalConnection_sq (hx : DifferentiableAt ℝ x
     rw [Vortex.covariantDerivative_eq_re_mul_add_im_mul]
     simp
   simp [Fin.sum_univ_four, covariantDeriv_normalConnection hx, h0]
+
+/-- The pulled-back connection is differentiable where the plane field is. -/
+theorem differentiableAt_normalConnection (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    DifferentiableAt ℝ (normalConnection e x) y := by
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ x (normalCoord e y') i) y :=
+    (differentiableAt_euclidean.1 hx i).comp y (normalCoord e).differentiableAt
+  exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
+    (0 : Fin 1)).differentiableAt.comp y (((hc 0).smul_const _).add ((hc 1).smul_const _))
 
 variable [FiniteDimensional ℝ V]
 
@@ -301,30 +320,24 @@ theorem alternatingFormEquiv_symm_neg_extDeriv_normalConnection
     (alternatingFormEquiv V 2).symm (-extDeriv (normalConnection e x) y) =
       (-Vortex.curvature x (normalCoord e y)) • ιMulti ℝ 2 ![e 2, e 3] := by
   set π := normalCoord e
-  have hc (i : Fin 4) : HasFDerivAt (fun y' ↦ x (π y') i)
-      ((fderiv ℝ (fun w ↦ x w i) (π y)).comp π) y :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx).hasFDerivAt.comp y
-      π.hasFDerivAt
-  have hb : DifferentiableAt ℝ (normalConnection e x) y := by
-    unfold normalConnection
-    have h : DifferentiableAt ℝ
-        (fun y' ↦ x (π y') 0 • innerSL ℝ (e 2) + x (π y') 1 • innerSL ℝ (e 3)) y :=
-      ((hc 0).differentiableAt.smul_const _).add ((hc 1).differentiableAt.smul_const _)
-    exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-      (0 : Fin 1)).differentiableAt.comp y h
+  have hd (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ x w i) (π y) :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ x (π y') i) y :=
+    (hd i).comp y π.differentiableAt
   -- The derivative of the coefficient `b(w) = b₁(z) Re z(w) + b₂(z) Im z(w)` along `v`.
   have key (v w : V) : fderiv ℝ (fun y' ↦ normalConnection e x y' (fun _ ↦ w)) y v =
       fderiv ℝ (fun z ↦ x z 0) (π y) (π v) * (π w).re +
         fderiv ℝ (fun z ↦ x z 1) (π y) (π v) * (π w).im := by
     simp only [normalConnection_apply]
-    rw [fderiv_fun_add ((hc 0).mul_const _).differentiableAt
-        ((hc 1).mul_const _).differentiableAt,
-      ((hc 0).mul_const _).fderiv, ((hc 1).mul_const _).fderiv]
-    simp [π]
+    rw [fderiv_fun_add ((hc 0).mul_const _) ((hc 1).mul_const _), fderiv_mul_const (hc 0),
+      fderiv_mul_const (hc 1), add_apply, smul_apply, smul_apply,
+      fderiv_comp_normalCoord_apply (hd 0), fderiv_comp_normalCoord_apply (hd 1), smul_eq_mul,
+      smul_eq_mul]
     ring
   refine ext_inner_ιMulti_two fun u w ↦ ?_
   rw [inner_alternatingFormEquiv_symm_ιMulti, real_inner_smul_left, inner_ιMulti_two,
-    ContinuousAlternatingMap.neg_apply, extDeriv_apply_pair_of_differentiableAt hb, key, key,
+    ContinuousAlternatingMap.neg_apply, extDeriv_apply_pair_of_differentiableAt
+      (differentiableAt_normalConnection hx), key, key,
     Vortex.curvature_apply]
   -- Expand each derivative of a plane coefficient in the frame `(1, i)`.
   simp only [ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ (π u),
