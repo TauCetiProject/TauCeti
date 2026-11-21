@@ -42,6 +42,7 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   form, the orthogonal complement of the derived ideal is the centre.
 * `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
   invariance.
+* `LinearMap.BilinMap.compl₁₂_lieInvariant`: the same for bilinear maps with values in a module.
 * `LinearMap.BilinForm.lieInvariant_of_isTrivial`: every form on a trivial Lie module is
   invariant.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
@@ -71,14 +72,23 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 public section
 
+/-- The pullback `B(φ ·, φ ·)` of a bilinear map `B` invariant under the adjoint action along a
+Lie algebra morphism `φ` is again invariant. This is the version of
+`LinearMap.BilinForm.lieInvariant.compl₁₂` for bilinear maps with values in a module `M`. -/
+theorem LinearMap.BilinMap.compl₁₂_lieInvariant {R L L' M : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [AddCommGroup M] [Module R M]
+    {B : LinearMap.BilinMap R L M} (hB : ∀ x y z : L, B ⁅x, y⁆ z = -B y ⁅x, z⁆)
+    (φ : L' →ₗ⁅R⁆ L) (x y z : L') :
+    B.compl₁₂ φ.toLinearMap φ.toLinearMap ⁅x, y⁆ z =
+      -B.compl₁₂ φ.toLinearMap φ.toLinearMap y ⁅x, z⁆ := by
+  simp [hB]
+
 /-- Pullback along a Lie homomorphism preserves invariance of a bilinear form. -/
 theorem LinearMap.BilinForm.lieInvariant.compl₁₂ {R L L' : Type*} [CommRing R]
     [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
     {B : LinearMap.BilinForm R L} (hB : B.lieInvariant L) (f : L' →ₗ⁅R⁆ L) :
-    LinearMap.BilinForm.lieInvariant L' (B.compl₁₂ f.toLinearMap f.toLinearMap) := by
-  intro x y z
-  simpa only [LinearMap.compl₁₂_apply, LieHom.map_lie, LieHom.coe_toLinearMap] using
-    hB (f x) (f y) (f z)
+    LinearMap.BilinForm.lieInvariant L' (B.compl₁₂ f.toLinearMap f.toLinearMap) :=
+  LinearMap.BilinMap.compl₁₂_lieInvariant hB f
 
 /-- Every bilinear form on a trivial Lie module, for instance on an abelian Lie algebra, is
 invariant: both brackets in the invariance identity vanish. -/
