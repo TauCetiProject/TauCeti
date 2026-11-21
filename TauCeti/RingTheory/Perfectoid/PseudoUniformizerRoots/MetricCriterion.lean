@@ -42,17 +42,16 @@ private theorem exists_scaled_gauge_sub_pow_le [IsPerfectoidTateRing p R]
       (2 : ℝ) ^ (-((m : ℝ) / p ^ n)) * (1 / 2 : ℝ) ^ p := by
   obtain ⟨y, hy⟩ := IsPerfectoidTateRing.exists_natCast_dvd_sub_pow
     (p := p) (⟨_, hx⟩ : powerBoundedSubring R)
+  have hradius : (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = (1 / 2 : ℝ) ^ p := by
+    simp only [pow_zero, div_one, Real.rpow_neg_eq_inv_rpow, Real.rpow_natCast, one_div]
   have he : ϖ.gauge ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) ≤ (1 / 2 : ℝ) ^ p := by
-    simpa [Real.rpow_neg, Real.rpow_natCast, one_div, inv_pow] using
-      (ϖ.gauge_le_root_radius_iff _ 0).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
+    rw [← hradius]
+    exact (ϖ.gauge_le_root_radius_iff _ 0).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
   refine ⟨(ϖ.zpow m (n + 1) : R) * (y : R), ?_⟩
   -- Undo the scaling using the next root, so its `p`-th power supplies the original scale.
-  have hpow : (ϖ.zpow m (n + 1) : R) ^ p = (ϖ.zpow m n : R) := by
-    rw [← Units.val_pow_eq_pow_val, zpow_def, ← zpow_natCast, ← _root_.zpow_mul, ← zpow_def,
-      zpow_mul_p]
   have heq : x - ((ϖ.zpow m (n + 1) : R) * (y : R)) ^ p =
       (ϖ.zpow m n : R) * ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) := by
-    rw [mul_pow, hpow, mul_sub, zpow_neg, ← mul_assoc]
+    rw [mul_pow, coe_zpow_succ_pow, mul_sub, zpow_neg, ← mul_assoc]
     simp
   rw [heq, gauge_zpow_mul]
   exact mul_le_mul_of_nonneg_left he (by positivity)
@@ -77,39 +76,36 @@ theorem exists_gauge_sub_pow_le_mul [IsPerfectoidTateRing p R] {c : ℝ}
   field_simp at this
   exact this.le
 
-/-- The approximating root may be chosen in the closed unit ball whenever the original
-element lies in that ball and the relative error constant is at most one. -/
-theorem exists_gauge_sub_pow_le_mul_of_gauge_le_one [IsPerfectoidTateRing p R] {c : ℝ}
-    (hc : (1 / 2 : ℝ) ^ p < c) (hc1 : c ≤ 1) {x : R} (hx : ϖ.gauge x ≤ 1) :
-    ∃ y : R, ϖ.gauge y ≤ 1 ∧ ϖ.gauge (x - y ^ p) ≤ c * ϖ.gauge x := by
-  obtain ⟨y, hy⟩ := ϖ.exists_gauge_sub_pow_le_mul hc x
-  exact ⟨y, ϖ.gauge_le_one_of_relative_error hc1 hx hy, hy⟩
-
 /-- A uniform complete Hausdorff Tate ring is perfectoid if its spectral gauge admits
 `p`-th-power approximations with a fixed relative error less than one. -/
 theorem isPerfectoidTateRing_of_exists_gauge_sub_pow_le_mul {c : ℝ}
-    (hc0 : 0 < c) (hc1 : c < 1)
+    (hc : c < 1)
     (h : ∀ x : R, ∃ y : R, ϖ.gauge (x - y ^ p) ≤ c * ϖ.gauge x) :
     IsPerfectoidTateRing p R := by
+  let d : ℝ := max c (1 / 2)
+  have hd0 : 0 < d := lt_of_lt_of_le (by norm_num) (le_max_right c (1 / 2))
+  have hd1 : d < 1 := max_lt hc (by norm_num)
   -- Deep enough roots make the relative error divisible by the selected root to the power `p`.
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, c ≤ (2 : ℝ) ^ (-((p : ℝ) / p ^ n)) := by
-    have hl : 0 < -Real.logb 2 c := neg_pos.mpr (Real.logb_neg one_lt_two hc0 hc1)
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt ((p : ℝ) / -Real.logb 2 c)
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, d ≤ (2 : ℝ) ^ (-((p : ℝ) / p ^ n)) := by
+    have hl : 0 < -Real.logb 2 d := neg_pos.mpr (Real.logb_neg one_lt_two hd0 hd1)
+    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt ((p : ℝ) / -Real.logb 2 d)
       (by exact_mod_cast (Fact.out : p.Prime).one_lt : (1 : ℝ) < p)
-    refine ⟨n, le_of_lt ((Real.logb_lt_iff_lt_rpow one_lt_two hc0).mp ?_)⟩
+    refine ⟨n, le_of_lt ((Real.logb_lt_iff_lt_rpow one_lt_two hd0).mp ?_)⟩
     have hn0 : 0 < (p : ℝ) ^ n := pow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) n
     have hn' := (div_lt_iff₀ hl).mp hn
-    have hp' : (p : ℝ) / (p : ℝ) ^ n < -Real.logb 2 c :=
+    have hp' : (p : ℝ) / (p : ℝ) ^ n < -Real.logb 2 d :=
       (div_lt_iff₀ hn0).mpr (by simpa only [mul_comm] using hn')
     linarith
   refine IsPerfectoidTateRing.of_surjective (ϖ.rootPB n) (by
     simpa only [coe_rootPB] using ϖ.isPseudoUniformizer_root n)
     (ϖ.rootPB_pow_dvd n) fun x ↦ ?_
   obtain ⟨y, hy⟩ := h (x : R)
+  have hy' : ϖ.gauge ((x : R) - y ^ p) ≤ d * ϖ.gauge (x : R) :=
+    hy.trans (mul_le_mul_of_nonneg_right (le_max_left c (1 / 2)) (apply_nonneg _ _))
   have hx : ϖ.gauge (x : R) ≤ 1 := ϖ.gauge_le_one_iff.mpr x.property
-  have hyle : ϖ.gauge y ≤ 1 := ϖ.gauge_le_one_of_relative_error hc1.le hx hy
+  have hyle : ϖ.gauge y ≤ 1 := ϖ.gauge_le_one_of_relative_error hd1.le hx hy'
   refine ⟨⟨y, ϖ.gauge_le_one_iff.mp hyle⟩, (ϖ.gauge_le_root_radius_iff _ n).mp ?_⟩
-  exact hy.trans ((mul_le_of_le_one_right hc0.le hx).trans hn)
+  exact hy'.trans ((mul_le_of_le_one_right hd0.le hx).trans hn)
 
 /-- **The metric criterion for perfectoidness**: a uniform complete Hausdorff Tate ring
 with a pseudouniformiser with compatible roots is perfectoid exactly when every element
@@ -118,7 +114,7 @@ theorem isPerfectoidTateRing_iff_exists_gauge_sub_pow_le_mul :
     IsPerfectoidTateRing p R ↔ ∃ c ∈ Set.Ioo (0 : ℝ) 1,
       ∀ x : R, ∃ y : R, ϖ.gauge (x - y ^ p) ≤ c * ϖ.gauge x := by
   refine ⟨fun hR ↦ ?_, fun ⟨c, hc, h⟩ ↦
-    ϖ.isPerfectoidTateRing_of_exists_gauge_sub_pow_le_mul hc.1 hc.2 h⟩
+    ϖ.isPerfectoidTateRing_of_exists_gauge_sub_pow_le_mul hc.2 h⟩
   have ha : (1 / 2 : ℝ) ^ p < 1 :=
     pow_lt_one₀ (by norm_num) (by norm_num) (Fact.out : p.Prime).ne_zero
   obtain ⟨c, hc0, hc1⟩ := exists_between ha
