@@ -77,7 +77,7 @@ Floer equation of the cylindrical datum `H_∞(t) dt`. The *pre-glued compositio
   for every `p > 0` the integral of its `p`-th power over the neck, in the cylindrical coordinates
   in which the gluing estimates are made, is at most `2 (C' e^{-κ R})^p`
   (`TauCeti.SymplecticForm.`
-  `exists_eventually_setLIntegral_enorm_floerOperator_preglueComposition_comp_rpow_le`).
+  `exists_eventually_setLIntegral_floerOperator_plumbedPerturbation_preglueComposition_comp_le`).
 
 These are the properties of the approximate solution consumed by the gluing theorem for the two
 broken products at the ends of the associativity family. The Sobolev setting, the right inverse
@@ -578,7 +578,7 @@ exponent `p > 0` and every large gluing parameter `R`, the integral over the nec
 `p`-th power of the Floer operator of the plumbed perturbation of neck length `2R` applied to the
 pre-glued composition is at most `2 (C' e^{-κ R})^p`: the operator is at most `C' e^{-κ R}` there
 and vanishes outside the band `R - 1 ≤ s ≤ R + 1`, of area `2`. -/
-theorem exists_eventually_setLIntegral_enorm_floerOperator_preglueComposition_comp_rpow_le
+theorem exists_eventually_setLIntegral_floerOperator_plumbedPerturbation_preglueComposition_comp_le
     (ω : SymplecticForm V) (hq : q ≠ inf) (hab : Hb q = Ha inf) (hHb : Periodic (Hb q) 1)
     {J : ℝ → V → V →L[ℝ] V} {C κ T T' : ℝ} (hT : 2 ≤ T) (hT' : T' ≤ -2)
     (hH : ContDiff ℝ 2 (uncurry (Hb q))) (hJ : Continuous (uncurry J))
