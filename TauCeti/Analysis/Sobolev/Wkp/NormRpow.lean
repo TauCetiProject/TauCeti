@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.Ring.Basic
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv

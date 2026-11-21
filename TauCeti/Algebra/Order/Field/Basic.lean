@@ -65,7 +65,6 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-For `0 ≤ c` and `1 ≤ p`, a lower bound `-c < a * p` gives `-c < a`.
 Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
 nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
 nonnegative, strictly below `1`, monotone, subadditive, subhomogeneous under factors `≥ 1`, and
@@ -99,7 +98,6 @@ zero only at `0`.
 * `TauCeti.one_add_sum_inv_pos`, `TauCeti.inv_le_one_add_sum_inv`: for nonnegative `x i`,
   `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
 * `TauCeti.nonneg_of_le_div_pow`: `0 ≤ A` from `0 ≤ a` and `a ≤ A / t ^ k` with `0 < t`.
-* `TauCeti.neg_lt_of_neg_lt_mul`: `-c < a` from `-c < a * p` for `0 ≤ c` and `1 ≤ p`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
 * `TauCeti.inv_sub_le_two_div`: `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`.
@@ -412,13 +410,6 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
   have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
     mul_le_mul_of_nonneg_left hγN hC
   linarith
-
-/-- For `c ≥ 0` and `p ≥ 1`, the condition `a p > -c` implies `a > -c`, since multiplying a
-negative `a` by `p` only decreases it. With `c` the dimension of the space: when `‖x‖ ^ a` is
-locally `Lᵖ`, it is also locally integrable. -/
-theorem neg_lt_of_neg_lt_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {a p c : α} (hc : 0 ≤ c) (hp : 1 ≤ p) (h : -c < a * p) : -c < a := by
-  nlinarith
 
 /-- A nonnegative quantity bounded by `A / t ^ k` with `t > 0` forces `0 ≤ A`. -/
 theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
