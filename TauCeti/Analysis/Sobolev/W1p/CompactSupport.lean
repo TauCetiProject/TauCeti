@@ -71,7 +71,7 @@ Neither `ψ` nor `w` need have compact support, so it applies to unbounded `Ω` 
   product extended by zero to a larger open set.
 * `TauCeti.W1p.exists_top_value_gradient_ae_eq_on_of_isCompact`: near a compact subset of `Ω`,
   a function in `W^{1,p}(Ω)` agrees in value and gradient with one in `W^{1,p}(ℝⁿ)`.
-* `TauCeti.W1p.exists_top_gradient_ae_eq_contDiffSMul_sub_const`: for a smooth `ψ` compactly
+* `TauCeti.W1p.exists_top_value_gradient_ae_eq_mul_sub_const`: for a smooth `ψ` compactly
   supported in `Ω` and a constant `m`, the function `ψ (u - m)` extends by zero to `W^{1,p}(ℝⁿ)`
   with weak gradient `ψ ∇u + (u - m) ∇ψ`; value and gradient are both stated.
 
@@ -360,7 +360,7 @@ theorem W1p.exists_top_value_gradient_ae_eq_on_of_isCompact (hp : p ≠ (∞ : E
 function `ψ (u - m)`, extended by zero, lies in `W^{1,p}(ℝⁿ)`, with weak gradient
 `ψ ∇u + (u - m) ∇ψ`: some `v ∈ W^{1,p}(ℝⁿ)` has value `ψ (u - m)` and this weak gradient almost
 everywhere. Both vanish off `Ω`, since `ψ` does. -/
-theorem W1p.exists_top_gradient_ae_eq_contDiffSMul_sub_const (hp : p ≠ (∞ : ℝ≥0∞))
+theorem W1p.exists_top_value_gradient_ae_eq_mul_sub_const (hp : p ≠ (∞ : ℝ≥0∞))
     (u : W1p mu Omega p) {psi : E → ℝ} (hpsi : ContDiff ℝ ∞ psi) (hcpt : HasCompactSupport psi)
     (hts : tsupport psi ⊆ (Omega : Set E)) (m : ℝ) :
     ∃ v : W1p mu ⊤ p, (∀ᵐ x ∂mu, W1p.value v x = psi x * (W1p.value u x - m)) ∧

@@ -1008,7 +1008,7 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
   obtain ⟨hG₁p, hG₁le⟩ := memLp_and_eLpNorm_le_divergenceDatum ha hbd hLam u (G := G)
     measurableSet_ball hp1 hζ.continuous hζle (by positivity) hgζk hζ0 hgζ0 m hvum hGp
   -- The whole-space estimate for the cutoff `ζ (u - m)`.
-  obtain ⟨v, -, hv⟩ := W1p.exists_top_gradient_ae_eq_contDiffSMul_sub_const (by norm_num) u hζ
+  obtain ⟨v, -, hv⟩ := W1p.exists_top_value_gradient_ae_eq_mul_sub_const (by norm_num) u hζ
     hζc (hζB.trans hball) m
   have hvg1 := memLp_cutoff_gradient u measurableSet_ball le_rfl hζ.continuous hζle
     (by positivity) hgζk hζ0 hgζ0 m (hgp.mono_exponent hp1) (hvum.mono_exponent hp1)
