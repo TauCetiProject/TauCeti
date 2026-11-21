@@ -117,23 +117,17 @@ variable (a : StdSimplex ℝ (Fin 2))
 
 end FaceWeights
 
-/-- The chain of a singular `2`-simplex given as a continuous map from the standard simplex. -/
-private abbrev chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) : ((singularChains ℤ).obj X).X 2 :=
-  simplexChain ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) 1
-
 private lemma δ_toSSetObjEquiv_symm (f : C(StdSimplex ℝ (Fin 3), X)) (i : Fin 3)
     (g : C(I, X)) (h : f.comp (face i) = g.comp toI) :
-    (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g := by
-  apply (X.toSSetObjEquiv _).injective
-  ext w
-  rw [TopCat.toSSetObjEquiv_δ_apply, toSSetObjEquiv_simplex₁, Equiv.apply_symm_apply]
-  exact congr($h w)
+    (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g :=
+  (δ_toSSetObjEquiv_symm_eq f i _ fun w ↦ congr($h w)).trans
+    ((X.toSSetObjEquiv _).symm_apply_eq.2 (toSSetObjEquiv_simplex₁ g).symm)
 
-private lemma d_chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
+private lemma d_simplexMapChain (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
     (h₀ : f.comp (face 0) = g₀.comp toI)
     (h₁ : f.comp (face 1) = g₁.comp toI)
     (h₂ : f.comp (face 2) = g₂.comp toI) :
-    ((singularChains ℤ).obj X).d 2 1 (chain₂ f) =
+    ((singularChains ℤ).obj X).d 2 1 (simplexMapChain ℤ f) =
       pathChain ℤ g₀ - pathChain ℤ g₁ + pathChain ℤ g₂ := by
   rw [singularChains_d_simplexChain (n := 1), Fin.sum_univ_three,
     δ_toSSetObjEquiv_symm f 0 g₀ h₀, δ_toSSetObjEquiv_symm f 1 g₁ h₁,
@@ -156,8 +150,8 @@ lemma mem_boundaries₁ {c : ((singularChains ℤ).obj X).X 1} (y : ((singularCh
 /-- The chain of a constant map is a boundary. -/
 lemma pathChain_const_mem_boundaries₁ (p : X) :
     pathChain ℤ (ContinuousMap.const I p) ∈ boundaries₁ X :=
-  mem_boundaries₁ (chain₂ (ContinuousMap.const _ p)) (by
-    rw [d_chain₂ _ (.const I p) (.const I p) (.const I p) rfl rfl rfl]
+  mem_boundaries₁ (simplexMapChain ℤ (ContinuousMap.const _ p)) (by
+    rw [d_simplexMapChain _ (.const I p) (.const I p) (.const I p) rfl rfl rfl]
     abel)
 
 /-- The affine projection of the standard `2`-simplex onto the unit interval sending the vertices
@@ -175,8 +169,8 @@ lemma pathChain_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ 
     pathChain ℤ γ.toContinuousMap + pathChain ℤ δ.toContinuousMap -
       pathChain ℤ (γ.trans δ).toContinuousMap ∈
       boundaries₁ X := by
-  refine mem_boundaries₁ (chain₂ ((γ.trans δ).toContinuousMap.comp concatProj)) ?_
-  rw [d_chain₂ _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
+  refine mem_boundaries₁ (simplexMapChain ℤ ((γ.trans δ).toContinuousMap.comp concatProj)) ?_
+  rw [d_simplexMapChain _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
   · abel
   · ext a
     exact Path.trans_apply_of_eq_two_mul_sub_one γ δ _
@@ -194,9 +188,9 @@ lemma pathChain_sub_mem_boundaries₁_of_homotopy {a b : X} {γ γ' : Path a b}
   let D : C(I, X) := F.toContinuousMap.comp ⟨fun t ↦ (t, t), by fun_prop⟩
   have h₁ : pathChain ℤ (.const I b) - pathChain ℤ D + pathChain ℤ γ.toContinuousMap ∈
       boundaries₁ X := by
-    refine mem_boundaries₁ (chain₂ (F.toContinuousMap.comp
+    refine mem_boundaries₁ (simplexMapChain ℤ (F.toContinuousMap.comp
       ((StdSimplex.weightI 2).prodMk StdSimplex.weightsOneAddTwoI))) ?_
-    rw [d_chain₂ _ (.const I b) D γ.toContinuousMap]
+    rw [d_simplexMapChain _ (.const I b) D γ.toContinuousMap]
     · ext x
       simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk]
     · ext x
@@ -207,9 +201,9 @@ lemma pathChain_sub_mem_boundaries₁_of_homotopy {a b : X} {γ γ' : Path a b}
         StdSimplex.homeomorphI_apply_eq_mk]
   have h₂ : pathChain ℤ γ'.toContinuousMap - pathChain ℤ D + pathChain ℤ (.const I a) ∈
       boundaries₁ X := by
-    refine mem_boundaries₁ (chain₂ (F.toContinuousMap.comp
+    refine mem_boundaries₁ (simplexMapChain ℤ (F.toContinuousMap.comp
       (StdSimplex.weightsOneAddTwoI.prodMk (StdSimplex.weightI 2)))) ?_
-    rw [d_chain₂ _ γ'.toContinuousMap D (.const I a)]
+    rw [d_simplexMapChain _ γ'.toContinuousMap D (.const I a)]
     · ext x
       simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
         StdSimplex.homeomorphI_apply_eq_mk]

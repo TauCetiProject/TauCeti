@@ -133,18 +133,6 @@ private theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2
       squareUpperTriangle_apply_zero, squareLowerTriangle_apply_one, squareUpperTriangle_apply_one,
       StdSimplex.weights_map_succAbove_self, h₁, h₂, zero_add, add_zero]
 
-/-- A face of the singular `2`-simplex of a map `f` out of the standard `2`-simplex is the singular
-`1`-simplex of any map `g` agreeing with `f` on that face. -/
-private theorem δ_toSSetObjEquiv_symm_eq {X : TopCat.{0}} (f : C(StdSimplex ℝ (Fin 3), X))
-    (i : Fin 3) (g : C(StdSimplex ℝ (Fin 2), X))
-    (h : ∀ z, f (StdSimplex.map i.succAbove z) = g z) :
-    (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) =
-      (X.toSSetObjEquiv (.op ⦋1⦌)).symm g := by
-  apply (X.toSSetObjEquiv _).injective
-  ext z
-  rw [TopCat.toSSetObjEquiv_δ_apply, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-  exact h z
-
 /-- A point of the square with a coordinate equal to `0` or `1` lies on its boundary. -/
 private theorem mem_boundary_of_coord {y : I^(Fin 2)} (j : Fin 2)
     (h : (y j : ℝ) = 0 ∨ (y j : ℝ) = 1) : y ∈ Cube.boundary (Fin 2) :=
@@ -163,21 +151,16 @@ variable {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
 (`TauCeti.squareLowerTriangle`, `TauCeti.squareUpperTriangle`) and the constant `2`-simplex at `x`.
 It is a cycle (`GenLoop.d_squareChain`). -/
 def squareChain (p : Ω^ (Fin 2) X x) : ((singularChains ℤ).obj (TopCat.of X)).X 2 :=
-  simplexChain (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
-      ((p : C(I^(Fin 2), X)).comp squareLowerTriangle)) 1 +
-    simplexChain (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
-      ((p : C(I^(Fin 2), X)).comp squareUpperTriangle)) 1 -
-    2 • simplexChain (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm (ContinuousMap.const _ x)) 1
+  simplexMapChain ℤ ((p : C(I^(Fin 2), X)).comp squareLowerTriangle) +
+    simplexMapChain ℤ ((p : C(I^(Fin 2), X)).comp squareUpperTriangle) -
+    2 • simplexMapChain ℤ (ContinuousMap.const _ x)
 
 /-- The triangulated chain of `p` is `p ∘ T₁ + p ∘ T₂ - 2 [x]`. -/
 theorem squareChain_def (p : Ω^ (Fin 2) X x) :
     squareChain p =
-      simplexChain (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
-          ((p : C(I^(Fin 2), X)).comp squareLowerTriangle)) 1 +
-        simplexChain (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
-          ((p : C(I^(Fin 2), X)).comp squareUpperTriangle)) 1 -
-        2 • simplexChain (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
-          (ContinuousMap.const _ x)) 1 :=
+      simplexMapChain ℤ ((p : C(I^(Fin 2), X)).comp squareLowerTriangle) +
+        simplexMapChain ℤ ((p : C(I^(Fin 2), X)).comp squareUpperTriangle) -
+        2 • simplexMapChain ℤ (ContinuousMap.const _ x) :=
   (rfl)
 
 /-- **The triangulated chain is a cycle.** The faces of the two triangles along the boundary of
@@ -190,7 +173,7 @@ theorem d_squareChain (p : Ω^ (Fin 2) X x) :
       (h : ∀ z, T (StdSimplex.map i.succAbove z) ∈ Cube.boundary (Fin 2)) :
       (TopCat.toSSet.obj (TopCat.of X)).δ i (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
         ((p : C(I^(Fin 2), X)).comp T)) = c :=
-    δ_toSSetObjEquiv_symm_eq _ i _ fun z ↦ GenLoop.boundary p _ (h z)
+    TopCat.δ_toSSetObjEquiv_symm_eq _ i _ fun z ↦ GenLoop.boundary p _ (h z)
   have hL₀ := hx (T := squareLowerTriangle) (i := 0) fun z ↦ mem_boundary_of_coord 0 <| Or.inr <| by
     rw [squareLowerTriangle_apply_zero, weights_one_add_weights_two_map_succAbove_zero]
   have hL₂ := hx (T := squareLowerTriangle) (i := 2) fun z ↦ mem_boundary_of_coord 1 <| Or.inl <| by
@@ -204,18 +187,18 @@ theorem d_squareChain (p : Ω^ (Fin 2) X x) :
         ((p : C(I^(Fin 2), X)).comp squareLowerTriangle)) =
       (TopCat.toSSet.obj (TopCat.of X)).δ 2 (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
         ((p : C(I^(Fin 2), X)).comp squareUpperTriangle)) :=
-    (δ_toSSetObjEquiv_symm_eq _ 1 _ fun z ↦ congrArg p
+    (TopCat.δ_toSSetObjEquiv_symm_eq _ 1 _ fun z ↦ congrArg p
         (squareLowerTriangle_map_succAbove_one z)).trans
-      (δ_toSSetObjEquiv_symm_eq _ 2 ((p : C(I^(Fin 2), X)).comp squareUpperTriangle |>.comp
+      (TopCat.δ_toSSetObjEquiv_symm_eq _ 2 ((p : C(I^(Fin 2), X)).comp squareUpperTriangle |>.comp
         ⟨StdSimplex.map (Fin.succAbove 2), StdSimplex.continuous_map ℝ _⟩) fun _ ↦ rfl).symm
   have hc (i : Fin 3) : (TopCat.toSSet.obj (TopCat.of X)).δ i
       (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm (ContinuousMap.const _ x)) = c :=
-    δ_toSSetObjEquiv_symm_eq _ i _ fun _ ↦ rfl
+    TopCat.δ_toSSetObjEquiv_symm_eq _ i _ fun _ ↦ rfl
   rw [squareChain, map_sub, map_add, map_nsmul, singularChains_d_simplexChain,
     singularChains_d_simplexChain, singularChains_d_simplexChain]
   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero]
   simp only [Fin.succ_zero_eq_one, Fin.succ_one_eq_two, hL₀, hL₂, hU₀, hU₁, hdiag, hc]
-  simp
+  simp only [Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one, neg_one_sq, one_smul]
   abel
 
 /-- The **square class** of a generalized loop `p : I² → X` at `x`: the class in `H₂(X; ℤ)` of its

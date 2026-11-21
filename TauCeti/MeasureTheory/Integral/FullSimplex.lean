@@ -46,7 +46,9 @@ These are the scalar computations behind Stokes' theorem on the standard simplex
 * `TauCeti.setIntegral_toLp_insertNth_eq`: the two readings of the face `∑ xᵢ = 1` give the same
   integral.
 * `TauCeti.setIntegral_fullSimplex_add_setIntegral_fullSimplex`: the unit square is the union of
-  the two shear images of `Δ²` (`TauCeti.setIntegral_fullSimplex_comp_shear_fst`,
+  its lower and upper halves (`TauCeti.squareLowerHalf_union_squareUpperHalf`), which meet in a
+  null set (`TauCeti.aedisjoint_squareLowerHalf_squareUpperHalf`) and are the two shear images of
+  `Δ²` (`TauCeti.setIntegral_fullSimplex_comp_shear_fst`,
   `TauCeti.setIntegral_fullSimplex_comp_shear_snd`), so an integral over the square is the sum of
   two integrals over `Δ²`.
 -/
@@ -185,6 +187,56 @@ def squareLowerHalf : Set (ℝ × ℝ) := {z | 0 ≤ z.2 ∧ z.2 ≤ z.1 ∧ z.1
 /-- The upper half `{(s, t) | 0 ≤ s ≤ t ≤ 1}` of the unit square. -/
 def squareUpperHalf : Set (ℝ × ℝ) := {z | 0 ≤ z.1 ∧ z.1 ≤ z.2 ∧ z.2 ≤ 1}
 
+/-- A point `(s, t)` lies in the lower half of the unit square when `0 ≤ t ≤ s ≤ 1`. -/
+theorem mem_squareLowerHalf_iff {z : ℝ × ℝ} :
+    z ∈ squareLowerHalf ↔ 0 ≤ z.2 ∧ z.2 ≤ z.1 ∧ z.1 ≤ 1 :=
+  Iff.rfl
+
+/-- A point `(s, t)` lies in the upper half of the unit square when `0 ≤ s ≤ t ≤ 1`. -/
+theorem mem_squareUpperHalf_iff {z : ℝ × ℝ} :
+    z ∈ squareUpperHalf ↔ 0 ≤ z.1 ∧ z.1 ≤ z.2 ∧ z.2 ≤ 1 :=
+  Iff.rfl
+
+/-- The lower half of the unit square is measurable. -/
+@[measurability]
+theorem measurableSet_squareLowerHalf : MeasurableSet squareLowerHalf :=
+  (measurableSet_le measurable_const measurable_snd).inter
+    ((measurableSet_le measurable_snd measurable_fst).inter
+      (measurableSet_le measurable_fst measurable_const))
+
+/-- The upper half of the unit square is measurable. -/
+@[measurability]
+theorem measurableSet_squareUpperHalf : MeasurableSet squareUpperHalf :=
+  (measurableSet_le measurable_const measurable_fst).inter
+    ((measurableSet_le measurable_fst measurable_snd).inter
+      (measurableSet_le measurable_snd measurable_const))
+
+/-- The lower and upper halves of the unit square cover it. -/
+theorem squareLowerHalf_union_squareUpperHalf :
+    squareLowerHalf ∪ squareUpperHalf = Icc (0, 0) (1, 1) := by
+  ext z
+  simp only [mem_union, mem_squareLowerHalf_iff, mem_squareUpperHalf_iff, mem_Icc]
+  constructor
+  · rintro (⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩)
+    exacts [⟨⟨by linarith, h₁⟩, h₃, by linarith⟩, ⟨⟨h₁, by linarith⟩, by linarith, h₃⟩]
+  · rintro ⟨⟨h₁, h₂⟩, h₃, h₄⟩
+    rcases le_total z.1 z.2 with h | h
+    exacts [Or.inr ⟨h₁, h, h₄⟩, Or.inl ⟨h₂, h, h₃⟩]
+
+/-- The lower and upper halves of the unit square meet in the diagonal, a null set. -/
+theorem aedisjoint_squareLowerHalf_squareUpperHalf :
+    AEDisjoint volume squareLowerHalf squareUpperHalf := by
+  rw [AEDisjoint, Measure.volume_eq_prod]
+  refine measure_mono_null (t := (LinearMap.ker (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ) :
+    Set (ℝ × ℝ))) (fun z hz ↦ ?_) (Measure.addHaar_submodule _ _ fun h ↦ ?_)
+  · rw [mem_inter_iff, mem_squareLowerHalf_iff, mem_squareUpperHalf_iff] at hz
+    simp only [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.fst_apply,
+      LinearMap.snd_apply, sub_eq_zero]
+    exact le_antisymm hz.2.2.1 hz.1.2.1
+  · have h10 : ((1, 0) : ℝ × ℝ) ∈ LinearMap.ker (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ) :=
+      h ▸ Submodule.mem_top
+    simp at h10
+
 /-- The shear `(s, t) ↦ (s + t, t)` of the plane is a measurable embedding. -/
 private theorem measurableEmbedding_shear_fst :
     MeasurableEmbedding fun z : ℝ × ℝ ↦ (z.1 + z.2, z.2) :=
@@ -214,7 +266,7 @@ theorem setIntegral_fullSimplex_comp_shear_fst (f : ℝ × ℝ → F) :
     ∫ y in fullSimplex 2, f (y 0 + y 1, y 1) = ∫ z in squareLowerHalf, f z :=
   setIntegral_fullSimplex_comp_of_mem_iff (measurePreserving_add_prod volume volume)
     measurableEmbedding_shear_fst (fun y ↦ by
-      simp only [squareLowerHalf, mem_ofPred_eq, mem_fullSimplex_iff, Fin.forall_fin_two,
+      simp only [mem_squareLowerHalf_iff, mem_fullSimplex_iff, Fin.forall_fin_two,
         Fin.sum_univ_two]
       constructor
       · rintro ⟨h₁, h₂, h₃⟩; exact ⟨⟨by linarith, h₁⟩, h₃⟩
@@ -227,7 +279,7 @@ theorem setIntegral_fullSimplex_comp_shear_snd (f : ℝ × ℝ → F) :
     ∫ y in fullSimplex 2, f (y 0, y 0 + y 1) = ∫ z in squareUpperHalf, f z :=
   setIntegral_fullSimplex_comp_of_mem_iff (measurePreserving_prod_add volume volume)
     (MeasurableEquiv.shearAddRight ℝ).measurableEmbedding (fun y ↦ by
-      simp only [squareUpperHalf, mem_ofPred_eq, mem_fullSimplex_iff, Fin.forall_fin_two,
+      simp only [mem_squareUpperHalf_iff, mem_fullSimplex_iff, Fin.forall_fin_two,
         Fin.sum_univ_two]
       constructor
       · rintro ⟨h₁, h₂, h₃⟩; exact ⟨⟨h₁, by linarith⟩, h₃⟩
@@ -242,34 +294,11 @@ theorem setIntegral_fullSimplex_add_setIntegral_fullSimplex {f : ℝ × ℝ → 
     (hf : IntegrableOn f (Icc (0, 0) (1, 1))) :
     (∫ y in fullSimplex 2, f (y 0 + y 1, y 1)) + ∫ y in fullSimplex 2, f (y 0, y 0 + y 1) =
       ∫ z in Icc (0, 0) (1, 1), f z := by
-  have hunion : squareLowerHalf ∪ squareUpperHalf = Icc (0, 0) (1, 1) := by
-    ext z
-    simp only [mem_union, mem_ofPred_eq, squareLowerHalf, squareUpperHalf, mem_Icc]
-    constructor
-    · rintro (⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩)
-      exacts [⟨⟨by linarith, h₁⟩, h₃, by linarith⟩, ⟨⟨h₁, by linarith⟩, by linarith, h₃⟩]
-    · rintro ⟨⟨h₁, h₂⟩, h₃, h₄⟩
-      rcases le_total z.1 z.2 with h | h
-      exacts [Or.inr ⟨h₁, h, h₄⟩, Or.inl ⟨h₂, h, h₃⟩]
-  -- The two halves meet in the diagonal, a line, which is a null set.
-  have hdisj : AEDisjoint volume squareLowerHalf squareUpperHalf := by
-    rw [AEDisjoint, Measure.volume_eq_prod]
-    refine measure_mono_null (t := (LinearMap.ker (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ) :
-      Set (ℝ × ℝ))) (fun z hz ↦ ?_) (Measure.addHaar_submodule _ _ fun h ↦ ?_)
-    · simp only [mem_inter_iff, mem_ofPred_eq, squareLowerHalf, squareUpperHalf] at hz
-      simp only [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.fst_apply,
-        LinearMap.snd_apply, sub_eq_zero]
-      exact le_antisymm hz.2.2.1 hz.1.2.1
-    · have h10 : ((1, 0) : ℝ × ℝ) ∈ LinearMap.ker (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ) :=
-        h ▸ Submodule.mem_top
-      simp at h10
-  have hT₂ : MeasurableSet squareUpperHalf :=
-    (measurableSet_le measurable_const measurable_fst).inter
-      ((measurableSet_le measurable_fst measurable_snd).inter
-        (measurableSet_le measurable_snd measurable_const))
   rw [setIntegral_fullSimplex_comp_shear_fst, setIntegral_fullSimplex_comp_shear_snd,
-    ← setIntegral_union₀ hdisj hT₂.nullMeasurableSet
-      (hf.mono_set (hunion ▸ subset_union_left)) (hf.mono_set (hunion ▸ subset_union_right)),
-    hunion]
+    ← setIntegral_union₀ aedisjoint_squareLowerHalf_squareUpperHalf
+      measurableSet_squareUpperHalf.nullMeasurableSet
+      (hf.mono_set (squareLowerHalf_union_squareUpperHalf ▸ subset_union_left))
+      (hf.mono_set (squareLowerHalf_union_squareUpperHalf ▸ subset_union_right)),
+    squareLowerHalf_union_squareUpperHalf]
 
 end TauCeti

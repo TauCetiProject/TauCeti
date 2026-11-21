@@ -235,21 +235,13 @@ of its generalized loop. -/
 private theorem chainComplexMap_ι_f_smoothSquareChain (hv : IsSmoothSphere I x v) :
     ((SSet.chainComplexMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ)).f 2).hom
       hv.smoothSquareChain = GenLoop.squareChain hv.genLoop := by
-  have h (σ : SmoothSimplex I M 2) :
-      ((SSet.chainComplexMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ)).f 2).hom
-        (((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ) σ).hom 1) =
-      simplexChain (X := TopCat.of M) σ.val 1 := by
-    rw [← ConcreteCategory.comp_apply, SSet.ι_chainComplexMap_f]
-    -- `simplexChain` is `ιChainComplex` of `TopCat.toSSet.obj _`, whose chain complex is by
-    -- definition `(singularChains ℤ).obj _`, and the inclusion of the subcomplex sends `σ` to
-    -- `σ.val`.
-    rfl
-  rw [smoothSquareChain, map_sub, map_add, map_nsmul, h, h, h, GenLoop.squareChain_def,
-    triangleSimplex_val, triangleSimplex_val, SmoothSimplex.coe_const]
-  -- The two sides are the same chain, with its sum and difference taken in the degree-`2` chains
-  -- of `SSet.chainComplex (TopCat.toSSet.obj _)` and of `(singularChains ℤ).obj _` respectively,
-  -- which are the same module by definition.
-  rfl
+  rw [smoothSquareChain, map_sub, map_add, map_nsmul, chainComplexMap_ι_f_ιChainComplex,
+    chainComplexMap_ι_f_ιChainComplex, chainComplexMap_ι_f_ιChainComplex, triangleSimplex_val,
+    triangleSimplex_val, SmoothSimplex.coe_const]
+  -- The left side is the chain of `GenLoop.squareChain_def`, with its sum and difference taken in
+  -- the degree-`2` chains of `SSet.chainComplex (TopCat.toSSet.obj _)`, the unfolding of the
+  -- abbreviation `(singularChains ℤ).obj _`.
+  exact (GenLoop.squareChain_def hv.genLoop).symm
 
 /-- The smooth triangulated chain of a smooth sphere is a cycle, since its image among all singular
 chains is one and the inclusion of smooth chains is injective. -/
@@ -275,12 +267,12 @@ class of its generalized loop. -/
 private theorem homologyMap_ι_smoothSquareClass (hv : IsSmoothSphere I x v) :
     (SSet.homologyMap (smoothSingularSubcomplex I M).ι (ModuleCat.of ℤ ℤ) 2).hom
       hv.smoothSquareClass = GenLoop.squareClass hv.genLoop := by
-  rw [smoothSquareClass, SSet.homologyMap, homologyMap_homologyπ_moduleCatCyclesMk,
-    GenLoop.squareClass_def]
+  rw [smoothSquareClass, SSet.homologyMap, homologyMap_homologyπ_moduleCatCyclesMk]
   simp only [chainComplexMap_ι_f_smoothSquareChain]
-  -- The cycles and homology of `SSet.chainComplex (TopCat.toSSet.obj _)` are by definition those
-  -- of `(singularChains ℤ).obj _`.
-  rfl
+  -- The left side is the class of `GenLoop.squareClass_def`, taken in the homology of
+  -- `SSet.chainComplex (TopCat.toSSet.obj _)`, the unfolding of the abbreviation
+  -- `(singularChains ℤ).obj _`.
+  exact (GenLoop.squareClass_def hv.genLoop).symm
 
 variable {φ : RoughForm I M F 2}
 
