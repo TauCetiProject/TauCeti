@@ -117,9 +117,11 @@ variable {R M₁ M₂ M₃ : Type*} [Semiring R]
   [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R M₃]
 
 /-- A composite `g ∘L f` whose outer factor `g` is injective is invertible exactly when both
-factors are. No dimension or completeness assumption is needed: since `g ∘L f` is a
-homeomorphism, the continuous map `g` is a quotient map, hence a homeomorphism as it is injective,
-and then `f` is invertible after cancelling `g`. -/
+factors are. Neither finite-dimensionality nor completeness is required.
+
+The forward implication rests on Mathlib's `Topology.IsQuotientMap.of_comp`, which makes `g` a
+quotient map when `g ∘L f` is invertible, and `isHomeomorph_iff_isQuotientMap_injective`, which
+makes the injective quotient map `g` a homeomorphism. -/
 theorem isInvertible_comp_iff_of_injective_left {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hg : Function.Injective g) : (g ∘L f).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
   refine ⟨fun h ↦ ?_, fun ⟨hf, hg'⟩ ↦ hg'.comp hf⟩
