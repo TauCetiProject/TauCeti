@@ -42,6 +42,7 @@ at some small time, every point forward by a small continuous amount, and the sh
   `AddCircle.toCircle` at the class of `t` are `cos (2πt / T)` and `sin (2πt / T)`.
 * `AddCircle.toCircle_half_period`, `AddCircle.coe_half_period_ne_zero` — the half period is sent
   to `-1`, so it is not `0`.
+* `AddCircle.coe_add_half_period_ne` — adding the half period moves every point.
 * `AddCircle.im_toCircle_eq_zero_iff` — `0` and the half period are the only points at which
   `AddCircle.toCircle` is real.
 * `AddCircle.exists_forall_eq_add_pos` — a continuous family `ψ (θ, ·)` of maps of the circle, the
@@ -105,6 +106,12 @@ theorem coe_half_period_ne_zero {T : ℝ} (hT : T ≠ 0) : ((T / 2 : ℝ) : AddC
     have := congrArg (fun x ↦ (toCircle x : ℂ).re) h
     norm_num [hT] at this
 
+/-- For a nonzero period `T`, the points `a + T / 2` and `a` of `AddCircle T` are different. -/
+theorem coe_add_half_period_ne {T : ℝ} (hT : T ≠ 0) (a : ℝ) :
+    ((a + T / 2 : ℝ) : AddCircle T) ≠ a :=
+  fun h ↦ coe_half_period_ne_zero hT <| by
+    rw [show T / 2 = a + T / 2 - a by ring, coe_sub, h, sub_self]
+
 /-- **The real points of the circle.** For a nonzero period `T`, the value of `AddCircle.toCircle`
 at `x` is real exactly when `x` is `0` or the half period `T / 2`; these are sent to `1` and `-1`.
 -/
@@ -157,7 +164,7 @@ theorem exists_forall_eq_add_pos (ψ : ℝ × AddCircle T → AddCircle T)
     exact ⟨hdw ▸ hw, by rw [hdw, hwψ, add_sub_cancel]⟩
   have hdc : Continuous d := continuous_iff_continuousAt.2 fun τ ↦ by
     obtain ⟨w, hw, hwψ⟩ := hθnear τ (mem_univ τ)
-    refine continuous_subtype_val.continuousAt.comp <|
+    refine continuous_subtypeVal.continuousAt.comp <|
       (AddCircle.continuousAt_equivIco T _ fun h ↦ ?_).comp (by fun_prop)
     rw [← hwψ, AddCircle.coe_eq_coe_iff_of_mem_Ico (hIco hw)
       ⟨le_rfl, by linarith [hT.out]⟩] at h

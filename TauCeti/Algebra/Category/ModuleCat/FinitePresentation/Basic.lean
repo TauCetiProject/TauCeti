@@ -38,8 +38,6 @@ the finitely presented projective module-theoretic generators
 
 * `TauCeti.finitePresentationModules`: the finitely presented modules, as a property of objects of
   `ModuleCat R`.
-* `TauCeti.finiteProjectiveModulesRegular`: the regular module `R`, as an object of
-  `(finiteProjectiveModules R).FullSubcategory`.
 * `TauCeti.finitePresentationModulesRegular`: the regular module `R`, as an object of
   `(finitePresentationModules R).FullSubcategory`.
 * `TauCeti.finitePresentationEquivalenceMod`: the equivalence between the finitely presented
@@ -240,16 +238,6 @@ noncomputable def finitePresentationEquivalenceMod :
       (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory :=
   ObjectProperty.equivalenceMod (finiteProjectiveModules_le_categoryTheory_isProjective R)
     (presented_finiteProjectiveModules R).symm
-
-/-- The regular module `R`, as a finitely generated projective `R`-module. -/
-def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
-    ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
-
-@[simp]
-theorem finiteProjectiveModulesRegular_obj :
-    (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
-  (rfl)
 
 /-- The functor of `finitePresentationEquivalenceMod` is `M ↦ (-, M)|_{proj R}`. -/
 noncomputable def finitePresentationEquivalenceModCompιIso :
