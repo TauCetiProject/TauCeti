@@ -73,6 +73,16 @@ def polynomialRealization (P : J → MvPolynomial (W ⊕ X) K) :
     (w : W → K) (x : X → K) (j : J) :
     polynomialRealization P w x j = eval (Sum.elim w x) (P j) := (rfl)
 
+/-- Renaming the parameter variables of a joint polynomial tuple precomposes its realization
+with the corresponding reindexing of parameter vectors. The input vector is unchanged. -/
+theorem polynomialRealization_rename_parameters {W' : Type*} (P : J → MvPolynomial (W ⊕ X) K)
+    (e : W → W') :
+    polynomialRealization (fun j => rename (Sum.map e id) (P j)) =
+      polynomialRealization P ∘ (fun w => w ∘ e) := by
+  funext w x j
+  simp only [Function.comp_apply, polynomialRealization_apply, eval_rename, Sum.elim_comp_map,
+    Function.comp_id]
+
 /-- Collect the input variables, leaving polynomial coefficients in the parameters.
 The swap keeps the original joint-polynomial convention: parameters precede inputs. -/
 def inputPolynomial (P : J → MvPolynomial (W ⊕ X) K) (j : J) :
