@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.Complex.Isometry
 import TauCeti.Geometry.Symplectic.Complex.Line
 
 /-!
