@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Moser
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Moser's lemma for families over an open set of times
@@ -32,8 +33,9 @@ flow is complete, and the time maps form an isotopy `ψ_t` with `ψ_t^* σ_t = �
 The proof reduces to Moser's principle for families on `ℝ × M`
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem`). A
 smooth map `g : ℝ → J` which is the identity near the interval of times
-(`TauCeti.exists_contMDiff_eventuallyEq_id`) turns `σ` into the form `(g × id)^* σ` on `ℝ × M`,
-whose slices are `σ_{g t}` and whose time derivative near the interval is that of `σ`
+(`TopologicalSpace.Opens.exists_contMDiff_eventuallyEq_id`) turns `σ` into the form
+`(g × id)^* σ` on `ℝ × M`, whose slices are `σ_{g t}` and whose time derivative near the interval
+is that of `σ`
 (`TauCeti.mpullback_prodMk_mlieDerivForm_mpullback_prodMap`). Along the trajectory the rate
 `ι_t^* L_{∂_t} σ + L_{X_t} σ_t = dα_t + d(ι_{X_t} σ_t)` then vanishes by Cartan's formula for the
 closed slices.
@@ -106,7 +108,7 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
   -- Read the family through a smooth map `g : ℝ → J` which is the identity near the times
   -- between `s` and `t`, so as to obtain the family `σ' = (g × id)^* σ` on `ℝ × M`.
   obtain ⟨g, hg, hgid⟩ :=
-    exists_contMDiff_eventuallyEq_id (convex_uIcc s t) isCompact_uIcc nonempty_uIcc hst
+    Opens.exists_contMDiff_eventuallyEq_id (convex_uIcc s t) isCompact_uIcc nonempty_uIcc hst
   have hgu {u : ℝ} (hu : u ∈ uIcc s t) : g u = ⟨u, hst hu⟩ :=
     Subtype.ext (hgid u hu).self_of_nhds
   set σ' := SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) σ
@@ -151,7 +153,7 @@ theorem exists_contMDiff_interior_eq_neg (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
         -(SmoothForm.mpullback (Prod.mk (⟨u, hab hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
             α).val := by
   obtain ⟨g, hg, hgid⟩ :=
-    exists_contMDiff_eventuallyEq_id (convex_uIcc a b) isCompact_uIcc nonempty_uIcc hab
+    Opens.exists_contMDiff_eventuallyEq_id (convex_uIcc a b) isCompact_uIcc nonempty_uIcc hab
   refine ⟨fun u ↦ (hσ (g u)).interiorEquiv.symm
     (SmoothForm.mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) (-α)),
     (contMDiff_interiorEquiv_symm_mpullback_prodMk σ hσ (-α)).comp (hg.prodMap contMDiff_id),

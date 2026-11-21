@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.ODE.ScalarLinear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
@@ -73,8 +72,6 @@ how Moser's argument runs with a field cut off away from a region of interest.
   same velocity for a smooth form, as a smooth form on `ℝ × M`.
 * `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap`: the time derivative of the
   pullback of a family along `id × f` is the pullback of its time derivative.
-* `TauCeti.exists_contMDiff_eventuallyEq_id`: a smooth map `g : ℝ → J` into an open set `J` of
-  times which is the identity near a convex compact set of times in `J`.
 * `TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`: the slices of `(g × id)^* β` are
   `ι_u^* (g × id)^* β = ι_{g u}^* β`.
 * `TauCeti.hasDerivAt_mpullback_prodMk_comp`: the same velocity for a form on `J × M`, for an open
@@ -198,18 +195,6 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
 section Opens
 
 variable {J : TopologicalSpace.Opens ℝ}
-
-/-- **A smooth map `ℝ → J` which is the identity near a convex compact set of times.** For a
-nonempty convex compact set `K` of times contained in an open set `J` of times, there is a smooth
-map `g : ℝ → J` which agrees with the identity near every time of `K`. Reading a family indexed by
-`J` through `g` gives a family indexed by `ℝ` which agrees with it near `K`. -/
-theorem exists_contMDiff_eventuallyEq_id {K : Set ℝ} (hKc : Convex ℝ K) (hK : IsCompact K)
-    (hKne : K.Nonempty) (hKJ : K ⊆ J) :
-    ∃ g : ℝ → J, ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ g ∧ ∀ u ∈ K, (fun v ↦ (g v : ℝ)) =ᶠ[𝓝 u] id := by
-  obtain ⟨κ, hκ, hκJ, hκid⟩ := hKc.exists_contDiff_mem_eventuallyEq_id hK hKne J.isOpen hKJ
-  refine ⟨fun v ↦ ⟨κ v, hκJ v⟩, ?_, hκid⟩
-  rw [← ContMDiff.subtypeVal_comp_iff]
-  exact hκ.contMDiff
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- The slices of the pullback of a family over `J` along `g × id`, for a map `g : ℝ → J`, are

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Geometry.Manifold.ContMDiff.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Holder
@@ -30,9 +31,12 @@ finite-dimensional real normed space. The cutoff is equal to one on a neighborho
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments. For a convex compact set, such a cutoff gives a smooth
 map into the open set which is the identity near the compact set
-(`Convex.exists_contDiff_mem_eventuallyEq_id`). A compact set covered by open sets carries a finite
-smooth partition of unity by nonnegative compactly supported functions, each with topological
-support in a member of the cover, whose sum is at most one everywhere and one on the compact set
+(`Convex.exists_contDiff_mem_eventuallyEq_id`); in particular, a nonempty convex compact set of
+times in an open set `J ⊆ ℝ` admits a smooth map `ℝ → J` which is the identity near it
+(`TopologicalSpace.Opens.exists_contMDiff_eventuallyEq_id`). A compact set covered by open sets
+carries a finite smooth partition of unity by nonnegative compactly supported functions, each with
+topological support in a member of the cover, whose sum is at most one everywhere and one on the
+compact set
 (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Taking differences of
 consecutive cutoffs along a compact exhaustion gives a nonnegative decomposition of unity of an
 open set by compactly supported smooth functions, with partial sums at most one, together with
@@ -197,6 +201,19 @@ theorem _root_.Convex.exists_contDiff_mem_eventuallyEq_id [NormedSpace ℝ E] [F
         (by ring))
   · filter_upwards [hψ1 x hx] with y hy
     simp [hy]
+
+open scoped Manifold in
+/-- **A smooth map `ℝ → J` which is the identity near a convex compact set of times.** For a
+nonempty convex compact set `K` of times contained in an open set `J` of times, there is a smooth
+map `g : ℝ → J` which agrees with the identity near every time of `K`. Reading a family indexed by
+`J` through `g` gives a family indexed by `ℝ` which agrees with it near `K`. -/
+theorem _root_.TopologicalSpace.Opens.exists_contMDiff_eventuallyEq_id {J : Opens ℝ} {K : Set ℝ}
+    (hKc : Convex ℝ K) (hK : IsCompact K) (hKne : K.Nonempty) (hKJ : K ⊆ J) :
+    ∃ g : ℝ → J, ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ g ∧ ∀ u ∈ K, (fun v ↦ (g v : ℝ)) =ᶠ[𝓝 u] id := by
+  obtain ⟨κ, hκ, hκJ, hκid⟩ := hKc.exists_contDiff_mem_eventuallyEq_id hK hKne J.isOpen hKJ
+  refine ⟨fun v ↦ ⟨κ v, hκJ v⟩, ?_, hκid⟩
+  rw [← ContMDiff.subtypeVal_comp_iff]
+  exact hκ.contMDiff
 
 /-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
 bounded by a common nonnegative constant. -/
