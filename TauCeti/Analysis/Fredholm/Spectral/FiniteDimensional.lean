@@ -53,6 +53,8 @@ index of the trajectory operator `d/ds + A` and minus that of `d/ds - A`; see
 * `TauCeti.isSpectralCutOn_iff_of_finiteDimensional`: in finite dimensions a spectral cut is a
   positive `c` with `±c` outside the spectra.
 * `TauCeti.isSpectralCutOn_of_forall_norm_lt`: a bound on the norms gives a spectral cut.
+* `TauCeti.spectralCount_eq_finrank_pointSpectralSubspace_Icc`: the local count is the number of
+  eigenvalues in `[0, c]`.
 * `TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`: above the norm, the local count is the
   number of nonnegative eigenvalues.
 * `TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`: the spectral flow is
@@ -97,14 +99,23 @@ theorem isSpectralCutOn_of_forall_norm_lt (hc : 0 < c) (h : ∀ u ∈ s, ‖A u�
     IsSpectralCutOn A c s := by
   refine isSpectralCutOn_iff_of_finiteDimensional.2 ⟨hc, fun u hu ↦ ?_⟩
   have hspec {r : ℝ} (hr : r ∈ spectrum ℝ (A u)) : |r| < c := by
-    have h₁ := spectrum.norm_le_norm_mul_of_mem hr
-    have h₂ : ‖(1 : H →L[𝕜] H)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+    have h₁ := spectrum.norm_le_norm_of_mem hr
     rw [Real.norm_eq_abs] at h₁
     nlinarith [norm_nonneg (A u), h u hu]
   exact ⟨fun hr ↦ by simpa [abs_of_pos hc] using hspec hr,
     fun hr ↦ by simpa [abs_of_pos hc] using hspec hr⟩
 
 variable [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
+
+/-- In finite dimensions, the count `TauCeti.spectralCount c T` of the eigenvalues of a
+self-adjoint `T` in `[0, c]` is the dimension of the sum of the eigenspaces of `T` at the
+eigenvalues in `[0, c]`. -/
+theorem spectralCount_eq_finrank_pointSpectralSubspace_Icc (c : ℝ) {T : H →L[𝕜] H}
+    (hT : IsSelfAdjoint T) :
+    spectralCount c T =
+      Module.finrank 𝕜 (Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Icc 0 c)) := by
+  rw [spectralCount_def, ContinuousLinearMap.cfc_indicator_eq_starProjection _ hT,
+    Submodule.range_starProjection]
 
 /-- In finite dimensions, for `c > ‖T‖` the count `TauCeti.spectralCount c T` of the eigenvalues
 of a self-adjoint `T` in `[0, c]` is the number of nonnegative eigenvalues of `T`, counted with
@@ -115,21 +126,13 @@ theorem spectralCount_eq_finrank_pointSpectralSubspace {T : H →L[𝕜] H} (hT 
       Module.finrank 𝕜 (Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Ici 0)) := by
   -- Every eigenvalue of `T` is at most `‖T‖ < c` in absolute value, so selecting those in
   -- `[0, c]` or in `[0, ∞)` gives the same subspace.
-  have hΩ : Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Icc 0 c) =
-      Module.End.pointSpectralSubspace (T : H →ₗ[𝕜] H) (Ici 0) := by
-    refine le_antisymm (Module.End.pointSpectralSubspace_mono Icc_subset_Ici_self)
-      (Module.End.pointSpectralSubspace_le_iff.2 fun μ hμ ↦ ?_)
-    by_cases hμc : μ ≤ c
-    · exact Module.End.eigenspace_le_pointSpectralSubspace ⟨hμ, hμc⟩
-    · have hbot : Module.End.eigenspace (T : H →ₗ[𝕜] H) (μ : 𝕜) = ⊥ := by
-        by_contra hne
-        have hmem : μ ∈ Module.End.restrictedPointSpectrum (T : H →ₗ[𝕜] H) ⊤ :=
-          Module.End.mem_restrictedPointSpectrum_iff_inf_eigenspace_ne_bot.2 (by simpa using hne)
-        have := ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hmem
-        linarith [le_abs_self μ]
-      exact hbot ▸ bot_le
-  rw [spectralCount_def, ContinuousLinearMap.cfc_indicator_eq_starProjection _ hT,
-    Submodule.range_starProjection, hΩ]
+  have hΩ : Icc 0 c ∩ Metric.closedBall 0 ‖T‖ = Ici 0 ∩ Metric.closedBall 0 ‖T‖ := by
+    ext x
+    simp only [mem_inter_iff, mem_Icc, mem_Ici, mem_closedBall_zero_iff, Real.norm_eq_abs]
+    exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, (le_abs_self x).trans (h.2.trans hc.le)⟩, h.2⟩⟩
+  rw [spectralCount_eq_finrank_pointSpectralSubspace_Icc c hT,
+    ← T.pointSpectralSubspace_inter_closedBall_norm, hΩ,
+    T.pointSpectralSubspace_inter_closedBall_norm]
 
 /-! ### The spectral flow from the endpoints -/
 

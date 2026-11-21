@@ -86,13 +86,13 @@ open TauCeti
 /-- The underlying map of the cotangent lift: a covector `p` at `x` goes to the covector
 `p ∘ (dh_x)⁻¹` at `h x`, the inverse differential being the differential of `h.symm` at `h x`. -/
 private def cotangentMap (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M) : CotangentBundle J N :=
-  TotalSpace.mk' (F →L[𝕜] 𝕜) (h z.proj) (z.2 ∘L mfderiv J I h.symm (h z.proj))
+  TotalSpace.mk' (F →L[𝕜] 𝕜) (h z.proj) (z.snd ∘L mfderiv J I h.symm (h z.proj))
 
 /-- The covector `cotangentMap h z` evaluates a tangent vector `w` at `h x` as `z` evaluates
 `dh⁻¹ w`. -/
 private theorem cotangentMap_snd_apply (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M)
     (w : TangentSpace J (h z.proj)) :
-    (h.cotangentMap z).2 w = z.2 (mfderiv J I h.symm (h z.proj) w) :=
+    (h.cotangentMap z).snd w = z.snd (mfderiv J I h.symm (h z.proj) w) :=
   (rfl)
 
 /-- Applying the cotangent lift of `h` and then that of `h.symm` returns the original covector. -/
@@ -102,7 +102,7 @@ private theorem cotangentMap_symm_cotangentMap (h : M ≃ₘ⟮I, J⟯ N) (z : C
   -- Evaluating both lifts in turn gives `z` applied to `dh⁻¹ (d(h⁻¹)⁻¹ v)`, and `d(h⁻¹)⁻¹ = dh`.
   have hv := h.symm.mfderiv_apply_mfderiv_symm_apply (by simp) (h z.proj) v
   exact ((cotangentMap_snd_apply _ _ v).trans (cotangentMap_snd_apply h z _)).trans
-    (congrArg z.2 hv)
+    (congrArg z.snd hv)
 
 variable [IsManifold I 2 M] [IsManifold J 2 N] [IsManifold K 2 P]
 
@@ -131,7 +131,7 @@ protected def cotangent (h : M ≃ₘ⟮I, J⟯ N) :
 `(dh_x)⁻¹` is the differential of `h.symm` at `h x`. -/
 theorem cotangent_apply (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M) :
     h.cotangent z =
-      TotalSpace.mk' (F →L[𝕜] 𝕜) (h z.proj) (z.2 ∘L mfderiv J I h.symm (h z.proj)) :=
+      TotalSpace.mk' (F →L[𝕜] 𝕜) (h z.proj) (z.snd ∘L mfderiv J I h.symm (h z.proj)) :=
   (rfl)
 
 /-- The cotangent lift of `h` covers `h`. -/
@@ -144,7 +144,7 @@ theorem proj_cotangent (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M) :
 evaluates `(dh_x)⁻¹ w`. -/
 theorem cotangent_snd_apply (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M)
     (w : TangentSpace J (h z.proj)) :
-    (h.cotangent z).2 w = z.2 (mfderiv J I h.symm (h z.proj) w) :=
+    (h.cotangent z).snd w = z.snd (mfderiv J I h.symm (h z.proj) w) :=
   (rfl)
 
 /-- **The cotangent lift preserves the pairing of covectors with tangent vectors:** the lifted
@@ -152,9 +152,9 @@ covector evaluated on `dh_x v` is the original covector evaluated on `v`. -/
 @[simp]
 theorem cotangent_snd_apply_mfderiv (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M)
     (v : TangentSpace I z.proj) :
-    (h.cotangent z).2 (mfderiv I J h z.proj v) = z.2 v :=
+    (h.cotangent z).snd (mfderiv I J h z.proj v) = z.snd v :=
   (cotangent_snd_apply h z _).trans
-    (congrArg z.2 (h.mfderiv_symm_apply_mfderiv_apply (by simp) z.proj v))
+    (congrArg z.snd (h.mfderiv_symm_apply_mfderiv_apply (by simp) z.proj v))
 
 /-- The cotangent lift of `h` sends the zero covector at `x` to the zero covector at `h x`. -/
 @[simp]
@@ -166,14 +166,14 @@ theorem cotangent_zeroSection (h : M ≃ₘ⟮I, J⟯ N) (x : M) :
 /-- **Cotangent lifts are linear on fibres:** rescaling a covector before lifting it rescales the
 lifted covector by the same scalar. -/
 theorem cotangent_mk_smul (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M) (c : 𝕜) :
-    h.cotangent (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj (c • z.2)) =
-      TotalSpace.mk' (F →L[𝕜] 𝕜) (h.cotangent z).proj (c • (h.cotangent z).2) :=
+    h.cotangent (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj (c • z.snd)) =
+      TotalSpace.mk' (F →L[𝕜] 𝕜) (h.cotangent z).proj (c • (h.cotangent z).snd) :=
   CotangentBundle.ext rfl fun _ ↦ rfl
 
 /-- The cotangent lift of `h` sends a covector to zero exactly when the covector is zero. -/
 @[simp]
 theorem cotangent_snd_eq_zero_iff (h : M ≃ₘ⟮I, J⟯ N) {z : CotangentBundle I M} :
-    (h.cotangent z).2 = 0 ↔ z.2 = 0 := by
+    (h.cotangent z).snd = 0 ↔ z.snd = 0 := by
   refine ⟨fun hz ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun hz ↦ ?_⟩
   · have hv := cotangent_snd_apply_mfderiv h z v
     rw [hz] at hv
@@ -195,7 +195,7 @@ theorem cotangent_refl :
       Diffeomorph.refl (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (CotangentBundle I M) ∞ := by
   refine Diffeomorph.ext fun z ↦ CotangentBundle.ext rfl fun v ↦ ?_
   -- The inverse of the identity diffeomorphism is the identity map, with identity differential.
-  exact (cotangent_snd_apply _ z v).trans (congrArg z.2 (DFunLike.congr_fun mfderiv_id v))
+  exact (cotangent_snd_apply _ z v).trans (congrArg z.snd (DFunLike.congr_fun mfderiv_id v))
 
 /-- Cotangent lift commutes with composition of smooth diffeomorphisms. -/
 @[simp]
@@ -207,7 +207,7 @@ theorem cotangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
     (h.symm.mdifferentiable (by simp) (g.symm (g (h z.proj))))
     (g.symm.mdifferentiable (by simp) (g (h z.proj))) v
   rw [g.symm_apply_apply] at hcomp
-  exact ((cotangent_snd_apply _ z v).trans (congrArg z.2 hcomp)).trans
+  exact ((cotangent_snd_apply _ z v).trans (congrArg z.snd hcomp)).trans
     ((cotangent_snd_apply h z _).symm.trans (cotangent_snd_apply g _ v).symm)
 
 /-- A smooth diffeomorphism is determined by its cotangent lift, which covers it. -/
@@ -241,7 +241,7 @@ theorem smul_def (g : G) (z : CotangentBundle I M) :
 `g • x`, where `(dg_x)⁻¹` is the differential of `x ↦ g⁻¹ • x` at `g • x`. -/
 theorem smul_eq_mk (g : G) (z : CotangentBundle I M) :
     g • z = TotalSpace.mk' (E →L[𝕜] 𝕜) (g • z.proj)
-      (z.2 ∘L mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj)) := by
+      (z.snd ∘L mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj)) := by
   rw [smul_def, Diffeomorph.cotangent_apply, Diffeomorph.coe_constSmul_symm,
     Diffeomorph.coe_constSmul]
 
@@ -253,7 +253,7 @@ theorem proj_smul (g : G) (z : CotangentBundle I M) : (g • z).proj = g • z.p
 /-- The covector `g • p` evaluates a tangent vector `w` at `g • x` as `p` evaluates
 `(dg_x)⁻¹ w`, the differential of `x ↦ g⁻¹ • x` at `g • x` applied to `w`. -/
 theorem smul_snd_apply (g : G) (z : CotangentBundle I M) (w : TangentSpace I (g • z.proj)) :
-    (g • z).2 w = z.2 (mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) := by
+    (g • z).snd w = z.snd (mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) := by
   rw [smul_eq_mk]
   -- The second component of `TotalSpace.mk'` is the displayed composite.
   rfl
@@ -262,7 +262,7 @@ theorem smul_snd_apply (g : G) (z : CotangentBundle I M) (w : TangentSpace I (g 
 covector `g • p` evaluated on `dg_x v` is `p v`. -/
 @[simp]
 theorem smul_snd_apply_mfderiv (g : G) (z : CotangentBundle I M) (v : TangentSpace I z.proj) :
-    (g • z).2 (mfderiv I I (fun x : M ↦ g • x) z.proj v) = z.2 v := by
+    (g • z).snd (mfderiv I I (fun x : M ↦ g • x) z.proj v) = z.snd v := by
   rw [← Diffeomorph.coe_constSmul g (I := I) (n := ∞), smul_def]
   exact (Diffeomorph.constSmul I ∞ g).cotangent_snd_apply_mfderiv z v
 

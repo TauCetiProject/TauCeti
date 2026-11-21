@@ -78,7 +78,7 @@ namespace TauCeti.MvPowerSeries
 open _root_.MvPowerSeries Filter
 open scoped Topology
 
-variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+variable {σ R : Type*} [NormedCommRing R]
 
 local notation "Tate" => IsRestricted.subring (R := R) (fun _ : σ ↦ 1)
 local notation "ExtraTate" => IsRestricted.subring (R := R) (fun _ : Option σ ↦ 1)
@@ -89,14 +89,12 @@ noncomputable def triangularFamily (α : σ → ℕ) (u : R) :
   fun x ↦ x.elim (MvPolynomial.X none) fun i ↦
     MvPolynomial.X (some i) + MvPolynomial.C u * MvPolynomial.X none ^ α i
 
-omit [IsUltrametricDist R] [NormOneClass R] in
 /-- The triangular family fixes the variable `Y = none`. -/
 @[simp]
 theorem triangularFamily_none (α : σ → ℕ) (u : R) :
     triangularFamily α u none = MvPolynomial.X none := by
   rw [triangularFamily, Option.elim_none]
 
-omit [IsUltrametricDist R] [NormOneClass R] in
 /-- The triangular family sends `Xᵢ` to `Xᵢ + u * Y ^ α i`. -/
 @[simp]
 theorem triangularFamily_some (α : σ → ℕ) (u : R) (i : σ) :
@@ -104,33 +102,11 @@ theorem triangularFamily_some (α : σ → ℕ) (u : R) (i : σ) :
       MvPolynomial.X (some i) + MvPolynomial.C u * MvPolynomial.X none ^ α i := by
   rw [triangularFamily, Option.elim_some]
 
-omit [IsUltrametricDist R] [NormOneClass R] in
 /-- For positive exponents the triangular polynomials have no constant term. -/
 theorem constantCoeff_triangularFamily {α : σ → ℕ} (hα : ∀ i, α i ≠ 0) (u : R)
     (x : Option σ) : (triangularFamily α u x).constantCoeff = 0 := by
   cases x <;> simp [triangularFamily, hα]
 
-omit [IsUltrametricDist R] in
-/-- For `‖u‖ ≤ 1` the triangular polynomials have all coefficients of norm at most `1`. -/
-theorem norm_coeff_triangularFamily_le {u : R} (hu : ‖u‖ ≤ 1) (α : σ → ℕ)
-    (x : Option σ) (t : Option σ →₀ ℕ) : ‖(triangularFamily α u x).coeff t‖ ≤ 1 := by
-  classical
-  cases x with
-  | none =>
-    simp only [triangularFamily, Option.elim_none, MvPolynomial.coeff_X]
-    split_ifs <;> simp
-  | some i =>
-    have h : (triangularFamily α u (some i)).coeff t =
-        (MvPolynomial.X (some i) : MvPolynomial (Option σ) R).coeff t +
-          u * (MvPolynomial.X none ^ α i : MvPolynomial (Option σ) R).coeff t := by
-      simp [triangularFamily, MvPolynomial.coeff_C_mul]
-    rw [h, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow]
-    -- The monomials `X (some i)` and `X none ^ α i` have disjoint supports.
-    split_ifs with h1 h2 h2 <;> simp [hu]
-    have := congrArg (fun f : Option σ →₀ ℕ ↦ f (some i)) (h1.trans h2.symm)
-    simp at this
-
-omit [IsUltrametricDist R] [NormOneClass R] in
 /-- The triangular families for `u` and `v = -u` are inverse to each other under substitution. -/
 theorem aeval_triangularFamily (α : σ → ℕ) {u v : R} (huv : u + v = 0) (x : Option σ) :
     MvPolynomial.aeval (triangularFamily α u) (triangularFamily α v x) = MvPolynomial.X x := by
@@ -142,36 +118,11 @@ theorem aeval_triangularFamily (α : σ → ℕ) {u v : R} (huv : u + v = 0) (x 
       eq_neg_of_add_eq_zero_right huv, map_neg]
     ring
 
-/-- The triangular automorphism `Y ↦ Y`, `Xᵢ ↦ Xᵢ + Y ^ α i` of the Tate algebra in the
-variables `Option σ`, for positive exponents `α`. -/
-noncomputable def restrictedTriangularEquiv [Finite σ] (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) :
-    ExtraTate ≃ₐ[R] ExtraTate :=
-  restrictedSubstEquiv (triangularFamily α 1) (constantCoeff_triangularFamily hα 1)
-    (norm_coeff_triangularFamily_le norm_one.le α) (triangularFamily α (-1))
-    (constantCoeff_triangularFamily hα (-1))
-    (norm_coeff_triangularFamily_le (by simp : ‖(-1 : R)‖ ≤ 1) α)
-    (aeval_triangularFamily α (neg_add_cancel 1)) (aeval_triangularFamily α (add_neg_cancel 1))
-
-/-- The triangular automorphism is the formal substitution of the triangular family. -/
-@[simp]
-theorem coe_restrictedTriangularEquiv [Finite σ] (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (f : ExtraTate) :
-    (restrictedTriangularEquiv α hα f : MvPowerSeries (Option σ) R) =
-      (f : MvPowerSeries (Option σ) R).subst
-        fun x ↦ (triangularFamily (R := R) α 1 x : MvPowerSeries (Option σ) R) :=
-  coe_restrictedSubstEquiv ..
-
-/-- The triangular automorphism preserves the Gauss norm. -/
-@[simp]
-theorem norm_restrictedTriangularEquiv [Finite σ] (α : σ → ℕ) (hα : ∀ i, α i ≠ 0)
-    (f : ExtraTate) : ‖restrictedTriangularEquiv α hα f‖ = ‖f‖ :=
-  norm_restrictedSubstEquiv ..
-
 /-- The `Y`-degree `ν none + ∑ᵢ α i * ν (some i)` of the image of `X ^ ν` under the triangular
 substitution. -/
 private def triangularDegree (α : σ → ℕ) (ν : Option σ →₀ ℕ) : ℕ :=
   ν.sum fun x n ↦ x.elim 1 α * n
 
-omit [IsUltrametricDist R] [NormOneClass R] in
 /-- As a polynomial in `Y`, the image of `X ^ ν` under the triangular substitution is monic of
 degree `triangularDegree α ν`. -/
 private theorem isMonicOfDegree_optionEquivLeft_prod [Nontrivial R] {α : σ → ℕ}
@@ -201,7 +152,6 @@ private theorem isMonicOfDegree_optionEquivLeft_prod [Nontrivial R] {α : σ →
     rw [Finset.prod_insert hxs, Finset.sum_insert hxs]
     exact ((hx x).pow _).mul ih
 
-omit [IsUltrametricDist R] [NormOneClass R] in
 open scoped Classical in
 /-- The coefficients of the image of `X ^ ν` under the triangular substitution in `Y`-degrees at
 least `triangularDegree α ν`: the only nonzero one is the leading coefficient `1` of `Y ^ N`. -/
@@ -220,32 +170,6 @@ private theorem coeff_optionElim_prod_triangularFamily [Nontrivial R] {α : σ �
   · rw [Polynomial.coeff_eq_zero_of_natDegree_lt (hP.natDegree_eq ▸ h)]
     simp [h.ne']
 
-open scoped Classical in
-/-- **The coefficient estimate behind the distinguishing automorphism.** Suppose that every
-exponent `d ≠ ν` whose triangular degree is at least that of `ν` has a coefficient of norm at most
-`ε`. Then in every `Y`-degree `m` at least the triangular degree of `ν`, the coefficients of the
-image of `f` are within `ε` of those of `coeff ν f * Y ^ m`. -/
-private theorem norm_coeff_restrictedTriangularEquiv_sub_le [Finite σ] [Nontrivial R] {α : σ → ℕ}
-    (hα : ∀ i, α i ≠ 0)
-    (f : ExtraTate) (ν : Option σ →₀ ℕ) {ε : ℝ} (hε : 0 ≤ ε)
-    (hν : ∀ d ≠ ν, triangularDegree α ν ≤ triangularDegree α d →
-      ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε)
-    (t : σ →₀ ℕ) {m : ℕ} (hm : triangularDegree α ν ≤ m) :
-    ‖coeff (t.optionElim m) (restrictedTriangularEquiv α hα f : MvPowerSeries (Option σ) R) -
-      if m = triangularDegree α ν ∧ t = 0 then coeff ν (f : MvPowerSeries (Option σ) R)
-        else 0‖ ≤ ε := by
-  have h := norm_coeff_subst_coe_sub_le (constantCoeff_triangularFamily hα 1)
-    (norm_coeff_triangularFamily_le (by simp) α) (f : MvPowerSeries (Option σ) R) ν
-    (t.optionElim m) hε fun d hd hcoeff ↦ hν d hd <| by
-      by_contra hlt
-      push Not at hlt
-      apply hcoeff
-      rw [coeff_optionElim_prod_triangularFamily hα d t (hlt.le.trans hm)]
-      simp [(hlt.trans_le hm).ne']
-  rw [coeff_optionElim_prod_triangularFamily hα ν t hm, mul_ite, mul_one, mul_zero] at h
-  simpa using h
-
-omit [IsUltrametricDist R] [NormOneClass R] in
 /-- With the exponents `α i = b ^ (k i + 1)`, the triangular degree is a base-`b` expansion, so it
 separates exponents whose entries are all below `b`. -/
 private theorem triangularDegree_injective {n : ℕ} (k : σ ≃ Fin n) {b : ℕ}
@@ -271,7 +195,35 @@ private theorem triangularDegree_injective {n : ℕ} (k : σ ≃ Fin n) {b : ℕ
   ext x
   simpa using congrFun hv (E x)
 
-omit [NormOneClass R] in
+section
+
+variable [NormOneClass R]
+
+/-- For `‖u‖ ≤ 1` the triangular polynomials have all coefficients of norm at most `1`. -/
+theorem norm_coeff_triangularFamily_le {u : R} (hu : ‖u‖ ≤ 1) (α : σ → ℕ)
+    (x : Option σ) (t : Option σ →₀ ℕ) : ‖(triangularFamily α u x).coeff t‖ ≤ 1 := by
+  classical
+  cases x with
+  | none =>
+    simp only [triangularFamily, Option.elim_none, MvPolynomial.coeff_X]
+    split_ifs <;> simp
+  | some i =>
+    have h : (triangularFamily α u (some i)).coeff t =
+        (MvPolynomial.X (some i) : MvPolynomial (Option σ) R).coeff t +
+          u * (MvPolynomial.X none ^ α i : MvPolynomial (Option σ) R).coeff t := by
+      simp [triangularFamily, MvPolynomial.coeff_C_mul]
+    rw [h, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow]
+    -- The monomials `X (some i)` and `X none ^ α i` have disjoint supports.
+    split_ifs with h1 h2 h2 <;> simp [hu]
+    have := congrArg (fun f : Option σ →₀ ℕ ↦ f (some i)) (h1.trans h2.symm)
+    simp at this
+
+end
+
+section
+
+variable [IsUltrametricDist R]
+
 /-- **Choice of the triangular exponents.** Let `f` be a nonzero restricted series, `S` the finite
 set of its exponents of maximal coefficient norm, and `b > 1` a base exceeding every entry of each
 exponent in `S`. For the exponents `α i = b ^ (k i + 1)` there are an exponent `ν` with
@@ -287,7 +239,7 @@ private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
           triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) d →
         ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε := by
   classical
-  obtain ⟨d₀, hd₀⟩ := f.2.exists_achievesGaussNorm
+  obtain ⟨d₀, hd₀⟩ := f.property.exists_achievesGaussNorm
   obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
   simp only [AchievesGaussNorm, ← norm_eq_gaussNorm, one_pow, Finsupp.prod_fun_one,
     mul_one] at hd₀ hε
@@ -301,6 +253,57 @@ private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
   · exact absurd (triangularDegree_injective k hb (hbS d hdS) (hbS ν hνS)
       (le_antisymm (hνmax d hdS) hdeg)) hd
   · exact hε d (lt_of_not_ge fun h ↦ hdS ((hS d).mpr h))
+
+variable [NormOneClass R]
+
+/-- The triangular automorphism `Y ↦ Y`, `Xᵢ ↦ Xᵢ + Y ^ α i` of the Tate algebra in the
+variables `Option σ`, for positive exponents `α`. -/
+noncomputable def restrictedTriangularEquiv [Finite σ] (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) :
+    ExtraTate ≃ₐ[R] ExtraTate :=
+  restrictedSubstEquiv (triangularFamily α 1) (constantCoeff_triangularFamily hα 1)
+    (norm_coeff_triangularFamily_le norm_one.le α) (triangularFamily α (-1))
+    (constantCoeff_triangularFamily hα (-1))
+    (norm_coeff_triangularFamily_le (by simp : ‖(-1 : R)‖ ≤ 1) α)
+    (aeval_triangularFamily α (neg_add_cancel 1)) (aeval_triangularFamily α (add_neg_cancel 1))
+
+/-- The triangular automorphism is the formal substitution of the triangular family. -/
+@[simp]
+theorem coe_restrictedTriangularEquiv [Finite σ] (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (f : ExtraTate) :
+    (restrictedTriangularEquiv α hα f : MvPowerSeries (Option σ) R) =
+      (f : MvPowerSeries (Option σ) R).subst
+        fun x ↦ (triangularFamily (R := R) α 1 x : MvPowerSeries (Option σ) R) :=
+  coe_restrictedSubstEquiv ..
+
+/-- The triangular automorphism preserves the Gauss norm. -/
+@[simp]
+theorem norm_restrictedTriangularEquiv [Finite σ] (α : σ → ℕ) (hα : ∀ i, α i ≠ 0)
+    (f : ExtraTate) : ‖restrictedTriangularEquiv α hα f‖ = ‖f‖ :=
+  norm_restrictedSubstEquiv ..
+
+open scoped Classical in
+/-- **The coefficient estimate behind the distinguishing automorphism.** Suppose that every
+exponent `d ≠ ν` whose triangular degree is at least that of `ν` has a coefficient of norm at most
+`ε`. Then in every `Y`-degree `m` at least the triangular degree of `ν`, the coefficients of the
+image of `f` are within `ε` of those of `coeff ν f * Y ^ m`. -/
+private theorem norm_coeff_restrictedTriangularEquiv_sub_le [Finite σ] [Nontrivial R] {α : σ → ℕ}
+    (hα : ∀ i, α i ≠ 0)
+    (f : ExtraTate) (ν : Option σ →₀ ℕ) {ε : ℝ} (hε : 0 ≤ ε)
+    (hν : ∀ d ≠ ν, triangularDegree α ν ≤ triangularDegree α d →
+      ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε)
+    (t : σ →₀ ℕ) {m : ℕ} (hm : triangularDegree α ν ≤ m) :
+    ‖coeff (t.optionElim m) (restrictedTriangularEquiv α hα f : MvPowerSeries (Option σ) R) -
+      if m = triangularDegree α ν ∧ t = 0 then coeff ν (f : MvPowerSeries (Option σ) R)
+        else 0‖ ≤ ε := by
+  have h := norm_coeff_subst_coe_sub_le (constantCoeff_triangularFamily hα 1)
+    (norm_coeff_triangularFamily_le (by simp) α) (f : MvPowerSeries (Option σ) R) ν
+    (t.optionElim m) hε fun d hd hcoeff ↦ hν d hd <| by
+      by_contra hlt
+      push Not at hlt
+      apply hcoeff
+      rw [coeff_optionElim_prod_triangularFamily hα d t (hlt.le.trans hm)]
+      simp [(hlt.trans_le hm).ne']
+  rw [coeff_optionElim_prod_triangularFamily hα ν t hm, mul_ite, mul_one, mul_zero] at h
+  simpa using h
 
 /-- If a coefficient `a = coeff ν f` of norm `‖f‖` dominates, up to `ε < ‖f‖`, every coefficient
 of triangular degree at least that of `ν`, then the triangular automorphism makes `f`
@@ -376,7 +379,7 @@ theorem exists_restrictedTriangularEquiv_forall_isDistinguished [Finite σ] {ι 
   -- The exponents of maximal coefficient norm of each member form a finite set `S j`.
   have hSfin (j : ι) : {d | ‖f j‖ ≤ ‖coeff d (f j : MvPowerSeries (Option σ) R)‖}.Finite := by
     have hM : 0 < ‖f j‖ := norm_pos_iff.mpr (hf j)
-    have := (isRestricted_one_iff.mp (f j).2).eventually (gt_mem_nhds (half_pos hM))
+    have := (isRestricted_one_iff.mp (f j).property).eventually (gt_mem_nhds (half_pos hM))
     exact (by simpa [eventually_cofinite, not_lt] using this :
       {d | ‖f j‖ / 2 ≤ ‖coeff d (f j : MvPowerSeries (Option σ) R)‖}.Finite).subset
         fun d hd ↦ (half_le_self hM.le).trans hd
@@ -412,6 +415,8 @@ theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraT
   obtain ⟨α, hα, h⟩ :=
     exists_restrictedTriangularEquiv_forall_isDistinguished (fun _ : Unit ↦ f) fun _ ↦ hf
   exact ⟨α, hα, h ()⟩
+
+end
 
 /-- **Distinguishing automorphisms of Tate algebras over a field, for finitely many series at
 once.** Over a complete nonarchimedean field `K`, for finite `σ` and a finite family `f` of

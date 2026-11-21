@@ -128,7 +128,7 @@ also has semisimple adjoint action on the subalgebra. This is the semisimple ana
 theorem isSemisimple_ad_of_isSemisimple_ad {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     (L' : LieSubalgebra R L) {x : L'} (h : (ad R L x).IsSemisimple) : (ad R L' x).IsSemisimple := by
   have hp : L'.toSubmodule ∈ (ad R L x).invtSubmodule :=
-    (mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun y hy ↦ L'.lie_mem x.2 hy
+    (mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun y hy ↦ L'.lie_mem x.property hy
   -- The restriction of `ad x` to `L'` is, elementwise by definition, the adjoint action on `L'`.
   exact (LinearEquiv.isSemisimple_iff _ _ (LinearEquiv.refl R L') (by ext; rfl)).1 (h.restrict hp)
 
@@ -150,7 +150,7 @@ theorem isNilpotent_ad_iff (I : LieIdeal R L) {x : I} :
   refine ⟨fun ⟨n, hn⟩ ↦ ⟨n + 1, LinearMap.ext fun y ↦ ?_⟩,
     I.toLieSubalgebra.isNilpotent_ad_of_isNilpotent_ad⟩
   -- `ad x` maps `L` into `I`, where its powers are those of the adjoint action of `I`
-  have h : ((ad R I x ^ n) ⟨⁅(x : L), y⁆, _root_.lie_mem_left R L I _ _ x.2⟩ : L) =
+  have h : ((ad R I x ^ n) ⟨⁅(x : L), y⁆, _root_.lie_mem_left R L I _ _ x.property⟩ : L) =
       (ad R L x ^ n) ⁅(x : L), y⁆ :=
     LieSubalgebra.coe_ad_pow R L I.toLieSubalgebra x _ n
   simpa [pow_succ, hn] using h.symm

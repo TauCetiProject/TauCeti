@@ -39,44 +39,44 @@ variable {n m : ℕ}
 /-- The number of strands connecting the bottom to the top. The top boundary starts at
 label `n` in the counterclockwise numbering. Closed circles are not counted. -/
 def through (D : TLDiagram n m) : ℕ :=
-  #{i : Fin n | n ≤ (D.matching.1.val (i.castAdd m) : ℕ)}
+  #{i : Fin n | n ≤ (D.matching.val.val (i.castAdd m) : ℕ)}
 
 /-- The through-strand count is the number of bottom points whose partners lie on the top. -/
 theorem through_def (D : TLDiagram n m) :
-    D.through = #{i : Fin n | n ≤ (D.matching.1.val (i.castAdd m) : ℕ)} := (rfl)
+    D.through = #{i : Fin n | n ≤ (D.matching.val.val (i.castAdd m) : ℕ)} := (rfl)
 
 private def bottomPartner (D : TLDiagram n m) (i : Fin n) : Fin n :=
-  if h : (D.matching.1.val (i.castAdd m) : ℕ) < n then
-    ⟨D.matching.1.val (i.castAdd m), h⟩ else i
+  if h : (D.matching.val.val (i.castAdd m) : ℕ) < n then
+    ⟨D.matching.val.val (i.castAdd m), h⟩ else i
 
 private theorem bottomPartner_of_lt (D : TLDiagram n m) (i : Fin n)
-    (h : (D.matching.1.val (i.castAdd m) : ℕ) < n) :
-    (D.bottomPartner i).castAdd m = D.matching.1.val (i.castAdd m) := by
+    (h : (D.matching.val.val (i.castAdd m) : ℕ) < n) :
+    (D.bottomPartner i).castAdd m = D.matching.val.val (i.castAdd m) := by
   simp [bottomPartner, h]
 
 private theorem bottomPartner_of_le (D : TLDiagram n m) (i : Fin n)
-    (h : n ≤ (D.matching.1.val (i.castAdd m) : ℕ)) : D.bottomPartner i = i := by
+    (h : n ≤ (D.matching.val.val (i.castAdd m) : ℕ)) : D.bottomPartner i = i := by
   simp [bottomPartner, not_lt.mpr h]
 
 private theorem bottomPartner_involutive (D : TLDiagram n m) :
     Function.Involutive D.bottomPartner := by
   intro i
-  by_cases h : (D.matching.1.val (i.castAdd m) : ℕ) < n
-  · have hi : D.matching.1.val ((D.bottomPartner i).castAdd m) = i.castAdd m := by
-      rw [bottomPartner_of_lt D i h, D.matching.1.apply_apply]
+  by_cases h : (D.matching.val.val (i.castAdd m) : ℕ) < n
+  · have hi : D.matching.val.val ((D.bottomPartner i).castAdd m) = i.castAdd m := by
+      rw [bottomPartner_of_lt D i h, D.matching.val.apply_apply]
     apply Fin.ext
     simpa [hi] using congrArg Fin.val
       (D.bottomPartner_of_lt (D.bottomPartner i) (by simp [hi]))
   · rw [bottomPartner_of_le D i (by omega), bottomPartner_of_le D i (by omega)]
 
 private theorem bottomPartner_eq_self_iff (D : TLDiagram n m) (i : Fin n) :
-    D.bottomPartner i = i ↔ n ≤ (D.matching.1.val (i.castAdd m) : ℕ) := by
+    D.bottomPartner i = i ↔ n ≤ (D.matching.val.val (i.castAdd m) : ℕ) := by
   refine ⟨fun h => ?_, D.bottomPartner_of_le i⟩
   by_contra! hi
-  exact D.matching.1.apply_ne (i.castAdd m) (by rw [← D.bottomPartner_of_lt i hi, h])
+  exact D.matching.val.apply_ne (i.castAdd m) (by rw [← D.bottomPartner_of_lt i hi, h])
 
 private theorem bottomPartner_lt_of_ne (D : TLDiagram n m) (i : Fin n)
-    (h : D.bottomPartner i ≠ i) : (D.matching.1.val (i.castAdd m) : ℕ) < n :=
+    (h : D.bottomPartner i ≠ i) : (D.matching.val.val (i.castAdd m) : ℕ) < n :=
   not_le.mp ((D.bottomPartner_eq_self_iff i).not.mp h)
 
 private theorem bottomPartner_isHalfDiagram (D : TLDiagram n m) :
@@ -87,7 +87,7 @@ private theorem bottomPartner_isHalfDiagram (D : TLDiagram n m) :
   · intro a b hab hba hlt
     have ha := D.bottomPartner_lt_of_ne a (hab.trans hba).ne'
     have hb := D.bottomPartner_lt_of_ne b (hba.trans hlt).ne'
-    exact (Perm.isNoncrossingMatching_iff.mp D.matching.2)
+    exact (Perm.isNoncrossingMatching_iff.mp D.matching.property)
       (a := a.castAdd m) (b := b.castAdd m) (by simpa only [Fin.lt_def, Fin.val_castAdd] using hab)
       (by simpa only [← D.bottomPartner_of_lt a ha, Fin.lt_def, Fin.val_castAdd] using hba)
       (by simpa only [← D.bottomPartner_of_lt a ha, ← D.bottomPartner_of_lt b hb,
@@ -113,19 +113,19 @@ def bottomHalf (D : TLDiagram n m) : HalfDiagram n D.through :=
 for a through strand. -/
 theorem bottomHalf_apply (D : TLDiagram n m) (i : Fin n) :
     D.bottomHalf.val i =
-      if h : (D.matching.1.val (i.castAdd m) : ℕ) < n then
-        ⟨D.matching.1.val (i.castAdd m), h⟩ else i := (rfl)
+      if h : (D.matching.val.val (i.castAdd m) : ℕ) < n then
+        ⟨D.matching.val.val (i.castAdd m), h⟩ else i := (rfl)
 
 /-- The defects of the bottom half are exactly the bottom endpoints of through strands. -/
 @[simp]
 theorem bottomHalf_apply_eq_self_iff (D : TLDiagram n m) (i : Fin n) :
-    D.bottomHalf.val i = i ↔ n ≤ (D.matching.1.val (i.castAdd m) : ℕ) :=
+    D.bottomHalf.val i = i ↔ n ≤ (D.matching.val.val (i.castAdd m) : ℕ) :=
   D.bottomPartner_eq_self_iff i
 
 /-- A cap keeps its partner when the diagram is cut. -/
 theorem castAdd_bottomHalf_apply (D : TLDiagram n m) (i : Fin n)
-    (h : (D.matching.1.val (i.castAdd m) : ℕ) < n) :
-    (D.bottomHalf.val i).castAdd m = D.matching.1.val (i.castAdd m) :=
+    (h : (D.matching.val.val (i.castAdd m) : ℕ) < n) :
+    (D.bottomHalf.val i).castAdd m = D.matching.val.val (i.castAdd m) :=
   D.bottomPartner_of_lt i h
 
 /-- There are no more through strands than bottom points. -/
@@ -134,7 +134,7 @@ theorem through_le_bottom (D : TLDiagram n m) : D.through ≤ n :=
 
 /-- Counting through endpoints in the full cyclic boundary instead of just its bottom row. -/
 private theorem through_eq_card_boundary (D : TLDiagram n m) :
-    D.through = #{a : Fin (n + m) | (a : ℕ) < n ∧ n ≤ (D.matching.1.val a : ℕ)} := by
+    D.through = #{a : Fin (n + m) | (a : ℕ) < n ∧ n ≤ (D.matching.val.val a : ℕ)} := by
   unfold through
   refine Finset.card_bij' (fun i _ => i.castAdd m)
     (fun a ha => ⟨a, (mem_filter.mp ha).2.1⟩) ?_ ?_ ?_ ?_
@@ -153,25 +153,25 @@ theorem through_verticalReflect (D : TLDiagram n m) :
     (verticalReflect n m D).through = D.through := by
   rw [through_eq_card_boundary, through_eq_card_boundary]
   let e : Fin (n + m) ≃ Fin (m + n) :=
-    D.matching.1.val.trans (Fin.revPerm.trans (finCongr (Nat.add_comm n m)))
+    D.matching.val.val.trans (Fin.revPerm.trans (finCongr (Nat.add_comm n m)))
   symm
   apply Finset.card_equiv e
   intro i
-  have he : (e i : ℕ) = n + m - 1 - (D.matching.1.val i : ℕ) := by
+  have he : (e i : ℕ) = n + m - 1 - (D.matching.val.val i : ℕ) := by
     simp [e, Fin.rev, Nat.sub_sub, Nat.add_comm]
-  have hp : ((verticalReflect n m D).matching.1.val (e i) : ℕ) =
+  have hp : ((verticalReflect n m D).matching.val.val (e i) : ℕ) =
       n + m - 1 - i := by
     rw [coe_verticalReflect_matching_val_apply]
     have h : (⟨n + m - 1 - (e i : ℕ), by omega⟩ : Fin (n + m)) =
-        D.matching.1.val i := by
+        D.matching.val.val i := by
       apply Fin.ext
       dsimp only
-      have := (D.matching.1.val i).isLt
+      have := (D.matching.val.val i).isLt
       omega
-    rw [h, D.matching.1.apply_apply]
+    rw [h, D.matching.val.apply_apply]
   simp only [mem_filter, mem_univ, true_and, hp, he]
   have := i.isLt
-  have := (D.matching.1.val i).isLt
+  have := (D.matching.val.val i).isLt
   omega
 
 /-- The top half of a diagram, read left to right: cups are retained and through strands
@@ -197,15 +197,15 @@ theorem topHalf_verticalReflect_val (D : TLDiagram n m) :
 point itself for a through strand. The cyclic label of `j` is `n + m - 1 - j`. -/
 theorem topHalf_apply (D : TLDiagram n m) (j : Fin m) :
     D.topHalf.val j =
-      if h : n ≤ (D.matching.1.val ⟨n + m - 1 - j, by omega⟩ : ℕ) then
-        ⟨n + m - 1 - (D.matching.1.val ⟨n + m - 1 - j, by omega⟩ : ℕ), by
-          have := (D.matching.1.val ⟨n + m - 1 - j, by omega⟩).isLt
+      if h : n ≤ (D.matching.val.val ⟨n + m - 1 - j, by omega⟩ : ℕ) then
+        ⟨n + m - 1 - (D.matching.val.val ⟨n + m - 1 - j, by omega⟩ : ℕ), by
+          have := (D.matching.val.val ⟨n + m - 1 - j, by omega⟩).isLt
           omega⟩ else j := by
   rw [topHalf_val, bottomHalf_apply]
   apply Fin.ext
   have hv := D.coe_verticalReflect_matching_val_apply (j.castAdd n)
   simp only [Fin.val_castAdd] at hv
-  have := (D.matching.1.val ⟨n + m - 1 - j, by omega⟩).isLt
+  have := (D.matching.val.val ⟨n + m - 1 - j, by omega⟩).isLt
   split_ifs <;> simp_all only <;> omega
 
 /-- A top point is a defect of the cut exactly when its original partner is on the bottom.
@@ -213,10 +213,10 @@ The index `j` is left-to-right, hence its cyclic label is `n + m - 1 - j`. -/
 @[simp]
 theorem topHalf_apply_eq_self_iff (D : TLDiagram n m) (j : Fin m) :
     D.topHalf.val j = j ↔
-      (D.matching.1.val ⟨n + m - 1 - j, by omega⟩ : ℕ) < n := by
+      (D.matching.val.val ⟨n + m - 1 - j, by omega⟩ : ℕ) < n := by
   rw [topHalf_val, bottomHalf_apply_eq_self_iff, coe_verticalReflect_matching_val_apply]
   simp only [Fin.val_castAdd]
-  have := (D.matching.1.val ⟨n + m - 1 - j, by omega⟩).isLt
+  have := (D.matching.val.val ⟨n + m - 1 - j, by omega⟩).isLt
   omega
 
 /-- There are no more through strands than top points. -/
@@ -245,7 +245,7 @@ theorem through_zero_right (D : TLDiagram n 0) : D.through = 0 :=
 @[simp]
 theorem through_id (n : ℕ) : (id n).through = n := by
   rw [through_def]
-  have h : ({i : Fin n | n ≤ ((id n).matching.1.val (i.castAdd n) : ℕ)} :
+  have h : ({i : Fin n | n ≤ ((id n).matching.val.val (i.castAdd n) : ℕ)} :
       Finset (Fin n)) = univ := by
     ext i
     simp only [mem_filter, mem_univ, true_and, iff_true, id_matching_val]

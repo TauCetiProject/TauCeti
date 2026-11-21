@@ -6,13 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Calculus.FDeriv.Adjugate
+import TauCeti.Analysis.Matrix.Normed
 
 /-!
-# Derivative of a map precomposed with inversion
+# Derivatives of inversion and maps precomposed with inversion
 
 For a map `u` out of a normed field `𝕜'` and `w ≠ 0`, the derivative over a subfield `𝕜` of
 `w ↦ u w⁻¹` at `w` is the derivative of `u` at `w⁻¹` precomposed with
@@ -22,9 +27,63 @@ is that of the derivative of `u` at `w⁻¹` divided by `‖w‖ ^ 2` (`TauCeti.
 This is how a map near infinity is read off in the coordinate `w = z⁻¹` near zero. No
 differentiability of `u` is assumed: where `u` is not differentiable at `w⁻¹`, neither is
 `w ↦ u w⁻¹` at `w`, and both derivatives are `0`.
+
+For an invertible finite matrix, inversion has differential `H ↦ -(A⁻¹ * H * A⁻¹)`.
+Matrices carry the operator norm, and the scalar field need not be complete.
 -/
 
 public section
+
+open Filter
+open scoped Topology Matrix.Norms.Operator RightActions
+
+namespace Matrix
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+
+/-- At an invertible matrix, inversion has differential `H ↦ -(A⁻¹ * H * A⁻¹)`.
+No scalar completeness assumption is needed. -/
+theorem hasFDerivAt_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+    [DecidableEq ι] {A : Matrix ι ι 𝕜} (hdet : IsUnit A.det) :
+    HasFDerivAt (Inv.inv : Matrix ι ι 𝕜 → Matrix ι ι 𝕜)
+      (-ContinuousLinearMap.mulLeftRight 𝕜 (Matrix ι ι 𝕜) A⁻¹ A⁻¹) A := by
+  have hd := differentiable_det A
+  have hne := hd.continuousAt.eventually_ne hdet.ne_zero
+  -- Transport through the entry-function equivalence before using Pi differentiability.
+  have hRows : DifferentiableAt 𝕜
+      ((ofContinuousLinearEquiv 𝕜 : (ι → ι → 𝕜) ≃L[𝕜] Matrix ι ι 𝕜).symm) A :=
+    (ofContinuousLinearEquiv 𝕜 : (ι → ι → 𝕜) ≃L[𝕜] Matrix ι ι 𝕜).symm.differentiableAt
+  have hAdjRows : DifferentiableAt 𝕜 (fun B : Matrix ι ι 𝕜 ↦ of.symm B.adjugate) A := by
+    simp only [coe_ofContinuousLinearEquiv_symm] at hRows
+    exact differentiableAt_pi.mpr fun i ↦ differentiableAt_pi.mpr fun j ↦
+      differentiableAt_adjugate_apply id A
+        (fun k l ↦ differentiableAt_pi.mp (differentiableAt_pi.mp hRows k) l) i j
+  have hAdj : DifferentiableAt 𝕜 (adjugate : Matrix ι ι 𝕜 → Matrix ι ι 𝕜) A := by
+    simpa only [Function.comp_def, coe_ofContinuousLinearEquiv, Equiv.apply_symm_apply] using!
+      (ofContinuousLinearEquiv 𝕜 : (ι → ι → 𝕜) ≃L[𝕜] Matrix ι ι 𝕜).differentiableAt.comp A
+        hAdjRows
+  have hInv : DifferentiableAt 𝕜 (fun B : Matrix ι ι 𝕜 ↦ B⁻¹) A := by
+    simpa only [Matrix.inv_def, Ring.inverse_eq_inv, Pi.inv_apply] using!
+      (hd.inv hdet.ne_zero).fun_smul hAdj
+  -- Differentiating B * B⁻¹ = 1 determines the differential on every direction.
+  have hmul : (fun B : Matrix ι ι 𝕜 ↦ B * B⁻¹) =ᶠ[𝓝 A] fun _ ↦ 1 := by
+    filter_upwards [hne] with B hB
+    exact mul_nonsing_inv B hB.isUnit
+  have hzero := ((hasFDerivAt_id A).fun_mul' hInv.hasFDerivAt).congr_of_eventuallyEq hmul.symm
+  apply hInv.hasFDerivAt.congr_fderiv
+  ext1 H
+  have hz : H * A⁻¹ + A * fderiv 𝕜 Inv.inv A H = 0 := by
+    have h := congrArg (fun L : Matrix ι ι 𝕜 →L[𝕜] Matrix ι ι 𝕜 ↦ L H)
+      (hzero.unique (hasFDerivAt_const (1 : Matrix ι ι 𝕜) A))
+    simpa [_root_.add_apply (β := Matrix ι ι 𝕜),
+      _root_.smul_apply (β := Matrix ι ι 𝕜), smul_eq_mul, op_smul_eq_mul,
+      ContinuousLinearMap.id_apply, add_comm] using! h
+  have hz' := congrArg (fun M ↦ A⁻¹ * M) hz
+  simpa [mul_add, ← Matrix.mul_assoc, nonsing_inv_mul _ hdet,
+    eq_neg_iff_add_eq_zero, add_comm, _root_.neg_apply (β := Matrix ι ι 𝕜),
+    ContinuousLinearMap.mulLeftRight_apply] using! hz'
+
+end Matrix
 
 namespace TauCeti
 

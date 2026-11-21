@@ -145,7 +145,7 @@ def parallelGraphGeomEdgeEquiv (α : Type w) : (parallelGraph α).GeomEdge ≃ �
 def parallelDart (a : α) : Quiver.Hom (V := (parallelGraph α).V) false true :=
   (parallelGraph α).dart (a, false)
 
-@[simp] theorem parallelDart_val (a : α) : (parallelDart a).1 = (a, false) :=
+@[simp] theorem parallelDart_val (a : α) : (parallelDart a).val = (a, false) :=
   dart_val _ _
 
 /-- A graph of parallel edges is preconnected exactly when it has an edge. -/
@@ -216,14 +216,14 @@ theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGrap
     cases p with
     | nil =>
       -- A single dart is not closed: its ends `f.1.2` and `!f.1.2` differ.
-      have h := f.2.2.trans f.2.1.symm
+      have h := f.property.2.trans f.property.1.symm
       rw [parallelGraph_tgt, parallelGraph_src] at h
       exact absurd h (Bool.not_ne_self _)
     | cons p e =>
       -- With a single edge, a dart following `e` can only be its reverse.
-      have h := f.2.1.trans e.2.2.symm
+      have h := f.property.1.trans e.property.2.symm
       rw [parallelGraph_src, parallelGraph_tgt] at h
-      have hf : f.1 = (parallelGraph α).rev e.1 := by
+      have hf : f.val = (parallelGraph α).rev e.val := by
         rw [parallelGraph_rev]
         exact Prod.ext (Subsingleton.elim _ _) h
       exact absurd hf ((Path.isReduced_cons_cons _ p e f).mp hp).2

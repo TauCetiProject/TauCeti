@@ -86,7 +86,7 @@ ambient representation, while the preservation hypothesis says that its value la
 `M`. -/
 noncomputable def integralDividedPower (x : A) (M : S)
     (n : ℕ) (hM : ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) : Module.End ℤ M where
-  toFun v := ⟨Associative.dividedPower n x • (v : V), hM v v.2⟩
+  toFun v := ⟨Associative.dividedPower n x • (v : V), hM v v.property⟩
   map_add' a b := by
     ext
     exact smul_add _ _ _
@@ -160,8 +160,8 @@ an arbitrary commutative ring. -/
 noncomputable def integralUnitRestrict (u : Aˣ) (M : S)
     (hu : ∀ v ∈ M, (u : A) • v ∈ M) (hu' : ∀ v ∈ M, ((u⁻¹ : Aˣ) : A) • v ∈ M) : M ≃ₗ[ℤ] M :=
   AddEquiv.toIntLinearEquiv
-    { toFun := fun v => ⟨(u : A) • (v : V), hu v v.2⟩
-      invFun := fun v => ⟨((u⁻¹ : Aˣ) : A) • (v : V), hu' v v.2⟩
+    { toFun := fun v => ⟨(u : A) • (v : V), hu v v.property⟩
+      invFun := fun v => ⟨((u⁻¹ : Aˣ) : A) • (v : V), hu' v v.property⟩
       left_inv := fun v => Subtype.ext (by simp [smul_smul])
       right_inv := fun v => Subtype.ext (by simp [smul_smul])
       map_add' := fun a b => Subtype.ext (smul_add _ _ _) }

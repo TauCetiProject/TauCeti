@@ -647,7 +647,7 @@ theorem unstableFrame_exp_smul_negativeCoord (hf : IsMorse 𝓘(ℝ, E) f) {y : 
   have he : φ.negativeCoord (φ.toChart (hX.flow (-T) y)) = Real.exp (-T) • a := by
     funext i
     have hw : φ.weight i = -1 :=
-      (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
+      (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.property)
     have h := hcoord i
     rw [φ.coord_negativeExtend_of_weight_neg a i, hw] at h
     rw [φ.negativeCoord_apply, Pi.smul_apply, smul_eq_mul]

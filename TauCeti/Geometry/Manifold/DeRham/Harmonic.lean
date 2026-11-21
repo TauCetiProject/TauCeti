@@ -145,11 +145,11 @@ theorem hodgeStar_mem_harmonicForms_iff (o : Manifold.Orientation I M (Fin m)) (
 `l`-forms, with inverse `(-1) ^ (k l) ⋆`. -/
 def harmonicForms.hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (hlk : l + k = m) : harmonicForms o hkl ≃ₗ[ℝ] harmonicForms o hlk where
-  toFun α := ⟨SmoothForm.hodgeStar o hkl α, hodgeStar_mem_harmonicForms o hkl hlk α.2⟩
-  map_add' α β := Subtype.ext (map_add _ α.1 β.1)
-  map_smul' c α := Subtype.ext (map_smul _ c α.1)
+  toFun α := ⟨SmoothForm.hodgeStar o hkl α, hodgeStar_mem_harmonicForms o hkl hlk α.property⟩
+  map_add' α β := Subtype.ext (map_add _ α.val β.val)
+  map_smul' c α := Subtype.ext (map_smul _ c α.val)
   invFun β := (-1 : ℝ) ^ (k * l) •
-    ⟨SmoothForm.hodgeStar o hlk β, hodgeStar_mem_harmonicForms o hlk hkl β.2⟩
+    ⟨SmoothForm.hodgeStar o hlk β, hodgeStar_mem_harmonicForms o hlk hkl β.property⟩
   left_inv α := Subtype.ext <| by
     simp only [SetLike.val_smul, SmoothForm.hodgeStar_hodgeStar, smul_smul, ← mul_pow,
       neg_one_mul, neg_neg, one_pow, one_smul]
@@ -232,7 +232,7 @@ theorem integralTopForm_inner_codifferential_eq_zero_of_mextDeriv_eq_zero
     (hα : mextDerivₗ I k α = 0) (β : SmoothForm I M ℝ (k + 1))
     (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M (k + 1)) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-      (α.1 x) ((codifferential o hkl β).1 x) • riemannianVolumeForm o x) = 0 := by
+      (α.val x) ((codifferential o hkl β).val x) • riemannianVolumeForm o x) = 0 := by
   rw [← integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl α β h, hα]
   simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
   exact integralTopForm_zero o
@@ -244,7 +244,7 @@ theorem integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero
     {β : SmoothForm I M ℝ (k + 1)} (hβ : codifferential o hkl β = 0)
     (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M (k + 1)) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-      ((mextDerivₗ I k α).1 x) (β.1 x) • riemannianVolumeForm o x) = 0 := by
+      ((mextDerivₗ I k α).val x) (β.val x) • riemannianVolumeForm o x) = 0 := by
   rw [integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl α β h, hβ]
   simp only [ZeroMemClass.coe_zero, Pi.zero_apply, map_zero, zero_smul]
   exact integralTopForm_zero o
@@ -365,7 +365,7 @@ def harmonicForms.toDeRhamCohomology (o : Manifold.Orientation I M (Fin m)) (hkl
 theorem harmonicForms.toDeRhamCohomology_apply (o : Manifold.Orientation I M (Fin m))
     (hkl : k + l = m) (α : harmonicForms o hkl) :
     harmonicForms.toDeRhamCohomology o hkl α =
-      deRhamCohomology.mk I k ⟨α.1, harmonicForms_le_closedForms o hkl α.2⟩ :=
+      deRhamCohomology.mk I k ⟨α.val, harmonicForms_le_closedForms o hkl α.property⟩ :=
   (rfl)
 
 /-- **Harmonic representatives are unique**: on a compact oriented boundaryless Riemannian
@@ -378,7 +378,7 @@ theorem harmonicForms.toDeRhamCohomology_injective (o : Manifold.Orientation I M
   rw [harmonicForms.toDeRhamCohomology_apply, harmonicForms.toDeRhamCohomology_apply,
     ← sub_eq_zero, ← map_sub, deRhamCohomology.mk_eq_zero_iff] at h
   exact Subtype.ext (sub_eq_zero.1 (Submodule.disjoint_def.1
-    (disjoint_harmonicForms_exactForms o hkl) _ (sub_mem α.2 β.2) h))
+    (disjoint_harmonicForms_exactForms o hkl) _ (sub_mem α.property β.property) h))
 
 /-! ### The Hodge theorem in degree zero -/
 
@@ -396,7 +396,7 @@ theorem harmonicForms.toDeRhamCohomology_bijective_zero (o : Manifold.Orientatio
     (hl : 0 + l = m) : Function.Bijective (harmonicForms.toDeRhamCohomology o hl) := by
   refine ⟨harmonicForms.toDeRhamCohomology_injective o hl, fun c ↦ ?_⟩
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I 0 c
-  exact ⟨⟨φ.1, (harmonicForms_zero_eq_closedForms o hl).ge φ.2⟩,
+  exact ⟨⟨φ.val, (harmonicForms_zero_eq_closedForms o hl).ge φ.property⟩,
     harmonicForms.toDeRhamCohomology_apply o hl _⟩
 
 /-- **Harmonic functions are the locally constant functions**: on a compact oriented boundaryless
@@ -408,7 +408,7 @@ def harmonicFormsZeroEquiv (o : Manifold.Orientation I M (Fin m)) (hl : 0 + l = 
 /-- The locally constant function of a harmonic function is its value on the empty tuple. -/
 @[simp]
 theorem harmonicFormsZeroEquiv_apply (o : Manifold.Orientation I M (Fin m)) (hl : 0 + l = m)
-    (f : harmonicForms o hl) (x : M) : harmonicFormsZeroEquiv o hl f x = f.1.1 x 0 := by
+    (f : harmonicForms o hl) (x : M) : harmonicFormsZeroEquiv o hl f x = f.val.val x 0 := by
   rw [harmonicFormsZeroEquiv, LinearEquiv.trans_apply, closedFormsZeroEquiv_apply,
     LinearEquiv.coe_ofEq_apply]
 
@@ -416,7 +416,7 @@ theorem harmonicFormsZeroEquiv_apply (o : Manifold.Orientation I M (Fin m)) (hl 
 @[simp]
 theorem coe_harmonicFormsZeroEquiv_symm_apply (o : Manifold.Orientation I M (Fin m))
     (hl : 0 + l = m) (f : LocallyConstant M ℝ) :
-    ((harmonicFormsZeroEquiv o hl).symm f).1.1 = RoughForm.ofFunction I f := by
+    ((harmonicFormsZeroEquiv o hl).symm f).val.val = RoughForm.ofFunction I f := by
   rw [harmonicFormsZeroEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.ofEq_symm,
     LinearEquiv.coe_ofEq_apply, coe_closedFormsZeroEquiv_symm_apply]
 
@@ -433,7 +433,7 @@ def harmonicFormsTopEquiv (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m
 @[simp]
 theorem harmonicFormsTopEquiv_apply (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m)
     (α : harmonicForms o hm) (x : M) :
-    harmonicFormsTopEquiv o hm α x = (SmoothForm.hodgeStar o hm α.1).1 x 0 := by
+    harmonicFormsTopEquiv o hm α x = (SmoothForm.hodgeStar o hm α.val).val x 0 := by
   rw [harmonicFormsTopEquiv, LinearEquiv.trans_apply, harmonicFormsZeroEquiv_apply,
     harmonicForms.coe_hodgeStar_apply]
 
@@ -441,7 +441,7 @@ theorem harmonicFormsTopEquiv_apply (o : Manifold.Orientation I M (Fin m)) (hm :
 @[simp]
 theorem coe_harmonicFormsTopEquiv_symm_apply (o : Manifold.Orientation I M (Fin m))
     (hm : m + 0 = m) (f : LocallyConstant M ℝ) :
-    ((harmonicFormsTopEquiv o hm).symm f).1.1 = fun x ↦ f x • riemannianVolumeForm o x := by
+    ((harmonicFormsTopEquiv o hm).symm f).val.val = fun x ↦ f x • riemannianVolumeForm o x := by
   rw [harmonicFormsTopEquiv, LinearEquiv.symm_trans_apply,
     harmonicForms.coe_hodgeStar_symm_apply, Nat.mul_zero, pow_zero, one_smul,
     SmoothForm.coe_hodgeStar, coe_harmonicFormsZeroEquiv_symm_apply,
@@ -453,18 +453,18 @@ is `f vol` for a locally constant function `f`. -/
 theorem mem_harmonicForms_top_iff (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m)
     (α : SmoothForm I M ℝ m) :
     α ∈ harmonicForms o hm ↔
-      ∃ f : LocallyConstant M ℝ, α.1 = fun x ↦ f x • riemannianVolumeForm o x := by
+      ∃ f : LocallyConstant M ℝ, α.val = fun x ↦ f x • riemannianVolumeForm o x := by
   refine ⟨fun hα ↦ ⟨harmonicFormsTopEquiv o hm ⟨α, hα⟩, ?_⟩, fun ⟨f, hf⟩ ↦ ?_⟩
   · rw [← coe_harmonicFormsTopEquiv_symm_apply o hm, LinearEquiv.symm_apply_apply]
   · rw [← coe_harmonicFormsTopEquiv_symm_apply o hm f] at hf
-    exact (Subtype.ext hf : α = _) ▸ ((harmonicFormsTopEquiv o hm).symm f).2
+    exact (Subtype.ext hf : α = _) ▸ ((harmonicFormsTopEquiv o hm).symm f).property
 
 /-- **Harmonic top forms on a preconnected manifold**: on a compact preconnected oriented
 boundaryless Riemannian manifold of dimension `m`, an `m`-form is harmonic exactly when it is a
 constant multiple of the volume form. -/
 theorem mem_harmonicForms_top_iff_of_preconnectedSpace [PreconnectedSpace M]
     (o : Manifold.Orientation I M (Fin m)) (hm : m + 0 = m) (α : SmoothForm I M ℝ m) :
-    α ∈ harmonicForms o hm ↔ ∃ c : ℝ, α.1 = c • riemannianVolumeForm o := by
+    α ∈ harmonicForms o hm ↔ ∃ c : ℝ, α.val = c • riemannianVolumeForm o := by
   rw [mem_harmonicForms_top_iff]
   refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun ⟨c, hc⟩ ↦ ⟨LocallyConstant.const M c, hc⟩⟩
   obtain ⟨c, rfl⟩ := f.exists_eq_const
@@ -492,12 +492,12 @@ theorem harmonicForms.toDeRhamCohomology_bijective_top (o : Manifold.Orientation
     -- The harmonic form `1_V vol` of the component `V` lies in `K` and comes from `H^m_c(V)`.
     let h := (harmonicFormsTopEquiv o hm).symm
       (LocallyConstant.charFn ℝ (isClopen_connectedComponent (x := x)))
-    let φ : compactlySupportedClosedForms I M m := ⟨h.1, (mem_compactlySupportedClosedForms I).2
-      ⟨by simp [compactlySupportedForms_eq_top], harmonicForms_le_closedForms o hm h.2⟩⟩
+    let φ : compactlySupportedClosedForms I M m := ⟨h.val, (mem_compactlySupportedClosedForms I).2
+      ⟨by simp [compactlySupportedForms_eq_top], harmonicForms_le_closedForms o hm h.property⟩⟩
     have hφ : harmonicForms.toDeRhamCohomology o hm h =
         compactlySupportedDeRhamCohomology.toDeRhamCohomology I M m (mk I m φ) := by
       simp [φ]
-    have hsupp : tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ.1.1 ⊆ V x := by
+    have hsupp : tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ.val.val ⊆ V x := by
       refine closure_minimal (fun y hy ↦ by_contra fun hyV ↦ hy ?_) isClosed_connectedComponent
       have hy0 : LocallyConstant.charFn ℝ (isClopen_connectedComponent (x := x)) y = 0 :=
         (LocallyConstant.charFn_eq_zero ℝ y _).2 hyV

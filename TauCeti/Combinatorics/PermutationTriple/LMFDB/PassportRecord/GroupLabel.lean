@@ -58,7 +58,7 @@ variable {r : PassportRecord n} {t : ConnectedTriple n}
 labels the monodromy group of its reference triple. -/
 theorem exists_parse_groupString (h : r.IsValidAt t) :
     ∃ j, parseTransitiveGroupLabel n r.groupString = some j ∧
-      TransitiveGroupLabel j t.1.monodromyGroup := by
+      TransitiveGroupLabel j t.val.monodromyGroup := by
   obtain ⟨j, hj, hlabel⟩ := h.exists_transitiveGroupLabel
   refine ⟨j, parseTransitiveGroupLabel_eq_some_iff.mpr ?_, hlabel⟩
   simp only [groupString_def, h.deg_eq, ← hj, transitiveGroupLabelString_def]
@@ -67,7 +67,7 @@ theorem exists_parse_groupString (h : r.IsValidAt t) :
 group with the returned reference subgroup. -/
 theorem transitiveGroupLabel_of_parse_groupString (h : r.IsValidAt t)
     {j : TransitiveGroupIndex n} (hj : parseTransitiveGroupLabel n r.groupString = some j) :
-    TransitiveGroupLabel j t.1.monodromyGroup := by
+    TransitiveGroupLabel j t.val.monodromyGroup := by
   obtain ⟨k, hk, hlabel⟩ := h.exists_parse_groupString
   have hkj : k = j := Option.some.inj (hk.symm.trans hj)
   exact hkj ▸ hlabel

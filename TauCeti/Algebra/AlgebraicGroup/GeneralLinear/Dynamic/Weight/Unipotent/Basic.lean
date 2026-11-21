@@ -124,7 +124,7 @@ theorem quotientPointsHom_weightUnipotentPointsIso_inv_app_apply (w : Fin N → 
     (g : Cocharacter.unipotent (CommAlgCat.of R A) (weightCocharacter (R := R) w)) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightUnipotentDefiningHopfIdeal R w) (CommAlgCat.of R A)
-        ((weightUnipotentPointsIso R w).inv.app (CommAlgCat.of R A) g) = g.1 := by
+        ((weightUnipotentPointsIso R w).inv.app (CommAlgCat.of R A) g) = g.val := by
   unfold weightUnipotentPointsIso
   convert
     (CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
