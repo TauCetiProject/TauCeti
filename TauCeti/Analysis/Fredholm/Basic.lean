@@ -336,12 +336,6 @@ theorem inessentialProj_apply_right (dec : FredholmDecomposition 𝕜 E) (k : de
     dec.inessentialProj (k : E) = k :=
   dec.X₀.projectionOntoL_apply_left dec.isTopCompl.symm k
 
-/-- Every vector decomposes into its essential and inessential components. -/
-theorem coe_proj_add_coe_inessentialProj (dec : FredholmDecomposition 𝕜 E) (x : E) :
-    (dec.proj x : E) + (dec.inessentialProj x : E) = x := by
-  rw [inessentialProj_def, Submodule.coe_projectionOntoL_apply, Submodule.coe_projectionOntoL_apply]
-  exact Submodule.projectionL_add_projectionL_eq_self dec.isTopCompl x
-
 end ContinuousSub
 
 section IsTopologicalAddGroup

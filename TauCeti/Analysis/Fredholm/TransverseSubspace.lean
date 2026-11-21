@@ -9,9 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.QuotientRange
 
 /-!
 # Transverse subspaces and Fredholm stability
@@ -58,9 +60,9 @@ norm, invertibility of `Φ_T` is an open condition in `E →L[𝕜] F`:
 * `ContinuousLinearMap.disjoint_ker_of_isInvertible_transverseCoprod` and
   `ContinuousLinearMap.isTopCompl_map_orthogonal_of_isInvertible_transverseCoprod`: transversality
   `Disjoint V T.ker` and topological splitting `(V.map T).IsTopCompl (V.map T₀)ᗮ`.
-* `ContinuousLinearMap.restrictTransverseEquiv` and
-  `ContinuousLinearMap.quotientMapEquivOrthogonal`: canonical equivalences `V ≃L[𝕜] V.map T` and
-  `(F ⧸ V.map T) ≃L[𝕜] (V.map T₀)ᗮ`.
+* `ContinuousLinearMap.restrictTransverseEquiv`: canonical equivalence `V ≃L[𝕜] V.map T` (while
+  `ContinuousLinearMap.quotientRangeEquiv` identifies
+  `(F ⧸ (T.comp V.subtypeL).range) ≃L[𝕜] (V.map T₀)ᗮ`).
 * `ContinuousLinearMap.isInvertible_transverseCoprod_self` and
   `ContinuousLinearMap.eventually_nhds_isInvertible_transverseCoprod`: invertibility of `Φ_{T₀}`
   and openness in `𝓝 T₀`.
@@ -134,25 +136,17 @@ theorem isTopCompl_map_orthogonal_of_isInvertible_transverseCoprod {T₀ T : E �
     {V : Submodule 𝕜 E} (hΦ : (T₀.transverseCoprod V T).IsInvertible) :
     (V.map (T : E →ₗ[𝕜] F)).IsTopCompl (V.map (T₀ : E →ₗ[𝕜] F))ᗮ := by
   let W := V.map (T₀ : E →ₗ[𝕜] F)
-  let f₁ : V →L[𝕜] F := T.comp V.subtypeL
-  let f₂ : F →L[𝕜] V := .fst 𝕜 V Wᗮ ∘L (T₀.transverseCoprod V T).inverse
-  have hleft : LeftInverse f₂ f₁ := fun u ↦ by
-    have h := congrArg Prod.fst (hΦ.inverse_apply_self (u, (0 : Wᗮ)))
-    simpa [f₁, f₂] using h
-  have hrange : f₁.range = V.map (T : E →ₗ[𝕜] F) := by
-    simp [f₁, LinearMap.range_comp]
-  have hker : f₂.ker = Wᗮ := by
-    ext y
-    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, f₂, comp_apply, coe_fst']
-    constructor
-    · intro hy
-      have hinv := hΦ.self_apply_inverse y
-      simp only [transverseCoprod_apply, hy, ZeroMemClass.coe_zero, map_zero, zero_add] at hinv
-      exact hinv ▸ ((T₀.transverseCoprod V T).inverse y).2.property
-    · intro hy
-      have h := congrArg Prod.fst (hΦ.inverse_apply_self ((0 : V), (⟨y, hy⟩ : Wᗮ)))
-      simpa using h
-  exact hrange ▸ hker ▸ f₁.isTopCompl_range_ker_of_leftInverse f₂ hleft
+  let A : V →L[𝕜] F := T.comp V.subtypeL
+  let B : Wᗮ →L[𝕜] F := Wᗮ.subtypeL
+  have hBA : (B.coprod A).IsInvertible := by
+    rw [← coprod_comp_prodComm _ _ _ A B, isInvertible_comp_equiv]
+    simpa only [transverseCoprod_def] using hΦ
+  have hrange : A.range = V.map (T : E →ₗ[𝕜] F) := by
+    simp [A, LinearMap.range_comp]
+  have hker : (B.quotientRangeCoordinate A).ker = Wᗮ := by
+    simp [B, ker_quotientRangeCoordinate hBA]
+  exact hrange ▸ hker ▸ A.isTopCompl_range_ker_of_leftInverse (B.quotientRangeCoordinate A)
+    (quotientRangeCoordinate_apply_right hBA)
 
 /-- If `T₀.transverseCoprod V T` is invertible, then `V.map T` is closed in `F`. -/
 theorem isClosed_map_of_isInvertible_transverseCoprod {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
@@ -216,47 +210,6 @@ theorem isInvertible_restrict_of_isInvertible_transverseCoprod {T₀ T : E →L[
     (T.restrict (q := V.map (T : E →ₗ[𝕜] F)) fun _ ↦ Submodule.mem_map_of_mem).IsInvertible :=
   ⟨restrictTransverseEquiv hΦ, (toContinuousLinearMap_restrictTransverseEquiv hΦ).symm⟩
 
-/-- If `T₀.transverseCoprod V T` is invertible, the quotient `F ⧸ V.map T` is continuously
-linearly equivalent to the fixed orthogonal complement `(V.map T₀)ᗮ`. -/
-noncomputable def quotientMapEquivOrthogonal {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
-    (hΦ : (T₀.transverseCoprod V T).IsInvertible) :
-    (F ⧸ V.map (T : E →ₗ[𝕜] F)) ≃L[𝕜] (V.map (T₀ : E →ₗ[𝕜] F))ᗮ :=
-  (V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsTopCompl (V.map (T₀ : E →ₗ[𝕜] F))ᗮ
-    (isTopCompl_map_orthogonal_of_isInvertible_transverseCoprod hΦ)
-
-/-- Definitional formula for `quotientMapEquivOrthogonal`. -/
-theorem quotientMapEquivOrthogonal_def {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
-    (hΦ : (T₀.transverseCoprod V T).IsInvertible) :
-    quotientMapEquivOrthogonal hΦ =
-      (V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsTopCompl (V.map (T₀ : E →ₗ[𝕜] F))ᗮ
-        (isTopCompl_map_orthogonal_of_isInvertible_transverseCoprod hΦ) :=
-  (rfl)
-
-/-- The inverse of `quotientMapEquivOrthogonal` sends `w ∈ (V.map T₀)ᗮ` to its quotient class. -/
-@[simp]
-theorem quotientMapEquivOrthogonal_symm_apply {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
-    (hΦ : (T₀.transverseCoprod V T).IsInvertible) (w : (V.map (T₀ : E →ₗ[𝕜] F))ᗮ) :
-    (quotientMapEquivOrthogonal hΦ).symm w = Submodule.Quotient.mk (w : F) := by
-  rw [quotientMapEquivOrthogonal_def, Submodule.quotientEquivOfIsTopCompl_symm_apply,
-    Submodule.mkQ_apply]
-
-/-- `quotientMapEquivOrthogonal` sends a quotient class `⟦y⟧` to the `(V.map T₀)ᗮ`-component of
-`(T₀.transverseCoprod V T).inverse y`. -/
-@[simp]
-theorem quotientMapEquivOrthogonal_apply_mk {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
-    (hΦ : (T₀.transverseCoprod V T).IsInvertible) (y : F) :
-    quotientMapEquivOrthogonal hΦ (Submodule.Quotient.mk y) =
-      ((T₀.transverseCoprod V T).inverse y).2 := by
-  apply (quotientMapEquivOrthogonal hΦ).symm.injective
-  rw [(quotientMapEquivOrthogonal hΦ).symm_apply_apply, quotientMapEquivOrthogonal_symm_apply,
-    Submodule.Quotient.eq]
-  have hinv := hΦ.self_apply_inverse y
-  rw [transverseCoprod_apply] at hinv
-  have hsub : y - (((T₀.transverseCoprod V T).inverse y).2 : F) =
-      T ((T₀.transverseCoprod V T).inverse y).1 := (eq_sub_of_add_eq hinv).symm
-  rw [hsub]
-  exact Submodule.mem_map_of_mem ((T₀.transverseCoprod V T).inverse y).1.property
-
 /-- Kernel dimension bound when `T₀.transverseCoprod V T` is invertible and `V` has finite
 codimension. -/
 theorem finrank_ker_le_of_isInvertible_transverseCoprod {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E}
@@ -271,9 +224,11 @@ theorem finrank_coker_le_of_isInvertible_transverseCoprod {T₀ T : E →L[𝕜]
     [FiniteDimensional 𝕜 (V.map (T₀ : E →ₗ[𝕜] F))ᗮ]
     (hΦ : (T₀.transverseCoprod V T).IsInvertible) :
     finrank 𝕜 (F ⧸ T.range) ≤ finrank 𝕜 (V.map (T₀ : E →ₗ[𝕜] F))ᗮ := by
-  let e := (quotientMapEquivOrthogonal hΦ).toLinearEquiv
-  have : FiniteDimensional 𝕜 (F ⧸ V.map (T : E →ₗ[𝕜] F)) := e.symm.finiteDimensional
-  have hle : V.map (T : E →ₗ[𝕜] F) ≤ T.range := LinearMap.map_le_range
+  let A := T.comp V.subtypeL
+  let B := (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL
+  let e := (A.quotientRangeEquiv B (by simpa only [transverseCoprod_def] using hΦ)).toLinearEquiv
+  have : FiniteDimensional 𝕜 (F ⧸ A.range) := e.symm.finiteDimensional
+  have hle : A.range ≤ T.range := LinearMap.range_comp_le_range _ _
   exact (LinearMap.finrank_le_finrank_of_surjective (Submodule.factor_surjective hle)).trans_eq
     e.finrank_eq
 
@@ -316,10 +271,9 @@ theorem index_eq_of_isInvertible_transverseCoprod {T₀ T : E →L[𝕜] F}
     rw [toLinearMap_comp, Submodule.toLinearMap_subtypeL]
     exact LinearMap.injective_domRestrict_iff.mpr (disjoint_ker_of_isInvertible_transverseCoprod hΦ)
   have hcoker : finrank 𝕜 (F ⧸ ((T ∘L V.subtypeL) : V →ₗ[𝕜] F).range) =
-      finrank 𝕜 (V.map (T₀ : E →ₗ[𝕜] F))ᗮ := by
-    rw [toLinearMap_comp, LinearMap.range_comp, Submodule.toLinearMap_subtypeL,
-      Submodule.range_subtype]
-    exact (quotientMapEquivOrthogonal hΦ).toLinearEquiv.finrank_eq
+      finrank 𝕜 (V.map (T₀ : E →ₗ[𝕜] F))ᗮ :=
+    ((T.comp V.subtypeL).quotientRangeEquiv (V.map (T₀ : E →ₗ[𝕜] F))ᗮ.subtypeL
+      (by simpa only [transverseCoprod_def] using hΦ)).toLinearEquiv.finrank_eq
   rw [LinearMap.index_of_injective hinj, hcoker, Submodule.toLinearMap_subtypeL,
     LinearMap.index_subtype, ← T.index_def] at hcomp_idx
   omega

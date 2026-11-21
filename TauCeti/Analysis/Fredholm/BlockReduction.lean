@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.Analysis.Fredholm.Basic
-import Mathlib.Analysis.Normed.Operator.Fredholm.Open
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Tactic.Abel
 import TauCeti.Analysis.Fredholm.Prod
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
@@ -751,11 +751,6 @@ theorem eventually_nhds_isInvertible_topLeftBlock_of_isInvertible {T : E →L[�
     ∀ᶠ S in 𝓝 T, (pkg.topLeftBlock S).IsInvertible := by
   have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.isComplete.completeSpace_coe
   exact pkg.continuous_topLeftBlock.continuousAt.eventually hA.eventually_nhds
-
-/-- For `S` close enough to `T₀` in operator norm, `pkg.topLeftBlock S` is invertible. -/
-theorem eventually_nhds_isInvertible_topLeftBlock :
-    ∀ᶠ S in 𝓝 T₀, (pkg.topLeftBlock S).IsInvertible :=
-  pkg.eventually_nhds_isInvertible
 
 /-- The inverse of the top-left block is continuous in operator norm at every operator where the
 top-left block is invertible. -/

@@ -192,17 +192,10 @@ theorem _root_.ContinuousLinearMap.range_adjoint_comp_self_of_isClosed_range (T 
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     LinearMap.range ((T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E) =
       LinearMap.range (T† : F →ₗ[𝕜] E) := by
-  let R := LinearMap.range (T : E →ₗ[𝕜] F)
-  have : CompleteSpace R := hT.completeSpace_coe
-  refine le_antisymm (LinearMap.range_comp_le_range _ _) ?_
-  rintro _ ⟨y, rfl⟩
-  obtain ⟨x, hx⟩ : R.starProjection y ∈ R := R.starProjection_apply_mem y
-  have hy0 : (T†) (Rᗮ.starProjection y) = 0 :=
-    LinearMap.mem_ker.mp (T.orthogonal_range ▸ Rᗮ.starProjection_apply_mem y)
-  refine ⟨x, ?_⟩
-  calc (T† ∘L T) x = (T†) (R.starProjection y) := congrArg (T†) hx
-    _ = (T†) (R.starProjection y + Rᗮ.starProjection y) := by rw [map_add, hy0, add_zero]
-    _ = (T†) y := by rw [R.starProjection_add_starProjection_orthogonal]
+  have : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) := hT.completeSpace_coe
+  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
+    ← (LinearMap.range (T : E →ₗ[𝕜] F)).orthogonal_orthogonal, T.orthogonal_range]
+  exact LinearMap.map_orthogonal_ker_eq_range (T† : F →ₗ[𝕜] E)
 
 /-- For a closed-range operator between Hilbert spaces, the range of the Gram operator `T† ∘L T`
 is the orthogonal complement of the kernel of `T`. -/
