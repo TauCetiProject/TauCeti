@@ -15,6 +15,7 @@ import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
 # Moser's weak Harnack inequality and the Harnack inequality
@@ -275,14 +276,10 @@ private theorem integrableOn_and_ae_setAverage_rpow_rpow_inv_le_of_forall_pos
     have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
     obtain ⟨c', hc', hc'c, hw⟩ := exists_energyFormH1_restrictL_add_const_nonneg hU hc hu hu0 hδ0
     set w := W1p.restrictL hU u + W1p.const δ
-    have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value w y = W1p.value u y + δ := by
-      filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ,
-        W1p.value_restrictL_ae hU u] with y h1 h2
-      rw [h1, h2]
-    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y := by
-      filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hUO hu0] with y h1 h2
-      rw [h1]
-      linarith
+    have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value w y = W1p.value u y + δ :=
+      W1p.value_restrictL_add_const_ae hU u δ
+    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y :=
+      W1p.le_value_restrictL_add_const_ae hU (ae_restrict_of_ae_restrict_of_subset hUO hu0) δ
     obtain ⟨hint, hH⟩ := hpos hc' hc'c hw hδ0 hδw
     have hwvρ := ae_restrict_of_ae_restrict_of_subset hρ hwv
     have e : ⨍ y in ball x₀ ρ, W1p.value w y ^ s ∂mu =
@@ -298,10 +295,7 @@ private theorem integrableOn_and_ae_setAverage_rpow_rpow_inv_le_of_forall_pos
     exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu0ρ.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hs.le)).trans hx
   -- Let `δ → 0`.
-  refine ⟨(hδ 0).1, ?_⟩
-  filter_upwards [ae_all_iff.2 fun k => (hδ k).2] with x hx
-  simpa using ge_of_tendsto'
-    ((tendsto_one_div_add_atTop_nhds_zero_nat.const_add _).const_mul C) hx
+  exact ⟨(hδ 0).1, ae_le_mul_of_forall_ae_le_mul_add_one_div fun k => (hδ k).2⟩
 
 /-- **Moser's weak Harnack inequality at a small exponent, with lower-order terms.** Let `n ≥ 1`
 be the dimension and `σ` real. There are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`,
