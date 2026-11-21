@@ -51,9 +51,6 @@ derivative applies.
   on a set exactly when their values are a basis of every cotangent space over it.
 * `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
   smooth function is its manifold derivative.
-* `ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv_uncurry`,
-  `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
-  family of functions are jointly `C^n`, at a point or globally.
 -/
 
 public section
@@ -224,44 +221,6 @@ end OnceDifferentiable
 section OnceDifferentiable
 
 variable [IsManifold I 1 M]
-
-/-- **The differential of a jointly `C^(n+1)` family is jointly `C^n` at a point.** For a family of
-functions `f : N → M → F` which is jointly `C^(n+1)` at `q = (p, x)`, the differentials
-`(p', x') ↦ d(f p')_{x'}` form a map into the bundle of linear maps `TangentSpace I x' →L[ℝ] F`
-which is `C^n` at `q`. -/
-theorem _root_.ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv_uncurry {E' H' N : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
-    {n : WithTop ℕ∞} {f : N → M → F} {q : N × M}
-    (hf : ContMDiffAt (J.prod I) 𝓘(ℝ, F) (n + 1) (Function.uncurry f) q) :
-    ContMDiffAt (J.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun q : N × M ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) q.2 (mvfderiv I (f q.1) q.2)) q := by
-  have hf' : ContMDiffAt ((J.prod I).prod I) 𝓘(ℝ, F) (n + 1) (fun p : (N × M) × M ↦ f p.1.1 p.2)
-      (q, q.2) :=
-    hf.comp (q, q.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
-  have hd := ContMDiffAt.mfderiv (fun p : N × M ↦ f p.1) Prod.snd hf' contMDiffAt_snd le_rfl
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_snd, hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ ?_)⟩
-  -- In the trivial bundle and in the tangent bundle of the model space `F`, the coordinate
-  -- changes are the identity, and `mvfderiv` is `mfderiv` read in `F`.
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
-    inTangentCoordinates, TangentBundle.continuousLinearMapAt_model_space]
-  rfl
-
-/-- **The differential of a jointly `C^(n+1)` family is jointly `C^n`.** For a family of functions
-`f : N → M → F` which is jointly `C^(n+1)` on `N × M`, the differentials `(p, x) ↦ d(f p)_x` form a
-`C^n` map into the bundle of linear maps `TangentSpace I x →L[ℝ] F`, lying over the projection
-`N × M → M`. For `N = ℝ` this is the regularity in time and space of the differential of a
-time-dependent function. -/
-theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry {E' H' N : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
-    {n : WithTop ℕ∞} {f : N → M → F}
-    (hf : ContMDiff (J.prod I) 𝓘(ℝ, F) (n + 1) (Function.uncurry f)) :
-    ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun q : N × M ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) q.2 (mvfderiv I (f q.1) q.2)) :=
-  fun q ↦ (hf q).contMDiffAt_totalSpaceMk_mvfderiv_uncurry
 
 namespace SmoothForm
 

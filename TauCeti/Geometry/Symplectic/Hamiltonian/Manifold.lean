@@ -13,7 +13,8 @@ public import TauCeti.Geometry.Manifold.VectorField.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
-import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
@@ -578,19 +579,17 @@ theorem contMDiffOn_hamiltonianVectorField_prod {E₁ H₁ P E₂ H₂ Q : Type*
     ContMDiffOn (J₁.prod (J₂.prod I)) I.tangent n
       (fun q : P × (Q × M) ↦
         (⟨q.2.2, σ.hamiltonianVectorField (H q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W := by
-  let a₁ : (P × Q) × M → P × (Q × M) := fun q ↦ (q.1.1, (q.1.2, q.2))
-  let a₂ : P × (Q × M) → (P × Q) × M := fun q ↦ ((q.1, q.2.1), q.2.2)
-  have ha₁ : ContMDiff ((J₁.prod J₂).prod I) (J₁.prod (J₂.prod I)) (n + 1) a₁ :=
-    (contMDiff_fst.comp contMDiff_fst).prodMk ((contMDiff_snd.comp contMDiff_fst).prodMk
-      contMDiff_snd)
-  have ha₂ : ContMDiff (J₁.prod (J₂.prod I)) ((J₁.prod J₂).prod I) n a₂ :=
-    (contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
-      (contMDiff_snd.comp contMDiff_snd)
+  let a := Diffeomorph.prodAssocOfModels J₁ J₂ I P Q M (n + 1)
   have hH' : ContMDiffOn ((J₁.prod J₂).prod I) 𝓘(ℝ) (n + 1)
-      (Function.uncurry (fun pq : P × Q ↦ H pq.1 pq.2)) (a₁ ⁻¹' W) :=
-    hH.comp ha₁.contMDiffOn (Set.mapsTo_preimage _ _)
-  exact (h.contMDiffOn_hamiltonianVectorField_uncurry (J := J₁.prod J₂) hn
-    (hW.preimage ha₁.continuous) hH').comp ha₂.contMDiffOn fun _ hq ↦ hq
+      (Function.uncurry (fun pq : P × Q ↦ H pq.1 pq.2)) (a ⁻¹' W) :=
+    (hH.comp a.contMDiff.contMDiffOn (Set.mapsTo_preimage (⇑a) W)).congr
+      (fun q _ ↦ by simp [a]; rfl)
+  refine ((h.contMDiffOn_hamiltonianVectorField_uncurry (J := J₁.prod J₂) hn
+      (hW.preimage a.continuous) hH').comp
+      (a.symm.contMDiff.of_le le_self_add).contMDiffOn
+      (fun q hq ↦ by simpa [a] using hq)).congr (fun q _ ↦ ?_)
+  dsimp only [Function.comp_apply, a]
+  rw [Diffeomorph.prodAssocOfModels_symm_apply]
 
 /-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
 a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
-public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
+public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Basic
 
 /-!
 # Limits of Floer solutions off the bubbling points

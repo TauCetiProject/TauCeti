@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -29,9 +30,10 @@ Floer equation read in the chart at a point `α` is `TauCeti.Geometry.Symplectic
 a solution `u` with values in the chart source has a coordinate expression
 `v = extChartAt I α ∘ u` solving `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})`, with `J` and the
 Hamiltonian vector fields read in the chart
-(`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). This file proves the
-compactness theorem for solutions with values in one chart, both for a chart of the atlas, which
-needs no closedness of `ω` and no inner product on `E`, and for a symplectic chart.
+(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp`).
+This file proves the compactness theorem for solutions with values in one chart, both for a chart
+of the atlas, which needs no closedness of `ω` and no inner product on `E`, and for a symplectic
+chart.
 
 ## Charts of the atlas
 
@@ -211,6 +213,30 @@ theorem floerEnergyDensity_eq_inChartAt (ω : SmoothTwoForm I M)
   rw [ω.inChartAt_apply_almostComplexInChartAt ((extChartAt I α).map_source hus),
     (extChartAt I α).left_inv hus, hPs, floerEnergyDensity_def, hPt]
 
+omit [FiniteDimensional ℝ E] in
+/-- **Slice continuity of the Floer energy density for a parametrized Hamiltonian family.** On any
+subset `S ⊆ Ω` of an open set `Ω` mapped into the open domain `W` of jointly continuous Hamiltonian
+vector fields `X_{K_s}, X_{K_t}`, a `C¹` map `u` has continuous Floer energy density. -/
+theorem continuousOn_floerEnergyDensity_of_isOpen_prod {P : Type*} [TopologicalSpace P]
+    (ω : SmoothTwoForm I M) {Ks Kt : P → ℝ × ℝ → M → ℝ}
+    {W : Set (P × ((ℝ × ℝ) × M))} (hW : IsOpen W)
+    (hXs : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (Ks q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
+    (hXt : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (Kt q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
+    {Ω S : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hSΩ : S ⊆ Ω)
+    {p : P} {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u Ω)
+    (huW : ∀ z ∈ S, (p, (z, u z)) ∈ W) :
+    ContinuousOn (ω.floerEnergyDensity (Ks p) (Kt p) u) S := by
+  intro z hz
+  have hqW : (p, (z, u z)) ∈ W := huW z hz
+  have hslice : ContinuousAt (fun q : (ℝ × ℝ) × M ↦ (p, q)) (z, u z) :=
+    continuousAt_const.prodMk continuousAt_id
+  exact (ω.continuousAt_floerEnergyDensity
+    (hu.contMDiffAt (hΩ.mem_nhds (hSΩ hz)))
+    ((hXs.continuousAt (hW.mem_nhds hqW)).comp hslice)
+    ((hXt.continuousAt (hW.mem_nhds hqW)).comp hslice)).continuousWithinAt
+
 /-- **Floer solutions in a chart solve the coordinate Floer equation.** Let `u` be `C³` on an open
 set `U`, with values in the source of the chart at `α`, and solve the Floer equation for `J(z, u)`
 on `U`. Then its coordinate expression `v = extChartAt I α ∘ u` is `C³` on `U` and solves the
@@ -233,8 +259,8 @@ theorem contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub (ω : Smoot
     fun z hz ↦ by rw [mem_preimage, ← extChartAt_source I]; exact hus hz, fun z hz ↦ ?_⟩
   simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
     hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
-    ω.fderiv_extChartAt_comp_stdComplexLineImag_sub
-      ((hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (hU.mem_nhds hz)) (hus hz)
+    (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp
+      ((hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (hU.mem_nhds hz)) (hus hz)).1
       (hfl z hz)
 
 omit [FiniteDimensional ℝ E] in
@@ -253,6 +279,68 @@ theorem IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt (hω : ω.I
   have hJ := hJt z hz _ huK
   rw [(extChartAt I α).left_inv hus] at hJ
   exact floerEnergyDensity_nonneg hω hJ h
+
+/-- **The energy form is comparable to the chart norm, uniformly on a compact parameter window.**
+Let `J(p, z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `C × D × K`, for
+compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0`
+and `C₀` such that at every point `x` with chart coordinate `y ∈ K`, and for every `p ∈ C`, `z ∈ D`,
+the energy form `ω_x(a, J(p, z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the
+chart at `α` satisfies `c ‖ξ‖² ≤ ω_x(a, J(p, z, x) a) ≤ C₀ ‖ξ‖²`. -/
+theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq_prod
+    {P : Type*} [TopologicalSpace P] (hω : ω.IsNondegenerate) (α : M)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {C : Set P} {D : Set (ℝ × ℝ)} {K : Set E} (hC : IsCompact C) (hD : IsCompact D)
+    (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
+    (hJ : ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ Floer.almostComplexInChartAt I α (J q.1) q.2)
+      (C ×ˢ (D ×ˢ K)))
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
+      (J p z ((extChartAt I α).symm y))) :
+    ∃ c > 0, ∃ C₀, ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K, ∀ ξ : E,
+      c * ‖ξ‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)
+          (J p z ((extChartAt I α).symm y)
+            ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ∧
+        SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)
+          (J p z ((extChartAt I α).symm y)
+            ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
+          C₀ * ‖ξ‖ ^ 2 := by
+  set e := extChartAt I α
+  set T := trivializationAt E (TangentSpace I) α with hT
+  have hCDK : IsCompact (C ×ˢ (D ×ˢ K)) := hC.prod (hD.prod hK)
+  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
+    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
+      e.map_target hy
+  -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `C × D × K`.
+  set b : P × ((ℝ × ℝ) × E) → E →L[ℝ] E →L[ℝ] ℝ := fun q ↦
+    ((compL ℝ E E ℝ).flip (Floer.almostComplexInChartAt I α (J q.1) q.2)).comp
+      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α q.2.2))
+    with hb_def
+  have hb_apply (q : P × ((ℝ × ℝ) × E)) (a : E) :
+      b q a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α q.2.2
+        ![a, Floer.almostComplexInChartAt I α (J q.1) q.2 a] := by
+    simp only [hb_def, comp_apply, flip_apply, compL_apply,
+      ContinuousAlternatingMap.flatL_apply_apply]
+  have hb : ∀ q ∈ C ×ˢ (D ×ˢ K), ∀ a, b q a a = SmoothBundleForm.eval₂ ω (e.symm q.2.2)
+      (T.symmL ℝ (e.symm q.2.2) a) (J q.1 q.2.1 (e.symm q.2.2) (T.symmL ℝ (e.symm q.2.2) a)) := by
+    rintro ⟨p, z, y⟩ hq a
+    rw [hb_apply]
+    exact ω.inChartAt_apply_almostComplexInChartAt (hKα hq.2.2) z a
+  have hbc : ContinuousOn b (C ×ˢ (D ×ˢ K)) :=
+    ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
+      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
+        ((ω.isSmoothForm.continuousOn_inChartAt α).comp
+          (continuous_snd.comp continuous_snd).continuousOn fun q hq ↦ hKα hq.2.2))
+  obtain ⟨c, hc, hcb⟩ := hCDK.exists_pos_forall_mul_norm_sq_le hbc fun q hq a ha ↦ by
+    rw [hb q hq]
+    have hy : q.2.2 ∈ e.target := hKα hq.2.2
+    have hSa : T.symmL ℝ (e.symm q.2.2) a ≠ 0 := fun h0 ↦ ha <| by
+      rw [← Trivialization.continuousLinearMapAt_symmL (R := ℝ) _ (hbase hy) a, h0, map_zero]
+    simpa only [IsNondegenerate.symplecticFormAt_apply] using
+      hJt q.1 hq.1 q.2.1 hq.2.1 q.2.2 hq.2.2 _ hSa
+  obtain ⟨C₀, hC₀⟩ := hCDK.exists_forall_le_mul_norm_sq hbc
+  exact ⟨c, hc, C₀, fun p hp z hz y hy ξ ↦ ⟨(hb (p, (z, y)) ⟨hp, hz, hy⟩ ξ) ▸
+    hcb _ ⟨hp, hz, hy⟩ ξ, (hb (p, (z, y)) ⟨hp, hz, hy⟩ ξ) ▸ hC₀ _ ⟨hp, hz, hy⟩ ξ⟩⟩
 
 /-- **The energy form is comparable to the chart norm, uniformly on a compact window.** Let the
 structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for
@@ -276,41 +364,114 @@ theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
           (J z ((extChartAt I α).symm y)
             ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
           C * ‖ξ‖ ^ 2 := by
+  obtain ⟨c, hc, C₀, hcb⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq_prod α
+    (P := Unit) (J := fun _ ↦ J) isCompact_singleton hD hK hKα
+    (hJ.comp continuousOn_snd mapsTo_snd_prod) fun _ _ ↦ hJt
+  exact ⟨c, hc, C₀, fun z hz y hy ξ ↦ hcb () (mem_singleton ()) z hz y hy ξ⟩
+
+/-- **Two-sided parametric energy–derivative comparison in a chart.** On a compact parameter window
+`C × D × K` in the chart at `α`, with `J` tamed by `ω` and `J`, `X_{K_s}`, `X_{K_t}` continuous in
+the chart, there are uniform constants `A > 0, B ≥ 0, C₀ ≥ 0, D₀ ≥ 0` such that every solution `u`
+for `p ∈ C` at `z ∈ D` with chart coordinate in `K` satisfies both
+`‖d(extChartAt I α ∘ u)_z‖² ≤ A e(u)(z) + B` and
+`e(u)(z) ≤ C₀ ‖∂ₛ(extChartAt I α ∘ u)(z)‖² + D₀`. -/
+theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le_and_floerEnergyDensity_le
+    {P : Type*} [TopologicalSpace P] {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate) (α : M)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set E}
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
+    (hJ : ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦ Floer.almostComplexInChartAt I α (J q.1) q.2)
+      (C ×ˢ (D ×ˢ K)))
+    (hXs : ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦
+      ω.hamiltonianVectorFieldInChartAt α (Ks q.1) q.2) (C ×ˢ (D ×ˢ K)))
+    (hXt : ContinuousOn (fun q : P × ((ℝ × ℝ) × E) ↦
+      ω.hamiltonianVectorFieldInChartAt α (Kt q.1) q.2) (C ×ˢ (D ×ˢ K)))
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ K,
+      (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames (J p z ((extChartAt I α).symm y))) :
+    ∃ A > 0, ∃ B ≥ 0, ∃ C₀ ≥ 0, ∃ D₀ ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄,
+      p ∈ C → z ∈ D → u z ∈ (extChartAt I α).source → extChartAt I α (u z) ∈ K →
+      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
+        (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap →
+      ‖fderiv ℝ (extChartAt I α ∘ u) z‖ ^ 2 ≤ A * ω.floerEnergyDensity (Ks p) (Kt p) u z + B ∧
+        ω.floerEnergyDensity (Ks p) (Kt p) u z ≤
+          C₀ * ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 + D₀ := by
   set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
-  set Jc := Floer.almostComplexInChartAt I α J
-  have hDK : IsCompact (D ×ˢ K) := hD.prod hK
-  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
-  -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
-  set b : (ℝ × ℝ) × E → E →L[ℝ] E →L[ℝ] ℝ := fun p ↦
-    ((compL ℝ E E ℝ).flip (Jc p)).comp
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2))
-    with hb_def
-  have hb_apply (p : (ℝ × ℝ) × E) (a : E) : b p a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2)
-      α p.2 ![a, Jc p a] := by
-    simp only [hb_def, comp_apply, flip_apply, compL_apply,
-      ContinuousAlternatingMap.flatL_apply_apply]
-  have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
-      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) := by
-    rintro ⟨z, y⟩ hp a
-    rw [hb_apply]
-    exact ω.inChartAt_apply_almostComplexInChartAt (hKα hp.2) z a
-  have hbc : ContinuousOn b (D ×ˢ K) :=
-    ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
-        ((ω.isSmoothForm.continuousOn_inChartAt α).comp continuousOn_snd
-          fun p hp ↦ hKα hp.2))
-  obtain ⟨c, hc, hcb⟩ := hDK.exists_pos_forall_mul_norm_sq_le hbc fun p hp a ha ↦ by
-    rw [hb p hp]
-    have hy : p.2 ∈ e.target := hKα hp.2
-    have hSa : T.symmL ℝ (e.symm p.2) a ≠ 0 := fun h0 ↦ ha <| by
-      rw [← Trivialization.continuousLinearMapAt_symmL (R := ℝ) _ (hbase hy) a, h0, map_zero]
-    simpa only [IsNondegenerate.symplecticFormAt_apply] using hJt p.1 hp.1 p.2 hp.2 _ hSa
-  obtain ⟨C, hC⟩ := hDK.exists_forall_le_mul_norm_sq hbc
-  exact ⟨c, hc, C, fun z hz y hy ξ ↦ ⟨(hb (z, y) ⟨hz, hy⟩ ξ) ▸ hcb _ ⟨hz, hy⟩ ξ,
-    (hb (z, y) ⟨hz, hy⟩ ξ) ▸ hC _ ⟨hz, hy⟩ ξ⟩⟩
+  have hCDK : IsCompact (C ×ˢ (D ×ˢ K)) := hC.prod (hD.prod hK)
+  obtain ⟨c, hc, Mb, hcb⟩ :=
+    hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq_prod α hC hD hK hKα hJ hJt
+  obtain ⟨MJ, hMJ⟩ := hCDK.exists_bound_of_continuousOn hJ
+  obtain ⟨Ms, hMs⟩ := hCDK.exists_bound_of_continuousOn hXs
+  obtain ⟨Mt, hMt⟩ := hCDK.exists_bound_of_continuousOn hXt
+  set M_b := max Mb 0
+  set M_J := max MJ 0
+  set M_s := max Ms 0
+  set M_t := max Mt 0
+  refine ⟨4 * (1 + M_J ^ 2) / c, by positivity, 4 * (M_s ^ 2 + M_t ^ 2), by positivity,
+    2 * M_b, by positivity, 2 * M_b * M_s ^ 2, by positivity, fun p u z hp hz hus huK hu hfl ↦ ?_⟩
+  have hq : (p, (z, e (u z))) ∈ C ×ˢ (D ×ˢ K) := ⟨hp, hz, huK⟩
+  set Xs := ω.hamiltonianVectorFieldInChartAt α (Ks p) (z, e (u z))
+  set Xt := ω.hamiltonianVectorFieldInChartAt α (Kt p) (z, e (u z))
+  set a := fderiv ℝ (e ∘ u) z stdComplexLineReal - Xs with ha_def
+  have he_eq : SmoothBundleForm.eval₂ ω (e.symm (e (u z)))
+      ((trivializationAt E (TangentSpace I) α).symmL ℝ (e.symm (e (u z))) a)
+      (J p z (e.symm (e (u z)))
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ (e.symm (e (u z))) a)) =
+      ω.floerEnergyDensity (Ks p) (Kt p) u z := by
+    rw [← ω.inChartAt_apply_almostComplexInChartAt (hKα huK) z a,
+      ← ω.floerEnergyDensity_eq_inChartAt hu hus hfl]
+  have hca : c * ‖a‖ ^ 2 ≤ ω.floerEnergyDensity (Ks p) (Kt p) u z :=
+    he_eq ▸ (hcb p hp z hz (e (u z)) huK a).1
+  have hba : ω.floerEnergyDensity (Ks p) (Kt p) u z ≤ M_b * ‖a‖ ^ 2 :=
+    (he_eq ▸ (hcb p hp z hz (e (u z)) huK a).2).trans
+      (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))
+  have hXsB : ‖Xs‖ ≤ M_s := (hMs _ hq).trans (le_max_left _ _)
+  have hXtB : ‖Xt‖ ≤ M_t := (hMt _ hq).trans (le_max_left _ _)
+  have hJB : ‖Floer.almostComplexInChartAt I α (J p) (z, e (u z))‖ ≤ M_J :=
+    (hMJ _ hq).trans (le_max_left _ _)
+  have hre_le : ‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ ≤ ‖a‖ + M_s := by
+    calc ‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ = ‖a + Xs‖ := by rw [ha_def, sub_add_cancel]
+      _ ≤ ‖a‖ + ‖Xs‖ := norm_add_le _ _
+      _ ≤ ‖a‖ + M_s := by linarith
+  have hCR := (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp (J := J p)
+    (Ks := Ks p) (Kt := Kt p) hu hus).1 hfl
+  have him_le : ‖fderiv ℝ (e ∘ u) z stdComplexLineImag‖ ≤ M_J * ‖a‖ + M_t := by
+    calc ‖fderiv ℝ (e ∘ u) z stdComplexLineImag‖
+        = ‖Floer.almostComplexInChartAt I α (J p) (z, e (u z)) a + Xt‖ := by
+            rw [← hCR, sub_add_cancel]
+      _ ≤ ‖Floer.almostComplexInChartAt I α (J p) (z, e (u z)) a‖ + ‖Xt‖ := norm_add_le _ _
+      _ ≤ M_J * ‖a‖ + M_t := by
+            gcongr
+            exact ((Floer.almostComplexInChartAt I α (J p) (z, e (u z))).le_opNorm a).trans
+              (mul_le_mul_of_nonneg_right hJB (norm_nonneg a))
+  have ha_le : ‖a‖ ≤ ‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ + M_s :=
+    (norm_sub_le _ _).trans (by linarith)
+  have hL : ‖fderiv ℝ (e ∘ u) z‖ ≤ ‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ +
+      ‖fderiv ℝ (e ∘ u) z stdComplexLineImag‖ := by
+    simpa [stdComplexLineReal, stdComplexLineImag] using
+      (fderiv ℝ (e ∘ u) z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one
+  have hdiv : ‖a‖ ^ 2 ≤ ω.floerEnergyDensity (Ks p) (Kt p) u z / c :=
+    (le_div_iff₀ hc).2 (by linarith)
+  refine ⟨?_, ?_⟩
+  · have hsq1 : ‖fderiv ℝ (e ∘ u) z‖ ^ 2 ≤
+        2 * (‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ (e ∘ u) z stdComplexLineImag‖ ^ 2) := by
+      nlinarith [sq_nonneg (‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ -
+        ‖fderiv ℝ (e ∘ u) z stdComplexLineImag‖), norm_nonneg (fderiv ℝ (e ∘ u) z)]
+    have hsq2 : ‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ ^ 2 ≤ 2 * ‖a‖ ^ 2 + 2 * M_s ^ 2 := by
+      nlinarith [sq_nonneg (‖a‖ - M_s), norm_nonneg (fderiv ℝ (e ∘ u) z stdComplexLineReal)]
+    have hsq3 : ‖fderiv ℝ (e ∘ u) z stdComplexLineImag‖ ^ 2 ≤
+        2 * M_J ^ 2 * ‖a‖ ^ 2 + 2 * M_t ^ 2 := by
+      nlinarith [sq_nonneg (M_J * ‖a‖ - M_t), norm_nonneg (fderiv ℝ (e ∘ u) z stdComplexLineImag)]
+    have h4 : 4 * (1 + M_J ^ 2) * ‖a‖ ^ 2 ≤
+        4 * (1 + M_J ^ 2) / c * ω.floerEnergyDensity (Ks p) (Kt p) u z := by
+      rw [div_mul_eq_mul_div, mul_div_assoc]
+      exact mul_le_mul_of_nonneg_left hdiv (by positivity)
+    linarith
+  · have hsqa : ‖a‖ ^ 2 ≤ 2 * ‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ ^ 2 + 2 * M_s ^ 2 := by
+      nlinarith [sq_nonneg (‖fderiv ℝ (e ∘ u) z stdComplexLineReal‖ - M_s), norm_nonneg a]
+    have hM0 : 0 ≤ M_b := le_max_right _ _
+    nlinarith
 
 /-- **The energy density bounds the derivative in a chart, uniformly on a compact window.** Let
 the structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`,

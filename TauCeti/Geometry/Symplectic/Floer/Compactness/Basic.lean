@@ -13,7 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
+import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Basic
 import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp

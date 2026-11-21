@@ -396,15 +396,15 @@ theorem continuousAt_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
     (hXt : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
       (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (z, u z)) :
     ContinuousAt (ω.floerEnergyDensity Ks Kt u) z := by
-  rw [show ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.val (u z)
-      ![ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal,
-        ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag] from
-    funext fun z ↦ by rw [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]]
+  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.val (u z) ![ω.perturbedMFDeriv Ks Kt u z
+      stdComplexLineReal, ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag] :=
+    funext fun z ↦ by simp only [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]
+  rw [hfun]
   -- The derivatives of `u` along fixed vectors are continuous into the tangent bundle at `z`.
   have hD (e : ℝ × ℝ) : Tendsto (fun z' ↦ (⟨u z', mfderiv 𝓘(ℝ, ℝ × ℝ) I u z' e⟩ :
       TangentBundle I M)) (𝓝 z) (𝓝 ⟨u z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z e⟩) :=
-    ((hu.continuousAt_tangentMap le_rfl).comp
-      ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
+    ((hu.continuousAt_tangentMap le_rfl).comp ((tangentBundleModelSpaceHomeomorph
+      𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
         (continuous_id.prodMk continuous_const).continuousAt)).tendsto
   have hP (e : ℝ × ℝ) := ω.tendsto_perturbedMFDeriv (u := fun _ ↦ u) tendsto_id hD hXs hXt e
   simp only [id_eq] at hP
