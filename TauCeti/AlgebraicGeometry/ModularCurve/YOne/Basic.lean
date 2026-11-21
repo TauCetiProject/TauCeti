@@ -842,101 +842,104 @@ section BaseChange
 
 open UniversalTate
 
+section PreimageEquiv
+
+variable (N : ℕ) [NeZero N]
+
+-- `UniversalTate.yOne N` and `naiveExactOrderPreimage N pointHom` represent the same locus of
+-- `Spec ℤ[A, B][Δ⁻¹]`.
+private theorem exists_lift_naiveExactOrderPreimageι_pointHom_iff {S : Scheme.{u}}
+    (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) :
+    (∃ l : S ⟶ naiveExactOrderPreimage N pointHom,
+        l ≫ naiveExactOrderPreimageι N pointHom = t) ↔
+      ∃ h : S ⟶ UniversalTate.yOne.{u} N, h ≫ UniversalTate.yOneι N = t := by
+  have h := exists_lift_naiveExactOrderPreimageι_iff N pointHom (Z := Over.mk t)
+    (x := toUnit (Over.mk t) ≫ pointHom) rfl
+  simp only [Over.mk_hom] at h
+  refine h.trans ?_
+  rw [isOfNaiveExactOrder_toUnit_comp_iff_forall_lt, exists_comp_yOneι_eq_iff]
+  simp only [mem_exactOrderOpens_iff, Over.mk_hom]
+  exact and_congr_right fun _ ↦
+    ⟨fun h' s k hk hkN ↦ h' k hk hkN s, fun h' k hk hkN s ↦ h' s k hk hkN⟩
+
+private noncomputable def yOneIsoPreimage :
+    UniversalTate.yOne.{u} N ≅ naiveExactOrderPreimage N pointHom where
+  hom := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N (UniversalTate.yOneι N)).mpr
+    ⟨𝟙 _, Category.id_comp _⟩).choose
+  inv := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
+    (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose
+  hom_inv_id := by
+    refine (cancel_mono (UniversalTate.yOneι N)).mp ?_
+    have h₁ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N (UniversalTate.yOneι N)).mpr
+      ⟨𝟙 _, Category.id_comp _⟩).choose_spec
+    have h₂ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
+      (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
+    rw [Category.assoc, h₂, h₁, Category.id_comp]
+  inv_hom_id := by
+    refine (cancel_mono (naiveExactOrderPreimageι N pointHom)).mp ?_
+    have h₁ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N (UniversalTate.yOneι N)).mpr
+      ⟨𝟙 _, Category.id_comp _⟩).choose_spec
+    have h₂ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
+      (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
+    rw [Category.assoc, h₁, h₂, Category.id_comp]
+
+private theorem yOneIsoPreimage_inv_yOneι :
+    (yOneIsoPreimage N).inv ≫ UniversalTate.yOneι N = naiveExactOrderPreimageι N pointHom :=
+  ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
+    (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
+
+end PreimageEquiv
+
 variable (B : Scheme.{u}) (N : ℕ) [NeZero N]
 
--- On the base change of `universalTate B` along `t`, the pullback of `(0, 0)` has naive exact
--- order `N` if and only if `t ≫ prod.snd` factors through `UniversalTate.yOne N`.
-private theorem isOfNaiveExactOrder_universalTatePoint_iff {S : Scheme.{u}}
-    (t : S ⟶ B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring))) :
-    (universalTate B).curve.IsOfNaiveExactOrder
-        (toUnit (Over.mk t) ≫ universalTatePoint B) N ↔
-      ∃ h : S ⟶ UniversalTate.yOne.{u} N, h ≫ UniversalTate.yOneι N = t ≫ prod.snd := by
-  let hbc := (universalTate B).curve.isPullback_baseChange t
-  have hbc0 : ((universalTate B).curve.baseChange t).zero ≫
-      ((universalTate B).curve.baseChangeIso t).hom ≫ pullback.fst _ _ =
-      t ≫ (universalTate B).curve.zero := by simp
-  let P_S := pointsPullback hbc hbc0 (universalTatePoint B)
-  have hPS : pointsBaseChangeEquiv hbc hbc0 P_S = toUnit (Over.mk t) ≫ universalTatePoint B := by
-    ext1
-    simp [P_S]
-  rw [← hPS, isOfNaiveExactOrder_pointsBaseChangeEquiv_iff hbc hbc0]
-  have hg : IsPullback
-      (((universalTate B).curve.baseChangeIso t).hom ≫ pullback.fst _ _ ≫
-        prodCurveProj B curveGeom)
-      ((universalTate B).curve.baseChange t).structureMap curveGeom.structureMap
-      (t ≫ prod.snd) :=
-    hbc.paste_horiz (isPullback_prodCurveProj B curveGeom)
-  have h₀ : ((universalTate B).curve.baseChange t).zero ≫
-      (((universalTate B).curve.baseChangeIso t).hom ≫ pullback.fst _ _ ≫
-        prodCurveProj B curveGeom) = (t ≫ prod.snd) ≫ curveGeom.zero := by
-    rw [reassoc_of% hbc0, Category.assoc, zero_prodCurveProj]
-  have hP : P_S = pointsPullback hg h₀ pointHom := by
-    refine (eq_pointsPullback_iff hg h₀).mpr ?_
-    rw [← Category.assoc ((universalTate B).curve.baseChangeIso t).hom,
-      ← Category.assoc P_S.left, pointsPullback_left_comp, Category.assoc,
-      universalTatePoint_def, prodCurvePoint_left_prodCurveProj, Category.assoc]
-    exact rfl
-  have hpow : P_S ^ N = 1 ↔
-      (t ≫ prod.snd) ≫ (pointHom ^ N).left = (t ≫ prod.snd) ≫ curveGeom.zero := by
-    rw [hP, ← map_pow]
-    simpa [Over.OverMorphism.ext_iff, hom_one_left] using
-      comp_pointsPullback_left_eq_comp_zero_iff hg h₀ (pointHom ^ N) (𝟙 S)
-  have happ (k : ℕ) (s : S) : (P_S ^ k).left s =
-        ((universalTate B).curve.baseChange t).zero s ↔
-      (pointHom ^ k).left ((t ≫ prod.snd) s) = curveGeom.zero ((t ≫ prod.snd) s) := by
-    rw [hP, ← map_pow]
-    exact pointsPullback_left_apply_eq_zero_iff hg h₀ (pointHom ^ k) s
-  rw [isOfNaiveExactOrder_iff_forall_lt, exists_comp_yOneι_eq_iff, hpow]
-  refine and_congr_right' ⟨fun h s ↦ mem_exactOrderOpens_iff.mpr fun k hk0 hkN ↦
-    mt (happ k s).mpr ((isEmpty_equalizer_one_iff _).mp (h k hk0 hkN) s), fun h k hk0 hkN ↦
-    (isEmpty_equalizer_one_iff _).mpr fun s ↦
-      mt (happ k s).mp (mem_exactOrderOpens_iff.mp (h s) k hk0 hkN)⟩
-
--- Morphisms `S ⟶ B × Spec ℤ[A, B][Δ⁻¹]` factor through `(yOne B N).base` if and only if their
--- second projection factors through `UniversalTate.yOne N`.
-private theorem exists_comp_yOneι_base_iff {S : Scheme.{u}}
-    (t : S ⟶ B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring))) :
-    (∃ l : S ⟶ (yOne B N).base, l ≫ (yOneι B N).base = t) ↔
-      ∃ h : S ⟶ UniversalTate.yOne.{u} N, h ≫ UniversalTate.yOneι N = t ≫ prod.snd := by
-  simp only [yOneι_base]
-  exact (exists_lift_naiveExactOrderPreimageι_iff N (universalTatePoint B)
-    (Z := Over.mk t) (x := toUnit (Over.mk t) ≫ universalTatePoint B) rfl).trans
-    (isOfNaiveExactOrder_universalTatePoint_iff B N t)
+private theorem universalTatePoint_left_prodCurveProj :
+    (universalTatePoint B).left ≫ prodCurveProj B curveGeom = prod.snd ≫ pointHom.left := by
+  rw [universalTatePoint_def, prodCurvePoint_left_prodCurveProj]
 
 /-- The canonical projection `(yOne B N).base ⟶ UniversalTate.yOne N` to `Y₁(N)` over `ℤ`. -/
 noncomputable def yOneSnd : (yOne B N).base ⟶ UniversalTate.yOne.{u} N :=
-  ((exists_comp_yOneι_base_iff B N (yOneι B N).base).mp ⟨𝟙 _, Category.id_comp _⟩).choose
+  naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
+    (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B) ≫
+    (yOneIsoPreimage N).inv
 
 /-- The projection `yOneSnd B N` commutes with the inclusions into the base of the universal Tate
 normal form. -/
 @[reassoc (attr := simp)]
 theorem yOneSnd_yOneι :
-    yOneSnd B N ≫ UniversalTate.yOneι N = (yOneι B N).base ≫ prod.snd :=
-  ((exists_comp_yOneι_base_iff B N (yOneι B N).base).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
+    yOneSnd B N ≫ UniversalTate.yOneι N = (yOneι B N).base ≫ prod.snd := by
+  rw [yOneι_base]
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg (naiveExactOrderPreimageMap _ _ _ _ ≫ ·) (yOneIsoPreimage_inv_yOneι N)).trans
+      (naiveExactOrderPreimageMap_naiveExactOrderPreimageι _ _ _ _)
 
-private theorem exists_prodToYOne :
-    ∃ inv : B ⨯ UniversalTate.yOne.{u} N ⟶ (yOne B N).base,
-      inv ≫ (yOneι B N).base = prod.map (𝟙 B) (UniversalTate.yOneι.{u} N) :=
-  (exists_comp_yOneι_base_iff B N
-    (prod.map (𝟙 B) (UniversalTate.yOneι.{u} N))).mpr ⟨prod.snd, by simp⟩
+/-- **`yOneSnd B N` exhibits `(yOne B N).base` as the base change of `UniversalTate.yOne N` along
+`prod.snd`.** -/
+theorem isPullback_yOneSnd :
+    IsPullback (yOneSnd B N) (yOneι B N).base (UniversalTate.yOneι N) prod.snd := by
+  refine (isPullback_naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
+      (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B)).of_iso
+    (Iso.refl _) (yOneIsoPreimage N).symm (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+  · exact (Category.id_comp _).symm
+  · rw [yOneι_base]
+    exact (Category.id_comp _).symm
+  · simp [yOneIsoPreimage_inv_yOneι]
+  · simp
 
 /-- **The base of `EllObj.yOne B N` is `B × UniversalTate.yOne N`** (`B` times `Y₁(N)` over
 `ℤ`). -/
 noncomputable def yOneBaseIsoProd : (yOne B N).base ≅ B ⨯ UniversalTate.yOne.{u} N where
   hom := prod.lift (yOne B N).structureMap (yOneSnd B N)
-  inv := (exists_prodToYOne B N).choose
+  inv := (isPullback_yOneSnd B N).lift prod.snd (prod.map (𝟙 B) (UniversalTate.yOneι.{u} N))
+    (by simp)
   hom_inv_id := by
     refine (cancel_mono (yOneι B N).base).mp ?_
-    rw [Category.assoc, (exists_prodToYOne B N).choose_spec, Category.id_comp]
+    rw [Category.assoc, IsPullback.lift_snd, Category.id_comp]
     refine prod.hom_ext ?_ ?_ <;> simp [yOne_structureMap]
   inv_hom_id := by
-    have hinv := (exists_prodToYOne B N).choose_spec
     refine prod.hom_ext ?_ ?_
-    · rw [Category.assoc, prod.lift_fst, yOne_structureMap, reassoc_of% hinv, prod.map_fst,
-        Category.comp_id, Category.id_comp]
-    · rw [Category.assoc, prod.lift_snd, Category.id_comp]
-      refine (cancel_mono (UniversalTate.yOneι.{u} N)).mp ?_
-      rw [Category.assoc, yOneSnd_yOneι, reassoc_of% hinv, prod.map_snd]
+    · rw [Category.assoc, prod.lift_fst, yOne_structureMap, IsPullback.lift_snd_assoc,
+        prod.map_fst, Category.comp_id, Category.id_comp]
+    · rw [Category.assoc, prod.lift_snd, Category.id_comp, IsPullback.lift_fst]
 
 /-- Under `yOneBaseIsoProd`, the first projection is `(yOne B N).structureMap`. -/
 @[reassoc (attr := simp)]
