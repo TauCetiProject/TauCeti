@@ -68,6 +68,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   is bounded by every power of the Japanese bracket.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl`: a `C^i` map, `1 ≤ i`, which is affine
+  outside a compact set has a bounded `i`-th derivative.
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm`: the
   order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of the
   Japanese bracket.
@@ -297,6 +299,26 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
     exact hfg y hy
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
+
+/-- A `C^i` map, `1 ≤ i`, which agrees outside a compact set with an affine map `x ↦ b + L x` has
+a bounded derivative of order `i`: outside a ball containing the compact set, its order-`i`
+derivative is that of the affine map, which is bounded by `‖L‖`. -/
+theorem ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl [ProperSpace E] {f : E → F} {i : ℕ}
+    (hf : ContDiff 𝕜 i f) (hi : 1 ≤ i) {K : Set E} (hK : IsCompact K) {b : F} {L : E →L[𝕜] F}
+    (hfK : EqOn f (fun x ↦ b + L x) Kᶜ) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C := by
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+  refine hf.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm (R := R) (C := ‖L‖)
+    (fun x hx ↦ hfK fun hxK ↦ hx.not_ge (mem_closedBall_zero_iff.1 (hR hxK))) fun x _ ↦ ?_
+  -- The derivatives of positive order of the affine map are those of the constant `L`.
+  obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
+  have hfd : fderiv 𝕜 (fun x ↦ b + L x) = fun _ ↦ L := by
+    ext1 y
+    exact ((L.hasFDerivAt (x := y)).const_add b).fderiv
+  rw [← norm_iteratedFDeriv_fderiv, hfd]
+  rcases j with _ | j
+  · simp
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
 
 /-- The order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of
 the Japanese bracket: `‖D^n f(x)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r / 2)`. -/
