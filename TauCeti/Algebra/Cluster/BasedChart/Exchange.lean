@@ -22,10 +22,11 @@ form `Λ'` that agrees with `Λ` off `k`, then defines a new based chart for `(R
 No hypothesis on the old form `Λ` is needed: it enters only through its values on exponents
 vanishing at `k`, where it agrees with `Λ'`. The new chart has coordinate `y` in direction `k`,
 keeps the other coordinates of `M`, and has the same subalgebra `C`. The exchange element
-`E = y * x` normalizes `C`, so `y = E * x⁻¹` is a skew exchange in the sense of
-`TauCeti.linearIndependent_mul_inv_zpow`. Neither the multiplication rule nor faithfulness of
-the new chart is assumed, and the ambient algebra need not be a division ring; this is the
-chart a seed mutation produces from an invertible exchange element.
+`E = y * x` normalizes `C` by `TauCeti.BasedChart.mul_monomial_mul_mul_inv_mem_subalgebra_iff`,
+and `y = E * x⁻¹` is a skew exchange in the sense of `TauCeti.linearIndependent_mul_inv_zpow`.
+Neither the multiplication rule nor faithfulness of the new chart is assumed, and the ambient
+algebra need not be a division ring; this is the chart a seed mutation produces from an
+invertible exchange element.
 
 Faithfulness passes between scalar rings in both directions. Tau Ceti's
 `LinearIndependent.of_smul_of_span_eq_top`, through
@@ -51,12 +52,12 @@ the exchanged chart for it.
 
 ## Main results
 
-* `TauCeti.BasedChart.mul_monomial_single_mul_mul_inv_mem_subalgebra_iff`: the exchange
-  element `y * x` normalizes the other-coordinate subalgebra.
 * `TauCeti.BasedChart.eq_exchange`: the exchanged chart is the only chart for `Λ'` with these
-  coordinates.
+  coordinates; `TauCeti.BasedChart.eq_exchangeOfDual` is the same for the chart built from `l`.
 * `TauCeti.BasedChart.subalgebra_exchange`: the exchanged chart keeps the subalgebra of every
-  subgroup of exponents vanishing at `k`.
+  set of exponents vanishing at `k`.
+* `LinearMap.BilinForm.IsAlt.apply_eq_erase`: an alternating form on `I →₀ R`, expanded along
+  the `k`th coordinate.
 * `LinearMap.BilinForm.IsAlt.eq_exchange`: an alternating form is determined by its
   restriction to the exponents vanishing at `k` and its cross terms.
 
@@ -70,11 +71,6 @@ the exchanged chart for it.
 -/
 
 public section
-
-/-- Erasing a coordinate at which a finitely supported function vanishes does not change it. -/
-private theorem Finsupp.erase_eq_self_of_apply_eq_zero {α M : Type*} [Zero M] {f : α →₀ M}
-    {a : α} (h : f a = 0) : f.erase a = f :=
-  Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.mpr h)
 
 namespace LinearMap.BilinForm
 
@@ -111,7 +107,8 @@ theorem exchange_apply_of_apply_eq_zero (Λ : LinearMap.BilinForm ℤ (I →₀ 
     (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker) {a b : I →₀ ℤ} (ha : a k = 0)
     (hb : b k = 0) : Λ.exchange k l a b = Λ a b := by
   rw [exchange_apply, ha, hb, zero_mul, zero_mul, add_zero, sub_zero,
-    Finsupp.erase_eq_self_of_apply_eq_zero ha, Finsupp.erase_eq_self_of_apply_eq_zero hb]
+    Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.mpr ha),
+    Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.mpr hb)]
 
 /-- The exchanged form pairs `e_k` with `b` by `l(b°)`. -/
 @[simp]
@@ -123,12 +120,13 @@ theorem exchange_single_self_apply (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ))
   rw [LinearMap.zero_apply, zero_add, sub_eq_self, mul_eq_zero]
   exact Or.inr (map_zero l)
 
-/-- An alternating form, expanded along `a = a_k e_k + a°` and `b = b_k e_k + b°`. -/
-private theorem IsAlt.apply_eq_erase {Λ' : LinearMap.BilinForm ℤ (I →₀ ℤ)} (hΛ' : Λ'.IsAlt)
-    (k : I) (a b : I →₀ ℤ) :
+/-- An alternating form on `I →₀ R`, expanded along `a = a_k e_k + a°` and `b = b_k e_k + b°`
+with `a° = a - a_k e_k`: `Λ'(a, b) = Λ'(a°, b°) + a_k * Λ'(e_k, b°) - b_k * Λ'(e_k, a°)`. -/
+theorem IsAlt.apply_eq_erase {R : Type*} [CommRing R] {Λ' : LinearMap.BilinForm R (I →₀ R)}
+    (hΛ' : Λ'.IsAlt) (k : I) (a b : I →₀ R) :
     Λ' a b = Λ' (a.erase k) (b.erase k) + a k * Λ' (Finsupp.single k 1) (b.erase k) -
       b k * Λ' (Finsupp.single k 1) (a.erase k) := by
-  have hs (n : ℤ) : Finsupp.single k n = n • Finsupp.single k (1 : ℤ) := by
+  have hs (n : R) : Finsupp.single k n = n • Finsupp.single k (1 : R) := by
     rw [Finsupp.smul_single_one]
   conv_lhs => rw [← Finsupp.single_add_erase k a, ← Finsupp.single_add_erase k b,
     hs (a k), hs (b k)]
@@ -281,30 +279,6 @@ private theorem linearIndependent_exchangeMonomial (M : BasedChart u Λ B) (k : 
   simp only [Pi.smul_apply', Function.comp_apply, Units.smul_def, Subalgebra.smul_def,
     smul_eq_mul]
 
-/-- The exchange element `E = y * M(e_k)` normalizes the span of the monomials whose
-exponent vanishes at `k`: conjugation by `E` maps this subalgebra onto itself. -/
-theorem mul_monomial_single_mul_mul_inv_mem_subalgebra_iff (M : BasedChart u Λ B) (k : I)
-    {y : Bˣ}
-    (hy : ∀ a : I →₀ ℤ, a k = 0 → y * M.monomial a =
-      Units.map (algebraMap R B) (u ^ (2 * Λ' (Finsupp.single k 1) a)) * (M.monomial a * y))
-    {c : B} :
-    ((y * M.monomial (Finsupp.single k 1) : Bˣ) : B) * c *
-        ↑(y * M.monomial (Finsupp.single k 1))⁻¹ ∈ M.subalgebra (Finsupp.applyAddHom k).ker ↔
-      c ∈ M.subalgebra (Finsupp.applyAddHom k).ker := by
-  have hyn (n : ℤ) {d : B} (hd : d ∈ M.subalgebra (Finsupp.applyAddHom k).ker) :
-      ((y ^ n : Bˣ) : B) * d * ↑(y ^ n)⁻¹ ∈ M.subalgebra (Finsupp.applyAddHom k).ker := by
-    refine M.mul_mul_inv_mem_subalgebra (fun a ha ↦ ?_) hd
-    rw [val_zpow_mul_monomial M k hy (by simpa using ha)]
-    simpa only [smul_mul_assoc, mul_assoc, Units.mul_inv, mul_one] using
-      Subalgebra.smul_mem _ (M.monomial_mem_subalgebra ha) _
-  constructor
-  · intro hc
-    simpa [mul_assoc] using
-      M.monomial_inv_mul_mul_mem_subalgebra (Finsupp.single k 1) (hyn (-1) hc)
-  · intro hc
-    simpa [mul_assoc] using
-      hyn 1 (M.monomial_mul_mul_inv_mem_subalgebra (Finsupp.single k 1) hc)
-
 /-- The exchanged chart for `Λ'`, in which `y` replaces the `k`th coordinate of `M`. Its
 monomials are `u ^ (-(a_k * Λ'(e_k, a°))) * y ^ a_k * M(a°)` with `a° = a - a_k e_k`.
 
@@ -342,7 +316,7 @@ noncomputable def exchangeOfDual (M : BasedChart u Λ B) (k : I)
     (fun a ha ↦ by
       have ha' : (⟨a.erase k, AddMonoidHom.mem_ker.mpr Finsupp.erase_same⟩ :
           (Finsupp.applyAddHom (M := ℤ) k).ker) = ⟨a, AddMonoidHom.mem_ker.mpr ha⟩ :=
-        Subtype.ext (Finsupp.erase_eq_self_of_apply_eq_zero ha)
+        Subtype.ext (Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.mpr ha))
       rw [LinearMap.BilinForm.exchange_single_self_apply, ha']
       exact hy ⟨a, _⟩)
     hyx
@@ -397,7 +371,7 @@ theorem exchange_monomial (a : I →₀ ℤ) :
 @[simp]
 theorem exchange_monomial_of_apply_eq_zero {a : I →₀ ℤ} (ha : a k = 0) :
     (M.exchange k hΛ' hΛΛ' y hy hyx).monomial a = M.monomial a := by
-  rw [exchange_monomial, ha, Finsupp.erase_eq_self_of_apply_eq_zero ha]
+  rw [exchange_monomial, ha, Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.mpr ha)]
   simp
 
 /-- The `k`th coordinate of the exchanged chart is `y`. -/
@@ -413,23 +387,51 @@ theorem exchange_monomial_single_of_ne {i : I} (hi : i ≠ k) :
   M.exchange_monomial_of_apply_eq_zero k hΛ' hΛΛ' y hy hyx
     (Finsupp.single_eq_of_ne hi.symm)
 
-/-- The exchanged chart has the same subalgebra as `M` on every subgroup of exponents vanishing
-at `k`, in particular on all of them. -/
-theorem subalgebra_exchange {N : AddSubgroup (I →₀ ℤ)}
-    (hN : N ≤ (Finsupp.applyAddHom (M := ℤ) k).ker) :
+/-- The exchanged chart has the same subalgebra as `M` on every set of exponents vanishing at
+`k`, in particular on all of them. -/
+theorem subalgebra_exchange {S : Type*} [SetLike S (I →₀ ℤ)] {N : S} (hN : ∀ a ∈ N, a k = 0) :
     (M.exchange k hΛ' hΛΛ' y hy hyx).subalgebra N = M.subalgebra N := by
   rw [subalgebra_eq_adjoin, subalgebra_eq_adjoin, Set.image_congr fun a ha ↦ by
-    rw [M.exchange_monomial_of_apply_eq_zero k hΛ' hΛΛ' y hy hyx (AddMonoidHom.mem_ker.mp (hN ha))]]
+    rw [M.exchange_monomial_of_apply_eq_zero k hΛ' hΛΛ' y hy hyx (hN a ha)]]
 
-/-- The exchanged chart built from `l` has the same subalgebra as `M` on every subgroup of
-exponents vanishing at `k`. -/
+/-- The exchanged chart built from `l` has the same subalgebra as `M` on every set of exponents
+vanishing at `k`. -/
 theorem subalgebra_exchangeOfDual (hΛ : ∀ a : I →₀ ℤ, a k = 0 → Λ a a = 0)
     (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker)
     (hl : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
       Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
-    {N : AddSubgroup (I →₀ ℤ)} (hN : N ≤ (Finsupp.applyAddHom (M := ℤ) k).ker) :
+    {S : Type*} [SetLike S (I →₀ ℤ)] {N : S} (hN : ∀ a ∈ N, a k = 0) :
     (M.exchangeOfDual k hΛ l y hl hyx).subalgebra N = M.subalgebra N :=
   M.subalgebra_exchange k _ _ y _ hyx hN
+
+/-- The exchanged chart built from `l` keeps every monomial whose exponent vanishes at `k`. -/
+@[simp]
+theorem exchangeOfDual_monomial_of_apply_eq_zero (hΛ : ∀ a : I →₀ ℤ, a k = 0 → Λ a a = 0)
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker)
+    (hl : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
+      Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
+    {a : I →₀ ℤ} (ha : a k = 0) :
+    (M.exchangeOfDual k hΛ l y hl hyx).monomial a = M.monomial a :=
+  M.exchange_monomial_of_apply_eq_zero k _ _ y _ hyx ha
+
+/-- The `k`th coordinate of the exchanged chart built from `l` is `y`. -/
+@[simp]
+theorem exchangeOfDual_monomial_single_self (hΛ : ∀ a : I →₀ ℤ, a k = 0 → Λ a a = 0)
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker)
+    (hl : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
+      Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y)) :
+    (M.exchangeOfDual k hΛ l y hl hyx).monomial (Finsupp.single k 1) = y :=
+  M.exchange_monomial_single_self k _ _ y _ hyx
+
+/-- The coordinates of the exchanged chart built from `l` away from `k` are those of `M`. -/
+theorem exchangeOfDual_monomial_single_of_ne (hΛ : ∀ a : I →₀ ℤ, a k = 0 → Λ a a = 0)
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker)
+    (hl : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
+      Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
+    {i : I} (hi : i ≠ k) :
+    (M.exchangeOfDual k hΛ l y hl hyx).monomial (Finsupp.single i 1) =
+      M.monomial (Finsupp.single i 1) :=
+  M.exchange_monomial_single_of_ne k _ _ y _ hyx hi
 
 /-- The exchanged chart is the only chart for `Λ'` whose `k`th coordinate is `y` and whose
 other coordinates are those of `M`. -/
@@ -441,6 +443,17 @@ theorem eq_exchange {M' : BasedChart u Λ' B} (hk : M'.monomial (Finsupp.single 
   obtain rfl | hik := eq_or_ne i k
   · rw [hk, exchange_monomial_single_self]
   · rw [hi i hik, M.exchange_monomial_single_of_ne k hΛ' hΛΛ' y hy hyx hik]
+
+/-- The exchanged chart built from `l` is the only chart for `Λ.exchange k l` whose `k`th
+coordinate is `y` and whose other coordinates are those of `M`. -/
+theorem eq_exchangeOfDual (hΛ : ∀ a : I →₀ ℤ, a k = 0 → Λ a a = 0)
+    (l : Module.Dual ℤ (Finsupp.applyAddHom (M := ℤ) k).ker)
+    (hl : ∀ a : (Finsupp.applyAddHom (M := ℤ) k).ker, y * M.monomial a =
+      Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
+    {M' : BasedChart u (Λ.exchange k l) B} (hk : M'.monomial (Finsupp.single k 1) = y)
+    (hi : ∀ i, i ≠ k → M'.monomial (Finsupp.single i 1) = M.monomial (Finsupp.single i 1)) :
+    M' = M.exchangeOfDual k hΛ l y hl hyx :=
+  M.eq_exchange k _ _ y _ hyx hk hi
 
 end Exchange
 
