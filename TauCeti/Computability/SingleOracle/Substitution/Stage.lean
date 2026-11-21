@@ -14,8 +14,9 @@ import Mathlib.Order.Filter.Finite
 # Oracle substitution at normalized stages
 
 The raw inlining and replay results extend to stages that also bound the program index and
-output. A finite list of successful inlined runs can be replayed at a common stage with a shared
-bound on base-oracle use precisely when that bound covers the largest recorded use.
+output. A finite list of successful inlined runs admits replay at a common stage preserving
+each output exactly when the shared base-oracle use bound covers the largest use recorded by
+the original inlined runs. Each replay records its intermediate-oracle use.
 
 ## References
 
@@ -51,9 +52,11 @@ theorem exists_evalStage_boundedAnswers_of_evalStage_subst {s : ℕ}
   obtain ⟨t, ht, he⟩ := exists_evaln_boundedAnswers_of_evaln_subst hr hj hu
   exact ⟨t, evalStage_eq_some_of_evaln ht hks hcs (he ▸ hy.trans_le hks), he⟩
 
-/-- For finitely many successful inlined runs, possibly witnessed at different stages, the same
-query fuel and outer stage can replay them all exactly when the permitted base-oracle use covers
-their largest use. Each entry records an outer program, its input and the inlined run's outcome. -/
+/-- For finitely many successful inlined runs, possibly witnessed at different stages, there
+is a common query fuel and outer stage at which replay preserves each output exactly when
+the shared bound covers the largest base-oracle use recorded by the original inlined runs.
+Each replay records its intermediate-oracle use. Each entry gives an outer program, its input
+and the inlined run's outcome. -/
 theorem exists_evalStage_boundedAnswers_forall_mem_iff {runs : List (Code × ℕ × Halt)}
     (h : ∀ p ∈ runs, ∃ k, evalStage σ k (p.1.subst d) p.2.1 = some p.2.2) :
     (∃ j s, ∀ p ∈ runs, ∃ t,
@@ -69,19 +72,16 @@ theorem exists_evalStage_boundedAnswers_forall_mem_iff {runs : List (Code × ℕ
     exact (exists_evaln_boundedAnswers_iff_use_le (evalStage_eq_some_iff.1 hk).2.1).1
       ⟨j, s, t, (evalStage_eq_some_iff.1 ht).2.1⟩
   · intro hu
-    have hcompiled (p) (hp : p ∈ runs.toFinset) :
-        ∀ᶠ k in atTop, evalStage σ k (p.1.subst d) p.2.1 = some p.2.2 := by
-      obtain ⟨k, hk⟩ := h p (List.mem_toFinset.1 hp)
-      exact eventually_atTop.2 ⟨k, fun _ hkk => evalStage_mono hkk hk⟩
-    obtain ⟨j, hj⟩ := ((eventually_all_finset runs.toFinset).2 hcompiled).exists
     have houter (p) (hp : p ∈ runs.toFinset) :
-        ∀ᶠ s in atTop, ∃ t, evalStage (d.boundedAnswers σ j u) s p.1 p.2.1 = some t ∧
+        ∀ᶠ s in atTop, ∃ t, evalStage (d.boundedAnswers σ s u) s p.1 p.2.1 = some t ∧
           t.output = p.2.2.output := by
-      refine eventually_atTop.2 ⟨max j (encode p.1 + 1), fun s hs => ?_⟩
-      exact exists_evalStage_boundedAnswers_of_evalStage_subst (hj p hp) le_rfl
-        (hu p (List.mem_toFinset.1 hp)) ((le_max_left _ _).trans hs)
+      obtain ⟨k, hk⟩ := h p (List.mem_toFinset.1 hp)
+      refine eventually_atTop.2 ⟨max k (encode p.1 + 1), fun s hs => ?_⟩
+      have hks : k ≤ s := (le_max_left _ _).trans hs
+      exact exists_evalStage_boundedAnswers_of_evalStage_subst hk hks
+        (hu p (List.mem_toFinset.1 hp)) hks
         (Nat.lt_of_succ_le ((le_max_right _ _).trans hs))
     obtain ⟨s, hs⟩ := ((eventually_all_finset runs.toFinset).2 houter).exists
-    exact ⟨j, s, fun p hp => hs p (List.mem_toFinset.2 hp)⟩
+    exact ⟨s, s, fun p hp => hs p (List.mem_toFinset.2 hp)⟩
 
 end TauCeti.Oracle.Single.Code
