@@ -67,18 +67,6 @@ namespace TauCeti
 
 variable {F : ℝ × ℝ → ℝ × ℝ} {J : Set ℝ}
 
-/-- Where `F = (X, Y)` is differentiable at `(x, c)`, the horizontal slice `s ↦ X(s, c)` has
-derivative `X_x(x, c)` at `x`. -/
-private theorem hasDerivAt_fst_slice_left {x c : ℝ} (hd : DifferentiableAt ℝ F (x, c)) :
-    HasDerivAt (fun s ↦ (F (s, c)).1) (fderiv ℝ F (x, c) (1, 0)).1 x :=
-  (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt x (hasDerivAt_slice_left hd)
-
-/-- Where `F = (X, Y)` is differentiable at `(x, c)`, the horizontal slice `s ↦ Y(s, c)` has
-derivative `Y_x(x, c)` at `x`. -/
-private theorem hasDerivAt_snd_slice_left {x c : ℝ} (hd : DifferentiableAt ℝ F (x, c)) :
-    HasDerivAt (fun s ↦ (F (s, c)).2) (fderiv ℝ F (x, c) (1, 0)).2 x :=
-  (ContinuousLinearMap.snd ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt x (hasDerivAt_slice_left hd)
-
 /-- **The momenta on a face of the band.** On a strip `ℝ × J` over an open interval `J`
 containing `0`, let `F = (X, Y)` be `C²`, twist, preserve area and map the line `y = 0` into
 itself, and let it map the line `y = c`, `c ∈ J`, into itself as well. At the point

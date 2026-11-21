@@ -15,12 +15,22 @@ operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
-(`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`).
+(`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`), since it is
+determined by these two columns, `f (a, b) = a • f (1, 0) + b • f (0, 1)`
+(`ContinuousLinearMap.apply_mk_eq_smul_add_smul`).
 -/
 
 public section
 
 namespace ContinuousLinearMap
+
+/-- A continuous linear map out of `R × R` is determined by its columns:
+`f (a, b) = a • f (1, 0) + b • f (0, 1)`. -/
+theorem apply_mk_eq_smul_add_smul {R M : Type*} [Semiring R] [TopologicalSpace R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] (f : R × R →L[R] M) (a b : R) :
+    f (a, b) = a • f (1, 0) + b • f (0, 1) := by
+  rw [← map_smul, ← map_smul, ← map_add]
+  simp
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [SeminormedAddCommGroup G]
@@ -38,9 +48,8 @@ values on the coordinate vectors. -/
 theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 →L[𝕜] G) :
     ‖f‖ ≤ ‖f (1, 0)‖ + ‖f (0, 1)‖ := by
   refine f.opNorm_le_bound (by positivity) fun p ↦ ?_
-  have hp : f p = p.1 • f (1, 0) + p.2 • f (0, 1) := by
-    rw [← map_smul, ← map_smul, ← map_add]
-    simp
+  have hp := f.apply_mk_eq_smul_add_smul p.1 p.2
+  rw [Prod.mk.eta] at hp
   rw [hp, add_mul]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
   · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le p) (norm_nonneg _)

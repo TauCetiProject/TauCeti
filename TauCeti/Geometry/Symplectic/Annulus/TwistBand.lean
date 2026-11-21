@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Darboux
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -257,14 +258,6 @@ theorem contDiffAt_stripBandGeneratingFunction {n : ℕ∞} (hJ : IsOpen J) (hJc
   rw [← hinj.leftInvOn_invFunOn hq] at hS
   exact hS.comp _ ((contDiffAt_invFunOn_stripTwistCoord hn hJ hJc hF htwist hq).of_le (by simp))
 
-/-- A linear map on the plane is determined by its columns:
-`A (a, b) = a • A (1, 0) + b • A (0, 1)`. -/
-private theorem apply_mk_eq_smul_add_smul {M : Type*} [AddCommGroup M] [Module ℝ M]
-    [TopologicalSpace M] (A : (ℝ × ℝ) →L[ℝ] M) (a b : ℝ) :
-    A (a, b) = a • A (1, 0) + b • A (0, 1) := by
-  rw [← map_smul, ← map_smul, ← map_add]
-  simp
-
 /-- If `e (u, v) = (u, (A (u, v)).1)` for a linear map `A` of the plane with
 `(A (0, 1)).1 ≠ 0`, then `e⁻¹ (a, b) = (a, (b - X_x a) / X_y)` in the notation `A = d(X, Y)`. -/
 private theorem symm_apply_of_coe_eq_prod {A : (ℝ × ℝ) →L[ℝ] ℝ × ℝ} {e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ}
@@ -273,7 +266,7 @@ private theorem symm_apply_of_coe_eq_prod {A : (ℝ × ℝ) →L[ℝ] ℝ × ℝ
     (htw : (A (0, 1)).1 ≠ 0) (v : ℝ × ℝ) :
     e.symm v = (v.1, (v.2 - (A (1, 0)).1 * v.1) / (A (0, 1)).1) := by
   set t := (v.2 - (A (1, 0)).1 * v.1) / (A (0, 1)).1
-  have hA := apply_mk_eq_smul_add_smul A v.1 t
+  have hA := A.apply_mk_eq_smul_add_smul v.1 t
   rw [e.symm_apply_eq, ← ContinuousLinearEquiv.coe_coe, he]
   ext
   · simp
@@ -363,7 +356,7 @@ theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J
   simp only [sub_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     symm_apply_of_coe_eq_prod he htw, ContinuousLinearMap.coe_snd']
-  rw [apply_mk_eq_smul_add_smul (fderiv ℝ F q) v.1]
+  rw [(fderiv ℝ F q).apply_mk_eq_smul_add_smul v.1]
   simp only [Prod.snd_add, Prod.smul_snd, smul_eq_mul, smul_apply,
     ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst']
   field_simp
