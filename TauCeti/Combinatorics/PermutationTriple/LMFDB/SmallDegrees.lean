@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.BlockQuotient
+public import TauCeti.Combinatorics.PermutationTriple.Passport.BranchPoints
 public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Basic
 public import TauCeti.Combinatorics.PermutationTriple.SmallDegrees
 public import TauCeti.GroupTheory.Perm.ComputedCycleType
@@ -20,6 +21,13 @@ convention, so the triples below use their componentwise inverses.
 
 The comparison certifies the listed records against the complete combinatorial classification;
 it does not assert that the database contains every ordered triple or every Belyi map.
+
+The database tabulates one ordered passport from each orbit of the branch-point action, keeping
+every class of the chosen ordered passport. Accordingly, every connected class of degree at most
+four lies in the branch-point orbit of the class of exactly one record, and every inhabited
+passport of degree at most four, once its branch points are reordered and its reference subgroup
+conjugated, is the passport of exactly one record. The records' passports therefore form a set of
+representatives of the branch-point orbits of inhabited passports.
 
 Distinct records have distinct isomorphism classes of triples. Exactly four records are
 imprimitive, and each of them primitivizes to the record `2T1-2_2_1.1-a`: its monodromy action has
@@ -175,6 +183,81 @@ theorem computedCycleData_eq_of_isoClass_eq {r r' : SmallDegreeRecord}
     (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mp (eq_of_heq h)))
 
 end SmallDegreeRecord
+
+/-! ### Branch-point orbits -/
+
+namespace SmallDegreeRecord
+
+/-- The class of a record lies in the branch-point orbit of the class of `t` exactly when the
+record has the degree and the unordered cycle data of `t`. -/
+theorem exists_isoClass_eq_smul_mk_iff {r : SmallDegreeRecord} {n : ℕ} (t : ConnectedTriple n) :
+    (∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • ConnectedIsoClass.mk t⟩) ↔
+      computedUnorderedCycleData r = (n, t.1.unorderedCycleData) := by
+  obtain ⟨_, m, s, hm⟩ := r
+  simp only [isoClass_def, computedUnorderedCycleData, Sigma.mk.inj_iff, Prod.mk.injEq]
+  constructor
+  · rintro ⟨ρ, rfl, h⟩
+    exact ⟨rfl, ((ConnectedIsoClass.mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four hm
+      t s).mp ⟨ρ, (eq_of_heq h).symm⟩).symm⟩
+  · rintro ⟨rfl, h⟩
+    obtain ⟨ρ, hρ⟩ :=
+      (ConnectedIsoClass.mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four hm t s).mpr h.symm
+    exact ⟨ρ, rfl, heq_of_eq hρ.symm⟩
+
+/-- Through degree four, the class of a record lies in the branch-point orbit of a class `c` exactly
+when the passport of the record's triple is, up to conjugating its reference subgroup, a
+reordering of any passport containing `c`. -/
+theorem exists_passportOf_conjugate_eq_smul_iff {r : SmallDegreeRecord} {n : ℕ}
+    {P : PassportSpec n} {c : ConnectedIsoClass n} (hc : c ∈ P.classSet) :
+    (∃ (ρ : (Perm (Fin 3))ᵐᵒᵖ) (τ : Perm (Fin r.degree)),
+        (⟨r.degree, r.triple.passportOf.conjugate τ⟩ : Σ n, PassportSpec n) = ⟨n, ρ • P⟩) ↔
+      ∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • c⟩ := by
+  obtain ⟨_, m, s, hm⟩ := r
+  simp only [isoClass_def, Sigma.mk.inj_iff]
+  -- Both sides force the degrees to agree; afterwards they compare passports and classes.
+  constructor
+  · rintro ⟨ρ, τ, rfl, h⟩
+    have hs : PassportSpec.HasPassport s (ρ • P) :=
+      (s.hasPassport_iff_exists_conjugate_passportOf _).mpr ⟨τ, eq_of_heq h⟩
+    have hρc := (PassportSpec.smul_mem_classSet_smul_iff ρ c P).mpr hc
+    rw [PassportSpec.classSet_eq_singleton_of_degree_le_four hm _ s hs,
+      Finset.mem_singleton] at hρc
+    exact ⟨ρ, rfl, heq_of_eq hρc.symm⟩
+  · rintro ⟨ρ, rfl, h⟩
+    have hρc := (PassportSpec.smul_mem_classSet_smul_iff ρ c P).mpr hc
+    rw [← eq_of_heq h, PassportSpec.mem_classSet, ConnectedIsoClass.hasPassport_mk,
+      s.hasPassport_iff_exists_conjugate_passportOf] at hρc
+    obtain ⟨τ, hτ⟩ := hρc
+    exact ⟨ρ, τ, rfl, heq_of_eq hτ⟩
+
+end SmallDegreeRecord
+
+/-- **The frozen records represent the branch-point orbits of classes.** Every connected
+isomorphism class of degree at most four lies in the branch-point orbit of the class of exactly one
+frozen record. -/
+theorem existsUnique_isoClass_eq_smul {n : ℕ} (hn : n ≤ 4) (c : ConnectedIsoClass n) :
+    ∃! r, r ∈ smallDegreeRecords ∧ ∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • c⟩ := by
+  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
+  simp only [SmallDegreeRecord.exists_isoClass_eq_smul_mk_iff]
+  have ht : t.1.unorderedCycleData ∈ (Finset.univ : Finset (ConnectedTriple n)).image
+      (fun t ↦ t.1.unorderedCycleData) := Finset.mem_image_of_mem _ (Finset.mem_univ t)
+  rw [← unorderedCycleData_eq_classification n hn] at ht
+  simp only [List.mem_toFinset, List.mem_map, List.mem_filter, decide_eq_true_eq] at ht
+  obtain ⟨r, ⟨hr, hrn⟩, hrt⟩ := ht
+  exact ⟨r, ⟨hr, Prod.ext hrn hrt⟩, fun r' ⟨hr', hr't⟩ ↦
+    List.inj_on_of_nodup_map computedUnorderedCycleData_nodup hr' hr
+      (hr't.trans (Prod.ext hrn hrt).symm)⟩
+
+/-- **The passports of the frozen records are branch-point orbit representatives.** Every
+inhabited passport of degree at most four, once its branch points are reordered and its reference
+subgroup is conjugated, is the passport of the triple of exactly one frozen record. -/
+theorem existsUnique_passportOf_conjugate_eq_smul {n : ℕ} (hn : n ≤ 4) {P : PassportSpec n}
+    (hP : P.classSet.Nonempty) :
+    ∃! r, r ∈ smallDegreeRecords ∧ ∃ (ρ : (Perm (Fin 3))ᵐᵒᵖ) (τ : Perm (Fin r.degree)),
+      (⟨r.degree, r.triple.passportOf.conjugate τ⟩ : Σ n, PassportSpec n) = ⟨n, ρ • P⟩ := by
+  obtain ⟨c, hc⟩ := hP
+  simpa only [SmallDegreeRecord.exists_passportOf_conjugate_eq_smul_iff hc] using
+    existsUnique_isoClass_eq_smul hn c
 
 /-- Distinct frozen records have distinct isomorphism classes of triples. -/
 theorem isoClass_nodup : (smallDegreeRecords.map SmallDegreeRecord.isoClass).Nodup := by
