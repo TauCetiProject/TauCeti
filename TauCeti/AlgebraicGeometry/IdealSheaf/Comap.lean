@@ -33,6 +33,9 @@ divisor sums with pullback.
   `I.comap f` is the inverse image of the complement of the support of `I`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_top_iff`: `I.comap f` is the unit ideal sheaf
   exactly when `f` maps into the complement of the support of `I`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.eq_of_comap_eq_of_isIso`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_comap_iff_of_isIso`: pulling back along an
+  isomorphism of schemes is injective on ideal sheaves.
 -/
 
 public section
@@ -153,5 +156,19 @@ theorem comap_eq_top_iff (I : Y.IdealSheafData) (f : X ⟶ Y) :
   rw [← support_eq_bot_iff, ← compl_support_comap, ← TopologicalSpace.Closeds.coe_eq_empty,
     ← TopologicalSpace.Opens.coe_eq_univ]
   simp [TopologicalSpace.Closeds.compl]
+
+/-- Pulling back along an isomorphism of schemes is injective on ideal sheaves. -/
+theorem eq_of_comap_eq_of_isIso {I J : Y.IdealSheafData} (f : X ⟶ Y) [IsIso f]
+    (h : I.comap f = J.comap f) : I = J := by
+  calc
+    I = (I.comap f).comap (inv f) := by rw [← comap_comp, IsIso.inv_hom_id, comap_id]
+    _ = J := by rw [h, ← comap_comp, IsIso.inv_hom_id, comap_id]
+
+/-- Along an isomorphism of schemes, two ideal sheaves have equal pullbacks if and only if they
+are equal. -/
+@[simp]
+theorem comap_eq_comap_iff_of_isIso {I J : Y.IdealSheafData} (f : X ⟶ Y) [IsIso f] :
+    I.comap f = J.comap f ↔ I = J :=
+  ⟨eq_of_comap_eq_of_isIso f, fun h ↦ h ▸ rfl⟩
 
 end AlgebraicGeometry.Scheme.IdealSheafData

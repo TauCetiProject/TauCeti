@@ -109,7 +109,7 @@ theorem isPullback_immersionClosure (i : X ⟶ X') [IsClosedImmersion i] (w : i 
     IsPullback i (immersionClosure i w C).obj.j C.j (i ≫ C.j).imageι := by
   refine isPullback_of_isClosedImmersion _ _ _ _ (i ≫ C.j).toImage_imageι.symm ?_
   rw [Scheme.Hom.imageι, Scheme.IdealSheafData.ker_subschemeι,
-    ← Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion C.j
+    ← Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_flat C.j
       (IsPullback.of_vert_isIso_mono (fst := i) (snd := 𝟙 X) ⟨by simp⟩)]
 
 end
