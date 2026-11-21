@@ -306,6 +306,7 @@ theorem map_comp (g : S →+* T) (f : R →+* S) : map (g.comp f) = (map g).comp
     simp only [map_ofUnit, RingHom.comp_apply]
     exact congrArg ofUnit <| Units.ext <| by simp
 
+@[simp]
 theorem map_map (g : S →+* T) (f : R →+* S) (x : MilnorK R) :
     map g (map f x) = map (g.comp f) x := by
   rw [map_comp, RingHom.comp_apply]
@@ -456,8 +457,8 @@ private theorem snd_truncation_ofUnit (a : Rˣ) :
   simp [truncation]
 
 /-- `ℤ` embeds into the Milnor K-ring as degree zero (detected by truncation to degrees at most
-one). -/
-theorem intCast_injective : Function.Injective (Int.cast : ℤ → MilnorK R) := fun m n h ↦ by
+one). Downstream code uses `Int.cast_injective` through `instCharZero`. -/
+private theorem intCast_injective : Function.Injective (Int.cast : ℤ → MilnorK R) := fun m n h ↦ by
   simpa [fst_truncation_intCast] using congrArg (fun x : MilnorK R ↦ (truncation x).fst) h
 
 /-- The degree-one class map `Rˣ → K_1ᴹ(R)` is injective (detected by truncation to degrees at
@@ -497,7 +498,7 @@ private theorem degree_one_eq_range :
 
 private theorem toSpanSingleton_one_injective :
     Function.Injective (LinearMap.toSpanSingleton ℤ (MilnorK R) 1) := fun m n h ↦
-  intCast_injective (R := R) (by simpa using h)
+  Int.cast_injective (α := MilnorK R) (by simpa using h)
 
 /-- Degree zero of the Milnor K-ring is `ℤ`, embedded through `ℤ → MilnorK R`. -/
 def degreeZeroEquiv : ℤ ≃ₗ[ℤ] degree R 0 :=
