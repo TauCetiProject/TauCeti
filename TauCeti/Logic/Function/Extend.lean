@@ -36,6 +36,8 @@ the points which lie in `s` as soon as they lie in `t`.
   vacuously off the range).
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
+* `Function.FactorsThrough.apply_extend_eq_apply`: gluing. Functionals of disjoint blocks of
+  coordinates take the values they have at given functions all at one function.
 -/
 
 public section
@@ -146,5 +148,16 @@ theorem Injective.extend_comp_extend {α β γ δ : Type*} {f₁₂ : α → β}
     · rw [extend_apply' _ _ _ hx,
         extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
   · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
+
+/-- Gluing along `e : κ → α` the functions `V i` on blocks `p⁻¹ {i}` of `κ` whose images under
+`e` are pairwise disjoint (`p` factors through `e`). The function that takes the value
+`V (p k) (e k)` at each `e k`, and the value of a fallback `f` off the range of `e`, has the same
+image as `V i` under every `F` that depends only on the values at the points `e k` of block `i`. -/
+theorem FactorsThrough.apply_extend_eq_apply {ι κ α β γ : Sort*} {p : κ → ι} {e : κ → α}
+    (hp : p.FactorsThrough e) (V : ι → α → β) (f : α → β) {F : (α → β) → γ} {i : ι}
+    (hF : ∀ v w, (∀ k, p k = i → v (e k) = w (e k)) → F v = F w) :
+    F (extend e (fun k => V (p k) (e k)) f) = F (V i) :=
+  hF _ _ fun k hk => by
+    rw [FactorsThrough.extend_apply (fun _ _ h => by rw [hp h, h]) f k, hk]
 
 end Function

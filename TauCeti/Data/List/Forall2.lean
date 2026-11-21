@@ -27,15 +27,11 @@ variable {α β : Type*} {R : α → β → Prop}
 a function `g` with `R (f i) (g i)` for every `i`. -/
 theorem forall₂_ofFn_left_iff {n : ℕ} {f : Fin n → α} {l : List β} :
     Forall₂ R (ofFn f) l ↔ ∃ g : Fin n → β, (∀ i, R (f i) (g i)) ∧ l = ofFn g := by
-  refine ⟨fun h => ?_, ?_⟩
-  · induction n generalizing l with
-    | zero => exact ⟨Fin.elim0, fun i => i.elim0, forall₂_nil_left_iff.1 h⟩
-    | succ n ih =>
-      rw [ofFn_succ, forall₂_cons_left_iff] at h
-      obtain ⟨b, l, hb, h, rfl⟩ := h
-      obtain ⟨g, hg, rfl⟩ := ih h
-      exact ⟨Fin.cons b g, Fin.cases hb hg, (ofFn_cons ..).symm⟩
+  simp only [forall₂_iff_get, length_ofFn, get_ofFn]
+  refine ⟨fun ⟨hn, h⟩ =>
+    ⟨fun i => l.get (Fin.cast hn i), fun i => h i i.isLt (hn ▸ i.isLt), ?_⟩, ?_⟩
+  · exact (ofFn_get l).symm.trans (ofFn_congr hn.symm _)
   · rintro ⟨g, h, rfl⟩
-    exact forall₂_iff_get.2 ⟨by simp, fun i h₁ _ => by simpa using h ⟨i, by simpa using h₁⟩⟩
+    exact ⟨by simp, fun i h₁ _ => by simpa using h ⟨i, h₁⟩⟩
 
 end List
