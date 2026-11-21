@@ -416,7 +416,9 @@ theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ
 
 /-- The canonical native half-space charts of a closed-upper-half-plane charted space.
 The original charts are composed with the existing real coordinate homeomorphism. This is
-an explicitly chosen charted-space structure, rather than a global instance on every `M`. -/
+an explicitly chosen charted-space structure, rather than a global instance on every `M`.
+The successor dimension `1 + 1` matches the native boundary-chart API. It is definitionally `2`,
+the dimension of `euclideanHalfSpaceHomeomorph`. No change of model or coordinate cast is used. -/
 @[instance_reducible]
 def ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] :
@@ -441,8 +443,8 @@ theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_apply (M : Type*)
     letI := euclideanHalfSpaceChartedSpace M
     chartAt (EuclideanHalfSpace (1 + 1)) x y =
       euclideanHalfSpaceHomeomorph (chartAt ClosedUpperHalfPlane x y) := by
-  rw [chartAt_euclideanHalfSpace]
-  rfl
+  simp only [chartAt_euclideanHalfSpace, OpenPartialHomeomorph.trans_apply,
+    Homeomorph.toOpenPartialHomeomorph_apply]
 
 /-- The inverse preferred chart undoes the half-space coordinate homeomorphism first. -/
 @[simp]
@@ -452,8 +454,8 @@ theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_symm_apply (M : Type*)
     letI := euclideanHalfSpaceChartedSpace M
     (chartAt (EuclideanHalfSpace (1 + 1)) x).symm v =
       (chartAt ClosedUpperHalfPlane x).symm (euclideanHalfSpaceHomeomorph.symm v) := by
-  rw [chartAt_euclideanHalfSpace]
-  rfl
+  simp only [chartAt_euclideanHalfSpace, OpenPartialHomeomorph.coe_trans_symm,
+    Homeomorph.toOpenPartialHomeomorph_symm_apply, Function.comp_apply]
 
 /-- Membership in the transferred chart target is membership after undoing the coordinate
 homeomorphism, which is defined on the whole half-space. -/
@@ -468,7 +470,8 @@ theorem ClosedUpperHalfPlane.mem_chartAt_euclideanHalfSpace_target (M : Type*)
   simp
 
 /-- A `C^n` manifold modelled on the closed upper half-plane is a `C^n` manifold modelled on
-`𝓡∂ 2`, for its charts read in the native half-space coordinates `s + it ↦ (t, s)`. -/
+`𝓡∂ (1 + 1)`, in the successor form used by the native boundary charts, through the
+coordinate comparison `s + it ↦ (t, s)` with the definitionally equal two-dimensional model. -/
 theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
     [IsManifold closedUpperHalfPlaneModel n M] :
