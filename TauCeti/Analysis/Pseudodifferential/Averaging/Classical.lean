@@ -169,15 +169,9 @@ theorem continuousOn_iteratedFDeriv_transport (a : HomogeneousSymbol E E V W m) 
       (n := ∞)).comp_contDiffOn (contDiff_fst.snd.fst.contDiffOn.prodMk
       ((((ContinuousLinearMap.compL ℂ V V W).bilinearRestrictScalars ℝ).isBoundedBilinearMap
         |>.contDiff (n := ∞)).comp_contDiffOn (ha.prodMk contDiff_fst.snd.snd.contDiffOn)))
-  have hpar : Continuous fun g ↦ ((((ρ g).symm : E →L[ℝ] E),
-      ((ρ g).adjointEquiv : E →L[ℝ] E)), ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) := by
-    have hadj : Continuous fun g ↦ ((ρ g).adjointEquiv : E →L[ℝ] E) := by
-      simp only [ContinuousLinearEquiv.coe_adjointEquiv]
-      exact ContinuousLinearMap.adjoint.continuous.comp hρ
-    exact (hρ.continuous_symm_of_monoidHom.prodMk hadj).prodMk
-      (hτ.prodMk hσ.continuous_symm_of_monoidHom)
   refine ((hU.continuousOn_iteratedFDerivWithin_prod_right (hs.prod ht).uniqueDiffOn k
-    (by simp)).comp ((hpar.comp continuous_fst).prodMk continuous_snd).continuousOn
+    (by simp)).comp (((continuous_transportParams hρ hσ hτ).comp continuous_fst).prodMk
+      continuous_snd).continuousOn
       fun q (hq : q ∈ univ ×ˢ t) ↦ ⟨⟨(ρ q.1).adjointEquiv.toUnit, rfl⟩, hq.2⟩).congr
       fun q hq ↦ ?_
   have hfun : (fun y ↦ U (((((ρ q.1).symm : E →L[ℝ] E), ((ρ q.1).adjointEquiv : E →L[ℝ] E)),
@@ -364,8 +358,11 @@ private theorem exists_bound_transport_cutoffSymbol_sub {m' : ℝ}
   obtain ⟨c₀, hc₀⟩ := isCompact_univ.exists_bound_of_continuousOn hρ.continuousOn
   set c := max 1 c₀
   have hc : 1 ≤ c := le_max_left _ _
-  have hinv := Symbol.norm_le_mul_norm_adjointEquiv (c := c) fun g ↦
-    (hc₀ g (mem_univ g)).trans (le_max_right _ _)
+  have hinv (g : G) (ξ : CoordinateSpace n) : ‖ξ‖ ≤ c * ‖(ρ g).adjointEquiv ξ‖ :=
+    ((ρ g).norm_le_norm_symm_mul_norm_adjointEquiv ξ).trans (by
+      gcongr
+      simpa only [map_inv, ContinuousLinearEquiv.inv_eq_symm] using
+        (hc₀ g⁻¹ (mem_univ _)).trans (le_max_right _ _))
   -- Both cutoffs are `1` once `‖ξ‖ > 2c`, so the difference vanishes there.
   refine Symbol.exists_bound_of_continuous_jets_of_eq_zero _ (fun k ↦ ?_) (2 * c)
     (fun g x ξ hξ ↦ ?_) m' hK α β
