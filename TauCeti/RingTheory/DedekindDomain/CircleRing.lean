@@ -15,40 +15,44 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
 /-!
-# The coordinate ring of the real algebraic circle
+# The coordinate ring of the algebraic circle
 
-Let `CircleRing = ℝ[x, y] / (x² + y² - 1)` be the coordinate ring of the real algebraic circle.
-Over any field `k` with `2 ≠ 0`, the defining polynomial `X₀² + X₁² - 1` is irreducible and the
-Jacobian ideal `(X₀² + X₁² - 1, 2 X₀, 2 X₁)` is the unit ideal, so `k[x, y] / (x² + y² - 1)` is
-a Dedekind domain by the smooth affine plane-curve criterion
-`MvPolynomial.isDedekindDomain_quotient_span_singleton`. In particular, `CircleRing` is a
-Dedekind domain.
+Let `CircleQuotient k = k[x, y] / (x² + y² - 1)` be the coordinate ring of the algebraic circle
+over `k`, and `CircleRing = CircleQuotient ℝ` its real specialization. Over any field `k` with
+`2 ≠ 0`, the defining polynomial `X₀² + X₁² - 1` is irreducible and the Jacobian ideal
+`(X₀² + X₁² - 1, 2 X₀, 2 X₁)` is the unit ideal, so `CircleQuotient k` is a Dedekind domain by
+the smooth affine plane-curve criterion `MvPolynomial.isDedekindDomain_quotient_span_singleton`.
+In particular, `CircleRing` is a Dedekind domain.
 
-Geometrically, the two principal open charts `D(1 + x)` and `D(1 - x)` cover `Spec(CircleRing)`
-since `(1 + x) + (1 - x) = 2` is a unit. On each chart `s = 1 + ε x` (`ε ∈ {±1}`), stereographic
-projection `t = y / s` with inverse `x = ε (1 - t²) / (1 + t²)`, `y = 2 t / (1 + t²)` identifies
-the localization `CircleRing[s⁻¹]` with `ℝ[t, (1 + t²)⁻¹]`, with overlap transition
-`t₊ · t₋ = 1` on `D(y)`.
+Geometrically, whenever `2 ≠ 0` in `k`, the two principal open charts `D(1 + x)` and `D(1 - x)`
+cover `Spec(CircleQuotient k)` since `(1 + x) + (1 - x) = 2` is a unit. On each chart
+`s = 1 + ε x` (`ε ∈ {±1}`), stereographic projection `t = y / s` with inverse
+`x = ε (1 - t²) / (1 + t²)`, `y = 2 t / (1 + t²)` identifies the localization
+`CircleQuotient k[s⁻¹]` with `k[t, (1 + t²)⁻¹]`, with overlap transition `t₊ · t₋ = 1` on `D(y)`.
 
 ## Main definitions
 
-* `TauCeti.CircleRing`: the coordinate ring `ℝ[x, y] / (x² + y² - 1)` of the real algebraic
-  circle.
-* `TauCeti.CircleRing.x`, `TauCeti.CircleRing.y`: the coordinate generators of `CircleRing`.
-* `TauCeti.CircleRing.liftAlgHom`: the universal property of `CircleRing` as an `ℝ`-algebra.
-* `TauCeti.CircleRing.stereographicChartEquiv`: the `ℝ`-algebra isomorphism
-  `Localization.Away (1 + ε x) ≃ₐ[ℝ] Localization.Away (X² + 1)` for `ε² = 1`.
-* `TauCeti.CircleRing.chartToOverlap`: the canonical map from a stereographic chart to
+* `TauCeti.CircleQuotient`: the coordinate ring `k[x, y] / (x² + y² - 1)` of the algebraic circle
+  over `k`.
+* `TauCeti.CircleQuotient.x`, `TauCeti.CircleQuotient.y`: the coordinate generators of
+  `CircleQuotient k`.
+* `TauCeti.CircleQuotient.liftAlgHom`: the universal property of `CircleQuotient k` as a
+  `k`-algebra.
+* `TauCeti.CircleQuotient.stereographicChartEquiv`: the `k`-algebra isomorphism
+  `Localization.Away (1 + ε x) ≃ₐ[k] Localization.Away (X² + 1)` for `ε² = 1` and `(2 : k) ≠ 0`.
+* `TauCeti.CircleQuotient.chartToOverlap`: the canonical map from a stereographic chart to
   `Localization.Away y`.
+* `TauCeti.CircleRing`: the real coordinate ring `CircleQuotient ℝ`.
 
 ## Main results
 
 * `TauCeti.irreducible_circlePoly`, `TauCeti.isDedekindDomain_circleQuotient`: over any field
   of characteristic different from two, `X₀² + X₁² - 1` is irreducible and its quotient is a
   Dedekind domain.
-* `TauCeti.CircleRing.instIsDedekindDomain`: `CircleRing` is a Dedekind domain.
-* `TauCeti.CircleRing.span_one_add_x_one_sub_x`: `1 + x` and `1 - x` generate the unit ideal.
-* `TauCeti.CircleRing.stereographic_overlap`: on `Localization.Away y`, the two stereographic
+* `TauCeti.CircleQuotient.instIsDedekindDomain`: `CircleQuotient k` is a Dedekind domain when
+  `2 ≠ 0` in `k`.
+* `TauCeti.CircleQuotient.span_one_add_x_one_sub_x`: `1 + x` and `1 - x` generate the unit ideal.
+* `TauCeti.CircleQuotient.stereographic_overlap`: on `Localization.Away y`, the two stereographic
   parameters satisfy `t₊ · t₋ = 1`.
 -/
 
@@ -59,6 +63,11 @@ open Polynomial
 namespace TauCeti
 
 noncomputable section
+
+/-- The coordinate ring `k[x, y] / (x² + y² - 1)` of the algebraic circle over `k`. -/
+abbrev CircleQuotient (k : Type*) [CommRing k] :=
+  MvPolynomial (Fin 2) k ⧸ Ideal.span
+    {MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - (1 : MvPolynomial (Fin 2) k)}
 
 /-! ## Irreducibility and Dedekind-domain structure -/
 
@@ -115,8 +124,7 @@ theorem irreducible_circlePoly (h2 : (2 : k) ≠ 0) :
 /-- Over a field of characteristic different from two, the coordinate ring
 `k[X₀, X₁] / (X₀² + X₁² - 1)` of the circle is a Dedekind domain. -/
 theorem isDedekindDomain_circleQuotient (h2 : (2 : k) ≠ 0) :
-    IsDedekindDomain (MvPolynomial (Fin 2) k ⧸
-      Ideal.span {MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - (1 : MvPolynomial (Fin 2) k)}) := by
+    IsDedekindDomain (CircleQuotient k) := by
   let f : MvPolynomial (Fin 2) k := MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - 1
   refine MvPolynomial.isDedekindDomain_quotient_span_singleton (irreducible_circlePoly h2) ?_
   rw [Ideal.eq_top_iff_one]
@@ -145,45 +153,40 @@ theorem isDedekindDomain_circleQuotient (h2 : (2 : k) ≠ 0) :
 
 end Field
 
-/-! ## The coordinate ring of the real algebraic circle -/
+/-! ## Coordinate generators and universal property -/
 
-/-- The coordinate ring of the real algebraic circle: `ℝ[x, y] / (x² + y² - 1)`. -/
-abbrev CircleRing :=
-  MvPolynomial (Fin 2) ℝ ⧸ Ideal.span
-    {MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - (1 : MvPolynomial (Fin 2) ℝ)}
+namespace CircleQuotient
 
-namespace CircleRing
+section CommRing
 
-/-- The defining ideal `(X₀² + X₁² - 1)` of `CircleRing`. -/
-private abbrev definingIdeal : Ideal (MvPolynomial (Fin 2) ℝ) :=
-  Ideal.span {MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - (1 : MvPolynomial (Fin 2) ℝ)}
+variable {k : Type*} [CommRing k]
 
-/-- The first coordinate generator `x` of `CircleRing`. -/
-def x : CircleRing :=
-  Ideal.Quotient.mk definingIdeal (MvPolynomial.X 0)
+/-- The defining ideal `(X₀² + X₁² - 1)` of `CircleQuotient k`. -/
+private abbrev definingIdeal (k : Type*) [CommRing k] : Ideal (MvPolynomial (Fin 2) k) :=
+  Ideal.span {MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - (1 : MvPolynomial (Fin 2) k)}
 
-/-- The second coordinate generator `y` of `CircleRing`. -/
-def y : CircleRing :=
-  Ideal.Quotient.mk definingIdeal (MvPolynomial.X 1)
+/-- The first coordinate generator `x` of `CircleQuotient k`. -/
+def x : CircleQuotient k :=
+  Ideal.Quotient.mk (definingIdeal k) (MvPolynomial.X 0)
 
-/-- The circle relation `x² + y² = 1` in `CircleRing`. -/
+/-- The second coordinate generator `y` of `CircleQuotient k`. -/
+def y : CircleQuotient k :=
+  Ideal.Quotient.mk (definingIdeal k) (MvPolynomial.X 1)
+
+/-- The circle relation `x² + y² = 1` in `CircleQuotient k`. -/
 @[simp]
-theorem x_sq_add_y_sq : x ^ 2 + y ^ 2 = 1 := by
-  have h : Ideal.Quotient.mk definingIdeal
+theorem x_sq_add_y_sq : (x : CircleQuotient k) ^ 2 + y ^ 2 = 1 := by
+  have h : Ideal.Quotient.mk (definingIdeal k)
       (MvPolynomial.X 0 ^ 2 + MvPolynomial.X 1 ^ 2 - 1) = 0 :=
     Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
   apply sub_eq_zero.mp
   simpa only [x, y, map_sub, map_add, map_pow, map_one] using h
 
-/-- `CircleRing` is a Dedekind domain. -/
-instance instIsDedekindDomain : IsDedekindDomain CircleRing :=
-  isDedekindDomain_circleQuotient two_ne_zero
-
-/-- The universal property of `CircleRing`: an `ℝ`-algebra homomorphism `CircleRing →ₐ[ℝ] B`
-is determined by two elements `a, b : B` satisfying `a² + b² = 1`. -/
-def liftAlgHom {B : Type*} [CommRing B] [Algebra ℝ B] (a b : B) (hab : a ^ 2 + b ^ 2 = 1) :
-    CircleRing →ₐ[ℝ] B :=
-  Ideal.Quotient.liftₐ definingIdeal (MvPolynomial.aeval ![a, b]) fun p hp ↦ by
+/-- The universal property of `CircleQuotient k`: a `k`-algebra homomorphism
+`CircleQuotient k →ₐ[k] B` is determined by two elements `a, b : B` satisfying `a² + b² = 1`. -/
+def liftAlgHom {B : Type*} [CommRing B] [Algebra k B] (a b : B) (hab : a ^ 2 + b ^ 2 = 1) :
+    CircleQuotient k →ₐ[k] B :=
+  Ideal.Quotient.liftₐ (definingIdeal k) (MvPolynomial.aeval ![a, b]) fun p hp ↦ by
     rw [Ideal.mem_span_singleton] at hp
     obtain ⟨q, rfl⟩ := hp
     simp only [map_mul, map_sub, map_add, map_pow, map_one, MvPolynomial.aeval_X,
@@ -192,22 +195,23 @@ def liftAlgHom {B : Type*} [CommRing B] [Algebra ℝ B] (a b : B) (hab : a ^ 2 +
 
 /-- `liftAlgHom a b hab` sends `x` to `a`. -/
 @[simp]
-theorem liftAlgHom_x {B : Type*} [CommRing B] [Algebra ℝ B] (a b : B) (hab : a ^ 2 + b ^ 2 = 1) :
-    liftAlgHom a b hab x = a :=
+theorem liftAlgHom_x {B : Type*} [CommRing B] [Algebra k B] (a b : B) (hab : a ^ 2 + b ^ 2 = 1) :
+    liftAlgHom a b hab (x : CircleQuotient k) = a :=
   MvPolynomial.aeval_X ![a, b] 0
 
 /-- `liftAlgHom a b hab` sends `y` to `b`. -/
 @[simp]
-theorem liftAlgHom_y {B : Type*} [CommRing B] [Algebra ℝ B] (a b : B) (hab : a ^ 2 + b ^ 2 = 1) :
-    liftAlgHom a b hab y = b :=
+theorem liftAlgHom_y {B : Type*} [CommRing B] [Algebra k B] (a b : B) (hab : a ^ 2 + b ^ 2 = 1) :
+    liftAlgHom a b hab (y : CircleQuotient k) = b :=
   MvPolynomial.aeval_X ![a, b] 1
 
-/-- Two `ℝ`-algebra homomorphisms out of `CircleRing` coincide when they agree on `x` and `y`. -/
+/-- Two `k`-algebra homomorphisms out of `CircleQuotient k` coincide when they agree on `x` and
+`y`. -/
 @[ext]
-theorem algHom_ext {B : Type*} [CommRing B] [Algebra ℝ B] {f g : CircleRing →ₐ[ℝ] B}
+theorem algHom_ext {B : Type*} [CommRing B] [Algebra k B] {f g : CircleQuotient k →ₐ[k] B}
     (hx : f x = g x) (hy : f y = g y) : f = g := by
-  have hcomp : f.comp (Ideal.Quotient.mkₐ ℝ definingIdeal) =
-      g.comp (Ideal.Quotient.mkₐ ℝ definingIdeal) := by
+  have hcomp : f.comp (Ideal.Quotient.mkₐ k (definingIdeal k)) =
+      g.comp (Ideal.Quotient.mkₐ k (definingIdeal k)) := by
     refine MvPolynomial.algHom_ext fun i ↦ ?_
     fin_cases i
     · exact hx
@@ -216,397 +220,492 @@ theorem algHom_ext {B : Type*} [CommRing B] [Algebra ℝ B] {f g : CircleRing �
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective z
   exact AlgHom.congr_fun hcomp p
 
-/-! ### Stereographic charts covering `Spec(CircleRing)` -/
+end CommRing
 
-/-- The principal open subsets `D(1 + x)` and `D(1 - x)` cover `Spec(CircleRing)`. -/
-theorem span_one_add_x_one_sub_x : Ideal.span ({1 + x, 1 - x} : Set CircleRing) = ⊤ := by
-  rw [Ideal.eq_top_iff_one]
-  have h2 : (2 : CircleRing) ∈ Ideal.span ({1 + x, 1 - x} : Set CircleRing) := by
-    have hadd : (1 + x) + (1 - x) = (2 : CircleRing) := by ring
-    rw [← hadd]
-    exact Ideal.add_mem _ (Ideal.subset_span (by simp)) (Ideal.subset_span (by simp))
-  have h1 : algebraMap ℝ CircleRing (2⁻¹) * (2 : CircleRing) = 1 := by
-    rw [← map_ofNat (algebraMap ℝ CircleRing) 2, ← map_mul,
-      inv_mul_cancel₀ two_ne_zero, map_one]
-  have hmem1 := Ideal.mul_mem_left _ (algebraMap ℝ CircleRing (2⁻¹)) h2
-  rwa [h1] at hmem1
+/-- `CircleQuotient k` is a Dedekind domain whenever `k` is a field with `2 ≠ 0`. -/
+instance instIsDedekindDomain {k : Type*} [Field k] [NeZero (2 : k)] :
+    IsDedekindDomain (CircleQuotient k) :=
+  isDedekindDomain_circleQuotient (NeZero.ne (2 : k))
 
-private theorem two_mul_invSelf_mul_inv {R : Type*} [CommRing R] [Algebra ℝ R] (r : R) :
+/-! ### Stereographic charts covering `Spec(CircleQuotient k)` -/
+
+section ChartHelpers
+
+private theorem two_mul_algebraMap_inv_two {k B : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    [CommRing B] [Algebra k B] :
+    (2 : B) * algebraMap k B (2⁻¹) = 1 := by
+  rw [← map_ofNat (algebraMap k B) 2, ← map_mul, mul_inv_cancel₀ h2, map_one]
+
+private theorem two_mul_invSelf_mul_inv {k R : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    [CommRing R] [Algebra k R] (r : R) :
     (2 : Localization.Away r) * IsLocalization.Away.invSelf r *
-        (algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r) =
+        (algebraMap k (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r) =
       1 := by
-  have h2 : (2 : Localization.Away r) * algebraMap ℝ (Localization.Away r) (2⁻¹) = 1 := by
-    rw [← map_ofNat (algebraMap ℝ _) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
   calc
     (2 : Localization.Away r) * IsLocalization.Away.invSelf r *
-        (algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r)
-        = ((2 : Localization.Away r) * algebraMap ℝ (Localization.Away r) (2⁻¹)) *
+        (algebraMap k (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r)
+        = ((2 : Localization.Away r) * algebraMap k (Localization.Away r) (2⁻¹)) *
             (algebraMap R (Localization.Away r) r * IsLocalization.Away.invSelf r) := by ring
-    _ = 1 := by rw [h2, IsLocalization.Away.mul_invSelf r, mul_one]
+    _ = 1 := by
+          rw [two_mul_algebraMap_inv_two (k := k) h2, IsLocalization.Away.mul_invSelf r, mul_one]
 
-private theorem eq_of_two_mul_invSelf_mul_eq_one {R : Type*} [CommRing R] [Algebra ℝ R]
-    (r : R) {z : Localization.Away r}
+private theorem eq_of_two_mul_invSelf_mul_eq_one {k R : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    [CommRing R] [Algebra k R] (r : R) {z : Localization.Away r}
     (hz : (2 : Localization.Away r) * IsLocalization.Away.invSelf r * z = 1) :
-    z = algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r := by
+    z = algebraMap k (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r := by
   calc
-    z = (2 * IsLocalization.Away.invSelf r *
-          (algebraMap ℝ (Localization.Away r) (2⁻¹) *
+    z = ((2 : Localization.Away r) * IsLocalization.Away.invSelf r *
+          (algebraMap k (Localization.Away r) (2⁻¹) *
             algebraMap R (Localization.Away r) r)) * z := by
-            rw [two_mul_invSelf_mul_inv r, one_mul]
-    _ = algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r *
-          (2 * IsLocalization.Away.invSelf r * z) := by ring
-    _ = algebraMap ℝ (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r := by
+            rw [two_mul_invSelf_mul_inv (k := k) h2 r, one_mul]
+    _ = algebraMap k (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r *
+          ((2 : Localization.Away r) * IsLocalization.Away.invSelf r * z) := by ring
+    _ = algebraMap k (Localization.Away r) (2⁻¹) * algebraMap R (Localization.Away r) r := by
           rw [hz, mul_one]
 
-/-- Base `ℝ`-algebra map `CircleRing →ₐ[ℝ] ℝ[t, (t² + 1)⁻¹]` underlying the stereographic chart. -/
-private def stereographicChartBaseHom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    CircleRing →ₐ[ℝ] Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  set q : ℝ[X] := Polynomial.X ^ 2 + 1
+private theorem X_sq_add_one_mul_invSelf (k : Type*) [CommRing k] :
+    (algebraMap k[X] (Localization.Away (Polynomial.X ^ 2 + 1 : k[X])) Polynomial.X ^ 2 + 1) *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) =
+      1 := by
+  have hq : algebraMap k[X] (Localization.Away (Polynomial.X ^ 2 + 1 : k[X]))
+      (Polynomial.X ^ 2 + 1) =
+      algebraMap k[X] (Localization.Away (Polynomial.X ^ 2 + 1 : k[X])) Polynomial.X ^ 2 + 1 := by
+    simp
+  rw [← hq]
+  exact IsLocalization.Away.mul_invSelf (Polynomial.X ^ 2 + 1 : k[X])
+
+private theorem one_add_y_mul_invSelf_sq {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
+    (algebraMap (CircleQuotient k)
+        (Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x)) y *
+      IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x)) ^ 2 + 1 =
+      2 * IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) := by
+  set s : CircleQuotient k := 1 + algebraMap k (CircleQuotient k) ε * x
+  let A_s := Localization.Away s
+  let invS : A_s := IsLocalization.Away.invSelf s
+  have hs_inv : algebraMap (CircleQuotient k) A_s s * invS = 1 := IsLocalization.Away.mul_invSelf s
+  have hεA : (algebraMap k (CircleQuotient k) ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+  have hs_sq_rel : (y : CircleQuotient k) ^ 2 + s ^ 2 = 2 * s := by
+    dsimp only [s]
+    linear_combination x_sq_add_y_sq (k := k) + x ^ 2 * hεA
+  have hmap := congrArg (algebraMap (CircleQuotient k) A_s) hs_sq_rel
+  simp only [map_add, map_pow, map_mul, map_ofNat] at hmap
+  calc
+    (algebraMap (CircleQuotient k) A_s y * invS) ^ 2 + 1
+        = (algebraMap (CircleQuotient k) A_s y * invS) ^ 2 +
+            (algebraMap (CircleQuotient k) A_s s * invS) ^ 2 := by rw [hs_inv, one_pow]
+    _ = (algebraMap (CircleQuotient k) A_s y ^ 2 + algebraMap (CircleQuotient k) A_s s ^ 2) *
+          invS ^ 2 := by ring
+    _ = (2 * algebraMap (CircleQuotient k) A_s s) * invS ^ 2 := by rw [hmap]
+    _ = 2 * (algebraMap (CircleQuotient k) A_s s * invS) * invS := by ring
+    _ = 2 * invS := by rw [hs_inv, mul_one]
+
+private theorem one_sub_y_mul_invSelf_sq {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
+    1 - (algebraMap (CircleQuotient k)
+          (Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x)) y *
+        IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x)) ^ 2 =
+      2 * algebraMap k _ ε * algebraMap (CircleQuotient k) _ x *
+        IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) := by
+  set s : CircleQuotient k := 1 + algebraMap k (CircleQuotient k) ε * x
+  let A_s := Localization.Away s
+  let invS : A_s := IsLocalization.Away.invSelf s
+  have hs_inv : algebraMap (CircleQuotient k) A_s s * invS = 1 := IsLocalization.Away.mul_invSelf s
+  have hεA : (algebraMap k (CircleQuotient k) ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+  have hεA' :
+      algebraMap k A_s ε = algebraMap (CircleQuotient k) A_s (algebraMap k (CircleQuotient k) ε) :=
+    IsScalarTower.algebraMap_apply k (CircleQuotient k) A_s ε
+  have hnum : s ^ 2 - y ^ 2 = 2 * algebraMap k (CircleQuotient k) ε * x * s := by
+    dsimp only [s]
+    linear_combination -x_sq_add_y_sq (k := k) - x ^ 2 * hεA
+  have hnumA := congrArg (algebraMap (CircleQuotient k) A_s) hnum
+  simp only [map_sub, map_pow, map_mul, map_ofNat] at hnumA
+  calc
+    1 - (algebraMap (CircleQuotient k) A_s y * invS) ^ 2
+        = (algebraMap (CircleQuotient k) A_s s * invS) ^ 2 -
+            (algebraMap (CircleQuotient k) A_s y * invS) ^ 2 := by rw [hs_inv, one_pow]
+    _ = (algebraMap (CircleQuotient k) A_s s ^ 2 - algebraMap (CircleQuotient k) A_s y ^ 2) *
+          invS ^ 2 := by ring
+    _ = (2 * algebraMap (CircleQuotient k) A_s (algebraMap k (CircleQuotient k) ε) *
+          algebraMap (CircleQuotient k) A_s x * algebraMap (CircleQuotient k) A_s s) *
+          invS ^ 2 := by rw [hnumA]
+    _ = 2 * algebraMap k A_s ε * algebraMap (CircleQuotient k) A_s x *
+          (algebraMap (CircleQuotient k) A_s s * invS) * invS := by rw [← hεA']; ring
+    _ = 2 * algebraMap k A_s ε * algebraMap (CircleQuotient k) A_s x * invS := by
+          rw [hs_inv, mul_one]
+
+end ChartHelpers
+
+section Charts
+
+/-- The principal open subsets `D(1 + x)` and `D(1 - x)` cover `Spec(CircleQuotient k)` when
+`2 ≠ 0` in `k`. -/
+theorem span_one_add_x_one_sub_x {k : Type*} [Field k] (h2 : (2 : k) ≠ 0) :
+    Ideal.span ({1 + x, 1 - x} : Set (CircleQuotient k)) = ⊤ := by
+  rw [Ideal.eq_top_iff_one]
+  have h2mem : (2 : CircleQuotient k) ∈ Ideal.span ({1 + x, 1 - x} : Set (CircleQuotient k)) := by
+    have hadd : (1 + (x : CircleQuotient k)) + (1 - x) = 2 := by ring
+    rw [← hadd]
+    exact Ideal.add_mem _ (Ideal.subset_span (by simp)) (Ideal.subset_span (by simp))
+  have h1 : (2 : CircleQuotient k) * algebraMap k (CircleQuotient k) (2⁻¹) = 1 :=
+    two_mul_algebraMap_inv_two (k := k) h2
+  have hmem1 := Ideal.mul_mem_right (algebraMap k (CircleQuotient k) (2⁻¹)) _ h2mem
+  rwa [h1] at hmem1
+
+/-- Base `k`-algebra map `CircleQuotient k →ₐ[k] k[t, (t² + 1)⁻¹]` underlying the stereographic
+chart. -/
+private def stereographicChartBaseHom {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
+    CircleQuotient k →ₐ[k] Localization.Away (Polynomial.X ^ 2 + 1 : k[X]) := by
+  set q : k[X] := Polynomial.X ^ 2 + 1
   let B_q := Localization.Away q
-  let t : B_q := algebraMap ℝ[X] B_q Polynomial.X
+  let t : B_q := algebraMap k[X] B_q Polynomial.X
   let invQ : B_q := IsLocalization.Away.invSelf q
-  have hq_inv : (t ^ 2 + 1) * invQ = 1 := by
-    have hq_eq : algebraMap ℝ[X] B_q q = t ^ 2 + 1 := by simp [q, t]
-    rw [← hq_eq]
-    exact IsLocalization.Away.mul_invSelf q
-  have hεB : (algebraMap ℝ B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
-  let xImg : B_q := algebraMap ℝ B_q ε * (1 - t ^ 2) * invQ
+  have hq_inv : (t ^ 2 + 1) * invQ = 1 := X_sq_add_one_mul_invSelf k
+  have hεB : (algebraMap k B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+  let xImg : B_q := algebraMap k B_q ε * (1 - t ^ 2) * invQ
   let yImg : B_q := 2 * t * invQ
   have hrel : xImg ^ 2 + yImg ^ 2 = 1 := by
     calc
       xImg ^ 2 + yImg ^ 2
-          = (algebraMap ℝ B_q ε) ^ 2 * (1 - t ^ 2) ^ 2 * invQ ^ 2 + 4 * t ^ 2 * invQ ^ 2 := by
+          = (algebraMap k B_q ε) ^ 2 * (1 - t ^ 2) ^ 2 * invQ ^ 2 + 4 * t ^ 2 * invQ ^ 2 := by
               simp only [xImg, yImg]; ring
       _ = ((t ^ 2 + 1) * invQ) ^ 2 := by rw [hεB]; ring
       _ = 1 := by rw [hq_inv, one_pow]
   exact liftAlgHom xImg yImg hrel
 
-private theorem stereographicChartBaseHom_x (ε : ℝ) (hε : ε ^ 2 = 1) :
+private theorem stereographicChartBaseHom_x {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
     stereographicChartBaseHom ε hε x =
-      algebraMap ℝ _ ε * (1 - algebraMap ℝ[X] _ Polynomial.X ^ 2) *
-        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
+      algebraMap k _ ε * (1 - algebraMap k[X] _ Polynomial.X ^ 2) *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) := by
   simp [stereographicChartBaseHom]
 
-private theorem stereographicChartBaseHom_y (ε : ℝ) (hε : ε ^ 2 = 1) :
+private theorem stereographicChartBaseHom_y {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
     stereographicChartBaseHom ε hε y =
-      2 * algebraMap ℝ[X] _ Polynomial.X *
-        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
+      2 * algebraMap k[X] _ Polynomial.X *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) := by
   simp [stereographicChartBaseHom]
 
-private theorem stereographicChartBaseHom_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartBaseHom ε hε (1 + algebraMap ℝ CircleRing ε * x) =
-      2 * IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  set q : ℝ[X] := Polynomial.X ^ 2 + 1
+private theorem stereographicChartBaseHom_denom {k : Type*} [CommRing k]
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartBaseHom ε hε (1 + algebraMap k (CircleQuotient k) ε * x) =
+      2 * IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) := by
+  set q : k[X] := Polynomial.X ^ 2 + 1
   let B_q := Localization.Away q
-  let t : B_q := algebraMap ℝ[X] B_q Polynomial.X
+  let t : B_q := algebraMap k[X] B_q Polynomial.X
   let invQ : B_q := IsLocalization.Away.invSelf q
-  have hq_inv : (t ^ 2 + 1) * invQ = 1 := by
-    have hq_eq : algebraMap ℝ[X] B_q q = t ^ 2 + 1 := by simp [q, t]
-    rw [← hq_eq]
-    exact IsLocalization.Away.mul_invSelf q
-  have hεB : (algebraMap ℝ B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+  have hq_inv : (t ^ 2 + 1) * invQ = 1 := X_sq_add_one_mul_invSelf k
+  have hεB : (algebraMap k B_q ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
   simp only [map_add, map_one, map_mul, AlgHom.commutes, stereographicChartBaseHom_x]
   calc
-    1 + algebraMap ℝ B_q ε * (algebraMap ℝ B_q ε * (1 - t ^ 2) * invQ)
-        = 1 + (algebraMap ℝ B_q ε) ^ 2 * (1 - t ^ 2) * invQ := by ring
+    1 + algebraMap k B_q ε * (algebraMap k B_q ε * (1 - t ^ 2) * invQ)
+        = 1 + (algebraMap k B_q ε) ^ 2 * (1 - t ^ 2) * invQ := by ring
     _ = 1 + (1 - t ^ 2) * invQ := by rw [hεB, one_mul]
     _ = (t ^ 2 + 1) * invQ + (1 - t ^ 2) * invQ := by rw [hq_inv]
     _ = 2 * invQ := by ring
 
-/-- Forward map of the stereographic chart `CircleRing[(1 + ε x)⁻¹] →ₐ[ℝ] ℝ[t, (t² + 1)⁻¹]`. -/
-private def stereographicChartHom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    Localization.Away (1 + algebraMap ℝ CircleRing ε * x) →ₐ[ℝ]
-      Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) :=
+/-- Forward map of the stereographic chart
+`CircleQuotient k[(1 + ε x)⁻¹] →ₐ[k] k[t, (t² + 1)⁻¹]`. -/
+private def stereographicChartHom {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x) →ₐ[k]
+      Localization.Away (Polynomial.X ^ 2 + 1 : k[X]) :=
   IsLocalization.Away.liftAlgHom (f := stereographicChartBaseHom ε hε)
-    (1 + algebraMap ℝ CircleRing ε * x) (by
+    (1 + algebraMap k (CircleQuotient k) ε * x) (by
       rw [stereographicChartBaseHom_denom ε hε]
       exact isUnit_iff_exists_inv.mpr
-        ⟨_, two_mul_invSelf_mul_inv (Polynomial.X ^ 2 + 1 : ℝ[X])⟩)
+        ⟨_, two_mul_invSelf_mul_inv (k := k) h2 (Polynomial.X ^ 2 + 1 : k[X])⟩)
 
-/-- Base `ℝ`-algebra map `ℝ[t] →ₐ[ℝ] CircleRing[(1 + ε x)⁻¹]` underlying the inverse chart. -/
-private def stereographicChartInvBaseHom (ε : ℝ) :
-    ℝ[X] →ₐ[ℝ] Localization.Away (1 + algebraMap ℝ CircleRing ε * x) :=
+/-- Base `k`-algebra map `k[t] →ₐ[k] CircleQuotient k[(1 + ε x)⁻¹]` underlying the inverse
+chart. -/
+private def stereographicChartInvBaseHom {k : Type*} [CommRing k] (ε : k) :
+    k[X] →ₐ[k] Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x) :=
   Polynomial.aeval
-    (algebraMap CircleRing _ y * IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x))
+    (algebraMap (CircleQuotient k) _ y *
+      IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x))
 
-private theorem stereographicChartInvBaseHom_X (ε : ℝ) :
+private theorem stereographicChartInvBaseHom_X {k : Type*} [CommRing k] (ε : k) :
     stereographicChartInvBaseHom ε Polynomial.X =
-      algebraMap CircleRing _ y *
-        IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
+      algebraMap (CircleQuotient k) _ y *
+        IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) := by
   simp [stereographicChartInvBaseHom]
 
-private theorem stereographicChartInvBaseHom_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
+private theorem stereographicChartInvBaseHom_denom {k : Type*} [CommRing k]
+    (ε : k) (hε : ε ^ 2 = 1) :
     stereographicChartInvBaseHom ε (Polynomial.X ^ 2 + 1) =
-      2 * IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
-  set s : CircleRing := 1 + algebraMap ℝ CircleRing ε * x
-  let A_s := Localization.Away s
-  let invS : A_s := IsLocalization.Away.invSelf s
-  have hs_inv : algebraMap CircleRing A_s s * invS = 1 := IsLocalization.Away.mul_invSelf s
-  have hεA : (algebraMap ℝ CircleRing ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
-  have hs_sq_rel : y ^ 2 + s ^ 2 = 2 * s := by
-    dsimp only [s]
-    linear_combination x_sq_add_y_sq + x ^ 2 * hεA
-  have hmap := congrArg (algebraMap CircleRing A_s) hs_sq_rel
-  simp only [map_add, map_pow, map_mul, map_ofNat] at hmap
+      2 * IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) := by
   simp only [map_add, map_pow, map_one, stereographicChartInvBaseHom_X]
-  calc
-    (algebraMap CircleRing A_s y * invS) ^ 2 + 1
-        = (algebraMap CircleRing A_s y ^ 2 + algebraMap CircleRing A_s s ^ 2) * invS ^ 2 := by
-            linear_combination -(1 + algebraMap CircleRing A_s s * invS) * hs_inv
-    _ = (2 * algebraMap CircleRing A_s s) * invS ^ 2 := by rw [hmap]
-    _ = 2 * (algebraMap CircleRing A_s s * invS) * invS := by ring
-    _ = 2 * invS := by rw [hs_inv, mul_one]
+  exact one_add_y_mul_invSelf_sq ε hε
 
-/-- Inverse map of the stereographic chart `ℝ[t, (t² + 1)⁻¹] →ₐ[ℝ] CircleRing[(1 + ε x)⁻¹]`. -/
-private def stereographicChartInv (ε : ℝ) (hε : ε ^ 2 = 1) :
-    Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) →ₐ[ℝ]
-      Localization.Away (1 + algebraMap ℝ CircleRing ε * x) :=
+/-- Inverse map of the stereographic chart
+`k[t, (t² + 1)⁻¹] →ₐ[k] CircleQuotient k[(1 + ε x)⁻¹]`. -/
+private def stereographicChartInv {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    Localization.Away (Polynomial.X ^ 2 + 1 : k[X]) →ₐ[k]
+      Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x) :=
   IsLocalization.Away.liftAlgHom (f := stereographicChartInvBaseHom ε)
-    (Polynomial.X ^ 2 + 1 : ℝ[X]) (by
+    (Polynomial.X ^ 2 + 1 : k[X]) (by
       rw [stereographicChartInvBaseHom_denom ε hε]
       exact isUnit_iff_exists_inv.mpr
-        ⟨_, two_mul_invSelf_mul_inv (1 + algebraMap ℝ CircleRing ε * x)⟩)
+        ⟨_, two_mul_invSelf_mul_inv (k := k) h2 (1 + algebraMap k (CircleQuotient k) ε * x)⟩)
 
-private theorem stereographicChartHom_x (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartHom ε hε (algebraMap CircleRing _ x) =
-      algebraMap ℝ _ ε * (1 - algebraMap ℝ[X] _ Polynomial.X ^ 2) *
-        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  simpa [stereographicChartHom] using stereographicChartBaseHom_x ε hε
+private theorem stereographicChartHom_algebraMap {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) (a : CircleQuotient k) :
+    stereographicChartHom h2 ε hε (algebraMap (CircleQuotient k) _ a) =
+      stereographicChartBaseHom ε hε a := by
+  rw [stereographicChartHom, IsLocalization.Away.coe_liftAlgHom, IsLocalization.Away.lift_eq]
+  rfl
 
-private theorem stereographicChartHom_y (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartHom ε hε (algebraMap CircleRing _ y) =
-      2 * algebraMap ℝ[X] _ Polynomial.X *
-        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  simpa [stereographicChartHom] using stereographicChartBaseHom_y ε hε
+private theorem stereographicChartInv_algebraMap {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) (p : k[X]) :
+    stereographicChartInv h2 ε hε (algebraMap k[X] _ p) =
+      stereographicChartInvBaseHom ε p := by
+  rw [stereographicChartInv, IsLocalization.Away.coe_liftAlgHom, IsLocalization.Away.lift_eq]
+  rfl
 
-private theorem stereographicChartHom_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartHom ε hε (algebraMap CircleRing _ (1 + algebraMap ℝ CircleRing ε * x)) =
-      2 * IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) := by
-  simpa [stereographicChartHom] using stereographicChartBaseHom_denom ε hε
+private theorem stereographicChartHom_x {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartHom h2 ε hε (algebraMap (CircleQuotient k) _ x) =
+      algebraMap k _ ε * (1 - algebraMap k[X] _ Polynomial.X ^ 2) *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) := by
+  rw [stereographicChartHom_algebraMap, stereographicChartBaseHom_x]
 
-private theorem stereographicChartInv_X (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartInv ε hε (algebraMap ℝ[X] _ Polynomial.X) =
-      algebraMap CircleRing _ y *
-        IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
-  simpa [stereographicChartInv] using stereographicChartInvBaseHom_X ε
+private theorem stereographicChartHom_y {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartHom h2 ε hε (algebraMap (CircleQuotient k) _ y) =
+      2 * algebraMap k[X] _ Polynomial.X *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) := by
+  rw [stereographicChartHom_algebraMap, stereographicChartBaseHom_y]
 
-private theorem stereographicChartInv_denom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartInv ε hε (algebraMap ℝ[X] _ (Polynomial.X ^ 2 + 1 : ℝ[X])) =
-      2 * IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) := by
-  simpa [stereographicChartInv] using stereographicChartInvBaseHom_denom ε hε
+private theorem stereographicChartHom_denom {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartHom h2 ε hε
+        (algebraMap (CircleQuotient k) _ (1 + algebraMap k (CircleQuotient k) ε * x)) =
+      2 * IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) := by
+  rw [stereographicChartHom_algebraMap, stereographicChartBaseHom_denom]
 
-private theorem stereographicChartHom_comp_inv (ε : ℝ) (hε : ε ^ 2 = 1) :
-    (stereographicChartHom ε hε).comp (stereographicChartInv ε hε) = AlgHom.id ℝ _ := by
-  set s : CircleRing := 1 + algebraMap ℝ CircleRing ε * x
-  set q : ℝ[X] := Polynomial.X ^ 2 + 1
+private theorem stereographicChartInv_X {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartInv h2 ε hε (algebraMap k[X] _ Polynomial.X) =
+      algebraMap (CircleQuotient k) _ y *
+        IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) := by
+  rw [stereographicChartInv_algebraMap, stereographicChartInvBaseHom_X]
+
+private theorem stereographicChartInv_denom {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartInv h2 ε hε (algebraMap k[X] _ (Polynomial.X ^ 2 + 1 : k[X])) =
+      2 * IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) := by
+  rw [stereographicChartInv_algebraMap, stereographicChartInvBaseHom_denom ε hε]
+
+private theorem stereographicChartHom_comp_inv {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    (stereographicChartHom h2 ε hε).comp (stereographicChartInv h2 ε hε) = AlgHom.id k _ := by
+  set s : CircleQuotient k := 1 + algebraMap k (CircleQuotient k) ε * x
+  set q : k[X] := Polynomial.X ^ 2 + 1
   let B_q := Localization.Away q
-  let t : B_q := algebraMap ℝ[X] B_q Polynomial.X
+  let t : B_q := algebraMap k[X] B_q Polynomial.X
   let invQ : B_q := IsLocalization.Away.invSelf q
-  have hq_inv : (t ^ 2 + 1) * invQ = 1 := by
-    have hq_eq : algebraMap ℝ[X] B_q q = t ^ 2 + 1 := by simp [q, t]
-    rw [← hq_eq]
-    exact IsLocalization.Away.mul_invSelf q
-  have h2B : (2 : B_q) * algebraMap ℝ B_q (2⁻¹) = 1 := by
-    rw [← map_ofNat (algebraMap ℝ B_q) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
+  have hq_inv : (t ^ 2 + 1) * invQ = 1 := X_sq_add_one_mul_invSelf k
+  have h2B : (2 : B_q) * algebraMap k B_q (2⁻¹) = 1 := two_mul_algebraMap_inv_two (k := k) h2
   have hΦ_invS :
-      stereographicChartHom ε hε (IsLocalization.Away.invSelf s) =
-        algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1) := by
-    have hmul : 2 * invQ * stereographicChartHom ε hε (IsLocalization.Away.invSelf s) = 1 := by
-      rw [← stereographicChartHom_denom ε hε, ← map_mul,
+      stereographicChartHom h2 ε hε (IsLocalization.Away.invSelf s) =
+        algebraMap k B_q (2⁻¹) * (t ^ 2 + 1) := by
+    have hmul : 2 * invQ * stereographicChartHom h2 ε hε (IsLocalization.Away.invSelf s) = 1 := by
+      rw [← stereographicChartHom_denom h2 ε hε, ← map_mul,
         IsLocalization.Away.mul_invSelf, map_one]
-    simpa [q, B_q, t] using eq_of_two_mul_invSelf_mul_eq_one q hmul
+    simpa [q, B_q, t] using eq_of_two_mul_invSelf_mul_eq_one h2 q hmul
   apply Localization.algHom_ext (Submonoid.powers q)
   apply Polynomial.algHom_ext
-  have hX : Algebra.algHom ℝ ℝ[X] (Localization (Submonoid.powers q)) Polynomial.X =
-      algebraMap ℝ[X] (Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X])) Polynomial.X := rfl
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply, hX,
-    stereographicChartInv_X, map_mul, stereographicChartHom_y, hΦ_invS]
+  dsimp only [q]
+  simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.algHom, IsScalarTower.toAlgHom_apply,
+    stereographicChartInv_X, map_mul, stereographicChartHom_y]
+  rw [hΦ_invS]
   calc
-    2 * t * invQ * (algebraMap ℝ B_q (2⁻¹) * (t ^ 2 + 1))
-        = (2 * algebraMap ℝ B_q (2⁻¹)) * ((t ^ 2 + 1) * invQ) * t := by ring
+    2 * t * invQ * (algebraMap k B_q (2⁻¹) * (t ^ 2 + 1))
+        = (2 * algebraMap k B_q (2⁻¹)) * ((t ^ 2 + 1) * invQ) * t := by ring
     _ = t := by rw [h2B, hq_inv, mul_one, one_mul]
 
-private theorem stereographicChartInv_comp_hom (ε : ℝ) (hε : ε ^ 2 = 1) :
-    (stereographicChartInv ε hε).comp (stereographicChartHom ε hε) = AlgHom.id ℝ _ := by
-  set s : CircleRing := 1 + algebraMap ℝ CircleRing ε * x
-  set q : ℝ[X] := Polynomial.X ^ 2 + 1
+private theorem stereographicChartInv_comp_hom {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    (stereographicChartInv h2 ε hε).comp (stereographicChartHom h2 ε hε) = AlgHom.id k _ := by
+  set s : CircleQuotient k := 1 + algebraMap k (CircleQuotient k) ε * x
+  set q : k[X] := Polynomial.X ^ 2 + 1
   let A_s := Localization.Away s
   let invS : A_s := IsLocalization.Away.invSelf s
-  have hs_inv : algebraMap CircleRing A_s s * invS = 1 := IsLocalization.Away.mul_invSelf s
-  have h2A : (2 : A_s) * algebraMap ℝ A_s (2⁻¹) = 1 := by
-    rw [← map_ofNat (algebraMap ℝ A_s) 2, ← map_mul, mul_inv_cancel₀ two_ne_zero, map_one]
-  have hεA : (algebraMap ℝ CircleRing ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+  have hs_inv : algebraMap (CircleQuotient k) A_s s * invS = 1 := IsLocalization.Away.mul_invSelf s
+  have h2A : (2 : A_s) * algebraMap k A_s (2⁻¹) = 1 := two_mul_algebraMap_inv_two (k := k) h2
+  have hε_sq : (algebraMap k A_s ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
   have hΨ_invQ :
-      stereographicChartInv ε hε (IsLocalization.Away.invSelf q) =
-        algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s := by
-    have hmul : 2 * invS * stereographicChartInv ε hε (IsLocalization.Away.invSelf q) = 1 := by
-      rw [← stereographicChartInv_denom ε hε, ← map_mul,
+      stereographicChartInv h2 ε hε (IsLocalization.Away.invSelf q) =
+        algebraMap k A_s (2⁻¹) * algebraMap (CircleQuotient k) A_s s := by
+    have hmul : 2 * invS * stereographicChartInv h2 ε hε (IsLocalization.Away.invSelf q) = 1 := by
+      rw [← stereographicChartInv_denom h2 ε hε, ← map_mul,
         IsLocalization.Away.mul_invSelf, map_one]
-    exact eq_of_two_mul_invSelf_mul_eq_one s hmul
+    exact eq_of_two_mul_invSelf_mul_eq_one h2 s hmul
   apply Localization.algHom_ext (Submonoid.powers s)
-  refine CircleRing.algHom_ext ?_ ?_
-  · have hx : Algebra.algHom ℝ CircleRing (Localization (Submonoid.powers s)) x =
-        algebraMap CircleRing (Localization.Away (1 + algebraMap ℝ CircleRing ε * x)) x := rfl
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply, hx,
-      stereographicChartHom_x, map_mul, map_mul, map_sub, map_one, map_pow, AlgHom.commutes,
-      stereographicChartInv_X, hΨ_invQ]
-    have hεA' :
-        algebraMap ℝ A_s ε = algebraMap CircleRing A_s (algebraMap ℝ CircleRing ε) :=
-      IsScalarTower.algebraMap_apply ℝ CircleRing A_s ε
-    have hnum : s ^ 2 - y ^ 2 = 2 * algebraMap ℝ CircleRing ε * x * s := by
-      dsimp only [s]
-      linear_combination -x_sq_add_y_sq - x ^ 2 * hεA
-    have hnumA := congrArg (algebraMap CircleRing A_s) hnum
-    simp only [map_sub, map_pow, map_mul, map_ofNat] at hnumA
-    have hstep : 1 - (algebraMap CircleRing A_s y * invS) ^ 2 =
-        2 * algebraMap ℝ A_s ε * algebraMap CircleRing A_s x * invS := by
-      calc
-        1 - (algebraMap CircleRing A_s y * invS) ^ 2
-            = (algebraMap CircleRing A_s s ^ 2 - algebraMap CircleRing A_s y ^ 2) * invS ^ 2 := by
-                linear_combination -(1 + algebraMap CircleRing A_s s * invS) * hs_inv
-        _ = (2 * algebraMap CircleRing A_s (algebraMap ℝ CircleRing ε) *
-              algebraMap CircleRing A_s x * algebraMap CircleRing A_s s) * invS ^ 2 := by
-                rw [hnumA]
-        _ = 2 * algebraMap ℝ A_s ε * algebraMap CircleRing A_s x *
-              (algebraMap CircleRing A_s s * invS) * invS := by rw [← hεA']; ring
-        _ = 2 * algebraMap ℝ A_s ε * algebraMap CircleRing A_s x * invS := by
-              rw [hs_inv, mul_one]
-    have hε_sq : (algebraMap ℝ A_s ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
-    rw [hstep]
+  refine CircleQuotient.algHom_ext ?_ ?_
+  · dsimp only [s]
+    simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.algHom, IsScalarTower.toAlgHom_apply,
+      stereographicChartHom_x, map_mul, map_sub, map_one, map_pow, AlgHom.commutes,
+      stereographicChartInv_X, one_sub_y_mul_invSelf_sq ε hε]
+    rw [hΨ_invQ]
     calc
-      algebraMap ℝ A_s ε * (2 * algebraMap ℝ A_s ε * algebraMap CircleRing A_s x * invS) *
-          (algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s)
-          = (algebraMap ℝ A_s ε) ^ 2 * (2 * algebraMap ℝ A_s (2⁻¹)) *
-              (algebraMap CircleRing A_s s * invS) * algebraMap CircleRing A_s x := by ring
-      _ = algebraMap CircleRing A_s x := by rw [hε_sq, h2A, hs_inv]; ring
-  · have hy : Algebra.algHom ℝ CircleRing (Localization (Submonoid.powers s)) y =
-        algebraMap CircleRing (Localization.Away (1 + algebraMap ℝ CircleRing ε * x)) y := rfl
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.id_apply, hy,
-      stereographicChartHom_y, map_mul, map_mul, map_ofNat, stereographicChartInv_X, hΨ_invQ]
+      algebraMap k A_s ε *
+          (2 * algebraMap k A_s ε * algebraMap (CircleQuotient k) A_s x * invS) *
+          (algebraMap k A_s (2⁻¹) * algebraMap (CircleQuotient k) A_s s)
+          = (algebraMap k A_s ε) ^ 2 * (2 * algebraMap k A_s (2⁻¹)) *
+              (algebraMap (CircleQuotient k) A_s s * invS) *
+              algebraMap (CircleQuotient k) A_s x := by ring
+      _ = algebraMap (CircleQuotient k) A_s x := by rw [hε_sq, h2A, hs_inv]; ring
+  · dsimp only [s]
+    simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.algHom, IsScalarTower.toAlgHom_apply,
+      stereographicChartHom_y, map_mul, map_ofNat, stereographicChartInv_X]
+    rw [hΨ_invQ]
     calc
-      2 * (algebraMap CircleRing A_s y * invS) *
-          (algebraMap ℝ A_s (2⁻¹) * algebraMap CircleRing A_s s)
-          = (2 * algebraMap ℝ A_s (2⁻¹)) * (algebraMap CircleRing A_s s * invS) *
-              algebraMap CircleRing A_s y := by ring
-      _ = algebraMap CircleRing A_s y := by rw [h2A, hs_inv]; ring
+      2 * (algebraMap (CircleQuotient k) A_s y * invS) *
+          (algebraMap k A_s (2⁻¹) * algebraMap (CircleQuotient k) A_s s)
+          = (2 * algebraMap k A_s (2⁻¹)) * (algebraMap (CircleQuotient k) A_s s * invS) *
+              algebraMap (CircleQuotient k) A_s y := by ring
+      _ = algebraMap (CircleQuotient k) A_s y := by rw [h2A, hs_inv]; ring
 
 /-- The stereographic chart isomorphism
-`CircleRing[(1 + ε x)⁻¹] ≃ₐ[ℝ] ℝ[t, (t² + 1)⁻¹]` for `ε ∈ {±1}` (`ε² = 1`).
-It sends `x` to `ε (1 - t²) / (t² + 1)` and `y` to `2 t / (t² + 1)`, with inverse sending `t` to
-`y / (1 + ε x)`. -/
-def stereographicChartEquiv (ε : ℝ) (hε : ε ^ 2 = 1) :
-    Localization.Away (1 + algebraMap ℝ CircleRing ε * x) ≃ₐ[ℝ]
-      Localization.Away (Polynomial.X ^ 2 + 1 : ℝ[X]) :=
-  AlgEquiv.ofAlgHom (stereographicChartHom ε hε) (stereographicChartInv ε hε)
-    (stereographicChartHom_comp_inv ε hε) (stereographicChartInv_comp_hom ε hε)
+`CircleQuotient k[(1 + ε x)⁻¹] ≃ₐ[k] k[t, (t² + 1)⁻¹]` for `ε ∈ {±1}` (`ε² = 1`) and
+`(2 : k) ≠ 0`. It sends `x` to `ε (1 - t²) / (t² + 1)` and `y` to `2 t / (t² + 1)`, with inverse
+sending `t` to `y / (1 + ε x)`. -/
+def stereographicChartEquiv {k : Type*} [Field k] (h2 : (2 : k) ≠ 0) (ε : k) (hε : ε ^ 2 = 1) :
+    Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x) ≃ₐ[k]
+      Localization.Away (Polynomial.X ^ 2 + 1 : k[X]) :=
+  AlgEquiv.ofAlgHom (stereographicChartHom h2 ε hε) (stereographicChartInv h2 ε hε)
+    (stereographicChartHom_comp_inv h2 ε hε) (stereographicChartInv_comp_hom h2 ε hε)
 
 /-- The stereographic chart sends `x` to `ε (1 - t²) / (t² + 1)`. -/
 @[simp]
-theorem stereographicChartEquiv_x (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartEquiv ε hε (algebraMap CircleRing _ x) =
-      algebraMap ℝ _ ε * (1 - algebraMap ℝ[X] _ Polynomial.X ^ 2) *
-        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) :=
-  stereographicChartHom_x ε hε
+theorem stereographicChartEquiv_x {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartEquiv h2 ε hε (algebraMap (CircleQuotient k) _ x) =
+      algebraMap k _ ε * (1 - algebraMap k[X] _ Polynomial.X ^ 2) *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) :=
+  stereographicChartHom_x h2 ε hε
 
 /-- The stereographic chart sends `y` to `2 t / (t² + 1)`. -/
 @[simp]
-theorem stereographicChartEquiv_y (ε : ℝ) (hε : ε ^ 2 = 1) :
-    stereographicChartEquiv ε hε (algebraMap CircleRing _ y) =
-      2 * algebraMap ℝ[X] _ Polynomial.X *
-        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : ℝ[X]) :=
-  stereographicChartHom_y ε hε
+theorem stereographicChartEquiv_y {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    stereographicChartEquiv h2 ε hε (algebraMap (CircleQuotient k) _ y) =
+      2 * algebraMap k[X] _ Polynomial.X *
+        IsLocalization.Away.invSelf (Polynomial.X ^ 2 + 1 : k[X]) :=
+  stereographicChartHom_y h2 ε hε
 
 /-- The inverse stereographic chart sends `t` to `y / (1 + ε x)`. -/
 @[simp]
-theorem stereographicChartEquiv_symm_X (ε : ℝ) (hε : ε ^ 2 = 1) :
-    (stereographicChartEquiv ε hε).symm (algebraMap ℝ[X] _ Polynomial.X) =
-      algebraMap CircleRing _ y *
-        IsLocalization.Away.invSelf (1 + algebraMap ℝ CircleRing ε * x) :=
-  stereographicChartInv_X ε hε
+theorem stereographicChartEquiv_symm_X {k : Type*} [Field k] (h2 : (2 : k) ≠ 0)
+    (ε : k) (hε : ε ^ 2 = 1) :
+    (stereographicChartEquiv h2 ε hε).symm (algebraMap k[X] _ Polynomial.X) =
+      algebraMap (CircleQuotient k) _ y *
+        IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x) :=
+  stereographicChartInv_X h2 ε hε
 
-/-- In `CircleRing[y⁻¹]`, `1 + ε x` is a unit whenever `ε² = 1`. -/
-theorem isUnit_one_add_mul_x_away_y (ε : ℝ) (hε : ε ^ 2 = 1) :
+/-- In `CircleQuotient k[y⁻¹]`, `1 + ε x` is a unit whenever `ε² = 1`. -/
+theorem isUnit_one_add_mul_x_away_y {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
     IsUnit
-      (algebraMap CircleRing (Localization.Away y) (1 + algebraMap ℝ CircleRing ε * x)) := by
-  have hdvd : 1 + algebraMap ℝ CircleRing ε * x ∣ y ^ 2 := by
-    refine ⟨1 - algebraMap ℝ CircleRing ε * x, ?_⟩
-    have hεA : (algebraMap ℝ CircleRing ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
-    linear_combination x_sq_add_y_sq + x ^ 2 * hεA
-  have hyUnit : IsUnit (algebraMap CircleRing (Localization.Away y) (y ^ 2)) := by
+      (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k))
+        (1 + algebraMap k (CircleQuotient k) ε * x)) := by
+  have hdvd : 1 + algebraMap k (CircleQuotient k) ε * x ∣ y ^ 2 := by
+    refine ⟨1 - algebraMap k (CircleQuotient k) ε * x, ?_⟩
+    have hεA : (algebraMap k (CircleQuotient k) ε) ^ 2 = 1 := by rw [← map_pow, hε, map_one]
+    linear_combination x_sq_add_y_sq (k := k) + x ^ 2 * hεA
+  have hyUnit : IsUnit (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k))
+      (y ^ 2)) := by
     rw [map_pow]
     exact (IsLocalization.Away.algebraMap_isUnit y).pow 2
   exact isUnit_of_dvd_unit (map_dvd _ hdvd) hyUnit
 
-/-- The canonical `ℝ`-algebra homomorphism from the stereographic chart
-`CircleRing[(1 + ε x)⁻¹]` into the overlap `CircleRing[y⁻¹]`, for `ε² = 1`. -/
-def chartToOverlap (ε : ℝ) (hε : ε ^ 2 = 1) :
-    Localization.Away (1 + algebraMap ℝ CircleRing ε * x) →ₐ[ℝ] Localization.Away y :=
-  IsLocalization.Away.liftAlgHom (f := IsScalarTower.toAlgHom ℝ CircleRing (Localization.Away y))
-    (1 + algebraMap ℝ CircleRing ε * x) (by
+/-- The canonical `k`-algebra homomorphism from the stereographic chart
+`CircleQuotient k[(1 + ε x)⁻¹]` into the overlap `CircleQuotient k[y⁻¹]`, for `ε² = 1`. -/
+def chartToOverlap {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1) :
+    Localization.Away (1 + algebraMap k (CircleQuotient k) ε * x) →ₐ[k]
+      Localization.Away (y : CircleQuotient k) :=
+  IsLocalization.Away.liftAlgHom
+    (f := IsScalarTower.toAlgHom k (CircleQuotient k) (Localization.Away (y : CircleQuotient k)))
+    (1 + algebraMap k (CircleQuotient k) ε * x) (by
       rw [IsScalarTower.toAlgHom_apply]
       exact isUnit_one_add_mul_x_away_y ε hε)
 
-/-- `chartToOverlap` commutes with the localization map from `CircleRing`. -/
+/-- `chartToOverlap` commutes with the localization map from `CircleQuotient k`. -/
 @[simp]
-theorem chartToOverlap_algebraMap (ε : ℝ) (hε : ε ^ 2 = 1) (a : CircleRing) :
-    chartToOverlap ε hε (algebraMap CircleRing _ a) = algebraMap CircleRing _ a := by
+theorem chartToOverlap_algebraMap {k : Type*} [CommRing k] (ε : k) (hε : ε ^ 2 = 1)
+    (a : CircleQuotient k) :
+    chartToOverlap ε hε (algebraMap (CircleQuotient k) _ a) =
+      algebraMap (CircleQuotient k) _ a := by
   simp only [chartToOverlap, IsLocalization.Away.coe_liftAlgHom, IsLocalization.Away.lift_eq]
   rfl
 
-/-- **Overlap compatibility of the two stereographic charts.** On `CircleRing[y⁻¹]`, the two
-stereographic parameters `t₊` (from `D(1 + x)`) and `t₋` (from `D(1 - x)`) are mutually inverse:
-`t₊ · t₋ = 1`. -/
-theorem stereographic_overlap :
-    chartToOverlap 1 (one_pow 2)
-        ((stereographicChartEquiv 1 (one_pow 2)).symm (algebraMap ℝ[X] _ Polynomial.X)) *
-      chartToOverlap (-1) neg_one_sq
-        ((stereographicChartEquiv (-1) neg_one_sq).symm
-          (algebraMap ℝ[X] _ Polynomial.X)) = 1 := by
+private theorem algebraMap_mul_chartToOverlap_invSelf {k : Type*} [CommRing k]
+    (ε : k) (hε : ε ^ 2 = 1) :
+    algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k))
+        (1 + algebraMap k (CircleQuotient k) ε * x) *
+      chartToOverlap ε hε
+        (IsLocalization.Away.invSelf (1 + algebraMap k (CircleQuotient k) ε * x)) = 1 := by
+  rw [← chartToOverlap_algebraMap ε hε, ← map_mul, IsLocalization.Away.mul_invSelf, map_one]
+
+/-- **Overlap compatibility of the two stereographic charts.** On `CircleQuotient k[y⁻¹]`, the
+two stereographic parameters `t₊` (from `D(1 + x)`) and `t₋` (from `D(1 - x)`) are mutually
+inverse: `t₊ · t₋ = 1`. -/
+theorem stereographic_overlap {k : Type*} [Field k] (h2 : (2 : k) ≠ 0) :
+    chartToOverlap (1 : k) (one_pow 2)
+        ((stereographicChartEquiv h2 (1 : k) (one_pow 2)).symm (algebraMap k[X] _ Polynomial.X)) *
+      chartToOverlap (-1 : k) neg_one_sq
+        ((stereographicChartEquiv h2 (-1 : k) neg_one_sq).symm
+          (algebraMap k[X] _ Polynomial.X)) = 1 := by
   rw [stereographicChartEquiv_symm_X, stereographicChartEquiv_symm_X]
-  set s₁ : CircleRing := 1 + algebraMap ℝ CircleRing 1 * x
-  set s₂ : CircleRing := 1 + algebraMap ℝ CircleRing (-1) * x
-  set ι₁ := chartToOverlap 1 (one_pow 2)
-  set ι₂ := chartToOverlap (-1) neg_one_sq
-  have hs₁ : algebraMap CircleRing (Localization.Away y) s₁ *
-      ι₁ (IsLocalization.Away.invSelf s₁) = 1 := by
-    rw [← chartToOverlap_algebraMap 1 (one_pow 2) s₁, ← map_mul,
-      IsLocalization.Away.mul_invSelf, map_one]
-  have hs₂ : algebraMap CircleRing (Localization.Away y) s₂ *
-      ι₂ (IsLocalization.Away.invSelf s₂) = 1 := by
-    rw [← chartToOverlap_algebraMap (-1) neg_one_sq s₂, ← map_mul,
-      IsLocalization.Away.mul_invSelf, map_one]
+  set s₁ : CircleQuotient k := 1 + algebraMap k (CircleQuotient k) 1 * x
+  set s₂ : CircleQuotient k := 1 + algebraMap k (CircleQuotient k) (-1) * x
+  set ι₁ := chartToOverlap (1 : k) (one_pow 2)
+  set ι₂ := chartToOverlap (-1 : k) neg_one_sq
+  have hs₁ : algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) s₁ *
+      ι₁ (IsLocalization.Away.invSelf s₁) = 1 :=
+    algebraMap_mul_chartToOverlap_invSelf (1 : k) (one_pow 2)
+  have hs₂ : algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) s₂ *
+      ι₂ (IsLocalization.Away.invSelf s₂) = 1 :=
+    algebraMap_mul_chartToOverlap_invSelf (-1 : k) neg_one_sq
   have hs₁₂ : s₁ * s₂ = y ^ 2 := by
     simp only [s₁, s₂, map_one, map_neg, one_mul]
-    linear_combination -x_sq_add_y_sq
-  have hmul : algebraMap CircleRing (Localization.Away y) (y ^ 2) *
-      (ι₁ (algebraMap CircleRing _ y * IsLocalization.Away.invSelf s₁) *
-        ι₂ (algebraMap CircleRing _ y * IsLocalization.Away.invSelf s₂)) =
-      algebraMap CircleRing (Localization.Away y) (y ^ 2) := by
+    linear_combination -x_sq_add_y_sq (k := k)
+  have hmul : algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) (y ^ 2) *
+      (ι₁ (algebraMap (CircleQuotient k) _ y * IsLocalization.Away.invSelf s₁) *
+        ι₂ (algebraMap (CircleQuotient k) _ y * IsLocalization.Away.invSelf s₂)) =
+      algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) (y ^ 2) := by
     calc
-      algebraMap CircleRing (Localization.Away y) (y ^ 2) *
-          (ι₁ (algebraMap CircleRing _ y * IsLocalization.Away.invSelf s₁) *
-            ι₂ (algebraMap CircleRing _ y * IsLocalization.Away.invSelf s₂))
-          = (algebraMap CircleRing (Localization.Away y) s₁ *
-              algebraMap CircleRing (Localization.Away y) s₂) *
-            (algebraMap CircleRing (Localization.Away y) y *
+      algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) (y ^ 2) *
+          (ι₁ (algebraMap (CircleQuotient k) _ y * IsLocalization.Away.invSelf s₁) *
+            ι₂ (algebraMap (CircleQuotient k) _ y * IsLocalization.Away.invSelf s₂))
+          = (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) s₁ *
+              algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) s₂) *
+            (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) y *
               ι₁ (IsLocalization.Away.invSelf s₁) *
-              (algebraMap CircleRing (Localization.Away y) y *
+              (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) y *
                 ι₂ (IsLocalization.Away.invSelf s₂))) := by
                   rw [← hs₁₂, map_mul, map_mul, map_mul, chartToOverlap_algebraMap,
                     chartToOverlap_algebraMap]
-      _ = (algebraMap CircleRing (Localization.Away y) s₁ *
+      _ = (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) s₁ *
               ι₁ (IsLocalization.Away.invSelf s₁)) *
-            (algebraMap CircleRing (Localization.Away y) s₂ *
+            (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) s₂ *
               ι₂ (IsLocalization.Away.invSelf s₂)) *
-            algebraMap CircleRing (Localization.Away y) y ^ 2 := by ring
-      _ = algebraMap CircleRing (Localization.Away y) (y ^ 2) := by
+            algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) y ^ 2 := by
+              ring
+      _ = algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) (y ^ 2) := by
             rw [hs₁, hs₂, one_mul, one_mul, map_pow]
-  have hyUnit : IsUnit (algebraMap CircleRing (Localization.Away y) (y ^ 2)) := by
+  have hyUnit : IsUnit
+      (algebraMap (CircleQuotient k) (Localization.Away (y : CircleQuotient k)) (y ^ 2)) := by
     rw [map_pow]
     exact (IsLocalization.Away.algebraMap_isUnit y).pow 2
   exact hyUnit.mul_left_cancel (by simpa only [mul_one] using hmul)
 
-end CircleRing
+end Charts
+
+end CircleQuotient
+
+/-! ## The coordinate ring of the real algebraic circle -/
+
+/-- The coordinate ring of the real algebraic circle: `ℝ[x, y] / (x² + y² - 1)`. -/
+abbrev CircleRing := CircleQuotient ℝ
 
 end
 

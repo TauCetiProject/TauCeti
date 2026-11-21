@@ -59,7 +59,7 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
 /-- A transvection `1 + c Eᵢⱼ` in `GL n 𝕜` varies continuously in its parameter `c`. -/
 @[fun_prop]
 theorem continuous_transvectionUnit [Ring 𝕜] [TopologicalSpace 𝕜]
-    [ContinuousAdd 𝕜] [ContinuousNeg 𝕜] {i j : n} (hij : i ≠ j) :
+    [ContinuousNeg 𝕜] {i j : n} (hij : i ≠ j) :
     Continuous (transvectionUnit hij : 𝕜 → GL n 𝕜) := by
   rw [Units.continuous_iff]
   constructor
@@ -67,9 +67,9 @@ theorem continuous_transvectionUnit [Ring 𝕜] [TopologicalSpace 𝕜]
     simp only [Function.comp_apply, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
       Matrix.single_apply]
     by_cases h : i = p ∧ j = q
-    · simp only [h, and_self, ↓reduceIte]
-      exact continuous_const.add continuous_id
-    · simp only [h, ↓reduceIte]
+    · rcases h with ⟨rfl, rfl⟩
+      simpa [Matrix.one_apply, hij] using continuous_id'
+    · simp only [h, ↓reduceIte, add_zero]
       exact continuous_const
   · refine continuous_matrix fun p q ↦ ?_
     have hinv :
@@ -77,9 +77,9 @@ theorem continuous_transvectionUnit [Ring 𝕜] [TopologicalSpace 𝕜]
       fun a ↦ by rw [transvectionUnit_inv, coe_transvectionUnit_eq_one_add_single]
     simp only [hinv, Matrix.add_apply, Matrix.single_apply]
     by_cases h : i = p ∧ j = q
-    · simp only [h, and_self, ↓reduceIte]
-      exact continuous_const.add continuous_neg
-    · simp only [h, ↓reduceIte]
+    · rcases h with ⟨rfl, rfl⟩
+      simpa [Matrix.one_apply, hij] using continuous_neg
+    · simp only [h, ↓reduceIte, add_zero]
       exact continuous_const
 
 end TauCeti
@@ -90,7 +90,7 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
 
 /-- A transvection `1 + c Eᵢⱼ` in `SL n 𝕜` varies continuously in its parameter `c`. -/
 @[fun_prop]
-theorem continuous_transvection [CommRing 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+theorem continuous_transvection [CommRing 𝕜] [TopologicalSpace 𝕜]
     {i j : n} (hij : i ≠ j) :
     Continuous (transvection hij : 𝕜 → SpecialLinearGroup n 𝕜) := by
   have hcont : Continuous fun a : 𝕜 ↦ (transvection hij a : Matrix n n 𝕜) := by
@@ -102,9 +102,9 @@ theorem continuous_transvection [CommRing 𝕜] [TopologicalSpace 𝕜] [Continu
       simp [transvection_coe, Matrix.single_apply]
     rw [hentry]
     by_cases h : i = p ∧ j = q
-    · simp only [h, and_self, ↓reduceIte]
-      exact continuous_const.add continuous_id
-    · simp only [h, ↓reduceIte]
+    · rcases h with ⟨rfl, rfl⟩
+      simpa [Matrix.one_apply, hij] using continuous_id'
+    · simp only [h, ↓reduceIte, add_zero]
       exact continuous_const
   exact hcont.subtype_mk fun a ↦ (transvection hij a).2
 
@@ -113,6 +113,36 @@ end Matrix.SpecialLinearGroup
 namespace RingHom
 
 open TauCeti
+
+private theorem homotopic_one_of_mem_closure {X A G : Type*} [TopologicalSpace X]
+    [Group A] [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
+    (φ : A →* C(X, G)) {S : Set A}
+    (hS : ∀ s ∈ S, ContinuousMap.Homotopic (1 : C(X, G)) (φ s))
+    {a : A} (ha : a ∈ Subgroup.closure S) :
+    ContinuousMap.Homotopic (1 : C(X, G)) (φ a) := by
+  let H : Subgroup A :=
+    { carrier := {u | ContinuousMap.Homotopic (1 : C(X, G)) (φ u)}
+      one_mem' := by
+        rw [Set.mem_ofPred_eq, map_one]
+      mul_mem' := fun {u v} hu hv ↦ by
+        rw [Set.mem_ofPred_eq, map_mul, ← one_mul (1 : C(X, G))]
+        exact hu.mul hv
+      inv_mem' := fun {u} hu ↦ by
+        rw [Set.mem_ofPred_eq, map_inv, ← inv_one (G := C(X, G))]
+        exact hu.inv }
+  exact (Subgroup.closure_le H).2 hS ha
+
+private theorem homotopic_one_of_continuous_family {X 𝕜 G : Type*} [TopologicalSpace X]
+    [MulZeroOneClass 𝕜] [TopologicalSpace 𝕜] [ContinuousMul 𝕜] [TopologicalSpace G] [One G]
+    (h : Joined (0 : 𝕜) 1) (gen : 𝕜 → G) (hgen : Continuous gen) (h0 : gen 0 = 1)
+    (c : C(X, 𝕜)) {g : C(X, G)} (hg : ∀ x, g x = gen (c x)) :
+    ContinuousMap.Homotopic (1 : C(X, G)) g :=
+  ⟨{ toFun := fun p : I × X ↦ gen (h.somePath p.1 * c p.2)
+     continuous_toFun :=
+       hgen.comp ((h.somePath.continuous.comp continuous_fst).mul
+         (c.continuous.comp continuous_snd))
+     map_zero_left := fun x ↦ by simp [h0]
+     map_one_left := fun x ↦ by simp [hg x] }⟩
 
 section GeneralLinear
 
@@ -165,27 +195,12 @@ theorem homotopic_one_mapGLContinuousMap_of_mem_elementarySubgroup
     (f : A →+* C(X, 𝕜)) (h : Joined (0 : 𝕜) 1) {g : GL n A}
     (hg : g ∈ elementarySubgroup n A) :
     ContinuousMap.Homotopic (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap g) := by
-  let H : Subgroup (GL n A) :=
-    { carrier := {u | ContinuousMap.Homotopic (1 : C(X, GL n 𝕜)) (f.mapGLContinuousMap u)}
-      one_mem' := by
-        rw [Set.mem_ofPred_eq, map_one]
-      mul_mem' := fun {u v} hu hv ↦ by
-        rw [Set.mem_ofPred_eq, map_mul, ← one_mul (1 : C(X, GL n 𝕜))]
-        exact hu.mul hv
-      inv_mem' := fun {u} hu ↦ by
-        rw [Set.mem_ofPred_eq, map_inv, ← inv_one (G := C(X, GL n 𝕜))]
-        exact hu.inv }
-  have hle : elementarySubgroup n A ≤ H := by
-    refine elementarySubgroup_le_iff.2 fun i j hij a ↦ ⟨?_⟩
-    exact
-      { toFun := fun p : I × X ↦ transvectionUnit hij (h.somePath p.1 * f a p.2)
-        continuous_toFun :=
-          (continuous_transvectionUnit hij).comp
-            ((h.somePath.continuous.comp continuous_fst).mul
-              ((f a).continuous.comp continuous_snd))
-        map_zero_left := fun x ↦ by simp
-        map_one_left := fun x ↦ by simp [mapGLContinuousMap_transvectionUnit] }
-  exact hle hg
+  rw [elementarySubgroup_def] at hg
+  refine homotopic_one_of_mem_closure f.mapGLContinuousMap ?_ hg
+  rintro _ ⟨i, j, hij, a, rfl⟩
+  exact homotopic_one_of_continuous_family h (transvectionUnit hij)
+    (continuous_transvectionUnit hij) (transvectionUnit_zero hij) (f a)
+    (f.mapGLContinuousMap_transvectionUnit hij a)
 
 /-- **Based nullhomotopy of elementary matrices in `GL n 𝕜`.** If an elementary matrix evaluates
 to the identity at `x₀ : X`, its evaluated map is homotopic to the constant identity map relative
@@ -258,35 +273,14 @@ theorem homotopic_one_mapSLContinuousMap_of_toGL_mem_elementarySubgroup
     {g : SpecialLinearGroup n R}
     (hg : SpecialLinearGroup.toGL g ∈ elementarySubgroup n R) :
     ContinuousMap.Homotopic (1 : C(X, SpecialLinearGroup n 𝕜)) (f.mapSLContinuousMap g) := by
-  let H : Subgroup (SpecialLinearGroup n R) :=
-    { carrier := {u | ContinuousMap.Homotopic (1 : C(X, SpecialLinearGroup n 𝕜))
-        (f.mapSLContinuousMap u)}
-      one_mem' := by
-        rw [Set.mem_ofPred_eq, map_one]
-      mul_mem' := fun {u v} hu hv ↦ by
-        rw [Set.mem_ofPred_eq, map_mul, ← one_mul (1 : C(X, SpecialLinearGroup n 𝕜))]
-        exact hu.mul hv
-      inv_mem' := fun {u} hu ↦ by
-        rw [Set.mem_ofPred_eq, map_inv, ← inv_one (G := C(X, SpecialLinearGroup n 𝕜))]
-        exact hu.inv }
-  have hle : Subgroup.closure (Set.range (TransvectionStruct.toSpecialLinearGroup :
-      TransvectionStruct n R → SpecialLinearGroup n R)) ≤ H := by
-    refine (Subgroup.closure_le H).2 ?_
-    rintro _ ⟨t, rfl⟩
-    refine ⟨?_⟩
-    exact
-      { toFun := fun p : I × X ↦
-          SpecialLinearGroup.transvection t.hij (h.somePath p.1 * f t.c p.2)
-        continuous_toFun :=
-          (SpecialLinearGroup.continuous_transvection t.hij).comp
-            ((h.somePath.continuous.comp continuous_fst).mul
-              ((f t.c).continuous.comp continuous_snd))
-        map_zero_left := fun x ↦ by simp
-        map_one_left := fun x ↦ by simp [TransvectionStruct.toSpecialLinearGroup] }
   rw [elementarySubgroup_eq_map_closure_range_toSpecialLinearGroup] at hg
   obtain ⟨u, hu, hug⟩ := hg
   have hgu : g = u := SpecialLinearGroup.toGL_injective hug.symm
-  exact hgu ▸ hle hu
+  refine hgu ▸ homotopic_one_of_mem_closure f.mapSLContinuousMap ?_ hu
+  rintro _ ⟨t, rfl⟩
+  exact homotopic_one_of_continuous_family h (SpecialLinearGroup.transvection t.hij)
+    (SpecialLinearGroup.continuous_transvection t.hij)
+    (by simp) (f t.c) (f.mapSLContinuousMap_transvection t.hij t.c)
 
 /-- **Based nullhomotopy of elementary determinant-one matrices in `SL n 𝕜`.** If a
 determinant-one matrix is elementary and evaluates to the identity at `x₀ : X`, its evaluated map

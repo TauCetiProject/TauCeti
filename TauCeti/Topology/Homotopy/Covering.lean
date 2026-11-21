@@ -34,6 +34,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 
 * `IsCoveringMap.map_injective` and `IsCoveringMap.mapOfEq_injective`: a
   covering map is injective on fundamental groups.
+* `IsCoveringMap.eq_of_map_homotopic_refl`: a path whose projection is homotopic to the
+  constant path relative to both endpoints has equal endpoints.
 * `IsCoveringMap.eq_of_joined`: over a simply connected space, two points of the total space
   that are joined by a path and lie over the same point are equal.
 * `IsCoveringMap.injective`: a covering map from a path-connected space to a simply connected
@@ -86,22 +88,32 @@ theorem _root_.IsCoveringMap.mapOfEq_injective
   (CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk he)).conj.injective.comp
     (IsCoveringMap.map_injective hp e)
 
+/-- **A path whose covering projection is nullhomotopic relative to its endpoints is a loop.**
+If `γ` is a path in the total space of a covering map `p` whose endpoints have the same image
+and whose projected loop `(γ.map hp.continuous).cast rfl h` is homotopic to the constant path
+relative to `{0, 1}`, then the endpoints of `γ` coincide. -/
+theorem _root_.IsCoveringMap.eq_of_map_homotopic_refl (hp : IsCoveringMap p) {e₀ e₁ : E}
+    (γ : Path e₀ e₁) (h : p e₀ = p e₁)
+    (hγ : ((γ.map hp.continuous).cast rfl h).Homotopic (Path.refl (p e₀))) :
+    e₀ = e₁ := by
+  let δ : Path (p e₀) (p e₀) := (γ.map hp.continuous).cast rfl h
+  have hδ : hp.liftPath δ.toContinuousMap e₀ δ.source = γ.toContinuousMap := by
+    refine ((hp.eq_liftPath_iff' _).mpr ⟨?_, γ.source⟩).symm
+    ext t
+    simp only [Function.comp_apply, Path.coe_toContinuousMap, δ, Path.cast_coe, Path.map_coe]
+  have hrefl : hp.liftPath (Path.refl (p e₀)).toContinuousMap e₀ rfl =
+      ContinuousMap.const _ e₀ :=
+    hp.liftPath_const rfl
+  have key := hp.liftPath_apply_one_eq_of_homotopicRel hγ e₀ δ.source rfl
+  rw [hδ, hrefl] at key
+  simpa using key.symm
+
 /-- **Points joined by a path over a simply connected space are equal if their images are.**
 Two points of the total space of a covering map of a simply connected space that are joined by a
 path and lie over the same point coincide. -/
 theorem _root_.IsCoveringMap.eq_of_joined [SimplyConnectedSpace X] (hp : IsCoveringMap p)
-    {e₀ e₁ : E} (hj : Joined e₀ e₁) (h : p e₀ = p e₁) : e₀ = e₁ := by
-  let γ := hj.somePath
-  let δ : Path (p e₀) (p e₀) := (γ.map hp.continuous).cast rfl h
-  have hδ : hp.liftPath δ.toContinuousMap e₀ δ.source = γ.toContinuousMap :=
-    ((hp.eq_liftPath_iff' _).mpr ⟨rfl, γ.source⟩).symm
-  have hrefl : hp.liftPath (Path.refl (p e₀)).toContinuousMap e₀ rfl =
-      ContinuousMap.const _ e₀ :=
-    hp.liftPath_const rfl
-  have key := hp.liftPath_apply_one_eq_of_homotopicRel
-    (SimplyConnectedSpace.paths_homotopic δ (Path.refl (p e₀))) e₀ δ.source rfl
-  rw [hδ, hrefl] at key
-  simpa [γ] using key.symm
+    {e₀ e₁ : E} (hj : Joined e₀ e₁) (h : p e₀ = p e₁) : e₀ = e₁ :=
+  hp.eq_of_map_homotopic_refl hj.somePath h (SimplyConnectedSpace.paths_homotopic _ _)
 
 /-- **A covering map from a path-connected space to a simply connected space is injective.** -/
 theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]

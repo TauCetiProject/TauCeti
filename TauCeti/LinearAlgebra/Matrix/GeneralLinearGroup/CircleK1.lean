@@ -17,13 +17,14 @@ import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
+import TauCeti.Topology.Homotopy.Covering
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # Nontriviality of `SK₁` for the real algebraic circle
 
 Although the coordinate ring `CircleRing = ℝ[x, y] / (x² + y² - 1)` of the real algebraic circle
-is a Dedekind domain (`TauCeti.CircleRing.instIsDedekindDomain`), its special Whitehead group
+is a Dedekind domain (`TauCeti.CircleQuotient.instIsDedekindDomain`), its special Whitehead group
 `SK₁(CircleRing)` does not vanish. The determinant-one rotation matrix
 
   `circleRotation = !![x, -y; y, x] ∈ SL₂(CircleRing)`
@@ -78,7 +79,7 @@ namespace CircleRing
 /-- Evaluation of `CircleRing` into continuous real-valued functions on the unit circle `Circle`,
 sending `x ↦ (z ↦ Re z)` and `y ↦ (z ↦ Im z)`. -/
 def evalContinuousMap : CircleRing →ₐ[ℝ] C(Circle, ℝ) :=
-  liftAlgHom
+  CircleQuotient.liftAlgHom
     ⟨fun z : Circle ↦ (z : ℂ).re, Complex.continuous_re.comp continuous_subtype_val⟩
     ⟨fun z : Circle ↦ (z : ℂ).im, Complex.continuous_im.comp continuous_subtype_val⟩
     (by
@@ -87,20 +88,24 @@ def evalContinuousMap : CircleRing →ₐ[ℝ] C(Circle, ℝ) :=
 
 /-- Evaluation sends `x` at `z : Circle` to `Re z`. -/
 @[simp]
-theorem evalContinuousMap_x_apply (z : Circle) : evalContinuousMap x z = (z : ℂ).re := by
+theorem evalContinuousMap_x_apply (z : Circle) :
+    evalContinuousMap CircleQuotient.x z = (z : ℂ).re := by
   simp [evalContinuousMap]
 
 /-- Evaluation sends `y` at `z : Circle` to `Im z`. -/
 @[simp]
-theorem evalContinuousMap_y_apply (z : Circle) : evalContinuousMap y z = (z : ℂ).im := by
+theorem evalContinuousMap_y_apply (z : Circle) :
+    evalContinuousMap CircleQuotient.y z = (z : ℂ).im := by
   simp [evalContinuousMap]
 
 /-- Evaluation sends `x` at `Circle.exp θ` to `cos θ`. -/
-theorem evalContinuousMap_x_exp (θ : ℝ) : evalContinuousMap x (Circle.exp θ) = Real.cos θ := by
+theorem evalContinuousMap_x_exp (θ : ℝ) :
+    evalContinuousMap CircleQuotient.x (Circle.exp θ) = Real.cos θ := by
   simp [Circle.coe_exp]
 
 /-- Evaluation sends `y` at `Circle.exp θ` to `sin θ`. -/
-theorem evalContinuousMap_y_exp (θ : ℝ) : evalContinuousMap y (Circle.exp θ) = Real.sin θ := by
+theorem evalContinuousMap_y_exp (θ : ℝ) :
+    evalContinuousMap CircleQuotient.y (Circle.exp θ) = Real.sin θ := by
   simp [Circle.coe_exp]
 
 end CircleRing
@@ -110,33 +115,33 @@ end CircleRing
 /-- The determinant-one rotation matrix `!![x, -y; y, x]` over the coordinate ring of the real
 algebraic circle. -/
 def circleRotation : Matrix.SpecialLinearGroup (Fin 2) CircleRing :=
-  ⟨!![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x], by
+  ⟨!![CircleQuotient.x, -CircleQuotient.y; CircleQuotient.y, CircleQuotient.x], by
     simp only [Matrix.det_fin_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
       Matrix.cons_val_one, Matrix.cons_val_fin_one]
-    linear_combination CircleRing.x_sq_add_y_sq⟩
+    linear_combination CircleQuotient.x_sq_add_y_sq (k := ℝ)⟩
 
 /-- Entry `(0, 0)` of `circleRotation` is `x`. -/
 @[simp]
 theorem circleRotation_apply_zero_zero : (circleRotation : Matrix (Fin 2) (Fin 2) CircleRing) 0 0 =
-    CircleRing.x :=
+    CircleQuotient.x :=
   (rfl)
 
 /-- Entry `(0, 1)` of `circleRotation` is `-y`. -/
 @[simp]
 theorem circleRotation_apply_zero_one : (circleRotation : Matrix (Fin 2) (Fin 2) CircleRing) 0 1 =
-    -CircleRing.y :=
+    -CircleQuotient.y :=
   (rfl)
 
 /-- Entry `(1, 0)` of `circleRotation` is `y`. -/
 @[simp]
 theorem circleRotation_apply_one_zero : (circleRotation : Matrix (Fin 2) (Fin 2) CircleRing) 1 0 =
-    CircleRing.y :=
+    CircleQuotient.y :=
   (rfl)
 
 /-- Entry `(1, 1)` of `circleRotation` is `x`. -/
 @[simp]
 theorem circleRotation_apply_one_one : (circleRotation : Matrix (Fin 2) (Fin 2) CircleRing) 1 1 =
-    CircleRing.x :=
+    CircleQuotient.x :=
   (rfl)
 
 /-- `circleRotation` is algebraically orthogonal over `CircleRing`. -/
@@ -146,10 +151,10 @@ theorem circleRotation_mul_transpose :
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
-  · linear_combination CircleRing.x_sq_add_y_sq
+  · linear_combination CircleQuotient.x_sq_add_y_sq (k := ℝ)
   · ring
   · ring
-  · linear_combination CircleRing.x_sq_add_y_sq
+  · linear_combination CircleQuotient.x_sq_add_y_sq (k := ℝ)
 
 /-- The class of `circleRotation` in algebraic `K₁` lies in `SK₁(CircleRing)`. -/
 theorem circleRotation_mk_mem_specialAlgebraicK1 :
@@ -182,38 +187,30 @@ private theorem coe_circleRotationStabilizedSL (N : ℕ) (hN : 2 ≤ N) :
         Matrix (Fin N) (Fin N) CircleRing) :=
   rfl
 
+private theorem coe_stabilizeGL_transpose_eq_inv {A : Type*} [Ring A] {m n : ℕ} (h : m ≤ n)
+    {u : GL (Fin m) A} (hu : (u : Matrix (Fin m) (Fin m) A)ᵀ = ↑u⁻¹) :
+    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A)ᵀ = ↑(stabilizeGL A h u)⁻¹ := by
+  rw [← map_inv (stabilizeGL A h) u]
+  ext i j
+  rw [Matrix.transpose_apply, coe_stabilizeGL_apply, coe_stabilizeGL_apply]
+  by_cases hij : (i : ℕ) < m ∧ (j : ℕ) < m
+  · simp only [hij.1, hij.2, and_self, ↓reduceDIte, ← hu, Matrix.transpose_apply]
+  · have hij' : ¬((j : ℕ) < m ∧ (i : ℕ) < m) := fun ⟨hj, hi⟩ ↦ hij ⟨hi, hj⟩
+    simp only [hij, hij', ↓reduceDIte, Matrix.one_apply, eq_comm]
+
+private theorem stabilizeGL_mul_transpose {A : Type*} [Ring A] {m n : ℕ} (h : m ≤ n)
+    {u : GL (Fin m) A}
+    (hu : (u : Matrix (Fin m) (Fin m) A) * (u : Matrix (Fin m) (Fin m) A)ᵀ = 1) :
+    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A) *
+      (stabilizeGL A h u : Matrix (Fin n) (Fin n) A)ᵀ = 1 := by
+  rw [coe_stabilizeGL_transpose_eq_inv h (Units.eq_inv_of_mul_eq_one_left hu),
+    ← Units.val_mul, mul_inv_cancel, Units.val_one]
+
 /-- Every identity stabilization of `circleRotation` is orthogonal over `CircleRing`. -/
 private theorem circleRotationStabilizedSL_mul_transpose (N : ℕ) (hN : 2 ≤ N) :
     (circleRotationStabilizedSL N hN : Matrix (Fin N) (Fin N) CircleRing) *
-      (circleRotationStabilizedSL N hN : Matrix (Fin N) (Fin N) CircleRing)ᵀ = 1 := by
-  set g : GL (Fin 2) CircleRing := SpecialLinearGroup.toGL circleRotation
-  have hg : (g : Matrix (Fin 2) (Fin 2) CircleRing) = circleRotation := rfl
-  have hinv : (↑g⁻¹ : Matrix (Fin 2) (Fin 2) CircleRing) =
-      (g : Matrix (Fin 2) (Fin 2) CircleRing)ᵀ := by
-    calc
-      (↑g⁻¹ : Matrix (Fin 2) (Fin 2) CircleRing)
-          = (↑g⁻¹ : Matrix (Fin 2) (Fin 2) CircleRing) *
-              ((g : Matrix (Fin 2) (Fin 2) CircleRing) *
-                (g : Matrix (Fin 2) (Fin 2) CircleRing)ᵀ) := by
-                  rw [hg, circleRotation_mul_transpose, mul_one]
-      _ = ((↑g⁻¹ : Matrix (Fin 2) (Fin 2) CircleRing) *
-              (g : Matrix (Fin 2) (Fin 2) CircleRing)) *
-              (g : Matrix (Fin 2) (Fin 2) CircleRing)ᵀ := by
-                  rw [Matrix.mul_assoc]
-      _ = (g : Matrix (Fin 2) (Fin 2) CircleRing)ᵀ := by
-                  rw [← Units.val_mul, inv_mul_cancel, Units.val_one, one_mul]
-  set u : GL (Fin N) CircleRing := stabilizeGL CircleRing hN g
-  have huinv : u⁻¹ = stabilizeGL CircleRing hN g⁻¹ :=
-    (map_inv (stabilizeGL CircleRing hN) g).symm
-  have htrans : (u : Matrix (Fin N) (Fin N) CircleRing)ᵀ =
-      (↑u⁻¹ : Matrix (Fin N) (Fin N) CircleRing) := by
-    ext i j
-    rw [Matrix.transpose_apply, huinv, coe_stabilizeGL_apply, coe_stabilizeGL_apply]
-    by_cases h : (i : ℕ) < 2 ∧ (j : ℕ) < 2
-    · simp only [h.1, h.2, and_self, ↓reduceDIte, hinv, Matrix.transpose_apply]
-    · have h' : ¬((j : ℕ) < 2 ∧ (i : ℕ) < 2) := fun ⟨hj, hi⟩ ↦ h ⟨hi, hj⟩
-      simp only [h, h', ↓reduceDIte, Matrix.one_apply, eq_comm]
-  rw [coe_circleRotationStabilizedSL, htrans, ← Units.val_mul, mul_inv_cancel, Units.val_one]
+      (circleRotationStabilizedSL N hN : Matrix (Fin N) (Fin N) CircleRing)ᵀ = 1 :=
+  stabilizeGL_mul_transpose hN circleRotation_mul_transpose
 
 /-- Evaluating the stabilized circle rotation at `z : Circle` yields an element of `SO(N)`. -/
 private def evalCircleRotationSO (N : ℕ) (hN : 2 ≤ N) (z : Circle) :
@@ -234,7 +231,7 @@ private def evalCircleRotationSO (N : ℕ) (hN : 2 ≤ N) (z : Circle) :
     have htr :
         (φ.mapMatrix (circleRotationStabilizedSL N hN : Matrix (Fin N) (Fin N) CircleRing))ᵀ =
           φ.mapMatrix (circleRotationStabilizedSL N hN : Matrix (Fin N) (Fin N) CircleRing)ᵀ :=
-      rfl
+      (Matrix.transpose_map).symm
     rw [hmap, htr, ← map_mul, circleRotationStabilizedSL_mul_transpose N hN, map_one]⟩
 
 private theorem toSL_evalCircleRotationSO (N : ℕ) (hN : 2 ≤ N) (z : Circle) :
@@ -246,36 +243,89 @@ private theorem toSL_evalCircleRotationSO (N : ℕ) (hN : 2 ≤ N) (z : Circle) 
 private theorem evalCircleRotationStabilizedSL_one (N : ℕ) (hN : 2 ≤ N) :
     CircleRing.evalContinuousMap.toRingHom.mapSLContinuousMap
       (circleRotationStabilizedSL N hN) 1 = 1 := by
-  ext i j
-  rw [RingHom.coe_mapSLContinuousMap_apply, coe_circleRotationStabilizedSL,
-    coe_stabilizeGL_apply, SpecialLinearGroup.coe_one]
-  split_ifs with hij
-  · obtain ⟨hi, hj⟩ := hij
-    have hi' : (i : ℕ) = 0 ∨ (i : ℕ) = 1 := by omega
-    have hj' : (j : ℕ) = 0 ∨ (j : ℕ) = 1 := by omega
-    rcases hi' with hi0 | hi1 <;> rcases hj' with hj0 | hj1
-    · have h0 : (⟨(i : ℕ), hi⟩ : Fin 2) = 0 := Fin.ext hi0
-      have h1 : (⟨(j : ℕ), hj⟩ : Fin 2) = 0 := Fin.ext hj0
-      have hij' : i = j := Fin.ext (hi0.trans hj0.symm)
-      rw [h0, h1]
-      simp [hij', Matrix.one_apply]
-    · have h0 : (⟨(i : ℕ), hi⟩ : Fin 2) = 0 := Fin.ext hi0
-      have h1 : (⟨(j : ℕ), hj⟩ : Fin 2) = 1 := Fin.ext hj1
-      have hij' : i ≠ j := fun h ↦ by have := congrArg Fin.val h; omega
-      rw [h0, h1]
-      simp [hij']
-    · have h0 : (⟨(i : ℕ), hi⟩ : Fin 2) = 1 := Fin.ext hi1
-      have h1 : (⟨(j : ℕ), hj⟩ : Fin 2) = 0 := Fin.ext hj0
-      have hij' : i ≠ j := fun h ↦ by have := congrArg Fin.val h; omega
-      rw [h0, h1]
-      simp [hij']
-    · have h0 : (⟨(i : ℕ), hi⟩ : Fin 2) = 1 := Fin.ext hi1
-      have h1 : (⟨(j : ℕ), hj⟩ : Fin 2) = 1 := Fin.ext hj1
-      have hij' : i = j := Fin.ext (hi1.trans hj1.symm)
-      rw [h0, h1]
-      simp [hij', Matrix.one_apply]
-  · rw [Matrix.one_apply, Matrix.one_apply]
+  apply SpecialLinearGroup.toGL_injective
+  let φ : CircleRing →+* ℝ :=
+    (ContinuousMap.evalAlgHom ℝ ℝ 1).toRingHom.comp CircleRing.evalContinuousMap.toRingHom
+  have h1 : CircleRing.evalContinuousMap.toRingHom.mapGLContinuousMap
+      (stabilizeGL CircleRing hN (SpecialLinearGroup.toGL circleRotation)) 1 =
+      Units.map (φ.mapMatrix (m := Fin N)).toMonoidHom
+        (stabilizeGL CircleRing hN (SpecialLinearGroup.toGL circleRotation)) := by
+    ext i j
+    simp [φ]
+  rw [RingHom.toGL_mapSLContinuousMap_apply, toGL_circleRotationStabilizedSL, h1,
+    ← stabilizeGL_map hN φ (SpecialLinearGroup.toGL circleRotation)]
+  have h2 : Units.map (φ.mapMatrix (m := Fin 2)).toMonoidHom
+      (SpecialLinearGroup.toGL circleRotation) = 1 := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [φ]
+  rw [h2, map_one, map_one]
+
+private theorem evalCircleRotationSO_apply (N : ℕ) (hN : 2 ≤ N) (z : Circle) (k j : Fin N) :
+    (evalCircleRotationSO N hN z : Matrix (Fin N) (Fin N) ℝ) k j =
+      if hkj : (k : ℕ) < 2 ∧ (j : ℕ) < 2 then
+        CircleRing.evalContinuousMap
+          ((circleRotation : Matrix (Fin 2) (Fin 2) CircleRing) ⟨k, hkj.1⟩ ⟨j, hkj.2⟩) z
+      else (1 : Matrix (Fin N) (Fin N) ℝ) k j := by
+  simp only [evalCircleRotationSO, RingHom.coe_mapSLContinuousMap_apply,
+    coe_circleRotationStabilizedSL, coe_stabilizeGL_apply]
+  split_ifs with hkj
+  · rfl
+  · simp only [Matrix.one_apply]
     split_ifs <;> simp
+
+private theorem evalCircleRotationSO_toLin'_single_zero (N : ℕ) (hN : 2 ≤ N) (z : Circle) :
+    Matrix.toLin' (evalCircleRotationSO N hN z : Matrix (Fin N) (Fin N) ℝ)
+        (Pi.single ⟨0, by omega⟩ 1) =
+      (z : ℂ).re • Pi.single ⟨0, by omega⟩ 1 + (z : ℂ).im • Pi.single ⟨1, by omega⟩ 1 := by
+  ext k
+  rw [Matrix.toLin'_apply, Matrix.mulVec_single_one, Matrix.col_apply,
+    evalCircleRotationSO_apply N hN z k ⟨0, by omega⟩]
+  rcases lt_or_ge (k : ℕ) 2 with hk | hk
+  · have hk' : k = ⟨0, by omega⟩ ∨ k = ⟨1, by omega⟩ := by
+      simp only [Fin.ext_iff]
+      omega
+    rcases hk' with hk0 | hk1
+    · rw [hk0]
+      simp [Fin.ext_iff]
+    · rw [hk1]
+      simp [Fin.ext_iff]
+  · have hkn0 : k ≠ ⟨0, by omega⟩ := fun h ↦ by
+      have := congrArg Fin.val h; dsimp only at this; omega
+    have hkn1 : k ≠ ⟨1, by omega⟩ := fun h ↦ by
+      have := congrArg Fin.val h; dsimp only at this; omega
+    simp [Nat.not_lt.mpr hk, hkn0, hkn1]
+
+private theorem evalCircleRotationSO_toLin'_single_one (N : ℕ) (hN : 2 ≤ N) (z : Circle) :
+    Matrix.toLin' (evalCircleRotationSO N hN z : Matrix (Fin N) (Fin N) ℝ)
+        (Pi.single ⟨1, by omega⟩ 1) =
+      (z : ℂ).re • Pi.single ⟨1, by omega⟩ 1 - (z : ℂ).im • Pi.single ⟨0, by omega⟩ 1 := by
+  ext k
+  rw [Matrix.toLin'_apply, Matrix.mulVec_single_one, Matrix.col_apply,
+    evalCircleRotationSO_apply N hN z k ⟨1, by omega⟩]
+  rcases lt_or_ge (k : ℕ) 2 with hk | hk
+  · have hk' : k = ⟨0, by omega⟩ ∨ k = ⟨1, by omega⟩ := by
+      simp only [Fin.ext_iff]
+      omega
+    rcases hk' with hk0 | hk1
+    · rw [hk0]
+      simp [Fin.ext_iff]
+    · rw [hk1]
+      simp [Fin.ext_iff]
+  · have hkn0 : k ≠ ⟨0, by omega⟩ := fun h ↦ by
+      have := congrArg Fin.val h; dsimp only at this; omega
+    have hkn1 : k ≠ ⟨1, by omega⟩ := fun h ↦ by
+      have := congrArg Fin.val h; dsimp only at this; omega
+    simp [Nat.not_lt.mpr hk, hkn0, hkn1]
+
+private theorem evalCircleRotationSO_toLin'_single_of_two_le (N : ℕ) (hN : 2 ≤ N) (z : Circle)
+    {j : Fin N} (hj : 2 ≤ (j : ℕ)) :
+    Matrix.toLin' (evalCircleRotationSO N hN z : Matrix (Fin N) (Fin N) ℝ)
+        (Pi.single j 1) =
+      Pi.single j 1 := by
+  ext k
+  rw [Matrix.toLin'_apply, Matrix.mulVec_single_one, Matrix.col_apply,
+    evalCircleRotationSO_apply N hN z k j]
+  simp [Nat.not_lt.mpr hj, Matrix.one_apply, Pi.single_apply, eq_comm]
 
 /-- The Spin rotation path in the `(e₁, e₀)` plane projects under
 `realCliffordSpinProjectionZero N` to `evalCircleRotationSO N hN (Circle.exp (2π u))`
@@ -292,8 +342,6 @@ private theorem realCliffordSpinProjectionZero_spinRotationPath_eq (N : ℕ) (hN
         (evalCircleRotationSO N hN (Circle.exp (2 * Real.pi * (u : ℝ)))) := by
   set i₀ : Fin N := ⟨0, by omega⟩
   set i₁ : Fin N := ⟨1, by omega⟩
-  have hi0lt : (i₀ : ℕ) < 2 := Nat.zero_lt_two
-  have hi1lt : (i₁ : ℕ) < 2 := Nat.one_lt_two
   have hi10 : i₁ ≠ i₀ := by simp [i₀, i₁, Fin.ext_iff]
   have he₁ : realCliffordForm N 0 (Pi.single i₁ 1) = 1 :=
     realCliffordForm_zero_single_one N i₁
@@ -301,9 +349,6 @@ private theorem realCliffordSpinProjectionZero_spinRotationPath_eq (N : ℕ) (hN
     realCliffordForm_zero_single_one N i₀
   have h10 : (realCliffordForm N 0).IsOrtho (Pi.single i₁ 1) (Pi.single i₀ 1) :=
     isOrtho_realCliffordForm_single hi10 1 1
-  have htoGL :
-      (SpecialLinearGroup.toGL circleRotation : Matrix (Fin 2) (Fin 2) CircleRing) =
-        circleRotation := rfl
   apply Subtype.ext
   apply LinearEquiv.toLinearMap_injective
   refine (Pi.basisFun ℝ (Fin N)).ext fun j ↦ ?_
@@ -324,84 +369,28 @@ private theorem realCliffordSpinProjectionZero_spinRotationPath_eq (N : ℕ) (hN
     rw [hz2, Complex.exp_ofReal_mul_I_re]
   have hzsq_im : ((z : ℂ) ^ 2).im = Real.sin (2 * Real.pi * (u : ℝ)) := by
     rw [hz2, Complex.exp_ofReal_mul_I_im]
-  by_cases hj0 : j = i₀
-  · subst hj0
-    rw [CliffordAlgebra.spinVectorAction_spinCircle_right, he₀, mul_one, hzsq_re, hzsq_im]
-    ext k
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Matrix.toLin'_apply,
-      Matrix.mulVec_single_one, Matrix.col_apply, evalCircleRotationSO,
-      RingHom.coe_mapSLContinuousMap_apply, coe_circleRotationStabilizedSL, coe_stabilizeGL_apply,
-      Pi.single_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    by_cases hk0 : k = i₀
-    · subst hk0
-      have h0 : (⟨(i₀ : ℕ), hi0lt⟩ : Fin 2) = 0 := rfl
-      simp only [hi0lt, and_self, ↓reduceDIte, h0, htoGL, circleRotation_apply_zero_zero,
-        CircleRing.evalContinuousMap_x_exp]
-      simp [i₀, Fin.ext_iff]
-    · by_cases hk1 : k = i₁
-      · subst hk1
-        have h0 : (⟨(i₀ : ℕ), hi0lt⟩ : Fin 2) = 0 := rfl
-        have h1 : (⟨(i₁ : ℕ), hi1lt⟩ : Fin 2) = 1 := rfl
-        simp only [hi1lt, hi0lt, and_self, ↓reduceDIte, h0, h1, htoGL,
-          circleRotation_apply_one_zero, CircleRing.evalContinuousMap_y_exp]
-        simp [i₁, Fin.ext_iff]
-      · have hk2 : ¬((k : ℕ) < 2) := fun hk ↦ by
-          have : (k : ℕ) = 0 ∨ (k : ℕ) = 1 := by omega
-          rcases this with h | h
-          · exact hk0 (Fin.ext h)
-          · exact hk1 (Fin.ext h)
-        simp only [hk2, false_and, ↓reduceDIte, Matrix.one_apply, hk0, ↓reduceIte, map_zero,
-          ContinuousMap.zero_apply]
-        have hk0' : (k : ℕ) ≠ 0 := fun h ↦ hk0 (Fin.ext h)
-        have hk1' : (k : ℕ) ≠ 1 := fun h ↦ hk1 (Fin.ext h)
-        simp [Fin.ext_iff, hk0', hk1']
-  · by_cases hj1 : j = i₁
-    · subst hj1
-      rw [CliffordAlgebra.spinVectorAction_spinCircle_left, he₁, mul_one, hzsq_re, hzsq_im]
-      ext k
-      simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, Matrix.toLin'_apply,
-        Matrix.mulVec_single_one, Matrix.col_apply, evalCircleRotationSO,
-        RingHom.coe_mapSLContinuousMap_apply, coe_circleRotationStabilizedSL,
-        coe_stabilizeGL_apply, Pi.single_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-      by_cases hk0 : k = i₀
-      · subst hk0
-        have h0 : (⟨(i₀ : ℕ), hi0lt⟩ : Fin 2) = 0 := rfl
-        have h1 : (⟨(i₁ : ℕ), hi1lt⟩ : Fin 2) = 1 := rfl
-        simp only [hi0lt, hi1lt, and_self, ↓reduceDIte, h0, h1, htoGL,
-          circleRotation_apply_zero_one, map_neg, ContinuousMap.neg_apply,
-          CircleRing.evalContinuousMap_y_exp]
-        simp [i₀, Fin.ext_iff]
-      · by_cases hk1 : k = i₁
-        · subst hk1
-          have h1 : (⟨(i₁ : ℕ), hi1lt⟩ : Fin 2) = 1 := rfl
-          simp only [hi1lt, and_self, ↓reduceDIte, h1, htoGL, circleRotation_apply_one_one,
-            CircleRing.evalContinuousMap_x_exp]
-          simp [i₁, Fin.ext_iff]
-        · have hk2 : ¬((k : ℕ) < 2) := fun hk ↦ by
-            have : (k : ℕ) = 0 ∨ (k : ℕ) = 1 := by omega
-            rcases this with h | h
-            · exact hk0 (Fin.ext h)
-            · exact hk1 (Fin.ext h)
-          simp only [hk2, false_and, ↓reduceDIte, Matrix.one_apply, hk1, ↓reduceIte, map_zero,
-            ContinuousMap.zero_apply]
-          have hk0' : (k : ℕ) ≠ 0 := fun h ↦ hk0 (Fin.ext h)
-          have hk1' : (k : ℕ) ≠ 1 := fun h ↦ hk1 (Fin.ext h)
-          simp [Fin.ext_iff, hk0', hk1']
-    · rw [CliffordAlgebra.spinVectorAction_spinCircle_of_isOrtho h10
+  rcases lt_or_ge (j : ℕ) 2 with hj | hj
+  · have hj' : j = i₀ ∨ j = i₁ := by
+      simp only [i₀, i₁, Fin.ext_iff]
+      omega
+    rcases hj' with rfl | rfl
+    · rw [CliffordAlgebra.spinVectorAction_spinCircle_right, he₀, mul_one, hzsq_re, hzsq_im,
+        evalCircleRotationSO_toLin'_single_zero N hN]
+      have hcexp : (Circle.exp (2 * Real.pi * (u : ℝ)) : ℂ) =
+          Complex.exp (((2 * Real.pi * (u : ℝ)) : ℝ) * Complex.I) := Circle.coe_exp _
+      rw [hcexp, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+    · rw [CliffordAlgebra.spinVectorAction_spinCircle_left, he₁, mul_one, hzsq_re, hzsq_im,
+        evalCircleRotationSO_toLin'_single_one N hN]
+      have hcexp : (Circle.exp (2 * Real.pi * (u : ℝ)) : ℂ) =
+          Complex.exp (((2 * Real.pi * (u : ℝ)) : ℝ) * Complex.I) := Circle.coe_exp _
+      rw [hcexp, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, sub_eq_add_neg]
+  · have hj0 : j ≠ i₀ := fun h ↦ by have := congrArg Fin.val h; dsimp [i₀] at this; omega
+    have hj1 : j ≠ i₁ := fun h ↦ by have := congrArg Fin.val h; dsimp [i₁] at this; omega
+    rw [CliffordAlgebra.spinVectorAction_spinCircle_of_isOrtho h10
         (by rw [he₁, he₀, mul_one])
-        (isOrtho_realCliffordForm_single (Ne.symm hj1) 1 1)
-        (isOrtho_realCliffordForm_single (Ne.symm hj0) 1 1)]
-      have hj2 : ¬((j : ℕ) < 2) := fun hj ↦ by
-        have : (j : ℕ) = 0 ∨ (j : ℕ) = 1 := by omega
-        rcases this with h | h
-        · exact hj0 (Fin.ext h)
-        · exact hj1 (Fin.ext h)
-      ext k
-      simp only [Matrix.toLin'_apply, Matrix.mulVec_single_one, Matrix.col_apply,
-        evalCircleRotationSO, RingHom.coe_mapSLContinuousMap_apply,
-        coe_circleRotationStabilizedSL, coe_stabilizeGL_apply, hj2, and_false, ↓reduceDIte,
-        Matrix.one_apply, Pi.single_apply]
-      split_ifs <;> simp
+        (isOrtho_realCliffordForm_single hj1.symm 1 1)
+        (isOrtho_realCliffordForm_single hj0.symm 1 1),
+      evalCircleRotationSO_toLin'_single_of_two_le N hN _ hj]
 
 /-! ## Nonvanishing in algebraic `K₁` and `SK₁` -/
 
@@ -458,18 +447,18 @@ theorem circleRotation_not_mem_elementarySubgroup (N : ℕ) (hN : 2 ≤ N) :
     (isOrtho_realCliffordForm_single (by simp [Fin.ext_iff]) 1 1)
   let p := CliffordAlgebra.realCliffordSpinProjectionZero N
   have hp : IsCoveringMap p := CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero N
-  let δ : Path (1 : QuadraticMap.specialOrthogonalGroup (realCliffordForm N 0)) 1 :=
-    (γSpin.map p.continuous).cast (map_one p).symm
-      (CliffordAlgebra.realCliffordSpinProjectionZero_negOne N).symm
+  have hp1 : p 1 = p (CliffordAlgebra.spinGroup.negOne (realCliffordForm N 0)
+      (nondegenerate_realCliffordForm N 0).ne_zero) :=
+    (map_one p).trans (CliffordAlgebra.realCliffordSpinProjectionZero_negOne N).symm
+  let δ : Path (p 1) (p 1) := (γSpin.map p.continuous).cast rfl hp1
   have hsrc :
       retractToClifford.comp ((1 : C(Circle, SpecialLinearGroup (Fin N) ℝ)).comp circleLoop) =
-        (Path.refl (1 : QuadraticMap.specialOrthogonalGroup
-          (realCliffordForm N 0))).toContinuousMap := by
+        (Path.refl (p 1)).toContinuousMap := by
     refine ContinuousMap.ext fun u ↦ ?_
     have h1 : SpecialLinearGroup.polarRetraction (Fin N) ℝ 1 = 1 := by
       simpa only [map_one] using
         SpecialLinearGroup.polarRetraction_toSL (n := Fin N) (𝕜 := ℝ) 1
-    simp [retractToClifford, h1]
+    simp [retractToClifford, h1, p]
   have hdst :
       retractToClifford.comp
         ((CircleRing.evalContinuousMap.toRingHom.mapSLContinuousMap gSL).comp circleLoop) =
@@ -481,24 +470,10 @@ theorem circleRotation_not_mem_elementarySubgroup (N : ℕ) (hN : 2 ≤ N) :
       SpecialLinearGroup.polarRetraction_toSL]
     exact (realCliffordSpinProjectionZero_spinRotationPath_eq N hN u).symm
   rw [hsrc, hdst] at hloopSO
-  -- Covering homotopy lifting forces the Spin lift starting at `1` to end at `1`, contradicting
-  -- `-1 ≠ 1` in `Spin(N)`.
-  have hδ0 : δ.toContinuousMap 0 = p 1 := δ.source.trans (map_one p).symm
-  have hrefl0 :
-      (Path.refl (1 : QuadraticMap.specialOrthogonalGroup
-        (realCliffordForm N 0))).toContinuousMap 0 = p 1 :=
-    (map_one p).symm
-  have hlift_δ : hp.liftPath δ.toContinuousMap 1 hδ0 = γSpin.toContinuousMap :=
-    ((hp.eq_liftPath_iff' _).mpr ⟨rfl, γSpin.source⟩).symm
-  have hlift_refl : hp.liftPath (Path.refl 1).toContinuousMap 1 hrefl0 = ContinuousMap.const I 1 :=
-    hp.liftPath_const (map_one p).symm
-  have hend := hp.liftPath_apply_one_eq_of_homotopicRel hloopSO 1 hrefl0 hδ0
-  rw [hlift_refl, hlift_δ] at hend
-  have hneg : CliffordAlgebra.spinGroup.negOne (realCliffordForm N 0)
-      (nondegenerate_realCliffordForm N 0).ne_zero = 1 := by
-    simpa [γSpin] using hend.symm
+  -- Covering homotopy lifting forces `1 = -1` in `Spin(N)`, a contradiction.
+  have hneq := IsCoveringMap.eq_of_map_homotopic_refl hp γSpin hp1 hloopSO.symm
   exact CliffordAlgebra.spinGroup.negOne_ne_one (realCliffordForm N 0)
-    (nondegenerate_realCliffordForm N 0).ne_zero hneg
+    (nondegenerate_realCliffordForm N 0).ne_zero hneq.symm
 
 /-- **The circle rotation has nontrivial class in algebraic `K₁`**: no identity stabilization of
 `circleRotation` is elementary, so it represents a nontrivial class in `SK₁(CircleRing)`. -/
@@ -517,13 +492,12 @@ theorem specialAlgebraicK1_circleRing_ne_bot : specialAlgebraicK1 CircleRing ≠
 
 /-- The determinant homomorphism `K₁(CircleRing) →* CircleRingˣ` is not injective. -/
 theorem not_det_circleRing_injective : ¬ Function.Injective (AlgebraicK1.det CircleRing) := by
-  intro hinj
-  have hdet : AlgebraicK1.det CircleRing
-      (AlgebraicK1.mk CircleRing 2 (SpecialLinearGroup.toGL circleRotation)) =
-      AlgebraicK1.det CircleRing 1 := by
-    rw [map_one]
-    exact mem_specialAlgebraicK1_iff.mp circleRotation_mk_mem_specialAlgebraicK1
-  exact circle_rotation_not_stably_elementary (hinj hdet)
+  rw [← MonoidHom.ker_eq_bot_iff]
+  have hker : (AlgebraicK1.det CircleRing).ker = specialAlgebraicK1 CircleRing := by
+    ext x
+    exact mem_specialAlgebraicK1_iff.symm
+  rw [hker]
+  exact specialAlgebraicK1_circleRing_ne_bot
 
 end
 
