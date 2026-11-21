@@ -14,9 +14,10 @@ import TauCeti.Topology.Algebra.Module.Submodule
 /-!
 # Henkel's open mapping theorem
 
-A surjective equivariant additive map out of a complete first-countable uniform additive group is
-open, provided the scalars carry a zero sequence of units and the target is a Baire space. This
-file assembles that statement from the pieces built around it.
+A surjective equivariant additive map, continuous at zero, from a complete first-countable uniform
+additive group (with scalar action continuous in the scalar at zero) to a `T₀` Baire topological
+additive group with continuous constant scalar actions is open, provided the scalars carry a zero
+sequence of units. This file assembles that statement from the pieces built around it.
 
 Each hypothesis pays for one step and no other.
 
@@ -38,10 +39,14 @@ spaces, F-spaces, Banach spaces, and complete first-countable modules over Tate 
 * `TauCeti.HasZeroSequenceOfUnits.isOpenMap`: Henkel's open mapping theorem.
 * `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the surjective map in `isOpenMap` induces the
   quotient topology on its target, so the target's topology is determined by the source's.
-* `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`: over a ring with a zero
-  sequence of units, closed-range linear maps from a complete first-countable uniform additive
-  module into a completely metrisable module are strict, assuming continuity at zero for the map
-  and for the scalar action on the source, and continuity of constant scalar actions on the target.
+* `LinearMap.isStrictMap_of_hasZeroSequenceOfUnits` and
+  `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`: over a ring with a zero
+  sequence of units, linear maps from a complete first-countable uniform additive module whose
+  range is completely metrisable (for instance, closed range in a completely metrisable target) are
+  strict, assuming continuity at zero for the map and for the scalar action on the source, and
+  continuity of constant scalar actions on the target.
+* `ContinuousLinearMap.equivRangeOfHasZeroSequenceOfUnits`: an injective continuous linear map
+  with completely metrisable range induces a continuous linear equivalence onto its range.
 
 The other two implications of Wedhorn's Theorem 6.16, that an open linear map is surjective and that
 a continuous one has a complete target, are in `TauCeti.Topology.Algebra.OpenMapping.Converse`.
@@ -103,7 +108,7 @@ theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
 
 end TauCeti
 
-namespace LinearMap
+section StrictAndRangeEquiv
 
 open TopologicalSpace
 
@@ -111,20 +116,21 @@ variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceO
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
   [(𝓝 (0 : E)).IsCountablyGenerated] [Module R E]
   [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-  [IsCompletelyMetrizableSpace F] [Module R F] [ContinuousConstSMul R F]
+  [Module R F] [ContinuousConstSMul R F]
 
-/-- A linear map with closed range is strict when the scalar ring has a zero sequence of units,
-the source is complete and first countable, and the target is completely metrisable. Only
-continuity at zero is needed for the map and for scalar multiplication.
+namespace LinearMap
+
+/-- A linear map whose range is completely metrisable is strict when the scalar ring has a zero
+sequence of units and the source is complete and first countable. Only continuity at zero is needed
+for the map and for scalar multiplication, and neither completeness nor metrisability is required
+of the ambient codomain `F`.
 
 The target's additive operations need only be continuous: no uniform structure on the target
 or uniform continuity of its operations is assumed. -/
-theorem isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits (f : E →ₗ[R] F)
+theorem isStrictMap_of_hasZeroSequenceOfUnits (f : E →ₗ[R] F)
+    [IsCompletelyMetrizableSpace f.range]
     (hfc : ContinuousAt (f : E → F) 0)
-    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
-    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) := by
-  have : IsCompletelyMetrizableSpace f.range :=
-    hr.isClosedEmbedding_subtypeVal.IsCompletelyMetrizableSpace
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) : Topology.IsStrictMap (f : E → F) := by
   have hcont : Continuous (f.rangeRestrict : E → f.range) :=
     (continuous_of_continuousAt_zero f hfc).subtype_mk _
   exact LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr
@@ -132,6 +138,80 @@ theorem isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits (f : E →ₗ[R]
       TauCeti.HasZeroSequenceOfUnits.isOpenMap f.rangeRestrict f.surjective_rangeRestrict
         hcont.continuousAt hc⟩
 
+/-- A linear map with closed range is strict when the scalar ring has a zero sequence of units,
+the source is complete and first countable, and the target is completely metrisable. Only
+continuity at zero is needed for the map and for scalar multiplication.
+
+The target's additive operations need only be continuous: no uniform structure on the target
+or uniform continuity of its operations is assumed. -/
+theorem isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
+    [IsCompletelyMetrizableSpace F] (f : E →ₗ[R] F)
+    (hfc : ContinuousAt (f : E → F) 0)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) := by
+  have : IsCompletelyMetrizableSpace f.range := hr.isCompletelyMetrizableSpace
+  exact f.isStrictMap_of_hasZeroSequenceOfUnits hfc hc
+
 end LinearMap
+
+namespace ContinuousLinearMap
+
+/-- An injective continuous linear map with completely metrisable range induces a continuous linear
+equivalence onto its range, when the scalar ring has a zero sequence of units, the source is
+complete and first countable, and the source scalar action is continuous in the scalar at zero.
+Neither completeness nor metrisability is required of the ambient codomain `F`. -/
+noncomputable def equivRangeOfHasZeroSequenceOfUnits (f : E →L[R] F)
+    [IsCompletelyMetrizableSpace f.range] (hinj : Function.Injective f)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) :
+    E ≃L[R] f.range where
+  toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hinj
+  continuous_toFun := (f.continuous.codRestrict _).congr fun _ ↦ rfl
+  continuous_invFun := by
+    have hopen : IsOpenMap f.rangeRestrict :=
+      (LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mp
+        (f.toLinearMap.isStrictMap_of_hasZeroSequenceOfUnits
+          f.continuous.continuousAt hc)).isOpenMap
+    exact (LinearEquiv.ofInjective f.toLinearMap hinj).toEquiv.continuous_symm_iff.mpr hopen
+
+@[simp]
+theorem toLinearEquiv_equivRangeOfHasZeroSequenceOfUnits (f : E →L[R] F)
+    [IsCompletelyMetrizableSpace f.range] (hinj : Function.Injective f)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) :
+    (f.equivRangeOfHasZeroSequenceOfUnits hinj hc).toLinearEquiv =
+      LinearEquiv.ofInjective f.toLinearMap hinj :=
+  (rfl)
+
+@[simp]
+theorem coeFn_equivRangeOfHasZeroSequenceOfUnits (f : E →L[R] F)
+    [IsCompletelyMetrizableSpace f.range] (hinj : Function.Injective f)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) :
+    ⇑(f.equivRangeOfHasZeroSequenceOfUnits hinj hc) = f.rangeRestrict :=
+  (rfl)
+
+@[simp]
+theorem coe_equivRangeOfHasZeroSequenceOfUnits (f : E →L[R] F)
+    [IsCompletelyMetrizableSpace f.range] (hinj : Function.Injective f)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) :
+    (f.equivRangeOfHasZeroSequenceOfUnits hinj hc : E →L[R] f.range) = f.rangeRestrict := by
+  ext
+  rfl
+
+@[simp]
+theorem equivRangeOfHasZeroSequenceOfUnits_apply (f : E →L[R] F)
+    [IsCompletelyMetrizableSpace f.range] (hinj : Function.Injective f)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) (x : E) :
+    f.equivRangeOfHasZeroSequenceOfUnits hinj hc x = f.rangeRestrict x :=
+  (rfl)
+
+@[simp]
+theorem equivRangeOfHasZeroSequenceOfUnits_symm_apply_apply (f : E →L[R] F)
+    [IsCompletelyMetrizableSpace f.range] (hinj : Function.Injective f)
+    (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) (x : E) :
+    (f.equivRangeOfHasZeroSequenceOfUnits hinj hc).symm ⟨f x, f.mem_range_self x⟩ = x :=
+  (f.equivRangeOfHasZeroSequenceOfUnits hinj hc).symm_apply_apply x
+
+end ContinuousLinearMap
+
+end StrictAndRangeEquiv
 
 end

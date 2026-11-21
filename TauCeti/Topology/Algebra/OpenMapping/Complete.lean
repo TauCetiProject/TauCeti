@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Sequence
-public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Removing the closure from Henkel's approximation
@@ -35,10 +36,12 @@ Two settings are handled here.
 
 ## Main results
 
-* `TauCeti.mem_image_of_mem_closure_image_of_add_subset`: `closure (f '' V 1) ⊆ f '' V 0` along
-  any shrinking sequence satisfying `V (n + 1) + V (n + 1) ⊆ V n` with `V 0` closed.
+* `TauCeti.mem_image_of_mem_closure_image_of_add_subset`: for `f` continuous at zero along a
+  shrinking sequence `V` of sets containing `0` with `V 0` closed, `V (n + 1) + V (n + 1) ⊆ V n`,
+  and `closure (f '' V (n + 2)) ∈ 𝓝 0` for all `n`, we have `closure (f '' V 1) ⊆ f '' V 0`.
 * `TauCeti.mem_image_of_mem_closure_image`: the sharper subgroup form
-  `closure (f '' V 0) ⊆ f '' V 0` for an antitone basis of subgroups.
+  `closure (f '' V 0) ⊆ f '' V 0` for an antitone basis of subgroups when `f` is continuous at
+  zero and `closure (f '' V (n + 1)) ∈ 𝓝 0` for all `n`.
 * `TauCeti.isOpenMap_of_closure_image_mem_nhds`: an additive map out of a complete
   first-countable uniform additive group is open once the closures of the images of neighbourhoods
   of zero are neighbourhoods of zero.
@@ -57,6 +60,30 @@ open Filter Topology
 open scoped Pointwise Uniformity
 
 namespace TauCeti
+
+/-- Tail sums along a doubling sequence `V (n + 1) + V (n + 1) ⊆ V n` stay inside `V n`. -/
+private theorem sum_Ico_mem_of_add_subset {M : Type*} [AddCommMonoid M]
+    {V : ℕ → Set M} (h0 : ∀ n, (0 : M) ∈ V n)
+    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
+    {x : ℕ → M} (hx : ∀ n, x n ∈ V (n + 1)) (m n : ℕ) :
+    ∑ i ∈ Finset.Ico n (n + m), x i ∈ V n := by
+  induction m generalizing n with
+  | zero => simpa using h0 n
+  | succ m ih =>
+    have hlt : n < n + (m + 1) := by omega
+    have hend : n + (m + 1) = (n + 1) + m := by omega
+    rw [Finset.sum_eq_sum_Ico_succ_bot hlt, hend]
+    exact hadd n (Set.add_mem_add (hx n) (ih (n + 1)))
+
+/-- Ordered differences of partial sums along a doubling sequence stay inside `V p`. -/
+private theorem sum_range_sub_sum_range_mem_of_add_subset {M : Type*} [AddCommGroup M]
+    {V : ℕ → Set M} (h0 : ∀ n, (0 : M) ∈ V n)
+    (hadd : ∀ n, V (n + 1) + V (n + 1) ⊆ V n)
+    {x : ℕ → M} (hx : ∀ n, x n ∈ V (n + 1)) {p q : ℕ} (hpq : p ≤ q) :
+    (∑ i ∈ Finset.range q, x i) - ∑ i ∈ Finset.range p, x i ∈ V p := by
+  have hend : p + (q - p) = q := Nat.add_sub_of_le hpq
+  rw [(Finset.sum_Ico_eq_sub x hpq).symm, ← hend]
+  exact sum_Ico_mem_of_add_subset h0 hadd hx (q - p) p
 
 variable {M N : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
   [AddGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [T0Space N]
@@ -83,19 +110,10 @@ theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
     hadd n (by simpa only [add_zero] using Set.add_mem_add hx (h0 (n + 1)))
   obtain ⟨x, hxV, hxres⟩ :=
     exists_seq_mem_and_sub_sum_mem f (fun n ↦ V (n + 1)) hVN hy
-  -- Finite tail sums starting at `n` stay inside `V n` by the doubling inclusion.
-  have hIco : ∀ m n, ∑ i ∈ Finset.Ico n (n + m), x i ∈ V n := by
-    intro m
-    induction m with
-    | zero => intro n; simpa using h0 n
-    | succ m ih =>
-      intro n
-      rw [Finset.sum_eq_sum_Ico_succ_bot (by omega : n < n + (m + 1)),
-        show n + (m + 1) = (n + 1) + m by omega]
-      exact hadd n (Set.add_mem_add (hxV n) (ih (n + 1)))
   let s : ℕ → M := fun k ↦ ∑ i ∈ Finset.range k, x i
   have hs_mem : ∀ k, s k ∈ V 0 := fun k ↦ by
-    simpa only [s, zero_add, Nat.Ico_zero_eq_range] using hIco k 0
+    simpa only [s, zero_add, Nat.Ico_zero_eq_range] using
+      sum_Ico_mem_of_add_subset h0 hadd hxV k 0
   have hs_cauchy : CauchySeq s := by
     rw [cauchySeq_iff]
     intro u hu
@@ -104,15 +122,9 @@ theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
     obtain ⟨K, hK⟩ := hbasis _ (Filter.inter_mem hU (neg_mem_nhds_zero M hU))
     refine ⟨K, fun p hp q hq ↦ hUu (Set.mem_preimage.mpr ?_)⟩
     rcases le_total p q with hpq | hqp
-    · have hsub : s q - s p = ∑ i ∈ Finset.Ico p (p + (q - p)), x i := by
-        rw [Nat.add_sub_of_le hpq, sub_eq_iff_eq_add', Finset.sum_range_add_sum_Ico _ hpq]
-      rw [hsub]
-      exact (hK (hanti hp (hIco (q - p) p))).1
-    · have hsub : s p - s q = ∑ i ∈ Finset.Ico q (q + (p - q)), x i := by
-        rw [Nat.add_sub_of_le hqp, sub_eq_iff_eq_add', Finset.sum_range_add_sum_Ico _ hqp]
-      have hneg : -(s p - s q) ∈ U := by
-        simpa only [Set.mem_neg, neg_neg] using (hK (hanti hq (hsub ▸ hIco (p - q) q))).2
-      simpa only [neg_sub] using hneg
+    · exact (hK (hanti hp (sum_range_sub_sum_range_mem_of_add_subset h0 hadd hxV hpq))).1
+    · simpa only [Set.mem_neg, neg_sub] using
+        (hK (hanti hq (sum_range_sub_sum_range_mem_of_add_subset h0 hadd hxV hqp))).2
   obtain ⟨a, ha⟩ := cauchySeq_tendsto_of_complete hs_cauchy
   refine ⟨a, hV0.mem_of_tendsto ha (Eventually.of_forall hs_mem), ?_⟩
   have hpart : Tendsto (fun n ↦ (f : M → N) (s (n + 1))) atTop (𝓝 ((f : M → N) a)) :=
@@ -135,49 +147,29 @@ each `closure (f '' V (n + 1))` is a neighbourhood of zero — which is what the
 Henkel's theorem provides. Then every point of `closure (f '' V 0)` is already the image of a point
 of `V 0`.
 
-`M` is not assumed nonarchimedean: a basis of subgroups at zero is exactly that condition, and
-the proof reconstructs the instance from `hV`. `N` need not be commutative, and separation of it
-is used only to identify the two limits of the partial sums. -/
+`M` is not assumed nonarchimedean: this follows directly from
+`TauCeti.mem_image_of_mem_closure_image_of_add_subset` applied to the shifted sequence
+`V 0, V 0, V 1, …`. `N` need not be commutative, and separation of it is used only to identify the
+two limits of the partial sums. -/
 theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
     (f : F) (hf : ContinuousAt (f : M → N) 0) {V : ℕ → AddSubgroup M}
     (hV : (𝓝 (0 : M)).HasAntitoneBasis fun n ↦ (V n : Set M))
     (hVN : ∀ n, closure ((f : M → N) '' (V (n + 1) : Set M)) ∈ 𝓝 (0 : N))
     {y : N} (hy : y ∈ closure ((f : M → N) '' (V 0 : Set M))) :
     y ∈ (f : M → N) '' (V 0 : Set M) := by
-  have hf' : Continuous (f : M → N) := continuous_of_continuousAt_zero f hf
-  obtain ⟨x, hxV, hxres⟩ :=
-    exists_seq_mem_and_sub_sum_mem f (fun n ↦ (V n : Set M)) hVN hy
-  -- A basis of subgroups at zero *is* nonarchimedeanness, so the instance need not be assumed.
-  have : NonarchimedeanAddGroup M :=
-    ⟨fun U hU ↦ by
-      obtain ⟨n, -, hn⟩ := hV.toHasBasis.mem_iff.mp hU
-      exact ⟨⟨V n, (V n).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial)⟩, hn⟩⟩
-  -- The errors tend to zero along the basis, so in a complete group they are summable.
-  have hsummable : Summable x :=
-    NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-      (by rw [Nat.cofinite_eq_atTop]; exact hV.tendsto hxV)
-  -- Their sum stays in `V 0`: an open subgroup is closed, and every error lies in it.
-  refine ⟨∑' n, x n, tsum_mem ((V 0).isClosed_of_isOpen
-    ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial)))
-    (fun n ↦ hV.antitone (Nat.zero_le n) (hxV n)), ?_⟩
-  -- The partial sums have two limits under `f`: its value at the sum, and `y`.
-  have hpart : Tendsto (fun n ↦ (f : M → N) (∑ i ∈ Finset.range (n + 1), x i)) atTop
-      (𝓝 ((f : M → N) (∑' n, x n))) :=
-    ((hf'.tendsto _).comp hsummable.hasSum.tendsto_sum_nat).comp (tendsto_add_atTop_nat 1)
-  refine tendsto_nhds_unique hpart ?_
-  -- The residuals tend to zero: the sets holding them shrink because `N` is regular.
-  have hres : Tendsto (fun n ↦ y - (f : M → N) (∑ i ∈ Finset.range (n + 1), x i)) atTop
-      (𝓝 (0 : N)) := by
-    refine (hasBasis_nhds_closure (0 : N)).tendsto_right_iff.mpr fun U hU ↦ ?_
-    have hpre : (f : M → N) ⁻¹' U ∈ 𝓝 (0 : M) :=
-      hf (by rw [map_zero]; exact hU)
-    obtain ⟨n₀, -, hn₀⟩ := hV.toHasBasis.mem_iff.mp hpre
-    filter_upwards [eventually_ge_atTop n₀] with n hn
-    exact closure_mono ((Set.image_mono
-      ((hV.antitone (hn.trans (Nat.le_succ n))).trans hn₀)).trans
-      (Set.image_preimage_subset _ _)) (hxres n)
-  -- `-(y - f s) + y = f s` reassociates without commuting anything in `N`.
-  simpa using hres.neg.add_const y
+  let W : ℕ → Set M := fun n ↦ (V (n - 1) : Set M)
+  have hW0 : IsClosed (W 0) :=
+    (V 0).isClosed_of_isOpen ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial))
+  have hadd : ∀ n, W (n + 1) + W (n + 1) ⊆ W n := by
+    rintro (_ | n) x ⟨a, ha, b, hb, rfl⟩
+    · exact (V 0).add_mem ha hb
+    · exact (V n).add_mem (hV.antitone (Nat.le_succ n) ha) (hV.antitone (Nat.le_succ n) hb)
+  have hbasis : ∀ U ∈ 𝓝 (0 : M), ∃ n, W n ⊆ U := by
+    intro U hU
+    obtain ⟨n, -, hn⟩ := hV.toHasBasis.mem_iff.mp hU
+    exact ⟨n + 1, hn⟩
+  exact mem_image_of_mem_closure_image_of_add_subset f hf hW0 (fun n ↦ (V (n - 1)).zero_mem)
+    hadd hbasis hVN hy
 
 /-- **Openness from the closure step.** Let `f : M → N` be an additive map, continuous at zero,
 out of a complete first-countable uniform additive group. If the closure of the image of every
@@ -193,32 +185,28 @@ theorem isOpenMap_of_closure_image_mem_nhds [(𝓝 (0 : M)).IsCountablyGenerated
     IsOpenMap (f : M → N) := by
   refine IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr fun S hS ↦ ?_
   rw [Filter.mem_map] at hS
-  obtain ⟨U₀, hU₀_nhds, hU₀_closed, -, hU₀_add⟩ :=
-    exists_closed_nhds_zero_neg_eq_add_subset hS
-  have hU₀S : U₀ ⊆ (f : M → N) ⁻¹' S := fun x hx ↦
-    hU₀_add (by simpa only [add_zero] using Set.add_mem_add hx (mem_of_mem_nhds hU₀_nhds))
   obtain ⟨W, hW⟩ := Filter.exists_antitone_basis (𝓝 (0 : M))
-  -- Build a decreasing sequence of neighbourhoods with `V (n + 1) + V (n + 1) ⊆ V n ∩ W n`.
-  choose step hstep_nhds _ _ hstep_add using
-    fun (T : Set M) (hT : T ∈ 𝓝 (0 : M)) (n : ℕ) ↦
-      exists_closed_nhds_zero_neg_eq_add_subset
-        (Filter.inter_mem hT (hW.toHasBasis.mem_of_mem (i := n) trivial))
-  let V : ℕ → {T : Set M // T ∈ 𝓝 (0 : M)} :=
-    Nat.rec ⟨U₀, hU₀_nhds⟩ fun n T ↦ ⟨step T.val T.property n, hstep_nhds T.val T.property n⟩
-  have hV_add : ∀ n, (V (n + 1)).val + (V (n + 1)).val ⊆ (V n).val ∩ W n :=
-    fun n ↦ hstep_add (V n).val (V n).property n
-  have hV_basis : ∀ U ∈ 𝓝 (0 : M), ∃ n, (V n).val ⊆ U := by
-    intro U hU
-    obtain ⟨n, -, hn⟩ := hW.toHasBasis.mem_iff.mp hU
-    refine ⟨n + 1, fun x hx ↦ hn ?_⟩
-    exact (hV_add n (by
-      simpa only [add_zero] using Set.add_mem_add hx (mem_of_mem_nhds (V (n + 1)).property))).2
-  refine Filter.mem_of_superset (h _ (V 1).property) fun y hy ↦ ?_
-  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image_of_add_subset f hfc hU₀_closed
-    (fun n ↦ mem_of_mem_nhds (V n).property)
-    (fun n ↦ (hV_add n).trans Set.inter_subset_left) hV_basis
-    (fun n ↦ h _ (V (n + 2)).property) hy
-  exact hU₀S hx
+  obtain ⟨φ, hφ_basis, hφ⟩ := hW.exists_subbasis_add_closure_subset
+  let B : ℕ → Set M := W ∘ φ
+  obtain ⟨k, -, hk⟩ := hφ_basis.toHasBasis.mem_iff.mp hS
+  let V : ℕ → Set M := fun n ↦ match n with
+    | 0 => closure (B (k + 1))
+    | n + 1 => B (k + n + 2)
+  have hV0_sub : V 0 ⊆ (f : M → N) ⁻¹' S := (hφ k).2.trans hk
+  have hV_nhds : ∀ n, V n ∈ 𝓝 (0 : M) := fun n ↦ match n with
+    | 0 => Filter.mem_of_superset (hφ_basis.toHasBasis.mem_of_mem trivial) subset_closure
+    | n + 1 => hφ_basis.toHasBasis.mem_of_mem trivial
+  have hV_add : ∀ n, V (n + 1) + V (n + 1) ⊆ V n := fun n ↦ match n with
+    | 0 => (hφ (k + 1)).1.trans subset_closure
+    | n + 1 => (hφ (k + n + 2)).1
+  have hV_basis : ∀ U ∈ 𝓝 (0 : M), ∃ n, V n ⊆ U := fun U hU ↦ by
+    obtain ⟨m, -, hm⟩ := hφ_basis.toHasBasis.mem_iff.mp hU
+    exact ⟨m + 1, (hφ_basis.antitone (by omega)).trans hm⟩
+  refine Filter.mem_of_superset (h _ (hV_nhds 1)) fun y hy ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image_of_add_subset f hfc isClosed_closure
+    (fun n ↦ mem_of_mem_nhds (hV_nhds n)) hV_add hV_basis
+    (fun n ↦ h _ (hV_nhds (n + 2))) hy
+  exact hV0_sub hx
 
 end TauCeti
 
