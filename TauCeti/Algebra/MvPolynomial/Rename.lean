@@ -35,8 +35,9 @@ it kills are exactly the multiples of `X a`.
 
 * `MvPolynomial.coeff_rename_eq_embDomain`: injective renaming embeds the coefficient vector
   along the induced map of exponents.
-* `MvPolynomial.killCompl_X_of_notMem_range`: a variable outside the range of an injective
-  renaming is killed by `killCompl`.
+* `MvPolynomial.killCompl_X_apply`, `MvPolynomial.killCompl_X_of_notMem_range`,
+  `MvPolynomial.killCompl_eq_aeval`: action of `killCompl` on variables inside and outside the
+  range of an injective renaming, and its characterization as an `aeval`.
 * `MvPolynomial.eval_killCompl`: evaluating `killCompl hf p` at `x ∘ f` agrees with evaluating `p`
   at `x` when `x` vanishes outside the range of `f`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
@@ -76,6 +77,12 @@ theorem coeff_rename_eq_embDomain (p : MvPolynomial σ R) {f : σ → τ}
 
 variable {σ τ R : Type*} [CommSemiring R] {f : σ → τ} (hf : Function.Injective f) {a : τ}
 
+/-- A variable in the range of an injective renaming maps to the corresponding variable under
+`killCompl`. -/
+@[simp]
+theorem killCompl_X_apply (i : σ) : killCompl (R := R) hf (X (f i)) = X i := by
+  rw [← rename_X (f := f), killCompl_rename_app]
+
 /-- A variable outside the range of an injective renaming is killed by `killCompl`. -/
 @[simp]
 theorem killCompl_X_of_notMem_range (ha : a ∉ Set.range f) :
@@ -84,19 +91,32 @@ theorem killCompl_X_of_notMem_range (ha : a ∉ Set.range f) :
   exact killCompl_monomial_eq_zero_of_notMem_range hf (s := Finsupp.single a 1) 1
     (a := a) (by simp) ha
 
+/-- Discarding variables outside the range of an injective renaming `f` is algebra evaluation at
+`Function.extend f X 0`. -/
+theorem killCompl_eq_aeval :
+    killCompl (R := R) hf = aeval (Function.extend f X (0 : τ → MvPolynomial σ R)) := by
+  classical
+  apply algHom_ext
+  intro j
+  by_cases hj : j ∈ Set.range f
+  · obtain ⟨i, rfl⟩ := hj
+    rw [killCompl_X_apply, aeval_X, hf.extend_apply]
+  · rw [killCompl_X_of_notMem_range hf hj, aeval_X, Function.extend_apply' _ _ _ hj,
+      Pi.zero_apply]
+
 /-- Evaluating `killCompl hf p` at `x ∘ f` equals evaluating `p` at `x`, provided `x` vanishes
 outside the range of `f`. -/
 theorem eval_killCompl {x : τ → R} (hx : ∀ a ∉ Set.range f, x a = 0) (p : MvPolynomial τ R) :
     eval (x ∘ f) (killCompl (R := R) hf p) = eval x p := by
   classical
-  rw [← aeval_eq_eval, ← aeval_eq_eval, killCompl, comp_aeval_apply]
-  congr 1
-  ext i
-  simp only [aeval_X]
-  split_ifs with hi
-  · obtain ⟨s, rfl⟩ := hi
-    simp [Equiv.ofInjective_symm_apply]
-  · simp [hx i hi]
+  have h : (aeval (x ∘ f)).comp (killCompl (R := R) hf) = aeval x := by
+    apply algHom_ext
+    intro j
+    by_cases hj : j ∈ Set.range f
+    · obtain ⟨i, rfl⟩ := hj
+      simp
+    · rw [AlgHom.comp_apply, killCompl_X_of_notMem_range hf hj, map_zero, aeval_X, hx j hj]
+  simpa only [← aeval_eq_eval, AlgHom.comp_apply] using AlgHom.congr_fun h p
 
 /-- When the range of an injective renaming is the complement of a single variable `X a`,
 discarding the variables outside the range kills exactly the multiples of `X a`. -/

@@ -8,14 +8,16 @@ module
 public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Algebra.MvPolynomial.Funext
-public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.LinearAlgebra.Basis.Pi
 import TauCeti.Algebra.MvPolynomial.Monad
+import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Algebra.MvPolynomial.Rename
 
 /-!
 # The submodules of polynomials of bounded total degree
@@ -58,6 +60,10 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   not raise the total degree.
 * `MvPolynomial.killCompl_mem_restrictTotalDegree`: discarding variables outside an injective
   renaming does not raise the total degree.
+* `MvPolynomial.hyperplaneSliceMap`, `MvPolynomial.hyperplaneSliceMap_surjective`: the bounded
+  hyperplane slice map `(f₀, ∂f/∂X_{j₀}|_{X_{j₀}=0})` from `restrictTotalDegree σ R (d + 1)` to
+  `restrictTotalDegree {j // j ≠ j₀} R (d + 1) × restrictTotalDegree {j // j ≠ j₀} R d` is
+  surjective.
 * `MvPolynomial.restrictTotalDegreeEquivDegreeLT`: in one variable, `restrictTotalDegree σ R d`
   is linearly equivalent to `Polynomial.degreeLT R (d + 1)`.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
@@ -284,10 +290,69 @@ theorem killCompl_mem_restrictTotalDegree {τ : Type*} {g : τ → σ} (hg : Fun
     {m : ℕ} {f : MvPolynomial σ R} (hf : f ∈ restrictTotalDegree σ R m) :
     killCompl hg f ∈ restrictTotalDegree τ R m := by
   classical
+  rw [killCompl_eq_aeval]
   refine aeval_mem_restrictTotalDegree (fun j ↦ ?_) hf
-  split_ifs
-  · exact (totalDegree_monomial_le _ _).trans_eq (by simp)
-  · simp
+  by_cases hj : j ∈ Set.range g
+  · obtain ⟨i, rfl⟩ := hj
+    rw [hg.extend_apply, X]
+    exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+  · rw [Function.extend_apply' _ _ _ hj, Pi.zero_apply, totalDegree_zero]
+    exact Nat.zero_le _
+
+/-- The bounded hyperplane slice map: restricts a polynomial of total degree at most `d + 1` and
+its `j₀`-th partial derivative to the coordinate hyperplane `X j₀ = 0`, producing bounded-degree
+polynomials of degrees `d + 1` and `d` in the remaining variables. -/
+noncomputable def hyperplaneSliceMap (j₀ : σ) (d : ℕ) :
+    restrictTotalDegree σ R (d + 1) →ₗ[R]
+      restrictTotalDegree {j : σ // j ≠ j₀} R (d + 1) ×
+        restrictTotalDegree {j : σ // j ≠ j₀} R d where
+  toFun f :=
+    (⟨killCompl Subtype.val_injective f.val,
+      killCompl_mem_restrictTotalDegree Subtype.val_injective f.property⟩,
+     ⟨killCompl Subtype.val_injective (pderiv j₀ f.val),
+      killCompl_mem_restrictTotalDegree Subtype.val_injective <|
+        (mem_restrictTotalDegree σ d _).2 <|
+          (totalDegree_pderiv_le j₀ f.val).trans <|
+            Nat.sub_le_of_le_add ((mem_restrictTotalDegree σ (d + 1) _).1 f.property)⟩)
+  map_add' _ _ := by ext <;> simp
+  map_smul' _ _ := by ext <;> simp
+
+/-- The first component of `hyperplaneSliceMap j₀ d f` is the restriction of `f` to `X j₀ = 0`. -/
+@[simp]
+theorem hyperplaneSliceMap_fst_coe (j₀ : σ) (d : ℕ) (f : restrictTotalDegree σ R (d + 1)) :
+    ((hyperplaneSliceMap (R := R) j₀ d f).1 : MvPolynomial {j : σ // j ≠ j₀} R) =
+      killCompl Subtype.val_injective f.val := by
+  simp [hyperplaneSliceMap]
+
+/-- The second component of `hyperplaneSliceMap j₀ d f` is the restriction of `pderiv j₀ f` to
+`X j₀ = 0`. -/
+@[simp]
+theorem hyperplaneSliceMap_snd_coe (j₀ : σ) (d : ℕ) (f : restrictTotalDegree σ R (d + 1)) :
+    ((hyperplaneSliceMap (R := R) j₀ d f).2 : MvPolynomial {j : σ // j ≠ j₀} R) =
+      killCompl Subtype.val_injective (pderiv j₀ f.val) := by
+  simp [hyperplaneSliceMap]
+
+/-- The bounded hyperplane slice map `hyperplaneSliceMap j₀ d` is surjective. -/
+theorem hyperplaneSliceMap_surjective (j₀ : σ) (d : ℕ) :
+    Function.Surjective (hyperplaneSliceMap (R := R) j₀ d) := by
+  classical
+  rintro ⟨g₀, g₁⟩
+  let p : MvPolynomial σ R := rename Subtype.val g₀.val + X j₀ * rename Subtype.val g₁.val
+  have hp : p ∈ restrictTotalDegree σ R (d + 1) := by
+    rw [mem_restrictTotalDegree]
+    refine (totalDegree_add _ _).trans (max_le ?_ ?_)
+    · exact (totalDegree_rename_le Subtype.val g₀.val).trans
+        ((mem_restrictTotalDegree {j : σ // j ≠ j₀} (d + 1) _).1 g₀.property)
+    · refine (totalDegree_mul _ _).trans ?_
+      have hX : (X j₀ : MvPolynomial σ R).totalDegree ≤ 1 :=
+        (totalDegree_monomial_le _ _).trans_eq (by simp)
+      have hg1 : (rename Subtype.val g₁.val).totalDegree ≤ d :=
+        (totalDegree_rename_le Subtype.val g₁.val).trans
+          ((mem_restrictTotalDegree {j : σ // j ≠ j₀} d _).1 g₁.property)
+      omega
+  refine ⟨⟨p, hp⟩, Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)⟩
+  · simp [p, killCompl_X_of_notMem_range]
+  · simp [p, pderiv_rename_of_notMem_range]
 
 /-- In one variable, `MvPolynomial.uniqueAlgEquiv` identifies the polynomials of total degree at
 most `d` with `Polynomial.degreeLT R (d + 1)`. -/

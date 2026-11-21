@@ -36,6 +36,8 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
+* `MvPolynomial.uniqueAlgEquiv_pderiv`: in one variable, `uniqueAlgEquiv` intertwines `pderiv`
+  with `Polynomial.derivative`.
 * `MvPolynomial.degreeOf_eval_C_finSuccEquiv_le`: specializing `X₀ = a` via `finSuccEquiv` bounds
   the degree in `Xⱼ` by `P.degreeOf j.succ`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
@@ -154,6 +156,17 @@ theorem finSuccEquiv'_pderiv (f : MvPolynomial (Fin (n + 1)) R) (p : Fin (n + 1)
     obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;>
       simp [Derivation.leibniz, smul_eq_mul, pderiv_X, hf, Polynomial.derivative_mul,
         mul_comm]
+
+/-- In one variable, `uniqueAlgEquiv` intertwines `pderiv default` and `Polynomial.derivative`. -/
+theorem uniqueAlgEquiv_pderiv {σ : Type*} [Unique σ] (f : MvPolynomial σ R) :
+    uniqueAlgEquiv R σ (pderiv default f) = Polynomial.derivative (uniqueAlgEquiv R σ f) := by
+  induction f using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => rw [map_add, map_add, map_add, map_add, hp, hq]
+  | mul_X p j hp =>
+    rw [Unique.eq_default j, pderiv_mul, pderiv_X_self, mul_one, map_add, map_mul, map_mul,
+      Polynomial.derivative_mul, hp]
+    simp [mul_comm, add_comm]
 
 section Map
 

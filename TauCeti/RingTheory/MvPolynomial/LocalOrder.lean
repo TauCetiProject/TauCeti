@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Nullstellensatz
 public import TauCeti.RingTheory.Ideal.Order
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Taylor
 
 /-!
 # Taylor order and localized ideal order
@@ -43,8 +43,7 @@ theorem mem_pow_vanishingIdeal_singleton_iff (f : MvPolynomial σ k) (a : σ →
   have hvan : vanishingIdeal k {a} = RingHom.ker (eval a) := by
     ext g
     simp [RingHom.mem_ker]
-  rw [hvan, pow_ker_eval_eq_comap_taylor, Ideal.mem_comap, AlgHom.toRingHom_eq_coe,
-    RingHom.coe_coe, mem_pow_idealOfVars_iff', le_orderAt_iff]
+  rw [hvan, mem_pow_ker_eval_iff, mem_pow_idealOfVars_iff', le_orderAt_iff]
   simp only [Nat.cast_lt]
 
 end MvPolynomial

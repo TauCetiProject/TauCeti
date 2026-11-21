@@ -9,7 +9,8 @@ public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.TrivSqZeroExt
+import TauCeti.RingTheory.MvPolynomial.Ideal.Taylor
 
 /-!
 # First jets of multivariate polynomials
@@ -28,8 +29,8 @@ Over any commutative ring, the kernel of the first jet at `P` is the square `�
 `𝔪_P = ker (eval P)` of polynomials vanishing at `P`: a polynomial lies in `𝔪_P²` exactly when its
 value and all its first partial derivatives vanish at `P`. For finitely many variables, the first
 jet at `P` is surjective, identifying `R[X] ⧸ 𝔪_P²` with `TrivSqZeroExt R (σ → R)`
-(`TauCeti.jetAlgebraEquiv`), the coordinate ring of the double point at `P`. Over a field, the
-ideals of distinct points, and their squares, are coprime.
+(`TauCeti.jetAlgebraEquiv`), the coordinate ring of the double point at `P`. Pointwise,
+`TauCeti.jetEquivOption` identifies `TrivSqZeroExt R (σ → R)` linearly with `Option σ → R`.
 
 ## Main definitions
 
@@ -37,6 +38,8 @@ ideals of distinct points, and their squares, are coprime.
   `TrivSqZeroExt R (σ → R)`.
 * `TauCeti.jetAlgebraEquiv P`: for finitely many variables over a commutative ring, the algebra
   equivalence `MvPolynomial σ R ⧸ RingHom.ker (eval P) ^ 2 ≃ₐ[R] TrivSqZeroExt R (σ → R)`.
+* `TauCeti.jetEquivOption R σ`: the linear equivalence
+  `TrivSqZeroExt R (σ → R) ≃ₗ[R] (Option σ → R)`.
 
 ## Main results
 
@@ -45,8 +48,7 @@ ideals of distinct points, and their squares, are coprime.
 * `TauCeti.sub_sum_mem_ker_eval_sq`: the first-order Taylor expansion modulo `𝔪_P²`.
 * `TauCeti.jetAlgebra_surjective`, `TauCeti.ker_jetAlgebra`: the first jet is surjective (in
   finitely many variables) with kernel `𝔪_P²`.
-* `TauCeti.isCoprime_ker_eval`, `TauCeti.isCoprime_ker_eval_sq`: the ideals of two distinct points
-  over a field, and their squares, are coprime.
+* `TauCeti.jetAlgebraEquiv_mk`: `jetAlgebraEquiv P` sends the class of `f` to `jetAlgebra P f`.
 
 ## References
 
@@ -113,26 +115,38 @@ theorem sub_sum_mem_ker_eval_sq [Fintype σ] (P : σ → R) (f : MvPolynomial σ
 
 end PointIdeal
 
-section Field
-
-variable {k : Type*} [Field k]
-
-/-- Over a field, the ideals of two distinct points are coprime. -/
-theorem isCoprime_ker_eval {P Q : σ → k} (h : P ≠ Q) :
-    IsCoprime (RingHom.ker (eval P)) (RingHom.ker (eval Q)) := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 h
-  exact isCoprime_ker_eval_of_isUnit_sub (isUnit_iff_ne_zero.2 (sub_ne_zero.2 hj))
-
-/-- Over a field, the squares of the ideals of two distinct points are coprime. -/
-theorem isCoprime_ker_eval_sq {P Q : σ → k} (h : P ≠ Q) :
-    IsCoprime (RingHom.ker (eval P) ^ 2) (RingHom.ker (eval Q) ^ 2) :=
-  (isCoprime_ker_eval h).pow
-
-end Field
-
 section JetAlgebra
 
-variable {R : Type*} [CommSemiring R] [DecidableEq σ]
+variable {R : Type*} [CommSemiring R]
+
+/-- The linear equivalence identifying `TrivSqZeroExt R (σ → R)` with `Option σ → R`:
+`none` selects the scalar part `fst`, and `some j` selects the `j`-th infinitesimal coordinate
+`snd j`. -/
+noncomputable def jetEquivOption (R σ : Type*) [CommSemiring R] :
+    TrivSqZeroExt R (σ → R) ≃ₗ[R] (Option σ → R) :=
+  (TrivSqZeroExt.linearEquivProd R (σ → R)).trans
+    (LinearEquiv.piOptionEquivProd R (M := fun _ : Option σ ↦ R)).symm
+
+/-- The `none` coordinate of `jetEquivOption` is the scalar part `fst`. -/
+@[simp]
+theorem jetEquivOption_apply_none (x : TrivSqZeroExt R (σ → R)) :
+    jetEquivOption R σ x none = x.fst := by
+  simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
+
+/-- The `some j` coordinate of `jetEquivOption` is the `j`-th infinitesimal coordinate `snd j`. -/
+@[simp]
+theorem jetEquivOption_apply_some (x : TrivSqZeroExt R (σ → R)) (j : σ) :
+    jetEquivOption R σ x (some j) = x.snd j := by
+  simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
+
+/-- The inverse of `jetEquivOption` sends an `Option σ`-indexed tuple `v` to
+`inl (v none) + inr (fun j ↦ v (some j))`. -/
+@[simp]
+theorem jetEquivOption_symm_apply (v : Option σ → R) :
+    (jetEquivOption R σ).symm v = inl (v none) + inr fun j ↦ v (some j) := by
+  ext <;> simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
+
+variable [DecidableEq σ]
 
 /-- The first jet of a polynomial at a point `P`: algebra evaluation at the point of
 `TrivSqZeroExt R (σ → R)` whose `j`-th coordinate is `P j` plus the `j`-th infinitesimal
@@ -202,8 +216,7 @@ commutative ring and in arbitrarily many variables. -/
 theorem ker_jetAlgebra (P : σ → R) :
     RingHom.ker (jetAlgebra P) = RingHom.ker (eval P) ^ 2 := by
   ext f
-  rw [RingHom.mem_ker, jetAlgebra_eq_zero_iff, pow_ker_eval_eq_comap_taylor, Ideal.mem_comap,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, mem_pow_idealOfVars_iff']
+  rw [RingHom.mem_ker, jetAlgebra_eq_zero_iff, mem_pow_ker_eval_iff, mem_pow_idealOfVars_iff']
   constructor
   · rintro ⟨h0, h1⟩ m hm
     obtain hdeg0 | hdeg1 : m.degree = 0 ∨ m.degree = 1 := by omega
@@ -219,12 +232,16 @@ theorem ker_jetAlgebra (P : σ → R) :
       exact h (Finsupp.single j 1) (by simp)
 
 /-- For finitely many variables over a commutative ring, the quotient by `RingHom.ker (eval P) ^ 2`
-is isomorphic as an `R`-algebra to the trivial square-zero extension `TrivSqZeroExt R (σ → R)`. -/
+is isomorphic as an `R`-algebra to the trivial square-zero extension `TrivSqZeroExt R (σ → R)`;
+the class of a polynomial maps to its value and first partial derivatives at `P`
+(`TauCeti.jetAlgebraEquiv_mk`). -/
 noncomputable def jetAlgebraEquiv [Finite σ] (P : σ → R) :
     (MvPolynomial σ R ⧸ RingHom.ker (eval P) ^ 2) ≃ₐ[R] TrivSqZeroExt R (σ → R) :=
   (Ideal.quotientEquivAlgOfEq R (ker_jetAlgebra P).symm).trans
     (Ideal.quotientKerAlgEquivOfSurjective (jetAlgebra_surjective P))
 
+/-- The quotient equivalence `jetAlgebraEquiv P` sends the class of a polynomial `f` to its value
+and first partial derivatives at `P`. -/
 @[simp]
 theorem jetAlgebraEquiv_mk [Finite σ] (P : σ → R) (f : MvPolynomial σ R) :
     jetAlgebraEquiv P (Ideal.Quotient.mk _ f) = jetAlgebra P f := by

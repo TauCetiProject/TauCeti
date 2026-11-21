@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
-public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.RingTheory.Ideal.Operations
 
 import Mathlib.RingTheory.MvPowerSeries.Derivative
@@ -61,9 +59,8 @@ difference of their constant coefficients.
   monomial `a X^m` is `a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
-* `MvPolynomial.uniqueAlgEquiv_pderiv`, `MvPolynomial.pderiv_killCompl`,
-  `MvPolynomial.pderiv_rename_of_notMem_range`: compatibility of `pderiv` with one-variable
-  identification, `killCompl`, and renaming away from a variable.
+* `MvPolynomial.pderiv_killCompl`, `MvPolynomial.pderiv_rename_of_notMem_range`: compatibility of
+  `pderiv` with `killCompl` and renaming away from a variable.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
@@ -236,17 +233,6 @@ theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (h
   | zero => rfl
   | succ k ih =>
     simp [Function.iterate_succ_apply', ih, Derivation.leibniz, Derivation.map_aeval, hg, mul_comm]
-
-/-- In one variable, `uniqueAlgEquiv` intertwines `pderiv default` and `Polynomial.derivative`. -/
-theorem uniqueAlgEquiv_pderiv [Unique σ] (f : MvPolynomial σ R) :
-    uniqueAlgEquiv R σ (pderiv default f) = Polynomial.derivative (uniqueAlgEquiv R σ f) := by
-  induction f using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => rw [map_add, map_add, map_add, map_add, hp, hq]
-  | mul_X p j hp =>
-    rw [Unique.eq_default j, pderiv_mul, pderiv_X_self, mul_one, map_add, map_mul, map_mul,
-      Polynomial.derivative_mul, hp]
-    simp [mul_comm, add_comm]
 
 /-- Partial differentiation along a variable `l : τ` commutes with `killCompl hg` along an
 injective renaming `g : τ → σ`. -/
