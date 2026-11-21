@@ -9,10 +9,10 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.LinearAlgebra.Complex.Determinant
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Holomorphic
 import TauCeti.Analysis.Analytic.IsolatedCriticalPoints
 import TauCeti.Analysis.Analytic.Order
-import TauCeti.Analysis.Complex.Determinant
-import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
+import TauCeti.Analysis.Complex.IsolatedZero
 
 /-!
 # The local index of a holomorphic map is its order of vanishing
@@ -47,14 +47,11 @@ is computed for a map of `ℂ` agreeing with `φ` near `j x`
 
 The proof of the general statement counts preimages. Choose a closed disc `D` around `z₀` on which
 `f` is analytic, `z₀` is the only solution of `f z = f z₀`, and `f'` vanishes nowhere except
-possibly at `z₀`. Extend `f|_D` radially to a proper map `g : ℂ → ℂ` whose values outside the open
-disc stay a fixed distance away from `f z₀`
-(`ContinuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub`).
-The degree of `g` is its local index at `z₀`, the only preimage of `f z₀`, which is the local index
-of `f`. At a value `w ≠ f z₀` close to `f z₀`, the preimages of `w` under `g` are the `m` distinct
-simple solutions of `f z = w` in the disc, with `m` the order of `f - f z₀` at `z₀`
-(`TauCeti.localDegree_card`, a Rouché argument). Each has local index `1`, so the degree of `g` is
-also `m`.
+possibly at `z₀`. The local index of `f` at `z₀` is then the number of solutions in the disc of
+`f z = w`, for any value `w` close to `f z₀` at whose solutions `f'` does not vanish
+(`TauCeti.HomologicalOrientation.localIndex_eq_ncard_of_hasFDerivAt`). For `w ≠ f z₀` these are
+the `m` distinct simple solutions of `f z = w` in the disc, with `m` the order of `f - f z₀` at
+`z₀` (`TauCeti.localDegree_card`, a Rouché argument).
 
 ## Main results
 
@@ -97,13 +94,9 @@ variable (o : HomologicalOrientation ℂ ℂ 2)
 differentiable at `z` with nonzero derivative `c`, its local index at `z` is `1`: the real
 derivative is multiplication by `c`, whose Jacobian determinant `‖c‖²` is positive. -/
 theorem localIndex_eq_one_of_hasDerivAt {f : C(ℂ, ℂ)} {c z : ℂ} (hf : HasDerivAt f c z)
-    (hc : c ≠ 0) : o.localIndex o f z = 1 := by
-  have hdet : ((ContinuousLinearMap.toSpanSingleton ℂ c).restrictScalars ℝ).det = ‖c‖ ^ 2 := by
-    simpa [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton] using
-      ContinuousLinearMap.det_restrictScalars_smulRight_one c
-  have hpos : 0 < ‖c‖ ^ 2 := pow_pos (norm_pos_iff.2 hc) 2
-  rw [o.localIndex_eq_sign_det finrank_real_complex (hf.hasFDerivAt.restrictScalars ℝ)
-    (hdet ▸ hpos.ne'), hdet, sign_pos hpos, SignType.coe_one]
+    (hc : c ≠ 0) : o.localIndex o f z = 1 :=
+  o.localIndex_eq_one_of_hasFDerivAt finrank_real_complex hf.hasFDerivAt
+    (smul_left_injective ℂ hc)
 
 /-- **Complex conjugation reverses orientation**: it has local index `-1` at every point, for the
 same orientation of `ℂ` on source and target. -/
@@ -125,34 +118,13 @@ private theorem localIndex_eq_analyticOrderNatAt_sub_of_closedBall {f : C(ℂ, �
     (hisolr : ∀ z ∈ closedBall z₀ r, z ≠ z₀ → f z ≠ f z₀)
     (hderivr : ∀ z ∈ ball z₀ r, z ≠ z₀ → deriv f z ≠ 0) :
     o.localIndex o f z₀ = analyticOrderNatAt (fun z ↦ f z - f z₀) z₀ := by
-  have hE : finrank ℝ ℂ = 2 := finrank_real_complex
   -- Values within `δ₁` of `f z₀` have `m` distinct simple preimages in the open disc, and `f` stays
   -- at distance at least `δ₂` from `f z₀` on the circle.
   obtain ⟨δ₁, hδ₁, hcard⟩ := localDegree_card hr hfr hisolr hderivr
   obtain ⟨δ₂, hδ₂, hδ₂le⟩ := exists_pos_le_norm_of_mem_sphere (f := fun z ↦ f z - f z₀)
     (f.continuous.continuousOn.sub continuousOn_const) fun z hz ↦ sub_ne_zero.2
       (hisolr z (sphere_subset_closedBall hz) (ne_of_mem_sphere hz hr.ne'))
-  obtain ⟨g, hgp, hgf, hgout⟩ :=
-    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr hδ₂ hδ₂le
-  have hgf_nhds (x : ℂ) (hx : x ∈ ball z₀ r) : g =ᶠ[𝓝 x] f :=
-    eventually_of_mem (isOpen_ball.mem_nhds hx) fun _ hy ↦ hgf (ball_subset_closedBall hy)
-  -- Outside the open disc `g` misses the ball of radius `δ₂` about `f z₀`, so the fibres of `g`
-  -- over that ball are the solutions of `f z = w` in the open disc.
-  have hgfib {w : ℂ} (hw : ‖w - f z₀‖ < δ₂) : g ⁻¹' {w} = {z ∈ ball z₀ r | f z = w} := by
-    ext z
-    simp only [mem_preimage, mem_singleton_iff, mem_ofPred_eq]
-    refine ⟨fun hz ↦ ?_, fun hz ↦ (hgf (ball_subset_closedBall hz.1)).trans hz.2⟩
-    have hzb : z ∈ ball z₀ r := mem_ball.2 (not_le.1 fun h ↦ (hgout z h).not_gt (hz ▸ hw))
-    exact ⟨hzb, (hgf (ball_subset_closedBall hzb)).symm.trans hz⟩
-  have hfib₀ : g ⁻¹' {f z₀} = {z₀} := by
-    rw [hgfib (by simpa using hδ₂)]
-    ext z
-    refine ⟨fun hz ↦ mem_singleton_iff.2 ?_, fun hz ↦ ?_⟩
-    · by_contra hne
-      exact hisolr z (ball_subset_closedBall hz.1) hne hz.2
-    · rw [mem_singleton_iff.1 hz]
-      exact ⟨mem_ball_self hr, rfl⟩
-  -- A value `w ≠ f z₀` close to `f z₀`, and its fibre under `g`.
+  -- A value `w ≠ f z₀` close to `f z₀`.
   set w : ℂ := f z₀ + ((min δ₁ δ₂ / 2 : ℝ) : ℂ) with hw_def
   have hwnorm : ‖w - f z₀‖ = min δ₁ δ₂ / 2 := by
     rw [hw_def, add_sub_cancel_left, norm_real, Real.norm_of_nonneg
@@ -164,22 +136,14 @@ private theorem localIndex_eq_analyticOrderNatAt_sub_of_closedBall {f : C(ℂ, �
     rw [hwnorm]; linarith [min_le_left δ₁ δ₂, half_lt_self (lt_min hδ₁ hδ₂)]
   have hw₂ : ‖w - f z₀‖ < δ₂ := by
     rw [hwnorm]; linarith [min_le_right δ₁ δ₂, half_lt_self (lt_min hδ₁ hδ₂)]
-  obtain ⟨hfin, hncard, -⟩ := hcard w hwne hw₁
-  have hfibw := hgfib hw₂
-  have hfin' : (g ⁻¹' {w}).Finite := hfibw ▸ hfin
-  -- The degree of `g` is its local index at `z₀`, which is that of `f` ...
-  have hdeg₀ := o.localDegree_eq_degree o hE hE hgp (f z₀)
-  rw [o.localDegree_eq_localIndex o hE hE g hfib₀,
-    o.localIndex_congr o hE (hgf_nhds z₀ (mem_ball_self hr))] at hdeg₀
-  -- ... and the number of preimages of `w`, each of local index `1`.
-  have hidx (x : ℂ) (hx : x ∈ hfin'.toFinset) : o.localIndex o g x = 1 := by
-    rw [Finite.mem_toFinset, hfibw] at hx
-    have hxz : x ≠ z₀ := fun h ↦ hwne (h ▸ hx.2).symm
-    rw [o.localIndex_congr o hE (hgf_nhds x hx.1)]
-    exact o.localIndex_eq_one_of_hasDerivAt
-      (hfr x (ball_subset_closedBall hx.1)).differentiableAt.hasDerivAt (hderivr x hx.1 hxz)
-  rw [hdeg₀, o.degree_eq_sum_localIndex o hE hE hgp hfin', Finset.sum_eq_card_nsmul hidx,
-    ← ncard_eq_toFinset_card _ hfin', hfibw, hncard, nsmul_one]
+  obtain ⟨-, hncard, -⟩ := hcard w hwne hw₁
+  -- The local index counts the solutions of `f z = w` in the disc, at each of which `f` has nonzero
+  -- derivative.
+  rw [o.localIndex_eq_ncard_of_hasFDerivAt finrank_real_complex hr hδ₂ hδ₂le
+    (fun z hz hfz ↦ by_contra fun hne ↦ hisolr z (ball_subset_closedBall hz) hne hfz) hw₂
+    (f' := fun z ↦ (1 : ℂ →L[ℂ] ℂ).smulRight (deriv f z))
+    (fun z hz _ ↦ (hfr z (ball_subset_closedBall hz)).differentiableAt.hasDerivAt.hasFDerivAt)
+    (fun z hz hfz ↦ smul_left_injective ℂ (hderivr z hz fun h ↦ hwne (h ▸ hfz).symm)), hncard]
 
 /-- **The local index of a holomorphic map is its order of vanishing.** If `f : ℂ → ℂ` is analytic
 at `z₀`, its local index at `z₀`, for the same orientation of `ℂ` on source and target, is the

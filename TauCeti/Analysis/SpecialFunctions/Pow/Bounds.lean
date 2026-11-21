@@ -157,6 +157,8 @@ dyadic intervals.
   for `1 ≤ ‖ξ‖`.
 * `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
   `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`.
+* `TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le`: on a ball, every constant is at most
+  a multiple of `(1 + ‖ξ‖ ^ 2) ^ (r / 2)`.
 * `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left` and
   `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
   `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
@@ -727,6 +729,15 @@ theorem one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow {E : Type*} [SeminormedA
       (Real.one_le_rpow (by nlinarith [norm_nonneg ξ]) (by linarith))
   · rw [abs_of_neg hr, neg_neg]
     exact Real.rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
+
+/-- On a ball, every constant is at most a multiple of each power of the Japanese bracket: for
+`‖ξ‖ ≤ R`, `M ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem exists_le_mul_one_add_norm_sq_rpow_of_norm_le {E : Type*} [SeminormedAddGroup E]
+    (M R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ : E, ‖ξ‖ ≤ R → M ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  refine ⟨max M 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun ξ hξ ↦ ?_⟩
+  calc M ≤ max M 0 := le_max_left _ _
+    _ = max M 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ _ := by gcongr; exact one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r
 
 open Real in
 /-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for

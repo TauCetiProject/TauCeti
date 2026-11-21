@@ -11,6 +11,7 @@ public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.MeanValue
 
 /-!
 # The Hölder spaces `C^{k,α}(Ω)` on an open set
@@ -51,6 +52,11 @@ completeness.
 * `TauCeti.CkHolderSpaceOn.extend`: the extension by zero of an element, a canonical function on
   `E` agreeing with it on `Ω`; `TauCeti.CkHolderSpaceOn.toBoundedContinuousFunctionCLM`: forgetting
   the derivatives, a continuous linear map of norm at most one to `Ω →ᵇ F`.
+* `TauCeti.CkHolderSpaceOn.holderOnWith_extend`: an element of `C^{0,α}(Ω)` is `α`-Hölder on `Ω`.
+* `TauCeti.CkHolderSpaceOn.iteratedFDeriv_last_apply_eq_apply_of_one_lt` and
+  `TauCeti.CkHolderSpaceOn.apply_eq_apply_of_one_lt`: for `α > 1` on a preconnected `Ω`, the
+  derivative field of order `k` is constant, and `C^{0,α}(Ω)` consists of constants. The space is
+  not wrong for `α > 1` but degenerate, which is why the exponents of interest lie in `(0, 1]`.
 * `TauCeti.CkHolderSpaceOn.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
@@ -617,6 +623,27 @@ theorem holderOnWith_iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) :
     HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F)) α
       (_root_.iteratedFDeriv ℝ k f.extend) Ω :=
   f.holderOnWith_iteratedFDeriv f.extend_apply
+
+/-- An element of `C^{0,α}(Ω)` is `α`-Hölder on `Ω`: its extension by zero is `α`-Hölder on `Ω`,
+with constant the Hölder seminorm of the derivative field of order zero. -/
+theorem holderOnWith_extend (f : CkHolderSpaceOn 0 α Ω F) :
+    HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last 0) : Ω → E [×0]→L[ℝ] F)) α
+      f.extend Ω :=
+  holderOnWith_iteratedFDeriv_zero_iff.1 f.holderOnWith_iteratedFDeriv_extend
+
+/-- **Hölder exponents above one.** For `α > 1` and a preconnected `Ω`, the derivative field of
+order `k` of an element of `C^{k,α}(Ω)` is constant on `Ω`. -/
+theorem iteratedFDeriv_last_apply_eq_apply_of_one_lt (hα : 1 < α)
+    (hΩ : IsPreconnected (Ω : Set E)) (f : CkHolderSpaceOn k α Ω F) (x y : Ω) :
+    f.iteratedFDeriv (Fin.last k) x = f.iteratedFDeriv (Fin.last k) y := by
+  rw [← f.iteratedFDeriv_extend, ← f.iteratedFDeriv_extend]
+  exact f.holderOnWith_iteratedFDeriv_extend.eq_of_one_lt hα Ω.isOpen hΩ x.property y.property
+
+/-- For `α > 1` and a preconnected `Ω`, the space `C^{0,α}(Ω)` consists of constant functions. -/
+theorem apply_eq_apply_of_one_lt (hα : 1 < α) (hΩ : IsPreconnected (Ω : Set E))
+    (f : CkHolderSpaceOn 0 α Ω F) (x y : Ω) : f x = f y := by
+  rw [← f.extend_apply, ← f.extend_apply]
+  exact f.holderOnWith_extend.eq_of_one_lt hα Ω.isOpen hΩ x.property y.property
 
 /-- The iterated derivatives through order `k` of the extension by zero are controlled on `Ω` by
 the `C^{k,α}(Ω)` norm. -/
