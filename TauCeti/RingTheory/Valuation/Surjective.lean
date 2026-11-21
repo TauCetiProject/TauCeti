@@ -14,17 +14,20 @@ public import Mathlib.RingTheory.Valuation.Discrete.Basic
 Normalized valuations, such as the valuation of a place of a function field, are surjective onto
 their value group with zero. This file records the consequences of surjectivity that do not involve
 an additive order. A surjective monoid-with-zero homomorphism has full value group, with no
-condition on the codomain. A surjective valuation is nontrivial exactly when its target has an
-element other than `0` and `1`, for instance a unit other than `1`; on a field its valuation ring
-is then a proper subring, and a discrete valuation ring if moreover the units of the target form a
-cyclic group. Finally, two equivalent valuations whose value groups are the same cyclic subgroup of
-the units of the target are equal. That the value groups are isomorphic as ordered groups is not
-enough: equivalence always provides such an isomorphism.
+condition on the codomain; between groups with zero, for instance for a valuation on a division
+ring, full value group conversely means surjectivity. A surjective valuation is nontrivial exactly
+when its target has an element other than `0` and `1`, for instance a unit other than `1`; on a
+field its valuation ring is then a proper subring, and a discrete valuation ring if moreover the
+units of the target form a cyclic group. Finally, two equivalent valuations whose value groups
+are the same cyclic subgroup of the units of the target are equal. That the value groups are
+isomorphic as ordered groups is not enough: equivalence always provides such an isomorphism.
 
 ## Main results
 
 * `MonoidWithZeroHom.valueGroup_eq_top_of_surjective`: a surjective monoid-with-zero homomorphism
   has full value group.
+* `MonoidWithZeroHom.valueGroup_eq_top_iff_surjective`: between groups with zero, the converse
+  holds as well.
 * `Valuation.isNontrivial_iff_of_surjective`: a surjective valuation is nontrivial exactly when
   `Γ₀` has an element other than `0` and `1`.
 * `Valuation.isNontrivial_of_surjective`: a surjective valuation is nontrivial when `Γ₀ˣ` is.
@@ -42,6 +45,8 @@ open MonoidWithZeroHom LinearOrderedCommGroup
 
 namespace MonoidWithZeroHom
 
+section MonoidWithZero
+
 variable {A B : Type*} [MonoidWithZero A] [MonoidWithZero B]
 
 /-- Surjectivity of `f` makes its value group the whole of `Bˣ`. -/
@@ -55,6 +60,26 @@ theorem nontrivial_valueGroup_of_surjective [Nontrivial Bˣ] (f : A →*₀ B)
     (hf : Function.Surjective f) : Nontrivial f.valueGroup :=
   (Subgroup.nontrivial_iff_ne_bot _).mpr <| valueGroup_eq_top_of_surjective f hf ▸ top_ne_bot
 
+end MonoidWithZero
+
+section GroupWithZero
+
+variable {A B : Type*} [GroupWithZero A] [GroupWithZero B]
+
+/-- **Between groups with zero, full value group means surjectivity.** The nonzero values of `f`
+are closed under inverses, so they already form the value group. On a ring this fails: the
+`t`-adic valuation on `k[t², t³]` has full value group in `ℤᵐ⁰` without attaining `exp (-1)`. -/
+theorem valueGroup_eq_top_iff_surjective (f : A →*₀ B) :
+    f.valueGroup = ⊤ ↔ Function.Surjective f := by
+  refine ⟨fun h b ↦ ?_, valueGroup_eq_top_of_surjective f⟩
+  rcases eq_or_ne b 0 with rfl | hb
+  · exact ⟨0, map_zero f⟩
+  have hb' : b ∈ Units.val '' (f.valueGroup : Set Bˣ) := ⟨Units.mk0 b hb, by simp [h], rfl⟩
+  rw [valueGroup_eq_range] at hb'
+  exact hb'.1
+
+end GroupWithZero
+
 end MonoidWithZeroHom
 
 namespace Valuation
@@ -67,8 +92,8 @@ variable {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀] {R : Type*} [Ri
 `1`.** Such an element need not be a unit: `Γ₀` may be `{0, ε, 1}` with `ε ^ 2 = 0`. -/
 theorem isNontrivial_iff_of_surjective {v : Valuation R Γ₀} (hv : Function.Surjective v) :
     v.IsNontrivial ↔ ∃ γ : Γ₀, γ ≠ 0 ∧ γ ≠ 1 :=
-  ⟨fun h ↦ let ⟨x, hx⟩ := h.exists_val_nontrivial; ⟨v x, hx⟩,
-    fun ⟨γ, hγ⟩ ↦ let ⟨x, hx⟩ := hv γ; ⟨x, hx ▸ hγ⟩⟩
+  (⟨fun h ↦ h.exists_val_nontrivial, fun h ↦ ⟨h⟩⟩ : v.IsNontrivial ↔ _).trans
+    (hv.exists (p := fun γ ↦ γ ≠ 0 ∧ γ ≠ 1)).symm
 
 /-- **A surjective valuation is nontrivial** once `Γ₀` has a unit other than `1`. Surjectivity is
 the form the hypothesis usually arrives in — a place carries it by definition — while results
@@ -113,7 +138,7 @@ theorem eq_of_isEquiv_of_valueGroup_eq {v w : Valuation R Γ₀} [IsCyclic v.val
   have key : w.valueGroup.subtype.comp (h.orderMonoidIso : v.valueGroup →* w.valueGroup) =
       v.valueGroup.subtype := by
     rcases subsingleton_or_nontrivial v.valueGroup with _ | hnt
-    · exact MonoidHom.ext fun x ↦ by rw [Subsingleton.elim x 1, map_one, map_one]
+    · exact Subsingleton.elim _ _
     have : Nontrivial w.valueGroup := hvw ▸ hnt
     have : IsCyclic w.valueGroup := hvw ▸ ‹IsCyclic v.valueGroup›
     -- Both homomorphisms send the generator below one of `v.valueGroup` to itself: the

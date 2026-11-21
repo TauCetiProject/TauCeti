@@ -422,7 +422,7 @@ theorem generator_eq_exp_neg_one : IsRankOneDiscrete.generator P.valuation =
 elements for `P`. -/
 @[simp]
 theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P.ord t = 1 :=
-  Valuation.isUniformizer_iff_ord_eq_one_of_mem_range P.valuation (P.valuation_surjective _)
+  Valuation.isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top P.valuation P.valueGroup_eq_top
 
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
   (Valuation.exists_isUniformizer_iff_generator_mem_range P.valuation).mpr
