@@ -130,26 +130,6 @@ private theorem returnDerivative_eq_smul_of_eqOn_compl
   rw [hderw ξ, hw_deriv.hasMFDerivAt.mfderiv]
   exact h₁
 
-/-- A field equal to the transverse dilation field of a `C²` profile `Φ` on an open set containing
-the axis segment `[0, σ] • u` carries the axis along itself up to time `σ`, and its time-`σ` map
-has derivative `w ↦ w + (exp (Φ σ - Φ 0) - 1) • (w - ℓ w • u)` at `0`. -/
-private theorem flowOf_smul_and_hasFDerivAt_of_eqOn {ℓ : StrongDual ℝ E} (hℓ : ℓ u = 1)
-    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ 2 Φ) {w : E → E}
-    (hw : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, w z⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    {U : Set E} (hU : IsOpen U) (hwU : EqOn w (transverseDilationField u ℓ Φ) U) {σ : ℝ}
-    (hσ : 0 ≤ σ) (hσU : ∀ τ ∈ Icc 0 σ, τ • u ∈ U) :
-    (∀ t ∈ Icc 0 σ, (t, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) w ∧
-      flowOf (I := 𝓘(ℝ, E)) w t 0 = t • u) ∧
-    HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) w σ)
-      (1 + (Real.exp (Φ σ - Φ 0) - 1) • (1 - ℓ.smulRight u)) 0 := by
-  have hseg : ∀ t ∈ Icc 0 σ, ∀ τ ∈ uIcc 0 t, ((0 : ℝ) + τ) • u ∈ U := fun t ht τ hτ ↦ by
-    rw [zero_add, uIcc_of_le ht.1] at *
-    exact hσU τ ⟨hτ.1, hτ.2.trans ht.2⟩
-  refine ⟨fun t ht ↦ ?_, ?_⟩
-  · simpa using flowOf_smul_of_eqOn_transverseDilationField hℓ hΦ hw hU hwU (hseg t ht)
-  · simpa using hasFDerivAt_flowOf_of_eqOn_transverseDilationField hℓ hΦ hw hU hwU
-      (hseg σ ⟨hσ, le_rfl⟩)
-
 omit [FiniteDimensional ℝ E] in
 /-- A short initial segment `[0, σ] • u` of the axis, with `σ < T₀`, lies in a given ball around
 `0`. -/
@@ -269,8 +249,20 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
   have hTDF (a : ℝ) (z : E) : transverseDilationField u ℓ (fun s ↦ a * Ψ s) z = u + a • Z z :=
     (congrFun (hZa a).1 z).symm
   -- Near `0` the flow of `v` itself runs along the axis, with the identity as derivative.
-  obtain ⟨hv_axis, hv_deriv⟩ := flowOf_smul_and_hasFDerivAt_of_eqOn hℓ (haΨ 0) hv isOpen_ball
-    (fun z hz ↦ by rw [hTDF, zero_smul, add_zero]; exact (hrv z hz).1) hσ.le hball
+  have hvU : EqOn v (transverseDilationField u ℓ fun s ↦ 0 * Ψ s) (ball 0 r) := fun z hz ↦ by
+    rw [hTDF, zero_smul, add_zero]
+    exact (hrv z hz).1
+  have hseg {U : Set E} (hU : ∀ τ ∈ Icc 0 σ, τ • u ∈ U) {t : ℝ} (ht : t ∈ Icc 0 σ) :
+      ∀ τ ∈ uIcc 0 t, (0 + τ) • u ∈ U := fun τ hτ ↦ by
+    rw [uIcc_of_le ht.1] at hτ
+    simpa using hU τ ⟨hτ.1, hτ.2.trans ht.2⟩
+  have hσσ : σ ∈ Icc 0 σ := ⟨hσ.le, le_rfl⟩
+  have hv_axis (t : ℝ) (ht : t ∈ Icc 0 σ) :
+      (t, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v ∧ flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u := by
+    simpa using flowOf_smul_of_eqOn_transverseDilationField hℓ (haΨ 0) hv isOpen_ball hvU
+      (hseg hball ht)
+  have hv_deriv := hasFDerivAt_flowOf_of_eqOn_transverseDilationField hℓ (haΨ 0) hv isOpen_ball
+    hvU (hseg hball hσσ)
   -- The cut-off `χ` is `1` near the segment `[s₀, s₁] • u` carrying the dilation, and supported
   -- away from the rest of the orbit, since the orbit has least period `T₀`.
   obtain ⟨χ, hχ, hχc, hχB, hχR, hχ1⟩ := exists_contDiff_cutoff_axis hv hP hp hmin hball
@@ -298,10 +290,16 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
     by_cases h : τ ∈ Icc s₀ s₁
     · exact Or.inl (hχ1 τ h)
     · exact Or.inr (by simpa [hℓ] using h)
-  obtain ⟨hw_axis, hw_deriv⟩ := flowOf_smul_and_hasFDerivAt_of_eqOn hℓ (haΨ a) hw
-    (isOpen_ball.inter (isOpen_interior.union (isClosed_Icc.preimage ℓ.continuous).isOpen_compl))
-    hwU hσ.le hσU₁
-  rw [hΨ₁ σ hs₁.le, hΨ₀ 0 hs₀.le, mul_one, mul_zero, sub_zero] at hw_deriv
+  have hU₁ : IsOpen U₁ :=
+    isOpen_ball.inter (isOpen_interior.union (isClosed_Icc.preimage ℓ.continuous).isOpen_compl)
+  -- So the flow of `v + a • W` also runs along the axis up to time `σ`, now with derivative
+  -- the transverse dilation by `exp a`.
+  have hw_axis := flowOf_smul_of_eqOn_transverseDilationField hℓ (haΨ a) hw hU₁ hwU
+    (hseg hσU₁ hσσ)
+  have hw_deriv := hasFDerivAt_flowOf_of_eqOn_transverseDilationField hℓ (haΨ a) hw hU₁ hwU
+    (hseg hσU₁ hσσ)
+  rw [zero_add, zero_smul] at hw_axis
+  rw [zero_add, zero_smul, hΨ₁ σ hs₁.le, hΨ₀ 0 hs₀.le, mul_one, mul_zero, sub_zero] at hw_deriv
   -- The dilation acts as `exp a` modulo the flow line `ℝ ∙ u`.
   have hD (ξ : E) : ((1 - Real.exp a) * ℓ ξ) • u =
       (1 + (Real.exp a - 1) • (1 - ℓ.smulRight u) : E →L[ℝ] E) ξ - Real.exp a • ξ := by
@@ -309,10 +307,9 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
       one_apply_eq_self]
     module
   have hv0 : v 0 = u := (hrv 0 (mem_ball_self hr)).1
-  refine returnDerivative_eq_smul_of_eqOn_compl hv hP hp hσ hσT hw
-    (by simp only [Pi.add_apply, Pi.smul_apply, by simpa using hWaxis 0, smul_zero, add_zero])
-    (hw_axis σ ⟨hσ.le, le_rfl⟩).1 ((hw_axis σ ⟨hσ.le, le_rfl⟩).2.trans (hv_axis σ ⟨hσ.le,
-      le_rfl⟩).2.symm) (by simpa using hv_deriv) hw_deriv
+  have hW0 : W 0 = 0 := by simpa using hWaxis 0
+  refine returnDerivative_eq_smul_of_eqOn_compl hv hP hp hσ hσT hw (by simp [hW0]) hw_axis.1
+    (hw_axis.2.trans (hv_axis σ hσσ).2.symm) (by simpa using hv_deriv) hw_deriv
     (fun ξ ↦ Submodule.mem_span_singleton.2 ⟨(1 - Real.exp a) * ℓ ξ, by rw [hv0]; exact hD ξ⟩)
     (isClosed_tsupport W) (fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz])
     fun t ht hW ↦ hχR t ht (htsW hW)

@@ -273,6 +273,9 @@ theorem returnDerivative_eq_smul_of_mfderiv_flowOf_eq {w : (x : M) → TangentSp
   have e₃ : B = c • A + r • V := by
     simp only [B, A, V]
     rw [show D ξ = c • ξ + r • v p by rw [hr, add_sub_cancel], map_add, map_smul, map_smul, hfix]
+    -- The two sides are the same expression, with `+` and `•` taken in the tangent space at
+    -- `flowOf v T₀ p` on the left and in `E` on the right; `TangentSpace I x` is by definition
+    -- `E`, so they agree definitionally.
     rfl
   -- So their difference is a multiple `k • v p` of the field.
   set k := α - c * β + r
@@ -293,6 +296,9 @@ theorem returnDerivative_eq_smul_of_mfderiv_flowOf_eq {w : (x : M) → TangentSp
     have h := congrArg L hdiff
     rw [map_sub, map_smul, hRw, hRv, smul_zero, sub_zero, map_smul, smul_eq_mul] at h
     exact h.symm
+  -- The goal is stated in `TangentSpace I p`, while `hdiff` is stated in `E` through the
+  -- abbreviations `Rw` and `Rv`; the two types are definitionally equal, so `change` restates the
+  -- goal in `E` and lets `hdiff` rewrite it.
   change Rw - c • Rv = 0
   rw [hdiff, (mul_eq_zero.1 hk).resolve_right hgv, zero_smul]
 

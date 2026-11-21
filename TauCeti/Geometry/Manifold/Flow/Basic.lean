@@ -453,11 +453,8 @@ theorem flowOf_flowOf_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSp
     (ht : (t, x) ∈ flowDomain v) (hs : (s, x) ∈ flowDomain v) (hx : flowOf v s x = x) :
     (s, flowOf v t x) ∈ flowDomain v ∧ flowOf v s (flowOf v t x) = flowOf v t x := by
   obtain ⟨hst, heq⟩ := flowOf_add hv hs (hx.symm ▸ ht)
-  have hs' : (s, flowOf v t x) ∈ flowDomain v := by
-    rw [mem_flowDomain, flowOf_apply,
-      mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht), add_comm,
-      ← mem_flowDomain]
-    exact hst
+  have hs' : (s, flowOf v t x) ∈ flowDomain v :=
+    (mem_flowDomain_flowOf_iff hv ht).2 (by rwa [add_comm])
   refine ⟨hs', ?_⟩
   rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
 
