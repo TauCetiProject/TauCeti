@@ -33,7 +33,7 @@ single Lipschitz constant along their joint image, giving forward uniqueness on 
 * `ContDiffAt.ode_eventuallyEq_nhdsWithin`: C¹ local uniqueness.
 * `IsPreconnected.ode_eqOn`: locally Lipschitz uniqueness on a preconnected parameter set.
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
-* `LocallyLipschitzOn.eqOn_Icc_of_hasDerivWithinAt_Ici`,
+* `LocallyLipschitzOn.eqOn_Icc_of_hasDerivAt_Ioo`,
   `LocallyLipschitzOn.eqOn_Ico_of_hasDerivWithinAt_Ico`: forward uniqueness on `[a, b]` and
   `[a, b)` for autonomous fields locally Lipschitz on a subset `S`.
 * `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_lipschitzWith`: closed-interval
@@ -150,69 +150,6 @@ theorem IsPreconnected.ode_eqOn_of_contDiffAt (hI : IsPreconnected I)
   refine ⟨K, s, hs, fun r x hx y hy ↦ ?_⟩
   simpa only [Prod.edist_eq, edist_self, zero_max] using hL hx hy
 
-namespace LocallyLipschitzOn
-
-open ODE Set
-
-/-- **Forward uniqueness on `[a, b]`.** If `X` is locally Lipschitz on `S`, any two continuous
-curves on `[a, b]` mapping `[a, b)` into `S` with right derivative `X (γ t)` on `[a, b)` and the
-same value at `a` agree on `[a, b]`. -/
-theorem eqOn_Icc_of_hasDerivWithinAt_Ici {S : Set E} {X : E → E} (hX : LocallyLipschitzOn S X)
-    {a b : ℝ}
-    (hf : ContinuousOn f (Icc a b))
-    (hf' : ∀ t ∈ Ico a b, HasDerivWithinAt f (X (f t)) (Ici t) t)
-    (hf_mem : MapsTo f (Ico a b) S)
-    (hg : ContinuousOn g (Icc a b))
-    (hg' : ∀ t ∈ Ico a b, HasDerivWithinAt g (X (g t)) (Ici t) t)
-    (hg_mem : MapsTo g (Ico a b) S)
-    (ha : f a = g a) :
-    EqOn f g (Icc a b) := by
-  have hIco : EqOn f g (Ico a b) := fun c hc ↦ by
-    have hsub : Icc a c ⊆ Ico a b := fun t ht ↦ ⟨ht.1, ht.2.trans_lt hc.2⟩
-    let Kset := f '' Icc a c ∪ g '' Icc a c
-    have hKcomp : IsCompact Kset :=
-      (isCompact_Icc.image_of_continuousOn (hf.mono (hsub.trans Ico_subset_Icc_self))).union
-        (isCompact_Icc.image_of_continuousOn (hg.mono (hsub.trans Ico_subset_Icc_self)))
-    have hKsub : Kset ⊆ S := union_subset (image_subset_iff.mpr fun t ht ↦ hf_mem (hsub ht))
-      (image_subset_iff.mpr fun t ht ↦ hg_mem (hsub ht))
-    obtain ⟨K, hKLip⟩ := (hX.mono hKsub).exists_lipschitzOnWith_of_compact hKcomp
-    exact ODE_solution_unique_of_mem_Icc_right (v := fun _ ↦ X) (s := fun _ ↦ Kset)
-      (fun _ _ ↦ hKLip) (hf.mono (hsub.trans Ico_subset_Icc_self))
-      (fun t ht ↦ hf' t (hsub (Ico_subset_Icc_self ht)))
-      (fun t ht ↦ Or.inl (mem_image_of_mem f (Ico_subset_Icc_self ht)))
-      (hg.mono (hsub.trans Ico_subset_Icc_self))
-      (fun t ht ↦ hg' t (hsub (Ico_subset_Icc_self ht)))
-      (fun t ht ↦ Or.inr (mem_image_of_mem g (Ico_subset_Icc_self ht))) ha ⟨hc.1, le_rfl⟩
-  rcases lt_or_ge a b with hab | hba
-  · exact hIco.of_subset_closure hf hg Ico_subset_Icc_self (closure_Ico hab.ne ▸ Subset.rfl)
-  · intro t ht
-    obtain rfl : a = b := le_antisymm (ht.1.trans ht.2) hba
-    simpa [le_antisymm ht.1 ht.2] using ha
-
-/-- **Forward uniqueness on `[a, b)`.** Two curves on `[a, b)` mapping into `S`, solving
-`γ' = X ∘ γ` within `[a, b)` for a locally Lipschitz field `X` on `S`, and agreeing at `a` agree on
-`[a, b)`. -/
-theorem eqOn_Ico_of_hasDerivWithinAt_Ico {S : Set E} {X : E → E} (hX : LocallyLipschitzOn S X)
-    {a b : ℝ}
-    (hf' : ∀ t ∈ Ico a b, HasDerivWithinAt f (X (f t)) (Ico a b) t)
-    (hf_mem : MapsTo f (Ico a b) S)
-    (hg' : ∀ t ∈ Ico a b, HasDerivWithinAt g (X (g t)) (Ico a b) t)
-    (hg_mem : MapsTo g (Ico a b) S)
-    (ha : f a = g a) :
-    EqOn f g (Ico a b) := fun c hc ↦ by
-  have hsub : Icc a c ⊆ Ico a b := fun t ht ↦ ⟨ht.1, ht.2.trans_lt hc.2⟩
-  have hIci {γ : ℝ → E} (h : ∀ t ∈ Ico a b, HasDerivWithinAt γ (X (γ t)) (Ico a b) t) :
-      ∀ t ∈ Ico a c, HasDerivWithinAt γ (X (γ t)) (Ici t) t := fun t ht ↦
-    (h t (hsub (Ico_subset_Icc_self ht))).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
-      ⟨Iio b, isOpen_Iio, ht.2.trans hc.2, fun _ hs ↦ ⟨ht.1.trans hs.2, hs.1⟩⟩
-  exact hX.eqOn_Icc_of_hasDerivWithinAt_Ici
-    (fun t ht ↦ ((hf' t (hsub ht)).continuousWithinAt).mono hsub)
-    (hIci hf') (fun t ht ↦ hf_mem (hsub (Ico_subset_Icc_self ht)))
-    (fun t ht ↦ ((hg' t (hsub ht)).continuousWithinAt).mono hsub)
-    (hIci hg') (fun t ht ↦ hg_mem (hsub (Ico_subset_Icc_self ht))) ha ⟨hc.1, le_rfl⟩
-
-end LocallyLipschitzOn
-
 end
 
 namespace ODE
@@ -254,3 +191,69 @@ theorem eqOn_Icc_of_lipschitzWith {a b c : ℝ} {v : ℝ → E → E} {K : ℝ�
     hf hf' (fun _ _ ↦ trivial) hg hg' (fun _ _ ↦ trivial) hfc
 
 end ODE
+
+namespace LocallyLipschitzOn
+
+open ODE Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : ℝ → E}
+
+/-- **Forward uniqueness on `[a, b]`.** If `X` is locally Lipschitz on `S`, any two continuous
+curves on `[a, b]` mapping `[a, b)` into `S` with derivative `X (γ t)` on `(a, b)` and the same
+value at `a` agree on `[a, b]`. -/
+theorem eqOn_Icc_of_hasDerivAt_Ioo {S : Set E} {X : E → E} (hX : LocallyLipschitzOn S X)
+    {a b : ℝ}
+    (hf : ContinuousOn f (Icc a b))
+    (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (X (f t)) t)
+    (hf_mem : MapsTo f (Ico a b) S)
+    (hg : ContinuousOn g (Icc a b))
+    (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (X (g t)) t)
+    (hg_mem : MapsTo g (Ico a b) S)
+    (ha : f a = g a) :
+    EqOn f g (Icc a b) := by
+  have hIco : EqOn f g (Ico a b) := fun c hc ↦ by
+    have hsub : Icc a c ⊆ Ico a b := fun t ht ↦ ⟨ht.1, ht.2.trans_lt hc.2⟩
+    let Kset := f '' Icc a c ∪ g '' Icc a c
+    have hKcomp : IsCompact Kset :=
+      (isCompact_Icc.image_of_continuousOn (hf.mono (hsub.trans Ico_subset_Icc_self))).union
+        (isCompact_Icc.image_of_continuousOn (hg.mono (hsub.trans Ico_subset_Icc_self)))
+    have hKsub : Kset ⊆ S := union_subset (image_subset_iff.mpr fun t ht ↦ hf_mem (hsub ht))
+      (image_subset_iff.mpr fun t ht ↦ hg_mem (hsub ht))
+    obtain ⟨K, hKLip⟩ := (hX.mono hKsub).exists_lipschitzOnWith_of_compact hKcomp
+    exact eqOn_Icc_of_lipschitzOnWith (v := fun _ ↦ X) (s := fun _ ↦ Kset)
+      (fun _ _ ↦ hKLip) (left_mem_Icc.mpr hc.1)
+      (hf.mono (hsub.trans Ico_subset_Icc_self))
+      (fun t ht ↦ hf' t ⟨ht.1, ht.2.trans hc.2⟩)
+      (fun _ ht ↦ Or.inl (mem_image_of_mem f (Ioo_subset_Icc_self ht)))
+      (hg.mono (hsub.trans Ico_subset_Icc_self))
+      (fun t ht ↦ hg' t ⟨ht.1, ht.2.trans hc.2⟩)
+      (fun _ ht ↦ Or.inr (mem_image_of_mem g (Ioo_subset_Icc_self ht))) ha ⟨hc.1, le_rfl⟩
+  rcases lt_or_ge a b with hab | hba
+  · exact hIco.of_subset_closure hf hg Ico_subset_Icc_self (closure_Ico hab.ne ▸ Subset.rfl)
+  · intro t ht
+    obtain rfl : a = b := le_antisymm (ht.1.trans ht.2) hba
+    simpa [le_antisymm ht.1 ht.2] using ha
+
+/-- **Forward uniqueness on `[a, b)`.** Two curves on `[a, b)` mapping into `S`, solving
+`γ' = X ∘ γ` within `[a, b)` for a locally Lipschitz field `X` on `S`, and agreeing at `a` agree on
+`[a, b)`. -/
+theorem eqOn_Ico_of_hasDerivWithinAt_Ico {S : Set E} {X : E → E} (hX : LocallyLipschitzOn S X)
+    {a b : ℝ}
+    (hf' : ∀ t ∈ Ico a b, HasDerivWithinAt f (X (f t)) (Ico a b) t)
+    (hf_mem : MapsTo f (Ico a b) S)
+    (hg' : ∀ t ∈ Ico a b, HasDerivWithinAt g (X (g t)) (Ico a b) t)
+    (hg_mem : MapsTo g (Ico a b) S)
+    (ha : f a = g a) :
+    EqOn f g (Ico a b) := fun c hc ↦ by
+  have hsub : Icc a c ⊆ Ico a b := fun t ht ↦ ⟨ht.1, ht.2.trans_lt hc.2⟩
+  exact hX.eqOn_Icc_of_hasDerivAt_Ioo
+    (fun t ht ↦ ((hf' t (hsub ht)).continuousWithinAt).mono hsub)
+    (fun t ht ↦ (hf' t ⟨ht.1.le, ht.2.trans hc.2⟩).hasDerivAt
+      (Ico_mem_nhds ht.1 (ht.2.trans hc.2)))
+    (fun t ht ↦ hf_mem (hsub (Ico_subset_Icc_self ht)))
+    (fun t ht ↦ ((hg' t (hsub ht)).continuousWithinAt).mono hsub)
+    (fun t ht ↦ (hg' t ⟨ht.1.le, ht.2.trans hc.2⟩).hasDerivAt
+      (Ico_mem_nhds ht.1 (ht.2.trans hc.2)))
+    (fun t ht ↦ hg_mem (hsub (Ico_subset_Icc_self ht))) ha ⟨hc.1, le_rfl⟩
+
+end LocallyLipschitzOn

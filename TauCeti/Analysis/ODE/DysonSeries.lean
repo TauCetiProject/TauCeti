@@ -69,6 +69,8 @@ one-parameter automorphism groups of C⋆-algebras.
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
+* `TauCeti.norm_sub_dysonSeriesLeft_le_add_mul_integral`: Volterra integral error estimate for the
+  difference between two integral curves and the left Dyson propagator.
 
 ## References
 
@@ -526,5 +528,71 @@ theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : 
   exact sub_eq_zero.1 h0
 
 end Left
+
+section LinearizationError
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+/-- **Volterra integral bound for the spatial linearization error.** For two integral curves `γ`
+and `γ₀` of `X` on `[0, τ]` starting at `y` and `y₀`, the difference
+`w t = γ t - γ₀ t - dysonSeriesLeft (DX ∘ γ₀) t (y - y₀)` satisfies
+`‖w t‖ ≤ R₀ * τ + CD * ∫ s in 0..t, ‖w s‖` whenever `‖DX (γ₀ s)‖ ≤ CD` and the first-order
+remainder of `X` at `(γ₀ s, γ s)` is bounded by `R₀`. -/
+theorem norm_sub_dysonSeriesLeft_le_add_mul_integral {X : E → E} {DX : E → E →L[ℝ] E}
+    {γ γ₀ : ℝ → E} {y y₀ : E} {τ R₀ CD : ℝ} (hτ : 0 < τ) (hR₀ : 0 ≤ R₀)
+    (hγ_cont : ContinuousOn γ (Icc 0 τ)) (hγ₀_cont : ContinuousOn γ₀ (Icc 0 τ))
+    (hX_cont : ContinuousOn (fun s ↦ X (γ s)) (Icc 0 τ))
+    (hX₀_cont : ContinuousOn (fun s ↦ X (γ₀ s)) (Icc 0 τ))
+    (hM₀_cont : Continuous (fun s ↦ DX (γ₀ (projIcc 0 τ hτ.le s))))
+    (hCD_bound : ∀ s ∈ Icc 0 τ, ‖DX (γ₀ s)‖ ≤ CD)
+    (hint : ∀ t ∈ Icc 0 τ, γ t = y + ∫ s in (0 : ℝ)..t, X (γ s))
+    (hint₀ : ∀ t ∈ Icc 0 τ, γ₀ t = y₀ + ∫ s in (0 : ℝ)..t, X (γ₀ s))
+    (hTaylor_s : ∀ s ∈ Icc 0 τ, ‖X (γ s) - X (γ₀ s) - DX (γ₀ s) (γ s - γ₀ s)‖ ≤ R₀)
+    {t : ℝ} (ht : t ∈ Icc 0 τ) :
+    let w : ℝ → E := fun s ↦ γ s - γ₀ s -
+      dysonSeriesLeft (fun r ↦ DX (γ₀ (projIcc 0 τ hτ.le r))) s (y - y₀)
+    ‖w t‖ ≤ R₀ * τ + CD * ∫ s in (0 : ℝ)..t, ‖w s‖ := by
+  intro w
+  let A := dysonSeriesLeft (fun r ↦ DX (γ₀ (projIcc 0 τ hτ.le r)))
+  have hA_cont : Continuous (fun s ↦ A s (y - y₀)) :=
+    (continuous_dysonSeriesLeft hM₀_cont).clm_apply continuous_const
+  have hw_cont : ContinuousOn (fun s ↦ ‖w s‖) (Icc 0 τ) :=
+    ((hγ_cont.sub hγ₀_cont).sub hA_cont.continuousOn).norm
+  have hsub_t : uIcc 0 t ⊆ Icc 0 τ := uIcc_of_le ht.1 ▸ Icc_subset_Icc_right ht.2
+  have hIntA := (hM₀_cont.clm_apply hA_cont).intervalIntegrable (μ := MeasureTheory.volume) 0 t
+  have hA_int : A t (y - y₀) - (y - y₀) =
+      ∫ s in (0 : ℝ)..t, DX (γ₀ (projIcc 0 τ hτ.le s)) (A s (y - y₀)) := by
+    simpa [A] using (intervalIntegral.integral_eq_sub_of_hasDerivAt
+      (fun s _ ↦ hasDerivAt_dysonSeriesLeft_apply hM₀_cont (y - y₀) s) hIntA).symm
+  have hw_eq : w t = ∫ s in (0 : ℝ)..t,
+      ((X (γ s) - X (γ₀ s) - DX (γ₀ s) (γ s - γ₀ s)) + DX (γ₀ s) (w s)) := by
+    have hI1 := (hX_cont.mono hsub_t).intervalIntegrable (μ := MeasureTheory.volume)
+    have hI2 := (hX₀_cont.mono hsub_t).intervalIntegrable (μ := MeasureTheory.volume)
+    rw [show w t = (γ t - y) - (γ₀ t - y₀) - (A t (y - y₀) - (y - y₀)) by simp [w, A]; abel,
+      hint t ht, hint₀ t ht, add_sub_cancel_left, add_sub_cancel_left, hA_int,
+      ← intervalIntegral.integral_sub hI1 hI2, ← intervalIntegral.integral_sub (hI1.sub hI2) hIntA]
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
+    simp only [projIcc_of_mem hτ.le (hsub_t hs), w, map_sub]; abel
+  have hDX_s : ContinuousOn (fun s ↦ DX (γ₀ s)) (Icc 0 τ) :=
+    hM₀_cont.continuousOn.congr fun s hs ↦ by simp [projIcc_of_mem hτ.le hs]
+  have hw_int : IntervalIntegrable (fun s ↦ CD * ‖w s‖) MeasureTheory.volume 0 t :=
+    ((continuousOn_const.mul hw_cont).mono hsub_t).intervalIntegrable
+  have hrem_int : IntervalIntegrable
+      (fun s ↦ ‖X (γ s) - X (γ₀ s) - DX (γ₀ s) (γ s - γ₀ s)‖ + CD * ‖w s‖)
+      MeasureTheory.volume 0 t :=
+    (((hX_cont.sub hX₀_cont).sub (hDX_s.clm_apply (hγ_cont.sub hγ₀_cont))).norm.add
+      (continuousOn_const.mul hw_cont) |>.mono hsub_t).intervalIntegrable
+  rw [hw_eq]
+  refine (intervalIntegral.norm_integral_le_of_norm_le ht.1 ?_ hrem_int).trans ?_
+  · filter_upwards with s hs
+    exact (norm_add_le _ _).trans (add_le_add_right ((ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_mul_of_nonneg_right (hCD_bound s ⟨hs.1.le, hs.2.trans ht.2⟩) (norm_nonneg _))) _)
+  · refine (intervalIntegral.integral_mono_on ht.1 hrem_int (intervalIntegrable_const.add hw_int)
+      fun s hs ↦ add_le_add_left (hTaylor_s s ⟨hs.1, hs.2.trans ht.2⟩) _).trans ?_
+    rw [intervalIntegral.integral_add intervalIntegrable_const hw_int,
+      intervalIntegral.integral_const, intervalIntegral.integral_const_mul, sub_zero, smul_eq_mul]
+    linarith [mul_comm t R₀ ▸ mul_le_mul_of_nonneg_left ht.2 hR₀]
+
+end LinearizationError
 
 end TauCeti

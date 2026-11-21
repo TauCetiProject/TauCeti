@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.Analysis.LocallyConvex.Separation
@@ -27,9 +28,13 @@ point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
 near each admissible point and vector (hence along any relatively continuous vector field). Any
 convex set admitting a strictly inward vector has nonempty interior, so its open intersections
-enjoy unique differentiability (`Convex.uniqueDiffOn_inter_of_mem_strictInwardCone`). These
-estimates supply the local geometric input for constructing strictly inward vector fields and
-their forward semiflows on models with corners.
+enjoy unique differentiability (`Convex.uniqueDiffOn_inter_of_mem_strictInwardCone`). Curves with
+one-sided derivatives in the strict inward cone immediately enter and remain in the interior
+(`HasDerivWithinAt.eventually_mem_interior_of_mem_strictInwardCone`,
+`Convex.mem_interior_of_hasDerivWithinAt_Iic`,
+`Convex.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico`). These estimates supply the local geometric
+input for constructing strictly inward vector fields and their forward semiflows on models with
+corners.
 
 A derivative of dense range of a map into a convex set with nonempty interior sends strictly
 inward directions to strictly inward directions
@@ -390,3 +395,87 @@ theorem strictInwardCone_quadrant_zero :
     exact ⟨1, zero_lt_one, by simpa using h₁, by simpa using h₂⟩
 
 end TauCeti
+
+/-! ### Interior entry and persistence along curves -/
+
+section InteriorPersistence
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A curve whose right derivative at `a` lies in `strictInwardCone s (γ a)` lies in `interior s`
+for all sufficiently small times strictly greater than `a`. No convexity of `s` is required. -/
+theorem HasDerivWithinAt.eventually_mem_interior_of_mem_strictInwardCone {s : Set E} {γ : ℝ → E}
+    {v : E} {a : ℝ} (hγ : HasDerivWithinAt γ v (Ici a) a)
+    (hv : v ∈ TauCeti.strictInwardCone s (γ a)) :
+    ∀ᶠ t in 𝓝[>] a, γ t ∈ interior s := by
+  obtain ⟨ε, hε, δ, hδ, hball⟩ := TauCeti.mem_strictInwardCone_iff.mp hv
+  filter_upwards [((hasDerivWithinAt_iff_isLittleO.mp hγ).bound (half_pos hε)).filter_mono
+    (nhdsWithin_mono a Ioi_subset_Ici_self), Ioo_mem_nhdsGT (lt_add_of_pos_right a hδ)]
+    with t ht hIoo
+  have hpos : 0 < t - a := sub_pos.mpr hIoo.1
+  rw [Real.norm_of_nonneg hpos.le] at ht
+  refine mem_interior.mpr ⟨ball (γ t) (ε / 2 * (t - a)), Subset.trans (fun z hz ↦ ?_)
+    (hball (t - a) ⟨hpos, sub_lt_iff_lt_add'.mpr hIoo.2⟩), isOpen_ball,
+    mem_ball_self (mul_pos (half_pos hε) hpos)⟩
+  rw [mem_ball, dist_eq_norm] at hz ⊢
+  calc ‖z - (γ a + (t - a) • v)‖ = ‖(z - γ t) + (γ t - γ a - (t - a) • v)‖ := by congr 1; abel
+    _ ≤ ‖z - γ t‖ + ‖γ t - γ a - (t - a) • v‖ := norm_add_le _ _
+    _ < ε * (t - a) := by linarith
+
+/-- In a convex set `C`, if `γ` lies in `C` for times just before `t` and has left derivative at `t`
+in `strictInwardCone C (γ t)`, then `γ t` already lies in `interior C`. -/
+theorem Convex.mem_interior_of_hasDerivWithinAt_Iic {C : Set E} (hC : Convex ℝ C) {γ : ℝ → E}
+    {v : E} {t : ℝ} (hγ' : HasDerivWithinAt γ v (Iic t) t) (hγC : ∀ᶠ s in 𝓝[<] t, γ s ∈ C)
+    (hv : v ∈ TauCeti.strictInwardCone C (γ t)) :
+    γ t ∈ interior C := by
+  obtain ⟨ε, hε, δ, hδ, hball⟩ := TauCeti.mem_strictInwardCone_iff.mp hv
+  obtain ⟨s, hs_err, hsC, hsIoo⟩ := ((((hasDerivWithinAt_iff_isLittleO.mp hγ').bound
+    (half_pos hε)).filter_mono (nhdsWithin_mono t Iio_subset_Iic_self)).and
+    (hγC.and (eventually_mem_set.mpr (Ioo_mem_nhdsLT (sub_lt_self t hδ))))).exists
+  set h := t - s; have hh_pos : 0 < h := sub_pos.mpr hsIoo.2
+  rw [Real.norm_eq_abs, abs_sub_comm, abs_of_pos hh_pos] at hs_err
+  refine mem_interior.mpr ⟨ball (γ t) (ε * h / 4), fun z hz ↦ ?_,
+    isOpen_ball, mem_ball_self (by positivity)⟩
+  rw [mem_ball, dist_eq_norm] at hz
+  have hq : (2 : ℝ) • z - γ s ∈ C := by
+    refine hball h ⟨hh_pos, sub_lt_comm.mp hsIoo.1⟩ (mem_ball_iff_norm.mpr ?_)
+    calc ‖(2 : ℝ) • z - γ s - (γ t + h • v)‖
+        = ‖(2 : ℝ) • (z - γ t) - (γ s - γ t - (s - t) • v)‖ := by congr 1; simp only [h]; module
+      _ ≤ 2 * ‖z - γ t‖ + ‖γ s - γ t - (s - t) • v‖ :=
+          (norm_sub_le _ _).trans (by rw [norm_smul, Real.norm_of_nonneg zero_le_two])
+      _ < ε * h := by linarith
+  rw [← show (1 / 2 : ℝ) • γ s + (1 / 2 : ℝ) • ((2 : ℝ) • z - γ s) = z by module]
+  exact hC hsC hq (by norm_num) (by norm_num) (by norm_num)
+
+/-- Any curve in a convex set `C` on `[a, b]` whose left derivatives on `(a, b]` lie in the strict
+inward cone of `C` stays in `interior C` for all `t ∈ (a, b]`. -/
+theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt_Iic {C : Set E} (hC : Convex ℝ C)
+    {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Icc a b) C)
+    (hγ' : ∀ t ∈ Ioc a b, HasDerivWithinAt γ (v t) (Iic t) t)
+    (hv : ∀ t ∈ Ioc a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
+    MapsTo γ (Ioc a b) (interior C) := fun t ht ↦
+  hC.mem_interior_of_hasDerivWithinAt_Iic (hγ' t ht)
+    (Filter.mem_of_superset (Ioo_mem_nhdsLT ht.1) fun _ hs ↦ hγ ⟨hs.1.le, hs.2.le.trans ht.2⟩)
+    (hv t ht)
+
+/-- Any curve in a convex set `C` on `[a, b]` whose derivatives within `[a, b]` on `(a, b]` lie in
+the strict inward cone of `C` maps `(a, b]` into `interior C`. -/
+theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt {C : Set E} (hC : Convex ℝ C)
+    {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Icc a b) C)
+    (hγ' : ∀ t ∈ Ioc a b, HasDerivWithinAt γ (v t) (Icc a b) t)
+    (hv : ∀ t ∈ Ioc a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
+    MapsTo γ (Ioc a b) (interior C) := hC.mapsTo_Ioc_interior_of_hasDerivWithinAt_Iic hγ
+  (fun t ht ↦ (hγ' t ht).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
+    ⟨Ioi a, isOpen_Ioi, ht.1, fun _ hs ↦ ⟨hs.1.le, hs.2.trans ht.2⟩⟩) hv
+
+/-- Any curve in a convex set `C` on `[a, b)` whose derivatives within `[a, b)` on `(a, b)` lie in
+the strict inward cone of `C` maps `(a, b)` into `interior C`. -/
+theorem Convex.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico {C : Set E} (hC : Convex ℝ C)
+    {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Ico a b) C)
+    (hγ' : ∀ t ∈ Ioo a b, HasDerivWithinAt γ (v t) (Ico a b) t)
+    (hv : ∀ t ∈ Ioo a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
+    MapsTo γ (Ioo a b) (interior C) := fun t ht ↦ hC.mem_interior_of_hasDerivWithinAt_Iic
+  (((hγ' t ht).hasDerivAt (Ico_mem_nhds ht.1 ht.2)).hasDerivWithinAt)
+  (Filter.mem_of_superset (Ioo_mem_nhdsLT ht.1) fun _ hs ↦ hγ ⟨hs.1.le, hs.2.trans ht.2⟩) (hv t ht)
+
+end InteriorPersistence
