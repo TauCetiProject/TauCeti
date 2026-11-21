@@ -40,6 +40,8 @@ This file supplements Mathlib's basic moment-generating-function API.
   independent variables from coordinatewise exponential bounds.
 * `TauCeti.ofReal_mgf_sub_integral_le_lintegral`: symmetrization by Jensen's inequality, the
   moment-generating function of `f - 𝔼 f` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`.
+* `TauCeti.integrable_exp_mul_add_of_integrable_exp_two_mul`: `exp (θ (X + Y))` is integrable
+  when `exp (2θX)` and `exp (2θY)` are, without independence.
 * `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: AM-GM and
   geometric-mean bounds for `mgf (X + Y)` without independence.
 -/
@@ -162,6 +164,25 @@ section AddBounds
 
 open Real
 
+/-- **Exponential integrability of a sum** without independence: if `exp (2θX)` and `exp (2θY)`
+are integrable, then so is `exp (θ (X + Y))`, their pointwise geometric mean. -/
+theorem integrable_exp_mul_add_of_integrable_exp_two_mul {Y : Ω → ℝ} {θ : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ) :
+    Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ := by
+  have hsqrt : (fun ω ↦ exp (θ * (X ω + Y ω))) =
+      fun ω ↦ Real.sqrt (exp (2 * θ * X ω) * exp (2 * θ * Y ω)) := funext fun ω ↦ by
+    have hmul_sq : exp (2 * θ * X ω) * exp (2 * θ * Y ω) = exp (θ * (X ω + Y ω)) ^ 2 := by
+      rw [sq, ← exp_add, ← exp_add]; ring_nf
+    rw [hmul_sq, Real.sqrt_sq (exp_pos _).le]
+  refine (hX_int.add hY_int).mono'
+    (hsqrt ▸ continuous_sqrt.comp_aestronglyMeasurable (hX_int.1.mul hY_int.1))
+    (.of_forall fun ω ↦ ?_)
+  rw [Real.norm_of_nonneg (exp_pos _).le, Pi.add_apply]
+  rcases le_total (θ * X ω) (θ * Y ω) with h | h
+  · exact (exp_le_exp.2 (by linarith)).trans (le_add_of_nonneg_left (exp_pos _).le)
+  · exact (exp_le_exp.2 (by linarith)).trans (le_add_of_nonneg_right (exp_pos _).le)
+
 /-- **AM-GM bound for the moment-generating function of a sum** without independence. -/
 theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
     (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
@@ -169,20 +190,13 @@ theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
     (hX_le : mgf X μ (2 * θ) ≤ M₁) (hY_le : mgf Y μ (2 * θ) ≤ M₂) :
     Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
       mgf (fun ω ↦ X ω + Y ω) μ θ ≤ (M₁ + M₂) / 2 := by
-  have hsqrt : (fun ω ↦ exp (θ * (X ω + Y ω))) =
-      fun ω ↦ Real.sqrt (exp (2 * θ * X ω) * exp (2 * θ * Y ω)) := funext fun ω ↦ by
-    have hmul_sq : exp (2 * θ * X ω) * exp (2 * θ * Y ω) = exp (θ * (X ω + Y ω)) ^ 2 := by
-      rw [sq, ← exp_add, ← exp_add]; ring_nf
-    rw [hmul_sq, Real.sqrt_sq (exp_pos _).le]
+  have hint := integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int
   have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2 := by
     have hsq (z : ℝ) : exp (2 * θ * z) = exp (θ * z) ^ 2 := by rw [sq, ← exp_add]; ring_nf
     rw [mul_add, exp_add, hsq (X ω), hsq (Y ω)]
     linarith [two_mul_le_add_sq (exp (θ * X ω)) (exp (θ * Y ω))]
   have hdom : Integrable (fun ω ↦ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2) μ :=
     (hX_int.add hY_int).div_const 2
-  have hint : Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ :=
-    hdom.mono' (hsqrt ▸ continuous_sqrt.comp_aestronglyMeasurable (hX_int.1.mul hY_int.1))
-      (.of_forall fun ω ↦ by rw [Real.norm_of_nonneg (exp_pos _).le]; exact hpt ω)
   refine ⟨hint, ?_⟩; rw [mgf]; refine (integral_mono hint hdom hpt).trans ?_
   rw [integral_div, integral_add hX_int hY_int, ← mgf, ← mgf]; linarith
 
@@ -193,7 +207,7 @@ theorem mgf_add_le_exp_half_add {Y : Ω → ℝ} {θ a b : ℝ}
     (hX_le : mgf X μ (2 * θ) ≤ exp a) (hY_le : mgf Y μ (2 * θ) ≤ exp b) :
     Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
       mgf (fun ω ↦ X ω + Y ω) μ θ ≤ exp ((a + b) / 2) := by
-  have hint := (mgf_add_le_of_mgf_two_mul_le hX_int hY_int hX_le hY_le).1
+  have hint := integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int
   have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ exp ((a + b) / 2) / 2 *
       (exp (-a) * exp (2 * θ * X ω) + exp (-b) * exp (2 * θ * Y ω)) := by
     have hsq (z c : ℝ) : exp (-c) * exp (2 * θ * z) = exp (θ * z - c / 2) ^ 2 := by
