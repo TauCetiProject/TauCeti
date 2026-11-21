@@ -299,9 +299,9 @@ theorem eq_of_forall_oneDimBoundaryRestrict_eq {U : Opens ℝ} {q₁ q₂ : OneD
       closure (V : Set ℝ) ⊆ U → oneDimBoundaryRestrict hVU q₁ = oneDimBoundaryRestrict hVU q₂) :
     q₁ = q₂ := by
   let ι := {V : Opens ℝ // IsCompact (closure (V : Set ℝ)) ∧ closure (V : Set ℝ) ⊆ U}
-  have hle (V : ι) : V.1 ≤ U := fun _ hx ↦ V.2.2 (subset_closure hx)
-  refine eq_of_oneDimBoundaryRestrict_eq (U := fun V : ι ↦ V.1) hle (fun x hx ↦ ?_)
-    fun V ↦ h V.1 (hle V) V.2.1 V.2.2
+  have hle (V : ι) : V.val ≤ U := fun _ hx ↦ V.property.2 (subset_closure hx)
+  refine eq_of_oneDimBoundaryRestrict_eq (U := fun V : ι ↦ V.val) hle (fun x hx ↦ ?_)
+    fun V ↦ h V.val (hle V) V.property.1 V.property.2
   obtain ⟨V, hV, hxV, hVU, hVc⟩ :=
     exists_open_between_and_isCompact_closure isCompact_singleton U.isOpen
       (singleton_subset_iff.2 hx)
