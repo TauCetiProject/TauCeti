@@ -11,7 +11,9 @@ public import TauCeti.GroupTheory.PresentedGroup
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.Coprime.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
 
 /-!
 # One-edge graphs of infinite cyclic groups
@@ -50,6 +52,12 @@ and `true` is `t`, respectively `y`.
   abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is `ℤ`.
 * `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, the
   abelianization of the fundamental group of the segment is `ℤ`.
+
+## Main results
+
+* `TauCeti.GraphOfGroups.index_range_α_baumslagSolitar`,
+  `TauCeti.GraphOfGroups.index_range_ω_baumslagSolitar`: the boundary images of `baumslagSolitar`
+  have indices `|m|` and `|n|`.
 
 ## References
 
@@ -93,6 +101,28 @@ fundamental group is the Baumslag–Solitar group `⟨a, t ∣ t a ^ n t⁻¹ = 
 @[simp] theorem baumslagSolitar_α_false :
     (baumslagSolitar m n hm hn).α ((), false) = zpowGroupHom (α := Multiplicative ℤ) n :=
   loop_α_false ..
+
+/-- The image of `α` on a dart of `baumslagSolitar m n` has index `|m|` on `((), true)` and `|n|`
+on `((), false)`. -/
+@[simp] theorem index_range_α_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).α e).range.index = cond e.2 m.natAbs n.natAbs := by
+  -- The vertex and edge groups of `baumslagSolitar` reduce definitionally to `Multiplicative ℤ`.
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · simp only [baumslagSolitar_α_false, Bool.cond_false]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) n
+  · simp only [baumslagSolitar_α_true, Bool.cond_true]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) m
+
+/-- The image of `ω` on a dart of `baumslagSolitar m n` has index `|n|` on `((), true)` and `|m|`
+on `((), false)`. -/
+@[simp] theorem index_range_ω_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).ω e).range.index = cond e.2 n.natAbs m.natAbs := by
+  -- The vertex and edge groups of `baumslagSolitar` reduce definitionally to `Multiplicative ℤ`.
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · simp only [baumslagSolitar_ω_false, Bool.cond_false]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) m
+  · simp only [baumslagSolitar_ω_true, Bool.cond_true]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) n
 
 /-- The Baumslag–Solitar relator `t a ^ n t⁻¹ a ^ (-m)` in the free group on `a = false` and
 `t = true`. -/

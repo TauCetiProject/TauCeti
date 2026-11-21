@@ -58,6 +58,8 @@ is replaced by Mathlib's `IsHeckeTriple`.
   subgroups of `SL_n(ℤ)` consists of integral matrices; `mem_intEntries_of_rightCoset_eq`,
   `mem_intEntries_of_cover` and `mem_intEntries_of_mem_doubleCoset_mul_doubleCoset` read this off
   a right coset, a family covering the double coset, and a product of two double cosets.
+* `posDetInt_le_commensurator_map` and the `IsHeckeTriple` instance for the images of any two
+  finite-index subgroups of `SL_n(ℤ)`;
 * the `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` instance, and the
   Hecke ring `IntegralHeckeRing n` it founds.
 
@@ -347,11 +349,11 @@ coefficients, modular symbols — receive the action of a Hecke coset representa
 /-- The integral matrix underlying an element of `intEntries n`: the chosen witness of its
 membership, unique because the cast `ℤ → ℚ` is injective (`intMatrix_eq_iff`). -/
 private noncomputable def intMatrixFun (g : intEntries n) : Matrix (Fin n) (Fin n) ℤ :=
-  Classical.choose ((mem_intEntries n).mp g.2)
+  Classical.choose ((mem_intEntries n).mp g.property)
 
 private lemma map_intMatrixFun (g : intEntries n) :
     (intMatrixFun n g).map (Int.cast : ℤ → ℚ) = ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) :=
-  (Classical.choose_spec ((mem_intEntries n).mp g.2)).symm
+  (Classical.choose_spec ((mem_intEntries n).mp g.property)).symm
 
 private lemma intMatrixFun_eq_iff {g : intEntries n} {A : Matrix (Fin n) (Fin n) ℤ} :
     intMatrixFun n g = A ↔
@@ -531,10 +533,10 @@ instance finiteIndex_SLnZ_subgroupOf_GLnZ : ((SLnZ n).subgroupOf (GLnZ n)).Finit
     ((Set.finite_singleton (1 : ℚˣ)).insert (-1)).subset (by
       rintro _ ⟨g, rfl⟩
       simpa [Units.ext_iff, Matrix.GeneralLinearGroup.val_det_apply, or_comm] using
-        det_eq_one_or_neg_one_of_mem_GLnZ n g.2) |>.to_subtype
+        det_eq_one_or_neg_one_of_mem_GLnZ n g.property) |>.to_subtype
   have hker : (SLnZ n).subgroupOf (GLnZ n) = φ.ker := by
     ext g; rw [Subgroup.mem_subgroupOf, MonoidHom.mem_ker, Subtype.ext_iff, Units.ext_iff]
-    exact ⟨det_eq_one_of_mem_SLnZ n, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n g.2⟩
+    exact ⟨det_eq_one_of_mem_SLnZ n, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n g.property⟩
   exact hker ▸ Subgroup.finiteIndex_ker φ
 
 /-- `GL_n(ℤ)` and `SL_n(ℤ)` are commensurable in `GL_n(ℚ)`. -/
@@ -772,6 +774,25 @@ lemma posDetInt_le_commensurator :
 underlying the classical Hecke operators, following Shimura §3.2. -/
 instance : IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n) :=
   IsHeckeTriple.of_diagonal (SLnZ_le_posDetInt n) (posDetInt_le_commensurator n)
+
+/-- `Δ` lies in the commensurator of the image of any finite-index subgroup of `SL_n(ℤ)`: that
+image is commensurable with `SL_n(ℤ)` (`commensurable_map_SLnZ`), so the two commensurators
+agree. -/
+lemma posDetInt_le_commensurator_map (Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ))
+    [Γ.FiniteIndex] : posDetInt n ≤ (commensurator (Γ.map (mapGL ℚ))).toSubmonoid := by
+  rw [Subgroup.Commensurable.eq (commensurable_map_SLnZ n Γ)]
+  exact posDetInt_le_commensurator n
+
+/-- **Any two finite-index subgroups of `SL_n(ℤ)` form a Hecke triple with `Δ`.** Their images
+in `GL_n(ℚ)` lie in `SL_n(ℤ) ≤ Δ`, are commensurable with `SL_n(ℤ)` and hence with each other,
+and `Δ` lies in their commensurator (`posDetInt_le_commensurator_map`). The two subgroups may
+differ, as for the degeneracy maps between two levels. -/
+instance (Γ₁ Γ₂ : Subgroup (SpecialLinearGroup (Fin n) ℤ)) [Γ₁.FiniteIndex] [Γ₂.FiniteIndex] :
+    IsHeckeTriple (posDetInt n) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) where
+  left_le _ hx := SLnZ_le_posDetInt n (Subgroup.map_le_range _ _ hx)
+  right_le _ hx := SLnZ_le_posDetInt n (Subgroup.map_le_range _ _ hx)
+  commensurable := (commensurable_map_SLnZ n Γ₁).trans (commensurable_map_SLnZ n Γ₂).symm
+  le_commensurator_right := posDetInt_le_commensurator_map n Γ₂
 
 end Pair
 

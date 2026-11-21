@@ -692,9 +692,9 @@ theorem le_of_isDirichletEigenvalue_of_subset_ball
     (isCoercive_energyFormH1L0 hcoeff
       (energyFormH1_poincare_constant_pos hbeta (by linarith) hsmall)
       (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
-        hc_nonneg hball w.2))
+        hc_nonneg hball w.property))
     (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
-      hc_nonneg hball w.2)
+      hc_nonneg hball w.property)
     hkappa
 
 end UniformlyEllipticOn

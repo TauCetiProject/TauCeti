@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
+import Mathlib.Topology.UrysohnsLemma
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
-# Scalar actions and pointwise norms on `C₀(α, β)`
+# Scalar actions, homomorphisms, and cutoffs on `C₀(α, β)`
 
 Mathlib equips the space `C₀(α, β)` of continuous functions vanishing at infinity with the sup
 distance and, for normed fields, with a normed-space structure. This file supplies the structure
-needed for scalar actions beyond normed fields:
+needed for scalar actions beyond normed fields, bundled homomorphisms, and Urysohn cutoffs:
 
 * `ZeroAtInftyContinuousMap.instIsBoundedSMul`: a bounded scalar action on `β` induces one on
   `C₀(α, β)`, so for instance `C₀(α, R)` is a module with contractive action over a seminormed
@@ -23,8 +24,20 @@ needed for scalar actions beyond normed fields:
   on an additive uniform group `β` induces continuous fixed-scalar multiplication on `C₀(α, β)`;
 * `ZeroAtInftyContinuousMap.norm_le` and `ZeroAtInftyContinuousMap.norm_eq_iSup_norm`: the norm
   on `C₀(α, β)` is the supremum of the pointwise norms;
-* `ZeroAtInftyContinuousMap.evalCLM`: evaluation at a point as a continuous linear map over an
+* `ZeroAtInftyContinuousMap.evalCLM` and `ZeroAtInftyContinuousMap.evalNonUnitalAlgHom`:
+  evaluation at a point as a continuous linear map or non-unital algebra homomorphism over an
   arbitrary semiring of scalars;
+* `ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom`: the canonical inclusion
+  `C₀(α, β) →⋆ₙₐ[𝕜] (α →ᵇ β)`;
+* `ZeroAtInftyContinuousMap.toBCFₗᵢ`: the inclusion into bounded continuous functions as a linear
+  isometry;
+* `BoundedContinuousFunction.mulZeroAtInfty` and `ZeroAtInftyContinuousMap.mulBCF`: pointwise
+  left and right multiplication of `C₀(α, β)` by bounded continuous functions `α →ᵇ β`, with
+  submultiplicative norm bounds;
+* `ZeroAtInftyContinuousMap.exists_eqOn_const_zero_of_isCompact`,
+  `ZeroAtInftyContinuousMap.exists_eqOn_const_of_isCompact`, and
+  `ZeroAtInftyContinuousMap.exists_apply_eq_norm_le`: compactly supported Urysohn cutoffs in
+  `C₀(α, β)` on regular locally compact spaces;
 * `ZeroAtInftyContinuousMap.compLeftFamily`: a strongly continuous family `u : α → E →L[R] F` of
   continuous linear maps with a uniform bound `‖u x e‖ ≤ C * ‖e‖` acts pointwise as a continuous
   linear map `C₀(α, E) →L[R] C₀(α, F)`, by `f ↦ (x ↦ u x (f x))`;
@@ -74,6 +87,12 @@ instance (priority := 90) instContinuousConstSMul
       (uniformContinuous_const_smul r).comp_tendstoUniformly <|
         tendsto_iff_tendstoUniformly.1 Filter.tendsto_id
 
+/-- A scalar acting injectively on `β` acts injectively on `C₀(α, β)`. -/
+theorem _root_.IsSMulRegular.zeroAtInftyContinuousMap [TopologicalSpace β] [Zero β] {M : Type*}
+    [SMulZeroClass M β] [ContinuousConstSMul M β] {r : M} (hr : IsSMulRegular β r) :
+    IsSMulRegular C₀(α, β) r :=
+  fun _ _ h ↦ ext fun x ↦ hr (congrArg (· x) h)
+
 /-- The coercion to functions commutes with finite sums. -/
 @[simp, norm_cast]
 theorem coe_sum [TopologicalSpace β] [AddCommMonoid β] [ContinuousAdd β] {ι : Type*}
@@ -111,6 +130,25 @@ def evalCLM (x : α) : C₀(α, β) →L[𝕜] β where
 theorem evalCLM_apply (x : α) (f : C₀(α, β)) : evalCLM 𝕜 x f = f x := (rfl)
 
 end Normed
+
+section ToBCF
+
+variable [SeminormedAddCommGroup β] (𝕜 : Type*) [PseudoMetricSpace 𝕜] [Semiring 𝕜] [Module 𝕜 β]
+  [IsBoundedSMul 𝕜 β]
+
+/-- The inclusion `ZeroAtInftyContinuousMap.toBCF` of functions vanishing at infinity into bounded
+continuous functions, as a linear isometry `C₀(α, β) →ₗᵢ[𝕜] (α →ᵇ β)`. -/
+def toBCFₗᵢ : C₀(α, β) →ₗᵢ[𝕜] α →ᵇ β where
+  toFun := toBCF
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  norm_map' _ := norm_toBCF_eq_norm
+
+/-- `toBCFₗᵢ 𝕜` is the inclusion `ZeroAtInftyContinuousMap.toBCF`. -/
+@[simp]
+theorem toBCFₗᵢ_apply (f : C₀(α, β)) : toBCFₗᵢ 𝕜 f = f.toBCF := (rfl)
+
+end ToBCF
 
 section Comparison
 
@@ -184,6 +222,25 @@ def compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) : 
 @[simp]
 theorem compLeft_apply (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) (x : α) :
     compLeft u hu f x = u (f x) := (rfl)
+
+/-- Postcomposing with the zero operator gives the zero operator on `C₀(α, E)`. -/
+@[simp]
+theorem compLeft_zero (h0 : ∃ C, ∀ x, ‖(0 : E →L[R] F) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (0 : E →L[R] F) h0 = 0 := by
+  ext; simp
+
+/-- `compLeft` is additive in the bounded operator. -/
+theorem compLeft_add (u v : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖)
+    (hv : ∃ C, ∀ x, ‖v x‖ ≤ C * ‖x‖) (huv : ∃ C, ∀ x, ‖(u + v) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (u + v) huv = compLeft u hu + compLeft v hv := by
+  ext; simp
+
+/-- `compLeft` commutes with scalar multiplication in the bounded operator. -/
+theorem compLeft_smul {S : Type*} [Semiring S] [Module S F]
+    [SMulCommClass R S F] [ContinuousConstSMul S F] (s : S) (u : E →L[R] F)
+    (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (hsu : ∃ C, ∀ x, ‖(s • u) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (s • u) hsu = s • compLeft u hu := by
+  ext; simp
 
 /-- The coordinatewise action of a composite is the composite of the coordinatewise actions. -/
 theorem compLeft_comp {G : Type*} [SeminormedAddCommGroup G] [Module R G] [ContinuousConstSMul R G]
