@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 -- Proof-only: the order filtration on points, substitution into points, the symmetric 2-cocycle
 -- lemma, lowest-degree parts of substitutions, two-variable substitution identities, symmetric
 -- power series, and the permutations of `Fin 2`.
-import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic

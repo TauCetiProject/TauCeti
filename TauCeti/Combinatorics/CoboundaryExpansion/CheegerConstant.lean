@@ -112,9 +112,27 @@ theorem le_h1_of_forall {X : TwoComplex V} {ℓ : GroupNorm G}
     c ≤ h1 X ℓ :=
   (le_h1_iff hne).mpr hc
 
+/-- When some cochain on `X` has positive gauge distance and every cochain satisfies
+`α.defect ℓ = c * α.gaugeDist ℓ`, `h1 X ℓ = c`. -/
+theorem h1_eq_of_forall_defect_eq_mul_gaugeDist {X : TwoComplex V} {ℓ : GroupNorm G}
+    (hne : ∃ α : Cochain X G, 0 < α.gaugeDist ℓ) {c : ℝ}
+    (hc : ∀ α : Cochain X G, α.defect ℓ = c * α.gaugeDist ℓ) :
+    h1 X ℓ = c := by
+  obtain ⟨α₀, hα₀⟩ := hne
+  refine le_antisymm ?_ (le_h1_of_forall ⟨α₀, hα₀⟩ fun α hα => ?_)
+  · exact (h1_le_div hα₀).trans_eq (by rw [hc α₀, mul_div_cancel_right₀ _ hα₀.ne'])
+  · rw [hc α, mul_div_cancel_right₀ _ hα.ne']
+
 /-- When every cochain has gauge distance zero, the ratio set is empty and `h1 X ℓ = 0`. -/
 theorem h1_eq_zero_of_forall_gaugeDist_eq_zero {X : TwoComplex V} {ℓ : GroupNorm G}
     (h : ∀ α : Cochain X G, α.gaugeDist ℓ = 0) : h1 X ℓ = 0 := by simp [h1_def, h]
+
+/-- On `complete V` with `Fintype.card V ≤ 2`, every cochain is a coboundary, so
+`h1 (complete V) ℓ = 0`. -/
+@[simp] theorem h1_complete_of_card_le_two (hV : Fintype.card V ≤ 2) (ℓ : GroupNorm G) :
+    h1 (complete V) ℓ = 0 :=
+  h1_eq_zero_of_forall_gaugeDist_eq_zero fun α =>
+    (Cochain.isCoboundary_complete_of_card_le_two hV α).gaugeDist_eq_zero ℓ
 
 /-- Over a trivial coefficient group every cochain is trivial, so `h1 X ℓ = 0`. -/
 @[simp] theorem h1_subsingleton [Subsingleton G] (X : TwoComplex V) (ℓ : GroupNorm G) :

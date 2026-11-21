@@ -15,7 +15,7 @@ import Mathlib.Data.Fintype.Prod
 
 For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V)` that is the
 transposition `swap 0 1` on the edges of `G` and `1` elsewhere has moved-point defect twice the
-number of odd triangles of `G` (`SimpleGraph.defect_ofLt_ite_adj`).
+number of odd triples of `G` (`SimpleGraph.defect_ofLt_ite_adj`).
 
 The balanced-replication identity `Cochain.defect_ofLt_lex` is in
 `TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication`.
@@ -59,11 +59,11 @@ open Finset Equiv TauCeti TauCeti.TwoComplex
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- **Defect of a graph cochain.** The cochain equal to `swap 0 1` on the edges of `G` and `1`
-elsewhere has moved-point defect `2 * #G.oddTriangleFinset`. -/
+elsewhere has moved-point defect `2 * #G.oddTripleFinset`. -/
 theorem defect_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] :
     (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).defect
-        (Perm.movedNorm (Fin 3)) = 2 * #G.oddTriangleFinset := by
-  rw [Cochain.defect_complete, sum_filter, card_oddTriangleFinset_eq_sum]
+        (Perm.movedNorm (Fin 3)) = 2 * #G.oddTripleFinset := by
+  rw [Cochain.defect_complete, sum_filter, card_oddTripleFinset_eq_sum]
   simp only [Fintype.sum_prod_type]
   push_cast
   rw [mul_sum]

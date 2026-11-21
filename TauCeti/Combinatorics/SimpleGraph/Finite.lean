@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import Mathlib.Data.Finset.Interval
 public import Mathlib.Order.Sym2
 import TauCeti.Order.Sym2
@@ -33,6 +34,8 @@ cardinalities over `G.edgeFinset` into ones over `{p : V × V | p.1 < p.2 ∧ G.
 * `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
+* `SimpleGraph.edgeFinset_edge_of_ne`, `SimpleGraph.card_edgeFinset_edge_of_ne` — the edge finset
+  and cardinality of a single-edge graph `SimpleGraph.edge u v` (`u ≠ v`).
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -89,6 +92,17 @@ theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
     (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
   rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
   exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
+
+/-- The edge finset of a single-edge graph `SimpleGraph.edge u v` (`u ≠ v`) is `{s(u, v)}`. -/
+@[simp]
+theorem edgeFinset_edge_of_ne {u v : V} (huv : u ≠ v) [Fintype (edge u v).edgeSet] :
+    (edge u v).edgeFinset = {s(u, v)} :=
+  coe_injective <| by rw [coe_edgeFinset, Finset.coe_singleton, edgeSet_edge_of_ne huv]
+
+/-- A single-edge graph `SimpleGraph.edge u v` (`u ≠ v`) has `1` edge. -/
+theorem card_edgeFinset_edge_of_ne {u v : V} (huv : u ≠ v) [Fintype (edge u v).edgeSet] :
+    #(edge u v).edgeFinset = 1 := by
+  rw [edgeFinset_edge_of_ne huv, card_singleton]
 
 section Interval
 

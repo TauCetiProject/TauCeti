@@ -32,7 +32,7 @@ simplex*, arXiv:1610.07136v2, Definition 3.2, which serves as the extremal binar
 * `SimpleGraph.card_edgeFinset_staircase`: `#(staircase c t).edgeFinset = c ^ 2 * t * (t + 1) / 2`.
 * `SimpleGraph.isCutMinimal_staircase`: `(staircase c t).IsCutMinimal`
   (Kozlov, Lemma 3.8 and Corollary 3.13).
-* `SimpleGraph.card_oddTriangleFinset_staircase`: the odd-triangle count over `ℝ` is
+* `SimpleGraph.card_oddTripleFinset_staircase`: the odd-triple count over `ℝ` is
   `((c * (2 * t + 1) : ℝ) / 3) * #(staircase c t).edgeFinset`
   (Kozlov, equation (2.5) and Lemma 3.10).
 -/
@@ -670,13 +670,13 @@ theorem three_mul_sum_degree_sq_staircase (c t : ℕ) :
         rw [← hedge]
         ring
 
-/-- Exact natural-number form of Kozlov's odd-triangle formula for `staircase c t`:
-`3 * #(staircase c t).oddTriangleFinset = c * (2 * t + 1) * #(staircase c t).edgeFinset`
+/-- Exact natural-number form of Kozlov's odd-triple formula for `staircase c t`:
+`3 * #(staircase c t).oddTripleFinset = c * (2 * t + 1) * #(staircase c t).edgeFinset`
 (Kozlov, arXiv:1610.07136v2, Lemma 3.10). -/
-theorem three_mul_card_oddTriangleFinset_staircase (c t : ℕ) :
-    3 * #(staircase c t).oddTriangleFinset =
+theorem three_mul_card_oddTripleFinset_staircase (c t : ℕ) :
+    3 * #(staircase c t).oddTripleFinset =
       c * (2 * t + 1) * #(staircase c t).edgeFinset := by
-  have hodd := (staircase c t).card_oddTriangleFinset_add_sum_degree_sq (cliqueFree_staircase c t)
+  have hodd := (staircase c t).card_oddTripleFinset_add_sum_degree_sq (cliqueFree_staircase c t)
   have hcard : Fintype.card (Fin (c * t) ⊕ Fin (c * t) ⊕ Fin c) = c * (2 * t + 1) := by
     rw [Fintype.card_sum, Fintype.card_sum, Fintype.card_fin, Fintype.card_fin]
     ring
@@ -686,14 +686,14 @@ theorem three_mul_card_oddTriangleFinset_staircase (c t : ℕ) :
   rw [mul_add, hdeg] at h3
   linarith
 
-/-- **Kozlov's staircase odd-triangle formula**: in `staircase c t` on `n = c * (2 * t + 1)`
+/-- **Kozlov's staircase odd-triple formula**: in `staircase c t` on `n = c * (2 * t + 1)`
 vertices, the number of `3`-vertex subsets spanning an odd number of edges is
 `(n / 3) * #(staircase c t).edgeFinset` over `ℝ`
 (Kozlov, arXiv:1610.07136v2, equation (2.5) and Lemma 3.10). -/
-theorem card_oddTriangleFinset_staircase (c t : ℕ) :
-    (#(staircase c t).oddTriangleFinset : ℝ) =
+theorem card_oddTripleFinset_staircase (c t : ℕ) :
+    (#(staircase c t).oddTripleFinset : ℝ) =
       (c * (2 * t + 1) : ℝ) / 3 * #(staircase c t).edgeFinset := by
-  have h := congrArg (Nat.cast : ℕ → ℝ) (three_mul_card_oddTriangleFinset_staircase c t)
+  have h := congrArg (Nat.cast : ℕ → ℝ) (three_mul_card_oddTripleFinset_staircase c t)
   push_cast at h
   linarith
 

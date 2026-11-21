@@ -20,7 +20,7 @@ import Mathlib.Tactic.Positivity
 # The `Sym(3)` coboundary constant along Kozlov's staircase graphs
 
 For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V) f` with
-`f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTriangleFinset`
+`f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTripleFinset`
 (`SimpleGraph.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
 `2 * #G.edgeFinset`: the parity retraction onto `{1, swap 0 1}`
 (`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the moved-point norm,
@@ -29,12 +29,12 @@ symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
 
 * `SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an
   edge,
-  `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTriangleFinset / #G.edgeFinset`.
+  `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTripleFinset / #G.edgeFinset`.
 * `h1_complete_movedNorm_fin_three_le_of_card_eq_mul`: applied to Kozlov's staircase graph
   `SimpleGraph.staircase q t` on `q (2 t + 1)` vertices, which is cut-minimal
   (`SimpleGraph.isCutMinimal_staircase`) with
-  `3 * #oddTriangleFinset = q (2 t + 1) * #edgeFinset`
-  (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`), this gives
+  `3 * #oddTripleFinset = q (2 t + 1) * #edgeFinset`
+  (`SimpleGraph.three_mul_card_oddTripleFinset_staircase`), this gives
   `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` whenever `card V = q (2 t + 1)`, `q, t ≥ 1`.
 
 ## References
@@ -135,21 +135,21 @@ private theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRe
       · simp [huv]
 
 /-- **Cut-minimal graphs bound the `Sym(3)` constant.** For a cut-minimal graph `G` on `V` with at
-least one edge, `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTriangleFinset / #G.edgeFinset`. -/
+least one edge, `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTripleFinset / #G.edgeFinset`. -/
 theorem h1_complete_movedNorm_fin_three_le_of_isCutMinimal (G : SimpleGraph V)
     [DecidableRel G.Adj] (hG : G.IsCutMinimal) (hE : 0 < #G.edgeFinset) :
     h1 (complete V) (Perm.movedNorm (Fin 3)) ≤
-      (#G.oddTriangleFinset : ℝ) / #G.edgeFinset := by
+      (#G.oddTripleFinset : ℝ) / #G.edgeFinset := by
   set α := Cochain.ofLt (complete V) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
   have hE' : (0 : ℝ) < 2 * #G.edgeFinset := by positivity
   have hgd : (2 * #G.edgeFinset : ℝ) ≤ α.gaugeDist (Perm.movedNorm (Fin 3)) :=
     (α.le_gaugeDist_iff _).mpr (G.two_mul_card_edgeFinset_le_cost hG)
   refine (h1_le_div (hE'.trans_le hgd)).trans ?_
   rw [defect_ofLt_ite_adj]
-  calc (2 * #G.oddTriangleFinset : ℝ) / α.gaugeDist (Perm.movedNorm (Fin 3)) ≤
-        2 * #G.oddTriangleFinset / (2 * #G.edgeFinset) :=
+  calc (2 * #G.oddTripleFinset : ℝ) / α.gaugeDist (Perm.movedNorm (Fin 3)) ≤
+        2 * #G.oddTripleFinset / (2 * #G.edgeFinset) :=
         div_le_div_of_nonneg_left (by positivity) hE' hgd
-    _ = #G.oddTriangleFinset / #G.edgeFinset := mul_div_mul_left _ _ two_ne_zero
+    _ = #G.oddTripleFinset / #G.edgeFinset := mul_div_mul_left _ _ two_ne_zero
 
 end SimpleGraph
 
@@ -172,7 +172,7 @@ theorem h1_complete_movedNorm_fin_three_le_of_card_eq_mul {q t : ℕ} (hq : 0 < 
     ring
   rw [h1_complete_eq_of_card_eq Perm.isConjInvariant_movedNorm (hV.trans hW.symm)]
   have hE2 := SimpleGraph.two_mul_card_edgeFinset_staircase q t
-  have hO := SimpleGraph.three_mul_card_oddTriangleFinset_staircase q t
+  have hO := SimpleGraph.three_mul_card_oddTripleFinset_staircase q t
   have hE : 0 < #(SimpleGraph.staircase q t).edgeFinset := by
     have : 0 < q ^ 2 * t * (t + 1) := by positivity
     omega
@@ -182,7 +182,7 @@ theorem h1_complete_movedNorm_fin_three_le_of_card_eq_mul {q t : ℕ} (hq : 0 < 
   rw [hV, div_eq_div_iff hE'.ne' (by norm_num)]
   have h := congrArg (Nat.cast (R := ℝ)) hO
   push_cast at h ⊢
-  -- the two odd-triangle counts differ only in their `DecidableEq W` instances
+  -- the two odd-triple counts differ only in their `DecidableEq W` instances
   refine (mul_comm _ _).trans ?_
   convert h
 

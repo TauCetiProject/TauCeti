@@ -6,13 +6,11 @@ Authors: pi
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Clique
-public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
-public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
-public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
-public import TauCeti.Data.Finset.Basic
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
+import TauCeti.Combinatorics.SimpleGraph.Degree
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Cut-minimal graphs
@@ -27,9 +25,10 @@ On any finite vertex type, every graph can be switched by a finset cut to a cut-
 complete-graph cut is `⊥` (`isCutMinimal_top_between_iff`), while a single edge
 `SimpleGraph.edge u v` (`u ≠ v`) is cut-minimal precisely when a third vertex exists
 (`isCutMinimal_edge_iff`). Evaluating cut-minimality on singleton cuts bounds every vertex degree
-by `2 * G.degree v ≤ Fintype.card V - 1` (`IsCutMinimal.two_mul_degree_le`). On at most four
-vertices, every cut-minimal graph therefore has maximum degree at most `1`, at most two edges, no
-`3`-clique, and `(Fintype.card V - 2) * #G.edgeFinset` odd triangles.
+by `2 * G.degree v ≤ Fintype.card V - 1` (`IsCutMinimal.two_mul_degree_le`), whence
+`2 * #G.edgeFinset ≤ Fintype.card V * ((Fintype.card V - 1) / 2)`
+(`IsCutMinimal.two_mul_card_edgeFinset_le`). On at most four vertices, every cut-minimal graph
+therefore has maximum degree at most `1`, at most two edges, and no `3`-clique.
 
 The cut-minimality convention follows D. N. Kozlov, *The first Cheeger constant of a
 simplex*, arXiv:1610.07136v2, Section 2. The characterizations here isolate isomorphism
@@ -50,8 +49,8 @@ or coefficient group.
 * `SimpleGraph.isCutMinimal_top_between_iff`, `SimpleGraph.isCutMinimal_edge_iff`: cut-minimality
   of complete-graph cuts and single-edge graphs.
 * `SimpleGraph.IsCutMinimal.two_mul_degree_le`,
-  `SimpleGraph.IsCutMinimal.card_oddTriangleFinset_of_card_le_four`: singleton-cut degree bound
-  and four-vertex cut-minimal odd-triangle count.
+  `SimpleGraph.IsCutMinimal.two_mul_card_edgeFinset_le`:
+  singleton-cut degree and edge-count bounds for cut-minimal graphs.
 -/
 
 public section
@@ -367,33 +366,37 @@ theorem IsCutMinimal.degree_le_one_of_card_le_four [Fintype V] {G : SimpleGraph 
   have := hG.two_mul_degree_le v
   omega
 
+/-- In a cut-minimal graph on a finite vertex type, twice the number of edges is at most
+`Fintype.card V * ((Fintype.card V - 1) / 2)`. -/
+theorem IsCutMinimal.two_mul_card_edgeFinset_le [Fintype V] {G : SimpleGraph V}
+    [Fintype G.edgeSet] (hG : G.IsCutMinimal) :
+    2 * #G.edgeFinset ≤ Fintype.card V * ((Fintype.card V - 1) / 2) := by
+  classical
+  have hcard : #G.edgeFinset = #(@edgeFinset _ G G.fintypeEdgeSet) :=
+    congrArg card ((@edgeFinset_inj _ G G _ G.fintypeEdgeSet).mpr rfl)
+  rw [hcard, ← G.sum_degrees_eq_twice_card_edges]
+  calc ∑ v : V, G.degree v ≤ ∑ _v : V, (Fintype.card V - 1) / 2 :=
+        Finset.sum_le_sum fun v _ ↦ by
+          have := hG.two_mul_degree_le v
+          omega
+    _ = Fintype.card V * ((Fintype.card V - 1) / 2) := by simp
+
 /-- On at most two vertices, every cut-minimal graph is edgeless. -/
 theorem IsCutMinimal.edgeFinset_eq_empty_of_card_le_two [Fintype V] {G : SimpleGraph V}
     [Fintype G.edgeSet] (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 2) :
     G.edgeFinset = ∅ := by
-  classical
-  have hcard : #G.edgeFinset = #(@edgeFinset _ G G.fintypeEdgeSet) :=
-    congrArg card ((@edgeFinset_inj _ G G _ G.fintypeEdgeSet).mpr rfl)
-  apply Finset.card_eq_zero.mp
-  rw [hcard]
-  have hsum : ∑ v : V, G.degree v = 0 :=
-    Finset.sum_eq_zero fun v _ ↦ by
-      have := hG.two_mul_degree_le v
-      omega
-  have h2 := G.sum_degrees_eq_twice_card_edges
-  omega
+  have h := hG.two_mul_card_edgeFinset_le
+  have hdiv : (Fintype.card V - 1) / 2 = 0 := by omega
+  rw [hdiv, mul_zero] at h
+  exact Finset.card_eq_zero.mp (by omega)
 
 /-- On at most four vertices, a cut-minimal graph has at most two edges. -/
 theorem IsCutMinimal.card_edgeFinset_le_two_of_card_le_four [Fintype V] {G : SimpleGraph V}
     [Fintype G.edgeSet] (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 4) :
     #G.edgeFinset ≤ 2 := by
-  classical
-  have hcard : #G.edgeFinset = #(@edgeFinset _ G G.fintypeEdgeSet) :=
-    congrArg card ((@edgeFinset_inj _ G G _ G.fintypeEdgeSet).mpr rfl)
-  rw [hcard]
-  have hsum : ∑ v : V, G.degree v ≤ 4 :=
-    (Finset.sum_le_sum fun v _ ↦ hG.degree_le_one_of_card_le_four hV v).trans (by simp [hV])
-  have h2 := G.sum_degrees_eq_twice_card_edges
+  have h := hG.two_mul_card_edgeFinset_le
+  have hle : Fintype.card V * ((Fintype.card V - 1) / 2) ≤ 4 :=
+    (Nat.mul_le_mul hV (by omega : (Fintype.card V - 1) / 2 ≤ 1)).trans_eq (mul_one 4)
   omega
 
 /-- On at most four vertices, every cut-minimal graph is `3`-clique-free. -/
@@ -401,15 +404,7 @@ theorem IsCutMinimal.cliqueFree_three_of_card_le_four [Fintype V] {G : SimpleGra
     (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 4) :
     G.CliqueFree 3 := by
   classical
-  exact G.cliqueFree_three_of_degree_le_one fun v ↦ hG.degree_le_one_of_card_le_four hV v
-
-/-- On a vertex type of size at most four, a cut-minimal graph has
-`(Fintype.card V - 2) * #G.edgeFinset` odd triangles. -/
-theorem IsCutMinimal.card_oddTriangleFinset_of_card_le_four [Fintype V] [DecidableEq V]
-    {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype G.edgeSet]
-    (hG : G.IsCutMinimal) (hV : Fintype.card V ≤ 4) :
-    #G.oddTriangleFinset = (Fintype.card V - 2) * #G.edgeFinset :=
-  G.card_oddTriangleFinset_of_degree_le_one fun v ↦ hG.degree_le_one_of_card_le_four hV v
+  exact G.cliqueFree_add_two_of_degree_le fun v ↦ hG.degree_le_one_of_card_le_four hV v
 
 end Switching
 

@@ -313,6 +313,27 @@ theorem isCoboundary_complete [Fintype V] (α : Cochain (complete V) G) :
   · simp
   · exact h u v ((adj_complete u v).mpr huv)
 
+/-- On `complete V` with `Fintype.card V ≤ 2`, every `1`-cochain is a coboundary. -/
+theorem isCoboundary_complete_of_card_le_two [Fintype V] (hV : Fintype.card V ≤ 2)
+    (α : Cochain (complete V) G) : α.IsCoboundary := by
+  rw [isCoboundary_complete]
+  rcases isEmpty_or_nonempty V with _ | ⟨⟨v₀⟩⟩
+  · exact ⟨isEmptyElim, fun u => isEmptyElim u⟩
+  · refine ⟨fun v => α v v₀, fun u v => ?_⟩
+    rcases eq_or_ne u v with rfl | huv
+    · simp
+    · have hsub : u = v₀ ∨ v = v₀ := by
+        by_contra! h
+        have hle : 3 ≤ Fintype.card V := by
+          classical
+          calc 3 = (#({u, v, v₀} : Finset V)) :=
+                (Finset.card_eq_three.mpr ⟨u, v, v₀, huv, h.1, h.2, rfl⟩).symm
+            _ ≤ Fintype.card V := Finset.card_le_univ _
+        omega
+      rcases hsub with rfl | rfl
+      · simp [α.apply_swap v u]
+      · simp
+
 /-- A cochain is a coboundary if and only if some gauge moves it to the trivial cochain `1`. -/
 theorem isCoboundary_iff_exists_smul_eq_one (α : Cochain X G) :
     α.IsCoboundary ↔ ∃ β : V → G, β • α = 1 := by

@@ -8,12 +8,14 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Data.Finset.Sort
+public import Mathlib.Data.Fintype.Perm
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Data.Fintype.Fin
 -- Non-public: a cycle and an adjacent transposition generate the permutation group.
 import Mathlib.GroupTheory.Perm.Closure
+import Mathlib.Tactic.FinCases
 
 /-!
 # Permutations of `Fin n`
@@ -39,6 +41,9 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
   `Fin (n + 1)` counts each value `n!` times.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
+* `Equiv.Perm.eq_one_or_swap_fin_two`, `Equiv.Perm.univ_fin_two`, and
+  `Equiv.Perm.eq_ite_ne_one_fin_two`: every permutation of `Fin 2` is the identity or the
+  transposition, and these form the set of all permutations.
 -/
 
 public section
@@ -174,5 +179,42 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
   (card_equiv σ fun _ => by simp).trans Fin.card_filter_val_lt
 
 end
+
+/-- A permutation of `Fin 2` is either the identity or the transposition. -/
+theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
+    e = 1 ∨ e = Equiv.swap 0 1 := by
+  by_cases h0 : e 0 = 0
+  · left
+    apply Equiv.ext
+    intro i
+    fin_cases i
+    · exact h0
+    · apply Fin.eq_one_of_ne_zero
+      intro h1
+      exact Fin.zero_ne_one (e.injective (h1.trans h0.symm)).symm
+  · right
+    have h0' : e 0 = 1 := Fin.eq_one_of_ne_zero _ h0
+    apply Equiv.ext
+    intro i
+    fin_cases i
+    · simpa using h0'
+    · have h1 : e 1 = 0 := by
+        by_contra h
+        have h1' : e 1 = 1 := Fin.eq_one_of_ne_zero _ h
+        exact Fin.zero_ne_one (e.injective (h1'.trans h0'.symm)).symm
+      simpa using h1
+
+/-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
+theorem univ_fin_two :
+    (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
+    {1, Equiv.swap 0 1} := by
+  classical
+  ext e
+  simpa using e.eq_one_or_swap_fin_two
+
+/-- Every permutation of `Fin 2` equals `Equiv.swap 0 1` when non-identity and `1` otherwise. -/
+theorem eq_ite_ne_one_fin_two (σ : Equiv.Perm (Fin 2)) :
+    σ = if σ ≠ 1 then Equiv.swap 0 1 else 1 := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl <;> decide
 
 end Equiv.Perm

@@ -29,10 +29,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Basic results about finite ordinal types
 
-This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, sums of families vanishing beyond an index, and the cyclic index
-arithmetic of `Fin 3`.
+This file collects elementary facts about finite ordinal types, including sums of reversed
+indices, indicator sums indexed by `Fin n`, the final value of a partial product, sums of families
+vanishing beyond an index, and the cyclic index arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -41,9 +40,6 @@ range, so the value is a `dite` rather than a plain application.
 
 ## Main results
 
-* `Equiv.Perm.eq_one_or_swap_fin_two`, `Equiv.Perm.univ_fin_two`, and
-  `Equiv.Perm.eq_ite_ne_one_fin_two`: every permutation of `Fin 2` is the identity or the
-  transposition, and these form the set of all permutations.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -1020,47 +1016,6 @@ theorem neg_one_pow_val_add_one {M : Type*} [Monoid M] [HasDistribNeg M] {n : �
     rw [hi, Nat.mod_self, pow_zero, hodd.neg_one_pow, neg_neg]
 
 end TauCeti
-
-namespace Equiv.Perm
-
-/-- A permutation of `Fin 2` is either the identity or the transposition. -/
-theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
-    e = 1 ∨ e = Equiv.swap 0 1 := by
-  by_cases h0 : e 0 = 0
-  · left
-    apply Equiv.ext
-    intro i
-    fin_cases i
-    · exact h0
-    · apply Fin.eq_one_of_ne_zero
-      intro h1
-      exact Fin.zero_ne_one (e.injective (h1.trans h0.symm)).symm
-  · right
-    have h0' : e 0 = 1 := Fin.eq_one_of_ne_zero _ h0
-    apply Equiv.ext
-    intro i
-    fin_cases i
-    · simpa using h0'
-    · have h1 : e 1 = 0 := by
-        by_contra h
-        have h1' : e 1 = 1 := Fin.eq_one_of_ne_zero _ h
-        exact Fin.zero_ne_one (e.injective (h1'.trans h0'.symm)).symm
-      simpa using h1
-
-/-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
-theorem univ_fin_two :
-    (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
-    {1, Equiv.swap 0 1} := by
-  classical
-  ext e
-  simpa using e.eq_one_or_swap_fin_two
-
-/-- Every permutation of `Fin 2` equals `Equiv.swap 0 1` when non-identity and `1` otherwise. -/
-theorem eq_ite_ne_one_fin_two (σ : Equiv.Perm (Fin 2)) :
-    σ = if σ ≠ 1 then Equiv.swap 0 1 else 1 := by
-  rcases σ.eq_one_or_swap_fin_two with rfl | rfl <;> decide
-
-end Equiv.Perm
 
 namespace TauCeti
 

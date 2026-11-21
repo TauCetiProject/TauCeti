@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 public import Mathlib.Logic.Equiv.Bool
+public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
 
 /-!
 # Bipartite restrictions and two-colourings
@@ -20,11 +21,13 @@ decomposition holds for `edgeFinset` (`SimpleGraph.edgeFinset_between`), with
 `(⊤ : SimpleGraph V).between S T` having `S.toFinset.card * T.toFinset.card` edges when `S` and
 `T` are disjoint (`SimpleGraph.card_edgeFinset_top_between`). Complete-graph cuts `(S, Sᶜ)` have
 adjacency `Xor (u ∈ S) (v ∈ S)` (`SimpleGraph.top_between_compl_adj`), respect symmetric difference
-(`SimpleGraph.top_between_symmDiff`), meet singleton cuts in the incident edge set
-(`SimpleGraph.edgeSet_between_singleton_compl`), and have an even number of adjacent pairs around
-every vertex triple (`SimpleGraph.not_xor_top_between_compl_adj`). A bipartition
-`G.IsBipartiteWith s t` extends to a covering bipartition on the whole vertex type by adjoining the
-remaining isolated vertices to either side (`SimpleGraph.IsBipartiteWith.compl_right` and
+(`SimpleGraph.top_between_symmDiff` and `SimpleGraph.symmDiff_top_between_symmDiff`), meet
+singleton cuts in the incident edge set (`SimpleGraph.edgeSet_between_singleton_compl`), and have
+an even number of adjacent pairs around every vertex triple
+(`SimpleGraph.not_xor_top_between_compl_adj`), so switching by them preserves triangle edge parity
+(`SimpleGraph.xor_symmDiff_top_between_compl_adj`). A bipartition `G.IsBipartiteWith s t` extends
+to a covering bipartition on the whole vertex type by adjoining the remaining isolated vertices to
+either side (`SimpleGraph.IsBipartiteWith.compl_right` and
 `SimpleGraph.IsBipartiteWith.compl_left`), and yields vertex covers given by either side or by
 replacing any subset `S` of the left side with its neighbours
 (`SimpleGraph.IsBipartiteWith.isVertexCover_left`,
@@ -42,8 +45,11 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.between_empty_left`, `SimpleGraph.between_empty_right`: empty bipartite
+  restrictions are `⊥`.
 * `SimpleGraph.top_between_compl_adj`, `SimpleGraph.top_between_sdiff_eq_compl_between`,
-  `SimpleGraph.edgeSet_between_singleton_compl`, `SimpleGraph.not_xor_top_between_compl_adj`:
+  `SimpleGraph.edgeSet_between_singleton_compl`, `SimpleGraph.not_xor_top_between_compl_adj`,
+  `SimpleGraph.symmDiff_top_between_symmDiff`, `SimpleGraph.xor_symmDiff_top_between_compl_adj`:
   characterizations and parity of `SimpleGraph.between` cuts.
 * `SimpleGraph.edgeFinset_between`, `SimpleGraph.card_edgeFinset_top_between`: edge finset of
   `G.between S T` and edge count of `(⊤ : SimpleGraph V).between S T` for disjoint `S` and `T`.
@@ -67,6 +73,17 @@ open scoped symmDiff Finset
 namespace SimpleGraph
 
 variable {V : Type*}
+
+/-- Restricting a graph between the empty set and any set gives the empty graph. -/
+@[simp]
+theorem between_empty_left (G : SimpleGraph V) (t : Set V) : G.between ∅ t = ⊥ := by
+  ext u v
+  simp [between_adj]
+
+/-- Restricting a graph between any set and the empty set gives the empty graph. -/
+@[simp]
+theorem between_empty_right (G : SimpleGraph V) (s : Set V) : G.between s ∅ = ⊥ := by
+  rw [between_comm, between_empty_left]
 
 /-- Restricting a graph to pairs between two sets is intersection with the corresponding
 restriction of the complete graph. -/
@@ -122,6 +139,17 @@ theorem not_xor_top_between_compl_adj (S : Set V) (u v w : V) :
   simp only [top_between_compl_adj]
   grind
 
+/-- Switching a graph by a complete-graph cut preserves the parity of adjacent pairs among
+`(u, v)`, `(v, w)`, and `(w, u)` (which counts spanned edges when `u`, `v`, `w` are pairwise
+distinct). -/
+theorem xor_symmDiff_top_between_compl_adj (G : SimpleGraph V) (S : Set V) (u v w : V) :
+    Xor ((G ∆ (⊤ : SimpleGraph V).between S Sᶜ).Adj u v)
+      (Xor ((G ∆ (⊤ : SimpleGraph V).between S Sᶜ).Adj v w)
+        ((G ∆ (⊤ : SimpleGraph V).between S Sᶜ).Adj w u)) ↔
+      Xor (G.Adj u v) (Xor (G.Adj v w) (G.Adj w u)) := by
+  rw [xor_symmDiff_adj, eq_false (not_xor_top_between_compl_adj S u v w)]
+  simp [Xor]
+
 /-- The complete-graph cut of `S ∆ T` is the symmetric difference of the cuts of `S` and `T`. -/
 theorem top_between_symmDiff (S T : Set V) :
     (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ =
@@ -130,6 +158,13 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
+
+/-- Switching `G` successively by the complete-graph cuts of `S` and `T` is switching once by the
+complete-graph cut of `S ∆ T`. -/
+theorem symmDiff_top_between_symmDiff (G : SimpleGraph V) (S T : Set V) :
+    G ∆ (⊤ : SimpleGraph V).between S Sᶜ ∆ (⊤ : SimpleGraph V).between T Tᶜ =
+      G ∆ (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ := by
+  rw [symmDiff_assoc, ← top_between_symmDiff]
 
 section Finite
 
