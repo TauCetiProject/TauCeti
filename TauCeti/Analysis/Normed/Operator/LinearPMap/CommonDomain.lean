@@ -126,15 +126,15 @@ theorem graph_domainOperator :
   simp [Prod.ext_iff]
 
 /-- For the identity inclusion, `domainOperator` is the everywhere defined operator `A`. -/
-theorem domainOperator_id (A : H →L[R] H) :
+theorem domainOperator_id (A : H →L[R] K) :
     domainOperator (.id R H) A (by intro x y h; simpa using h) =
-      (A : H →ₗ[R] H).toPMap ⊤ := by
+      (A : H →ₗ[R] K).toPMap ⊤ := by
   refine LinearPMap.ext ?_ fun y hy hy' ↦ ?_
   · rw [domain_domainOperator, LinearMap.toPMap_domain, coe_id, LinearMap.range_id]
   · -- `rw [LinearMap.toPMap_apply]` does not find the coercion of `LinearMap.toPMap`, so the two
     -- formulas are composed as terms.
     exact (domainOperator_apply _ A _ (x := y) (by simp)).trans
-      (LinearMap.toPMap_apply (A : H →ₗ[R] H) ⊤ ⟨y, hy'⟩).symm
+      (LinearMap.toPMap_apply (A : H →ₗ[R] K) ⊤ ⟨y, hy'⟩).symm
 
 end Basic
 
@@ -248,14 +248,14 @@ theorem isClosed_domainOperator_of_norm_le [CompleteSpace D] {ι : D →L[𝕜] 
     {hι : Injective ι} {C : ℝ} (hC : ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖)) :
     (domainOperator ι A hι).IsClosed := by
   rw [isClosed_domainOperator_iff_isClosed_range]
-  have hbound : ∀ x, ‖x‖ ≤ (⟨2 * max C 0, by positivity⟩ : NNReal) * ‖ι.prod A x‖ := fun x ↦ by
+  have hbound : ∀ x, ‖x‖ ≤ (2 * max C 0).toNNReal * ‖ι.prod A x‖ := fun x ↦ by
     have h₁ : ‖ι x‖ ≤ ‖ι.prod A x‖ := norm_fst_le (ι.prod A x)
     have h₂ : ‖A x‖ ≤ ‖ι.prod A x‖ := norm_snd_le (ι.prod A x)
+    rw [Real.coe_toNNReal _ (by positivity)]
     calc ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖) := hC x
       _ ≤ max C 0 * (‖ι x‖ + ‖A x‖) := by gcongr; exact le_max_left _ _
       _ ≤ max C 0 * (2 * ‖ι.prod A x‖) := by gcongr; linarith
-      _ = (⟨2 * max C 0, by positivity⟩ : NNReal) * ‖ι.prod A x‖ := by
-        change _ = 2 * max C 0 * _; ring
+      _ = 2 * max C 0 * ‖ι.prod A x‖ := by ring
   exact ((ι.prod A).antilipschitz_of_bound hbound).isClosed_range (ι.prod A).uniformContinuous
 
 /-- For complete `D`, `H` and `K`, `domainOperator ι A hι` is closed exactly when the norm of `D`

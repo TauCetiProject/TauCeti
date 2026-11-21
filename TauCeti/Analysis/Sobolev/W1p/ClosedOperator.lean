@@ -74,10 +74,9 @@ variable (mu Omega p) in
 /-- **The weak gradient as an unbounded operator** `Lᵖ(Ω) →ₗ.[ℝ] Lᵖ(Ω; E)`. Its domain consists of
 the `Lᵖ` classes of the elements of `W^{1,p}(Ω)`, and it sends such a class to its weak
 gradient. It is the partial operator `ContinuousLinearMap.domainOperator` of the pair
-`(W1p.valueL, W1p.gradientL)`, whose first component is injective by `W1p.ext_value`. -/
+`(W1p.valueL, W1p.gradientL)`, whose first component is injective by `W1p.valueL_injective`. -/
 def weakGradientPMap : Lp ℝ p (mu.restrict Omega) →ₗ.[ℝ] Lp E p (mu.restrict Omega) :=
-  W1p.valueL.domainOperator W1p.gradientL <| show Function.Injective W1p.valueL from
-    fun _ _ h => W1p.ext_value (by simpa only [W1p.valueL_apply] using h)
+  W1p.valueL.domainOperator W1p.gradientL W1p.valueL_injective
 
 /-- The graph of the weak gradient consists of the value-gradient pairs of the elements of
 `W^{1,p}(Ω)`. -/

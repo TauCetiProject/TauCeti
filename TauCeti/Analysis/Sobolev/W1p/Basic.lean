@@ -915,6 +915,11 @@ theorem W1p.ext_value {u v : W1p mu Omega p} (hvalue : W1p.value u = W1p.value v
   filter_upwards [hderiv] with x hx
   exact innerSL_inj.mp hx
 
+/-- The `Lᵖ` value projection of `W^{1,p}(Ω)` is injective. -/
+theorem W1p.valueL_injective :
+    Function.Injective (W1p.valueL (mu := mu) (Omega := Omega) (p := p)) :=
+  fun _ _ h => W1p.ext_value (by simpa only [W1p.valueL_apply] using h)
+
 section Const
 
 variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
