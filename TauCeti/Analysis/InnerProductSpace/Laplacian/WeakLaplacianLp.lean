@@ -154,7 +154,7 @@ theorem weakLaplacianLp_apply_eq_iff (f : (weakLaplacianLp E F p).domain)
     {g : Lp F p (volume : Measure E)} :
     weakLaplacianLp E F p f = g ↔ ∀ φ : 𝓓((⊤ : Opens E), ℝ),
       ∫ x, Δ (φ : E → ℝ) x • (f : Lp F p (volume : Measure E)) x = ∫ x, φ x • g x := by
-  rw [← mem_graph_weakLaplacianLp_iff, ← LinearPMap.image_iff f.2]
+  rw [← mem_graph_weakLaplacianLp_iff, ← LinearPMap.image_iff f.property]
   exact eq_comm
 
 /-- **On `C²` functions the distributional Laplacian is the classical one.** If `u` is of class

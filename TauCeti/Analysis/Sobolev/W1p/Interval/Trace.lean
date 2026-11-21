@@ -135,7 +135,7 @@ theorem gradient_intervalCoord :
 theorem intervalRepresentativeL_intervalCoord (hab : a < b) (t : Icc a b) :
     intervalRepresentativeL hab (intervalCoord (p := p)) t = t.val := by
   have heq : intervalRepresentativeL hab (intervalCoord (p := p)) =
-      ⟨Subtype.val, continuous_subtype_val⟩ := by
+      ⟨Subtype.val, continuous_subtypeVal⟩ := by
     apply (intervalRepresentativeL_eq_iff hab _ _).2
     filter_upwards [value_intervalCoord (p := p), ae_restrict_mem measurableSet_Ioo]
       with x hx hmem

@@ -126,7 +126,7 @@ theorem degree_subgraph (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.sr
     ext e
     constructor
     · rintro ⟨e, he, rfl⟩
-      exact ⟨e.2, (subgraph_src_val Γ A D hsrc hrev e).symm.trans (congrArg Subtype.val he)⟩
+      exact ⟨e.property, (subgraph_src_val Γ A D hsrc hrev e).symm.trans (congrArg Subtype.val he)⟩
     · rintro ⟨he, rfl⟩
       exact ⟨⟨e, he⟩, Subtype.ext (subgraph_src_val Γ A D hsrc hrev ⟨e, he⟩), rfl⟩
   rw [← h, Subtype.val_injective.encard_image]

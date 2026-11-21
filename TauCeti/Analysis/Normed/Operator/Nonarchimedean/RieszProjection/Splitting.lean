@@ -109,11 +109,11 @@ theorem isClosed_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
 complementary summand `ker E`, identified with every stabilised range by `range_pow_eq_ker`.
 Its inverse is the restriction of the complementary inverse `IsRieszProjection.inverse`. -/
 noncomputable def equivKer (hE : IsRieszProjection u a h E) : E.ker ≃L[R] E.ker :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((1 - a • u).restrict (fun _ hx ↦ hE.mapsTo_ker_one_sub_smul hx))
     (hE.inverse.restrict (fun _ hx ↦ hE.mapsTo_ker_inverse hx))
-    (fun x ↦ Subtype.ext (hE.inverse_one_sub_smul_apply x.property))
-    (fun x ↦ Subtype.ext (hE.one_sub_smul_apply_inverse x.property))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hE.one_sub_smul_apply_inverse x.property))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hE.inverse_one_sub_smul_apply x.property))
 
 /-- The complementary automorphism acts by the spectral operator. -/
 @[simp]

@@ -180,7 +180,7 @@ theorem continuousCochainMap_id {hφ : Continuous (LieHom.id : L →ₗ⁅R⁆ L
       LinearMap.id := by
   ext ω : 1
   apply Subtype.ext
-  exact LinearMap.congr_fun (cochainMap_id n) ω.1
+  exact LinearMap.congr_fun (cochainMap_id n) ω.val
 
 theorem continuousCochainMap_comp (e : M →ₗ[R] M') (e' : M' →ₗ[R] M'')
     (φ : L' →ₗ⁅R⁆ L) (ψ : L'' →ₗ⁅R⁆ L') (hφ : Continuous φ) (hψ : Continuous ψ) (n : ℕ) :
@@ -188,7 +188,7 @@ theorem continuousCochainMap_comp (e : M →ₗ[R] M') (e' : M' →ₗ[R] M'')
       continuousCochainMap (e'.comp e) (φ.comp ψ) (hφ.comp hψ) n := by
   ext ω : 1
   apply Subtype.ext
-  exact LinearMap.congr_fun (cochainMap_comp e e' φ ψ n) ω.1
+  exact LinearMap.congr_fun (cochainMap_comp e e' φ ψ n) ω.val
 
 /-- Transport of continuous `n`-cochains along a bicontinuous Lie equivalence and a linear
 equivalence of coefficients. -/

@@ -229,8 +229,8 @@ theorem Scheme.Hom.bijective_comp_of_formallyUnramified (f : X ⟶ Y)
     [FormallyUnramified f] [LocallyOfFiniteType f] {Ω Ω' : Type u} [Field Ω] [IsSepClosed Ω]
     [Field Ω'] (φ : Spec (.of Ω') ⟶ Spec (.of Ω)) (s : Spec (.of Ω) ⟶ Y) :
     Function.Bijective fun u : {u : Spec (.of Ω) ⟶ X // u ≫ f = s} ↦
-      (⟨φ ≫ u.1, by simp [u.2]⟩ : {v : Spec (.of Ω') ⟶ X // v ≫ f = φ ≫ s}) := by
-  refine ⟨fun u v h ↦ Subtype.ext ((cancel_epi φ).mp congr(($h).1)), ?_⟩
+      (⟨φ ≫ u.val, by simp [u.property]⟩ : {v : Spec (.of Ω') ⟶ X // v ≫ f = φ ≫ s}) := by
+  refine ⟨fun u v h ↦ Subtype.ext ((cancel_epi φ).mp congr(($h).val)), ?_⟩
   rintro ⟨v, hv⟩
   -- Write `s` and `v` through residue fields, and `φ` as `Spec g`.
   obtain ⟨⟨t, b⟩, rfl⟩ := (Scheme.SpecToEquivOfField Ω Y).symm.surjective s
