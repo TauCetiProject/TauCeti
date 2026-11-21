@@ -165,7 +165,7 @@ private theorem cwModelExtends_of_forall_notMem (hf : IsMorse I f) {s t : ℝ} (
     fun x hsx hxt hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hsx, hxt⟩
   have (m : ℕ) : IsEmpty
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc s t | manifoldMorseIndex I f x = m} :=
-    ⟨fun x ↦ hcrit x x.2.1.1 (Ioc_subset_Icc_self x.2.1.2)⟩
+    ⟨fun x ↦ hcrit x x.property.1.1 (Ioc_subset_Icc_self x.property.1.2)⟩
   refine ⟨W, _, ‹_›, .id W, D, ‹_›, h.trans e', (image_id D).symm, .id, ?_,
     fun w ↦ he' (h w), fun m ↦ (Equiv.sumEmpty _ _).symm, fun m j x ↦ rfl⟩
   rw [ContinuousMap.coe_id, range_id]
@@ -408,7 +408,7 @@ theorem IsMorse.exists_finite_cwComplex_homotopyEquiv_sublevel_of_isCompact (hf 
   have := finiteDimensional_of_isCompact_sublevel hf.contMDiff.continuous hcompact hb
   obtain ⟨a, hab, ha⟩ := exists_le_forall_lt_of_isCompact_sublevel hcompact
     hf.contMDiff.continuous.continuousOn
-  have : IsEmpty {x | f x ≤ a} := ⟨fun x ↦ (ha x.1).not_ge x.2⟩
+  have : IsEmpty {x | f x ≤ a} := ⟨fun x ↦ (ha x.val).not_ge x.property⟩
   have hband : IsCompact (f ⁻¹' Icc a b) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous) fun _ hx ↦ hx.2
   have hareg : IsRegularValue I 𝓘(ℝ) f a :=
@@ -482,9 +482,12 @@ theorem IsMorse.finiteCWType [CompactSpace M] (hf : IsMorse I f) : FiniteCWType 
 omit [FiniteDimensional ℝ E] in
 variable (I M) in
 include I in
-/-- **Compact manifolds have finite CW type.** A compact boundaryless Hausdorff smooth manifold is
-homotopy equivalent to a finite CW complex. -/
-theorem FiniteCWType.of_isManifold [CompactSpace M] : FiniteCWType M :=
-  (exists_isMorse (I := I) (M := M)).choose_spec.finiteCWType
+/-- **Compact manifolds have finite CW type.** A compact boundaryless smooth manifold is homotopy
+equivalent to a finite CW complex. -/
+theorem FiniteCWType.of_isManifold [CompactSpace M] : FiniteCWType M := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact FiniteCWType.of_discreteTopology M
+  · have := FiniteDimensional.of_locallyCompact_manifold M I
+    exact (exists_isMorse (I := I) (M := M)).choose_spec.finiteCWType
 
 end TauCeti

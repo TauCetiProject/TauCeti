@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.TaylorIntegral
-public import TauCeti.Analysis.Calculus.ParametricIntegral
+public import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
@@ -16,6 +16,11 @@ import TauCeti.MeasureTheory.Constructions.UnitInterval
 This file develops the first-order factorization of a smooth map through displacement from a
 basepoint. It is the analytic input for identifying point derivations on a finite-dimensional
 smooth manifold with tangent vectors.
+
+The factor `hadamardFactor f x y`, the averaged derivative of `f` along the segment from `x` to
+`y`, depends smoothly on `x` and `y` jointly. Since `hadamardFactor f x x` is the derivative of `f`
+at `x`, it is invertible for all `x` and `y` near a point where the derivative of `f` is
+invertible (`ContDiff.exists_mem_nhds_isUnit_hadamardFactor`).
 
 Its higher-order analogue is `TauCeti.taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st
 derivative of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder.
@@ -30,7 +35,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ContDiff unitInterval
+open scoped ContDiff Topology unitInterval
 
 universe u v
 
@@ -60,7 +65,7 @@ theorem ContDiff.contDiff_segmentAverage_param
   rw [← contDiffOn_univ]
   refine (TauCeti.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp hwi)
-    continuous_subtype_val isOpen_univ
+    continuous_subtypeVal isOpen_univ
     ((hg.comp (by fun_prop :
       ContDiff ℝ n (fun p : (P × E) × ℝ ↦ (p.1.1, x + p.2 • p.1.2)))).contDiffOn)
     (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_
@@ -140,6 +145,40 @@ theorem ContDiff.contDiff_hadamardFactor (f : E → F)
     (hf : ContDiff ℝ ∞ f)
     (x : E) : ContDiff ℝ ∞ (hadamardFactor f x) := by
   simpa using ContDiff.contDiff_hadamardFactor_of_succ (⊤ : ℕ∞) f (by simpa using hf) x
+
+/-- If `f` is `n + 1` times continuously differentiable, its Hadamard factor is `n` times
+continuously differentiable in the basepoint and the endpoint jointly. -/
+theorem ContDiff.contDiff_hadamardFactor_uncurry_of_succ
+    (n : ℕ∞) (f : E → F) (hf : ContDiff ℝ (n + 1) f) :
+    ContDiff ℝ n (fun p : E × E ↦ hadamardFactor f p.1 p.2) := by
+  have hd : ContDiff ℝ n (fun q : E × E ↦ fderiv ℝ f (q.1 + q.2)) :=
+    (hf.fderiv_right (m := n) (by norm_num)).comp (contDiff_fst.add contDiff_snd)
+  have h := (hd.contDiff_segmentAverage_param (w := fun _ ↦ (1 : ℝ))
+      intervalIntegrable_const 0).comp
+    (contDiff_fst.prodMk (contDiff_snd.sub contDiff_fst) :
+      ContDiff ℝ n (fun p : E × E ↦ (p.1, p.2 - p.1)))
+  convert h using 1
+  funext p
+  simp [hadamardFactor, segmentAverage]
+
+/-- For a smooth function, the averaged derivative in Hadamard's factorization depends smoothly on
+the basepoint and the endpoint jointly. -/
+theorem ContDiff.contDiff_hadamardFactor_uncurry (f : E → F) (hf : ContDiff ℝ ∞ f) :
+    ContDiff ℝ ∞ (fun p : E × E ↦ hadamardFactor f p.1 p.2) := by
+  simpa using ContDiff.contDiff_hadamardFactor_uncurry_of_succ (⊤ : ℕ∞) f (by simpa using hf)
+
+/-- Near a point where the derivative of a `C¹` map `f : E → E` is invertible, the averaged
+derivative `hadamardFactor f y x` is invertible for all basepoints `y` and endpoints `x`. -/
+theorem ContDiff.exists_mem_nhds_isUnit_hadamardFactor [CompleteSpace E] {f : E → E}
+    (hf : ContDiff ℝ 1 f) {x₀ : E} (hx₀ : IsUnit (fderiv ℝ f x₀)) :
+    ∃ U ∈ 𝓝 x₀, ∀ x ∈ U, ∀ y ∈ U, IsUnit (hadamardFactor f y x) := by
+  have hcont : Continuous fun w : E × E ↦ hadamardFactor f w.2 w.1 :=
+    ((ContDiff.contDiff_hadamardFactor_uncurry_of_succ 0 f (by simpa using hf)).comp
+      (contDiff_snd.prodMk contDiff_fst)).continuous
+  have hmem : {w : E × E | IsUnit (hadamardFactor f w.2 w.1)} ∈ 𝓝 (x₀, x₀) :=
+    (Units.isOpen.preimage hcont).mem_nhds (by simpa using hx₀)
+  obtain ⟨U, hU, U', hU', hUU'⟩ := mem_nhds_prod_iff.1 hmem
+  exact ⟨U ∩ U', Filter.inter_mem hU hU', fun x hx y hy ↦ @hUU' (x, y) ⟨hx.1, hy.2⟩⟩
 
 namespace TauCeti
 

@@ -105,7 +105,7 @@ def homotopyFiberBasepoint : (homotopyFiberProj f x).fiber x :=
 
 @[simp]
 theorem homotopyFiberBasepoint_val :
-    (homotopyFiberBasepoint f x).1.val = (x, ContinuousMap.const I (f x)) :=
+    (homotopyFiberBasepoint f x).val.val = (x, ContinuousMap.const I (f x)) :=
   (rfl)
 
 /-- The fibre over `x` of the projection of the homotopy fibre of `f` is the loop space of `Y` at
@@ -115,7 +115,7 @@ def homotopyFiberFiberHomeomorph : (homotopyFiberProj f x).fiber x ≃ₜ Ω Y (
 
 @[simp]
 theorem homotopyFiberFiberHomeomorph_apply (p : (homotopyFiberProj f x).fiber x) (t : I) :
-    homotopyFiberFiberHomeomorph f x p t = p.1.val.2 t :=
+    homotopyFiberFiberHomeomorph f x p t = p.val.val.2 t :=
   MappingPathFiber.projFiberHomeomorphPath_apply _ _ x p t
 
 /-- The fixed-end path fibration of `Y` over `f x`, the source projection of
@@ -149,11 +149,11 @@ private theorem bijective_map_fiberMap {e : (homotopyFiberProj f x).fiber x} :
       (MappingPathFiber.projFiberHomeomorphPath (ContinuousMap.id Y) (f x) (f x)).symm
   have hφ : ((commSq f x).fiberMap x).hom = ⟨φ, φ.continuous⟩ := by
     refine ContinuousMap.ext fun q ↦ Subtype.ext (Subtype.ext ?_)
-    have hφq : (φ q).1.val = (f x, (homotopyFiberFiberHomeomorph f x q).toContinuousMap) :=
+    have hφq : (φ q).val.val = (f x, (homotopyFiberFiberHomeomorph f x q).toContinuousMap) :=
       MappingPathFiber.projFiberHomeomorphPath_symm_val_val _ _ _ _
     refine ((congrArg Subtype.val (CommSq.fiberMap_apply_coe (commSq f x) x q)).trans
       (MappingPathFiber.map_val _ _ _ _ _)).trans (hφq ▸ Prod.ext ?_ ?_)
-    · exact congrArg f ((homotopyFiberProj_apply f x q.1).symm.trans q.2)
+    · exact congrArg f ((homotopyFiberProj_apply f x q.val).symm.trans q.property)
     · exact ContinuousMap.ext fun t ↦ (homotopyFiberFiberHomeomorph_apply f x q t).symm
   have h := (HomotopyGroup.homeomorphEquivOfEq (N := N) φ (DFunLike.congr_fun hφ e).symm).bijective
   rw [funext (HomotopyGroup.homeomorphEquivOfEq_apply φ _)] at h
@@ -173,7 +173,7 @@ private theorem fibrationBoundary_toPath (a : HomotopyGroup (Option N) X x) :
 comes from the homotopy fibre of `f` exactly when `f` sends it to the trivial class. -/
 theorem mem_range_homotopyGroupMap_homotopyFiberProj_iff {a : HomotopyGroup (Option N) X x} :
     a ∈ range (HomotopyGroup.map (homotopyFiberProj f x).hom
-      (Set.mem_singleton_iff.1 (homotopyFiberBasepoint f x).2)) ↔
+      (Set.mem_singleton_iff.1 (homotopyFiberBasepoint f x).property)) ↔
       HomotopyGroup.map f.hom rfl a = ⟦GenLoop.const⟧ := by
   have hP := serreFibrations_pathProj f x
   rw [mem_range_homotopyGroupMap_iff_fibrationBoundary_eq (serreFibrations_homotopyFiberProj f x),
@@ -189,9 +189,9 @@ trivial. -/
 theorem eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const
     (hf : Function.Surjective (HomotopyGroup.map (N := Option N) f.hom (rfl : f x = f x)))
     {c : HomotopyGroup N (_root_.TopCat.of (MappingPathFiber f.hom (f x)))
-      (homotopyFiberBasepoint f x).1}
+      (homotopyFiberBasepoint f x).val}
     (hc : HomotopyGroup.map (homotopyFiberProj f x).hom
-      (Set.mem_singleton_iff.1 (homotopyFiberBasepoint f x).2) c = ⟦GenLoop.const⟧) :
+      (Set.mem_singleton_iff.1 (homotopyFiberBasepoint f x).property) c = ⟦GenLoop.const⟧) :
     c = ⟦GenLoop.const⟧ := by
   have hq := serreFibrations_homotopyFiberProj f x
   have hP := serreFibrations_pathProj f x

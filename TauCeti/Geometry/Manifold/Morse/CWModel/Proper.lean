@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.SigmaCompact
-public import Mathlib.Topology.Coherent
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 import Mathlib.Order.SuccPred.IntervalSucc
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cofibration
 import TauCeti.Geometry.Manifold.Morse.Exhaustion
 import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 import TauCeti.Logic.Equiv.Sum
-import TauCeti.Topology.Category.TopCat.Normal
 import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.CWComplex.Classical.SequentialColimit
 import TauCeti.Topology.Maps.Proper.Basic
@@ -39,40 +37,53 @@ complex, since a compact band holds finitely many critical points
 
 The colimit `X` of the stages `W k` is a CW complex whose cells are the new cells of all the stages
 (`TauCeti.cwComplexOfIsColimit`), so its `λ`-cells correspond to the critical points of index `λ`:
-each lies in exactly one band `(a k, a (k + 1)]`. It is Hausdorff, indeed normal, because each
-stage is compact (`TauCeti.TopCat.normalSpace_of_isColimit`). Inside `X` the stages are linked by
+each lies in exactly one band `(a k, a (k + 1)]`. It is Hausdorff because every stage is Hausdorff
+(`TauCeti.t2Space_of_isColimit_cwComplex`). Inside `X` the stages are linked by
 closed cofibrations, since each is a subcomplex of the next, and so are the regular sublevels of
 `M`, by collars of the regular levels
 (`TauCeti.hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue`). The models of
 the stages commute strictly with the inclusions, so they glue to a homotopy equivalence `X ≃ₕ M`
-compatible with the stages and carrying each sublevel `{f ≤ a k}` back into the `k`-th stage
-(`TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex`).
+compatible with the stage subcomplexes
+(`TauCeti.exists_homotopyEquiv_cwComplexOfIsColimitSubcomplex`).
+
+The model keeps track of the sublevels
+(`TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel`). Each stage `W k` is a
+subcomplex of `X` (`TauCeti.cwComplexOfIsColimitSubcomplex`), whose cells are those labelled by the
+critical points in `M_{a k}`; the homotopy equivalence `X ≃ₕ M` restricts on it to a homotopy
+equivalence `W k ≃ₕ M_{a k}`; and every compact subset of `X`, for instance the image of a sphere
+or of a homotopy, lies in a single stage.
 
 ## Main results
 
-* `TauCeti.IsMorse.exists_cwComplex_sublevel_homotopyEquiv` and
-  `TauCeti.IsMorse.exists_cwComplex_sublevel_homotopyEquiv_of_manifoldMorseIndex_le`: **the CW
-  model of a proper Morse function with compatible sublevel models** (and cell-dimension bound `d`
-  when all critical indices are at most `d`). A manifold carrying a proper Morse function bounded
-  below is homotopy equivalent to a Hausdorff CW complex `X` whose `λ`-cells correspond to the
-  critical points of `f` of index `λ`, realized as the coherent union of cellular closed embeddings
-  of a tower of finite CW models of regular sublevels commuting with the global homotopy
-  equivalence.
-* `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv` and
-  `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_of_manifoldMorseIndex_le`: the global CW homotopy
-  model of a proper bounded-below Morse function, and its dimension bound `d` when all critical
-  indices are at most `d`.
+* `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel`: the CW model of a proper
+  Morse function bounded below, with subcomplexes modelling an exhaustion of `M` by regular
+  sublevels, compatibly with the homotopy equivalence.
+* `TauCeti.IsMorse.exists_cwComplex_subcomplex_homotopyEquiv`: **the sublevel-compatible CW
+  exhaustion of a proper Morse function.** A manifold carrying a proper Morse function bounded below
+  admits a regular exhaustion `a 0 < a 1 < ⋯` and a Hausdorff CW homotopy model `X ≃ₕ M` exhausted
+  by an increasing sequence of finite CW subcomplexes `W k` restricting `X ≃ₕ M` to stage homotopy
+  equivalences `W k ≃ₕ {f ≤ a k}` (with homotopy inverse mapping `{f ≤ a k}` into `W k`), whose
+  `λ`-cells globally and at each stage correspond to the critical points of index `λ`.
+* `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`: **the CW model of a proper Morse function.** A
+  manifold carrying a proper Morse function bounded below is homotopy equivalent to a Hausdorff
+  CW complex whose `λ`-cells correspond to the critical points of index `λ`.
+* `TauCeti.IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_le` and
+  `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_of_manifoldMorseIndex_le`: when every critical
+  point of `f` has Morse index at most `d`, the CW homotopy model (and its sublevel-compatible
+  subcomplex exhaustion) is finite-dimensional and has no cells in dimensions strictly above `d`.
+* `TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv_of_isProperMap` and
+  `TauCeti.IsMorse.finiteCWType_of_isProperMap`: when `f` has finitely many critical points, the
+  CW model is finite and the manifold has finite CW type.
 * `TauCeti.IsMorse.cwType`, `TauCeti.CWType.of_isManifold`, and
   `TauCeti.CWType.of_isManifold_of_isProperMap`: a manifold carrying a proper bounded-below Morse
-  function, any sigma-compact finite-dimensional smooth boundaryless Hausdorff manifold (combining
-  `TauCeti.IsMorse.cwType` with `TauCeti.exists_isMorse_isProperMap_bddBelow`), or any smooth
-  boundaryless Hausdorff manifold admitting a proper map to a weakly locally compact sigma-compact
-  space has CW type.
+  function, any sigma-compact finite-dimensional smooth boundaryless Hausdorff manifold, or any
+  smooth boundaryless Hausdorff manifold admitting a proper map to a weakly locally compact
+  sigma-compact space has CW type.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Theorem 3.5, its proof, the remark following it, and §6, Corollary 6.7.
+  Theorem 3.5, its proof, and §6, Corollary 6.7.
 * J. Milnor, *On spaces having the homotopy type of a CW-complex*, Transactions of the American
   Mathematical Society 90 (1959), 272–280, Corollary 1.
 -/
@@ -88,8 +99,11 @@ universe u
 
 namespace TauCeti
 
-/-- A finite CW model of the sublevel `{f ≤ a}`. -/
-private structure SublevelCWModel {M : Type u} [TopologicalSpace M] (f : M → ℝ) (a : ℝ) where
+/-- A finite CW model of the sublevel `{f ≤ a}`, keeping track of its cell bijection with the
+critical points in `{f ≤ a}`. -/
+private structure SublevelCWModel {E H : Type*} {M : Type u} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [TopologicalSpace M]
+    [ChartedSpace H M] (f : M → ℝ) (a : ℝ) where
   /-- The model. -/
   W : Type u
   [topologicalSpace : TopologicalSpace W]
@@ -98,84 +112,50 @@ private structure SublevelCWModel {M : Type u} [TopologicalSpace M] (f : M → �
   [finite : RelCWComplex.Finite (univ : Set W)]
   /-- The homotopy equivalence of the model with the sublevel. -/
   h : W ≃ₕ {x | f x ≤ a}
+  /-- The `m`-cells of the model correspond to the critical points of index `m` in `{f ≤ a}`. -/
+  cellEquiv : ∀ m, cell (univ : Set W) m ≃
+    ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic a | manifoldMorseIndex I f x = m}
 
 attribute [instance] SublevelCWModel.topologicalSpace SublevelCWModel.t2Space
   SublevelCWModel.cwComplex SublevelCWModel.finite
 
-variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
-
 /-- The sequence of models defined recursively from a first model and a rule extending each model
 to the next sublevel. -/
-private def sublevelCWModelSeq {M : Type u} [TopologicalSpace M] {f : M → ℝ} {a : ℕ → ℝ}
-    (S₀ : SublevelCWModel f (a 0))
-    (S' : ∀ k, SublevelCWModel f (a k) → SublevelCWModel f (a (k + 1))) :
-    ∀ k, SublevelCWModel f (a k)
+private def sublevelCWModelSeq {E H : Type*} {M : Type u} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] {f : M → ℝ} {a : ℕ → ℝ}
+    (S₀ : SublevelCWModel I f (a 0))
+    (S' : ∀ k, SublevelCWModel I f (a k) → SublevelCWModel I f (a (k + 1))) :
+    ∀ k, SublevelCWModel I f (a k)
   | 0 => S₀
   | k + 1 => S' k (sublevelCWModelSeq S₀ S' k)
 
-/-- Across a compact band between regular values, a finite CW model of the lower sublevel extends
-to one of the upper sublevel, containing it as a subcomplex, with one new `m`-cell for each
-critical point of index `m` in the band. -/
-private theorem IsMorse.exists_sublevelCWModel_extension (hf : IsMorse I f) {a b : ℝ}
-    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) (S : SublevelCWModel f a) :
-    ∃ (S' : SublevelCWModel f b) (ι : C(S.W, S'.W)), IsClosedEmbedding ι ∧
-      (∀ w, (S'.h (ι w) : M) = S.h w) ∧
-      ∃ e : ∀ m, cell (univ : Set S'.W) m ≃ cell (univ : Set S.W) m ⊕
-          ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
-        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
-  obtain ⟨W', _, _, _, ι, h', _, hι, -, hh, e, he⟩ :=
-    hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
-  exact ⟨⟨W', h'⟩, ι, hι, hh, e, he⟩
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ}
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- At stage `k` of `sublevelCWModelSeq` starting from an empty sublevel, the `m`-cells correspond
-to the critical points of `f` in `{f ≤ a k}` of index `m`. -/
-private theorem sublevelCWModelSeq_cell_equiv {a : ℕ → ℝ} (hmono : StrictMono a)
-    (ha0 : ∀ x, a 0 < f x) (S₀ : SublevelCWModel f (a 0))
-    (hS₀ : ∀ m, IsEmpty (cell (univ : Set S₀.W) m))
-    (S' : ∀ k, SublevelCWModel f (a k) → SublevelCWModel f (a (k + 1)))
-    (e : ∀ k (S : SublevelCWModel f (a k)) (m : ℕ),
-      cell (univ : Set (S' k S).W) m ≃ cell (univ : Set S.W) m ⊕
-        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc (a k) (a (k + 1)) | manifoldMorseIndex I f x = m})
-    (k m : ℕ) :
-    Nonempty (cell (univ : Set (sublevelCWModelSeq S₀ S' k).W) m ≃
-      ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ a k} | manifoldMorseIndex I f x = m}) := by
-  classical
-  induction k with
-  | zero =>
-    have : IsEmpty (cell (univ : Set (sublevelCWModelSeq S₀ S' 0).W) m) := hS₀ m
-    have : IsEmpty ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ a 0} | manifoldMorseIndex I f x = m} :=
-      ⟨fun ⟨x, hx, _⟩ ↦ (ha0 x).not_ge hx.2⟩
-    exact ⟨Equiv.equivOfIsEmpty _ _⟩
-  | succ k ih =>
-    obtain ⟨ek⟩ := ih
-    have hdisj : Disjoint
-        {x ∈ criticalPoints I f ∩ {x | f x ≤ a k} | manifoldMorseIndex I f x = m}
-        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc (a k) (a (k + 1)) | manifoldMorseIndex I f x = m} :=
-      disjoint_left.2 fun x hx hx' ↦ hx'.1.2.1.not_ge hx.1.2
-    refine ⟨(e k (sublevelCWModelSeq S₀ S' k) m).trans ((Equiv.sumCongr ek (.refl _)).trans
-      ((Equiv.Set.union hdisj).symm.trans (Set.equivOfEq ?_)))⟩
-    ext x
-    simp only [mem_union, mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Ioc]
-    refine ⟨?_, fun ⟨⟨hx, hxk⟩, hm⟩ ↦ ?_⟩
-    · rintro (⟨⟨hx, hxk⟩, hm⟩ | ⟨⟨hx, _, hxk⟩, hm⟩)
-      · exact ⟨⟨hx, hxk.trans (hmono k.lt_succ_self).le⟩, hm⟩
-      · exact ⟨⟨hx, hxk⟩, hm⟩
-    · rcases le_or_gt (f x) (a k) with hle | hgt
-      · exact .inl ⟨⟨hx, hle⟩, hm⟩
-      · exact .inr ⟨⟨hx, hgt, hxk⟩, hm⟩
+open Classical in
+/-- Splitting the critical points of index `m` in `{f ≤ b}` into those in `{f ≤ a}` and those in
+`(a, b]`, when `a ≤ b`. -/
+private def criticalPointsIicUnionEquiv {a b : ℝ} (hab : a ≤ b) (m : ℕ) :
+    ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic a | manifoldMorseIndex I f x = m} ⊕
+      ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m} ≃
+    ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic b | manifoldMorseIndex I f x = m} :=
+  (Equiv.Set.union
+    (s := {x ∈ criticalPoints I f ∩ f ⁻¹' Iic a | manifoldMorseIndex I f x = m})
+    (t := {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m})
+    (disjoint_left.2 fun _ hx hx' ↦ (not_lt.2 hx.1.2) hx'.1.2.1)).symm.trans
+    (Set.equivOfEq <| by
+      ext x
+      simp only [mem_union, mem_ofPred_eq, mem_inter_iff, mem_preimage, ← Iic_union_Ioc_eq_Iic hab]
+      tauto)
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The critical points of index `m` are the disjoint union, over `k`, of those with value in
 `(a k, a (k + 1)]`, when `a` increases to infinity from below all values of `f`. -/
 private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
     (htop : Tendsto a atTop atTop) (ha0 : ∀ x, a 0 < f x) (m : ℕ) :
     (Σ k, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc (a k) (a (k + 1)) | manifoldMorseIndex I f x = m})
       ≃ ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m} :=
-  Equiv.ofBijective (fun p ↦ ⟨p.2.1, p.2.2.1.1, p.2.2.2⟩) <| by
+  Equiv.ofBijective (fun p ↦ ⟨p.2.val, p.2.property.1.1, p.2.property.2⟩) <| by
     refine ⟨fun ⟨k, x, hx⟩ ⟨l, y, hy⟩ hxy ↦ ?_, fun ⟨x, hx, hxm⟩ ↦ ?_⟩
     · obtain rfl : x = y := congrArg Subtype.val hxy
       -- The intervals `(a k, a (k + 1)]` are pairwise disjoint.
@@ -191,216 +171,329 @@ private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
       obtain ⟨k, hk⟩ := mem_iUnion.1 (hcover.symm ▸ ha0 x : f x ∈ ⋃ k, Ioc (a k) (a (k + 1)))
       exact ⟨⟨k, x, ⟨hx, hk⟩, hxm⟩, rfl⟩
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- On an empty manifold, every level is regular and `PEmpty` gives the global and stage CW
-models. -/
-private theorem IsMorse.exists_cwComplex_sublevel_homotopyEquiv_of_isEmpty [IsEmpty M] :
-    ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
-      (_ : CWComplex (univ : Set X)) (h : X ≃ₕ M)
-      (W : ℕ → Type u) (_ : ∀ k, TopologicalSpace (W k)) (_ : ∀ k, T2Space (W k))
-      (_ : ∀ k, CWComplex (univ : Set (W k))) (_ : ∀ k, RelCWComplex.Finite (univ : Set (W k)))
-      (ι : ∀ k, C(W k, W (k + 1))) (j : ∀ k, C(W k, X)) (hSub : ∀ k, W k ≃ₕ {x | f x ≤ a k}),
-      StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
-      (∀ x, a 0 < f x) ∧ (∀ k, IsClosedEmbedding (ι k)) ∧ (∀ k, IsClosedEmbedding (j k)) ∧
-      (∀ k w, j (k + 1) (ι k w) = j k w) ∧
-      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
-      (∀ k w, h (j k w) = (hSub k w : M)) ∧
-      (∀ k, MapsTo h.symm {x | f x ≤ a k} (range (j k))) ∧
-      (∃ (ιc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set (W (k + 1))) m)
-         (jc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set X) m),
-        (∀ k m c x, map m (ιc k m c) x = ι k (map m c x)) ∧
-        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
-      (∀ m, Nonempty (cell (univ : Set X) m ≃
-        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
-      ∀ k m, Nonempty (cell (univ : Set (W k)) m ≃
-        ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ a k} | manifoldMorseIndex I f x = m}) :=
-  ⟨fun k : ℕ ↦ (k : ℝ), PEmpty.{u + 1}, _, inferInstance, inferInstance,
-    Homeomorph.empty.toHomotopyEquiv, fun _ ↦ PEmpty.{u + 1}, fun _ ↦ _, fun _ ↦ inferInstance,
-    fun _ ↦ inferInstance, fun _ ↦ inferInstance, fun _ ↦ .id _, fun _ ↦ .id _,
-    fun _ ↦ Homeomorph.empty.toHomotopyEquiv, Nat.strictMono_cast, tendsto_natCast_atTop_atTop,
-    fun _ ↦ isRegularValue_of_notMem_range fun ⟨x, _⟩ ↦ isEmptyElim x,
-    isEmptyElim, fun _ ↦ .id, fun _ ↦ .id, fun _ ↦ isEmptyElim,
-    .of_continuous_prop fun _ _ ↦ continuous_of_discreteTopology,
-    eq_univ_of_forall isEmptyElim, fun _ ↦ isEmptyElim, fun _ x ↦ isEmptyElim x,
-    ⟨fun _ _ ↦ id, fun _ _ ↦ id, fun _ _ c ↦ isEmptyElim c, fun _ _ c ↦ isEmptyElim c⟩,
-    fun _ ↦ ⟨Equiv.equivOfIsEmpty _ _⟩, fun _ _ ↦ ⟨Equiv.equivOfIsEmpty _ _⟩⟩
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The sequential colimit of a tower of finite sublevel CW models `sublevelCWModelSeq S₀ S'`
-starting from an empty model `S₀` is a Hausdorff CW complex homotopy equivalent to `M`, compatible
-with the stage models and with one `m`-cell per critical point of `f` of index `m`. -/
-private theorem exists_cwComplex_of_sublevelCWModelSeq {a : ℕ → ℝ} (hmono : StrictMono a)
-    (htop : Tendsto a atTop atTop) (ha0 : ∀ x, a 0 < f x) (hfcont : Continuous f)
-    (hBH : ∀ k, HasHomotopyExtensionProperty
-      ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}))
-    (S₀ : SublevelCWModel f (a 0)) [IsEmpty S₀.W]
-    (S' : ∀ k, SublevelCWModel f (a k) → SublevelCWModel f (a (k + 1)))
-    (ι : ∀ k (S : SublevelCWModel f (a k)), C(S.W, (S' k S).W))
-    (hι : ∀ k S, IsClosedEmbedding (ι k S))
-    (hh : ∀ k S w, ((S' k S).h (ι k S w) : M) = S.h w)
-    (e : ∀ k (S : SublevelCWModel f (a k)) (m : ℕ),
-      cell (univ : Set (S' k S).W) m ≃ cell (univ : Set S.W) m ⊕
-        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc (a k) (a (k + 1)) | manifoldMorseIndex I f x = m})
-    (he : ∀ k S m j x, map m ((e k S m).symm (.inl j)) x = ι k S (map m j x)) :
-    let S := sublevelCWModelSeq S₀ S'
-    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
-      (_ : CWComplex (univ : Set X)) (h : X ≃ₕ M) (j : ∀ k, C((S k).W, X)),
-      (∀ k, IsClosedEmbedding (j k)) ∧ (∀ k w, j (k + 1) (ι k (S k) w) = j k w) ∧
-      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
-      (∀ k w, h (j k w) = ((S k).h w : M)) ∧
-      (∀ k, MapsTo h.symm {x | f x ≤ a k} (range (j k))) ∧
-      (∃ (ιc : ∀ k m, cell (univ : Set (S k).W) m → cell (univ : Set (S (k + 1)).W) m)
-         (jc : ∀ k m, cell (univ : Set (S k).W) m → cell (univ : Set X) m),
-        (∀ k m c x, map m (ιc k m c) x = ι k (S k) (map m c x)) ∧
-        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
-      ∀ m, Nonempty (cell (univ : Set X) m ≃
-        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
-  let S := sublevelCWModelSeq S₀ S'
-  let F : ℕ ⥤ TopCat.{u} :=
-    Functor.ofSequence (X := fun k : ℕ ↦ TopCat.of (S k).W) fun k : ℕ ↦
-      (TopCat.ofHom (ι k (S k)) : TopCat.of (S k).W ⟶ TopCat.of (S (k + 1)).W)
-  have hF (k : ℕ) : IsClosedEmbedding (F.map (homOfLE k.le_succ)) := by
-    rw [Functor.ofSequence_map_homOfLE_succ]; exact hι k (S k)
-  let (k : ℕ) : CWComplex (univ : Set (F.obj k)) := (S k).cwComplex
-  have (k : ℕ) : T2Space (F.obj k) := (S k).t2Space
-  let ιc (k m : ℕ) (j : cell (univ : Set (S k).W) m) : cell (univ : Set (S (k + 1)).W) m :=
-    (e k (S k) m).symm (.inl j)
-  have hιc (k m : ℕ) (j : cell (univ : Set (S k).W) m) :
-      ⇑(map m (ιc k m j)) = F.map (homOfLE k.le_succ) ∘ map m j := by
-    rw [Functor.ofSequence_map_homOfLE_succ]; exact funext (he k (S k) m j)
-  let c := colimit.cocone F
-  have hc : IsColimit c := colimit.isColimit F
-  let hCW := cwComplexOfIsColimit hF hιc hc
-  -- `X` is `T4`, as a sequential colimit of compact Hausdorff spaces along closed embeddings.
-  have : ∀ k, CompactSpace (F.obj k) := fun k ↦
-    isCompact_univ_iff.1 (CWComplex.isCompact_of_finite (C := (univ : Set (S k).W)))
-  have := TopCat.t4Space_of_isColimit hF hc
-  obtain ⟨h, hcomm, hMaps⟩ := exists_homotopyEquiv_of_isColimit_cwComplex hF hιc hc
-    ((sublevel_mono f).comp hmono.monotone) (iUnion_sublevel_eq_univ_of_tendsto f htop)
-    (isCoherentWith_range_sublevel_of_tendsto hfcont htop) hBH (fun k ↦ (S k).h) fun k w ↦ by
-      rw [Functor.ofSequence_map_homOfLE_succ]; exact hh k (S k) w
-  have hjι (k : ℕ) (w : (S k).W) : (c.ι.app (k + 1)).hom (ι k (S k) w) = (c.ι.app k).hom w := by
-    have hw := c.w (homOfLE k.le_succ)
-    rw [Functor.ofSequence_map_homOfLE_succ] at hw
-    exact ConcreteCategory.congr_hom hw w
-  refine ⟨c.pt, _, inferInstance, hCW, h, fun k ↦ (c.ι.app k).hom,
-    TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc, hjι,
-    TopCat.isCoherentWith_range_ι_of_isColimit hc, TopCat.iUnion_range_ι_of_isColimit hc,
-    hcomm, hMaps,
-    ⟨ιc, cwComplexOfIsColimitStageCellMap hF hιc hc, fun k m i x ↦ he k (S k) m i x,
-      fun k m i x ↦ congrFun (coe_map_cwComplexOfIsColimitStageCellMap hF hιc hc i) x⟩,
-    fun m ↦ ⟨?_⟩⟩
-  -- The cells of `X` are the cells of the first, empty, stage, and the new cells of the later
-  -- stages, which are the critical points in the bands `(a k, a (k + 1)]`.
-  have : IsEmpty (F.obj 0) := ‹IsEmpty S₀.W›
-  exact (cwComplexOfIsColimitCellEquiv hF hιc hc m).trans <| (Equiv.emptySum _ _).trans <|
-    (Equiv.sigmaCongrRight fun k ↦ (e k (S k) m).complRangeSymmInl).trans
-      (sigmaCriticalPointsIocEquiv hmono htop ha0 m)
+/-- Across a compact band between regular values, a finite CW model of the lower sublevel extends
+to one of the upper sublevel, containing it as a subcomplex, with one new `m`-cell for each
+critical point of index `m` in the band. -/
+private theorem IsMorse.exists_sublevelCWModel_extension (hf : IsMorse I f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) (S : SublevelCWModel I f a) :
+    ∃ (S' : SublevelCWModel I f b) (ι : C(S.W, S'.W)), IsClosedEmbedding ι ∧
+      (∀ w, (S'.h (ι w) : M) = S.h w) ∧
+      ∃ e : ∀ m, cell (univ : Set S'.W) m ≃ cell (univ : Set S.W) m ⊕
+          ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
+  obtain ⟨W', _, _, _, ι, h', _, hι, -, hh, e, he⟩ :=
+    hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
+  exact ⟨⟨W', h', fun m ↦ (e m).trans ((Equiv.sumCongr (S.cellEquiv m) (.refl _)).trans
+    (criticalPointsIicUnionEquiv hab m))⟩, ι, hι, hh, e, he⟩
 
-omit [FiniteDimensional ℝ E] in
-/-- **The CW model of a proper Morse function, with compatible finite sublevel models.** Let `f` be
-a proper Morse function, bounded below, on a boundaryless Hausdorff manifold `M`. There exist
-strictly increasing regular values `a : ℕ → ℝ` tending to infinity from below all values of `f`, a
-Hausdorff CW complex `X` with a homotopy equivalence `h : X ≃ₕ M` whose `m`-cells correspond to the
-critical points of `f` of index `m`, and finite Hausdorff CW complexes `W k` linked by cellular
-closed embeddings `ι k : C(W k, W (k + 1))` with cellular closed embeddings `j k : C(W k, X)`
-exhausting `X` coherently (`j (k + 1) ∘ ι k = j k`) and homotopy equivalences
-`hSub k : W k ≃ₕ {f ≤ a k}` such that `h ∘ j k` is `hSub k` followed by the sublevel inclusion,
-`h.symm` carries `{f ≤ a k}` into the image of `j k`, and the `m`-cells of `W k` correspond to the
-critical points of `f` in `{f ≤ a k}` of index `m`. -/
-theorem IsMorse.exists_cwComplex_sublevel_homotopyEquiv (hf : IsMorse I f) (hp : IsProperMap f)
+/-- The tower of finite CW models of the regular sublevels of a proper Morse function bounded
+below: regular values `a 0 < a 1 < ⋯` tending to infinity, with `a 0` below every value of `f`, and
+finite CW models `S k` of the sublevels `M_{a k}`, each a subcomplex of the next along a closed
+embedding commuting with the models, with one new `m`-cell for each critical point of index `m`
+with value in `(a k, a (k + 1)]`. The inclusions of the sublevels are closed cofibrations. -/
+private theorem IsMorse.exists_sublevelCWModel_tower (hf : IsMorse I f) (hp : IsProperMap f)
     (hbdd : BddBelow (range f)) :
-    ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
-      (_ : CWComplex (univ : Set X)) (h : X ≃ₕ M)
-      (W : ℕ → Type u) (_ : ∀ k, TopologicalSpace (W k)) (_ : ∀ k, T2Space (W k))
-      (_ : ∀ k, CWComplex (univ : Set (W k))) (_ : ∀ k, RelCWComplex.Finite (univ : Set (W k)))
-      (ι : ∀ k, C(W k, W (k + 1))) (j : ∀ k, C(W k, X)) (hSub : ∀ k, W k ≃ₕ {x | f x ≤ a k}),
+    ∃ (a : ℕ → ℝ) (S : ∀ k, SublevelCWModel I f (a k)) (ι : ∀ k, C((S k).W, (S (k + 1)).W))
+      (e : ∀ k m, cell (univ : Set (S (k + 1)).W) m ≃ cell (univ : Set (S k).W) m ⊕
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc (a k) (a (k + 1)) | manifoldMorseIndex I f x = m}),
       StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
-      (∀ x, a 0 < f x) ∧ (∀ k, IsClosedEmbedding (ι k)) ∧ (∀ k, IsClosedEmbedding (j k)) ∧
-      (∀ k w, j (k + 1) (ι k w) = j k w) ∧
-      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
-      (∀ k w, h (j k w) = (hSub k w : M)) ∧
-      (∀ k, MapsTo h.symm {x | f x ≤ a k} (range (j k))) ∧
-      (∃ (ιc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set (W (k + 1))) m)
-         (jc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set X) m),
-        (∀ k m c x, map m (ιc k m c) x = ι k (map m c x)) ∧
-        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
-      (∀ m, Nonempty (cell (univ : Set X) m ≃
-        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
-      ∀ k m, Nonempty (cell (univ : Set (W k)) m ≃
-        ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ a k} | manifoldMorseIndex I f x = m}) := by
-  rcases isEmpty_or_nonempty M with _ | _
-  · exact IsMorse.exists_cwComplex_sublevel_homotopyEquiv_of_isEmpty
-  have := hp.weaklyLocallyCompactSpace
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+        (∀ x, a 0 < f x) ∧
+        (∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)})) ∧
+        (∀ k, IsClosedEmbedding (ι k)) ∧
+        (∀ k w, ((S (k + 1)).h (ι k w) : M) = (S k).h w) ∧
+        ∀ k m j x, map m ((e k m).symm (.inl j)) x = ι k (map m j x) := by
   obtain ⟨a, K, hmono, htop, hreg, hK, hK0, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
   have ha0 (x : M) : a 0 < f x := by
     by_contra hx
     have hxK : x ∈ K 0 := by rw [hK]; exact not_lt.1 hx
     rw [hK0] at hxK
     exact hxK
-  have hcompact (k : ℕ) : IsCompact (f ⁻¹' Icc (a k) (a (k + 1))) :=
-    hp.isCompact_preimage isCompact_Icc
-  choose S' ι hι hh e he using fun k (S : SublevelCWModel f (a k)) ↦
-    hf.exists_sublevelCWModel_extension (hmono k.lt_succ_self).le (hcompact k) (hreg k)
-      (hreg (k + 1)) S
-  have : IsEmpty {x | f x ≤ a 0} := ⟨fun x ↦ (not_le.2 (ha0 x)) x.2⟩
-  let S₀ : SublevelCWModel f (a 0) :=
-    { W := PEmpty.{u + 1}, h := Homeomorph.empty.toHomotopyEquiv }
-  let S := sublevelCWModelSeq S₀ S'
-  have hBH (k : ℕ) : HasHomotopyExtensionProperty
-      ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}) := by
-    rw [← range_sublevelInclusion f (hmono k.lt_succ_self).le]
-    exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
-      hf.contMDiff (hmono k.lt_succ_self) (hcompact k) (hreg k) (hmono k.lt_succ_self).le
-  obtain ⟨X, _, _, _, h, j, hj, hjι, hcoh, hunion, hcomm, hMaps, hcellCompat, hXcell⟩ :=
-    exists_cwComplex_of_sublevelCWModelSeq hmono htop ha0 hf.contMDiff.continuous hBH S₀ S'
-      ι hι hh e he
-  exact ⟨a, X, _, ‹_›, ‹_›, h, fun k ↦ (S k).W, fun k ↦ (S k).topologicalSpace,
-    fun k ↦ (S k).t2Space, fun k ↦ (S k).cwComplex, fun k ↦ (S k).finite,
-    fun k ↦ ι k (S k), j, fun k ↦ (S k).h, hmono, htop, hreg, ha0,
-    fun k ↦ hι k (S k), hj, hjι, hcoh, hunion, hcomm, hMaps, hcellCompat, hXcell,
-    sublevelCWModelSeq_cell_equiv hmono ha0 S₀ (fun _ ↦ inferInstance) S' e⟩
+  choose S' ι hι hh e he using fun k (S : SublevelCWModel I f (a k)) ↦
+    hf.exists_sublevelCWModel_extension (hmono k.lt_succ_self).le
+      (hp.isCompact_preimage isCompact_Icc) (hreg k) (hreg (k + 1)) S
+  -- The models start from the empty one, since the sublevel `M_{a 0}` is empty.
+  have : IsEmpty {x | f x ≤ a 0} := ⟨fun x ↦ (not_le.2 (ha0 x)) x.property⟩
+  have hcell0 (m : ℕ) : cell (univ : Set PEmpty.{u + 1}) m ≃
+      ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a 0) | manifoldMorseIndex I f x = m} :=
+    have : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) := ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
+    have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a 0) | manifoldMorseIndex I f x = m} :=
+      ⟨fun x ↦ (not_le.2 (ha0 x.val)) x.property.1.2⟩
+    Equiv.equivOfIsEmpty _ _
+  let S := sublevelCWModelSeq ⟨PEmpty.{u + 1}, Homeomorph.empty.toHomotopyEquiv, hcell0⟩ S'
+  -- The inclusions of the regular sublevels are closed cofibrations, by collars of the levels.
+  refine ⟨a, S, fun k ↦ ι k (S k), fun k ↦ e k (S k), hmono, htop, hreg, ha0, fun k ↦ ?_,
+    fun k ↦ hι k (S k), fun k ↦ hh k (S k), fun k ↦ he k (S k)⟩
+  rw [← range_sublevelInclusion f (hmono k.lt_succ_self).le]
+  exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
+    hf.contMDiff (hmono k.lt_succ_self) (hp.isCompact_preimage isCompact_Icc) (hreg k)
+    (hmono k.lt_succ_self).le
 
-omit [FiniteDimensional ℝ E] in
-/-- **The dimension-bounded CW model of a proper Morse function, with compatible finite sublevel
-models.** If every critical point of a proper bounded-below Morse function `f` has Morse index at
-most `d`, then both the global CW model `X` and the compatible finite sublevel CW models `W k` of
-`TauCeti.IsMorse.exists_cwComplex_sublevel_homotopyEquiv` have no cells in dimensions strictly
-greater than `d`. -/
-theorem IsMorse.exists_cwComplex_sublevel_homotopyEquiv_of_manifoldMorseIndex_le (hf : IsMorse I f)
-    (hp : IsProperMap f) (hbdd : BddBelow (range f)) {d : ℕ}
-    (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) :
+/-- **The CW model of a proper Morse function, with its sublevels** (Milnor, *Morse Theory*,
+Theorem 3.5 and its proof). Let `f` be a Morse function on a boundaryless manifold `M`, proper and
+bounded below. There are regular values `a 0 < a 1 < ⋯` of `f` tending to infinity, a Hausdorff CW
+complex `X` whose `m`-cells are labelled by the critical points of `f` of index `m`, a homotopy
+equivalence `H : X ≃ₕ M`, and subcomplexes `W k` of `X` such that:
+
+* the cells of `W k` are those labelled by the critical points in the sublevel `{f ≤ a k}`;
+* every compact subset of `X` lies in some `W k`;
+* `H` restricts on `W k` to a homotopy equivalence `W k ≃ₕ {f ≤ a k}`.
+
+So the model is the increasing union of CW models of the regular sublevels, with the comparison
+maps commuting strictly with the inclusions. -/
+theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
+    ∃ a : ℕ → ℝ, StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
+      ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X))
+        (H : X ≃ₕ M)
+        (e : ∀ m, cell (univ : Set X) m ≃
+          ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})
+        (W : ℕ → Subcomplex (univ : Set X)),
+        (∀ k m j, j ∈ (W k).I m ↔ f (e m j) ≤ a k) ∧
+        (∀ K : Set X, IsCompact K → ∃ k, K ⊆ W k) ∧
+        ∀ k, ∃ h : ↥(W k : Set X) ≃ₕ {x | f x ≤ a k}, ∀ w, (h w : M) = H w := by
+  -- Outline: take finite CW models `S k` of the regular sublevels `M_{a k}`, each a subcomplex of
+  -- the next; take their colimit `X` with its CW structure, whose stages are subcomplexes, and
+  -- label its cells; then glue the models to a map `X → M` and compare the two towers of closed
+  -- cofibrations.
+  obtain ⟨a, S, ι, e, hmono, htop, hreg, ha0, hBH, hι, hh, he⟩ :=
+    hf.exists_sublevelCWModel_tower hp hbdd
+  -- The tower of models, its colimit `X`, and the cells of each stage among those of the next.
+  let F : ℕ ⥤ TopCat.{u} :=
+    Functor.ofSequence (X := fun k : ℕ ↦ TopCat.of (S k).W) fun k : ℕ ↦
+      (TopCat.ofHom (ι k) : TopCat.of (S k).W ⟶ TopCat.of (S (k + 1)).W)
+  have hF (k : ℕ) : IsClosedEmbedding (F.map (homOfLE k.le_succ)) := by
+    rw [Functor.ofSequence_map_homOfLE_succ]
+    exact hι k
+  let (k : ℕ) : CWComplex (univ : Set (F.obj k)) := (S k).cwComplex
+  have (k : ℕ) : T2Space (F.obj k) := (S k).t2Space
+  let ιc (k m : ℕ) (j : cell (univ : Set (S k).W) m) : cell (univ : Set (S (k + 1)).W) m :=
+    (e k m).symm (.inl j)
+  have hιc (k m : ℕ) (j : cell (univ : Set (S k).W) m) :
+      ⇑(map m (ιc k m j)) = F.map (homOfLE k.le_succ) ∘ map m j := by
+    rw [Functor.ofSequence_map_homOfLE_succ]
+    exact funext (he k m j)
+  let c := colimit.cocone F
+  have hc : IsColimit c := colimit.isColimit F
+  let := cwComplexOfIsColimit hF hιc hc
+  have := t2Space_of_isColimit_cwComplex hF hιc hc
+  -- The sublevels of `M` are a tower of closed cofibrations exhausting `M` with the coherent
+  -- topology, and the models commute with their inclusions.
+  obtain ⟨H, hH, -⟩ := exists_homotopyEquiv_of_isColimit_cwComplex hF hιc hc
+    ((sublevel_mono f).comp hmono.monotone) (iUnion_sublevel_eq_univ_of_tendsto f htop)
+    (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop) hBH
+    (fun k ↦ (S k).h) fun k w ↦ by
+      rw [Functor.ofSequence_map_homOfLE_succ]
+      exact hh k w
+  -- The cells of `X` are the cells of the first, empty, stage, and the new cells of the later
+  -- stages, which are the critical points in the bands `(a k, a (k + 1)]`.
+  have hempty (m : ℕ) : IsEmpty (cell (univ : Set (F.obj 0)) m) :=
+    ⟨fun j ↦ (not_le.2 (ha0 _)) ((S 0).h (map m j 0)).property⟩
+  let eX (m : ℕ) := (cwComplexOfIsColimitCellEquiv hF hιc hc m).trans <|
+    (Equiv.emptySum _ _).trans <|
+      (Equiv.sigmaCongrRight fun k ↦ (e k m).complRangeSymmInl).trans
+        (sigmaCriticalPointsIocEquiv hmono htop ha0 m)
+  refine ⟨a, hmono, htop, hreg, c.pt, _, inferInstance, ‹_›, H, eX,
+    cwComplexOfIsColimitSubcomplex hF hιc hc, fun k m j ↦ ?_,
+    fun L hL ↦ exists_subset_cwComplexOfIsColimitSubcomplex_of_isCompact hF hιc hc hL, fun k ↦ ?_⟩
+  · -- A new cell of the stage `k' + 1` belongs to the stage `k` exactly when `k' < k`, and its
+    -- critical point has value in `(a k', a (k' + 1)]`.
+    obtain ⟨s | ⟨k', x⟩, rfl⟩ := (cwComplexOfIsColimitCellEquiv hF hιc hc m).symm.surjective j
+    · exact (hempty m).elim s
+    have hx := ((e k' m).complRangeSymmInl x).property.1.2
+    refine (cwComplexOfIsColimitCellEquiv_symm_inr_mem_I_iff hF hιc hc _).trans ?_
+    simp only [eX, Equiv.trans_apply, Equiv.apply_symm_apply]
+    refine ⟨fun hk ↦ hx.2.trans (hmono.monotone hk), fun hk ↦ ?_⟩
+    exact hmono.lt_iff_lt.1 (hx.1.trans_le hk)
+  · -- On the stage `k`, `H` is the model `S k` of `M_{a k}`, read through the closed embedding of
+    -- the stage into `X`.
+    have hemb := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding
+    refine ⟨(Homeomorph.setCongr (coe_cwComplexOfIsColimitSubcomplex hF hιc hc k)).trans
+      hemb.toHomeomorph.symm |>.toHomotopyEquiv.trans (S k).h, fun w ↦ ?_⟩
+    obtain ⟨w, hw⟩ := w
+    obtain ⟨z, rfl⟩ := (coe_cwComplexOfIsColimitSubcomplex hF hιc hc k).subset hw
+    rw [hH]
+    exact congrArg (fun y ↦ ((S k).h y : M)) (hemb.toHomeomorph_symm_apply z)
+
+/-- Finite-dimensional core of `TauCeti.IsMorse.exists_cwComplex_subcomplex_homotopyEquiv`. -/
+private theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_finiteDimensional
+    (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
     ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
-      (_ : CWComplex (univ : Set X)) (h : X ≃ₕ M)
-      (W : ℕ → Type u) (_ : ∀ k, TopologicalSpace (W k)) (_ : ∀ k, T2Space (W k))
-      (_ : ∀ k, CWComplex (univ : Set (W k))) (_ : ∀ k, RelCWComplex.Finite (univ : Set (W k)))
-      (ι : ∀ k, C(W k, W (k + 1))) (j : ∀ k, C(W k, X)) (hSub : ∀ k, W k ≃ₕ {x | f x ≤ a k}),
-      StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
-      (∀ x, a 0 < f x) ∧ (∀ k, IsClosedEmbedding (ι k)) ∧ (∀ k, IsClosedEmbedding (j k)) ∧
-      (∀ k w, j (k + 1) (ι k w) = j k w) ∧
-      IsCoherentWith (range fun k ↦ range (j k)) ∧ ⋃ k, range (j k) = univ ∧
-      (∀ k w, h (j k w) = (hSub k w : M)) ∧
-      (∀ k, MapsTo h.symm {x | f x ≤ a k} (range (j k))) ∧
-      (∃ (ιc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set (W (k + 1))) m)
-         (jc : ∀ k m, cell (univ : Set (W k)) m → cell (univ : Set X) m),
-        (∀ k m c x, map m (ιc k m c) x = ι k (map m c x)) ∧
-        ∀ k m c x, map m (jc k m c) x = j k (map m c x)) ∧
-      (∀ m, d < m → IsEmpty (cell (univ : Set X) m)) ∧
-      (∀ k m, d < m → IsEmpty (cell (univ : Set (W k)) m)) ∧
+      (_ : CWComplex (univ : Set X)) (W : ℕ → Subcomplex (univ : Set X))
+      (h : X ≃ₕ M) (hW : ∀ k, (W k : Set X) ≃ₕ {x | f x ≤ a k}),
+      StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ x, a 0 < f x) ∧
+      (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
+      Monotone W ∧ (W 0 : Set X) = ∅ ∧ (⋃ k, (W k : Set X)) = univ ∧
+      (∀ k, RelCWComplex.Finite (W k : Set X)) ∧
+      (∀ k (w : (W k : Set X)), (hW k w : M) = h w) ∧
+      (∀ k, MapsTo h.symm {x | f x ≤ a k} (W k)) ∧
       (∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
-      ∀ k m, Nonempty (cell (univ : Set (W k)) m ≃
-        ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ a k} | manifoldMorseIndex I f x = m}) := by
-  obtain ⟨a, X, _, _, _, h, W, _, _, _, _, ι, j, hSub, hmono, htop, hreg, ha0, hι, hj, hjι, hcoh,
-      hunion, hcomm, hMaps, hcellCompat, hXcell, hWcell⟩ :=
-    hf.exists_cwComplex_sublevel_homotopyEquiv hp hbdd
-  refine ⟨a, X, _, ‹_›, ‹_›, h, W, _, ‹_›, ‹_›, ‹_›, ι, j, hSub, hmono, htop, hreg, ha0, hι, hj,
-    hjι, hcoh, hunion, hcomm, hMaps, hcellCompat, fun m hm ↦ ?_, fun k m hm ↦ ?_, hXcell, hWcell⟩
-  · exact (hXcell m).some.isEmpty_congr.2
-      ⟨fun ⟨x, hx, hxm⟩ ↦ ((hd x hx).trans_lt (hxm ▸ hm)).false⟩
-  · exact (hWcell k m).some.isEmpty_congr.2
-      ⟨fun ⟨x, ⟨hx, _⟩, hxm⟩ ↦ ((hd x hx).trans_lt (hxm ▸ hm)).false⟩
+      ∀ k m, Nonempty (cell (W k : Set X) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a k) | manifoldMorseIndex I f x = m}) := by
+  obtain ⟨a, S, ι, e, hmono, htop, hreg, ha0, hBH, hι, hh, he⟩ :=
+    hf.exists_sublevelCWModel_tower hp hbdd
+  let F : ℕ ⥤ TopCat.{u} :=
+    Functor.ofSequence (X := fun k : ℕ ↦ TopCat.of (S k).W) fun k : ℕ ↦
+      (TopCat.ofHom (ι k) : TopCat.of (S k).W ⟶ TopCat.of (S (k + 1)).W)
+  have hF (k : ℕ) : IsClosedEmbedding (F.map (homOfLE k.le_succ)) := by
+    rw [Functor.ofSequence_map_homOfLE_succ]; exact hι k
+  let (k : ℕ) : CWComplex (univ : Set (F.obj k)) := (S k).cwComplex
+  let (k : ℕ) : RelCWComplex.Finite (univ : Set (F.obj k)) := (S k).finite
+  have (k : ℕ) : T2Space (F.obj k) := (S k).t2Space
+  let ιc (k m : ℕ) (j : cell (univ : Set (S k).W) m) : cell (univ : Set (S (k + 1)).W) m :=
+    (e k m).symm (.inl j)
+  have hιc (k m : ℕ) (j : cell (univ : Set (S k).W) m) :
+      ⇑(map m (ιc k m j)) = F.map (homOfLE k.le_succ) ∘ map m j := by
+    rw [Functor.ofSequence_map_homOfLE_succ]; exact funext (he k m j)
+  -- Glue the stage equivalences on the CW colimit `c.pt` and its stage subcomplexes.
+  let c := colimit.cocone F
+  have hc : IsColimit c := colimit.isColimit F
+  let := cwComplexOfIsColimit hF hιc hc
+  have := t2Space_of_isColimit_cwComplex hF hιc hc
+  obtain ⟨h, hW, hhW, hsymm⟩ := exists_homotopyEquiv_cwComplexOfIsColimitSubcomplex hF hιc hc
+    (A := fun k ↦ {x | f x ≤ a k}) ((sublevel_mono f).comp hmono.monotone)
+    (iUnion_sublevel_eq_univ_of_tendsto f htop)
+    (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop) hBH (fun k ↦ (S k).h)
+    fun k w ↦ by rw [Functor.ofSequence_map_homOfLE_succ]; exact hh k w
+  have : IsEmpty (F.obj 0) := ⟨fun w ↦ (not_le.2 (ha0 _)) ((S 0).h w).property⟩
+  refine ⟨a, c.pt, c.pt.str, inferInstance, ‹_›, cwComplexOfIsColimitSubcomplex hF hιc hc,
+    h, hW, hmono, htop, ha0, hreg, monotone_cwComplexOfIsColimitSubcomplex hF hιc hc,
+    (coe_cwComplexOfIsColimitSubcomplex hF hιc hc 0).trans (range_eq_empty _),
+    iUnion_coe_cwComplexOfIsColimitSubcomplex hF hιc hc,
+    fun k ↦ finite_cwComplexOfIsColimitSubcomplex hF hιc hc k, hhW, hsymm, fun m ↦ ⟨?_⟩,
+    fun k m ↦ ?_⟩
+  · -- Identify the global `m`-cells with critical points of index `m` across all bands.
+    have : IsEmpty (cell (univ : Set (F.obj 0)) m) := ⟨fun j ↦ isEmptyElim (map m j 0)⟩
+    exact (cwComplexOfIsColimitCellEquiv hF hιc hc m).trans <| (Equiv.emptySum _ _).trans <|
+      (Equiv.sigmaCongrRight fun k ↦ (e k m).complRangeSymmInl).trans
+        (sigmaCriticalPointsIocEquiv hmono htop ha0 m)
+  · rw [CWComplex.Subcomplex.cell_def]
+    exact ⟨(cwComplexOfIsColimitSubcomplexCellEquiv hF hιc hc k m).trans ((S k).cellEquiv m)⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- **The sublevel-compatible CW exhaustion of a proper Morse function** (Milnor, *Morse Theory*,
+Theorem 3.5 and its proof). Let `f` be a proper, bounded-below Morse function on a boundaryless
+manifold `M`. Then there exist a strictly increasing sequence of regular values `a : ℕ → ℝ` tending
+to `+∞` with `a 0 < f x` everywhere, a Hausdorff CW complex `X`, an increasing sequence of finite
+CW subcomplexes `W : ℕ → Subcomplex (univ : Set X)` exhausting `X` from `W 0 = ∅`, a homotopy
+equivalence `h : X ≃ₕ M`, and stage homotopy equivalences `hW k : W k ≃ₕ {f ≤ a k}` restricted from
+`h` whose global homotopy inverse `h.symm` carries `{f ≤ a k}` into `W k`. Moreover, the `m`-cells
+of `X` (and of each `W k`) correspond to the critical points of `f` of index `m` (in `{f ≤ a k}`).
+-/
+theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) :
+    ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
+      (_ : CWComplex (univ : Set X)) (W : ℕ → Subcomplex (univ : Set X))
+      (h : X ≃ₕ M) (hW : ∀ k, (W k : Set X) ≃ₕ {x | f x ≤ a k}),
+      StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ x, a 0 < f x) ∧
+      (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
+      Monotone W ∧ (W 0 : Set X) = ∅ ∧ (⋃ k, (W k : Set X)) = univ ∧
+      (∀ k, RelCWComplex.Finite (W k : Set X)) ∧
+      (∀ k (w : (W k : Set X)), (hW k w : M) = h w) ∧
+      (∀ k, MapsTo h.symm {x | f x ≤ a k} (W k)) ∧
+      (∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
+      ∀ k m, Nonempty (cell (W k : Set X) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a k) | manifoldMorseIndex I f x = m}) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · let W : ℕ → Subcomplex (univ : Set PEmpty.{u + 1}) :=
+      fun _ ↦ ⟨∅, fun _ ↦ ∅, isClosed_empty, by simp⟩
+    have hWempty (k m : ℕ) : IsEmpty (cell (W k : Set PEmpty.{u + 1}) m) :=
+      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
+    have (k : ℕ) : IsEmpty {x : M | f x ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.val⟩
+    refine ⟨Nat.cast, PEmpty.{u + 1}, inferInstance, inferInstance, inferInstance, W,
+      Homeomorph.empty.toHomotopyEquiv, fun _ ↦ Homeomorph.empty.toHomotopyEquiv,
+      Nat.strictMono_cast, tendsto_natCast_atTop_atTop, isEmptyElim,
+      fun _ ↦ isRegularValue_of_notMem_range fun ⟨x, _⟩ ↦ hM.elim x,
+      monotone_const, rfl, eq_univ_of_forall isEmptyElim,
+      fun k ↦ RelCWComplex.finite_of_finite_cells
+        (have : IsEmpty (Σ n, cell (W k : Set PEmpty.{u + 1}) n) :=
+          ⟨fun ⟨n, j⟩ ↦ (hWempty k n).elim j⟩
+        inferInstance),
+      fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x, fun m ↦ ⟨?_⟩, fun k m ↦ ⟨?_⟩⟩
+    · have : IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m} :=
+        ⟨fun x ↦ hM.elim x.val⟩
+      exact Equiv.equivOfIsEmpty _ _
+    · have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (k : ℝ) |
+          manifoldMorseIndex I f x = m} := ⟨fun x ↦ hM.elim x.val⟩
+      exact Equiv.equivOfIsEmpty _ _
+  · obtain ⟨a, K, -, htop, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
+    obtain ⟨n, hn⟩ := (htop.eventually_ge_atTop (f x₀)).exists
+    have : Nonempty {x | f x ≤ a n} := ⟨⟨x₀, hn⟩⟩
+    have hcomp : IsCompact (f ⁻¹' Iic (a n)) := hK n ▸ K.isCompact n
+    have : FiniteDimensional ℝ E := finiteDimensional_of_isCompact_sublevel (I := I)
+      hf.contMDiff.continuous hcomp (hreg n)
+    exact hf.exists_cwComplex_subcomplex_homotopyEquiv_of_finiteDimensional hp hbdd
+
+omit [FiniteDimensional ℝ E] in
+/-- **Index-bounded sublevel-compatible CW exhaustion of a proper Morse function.** If `f` is a
+proper, bounded-below Morse function on a boundaryless manifold `M` whose critical points all have
+Morse index at most `d`, then the sublevel-compatible CW exhaustion of
+`IsMorse.exists_cwComplex_subcomplex_homotopyEquiv` is finite-dimensional and has no cells in
+dimensions strictly above `d`, globally or in any stage subcomplex `W k`. -/
+theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_le
+    (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) {d : ℕ}
+    (hidx : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) :
+    ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
+      (_ : CWComplex (univ : Set X)) (W : ℕ → Subcomplex (univ : Set X))
+      (h : X ≃ₕ M) (hW : ∀ k, (W k : Set X) ≃ₕ {x | f x ≤ a k}),
+      StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ x, a 0 < f x) ∧
+      (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
+      Monotone W ∧ (W 0 : Set X) = ∅ ∧ (⋃ k, (W k : Set X)) = univ ∧
+      (∀ k, RelCWComplex.Finite (W k : Set X)) ∧
+      RelCWComplex.FiniteDimensional (univ : Set X) ∧
+      (∀ k (w : (W k : Set X)), (hW k w : M) = h w) ∧
+      (∀ k, MapsTo h.symm {x | f x ≤ a k} (W k)) ∧
+      (∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
+      (∀ k m, Nonempty (cell (W k : Set X) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a k) | manifoldMorseIndex I f x = m})) ∧
+      (∀ m, d < m → IsEmpty (cell (univ : Set X) m)) ∧
+      ∀ k m, d < m → IsEmpty (cell (W k : Set X) m) := by
+  obtain ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, ha0, hreg, hWmono, hW0, hWuniv,
+      hWfin, hhW, hsymm, hcell, hWcell⟩ :=
+    hf.exists_cwComplex_subcomplex_homotopyEquiv hp hbdd
+  have hempty (m : ℕ) (hm : d < m) : IsEmpty (cell (univ : Set X) m) :=
+    (hcell m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.property.2 ▸ hidx x.val x.property.1).trans_lt
+        hm).false⟩
+  have hWempty (k m : ℕ) (hm : d < m) : IsEmpty (cell (W k : Set X) m) :=
+    (hWcell k m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.property.2 ▸ hidx x.val x.property.1.1).trans_lt
+        hm).false⟩
+  exact ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, ha0, hreg, hWmono, hW0, hWuniv,
+    hWfin, RelCWComplex.finiteDimensional_of_isEmpty_cell_gt (univ : Set X) hempty, hhW, hsymm,
+    hcell, hWcell, hempty, hWempty⟩
+
+/-- Finite-dimensional core of `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`. -/
+private theorem IsMorse.exists_cwComplex_homotopyEquiv_of_finiteDimensional (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
+    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
+  obtain ⟨-, -, -, -, X, _, _, _, H, e, -⟩ :=
+    hf.exists_cwComplex_homotopyEquiv_subcomplex_sublevel hp hbdd
+  exact ⟨X, _, ‹_›, ‹_›, ⟨H.symm⟩, fun m ↦ ⟨e m⟩⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- **Index-bounded CW model of a proper Morse function.** If `f` is a proper, bounded-below Morse
+function on a boundaryless manifold `M` whose critical points all have Morse index at most `d`,
+then `M` is homotopy equivalent to a finite-dimensional Hausdorff CW complex `X` whose `m`-cells
+correspond to the critical points of `f` of index `m`, with no cells in dimensions strictly above
+`d`. -/
+theorem IsMorse.exists_cwComplex_homotopyEquiv_of_manifoldMorseIndex_le (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) {d : ℕ}
+    (hidx : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) :
+    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (M ≃ₕ X) ∧
+      (∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
+      ∀ m, d < m → IsEmpty (cell (univ : Set X) m) := by
+  obtain ⟨_, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, -, hfd, -, -, hcell, -,
+      hempty, -⟩ :=
+    hf.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_le hp hbdd hidx
+  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hcell, hempty⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **The CW model of a proper Morse function** (Milnor, *Morse Theory*, Theorem 3.5). Let `f` be
@@ -413,27 +506,44 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
-  obtain ⟨_, X, _, _, _, h, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hcell, -⟩ :=
-    hf.exists_cwComplex_sublevel_homotopyEquiv hp hbdd
-  exact ⟨X, _, ‹_›, ‹_›, ⟨h.symm⟩, hcell⟩
+  rcases isEmpty_or_nonempty M with _ | hM
+  · refine ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance,
+      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun m ↦ ?_⟩
+    have : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) := ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
+    exact ⟨Equiv.equivOfIsEmpty _ _⟩
+  · obtain ⟨x₀⟩ := hM
+    obtain ⟨a, K, -, htop, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
+    obtain ⟨n, hn⟩ := (htop.eventually_ge_atTop (f x₀)).exists
+    have : Nonempty {x | f x ≤ a n} := ⟨⟨x₀, hn⟩⟩
+    have hcomp : IsCompact (f ⁻¹' Iic (a n)) := hK n ▸ K.isCompact n
+    have : FiniteDimensional ℝ E := finiteDimensional_of_isCompact_sublevel (I := I)
+      hf.contMDiff.continuous hcomp (hreg n)
+    exact hf.exists_cwComplex_homotopyEquiv_of_finiteDimensional hp hbdd
 
 omit [FiniteDimensional ℝ E] in
-/-- **The dimension-bounded CW model of a proper Morse function.** Let `f` be a proper Morse
-function, bounded below, on a boundaryless Hausdorff manifold `M`, all of whose critical points
-have Morse index at most `d`. Then `M` is homotopy equivalent to a Hausdorff CW complex `X` whose
-`m`-cells correspond to the critical points of `f` of index `m` and which has no cells in
-dimensions strictly greater than `d`. -/
-theorem IsMorse.exists_cwComplex_homotopyEquiv_of_manifoldMorseIndex_le (hf : IsMorse I f)
-    (hp : IsProperMap f) (hbdd : BddBelow (range f)) {d : ℕ}
-    (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d) :
+/-- **The finite CW model of a proper Morse function with finitely many critical points.** Let `f`
+be a Morse function on a boundaryless manifold `M`, proper, bounded below, and with finitely many
+critical points. Then `M` is homotopy equivalent to a finite Hausdorff CW complex `X` whose
+`m`-cells correspond to the critical points of `f` of index `m`, for every `m`. -/
+theorem IsMorse.exists_finite_cwComplex_homotopyEquiv_of_isProperMap (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) (hfin : (criticalPoints I f).Finite) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
-      Nonempty (M ≃ₕ X) ∧ (∀ k, d < k → IsEmpty (cell (univ : Set X) k)) ∧
+      RelCWComplex.Finite (univ : Set X) ∧ Nonempty (M ≃ₕ X) ∧
       ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
-  obtain ⟨_, X, _, _, _, h, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hdim, -,
-      hcell, -⟩ :=
-    hf.exists_cwComplex_sublevel_homotopyEquiv_of_manifoldMorseIndex_le hp hbdd hd
-  exact ⟨X, _, ‹_›, ‹_›, ⟨h.symm⟩, hdim, hcell⟩
+  obtain ⟨X, _, _, _, ⟨h⟩, hcell⟩ := hf.exists_cwComplex_homotopyEquiv hp hbdd
+  have := finite_sigma_criticalPoints (I := I) hfin
+  exact ⟨X, _, ‹_›, ‹_›, RelCWComplex.finite_of_finite_cells (.of_equiv _
+    (Equiv.sigmaCongrRight fun m ↦ (hcell m).some.symm)), ⟨h⟩, hcell⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- A boundaryless manifold carrying a proper Morse function bounded below with finitely many
+critical points has finite CW type. -/
+theorem IsMorse.finiteCWType_of_isProperMap (hf : IsMorse I f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hfin : (criticalPoints I f).Finite) : FiniteCWType M := by
+  obtain ⟨X, _, _, _, _, ⟨e⟩, -⟩ :=
+    hf.exists_finite_cwComplex_homotopyEquiv_of_isProperMap hp hbdd hfin
+  exact (e.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).finiteCWType
 
 omit [FiniteDimensional ℝ E] in
 /-- A boundaryless Hausdorff manifold carrying a proper Morse function bounded below has CW type. -/

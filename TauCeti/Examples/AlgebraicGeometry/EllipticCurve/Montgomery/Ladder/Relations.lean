@@ -7,6 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Ladder.Relations
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of the binary Montgomery-ladder invariant
@@ -22,19 +23,16 @@ public section
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open WeierstrassCurve TauCeti.Examples.Montgomery.CurveX3AddX
 
 -- Three bits, with the actual unnormalized raw outputs retained at each stage.
 example [Fact (Nat.Prime 7)] :
-    let P : (model (0 : ZMod 7) 1).toAffine.Point := .some 3 3 (by
-      rw [Affine.nonsingular_iff, Affine.equation_iff]
-      norm_num
-      decide +revert)
+    let P := pointThreeThreeSeven
     (Pair.mk (2 : ZMod 7) 3).cross (coordinates 0 1 (7 • P)) = 0 ∧ 8 • P = 0 := by
   intro P
   have hP : P ≠ 0 := Affine.Point.some_ne_zero _
   have hPT : P ≠ twoTorsionPoint 0 (by simp) := by
-    simpa [P, twoTorsionPoint_def] using
+    simpa [P, pointThreeThreeSeven, twoTorsionPoint_def] using
       (ZMod.natCast_eq_zero_iff 3 7).not.mpr (by decide)
   have h₁ : LadderRel (2 : ZMod 7) 4 ⟨3, 1⟩ 1 ⟨1, 5⟩ ⟨4, 4⟩ := by
     convert (LadderRel.zero (N := (2 : ZMod 7)) (D := 4) (S := ⟨3, 1⟩)).bit true
@@ -52,7 +50,7 @@ example [Fact (Nat.Prime 7)] :
   have hinv := h₇.coordinates (A := 0) (B := 1) (P := P)
     ((ZMod.natCast_eq_zero_iff 2 7).not.mpr (by decide)) (by simp)
     ((ZMod.natCast_eq_zero_iff 4 7).not.mpr (by decide)) (by norm_num)
-    (by simp [Pair.ne_zero_iff]) (by simp [P]) hP hPT
+    (by simp [Pair.ne_zero_iff]) (by simp [P, pointThreeThreeSeven]) hP hPT
   refine ⟨hinv.2.1, (coordinates_z_eq_zero_iff (by simp)).mp ?_⟩
   simpa [Pair.cross_def] using hinv.2.2.2
 

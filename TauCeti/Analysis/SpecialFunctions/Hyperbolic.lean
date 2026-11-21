@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Data.Nat.Factorial.Basic
 
@@ -40,8 +44,13 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.one_add_tanh_le` and `Real.one_sub_tanh_le` —
   `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
+* `Real.one_sub_tanh_sq_le`, `Real.exists_iteratedDeriv_succ_tanh_eq_mul_eval` and
+  `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
+  `Real.tanh` is `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))` times a polynomial in `tanh x`, so it is
+  at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
@@ -49,6 +58,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
   `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
   `cosh α * cosh θ ≠ 0`.
+* `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
+* `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
+  `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -223,6 +235,62 @@ theorem one_add_tanh_le (x : ℝ) : 1 + tanh x ≤ 2 * exp (2 * x) := by
 theorem one_sub_tanh_le (x : ℝ) : 1 - tanh x ≤ 2 * exp (-(2 * x)) := by
   simpa [tanh_neg, sub_eq_add_neg] using one_add_tanh_le (-x)
 
+/-- `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))`: the derivative `1 - tanh x ^ 2 = 1 / cosh x ^ 2` of
+the hyperbolic tangent decays exponentially at both ends of the line. -/
+theorem one_sub_tanh_sq_le (x : ℝ) : 1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|)) := by
+  have ha := neg_one_lt_tanh x
+  have hb := tanh_lt_one x
+  have e : 1 - tanh x ^ 2 = (1 + tanh x) * (1 - tanh x) := by ring
+  rw [e]
+  rcases le_total 0 x with hx | hx
+  · rw [abs_of_nonneg hx]
+    calc (1 + tanh x) * (1 - tanh x) ≤ 2 * (2 * exp (-(2 * x))) :=
+          mul_le_mul (by linarith) (one_sub_tanh_le x) (by linarith) zero_le_two
+      _ = 4 * exp (-(2 * x)) := by ring
+  · rw [abs_of_nonpos hx, mul_neg, neg_neg]
+    calc (1 + tanh x) * (1 - tanh x) ≤ 2 * exp (2 * x) * 2 :=
+          mul_le_mul (one_add_tanh_le x) (by linarith) (by linarith) (by positivity)
+      _ = 4 * exp (2 * x) := by ring
+
+open _root_.Polynomial in
+/-- Every derivative of positive order of the hyperbolic tangent is `1 - tanh x ^ 2` times a
+polynomial in `tanh x`, since `tanh' = 1 - tanh ^ 2`. -/
+theorem exists_iteratedDeriv_succ_tanh_eq_mul_eval (n : ℕ) :
+    ∃ p : ℝ[X], ∀ x, iteratedDeriv (n + 1) tanh x = (1 - tanh x ^ 2) * p.eval (tanh x) := by
+  have ht (x : ℝ) : HasDerivAt tanh (1 - tanh x ^ 2) x := by
+    simpa [one_sub_tanh_sq] using hasDerivAt_tanh x
+  induction n with
+  | zero => exact ⟨1, fun x ↦ by simp [(ht x).deriv]⟩
+  | succ n ih =>
+    obtain ⟨p, hp⟩ := ih
+    refine ⟨-2 * X * p + (1 - X ^ 2) * derivative p, fun x ↦ ?_⟩
+    rw [iteratedDeriv_succ, funext hp]
+    have h : HasDerivAt (fun y ↦ (1 - tanh y ^ 2) * p.eval (tanh y)) _ x :=
+      (((ht x).pow 2).const_sub 1).fun_mul ((p.hasDerivAt (tanh x)).comp x (ht x))
+    rw [h.deriv]
+    simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, eval_add, eval_mul, eval_neg,
+      eval_ofNat, eval_X, eval_sub, eval_one, eval_pow, Pi.pow_apply]
+    ring
+
+/-- **The derivatives of the hyperbolic tangent decay exponentially.** For every `n` there is a
+constant `C` with `|tanh⁽ⁿ⁺¹⁾ x| ≤ C exp (-2 |x|)` for all `x`: every derivative of positive
+order is `1 - tanh x ^ 2` (`Real.one_sub_tanh_sq_le`) times a polynomial in `tanh x`, which is
+bounded since `tanh x ∈ [-1, 1]`. So `tanh` converges to `±1` at `±∞` in every `C^k` norm, at the
+rate `exp (-2 |x|)`. -/
+theorem exists_abs_iteratedDeriv_succ_tanh_le (n : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ x, |iteratedDeriv (n + 1) tanh x| ≤ C * exp (-(2 * |x|)) := by
+  obtain ⟨p, hp⟩ := exists_iteratedDeriv_succ_tanh_eq_mul_eval n
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (p.differentiable.continuous.continuousOn (s := Set.Icc (-1 : ℝ) 1))
+  have hb (x : ℝ) : |p.eval (tanh x)| ≤ C := by
+    simpa [Real.norm_eq_abs] using hC (tanh x) ⟨(neg_one_lt_tanh x).le, (tanh_lt_one x).le⟩
+  refine ⟨4 * C, by linarith [(abs_nonneg _).trans (hb 0)], fun x ↦ ?_⟩
+  have hs : 0 ≤ 1 - tanh x ^ 2 := (sub_pos.2 (tanh_sq_lt_one x)).le
+  rw [hp, abs_mul, abs_of_nonneg hs]
+  calc (1 - tanh x ^ 2) * |p.eval (tanh x)| ≤ 4 * exp (-(2 * |x|)) * C :=
+        mul_le_mul (one_sub_tanh_sq_le x) (hb x) (abs_nonneg _) (by positivity)
+    _ = 4 * C * exp (-(2 * |x|)) := by ring
+
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/
 theorem four_mul_sinh_half_sq (r : ℝ) :
@@ -258,7 +326,7 @@ theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
   -- bounds it by `exp (l ^ 2 / 24)`.
   have h1 : 1 - exp (-l) = exp (-(l / 2)) * (2 * sinh (l / 2)) := by
     have ha : exp (-(l / 2)) * exp (l / 2) = 1 := by rw [← exp_add]; simp
-    have hb : exp (-l) = exp (-(l / 2)) ^ 2 := by rw [← exp_nat_mul]; ring_nf
+    have hb : exp (-l) = exp (-(l / 2)) ^ 2 := by rw [← exp_natCast_mul]; ring_nf
     rw [sinh_eq]
     linear_combination -ha - hb
   have hsq : (l / 2) ^ 2 / 6 = l ^ 2 / 24 := by ring
@@ -284,6 +352,16 @@ theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
 theorem tendsto_cosh_atBot : Filter.Tendsto cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- The shifted hyperbolic cosine `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`. -/
+theorem bijOn_cosh_sub_one_Ioi :
+    Set.BijOn (fun u : ℝ ↦ cosh u - 1) (Set.Ioi 0) (Set.Ioi 0) := by
+  refine ⟨fun u hu ↦ sub_pos.mpr (one_lt_cosh.mpr (ne_of_gt hu)),
+    sub_left_injective.comp_injOn coshOpenPartialHomeomorph.injOn, fun τ hτ ↦ ?_⟩
+  have hτ' : 1 < τ + 1 := by linarith [Set.mem_Ioi.mp hτ]
+  refine ⟨arcosh (τ + 1), arcosh_pos hτ', ?_⟩
+  dsimp only
+  rw [cosh_arcosh hτ'.le, add_sub_cancel_right]
 
 /-- The derivative of `log (cosh x)` is `tanh x`. -/
 theorem _root_.Real.hasDerivAt_log_cosh (x : ℝ) :
@@ -337,5 +415,22 @@ theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
       (1 - tanh α * tanh θ) / 2 := by
   rw [cosh_sub, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
   field_simp
+
+/-- The complex hyperbolic cosine is bounded by the mean of the norms of the two exponentials:
+`‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2`. -/
+theorem norm_cosh_le (z : ℂ) : ‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 := by
+  rw [cosh, norm_div, Complex.norm_two]
+  gcongr
+  exact norm_add_le _ _
+
+/-- The bound `Complex.norm_cosh_le` with a common factor `w`:
+`‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2`. It dominates `cosh z * w` by the two
+exponential terms `exp (± z) * w`. -/
+theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2 := by
+  calc ‖cosh z * w‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 * ‖w‖ := by
+        rw [norm_mul]
+        gcongr
+        exact norm_cosh_le z
+    _ = _ := by rw [norm_mul, norm_mul]; ring
 
 end Complex

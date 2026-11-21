@@ -116,7 +116,7 @@ private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
       ⟨(mem_twistedIndexFiltration_iff _).1 (indexExtend_mem_twistedIndexFiltration _),
         mem_twistedTotalGrading_iff.1
           (indexExtend_mem_twistedTotalGrading (indexGradedPieceComplexXEquiv hM ind (b + 1)
-            (a + b) f).2)⟩
+            (a + b) f).property)⟩
   let s' := (m.twistedIndexCochainComplexXEquiv hM (b + 1) (a + b)).symm ⟨ef, hef_mem⟩
   have hs' : (m.twistedIndexCochainComplexXEquiv hM (b + 1) (a + b) s' : P → M) = ef :=
     congrArg Subtype.val ((m.twistedIndexCochainComplexXEquiv hM (b + 1) (a + b)).apply_symm_apply
@@ -132,7 +132,7 @@ private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
           rw [← hds']
           exact (mem_twistedIndexGrading_iff.1 (m.twistedIndexCochainComplexXEquiv hM (b + 1)
             (a + b + 1) (((m.twistedIndexCochainComplex hM (b + 1)).d (a + b)
-              (a + b + 1)).hom s')).2).2⟩
+              (a + b + 1)).hom s')).property).2⟩
   let w := (m.twistedIndexCochainComplexXEquiv hM b (a + b + 1)).symm ⟨_, hw_mem⟩
   have hw : (m.twistedIndexCochainComplexXEquiv hM b (a + b + 1) w : P → M) =
       twistedDifferential m.m ℳ dM ef :=
