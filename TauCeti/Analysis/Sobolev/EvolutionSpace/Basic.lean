@@ -246,6 +246,12 @@ theorem norm_timeDeriv_le (u : EvolutionSpace ι a b) : ‖timeDeriv u‖ ≤ �
   rw [norm_timeDeriv_eq]
   exact WeakDerivStep.norm_weakFDeriv_le _ u
 
+/-- The graph norm is at most the sum of the `L²(a,b;V)` and `L²(a,b;V*)` norms. -/
+theorem norm_le_norm_value_add_norm_timeDeriv (u : EvolutionSpace ι a b) :
+    ‖u‖ ≤ ‖value u‖ + ‖timeDeriv u‖ := by
+  rw [value_eq_prev, norm_timeDeriv_eq]
+  exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv _ u
+
 /-- The energy space is complete in its graph norm. -/
 instance [CompleteSpace V] : CompleteSpace (EvolutionSpace ι a b) := inferInstance
 
@@ -335,6 +341,11 @@ theorem value_ae_eq_toContinuousMap (hab : a < b) (u : EvolutionSpace ι a b) :
   rw [toContinuousMap_apply]
   exact representativeₗ_ae hab u
 
+/-- The canonical time trace, extended to `ℝ` by the projection onto `[a,b]`, is continuous. -/
+theorem continuous_toContinuousMap_projIcc (hab : a < b) (u : EvolutionSpace ι a b) :
+    Continuous fun t ↦ toContinuousMap hab u (projIcc a b hab.le t) :=
+  (toContinuousMap hab u).continuous.comp continuous_projIcc
+
 /-- A continuous function is the time trace exactly when it represents the pivot value field. -/
 theorem toContinuousMap_eq_iff (hab : a < b) (u : EvolutionSpace ι a b)
     (w : C(Icc a b, H)) : toContinuousMap hab u = w ↔
@@ -362,7 +373,7 @@ theorem norm_sq_sub_norm_sq_eq_integral (hab : a < b) (u : EvolutionSpace ι a b
     projIcc_of_mem hab.le s.property] using
     (hasWeakLineDerivOn u).norm_sq_sub_norm_sq_eq_of_gelfandDual
       (Lp.memLp (value u)) (Lp.memLp (timeDeriv u))
-      ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousOn
+      (continuous_toContinuousMap_projIcc hab u).continuousOn
       (value_ae_eq_toContinuousMap hab u) s.property t.property
 
 end EvolutionSpace

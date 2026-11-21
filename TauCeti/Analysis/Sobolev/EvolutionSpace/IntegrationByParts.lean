@@ -69,11 +69,11 @@ theorem integral_timeDeriv_value_eq_sub (hab : a < b) (u v : EvolutionSpace ι a
   have hp := (hasWeakLineDerivOn u).inner_sub_inner_eq_integral_of_gelfandDual
     (hasWeakLineDerivOn v) (Lp.memLp (value u)) (Lp.memLp (timeDeriv u))
     (Lp.memLp (value v)) (Lp.memLp (timeDeriv v))
-    ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousOn
-    ((toContinuousMap hab v).continuous.comp continuous_projIcc).continuousOn
+    (continuous_toContinuousMap_projIcc hab u).continuousOn
+    (continuous_toContinuousMap_projIcc hab v).continuousOn
     (value_ae_eq_toContinuousMap hab u) (value_ae_eq_toContinuousMap hab v)
     s.property t.property
-  simp only [Function.comp_apply, projIcc_of_mem hab.le s.property,
+  simp only [projIcc_of_mem hab.le s.property,
     projIcc_of_mem hab.le t.property,
     intervalIntegral.integral_add (intervalIntegrable_timeDeriv_value u v s t)
       (intervalIntegrable_timeDeriv_value v u s t)] at hp

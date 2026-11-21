@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.EvolutionSpace.Basic
 import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
 import TauCeti.Analysis.PDE.Parabolic.Existence
+import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -72,27 +73,6 @@ variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] {ι : V →L[ℝ] H}
   {A : ℝ → V →L[ℝ] StrongDual ℝ V} {a b α β Λ : ℝ} {u v : EvolutionSpace ι a b}
 
-/-- An essential bound for a family of norms over a nondegenerate interval is nonnegative. -/
-private theorem nonneg_of_ae_norm_le (hab : a < b)
-    (hA_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t‖ ≤ Λ) : 0 ≤ Λ := by
-  have hμ : volume.restrict (Ioo a b) ≠ 0 := by
-    rw [Ne, Measure.restrict_eq_zero, Real.volume_Ioo, ENNReal.ofReal_eq_zero, not_le, sub_pos]
-    exact hab
-  have := ae_neBot.2 hμ
-  obtain ⟨t, ht⟩ := hA_bound.exists
-  exact (norm_nonneg (A t)).trans ht
-
-/-- On `(a, b)`, the integral of the squared norm of an `L²` function over a subinterval `(a, t)`
-is at most its squared norm. -/
-private theorem intervalIntegral_norm_sq_le {E : Type*} [NormedAddCommGroup E]
-    (g : Lp E 2 (volume.restrict (Ioo a b))) {t : ℝ} (ht : t ∈ Icc a b) :
-    ∫ s in a..t, ‖g s‖ ^ 2 ≤ ‖g‖ ^ 2 := by
-  rw [← Lp.integral_norm_sq_eq_norm_sq, intervalIntegral.integral_of_le ht.1,
-    integral_Ioc_eq_integral_Ioo]
-  exact setIntegral_mono_set
-    ((memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable g)).1 (Lp.memLp g))
-    (ae_of_all _ fun _ ↦ by positivity) (ae_of_all _ fun _ hs ↦ Ioo_subset_Ioo_right ht.2 hs)
-
 /-- **The time derivative of a solution.** If `‖A(t)‖ ≤ Λ` for almost every `t ∈ (a, b)`, every
 element of the energy space solving `u' + A(t) u = f` on `(a, b)` satisfies
 `‖u'‖_{L²(a, b; V*)} ≤ ‖f‖ + Λ ‖u‖_{L²(a, b; V)}`. -/
@@ -120,12 +100,6 @@ theorem norm_timeDeriv_le_of_ae_timeDeriv_add_eq
 
 variable [CompleteSpace V] [CompleteSpace H]
 
-/-- The canonical continuous representative, extended to `ℝ` by the projection onto `[a, b]`, is
-continuous on `[a, b]`. -/
-private theorem continuousOn_toContinuousMap_projIcc (hab : a < b) (u : EvolutionSpace ι a b) :
-    ContinuousOn (fun t ↦ toContinuousMap hab u (projIcc a b hab.le t)) (Icc a b) :=
-  ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousOn
-
 /-- **Uniqueness in the energy space.** Let `A(t)` satisfy Gårding's inequality
 `α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` with `α > 0` and `β ≥ 0` for almost every `t ∈ (a, b)`. Two
 elements of the energy space solving `u' + A(t) u = f` on `(a, b)` with the same initial value
@@ -140,8 +114,8 @@ theorem eq_of_ae_timeDeriv_add_eq (hab : a < b) (hα : 0 < α) (hβ : 0 ≤ β)
     u = v :=
   ext <| Lp.ext <| (hasWeakLineDerivOn u).ae_eq_of_gelfandDual (hasWeakLineDerivOn v)
     (Lp.memLp _) (Lp.memLp _) (Lp.memLp _) (Lp.memLp _) hα hβ hA_garding hu hv
-    (continuousOn_toContinuousMap_projIcc hab u) (value_ae_eq_toContinuousMap hab u)
-    (continuousOn_toContinuousMap_projIcc hab v) (value_ae_eq_toContinuousMap hab v)
+    (continuous_toContinuousMap_projIcc hab u).continuousOn (value_ae_eq_toContinuousMap hab u)
+    (continuous_toContinuousMap_projIcc hab v).continuousOn (value_ae_eq_toContinuousMap hab v)
     (by simpa only [projIcc_left] using h₀)
 
 /-- The energy estimate at time `t` for an element of the energy space solving
@@ -157,7 +131,7 @@ private theorem norm_sq_add_mul_integral_le (hab : a < b) (hα : 0 < α) (hβ : 
           α⁻¹ * ∫ s in a..t, ‖f s‖ ^ 2) := by
   simpa only [projIcc_of_mem hab.le t.property, projIcc_left] using
     (hasWeakLineDerivOn u).norm_sq_add_mul_integral_le_of_gelfandDual (Lp.memLp _) (Lp.memLp _)
-      (Lp.memLp f) hα hβ hA_garding hu (continuousOn_toContinuousMap_projIcc hab u)
+      (Lp.memLp f) hα hβ hA_garding hu (continuous_toContinuousMap_projIcc hab u).continuousOn
       (value_ae_eq_toContinuousMap hab u) t.property
 
 /-- **The energy estimate in `L²(a, b; V)`.** Under Gårding's inequality
@@ -174,7 +148,9 @@ theorem norm_value_sq_le_of_ae_timeDeriv_add_eq (hab : a < b) (hα : 0 < α) (h�
   have h := norm_sq_add_mul_integral_le hab hα hβ hA_garding hu ⟨b, right_mem_Icc.2 hab.le⟩
   rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo,
     Lp.integral_norm_sq_eq_norm_sq] at h
-  have hf := intervalIntegral_norm_sq_le f (right_mem_Icc.2 hab.le)
+  have hf : ∫ s in a..b, ‖f s‖ ^ 2 ≤ ‖f‖ ^ 2 := by
+    rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo]
+    exact Lp.setIntegral_norm_sq_le_norm_sq f subset_rfl
   rw [le_div_iff₀ hα]
   calc ‖value u‖ ^ 2 * α
       ≤ exp (2 * β * (b - a)) * (‖toContinuousMap hab u ⟨a, left_mem_Icc.2 hab.le⟩‖ ^ 2 +
@@ -209,7 +185,10 @@ theorem norm_toContinuousMap_sq_le_of_ae_timeDeriv_add_eq (hab : a < b) (hα : 0
         ≤ exp (2 * β * (t - a)) * (‖toContinuousMap hab u ⟨a, left_mem_Icc.2 hab.le⟩‖ ^ 2 +
             α⁻¹ * ∫ s in a..t, ‖f s‖ ^ 2) := by linarith
       _ ≤ R :=
-        mul_le_mul hexp (by gcongr; exact intervalIntegral_norm_sq_le f t.property)
+        mul_le_mul hexp (by
+            gcongr
+            rw [intervalIntegral.integral_of_le t.property.1, integral_Ioc_eq_integral_Ioo]
+            exact Lp.setIntegral_norm_sq_le_norm_sq f (Ioo_subset_Ioo_right t.property.2))
           (add_nonneg (sq_nonneg _) (mul_nonneg (inv_nonneg.2 hα.le) hf2)) (exp_pos _).le
   have hle : ‖toContinuousMap hab u‖ ≤ √R :=
     (ContinuousMap.norm_le _ (sqrt_nonneg R)).2 fun t ↦ by
@@ -330,7 +309,8 @@ private theorem norm_parabolicSolutionₗ_apply_le
   rw [parabolicSolutionₗ_apply]
   set u := parabolicSolution hι hab hA hA_bound hα hβ hA_garding p
   obtain ⟨hu, hu₀⟩ := parabolicSolution_spec hι hab hA hA_bound hα hβ hA_garding p
-  have hΛ := nonneg_of_ae_norm_le hab hA_bound
+  have hΛ := nonneg_of_ae_restrict_abs_le (s := Ioo a b) (g := fun t ↦ ‖A t‖)
+    (by simp [hab]) (hA_bound.mono fun t ht ↦ (abs_norm (A t)).trans_le ht)
   have h₁ : ‖p.1‖ ≤ ‖p‖ := norm_fst_le p
   have h₂ : ‖p.2‖ ≤ ‖p‖ := norm_snd_le p
   -- The `L²(a, b; V)` part, by the energy estimate.
@@ -350,11 +330,7 @@ private theorem norm_parabolicSolutionₗ_apply_le
       _ = _ := by rw [sqrt_mul (by positivity), sqrt_sq (norm_nonneg _)]
   -- The time derivative, from the equation.
   have hder := norm_timeDeriv_le_of_ae_timeDeriv_add_eq hA_bound hu
-  -- The graph norm is at most the sum of the two norms.
-  have hsum : ‖u‖ ≤ ‖value u‖ + ‖timeDeriv u‖ := by
-    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-    rw [norm_sq_eq_norm_value_sq_add_norm_timeDeriv_sq]
-    nlinarith [norm_nonneg (value u), norm_nonneg (timeDeriv u)]
+  have hsum := norm_le_norm_value_add_norm_timeDeriv u
   nlinarith [norm_nonneg p]
 
 /-- **The solution operator of a linear parabolic equation.** Let `V ↪ H ↪ V*` be a Gelfand
@@ -373,7 +349,7 @@ private theorem parabolicSolutionL_apply
     (p : H × Lp (StrongDual ℝ V) 2 (volume.restrict (Ioo a b))) :
     parabolicSolutionL hι hab hA hA_bound hα hβ hA_garding p =
       parabolicSolution hι hab hA hA_bound hα hβ hA_garding p :=
-  (rfl)
+  (LinearMap.mkContinuous_apply ..).trans (parabolicSolutionₗ_apply ..)
 
 /-- The image of `(u₀, f)` under the solution operator solves `u' + A(t) u = f` on `(a, b)`. -/
 theorem ae_timeDeriv_parabolicSolutionL_add_eq
@@ -415,7 +391,8 @@ two norms and the energy space its graph norm. -/
 theorem norm_parabolicSolutionL_le :
     ‖parabolicSolutionL hι hab hA hA_bound hα hβ hA_garding‖ ≤
       1 + (1 + Λ) * √(exp (2 * β * (b - a)) * (1 + α⁻¹) / α) := by
-  have hΛ := nonneg_of_ae_norm_le hab hA_bound
+  have hΛ := nonneg_of_ae_restrict_abs_le (s := Ioo a b) (g := fun t ↦ ‖A t‖)
+    (by simp [hab]) (hA_bound.mono fun t ht ↦ (abs_norm (A t)).trans_le ht)
   exact LinearMap.mkContinuous_norm_le _ (by positivity) _
 
 end Existence
