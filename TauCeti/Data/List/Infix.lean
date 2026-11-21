@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.List.Infix
+public import Mathlib.Data.List.Rotate
 
 /-!
 # Prefixes of repeated lists, prefix chains, and infixes of concatenations
 
-Concatenating fewer copies of a list gives a prefix of concatenating more copies. A list which,
-followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself begins with these `k`
-copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`. An
-injective map preserves and reflects infixes.
+Concatenating fewer copies of a list gives a prefix of concatenating more copies, and the factor of
+length `|l|` of `m` concatenated copies of `l` starting at position `d` is the rotation of `l` by
+`d`. A list which, followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself
+begins with these `k` copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an
+infix of `l₂`. An injective map preserves and reflects infixes.
 -/
 
 public section
@@ -28,6 +30,29 @@ theorem flatten_replicate_prefix_flatten_replicate (l : List α) {m n : ℕ} (h 
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
   rw [replicate_add, flatten_append]
   exact prefix_append _ _
+
+/-- The factor of length `|l|` starting at position `d` of `m` concatenated copies of `l` is the
+rotation of `l` by `d`, provided it fits: `d + |l| ≤ m * |l|`. -/
+theorem take_drop_flatten_replicate (l : List α) {m d : ℕ} (h : d + l.length ≤ m * l.length) :
+    (((replicate m l).flatten).drop d).take l.length = l.rotate d := by
+  induction m generalizing d with
+  | zero =>
+    obtain rfl : l = [] := length_eq_zero_iff.1 (by lia)
+    simp
+  | succ m ih =>
+    rw [replicate_succ, flatten_cons]
+    obtain hd | hd := le_or_gt l.length d
+    · obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le hd
+      rw [drop_length_add_append, ih (by rw [Nat.succ_mul] at h; lia), ← rotate_rotate,
+        rotate_length]
+    · rw [drop_append_of_le_length hd.le, take_append, length_drop, take_of_length_le (by simp),
+        rotate_eq_drop_append_take hd.le, Nat.sub_sub_self hd.le]
+      congr 1
+      cases m with
+      | zero =>
+        obtain rfl : d = 0 := by lia
+        simp
+      | succ m => rw [replicate_succ, flatten_cons, take_append_of_le_length hd.le]
 
 /-- If `l ++ y :: t` begins with `k` copies of `x` and `x ≠ y`, then `l` begins with these `k`
 copies: the entry `y` cannot lie among them. -/

@@ -1,14 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Order.IntermediateValue
-import TauCeti.Analysis.ODE.Gronwall.TwoSided
+import TauCeti.Analysis.ODE.Gronwall.Interior
 
 /-!
 # ODE uniqueness on relative neighborhoods
@@ -17,7 +17,9 @@ Two solutions of a locally Lipschitz vector field with a common value agree near
 within an order-connected parameter set. Derivatives are taken within the parameter set,
 so the initial time may be a closed endpoint. No completeness of the phase space is needed.
 A C¹ vector field supplies the local Lipschitz hypothesis; equality then extends throughout
-any preconnected real parameter set.
+any preconnected real parameter set. On a closed interval, continuity up to the endpoints and
+an interior derivative with a state-space Lipschitz bound likewise yield uniqueness from any
+interior or boundary reference point.
 
 ## Main results
 
@@ -28,10 +30,14 @@ any preconnected real parameter set.
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
 * `LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt`: solutions of an autonomous locally Lipschitz
   ODE on `[a, b]` are determined by their value at `a`.
+* `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_lipschitzWith`: closed-interval
+  uniqueness from interior derivatives and a common value at any `c ∈ [a, b]`.
 
 ## References
 
 * `Mathlib.Analysis.ODE.ExistUnique` for local Lipschitz uniqueness.
+* `TauCeti.Analysis.ODE.Gronwall.Interior` for closed-interval Grönwall bounds from interior
+  derivatives.
 * J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Lemmas 6.8 and 6.10:
   closed-endpoint ODE uniqueness is an analytic input to reduced-geodesic and variation
   uniqueness there.
@@ -43,6 +49,8 @@ public section
 
 open Filter Topology
 open scoped NNReal
+
+section
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {V : ℝ × E → E} {I : Set ℝ} {f g : ℝ → E} {t0 : ℝ}
@@ -150,3 +158,45 @@ theorem LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt {v : E → E} (hv : Locall
   exact ODE_solution_unique_of_mem_Icc_right (v := fun _ ↦ v) (fun _ _ ↦ hK) hf hf'
     (fun t ht ↦ .inl ⟨t, Set.Ico_subset_Icc_self ht, rfl⟩) hg hg'
     (fun t ht ↦ .inr ⟨t, Set.Ico_subset_Icc_self ht, rfl⟩) ha
+
+end
+
+namespace ODE
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Two curves continuous on `[a, b]`, remaining inside `s t` and solving `γ' t = v t (γ t)` at
+interior points `t ∈ (a, b)` where `v t` is `K`-Lipschitz on `s t`, agree throughout `[a, b]`
+whenever they agree at an interior or boundary point `c ∈ [a, b]`. -/
+theorem eqOn_Icc_of_lipschitzOnWith {a b c : ℝ} {v : ℝ → E → E} {s : ℝ → Set E} {K : ℝ≥0}
+    {f g : ℝ → E} (hv : ∀ t ∈ Ioo a b, LipschitzOnWith K (v t) (s t)) (hc : c ∈ Icc a b)
+    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
+    (hfs : ∀ t ∈ Ioo a b, f t ∈ s t)
+    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
+    (hgs : ∀ t ∈ Ioo a b, g t ∈ s t) (hfc : f c = g c) :
+    EqOn f g (Icc a b) := fun t ht ↦ by
+  have hle := TauCeti.norm_le_gronwallBound_of_norm_deriv_le (f := fun u ↦ f u - g u)
+    (f' := fun u ↦ v u (f u) - v u (g u)) (δ := 0) (K := K) (ε := 0) hc (hf.sub hg)
+    (fun u hu ↦ (hf' u hu).sub (hg' u hu)) (by simp [hfc])
+    (fun u hu ↦ by
+      simpa only [add_zero, dist_eq_norm] using
+        (hv u hu).dist_le_mul (f u) (hfs u hu) (g u) (hgs u hu))
+    t ht
+  rw [gronwallBound_ε0_δ0] at hle
+  exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
+
+/-- Two curves continuous on `[a, b]` that solve `γ' t = v t (γ t)` on `(a, b)` for a
+state-Lipschitz field `v` and agree at an interior or boundary point `c ∈ [a, b]` agree throughout
+`[a, b]`. -/
+theorem eqOn_Icc_of_lipschitzWith {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0} {f g : ℝ → E}
+    (hv : ∀ t ∈ Ioo a b, LipschitzWith K (v t)) (hc : c ∈ Icc a b)
+    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
+    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
+    (hfc : f c = g c) :
+    EqOn f g (Icc a b) :=
+  eqOn_Icc_of_lipschitzOnWith (s := fun _ ↦ univ) (fun t ht ↦ (hv t ht).lipschitzOnWith) hc
+    hf hf' (fun _ _ ↦ trivial) hg hg' (fun _ _ ↦ trivial) hfc
+
+end ODE

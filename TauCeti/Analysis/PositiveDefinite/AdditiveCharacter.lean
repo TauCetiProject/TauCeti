@@ -43,7 +43,7 @@ theorem isPositiveDefiniteSub
         (fun g : G => (χ (Multiplicative.ofAdd g) : ℂ)) := by
   constructor
   · have hco : Continuous ((↑) : Circle → ℂ) :=
-      (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous
+      (LipschitzWith.subtypeVal (Submonoid.unitSphere ℂ).carrier).continuous
     have hid : Continuous (fun g : G => (g : Multiplicative G)) := continuous_ofAdd
     exact hco.comp (χ.continuous.comp hid)
   · rw [isPositiveDefiniteSub_iff_posSemidef]

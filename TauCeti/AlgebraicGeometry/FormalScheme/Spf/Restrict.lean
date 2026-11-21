@@ -106,7 +106,7 @@ theorem range_comap_completedAway :
       (Ideal.Quotient.mk (IsAdicRing.ideal A ^ 1) f), Homeomorph.image_symm]
   ext p
   simp [Ideal.mem_quotient_iff_mem ((mem_carrier_iff_le
-    (is_ideal_adic_pow (IsAdicRing.ideal_spec A).2.1 one_pos)).mp p.2)]
+    (is_ideal_adic_pow (IsAdicRing.ideal_spec A).2.1 one_pos)).mp p.property)]
 
 /-- The open embedding `Spf A_{f} → Spf A` carries the basic open set `D(a)` of `Spf A_{f}`, for
 `a ∈ A`, onto the basic open set `D(f a)` of `Spf A`. -/

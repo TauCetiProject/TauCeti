@@ -113,7 +113,7 @@ theorem cast_id_comp {n' : ℕ} (h : n = n') (f : TLDiagram n' m) :
   simp
 
 private theorem val_mk_eq_mk_iff {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hq : q < K)
-    (hr : r < K) : x.1.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by
+    (hr : r < K) : x.val.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by
   rw [PlanarMatching.pv_of_lt x hq, Fin.ext_iff]
 
 /-- **Vertical reflection is contravariant on composition**: turning a stacked composite `f ≫ g`
@@ -162,7 +162,7 @@ theorem cup_comp_cap : cup.comp cap = ⟨(id 0).matching, 1⟩ := by
 
 /-- **A cap followed by a cup** has the matching of the diagram `e₁ : 2 → 2`, joining the two
 bottom points and the two top points. -/
-theorem cap_comp_cup_matching_val : (cap.comp cup).matching.1.val = swap 0 1 * swap 2 3 := by
+theorem cap_comp_cup_matching_val : (cap.comp cup).matching.val.val = swap 0 1 * swap 2 3 := by
   refine Equiv.ext fun i => Fin.ext ?_
   rw [← PlanarMatching.pv_coe, matching_comp, PlanarMatching.glueMiddle_zero,
     PlanarMatching.pv_cast]

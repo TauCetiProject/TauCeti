@@ -99,7 +99,7 @@ theorem Coalgebra.IsFrobenius.comul_one_mem_graded [Coalgebra R A] [Coalgebra.Is
   rw [← DirectSum.sum_support_decompose (G.tensorProduct G).piece c]
   refine Submodule.sum_mem _ fun n hn => ?_
   by_cases hnd : n = d
-  · exact hnd ▸ (DirectSum.decompose (G.tensorProduct G).piece c n).2
+  · exact hnd ▸ (DirectSum.decompose (G.tensorProduct G).piece c n).property
   · exfalso; apply DFinsupp.mem_support_iff.mp hn; ext
     refine tensor_eq_of_forall_lid_rTensor_counit_mulLeft fun a => ?_
     set zn : A ⊗[R] A := ↑(DirectSum.decompose (G.tensorProduct G).piece c n) with hzn_def
@@ -220,7 +220,7 @@ theorem LinearMap.traceDualBasis_mem_graded {R A ι : Type*} [CommSemiring R] [C
   classical
   set w := ε.traceDualBasis b i with hw_def
   suffices hw : w = DirectSum.decompose 𝒜 w (d - deg i) by
-    rw [hw]; exact (DirectSum.decompose 𝒜 w (d - deg i)).2
+    rw [hw]; exact (DirectSum.decompose 𝒜 w (d - deg i)).property
   refine ((mul R A).compr₂ ε).toPerfPair.injective (b.ext fun j => ?_)
   simp only [toPerfPair_apply, compr₂_apply, mul_apply_apply]
   have hkill {q : ℤ} {x : A} (hx : x ∈ 𝒜 q) (hq : q ≠ d - deg j) : ε (x * b j) = 0 :=
@@ -233,7 +233,7 @@ theorem LinearMap.traceDualBasis_mem_graded {R A ι : Type*} [CommSemiring R] [C
         rw [InternalGrading.ofDecomposition_piece] at hx
         exact hkill hx (hij ▸ hq)) w
     simpa [InternalGrading.coe_decompose_ofDecomposition_piece_apply] using hmap
-  · rw [hkill (DirectSum.decompose 𝒜 w (d - deg i)).2 (by omega), hw_def]
+  · rw [hkill (DirectSum.decompose 𝒜 w (d - deg i)).property (by omega), hw_def]
     simp only [ε.traceDualBasis_mul, Module.Basis.repr_self, Finsupp.single_apply, ite_eq_right_iff]
     rintro rfl; exact (hij rfl).elim
 

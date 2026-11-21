@@ -206,7 +206,7 @@ theorem eisensteinSubspace_eq_comap_congruenceEisensteinSubspace (χ : (ZMod N)�
     rw [iSup_split_single W χ, sup_inf_assoc_of_le _ (hWle χ), sup_eq_left]
     exact ((iSupIndep_modFormCharSpace (k : ℤ) χ).symm.mono_left
       (iSup₂_mono fun ψ _ ↦ hWle ψ)).le_bot.trans bot_le
-  have hfW : (f : ModularForm _ (k : ℤ)) ∈ W χ := hcut ▸ Submodule.mem_inf.mpr ⟨hE hf, f.2⟩
+  have hfW : (f : ModularForm _ (k : ℤ)) ∈ W χ := hcut ▸ Submodule.mem_inf.mpr ⟨hE hf, f.property⟩
   obtain ⟨g, hg, hgf⟩ := Submodule.mem_map.mp hfW
   rwa [← Subtype.ext hgf]
 

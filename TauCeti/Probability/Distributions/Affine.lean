@@ -144,7 +144,7 @@ theorem support_map_affine :
 theorem measurable_map_affine :
     Measurable fun p : ProbabilityMeasure ℝ × ℝ × ℝ =>
       (p.1 : Measure ℝ).map fun x => p.2.1 + p.2.2 * x := by
-  exact measurable_subtype_coe.comp
+  exact measurable_subtypeVal.comp
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun p : ℝ × ℝ => fun x => p.1 + p.2 * x) (by fun_prop))
 

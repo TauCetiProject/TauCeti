@@ -70,7 +70,7 @@ omit [Flat toBase] in
 generator `π` of the maximal ideal. -/
 private lemma ideal_ker_specialFiberι (hπ : maximalIdeal R = Ideal.span {π}) (U : X.affineOpens) :
     (specialFiberι R toBase).ker.ideal U = Ideal.span
-      {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op
+      {X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op
         (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))} := by
   rw [ker_specialFiberι_eq_ofIdealTop_span toBase hπ, Scheme.IdealSheafData.ofIdealTop_ideal,
     Ideal.map_span, Set.image_singleton]

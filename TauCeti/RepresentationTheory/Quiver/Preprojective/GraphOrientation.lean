@@ -303,14 +303,14 @@ theorem orientedColor_vertex (o : Orientation G) (i : V) :
 /-- Every arrow of an orientation of a two-coloured graph has differently coloured endpoints. -/
 theorem orientedColor_ne (o : Orientation G) {i j : OrientedQuiver G o} (a : i ⟶ j) :
     C.orientedColor o i ≠ C.orientedColor o j :=
-  C.valid a.1
+  C.valid a.val
 
 /-- Every arrow of the source--sink orientation ends at a vertex of colour `true`. -/
 theorem orientedColor_sourceSink_target_eq_true
     {i j : OrientedQuiver G C.sourceSink} (a : i ⟶ j) :
     C.orientedColor C.sourceSink j = true := by
   rw [orientedColor]
-  exact (mem_sourceSink_iff C _).mp a.2
+  exact (mem_sourceSink_iff C _).mp a.property
 
 /-! ### The preprojective comparison -/
 

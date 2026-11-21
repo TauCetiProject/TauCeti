@@ -28,14 +28,14 @@ public section
 namespace TauCeti.ReeG2LieIndex
 
 /-- The algebraic closure attached to a Ree index of type `G₂` has characteristic three. -/
-instance charP_closure_three (d : ReeG2LieIndex) : CharP d.1.Closure 3 := by
+instance charP_closure_three (d : ReeG2LieIndex) : CharP d.val.Closure 3 := by
   rw [← d.characteristic_eq_three]
   infer_instance
 
 /-- The algebraic closure attached to a Ree index of type `G₂` is an algebra over the field of
 three elements, the base ring of the family's carrier. Characteristic three determines this
 structure uniquely. -/
-noncomputable instance algebraZModThree (d : ReeG2LieIndex) : Algebra (ZMod 3) d.1.Closure :=
-  ZMod.algebra d.1.Closure 3
+noncomputable instance algebraZModThree (d : ReeG2LieIndex) : Algebra (ZMod 3) d.val.Closure :=
+  ZMod.algebra d.val.Closure 3
 
 end TauCeti.ReeG2LieIndex

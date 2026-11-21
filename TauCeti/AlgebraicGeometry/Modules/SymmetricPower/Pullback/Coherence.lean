@@ -83,11 +83,11 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- Both maps are the identity on scalars and on sections.
   refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x).trans ?_
   refine (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl)
-    (fun _ ↦ rfl)) x.1).trans ?_
+    (fun _ ↦ rfl)) x.val).trans ?_
   exact ((ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ
     (((Scheme.Modules.pushforwardId X).hom.app M).val.app' U) n x).trans
       (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl))
-        x.1)).symm
+        x.val)).symm
 
 /-- The symmetric-power comparison for composite pushforward is the composite of the two
 successive comparisons, through the canonical pushforward composition isomorphism. -/

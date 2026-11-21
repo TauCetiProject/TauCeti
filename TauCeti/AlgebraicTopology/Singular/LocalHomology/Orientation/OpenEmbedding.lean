@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
+public import TauCeti.Geometry.Manifold.Opens
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Pulling back homological orientations along open embeddings
@@ -250,6 +252,15 @@ lemma comap_comap_of_comp_eq (o : HomologicalOrientation P E d) {j' : N → P} {
     (hj' : IsOpenEmbedding j') (hj : IsOpenEmbedding j) (hk : IsOpenEmbedding k)
     (hjk : j' ∘ j = k) : (o.comap hj').comap hj = o.comap hk := by
   rw [comap_comap, o.comap_congr _ hk hjk]
+
+/-- Restricting an orientation of `M` to an open `W` and then to an open `V ⊆ W`, along the
+inclusion `V ⟶ W` in `Opens (TopCat.of M)`, is restricting it to `V`. -/
+@[simp]
+lemma comap_comap_toTopCat_map (o : HomologicalOrientation N E d)
+    {V W : TopologicalSpace.Opens (TopCat.of N)} (f : V ⟶ W) :
+    (o.comap W.isOpenEmbedding).comap (TopologicalSpace.Opens.isOpenEmbedding_toTopCat_map f) =
+      o.comap V.isOpenEmbedding :=
+  o.comap_comap_of_comp_eq _ _ _ (funext fun _ ↦ rfl)
 
 /-- Pulling an orientation back along a homeomorphism and then along its inverse gives it back. -/
 @[simp]

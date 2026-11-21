@@ -26,12 +26,30 @@ The construction uses Mathlib's
 bounds by a smooth partition of unity. It is the usual compact-exhaustion construction of a
 smooth exhaustion function; see J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 2, on smooth partitions of unity and smooth exhaustion functions.
+
+Finite-dimensionality is necessary: a nonempty manifold admitting a proper map to a weakly locally
+compact space, such as a proper real-valued function, is locally compact, so its model vector space
+is finite-dimensional (`IsProperMap.finiteDimensional_of_manifold`).
 -/
 
 public section
 
 open Set Filter Topology
 open scoped ContDiff Manifold
+
+/-- A nonempty manifold admitting a proper map to a weakly locally compact space, for instance a
+proper real-valued function, is modelled on a finite-dimensional space: properness makes the
+manifold locally compact, and Riesz's theorem applies. -/
+theorem IsProperMap.finiteDimensional_of_manifold {𝕜 E H M Y : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+    [TopologicalSpace M] [ChartedSpace H M] [R1Space M] [Nonempty M] [TopologicalSpace Y]
+    [WeaklyLocallyCompactSpace Y] {f : M → Y} (hf : IsProperMap f) (I : ModelWithCorners 𝕜 E H) :
+    FiniteDimensional 𝕜 E := by
+  -- The preimage of a compact neighbourhood of `f x` is a compact neighbourhood of `x`.
+  have : WeaklyLocallyCompactSpace M := ⟨fun x ↦
+    let ⟨K, hK, hKx⟩ := exists_compact_mem_nhds (f x)
+    ⟨f ⁻¹' K, hf.isCompact_preimage hK, hf.continuous.continuousAt.preimage_mem_nhds hKx⟩⟩
+  exact .of_locallyCompact_manifold M I
 
 namespace TauCeti
 

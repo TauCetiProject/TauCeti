@@ -129,7 +129,7 @@ theorem wedge_formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V)
   -- The wedge of forms is the form of the exterior product `a ∧ ⋆b`, a top-degree element whose
   -- volume is `⟪a, b⟫`.
   set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
-    rw [← hkl]; exact (wedge ℝ V k l a (o.hodgeStar hkl b)).2⟩
+    rw [← hkl]; exact (wedge ℝ V k l a (o.hodgeStar hkl b)).property⟩
   rw [formHodgeStar_alternatingFormEquiv, ← alternatingFormEquiv_wedge,
     alternatingFormEquiv_apply, alternatingFormInner_alternatingFormEquiv,
     ← o.wedgePairing_hodgeStar hkl, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
