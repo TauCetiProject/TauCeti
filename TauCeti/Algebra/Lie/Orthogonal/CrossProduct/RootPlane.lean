@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint.Height
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # The root plane of `so(3)`
@@ -153,8 +154,7 @@ theorem isRootPlaneDecomposition_soThree :
     obtain ⟨u, rfl⟩ := (soThreeEquiv K).surjective v
     have hu : u ≠ 0 := fun h ↦ hv0 (by rw [h, map_zero])
     rw [soThreeForm_apply_soThreeEquiv]
-    exact lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (u i))
-      (Ne.symm (dotProduct_self_eq_zero.not.mpr hu))
+    exact (Matrix.dotProduct_self_nonneg u).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hu)
   lie_eq_zero hH hH' := by
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hH
     obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.mp hH'
