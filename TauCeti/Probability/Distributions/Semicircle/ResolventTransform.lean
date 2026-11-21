@@ -245,7 +245,7 @@ private lemma im_two_mul_resolventTransform_semicircleReal_add_pos (hz : 0 < z.i
   linarith
 
 /-- In the upper half-plane the derivative of the transform `m` of `semicircleReal a v` is
-`m'(z) = -m(z) / (2 v m(z) + (z - a))`, from differentiating the quadratic equation. -/
+`m'(z) = -m(z) / (2 v m(z) + (z - a))`. -/
 theorem deriv_resolventTransform_semicircleReal (hz : 0 < z.im) :
     deriv (resolventTransform (semicircleReal a v)) z =
       -resolventTransform (semicircleReal a v) z /
@@ -325,9 +325,10 @@ theorem hasDerivWithinAt_resolventTransform_semicircleReal (hz : 0 < z.im) {u : 
   have hsu : (s : ℂ) - u ≠ 0 := sub_ne_zero.2 (by exact_mod_cast (ne_of_gt hs))
   have key : (m s - m u) * ((u : ℂ) * (m s + m u) + (z - a)) = -((s : ℂ) - u) * m s ^ 2 := by
     linear_combination hquad (hu.trans (le_of_lt hs)) - hquad hu
-  rw [slope_def_module, Complex.real_smul, ofReal_inv, ofReal_sub, eq_comm, inv_mul_eq_div,
-    div_eq_div_iff hsu (hE s)]
-  linear_combination key
+  have hE' := hE s
+  simp only [slope_def_module, Complex.real_smul, ofReal_inv, ofReal_sub]
+  field_simp
+  linear_combination -key
 
 /-- The transform of the standard semicircle law at `i` is `i (√5 - 1) / 2`, the root of
 `m² + i m + 1 = 0` with positive imaginary part; the other root is `-i (√5 + 1) / 2`. -/

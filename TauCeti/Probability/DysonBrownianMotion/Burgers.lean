@@ -92,6 +92,16 @@ def IsBurgersFlow (μ : ℝ≥0 → Measure ℝ) : Prop :=
 
 variable {μ ν : ℝ≥0 → Measure ℝ}
 
+/-- Unfolding `IsBurgersFlow`: the integrability of `s ↦ m_s(z) ∂_z m_s(z)` on `[0, t]` and the
+integrated equation, at every point of the upper half-plane and every time. -/
+theorem isBurgersFlow_iff : IsBurgersFlow μ ↔ ∀ z : ℂ, 0 < z.im → ∀ t : ℝ≥0,
+    IntervalIntegrable (fun s : ℝ ↦ resolventTransform (μ s.toNNReal) z *
+      deriv (resolventTransform (μ s.toNNReal)) z) volume 0 t ∧
+    resolventTransform (μ t) z = resolventTransform (μ 0) z +
+      ∫ s in (0 : ℝ)..t, resolventTransform (μ s.toNNReal) z *
+        deriv (resolventTransform (μ s.toNNReal)) z :=
+  Iff.rfl
+
 namespace IsBurgersFlow
 
 /-- Along a Burgers flow the integrand `s ↦ m_s(z) ∂_z m_s(z)` is integrable on `[0, t]`. -/
@@ -107,44 +117,44 @@ theorem resolventTransform_eq (hμ : IsBurgersFlow μ) {z : ℂ} (hz : 0 < z.im)
         deriv (resolventTransform (μ s.toNNReal)) z :=
   (hμ z hz t).2
 
+/-- **Burgers flows from the differentiated equation.** If, at every point `z` of the upper
+half-plane, `t ↦ m_t(z)` is continuous, the integrand `s ↦ m_s(z) ∂_z m_s(z)` is integrable on
+each `[0, t]`, and `s ↦ m_s(z)` has right derivative `m_t(z) ∂_z m_t(z)` at every time `t ≥ 0`,
+then the family is a Burgers flow. -/
+theorem of_hasDerivWithinAt
+    (hc : ∀ z : ℂ, 0 < z.im → Continuous fun t : ℝ≥0 ↦ resolventTransform (μ t) z)
+    (hi : ∀ z : ℂ, 0 < z.im → ∀ t : ℝ≥0,
+      IntervalIntegrable (fun s : ℝ ↦ resolventTransform (μ s.toNNReal) z *
+        deriv (resolventTransform (μ s.toNNReal)) z) volume 0 t)
+    (hd : ∀ z : ℂ, 0 < z.im → ∀ t : ℝ, 0 ≤ t →
+      HasDerivWithinAt (fun s : ℝ ↦ resolventTransform (μ s.toNNReal) z)
+        (resolventTransform (μ t.toNNReal) z * deriv (resolventTransform (μ t.toNNReal)) z)
+        (Ici t) t) :
+    IsBurgersFlow μ := by
+  refine fun z hz t ↦ ⟨hi z hz t, ?_⟩
+  have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le t.coe_nonneg
+    ((hc z hz).comp continuous_real_toNNReal).continuousOn
+    (fun s hs ↦ (hd z hz s hs.1.le).mono Ioi_subset_Ici_self) (hi z hz t)
+  simp only [Function.comp_apply, Real.toNNReal_coe, Real.toNNReal_zero] at hftc
+  rw [hftc]
+  ring
+
 end IsBurgersFlow
 
-/-- For a probability measure, `‖m(z) m'(z)‖ ≤ (Im z)⁻³` in the upper half-plane. -/
-private lemma norm_resolventTransform_mul_deriv_le (ρ : Measure ℝ) [IsProbabilityMeasure ρ]
-    {z : ℂ} (hz : 0 < z.im) :
-    ‖resolventTransform ρ z * deriv (resolventTransform ρ) z‖ ≤ (z.im ^ 3)⁻¹ := by
-  have h₁ := norm_resolventTransform_le (μ := ρ) hz.ne'
-  have h₂ := norm_deriv_resolventTransform_le (μ := ρ) hz.ne'
-  rw [probReal_univ, mul_one, abs_of_pos hz] at h₁ h₂
-  rw [norm_mul]
-  calc _ ≤ z.im⁻¹ * z.im⁻¹ ^ 2 := mul_le_mul h₁ h₂ (norm_nonneg _) (by positivity)
-    _ = (z.im ^ 3)⁻¹ := by ring
+/-- For a probability measure in the upper half-plane, the difference quotient of the transform
+`m` at `z` is within `‖w - z‖ / ((Im z)² Im w)` of `m'(z)`. -/
+private lemma norm_slope_sub_deriv_le (ρ : Measure ℝ) [IsProbabilityMeasure ρ] {z w : ℂ}
+    (hz : 0 < z.im) (hw : 0 < w.im) (hwz : w ≠ z) :
+    ‖slope (resolventTransform ρ) z w - deriv (resolventTransform ρ) z‖ ≤
+      ‖w - z‖ / (z.im ^ 2 * w.im) := by
+  have h := norm_slope_resolventTransform_sub_deriv_le (μ := ρ) hz.ne' hw.ne' hwz
+  rwa [probReal_univ, mul_one, abs_of_pos hz, abs_of_pos hw] at h
 
-/-- For a probability measure and `ε > 0`, the difference quotient of `m` at `z` in the direction
-`ε i` is within `ε (Im z)⁻³` of `m'(z)`. -/
-private lemma norm_deriv_sub_div_le (ρ : Measure ℝ) [IsProbabilityMeasure ρ] {z : ℂ}
-    (hz : 0 < z.im) {ε : ℝ} (hε : 0 < ε) :
-    ‖deriv (resolventTransform ρ) z -
-        ((ε : ℂ) * I)⁻¹ * (resolventTransform ρ (z + ε * I) - resolventTransform ρ z)‖ ≤
-      ε / z.im ^ 3 := by
-  have hw : 0 < (z + ε * I).im := by simp; linarith
-  have key := norm_resolventTransform_sub_sub_mul_deriv_le (μ := ρ) hz.ne' hw.ne'
-  have hεI : (ε : ℂ) * I ≠ 0 := mul_ne_zero (by exact_mod_cast hε.ne') I_ne_zero
-  have hnorm : ‖(ε : ℂ) * I‖ = ε := by simp [abs_of_pos hε]
-  rw [probReal_univ, mul_one, add_sub_cancel_left, hnorm, abs_of_pos hz, abs_of_pos hw] at key
-  have hrw : deriv (resolventTransform ρ) z -
-      ((ε : ℂ) * I)⁻¹ * (resolventTransform ρ (z + ε * I) - resolventTransform ρ z) =
-      -(((ε : ℂ) * I)⁻¹ * (resolventTransform ρ (z + ε * I) - resolventTransform ρ z -
-        (ε * I) * deriv (resolventTransform ρ) z)) := by
-    have hε0 : (ε : ℂ) ≠ 0 := by exact_mod_cast hε.ne'
-    field_simp
-    ring
-  rw [hrw, norm_neg, norm_mul, norm_inv, hnorm]
-  have hwz : z.im ≤ (z + ε * I).im := by simp [hε.le]
-  calc ε⁻¹ * ‖_‖ ≤ ε⁻¹ * (ε ^ 2 / (z.im ^ 2 * (z + ε * I).im)) := by gcongr
-    _ = ε / (z.im ^ 2 * (z + ε * I).im) := by field_simp
-    _ ≤ ε / (z.im ^ 2 * z.im) := by gcongr
-    _ = ε / z.im ^ 3 := by ring
+/-- Along the line `u ↦ z - u c` with `Im c ≥ 0` the imaginary part is antitone. -/
+private lemma im_sub_mul_le_im_sub_mul {z c : ℂ} (hc : 0 ≤ c.im) {u t : ℝ} (hu : u ≤ t) :
+    (z - t * c).im ≤ (z - u * c).im := by
+  simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
+  nlinarith
 
 namespace IsBurgersFlow
 
@@ -158,8 +168,9 @@ theorem norm_resolventTransform_sub_le (hμ : IsBurgersFlow μ) {z : ℂ} (hz : 
   rw [hμ.resolventTransform_eq hz t, hμ.resolventTransform_eq hz s, add_sub_add_left_eq_sub,
     intervalIntegral.integral_interval_sub_left (hμ.intervalIntegrable hz t)
       (hμ.intervalIntegrable hz s)]
-  exact intervalIntegral.norm_integral_le_of_norm_le_const fun _ _ ↦
-    norm_resolventTransform_mul_deriv_le _ hz
+  refine intervalIntegral.norm_integral_le_of_norm_le_const fun u _ ↦ ?_
+  have h := norm_resolventTransform_mul_deriv_le (μ := μ u.toNNReal) hz.ne'
+  rwa [probReal_univ, one_pow, mul_one, abs_of_pos hz, inv_pow] at h
 
 /-- Along a Burgers flow of probability measures, `(t, z) ↦ m_t(z)` is jointly continuous on
 time times the upper half-plane. -/
@@ -193,22 +204,29 @@ theorem continuous_resolventTransform (hμ : IsBurgersFlow μ) {z : ℂ} (hz : 0
     fun _ ↦ ⟨trivial, hz⟩
 
 /-- Along a Burgers flow of probability measures, `t ↦ ∂_z m_t(z)` is continuous for every `z`
-in the upper half-plane: it is the uniform limit of difference quotients in `z`. -/
+in the upper half-plane. -/
 theorem continuous_deriv_resolventTransform (hμ : IsBurgersFlow μ) {z : ℂ} (hz : 0 < z.im) :
     Continuous fun t : ℝ≥0 ↦ deriv (resolventTransform (μ t)) z := by
-  have hw {ε : ℝ} (hε : 0 < ε) : 0 < (z + ε * I).im := by simp; linarith
+  have hw {ε : ℝ} (hε : 0 < ε) : 0 < (z + ε * I).im := by simpa using add_pos hz hε
   refine TendstoUniformly.continuous (p := 𝓝[>] (0 : ℝ))
-    (F := fun (ε : ℝ) (t : ℝ≥0) ↦ ((ε : ℂ) * I)⁻¹ *
-      (resolventTransform (μ t) (z + ε * I) - resolventTransform (μ t) z)) ?_ ?_
+    (F := fun (ε : ℝ) (t : ℝ≥0) ↦ slope (resolventTransform (μ t)) z (z + ε * I)) ?_ ?_
   · rw [Metric.tendstoUniformly_iff]
     intro δ hδ
     have hδ' : 0 < δ * z.im ^ 3 := by positivity
     filter_upwards [Ioo_mem_nhdsGT hδ'] with ε hε t
-    rw [dist_eq_norm]
-    calc _ ≤ ε / z.im ^ 3 := norm_deriv_sub_div_le _ hz hε.1
-      _ < δ := by rw [div_lt_iff₀ (by positivity)]; exact hε.2
+    have hne : z + ε * I ≠ z := by simpa using hε.1.ne'
+    rw [dist_eq_norm, norm_sub_rev]
+    calc _ ≤ ‖z + ε * I - z‖ / (z.im ^ 2 * (z + ε * I).im) :=
+          norm_slope_sub_deriv_le _ hz (hw hε.1) hne
+      _ = ε / (z.im ^ 2 * (z + ε * I).im) := by simp [abs_of_pos hε.1]
+      _ ≤ ε / (z.im ^ 2 * z.im) := by
+          have : z.im ≤ (z + ε * I).im := by simpa using hε.1.le
+          gcongr
+          exact hε.1.le
+      _ < δ := by rw [div_lt_iff₀ (by positivity)]; linarith [hε.2]
   · refine (Eventually.frequently ?_)
     filter_upwards [self_mem_nhdsWithin] with ε hε
+    simp only [slope_def_module, smul_eq_mul]
     exact continuous_const.mul ((hμ.continuous_resolventTransform (hw hε)).sub
       (hμ.continuous_resolventTransform hz))
 
@@ -236,8 +254,9 @@ private lemma hasDerivWithinAt_resolventTransform_sub_mul_sub (hμ : IsBurgersFl
     HasDerivWithinAt (fun u : ℝ ↦ resolventTransform (μ u.toNNReal) (z - u * c) -
       resolventTransform (μ u.toNNReal) (z - s * c))
       (-c * deriv (resolventTransform (μ s.toNNReal)) (z - s * c)) (Ici s) s := by
-  have hle {u : ℝ} (hu : u ≤ t) : (z - t * c).im ≤ (z - u * c).im := by
-    simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]; nlinarith
+  rcases eq_or_ne c 0 with rfl | hc0
+  · simpa using hasDerivWithinAt_const s (Ici s) (0 : ℂ)
+  have hle {u : ℝ} (hu : u ≤ t) := im_sub_mul_le_im_sub_mul (z := z) hc hu
   set w := z - s * c with hw_def
   have hw : 0 < w.im := ht.trans_le (hle hst.le)
   refine HasDerivWithinAt.Ici_of_Ioi ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl s)).2 ?_)
@@ -253,24 +272,26 @@ private lemma hasDerivWithinAt_resolventTransform_sub_mul_sub (hμ : IsBurgersFl
     · filter_upwards [Ioc_mem_nhdsGT hst] with u hu
       have hu' : 0 < (z - u * c).im := ht.trans_le (hle hu.2)
       have hus : 0 < u - s := sub_pos.2 hu.1
-      have key := norm_resolventTransform_sub_sub_mul_deriv_le (μ := μ u.toNNReal) hw.ne'
-        hu'.ne'
+      have hus' : ((u - s : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hus.ne'
       have hdiff : z - u * c - w = -((u - s : ℝ) * c) := by rw [hw_def]; push_cast; ring
-      rw [probReal_univ, mul_one, hdiff, abs_of_pos hw, abs_of_pos hu', norm_neg, norm_mul,
-        Complex.norm_real, Real.norm_of_nonneg hus.le] at key
+      have hne : z - u * c ≠ w := by
+        rw [← sub_ne_zero, hdiff, neg_ne_zero]; exact mul_ne_zero hus' hc0
+      -- The real slope is `-c` times the complex difference quotient of `m_u` at `w`.
       have hrw : slope (fun u : ℝ ↦ resolventTransform (μ u.toNNReal) (z - u * c) -
           resolventTransform (μ u.toNNReal) w) s u -
             -c * deriv (resolventTransform (μ u.toNNReal)) w =
-          ((u - s : ℝ) : ℂ)⁻¹ * (resolventTransform (μ u.toNNReal) (z - u * c) -
-            resolventTransform (μ u.toNNReal) w -
-              -((u - s : ℝ) * c) * deriv (resolventTransform (μ u.toNNReal)) w) := by
-        have hus' : ((u - s : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hus.ne'
-        rw [slope_def_module, hw_def, sub_self, sub_zero, Complex.real_smul, Complex.ofReal_inv]
+          -c * (slope (resolventTransform (μ u.toNNReal)) w (z - u * c) -
+            deriv (resolventTransform (μ u.toNNReal)) w) := by
+        simp only [slope_def_module, ← hw_def, hdiff, sub_self, sub_zero, Complex.real_smul,
+          Complex.ofReal_inv, smul_eq_mul]
         field_simp
-      rw [hrw, norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hus.le]
-      calc (u - s)⁻¹ * ‖_‖ ≤ (u - s)⁻¹ * ((u - s) * ‖c‖) ^ 2 / (w.im ^ 2 * (z - u * c).im) := by
-            rw [mul_div_assoc]; gcongr
-        _ = ‖c‖ ^ 2 * (u - s) / (w.im ^ 2 * (z - u * c).im) := by field_simp
+        ring
+      rw [hrw, norm_mul, norm_neg]
+      calc ‖c‖ * ‖_‖ ≤ ‖c‖ * (‖z - u * c - w‖ / (w.im ^ 2 * (z - u * c).im)) := by
+            gcongr; exact norm_slope_sub_deriv_le _ hw hu' hne
+        _ = ‖c‖ ^ 2 * (u - s) / (w.im ^ 2 * (z - u * c).im) := by
+            rw [hdiff, norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg hus.le]
+            ring
         _ ≤ ‖c‖ ^ 2 * (u - s) / ((z - t * c).im ^ 2 * (z - t * c).im) := by
             gcongr
             · exact hle hst.le
@@ -290,8 +311,7 @@ private lemma hasDerivWithinAt_resolventTransform_sub_mul (hμ : IsBurgersFlow �
     HasDerivWithinAt (fun u : ℝ ↦ resolventTransform (μ u.toNNReal) (z - u * c))
       ((resolventTransform (μ s.toNNReal) (z - s * c) - c) *
         deriv (resolventTransform (μ s.toNNReal)) (z - s * c)) (Ici s) s := by
-  have hw : 0 < (z - s * c).im := ht.trans_le (by
-    simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]; nlinarith)
+  have hw : 0 < (z - s * c).im := ht.trans_le (im_sub_mul_le_im_sub_mul hc hst.le)
   -- Split `m_u(z - u c) = (m_u(z - u c) - m_u(z - s c)) + m_u(z - s c)`; the second summand is
   -- the differentiated Burgers equation at the fixed point `z - s c`.
   convert (hasDerivWithinAt_resolventTransform_sub_mul_sub hμ hc hst ht).add
@@ -310,9 +330,7 @@ theorem resolventTransform_sub_mul_resolventTransform (hμ : IsBurgersFlow μ) {
       resolventTransform (μ 0) z := by
   set c := resolventTransform (μ 0) z with hc_def
   have hc : 0 ≤ c.im := (im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz).le
-  have hle {u : ℝ} (hu : u ≤ t) : (z - t * c).im ≤ (z - u * c).im := by
-    simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
-    nlinarith
+  have hle {u : ℝ} (hu : u ≤ (t : ℝ)) := im_sub_mul_le_im_sub_mul (z := z) hc hu
   -- `F u = m_u(z - u c) - c` vanishes at `0` and satisfies `F' = F m_u'(z - u c)`.
   set F : ℝ → ℂ := fun u ↦ resolventTransform (μ u.toNNReal) (z - u * c) - c with hF_def
   have hF0 : F 0 = 0 := by simp [hF_def, hc_def]
@@ -331,14 +349,10 @@ theorem resolventTransform_sub_mul_resolventTransform (hμ : IsBurgersFlow μ) {
     intro u hu
     have hu' : 0 < (z - u * c).im := ht.trans_le (hle hu.2.le)
     have hd := norm_deriv_resolventTransform_le (μ := μ u.toNNReal) hu'.ne'
-    rw [probReal_univ, mul_one, abs_of_pos hu'] at hd
+    rw [probReal_univ, mul_one, abs_of_pos hu', inv_pow] at hd
     rw [add_zero, norm_mul, mul_comm]
     gcongr
-    calc _ ≤ ((z - u * c).im⁻¹) ^ 2 := hd
-      _ ≤ ((z - t * c).im ^ 2)⁻¹ := by
-        rw [inv_pow]
-        gcongr
-        exact hle hu.2.le
+    exact hd.trans (by gcongr; exact hle hu.2.le)
   have hFt := norm_le_gronwallBound_of_norm_deriv_right_le hcont hderiv
     (show ‖F 0‖ ≤ 0 by simp [hF0]) hbound
     t ⟨t.coe_nonneg, le_rfl⟩
@@ -346,44 +360,6 @@ theorem resolventTransform_sub_mul_resolventTransform (hμ : IsBurgersFlow μ) {
   simpa [sub_eq_zero] using hFt
 
 end IsBurgersFlow
-
-/-- For the transform `m` of a probability measure, `z - t m(z)` lies in the upper half-plane
-whenever `Im z > |t| + 1`. -/
-private lemma im_sub_mul_resolventTransform_pos (ρ : Measure ℝ) [IsProbabilityMeasure ρ]
-    {t : ℝ} {z : ℂ} (hz : |t| + 1 < z.im) : 0 < (z - t * resolventTransform ρ z).im := by
-  have hz1 : 1 < z.im := by linarith [abs_nonneg t]
-  have hm : ‖resolventTransform ρ z‖ ≤ z.im⁻¹ := by
-    simpa [abs_of_pos (zero_lt_one.trans hz1)] using
-      norm_resolventTransform_le (μ := ρ) (zero_lt_one.trans hz1).ne'
-  have h₁ : t * (resolventTransform ρ z).im ≤ |t| * z.im⁻¹ := by
-    calc _ ≤ |t * (resolventTransform ρ z).im| := le_abs_self _
-      _ = |t| * |(resolventTransform ρ z).im| := abs_mul _ _
-      _ ≤ |t| * z.im⁻¹ := by gcongr; exact (abs_im_le_norm _).trans hm
-  have h₂ : |t| * z.im⁻¹ ≤ |t| := mul_le_of_le_one_right (abs_nonneg t)
-    (inv_le_one_of_one_le₀ hz1.le)
-  simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
-  linarith
-
-/-- For the transform `m` of a probability measure, `z ↦ z - t m(z)` is injective on
-`{Im z > |t| + 1}`. -/
-private lemma eq_of_sub_mul_resolventTransform_eq (ρ : Measure ℝ) [IsProbabilityMeasure ρ]
-    {t : ℝ} {a b : ℂ} (ha : |t| + 1 < a.im) (hb : |t| + 1 < b.im)
-    (hab : a - t * resolventTransform ρ a = b - t * resolventTransform ρ b) : a = b := by
-  have ha0 : 0 < a.im := by linarith [abs_nonneg t]
-  have hb0 : 0 < b.im := by linarith [abs_nonneg t]
-  by_contra hne
-  have hpos : 0 < ‖a - b‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
-  have hlip := norm_resolventTransform_sub_le (μ := ρ) ha0.ne' hb0.ne'
-  rw [probReal_univ, mul_one, abs_of_pos ha0, abs_of_pos hb0] at hlip
-  have hab' : a - b = t * (resolventTransform ρ a - resolventTransform ρ b) := by
-    linear_combination hab
-  have hlt : |t| < a.im * b.im := by nlinarith [abs_nonneg t]
-  have : ‖a - b‖ ≤ |t| * (‖a - b‖ / (a.im * b.im)) := by
-    calc ‖a - b‖ = |t| * ‖resolventTransform ρ a - resolventTransform ρ b‖ := by
-          rw [hab', norm_mul, Complex.norm_real, Real.norm_eq_abs]
-      _ ≤ _ := by gcongr
-  rw [mul_div_assoc', le_div_iff₀ (by positivity)] at this
-  nlinarith
 
 /-- Let `m` be the transform of a probability measure and `t` real. If two functions analytic in
 the upper half-plane agree at every point `z - t m(z)` of the upper half-plane with `z` in the upper
@@ -395,10 +371,11 @@ private lemma eqOn_of_eq_sub_mul_resolventTransform (ρ : Measure ℝ) [IsProbab
     (hfg : ∀ z : ℂ, 0 < z.im → 0 < (z - t * resolventTransform ρ z).im →
       f (z - t * resolventTransform ρ z) = g (z - t * resolventTransform ρ z)) :
     EqOn f g {w : ℂ | 0 < w.im} := by
-  have hr : 0 < |t| + 1 := by positivity
-  set z₀ : ℂ := ⟨0, 2 * (|t| + 1)⟩
-  have hz₀ : |t| + 1 < z₀.im := by simp [z₀]; linarith
-  have hU : {z : ℂ | |t| + 1 < z.im} ∈ 𝓝 z₀ := (isOpen_im_gt _).mem_nhds hz₀
+  set r := |t| * ρ.real univ + 1
+  have hr : 0 < r := by positivity
+  set z₀ : ℂ := ⟨0, 2 * r⟩
+  have hz₀ : r < z₀.im := show r < 2 * r by linarith
+  have hU : {z : ℂ | r < z.im} ∈ 𝓝 z₀ := (isOpen_im_gt _).mem_nhds hz₀
   have hcont : ContinuousAt (fun z : ℂ ↦ z - t * resolventTransform ρ z) z₀ :=
     continuousAt_id.sub (continuousAt_const.mul
       (hasDerivAt_resolventTransform_of_im_ne_zero (hr.trans hz₀).ne').continuousAt)
@@ -408,14 +385,14 @@ private lemma eqOn_of_eq_sub_mul_resolventTransform (ρ : Measure ℝ) [IsProbab
     refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
       (hcont.tendsto.mono_left nhdsWithin_le_nhds) ?_
     filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU, self_mem_nhdsWithin] with z hz hne
-    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq ρ hz hz₀ h)
+    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq hz hz₀ h)
   have hfreq : ∃ᶠ z in 𝓝[≠] z₀, f (z - t * resolventTransform ρ z) =
       g (z - t * resolventTransform ρ z) := by
     refine Eventually.frequently ?_
     filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU] with z hz
-    exact hfg z (hr.trans hz) (im_sub_mul_resolventTransform_pos ρ hz)
+    exact hfg z (hr.trans hz) (im_sub_mul_resolventTransform_pos hz)
   exact hf.eqOn_of_preconnected_of_frequently_eq hg (convex_halfSpace_im_gt 0).isPreconnected
-    (im_sub_mul_resolventTransform_pos ρ hz₀) (htend.frequently hfreq)
+    (im_sub_mul_resolventTransform_pos hz₀) (htend.frequently hfreq)
 
 namespace IsBurgersFlow
 
@@ -434,11 +411,9 @@ theorem resolventTransform_eq_resolventTransform_add_mul (hμ : IsBurgersFlow μ
     simp only [mem_ofPred_eq, add_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero] at hw ⊢
     have : 0 ≤ (t : ℝ) * (resolventTransform (μ t) w).im := by positivity
     linarith
-  have han (ρ : Measure ℝ) [IsFiniteMeasure ρ] :
-      AnalyticOnNhd ℂ (resolventTransform ρ) {w : ℂ | 0 < w.im} :=
-    analyticOnNhd_resolventTransform.mono fun _ hw ↦ ne_of_gt hw
-  refine eqOn_of_eq_sub_mul_resolventTransform (μ 0) t (han _)
-    ((han _).comp (analyticOnNhd_id.add (analyticOnNhd_const.mul (han _))) hmaps)
+  refine eqOn_of_eq_sub_mul_resolventTransform (μ 0) t analyticOnNhd_resolventTransform_setOf_im_pos
+    (analyticOnNhd_resolventTransform_setOf_im_pos.comp (analyticOnNhd_id.add
+      (analyticOnNhd_const.mul analyticOnNhd_resolventTransform_setOf_im_pos)) hmaps)
     (fun z hz hzt ↦ ?_) hw
   simp only [Function.comp_apply, Pi.add_apply]
   rw [hμ.resolventTransform_sub_mul_resolventTransform hz hzt, sub_add_cancel]
@@ -447,12 +422,10 @@ theorem resolventTransform_eq_resolventTransform_add_mul (hμ : IsBurgersFlow μ
 coincide. -/
 theorem eq [∀ t, IsProbabilityMeasure (ν t)] (hμ : IsBurgersFlow μ) (hν : IsBurgersFlow ν)
     (h₀ : μ 0 = ν 0) : μ = ν := by
-  have han (ρ : Measure ℝ) [IsFiniteMeasure ρ] :
-      AnalyticOnNhd ℂ (resolventTransform ρ) {w : ℂ | 0 < w.im} :=
-    analyticOnNhd_resolventTransform.mono fun _ hw ↦ ne_of_gt hw
   funext t
   refine Measure.ext_of_resolventTransform fun w hw ↦
-    eqOn_of_eq_sub_mul_resolventTransform (μ 0) t (han _) (han _) (fun z hz hzt ↦ ?_) hw
+    eqOn_of_eq_sub_mul_resolventTransform (μ 0) t analyticOnNhd_resolventTransform_setOf_im_pos
+      analyticOnNhd_resolventTransform_setOf_im_pos (fun z hz hzt ↦ ?_) hw
   rw [hμ.resolventTransform_sub_mul_resolventTransform hz hzt]
   rw [h₀] at hzt ⊢
   rw [hν.resolventTransform_sub_mul_resolventTransform hz hzt]
@@ -467,21 +440,12 @@ variable {a : ℝ}
 
 /-- **The semicircle flow.** The semicircle laws `semicircleReal a t` of variance `t` centred at
 `a` form a Burgers flow. -/
-theorem isBurgersFlow_semicircleReal (a : ℝ) : IsBurgersFlow fun t ↦ semicircleReal a t := by
-  intro z hz t
-  have hmc : Continuous fun s : ℝ ↦ resolventTransform (semicircleReal a s.toNNReal) z :=
-    (continuous_resolventTransform_semicircleReal hz).comp continuous_real_toNNReal
-  have hgc : Continuous fun s : ℝ ↦ resolventTransform (semicircleReal a s.toNNReal) z *
-      deriv (resolventTransform (semicircleReal a s.toNNReal)) z :=
-    hmc.mul ((continuous_deriv_resolventTransform_semicircleReal hz).comp
-      continuous_real_toNNReal)
-  refine ⟨hgc.intervalIntegrable _ _, ?_⟩
-  have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le t.coe_nonneg
-    hmc.continuousOn (fun s hs ↦ (hasDerivWithinAt_resolventTransform_semicircleReal hz
-      hs.1.le).mono Ioi_subset_Ici_self) (hgc.intervalIntegrable 0 t)
-  simp only [Real.toNNReal_coe, Real.toNNReal_zero] at hftc
-  rw [hftc]
-  ring
+theorem isBurgersFlow_semicircleReal (a : ℝ) : IsBurgersFlow fun t ↦ semicircleReal a t :=
+  .of_hasDerivWithinAt (fun _ hz ↦ continuous_resolventTransform_semicircleReal hz)
+    (fun _ hz _ ↦ (((continuous_resolventTransform_semicircleReal hz).mul
+      (continuous_deriv_resolventTransform_semicircleReal hz)).comp
+        continuous_real_toNNReal).intervalIntegrable _ _)
+    fun _ hz _ ↦ hasDerivWithinAt_resolventTransform_semicircleReal hz
 
 /-- **The Burgers flow from a point mass.** A Burgers flow of probability measures started at the
 point mass at `a` is the semicircle flow `t ↦ semicircleReal a t`. -/
