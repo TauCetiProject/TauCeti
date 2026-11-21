@@ -325,13 +325,14 @@ theorem freeProdMap_map_toCoordGroup (w : GX (SystemGroup G S) Y) :
     freeProdMap ι ψ
         (Monoid.Coprod.map (SystemGroup.toCoordGroup ι S : SystemGroup G S →* CoordGroup ι S)
           (.id _) w) =
-      SystemGroup.toCoordGroup ι T (ψ w) := by
-  induction w using induction_on with
-  | inl q =>
-    induction q using QuotientGroup.induction_on
-    simp
-  | inr w => simp
-  | mul x y hx hy => simp only [map_mul, hx, hy]
+      SystemGroup.toCoordGroup ι T (ψ w) :=
+  DFunLike.congr_fun (Monoid.Coprod.hom_ext
+    (f := (freeProdMap ι ψ : GX (CoordGroup ι S) Y →* CoordGroup ι T).comp
+      (Monoid.Coprod.map (SystemGroup.toCoordGroup ι S : SystemGroup G S →* CoordGroup ι S)
+        (.id _)))
+    (g := (SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp ψ)
+    (QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun _ => by simp))
+    (MonoidHom.ext fun _ => by simp)) w
 
 variable {ψ} in
 /-- A surjective homomorphism of presented groups induces a surjective homomorphism of
@@ -401,16 +402,6 @@ theorem evalGHom_comp_inclFreeVarsHom {v : X ⊕ Y → H} (hv : v ∈ V ι (addF
       evalGHom (v ∘ Sum.inl) (mem_V_addFreeVars.1 hv) :=
   GHom.ext fun _ => by simp
 
-/-- The embedding `G_{R(S)} → G_{R(S')}` is compatible, through `G_S → G_S ∗ F(Y) ≃ G_{S'}`, with
-the projections `G_S → G_{R(S)}` and `G_{S'} → G_{R(S')}`. -/
-@[simp]
-theorem inclFreeVarsHom_toCoordGroup (q : SystemGroup G S) :
-    inclFreeVarsHom ι Y S (SystemGroup.toCoordGroup ι S q) =
-      SystemGroup.toCoordGroup ι (addFreeVars Y S)
-        ((SystemGroup.addFreeVarsEquiv Y S).symm (inl q)) := by
-  induction q using QuotientGroup.induction_on
-  simp
-
 @[simp]
 theorem freeVarsHom_inr (w : FreeGroup Y) :
     freeVarsHom ι Y S (inr w) =
@@ -451,6 +442,15 @@ theorem freeVarsHom_map_toCoordGroup (w : GX (SystemGroup G S) Y) :
       SystemGroup.toCoordGroup ι (addFreeVars Y S)
         ((SystemGroup.addFreeVarsEquiv Y S).symm w) := by
   simp [freeVarsHom]
+
+/-- The embedding `G_{R(S)} → G_{R(S')}` is compatible, through `G_S → G_S ∗ F(Y) ≃ G_{S'}`, with
+the projections `G_S → G_{R(S)}` and `G_{S'} → G_{R(S')}`. -/
+@[simp]
+theorem inclFreeVarsHom_toCoordGroup (q : SystemGroup G S) :
+    inclFreeVarsHom ι Y S (SystemGroup.toCoordGroup ι S q) =
+      SystemGroup.toCoordGroup ι (addFreeVars Y S)
+        ((SystemGroup.addFreeVarsEquiv Y S).symm (inl q)) := by
+  simpa using freeVarsHom_map_toCoordGroup (ι := ι) (inl q)
 
 /-- The kernel of `G_{R(S)} ∗ F(Y) → G_{R(S')}` consists of the elements killed by every
 homomorphism `G_{R(S)} ∗ F(Y) → H` given by a solution of `S` in `H` and values of `Y` in `H`. -/
