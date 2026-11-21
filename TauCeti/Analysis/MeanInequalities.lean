@@ -57,8 +57,6 @@ of a higher-order Sobolev space.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
-* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: the two-point weighted geometric mean is
-  positively homogeneous.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
@@ -132,13 +130,6 @@ theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0
   have := (rpow_pos_of_pos hb θ).ne'
   field_simp
 
-/-- **Homogeneity of the two-point weighted geometric mean.** For weights with `a + b = 1` and
-`t, x, y ≥ 0`, `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`. -/
-theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hx : 0 ≤ x)
-    (hy : 0 ≤ y) (hab : a + b = 1) : (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
-  rw [mul_rpow ht hx, mul_rpow ht hy, mul_mul_mul_comm,
-    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
-
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
 weighted geometric mean of `a` and `b`. -/
@@ -190,19 +181,19 @@ theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0
   rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
   nlinarith
 
-/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `b > 0`, then
+/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `a + b > 0`, then
 `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`: split `s^a u` as
 `(s^(a + b) u)^(a / (a + b)) u^(b / (a + b))`. -/
-theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 ≤ s) (hu : 0 ≤ u)
-    (hM : s ^ (a + b) * u ≤ M) :
+theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hab : 0 < a + b) (hs : 0 ≤ s)
+    (hu : 0 ≤ u) (hM : s ^ (a + b) * u ≤ M) :
     s ^ a * u ≤ M ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
+  have hab' : (a : ℝ) + b ≠ 0 := by exact_mod_cast hab.ne'
+  have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by rw [← add_div, div_self hab']
   have hsplit : s ^ a * u = (s ^ (a + b) * u) ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
     rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
-      mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
+      mul_assoc, ← rpow_add' hu (by rw [hsum]; exact one_ne_zero), hsum, rpow_one]
     push_cast
-    have hmul : ((a : ℝ) + b) * (a / (a + b)) = a := by field_simp
-    have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by field_simp
-    rw [hmul, hsum, rpow_one, rpow_natCast]
+    rw [mul_div_cancel₀ _ hab', rpow_natCast]
   rw [hsplit]
   exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
     (by positivity)
@@ -311,9 +302,6 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
     · intro j k
       simp only [Finset.mem_filter, Finset.mem_range, W, Finset.mem_Ico]
       omega
-  have hL : ((2 * L : ℝ≥0∞) ^ (2⁻¹ : ℝ)) * (2 * L) ^ (2⁻¹ : ℝ) = 2 * L := by
-    rw [← rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
-    norm_num
   calc ∑ j ∈ Finset.range N, ∑ k ∈ W j, a j * b k = ∑ x ∈ T, a x.1 * b x.2 := by
         rw [Finset.sum_sigma]
     _ ≤ (∑ x ∈ T, a x.1 ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) * (∑ x ∈ T, b x.2 ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
@@ -321,11 +309,11 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
     _ ≤ (2 * L * ∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (2 * L * ∑' k, b k ^ 2) ^ (2⁻¹ : ℝ) := by
         rw [one_div]
         gcongr
-    _ = (2 * L) ^ (2⁻¹ : ℝ) * (2 * L) ^ (2⁻¹ : ℝ) *
-          ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
-        rw [mul_rpow_of_nonneg _ _ (by norm_num), mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ (by norm_num)]
-        ring
-    _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by rw [hL]
+    _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
+        -- The two square roots of `2 * L` combine to `(2 * L) ^ (2⁻¹ + 2⁻¹) = 2 * L`.
+        rw [mul_rpow_of_nonneg _ _ (by norm_num), mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ (by norm_num),
+          mul_mul_mul_comm, ← rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+        norm_num
 
 end ENNReal
 
@@ -368,7 +356,7 @@ theorem Lp_le_mul_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f g : ι → ℝ} {
         rcases hc.eq_or_lt with rfl | hc
         · simp [zero_rpow hp.ne', zero_rpow (inv_ne_zero hp.ne')]
         have hg (i : ι) (hi : i ∈ s) : 0 ≤ g i :=
-          nonneg_of_mul_nonneg_right (by simpa [mul_comm] using (hf i hi).trans (hfg i hi)) hc
+          nonneg_of_mul_nonneg_right ((hf i hi).trans (hfg i hi)) hc
         rw [Finset.sum_congr rfl fun i hi ↦ mul_rpow hc.le (hg i hi), ← Finset.mul_sum,
           mul_rpow (rpow_nonneg hc.le p) (Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hg i hi) p),
           ← rpow_mul hc.le, mul_one_div_cancel hp.ne', rpow_one]
