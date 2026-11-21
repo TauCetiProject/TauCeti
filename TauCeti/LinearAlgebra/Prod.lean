@@ -52,8 +52,11 @@ quadratic forms with the subgroup preserving both summands.
   fibre products of linear maps, with its components `LinearMap.fiberProductAssoc_apply_fst`,
   `LinearMap.fiberProductAssoc_apply_snd` and those of its inverse
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
-* `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
-  coercion of `f.prodMap g`.
+* `LinearMap.injective_prodMap`, `LinearMap.surjective_prodMap`: a product of injective, resp.
+  surjective, linear maps is injective, resp. surjective, stated for the coercion of
+  `f.prodMap g`.
+* `LinearMap.surjective_of_surjective_prod_right`: the second component of a surjective map
+  `(f, g)` to a product is surjective.
 * `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
   factors to the appended family of their images.
 * `LinearMap.prodMap_comp_inl`, `LinearMap.snd_comp_prodMap`: the commuting squares of the split
@@ -75,6 +78,8 @@ quadratic forms with the subgroup preserving both summands.
   ones follow from the previous item.
 * `LinearMap.fiberProductInclusionLeft`, `LinearMap.fiberProductInclusionRight`: for a subspace
   of one factor, the inclusion of the smaller fibre product in the fibre product of `α` and `β`.
+* `LinearMap.kerEquivKerIdProdMap`: the kernel of `g` is the kernel of `id × g`, embedded in the
+  second factor.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -251,6 +256,18 @@ theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (h
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
   hf.prodMap hg
 
+/-- A product of surjective linear maps is surjective, stated for the coercion of
+`f.prodMap g`. -/
+theorem surjective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Surjective f)
+    (hg : Function.Surjective g) : Function.Surjective (f.prodMap g) :=
+  hf.prodMap hg
+
+/-- If `(f, g) : M₁ → M₂ × M₃` is surjective, then so is its second component `g`. -/
+theorem surjective_of_surjective_prod_right {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Surjective (f.prod g)) : Function.Surjective g :=
+  -- `g` is `snd ∘ₗ f.prod g` by definition (`LinearMap.snd_prod` is proved by `rfl`).
+  Prod.snd_surjective.comp h
+
 /-- The product map `f × g` sends an appended family of vectors of the two factors to the appended
 family of their images. -/
 theorem prodMap_comp_append (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) {m n : ℕ} (p : Fin m → M₁)
@@ -319,6 +336,35 @@ theorem subsingleton_quotient_range_of_surjective_prod {R M₁ M₂ M₃ : Type*
     Subsingleton (M₂ ⧸ range f) :=
   -- `f` is `fst ∘ₗ f.prod g` by definition (`LinearMap.fst_prod` is proved by `rfl`).
   Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr (Prod.fst_surjective.comp h))
+
+section KerProdMap
+
+variable {R L M N : Type*} [Semiring R] [AddCommMonoid L] [Module R L] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid N] [Module R N]
+
+variable (L) in
+/-- The kernel of `id × g : L × M → L × N` is the kernel of `g`, embedded in the second factor. -/
+def kerEquivKerIdProdMap (g : M →ₗ[R] N) :
+    ker g ≃ₗ[R] ker ((LinearMap.id : L →ₗ[R] L).prodMap g) where
+  toFun x := ⟨(0, x), by simp⟩
+  invFun y := ⟨y.val.2, (Prod.mk_eq_zero.1 (mem_ker.1 y.property)).2⟩
+  map_add' _ _ := by ext <;> simp
+  map_smul' _ _ := by ext <;> simp
+  left_inv _ := rfl
+  right_inv y := Subtype.ext (Prod.ext (Prod.mk_eq_zero.1 (mem_ker.1 y.property)).1.symm rfl)
+
+@[simp]
+theorem coe_kerEquivKerIdProdMap_apply (g : M →ₗ[R] N) (x : ker g) :
+    (kerEquivKerIdProdMap L g x : L × M) = (0, (x : M)) :=
+  (rfl)
+
+@[simp]
+theorem coe_kerEquivKerIdProdMap_symm_apply (g : M →ₗ[R] N)
+    (y : ker ((LinearMap.id : L →ₗ[R] L).prodMap g)) :
+    ((kerEquivKerIdProdMap L g).symm y : M) = (y : L × M).2 :=
+  (rfl)
+
+end KerProdMap
 
 section Ring
 
