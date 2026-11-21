@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Order.Antichain
 public import Mathlib.Order.Partition.Finpartition
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import Mathlib.Order.Preorder.Finite
 import TauCeti.Order.Chain
 
@@ -24,8 +23,8 @@ size of an antichain contained in `s`. This file proves both halves of this min-
   same cardinality. By weak duality, `A` is then an antichain of maximum cardinality in `s`, and
   the partition has the fewest parts among all partitions of `s` into chains.
 
-The chain partition is produced as the fibres of a colouring `f : α → ℕ` of `s` taking fewer than
-`#A` values whose fibres in `s` are chains. Such a colouring is built by Galvin's induction on
+The chain partition is produced as the fibres of a colouring `f : α → ℕ` of `s` by the colours
+`0, …, #A - 1` whose fibres in `s` are chains. Such a colouring is built by Galvin's induction on
 `#s`, removing a maximal point.
 
 These statements feed comparisons of chain partitions with matchings in the split bipartite graph
@@ -61,15 +60,8 @@ as there are chains, since each chain meets the antichain in at most one point. 
 theorem card_le_card_of_forall_isChain {r : α → α → Prop} {A : Finset α}
     {C : Finset (Finset α)} (hA : IsAntichain r (A : Set α))
     (hC : ∀ c ∈ C, IsChain r (c : Set α)) (hAC : ∀ a ∈ A, ∃ c ∈ C, a ∈ c) : #A ≤ #C := by
-  classical
-  calc #A ≤ #(C.biUnion fun c => c ∩ A) := card_le_card fun a ha => by
-        obtain ⟨c, hc, hac⟩ := hAC a ha
-        exact mem_biUnion.2 ⟨c, hc, mem_inter.2 ⟨hac, ha⟩⟩
-    _ ≤ ∑ c ∈ C, #(c ∩ A) := card_biUnion_le
-    _ ≤ ∑ _c ∈ C, 1 := sum_le_sum fun c hc => card_le_one.2 fun x hx y hy =>
-        inter_subsingleton_of_isChain_of_isAntichain (hC c hc) hA
-          (by simpa using hx) (by simpa using hy)
-    _ = #C := by simp
+  refine card_le_card_of_forall_subsingleton (· ∈ ·) hAC fun c hc x hx y hy => ?_
+  exact inter_subsingleton_of_isChain_of_isAntichain (hC c hc) hA ⟨hx.2, hx.1⟩ ⟨hy.2, hy.1⟩
 
 /-- **Weak duality** for partitions: an antichain contained in `s` has at most as many points as
 any finite partition of `s` into chains has parts. -/
@@ -95,6 +87,32 @@ private structure IsChainColouring (s : Finset α) (k : ℕ) (f : α → ℕ) : 
   /-- Two points of `s` of the same colour are comparable. -/
   le_or_le : ∀ x ∈ s, ∀ y ∈ s, f x = f y → x ≤ y ∨ y ≤ x
 
+/-- A chain colouring by `k` colours maps its domain into `range k`. -/
+private theorem IsChainColouring.mapsTo {s B : Finset α} {k : ℕ} {f : α → ℕ}
+    (hf : IsChainColouring s k f) (hBs : B ⊆ s) : Set.MapsTo f B (range k) :=
+  fun x hx => mem_range.2 (hf.lt x (hBs hx))
+
+/-- A chain colouring by `k` colours is also one by any larger number of colours. -/
+private theorem IsChainColouring.mono {s : Finset α} {k l : ℕ} {f : α → ℕ}
+    (hf : IsChainColouring s k f) (hkl : k ≤ l) : IsChainColouring s l f :=
+  ⟨fun x hx => (hf.lt x hx).trans_le hkl, hf.le_or_le⟩
+
+/-- A chain colouring of `t` by `k` colours extends to a chain colouring of `s` by `k + 1` colours,
+giving the new colour `k` to the points of `s` outside `t`, provided these are pairwise
+comparable. -/
+private theorem IsChainColouring.extend [DecidableEq α] {s t : Finset α} {k : ℕ} {g : α → ℕ}
+    (hg : IsChainColouring t k g) (hst : ∀ x ∈ s, x ∉ t → ∀ y ∈ s, y ∉ t → x ≤ y ∨ y ≤ x) :
+    IsChainColouring s (k + 1) fun x => if x ∈ t then g x else k := by
+  refine ⟨fun x _ => ?_, fun x hx y hy hxy => ?_⟩
+  · split_ifs with hxt
+    · exact (hg.lt x hxt).trans k.lt_succ_self
+    · exact k.lt_succ_self
+  by_cases hxt : x ∈ t <;> by_cases hyt : y ∈ t <;> simp only [hxt, hyt, ↓reduceIte] at hxy
+  · exact hg.le_or_le x hxt y hyt hxy
+  · exact absurd hxy (hg.lt x hxt).ne
+  · exact absurd hxy.symm (hg.lt y hyt).ne
+  · exact hst x hx hxt y hy hyt
+
 /-- A chain colouring is injective on every antichain contained in its domain. -/
 private theorem IsChainColouring.injOn {s B : Finset α} {k : ℕ} {f : α → ℕ}
     (hf : IsChainColouring s k f) (hBs : B ⊆ s) (hB : IsAntichain (· ≤ ·) (B : Set α)) :
@@ -105,28 +123,16 @@ private theorem IsChainColouring.injOn {s B : Finset α} {k : ℕ} {f : α → �
 private theorem IsChainColouring.card_le {s B : Finset α} {k : ℕ} {f : α → ℕ}
     (hf : IsChainColouring s k f) (hBs : B ⊆ s) (hB : IsAntichain (· ≤ ·) (B : Set α)) :
     #B ≤ k := by
-  classical
-  rw [← card_image_of_injOn (hf.injOn hBs hB)]
-  simpa using card_le_card (s := B.image f) (t := range k) fun i hi => by
-    obtain ⟨x, hx, rfl⟩ := mem_image.1 hi
-    exact mem_range.2 (hf.lt x (hBs hx))
+  simpa using card_le_card_of_injOn f (hf.mapsTo hBs) (hf.injOn hBs hB)
 
 /-- An antichain of at least `k` points inside the domain of a chain colouring by `k` colours meets
 every colour. -/
 private theorem IsChainColouring.exists_mem_eq {s B : Finset α} {k : ℕ} {f : α → ℕ}
     (hf : IsChainColouring s k f) (hBs : B ⊆ s) (hB : IsAntichain (· ≤ ·) (B : Set α))
     (hkB : k ≤ #B) {i : ℕ} (hi : i < k) : ∃ b ∈ B, f b = i := by
-  classical
-  have hsub : B.image f ⊆ range k := fun j hj => by
-    obtain ⟨x, hx, rfl⟩ := mem_image.1 hj
-    exact mem_range.2 (hf.lt x (hBs hx))
-  have heq : B.image f = range k := eq_of_subset_of_card_le hsub (by
-    rw [card_range, card_image_of_injOn (hf.injOn hBs hB)]
-    exact hkB)
-  have hi' : i ∈ B.image f := by
-    rw [heq]
-    exact mem_range.2 hi
-  simpa using hi'
+  obtain ⟨b, hb, hbi⟩ := surjOn_of_injOn_of_card_le f (hf.mapsTo hBs) (hf.injOn hBs hB)
+    (by simpa using hkB) (mem_range.2 hi)
+  exact ⟨b, hb, hbi⟩
 
 /-- **Galvin's antichain.** Given a chain colouring of `s` by `k` colours and an antichain of `k`
 points in `s`, choose in each colour the largest point lying on some antichain of `k` points in `s`.
@@ -184,23 +190,16 @@ private theorem hasDilworthColouring_of_forall_not_le [DecidableEq α] {s X : Fi
     (hXs : X ⊆ s.erase a) (hX : IsAntichain (· ≤ ·) (X : Set α)) (hkX : k ≤ #X)
     (hXa : ∀ x ∈ X, ¬x ≤ a) : HasDilworthColouring s := by
   have haX : a ∉ X := fun h => (mem_erase.1 (hXs h)).1 rfl
-  refine ⟨insert a X, insert_subset ha.1 fun x hx => mem_of_mem_erase (hXs hx), ?_,
-    fun x => if x = a then k else f x, ?_, ?_⟩
+  -- The only point of `s` outside `s.erase a` is `a`.
+  have hout : ∀ x ∈ s, x ∉ s.erase a → x = a := fun x hx hxa =>
+    not_not.1 fun h => hxa (mem_erase.2 ⟨h, hx⟩)
+  refine ⟨insert a X, insert_subset ha.1 fun x hx => mem_of_mem_erase (hXs hx), ?_, _,
+    (hf.extend fun x hx hxa y hy hya => Or.inl (hout x hx hxa ▸ hout y hy hya ▸ le_rfl)).mono ?_⟩
   · rw [coe_insert]
     exact hX.insert (fun b hb _ => hXa b hb) fun b hb _ h =>
       hXa b hb (ha.le_of_ge (mem_of_mem_erase (hXs hb)) h)
-  · intro x hx
-    rw [card_insert_of_notMem haX]
-    split_ifs with hxa
-    · omega
-    · exact (hf.lt x (mem_erase.2 ⟨hxa, hx⟩)).trans_le (hkX.trans (Nat.le_succ _))
-  · intro x hx y hy hxy
-    by_cases hxa : x = a <;> by_cases hya : y = a <;> simp only [hxa, hya, ↓reduceIte]
-      at hxy ⊢
-    · exact Or.inl le_rfl
-    · exact absurd hxy.symm (hf.lt y (mem_erase.2 ⟨hya, hy⟩)).ne
-    · exact absurd hxy (hf.lt x (mem_erase.2 ⟨hxa, hx⟩)).ne
-    · exact hf.le_or_le x (mem_erase.2 ⟨hxa, hx⟩) y (mem_erase.2 ⟨hya, hy⟩) hxy
+  · rw [card_insert_of_notMem haX]
+    exact Nat.succ_le_succ hkX
 
 /-- Galvin's second case: if a point `x₀` of the top antichain of `s.erase a` lies below the
 maximal point `a`, then removing `a` and the points of the colour of `x₀` below `x₀` leaves a set
@@ -222,11 +221,6 @@ private theorem hasDilworthColouring_of_le [DecidableEq α] {s A : Finset α} {a
     refine (hf.card_le hCs hC).lt_of_ne fun hCA => ?_
     obtain ⟨y, hyC, hy⟩ := hf.exists_mem_eq hCs hC hCA.ge (hf.lt x₀ hx₀)
     exact (mem_filter.1 (hCt hyC)).2 ⟨hy, hx₀top C hCs hC hCA y hyC hy⟩
-  refine ⟨A, hAs.trans (erase_subset _ _), hA, fun y => if y ∈ t then g y else #C, ?_, ?_⟩
-  · intro y _
-    split_ifs with hyt
-    · exact (hg.lt y hyt).trans hCA
-    · exact hCA
   -- Outside `t`, a point of `s` is `a` or a point of the colour of `x₀` below `x₀ ≤ a`.
   have hout : ∀ y ∈ s, y ∉ t → y = a ∨ (y ∈ s.erase a ∧ f y = f x₀ ∧ y ≤ x₀) := by
     intro y hy hyt
@@ -234,18 +228,13 @@ private theorem hasDilworthColouring_of_le [DecidableEq α] {s A : Finset α} {a
     · exact Or.inl hya
     · have hy' : y ∈ s.erase a := mem_erase.2 ⟨hya, hy⟩
       exact Or.inr ⟨hy', not_not.1 fun h => hyt (mem_filter.2 ⟨hy', h⟩)⟩
-  intro y hy z hz hyz
-  by_cases hyt : y ∈ t <;> by_cases hzt : z ∈ t <;> simp only [hyt, hzt, ↓reduceIte]
-    at hyz
-  · exact hg.le_or_le y hyt z hzt hyz
-  · exact absurd hyz (hg.lt y hyt).ne
-  · exact absurd hyz.symm (hg.lt z hzt).ne
-  · rcases hout y hy hyt with rfl | ⟨hy', hfy, hyx₀⟩ <;>
-      rcases hout z hz hzt with rfl | ⟨hz', hfz, hzx₀⟩
-    · exact Or.inl le_rfl
-    · exact Or.inr (hzx₀.trans hx₀a)
-    · exact Or.inl (hyx₀.trans hx₀a)
-    · exact hf.le_or_le y hy' z hz' (hfy.trans hfz.symm)
+  refine ⟨A, hAs.trans (erase_subset _ _), hA, _, (hg.extend fun y hy hyt z hz hzt => ?_).mono hCA⟩
+  rcases hout y hy hyt with rfl | ⟨hy', hfy, hyx₀⟩ <;>
+    rcases hout z hz hzt with rfl | ⟨hz', hfz, hzx₀⟩
+  · exact Or.inl le_rfl
+  · exact Or.inr (hzx₀.trans hx₀a)
+  · exact Or.inl (hyx₀.trans hx₀a)
+  · exact hf.le_or_le y hy' z hz' (hfy.trans hfz.symm)
 
 /-- Every finite set in a partial order carries an antichain and a chain colouring by as many
 colours as the antichain has points. -/
@@ -286,8 +275,7 @@ theorem exists_isAntichain_card_eq_card_parts [PartialOrder α] [DecidableEq α]
     exact hf.le_or_le x hx.1 y hy.1 (hx.2.symm.trans hy.2)
   refine ⟨A, hAs, hA, P, hP, (hA.card_le_card_parts hAs P hP).antisymm ?_⟩
   rw [hparts]
-  refine card_image_le.trans ((card_le_card fun i hi => ?_).trans (card_range #A).le)
-  obtain ⟨x, hx, rfl⟩ := mem_image.1 hi
-  exact mem_range.2 (hf.lt x hx)
+  exact card_image_le.trans ((card_le_card (hf.mapsTo subset_rfl).finsetImage_subset).trans
+    (card_range #A).le)
 
 end Finset
