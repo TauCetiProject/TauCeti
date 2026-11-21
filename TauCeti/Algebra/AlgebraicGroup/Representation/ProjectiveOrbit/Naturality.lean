@@ -17,7 +17,9 @@ its projective orbit morphism along that morphism. The result is an equality of
 scheme morphisms over arbitrary commutative rings, rather than only an equality
 on rational points. It applies in particular to the restriction to a closed subgroup.
 Projective translation by a point of the source group agrees with translation by its
-image in the original group.
+image in the original group. A morphism surjective on spectra preserves the entire
+projective orbit image under restriction, including its nonclosed points
+(`BialgHom.range_projectiveOrbitMap_corestrict`).
 
 The coordinate formula is `CoalgHom.matrixCoefficient_corestrict`. The scheme
 comparison combines `Comodule.projectiveOrbitMap` with
@@ -101,5 +103,23 @@ theorem projectiveOrbitMap_corestrict (f : H →ₐc[R] K) (m : M)
   simpa only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply,
     AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.comp_apply]
     using DFunLike.congr_fun h (orbitCoordinates (R := R) (H := H) m s)
+
+/-- A surjective affine-group morphism preserves the full projective orbit image of a
+restricted representation, including its nonclosed points. No reducedness is needed. -/
+theorem range_projectiveOrbitMap_corestrict (f : H →ₐc[R] K)
+    (hf : Function.Surjective (PrimeSpectrum.comap f.toAlgHom.toRingHom))
+    (m : M) (hm : Module.IsUnimodular R m) :
+    (letI : Comodule R K M := Corestrict f.toCoalgHom
+     Set.range (projectiveOrbitMap (H := K) m hm)) =
+      Set.range (projectiveOrbitMap (H := H) m hm) := by
+  rw [projectiveOrbitMap_corestrict]
+  have hcomp : ⇑(Spec.map (CommRingCat.ofHom f.toAlgHom.toRingHom) ≫
+      projectiveOrbitMap (H := H) m hm) =
+      (projectiveOrbitMap (H := H) m hm) ∘ PrimeSpectrum.comap f.toAlgHom.toRingHom := by
+    funext x
+    rw [Scheme.Hom.comp_apply, Spec.map_apply]
+    rfl
+  rw [hcomp]
+  exact hf.range_comp _
 
 end BialgHom

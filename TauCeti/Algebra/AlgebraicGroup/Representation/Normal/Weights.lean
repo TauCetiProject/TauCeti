@@ -57,7 +57,7 @@ theorem nonzeroJointWeightAction_basePointsRepresentation_eq_one
   apply MonoidHom.ext
   intro n
   apply Units.ext
-  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).mp χ.2
+  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).mp χ.property
   obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one k hv0
   -- The generic point makes conjugation a regular, coordinate-algebra-valued point.
   let u : WithConv (H →ₐ[k] H) := toConv (AlgHom.id k H)
@@ -69,7 +69,7 @@ theorem nonzeroJointWeightAction_basePointsRepresentation_eq_one
     rw [WithConv.mapValue_algebraOfId]
     simp [u, AlgHom.mapValue_apply]
   have heval (x : WithConv (H →ₐ[k] k)) :
-      x.ofConv a = ((nonzeroJointWeightAction N ρ x χ).1 n : k) := by
+      x.ofConv a = ((nonzeroJointWeightAction N ρ x χ).val n : k) := by
     have h := congrArg
       (fun y : WithConv (H →ₐ[k] k) ↦ y.ofConv (matrixCoefficient (R := k) (C := H) φ v)) (hq x)
     simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] at h
@@ -83,7 +83,7 @@ theorem nonzeroJointWeightAction_basePointsRepresentation_eq_one
       map_inv, MulAut.inv_def]
   -- Evaluation factors through the finite set of weights, so connectedness forces constancy.
   have hfinite : (Set.range fun f : H →ₐ[k] k ↦ f a).Finite := by
-    apply (Set.finite_range fun ψ : NonzeroJointWeight N ρ ↦ (ψ.1 n : k)).subset
+    apply (Set.finite_range fun ψ : NonzeroJointWeight N ρ ↦ (ψ.val n : k)).subset
     rintro _ ⟨f, rfl⟩
     exact ⟨nonzeroJointWeightAction N ρ (toConv f) χ, (heval (toConv f)).symm⟩
   have ha := eq_algebraMap_of_finite_range_eval a hfinite (1 : WithConv (H →ₐ[k] k)).ofConv
@@ -99,9 +99,9 @@ theorem map_iInf_eigenspace_basePointsRepresentation_eq_self
     (N : Subgroup (WithConv (H →ₐ[k] k))) [N.Normal]
     (g : WithConv (H →ₐ[k] k))
     (χ : NonzeroJointWeight N (basePointsRepresentation (R := k) (H := H) V)) :
-    (⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.1 n : k)).map
+    (⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.val n : k)).map
         (basePointsRepresentation (R := k) (H := H) V g) =
-      ⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.1 n : k) := by
+      ⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.val n : k) := by
   apply map_iInf_eigenspace_unitHom_eq_self_of_nonzeroJointWeightAction_eq
   rw [nonzeroJointWeightAction_basePointsRepresentation_eq_one]
   rfl
@@ -112,7 +112,7 @@ def normalWeightSubcomodule
     (χ : NonzeroJointWeight N (basePointsRepresentation (R := k) (H := H) V)) :
     Subcomodule k H V :=
   Subcomodule.ofEndOfPointStable (K := k)
-    (⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.1 n : k))
+    (⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.val n : k))
     fun g v hv ↦ by
       rw [endOfPoint_tmul, one_smul,
         endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
@@ -126,7 +126,7 @@ theorem normalWeightSubcomodule_toSubmodule
     (N : Subgroup (WithConv (H →ₐ[k] k))) [N.Normal]
     (χ : NonzeroJointWeight N (basePointsRepresentation (R := k) (H := H) V)) :
     (normalWeightSubcomodule N χ).toSubmodule =
-      ⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.1 n : k) :=
+      ⨅ n : N, (basePointsRepresentation (R := k) (H := H) V n).eigenspace (χ.val n : k) :=
   Subcomodule.ofEndOfPointStable_toSubmodule _ _
 
 /-- The subcomodule associated to a nonzero joint weight is nonzero. -/
@@ -136,7 +136,7 @@ theorem normalWeightSubcomodule_ne_bot
     (χ : NonzeroJointWeight N (basePointsRepresentation (R := k) (H := H) V)) :
     normalWeightSubcomodule N χ ≠ ⊥ := by
   rw [ne_eq, ← Subcomodule.toSubmodule_eq_bot, normalWeightSubcomodule_toSubmodule]
-  exact χ.2
+  exact χ.property
 
 /-- Membership in the normal weight subcomodule is the joint eigenvector equation. -/
 @[simp]
@@ -144,7 +144,7 @@ theorem mem_normalWeightSubcomodule
     (N : Subgroup (WithConv (H →ₐ[k] k))) [N.Normal]
     (χ : NonzeroJointWeight N (basePointsRepresentation (R := k) (H := H) V)) (v : V) :
     v ∈ normalWeightSubcomodule N χ ↔
-      ∀ n : N, basePointsRepresentation (R := k) (H := H) V n v = (χ.1 n : k) • v := by
+      ∀ n : N, basePointsRepresentation (R := k) (H := H) V n v = (χ.val n : k) • v := by
   rw [← Subcomodule.mem_toSubmodule, normalWeightSubcomodule_toSubmodule]
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff]
 

@@ -281,11 +281,11 @@ theorem finite_setOf_apply_eq (f : C(U, E)) (hK : IsCompact {z | f z = z}) {φ :
     ext w
     constructor
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
+      exact ⟨z.property, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
     · intro hw
       exact ⟨⟨w, hw.1⟩, hfix w hw, rfl⟩
   have hc : IsCompact ((U : Set E) ∩ (fun z ↦ z - φ z) ⁻¹' {0}) :=
-    himage ▸ hK.image continuous_subtype_val
+    himage ▸ hK.image continuous_subtypeVal
   have hfin := hc.finite_inter_preimage_of_hasFDerivAt
     (fun w hw ↦ (hasFDerivAt_id w).sub (hd _ (hfix w hw)))
     fun w hw ↦ ⟨_, ((1 - f' w).toContinuousLinearEquivOfDetNeZero
@@ -315,7 +315,7 @@ theorem fixedPointIndex_eq_of_homotopy {f₀ f₁ : C(U, E)} (H : f₀.Homotopy 
   -- zeros are the fixed points of the homotopy.
   let D : f₀.displacement.Homotopy f₁.displacement :=
     { toFun := fun p ↦ (p.2 : E) - H p
-      continuous_toFun := (continuous_subtype_val.comp continuous_snd).sub H.continuous
+      continuous_toFun := (continuous_subtypeVal.comp continuous_snd).sub H.continuous
       map_zero_left := fun z ↦ by simp
       map_one_left := fun z ↦ by simp }
   have hD : D ⁻¹' {0} = {p | H p = p.2} := by
@@ -375,7 +375,7 @@ theorem fixedPointIndex_add_pow_three :
     simp only [mem_ofPred_eq, mem_prod, mem_univ, mem_singleton_iff, true_and, Subtype.ext_iff,
       hHapply]
     constructor
-    · exact eq_zero_of_add_pow_three_add_mul_eq t.2.1
+    · exact eq_zero_of_add_pow_three_add_mul_eq t.property.1
     · intro hz
       simp [hz]
   rw [fixedPointIndex_eq_of_homotopy H (hH ▸ isCompact_univ.prod isCompact_singleton)]

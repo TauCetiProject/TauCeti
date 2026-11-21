@@ -40,35 +40,35 @@ unit can be matched at finitely many places by a regular global form of that dis
 theorem exists_form_discr_eq_equivalent_at_places
     {n : ℕ} (hn : 0 < n) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (T : Finset {w : InfinitePlace K // w.IsReal}) (d : Kˣ)
-    (U : ∀ v : S, _root_.QuadraticForm (v.1.adicCompletion K) (Fin n → v.1.adicCompletion K))
+    (U : ∀ v : S, _root_.QuadraticForm (v.val.adicCompletion K) (Fin n → v.val.adicCompletion K))
     (R : T → _root_.QuadraticForm ℝ (Fin n → ℝ))
     (hU : ∀ v, (U v).Nondegenerate) (hR : ∀ w, (R w).Nondegenerate)
     (hUd : ∀ v : S,
       let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-      let : Invertible (2 : v.1.adicCompletion K) :=
-        (Invertible.map (algebraMap K (v.1.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
+      let : Invertible (2 : v.val.adicCompletion K) :=
+        (Invertible.map (algebraMap K (v.val.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
       RegularFormClass.discr (formClass (U v) (hU v)) =
-        (algebraMap K (v.1.adicCompletion K)).squareClassMap (squareClass d))
+        (algebraMap K (v.val.adicCompletion K)).squareClassMap (squareClass d))
     (hRd : ∀ w : T, RegularFormClass.discr (formClass (R w) (hR w)) =
-      (embedding_of_isReal w.1.2).squareClassMap (squareClass d)) :
+      (embedding_of_isReal w.val.property).squareClassMap (squareClass d)) :
     ∃ Q : _root_.QuadraticForm K (Fin n → K), ∃ hQ : Q.Nondegenerate,
       (letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero;
         RegularFormClass.discr (formClass Q hQ) = squareClass d) ∧
-      (∀ v : S, (Q.atFinitePlace v.1).Equivalent (U v)) ∧
-      (∀ w : T, (Q.atRealPlace w.1).Equivalent (R w)) := by
+      (∀ v : S, (Q.atFinitePlace v.val).Equivalent (U v)) ∧
+      (∀ w : T, (Q.atRealPlace w.val).Equivalent (R w)) := by
   classical
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   cases n with
   | zero => omega
   | succ n =>
-    let (v : S) : Invertible (2 : v.1.adicCompletion K) :=
-      (Invertible.map (algebraMap K (v.1.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
+    let (v : S) : Invertible (2 : v.val.adicCompletion K) :=
+      (Invertible.map (algebraMap K (v.val.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
     -- Diagonalize the prescribed local forms, tracking the square class of the coefficient product.
     choose a ha hprodU using fun v : S =>
-      (algebraMap K (v.1.adicCompletion K)).exists_equivalent_weightedSumSquares_isSquare_div_prod
+      (algebraMap K (v.val.adicCompletion K)).exists_equivalent_weightedSumSquares_isSquare_div_prod
       d (U v) (hU v) (hUd v)
     choose b hb hprodR using fun w : T =>
-      (embedding_of_isReal w.1.2).exists_equivalent_weightedSumSquares_isSquare_div_prod
+      (embedding_of_isReal w.val.property).exists_equivalent_weightedSumSquares_isSquare_div_prod
       d (R w) (hR w) (hRd w)
     -- Approximate the coefficients, with the last one fixed by their global product.
     obtain ⟨c, hc, hcv, hcw⟩ :=
@@ -86,13 +86,13 @@ theorem exists_form_discr_eq_equivalent_at_places
       have he := equivalent_weightedSumSquares_of_isSquare_div (hcv v)
       rw [weightedSumSquares_units, weightedSumSquares_units] at he
       exact Equivalent.trans
-        ⟨_root_.QuadraticForm.atFinitePlaceWeightedSumSquares v.1 (fun i => (c i : K))⟩
+        ⟨_root_.QuadraticForm.atFinitePlaceWeightedSumSquares v.val (fun i => (c i : K))⟩
         (he.trans (by simpa only [weightedSumSquares_units] using (ha v).symm))
     · intro w
       have he := equivalent_weightedSumSquares_of_isSquare_div (hcw w)
       rw [weightedSumSquares_units, weightedSumSquares_units] at he
       exact Equivalent.trans
-        ⟨_root_.QuadraticForm.atRealPlaceWeightedSumSquares w.1 (fun i => (c i : K))⟩
+        ⟨_root_.QuadraticForm.atRealPlaceWeightedSumSquares w.val (fun i => (c i : K))⟩
         (he.trans (by simpa only [weightedSumSquares_units] using (hb w).symm))
 
 end TauCeti.NumberField.QuadraticForm

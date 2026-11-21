@@ -48,7 +48,7 @@ theorem integrable_prod_clm (μ : Measure E) [IsGaussian μ]
   by_cases hs : s = ∅
   · simp [hs]
   have hcard : (s.card : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast Finset.card_ne_zero.mpr (Finset.nonempty_iff_ne_empty.mpr hs)
+    exact_mod_cast Finset.card_ne_zero.mpr (Finset.ne_empty_iff_nonempty.mp hs)
   have hLp := MemLp.fun_prod (s := s) (p := fun _ ↦ (s.card : ℝ≥0∞))
     (fun i _ ↦ ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
       (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i)))
