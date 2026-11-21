@@ -24,6 +24,9 @@ row's lattice (`coupledPatternIsometryHom_injective`).
 
 ## Main declarations
 
+* `TauCeti.RootfulNiemeierType.forall_mem_glueSymmetries_of_mem_symmetries_iff`:
+  `r ≠ a5FourthD4` is the exact domain on which pattern symmetries are pure-position glue
+  symmetries.
 * `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom`: action of `p.symmetries` on `r.lattice`
   for every `p ∈ r.gluePatterns` across all 23 rootful Niemeier rows.
 * `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom_eq_patternIsometryHom`,
@@ -47,6 +50,23 @@ namespace TauCeti
 namespace RootfulNiemeierType
 
 open IntegralLattice
+
+/-- **Exactness of `mem_glueSymmetries_of_mem_symmetries`**: every indicated pattern symmetry of a
+row `r` is a pure-position glue symmetry of `r` if and only if `r ≠ a5FourthD4`. -/
+theorem forall_mem_glueSymmetries_of_mem_symmetries_iff {r : RootfulNiemeierType} :
+    (∀ {p : GluePattern} (hp : p ∈ r.gluePatterns) {g : Equiv.Perm (Fin p.length)},
+      g ∈ p.symmetries →
+        (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g ∈ r.glueSymmetries) ↔
+      r ≠ a5FourthD4 := by
+  refine ⟨fun h hr ↦ ?_, fun hr {p} hp {g} hg ↦ mem_glueSymmetries_of_mem_symmetries hr hp hg⟩
+  subst hr
+  have hp : GluePattern.cyclic [2] [0, 2, 4] [0] ∈ a5FourthD4.gluePatterns := by simp [gluePatterns]
+  have hmem := h hp a5FourthD4BlockRot_mem_symmetries
+  have heq : (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr a5FourthD4BlockRot =
+      (a5FourthD4BlockRot : Equiv.Perm (Fin a5FourthD4.components.length)) := by
+    ext ⟨i, hi⟩
+    rfl
+  exact a5FourthD4BlockRot_notMem_glueSymmetries (heq ▸ hmem)
 
 /-- **Every table pattern of every rootful Niemeier row acts on the lattice of its row**: by pure
 component permutation (`patternIsometryHom`) on the 22 rows other than `A₅⁴ D₄`, and by the

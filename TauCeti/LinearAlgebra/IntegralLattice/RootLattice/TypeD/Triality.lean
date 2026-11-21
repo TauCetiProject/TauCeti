@@ -10,8 +10,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Qua
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoots
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
-import Mathlib.Algebra.BigOperators.Pi
-
 /-!
 # The triality isometry of `D₄`
 
@@ -42,8 +40,7 @@ act on a lattice glued from copies of `D₄`.
   `D₄`, with coordinate formula `checkerboardTriality_apply`.
 * `TauCeti.IntegralLattice.checkerboardTriality_checkerboardSimpleRoot`: `τ` permutes the simple
   roots by `trialityPermD4`.
-* `TauCeti.IntegralLattice.checkerboardTriality_pow_three`,
-  `TauCeti.IntegralLattice.orderOf_checkerboardTriality`: `τ` has order `3`.
+* `TauCeti.IntegralLattice.checkerboardTriality_pow_three`: `τ³ = 1`.
 * `discriminantGroupEquiv_checkerboardTriality_checkerboardVectorClass` and its two companions:
   `τ` acts on the discriminant classes by `v ↦ c ↦ s ↦ v`.
 * `discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry`:
@@ -51,9 +48,8 @@ act on a lattice glued from copies of `D₄`.
   powers give `TauCeti.IntegralLattice.checkerboardScalarIsometry`, realizing every unit of `F₄` on
   the checkerboard discriminant group.
 * `TauCeti.DynkinType.typeD4Triality`: the triality isometry of the root lattice of type `D₄`,
-  permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`,
-  `typeD4Triality_apply_apply`), of order `3` (`orderOf_typeD4Triality`), whose induced
-  glue-alphabet isometry cycles the Conway--Sloane labels by
+  permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`), whose
+  induced glue-alphabet isometry cycles the Conway--Sloane labels by
   `TauCeti.DynkinType.typeD4TrialityLabelPerm` (`1 ↦ 2 ↦ 3 ↦ 1`, of order three by
   `orderOf_typeD4TrialityLabelPerm`; `glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv`,
   `glueAlphabetIsometryOfIsometry_typeD4Triality_pow_glueLabelEquiv`).
@@ -186,18 +182,6 @@ theorem checkerboardTriality_pow_three : checkerboardTriality ^ 3 = 1 :=
     simp only [pow_three, Isometry.mul_apply, Isometry.one_apply,
       checkerboardTriality_eq_trialityLinearMap]
     exact trialityLinearMap_apply_apply_apply x
-
-/-- Triality moves the first simple root, so it is not the identity. -/
-theorem checkerboardTriality_ne_one : checkerboardTriality ≠ 1 := fun h ↦ by
-  have h0 := congrArg (fun f : Isometry (checkerboardLattice 4) (checkerboardLattice 4) ↦
-    f (checkerboardSimpleRoot 4 le_rfl 0) 0) h
-  rw [checkerboardTriality_checkerboardSimpleRoot, Isometry.one_apply] at h0
-  norm_num at h0
-
-/-- **Triality has order exactly three.** -/
-@[simp]
-theorem orderOf_checkerboardTriality : orderOf checkerboardTriality = 3 :=
-  orderOf_eq_prime checkerboardTriality_pow_three checkerboardTriality_ne_one
 
 /-! ## The action on the discriminant group -/
 
@@ -381,43 +365,10 @@ theorem typeD4Triality_single (i : Fin 4) :
   -- The two sides differ only in spelling the index type as `Fin 4` or `Fin (D 4).rank`.
   rfl
 
-/-- **Simple-root coordinates of triality on `D₄`**: the `j`-th Bourbaki simple-root coordinate of
-`typeD4Triality ht x` is read from `trialityPermD4.symm j`. -/
--- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside `x` by `rank_D`.
-theorem typeD4Triality_apply_apply (x : Fin (D 4).rank → ℚ) (j : Fin 4) :
-    typeD4Triality ht x j = x (trialityPermD4.symm j) := by
-  obtain ⟨k, rfl⟩ := trialityPermD4.surjective j
-  have h1 : typeD4Triality ht x =
-      ∑ i : Fin (D 4).rank, x i • typeD4Triality ht (Pi.single i 1) := by
-    conv_lhs => rw [pi_eq_sum_univ' x, map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ map_smul (typeD4Triality ht) (x i) (Pi.single i 1)
-  let y : Fin 4 → ℚ := fun i ↦ x (Fin.cast (rank_D 4).symm i)
-  -- As in `typeD4Triality_single`, `(D 4).rank` unfolds to `4` (`rank_D`), identifying
-  -- coordinates indexed by `Fin (D 4).rank` with `Fin 4` so `Fin.cast (rank_D 4).symm` is
-  -- definitionally the identity.
-  have h2 : (∑ i : Fin (D 4).rank, x i • typeD4Triality ht (Pi.single i 1)) =
-      (∑ i : Fin 4, y i • Pi.single (trialityPermD4 i) (1 : ℚ)) :=
-    Finset.sum_congr rfl fun i _ ↦ congrArg (y i • ·) (typeD4Triality_single ht i)
-  have h3 : (∑ i : Fin 4, y i • Pi.single (trialityPermD4 i) (1 : ℚ)) (trialityPermD4 k) =
-      y (trialityPermD4.symm (trialityPermD4 k)) := by
-    simp only [Finset.sum_apply, Pi.smul_apply, Pi.single_apply,
-      trialityPermD4.injective.eq_iff, smul_eq_mul, mul_boole, Finset.sum_ite_eq,
-      Finset.mem_univ, ↓reduceIte, Equiv.symm_apply_apply]
-  exact (congrFun (h1.trans h2) (trialityPermD4 k)).trans h3
-
 /-- **Triality has order three.** -/
 @[simp]
 theorem typeD4Triality_pow_three : typeD4Triality ht ^ 3 = 1 := by
   rw [typeD4Triality, ← map_pow, checkerboardTriality_pow_three, map_one]
-
-/-- Triality on the `D₄` root lattice is not the identity. -/
-theorem typeD4Triality_ne_one : typeD4Triality ht ≠ 1 :=
-  (MulEquiv.map_ne_one_iff _).mpr checkerboardTriality_ne_one
-
-/-- **Triality on the `D₄` root lattice has order exactly three.** -/
-@[simp]
-theorem orderOf_typeD4Triality : orderOf (typeD4Triality ht) = 3 :=
-  orderOf_eq_prime (typeD4Triality_pow_three ht) (typeD4Triality_ne_one ht)
 
 /-- **The Conway--Sloane label permutation of `D₄` triality**: the 3-cycle `1 ↦ 2 ↦ 3 ↦ 1` fixing
 `0` (`s ↦ v ↦ c ↦ s`). -/

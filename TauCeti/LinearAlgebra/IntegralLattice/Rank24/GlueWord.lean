@@ -282,6 +282,16 @@ theorem encodeGlueWord_add (w w' : ∀ i, (t i).glueAlphabet (ht i)) :
   rw [getD_encodeGlueWord, getD_encodeGlueWord, Pi.add_apply,
     DynkinType.val_glueLabelEquiv_symm_add]
 
+/-- Digit words encoded by elements of an additive subgroup are closed under `glueWordAdd`. -/
+theorem exists_mem_addSubgroup_glueWordAdd
+    (H : AddSubgroup (∀ i, (t i).glueAlphabet (ht i))) {l₁ l₂ : List ℕ}
+    (h₁ : ∃ w ∈ H, encodeGlueWord t ht w = l₁)
+    (h₂ : ∃ w ∈ H, encodeGlueWord t ht w = l₂) :
+    ∃ w ∈ H, encodeGlueWord t ht w = glueWordAdd t l₁ l₂ := by
+  obtain ⟨w₁, hw₁, rfl⟩ := h₁
+  obtain ⟨w₂, hw₂, rfl⟩ := h₂
+  exact ⟨w₁ + w₂, H.add_mem hw₁ hw₂, encodeGlueWord_add t ht w₁ w₂⟩
+
 /-- **The shortest norm of a glue word is read off its digit word**:
 `glueWordMinimum` of the digits of `w` is `μ(w) = ∑ i, μ_(t i)(w_i)`. -/
 @[simp]

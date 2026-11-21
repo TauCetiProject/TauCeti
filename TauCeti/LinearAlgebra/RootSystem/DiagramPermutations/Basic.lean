@@ -187,15 +187,6 @@ theorem graphPermD_ne_one (n : ℕ) (hn : 2 ≤ n) : graphPermD n hn ≠ 1 := by
 /-- Triality sends outer node `3` to outer node `0`. -/
 @[simp] lemma trialityPermD4_apply_three : trialityPermD4 3 = 0 := by decide
 
-/-- The inverse of triality sends outer node `0` to outer node `3`. -/
-@[simp] lemma trialityPermD4_symm_apply_zero : trialityPermD4.symm 0 = 3 := by decide
-/-- The inverse of triality fixes the central node `1`. -/
-@[simp] lemma trialityPermD4_symm_apply_one : trialityPermD4.symm 1 = 1 := by decide
-/-- The inverse of triality sends outer node `2` to outer node `0`. -/
-@[simp] lemma trialityPermD4_symm_apply_two : trialityPermD4.symm 2 = 0 := by decide
-/-- The inverse of triality sends outer node `3` to outer node `2`. -/
-@[simp] lemma trialityPermD4_symm_apply_three : trialityPermD4.symm 3 = 2 := by decide
-
 /-- Applying triality three times is the identity. -/
 @[simp] theorem trialityPermD4_pow_three : trialityPermD4 ^ 3 = 1 := by decide
 
