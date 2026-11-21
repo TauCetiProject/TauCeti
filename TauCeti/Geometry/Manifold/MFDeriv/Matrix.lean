@@ -40,14 +40,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] {ι : Type*} [Fintype ι] {a f : M → ι → ℝ}
 
-/-- An integer matrix is determined by its action on real vectors. -/
-private theorem eq_of_forall_map_intCast_mulVec_eq {N N' : Matrix ι ι ℤ}
-    (h : ∀ w : ι → ℝ, N.map (↑) *ᵥ w = N'.map (↑) *ᵥ w) : N = N' := by
-  classical
-  ext i j
-  have hij := congrFun (h (Pi.single j 1)) i
-  simpa [mulVec_single_one] using hij
-
 omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
 /-- Read through a local inverse `ψ` of `a`, a map `f` whose differentials are `N_x ∘ da_x` has
 derivative `N_(ψ y)` at each point `y` of the domain of `ψ`. -/
@@ -69,6 +61,7 @@ private theorem fderiv_comp_localInverse_apply (ha : ContMDiff I 𝓘(ℝ, ι �
     exact congrArg (fun L ↦ L w) h
   have hfd : fderiv ℝ (f ∘ ψ) y w = mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) (f ∘ ψ) y w := by
     rw [mfderiv_eq_fderiv]
+    -- `rfl`: `NormedSpace.fromTangentSpace` is the identity equivalence of `ι → ℝ`.
     rfl
   rw [hfd, mfderiv_comp y (hf.mdifferentiableAt one_ne_zero) hψy]
   exact (hN (ψ y) _).trans (congrArg _ hid)
@@ -104,7 +97,7 @@ private theorem exists_eventually_eq_mulVec_add (ha : ContMDiff I 𝓘(ℝ, ι �
   have hNy (y : ι → ℝ) (hy : y ∈ Metric.ball (a x₀) r) : N (ψ y) = N₀ := by
     have hd := HasFDerivAt.of_eventuallyEq_mulVec_add (hasFDerivAt_id y)
       (eventually_of_mem (Metric.isOpen_ball.mem_nhds hy) hb)
-    refine eq_of_forall_map_intCast_mulVec_eq fun w ↦ ?_
+    refine Matrix.map_injective (Int.cast_injective (α := ℝ)) (Matrix.ext_iff_mulVec.2 fun w ↦ ?_)
     rw [← hderiv y hy, hd.fderiv]
     simp
   have hN₀ : N x₀ = N₀ := by

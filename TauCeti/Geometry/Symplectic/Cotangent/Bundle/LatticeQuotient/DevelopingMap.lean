@@ -36,7 +36,7 @@ is not injective no such `J` is injective
 (`TauCeti.CotangentBundle.LatticeQuotient.not_injective_of_mem_span`). So exactness of the period
 forms does not suffice for global action coordinates onto an open subset of `ℝ^ι`: the developing
 map must also be injective. An explicit example is in
-`TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.PolarSector`.
+`TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.PolarRectangle`.
 
 ## Main definitions
 
@@ -99,6 +99,7 @@ theorem degreeOneEquiv_developingForm_apply (p : ℝ) (a : C^∞⟮I, B; 𝓘(�
     (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).mdifferentiableAt
     (a.contMDiff.mdifferentiableAt (by simp)) v).trans (by
       rw [mvfderiv, (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt.mfderiv]
+      -- `rfl`: the tangent space of `ℝ^ι` at `a x` is `ℝ^ι` itself, and `proj i` evaluates at `i`.
       rfl)
 
 /-- The developing forms are closed, being multiples of exact forms. -/
