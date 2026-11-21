@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.Topology.Compactification.OnePoint.Basic
+public import TauCeti.Topology.Compactification.OnePoint.SubInv
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -20,9 +20,10 @@ import Mathlib.Tactic.Ring
 `t : OnePoint F`: it is `min 1 (w (β - a))` at a finite target `a`, and
 `(max 1 (w β))⁻¹` at infinity. In particular the factor at infinity is `1`, not `0`, at `β = 0`.
 
-The change of variable `β ↦ (β - c)⁻¹`, with `c` different from every finite target, turns all
-targets into finite ones. `AbsoluteValue.exists_pos_forall_min_one_sub_inv_sub_le` bounds its
-local distortion by a positive constant independent of `β`. The finite-product version handles
+The change of variable `β ↦ (β - c)⁻¹`, with `c` different from every finite target, turns each
+target `t` into the finite target `t.subInv c`. The theorem
+`AbsoluteValue.exists_pos_forall_min_one_sub_inv_sub_le` bounds its local distortion by a positive
+constant independent of `β`. The finite-product version handles
 several absolute values and their multiplicities at once. These estimates allow finiteness
 results for approximation to finite targets to be transported to targets at infinity.
 
@@ -166,8 +167,7 @@ finite target with bounded local distortion. Its new target is zero at infinity 
 theorem exists_pos_forall_min_one_sub_inv_sub_le (w : AbsoluteValue F ℝ) (c : F)
     (t : OnePoint F) (ht : t ≠ (c : OnePoint F)) :
     ∃ C : ℝ, 0 < C ∧ ∀ β : F,
-      min 1 (w ((β - c)⁻¹ - t.elim 0 (fun a ↦ (a - c)⁻¹))) ≤
-        C * w.onePointApprox β t := by
+      min 1 (w ((β - c)⁻¹ - t.subInv c)) ≤ C * w.onePointApprox β t := by
   induction t using OnePoint.rec with
   | infty =>
     exact ⟨1 + w c, by linarith [w.nonneg c], fun β ↦ by
@@ -183,7 +183,7 @@ theorem exists_pos_forall_prod_min_one_sub_inv_sub_le {ι : Type*} [Fintype ι]
     (w : ι → AbsoluteValue F ℝ) (c : F) (t : ι → OnePoint F) (m : ι → ℕ)
     (ht : ∀ i, t i ≠ (c : OnePoint F)) :
     ∃ C : ℝ, 0 < C ∧ ∀ β : F,
-      (∏ i, min 1 (w i ((β - c)⁻¹ - (t i).elim 0 (fun a ↦ (a - c)⁻¹))) ^ m i) ≤
+      (∏ i, min 1 (w i ((β - c)⁻¹ - (t i).subInv c)) ^ m i) ≤
         C * ∏ i, (w i).onePointApprox β (t i) ^ m i := by
   classical
   choose C hC h using fun i ↦
