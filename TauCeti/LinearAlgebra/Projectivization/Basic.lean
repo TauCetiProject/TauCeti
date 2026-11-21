@@ -42,7 +42,7 @@ sends every other vector into a single line
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
 point under an injective semilinear map is the image of its line. A semilinear equivalence induces
-a bijection of projective spaces (`Projectivization.mapLinearEquiv`), and a vector lies on the line
+a bijection of projective spaces (`LinearEquiv.mapProjectivization`), and a vector lies on the line
 of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
 Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
 points by vanishing of all their `2 × 2` homogeneous minors.
@@ -218,7 +218,11 @@ theorem submodule_map {D E V W : Type*} [DivisionRing D] [DivisionRing E] [AddCo
   induction x using ind with
   | h v hv => simp [map_mk, submodule_mk, Submodule.map_span]
 
-section LinearEquiv
+end Projectivization
+
+namespace LinearEquiv
+
+open Projectivization
 
 variable {K L M V W U : Type*} [DivisionRing K] [DivisionRing L] [DivisionRing M]
   [AddCommGroup V] [Module K V] [AddCommGroup W] [Module L W] [AddCommGroup U] [Module M U]
@@ -226,7 +230,7 @@ variable {K L M V W U : Type*} [DivisionRing K] [DivisionRing L] [DivisionRing M
 
 /-- A semilinear equivalence `f : V ≃ₛₗ[σ] W` induces a bijection of projective spaces, sending
 the line of `v` to the line of `f v`. -/
-def mapLinearEquiv (f : V ≃ₛₗ[σ] W) : Projectivization K V ≃ Projectivization L W where
+def mapProjectivization (f : V ≃ₛₗ[σ] W) : Projectivization K V ≃ Projectivization L W where
   toFun := map (f : V →ₛₗ[σ] W) f.injective
   invFun := map (f.symm : W →ₛₗ[σ'] V) f.symm.injective
   left_inv x := by
@@ -234,26 +238,28 @@ def mapLinearEquiv (f : V ≃ₛₗ[σ] W) : Projectivization K V ≃ Projectivi
   right_inv x := by
     induction x using ind with | h v hv => simp [map_mk]
 
-/-- `mapLinearEquiv f` is `Projectivization.map f`. -/
-theorem mapLinearEquiv_apply (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
-    mapLinearEquiv f x = map (f : V →ₛₗ[σ] W) f.injective x :=
+/-- `mapProjectivization f` is `Projectivization.map f`. -/
+theorem mapProjectivization_apply (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    mapProjectivization f x = map (f : V →ₛₗ[σ] W) f.injective x :=
   (rfl)
 
-/-- `mapLinearEquiv f` sends the line of `v` to the line of `f v`. -/
+/-- `mapProjectivization f` sends the line of `v` to the line of `f v`. -/
 @[simp]
-theorem mapLinearEquiv_mk (f : V ≃ₛₗ[σ] W) (v : V) (hv : v ≠ 0) :
-    mapLinearEquiv f (mk K v hv) = mk L (f v) (by simpa using hv) :=
+theorem mapProjectivization_mk (f : V ≃ₛₗ[σ] W) (v : V) (hv : v ≠ 0) :
+    mapProjectivization f (Projectivization.mk K v hv) =
+      Projectivization.mk L (f v) (by simpa using hv) :=
   (rfl)
 
-/-- The inverse of `mapLinearEquiv f` is induced by the inverse of `f`. -/
+/-- The inverse of `mapProjectivization f` is induced by the inverse of `f`. -/
 @[simp]
-theorem mapLinearEquiv_symm (f : V ≃ₛₗ[σ] W) : (mapLinearEquiv f).symm = mapLinearEquiv f.symm :=
+theorem mapProjectivization_symm (f : V ≃ₛₗ[σ] W) :
+    (mapProjectivization f).symm = mapProjectivization f.symm :=
   (rfl)
 
 /-- The identity induces the identity of projective space. -/
 @[simp]
-theorem mapLinearEquiv_refl :
-    mapLinearEquiv (LinearEquiv.refl K V) = Equiv.refl (Projectivization K V) := by
+theorem mapProjectivization_refl :
+    mapProjectivization (LinearEquiv.refl K V) = Equiv.refl (Projectivization K V) := by
   ext x
   induction x using ind with | h v hv => rfl
 
@@ -263,28 +269,34 @@ variable {τ : L →+* M} {τ' : M →+* L} [RingHomInvPair τ τ'] [RingHomInvP
   {ρ : K →+* M} {ρ' : M →+* K} [RingHomCompTriple σ τ ρ] [RingHomCompTriple τ' σ' ρ']
   [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ]
 
-/-- Applying `mapLinearEquiv f` and then `mapLinearEquiv g` is applying the bijection induced by
-the composite `f.trans g`. -/
+/-- Applying the projective maps of `f` and `g` successively is applying the projective map
+of their composite `f.trans g`. -/
 @[simp]
-theorem mapLinearEquiv_mapLinearEquiv (f : V ≃ₛₗ[σ] W) (g : W ≃ₛₗ[τ] U)
+theorem mapProjectivization_mapProjectivization (f : V ≃ₛₗ[σ] W) (g : W ≃ₛₗ[τ] U)
     (x : Projectivization K V) :
-    mapLinearEquiv g (mapLinearEquiv f x) = mapLinearEquiv (f.trans g) x := by
+    mapProjectivization g (mapProjectivization f x) = mapProjectivization (f.trans g) x := by
   induction x using ind with | h v hv => rfl
 
 /-- The bijection induced by a composite of semilinear equivalences is the composite of the
 induced bijections. -/
 @[simp]
-theorem mapLinearEquiv_trans (f : V ≃ₛₗ[σ] W) (g : W ≃ₛₗ[τ] U) :
-    (mapLinearEquiv f).trans (mapLinearEquiv g) = mapLinearEquiv (f.trans g) :=
-  Equiv.ext (mapLinearEquiv_mapLinearEquiv f g)
+theorem mapProjectivization_trans (f : V ≃ₛₗ[σ] W) (g : W ≃ₛₗ[τ] U) :
+    (mapProjectivization f).trans (mapProjectivization g) = mapProjectivization (f.trans g) :=
+  Equiv.ext (mapProjectivization_mapProjectivization f g)
 
 end Trans
 
-/-- The line of the image of a point under `mapLinearEquiv f` is the image of its line. -/
+/-- The line of the image of a point under `mapProjectivization f` is the image of its line. -/
 @[simp]
-theorem submodule_mapLinearEquiv (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
-    (mapLinearEquiv f x).submodule = x.submodule.map (f : V →ₛₗ[σ] W) :=
+theorem submodule_mapProjectivization (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    (mapProjectivization f x).submodule = x.submodule.map (f : V →ₛₗ[σ] W) :=
   submodule_map _ f.injective x
+
+end LinearEquiv
+
+namespace Projectivization
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 /-- A vector lies on the line of a point exactly when it is zero or spans that point. -/
 theorem mem_submodule_iff {x : Projectivization K V} {v : V} :
@@ -293,7 +305,5 @@ theorem mem_submodule_iff {x : Projectivization K V} {v : V} :
   by_cases hv : v = 0
   · simp [hv]
   · simp [hv, submodule_mk, mk_eq_mk_iff_mem_span hv hw]
-
-end LinearEquiv
 
 end Projectivization

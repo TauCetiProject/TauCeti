@@ -35,7 +35,7 @@ represents. The pairs of a point `y` and a vector of its tautological line form 
 `TauCeti.ProjectiveBundle.tautologicalLineSet` of `P(E) × E`, closed when the base is Hausdorff
 (`TauCeti.ProjectiveBundle.isClosed_tautologicalLineSet`). In a chart of `P(E)` the tautological
 line is read off the coordinate in `ℙ 𝕜 V` through the Gram–Schmidt frame of the chart
-(`TauCeti.ProjectiveBundle.fiberHomeomorph_eq_mapLinearEquiv_trivializationAt_snd`).
+(`TauCeti.ProjectiveBundle.fiberHomeomorph_eq_mapProjectivization_trivializationAt_snd`).
 
 The fibre `ℙ 𝕜 V` is compact, so the projection of `P(E)` is proper and `P(E)` is compact over a
 compact base (`FiberBundle.compactSpace_totalSpace`). In rank one each fibre is a single point and
@@ -100,59 +100,65 @@ namespace ProjectiveBundle
 /-- The fibre of `P(E)` over `b` is homeomorphic to the projective space of lines of `E b`:
 the class `[φ, ℓ]` of a frame and a line of `V` is the line `φ ℓ`
 (`TauCeti.ProjectiveBundle.fiberHomeomorph_mk`). -/
-def fiberHomeomorph (b : B) : ProjectiveBundle 𝕜 F E V b ≃ₜ ℙ 𝕜 (E b) := by
+def fiberHomeomorph (b : B) : ProjectiveBundle 𝕜 F E V b ≃ₜ ℙ 𝕜 (E b) :=
   let p : OrthonormalFrameBundle.Fiber 𝕜 F E V b :=
     (FiberBundle.homeomorphAt (unitary (V →L[𝕜] V))
       (OrthonormalFrameBundle.Fiber 𝕜 F E V) b).symm 1
   let e := Equiv.ofBijective
     (AssociatedBundle.mk (unitary (V →L[𝕜] V)) p : ℙ 𝕜 V → ProjectiveBundle 𝕜 F E V b)
     (AssociatedBundle.mk_bijective p)
-  letI : T2Space (ProjectiveBundle 𝕜 F E V b) :=
+  haveI : T2Space (ProjectiveBundle 𝕜 F E V b) :=
     FiberBundle.t2Space (ℙ 𝕜 V) (ProjectiveBundle 𝕜 F E V) b
-  have he : Continuous e :=
-    (FiberBundle.totalSpaceMk_isInducing (ℙ 𝕜 V) (ProjectiveBundle 𝕜 F E V) b).continuous_iff.2
-      (continuous_const.totalSpaceMk_associatedBundleMk continuous_id)
-  exact he.homeoOfEquivCompactToT2.symm.trans p.frame.toContinuousLinearEquiv.mapProjectivization
+  ((FiberBundle.totalSpaceMk_isInducing (ℙ 𝕜 V) (ProjectiveBundle 𝕜 F E V) b).continuous_iff.2
+    (continuous_const.totalSpaceMk_associatedBundleMk continuous_id) : Continuous e
+      ).homeoOfEquivCompactToT2.symm.trans p.frame.toContinuousLinearEquiv.mapProjectivization
+
+/-- The fibre identification reads a class in the preferred frame, then maps its line into `E b`. -/
+theorem fiberHomeomorph_apply (b : B) (y : ProjectiveBundle 𝕜 F E V b) :
+    fiberHomeomorph b y =
+      let p : OrthonormalFrameBundle.Fiber 𝕜 F E V b :=
+        (FiberBundle.homeomorphAt (unitary (V →L[𝕜] V))
+          (OrthonormalFrameBundle.Fiber 𝕜 F E V) b).symm 1
+      p.frame.toContinuousLinearEquiv.mapProjectivization ((Equiv.ofBijective
+        (AssociatedBundle.mk (unitary (V →L[𝕜] V)) p : ℙ 𝕜 V → ProjectiveBundle 𝕜 F E V b)
+        (AssociatedBundle.mk_bijective p)).symm y) :=
+  (rfl)
 
 /-- **The fibre of `P(E)` is `ℙ(E_b)`.** The class `[φ, ℓ]` of a frame `φ` of `E b` and a line `ℓ`
 of `V` is the line `φ ℓ` of `E b`. -/
 @[simp]
 theorem fiberHomeomorph_mk {b : B} (φ : OrthonormalFrameBundle.Fiber 𝕜 F E V b) (ℓ : ℙ 𝕜 V) :
     fiberHomeomorph b (AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ ℓ) =
-      Projectivization.mapLinearEquiv φ.frame.toLinearEquiv ℓ := by
+      LinearEquiv.mapProjectivization φ.frame.toLinearEquiv ℓ := by
   set p : OrthonormalFrameBundle.Fiber 𝕜 F E V b :=
     (FiberBundle.homeomorphAt (unitary (V →L[𝕜] V)) (OrthonormalFrameBundle.Fiber 𝕜 F E V) b).symm 1
   have h : AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ ℓ =
       AssociatedBundle.mk (unitary (V →L[𝕜] V)) p
         (PrincipalBundle.division (unitary (V →L[𝕜] V)) p φ • ℓ) :=
     (AssociatedBundle.mk_eq_mk_iff.2 rfl).symm
-  -- The compact-to-Hausdorff homeomorphism keeps its specified equivalence, and
-  -- projectivization of a continuous frame keeps its underlying semilinear map.
-  change p.frame.toContinuousLinearEquiv.mapProjectivization
-    ((Equiv.ofBijective
-      (AssociatedBundle.mk (unitary (V →L[𝕜] V)) p : ℙ 𝕜 V → ProjectiveBundle 𝕜 F E V b)
-      (AssociatedBundle.mk_bijective p)).symm
-        (AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ ℓ)) = _
+  rw [fiberHomeomorph_apply]
+  dsimp only
   rw [h, Equiv.ofBijective_symm_apply_apply, ContinuousLinearEquiv.coe_mapProjectivization,
-    ← Projectivization.mapLinearEquiv_apply, OrthonormalFrameBundle.division_eq,
-    Projectivization.mapLinearEquiv_smul]
+    ← LinearEquiv.mapProjectivization_apply, OrthonormalFrameBundle.division_eq,
+    LinearEquiv.mapProjectivization_smul]
   -- Acting by the unitary transformation `p⁻¹ ∘ φ` and then by the frame `p` is the frame `φ`.
-  refine congrArg (Projectivization.mapLinearEquiv · ℓ) (LinearEquiv.ext fun v ↦ ?_)
+  refine congrArg (LinearEquiv.mapProjectivization · ℓ) (LinearEquiv.ext fun v ↦ ?_)
   simp [p, Submonoid.smul_def]
 
 /-- The class of a frame `φ` and the line `φ⁻¹ L` is the line `L`. -/
 theorem fiberHomeomorph_symm_apply {b : B} (φ : OrthonormalFrameBundle.Fiber 𝕜 F E V b)
     (L : ℙ 𝕜 (E b)) :
     (fiberHomeomorph b).symm L = AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ
-      (Projectivization.mapLinearEquiv φ.frame.toLinearEquiv.symm L) := by
-  rw [Homeomorph.symm_apply_eq, fiberHomeomorph_mk, ← Projectivization.mapLinearEquiv_symm,
+      (LinearEquiv.mapProjectivization φ.frame.toLinearEquiv.symm L) := by
+  rw [Homeomorph.symm_apply_eq, fiberHomeomorph_mk, ← LinearEquiv.mapProjectivization_symm,
     Equiv.apply_symm_apply]
 
 /-- The line `φ ℓ` of `E b` is the class `[φ, ℓ]` of the frame `φ` and the line `ℓ`. -/
 @[simp]
-theorem fiberHomeomorph_symm_mapLinearEquiv {b : B} (φ : OrthonormalFrameBundle.Fiber 𝕜 F E V b)
+theorem fiberHomeomorph_symm_mapProjectivization {b : B}
+    (φ : OrthonormalFrameBundle.Fiber 𝕜 F E V b)
     (ℓ : ℙ 𝕜 V) :
-    (fiberHomeomorph b).symm (Projectivization.mapLinearEquiv φ.frame.toLinearEquiv ℓ) =
+    (fiberHomeomorph b).symm (LinearEquiv.mapProjectivization φ.frame.toLinearEquiv ℓ) =
       AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ ℓ := by
   rw [Homeomorph.symm_apply_eq, fiberHomeomorph_mk]
 
@@ -160,11 +166,11 @@ theorem fiberHomeomorph_symm_mapLinearEquiv {b : B} (φ : OrthonormalFrameBundle
 line of `E` represented by a point of `P(E)` is the image, under the Gram–Schmidt frame
 `TauCeti.OrthonormalFrameBundle.chartFrame F b`, of its coordinate in the preferred chart of `P(E)`
 at `b`. -/
-theorem fiberHomeomorph_eq_mapLinearEquiv_trivializationAt_snd {b : B}
+theorem fiberHomeomorph_eq_mapProjectivization_trivializationAt_snd {b : B}
     (y : TotalSpace (ℙ 𝕜 V) (ProjectiveBundle 𝕜 F E V))
     (hy : y.proj ∈ (trivializationAt F E b).baseSet) :
     fiberHomeomorph y.proj y.snd =
-      Projectivization.mapLinearEquiv
+      LinearEquiv.mapProjectivization
         (OrthonormalFrameBundle.chartFrame F (E := E) (V := V) b y.proj).toLinearEquiv
         (trivializationAt (ℙ 𝕜 V) (ProjectiveBundle 𝕜 F E V) b y).2 := by
   obtain ⟨y, w⟩ := y
@@ -178,11 +184,13 @@ theorem fiberHomeomorph_eq_mapLinearEquiv_trivializationAt_snd {b : B}
     OrthonormalFrameBundle.trivializationAt_fiber,
     OrthonormalFrameBundle.trivializationAtFiber_apply,
     OrthonormalFrameBundle.totalSpaceEquiv_apply]
-  simp only at h ⊢
+  -- Only beta/zeta and projection reduction align the displayed frame identity with the native
+  -- chart coordinates; no chart or fibre constructor is unfolded here.
+  dsimp only at h ⊢
   rw [h, OrthonormalFrameBundle.chartFrame, Trivialization.orthonormalFrameAt_of_mem _ _ _ hy,
-    Projectivization.mapLinearEquiv_smul]
+    LinearEquiv.mapProjectivization_smul]
   -- Acting by the unitary coordinate of `φ` in the chart and then by the chart frame is `φ`.
-  refine congrArg (Projectivization.mapLinearEquiv · ℓ) (LinearEquiv.ext fun v ↦ ?_)
+  refine congrArg (LinearEquiv.mapProjectivization · ℓ) (LinearEquiv.ext fun v ↦ ?_)
   simp [Submonoid.smul_def]
 
 /-! ### The tautological line -/
@@ -209,7 +217,7 @@ theorem tautologicalLine_mk {b : B} (φ : OrthonormalFrameBundle.Fiber 𝕜 F E 
     tautologicalLine (⟨b, AssociatedBundle.mk _ φ ℓ⟩ :
         TotalSpace (ℙ 𝕜 V) (ProjectiveBundle 𝕜 F E V)) =
       ℓ.submodule.map (φ.frame.toLinearEquiv : V →ₗ[𝕜] E b) := by
-  rw [tautologicalLine_def, fiberHomeomorph_mk, Projectivization.submodule_mapLinearEquiv]
+  rw [tautologicalLine_def, fiberHomeomorph_mk, LinearEquiv.submodule_mapProjectivization]
 
 /-- The tautological line of the point of `P(E)` corresponding to a line `L` of `E b` is `L`. -/
 @[simp]
@@ -287,8 +295,10 @@ theorem isClosed_tautologicalLineSet [T2Space B] : IsClosed (tautologicalLineSet
         f (y', ⟨y'.proj, w⟩) ∈ {p : ℙ 𝕜 V × V | p.2 ∈ p.1.submodule}) := by
     intro y' w hy'
     rw [mk_mem_tautologicalLineSet_iff, tautologicalLine_def,
-      fiberHomeomorph_eq_mapLinearEquiv_trivializationAt_snd y' hy',
-      Projectivization.submodule_mapLinearEquiv, Submodule.mem_map_equiv]
+      fiberHomeomorph_eq_mapProjectivization_trivializationAt_snd y' hy',
+      LinearEquiv.submodule_mapProjectivization, Submodule.mem_map_equiv]
+    -- Unfold the local incidence map and subtype membership; the frame inverse is the
+    -- underlying linear equivalence of the inverse linear isometry.
     rfl
   have hz' : f (⟨b', y⟩, ⟨b', v⟩) ∉ {p : ℙ 𝕜 V × V | p.2 ∈ p.1.submodule} :=
     fun h ↦ hz ((hiff (y' := ⟨b', y⟩) v hb).2 h)
@@ -397,7 +407,7 @@ theorem snd_trivialHomeomorph (y : TotalSpace (ℙ 𝕜 V) (ProjectiveBundle �
   obtain ⟨ℓ, rfl⟩ := (AssociatedBundle.mk_bijective (F := ℙ 𝕜 V)
     (OrthonormalFrameBundle.trivialFrame (𝕜 := 𝕜) B b)).2 w
   rw [trivialHomeomorph_mk, fiberHomeomorph_mk, OrthonormalFrameBundle.frame_trivialFrame,
-    LinearIsometryEquiv.toLinearEquiv_refl, Projectivization.mapLinearEquiv_refl, Equiv.refl_apply]
+    LinearIsometryEquiv.toLinearEquiv_refl, LinearEquiv.mapProjectivization_refl, Equiv.refl_apply]
 
 /-- The inverse of `P(B × V) ≃ₜ B × ℙ 𝕜 V` sends `(b, ℓ)` to the class of the identity frame and
 `ℓ`. -/

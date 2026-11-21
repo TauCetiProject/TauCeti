@@ -36,24 +36,24 @@ variable {K L V W : Type*} [DivisionRing K] [DivisionRing L]
   {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
 
 example (f : V ≃ₛₗ[σ] W) (hf : Continuous f) :
-    Continuous (Projectivization.mapLinearEquiv f) := by
+    Continuous (LinearEquiv.mapProjectivization f) := by
   fun_prop
 
 example {X : Type*} [TopologicalSpace X] (f : V ≃ₛₗ[σ] W) (hf : Continuous f)
     (g : X → ℙ K V) (hg : Continuous g) :
-    Continuous fun x ↦ Projectivization.mapLinearEquiv f (g x) := by
+    Continuous fun x ↦ LinearEquiv.mapProjectivization f (g x) := by
   fun_prop
 
 example (f : V ≃ₛₗ[σ] W) (hf : Continuous f.symm) :
-    Continuous (Projectivization.mapLinearEquiv f).symm := by
-  rw [Projectivization.mapLinearEquiv_symm]
+    Continuous (LinearEquiv.mapProjectivization f).symm := by
+  rw [LinearEquiv.mapProjectivization_symm]
   fun_prop
 
 end Semilinear
 
-example : Continuous (Projectivization.mapLinearEquiv
+example : Continuous (LinearEquiv.mapProjectivization
     (LinearEquiv.refl (Quaternion ℝ) (Quaternion ℝ × Quaternion ℝ))) :=
-  Projectivization.continuous_mapLinearEquiv _
+  LinearEquiv.continuous_mapProjectivization _
     ((continuous_id : Continuous (id : Quaternion ℝ × Quaternion ℝ → _)).congr
       fun x ↦ (LinearEquiv.refl_apply x).symm)
 
@@ -107,7 +107,7 @@ example [T2Space B] : IsClosed (ProjectiveBundle.tautologicalLineSet 𝕜 F E V)
 
 example {b : B} (φ : OrthonormalFrameBundle.Fiber 𝕜 F E V b) (ℓ : ℙ 𝕜 V) :
     (ProjectiveBundle.fiberHomeomorph b).symm
-      (Projectivization.mapLinearEquiv φ.frame.toLinearEquiv ℓ) =
+      (LinearEquiv.mapProjectivization φ.frame.toLinearEquiv ℓ) =
         AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ ℓ := by
   simp
 
