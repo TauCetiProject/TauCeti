@@ -621,6 +621,14 @@ theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v :
   (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
     (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
 
+/-- The entries of a Wigner column outside its diagonal are independent. -/
+theorem iIndepFun_wignerMatrix_column_of_ne {n : ℕ} (i : Fin n)
+    (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P) :
+    iIndepFun (fun (j : {j // j ≠ i}) ω ↦ wignerMatrix ξ η n ω j i) P :=
+  iIndepFun_wignerMatrix_apply_of_ne Subtype.val (fun _ ↦ i) Subtype.property
+    (fun j _ h ↦ Subtype.ext (((Sym2.eq_iff.mp h).resolve_right
+      fun he ↦ j.property he.1).1)) hind
+
 end IndependentEdges
 
 section Entries
@@ -691,6 +699,15 @@ variable {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
+/-- A corner off-diagonal entry has second absolute moment equal to the common upper-entry
+second moment divided by the dimension. -/
+theorem integral_norm_wignerMatrix_apply_sq_of_ne {s : ℝ} {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
+    {i j : Fin n} (hij : i ≠ j) :
+    ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
+  simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul]
+  rw [hξ _ (max_lt i.isLt j.isLt)]
+
 private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) (hη : ∀ i, ∫ ω, η i ω ^ 2 ∂P = σ2) {n : ℕ}
     (i j : Fin n) :
@@ -698,8 +715,8 @@ private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
   by_cases hij : i = j
   · subst j
     simp only [norm_wignerMatrix_apply_self_sq, integral_const_mul, hη, ↓reduceIte]
-  · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul,
-      hξ, hij, ↓reduceIte]
+  · simpa only [ite_eq_right hij] using
+      integral_norm_wignerMatrix_apply_sq_of_ne (η := η) (fun ij _ ↦ hξ ij) hij
 
 private theorem integrable_norm_wignerMatrix_apply_sq
     (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hη : ∀ i, Integrable (fun ω ↦ η i ω ^ 2) P)

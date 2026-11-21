@@ -92,6 +92,11 @@ theorem finiteMean_sub_const [Nonempty ι] (z : ι → E) (c : E) :
   simp [finiteMean_eq_inv_smul_sum, sum_sub_distrib, smul_sub, ← Nat.cast_smul_eq_nsmul R,
     smul_smul]
 
+/-- Adding a constant to every member of a nonempty family adds it to the mean. -/
+theorem finiteMean_add_const [Nonempty ι] (z : ι → E) (c : E) :
+    finiteMean R (fun i ↦ z i + c) = finiteMean R z + c := by
+  simpa only [sub_neg_eq_add] using finiteMean_sub_const (R := R) z (-c)
+
 /-- **Appending a point.** Appending `y` to a family `z` of `n` points with mean `m` moves the
 mean by `(n + 1)⁻¹ • (y - m)`. For `n = 0` this says that the mean of the single point `y` is
 `y`. -/

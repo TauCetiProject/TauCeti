@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Moments.Variance
 public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Bounded centered approximations in mean square
@@ -110,6 +111,41 @@ variable [CompleteSpace E]
   rw [centeredTruncation_def, integral_sub hi (integrable_const _)]
   simp
 
+omit [IsProbabilityMeasure P] [CompleteSpace E] in
+private theorem sub_integral_sub_centeredTruncation_eq (hX : Integrable X P)
+    (R : ℝ≥0) (ω : Ω) :
+    X ω - (∫ y, X y ∂P) - centeredTruncation X P R ω =
+      {y | (R : ℝ) < ‖X y‖}.indicator X ω -
+        ∫ y, {y | (R : ℝ) < ‖X y‖}.indicator X y ∂P := by
+  have hS := hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const
+    (f := fun y ↦ ‖X y‖) (g := fun _ ↦ (R : ℝ)))
+  have hsplit (y : Ω) :
+      X y - {y | ‖X y‖ ≤ R}.indicator X y = {y | (R : ℝ) < ‖X y‖}.indicator X y := by
+    by_cases h : ‖X y‖ ≤ R <;> simp [Set.indicator, h, not_lt.mpr, not_le.mp]
+  rw [← hsplit, ← integral_congr_ae (.of_forall hsplit), integral_sub hX hS,
+    centeredTruncation_def]
+  exact sub_sub_sub_comm ..
+
+omit [CompleteSpace E] in
+/-- The mean absolute error of centered truncation is at most twice the discarded norm
+integral. -/
+theorem _root_.MeasureTheory.Integrable.integral_norm_sub_integral_sub_centeredTruncation_le
+    (hX : Integrable X P) (R : ℝ≥0) :
+    (∫ ω, ‖X ω - (∫ y, X y ∂P) - centeredTruncation X P R ω‖ ∂P) ≤
+      2 * ∫ ω, {y | (R : ℝ) < ‖X y‖}.indicator (fun y ↦ ‖X y‖) ω ∂P := by
+  let T := {y | (R : ℝ) < ‖X y‖}.indicator X
+  have hT : Integrable T P := hX.indicator₀
+    (nullMeasurableSet_lt aemeasurable_const hX.norm.aemeasurable)
+  simp_rw [sub_integral_sub_centeredTruncation_eq hX R]
+  calc
+    _ ≤ (∫ ω, ‖T ω‖ ∂P) + ‖∫ y, T y ∂P‖ := by
+      simpa only [← sub_eq_add_neg, norm_neg, integral_const, probReal_univ, one_smul] using
+        integral_norm_add_le hT (integrable_const (-(∫ y, T y ∂P)))
+    _ ≤ 2 * ∫ ω, {y | (R : ℝ) < ‖X y‖}.indicator (fun y ↦ ‖X y‖) ω ∂P := by
+      simp_rw [two_mul, ← norm_indicator_eq_indicator_norm]
+      unfold T
+      exact add_le_add le_rfl (norm_integral_le_integral_norm T)
+
 end Normed
 
 section Hilbert
@@ -123,25 +159,36 @@ theorem _root_.MeasureTheory.MemLp.integral_norm_sub_centeredTruncation_sq_le (h
     (hmean : ∫ ω, X ω ∂P = 0) (R : ℝ≥0) :
     ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P ≤
       ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
-  let T := {ω | ‖X ω‖ ≤ R}.indicator X
-  let Y := fun ω ↦ X ω - T ω
-  have hT : MemLp T 2 P := hX.indicator
-    (nullMeasurableSet_le hX.aestronglyMeasurable.norm.aemeasurable aemeasurable_const)
-  have hY : MemLp Y 2 P := hX.sub hT
-  have hm : ∫ ω, Y ω ∂P = -(∫ ω, T ω ∂P) := by
-    rw [integral_sub (hX.integrable one_le_two) (hT.integrable one_le_two), hmean, zero_sub]
-  have heq (ω : Ω) : X ω - centeredTruncation X P R ω =
-      Y ω - ∫ ω, Y ω ∂P := by
-    simp only [hm, centeredTruncation, Y, T]
-    abel
+  let Y := {ω | (R : ℝ) < ‖X ω‖}.indicator X
+  have hY : MemLp Y 2 P := hX.indicator
+    (nullMeasurableSet_lt aemeasurable_const hX.aestronglyMeasurable.norm.aemeasurable)
+  have heq (ω : Ω) : X ω - centeredTruncation X P R ω = Y ω - ∫ y, Y y ∂P := by
+    simpa only [hmean, sub_zero] using
+      sub_integral_sub_centeredTruncation_eq (hX.integrable one_le_two) R ω
   simp_rw [heq]
   rw [hY.integral_norm_sub_integral_sq]
-  calc
-    _ ≤ ∫ ω, ‖Y ω‖ ^ 2 ∂P := sub_le_self _ (sq_nonneg _)
-    _ = _ := by
-      apply integral_congr_ae
-      exact .of_forall fun ω ↦ by
-        by_cases h : ‖X ω‖ ≤ R <;> simp [Y, T, indicator, h, not_lt.mpr, not_le.mp]
+  refine (sub_le_self _ (sq_nonneg _)).trans_eq (integral_congr_ae (.of_forall fun ω ↦ ?_))
+  by_cases h : (R : ℝ) < ‖X ω‖ <;> simp [Y, Set.indicator, h]
+
+/-- The second moment of a centered truncation is bounded by the cutoff times the original
+mean norm. -/
+theorem _root_.MeasureTheory.Integrable.integral_norm_centeredTruncation_sq_le_mul
+    (hX : Integrable X P) (R : ℝ≥0) :
+    (∫ ω, ‖centeredTruncation X P R ω‖ ^ 2 ∂P) ≤ (R : ℝ) * ∫ ω, ‖X ω‖ ∂P := by
+  let S := {ω | ‖X ω‖ ≤ R}.indicator X
+  have hS : MemLp S 2 P := (memLp_const (R : ℝ)).mono'
+    (hX.aestronglyMeasurable.indicator₀
+      (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
+    (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))
+  rw [centeredTruncation_def, hS.integral_norm_sub_integral_sq]
+  refine (sub_le_self _ (sq_nonneg _)).trans ?_
+  rw [← integral_const_mul]
+  apply integral_mono ((memLp_two_iff_integrable_sq_norm hS.aestronglyMeasurable).1 hS)
+    (hX.norm.const_mul _)
+  intro ω
+  by_cases h : ‖X ω‖ ≤ R
+  · simpa [S, indicator_apply, h, sq] using mul_le_mul_of_nonneg_right h (norm_nonneg (X ω))
+  · simpa [S, indicator_apply, h] using mul_nonneg R.coe_nonneg (norm_nonneg (X ω))
 
 /-- Centered truncations approximate a centered square-integrable variable in mean square. -/
 theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_sub_centeredTruncation_sq
@@ -172,75 +219,6 @@ theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_centeredTruncation_sq (
   simpa only [MemLp.norm_toLp_sq] using ht.norm.pow 2
 
 end Hilbert
-section Nonnegative
-
-variable {P : Measure Ω} [IsProbabilityMeasure P]
-
-/-- The mean absolute error of centered truncation of a nonnegative integrable variable
-is at most twice its discarded first moment. -/
-theorem _root_.MeasureTheory.Integrable.integral_norm_sub_integral_sub_centeredTruncation_le
-    {W : Ω → ℝ} (hW : Integrable W P) (hn : ∀ ω, 0 ≤ W ω) (r : ℝ≥0) :
-    (∫ ω, ‖W ω - (∫ y, W y ∂P) - centeredTruncation W P r ω‖ ∂P) ≤
-      2 * ∫ ω, {ω | (r : ℝ) < W ω}.indicator W ω ∂P := by
-  let T := {ω | (r : ℝ) < W ω}.indicator W
-  let S := {ω | ‖W ω‖ ≤ r}.indicator W
-  have hS : Integrable S P := hW.indicator₀
-    (nullMeasurableSet_le hW.aemeasurable.norm aemeasurable_const)
-  have hT : Integrable T P := hW.indicator₀
-    (nullMeasurableSet_lt aemeasurable_const hW.aemeasurable)
-  have hsplit (ω : Ω) : W ω = S ω + T ω := by
-    by_cases h : W ω ≤ r <;> simp [S, T, abs_of_nonneg (hn ω), h, not_lt.mpr, not_le.mp]
-  have hmean : ∫ ω, W ω ∂P = (∫ ω, S ω ∂P) + ∫ ω, T ω ∂P := by
-    rw [← integral_add hS hT]
-    exact integral_congr_ae (.of_forall hsplit)
-  have hpoint (ω : Ω) : W ω - (∫ y, W y ∂P) - centeredTruncation W P r ω =
-      T ω - ∫ y, T y ∂P := by
-    rw [hmean, centeredTruncation_def]
-    -- The two complementary indicators sum to the original variable.
-    change W ω - ((∫ y, S y ∂P) + ∫ y, T y ∂P) - (S ω - ∫ y, S y ∂P) = _
-    rw [hsplit ω]
-    ring
-  have hnonneg (ω : Ω) : 0 ≤ T ω := indicator_nonneg (fun _ _ ↦ hn _) _
-  simp_rw [hpoint]
-  refine (integral_mono (f := fun ω ↦ ‖T ω - ∫ y, T y ∂P‖)
-    (g := fun ω ↦ T ω + ∫ y, T y ∂P) (hT.sub (integrable_const _)).norm
-    (hT.add (integrable_const _)) (fun ω ↦ ?_)).trans_eq ?_
-  · simpa only [Real.norm_of_nonneg (hnonneg ω),
-      Real.norm_of_nonneg (integral_nonneg hnonneg)] using
-      norm_sub_le (T ω) (∫ y, T y ∂P)
-  · rw [integral_add hT (integrable_const _), integral_const, probReal_univ, one_smul, two_mul]
-
-/-- The second moment of a centered truncation of a nonnegative integrable variable is
-at most the cutoff times the original mean. -/
-theorem _root_.MeasureTheory.Integrable.integral_norm_centeredTruncation_sq_le_mul
-    {W : Ω → ℝ} (hW : Integrable W P) (hn : ∀ ω, 0 ≤ W ω) (r : ℝ≥0) :
-    ∫ ω, ‖centeredTruncation W P r ω‖ ^ 2 ∂P ≤ (r : ℝ) * ∫ ω, W ω ∂P := by
-  let S := {ω | ‖W ω‖ ≤ r}.indicator W
-  have hS : MemLp S 2 P := (memLp_const (r : ℝ)).mono'
-    (hW.aestronglyMeasurable.indicator₀
-      (nullMeasurableSet_le hW.aemeasurable.norm aemeasurable_const))
-    (.of_forall fun ω ↦ by
-      by_cases h : ω ∈ {ω | ‖W ω‖ ≤ (r : ℝ)}
-      · simpa only [S, Set.indicator_of_mem h, Real.norm_of_nonneg r.coe_nonneg] using
-          (Set.mem_ofPred_eq.mp h)
-      · simp only [S, Set.indicator_of_notMem h, norm_zero]
-        exact r.coe_nonneg)
-  rw [centeredTruncation_def, hS.integral_norm_sub_integral_sq]
-  refine (sub_le_self _ (sq_nonneg _)).trans ?_
-  rw [← integral_const_mul]
-  apply integral_mono ((memLp_two_iff_integrable_sq_norm hS.aestronglyMeasurable).1 hS)
-    (hW.const_mul _)
-  intro ω
-  by_cases h : ω ∈ {ω | ‖W ω‖ ≤ (r : ℝ)}
-  · simp only [S, Set.indicator_of_mem h, Real.norm_of_nonneg (hn ω)]
-    have hw : W ω ≤ r := (Real.norm_of_nonneg (hn ω)) ▸ h
-    exact (sq (W ω)).trans_le (mul_le_mul_of_nonneg_right hw (hn ω))
-  · simp only [S, Set.indicator_of_notMem h, norm_zero, zero_pow (by decide : 2 ≠ 0)]
-    exact mul_nonneg r.coe_nonneg (hn ω)
-
-end Nonnegative
-
-
 end TauCeti.Probability
 
 namespace ProbabilityTheory

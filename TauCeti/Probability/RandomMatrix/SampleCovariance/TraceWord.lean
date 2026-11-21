@@ -24,9 +24,9 @@ When the entries are independent and have zero integrals, the totalized Bochner 
 word reading some position exactly once vanishes. For integrable word products this gives
 expectation zero, so only the words reading each position at least twice contribute to the
 expected moment. Such a word visits at most `k + 1` row and column indices
-(`TauCeti.card_image_add_card_image_le_add_one_of_no_singleton_edge`), which is what makes the
-words with fewer indices negligible after normalization. Neither identical distribution nor any
-moment condition beyond integrability of the products is needed for this reduction.
+(`TauCeti.card_image_add_card_image_le_add_one_of_no_singleton_edge`).
+To show that words with fewer indices are asymptotically negligible after normalization,
+one also needs control of the word moments across dimensions.
 
 ## Main results
 
@@ -90,8 +90,10 @@ theorem integral_prod_apply_mul_star_apply_eq_zero
     ∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P = 0 := by
   classical
   simp_rw [prod_mul_star_eq_prod_readFactor]
-  refine hindep.integral_fun_prod_comp_eq_zero_of_singleton_fiber (fun ij ↦ hXm ij.1 ij.2)
-    (bipartiteEdge u v) (fun s ↦ (measurable_readFactor s).aestronglyMeasurable) ha ?_
+  refine hindep.integral_fun_prod_comp_eq_zero_of_singleton_fiber Finset.univ
+    (bipartiteEdge u v) (fun ij _ ↦ hXm ij.1 ij.2)
+    (fun s _ ↦ (measurable_readFactor s).aestronglyMeasurable) (Finset.mem_univ a)
+    (fun b _ ↦ ha b) ?_
   cases a with
   | inl t => exact hX _ _
   | inr t =>

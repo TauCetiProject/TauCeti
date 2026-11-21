@@ -30,7 +30,25 @@ public section
 noncomputable section
 
 open MeasureTheory Matrix
-open scoped Matrix.Norms.L2Operator
+open scoped NNReal Matrix.Norms.L2Operator
+
+namespace Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The resolvent after deleting row and column `i`. -/
+@[expose] def minorResolvent (A : Matrix n n ℂ) (i : n) (z : ℂ) :
+    Matrix {j // j ≠ i} {j // j ≠ i} ℂ :=
+  (A.submatrix (↑) (↑) - z • 1)⁻¹
+
+/-- The quadratic form of column `i` against the minor resolvent minus the minor trace
+times the variance `v / Fintype.card n`. -/
+@[expose] def minorQuadraticError (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ≥0) : ℂ :=
+  let a : {j // j ≠ i} → ℂ := fun j ↦ A j i
+  star a ⬝ᵥ A.minorResolvent i z *ᵥ a -
+    ((v : ℂ) / (Fintype.card n : ℂ)) * (A.minorResolvent i z).trace
+
+end Matrix
 
 namespace Matrix.IsHermitian
 
@@ -87,6 +105,18 @@ theorem norm_trace_inv_sub_smul_one_sub_trace_submatrix_le (hA : A.IsHermitian)
       rw [norm_inv, norm_neg, one_div]
       exact inv_anti₀ (abs_pos.mpr hz) (Complex.abs_im_le_norm _)
     _ = _ := by ring
+
+/-- Normalizing the principal-minor trace by the original dimension bounds its difference
+from the original spectral transform by `3 / (card n * |Im z|)`. -/
+theorem norm_normalized_minor_trace_sub_resolventTransform_le [Nonempty n]
+    (hA : A.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) (i : n) :
+    ‖(Fintype.card n : ℂ)⁻¹ * (A.minorResolvent i z).trace -
+      resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
+      3 / ((Fintype.card n : ℝ) * |z.im|) := by
+  rw [resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz),
+    ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast, norm_sub_rev, minorResolvent]
+  exact (mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_trace_submatrix_le i hz)
+    (by positivity)).trans_eq (by ring)
 
 /-- The quadratic residual of a normalized Hermitian resolvent trace is bounded by its
 mean absolute leave-one-out error divided by `Im z`. -/
