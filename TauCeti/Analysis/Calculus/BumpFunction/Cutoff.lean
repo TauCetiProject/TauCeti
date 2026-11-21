@@ -28,10 +28,12 @@ import TauCeti.MeasureTheory.Integral.Bochner.Set
 This module provides smooth, compactly supported cutoffs for compact subsets of a
 finite-dimensional real normed space. The cutoff is equal to one on a neighborhood of the compact
 set and has topological support in a prescribed open set, which is the localization step used for
-compact exhaustions in domain arguments. A compact set covered by open sets carries a finite
-smooth partition of unity by nonnegative compactly supported functions, each with topological
-support in a member of the cover, whose sum is at most one everywhere and one on the compact set
-(`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Taking differences of
+compact exhaustions in domain arguments; between the sublevel sets `{ν ≤ a}` and `{ν ≥ b}` of a
+continuous function with compact sublevel set `{ν ≤ a}` it gives a cutoff whose derivative vanishes
+where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`). A compact set covered by open sets
+carries a finite smooth partition of unity by nonnegative compactly supported functions, each with
+topological support in a member of the cover, whose sum is at most one everywhere and one on the
+compact set (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Taking differences of
 consecutive cutoffs along a compact exhaustion gives a nonnegative decomposition of unity of an
 open set by compactly supported smooth functions, with partial sums at most one, together with
 cutoffs equal to one on their supports which are locally finite in the open set
@@ -136,6 +138,24 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_eventuallyEq_one [NormedSpace �
         (∀ x ∈ K, ∀ᶠ y in 𝓝 x, ψ y = 1) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U := by
   obtain ⟨ψ, hψ, hr, h1, hc, hs⟩ := hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ, hr, fun x hx => mem_interior_iff_mem_nhds.1 (h1 hx), hc, hs⟩
+
+/-- **A cutoff between sublevel sets.** Let `ν : E → ℝ` be continuous with compact sublevel set
+`{ν ≤ a}`, and let `a < b`. There is a smooth function `ψ` with values in `[0, 1]`, equal to `1`
+near every point where `ν ≤ a` and to `0` near every point where `ν ≥ b`, whose derivative
+vanishes wherever `ν > b`. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_sublevel [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {ν : E → ℝ} {a b : ℝ} (hK : IsCompact {x | ν x ≤ a}) (hν : Continuous ν) (hab : a < b) :
+    ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ (∀ x, ψ x ∈ Icc 0 1) ∧
+      (∀ x, ν x ≤ a → ψ =ᶠ[𝓝 x] 1) ∧ (∀ x, b ≤ ν x → ψ =ᶠ[𝓝 x] 0) ∧
+        ∀ x, b < ν x → fderiv ℝ ψ x = 0 := by
+  obtain ⟨ψ, hψ, hψ01, hψ1, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one
+    (isOpen_lt hν continuous_const) fun x (hx : ν x ≤ a) ↦ (show ν x < b from hx.trans_lt hab)
+  -- Points with `ν ≥ b` lie outside the support of `ψ`.
+  have hψ0 (x : E) (hx : b ≤ ν x) : ψ =ᶠ[𝓝 x] 0 :=
+    notMem_tsupport_iff_eventuallyEq.1 fun h ↦ (hψU h : ν x < b).not_ge hx
+  refine ⟨ψ, hψ, fun x ↦ hψ01 (mem_range_self x), hψ1, hψ0, fun x hx ↦ ?_⟩
+  rw [(hψ0 x hx.le).fderiv_eq]
+  simp
 
 /-- **A finite smooth partition of unity on a compact set.** A compact subset `K` of a
 finite-dimensional real normed space covered by open sets `U i` carries smooth, compactly
