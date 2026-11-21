@@ -110,9 +110,11 @@ invertible real derivative. -/
 theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [FiniteDimensional 𝕜' V]
     (f : V ≃ᵃ[𝕜'] V) (x : V) :
     HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars 𝕜 : V ≃L[𝕜] V) :
-      V →L[𝕜] V) x :=
-  ((ContinuousAffineMap.hasFDerivAt
-    (f := f.toContinuousAffineEquiv.toContinuousAffineMap)).restrictScalars 𝕜).congr_fderiv
-      (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
+      V →L[𝕜] V) x := by
+  have h := (ContinuousAffineMap.hasFDerivAt
+    (f := f.toContinuousAffineEquiv.toContinuousAffineMap) (x := x)).restrictScalars 𝕜
+  rw [ContinuousAffineEquiv.coe_toContinuousAffineMap, AffineEquiv.coe_toContinuousAffineEquiv]
+    at h
+  exact h.congr_fderiv (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
 
 end TauCeti

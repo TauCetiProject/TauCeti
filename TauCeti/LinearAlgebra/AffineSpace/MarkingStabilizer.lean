@@ -10,8 +10,8 @@ public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.Finite.Perm
+public import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
 import Mathlib.GroupTheory.Coset.Card
-import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
 import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
@@ -31,7 +31,8 @@ with special points `∞` and `P ⊆ K`, for instance `P = ∅` or `P = {0}`, is
 
 * **Stability of the stabilized domain.** The automorphisms of the sphere fixing `∞` and every
   point of `P`, and mapping a finite set `C` onto itself, form the subgroup
-  `TauCeti.markingStabilizer P C` of `AffineEquiv.fixingSubgroup K P`. Each of them permutes `C`
+  `TauCeti.markingStabilizer P C` of `AffineEquiv.fixingSubgroup K P`
+  (`TauCeti.markingStabilizer_le_fixingSubgroup`). Each of them permutes `C`
   (`TauCeti.markingPerm`), and when `P ∪ C` contains two distinct points this permutation
   determines it (`TauCeti.markingPerm_injective`), because an affine automorphism fixing two
   distinct points is the identity (`AffineMap.ext_of_ne`). So the sphere with the
@@ -85,10 +86,12 @@ the unordered marking `C` onto itself: the affine automorphisms `f` of `K` with 
 `p ∈ P` and `f '' C = C`. -/
 def markingStabilizer (P C : Set K) : Subgroup (K ≃ᵃ[K] K) where
   carrier := {f | (∀ p ∈ P, f p = p) ∧ f '' C = C}
-  mul_mem' {f g} hf hg := ⟨(AffineEquiv.fixingSubgroup K P).mul_mem hf.1 hg.1, by
+  mul_mem' {f g} hf hg := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
+    mul_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1) (AffineEquiv.mem_fixingSubgroup.2 hg.1), by
     rw [AffineEquiv.coe_mul, Set.image_comp, hg.2, hf.2]⟩
-  one_mem' := ⟨(AffineEquiv.fixingSubgroup K P).one_mem, by simp⟩
-  inv_mem' {f} hf := ⟨(AffineEquiv.fixingSubgroup K P).inv_mem hf.1,
+  one_mem' := ⟨AffineEquiv.mem_fixingSubgroup.1 (one_mem _), by simp⟩
+  inv_mem' {f} hf := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
+    inv_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1),
     by
       calc (f⁻¹ : K ≃ᵃ[K] K) '' C = f.symm '' (f '' C) := by rw [hf.2, AffineEquiv.inv_def]
         _ = C := by simp [Set.image_image]⟩
@@ -97,6 +100,11 @@ def markingStabilizer (P C : Set K) : Subgroup (K ≃ᵃ[K] K) where
 theorem mem_markingStabilizer :
     f ∈ markingStabilizer P C ↔ (∀ p ∈ P, f p = p) ∧ f '' C = C :=
   Iff.rfl
+
+/-- The stabilizer of a marking fixes each point of `P`. -/
+theorem markingStabilizer_le_fixingSubgroup :
+    markingStabilizer P C ≤ AffineEquiv.fixingSubgroup K P :=
+  fun _ hf ↦ AffineEquiv.mem_fixingSubgroup.2 hf.1
 
 /-- An element of the stabilizer of a marking maps marked points, and only those, to marked
 points. -/
@@ -161,10 +169,12 @@ marked points `P`: the affine automorphisms `f` of `K` fixing each point of `P` 
 `u ∘ f = u`. -/
 def markedIsotropy (u : K → X) (P : Set K) : Subgroup (K ≃ᵃ[K] K) where
   carrier := {f | (∀ p ∈ P, f p = p) ∧ u ∘ f = u}
-  mul_mem' {f g} hf hg := ⟨(AffineEquiv.fixingSubgroup K P).mul_mem hf.1 hg.1, by
+  mul_mem' {f g} hf hg := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
+    mul_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1) (AffineEquiv.mem_fixingSubgroup.2 hg.1), by
     rw [AffineEquiv.coe_mul, ← Function.comp_assoc, hf.2, hg.2]⟩
-  one_mem' := ⟨(AffineEquiv.fixingSubgroup K P).one_mem, rfl⟩
-  inv_mem' {f} hf := ⟨(AffineEquiv.fixingSubgroup K P).inv_mem hf.1,
+  one_mem' := ⟨AffineEquiv.mem_fixingSubgroup.1 (one_mem _), rfl⟩
+  inv_mem' {f} hf := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
+    inv_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1),
     by
       funext z
       simpa [AffineEquiv.inv_def] using congrFun hf.2 (f.symm z) |>.symm⟩
@@ -172,6 +182,10 @@ def markedIsotropy (u : K → X) (P : Set K) : Subgroup (K ≃ᵃ[K] K) where
 @[simp]
 theorem mem_markedIsotropy : f ∈ markedIsotropy u P ↔ (∀ p ∈ P, f p = p) ∧ u ∘ f = u :=
   Iff.rfl
+
+/-- The isotropy of `u` with the marked points `P` fixes each point of `P`. -/
+theorem markedIsotropy_le_fixingSubgroup : markedIsotropy u P ≤ AffineEquiv.fixingSubgroup K P :=
+  fun _ hf ↦ AffineEquiv.mem_fixingSubgroup.2 hf.1
 
 /-- Without marked points besides `∞`, the isotropy is the set of affine automorphisms `f` with
 `u ∘ f = u`. -/

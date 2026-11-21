@@ -96,7 +96,7 @@ variable (k) in
 /-- The subgroup of affine automorphisms of `P` fixing each point of `s`. This is the analogue of
 the pointwise fixer `_root_.fixingSubgroup` of a group action; Mathlib does not make the affine
 group act on `P` by a `MulAction` instance, so that construction does not apply. -/
-@[expose] def fixingSubgroup (s : Set P) : Subgroup (P ≃ᵃ[k] P) where
+def fixingSubgroup (s : Set P) : Subgroup (P ≃ᵃ[k] P) where
   carrier := {f | ∀ p ∈ s, f p = p}
   mul_mem' {f g} hf hg p hp := by simp [hg p hp, hf p hp]
   one_mem' _ _ := rfl
