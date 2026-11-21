@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 
@@ -127,11 +128,6 @@ theorem adaptedLocalAddition_of_mem_orthogonal {x : M} (hrx : r (f x) = x) {v : 
     (Submodule.starProjection_apply_eq_zero_iff _).mpr hv
   rw [adaptedLocalAddition_apply_of_retract hrx, h0, map_zero, add_zero,
     Submodule.starProjection_eq_self_iff.mpr hv]
-
-/-- An orthogonal projection is idempotent, evaluated at a vector. -/
-private theorem starProjection_starProjection (K : Submodule ℝ V) [K.HasOrthogonalProjection]
-    (v : V) : K.starProjection (K.starProjection v) = K.starProjection v :=
-  Submodule.starProjection_eq_self_iff.mpr (K.starProjection_apply_mem v)
 
 section Smooth
 
@@ -269,7 +265,8 @@ theorem hasFDerivAt_adaptedLocalAddition [IsManifold I (n + 1) M]
     (ContinuousLinearMap.ext fun h ↦ ?_)
   simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply, map_zero, add_zero, hrx,
     ContinuousLinearMap.coe_id', id_eq]
-  rw [starProjection_starProjection, starProjection_starProjection, add_comm]
+  rw [Submodule.starProjection_starProjection_apply, Submodule.starProjection_starProjection_apply,
+    add_comm]
   exact Submodule.starProjection_add_starProjection_orthogonal h
 
 /-- Let normal addition `(y, ν) ↦ f y + ν` be injective on the normal vectors of length less than
@@ -317,7 +314,7 @@ theorem eventually_adaptedLocalAddition_mem_image_iff [IsManifold I (n + 1) M]
     by_contra hPv
     have hle : ‖P v‖ ≤ ‖P - N (f x + T v)‖ * ‖P v‖ := by
       calc ‖P v‖ = ‖(P - N (f x + T v)) (P v)‖ := by
-            rw [sub_apply, hNPv, sub_zero, starProjection_starProjection]
+            rw [sub_apply, hNPv, sub_zero, Submodule.starProjection_starProjection_apply]
         _ ≤ ‖P - N (f x + T v)‖ * ‖P v‖ := ContinuousLinearMap.le_opNorm _ _
     have hlt : ‖P - N (f x + T v)‖ < 1 := by
       simpa [dist_eq_norm, norm_sub_rev] using hv1

@@ -59,6 +59,7 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
 
+* `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
@@ -123,15 +124,18 @@ open scoped InnerProductSpace
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
+/-- An orthogonal projection is idempotent, evaluated at a vector: `P_U (P_U x) = P_U x`. -/
+theorem starProjection_starProjection_apply (x : E) :
+    U.starProjection (U.starProjection x) = U.starProjection x :=
+  starProjection_eq_self_iff.mpr (U.starProjection_apply_mem x)
+
 /-- The inner product with the orthogonal-complement projection is squared distance, embedded
 in the scalar field. In particular, this inner product is real even for complex scalars. -/
 theorem inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
     inner 𝕜 x (Uᗮ.starProjection x) = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
-  have hfix : Uᗮ.starProjection (Uᗮ.starProjection x) = Uᗮ.starProjection x :=
-    starProjection_eq_self_iff.mpr (Uᗮ.starProjection_apply_mem x)
   calc
     inner 𝕜 x (Uᗮ.starProjection x) = inner 𝕜 (Uᗮ.starProjection x) (Uᗮ.starProjection x) := by
-      rw [Uᗮ.inner_starProjection_left_eq_right, hfix]
+      rw [Uᗮ.inner_starProjection_left_eq_right, starProjection_starProjection_apply]
     _ = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
       rw [inner_self_eq_norm_sq_to_K, Uᗮ.norm_starProjection_eq_infDist, orthogonal_orthogonal]
 
@@ -142,7 +146,7 @@ private theorem norm_starProjection_comp_starProjection_le :
   -- `P_U y = y`.
   refine opNorm_le_bound _ (norm_nonneg _) fun x => ?_
   set y := U.starProjection (V.starProjection x)
-  have hy : U.starProjection y = y := starProjection_eq_self_iff.mpr (U.starProjection_apply_mem _)
+  have hy : U.starProjection y = y := U.starProjection_starProjection_apply _
   have hinner : ⟪y, y⟫_𝕜 = ⟪x, V.starProjection y⟫_𝕜 :=
     calc ⟪y, y⟫_𝕜 = ⟪V.starProjection x, U.starProjection y⟫_𝕜 :=
           inner_starProjection_left_eq_right U _ _
