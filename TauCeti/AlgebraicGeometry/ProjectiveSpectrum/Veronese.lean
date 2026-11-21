@@ -25,6 +25,8 @@ compatible with the transitions between charts.
 ## Main definitions
 
 * `AlgebraicGeometry.Proj.veroneseIso`: the isomorphism `Proj A^{(d)} ≅ Proj A`.
+* `AlgebraicGeometry.Proj.veroneseLocalizationsMap`: the map of localizations
+  `A^{(d)}_{x ∩ A^{(d)}} → A_x` at a point `x` of `Proj A`.
 
 ## Main results
 
@@ -305,6 +307,24 @@ theorem toIdeal_asHomogeneousIdeal_veroneseIso_inv (x : Proj 𝒜) :
     ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal.toIdeal =
       x.asHomogeneousIdeal.toIdeal.comap (veronese 𝒜 d).val :=
   Ideal.ext <| mem_asHomogeneousIdeal_veroneseIso_inv 𝒜 d x
+
+/-- The map of localizations `A^{(d)}_{x ∩ A^{(d)}} → A_x` induced by the inclusion
+`A^{(d)} → A`, at a point `x` of `Proj A`; the contraction `x ∩ A^{(d)}` is the point
+`(veroneseIso 𝒜 d).inv x` of `Proj A^{(d)}`. -/
+@[expose] noncomputable def veroneseLocalizationsMap (x : Proj 𝒜) :
+    Localization.AtPrime ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal.toIdeal →+*
+      Localization.AtPrime x.asHomogeneousIdeal.toIdeal :=
+  Localization.localRingHom _ _ (veronese 𝒜 d).val.toRingHom
+    (toIdeal_asHomogeneousIdeal_veroneseIso_inv 𝒜 d x)
+
+/-- The map of localizations sends the fraction `r / s` to the same fraction in `A_x`. -/
+@[simp]
+theorem veroneseLocalizationsMap_mk (x : Proj 𝒜) (r : veronese 𝒜 d)
+    (s : ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal.toIdeal.primeCompl) :
+    veroneseLocalizationsMap 𝒜 d x (Localization.mk r s) =
+      Localization.mk (r : A) ⟨(s : veronese 𝒜 d), fun h ↦
+        s.property ((mem_asHomogeneousIdeal_veroneseIso_inv 𝒜 d x s).2 h)⟩ :=
+  Localization.localRingHom_mk ..
 
 /-- An element `f` of `A^{(d)}` lies in the homogeneous prime ideal of the point of `Proj A`
 corresponding to a point `y` of `Proj A^{(d)}` if and only if it lies in that of `y`. -/
