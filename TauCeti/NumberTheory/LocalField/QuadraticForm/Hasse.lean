@@ -274,13 +274,18 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
 /-- **Invariance under field isomorphisms.** Transporting a regular-form class along a ring
 isomorphism of nonarchimedean local fields preserves its local Hasse invariant, because the
 norm-equation Hilbert symbol is preserved on each pair of diagonal weights. -/
-@[simp]
+@[simp↓]
 theorem localHasse_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
     localHasse (mapRingEquiv e x) = localHasse x := by
   induction x using Quotient.inductionOn with
   | h p =>
     rw [mapRingEquiv_mk, RegularFormPresentation.equivOfRingEquiv_def, localHasse_mk, localHasse_mk]
     simp only [hilbertSymbol_units_map_ringEquiv]
+
+example (e : K ≃+* L) (p : RegularFormPresentation K) :
+    localHasse (mapRingEquiv e (Quotient.mk (regularFormSetoid K) p)) =
+      localHasse (Quotient.mk (regularFormSetoid K) p) := by
+  simp
 
 /-- Scalar extension along a surjective homomorphism of nonarchimedean local fields preserves the
 local Hasse invariant. -/
