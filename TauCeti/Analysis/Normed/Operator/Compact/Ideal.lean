@@ -19,12 +19,15 @@ import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
 
 For a topological module `M` over a ring `R`, the compact continuous linear endomorphisms form a
 two-sided ideal `ContinuousLinearMap.compactIdeal R M` of `M →L[R] M`, and the continuous linear
-endomorphisms with separable range form a two-sided ideal
-`ContinuousLinearMap.separableRangeIdeal R M`, with `separableRangeIdeal R M = ⊤` if and only if
-`M` is separable. Over a locally compact nontrivially normed field `𝕜` (`[LocallyCompactSpace 𝕜]`),
-a Hausdorff topological vector space `E` satisfies `compactIdeal 𝕜 E = ⊤` if and only if `E` is
-finite-dimensional. On a seminormed space `E` over a nontrivially normed field `𝕜`,
-`separableRangeIdeal 𝕜 E` is closed in the operator-norm topology and contains `compactIdeal 𝕜 E`;
+endomorphisms whose range is contained in the closure of a countable subset of `M`
+(`IsSeparable (Set.range f)`) form a two-sided ideal `ContinuousLinearMap.separableRangeIdeal R M`,
+with `separableRangeIdeal R M = ⊤` if and only if `M` is separable. Over a locally compact
+nontrivially normed field `𝕜` (`[LocallyCompactSpace 𝕜]`), a Hausdorff topological vector space `E`
+satisfies `compactIdeal 𝕜 E = ⊤` if and only if `E` is finite-dimensional. On a seminormed space
+`E` over a nontrivially normed field `𝕜`, membership in `separableRangeIdeal 𝕜 E` is equivalent to
+intrinsic separability `SeparableSpace (Set.range f)` of the range subtype
+(`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`), `separableRangeIdeal 𝕜 E` is
+closed in the operator-norm topology, and `separableRangeIdeal 𝕜 E` contains `compactIdeal 𝕜 E`;
 when `E` is a Banach space, `compactIdeal 𝕜 E` is also closed.
 
 On a Hilbert space `H` over `𝕜` (`ℝ` or `ℂ`), every nonzero bounded operator `T` with `T x ≠ 0`
@@ -43,9 +46,11 @@ extraction with the norm-convergent singular value expansion of compact operator
   endomorphisms of `M`, closed when `M` is a Banach space
   (`ContinuousLinearMap.isClosed_compactIdeal`).
 * `ContinuousLinearMap.separableRangeIdeal`: the two-sided ideal of continuous linear endomorphisms
-  of `M` with separable range, closed (`ContinuousLinearMap.isClosed_separableRangeIdeal`) and
-  containing `compactIdeal` (`ContinuousLinearMap.compactIdeal_le_separableRangeIdeal`) on
-  seminormed spaces over a nontrivially normed field.
+  of `M` whose range lies in the closure of a countable subset of `M`, characterized by
+  `SeparableSpace (Set.range f)` (`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`),
+  closed (`ContinuousLinearMap.isClosed_separableRangeIdeal`), and containing `compactIdeal`
+  (`ContinuousLinearMap.compactIdeal_le_separableRangeIdeal`) on seminormed spaces over a
+  nontrivially normed field.
 * `ContinuousLinearMap.twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed`:
   `↥(compactIdeal 𝕜 H)` has no proper nonzero closed two-sided ideals.
 * `ContinuousLinearMap.compactIdeal_le_of_isClosed_of_ne_bot`: every nonzero closed two-sided ideal
@@ -192,7 +197,9 @@ section Topological
 variable (R M : Type*) [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
   [IsTopologicalAddGroup M]
 
-/-- The two-sided ideal of continuous linear endomorphisms of `M` whose range is separable. -/
+/-- The two-sided ideal of continuous linear endomorphisms of `M` whose range lies in the closure
+of a countable subset of `M` (`IsSeparable (Set.range f)`). On a seminormed space, this coincides
+with intrinsic separability of the range subtype (`mem_separableRangeIdeal_iff_separableSpace`). -/
 def separableRangeIdeal : TwoSidedIdeal (M →L[R] M) :=
   TwoSidedIdeal.mk' {f : M →L[R] M | IsSeparable (Set.range f)}
     ((Set.finite_singleton (0 : M)).isSeparable.mono <| by
@@ -213,20 +220,22 @@ def separableRangeIdeal : TwoSidedIdeal (M →L[R] M) :=
 
 variable {R M}
 
-/-- An endomorphism belongs to `separableRangeIdeal` precisely when its range is separable. -/
+/-- An endomorphism belongs to `separableRangeIdeal` precisely when its range lies in the closure
+of a countable subset of `M`. -/
 @[simp]
 theorem mem_separableRangeIdeal {f : M →L[R] M} :
     f ∈ separableRangeIdeal R M ↔ IsSeparable (Set.range f) :=
   TwoSidedIdeal.mem_mk' _ _ _ _ _ _ f
 
-/-- The underlying set of `separableRangeIdeal` consists of endomorphisms with separable range. -/
+/-- The underlying set of `separableRangeIdeal` consists of endomorphisms whose range lies in the
+closure of a countable subset of `M`. -/
 @[simp]
 theorem coe_separableRangeIdeal :
     (separableRangeIdeal R M : Set (M →L[R] M)) = {f : M →L[R] M | IsSeparable (Set.range f)} :=
   Set.ext fun _ ↦ mem_separableRangeIdeal
 
-/-- Every continuous linear endomorphism of `M` has separable range if and only if `M` itself is a
-separable space. -/
+/-- Every continuous linear endomorphism of `M` has range contained in the closure of a countable
+subset of `M` if and only if `M` itself is a separable space. -/
 @[simp]
 theorem separableRangeIdeal_eq_top_iff : separableRangeIdeal R M = ⊤ ↔ SeparableSpace M := by
   rw [← TwoSidedIdeal.one_mem_iff, mem_separableRangeIdeal, one_def, coe_id', Set.range_id,
@@ -249,6 +258,13 @@ end Topological
 section Normed
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- On a seminormed space, an endomorphism belongs to `separableRangeIdeal` if and only if its
+range subtype is a separable space. -/
+theorem mem_separableRangeIdeal_iff_separableSpace {f : E →L[𝕜] E} :
+    f ∈ separableRangeIdeal 𝕜 E ↔ SeparableSpace (Set.range f) :=
+  mem_separableRangeIdeal.trans
+    ⟨fun h ↦ h.separableSpace, fun _ ↦ IsSeparable.of_subtype (Set.range f)⟩
 
 /-- On a seminormed space, `separableRangeIdeal` is closed in the operator-norm topology. -/
 theorem isClosed_separableRangeIdeal :

@@ -29,6 +29,10 @@ Every rank-one operator `InnerProductSpace.rankOne 𝕜 x y` and every normalize
 `T x ≠ 0` between `rankOneDivNormSq 𝕜 u (T x)` and `rankOne 𝕜 x v` recovers `rankOne 𝕜 u v`
 (`ContinuousLinearMap.rankOneDivNormSq_comp_comp_rankOne`).
 
+Over the reals, the symmetric operator `u ↦ ⟪a, u⟫ b + ⟪b, u⟫ a` sends a nonzero `a` to a vector
+pairing positively with a nonzero `b` (`TauCeti.inner_rankOne_add_rankOne_apply_pos`). This
+is the symmetric operator used to build metric variations pairing positively with a given vector.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -144,3 +148,21 @@ theorem rankOneDivNormSq_comp_comp_rankOne {𝕜 E₁ E₂ E₃ E₄ : Type*} [R
   simp [map_smul, rankOneDivNormSq_apply_self u hx]
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+open InnerProductSpace
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The symmetric operator `u ↦ ⟪a, u⟫ b + ⟪b, u⟫ a` carries `a` to a vector pairing positively
+with `b`, for nonzero `a` and `b`: the pairing is `‖a‖² ‖b‖² + ⟪a, b⟫²`. -/
+theorem inner_rankOne_add_rankOne_apply_pos {a b : E} (ha : a ≠ 0) (hb : b ≠ 0) :
+    0 < ⟪(rankOne ℝ b a + rankOne ℝ a b) a, b⟫ := by
+  simp only [add_apply, rankOne_apply, inner_add_left, real_inner_smul_left,
+    real_inner_self_eq_norm_sq, real_inner_comm a b]
+  have := mul_pos (pow_pos (norm_pos_iff.2 ha) 2) (pow_pos (norm_pos_iff.2 hb) 2)
+  nlinarith [sq_nonneg ⟪b, a⟫]
+
+end TauCeti

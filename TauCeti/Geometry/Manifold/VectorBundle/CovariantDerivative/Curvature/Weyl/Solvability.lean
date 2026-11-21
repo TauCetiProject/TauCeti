@@ -636,7 +636,7 @@ private theorem mgradient_and_hessian_eq_of_comp_opens
     have he₀ (w : TangentSpace I (⟨x₀, hW_W₀ hx₀W⟩ : W₀)) :
         e₀ (tangentSpaceOpenEquiv (I := I) ⟨x₀, hW_W₀ hx₀W⟩ w) =
           mfderiv I 𝓘(ℝ, E) Ψ ⟨x₀, hW_W₀ hx₀W⟩ w := by
-      simpa [e₀] using DFunLike.congr_fun (Ψ.mfderivToContinuousLinearEquiv_coe (by simp)) w
+      simp [e₀]
     rw [← hm₁, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
       ← tangentSpaceOpenEquiv_mfderiv_inclusion_apply hW_W₀ ⟨x₀, hx₀W⟩, he₀,
       ← mfderiv_comp_apply (⟨x₀, hx₀W⟩ : W_op)
@@ -716,7 +716,8 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
     (fun y ↦ by
       obtain ⟨y', hy'WE, hy'eq⟩ := (hW_sub y.val y.property).2
       exact (Subtype.ext hy'eq : y' = Opens.inclusion hW_W₀ y) ▸ hy'WE)
-    (by simpa [eQ, e₀] using hgrad_E) hhess_E
+    (by simpa [eQ, e₀, -Diffeomorph.mfderivToContinuousLinearEquiv_apply] using hgrad_E)
+    hhess_E
 
 /-- **Smooth initial-value dependence for the conformal flattening equation on a boundaryless
 manifold.** -/

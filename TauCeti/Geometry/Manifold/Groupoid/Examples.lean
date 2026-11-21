@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Groupoid.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.Groupoid.Examples
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Unit, pair, and one-object smooth and Lie groupoids
@@ -175,17 +176,14 @@ private theorem contMDiff_inverse_aux :
   rw [← (arrowDiffeomorph I ∞ M).contMDiff_diffeomorph_comp_iff le_rfl]
   exact (arrowDiffeomorph I ∞ M).contMDiff.congr fun a ↦ by simp
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
+variable [IsManifold I ∞ M]
 
 private theorem isSubmersion_source_aux :
     Manifold.IsSubmersion I I ∞ (Quiver.Total.left : Quiver.Total (Discrete M) → Discrete M) := by
-  rw [← coe_sourceDiffeomorph I ∞ (N := M)]
-  refine ((sourceDiffeomorph I ∞ M).contMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-    (by simp) fun a ↦ ?_).isSubmersion
-  rw [← (sourceDiffeomorph I ∞ M).mfderivToContinuousLinearEquiv_coe (by simp)]
-  exact ((sourceDiffeomorph I ∞ M).mfderivToContinuousLinearEquiv (by simp) a).surjective
+  simpa using (sourceDiffeomorph I ∞ M).isLocalDiffeomorph.comp_isSubmersion
+    (Manifold.IsSubmersion.id (I := I) (n := ∞) (M := Quiver.Total (Discrete M)))
 
-variable [T2Space M] [SecondCountableTopology M]
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [SecondCountableTopology M]
 
 /-- The unit groupoid on a Hausdorff second-countable smooth manifold is a Lie groupoid. -/
 instance isLieGroupoid : IsLieGroupoid I I (Discrete M) where
@@ -194,22 +192,10 @@ instance isLieGroupoid : IsLieGroupoid I I (Discrete M) where
     ((arrowDiffeomorph I ∞ M).symm.contMDiff.comp
       (objectDiffeomorph I ∞ M).contMDiff).congr fun x ↦ by simp
   contMDiff_inverse := contMDiff_inverse_aux I M
-  contMDiff_comp := by
-    let := transverseFiberProductChartedSpace
-      (f := (Quiver.Total.right : Quiver.Total (Discrete M) → Discrete M))
-      (g := (Quiver.Total.left : Quiver.Total (Discrete M) → Discrete M)) (n := ∞) (by simp)
-      ((isSubmersion_source_aux I M).contMDiff.comp (contMDiff_inverse_aux I M))
-      (isSubmersion_source_aux I M).contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) (isSubmersion_source_aux I M) p)
-    have hemb := isSmoothEmbedding_coe_transverseFiberProduct
-      (f := (Quiver.Total.right : Quiver.Total (Discrete M) → Discrete M))
-      (g := (Quiver.Total.left : Quiver.Total (Discrete M) → Discrete M)) (n := ∞) (by simp)
-      ((isSubmersion_source_aux I M).contMDiff.comp (contMDiff_inverse_aux I M))
-      (isSubmersion_source_aux I M).contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) (isSubmersion_source_aux I M) p)
-    rw [← (arrowDiffeomorph I ∞ M).contMDiff_diffeomorph_comp_iff le_rfl]
-    exact ((arrowDiffeomorph I ∞ M).contMDiff.comp (contMDiff_fst.comp hemb.contMDiff)).congr
-      fun p ↦ by simp
+  -- An arrow of the unit groupoid is determined by its source, so composition is the first
+  -- projection.
+  contMDiff_comp := contMDiff_composablePairs_comp_of_eq (isSubmersion_source_aux I M)
+    (contMDiff_inverse_aux I M) contMDiff_fst fun p ↦ (arrowHomeomorph M).injective (by simp)
 
 end LieGroupoid
 
@@ -303,68 +289,39 @@ private theorem contMDiff_inverse_aux :
   exact ((contMDiff_snd.comp (arrowDiffeomorph I ∞ M).contMDiff).prodMk
     (contMDiff_fst.comp (arrowDiffeomorph I ∞ M).contMDiff)).congr fun a ↦ by simp
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
+variable [IsManifold I ∞ M]
 
 private theorem isSubmersion_source_aux :
     Manifold.IsSubmersion (I.prod I) I ∞
       (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) := by
-  have hs : ContMDiff (I.prod I) I ∞
-      (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) :=
-    ((objectDiffeomorph I ∞ M).symm.contMDiff.comp
-      (contMDiff_snd.comp (arrowDiffeomorph I ∞ M).contMDiff)).congr fun a ↦ by simp
-  refine (hs.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun a v ↦ ?_).isSubmersion
-  let σ : Codiscrete M → Quiver.Total (Codiscrete M) :=
-    fun x ↦ (arrowDiffeomorph I ∞ M).symm (a.right.as, objectDiffeomorph I ∞ M x)
-  have hσ : ContMDiff I (I.prod I) ∞ σ :=
-    (arrowDiffeomorph I ∞ M).symm.contMDiff.comp
-      (contMDiff_const.prodMk (objectDiffeomorph I ∞ M).contMDiff)
-  have hσa : σ a.left = a := by
-    refine Quiver.Total.ext (by simp [σ]) (by simp [σ]) ?_
-    exact heq_of_eq (Subsingleton.elim _ _)
-  have hlσ : (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) ∘ σ = id := by
-    ext x
-    simp [σ]
-  refine ⟨mfderiv I (I.prod I) σ a.left v, ?_⟩
-  have hcomp := mfderiv_comp a.left (by rw [hσa]; exact hs.mdifferentiableAt (by simp))
-    (hσ.mdifferentiableAt (by simp))
-  rw [hσa, hlσ, mfderiv_id] at hcomp
-  exact DFunLike.congr_fun hcomp.symm v
+  have h : (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) =
+      (objectDiffeomorph I ∞ M).symm ∘ (Prod.fst ∘
+        ((arrowDiffeomorph I ∞ M).trans (Diffeomorph.prodComm I I M M ∞))) := by
+    funext a
+    simp
+  rw [h]
+  exact (objectDiffeomorph I ∞ M).symm.isLocalDiffeomorph.comp_isSubmersion
+    (((arrowDiffeomorph I ∞ M).trans (Diffeomorph.prodComm I I M M ∞)).isLocalDiffeomorph
+      |>.isSubmersion_comp Manifold.isSubmersion_fst)
 
-variable [T2Space M] [SecondCountableTopology M]
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [SecondCountableTopology M]
 
 /-- The pair groupoid on a Hausdorff second-countable smooth manifold is a Lie groupoid. -/
 instance isLieGroupoid : IsLieGroupoid I (I.prod I) (Codiscrete M) where
-  t2Space_objects :=
-    T2Space.of_injective_continuous (objectHomeomorph M).injective (objectHomeomorph M).continuous
-  secondCountableTopology_arrows := (arrowHomeomorph M).isEmbedding.secondCountableTopology
   isSubmersion_source := isSubmersion_source_aux I M
   contMDiff_unit := by
     rw [← (arrowDiffeomorph I ∞ M).contMDiff_diffeomorph_comp_iff le_rfl]
     exact ((objectDiffeomorph I ∞ M).contMDiff.prodMk
       (objectDiffeomorph I ∞ M).contMDiff).congr fun x ↦ by simp
   contMDiff_inverse := contMDiff_inverse_aux I M
+  -- The composite of `x → y` and `y → z` is the arrow with coordinates `(z, x)`.
   contMDiff_comp := by
-    let := transverseFiberProductChartedSpace
-      (f := (Quiver.Total.right : Quiver.Total (Codiscrete M) → Codiscrete M))
-      (g := (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M)) (n := ∞) (by simp)
-      ((isSubmersion_source_aux I M).contMDiff.comp (contMDiff_inverse_aux I M))
-      (isSubmersion_source_aux I M).contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) (isSubmersion_source_aux I M) p)
-    have hemb := isSmoothEmbedding_coe_transverseFiberProduct
-      (f := (Quiver.Total.right : Quiver.Total (Codiscrete M) → Codiscrete M))
-      (g := (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M)) (n := ∞) (by simp)
-      ((isSubmersion_source_aux I M).contMDiff.comp (contMDiff_inverse_aux I M))
-      (isSubmersion_source_aux I M).contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) (isSubmersion_source_aux I M) p)
-    rw [← (arrowDiffeomorph I ∞ M).contMDiff_diffeomorph_comp_iff le_rfl]
-    exact (((contMDiff_fst.comp (arrowDiffeomorph I ∞ M).contMDiff).comp
-      (contMDiff_snd.comp hemb.contMDiff)).prodMk
-      ((contMDiff_snd.comp (arrowDiffeomorph I ∞ M).contMDiff).comp
-        (contMDiff_fst.comp hemb.contMDiff))).congr fun p ↦ by simp
-  t2Space_sourceFiber _ :=
-    have : T2Space (Quiver.Total (Codiscrete M)) :=
-      T2Space.of_injective_continuous (arrowHomeomorph M).injective (arrowHomeomorph M).continuous
-    inferInstance
+    have ha := (arrowDiffeomorph I ∞ M).contMDiff
+    exact contMDiff_composablePairs_comp_of_eq (isSubmersion_source_aux I M)
+      (contMDiff_inverse_aux I M)
+      ((arrowDiffeomorph I ∞ M).symm.contMDiff.comp
+        ((ha.comp contMDiff_snd).fst.prodMk (ha.comp contMDiff_fst).snd))
+      fun p ↦ (arrowHomeomorph M).injective (by simp)
 
 end LieGroupoid
 
