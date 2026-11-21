@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
+import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 
 /-!
@@ -161,18 +162,8 @@ variable {I} in
 theorem conformalLaplacian_congr_of_eventuallyEq {u v : M → ℝ} {x : M}
     (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (h : u =ᶠ[𝓝 x] v) :
     conformalLaplacian I u x = conformalLaplacian I v x := by
-  have hv : ContMDiffAt I 𝓘(ℝ) 2 v x := hu.congr_of_eventuallyEq h.symm
-  have hgrad0 : (fun y ↦ (mgradient I (u - v) y : E)) =ᶠ[𝓝 x] 0 := by
-    filter_upwards [h.eventuallyEq_nhds] with y hy
-    exact mgradient_eq_zero_iff.2 <|
-      ((hy.sub Filter.EventuallyEq.rfl).trans (by simp)).mvfderiv_eq.trans mvfderiv_zero
-  have hΔ0 : laplaceBeltrami I (u - v) x = 0 := by
-    rw [laplaceBeltrami_def]
-    exact divergence_eq_zero_of_notMem_tsupport I (notMem_tsupport_iff_eventuallyEq.2 hgrad0)
-  have hΔ : laplaceBeltrami I u x = laplaceBeltrami I v x := by
-    rw [← sub_add_cancel u v,
-      laplaceBeltrami_add_of_contMDiffAt I (f := u - v) (hu.sub hv) hv, hΔ0, zero_add]
-  rw [conformalLaplacian_def, conformalLaplacian_def, hΔ, h.eq_of_nhds]
+  rw [conformalLaplacian_def, conformalLaplacian_def,
+    laplaceBeltrami_congr_of_eventuallyEq I hu h, h.eq_of_nhds]
 
 end Manifold
 
@@ -456,10 +447,9 @@ theorem conformalLaplacian_comp_ofWithMetric
       (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
        conformalLaplacian I w x) := by
   let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
-  have hiso : IsLocalRiemannianIsometry I I (ofWithMetric : WithMetric g → M) :=
-    ⟨contMDiff_ofWithMetric,
-      fun y ↦ by rw [mfderiv_ofWithMetric]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩,
-      fun y a b ↦ (inner_def y a b).symm⟩
-  exact hiso.conformalLaplacian_comp (x := toWithMetric g x) hw
+  have hw' : ContMDiffAt I 𝓘(ℝ) 2 w ((riemannianIsometry g) (toWithMetric g x)) := by
+    simpa [coe_riemannianIsometry] using hw
+  simpa [coe_riemannianIsometry] using
+    (riemannianIsometry g).isLocalRiemannianIsometry.conformalLaplacian_comp hw'
 
 end TauCeti.WithMetric

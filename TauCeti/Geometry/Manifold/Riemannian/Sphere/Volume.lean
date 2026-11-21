@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Radius
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
+import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.MeasureTheory.Function.AreaFormula.Integral
@@ -105,28 +106,26 @@ theorem normDet_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
     LinearMap.normDet
         (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y).toLinearMap =
       (4 / (‖y‖ ^ 2 + 4)) ^ n := by
-  let b := EuclideanSpace.basisFun (Fin n) ℝ
   have hσ : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm y :=
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
-  have hd (c : TangentSpace (𝓡 n) y) :
-      fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y c =
-        mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) _
-          (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c) := by
+  let x := (stereographic' n v).symm y
+  let ιL : TangentSpace (𝓡 n) x →ₗᵢ[ℝ] E :=
+    (ℝ ∙ (x : E))ᗮ.subtypeₗᵢ.comp (sphereTangentEquiv x).toLinearIsometry
+  let J : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] TangentSpace (𝓡 n) x :=
+    (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y).toLinearMap
+  have hcomp :
+      (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y).toLinearMap =
+        ιL.toLinearMap ∘ₗ J := by
+    refine LinearMap.ext fun (c : TangentSpace (𝓡 n) y) ↦ ?_
+    have h1 := mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv x
+      (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c)
     rw [← mvfderiv_comp_apply y ((contMDiff_coe_sphere (m := 1) _).mdifferentiableAt one_ne_zero)
-      hσ, mvfderiv_eq_fderiv]
-    rfl
-  have hgram : Matrix.gram ℝ (fun i ↦
-      (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y).toLinearMap (b i)) =
-      Matrix.gram ℝ (fun i ↦ mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y (b.toBasis i)) := by
-    ext i j
-    rw [Matrix.gram_apply, Matrix.gram_apply, ContinuousLinearMap.coe_coe,
-      OrthonormalBasis.coe_toBasis, inner_tangentSpace_sphere]
-    exact congrArg₂ (inner ℝ) (hd (b i)) (hd (b j))
-  have hdet := LinearMap.normDet_sq_eq_det_gram (U := EuclideanSpace ℝ (Fin n))
-    (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y).toLinearMap b
-  simp only [RCLike.ofReal_real_eq_id, id_eq, hgram] at hdet
-  rw [← Real.sqrt_sq (LinearMap.normDet_nonneg _), hdet, ← riemannianJacobian_eq_sqrt_det_gram,
-    riemannianJacobian_stereographic'_symm]
+      hσ, mvfderiv_eq_fderiv] at h1
+    exact h1
+  rw [hcomp, LinearMap.normDet_comp_of_finrank_eq J ιL.toLinearMap rfl,
+    ιL.normDet_eq_one, one_mul]
+  exact (riemannianJacobian_eq_normDet (EuclideanSpace.basisFun (Fin n) ℝ)
+    (stereographic' n v).symm y).symm.trans (riemannianJacobian_stereographic'_symm v y)
 
 end Jacobian
 
@@ -215,15 +214,7 @@ theorem integrable_riemannianVolume_sphere_iff_stereographic'
       Integrable (fun y : EuclideanSpace ℝ (Fin n) ↦
         ((4 / (‖y‖ ^ 2 + 4)) ^ n) • f ((stereographic' n v).symm y)) := by
   rcases n.eq_zero_or_pos with rfl | hn
-  · have : FiniteDimensional ℝ E :=
-      Module.finite_of_finrank_pos ((Fact.out : finrank ℝ E = 0 + 1) ▸ Nat.succ_pos 0)
-    have hcov : (univ : Set (sphere (0 : E) 1)) ⊆ {v} ∪ range (stereographic' 0 v).symm := by
-      intro x _
-      by_cases hxv : x = v
-      · exact Or.inl hxv
-      · exact Or.inr ⟨stereographic' 0 v x, (stereographic' 0 v).left_inv (by simpa using hxv)⟩
-    have : Finite (sphere (0 : E) 1) :=
-      Finite.of_finite_univ (((finite_singleton v).union (finite_range _)).subset hcov)
+  · have : Finite (sphere (0 : E) 1) := finite_sphere_of_finrank_eq_one Fact.out (0 : E) 1
     exact ⟨fun _ ↦ Integrable.of_finite, fun _ ↦ Integrable.of_finite⟩
   · rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
       (measurableEmbedding_stereographic'_symm v).integrable_map_iff,
@@ -268,8 +259,6 @@ private theorem restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHaus
   let σ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 := (stereographic' n v).symm
   have hι : MeasurableEmbedding ι :=
     MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet
-  -- Push both restricted measures forward along the measurable embedding `ι : Sⁿ → E`.
-  apply hι.map_injective
   have harea := restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure
     (U := EuclideanSpace ℝ (Fin n)) (V := E) (f := ι ∘ σ) (s := univ) MeasurableSet.univ
     (fun y _ ↦ (contDiff_coe_comp_stereographic'_symm (k := 1) v).differentiable one_ne_zero y)
@@ -297,12 +286,7 @@ private theorem restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHaus
     simpa [σ] using (stereographic' n v).symm.image_source_eq_target
   rw [finrank_euclideanSpace_fin, hdom, himg,
     map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume v] at harea
-  rw [harea]
-  ext t ht
-  rw [Measure.restrict_apply ht, Measure.map_apply hι.measurable ht,
-    Measure.restrict_apply (hι.measurable ht), hι.comap_apply, image_inter hι.injective,
-    image_preimage_eq_inter_range, Subtype.range_coe, inter_assoc,
-    inter_eq_self_of_subset_right (Subtype.coe_image_subset _ _)]
+  simpa only [hι.comap_map, ← hι.restrict_comap] using congrArg (Measure.comap ι) harea
 
 /-- **The Riemannian volume of the unit sphere is normalized Hausdorff measure.** In every
 dimension `n ≥ 0`, the Riemannian volume of `Sⁿ` for the round metric is the pullback of the
@@ -313,16 +297,15 @@ theorem riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
   obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   have hvneg : v ≠ -v := ne_neg_of_mem_unit_sphere ℝ v
-  have h₁ := restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure (n := n) v
-  have h₂ :=
-    restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure (n := n) (-v)
-  ext s _
-  rw [← measure_inter_add_sdiff s (measurableSet_singleton v),
-    ← measure_inter_add_sdiff s (measurableSet_singleton v) (μ := Measure.comap _ _)]
-  have hsub₁ : s ∩ {v} ⊆ {-v}ᶜ := fun x hx ↦ hx.2 ▸ hvneg
-  have hsub₂ : s \ {v} ⊆ {v}ᶜ := fun _ hx ↦ hx.2
-  rw [← Measure.restrict_eq_self _ hsub₁, ← Measure.restrict_eq_self (Measure.comap _ _) hsub₁, h₂,
-    ← Measure.restrict_eq_self _ hsub₂, ← Measure.restrict_eq_self (Measure.comap _ _) hsub₂, h₁]
+  have hcov : (⋃ b : Bool, ({if b then v else -v}ᶜ : Set (sphere (0 : E) 1))) = univ := by
+    ext x
+    simp only [mem_iUnion, mem_compl_iff, mem_singleton_iff, mem_univ, iff_true, Bool.exists_bool,
+      ite_true]
+    by_contra! h
+    exact hvneg (h.2.symm.trans h.1)
+  refine Measure.ext_of_iUnion_eq_univ hcov fun b ↦ ?_
+  exact restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHausdorffMeasure
+    (if b then v else -v)
 
 /-- Pushing the Riemannian volume of the unit sphere forward along the inclusion `Sⁿ → E` gives
 normalized `n`-dimensional Hausdorff measure restricted to the sphere. -/

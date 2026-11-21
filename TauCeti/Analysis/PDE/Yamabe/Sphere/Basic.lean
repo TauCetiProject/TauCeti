@@ -50,9 +50,8 @@ proved here.
 
 All declarations are in the namespace `TauCeti.Yamabe`.
 
-* `conformalLaplacian_sphere`, `conformalLaplacian_sphere_const`, and
-  `conformalLaplacian_sphereRoundMetricOfRadius_const`: the conformal Laplacian on `Sⁿ` and on
-  constants for `Sⁿ(r)`.
+* `conformalLaplacian_sphere` and `conformalLaplacian_sphereRoundMetricOfRadius_const`: the
+  conformal Laplacian on `Sⁿ` and on constants for `Sⁿ(r)`.
 * `conformalLaplacian_sphere_roundSphereVolume_rpow_neg_inv` and
   `integral_abs_rpow_criticalExponent_roundSphereVolume_rpow_neg_inv`: the constant
   solution `|Sⁿ| ^ (-1 / pₙ)` of `L u = Y(Sⁿ) u ^ (pₙ - 1)` on `Sⁿ`, which has unit `L^{pₙ}` norm
@@ -90,13 +89,6 @@ theorem conformalLaplacian_sphere (u : sphere (0 : E) 1 → ℝ) (p : sphere (0 
       conformalCoefficient n * -laplaceBeltrami (𝓡 n) u p + n * ((n : ℝ) - 1) * u p := by
   rw [conformalLaplacian_def, finrank_euclideanSpace_fin, scalarCurvature_sphere]
 
-/-- On the unit round sphere `Sⁿ`, the conformal Laplacian of a constant `c` is `n (n - 1) c`.
-Not tagged `@[simp]`: `simp` already proves this via `conformalLaplacian_const` and
-`scalarCurvature_sphere`. -/
-theorem conformalLaplacian_sphere_const (c : ℝ) (p : sphere (0 : E) 1) :
-    conformalLaplacian (𝓡 n) (fun _ : sphere (0 : E) 1 ↦ c) p = n * ((n : ℝ) - 1) * c := by
-  rw [conformalLaplacian_const, scalarCurvature_sphere]
-
 /-- **Conformal Laplacian of a constant on the round sphere of radius `r > 0`**:
 `L_(r² g) c = (n (n - 1) / r²) c`. In particular, on `S³` at radius `r = 2` (`4 g`),
 `L_(4 g) 1 = 6 / 4`. -/
@@ -107,10 +99,10 @@ theorem conformalLaplacian_sphereRoundMetricOfRadius_const {r : ℝ} (hr : 0 < r
        ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩;
      conformalLaplacian (𝓡 n) (fun _ ↦ c) p) =
       n * ((n : ℝ) - 1) / r ^ 2 * c := by
-  rw [sphereRoundMetricOfRadius_def,
-    conformalLaplacian_rescale_const _ (pow_pos hr 2) contMDiff_const p, conformalLaplacian_const,
-    ← ContMDiffRiemannianMetric.scalarCurvature_def, scalarCurvature_sphereRoundMetric_ofLE]
-  ring
+  let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+    ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
+  rw [conformalLaplacian_const, ← ContMDiffRiemannianMetric.scalarCurvature_def,
+    scalarCurvature_sphereRoundMetricOfRadius]
 
 /-- **Constant Yamabe solution on `Sⁿ`.** In dimension `n ≠ 2`, the positive constant
 `cₙ = |Sⁿ| ^ (-1 / pₙ)` solves `L cₙ = Y(Sⁿ) cₙ ^ (pₙ - 1)` on the unit round sphere; for
@@ -121,7 +113,7 @@ theorem conformalLaplacian_sphere_roundSphereVolume_rpow_neg_inv (hn : n ≠ 2)
         (fun _ : sphere (0 : E) 1 ↦ roundSphereVolume n ^ (-(1 / criticalExponent n))) p =
       sphereYamabeConstant n *
         (roundSphereVolume n ^ (-(1 / criticalExponent n))) ^ (criticalExponent n - 1) := by
-  rw [conformalLaplacian_sphere_const]
+  rw [conformalLaplacian_const, scalarCurvature_sphere]
   rcases eq_or_ne n 0 with rfl | hn₀
   · simp [sphereYamabeConstant_def]
   have hn₀' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn₀
@@ -202,13 +194,8 @@ theorem conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_sy
         conformalLaplacian (𝓡 n) u ((stereographic' n v).symm ((2 / t) • (x - b))) := by
   have hn' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
   rcases ht.eq_or_lt with rfl | ht
-  · have hb0 (y : EuclideanSpace ℝ (Fin n)) : bubble 0 b y = 0 := by
-      rw [bubble_apply, finrank_euclideanSpace_fin, mul_zero, zero_div,
-        Real.zero_rpow (div_ne_zero hn' two_ne_zero)]
-    have hfun : (fun y ↦ bubble 0 b y * u ((stereographic' n v).symm ((2 / (0 : ℝ)) • (y - b)))) =
-        fun _ ↦ (0 : ℝ) := funext fun y ↦ by rw [hb0, zero_mul]
-    rw [hfun, laplacian_const, Pi.zero_apply, neg_zero, mul_zero, hb0,
-      Real.zero_rpow (div_ne_zero (by positivity) hn'), zero_mul]
+  · rw [bubble_zero_left, finrank_euclideanSpace_fin, Real.zero_rpow (div_ne_zero hn' two_ne_zero)]
+    simp [Real.zero_rpow (div_ne_zero (by positivity : (n : ℝ) + 2 ≠ 0) hn')]
   let g₀ := (riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := ∞) le_top
   let hf : ContMDiff (𝓡 n) 𝓘(ℝ) ∞ fun y : EuclideanSpace ℝ (Fin n) ↦
       bubble t b y ^ (4 / ((finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) - 2)) :=

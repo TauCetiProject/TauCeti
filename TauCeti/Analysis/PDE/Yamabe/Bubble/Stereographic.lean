@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Volume
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The Yamabe bubbles as stereographic pullbacks of the round sphere
@@ -106,20 +108,16 @@ theorem riemannianJacobian_stereographic'_symm_smul_sub (hn : n ≠ 2) (v : sphe
         (2 / (0 : ℝ)) • (y - b)) = fun _ ↦ (stereographic' n v).symm 0 := by
       ext y
       simp
-    have hgram : Matrix.gram ℝ (fun i ↦ mfderiv (𝓡 n) (𝓡 n)
-        (fun _ : EuclideanSpace ℝ (Fin n) ↦ (stereographic' n v).symm 0) x (e i)) = 0 := by
-      ext i j
-      rw [Matrix.gram_apply, mfderiv_const, Matrix.zero_apply]
-      exact inner_zero_left _
-    rw [hconst, riemannianJacobian_eq_sqrt_det_gram, OrthonormalBasis.coe_toBasis, hgram]
+    rw [hconst, riemannianJacobian_eq_normDet e, mfderiv_const,
+      ContinuousLinearMap.toLinearMap_zero]
+    change LinearMap.normDet (0 : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] _) = _
+    rw [LinearMap.normDet_zero, finrank_euclideanSpace_fin, bubble_zero_left,
+      finrank_euclideanSpace_fin, criticalExponent_def]
     rcases eq_or_ne n 0 with rfl | hn₀
-    · simp [criticalExponent_def]
-    · have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn₀)
-      have hn' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
+    · simp
+    · have hn' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
       have hn₀' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn₀
-      rw [Matrix.det_zero, Real.sqrt_zero, bubble_apply, finrank_euclideanSpace_fin,
-        criticalExponent_def]
-      simp [Real.zero_rpow (div_ne_zero hn' two_ne_zero),
+      simp [hn₀, Real.zero_rpow (div_ne_zero hn' two_ne_zero),
         Real.zero_rpow (div_ne_zero (mul_ne_zero two_ne_zero hn₀') hn')]
   · have hgram : Matrix.gram ℝ (fun i ↦ mfderiv (𝓡 n) (𝓡 n)
         ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) x (e i)) =
@@ -171,24 +169,14 @@ private theorem map_smul_sub_withDensity_bubble_rpow_criticalExponent {n : ℕ} 
     congr 1
     field_simp
     ring
-  ext s hs
-  rw [he, e.map_apply s, withDensity_apply _ (e.measurable hs), withDensity_apply _ hs,
-    ← lintegral_indicator (e.measurable hs)]
-  have hind : (e ⁻¹' s).indicator (fun x ↦ ENNReal.ofReal (bubble t b x ^ criticalExponent n)) =
-      fun x ↦ (s.indicator fun y : EuclideanSpace ℝ (Fin n) ↦
-        ENNReal.ofReal ((2 / t) ^ n * (4 / (‖y‖ ^ 2 + 4)) ^ n)) (e x) := by
-    ext x
-    by_cases hx : e x ∈ s <;> simp [hx, hpt]
-  rw [hind, ← e.measurableEmbedding.lintegral_map, hmap_vol, lintegral_smul_measure,
-    lintegral_indicator hs, smul_eq_mul]
-  have hconst (y : EuclideanSpace ℝ (Fin n)) :
-      ENNReal.ofReal ((2 / t) ^ n * (4 / (‖y‖ ^ 2 + 4)) ^ n) =
-        ENNReal.ofReal ((2 / t) ^ n) * ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n) :=
-    ENNReal.ofReal_mul (by positivity)
-  simp_rw [hconst]
-  rw [lintegral_const_mul _ (by fun_prop), ← mul_assoc, ← ENNReal.ofReal_mul (by positivity),
-    ← mul_pow, div_mul_div_cancel₀ two_ne_zero, div_self ht.ne', one_pow, ENNReal.ofReal_one,
-    one_mul]
+  rw [he]
+  refine Measure.map_withDensity_eq_withDensity (jac := fun _ ↦ ENNReal.ofReal ((2 / t) ^ n))
+    e.measurable measurable_const (by fun_prop) ?_ ?_
+  · rw [withDensity_const, Measure.map_smul, hmap_vol, smul_smul,
+      ← ENNReal.ofReal_mul (by positivity), ← mul_pow, div_mul_div_cancel₀ ht.ne',
+      div_self two_ne_zero, one_pow, ENNReal.ofReal_one, one_smul]
+    exact e.measurable.aemeasurable
+  · exact ae_of_all _ fun x ↦ by rw [← ENNReal.ofReal_mul (by positivity), ← hpt x]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
@@ -240,10 +228,10 @@ theorem map_stereographic'_symm_smul_sub_withDensity_eq_riemannianVolume (hn₀ 
         (volume.withDensity fun x : EuclideanSpace ℝ (Fin n) ↦
           ENNReal.ofReal (bubble t b x ^ criticalExponent n)) =
       riemannianVolume (𝓡 n) (sphere (0 : E) 1) := by
-  rw [← Measure.map_map
-    ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding.measurable
-    (by fun_prop), map_smul_sub_withDensity_bubble_rpow_criticalExponent hn ht b,
-    map_stereographic'_symm_withDensity_eq_riemannianVolume hn₀ v]
+  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
+    Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn₀)
+  rw [map_stereographic'_symm_smul_sub_withDensity_eq_restrict_riemannianVolume hn v ht b,
+    Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (by simp))]
 
 /-- **Lower Lebesgue integration on `Sⁿ` via a Yamabe bubble.** In positive dimension `n ≠ 2`, for
 `t > 0`, the lower Lebesgue integral of any `f : Sⁿ → ℝ≥0∞` against the Riemannian volume is its
