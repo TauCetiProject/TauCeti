@@ -5,6 +5,7 @@ Authors: Claude Fable 5, Claude Opus 4.8, Claude Opus 5
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -19,11 +20,10 @@ import Mathlib.Analysis.MeanInequalitiesPow
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, and that
-`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a weighted form of that bound, that
+`1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
 modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
-to `0` as
-`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
+to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
 the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
@@ -35,6 +35,8 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
+* `Real.abs_sqrt_sub_sqrt_mul_max_rpow_le`: for `0 ≤ γ ≤ 1`, the weighted bound
+  `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`.
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_sq_add_le_one`: for `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
@@ -155,6 +157,43 @@ theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
   have h₂ := sqrt_le_sqrt_add_sqrt_abs_sub s t
   rw [abs_sub_comm s t] at h₂
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
+/-- **A weighted Hölder bound for the square root.** For all reals `t` and `s` and `0 ≤ γ ≤ 1`,
+`|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`. At `γ = 0` this is the `1/2`-Hölder
+bound `Real.abs_sqrt_sub_sqrt_le`. It is the time increment of a parabolic rescaling `x - √t y`
+against a `γ`-Hölder modulus, as in the temporal Hölder estimate of heat potentials of `C^{1,γ}`
+data. -/
+theorem abs_sqrt_sub_sqrt_mul_max_rpow_le (t s : ℝ) {γ : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) :
+    |√t - √s| * max √t √s ^ γ ≤ |t - s| ^ ((1 + γ) / 2) := by
+  -- First the bound `|a - b| max a b ^ γ ≤ |a² - b²| ^ ((1 + γ) / 2)` for `a, b ≥ 0`.
+  have key : ∀ {a b : ℝ}, 0 ≤ a → 0 ≤ b →
+      |a - b| * max a b ^ γ ≤ |a ^ 2 - b ^ 2| ^ ((1 + γ) / 2) := by
+    intro a b ha hb
+    wlog hab : b ≤ a generalizing a b
+    · simpa [abs_sub_comm, max_comm] using this hb ha (le_of_not_ge hab)
+    rcases (add_nonneg ha hb).eq_or_lt with hs | hs
+    · obtain rfl : a = 0 := by linarith
+      obtain rfl : b = 0 := by linarith
+      simp only [sub_self, abs_zero, zero_mul]
+      positivity
+    have hd : 0 ≤ a - b := sub_nonneg.2 hab
+    rw [abs_of_nonneg hd, max_eq_left hab, show a ^ 2 - b ^ 2 = (a - b) * (a + b) by ring,
+      abs_of_nonneg (mul_nonneg hd hs.le), mul_rpow hd hs.le]
+    -- Split `a - b = (a - b) ^ ((1 + γ) / 2) (a - b) ^ ((1 - γ) / 2)` and use `a - b ≤ a + b`.
+    have he : (1 + γ) / 2 + (1 - γ) / 2 = 1 := by ring
+    have h₁ : a - b ≤ (a - b) ^ ((1 + γ) / 2) * (a + b) ^ ((1 - γ) / 2) := by
+      calc a - b = (a - b) ^ ((1 + γ) / 2) * (a - b) ^ ((1 - γ) / 2) := by
+            rw [← rpow_add' hd (by rw [he]; exact one_ne_zero), he, rpow_one]
+        _ ≤ _ := by gcongr; linarith
+    have h₂ : a ^ γ ≤ (a + b) ^ γ := by gcongr; linarith
+    calc (a - b) * a ^ γ
+        ≤ (a - b) ^ ((1 + γ) / 2) * (a + b) ^ ((1 - γ) / 2) * (a + b) ^ γ := by gcongr
+      _ = (a - b) ^ ((1 + γ) / 2) * (a + b) ^ ((1 + γ) / 2) := by
+          rw [mul_assoc, ← rpow_add hs, show (1 - γ) / 2 + γ = (1 + γ) / 2 by ring]
+  refine (key (sqrt_nonneg t) (sqrt_nonneg s)).trans
+    (rpow_le_rpow (abs_nonneg _) ?_ (by positivity))
+  rw [sq_sqrt', sq_sqrt']
+  exact abs_max_sub_max_le_abs t s 0
 
 /-- For every real `t`, `1 ≤ √(1 + t²)`. -/
 theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
