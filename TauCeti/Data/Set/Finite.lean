@@ -60,18 +60,6 @@ theorem Function.Injective.of_range_eq {ι β : Type*} [Finite ι] {f g : ι →
   exact Subtype.val_injective.comp
     ((Finite.injective_iff_surjective_of_equiv e).2 Set.rangeFactorization_surjective)
 
-/-- A map that is injective on each member of a finite cover has finite fibers. -/
-theorem Set.finite_fiber_of_iUnion_eq_univ {α β κ : Type*} [Finite κ] {f : α → β}
-    {S : κ → Set α} (hS : (⋃ k, S k) = Set.univ) (hf : ∀ k, Set.InjOn f (S k))
-    (w : β) : Finite {x : α // f x = w} := by
-  have hx (x : α) : ∃ k, x ∈ S k := Set.mem_iUnion.mp (hS.symm ▸ Set.mem_univ x)
-  choose k hk using hx
-  refine Finite.of_injective (fun x : {x : α // f x = w} => k x.val) ?_
-  intro x y hxy
-  have hpiece : k x.val = k y.val := hxy
-  have hy : y.val ∈ S (k x.val) := by rw [hpiece]; exact hk y.val
-  exact Subtype.ext (hf (k x.val) (hk x.val) hy (x.property.trans y.property.symm))
-
 namespace TauCeti
 
 /-- A function `h` from a finite type factors as an injective enumeration `b : Fin m ↪ γ` of its

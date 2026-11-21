@@ -6,15 +6,15 @@ Authors: Claude
 module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.LocallyClosed
-import TauCeti.Data.Set.Finite
+import TauCeti.Data.Set.InjOnUnion
 
 /-!
 # Piecewise-affine maps with rational linear parts
 
 Finite covers describe maps that agree piecewise with affine maps whose linear parts
 are rational for the specified lattices. The offsets can be arbitrary real vectors.
-For finite branches, the covers use locally closed polyhedra and each representative
-is injective on its own piece.
+For finite branches, the covers use locally closed rational-normal polyhedra, and each
+representative is injective on its own piece.
 
 The predicates and their operations are adapted from
 `Mei/Geometry/Convex/Polyhedron/Rational/SemilinearFamily/Basic.lean`
@@ -62,14 +62,35 @@ theorem isRationalPiecewiseAffine_iff {D : Set V} {f : D → W} :
           TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧
             ∀ x : D, x.val ∈ S k → f x = g k x := (Iff.rfl)
 
-/-- A finite branch is characterized by a finite locally closed polyhedral cover and affine
-representatives with rational linear parts that are injective on their respective pieces. -/
+/-- A finite branch is characterized by a finite cover by locally closed rational-normal
+polyhedra and affine representatives with rational linear parts that are injective on their
+respective pieces. -/
 theorem isFiniteBranchOn_iff {D : Set V} {f : D → W} :
     IsFiniteBranchOn h h' D f ↔
       ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
         (⋃ k, S k) = D ∧ ∀ k, IsLocallyClosedPolyhedron h (S k) ∧
           TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧ Set.InjOn (g k) (S k) ∧
             ∀ x : D, x.val ∈ S k → f x = g k x := (Iff.rfl)
+
+/-- An affine map with rational linear part on a rational semilinear domain is rational
+piecewise affine, with a single piece and arbitrary real offset. -/
+theorem IsRationalSemilinear.isRationalPiecewiseAffine {D : Set V}
+    (hD : IsRationalSemilinear h D) (g : V →ᵃ[ℝ] W)
+    (hg : TauCeti.Toric.IsRationalLinearMap h h' g.linear) :
+    IsRationalPiecewiseAffine h h' D (fun x => g x) :=
+  isRationalPiecewiseAffine_iff.mpr
+    ⟨Unit, inferInstance, fun _ => D, fun _ => g, Set.iUnion_const _,
+      fun _ => ⟨hD, hg, fun _ _ => rfl⟩⟩
+
+/-- An affine map with rational linear part, injective on a locally closed rational-normal
+polyhedron, is a finite branch on that domain. -/
+theorem IsLocallyClosedPolyhedron.isFiniteBranchOn {D : Set V}
+    (hD : IsLocallyClosedPolyhedron h D) (g : V →ᵃ[ℝ] W)
+    (hg : TauCeti.Toric.IsRationalLinearMap h h' g.linear) (hinj : Set.InjOn g D) :
+    IsFiniteBranchOn h h' D (fun x => g x) :=
+  isFiniteBranchOn_iff.mpr
+    ⟨Unit, inferInstance, fun _ => D, fun _ => g, Set.iUnion_const _,
+      fun _ => ⟨hD, hg, hinj, fun _ _ => rfl⟩⟩
 
 namespace IsRationalPiecewiseAffine
 
@@ -82,7 +103,8 @@ theorem isRationalSemilinear {D : Set V} {f : D → W} (hf : IsRationalPiecewise
 /-- Restricting to a rational semilinear set keeps the map piecewise affine. -/
 theorem inter {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f) {P : Set V}
     (hP : IsRationalSemilinear h P) :
-    IsRationalPiecewiseAffine h h' (D ∩ P) fun x => f ⟨x.val, x.property.1⟩ := by
+    IsRationalPiecewiseAffine h h' (D ∩ P)
+      (Set.domRestrict₂ (π := fun _ : V => W) Set.inter_subset_left f) := by
   obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
   refine ⟨κ, ‹_›, fun k => S k ∩ P, g, (Set.iUnion_inter ..).symm, fun k =>
     ⟨(hS k).1.inter hP, (hS k).2.1, fun x hx => (hS k).2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
@@ -112,7 +134,8 @@ theorem isRationalPiecewiseAffine {D : Set V} {f : D → W} (hf : IsFiniteBranch
 /-- Restricting a finite branch to a rational semilinear set gives a finite branch. -/
 theorem inter {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) {P : Set V}
     (hP : IsRationalSemilinear h P) :
-    IsFiniteBranchOn h h' (D ∩ P) fun x => f ⟨x.val, x.property.1⟩ := by
+    IsFiniteBranchOn h h' (D ∩ P)
+      (Set.domRestrict₂ (π := fun _ : V => W) Set.inter_subset_left f) := by
   obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
   obtain ⟨μ, _, C, hC, -, rfl⟩ := TauCeti.isRationalSemilinear_iff_exists_pairwise_disjoint.mp hP
   refine ⟨κ × μ, inferInstance, fun p => S p.1 ∩ C p.2, fun p => g p.1, ?_, fun p =>
@@ -124,16 +147,12 @@ theorem inter {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) {P : Se
 theorem finite_fiber {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) (w : W) :
     Finite {x : D // f x = w} := by
   obtain ⟨κ, _, S, g, hD, hS⟩ := hf
-  apply Set.finite_fiber_of_iUnion_eq_univ (S := fun k => Subtype.val ⁻¹' S k)
+  apply Set.finite_fiber_of_subset_iUnion (S := fun k => Subtype.val ⁻¹' S k) w
   · rw [← Set.preimage_iUnion, hD]
-    exact Set.eq_univ_of_forall Subtype.property
-  · intro k x hx y hy hxy
-    have he := (hS k).2.2.2
-    apply Subtype.ext ((hS k).2.2.1 hx hy ?_)
-    calc
-      g k x = f x := (he x hx).symm
-      _ = f y := hxy
-      _ = g k y := he y hy
+    exact fun x _ => x.property
+  · intro k
+    exact ((hS k).2.2.1.comp Set.injOn_subtypeVal (fun _ hx => hx)).congr
+      (fun x hx => ((hS k).2.2.2 x hx).symm)
 
 end IsFiniteBranchOn
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Function
+public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Injectivity from injectivity on a cover
@@ -17,6 +18,8 @@ in `A` or both outside it, and a point outside `A` lies in `B`.
 ## Main results
 
 * `TauCeti.injective_of_injOn_of_union_eq_univ`: the statement above.
+* `Set.finite_fiber_of_subset_iUnion`: a finite cover of one fiber by injective pieces
+  makes that fiber finite, without assumptions on the remaining source points.
 -/
 
 public section
@@ -40,3 +43,19 @@ theorem injective_of_injOn_of_union_eq_univ {g : X → Y} {P : Y → Prop}
       hxy
 
 end TauCeti
+
+open Set
+
+/-- A fiber covered by finitely many sets on which the map is injective is finite.
+The covering sets need not cover source points outside this fiber. -/
+theorem Set.finite_fiber_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {S : κ → Set α} (w : β) (hS : f ⁻¹' {w} ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k)) : Finite {x : α // f x = w} := by
+  have hpiece (k : κ) : (S k ∩ f ⁻¹' {w}).Finite :=
+    Set.Finite.of_injOn (f := f) (fun _ hx => hx.2)
+      ((hf k).mono Set.inter_subset_left) (Set.finite_singleton w)
+  have hfinite : (f ⁻¹' {w}).Finite := by
+    apply (Set.finite_iUnion hpiece).subset
+    rw [← Set.iUnion_inter]
+    exact fun x hx => ⟨hS hx, hx⟩
+  exact hfinite.to_subtype
