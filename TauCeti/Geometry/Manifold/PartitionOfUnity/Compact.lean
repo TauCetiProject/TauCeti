@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.Geometry.Manifold.Algebra.Monoid
+import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.BumpFunction
 
 /-!
-# Smooth cutoff functions around compact sets
+# Smooth cutoff functions and finite partitions of unity around compact sets
 
 On a Hausdorff manifold modelled on a finite-dimensional real space, a compact set `K` inside an
 open set `W` has a smooth cutoff function: a smooth `σ : M → [0, 1]`, equal to `1` on a
@@ -26,8 +27,17 @@ and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
 `SmoothBumpCovering.embeddingPiTangent`.
 
-The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
-bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
+Any `BumpCovering` by `C^n` functions yields a `C^n` partition of unity
+(`BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`, adapted from Mathlib's
+`BumpCovering.contMDiff_toPartitionOfUnity`). Combining this with
+`SmoothBumpFunction.contMDiff_of_isManifold` and
+`IsCompact.exists_smoothBumpCovering_isSubordinate` gives a finite `C^n` partition of unity by
+compactly supported functions subordinate to any neighbourhood cover of `K`, without assuming
+σ-compactness (`IsCompact.exists_contMDiffMap_partitionOfUnity`, adapting Mathlib's
+`SmoothBumpCovering.toBumpCovering` and `SmoothBumpCovering.toSmoothPartitionOfUnity` to `C^n`).
+
+The cutoff construction, smoothing a finite sum of bump functions by `Real.smoothTransition`,
+follows the bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
 -/
 
 public section
@@ -99,3 +109,65 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
     locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.val).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
+
+section FiniteOrder
+
+omit [IsManifold I ∞ M]
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- If every function in a `BumpCovering` is `C^n`, each weight of its associated partition of
+unity is `C^n`. Adapted from Mathlib's `BumpCovering.contMDiff_toPartitionOfUnity`, generalized
+from `C^∞` to `C^n`. -/
+theorem BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff {ι : Type*} {s : Set M} {n : ℕ∞ω}
+    (f : BumpCovering ι M s) (hf : ∀ i, ContMDiff I 𝓘(ℝ) n (f i)) (i : ι) :
+    ContMDiff I 𝓘(ℝ) n (f.toPartitionOfUnity i) :=
+  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
+    simp only [mulSupport_one_sub]
+    exact f.locallyFinite
+
+variable (I) in
+/-- **A finite `C^n` partition of unity on a compact set.** Let `K` be a compact subset of a
+Hausdorff `C^n` manifold (`n : ℕ∞`) modelled on a finite-dimensional real space, and let `U` be a
+family of sets such that every point of `K` has some `U j` as a neighbourhood. Then there is a
+finite family `χ : ι → C^n⟮I, M; 𝓘(ℝ), ℝ⟯` of compactly supported nonnegative `C^n` functions,
+each supported in one of the `U j`, whose sum is at most `1` everywhere and equals `1` on `K`. No
+σ-compactness hypothesis on `M` is needed. The conversion from `SmoothBumpCovering` to a
+`BumpCovering` and its `C^n` partition of unity is adapted from Mathlib's
+`SmoothBumpCovering.toBumpCovering` and `SmoothBumpCovering.toSmoothPartitionOfUnity`. -/
+theorem IsCompact.exists_contMDiffMap_partitionOfUnity {n : ℕ∞} [IsManifold I n M]
+    {K : Set M} (hK : IsCompact K) {κ : Type*} {U : κ → Set M}
+    (hU : ∀ x ∈ K, ∃ j, U j ∈ 𝓝 x) :
+    ∃ (ι : Type u) (_ : Fintype ι) (r : ι → κ) (χ : ι → C^n⟮I, M; 𝓘(ℝ), ℝ⟯),
+      (∀ i, HasCompactSupport (χ i)) ∧
+      (∀ i, tsupport (χ i) ⊆ U (r i)) ∧
+      (∀ i x, 0 ≤ χ i x) ∧
+      (∀ x, ∑ i, χ i x ≤ 1) ∧
+      (∀ x ∈ K, ∑ i, χ i x = 1) := by
+  classical
+  let V : M → Set M := fun x ↦ if hx : x ∈ K then U (hU x hx).choose else univ
+  obtain ⟨ι, hfin, f, hfsub⟩ := hK.exists_smoothBumpCovering_isSubordinate I (U := V) fun x hx ↦ by
+    simpa only [V, hx, ↓reduceDIte] using (hU x hx).choose_spec
+  let r : ι → κ := fun i ↦ (hU (f.c i) (f.c_mem' i)).choose
+  let B : BumpCovering ι M K :=
+    { toFun i := ⟨f i, (f i).contMDiff_of_isManifold (n := n).continuous⟩
+      locallyFinite' := f.locallyFinite
+      nonneg' i _ := (f i).nonneg
+      le_one' i _ := (f i).le_one
+      eventuallyEq_one' := f.eventuallyEq_one' }
+  let χ : ι → C^n⟮I, M; 𝓘(ℝ), ℝ⟯ := fun i ↦
+    ⟨B.toPartitionOfUnity i,
+      B.contMDiff_toPartitionOfUnity_of_contMDiff (fun j ↦ (f j).contMDiff_of_isManifold) i⟩
+  have hsupp (i : ι) : tsupport (χ i) ⊆ tsupport (f i) :=
+    closure_mono (B.support_toPartitionOfUnity_subset i)
+  refine ⟨ι, hfin, r, χ,
+    fun i ↦ (f i).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) (hsupp i),
+    fun i ↦ (hsupp i).trans ?_,
+    fun i x ↦ B.toPartitionOfUnity.nonneg i x,
+    fun x ↦ ?_, fun x hx ↦ ?_⟩
+  · simpa only [V, f.c_mem' i, ↓reduceDIte] using hfsub i
+  · simpa only [← finsum_eq_sum_of_fintype, χ, ContMDiffMap.coeFn_mk] using
+      B.toPartitionOfUnity.sum_le_one x
+  · simpa only [← finsum_eq_sum_of_fintype, χ, ContMDiffMap.coeFn_mk] using
+      B.toPartitionOfUnity.sum_eq_one hx
+
+end FiniteOrder

@@ -69,6 +69,12 @@ section.
   trivialization's base set is open.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
+* `TauCeti.bundleChartAt`, `TauCeti.bundleChartAt_source`,
+  `TauCeti.mem_bundleChartAt_source`, `TauCeti.bundleChartAt_source_subset_baseSet`,
+  `TauCeti.contMDiffOn_bundleChartAt`, `TauCeti.contMDiffOn_bundleChartAt_symm`: on a
+  boundaryless manifold, a manifold chart at a point restricted to the base set of
+  `trivializationAt` and read in the model space, together with its source and two-sided `C^n`
+  regularity.
 -/
 
 public noncomputable section
@@ -439,6 +445,63 @@ theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
     ContDiffOn 𝕜 n (fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2) (φ.target ∩ φ.symm ⁻¹' e.baseSet) :=
   (e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
+
+section BundleChartAt
+
+open Set
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M]
+  (F : Type*) [TopologicalSpace F] (V : M → Type*)
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V]
+
+/-- On a boundaryless manifold, a manifold chart at `x` restricted to the base set of
+`trivializationAt F V x` and read in the model vector space `E`. -/
+def bundleChartAt (x : M) : OpenPartialHomeomorph M E :=
+  ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E)
+
+variable {I F V}
+
+@[simp]
+theorem bundleChartAt_source (x : M) :
+    (bundleChartAt I F V x).source =
+      (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
+  rw [bundleChartAt, OpenPartialHomeomorph.extendTrans_source,
+    (chartAt H x).restr_source' _ (trivializationAt F V x).open_baseSet]
+
+/-- Each point `x` belongs to the source of `bundleChartAt I F V x`. -/
+theorem mem_bundleChartAt_source (x : M) : x ∈ (bundleChartAt I F V x).source := by
+  rw [bundleChartAt_source]
+  exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt F V x⟩
+
+/-- The source of `bundleChartAt I F V x` lies inside the base set of
+`trivializationAt F V x`. -/
+theorem bundleChartAt_source_subset_baseSet (x : M) :
+    (bundleChartAt I F V x).source ⊆ (trivializationAt F V x).baseSet := by
+  rw [bundleChartAt_source]
+  exact inter_subset_right
+
+/-- Forward `C^n` regularity of `bundleChartAt I F V x` on its source. -/
+theorem contMDiffOn_bundleChartAt {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ContMDiffOn I 𝓘(𝕜, E) n (bundleChartAt I F V x) (bundleChartAt I F V x).source :=
+  OpenPartialHomeomorph.contMDiffOn_extendTrans _
+    (restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
+      (trivializationAt F V x).open_baseSet)
+    contDiff_id
+
+/-- Inverse `C^n` regularity of `bundleChartAt I F V x` on its target. -/
+theorem contMDiffOn_bundleChartAt_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ContMDiffOn 𝓘(𝕜, E) I n (bundleChartAt I F V x).symm (bundleChartAt I F V x).target :=
+  OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _
+    (restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
+      (trivializationAt F V x).open_baseSet)
+    contDiff_id
+
+end BundleChartAt
 
 end TauCeti
 

@@ -6,16 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
-public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Topology.ContinuousMap.Polynormable
 
 /-!
-# Extension scalars in the native section frame topology
+# Extension scalars in the native section frame topology and support stages
 
 The existing section module over a normed field extension acts continuously for the existing
 frame topology. The native frame jet is linear over the extension field when the actual bundle
 frames are linear over that field. Its induced topology is therefore polynormable over the
 extension field as well as locally convex over the real numbers when the base field is real.
+Consequently, each fixed-support stage `ContMDiffSection.supportedIn` carries a jointly continuous
+`𝕜'`-action under the subspace topology of `ContMDiffSection.frameTopology`
+(`ContMDiffSection.continuousSMul_supportedIn_ofNormedAlgebra`).
 -/
 
 public noncomputable section
@@ -64,8 +67,9 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, Module 𝕜' (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V] [VectorBundle 𝕜' F V]
-  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] [VectorBundle 𝕜' F V] {n : ℕ∞ω}
+
+variable [ContMDiffVectorBundle n F V I] [IsManifold I n M]
   {ι : Type*} (e : ι → Trivialization F (π F V))
   [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
@@ -126,5 +130,14 @@ theorem continuousSMul_frameTopology_ofNormedAlgebra :
   let _ : PolynormableSpace 𝕜' Cₛ^n⟮I; F, V⟯ :=
     polynormableSpace_frameTopology_ofNormedAlgebra (𝕜' := 𝕜') e U hU
   infer_instance
+
+/-- Extension-scalar multiplication is jointly continuous on every fixed-support stage for the
+subspace topology induced by `frameTopology`. -/
+theorem continuousSMul_supportedIn_ofNormedAlgebra {K : Set M} :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    ContinuousSMul 𝕜' (supportedIn I F n V K) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := continuousSMul_frameTopology_ofNormedAlgebra (𝕜' := 𝕜') (I := I) (n := n) e U hU
+  exact ⟨(continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
 
 end ContMDiffSection

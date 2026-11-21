@@ -89,6 +89,12 @@ needed.
 An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
 proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
 `LinearMap.isClosedEmbedding_of_injective`.
+
+If a topological additive monoid with jointly continuous scalar action of a complete nontrivially
+normed field `𝕜` also carries a compatible module action of a finite-dimensional Hausdorff
+`𝕜`-topological vector space ring `𝕜'` whose constant multiplications are continuous, then the
+`𝕜'`-scalar action is jointly continuous:
+`TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional`.
 -/
 
 public section
@@ -433,3 +439,22 @@ theorem Ideal.quotientMapₐ_bijective_of_denseRange {K A B : Type*} [Nontrivial
       ((Ideal.Quotient.mk_surjective (I := J)).denseRange.comp hf continuous_quotient_mk'))⟩
   rintro _ ⟨a, rfl⟩
   exact ⟨Ideal.Quotient.mk _ a, rfl⟩
+
+/-- If an additive monoid `X` with continuous addition and jointly continuous `𝕜`-scalar action
+carries a compatible module action of a finite-dimensional Hausdorff `𝕜`-topological vector space
+ring `𝕜'` over a complete nontrivially normed field `𝕜` whose constant multiplications are
+continuous, then the `𝕜'`-scalar action on `X` is jointly continuous. -/
+theorem TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional
+    (𝕜 : Type*) {𝕜' X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [Ring 𝕜'] [TopologicalSpace 𝕜'] [IsTopologicalAddGroup 𝕜'] [Module 𝕜 𝕜']
+    [ContinuousSMul 𝕜 𝕜'] [T2Space 𝕜'] [FiniteDimensional 𝕜 𝕜']
+    [AddCommMonoid X] [SMul 𝕜 X] [Module 𝕜' X] [IsScalarTower 𝕜 𝕜' X]
+    [TopologicalSpace X] [ContinuousAdd X] [ContinuousSMul 𝕜 X] [ContinuousConstSMul 𝕜' X] :
+    ContinuousSMul 𝕜' X := by
+  let b := Module.finBasis 𝕜 𝕜'
+  have hb : Continuous b.equivFun := continuous_equivFun_basis b
+  refine ⟨(continuous_finsetSum Finset.univ fun i _ ↦
+    continuous_smul.comp (((continuous_apply i).comp (hb.comp continuous_fst)).prodMk
+      ((continuous_const_smul (b i)).comp continuous_snd))).congr fun p ↦ ?_⟩
+  conv_rhs => rw [← b.sum_equivFun p.1, Finset.sum_smul]
+  simp only [Function.comp_apply, smul_assoc]

@@ -61,12 +61,13 @@ We also record the product trivialization's fibrewise inverse
 bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
-fields has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`); when the two
-scalar actions are compatible, the one over `𝕜'` is the scalar restriction of the one over `𝕜`,
-including its zero extension off the base set
-(`Bundle.Trivialization.restrictScalars_continuousLinearMapAt`). Subspaces of the fibres of a
-vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isClosed_submodule`).
+fields has the same forward and inverse continuous linear maps at every point over either field
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`,
+`Bundle.Trivialization.coe_symmL_eq_coe_symmL`); when the two scalar actions are compatible, the
+forward map over `𝕜'` is the scalar restriction of the one over `𝕜`, including its zero extension
+off the base set (`Bundle.Trivialization.restrictScalars_continuousLinearMapAt`). Subspaces of the
+fibres of a vector bundle with finite-dimensional model fibre are closed
+(`VectorBundle.isClosed_submodule`).
 -/
 
 public section
@@ -346,6 +347,18 @@ theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Typ
     ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
   ext v
   simp only [continuousLinearMapAt_apply, coe_linearMapAt]
+
+/-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same inverse continuous linear
+map at every point over either field. -/
+theorem coe_symmL_eq_coe_symmL (𝕜' 𝕜 : Type*)
+    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] {F : Type*} {E : B → Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (E x)]
+    [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+    [∀ x, TopologicalSpace (E x)] [FiberBundle F E] (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
+    ⇑(e.symmL 𝕜' b) = e.symmL 𝕜 b := by
+  ext v
+  by_cases hb : b ∈ e.baseSet <;> simp [hb]
 
 /-- The fibre-coordinate map of a trivialization over `𝕜'` is the scalar restriction of the
 fibre-coordinate map over `𝕜`, including its zero extension off the base set. Only compatibility
