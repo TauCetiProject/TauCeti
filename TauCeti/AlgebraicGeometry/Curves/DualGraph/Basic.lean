@@ -189,27 +189,26 @@ lemma forall_endpoint_one_ne_iff {v : G.Vertex} :
     (∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) ↔ ∀ e, G.ends e ≠ s(v, v) := by
   simp [ends]
 
-/-- The simple graph on the vertices joining two distinct vertices when some edge does. -/
+variable {G} in
+/-- Two vertices are adjacent exactly when they are the ends of some edge. -/
+private lemma adj_iff_mem_range_ends {v w : G.Vertex} : G.Adj v w ↔ s(v, w) ∈ Set.range G.ends := by
+  simp only [Adj, ends, Set.mem_range, Sym2.eq_iff]
+
+/-- The simple graph on the vertices joining two distinct vertices when some edge does: its edges
+are the ends of the edges of `G` that are not loops. -/
 def toSimpleGraph : SimpleGraph G.Vertex :=
-  SimpleGraph.fromRel G.Adj
+  SimpleGraph.fromEdgeSet (Set.range G.ends)
 
 @[simp]
 lemma toSimpleGraph_adj {v w : G.Vertex} : G.toSimpleGraph.Adj v w ↔ v ≠ w ∧ G.Adj v w := by
-  rw [toSimpleGraph, SimpleGraph.fromRel_adj]
-  exact and_congr_right fun _ ↦ ⟨fun h ↦ h.elim id Adj.symm, Or.inl⟩
+  rw [toSimpleGraph, SimpleGraph.fromEdgeSet_adj, adj_iff_mem_range_ends, and_comm]
 
 /-- The simple graph underlying a dual graph is connected. -/
-theorem toSimpleGraph_connected : G.toSimpleGraph.Connected := by
-  obtain ⟨v⟩ := G.vertexNonempty
-  rw [SimpleGraph.connected_iff_exists_forall_reachable]
-  refine ⟨v, fun w ↦ ?_⟩
-  rw [SimpleGraph.reachable_iff_reflTransGen]
-  induction G.reflTransGen_adj v w with
-  | refl => exact .refl
-  | @tail b c _ hbc ih =>
-    by_cases hb : b = c
-    · exact hb ▸ ih
-    · exact ih.tail (G.toSimpleGraph_adj.mpr ⟨hb, hbc⟩)
+theorem toSimpleGraph_connected : G.toSimpleGraph.Connected where
+  preconnected v w := by
+    rw [toSimpleGraph, SimpleGraph.reachable_fromEdgeSet_eq_reflTransGen_toRel]
+    exact Relation.ReflTransGen.mono (fun _ _ h ↦
+      (Sym2.toRel_prop _ _ _).mpr (adj_iff_mem_range_ends.mp h)) _ _ (G.reflTransGen_adj v w)
 
 variable {G} in
 /-- A connectivity criterion for a graph built on the image of a surjection `φ` from the vertices
@@ -249,19 +248,12 @@ theorem card_vertex_le_card_edge_add_one :
   have hconn := G.toSimpleGraph_connected.card_vert_le_card_edgeSet_add_one
   rw [Nat.card_eq_fintype_card] at hconn
   refine hconn.trans (Nat.add_le_add_right ?_ 1)
-  -- Every edge of the underlying simple graph is the pair of endpoints of an edge of `G`.
-  let f : G.Edge → Sym2 G.Vertex := fun e ↦ s(G.endpoint e 0, G.endpoint e 1)
-  have hsub : G.toSimpleGraph.edgeSet ⊆ Set.range f := by
-    intro s hs
-    induction s using Sym2.ind with
-    | h v w =>
-      obtain ⟨-, e, ⟨he₀, he₁⟩ | ⟨he₀, he₁⟩⟩ :=
-        G.toSimpleGraph_adj.mp (SimpleGraph.mem_edgeSet _ |>.mp hs)
-      · exact ⟨e, by simp [f, he₀, he₁]⟩
-      · exact ⟨e, by simp [f, he₀, he₁, Sym2.eq_swap]⟩
+  -- Every edge of the underlying simple graph is the pair of ends of an edge of `G`.
+  have hsub : G.toSimpleGraph.edgeSet ⊆ Set.range G.ends :=
+    (SimpleGraph.edgeSet_fromEdgeSet _).trans_subset Set.sdiff_subset
   calc Nat.card G.toSimpleGraph.edgeSet
-      ≤ Nat.card (Set.range f) := Nat.card_mono (Set.toFinite _) hsub
-    _ ≤ Nat.card G.Edge := Finite.card_range_le f
+      ≤ Nat.card (Set.range G.ends) := Nat.card_mono (Set.toFinite _) hsub
+    _ ≤ Nat.card G.Edge := Finite.card_range_le G.ends
     _ = Fintype.card G.Edge := Nat.card_eq_fintype_card
 
 /-! ### Valence and markings -/
@@ -338,8 +330,7 @@ lemma arithmeticGenus_def : G.arithmeticGenus = ∑ v, G.genus v + G.firstBetti 
 /-- A component's genus is at most the arithmetic genus of the whole graph. -/
 theorem genus_le_arithmeticGenus (v : G.Vertex) : G.genus v ≤ G.arithmeticGenus := by
   rw [arithmeticGenus_def]
-  exact (Finset.single_le_sum (fun x _ ↦ Nat.zero_le (G.genus x)) (Finset.mem_univ v)).trans
-    (Nat.le_add_right _ _)
+  exact le_add_right (single_le_sum (fun x _ ↦ Nat.zero_le (G.genus x)) (mem_univ v))
 
 /-- The arithmetic genus in terms of the numbers of vertices and edges. -/
 theorem arithmeticGenus_add_card_vertex :
@@ -583,13 +574,11 @@ rational tails nor rational bridges. -/
 theorem isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge [Fintype ι] [IsEmpty ι]
     (hg : 2 ≤ G.arithmeticGenus) :
     G.IsStable ↔ ∀ v, ¬ G.IsRationalTail v ∧ ¬ G.IsRationalBridge v := by
-  refine ⟨fun hG v ↦ ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩, fun hG v ↦ ?_⟩
-  · have := hG v
-    rw [hv.logCanonicalDegree_eq, numMarkings_of_isEmpty] at this
-    omega
-  · have := hG v
-    rw [hv.logCanonicalDegree_eq, numMarkings_of_isEmpty] at this
-    omega
+  refine ⟨fun hG v ↦ ?_, fun hG v ↦ ?_⟩
+  · -- Unmarked rational tails and bridges have log-canonical degree `-1` and `0`.
+    have := hG v
+    refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩ <;>
+      rw [hv.logCanonicalDegree_eq, numMarkings_of_isEmpty] at this <;> omega
   · by_contra hnonpos
     rcases G.logCanonicalDegree_nonpos_iff.mp (not_lt.mp hnonpos) with ⟨hgv, hval⟩ | ⟨hgv, hval, -⟩
     · rw [numMarkings_of_isEmpty, add_zero] at hval
