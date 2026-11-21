@@ -29,6 +29,10 @@ records the punctured form of that sum, over the units of the field.
   `-1` over the nonzero elements, even after multiplication by a unit. This is the punctured form
   of Mathlib's `AddChar.sum_eq_zero_of_ne_one`, reindexed by `Fˣ`, which is the shape character
   computations over a finite field consume directly.
+* `TauCeti.traceAddChar`, `TauCeti.traceAddChar_apply`, `TauCeti.isPrimitive_traceAddChar`: the
+  canonical additive character `t ↦ ζ ^ Tr(t)` on an algebra `F / ZMod p`, its evaluation lemma,
+  and its primitivity when `p` is prime, `F` is a finite field, and `ζ` is a primitive `p`-th root
+  of unity.
 -/
 
 public section
@@ -70,3 +74,33 @@ theorem sum_units_mul_eq_neg_one {F : Type*} [Field F] [Fintype F] [DecidableEq 
   exact eq_neg_of_add_eq_zero_right hsum
 
 end AddChar
+
+namespace TauCeti
+
+/-- The canonical additive character `t ↦ ζ ^ Tr(t)` on an algebra `F / ZMod p` attached to a
+`p`-th root of unity `ζ`. -/
+noncomputable def traceAddChar (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [CommRing F]
+    [Algebra (ZMod p) F] [CommMonoid L] {ζ : L} (hζ : ζ ^ p = 1) :
+    AddChar F L :=
+  (AddChar.zmodChar p hζ).compAddMonoidHom (Algebra.trace (ZMod p) F).toAddMonoidHom
+
+/-- Evaluation of `TauCeti.traceAddChar`. -/
+@[simp]
+theorem traceAddChar_apply (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [CommRing F]
+    [Algebra (ZMod p) F] [CommMonoid L] {ζ : L} (hζ : ζ ^ p = 1) (t : F) :
+    traceAddChar p F hζ t = ζ ^ (Algebra.trace (ZMod p) F t).val := by
+  simp [traceAddChar, AddChar.zmodChar_apply]
+
+/-- For a prime `p` and a primitive `p`-th root of unity `ζ`, the trace character `t ↦ ζ ^ Tr(t)`
+on a finite field of characteristic `p` is primitive. -/
+theorem isPrimitive_traceAddChar {p : ℕ} [Fact p.Prime] (F : Type*) {L : Type*} [Field F]
+    [Finite F] [Algebra (ZMod p) F] [CommMonoidWithZero L] {ζ : L}
+    (hζ : IsPrimitiveRoot ζ p) :
+    (traceAddChar p F hζ.pow_eq_one).IsPrimitive := by
+  refine AddChar.IsPrimitive.of_ne_one fun h ↦ ?_
+  obtain ⟨t, ht⟩ := Algebra.trace_surjective (ZMod p) F 1
+  have hval := traceAddChar_apply p F hζ.pow_eq_one t
+  rw [h, one_apply, ht, ZMod.val_one, pow_one] at hval
+  exact hζ.ne_one (Fact.out : p.Prime).one_lt hval.symm
+
+end TauCeti

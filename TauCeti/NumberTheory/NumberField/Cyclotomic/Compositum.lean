@@ -34,6 +34,8 @@ character — are *jointly* bijective:
   `IsCyclotomicExtension.autToPow_galEquivProd_symm` eliminating its inverse. Those three
   `simp` lemmas are the whole interface: no consumer needs the `MulEquiv.ofBijective` that
   packages the equivalence, in either direction.
+* `IsCyclotomicExtension.restrictScalars_eq_galEquivProd_symm_one`: every relative automorphism
+  `ρ ∈ Gal(M/L)` corresponds under `galEquivProd` to `(1, hζ.autToPow L ρ)`.
 * `IsCyclotomicExtension.ker_autToPow_eq_comap_galEquivProd` and
   `IsCyclotomicExtension.ker_restrictNormalHom_eq_comap_galEquivProd`: the same interface one
   level up, on subgroups rather than elements — each component's kernel is what `galEquivProd`
@@ -276,6 +278,27 @@ theorem autToPow_galEquivProd_symm (hcop : ((NumberField.discr L).natAbs).Coprim
   have h := galEquivProd_apply K L M m hcop hζ ((galEquivProd K L M m hcop hζ).symm x)
   rw [MulEquiv.apply_symm_apply] at h
   exact (congrArg Prod.snd h).symm
+
+/-- **Relative automorphisms map to the second factor of `galEquivProd`.** Under the compositum
+isomorphism `Gal(M/K) ≃* Gal(L/K) × (ZMod m)ˣ`, every automorphism `ρ ∈ Gal(M/L)` corresponds to
+`(1, hζ.autToPow L ρ)`. -/
+theorem restrictScalars_eq_galEquivProd_symm_one
+    (hcop : ((NumberField.discr L).natAbs).Coprime m) {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (ρ : Gal(M/L)) :
+    ρ.restrictScalars K =
+      (galEquivProd K L M m hcop hζ).symm (1, hζ.autToPow L ρ) := by
+  apply (galEquivProd K L M m hcop hζ).injective
+  have hres : (ρ.restrictScalars K).restrictNormal L = 1 := by
+    ext z
+    apply (algebraMap L M).injective
+    rw [AlgEquiv.restrictNormal_commutes (ρ.restrictScalars K) L z]
+    exact ρ.commutes z
+  have haut : hζ.autToPow K (ρ.restrictScalars K) = hζ.autToPow L ρ := by
+    have hpow : ζ ^ (hζ.autToPow K (ρ.restrictScalars K) : ZMod m).val =
+        ζ ^ (hζ.autToPow L ρ : ZMod m).val :=
+      (hζ.autToPow_spec K (ρ.restrictScalars K)).trans (hζ.autToPow_spec L ρ).symm
+    exact Units.ext (ZMod.val_injective _ (hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) hpow))
+  simp [hres, haut]
 
 /-- **The cyclotomic character's kernel is the first factor of the joint restriction.** The
 automorphisms of `M` acting trivially on the `m`-th roots of unity are exactly those that

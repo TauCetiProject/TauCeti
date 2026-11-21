@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.Ideal.Pointwise
 
 /-!
 # Automorphisms acting on the ring of integers
@@ -44,6 +45,8 @@ recorded once here rather than reconstructed at each use site.
   `(𝓞 F)ˣ`.
 * `AlgEquiv.mapAlgEquiv_symm_autCongr_smul`: restriction to rings of integers intertwines
   conjugation of automorphisms along an algebra equivalence.
+* `Ideal.map_ringOfIntegers_mapRingEquiv`: pushing an ideal of `𝓞 K` forward along
+  `RingOfIntegers.mapRingEquiv τ.toRingEquiv` coincides with the pointwise Galois action `τ • I`.
 -/
 
 public section
@@ -128,3 +131,21 @@ theorem mapAlgEquiv_symm_autCongr_smul (e : K ≃ₐ[R] L) (σ : K ≃ₐ[R] K)
   simp
 
 end AlgEquiv
+
+namespace Ideal
+
+open NumberField
+
+variable {R K : Type*} [CommSemiring R] [Field K] [Algebra R K]
+
+/-- Pushing an ideal of `𝓞 K` forward along `RingOfIntegers.mapRingEquiv τ.toRingEquiv`
+coincides with the pointwise Galois action `τ • I`. -/
+theorem map_ringOfIntegers_mapRingEquiv (I : Ideal (𝓞 K)) (τ : K ≃ₐ[R] K) :
+    I.map (RingOfIntegers.mapRingEquiv τ.toRingEquiv) = τ • I := by
+  rw [Ideal.pointwise_smul_def]
+  refine congrArg (fun f : 𝓞 K →+* 𝓞 K ↦ I.map f) (RingHom.ext fun x ↦ RingOfIntegers.ext ?_)
+  rw [RingOfIntegers.mapRingHom_apply, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+    MulSemiringAction.toRingHom_apply, RingOfIntegers.coe_eq_algebraMap,
+    RingOfIntegers.coe_eq_algebraMap, NumberField.algebraMap_smul_eq_apply]
+
+end Ideal

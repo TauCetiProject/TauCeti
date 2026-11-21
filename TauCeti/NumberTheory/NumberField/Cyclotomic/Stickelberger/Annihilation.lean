@@ -20,6 +20,8 @@ import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.NumberTheory.GaussSum
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.NumberTheory.GaussSum.Basic
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
@@ -103,72 +105,6 @@ namespace TauCeti
 
 /-! ### Smoothed Gauss descent and prime principalization -/
 
-/-- The canonical additive character `t ↦ ζ ^ Tr(t)` on a finite extension `F / ZMod p` attached
-to a primitive `p`-th root of unity `ζ`. -/
-private noncomputable def traceAddChar (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [Field F]
-    [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) :
-    AddChar F L :=
-  (AddChar.zmodChar p hζ.pow_eq_one).compAddMonoidHom (Algebra.trace (ZMod p) F).toAddMonoidHom
-
-private theorem traceAddChar_apply (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [Field F]
-    [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) (t : F) :
-    traceAddChar p F hζ t = ζ ^ (Algebra.trace (ZMod p) F t).val := by
-  simp [traceAddChar, AddChar.zmodChar_apply]
-
-/-- For a prime `p` and a primitive `p`-th root of unity `ζ`, the trace character `t ↦ ζ ^ Tr(t)`
-on a finite field of characteristic `p` is primitive. -/
-private theorem isPrimitive_traceAddChar {p : ℕ} [Fact p.Prime] (F : Type*) {L : Type*} [Field F]
-    [Finite F] [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) :
-    (traceAddChar p F hζ).IsPrimitive := by
-  refine AddChar.IsPrimitive.of_ne_one fun h ↦ ?_
-  obtain ⟨t, ht⟩ := Algebra.trace_surjective (ZMod p) F 1
-  have hval := traceAddChar_apply p F hζ t
-  rw [h, one_apply, ht, ZMod.val_one, pow_one] at hval
-  exact hζ.ne_one (Fact.out : p.Prime).one_lt hval.symm
-
-/-- Any ring endomorphism `τ` of `L` fixing the values of `χ` and sending `ζ ↦ ζ ^ b` scales the
-Gauss sum `g(χ, traceAddChar p F hζ)` by `χ⁻¹ b`. -/
-private theorem map_gaussSum_traceAddChar {p : ℕ} [Fact p.Prime] {F L : Type*} [Field F]
-    [Fintype F] [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p)
-    (χ : MulChar F L) (τ : L →+* L) (b : (ZMod p)ˣ)
-    (hτχ : ∀ t, τ (χ t) = χ t) (hτζ : τ ζ = ζ ^ (b : ZMod p).val) :
-    τ (gaussSum χ (traceAddChar p F hζ)) =
-      χ⁻¹ (algebraMap (ZMod p) F b) * gaussSum χ (traceAddChar p F hζ) := by
-  let u_b : Fˣ := Units.map (algebraMap (ZMod p) F).toMonoidHom b
-  have hτψ (t : F) : τ (traceAddChar p F hζ t) = ((traceAddChar p F hζ).mulShift (u_b : F)) t := by
-    rw [traceAddChar_apply, map_pow, hτζ, ← pow_mul, AddChar.mulShift_apply, traceAddChar_apply]
-    have htr : Algebra.trace (ZMod p) F ((u_b : F) * t) =
-        (b : ZMod p) * Algebra.trace (ZMod p) F t := by
-      have hsmul : (u_b : F) * t = (b : ZMod p) • t := by
-        simp [u_b, Algebra.smul_def]
-      rw [hsmul, LinearMap.map_smul, smul_eq_mul]
-    rw [htr, ZMod.val_mul]
-    exact (pow_eq_pow_of_modEq (Nat.mod_modEq _ p) hζ.pow_eq_one).symm
-  have hτgs : τ (gaussSum χ (traceAddChar p F hζ)) =
-      gaussSum χ ((traceAddChar p F hζ).mulShift (u_b : F)) := by
-    simp only [gaussSum, map_sum, map_mul, hτχ, hτψ]
-  rw [hτgs, gaussSum_mulShift_eq χ (traceAddChar p F hζ) u_b]
-  simp only [u_b, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
-
-/-- Under the compositum isomorphism `Gal(L/ℚ) ≃* Gal(K/ℚ) × (ZMod p)ˣ`, every automorphism
-`ρ ∈ Gal(L/K)` corresponds to a pure `(ZMod p)ˣ` factor `(1, b)`. -/
-private theorem restrictScalars_eq_galEquivProd_symm_one
-    (K L : Type*) [Field K] [NumberField K] [Field L] [Algebra K L]
-    [Algebra ℚ L] [IsScalarTower ℚ K L] [IsGalois ℚ K]
-    (p : ℕ) [NeZero p] [IsCyclotomicExtension {p} K L]
-    (hcop : ((NumberField.discr K).natAbs).Coprime p)
-    {ζp : L} (hζp : IsPrimitiveRoot ζp p) (ρ : Gal(L/K)) :
-    ρ.restrictScalars ℚ =
-      (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζp).symm
-        (1, hζp.autToPow ℚ (ρ.restrictScalars ℚ)) := by
-  apply (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζp).injective
-  have hres : (ρ.restrictScalars ℚ).restrictNormal K = 1 := by
-    ext z
-    apply (algebraMap K L).injective
-    rw [AlgEquiv.restrictNormal_commutes (ρ.restrictScalars ℚ) K z]
-    exact ρ.commutes z
-  simp [hres]
-
 /-- **Smoothed Gauss descent.** Let `m ≥ 2`, let `K` be an `m`-th cyclotomic extension of `ℚ`, and
 let `P` be a maximal ideal of `𝓞 K` whose norm is prime to `m`. For every denominator multiplier
 `x ∈ stickelbergerDenominatorIdeal m`, the Galois-weighted product
@@ -233,7 +169,7 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
   have hf : Function.Injective f :=
     (algebraMap K L).injective.comp (FaithfulSMul.algebraMap_injective _ _)
   let χ : MulChar (𝓞 K ⧸ P) L := (Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f
-  let g : L := gaussSum χ (traceAddChar p (𝓞 K ⧸ P) hζp)
+  let g : L := gaussSum χ (traceAddChar p (𝓞 K ⧸ P) hζp.pow_eq_one)
   have hg_pow : g ^ m = f (Ideal.stickelbergerPhi P m) :=
     (Ideal.stickelbergerPhi_prime P hP hm hf (isPrimitive_traceAddChar (𝓞 K ⧸ P) hζp)).symm
   have hΦ_ne : Ideal.stickelbergerPhi P m ≠ 0 := Ideal.stickelbergerPhi_ne_zero hP hm
@@ -244,7 +180,7 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
     let u_b : (𝓞 K ⧸ P)ˣ := Units.map (algebraMap (ZMod p) (𝓞 K ⧸ P)).toMonoidHom b
     refine ⟨Ideal.powerResidueSymbol P m (u_b : 𝓞 K ⧸ P),
       Ideal.powerResidueSymbol_pow_eq_one u_b.ne_zero, ?_⟩
-    have hact := map_gaussSum_traceAddChar hζp χ (τ b).toRingHom b
+    have hact := map_gaussSum_traceAddChar hζp.pow_eq_one χ (τ b).toRingHom b
       (fun t ↦ hτ_K b (algebraMap (𝓞 K) K ((Ideal.powerResidueSymbol P m)⁻¹ t))) (hτ_ζp b)
     have hχinv : χ⁻¹ = (Ideal.powerResidueSymbol P m).ringHomComp f := by
       simp only [χ, ← MulChar.ringHomComp_inv, inv_inv]
@@ -285,7 +221,7 @@ theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
       _ = Gx := by rw [hfω_pow, one_mul]
   have hGx_fixed (ρ : Gal(L/K)) : ρ Gx = Gx := by
     rw [← AlgEquiv.restrictScalars_apply ℚ ρ Gx,
-      restrictScalars_eq_galEquivProd_symm_one K L p hcop hζp ρ]
+      IsCyclotomicExtension.restrictScalars_eq_galEquivProd_symm_one ℚ K L p hcop hζp ρ]
     exact hτ_Gx _
   obtain ⟨α, hαL⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed Gx).mpr hGx_fixed)
   have hα_ne : α ≠ 0 := fun h0 ↦ hGx_ne (by rw [← hαL, h0, map_zero])
@@ -427,17 +363,6 @@ theorem exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal (m : ℕ) [NeZero m]
 
 /-! ### Full annihilation of the cyclotomic class group -/
 
-/-- Pushing an ideal of `𝓞 K` forward along `RingOfIntegers.mapRingEquiv τ.toRingEquiv`
-coincides with the pointwise Galois action `τ • I`. -/
-private theorem ideal_map_ringOfIntegers_mapRingEquiv {K : Type*} [Field K] [NumberField K]
-    (τ : Gal(K/ℚ)) (I : Ideal (𝓞 K)) :
-    I.map (RingOfIntegers.mapRingEquiv τ.toRingEquiv) = τ • I := by
-  rw [Ideal.pointwise_smul_def]
-  refine congrArg (fun f : 𝓞 K →+* 𝓞 K ↦ I.map f) (RingHom.ext fun x ↦ RingOfIntegers.ext ?_)
-  rw [RingOfIntegers.mapRingHom_apply, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
-    MulSemiringAction.toRingHom_apply, RingOfIntegers.coe_eq_algebraMap,
-    RingOfIntegers.coe_eq_algebraMap, NumberField.algebraMap_smul_eq_apply]
-
 /-- **Stickelberger's theorem.** For every positive conductor `m` and every `m`-th cyclotomic
 extension `K / ℚ`, the integral Stickelberger ideal `stickelbergerIdeal m` annihilates the full
 ideal class group `ClassGroup (𝓞 K)` under the covariant Galois action. -/
@@ -469,7 +394,7 @@ theorem stickelbergerIdeal_annihilates (m : ℕ) [NeZero m]
     refine (Finset.prod_congr rfl fun a _ ↦ ?_).trans hmk.symm
     rw [map_zpow, ClassGroup.mk_mk0 K, ClassGroup.mulEquivHom_apply, ClassGroup.mulEquiv_mk0]
     exact congrArg (· ^ x.coeff a)
-      (congrArg ClassGroup.mk0 (Subtype.ext (ideal_map_ringOfIntegers_mapRingEquiv _ P)))
+      (congrArg ClassGroup.mk0 (Subtype.ext (P.map_ringOfIntegers_mapRingEquiv _)))
   -- Step 2: By unique factorization, `act` kills every nonzero ideal `I` with
   -- `(absNorm I).Coprime m`.
   have hideal (I : Ideal (𝓞 K)) (hI : (Ideal.absNorm I).Coprime m) (hI0 : I ≠ ⊥) :
