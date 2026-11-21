@@ -109,23 +109,30 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
   exact Prod.ext (sub_eq_zero.1 hab) (sub_eq_zero.1 (himm h0))
 
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
-differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than the
-finite-dimensional `M`. If a function `h`, differentiable at `ι s`, vanishes on the slice near `s`
-and its derivative along `Z` vanishes at `ι s`, then its differential at `ι s` is zero. -/
-theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero [FiniteDimensional ℝ E]
+differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
+If a function `h` vanishes on the slice near `s` and its derivative along `Z` vanishes at `ι s`,
+then its differential at `ι s` is zero. -/
+theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) {Z : (x : M) → TangentSpace I x} {ι : S → M}
     {h : M → ℝ} {s : S}
-    (hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)) (hιs : MDifferentiableAt J I ι s)
     (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Function.Injective (mfderiv J I ι s))
     (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
     mvfderiv I h (ι s) = 0 := by
+  -- A function that is not differentiable at `ι s` has zero differential there by convention.
+  by_cases hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)
+  swap
+  · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hh]
   set L := (mfderiv J I ι s).toLinearMap
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (hdim ▸ Nat.succ_pos _)
   have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
-  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`.
+  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`
+  -- (trivially when `ι` is not differentiable at `s`, as then `L = 0`).
   have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
-    have hc := mvfderiv_comp_apply s hh hιs w
-    rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
-    exact hc.symm
+    by_cases hιs : MDifferentiableAt J I ι s
+    · have hc := mvfderiv_comp_apply s hh hιs w
+      rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
+      exact hc.symm
+    · rw [show L w = 0 by simp [L, mfderiv_zero_of_not_mdifferentiableAt hιs], map_zero]
   -- The tangent space of the slice and the line through `Z (ι s)` span the tangent space of `M`.
   have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
     refine Submodule.eq_top_of_finrank_eq ?_

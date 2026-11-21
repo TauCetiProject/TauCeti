@@ -574,7 +574,6 @@ the hypotheses on `h` at every point of the slice, so its strict Moser isotopy f
 the slice where `∂_t α_t` vanishes. -/
 theorem strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero {ι : S → M} {s : S}
     (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E)
-    (hh : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ h (t, y)) (ι s)) (hι : MDifferentiableAt J I ι s)
     (himm : Function.Injective (mfderiv J I ι s))
     (htr : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField (ι s) ∉
       (mfderiv J I ι s).range)
@@ -589,7 +588,7 @@ theorem strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero {ι : S → M} 
     α.strictMoserVectorField h t (ι s) = 0 := by
   -- The derivative of `h_t` along the Reeb field vanishes at `ι s`, so its differential does.
   have hd : mvfderiv I (fun y ↦ h (t, y)) (ι s) = 0 :=
-    mvfderiv_eq_zero_of_comp_eventuallyEq_zero hdim hh hι h0 himm htr (by rw [hR, hβ]; simp)
+    mvfderiv_eq_zero_of_comp_eventuallyEq_zero hdim h0 himm htr (by rw [hR, hβ]; simp)
   refine (strictMoserVectorField_eq_zero_iff hc hR).2 ⟨h0.self_of_nhds, fun w ↦ ?_⟩
   rw [hd, hβ]
   simp
