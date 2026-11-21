@@ -102,12 +102,8 @@ theorem fontaineThetaTilde_teichmuller (a : A♭) :
 
 /-- `θ'` is surjective exactly when Fontaine's map `θ` is. -/
 theorem surjective_fontaineThetaTilde_iff :
-    Function.Surjective (fontaineThetaTilde A p) ↔ Function.Surjective (fontaineTheta A p) := by
-  refine ⟨fun h y ↦ ?_, fun h y ↦ ?_⟩
-  · obtain ⟨x, rfl⟩ := h y
-    exact ⟨_, (fontaineThetaTilde_apply x).symm⟩
-  · obtain ⟨x, rfl⟩ := h y
-    exact ⟨frobenius x, fontaineThetaTilde_frobenius x⟩
+    Function.Surjective (fontaineThetaTilde A p) ↔ Function.Surjective (fontaineTheta A p) :=
+  EquivLike.surjective_comp (frobeniusEquiv p A♭).symm (fontaineTheta A p)
 
 /-- `φ x` lies in `ker θ'` exactly when `x` lies in `ker θ`. -/
 theorem frobenius_mem_ker_fontaineThetaTilde_iff {x : 𝕎 A♭} :
