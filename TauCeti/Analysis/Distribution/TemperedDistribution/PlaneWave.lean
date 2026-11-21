@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
-public import TauCeti.Analysis.Fourier.FourierCharDeriv
+public import TauCeti.Analysis.Fourier.FourierChar.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft

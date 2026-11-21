@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
-import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Analysis.Fourier.FourierChar.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
