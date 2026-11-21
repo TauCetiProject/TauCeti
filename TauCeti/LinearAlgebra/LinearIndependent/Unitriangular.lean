@@ -13,54 +13,74 @@ import Mathlib.Order.Preorder.Finite
 
 Let `x` be a family indexed by a preorder, and let every `z j` be `x j` plus a combination of the
 earlier `x l`. If `x` is linearly independent, then so is `z`. The family `x` need not span the
-ambient module, and neither the index type nor the ring is restricted: in a vanishing combination
-of the `z l`, a maximal index with a nonzero coefficient would give a nontrivial vanishing
-combination of the `x l`.
+ambient module, the index type is any preorder, and no subtraction is needed: over a semiring with
+cancellative addition, write `z j = x j + ∑ l, d j l • x l` with `d j` supported below `j`. Two
+combinations of the `z l` with equal values give, by independence of `x`, equal coefficient
+families `f + ∑ l, f l • d l` and `g + ∑ l, g l • d l`. At a maximal index `j` where `f` and `g`
+differ, the two sums have the same coefficient at `j`, so cancelling it gives `f j = g j`.
 
 ## Main results
 
-* `LinearIndependent.of_sub_mem_span_image_Iio`: a unitriangular change of a linearly independent
-  family is linearly independent.
+* `LinearIndependent.of_eq_add_mem_span_image_Iio`: a unitriangular change of a linearly
+  independent family is linearly independent.
 
 ## Attribution
 
-The statement and proof are those of the unmerged Tau Ceti pull request 34591.
+The statement is adapted from Tau Ceti pull request
+[#34591](https://github.com/TauCetiProject/TauCeti/pull/34591).
 -/
 
 public section
 
 open Submodule
 
-variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι]
+variable {R M ι : Type*} [Semiring R] [IsCancelAdd R] [AddCommMonoid M] [Module R M]
+  [Preorder ι]
 
 /-- **A unitriangular change of a linearly independent family is linearly independent.** Let `x`
 be a family indexed by a preorder and let every `z j` be `x j` plus a combination of the earlier
 `x l`. If `x` is linearly independent, then so is `z`. -/
-theorem LinearIndependent.of_sub_mem_span_image_Iio {x z : ι → M}
-    (hx : LinearIndependent R x) (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) :
+theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
+    (hx : LinearIndependent R x) (h : ∀ j, ∃ u ∈ span R (x '' Set.Iio j), z j = x j + u) :
     LinearIndependent R z := by
   classical
-  refine linearIndependent_iff'.2 fun s g hg i hi ↦ by_contra fun hgi ↦ ?_
-  -- A maximal index `j` of `s` with a nonzero coefficient.
-  obtain ⟨j, hjmax⟩ :=
-    (s.filter (g · ≠ 0)).exists_maximal ⟨i, Finset.mem_filter.2 ⟨hi, hgi⟩⟩
-  obtain ⟨hjs, hj⟩ := Finset.mem_filter.1 hjmax.prop
-  -- The other terms lie in the span of the `x l` with `l ≠ j`, hence so does `g j • x j`.
-  have hrest : ∑ l ∈ s.erase j, g l • z l ∈ span R (x '' {j}ᶜ) := by
-    refine sum_mem fun l hl ↦ ?_
-    by_cases hgl : g l = 0
-    · simp [hgl]
-    have hjl : ¬j < l :=
-      hjmax.not_gt (Finset.mem_filter.2 ⟨Finset.mem_of_mem_erase hl, hgl⟩)
-    have hle := span_mono (Set.image_mono (show Set.Iio l ⊆ {j}ᶜ from
-      fun m (hm : m < l) (hmj : m = j) ↦ hjl (hmj ▸ hm))) (h l)
-    exact smul_mem _ _
-      (by simpa using add_mem hle (subset_span ⟨l, Finset.ne_of_mem_erase hl, rfl⟩))
-  rw [← Finset.add_sum_erase _ _ hjs] at hg
-  have hmem := sub_mem (neg_mem hrest) (smul_mem _ (g j)
-    (span_mono (Set.image_mono (show Set.Iio j ⊆ {j}ᶜ from fun _ hm ↦ ne_of_lt hm)) (h j)))
-  rw [← eq_neg_of_add_eq_zero_left hg, smul_sub, sub_sub_cancel] at hmem
-  have hx0 : g j • x j = 0 :=
-    disjoint_def.1 (hx.disjoint_span_image disjoint_compl_left) _ hmem
-      (by simpa using smul_mem _ (g j) (mem_span_singleton_self (x j)))
-  exact hj (hx.smul_left_injective j (by simpa using hx0))
+  -- Write `z j = x j + ∑ l, d j l • x l` with `d j` supported below `j`.
+  have h' (j : ι) : ∃ d ∈ Finsupp.supported R R (Set.Iio j),
+      z j = x j + Finsupp.linearCombination R x d := by
+    obtain ⟨u, hu, hzu⟩ := h j
+    obtain ⟨d, hd, rfl⟩ := (Finsupp.mem_span_image_iff_linearCombination R).1 hu
+    exact ⟨d, hd, hzu⟩
+  choose d hd hdz using h'
+  -- The combinations of `z` are those of `x` after the change `f ↦ f + ∑ l, f l • d l`.
+  have hz : Finsupp.linearCombination R z =
+      Finsupp.linearCombination R x ∘ₗ (LinearMap.id + Finsupp.linearCombination R d) := by
+    ext j
+    simp [hdz]
+  intro f g hfg
+  rw [hz] at hfg
+  have hfg' : f + Finsupp.linearCombination R d f = g + Finsupp.linearCombination R d g := hx hfg
+  by_contra hne
+  obtain ⟨i, hi⟩ := DFunLike.ne_iff.1 hne
+  set s := f.support ∪ g.support
+  -- A maximal index `j` where `f` and `g` differ.
+  obtain ⟨j, hjmax⟩ := (s.filter fun l ↦ f l ≠ g l).exists_maximal
+    ⟨i, Finset.mem_filter.2 ⟨by by_contra hs; simp_all [s], hi⟩⟩
+  obtain ⟨-, hj⟩ := Finset.mem_filter.1 hjmax.prop
+  have hsum (h : ι →₀ R) (hs : h.support ⊆ s) :
+      Finsupp.linearCombination R d h j = ∑ l ∈ s, h l * d l j := by
+    rw [Finsupp.linearCombination_apply, Finsupp.sum_of_support_subset _ hs _ (by simp),
+      Finsupp.finsetSum_apply]
+    simp
+  -- The changes of `f` and `g` agree at `j`: above `j` the coefficients agree, and `d l` vanishes
+  -- at `j` unless `j < l`.
+  have hd_eq : Finsupp.linearCombination R d f j = Finsupp.linearCombination R d g j := by
+    rw [hsum f Finset.subset_union_left, hsum g Finset.subset_union_right]
+    refine Finset.sum_congr rfl fun l hl ↦ ?_
+    by_cases hjl : j < l
+    · by_contra hfl
+      exact hjmax.not_gt (Finset.mem_filter.2 ⟨hl, fun h ↦ hfl (by rw [h])⟩) hjl
+    · rw [Finsupp.notMem_support_iff.1 fun hjd ↦ hjl ((Finsupp.mem_supported _ _).1 (hd l) hjd),
+        mul_zero, mul_zero]
+  have hj' := DFunLike.congr_fun hfg' j
+  rw [Finsupp.add_apply, Finsupp.add_apply, hd_eq] at hj'
+  exact hj (add_right_cancel hj')

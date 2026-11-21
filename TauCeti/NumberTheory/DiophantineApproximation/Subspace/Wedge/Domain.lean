@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveM
 
 import TauCeti.Data.Set.PowersetCard
 import TauCeti.Analysis.ExteriorPower.WedgeForms
-import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Evertse
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 

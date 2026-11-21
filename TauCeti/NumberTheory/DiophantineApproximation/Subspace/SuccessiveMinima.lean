@@ -56,6 +56,7 @@ bound. The uniformity in `c` is what lets exponent families that move with `Q` b
 
 * `TauCeti.NumberField.le_prod_successiveMinimum_approx`: the lower bound on `∏ l, μ l ^ d`.
 * `TauCeti.NumberField.prod_successiveMinimum_approx_le`: the upper bound on `∏ l, μ l ^ d`.
+* `TauCeti.NumberField.successiveMinimum_approx_pos`: the minima below `card ι` are positive.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum`: every minimum is at least
   `Q ^ (-B)` for `Q ≥ Q₀`, uniformly in the exponents of absolute weight at most `A`.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum_le`: every minimum lies
@@ -87,6 +88,13 @@ noncomputable def approxLowerConst (S₀ : Finset (FinitePlace K))
     (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
       integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) * approxConst S₀ L)
 
+/-- Explicit quotient formula for `approxLowerConst`. -/
+theorem approxLowerConst_def (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
+    approxLowerConst S₀ L = 2 ^ (finrank ℚ K * Fintype.card ι) /
+      (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
+        integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) * approxConst S₀ L) := (rfl)
+
 /-- **The constant of the upper Minkowski bound for an approximation domain**:
 `2 ^ N · ∏ v ∈ S₀, N 𝔭_v ^ card ι / approxConst S₀ L`, where `N = [K : ℚ] · card ι`
 (`TauCeti.NumberField.prod_successiveMinimum_approx_le`). -/
@@ -94,6 +102,13 @@ noncomputable def approxUpperConst (S₀ : Finset (FinitePlace K))
     (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) : ℝ :=
   2 ^ (finrank ℚ K * Fintype.card ι) *
     (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L
+
+/-- Explicit quotient formula for `approxUpperConst`. -/
+theorem approxUpperConst_def (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
+    approxUpperConst S₀ L = 2 ^ (finrank ℚ K * Fintype.card ι) *
+      (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L :=
+  (rfl)
 
 /-- The constant of the lower Minkowski bound is positive for forms independent at the infinite
 places and at `S₀`. -/
@@ -210,7 +225,8 @@ theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
       _ ≤ 2 ^ N * C := hmink
   calc P ≤ 2 ^ N / (approxConst S₀ L / D * Q ^ approxWeight S₀ c) := (le_div_iff₀ hk).2 hPk
     _ = approxUpperConst S₀ L * Q ^ (-approxWeight S₀ c) := by
-      rw [Real.rpow_neg hQ.le, show approxUpperConst S₀ L = 2 ^ N * D / approxConst S₀ L from rfl]
+      rw [Real.rpow_neg hQ.le, approxUpperConst]
+      simp only [N, D]
       field_simp
 
 /-! ### Bounds on each successive minimum -/
@@ -321,6 +337,16 @@ private theorem exists_ne_zero_mem_smul_approxBody {S₀ : Finset (FinitePlace K
   obtain ⟨x, hx, hxB⟩ := (Submodule.successiveMinimum_le_iff hB hl hpos).1 le_rfl
   rw [hcoe] at hpos hxB
   exact ⟨hpos, x 0, (hxB 0).1, hx.ne_zero 0, (hxB 0).2⟩
+
+/-- The successive minima over `K` of an approximation domain of positive level, with forms
+independent at the infinite places and at `S₀`, are positive below the ambient dimension. -/
+theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
+    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l :=
+  (exists_ne_zero_mem_smul_approxBody hLInf hLFin c hQ hl).1
 
 /-- Each successive minimum over `K` of an approximation domain has `d`-th power at least
 `C * Q ^ (-approxAbsWeight S₀ c)`, with `C > 0` independent of `c` and of `Q ≥ 1`. -/

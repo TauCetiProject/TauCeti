@@ -18,8 +18,9 @@ The rank of the span of an approximation domain is the number of its successive 
 `r` vectors, where `r` is this rank. These statements let arguments about the dimensions and
 spans of domains use the geometry of their successive minima without choosing a new basis.
 In one direction no hypothesis is needed: every minimum below the rank is at most one, for all
-forms and every real level. For a positive level and independent forms, the minima below the
-ambient dimension are positive.
+forms and every real level. For a positive level and forms independent at the infinite places
+and at `S₀`, a family realizing the minima exists
+(`TauCeti.NumberField.exists_linearIndependent_mem_smul_successiveMinimum_approx`).
 
 The threshold is non-strict: vectors on the boundary of the closed approximation body belong
 to the domain. Only indices below the ambient dimension are counted, since later successive
@@ -63,19 +64,27 @@ theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
     exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
   · rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
 
-/-- The successive minima over `K` of an approximation domain of positive level, with forms
-independent at the infinite places and at `S₀`, are positive below the ambient dimension. -/
-theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+/-- **A family realizing the successive minima of an approximation domain.** For forms
+independent at the infinite places and at `S₀` and a level `Q > 0`, there are `card ι` linearly
+independent vectors `x l` of the lattice `approxModule S₀ L c Q` whose mixed embeddings lie in the
+dilate of `approxBody L c Q` by the `l`-th successive minimum over `K`. Read at the infinite places
+with `TauCeti.NumberField.mixedEmbedding_mem_smul_approxBody_iff`, this is
+`v (L v i (x l)) ≤ μ l · Q ^ c v i`. -/
+theorem exists_linearIndependent_mem_smul_successiveMinimum_approx
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
-    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l := by
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+    ∃ x : Fin (Fintype.card ι) → ι → K, LinearIndependent K x ∧
+      ∀ l, x l ∈ approxModule S₀ L c Q ∧ (fun j ↦ mixedEmbedding K (x l j)) ∈
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q := by
   let _ := discreteTopology_mixedImage_approxModule hLfin c Q
   let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
   obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  rw [← hcoe]
-  exact Submodule.successiveMinimum_pos hB hl
+  obtain ⟨x, hx, hxB⟩ :=
+    (approxModule S₀ L c Q).exists_linearIndependent_mem_smul_successiveMinimum hB
+  rw [hcoe] at hxB
+  exact ⟨x, hx, hxB⟩
 
 /-- **The minima below the rank of an approximation domain are at most one**: if `l` is less
 than the rank of the span of `approxDomain S₀ L c Q`, then its `l`-th successive minimum over `K`
