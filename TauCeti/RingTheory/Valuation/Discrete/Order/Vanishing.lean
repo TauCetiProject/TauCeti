@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 
 /-!

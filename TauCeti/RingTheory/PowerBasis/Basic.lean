@@ -27,6 +27,8 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
   of Mathlib's `charpoly_leftMulMatrix`.
 * `PowerBasis.basis_repr_aeval`: the coordinates of `aeval pb.gen q` in `pb.basis` are the
   coefficients of `q %ₘ pb.minpolyGen`.
+* `PowerBasis.minpolyGen_eq_X_pow_sub_C`: if `pb.gen ^ pb.dim` is a scalar `b`, then
+  `pb.minpolyGen = X ^ pb.dim - C b`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
   `S →ₐ[R] E`, each counted once.
@@ -91,6 +93,17 @@ theorem PowerBasis.basis_repr_aeval {R S : Type*} [CommRing R] [Ring S] [Algebra
   rw [haeval, map_sum, Finsupp.finsetSum_apply]
   simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, pb.basis.repr_self, Finsupp.single_apply,
     mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+
+open Polynomial in
+/-- **Minimal polynomial of a purely binomial power basis**: if `pb` is a power basis of `S` over
+`R` and `pb.gen ^ pb.dim = algebraMap R S b`, then `pb.minpolyGen = X ^ pb.dim - C b`. -/
+theorem PowerBasis.minpolyGen_eq_X_pow_sub_C {R S : Type*} [CommRing R] [Ring S] [Nontrivial S]
+    [Algebra R S] (pb : PowerBasis R S) {b : R} (hb : algebraMap R S b = pb.gen ^ pb.dim) :
+    pb.minpolyGen = X ^ pb.dim - C b := by
+  rw [minpolyGen, ← hb, Algebra.algebraMap_eq_smul_one,
+    ← show pb.basis ⟨0, pb.dim_pos⟩ = 1 by rw [pb.basis_eq_pow, pow_zero],
+    map_smul, pb.basis.repr_self, Finsupp.smul_single_one]
+  simp [Finsupp.single_apply, apply_ite C]
 
 open Polynomial in
 /-- The roots in a domain `E` of the minimal polynomial of the generator of a power basis are the

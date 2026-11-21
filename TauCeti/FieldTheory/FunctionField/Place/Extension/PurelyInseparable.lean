@@ -61,10 +61,12 @@ of `t − s`, and `e(P' ∣ P) = 1`, `f(P' ∣ P) = p`: the residue field of `P`
   `TauCeti.Place.ramificationIdx_eq_finrank_of_isPurelyInseparable`: `f(P' ∣ P) = 1` and
   `e(P' ∣ P) = [F' : F]` when the residue extension is separable.
 * `TauCeti.Place.isIntegral_integers_restrict_iff`,
+  `TauCeti.Place.isIntegralClosure_integers`,
   `TauCeti.Place.moduleFinite_integers_of_isPurelyInseparable`,
   `TauCeti.Place.exists_adjoin_integers_eq_top_of_finrank_eq_prime`, and
   `TauCeti.Place.exists_powerBasis_integers_of_finrank_eq_prime`: characterization of the integral
-  closure of `𝒪_P`, module finiteness, and prime-degree monogenicity of `𝒪_{P'}` over `𝒪_P`.
+  closure of `𝒪_P`, `IsIntegralClosure` identification, module finiteness, and prime-degree
+  monogenicity of `𝒪_{P'}` over `𝒪_P`.
 * `TauCeti.Place.ramificationIdx_adicOfIrreducible_X_pow_sub_C`,
   `TauCeti.Place.ord_restrict_adicOfIrreducible_X_pow_sub_C` and
   `TauCeti.Place.relativeDegree_adicOfIrreducible_X_pow_sub_C`: the counterexample
@@ -204,6 +206,15 @@ theorem isIntegral_integers_restrict_iff [Algebra.IsIntegral k k']
   exact ⟨fun hz ↦ hz P' rfl,
     fun hz Q' hQ' ↦ restrict_injective_of_isPurelyInseparable k F hQ' ▸ hz⟩
 
+/-- At a place `P'` of a purely inseparable extension `F' / F`, `P'` is the unique place over
+`P = P'|_F`, so `𝒪_{P'}` is the integral closure of `𝒪_P` in `F'`. -/
+theorem isIntegralClosure_integers [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') (P' : Place k' F') :
+    IsIntegralClosure P'.integers (P'.restrict k F).integers F' where
+  algebraMap_injective := Subtype.val_injective
+  isIntegral_iff {z} := (isIntegral_integers_restrict_iff hF' P').trans
+    ⟨fun hz ↦ ⟨⟨z, hz⟩, rfl⟩, fun ⟨⟨_, hw⟩, h⟩ ↦ h ▸ hw⟩
+
 /-- At any place `P'` of a finite purely inseparable extension `F' / F` of an algebraic function
 field `F / k`, `𝒪_{P'}` coincides with the integral closure of `𝒪_P` (`P = P'|_F`) in `F'` and
 is therefore module-finite over `𝒪_P`. -/
@@ -213,19 +224,10 @@ theorem moduleFinite_integers_of_isPurelyInseparable [FiniteDimensional F F']
     Module.Finite (P'.restrict k F).integers P'.integers := by
   let P := P'.restrict k F
   have := moduleFinite_integralClosure_of_isFunctionField F' P hF
-  have hmem (z : F') : z ∈ integralClosure P.integers F' ↔ z ∈ P'.integers := by
-    rw [mem_integralClosure_iff, isIntegral_integers_restrict_iff hF' P']
-  let e : integralClosure P.integers F' ≃ₗ[P.integers] P'.integers :=
-    { toFun := fun x ↦ ⟨x.val, (hmem x.val).1 x.property⟩
-      invFun := fun x ↦ ⟨x.val, (hmem x.val).2 x.property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun r x ↦ Subtype.ext <| by
-        rw [RingHom.id_apply, Algebra.smul_def, Algebra.smul_def, Subalgebra.coe_mul,
-          Subring.coe_mul, coe_algebraMap_integers]
-        rfl }
-  exact Module.Finite.equiv e
+  have : IsIntegralClosure P'.integers P.integers F' := isIntegralClosure_integers hF' P'
+  exact Module.Finite.equiv
+    (IsIntegralClosure.equiv P.integers (integralClosure P.integers F') F'
+      P'.integers).toLinearEquiv
 
 /-- Nakayama monogenicity of `𝒪_{P'}` over `𝒪_P` when `[F' : F] = p` is prime in a purely
 inseparable extension. -/

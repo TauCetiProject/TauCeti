@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.B
 public import TauCeti.RingTheory.HahnSeries.Map
 import TauCeti.RingTheory.LaurentSeries.Basic
 import TauCeti.RingTheory.Valuation.IsTrivialOn
-import TauCeti.RingTheory.Valuation.Discrete.Order
+import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 
 /-!
 # Laurent expansions of Weierstrass rational functions

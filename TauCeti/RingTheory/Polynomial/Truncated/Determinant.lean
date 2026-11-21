@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Div
-public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.LinearAlgebra.Matrix.Block

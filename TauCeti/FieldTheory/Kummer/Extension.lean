@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.KummerPolynomial
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import TauCeti.Algebra.Polynomial.XPow.SubC
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 import Mathlib.FieldTheory.SeparableDegree
 import TauCeti.FieldTheory.Minpoly
 

@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import Mathlib.FieldTheory.Normal.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
-import TauCeti.FieldTheory.PurelyInseparable.Exponent
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -45,9 +44,6 @@ carried out after a finite constant field extension.
   field extension is separable over the original field.
 * `TauCeti.isPurelyInseparable_of_constantCompositum_eq_top`: the compositum of a purely
   inseparable constant field extension is purely inseparable over the original field.
-* `TauCeti.isPurelyInseparable_enlargement_of_finrank_eq_prime`: in a degree-`p` purely
-  inseparable extension over exact constants, any algebraic enlargement `k'' / k'` inside `F'` is
-  purely inseparable over `k'`.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
@@ -144,38 +140,6 @@ theorem isPurelyInseparable_of_constantCompositum_eq_top [IsPurelyInseparable k 
   obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem k q c
   exact (mem_perfectClosure_iff_pow_mem q).mpr ⟨n, algebraMap k F a, by
     rw [← map_pow, ← ha, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]⟩
-
-/-- In a degree-`p` purely inseparable constant extension over an exact base constant field `k`,
-any algebraic constant enlargement `k'' / k'` inside `F'` is purely inseparable over `k'`. -/
-theorem isPurelyInseparable_enlargement_of_finrank_eq_prime {p : ℕ} (hp : p.Prime) [CharP k p]
-    [Algebra.IsAlgebraic k k'] [IsPurelyInseparable F F'] (hex : IsIntegrallyClosedIn k F)
-    (hFF' : Module.finrank F F' = p) {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F']
-    [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k''] :
-    IsPurelyInseparable k' k'' := by
-  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ hp.pos)
-  have : CharP F p := charP_of_injective_algebraMap (algebraMap k F).injective p
-  have : ExpChar F p := .prime hp
-  have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
-  have : ExpChar k' p := .prime hp
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  rw [isPurelyInseparable_iff_pow_mem k' p]
-  intro c
-  obtain ⟨y, hy⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow F F' p (n := 1)
-    (by simp [hFF']) (algebraMap k'' F' c)
-  rw [pow_one] at hy
-  have hy_int : IsIntegral k y := by
-    refine (isIntegral_algHom_iff (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective).1 ?_
-    rw [IsScalarTower.toAlgHom_apply, hy, ← map_pow]
-    exact (Algebra.IsIntegral.isIntegral (R := k) (c ^ p)).map (IsScalarTower.toAlgHom k k'' F')
-  obtain ⟨c₀, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 hy_int
-  refine ⟨1, algebraMap k k' c₀, (algebraMap k'' F').injective ?_⟩
-  rw [pow_one, map_pow, ← hy, ← IsScalarTower.algebraMap_apply k F F',
-    ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
 
 /-! ### The constant field of the compositum -/
 

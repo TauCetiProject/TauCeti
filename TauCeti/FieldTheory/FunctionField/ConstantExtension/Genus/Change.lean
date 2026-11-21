@@ -7,11 +7,9 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # The genus drop under a constant field extension, place by place

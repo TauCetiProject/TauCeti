@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Valuation.Extension
 public import TauCeti.RingTheory.LaurentSeries.Level.Kummer
 public import TauCeti.RingTheory.LaurentSeries.Valuation.Ring
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 
 /-!
 # Valuation, integers and ramification of the ramified Laurent-series levels

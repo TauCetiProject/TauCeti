@@ -60,11 +60,7 @@ theorem det_toMatrix_aeval_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra 
       aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2) := by
   nontriviality S
   have : Nontrivial R := (algebraMap R S).domain_nontrivial
-  have hmin : pb.minpolyGen = X ^ pb.dim - C b := by
-    rw [minpolyGen, ← hb, Algebra.algebraMap_eq_smul_one,
-      ← show pb.basis ⟨0, pb.dim_pos⟩ = 1 by rw [pb.basis_eq_pow, pow_zero],
-      map_smul, pb.basis.repr_self, Finsupp.smul_single_one]
-    simp [Finsupp.single_apply, apply_ite C]
+  have hmin : pb.minpolyGen = X ^ pb.dim - C b := pb.minpolyGen_eq_X_pow_sub_C hb
   have hmod : X ^ pb.dim - C pb.gen ^ pb.dim = (X - C pb.gen) ^ pb.dim := by
     rw [hdim, sub_pow_expChar_pow]
   have hmat : (algebraMap R S).mapMatrix

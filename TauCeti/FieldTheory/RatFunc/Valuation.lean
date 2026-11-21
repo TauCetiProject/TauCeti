@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.Valuation
-import TauCeti.RingTheory.Valuation.Discrete.Order
+import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 
 /-!
 # A valuation obstruction to roots of the rational-function variable

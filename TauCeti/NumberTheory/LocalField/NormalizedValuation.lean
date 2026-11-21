@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import TauCeti.Data.Int.WithZero
 public import TauCeti.RingTheory.Valuation.AbsoluteValue
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 
 /-!
 # The normalized valuation of a nonarchimedean local field
