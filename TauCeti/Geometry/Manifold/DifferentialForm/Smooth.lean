@@ -565,7 +565,7 @@ theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   exact cast_apply h α x v
 
 /-- Transporting a smooth form along a trivial degree equality leaves it unchanged. -/
-theorem cast_self {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem cast_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n : ℕ} (h : n = n) (α : SmoothForm I M F n) :
     LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α = α :=
   (rfl)

@@ -193,7 +193,7 @@ theorem atiyahBottForm_nondegenerate : (atiyahBottForm o).Nondegenerate := by
       (show 1 + 1 = 2 from rfl)
       ((mem_compactlySupportedForms I).mpr (isClosed_tsupport _).isCompact) hne
     refine hb ?_
-    rw [← ha b, atiyahBottForm_apply, SmoothForm.cast_self, SmoothForm.coe_wedge]
+    rw [← ha b, atiyahBottForm_apply, SmoothForm.cast_refl, SmoothForm.coe_wedge]
   refine ⟨hleft, fun b hb ↦ hleft b fun a ↦ ?_⟩
   rw [atiyahBottForm_swap, hb, neg_zero]
 
@@ -238,7 +238,7 @@ theorem atiyahBottForm_circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) (b : Smo
     integralTopForm_add_of_compactSpace o ((SmoothForm.isSmoothForm _).of_le (by simp))
       ((SmoothForm.isSmoothForm _).of_le (by simp))] at hS
   -- the degree transport `0 + 1 + 1 = 1 + 1` of `dξ ∧ b` does not change the form
-  rw [SmoothForm.cast_self] at hS
+  rw [SmoothForm.cast_refl] at hS
   rw [ξ.circleGaugeGenerator_def, map_neg, LinearMap.neg_apply, atiyahBottForm, atiyahBottMoment,
     LinearMap.mk₂_apply, LinearMap.mk₂_apply]
   linarith
@@ -287,7 +287,7 @@ theorem atiyahBottMoment_eq_zero_iff {a : SmoothForm I M ℝ 1} :
     congr 1
     funext x
     ext v
-    rw [SmoothForm.cast_self, SmoothForm.coe_wedge]
+    rw [SmoothForm.cast_refl, SmoothForm.coe_wedge]
     conv_lhs => rw [RoughForm.eq_ofFunction s.val, RoughForm.wedge_ofFunction]
     simp [F, mextDerivₗ_apply]
   · ext ξ
