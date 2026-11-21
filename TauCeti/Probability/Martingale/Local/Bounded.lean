@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Martingale.CountableStopping
-public import TauCeti.Probability.Process.CountableLevelLocalizer
-public import TauCeti.Probability.Process.LocalProperty
+public import TauCeti.Probability.Process.BoundedLocalizer
 import TauCeti.Probability.Process.Stopping
 
 /-!
@@ -33,53 +32,14 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
-open scoped NNReal Topology
+open MeasureTheory Set
+open scoped NNReal
 
 namespace ProbabilityTheory.Locally
 
 variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
   {ℱ : Filtration ℝ≥0 mΩ} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {M : ℝ≥0 → Ω → E}
-
--- Pathwise bounds for the particular level-localizer and initial-cutoff construction below.
-open scoped Classical in
-omit [NormedSpace ℝ E] [CompleteSpace E] in
-private theorem bounded_native_stage {Y : ℝ≥0 → Ω → E}
-    (τ η : Ω → WithTop ℝ≥0) (n : ℕ) (ω : Ω)
-    (heq : ∀ t, Y t ω = M t ω)
-    (hb : ∀ t, ‖stoppedProcess Y η t ω - Y 0 ω‖ ≤ (n : ℝ) + 1) :
-    let χ := {ω | ‖Y 0 ω‖ ≤ (n : ℝ)}.piecewise η (fun _ ↦ 0)
-    let ρ := min τ χ
-    ∀ t, let Z := stoppedProcess (fun t ↦ {ω | 0 < ρ ω}.indicator (M t)) ρ
-      ‖Z t ω - Z 0 ω‖ ≤ (n : ℝ) + 1 ∧ ‖Z t ω‖ ≤ 2 * (n : ℝ) + 1 := by
-  classical
-  intro χ ρ t
-  have hρη : ρ ω ≤ η ω := by
-    refine (min_le_right _ _).trans ?_
-    by_cases hn : ‖Y 0 ω‖ ≤ (n : ℝ) <;> simp [χ, hn]
-  have hcenter : ‖stoppedProcess M ρ t ω - M 0 ω‖ ≤ (n : ℝ) + 1 := by
-    apply stoppedProcess_mem (s := {x | ‖x - M 0 ω‖ ≤ (n : ℝ) + 1}) (fun u hu ↦ ?_) t
-    have h := hb u
-    rw [stoppedProcess_eq_of_le (hu.trans hρη), heq u, heq 0] at h
-    exact h
-  dsimp only
-  rw [stoppedProcess_indicator_comm, stoppedProcess_indicator_comm]
-  by_cases hpos : 0 < ρ ω
-  · have hn : ‖Y 0 ω‖ ≤ (n : ℝ) := by
-      by_contra hn
-      have : ρ ω ≤ 0 := (min_le_right _ _).trans (by simp [χ, hn])
-      exact (not_lt_of_ge this) hpos
-    have hinit : ‖M 0 ω‖ ≤ (n : ℝ) := by simpa only [heq 0] using hn
-    simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte]
-    have hzero : stoppedProcess M ρ 0 = M 0 := by
-      simpa only [bot_eq_zero] using stoppedProcess_bot M ρ
-    rw [hzero]
-    have hnorm := norm_add_le (stoppedProcess M ρ t ω - M 0 ω) (M 0 ω)
-    rw [sub_add_cancel] at hnorm
-    exact ⟨hcenter, by linarith⟩
-  · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte, sub_self, norm_zero]
-    constructor <;> positivity
 
 /-- On a finite measure space, an almost-surely continuous native local martingale has bounded
 native martingale stages on its original raw filtration, even without adaptation or moments
@@ -102,25 +62,8 @@ theorem exists_isLocalizingSequence_bounded_martingale
   have hcY : ∀ᵐ ω ∂P, Continuous (Y · ω) := by
     filter_upwards [hc, heq] with ω hω heqω
     simpa only [heqω] using hω
-  obtain ⟨η, hη, hcount, _, hbound⟩ :=
-    hY.exists_isLocalizingSequence_countable_range_level hcY
-  let A (n : ℕ) := {ω | ‖Y 0 ω‖ ≤ (n : ℝ)}
-  have hA (n : ℕ) : MeasurableSet[ℱ 0] (A n) :=
-    measurableSet_le (hY 0).norm.measurable measurable_const
-  have hAmono : Monotone A := by
-    intro n k hnk ω hω
-    have hnk' : (n : ℝ) ≤ (k : ℝ) := by exact_mod_cast hnk
-    exact le_trans hω hnk'
-  -- The initial cutoff is essential: stopping alone does not bound a nonintegrable M₀.
-  let χ (n : ℕ) := (A n).piecewise (η n) (fun _ ↦ 0)
-  have hχcount (n : ℕ) : (range (χ n)).Countable := by
-    rw [range_piecewise]
-    exact ((hcount n).mono (image_subset_range _ _)).union
-      ((countable_singleton 0).mono (by simp))
-  have hχ : IsLocalizingSequence ℱ χ P := by
-    simpa only [bot_eq_zero] using hη.piecewise_bot hA hAmono
-      (ae_of_all _ fun ω ↦
-        tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖Y 0 ω‖))
+  obtain ⟨χ, hχ, hχcount, _, hbound⟩ :=
+    hY.exists_isLocalizingSequence_countable_range_bounded hcY
   let ρ := min hM.localSeq χ
   have hρ : IsLocalizingSequence ℱ ρ P := hM.isLocalizingSequence_localSeq.min hχ
   refine ⟨ρ, hρ, fun n ↦ ?_, ?_⟩
@@ -131,8 +74,23 @@ theorem exists_isLocalizingSequence_bounded_martingale
     simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
     ext t ω
     simp [ρ, Pi.inf_apply, lt_min_iff, Set.indicator_apply, inf_comm, ite_and]
-  · -- Transfer the pathwise level bounds back to M, then account for the initial cutoff.
+  · -- Before the smaller positive stopping time, the bounds for Y also apply to M.
     filter_upwards [heq, hbound] with ω heqω hb n t
-    exact bounded_native_stage (hM.localSeq n) (η n) n ω heqω (hb n).2 t
+    dsimp only
+    simp only [stoppedProcess_indicator_comm, indicator_apply, mem_ofPred_eq]
+    by_cases hp : 0 < ρ n ω
+    · have hle : ρ n ω ≤ χ n ω := min_le_right _ _
+      have hpχ := hp.trans_le hle
+      have hzero : stoppedProcess M (ρ n) 0 = M 0 := stoppedProcess_bot _ _
+      simp only [hp, ↓reduceIte, hzero]
+      refine stoppedProcess_mem (s := {x | ‖x - M 0 ω‖ ≤ (n : ℝ) + 1 ∧
+        ‖x‖ ≤ 2 * (n : ℝ) + 1}) (fun u hu ↦ ?_) t
+      have hstop := stoppedProcess_eq_of_le (u := Y) (hu.trans hle)
+      refine ⟨?_, ?_⟩
+      · simpa only [hstop, heqω] using (hb n u).1 hpχ
+      · simpa only [stoppedProcess_indicator_comm, indicator_apply, mem_ofPred_eq, hpχ,
+          ↓reduceIte, hstop, heqω] using (hb n u).2
+    · simp only [hp, ↓reduceIte, sub_self, norm_zero]
+      constructor <;> positivity
 
 end ProbabilityTheory.Locally
