@@ -112,6 +112,14 @@ theorem tendsto_measure_of_null_frontier [T2Space Y] [LocallyCompactSpace Y] [Bo
     (hb : ν (frontier s) = 0) : Tendsto (fun n ↦ μ n s) atTop (𝓝 (ν s)) :=
   Measure.tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported h hs hsc hb
 
+/-- **Upper semicontinuity on compact sets**: along a convergent sequence of locally finite
+measures, the limit superior of the masses of a compact set is at most its mass for the limit. -/
+theorem limsup_measure_le [T2Space Y] [LocallyCompactSpace Y] [BorelSpace Y]
+    [HasOuterApproxClosed Y] [∀ n, IsLocallyFiniteMeasure (μ n)] [IsLocallyFiniteMeasure ν]
+    (h : VarifoldTendsto μ ν) {K : Set Y} (hK : IsCompact K) :
+    limsup (fun n ↦ μ n K) atTop ≤ ν K :=
+  Measure.limsup_measure_le_of_tendsto_integral_compactlySupported h hK
+
 variable [R1Space Y] [LocallyCompactSpace Y]
 
 /-- A convergent sequence of measures that are finite on compact sets has **locally bounded
@@ -124,20 +132,6 @@ theorem iSup_measure_ne_top [OpensMeasurableSpace Y] [∀ n, IsFiniteMeasureOnCo
   refine ne_top_of_le_ne_top (b := ENNReal.ofReal C) ENNReal.ofReal_ne_top
     (iSup_le fun n ↦ ?_)
   exact (hfK (μ n)).trans (ENNReal.ofReal_le_ofReal (hC (mem_range_self n)))
-
-/-- **Upper semicontinuity on compact sets**: along a convergent sequence of measures that are
-finite on compact sets, the limit superior of the masses of a compact set is at most its mass
-for the limit. -/
-theorem limsup_measure_le [OpensMeasurableSpace Y] [∀ n, IsFiniteMeasureOnCompacts (μ n)]
-    [ν.OuterRegular] (h : VarifoldTendsto μ ν) {K : Set Y} (hK : IsCompact K) :
-    limsup (fun n ↦ μ n K) atTop ≤ ν K := by
-  refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
-  obtain ⟨U, hKU, hU, hUr⟩ := K.exists_isOpen_lt_of_lt r hr
-  obtain ⟨f, hfK, hfU⟩ := hK.exists_compactlySupported_measure_le_integral_le hU hKU
-  have hlim := (ENNReal.continuous_ofReal.tendsto _).comp (h f)
-  refine limsup_le_of_le (h := ?_)
-  filter_upwards [hlim.eventually (gt_mem_nhds ((hfU ν).trans_lt hUr))] with n hn
-  exact ((hfK (μ n)).trans_lt hn).le
 
 /-- **Lower semicontinuity on open sets**: along a convergent sequence of measures, the mass of
 an open set for a regular limit is at most the limit inferior of its masses. -/
