@@ -322,8 +322,8 @@ def map (f : A →ₙₐ[R] B) (n : ℕ) :
 
 /-- `map` sends `[φ]` to the class of its pullback along `f`. -/
 @[simp] theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : hochschildCocycles R B M n) :
-    map M f n (mk R B M n φ) = mk R A M n ⟨φ.1.compLinearMap fun _ ↦ (f : A →ₗ[R] B),
-      compLinearMap_mem_hochschildCocycles f φ.2⟩ := desc_mk _ _ _ φ
+    map M f n (mk R B M n φ) = mk R A M n ⟨φ.val.compLinearMap fun _ ↦ (f : A →ₗ[R] B),
+      compLinearMap_mem_hochschildCocycles f φ.property⟩ := desc_mk _ _ _ φ
 /-- Pulling back along the identity nonunital algebra homomorphism is the identity. -/
 @[simp] theorem map_id (n : ℕ) :
     map (R := R) (A := A) M (NonUnitalAlgHom.id R A) n = LinearMap.id := by

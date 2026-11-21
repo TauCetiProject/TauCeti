@@ -438,7 +438,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
       rw [e.symm_apply_apply] at this
       rw [this, div_mul_cancel₀ _ hε.ne']
     refine ⟨?_, hsn⟩
-    have hmem : (e s).val ∈ insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) := hcl ▸ (e s).2
+    have hmem : (e s).val ∈ insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) := hcl ▸ (e s).property
     refine hmem.resolve_left fun h0 ↦ hs ?_
     have : e s = e ⟨0, left_mem_Icc.2 hr₀.le⟩ := by rw [he₀']; exact Subtype.ext h0
     exact congrArg Subtype.val (e.injective this)
@@ -450,9 +450,9 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   · refine continuous_iff_continuousAt.2 fun s ↦ ?_
     have hc : Continuous fun s : Icc (0 : ℝ) r₁ ↦
         (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val :=
-      continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion _))
+      continuous_subtypeVal.comp (e.continuous.comp (continuous_inclusion _))
     exact (continuousAt_toChart_symm_of_mem_insert_splitGluingPairs φ hε₁ hy₁φ hy₂φ
-      (by rw [← hcl]; exact (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).2)).comp
+      (by rw [← hcl]; exact (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).property)).comp
       hc.continuousAt
   · simp only [hBdef]
     rw [inclusion_mk, he₀', hΨΦ y₁ hy₁φ, hΨΦ y₂ hy₂φ, hT₁, hT₂]
@@ -464,7 +464,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
     obtain ⟨hz, hzn⟩ := hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s) hs
     obtain ⟨hz', hzn'⟩ := hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s') hs'
     have hle : ∀ u : Icc (0 : ℝ) r₁, (u : ℝ) * ε ≤ r₁ * ε := fun u ↦
-      mul_le_mul_of_nonneg_right u.2.2 hε.le
+      mul_le_mul_of_nonneg_right u.property.2 hε.le
     have h1 := hX.eq_of_flow_eq_of_mem_splitPassage_source φ hφ hε₁ (mem_splitGluingPairs.1 hz).1
       (mem_splitGluingPairs.1 hz').1
       (hsmall _ (norm_nonneg _) (hzn ▸ hle s)) (hsmall _ (norm_nonneg _) (hzn' ▸ hle s'))
@@ -506,10 +506,10 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
       rw [hs₀def, he, div_lt_iff₀ hε, norm_snd_splitQuadraticFlow_splitEntryTime hε
         (norm_pos_iff.1 hw₁f0)]
       exact hκw₁
-    have hes : e (inclusion (Icc_subset_Icc_right hr₁r₀) ⟨(s₀ : ℝ), s₀.2.1, hs₀r₁.le⟩) =
+    have hes : e (inclusion (Icc_subset_Icc_right hr₁r₀) ⟨(s₀ : ℝ), s₀.property.1, hs₀r₁.le⟩) =
         ⟨_, subset_closure hEQ⟩ := by
       rw [← e.apply_symm_apply ⟨_, subset_closure hEQ⟩, ← hs₀def]
-    refine ⟨⟨s₀, s₀.2.1, hs₀r₁.le⟩, hs₀r₁, ⟨splitEntryTime ε (Φ w.1), ?_⟩,
+    refine ⟨⟨s₀, s₀.property.1, hs₀r₁.le⟩, hs₀r₁, ⟨splitEntryTime ε (Φ w.1), ?_⟩,
       ⟨splitExitTime ε (Φ w.2), ?_⟩⟩
     · simp only [hBdef, hes]
       exact hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw₁src hw₁f hw₁s
@@ -676,7 +676,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       (hX.flow.isInvariant_unstableSet_inter_stableSet p r _ hw1)
       (Flow.apply_flow_levelCrossingTime ⟨σ₁, hσ₁⟩) (Flow.apply_flow_levelCrossingTime ⟨σ₂, hσ₂⟩)
       ⟨τ₂ + t - τ₁, by rw [← Flow.map_add, sub_add_cancel, Flow.map_add, ht]⟩
-    refine ⟨⟨s, s.2.1, hs⟩, ?_⟩
+    refine ⟨⟨s, s.property.1, hs⟩, ?_⟩
     have e₁ := Flow.flow_levelCrossingTime_flow hanti₁
       (by rw [Flow.map_zero_apply]; exact hw1f : f (hX.flow 0 w.1) = f a₁) (t₁ + τ₁)
     have e₂ := Flow.flow_levelCrossingTime_flow hanti₂
@@ -786,11 +786,11 @@ private theorem IsMorseSmale.exists_gluingArc_of_ne {hX : IsAdaptedPseudoGradien
     exact hX.mem_unstableSet_inter_stableSet_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws
       hwu hwz hw' hw'f hw's hw'r hw'z
   have hmem (s : Icc (0 : ℝ) r₀) :
-      (e s).val ∈ insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) := hcl ▸ (e s).2
+      (e s).val ∈ insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) := hcl ▸ (e s).property
   -- The arc: the points with the coordinates of the gluing pairs.
   refine ⟨T₁, T₂, r₀, hr₀, fun s ↦ (Ψ (e s).val.1, Ψ (e s).val.2), ?_, ?_, fun s hs ↦ ?_⟩
   · refine continuous_iff_continuousAt.2 fun s ↦ ?_
-    have hc : Continuous fun s ↦ (e s).val := continuous_subtype_val.comp e.continuous
+    have hc : Continuous fun s ↦ (e s).val := continuous_subtypeVal.comp e.continuous
     exact (continuousAt_toChart_symm_of_mem_insert_splitGluingPairs φ
       (fun z hz ↦ hε₂ z (by linarith)) hy₁φ hy₂φ (hmem s)).comp (f := fun s ↦ (e s).val)
       hc.continuousAt

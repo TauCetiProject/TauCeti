@@ -84,11 +84,11 @@ variable {v : G.Vertex} (hv : G.valence v = 1)
 /-- The restriction of a degree decoration to the graph obtained by contracting a vertex of
 valence one. -/
 def contractTail : (G.contractTail hv).DegreeDecoration :=
-  ⟨fun w ↦ D.componentDegree w.1⟩
+  ⟨fun w ↦ D.componentDegree w.val⟩
 
 @[simp]
 lemma componentDegree_contractTail (w : (G.contractTail hv).Vertex) :
-    (D.contractTail hv).componentDegree w = D.componentDegree w.1 :=
+    (D.contractTail hv).componentDegree w = D.componentDegree w.val :=
   (rfl)
 
 @[simp]
@@ -125,11 +125,11 @@ variable {v : G.Vertex} (hv : G.valence v = 2)
 /-- The restriction of a degree decoration to the graph obtained by contracting an unmarked
 loopless vertex of valence two. -/
 def contractBridge : (G.contractBridge hv hloop hm).DegreeDecoration :=
-  ⟨fun w ↦ D.componentDegree w.1⟩
+  ⟨fun w ↦ D.componentDegree w.val⟩
 
 @[simp]
 lemma componentDegree_contractBridge (w : (G.contractBridge hv hloop hm).Vertex) :
-    (D.contractBridge hv hloop hm).componentDegree w = D.componentDegree w.1 :=
+    (D.contractBridge hv hloop hm).componentDegree w = D.componentDegree w.val :=
   (rfl)
 
 @[simp]
@@ -216,13 +216,13 @@ theorem labelledStabilizationStep (h : StabilizationStep x y) :
   | @contractTail G D v hv hm hd =>
     dsimp only
     rw [show (D.contractTail (G.isRationalTail_iff.mp hv).2).componentDegree =
-      fun w ↦ D.componentDegree w.1 from funext (D.componentDegree_contractTail _)]
+      fun w ↦ D.componentDegree w.val from funext (D.componentDegree_contractTail _)]
     exact .contractTail _ hv hm hd
   | @contractBridge G D v hv hm hd =>
     dsimp only
     rw [show (D.contractBridge (G.isRationalBridge_iff.mp hv).2.1
         (G.isRationalBridge_iff.mp hv).2.2 hm).componentDegree =
-      fun w ↦ D.componentDegree w.1 from funext (D.componentDegree_contractBridge _ _ _)]
+      fun w ↦ D.componentDegree w.val from funext (D.componentDegree_contractBridge _ _ _)]
     exact .contractBridge _ hv hm hd
 
 /-- A stabilization step contracts a vertex of degree zero and nonpositive log-canonical degree. -/

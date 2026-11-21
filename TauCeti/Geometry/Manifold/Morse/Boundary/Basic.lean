@@ -168,7 +168,7 @@ theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice {p q : M} :
     have hC : ∀ y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet p, y = p := fun y hy ↦
       hX.eq_of_mem_unstableSet_inter_stableSet hy
     have : Subsingleton ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet p) :=
-      ⟨fun a b ↦ Subtype.ext ((hC _ a.2).trans (hC _ b.2).symm)⟩
+      ⟨fun a b ↦ Subtype.ext ((hC _ a.property).trans (hC _ b.property).symm)⟩
     have hlevel : hX.flow.unstableSet p ∩ hX.flow.stableSet p ∩ {z | f z = (f p + f p) / 2} =
         hX.flow.unstableSet p ∩ hX.flow.stableSet p :=
       inter_eq_left.2 fun z hz ↦ by rw [mem_ofPred_eq, hC z hz]; ring

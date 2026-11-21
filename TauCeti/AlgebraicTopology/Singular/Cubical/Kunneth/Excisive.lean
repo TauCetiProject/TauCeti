@@ -105,11 +105,12 @@ variable (k : Type u) [Ring k] {X Y : TopCat.{u}} (A : Set X) (B : Set Y)
 with `X × B` realized as the product and as the preimage of `B`. -/
 private def prodLeftToTotalPair :
     (ofSubset B).prodLeft (ofSubset A).fst ⟶ TopTriple.totalPair.obj (prodUnionTripleSnd A B) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1), x.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.val), x.2.property⟩, by fun_prop⟩)
+      (by ext; rfl)
 
 private instance : IsIso (prodLeftToTotalPair A B) := by
   have : IsIso (Hom.fst (prodLeftToTotalPair A B)) := inferInstanceAs (IsIso (𝟙 _))
-  exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨(y.1.1, ⟨y.1.2, y.2⟩), rfl⟩
+  exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨(y.val.1, ⟨y.val.2, y.property⟩), rfl⟩
 
 /-- The pair `(A × Y ∪ X × B, X × B)` of `TopPair.prodExcisionPair` is the inner pair of the
 triple, with `A × Y ∪ X × B` and `X × B` realized as preimages of `A` and `B`. -/
@@ -119,13 +120,13 @@ private def prodExcisionPairToInnerPair :
   TopPair.ofHom (TopCat.isoOfHomeo (Homeomorph.setCongr (by
       -- The ambient space `(ofSubset A).fst ⊗ (ofSubset B).fst` of `prodSubspace` is `X ⊗ Y`.
       rw [prodSubspace, range_ofSubset_map, range_ofSubset_map]; rfl))).hom
-    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1), x.2.2⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.val), x.2.property⟩, by fun_prop⟩)
     (by ext x; exact Subtype.ext ((ofSubset A).coe_prodSubspaceInr_apply (ofSubset B) x).symm)
 
 private instance : IsIso (prodExcisionPairToInnerPair A B) := by
   have : IsIso (Hom.fst (prodExcisionPairToInnerPair A B)) :=
     inferInstanceAs (IsIso (TopCat.isoOfHomeo _).hom)
-  exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨(y.1.1, ⟨y.1.2, y.2⟩), rfl⟩
+  exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨(y.val.1, ⟨y.val.2, y.property⟩), rfl⟩
 
 /-- The comparison on the first terms: relative cubical chains of `(A × Y, A × B)` to relative
 singular chains of `(A × Y ∪ X × B, X × B)`. -/

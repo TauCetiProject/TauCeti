@@ -664,21 +664,24 @@ def equivFinsetPair :
     rw [w.card_startFinset, w.card_endFinset]
     exact ⟨rfl, w.zip_sort_startFinset_endFinset.symm ▸ w.snd_le_fst⟩⟩
   invFun s :=
-    { blocks := List.zip (s.1.1.sort (· ≤ ·)) (s.1.2.sort (· ≤ ·))
-      snd_le_fst := s.2.2
+    { blocks := List.zip (s.val.1.sort (· ≤ ·)) (s.val.2.sort (· ≤ ·))
+      snd_le_fst := s.property.2
       pairwise_fst_lt := by
-        have hlen : (s.1.1.sort (· ≤ ·)).length = (s.1.2.sort (· ≤ ·)).length := by simp [s.2.1]
+        have hlen : (s.val.1.sort (· ≤ ·)).length = (s.val.2.sort (· ≤ ·)).length
+            := by simp [s.property.1]
         rw [← List.pairwise_map, List.map_fst_zip (le_of_eq hlen)]
-        exact s.1.1.sortedLT_sort.pairwise
+        exact s.val.1.sortedLT_sort.pairwise
       pairwise_snd_lt := by
-        have hlen : (s.1.1.sort (· ≤ ·)).length = (s.1.2.sort (· ≤ ·)).length := by simp [s.2.1]
+        have hlen : (s.val.1.sort (· ≤ ·)).length = (s.val.2.sort (· ≤ ·)).length
+            := by simp [s.property.1]
         rw [← List.pairwise_map, List.map_snd_zip (ge_of_eq hlen)]
-        exact s.1.2.sortedLT_sort.pairwise }
+        exact s.val.2.sortedLT_sort.pairwise }
   left_inv w := by
     ext1
     exact w.zip_sort_startFinset_endFinset
   right_inv s := by
-    have hlen : (s.1.1.sort (· ≤ ·)).length = (s.1.2.sort (· ≤ ·)).length := by simp [s.2.1]
+    have hlen : (s.val.1.sort (· ≤ ·)).length = (s.val.2.sort (· ≤ ·)).length
+        := by simp [s.property.1]
     ext x <;>
       simp [startFinset_def, endFinset_def, List.map_fst_zip (le_of_eq hlen),
         List.map_snd_zip (ge_of_eq hlen)]
@@ -694,7 +697,8 @@ theorem blocks_equivFinsetPair_symm
     (s : {s : Finset (Fin (n - 1)) × Finset (Fin (n - 1)) //
       s.1.card = s.2.card ∧
         ∀ p ∈ List.zip (s.1.sort (· ≤ ·)) (s.2.sort (· ≤ ·)), p.2 ≤ p.1}) :
-    (equivFinsetPair.symm s).blocks = List.zip (s.1.1.sort (· ≤ ·)) (s.1.2.sort (· ≤ ·)) := (rfl)
+    (equivFinsetPair.symm s).blocks = List.zip (s.val.1.sort (· ≤ ·)) (s.val.2.sort (· ≤ ·)) :=
+        (rfl)
 
 instance : Fintype (JonesWord n) :=
   Fintype.ofEquiv _ equivFinsetPair.symm

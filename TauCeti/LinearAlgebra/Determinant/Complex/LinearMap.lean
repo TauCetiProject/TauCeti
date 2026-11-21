@@ -58,6 +58,8 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
   `LinearMap.IsComplexPositiveDetLine.not_neg`,
   `LinearMap.isComplexPositiveDetLine_or_isComplexPositiveDetLine_neg`: complex positivity is an
   orientation of the determinant line.
+* `LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`: for a bijective map the
+  complex orientation is the orientation given by bijectivity.
 * `LinearMap.IsComplexPositiveDetLine.detLineCongr`: complex-linear transport preserves the
   complex orientation of the determinant line of a complex-linear map.
 * `LinearMap.IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr`: conjugate-linear transport
@@ -165,6 +167,22 @@ theorem exists_isComplexPositiveDetLine [FiniteDimensional ℂ (ker f)]
   obtain ⟨t, ht⟩ := exists_isComplexPositiveTMulDual (E := ker f) (F := N ⧸ range f)
   exact ⟨f.detLineRestrictScalarsEquiv.symm t, by
     rwa [isComplexPositiveDetLine_iff, LinearEquiv.apply_symm_apply]⟩
+
+/-- **The complex orientation of a bijective complex-linear map** is the orientation given by
+bijectivity: kernel and cokernel vanish, and the element `1` of the determinant line under
+`LinearMap.detLineEquivOfBijective` is complex positive. -/
+theorem isComplexPositiveDetLine_detLineEquivOfBijective_symm_one
+    (hf : Function.Bijective (f.restrictScalars ℝ)) :
+    f.IsComplexPositiveDetLine ((detLineEquivOfBijective hf).symm 1) := by
+  have hf' : Function.Bijective f := by simpa using hf
+  have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.2 (ker_eq_bot.2 hf'.1)
+  have : Subsingleton (N ⧸ range f) :=
+    Submodule.Quotient.subsingleton_iff.2 (range_eq_top.2 hf'.2)
+  rw [detLineEquivOfBijective_symm_one_eq_ιMulti_tmul, isComplexPositiveDetLine_iff,
+    detLineRestrictScalarsEquiv_tmul, LinearEquiv.detLineCongr_ιMulti]
+  refine (isComplexPositive_ιMulti_of_subsingleton _).isComplexPositiveTMulDual_tmul
+    ((isComplexPositive_ιMulti_of_subsingleton 0).isComplexPositiveDual_of_apply_eq_one ?_)
+  simp
 
 /-- A positive multiple of a complex positive element of the determinant line of a complex-linear
 map is complex positive. -/
