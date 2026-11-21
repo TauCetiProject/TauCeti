@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 `renewalArrivalMeasure T ω` places one Dirac mass at each positive-index arrival of the
 renewal process with increments `T`. It omits the artificial arrival at index zero, but
 retains genuine arrivals at zero and repeated arrivals. Its evaluation on `[0,t]` is the
-extended renewal count, and local finiteness is equivalent to nonexplosion.
+extended renewal count, interarrival extraction recovers the increments pointwise, and local
+finiteness is equivalent to nonexplosion.
 
 The construction is measurable into Mathlib's space of measures with its evaluation
 σ-algebra. Its entire law transfers to the canonical product realization of i.i.d.
@@ -107,6 +108,21 @@ theorem occurrenceGap_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
       occurrenceTime_renewalArrivalMeasure, occurrenceTime_renewalArrivalMeasure,
       arrival_succ, ENNReal.coe_add, ENNReal.add_sub_cancel_left ENNReal.coe_ne_top]
 
+/-- A locally finite counting measure with all interarrival gaps finite is the renewal arrival
+measure of its nonnegative-real gaps. Zero gaps and repeated occurrences are retained. -/
+theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ≥0} {ω : Ω}
+    [IsLocallyFiniteMeasure (N ω)] (hN : (N ω).IsIntegerValued)
+    (hfin : ∀ n, (N ω).occurrenceGap n ≠ ∞) :
+    renewalArrivalMeasure (fun n ω => ((N ω).occurrenceGap n).toNNReal) ω = N ω := by
+  rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure]
+  have harr : (fun n => (arrival (fun k ω => ((N ω).occurrenceGap k).toNNReal) (n + 1) ω :
+      ℝ≥0∞)) = (N ω).occurrenceTime := by
+    funext n
+    have hn : (N ω).occurrenceTime n ≠ ∞ := ((N ω).occurrenceGap_eq_top_iff n).not.mp (hfin n)
+    rw [arrival_def, Measure.coe_sum_range_succ_toNNReal_occurrenceGap hn]
+  rw [harr]
+  exact hN.eq_occurrenceTimeMeasure.symm
+
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]
 theorem lintegral_renewalArrivalMeasure (ω : Ω) (f : ℝ≥0 → ℝ≥0∞) :
@@ -180,6 +196,16 @@ theorem measurable_renewalArrivalMeasure (hT : ∀ n, Measurable (T n)) :
   refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
   simp only [renewalArrivalMeasure_def, Measure.sum_apply _ hs]
   exact Measurable.tsum (measurable_dirac_arrival_apply hT hs)
+
+/-- The renewal arrival measure is measurable if and only if every increment is measurable. -/
+theorem measurable_renewalArrivalMeasure_iff :
+    Measurable (renewalArrivalMeasure T) ↔ ∀ n, Measurable (T n) := by
+  refine ⟨fun h n => ?_, measurable_renewalArrivalMeasure⟩
+  have hcomp : T n = fun ω => ((renewalArrivalMeasure T ω).occurrenceGap n).toNNReal := by
+    funext ω
+    simp
+  rw [hcomp]
+  exact ENNReal.measurable_toNNReal.comp ((Measure.measurable_occurrenceGap n).comp h)
 
 variable {P : Measure Ω}
 
