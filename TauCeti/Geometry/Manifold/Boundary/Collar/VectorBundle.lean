@@ -65,7 +65,7 @@ private theorem exists_uniformDepth {N : Type*} [TopologicalSpace N] [CompactSpa
   obtain ⟨W, hW, V, hV, hWV⟩ := Filter.mem_prod_iff.mp htube
   obtain ⟨O, hOV, hOo, h0O⟩ := mem_nhds_iff.mp hV
   have hOimage : IsOpen (Subtype.val '' O : Set (EuclideanHalfSpace 1)) :=
-    (normalIioOpens 1).isOpen.isOpenMap_subtype_val _ hOo
+    (normalIioOpens 1).isOpen.isOpenMap_subtypeVal _ hOo
   have h0image : (0 : EuclideanHalfSpace 1) ∈ Subtype.val '' O :=
     ⟨normalIioOpensZero zero_lt_one, h0O, coe_normalIioOpensZero zero_lt_one⟩
   obtain ⟨δ, hδ, hδO⟩ := exists_normalIio_subset hOimage h0image
@@ -103,7 +103,7 @@ structure BundleComparison where
   /-- Its native real-smooth total-space diffeomorphism. -/
   diffeomorph :
     let b₀ : C(↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε, M) :=
-      ⟨fun p ↦ (p.1 : M), continuous_subtype_val.comp continuous_fst⟩
+      ⟨fun p ↦ (p.1 : M), continuous_subtypeVal.comp continuous_fst⟩
     let b₁ : C(↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε, M) :=
       ⟨fun p ↦ c (p.1, Set.inclusion (fun _ ht ↦
       mem_normalIioOpens.mpr (lt_trans (mem_normalIioOpens.mp ht) hε1)) p.2),
@@ -501,7 +501,7 @@ theorem BundleComparison.contMDiffOn_transport {U : Set ↥((𝓡∂ (n + 1)).bo
   have hs : ContMDiffOn ((𝓡 n).prod (𝓡∂ 1))
       (((𝓡 n).prod (𝓡∂ 1)).prod 𝓘(ℝ, F)) ∞
       (fun p ↦ TotalSpace.mk' F (E := ((⟨fun p ↦ (p.1 : M),
-        continuous_subtype_val.comp continuous_fst⟩ :
+        continuous_subtypeVal.comp continuous_fst⟩ :
         C(↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε, M)) *ᵖ V))
         p (σ p.1)) (Prod.fst ⁻¹' U) := by
     intro p hp
