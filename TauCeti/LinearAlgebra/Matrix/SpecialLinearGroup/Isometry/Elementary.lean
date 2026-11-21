@@ -77,6 +77,47 @@ instance normal_elementaryUnitaryGroup : (Q.elementaryUnitaryGroup σ).Normal :=
     exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup _ hconj
   exact hle hx
 
+/-- Any special isometry whose matrix is a unitary transvection along an isotropic vector (possibly
+`0`) belongs to the elementary unitary group. -/
+theorem mem_elementaryUnitaryGroup_of_coe_eq {g : Q.specialIsometryGroup σ}
+    {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
+    (hg : ((g : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    g ∈ Q.elementaryUnitaryGroup σ := by
+  by_cases hv0 : v = 0
+  · subst hv0
+    have hg1 : g = 1 := Subtype.ext (Subtype.ext (by simp [hg, unitaryTransvection_def]))
+    exact hg1 ▸ one_mem _
+  · let p : Q.isotropicPoints σ := ⟨Projectivization.mk K v hv0,
+      (mk_mem_isotropicPoints_iff hv0).mpr hv⟩
+    exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup p
+      ((mem_unitaryTransvectionSubgroup_mk_iff hv0 p.property).mpr ⟨a, hg⟩)
+
+/-- On a transitive isotropic-point action, a normal subgroup containing the unitary transvection
+subgroup of one isotropic point contains the entire elementary unitary group. -/
+theorem elementaryUnitaryGroup_le_of_normal
+    [MulAction.IsPretransitive (Q.specialIsometryGroup σ) (Q.isotropicPoints σ)]
+    {N : Subgroup (Q.specialIsometryGroup σ)} [N.Normal] (p₀ : Q.isotropicPoints σ)
+    (hp₀ : Q.unitaryTransvectionSubgroup σ p₀ ≤ N) :
+    Q.elementaryUnitaryGroup σ ≤ N := by
+  rw [elementaryUnitaryGroup_eq_iSup]
+  refine iSup_le fun p ↦ ?_
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (Q.specialIsometryGroup σ) p₀ p
+  rw [Q.unitaryTransvectionSubgroup_smul]
+  rintro x hx
+  rw [Subgroup.mem_smul_pointwise_iff_exists] at hx
+  obtain ⟨y, hy, rfl⟩ := hx
+  exact ‹N.Normal›.conj_mem y (hp₀ hy) g
+
+/-- Every admissible unitary transvection `τ_{v, a}` along an isotropic vector `v` (possibly `0`)
+defines an element of the elementary unitary group. -/
+theorem exists_mem_elementaryUnitaryGroup_coe_eq (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
+    (ha : a + ε * σ a = 0) :
+    ∃ g ∈ Q.elementaryUnitaryGroup σ,
+      ((g : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a := by
+  obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ hv ha
+  exact ⟨⟨g, hg⟩, mem_elementaryUnitaryGroup_of_coe_eq hv hga, hga⟩
+
 /-- **A unitary transvection joins two isotropic vectors.** If `σ` is an involution, `Q` is
 `ε`-Hermitian, and `x` and `y` are isotropic with `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, then
 the unitary transvection along `y - x` with parameter `h(y, x)⁻¹` lies in the elementary unitary
@@ -204,6 +245,23 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
   · simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul]
     rw [← mulVec_mulVec, hg₁x, mulVec_smul, hg₂z, smul_smul]
 
+/-- **The elementary unitary group acts transitively on isotropic lines.** Let `σ` be an
+involution, let `Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace
+`t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` and has a nonzero kernel element.
+Then for any two nonzero isotropic vectors `x` and `y`, an element of the elementary unitary group
+sends `x` to a nonzero scalar multiple of `y`. -/
+theorem exists_elementaryUnitaryGroup_mulVec_eq_smul (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
+    {x y : n → K} (hx0 : x ≠ 0) (hy0 : y ≠ 0)
+    (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0) :
+    ∃ g : Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
+      (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = c • y := by
+  obtain ⟨g, c, hc, -, hgx⟩ :=
+    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
+      hσ hQ hdet htr hadm (u := 0) hx hy (by simp [hx0]) (by simp [hy0]) (by simp) (by simp)
+  exact ⟨g, c, hc, hgx⟩
+
 /-- The elementary unitary group acts transitively on isotropic projective points of a
 nondegenerate ε-Hermitian form when the trace map is onto the ε-fixed scalars and has
 nonzero kernel. This does not require generation of the full special isometry group. -/
@@ -215,9 +273,8 @@ theorem isPretransitive_elementaryUnitaryGroup (hσ : Function.Involutive σ)
   induction p using Projectivization.ind with | h x hx0 => ?_
   induction q using Projectivization.ind with | h y hy0 => ?_
   rw [mk_mem_isotropicPoints_iff] at hp hq
-  obtain ⟨g, c, -, -, hgx⟩ :=
-    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
-      hσ hQ hdet htr hadm (u := 0) hp hq (by simp [hx0]) (by simp [hy0]) (by simp) (by simp)
+  obtain ⟨g, c, -, hgx⟩ :=
+    exists_elementaryUnitaryGroup_mulVec_eq_smul hσ hQ hdet htr hadm hx0 hy0 hp hq
   refine ⟨g, Subtype.ext ?_⟩
   exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hx0 hy0 (c := c)
     (by rwa [Subgroup.smul_def, Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec])

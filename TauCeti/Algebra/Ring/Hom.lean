@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.Ring.Commute
 public import Mathlib.Algebra.Ring.Equiv
+import Mathlib.Algebra.Ring.Parity
 import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Tactic.Abel
 
@@ -35,6 +37,9 @@ along field and completion isomorphisms.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `TauCeti.exists_add_neg_one_pow_mul_apply_eq` and
+  `TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero`: extending trace surjectivity and
+  existence of a nonzero kernel element from `t ↦ t + σ t` to `t ↦ t + (-1) ^ k * σ t`.
 * `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
   to a ring, which is a monoid homomorphism.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
@@ -55,6 +60,35 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
+
+/-- Surjectivity of `t ↦ t + σ t` onto `{s | σ s = s}` implies surjectivity of the signed trace
+`t ↦ t + (-1) ^ k * σ t` onto `{s | σ s = (-1) ^ k * s}` for every `k : ℕ`.
+
+Adapted from `TauCeti.FiniteField.exists_add_neg_one_pow_mul_pow_eq` in
+`TauCeti.FieldTheory.Finite.PowAddSelf` to an arbitrary ring endomorphism. -/
+theorem exists_add_neg_one_pow_mul_apply_eq {R : Type*} [Ring R] {σ : R →+* R}
+    (htr : ∀ s : R, σ s = s → ∃ t : R, t + σ t = s) (k : ℕ) {s : R}
+    (hs : σ s = (-1 : R) ^ k * s) : ∃ t : R, t + (-1 : R) ^ k * σ t = s := by
+  rcases neg_one_pow_eq_or R k with hk | hk <;> rw [hk] at hs ⊢
+  · obtain ⟨t, ht⟩ := htr s (by simpa using hs)
+    exact ⟨t, by simpa using ht⟩
+  · obtain ⟨b, hb⟩ := htr 1 (map_one σ)
+    refine ⟨s * b, ?_⟩
+    rw [neg_one_mul] at hs
+    rw [map_mul, neg_one_mul, hs, neg_mul, neg_neg, ← mul_add, hb, mul_one]
+
+/-- Existence of a nonzero `d` with `d + σ d = 0` when `k` is even yields a nonzero solution of
+`d + (-1) ^ k * σ d = 0` for every `k : ℕ` (for odd `k`, `d = 1` works unconditionally).
+
+Adapted from `TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero` in
+`TauCeti.FieldTheory.Finite.PowAddSelf` to an arbitrary nontrivial ring. -/
+theorem exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero {R : Type*} [Ring R] [Nontrivial R]
+    {σ : R →+* R} {k : ℕ} (hadm : Even k → ∃ d ≠ (0 : R), d + σ d = 0) :
+    ∃ d ≠ (0 : R), d + (-1 : R) ^ k * σ d = 0 := by
+  rcases Nat.even_or_odd k with hk | hk
+  · obtain ⟨d, hd0, hd⟩ := hadm hk
+    exact ⟨d, hd0, by rw [hk.neg_one_pow, one_mul, hd]⟩
+  · exact ⟨1, one_ne_zero, by rw [hk.neg_one_pow, map_one, neg_one_mul, add_neg_cancel]⟩
 
 end TauCeti
 

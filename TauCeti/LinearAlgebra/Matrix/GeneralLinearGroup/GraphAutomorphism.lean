@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.Rev
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
+import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 import TauCeti.Data.Fin.Rev
 import Mathlib.Tactic.FinCases
@@ -52,7 +53,11 @@ carrier.
   arbitrary root `ε_i - ε_j`, where the parameter is rescaled by the sign `(-1) ^ (i + j + 1)`.
 * `TauCeti.typeAGraphAutomorphism_diagGL`: the automorphism reverses and inverts diagonal entries.
 * `TauCeti.typeAGraphAutomorphism_apply_apply`: the signed entrywise formula on the inverse matrix.
-* `TauCeti.transpose_typeAGraphConjugator`: `Qᵀ = (-1) ^ r • Q`.
+* `TauCeti.transpose_typeAGraphConjugator` and `TauCeti.transpose_map_typeAGraphConjugator`:
+  `Qᵀ = (-1) ^ r • Q` and `(Q.map f)ᵀ = (-1) ^ r • Q`.
+* `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec` and
+  `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec_single`: pairing `σ ∘ eᵢ` against
+  `Q *ᵥ v`, and isotropy of `eᵢ` for `i ≠ i.rev`.
 * `TauCeti.typeAGraphAutomorphism_mem_upperTriangularGroup_iff`: preservation of
   upper triangularity.
 * `TauCeti.typeAGraphAutomorphism_mul_self`: the automorphism has order dividing two.
@@ -250,6 +255,29 @@ theorem map_coe_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : �
       (typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) := by
   have hmap := congrArg Units.val (map_typeAGraphConjugator f r)
   rwa [Units.coe_map, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] at hmap
+
+/-- Entrywise application of a ring homomorphism fixes the entries `0` and `±1` of the signed
+reversal matrix `Q_r`, so `(Q_r.map f)ᵀ = (-1) ^ r • Q_r`. -/
+theorem transpose_map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
+    ((typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A).map f)ᵀ =
+      (-1 : B) ^ r • (typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) := by
+  rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
+
+/-- Pairing `σ ∘ eᵢ` on the left against `Q_r *ᵥ v` extracts `(-1) ^ i * v i.rev`. -/
+theorem comp_single_dotProduct_typeAGraphConjugator_mulVec {B : Type*} [Ring B] (σ : A →+* B)
+    {r : ℕ} (i : Fin (r + 1)) (v : Fin (r + 1) → B) :
+    (σ ∘ Pi.single i (1 : A)) ⬝ᵥ
+      ((typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) *ᵥ v) =
+      (-1 : B) ^ (i : ℕ) * v i.rev := by
+  rw [map_comp_single, map_one, single_one_dotProduct, coe_typeAGraphConjugator_mulVec]
+
+/-- A standard coordinate vector `eᵢ` with `i ≠ i.rev` is isotropic for `Q_r`. -/
+theorem comp_single_dotProduct_typeAGraphConjugator_mulVec_single {B : Type*} [Ring B]
+    {σ : A →+* B} {r : ℕ} {i : Fin (r + 1)} (hi : i ≠ i.rev) :
+    (σ ∘ Pi.single i (1 : A)) ⬝ᵥ
+      ((typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) *ᵥ Pi.single i 1) =
+      0 := by
+  rw [comp_single_dotProduct_typeAGraphConjugator_mulVec, Pi.single_eq_of_ne hi.symm, mul_zero]
 
 end Ring
 

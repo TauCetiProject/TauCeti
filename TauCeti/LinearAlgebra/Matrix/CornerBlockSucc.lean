@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.LinearAlgebra.Matrix.Defs
 
 /-!
@@ -14,8 +15,10 @@ public import TauCeti.LinearAlgebra.Matrix.Defs
 
 A scalar `c` and a square matrix `B` of size `m` give the block-diagonal matrix `diag(c, B)` of
 size `m + 1`, with `c` in the corner indexed by `0` and `B` on the indices `Fin.succ`. This file
-builds it and shows that it multiplies blockwise and commutes with the star operation. No
-commutativity is assumed, so the construction applies to quaternionic matrices.
+builds it and shows that it multiplies blockwise, commutes with transpose, entrywise maps, and the
+star operation, and has determinant `c * B.det` over a commutative ring. No commutativity is
+assumed for the blockwise multiplication and star identities, so those apply to quaternionic
+matrices.
 
 `TauCeti/LinearAlgebra/Matrix/UnitaryGroup/CornerBlock.lean` deduces from this the block-diagonal
 embedding `U(1) × U(m) → U(m + 1)`.
@@ -28,9 +31,11 @@ embedding `U(1) × U(m) → U(m + 1)`.
 ## Main results
 
 * `Matrix.cornerBlockSucc_inj`: `diag(c, B)` determines `c` and `B`.
-* `Matrix.cornerBlockSucc_mul_cornerBlockSucc`, `Matrix.cornerBlockSucc_one`,
-  `Matrix.star_cornerBlockSucc`: `diag(c, B)` is multiplicative and unital, and commutes with the
-  star operation, blockwise.
+* `Matrix.transpose_cornerBlockSucc`, `Matrix.map_cornerBlockSucc`, `Matrix.star_cornerBlockSucc`:
+  `diag(c, B)` commutes with transpose, entrywise maps preserving `0`, and `star`.
+* `Matrix.cornerBlockSucc_mul_cornerBlockSucc`, `Matrix.cornerBlockSucc_one`: `diag(c, B)` is
+  multiplicative and unital blockwise.
+* `Matrix.det_cornerBlockSucc`: `det (diag(c, B)) = c * det B` over a commutative ring.
 -/
 
 public section
@@ -84,6 +89,19 @@ theorem cornerBlockSucc_inj {c c' : α} {B B' : Matrix (Fin m) (Fin m) α} :
   · simpa using congrFun (congrFun h 0) 0
   · simpa using congrFun (congrFun h i.succ) j.succ
 
+/-- The transpose of `diag(c, B)` is `diag(c, Bᵀ)`. -/
+@[simp]
+theorem transpose_cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    (cornerBlockSucc c B)ᵀ = cornerBlockSucc c Bᵀ := by
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;> simp
+
+/-- Mapping a zero-preserving function over `diag(c, B)` gives `diag(f c, B.map f)`. -/
+@[simp]
+theorem map_cornerBlockSucc {β F : Type*} [Zero β] [FunLike F α β] [ZeroHomClass F α β]
+    (f : F) (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    (cornerBlockSucc c B).map f = cornerBlockSucc (f c) (B.map f) := by
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;> simp
+
 end Zero
 
 /-- Block-diagonal matrices `diag(c, B)` multiply blockwise. -/
@@ -108,5 +126,16 @@ theorem star_cornerBlockSucc [AddMonoid α] [StarAddMonoid α] (c : α)
     star (cornerBlockSucc c B) = cornerBlockSucc (star c) (star B) := by
   refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
     simp [star_eq_conjTranspose, conjTranspose_apply]
+
+/-- The determinant of `diag(c, B)` is `c * B.det`. -/
+@[simp]
+theorem det_cornerBlockSucc [CommRing α] (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    (cornerBlockSucc c B).det = c * B.det := by
+  have hsub : (cornerBlockSucc c B).submatrix Fin.succ Fin.succ = B :=
+    Matrix.ext fun _ _ ↦ rfl
+  rw [det_succ_row_zero, Finset.sum_eq_single 0
+    (fun j _ hj ↦ by obtain ⟨k, rfl⟩ := Fin.eq_succ_of_ne_zero hj; simp)
+    (fun h ↦ absurd (Finset.mem_univ _) h), Fin.val_zero, pow_zero, one_mul,
+    cornerBlockSucc_zero_zero, Fin.succAbove_zero, hsub]
 
 end Matrix

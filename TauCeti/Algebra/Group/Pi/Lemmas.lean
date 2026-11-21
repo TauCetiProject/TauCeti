@@ -18,6 +18,8 @@ one-point family `Pi.mulSingle i a` to the one-point family `Pi.mulSingle i (f a
 
 * `MonoidHom.compLeft_mulSingle`, `AddMonoidHom.compLeft_single`: post-composition maps
   one-point families to one-point families.
+* `TauCeti.map_comp_mulSingle`, `TauCeti.map_comp_single`: function composition `f ∘ Pi.mulSingle`
+  / `f ∘ Pi.single` for maps preserving `1` / `0`.
 -/
 
 public section
@@ -35,3 +37,17 @@ theorem compLeft_mulSingle (f : α →* β) (i : I) (a : α) :
   funext fun j ↦ Pi.apply_mulSingle (fun _ ↦ f) (fun _ ↦ map_one f) i a j
 
 end MonoidHom
+
+namespace TauCeti
+
+/-- Post-composing a one-point family `Pi.mulSingle i a` with a map preserving `1` gives
+`Pi.mulSingle i (f a)`. -/
+@[to_additive (attr := simp)
+/-- Post-composing a one-point family `Pi.single i a` with a map preserving `0` gives
+`Pi.single i (f a)`. -/]
+theorem map_comp_mulSingle {I α β F : Type*} [DecidableEq I] [One α] [One β]
+    [FunLike F α β] [OneHomClass F α β] (f : F) (i : I) (a : α) :
+    (f : α → β) ∘ Pi.mulSingle i a = Pi.mulSingle i (f a) :=
+  (Pi.mulSingle_op (fun _ ↦ f) (fun _ ↦ map_one f) i a).symm
+
+end TauCeti
