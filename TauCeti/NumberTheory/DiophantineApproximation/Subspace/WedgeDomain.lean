@@ -43,14 +43,14 @@ lie in `approxDomain S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
 (`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`), with `C` depending only on
 `K` and `ι`.
 
-The weight of the wedge exponents is exact. Each index lies in `e = (N - 1).choose (p - 1)` of
-the `p`-subsets and, for `0 < p` and `k + p = N`, exactly one subset is the top block. So, when
-`C` and the minima `μ l`, `l < N`, are nonzero, `approxWeight S₀ (wedgeExponent …)` is
-`e · approxWeight S₀ c` plus `[K : ℚ]` times
+The weight of the wedge exponents is exact. For `0 < p`, each index lies in
+`e = (N - 1).choose (p - 1)` of the `p`-subsets, and if also `k + p = N`, exactly one subset is
+the top block. So, for `0 < p` and `k + p = N`, when `C` and the minima `μ l`, `l < N`, are
+nonzero, `approxWeight S₀ (wedgeExponent …)` is `e · approxWeight S₀ c` plus `[K : ℚ]` times
 `logb Q (C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k)`, with `M = N.choose p`
 (`TauCeti.NumberField.approxWeight_wedgeExponent`); this additive identity needs no condition on
-`Q`. When `μ` are the successive minima, `0 < Q`, `Q ≠ 1` and `0 < C`, Minkowski's second theorem
-bounds `Q ^ approxWeight S₀ c · ∏ l, μ l ^ [K : ℚ]` by a constant, so
+`Q`. When `μ` are the successive minima, `0 < p`, `k + p = N`, `0 < Q`, `Q ≠ 1` and `0 < C`,
+Minkowski's second theorem bounds `Q ^ approxWeight S₀ c · ∏ l, μ l ^ [K : ℚ]` by a constant, so
 `Q ^ approxWeight` of the wedge exponents is at most a constant times
 `(μ (k - 1) / μ k) ^ [K : ℚ]` (`TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`): a
 large jump between consecutive minima makes the wedge domain small.
@@ -68,7 +68,7 @@ indices lie in the approximation domain of the wedge forms with the exponents
 spans `V(Q)` by its first `finrank K V(Q)` members. For `0 < p` and positive minima `μ l`, `l < N`,
 moving the minima does not change the weight, since `mult w₀ · (d / mult w₀) = d` is the total
 multiplicity of the infinite places (`TauCeti.NumberField.approxWeight_wedgeExponentAt`), so the
-same jump bound holds for `0 < Q`, `Q ≠ 1` and `0 < C`
+same jump bound holds for `0 < p`, `k + p = N`, `0 < Q`, `Q ≠ 1` and `0 < C`
 (`TauCeti.NumberField.rpow_approxWeight_wedgeExponentAt_le`). When `μ k ≠ 0`, on a set of forms in
 the top block containing the form `σ k`, in particular on the top block itself for `0 < p` and
 `k + p = card ι`, the gain cancels the minimum `μ k`, so the minima attached to it are a product
@@ -575,7 +575,7 @@ theorem rpow_wedgeExponentAt_of_not_isNonarchimedean_of_ne (hv : ¬IsNonarchimed
 `w₀` and the constant `C₂ ≥ 1` at the other infinite places is dominated by `Q` raised to the
 exponent `wedgeExponentAt` with the constant multiplied by `C₂ ^ card ι`. -/
 private theorem le_rpow_wedgeExponentAt {w₀ : InfinitePlace K} {μ' : AbsoluteValue K ℝ → ℕ → ℝ}
-    {C₀ C₂ : ℝ} (hμ₀ : ∀ l, 0 ≤ μ l) (hμp : ∀ l < Fintype.card ι, 0 < μ l) (hC₀ : 0 < C₀)
+    {C₀ C₂ : ℝ} (hμp : ∀ l < Fintype.card ι, 0 < μ l) (hC₀ : 0 < C₀)
     (hC₂ : 1 ≤ C₂) (hw₀ : ∀ l, μ' w₀.val l = C₂ * μ l ^ ((finrank ℚ K : ℝ) / w₀.mult))
     (hne : ∀ v : InfinitePlace K, v ≠ w₀ → ∀ l, μ' v.val l = C₂) (hQ : 0 < Q) (hQ₁ : Q ≠ 1)
     (hp : 0 < p) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι) (v : InfinitePlace K)
@@ -591,10 +591,12 @@ private theorem le_rpow_wedgeExponentAt {w₀ : InfinitePlace K} {μ' : Absolute
     prod_nonneg fun _ _ ↦ (Real.rpow_pos_of_pos hQ _).le
   by_cases hv : v = w₀
   · subst hv
+    have hT : (T : Finset ι).Nonempty := card_pos.1 (by rw [card_eq]; exact hp)
+    have hμ₀ (l : ℕ) (hl : l < Fintype.card ι) : 0 ≤ μ l := (hμp l hl).le
     rw [rpow_wedgeExponentAt_self hQ hQ₁ (by positivity) hμp hp]
-    rw [funext hw₀, wedgeGain_const_mul_rpow hC₂₀.ne' hμ₀, card_eq]
+    rw [funext hw₀, wedgeGain_const_mul_rpow hC₂₀.ne' hμ₀ _ hT, card_eq]
     have hG : 0 ≤ wedgeGain k μ (σ v.val) T ^ ((finrank ℚ K : ℝ) / v.mult) :=
-      Real.rpow_nonneg (wedgeGain_nonneg hμ₀ _ _) _
+      Real.rpow_nonneg (wedgeGain_nonneg hμ₀ _ hT) _
     convert mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left hpow hC₀.le) hG) hP using 1
     ring
@@ -640,24 +642,24 @@ theorem exists_plucker_mem_approxDomain_wedgeExponentAt [LinearOrder ι] :
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
   have hμp (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
   have hμm := monotoneOn_successiveMinimum_approx S₀ L c hQ₀
-  have hμ₀ (l : ℕ) : 0 ≤ μ l := Submodule.successiveMinimum_nonneg _ _ l
   -- Evertse's lemma with the balanced minima `C₂ · μ l ^ a` at `w₀` and `C₂` elsewhere.
   set a : ℝ := (finrank ℚ K : ℝ) / w₀.mult
   let μ' : AbsoluteValue K ℝ → ℕ → ℝ := fun v l ↦ C₂ * if v = w₀.val then μ l ^ a else 1
-  have hne {v : InfinitePlace K} (hv : v ≠ w₀) : v.val ≠ w₀.val := fun h ↦ hv (Subtype.ext h)
-  have hμ'm (v : InfinitePlace K) : MonotoneOn (μ' v.val) (Set.Iio N) := fun i hi j hj hij ↦ by
-    simp only [μ']
-    split_ifs
-    exacts [mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (hμ₀ i) (hμm hi hj hij) (by positivity))
-      hC₂₀.le, le_rfl]
-  have hμ'p (v : InfinitePlace K) (l : ℕ) (hl : l < N) : 0 < μ' v.val l := by
-    have := hμp l hl
-    simp only [μ']
-    split_ifs <;> positivity
-  have hxinf (v : InfinitePlace K) (i : ι) (l : Fin N) :
-      v (L v.val i (x l)) ≤ μ' v.val l * Q ^ c v.val i := by
+  have hμ'w₀ (l : ℕ) : μ' w₀.val l = C₂ * μ l ^ a := by simp [μ']
+  have hμ'ne {v : InfinitePlace K} (hv : v ≠ w₀) (l : ℕ) : μ' v.val l = C₂ := by
+    simp [μ', Subtype.val_injective.ne hv]
+  have hμ' (v : InfinitePlace K) : MonotoneOn (μ' v.val) (Set.Iio N) ∧
+      (∀ l < N, 0 < μ' v.val l) ∧
+      ∀ (i : ι) (l : Fin N), v (L v.val i (x l)) ≤ μ' v.val l * Q ^ c v.val i := by
     rcases eq_or_ne v w₀ with rfl | hv
-    exacts [by simpa [μ', a] using (hxΛ l).2.2 i, by simpa [μ', hne hv] using (hxΛ l).2.1 v hv i]
+    · rw [funext hμ'w₀]
+      refine ⟨fun i hi j hj hij ↦ ?_, fun l hl ↦ ?_, fun i l ↦ (hxΛ l).2.2 i⟩
+      · exact mul_le_mul_of_nonneg_left
+          (Real.rpow_le_rpow (hμp i hi).le (hμm hi hj hij) (by positivity)) hC₂₀.le
+      · exact mul_pos hC₂₀ (Real.rpow_pos_of_pos (hμp l hl) _)
+    · rw [funext (hμ'ne hv)]
+      exact ⟨monotoneOn_const, fun _ _ ↦ hC₂₀, fun i l ↦ (hxΛ l).2.1 v hv i⟩
+  choose hμ'm hμ'p hxinf using hμ'
   obtain ⟨y, σ, hspan, hint, hinf, hfin⟩ := hE S₀ L c Q x μ' hLinf hLfin hQ₀ hx hμ'm hμ'p
     (fun l ↦ (hxΛ l).1) hxinf
   -- The correction is unitriangular, so it keeps the spans of the initial segments.
@@ -674,9 +676,9 @@ theorem exists_plucker_mem_approxDomain_wedgeExponentAt [LinearOrder ι] :
   have hp : 0 < p := hJ.elim fun j hj ↦ Set.powersetCard.coe_nonempty_iff.1 ⟨j, hj.1⟩
   refine plucker_mem_approxDomain_wedgeForms hQ₀ hC₁ hμ'm hμ'p hint hinf hfin (fun v T ↦ ?_)
     (fun v _ T ↦ wedgeExponentAt_of_isNonarchimedean v.add_le T) hJ
-  exact le_rpow_wedgeExponentAt (c := c) (k := k) (w₀ := w₀) (μ' := μ') hμ₀ hμp
-    (by positivity : 0 < (N.factorial : ℝ) * max 1 C₁ ^ N) hC₂ (fun l ↦ by simp [μ', a])
-    (fun v hv l ↦ by simp [μ', hne hv]) hQ₀ hQ₁ hp σ v T
+  exact le_rpow_wedgeExponentAt (c := c) (k := k) (w₀ := w₀) (μ' := μ') hμp
+    (by positivity : 0 < (N.factorial : ℝ) * max 1 C₁ ^ N) hC₂ hμ'w₀ (fun v hv ↦ hμ'ne hv) hQ₀ hQ₁
+    hp σ v T
 
 /-- **The weight of the wedge domain at `w₀`.** Moving the minima to `w₀` does not change the
 weight: for `0 < p` and positive minima, the exponents `wedgeExponentAt c p k w₀ σ μ C Q` have the
