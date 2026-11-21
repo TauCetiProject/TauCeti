@@ -177,6 +177,12 @@ theorem hasSum_equiv_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ �
   simpa only [LinearIsometryEquiv.coe_coe'', b.equiv_apply_basis c e] using
     b.hasSum_inner_smul_apply (b.equiv c e : E →L[𝕜] F) x
 
+/-- Formula for `b.equiv c e x` as an infinite series in `c`:
+`b.equiv c e x = ∑' i, ⟪b i, x⟫_𝕜 • c (e i)`. -/
+theorem equiv_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) (x : E) :
+    b.equiv c e x = ∑' i, ⟪b i, x⟫_𝕜 • c (e i) :=
+  (b.hasSum_equiv_apply c e x).tsum_eq.symm
+
 /-- The inverse of `b.equiv c e` is `c.equiv b e.symm`. -/
 @[simp]
 theorem equiv_symm (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) :
