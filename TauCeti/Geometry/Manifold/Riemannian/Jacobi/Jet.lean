@@ -43,7 +43,7 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -56,8 +56,7 @@ private theorem IsGeodesicCurveOn.contMDiffOn_jacobiOperator
       (fun r ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (γ r)
         ((((leviCivitaConnection I M).curvatureTensorCLM
-          (V := fun x : M ↦ TangentSpace I x)
-          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) (γ r)).flip
+          (V := fun x : M ↦ TangentSpace I x) (γ r)).flip
           (curveVelocityWithin I γ s r)).flip (curveVelocityWithin I γ s r))) s := by
   -- Cache the iterated hom-fibre instances, as in the curvature smoothness theorem.
   let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
@@ -78,7 +77,6 @@ private theorem IsGeodesicCurveOn.contMDiffOn_jacobiOperator
       hγ.contMDiffOn_curveVelocityLiftWithin_infty
   have hR := (contMDiff_curvatureTensorCLM (F := E)
     (V := fun x : M ↦ TangentSpace I x)
-    (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
     (leviCivitaConnection I M)).comp_contMDiffOn hγ.contMDiffOn_infty
   intro r hr
   have hswap := ContMDiffWithinAt.clm_bundle_flip (F₁ := E) (F₂ := E) (F₃ := E →L[ℝ] E)
@@ -105,8 +103,7 @@ theorem IsJacobiFieldOn.alongCurveWithin_three_of_eq_zero
         (alongCurveWithin (leviCivitaConnection I M) γ J s a)
         (curveVelocityWithin I γ s a) (curveVelocityWithin I γ s a) := by
   let A := fun r ↦ (((leviCivitaConnection I M).curvatureTensorCLM
-          (V := fun x : M ↦ TangentSpace I x)
-          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) (γ r)).flip
+          (V := fun x : M ↦ TangentSpace I x) (γ r)).flip
     (curveVelocityWithin I γ s r)).flip (curveVelocityWithin I γ s r)
   have hA := (hJ.isGeodesicCurveOn.contMDiffOn_jacobiOperator a ha).mdifferentiableWithinAt
     (by simp)
@@ -124,7 +121,8 @@ theorem IsJacobiFieldOn.alongCurveWithin_three_of_eq_zero
 
 /-- The radial exponential Jacobi field `t ↦ d(exp_p)_(t v) (t w)` has third covariant
 derivative `-R(w,v)v` at zero, with the native curvature sign convention. -/
-theorem alongCurveWithin_three_mfderiv_riemannianExp_zero (p : M) (v w : TangentSpace I p) :
+theorem alongCurveWithin_three_mfderiv_riemannianExp_zero [I.Boundaryless] (p : M)
+    (v w : TangentSpace I p) :
     let γ := fun t : ℝ ↦ riemannianExp I M p (t • v)
     let J := fun t ↦ mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w)
     let s := geodesicInterval I M p v

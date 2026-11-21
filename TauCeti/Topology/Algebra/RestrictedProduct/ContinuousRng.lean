@@ -70,7 +70,7 @@ theorem tendsto_restrictedProduct_iff_of_eventually_mem {X : Type*} {l : Filter 
   refine ⟨fun h i ↦ ((RestrictedProduct.continuous_eval i).tendsto x).comp h, fun h ↦ ?_⟩
   -- Shrink `T` so that the limit `x` lies in the same principal stage as the family.
   let T' := T ∩ {i | x i ∈ A i}
-  have hT' : 𝓕 ≤ 𝓟 T' := le_principal_iff.mpr (inter_mem (le_principal_iff.mp hT) x.2)
+  have hT' : 𝓕 ≤ 𝓟 T' := le_principal_iff.mpr (inter_mem (le_principal_iff.mp hT) x.property)
   let y : Πʳ i, [R i, A i]_[𝓟 T'] :=
     RestrictedProduct.mk x (eventually_principal.mpr fun _ hi ↦ hi.2)
   let g : X → Πʳ i, [R i, A i]_[𝓟 T'] :=
@@ -108,7 +108,7 @@ theorem continuous_restrictedProduct_of_apply_eq_of_isOpen {S : Set ι} (hS : S.
     (hmem : ∀ p (i : S), f p i = p.1 i)
     (hnotMem : ∀ p (j : {j // j ∉ S}), f p j = p.2 j) :
     Continuous f := by
-  rw [RestrictedProduct.continuous_dom_prod_left fun j : {j // j ∉ S} ↦ hA j.1 j.2]
+  rw [RestrictedProduct.continuous_dom_prod_left fun j : {j // j ∉ S} ↦ hA j.val j.property]
   intro T hT
   have hT' : cofinite ≤ 𝓟 (Subtype.val '' T) := by
     rw [le_principal_iff, mem_cofinite]
@@ -128,6 +128,6 @@ theorem continuous_restrictedProduct_of_apply_eq_of_isOpen {S : Set ι} (hS : S.
         continuous_snd).congr fun p ↦ (hnotMem' p ⟨i, hi⟩).symm
   · rintro p i ⟨j, hj, rfl⟩
     rw [hnotMem' p j]
-    exact eventually_principal.mp p.2.2 j hj
+    exact eventually_principal.mp p.2.property j hj
 
 end TauCeti

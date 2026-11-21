@@ -33,7 +33,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 semidefinite log-covariance, including singular and zero covariances. -/
 theorem continuous_multivariateLogNormalMeasure :
     Continuous (fun p : EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-      (multivariateLogNormalMeasure p.1 p.2.1).toProbabilityMeasure) := by
+      (multivariateLogNormalMeasure p.1 p.2.val).toProbabilityMeasure) := by
   have hexp : Continuous (fun x : EuclideanSpace ℝ ι ↦
       WithLp.toLp 2 (fun i ↦ Real.exp (x i))) := by
     fun_prop
@@ -42,13 +42,13 @@ theorem continuous_multivariateLogNormalMeasure :
   apply ProbabilityMeasure.toMeasure_injective
   simp only [Function.comp_apply, ProbabilityMeasure.toMeasure_map,
     Measure.coe_toProbabilityMeasure]
-  exact (multivariateLogNormalMeasure_def p.1 p.2.1).symm
+  exact (multivariateLogNormalMeasure_def p.1 p.2.val).symm
 
 /-- As the positive semidefinite log-covariance tends to zero, the multivariate log-normal law
 converges weakly to the point mass at the coordinatewise exponential of its log-mean. -/
 theorem tendsto_multivariateLogNormalMeasure_nhds_zero_dirac (m : EuclideanSpace ℝ ι) :
     Tendsto (fun S : {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-      (multivariateLogNormalMeasure m S.1).toProbabilityMeasure)
+      (multivariateLogNormalMeasure m S.val).toProbabilityMeasure)
       (𝓝 ⟨0, Matrix.PosSemidef.zero⟩)
       (𝓝 (Measure.dirac (WithLp.toLp 2 (fun i ↦ Real.exp (m i)))).toProbabilityMeasure) := by
   have h := (continuous_multivariateLogNormalMeasure.comp

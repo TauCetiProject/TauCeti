@@ -299,11 +299,11 @@ whose contraction `ι_Z β` with a `C²` vector field `Z` is closed, the time-`t
 flow `φ` of `Z` satisfies `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is defined at time `t`,
 because Cartan's formula gives `L_Z β = d(ι_Z β) = 0`. The field need not be complete. -/
 theorem mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
-    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) {t : ℝ} {x : M}
+    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.val) = 0) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain Z) :
-    mpullback (F := F) I I (flowOf Z t) β.1 x = β.1 x := by
+    mpullback (F := F) I I (flowOf Z t) β.val x = β.val x := by
   -- Cartan's formula: `L_Z β = d(ι_Z β) = 0`, a zero multiple of `β`.
-  have hL : mlieDerivForm Z β.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • β.1 y := by
+  have hL : mlieDerivForm Z β.val = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • β.val y := by
     rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior (hZ.mdifferentiable two_ne_zero) hβ, hZβ]
     funext y
     simp
@@ -317,11 +317,11 @@ wherever the flow through `x` is defined at time `t`, because Cartan's formula g
 `L_Z α = ι_Z dα + d(α(Z)) = 0`. This applies to the Reeb vector field of a contact form. The field
 need not be complete. -/
 theorem mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero {α : SmoothForm I M F 1} {c : F}
-    (hαZ : ∀ y, α.1 y ![Z y] = c) (hZα : (mextDeriv α.1).interior Z = 0) {t : ℝ} {x : M}
+    (hαZ : ∀ y, α.val y ![Z y] = c) (hZα : (mextDeriv α.val).interior Z = 0) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain Z) :
-    mpullback (F := F) I I (flowOf Z t) α.1 x = α.1 x := by
+    mpullback (F := F) I I (flowOf Z t) α.val x = α.val x := by
   -- Cartan's formula: `L_Z α = ι_Z dα + d(α(Z)) = 0`, a zero multiple of `α`.
-  have hL : mlieDerivForm Z α.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • α.1 y := by
+  have hL : mlieDerivForm Z α.val = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • α.val y := by
     funext y
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
@@ -394,8 +394,8 @@ theorem mpullback_globalFlow_eq_exp_smul {c : ℝ}
 contraction `ι_Z β` with a complete `C²` vector field `Z` is closed, the flow `ψ` of `Z` satisfies
 `ψₜ^* β = β` for every time `t`, because Cartan's formula gives `L_Z β = d(ι_Z β) = 0`. -/
 theorem mpullback_globalFlow_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
-    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) (t : ℝ) :
-    mpullback (F := F) I I (globalFlow Z (hZ.of_le one_le_two) hc t) β.1 = β.1 := by
+    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.val) = 0) (t : ℝ) :
+    mpullback (F := F) I I (globalFlow Z (hZ.of_le one_le_two) hc t) β.val = β.val := by
   funext x
   rw [← flowOf_eq_globalFlow (hZ.of_le one_le_two) hc]
   exact mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hZ hβ hZβ (hc.mem_flowDomain t x)

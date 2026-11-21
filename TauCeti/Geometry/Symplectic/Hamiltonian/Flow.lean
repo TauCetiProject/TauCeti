@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Dynamics.Flow.Variational
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.FDeriv.Const
 
 /-!
 # Autonomous Hamiltonian flows
@@ -18,7 +19,11 @@ has a canonical global flow. This applies in particular to every `C²` Hamiltoni
 support (`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`). The Hamiltonian
 is constant along each orbit. The rest points of the flow are the critical points of the
 Hamiltonian, and the flow only sees the Hamiltonian near the orbit: two Hamiltonians that agree
-near an orbit segment of one of them move its initial point to the same place. For a `C²`
+near an orbit segment of one of them move its initial point to the same place. In particular the
+time maps are the identity near every point outside the support of the Hamiltonian, and they
+translate a point by `t • c` when the vector field is the constant `c` along the segment of that
+translation. A bound `M` on the vector field bounds the displacement of the time-`t` map by
+`M |t|`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
 pairing of two variations and using symmetry of the Hessian gives zero.
 
@@ -69,6 +74,32 @@ theorem hamiltonianFlow_apply_eq_of_eventuallyEq {H' : V → ℝ} {K' : ℝ≥0}
     ω.hamiltonianFlow H hX t x = ω.hamiltonianFlow H' hX' t x :=
   flowOfLipschitz_apply_eq_of_eqOn hX hX' fun τ hτ ↦
     ω.hamiltonianVectorField_congr_of_eventuallyEq (h τ hτ)
+
+/-- **Hamiltonian flows fix the points outside the support.** Every time map of the flow is the
+identity near each point outside the closed support of the Hamiltonian, where the Hamiltonian
+vector field vanishes. -/
+theorem hamiltonianFlow_eventuallyEq_id_of_notMem_tsupport
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) {x : V} (hx : x ∉ tsupport H) (t : ℝ) :
+    ω.hamiltonianFlow H hX t =ᶠ[nhds x] id := by
+  filter_upwards [(isClosed_tsupport H).isOpen_compl.mem_nhds hx] with z hz
+  exact (ω.forall_hamiltonianFlow_apply_eq_self_iff H hX z).2
+    (((notMem_tsupport_iff_eventuallyEq.1 hz).fderiv_eq).trans (fderiv_const_apply 0)) t
+
+/-- **Displacement bound.** If the Hamiltonian vector field is bounded by `M`, the time-`t` map
+moves no point by more than `M |t|`. -/
+theorem norm_hamiltonianFlow_sub_le (hX : LipschitzWith K (ω.hamiltonianVectorField H)) {M : ℝ}
+    (hM : ∀ z, ‖ω.hamiltonianVectorField H z‖ ≤ M) (t : ℝ) (x : V) :
+    ‖ω.hamiltonianFlow H hX t x - x‖ ≤ M * |t| := by
+  rw [hamiltonianFlow_eq]
+  exact norm_flowOfLipschitz_sub_le hX hM t x
+
+/-- **Flow along a constant field.** If the Hamiltonian vector field equals `c` along the segment
+`{x + τ • c | τ ∈ [[0, t]]}`, then the time-`t` map sends `x` to `x + t • c`. -/
+theorem hamiltonianFlow_apply_eq_add_smul (hX : LipschitzWith K (ω.hamiltonianVectorField H))
+    {x c : V} {t : ℝ} (hc : ∀ τ ∈ Set.uIcc 0 t, ω.hamiltonianVectorField H (x + τ • c) = c) :
+    ω.hamiltonianFlow H hX t x = x + t • c := by
+  rw [hamiltonianFlow_eq]
+  exact flowOfLipschitz_apply_eq_add_smul hX hc
 
 /-- An autonomous Hamiltonian is conserved by its flow. Where `H` is not differentiable, its
 Hamiltonian vector field vanishes by convention, so the orbit is a rest point. -/

@@ -135,9 +135,9 @@ theorem pointMeasure_apply_beta (D : Region → ℤ) (p : Point) :
       ((D (H.betaLeft (H.betaNext.symm p)) : ℚ) + D (H.betaRight (H.betaNext.symm p)) +
         D (H.betaLeft p) + D (H.betaRight p)) / 4 := by
   rw [pointMeasure_apply]
-  rcases H.crossingCompatible p with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;>
-    · rw [h₁, h₂, h₃, h₄]
-      ring
+  congr 1
+  norm_cast
+  linear_combination (H.crossingCompatible p).corner_sum_eq D
 
 /-- Every point measure is an integer multiple of `1 / 4`. -/
 theorem pointMeasure_apply_mem_zmultiples_inv_four (D : Region → ℤ) (p : Point) :
@@ -173,8 +173,7 @@ measures. -/
 theorem generatorPointMeasure_eq_sum_generatorChain [Fintype Point] (x : H.Generator)
     (D : Region → ℤ) :
     H.generatorPointMeasure x D = ∑ q, (H.generatorChain x q : ℚ) * H.pointMeasure D q := by
-  simp_rw [← zsmul_eq_mul]
-  exact (H.sum_generatorChain_smul x (H.pointMeasure D)).symm
+  exact (H.sum_generatorChain_mul x (H.pointMeasure D)).symm
 
 end PointMeasure
 
@@ -182,51 +181,20 @@ section Additivity
 
 variable {H}
 
-/-- At every crossing, the jump across `β` of the average of `E` along `α`, weighted by the
-`α`-boundary of `D`, cancels the jump across `α` of the average of `D` along `β`, weighted by the
-`β`-boundary of `E`: both are the local intersection number of the two boundaries, with opposite
-signs. -/
-private theorem crossing_cancel (D E : Region → ℤ) (q : Point) :
-    ((H.alphaBoundary D (H.alphaNext.symm q) : ℚ) + H.alphaBoundary D q) *
-        (((E (H.alphaLeft q) : ℚ) + E (H.alphaRight q)) -
-          ((E (H.alphaLeft (H.alphaNext.symm q)) : ℚ) + E (H.alphaRight (H.alphaNext.symm q)))) +
-      ((H.betaBoundary E (H.betaNext.symm q) : ℚ) + H.betaBoundary E q) *
-        (((D (H.betaLeft q) : ℚ) + D (H.betaRight q)) -
-          ((D (H.betaLeft (H.betaNext.symm q)) : ℚ) + D (H.betaRight (H.betaNext.symm q)))) =
-      0 := by
-  simp only [alphaBoundary_apply, betaBoundary_apply, Int.cast_sub]
-  rcases H.crossingCompatible q with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;>
-    · rw [h₁, h₂, h₃, h₄]
-      ring
-
-/-- Pairing `∂(∂D ∩ α)` with the sums of `E` over the corners along `α` cancels pairing
-`∂(∂E ∩ β)` with the sums of `D` over the corners along `β`. Summation by parts along the curves
-turns the two pairings into sums over the crossings of the two terms of `crossing_cancel`. -/
-private theorem sum_arcBoundary_mul_add_sum_arcBoundary_mul [Fintype Point]
-    (D E : Region → ℤ) :
-    ∑ q, (H.alphaArcBoundary (H.alphaBoundary D) q : ℚ) *
-        ((E (H.alphaLeft (H.alphaNext.symm q)) : ℚ) + E (H.alphaRight (H.alphaNext.symm q)) +
-          E (H.alphaLeft q) + E (H.alphaRight q)) +
-      ∑ q, (H.betaArcBoundary (H.betaBoundary E) q : ℚ) *
-        ((D (H.betaLeft (H.betaNext.symm q)) : ℚ) + D (H.betaRight (H.betaNext.symm q)) +
-          D (H.betaLeft q) + D (H.betaRight q)) = 0 := by
-  -- Reindexing along the curves by the predecessor maps.
-  have hα := Equiv.sum_comp H.alphaNext.symm fun q =>
-    (H.alphaBoundary D q : ℚ) * (E (H.alphaLeft q) + E (H.alphaRight q))
-  have hβ := Equiv.sum_comp H.betaNext.symm fun q =>
-    (H.betaBoundary E q : ℚ) * (D (H.betaLeft q) + D (H.betaRight q))
+/-- At every crossing, the local intersection number of `∂D ∩ α` with `∂E ∩ β` cancels that of
+`∂E ∩ β` with `∂D ∩ α`, by `IsCrossingCompatible.cross_add_cross_eq_zero`, so their sums over the
+crossings cancel too. -/
+private theorem sum_cross_add_sum_cross_eq_zero [Fintype Point] (D E : Region → ℤ) :
+    ∑ q, (D (H.alphaLeft (H.alphaNext.symm q)) - D (H.alphaRight (H.alphaNext.symm q)) +
+          (D (H.alphaLeft q) - D (H.alphaRight q))) *
+        (E (H.alphaLeft q) + E (H.alphaRight q) -
+          (E (H.alphaLeft (H.alphaNext.symm q)) + E (H.alphaRight (H.alphaNext.symm q)))) +
+      ∑ q, (E (H.betaLeft (H.betaNext.symm q)) - E (H.betaRight (H.betaNext.symm q)) +
+          (E (H.betaLeft q) - E (H.betaRight q))) *
+        (D (H.betaLeft q) + D (H.betaRight q) -
+          (D (H.betaLeft (H.betaNext.symm q)) + D (H.betaRight (H.betaNext.symm q)))) = 0 := by
   rw [← sum_add_distrib]
-  calc _ = ∑ q, (2 * ((H.alphaBoundary D (H.alphaNext.symm q) : ℚ) *
-          (E (H.alphaLeft (H.alphaNext.symm q)) + E (H.alphaRight (H.alphaNext.symm q))) -
-            (H.alphaBoundary D q : ℚ) * (E (H.alphaLeft q) + E (H.alphaRight q))) +
-        2 * ((H.betaBoundary E (H.betaNext.symm q) : ℚ) *
-          (D (H.betaLeft (H.betaNext.symm q)) + D (H.betaRight (H.betaNext.symm q))) -
-            (H.betaBoundary E q : ℚ) * (D (H.betaLeft q) + D (H.betaRight q)))) :=
-        sum_congr rfl fun q _ => by
-          simp only [alphaArcBoundary_apply, betaArcBoundary_apply, Int.cast_sub]
-          linear_combination crossing_cancel D E q
-    _ = 0 := by simp only [sum_add_distrib, ← mul_sum, sum_sub_distrib, hα, hβ, sub_self,
-          mul_zero, add_zero]
+  exact sum_eq_zero fun q _ => (H.crossingCompatible q).cross_add_cross_eq_zero D E
 
 variable {x y w : H.Generator} {D E : Region → ℤ}
 
@@ -238,26 +206,22 @@ theorem IsDomainBetween.generatorPointMeasure_add_generatorPointMeasure
       H.generatorPointMeasure y D + H.generatorPointMeasure y E := by
   let _ : Fintype Point := H.pointFintype
   -- Along `α`: `n_y(E) - n_x(E)` pairs `∂(∂D ∩ α) = y - x` with the point measures of `E`.
-  have hα : H.generatorPointMeasure y E - H.generatorPointMeasure x E =
-      (∑ q, (H.alphaArcBoundary (H.alphaBoundary D) q : ℚ) *
-        ((E (H.alphaLeft (H.alphaNext.symm q)) : ℚ) + E (H.alphaRight (H.alphaNext.symm q)) +
-          E (H.alphaLeft q) + E (H.alphaRight q))) / 4 := by
-    rw [generatorPointMeasure_eq_sum_generatorChain, generatorPointMeasure_eq_sum_generatorChain,
-      ← sum_sub_distrib, (isDomainBetween_iff.mp hD).1, sum_div]
-    refine sum_congr rfl fun q _ => ?_
-    simp only [Pi.sub_apply, Int.cast_sub, pointMeasure_apply]
-    ring
+  have hα := sum_mul_cornerSum_div_four H.alphaNext H.alphaLeft H.alphaRight D E
+    (H.alphaArcBoundary (H.alphaBoundary D)) (H.pointMeasure E)
+    (fun q => by simp only [alphaArcBoundary_apply, alphaBoundary_apply])
+    (fun q => by rw [pointMeasure_apply]; push_cast; ring)
   -- Along `β`: `n_y(D) - n_w(D)` pairs `∂(∂E ∩ β) = y - w` with the point measures of `D`.
-  have hβ : H.generatorPointMeasure y D - H.generatorPointMeasure w D =
-      (∑ q, (H.betaArcBoundary (H.betaBoundary E) q : ℚ) *
-        ((D (H.betaLeft (H.betaNext.symm q)) : ℚ) + D (H.betaRight (H.betaNext.symm q)) +
-          D (H.betaLeft q) + D (H.betaRight q))) / 4 := by
-    rw [generatorPointMeasure_eq_sum_generatorChain, generatorPointMeasure_eq_sum_generatorChain,
-      ← sum_sub_distrib, (isDomainBetween_iff.mp hE).2, sum_div]
-    refine sum_congr rfl fun q _ => ?_
-    simp only [Pi.sub_apply, Int.cast_sub, pointMeasure_apply_beta]
-    ring
-  linarith [sum_arcBoundary_mul_add_sum_arcBoundary_mul (H := H) D E]
+  have hβ := sum_mul_cornerSum_div_four H.betaNext H.betaLeft H.betaRight E D
+    (H.betaArcBoundary (H.betaBoundary E)) (H.pointMeasure D)
+    (fun q => by simp only [betaArcBoundary_apply, betaBoundary_apply])
+    (fun q => by rw [pointMeasure_apply_beta]; push_cast; ring)
+  rw [(isDomainBetween_iff.mp hD).1] at hα
+  rw [(isDomainBetween_iff.mp hE).2] at hβ
+  simp only [Pi.sub_apply, Int.cast_sub, sub_mul, sum_sub_distrib,
+    ← generatorPointMeasure_eq_sum_generatorChain] at hα hβ
+  have h := congrArg (fun z : ℤ => (z : ℚ) / 4) (sum_cross_add_sum_cross_eq_zero (H := H) D E)
+  simp only [Int.cast_add, Int.cast_zero, add_div, zero_div] at h
+  linarith
 
 /-- A domain whose boundary is a sum of whole curves has the same point measure at any two
 generators joined by a domain. -/

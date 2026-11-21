@@ -29,8 +29,12 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
-* `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
-* `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
+  `QuadraticMap.IsometryEquiv.trans_apply`: basic evaluation and involution lemmas for isometric
+  equivalences.
+* `QuadraticMap.IsometryEquiv.nondegenerate_iff`,
+  `QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff`: nondegeneracy of a quadratic map and of
+  its polar bilinear form are invariant under isometry.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -150,6 +154,23 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
     (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y :=
   e.toLinearEquiv.ofSubmodules_symm_apply (e.map_polarKernel x) y
 
+/-- The identity isometric equivalence acts as the identity on vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.refl_apply {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) (x : M) :
+    IsometryEquiv.refl Q x = x :=
+  (rfl)
+
+/-- Taking the inverse of an isometric equivalence twice recovers the original equivalence. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.symm_symm {R : Type u} {M₁ : Type v} {M₂ : Type*}
+    {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+    [Module R M₂] [AddCommMonoid N] [Module R N] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (e : Q₁.IsometryEquiv Q₂) :
+    e.symm.symm = e :=
+  DFunLike.ext _ _ fun x ↦ e.symm.symm_apply_eq.mpr (e.symm_apply_apply x).symm
+
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type v} {M₂ : Type*}
@@ -188,6 +209,21 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+/-- Nondegeneracy of the polar bilinear map is invariant under an isometric equivalence. -/
+theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} {N : Type w} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (e : Q₁.IsometryEquiv Q₂) :
+    Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate := by
+  have hcongr :
+      e.toLinearEquiv.arrowCongr (e.toLinearEquiv.arrowCongr (LinearEquiv.refl R N))
+        Q₁.polarBilin = Q₂.polarBilin :=
+    LinearMap.ext₂ fun x y ↦ by
+      simp [polarBilin_apply_apply]
+  rw [← hcongr, LinearMap.nondegenerate_congr_iff]
 
 section Neg
 

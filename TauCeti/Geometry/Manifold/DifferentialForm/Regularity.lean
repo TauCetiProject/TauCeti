@@ -55,6 +55,25 @@ differentiation commutes with this extension.
   differentiable section.
 * `TauCeti.mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self`: a form whose
   coordinate expression in its own preferred chart is differentiable is a differentiable section.
+* `TauCeti.mextDeriv_sum`, `TauCeti.IsSmoothForm.mextDeriv_add`: exterior differentiation
+  commutes with finite sums of `C¹` forms.
+* `TauCeti.isSmoothForm_zeroDim`, `TauCeti.isSmoothForm_modelSpace_iff`: over a zero-dimensional
+  model every form is smooth, and over the model space a form is a `C^n` section exactly when it
+  is a `C^n` function.
+* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form, and
+  conversely `TauCeti.SmoothForm.contMDiff_apply_zero`: the function underlying a smooth `0`-form
+  is smooth;
+  `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
+  `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` identifies, for a real-valued smooth `1`-form `α`,
+  `mextDeriv α.1 x ![v, w]` with `(mextDerivₗ I 1 α).bilinFormAt x v w`.
+* `TauCeti.RoughForm.contDiffOn_indicator_inChartAt`,
+  `TauCeti.IsSmoothForm.extDerivWithin_indicator_inChartAt`,
+  `TauCeti.IsSmoothForm.contDiff_indicator_inChartAt`: extending the chart expression
+  `φ.inChartAt α` of a form with compact `tsupport` inside `(extChartAt I α).source` by zero
+  outside `(extChartAt I α).target` preserves `C^r` regularity on `range I`; on a `C²` manifold,
+  `extDerivWithin` on `range I` of this extension agrees with the extension of the chart
+  expression of `mextDeriv φ` for a `C¹` form `φ`; and the extension is `C¹` on all of `E` when
+  moreover `tsupport φ` is disjoint from `I.boundary M`.
 
 ## References
 
@@ -263,7 +282,7 @@ theorem IsSmoothForm.contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
 hypotheses ensure additivity of the coordinate derivatives. -/
 theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
     (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I 1 (φ i)) :
-    TauCeti.mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, TauCeti.mextDeriv (φ i) := by
+    mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, mextDeriv (φ i) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
@@ -277,6 +296,14 @@ theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
       (hi'.differentiableWithinAt one_ne_zero) (hs'.differentiableWithinAt one_ne_zero)]
     exact congrArg (fun ψ : RoughForm I M F (k + 1) ↦ TauCeti.mextDeriv (φ i) x + ψ x)
       (ih hrest)
+
+/-- Exterior differentiation is additive on `C¹` forms. -/
+theorem IsSmoothForm.mextDeriv_add [IsManifold I 1 M] {φ ψ : RoughForm I M F k}
+    (hφ : IsSmoothForm I 1 φ) (hψ : IsSmoothForm I 1 ψ) :
+    mextDeriv (φ + ψ) = mextDeriv φ + mextDeriv ψ :=
+  funext fun x ↦ TauCeti.mextDeriv_add
+    ((hφ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
+    ((hψ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
 
 /-- Coordinate regularity of a form transfers between preferred charts: regularity within the
 model range in the chart at `β`, at the image of a point of the overlap, gives the same regularity
@@ -495,41 +522,34 @@ theorem mdifferentiableAt_ofFunction [IsManifold I 1 M] {f : M → F} {x : M}
     : F →L[ℝ] E [⋀^Fin 0]→L[ℝ] F).mdifferentiableAt.comp x hf
 
 /-- **Local primitives glue to a global one.** If near every point `x` the function `f` differs by
-a constant from a function `g` which is `C^r` at `x` (`r ≠ 0`) with `d g = φ` at `x`, then the
+a constant from a function `g` which is `C^r` at `x` with `d g = φ` at `x`, then the
 `0`-form of `f` is a `C^r` primitive of `φ`. -/
 theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
-    {r : WithTop ℕ∞} (hr : r ≠ 0) {φ : RoughForm I M F 1} {f : M → F}
+    {r : WithTop ℕ∞} {φ : RoughForm I M F 1} {f : M → F}
     (hloc : ∀ x, ∃ g : M → F, ∃ c : F, ContMDiffAt I 𝓘(ℝ, F) r g x ∧
       (∀ᶠ y in 𝓝 x, f y = g y + c) ∧ mextDeriv (RoughForm.ofFunction I g) x = φ x) :
     ∃ ψ : RoughForm I M F 0, IsSmoothForm I r ψ ∧ mextDeriv ψ = φ := by
   refine ⟨RoughForm.ofFunction I f, isSmoothForm_ofFunction_iff.mpr fun x ↦ ?_, funext fun x ↦ ?_⟩
   · obtain ⟨g, c, hg, hfg, -⟩ := hloc x
     exact (hg.add contMDiffAt_const).congr_of_eventuallyEq hfg
-  · obtain ⟨g, c, hg, hfg, hdg⟩ := hloc x
+  · obtain ⟨g, c, -, hfg, hdg⟩ := hloc x
     rw [← hdg]
-    exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const (hg.mdifferentiableAt hr) hfg
+    exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const hfg
 
 end Regularity
 
 /-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
-theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M]
-    [IsManifold 𝓘(ℝ, E) 1 M]
+theorem isSmoothForm_zeroDim {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {n : WithTop ℕ∞}
-    (φ : RoughForm 𝓘(ℝ, E) M F k) :
-    IsSmoothForm 𝓘(ℝ, E) n φ := by
-  rw [isSmoothForm_def]
-  intro x
-  rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
-    contMDiffWithinAt_iff_contDiffWithinAt]
-  have hflat (f : E →
-      E [⋀^Fin k]→L[ℝ] F)
-      (s : Set (E)) (z : E) :
-      ContDiffWithinAt ℝ n f s z := by
-    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
-    rw [he]
-    exact contDiffWithinAt_const
-  exact hflat _ _ _
+    (φ : RoughForm I M F k) :
+    IsSmoothForm I n φ := by
+  refine IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ ?_
+  have he : φ.inChartAt x = fun _ ↦ φ.inChartAt x 0 :=
+    funext fun y ↦ congrArg (φ.inChartAt x) (Subsingleton.elim y 0)
+  rw [he]
+  exact contDiffWithinAt_const
 
 /-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
 function into the space of alternating maps. -/
@@ -558,33 +578,33 @@ variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
     SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F (k + 1) where
-  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothBundleForms φ.2⟩
+  toFun φ := ⟨mextDeriv φ.val, mextDeriv_mem_smoothBundleForms φ.property⟩
   map_add' φ ψ := by
     apply Subtype.ext
     funext x
     apply mextDeriv_add
-    · exact RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt φ.1
+    · exact RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt φ.val
         (φ.mdifferentiableAt x)
-    · exact RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt ψ.1
+    · exact RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt ψ.val
         (ψ.mdifferentiableAt x)
-  map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
+  map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.val)
 
 variable (I) in
 /-- The bundled derivative has the usual rough exterior derivative as its underlying form. -/
 @[simp]
 theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k) :
-    (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
+    (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.val :=
   (rfl)
 
 /-- The exterior derivative of a smooth function, regarded as a `0`-form, evaluated on a tangent
 vector, is the derivative of the function applied to that vector. -/
 theorem mextDerivₗ_zero_apply [IsManifold I 2 M] (f : SmoothForm I M F 0) (x : M)
     (v : TangentSpace I x) :
-    (mextDerivₗ I 0 f).1 x ![v] = mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  calc (mextDerivₗ I 0 f).1 x ![v]
-      = mextDeriv (RoughForm.ofFunction I fun y ↦ f.1 y 0) x ![v] := by
+    (mextDerivₗ I 0 f).val x ![v] = mvfderiv I (fun y ↦ f.val y 0) x v := by
+  calc (mextDerivₗ I 0 f).val x ![v]
+      = mextDeriv (RoughForm.ofFunction I fun y ↦ f.val y 0) x ![v] := by
         rw [mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
-    _ = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+    _ = mvfderiv I (fun y ↦ f.val y 0) x v := by
         rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
           Matrix.cons_val_zero]
 
@@ -603,13 +623,19 @@ theorem coe_ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯)
 /-- Evaluating the smooth `0`-form of a function on the empty tuple of tangent vectors recovers the
 function. -/
 theorem ofFunction_apply_zero [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) :
-    (fun y ↦ (ofFunction f).1 y 0) = f :=
+    (fun y ↦ (ofFunction f).val y 0) = f :=
   funext fun y ↦ by rw [coe_ofFunction, RoughForm.ofFunction_apply]
+
+/-- The function underlying a smooth `0`-form is smooth. -/
+theorem contMDiff_apply_zero [IsManifold I 1 M] (f : SmoothForm I M F 0) :
+    ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.val y 0 := by
+  rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
+  exact f.isSmoothForm
 
 /-- The exterior derivative of a smooth form is a smooth section. -/
 theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :
     ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) x (mextDeriv φ.1 x)) :=
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) x (mextDeriv φ.val x)) :=
   (mextDerivₗ I k φ).contMDiff
 
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
@@ -627,8 +653,15 @@ theorem mextDerivₗ_cast [IsManifold I 2 M]
 of the two-form `dα`. -/
 theorem mextDeriv_eq_bilinFormAt [IsManifold I 2 M] (α : SmoothForm I M ℝ 1) (x : M)
     (v w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
+    mextDeriv α.val x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
   rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+
+/-- A tangent vector lies in the kernel of the bilinear form of `dα` exactly when `dα` vanishes on
+every pair with that vector as its first argument. -/
+theorem mem_ker_bilinFormAt_mextDerivₗ_iff [IsManifold I 2 M] {α : SmoothForm I M ℝ 1} {x : M}
+    {v : TangentSpace I x} :
+    v ∈ LinearMap.ker ((mextDerivₗ I 1 α).bilinFormAt x) ↔ ∀ w, mextDeriv α.val x ![v, w] = 0 := by
+  rw [mem_ker_bilinFormAt_iff, mextDerivₗ_apply]
 
 end SmoothForm
 

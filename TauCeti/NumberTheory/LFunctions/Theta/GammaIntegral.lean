@@ -34,9 +34,11 @@ gamma factor `Γ_ℝ(s)^r₁ Γ_ℂ(s)^r₂` of the completed Dedekind zeta func
 This is the gamma integral contributed by one unit orbit of lattice points when the theta series
 of an ideal lattice is integrated over the cone above a fundamental domain for the units (Hecke's
 integral representation of a partial zeta function). The integrand is integrable
-(`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), and its `L¹` norm is evaluated by
-`TauCeti.LFunctions.integral_norm_archGaussian_mul_archNorm_cpow`, as the interchange of the lattice
-sum with the integral requires.
+(`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), as the interchange of the
+lattice sum with the integral requires. At positive parameters its norm is its value at `Re s`
+(`TauCeti.LFunctions.ofReal_norm_archGaussian_mul_archNorm_cpow`), so its integral over any set
+of parameters is the real part of the integral at `Re s`
+(`TauCeti.LFunctions.setIntegral_norm_archGaussian_mul_archNorm_cpow`).
 
 ## References
 
@@ -54,48 +56,18 @@ namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### One place -/
-
-/-- The exponent `m s / 2` of the factor at a place of multiplicity `m` has positive real part. -/
-private theorem re_natCast_mul_div_two_pos {m : ℕ} (hm : m ≠ 0) {s : ℂ} (hs : 0 < s.re) :
-    0 < ((m : ℂ) * s / 2).re := by
-  have : ((m : ℂ) * s / 2).re = m * s.re / 2 := by simp
-  rw [this]
-  exact div_pos (mul_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)) hs) two_pos
-
-/-- The factor of the archimedean Gaussian at one place is integrable against
-`t ^ (m s / 2) dt / t`. -/
-private theorem integrable_cpow_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {m : ℕ} (hm : m ≠ 0)
-    {s : ℂ} (hs : 0 < s.re) :
-    Integrable (fun t : ℝ ↦ (t : ℂ) ^ (m * s / 2) * (Real.exp (-(π * a ^ 2 * t)) : ℂ))
-      multHaar := by
-  simpa only [smul_eq_mul] using integrable_multHaar_cpow_smul_iff.mpr
-    (mellinConvergent_exp_neg_mul (by positivity) (re_natCast_mul_div_two_pos hm hs))
-
-/-- The factor of the archimedean Gaussian at one place, against `t ^ (m s / 2) dt / t`:
-`∫_0^∞ e^(-π t a²) t^(m s / 2) dt / t = Γ_ℝ(m s) a^(-m s)`. -/
-private theorem integral_cpow_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {m : ℕ} (hm : m ≠ 0)
-    {s : ℂ} (hs : 0 < s.re) :
-    ∫ t, (t : ℂ) ^ (m * s / 2) * (Real.exp (-(π * a ^ 2 * t)) : ℂ) ∂multHaar =
-      Gammaℝ (m * s) * (a : ℂ) ^ (m * -s) := by
-  have hc : 0 < π * a ^ 2 := by positivity
-  have hpow : ((π * a ^ 2 : ℝ) : ℂ) ^ (-(m * s / 2)) =
-      (π : ℂ) ^ (-(m * s) / 2) * (a : ℂ) ^ (m * -s) := by
-    rw [ofReal_mul, ofReal_mul_cpow Real.pi_pos.le, ofReal_pow, ofReal_pow_cpow ha.le]
-    congr 2 <;> ring
-  have h := integral_multHaar_cpow_smul (fun t : ℝ ↦ (Real.exp (-(π * a ^ 2 * t)) : ℂ))
-    (m * s / 2)
-  simp only [smul_eq_mul, mellin, ofReal_exp, ofReal_neg, ofReal_mul (π * a ^ 2)] at h ⊢
-  rw [h, integral_cpow_mul_exp_neg_mul_Ioi (re_natCast_mul_div_two_pos hm hs) hc, one_div,
-    inv_cpow_ofReal_nonneg hc.le, ← cpow_neg, hpow, Gammaℝ_def]
-  ring
-
 /-! ### The product over the places -/
 
 /-- The coordinates of a point of nonzero norm are positive at every place. -/
 private theorem normAtPlace_pos_of_norm_ne_zero {x : mixedSpace K}
     (hx : mixedEmbedding.norm x ≠ 0) (w : InfinitePlace K) : 0 < normAtPlace w x :=
   (normAtPlace_nonneg w x).lt_of_ne' (mixedEmbedding.norm_ne_zero_iff.mp hx w)
+
+omit [NumberField K] in
+/-- The exponent `mult w * s` at a place of multiplicity `mult w` has positive real part. -/
+private theorem re_mult_mul_pos (w : InfinitePlace K) {s : ℂ} (hs : 0 < s.re) :
+    0 < ((mult w : ℂ) * s).re := by
+  simpa using mul_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (mult_ne_zero (w := w)))) hs
 
 /-- A principal power of `∏_w b_w ^ mult w`, for nonnegative `b`, is `∏_w b_w ^ (mult w · z)`. -/
 private theorem ofReal_prod_pow_mult_cpow {b : InfinitePlace K → ℝ} (hb : ∀ w, 0 ≤ b w)
@@ -136,7 +108,8 @@ theorem integrable_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x �
     Integrable (fun y ↦ archGaussian y x * (archNorm y : ℂ) ^ (s / 2)) (archHaar K) := by
   have ha := normAtPlace_pos_of_norm_ne_zero hx
   have hint := Integrable.fintype_prod (μ := fun _ : InfinitePlace K ↦ multHaar)
-    fun w ↦ integrable_cpow_mul_exp_neg_multHaar (ha w) (mult_ne_zero (w := w)) hs
+    fun w ↦ integrable_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq (ha w).ne'
+      (re_mult_mul_pos w hs)
   rw [← archHaar_def] at hint
   refine hint.congr ?_
   filter_upwards [ae_archHaar_pos] with y hy
@@ -163,43 +136,34 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
         exact integral_fintype_prod_eq_prod (fun w (t : ℝ) ↦ (t : ℂ) ^ (mult w * s / 2) *
           (Real.exp (-(π * normAtPlace w x ^ 2 * t)) : ℂ))
     _ = ∏ w, Gammaℝ (mult w * s) * (normAtPlace w x : ℂ) ^ (mult w * -s) := by
-        exact Finset.prod_congr rfl fun w _ ↦
-          integral_cpow_mul_exp_neg_multHaar (ha w) (mult_ne_zero (w := w)) hs
+        refine Finset.prod_congr rfl fun w _ ↦ ?_
+        rw [integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq _ (re_mult_mul_pos w hs),
+          abs_of_pos (ha w), ← mul_neg]
     _ = _ := by
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
           ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
 
-/-- On the positive orthant, the norm of `archGaussian y x * N(y)^(s / 2)`, cast to `ℂ`, is the
-integrand at the real exponent `s.re`. -/
-private theorem ofReal_norm_archGaussian_mul_archNorm_cpow {y : realSpace K} (hy : ∀ w, 0 < y w)
-    (x : mixedSpace K) (s : ℂ) :
-    ((‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ : ℝ) : ℂ) =
+/-- At a positive parameter `y`, the norm of the Gaussian against `N(y)^(s/2)` is its value at
+`Re s`; this dominates the integrand at `s` by the one at `Re s`. -/
+theorem ofReal_norm_archGaussian_mul_archNorm_cpow {y : realSpace K} (hy : ∀ w, 0 < y w) :
+    (‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ : ℂ) =
       archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) := by
-  have hN : 0 < archNorm y := archNorm_pos hy
-  have hexp : ‖archGaussian y x‖ = Real.exp (-π * ∑ w, y w * normAtPlace w x ^ 2) := by
-    rw [archGaussian_apply, norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
-  have hre : (s / 2).re = s.re / 2 := by simp
-  rw [norm_mul, hexp, norm_cpow_eq_rpow_re_of_pos hN, hre, ofReal_mul, archGaussian_apply,
-    ofReal_cpow hN.le, ofReal_div, ofReal_ofNat]
+  have hN := archNorm_pos hy
+  have hσ : (s.re : ℂ) / 2 = ((s.re / 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hN, hσ, ← ofReal_cpow hN.le, archGaussian_apply,
+    ← ofReal_mul, norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, div_ofNat_re]
 
-/-- **Evaluation of the `L¹` norm of the archimedean Gaussian.** For a point `x : mixedSpace K`
-with `N(x) ≠ 0` and `0 < Re s`, the `archHaar K`-integral of `‖archGaussian y x * N(y)^(s / 2)‖` is
-`Re(Γ_ℝ(Re s)^r₁ Γ_ℝ(2 Re s)^r₂) |N(x)|^(-Re s)`. -/
-theorem integral_norm_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 0)
-    (hs : 0 < s.re) :
-    ∫ y, ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K =
-      (Gammaℝ s.re ^ nrRealPlaces K * Gammaℝ (2 * s.re) ^ nrComplexPlaces K).re *
-        mixedEmbedding.norm x ^ (-s.re) := by
-  have hxpos : 0 < mixedEmbedding.norm x := (mixedEmbedding.norm_nonneg x).lt_of_ne' hx
-  have hs0 : 0 < (s.re : ℂ).re := by simpa using hs
-  have hintC := integrable_archGaussian_mul_archNorm_cpow hx hs0
-  have hae : (fun y ↦ ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖) =ᵐ[archHaar K]
-      fun y ↦ Complex.reCLM (archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2)) := by
-    filter_upwards [ae_archHaar_pos] with y hy
-    simpa only [ofReal_re, Complex.reCLM_apply] using
-      congrArg Complex.re (ofReal_norm_archGaussian_mul_archNorm_cpow hy x s)
-  rw [integral_congr_ae hae, Complex.reCLM.integral_comp_comm hintC, Complex.reCLM_apply,
-    integral_archGaussian_mul_archNorm_cpow hx hs0, ← ofReal_neg, ← ofReal_cpow hxpos.le]
-  simp only [mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
+/-- The integral of the norm of the Gaussian against `N(y)^(s/2)` over a set `S` of parameters is
+the real part of the integral over `S` at `Re s`, since `dy / y` is concentrated on the positive
+orthant. -/
+theorem setIntegral_norm_archGaussian_mul_archNorm_cpow (S : Set (realSpace K)) :
+    ∫ y in S, ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K =
+      (∫ y in S, archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) ∂archHaar K).re := by
+  have h : ∫ y in S, archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) ∂archHaar K =
+      ∫ y in S, (‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ : ℂ) ∂archHaar K := by
+    refine integral_congr_ae ?_
+    filter_upwards [ae_restrict_of_ae ae_archHaar_pos] with y hy
+    exact (ofReal_norm_archGaussian_mul_archNorm_cpow hy).symm
+  rw [h, integral_complex_ofReal, ofReal_re]
 
 end TauCeti.LFunctions

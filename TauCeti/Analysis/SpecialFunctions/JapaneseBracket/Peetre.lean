@@ -45,18 +45,37 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_sub_le_one`: for `‖x - y‖ ≤ 1`,
   `⟨x⟩ ^ s ≤ 2 ^ |s| ⟨y⟩ ^ s`.
-* `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
+* `TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul`: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖` with
+  `c ≥ 1`, then `⟨x⟩ ^ s ≤ c ^ |s| ⟨y⟩ ^ s`; in particular
+  (`TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`) rescaling by `c ≥ 1` changes the weight
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_smul_sq_rpow_le`: the same for the scalar multiple `c • x`,
   `⟨c • x⟩ ^ s ≤ c ^ |s| ⟨x⟩ ^ s`.
+* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`: rescaling by any `c ≠ 0` changes
+  `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor.
+* `TauCeti.one_add_norm_add_smul_sq_rpow_le`: Peetre's inequality for the shift `ξ + c • θ`
+  with `c ≥ 1`, `⟨ξ + c • θ⟩ ^ s ≤ 2 ^ (|s| / 2) c ^ |s| ⟨ξ⟩ ^ s ⟨θ⟩ ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
+* `TauCeti.one_add_norm_sq_rpow_le_mul_one_add_norm_pow`: `⟨x⟩ ^ a ≤ ⟨x⟩ ^ b (1 + ‖x‖) ^ N` for
+  `a ≤ b + N`.
+* `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
+* `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
+* `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
+  `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|`; this separates frequencies outside a cone
+  from those inside it.
+* `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow_of_le`: `⟨x⟩ ^ s ≤ (1 + ‖x‖) ^ N` for real
+  `s ≤ N`.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
+* `TauCeti.one_add_norm_sq_rpow_le_max_mul_rpow`: where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` with
+  `a, R > 0`, every power `⟨ξ⟩ ^ u` is at most a constant times `R ^ u`.
+* `TauCeti.one_add_norm_smul_sq_rpow_le_max_mul_rpow`: on an annulus `0 < c ≤ ‖ζ‖ ≤ d`, the
+  bracket power `(1 + ‖t ζ‖ ^ 2) ^ (u / 2)` is `O(t ^ u)` for `t ≥ 1`.
 
 ## References
 
@@ -174,30 +193,42 @@ theorem one_add_norm_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] {x
         ring_nf
 
 omit [SeminormedAddGroup E] in
+/-- Comparable norms give comparable Japanese bracket weights: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖`
+with `c ≥ 1`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
+For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ c ‖x‖`. This applies to
+`y = A x` for a continuous linear equivalence `A` with `c ≥ max 1 (max ‖A‖ ‖A⁻¹‖)`. -/
+theorem one_add_norm_sq_rpow_le_of_norm_le_mul [SeminormedAddGroup E] {F : Type*}
+    [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) {x : E} {y : F} (hxy : ‖x‖ ≤ c * ‖y‖)
+    (hyx : ‖y‖ ≤ c * ‖x‖) :
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
+  -- In both cases one bracket is at most `c ^ 2` times the other.
+  have hc1 : 1 * 1 ≤ c * c := mul_self_le_mul_self zero_le_one hc
+  have hsq : ∀ {a b : ℝ}, 0 ≤ a → a ≤ c * b → 1 + a ^ 2 ≤ c ^ 2 * (1 + b ^ 2) :=
+    fun {a b} ha hab ↦ by nlinarith [sq_nonneg b, mul_self_le_mul_self ha hab]
+  have hpow : (c ^ 2) ^ (s / 2) = c ^ s := by
+    rw [← Real.rpow_natCast c 2, ← Real.rpow_mul (by linarith)]
+    congr 1
+    push_cast
+    ring
+  rcases le_or_gt 0 s with hs | hs
+  · rw [abs_of_nonneg hs, ← hpow, ← Real.mul_rpow (by positivity) (by positivity)]
+    exact Real.rpow_le_rpow (by positivity) (hsq (norm_nonneg x) hxy) (by positivity)
+  · rw [abs_of_neg hs, Real.rpow_neg (by linarith), ← hpow,
+      ← Real.inv_rpow (by positivity), ← Real.mul_rpow (by positivity) (by positivity)]
+    refine Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (by linarith)
+    rw [← div_eq_inv_mul, div_le_iff₀ (by positivity), mul_comm]
+    exact hsq (norm_nonneg y) hyx
+
+omit [SeminormedAddGroup E] in
 /-- Rescaling by a factor `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`: if
 `‖x‖ = c ‖y‖`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
-For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ ‖x‖`. -/
+-/
 theorem one_add_norm_sq_rpow_le_of_norm_eq_mul [SeminormedAddGroup E] {F : Type*}
     [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) {x : E} {y : F} (h : ‖x‖ = c * ‖y‖) :
-    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
-  rw [h]
-  rcases le_or_gt 0 s with hs | hs
-  · rw [abs_of_nonneg hs]
-    calc (1 + (c * ‖y‖) ^ 2) ^ (s / 2) ≤ (c ^ 2 * (1 + ‖y‖ ^ 2)) ^ (s / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith) (by positivity)
-      _ = c ^ s * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
-          rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast c 2,
-            ← Real.rpow_mul (by linarith)]
-          congr 2
-          push_cast
-          ring
-  · have hcy : ‖y‖ ^ 2 ≤ (c * ‖y‖) ^ 2 := by
-      rw [mul_pow]
-      exact le_mul_of_one_le_left (sq_nonneg _) (one_le_pow₀ hc)
-    calc (1 + (c * ‖y‖) ^ 2) ^ (s / 2) ≤ (1 + ‖y‖ ^ 2) ^ (s / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by linarith)
-      _ ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
-          le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hc (abs_nonneg s))
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
+  one_add_norm_sq_rpow_le_of_norm_le_mul hc s h.le <| by
+    rw [h]
+    nlinarith [norm_nonneg y, mul_self_le_mul_self zero_le_one hc]
 
 omit [SeminormedAddGroup E] in
 /-- Scaling by `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`:
@@ -207,6 +238,41 @@ theorem one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ
     (1 + ‖c • x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖x‖ ^ 2) ^ (s / 2) :=
   one_add_norm_sq_rpow_le_of_norm_eq_mul hc s
     (by rw [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hc)])
+
+omit [SeminormedAddGroup E] in
+/-- Rescaling the argument by `c ≠ 0` changes `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor. -/
+theorem exists_one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
+    (hc : c ≠ 0) (r : ℝ) :
+    ∃ C, ∀ x : E, (1 + ‖c • x‖ ^ 2) ^ r ≤ C * (1 + ‖x‖ ^ 2) ^ r := by
+  have hc0 : 0 < |c| := abs_pos.2 hc
+  refine ⟨max 1 (max |c| |c|⁻¹) ^ |2 * r|, fun x ↦ ?_⟩
+  have h := one_add_norm_sq_rpow_le_of_norm_le_mul (le_max_left 1 (max |c| |c|⁻¹)) (2 * r)
+    (x := c • x) (y := x) ?_ ?_
+  · rwa [mul_div_cancel_left₀ r two_ne_zero] at h
+  · rw [norm_smul, Real.norm_eq_abs]
+    gcongr
+    exact (le_max_left _ _).trans (le_max_right _ _)
+  · calc ‖x‖ = |c|⁻¹ * ‖c • x‖ := by
+          rw [norm_smul, Real.norm_eq_abs, inv_mul_cancel_left₀ hc0.ne']
+      _ ≤ max 1 (max |c| |c|⁻¹) * ‖c • x‖ := by
+          gcongr
+          exact (le_max_right _ _).trans (le_max_right _ _)
+
+omit [SeminormedAddGroup E] in
+/-- Peetre's inequality for the shift `ξ + c • θ` by a multiple of `θ` with `c ≥ 1`:
+`(1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤ 2 ^ (|m| / 2) c ^ |m| (1 + ‖ξ‖ ^ 2) ^ (m / 2)
+(1 + ‖θ‖ ^ 2) ^ (|m| / 2)` for every real `m`. -/
+theorem one_add_norm_add_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
+    (hc : 1 ≤ c) (m : ℝ) (ξ θ : E) :
+    (1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤
+      2 ^ (|m| / 2) * c ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
+  refine (one_add_norm_add_sq_rpow_le_mul m ξ (c • θ)).trans ?_
+  have := one_add_norm_smul_sq_rpow_le hc |m| θ
+  rw [abs_abs] at this
+  calc 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖c • θ‖ ^ 2) ^ (|m| / 2)
+      ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (c ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by
+        gcongr
+    _ = _ := by ring
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,
@@ -248,6 +314,26 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) (N : ℕ) :
           ← Real.rpow_natCast]
         ring_nf
 
+/-- A real power of the Japanese bracket is at most every larger natural power of `1 + ‖x‖`: if
+`s ≤ N`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ N`. -/
+theorem one_add_norm_sq_rpow_le_one_add_norm_pow_of_le (x : E) {s : ℝ} {N : ℕ} (hs : s ≤ N) :
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ N :=
+  (Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)).trans
+    (one_add_norm_sq_rpow_le_one_add_norm_pow x N)
+
+/-- Raising the order of the Japanese bracket by at most a natural number `N` costs at most the
+factor `(1 + ‖x‖) ^ N`: `(1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) (1 + ‖x‖) ^ N` for
+`a ≤ b + N`. -/
+theorem one_add_norm_sq_rpow_le_mul_one_add_norm_pow (x : E) {a b : ℝ} {N : ℕ}
+    (h : a ≤ b + N) : (1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖) ^ N :=
+  calc (1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ ((b + N) / 2) :=
+        Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)
+    _ = (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) := by
+        rw [add_div, Real.rpow_add (by positivity)]
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖) ^ N := by
+        gcongr
+        exact one_add_norm_sq_rpow_le_one_add_norm_pow x N
+
 /-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,
 `(1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ r`. -/
 theorem one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) {r : ℝ} (hr : 0 ≤ r) :
@@ -258,6 +344,38 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) {r : ℝ} (hr : 0 ≤ 
     _ = (1 + ‖x‖) ^ r := by
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
         ring_nf
+
+/-- The powers of the Japanese bracket multiply: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`. -/
+theorem one_add_norm_sq_rpow_add (x : E) (s t : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ ((s + t) / 2) = (1 + ‖x‖ ^ 2) ^ (s / 2) * (1 + ‖x‖ ^ 2) ^ (t / 2) := by
+  rw [← Real.rpow_add (by positivity)]
+  ring_nf
+
+/-- Opposite powers of the Japanese bracket cancel: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`. -/
+theorem one_add_norm_sq_rpow_neg_mul_rpow (x : E) (s : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ (-s / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) = 1 := by
+  rw [← one_add_norm_sq_rpow_add, neg_add_cancel, zero_div, Real.rpow_zero]
+
+/-- **The bracket away from a cone.** If `y` lies outside the open ball of radius `c ‖x‖` about
+`x`, `c > 0`, then `‖y‖` is controlled by `‖x - y‖`, and so is the bracket at `y`:
+`⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|` for every real `s`. -/
+theorem one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub {c : ℝ} (hc : 0 < c) {x y : E}
+    (h : c * ‖x‖ ≤ ‖x - y‖) (s : ℝ) :
+    (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (c⁻¹ + 1) ^ |s| * (1 + ‖x - y‖) ^ |s| := by
+  have hx : ‖x‖ ≤ c⁻¹ * ‖x - y‖ := by
+    rw [inv_mul_eq_div, le_div_iff₀ hc, mul_comm]
+    exact h
+  have hy : 1 + ‖y‖ ≤ (c⁻¹ + 1) * (1 + ‖x - y‖) := by
+    have := norm_le_norm_add_norm_sub' y x
+    rw [norm_sub_rev] at this
+    have hc1 : 0 ≤ c⁻¹ := inv_nonneg.2 hc.le
+    nlinarith [norm_nonneg (x - y)]
+  calc (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (1 + ‖y‖ ^ 2) ^ (|s| / 2) :=
+        Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖y‖])
+          (by linarith [le_abs_self s])
+    _ ≤ (1 + ‖y‖) ^ |s| := one_add_norm_sq_rpow_le_one_add_norm_rpow y (abs_nonneg s)
+    _ ≤ ((c⁻¹ + 1) * (1 + ‖x - y‖)) ^ |s| := by gcongr
+    _ = (c⁻¹ + 1) ^ |s| * (1 + ‖x - y‖) ^ |s| := Real.mul_rpow (by positivity) (by positivity)
 
 /-- A natural power of the Japanese bracket is comparable to the same power of the norm:
 `(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ 2 ^ N (1 + ‖x‖ ^ N)`. -/
@@ -270,5 +388,46 @@ theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
         rw [one_pow]
         gcongr
         exacts [one_le_two, N.sub_le 1]
+
+/-- For `a > 0` and `R > 0`, where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2`, every power
+`(1 + ‖ξ‖ ^ 2) ^ (u / 2)` of the Japanese bracket is at most
+`max (a ^ (u / 2)) (b ^ (u / 2)) R ^ u`. -/
+theorem one_add_norm_sq_rpow_le_max_mul_rpow {a b R : ℝ} (ha : 0 < a) (hR : 0 < R) {ξ : E}
+    (hξ : a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) (u : ℝ) :
+    (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ max (a ^ (u / 2)) (b ^ (u / 2)) * R ^ u := by
+  have hb : 0 < b := pos_of_mul_pos_left ((mul_pos ha (by positivity)).trans_le
+    (hξ.1.trans hξ.2)) (by positivity)
+  have hRu (c : ℝ) (hc : 0 < c) : (c * R ^ 2) ^ (u / 2) = c ^ (u / 2) * R ^ u := by
+    rw [Real.mul_rpow hc.le (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
+    congr 2
+    push_cast
+    ring
+  rcases le_total 0 u with hu | hu
+  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (b * R ^ 2) ^ (u / 2) :=
+          Real.rpow_le_rpow (by positivity) hξ.2 (by positivity)
+      _ ≤ _ := by
+          rw [hRu b hb]
+          gcongr
+          exact le_max_right _ _
+  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (a * R ^ 2) ^ (u / 2) :=
+          Real.rpow_le_rpow_of_nonpos (by positivity) hξ.1 (by linarith)
+      _ ≤ _ := by
+          rw [hRu a ha]
+          gcongr
+          exact le_max_left _ _
+
+omit [SeminormedAddGroup E] in
+/-- On the annulus `0 < c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
+at most a multiple of `t ^ u`: `(1 + ‖t ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2))
+((1 + d ^ 2) ^ (u / 2)) t ^ u`. -/
+theorem one_add_norm_smul_sq_rpow_le_max_mul_rpow [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    {c d t : ℝ} (hc : 0 < c) (ht : 1 ≤ t) {ζ : E} (hζ : c ≤ ‖ζ‖ ∧ ‖ζ‖ ≤ d) (u : ℝ) :
+    (1 + ‖t • ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2)) ((1 + d ^ 2) ^ (u / 2)) * t ^ u := by
+  have ht0 : 0 < t := one_pos.trans_le ht
+  have htζ : ‖t • ζ‖ = t * ‖ζ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
+  have hlo := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.1 ht0.le)
+  have hhi := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.2 ht0.le)
+  exact one_add_norm_sq_rpow_le_max_mul_rpow (by positivity) ht0
+    ⟨by rw [htζ]; nlinarith, by rw [htζ]; nlinarith [one_le_pow₀ (n := 2) ht]⟩ u
 
 end TauCeti

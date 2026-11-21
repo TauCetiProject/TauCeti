@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Network.Decomposition
 public import TauCeti.Combinatorics.Network.SetFlow
+import TauCeti.Combinatorics.Network.PathTrimming
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -21,47 +22,49 @@ of `F`.
 
 This file proves the local edge form of Menger's theorem for directed networks with finitely many
 vertices and arrows: the largest number of arrow-disjoint `s`–`t` paths equals the least number of
-arrows separating `t` from `s`. Weak duality, that every arrow-disjoint family of `s`–`t` walks has
-at most as many members as every separating set of arrows, needs no finiteness at all: each member
-traverses an arrow of the separating set, and different members traverse different arrows.
+arrows separating `t` from `s`. Weak duality, that every finite arrow-disjoint family of `s`–`t`
+walks has at most as many members as every finite separating set of arrows, needs no finiteness of
+the vertex or arrow types: each member traverses an arrow of the separating set, and different
+members traverse different arrows.
 
 It also proves the set-to-set form for disjoint vertex sets `A` and `B`. An *`A`–`B` path* runs from
 a vertex of `A` to a vertex of `B` and has no other vertex in `A` or `B`; arrow-disjoint `A`–`B`
 paths may share their endpoints. A set of arrows *separates* `B` from `A` when after deleting it no
 vertex of `B` is reachable from a vertex of `A`. The largest number of arrow-disjoint `A`–`B` paths
-equals the least number of arrows separating `B` from `A`; weak duality again needs neither
-finiteness nor disjointness.
+equals the least number of arrows separating `B` from `A`; weak duality for finite families and
+finite separating sets again needs no finiteness of the vertex or arrow types.
 
 Attainment is reduced to the max-flow/min-cut theorem over `ℤ` with capacity one on every arrow,
-between the terminals `s` and `t` or between the vertex sets `A` and `B`
-(`TauCeti.SetFlow.exists_val_eq_arrowSum`). A maximum flow has the value of a cut `S`, which is the
-number of arrows leaving `S`; those arrows separate the sink side from the source side. A
-path–cycle decomposition of the flow has paths from supply to demand vertices whose weights add
-up to the value. Every arrow carries at most one unit, so every path has weight one and no two
-paths share an arrow (`TauCeti.PathCycleDecomposition.pairwise_disjoint_arrows`). In the
-set-to-set case each path is finally trimmed to an `A`–`B` path, which traverses only arrows of
-the original path (`TauCeti.ArrowWalk.exists_isPath_interior_notMem`).
+between the vertex sets `A` and `B` (`TauCeti.SetFlow.exists_val_eq_arrowSum`). A maximum flow has
+the value of a cut `S`, which is the number of arrows leaving `S`; those arrows separate `B` from
+`A`. A path–cycle decomposition of the flow has paths from supply to demand vertices whose weights
+add up to the value. Every arrow carries at most one unit, so every path has weight one and no two
+paths share an arrow (`TauCeti.PathCycleDecomposition.pairwise_disjoint_arrows`). Each path is
+finally trimmed to an `A`–`B` path, which traverses only arrows of the original path
+(`TauCeti.ArrowWalk.trimToSets`). The `s`–`t` theorem is the case of the singleton terminal sets
+`A = {s}` and `B = {t}`.
 
 ## Main results
 
 * `TauCeti.natCard_sub_one_le_card_of_completeCut`: a finite set of arrows containing every
   arrow across a nontrivial complete directed cut has at least one fewer member than the number
   of vertices.
-* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, an arrow-disjoint family of
-  `s`–`t` walks has at most as many members as any set of arrows separating `t` from `s`.
+* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, a finite arrow-disjoint family
+  of `s`–`t` walks has at most as many members as any finite set of arrows separating `t` from
+  `s`.
+* `TauCeti.SetFlow.exists_paths_card_eq_val`: an integer `A`–`B` flow carrying at most one unit on
+  every arrow carries as many arrow-disjoint paths from `A` to `B` as its value.
+* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for finite arrow-disjoint
+  families of walks from `A` to `B` and finite sets of arrows separating `B` from `A`.
+* `TauCeti.exists_paths_setArrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint
+  directed paths between disjoint vertex sets, in witness form.
+* `TauCeti.forall_exists_reachableWithout_iff_exists_paths`: its predicate form.
 * `TauCeti.exists_paths_arrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint directed
   paths, in witness form: there are a family of arrow-disjoint `s`–`t` paths and a set of arrows
   separating `t` from `s` of the same size.
 * `TauCeti.forall_reachableWithout_iff_exists_paths`: the predicate form, `t` stays reachable from
   `s` after deleting any fewer than `k` arrows exactly when there are `k` arrow-disjoint `s`–`t`
   paths.
-* `TauCeti.SetFlow.exists_paths_card_eq_val`: an integer `A`–`B` flow carrying at most one unit on
-  every arrow carries as many arrow-disjoint paths from `A` to `B` as its value.
-* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for arrow-disjoint walks from
-  `A` to `B` and sets of arrows separating `B` from `A`.
-* `TauCeti.exists_paths_setArrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint
-  directed paths between disjoint vertex sets, in witness form.
-* `TauCeti.forall_exists_reachableWithout_iff_exists_paths`: its predicate form.
 
 ## References
 
@@ -145,48 +148,6 @@ theorem TerminalCut.IsAdmissible.not_reachableWithout_of_cut_subset {A B S : Fin
       by_contra hw
       exact he (hF e hv hw)) hb
 
-/-- **Menger's theorem for arrow-disjoint directed paths.** For distinct vertices `s` and `t` of a
-finite arrow family, some family of directed `s`–`t` paths, no two of which traverse a common
-arrow, has as many members as some set of arrows whose deletion leaves `t` unreachable from `s`.
-By `TauCeti.card_le_card_of_not_reachableWithout`, the family is then largest and the set of
-arrows smallest. -/
-theorem exists_paths_arrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x y)] (hst : s ≠ t) :
-    ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t) (F : Finset (Σ x y, Q x y)),
-      (∀ i, (P i).IsPath) ∧ (Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) ∧
-      ¬ReachableWithout (F : Set (Σ x y, Q x y)) s t ∧ #F = k := by
-  classical
-  have := Fintype.ofFinite V
-  have (x y : V) : Fintype (Q x y) := Fintype.ofFinite _
-  -- A maximum flow for unit capacities has the value of a cut `S`: the number of arrows leaving
-  -- `S`, which separate `t` from `s`.
-  obtain ⟨f, S, hs, ht, hval⟩ :=
-    Flow.exists_val_eq_arrowSum hst (cap := (1 : Assignment Q ℤ)) fun _ _ _ ↦ zero_le_one
-  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val fun _ _ e ↦ f.le_upper e
-  refine ⟨k, P, ({a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ Sᶜ} : Finset _), hP, hdisj,
-    fun h ↦ ht ?_, ?_⟩
-  · refine h.mem_of_mem (C := (S : Set V)) hs fun v w e hv he ↦ ?_
-    by_contra hw
-    exact he (by simpa using ⟨hv, hw⟩)
-  · rw [← Nat.cast_inj (R := ℤ), hk, hval, arrowSum_one]
-
-/-- **Menger's theorem for arrow-disjoint directed paths, predicate form.** For vertices `s` and
-`t` of a finite arrow family, `t` stays reachable from `s` after deleting any fewer than `k` arrows
-exactly when there are `k` directed `s`–`t` paths, no two of which traverse a common arrow. -/
-theorem forall_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] (k : ℕ) :
-    (∀ F : Finset (Σ x y, Q x y), #F < k → ReachableWithout (F : Set (Σ x y, Q x y)) s t) ↔
-      ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
-        Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows := by
-  refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ F hF ↦ ?_⟩
-  · -- At `s = t`, take `k` copies of the trivial path.
-    rcases eq_or_ne s t with rfl | hst
-    · exact ⟨fun _ ↦ .nil s, fun _ ↦ ArrowWalk.isPath_nil s, fun _ _ _ ↦ by simp⟩
-    obtain ⟨m, P, F, hP, hdisj, hF, hFm⟩ := exists_paths_arrowSeparator_card_eq (Q := Q) hst
-    have hkm : k ≤ m := hFm ▸ not_lt.1 fun hlt ↦ hF (h F hlt)
-    exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,
-      hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
-  · by_contra h
-    exact hF.not_ge (by simpa using card_le_card_of_not_reachableWithout hP h)
-
 /-! ### Arrow-disjoint paths between vertex sets -/
 
 /-- An integer `A`–`B` flow carrying at most one unit on every arrow carries as many directed paths
@@ -218,17 +179,19 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     · exact f.excessAt_nonpos _ hA
     · exact (f.conserve _ hA hB).le
   let P (i : Fin D.paths.length) := D.paths[(i : ℕ)].walk
-  have htrim (i : Fin D.paths.length) :
-      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.arrows ⊆ (P i).arrows ∧
-        ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a, ha, b, hb, q, hq, -, hsub, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) (P i)
-        (hsource _ (List.getElem_mem _)).1 (htarget _ (List.getElem_mem _))
-    exact ⟨a, ha, b, hb, q, hq, hsub, by simpa using hint⟩
-  choose a ha b hb P' hP' hsub hint using htrim
-  refine ⟨D.paths.length, a, b, P', ?_, ha, hb, hP', hint,
-    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _) (hsub i he),
-    fun i j hij e hei hej ↦ D.pairwise_disjoint_arrows hf hij (hsub i hei) (hsub j hej)⟩
+  have hA (i : Fin D.paths.length) : D.paths[(i : ℕ)].source ∈ (A : Set V) :=
+    (hsource _ (List.getElem_mem i.isLt)).1
+  have hB (i : Fin D.paths.length) : D.paths[(i : ℕ)].target ∈ (B : Set V) :=
+    htarget _ (List.getElem_mem i.isLt)
+  refine ⟨D.paths.length, fun i ↦ (P i).trimToSetsSource (hA i) (hB i),
+    fun i ↦ (P i).trimToSetsTarget (hA i) (hB i), fun i ↦ (P i).trimToSets (hA i) (hB i), ?_,
+    fun i ↦ (P i).trimToSetsSource_mem (hA i) (hB i),
+    fun i ↦ (P i).trimToSetsTarget_mem (hA i) (hB i),
+    fun i ↦ (D.isPath_walk _ (List.getElem_mem i.isLt)).trimToSets _ _,
+    fun i _ hv ↦ (P i).notMem_and_notMem_of_mem_vertices_trimToSets (hA i) (hB i) hv,
+    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _)
+      ((P i).arrows_trimToSets_subset (hA i) (hB i) he),
+    ArrowWalk.pairwise_disjoint_arrows_trimToSets (D.pairwise_disjoint_arrows hf) hA hB⟩
   -- The value is the total weight of the paths ending in `B`, each of weight one.
   have hval := WeightedWalk.sum_excessAt_sum_map_assignment D.paths B
   rw [← D.pathAssignment_def, List.filter_eq_self.2 fun p hp ↦ decide_eq_true (htarget p hp),
@@ -295,5 +258,39 @@ theorem forall_exists_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Fin
   · by_contra h
     push Not at h
     exact hF.not_ge (by simpa using card_le_card_of_forall_not_reachableWithout ha hb hP h)
+
+/-! ### Arrow-disjoint paths between two vertices -/
+
+/-- **Menger's theorem for arrow-disjoint directed paths.** For distinct vertices `s` and `t` of a
+finite arrow family, some family of directed `s`–`t` paths, no two of which traverse a common
+arrow, has as many members as some set of arrows whose deletion leaves `t` unreachable from `s`.
+By `TauCeti.card_le_card_of_not_reachableWithout`, the family is then largest and the set of
+arrows smallest. This is the case of one source and one sink terminal of
+`TauCeti.exists_paths_setArrowSeparator_card_eq`. -/
+theorem exists_paths_arrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x y)] (hst : s ≠ t) :
+    ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t) (F : Finset (Σ x y, Q x y)),
+      (∀ i, (P i).IsPath) ∧ (Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) ∧
+      ¬ReachableWithout (F : Set (Σ x y, Q x y)) s t ∧ #F = k := by
+  obtain ⟨k, a, b, P, F, ha, hb, hP, -, hdisj, hF, hk⟩ :=
+    exists_paths_setArrowSeparator_card_eq (Q := Q) (disjoint_singleton.2 hst)
+  obtain rfl : a = fun _ ↦ s := funext fun i ↦ mem_singleton.1 (ha i)
+  obtain rfl : b = fun _ ↦ t := funext fun i ↦ mem_singleton.1 (hb i)
+  exact ⟨k, P, F, hP, hdisj, hF s (mem_singleton_self s) t (mem_singleton_self t), hk⟩
+
+/-- **Menger's theorem for arrow-disjoint directed paths, predicate form.** For vertices `s` and
+`t` of a finite arrow family, `t` stays reachable from `s` after deleting any fewer than `k` arrows
+exactly when there are `k` directed `s`–`t` paths, no two of which traverse a common arrow. -/
+theorem forall_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] (k : ℕ) :
+    (∀ F : Finset (Σ x y, Q x y), #F < k → ReachableWithout (F : Set (Σ x y, Q x y)) s t) ↔
+      ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
+        Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows := by
+  have h := forall_exists_reachableWithout_iff_exists_paths (Q := Q) (A := {s}) (B := {t}) k
+  simp only [mem_singleton, exists_eq_left] at h
+  refine h.trans ⟨fun ⟨a, b, P, ha, hb, hP, _, hdisj⟩ ↦ ?_, fun ⟨P, hP, hdisj⟩ ↦ ?_⟩
+  · obtain rfl : a = fun _ ↦ s := funext ha
+    obtain rfl : b = fun _ ↦ t := funext hb
+    exact ⟨P, hP, hdisj⟩
+  · exact ⟨fun _ ↦ s, fun _ ↦ t, P, fun _ ↦ rfl, fun _ ↦ rfl, hP,
+      fun _ _ _ hs ht ↦ ⟨hs, ht⟩, hdisj⟩
 
 end TauCeti

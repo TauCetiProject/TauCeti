@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Topology.Instances.NNReal.Lemmas
-public import TauCeti.Analysis.BoundedVariation.QuadraticSums
+public import TauCeti.Analysis.QuadraticSums.BoundedVariation
 
 /-!
 # Quadratic sums and continuous finite-variation perturbations

@@ -117,7 +117,7 @@ theorem isProP_congruenceSubgroup [TopologicalSpace R]
   rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
   refine hVU (hn ?_)
   exact congruenceSubgroup_mono k H R (Ideal.pow_le_pow_right n.le_succ)
-    (pow_pow_mem_congruenceSubgroup_pow_succ hp x.2 n)
+    (pow_pow_mem_congruenceSubgroup_pow_succ hp x.property n)
 
 variable (k H R) in
 /-- Over a compact Hausdorff noetherian local ring `R` whose residue field has characteristic `p`,

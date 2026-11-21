@@ -180,10 +180,9 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
     (lt_min one_pos hlam) (Lam := max 1 Lam) (1 + K) T₀
   refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck s hs u ↦ ?_⟩
   have ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
-      (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 := fun p ξ ↦
-    (Matrix.toQuadraticForm'_le_sum_abs_mul_sq _ ξ).trans (mul_le_mul_of_nonneg_right
-      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦
-        (HolderSpace.norm_apply_le (a i j) p).trans (hak i j)) (sq_nonneg _))
+      (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 := fun p ↦
+    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
+      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
   -- The closed ball of radius `1 + K` is convex, so it contains the segments of coefficients.
   have hball {x y : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
       (hx : ‖x‖ ≤ 1 + K) (hy : ‖y‖ ≤ 1 + K) : ‖AffineMap.lineMap x y s‖ ≤ 1 + K :=
@@ -196,13 +195,13 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
     (fun i j ↦ by
       push_cast
       exact hball ((HolderSpace.norm_const_le _).trans (by
-        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.2])) ((hak i j).trans hK))
+        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.property])) ((hak i j).trans hK))
     (fun i ↦ by
       push_cast
-      exact hball (by simpa using K.2.trans hK) ((hbk i).trans hK))
+      exact hball (by simpa using K.property.trans hK) ((hbk i).trans hK))
     (by
       push_cast
-      exact hball (by simpa using K.2.trans hK) (hck.trans hK)) u
+      exact hball (by simpa using K.property.trans hK) (hck.trans hK)) u
   rw [lineMap_prod_spatialTraceL, ContinuousLinearMap.prod_apply, Prod.norm_mk,
     spatialTraceL_apply]
   set P := ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)
@@ -353,9 +352,9 @@ theorem isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα
       (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) := by
     rw [euclideanBackwardParabolicOperatorL_def,
       bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := T) (ha := h₀) (hb := h₁),
-      parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
+      initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
     exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
-      fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
+      (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
   -- A bijective bounded operator between Banach spaces is an isomorphism (open mapping).
   exact ⟨ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot_of_injective h.1)
     (LinearMap.range_eq_top_of_surjective _ h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩

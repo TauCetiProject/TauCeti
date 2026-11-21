@@ -40,21 +40,30 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
 /-- Finite products of affine linear observables of a Gaussian measure are integrable,
-including the empty product. -/
-theorem integrable_prod_dual (μ : Measure E) [IsGaussian μ]
-    {ι : Type*} (s : Finset ι) (L : ι → StrongDual ℝ E) (c : ι → ℝ) :
+including real or complex observables and the empty product. -/
+theorem integrable_prod_clm (μ : Measure E) [IsGaussian μ]
+    {ι 𝕜 : Type*} [RCLike 𝕜] (s : Finset ι) (L : ι → E →L[ℝ] 𝕜) (c : ι → 𝕜) :
     Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ := by
   classical
   by_cases hs : s = ∅
   · simp [hs]
   have hcard : (s.card : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast Finset.card_ne_zero.mpr (Finset.nonempty_iff_ne_empty.mpr hs)
+    exact_mod_cast Finset.card_ne_zero.mpr (Finset.ne_empty_iff_nonempty.mp hs)
   have hLp := MemLp.fun_prod (s := s) (p := fun _ ↦ (s.card : ℝ≥0∞))
-    (fun i _ ↦ (IsGaussian.memLp_dual μ (L i) _ (by simp)).add (memLp_const (c i)))
+    (fun i _ ↦ ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
+      (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i)))
   have hexp : (∑ _i ∈ s, (s.card : ℝ≥0∞)⁻¹)⁻¹ = 1 := by
     simp [nsmul_eq_mul, hcard, ENNReal.mul_inv_cancel]
   rw [hexp] at hLp
   exact memLp_one_iff_integrable.mp hLp
+
+/-- An affine linear observable times a finite product of affine linear observables is
+integrable under a Gaussian measure, for real or complex observables. -/
+theorem integrable_clm_add_mul_prod (μ : Measure E) [IsGaussian μ] {ι 𝕜 : Type*} [RCLike 𝕜]
+    (s : Finset ι) (L₀ : E →L[ℝ] 𝕜) (c₀ : 𝕜) (L : ι → E →L[ℝ] 𝕜) (c : ι → 𝕜) :
+    Integrable (fun x ↦ (L₀ x + c₀) * ∏ i ∈ s, (L i x + c i)) μ := by
+  simpa [Finset.prod_insertNone] using
+    integrable_prod_clm μ s.insertNone (fun i ↦ i.elim L₀ L) (fun i ↦ i.elim c₀ c)
 
 variable [CompleteSpace E] [SecondCountableTopology E]
 
@@ -92,7 +101,7 @@ theorem integral_mul_mul_mul_sub_dual (μ : Measure E) [IsGaussian μ]
       L₁ - L₂ - L₃ + L₄, L₁ - L₂ - L₃ - L₄]
   let w : Fin 8 → ℝ := ![1, -1, -1, 1, -1, 1, 1, -1]
   have hint (i : Fin 8) : Integrable (fun x ↦ L i (x - μ[id]) ^ 4) μ := by
-    simpa [map_sub, sub_eq_add_neg] using integrable_prod_dual μ
+    simpa [map_sub, sub_eq_add_neg] using integrable_prod_clm μ
       (Finset.univ : Finset (Fin 4)) (fun _ ↦ L i) (fun _ ↦ -L i μ[id])
   have hpolar :
       192 * (∫ x, L₁ (x - μ[id]) * L₂ (x - μ[id]) *
@@ -136,7 +145,7 @@ theorem integrable_prod_pow_sub_multivariateGaussian (m c : EuclideanSpace ℝ �
     (S : Matrix ι ι ℝ) (n : ι → ℕ) :
     Integrable (fun x ↦ ∏ i, (x i - c i) ^ n i) (multivariateGaussian m S) := by
   simpa [Fintype.prod_sigma, sub_eq_add_neg] using
-    IsGaussian.integrable_prod_dual (multivariateGaussian m S)
+    IsGaussian.integrable_prod_clm (multivariateGaussian m S)
       (Finset.univ : Finset (Σ i, Fin (n i)))
       (fun p ↦ EuclideanSpace.proj p.1) (fun p ↦ -c p.1)
 
