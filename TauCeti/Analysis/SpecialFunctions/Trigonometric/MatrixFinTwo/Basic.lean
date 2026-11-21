@@ -151,6 +151,7 @@ end ProjectiveSpecialLinearGroup
 
 namespace SpecialLinearGroup
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- The rotation `!![cos θ, sin θ; -sin θ, cos θ]`, an element of `SL(2, ℝ)`. -/
 def rotation (θ : ℝ) : SL(2, ℝ) :=
   .mk !![cos θ, sin θ; -sin θ, cos θ] (by

@@ -137,6 +137,7 @@ theorem interiorAngle_triangle_two : triangle.interiorAngle 2 = 0 :=
 
 /-! ### The vertex transformations -/
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- The element `z ↦ (z - 1/2) / (z + 1/2)` of `SL(2, ℝ)`, whose geodesic line is the unit
 semicircle. -/
 private def unitCircleMatrix : SL(2, ℝ) :=

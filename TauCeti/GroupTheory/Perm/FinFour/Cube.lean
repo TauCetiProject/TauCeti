@@ -457,6 +457,7 @@ theorem cubeEdgeOrientation_neg (e : cubeEdgeSet) (j : Fin 4) :
 
 /-! ### Four rotations -/
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- **The half-turn about the axis through the midpoints of two opposite edges**, the edges with
 midpoints `±(0, 1, 1)`: `(x, y, z) ↦ (-x, z, y)`. -/
 def cubeEdgeHalfTurn : cubeRotationGroup :=
