@@ -46,9 +46,9 @@ The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`
 The same arguments bound every field of a single map of order `k` by its norm: for `α ≤ 1`, each
 field `D_t^r D_x^m u` is `α`-Hölder in space with constant `3 ‖u‖`
 (`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_space`) and `α / 2`-Hölder in time with
-constant `5 ‖u‖` (`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_time_half`), and below
+constant `5 ‖u‖` (`TauCeti.ParabolicCkHolderSpace.holderWith_div_two_mixedDerivL_slabMk`), and below
 the top order its time slices are `(1 + α) / 2`-Hölder with constant `3 ‖u‖`
-(`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_time`).
+(`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk_of_add_one_le`).
 
 ## Main declarations
 
@@ -133,8 +133,8 @@ theorem holderWith_mixedDerivL_space (f : ParabolicCkHolderSpace k α E F hab) {
 
 /-- For `α ≤ 1`, every field `D_t^r D_x^m u` below the top order has `(1 + α) / 2`-Hölder time
 slices with constant `3 ‖u‖`. -/
-theorem holderWith_mixedDerivL_time (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m + 1 ≤ k) (hα : α ≤ 1) (x : E) :
+theorem holderWith_mixedDerivL_slabMk_of_add_one_le (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (hα : α ≤ 1) (x : E) :
     HolderWith (3 * ‖f‖₊) ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
   rcases h.lt_or_eq with h | h
   · refine (holderWith_mixedDerivL_slabMk_of_add_two_le f (by omega) hα x).mono ?_
@@ -153,14 +153,14 @@ theorem holderWith_mixedDerivL_time (f : ParabolicCkHolderSpace k α E F hab) {r
 /-- For `α ≤ 1`, every field `D_t^r D_x^m u` is `α / 2`-Hölder in time with constant `5 ‖u‖`: at
 the top order by the parabolic Hölder condition, below it from the `(1 + α) / 2`-Hölder bound at
 time differences below one and the bound `2 ‖u‖` on the oscillation above. -/
-theorem holderWith_mixedDerivL_time_half (f : ParabolicCkHolderSpace k α E F hab)
+theorem holderWith_div_two_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) (hα : α ≤ 1) (x : E) :
     HolderWith (5 * ‖f‖₊) (α / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
   rcases h.lt_or_eq with h | h
   · have hγ : α / 2 ≤ (1 + α) / 2 := by gcongr; exact le_add_self
     have hH := holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (D := 2 * ‖f‖₊)
-      (fun t _ s _ _ ↦
-        (holderWith_mixedDerivL_time f (r := r) (m := m) (by omega) hα x).dist_le t s)
+      (fun t _ s _ _ ↦ (holderWith_mixedDerivL_slabMk_of_add_one_le f (r := r) (m := m)
+        (by omega) hα x).dist_le t s)
       (fun t _ s _ ↦ by
         push_cast
         linarith [dist_le_norm_add_norm (mixedDerivL r m f (slabMk x t))

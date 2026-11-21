@@ -399,8 +399,8 @@ private theorem holderWith_leibnizField_slice (hα : α ≤ 1) {r m : ℕ} (h : 
     HolderWith (2 ^ r * (2 * 3 * 2 ^ m * ‖B‖₊ * ‖u‖₊ * ‖v‖₊)) ((1 + α) / 2)
       fun t : Icc a b ↦ leibnizField B u v r m (slabMk x t) :=
   holderWith_leibnizField_time B (by omega) x
-    (fun i l hil ↦ holderWith_mixedDerivL_time u (r := i) (m := l) (by omega) hα x)
-    (fun j l hjl ↦ holderWith_mixedDerivL_time v (r := j) (m := l) (by omega) hα x)
+    (fun i l hil ↦ holderWith_mixedDerivL_slabMk_of_add_one_le u (r := i) (m := l) (by omega) hα x)
+    (fun j l hjl ↦ holderWith_mixedDerivL_slabMk_of_add_one_le v (r := j) (m := l) (by omega) hα x)
 
 /-- A Leibniz field of the top order is parabolically `α`-Hölder. -/
 private theorem holderWith_leibnizField (hα : α ≤ 1) {r m : ℕ} (h : 2 * r + m = k) :
@@ -408,8 +408,8 @@ private theorem holderWith_leibnizField (hα : α ≤ 1) {r m : ℕ} (h : 2 * r 
       2 ^ r * (2 * 5 * 2 ^ m * ‖B‖₊ * ‖u‖₊ * ‖v‖₊)) α (leibnizField B u v r m) :=
   holderWith_of_holderWith_slices (holderWith_leibnizField_space B hα h.le) fun x ↦
     holderWith_leibnizField_time B h.le x
-      (fun i l hil ↦ holderWith_mixedDerivL_time_half u (r := i) (m := l) (by omega) hα x)
-      (fun j l hjl ↦ holderWith_mixedDerivL_time_half v (r := j) (m := l) (by omega) hα x)
+      (fun i l hil ↦ holderWith_div_two_mixedDerivL_slabMk u (r := i) (m := l) (by omega) hα x)
+      (fun j l hjl ↦ holderWith_div_two_mixedDerivL_slabMk v (r := j) (m := l) (by omega) hα x)
 
 variable (u v) in
 /-- The fields of the product as bounded continuous fields: the Leibniz fields up to the order `k`,
