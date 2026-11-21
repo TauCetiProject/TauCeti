@@ -86,6 +86,12 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFlasque_of_injective
   have : @Injective (_root_.SheafOfModules.{u} X.ringCatSheaf) _ M := hM
   exact _root_.SheafOfModules.isFlasque_of_injective M
 
+/-- Direct image of a flasque scheme module is flasque. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFlasque_pushforward
+    {Y : Scheme.{u}} (f : X ⟶ Y) (M : X.Modules) [M.presheaf.IsFlasque] :
+    ((_root_.AlgebraicGeometry.Scheme.Modules.pushforward f).obj M).presheaf.IsFlasque :=
+  TopCat.Presheaf.IsFlasque.pushforward_isFlasque M.presheaf f.base
+
 /-- A flasque sheaf of modules has vanishing cohomology over every open subset in every positive
 degree. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque

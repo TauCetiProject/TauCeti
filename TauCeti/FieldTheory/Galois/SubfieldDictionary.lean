@@ -93,7 +93,7 @@ noncomputable def intermediateFieldEquivSubgroup :
 -/
 @[simp]
 theorem coe_intermediateFieldEquivSubgroup_apply (E' : IntermediateField F K) :
-    (OrderDual.ofDual (K.intermediateFieldEquivSubgroup E')).1 = (lift E').fixingSubgroup := by
+    (OrderDual.ofDual (K.intermediateFieldEquivSubgroup E')).val = (lift E').fixingSubgroup := by
   erw [OrderIso.trans_apply, OrderIso.Iic_apply_coe]
   simp [liftOrderIso_apply]
   rfl
@@ -101,7 +101,7 @@ theorem coe_intermediateFieldEquivSubgroup_apply (E' : IntermediateField F K) :
 /-- **The inverse sends a subgroup to its fixed field**, read inside `L` through `lift`. -/
 @[simp]
 theorem lift_intermediateFieldEquivSubgroup_symm_apply (H : (Set.Ici K.fixingSubgroup)ᵒᵈ) :
-    lift (K.intermediateFieldEquivSubgroup.symm H) = fixedField (OrderDual.ofDual H).1 := by
+    lift (K.intermediateFieldEquivSubgroup.symm H) = fixedField (OrderDual.ofDual H).val := by
   erw [OrderIso.symm_trans_apply, liftOrderIso_symm_apply, lift_restrict,
     OrderIso.Iic_symm_apply_coe]
   simp [IsGalois.intermediateFieldEquivSubgroup_symm_apply]
@@ -126,7 +126,7 @@ noncomputable def intermediateFieldEquivSubgroup (φ : K →ₐ[F] L) :
 /-- **The dictionary sends an intermediate field of `K / F` to the subgroup fixing its image.** -/
 @[simp]
 theorem coe_intermediateFieldEquivSubgroup_apply (φ : K →ₐ[F] L) (E : IntermediateField F K) :
-    (OrderDual.ofDual (φ.intermediateFieldEquivSubgroup E)).1 = (E.map φ).fixingSubgroup := by
+    (OrderDual.ofDual (φ.intermediateFieldEquivSubgroup E)).val = (E.map φ).fixingSubgroup := by
   -- the image of `E` in `φ(K)`, lifted back to `L`, is the image of `E` under `φ` itself
   have hφ : (IntermediateField.val φ.fieldRange).comp φ.equivFieldRange.toAlgHom = φ :=
     AlgHom.ext (equivFieldRange_apply_coe φ)
@@ -140,7 +140,7 @@ theorem coe_intermediateFieldEquivSubgroup_apply (φ : K →ₐ[F] L) (E : Inter
 theorem intermediateFieldEquivSubgroup_symm_apply (φ : K →ₐ[F] L)
     (H : (Set.Ici φ.fieldRange.fixingSubgroup)ᵒᵈ) :
     φ.intermediateFieldEquivSubgroup.symm H =
-      (IntermediateField.fixedField (OrderDual.ofDual H).1).comap φ := by
+      (IntermediateField.fixedField (OrderDual.ofDual H).val).comap φ := by
   rw [← IntermediateField.lift_intermediateFieldEquivSubgroup_symm_apply,
     intermediateFieldEquivSubgroup, OrderIso.symm_trans_apply,
     IntermediateField.orderIsoMapComap_symm_apply]
@@ -151,7 +151,7 @@ theorem intermediateFieldEquivSubgroup_symm_apply (φ : K →ₐ[F] L)
 /-- **Degree is index.** The subgroup attached to an intermediate field `E` of `K / F` has index
 `[E : F]` in `Gal(L/F)`. -/
 theorem index_intermediateFieldEquivSubgroup_apply (φ : K →ₐ[F] L) (E : IntermediateField F K) :
-    (OrderDual.ofDual (φ.intermediateFieldEquivSubgroup E)).1.index = Module.finrank F E := by
+    (OrderDual.ofDual (φ.intermediateFieldEquivSubgroup E)).val.index = Module.finrank F E := by
   rw [coe_intermediateFieldEquivSubgroup_apply,
     ← IntermediateField.finrank_eq_fixingSubgroup_index, (E.equivMap φ).toLinearEquiv.finrank_eq]
 

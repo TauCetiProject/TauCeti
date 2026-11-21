@@ -271,7 +271,7 @@ theorem disjoint_rootsOfUnity_unitFiltration_of_prime {p : ℕ} (hp : p.Prime) (
   rw [hrem, Valuation.map_neg] at hr
   have h0 : valuation K (p * ((u : K) - 1)) = 0 := by
     by_contra h
-    exact (mul_lt_of_lt_one_right (zero_lt_iff.mpr h) hγ1).not_ge hr
+    exact (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr h) hγ1).not_ge hr
   rw [Valuation.zero_iff, mul_eq_zero, sub_eq_zero] at h0
   exact Units.ext (h0.resolve_left hpK)
 
@@ -414,7 +414,8 @@ theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsU
   refine ⟨(MonoidHom.ker_eq_bot_iff _).mp <| eq_bot_iff.mpr fun x hx ↦ Subtype.ext ?_,
     MonoidHom.range_eq_top.mp ?_⟩
   · refine Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
-      ((mem_rootsOfUnity n (x : Kˣ)).mpr ?_) (unitFiltration_antitone (Nat.le_add_left 1 i) x.2)
+      ((mem_rootsOfUnity n (x : Kˣ)).mpr ?_) (unitFiltration_antitone
+          (Nat.le_add_left 1 i) x.property)
     simpa using congrArg Subtype.val (MonoidHom.mem_ker.mp hx)
   · rw [← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
       map_powMonoidHom_unitFiltration_succ_of_isUnit hn i, Subgroup.subgroupOf_self]

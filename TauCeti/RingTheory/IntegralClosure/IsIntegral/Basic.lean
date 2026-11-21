@@ -18,10 +18,13 @@ import Mathlib.Tactic.ComputeDegree
 /-!
 # Integrality and clearing denominators
 
-Mathlib's `isIntegral_trans` transfers integrality down a scalar tower `R → A → B`. The variant
-here drops the tower: the two candidate base rings are only required to map compatibly into the
-ring where the element lives, which is what happens when both of them sit inside that ring
-without either being an algebra over the other.
+Integrality lemmas complementing Mathlib's `IsIntegral` API: clearing denominators of integral
+elements by powers of a fixed element, module-finiteness from finitely many integral generators,
+and a variant of Mathlib's `isIntegral_trans` without a scalar tower. Mathlib's lemma transfers
+integrality down a tower `R → A → B`; the variant here only requires every element of the middle
+ring `P` to become integral over `R` once mapped into the ring `L` where the element lives, which
+is what happens when `R` and `P` both sit inside `L` without either being an algebra over the
+other.
 
 ## Main results
 
@@ -30,19 +33,21 @@ without either being an algebra over the other.
   `P` after multiplication by a power of `r`.
 * `AlgHom.finite_of_adjoin_eq_top`: an `R`-algebra morphism `f : B →ₐ[R] A` is module-finite when
   `A` is generated as an `R`-algebra by a finite set of elements integral over `B` via `f`.
+* `IsIntegral.natCast_pow_mul_pow`: if `b x` is integral over `R` for a natural number
+  `b`, then so is `b ^ n x ^ j` for `j ≤ n`.
 * `TauCeti.isIntegral_trans_common`: if every element of `P` becomes integral over `R` once
   mapped into `L`, then an element of `L` integral over `P` is integral over `R`.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
   elements of `A` and is integral over `A` has its numerator divisible by its denominator, when
   `A` is integrally closed.
-* `TauCeti.isIntegral_natCast_pow_mul_pow`: if `b x` is integral over `ℤ`, then so is
-  `b ^ n x ^ j` for `j ≤ n`.
 * `TauCeti.isIntegral_pow_card_mul_prod_sub`: an integral common denominator for a finite set
   clears the denominators of the product of differences from any one of its elements.
 * `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
   `b ≠ 0`, then `x` is integral over `ℚ`.
 * `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
   with integral coefficients.
+* `Algebra.IsIntegral.of_finrank_pos`: a free algebra of positive finite rank over a commutative
+  ring with the strong rank condition is integral.
 -/
 
 public section
@@ -51,7 +56,7 @@ section
 
 open Polynomial
 
-variable {P A B : Type*} [CommRing P] [CommRing A] [CommRing B] [Algebra P A] [Algebra A B]
+variable {P A B : Type*} [CommRing P] [CommRing A] [Ring B] [Algebra P A] [Algebra A B]
   [Algebra P B] [IsScalarTower P A B]
 
 /-- Let `r ∈ A` be such that every element of `A` times a power of `r` is integral over `P`. Then
@@ -110,33 +115,37 @@ theorem AlgHom.finite_of_adjoin_eq_top {R B A : Type*} [CommRing R] [CommRing B]
   have := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
   have htop : Algebra.adjoin B s = ⊤ :=
     Subalgebra.restrictScalars_injective R (by simp [Algebra.Subalgebra.restrictScalars_adjoin, hx])
-  have hfg : (⊤ : Subalgebra B A).toSubmodule.FG := by
-    rw [← htop]
-    exact fg_adjoin_of_finite hs hint
-  rw [Algebra.top_toSubmodule] at hfg
-  exact Module.finite_def.mpr hfg
+  refine Module.finite_def.mpr ?_
+  rw [← Algebra.top_toSubmodule, ← htop]
+  exact fg_adjoin_of_finite hs hint
+
+/-- If `b x` is integral over `R` for a natural number `b`, then so is `b ^ n x ^ j` for
+`j ≤ n`. -/
+theorem IsIntegral.natCast_pow_mul_pow {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    {x : A} {b : ℕ} (hbx : IsIntegral R ((b : A) * x)) {j n : ℕ} (hj : j ≤ n) :
+    IsIntegral R ((b : A) ^ n * x ^ j) := by
+  -- Write `b ^ n x ^ j` as the natural-number multiple `b ^ l • (b x) ^ j`, using that the cast
+  -- of `b` commutes with `x`.
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le' hj
+  rw [pow_add, mul_assoc, ← (Nat.cast_commute b x).mul_pow, ← Nat.cast_pow, ← nsmul_eq_mul]
+  exact (hbx.pow j).smul _
 
 namespace TauCeti
 
-/-- Integrality transfers through compatible maps from two rings into a common ring. -/
+/-- If every element of `P` maps to an element of `L` integral over `R`, then every element of `L`
+integral over `P` is integral over `R`. No algebra structure between `R` and `P` is needed. -/
 theorem isIntegral_trans_common {R P L : Type*} [CommRing R] [CommRing P]
     [CommRing L] [Algebra R L] [Algebra P L]
     (hP : ∀ x : P, IsIntegral R (algebraMap P L x)) {x : L}
     (hx : IsIntegral P x) : IsIntegral R x := by
-  let S := Algebra.adjoin R (Set.range (algebraMap P L))
-  let integral : Algebra.IsIntegral R S := Algebra.IsIntegral.adjoin fun y hy ↦ by
-    obtain ⟨z, rfl⟩ := hy
-    exact hP z
-  let pToS : P →+* S := RingHom.codRestrict (algebraMap P L) S fun z ↦
-    Algebra.subset_adjoin ⟨z, rfl⟩
-  let pAlgebra : Algebra P S := pToS.toAlgebra
-  -- the tower equality holds pointwise: `pToS` restricts `algebraMap P L` to `S`, so composing
-  -- with the inclusion `S.val` returns the original map. Stated by extensionality rather than by
-  -- `rfl`, so it does not depend on how `codRestrict` and `toAlgebra` unfold.
-  let scalarTower : IsScalarTower P S L := IsScalarTower.of_algebraMap_eq' <| by
-    ext z
-    simp [pAlgebra, RingHom.algebraMap_toAlgebra, pToS]
-  exact isIntegral_trans (R := R) (A := S) x (hx.tower_top (A := S))
+  -- Lift the monic equation of `x` over `P` to the integral closure of `R` in `L`, following the
+  -- proof of Mathlib's `IsIntegral.of_aeval_monic_of_isIntegral_coeff`.
+  obtain ⟨p, hpm, hpx⟩ := hx
+  obtain ⟨q, hqp, -, hqm⟩ := Polynomial.lifts_and_natDegree_eq_and_monic
+    (f := algebraMap (integralClosure R L) L) (p := p.map (algebraMap P L))
+    ((Polynomial.lifts_iff_coeff_lifts _).mpr fun i ↦
+      ⟨⟨_, hP (p.coeff i)⟩, (Polynomial.coeff_map _ i).symm⟩) (hpm.map _)
+  exact isIntegral_trans x ⟨q, hqm, by rw [← Polynomial.eval_map, hqp, Polynomial.eval_map, hpx]⟩
 
 /-- An element of a field extension of `A` that is a quotient of elements of `A` and is integral
 over `A` has its numerator divisible by its denominator, when `A` is integrally closed. -/
@@ -157,14 +166,6 @@ theorem dvd_of_isIntegral_div
   refine ⟨e, IsFractionRing.injective A (FractionRing A) ?_⟩
   rw [map_mul, he, mul_div_cancel₀ _ hdF]
 
-/-- If `b x` is integral over `ℤ`, then so is `b ^ n x ^ j` for `j ≤ n`. -/
-theorem isIntegral_natCast_pow_mul_pow {A : Type*} [CommRing A] {x : A} {b : ℕ}
-    (hbx : IsIntegral ℤ ((b : A) * x)) {j n : ℕ} (hj : j ≤ n) :
-    IsIntegral ℤ ((b : A) ^ n * x ^ j) := by
-  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hj
-  rw [pow_add, mul_right_comm, ← mul_pow, mul_comm]
-  exact ((isIntegral_natCast b).pow l).mul (hbx.pow j)
-
 /-- If `l` and every `l x` for `x ∈ S` are integral over `R`, then
 `l ^ S.card * ∏ x ∈ S.erase a, (a - x)` is integral over `R` for every `a ∈ S`. -/
 theorem isIntegral_pow_card_mul_prod_sub {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
@@ -178,10 +179,14 @@ theorem isIntegral_pow_card_mul_prod_sub {R A : Type*} [CommRing R] [CommRing A]
 
 /-- If `b x` is integral over `ℤ` for a nonzero natural number `b`, then `x` is integral over
 `ℚ`. -/
-theorem isIntegral_rat_of_isIntegral_natCast_mul {F : Type*} [Field F] [CharZero F] {x : F}
-    {b : ℕ} (hb : b ≠ 0) (hbx : IsIntegral ℤ ((b : F) * x)) : IsIntegral ℚ x := by
-  have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul (hbx.tower_top (A := ℚ))
-  rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hb), one_mul] at h
+theorem isIntegral_rat_of_isIntegral_natCast_mul {A : Type*} [Ring A] [Algebra ℚ A] {x : A}
+    {b : ℕ} (hb : b ≠ 0) (hbx : IsIntegral ℤ ((b : A) * x)) : IsIntegral ℚ x := by
+  -- `b` becomes a unit over `ℚ`, with inverse `algebraMap ℚ A b⁻¹`.
+  refine .of_mul_unit (y := (b : A)) (r := (b : ℚ)⁻¹) ?_ ?_
+  · rw [← map_natCast (algebraMap ℚ A), ← map_mul, inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hb),
+      map_one]
+  · rw [← Nat.cast_comm]
+    exact hbx.tower_top
 
 /-- If `(g ^ n + c) ^ m = z * (g ^ n) ^ k` with `0 < n`, `k < m`, and both `c` and `z`
 integral over `R`, then `g` is integral over `R`. The degree bound makes the relation monic
@@ -202,3 +207,15 @@ theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRin
   exact isIntegral_trans g (hpow.of_pow hn)
 
 end TauCeti
+
+/-- **A positive finite rank forces integrality**: if `0 < Module.finrank K L` for a commutative
+ring `K` with the strong rank condition (for example a nontrivial commutative ring) and a free
+`K`-algebra `L` (automatic over a field), then `L` is integral over `K`.
+
+This is the composition of Mathlib's `Module.finite_of_finrank_pos` (positive rank gives a finite
+module) and `Algebra.IsIntegral.of_finite` (finite algebras are integral). -/
+theorem Algebra.IsIntegral.of_finrank_pos {K L : Type*} [CommRing K] [Ring L] [Algebra K L]
+    [StrongRankCondition K] [Module.Free K L] (h : 0 < Module.finrank K L) :
+    Algebra.IsIntegral K L :=
+  haveI := Module.finite_of_finrank_pos h
+  Algebra.IsIntegral.of_finite K L

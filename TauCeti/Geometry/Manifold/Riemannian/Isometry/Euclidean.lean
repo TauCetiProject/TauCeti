@@ -173,8 +173,8 @@ linear isometry group, the orthogonal group `O(F)`: an isometry fixing the origi
 Mazur–Ulam theorem. -/
 def stabilizerZeroMulEquiv :
     MulAction.stabilizer (Isom 𝓘(ℝ, F) F) (0 : F) ≃* (F ≃ₗᵢ[ℝ] F) where
-  toFun Φ := (Φ.1 : F ≃ᵢ F).toRealLinearIsometryEquivOfMapZero
-    (by simpa using MulAction.mem_stabilizer_iff.mp Φ.2)
+  toFun Φ := (Φ.val : F ≃ᵢ F).toRealLinearIsometryEquivOfMapZero
+    (by simpa using MulAction.mem_stabilizer_iff.mp Φ.property)
   invFun L := ⟨L.toAffineIsometryEquiv.toRiemannianIsometry, by simp⟩
   left_inv Φ := by
     ext x
@@ -190,14 +190,14 @@ def stabilizerZeroMulEquiv :
 @[simp]
 theorem coe_stabilizerZeroMulEquiv
     (Φ : MulAction.stabilizer (Isom 𝓘(ℝ, F) F) (0 : F)) :
-    ⇑(stabilizerZeroMulEquiv Φ) = Φ.1 := by
+    ⇑(stabilizerZeroMulEquiv Φ) = Φ.val := by
   simp [stabilizerZeroMulEquiv]
 
 /-- A linear isometry, viewed as an isometry fixing the origin, has the same underlying function.
 -/
 @[simp]
 theorem coe_stabilizerZeroMulEquiv_symm (L : F ≃ₗᵢ[ℝ] F) :
-    ⇑(stabilizerZeroMulEquiv.symm L).1 = L := by
+    ⇑(stabilizerZeroMulEquiv.symm L).val = L := by
   simp [stabilizerZeroMulEquiv]
 
 /-- Euclidean space is a homogeneous Riemannian manifold: translations are isometries, so the
