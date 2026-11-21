@@ -50,7 +50,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   spheres, with the integral and integrability forms
   `TauCeti.setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one`,
   `TauCeti.setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one` and
-  `TauCeti.integrableOn_sphere_iff`.
+  `TauCeti.integrableOn_sphere_iff`. For `r ≤ 0` the sphere contains at most its center
+  (`TauCeti.setIntegral_sphere_eq_zero_of_nonpos`).
 * `TauCeti.euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul`: the cone formula for
   a regular injective parametrization of a piece of the unit sphere.
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
@@ -65,7 +66,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
 * `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
   real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
-  particular this measure is finite.
+  particular this measure is finite. The sphere of radius `r > 0` has measure `r ^ n |Sⁿ|`
+  (`TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume`).
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
 
@@ -145,6 +147,15 @@ theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one {F : Type*}
     (addSMulEquiv c hr.ne').measurableEmbedding.integral_map, ← ENNReal.ofReal_pow hr.le,
     ENNReal.toReal_ofReal (pow_nonneg hr.le d)]
   simp only [addSMulEquiv_apply]
+
+omit [NormedSpace ℝ E] [BorelSpace E] in
+/-- A sphere of radius `r ≤ 0` contains at most its center, so the integral over it of a function
+vanishing at the center is zero, for every measure. -/
+theorem setIntegral_sphere_eq_zero_of_nonpos {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (μ : Measure E) (c : E) {r : ℝ} (hr : r ≤ 0) {f : E → F} (hf : f c = 0) :
+    ∫ y in sphere c r, f y ∂μ = 0 :=
+  setIntegral_eq_zero_of_forall_eq_zero fun _ hy ↦ by
+    rwa [dist_le_zero.1 ((mem_sphere.1 hy).le.trans hr)]
 
 /-- A function is integrable for `d`-dimensional Hausdorff measure on `sphere c r`, `r > 0`, if
 and only if its pullback by `u ↦ c + r • u` is integrable on the unit sphere. -/
@@ -444,5 +455,16 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume {n : ℕ}
     μHE[n] (sphere (0 : E) 1) = ENNReal.ofReal (roundSphereVolume n) := by
   rw [euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma hE,
     roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+
+omit [FiniteDimensional ℝ E] in
+/-- A sphere of radius `r > 0` in a real inner product space of dimension `n + 1` has normalized
+`n`-dimensional Hausdorff measure `r ^ n |Sⁿ|`. -/
+theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) (c : E) {r : ℝ} (hr : 0 < r) :
+    μHE[n] (sphere c r) = ENNReal.ofReal (r ^ n * roundSphereVolume n) := by
+  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
+    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
+    smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
 
 end TauCeti
