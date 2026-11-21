@@ -85,7 +85,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   class to a representative of its image.
 * `TopPair.exists_isCubicalRepresentative_of_d_mem`, `TopPair.IsCubicalRepresentative.eq_zero_iff`:
   relative cycles represent relative classes, and represent the zero class exactly when they are
-  relative boundaries.
+  relative boundaries; a chain represents at most one class
+  (`TopPair.IsCubicalRepresentative.unique`).
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -494,6 +495,13 @@ theorem IsCubicalRepresentative.add {c c' : ((normalizedCubicalChainComplex k).o
   obtain ⟨r', hr', rfl⟩ := h'
   exact ⟨r + r', by rw [map_add, map_add, hr, hr'], map_add _ _ _⟩
 
+/-- The negative of a representative of a relative class represents its negative. -/
+theorem IsCubicalRepresentative.neg {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) :
+    P.IsCubicalRepresentative k (-c) (-μ) := by
+  obtain ⟨r, hr, rfl⟩ := h
+  exact ⟨-r, by rw [map_neg, map_neg, hr], map_neg _ _⟩
+
 /-- Representatives of relative classes subtract. -/
 theorem IsCubicalRepresentative.sub {c c' : ((normalizedCubicalChainComplex k).obj P.fst).X n}
     {μ μ' : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ)
@@ -515,6 +523,14 @@ theorem IsCubicalRepresentative.sum {ι : Type*} {s : Finset ι}
   | insert i s hi ih =>
     rw [Finset.sum_insert hi, Finset.sum_insert hi]
     exact (h i (Finset.mem_insert_self i s)).add (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- A chain represents at most one relative class. -/
+theorem IsCubicalRepresentative.unique {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ μ' : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ)
+    (h' : P.IsCubicalRepresentative k c μ') : μ = μ' := by
+  obtain ⟨r, hr, rfl⟩ := h
+  obtain ⟨r', hr', rfl⟩ := h'
+  rw [(P.cubicalChainComplex k).moduleCat_iCycles_injective n (hr.symm.trans hr')]
 
 /-- **Relative cycles represent relative classes**: a chain of the ambient space of a pair whose
 boundary is a chain of the subspace represents a class of the relative homology. -/
