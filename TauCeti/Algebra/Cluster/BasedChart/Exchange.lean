@@ -27,14 +27,23 @@ of the new chart is assumed, and the ambient algebra need not be a division ring
 chart a seed mutation produces from an invertible exchange element.
 
 The general material is stated for any exponent group `L`: `BasedChart.subalgebra M N`
-is the span of the monomials with exponents in a subgroup `N`, every unit that conjugates
-these monomials into it normalizes it, and the powers of a monomial transverse to `N` have
-unique left coefficients in it (`BasedChart.linearIndependent_zpow_monomial`).
+is the span of the monomials with exponents in a subgroup `N`, conjugation by a unit that
+maps these monomials into it maps all of it into itself, and the powers of a monomial
+transverse to `N` have unique left coefficients in it
+(`BasedChart.linearIndependent_zpow_monomial`).
+
+For the data of §0.5, an additive map `l` on the exponents in place of `Λ'`,
+`LinearMap.BilinForm.exchange Λ k l` is the alternating form
+`Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)`, and `BasedChart.exchangeOfDual` is the
+exchanged chart for it.
 
 ## Main definitions
 
 * `TauCeti.BasedChart.subalgebra`: the span of the chart monomials with exponents in `N`.
 * `TauCeti.BasedChart.exchange`: the based chart obtained by exchanging the `k`th coordinate.
+* `LinearMap.BilinForm.exchange`: the alternating form of the exchanged chart, built from `Λ`
+  and the cross terms `l`.
+* `TauCeti.BasedChart.exchangeOfDual`: the exchanged chart for this form.
 
 ## Main results
 
@@ -55,6 +64,48 @@ unique left coefficients in it (`BasedChart.linearIndependent_zpow_monomial`).
 -/
 
 public section
+
+namespace LinearMap.BilinForm
+
+variable {I : Type*}
+
+/-- The form of the chart exchanged in direction `k` with cross terms `l` (§0.5): it agrees with
+`Λ` on exponents vanishing at `k` and pairs `e_k` with them by `l`, namely
+`Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)` with `a° = a - a_k e_k`. -/
+noncomputable def exchange (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) (k : I)
+    (l : Module.Dual ℤ (I →₀ ℤ)) : LinearMap.BilinForm ℤ (I →₀ ℤ) :=
+  Λ.compl₁₂ (Finsupp.eraseAddHom k).toIntLinearMap (Finsupp.eraseAddHom k).toIntLinearMap +
+    (Finsupp.lapply k).smulRight (l ∘ₗ (Finsupp.eraseAddHom k).toIntLinearMap) -
+      ((Finsupp.lapply k).smulRight (l ∘ₗ (Finsupp.eraseAddHom k).toIntLinearMap)).flip
+
+/-- The exchanged form is `Λ'(a, b) = Λ(a°, b°) + a_k * l(b°) - b_k * l(a°)`. -/
+theorem exchange_apply (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) (k : I)
+    (l : Module.Dual ℤ (I →₀ ℤ)) (a b : I →₀ ℤ) :
+    Λ.exchange k l a b =
+      Λ (a.erase k) (b.erase k) + a k * l (b.erase k) - b k * l (a.erase k) :=
+  (rfl)
+
+/-- The exchanged form of an alternating form is alternating. -/
+theorem isAlt_exchange {Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)} (hΛ : Λ.IsAlt) (k : I)
+    (l : Module.Dual ℤ (I →₀ ℤ)) : (Λ.exchange k l).IsAlt := fun a ↦ by
+  rw [exchange_apply, hΛ.self_eq_zero, zero_add, sub_self]
+
+/-- The exchanged form agrees with `Λ` on exponents vanishing at `k`. -/
+theorem exchange_apply_of_apply_eq_zero (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) {k : I}
+    (l : Module.Dual ℤ (I →₀ ℤ)) {a b : I →₀ ℤ} (ha : a k = 0) (hb : b k = 0) :
+    Λ.exchange k l a b = Λ a b := by
+  rw [exchange_apply, ha, hb, Finsupp.erase_of_notMem_support (by simpa using ha),
+    Finsupp.erase_of_notMem_support (by simpa using hb)]
+  simp
+
+/-- The exchanged form pairs `e_k` with `b` by `l(b°)`. -/
+@[simp]
+theorem exchange_single_self_apply (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ)) (k : I)
+    (l : Module.Dual ℤ (I →₀ ℤ)) (b : I →₀ ℤ) :
+    Λ.exchange k l (Finsupp.single k 1) b = l (b.erase k) := by
+  simp [exchange_apply, Finsupp.erase_single]
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 
@@ -138,7 +189,8 @@ theorem span_range_monomial_subalgebra (M : BasedChart u Λ B) (N : AddSubgroup 
   obtain ⟨d, hd, hdc⟩ := hc
   rwa [show d = c from Subtype.ext hdc] at hd
 
-/-- A unit conjugating every monomial of `N` into the subalgebra of `N` normalizes it. -/
+/-- If conjugation by a unit maps every monomial of `N` into the subalgebra of `N`, it maps the
+whole subalgebra into itself. -/
 theorem mul_mul_inv_mem_subalgebra (M : BasedChart u Λ B) {N : AddSubgroup L} {g : Bˣ}
     (hg : ∀ a ∈ N, (g : B) * M.monomial a * ↑g⁻¹ ∈ M.subalgebra N) {c : B}
     (hc : c ∈ M.subalgebra N) : (g : B) * c * ↑g⁻¹ ∈ M.subalgebra N := by
@@ -151,8 +203,8 @@ theorem mul_mul_inv_mem_subalgebra (M : BasedChart u Λ B) {N : AddSubgroup L} {
   | add c d _ _ hc hd => simpa [mul_add, add_mul] using add_mem hc hd
   | smul r c _ hc => simpa [mul_smul_comm, smul_mul_assoc] using Subalgebra.smul_mem _ hc r
 
-/-- For an alternating form, conjugation by any chart monomial normalizes the subalgebra
-of `N`, since it rescales each monomial by a power of `u`. -/
+/-- For an alternating form, conjugation by any chart monomial maps the subalgebra of `N` into
+itself, since it rescales each monomial by a power of `u`. -/
 theorem monomial_mul_mul_inv_mem_subalgebra (M : BasedChart u Λ B) (hΛ : Λ.IsAlt)
     {N : AddSubgroup L} (b : L) {c : B} (hc : c ∈ M.subalgebra N) :
     (M.monomial b : B) * c * ↑(M.monomial b)⁻¹ ∈ M.subalgebra N := by
@@ -161,8 +213,8 @@ theorem monomial_mul_mul_inv_mem_subalgebra (M : BasedChart u Λ B) (hΛ : Λ.Is
     Units.mul_inv, mul_one]
   exact Subalgebra.smul_mem _ (M.monomial_mem_subalgebra ha) _
 
-/-- For an alternating form, conjugation by the inverse of any chart monomial normalizes the
-subalgebra of `N`. -/
+/-- For an alternating form, conjugation by the inverse of any chart monomial maps the
+subalgebra of `N` into itself. -/
 theorem monomial_inv_mul_mul_mem_subalgebra (M : BasedChart u Λ B) (hΛ : Λ.IsAlt)
     {N : AddSubgroup L} (b : L) {c : B} (hc : c ∈ M.subalgebra N) :
     (↑(M.monomial b)⁻¹ : B) * c * M.monomial b ∈ M.subalgebra N := by
@@ -365,6 +417,38 @@ noncomputable def exchange (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I) (hΛ
   monomial_zero := by simp [exchangeMonomial]
   monomial_mul := exchangeMonomial_mul M k hΛ' hΛΛ' hy
   linearIndependent := linearIndependent_exchangeMonomial M hΛ k hy hyx
+
+/-- The exchanged chart built from the data of §0.5: an additive map `l` on the exponents and a
+unit `y` with `y * M(a) = u ^ (2 * l(a)) * M(a) * y` whenever `a_k = 0` and `y * M(e_k)` in the
+span of those monomials. It is the chart for the alternating form `Λ.exchange k l`, which agrees
+with `Λ` off `k` and pairs `e_k` with `a°` by `l(a°)`. -/
+noncomputable def exchangeOfDual (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I)
+    (l : Module.Dual ℤ (I →₀ ℤ)) (y : Bˣ)
+    (hy : ∀ a : I →₀ ℤ, a k = 0 → y * M.monomial a =
+      Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
+    (hyx : ((y * M.monomial (Finsupp.single k 1) : Bˣ) : B) ∈
+      M.subalgebra (Finsupp.applyAddHom k).ker) :
+    BasedChart u (Λ.exchange k l) B :=
+  M.exchange hΛ k (LinearMap.BilinForm.isAlt_exchange hΛ k l)
+    (fun _ _ ha hb ↦ Λ.exchange_apply_of_apply_eq_zero l ha hb) y
+    (fun a ha ↦ by
+      rw [LinearMap.BilinForm.exchange_single_self_apply,
+        Finsupp.erase_of_notMem_support (by simpa using ha)]
+      exact hy a ha)
+    hyx
+
+/-- The monomials of the exchanged chart built from `l`: `u ^ (-(a_k * l(a°))) * y ^ a_k * M(a°)`.
+-/
+theorem exchangeOfDual_monomial (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I)
+    (l : Module.Dual ℤ (I →₀ ℤ)) (y : Bˣ)
+    (hy : ∀ a : I →₀ ℤ, a k = 0 → y * M.monomial a =
+      Units.map (algebraMap R B) (u ^ (2 * l a)) * (M.monomial a * y))
+    (hyx : ((y * M.monomial (Finsupp.single k 1) : Bˣ) : B) ∈
+      M.subalgebra (Finsupp.applyAddHom k).ker) (a : I →₀ ℤ) :
+    (M.exchangeOfDual hΛ k l y hy hyx).monomial a =
+      Units.map (algebraMap R B) (u ^ (-(a k * l (a.erase k)))) *
+        y ^ a k * M.monomial (a.erase k) := by
+  simp [exchangeOfDual, exchange, exchangeMonomial]
 
 variable (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I) (hΛ' : Λ'.IsAlt)
   (hΛΛ' : ∀ a b : I →₀ ℤ, a k = 0 → b k = 0 → Λ' a b = Λ a b) (y : Bˣ)
