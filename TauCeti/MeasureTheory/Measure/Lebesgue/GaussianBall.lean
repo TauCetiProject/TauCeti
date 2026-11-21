@@ -107,10 +107,12 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
       ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
   -- The radii of the ray that meet `A` form an initial segment.
   set R := (fun r : ℝ ↦ r • (u : E)) ⁻¹' A
-  have hR : ∀ ⦃r s⦄, 0 < s → s ≤ r → r ∈ R → s ∈ R := fun r s hs hsr hr ↦ by
+  have hR : IsRelLowerSet (R ∩ Ioi 0) (· ∈ Ioi 0) := fun r ⟨hr, hr₀⟩ ↦ ⟨hr₀, fun s hsr hs ↦ by
+    have hs : 0 < s := hs
     have := hA₀.smul_mem (mem_preimage.1 hr) (div_nonneg hs.le (hs.trans_le hsr).le)
       (div_le_one_of_le₀ hsr (hs.trans_le hsr).le)
-    rwa [smul_smul, div_mul_cancel₀ _ (hs.trans_le hsr).ne'] at this
+    rw [smul_smul, div_mul_cancel₀ _ (hs.trans_le hsr).ne'] at this
+    exact ⟨this, hs⟩⟩
   calc ∫⁻ r in Ioi (0 : ℝ), w r * A.indicator (fun x ↦ φ ‖x‖) (r • (u : E))
       = ∫⁻ r in Ioi (0 : ℝ), R.indicator (fun r ↦ w r * φ r) r := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
@@ -120,9 +122,9 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
         · rw [indicator_of_notMem hrA, indicator_of_notMem (s := R) (mt mem_preimage.1 hrA),
             mul_zero]
     _ ≤ ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r :=
-        setLIntegral_indicator_le_setLIntegral_indicator_inter measurableSet_Ioi
-          (fun r hr ↦ mul_le_of_le_one_right' (hφ r hr)) hmass
-          (fun _ _ _ hs hsr hr ↦ hR hs hsr hr) fun _ _ _ _ hsr hr ↦ IsLowerSet.Iic ρ hsr hr
+        setLIntegral_indicator_le_setLIntegral_indicator_inter measurableSet_Ioi.nullMeasurableSet
+          (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ mul_le_of_le_one_right' (hφ r hr))
+          hmass hR fun _ ⟨hr, hr₀⟩ ↦ ⟨hr₀, fun _ hsr hs ↦ ⟨IsLowerSet.Iic ρ hsr hr, hs⟩⟩
     _ = ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
         rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr]

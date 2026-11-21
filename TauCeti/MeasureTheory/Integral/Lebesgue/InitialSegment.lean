@@ -10,10 +10,11 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 /-!
 # Integral comparison on initial segments
 
-Let `μ` be a measure on a linear order, `S` a measurable set and `f ≤ w` on `S`. Let `R` and
-`T` be initial segments of `S`, relative to `S`. If the integral of `f` over `S` is at most the
-integral over `S` of `T.indicator w`, then the integral over `S` of `R.indicator f` is at most the
-integral over `S` of `(R ∩ T).indicator w`.
+Let `μ` be a measure on a linear order, `S` a null-measurable set and `f ≤ w` almost everywhere on
+`S`. Let `R` and `T` be initial segments of `S`, relative to `S`: `R ∩ S` and `T ∩ S` are lower
+sets relative to `S` (`IsRelLowerSet`). If the integral of `f` over `S` is at most the integral
+over `S` of `T.indicator w`, then the integral over `S` of `R.indicator f` is at most the integral
+over `S` of `(R ∩ T).indicator w`.
 
 `TauCeti.setLIntegral_indicator_le_setLIntegral_indicator_inter` supplies this comparison
 without measurability assumptions on `f`, `w`, `R` or `T`. Applied along each ray, with `S` the
@@ -35,39 +36,34 @@ namespace TauCeti
 open MeasureTheory Set
 open scoped ENNReal
 
-/-- Let `R` and `T` be initial segments of a measurable set `S` in a linear order, relative to
-`S`: whenever `y ≤ x` are points of `S` and `x` lies in the segment, so does `y`. Let `f ≤ w` on
-`S`. If the integral of `f` over `S` is at most the integral over `S` of `T.indicator w`, then
-the integral over `S` of `R.indicator f` is at most the integral over `S` of
-`(R ∩ T).indicator w`. The measure is arbitrary, and no measurability assumptions on `f`, `w`,
-`R` or `T` are needed. -/
+/-- Let `R` and `T` be initial segments of a null-measurable set `S` in a linear order, relative
+to `S`: `R ∩ S` and `T ∩ S` are lower sets relative to `S`, so whenever `y ≤ x` are points of `S`
+and `x` lies in the segment, so does `y`. Let `f ≤ w` almost everywhere on `S`. If the integral
+of `f` over `S` is at most the integral over `S` of `T.indicator w`, then the integral over `S` of
+`R.indicator f` is at most the integral over `S` of `(R ∩ T).indicator w`. The measure is
+arbitrary, and no measurability assumptions on `f`, `w`, `R` or `T` are needed. -/
 theorem setLIntegral_indicator_le_setLIntegral_indicator_inter
     {α : Type*} [LinearOrder α] [MeasurableSpace α] {μ : Measure α} {S R T : Set α}
-    {f w : α → ℝ≥0∞} (hS : MeasurableSet S) (hf : ∀ x ∈ S, f x ≤ w x)
+    {f w : α → ℝ≥0∞} (hS : NullMeasurableSet S μ) (hf : ∀ᵐ x ∂μ.restrict S, f x ≤ w x)
     (hmass : ∫⁻ x in S, f x ∂μ ≤ ∫⁻ x in S, T.indicator w x ∂μ)
-    (hR : ∀ ⦃x y⦄, x ∈ S → y ∈ S → y ≤ x → x ∈ R → y ∈ R)
-    (hT : ∀ ⦃x y⦄, x ∈ S → y ∈ S → y ≤ x → x ∈ T → y ∈ T) :
+    (hR : IsRelLowerSet (R ∩ S) (· ∈ S)) (hT : IsRelLowerSet (T ∩ S) (· ∈ S)) :
     ∫⁻ x in S, R.indicator f x ∂μ ≤ ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := by
-  by_cases hTR : ∀ x ∈ S, x ∈ T → x ∈ R
+  -- Seen inside `S`, the segments `R` and `T` are lower sets, so one contains the other.
+  have hlower {U : Set α} (hU : IsRelLowerSet (U ∩ S) (· ∈ S)) :
+      IsLowerSet ((↑) ⁻¹' U : Set S) := fun x y hyx hx ↦ ((hU ⟨hx, x.property⟩).2 hyx y.property).1
+  rcases (hlower hT).total (hlower hR) with hTR | hRT
   · -- `R` contains the part of `S` in `T`: compare with the total mass of `f`.
     calc ∫⁻ x in S, R.indicator f x ∂μ
         ≤ ∫⁻ x in S, f x ∂μ := lintegral_mono fun x ↦ indicator_le_self _ _ _
       _ ≤ ∫⁻ x in S, T.indicator w x ∂μ := hmass
-      _ = ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := by
-        refine setLIntegral_congr_fun hS fun x hx ↦ ?_
-        by_cases hxT : x ∈ T
-        · rw [indicator_of_mem hxT, indicator_of_mem (mem_inter (hTR x hx hxT) hxT)]
-        · rw [indicator_of_notMem hxT, indicator_of_notMem fun h ↦ hxT (mem_of_mem_inter_right h)]
-  · -- `R` misses a point `y ∈ S ∩ T`, so its part in `S` lies below `y`, hence in `T`:
-    -- use `f ≤ w` pointwise.
-    simp only [not_forall] at hTR
-    obtain ⟨y, hy, hyT, hyR⟩ := hTR
-    refine setLIntegral_mono' hS fun x hx ↦ ?_
-    by_cases hxR : x ∈ R
-    · have hxT : x ∈ T := hT hy hx (not_le.mp fun hyx ↦ hyR (hR hx hy hyx hxR)).le hyT
-      rw [indicator_of_mem hxR, indicator_of_mem (mem_inter hxR hxT)]
-      exact hf x hx
-    · rw [indicator_of_notMem hxR]
-      exact zero_le
+      _ = ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := lintegral_congr_ae <|
+        (ae_restrict_mem₀ hS).mono fun x hx ↦
+          indicator_eq_indicator ⟨fun hxT ↦ ⟨hTR (a := ⟨x, hx⟩) hxT, hxT⟩, And.right⟩ rfl
+  · -- The part of `S` in `R` lies in `T`: use `f ≤ w` almost everywhere on `S`.
+    refine lintegral_mono_ae ?_
+    filter_upwards [ae_restrict_mem₀ hS, hf] with x hx hfx
+    rw [← indicator_indicator]
+    exact indicator_le_indicator' fun hxR ↦ by
+      rwa [indicator_of_mem (show x ∈ T from hRT (a := ⟨x, hx⟩) hxR)]
 
 end TauCeti
