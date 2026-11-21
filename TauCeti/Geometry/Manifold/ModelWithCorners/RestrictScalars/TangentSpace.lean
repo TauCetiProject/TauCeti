@@ -13,10 +13,11 @@ public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
 
 Let `E` and `E'` be normed spaces over two fields `𝕜` and `𝕜'`, compatibly: for instance `𝕜'` is an
 algebra over `𝕜` and the actions form scalar towers. For a boundaryless model `I` over `𝕜'`, the
-tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜) x` are both the model
-space `E`, but they are distinct types carrying module structures over different fields. This file
-compares maps and vectors in the two tangent spaces, fibre by fibre; the derivatives of maps between
-manifolds are compared in `TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars`.
+tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜) x` are both
+definitionally the model space `E`, so their vectors can be compared directly, but their module
+instances are over different fields: the second is only a `𝕜`-module. This file compares maps and
+vectors in the two tangent spaces, fibre by fibre; the derivatives of maps between manifolds are
+compared in `TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars`.
 
 `ContinuousLinearMap.restrictScalarsTangent` turns a `𝕜'`-linear map between tangent spaces for
 boundaryless models `I` and `I'` into the same map, `𝕜`-linear between the tangent spaces for their

@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentSpace
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
-import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -31,14 +29,17 @@ those in `Mathlib.Analysis.Calculus.FDeriv.RestrictScalars`: `HasFDerivWithinAt.
 `DifferentiableAt.fderiv_restrictScalars`, `differentiableWithinAt_iff_restrictScalars` and
 `differentiableAt_iff_restrictScalars`.
 
-The tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜) x` are both the model
-space `E`, but they are distinct types carrying module structures over different fields. The
-derivative comparisons are stated with `ContinuousLinearMap.restrictScalarsTangent` from
+The tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜) x` are both
+definitionally the model space `E`, but their module instances are over different fields: the
+second is only a `𝕜`-module. The derivative comparisons are stated with
+`ContinuousLinearMap.restrictScalarsTangent` from
 `TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.TangentSpace`, which turns a
 `𝕜'`-linear map between tangent spaces for `I` and `I'` into the same map, `𝕜`-linear between the
 tangent spaces for their scalar restrictions. Like `ContinuousLinearMap.restrictScalars`, the
-derivative comparisons and the comparison of tangent coordinate changes assume only
-`LinearMap.CompatibleSMul`, which scalar towers provide.
+derivative comparisons need only the scalar compatibility condition `LinearMap.CompatibleSMul`,
+which scalar towers provide. The comparison of tangent coordinate changes needs it as well, together
+with `C¹` manifold structures `IsManifold I 1 M` and `IsManifold (I.restrictScalars 𝕜) 1 M` for both
+models; the comparison of the derivatives of inverse charts needs only `IsManifold I 1 M`.
 
 The main example is a holomorphic map between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`: its real derivative is its complex derivative regarded as an `ℝ`-linear map.
@@ -73,13 +74,16 @@ vector-valued derivatives over the two fields.
   `MDifferentiableAt.injective_mfderiv_restrictScalars_iff`,
   `MDifferentiableAt.injective_mvfderiv_restrictScalars_iff`: if the derivative for boundaryless
   models over `𝕜'` is injective, so is the derivative for their scalar restrictions, and at a point
-  of differentiability injectivity of the derivatives over `𝕜` and over `𝕜'` are equivalent.
-* `ModelWithCorners.tangentCoordChange_restrictScalars`: for a boundaryless model `I` over `𝕜'`,
-  on the overlap of two charts the tangent coordinate change for `I.restrictScalars 𝕜` is that for
-  `I` with scalars restricted to `𝕜`; in particular it is `𝕜'`-linear there
-  (`ModelWithCorners.tangentCoordChange_smul`), and so is the derivative for `I.restrictScalars 𝕜`
-  of the inverse of a chart at points of the chart target, read in the model space
-  (`ModelWithCorners.mfderivWithin_extChartAt_symm_smul`).
+  where the map is differentiable for the models over `𝕜'`, injectivity of the derivatives over `𝕜`
+  and over `𝕜'` are equivalent.
+* `ModelWithCorners.tangentCoordChange_restrictScalars`: for a boundaryless model `I` over `𝕜'` and
+  a manifold with `C¹` structures `IsManifold I 1 M` and `IsManifold (I.restrictScalars 𝕜) 1 M`, on
+  the overlap of two charts the tangent coordinate change for `I.restrictScalars 𝕜` is that for `I`
+  with scalars restricted to `𝕜`; in particular it is `𝕜'`-linear there
+  (`ModelWithCorners.tangentCoordChange_smul`).
+* `ModelWithCorners.mfderivWithin_extChartAt_symm_smul`: for a boundaryless model `I` over `𝕜'` and
+  a manifold with `IsManifold I 1 M`, the derivative for `I.restrictScalars 𝕜` of the inverse of a
+  chart at points of the chart target, read in the model spaces, is `𝕜'`-linear.
   `TauCeti.tangentCoordChange_restrictScalars`, `TauCeti.tangentCoordChange_smul` and
   `TauCeti.mfderivWithin_extChartAt_symm_smul` state these for a manifold charted by `E` with the
   self models `𝓘(𝕜', E)` and `𝓘(𝕜, E)`.
@@ -277,9 +281,13 @@ namespace ModelWithCorners
 
 variable {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜' E H) [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [IsManifold (I.restrictScalars 𝕜) 1 M] [LinearMap.CompatibleSMul E E 𝕜 𝕜']
+  [LinearMap.CompatibleSMul E E 𝕜 𝕜']
 
 variable (𝕜)
+
+section TangentCoordChange
+
+variable [IsManifold (I.restrictScalars 𝕜) 1 M]
 
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the scalar
 restriction `I.restrictScalars 𝕜` of a boundaryless model `I` over `𝕜'` is the tangent coordinate
@@ -310,22 +318,34 @@ theorem tangentCoordChange_smul {x y z : M}
   rw [I.tangentCoordChange_restrictScalars 𝕜 h, ContinuousLinearMap.coe_restrictScalars',
     map_smul]
 
+end TangentCoordChange
+
 /-- On the target of the chart at `x`, the derivative over `𝕜` of the inverse of the chart for the
 scalar restriction `I.restrictScalars 𝕜` of a boundaryless model `I` over `𝕜'`, read in the model
-space through `tangentSpaceCastModel`, is `𝕜'`-linear: it is a tangent coordinate change. -/
+spaces through `tangentSpaceCastModel`, is `𝕜'`-linear: it is the derivative over `𝕜'` of the
+inverse of the chart for `I`, with scalars restricted to `𝕜`. -/
 theorem mfderivWithin_extChartAt_symm_smul {x : M} {z : E}
     (hz : z ∈ (extChartAt (I.restrictScalars 𝕜) x).target) (c : 𝕜') (w : E) :
     tangentSpaceCastModel (I.restrictScalars 𝕜) _
         (mfderivWithin 𝓘(𝕜, E) (I.restrictScalars 𝕜) (extChartAt (I.restrictScalars 𝕜) x).symm
-          (range (I.restrictScalars 𝕜)) z (c • w)) =
+          (range (I.restrictScalars 𝕜)) z ((tangentSpaceCastModel 𝓘(𝕜, E) z).symm (c • w))) =
       c • tangentSpaceCastModel (I.restrictScalars 𝕜) _
         (mfderivWithin 𝓘(𝕜, E) (I.restrictScalars 𝕜) (extChartAt (I.restrictScalars 𝕜) x).symm
-          (range (I.restrictScalars 𝕜)) z w) := by
-  have hy : (extChartAt (I.restrictScalars 𝕜) x).symm z ∈ (chartAt H x).source := by
-    simpa only [extChartAt_source] using (extChartAt (I.restrictScalars 𝕜) x).map_target hz
-  rw [← (extChartAt (I.restrictScalars 𝕜) x).right_inv hz,
-    ← TangentBundle.symmL_trivializationAt hy, TangentBundle.symmL_trivializationAt_eq_core hy]
-  exact I.tangentCoordChange_smul 𝕜 ⟨hy, mem_chart_source H _⟩ c w
+          (range (I.restrictScalars 𝕜)) z ((tangentSpaceCastModel 𝓘(𝕜, E) z).symm w)) := by
+  rw [extChartAt_restrictScalars] at hz ⊢
+  have hs : UniqueMDiffWithinAt (𝓘(𝕜', E).restrictScalars 𝕜) (range I) z := by
+    rw [I.range_eq_univ]
+    exact uniqueMDiffWithinAt_univ _
+  rw [coe_restrictScalars, ← modelWithCornersSelf_restrictScalars (𝕜 := 𝕜) (𝕜' := 𝕜'),
+    ← (mdifferentiableWithinAt_extChartAt_symm hz).restrictScalars_mfderivWithin 𝕜 hs]
+  -- Read in the model spaces, the scalar restriction of the derivative over `𝕜'` is
+  -- `ContinuousLinearMap.restrictScalars` of a `𝕜'`-linear map.
+  have key (v : E) := DFunLike.congr_fun
+    (ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp 𝕜
+      (mfderivWithin 𝓘(𝕜', E) I (extChartAt I x).symm (range I) z)) v
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearMap.coe_restrictScalars'] at key
+  simp only [key, map_smul]
 
 end ModelWithCorners
 
@@ -360,27 +380,27 @@ theorem tangentCoordChange_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘
   rw [tangentCoordChange_restrictScalars 𝕜 (𝕜' := 𝕜') h, ContinuousLinearMap.coe_restrictScalars',
     map_smul]
 
-end CompatibleSMul
-
-variable [NormedAlgebra 𝕜 𝕜'] [IsScalarTower 𝕜 𝕜' E]
-
 /-- On the target of the chart at `x`, the derivative over `𝕜` of the inverse of the chart is
-`𝕜'`-linear: it is a tangent coordinate change. For instance, on a complex manifold, regarded as
-a real manifold, the real derivative of the inverse of a chart commutes with multiplication by
-`i`. This is `ModelWithCorners.mfderivWithin_extChartAt_symm_smul` for the self models. -/
-theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M]
+`𝕜'`-linear: it is the derivative over `𝕜'` with scalars restricted to `𝕜`. For instance, on a
+complex manifold, regarded as a real manifold, the real derivative of the inverse of a chart
+commutes with multiplication by `i`. This is `ModelWithCorners.mfderivWithin_extChartAt_symm_smul`
+for the self models, whose tangent spaces are `E`. -/
+theorem mfderivWithin_extChartAt_symm_smul [SMulCommClass 𝕜 𝕜' E] [IsManifold 𝓘(𝕜', E) 1 M]
     {z : E} (hz : z ∈ (extChartAt 𝓘(𝕜, E) x).target) (c : 𝕜') (w : E) :
     mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z
         ((c • ContinuousLinearMap.id 𝕜 E) w) =
       (c • ContinuousLinearMap.id 𝕜 E)
         (mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z w) := by
-  have : IsManifold (𝓘(𝕜', E).restrictScalars 𝕜) 1 M :=
-    𝓘(𝕜', E).isManifold_restrictScalars 𝕜 inferInstance
   have h := 𝓘(𝕜', E).mfderivWithin_extChartAt_symm_smul 𝕜
     (by rwa [modelWithCornersSelf_restrictScalars]) c w
   rw [modelWithCornersSelf_restrictScalars] at h
-  -- The self-model tangent spaces are `E`, where `c • ContinuousLinearMap.id 𝕜 E` acts as `c • ·`.
+  -- The statement feeds vectors of `E` to the self-model tangent spaces, which are `E` by
+  -- definition, and applies `c • ContinuousLinearMap.id 𝕜 E` to tangent vectors. On these spaces
+  -- `tangentSpaceCastModel 𝓘(𝕜, E)` and its inverse are the identity of `E`, so `h`, which reads
+  -- the derivative through these casts, is the claim.
   exact h
+
+end CompatibleSMul
 
 end TauCeti
 
