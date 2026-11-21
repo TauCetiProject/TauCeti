@@ -113,9 +113,7 @@ theorem contMDiff_mk (r : ℕ∞ω) :
   rw [comp_apply, ← affineParam_ratio k hv]
   simp only [comp_apply, ratio_mk]
 
-/-- **The derivative of the Hopf projection is onto** at every point of `S²ⁿ⁺¹`. Through `w`
-passes the smooth local section `z ↦ c • w(z) / ‖w(z)‖` of the chart `X_k ≠ 0`, for a suitable
-unit complex number `c`, whose composite with `mk` is the inverse of that chart. -/
+/-- **The derivative of the Hopf projection is onto** at every point of `S²ⁿ⁺¹`. -/
 theorem surjective_mfderiv_mk (w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     Surjective (mfderiv (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) (mk n) w) := by
   obtain ⟨k, hk⟩ := exists_mem_affineOpen (mk n w)
@@ -124,7 +122,9 @@ theorem surjective_mfderiv_mk (w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1)))
     rw [← affineParam_def, ← affineChart_symm_apply,
       (affineChart k).left_inv (by rwa [affineChart_source])]
   obtain ⟨c, hc⟩ := (mk_eq_mk_iff_exists_circle_smul n w (affineUnitVector k z₀)).1 hw
-  -- A smooth section of `mk n` over the chart `X_k ≠ 0`, passing through `w` at `z₀`.
+  -- A smooth section `z ↦ c • w(z) / ‖w(z)‖` of `mk n` over the chart `X_k ≠ 0`, passing
+  -- through `w` at `z₀`, for a suitable unit complex number `c`. Its composite with `mk n` is
+  -- the inverse of that chart.
   set s : (Fin n → ℂ) → sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 :=
     fun z ↦ c • affineUnitVector k z
   have hs : ContMDiff 𝓘(ℝ, Fin n → ℂ) (𝓡 (2 * n + 1)) 1 s :=
