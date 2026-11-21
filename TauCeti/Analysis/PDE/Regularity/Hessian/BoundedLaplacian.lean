@@ -67,22 +67,6 @@ open scoped ENNReal NNReal Laplacian ContDiff SchwartzMap
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- The rescaling `c⁻² φ(c ·)` of a `C²` function `φ` has Laplacian `(Δφ)(c ·)`. -/
-private theorem laplacian_smul_comp_smul {φ : V → ℝ} (hφ : ContDiff ℝ 2 φ) {c : ℝ} (hc : c ≠ 0)
-    (x : V) : Δ ((c ^ 2)⁻¹ • fun y ↦ φ (c • y)) x = Δ φ (c • x) := by
-  have hcomp : ContDiff ℝ 2 fun y ↦ φ (c • y) := hφ.comp (contDiff_const_smul c)
-  rw [laplacian_smul _ hcomp.contDiffAt, laplacian_comp_smul_right, smul_smul,
-    inv_mul_cancel₀ (pow_ne_zero 2 hc), one_smul]
-
-omit [FiniteDimensional ℝ V] in
-/-- The rescaling `c⁻² φ(c ·)` of a `C²` function `φ` has the same Hessian at the origin as `φ`. -/
-private theorem iteratedFDeriv_two_smul_comp_smul_zero {φ : V → ℝ} (hφ : ContDiff ℝ 2 φ) {c : ℝ}
-    (hc : c ≠ 0) :
-    iteratedFDeriv ℝ 2 ((c ^ 2)⁻¹ • fun y ↦ φ (c • y)) 0 = iteratedFDeriv ℝ 2 φ 0 := by
-  have hcomp : ContDiff ℝ 2 fun y ↦ φ (c • y) := hφ.comp (contDiff_const_smul c)
-  rw [iteratedFDeriv_const_smul_apply hcomp.contDiffAt, iteratedFDeriv_comp_const_smul c hφ]
-  simp only [smul_zero, smul_smul, inv_mul_cancel₀ (pow_ne_zero 2 hc), one_smul]
-
 /-- **The cut-off.** A smooth harmonic function `q`, multiplied by a bump equal to `1` on the closed
 unit ball and vanishing outside the ball of radius `2`, gives a smooth function `φ` vanishing
 outside the ball of radius `2`, with the Hessian of `q` at the origin and with `Δφ` supported in the
@@ -149,9 +133,9 @@ private theorem exists_lacunary_sum {φ : V → ℝ} (hφ : ContDiff ℝ ∞ φ)
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
   have hc0 : ∀ k, (4 : ℝ) ^ k ≠ 0 := fun k ↦ pow_ne_zero _ (by norm_num)
   set ψ : ℕ → V → ℝ := fun k ↦ (((4 : ℝ) ^ k) ^ 2)⁻¹ • fun y ↦ φ ((4 : ℝ) ^ k • y) with hψ_def
-  have hψ : ∀ k, ContDiff ℝ ∞ (ψ k) := fun k ↦
-    have h : ContDiff ℝ ∞ fun y ↦ φ ((4 : ℝ) ^ k • y) := hφ.comp (contDiff_const_smul _)
-    h.const_smul (((4 : ℝ) ^ k) ^ 2)⁻¹
+  have hφk : ∀ k, ContDiff ℝ ∞ fun y ↦ φ ((4 : ℝ) ^ k • y) := fun k ↦
+    hφ.comp (contDiff_const_smul _)
+  have hψ : ∀ k, ContDiff ℝ ∞ (ψ k) := fun k ↦ (hφk k).const_smul (((4 : ℝ) ^ k) ^ 2)⁻¹
   have hψ2 : ∀ k ∈ range N, ContDiff ℝ 2 (ψ k) := fun k _ ↦ (hψ k).of_le (by simp)
   refine ⟨fun x ↦ ∑ k ∈ range N, ψ k x, ContDiff.sum fun k _ ↦ hψ k,
     HasCompactSupport.intro (isCompact_closedBall 0 2) fun x hx ↦ ?_, fun x ↦ ?_, fun x ↦ ?_, ?_⟩
@@ -164,7 +148,7 @@ private theorem exists_lacunary_sum {φ : V → ℝ} (hφ : ContDiff ℝ ∞ φ)
       nlinarith [norm_nonneg x]
     simp [hψ_def, hφ0 _ this]
   · rw [laplacian_fun_sum fun k hk ↦ (hψ2 k hk).contDiffAt]
-    simp only [hψ_def, laplacian_smul_comp_smul hφ2 (hc0 _)]
+    simp only [hψ_def, laplacian_smul_comp_smul_right (hc0 _) hφ2.contDiffAt]
     exact abs_sum_comp_four_pow_smul_le hΔφ hM0 hM _ x
   · calc |∑ k ∈ range N, ψ k x| ≤ ∑ k ∈ range N, |ψ k x| := Finset.abs_sum_le_sum_abs _ _
       _ ≤ ∑ k ∈ range N, (1 / 2 : ℝ) ^ k * P := Finset.sum_le_sum fun k _ ↦ by
@@ -178,9 +162,13 @@ private theorem exists_lacunary_sum {φ : V → ℝ} (hφ : ContDiff ℝ ∞ φ)
       _ = (∑ k ∈ range N, (1 / 2 : ℝ) ^ k) * P := by rw [Finset.sum_mul]
       _ ≤ 2 * P := mul_le_mul_of_nonneg_right (sum_geometric_two_le N)
           ((abs_nonneg _).trans (hP 0))
-  · rw [iteratedFDeriv_sum hψ2, Finset.sum_apply]
-    simp only [hψ_def, iteratedFDeriv_two_smul_comp_smul_zero hφ2 (hc0 _), Finset.sum_const,
-      Finset.card_range, Nat.cast_smul_eq_nsmul]
+  · -- Each rescaling `ψ k` has the Hessian of `φ` at the origin.
+    have hD : ∀ k, iteratedFDeriv ℝ 2 (ψ k) 0 = iteratedFDeriv ℝ 2 φ 0 := fun k ↦ by
+      rw [hψ_def, iteratedFDeriv_const_smul_apply ((hφk k).of_le (by simp)).contDiffAt,
+        iteratedFDeriv_comp_const_smul _ hφ2]
+      simp only [smul_zero, smul_smul, inv_mul_cancel₀ (pow_ne_zero 2 (hc0 k)), one_smul]
+    rw [iteratedFDeriv_sum hψ2, Finset.sum_apply]
+    simp only [hD, Finset.sum_const, Finset.card_range, Nat.cast_smul_eq_nsmul]
 
 /-- **The lacunary construction.** If `q` is a smooth harmonic function whose Hessian does not
 vanish at the origin, then there are smooth compactly supported functions with `|Δu| ≤ 1` and
