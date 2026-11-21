@@ -53,29 +53,29 @@ variable
 /-- The linear map taking an infinitesimal geodesic initial state to the Jacobi field's
 value at time `t`. Its geometric properties hold on the natural maximal geodesic interval. -/
 def geodesicJacobiPropagator (z : TangentBundle I M) (t : ℝ) :
-    TangentSpace I.tangent z →L[ℝ] TangentSpace I (maximalGeodesic I M z.proj z.2 t) :=
-  mfderiv I.tangent I (fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.2 t) z
+    TangentSpace I.tangent z →L[ℝ] TangentSpace I (maximalGeodesic I M z.proj z.snd t) :=
+  mfderiv I.tangent I (fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.snd t) z
 
 omit [I.Boundaryless] [T2Space M] in
 /-- The defining differential of Jacobi propagation in the initial state. -/
 theorem geodesicJacobiPropagator_def (z : TangentBundle I M) (t : ℝ) :
     geodesicJacobiPropagator z t =
-      mfderiv I.tangent I (fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.2 t) z :=
+      mfderiv I.tangent I (fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.snd t) z :=
   (rfl)
 
 /-- The full differential of the geodesic evaluation map, applied with zero time component,
 is the Jacobi propagator. -/
 theorem geodesicJacobiPropagator_apply (z : TangentBundle I M) {t : ℝ}
-    (ht : t ∈ geodesicInterval I M z.proj z.2) (ξ : TangentSpace I.tangent z) :
+    (ht : t ∈ geodesicInterval I M z.proj z.snd) (ξ : TangentSpace I.tangent z) :
     geodesicJacobiPropagator z t ξ =
       mfderiv (I.tangent.prod 𝓘(ℝ, ℝ)) I
-        (fun q : TangentBundle I M × ℝ ↦ maximalGeodesic I M q.1.proj q.1.2 q.2)
+        (fun q : TangentBundle I M × ℝ ↦ maximalGeodesic I M q.1.proj q.1.snd q.2)
         (z, t) (ξ, 0) := by
   have hF := (contMDiffOn_maximalGeodesic (I := I) (M := M)).contMDiffAt
     (isOpen_setOfPred_mem_geodesicInterval.mem_nhds (x := (z, t)) ht)
   rw [geodesicJacobiPropagator_def]
   have h := mfderiv_comp (f := fun w : TangentBundle I M ↦ (w, t))
-    (g := fun q : TangentBundle I M × ℝ ↦ maximalGeodesic I M q.1.proj q.1.2 q.2)
+    (g := fun q : TangentBundle I M × ℝ ↦ maximalGeodesic I M q.1.proj q.1.snd q.2)
     z (hF.mdifferentiableAt (by simp))
     (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
   rw [mfderiv_prod_left] at h
@@ -86,9 +86,9 @@ and time. The domain is the inverse image of the actual maximal-flow domain. -/
 theorem contMDiffOn_geodesicJacobiPropagator :
     ContMDiffOn (I.tangent.tangent.prod 𝓘(ℝ, ℝ)) I.tangent ∞
       (fun q : TangentBundle I.tangent (TangentBundle I M) × ℝ ↦
-        TotalSpace.mk' E (maximalGeodesic I M q.1.proj.proj q.1.proj.2 q.2)
-          (geodesicJacobiPropagator q.1.proj q.2 q.1.2))
-      {q | q.2 ∈ geodesicInterval I M q.1.proj.proj q.1.proj.2} := by
+        TotalSpace.mk' E (maximalGeodesic I M q.1.proj.proj q.1.proj.snd q.2)
+          (geodesicJacobiPropagator q.1.proj q.2 q.1.snd))
+      {q | q.2 ∈ geodesicInterval I M q.1.proj.proj q.1.proj.snd} := by
   let ι : TangentBundle I.tangent (TangentBundle I M) × ℝ →
       TangentBundle (I.tangent.prod 𝓘(ℝ, ℝ)) (TangentBundle I M × ℝ) :=
     fun q ↦ (equivTangentBundleProd I.tangent (TangentBundle I M) 𝓘(ℝ, ℝ) ℝ).symm
@@ -102,28 +102,28 @@ theorem contMDiffOn_geodesicJacobiPropagator :
     (isOpen_setOfPred_mem_geodesicInterval.mem_nhds (x := (q.1.proj, q.2)) hq)
   have h := (hF.contMDiffAt_tangentMap (X := ι q) (m := ∞) (by simp)).comp q (hι q)
   have hdom : ∀ᶠ r : TangentBundle I.tangent (TangentBundle I M) × ℝ in 𝓝 q,
-      r.2 ∈ geodesicInterval I M r.1.proj.proj r.1.proj.2 :=
+      r.2 ∈ geodesicInterval I M r.1.proj.proj r.1.proj.snd :=
     (((FiberBundle.continuous_proj (E × E) (TangentSpace I.tangent)).comp
       continuous_fst).prodMk continuous_snd).continuousAt.preimage_mem_nhds
       (isOpen_setOfPred_mem_geodesicInterval.mem_nhds (x := (q.1.proj, q.2)) hq)
   refine (h.congr_of_eventuallyEq ?_).contMDiffWithinAt
   filter_upwards [hdom] with r hr
   simp only [Function.comp_apply, tangentMap, ι, equivTangentBundleProd]
-  exact congrArg (TotalSpace.mk' E _) (geodesicJacobiPropagator_apply r.1.proj hr r.1.2)
+  exact congrArg (TotalSpace.mk' E _) (geodesicJacobiPropagator_apply r.1.proj hr r.1.snd)
 
 /-- Differentiating any initial-state curve gives the propagator applied to that curve's
 velocity. Thus the resulting field depends only on the infinitesimal initial state. -/
 theorem variationField_maximalGeodesic_eq_geodesicJacobiPropagator
     {σ : ℝ → TangentBundle I M} (hσ : MDifferentiableAt 𝓘(ℝ, ℝ) I.tangent σ 0)
-    {t : ℝ} (ht : t ∈ geodesicInterval I M (σ 0).proj (σ 0).2) :
-    variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2) t =
+    {t : ℝ} (ht : t ∈ geodesicInterval I M (σ 0).proj (σ 0).snd) :
+    variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).snd) t =
       geodesicJacobiPropagator (σ 0) t (curveVelocity I.tangent σ 0) := by
   have hF := (contMDiffOn_maximalGeodesic (I := I) (M := M)).contMDiffAt
     (isOpen_setOfPred_mem_geodesicInterval.mem_nhds (x := (σ 0, t)) ht)
   have hs := (hF.comp (σ 0) (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt
     (by simp)
   have h := mfderiv_comp (f := σ)
-    (g := fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.2 t) 0 hs hσ
+    (g := fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.snd t) 0 hs hσ
   rw [variationField_apply, curveVelocity_apply, geodesicJacobiPropagator_def,
     curveVelocity_apply]
   simpa only [Function.comp_def, ContinuousLinearMap.coe_comp, Function.comp_apply] using
@@ -133,8 +133,8 @@ theorem variationField_maximalGeodesic_eq_geodesicJacobiPropagator
 interval. No completeness or nonzero-velocity hypothesis is imposed. -/
 theorem isJacobiFieldOn_geodesicJacobiPropagator (z : TangentBundle I M)
     (ξ : TangentSpace I.tangent z) :
-    IsJacobiFieldOn I (maximalGeodesic I M z.proj z.2)
-      (fun t ↦ geodesicJacobiPropagator z t ξ) (geodesicInterval I M z.proj z.2) := by
+    IsJacobiFieldOn I (maximalGeodesic I M z.proj z.snd)
+      (fun t ↦ geodesicJacobiPropagator z t ξ) (geodesicInterval I M z.proj z.snd) := by
   obtain ⟨σ, rfl, hσ, hξ⟩ := exists_contMDiffAt_curveVelocity_eq (I := I.tangent)
     (n := ∞) (by simp) z ξ (0 : ℝ)
   apply (isJacobiFieldOn_variationField_maximalGeodesic (hσ.of_le (by simp))).congr
@@ -149,8 +149,8 @@ The heterogeneous equality transports the target fibre along `maximalGeodesic_ze
 theorem geodesicJacobiPropagator_zero (z : TangentBundle I M) (ξ : TangentSpace I.tangent z) :
     HEq (geodesicJacobiPropagator z 0 ξ)
       (mfderiv I.tangent I (π E (TangentSpace I)) z ξ) := by
-  have hfun : (fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.2 0) =
-      π E (TangentSpace I) := funext fun w ↦ maximalGeodesic_zero w.proj w.2
+  have hfun : (fun w : TangentBundle I M ↦ maximalGeodesic I M w.proj w.snd 0) =
+      π E (TangentSpace I) := funext fun w ↦ maximalGeodesic_zero w.proj w.snd
   have h := congrArg (fun f : TangentBundle I M → M ↦
     tangentMap I.tangent I f (TotalSpace.mk' (E × E) z ξ)) hfun
   exact (TotalSpace.ext_iff.mp h).2
@@ -161,11 +161,11 @@ of any smooth curve representing its infinitesimal initial state. -/
 theorem alongCurveWithin_geodesicJacobiPropagator_zero
     {σ : ℝ → TangentBundle I M} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 σ 0) :
     CovariantDerivative.alongCurveWithin (CovariantDerivative.leviCivitaConnection I M)
-      (maximalGeodesic I M (σ 0).proj (σ 0).2)
+      (maximalGeodesic I M (σ 0).proj (σ 0).snd)
       (fun t ↦ geodesicJacobiPropagator (σ 0) t (curveVelocity I.tangent σ 0))
-      (geodesicInterval I M (σ 0).proj (σ 0).2) 0 =
+      (geodesicInterval I M (σ 0).proj (σ 0).snd) 0 =
         CovariantDerivative.alongCurve (CovariantDerivative.leviCivitaConnection I M)
-          (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) 0 := by
+          (fun q ↦ (σ q).proj) (fun q ↦ (σ q).snd) 0 := by
   rw [← alongCurveWithin_variationField_maximalGeodesic_zero hσ]
   apply CovariantDerivative.alongCurveWithin_congr
   · filter_upwards [self_mem_nhdsWithin] with t ht
@@ -179,14 +179,14 @@ initial states, on which Jacobi propagation is smooth for every infinitesimal in
 In particular, closed segment endpoints do not require one-sided parameter derivatives. -/
 theorem exists_contMDiffOn_geodesicJacobiPropagator_of_isCompact
     (z : TangentBundle I M) {K : Set ℝ} (hK : IsCompact K)
-    (hsub : K ⊆ geodesicInterval I M z.proj z.2) :
+    (hsub : K ⊆ geodesicInterval I M z.proj z.snd) :
     ∃ (U : Set (TangentBundle I M)) (V : Set ℝ),
       IsOpen U ∧ IsOpen V ∧ z ∈ U ∧ K ⊆ V ∧
-        (∀ w ∈ U, V ⊆ geodesicInterval I M w.proj w.2) ∧
+        (∀ w ∈ U, V ⊆ geodesicInterval I M w.proj w.snd) ∧
         ContMDiffOn (I.tangent.tangent.prod 𝓘(ℝ, ℝ)) I.tangent ∞
           (fun q : TangentBundle I.tangent (TangentBundle I M) × ℝ ↦
-            TotalSpace.mk' E (maximalGeodesic I M q.1.proj.proj q.1.proj.2 q.2)
-              (geodesicJacobiPropagator q.1.proj q.2 q.1.2))
+            TotalSpace.mk' E (maximalGeodesic I M q.1.proj.proj q.1.proj.snd q.2)
+              (geodesicJacobiPropagator q.1.proj q.2 q.1.snd))
           ((π (E × E) (TangentSpace I.tangent) ⁻¹' U) ×ˢ V) := by
   obtain ⟨U, V, hU, hV, hz, hKV, hdom, _⟩ :=
     z.exists_contMDiffOn_maximalGeodesic_of_isCompact hK hsub

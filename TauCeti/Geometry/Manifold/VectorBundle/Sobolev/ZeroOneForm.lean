@@ -351,14 +351,14 @@ theorem chartValueL_zeroOnePartSobolevL_ae_coord {w : SobolevSection A.tangentHo
 @[simp]
 theorem zeroOnePartSobolevL_coe (w : zeroOneSobolevSections A μ p k) :
     zeroOnePartSobolevL A μ p k w = w :=
-  Subtype.ext (zeroOnePartEnd_of_mem w.2)
+  Subtype.ext (zeroOnePartEnd_of_mem w.property)
 
 /-- An element of `W^{k,p}` of `V`-valued one-forms is fixed by the `(0,1)`-projection exactly when
 it is a `(0,1)`-form. -/
 theorem coe_zeroOnePartSobolevL_eq_self_iff {w : SobolevSection A.tangentHom μ p k} :
     (zeroOnePartSobolevL A μ p k w : SobolevSection A.tangentHom μ p k) = w ↔
       w ∈ zeroOneSobolevSections A μ p k :=
-  ⟨fun h ↦ h ▸ (zeroOnePartSobolevL A μ p k w).2, zeroOnePartEnd_of_mem⟩
+  ⟨fun h ↦ h ▸ (zeroOnePartSobolevL A μ p k w).property, zeroOnePartEnd_of_mem⟩
 
 /-- The `(0,1)`-projection is onto the `(0,1)`-forms. -/
 theorem zeroOnePartSobolevL_surjective : Function.Surjective (zeroOnePartSobolevL A μ p k) :=
@@ -387,7 +387,7 @@ def zeroOneLowerOrderL :
     zeroOneSobolevSections A μ p (k + 1) →L[ℝ] zeroOneSobolevSections A μ p k :=
   ((A.tangentHom.sectionChartData.lowerOrderL μ p k).comp
     (zeroOneSobolevSections A μ p (k + 1)).subtypeL).codRestrict _
-      fun w ↦ lowerOrderL_mem_zeroOneSobolevSections w.2
+      fun w ↦ lowerOrderL_mem_zeroOneSobolevSections w.property
 
 /-- The inclusion of `(0,1)`-forms forgets the highest derivative. -/
 @[simp]
