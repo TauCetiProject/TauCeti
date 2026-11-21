@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
-public import TauCeti.Analysis.InnerProductSpace.Modulus
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
 /-!
 # The extended trace of positive operators
@@ -43,7 +44,9 @@ variable {𝕜 E F ι : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
--- Restriction of scalars supplies the real functional calculus also for real Hilbert spaces.
+section RealAlgebra
+
+-- Restriction of scalars supplies the real functional calculus over any `RCLike` field.
 attribute [local instance] realAlgebra realIsScalarTower
 
 /-- The extended trace on the positive cone, defined as the Hilbert–Schmidt energy of the
@@ -51,17 +54,31 @@ positive square root. It is zero on operators outside the positive cone. -/
 noncomputable def positiveTrace (T : E →L[𝕜] E) : ℝ≥0∞ :=
   (CFC.sqrt T).hilbertSchmidtEnergy (exists_hilbertBasis 𝕜 E).choose_spec.choose
 
-/-- The extended positive trace is the energy of the square root in any Hilbert basis. -/
-theorem positiveTrace_eq_hilbertSchmidtEnergy_sqrt (T : E →L[𝕜] E)
-    (b : HilbertBasis ι 𝕜 E) :
-    T.positiveTrace = (CFC.sqrt T).hilbertSchmidtEnergy b :=
-  (CFC.sqrt T).hilbertSchmidtEnergy_indep _ b
-
 /-- The extended trace is zero outside the positive cone. -/
 theorem positiveTrace_of_not_nonneg {T : E →L[𝕜] E} (hT : ¬ 0 ≤ T) :
     T.positiveTrace = 0 := by
-  simp [positiveTrace, CFC.sqrt, cfcₙ_apply_of_not_predicate T hT]
+  simp [positiveTrace, CFC.sqrt_of_not_nonneg hT]
 
+private theorem positiveTrace_exists_sq_eq {T : E →L[𝕜] E} (hT : 0 ≤ T)
+    (b : HilbertBasis ι 𝕜 E) :
+    ∃ S : E →L[𝕜] E, 0 ≤ S ∧ S * S = T ∧ T.positiveTrace = S.hilbertSchmidtEnergy b :=
+  ⟨CFC.sqrt T, CFC.sqrt_nonneg T, CFC.sqrt_mul_sqrt_self T hT,
+    (CFC.sqrt T).hilbertSchmidtEnergy_indep _ b⟩
+
+end RealAlgebra
+
+/-- The extended positive trace is the energy of the square root in any Hilbert basis,
+for any real algebra structure on the operators compatible with the `𝕜`-action. -/
+theorem positiveTrace_eq_hilbertSchmidtEnergy_sqrt
+    [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+    (T : E →L[𝕜] E) (b : HilbertBasis ι 𝕜 E) :
+    T.positiveTrace = (CFC.sqrt T).hilbertSchmidtEnergy b := by
+  by_cases hT : 0 ≤ T
+  · obtain ⟨S, hS, hSq, hTrace⟩ := positiveTrace_exists_sq_eq hT b
+    rwa [CFC.sqrt_unique hSq hS]
+  · simp [positiveTrace_of_not_nonneg hT, CFC.sqrt_of_not_nonneg hT]
+
+attribute [local instance] realAlgebra realIsScalarTower in
 /-- **The diagonal formula for the positive trace.** Any Hilbert basis, including an
 uncountable or empty one, computes the trace by its nonnegative diagonal coefficients. -/
 theorem positiveTrace_eq_tsum (T : E →L[𝕜] E) (hT : 0 ≤ T)
@@ -76,6 +93,7 @@ theorem positiveTrace_eq_tsum (T : E →L[𝕜] E) (hT : 0 ≤ T)
   rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
     @norm_sq_eq_re_inner 𝕜, ← adjoint_inner_right, ← comp_apply, hsq]
 
+/-- The zero operator has zero positive trace. -/
 @[simp]
 theorem positiveTrace_zero : (0 : E →L[𝕜] E).positiveTrace = 0 := by
   simp [positiveTrace]
@@ -91,31 +109,50 @@ theorem positiveTrace_add {S T : E →L[𝕜] E} (hS : 0 ≤ S) (hT : 0 ≤ T) :
   exact ENNReal.ofReal_add (nonneg_iff_isPositive.mp hS |>.re_inner_nonneg_right _)
     (nonneg_iff_isPositive.mp hT |>.re_inner_nonneg_right _)
 
-/-- Positive real homogeneity of the trace, including the convention `0 * ∞ = 0` and the
-zero extension outside the positive cone. -/
-@[simp]
-theorem positiveTrace_smul (T : E →L[𝕜] E) (r : ℝ≥0) :
-    (((r : ℝ) : 𝕜) • T).positiveTrace = r * T.positiveTrace := by
-  by_cases hr0 : r = 0
-  · simp [hr0]
-  have hr : 0 ≤ ((r : ℝ) : 𝕜) := by exact_mod_cast r.coe_nonneg
-  have hrne : ((r : ℝ) : 𝕜) ≠ 0 := by exact_mod_cast hr0
+/-- The extended positive trace distributes over finite sums of positive operators. -/
+theorem positiveTrace_sum {s : Finset ι} {f : ι → E →L[𝕜] E} (hf : ∀ i ∈ s, 0 ≤ f i) :
+    (∑ i ∈ s, f i).positiveTrace = ∑ i ∈ s, (f i).positiveTrace := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : ∀ j ∈ s, 0 ≤ f j := fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    simp only [Finset.sum_insert hi]
+    rw [positiveTrace_add (hf i (Finset.mem_insert_self i s)) (Finset.sum_nonneg hs), ih hs]
+
+/-- Scaling by a nonnegative scalar scales the trace by its extended norm, including the
+convention `0 * ∞ = 0` and the zero extension off the positive cone. -/
+theorem positiveTrace_smul_of_nonneg (T : E →L[𝕜] E) {c : 𝕜} (hc : 0 ≤ c) :
+    (c • T).positiveTrace = ‖c‖ₑ * T.positiveTrace := by
+  by_cases hc0 : c = 0
+  · simp [hc0]
   by_cases hT : 0 ≤ T
   swap
-  · have hscaled : ¬ 0 ≤ ((r : ℝ) : 𝕜) • T := by
+  · have hscaled : ¬ 0 ≤ c • T := by
       intro h
-      have hback := (nonneg_iff_isPositive.mp h).smul_of_nonneg (inv_nonneg.mpr hr)
+      have hback := (nonneg_iff_isPositive.mp h).smul_of_nonneg (inv_nonneg.mpr hc)
       apply hT
-      simpa only [smul_smul, inv_mul_cancel₀ hrne, one_smul] using
+      simpa only [smul_smul, inv_mul_cancel₀ hc0, one_smul] using
         (nonneg_iff_isPositive.mpr hback)
     rw [positiveTrace_of_not_nonneg hscaled, positiveTrace_of_not_nonneg hT, mul_zero]
   obtain ⟨ι, b, -⟩ := exists_hilbertBasis 𝕜 E
   rw [positiveTrace_eq_tsum _ (nonneg_iff_isPositive.mpr
-      ((nonneg_iff_isPositive.mp hT).smul_of_nonneg hr)) b,
+      ((nonneg_iff_isPositive.mp hT).smul_of_nonneg hc)) b,
     positiveTrace_eq_tsum _ hT b, ← ENNReal.tsum_mul_left]
+  obtain ⟨r, hr, rfl⟩ := RCLike.nonneg_iff_exists_ofReal.mp hc
   refine tsum_congr fun i => ?_
-  simp only [smul_apply, inner_smul_right, RCLike.re_ofReal_mul]
-  rw [ENNReal.ofReal_mul r.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+  rw [smul_apply, inner_smul_right, RCLike.re_ofReal_mul, ENNReal.ofReal_mul hr,
+    ← ofReal_norm, RCLike.norm_of_nonneg hr]
+
+/-- Scaling by a nonnegative real scales the extended trace by that real. -/
+@[simp]
+theorem positiveTrace_smul [SMul ℝ≥0 (E →L[𝕜] E)] [IsScalarTower ℝ≥0 𝕜 (E →L[𝕜] E)]
+    (T : E →L[𝕜] E) (r : ℝ≥0) : (r • T).positiveTrace = r * T.positiveTrace := by
+  have h : r • (1 : 𝕜) = ((r : ℝ) : 𝕜) := by
+    simp [NNReal.smul_def, RCLike.real_smul_eq_coe_mul]
+  rw [← smul_one_smul 𝕜 r T, h,
+    T.positiveTrace_smul_of_nonneg (RCLike.ofReal_nonneg.2 r.coe_nonneg),
+    ← ofReal_norm, RCLike.norm_of_nonneg r.coe_nonneg, ENNReal.ofReal_coe_nnreal]
 
 /-- The positive trace, extended by zero off the positive cone, is monotone. -/
 theorem positiveTrace_mono {S T : E →L[𝕜] E} (hST : S ≤ T) :
@@ -130,6 +167,23 @@ theorem positiveTrace_mono {S T : E →L[𝕜] E} (hST : S ≤ T) :
   have h := (nonneg_iff_isPositive.mp (sub_nonneg.mpr hST)).re_inner_nonneg_right (b i)
   simpa only [sub_apply, inner_sub_right, map_sub, sub_nonneg] using h
 
+/-- Taking the adjoint preserves the extended trace, including its zero extension. -/
+@[simp]
+theorem positiveTrace_adjoint (T : E →L[𝕜] E) : (T†).positiveTrace = T.positiveTrace := by
+  by_cases hT : 0 ≤ T
+  · rw [(nonneg_iff_isPositive.mp hT).isSelfAdjoint.adjoint_eq]
+  · have hAdj : ¬ 0 ≤ T† := by
+      intro h
+      have hEq := (nonneg_iff_isPositive.mp h).isSelfAdjoint.adjoint_eq
+      rw [adjoint_adjoint] at hEq
+      exact hT (hEq.symm ▸ h)
+    rw [positiveTrace_of_not_nonneg hAdj, positiveTrace_of_not_nonneg hT]
+
+/-- Taking the star of an operator preserves its extended positive trace. -/
+@[simp]
+theorem positiveTrace_star (T : E →L[𝕜] E) : (star T).positiveTrace = T.positiveTrace :=
+  T.positiveTrace_adjoint
+
 /-- The trace of the source Gram operator is the Hilbert–Schmidt energy of the operator. -/
 theorem positiveTrace_adjoint_comp_self (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     (T† ∘L T).positiveTrace = T.hilbertSchmidtEnergy b := by
@@ -141,7 +195,7 @@ theorem positiveTrace_adjoint_comp_self (T : E →L[𝕜] F) (b : HilbertBasis �
 
 /-- **The rectangular trace identity.** Source and target may have different dimensions and
 cardinalities; the two traces are equal even when infinite. -/
-theorem positiveTrace_adjoint_comp_self_eq (T : E →L[𝕜] F) :
+theorem positiveTrace_adjoint_comp_self_eq_positiveTrace_self_comp_adjoint (T : E →L[𝕜] F) :
     (T† ∘L T).positiveTrace = (T ∘L T†).positiveTrace := by
   obtain ⟨ι, b, -⟩ := exists_hilbertBasis 𝕜 E
   obtain ⟨κ, c, -⟩ := exists_hilbertBasis 𝕜 F
@@ -152,9 +206,10 @@ theorem positiveTrace_adjoint_comp_self_eq (T : E →L[𝕜] F) :
     _ = (T ∘L T†).positiveTrace := by
       simpa only [adjoint_adjoint] using (positiveTrace_adjoint_comp_self (T†) c).symm
 
+attribute [local instance] realAlgebra realIsScalarTower in
 /-- Unitary transport preserves the positive trace. -/
 @[simp]
-theorem positiveTrace_conj (T : E →L[𝕜] E) (U : E ≃ₗᵢ[𝕜] F) :
+theorem positiveTrace_conjStarAlgEquiv (T : E →L[𝕜] E) (U : E ≃ₗᵢ[𝕜] F) :
     (U.conjStarAlgEquiv T).positiveTrace = T.positiveTrace := by
   by_cases hT : 0 ≤ T
   swap
@@ -176,8 +231,9 @@ theorem positiveTrace_conj (T : E →L[𝕜] E) (U : E ≃ₗᵢ[𝕜] F) :
       LinearIsometryEquiv.coe_coe'', hs,
       LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
     exact congr(U ($(CFC.sqrt_mul_sqrt_self T hT) (U.symm x)))
-  rw [← htarget, ← positiveTrace_adjoint_comp_self_eq A, hsource]
+  rw [← htarget, ← positiveTrace_adjoint_comp_self_eq_positiveTrace_self_comp_adjoint A, hsource]
 
+attribute [local instance] realAlgebra realIsScalarTower in
 /-- The positive trace dominates the operator norm. -/
 theorem enorm_le_positiveTrace {T : E →L[𝕜] E} (hT : 0 ≤ T) :
     ‖T‖ₑ ≤ T.positiveTrace := by
@@ -224,7 +280,7 @@ theorem positiveTrace_rankOne_self (v : E) :
 `ℝ≥0∞`. Thus infinite-dimensional spaces have infinite identity trace. -/
 theorem _root_.HilbertBasis.positiveTrace_one (b : HilbertBasis ι 𝕜 E) :
     (1 : E →L[𝕜] E).positiveTrace = ENat.card ι := by
-  rw [positiveTrace_eq_tsum _ zero_le_one b]
+  rw [positiveTrace_eq_tsum _ (nonneg_iff_isPositive.mpr isPositive_one) b]
   simp [b.orthonormal.norm_eq_one, ENNReal.tsum_one]
 
 /-- The trace of the identity in finite dimension is the dimension, without normalization. -/
