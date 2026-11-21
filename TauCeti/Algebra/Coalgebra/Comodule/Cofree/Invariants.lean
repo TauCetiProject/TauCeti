@@ -1,84 +1,80 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The TauCeti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The TauCeti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Adjunction
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Fixed
+public import TauCeti.Algebra.Coalgebra.Comodule.Invariants
 
 /-!
-# Invariants of a cofree comodule
+# The invariants of the cofree functor
 
-The invariant vectors of the cofree comodule `M ⊗ H` are exactly the tensors `m ⊗ 1`.
-Counit evaluation identifies them naturally with `M`. This is the degree-zero
-calculation for cofree coefficients in rational cohomology; it needs neither flatness
-nor injectivity of `M` and holds over a commutative semiring.
+Counit evaluation identifies the invariants of a cofree comodule `M ⊗ H` naturally with `M`.
+This packages `Comodule.cofreeFixedEquiv` into a natural isomorphism without assuming flatness.
 
 ## References
 
-* J. C. Jantzen, *Representations of Algebraic Groups I*, SFB/MPI 85-9 (1985),
-  §4.7(a).
+* J. C. Jantzen, *Representations of Algebraic Groups I*, SFB/MPI 85-9 (1985), §4.7(a).
 -/
 
 public section
 
+open CategoryTheory
 open scoped TensorProduct
 
-namespace TauCeti.Comodule
+namespace TauCeti.ComoduleCat
 
-variable (R H M : Type*) [CommSemiring R] [Semiring H] [Bialgebra R H]
-  [AddCommMonoid M] [Module R M]
+universe u v w
 
-attribute [local instance] cofree
+variable (R : Type u) (H : Type v) [CommRing R] [Semiring H] [Bialgebra R H]
 
-/-- An invariant cofree vector is recovered by tensoring its counit evaluation with `1`. -/
-theorem eq_counit_tmul_one_of_mem_fixedSubcomodule
-    (x : M ⊗[R] H) (hx : x ∈ fixedSubcomodule R H (M ⊗[R] H)) :
-    x = (TensorProduct.rid R M (Coalgebra.counit.lTensor M x)) ⊗ₜ[R] (1 : H) := by
-  let e := (TensorProduct.rid R M).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := H)).lTensor M
-  have h := congrArg (e.rTensor H) (mem_fixedSubcomodule.mp hx)
-  have he : e.rTensor H (cofreeCoact R H M x) = x :=
-    LinearMap.congr_fun (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
-      (R := R) (C := H) (M := M)) x
-  rw [cofree_coact, ← cofreeCoact_def, he] at h
-  simpa [e] using h
+-- Use the additive group carried by the functor object rather than the one inferred on the
+-- tensor product by `LinearEquiv.toModuleIso`; the underlying linear maps are unchanged.
+private noncomputable def cofreeInvariantsComponent (M : ModuleCat.{max v w} R) :
+    (cofreeFunctor.{u, v, w} R H ⋙ invariantsFunctor R H).obj M ≅ M where
+  hom := ConcreteCategory.ofHom
+    (X := (cofreeFunctor.{u, v, w} R H ⋙ invariantsFunctor R H).obj M) (Y := M)
+    (Comodule.cofreeFixedEquiv R H M).symm.toLinearMap
+  inv := ConcreteCategory.ofHom
+    (X := M) (Y := (cofreeFunctor.{u, v, w} R H ⋙ invariantsFunctor R H).obj M)
+    (Comodule.cofreeFixedEquiv R H M).toLinearMap
+  hom_inv_id := by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    exact (Comodule.cofreeFixedEquiv R H M).apply_symm_apply z
+  inv_hom_id := by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro m
+    exact (Comodule.cofreeFixedEquiv R H M).symm_apply_apply m
 
-/-- Counit evaluation identifies the invariants of a cofree comodule with its
-coefficient module. Its inverse sends `m` to `m ⊗ 1`. -/
-noncomputable def cofreeInvariantsEquiv :
-    fixedSubcomodule R H (M ⊗[R] H) ≃ₗ[R] M where
-  toLinearMap := ((TensorProduct.rid R M).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := H)).lTensor M).comp
-      (SMulMemClass.subtype (fixedSubcomodule R H (M ⊗[R] H)))
-  invFun m := ⟨m ⊗ₜ[R] 1, by simp [Algebra.TensorProduct.one_def]⟩
-  left_inv x := Subtype.ext
-    (eq_counit_tmul_one_of_mem_fixedSubcomodule R H M x x.property).symm
-  right_inv m := by simp
+/-- The invariants of a cofree comodule are naturally its coefficient module, via the counit. -/
+noncomputable def cofreeInvariantsIso :
+    cofreeFunctor.{u, v, w} R H ⋙ invariantsFunctor R H ≅ 𝟭 (ModuleCat.{max v w} R) :=
+  NatIso.ofComponents (cofreeInvariantsComponent R H) (by
+    intro M N f
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    exact Comodule.cofreeFixedEquiv_symm_naturality f.hom z)
 
-/-- The forward cofree-invariants comparison is counit evaluation. -/
-@[simp]
-theorem cofreeInvariantsEquiv_apply (x : fixedSubcomodule R H (M ⊗[R] H)) :
-    cofreeInvariantsEquiv R H M x =
-      TensorProduct.rid R M (Coalgebra.counit.lTensor M (x : M ⊗[R] H)) :=
-  (rfl)
+-- Simplify the component applications before `ConcreteCategory.hom` changes their form.
+/-- The comparison on a cofree comodule is evaluation by the counit. -/
+@[simp↓]
+theorem cofreeInvariantsIso_hom_app_apply (M : ModuleCat.{max v w} R)
+    (z : (cofreeFunctor.{u, v, w} R H ⋙ invariantsFunctor R H).obj M) :
+    (cofreeInvariantsIso.{u, v, w} R H).hom.app M z =
+      TensorProduct.rid R M (Coalgebra.counit.lTensor M z.val) :=
+  Comodule.cofreeFixedEquiv_symm_apply (R := R) (H := H) (N := M) z
 
-/-- The inverse cofree-invariants comparison tensors with `1`. -/
-@[simp]
-theorem cofreeInvariantsEquiv_symm_apply (m : M) :
-    ((cofreeInvariantsEquiv R H M).symm m : M ⊗[R] H) = m ⊗ₜ[R] (1 : H) :=
-  (rfl)
+/-- The inverse comparison is inclusion via tensoring with `1`. -/
+@[simp↓]
+theorem coe_cofreeInvariantsIso_inv_app_apply (M : ModuleCat.{max v w} R) (m : M) :
+    (((cofreeInvariantsIso.{u, v, w} R H).inv.app M m).val : M ⊗[R] H) = m ⊗ₜ[R] (1 : H) :=
+  Comodule.cofreeFixedEquiv_apply (R := R) (H := H) (N := M) m
 
-/-- The cofree-invariants comparison is natural in the coefficient module. -/
-theorem cofreeInvariantsEquiv_naturality {N : Type*} [AddCommMonoid N] [Module R N]
-    (f : M →ₗ[R] N) (x : fixedSubcomodule R H (M ⊗[R] H)) :
-    cofreeInvariantsEquiv R H N ((Hom.cofreeMap f).fixedMap x) =
-      f (cofreeInvariantsEquiv R H M x) := by
-  simpa only [cofreeInvariantsEquiv_apply, Hom.fixedMap_apply, Hom.cofreeMap_apply,
-    LinearMap.comp_apply, LinearEquiv.coe_coe] using LinearMap.congr_fun
-      (rid_comp_lTensor_counit_comp_rTensor (C := H) f) (x : M ⊗[R] H)
-
-end TauCeti.Comodule
+end TauCeti.ComoduleCat

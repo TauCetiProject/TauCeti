@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Invariants
+public import Mathlib.CategoryTheory.Whiskering
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Invariants
 public import TauCeti.Algebra.Coalgebra.Comodule.EnoughInjectives
-public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import TauCeti.CategoryTheory.Abelian.RightDerived
 
 /-!
 # Rational cohomology as derived invariants
@@ -20,7 +21,8 @@ existing fixed subcomodule, not the vectors fixed only by field-valued points.
 
 The construction uses Mathlib's right derived functors and the enough-injectives
 instance for comodules. The invariants adjunction supplies left exactness. Computing
-these functors by an explicit cofree complex is a separate comparison.
+these functors by an explicit cofree complex is a separate comparison. In degree zero,
+cofree coefficients recover the original module by counit evaluation.
 
 ## References
 
@@ -46,8 +48,16 @@ noncomputable abbrev rationalCohomology (n : ℕ) :
   (invariantsFunctor R H).rightDerived n
 
 /-- Zeroth rational cohomology is naturally the invariant submodule. -/
-noncomputable def rationalCohomologyZeroIso :
+noncomputable abbrev rationalCohomologyZeroIso :
     rationalCohomology.{u, v, w} R H 0 ≅ invariantsFunctor R H :=
   (invariantsFunctor R H).rightDerivedZeroIsoSelf
+
+/-- Zeroth rational cohomology of the cofree comodule naturally recovers its coefficient
+module. The comparison evaluates invariant tensors by the coalgebra counit. -/
+noncomputable abbrev rationalCohomologyZeroCofreeIso :
+    cofreeFunctor.{u, v, max u w} R H ⋙ rationalCohomology.{u, v, w} R H 0 ≅
+      𝟭 (ModuleCat.{max u v w} R) :=
+  Functor.isoWhiskerLeft _ (rationalCohomologyZeroIso.{u, v, w} R H) ≪≫
+    cofreeInvariantsIso.{u, v, max u w} R H
 
 end TauCeti.ComoduleCat
