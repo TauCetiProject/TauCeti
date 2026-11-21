@@ -292,6 +292,18 @@ theorem congr_symm (θ : P ≃ₗ[R] P') : (congr f θ).symm = congr f θ.symm :
 
 end Map
 
+/-- Transport balanced extension along equality of the scalar ring homomorphisms. -/
+def congrRingHom {g : R →+* S} (h : f = g) :
+    BalancedExtension f P ≃ₗ[S] BalancedExtension g P := by
+  subst g
+  exact .refl _ _
+
+@[simp]
+theorem congrRingHom_tmul {g : R →+* S} (h : f = g) (s : S) (p : P) :
+    congrRingHom h (tmul f s p) = tmul g s p := by
+  subst g
+  rfl
+
 section Identity
 
 variable (R P) in

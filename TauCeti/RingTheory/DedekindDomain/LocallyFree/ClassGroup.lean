@@ -34,14 +34,17 @@ add on products and vanish on `Λⁿ`.
 
 Extension of scalars along a ring homomorphism `f : Λ →+* Λ'`, for instance the inclusion of
 `Λ` into a maximal order `Λ'`, sends `c(M, n)` to `c(Λ' ⊗_Λ M, n)`. Restricted to `Cl(Λ)` this is
-`TauCeti.LocallyFree.classGroupMap`, valued in `K₀(Λ')`; its kernel is the *kernel group*
+`TauCeti.LocallyFree.classGroupK0Map`, valued in `K₀(Λ')`; its kernel is the *kernel group*
 `D(Λ)`. The kernel depends only on the map into `K₀(Λ')`, of which `Cl(Λ')` is a subgroup.
+For morphisms of algebras finite over the central base, the subgroup-valued map
+`TauCeti.LocallyFree.classGroupMap` is constructed in
+`TauCeti.RingTheory.DedekindDomain.LocallyFree.ScalarChange`.
 
 ## Main definitions
 
 * `TauCeti.FiniteProjectiveModules.classOf Λ M n`: the class `[M] - n[Λ]` in `K₀(Λ)`.
 * `TauCeti.LocallyFree.classGroup A K Λ`: the locally free class group `Cl(Λ)`.
-* `TauCeti.LocallyFree.classGroupMap A K f`: extension of scalars `Cl(Λ) → K₀(Λ')` along
+* `TauCeti.LocallyFree.classGroupK0Map A K f`: extension of scalars `Cl(Λ) → K₀(Λ')` along
   `f : Λ →+* Λ'`.
 * `TauCeti.LocallyFree.kernelGroup A K f`: its kernel, the kernel group `D(Λ)`.
 
@@ -57,7 +60,7 @@ Extension of scalars along a ring homomorphism `f : Λ →+* Λ'`, for instance 
 * `TauCeti.LocallyFree.classOf_mem_classGroup` and `TauCeti.LocallyFree.classGroup_le_iff`: if
   `A` is not a field, the classes of locally free lattices lie in `Cl(Λ)` and generate it.
 * `TauCeti.LocallyFree.classGroup_eq_bot`: over a field, `Cl(Λ)` is trivial.
-* `TauCeti.LocallyFree.classGroupMap_classOf`: extension of scalars sends `[M] - n[Λ]` to
+* `TauCeti.LocallyFree.classGroupK0Map_classOf`: extension of scalars sends `[M] - n[Λ]` to
   `[Λ' ⊗_Λ M] - n[Λ']`.
 * `TauCeti.LocallyFree.classOf_mem_kernelGroup_iff`: the class of a locally free lattice `M` lies
   in the kernel group exactly when `Λ' ⊗_Λ M` is stably free.
@@ -131,24 +134,25 @@ theorem classGroup_le_iff (hA : ¬IsField A)
 variable (A K) {Λ' : Type u} [Ring Λ'] (f : Λ →+* Λ')
 
 /-- **Extension of scalars on the locally free class group.** A ring homomorphism `f : Λ →+* Λ'`
-sends a class `[M] - n[Λ]` of `Cl(Λ)` to `[Λ' ⊗_Λ M] - n[Λ']` (`classGroupMap_classOf`). This is
+sends a class `[M] - n[Λ]` of `Cl(Λ)` to `[Λ' ⊗_Λ M] - n[Λ']` (`classGroupK0Map_classOf`). This is
 the restriction to `Cl(Λ)` of the map induced on split `K₀` by extension of scalars, and its
 values are taken in the split `K₀` of `Λ'`. -/
-noncomputable def classGroupMap :
+noncomputable def classGroupK0Map :
     classGroup A K Λ →+ SplitK0.{u} (finiteProjectiveModules Λ').FullSubcategory :=
   (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars).comp (classGroup A K Λ).subtype
 
-theorem classGroupMap_apply (x : classGroup A K Λ) :
-    classGroupMap A K f x = SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x :=
+/-- The ambient class-group map is the restriction of extension on split `K₀`. -/
+theorem classGroupK0Map_apply (x : classGroup A K Λ) :
+    classGroupK0Map A K f x = SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x :=
   (rfl)
 
 variable {A K}
 
 /-- If `A` is not a field, extension of scalars sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`. -/
-theorem classGroupMap_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
-    classGroupMap A K f ⟨classOf Λ M n, classOf_mem_classGroup hA h⟩ =
+theorem classGroupK0Map_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
+    classGroupK0Map A K f ⟨classOf Λ M n, classOf_mem_classGroup hA h⟩ =
       classOf Λ' (BalancedExtension f M) n := by
-  rw [classGroupMap_apply, Subtype.coe_mk, classOf_def, classOf_def, map_sub, map_nsmul,
+  rw [classGroupK0Map_apply, Subtype.coe_mk, classOf_def, classOf_def, map_sub, map_nsmul,
     SplitK0.map_of, SplitK0.map_of,
     SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' (BalancedExtension f M),
       finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _),
@@ -163,7 +167,7 @@ variable (A K) in
 `f : Λ →+* Λ'`. For the inclusion of an order `Λ` into a maximal order `Λ'` it is the kernel of
 `Cl(Λ) → Cl(Λ')`, since `Cl(Λ')` is a subgroup of `K₀(Λ')`. -/
 noncomputable def kernelGroup : AddSubgroup (classGroup A K Λ) :=
-  (classGroupMap A K f).ker
+  (classGroupK0Map A K f).ker
 
 theorem mem_kernelGroup_iff {x : classGroup A K Λ} :
     x ∈ kernelGroup A K f ↔ SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x = 0 :=
@@ -175,7 +179,7 @@ group exactly when `Λ' ⊗_Λ M` is stably free of rank `n`: `(Λ' ⊗_Λ M) ×
 theorem classOf_mem_kernelGroup_iff (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
     ⟨classOf Λ M n, classOf_mem_classGroup hA h⟩ ∈ kernelGroup A K f ↔
       ∃ k : ℕ, Nonempty ((BalancedExtension f M × (Fin k → Λ')) ≃ₗ[Λ'] (Fin (n + k) → Λ')) := by
-  rw [kernelGroup, AddMonoidHom.mem_ker, classGroupMap_classOf f hA h, classOf_eq_zero_iff]
+  rw [kernelGroup, AddMonoidHom.mem_ker, classGroupK0Map_classOf f hA h, classOf_eq_zero_iff]
 
 variable (A K Λ) in
 /-- The kernel group of the identity is trivial. -/
