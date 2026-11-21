@@ -528,7 +528,7 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
   simp_rw [hterm]
   rw [finsum_eq_sum_of_support_subset (f := fun x : M ↦ μ x 0) (s := s)
     (hsupp_eq ▸ hfin.coe_toFinset.ge)]
-  exact (Fintype.sum_equiv e.symm (fun i ↦ μ (α i) 0) (fun x : s ↦ μ x.1 0) fun _ ↦ rfl).trans
+  exact (Fintype.sum_equiv e.symm (fun i ↦ μ (α i) 0) (fun x : s ↦ μ x.val 0) fun _ ↦ rfl).trans
     (Finset.sum_attach s fun x ↦ μ x 0)
 
 /-- On a zero-dimensional charted manifold, any rough density supported in `{x}` is integrable. -/

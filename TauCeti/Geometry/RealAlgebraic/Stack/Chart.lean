@@ -55,9 +55,9 @@ theorem IsAnalyticChart.exists_delineation_of_const_on_sections (he : IsAnalytic
   let U : Set S := (Subtype.val ⁻¹' e.source) ∩ C ⁻¹' V
   have hC : ContinuousOn C (Subtype.val ⁻¹' e.source) :=
     (firstCoords ℝ n d).continuous.comp_continuousOn
-      (e.continuousOn.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _))
+      (e.continuousOn.comp continuous_subtypeVal.continuousOn (mapsTo_preimage _ _))
   have hU : IsOpen U :=
-    hC.isOpen_inter_preimage (e.open_source.preimage continuous_subtype_val) hV
+    hC.isOpen_inter_preimage (e.open_source.preimage continuous_subtypeVal) hV
   let ψ : U → V := fun y ↦ ⟨C y, y.property.2⟩
   have hψ : Continuous ψ := (hC.mono inter_subset_left).domRestrict.subtype_mk _
   have hpoint (y : U) : e.symm (firstCoords ℝ d n (ψ y)) = (y : S) :=

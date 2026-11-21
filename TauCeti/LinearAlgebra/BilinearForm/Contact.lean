@@ -48,8 +48,10 @@ For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ 
 `(v, w) ↦ B v w + a v * a w`, is left-separating
 (`Module.Dual.IsContact.separatingLeft_add_smulRight`), so in finite dimension `v ↦ B v + a(v) a`
 is an isomorphism onto the dual. This is the pointwise contact flat map `X ↦ ι_X dα + α(X) α` of a
-contact form. The preimage of `a` itself is characterized by the Reeb equations: `B r + a(r) a = a`
-exactly when `a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`).
+contact form. In odd finite dimension the converse holds, so contactness is exactly the
+left-separation of `B + a ⊗ a` (`Module.Dual.isContact_iff_separatingLeft_add_smulRight`). The
+preimage of `a` itself is characterized by the Reeb equations: `B r + a(r) a = a` exactly when
+`a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`).
 
 A contact covector `a` on a finite-dimensional space has a **Reeb vector** `r = a.reebVector B`
 (`Module.Dual.reebVector`): the unique vector with `a r = 1` which is `B`-orthogonal to `ker a`.
@@ -79,6 +81,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`: the symplectization form, which
   is nondegenerate exactly for contact covectors.
 * `Module.Dual.IsContact.separatingLeft_add_smulRight`: `B + a ⊗ a` is left-separating.
+* `Module.Dual.isContact_iff_separatingLeft_add_smulRight`: in odd finite dimension, `a` is contact
+  exactly when `B + a ⊗ a` is left-separating.
 * `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
   `v ↦ B v + a(v) a`.
 * `Module.Dual.reebVector`, `Module.Dual.IsContact.eq_reebVector_iff`: the Reeb vector and its
@@ -132,16 +136,16 @@ theorem isContact_iff_of_isRefl (hB : B.IsRefl) :
   rw [isContact_def, LinearMap.BilinForm.Nondegenerate,
     LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl]
   refine and_congr_right fun _ ↦ ⟨fun h v hv hvw ↦ ?_, fun h v hv ↦ ?_⟩
-  · have := h ⟨v, hv⟩ fun w ↦ hvw w w.2
+  · have := h ⟨v, hv⟩ fun w ↦ hvw w w.property
     simpa using congrArg Subtype.val this
-  · exact Subtype.ext <| h v v.2 fun w hw ↦ hv ⟨w, hw⟩
+  · exact Subtype.ext <| h v v.property fun w hw ↦ hv ⟨w, hw⟩
 
 /-- Whether `a` is contact for `B` only depends on the values of `B` on `ker a × ker a`. -/
 theorem isContact_congr (h : ∀ v w, a v = 0 → a w = 0 → B v w = B' v w) :
     a.IsContact B ↔ a.IsContact B' := by
   have hrestrict : B.restrict (LinearMap.ker a) = B'.restrict (LinearMap.ker a) := by
     ext v w
-    exact h v w v.2 w.2
+    exact h v w v.property w.property
   rw [isContact_def, isContact_def, hrestrict]
 
 /-- A nonzero multiple of a covector is contact for `B` exactly when the covector is. -/
@@ -322,7 +326,8 @@ theorem separatingLeft_symplectizationForm_iff :
     rw [Set.range_const] at hspan
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 hspan
     have h0 := h (-c, v) fun y ↦ by
-      simp only [symplectizationForm_apply, LinearMap.mem_ker.1 v.2, ← hc, LinearMap.smul_apply,
+      simp only [symplectizationForm_apply, LinearMap.mem_ker.1 v.property, ← hc,
+          LinearMap.smul_apply,
         smul_eq_mul]
       ring
     exact Subtype.ext (congrArg Prod.snd h0)
@@ -334,7 +339,7 @@ theorem separatingLeft_symplectizationForm_iff :
     have hx₂ : a x.2 = 0 := by simpa using hx ((1 : K), (0 : V))
     -- Testing against `(0, w)` for `w ∈ ker a` shows `x.2 = 0`.
     have hx₂' : x.2 = 0 := congrArg Subtype.val <| hr ⟨x.2, hx₂⟩ fun w ↦ by
-      simpa [LinearMap.mem_ker.1 w.2] using hx ((0 : K), (w : V))
+      simpa [LinearMap.mem_ker.1 w.property] using hx ((0 : K), (w : V))
     -- Testing against `(0, u)` shows `x.1 = 0`.
     have hx₁ : x.1 = 0 := by
       have := hx ((0 : K), u)
@@ -377,7 +382,37 @@ theorem IsContact.separatingLeft_add_smulRight (hB : B.IsAlt) (h : a.IsContact B
   have hvv : a v = 0 := by
     simpa [hB v] using hv v
   refine Subtype.ext_iff.1 (h.nondegenerate_restrict.1 ⟨v, hvv⟩ fun w ↦ ?_)
-  simpa [w.2] using hv w
+  simpa [w.property] using hv w
+
+/-- **The converse in odd dimension.** On a finite-dimensional space of odd dimension, if `B` is
+alternating and `B + a ⊗ a` is left-separating, then `a` is contact for `B`. The dimension
+hypothesis is needed: on a symplectic plane, `a = 0` is not contact although `B + a ⊗ a = B` is
+left-separating. -/
+theorem isContact_of_separatingLeft_add_smulRight [FiniteDimensional K V] (hB : B.IsAlt)
+    (hodd : Odd (finrank K V)) (h : (B + a.smulRight a).SeparatingLeft) : a.IsContact B := by
+  have hBv (v w : V) : (B + a.smulRight a) v w = B v w + a v * a w := by simp
+  -- An alternating form on an odd-dimensional space is degenerate: pick `k ≠ 0` in its kernel.
+  obtain ⟨k, hkB, hk⟩ : ∃ k, (∀ w, B k w = 0) ∧ k ≠ 0 := by
+    by_contra! hcon
+    exact Nat.not_even_iff_odd.2 hodd (LinearMap.BilinForm.IsAlt.even_finrank hB
+      ((LinearMap.IsRefl.nondegenerate_iff_separatingLeft hB.isRefl).2 hcon))
+  -- Since `B + a ⊗ a` is left-separating, `a k ≠ 0`.
+  have hak : a k ≠ 0 := fun hak ↦ hk (h k fun w ↦ by rw [hBv, hkB, hak, zero_mul, add_zero])
+  refine (isContact_iff_of_isRefl hB.isRefl).2 ⟨fun ha ↦ hak (by simp [ha]), fun v hv hvw ↦ ?_⟩
+  refine h v fun w ↦ ?_
+  -- Split `w` along `ker a ⊕ K k`; `B v k = -B k v = 0`.
+  have hw : a (w - (a w / a k) • k) = 0 := by
+    rw [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hak, sub_self]
+  have hvk : B v k = 0 := by rw [← hB.neg_eq, hkB, neg_zero]
+  have hsplit : B v w = B v (w - (a w / a k) • k) + (a w / a k) * B v k := by
+    rw [map_sub, map_smul, smul_eq_mul, sub_add_cancel]
+  rw [hBv, hv, zero_mul, add_zero, hsplit, hvw _ hw, hvk, mul_zero, add_zero]
+
+/-- On a finite-dimensional space of odd dimension, for an alternating `B`, the covector `a` is
+contact for `B` exactly when `B + a ⊗ a` is left-separating. -/
+theorem isContact_iff_separatingLeft_add_smulRight [FiniteDimensional K V] (hB : B.IsAlt)
+    (hodd : Odd (finrank K V)) : a.IsContact B ↔ (B + a.smulRight a).SeparatingLeft :=
+  ⟨fun h ↦ h.separatingLeft_add_smulRight hB, isContact_of_separatingLeft_add_smulRight hB hodd⟩
 
 /-- For an alternating `B` and a contact covector `a`, a vector `r` solves `B r + a(r) a = a`
 exactly when `a r = 1` and `r` is `B`-orthogonal to everything: these are the Reeb equations. -/
@@ -393,7 +428,7 @@ theorem IsContact.add_smulRight_apply_eq_self_iff (hB : B.IsAlt) (h : a.IsContac
     by_cases h₀ : a r = 0
     · -- If `a r = 0`, then `r ∈ ker a` is `B`-orthogonal to `ker a`, so `r = 0` and `a = 0`.
       have hr₀ : r = 0 := Subtype.ext_iff.1 <| h.nondegenerate_restrict.1 ⟨r, h₀⟩ fun w ↦ by
-        simpa [h₀, w.2] using hr' w
+        simpa [h₀, w.property] using hr' w
       exact absurd (LinearMap.ext fun w ↦ by simpa [hr₀] using (hr' w).symm) h.ne_zero
     · exact (mul_eq_left₀ h₀).1 hrr
   exact ⟨h₁, LinearMap.ext fun w ↦ by simpa [h₁] using hr' w⟩
@@ -446,7 +481,7 @@ private theorem IsContact.eq_of_apply_eq_one (h : a.IsContact B) {r r' : V} (hr 
   have hmem : r - r' ∈ LinearMap.ker a := by
     rw [LinearMap.mem_ker, map_sub, hr, hr', sub_self]
   have := h.nondegenerate_restrict.1 ⟨r - r', hmem⟩ fun w ↦ by
-    simp [hrB w w.2, hrB' w w.2]
+    simp [hrB w w.property, hrB' w w.property]
   exact sub_eq_zero.1 (congrArg Subtype.val this)
 
 open Classical in
@@ -506,7 +541,7 @@ private theorem IsContact.exists_apply_eq_one (h : a.IsContact B) :
   have hu : ∀ w : LinearMap.ker a, B u w = B v₀ w := fun w ↦
     LinearMap.BilinForm.apply_toDual_symm_apply (B := B.restrict (LinearMap.ker a)) _ w
   refine ⟨v₀ - u, ?_, fun w hw ↦ ?_⟩
-  · rw [map_sub, hv₀, LinearMap.mem_ker.1 u.2, sub_zero]
+  · rw [map_sub, hv₀, LinearMap.mem_ker.1 u.property, sub_zero]
   · rw [map_sub, LinearMap.sub_apply, ← hu ⟨w, hw⟩, sub_self]
 
 /-- **Characterization of the Reeb vector.** For a contact covector `a`, the Reeb vector is the
@@ -521,6 +556,12 @@ theorem IsContact.eq_reebVector_iff (h : a.IsContact B) {r : V} :
 @[simp]
 theorem IsContact.apply_reebVector (h : a.IsContact B) : a (a.reebVector B) = 1 :=
   (h.eq_reebVector_iff.1 rfl).1
+
+/-- Subtracting `a v` times the Reeb vector from `v` gives a vector of `ker a`: this is the
+component of `v` in `ker a` for the splitting `V = ker a ⊕ K r`. -/
+theorem IsContact.apply_sub_smul_reebVector (h : a.IsContact B) (v : V) :
+    a (v - a v • a.reebVector B) = 0 := by
+  rw [map_sub, map_smul, h.apply_reebVector, smul_eq_mul, mul_one, sub_self]
 
 /-- The Reeb vector is `B`-orthogonal to the kernel of the contact covector. -/
 theorem IsContact.apply_reebVector_of_apply_eq_zero (h : a.IsContact B) {w : V} (hw : a w = 0) :
@@ -580,7 +621,7 @@ theorem IsContact.reebVector_smul_eq_inv_smul_add_iff (h : a.IsContact B) {c : K
     · subst hy
       simp
     · have := h.nondegenerate_restrict.1 ⟨y, LinearMap.mem_ker.2 hy⟩ fun w ↦ by
-        simpa using hB0 w w.2
+        simpa using hB0 w w.property
       exact congrArg Subtype.val this
   have h' : (c • a).IsContact B' := by
     rw [isContact_smul_iff hc, isContact_congr (B' := c • B) fun v w hv hw ↦ by
@@ -613,9 +654,7 @@ include hB
 @[simp]
 theorem IsContact.apply_reebVector_left (h : a.IsContact B) (w : V) :
     B (a.reebVector B) w = 0 := by
-  have hw : a (w - a w • a.reebVector B) = 0 := by
-    rw [map_sub, map_smul, h.apply_reebVector, smul_eq_mul, mul_one, sub_self]
-  have := h.apply_reebVector_of_apply_eq_zero hw
+  have := h.apply_reebVector_of_apply_eq_zero (h.apply_sub_smul_reebVector w)
   rwa [map_sub, map_smul, hB, smul_zero, sub_zero] at this
 
 /-- For an alternating `B`, every vector is `B`-orthogonal to the Reeb vector from the left. -/
@@ -623,6 +662,13 @@ theorem IsContact.apply_reebVector_left (h : a.IsContact B) (w : V) :
 theorem IsContact.apply_reebVector_right (h : a.IsContact B) (w : V) :
     B w (a.reebVector B) = 0 := by
   rw [← LinearMap.BilinForm.IsAlt.neg_eq hB, h.apply_reebVector_left hB, neg_zero]
+
+/-- For an alternating `B`, a contact covector's form `B` only sees the components in `ker a`
+along the Reeb vector: `B (v - a v • r) (w - a w • r) = B v w`. -/
+theorem IsContact.apply_sub_smul_reebVector_apply (h : a.IsContact B) (v w : V) :
+    B (v - a v • a.reebVector B) (w - a w • a.reebVector B) = B v w := by
+  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
+    h.apply_reebVector_left hB, h.apply_reebVector_right hB, smul_zero, sub_zero]
 
 /-- For an alternating `B`, the Reeb vector of a contact covector lies in the kernel of `B`. -/
 theorem IsContact.reebVector_mem_ker (h : a.IsContact B) : a.reebVector B ∈ LinearMap.ker B :=
@@ -643,11 +689,8 @@ theorem IsContact.ker_eq_span_reebVector (h : a.IsContact B) :
   ext v
   rw [LinearMap.mem_ker, Submodule.mem_span_singleton]
   refine ⟨fun hv ↦ ⟨a v, ?_⟩, ?_⟩
-  · have hmem : v - a v • a.reebVector B ∈ LinearMap.ker a := by
-      rw [LinearMap.mem_ker, map_sub, map_smul, h.apply_reebVector, smul_eq_mul, mul_one,
-        sub_self]
-    have := h.nondegenerate_restrict.1 ⟨_, hmem⟩ fun w ↦ by
-      simp [hv, h.apply_reebVector_left hB]
+  · have := h.nondegenerate_restrict.1 ⟨_, LinearMap.mem_ker.2 (h.apply_sub_smul_reebVector v)⟩
+      fun w ↦ by simp [hv, h.apply_reebVector_left hB]
     exact (sub_eq_zero.1 (congrArg Subtype.val this)).symm
   · rintro ⟨t, rfl⟩
     rw [map_smul, LinearMap.mem_ker.1 (h.reebVector_mem_ker hB), smul_zero]
