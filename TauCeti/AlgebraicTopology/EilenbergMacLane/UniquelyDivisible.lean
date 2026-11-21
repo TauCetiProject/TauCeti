@@ -5,19 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Degree
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-import TauCeti.AlgebraicTopology.EilenbergMacLane.LoopSpace
 import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
 import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
 import TauCeti.AlgebraicTopology.Singular.Contractible
 import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
-import TauCeti.Topology.Homotopy.MappingPath.PathFibration
 
 /-!
 # Eilenberg--Mac Lane spaces of uniquely divisible groups
@@ -39,7 +37,7 @@ type) satisfies:
   multiplicative `[CommGroup G]` form
   `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zpow`);
 * every Serre fibration with `K(A, n)` fibres induces isomorphisms on `k`-homology in every degree
-  (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`);
+  (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber_of_bijective_zsmul`);
 * for `m = 2`: every `K(A, n)` space of a uniquely two-divisible group has the mod-two homology of
   a point (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`
   and `TauCeti.IsEilenbergMacLaneSpace.isZero_reducedSingularHomology_of_isUniquelyTwoDivisible`).
@@ -47,10 +45,9 @@ type) satisfies:
 The proof proceeds in three stages. First, for a commutative semisimple ring `k` with `m = 0`, the
 base case `n = 1` is the computation of the group homology of `A`
 (`TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul`), and the
-induction on `n` goes through the based path fibration `p : P → X` whose total space `P` is
-contractible and whose fibres are homotopy equivalent to `ΩX`, a `K(A, n - 1)` space, using
-`TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber`. Second, applying this at each prime
-divisor `p ∣ m` together with the prime-factor criterion
+induction on `n` goes through the based path fibration `p : P → X`
+(`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne`).
+Second, applying this at each prime divisor `p ∣ m` together with the prime-factor criterion
 (`TopCat.isZero_singularHomology_zmod_iff_forall_prime`) and the mod-`m` coefficient sequence yields
 bijectivity of multiplication by `m` on `Hᵢ(X; ℤ)`. Third, for any path-connected space whose
 positive integral homology is uniquely `m`-divisible, the endomorphism
@@ -76,9 +73,9 @@ This is the input on Eilenberg--Mac Lane spaces for Serre's mod-`m` and mod-two 
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`,
   `TauCeti.IsEilenbergMacLaneSpace.isZero_reducedSingularHomology_of_isUniquelyTwoDivisible`: a
   `K(A, n)` space of a uniquely two-divisible abelian group has the mod-two homology of a point.
-* `TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`: a Serre fibration whose
-  fibres are `K(A, n)` spaces of a uniquely `m`-divisible abelian group is a homology isomorphism
-  over any ring `k` in which `m = 0`.
+* `TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber_of_bijective_zsmul`: a Serre
+  fibration whose fibres are `K(A, n)` spaces of a uniquely `m`-divisible abelian group is a
+  homology isomorphism over any ring `k` in which `m = 0`.
 
 ## References
 
@@ -97,53 +94,6 @@ open CategoryTheory Limits AlgebraicTopology
 namespace TauCeti
 
 namespace IsEilenbergMacLaneSpace
-
-/-- A Serre fibration whose fibres are `K(G, n)` spaces induces isomorphisms on `k`-homology, as
-soon as `K(G, n)` spaces have no positive-degree `k`-homology. -/
-private theorem isIso_singularHomologyMap_of_fiber (k : Type) [Ring k] {G : Type} [Group G]
-    {n : ℕ} [NeZero n] {E B : _root_.TopCat.{0}} {p : E ⟶ B}
-    (hp : TauCeti.TopCat.serreFibrations p)
-    (hfib : ∀ b, ∃ y, IsEilenbergMacLaneSpace G n (p.fiber b) y)
-    (hK : ∀ {X : Type} [TopologicalSpace X] {x : X}, IsEilenbergMacLaneSpace G n X x →
-      ∀ i, Subsingleton (((singularChains k).obj (_root_.TopCat.of X)).homology (i + 1)))
-    (i : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} k) i).obj (ModuleCat.of k k)).map p) :=
-  TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber hp k i
-    (fun b ↦ (hfib b).choose_spec.pathConnectedSpace) fun b q hq0 _ ↦ by
-      obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
-      rw [singularHomologyFunctor_obj_obj]
-      exact ModuleCat.isZero_iff_subsingleton.2 (hK (hfib b).choose_spec q)
-
-/-- The induction on the degree for a commutative semisimple ring `k`, through the based path
-fibration. The degree is written `j + 1` so that the induction does not have to carry a `NeZero`
-instance. -/
-private theorem subsingleton_singularHomology_of_bijective_zsmul_succ (k : Type) [CommRing k]
-    [IsSemisimpleRing k] {m : ℤ} (hmk : (m : k) = 0) {A : Type} [AddCommGroup A]
-    (hA : Function.Bijective fun a : A ↦ m • a) (j : ℕ) :
-    ∀ {X : Type} [TopologicalSpace X] {x : X},
-      IsEilenbergMacLaneSpace (Multiplicative A) (j + 1) X x →
-        ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
-  induction j with
-  | zero =>
-    intro X _ x hX i
-    exact IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul k hmk hA
-      (isEilenbergMacLaneSpace_one_iff.1 hX) i
-  | succ j ih =>
-    intro X _ x hX i
-    have := hX.pathConnectedSpace
-    -- The based path fibration `P → X`, sending a path ending at `x` to its starting point.
-    let p : TopCat.of (MappingPathFiber (ContinuousMap.id X) x) ⟶ TopCat.of X :=
-      TopCat.ofHom (MappingPathFiber.proj _ x)
-    have hp : TauCeti.TopCat.serreFibrations p :=
-      (MappingPathFiber.isHurewiczFibration_proj.{0} _ _).mem_serreFibrations
-    -- Every fibre is homotopy equivalent to the loop space, a `K(A, j + 1)` space.
-    have hfib (b : X) : ∃ y, IsEilenbergMacLaneSpace (Multiplicative A) (j + 1) (p.fiber b) y :=
-      hX.exists_fiber_mappingPathFiberProj (ContinuousMap.id X) x b
-    have := isIso_singularHomologyMap_of_fiber k hp hfib ih (i + 1)
-    -- The total space is contractible, so its positive-degree homology vanishes.
-    rw [← subsingleton_singularChains_homology_iff_of_isIso k p (i + 1),
-      ← singularHomologyFunctor_obj_obj]
-    infer_instance
 
 /-- Mod-`m` acyclicity of `K(A, d)` spaces for arbitrary `m : ℕ`, obtained from prime moduli via
 `TopCat.isZero_singularHomology_zmod_iff_forall_prime`. -/
@@ -165,7 +115,6 @@ private theorem subsingleton_singularHomology_zmod_of_bijective_zsmul {m : ℕ} 
       isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (fun r _ ↦ hπ r) (ZMod 0)
         (Nat.succ_ne_zero n) (Nat.lt_succ_self (n + 1))
   · have : NeZero m := ⟨hm⟩
-    obtain ⟨d', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne d)
     refine ModuleCat.isZero_iff_subsingleton.1 <|
       ((TopCat.of X).isZero_singularHomology_uliftZMod_iff m (n + 1)).1 <|
         ((TopCat.of X).isZero_singularHomology_zmod_iff_forall_prime m (n + 1)).2 fun p hp hpm ↦ ?_
@@ -181,8 +130,9 @@ private theorem subsingleton_singularHomology_zmod_of_bijective_zsmul {m : ℕ} 
       exact ⟨Function.Injective.of_comp (h2 ▸ hA.1), Function.Surjective.of_comp (h1 ▸ hA.2)⟩
     exact ((TopCat.of X).isZero_singularHomology_uliftZMod_iff p (n + 1)).2 <|
       ModuleCat.isZero_iff_subsingleton.2 <|
-        subsingleton_singularHomology_of_bijective_zsmul_succ (ZMod p) (m := p) (by simp)
-          hAp d' hX n
+        subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne (ZMod p)
+          (IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul (ZMod p)
+            (m := p) (by simp) hAp) hX n
 
 /-- Multiplication by `m : ℤ` is bijective on an abelian group iff multiplication by `m.natAbs`
 is. -/
@@ -413,13 +363,18 @@ end IsEilenbergMacLaneSpace
 multiplication by the integer `m` is a bijection of the abelian group `A`, then a Serre fibration
 whose fibres are `K(A, n)` spaces, `n ≥ 1`, induces isomorphisms on homology with coefficients in
 any ring `k` in which `m = 0`. -/
-theorem isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber (k : Type) [Ring k] {m : ℤ}
-    (hmk : (m : k) = 0) {A : Type} [AddCommGroup A]
+theorem isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber_of_bijective_zsmul
+    (k : Type) [Ring k] {m : ℤ} (hmk : (m : k) = 0) {A : Type} [AddCommGroup A]
     (hA : Function.Bijective fun a : A ↦ m • a) {n : ℕ} [NeZero n] {E B : _root_.TopCat.{0}}
     {p : E ⟶ B} (hp : TauCeti.TopCat.serreFibrations p)
     (hfib : ∀ b, ∃ y, IsEilenbergMacLaneSpace (Multiplicative A) n (p.fiber b) y) (i : ℕ) :
     IsIso (((singularHomologyFunctor (ModuleCat.{0} k) i).obj (ModuleCat.of k k)).map p) :=
-  IsEilenbergMacLaneSpace.isIso_singularHomologyMap_of_fiber k hp hfib
-    (IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul k hmk hA) i
+  TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber hp k i
+    (fun b ↦ (hfib b).choose_spec.pathConnectedSpace) fun b q hq0 _ ↦ by
+      obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
+      rw [singularHomologyFunctor_obj_obj]
+      exact ModuleCat.isZero_iff_subsingleton.2
+        (IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul k hmk hA
+          (hfib b).choose_spec q)
 
 end TauCeti

@@ -98,7 +98,7 @@ private theorem map_det_lkjMeasure_eq_map_det_partialCorrelationGram (hη : 0 < 
         (R : Matrix (Fin p) (Fin p) ℝ).det) =
         Matrix.det ∘ (Subtype.val : selfAdjoint.submodule ℝ
           (Matrix (Fin p) (Fin p) ℝ) → Matrix (Fin p) (Fin p) ℝ) := rfl
-  rw [hdet, ← Measure.map_map (by fun_prop) measurable_subtype_coe, map_coe_lkjMeasure hη,
+  rw [hdet, ← Measure.map_map (by fun_prop) measurable_subtypeVal, map_coe_lkjMeasure hη,
     Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 

@@ -72,7 +72,7 @@ variable (n : ℕ)
 def specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
   finiteOrthonormalFrame.sphereHomeomorph (1 + n)
-    (finiteOrthonormalFrame.unitaryMap ⟨A.1, A.2.1⟩
+    (finiteOrthonormalFrame.unitaryMap ⟨A.val, A.property.1⟩
       (finiteOrthonormalFrame.standard ℝ (Nat.le_add_right 1 n)))
 
 variable {n}
@@ -92,7 +92,7 @@ variable (n) in
 theorem continuous_specialOrthogonalSphereMap : Continuous (specialOrthogonalSphereMap n) :=
   (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).continuous.comp
     (finiteOrthonormalFrame.continuous_unitaryMap.comp
-      ((continuous_subtype_val.subtype_mk _).prodMk continuous_const))
+      ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const))
 
 /-- The evaluation map is equivariant: `(A B) e₀ = A (B e₀)`. -/
 theorem ofLp_specialOrthogonalSphereMap_mul (A B : specialOrthogonalGroup (Fin (1 + n)) ℝ) :

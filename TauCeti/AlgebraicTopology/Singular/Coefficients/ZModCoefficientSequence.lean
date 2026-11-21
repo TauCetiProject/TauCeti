@@ -275,7 +275,7 @@ theorem isZero_singularHomology_zmod_zero_iff (X : TopCat.{u}) (m : ℕ) :
       exact ZMod.subsingleton_iff.1 Equiv.ulift.symm.subsingleton
     · exact Or.inl (not_nonempty_iff.1 hne)
   · rintro (h | rfl)
-    · exact TauCeti.isZero_singularHomologyFunctor_zero_of_isEmpty _ X
+    · exact TauCeti.isZero_singularHomology_of_isEmpty _ X 0
     · rw [isZero_singularHomology_zmod_iff, ModuleCat.isZero_iff_subsingleton]
       exact Module.subsingleton (ZMod 1) _
 

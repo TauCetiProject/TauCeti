@@ -1,10 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 
 /-!
@@ -35,6 +37,12 @@ A projective scheme over `R` is proper over `R`, because closed immersions are p
   a projective scheme over `R` is projective over `R`.
 * the instance `(Proj (Sym_R M)).IsProjectiveOver R` for a finite `R`-module `M`.
 * the instance `IsProper (X ↘ Spec R)` for `X` projective over `R`.
+* `AlgebraicGeometry.Scheme.exists_isAffineOpen_superset_of_isProjectiveOver`: a finite set
+  in a scheme projective over `R` lies in a common affine open inside a prescribed open.
+* `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom_isProjectiveOver`:
+  the same conclusion for affine morphisms to a scheme projective over `R`.
+* `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion_isProjectiveOver`:
+  the same conclusion for immersions into a scheme projective over `R`.
 
 ## References
 
@@ -78,5 +86,30 @@ instance IsProjectiveOver.isProper [X.IsProjectiveOver R] : IsProper (X ↘ Spec
   obtain ⟨M, _, _, _, f, hf, hfR⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
   rw [← comp_over f (Spec (.of R))]
   infer_instance
+
+/-- An affine morphism to a scheme projective over an affine base admits affine
+neighbourhoods of finite sets inside any prescribed source open. -/
+theorem Hom.exists_isAffineOpen_superset_of_isAffineHom_isProjectiveOver
+    [X.IsProjectiveOver R] {Z : Scheme.{u}} (f : Z ⟶ X) [IsAffineHom f]
+    {s : Set Z} {W : Z.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : Z.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨M, _, _, _, g, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
+  exact (f ≫ g).exists_isAffineOpen_superset_of_isAffineHom_proj hs hsW
+
+/-- A finite subset of a scheme projective over an affine base has a common affine
+neighbourhood inside any prescribed open containing it. -/
+theorem exists_isAffineOpen_superset_of_isProjectiveOver [X.IsProjectiveOver R]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W :=
+  Hom.exists_isAffineOpen_superset_of_isAffineHom_isProjectiveOver R (𝟙 X) hs hsW
+
+/-- A finite subset of a scheme immersed in a scheme projective over an affine base has a
+common affine neighbourhood inside any prescribed open containing it. -/
+theorem Hom.exists_isAffineOpen_superset_of_isImmersion_isProjectiveOver
+    [X.IsProjectiveOver R] {Z : Scheme.{u}} (f : Z ⟶ X) [IsImmersion f]
+    {s : Set Z} {W : Z.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ U : Z.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨M, _, _, _, g, _, _⟩ := IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
+  exact (f ≫ g).exists_isAffineOpen_superset_of_isImmersion_proj hs hsW
 
 end AlgebraicGeometry.Scheme

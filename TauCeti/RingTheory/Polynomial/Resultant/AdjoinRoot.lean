@@ -146,7 +146,7 @@ theorem coe_sylvesterEquivOne_symm_fst (hg : g.Monic) (n : ℕ)
   nontriviality R
   obtain ⟨w, rfl⟩ : ∃ w, q = sylvesterEquivOne hg n w :=
     ⟨_, ((sylvesterEquivOne hg n).apply_symm_apply q).symm⟩
-  have h : (w.1 : R[X]).degree < g.degree := (mem_degreeLT_natDegree_iff hg.ne_zero).mp w.1.2
+  have h : (w.1 : R[X]).degree < g.degree := (mem_degreeLT_natDegree_iff hg.ne_zero).mp w.1.property
   rw [symm_apply_apply, coe_sylvesterEquivOne_apply, hg.modByMonic_mul_add,
     (modByMonic_eq_self_iff hg).mpr h]
 
@@ -158,7 +158,7 @@ theorem coe_sylvesterEquivOne_symm_snd (hg : g.Monic) (n : ℕ)
   nontriviality R
   obtain ⟨w, rfl⟩ : ∃ w, q = sylvesterEquivOne hg n w :=
     ⟨_, ((sylvesterEquivOne hg n).apply_symm_apply q).symm⟩
-  have h : (w.1 : R[X]).degree < g.degree := (mem_degreeLT_natDegree_iff hg.ne_zero).mp w.1.2
+  have h : (w.1 : R[X]).degree < g.degree := (mem_degreeLT_natDegree_iff hg.ne_zero).mp w.1.property
   rw [symm_apply_apply, coe_sylvesterEquivOne_apply, hg.divByMonic_mul_add,
     (divByMonic_eq_zero_iff hg).mpr h, add_zero]
 
@@ -246,7 +246,7 @@ def degreeLTEquiv (hg : g.Monic) : degreeLT R g.natDegree ≃ₗ[R] AdjoinRoot g
       -- unwrap the corestriction: the underlying polynomial is `modByMonicHom hg (mk g q)`
       change modByMonicHom hg (mk g (q : R[X])) = (q : R[X])
       rw [modByMonicHom_mk hg]
-      exact (modByMonic_eq_self_iff hg).mpr ((mem_degreeLT_natDegree_iff hg.ne_zero).mp q.2))
+      exact (modByMonic_eq_self_iff hg).mpr ((mem_degreeLT_natDegree_iff hg.ne_zero).mp q.property))
 
 @[simp]
 theorem degreeLTEquiv_apply (hg : g.Monic) (q : degreeLT R g.natDegree) :

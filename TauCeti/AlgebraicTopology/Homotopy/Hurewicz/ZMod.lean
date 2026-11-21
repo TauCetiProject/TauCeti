@@ -243,8 +243,8 @@ private theorem bijective_zsmul_homotopyGroup_of_isZero_zmod_aux (m : ℕ) :
         (by omega)
     have hHE : ∀ q, (j + 1) + 2 ≤ q → q ≤ (j + 1) + d + 3 →
         IsZero (((singularChains (ZMod m)).obj (TopCat.of E)).homology q) := fun q hq1 hq2 ↦ by
-      have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber (ZMod m) (m := m)
-        (by rw [Int.cast_natCast, ZMod.natCast_self]) hπ
+      have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber_of_bijective_zsmul
+        (ZMod m) (m := m) (by rw [Int.cast_natCast, ZMod.natCast_self]) hπ
         (serreFibrations_nConnectedCoverProj (j + 2) (TopCat.of W) w)
         (fun b ↦ (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj (TopCat.of W) w j hW b).imp
           fun _ h ↦ h.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm) q

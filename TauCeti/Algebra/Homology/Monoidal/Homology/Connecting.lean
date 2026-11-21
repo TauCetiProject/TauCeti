@@ -130,7 +130,7 @@ lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortEx
       (X₃ := ((((curriedTensor C).mapBifunctorHomologicalComplex c c).obj K).obj
         S.X₃).toGradedObject)
       (fun x ↦ K.X x.1 ◁ S.f.f x.2) (fun x ↦ K.X x.1 ◁ S.g.f x.2)
-      (funext fun x ↦ (whiskerLeft_comp _ _ _).symm.trans (by simp [← comp_f]; rfl))
+      (funext fun x ↦ (whiskerLeft_comp _ _ _).symm.trans (by simp [← comp_f]))
   have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦
     ((shortExact_iff_degreewise_shortExact S).1 hS q).map_of_exact (tensorLeft (K.X p))
   refine ShortComplex.shortExact_of_iso ?_ hT
