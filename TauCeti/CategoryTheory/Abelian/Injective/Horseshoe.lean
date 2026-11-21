@@ -217,7 +217,8 @@ lemma horseshoeShortComplex_shortExact : (I₁.horseshoeShortComplex I₃ hS).Sh
 /-- The augmentation `S.X₂ ⟶ I₁⁰ ⊞ I₃⁰` of the horseshoe resolution, `b ↦ (e b, ε₃ (g b))`. -/
 def horseshoeι : (single₀ C).obj S.X₂ ⟶ I₁.horseshoeCocomplex I₃ hS :=
   (fromSingle₀Equiv _ _).symm ⟨biprod.lift (I₁.horseshoeExtension hS) (S.g ≫ I₃.ι₀), by
-    rw [show (I₁.horseshoeCocomplex I₃ hS).d 0 1 = _ from I₁.horseshoeCocomplex_d I₃ hS 0]
+    -- `rw` unifies the index `0 + 1` of `horseshoeCocomplex_d` with the `1` of `fromSingle₀Equiv`
+    rw [I₁.horseshoeCocomplex_d I₃ hS 0]
     ext <;> simp [comp_horseshoeTwist_zero]⟩
 
 @[simp]
