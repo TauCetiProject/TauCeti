@@ -63,7 +63,7 @@ at `k` (`TopCat.Hom.pullbackFiberι`), is a weak homotopy equivalence
 (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`): it is the inclusion of a fibre of a
 Serre fibration over a base with no homotopy. Applying this to a path in `B` connects the fibres
 over any two joined points of `B` by a zigzag of weak homotopy equivalences
-(`TauCeti.TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`), showing in particular that
+(`TauCeti.TopCat.exists_weakHomotopyEquivalence_zigzag_fiber_of_joined`), showing in particular that
 path-connectedness of the fibre is constant on each path component of `B`
 (`TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`).
 
@@ -83,7 +83,7 @@ path-connectedness of the fibre is constant on each path component of `B`
   over a weakly equivalent subspace.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`: the fibre inclusions into a base
   change of a Serre fibration to a weakly contractible space.
-* `TauCeti.TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`,
+* `TauCeti.TopCat.exists_weakHomotopyEquivalence_zigzag_fiber_of_joined`,
   `TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`: fibres of a Serre fibration over joined
   points are connected by a zigzag of weak homotopy equivalences and are simultaneously
   path-connected.
@@ -478,7 +478,7 @@ theorem isWeakHomotopyEquivalence_pullbackFiberι (hp : serreFibrations p) {K : 
 
 /-- **Fibres of a Serre fibration over joined points are connected by a zigzag of weak homotopy
 equivalences**, through the pullback of `p` along a path between them. -/
-theorem exists_isWeakHomotopyEquivalence_fiber_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
+theorem exists_weakHomotopyEquivalence_zigzag_fiber_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
     (hb : Joined b₀ b₁) :
     ∃ (P : TopCat.{u}) (f₀ : p.fiber b₀ ⟶ P) (f₁ : p.fiber b₁ ⟶ P),
       f₀.hom.IsWeakHomotopyEquivalence ∧ f₁.hom.IsWeakHomotopyEquivalence :=
@@ -491,7 +491,7 @@ theorem exists_isWeakHomotopyEquivalence_fiber_of_joined (hp : serreFibrations p
 path-connected.** -/
 theorem pathConnectedSpace_fiber_iff_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
     (hb : Joined b₀ b₁) : PathConnectedSpace (p.fiber b₀) ↔ PathConnectedSpace (p.fiber b₁) := by
-  obtain ⟨_, _, _, h₀, h₁⟩ := exists_isWeakHomotopyEquivalence_fiber_of_joined hp hb
+  obtain ⟨_, _, _, h₀, h₁⟩ := exists_weakHomotopyEquivalence_zigzag_fiber_of_joined hp hb
   exact h₀.pathConnectedSpace_iff.trans h₁.pathConnectedSpace_iff.symm
 
 end TauCeti.TopCat

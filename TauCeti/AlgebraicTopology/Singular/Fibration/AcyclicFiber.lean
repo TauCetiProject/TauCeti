@@ -16,7 +16,7 @@ import TauCeti.Topology.Homotopy.MappingPath.PathFibration
 
 When `p : E ⟶ B` is a Serre fibration, the fibres over any two points in the same path component
 of `B` are connected by a zigzag of weak homotopy equivalences through the pullback of `p` along a
-path between them (`TauCeti.TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`, in
+path between them (`TauCeti.TopCat.exists_weakHomotopyEquivalence_zigzag_fiber_of_joined`, in
 `TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence`). Consequently,
 path-connectedness (`TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`) and, via the
 transport isomorphism `TauCeti.TopCat.fiberHomologyTransport` along a path, vanishing of the
@@ -77,15 +77,8 @@ variable {E B : TopCat.{u}} {p : E ⟶ B}
 theorem isZero_singularHomology_fiber_iff_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
     (hb : Joined b₀ b₁) {A : Type*} [Ring A] (M : ModuleCat.{u} A) (n : ℕ) :
     IsZero (((singularHomologyFunctor (ModuleCat.{u} A) n).obj M).obj (p.fiber b₀)) ↔
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} A) n).obj M).obj (p.fiber b₁)) := by
-  let γ := hb.somePath
-  let g := (_root_.TopCat.pathEquiv.symm γ).hom
-  have : IsIso (fiberHomologyTransport hp M n γ) := by
-    rw [fiberHomologyTransport_eq_pullbackFiberTransport]
-    exact ⟨pullbackFiberTransport hp M n g
-        (_root_.TopCat.pathEquiv.symm γ).hom₁ (_root_.TopCat.pathEquiv.symm γ).hom₀,
-      by simp [g], by simp [g]⟩
-  exact (asIso (fiberHomologyTransport hp M n γ)).isZero_iff
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} A) n).obj M).obj (p.fiber b₁)) :=
+  (asIso (fiberHomologyTransport hp M n hb.somePath)).isZero_iff
 
 end JoinedFibers
 

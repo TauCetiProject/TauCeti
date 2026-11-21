@@ -310,4 +310,26 @@ theorem homotopyGroupMulEquivOfBijective_apply [DecidableEq N] [Nonempty N] (f :
     f.homotopyGroupMulEquivOfBijective hf hbij a = HomotopyGroup.map f hf a :=
   HomotopyGroup.mapHom_apply f hf a
 
+/-- Identity law for `ContinuousMap.homotopyGroupMulEquivOfBijective`: the multiplicative
+isomorphism induced by the identity continuous map is `MulEquiv.refl`. -/
+@[simp]
+theorem homotopyGroupMulEquivOfBijective_id [DecidableEq N] [Nonempty N]
+    (hbij : Function.Bijective (HomotopyGroup.map (N := N) (ContinuousMap.id X) (x := x) rfl)) :
+    (ContinuousMap.id X).homotopyGroupMulEquivOfBijective rfl hbij =
+      MulEquiv.refl (HomotopyGroup N X x) :=
+  MulEquiv.ext fun a => HomotopyGroup.map_id_apply a
+
+/-- Composition law for `ContinuousMap.homotopyGroupMulEquivOfBijective`: the composite of the
+induced multiplicative isomorphisms is the isomorphism induced by the composite continuous map. -/
+@[simp]
+theorem homotopyGroupMulEquivOfBijective_trans [DecidableEq N] [Nonempty N] {Z : Type*}
+    [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
+    (hbij_f : Function.Bijective (HomotopyGroup.map (N := N) f hf))
+    (hbij_g : Function.Bijective (HomotopyGroup.map (N := N) g hg)) :
+    (f.homotopyGroupMulEquivOfBijective hf hbij_f).trans
+        (g.homotopyGroupMulEquivOfBijective hg hbij_g) =
+      (g.comp f).homotopyGroupMulEquivOfBijective (by simp [hf, hg])
+        (by rw [← HomotopyGroup.map_comp_map g hg f hf]; exact hbij_g.comp hbij_f) :=
+  MulEquiv.ext fun a => by simp
+
 end ContinuousMap

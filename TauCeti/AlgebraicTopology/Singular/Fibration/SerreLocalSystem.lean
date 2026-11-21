@@ -166,6 +166,11 @@ theorem pullbackFiberTransport_comp_pullbackFiberTransport (g : K ⟶ B)
       pullbackFiberTransport hp M n g h₀ h₂ :=
   (eq_pullbackFiberTransport_iff hp M n g h₀ h₂ _).2 (by simp)
 
+/-- **Transport over a contractible parameter space is an isomorphism.** -/
+instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B}
+    (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) : IsIso (pullbackFiberTransport hp M n g h₀ h₁) :=
+  ⟨pullbackFiberTransport hp M n g h₁ h₀, by simp, by simp⟩
+
 /-- **Transport along a path on which the map to `B` is constant is the identity.** If `γ` is a path
 from `k₀` to `k₁` in `K` which `g` maps to the point `b`, then transport from `k₀` to `k₁` is the
 identity of the homology of the fibre over `b`: the fibre inclusions at `k₀` and `k₁` are homotopic
@@ -252,6 +257,12 @@ lemma fiberHomologyTransport_eq_pullbackFiberTransport (γ : Path b₀ b₁) :
       pullbackFiberTransport hp M n (TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
         (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ :=
   (rfl)
+
+/-- **Transport along a path is an isomorphism.** -/
+instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
+    IsIso (fiberHomologyTransport hp M n γ) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
+  infer_instance
 
 /-- **Characterization of transport along a path.** Transport along `γ` followed by the inclusion
 of the fibre over `b₁` into `γ*E` is the inclusion of the fibre over `b₀`. -/
