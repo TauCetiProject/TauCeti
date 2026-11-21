@@ -122,7 +122,7 @@ theorem bijective_unstableFrame_self (𝔬 : MorseOrientation f X) {p : critical
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
     Bijective (hX.unstableFrame (𝔬.chart p) p) :=
   bijective_unstableFrame (𝔬.coord_mfderiv_chart p) hp
-    (mem_linearBackwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) 0)
+    (mem_linearBackwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) 0)
 
 variable (hX) in
 /-- The **unstable orientation** of a critical point `p` of Morse index `n = dim M`: the
@@ -455,7 +455,7 @@ private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f
       funext i
       rw [MorseChart.negativeCoord_apply, LinearEquiv.apply_symm_apply,
         Pi.single_eq_of_ne (fun h ↦ (lt_irrefl (0 : ℝ)) (by
-          have := i.2
+          have := i.property
           rw [h, hj] at this
           linarith)), Pi.zero_apply]
     · have hdf := hX.mvfderiv_apply_lt_zero z hcrit
@@ -586,7 +586,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
     exact (Orientation.reindex ℝ _ (finCongr hp)).injective.eq_iff.symm
   rw [trajectorySign_of_bijective hC,
     ← map_unstableFrame_eq_orientationAt_iff hf (𝔬.coord_mfderiv_chart p)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) oM op hz.1 hF, if_congr hτ rfl rfl]
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) oM op hz.1 hF, if_congr hτ rfl rfl]
   refine Orientation.ite_map_mul_ite_map_trans 𝓕 𝒜 op (Fintype.card_fin _) ?_
   rw [Fintype.card_fin, (𝔬.chart q).finrank_prod_negativeWeight_fun]
   omega
@@ -630,7 +630,7 @@ private theorem fundamentalSign_mul_trajectorySign_eq_neg {q : criticalPoints �
   have hcrit (i : Fin 2) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (w i) ≠ 0 :=
     hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet (hne i) (hw i)
   have hwq (i : Fin 2) : w i ≠ q := fun he ↦ hcrit i
-    (he ▸ mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2)
+    (he ▸ mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property)
   -- Flow both points close to `q`, into the normal form of the chart.
   choose T b h0 hpres hb0 hb using fun i ↦
     exists_flow_eq_smul_single hφ hneg (hw i).2 (hwq i) hU
@@ -679,7 +679,7 @@ theorem finsum_fundamentalSign_mul_signedMorseBoundaryCoeff (q : criticalPoints 
   -- The two trajectories into `q` cross the middle levels at `w i` and start at `ac i`.
   obtain ⟨w, a, ha, hwmem, hw1, hwinj, hslice⟩ :=
     h.exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank hf
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hq
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) hq
   set ac : Fin 2 → criticalPoints 𝓘(ℝ, E) f :=
     fun i ↦ ⟨a i, mem_criticalPoints_iff_mfderiv_eq_zero.2 (ha i).1⟩
   have hpq (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ, E) f (ac i) =

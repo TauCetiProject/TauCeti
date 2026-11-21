@@ -334,7 +334,7 @@ private theorem singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero
       (TopPair.singularHomologyMap_eq_zero_of_fac (prodComplPairMap p b' b ≫
         TopPair.ofSubsetMap _ (mapsTo_preimage_fst_compl_fiber p b' b)) _
         (TopCat.ofHom ⟨fun z : M × ↥((p ⁻¹' {b})ᶜ) ↦
-          (⟨(z.1, z.2.1), fun hz ↦ z.2.2 (congrArg Prod.snd hz)⟩ :
+          (⟨(z.1, z.2.val), fun hz ↦ z.2.property (congrArg Prod.snd hz)⟩ :
             ↥(((Prod.map id p) ⁻¹' {(b', b)})ᶜ : Set (M × X))), by fun_prop⟩)
         (by
           ext z

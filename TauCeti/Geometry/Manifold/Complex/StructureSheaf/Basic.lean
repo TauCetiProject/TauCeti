@@ -150,7 +150,7 @@ theorem ext {U : (Opens (TopCat.of X))ᵒᵖ}
 
 /-- A section of the structure sheaf is complex analytic on its domain. -/
 theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ}
-    (f : (holomorphicStructureSheaf I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f := f.2
+    (f : (holomorphicStructureSheaf I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f := f.property
 
 @[simp]
 theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
@@ -264,7 +264,7 @@ def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommR
   colimit.desc _
     { pt := CommRingCat.of ℂ
       ι :=
-        { app := fun U ↦ CommRingCat.ofHom (ContMDiffMap.evalRingHom ⟨x, (unop U).2⟩)
+        { app := fun U ↦ CommRingCat.ofHom (ContMDiffMap.evalRingHom ⟨x, (unop U).property⟩)
           naturality := by
             intro U V h
             apply CommRingCat.hom_ext
@@ -272,9 +272,9 @@ def evalHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x ⟶ CommR
             intro f
             -- Both categorical composites evaluate the restriction at the base point.
             exact map_apply (I := I) (X := X)
-              (U := op (α := Opens X) (unop U).1)
-              (V := op (α := Opens X) (unop V).1)
-              ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f ⟨x, (unop V).2⟩ } }
+              (U := op (α := Opens X) (unop U).val)
+              (V := op (α := Opens X) (unop V).val)
+              ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f ⟨x, (unop V).property⟩ } }
 
 /-- The ring homomorphism evaluating a holomorphic germ at its base point. -/
 def eval (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x →+* ℂ :=
@@ -330,10 +330,10 @@ def precomp (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
     (holomorphicStructureSheaf J Y).obj.obj U →+*
       (holomorphicStructureSheaf I X).obj.obj (op (α := Opens X)
         ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :=
-    { toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.1, x.2⟩) (by
+    { toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.val, x.property⟩) (by
         apply (contMDiff g).comp (I' := J)
         exact (TauCeti.ContMDiff.subtypeVal_comp_iff (unop U) _).mp
-          (hf.comp contMDiff_subtype_val))
+          (hf.comp contMDiff_subtypeVal))
       map_one' := rfl
       map_mul' := fun _ _ ↦ rfl
       map_zero' := rfl
@@ -346,7 +346,7 @@ theorem precomp_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒ�
     (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
     toFun I X (no_index (op (α := Opens X)
       ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))))
-      (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.1, x.2⟩ := (rfl)
+      (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.val, x.property⟩ := (rfl)
 
 /-- A complex analytic map induces a morphism `𝒪_Y ⟶ f_*𝒪_X` by precomposition. -/
 def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
@@ -578,7 +578,7 @@ def precompLinearMap (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒ�
 theorem precompLinearMap_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ)
     (g : (holomorphicStructureSheafModules J Y).obj.obj U)
     (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
-    precompLinearMap I X f hf U g x = g ⟨f x.1, x.2⟩ :=
+    precompLinearMap I X f hf U g x = g ⟨f x.val, x.property⟩ :=
   holomorphicStructureSheaf.precomp_apply I X f hf U g x
 
 /-- A complex analytic map `f` induces a morphism `𝒪_Y ⟶ f_*𝒪_X` of presheaves of complex vector
@@ -604,16 +604,17 @@ theorem precompLinearMap_bijective (f : X → Y) (hf : ContMDiff I J ω f) (g : 
     (U : (Opens Y)ᵒᵖ) : Function.Bijective (precompLinearMap I X f hf U) := by
   -- `g` maps `U` into its inverse image under `f`.
   let k : ↥(unop U) → ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U)) :=
-    fun y ↦ ⟨g y.1, ((hfg y.1).symm ▸ y.2 : f (g y.1) ∈ unop U)⟩
+    fun y ↦ ⟨g y.val, ((hfg y.val).symm ▸ y.property : f (g y.val) ∈ unop U)⟩
   have hk : ContMDiff J I ω k := by
     rw [← ContMDiff.subtypeVal_comp_iff]
-    exact hg.comp contMDiff_subtype_val
-  have hfk (y : ↥(unop U)) : (⟨f (k y).1, (k y).2⟩ : ↥(unop U)) = y := Subtype.ext (hfg y.1)
+    exact hg.comp contMDiff_subtypeVal
+  have hfk (y : ↥(unop U)) : (⟨f (k y).val, (k y).property⟩ : ↥(unop U)) = y := Subtype.ext
+      (hfg y.val)
   refine ⟨fun h₁ h₂ h ↦ ext fun y ↦ ?_, fun h ↦ ⟨ofContMDiff (fun y ↦ h (k y))
     ((contMDiff h).comp hk), ext fun x ↦ ?_⟩⟩
   · simpa only [precompLinearMap_apply, hfk] using congr($h (k y))
   · rw [precompLinearMap_apply, ofContMDiff_apply]
-    exact congrArg h (Subtype.ext (hgf x.1))
+    exact congrArg h (Subtype.ext (hgf x.val))
 
 /-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` identifies
 `𝒪_Y` with `f_*𝒪_X`. -/

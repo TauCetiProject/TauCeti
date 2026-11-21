@@ -291,7 +291,7 @@ units. -/
 theorem gamma1CuspLabel_neg (γ : SL(2, ℤ)) :
     gamma1CuspLabel N (-γ) =
       ⟨(gamma1CuspLabel N γ).1, -(gamma1CuspLabel N γ).2.1, -(gamma1CuspLabel N γ).2.2⟩ := by
-  refine gamma1CuspLabel_eq_mk (gamma1CuspLabel N γ).1.2 ?_ ?_ ?_
+  refine gamma1CuspLabel_eq_mk (gamma1CuspLabel N γ).1.property ?_ ?_ ?_
   · simp
   · rw [Units.val_neg, coe_gamma1CuspLabel_snd_fst, coe_neg, Matrix.neg_apply,
       Int.neg_ediv_of_dvd (show ((gamma1CuspLabel N γ).1 : ℤ) ∣ γ 1 0 from Int.gcd_dvd_left ..),
@@ -350,9 +350,9 @@ theorem card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
     2 * Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit =
       ∑ g ∈ N.divisors, Nat.totient g * Nat.totient (N / g) := by
   have hfin (g : N.divisors) : Finite ((ZMod (N / g))ˣ × (ZMod g)ˣ) := by
-    have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2)⟩
+    have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.property)⟩
     have : NeZero (N / g) := ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N)
-      (Nat.dvd_of_mem_divisors g.2)) (NeZero.pos (g : ℕ))).ne'⟩
+      (Nat.dvd_of_mem_divisors g.property)) (NeZero.pos (g : ℕ))).ne'⟩
     infer_instance
   -- Send a label to the cusp of any matrix carrying it; every fibre is `{λ(γ), λ(-γ)}`.
   let f (x : Σ g : N.divisors, (ZMod (N / g))ˣ × (ZMod g)ˣ) :
@@ -379,9 +379,9 @@ theorem card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
     _ = ∑ g ∈ N.divisors, Nat.totient g * Nat.totient (N / g) := by
         rw [Nat.card_sigma, ← Finset.sum_coe_sort N.divisors]
         refine Finset.sum_congr rfl fun g _ ↦ ?_
-        have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.2)⟩
+        have : NeZero (g : ℕ) := ⟨Nat.ne_of_gt (Nat.pos_of_mem_divisors g.property)⟩
         have : NeZero (N / g) := ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N)
-          (Nat.dvd_of_mem_divisors g.2)) (NeZero.pos (g : ℕ))).ne'⟩
+          (Nat.dvd_of_mem_divisors g.property)) (NeZero.pos (g : ℕ))).ne'⟩
         rw [Nat.card_prod, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
           ZMod.card_units_eq_totient, ZMod.card_units_eq_totient, mul_comm]
 

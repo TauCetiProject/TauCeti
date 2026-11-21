@@ -169,7 +169,7 @@ theorem apply_mul_fst_of_isCocycle₂_of_vanishing [N.Normal] {f : G × G → A}
   have h₁ := hf g n h
   -- `n * h = h * (h⁻¹ * n * h)`, with `h⁻¹ * n * h ∈ N` by normality.
   have h₂ := apply_mul_snd_of_isCocycle₂_of_vanishing hf hR g h
-    ⟨_, ‹N.Normal›.conj_mem' _ n.2 h⟩
+    ⟨_, ‹N.Normal›.conj_mem' _ n.property h⟩
   rw [← mul_assoc, mul_inv_cancel_left] at h₂
   rw [hR, hL, smul_zero, zero_add, add_zero] at h₁
   rw [h₁, h₂]
@@ -182,7 +182,7 @@ theorem smul_apply_of_isCocycle₂_of_vanishing [N.Normal] {f : G × G → A} (h
   have h₁ := hf n g h
   -- `n * g = g * (g⁻¹ * n * g)`, with `g⁻¹ * n * g ∈ N` by normality.
   have h₂ := apply_mul_fst_of_isCocycle₂_of_vanishing hf hR hL g h
-    ⟨_, ‹N.Normal›.conj_mem' _ n.2 g⟩
+    ⟨_, ‹N.Normal›.conj_mem' _ n.property g⟩
   rw [← mul_assoc, mul_inv_cancel_left] at h₂
   rw [hL, hL, add_zero, add_zero, h₂] at h₁
   exact h₁.symm

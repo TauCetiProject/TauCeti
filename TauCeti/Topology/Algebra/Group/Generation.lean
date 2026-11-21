@@ -307,8 +307,8 @@ theorem IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker
     Finite {f : G →* F // IsOpen (f.ker : Set G)} := by
   obtain ⟨s, hs⟩ := hG
   have : Finite (s : Set G) := s.finite_toSet.to_subtype
-  refine Finite.of_injective (fun f (x : (s : Set G)) ↦ f.1 x) fun f g hfg ↦ Subtype.ext ?_
-  exact MonoidHom.eq_of_eqOn_of_isOpen_ker hs f.2 g.2 fun x hx ↦ congrFun hfg ⟨x, hx⟩
+  refine Finite.of_injective (fun f (x : (s : Set G)) ↦ f.val x) fun f g hfg ↦ Subtype.ext ?_
+  exact MonoidHom.eq_of_eqOn_of_isOpen_ker hs f.property g.property fun x hx ↦ congrFun hfg ⟨x, hx⟩
 
 end OpenKernel
 

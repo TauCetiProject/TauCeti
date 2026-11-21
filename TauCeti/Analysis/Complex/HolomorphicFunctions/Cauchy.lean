@@ -167,7 +167,7 @@ private theorem continuousOn_segmentIntegrand {U V : Opens ℂ} (f : holomorphic
     ((differentiableOn_extend f).continuousOn.mono hpqU).comp hline.continuousOn hmem
   have hden : ContinuousOn (fun x : ℝ × V ↦ AffineMap.lineMap (k := ℝ) p q x.1 - x.2.val)
       (Icc 0 1 ×ˢ univ) :=
-    (hline.sub (continuous_subtype_val.comp continuous_snd)).continuousOn
+    (hline.sub (continuous_subtypeVal.comp continuous_snd)).continuousOn
   exact continuousOn_const.mul <| hnum.div hden fun x hx ↦
     sub_ne_zero.mpr fun h ↦ hpqV.notMem_of_mem_left (hmem x hx) (by rw [h]; exact x.2.property)
 
