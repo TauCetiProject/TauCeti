@@ -198,6 +198,9 @@ theorem eval₂_cartanTwoForm_comp_snd
   have hf : ContDiff ℝ ∞ f := hL.contDiff_tangentBundle_mk_constBase 0
   rw [eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap, comp_extChartAt_symm_comp_snd,
     TangentBundle.extChartAt_modelSpace_apply, (hasFDerivAt_linearLegendreMap_comp_snd hf _).fderiv]
+  -- `X` and `W` are pairs of the model `E × E`, and `fst.prod (D²f(v) ∘ snd)` sends `X` to
+  -- `(X.1, D²f(v) X.2)` by `ContinuousLinearMap.prod_apply`; this defeq is used through the
+  -- `TangentSpace` synonym, which blocks rewriting with it.
   exact strongDualCotangentSymplecticForm_apply _ _
 
 /-- **The differential of the energy of a Lagrangian depending only on the velocity.** On a

@@ -221,7 +221,8 @@ theorem hamiltonianVectorField_lagrangianEnergy_comp_snd_sub
     (isHamiltonianVectorField_lagrangianEnergy_comp_snd hL)
   rw [hreg.hamiltonianVectorField_lagrangianEnergy_sub_comp_proj hL hLV, ← hX,
     potentialForce_def, fiberHessian_comp_snd]
-  refine Prod.ext (add_zero _) ((zero_add _).trans ?_)
+  refine Prod.ext ((Prod.fst_add _ _).trans (add_zero _))
+    ((Prod.snd_add _ _).trans ((zero_add _).trans ?_))
   -- On a normed space `mvfderiv` is `fderiv`, read through the identification of `T_q E` with `E`.
   have hV : mvfderiv 𝓘(ℝ, E) V v.proj = fderiv ℝ V v.proj :=
     ContinuousLinearMap.ext fun u ↦ by

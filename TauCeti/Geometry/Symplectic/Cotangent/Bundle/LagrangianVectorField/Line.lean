@@ -59,18 +59,24 @@ variable {m : ℝ} {V : ℝ → ℝ}
 /- The velocity `v.snd` lies in `TangentSpace 𝓘(ℝ, ℝ) v.proj`, which is `ℝ` but carries no power
 instance, so the kinetic energy `(m / 2) v²` below names the power of `ℝ` explicitly. -/
 
+/-- The second derivative of the kinetic energy `(m / 2) v²` is `m`. -/
+private theorem iteratedDeriv_two_mul_sq (w : ℝ) :
+    iteratedDeriv 2 (fun v : ℝ ↦ m / 2 * v ^ 2) w = m := by
+  simp
+
+/-- For `m ≠ 0` the second derivative of the kinetic energy `(m / 2) v²` is invertible. -/
+private theorem isInvertible_fderiv_fderiv_mul_sq (hm : m ≠ 0) (w : ℝ) :
+    (fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w).IsInvertible :=
+  isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero.2 (iteratedDeriv_two_mul_sq w ▸ hm)
+
 /-- The second derivative of the kinetic energy `(m / 2) v²` sends `a` to the linear form
 `b ↦ m a b`, so for `m ≠ 0` its inverse sends the linear form `φ` to `φ(1) / m`. -/
 private theorem inverse_fderiv_fderiv_mul_sq (hm : m ≠ 0) (w : ℝ) (φ : ℝ →L[ℝ] ℝ) :
     (fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w).inverse φ = φ 1 / m := by
   have hD : ∀ a b, fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w a b = m * a * b := fun a b ↦ by
-    -- The second derivative of `(m / 2) v²` is `m`.
-    have h2 : iteratedDeriv 2 (fun v : ℝ ↦ m / 2 * v ^ 2) w = m := by simp
-    rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, h2, smul_eq_mul]
+    rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, iteratedDeriv_two_mul_sq, smul_eq_mul]
     ring
-  have hinv : (fderiv ℝ (fderiv ℝ fun v : ℝ ↦ m / 2 * v ^ 2) w).IsInvertible :=
-    isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero.2 (by simpa using hm)
-  rw [hinv.inverse_apply_eq]
+  rw [(isInvertible_fderiv_fderiv_mul_sq hm w).inverse_apply_eq]
   refine ContinuousLinearMap.ext_ring ?_
   rw [hD]
   field_simp
@@ -92,7 +98,7 @@ theorem hamiltonianVectorField_lagrangianEnergy_mul_sq_sub (hm : m ≠ 0)
     (congrArg Neg.neg (inverse_fderiv_fderiv_mul_sq hm v.snd _)).trans
       (by rw [fderiv_apply_one_eq_deriv, neg_div])
   rw [hamiltonianVectorField_lagrangianEnergy_comp_snd_sub (f := fun w : ℝ ↦ m / 2 * w ^ 2) hL
-    (fun w ↦ isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero.2 (by simpa using hm)) v, h]
+    (isInvertible_fderiv_fderiv_mul_sq hm) v, h]
 
 /-- **The opposite sign convention.** For `L(q, v) = (m / 2) v² - V(q)` with `m ≠ 0`, the vector
 field `X` with `ι_X ω_L = -dE_L` is `(q, v) ↦ (-v, V'(q) / m)`. -/
@@ -106,8 +112,7 @@ theorem hamiltonianVectorField_neg_lagrangianEnergy_mul_sq_sub (hm : m ≠ 0)
       ((-v.snd, deriv V v.proj / m) : TangentSpace 𝓘(ℝ, ℝ).tangent v) := by
   rw [SmoothTwoForm.hamiltonianVectorField_neg,
     hamiltonianVectorField_lagrangianEnergy_mul_sq_sub hm hL]
-  have h : -(-deriv V v.proj / m) = deriv V v.proj / m := by ring
-  exact Prod.ext rfl h
+  exact Prod.ext (Prod.fst_neg _) ((Prod.snd_neg _).trans (by ring))
 
 /-- **The opposite sign convention is not second order.** For `L(q, v) = (m / 2) v² - V(q)` with
 `m ≠ 0`, the vector field `X` with `ι_X ω_L = -dE_L` has base component `-v ≠ v` at every
