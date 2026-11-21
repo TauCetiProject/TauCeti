@@ -81,7 +81,7 @@ theorem weightedTrivializationMap_apply_of_mem {x : B} {i : ι} (hx : x ∈ (e i
 weight `ρ i` is continuous and has topological support inside the base set of `e i`. -/
 theorem continuous_weightedTrivializationMap (hρ : ∀ i, Continuous (ρ i))
     (hsupp : ∀ i, tsupport (ρ i) ⊆ (e i).baseSet) :
-    Continuous fun p : TotalSpace F E ↦ weightedTrivializationMap e ρ p.proj p.2 := by
+    Continuous fun p : TotalSpace F E ↦ weightedTrivializationMap e ρ p.proj p.snd := by
   refine continuous_pi fun i ↦ continuous_of_tsupport fun p hp ↦ ?_
   have hpρ : p.proj ∈ tsupport (ρ i) :=
     tsupport_comp_subset_preimage (ρ i) (FiberBundle.continuous_proj F E)
@@ -92,7 +92,7 @@ theorem continuous_weightedTrivializationMap (hρ : ∀ i, Continuous (ρ i))
     ((hρ i).continuousAt.comp (FiberBundle.continuous_proj F E).continuousAt).smul
       ((e i).continuousOn.continuousAt hsource).snd
   refine hcont.congr (Filter.eventuallyEq_of_mem hsource fun q hq ↦ ?_)
-  exact (weightedTrivializationMap_apply_of_mem e ρ ((e i).mem_source.1 hq) q.2).symm
+  exact (weightedTrivializationMap_apply_of_mem e ρ ((e i).mem_source.1 hq) q.snd).symm
 
 /-- `weightedTrivializationMap` is injective on the fibre over a point `x` of the base set of some
 `e i` at which the weight `ρ i` does not vanish. -/
@@ -117,7 +117,7 @@ theorem exists_continuous_injective_pi_of_iUnion_baseSet [NormalSpace B] [Finite
     (e : ι → Trivialization F (π F E)) [∀ i, (e i).IsLinear 𝕜]
     (hcover : ⋃ i, (e i).baseSet = univ) :
     ∃ j : ∀ x, E x →L[𝕜] (ι → F),
-      Continuous (fun p : TotalSpace F E ↦ j p.proj p.2) ∧ ∀ x, Injective (j x) := by
+      Continuous (fun p : TotalSpace F E ↦ j p.proj p.snd) ∧ ∀ x, Injective (j x) := by
   obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate_of_locallyFinite isClosed_univ
     (fun i ↦ (e i).baseSet) (fun i ↦ (e i).open_baseSet) (locallyFinite_of_finite _)
     hcover.ge
@@ -125,7 +125,8 @@ theorem exists_continuous_injective_pi_of_iUnion_baseSet [NormalSpace B] [Finite
   have hwsupp : ∀ i, tsupport (w i) ⊆ (e i).baseSet := fun i ↦
     (tsupport_comp_subset (map_zero (algebraMap ℝ 𝕜)) (ρ i)).trans (hρ i)
   refine ⟨weightedTrivializationMap e w,
-    continuous_weightedTrivializationMap e w (fun i ↦ (continuous_algebraMap ℝ 𝕜).comp (ρ i).2)
+    continuous_weightedTrivializationMap e w (fun i ↦ (continuous_algebraMap ℝ 𝕜).comp
+        (ρ i).continuous_toFun)
       hwsupp, fun x ↦ ?_⟩
   obtain ⟨i, hi⟩ := ρ.exists_pos (mem_univ x)
   have hwi : w i x ≠ 0 := (map_ne_zero (algebraMap ℝ 𝕜)).2 hi.ne'
@@ -137,13 +138,13 @@ trivial bundle `B × (Fin N → 𝕜)` for some `N`. -/
 theorem exists_continuous_injective_fin_of_compactSpace [CompactSpace B] [NormalSpace B]
     [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [VectorBundle 𝕜 F E] :
     ∃ (N : ℕ) (j : ∀ x, E x →L[𝕜] (Fin N → 𝕜)),
-      Continuous (fun p : TotalSpace F E ↦ j p.proj p.2) ∧ ∀ x, Injective (j x) := by
+      Continuous (fun p : TotalSpace F E ↦ j p.proj p.snd) ∧ ∀ x, Injective (j x) := by
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
     (fun x : B ↦ (trivializationAt F E x).baseSet)
     (fun x ↦ (trivializationAt F E x).open_baseSet)
     fun x _ ↦ mem_iUnion.2 ⟨x, mem_baseSet_trivializationAt F E x⟩
   obtain ⟨j, hj, hinj⟩ := exists_continuous_injective_pi_of_iUnion_baseSet (𝕜 := 𝕜)
-    (fun x : t ↦ trivializationAt F E x.1)
+    (fun x : t ↦ trivializationAt F E x.val)
     (eq_univ_of_univ_subset fun x hx ↦ by simpa using ht hx)
   let L : (t → F) ≃L[𝕜] (Fin (Module.finrank 𝕜 (t → F)) → 𝕜) :=
     ContinuousLinearEquiv.ofFinrankEq (by simp)

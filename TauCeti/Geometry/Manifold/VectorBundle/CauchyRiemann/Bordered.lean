@@ -130,8 +130,7 @@ theorem isZeroOneForm_ofBorderedHolomorphic_chart_iff_halfCoord {i : Fin A.n}
           -(Complex.I •
             (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ (A.chart i x : ℂ) v) := by
   have himg : closedUpperHalfPlaneModel.symm (A.chart i x : ℂ) ∈ A.image i := by
-    rw [closedUpperHalfPlaneModel_symm_coe]
-    exact A.mem_image.2 ⟨x, hx, rfl⟩
+    simpa using A.mem_image.2 ⟨x, hx, rfl⟩
   have hsymm : (A.chart i).symm (closedUpperHalfPlaneModel.symm (A.chart i x : ℂ)) = x := by
     rw [closedUpperHalfPlaneModel_symm_coe, (A.chart i).left_inv (A.dom_subset_chart_source i hx)]
   have h := A.isZeroOneForm_ofBorderedHolomorphic_iff_halfCoord_tangentHom i θ himg

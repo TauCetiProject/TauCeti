@@ -19,7 +19,9 @@ A path in the quiver of a Serre graph is reduced when no consecutive darts cance
 condition retains the distinction between a loop and its reversed dart, and between parallel
 edges. It is the local normal-form condition used for graph path groups and Stallings graphs.
 The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
-its decomposition and mapping lemmas support subgraph and based-core constructions. The paths of
+its decomposition and mapping lemmas support subgraph and based-core constructions. A morphism that
+is injective on the darts issuing from each vertex maps reduced paths to reduced paths
+(`SerreGraph.Hom.isReduced_mapPath`). The paths of
 a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, a path whose darts lie
 in a subgraph `Γ.subgraph A D hsrc hrev` lifts to it, with the same reducedness, and a path leaving
 a vertex set crosses its boundary along one of its darts.
@@ -36,17 +38,17 @@ variable (Γ : SerreGraph)
 /-- The ordered list of darts traversed by a path. -/
 def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   (p.weight fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) =>
-    FreeMonoid.of e.1).toList
+    FreeMonoid.of e.val).toList
 
 @[simp] theorem Path.darts_nil (a : Γ.V) :
     Path.darts Γ (Quiver.Path.nil : Γ.Path a a) = [] := by simp [Path.darts]
 
 @[simp] theorem Path.darts_cons {a b c : Γ.V} (p : Γ.Path a b)
-    (e : Quiver.Hom b c) : Path.darts Γ (p.cons e) = Path.darts Γ p ++ [e.1] := by
+    (e : Quiver.Hom b c) : Path.darts Γ (p.cons e) = Path.darts Γ p ++ [e.val] := by
   simp [Path.darts]
 
 @[simp] theorem Path.darts_toPath {a b : Γ.V} (e : Quiver.Hom a b) :
-    Path.darts Γ e.toPath = [e.1] := by simp [Quiver.Hom.toPath]
+    Path.darts Γ e.toPath = [e.val] := by simp [Quiver.Hom.toPath]
 
 @[simp] theorem Path.darts_comp {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
     Path.darts Γ (p.comp q) = Path.darts Γ p ++ Path.darts Γ q := by
@@ -61,11 +63,25 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
 /-- The weight of a path is the ordered product of the weights of the darts it traverses. -/
 theorem Path.weight_eq_prod_map_darts {M : Type*} [Monoid M] (f : Γ.E → M) {a b : Γ.V}
     (p : Γ.Path a b) :
-    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.1) =
+    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.val) =
       ((Path.darts Γ p).map f).prod := by
   induction p with
   | nil => simp
   | cons p e ih => simp [ih]
+
+/-- Two dart weights that agree on the darts of a path agree along it. -/
+theorem Path.weight_congr {M : Type*} [Monoid M] {f g : Γ.E → M} {a b : Γ.V} (p : Γ.Path a b)
+    (h : ∀ e ∈ Path.darts Γ p, f e = g e) :
+    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.val) =
+      p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => g e.val) := by
+  rw [Path.weight_eq_prod_map_darts, Path.weight_eq_prod_map_darts, List.map_congr_left h]
+
+/-- A dart weight that is trivial on the darts of a path is trivial along it. -/
+theorem Path.weight_eq_one {M : Type*} [Monoid M] {f : Γ.E → M} {a b : Γ.V} (p : Γ.Path a b)
+    (h : ∀ e ∈ Path.darts Γ p, f e = 1) :
+    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.val) = 1 := by
+  rw [Path.weight_eq_prod_map_darts]
+  exact List.prod_eq_one (by simpa using h)
 
 /-- A path traverses as many darts as its length. -/
 @[simp] theorem Path.length_darts {a b : Γ.V} (p : Γ.Path a b) :
@@ -105,7 +121,7 @@ def Path.IsReduced {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Prop
   | _, .nil => True
   | _, .cons .nil _ => True
   | _, .cons (.cons p e) f =>
-      Path.IsReduced (.cons p e) ∧ f.1 ≠ Γ.rev e.1
+      Path.IsReduced (.cons p e) ∧ f.val ≠ Γ.rev e.val
 
 @[simp] theorem Path.isReduced_nil (a : Γ.V) :
     Path.IsReduced Γ (Quiver.Path.nil : Γ.Path a a) := trivial
@@ -118,7 +134,7 @@ def Path.IsReduced {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Prop
     (p : Γ.Path a b) (e : Quiver.Hom b c)
     (f : Quiver.Hom c d) :
     Path.IsReduced Γ ((p.cons e).cons f) ↔
-      Path.IsReduced Γ (p.cons e) ∧ f.1 ≠ Γ.rev e.1 := Iff.rfl
+      Path.IsReduced Γ (p.cons e) ∧ f.val ≠ Γ.rev e.val := Iff.rfl
 
 /-- Transporting a path along equalities of its endpoints keeps its darts. -/
 @[simp] theorem Path.darts_cast {a b a' b' : Γ.V} (ha : a = a') (hb : b = b') (p : Γ.Path a b) :
@@ -156,24 +172,40 @@ theorem Path.IsReduced.of_comp_left {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Pat
     rw [Prefunctor.mapPath_cons, Path.darts_cons Δ, ih]
     simp
 
-/-- A morphism injective on darts preserves and reflects reduced paths. -/
-theorem Hom.isReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
-    Path.IsReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsReduced Γ p := by
+variable {Γ} in
+/-- A morphism that is injective on the darts issuing from each vertex maps reduced paths to
+reduced paths, even when it identifies vertices or darts globally. -/
+theorem Hom.isReduced_mapPath {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) (hp : Path.IsReduced Γ p) :
+    Path.IsReduced Δ (f.toPrefunctor.mapPath p) := by
   induction p with
-  | nil => simp
+  | nil => trivial
   | cons p e ih =>
     cases p with
-    | nil => simp [Path.IsReduced]
-    | cons p k =>
-      simp only [Prefunctor.mapPath_cons, Path.isReduced_cons_cons,
-        Hom.toPrefunctor_map_val, ← f.map_rev, ne_eq, hf.eq_iff] at ih ⊢
-      exact and_congr ih Iff.rfl
+    | nil => trivial
+    | cons p d =>
+      exact ⟨ih hp.1, fun he => hp.2 (hf _ _ (by simp [e.property.1, d.property.2])
+          (by simpa using he))⟩
+
+/-- A morphism that is injective on the darts issuing from each vertex preserves and reflects
+reduced paths. -/
+theorem Hom.isReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) :
+    Path.IsReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsReduced Γ p := by
+  refine ⟨fun hp => ?_, f.isReduced_mapPath hf p⟩
+  induction p with
+  | nil => trivial
+  | cons p e ih =>
+    cases p with
+    | nil => trivial
+    | cons p k => exact ⟨ih hp.1, fun he => hp.2 (by simp [he])⟩
 
 private theorem isReduced_pair_comp {a b c d : Γ.V}
     (e : Quiver.Hom a b) (f : Quiver.Hom b c) (p : Γ.Path c d) :
     Path.IsReduced Γ ((e.toPath.comp f.toPath).comp p) ↔
-      f.1 ≠ Γ.rev e.1 ∧ Path.IsReduced Γ (f.toPath.comp p) := by
+      f.val ≠ Γ.rev e.val ∧ Path.IsReduced Γ (f.toPath.comp p) := by
   induction p with
   | nil => simp [Quiver.Path.comp, Quiver.Hom.toPath, Path.IsReduced]
   | cons p k ih =>
@@ -195,7 +227,7 @@ private theorem isReduced_pair_comp {a b c d : Γ.V}
       rw [Quiver.Path.reverse, Quiver.Path.reverse, ← Quiver.Path.comp_assoc,
         isReduced_pair_comp]
       simp only [reverse_val, Γ.rev_rev, Path.isReduced_cons_cons]
-      exact (and_congr (ne_comm : Γ.rev f.1 ≠ e.1 ↔ e.1 ≠ Γ.rev f.1) ih).trans and_comm
+      exact (and_congr (ne_comm : Γ.rev f.val ≠ e.val ↔ e.val ≠ Γ.rev f.val) ih).trans and_comm
 
 /-- A suffix of a reduced concatenation is reduced. -/
 theorem Path.IsReduced.of_comp_right {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
@@ -222,6 +254,15 @@ theorem Path.isReduced_comp_iff {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b 
       ∀ e ∈ (Path.darts Γ p).getLast?, ∀ f ∈ (Path.darts Γ q).head?, f ≠ Γ.rev e := by
   simp only [Path.isReduced_iff_isChain, Path.darts_comp, List.isChain_append]
 
+/-- A path traversing each geometric edge at most once is reduced: no dart of it is followed by its
+reverse. -/
+theorem Path.isReduced_of_nodup_map_toGeomEdge_darts {a b : Γ.V} {p : Γ.Path a b}
+    (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : Path.IsReduced Γ p := by
+  rw [Path.isReduced_iff_isChain]
+  refine List.isChain_of_isChain_map Γ.toGeomEdge (S := (· ≠ ·)) (fun e f hef hfe => ?_)
+    hp.isChain
+  exact hef (by rw [hfe, toGeomEdge_rev])
+
 /-- The first dart of a path starts at the start of the path. -/
 theorem Path.src_eq_of_mem_head?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
     (he : e ∈ (Path.darts Γ p).head?) : Γ.src e = a := by
@@ -232,7 +273,7 @@ theorem Path.src_eq_of_mem_head?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
     | nil =>
       simp only [Path.darts_cons, Path.darts_nil, List.nil_append, List.head?_cons,
         Option.mem_def, Option.some.injEq] at he
-      exact he ▸ f.2.1
+      exact he ▸ f.property.1
     | cons p g =>
       refine ih ?_
       rw [Path.darts_cons Γ (p.cons g), List.head?_append_of_ne_nil _ (by simp)] at he
@@ -246,7 +287,30 @@ theorem Path.tgt_eq_of_mem_getLast?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ
   | cons p f =>
     simp only [Path.darts_cons, List.getLast?_append, List.getLast?_singleton, Option.some_or,
       Option.mem_def, Option.some.injEq] at he
-    exact he ▸ f.2.2
+    exact he ▸ f.property.2
+
+/-- A dart of a path whose target is the source of no dart of the path is the last dart of the
+path. -/
+theorem Path.mem_getLast?_darts_of_forall_src_ne {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) (hp : ∀ f ∈ Path.darts Γ p, Γ.src f ≠ Γ.tgt e) :
+    e ∈ (Path.darts Γ p).getLast? := by
+  induction p with
+  | nil => simp at he
+  | cons p f ih =>
+    rcases (by simpa using he : e ∈ Path.darts Γ p ∨ e = f.val) with he | rfl
+    · refine (hp f.val (by simp) (f.property.1.trans ?_)).elim
+      exact (Path.tgt_eq_of_mem_getLast?_darts Γ p (ih he fun g hg => hp g (by simp [hg]))).symm
+    · simp
+
+/-- A dart of a path whose source is the target of no dart of the path is the first dart of the
+path. -/
+theorem Path.mem_head?_darts_of_forall_tgt_ne {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) (hp : ∀ f ∈ Path.darts Γ p, Γ.tgt f ≠ Γ.src e) :
+    e ∈ (Path.darts Γ p).head? := by
+  -- The reverse of `e` is the last dart of the reverse of `p`.
+  have h := Path.mem_getLast?_darts_of_forall_src_ne Γ (p := p.reverse) (e := Γ.rev e)
+    (by simpa [Γ.rev_injective.eq_iff] using he) (by simpa using hp)
+  simpa [List.getLast?_reverse, Γ.rev_injective.eq_iff] using h
 
 /-- A vertex of a path is its start or the end of one of its darts. -/
 theorem Path.eq_or_exists_tgt_eq_of_mem_vertices {a b : Γ.V} (p : Γ.Path a b) {v : Γ.V}
@@ -256,7 +320,7 @@ theorem Path.eq_or_exists_tgt_eq_of_mem_vertices {a b : Γ.V} (p : Γ.Path a b) 
   | cons p e ih =>
     rcases (Quiver.Path.mem_vertices_cons p e).mp hv with hv | rfl
     · exact (ih hv).imp_right fun ⟨f, hf, hfv⟩ => ⟨f, by simp [hf], hfv⟩
-    · exact Or.inr ⟨e.1, by simp, e.2.2⟩
+    · exact Or.inr ⟨e.val, by simp, e.property.2⟩
 
 /-- A dart of a path starts at a vertex of the path. -/
 theorem Path.src_mem_vertices_of_mem_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
@@ -293,7 +357,7 @@ theorem Path.exists_boundary_dart {a b : Γ.V} (p : Γ.Path a b) (R : Set Γ.V)
     (ha : a ∈ R) (hb : b ∉ R) : ∃ e ∈ Path.darts Γ p, Γ.src e ∈ R ∧ Γ.tgt e ∉ R := by
   obtain ⟨u, hu, v, hv, e, p₁, p₂, rfl⟩ :=
     Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem p R ha hb
-  exact ⟨e.1, by simp, by rwa [e.2.1], by rwa [e.2.2]⟩
+  exact ⟨e.val, by simp, by rwa [e.property.1], by rwa [e.property.2]⟩
 
 /-- A list of consecutive darts starting at `a` and ending at `b` is the dart list of a path
 from `a` to `b`. The three conditions are expressed as one equation between lists of
@@ -310,6 +374,39 @@ theorem exists_path_darts_eq {a b : Γ.V} (l : List Γ.E)
     obtain ⟨p, hp⟩ := ih h₁
     exact ⟨p.cons ⟨e, rfl, by simpa using h₂⟩, by simp [hp]⟩
 
+/-- The darts of a path are consecutive: the start of the path followed by the targets of its
+darts is the list of the sources of its darts followed by the end of the path. -/
+theorem Path.cons_map_tgt_darts {a b : Γ.V} (p : Γ.Path a b) :
+    a :: (Path.darts Γ p).map Γ.tgt = (Path.darts Γ p).map Γ.src ++ [b] := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    obtain ⟨e, rfl, rfl⟩ := e
+    simp [← List.cons_append, ih]
+
+/-- A closed path ends its darts at the vertices at which it starts them, with the same
+multiplicities. -/
+theorem Path.map_tgt_darts_perm {a : Γ.V} (p : Γ.Path a a) :
+    ((Path.darts Γ p).map Γ.tgt).Perm ((Path.darts Γ p).map Γ.src) :=
+  (List.perm_cons a).1 <| (Path.cons_map_tgt_darts Γ p).symm ▸ List.perm_append_singleton _ _
+
+/-- A path is determined by its endpoints and its darts. -/
+theorem Path.darts_injective {a b : Γ.V} :
+    Function.Injective (Path.darts Γ : Γ.Path a b → List Γ.E) := by
+  intro p q h
+  induction p with
+  | nil => exact (q.eq_nil_of_length_zero (by simp [← Path.length_darts, ← h])).symm
+  | cons p e ih =>
+    cases q with
+    | nil => simp at h
+    | cons q f =>
+      rw [Path.darts_cons, Path.darts_cons] at h
+      obtain ⟨h₁, h₂⟩ := List.append_inj' h rfl
+      obtain ⟨e, rfl, rfl⟩ := e
+      obtain ⟨f, rfl, hf⟩ := f
+      obtain rfl : e = f := by simpa using h₂
+      rw [ih h₁]
+
 section Restrict
 
 variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
@@ -323,7 +420,7 @@ theorem exists_restrict_path {a b : Γ.V} (p : Γ.Path a b)
   | nil => exact ⟨.nil, rfl⟩
   | @cons b c p e ih =>
     obtain ⟨q, hq⟩ := ih fun f hf => hp f (by simp [hf])
-    refine ⟨q.cons ⟨⟨e.1, hp e.1 (by simp)⟩, e.2⟩, ?_⟩
+    refine ⟨q.cons ⟨⟨e.val, hp e.val (by simp)⟩, e.property⟩, ?_⟩
     subst hq
     rfl
 
@@ -333,14 +430,15 @@ theorem mem_of_mem_darts_mapPath {a b : (Γ.restrict S hS).V}
     (he : e ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q)) : e ∈ S := by
   rw [Hom.darts_mapPath] at he
   obtain ⟨f, -, rfl⟩ := List.mem_map.mp he
-  exact f.2
+  exact f.property
 
 /-- A path in the restriction is reduced exactly when it is reduced in the ambient graph. -/
 @[simp] theorem isReduced_restrictInclusion_mapPath_iff {a b : (Γ.restrict S hS).V}
     (q : (Γ.restrict S hS).Path a b) :
     Path.IsReduced Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q) ↔
       Path.IsReduced (Γ.restrict S hS) q :=
-  Hom.isReduced_mapPath_iff _ (Γ.restrictInclusion S hS) Subtype.val_injective q
+  Hom.isReduced_mapPath_iff _ (Γ.restrictInclusion S hS)
+    (fun _ _ _ h => Subtype.val_injective h) q
 
 /-- The restriction is preconnected exactly when any two vertices are joined by a path of `Γ`
 whose darts lie in `S`. -/
@@ -365,9 +463,9 @@ theorem exists_subgraph_path (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, 
   induction p with
   | nil => exact ⟨.nil, rfl⟩
   | @cons b c p e ih =>
-    have he : e.1 ∈ D := hp e.1 (by simp)
-    obtain ⟨q, rfl⟩ := ih (fun f hf => hp f (by simp [hf])) (e.2.1 ▸ hsrc e.1 he)
-    exact ⟨q.cons ⟨⟨e.1, he⟩, Subtype.ext e.2.1, Subtype.ext e.2.2⟩, rfl⟩
+    have he : e.val ∈ D := hp e.val (by simp)
+    obtain ⟨q, rfl⟩ := ih (fun f hf => hp f (by simp [hf])) (e.property.1 ▸ hsrc e.val he)
+    exact ⟨q.cons ⟨⟨e.val, he⟩, Subtype.ext e.property.1, Subtype.ext e.property.2⟩, rfl⟩
 
 /-- A path in a subgraph is reduced exactly when it is reduced in the ambient graph. -/
 @[simp] theorem isReduced_subgraphInclusion_mapPath_iff (A : Set Γ.V) (D : Set Γ.E)
@@ -375,7 +473,8 @@ theorem exists_subgraph_path (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, 
     {a b : (Γ.subgraph A D hsrc hrev).V} (q : (Γ.subgraph A D hsrc hrev).Path a b) :
     Path.IsReduced Γ ((Γ.subgraphInclusion A D hsrc hrev).toPrefunctor.mapPath q) ↔
       Path.IsReduced (Γ.subgraph A D hsrc hrev) q :=
-  Hom.isReduced_mapPath_iff _ _ (Γ.subgraphInclusion_mapE_injective A D hsrc hrev) q
+  Hom.isReduced_mapPath_iff _ _
+    (fun _ _ _ h => Γ.subgraphInclusion_mapE_injective A D hsrc hrev h) q
 
 /-- Traversing a rose petal and then its reverse is a backtrack. -/
 theorem rose_not_isReduced_backtrack {α : Type*} (a : α) :

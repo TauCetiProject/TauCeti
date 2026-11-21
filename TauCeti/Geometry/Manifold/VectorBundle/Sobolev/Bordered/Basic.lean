@@ -355,10 +355,10 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
     (A.halfSectionChartData_coord_ae_eq i s).symm.trans
       (A.halfSectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero volume p k _ _ hs i)
   have hval : A.halfCoord i s (A.chart i x : ℂ) = 0 :=
-    A.eqOn_halfClosedImage_of_ae_eq
+    A.eqOn_halfClosedImage_of_ae_eq hae
       ((A.contDiffOn_halfCoord s.contMDiff i).continuousOn.mono
         (A.halfClosedImage_subset_halfChartSet i))
-      continuousOn_const hae (A.coe_chart_mem_halfClosedImage hx)
+      continuousOn_const (A.coe_chart_mem_halfClosedImage hx)
   rw [A.halfCoord_coe_chart s hx] at hval
   rw [ContMDiffSection.coe_zero, Pi.zero_apply,
     ← ((A.triv i).continuousLinearEquivAt ℝ x (A.dom_subset_baseSet i hx)).map_eq_zero_iff]

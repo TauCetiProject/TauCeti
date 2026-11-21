@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
-public import Mathlib.Probability.Moments.Variance
 import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Data.Nat.Choose.Sum
 
@@ -82,7 +80,12 @@ variable {N K r : ℕ}
 population size `N`, success count `K`, and number `r` of successes awaited.
 
 The explicit `k ≤ N - K` branch is necessary because natural subtraction is totalized: without
-it, the displayed quotient need not vanish when there are fewer than `k` failures. -/
+it, the displayed quotient need not vanish when there are fewer than `k` failures.
+
+The weight is meaningful only for `r ≤ K ≤ N`. Outside that range it is a junk value: for `r > K`
+it is positive on all `k ≤ N - K` (for instance `negativeHypergeometricWeight 3 1 2 0 = 1 / 3`), and
+for `K > N` it can be infinite (`negativeHypergeometricWeight 0 1 1 0 = ⊤`).
+`negativeHypergeometricMeasure` guards the range, so it is the zero measure there. -/
 def negativeHypergeometricWeight (N K r k : ℕ) : ℝ≥0∞ :=
   if k ≤ N - K then
     ((k + r - 1).choose k : ℝ≥0∞) * ((N - r - k).choose (K - r) : ℝ≥0∞) / (N.choose K : ℝ≥0∞)
@@ -131,8 +134,8 @@ theorem negativeHypergeometricWeight_toReal_of_lt (hK : N < K) (k : ℕ) :
   simp [negativeHypergeometricWeight_toReal, Nat.choose_eq_zero_of_lt hK]
 
 /-- The negative hypergeometric measure with population size `N`, success count `K`, and number
-`r` of successes awaited: the law of the number of failures drawn without replacement before the
-`r`th success.
+`r` of successes awaited: the law of the number of failures drawn, uniformly at random and without
+replacement, before the `r`th success.
 
 It is a probability measure when `r ≤ K ≤ N`, and is the zero measure otherwise. -/
 def negativeHypergeometricMeasure (N K r : ℕ) : Measure ℕ :=
@@ -245,7 +248,7 @@ theorem negativeHypergeometricMeasure_zero_successes (hK : K ≤ N) :
 /-! ## Integration -/
 
 /-- Every function is integrable against a negative hypergeometric measure, since the measure has
-finite support. -/
+finitely many atoms, each of finite mass. -/
 @[fun_prop]
 theorem integrable_negativeHypergeometricMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℕ → E) (N K r : ℕ) : Integrable f (negativeHypergeometricMeasure N K r) := by
@@ -364,7 +367,8 @@ private theorem sum_negativeHypergeometricWeight_toReal_mul_ascFactorial (hr : r
     integral_negativeHypergeometricMeasure _ hr]
   simp only [smul_eq_mul]
 
-/-- The first two moments of the number of draws `X + r`, as finite sums. -/
+/-- The sum of the weights against `a * (Y * (Y + 1)) + b * Y + c`, where `Y = X + r` is the number
+of draws, in closed form: this uses the first two rising-factorial moments of `Y`. -/
 private theorem sum_negativeHypergeometricWeight_toReal_mul (hr : r ≤ K) (hK : K ≤ N)
     (a b c : ℝ) :
     ∑ k ∈ Finset.range (N - K + 1), (negativeHypergeometricWeight N K r k).toReal *

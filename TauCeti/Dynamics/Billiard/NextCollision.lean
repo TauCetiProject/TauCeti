@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 
 /-!
@@ -102,6 +103,10 @@ variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 instance : CoeFun (StrictConvexBilliardTable o) fun _ ↦ ℝ → E :=
   ⟨toFun⟩
 
+/-- The length of the boundary of a billiard table is positive. -/
+instance instFactPeriodPos : Fact (0 < χ.period) :=
+  ⟨χ.period_pos⟩
+
 theorem differentiableAt (s : ℝ) : DifferentiableAt ℝ χ s :=
   differentiableAt_of_deriv_ne_zero fun h ↦ by simpa [h] using χ.norm_deriv s
 
@@ -166,7 +171,7 @@ theorem sub_eq_norm_smul_outgoingDir_of_areaForm_eq_zero {s v t : ℝ} (hv : v �
   · simp [h0]
   have hpos := χ.areaForm_pos _ _ h0
   rw [hx, map_smul, areaForm_deriv_outgoingDir, smul_eq_mul] at hpos
-  have hsqrt : 0 < √(1 - v ^ 2) := Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2])
+  have hsqrt : 0 < √(1 - v ^ 2) := Real.sqrt_one_sub_sq_pos hv
   have hc : 0 < ⟪u, χ t - χ s⟫ := pos_of_mul_pos_left hpos hsqrt.le
   rw [hx, norm_smul, hu, mul_one, Real.norm_of_nonneg hc.le]
 
@@ -189,7 +194,7 @@ theorem exists_collision {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
       ((χ.differentiableAt a).hasDerivAt.sub_const (χ s))
   have hneg : o.areaForm u (deriv χ s) < 0 := by
     rw [o.areaForm_swap, areaForm_deriv_outgoingDir, neg_lt_zero]
-    exact Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2])
+    exact Real.sqrt_one_sub_sq_pos hv
   have hf_s : f s = 0 := by simp [f]
   have hf_sL : f (s + L) = 0 := by simp [f, L, χ.periodic s]
   have hslope_s := (hasDerivAt_iff_tendsto_slope.1 (hderiv s)).eventually
@@ -315,25 +320,17 @@ theorem areaForm_deriv_nextParam_outgoingDir_neg {s v : ℝ} (hv : v ∈ Ioo (-1
 theorem areaForm_deriv_nextParam_outgoingDir {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     o.areaForm (deriv χ (χ.nextParam s v)) (χ.outgoingDir s v) =
       -√(1 - χ.nextTangential s v ^ 2) := by
-  set T := deriv χ (χ.nextParam s v)
-  have hneg := χ.areaForm_deriv_nextParam_outgoingDir_neg (s := s) hv
-  have h := o.inner_sq_add_areaForm_sq T (χ.outgoingDir s v)
-  rw [χ.norm_deriv _, χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩, real_inner_comm] at h
-  have key : √(1 - χ.nextTangential s v ^ 2) = -o.areaForm T (χ.outgoingDir s v) :=
-    (Real.sqrt_eq_iff_mul_self_eq_of_pos (neg_pos.2 hneg)).2 (by rw [nextTangential_def]; nlinarith)
-  rw [key, neg_neg]
+  rw [nextTangential_def, real_inner_comm, o.sqrt_one_sub_inner_sq_eq_abs_areaForm (χ.norm_deriv _)
+    (χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩),
+    abs_of_neg (χ.areaForm_deriv_nextParam_outgoingDir_neg hv), neg_neg]
 
 /-- The chord is never tangent to the boundary at its far end: the next tangential component lies
 in `(-1, 1)`. -/
 theorem nextTangential_mem_Ioo {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     χ.nextTangential s v ∈ Ioo (-1) 1 := by
-  set T := deriv χ (χ.nextParam s v)
-  have hneg := χ.areaForm_deriv_nextParam_outgoingDir_neg (s := s) hv
-  have h := o.inner_sq_add_areaForm_sq T (χ.outgoingDir s v)
-  rw [χ.norm_deriv _, χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩, real_inner_comm] at h
-  have hw : χ.nextTangential s v ^ 2 < 1 := by
-    rw [nextTangential_def]; nlinarith
-  constructor <;> nlinarith
+  rw [nextTangential_def, real_inner_comm]
+  exact o.inner_mem_Ioo_of_areaForm_ne_zero (χ.norm_deriv _) (χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩)
+    (χ.areaForm_deriv_nextParam_outgoingDir_neg hv).ne
 
 /-- The law of specular reflection: the outgoing velocity of the next state is the mirror image of
 the incoming velocity `u` in the tangent line at the next collision point. -/

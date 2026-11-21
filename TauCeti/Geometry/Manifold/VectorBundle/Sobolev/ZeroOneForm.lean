@@ -148,19 +148,19 @@ theorem mem_antilinearSobolevSections_iff {w : C.sobolevSections μ p k} :
       ∀ i, ∀ᵐ y ∂μ.restrict (C.image i), ∀ v : G,
         C.chartValueL μ p k i w y (Complex.I • v) =
           -(Complex.I • C.chartValueL μ p k i w y v) := by
-  simp only [antilinearSobolevSections, Submodule.mem_iInf, LinearMap.mem_ker]
+  simp only [antilinearSobolevSections, Submodule.mem_iInf, LinearMap.mem_ker,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+    Lp.eq_zero_iff_ae_eq_zero]
   refine forall_congr' fun i ↦ ?_
   have hc := ContinuousLinearMap.coeFn_compLpL (p := p) (μ := μ.restrict (C.image i))
     (complexAntilinearPartL - ContinuousLinearMap.id ℝ (G →L[ℝ] F)) (C.chartValueL μ p k i w)
-  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Lp.eq_zero_iff_ae_eq_zero]
   have key : (fun y ↦ (complexAntilinearPartL - ContinuousLinearMap.id ℝ _ :
       (G →L[ℝ] F) →L[ℝ] G →L[ℝ] F) (C.chartValueL μ p k i w y)) =ᵐ[μ.restrict (C.image i)] 0 ↔
       ∀ᵐ y ∂μ.restrict (C.image i), ∀ v : G,
         C.chartValueL μ p k i w y (Complex.I • v) =
-          -(Complex.I • C.chartValueL μ p k i w y v) := by
-    refine Filter.eventually_congr (Filter.Eventually.of_forall fun y ↦ ?_)
-    exact sub_eq_zero.trans complexAntilinearPartL_eq_self_iff
+          -(Complex.I • C.chartValueL μ p k i w y v) :=
+    Filter.eventually_congr (Filter.Eventually.of_forall fun _ ↦
+      sub_eq_zero.trans complexAntilinearPartL_eq_self_iff)
   exact ⟨fun h ↦ key.1 (hc.symm.trans h), fun h ↦ hc.trans (key.2 h)⟩
 
 /-- `C.antilinearSobolevSections μ p k` is a closed subspace of `C.sobolevSections μ p k`. -/
@@ -254,14 +254,14 @@ theorem chartValueL_antilinearPartSobolevL_ae_coord {w : C.sobolevSections μ p 
 @[simp]
 theorem antilinearPartSobolevL_coe (w : C.antilinearSobolevSections μ p k) :
     C.antilinearPartSobolevL μ p k proj hproj w = w :=
-  Subtype.ext (C.constMapL_eq_self_of_mem_antilinearSobolevSections μ p k proj hproj w.2)
+  Subtype.ext (C.constMapL_eq_self_of_mem_antilinearSobolevSections μ p k proj hproj w.property)
 
 /-- An element of `C.sobolevSections μ p k` is fixed by the complex-antilinear projection iff it
 belongs to `C.antilinearSobolevSections μ p k`. -/
 theorem coe_antilinearPartSobolevL_eq_self_iff {w : C.sobolevSections μ p k} :
     (C.antilinearPartSobolevL μ p k proj hproj w : C.sobolevSections μ p k) = w ↔
       w ∈ C.antilinearSobolevSections μ p k :=
-  ⟨fun h ↦ h ▸ (C.antilinearPartSobolevL μ p k proj hproj w).2,
+  ⟨fun h ↦ h ▸ (C.antilinearPartSobolevL μ p k proj hproj w).property,
     C.constMapL_eq_self_of_mem_antilinearSobolevSections μ p k proj hproj⟩
 
 /-- The complex-antilinear projection is surjective. -/
@@ -276,11 +276,9 @@ end Projection
 /-- Forgetting the highest derivative preserves `C.antilinearSobolevSections`. -/
 theorem lowerOrderL_mem_antilinearSobolevSections {w : C.sobolevSections μ p (k + 1)}
     (hw : w ∈ C.antilinearSobolevSections μ p (k + 1)) :
-    C.lowerOrderL μ p k w ∈ C.antilinearSobolevSections μ p k := by
-  rw [mem_antilinearSobolevSections_iff] at hw ⊢
-  intro i
-  rw [C.chartValueL_coe_lowerOrderL]
-  exact hw i
+    C.lowerOrderL μ p k w ∈ C.antilinearSobolevSections μ p k :=
+  mem_antilinearSobolevSections_iff.2 fun i ↦ by
+    simpa only [C.chartValueL_coe_lowerOrderL] using mem_antilinearSobolevSections_iff.1 hw i
 
 variable (C μ p k) in
 /-- The continuous inclusion of `C.antilinearSobolevSections μ p (k + 1)` into
@@ -323,11 +321,10 @@ variable {C μ k} in
 /-- Lowering the integrability exponent preserves `C.antilinearSobolevSections`. -/
 theorem ofExponentLEL_mem_antilinearSobolevSections {w : C.sobolevSections μ q k}
     (hpq : p ≤ q) (hw : w ∈ C.antilinearSobolevSections μ q k) :
-    C.ofExponentLEL μ k hpq w ∈ C.antilinearSobolevSections μ p k := by
-  rw [mem_antilinearSobolevSections_iff] at hw ⊢
-  intro i
-  rw [chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
-  exact hw i
+    C.ofExponentLEL μ k hpq w ∈ C.antilinearSobolevSections μ p k :=
+  mem_antilinearSobolevSections_iff.2 fun i ↦ by
+    simpa only [chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL] using
+      mem_antilinearSobolevSections_iff.1 hw i
 
 /-- For `p ≤ q`, the continuous inclusion of `C.antilinearSobolevSections μ q k` into
 `C.antilinearSobolevSections μ p k`. -/
@@ -354,16 +351,14 @@ omit [Fact (1 ≤ q)] in
 @[simp]
 theorem antilinearOfExponentLEL_self (w : C.antilinearSobolevSections μ p k) :
     C.antilinearOfExponentLEL μ k le_rfl w = w :=
-  Subtype.ext <| (C.coe_antilinearOfExponentLEL le_rfl w).trans (C.ofExponentLEL_self w.1)
+  Subtype.ext <| (C.coe_antilinearOfExponentLEL le_rfl w).trans (C.ofExponentLEL_self w.val)
 
 @[simp]
 theorem antilinearOfExponentLEL_antilinearOfExponentLEL {r : ℝ≥0∞} [Fact (1 ≤ r)]
     (hpq : p ≤ q) (hqr : q ≤ r) (w : C.antilinearSobolevSections μ r k) :
     C.antilinearOfExponentLEL μ k hpq (C.antilinearOfExponentLEL μ k hqr w) =
       C.antilinearOfExponentLEL μ k (hpq.trans hqr) w :=
-  Subtype.ext <| by
-    rw [coe_antilinearOfExponentLEL, coe_antilinearOfExponentLEL, coe_antilinearOfExponentLEL,
-      C.ofExponentLEL_ofExponentLEL hpq hqr w.1]
+  Subtype.ext <| by simp [C.ofExponentLEL_ofExponentLEL]
 
 /-- Lowering the exponent commutes with forgetting the highest derivative on
 `C.antilinearSobolevSections`. -/
@@ -371,9 +366,7 @@ theorem antilinearLowerOrderL_antilinearOfExponentLEL (hpq : p ≤ q)
     (w : C.antilinearSobolevSections μ q (k + 1)) :
     C.antilinearLowerOrderL μ p k (C.antilinearOfExponentLEL μ (k + 1) hpq w) =
       C.antilinearOfExponentLEL μ k hpq (C.antilinearLowerOrderL μ q k w) :=
-  Subtype.ext <| by
-    rw [coe_antilinearLowerOrderL, coe_antilinearOfExponentLEL, coe_antilinearOfExponentLEL,
-      coe_antilinearLowerOrderL, C.lowerOrderL_ofExponentLEL hpq w.1]
+  Subtype.ext <| by simp [C.lowerOrderL_ofExponentLEL]
 
 /-- Lowering the exponent commutes with the complex-antilinear projection. -/
 theorem antilinearOfExponentLEL_antilinearPartSobolevL (proj : S → S)
@@ -538,8 +531,7 @@ theorem mem_zeroOneSobolevSections_of_isZeroOneForm
         (A.tangentHom 𝓘(ℝ, ℂ)).coord i θ)
     (hθ : ∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (θ x)) :
     w ∈ zeroOneSobolevSections A μ p k :=
-  (mem_zeroOneSobolevSections_iff_isZeroOneForm hw).2 fun _ ↦ Filter.Eventually.of_forall
-    fun _ ↦ hθ _
+  (mem_zeroOneSobolevSections_iff_isZeroOneForm hw).2 fun _ ↦ .of_forall fun _ ↦ hθ _
 
 /-- The `(0,1)`-forms form a closed subspace of `SobolevSection`. -/
 theorem isClosed_zeroOneSobolevSections :
@@ -608,8 +600,7 @@ theorem chartValueL_zeroOnePartSobolevL_ae_coord
     (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i (zeroOnePartSobolevL A μ p k w)
       =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i)]
         (A.tangentHom 𝓘(ℝ, ℂ)).coord i fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x) := by
-  have hcoord (θ' : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :=
-    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData_coord_ae_eq μ i θ'
+  have hcoord := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData_coord_ae_eq μ i
   exact (SectionChartData.chartValueL_antilinearPartSobolevL_ae_coord _ _
     (hw.trans (hcoord θ).symm)).trans (hcoord _)
 
@@ -746,29 +737,26 @@ theorem coe_zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ 
 @[simp]
 theorem zeroOneContMDiffSMulL_const (c : ℝ) :
     zeroOneContMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
-  ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_const c) w.1)
+  ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_const c) w.val)
 
 theorem zeroOneContMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.add hψ) =
       zeroOneContMDiffSMulL A μ p k hφ + zeroOneContMDiffSMulL A μ p k hψ := by
-  ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_add hφ hψ) w.1)
+  ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_add hφ hψ) w.val)
 
 theorem zeroOneContMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.mul hψ) =
       (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) := by
-  ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_mul hφ hψ) w.1)
+  ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_mul hφ hψ) w.val)
 
 /-- Smooth real multiplication commutes with forgetting the highest derivative on `(0,1)`-forms. -/
 theorem zeroOneLowerOrderL_zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (w : zeroOneSobolevSections A μ p (k + 1)) :
     zeroOneLowerOrderL A μ p k (zeroOneContMDiffSMulL A μ p (k + 1) hφ w) =
       zeroOneContMDiffSMulL A μ p k hφ (zeroOneLowerOrderL A μ p k w) :=
-  Subtype.ext (SobolevSection.lowerOrderL_contMDiffSMulL hφ w.1)
+  Subtype.ext (SobolevSection.lowerOrderL_contMDiffSMulL hφ w.val)
 
 /-- Smooth real multiplication commutes with the `(0,1)`-projection. -/
 theorem zeroOneContMDiffSMulL_zeroOnePartSobolevL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)

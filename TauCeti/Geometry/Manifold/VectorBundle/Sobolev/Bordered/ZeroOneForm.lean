@@ -175,7 +175,7 @@ theorem mem_borderedZeroOneSobolevSections_iff
             (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
               volume p k i w z v) := by
   rw [borderedZeroOneSobolevSections, SectionChartData.mem_antilinearSobolevSections_iff]
-  refine forall_congr' fun i ↦ Iff.of_eq <| congrArg (Filter.Eventually _) <| by
+  exact forall_congr' fun i ↦ Iff.of_eq <| congrArg (Filter.Eventually _) <| by
     rw [(A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i,
       A.halfImage_tangentHom i]
 
@@ -210,8 +210,7 @@ theorem mem_borderedZeroOneSobolevSections_of_isZeroOneForm
           (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ)
     (hθ : ∀ x, (ofBorderedHolomorphic M).IsZeroOneForm (θ x)) :
     w ∈ borderedZeroOneSobolevSections A p k :=
-  (mem_borderedZeroOneSobolevSections_iff_isZeroOneForm hw).2 fun _ ↦
-    Filter.Eventually.of_forall fun _ ↦ hθ _
+  (mem_borderedZeroOneSobolevSections_iff_isZeroOneForm hw).2 fun _ ↦ .of_forall fun _ ↦ hθ _
 
 /-- The `(0,1)`-forms over a Riemann surface with boundary form a closed subspace of
 `BorderedSobolevSection`. -/
@@ -267,13 +266,9 @@ theorem chartValueL_borderedZeroOnePartSobolevL_ae
           ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
             volume p k i w z) := by
   rw [borderedZeroOnePartSobolevL]
-  have himg : ae (volume.restrict
-      ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.image i : Set ℂ)) =
-      ae (volume.restrict (A.halfImage i : Set ℂ)) := by
-    rw [(A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i,
-      A.halfImage_tangentHom i]
-  exact (congrArg (Filter.Eventually _) himg).mp
-    (SectionChartData.chartValueL_antilinearPartSobolevL_ae _ _ w i)
+  simp_rw [← A.halfImage_tangentHom i,
+    ← (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i]
+  exact SectionChartData.chartValueL_antilinearPartSobolevL_ae _ _ w i
 
 /-- The `(0,1)`-projection of `w` vanishes iff the chart data of `w` are complex linear almost
 everywhere on `A.halfImage i` for every chart `i`. -/
@@ -442,10 +437,9 @@ variable (A p k) in
 `(0,1)`-forms `borderedZeroOneSobolevSections A p k`. -/
 def borderedZeroOneContMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ) :
     borderedZeroOneSobolevSections A p k →L[ℝ] borderedZeroOneSobolevSections A p k :=
-  (BorderedSobolevSection.contMDiffSMulL
-    (A.tangentHom closedUpperHalfPlaneModel) p k hφ).restrict fun _ ↦
-      SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
-        (BorderedSobolevSection.chartValueL_contMDiffSMulL_ae hφ)
+  (BorderedSobolevSection.contMDiffSMulL _ p k hφ).restrict fun _ ↦
+    SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
+      (BorderedSobolevSection.chartValueL_contMDiffSMulL_ae hφ)
 
 @[simp]
 theorem coe_borderedZeroOneContMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
@@ -460,21 +454,21 @@ theorem borderedZeroOneContMDiffSMulL_const (c : ℝ) :
     borderedZeroOneContMDiffSMulL A p k (contMDiff_const (c := c)) =
       c • ContinuousLinearMap.id ℝ _ := by
   ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_const c) w.1)
+  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_const c) w.val)
 
 theorem borderedZeroOneContMDiffSMulL_add (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.add hψ) =
       borderedZeroOneContMDiffSMulL A p k hφ + borderedZeroOneContMDiffSMulL A p k hψ := by
   ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_add hφ hψ) w.1)
+  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_add hφ hψ) w.val)
 
 theorem borderedZeroOneContMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.mul hψ) =
       (borderedZeroOneContMDiffSMulL A p k hφ).comp (borderedZeroOneContMDiffSMulL A p k hψ) := by
   ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ) w.1)
+  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ) w.val)
 
 /-- Smooth real multiplication up to the boundary commutes with forgetting the highest derivative
 on `(0,1)`-forms. -/
@@ -485,16 +479,14 @@ theorem borderedZeroOneLowerOrderL_borderedZeroOneContMDiffSMulL
       borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOneLowerOrderL A p k w) :=
   Subtype.ext <| by
     simp only [coe_borderedZeroOneLowerOrderL, coe_borderedZeroOneContMDiffSMulL]
-    exact BorderedSobolevSection.lowerOrderL_contMDiffSMulL hφ w.1
+    exact BorderedSobolevSection.lowerOrderL_contMDiffSMulL hφ w.val
 
 /-- Smooth real multiplication up to the boundary commutes with the `(0,1)`-projection. -/
 theorem borderedZeroOneContMDiffSMulL_borderedZeroOnePartSobolevL
     (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p k) :
     borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOnePartSobolevL A p k w) =
-      borderedZeroOnePartSobolevL A p k
-        (BorderedSobolevSection.contMDiffSMulL
-          (A.tangentHom closedUpperHalfPlaneModel) p k hφ w) :=
+      borderedZeroOnePartSobolevL A p k (BorderedSobolevSection.contMDiffSMulL _ p k hφ w) :=
   SectionChartData.restrict_antilinearPartSobolevL_of_chartValueL_ae_smul
     (BorderedSobolevSection.chartValueL_contMDiffSMulL_ae hφ) _ _ w
 
@@ -512,20 +504,19 @@ theorem exists_isZeroOneForm_memWkpLoc_halfCoord (w : borderedZeroOneSobolevSect
     ∃ θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x,
       (∀ x, (ofBorderedHolomorphic M).IsZeroOneForm (θ x)) ∧
       (∀ i : Fin A.n, (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL
-          volume p k i w
-        =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
+          volume p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
           (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ) ∧
       ∀ i : Fin A.n, MemWkpLoc p (A.halfClosedImage i) k
         ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ) := by
   have (x : M) : ContinuousSMul ℂ (V x) :=
     (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
-  obtain ⟨θ₀, hθ₀, hloc₀⟩ := BorderedSobolevSection.exists_section_memWkpLoc w.1
+  obtain ⟨θ₀, hθ₀, hloc₀⟩ := BorderedSobolevSection.exists_section_memWkpLoc w.val
   let θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x :=
     fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ₀ x)
   refine ⟨θ, fun x ↦ isZeroOneForm_zeroOnePart (θ₀ x), fun i ↦ ?_, fun i ↦ ?_⟩
   · have hθ₀i := hθ₀ i
     rw [A.halfImage_tangentHom i] at hθ₀i
-    have hproj := chartValueL_borderedZeroOnePartSobolevL_ae_halfCoord (w := w.1) hθ₀i
+    have hproj := chartValueL_borderedZeroOnePartSobolevL_ae_halfCoord (w := w.val) hθ₀i
     rwa [borderedZeroOnePartSobolevL_coe] at hproj
   · have hloc : MemWkpLoc p (A.halfClosedImage i) k
         ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ₀) := by
@@ -591,7 +582,7 @@ theorem ofContMDiffSection_mem_borderedZeroOneSobolevSections_iff
       (B.contDiffOn_halfCoord θ.contMDiff i).continuousOn.mono
         (B.halfClosedImage_subset_halfChartSet i)
   have hval : L (B.halfCoord i θ (A.chart i x : ℂ)) = 0 :=
-    B.eqOn_halfClosedImage_of_ae_eq hcont continuousOn_const hae
+    B.eqOn_halfClosedImage_of_ae_eq hae hcont continuousOn_const
       (B.coe_chart_mem_halfClosedImage hx)
   rw [A.isZeroOneForm_ofBorderedHolomorphic_chart_iff_halfCoord θ hx]
   exact complexAntilinearPartL_eq_self_iff.1 (sub_eq_zero.1 hval)
@@ -602,9 +593,7 @@ linear (`θ x (j x v) = i • θ x v`) at *every* point of `M`, boundary points 
 theorem borderedZeroOnePartSobolevL_ofContMDiffSection_eq_zero_iff
     (θ : Cₛ^k⟮closedUpperHalfPlaneModel; ℂ →L[ℝ] F,
       fun x ↦ TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x⟯) :
-    borderedZeroOnePartSobolevL A p k
-        (BorderedSobolevSection.ofContMDiffSection
-          (A.tangentHom closedUpperHalfPlaneModel) p k θ) = 0 ↔
+    borderedZeroOnePartSobolevL A p k (BorderedSobolevSection.ofContMDiffSection _ p k θ) = 0 ↔
       ∀ x (v : TangentSpace closedUpperHalfPlaneModel x),
         θ x (ofBorderedHolomorphic M x v) = Complex.I • θ x v := by
   have (x : M) : ContinuousSMul ℂ (V x) :=
@@ -629,12 +618,12 @@ theorem borderedZeroOnePartSobolevL_ofContMDiffSection_eq_zero_iff
         (B.contDiffOn_halfCoord θ.contMDiff i).continuousOn.mono
           (B.halfClosedImage_subset_halfChartSet i)
     have hval : complexAntilinearPartL (B.halfCoord i θ (A.chart i x : ℂ)) = 0 :=
-      B.eqOn_halfClosedImage_of_ae_eq hcont continuousOn_const hae
+      B.eqOn_halfClosedImage_of_ae_eq hae hcont continuousOn_const
         (B.coe_chart_mem_halfClosedImage hx)
     have hchart_val :
         (A.tangentHom closedUpperHalfPlaneModel).halfCoord i
             (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x)) (A.chart i x : ℂ) =
-          (B.triv i ⟨x, (ofBorderedHolomorphic M).zeroOnePart (θ x)⟩).2 :=
+          (B.triv i ⟨x, (ofBorderedHolomorphic M).zeroOnePart (θ x)⟩).snd :=
       B.halfCoord_coe_chart _ hx
     rw [← A.halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart i θ, hchart_val] at hval
     exact zeroOnePart_eq_zero_iff.1 <|
@@ -642,11 +631,11 @@ theorem borderedZeroOnePartSobolevL_ofContMDiffSection_eq_zero_iff
   · have hzero : (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x)) = 0 :=
       funext fun x ↦ zeroOnePart_eq_zero_iff.2 (hθ x)
     refine BorderedSobolevSection.eq_of_ae_eq_halfCoord (s := 0) (fun i ↦ ?_) fun i ↦ ?_
-    · refine ((congrArg
-          (fun U : Opens ℂ ↦ Filter.EventuallyEq (ae (volume.restrict (U : Set ℂ))) _ _)
-          (A.halfImage_tangentHom i).symm).mp
-            (chartValueL_borderedZeroOnePartSobolevL_ae_halfCoord (hchart i))).trans ?_
-      exact Filter.EventuallyEq.of_eq (congrArg (B.halfCoord i) hzero)
+    · refine ((congrArg (fun U : Opens ℂ ↦
+          Filter.EventuallyEq (ae (volume.restrict (U : Set ℂ))) _ _)
+            (A.halfImage_tangentHom i).symm).mp
+          (chartValueL_borderedZeroOnePartSobolevL_ae_halfCoord (hchart i))).trans
+        (.of_eq (congrArg (B.halfCoord i) hzero))
     · simpa only [ZeroMemClass.coe_zero, map_zero, ContMDiffSection.coe_zero] using
         BorderedSobolevSection.chartValueL_ofContMDiffSection_ae B p k 0 i
 
@@ -665,7 +654,7 @@ theorem coe_borderedZeroOneOfContMDiffSection
     (borderedZeroOneOfContMDiffSection A p k θ :
         BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p k) =
       BorderedSobolevSection.ofContMDiffSection
-        (A.tangentHom closedUpperHalfPlaneModel) p k θ.1 :=
+        (A.tangentHom closedUpperHalfPlaneModel) p k θ.val :=
   LinearMap.coe_restrict_apply _ θ
 
 /-- The chart data of `borderedZeroOneOfContMDiffSection A p k θ` on `A.halfImage i` equal the
@@ -675,10 +664,10 @@ theorem chartValueL_borderedZeroOneOfContMDiffSection_ae
     (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL volume p k i
         (borderedZeroOneOfContMDiffSection A p k θ)
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
-        (A.tangentHom closedUpperHalfPlaneModel).halfCoord i ⇑θ.1 := by
-  rw [coe_borderedZeroOneOfContMDiffSection, ← A.halfImage_tangentHom i]
-  exact BorderedSobolevSection.chartValueL_ofContMDiffSection_ae
-    (A.tangentHom closedUpperHalfPlaneModel) p k θ.1 i
+        (A.tangentHom closedUpperHalfPlaneModel).halfCoord i ⇑θ.val := by
+  simpa only [coe_borderedZeroOneOfContMDiffSection, ← A.halfImage_tangentHom] using
+    BorderedSobolevSection.chartValueL_ofContMDiffSection_ae
+      (A.tangentHom closedUpperHalfPlaneModel) p k θ.val i
 
 /-- **Norm bound.** The norm of `borderedZeroOneOfContMDiffSection A p k θ` is bounded by the sum
 of the `Lᵖ` norms on `A.halfImage i` of the classical derivatives of orders `0` through `k` of the
@@ -688,27 +677,21 @@ theorem norm_borderedZeroOneOfContMDiffSection_le
     ‖borderedZeroOneOfContMDiffSection A p k θ‖ ≤
       ∑ i : Fin A.n, ∑ j, ∑ l ∈ Finset.range (k + 1),
         lpNorm (iteratedFDeriv ℝ l fun z ↦ (finBasis ℝ (ℂ →L[ℝ] F)).coord j
-          ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i ⇑θ.1 z)) p
-            (volume.restrict (A.halfImage i : Set ℂ)) :=
-  calc ‖borderedZeroOneOfContMDiffSection A p k θ‖
-      = ‖BorderedSobolevSection.ofContMDiffSection
-          (A.tangentHom closedUpperHalfPlaneModel) p k θ.1‖ :=
-        (Submodule.norm_coe _).trans
-          (congrArg Norm.norm (coe_borderedZeroOneOfContMDiffSection A p k θ))
-    _ ≤ _ := BorderedSobolevSection.norm_ofContMDiffSection_le
-          (A.tangentHom closedUpperHalfPlaneModel) p k θ.1
-    _ = _ := Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun _ _ ↦
-          Finset.sum_congr rfl fun _ _ ↦
-            congrArg (fun U : Opens ℂ ↦ lpNorm _ p (volume.restrict (U : Set ℂ)))
-              (A.halfImage_tangentHom i)
+          ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i ⇑θ.val z)) p
+            (volume.restrict (A.halfImage i : Set ℂ)) := by
+  refine (Submodule.norm_coe _).symm.le.trans ?_
+  rw [coe_borderedZeroOneOfContMDiffSection]
+  refine (BorderedSobolevSection.norm_ofContMDiffSection_le _ p k θ.val).trans_eq ?_
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun _ _ ↦
+    Finset.sum_congr rfl fun _ _ ↦ congrArg
+      (fun U : Opens ℂ ↦ lpNorm _ p (volume.restrict (U : Set ℂ))) (A.halfImage_tangentHom i)
 
 /-- **Injectivity.** Two `Cᵏ` `(0,1)`-forms up to the boundary defining the same Sobolev
 `(0,1)`-form are equal everywhere on `M`, boundary points included. -/
 theorem borderedZeroOneOfContMDiffSection_injective :
     Function.Injective (borderedZeroOneOfContMDiffSection A p k) := fun _ _ h ↦
-  Subtype.ext <| BorderedSobolevSection.ofContMDiffSection_injective
-    (A.tangentHom closedUpperHalfPlaneModel) p k <| by
-      simpa only [coe_borderedZeroOneOfContMDiffSection] using congrArg Subtype.val h
+  Subtype.ext <| BorderedSobolevSection.ofContMDiffSection_injective _ p k <| by
+    simpa only [coe_borderedZeroOneOfContMDiffSection] using congrArg Subtype.val h
 
 /-! #### Concrete witness: the closed annulus -/
 

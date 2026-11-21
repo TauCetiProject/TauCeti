@@ -119,7 +119,7 @@ corresponding charts of `A` and `A.ofBaseSet h`. -/
 theorem coord_prod (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet)
     (i : Fin A.n) (s : ∀ x, (V ×ᵇ V') x) (y : E) :
     (A.prod h).coord i s y =
-      (A.coord i (fun x ↦ (s x).1) y, (A.ofBaseSet h).coord i (fun x ↦ (s x).2) y) := by
+      (A.coord i (fun x ↦ (s x).fst) y, (A.ofBaseSet h).coord i (fun x ↦ (s x).snd) y) := by
   rw [coord_def (A.prod h) i, coord_def A i, coord_def (A.ofBaseSet h) i]
   rfl
 
