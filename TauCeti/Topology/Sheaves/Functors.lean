@@ -28,7 +28,9 @@ presheaves with right whiskering along `Opens.map`.
 
 It also records that the restriction maps of Mathlib's restriction of a sheaf along an open
 embedding, `Topology.IsOpenEmbedding.sheafPullback`, are restriction maps of the original sheaf
-between the image opens.
+between the image opens, and supplies general open-subspace restriction helpers for sheaves and
+sheaf morphisms (`TopologicalSpace.Opens.sheafInclusionHom`, `TopologicalSpace.Opens.resLE`,
+`TopologicalSpace.Opens.sheafHomResLE`, and `TopologicalSpace.Opens.coversTop_map`).
 
 Finally, it records that the inverse image functor `f⁻¹` of abelian sheaves along a continuous map
 `f` is left exact, and that it carries constant sheaves to constant sheaves. Its right exactness
@@ -50,6 +52,11 @@ and additivity hold for the pullback along any continuous functor of sites
   sheaves with right whiskering along `Opens.map`.
 * `Topology.IsOpenEmbedding.sheafPullback_obj_obj_map`: the restriction maps of the restriction of
   a sheaf along an open embedding.
+* `TopologicalSpace.Opens.sheafInclusionHom`, `TopologicalSpace.Opens.resLE`,
+  `TopologicalSpace.Opens.sheafHomResLE`, and `TopologicalSpace.Opens.coversTop_map`: the
+  canonical sheaf morphism `F ⟶ (U.inclusion')_* (F|_U)`, the restricted map between open
+  subspaces, the restriction of `φ : S ⟶ f_* R` to opens `V ⊆ Y` and `U ⊆ f⁻¹(V)`, and pullback
+  of covering families.
 * `TopCat.Hom.pullbackConstantSheafIso`: the inverse image of a constant abelian sheaf is
   constant.
 -/
@@ -228,3 +235,209 @@ lemma constantSheafAdj_homEquiv_pullbackConstantSheafIso_inv
 end
 
 end TopCat.Hom
+
+namespace TopologicalSpace.Opens
+
+open Opposite Topology
+
+section SheafRestriction
+
+noncomputable section
+
+variable {X Y : TopCat.{u}}
+
+/-- For an open subset `U` of `X` and a sheaf `F` on `X`, the canonical morphism
+`F ⟶ (U.inclusion')_* (F|_U)` induced by the counit
+`(U.inclusion') '' ((U.inclusion')⁻¹ W) ≤ W` of `U.isOpenEmbedding.isOpenMap.adjunction`. -/
+def sheafInclusionHom (U : Opens X) (A : Type*) [Category.{u} A] (F : X.Sheaf A) :
+    F ⟶ ((Opens.map U.inclusion').sheafPushforwardContinuous A
+      (Opens.grothendieckTopology X)
+      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).obj
+        ((U.isOpenEmbedding.sheafPullback A).obj F) where
+  hom :=
+    Functor.whiskerRight (NatTrans.op U.isOpenEmbedding.isOpenMap.adjunction.counit) F.obj
+
+/-- On sections over `W`, `sheafInclusionHom` restricts along `W ⊓ U ≤ W`. -/
+@[simp]
+theorem sheafInclusionHom_hom_app (U : Opens X) (A : Type*) [Category.{u} A]
+    (F : X.Sheaf A) (W : (Opens X)ᵒᵖ) :
+    (U.sheafInclusionHom A F).hom.app W =
+      F.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app W.unop).op :=
+  (rfl)
+
+/-- The continuous map `(Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V` between open
+subspaces induced by `f : X ⟶ Y` when `U ≤ (Opens.map f).obj V`. -/
+def resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
+    (Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V :=
+  TopCat.ofHom ⟨fun x ↦ ⟨f x.1, e x.2⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
+
+/-- `Opens.resLE` commutes with the open inclusions `Opens.inclusion'` into `X` and `Y`. -/
+@[reassoc (attr := simp)]
+theorem resLE_comp_inclusion' (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) :
+    Opens.resLE f V U e ≫ V.inclusion' = U.inclusion' ≫ f := by
+  ext x
+  rfl
+
+/-- Underlying point value of `Opens.resLE`. -/
+@[simp]
+theorem inclusion'_resLE_apply (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) (x : (Opens.toTopCat X).obj U) :
+    V.inclusion' (Opens.resLE f V U e x) = f (U.inclusion' x) :=
+  (rfl)
+
+/-- For an open `W` of `(Opens.toTopCat Y).obj V` and `e : U ≤ (Opens.map f).obj V`, the image in
+`X` of the preimage of `W` under `Opens.resLE f V U e` is contained in the preimage under `f` of
+the image of `W` in `Y`. -/
+theorem functor_map_resLE_le (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) (W : Opens ((Opens.toTopCat Y).obj V)) :
+    U.isOpenEmbedding.functor.obj ((Opens.map (Opens.resLE f V U e)).obj W) ≤
+      (Opens.map f).obj (V.isOpenEmbedding.functor.obj W) := by
+  rintro _ ⟨u, hu, rfl⟩
+  exact ⟨⟨f u.1, e u.2⟩, hu, rfl⟩
+
+/-- Restriction of a sheaf morphism `φ : S ⟶ f_* R` to open subspaces `V ⊆ Y` and `U ⊆ f⁻¹(V)`
+along `Opens.resLE f V U e`. -/
+def sheafHomResLE {A : Type*} [Category.{u} A] {f : X ⟶ Y}
+    {S : Y.Sheaf A} {R : X.Sheaf A}
+    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous A
+      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
+    (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
+    (V.isOpenEmbedding.sheafPullback A).obj S ⟶
+      ((Opens.map (Opens.resLE f V U e)).sheafPushforwardContinuous A
+        (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V))
+        (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).obj
+          ((U.isOpenEmbedding.sheafPullback A).obj R) where
+  hom :=
+    { app W := φ.hom.app (op (V.isOpenEmbedding.functor.obj W.unop)) ≫
+        R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W.unop)).op
+      naturality W₁ W₂ g := by
+        let a := S.obj.map (V.isOpenEmbedding.functor.map g.unop).op
+        let b₁ : S.obj.obj (op (V.isOpenEmbedding.functor.obj W₁.unop)) ⟶
+            R.obj.obj (op ((Opens.map f).obj (V.isOpenEmbedding.functor.obj W₁.unop))) :=
+          φ.hom.app (op (V.isOpenEmbedding.functor.obj W₁.unop))
+        let b₂ : S.obj.obj (op (V.isOpenEmbedding.functor.obj W₂.unop)) ⟶
+            R.obj.obj (op ((Opens.map f).obj (V.isOpenEmbedding.functor.obj W₂.unop))) :=
+          φ.hom.app (op (V.isOpenEmbedding.functor.obj W₂.unop))
+        let c₁ := R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W₁.unop)).op
+        let c₂ := R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W₂.unop)).op
+        let d := R.obj.map
+          (U.isOpenEmbedding.functor.map ((Opens.map (Opens.resLE f V U e)).map g.unop)).op
+        let e₀ := R.obj.map ((Opens.map f).map (V.isOpenEmbedding.functor.map g.unop)).op
+        have hnat : a ≫ b₂ = b₁ ≫ e₀ :=
+          φ.hom.naturality (V.isOpenEmbedding.functor.map g.unop).op
+        have hR : e₀ ≫ c₂ = c₁ ≫ d := by
+          rw [← R.obj.map_comp, ← R.obj.map_comp, ← op_comp, ← op_comp]
+          exact congrArg (R.obj.map ∘ Quiver.Hom.op) (Subsingleton.elim _ _)
+        exact (Category.assoc a b₂ c₂).symm.trans
+          ((congrArg (· ≫ c₂) hnat).trans
+            ((Category.assoc b₁ e₀ c₂).trans
+              ((congrArg (b₁ ≫ ·) hR).trans (Category.assoc b₁ c₁ d).symm))) }
+
+/-- Component of `Opens.sheafHomResLE` on an open `W` of `(Opens.toTopCat Y).obj V`. -/
+@[simp]
+theorem sheafHomResLE_hom_app {A : Type*} [Category.{u} A] {f : X ⟶ Y}
+    {S : Y.Sheaf A} {R : X.Sheaf A}
+    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous A
+      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
+    (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V)
+    (W : (Opens ((Opens.toTopCat Y).obj V))ᵒᵖ) :
+    (Opens.sheafHomResLE φ V U e).hom.app W =
+      φ.hom.app (op (V.isOpenEmbedding.functor.obj W.unop)) ≫
+        R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W.unop)).op :=
+  (rfl)
+
+/-- Natural isomorphism between composed open-preimage functors witnessing the commutative square
+`resLE_comp_inclusion'`. -/
+def mapCompResLEIso (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
+    Opens.map f ⋙ Opens.map U.inclusion' ≅
+      Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e) :=
+  Opens.mapIso (U.inclusion' ≫ f) (Opens.resLE f V U e ≫ V.inclusion')
+    (Opens.resLE_comp_inclusion' f V U e).symm
+
+/-- Compatibility of `sheafHomResLE` with `sheafInclusionHom`: restricting `S` to `V` and applying
+`sheafHomResLE` agrees with applying `φ` and restricting `R` to `U` along the commutative square
+`resLE_comp_inclusion'`. -/
+theorem sheafInclusionHom_comp_map_sheafHomResLE {A : Type*} [Category.{u} A] {f : X ⟶ Y}
+    {S : Y.Sheaf A} {R : X.Sheaf A}
+    (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous A
+      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
+    (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
+    letI : (Opens.map f ⋙ Opens.map U.inclusion').IsContinuous
+        (Opens.grothendieckTopology Y)
+        (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+      Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology X) _
+    letI : (Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)).IsContinuous
+        (Opens.grothendieckTopology Y)
+        (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+      Functor.isContinuous_comp _ _ _
+        (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V)) _
+    (V.sheafInclusionHom A S ≫
+          ((Opens.map V.inclusion').sheafPushforwardContinuous A
+            (Opens.grothendieckTopology Y)
+            (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V))).map
+              (Opens.sheafHomResLE φ V U e) :
+        S ⟶ ((Opens.map V.inclusion' ⋙
+            Opens.map (Opens.resLE f V U e)).sheafPushforwardContinuous
+          A (Opens.grothendieckTopology Y)
+          (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).obj
+            ((U.isOpenEmbedding.sheafPullback A).obj R)) ≫
+      (Functor.sheafPushforwardContinuousNatTrans
+        (Opens.mapCompResLEIso f V U e).hom A
+          (Opens.grothendieckTopology Y)
+          (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).app
+            ((U.isOpenEmbedding.sheafPullback A).obj R) =
+      (φ ≫ ((Opens.map f).sheafPushforwardContinuous A
+          (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).map
+            (U.sheafInclusionHom A R) :
+        S ⟶ ((Opens.map f ⋙ Opens.map U.inclusion').sheafPushforwardContinuous
+          A (Opens.grothendieckTopology Y)
+          (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).obj
+            ((U.isOpenEmbedding.sheafPullback A).obj R)) := by
+  have : (Opens.map f ⋙ Opens.map U.inclusion').IsContinuous
+      (Opens.grothendieckTopology Y)
+      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+    Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology X) _
+  have : (Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)).IsContinuous
+      (Opens.grothendieckTopology Y)
+      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+    Functor.isContinuous_comp _ _ _
+      (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V)) _
+  refine Sheaf.hom_ext (NatTrans.ext (funext fun Z ↦ ?_))
+  let τ := (Opens.mapCompResLEIso f V U e).hom
+  let a := S.obj.map (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop).op
+  let b₁ : S.obj.obj Z ⟶ R.obj.obj (op ((Opens.map f).obj Z.unop)) := φ.hom.app Z
+  let b₂ : S.obj.obj (op (V.isOpenEmbedding.functor.obj
+        ((Opens.map V.inclusion').obj Z.unop))) ⟶
+      R.obj.obj (op ((Opens.map f).obj (V.isOpenEmbedding.functor.obj
+        ((Opens.map V.inclusion').obj Z.unop)))) :=
+    φ.hom.app (op (V.isOpenEmbedding.functor.obj ((Opens.map V.inclusion').obj Z.unop)))
+  let c := R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e
+    ((Opens.map V.inclusion').obj Z.unop))).op
+  let d := R.obj.map (U.isOpenEmbedding.functor.map (τ.app Z.unop)).op
+  let e₀ := R.obj.map ((Opens.map f).map
+    (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop)).op
+  let e₁ := R.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app
+    ((Opens.map f).obj Z.unop)).op
+  have hnat : a ≫ b₂ = b₁ ≫ e₀ :=
+    φ.hom.naturality (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop).op
+  have hR : (e₀ ≫ c) ≫ d = e₁ := by
+    rw [← R.obj.map_comp, ← R.obj.map_comp, ← op_comp, ← op_comp]
+    exact congrArg (R.obj.map ∘ Quiver.Hom.op) (Subsingleton.elim _ _)
+  exact (congrArg (· ≫ d) ((Category.assoc a b₂ c).symm.trans
+    ((congrArg (· ≫ c) hnat).trans (Category.assoc b₁ e₀ c)))).trans
+      ((Category.assoc b₁ (e₀ ≫ c) d).trans (congrArg (b₁ ≫ ·) hR))
+
+/-- Pulling back a covering family of opens along a continuous map `f : X ⟶ Y` gives a covering
+family of opens of `X`. -/
+theorem coversTop_map (f : X ⟶ Y) {ι : Type*} {V : ι → Opens Y}
+    (hV : (Opens.grothendieckTopology Y).CoversTop V) :
+    (Opens.grothendieckTopology X).CoversTop (fun i ↦ (Opens.map f).obj (V i)) := by
+  rw [Opens.coversTop_iff] at hV ⊢
+  rw [IsOpenCover, ← Function.comp_def, ← Opens.map_iSup, hV.iSup_eq_top, Opens.map_top]
+
+end
+
+end SheafRestriction
+
+end TopologicalSpace.Opens
