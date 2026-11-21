@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -54,6 +55,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   `ℝ^ι` whose derivative has compact support has bounded squared gradient.
 * `ContDiffAt.exists_ball_bound_iteratedFDeriv`: on some ball around a point where a map is
   `C^n`, its derivatives of order at most `n` are bounded by one constant.
+* `ContDiffAt.exists_closedBall_differentiableAt_lipschitz_fderiv`: on some closed ball around a
+  point where a map is `C²`, it is differentiable with Lipschitz derivative.
 * `ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le`: the linear bound on the
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
@@ -176,6 +179,20 @@ theorem ContDiffAt.exists_ball_bound_iteratedFDeriv {f : E → F} {x : E} {n : �
   have hi' := Finset.mem_range_succ_iff.mpr hi
   exact (hr y hy i hi').le.trans (Finset.single_le_sum
     (f := fun i ↦ ‖iteratedFDeriv 𝕜 i f x‖ + 1) (fun _ _ ↦ by positivity) hi')
+
+/-- On some closed ball around a point `x` at which `f` is `C²`, the map `f` is differentiable
+and its derivative is Lipschitz. -/
+theorem ContDiffAt.exists_closedBall_differentiableAt_lipschitz_fderiv {𝕂 : Type*} [RCLike 𝕂]
+    {E' F' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F']
+    [NormedSpace 𝕂 F'] {f : E' → F'} {x : E'} (hf : ContDiffAt 𝕂 2 f x) :
+    ∃ r > 0, ∃ K : NNReal, (∀ y ∈ Metric.closedBall x r, DifferentiableAt 𝕂 f y) ∧
+      ∀ y ∈ Metric.closedBall x r, ∀ z ∈ Metric.closedBall x r,
+        ‖fderiv 𝕂 f y - fderiv 𝕂 f z‖ ≤ K * ‖y - z‖ := by
+  obtain ⟨K, t₀, ht₀, hK⟩ := (hf.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
+  obtain ⟨r, hr, hrf⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
+    ((hf.eventually (by simp)).and ht₀)
+  exact ⟨r, hr, K, fun y hy ↦ (hrf hy).1.differentiableAt (by norm_num), fun y hy z hz ↦ by
+    simpa [dist_eq_norm] using hK.dist_le_mul y (hrf hy).2 z (hrf hz).2⟩
 
 /-- On a compact set `K`, the order-`n` derivative of `z ↦ L z (φ (τ z))` is bounded by a constant
 multiple of any common bound `δ` for the derivatives of `φ` of order at most `n` along `τ '' K`.
