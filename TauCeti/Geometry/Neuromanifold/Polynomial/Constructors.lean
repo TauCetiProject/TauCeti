@@ -233,17 +233,22 @@ theorem inputPolynomial_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
         (fun j => map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
           (inputPolynomial P j))
         (inputPolynomial Q l) := by
-  have hP (j : J) :
-      sumAlgEquiv K I (W ⊕ V) (rename (Sum.swap ∘ Sum.map Sum.inl id) (P j)) =
-        map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
-          (inputPolynomial P j) := by
-    rw [← rename_rename, ← inputPolynomial_def (fun k => rename (Sum.map Sum.inl id) (P k)) j]
-    exact inputPolynomial_rename_sumMap Sum.inl P j
-  simp only [inputPolynomial_def, polynomialCompose_apply]
-  induction Q l using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => cases i <;> simp [hp, hP, ← inputPolynomial_def]
+  let φ : MvPolynomial ((W ⊕ V) ⊕ I) K →+* MvPolynomial I (MvPolynomial (W ⊕ V) K) :=
+    ((sumAlgEquiv K I (W ⊕ V)).toAlgHom.comp (rename Sum.swap)).toRingHom
+  have hC :
+      (C.comp (rename Sum.inr : MvPolynomial V K →ₐ[K] MvPolynomial (W ⊕ V) K) :
+          MvPolynomial V K →+* MvPolynomial I (MvPolynomial (W ⊕ V) K)) =
+        eval₂Hom (C.comp C) (fun v => C (X (Sum.inr v))) := by
+    apply ringHom_ext <;> simp
+  rw [inputPolynomial_def, polynomialCompose_apply,
+    show sumAlgEquiv K I (W ⊕ V) (rename Sum.swap _) = φ _ from rfl, hom_bind₁,
+    inputPolynomial_def, hC, eval₂_sumAlgEquiv, eval₂_rename, coe_eval₂Hom]
+  refine congrArg₂ (fun f g => eval₂ f g (Q l)) (RingHom.ext fun r => by simp [φ])
+    (funext fun x => ?_)
+  cases x with
+  | inl v => simp [φ]
+  | inr j =>
+    simpa [φ, inputPolynomial_def] using inputPolynomial_rename_sumMap Sum.inl P j
 
 /-- The uniform input-degree bound of `polynomialCompose P Q` is at most the product of the uniform
 input-degree bounds of `P` and `Q`. -/

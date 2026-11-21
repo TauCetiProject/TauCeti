@@ -75,14 +75,20 @@ prefix `0` is the tuple of input variables, and prefix `i + 1` substitutes prefi
 inputs of `P i` while tagging the parameter variables of `P i` with layer index `i`. -/
 def polynomialChainPrefix (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K) :
     ∀ k, I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K :=
-  Fin.induction (fun a => X (Sum.inr a)) fun i prev o =>
-    bind₁ (Sum.elim (fun w => X (Sum.inl ⟨i, w⟩)) prev) (P i o)
+  fun k =>
+    Fin.dfoldl k.val (fun j => I (Fin.castLE k.isLt j) → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
+      (fun j prev o =>
+        bind₁ (Sum.elim (fun w => X (Sum.inl ⟨Fin.castLE (Nat.le_of_lt_succ k.isLt) j, w⟩)) prev)
+          (P (Fin.castLE (Nat.le_of_lt_succ k.isLt) j) o))
+      (fun a => X (Sum.inr a))
 
 /-- The zeroth prefix of a chain of polynomial models is the tuple of input variables. -/
 @[simp] theorem polynomialChainPrefix_zero
     (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K) :
     polynomialChainPrefix P 0 = fun a => X (Sum.inr a) :=
-  Fin.induction_zero ..
+  Fin.dfoldl_zero
+    (α := fun j => I (Fin.castLE (0 : Fin (n + 1)).isLt j) → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
+    _ (fun a => X (Sum.inr a))
 
 /-- Each step of `polynomialChainPrefix` substitutes the preceding prefix for the layer's inputs
 and tags the layer's parameter variables with its index. -/
@@ -90,8 +96,14 @@ and tags the layer's parameter variables with its index. -/
     (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K) (i : Fin n) (o : I i.succ) :
     polynomialChainPrefix P i.succ o =
       bind₁ (Sum.elim (fun w => X (Sum.inl ⟨i, w⟩)) (polynomialChainPrefix P i.castSucc))
-        (P i o) := by
-  simp only [polynomialChainPrefix, Fin.induction_succ]
+        (P i o) :=
+  congrFun (Fin.dfoldl_succ_last
+    (α := fun j => I (Fin.castLE i.succ.isLt j) → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
+    (fun j prev o =>
+      bind₁ (Sum.elim (fun w => X (Sum.inl ⟨Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j, w⟩))
+          prev)
+        (P (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j) o))
+    (fun a => X (Sum.inr a))) o
 
 /-- Prefix `k` of `polynomialChainPrefix` depends only on the layers strictly below `k`. -/
 theorem polynomialChainPrefix_congr
@@ -134,26 +146,7 @@ theorem polynomialChainPrefix_eq_dfoldl
         (fun j prev o =>
           bind₁ (Sum.elim (fun w => X (Sum.inl ⟨Fin.castLE (Nat.le_of_lt_succ k.isLt) j, w⟩)) prev)
             (P (Fin.castLE (Nat.le_of_lt_succ k.isLt) j) o))
-        (fun a => X (Sum.inr a)) := by
-  induction k using Fin.induction with
-  | zero =>
-    exact (polynomialChainPrefix_zero P).trans
-      (Fin.dfoldl_zero
-        (α := fun j => I (Fin.castLE (0 : Fin (n + 1)).isLt j) →
-          MvPolynomial ((Σ i, W i) ⊕ I 0) K)
-        _ (fun a => X (Sum.inr a))).symm
-  | succ i ih =>
-    have hsucc : polynomialChainPrefix P i.succ = fun o =>
-        bind₁ (Sum.elim (fun w => X (Sum.inl ⟨i, w⟩)) (polynomialChainPrefix P i.castSucc))
-          (P i o) := funext (polynomialChainPrefix_succ P i)
-    rw [hsucc, ih]
-    exact (Fin.dfoldl_succ_last
-      (α := fun j => I (Fin.castLE i.succ.isLt j) → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
-      (fun j prev o =>
-        bind₁ (Sum.elim (fun w => X (Sum.inl ⟨Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j, w⟩))
-            prev)
-          (P (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j) o))
-      (fun a => X (Sum.inr a))).symm
+        (fun a => X (Sum.inr a)) := (rfl)
 
 /-- Compose a finite chain of jointly polynomial layer models `P` into a single jointly polynomial
 model, with parameter variables `Σ i, W i` and input variables `I 0`. -/
@@ -223,7 +216,7 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose
     refine congrArg (fun F => bind₁ F (P 0 o)) (funext fun x => ?_)
     rcases x with w | a
     · simp
-    · rfl
+    · simp [Fin.castSucc_zero]; rfl
   | succ i ih =>
     rw [polynomialChainPrefix_succ, polynomialCompose_apply, polynomialChainPrefix_succ,
       bind₁_bind₁, rename_bind₁]
@@ -294,15 +287,10 @@ the layer's slice `v ↦ w ⟨i, v⟩` of parameter coordinates. -/
     polynomialRealization (polynomialChainPrefix P i.succ) w x =
       polynomialRealization (P i) (fun v => w ⟨i, v⟩)
         (polynomialRealization (polynomialChainPrefix P i.castSucc) w x) := by
-  rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last]
-  simp only [polynomialRealization_rename_sumMap, polynomialRealization_polynomialCompose,
-    Function.comp_apply, compose_apply_apply]
-  refine congrArg₂ (fun p q => polynomialRealization (P i) p
-      (polynomialRealization (polynomialChainPrefix P i.castSucc) q x)) ?_ ?_
-  · funext v
-    simp
-  · funext p
-    simp
+  funext o
+  simp only [polynomialRealization_apply, polynomialChainPrefix_succ, ← aeval_eq_eval, aeval_bind₁]
+  refine congrArg (fun F => aeval F (P i o)) (funext fun v => ?_)
+  cases v <;> simp
 
 /-- Evaluating `polynomialChainPrefix P k` agrees with the `k.val`-step dependent left fold of the
 layer realization maps. -/
@@ -324,20 +312,6 @@ theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl
       (fun j => polynomialRealization (P (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j))
         (fun v => w ⟨Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j, v⟩))
       x).symm
-
-/-- If each layer `P i` realizes `f i` on its slice `v ↦ w ⟨i, v⟩` of parameter coordinates, then
-evaluating `polynomialChainPrefix P k` agrees with the `k.val`-step dependent left fold of `f`. -/
-theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl_of_eq
-    {P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K} {w : (Σ i, W i) → K}
-    {f : ∀ i, (I i.castSucc → K) → I i.succ → K}
-    (hf : ∀ i, polynomialRealization (P i) (fun v => w ⟨i, v⟩) = f i) (x : I 0 → K)
-    (k : Fin (n + 1)) :
-    polynomialRealization (polynomialChainPrefix P k) w x =
-      Fin.dfoldl k.val (fun j => I (Fin.castLE k.isLt j) → K)
-        (fun j => f (Fin.castLE (Nat.le_of_lt_succ k.isLt) j)) x := by
-  rw [polynomialRealization_polynomialChainPrefix_eq_dfoldl]
-  exact congrArg (fun g => Fin.dfoldl k.val (fun j => I (Fin.castLE k.isLt j) → K) g x)
-    (funext fun j => hf (Fin.castLE (Nat.le_of_lt_succ k.isLt) j))
 
 /-- Evaluating `polynomialChain P` realizes the finite chain of layer realizations
 `chain (fun i => polynomialRealization (P i))` after currying the parameter coordinates with
@@ -379,13 +353,21 @@ theorem inputPolynomial_polynomialChainPrefix_succ
           MvPolynomial (Σ j, W j) K))
         (inputPolynomial (polynomialChainPrefix P i.castSucc))
         (inputPolynomial (P i) o) := by
-  rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last, inputPolynomial_rename_sumMap,
-    inputPolynomial_polynomialCompose, hom_eval₂]
-  refine congrArg₂ (fun f g => eval₂ f g (inputPolynomial (P i) o)) ?_ (funext fun a => ?_)
-  · ext w <;> simp
-  · simp only [map_map]
-    convert map_id (inputPolynomial (polynomialChainPrefix P i.castSucc) a)
-    ext w <;> simp
+  let φ : MvPolynomial ((Σ j, W j) ⊕ I 0) K →+* MvPolynomial (I 0) (MvPolynomial (Σ j, W j) K) :=
+    ((sumAlgEquiv K (I 0) (Σ j, W j)).toAlgHom.comp (rename Sum.swap)).toRingHom
+  have hC :
+      (C.comp (rename (Sigma.mk i) : MvPolynomial (W i) K →ₐ[K] MvPolynomial (Σ j, W j) K) :
+          MvPolynomial (W i) K →+* MvPolynomial (I 0) (MvPolynomial (Σ j, W j) K)) =
+        eval₂Hom (C.comp C) (fun w => C (X ⟨i, w⟩)) := by
+    apply ringHom_ext <;> simp
+  rw [inputPolynomial_def, polynomialChainPrefix_succ,
+    show sumAlgEquiv K (I 0) (Σ j, W j) (rename Sum.swap _) = φ _ from rfl, hom_bind₁,
+    inputPolynomial_def, hC, eval₂_sumAlgEquiv, eval₂_rename, coe_eval₂Hom]
+  refine congrArg₂ (fun f g => eval₂ f g (P i o)) (RingHom.ext fun r => by simp [φ])
+    (funext fun x => ?_)
+  cases x with
+  | inl w => simp [φ]
+  | inr a => simp [φ, inputPolynomial_def]
 
 /-- Reparametrizing each layer `i` by `R i` reparametrizes every prefix of `polynomialChainPrefix`
 by the induced substitution on `Σ i, W i`. -/
@@ -445,11 +427,14 @@ theorem polynomialInputDegree_polynomialChain_le [∀ k, Fintype (I k)]
   simpa only [polynomialChain_def, Fin.partialProd_last] using
     polynomialInputDegree_polynomialChainPrefix_le P (Fin.last n)
 
-/-- If each layer `P i` is homogeneous in its inputs of degree `d i`, then prefix `k` of
-`polynomialChainPrefix P` is homogeneous in the initial inputs of degree `Fin.partialProd d k`. -/
+/-- If each layer `P i` strictly below `k` is homogeneous in its inputs of degree `d i`, then
+prefix `k` of `polynomialChainPrefix P` is homogeneous in the initial inputs of degree
+`Fin.partialProd d k`. -/
 theorem isHomogeneous_inputPolynomial_polynomialChainPrefix
     {P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K} {d : Fin n → ℕ}
-    (hP : ∀ i o, (inputPolynomial (P i) o).IsHomogeneous (d i)) (k : Fin (n + 1)) (o : I k) :
+    (k : Fin (n + 1))
+    (hP : ∀ i : Fin n, i.val < k.val → ∀ o, (inputPolynomial (P i) o).IsHomogeneous (d i))
+    (o : I k) :
     (inputPolynomial (polynomialChainPrefix P k) o).IsHomogeneous (Fin.partialProd d k) := by
   induction k using Fin.induction with
   | zero =>
@@ -458,7 +443,8 @@ theorem isHomogeneous_inputPolynomial_polynomialChainPrefix
   | succ i ih =>
     rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last, Fin.partialProd_succ]
     exact isHomogeneous_inputPolynomial_rename_sumMap _
-      (isHomogeneous_inputPolynomial_polynomialCompose ih (hP i)) o
+      (isHomogeneous_inputPolynomial_polynomialCompose
+        (ih fun j hj => hP j (Nat.lt_succ_of_lt hj)) (hP i (Nat.lt_succ_self _))) o
 
 /-- If each layer `P i` is homogeneous in its inputs of degree `d i`, then `polynomialChain P` is
 homogeneous in the initial inputs of degree `∏ i, d i`. -/
@@ -467,7 +453,7 @@ theorem isHomogeneous_inputPolynomial_polynomialChain
     (hP : ∀ i o, (inputPolynomial (P i) o).IsHomogeneous (d i)) (o : I (Fin.last n)) :
     (inputPolynomial (polynomialChain P) o).IsHomogeneous (∏ i, d i) := by
   simpa only [polynomialChain_def, Fin.partialProd_last] using
-    isHomogeneous_inputPolynomial_polynomialChainPrefix hP (Fin.last n) o
+    isHomogeneous_inputPolynomial_polynomialChainPrefix (Fin.last n) (fun i _ => hP i) o
 
 /-- Transporting `polynomialChainPrefix` along a ring homomorphism transports each layer model. -/
 @[simp] theorem map_polynomialChainPrefix {L : Type*} [CommSemiring L] (φ : K →+* L)
@@ -482,20 +468,6 @@ theorem isHomogeneous_inputPolynomial_polynomialChain
     rcases x with w | a
     · simp
     · exact ih a
-
-/-- Transporting two tuples identified with `polynomialChainPrefix` along a ring homomorphism
-agrees whenever their layers transport layerwise. -/
-theorem map_polynomialChainPrefix_of_eq {L : Type*} [CommSemiring L] (φ : K →+* L)
-    {P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K}
-    {Q : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) L}
-    {k : Fin (n + 1)} {lhs : I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K}
-    {rhs : I k → MvPolynomial ((Σ i, W i) ⊕ I 0) L}
-    (hlhs : lhs = polynomialChainPrefix P k)
-    (hrhs : rhs = polynomialChainPrefix Q k)
-    (hPQ : ∀ i o, map φ (P i o) = Q i o) (o : I k) :
-    map φ (lhs o) = rhs o := by
-  rw [hlhs, hrhs, map_polynomialChainPrefix]
-  exact congrArg (fun R => polynomialChainPrefix R k o) (funext fun i => funext (hPQ i))
 
 /-- Transporting `polynomialChain` along a ring homomorphism transports each layer model. -/
 @[simp] theorem map_polynomialChain {L : Type*} [CommSemiring L] (φ : K →+* L)

@@ -122,7 +122,8 @@ theorem eval_polynomialPrefix (A : ConvolutionSpec K L)
     funext y b
     simp [A.toMLPSpec.layerActivation_eq_eval_layerPolynomial hq, hparam]
   rw [← polynomialRealization_apply, polynomialPrefix_eq_polynomialChainPrefix,
-    polynomialRealization_polynomialChainPrefix_eq_dfoldl_of_eq hstep, A.evalPrefix_eq_dfoldl]
+    polynomialRealization_polynomialChainPrefix_eq_dfoldl, A.evalPrefix_eq_dfoldl]
+  simp only [hstep]
 
 /-- Joint polynomials for the full affine convolutional realization. -/
 def polynomialRealize (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial K) :

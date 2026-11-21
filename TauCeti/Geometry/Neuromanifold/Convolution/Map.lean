@@ -92,13 +92,23 @@ polynomials are mapped along the scalar homomorphism. -/
     (a : Fin (A.width i)) :
     MvPolynomial.map φ (A.polynomialPrefix q i a) =
       (A.polynomial (Polynomial.map φ ∘ q)).polynomialPrefix (Polynomial.map φ ∘ q) i a := by
-  refine map_polynomialChainPrefix_of_eq (I := fun j => Fin (A.width j)) φ
-    (A.polynomialPrefix_eq_polynomialChainPrefix q i)
-    ((A.polynomial (Polynomial.map φ ∘ q)).polynomialPrefix_eq_polynomialChainPrefix
-      (Polynomial.map φ ∘ q) i) (fun k b => ?_) a
-  -- Normalize the common widths, strides, and filter lengths in the dependent types and instances.
-  dsimp +instances only [polynomial, ParameterIndex]
-  rw [Polynomial.map_aeval_eq_aeval_map (MvPolynomial.map_comp_C φ).symm,
+  have hL : A.polynomialPrefix q i a =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun k b => Polynomial.aeval (polynomialAffineConvolution (A.length_eq k) b)
+          (MLPSpec.layerPolynomial q k)) i a :=
+    congrFun (A.polynomialPrefix_eq_polynomialChainPrefix q i) a
+  have hR : (A.polynomial (Polynomial.map φ ∘ q)).polynomialPrefix
+        (Polynomial.map φ ∘ q) i a =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun k b => Polynomial.aeval (polynomialAffineConvolution (A.length_eq k) b)
+          (MLPSpec.layerPolynomial (Polynomial.map φ ∘ q) k)) i a :=
+    congrFun ((A.polynomial (Polynomial.map φ ∘ q)).polynomialPrefix_eq_polynomialChainPrefix
+      (Polynomial.map φ ∘ q) i) a
+  rw [hL, hR]
+  refine (map_polynomialChainPrefix φ (I := fun j => Fin (A.width j)) _ i a).trans ?_
+  refine congrArg (fun R => polynomialChainPrefix (I := fun j => Fin (A.width j)) R i a)
+    (funext fun k => funext fun b => ?_)
+  rw [Function.comp_apply, Polynomial.map_aeval_eq_aeval_map (MvPolynomial.map_comp_C φ).symm,
     MLPSpec.map_layerPolynomial, map_polynomialAffineConvolution]
   simp only [Function.comp_def]
 

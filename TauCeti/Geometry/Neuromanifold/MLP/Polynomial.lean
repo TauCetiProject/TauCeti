@@ -162,7 +162,8 @@ theorem eval_polynomialPrefix (A : MLPSpec K L) {q : Fin (L - 1) → Polynomial 
     funext y a
     simp [A.layerActivation_eq_eval_layerPolynomial hq, hparam]
   rw [← polynomialRealization_apply, polynomialPrefix_eq_polynomialChainPrefix,
-    polynomialRealization_polynomialChainPrefix_eq_dfoldl_of_eq hstep, A.evalPrefix_eq_dfoldl]
+    polynomialRealization_polynomialChainPrefix_eq_dfoldl, A.evalPrefix_eq_dfoldl]
+  simp only [hstep]
 
 /-- The jointly polynomial tuple of `A` with hidden activation polynomials `q`: the output-layer
 prefix polynomials, in the affine parameter coordinates and the input variables. -/

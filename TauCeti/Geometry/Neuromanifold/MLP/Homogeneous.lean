@@ -116,7 +116,7 @@ theorem isHomogeneous_inputPolynomial_polynomialPrefix_weights_monomial (A : MLP
       (Fin.partialProd (layerExponent r) i) := by
   rw [A.polynomialPrefix_zeroBias_eq_polynomialChainPrefix]
   refine isHomogeneous_inputPolynomial_polynomialChainPrefix
-    (I := fun j => Fin (A.width j)) (fun k a => ?_) i o
+    (I := fun j => Fin (A.width j)) i (fun k _ a => ?_) o
   simpa only [layerPolynomial_X_pow, one_mul] using
     isHomogeneous_inputPolynomial_aeval_X_pow
       isHomogeneous_inputPolynomial_polynomialLinear (layerExponent r k) a
