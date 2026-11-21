@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.AddCircle
+import TauCeti.Analysis.Fourier.FourierCoeffOn
 
 /-!
 # Cauchy coefficients as Fourier coefficients of boundary values
@@ -25,13 +26,19 @@ For a function `f : ℂ → E` and a circle `C(c, R)` with `R ≠ 0`, write
   with `m > 0`, that is the negative-degree Fourier coefficients, vanish by Cauchy's theorem
   (`DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero`); on the unit circle, read as a
   function on `AddCircle (2 * π)`, its negative Fourier coefficients vanish
-  (`DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero`).
+  (`DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero`);
+* on the unit circle, the angle integral of `w ^ m * F w` and the circle integral of `z ^ j * F z`
+  are `2π` and `2π i` times Fourier coefficients of `θ ↦ F(e^{iθ})` on `[0, 2π]`
+  (`TauCeti.intervalIntegral_circleMap_zpow_mul`, `TauCeti.circleIntegral_pow_mul`);
+* the Fourier coefficients of the boundary defect `θ ↦ e^{ikθ} conj (T(e^{iθ})) - T(e^{iθ})` are
+  `conj (a (k - n)) - a n` in terms of those `a` of `θ ↦ T(e^{iθ})`
+  (`TauCeti.fourierCoeffOn_circleMap_zpow_mul_conj_sub`).
 -/
 
 public section
 
 open Complex Metric
-open scoped Real
+open scoped ComplexConjugate Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
@@ -91,3 +98,53 @@ theorem DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero {f : ℂ → E}
   have := hf.intervalIntegral_circleMap_zpow_smul_eq_zero one_pos (m := -n) (by omega)
   simp only [TauCeti.fourier_apply_eq_coe_toCircle_zpow, TauCeti.coe_toCircle_coe_eq_circleMap]
   simpa [zpow_neg] using this
+
+namespace TauCeti
+
+/-- The angle integral of `w ^ m * F w` over the unit circle is `2π` times the `-m`-th Fourier
+coefficient of `θ ↦ F(e^{iθ})` on `[0, 2π]`. -/
+theorem intervalIntegral_circleMap_zpow_mul (F : ℂ → ℂ) (m : ℤ) :
+    ∫ θ in 0..2 * π, circleMap 0 1 θ ^ m * F (circleMap 0 1 θ) =
+      2 * π * fourierCoeffOn Real.two_pi_pos (fun θ ↦ F (circleMap 0 1 θ)) (-m) := by
+  rw [← fourierCoeff_comp_toCircle, fourierCoeff_eq_intervalIntegral (T := 2 * π) _ (-m) 0,
+    zero_add]
+  simp only [fourier_apply_eq_coe_toCircle_zpow, coe_toCircle_coe_eq_circleMap, neg_neg,
+    smul_eq_mul, real_smul]
+  push_cast
+  field_simp
+
+/-- The circle integral of `z ^ j * F z` over the unit circle is `2π i` times the `-(j + 1)`-th
+Fourier coefficient of `θ ↦ F(e^{iθ})` on `[0, 2π]`. -/
+theorem circleIntegral_pow_mul (F : ℂ → ℂ) (j : ℕ) :
+    (∮ z in C(0, 1), z ^ j * F z) =
+      I * (2 * π * fourierCoeffOn Real.two_pi_pos (fun θ ↦ F (circleMap 0 1 θ))
+        (-((j : ℤ) + 1))) := by
+  have h := circleIntegral_sub_zpow_sub_one_smul F 0 one_ne_zero ((j : ℤ) + 1)
+  simp only [sub_zero, add_sub_cancel_right, zpow_natCast, smul_eq_mul] at h
+  rw [h, intervalIntegral_circleMap_zpow_mul]
+
+/-- The Fourier coefficients of the boundary defect `θ ↦ e^{ikθ} conj (T(e^{iθ})) - T(e^{iθ})` of a
+continuous function `T` are `conj (a (k - n)) - a n`, where `a` are the Fourier coefficients of
+`θ ↦ T(e^{iθ})` on `[0, 2π]`. -/
+theorem fourierCoeffOn_circleMap_zpow_mul_conj_sub {T : ℂ → ℂ} (hT : Continuous T) (k n : ℤ) :
+    fourierCoeffOn Real.two_pi_pos
+      (fun θ ↦ circleMap 0 1 θ ^ k * conj (T (circleMap 0 1 θ)) - T (circleMap 0 1 θ)) n =
+      conj (fourierCoeffOn Real.two_pi_pos (fun θ ↦ T (circleMap 0 1 θ)) (k - n)) -
+        fourierCoeffOn Real.two_pi_pos (fun θ ↦ T (circleMap 0 1 θ)) n := by
+  have hTc : Continuous fun x : AddCircle (2 * π) ↦ T (AddCircle.toCircle x) :=
+    continuous_comp_toCircle (hT.comp (continuous_circleMap 0 1))
+  have hTc' : Continuous fun x : AddCircle (2 * π) ↦
+      fourier k x * conj (T (AddCircle.toCircle x)) :=
+    (map_continuous (fourier k)).mul (continuous_conj.comp hTc)
+  have hi {g : AddCircle (2 * π) → ℂ} (hg : Continuous g) :
+      MeasureTheory.Integrable g AddCircle.haarAddCircle :=
+    hg.integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hfun : (fun x : AddCircle (2 * π) ↦ (AddCircle.toCircle x : ℂ) ^ k *
+      conj (T (AddCircle.toCircle x)) - T (AddCircle.toCircle x)) =
+      fun x ↦ fourier k x * conj (T (AddCircle.toCircle x)) - T (AddCircle.toCircle x) :=
+    funext fun x ↦ by rw [fourier_apply_eq_coe_toCircle_zpow]
+  rw [← fourierCoeff_comp_toCircle (fun w ↦ w ^ k * conj (T w) - T w), hfun,
+    fourierCoeff_sub (hi hTc') (hi hTc), fourierCoeff_fourier_mul_conj, fourierCoeff_comp_toCircle,
+    fourierCoeff_comp_toCircle]
+
+end TauCeti

@@ -5,27 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Component
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
-# The parity involution on `ZMod 2`-graded modules and algebras
+# The parity involution on `ZMod 2`-graded modules and nonunital rings
 
 On an internally `ZMod 2`-graded module, the parity involution
 `TauCeti.InternalGrading.parityTwist` fixes the even piece and negates the odd piece. This is the
 `ZMod 2`-graded counterpart of `TauCeti.InternalGrading.koszulTwist G 1`, and agrees with it on the
-parity reduction of any integer grading (`TauCeti.InternalGrading.parityTwist_parity`). On an
-internally `ZMod 2`-graded algebra, it upgrades to an involutive algebra automorphism
-`TauCeti.InternalGrading.parityTwistAlgEquiv`, paralleling
-`TauCeti.InternalGrading.koszulTwistAlgEquiv` at parameter `1`.
+parity reduction of any integer grading (`TauCeti.InternalGrading.parityTwist_parity`). For unital
+internally `ZMod 2`-graded algebras, `TauCeti.gradeInvolution` in
+`TauCeti.RingTheory.GradedAlgebra.GradeInvolution` supplies the corresponding involutive algebra
+automorphism.
 
 ## Main definitions
 
 * `TauCeti.InternalGrading.parityTwist`: the parity involution fixing the even piece and negating
   the odd piece of a `ZMod 2`-graded module.
-* `TauCeti.InternalGrading.parityTwistAlgEquiv`: the parity algebra automorphism of a
-  `ZMod 2`-graded algebra.
 
 ## Main results
 
@@ -75,7 +73,7 @@ theorem parityTwist_apply_of_mem (G : InternalGrading R M (ZMod 2)) {i : ZMod 2}
 theorem parityTwist_mem_piece (G : InternalGrading R M (ZMod 2)) {i : ZMod 2} {x : M}
     (hx : x ∈ G.piece i) : G.parityTwist x ∈ G.piece i := by
   rw [G.parityTwist_apply_of_mem hx, Units.smul_def]
-  exact zsmul_mem_of_decomposition G.piece hx _
+  exact DirectSum.Decomposition.zsmul_mem hx _
 
 /-- The parity involution is homogeneous of parity `0`. -/
 theorem isHomogeneous_parityTwist (G : InternalGrading R M (ZMod 2)) :
@@ -146,47 +144,5 @@ theorem parityTwist_parity {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
     uzpow_intCast, ← Int.negOnePow_def, Units.smul_def, Int.cast_smul_eq_zsmul]
 
 end ParityTwist
-
-section AlgEquiv
-
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
-  (𝒜 : ZMod 2 → Submodule R A) [GradedAlgebra 𝒜]
-
-/-- The involutive algebra automorphism of a `ZMod 2`-graded algebra scaling parity `i` by
-`(-1) ^ i`. -/
-noncomputable def parityTwistAlgEquiv : A ≃ₐ[R] A :=
-  AlgEquiv.ofAlgHom
-    (AlgHom.ofLinearMap (ofDecomposition 𝒜).parityTwist
-      parityTwist_ofDecomposition_one parityTwist_ofDecomposition_mul)
-    (AlgHom.ofLinearMap (ofDecomposition 𝒜).parityTwist
-      parityTwist_ofDecomposition_one parityTwist_ofDecomposition_mul)
-    (by ext a; exact (ofDecomposition 𝒜).parityTwist_parityTwist a)
-    (by ext a; exact (ofDecomposition 𝒜).parityTwist_parityTwist a)
-
-/-- The underlying linear map of `parityTwistAlgEquiv` is `parityTwist`. -/
-@[simp]
-theorem parityTwistAlgEquiv_apply (a : A) :
-    parityTwistAlgEquiv 𝒜 a = (ofDecomposition 𝒜).parityTwist a := (rfl)
-
-/-- On an element of parity `i`, `parityTwistAlgEquiv` acts as `(-1) ^ i`. -/
-theorem parityTwistAlgEquiv_apply_of_mem {i : ZMod 2} {a : A} (ha : a ∈ 𝒜 i) :
-    parityTwistAlgEquiv 𝒜 a = ((-1 : ℤˣ) ^ i) • a :=
-  parityTwist_ofDecomposition_apply_of_mem 𝒜 ha
-
-/-- The inverse of `parityTwistAlgEquiv` is `parityTwistAlgEquiv` itself. -/
-@[simp]
-theorem parityTwistAlgEquiv_symm :
-    (parityTwistAlgEquiv 𝒜).symm = parityTwistAlgEquiv 𝒜 := by
-  ext a
-  rfl
-
-/-- Composing `parityTwistAlgEquiv` with itself gives the identity algebra equivalence. -/
-@[simp]
-theorem parityTwistAlgEquiv_trans_self :
-    (parityTwistAlgEquiv 𝒜).trans (parityTwistAlgEquiv 𝒜) = AlgEquiv.refl := by
-  ext a
-  simp
-
-end AlgEquiv
 
 end TauCeti.InternalGrading

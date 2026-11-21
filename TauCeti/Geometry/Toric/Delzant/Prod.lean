@@ -192,10 +192,9 @@ theorem of_prod [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
   obtain ⟨x, hx⟩ := h.nonempty
   rw [← ContinuousLinearMap.coprod_comp_inl_inr x, coprod_mem_facetPolyhedron_prod_iff] at hx
   obtain ⟨hbdd₁, hbdd₂⟩ := (isBounded_facetPolyhedron_prod_iff ⟨_, hx.1⟩ ⟨_, hx.2⟩).1 h.isBounded
-  obtain ⟨z, hz⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron
-    hbdd₁).extremePoints_nonempty ⟨_, hx.1⟩
-  obtain ⟨z', hz'⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron
-    hbdd₂).extremePoints_nonempty ⟨_, hx.2⟩
+  obtain ⟨z, hz⟩ := (isCompact_facetPolyhedron_of_isBounded hbdd₁).extremePoints_nonempty ⟨_, hx.1⟩
+  obtain ⟨z', hz'⟩ :=
+    (isCompact_facetPolyhedron_of_isBounded hbdd₂).extremePoints_nonempty ⟨_, hx.2⟩
   -- An irredundancy witness of the product restricts to one of each factor.
   have hirr (k : ι ⊕ ι') : ∃ y₁ ∈ facetPolyhedron i u c, ∃ y₂ ∈ facetPolyhedron i' u' c',
       Sum.inl '' activeSet (facetPairing i u) c y₁ ∪

@@ -15,11 +15,16 @@ import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
 # Supercommutativity of the signed symmetric algebra
 
 Homogeneous elements of `TauCeti.SignedSym G`, not just its generators, obey the Koszul
-commutation rule. Passing to `TauCeti.parityGrading` extends these identities to elements of pure
-parity across multiple integer degrees: even-parity elements lie in the center of `SignedSym G`
-over any commutative ring, and every element of odd parity has square zero when `2` is invertible
-in the coefficient ring. These identities allow the signed symmetric algebra to serve as a receiving
-supercommutative algebra in universal properties and tensor comparisons.
+commutation rule `a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a)`. In particular, over any Koszul-signed
+degree semiring `ι`, every homogeneous element whose degree has Koszul sign `1` (including degree
+`0`) lies in the center of `SignedSym G` over any commutative ring, and every homogeneous element
+whose degree has sign `-1` (including degree `1`) has square zero when `2` is invertible in the
+coefficient ring. For integer-graded modules, passing to `TauCeti.parityGrading` extends these
+identities to elements of pure parity across multiple integer degrees: even-parity elements lie in
+the center of `SignedSym G` over any commutative ring, and every element of odd parity has square
+zero when `2` is invertible in the coefficient ring. These identities allow the signed symmetric
+algebra to serve as a receiving supercommutative algebra in universal properties and tensor
+comparisons, for both integer and parity (`ZMod 2`) gradings.
 
 The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top` from
 `TauCeti.RingTheory.GradedAlgebra.Supercommutativity`.
@@ -35,42 +40,99 @@ universe u v
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-variable (G : InternalGrading R V ℤ)
+
+section General
+
+variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
+variable (G : InternalGrading R V ι)
 
 /-- Homogeneous elements supercommute with the sign determined by their total input degrees.
 No assumption on the characteristic of the coefficient ring is needed. -/
-theorem mul_eq_negOnePow_smul_mul {p q : ℤ} {a b : SignedSym G}
+theorem mul_eq_uzpow_smul_mul {p q : ι} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
-    a * b = ((p * q).negOnePow : ℤ) • (b * a) :=
+    a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a) :=
   mul_eq_smul_mul_of_adjoin_range_eq_top (𝒜 := signedSymPiece G)
-    (s := fun p q => ((p * q).negOnePow : ℤ))
+    (s := fun p q => (-1 : ℤˣ) ^ (p * q))
     (fun _ => by simp)
-    (fun _ _ _ => by simp [mul_add, Int.negOnePow_add])
+    (fun _ _ _ => by rw [mul_add, uzpow_add])
     (fun _ => by simp)
-    (fun p₁ _ q => by rw [add_mul, add_comm (p₁ * q), Int.negOnePow_add, Units.val_mul])
+    (fun i₁ _ j => by rw [add_mul, add_comm (i₁ * j), uzpow_add])
     (adjoin_range_generator G) G.isInternal.submodule_iSup_eq_top
     (isHomogeneous_signedSymGenerator G)
     (fun hx hy => generator_mul_generator G hx hy) ha hb
 
-/-- An odd homogeneous element squares to its own negative, over any commutative ring. -/
-theorem sq_eq_neg {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) (hp : Odd p) :
-    a ^ 2 = -(a ^ 2) := by
-  simpa only [pow_two, Int.negOnePow_mul_self, Int.negOnePow_odd _ hp,
-    Units.val_neg, Units.val_one, neg_smul, one_smul] using
-    mul_eq_negOnePow_smul_mul G ha ha
+/-- Every homogeneous element whose degree has Koszul sign `1` commutes with all of
+`SignedSym G`. -/
+theorem commute_of_uzpow_eq_one {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = 1) (b : SignedSym G) : Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha hp b
 
-/-- Every odd homogeneous element has square zero when 2 is invertible, in particular over ℚ. -/
-theorem sq_eq_zero [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
-    (ha : a ∈ signedSymPiece G p) (hp : Odd p) : a ^ 2 = 0 :=
+/-- Every homogeneous element whose degree has Koszul sign `1` lies in the center of
+`SignedSym G`. -/
+theorem mem_center_of_uzpow_eq_one {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = 1) : a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_uzpow_eq_one G ha hp b).symm
+
+/-- Every element of degree `0` (in particular, any even-parity element when `ι = ZMod 2`)
+commutes with all of `SignedSym G`. -/
+theorem commute_of_mem_zero {a : SignedSym G} (ha : a ∈ signedSymPiece G 0) (b : SignedSym G) :
+    Commute a b :=
+  TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero (mul_eq_uzpow_smul_mul G) ha b
+
+/-- Every element of degree `0` (in particular, any even-parity element when `ι = ZMod 2`) lies
+in the center of `SignedSym G`. -/
+theorem mem_center_of_mem_zero {a : SignedSym G} (ha : a ∈ signedSymPiece G 0) :
+    a ∈ Subalgebra.center R (SignedSym G) :=
+  Subalgebra.mem_center_iff.mpr fun b => (commute_of_mem_zero G ha b).symm
+
+/-- Generators whose degree has Koszul sign `1` are central in `SignedSym G`. -/
+theorem generator_mem_center_of_uzpow_eq_one {p : ι} {x : V} (hx : x ∈ G.piece p)
+    (hp : (-1 : ℤˣ) ^ p = 1) : generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_uzpow_eq_one G (generator_mem_signedSymPiece G hx) hp
+
+/-- Generators of degree `0` (in particular, even-parity generators when `ι = ZMod 2`) are
+central in `SignedSym G`. -/
+theorem generator_mem_center_of_mem_zero {x : V} (hx : x ∈ G.piece 0) :
+    generator G x ∈ Subalgebra.center R (SignedSym G) :=
+  mem_center_of_mem_zero G (generator_mem_signedSymPiece G hx)
+
+/-- A homogeneous element whose degree has Koszul sign `-1` squares to its own negative, over any
+commutative ring. -/
+theorem sq_eq_neg {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p)
+    (hp : (-1 : ℤˣ) ^ p = -1) : a ^ 2 = -(a ^ 2) := by
+  rw [pow_two]
+  exact TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul (mul_eq_uzpow_smul_mul G) ha hp
+
+/-- Every homogeneous element whose degree has Koszul sign `-1` has square zero when `2` is
+invertible, in particular over `ℚ`. -/
+theorem sq_eq_zero [Invertible (2 : R)] {p : ι} {a : SignedSym G}
+    (ha : a ∈ signedSymPiece G p) (hp : (-1 : ℤˣ) ^ p = -1) : a ^ 2 = 0 :=
   eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg G ha hp)
+
+/-- An element of degree `1` (in particular, any odd-parity element when `ι = ZMod 2`) squares to
+its own negative. -/
+theorem sq_eq_neg_of_mem_one {a : SignedSym G} (ha : a ∈ signedSymPiece G 1) :
+    a ^ 2 = -(a ^ 2) :=
+  sq_eq_neg G ha (uzpow_one (-1))
+
+/-- An element of degree `1` (in particular, any odd-parity element when `ι = ZMod 2`) has square
+zero when `2` is invertible. -/
+theorem sq_eq_zero_of_mem_one [Invertible (2 : R)] {a : SignedSym G}
+    (ha : a ∈ signedSymPiece G 1) : a ^ 2 = 0 :=
+  sq_eq_zero G ha (uzpow_one (-1))
+
+end General
+
+section Int
+
+variable (G : InternalGrading R V ℤ)
 
 /-- Elements of pure parity supercommute with the sign determined by their parities, even when
 they combine multiple integer degrees. -/
 theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedSym G}
     (ha : a ∈ parityGrading (signedSymPiece G) i) (hb : b ∈ parityGrading (signedSymPiece G) j) :
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
-  TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading
-    (fun ha hb => by rw [Units.smul_def]; exact mul_eq_negOnePow_smul_mul G ha hb) ha hb
+  TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading (mul_eq_uzpow_smul_mul G) ha hb
 
 /-- Every element of even parity commutes with all of `SignedSym G`. -/
 theorem commute_of_mem_parityGrading_zero {a : SignedSym G}
@@ -105,5 +167,7 @@ theorem generator_mem_center_of_mem_parityGrading_zero {x : V}
 theorem generator_sq_eq_zero_of_mem_parityGrading_one [Invertible (2 : R)] {x : V}
     (hx : x ∈ parityGrading G.piece 1) : generator G x ^ 2 = 0 :=
   sq_eq_zero_of_mem_parityGrading_one G (generator_mem_parityGrading G hx)
+
+end Int
 
 end TauCeti.SignedSym

@@ -195,13 +195,13 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
     (fun i j ↦ by
       push_cast
       exact hball ((HolderSpace.norm_const_le _).trans (by
-        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.2])) ((hak i j).trans hK))
+        rw [Matrix.one_apply]; split_ifs <;> simp [hK.trans' K.property])) ((hak i j).trans hK))
     (fun i ↦ by
       push_cast
-      exact hball (by simpa using K.2.trans hK) ((hbk i).trans hK))
+      exact hball (by simpa using K.property.trans hK) ((hbk i).trans hK))
     (by
       push_cast
-      exact hball (by simpa using K.2.trans hK) (hck.trans hK)) u
+      exact hball (by simpa using K.property.trans hK) (hck.trans hK)) u
   rw [lineMap_prod_spatialTraceL, ContinuousLinearMap.prod_apply, Prod.norm_mk,
     spatialTraceL_apply]
   set P := ‖euclideanParabolicOperatorL hα₁.le (AffineMap.lineMap heatCoeff a s)
@@ -354,7 +354,7 @@ theorem isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα
       bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := T) (ha := h₀) (hb := h₁),
       initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
     exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
-      fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
+      (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
   -- A bijective bounded operator between Banach spaces is an isomorphism (open mapping).
   exact ⟨ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot_of_injective h.1)
     (LinearMap.range_eq_top_of_surjective _ h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩

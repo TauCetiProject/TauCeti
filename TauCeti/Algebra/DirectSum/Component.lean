@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Kimi K3
+Authors: Kimi K3, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -14,11 +14,10 @@ For a family of submodules with a direct-sum decomposition, `TauCeti.homogeneous
 projection `M →ₗ[R] ℳ η` onto the `η`-th homogeneous piece, and `TauCeti.homogeneousComponent`
 composes it with the submodule inclusion to give an endomorphism of the ambient module. These
 projections are idempotent and pairwise orthogonal, acting as the identity on their own piece and as
-zero on every other piece. We also record the subtype-valued evaluations
+zero on every other piece. A homogeneous substructure not contained in an additive submonoid
+contains a homogeneous element outside that submonoid. We also record the subtype-valued evaluations
 `TauCeti.decompose_apply_of_mem_same` and `TauCeti.decompose_apply_of_mem_ne` of
-`DirectSum.decompose` for any `AddSubmonoidClass` decomposition, as well as
-`TauCeti.zsmul_mem_of_decomposition` showing that each homogeneous piece of an `AddCommGroup`
-decomposition is closed under integer scalar multiplication.
+`DirectSum.decompose` for any `AddSubmonoidClass` decomposition.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
@@ -47,27 +46,6 @@ theorem decompose_apply_of_mem_ne {i j : ι} {x : M} (hx : x ∈ ℳ i) (hij : i
   Subtype.ext (DirectSum.decompose_of_mem_ne ℳ hx hij)
 
 end AddCommMonoid
-
-section AddCommGroup
-
-variable {ι M σ : Type*} [DecidableEq ι] [AddCommGroup M]
-  [SetLike σ M] [AddSubmonoidClass σ M] (ℳ : ι → σ) [DirectSum.Decomposition ℳ]
-
-/-- In an internal direct-sum decomposition of an additive commutative group, every homogeneous
-piece is closed under integer scalar multiplication. -/
-theorem zsmul_mem_of_decomposition {i : ι} {x : M} (hx : x ∈ ℳ i) (n : ℤ) :
-    n • x ∈ ℳ i := by
-  let proj : M →+ M :=
-    { toFun a := (DirectSum.decompose ℳ a i : M)
-      map_zero' := by simp
-      map_add' a b := by simp }
-  have h : n • x = proj (n • x) := by
-    rw [map_zsmul]
-    simp [proj, DirectSum.decompose_of_mem_same ℳ hx]
-  rw [h]
-  exact Subtype.property _
-
-end AddCommGroup
 
 variable {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [DecidableEq ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
@@ -149,3 +127,18 @@ theorem homogeneousComponent_comp_of_ne {i j : ι} (h : i ≠ j) :
   exact homogeneousComponent_apply_of_mem_ne ℳ (homogeneousComponent_mem ℳ j a) (Ne.symm h)
 
 end TauCeti
+
+/-- A homogeneous substructure not contained in an additive submonoid has a homogeneous
+witness outside it. The left substructure need not be closed under addition. -/
+theorem DirectSum.SetLike.IsHomogeneous.exists_mem_notMem_of_not_subset
+    {ι M σ P Q : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike σ M] [AddSubmonoidClass σ M] {ℳ : ι → σ} [DirectSum.Decomposition ℳ]
+    [SetLike P M] [SetLike Q M] [AddSubmonoidClass Q M]
+    {p : P} (hp : DirectSum.SetLike.IsHomogeneous ℳ p) {q : Q}
+    (h : ¬ (p : Set M) ⊆ q) : ∃ i, ∃ x ∈ ℳ i, x ∈ p ∧ x ∉ q := by
+  classical
+  obtain ⟨x, hxp, hxq⟩ := Set.not_subset.mp h
+  by_contra! hsep
+  apply hxq
+  rw [← DirectSum.sum_support_decompose ℳ x]
+  exact sum_mem fun i _ ↦ hsep i _ (SetLike.coe_mem _) (hp i hxp)

@@ -6,19 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
-public import Mathlib.Data.Matrix.Basic
-public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import Mathlib.Data.Int.Order.Units
 import Mathlib.GroupTheory.GroupAction.Ring
 import Mathlib.Tactic.Abel
-import TauCeti.Algebra.DirectSum.Component
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Homology.DG.Algebra.Defs
 import TauCeti.RingTheory.GradedAlgebra.Generators
 
 /-!
-# Signed Leibniz endomorphisms and lower-triangular matrix derivations
+# Signed Leibniz endomorphisms
 
 Let `A` be an internally `ι`-graded `R`-algebra with grading `𝒜 : ι → Submodule R A`. A linear
 endomorphism `d : A →ₗ[R] A` satisfies an `s`-signed Leibniz rule (for a sign function `s : ι → ℤˣ`)
@@ -40,18 +38,6 @@ sign maps `s : ι → ℤˣ`:
 * if `d` is homogeneous of degree `q` and `s (i + q) = -s i`, then `d ∘ₗ d` is an unsigned
   derivation, hence vanishes on `A` as soon as it vanishes on an algebra-generating set.
 
-To *construct* signed derivations out of algebras presented by generators and Koszul commutation
-relations (such as `TauCeti.SignedSym` and `TauCeti.ParitySignedSym`), we also package the `2 × 2`
-lower-triangular matrix representation `x ↦ !![g x, 0; δ x, h x]` and the `(1, 0)`-entry extractor
-`AlgHom.lowerLeftEntry`, which produces a `(1, σ)`-derivation whenever an algebra map
-`Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` is lower-triangular with diagonal `(id, σ)` on generators.
-
-## Main definitions
-
-* `TauCeti.lowerTriangularLinearMap`: the linear map `x ↦ !![g x, 0; δ x, h x]`.
-* `AlgHom.lowerLeftEntry`: the `(1, 0)` entry of an algebra map
-  `A →ₐ[R] Matrix (Fin 2) (Fin 2) A` as an `R`-linear endomorphism of `A`.
-
 ## Main results
 
 * `TauCeti.eq_zero_of_signedLeibniz_along_of_adjoin_eq_top`,
@@ -64,15 +50,11 @@ lower-triangular matrix representation `x ↦ !![g x, 0; δ x, h x]` and the `(1
   propagates to the whole graded algebra.
 * `TauCeti.comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top`: an odd-sign Leibniz map
   squares to zero if and only if its square vanishes on generators.
-* `TauCeti.lowerTriangularLinearMap_mul_eq_smul` and
-  `AlgHom.lowerLeftEntry_mul_of_adjoin_range_eq_top`: Koszul supercommutativity of the
-  generator matrices and the resulting twisted Leibniz rule.
 
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1, for the left-factor
   graded Leibniz convention.
-* N. Bourbaki, *Algebra I*, Chapter III, §10.2, for derivations via `2 × 2` triangular matrices.
 -/
 
 public section
@@ -200,7 +182,7 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_eq_top
     GradedAlgebra.grade_le_of_adjoin_eq_top 𝒜
       (ℬ := fun i ↦ (𝒜 (i + q)).comap d)
       (Submodule.mem_comap.2 <| by
-        rw [map_one_eq_zero_of_leibniz (𝒜 := 𝒜) hl]
+        rw [map_one_eq_zero_of_leibniz 𝒜 hl]
         exact zero_mem _)
       (fun {i j a b} ha hda hb hdb ↦ Submodule.mem_comap.2 <| by
         rw [hl ha b]
@@ -210,7 +192,7 @@ theorem isHomogeneous_of_signedLeibniz_of_adjoin_eq_top
           add_assoc i j q ▸ SetLike.GradedMul.mul_mem ha hdb
         refine add_mem hda_b ?_
         rw [Units.smul_def]
-        exact zsmul_mem_of_decomposition 𝒜 ha_db _)
+        exact DirectSum.Decomposition.zsmul_mem ha_db _)
       hadj hS k ha
 
 /-- If `g : V →ₗ[R] A` is homogeneous of degree `0`, its image generates `A`, `𝒱` spans `V`, and
@@ -289,148 +271,4 @@ theorem comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_range_eq_top {V : Type*
 
 end SquareZero
 
-section LowerTriangular
-
-/-- The `R`-linear map `x ↦ !![g x, 0; δ x, h x]` into lower-triangular `2 × 2` matrices. -/
-def lowerTriangularLinearMap {R V A : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
-    [AddCommMonoid A] [Module R A] (g δ h : V →ₗ[R] A) : V →ₗ[R] Matrix (Fin 2) (Fin 2) A where
-  toFun x := !![g x, 0; δ x, h x]
-  map_add' x y := by
-    ext r c
-    fin_cases r <;> fin_cases c <;> simp
-  map_smul' r x := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-
-/-- Evaluation of `lowerTriangularLinearMap` as an explicit `2 × 2` matrix. -/
-@[simp]
-theorem lowerTriangularLinearMap_apply {R V A : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
-    [AddCommMonoid A] [Module R A] (g δ h : V →ₗ[R] A) (x : V) :
-    lowerTriangularLinearMap g δ h x = !![g x, 0; δ x, h x] := (rfl)
-
-private theorem mul_add_smul_mul_eq_smul {A ι σ : Type*} [NonUnitalNonAssocRing A]
-    [SetLike σ A] [Semiring ι] {𝒜 : ι → σ} {c : ι → ℤˣ} (hc : ∀ i j, c (i + j) = c i * c j)
-    (hcomm : ∀ {i j : ι} {a b : A}, a ∈ 𝒜 i → b ∈ 𝒜 j → a * b = c (i * j) • (b * a))
-    {i j : ι} {a b a' b' : A} (ha : a ∈ 𝒜 i) (hb : b ∈ 𝒜 j)
-    (ha' : a' ∈ 𝒜 (i + 1)) (hb' : b' ∈ 𝒜 (j + 1)) :
-    a' * b + (c i • a) * b' = c (i * j) • (b' * a + (c j • b) * a') := by
-  have h₁ : c ((i + 1) * j) = c (i * j) * c j := by
-    rw [add_mul, one_mul, hc]
-  have h₂ : c i * c (i * (j + 1)) = c (i * j) := by
-    rw [mul_add, mul_one, hc, mul_left_comm, Int.units_mul_self, mul_one]
-  have hleft : a' * b = c (i * j) • ((c j • b) * a') := by
-    rw [hcomm ha' hb, h₁, mul_smul]
-    simp only [Units.smul_def, smul_mul_assoc]
-  have hright : (c i • a) * b' = c (i * j) • (b' * a) := by
-    have hab' : a * b' = c (i * (j + 1)) • (b' * a) := hcomm ha hb'
-    calc
-      (c i • a) * b' = c i • (a * b') := by simp only [Units.smul_def, smul_mul_assoc]
-      _ = (c i * c (i * (j + 1))) • (b' * a) := by rw [hab', mul_smul]
-      _ = c (i * j) • (b' * a) := by rw [h₂]
-  rw [hleft, hright, ← smul_add, add_comm]
-
-/-- For homogeneous generators `x ∈ 𝒱 i` and `y ∈ 𝒱 j`, a degree-`0` generator map `g`, a
-degree-`1` derivation assignment `δ`, and a linear map `h` scaling `g x` by `c i` on `𝒱 i`, the
-lower-triangular matrices `!![g x, 0; δ x, h x]` obey the Koszul commutation relation with sign
-`c (i * j)`. -/
-theorem lowerTriangularLinearMap_mul_eq_smul {R V A ι : Type*} [Semiring R]
-    [NonUnitalNonAssocRing A] [Module R A] [AddCommMonoid V] [Module R V] [Semiring ι]
-    {𝒱 : ι → Submodule R V} {𝒜 : ι → Submodule R A} {c : ι → ℤˣ}
-    (hc : ∀ i j, c (i + j) = c i * c j)
-    (hcomm : ∀ {i j : ι} {a b : A}, a ∈ 𝒜 i → b ∈ 𝒜 j → a * b = c (i * j) • (b * a))
-    {g δ h : V →ₗ[R] A} (hg : LinearMap.IsHomogeneous g 𝒱 𝒜 0)
-    (hδ : LinearMap.IsHomogeneous δ 𝒱 𝒜 1)
-    (hh : ∀ {i : ι} {x : V}, x ∈ 𝒱 i → h x = c i • g x)
-    {i j : ι} {x y : V} (hx : x ∈ 𝒱 i) (hy : y ∈ 𝒱 j) :
-    lowerTriangularLinearMap g δ h x * lowerTriangularLinearMap g δ h y =
-      c (i * j) • (lowerTriangularLinearMap g δ h y * lowerTriangularLinearMap g δ h x) := by
-  have hgx : g x ∈ 𝒜 i := by simpa only [add_zero] using hg.map_mem hx
-  have hgy : g y ∈ 𝒜 j := by simpa only [add_zero] using hg.map_mem hy
-  have hdx : δ x ∈ 𝒜 (i + 1) := hδ.map_mem hx
-  have hdy : δ y ∈ 𝒜 (j + 1) := hδ.map_mem hy
-  ext r col
-  fin_cases r <;> fin_cases col
-  · simpa [Matrix.mul_apply] using hcomm hgx hgy
-  · simp [Matrix.mul_apply]
-  · have hcross := mul_add_smul_mul_eq_smul hc hcomm hgx hgy hdx hdy
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, hh hx, hh hy, Units.smul_def, smul_mul_assoc]
-      using hcross
-  · have key : h x * h y = c (i * j) • (h y * h x) := by
-      simp only [hh hx, hh hy, Units.smul_def, smul_mul_assoc, mul_smul_comm, hcomm hgx hgy]
-      rw [smul_comm (c i : ℤ), smul_comm (c j : ℤ), smul_comm (c i : ℤ) (c j : ℤ)]
-    simpa [Matrix.mul_apply, Fin.sum_univ_two] using key
-
-end LowerTriangular
-
 end TauCeti
-
-namespace AlgHom
-
-/-- Extract the lower-left `(1, 0)` entry of an algebra homomorphism into `2 × 2` matrices as an
-`R`-linear endomorphism of `A`. -/
-def lowerLeftEntry {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) : A →ₗ[R] A :=
-  Matrix.entryLinearMap R A 1 0 ∘ₗ Φ.toLinearMap
-
-/-- `AlgHom.lowerLeftEntry Φ` evaluates to the `(1, 0)` entry of `Φ`. -/
-theorem lowerLeftEntry_apply {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (a : A) :
-    Φ.lowerLeftEntry a = Φ a 1 0 := (rfl)
-
-/-- The `(1, 0)` entry of an algebra map `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` vanishes on
-`algebraMap R A r` for every `r : R`. -/
-@[simp]
-theorem lowerLeftEntry_algebraMap {R A : Type*} [CommSemiring R] [Semiring A]
-    [Algebra R A] (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (r : R) :
-    Φ.lowerLeftEntry (algebraMap R A r) = 0 := by
-  simp [lowerLeftEntry_apply, Matrix.algebraMap_matrix_apply]
-
-/-- The `(1, 0)` entry of an algebra map `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` annihilates `1`. -/
-@[simp]
-theorem lowerLeftEntry_one {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) :
-    Φ.lowerLeftEntry 1 = 0 := by
-  simpa only [map_one] using Φ.lowerLeftEntry_algebraMap 1
-
-/-- If `Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A` has diagonal `(id, σ)` and zero `(0, 1)` entry on an
-algebra-generating set, it has that form on all of `A`. -/
-theorem lowerTriangular_entries_of_adjoin_eq_top {R A : Type*} [CommSemiring R]
-    [Semiring A] [Algebra R A] (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (σ : A →ₐ[R] A)
-    {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
-    (hS : ∀ x ∈ S, Φ x 0 0 = x ∧ Φ x 0 1 = 0 ∧ Φ x 1 1 = σ x) (a : A) :
-    Φ a 0 0 = a ∧ Φ a 0 1 = 0 ∧ Φ a 1 1 = σ a := by
-  let L : Subalgebra R A :=
-    { carrier := {a | Φ a 0 0 = a ∧ Φ a 0 1 = 0 ∧ Φ a 1 1 = σ a}
-      mul_mem' := fun {a b} ha hb ↦ by
-        simp [Matrix.mul_apply, Fin.sum_univ_two, ha.1, ha.2.1, ha.2.2, hb.1, hb.2.1, hb.2.2]
-      add_mem' := fun {a b} ha hb ↦ by
-        simp [ha.1, ha.2.1, ha.2.2, hb.1, hb.2.1, hb.2.2]
-      algebraMap_mem' := fun r ↦ by
-        simp [Matrix.algebraMap_matrix_apply] }
-  have htop : (⊤ : Subalgebra R A) ≤ L := hadj ▸ Algebra.adjoin_le hS
-  exact htop Algebra.mem_top
-
-/-- Under the hypotheses of `AlgHom.lowerTriangular_entries_of_adjoin_eq_top`, the `(1, 0)` entry
-of `Φ` satisfies the `(1, σ)`-twisted Leibniz rule `d (a * b) = d a * b + σ a * d b`. -/
-theorem lowerLeftEntry_mul_of_adjoin_eq_top {R A : Type*} [CommSemiring R]
-    [Semiring A] [Algebra R A] (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (σ : A →ₐ[R] A)
-    {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
-    (hS : ∀ x ∈ S, Φ x 0 0 = x ∧ Φ x 0 1 = 0 ∧ Φ x 1 1 = σ x) (a b : A) :
-    Φ.lowerLeftEntry (a * b) = Φ.lowerLeftEntry a * b + σ a * Φ.lowerLeftEntry b := by
-  have ha := Φ.lowerTriangular_entries_of_adjoin_eq_top σ hadj hS a
-  have hb := Φ.lowerTriangular_entries_of_adjoin_eq_top σ hadj hS b
-  simp [lowerLeftEntry_apply, Matrix.mul_apply, Fin.sum_univ_two, ha.2.2, hb.1]
-
-/-- When `Φ (g x) = !![g x, 0; δ x, σ (g x)]` for an algebra-generating map `g : V →ₗ[R] A`, the
-`(1, 0)` entry of `Φ` satisfies `d (a * b) = d a * b + σ a * d b` for all `a, b : A`. -/
-theorem lowerLeftEntry_mul_of_adjoin_range_eq_top {R V A : Type*} [CommSemiring R]
-    [Semiring A] [Algebra R A] [AddCommMonoid V] [Module R V]
-    (Φ : A →ₐ[R] Matrix (Fin 2) (Fin 2) A) (σ : A →ₐ[R] A) {g δ : V →ₗ[R] A}
-    (hadj : Algebra.adjoin R (Set.range g) = ⊤)
-    (hΦ : ∀ x, Φ (g x) = TauCeti.lowerTriangularLinearMap g δ (σ.toLinearMap ∘ₗ g) x) (a b : A) :
-    Φ.lowerLeftEntry (a * b) = Φ.lowerLeftEntry a * b + σ a * Φ.lowerLeftEntry b := by
-  refine Φ.lowerLeftEntry_mul_of_adjoin_eq_top σ hadj ?_ a b
-  rintro _ ⟨x, rfl⟩
-  simp [hΦ x]
-
-end AlgHom
