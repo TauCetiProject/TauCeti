@@ -21,6 +21,7 @@ Dwork's criterion describes integral ghost sequences using prime Frobenius lifts
 requiring the lifts to commute or the coefficient ring to be torsion-free. Ghost coordinates
 are unique when multiplication by each truncation index is injective. If those indices are
 units, every ghost sequence has unique coordinates on the truncation set.
+The single-prime congruence is `ghostPolynomial_mul_sub_map_dvd`.
 
 The image criterion follows Hesselholt, *The big de Rham–Witt complex*, Lemma 1.1.
 -/
@@ -64,10 +65,13 @@ private theorem dvd_sub_ghostSummand (p d m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
       mul_dvd_mul hcoeff hpower
     _ = (d : R) * a ^ (p * m / d) - φ ((d : R) * a ^ (m / d)) := hsummand.symm
 
-private theorem dvd_ghostPolynomial_sub_frobenius (p m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
+/-- A prime Frobenius lift carries the `m`th ghost polynomial to the `(p * m)`th
+ghost polynomial modulo the full power `p ^ padicValNat p (p * m)`. -/
+theorem ghostPolynomial_mul_sub_map_dvd (p m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
     (φ : R →+* R) (hφ : ∀ a : R, (p : R) ∣ φ a - a ^ p)
-    (x : ℕ → R) : (p : R) ^ (p * m).factorization p ∣
+    (x : ℕ → R) : (p : R) ^ padicValNat p (p * m) ∣
       ghostPolynomial (p * m) x - φ (ghostPolynomial m x) := by
+  rw [Nat.padicValNat_def, ← Nat.factorization_def (p * m) hp]
   classical
   have hn : p * m ≠ 0 := mul_ne_zero hp.ne_zero hm
   have hs : (p * m).divisors.filter (· ∣ m) = m.divisors := by
@@ -147,9 +151,10 @@ private theorem ghost_numerator_dvd (S : TruncationSet) (φ : ℕ → R →+* R)
         (hprev _ (S.mem_of_dvd hn (Nat.div_dvd_of_dvd hpn)) hmn)
       intro d hd
       exact Function.update_of_ne ((Nat.divisor_le hd).trans_lt hmn).ne 0 x
-    have hy := dvd_ghostPolynomial_sub_frobenius p (n / p) hpp hm.ne' (φ p)
+    have hy := ghostPolynomial_mul_sub_map_dvd p (n / p) hpp hm.ne' (φ p)
       (hφ p hpp (S.mem_of_dvd hn hpn)) y
-    rw [Nat.mul_div_cancel' hpn, hmy] at hy
+    rw [Nat.mul_div_cancel' hpn, hmy, Nat.padicValNat_def,
+      ← Nat.factorization_def n hpp] at hy
     simpa only [sub_sub_sub_cancel_right] using dvd_sub (hb p hpp n hn hpn) hy
   have hprod := Finset.prod_primes_pow_dvd
     (fun p hp => Nat.prime_of_mem_primeFactors hp) n.factorization hprime
@@ -177,9 +182,9 @@ theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
     have hm := Nat.div_pos (Nat.le_of_dvd (S.pos hn) hpn) hp.pos
     apply Ideal.mem_span_singleton.mpr
     rw [← hx n hn, ← hx (n / p) (S.mem_of_dvd hn (Nat.div_dvd_of_dvd hpn))]
-    have h := dvd_ghostPolynomial_sub_frobenius p (n / p) hp hm.ne' (φ p)
+    have h := ghostPolynomial_mul_sub_map_dvd p (n / p) hp hm.ne' (φ p)
       (hφ' p hp (S.mem_of_dvd hn hpn)) x
-    simpa only [Nat.mul_div_cancel' hpn, Nat.factorization_def n hp, Nat.padicValNat_def] using h
+    simpa only [Nat.mul_div_cancel' hpn] using h
   · intro hb
     refine ⟨ghostCoordinates b, ?_⟩
     intro n
