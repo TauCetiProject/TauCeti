@@ -39,7 +39,8 @@ theorem laplaceBeltrami_eq_sum_chartInvGramMatrix_hessian
     (α : M) {x : M} (hx : x ∈ (chartAt H α).source) (f : M → ℝ) :
     laplaceBeltrami I f x = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j *
       hessian I f x (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
-  rw [laplaceBeltrami_eq_metricTrace_hessianForm, metricTrace_eq_sum_chartInvGramMatrix α hx]
-  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hessianForm_apply, smul_eq_mul]
+  rw [I.laplaceBeltrami_eq_metricTrace_hessianForm, metricTrace_eq_sum_chartInvGramMatrix α hx]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, I.hessianForm_apply,
+    smul_eq_mul]
 
 end TauCeti.Manifold

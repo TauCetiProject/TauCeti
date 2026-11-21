@@ -14,6 +14,9 @@ On an open set where a scalar function is `C^(n+2)`, pairing its Riemannian Hess
 `C^n` tangent fields along a `C^n` base map gives a `C^n` scalar function, on a `C^(n+2)`
 manifold with a `C^(n+1)` metric. The parameter manifold needs no dimension or regularity
 assumption beyond its charts.
+
+Likewise, the Hessian form of a `C³` function pairs two tangent fields differentiable at a point
+to a function differentiable there, on a `C³` manifold with a `C²` metric.
 -/
 
 public noncomputable section
@@ -62,5 +65,27 @@ theorem contMDiffAt_hessian_pair (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M �
   rw [heq]
   exact ContMDiffAt.inner_bundle (IB := I) (F := E)
     (E := fun y : M ↦ TangentSpace I y) (b := γ) hAP hQ
+
+/-- The Hessian form of a function that is `C³` on an open neighbourhood of `x` pairs two tangent
+fields differentiable at `x` to a function differentiable at `x`, on a `C³` manifold with a `C²`
+metric. -/
+theorem mdifferentiableAt_hessianForm_apply (hm : 3 ≤ m) (hk : 2 ≤ k) {f : M → ℝ} {U : Set M}
+    (hU : IsOpen U) (hf : ContMDiffOn I 𝓘(ℝ) 3 f U) {x : M} (hx : x ∈ U)
+    {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
+    MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x := by
+  have h3 : (1 : ℕ∞ω) + 1 + 1 = 3 := by norm_num
+  have hk' : (1 : ℕ∞ω) + 1 ≤ k := by rwa [one_add_one_eq_two]
+  have : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := m) (h3 ▸ hm)
+  have : IsContMDiffRiemannianBundle I (1 + 1) E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := k) hk'
+  have hG : CMDiff[U] (1 + 1) (T% (mgradient I f)) := fun y hy ↦
+    (contMDiffAt_mgradient (n := 1 + 1)
+      (by simpa only [h3] using hf.contMDiffAt (hU.mem_nhds hy))).contMDiffWithinAt
+  have hA := contMDiffOn_leviCivitaConnection (I := I) (n := 1) (m := m) (k := k) hU
+    (by rwa [show (1 : ℕ∞ω) + 2 = 3 by norm_num]) hk' hG
+  have hGσ : MDiffAt (T% (fun y ↦ leviCivitaConnection I M (mgradient I f) y (σ y))) x :=
+    ((hA.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt one_ne_zero).clm_bundle_apply hσ
+  simp only [ModelWithCorners.hessianForm_apply, hessian_def]
+  exact mdifferentiableAt_inner hGσ hτ
 
 end TauCeti.Manifold

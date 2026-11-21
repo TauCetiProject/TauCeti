@@ -37,8 +37,9 @@ This file introduces the pointwise Riemannian divergence as the trace of the Lev
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
 trace formula makes the relationship between the Laplacian and the Hessian explicit, and
-`laplaceBeltrami_eq_metricTrace_hessianForm` identifies the Laplacian with the metric trace of the
-Hessian as a continuous bilinear form `hessianForm`. The operator
+`ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm` identifies the Laplacian with the
+metric trace of the Hessian as a continuous bilinear form `ModelWithCorners.hessianForm`, which is
+symmetric and linear in the function at points of `C²` regularity. The operator
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
 real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
 finite-dimensional normed space whose metric is a field of bilinear forms `g`, the Hessian in
@@ -160,14 +161,24 @@ theorem _root_.ContMDiffSection.contMDiff_divergence {I : ModelWithCorners ℝ E
   TauCeti.Manifold.contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
     (by simpa using X.contMDiff)
 
+/-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
+`(v, w) ↦ ⟪∇_v grad f, w⟫`: the metric lowering of the Levi–Civita covariant derivative of the
+gradient. Its values are `TauCeti.Manifold.hessian` (`ModelWithCorners.hessianForm_apply`). -/
+noncomputable def _root_.ModelWithCorners.hessianForm (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
+  (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x)
+
 /-- The scalar Hessian of `f`, pairing the covariant derivative of its gradient with a second
-tangent vector. -/
+tangent vector: the values of `ModelWithCorners.hessianForm`. -/
 noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) : ℝ :=
-  inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w
+  I.hessianForm f x v w
 
 theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -176,25 +187,16 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
-  rw [hessian]
-
-/-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
-`(v, w) ↦ ⟪∇_v grad f, w⟫`; its values are `TauCeti.Manifold.hessian` (`hessianForm_apply`). -/
-noncomputable def hessianForm (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 2 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-    (f : M → ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
-  (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x)
+  rw [hessian, ModelWithCorners.hessianForm, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
 @[simp]
-theorem hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 2 M]
+theorem _root_.ModelWithCorners.hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
-    hessianForm I f x v w = hessian I f x v w := by
-  rw [hessianForm, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hessian_def]
+    I.hessianForm f x v w = hessian I f x v w := by
+  rw [hessian]
 
 section HessianSymmetry
 
@@ -509,7 +511,7 @@ protected theorem _root_.HasCompactSupport.laplaceBeltrami {f : M → ℝ}
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I (fun _ : M ↦ c) x v w = 0 := by
-  simp [hessian]
+  simp [hessian_def]
 
 /-- The Hessian of the zero function is zero. -/
 @[simp]
@@ -555,6 +557,28 @@ theorem hessian_sub_of_contMDiffAt {f g : M → ℝ} {x : M}
     hessian I (f - g) x v w = hessian I f x v w - hessian I g x v w := by
   rw [sub_eq_add_neg, hessian_add_of_contMDiffAt I (g := -g) hf hg.neg,
     hessian_neg_of_contMDiffAt I hg, sub_eq_add_neg]
+
+/-- The Hessian form of a function that is `C²` at `x` is symmetric. -/
+theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) : (I.hessianForm f x).flip = I.hessianForm f x :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [ContinuousLinearMap.flip_apply, I.hessianForm_apply, I.hessianForm_apply,
+      hessian_symm x hf]
+
+/-- The Hessian form is additive at a point where both functions are `C²`. -/
+theorem _root_.ModelWithCorners.hessianForm_add_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
+    I.hessianForm (f + g) x = I.hessianForm f x + I.hessianForm g x :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [add_apply, add_apply, I.hessianForm_apply,
+      I.hessianForm_apply, I.hessianForm_apply, hessian_add_of_contMDiffAt I hf hg]
+
+/-- The Hessian form commutes with constant scalar multiplication at a point of `C²` regularity. -/
+theorem _root_.ModelWithCorners.hessianForm_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) : I.hessianForm (c • f) x = c • I.hessianForm f x :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [smul_apply, smul_apply, I.hessianForm_apply,
+      I.hessianForm_apply, hessian_smul_of_contMDiffAt I c hf, smul_eq_mul]
 
 /-- The Hessian is additive on twice continuously differentiable functions. -/
 theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
@@ -750,7 +774,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v₁ v₂ w : TangentSpace I x) :
     hessian I f x (v₁ + v₂) w = hessian I f x v₁ w + hessian I f x v₂ w := by
-  simp only [hessian, map_add, inner_add_left]
+  simp only [hessian_def, map_add, inner_add_left]
 
 @[simp] theorem hessian_smul_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -758,7 +782,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x (r • v) w = r * hessian I f x v w := by
-  simp only [hessian, map_smul, real_inner_smul_left]
+  simp only [hessian_def, map_smul, real_inner_smul_left]
 
 @[simp] theorem hessian_zero_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -766,7 +790,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (w : TangentSpace I x) :
     hessian I f x 0 w = 0 := by
-  simp only [hessian, map_zero, inner_zero_left]
+  simp only [hessian_def, map_zero, inner_zero_left]
 
 @[simp] theorem hessian_add_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -774,7 +798,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w₁ w₂ : TangentSpace I x) :
     hessian I f x v (w₁ + w₂) = hessian I f x v w₁ + hessian I f x v w₂ := by
-  simp only [hessian, inner_add_right]
+  simp only [hessian_def, inner_add_right]
 
 @[simp] theorem hessian_smul_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -782,7 +806,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x v (r • w) = r * hessian I f x v w := by
-  simp only [hessian, real_inner_smul_right]
+  simp only [hessian_def, real_inner_smul_right]
 
 @[simp] theorem hessian_zero_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -790,21 +814,22 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     hessian I f x v 0 = 0 := by
-  simp only [hessian, inner_zero_right]
+  simp only [hessian_def, inner_zero_right]
 
 /-- The Laplace–Beltrami operator is the metric trace of the Hessian form. -/
-theorem laplaceBeltrami_eq_metricTrace_hessianForm (I : ModelWithCorners ℝ E H) {M : Type*}
+theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
+    (I : ModelWithCorners ℝ E H) {M : Type*}
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (x : M) :
     laplaceBeltrami I f x =
-      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (hessianForm I f x)) := by
+      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
   -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
-  have h : ContinuousLinearMap.toLinearMap₁₂ (hessianForm I f x) =
+  have h : ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x) =
       (innerₗ (TangentSpace I x)).comp
         (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x).toLinearMap :=
     LinearMap.ext₂ fun v w ↦ by
-      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hessianForm_apply, hessian_def,
+      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, I.hessianForm_apply, hessian_def,
         LinearMap.comp_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
   rw [laplaceBeltrami_def, divergence_def, h, ← LinearMap.BilinForm.trace_bilinFormToEnd,
     LinearMap.bilinFormToEnd_innerₗ_comp]
@@ -817,8 +842,8 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
     {ι : Type*} [Fintype ι] (f : M → ℝ) (x : M)
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     laplaceBeltrami I f x = ∑ i, hessian I f x (b i) (b i) := by
-  rw [laplaceBeltrami_eq_metricTrace_hessianForm, LinearMap.BilinMap.metricTrace_eq_sum _ b]
-  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hessianForm_apply]
+  rw [I.laplaceBeltrami_eq_metricTrace_hessianForm, LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, I.hessianForm_apply]
 
 /-- The squared trace of the Hessian is at most the dimension times its squared norm,
 expressed in any orthonormal basis. This includes dimension zero. -/
@@ -953,7 +978,7 @@ theorem hessian_eq_iteratedFDeriv_model_space
     hessian (modelWithCornersSelf ℝ F) f x v w =
       iteratedFDeriv ℝ 2 f x
         ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w] := by
-  rw [hessian]
+  rw [hessian_def]
   have hm : mgradient (modelWithCornersSelf ℝ F) f = ∇ f :=
     funext fun y ↦ mgradient_eq_gradient f y
   have hmgrad : DifferentiableAt ℝ (mgradient (modelWithCornersSelf ℝ F) f) x := by

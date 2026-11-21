@@ -599,9 +599,10 @@ theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDif
         2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
   have hgrad : ∇ (fun y : E => ‖y‖ ^ 2) x = (2 : ℝ) • x := by
     simpa only [sub_zero] using gradient_norm_sq_sub (0 : E) x
-  change Δ (ρ ∘ fun y : E => ‖y‖ ^ 2) x = _
-  rw [hρ.contDiffAt.laplacian_comp (contDiff_norm_sq ℝ).contDiffAt, hgrad, laplacian_norm_sq,
-    norm_smul, Real.norm_two]
+  have h := hρ.contDiffAt.laplacian_comp (x := x) (q := fun y : E => ‖y‖ ^ 2)
+    (contDiff_norm_sq ℝ).contDiffAt
+  simp only [Function.comp_def] at h
+  rw [h, hgrad, laplacian_norm_sq, norm_smul, Real.norm_two]
   ring
 
 open Gradient in
