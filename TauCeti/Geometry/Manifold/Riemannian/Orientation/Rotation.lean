@@ -40,8 +40,22 @@ namespace TauCeti.Manifold.Orientation
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I (n + 1) M]
+  [IsManifold I 1 M]
   [RiemannianBundle (TangentSpace I : M → Type _)]
+
+/-- Rotation of equal model vectors at equal base points gives equal model vectors in the
+oriented tangent planes. -/
+theorem rightAngleRotation_tangentSpace_congr
+    (o : Manifold.Orientation I M (Fin 2)) {p q : M} (hp : p = q)
+    {v : TangentSpace I p} {w : TangentSpace I q} (hv : (v : E) = w) :
+    (letI := o.fact_finrank_tangentSpace p;
+      ((o.orientationAt p).rightAngleRotation v : E)) =
+    (letI := o.fact_finrank_tangentSpace q;
+      (o.orientationAt q).rightAngleRotation w) := by
+  subst hp hv
+  rfl
+
+variable {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (TangentSpace I : M → Type _)]
 
 /-- **The right-angle rotation preserves regularity at a point.** On a Riemannian surface with a

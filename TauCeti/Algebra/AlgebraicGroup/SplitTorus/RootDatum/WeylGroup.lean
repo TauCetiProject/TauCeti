@@ -48,9 +48,9 @@ noncomputable section
 variable {σ : Type*}
 
 private theorem domLCongr_coordinateRoot (e : Equiv.Perm σ) (p : CoordinateRootIndex σ) :
-    Finsupp.domLCongr (R := ℤ) e (coordinateRoot p.1.1 p.1.2) =
-      coordinateRoot (coordinatePermRootIndex e p).1.1
-        (coordinatePermRootIndex e p).1.2 := by
+    Finsupp.domLCongr (R := ℤ) e (coordinateRoot p.val.1 p.val.2) =
+      coordinateRoot (coordinatePermRootIndex e p).val.1
+        (coordinatePermRootIndex e p).val.2 := by
   classical
   ext a
   simp only [Finsupp.domLCongr_apply, Finsupp.domCongr_apply,
@@ -207,7 +207,7 @@ private theorem coordinatePermWeylGroupHom_bijective :
     have hw : (w : RootPairing.Aut (coordinateRootDatum σ)) ∈
         MonoidHom.range (coordinatePermRootDatumAutHom (σ := σ)) := by
       rw [coordinatePermRootDatumAutHom_range]
-      exact w.2
+      exact w.property
     obtain ⟨e, he⟩ := hw
     exact ⟨e, Subtype.ext he⟩
 
@@ -219,7 +219,7 @@ noncomputable def coordinatePermMulEquivWeylGroup :
   MulEquiv.ofBijective coordinatePermWeylGroupHom coordinatePermWeylGroupHom_bijective
 
 private theorem coordinatePermMulEquivWeylGroup_val (e : Equiv.Perm σ) :
-    (coordinatePermMulEquivWeylGroup e).1 = coordinatePermRootDatumAut e := by
+    (coordinatePermMulEquivWeylGroup e).val = coordinatePermRootDatumAut e := by
   simp only [coordinatePermMulEquivWeylGroup, MulEquiv.ofBijective_apply,
     coordinatePermWeylGroupHom, MonoidHom.codRestrict_apply,
     coordinatePermRootDatumAutHom, MonoidHom.coe_mk, OneHom.coe_mk]
@@ -229,7 +229,7 @@ permutation; equivalently, its value at `a` is the original value at `e.symm a`.
 @[simp]
 theorem coordinatePermMulEquivWeylGroup_weightMap_apply
     (e : Equiv.Perm σ) (x : σ →₀ ℤ) :
-    (coordinatePermMulEquivWeylGroup e).1.weightMap x =
+    (coordinatePermMulEquivWeylGroup e).val.weightMap x =
       Finsupp.domLCongr (R := ℤ) e x := by
   rw [coordinatePermMulEquivWeylGroup_val]
   exact coordinatePermRootDatumAut_weightMap_apply e x
@@ -238,7 +238,7 @@ theorem coordinatePermMulEquivWeylGroup_weightMap_apply
 @[simp]
 theorem coordinatePermMulEquivWeylGroup_coweightMap_apply
     (e : Equiv.Perm σ) (x : σ → ℤ) (a : σ) :
-    (coordinatePermMulEquivWeylGroup e).1.coweightMap x a = x (e a) := by
+    (coordinatePermMulEquivWeylGroup e).val.coweightMap x a = x (e a) := by
   rw [coordinatePermMulEquivWeylGroup_val, coordinatePermRootDatumAut]
   simp only [LinearEquiv.coe_coe, LinearEquiv.piCongrLeft'_apply, Equiv.symm_symm]
 
@@ -246,10 +246,10 @@ theorem coordinatePermMulEquivWeylGroup_coweightMap_apply
 is implemented by `RootPairing.Equiv.weightHom`. -/
 private theorem coordinateRootDatumWeylGroup_smul_eq_weightMap
     (w : (coordinateRootDatum σ).weylGroup) (x : σ →₀ ℤ) :
-    w • x = w.1.weightMap x := by
+    w • x = w.val.weightMap x := by
   rw [Subgroup.smul_def]
   -- Mathlib has no lemma unfolding this `DistribMulAction` instance to `weightHom`.
-  change (RootPairing.Equiv.weightHom (coordinateRootDatum σ) w.1) x = _
+  change (RootPairing.Equiv.weightHom (coordinateRootDatum σ) w.val) x = _
   rw [RootPairing.Equiv.weightHom_apply, RootPairing.Equiv.weightEquiv_apply]
 
 /-- A coordinate permutation acts on the character lattice by moving each coordinate through
@@ -268,7 +268,7 @@ entries of every root index. -/
 @[simp]
 theorem coordinatePermMulEquivWeylGroup_indexEquiv_apply
     (e : Equiv.Perm σ) (p : CoordinateRootIndex σ) :
-    (coordinatePermMulEquivWeylGroup e).1.indexEquiv p =
+    (coordinatePermMulEquivWeylGroup e).val.indexEquiv p =
       coordinatePermRootIndex e p :=
   by
     rw [coordinatePermMulEquivWeylGroup_val,
@@ -306,10 +306,10 @@ theorem coordinatePermMulEquivWeylGroup_symm_ofIdx [DecidableEq σ]
     (p : CoordinateRootIndex σ) :
     (coordinatePermMulEquivWeylGroup (σ := σ)).symm
         (RootPairing.weylGroup.ofIdx (coordinateRootDatum σ) p) =
-      Equiv.swap p.1.1 p.1.2 := by
+      Equiv.swap p.val.1 p.val.2 := by
   apply (coordinatePermMulEquivWeylGroup (σ := σ)).injective
   rw [MulEquiv.apply_symm_apply]
-  exact (coordinatePermMulEquivWeylGroup_swap p.1.1 p.1.2 p.2).symm
+  exact (coordinatePermMulEquivWeylGroup_swap p.val.1 p.val.2 p.property).symm
 
 end
 

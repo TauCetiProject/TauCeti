@@ -40,7 +40,9 @@ points, on which the trajectory spaces of Morse homology are built.
 * `TauCeti.MorseChart.euclideanForm`: the Euclidean metric of a Morse chart, with
   `TauCeti.MorseChart.contMDiffOn_euclideanForm`, `TauCeti.MorseChart.euclideanForm_comm` and
   `TauCeti.MorseChart.euclideanForm_self_pos`, and its comparison with Euclidean metrics in
-  `TauCeti.MorseChart.isEuclidean_iff_euclideanForm`.
+  `TauCeti.MorseChart.isEuclidean_iff_euclideanForm`. A field which is linear in the chart is the
+  negative gradient of `f` for this metric
+  (`TauCeti.MorseChart.euclideanForm_apply_left_eq_neg_mvfderiv`).
 * `IsCompact.exists_contMDiffRiemannianMetric_inner_eq_euclideanForm`: a metric which is Euclidean
   in Morse charts, with sources of pairwise disjoint closures, at the critical points in a compact
   set.
@@ -154,6 +156,17 @@ theorem contMDiffOn_euclideanForm [IsManifold 𝓘(ℝ, E) ∞ M] :
     simp only [Q, TangentBundle.coordChange_model_space, one_apply_eq_self]
     with_reducible_and_instances rfl
   exact (contMDiffAt_bilinearForm_pullback hQ hψ).contMDiffWithinAt
+
+/-- **A linear field is the Euclidean negative gradient**: on the source of a Morse chart in which
+a field `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, the Euclidean metric of the chart has
+`g (X, ·) = -df`. -/
+theorem euclideanForm_apply_left_eq_neg_mvfderiv {X : (y : M) → TangentSpace 𝓘(ℝ, E) y}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {y : M} (hy : y ∈ φ.toChart.source) (w : TangentSpace 𝓘(ℝ, E) y) :
+    φ.euclideanForm y (X y) w = -mvfderiv 𝓘(ℝ, E) f y w := by
+  rw [euclideanForm_apply, hφ y hy, φ.mvfderiv_apply hy, dotProduct, ← Finset.sum_neg_distrib]
+  simp
 
 /-- A metric is Euclidean in a Morse chart exactly when it equals the Euclidean metric of the chart
 on its source. -/

@@ -94,7 +94,7 @@ theorem isMonogenic_iff_exists_index_eq_one :
     exact ⟨IntegralPrimitiveElement.ofAdjoinEqTop hθ,
       IntegralPrimitiveElement.index_ofAdjoinEqTop hθ⟩
   · rintro ⟨θ, hθ⟩
-    refine ⟨θ.1, ?_⟩
+    refine ⟨θ.val, ?_⟩
     rw [← IntegralPrimitiveElement.adjoin_def]
     exact (IntegralPrimitiveElement.index_eq_one_iff θ).mp hθ
 
