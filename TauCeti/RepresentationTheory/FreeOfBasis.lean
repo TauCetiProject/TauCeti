@@ -30,6 +30,8 @@ the generator `single i (single h 1)` corresponding to `ρ h (b ⟨i, 1⟩)`
 
 * `Representation.freeEquivOfBasis`: a basis freely permuted by the action identifies the
   representation with the free representation on the labels.
+* `Representation.monomialRescaledBasis`: rescaling a monomial basis along group translates so
+  that the group permutes the rescaled basis without scalars.
 * `Representation.freeEquivOfMonomialBasis`: a basis on which a group acts monomially and freely on
   the index set identifies the representation with the free representation on the labels.
 
@@ -113,7 +115,9 @@ theorem isUnit_of_apply_basis_eq_smul {k G V X : Type*} [Semiring k] [Group G]
     simpa [one_smul] using h
   exact ⟨⟨c, d, hcd, hdc⟩, rfl⟩
 
-variable {k G V ι X : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V]
+section Rescale
+
+variable {k G V ι X : Type*} [Semiring k] [Group G] [AddCommMonoid V] [Module k V]
   (ρ : Representation k G V) (b : Module.Basis X k V) (e : (Σ _ : ι, G) ≃ X)
   (hb : ∀ (g h : G) (i : ι), ∃ c : k, ρ g (b (e ⟨i, h⟩)) = c • b (e ⟨i, g * h⟩))
 
@@ -127,8 +131,10 @@ private lemma apply_basis_eq_repr_smul (g h : G) (i : ι) :
     rw [hc, map_smul, b.repr_self, Finsupp.smul_apply, Finsupp.single_eq_same, smul_eq_mul, mul_one]
   rw [hrepr, hc]
 
-/-- Rescaling `b` so that the basis vector at `e ⟨i, h⟩` is `ρ h (b (e ⟨i, 1⟩))`. -/
-private def monomialRescaledBasis : Module.Basis X k V :=
+/-- **Rescaling a monomial basis along group translates.** Given a basis `b` on which `G` acts
+monomially along `e`, rescales `b` so that the basis vector at `e ⟨i, h⟩` is
+`ρ h (b (e ⟨i, 1⟩))`. -/
+def monomialRescaledBasis : Module.Basis X k V :=
   b.isUnitSMul (w := fun x ↦ b.repr (ρ (e.symm x).2 (b (e ⟨(e.symm x).1, 1⟩))) x) fun x ↦ by
     have h1 := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2 1 (e.symm x).1
     have h2 := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2⁻¹ (e.symm x).2 (e.symm x).1
@@ -136,12 +142,21 @@ private def monomialRescaledBasis : Module.Basis X k V :=
     rw [inv_mul_cancel, _root_.Equiv.apply_symm_apply] at h2
     exact ρ.isUnit_of_apply_basis_eq_smul b h1 h2
 
-private lemma monomialRescaledBasis_apply (i : ι) (h : G) :
-    monomialRescaledBasis ρ b e hb (e ⟨i, h⟩) = ρ h (b (e ⟨i, 1⟩)) := by
+/-- The rescaled basis `Representation.monomialRescaledBasis` sends `e ⟨i, h⟩` to
+`ρ h (b (e ⟨i, 1⟩))`. -/
+@[simp]
+theorem monomialRescaledBasis_apply (i : ι) (h : G) :
+    ρ.monomialRescaledBasis b e hb (e ⟨i, h⟩) = ρ h (b (e ⟨i, 1⟩)) := by
   rw [monomialRescaledBasis, Module.Basis.isUnitSMul_apply, e.symm_apply_apply]
   have h1 := apply_basis_eq_repr_smul ρ b e hb h 1 i
   rw [mul_one] at h1
   exact h1.symm
+
+end Rescale
+
+variable {k G V ι X : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V]
+  (ρ : Representation k G V) (b : Module.Basis X k V) (e : (Σ _ : ι, G) ≃ X)
+  (hb : ∀ (g h : G) (i : ι), ∃ c : k, ρ g (b (e ⟨i, h⟩)) = c • b (e ⟨i, g * h⟩))
 
 /-- **A representation with a freely permuted monomial basis is free.** If the basis `b` of `ρ` is
 indexed, through `e`, by `Σ _ : ι, G`, and `ρ g` sends each `b (e ⟨i, h⟩)` to a scalar multiple of

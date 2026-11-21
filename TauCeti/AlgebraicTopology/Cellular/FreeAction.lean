@@ -363,14 +363,27 @@ variable {n : ℕ} {ι : Type w} (s : ι → cell C n)
     Function.Bijective (fun a ↦ (Quotient.mk'' (s a) :
       MulAction.orbitRel.Quotient G (cell C n))))
 
+/-- The cellular chain representation acts monomially on `TauCeti.cellularChainBasis` along the
+orbit decomposition `TauCeti.sigmaSMulCellEquiv`. -/
+private lemma cellActionChainRepresentation_monomial :
+    ∀ (g h : G) (a : ι), ∃ c : R,
+      cellActionChainRepresentation C hcell R n g
+          (cellularChainBasis C R n (sigmaSMulCellEquiv hcell hfree s hs ⟨a, h⟩)) =
+        c • cellularChainBasis C R n (sigmaSMulCellEquiv hcell hfree s hs ⟨a, g * h⟩) :=
+  fun g h a ↦
+    let := cellMulAction hcell n
+    ⟨cellActionScale C hcell R g (h • s a), by
+      rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply,
+        cellActionChainRepresentation_cellularChainBasis, ← smul_smul]⟩
+
 /-- **The orbit-adapted cellular basis** associated with orbit representatives `s`: obtained from
-`TauCeti.cellularChainBasis` by rescaling each cell `g • s a` by `TauCeti.cellActionUnit`, so that
-the vector of `g • s a` is the image under `g` of the cellular basis vector of `s a`. -/
+`TauCeti.cellularChainBasis` via `Representation.monomialRescaledBasis`, so that the vector of
+`g • s a` is the image under `g` of the cellular basis vector of `s a`. -/
 def cellActionOrbitBasis :
     Module.Basis (cell C n) R (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R) :=
-  (cellularChainBasis C R n).unitsSMul fun c ↦
-    cellActionUnit C hcell R ((sigmaSMulCellEquiv hcell hfree s hs).symm c).2
-      (s ((sigmaSMulCellEquiv hcell hfree s hs).symm c).1)
+  (cellActionChainRepresentation C hcell R n).monomialRescaledBasis (cellularChainBasis C R n)
+    (sigmaSMulCellEquiv hcell hfree s hs)
+    (cellActionChainRepresentation_monomial C hcell hfree R s hs)
 
 /-- On the cell `g • s a` indexed by `⟨a, g⟩`, `TauCeti.cellActionOrbitBasis` is the image under
 `g` of the cellular basis vector of `s a`. -/
@@ -378,9 +391,8 @@ theorem cellActionOrbitBasis_sigmaSMulCellEquiv (a : ι) (g : G) :
     cellActionOrbitBasis C hcell hfree R s hs (sigmaSMulCellEquiv hcell hfree s hs ⟨a, g⟩) =
       cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n (s a)) := by
   let := cellMulAction hcell n
-  unfold cellActionOrbitBasis
-  rw [Module.Basis.unitsSMul_apply, Equiv.symm_apply_apply, Units.smul_def, val_cellActionUnit,
-    sigmaSMulCellEquiv_apply, cellActionChainRepresentation_cellularChainBasis]
+  rw [cellActionOrbitBasis, Representation.monomialRescaledBasis_apply, sigmaSMulCellEquiv_apply,
+    one_smul]
 
 /-- On the translate `g • s a` of an orbit representative, `TauCeti.cellActionOrbitBasis` is the
 image under `g` of the cellular basis vector of `s a`. -/
@@ -420,11 +432,8 @@ generator `single a (single 1 1)`. -/
 def cellActionChainRepIsoFree :
     Rep.of (cellActionChainRepresentation C hcell R n) ≅ Rep.free R G ι :=
   (Rep.mkIso ((cellActionChainRepresentation C hcell R n).freeEquivOfMonomialBasis
-    (cellularChainBasis C R n) (sigmaSMulCellEquiv hcell hfree s hs) fun g h a ↦
-      let := cellMulAction hcell n
-      ⟨cellActionScale C hcell R g (h • s a), by
-        rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply,
-          cellActionChainRepresentation_cellularChainBasis, ← smul_smul]⟩)).symm
+    (cellularChainBasis C R n) (sigmaSMulCellEquiv hcell hfree s hs)
+    (cellActionChainRepresentation_monomial C hcell hfree R s hs))).symm
 
 /-- The generator `single a (single g 1)` of `Rep.free R G ι` corresponds under
 `TauCeti.cellActionChainRepIsoFree` to the `g`-translate of the cellular basis vector of `s a`. -/
@@ -464,10 +473,9 @@ theorem cellActionChainRepIsoFree_hom_hom_cellularChainBasis_smul (a : ι) (g : 
     Rep.mkIso_inv_hom_apply]
   refine (Representation.freeEquivOfMonomialBasis_symm_basis _ _ _ _ a g).trans ?_
   congr 2
-  rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply, one_smul,
-    cellActionChainRepresentation_cellularChainBasis, map_smul, Module.Basis.repr_self,
-    Finsupp.smul_single, smul_eq_mul, mul_one, inv_smul_smul, Finsupp.single_eq_same,
-    ← val_cellActionUnit, ← cellActionUnit_inv]
+  rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply, one_smul]
+  nth_rw 2 [← inv_smul_smul g (s a)]
+  rw [← cellActionScale_def, ← val_cellActionUnit, ← cellActionUnit_inv]
 
 end Representatives
 

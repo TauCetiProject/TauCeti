@@ -54,8 +54,6 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
 * `TauCeti.instCWComplexClassifyingSpace`: the CW structure on `classifyingSpace G`.
 * `TauCeti.classifyingSpaceCellEquiv`: its `n`-cells are the `G`-orbits of `n`-simplices of the
   countable join.
-* `TauCeti.classifyingSpaceProjCellularMap`: the universal covering projection `EG → BG` on the
-  universal subsets used by cellular maps.
 
 ## Main results
 
@@ -446,31 +444,15 @@ theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
   rw [← c.image_characteristicMap_sphere, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
 
-open CategoryTheory in
-variable (G) in
-/-- The universal covering projection `EG → BG`, restricted to the universal subsets used by
-cellular maps. -/
-def classifyingSpaceProjCellularMap :
-    TopCat.of (univ : Set (universalGSpace G)) ⟶
-      TopCat.of (univ : Set (classifyingSpace G)) :=
-  TopCat.ofHom ((⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩ :
-    C(universalGSpace G, classifyingSpace G)).restrictPreimage univ)
-
-/-- On underlying points, `TauCeti.classifyingSpaceProjCellularMap` is `classifyingSpaceProj`. -/
-@[simp]
-theorem coe_classifyingSpaceProjCellularMap_apply
-    (x : (univ : Set (universalGSpace G))) :
-    (classifyingSpaceProjCellularMap G x : classifyingSpace G) = classifyingSpaceProj G x.val :=
-  Set.restrictPreimage_coe univ (classifyingSpaceProj G) x
-
 variable (G) in
 /-- **The universal covering projection `EG → BG` is cellular.** For the CW structures on Milnor's
 countable join and classifying space, the projection `classifyingSpaceProj G` carries every
 skeleton of `universalGSpace G` into the corresponding skeleton of `classifyingSpace G`. -/
 theorem isCellular_classifyingSpaceProj :
     IsCellular (univ : Set (universalGSpace G)) (univ : Set (classifyingSpace G))
-      (classifyingSpaceProjCellularMap G) := by
-  rw [classifyingSpaceProjCellularMap, TopCat.ofHom_restrictPreimage_univ_eq]
+      (TopCat.ofHom ((⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩ :
+        C(universalGSpace G, classifyingSpace G)).restrictPreimage univ)) := by
+  rw [TopCat.ofHom_restrictPreimage_univ_eq]
   exact (isQuotientCoveringMap_classifyingSpaceProj G).isCellular_cwComplexQuotient
     exists_smul_openCell_eq fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq
 
