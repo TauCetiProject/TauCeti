@@ -24,7 +24,7 @@ These examples exercise `TauCeti.Algebra.Homology.DerivedCategory.CohomologyActi
 objects in `DerivedCategory (ModuleCat ℤ)`:
 
 * the general quotient isomorphism
-  `α.range ⧸ imageGhostIdeal α ≃ₐ[A] ((X.cohomologyAction A).comp α).range`;
+  `α.range ⧸ α.imageGhostIdeal ≃ₐ[A] ((X.cohomologyAction A).comp α).range`;
 * the zero object `0`, where every endomorphism is a ghost (`actionGhostKer = ⊤`,
   `imageGhostIdeal = ⊤`) while `ghostIdeal = ⊥` in the trivial endomorphism ring;
 * `ℤ[0]` with scalar action `ℤ →ₐ[ℤ] End ℤ[0]` (zero ghost ideal, faithful cohomology action) and
@@ -35,8 +35,8 @@ objects in `DerivedCategory (ModuleCat ℤ)`:
 * `TauCeti.Examples.CohomologyAction.exists_nonzero_sq_zero_ghost`: `(ℤ/2)[0] ⊞ (ℤ/2)[1]` admits a
   nonzero square-zero ghost constructed from the non-split extension
   `0 → ℤ/2 → ℤ/4 → ℤ/2 → 0`, giving `RingHom.ker α = (2, X^2)` strictly contained in
-  `actionGhostKer α = (2, X)`, a nonzero square-zero `imageGhostIdeal α`, and a nontrivial
-  quotient `cohomologyImageQuotientEquiv α`.
+  `actionGhostKer α = (2, X)`, a nonzero square-zero `α.imageGhostIdeal`, and a nontrivial
+  quotient `α.imageGhostIdealQuotientEquivCohomologyImage`.
 -/
 
 public section
@@ -51,8 +51,8 @@ universe t' t w v u
 example {A : Type u} [CommRing A] {C : Type v} [Category.{w} C] [Abelian C] [Linear A C]
     [HasDerivedCategory.{t} C] {H : Type t'} [Semiring H] [Algebra A H]
     (X : DerivedCategory C) (α : H →ₐ[A] End X) :
-    Nonempty ((α.range ⧸ imageGhostIdeal α) ≃ₐ[A] ((X.cohomologyAction A).comp α).range) :=
-  ⟨cohomologyImageQuotientEquiv α⟩
+    Nonempty ((α.range ⧸ α.imageGhostIdeal) ≃ₐ[A] ((X.cohomologyAction A).comp α).range) :=
+  ⟨α.imageGhostIdealQuotientEquivCohomologyImage⟩
 
 attribute [local instance] HasDerivedCategory.standard
 
@@ -62,8 +62,9 @@ example :
     X.cohomologyAction ℤ (algebraMap ℤ (End X) 7) = 0 ∧
     X.ghostIdeal = ⊥ ∧
     actionGhostKer α = ⊤ ∧
-    imageGhostIdeal α = ⊤ ∧
-    cohomologyImageQuotientEquiv α (Ideal.Quotient.mk _ (α.rangeRestrict 7)) = 0 := by
+    α.imageGhostIdeal = ⊤ ∧
+    α.imageGhostIdealQuotientEquivCohomologyImage
+      (Ideal.Quotient.mk _ (α.rangeRestrict 7)) = 0 := by
   intro X α
   have hX : IsZero X := isZero_zero _
   have hEnd : Subsingleton (End X) :=
@@ -77,7 +78,7 @@ example :
   · ext r
     simp only [mem_actionGhostKer_iff, Submodule.mem_top, iff_true]
     rw [Subsingleton.elim (α r) 0]
-    exact isGhost_zero
+    exact End.isGhost_zero
   · ext x
     simp [Subsingleton.elim x.1 0]
   · apply Subtype.ext
@@ -93,8 +94,8 @@ example :
     e.hom ((X.cohomologyAction ℤ (algebraMap ℤ (End X) 2) 0).asHom (e.inv 3)) = (6 : ℤ) ∧
     X.ghostIdeal = ⊥ ∧
     actionGhostKer α = ⊥ ∧
-    imageGhostIdeal α = ⊥ ∧
-    e.hom (((cohomologyImageQuotientEquiv α
+    α.imageGhostIdeal = ⊥ ∧
+    e.hom (((α.imageGhostIdealQuotientEquivCohomologyImage
       (Ideal.Quotient.mk _ (α.rangeRestrict 2))).1 0).asHom (e.inv 3)) = (6 : ℤ) := by
   intro X α e
   have hscalar : ∀ n : ℤ,
@@ -105,8 +106,9 @@ example :
       simp [End.intCast_asHom]
     rw [h1]
     simp [Iso.inv_hom_id_apply]
-  have hghost0 : ∀ f : End X, IsGhost f → f = 0 := fun f hf ↦
-    End.ext <| (homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE f.asHom 0).mp (isGhost_iff.mp hf 0)
+  have hghost0 : ∀ f : End X, f.IsGhost → f = 0 := fun f hf ↦
+    End.ext <| (homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE f.asHom 0).mp
+      (End.isGhost_iff.mp hf 0)
   have halg_inj : Function.Injective (algebraMap ℤ (End X)) := by
     intro a b hab
     have h := congrArg (fun g ↦ e.hom ((X.cohomologyAction ℤ g 0).asHom (e.inv 3))) hab
@@ -120,19 +122,20 @@ example :
     simp only [mem_actionGhostKer_iff, Ideal.mem_bot]
     exact ⟨fun h ↦ halg_inj (by simpa [α] using hghost0 _ h), fun h ↦ by simp [h]⟩
   · ext x
-    simp only [mem_imageGhostIdeal_iff, Ideal.mem_bot]
+    simp only [AlgHom.mem_imageGhostIdeal_iff, Ideal.mem_bot]
     exact ⟨fun h ↦ Subtype.ext (hghost0 x.1 h), fun h ↦ by simp [h]⟩
-  · rw [cohomologyImageQuotientEquiv_mk_val]
+  · rw [AlgHom.imageGhostIdealQuotientEquivCohomologyImage_mk_val]
     exact (hscalar 2).trans (by decide)
 
 example :
     let X := (singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ ℤ)
     let α : Polynomial ℤ →ₐ[ℤ] End X :=
       (Algebra.ofId ℤ (End X)).comp (Polynomial.aeval (0 : ℤ))
-    actionGhostKer α = Ideal.span {Polynomial.X} ∧ imageGhostIdeal α = ⊥ := by
+    actionGhostKer α = Ideal.span {Polynomial.X} ∧ α.imageGhostIdeal = ⊥ := by
   intro X α
-  have hghost0 : ∀ f : End X, IsGhost f → f = 0 := fun f hf ↦
-    End.ext <| (homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE f.asHom 0).mp (isGhost_iff.mp hf 0)
+  have hghost0 : ∀ f : End X, f.IsGhost → f = 0 := fun f hf ↦
+    End.ext <| (homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE f.asHom 0).mp
+      (End.isGhost_iff.mp hf 0)
   have hscalar : ∀ n : ℤ, algebraMap ℤ (End X) n = 0 → n = 0 := by
     intro n hn
     let e : (homologyFunctor (ModuleCat.{0} ℤ) 0).obj X ≅ ModuleCat.of ℤ ℤ :=
@@ -154,9 +157,9 @@ example :
       exact hscalar (p.coeff 0) (by rw [← hαp p]; exact hghost0 _ hp)
     · intro hp
       rw [hαp p, hp, map_zero]
-      exact isGhost_zero
+      exact End.isGhost_zero
   · ext x
-    simp only [mem_imageGhostIdeal_iff, Ideal.mem_bot]
+    simp only [AlgHom.mem_imageGhostIdeal_iff, Ideal.mem_bot]
     exact ⟨fun h ↦ Subtype.ext (hghost0 x.1 h), fun h ↦ by simp [h]⟩
 
 example :
@@ -371,14 +374,14 @@ private theorem zmod2_ghost_ker :
     · simp [RingHom.mem_ker, zmod2_ghost_sq]
 
 private theorem zmod2_action_ghost_ker :
-    IsGhost zmod2Ghost ∧
+    zmod2Ghost.IsGhost ∧
       actionGhostKer zmod2Action = Ideal.span {(2 : Polynomial ℤ), Polynomial.X} := by
   have ⟨h2M, _, h2s0, hid0⟩ := zmod2_two_smul_id_eq_zero
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have hord0 :
       addOrderOf (𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2)))) = 2 :=
     addOrderOf_eq_prime (by simpa [← natCast_zsmul] using h2s0) hid0
-  have hghostx : IsGhost zmod2Ghost := isGhost_iff.mpr fun i ↦ by
+  have hghostx : zmod2Ghost.IsGhost := End.isGhost_iff.mpr fun i ↦ by
     have hδi : (homologyFunctor (ModuleCat.{0} ℤ) i).map zmod2Ext1Map = 0 := by
       rcases lt_or_ge i 1 with hlt | hge'
       · exact (isZero_of_isGE _ 1 i hlt).eq_of_src _ _
@@ -386,9 +389,9 @@ private theorem zmod2_action_ghost_ker :
     simp [hδi]
   refine ⟨hghostx, le_antisymm (fun p hp ↦ ?_) (Ideal.span_le.mpr ?_)⟩
   · have hp0 : zmod2M.cohomologyAction ℤ (zmod2Action p) = 0 :=
-      (isGhost_iff_cohomologyAction_eq_zero ℤ).mp (mem_actionGhostKer_iff.mp hp)
+      (End.isGhost_iff_cohomologyAction_eq_zero ℤ).mp (mem_actionGhostKer_iff.mp hp)
     have hcohx : zmod2M.cohomologyAction ℤ zmod2Ghost = 0 :=
-      (isGhost_iff_cohomologyAction_eq_zero ℤ).mp hghostx
+      (End.isGhost_iff_cohomologyAction_eq_zero ℤ).mp hghostx
     have h0 : (p.coeff 0 : ℤ) •
         𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2))) = 0 := by
       have hcomp := congrArg (fun g ↦ (homologyFunctor (ModuleCat.{0} ℤ) 0).map biprod.inl ≫
@@ -415,13 +418,13 @@ private theorem zmod2_action_ghost_ker :
     · rw [SetLike.mem_coe, mem_actionGhostKer_iff]
       have h2 : zmod2Action 2 = 0 := by rw [map_ofNat]; simpa [zsmul_one] using h2M
       rw [h2]
-      exact isGhost_zero
+      exact End.isGhost_zero
     · simpa [mem_actionGhostKer_iff] using hghostx
 
 /-- There exists an object `X` in `DerivedCategory (ModuleCat ℤ)` concentrated in `[0, 1]` and an
 algebra action `α : Polynomial ℤ →ₐ[ℤ] End X` whose image ghost ideal is nonzero and square-zero,
 with `RingHom.ker α = (2, X^2)` strictly contained in `actionGhostKer α = (2, X)` and a nontrivial
-quotient `cohomologyImageQuotientEquiv α`. -/
+quotient `α.imageGhostIdealQuotientEquivCohomologyImage`. -/
 theorem exists_nonzero_sq_zero_ghost :
     ∃ (X : DerivedCategory (ModuleCat.{0} ℤ)) (α : Polynomial ℤ →ₐ[ℤ] End X) (g : End X),
       X.IsGE 0 ∧ X.IsLE 1 ∧
@@ -429,11 +432,11 @@ theorem exists_nonzero_sq_zero_ghost :
       X.cohomologyAction ℤ g = 0 ∧ g ∈ X.ghostIdeal ∧
       RingHom.ker α = Ideal.span {(2 : Polynomial ℤ), Polynomial.X ^ 2} ∧
       actionGhostKer α = Ideal.span {(2 : Polynomial ℤ), Polynomial.X} ∧
-      α.rangeRestrict Polynomial.X ∈ imageGhostIdeal α ∧
-      α.rangeRestrict Polynomial.X ≠ 0 ∧ (imageGhostIdeal α) ^ 2 = ⊥ ∧
-      cohomologyImageQuotientEquiv α
+      α.rangeRestrict Polynomial.X ∈ α.imageGhostIdeal ∧
+      α.rangeRestrict Polynomial.X ≠ 0 ∧ α.imageGhostIdeal ^ 2 = ⊥ ∧
+      α.imageGhostIdealQuotientEquivCohomologyImage
         (Ideal.Quotient.mk _ (α.rangeRestrict Polynomial.X)) = 0 ∧
-      cohomologyImageQuotientEquiv α
+      α.imageGhostIdealQuotientEquivCohomologyImage
         (Ideal.Quotient.mk _ (α.rangeRestrict 1)) ≠ 0 := by
   have ⟨hge, hle⟩ := zmod2_biprod_isGE_isLE
   have ⟨_, _, _, hid0⟩ := zmod2_two_smul_id_eq_zero
@@ -442,22 +445,23 @@ theorem exists_nonzero_sq_zero_ghost :
     simp [Category.assoc]
   have hxne : zmod2Ghost ≠ 0 := fun h ↦ zmod2Ext1Map_ne_zero (by rw [← hUR, h]; simp)
   have hcohx : zmod2M.cohomologyAction ℤ zmod2Ghost = 0 :=
-    (isGhost_iff_cohomologyAction_eq_zero ℤ).mp hghostx
-  have h1ne : cohomologyImageQuotientEquiv zmod2Action
+    (End.isGhost_iff_cohomologyAction_eq_zero ℤ).mp hghostx
+  have h1ne : zmod2Action.imageGhostIdealQuotientEquivCohomologyImage
       (Ideal.Quotient.mk _ (zmod2Action.rangeRestrict 1)) ≠ 0 := by
     intro h0
-    have h1g : IsGhost (1 : End zmod2M) := (isGhost_iff_cohomologyAction_eq_zero ℤ).mpr
-      (by simpa [cohomologyImageQuotientEquiv_mk_val] using congrArg Subtype.val h0)
+    have h1g : (1 : End zmod2M).IsGhost := (End.isGhost_iff_cohomologyAction_eq_zero ℤ).mpr
+      (by simpa [AlgHom.imageGhostIdealQuotientEquivCohomologyImage_mk_val] using
+        congrArg Subtype.val h0)
     have hidH : (homologyFunctor (ModuleCat.{0} ℤ) 0).map
         (𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2)))) = 0 := by
       have := congrArg (fun f ↦ (homologyFunctor (ModuleCat.{0} ℤ) 0).map biprod.inl ≫ f ≫
-        (homologyFunctor (ModuleCat.{0} ℤ) 0).map biprod.fst) (isGhost_iff.mp h1g 0)
+        (homologyFunctor (ModuleCat.{0} ℤ) 0).map biprod.fst) (End.isGhost_iff.mp h1g 0)
       simpa [Category.id_comp, ← Functor.map_comp] using this
     exact hid0 ((homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE _ 0).mp hidH)
   exact ⟨zmod2M, zmod2Action, zmod2Ghost, hge, hle, hxne, zmod2_ghost_sq, hcohx,
     mem_ghostIdeal_iff.mpr hghostx, zmod2_ghost_ker, hghostker, by simpa using hghostx,
     fun h ↦ hxne (by simpa using congrArg Subtype.val h),
-    imageGhostIdeal_pow_eq_bot zmod2Action 0 1 2 (by omega),
+    zmod2Action.imageGhostIdeal_pow_eq_bot 0 1 2 (by omega),
     Subtype.ext (by simpa using hcohx), h1ne⟩
 
 example :

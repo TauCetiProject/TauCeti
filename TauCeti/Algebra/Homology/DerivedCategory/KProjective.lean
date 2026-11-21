@@ -46,7 +46,7 @@ namespace TauCeti
 /-- Descending a chain-level endomorphism through `HomotopyCategory.quotient` and then
 `DerivedCategory.Qh` agrees with descending directly through `DerivedCategory.Q`, up to conjugation
 by `quotientCompQhIso`. -/
-theorem conjAlgEquiv_comp_Qh_mapEndAlgHom_comp_quotient (R : Type t) [CommSemiring R]
+theorem conjAlgEquiv_comp_Qh_mapEndAlgHom_comp_quotient_mapEndAlgHom (R : Type t) [CommSemiring R]
     {C : Type u} [Category.{v} C] [Abelian C] [Linear R C] [HasDerivedCategory.{w} C]
     [Linear R (DerivedCategory C)] [(Qh (C := C)).Linear R] [(Q (C := C)).Linear R]
     (K : CochainComplex C ℤ) :
@@ -128,8 +128,8 @@ theorem homotopyToDerivedEndEquivQ_apply_asHom [(Qh (C := C)).Linear R]
 /-- Applying `homotopyToDerivedEndEquivQ` to the homotopy class of a chain endomorphism `f : End K`
 gives `Q.mapEndAlgHom R K f`. -/
 @[simp]
-theorem homotopyToDerivedEndEquivQ_quotient [(Qh (C := C)).Linear R] [(Q (C := C)).Linear R]
-    (K : CochainComplex C ℤ) [K.IsKProjective] (f : End K) :
+theorem homotopyToDerivedEndEquivQ_apply_quotient_mapEndAlgHom [(Qh (C := C)).Linear R]
+    [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) [K.IsKProjective] (f : End K) :
     homotopyToDerivedEndEquivQ R K
       ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K f) =
       Q.mapEndAlgHom R K f := by

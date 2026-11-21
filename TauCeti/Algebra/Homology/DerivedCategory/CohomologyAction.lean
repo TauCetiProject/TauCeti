@@ -39,7 +39,7 @@ Main declarations:
   * `DerivedCategory.cohomologyActionRingHom` and `DerivedCategory.cohomologyAction`: for an
     object `X : DerivedCategory C`, the ring homomorphism (and, in a linear setting, `R`-algebra
     homomorphism) `End X → ∀ i : ℤ, End ((homologyFunctor C i).obj X)` sending `f` to `(H^i(f))_i`.
-  * `TauCeti.DerivedCategory.IsGhost`: predicate asserting that an endomorphism `f : End X` induces
+  * `CategoryTheory.End.IsGhost`: predicate asserting that an endomorphism `f : End X` induces
     zero on every `H^i(X)`.
   * `DerivedCategory.ghostIdeal`: the two-sided ideal of ghosts in `End X`, defined via
     `TwoSidedIdeal.ker X.cohomologyActionRingHom` independently of any coefficient ring `R`.
@@ -59,8 +59,8 @@ Main declarations:
     `α : F` (`[RingHomClass F H (End X)]`) and ideal `I ≤ actionGhostKer α`, `I ^ n ≤ RingHom.ker α`
     whenever `b < a + n`.
   * `TauCeti.DerivedCategory.ghostIdeal_asIdeal_pow_eq_bot`,
-    `TauCeti.DerivedCategory.imageGhostIdeal`, `TauCeti.DerivedCategory.imageGhostIdeal_pow_eq_bot`,
-    and `TauCeti.DerivedCategory.cohomologyImageQuotientEquiv`: the ghost ideal on `α.range` is
+    `AlgHom.imageGhostIdeal`, `AlgHom.imageGhostIdeal_pow_eq_bot`,
+    and `AlgHom.imageGhostIdealQuotientEquivCohomologyImage`: the ghost ideal on `α.range` is
     nilpotent of exponent at most `(b - a).toNat + 1`, and its quotient is isomorphic as an
     `R`-algebra to `((X.cohomologyAction R).comp α).range`.
 
@@ -135,9 +135,9 @@ end CohomologyAction
 
 end DerivedCategory
 
-namespace TauCeti.DerivedCategory
+namespace CategoryTheory.End
 
-open _root_.DerivedCategory
+open DerivedCategory
 
 section Ghost
 
@@ -145,56 +145,76 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- An endomorphism `f : End X` in `DerivedCategory C` is a ghost if it induces zero on every
 cohomology object `H^i(X)`. -/
-def IsGhost {X : _root_.DerivedCategory C} (f : End X) : Prop :=
+def IsGhost {X : DerivedCategory C} (f : End X) : Prop :=
   ∀ i : ℤ, (homologyFunctor C i).map f.asHom = 0
 
-/-- Characterization of `IsGhost`. -/
-theorem isGhost_iff {X : _root_.DerivedCategory C} {f : End X} :
-    IsGhost f ↔ ∀ i : ℤ, (homologyFunctor C i).map f.asHom = 0 :=
+/-- Characterization of `End.IsGhost`. -/
+theorem isGhost_iff {X : DerivedCategory C} {f : End X} :
+    f.IsGhost ↔ ∀ i : ℤ, (homologyFunctor C i).map f.asHom = 0 :=
   Iff.rfl
 
 /-- An endomorphism is a ghost if and only if it lies in the kernel of
 `DerivedCategory.cohomologyActionRingHom`. -/
-theorem isGhost_iff_cohomologyActionRingHom_eq_zero {X : _root_.DerivedCategory C} {f : End X} :
-    IsGhost f ↔ X.cohomologyActionRingHom f = 0 := by
+theorem isGhost_iff_cohomologyActionRingHom_eq_zero {X : DerivedCategory C} {f : End X} :
+    f.IsGhost ↔ X.cohomologyActionRingHom f = 0 := by
   constructor
   · intro hf
     ext i
-    simpa [cohomologyActionRingHom_apply_asHom] using hf i
+    simpa [DerivedCategory.cohomologyActionRingHom_apply_asHom] using hf i
   · intro hf i
-    simpa [cohomologyActionRingHom_apply_asHom] using congrArg (fun g ↦ (g i).asHom) hf
+    simpa [DerivedCategory.cohomologyActionRingHom_apply_asHom] using
+      congrArg (fun g ↦ (g i).asHom) hf
+
+/-- The zero endomorphism is a ghost. -/
+@[simp]
+theorem isGhost_zero {X : DerivedCategory C} : (0 : End X).IsGhost := by
+  intro i
+  simp
+
+section Linear
+
+variable (R : Type t) [CommSemiring R] [Linear R C] [Linear R (DerivedCategory C)]
+  [∀ i : ℤ, (homologyFunctor C i).Linear R]
+
+/-- An endomorphism is a ghost if and only if it lies in the kernel of `cohomologyAction`. -/
+theorem isGhost_iff_cohomologyAction_eq_zero {X : DerivedCategory C} {f : End X} :
+    f.IsGhost ↔ X.cohomologyAction R f = 0 := by
+  rw [isGhost_iff_cohomologyActionRingHom_eq_zero, ← X.cohomologyAction_toRingHom R,
+    AlgHom.coe_toRingHom]
+
+end Linear
+
+end Ghost
+
+end CategoryTheory.End
+
+namespace TauCeti.DerivedCategory
+
+open _root_.DerivedCategory
+
+section GhostMembership
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- An endomorphism belongs to `X.ghostIdeal` if and only if it is a ghost. -/
 @[simp]
 theorem mem_ghostIdeal_iff {X : _root_.DerivedCategory C} {f : End X} :
-    f ∈ X.ghostIdeal ↔ IsGhost f := by
-  rw [ghostIdeal, TwoSidedIdeal.mem_ker, isGhost_iff_cohomologyActionRingHom_eq_zero]
-
-/-- The zero endomorphism is a ghost. -/
-@[simp]
-theorem isGhost_zero {X : _root_.DerivedCategory C} : IsGhost (0 : End X) := by
-  rw [← mem_ghostIdeal_iff]
-  exact X.ghostIdeal.zero_mem
+    f ∈ X.ghostIdeal ↔ f.IsGhost := by
+  rw [ghostIdeal, TwoSidedIdeal.mem_ker, End.isGhost_iff_cohomologyActionRingHom_eq_zero]
 
 section Linear
 
 variable (R : Type t) [CommSemiring R] [Linear R C] [Linear R (_root_.DerivedCategory C)]
   [∀ i : ℤ, (homologyFunctor C i).Linear R]
 
-/-- An endomorphism is a ghost if and only if it lies in the kernel of `cohomologyAction`. -/
-theorem isGhost_iff_cohomologyAction_eq_zero {X : _root_.DerivedCategory C} {f : End X} :
-    IsGhost f ↔ X.cohomologyAction R f = 0 := by
-  rw [isGhost_iff_cohomologyActionRingHom_eq_zero, ← X.cohomologyAction_toRingHom R,
-    AlgHom.coe_toRingHom]
-
-/-- Membership in `RingHom.ker (X.cohomologyAction R)` is equivalent to `IsGhost`. -/
+/-- Membership in `RingHom.ker (X.cohomologyAction R)` is equivalent to `End.IsGhost`. -/
 theorem mem_ringHom_ker_cohomologyAction_iff {X : _root_.DerivedCategory C} {f : End X} :
-    f ∈ RingHom.ker (X.cohomologyAction R) ↔ IsGhost f := by
-  rw [RingHom.mem_ker, isGhost_iff_cohomologyAction_eq_zero R]
+    f ∈ RingHom.ker (X.cohomologyAction R) ↔ f.IsGhost := by
+  rw [RingHom.mem_ker, End.isGhost_iff_cohomologyAction_eq_zero R]
 
 end Linear
 
-end Ghost
+end GhostMembership
 
 section GhostNilpotence
 
@@ -265,7 +285,7 @@ theorem list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero
 ordered product of `(b - a).toNat + 1` ghost endomorphisms of `X` vanishes. -/
 theorem list_prod_ofFn_eq_zero_of_isGE_of_isLE_of_isGhost {X : _root_.DerivedCategory C}
     (a b : ℤ) [X.IsGE a] [X.IsLE b] (fs : Fin ((b - a).toNat + 1) → End X)
-    (hfs : ∀ j, IsGhost (fs j)) :
+    (hfs : ∀ j, (fs j).IsGhost) :
     (List.ofFn fs).prod = 0 := by
   refine list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero a b (List.ofFn fs)
     (fun f hf i _ _ ↦ ?_) (by simp; omega)
@@ -282,7 +302,7 @@ noncomputable def actionGhostKer {H : Type t} [Semiring H] {X : _root_.DerivedCa
 @[simp]
 theorem mem_actionGhostKer_iff {H : Type t} [Semiring H] {X : _root_.DerivedCategory C}
     {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)] {α : F} {h : H} :
-    h ∈ actionGhostKer α ↔ IsGhost (α h) := by
+    h ∈ actionGhostKer α ↔ (α h).IsGhost := by
   rw [actionGhostKer, Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal, mem_ghostIdeal_iff]
 
 /-- The action ghost kernel of `α` is a two-sided ideal of `H`. -/
@@ -298,7 +318,7 @@ theorem ker_le_actionGhostKer {H : Type t} [Semiring H] {X : _root_.DerivedCateg
     RingHom.ker α ≤ actionGhostKer α := by
   intro h hh
   rw [mem_actionGhostKer_iff, RingHom.mem_ker.mp hh]
-  exact isGhost_zero
+  exact End.isGhost_zero
 
 /-- If `X` is concentrated in degrees `≤ b` and `I ≤ actionGhostKer α`, then every `x ∈ I ^ n`
 acts via a morphism factoring through `τ_{≤ a} X ⟶ X` whenever `a + n = b`. -/
@@ -316,7 +336,7 @@ theorem exists_comp_truncLEι_of_isLE_of_le_actionGhostKer_of_mem_pow {H : Type 
     cases n with
     | zero =>
       rw [Submodule.pow_one] at hx
-      have hghost : IsGhost (α x) := mem_actionGhostKer_iff.mp (hI hx)
+      have hghost : (α x).IsGhost := mem_actionGhostKer_iff.mp (hI hx)
       exact exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero (α x).asHom a b
         (hghost b) (by lia)
     | succ n =>
@@ -360,38 +380,44 @@ theorem ghostIdeal_asIdeal_pow_eq_bot {X : _root_.DerivedCategory C} (a b : ℤ)
 
 end GhostNilpotence
 
+end TauCeti.DerivedCategory
+
+namespace AlgHom
+
+open _root_.DerivedCategory TauCeti.DerivedCategory
+
 section ImageGhost
 
 variable {R : Type t} [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
   [HasDerivedCategory.{w} C] [Linear R (_root_.DerivedCategory C)]
 
-/-- The image ghost ideal of an `R`-algebra action `α : H →ₐ[R] End X`, consisting of all elements
-of `α.range` that act by zero on every cohomology object `H^i(X)`. -/
+/-- The image ghost ideal of an `R`-algebra action `α : H →ₐ[R] CategoryTheory.End X`, consisting
+of all elements of `α.range` that act by zero on every cohomology object `H^i(X)`. -/
 noncomputable def imageGhostIdeal {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] End X) : Ideal α.range :=
+    {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) : Ideal α.range :=
   actionGhostKer α.range.val
 
-/-- An element of `α.range` belongs to `imageGhostIdeal α` if and only if it is a ghost. -/
+/-- An element of `α.range` belongs to `α.imageGhostIdeal` if and only if it is a ghost. -/
 @[simp]
 theorem mem_imageGhostIdeal_iff {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} {α : H →ₐ[R] End X} {x : α.range} :
-    x ∈ imageGhostIdeal α ↔ IsGhost x.1 := by
+    {X : _root_.DerivedCategory C} {α : H →ₐ[R] CategoryTheory.End X} {x : α.range} :
+    x ∈ α.imageGhostIdeal ↔ x.1.IsGhost := by
   rw [imageGhostIdeal, mem_actionGhostKer_iff, Subalgebra.coe_val]
 
 /-- The image ghost ideal of `α` is a two-sided ideal of `α.range`. -/
 instance imageGhostIdeal_isTwoSided {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] End X) :
-    (imageGhostIdeal α).IsTwoSided := by
+    {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
+    α.imageGhostIdeal.IsTwoSided := by
   unfold imageGhostIdeal
   infer_instance
 
-/-- If `X` is concentrated in `[a, b]` and `b < a + n`, then `(imageGhostIdeal α) ^ n = ⊥`. -/
+/-- If `X` is concentrated in `[a, b]` and `b < a + n`, then `α.imageGhostIdeal ^ n = ⊥`. -/
 theorem imageGhostIdeal_pow_eq_bot {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] End X) (a b : ℤ) [X.IsGE a] [X.IsLE b]
-    (n : ℕ) (hn : b < a + n) :
-    (imageGhostIdeal α) ^ n = ⊥ :=
+    {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) (a b : ℤ) [X.IsGE a]
+    [X.IsLE b] (n : ℕ) (hn : b < a + n) :
+    α.imageGhostIdeal ^ n = ⊥ :=
   le_bot_iff.mp <|
-    (pow_le_ker_of_le_actionGhostKer α.range.val (imageGhostIdeal α) a b n le_rfl hn).trans
+    (pow_le_ker_of_le_actionGhostKer α.range.val α.imageGhostIdeal a b n le_rfl hn).trans
       fun _ hx ↦ Ideal.mem_bot.mpr (Subtype.ext (by simpa using RingHom.mem_ker.mp hx))
 
 end ImageGhost
@@ -405,25 +431,27 @@ variable {R : Type t} [CommRing R] {C : Type u} [Category.{v} C] [Abelian C]
 /-- The cohomology image quotient equivalence: the quotient of the derived image `α.range` by its
 image ghost ideal is isomorphic as an `R`-algebra to the cohomology image
 `((X.cohomologyAction R).comp α).range`. -/
-noncomputable def cohomologyImageQuotientEquiv {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] End X) :
-    (α.range ⧸ imageGhostIdeal α) ≃ₐ[R] ((X.cohomologyAction R).comp α).range :=
-  (Ideal.quotientEquivAlgOfEq R (show imageGhostIdeal α =
+noncomputable def imageGhostIdealQuotientEquivCohomologyImage {H : Type t'} [Semiring H]
+    [Algebra R H] {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
+    (α.range ⧸ α.imageGhostIdeal) ≃ₐ[R] ((X.cohomologyAction R).comp α).range :=
+  (Ideal.quotientEquivAlgOfEq R (show α.imageGhostIdeal =
       RingHom.ker ((X.cohomologyAction R).comp α.range.val) by
     ext x
-    simp [mem_imageGhostIdeal_iff, isGhost_iff_cohomologyAction_eq_zero R])).trans <|
+    simp [mem_imageGhostIdeal_iff,
+      CategoryTheory.End.isGhost_iff_cohomologyAction_eq_zero R])).trans <|
   (Ideal.quotientKerEquivRange ((X.cohomologyAction R).comp α.range.val)).trans <|
     Subalgebra.equivOfEq _ _ (by rw [Subalgebra.range_comp_val, ← AlgHom.range_comp])
 
-/-- Applying `cohomologyImageQuotientEquiv` to the class of `x : α.range` gives
+/-- Applying `α.imageGhostIdealQuotientEquivCohomologyImage` to the class of `x : α.range` gives
 `X.cohomologyAction R x.1`. -/
 @[simp]
-theorem cohomologyImageQuotientEquiv_mk_val {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] End X) (x : α.range) :
-    (cohomologyImageQuotientEquiv α (Ideal.Quotient.mk (imageGhostIdeal α) x)).1 =
-      X.cohomologyAction R x.1 := by
-  simp [cohomologyImageQuotientEquiv, Ideal.quotientKerEquivRange]
+theorem imageGhostIdealQuotientEquivCohomologyImage_mk_val {H : Type t'} [Semiring H]
+    [Algebra R H] {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X)
+    (x : α.range) :
+    (α.imageGhostIdealQuotientEquivCohomologyImage
+      (Ideal.Quotient.mk α.imageGhostIdeal x)).1 = X.cohomologyAction R x.1 := by
+  simp [imageGhostIdealQuotientEquivCohomologyImage, Ideal.quotientKerEquivRange]
 
 end CohomologyImageQuotient
 
-end TauCeti.DerivedCategory
+end AlgHom
