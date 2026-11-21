@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Injective.Bidual
-public import TauCeti.RingTheory.MatlisDuality.Artinian
+public import TauCeti.RingTheory.MatlisDuality.Artinian.Basic
 public import TauCeti.RingTheory.MatlisDuality.Endomorphism
+import TauCeti.Algebra.Module.Dual.Bidual
 
 /-!
 # Matlis duality for finitely generated modules

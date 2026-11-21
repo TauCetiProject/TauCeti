@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.RingTheory.Jacobson.Semiprimary
-import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Ideal-power torsion in essential extensions

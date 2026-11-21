@@ -25,8 +25,6 @@ characteristic, over a complete discrete valuation ring.
 
 ## Main results
 
-* `TauCeti.AdicCompletion.residueFieldEquiv`: the `R`-algebra equivalence
-  `ResidueField R ≃ₐ[R] ResidueField R̂` induced by `R → R̂`.
 * `TauCeti.AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 
@@ -47,22 +45,6 @@ namespace TauCeti.AdicCompletion
 section
 
 variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
-
-/-- The `R`-algebra equivalence `ResidueField R ≃ₐ[R] ResidueField R̂` induced by `R → R̂`. -/
-noncomputable def residueFieldEquiv (R : Type*) [CommRing R] [IsLocalRing R] [IsNoetherianRing R] :
-    ResidueField R ≃ₐ[R] ResidueField (AdicCompletion (maximalIdeal R) R) :=
-  have : IsLocalHom (Algebra.ofId R (AdicCompletion (maximalIdeal R) R)) :=
-    ⟨IsLocalHom.map_nonunit (f := algebraMap R (AdicCompletion (maximalIdeal R) R))⟩
-  AlgEquiv.ofBijective
-    (ResidueField.mapAlgHom (Algebra.ofId R (AdicCompletion (maximalIdeal R) R)))
-    (_root_.AdicCompletion.residueField_map_bijective R)
-
-/-- `residueFieldEquiv` agrees with `ResidueField.map` of the canonical map `R → R̂`. -/
-@[simp]
-theorem residueFieldEquiv_apply (x : ResidueField R) :
-    residueFieldEquiv R x =
-      ResidueField.map (algebraMap R (AdicCompletion (maximalIdeal R) R)) x :=
-  AlgEquiv.ofBijective_apply _ _ x
 
 /-- The completion of a Noetherian local ring at its maximal ideal has the same Krull dimension as
 the ring. -/

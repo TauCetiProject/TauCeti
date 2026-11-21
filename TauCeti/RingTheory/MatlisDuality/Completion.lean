@@ -5,33 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.LocalRing
-public import TauCeti.RingTheory.AdicCompletion.Finite
-public import TauCeti.RingTheory.Artinian.LocalRing
-public import TauCeti.RingTheory.MatlisDuality.Finite
-import TauCeti.RingTheory.AdicCompletion.LocalRing
+public import TauCeti.RingTheory.MatlisDuality.Artinian.Bidual
+import TauCeti.Algebra.Module.Dual.Bidual
+import TauCeti.RingTheory.AdicCompletion.Injective
+public import TauCeti.RingTheory.AdicCompletion.ResidueField
 import TauCeti.RingTheory.AdicCompletion.Small
+import TauCeti.RingTheory.Artinian.LocalRing
 
 /-!
-# Matlis duality for Artinian modules and over the completion
+# General Matlis duality over the completion
 
 Let `R` be a commutative Noetherian local ring with maximal ideal `𝔪`, residue field `κ`, and
 `𝔪`-adic completion `R̂`, and let `ι : κ →ₗ[R] E` be an injective envelope of `κ`. This file
-completes Matlis duality on the Artinian side and establishes the general duality between Artinian
-`R`-modules and finitely generated `R̂`-modules without assuming that `R` is complete or that `κ`
-is finite.
-
-Every Artinian module over a commutative local ring embeds into a finite power `Fin n → E`
-(`TauCeti.exists_injective_linearMap_fin_of_isArtinian` in `TauCeti.RingTheory.Artinian.LocalRing`).
-When `E` is the injective hull of `κ` over a Noetherian local ring, dualizing this embedding
-against `End_R(E) ≃ R̂` shows that `Hom_R(M, E)` is a finite `R̂`-module for every Artinian
-`R`-module `M`, establishing the converse to
-`TauCeti.IsInjectiveEnvelope.isArtinian_of_finite_adicCompletion_linearMap`.
-
-When `R` is complete, `Hom_R(M, E)` is finite over `R` iff `M` is Artinian, `Hom_R(M, E)` is
-Artinian iff `M` is finite over `R`, and applying finite-module biduality to `Hom_R(M, E)` proves
-that the cokernel of evaluation `M → Hom_R(Hom_R(M, E), E)` has trivial Matlis dual and hence
-vanishes (`TauCeti.IsInjectiveEnvelope.bijective_applyₗ_of_isArtinian`).
+establishes the general Matlis duality between Artinian `R`-modules and finitely generated
+`R̂`-modules without assuming that `R` is complete or that `κ` is finite.
 
 Over an arbitrary Noetherian local ring `R`, the canonical `R̂`-module structure on `E` makes `E`
 an injective envelope of the residue field of `R̂` (`TauCeti.IsInjectiveEnvelope.adicCompletion`).
@@ -43,15 +30,6 @@ finite `R̂`-modules, and identifies the double Matlis dual `Hom_R(Hom_R(N, E), 
 
 ## Main results
 
-* `TauCeti.IsInjectiveEnvelope.finite_adicCompletion_linearMap_of_isArtinian` and
-  `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_adicCompletion_linearMap`: an `R`-module is
-  Artinian iff its Matlis dual is finite over `R̂`.
-* `TauCeti.IsInjectiveEnvelope.finite_linearMap_of_isArtinian`,
-  `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_linearMap`,
-  `TauCeti.IsInjectiveEnvelope.isArtinian_linearMap_iff_finite`,
-  `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_of_isArtinian`, and
-  `TauCeti.IsInjectiveEnvelope.evalEquivOfIsArtinian`: Artinian Matlis biduality over a complete
-  Noetherian local ring.
 * `TauCeti.IsInjectiveEnvelope.adicCompletion`: `E`, with its canonical `R̂`-module structure, is
   an injective envelope of the residue field of `R̂`.
 * `TauCeti.IsInjectiveEnvelope.isArtinian_adicCompletion_linearMap_of_finite`,
@@ -61,7 +39,7 @@ finite `R̂`-modules, and identifies the double Matlis dual `Hom_R(Hom_R(N, E), 
   `R`-modules and finite `R̂`-modules over any Noetherian local ring.
 * `TauCeti.IsInjectiveEnvelope.adicCompletionEquivBidualOfFinite`: for any finite `R`-module `N`,
   `AdicCompletion 𝔪 N ≃ₗ[R̂] Hom_R(Hom_R(N, E), E)`, intertwining `AdicCompletion.of` with
-  evaluation.
+  evaluation and `AdicCompletion.map` with double precomposition.
 
 ## References
 
@@ -86,128 +64,6 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
   {ι : ResidueField R →ₗ[R] E} (hι : IsInjectiveEnvelope ι)
 
 include hι
-
-section ArtinianDual
-
-variable [Small.{v} R]
-
-/-- The Matlis dual of an Artinian module over a Noetherian local ring is finitely generated over
-the completion `R̂`. Completeness of `R` is not needed. -/
-theorem finite_adicCompletion_linearMap_of_isArtinian (M : Type w) [AddCommGroup M] [Module R M]
-    [IsArtinian R M] :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := hι.moduleInjective
-  obtain ⟨n, f, hf⟩ := exists_injective_linearMap_fin_of_isArtinian hι.injective M
-  -- Precomposition with `f : M ↪ Eⁿ` surjects `Hom_R(Eⁿ, E) ≃ End_R(E)ⁿ ≃ R̂ⁿ` onto `Hom_R(M, E)`.
-  have hsurj : Function.Surjective (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) :=
-    fun g ↦ Module.Injective.extension_property R E M (Fin n → E) f hf g
-  let e : (Fin n → _root_.AdicCompletion (maximalIdeal R) R) ≃ₗ[_root_.AdicCompletion
-      (maximalIdeal R) R] ((Fin n → E) →ₗ[R] E) :=
-    (LinearEquiv.piCongrRight fun _ ↦ hι.adicCompletionLinearEquivEnd).trans
-      (LinearMap.lsum R (fun _ : Fin n ↦ E) (_root_.AdicCompletion (maximalIdeal R) R))
-  exact Module.Finite.of_surjective ((f.lcomp _ E).comp e.toLinearMap)
-    (hsurj.comp e.surjective)
-
-/-- Over a Noetherian local ring, a module is Artinian iff its Matlis dual is finitely generated
-over the completion `R̂`. -/
-theorem isArtinian_iff_finite_adicCompletion_linearMap (M : Type w) [AddCommGroup M] [Module R M] :
-    IsArtinian R M ↔
-      letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-      Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
-  ⟨fun _ ↦ hι.finite_adicCompletion_linearMap_of_isArtinian M,
-    hι.isArtinian_of_finite_adicCompletion_linearMap⟩
-
-section Complete
-
-variable [IsAdicComplete (maximalIdeal R) R]
-
-/-- The Matlis dual of an Artinian module over a complete Noetherian local ring is finitely
-generated over `R`. -/
-theorem finite_linearMap_of_isArtinian (M : Type w) [AddCommGroup M] [Module R M]
-    [IsArtinian R M] : Module.Finite R (M →ₗ[R] E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have : Module.Finite R (_root_.AdicCompletion (maximalIdeal R) R) :=
-    Module.Finite.equiv (_root_.AdicCompletion.ofLinearEquiv (maximalIdeal R) R)
-  have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
-    hι.finite_adicCompletion_linearMap_of_isArtinian M
-  exact Module.Finite.trans (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E)
-
-/-- Over a complete Noetherian local ring, a module is Artinian iff its Matlis dual is finitely
-generated over `R`. -/
-theorem isArtinian_iff_finite_linearMap (M : Type w) [AddCommGroup M] [Module R M] :
-    IsArtinian R M ↔ Module.Finite R (M →ₗ[R] E) := by
-  refine ⟨fun _ ↦ hι.finite_linearMap_of_isArtinian M, fun _ ↦ ?_⟩
-  have := hι.moduleInjective
-  exact isArtinian_of_isNoetherian_linearMap R hι.injective
-
-/-- Over a complete Noetherian local ring, the Matlis dual of a module is Artinian iff the module
-is finitely generated over `R`. -/
-theorem isArtinian_linearMap_iff_finite (M : Type w) [AddCommGroup M] [Module R M] :
-    IsArtinian R (M →ₗ[R] E) ↔ Module.Finite R M := by
-  refine ⟨fun _ ↦ ?_, fun _ ↦ hι.isArtinian_linearMap_of_finite M⟩
-  have := hι.moduleInjective
-  have : Module.Finite R ((M →ₗ[R] E) →ₗ[R] E) := hι.finite_linearMap_of_isArtinian (M →ₗ[R] E)
-  have : IsNoetherian R M :=
-    isNoetherian_of_injective (applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E)
-      (injective_applyₗ_of_injective hι.injective)
-  exact Module.finite_def.mpr (IsNoetherian.noetherian (⊤ : Submodule R M))
-
-/-- **Matlis biduality for Artinian modules over a complete Noetherian local ring**: the canonical
-evaluation map `M → Hom_R(Hom_R(M, E), E)` is bijective. -/
-theorem bijective_applyₗ_of_isArtinian (M : Type w) [AddCommGroup M] [Module R M]
-    [IsArtinian R M] :
-    Function.Bijective (applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) := by
-  have := hι.moduleInjective
-  refine ⟨injective_applyₗ_of_injective hι.injective, fun φ ↦ ?_⟩
-  -- It suffices to show that the cokernel `C` of `applyₗ` admits no nonzero map to `E`.
-  let K := LinearMap.range (applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E)
-  have hzero : ∀ g : (((M →ₗ[R] E) →ₗ[R] E) ⧸ K) →ₗ[R] E, g = 0 := fun g ↦ by
-    have : Module.Finite R (M →ₗ[R] E) := hι.finite_linearMap_of_isArtinian M
-    obtain ⟨f, hf⟩ := (hι.bijective_applyₗ_of_finite (M →ₗ[R] E)).2 (g.comp K.mkQ)
-    have hf0 : f = 0 := LinearMap.ext fun m ↦ by
-      have hm := LinearMap.congr_fun hf (applyₗ m)
-      have hmem : applyₗ m ∈ K := ⟨m, rfl⟩
-      simpa only [applyₗ_apply_apply, comp_apply, Submodule.mkQ_apply, LinearMap.zero_apply,
-        (Submodule.Quotient.mk_eq_zero K).mpr hmem, map_zero] using hm
-    refine LinearMap.ext fun y ↦ ?_
-    obtain ⟨ψ, rfl⟩ := K.mkQ_surjective y
-    have hψ := LinearMap.congr_fun hf ψ
-    simpa [hf0] using hψ.symm
-  have hq : K.mkQ φ = 0 :=
-    (injective_iff_map_eq_zero _).mp (injective_applyₗ_of_injective hι.injective) (K.mkQ φ)
-      (LinearMap.ext fun g ↦ by simp [hzero g])
-  exact (Submodule.Quotient.mk_eq_zero K).mp hq
-
-/-- Evaluation identifies an Artinian module over a complete Noetherian local ring with its double
-Matlis dual. -/
-def evalEquivOfIsArtinian (M : Type w) [AddCommGroup M] [Module R M] [IsArtinian R M] :
-    M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[R] E) :=
-  LinearEquiv.ofBijective applyₗ (hι.bijective_applyₗ_of_isArtinian M)
-
-@[simp]
-theorem evalEquivOfIsArtinian_apply_apply (M : Type w) [AddCommGroup M] [Module R M]
-    [IsArtinian R M] (m : M) (f : M →ₗ[R] E) :
-    hι.evalEquivOfIsArtinian M m f = f m := (rfl)
-
-@[simp]
-theorem evalEquivOfIsArtinian_symm_apply_apply (M : Type w) [AddCommGroup M] [Module R M]
-    [IsArtinian R M] (φ : (M →ₗ[R] E) →ₗ[R] E) (f : M →ₗ[R] E) :
-    f ((hι.evalEquivOfIsArtinian M).symm φ) = φ f := by
-  simpa only [evalEquivOfIsArtinian_apply_apply] using
-    congrArg (fun ψ : (M →ₗ[R] E) →ₗ[R] E ↦ ψ f) ((hι.evalEquivOfIsArtinian M).apply_symm_apply φ)
-
-/-- Over a complete Noetherian local ring, Matlis duality is bijective on morphisms into any
-Artinian module. -/
-theorem bijective_lcomp_of_isArtinian (M : Type w) [AddCommGroup M] [Module R M]
-    (N : Type z) [AddCommGroup N] [Module R N] [IsArtinian R N] :
-    Function.Bijective (fun f : M →ₗ[R] N ↦ f.lcomp R E) :=
-  bijective_lcomp_of_bijective_applyₗ (hι.bijective_applyₗ_of_isArtinian N)
-
-end Complete
-
-end ArtinianDual
 
 /-! ### The injective hull over the completion -/
 
@@ -234,6 +90,16 @@ def adicCompletionResidueMap :
   exact (AdicCompletion.restrictScalarsEquivOfPrimaryComponent
     (maximalIdeal R).fg_of_isNoetherianRing hκ).symm
     (ι.comp (AdicCompletion.residueFieldEquiv R).symm.toLinearMap)
+
+/-- Restricting scalars to `R` identifies `adicCompletionResidueMap` with `ι` composed with the
+inverse of `AdicCompletion.residueFieldEquiv`. -/
+theorem adicCompletionResidueMap_restrictScalars :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    hι.adicCompletionResidueMap.restrictScalars R =
+      ι.comp (AdicCompletion.residueFieldEquiv R).symm.toLinearMap := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  ext x
+  simp [adicCompletionResidueMap]
 
 @[simp]
 theorem adicCompletionResidueMap_apply_map (x : ResidueField R) :
@@ -275,12 +141,18 @@ theorem adicCompletion :
     rw [hι.adicCompletionResidueMap_apply_map, hι.adicCompletionResidueMap_apply_map] at hxy
     rw [hι.injective hxy]
   · -- Restricting to `R`, `range ι̂` has the same elements as `range ι`, which is essential.
+    have hrange : LinearMap.range (hι.adicCompletionResidueMap.restrictScalars R) =
+        LinearMap.range ι := by
+      rw [hι.adicCompletionResidueMap_restrictScalars, LinearMap.range_comp_of_range_eq_top _
+        (LinearMap.range_eq_top.mpr (AdicCompletion.residueFieldEquiv R).symm.surjective)]
     have hK' : LinearMap.range ι ⊓ K.restrictScalars R = ⊥ := by
-      refine (Submodule.eq_bot_iff _).mpr fun y hy ↦ ?_
-      obtain ⟨⟨x, rfl⟩, hyK⟩ := hy
-      have hmem : ι x ∈ LinearMap.range hι.adicCompletionResidueMap ⊓ K :=
-        ⟨⟨ResidueField.map _ x, hι.adicCompletionResidueMap_apply_map x⟩, hyK⟩
-      rwa [hK, Submodule.mem_bot] at hmem
+      refine (Submodule.eq_bot_iff _).mpr fun y ⟨hy1, hyK⟩ ↦ ?_
+      obtain ⟨x, hx⟩ := hrange.ge hy1
+      have hmem : hι.adicCompletionResidueMap x ∈
+          LinearMap.range hι.adicCompletionResidueMap ⊓ K :=
+        ⟨⟨x, rfl⟩, hx ▸ hyK⟩
+      rw [hK, Submodule.mem_bot] at hmem
+      exact hx.symm.trans hmem
     have hbot : K.restrictScalars R = ⊥ := isEssential_iff.mp hι.isEssential_range _ hK'
     exact Submodule.ext fun y ↦ by
       simpa using Submodule.ext_iff.mp hbot y
@@ -357,6 +229,20 @@ theorem evalEquivAdicCompletionOfIsArtinian_symm_apply_apply (M : Type w) [AddCo
     congrArg (fun ψ : (M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E ↦ ψ f)
       ((hι.evalEquivAdicCompletionOfIsArtinian M).apply_symm_apply φ)
 
+/-- `evalEquivAdicCompletionOfIsArtinian` is natural with respect to `R`-linear maps. -/
+@[simp]
+theorem lcomp_lcomp_evalEquivAdicCompletionOfIsArtinian {M : Type w} [AddCommGroup M]
+    [Module R M] [IsArtinian R M] {N : Type z} [AddCommGroup N] [Module R N] [IsArtinian R N]
+    (f : M →ₗ[R] N) (m : M) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E).lcomp
+        (_root_.AdicCompletion (maximalIdeal R) R) E
+      (hι.evalEquivAdicCompletionOfIsArtinian M m) =
+      hι.evalEquivAdicCompletionOfIsArtinian N (f m) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  ext g
+  simp
+
 /-- **General Matlis biduality for finite `R̂`-modules**: over any Noetherian local ring `R`,
 evaluation identifies a finitely generated `R̂`-module `N` with `Hom_R(Hom_{R̂}(N, E), E)`. -/
 def evalEquivOfFiniteAdicCompletion (N : Type w) [AddCommGroup N]
@@ -394,6 +280,22 @@ theorem evalEquivOfFiniteAdicCompletion_symm_apply_apply (N : Type w) [AddCommGr
   simpa only [evalEquivOfFiniteAdicCompletion_apply_apply] using
     congrArg (fun ψ : (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) →ₗ[R] E ↦ ψ f)
       ((hι.evalEquivOfFiniteAdicCompletion N).apply_symm_apply φ)
+
+/-- `evalEquivOfFiniteAdicCompletion` is natural with respect to `R̂`-linear maps. -/
+@[simp]
+theorem lcomp_lcomp_evalEquivOfFiniteAdicCompletion {M : Type w} [AddCommGroup M]
+    [Module (_root_.AdicCompletion (maximalIdeal R) R) M]
+    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) M]
+    {N : Type z} [AddCommGroup N]
+    [Module (_root_.AdicCompletion (maximalIdeal R) R) N]
+    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N]
+    (f : M →ₗ[_root_.AdicCompletion (maximalIdeal R) R] N) (x : M) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    (f.lcomp R E).lcomp R E (hι.evalEquivOfFiniteAdicCompletion M x) =
+      hι.evalEquivOfFiniteAdicCompletion N (f x) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  ext g
+  simp
 
 /-- Over any Noetherian local ring, `Hom_R(-, E)` is bijective on morphisms into an Artinian
 `R`-module, valued in `R̂`-linear maps between Matlis duals. -/
@@ -476,6 +378,28 @@ theorem adicCompletionEquivBidualOfFinite_symm_apply_apply (N : Type w) [AddComm
   simpa only [adicCompletionEquivBidualOfFinite_apply_apply] using
     congrArg (fun ψ : (N →ₗ[R] E) →ₗ[R] E ↦ ψ f)
       ((hι.adicCompletionEquivBidualOfFinite N).apply_symm_apply φ)
+
+/-- `adicCompletionEquivBidualOfFinite` intertwines `AdicCompletion.map` with double
+precomposition. -/
+@[simp]
+theorem adicCompletionEquivBidualOfFinite_map {M : Type w} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] {N : Type z} [AddCommGroup N] [Module R N] [Module.Finite R N]
+    (f : M →ₗ[R] N) (y : _root_.AdicCompletion (maximalIdeal R) M) :
+    hι.adicCompletionEquivBidualOfFinite N (_root_.AdicCompletion.map (maximalIdeal R) f y) =
+      (f.lcomp R E).lcomp R E (hι.adicCompletionEquivBidualOfFinite M y) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  ext g
+  simp only [adicCompletionEquivBidualOfFinite_apply_apply, LinearMap.lcomp_apply]
+  let lhs : _root_.AdicCompletion (maximalIdeal R) M →ₗ[_root_.AdicCompletion (maximalIdeal R) R]
+      E :=
+    (AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent g).comp
+      (_root_.AdicCompletion.map (maximalIdeal R) f)
+  let rhs : _root_.AdicCompletion (maximalIdeal R) M →ₗ[_root_.AdicCompletion (maximalIdeal R) R]
+      E :=
+    AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent (g.comp f)
+  exact LinearMap.congr_fun
+    (AdicCompletion.linearMap_ext_of_finite (maximalIdeal R) (g₁ := lhs) (g₂ := rhs) fun x ↦ by
+      simp [lhs, rhs, _root_.AdicCompletion.map_of]) y
 
 end CompletionDuality
 

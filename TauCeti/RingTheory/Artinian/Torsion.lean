@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Jacobson.Ideal
-public import Mathlib.RingTheory.SimpleModule.Basic
 import Mathlib.RingTheory.FiniteLength
 import Mathlib.RingTheory.Nakayama
 
