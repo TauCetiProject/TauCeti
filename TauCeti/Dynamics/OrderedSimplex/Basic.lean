@@ -382,35 +382,6 @@ theorem orderedCone_subset_coneSpan (d : ℕ) :
     orderedCone d ⊆ (coneSpan d : Set (Fin (d + 2) → ℝ)) :=
   fun _ hy => hy.2.2.2
 
-/-- The vector `e_j + e_n` in `coneSpan d` for `j : Fin (d + 1)`. -/
-noncomputable def coneSpanBasisVec (d : ℕ) (j : Fin (d + 1)) : coneSpan d :=
-  ⟨Pi.single j.castSucc (1 : ℝ) + Pi.single (Fin.last (d + 1)) (1 : ℝ), by
-    classical
-    simp only [mem_coneSpan_iff, Pi.add_apply, Finset.sum_add_distrib, Pi.single_eq_same,
-      Pi.single_eq_of_ne (Fin.castSucc_lt_last j).ne', zero_add]
-    rw [Finset.sum_eq_single j (fun b _ hb =>
-        Pi.single_eq_of_ne (fun h => hb (Fin.castSucc_inj.1 h)) _) (by simp),
-      Finset.sum_eq_zero fun i _ => Pi.single_eq_of_ne (Fin.castSucc_lt_last i).ne _]
-    simp⟩
-
-@[simp]
-theorem coe_coneSpanBasisVec (d : ℕ) (j : Fin (d + 1)) :
-    (coneSpanBasisVec d j : Fin (d + 2) → ℝ) =
-      Pi.single j.castSucc 1 + Pi.single (Fin.last (d + 1)) 1 :=
-  (rfl)
-
-private theorem coe_coneSpanBasisVec_eq_snoc (d : ℕ) (j : Fin (d + 1)) :
-    (coneSpanBasisVec d j : Fin (d + 2) → ℝ) =
-      Fin.snoc (α := fun _ => ℝ) (Pi.single j (1 : ℝ)) 1 := by
-  classical
-  ext i
-  refine Fin.lastCases (by simp) (fun k => ?_) i
-  simp only [coe_coneSpanBasisVec, Pi.add_apply, Fin.snoc_castSucc,
-    Pi.single_eq_of_ne (Fin.castSucc_lt_last k).ne, add_zero]
-  by_cases h : k = j
-  · subst h; simp
-  · rw [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (fun h' => h (Fin.castSucc_inj.1 h'))]
-
 /-- The vectors `e_j + e_n` (`j : Fin (d + 1)`) form a basis of `coneSpan d`. -/
 noncomputable def coneSpanBasis (d : ℕ) : Module.Basis (Fin (d + 1)) ℝ (coneSpan d) := by
   classical
@@ -423,13 +394,33 @@ noncomputable def coneSpanBasis (d : ℕ) : Module.Basis (Fin (d + 1)) ℝ (cone
         Fin.lastCases (by simp only [Fin.snoc_last]; exact y.property) (fun _ => by simp)
       right_inv := fun c => funext fun _ => by simp }
 
+/-- The `j`-th coordinate of `y ∈ coneSpan d` in `coneSpanBasis d` is `y j`. -/
+@[simp]
+theorem coneSpanBasis_repr_apply (d : ℕ) (y : coneSpan d) (j : Fin (d + 1)) :
+    (coneSpanBasis d).repr y j = (y : Fin (d + 2) → ℝ) j.castSucc := by
+  classical
+  simp [coneSpanBasis]
+
+private theorem coe_coneSpanBasis_eq_snoc (d : ℕ) (j : Fin (d + 1)) :
+    (coneSpanBasis d j : Fin (d + 2) → ℝ) =
+      Fin.snoc (α := fun _ => ℝ) (Pi.single j (1 : ℝ)) 1 := by
+  classical
+  simp [coneSpanBasis, Module.Basis.coe_ofEquivFun]
+
 /-- The `j`-th basis vector of `coneSpanBasis d` is `e_j + e_n`. -/
 @[simp]
-theorem coneSpanBasis_apply (d : ℕ) (j : Fin (d + 1)) :
-    coneSpanBasis d j = coneSpanBasisVec d j := by
+theorem coe_coneSpanBasis (d : ℕ) (j : Fin (d + 1)) :
+    (coneSpanBasis d j : Fin (d + 2) → ℝ) =
+      Pi.single j.castSucc 1 + Pi.single (Fin.last (d + 1)) 1 := by
   classical
-  rw [Subtype.ext_iff, coe_coneSpanBasisVec_eq_snoc]
-  simp [coneSpanBasis, Module.Basis.coe_ofEquivFun]
+  rw [coe_coneSpanBasis_eq_snoc]
+  ext i
+  refine Fin.lastCases (by simp) (fun k => ?_) i
+  simp only [Pi.add_apply, Fin.snoc_castSucc,
+    Pi.single_eq_of_ne (Fin.castSucc_lt_last k).ne, add_zero]
+  by_cases h : k = j
+  · subst h; simp
+  · rw [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (fun h' => h (Fin.castSucc_inj.1 h'))]
 
 /-- The dimension of `coneSpan d` is `d + 1`. -/
 theorem finrank_coneSpan (d : ℕ) : Module.finrank ℝ (coneSpan d) = d + 1 := by
@@ -461,9 +452,9 @@ private theorem stepConeVec_mem_orderedCone (d : ℕ) (k : Fin (d + 1)) :
     by simp [stepConeVec]⟩
 
 private theorem stepConeVec_last_eq (d : ℕ) :
-    (coneSpanBasisVec d (Fin.last d) : Fin (d + 2) → ℝ) = stepConeVec d (Fin.last d) := by
+    (coneSpanBasis d (Fin.last d) : Fin (d + 2) → ℝ) = stepConeVec d (Fin.last d) := by
   classical
-  rw [coe_coneSpanBasisVec_eq_snoc]
+  rw [coe_coneSpanBasis_eq_snoc]
   ext i
   refine Fin.lastCases ?_ (fun m => ?_) i
   · simp only [stepConeVec, Fin.snoc_last]
@@ -473,7 +464,7 @@ private theorem stepConeVec_last_eq (d : ℕ) :
   · simp only [stepConeVec, Fin.snoc_castSucc, Pi.single_apply, Fin.last_le_iff]
 
 private theorem stepConeVec_sub_eq (d : ℕ) (k : Fin d) :
-    (coneSpanBasisVec d k.castSucc : Fin (d + 2) → ℝ) =
+    (coneSpanBasis d k.castSucc : Fin (d + 2) → ℝ) =
       stepConeVec d k.castSucc - stepConeVec d k.succ := by
   classical
   have hstep : ∀ m : Fin (d + 1),
@@ -490,14 +481,14 @@ private theorem stepConeVec_sub_eq (d : ℕ) (k : Fin d) :
         simp [hmk, hkb, hsucc]
       · have hnot : ¬ k.succ ≤ m := fun h => hkb (k.castSucc_lt_succ.le.trans h)
         simp [hmk, hkb, hnot]
-  rw [coe_coneSpanBasisVec_eq_snoc]
+  rw [coe_coneSpanBasis_eq_snoc]
   ext i
   refine Fin.lastCases ?_ (fun m => by simp [stepConeVec, hstep]) i
   simp only [stepConeVec, Fin.snoc_last, Pi.sub_apply, ← Finset.sum_sub_distrib, hstep]
   simp
 
-private theorem coneSpanBasisVec_mem_span_orderedCone (d : ℕ) (j : Fin (d + 1)) :
-    (coneSpanBasisVec d j : Fin (d + 2) → ℝ) ∈ Submodule.span ℝ (orderedCone d) :=
+private theorem coneSpanBasis_mem_span_orderedCone (d : ℕ) (j : Fin (d + 1)) :
+    (coneSpanBasis d j : Fin (d + 2) → ℝ) ∈ Submodule.span ℝ (orderedCone d) :=
   Fin.lastCases (stepConeVec_last_eq d ▸ Submodule.subset_span (stepConeVec_mem_orderedCone d _))
     (fun k => stepConeVec_sub_eq d k ▸ Submodule.sub_mem _
       (Submodule.subset_span (stepConeVec_mem_orderedCone d k.castSucc))
@@ -508,11 +499,10 @@ theorem span_orderedCone_eq_coneSpan (d : ℕ) :
     Submodule.span ℝ (orderedCone d) = coneSpan d := by
   refine le_antisymm (Submodule.span_le.2 (orderedCone_subset_coneSpan d)) fun y hy => ?_
   have hval : y = ∑ j : Fin (d + 1),
-      (coneSpanBasis d).repr ⟨y, hy⟩ j • (coneSpanBasisVec d j : Fin (d + 2) → ℝ) := by
-    simpa [coneSpanBasis_apply] using
-      congrArg Subtype.val ((coneSpanBasis d).sum_repr ⟨y, hy⟩).symm
+      (coneSpanBasis d).repr ⟨y, hy⟩ j • (coneSpanBasis d j : Fin (d + 2) → ℝ) := by
+    simpa using congrArg Subtype.val ((coneSpanBasis d).sum_repr ⟨y, hy⟩).symm
   rw [hval]
   exact Submodule.sum_mem _ fun j _ =>
-    Submodule.smul_mem _ _ (coneSpanBasisVec_mem_span_orderedCone d j)
+    Submodule.smul_mem _ _ (coneSpanBasis_mem_span_orderedCone d j)
 
 end TauCeti
