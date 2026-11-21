@@ -123,6 +123,6 @@ namespace Ideal
 /-- If `J * I = ⊥`, then `I` viewed as an `A`-module is annihilated by `J`. -/
 theorem isTorsionBySet_of_mul_eq_bot {A : Type*} [Ring A] {J I : Ideal A}
     (hJI : J * I = ⊥) : Module.IsTorsionBySet A I J := fun x r ↦
-  Subtype.ext <| mem_bot.mp (hJI ▸ mul_mem_mul r.2 x.2)
+  Subtype.ext <| mem_bot.mp (hJI ▸ mul_mem_mul r.property x.property)
 
 end Ideal

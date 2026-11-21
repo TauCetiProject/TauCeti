@@ -81,7 +81,7 @@ private theorem shapiroCochains_apply (i : ℕ) (c : (Fin i → G) → coind S.s
           (TauCeti.Rep.barComplex.resChainMap (k := k) S.subtype)).op).f i).hom
       (((linearYonedaObjResProjectiveResolutionIso (barResolution k G) A).inv.f i).hom
       (((inhomogeneousCochainsIso (coind S.subtype A)).hom.f i).hom c))) s =
-      (c (S.subtype ∘ s)).1 1 := by
+      (c (S.subtype ∘ s)).val 1 := by
   -- Unfolding the two cochain isomorphisms, the value is the Shapiro adjunct of `freeLift c`
   -- evaluated on the image of the basis element `s` under the bar resolution along `S ≤ G`.
   refine Eq.trans (b := ((resCoindHomEquiv.{u} S.subtype (free k G (Fin i → G)) A).symm

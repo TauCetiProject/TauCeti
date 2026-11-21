@@ -75,8 +75,8 @@ theorem ofUnitInterval_eq_ofUnitInterval_iff [hp : Fact (0 < p)] {s t : I} :
     obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (QuotientAddGroup.eq.1 h)
     rw [zsmul_eq_mul, ← sub_eq_neg_add, ← sub_mul] at hk
     have hk' : (k : ℝ) = t - s := mul_right_cancel₀ hp.out.ne' hk
-    obtain ⟨hs₀, hs₁⟩ := s.2
-    obtain ⟨ht₀, ht₁⟩ := t.2
+    obtain ⟨hs₀, hs₁⟩ := s.property
+    obtain ⟨ht₀, ht₁⟩ := t.property
     -- `k = t - s` lies in `[-1, 1]`, so it is one of `-1`, `0`, `1`
     have hk_lo : (-1 : ℝ) ≤ k := by linarith
     have hk_hi : (k : ℝ) ≤ 1 := by linarith

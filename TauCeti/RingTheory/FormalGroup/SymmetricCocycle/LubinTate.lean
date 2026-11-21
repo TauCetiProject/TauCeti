@@ -365,14 +365,19 @@ noncomputable def deformationCocycleEquiv (F : FormalGroup A) [F.IsComm] {I : Id
     {G : FormalGroup A // G.IsComm ∧ ∀ d, coeff d (G.toPowerSeries - F.toPowerSeries) ∈ I} ≃
       {Φ : MvPowerSeries (Fin 2) A //
         F.IsSymmetricCocycle Φ ∧ constantCoeff Φ = 0 ∧ ∀ d, coeff d Φ ∈ I} where
-  toFun G := have := G.2.1; ⟨F.deformationCocycle G.1,
-    F.isSymmetricCocycle_deformationCocycle G.1 hI G.2.2, F.constantCoeff_deformationCocycle G.1,
-    coeff_deformationCocycle_mem_iff.mpr G.2.2⟩
-  invFun Φ := ⟨F.deformByCocycle hI Φ.2.1 Φ.2.2.1 Φ.2.2.2, inferInstance, fun d ↦ by
-    rw [toPowerSeries_deformByCocycle, add_sub_cancel_left]
-    exact coeff_mul_mem_of_right Φ.2.2.2 d⟩
-  left_inv G := have := G.2.1; Subtype.ext (F.deformByCocycle_deformationCocycle G.1 hI G.2.2)
-  right_inv Φ := Subtype.ext (F.deformationCocycle_deformByCocycle hI Φ.2.1 Φ.2.2.1 Φ.2.2.2)
+  toFun G :=
+    have := G.property.1
+    ⟨F.deformationCocycle G.val, F.isSymmetricCocycle_deformationCocycle G.val hI G.property.2,
+      F.constantCoeff_deformationCocycle G.val, coeff_deformationCocycle_mem_iff.mpr G.property.2⟩
+  invFun Φ :=
+    ⟨F.deformByCocycle hI Φ.property.1 Φ.property.2.1 Φ.property.2.2, inferInstance, fun d ↦ by
+      rw [toPowerSeries_deformByCocycle, add_sub_cancel_left]
+      exact coeff_mul_mem_of_right Φ.property.2.2 d⟩
+  left_inv G :=
+    have := G.property.1
+    Subtype.ext (F.deformByCocycle_deformationCocycle G.val hI G.property.2)
+  right_inv Φ :=
+    Subtype.ext (F.deformationCocycle_deformByCocycle hI Φ.property.1 Φ.property.2.1 Φ.property.2.2)
 
 /-- Evaluating `deformationCocycleEquiv` on `G` computes `F.deformationCocycle G`. -/
 @[simp]
@@ -388,7 +393,7 @@ theorem deformationCocycleEquiv_symm_apply_coe (F : FormalGroup A) [F.IsComm] {I
     (Φ : {Φ : MvPowerSeries (Fin 2) A //
       F.IsSymmetricCocycle Φ ∧ constantCoeff Φ = 0 ∧ ∀ d, coeff d Φ ∈ I}) :
     ((F.deformationCocycleEquiv hI).symm Φ).val =
-      F.deformByCocycle hI Φ.2.1 Φ.2.2.1 Φ.2.2.2 := (rfl)
+      F.deformByCocycle hI Φ.property.1 Φ.property.2.1 Φ.property.2.2 := (rfl)
 
 end DeformationCocycle
 
@@ -770,12 +775,12 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_
     {Φ : MvPowerSeries (Fin 2) R} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) :
     ∃! c : Fin (h - 1) → R, ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧
       Φ = ∑ j : Fin (h - 1),
-        c j • F.lubinTateCocycle ⟨p ^ (j.1 + 1) - 1,
-          Nat.sub_pos_of_lt (Nat.one_lt_pow j.1.succ_ne_zero hp.one_lt)⟩ +
+        c j • F.lubinTateCocycle ⟨p ^ (j.val + 1) - 1,
+          Nat.sub_pos_of_lt (Nat.one_lt_pow j.val.succ_ne_zero hp.one_lt)⟩ +
         F.homDefect 𝔾ₐ g := by
   let idx (j : Fin (h - 1)) : ℕ+ :=
-    ⟨p ^ (j.1 + 1) - 1, Nat.sub_pos_of_lt (Nat.one_lt_pow j.1.succ_ne_zero hp.one_lt)⟩
-  have hsub (j : Fin (h - 1)) : (idx j : ℕ) + 1 = p ^ (j.1 + 1) :=
+    ⟨p ^ (j.val + 1) - 1, Nat.sub_pos_of_lt (Nat.one_lt_pow j.val.succ_ne_zero hp.one_lt)⟩
+  have hsub (j : Fin (h - 1)) : (idx j : ℕ) + 1 = p ^ (j.val + 1) :=
     Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.pos)
   exact hΦ.existsUnique_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv (u := fun _ ↦ 1)
     (fun j ↦ F.isSymmetricCocycle_lubinTateCocycle _)

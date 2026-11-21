@@ -189,7 +189,7 @@ theorem manifoldMorseIndex_sq_comp_sphereHeight_neg (v : sphere (0 : E) 1) :
 variable {b : ℝ}
 
 /-- The derivative of `b t - t³` is `b - 3 t²`. -/
-private theorem deriv_mul_sub_pow_three :
+theorem deriv_mul_sub_pow_three :
     deriv (fun t : ℝ ↦ b * t - t ^ 3) = fun t ↦ b - 3 * t ^ 2 :=
   funext fun t ↦ (((hasDerivAt_id t).const_mul b).fun_sub (hasDerivAt_pow 3 t)).deriv.trans
     (by simp)
@@ -205,7 +205,7 @@ private theorem sq_sqrt_div_three (hb : 0 ≤ b) : √(b / 3) ^ 2 = b / 3 :=
   Real.sq_sqrt (by positivity)
 
 /-- The derivative of `b t - t³` vanishes where `t² = b / 3`, in particular at `t = ±√(b / 3)`. -/
-private theorem deriv_mul_sub_pow_three_eq_zero_of_sq_eq {t : ℝ} (ht : t ^ 2 = b / 3) :
+theorem deriv_mul_sub_pow_three_eq_zero_of_sq_eq {t : ℝ} (ht : t ^ 2 = b / 3) :
     deriv (fun t : ℝ ↦ b * t - t ^ 3) t = 0 := by
   simp only [deriv_mul_sub_pow_three, ht]
   ring

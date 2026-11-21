@@ -333,9 +333,9 @@ only if `c = 0`. -/
 theorem sum_smul_eq_homDefect_𝔾ₐ_iff (hp : p.Prime)
     (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
     {Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R} {u : Fin (h - 1) → R}
-    (hΓ_ord : ∀ j, ((p ^ (j.1 + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
-    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.1 + 1)) (Γ j) =
-      ↑(u j • TauCeti.lazardCocycle (p ^ (j.1 + 1)) R))
+    (hΓ_ord : ∀ j, ((p ^ (j.val + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
+    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.val + 1)) (Γ j) =
+      ↑(u j • TauCeti.lazardCocycle (p ^ (j.val + 1)) R))
     (hu : ∀ j, IsUnit (u j)) {c : Fin (h - 1) → R} :
     (∃ g : PowerSeries R, ∑ j, c j • Γ j = F.homDefect 𝔾ₐ g) ↔ c = 0 := by
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun hc ↦ ⟨0, by simp [hc]⟩⟩
@@ -349,8 +349,8 @@ theorem sum_smul_eq_homDefect_𝔾ₐ_iff (hp : p.Prime)
       refine le_order fun d hd ↦ by
         rw [map_sum]
         refine Finset.sum_eq_zero fun j _ ↦ ?_
-        rcases lt_or_ge j.1 k with hlt | hge
-        · simp [ih j.1 hlt j.2]
+        rcases lt_or_ge j.val k with hlt | hge
+        · simp [ih j.val hlt j.isLt]
         · exact coeff_of_lt_order <| hd.trans_le
             (((Nat.cast_le.mpr (Nat.pow_le_pow_right hp.pos (by omega))).trans (hΓ_ord j)).trans
               le_order_smul)
@@ -364,8 +364,8 @@ theorem sum_smul_eq_homDefect_𝔾ₐ_iff (hp : p.Prime)
           (hp.two_le.trans (Nat.le_self_pow k.succ_ne_zero p))] at hlhs
       exact (hu ⟨k, hk⟩).mul_left_eq_zero.mp hlhs
     · intro j _ hj
-      rcases lt_trichotomy j.1 k with hlt | heq | hgt
-      · simp [ih j.1 hlt j.2]
+      rcases lt_trichotomy j.val k with hlt | heq | hgt
+      · simp [ih j.val hlt j.isLt]
       · exact absurd (Fin.ext heq) hj
       · exact homogeneousComponent_of_lt_order_eq_zero <|
           ((Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt (by omega))).trans_le
@@ -399,9 +399,9 @@ private theorem IsSymmetricCocycle.exists_le_order_sub_sum_smul_sub_homDefect_�
     (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
     {Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R} {u : Fin (h - 1) → R}
     (hΓ : ∀ j, F.IsSymmetricCocycle (Γ j))
-    (hΓ_ord : ∀ j, ((p ^ (j.1 + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
-    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.1 + 1)) (Γ j) =
-      ↑(u j • TauCeti.lazardCocycle (p ^ (j.1 + 1)) R))
+    (hΓ_ord : ∀ j, ((p ^ (j.val + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
+    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.val + 1)) (Γ j) =
+      ↑(u j • TauCeti.lazardCocycle (p ^ (j.val + 1)) R))
     (hu : ∀ j, IsUnit (u j)) {Φ : MvPowerSeries (Fin 2) R} (hΦ : F.IsSymmetricCocycle Φ)
     (hΦ₀ : constantCoeff Φ = 0) {k : ℕ} (hk : k ≤ h - 1) :
     ∃ (c : Fin (h - 1) → R) (g : PowerSeries R), PowerSeries.constantCoeff g = 0 ∧
@@ -454,9 +454,9 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_add_homDefect_𝔾ₐ (hp : p.P
     (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
     {Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R} {u : Fin (h - 1) → R}
     (hΓ : ∀ j, F.IsSymmetricCocycle (Γ j))
-    (hΓ_ord : ∀ j, ((p ^ (j.1 + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
-    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.1 + 1)) (Γ j) =
-      ↑(u j • TauCeti.lazardCocycle (p ^ (j.1 + 1)) R))
+    (hΓ_ord : ∀ j, ((p ^ (j.val + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
+    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.val + 1)) (Γ j) =
+      ↑(u j • TauCeti.lazardCocycle (p ^ (j.val + 1)) R))
     (hu : ∀ j, IsUnit (u j)) {Φ : MvPowerSeries (Fin 2) R} (hΦ : F.IsSymmetricCocycle Φ)
     (hΦ₀ : constantCoeff Φ = 0) :
     ∃! c : Fin (h - 1) → R, ∃ g : PowerSeries R,

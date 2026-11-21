@@ -209,9 +209,9 @@ noncomputable def tropicalYSeedEquiv :
       {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) //
         B.HasFiniteFrozenColumnSupport} where
   toFun s := ⟨s.toExtendedMatrix, s.hasFiniteFrozenColumnSupport_toExtendedMatrix⟩
-  invFun B := B.1.toTropicalYSeed B.2
+  invFun B := B.val.toTropicalYSeed B.property
   left_inv s := s.toTropicalYSeed_toExtendedMatrix _
-  right_inv B := Subtype.ext (B.1.toExtendedMatrix_toTropicalYSeed B.2)
+  right_inv B := Subtype.ext (B.val.toExtendedMatrix_toTropicalYSeed B.property)
 
 @[simp]
 theorem tropicalYSeedEquiv_apply_val (s : YSeed K (Trop J)) :

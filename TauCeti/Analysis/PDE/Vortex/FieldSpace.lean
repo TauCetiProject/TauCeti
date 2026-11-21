@@ -11,13 +11,16 @@ public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Reference
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 public import TauCeti.Analysis.Distribution.Sobolev
+public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -38,7 +41,11 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
   `H^s` when `s ≥ 0`): each coordinate is a real `L²` function whose complexified tempered
   distribution lies in Mathlib's Bessel-potential space `H^s`
   (`TemperedDistribution.realSobolevFunctions`). This is the componentwise complexification on
-  which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts.
+  which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts. For `s ≥ 0` a
+  field lies in it exactly when its coordinates are almost everywhere the `L²` functions of
+  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`), and its `L²` norm is
+  then at most `4` times the norm of these coordinates
+  (`eLpNorm_le_of_forall_inclusionLp_ae_eq`).
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
 
@@ -51,7 +58,8 @@ holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
 its vortex defect is a smooth compactly supported field
 (`hasCompactSupport_equation_referenceField`). Every coordinate has bounded derivatives of each
 order on the whole plane (`exists_norm_iteratedFDeriv_referenceField_apply_le`), since the reference
-section and connection do. These are the properties of the reference
+section and connection do; as complex functions they therefore have temperate growth
+(`hasTemperateGrowth_ofReal_referenceField_apply`). These are the properties of the reference
 that make multiplication by its coefficients, and its own defect, compatible with the Sobolev
 scale.
 
@@ -208,7 +216,7 @@ theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) 
       smul_eq_mul]
     ring
   have hs : (w / (‖w‖ : ℂ)) ^ m = (Real.exp (-(m * Real.log ‖w‖)) : ℂ) * w ^ m := by
-    rw [Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, div_pow, div_eq_inv_mul]
+    rw [Real.exp_neg, Real.exp_natCast_mul, Real.exp_log hn, div_pow, div_eq_inv_mul]
     push_cast
     ring
   rw [referenceField_eq_of_rOut_le f m hw.le, hs, re_ofReal_mul, im_ofReal_mul]
@@ -226,7 +234,7 @@ theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {
       (norm_pos_iff.1 hn)).const_smul (c := (m : ℝ))).neg
   rw [equation_congr_nhds (referenceField_eventuallyEq_amplitudeField f m hz),
     equation_amplitudeField_eq_zero_iff hu.1 (differentiableAt_pow m), hu.2.eq_of_nhds,
-    two_mul, Real.exp_add, Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, norm_pow]
+    two_mul, Real.exp_add, Real.exp_neg, Real.exp_natCast_mul, Real.exp_log hn, norm_pow]
   field_simp
   norm_num
 
@@ -237,6 +245,21 @@ theorem hasCompactSupport_equation_referenceField (f : ContDiffBump (0 : ℝ)) (
     HasCompactSupport (equation (referenceField f m)) := by
   refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (√f.rOut)) fun z hz ↦ ?_
   exact equation_referenceField_eq_zero f m (rOut_lt_norm_sq_of_sqrt_lt f (by simpa using hz))
+
+/-- Each coordinate of the vortex defect of the reference field, viewed as a complex function, is
+compactly supported (`hasCompactSupport_equation_referenceField`). -/
+theorem hasCompactSupport_ofReal_equation_referenceField_apply
+    (f : ContDiffBump (0 : ℝ)) (m : ℕ) (i : Fin 3) :
+    HasCompactSupport fun z ↦ (equation (referenceField f m) z i : ℂ) :=
+  (hasCompactSupport_equation_referenceField f m).comp_left
+    (g := fun v : EuclideanSpace ℝ (Fin 3) ↦ (v i : ℂ)) (by simp)
+
+/-- Each coordinate of the vortex defect of the reference field, viewed as a complex function, is
+smooth. -/
+theorem contDiff_ofReal_equation_referenceField_apply (f : ContDiffBump (0 : ℝ))
+    (m : ℕ) (i : Fin 3) : ContDiff ℝ ∞ fun z ↦ (equation (referenceField f m) z i : ℂ) :=
+  Complex.ofRealCLM.contDiff.comp (contDiff_euclidean.1
+    (contDiff_equation (contDiff_referenceField f m) ENat.coe_top_add_one.le) i)
 
 /-- **The reference field has bounded derivatives.** Each iterated derivative of each coordinate
 of the reference field is bounded on the whole plane. The coordinates are real parts and imaginary
@@ -266,6 +289,30 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
   · simpa [referenceField_apply, div_eq_inv_mul] using hcomp (contDiff_referenceSection f m)
       ((1 / 2 : ℝ) • imCLM) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
 
+/-- Each coordinate of the reference field, viewed as a complex function, is smooth. -/
+theorem contDiff_ofReal_referenceField_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ) (i : Fin 4) :
+    ContDiff ℝ ∞ fun z ↦ (referenceField f m z i : ℂ) :=
+  Complex.ofRealCLM.contDiff.comp (contDiff_euclidean.1 (contDiff_referenceField f m) i)
+
+/-- Each coordinate of the reference field, viewed as a complex function, has bounded derivatives
+of each order on the whole plane (`exists_norm_iteratedFDeriv_referenceField_apply_le`). -/
+theorem exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le (f : ContDiffBump (0 : ℝ))
+    (m : ℕ) (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (referenceField f m z i : ℂ)) z‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceField_apply_le f m i n
+  refine ⟨C, fun z ↦ ?_⟩
+  have h := Complex.ofRealLI.norm_iteratedFDeriv_comp_left
+    ((contDiff_euclidean.1 (contDiff_referenceField f m) i).contDiffAt (x := z))
+    (i := n) (by exact_mod_cast le_top)
+  exact (le_of_eq h).trans (hC z)
+
+/-- Each coordinate of the reference field, viewed as a complex function, has temperate growth,
+since it is smooth with bounded derivatives. -/
+theorem hasTemperateGrowth_ofReal_referenceField_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ)
+    (i : Fin 4) : (fun z ↦ (referenceField f m z i : ℂ)).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le (contDiff_ofReal_referenceField_apply f m i)
+    (exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m i)
+
 /-! ### Sobolev fields -/
 
 /-- The real space of pointwise representatives of `(L² ∩ H^s)(ℂ; ℝ⁴)` fields, which is the
@@ -292,10 +339,52 @@ theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
 
+open scoped BesselPotentialSpace in
+/-- A real field lies in `sobolevFields s`, `s ≥ 0`, exactly when its coordinates are almost
+everywhere the `L²` functions of elements of `H^s(ℂ)`. -/
+theorem mem_sobolevFields_iff_exists_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ sobolevFields s ↔ ∃ u : Fin 4 → H^{s}(ℂ),
+      ∀ a, ⇑(BesselPotentialSpace.inclusionLp hs (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ) := by
+  simp only [mem_sobolevFields, mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs]
+  exact ⟨fun h ↦ ⟨fun a ↦ (h a).choose, fun a ↦ (h a).choose_spec⟩,
+    fun ⟨u, hu⟩ a ↦ ⟨u a, hu a⟩⟩
+
 /-- Every field of `sobolevFields s` is square integrable, whatever the order `s`. -/
 theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : y ∈ sobolevFields s) : MemLp y 2 volume :=
   memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
+
+open BesselPotentialSpace in
+/-- A real field whose four coordinates are represented by `v : Fin 4 → H^s(ℂ)`, `s ≥ 0`, has
+`L²` norm at most `4 ‖v‖`. -/
+theorem eLpNorm_le_of_forall_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {v : Fin 4 → H^{s}(ℂ)}
+    (hv : ∀ a, ⇑(inclusionLp hs (v a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
+    eLpNorm y 2 volume ≤ ENNReal.ofReal (4 * ‖v‖) := by
+  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
+    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
+  let b := (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis
+  calc eLpNorm y 2 volume
+      ≤ ∑ a, ‖b a‖ₑ * eLpNorm (fun z ↦ b.coord a (y z)) 2 volume :=
+        b.eLpNorm_le_sum_enorm_mul_eLpNorm_coord hy.aestronglyMeasurable
+    _ ≤ ∑ _a : Fin 4, ENNReal.ofReal ‖v‖ := by
+        refine Finset.sum_le_sum fun a _ ↦ ?_
+        have hn : eLpNorm (fun z ↦ b.coord a (y z)) 2 volume =
+            eLpNorm (inclusionLp hs (v a)) 2 volume :=
+          eLpNorm_congr_norm_ae
+            ((b.coord a).continuous_of_finiteDimensional.comp_aestronglyMeasurable
+              hy.aestronglyMeasurable) (Lp.aestronglyMeasurable _)
+            ((hv a).mono fun z hz ↦ by simp [b, hz])
+        have hb : ‖b a‖ = 1 := by simp [b]
+        rw [← ofReal_norm, hb, ENNReal.ofReal_one, one_mul, hn,
+          ← ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _), ← Lp.norm_def]
+        exact ENNReal.ofReal_le_ofReal
+          ((norm_inclusionLp_apply_le hs _).trans (norm_le_pi_norm v a))
+    _ = ENNReal.ofReal (4 * ‖v‖) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+          ENNReal.ofReal_mul (by norm_num)]
+        norm_num
 
 /-- A field lies in `sobolevFields 0` exactly when it is square integrable. -/
 @[simp]
@@ -336,6 +425,17 @@ theorem exists_contDiff_ae_eq_of_forall_mem_sobolevFields {y : ℂ → Euclidean
   filter_upwards [ae_all_iff.2 hyg] with z hz
   ext i
   simp [hz i]
+
+/-- For `n + 1 < s`, a continuous variation in `H^s` is `C^n`, by the Sobolev embedding of each
+coordinate. -/
+theorem contDiff_of_mem_sobolevFields {s : ℝ} {n : ℕ} (hs : n + 1 < s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hyc : Continuous y) :
+    ContDiff ℝ n y := by
+  refine contDiff_euclidean.2 fun i ↦ contDiff_of_mem_realSobolevFunctions ?_
+    (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hyc)
+  rw [Complex.finrank_real_complex]
+  push_cast
+  linarith
 
 /-- A smooth compactly supported field lies in every Sobolev space. -/
 theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (Fin 4)}

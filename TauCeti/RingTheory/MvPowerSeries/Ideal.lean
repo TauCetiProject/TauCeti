@@ -183,7 +183,7 @@ theorem basisComp_add [Semiring A] [Semiring k] {I : Ideal A} [Module k I]
 compatible with `π : A →+* k`. -/
 theorem eq_sum_smul_liftOfSurjective [CommSemiring A] [Semiring k] {π : A →+* k}
     (hπ : Function.Surjective π) {I : Ideal A} [Module k I]
-    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Fintype ι]
+    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.val) [Fintype ι]
     (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I) :
     f = ∑ i, (b i : A) • liftOfSurjective hπ (basisComp b hf i) := by
   ext d
@@ -197,7 +197,7 @@ theorem eq_sum_smul_liftOfSurjective [CommSemiring A] [Semiring k] {π : A →+*
 /-- If `f = ∑ j, (b j : A) • gA j`, then the `i`-th basis component of `f` is
 `MvPowerSeries.map π (gA i)`. -/
 theorem basisComp_eq_map_of_eq_sum_smul [CommSemiring A] [Semiring k] {π : A →+* k}
-    {I : Ideal A} [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1)
+    {I : Ideal A} [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.val)
     [Fintype ι] (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I)
     (gA : ι → MvPowerSeries σ A) (hsum : f = ∑ j, (b j : A) • gA j) (i : ι) :
     basisComp b hf i = MvPowerSeries.map π (gA i) := by
@@ -213,21 +213,21 @@ theorem basisComp_eq_map_of_eq_sum_smul [CommSemiring A] [Semiring k] {π : A �
 `∑ j, (b j : A) • gA j = ∑ j, (b j : A) • hA j` forces `map π (gA i) = map π (hA i)` for every
 `i`. -/
 theorem map_eq_of_sum_smul_eq [CommSemiring A] [Semiring k] {π : A →+* k} {I : Ideal A}
-    [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Fintype ι]
+    [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.val) [Fintype ι]
     (b : Module.Basis ι k I) {gA hA : ι → MvPowerSeries σ A}
     (heq : ∑ j, (b j : A) • gA j = ∑ j, (b j : A) • hA j) (i : ι) :
     MvPowerSeries.map π (gA i) = MvPowerSeries.map π (hA i) := by
   have hmem (d : σ →₀ ℕ) : coeff d (∑ j, (b j : A) • gA j) ∈ I := by
     rw [map_sum]
     exact Ideal.sum_mem _ fun j _ ↦ by
-      rw [coeff_smul]; exact I.mul_mem_right _ (b j).2
+      rw [coeff_smul]; exact I.mul_mem_right _ (b j).property
   rw [← basisComp_eq_map_of_eq_sum_smul hsmul b hmem gA rfl i,
     basisComp_eq_map_of_eq_sum_smul hsmul b hmem hA heq i]
 
 /-- Conversely, if `MvPowerSeries.map π (gA i) = MvPowerSeries.map π (hA i)` for every `i`, then
 `∑ j, (v j : A) • gA j = ∑ j, (v j : A) • hA j` for any `v : ι → I`. -/
 theorem sum_smul_eq_of_map_eq [CommSemiring A] [Semiring k] {π : A →+* k} {I : Ideal A}
-    [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Fintype ι]
+    [Module k I] (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.val) [Fintype ι]
     (v : ι → I) {gA hA : ι → MvPowerSeries σ A}
     (hmap : ∀ i, MvPowerSeries.map π (gA i) = MvPowerSeries.map π (hA i)) :
     ∑ j, (v j : A) • gA j = ∑ j, (v j : A) • hA j := by
@@ -242,7 +242,7 @@ theorem sum_smul_eq_of_map_eq [CommSemiring A] [Semiring k] {π : A →+* k} {I 
 `i`-th basis component of `f` substituted with `fun s ↦ MvPowerSeries.map π (a s)`. -/
 theorem basisComp_subst {τ : Type*} [CommRing A] [CommRing k] {π : A →+* k}
     (hπ : Function.Surjective π) {I : Ideal A} [Module k I]
-    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.1) [Finite ι]
+    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.val) [Finite ι]
     (b : Module.Basis ι k I) {f : MvPowerSeries σ A} (hf : ∀ d, coeff d f ∈ I)
     {a : σ → MvPowerSeries τ A} (ha : HasSubst a) (i : ι) :
     basisComp b (coeff_subst_mem_of_coeff_mem ha hf) i =
