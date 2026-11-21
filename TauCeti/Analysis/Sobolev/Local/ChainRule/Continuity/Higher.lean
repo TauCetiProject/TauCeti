@@ -236,7 +236,7 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub {G : Type uG} [NormedAddCommG
   have hle (n : ι) : eLpNormWkp p K (k + 1) (g ∘ u n - g ∘ u₀) ≤
       ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ *
         eLpNormWkp p K (k + 1) ((fun x => e (g x)) ∘ u n - (fun x => e (g x)) ∘ u₀) := by
-    convert eLpNormWkp_clm_comp_le (e.symm : ULift.{uF} G →L[ℝ] G) using 2
+    convert eLpNormWkp_clm_comp_le (E := ℂ) (e.symm : ULift.{uF} G →L[ℝ] G) using 2
     ext z
     simp
   have h' := ENNReal.Tendsto.const_mul (a := ‖(e.symm : ULift.{uF} G →L[ℝ] G)‖ₑ) h
