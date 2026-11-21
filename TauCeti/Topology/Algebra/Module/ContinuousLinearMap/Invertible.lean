@@ -30,7 +30,8 @@ topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
 (`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
-(`ContinuousLinearMap.isInvertible_iff_isUnit`).
+(`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
+(`ContinuousLinearMap.isInvertible_neg_iff`).
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -81,6 +82,19 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section Neg
+
+variable {R E F : Type*} [Ring R] [TopologicalSpace E] [AddCommGroup E] [Module R E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [IsTopologicalAddGroup F]
+
+/-- Negation preserves and reflects invertibility. -/
+@[simp]
+theorem isInvertible_neg_iff {f : E →L[R] F} : (-f).IsInvertible ↔ f.IsInvertible := by
+  have h : -f = (ContinuousLinearEquiv.neg R : F ≃L[R] F) ∘L f := by ext; simp
+  rw [h, isInvertible_equiv_comp]
+
+end Neg
 
 section CompleteSpace
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CommonDomain
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
 import TauCeti.Topology.Algebra.Module.ComplexSmulI
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The asymptotic operator of a loop as a self-adjoint operator
@@ -70,7 +71,6 @@ theorem hasCompactResolvent_domainOperator_I_smul_loopOperator
       (I • loopOperator T S) (inclusion_injective zero_le_one)).HasCompactResolvent :=
   ContinuousLinearMap.hasCompactResolvent_domainOperator (c := 0)
     (isCompactOperator_inclusion (E := F) zero_lt_one)
-    (ContinuousLinearMap.isInvertible_zero_smul_sub_iff.2
-      ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL))
+    (by simpa using hL)
 
 end TauCeti.CircleSobolev

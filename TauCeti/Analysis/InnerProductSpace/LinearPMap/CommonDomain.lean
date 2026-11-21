@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain
+public import TauCeti.Topology.Algebra.Module.LinearPMap.CommonDomain
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Self-adjoint operators on a common domain
@@ -82,8 +83,9 @@ then `domainOperator ι A hι` is self-adjoint. -/
 theorem isSelfAdjoint_domainOperator_of_isInvertible [CompleteSpace H]
     (hsymm : ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫) (h : A.IsInvertible) :
     IsSelfAdjoint (domainOperator ι A hι) :=
-  isSelfAdjoint_domainOperator hsymm (c := 0) (map_zero _)
-    (isInvertible_zero_smul_sub_iff.2 h).surjective
+  isSelfAdjoint_domainOperator hsymm (c := 0) (map_zero _) <| by
+    rw [zero_smul, zero_sub]
+    exact (isInvertible_neg_iff.2 h).surjective
 
 end Topological
 
