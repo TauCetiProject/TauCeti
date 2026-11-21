@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Parametric
+public import Mathlib.Algebra.Group.Action.End
+public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
 # Parametric generalised equations and their coordinate groups
@@ -21,6 +23,12 @@ non-active part of `Ω` until only parametric sections and the constant part rem
 part made of items carrying a constant base and of free items; such an equation is *terminal*
 (`TauCeti.ParamGenEq.IsTerminal`).
 
+Along the tree, solutions are transformed by groups of canonical automorphisms of the coordinate
+groups, which fix all variables in the non-active part (§5.6 of the source): the items of the
+non-active, parametric and constant sections. The automorphisms of the coordinate group fixing the
+coefficients and these items form the group `TauCeti.ParamGenEq.activeAut`; every group of
+canonical automorphisms of `Ω` is a subgroup of it.
+
 Solutions move along the tree through `F(A)`-homomorphisms between coordinate groups
 (`TauCeti.GenEq.CoordHom`), and the values of the parameters are recorded as words in the items:
 `TauCeti.GenEq.item` is the image of an item in the coordinate group `F_{R(Ω)}` (a coordinate
@@ -35,6 +43,8 @@ solution for the items (`TauCeti.GenEq.Solution.toHom_wordElem`).
 * `TauCeti.ParamGenEq.IsParamItem`: the parametric items.
 * `TauCeti.ParamGenEq.IsTerminal`: every item is parametric, or lies in the constant part and is
   constant or free.
+* `TauCeti.ParamGenEq.activeAut`: the automorphisms of the coordinate group fixing the coefficients
+  and the items outside the active sections.
 * `TauCeti.GenEq.CoordHom`: `F(A)`-homomorphisms between coordinate groups.
 * `TauCeti.GenEq.item`, `TauCeti.GenEq.wordElem`: an item, and the value of a word in the items
   and the letters, in the coordinate group.
@@ -146,6 +156,27 @@ def IsTerminal : Prop :=
 theorem isTerminal_iff : Ω.IsTerminal ↔ ∀ k, Ω.partition.itemKind k = .parametric ∨
     (Ω.partition.itemKind k = .constant ∧ (Ω.IsConstantItem k ∨ Ω.IsFreeItem k)) :=
   Iff.rfl
+
+/-- The automorphisms of the coordinate group `F_{R(Ω)}` fixing the coefficients and every item
+outside the active sections, that is, every variable of the non-active part. -/
+def activeAut : Subgroup (MulAut Ω.coordGroup) :=
+  fixingSubgroup (MulAut Ω.coordGroup)
+    (Set.range (CoordGroup.coeff (MonoidHom.id (FreeGroup A)) Ω.toSystem) ∪
+      Ω.item '' {k | Ω.partition.itemKind k ≠ .active})
+
+variable {Ω} in
+theorem mem_activeAut_iff {σ : MulAut Ω.coordGroup} : σ ∈ Ω.activeAut ↔
+    (∀ g, σ (CoordGroup.coeff (MonoidHom.id (FreeGroup A)) Ω.toSystem g) =
+      CoordGroup.coeff (MonoidHom.id (FreeGroup A)) Ω.toSystem g) ∧
+      ∀ k, Ω.partition.itemKind k ≠ .active → σ (Ω.item k) = Ω.item k := by
+  simp [activeAut, mem_fixingSubgroup_iff, or_imp, forall_and]
+
+variable {Ω} in
+/-- An automorphism of the coordinate group fixing the coefficients and the items outside the
+active sections fixes the parametric items. -/
+theorem apply_item_of_mem_activeAut {σ : MulAut Ω.coordGroup} (hσ : σ ∈ Ω.activeAut)
+    {k : Fin Ω.numItems} (hk : Ω.IsParamItem k) : σ (Ω.item k) = Ω.item k :=
+  (mem_activeAut_iff.1 hσ).2 k (by simp [(Ω.isParamItem_iff).1 hk])
 
 end ParamGenEq
 
