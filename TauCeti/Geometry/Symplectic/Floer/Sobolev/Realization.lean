@@ -97,18 +97,18 @@ open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_j
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- The coefficient field of the linearized Floer operator on jets: at `z`, the linear map
-`(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v` (`TauCeti.jetCoeff`), where `A` is the zeroth-order
-part `TauCeti.SymplecticForm.floerLinearizationCoeff`. -/
+`(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v` (`TauCeti.firstOrderJetCoeff`), where `A` is the
+zeroth-order part `TauCeti.SymplecticForm.floerLinearizationCoeff`. -/
 def floerJetCoeff (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (u : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V →L[ℝ] V :=
-  jetCoeff (J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u z)
+  firstOrderJetCoeff (J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u z)
 
 /-- The coefficient field of the linearized Floer operator, evaluated on a jet. -/
 theorem floerJetCoeff_apply (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) (v : V × V × V) :
     ω.floerJetCoeff J Ks Kt u z v =
       v.2.1 + J z (u z) v.2.2 + ω.floerLinearizationCoeff J Ks Kt u z v.1 :=
-  jetCoeff_apply _ _ v
+  firstOrderJetCoeff_apply _ _ v
 
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a section, the coefficient field gives the linearized Floer
 operator `D_u ξ`. -/
@@ -198,7 +198,7 @@ theorem continuous_floerJetCoeff (ω : SymplecticForm V) {J : ℝ × ℝ → V �
   have hJu : ContinuousAt (fun z ↦ J z (u z)) z :=
     (hJ z).continuousAt.comp (f := fun z ↦ (z, u z))
       (continuousAt_id.prodMk hu.continuous.continuousAt)
-  exact continuousAt_jetCoeff hJu
+  exact continuousAt_firstOrderJetCoeff hJu
     (ω.continuousAt_floerLinearizationCoeff (hJ z) (hKs z) (hKt z) hu.contDiffAt)
 
 /-- For the datum `K = H_t dt`, the zeroth-order part of the linearized Floer operator is bounded
@@ -262,7 +262,7 @@ theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ →
       (mul_le_mul hdJb hδz (norm_nonneg _)
         ((norm_nonneg (fderiv ℝ (J' (s, t)) (u (s, t)))).trans hdJb))
       (mul_le_mul hJb hdXb (norm_nonneg _) ((norm_nonneg (J' (s, t) (u (s, t)))).trans hJb)))
-  exact (norm_jetCoeff_le _ _).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
+  exact (norm_firstOrderJetCoeff_le _ _).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
 
 /-- **The coefficients of the linearized Floer operator are bounded for Floer data cylindrical
 near the ends.** Let the data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) along the graph of a

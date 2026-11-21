@@ -65,11 +65,11 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- The coefficient field of the linearized Floer operator on the jets `(√ρ ξ, ∂s ξ, ∂t ξ)` of a
 conformal weight `ρ`: at `z`, the linear map `(a, b, c) ↦ b + J(z, u z) c + ρ(z)^(-1/2) C(z) a`
-(`TauCeti.jetCoeff`), where `C` is the zeroth-order part
+(`TauCeti.firstOrderJetCoeff`), where `C` is the zeroth-order part
 `TauCeti.SymplecticForm.floerLinearizationCoeff`. -/
 def floerConformalJetCoeff (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V →L[ℝ] V :=
-  jetCoeff (J z (u z)) ((√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z)
+  firstOrderJetCoeff (J z (u z)) ((√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z)
 
 /-- The coefficient field of the linearized Floer operator on conformal jets, evaluated on a
 jet. -/
@@ -78,7 +78,7 @@ theorem floerConformalJetCoeff_apply (ω : SymplecticForm V) (ρ : ℝ × ℝ �
     (v : V × V × V) :
     ω.floerConformalJetCoeff ρ J Ks Kt u z v =
       v.2.1 + J z (u z) v.2.2 + (√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z v.1 :=
-  jetCoeff_apply _ _ v
+  firstOrderJetCoeff_apply _ _ v
 
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
@@ -97,7 +97,7 @@ theorem norm_floerConformalJetCoeff_le (ω : SymplecticForm V) (ρ : ℝ × ℝ 
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ‖ω.floerConformalJetCoeff ρ J Ks Kt u z‖ ≤
       1 + ‖J z (u z)‖ + (√(ρ z))⁻¹ * ‖ω.floerLinearizationCoeff J Ks Kt u z‖ := by
-  refine (norm_jetCoeff_le _ _).trans_eq ?_
+  refine (norm_firstOrderJetCoeff_le _ _).trans_eq ?_
   rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
 
 /-- The coefficient field on conformal jets is continuous on `U` when the weight is a conformal
@@ -118,7 +118,7 @@ theorem continuousOn_floerConformalJetCoeff (ω : SymplecticForm V) {U : Set (�
   have hρz : ContinuousAt (fun z ↦ (√(ρ z))⁻¹) z :=
     ((hρ.continuousOn.continuousAt (hρ.isOpen.mem_nhds hz)).sqrt).inv₀
       (Real.sqrt_pos.2 (hρ.pos z hz)).ne'
-  exact (continuousAt_jetCoeff hJu (hρz.smul hA)).continuousWithinAt
+  exact (continuousAt_firstOrderJetCoeff hJu (hρz.smul hA)).continuousWithinAt
 
 variable (U : Set (ℝ × ℝ)) (ρ : ℝ × ℝ → ℝ)
 

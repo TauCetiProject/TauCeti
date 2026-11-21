@@ -48,14 +48,14 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 variable {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
 
 /-- The coefficient `(v, v_s, v_t) ↦ v_s + J v_t` of the Cauchy--Riemann operator `∂s + J ∂t`
-on jets: the coefficient field `TauCeti.jetCoeff` of `∂s + J ∂t + 0`. -/
+on jets: the coefficient field `TauCeti.firstOrderJetCoeff` of `∂s + J ∂t + 0`. -/
 noncomputable def cauchyRiemannJetCoeff (J : AlmostComplexStructure V) : V × V × V →L[ℝ] V :=
-  jetCoeff (LinearMap.toContinuousLinearMap J.toLinearMap) 0
+  firstOrderJetCoeff (LinearMap.toContinuousLinearMap J.toLinearMap) 0
 
 @[simp]
 theorem cauchyRiemannJetCoeff_apply (J : AlmostComplexStructure V) (v : V × V × V) :
     cauchyRiemannJetCoeff J v = v.2.1 + J v.2.2 := by
-  simp [cauchyRiemannJetCoeff, jetCoeff_apply]
+  simp [cauchyRiemannJetCoeff]
 
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a map, the coefficient gives `∂s ξ + J ∂t ξ`. -/
 theorem cauchyRiemannJetCoeff_jet (J : AlmostComplexStructure V) (ξ : ℝ × ℝ → V)
