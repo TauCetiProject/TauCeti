@@ -308,7 +308,7 @@ private theorem tendsto_fract_Ico_of_asympEquidistributed {u : ℕ → ℝ}
   classical
   set E : Set UnitAddCircle := (fun θ : UnitAddCircle ↦ (AddCircle.equivIco 1 0 θ : ℝ)) ⁻¹' Ico a b
   have hm : Measurable (fun θ : UnitAddCircle ↦ (AddCircle.equivIco 1 0 θ : ℝ)) :=
-    measurable_subtype_coe.comp (AddCircle.measurableEquivIco 1 0).measurable
+    measurable_subtypeVal.comp (AddCircle.measurableEquivIco 1 0).measurable
   have hmeas : (AddCircle.haarAddCircle : Measure UnitAddCircle).real E = b - a := by
     rw [Measure.real, (by simp [AddCircle.volume_eq_smul_haarAddCircle] :
         (AddCircle.haarAddCircle : Measure UnitAddCircle) = volume),

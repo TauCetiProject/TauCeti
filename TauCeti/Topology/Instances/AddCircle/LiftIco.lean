@@ -58,7 +58,7 @@ theorem frontier_preimage_equivIco_Ico_subset {T c a b : ℝ} [Fact (0 < T)] (hc
   set E : Set (AddCircle T) := (fun θ : AddCircle T ↦ (equivIco T c θ : ℝ)) ⁻¹' Ico a b
   intro x hx; by_contra hnot
   obtain ⟨hxa, hxb⟩ := not_or.mp (by simpa [mem_insert_iff, mem_singleton_iff] using hnot)
-  set t : ℝ := (equivIco T c x : ℝ); obtain ⟨ht0, ht1⟩ := (equivIco T c x).2
+  set t : ℝ := (equivIco T c x : ℝ); obtain ⟨ht0, ht1⟩ := (equivIco T c x).property
   have hxt : (t : AddCircle T) = x := by simp [t]
   have himg_open (u v : ℝ) : IsOpen (((↑) : ℝ → AddCircle T) '' Ioo u v) :=
     QuotientAddGroup.isOpenMap_coe _ isOpen_Ioo

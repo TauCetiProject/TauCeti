@@ -114,7 +114,7 @@ theorem sum_fourier_div_eq_zero {k : ℤ} {M : ℕ} (hk : k ≠ 0) (hM : k.natAb
   have hM0 : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (lt_of_le_of_lt (Nat.zero_le _) hM).ne'
   set ζ : ℂ := fourier k (((1 / (M : ℝ) : ℝ) : UnitAddCircle))
   have hpow (j : ℕ) : fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = ζ ^ j := by
-    simp only [ζ, fourier_coe_apply, ← Complex.exp_nat_mul]; congr 1; push_cast; ring
+    simp only [ζ, fourier_coe_apply, ← Complex.exp_natCast_mul]; congr 1; push_cast; ring
   have hζM : ζ ^ M = 1 := by rw [← hpow M, div_self hM0, AddCircle.coe_period, fourier_eval_zero]
   have hζne : ζ ≠ 1 := fun h1 ↦ by
     have hEq : fourier 1 (((k : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = 1 := by
