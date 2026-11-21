@@ -31,7 +31,9 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) a x₀ x` on `[a, b]`, for `x`
 solutions on the whole line, `Continuous.eq_of_hasDerivAt_clm_apply` deduces uniqueness for
 `v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`, and
 `Continuous.eqOn_Ici_of_hasDerivAt_clm_apply` does the same in forward time on a half-line
-`[a, ∞)` from `ODE_solution_unique_of_mem_Icc_right`.
+`[a, ∞)` from `ODE_solution_unique_of_mem_Icc_right`. A solution of `v' = B(t) v` that lies at one
+time in a closed complemented subspace invariant under every `B(t)` lies in it at all times
+(`Continuous.mem_of_hasDerivAt_clm_apply`).
 
 Linear equations with merely measurable, bounded coefficients arise as the Galerkin
 approximations of linear parabolic equations, whose coefficients are only measurable in time.
@@ -269,3 +271,30 @@ theorem Continuous.eqOn_Ici_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGr
     (HasDerivAt.continuousOn fun s hs ↦ hv s hs.1) (fun s hs ↦ (hv s hs.1).hasDerivWithinAt)
     (fun _ _ ↦ mem_univ _) (HasDerivAt.continuousOn fun s hs ↦ hw s hs.1)
     (fun s hs ↦ (hw s hs.1).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) h ⟨ht, le_rfl⟩
+
+/-- **A linear equation preserves the invariant subspaces of its coefficients.** Let `V` be a
+closed complemented subspace invariant under every operator of a continuous family `B`. A solution
+of `w' = B(t) w` on the line that lies in `V` at one time lies in `V` at all times: for a continuous
+projection `P` onto `V`, the component `w - P w` solves a linear equation and vanishes at that
+time. -/
+theorem Continuous.mem_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {V : Submodule ℝ X}
+    (hVc : V.ClosedComplemented) (hV : ∀ t, ∀ x ∈ V, B t x ∈ V) {w : ℝ → X}
+    (hw : ∀ t, HasDerivAt w (B t (w t)) t) {t₀ : ℝ} (h : w t₀ ∈ V) (t : ℝ) : w t ∈ V := by
+  obtain ⟨P, hP⟩ := hVc
+  set Q := ContinuousLinearMap.id ℝ X - V.subtypeL ∘L P
+  have hQV {x : X} (hx : x ∈ V) : Q x = 0 := by
+    simp [Q, hP ⟨x, hx⟩]
+  -- `Q w` solves `u' = Q B(t) u`, since `Q B(t)` kills `V`.
+  have hQ (t : ℝ) (x : X) : Q (B t x) = (Q ∘L B t) (Q x) := by
+    have hx : Q x = x - P x := rfl
+    rw [ContinuousLinearMap.comp_apply, hx, map_sub, map_sub,
+      hQV (hV t _ (P x).property), sub_zero]
+  have hQw : (fun t ↦ Q (w t)) = fun _ ↦ 0 :=
+    (continuous_const.clm_comp hB).eq_of_hasDerivAt_clm_apply (B := fun t ↦ Q ∘L B t)
+      (fun t ↦ (Q.hasFDerivAt.comp_hasDerivAt t (hw t)).congr_deriv (hQ t (w t)))
+      (fun t ↦ by simpa using hasDerivAt_const t (0 : X)) (hQV h)
+  have h0 : w t - P (w t) = 0 := congrFun hQw t
+  rw [sub_eq_zero] at h0
+  rw [h0]
+  exact (P (w t)).property

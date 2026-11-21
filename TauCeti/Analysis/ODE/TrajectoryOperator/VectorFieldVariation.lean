@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.ODE.EnergyEstimate.Cokernel
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Path
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.LinearAlgebra.Submodule.Quotient
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Vertical variations of a lifted vector field make the linearized equation onto
@@ -46,7 +48,13 @@ then `w s ∈ (ker π)ᗮ` for all `s`, because a linear equation preserves the 
 its coefficients (`Continuous.mem_of_hasDerivAt_clm_apply`). Finally `(ker π)ᗮ` is the range of
 `π†`, so `w = π† u` with `u` a square-integrable solution of the base adjoint equation
 `u' = B† u`, which vanishes because `D_B` is onto
-(`TauCeti.eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker`).
+(`TauCeti.WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective`,
+`TauCeti.eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker`).
+
+This adapts the proof of `TauCeti.range_trajectoryOperator_sup_span_metricVariations_eq_top` in
+`TauCeti.Analysis.Calculus.Morse.MorseSmale.MetricVariation`, with vertical vector-field variations
+in place of metric variations. The two share the localization by a bump function along a
+once-visited point (`TauCeti.exists_contDiff_tsupport_subset_integral_comp_mul_pos`).
 
 ## Main definitions
 
@@ -55,13 +63,9 @@ its coefficients (`Continuous.mem_of_hasDerivAt_clm_apply`). Finally `(ker π)�
 
 ## Main results
 
-* `Continuous.mem_of_hasDerivAt_clm_apply`: a solution of `w' = B(t) w` that lies in a subspace
-  invariant under every `B(t)` at one time lies in it at all times.
 * `TauCeti.eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker`: for a coefficient lifting one
   whose trajectory operator is onto, a square-integrable solution of the adjoint equation that is
   orthogonal to `ker π` at one time vanishes.
-* `TauCeti.WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective`: when
-  `D_B` is onto, the adjoint equation `u' = B† u` has no nonzero square-integrable solution.
 * `TauCeti.orthogonal_range_trajectoryOperator_sup_span_vectorFieldVariations_eq_bot`: a path
   orthogonal to the range of `D_A` and to the vertical variations near a once-visited point
   vanishes.
@@ -81,30 +85,6 @@ public section
 
 open Filter MeasureTheory Set Topology TopologicalSpace
 open scoped ContDiff ENNReal RealInnerProductSpace
-
-/-! ### Invariant subspaces of a linear equation -/
-
-/-- **A linear equation preserves the invariant subspaces of its coefficients.** Let `V` be a
-subspace with an orthogonal projection, invariant under every operator of a continuous family `B`.
-A solution of `w' = B(t) w` on the line that lies in `V` at one time lies in `V` at all times: its
-component orthogonal to `V` solves a linear equation and vanishes at that time. -/
-theorem Continuous.mem_of_hasDerivAt_clm_apply {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {B : ℝ → E →L[ℝ] E} (hB : Continuous B) {V : Submodule ℝ E}
-    [V.HasOrthogonalProjection] (hV : ∀ t, ∀ x ∈ V, B t x ∈ V) {w : ℝ → E}
-    (hw : ∀ t, HasDerivAt w (B t (w t)) t) {t₀ : ℝ} (h : w t₀ ∈ V) (t : ℝ) : w t ∈ V := by
-  set Q := Vᗮ.starProjection
-  -- The orthogonal component `Q w` solves `u' = Q B(t) u`, since `Q B(t)` kills `V`.
-  have hQ (t : ℝ) (x : E) : Q (B t x) = (Q ∘L B t) (Q x) := by
-    conv_lhs => rw [← V.starProjection_add_starProjection_orthogonal x, map_add, map_add]
-    rw [(Submodule.starProjection_apply_eq_zero_iff _).2 (Submodule.le_orthogonal_orthogonal V
-      (hV t _ (V.starProjection_apply_mem x))), zero_add, ContinuousLinearMap.comp_apply]
-  have hQw : (fun t ↦ Q (w t)) = fun _ ↦ 0 :=
-    (continuous_const.clm_comp hB).eq_of_hasDerivAt_clm_apply (B := fun t ↦ Q ∘L B t)
-      (fun t ↦ (Q.hasFDerivAt.comp_hasDerivAt t (hw t)).congr_deriv (hQ t (w t)))
-      (fun t ↦ by simpa using hasDerivAt_const t (0 : E))
-      ((Submodule.starProjection_apply_eq_zero_iff _).2 (Submodule.le_orthogonal_orthogonal V h))
-  rw [← V.orthogonal_orthogonal, ← Submodule.starProjection_apply_eq_zero_iff]
-  exact congrFun hQw t
 
 namespace TauCeti
 
@@ -143,26 +123,6 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
 /-! ### The adjoint equation of a lifted coefficient -/
 
-/-- **An onto trajectory operator has no square-integrable adjoint solutions.** If the trajectory
-operator `D_A u = u' + A u` of a continuous family on a finite-dimensional space maps
-`W^{1,2}(ℝ, E)` onto `L²(ℝ, E)`, then the adjoint equation `v' = A(s)† v` has no nonzero
-square-integrable solution: such a solution would be orthogonal to the range of `D_A`. -/
-theorem WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective
-    {A : ℝ → E →L[ℝ] E} (hA : Continuous A)
-    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
-    (hsurj : Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) AL)) :
-    squareIntegrableSolutions (fun s ↦ -ContinuousLinearMap.adjoint (A s)) = ⊥ := by
-  have hadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
-    ((ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous.comp hA).neg
-  obtain ⟨AL', hAL'⟩ := WeakDerivStep.exists_ae_eq_adjoint AL hAL
-  rw [← WeakDerivStep.ker_trajectoryOperator_eq_bot_iff hadj (-AL')
-    ((Lp.coeFn_neg AL').trans (hAL'.mono fun s hs ↦ by simp [hs]))]
-  refine (WeakDerivStep.surjective_trajectoryOperator_iff_ker_neg_eq_bot
-    (WeakDerivStep.ae_eq_adjoint_of_ae_eq hAL hAL') ?_).1 hsurj
-  rw [LinearMap.range_eq_top.2 hsurj]
-  exact isClosed_univ
-
 /-- **Square-integrable adjoint solutions of a lifted coefficient.** Let `π : E → F` be onto and
 let the coefficients `A` on `E` and `B` on `F` satisfy `π ∘ A(s) = B(s) ∘ π`, with `B` continuous
 and its trajectory operator `D_B u = u' + B u` from `W^{1,2}(ℝ, F)` onto `L²(ℝ, F)`. A
@@ -176,10 +136,6 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
     (hsurj : Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) BL))
     {w : ℝ → E} (hw : ∀ s, HasDerivAt w (ContinuousLinearMap.adjoint (A s) (w s)) s)
     (hw2 : MemLp w 2) {s₀ : ℝ} (hs₀ : w s₀ ∈ π.kerᗮ) : w = 0 := by
-  have hadjA : Continuous fun s ↦ ContinuousLinearMap.adjoint (A s) :=
-    (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous.comp hA
-  have hadjB : Continuous fun s ↦ ContinuousLinearMap.adjoint (B s) :=
-    (ContinuousLinearMap.adjoint : (F →L[ℝ] F) ≃ₗᵢ⋆[ℝ] (F →L[ℝ] F)).continuous.comp hB
   have hπA (s : ℝ) (x : E) : π (A s x) = B s (π x) := by
     simpa using congrArg (fun T : E →L[ℝ] F ↦ T x) (hAB s)
   have hAπ (s : ℝ) (y : F) : ContinuousLinearMap.adjoint (A s) (ContinuousLinearMap.adjoint π y) =
@@ -190,8 +146,12 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
   have hinv (s : ℝ) (x : E) (hx : x ∈ π.kerᗮ) : ContinuousLinearMap.adjoint (A s) x ∈ π.kerᗮ := by
     refine (Submodule.mem_orthogonal _ _).2 fun y hy ↦ ?_
     rw [ContinuousLinearMap.adjoint_inner_right]
-    exact (Submodule.mem_orthogonal _ _).1 hx _ (by simp_all)
-  have hmem (s : ℝ) : w s ∈ π.kerᗮ := hadjA.mem_of_hasDerivAt_clm_apply hinv hw hs₀ s
+    have hy' : π y = 0 := LinearMap.mem_ker.1 hy
+    exact (Submodule.mem_orthogonal _ _).1 hx _
+      (by rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hπA, hy', map_zero])
+  have hmem (s : ℝ) : w s ∈ π.kerᗮ := hA.clm_adjoint.mem_of_hasDerivAt_clm_apply
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.isClosed_of_finiteDimensional _)) hinv hw hs₀ s
   -- Since `π` is onto, `π†` is injective with range `(ker π)ᗮ`; let `L` be a left inverse.
   have hinj : Function.Injective (ContinuousLinearMap.adjoint π) := by
     have h := π.orthogonal_range
@@ -218,7 +178,7 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
       mem_squareIntegrableSolutions.2 ⟨u, rfl, fun s ↦ by simpa using hu s, L.comp_memLp' hw2⟩
     rwa [WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective hB hBL hsurj,
       Submodule.mem_bot] at this
-  have hu_eq : u = fun _ ↦ 0 := hadjB.eq_of_hasDerivAt_clm_apply hu
+  have hu_eq : u = fun _ ↦ 0 := hB.clm_adjoint.eq_of_hasDerivAt_clm_apply hu
     (fun s ↦ by simpa using hasDerivAt_const s (0 : F)) hu0
   funext s
   rw [← hrange s]
@@ -226,9 +186,9 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
 
 /-- Near a point `γ s₀` that `γ` passes through only once, a continuous path `w` with `w s₀` not
 orthogonal to `K` pairs positively with the path of a vector field with values in `K` localized in
-a given neighbourhood of `γ s₀`. The field is `ψ • e` for a bump function `ψ` at `γ s₀` and the
-projection `e` of `w s₀` to `K`; the bump is so small that `γ` meets it only at times where
-`⟪e, w s⟫ > 0`. -/
+a given neighbourhood of `γ s₀`. The field is `ψ • e` for a bump function `ψ` at `γ s₀`
+(`TauCeti.exists_contDiff_tsupport_subset_integral_comp_mul_pos`) and the projection `e` of `w s₀`
+to `K`. -/
 private theorem exists_integral_inner_vectorFieldVariation_pos (hγ : Continuous γ) {s₀ : ℝ}
     (hvisit : comap γ (𝓝 (γ s₀)) ≤ 𝓝 s₀) {U : Set E} (hU : U ∈ 𝓝 (γ s₀)) {K : Submodule ℝ E}
     {w : ℝ → E} (hwc : Continuous w) (hw0 : w s₀ ∉ Kᗮ) :
@@ -242,36 +202,12 @@ private theorem exists_integral_inner_vectorFieldVariation_pos (hγ : Continuous
     rw [h0, real_inner_self_eq_norm_sq]
     exact pow_pos
       (norm_pos_iff.2 fun h ↦ hw0 ((Submodule.starProjection_apply_eq_zero_iff _).1 h)) 2
-  have hq : Continuous fun s ↦ ⟪e, w s⟫ := continuous_const.inner hwc
-  obtain ⟨δ, hδ, hqδ⟩ := Metric.eventually_nhds_iff_ball.1
-    (hq.continuousAt.eventually (lt_mem_nhds he))
-  -- A small ball around `γ s₀` inside `U` meets `γ` only at times within `δ` of `s₀`.
-  obtain ⟨V, hV, hVδ⟩ := mem_comap.1 (hvisit (Metric.ball_mem_nhds s₀ hδ))
-  obtain ⟨r, hr, hrUV⟩ := Metric.mem_nhds_iff.1 (inter_mem hU hV)
-  let ψ : ContDiffBump (γ s₀) := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  have hψr : ψ.rOut = r / 2 := rfl
-  have hψγ {s : ℝ} (hs : ψ (γ s) ≠ 0) : s ∈ Metric.ball s₀ δ := by
-    refine hVδ (hrUV ?_).2
-    exact Metric.ball_subset_ball (by rw [hψr]; linarith)
-      (ψ.support_eq ▸ Function.mem_support.2 hs)
-  have hψsupp : HasCompactSupport fun s ↦ ψ (γ s) :=
-    HasCompactSupport.of_support_subset_isCompact (K := Metric.closedBall s₀ δ)
-      (isCompact_closedBall s₀ δ) fun s hs ↦ Metric.ball_subset_closedBall (hψγ hs)
-  refine ⟨fun x ↦ ψ x • e, ψ.contDiff.smul contDiff_const, ψ.hasCompactSupport.smul_right,
-    (tsupport_smul_subset_left _ _).trans ?_, fun x ↦ K.smul_mem _ (K.starProjection_apply_mem _),
-    hψsupp.mono fun s hs h ↦ hs (by simp [h]), ?_⟩
-  · rw [ψ.tsupport_eq]
-    exact fun x hx ↦ (hrUV (Metric.closedBall_subset_ball (by rw [hψr]; linarith) hx)).1
-  -- The pairing is the integral of a nonnegative function, positive at `s₀`.
-  simp only [real_inner_smul_left]
-  refine Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := s₀)
-    (((ψ.contDiff (n := 0)).continuous.comp hγ).mul hq)
-    (hψsupp.mono fun s hs h ↦ hs (by simp [h])) (fun s ↦ ?_) ?_
-  · by_cases hs : ψ (γ s) = 0
-    · simp [hs]
-    · exact mul_nonneg ψ.nonneg (hqδ s (hψγ hs)).le
-  · rw [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le), one_mul]
-    exact he.ne'
+  obtain ⟨ψ, hψ, hψc, hψU, hψγ, hpos⟩ := exists_contDiff_tsupport_subset_integral_comp_mul_pos hγ
+    hvisit hU (continuous_const.inner hwc) he
+  refine ⟨fun x ↦ ψ x • e, hψ.smul contDiff_const, hψc.smul_right,
+    (tsupport_smul_subset_left _ _).trans hψU, fun x ↦ K.smul_mem _ (K.starProjection_apply_mem _),
+    hψγ.smul_right, ?_⟩
+  simpa only [real_inner_smul_left] using hpos
 
 /-! ### Surjectivity of the universal linearization -/
 
@@ -311,14 +247,12 @@ theorem orthogonal_range_trajectoryOperator_sup_span_vectorFieldVariations_eq_bo
     have hmem : MemLp (fun s ↦ Y (γ s)) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
       rw [hvol]
       exact (hY.continuous.comp hγ).memLp_of_hasCompactSupport hpath
-    have hint : ⟪hmem.toLp _, v⟫ = ∫ s, ⟪Y (γ s), w s⟫
-        ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ) := by
-      rw [L2.inner_def]
-      refine integral_congr_ae ?_
-      filter_upwards [hmem.coeFn_toLp, hvw] with s hs hs'
-      rw [hs, hs']
+    have hint : ⟪v, hmem.toLp _⟫ = ∫ s, ⟪Y (γ s), w s⟫
+        ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ) :=
+      (L2.inner_toLp v hmem).trans (integral_congr_ae (hvw.mono fun s hs ↦
+        (congrArg (⟪·, Y (γ s)⟫) hs).trans (real_inner_comm _ _)))
     exact hpos.ne' ((hint.trans (by rw [hvol])).symm.trans
-      (hvar _ ⟨Y, hY, hYc, hYU, hYK, hmem.coeFn_toLp⟩))
+      ((real_inner_comm _ _).trans (hvar _ ⟨Y, hY, hYc, hYU, hYK, hmem.coeFn_toLp⟩)))
   have hw2 : MemLp w 2 := by
     simpa [hvol] using (Lp.memLp v).ae_eq hvw
   have hw0 := eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker hπ hA hB hAB hBL hsurj hw hw2 hs₀
