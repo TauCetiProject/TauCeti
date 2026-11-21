@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.Algebra.Field.Equiv
 import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
@@ -23,9 +22,11 @@ This file also proves the absorption lemmas for componentwise membership: if eve
 component of `x` lies in an ideal, then so does every homogeneous component of `a * x`, and, when
 the ideal is two-sided, of `x * a`.
 
-Finally, in a connected `ℕ`-graded algebra, whose degree-zero part consists of the scalars, every
-element is its constant term plus an element of the irrelevant ideal. So the scalars map onto
-`A ⧸ A₊`, and over a field the irrelevant ideal is maximal.
+Finally, the irrelevant ideal `A₊` is two-sided, and in a connected graded algebra, whose
+degree-zero part consists of the scalars, every element is its constant term plus an element of
+`A₊`. So the scalars map onto `A ⧸ A₊`, and over a field `A₊` is maximal. These results need
+neither commutativity of `A` nor grading by `ℕ`: any canonically ordered grading monoid, the
+setting of Mathlib's `HomogeneousIdeal.irrelevant`, will do.
 
 ## Main results
 
@@ -35,6 +36,8 @@ element is its constant term plus an element of the irrelevant ideal. So the sca
   asks the ideal to be two-sided, through `Ideal.IsTwoSided`.
 * `CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span`: a complete family of orthogonal
   idempotents with homogeneous left ideals consists of degree-zero elements.
+* `HomogeneousIdeal.isTwoSided_toIdeal_irrelevant`: the irrelevant ideal is two-sided, so the
+  quotient `A ⧸ A₊` is a ring.
 * `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: in a connected graded algebra
   every element is a scalar plus an element of the irrelevant ideal.
 * `TauCeti.GradedAlgebra.surjective_algebraMap_quotient_irrelevant`: in a connected graded algebra
@@ -126,9 +129,7 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
   have hvanish : ∀ p, p ≠ 0 → (decompose 𝒜 (e i) p : A) = 0 := by
     intro p hp
     have hsum : ∑ j, (decompose 𝒜 (e j) p : A) = 0 := by
-      have h : (decompose 𝒜 (∑ j, e j) p : A) = ∑ j, (decompose 𝒜 (e j) p : A) := by
-        rw [decompose_sum, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum]
-      rw [← h, he.complete]
+      rw [← AddSubmonoidClass.coe_finsetSum, ← DirectSum.sum_apply, ← decompose_sum, he.complete]
       exact decompose_of_mem_ne 𝒜 SetLike.GradedOne.one_mem hp.symm
     calc (decompose 𝒜 (e i) p : A)
         = (decompose 𝒜 (e i) p : A) * e i := (hfix i p).symm
@@ -141,24 +142,34 @@ theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
       _ = 0 := by rw [hsum, zero_mul]
   rw [← sum_support_decompose 𝒜 (e i)]
   refine sum_mem fun p _ ↦ ?_
-  by_cases hp : p = 0
-  · subst hp
-    exact (decompose 𝒜 (e i) 0).property
-  · rw [hvanish p hp]
-    exact zero_mem _
+  obtain rfl | hp := eq_or_ne p 0
+  exacts [SetLike.coe_mem _, hvanish p hp ▸ zero_mem _]
 
 end CompleteOrthogonalIdempotents
+
+namespace HomogeneousIdeal
+
+variable {ι σ A : Type*} [Semiring A] [DecidableEq ι] [AddCommMonoid ι] [PartialOrder ι]
+  [CanonicallyOrderedAdd ι] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜]
+
+/-- The irrelevant ideal is two-sided, as the kernel of the projection onto degree zero. -/
+instance isTwoSided_toIdeal_irrelevant : (irrelevant 𝒜).toIdeal.IsTwoSided :=
+  inferInstanceAs (RingHom.ker (GradedRing.projZeroRingHom 𝒜)).IsTwoSided
+
+end HomogeneousIdeal
 
 namespace TauCeti.GradedAlgebra
 
 open HomogeneousIdeal
 
+variable {ι R A : Type*} [DecidableEq ι] [AddCommMonoid ι] [PartialOrder ι]
+  [CanonicallyOrderedAdd ι]
+
 /-- In a connected graded algebra, whose degree-zero part consists of the scalars, every element
 is a scalar plus an element of the irrelevant ideal. -/
-theorem exists_sub_algebraMap_mem_irrelevant {R A : Type*} [CommSemiring R] [CommRing A]
-    [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
-    (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) (a : A) :
-    ∃ c : R, a - algebraMap R A c ∈ irrelevant 𝒜 := by
+theorem exists_sub_algebraMap_mem_irrelevant [CommSemiring R] [Ring A] [Algebra R A]
+    (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A))
+    (a : A) : ∃ c : R, a - algebraMap R A c ∈ irrelevant 𝒜 := by
   obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ (decompose 𝒜 a 0).property)
   refine ⟨c, ?_⟩
   rw [mem_irrelevant_iff, map_sub, hc, GradedRing.proj_apply,
@@ -166,33 +177,34 @@ theorem exists_sub_algebraMap_mem_irrelevant {R A : Type*} [CommSemiring R] [Com
 
 /-- In a connected graded algebra the scalars map onto `A ⧸ A₊`: every element is its constant
 term modulo `A₊`. -/
-theorem surjective_algebraMap_quotient_irrelevant {R A : Type*} [CommSemiring R] [CommRing A]
-    [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
-    (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) :
+theorem surjective_algebraMap_quotient_irrelevant [CommSemiring R] [Ring A] [Algebra R A]
+    (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) :
     Function.Surjective (algebraMap R (A ⧸ (irrelevant 𝒜).toIdeal)) := by
   intro y
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
   obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 a
   exact ⟨c, (Ideal.Quotient.eq.2 hc).symm⟩
 
-/-- The irrelevant ideal of a nontrivial connected graded algebra over a field is maximal, since
-the quotient `A ⧸ A₊` is the field `k`. -/
-theorem isMaximal_toIdeal_irrelevant {k A : Type*} [Field k] [CommRing A] [Nontrivial A]
-    [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
-    (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A)) :
+/-- The irrelevant ideal of a nontrivial connected graded algebra over a field is maximal: it does
+not contain `1`, and modulo `A₊` every element outside `A₊` is a nonzero scalar, hence a unit. -/
+theorem isMaximal_toIdeal_irrelevant {k : Type*} [Field k] [Ring A] [Nontrivial A] [Algebra k A]
+    (𝒜 : ι → Submodule k A) [GradedAlgebra 𝒜] (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A)) :
     (irrelevant 𝒜).toIdeal.IsMaximal := by
-  -- `1` has degree-zero component `1 ≠ 0`, so `A₊ ≠ ⊤` and `A ⧸ A₊` is nontrivial.
-  have hne : (irrelevant 𝒜).toIdeal ≠ ⊤ := fun h ↦ by
-    have h1 : (1 : A) ∈ irrelevant 𝒜 := by
-      rw [← HomogeneousIdeal.mem_iff, h]
-      exact Submodule.mem_top
-    rw [mem_irrelevant_iff, GradedRing.proj_apply,
+  refine Ideal.isMaximal_iff.2 ⟨fun h1 ↦ ?_, fun J a hle ha haJ ↦ ?_⟩
+  · -- `1` has degree-zero component `1 ≠ 0`.
+    rw [HomogeneousIdeal.mem_iff, mem_irrelevant_iff, GradedRing.proj_apply,
       decompose_of_mem_same 𝒜 SetLike.GradedOne.one_mem] at h1
     exact one_ne_zero h1
-  have := Ideal.Quotient.nontrivial_iff.2 hne
-  exact Ideal.Quotient.maximal_of_isField _ <| MulEquiv.isField (Field.toIsField k)
-    (RingEquiv.ofBijective (algebraMap k (A ⧸ (irrelevant 𝒜).toIdeal))
-      ⟨(algebraMap k _).injective,
-        surjective_algebraMap_quotient_irrelevant 𝒜 h𝒜⟩).symm.toMulEquiv
+  · -- Modulo `A₊ ≤ J`, the element `a ∉ A₊` is a scalar `c`, nonzero, so `J` contains a unit.
+    obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 a
+    rw [← HomogeneousIdeal.mem_iff] at hc
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      rw [map_zero, sub_zero] at hc
+      exact ha hc
+    have hcJ : algebraMap k A c ∈ J :=
+      sub_sub_cancel a (algebraMap k A c) ▸ J.sub_mem haJ (hle hc)
+    have := J.mul_mem_left (algebraMap k A c⁻¹) hcJ
+    rwa [← map_mul, inv_mul_cancel₀ hc0, map_one] at this
 
 end TauCeti.GradedAlgebra
