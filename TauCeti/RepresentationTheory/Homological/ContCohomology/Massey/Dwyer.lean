@@ -34,7 +34,9 @@ only the corner, this gives Dwyer's criteria:
 The two directions of the first criterion are the homomorphism
 `TauCeti.ContCohomology.DefiningSystem.toQuotientLift` attached to a defining system, characterized
 by `TauCeti.ContCohomology.DefiningSystem.mk_eq_toQuotientLift_iff`, and the defining system
-`TauCeti.ContCohomology.DefiningSystem.ofLift` formed by the entries of a lift.
+`TauCeti.ContCohomology.DefiningSystem.ofLift` formed by the entries of a lift. The lift of the
+second criterion is the homomorphism `TauCeti.ContCohomology.DefiningSystem.toLift` attached to a
+defining system and a primitive of its value, whose corner entry is the primitive.
 
 Continuity of a homomorphism into the discrete groups `Uₙ₊₁(R)` and `Uₙ₊₁(R) / Z` is written as
 openness of its kernel. Neither criterion assumes that the `χ i` are homomorphisms, nor that the
@@ -126,6 +128,12 @@ private theorem continuous_liftEntries_apply (D : DefiningSystem Γ R n χ) {c :
   · simpa only [liftEntries_apply_of_corner D c _ hij hcorner] using hc
   · simpa only [liftEntries_apply_of_ne D c _ hij hcorner] using D.continuous_entry i j
 
+/-- For a continuous corner `c`, the matrices `liftEntries D c g` depend continuously on `g`; for
+a discrete `R` their space is discrete, so the set of `g` where they lie in a given set is open. -/
+private theorem continuous_liftEntries (D : DefiningSystem Γ R n χ) {c : Γ → R}
+    (hc : Continuous c) : Continuous fun g ↦ (liftEntries D c g : Fin (n + 1) → Fin (n + 1) → R) :=
+  continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_liftEntries_apply D hc i j
+
 /-- The matrix `liftEntries D c g` as an element of `Uₙ₊₁(R)`. -/
 private noncomputable def liftMatrix (D : DefiningSystem Γ R n χ) (c : Γ → R) (g : Γ) :
     upperUnitriangularGroup (Fin (n + 1)) R :=
@@ -144,17 +152,6 @@ private theorem liftMatrix_apply_castSucc_succ (D : DefiningSystem Γ R n χ) (h
       i.castSucc i.succ = χ i g := by
   rw [coe_liftMatrix, liftEntries_apply_of_ne D c g (Fin.castSucc_lt_succ (i := i)).ne
     (Fin.not_castSucc_eq_zero_and_succ_eq_last hn i), D.entry_castSucc_succ]
-
-omit [Group Γ] [Ring R] in
-/-- For a discrete `R`, the set of `g` at which prescribed entries of a continuous family of
-matrices take prescribed values is open. -/
-private theorem isOpen_setOf_forall_apply_eq [DiscreteTopology R]
-    {L : Γ → Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hL : ∀ i j, Continuous fun g ↦ L g i j)
-    (P : Fin (n + 1) → Fin (n + 1) → Prop) (a : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    IsOpen {g | ∀ i j, P i j → L g i j = a i j} := by
-  simp only [Set.ofPred_forall]
-  exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
-    isOpen_iInter_of_finite fun _ ↦ (isOpen_discrete {a i j}).preimage (hL i j)
 
 /-! ### From lifts to defining systems -/
 
@@ -185,8 +182,7 @@ def DefiningSystem.ofLift [Mul Γ] (hn : 2 ≤ n) (L : Γ → upperUnitriangular
     rw [ite_eq_left ⟨Fin.castSucc_lt_succ, Fin.not_castSucc_eq_zero_and_succ_eq_last hn i⟩, hχ]
   entry_mul i j hij hc g h := by
     rw [ite_eq_left ⟨hij, hc⟩, ite_eq_left ⟨hij, hc⟩, ite_eq_left ⟨hij, hc⟩, hmul g h i j hij hc,
-      Subgroup.coe_mul, Units.val_mul,
-      (isUpperUnitriangular (L g)).mul_apply_of_lt (isUpperUnitriangular (L h)) hij]
+      UpperUnitriangularGroup.mul_apply_of_lt (L g) (L h) hij]
     refine congrArg _ (Finset.sum_congr rfl fun k hk ↦ ?_)
     obtain ⟨h1, h2⟩ := not_corner_of_mem_Ioo hk
     rw [Finset.mem_Ioo] at hk
@@ -239,7 +235,7 @@ noncomputable def DefiningSystem.toQuotientLift (D : DefiningSystem Γ R n χ) :
   MonoidHom.mk' (fun g ↦ (liftMatrix D 0 g : _ ⧸ _)) fun g h ↦ by
     rw [← QuotientGroup.mk_mul, mk_eq_mk_iff]
     intro i j hij hc
-    rw [Subgroup.coe_mul, Units.val_mul, coe_liftMatrix, coe_liftMatrix, coe_liftMatrix,
+    rw [UpperUnitriangularGroup.coe_mul, coe_liftMatrix, coe_liftMatrix, coe_liftMatrix,
       liftEntries_mul_apply D 0 g h hij, ite_eq_right hc, liftEntries_apply_of_ne D 0 _ hij.ne hc]
 
 private theorem toQuotientLift_apply (D : DefiningSystem Γ R n χ) (g : Γ) :
@@ -268,39 +264,64 @@ theorem DefiningSystem.isOpen_ker_toQuotientLift [DiscreteTopology R]
       mk_eq_mk_iff, Set.mem_ofPred_eq]
     simp only [coe_liftMatrix, OneMemClass.coe_one, Units.val_one, and_imp]
   rw [hker]
-  exact isOpen_setOf_forall_apply_eq (continuous_liftEntries_apply D continuous_const) _ _
+  exact (isOpen_discrete {M : Fin (n + 1) → Fin (n + 1) → R | ∀ i j,
+    (i < j ∧ ¬ (i = 0 ∧ j = Fin.last n)) →
+      M i j = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j}).preimage
+    (continuous_liftEntries D continuous_const)
 
-/-- When the value of `D` is the coboundary of `f`, the matrices `liftEntries D f g`, with corner
-`f g`, form a homomorphism `Γ → Uₙ₊₁(R)`. -/
-private noncomputable def lift (D : DefiningSystem Γ R n χ) (f : Γ → R)
+/-- The homomorphism `Γ → Uₙ₊₁(R)` attached to a defining system `D` and a primitive `f` of its
+value: it sends `g` to the upper-unitriangular matrix whose corner entry is `f g` and whose other
+entries above the diagonal are those of `D` at `g`
+(`TauCeti.ContCohomology.DefiningSystem.toLift_apply_zero_last`,
+`TauCeti.ContCohomology.DefiningSystem.toLift_apply_of_ne`). -/
+noncomputable def DefiningSystem.toLift (D : DefiningSystem Γ R n χ) (f : Γ → R)
     (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) :
     Γ →* upperUnitriangularGroup (Fin (n + 1)) R :=
   MonoidHom.mk' (liftMatrix D f) fun g h ↦ by
     refine ext fun i j hij ↦ ?_
-    rw [Subgroup.coe_mul, Units.val_mul, coe_liftMatrix, coe_liftMatrix, coe_liftMatrix,
+    rw [UpperUnitriangularGroup.coe_mul, coe_liftMatrix, coe_liftMatrix, coe_liftMatrix,
       liftEntries_mul_apply D f g h hij]
     by_cases hc : i = 0 ∧ j = Fin.last n
     · rw [ite_eq_left hc, liftEntries_apply_of_corner D f _ hij.ne hc, hval g h]
       abel
     · rw [ite_eq_right hc, liftEntries_apply_of_ne D f _ hij.ne hc]
 
-private theorem lift_apply (D : DefiningSystem Γ R n χ) (f : Γ → R)
+private theorem toLift_apply (D : DefiningSystem Γ R n χ) (f : Γ → R)
     (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) (g : Γ) :
-    lift D f hval g = liftMatrix D f g := by
-  rw [lift, MonoidHom.mk'_apply]
+    D.toLift f hval g = liftMatrix D f g := by
+  rw [DefiningSystem.toLift, MonoidHom.mk'_apply]
 
-private theorem isOpen_ker_lift [DiscreteTopology R] (D : DefiningSystem Γ R n χ) {f : Γ → R}
-    (hf : Continuous f) (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) :
-    IsOpen ((lift D f hval).ker : Set Γ) := by
-  have hker : ((lift D f hval).ker : Set Γ) = {g | ∀ i j, i < j →
+/-- The corner entry of `D.toLift f hval g` is `f g`. -/
+theorem DefiningSystem.toLift_apply_zero_last [NeZero n] (D : DefiningSystem Γ R n χ)
+    (f : Γ → R) (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) (g : Γ) :
+    ((D.toLift f hval g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0
+      (Fin.last n) = f g := by
+  rw [toLift_apply, coe_liftMatrix, liftEntries_apply_of_corner D f g Fin.last_pos'.ne ⟨rfl, rfl⟩]
+
+/-- Away from the diagonal and the corner, the entries of `D.toLift f hval g` are those of `D` at
+`g`. -/
+theorem DefiningSystem.toLift_apply_of_ne (D : DefiningSystem Γ R n χ) (f : Γ → R)
+    (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) (g : Γ) {i j : Fin (n + 1)}
+    (hij : i ≠ j) (hc : ¬ (i = 0 ∧ j = Fin.last n)) :
+    ((D.toLift f hval g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j =
+      D.entry i j g := by
+  rw [toLift_apply, coe_liftMatrix, liftEntries_apply_of_ne D f g hij hc]
+
+/-- For a discrete `R` and a continuous primitive `f`, the homomorphism `D.toLift f hval` is
+continuous: its kernel is open. -/
+theorem DefiningSystem.isOpen_ker_toLift [DiscreteTopology R] (D : DefiningSystem Γ R n χ)
+    {f : Γ → R} (hf : Continuous f) (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) :
+    IsOpen ((D.toLift f hval).ker : Set Γ) := by
+  have hker : ((D.toLift f hval).ker : Set Γ) = {g | ∀ i j, i < j →
       liftEntries D f g i j = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j} := by
     ext g
-    rw [SetLike.mem_coe, MonoidHom.mem_ker, lift_apply, Set.mem_ofPred_eq]
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, toLift_apply, Set.mem_ofPred_eq]
     refine ⟨fun h i j _ ↦ ?_, fun h ↦ ext fun i j hij ↦ ?_⟩
     · rw [← coe_liftMatrix D f g, h, OneMemClass.coe_one, Units.val_one]
     · rw [coe_liftMatrix, h i j hij, OneMemClass.coe_one, Units.val_one]
   rw [hker]
-  exact isOpen_setOf_forall_apply_eq (continuous_liftEntries_apply D hf) _ _
+  exact (isOpen_discrete {M : Fin (n + 1) → Fin (n + 1) → R | ∀ i j, i < j →
+    M i j = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j}).preimage (continuous_liftEntries D hf)
 
 /-! ### Defining systems attached to lifts -/
 
@@ -322,8 +343,7 @@ private theorem value_definingSystemOfMonoidHom (hn : 2 ≤ n)
           (Fin.last n) +
         ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n) := by
   have : NeZero n := ⟨by omega⟩
-  rw [map_mul, Subgroup.coe_mul, Units.val_mul,
-    (isUpperUnitriangular (β g)).mul_apply_of_lt (isUpperUnitriangular (β h)) Fin.last_pos',
+  rw [map_mul, UpperUnitriangularGroup.mul_apply_of_lt (β g) (β h) Fin.last_pos',
     DefiningSystem.value_apply]
   -- The intermediate entries of the value are entries of the lift.
   have hsum : ∑ m ∈ Finset.Ioo (0 : Fin (n + 1)) (Fin.last n),
@@ -392,8 +412,9 @@ theorem masseyContainsZero_iff_exists_lift [SeparatelyContinuousMul Γ] [Discret
             ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
               i.castSucc i.succ = χ i g := by
   rw [masseyContainsZero_iff]
-  refine ⟨fun ⟨D, f, hf, hval⟩ ↦ ⟨lift D f hval, isOpen_ker_lift D hf hval,
-    fun g i ↦ liftMatrix_apply_castSucc_succ D hn f g i⟩, fun ⟨β, hβ, hχ⟩ ↦ ?_⟩
+  refine ⟨fun ⟨D, f, hf, hval⟩ ↦ ⟨D.toLift f hval, D.isOpen_ker_toLift hf hval,
+    fun g i ↦ by rw [toLift_apply]; exact liftMatrix_apply_castSucc_succ D hn f g i⟩,
+    fun ⟨β, hβ, hχ⟩ ↦ ?_⟩
   -- The entries of a lift form a defining system, and its corner entry is a primitive.
   exact ⟨_, fun g ↦ ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0
     (Fin.last n), continuous_apply_of_isOpen_ker hβ 0 (Fin.last n),

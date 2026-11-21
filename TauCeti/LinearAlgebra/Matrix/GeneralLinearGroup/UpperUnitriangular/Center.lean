@@ -104,9 +104,9 @@ theorem mem_center_iff {z : upperUnitriangularGroup (Fin (n + 1)) R} :
   apply Subtype.ext
   apply Units.ext
   -- Reduce to the matrix identity `g (1 + t E₀ₙ) = (1 + t E₀ₙ) g`.
-  rw [Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul, Units.val_mul, hZ, Matrix.mul_add,
-    Matrix.add_mul, (isUpperUnitriangular g).mul_single_zero_last,
-    (isUpperUnitriangular g).single_zero_last_mul, Matrix.mul_one, Matrix.one_mul]
+  rw [coe_mul, coe_mul, hZ, Matrix.mul_add, Matrix.add_mul,
+    (isUpperUnitriangular g).mul_single_zero_last, (isUpperUnitriangular g).single_zero_last_mul,
+    Matrix.mul_one, Matrix.one_mul]
 
 /-- The centre of `Uₙ₊₁(R)` is the corner subgroup, the term `superdiagonalSubgroup n` of the
 superdiagonal filtration: the matrices whose entries vanish strictly between the diagonal and the
@@ -156,7 +156,7 @@ theorem mk_eq_mk_iff {u v : upperUnitriangularGroup (Fin (n + 1)) R} :
           1 + single 0 (Fin.last n) t :=
       ⟨_, (isUpperUnitriangular _).eq_one_add_single_zero_last hn (mem_center_iff.1 hz)⟩
     have hv : v = u * (u⁻¹ * v) := (mul_inv_cancel_left u v).symm
-    rw [hv, Subgroup.coe_mul, Units.val_mul, hZ, Matrix.mul_add, Matrix.mul_one,
+    rw [hv, coe_mul, hZ, Matrix.mul_add, Matrix.mul_one,
       (isUpperUnitriangular u).mul_single_zero_last, Matrix.add_apply,
       single_zero_last_apply_of_not hc, add_zero]
   · -- `v = u e₀ₙ(t)` with `t` the difference of the corner entries, and `e₀ₙ(t)` is central.
@@ -172,7 +172,7 @@ theorem mk_eq_mk_iff {u v : upperUnitriangularGroup (Fin (n + 1)) R} :
       coe_transvectionUnit_eq_one_add_single h0l.ne t
     have hvw : v = u * w := by
       refine ext fun i j hij ↦ ?_
-      rw [Subgroup.coe_mul, Units.val_mul, hw, Matrix.mul_add, Matrix.mul_one,
+      rw [coe_mul, hw, Matrix.mul_add, Matrix.mul_one,
         (isUpperUnitriangular u).mul_single_zero_last, Matrix.add_apply]
       by_cases hc : i = 0 ∧ j = Fin.last n
       · obtain ⟨rfl, rfl⟩ := hc
