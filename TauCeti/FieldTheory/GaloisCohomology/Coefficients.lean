@@ -68,6 +68,8 @@ are strictly larger than `Kˣ`.
   `K`.
 * `TauCeti.kummerCoeffIncl`, `TauCeti.unitsCoeffPow`: the inclusion `μₙ ↪ (Kˢ)ˣ` and the `n`-th
   power map, the two maps of the Kummer sequence.
+* `TauCeti.kummerCoeffInclusion`: the inclusion `μₘ ↪ μₙ` of roots-of-unity coefficient modules
+  for `m ∣ n`.
 * `TauCeti.kummerShortExact`: the Kummer sequence as a short exact sequence of discrete
   `G_K`-modules.
 * `TauCeti.baseUnitsEquivInvariants`: the isomorphism `Kˣ ≅ H⁰(G_K, (Kˢ)ˣ)`.
@@ -247,6 +249,75 @@ theorem kummerCoeffInclHom_apply (x : KummerCoeff K n) :
 theorem kummerCoeffIncl_injective : Function.Injective (kummerCoeffIncl K n) := fun x y h =>
   Additive.toMul.injective <| Subtype.ext <| by
     simpa only [toMul_kummerCoeffIncl] using congrArg Additive.toMul h
+
+variable {n} in
+/-- The inclusion `μₘ ↪ μₙ` for `m ∣ n`, as a `G_K`-equivariant homomorphism of Kummer
+coefficient modules. -/
+def kummerCoeffInclusion {m : ℕ} (h : m ∣ n) :
+    KummerCoeff K m →+[AbsoluteGaloisGroup K] KummerCoeff K n :=
+  { MonoidHom.toAdditive (Subgroup.inclusion (rootsOfUnity_le_of_dvd h)) with
+    map_smul' := fun _ _ => Additive.toMul.injective (Subtype.ext (by simp)) }
+
+variable {n} in
+/-- Changing the level along `m ∣ n` leaves the underlying unit of `Kˢ` unchanged. -/
+@[simp]
+theorem coe_toMul_kummerCoeffInclusion {m : ℕ} (h : m ∣ n) (x : KummerCoeff K m) :
+    ((kummerCoeffInclusion K h x).toMul : (SeparableClosure K)ˣ) =
+      (x.toMul : (SeparableClosure K)ˣ) :=
+  (rfl)
+
+/-- Including `μₙ` into itself along `n ∣ n` is the identity homomorphism. -/
+@[simp]
+theorem kummerCoeffInclusion_dvd_refl :
+    kummerCoeffInclusion K (dvd_refl n) = DistribMulActionHom.id _ :=
+  DistribMulActionHom.ext fun _ => Additive.toMul.injective (Subtype.ext (by simp))
+
+variable {n} in
+/-- Level inclusions `μₗ ↪ μₘ ↪ μₙ` compose along `l ∣ m ∣ n`. -/
+@[simp]
+theorem kummerCoeffInclusion_comp {l m : ℕ} (h₁ : l ∣ m) (h₂ : m ∣ n) :
+    (kummerCoeffInclusion K h₂).comp (kummerCoeffInclusion K h₁) =
+      kummerCoeffInclusion K (h₁.trans h₂) :=
+  DistribMulActionHom.ext fun _ => Additive.toMul.injective (Subtype.ext (by simp))
+
+variable {n} in
+/-- Applying level inclusions `μₗ ↪ μₘ ↪ μₙ` sequentially is the direct inclusion `μₗ ↪ μₙ`. -/
+@[simp]
+theorem kummerCoeffInclusion_kummerCoeffInclusion {l m : ℕ} (h₁ : l ∣ m) (h₂ : m ∣ n)
+    (x : KummerCoeff K l) :
+    kummerCoeffInclusion K h₂ (kummerCoeffInclusion K h₁ x) =
+      kummerCoeffInclusion K (h₁.trans h₂) x :=
+  Additive.toMul.injective (Subtype.ext (by simp))
+
+variable {n} in
+/-- The inclusion `μₘ ↪ μₙ` for `m ∣ n` is injective. -/
+theorem kummerCoeffInclusion_injective {m : ℕ} (h : m ∣ n) :
+    Function.Injective (kummerCoeffInclusion K h) := fun _ _ hxy =>
+  Additive.toMul.injective <| Subgroup.inclusion_injective (rootsOfUnity_le_of_dvd h) <|
+    Subtype.ext <| by
+      simpa only [coe_toMul_kummerCoeffInclusion, Subgroup.coe_inclusion] using
+        congrArg (fun v : KummerCoeff K n => (v.toMul : (SeparableClosure K)ˣ)) hxy
+
+variable {n} in
+/-- For equal exponents `m = n`, the level inclusion `μₘ ↪ μₙ` is bijective. -/
+theorem kummerCoeffInclusion_bijective_of_eq {m : ℕ} (h : m = n) :
+    Function.Bijective (kummerCoeffInclusion K (dvd_of_eq h)) :=
+  ⟨kummerCoeffInclusion_injective K (dvd_of_eq h), fun y =>
+    ⟨kummerCoeffInclusion K (dvd_of_eq h.symm) y, by simp⟩⟩
+
+variable {n} in
+/-- Including `μₘ` into `μₙ` and then into `(Kˢ)ˣ` is the inclusion of `μₘ` into `(Kˢ)ˣ`. -/
+@[simp]
+theorem kummerCoeffInclHom_comp_kummerCoeffInclusion {m : ℕ} (h : m ∣ n) :
+    (kummerCoeffInclHom K n).comp (kummerCoeffInclusion K h) = kummerCoeffInclHom K m :=
+  DistribMulActionHom.ext fun _ => Additive.toMul.injective (by simp)
+
+variable {n} in
+/-- Evaluating `kummerCoeffIncl` after `kummerCoeffInclusion` recovers `kummerCoeffIncl`. -/
+@[simp]
+theorem kummerCoeffIncl_kummerCoeffInclusion {m : ℕ} (h : m ∣ n) (x : KummerCoeff K m) :
+    kummerCoeffIncl K n (kummerCoeffInclusion K h x) = kummerCoeffIncl K m x :=
+  Additive.toMul.injective (by simp)
 
 /-- The `n`-th power map on `(Kˢ)ˣ`, the right-hand map of the Kummer sequence. In additive
 notation it is multiplication by `n`, which is `TauCeti.unitsCoeffPow_eq_nsmul`. -/

@@ -34,15 +34,14 @@ cokernel with a dual Selmer obstruction requires arithmetic duality, not just lo
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.SelmerStructure.withLocalConditions`: replace the local conditions
-  without changing the localisation data.
 * `TauCeti.ContCohomology.SelmerStructure.localConditionComparison`: localisation of
   `𝓖.selmerGroup` modulo `𝓕.localCondition`, at a specified set of indices.
 
 ## Main results
 
-* `TauCeti.ContCohomology.SelmerStructure.exact_inclusion_localConditionComparison`: exactness
-  of the change-of-local-conditions sequence.
+* `TauCeti.ContCohomology.SelmerStructure.exact_inclusion_localConditionComparison` and
+  `TauCeti.ContCohomology.SelmerStructure.exact_inclusion_localConditionComparison_relax`:
+  exactness of the change-of-local-conditions and relaxation sequences.
 * `TauCeti.ContCohomology.SelmerStructure.relIndex_selmerGroup_eq_card_range`: the relative
   Selmer index is the order of the localisation image.
 * `TauCeti.ContCohomology.SelmerStructure.relIndex_selmerGroup_dvd_prod`: divisibility of the
@@ -69,57 +68,7 @@ variable {G : Type*} [Monoid G] [TopologicalSpace G]
   {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, TopologicalSpace (N i)]
   [∀ i, IsTopologicalAddGroup (N i)] [∀ i, DistribMulAction (H i) (N i)]
   [∀ i, ContinuousSMul (H i) (N i)]
-  (𝓕 : SelmerStructure G M H N)
-  (A B : ∀ i, AddSubgroup (H1 (H i) (N i)))
-
-/-- Replace only the local conditions of a Selmer structure. -/
-def withLocalConditions : SelmerStructure G M H N :=
-  { 𝓕 with localCondition := A }
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Updating local conditions leaves the group homomorphisms unchanged. -/
-@[simp]
-theorem withLocalConditions_groupHom :
-    (𝓕.withLocalConditions A).groupHom = 𝓕.groupHom :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Updating local conditions leaves the coefficient homomorphisms unchanged. -/
-@[simp]
-theorem withLocalConditions_coeffHom :
-    (𝓕.withLocalConditions A).coeffHom = 𝓕.coeffHom :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- The updated structure has the prescribed local conditions. -/
-@[simp]
-theorem withLocalConditions_localCondition :
-    (𝓕.withLocalConditions A).localCondition = A :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Replacing the local conditions twice retains only the last system. -/
-@[simp]
-theorem withLocalConditions_withLocalConditions :
-    (𝓕.withLocalConditions A).withLocalConditions B = 𝓕.withLocalConditions B :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Replacing the local conditions by the original ones changes nothing. -/
-@[simp]
-theorem withLocalConditions_self : 𝓕.withLocalConditions 𝓕.localCondition = 𝓕 :=
-  (rfl)
-
-/-- Updating local conditions leaves the localisation maps unchanged. -/
-@[simp]
-theorem withLocalConditions_localization :
-    (𝓕.withLocalConditions A).localization = 𝓕.localization := by
-  funext i
-  -- The imported localisation body is opaque; its characterisation exposes the unchanged data.
-  rw [localization_eq_explicitMap1, localization_eq_explicitMap1]
-  rfl
-
-variable (𝓖 : SelmerStructure G M H N)
+  (𝓕 𝓖 : SelmerStructure G M H N)
 
 /-- Enlarging every local condition enlarges the Selmer group when localisation agrees. -/
 theorem selmerGroup_le (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
@@ -256,5 +205,13 @@ theorem relIndex_selmerGroup_dvd_prod (T : Finset ι)
       (Finset.prod_subtype T (p := fun i ↦ i ∈ (T : Set ι)) (fun _ ↦ Iff.rfl)
         (fun i ↦ (𝓕.localCondition i).relIndex (𝓖.localCondition i))).symm
   rwa [hcard] at h
+
+/-- The inclusion of `𝓕.selmerGroup` into `(𝓕.relax S).selmerGroup` followed by localisation at
+`S` modulo `𝓕.localCondition` is exact. -/
+theorem exact_inclusion_localConditionComparison_relax :
+    Function.Exact (AddSubgroup.inclusion (𝓕.selmerGroup_le_relax S))
+      (𝓕.localConditionComparison (𝓕.relax S) S) :=
+  𝓕.exact_inclusion_localConditionComparison (𝓕.relax S) S (fun _ ↦ by simp)
+    (fun _ hi ↦ (𝓕.relax_localCondition_of_notMem S hi).le) (𝓕.localCondition_le_relax S)
 
 end TauCeti.ContCohomology.SelmerStructure

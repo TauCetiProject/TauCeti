@@ -31,6 +31,8 @@ Thus a local invariant `Br F ≃+ ℚ/ℤ` restricts along `h2MuToBr` to an iden
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.h2MuToBr_muNRepH2Equiv_explicitCoeff2_kummerCoeffInclusion`:
+  including `μₘ` into `μₙ` for `m ∣ n` commutes with `h2MuToBr`.
 * `TauCeti.ClassFieldTheory.h2MuToBr_injective`: the map is injective when `n` is invertible
   in `F`.
 * `TauCeti.ClassFieldTheory.h2MuToBr_range`: its image is then the `n`-torsion of `Br F`.
@@ -114,6 +116,20 @@ theorem h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2
         (explicitCoeff2 _ _ (kummerCoeffInclHom F n) continuous_of_discreteTopology x) := by
   rw [h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     AddEquiv.symm_apply_apply]
+
+/-- Including `μₘ` into `μₙ` for `m ∣ n` commutes with the maps from roots-of-unity cohomology
+to the Brauer group. No invertibility hypothesis on `m` or `n` is needed. -/
+@[simp]
+theorem h2MuToBr_muNRepH2Equiv_explicitCoeff2_kummerCoeffInclusion {m : ℕ} (h : m ∣ n)
+    (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F m)) :
+    h2MuToBr n F (muNRepH2Equiv n F
+      (explicitCoeff2 _ _ (kummerCoeffInclusion F h) continuous_of_discreteTopology x)) =
+      h2MuToBr m F (muNRepH2Equiv m F x) := by
+  rw [h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
+    ← AddMonoidHom.comp_apply, ← explicitCoeff2_comp]
+  exact congrArg
+    (fun f ↦ unitsRepH2Equiv F (explicitCoeff2 _ _ f continuous_of_discreteTopology x))
+    (kummerCoeffInclHom_comp_kummerCoeffInclusion F h)
 
 /-- **The map from roots-of-unity cohomology into the Brauer group is injective** when `n` is
 invertible in `F`. -/

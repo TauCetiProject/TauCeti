@@ -47,6 +47,7 @@ degree off any algebra structure whose structure map is the pullback.
 * `TauCeti.Isogeny.finiteDimensional_functionField`: the function-field extension is finite, for
   any algebra structure whose structure map is the pullback.
 * `TauCeti.Isogeny.degree_pos`: an isogeny has positive degree.
+* `TauCeti.Isogeny.isUnit_degree`: over a field of characteristic zero, the degree is invertible.
 * `TauCeti.Isogeny.degree_eq_one_iff`: degree one means the function-field pullback is onto;
   `TauCeti.Isogeny.degree_id` is the identity's case, and is the `@[simp]` normal form of a
   degree.
@@ -168,6 +169,10 @@ theorem degree_ne_zero (φ : Isogeny W₁ W₂) : φ.degree ≠ 0 :=
 
 /-- The degree of an isogeny is nonzero, available to typeclass inference. -/
 instance (φ : Isogeny W₁ W₂) : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
+
+/-- Over a field of characteristic zero, the degree of an isogeny is invertible. -/
+theorem isUnit_degree [CharZero F] (φ : Isogeny W₁ W₂) : IsUnit (φ.degree : F) :=
+  (NeZero.ne (φ.degree : F)).isUnit
 
 /-- **Degree one means an isomorphism of function fields.** The degree measures
 `W₁.FunctionField` over the image of `fieldPullback`, so it is one exactly when that image is

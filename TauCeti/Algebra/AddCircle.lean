@@ -89,9 +89,10 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / n` as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
-* `ZMod.toRatAddCircle` and `ZMod.toRatAddCircle_range`: the homomorphism from `ℤ/n` to `ℚ/ℤ`
-  sending the class of an integer `k` to the class of `k / n`; for nonzero `n`, it is an
-  injection onto the `n`-torsion, so every element killed by `n` lies in its image
+* `ZMod.toRatAddCircle`, `ZMod.toRatAddCircle_ringEquivCongr`, and `ZMod.toRatAddCircle_range`:
+  the homomorphism from `ℤ/n` to `ℚ/ℤ` sending the class of an integer `k` to the class of `k / n`
+  (compatible with `ZMod.ringEquivCongr`); for nonzero `n`, it is an injection onto the
+  `n`-torsion, so every element killed by `n` lies in its image
   (`ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero`).
 
 ## References
@@ -718,5 +719,13 @@ theorem exists_toRatAddCircle_eq_of_nsmul_eq_zero [NeZero n] {v : AddCircle (1 :
     rw [toRatAddCircle_range, AddSubgroup.torsionBy.nsmul_iff]
     exact hv
   exact AddMonoidHom.mem_range.mp hmem
+
+variable {n} in
+/-- Transporting `ZMod m` to `ZMod n` along `m = n` commutes with `ZMod.toRatAddCircle`. -/
+@[simp]
+theorem toRatAddCircle_ringEquivCongr {m : ℕ} (h : m = n) (z : ZMod m) :
+    toRatAddCircle n (ZMod.ringEquivCongr h z) = toRatAddCircle m z := by
+  subst h
+  simp
 
 end ZMod
