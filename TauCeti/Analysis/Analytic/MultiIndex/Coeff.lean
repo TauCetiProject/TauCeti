@@ -21,6 +21,7 @@ import TauCeti.Algebra.Order.Antidiag.Prod
 import TauCeti.Algebra.Order.Antidiag.Tendsto
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Multi-index coefficients of formal multilinear series
@@ -174,11 +175,6 @@ theorem _root_.ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries
   classical
   simp [mvCoeff_eq_sum _ rfl, map_sum]
 
-omit [Fintype ι] in
-private theorem piCongrLeft_apply {κ : Type*} (e : κ ≃ ι) (x : κ → 𝕜) (i : ι) :
-    ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : ι ↦ 𝕜) e x i = x (e.symm i) := by
-  simp [ContinuousLinearEquiv.piCongrLeft, Homeomorph.piCongrLeft, Equiv.piCongrLeft_apply]
-
 /-- Reindexing coordinates along `e : κ ≃ ι` pulls back the multi-index coefficients of `p`: the
 coefficient of `p.compContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜) e)` at `α ∘ e` is
 `p.mvCoeff α`. -/
@@ -202,7 +198,8 @@ theorem mvCoeff_compContinuousLinearMap_piCongrLeft {κ : Type*} [Fintype κ]
   · rw [compContinuousLinearMap_apply]
     congr 1
     ext r i
-    simp [Equiv.arrowCongr_apply, piCongrLeft_apply, Pi.single_apply, e.symm_apply_eq]
+    simp [Equiv.arrowCongr_apply, ContinuousLinearEquiv.piCongrLeft_apply, Pi.single_apply,
+      e.symm_apply_eq]
 
 /-- The multi-index coefficient at `α` is the sum over the tuples `a : Fin k → ι` whose
 coordinate counts are `α`, for `α` of total degree `k`. -/

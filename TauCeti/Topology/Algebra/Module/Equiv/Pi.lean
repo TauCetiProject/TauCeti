@@ -21,6 +21,8 @@ The construction combines `LinearEquiv.piOptionEquivProd` with
 For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family indexed by `S ⊕ T`
 into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
 `ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
+Similarly, `ContinuousLinearEquiv.piCongrLeft_apply` evaluates Mathlib's
+`ContinuousLinearEquiv.piCongrLeft` via `Equiv.piCongrLeft`.
 
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
@@ -74,6 +76,18 @@ to `T`. -/
     (sumPiEquivProdPi R S T A).symm p = Sum.rec p.1 p.2 := (rfl)
 
 end SumPi
+
+section PiCongrLeft
+
+variable {ι ι' : Type*} (φ : ι → Type*) [∀ i, AddCommMonoid (φ i)] [∀ i, Module R (φ i)]
+  [∀ i, TopologicalSpace (φ i)]
+
+/-- Mathlib's `ContinuousLinearEquiv.piCongrLeft` evaluates via `Equiv.piCongrLeft`. -/
+theorem piCongrLeft_apply (e : ι' ≃ ι) (x : (i' : ι') → φ (e i')) (i : ι) :
+    piCongrLeft R φ e x i = e.apply_symm_apply i ▸ x (e.symm i) :=
+  rfl
+
+end PiCongrLeft
 
 end ContinuousLinearEquiv
 
