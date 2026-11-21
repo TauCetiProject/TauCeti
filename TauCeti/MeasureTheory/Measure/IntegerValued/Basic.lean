@@ -280,6 +280,6 @@ theorem isIntegerValued_sum {ι X : Type*} [MeasurableSpace X]
     (s : Finset ι) {μ : ι → Measure X} (hμ : ∀ i ∈ s, (μ i).IsIntegerValued) :
     (∑ i ∈ s, μ i).IsIntegerValued := by
   rw [← Measure.sum_coe_finset]
-  exact Measure.IsIntegerValued.sum fun i => hμ i i.2
+  exact Measure.IsIntegerValued.sum fun i => hμ i i.property
 
 end Finset

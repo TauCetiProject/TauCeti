@@ -162,12 +162,12 @@ variable {C : Type*} [Category* C] [Preadditive C] (R : C) {ι : Type*} (i₀ : 
 of coproduct inclusions.  It is a kernel of the codiagonal `∐_ι R ⟶ R`
 (`TauCeti.isKernelSigmaιSubι`). -/
 def sigmaιSubι : (∐ fun _ : {i // i ≠ i₀} ↦ R) ⟶ ∐ fun _ : ι ↦ R :=
-  Sigma.desc fun i ↦ Sigma.ι (fun _ : ι ↦ R) i.1 - Sigma.ι (fun _ : ι ↦ R) i₀
+  Sigma.desc fun i ↦ Sigma.ι (fun _ : ι ↦ R) i.val - Sigma.ι (fun _ : ι ↦ R) i₀
 
 @[reassoc (attr := simp)]
 lemma ι_sigmaιSubι (i : {i // i ≠ i₀}) :
     Sigma.ι (fun _ : {i // i ≠ i₀} ↦ R) i ≫ sigmaιSubι R i₀ =
-      Sigma.ι (fun _ : ι ↦ R) i.1 - Sigma.ι (fun _ : ι ↦ R) i₀ :=
+      Sigma.ι (fun _ : ι ↦ R) i.val - Sigma.ι (fun _ : ι ↦ R) i₀ :=
   Sigma.ι_comp_desc _ _
 
 /-- The differences of coproduct inclusions are killed by the codiagonal. -/
@@ -354,7 +354,7 @@ theorem hasCoproduct_of_finite_setOf_not_isZero {J : Type*} (f : J → C)
     · simp [h]
     · simpa only [dite_eq_right h] using (not_not.1 h).eq_of_src _ _
   · refine Sigma.hom_ext (f := fun j : s ↦ f j) _ _ fun j ↦ ?_
-    simpa [j.2] using hm j
+    simpa [j.property] using hm j
 
 end FiniteSupport
 

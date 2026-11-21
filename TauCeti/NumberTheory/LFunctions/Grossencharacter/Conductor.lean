@@ -390,14 +390,14 @@ primes dividing `𝔪₀`, the product may equivalently be taken over all primes
 (`eulerCorrection_eq_prod_support`). -/
 def eulerCorrection (χ : Grossencharacter K 𝔪) (𝔫 : Modulus K) (s : ℂ) : ℂ :=
   ∏ 𝔭 ∈ 𝔫.support \ 𝔪.support,
-    (1 - χ.unitaryWeight.1 𝔭.asIdeal *
+    (1 - χ.unitaryWeight.val 𝔭.asIdeal *
       (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ ((χ.idealShift : ℂ) - s))
 
 /-- Since `χ.unitaryWeight` vanishes at every prime dividing `𝔪.finitePart`, the Euler correction
 may be taken over the whole support of `𝔫`. -/
 theorem eulerCorrection_eq_prod_support (χ : Grossencharacter K 𝔪) (𝔫 : Modulus K) (s : ℂ) :
     χ.eulerCorrection 𝔫 s = ∏ 𝔭 ∈ 𝔫.support,
-      (1 - χ.unitaryWeight.1 𝔭.asIdeal *
+      (1 - χ.unitaryWeight.val 𝔭.asIdeal *
         (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ ((χ.idealShift : ℂ) - s)) := by
   classical
   refine Finset.prod_subset Finset.sdiff_subset fun 𝔭 h𝔫 h𝔭 ↦ ?_
@@ -441,13 +441,13 @@ theorem re_eq_idealShift_of_eulerCorrection_eq_zero (χ : Grossencharacter K �
   classical
   rw [eulerCorrection_eq_prod_support] at hs
   obtain ⟨P, _, hP⟩ := Finset.prod_eq_zero_iff.mp hs
-  have hane : χ.unitaryWeight.1 P.asIdeal ≠ 0 := by
+  have hane : χ.unitaryWeight.val P.asIdeal ≠ 0 := by
     intro ha
     simp [ha] at hP
-  have hgood : χ.unitaryWeight.1.IsGood P.asIdeal :=
+  have hgood : χ.unitaryWeight.val.IsGood P.asIdeal :=
     (MultiplicativeIdealWeight.apply_ne_zero_iff_isGood _ _).mp hane
-  have hnorm : ‖χ.unitaryWeight.1 P.asIdeal‖ = 1 := χ.unitaryWeight.norm_eq_one hgood
-  have hz : 1 - χ.unitaryWeight.1 P.asIdeal *
+  have hnorm : ‖χ.unitaryWeight.val P.asIdeal‖ = 1 := χ.unitaryWeight.norm_eq_one hgood
+  have hz : 1 - χ.unitaryWeight.val P.asIdeal *
       ((Ideal.absNorm P.asIdeal : ℝ) : ℂ) ^ (-(s - (χ.idealShift : ℂ))) = 0 := by
     simpa [neg_sub] using hP
   have hre := Complex.re_eq_zero_of_one_sub_mul_ofReal_cpow_neg_eq_zero
@@ -490,7 +490,7 @@ theorem LSeries_eq_of_dvd {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter 
   rw [idealShift_congr hψ, unitaryWeight_eq_restrictAway_of_dvd h hψ]
   simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
     UnitaryIdealWeight.val_restrictAway] at hsum ⊢
-  rw [χ.unitaryWeight.1.LSeries_restrictAway 𝔫.support hsum, eulerCorrection_eq_prod_support]
+  rw [χ.unitaryWeight.val.LSeries_restrictAway 𝔫.support hsum, eulerCorrection_eq_prod_support]
   congr 1
   refine Finset.prod_congr rfl fun P _ ↦ ?_
   rw [div_eq_mul_inv, ← Complex.cpow_neg, neg_sub]

@@ -297,11 +297,11 @@ theorem finite_setOf_apply_eq (f : C(U, E)) (hK : IsCompact {z | f z = z}) {φ :
     ext w
     constructor
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
+      exact ⟨z.property, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
     · intro hw
       exact ⟨⟨w, hw.1⟩, hfix w hw, rfl⟩
   have hc : IsCompact ((U : Set E) ∩ (fun z ↦ z - φ z) ⁻¹' {0}) :=
-    himage ▸ hK.image continuous_subtype_val
+    himage ▸ hK.image continuous_subtypeVal
   have hfin := hc.finite_inter_preimage_of_hasFDerivAt
     (fun w hw ↦ (hasFDerivAt_id w).sub (hd _ (hfix w hw)))
     fun w hw ↦ ⟨_, ((1 - f' w).toContinuousLinearEquivOfDetNeZero
@@ -331,7 +331,7 @@ theorem fixedPointIndex_eq_of_homotopy {f₀ f₁ : C(U, E)} (H : f₀.Homotopy 
   -- zeros are the fixed points of the homotopy.
   let D : f₀.displacement.Homotopy f₁.displacement :=
     { toFun := fun p ↦ (p.2 : E) - H p
-      continuous_toFun := (continuous_subtype_val.comp continuous_snd).sub H.continuous
+      continuous_toFun := (continuous_subtypeVal.comp continuous_snd).sub H.continuous
       map_zero_left := fun z ↦ by simp
       map_one_left := fun z ↦ by simp }
   have hD : D ⁻¹' {0} = {p | H p = p.2} := by
@@ -372,7 +372,7 @@ theorem fixedPointIndex_of_subsingleton [Subsingleton E] [Nonempty U] (f : C(U, 
     f.fixedPointIndex = 1 := by
   obtain ⟨x⟩ := ‹Nonempty U›
   rw [show f = const U (x : E) from ContinuousMap.ext fun z ↦ Subsingleton.elim _ _]
-  exact fixedPointIndex_const x.2
+  exact fixedPointIndex_const x.property
 
 /-- **The local fixed-point index in dimension zero**: on a zero-dimensional space every point is
 an isolated fixed point, of local index `1`. -/
@@ -449,7 +449,7 @@ private theorem two_mul_fixedPointIndex_sub_affineInterp {a b da db : ℝ} (hab 
     · rcases lt_or_gt_of_ne hda with hda' | hda'
       · simp [sign_neg hda', sign_neg (by nlinarith : db < 0)]
       · simp [sign_pos hda', sign_pos (by nlinarith : 0 < db)]
-    · obtain ⟨hza, hzb⟩ := z.2
+    · obtain ⟨hza, hzb⟩ := z.property
       rw [coe_mk, sub_eq_self] at hz
       have h2 : ((b - z) * da + (z - a) * db) * da = 0 := by
         rw [← mul_affineInterp hab, ← hs, hz]
@@ -474,7 +474,7 @@ private theorem isCompact_setOf_eq_zero_Ioo {a b : ℝ} {Φ : unitInterval × �
     mem_prod, mem_univ, true_and, mem_preimage, mem_singleton_iff]
   constructor
   · rintro ⟨t', w, hw, rfl, rfl⟩
-    exact ⟨Ioo_subset_Icc_self w.2, hw⟩
+    exact ⟨Ioo_subset_Icc_self w.property, hw⟩
   · rintro ⟨hz, hΦ0⟩
     have hza : a ≠ z := by
       rintro rfl
@@ -509,9 +509,10 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
     field_simp [(sub_pos.2 hab).ne']
     ring
   -- `F` extends `f` from `[a, b]` to `ℝ`, constant beyond the endpoints.
-  set F : ℝ → ℝ := fun z ↦ f ⟨projIcc (a : ℝ) b hab.le z, hU (projIcc (a : ℝ) b hab.le z).2⟩
+  set F : ℝ → ℝ := fun z ↦
+    f ⟨projIcc (a : ℝ) b hab.le z, hU (projIcc (a : ℝ) b hab.le z).property⟩
   have hF : Continuous F :=
-    f.continuous.comp ((continuous_subtype_val.comp continuous_projIcc).subtype_mk _)
+    f.continuous.comp ((continuous_subtypeVal.comp continuous_projIcc).subtype_mk _)
   have hFeq (z : U) (hz : (z : ℝ) ∈ Icc (a : ℝ) b) : F z = f z := by simp [F, projIcc_of_mem _ hz]
   set g := f.comp (inclusion (Ioo_le_of_Icc_subset hU))
   set g₁ : C(V, ℝ) := ⟨fun z ↦ (z : ℝ) - ℓ z, by fun_prop⟩
@@ -522,14 +523,15 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
       map_one_left := fun z ↦ by simp }
   -- `H (t, w)` is its defining formula, and `g w` is `f w`.
   have hHapply (t : unitInterval) (w : V) :
-      H (t, w) = (1 - t : ℝ) * f ⟨w, hU (Ioo_subset_Icc_self w.2)⟩ + t * ((w : ℝ) - ℓ w) := rfl
+      H (t, w) = (1 - t : ℝ) * f ⟨w, hU (Ioo_subset_Icc_self w.property)⟩ + t * ((w : ℝ) - ℓ w) :=
+        rfl
   refine fixedPointIndex_eq_of_homotopy H ?_
   -- The fixed points of `H` are the zeros of `Φ (t, z) = (1 - t) (z - F z) + t ℓ z` in
   -- `[0, 1] × (a, b)`, and at the endpoints `Φ` is `a - f a` and `b - f b`, which are nonzero.
   let Φ : unitInterval × ℝ → ℝ := fun q ↦ (1 - q.1 : ℝ) * (q.2 - F q.2) + q.1 * ℓ q.2
   have hHΦ : {p : unitInterval × V | H p = p.2} = {p | Φ (p.1, p.2) = 0} := by
     ext ⟨t, w⟩
-    have hw : (w : ℝ) ∈ Icc (a : ℝ) b := Ioo_subset_Icc_self w.2
+    have hw : (w : ℝ) ∈ Icc (a : ℝ) b := Ioo_subset_Icc_self w.property
     have key : (w : ℝ) - H (t, w) = Φ (t, w) := by
       simp only [Φ, hFeq ⟨w, hU hw⟩ hw, hHapply]
       ring

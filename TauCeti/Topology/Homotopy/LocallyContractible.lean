@@ -33,6 +33,6 @@ theorem LocallyContractibleSpace.locallyPathConnectedSpace (h : LocallyContracti
   obtain ⟨V, hVu, hV, y, ⟨F⟩⟩ := h x u (‹IsOpen u›.mem_nhds hxu)
   -- Each point of `V` is joined inside `u` to the centre `y` of the null-homotopy.
   have hjoin : ∀ v ∈ V, JoinedIn u v y := fun v hv =>
-    ⟨(F.evalAt ⟨v, hv⟩).map continuous_subtype_val, fun t => (F (t, ⟨v, hv⟩)).2⟩
+    ⟨(F.evalAt ⟨v, hv⟩).map continuous_subtypeVal, fun t => (F (t, ⟨v, hv⟩)).property⟩
   refine Filter.mem_of_superset hV fun v hv => ?_
   exact (hjoin x (mem_of_mem_nhds hV)).trans (hjoin v hv).symm

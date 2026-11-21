@@ -483,7 +483,7 @@ theorem algebraMap_mem_constantCompositum_iff_of_linearDisjoint
   have h1m : LinearIndependent M ![(1 : k'), m] :=
     (LinearIndependent.pair_iff' one_ne_zero).2 fun a ha ↦ hmM (by
       rw [← ha, Algebra.smul_def, mul_one]
-      exact a.2)
+      exact a.property)
   have hli := H.symm'.linearIndependent_adjoin_algebraMap_comp M h1m
   -- The image of the pair `![1, m]` under `algebraMap k' F'`, computed entrywise.
   have hvec : algebraMap k' F' ∘ ![(1 : k'), m] = ![1, algebraMap k' F' m] := by

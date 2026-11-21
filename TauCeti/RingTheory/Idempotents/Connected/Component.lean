@@ -63,13 +63,13 @@ It is the inverse image of the clopen connected component under Mathlib's order 
 between idempotents and clopen subsets of the prime spectrum. -/
 noncomputable def connectedComponentIdempotent (x : PrimeSpectrum R) : R :=
   (isIdempotentElemEquivClopens.symm
-    ⟨connectedComponent x, isClopen_connectedComponent⟩).1
+    ⟨connectedComponent x, isClopen_connectedComponent⟩).val
 
 /-- The element selecting a connected component is idempotent. -/
 theorem isIdempotentElem_connectedComponentIdempotent (x : PrimeSpectrum R) :
     IsIdempotentElem (connectedComponentIdempotent x) :=
   (isIdempotentElemEquivClopens.symm
-    ⟨connectedComponent x, isClopen_connectedComponent⟩).2
+    ⟨connectedComponent x, isClopen_connectedComponent⟩).property
 
 /-- The basic open of the component idempotent is exactly the connected component. -/
 theorem basicOpen_connectedComponentIdempotent (x : PrimeSpectrum R) :

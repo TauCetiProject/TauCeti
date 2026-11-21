@@ -268,11 +268,12 @@ theorem exists_pairwise_disjoint_normalized_morseCharts [T2Space M] {S : Set M} 
           f y = f p + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2 := by
   -- Separate the points of `S` by open sets and choose each chart inside its separating set.
   obtain ⟨V, hV, hdisj⟩ := hS.t2_separation
-  choose ψ hψ using fun p : S ↦ (h p p.2).exists_normalized_morseChart_subset (hf p p.2)
-    (inter_mem (hU p p.2) ((hV p).2.mem_nhds (hV p).1))
+  choose ψ hψ using fun p : S ↦ (h p p.property).exists_normalized_morseChart_subset
+      (hf p p.property)
+    (inter_mem (hU p p.property) ((hV p).2.mem_nhds (hV p).1))
   refine ⟨ψ, fun p q hpq ↦ ?_, fun p ↦ ⟨(hψ p).1, (hψ p).2.1.trans inter_subset_left,
     (hψ p).2.2⟩⟩
-  exact (hdisj p.2 q.2 (Subtype.coe_injective.ne hpq)).mono
+  exact (hdisj p.property q.property (Subtype.coe_injective.ne hpq)).mono
     ((hψ p).2.1.trans inter_subset_right) ((hψ q).2.1.trans inter_subset_right)
 
 omit [FiniteDimensional ℝ E] in

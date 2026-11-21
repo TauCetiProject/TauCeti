@@ -73,7 +73,7 @@ theorem ramificationGroup_succ_eq_bot_of_not_dvd_card_inertia
   let _ : Finite (ramificationGroup F P (i + 1)) :=
     Finite.of_injective
       (fun g : ramificationGroup F P (i + 1) ↦
-        (⟨g, ramificationGroup_antitone F P (Nat.zero_le (i + 1)) g.2⟩ :
+        (⟨g, ramificationGroup_antitone F P (Nat.zero_le (i + 1)) g.property⟩ :
           ramificationGroup F P 0))
       (fun _ _ h ↦ Subtype.ext (congrArg
         (fun g : ramificationGroup F P 0 ↦ (g : P.integers.decompositionSubgroup F)) h))

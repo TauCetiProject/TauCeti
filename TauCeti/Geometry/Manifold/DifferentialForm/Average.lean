@@ -92,7 +92,7 @@ private def pullbackSMulForm (α : SmoothForm I M F k) (a : G) (x : M) : E [⋀^
   -- `TangentSpace I x` is definitionally `E` and `Trivial M F x` is `F`. The `@id` ascription reads
   -- the value as an alternating map on `E`, so that it can be integrated in the fixed normed space
   -- `E [⋀^Fin k]→L[ℝ] F`, which carries the norm that the fibre `T_x M [⋀^Fin k]→L[ℝ] F` lacks.
-  @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) α.1 x)
+  @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) α.val x)
 
 variable (I) in
 /-- At a point `x` of the chart domain at `x₀`, the trivialization at `x₀` of the bundle of
@@ -125,7 +125,7 @@ private theorem trivializationAt_averageForm (α : SmoothForm I M F k) (x₀ : M
         ⟨x, averageForm μ α x⟩).2 =
       ∫ a, (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
         (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x₀
-        ⟨x, mpullback I I (a • ·) α.1 x⟩).2 ∂μ :=
+        ⟨x, mpullback I I (a • ·) α.val x⟩).2 ∂μ :=
   ((trivializationAtEquiv I x₀ hx).integral_comp_comm fun a ↦ pullbackSMulForm α a x).symm
 
 /-- Averaging the pullbacks is homogeneous. -/
@@ -159,7 +159,7 @@ private theorem contMDiff_mpullback_smul (α : SmoothForm I M F k) :
     ContMDiff (I.prod J) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
       (fun p : M × G ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
         (E := fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) p.1
-        (mpullback I I (p.2 • ·) α.1 p.1)) := fun p₀ ↦ by
+        (mpullback I I (p.2 • ·) α.val p.1)) := fun p₀ ↦ by
   have hsmul : ContMDiff ((I.prod J).prod I) I ∞
       (uncurry fun (p : M × G) (y : M) ↦ p.2 • y) :=
     (contMDiff_smul (I := J) (I' := I)).comp
@@ -174,7 +174,7 @@ private theorem contMDiffAt_trivializationAt_mpullback_smul (α : SmoothForm I M
     ContMDiffAt (I.prod J) 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F) ∞
       (fun q : M × G ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
         (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x₀
-        ⟨q.1, mpullback I I (q.2 • ·) α.1 q.1⟩).2) p :=
+        ⟨q.1, mpullback I I (q.2 • ·) α.val q.1⟩).2) p :=
   ((Trivialization.contMDiffAt_iff (by simpa using hp)).1
     (contMDiff_mpullback_smul J α p)).2
 
@@ -218,7 +218,8 @@ omit [MeasurableSpace G] [CompactSpace G] [T2Space G] [OpensMeasurableSpace G] i
 action are jointly smooth in the chart point and the group element. -/
 private theorem contMDiffOn_inChartAt_mpullback_smul (α : SmoothForm I M F k) (x₀ : M) :
     ContMDiffOn (𝓘(ℝ, E).prod J) 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F) 1
-      (uncurry fun (z : E) (a : G) ↦ RoughForm.inChartAt (F := F) (mpullback I I (a • ·) α.1) x₀ z)
+      (uncurry fun (z : E) (a : G) ↦ RoughForm.inChartAt (F := F) (mpullback I I
+          (a • ·) α.val) x₀ z)
       ((extChartAt I x₀).target ×ˢ univ) := by
   have hopen : IsOpen ((extChartAt I x₀).target ×ˢ (univ : Set G)) :=
     (isOpen_extChartAt_target x₀).prod isOpen_univ
@@ -246,7 +247,7 @@ private theorem contMDiff_averageForm (α : SmoothForm I M F k) :
   refine (contMDiffAt_parametric_integral (μ := μ) (J := J)
     (f := fun x (a : G) ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
       (fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) x₀
-      ⟨x, mpullback I I (a • ·) α.1 x⟩).2)
+      ⟨x, mpullback I I (a • ·) α.val x⟩).2)
     fun a ↦ contMDiffAt_trivializationAt_mpullback_smul J α x₀ (p := (x₀, a))
       (mem_chart_source H x₀)).congr_of_eventuallyEq ?_
   filter_upwards [(chartAt H x₀).open_source.mem_nhds (mem_chart_source H x₀)] with x hx
@@ -270,7 +271,7 @@ def measureAverage : SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F k where
 
 /-- The underlying rough form of the averaged form is `averageForm`. -/
 private theorem val_measureAverage (α : SmoothForm I M F k) :
-    (measureAverage J μ α).1 = averageForm μ α :=
+    (measureAverage J μ α).val = averageForm μ α :=
   rfl
 
 variable [CompleteSpace F]
@@ -278,8 +279,8 @@ variable [CompleteSpace F]
 /-- The averaged form is the integral of the pulled-back forms. -/
 @[simp]
 theorem measureAverage_apply (α : SmoothForm I M F k) (x : M) (v : Fin k → TangentSpace I x) :
-    (measureAverage J μ α).1 x v =
-      ∫ a, α.1 (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i)) ∂μ := by
+    (measureAverage J μ α).val x v =
+      ∫ a, α.val (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i)) ∂μ := by
   refine (ContinuousLinearMap.integral_comp_comm (ContinuousAlternatingMap.apply ℝ E F v)
     (integrable_pullbackSMulForm J μ α x)).symm.trans ?_
   -- The integrands agree by unfolding `pullbackSMulForm`, its `@id` ascription and `mpullback`.
@@ -290,16 +291,17 @@ normalized Haar measure, every element of the group preserves the averaged form.
 @[simp]
 theorem mpullback_smul_measureAverage [MeasurableMul G] [μ.IsMulRightInvariant]
     (α : SmoothForm I M F k) (b : G) :
-    TauCeti.mpullback (F := F) I I (b • ·) (measureAverage J μ α).1 = (measureAverage J μ α).1 := by
+    TauCeti.mpullback (F := F) I I (b • ·) (measureAverage J μ α).val = (measureAverage J μ α).val
+        := by
   funext x
   ext v
   rw [TauCeti.mpullback_apply, measureAverage_apply, measureAverage_apply]
   refine Eq.trans ?_ (integral_mul_right_eq_self (μ := μ) (fun a : G ↦
-    α.1 (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i))) b)
+    α.val (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i))) b)
   refine integral_congr_ae (Eventually.of_forall fun a ↦ ?_)
   have h := mpullback_comp_at (F := F)
     (ContMDiffSMul.mdifferentiable_const_smul (I := J) (n := ∞) (by simp) b x)
-    (ContMDiffSMul.mdifferentiable_const_smul (I := J) (n := ∞) (by simp) a (b • x)) α.1
+    (ContMDiffSMul.mdifferentiable_const_smul (I := J) (n := ∞) (by simp) a (b • x)) α.val
   rw [show (fun y : M ↦ a • y) ∘ (b • ·) = ((a * b) • ·) from
     funext fun y ↦ (mul_smul a b y).symm] at h
   simpa only [TauCeti.mpullback_apply] using (DFunLike.congr_fun h v).symm
@@ -309,14 +311,14 @@ the group, a form is unchanged by averaging exactly when every element of the gr
 it. -/
 theorem measureAverage_eq_self_iff [IsProbabilityMeasure μ] [MeasurableMul G]
     [μ.IsMulRightInvariant] (α : SmoothForm I M F k) :
-    measureAverage J μ α = α ↔ ∀ a : G, TauCeti.mpullback (F := F) I I (a • ·) α.1 = α.1 := by
+    measureAverage J μ α = α ↔ ∀ a : G, TauCeti.mpullback (F := F) I I (a • ·) α.val = α.val := by
   refine ⟨fun h a ↦ ?_, fun h ↦ ?_⟩
   · rw [← h]
     exact mpullback_smul_measureAverage J μ α a
   · refine Subtype.ext <| funext fun x ↦ ?_
     ext v
-    have h' (a : G) : α.1 (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i)) = α.1 x v := by
-      rw [← TauCeti.mpullback_apply (F := F) (I := I) (I' := I) (fun y ↦ a • y) α.1 x v, h a]
+    have h' (a : G) : α.val (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i)) = α.val x v := by
+      rw [← TauCeti.mpullback_apply (F := F) (I := I) (I' := I) (fun y ↦ a • y) α.val x v, h a]
     simp [measureAverage_apply, h']
 
 /-- Averaging twice over a right-invariant probability measure is averaging once. -/
@@ -329,7 +331,7 @@ theorem measureAverage_measureAverage [IsProbabilityMeasure μ] [MeasurableMul G
 /-- A form vanishing at every point of the orbit of `x` has average vanishing at `x`. In
 particular, averaging preserves vanishing on an invariant subset. -/
 theorem measureAverage_eq_zero_of_forall_smul (α : SmoothForm I M F k) {x : M}
-    (h : ∀ a : G, α.1 (a • x) = 0) : (measureAverage J μ α).1 x = 0 := by
+    (h : ∀ a : G, α.val (a • x) = 0) : (measureAverage J μ α).val x = 0 := by
   ext v
   rw [measureAverage_apply]
   simp_rw [h]
@@ -350,23 +352,23 @@ theorem mextDerivₗ_measureAverage (α : SmoothForm I M F k) :
     (isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x)
   -- In the chart at `x`, the average is the integral of the coordinate expressions of the
   -- pullbacks.
-  have hchart : RoughForm.inChartAt (F := F) (measureAverage J μ α).1 x =ᶠ[𝓝 (extChartAt I x x)]
-      fun z ↦ ∫ a, (TauCeti.mpullback (F := F) I I (a • ·) α.1).inChartAt x z ∂μ := by
+  have hchart : RoughForm.inChartAt (F := F) (measureAverage J μ α).val x =ᶠ[𝓝 (extChartAt I x x)]
+      fun z ↦ ∫ a, (TauCeti.mpullback (F := F) I I (a • ·) α.val).inChartAt x z ∂μ := by
     filter_upwards [htarget] with z hz
     rw [RoughForm.inChartAt_eq_trivializationAt _ x hz, val_measureAverage]
     refine (trivializationAt_averageForm μ α x
       (extChartAt_symm_mem_chart_source hz)).trans ?_
     exact integral_congr_ae (Eventually.of_forall fun a ↦
       (RoughForm.inChartAt_eq_trivializationAt _ x hz).symm)
-  have hpull (a : G) : TauCeti.mpullback (F := F) I I (a • ·) (mextDeriv α.1) =
-      mextDeriv (TauCeti.mpullback (F := F) I I (a • ·) α.1) :=
+  have hpull (a : G) : TauCeti.mpullback (F := F) I I (a • ·) (mextDeriv α.val) =
+      mextDeriv (TauCeti.mpullback (F := F) I I (a • ·) α.val) :=
     mpullback_mextDeriv ((contMDiff_smul_left J a).of_le (by simp))
-      ((isSmoothBundleForm_def 1 α.1).mpr (α.contMDiff.of_le (by simp)))
+      ((isSmoothBundleForm_def 1 α.val).mpr (α.contMDiff.of_le (by simp)))
   rw [mextDerivₗ_apply, mextDeriv_eq_extDeriv_inChartAt, hchart.extDeriv_eq,
     extDeriv_integral_of_contMDiffOn (isOpen_extChartAt_target x) (mem_extChartAt_target x)
       (contMDiffOn_inChartAt_mpullback_smul J α x)]
   have key : (∫ a, extDeriv (fun z ↦ RoughForm.inChartAt (F := F)
-        (TauCeti.mpullback (F := F) I I (a • ·) α.1) x z) (extChartAt I x x) ∂μ :
+        (TauCeti.mpullback (F := F) I I (a • ·) α.val) x z) (extChartAt I x x) ∂μ :
         E [⋀^Fin (k + 1)]→L[ℝ] F) =
       averageForm μ (mextDerivₗ I k α) x := by
     rw [averageForm, averageModel]
