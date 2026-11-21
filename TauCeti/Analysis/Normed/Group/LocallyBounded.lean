@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
-public import TauCeti.Topology.UniformSpace.CompactConvergence
+public import TauCeti.Topology.ContinuousMap.CompactConvergence.Basic
 
 /-!
 # Local boundedness of families on compact sets
@@ -20,7 +20,7 @@ For seminormed group targets, total boundedness of the continuous restrictions, 
 uniformity of compact convergence (whose topology is the compact-open topology), implies local
 boundedness; in particular relative compactness does. This works on an arbitrary topological
 domain: on each compact subset, the values of a totally bounded family form a totally bounded,
-hence bounded, set (`ContinuousMap.totallyBounded_biUnion_image`).
+hence bounded, set (`TotallyBounded.biUnion_image`).
 
 ## Main results
 
@@ -101,7 +101,7 @@ theorem isLocallyBoundedOn_of_totallyBounded_range
   have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by rwa [Subtype.range_coe])
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
-    (ContinuousMap.totallyBounded_biUnion_image htb hK').isBounded
+    (htb.biUnion_image hK').isBounded
   refine ⟨C, fun i z hz => ?_⟩
   have hz' : (⟨z, hKΩ hz⟩ : Ω) ∈ Subtype.val ⁻¹' K := mem_preimage.2 hz
   simpa [hf i] using hC _ (mem_biUnion (mem_range_self i) (mem_image_of_mem (f i) hz'))

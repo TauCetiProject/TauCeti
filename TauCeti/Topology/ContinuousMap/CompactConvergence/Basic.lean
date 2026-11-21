@@ -23,7 +23,7 @@ has a compact, hence totally bounded, image of `K`.
 
 ## Main results
 
-* `ContinuousMap.totallyBounded_biUnion_image`: if `A ⊆ C(X, E)` is totally bounded and
+* `TotallyBounded.biUnion_image`: if `A ⊆ C(X, E)` is totally bounded and
   `K ⊆ X` is compact, then the set `⋃ g ∈ A, g '' K` of all values on `K` is totally bounded.
 -/
 
@@ -31,19 +31,19 @@ public section
 
 open Set Uniformity
 
-namespace ContinuousMap
+namespace TotallyBounded
 
 variable {X E : Type*} [TopologicalSpace X] [UniformSpace E]
 
 /-- The values on a compact set `K` of a totally bounded family `A` of continuous maps, for the
 uniformity of compact convergence, form a totally bounded set. -/
-theorem totallyBounded_biUnion_image {A : Set C(X, E)} (hA : TotallyBounded A) {K : Set X}
+theorem biUnion_image {A : Set C(X, E)} (hA : TotallyBounded A) {K : Set X}
     (hK : IsCompact K) : TotallyBounded (⋃ g ∈ A, g '' K) := by
   intro V hV
   obtain ⟨W, hW, hWV⟩ := comp_mem_uniformity_sets hV
   -- Finitely many maps `g ∈ t` approximate every member of `A` within `W`, uniformly on `K`.
   obtain ⟨t, ht, hAt⟩ :=
-    hasBasis_compactConvergenceUniformity.totallyBounded_iff.mp hA (K, W) ⟨hK, hW⟩
+    ContinuousMap.hasBasis_compactConvergenceUniformity.totallyBounded_iff.mp hA (K, W) ⟨hK, hW⟩
   -- Their values on `K` form a compact, hence totally bounded, set.
   obtain ⟨s, hs, hts⟩ :=
     (ht.isCompact_biUnion fun g _ => hK.image g.continuous).totallyBounded W hW
@@ -53,4 +53,4 @@ theorem totallyBounded_biUnion_image {A : Set C(X, E)} (hA : TotallyBounded A) {
   obtain ⟨y, hy, hgy⟩ := mem_iUnion₂.mp (hts (mem_biUnion hg (mem_image_of_mem g hx)))
   exact mem_biUnion hy (hWV ⟨g x, hfg x hx, hgy⟩)
 
-end ContinuousMap
+end TotallyBounded
