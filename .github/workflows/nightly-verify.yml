@@ -60,19 +60,21 @@ env:
 jobs:
   # The hard signal runs independently of cache verification, without secrets.
   verify:
-    if: github.repository == 'TauCetiProject/TauCeti'
-    # A clean build alone now exceeds GitHub-hosted runners' six-hour platform limit.
-    # Like dependency warming and performance profiling, this singleton maintenance job
-    # uses the already provisioned sixteen-core Namespace build profile directly. Do not route it
-    # through the ordinary picker: its GitHub fallback cannot finish this workload.
-    # Workflow concurrency above bounds this exception to one source verification at a time;
-    # the reference job still selects ordinary shared build capacity below.
-    # Full clean builds retain their twelve-hour budget on the existing CI pool.
-    # The PR class excludes staging-only and queue-control reservations.
+    # Main only, so every message below can say "main": a dispatch from another branch would
+    # check out and verify that branch's head instead.
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    # A clean build alone now exceeds GitHub-hosted runners' six-hour platform limit, so this
+    # singleton maintenance job targets the Fleet PR class directly. Do not route it through the
+    # ordinary picker: its GitHub fallback cannot finish this workload. Workflow concurrency above
+    # bounds this exception to one source verification at a time; the reference job still selects
+    # ordinary shared build capacity below. The PR class excludes staging-only and queue-control
+    # reservations. Its runners must hold more disk than a cache-backed PR build needs: the clean
+    # build also packs every output into a workspace-local Lake cache, and passed 56 GiB in
+    # November 2026.
     runs-on:
       group: TauCetiFleet
       labels: [self-hosted, linux, x64, tauceti-fleet-pr]
-    # Namespace runners support longer jobs; allow headroom for source growth and audits.
+    # Full clean builds retain their twelve-hour budget; allow headroom for source growth and audits.
     timeout-minutes: 720
     outputs:
       sha: ${{ steps.rev.outputs.sha }}
@@ -92,10 +94,13 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
-      - name: Check out main
+      # The triggering commit rather than `main`, so the report can name the commit under test
+      # even when this job dies before publishing its outputs. On main, `github.sha` is the head of
+      # main when the run was created.
+      - name: Check out the commit under test
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
           path: fresh
           # This job executes repository code; keep the token out of its git config.
           persist-credentials: false
@@ -602,7 +607,8 @@ jobs:
     # than `||`.
     # The repository guard matters here too: on a fork `verify` is skipped, and without it this
     # job would fire on every schedule and fail for want of a Zulip secret it should not have.
-    if: ${{ always() && github.repository == 'TauCetiProject/TauCeti'
+    # The main guard likewise keeps a skipped non-main dispatch from posting.
+    if: ${{ always() && github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
             && (needs.verify.result != 'success' || needs.reference.result != 'success'
                 || needs.reference.outputs.compare != 'agree') }}
     runs-on: ubuntu-24.04
@@ -618,7 +624,8 @@ jobs:
           ZULIP_TOPIC: Nightly verification
           RESULT: ${{ needs.verify.result }}
           REFERENCE_RESULT: ${{ needs.reference.result }}
-          SHA: ${{ needs.verify.outputs.sha }}
+          # Not `needs.verify.outputs.sha`: a job whose runner is lost publishes no outputs.
+          SHA: ${{ github.sha }}
           BUILD: ${{ needs.verify.outputs.build }}
           AUDIT: ${{ needs.verify.outputs.audit }}
           COMPARE: ${{ needs.reference.outputs.compare }}
@@ -634,9 +641,8 @@ jobs:
           import urllib.parse
           import urllib.request
 
-          sha = os.environ.get("SHA") or ""
-          where = (f"[`{sha[:8]}`](https://github.com/TauCetiProject/TauCeti/commit/{sha})"
-                   if sha else "an unresolved commit")
+          sha = os.environ["SHA"]
+          where = f"[`{sha[:8]}`](https://github.com/TauCetiProject/TauCeti/commit/{sha})"
           lines = [f"**Nightly verification did not come back clean** on {where}."]
 
           # Deliberately does not claim the cached per-push CI passed for this SHA: main's CI
@@ -648,10 +654,17 @@ jobs:
               elif os.environ.get("AUDIT") == "failure":
                   lines.append("main built from source, but an audit or lint FAILED there. "
                                "Treat the published Lake cache as suspect until this is explained.")
-              else:
+              elif os.environ.get("BUILD"):
                   lines.append(f"The from-source verification did not complete "
                                f"(result: `{os.environ.get('RESULT')}`, "
-                               f"build: `{os.environ.get('BUILD') or 'not run'}`). "
+                               f"build: `{os.environ.get('BUILD')}`). "
+                               "No complete independent verification was established for this commit.")
+              else:
+                  # A job that loses its runner publishes no outputs, even for steps that ran, so
+                  # a missing outcome is not evidence that the build never started.
+                  lines.append(f"The from-source verification did not complete "
+                               f"(result: `{os.environ.get('RESULT')}`) and recorded no build outcome. "
+                               "The run log shows how far it got. "
                                "No complete independent verification was established for this commit.")
           elif os.environ.get("REFERENCE_RESULT") != "success":
               lines.append(f"The from-source build and audits passed, but cache verification "
