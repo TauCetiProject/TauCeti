@@ -364,7 +364,7 @@ noncomputable def EndSequence.ofSections (hK : Monotone K) (hKc : ∀ n, IsCompa
     (hcof : ∀ L : Set X, IsCompact L → ∃ n, L ⊆ K n) (s : (componentComplFunctor K hK).sections) :
     EndSequence X where
   toFun n := connectedComponentIn (K n)ᶜ (sectionsRep hK s n)
-  exists_eq_connectedComponentIn' n := ⟨K n, hKc n, _, (sectionsRep hK s n).2, rfl⟩
+  exists_eq_connectedComponentIn' n := ⟨K n, hKc n, _, (sectionsRep hK s n).property, rfl⟩
   antitone' {m n} hmn := by
     dsimp only
     rw [← connectedComponentIn_sectionsRep_eq hK s hmn]
@@ -381,8 +381,8 @@ theorem EndSequence.ofSections_apply (hK : Monotone K) (hKc : ∀ n, IsCompact (
     {n : ℕ} {x : ↥(K n)ᶜ} (hx : ConnectedComponents.mk x = s.val (.op n)) :
     EndSequence.ofSections hK hKc hcof s n = connectedComponentIn (K n)ᶜ x := by
   rw [← mk_sectionsRep hK s n] at hx
-  exact ((ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq x.2
-    (sectionsRep hK s n).2).1 hx).symm
+  exact ((ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq x.property
+    (sectionsRep hK s n).property).1 hx).symm
 
 /-- The end sequence of a compatible family lies, in the complement of `Kₙ`, in the `n`-th
 component of the family. -/
@@ -392,7 +392,7 @@ theorem EndSequence.component_ofSections (hK : Monotone K) (hKc : ∀ n, IsCompa
   rw [← mk_sectionsRep hK s n]
   exact (EndSequence.ofSections hK hKc hcof s).component_eq_mk_of_mem (hKc n) (n := n)
     (disjoint_compl_left.mono_left (connectedComponentIn_subset _ _))
-    (mem_connectedComponentIn (sectionsRep hK s n).2)
+    (mem_connectedComponentIn (sectionsRep hK s n).property)
 
 /-- Along a monotone sequence of compact sets `Kₙ` that is cofinal among all compact sets, the ends
 of `X` are the inverse limit of the sets `π₀(X \ Kₙ)` of complementary components. The end of a

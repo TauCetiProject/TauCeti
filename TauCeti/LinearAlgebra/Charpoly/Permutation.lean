@@ -64,10 +64,10 @@ theorem charpoly_lmapDomain_eq_mul_subtypePerm [Finite α] (π : Perm α) (p : �
   rw [← LinearMap.charpoly_prodMap, ← e.charpoly_conj]
   congr 1
   apply LinearMap.prod_ext <;> apply Finsupp.lhom_ext <;> intro y c
-  · have hy : p (π y) := (h y).mpr y.2
+  · have hy : p (π y) := (h y).mpr y.property
     simp [e, LinearEquiv.conj_apply, Equiv.sumCompl_symm_apply_of_pos hy,
       Finsupp.comapDomain_single, Finsupp.comapDomain_single_of_notMem_range]
-  · have hy : ¬ p (π y) := (not_congr (h y)).mpr y.2
+  · have hy : ¬ p (π y) := (not_congr (h y)).mpr y.property
     simp [e, LinearEquiv.conj_apply, Equiv.sumCompl_symm_apply_of_neg hy,
       Finsupp.comapDomain_single, Finsupp.comapDomain_single_of_notMem_range]
 
@@ -142,7 +142,7 @@ theorem charpoly_lmapDomain (π : Perm α) :
       Multiset.map_add, Multiset.prod_add]
     congr 1
     · have hc : ∀ y, (π.subtypePerm h).SameCycle ⟨x, SameCycle.refl π x⟩ y :=
-        fun y ↦ sameCycle_subtypePerm.mpr y.2
+        fun y ↦ sameCycle_subtypePerm.mpr y.property
       rw [charpoly_lmapDomain_of_forall_sameCycle _ hc, fullCycleType_of_forall_sameCycle _ hc,
         Multiset.map_singleton, Multiset.prod_singleton]
     · refine ih _ ?_ _ rfl

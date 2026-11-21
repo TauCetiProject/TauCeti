@@ -219,16 +219,16 @@ def stiefelBundle (k : ℕ) :
   continuousOn_invFun := by
     have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
     rw [continuousOn_iff_continuous_domRestrict]
-    refine StiefelBundle.continuous_iff.2 ⟨continuous_fst.comp continuous_subtype_val, fun i ↦ ?_⟩
+    refine StiefelBundle.continuous_iff.2 ⟨continuous_fst.comp continuous_subtypeVal, fun i ↦ ?_⟩
     have hσ : Continuous fun q : (e.baseSet ×ˢ univ : Set (B × stiefel V k)) ↦
-        (⟨q.1.1, e.orthonormalFrameAt c b q.1.1⟩ : OrthonormalFrameBundle ℝ F E V) :=
+        (⟨q.val.1, e.orthonormalFrameAt c b q.val.1⟩ : OrthonormalFrameBundle ℝ F E V) :=
       ((e.continuous_orthonormalFrame c b).comp
-        ((continuous_fst.comp continuous_subtype_val).subtype_mk fun q ↦ q.2.1)).congr fun q ↦
-          OrthonormalFrameBundle.mk_eq_mk_iff.2 (e.orthonormalFrameAt_of_mem c b q.2.1).symm
+        ((continuous_fst.comp continuous_subtypeVal).subtype_mk fun q ↦ q.property.1)).congr fun q ↦
+          OrthonormalFrameBundle.mk_eq_mk_iff.2 (e.orthonormalFrameAt_of_mem c b q.property.1).symm
     have hw : Continuous fun q : (e.baseSet ×ˢ univ : Set (B × stiefel V k)) ↦
-        (q.1.2 : Fin k → V) i :=
-      (continuous_apply i).comp (continuous_subtype_val.comp
-        (continuous_snd.comp continuous_subtype_val))
+        (q.val.2 : Fin k → V) i :=
+      (continuous_apply i).comp (continuous_subtypeVal.comp
+        (continuous_snd.comp continuous_subtypeVal))
     exact (OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp (hσ.prodMk hw)).congr
       fun _ ↦ TotalSpace.ext rfl (heq_of_eq (by simp))
   baseSet := e.baseSet
@@ -263,7 +263,7 @@ vector of the model frame. -/
 theorem stiefelBundle_symm_apply {k : ℕ} (y : e.baseSet) (w : stiefel V k) :
     (e.stiefelBundle c b k).toOpenPartialHomeomorph.symm ((y : B), w) =
       ⟨y, (e.orthonormalFrame c b y).stiefelHomeomorph k w⟩ := by
-  have hy : (y : B) ∈ e.baseSet := y.2
+  have hy : (y : B) ∈ e.baseSet := y.property
   -- Unfold `stiefelBundle`'s `invFun`, then rewrite `orthonormalFrameAt` on `e.baseSet`.
   change (⟨(y : B), (e.orthonormalFrameAt c b y).stiefelHomeomorph k w⟩ : StiefelBundle F E k) = _
   rw [e.orthonormalFrameAt_of_mem c b hy]
@@ -347,8 +347,8 @@ omit [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)] [TopologicalSpace 
 /-- The unit vector `q` of `S(E)`, read as an orthonormal `1`-frame of its fibre, has `q` as its
 vector. -/
 private theorem totalSpaceMk_stiefelOneHomeomorphSphere_symm (q : sphereBundle F E) (i : Fin 1) :
-    (⟨q.1.proj, ((stiefelOneHomeomorphSphere (E q.1.proj)).symm (unitSphereOfSphereBundle q) :
-      Fin 1 → E q.1.proj) i⟩ : TotalSpace F E) = q.1 :=
+    (⟨q.val.proj, ((stiefelOneHomeomorphSphere (E q.val.proj)).symm (unitSphereOfSphereBundle q) :
+      Fin 1 → E q.val.proj) i⟩ : TotalSpace F E) = q.val :=
   TotalSpace.ext rfl
     (heq_of_eq (coe_stiefelOneHomeomorphSphere_symm_apply (unitSphereOfSphereBundle q) i))
 
@@ -356,8 +356,8 @@ variable (F E) in
 /-- **Orthonormal `1`-frames are unit vectors**: `V₁(E) ≃ₜ S(E)`. -/
 def oneHomeomorphSphereBundle : StiefelBundle F E 1 ≃ₜ sphereBundle F E where
   toFun := sphereProj F 1 0
-  invFun q := ⟨q.1.proj,
-    (stiefelOneHomeomorphSphere (E q.1.proj)).symm (unitSphereOfSphereBundle q)⟩
+  invFun q := ⟨q.val.proj,
+    (stiefelOneHomeomorphSphere (E q.val.proj)).symm (unitSphereOfSphereBundle q)⟩
   left_inv p := ext (congrArg TotalSpace.proj (coe_sphereProj_apply 0 p)) fun i ↦
     (totalSpaceMk_stiefelOneHomeomorphSphere_symm _ i).trans
       ((coe_sphereProj_apply 0 p).trans (by rw [Subsingleton.elim i 0]))
@@ -366,7 +366,7 @@ def oneHomeomorphSphereBundle : StiefelBundle F E 1 ≃ₜ sphereBundle F E wher
   continuous_toFun := (sphereProj F 1 0).continuous
   continuous_invFun := continuous_iff_of_neZero.2 fun i ↦ by
     rw [Subsingleton.elim i 0]
-    exact continuous_subtype_val.congr fun q ↦ TotalSpace.ext rfl
+    exact continuous_subtypeVal.congr fun q ↦ TotalSpace.ext rfl
       (heq_of_eq (coe_stiefelOneHomeomorphSphere_symm_apply (unitSphereOfSphereBundle q) 0).symm)
 
 @[simp]
@@ -380,7 +380,7 @@ theorem totalSpaceMk_oneHomeomorphSphereBundle_symm (q : sphereBundle F E) (i : 
     (⟨((oneHomeomorphSphereBundle F E).symm q).proj,
         (((oneHomeomorphSphereBundle F E).symm q).frame :
           Fin 1 → E ((oneHomeomorphSphereBundle F E).symm q).proj) i⟩ : TotalSpace F E) =
-      q.1 := by
+      q.val := by
   rw [Subsingleton.elim i 0, oneHomeomorphSphereBundle]
   exact TotalSpace.ext rfl
     (heq_of_eq (coe_stiefelOneHomeomorphSphere_symm_apply (unitSphereOfSphereBundle q) 0))
@@ -405,24 +405,24 @@ theorem proj_oneHomeomorphSphereBundle_symm (q : sphereBundle F E) :
 /-- **Inclusion of the vertical `k`-frame fibre `V_k(q^⊥) → V_{k+1}(E)` over `q : S(E)`.** It
 prepends `q` as the first vector of an orthonormal `(k + 1)`-frame of `E q.1.proj`. -/
 def sphereFiberIncl (q : sphereBundle F E) (k : ℕ) :
-    C(stiefel (ℝ ∙ q.1.2)ᗮ k, StiefelBundle F E (k + 1)) :=
-  (fiberIncl F E (k + 1) q.1.proj).comp (stiefelFrameIncl (unitSphereOfSphereBundle q) k)
+    C(stiefel (ℝ ∙ q.val.snd)ᗮ k, StiefelBundle F E (k + 1)) :=
+  (fiberIncl F E (k + 1) q.val.proj).comp (stiefelFrameIncl (unitSphereOfSphereBundle q) k)
 
-theorem sphereFiberIncl_apply (q : sphereBundle F E) (k : ℕ) (x : stiefel (ℝ ∙ q.1.2)ᗮ k) :
+theorem sphereFiberIncl_apply (q : sphereBundle F E) (k : ℕ) (x : stiefel (ℝ ∙ q.val.snd)ᗮ k) :
     sphereFiberIncl q k x =
-      fiberIncl F E (k + 1) q.1.proj (stiefelFrameIncl (unitSphereOfSphereBundle q) k x) :=
+      fiberIncl F E (k + 1) q.val.proj (stiefelFrameIncl (unitSphereOfSphereBundle q) k x) :=
   (rfl)
 
 @[simp]
 theorem sphereProj_zero_sphereFiberIncl (q : sphereBundle F E) (k : ℕ)
-    (x : stiefel (ℝ ∙ q.1.2)ᗮ k) : sphereProj F (k + 1) 0 (sphereFiberIncl q k x) = q := by
+    (x : stiefel (ℝ ∙ q.val.snd)ᗮ k) : sphereProj F (k + 1) 0 (sphereFiberIncl q k x) = q := by
   rw [sphereFiberIncl_apply, sphereProj_fiberIncl, stiefelProj_zero_stiefelFrameIncl,
     sphereBundleFiberIncl_unitSphereOfSphereBundle]
 
 /-- The vertical frame inclusion `V_k(q^⊥) → V_{k+1}(E)` is a topological embedding. -/
 theorem isEmbedding_sphereFiberIncl (q : sphereBundle F E) (k : ℕ) :
     IsEmbedding (sphereFiberIncl q k) :=
-  (isEmbedding_fiberIncl F E (k + 1) q.1.proj).comp
+  (isEmbedding_fiberIncl F E (k + 1) q.val.proj).comp
     (isClosedEmbedding_stiefelFrameIncl (unitSphereOfSphereBundle q) k).isEmbedding
 
 /-- The range of `V_k(q^⊥) → V_{k+1}(E)` is the fibre of `sphereProj 0 : V_{k+1}(E) → S(E)` over
@@ -436,18 +436,18 @@ theorem range_sphereFiberIncl (q : sphereBundle F E) (k : ℕ) :
 embedding. -/
 theorem isClosedEmbedding_sphereFiberIncl [T1Space B] (q : sphereBundle F E) (k : ℕ) :
     IsClosedEmbedding (sphereFiberIncl q k) :=
-  (isClosedEmbedding_fiberIncl F E (k + 1) q.1.proj).comp
+  (isClosedEmbedding_fiberIncl F E (k + 1) q.val.proj).comp
     (isClosedEmbedding_stiefelFrameIncl (unitSphereOfSphereBundle q) k)
 
 /-- **Homeomorphism onto the fibre of `sphereProj 0 : V_{k+1}(E) → S(E)` over `q : S(E)`.** -/
 def sphereFiberHomeomorph (q : sphereBundle F E) (k : ℕ) :
-    stiefel (ℝ ∙ q.1.2)ᗮ k ≃ₜ (sphereProj (E := E) F (k + 1) 0) ⁻¹' {q} :=
+    stiefel (ℝ ∙ q.val.snd)ᗮ k ≃ₜ (sphereProj (E := E) F (k + 1) 0) ⁻¹' {q} :=
   (isEmbedding_sphereFiberIncl q k).toHomeomorph.trans
     (Homeomorph.setCongr (range_sphereFiberIncl q k))
 
 @[simp]
 theorem coe_sphereFiberHomeomorph_apply (q : sphereBundle F E) (k : ℕ)
-    (x : stiefel (ℝ ∙ q.1.2)ᗮ k) :
+    (x : stiefel (ℝ ∙ q.val.snd)ᗮ k) :
     (sphereFiberHomeomorph q k x : StiefelBundle F E (k + 1)) = sphereFiberIncl q k x :=
   (rfl)
 
@@ -489,7 +489,7 @@ theorem exists_trivialization_sphereProj_zero {n : ℕ} (hF : finrank ℝ F = n 
     (oneHomeomorphSphereBundle F E).symm).transFiberHomeomorph (stiefelOneHomeomorphSphere V)
   refine ⟨e₁, e₂, mem_baseSet_trivializationAt F E x,
     mem_baseSet_trivializationAt F E x, fun p _ _ ↦ Subtype.ext ?_⟩
-  let Φ : TotalSpace F E → V := fun r ↦ (e₀.orthonormalFrameAt c b r.proj).symm r.2
+  let Φ : TotalSpace F E → V := fun r ↦ (e₀.orthonormalFrameAt c b r.proj).symm r.snd
   have hlhs : (((e₂ (sphereProj F (k + 1) 0 p)).2 : sphere (0 : V) 1) : V) =
       Φ (sphereProj F (k + 1) 0 p : TotalSpace F E) := by
     -- Unfold `e₂` as `stiefelOneHomeomorphSphere V` applied to `e₀.stiefelBundle c b 1`.
@@ -537,19 +537,19 @@ theorem isNConnected_sphereProj_zero {n k : ℕ} (hF : finrank ℝ F = n + 1) (h
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   refine (TopCat.isNConnected_iff_of_mem_serreFibrations
     (mem_serreFibrations_sphereProj_zero F E k) (n - k)).2 fun q ↦ ?_
-  let L := (trivializationAt F E q.1.proj).continuousLinearEquivAt ℝ q.1.proj
-    (mem_baseSet_trivializationAt F E q.1.proj)
-  have : Fact (finrank ℝ (E q.1.proj) = n + 1) := ⟨L.toLinearEquiv.finrank_eq.trans hF⟩
-  have : FiniteDimensional ℝ (E q.1.proj) := .of_fact_finrank_eq_succ n
-  have hperp : finrank ℝ (ℝ ∙ q.1.2)ᗮ = n :=
+  let L := (trivializationAt F E q.val.proj).continuousLinearEquivAt ℝ q.val.proj
+    (mem_baseSet_trivializationAt F E q.val.proj)
+  have : Fact (finrank ℝ (E q.val.proj) = n + 1) := ⟨L.toLinearEquiv.finrank_eq.trans hF⟩
+  have : FiniteDimensional ℝ (E q.val.proj) := .of_fact_finrank_eq_succ n
+  have hperp : finrank ℝ (ℝ ∙ q.val.snd)ᗮ = n :=
     Submodule.finrank_orthogonal_span_singleton
       (ne_zero_of_mem_unit_sphere (unitSphereOfSphereBundle q))
   refine ⟨?_, fun e m hm ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := (nonempty_stiefel (E := (ℝ ∙ q.1.2)ᗮ) (k := k)).2 (by omega)
+  · obtain ⟨x, hx⟩ := (nonempty_stiefel (E := (ℝ ∙ q.val.snd)ᗮ) (k := k)).2 (by omega)
     exact ⟨sphereFiberHomeomorph q k ⟨x, hx⟩⟩
   · let φ : (_root_.TopCat.ofHom (sphereProj (E := E) F (k + 1) 0) :
         _root_.TopCat.of (StiefelBundle F E (k + 1)) ⟶ _root_.TopCat.of (sphereBundle F E)).fiber q
-        ≃ₜ stiefel (ℝ ∙ q.1.2)ᗮ k :=
+        ≃ₜ stiefel (ℝ ∙ q.val.snd)ᗮ k :=
       ((Homeomorph.refl _).subtype fun _ ↦ Iff.rfl).trans (sphereFiberHomeomorph q k).symm
     have := subsingleton_homotopyGroup_stiefel (M := Fin m) (by simp [hperp]; omega) (φ e)
     exact (HomotopyGroup.homeomorphEquiv φ e).subsingleton

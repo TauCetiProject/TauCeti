@@ -103,7 +103,7 @@ the symbols of a prescribed set over its real places. -/
 theorem hilbertSymbol_unitAtRealPlace_eq_neg_one_iff (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = -1 ↔
-      embedding_of_isReal w.2 (a : K) < 0 ∧ embedding_of_isReal w.2 (b : K) < 0 := by
+      embedding_of_isReal w.property (a : K) < 0 ∧ embedding_of_isReal w.property (b : K) < 0 := by
   rw [hilbertSymbol_real_eq_neg_one_iff, unitAtRealPlace_apply, unitAtRealPlace_apply]
 
 /-- The archimedean symbol at a real place is `1` exactly when one of the two global units is
@@ -111,23 +111,23 @@ positive there. -/
 theorem hilbertSymbol_unitAtRealPlace_eq_one_iff (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 ↔
-      0 < embedding_of_isReal w.2 (a : K) ∨ 0 < embedding_of_isReal w.2 (b : K) := by
+      0 < embedding_of_isReal w.property (a : K) ∨ 0 < embedding_of_isReal w.property (b : K) := by
   rw [hilbertSymbol_real_eq_one_iff, unitAtRealPlace_apply, unitAtRealPlace_apply]
 
 /-- A global unit is a square at a real place exactly when it is positive there. -/
 theorem isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
-    IsSquare (unitAtRealPlace w a) ↔ 0 < embedding_of_isReal w.2 (a : K) := by
+    IsSquare (unitAtRealPlace w a) ↔ 0 < embedding_of_isReal w.property (a : K) := by
   rw [Units.isSquare_iff_pos, unitAtRealPlace_apply]
 
 /-- A global unit is a nonsquare at a real place exactly when it is negative there. -/
 theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
-    ¬IsSquare (unitAtRealPlace w a) ↔ embedding_of_isReal w.2 (a : K) < 0 := by
+    ¬IsSquare (unitAtRealPlace w a) ↔ embedding_of_isReal w.property (a : K) < 0 := by
   rw [not_congr (isSquare_unitAtRealPlace_iff w a), not_lt, lt_iff_le_and_ne]
-  have hne : (embedding_of_isReal w.2 (a : K)) ≠ 0 := by
+  have hne : (embedding_of_isReal w.property (a : K)) ≠ 0 := by
     intro hz
-    have h1 : (embedding_of_isReal w.2 (a : K)) = (embedding_of_isReal w.2 0) := by
+    have h1 : (embedding_of_isReal w.property (a : K)) = (embedding_of_isReal w.property 0) := by
       simpa only [map_zero] using hz
-    exact a.ne_zero ((embedding_of_isReal w.2).injective h1)
+    exact a.ne_zero ((embedding_of_isReal w.property).injective h1)
   exact ⟨fun h => ⟨h, hne⟩, fun h => h.1⟩
 
 /-- **A prescribed negative global unit at a real place has a partner with symbol `-1`.**
@@ -138,8 +138,8 @@ are read at the same real place, so that the symbol can be multiplied with the s
 other places of the prescribed set.  This is the step that turns a prescribed nonsquare into a
 local non-norm. -/
 theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K // w.IsReal})
-    (b : Kˣ) (hb : embedding_of_isReal w.2 (b : K) < 0) :
-    ∃ a : Kˣ, embedding_of_isReal w.2 (a : K) < 0 ∧
+    (b : Kˣ) (hb : embedding_of_isReal w.property (b : K) < 0) :
+    ∃ a : Kˣ, embedding_of_isReal w.property (a : K) < 0 ∧
       hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = -1 :=
   ⟨-1, by simp, by
       rw [hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
@@ -149,18 +149,18 @@ theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K //
 the isomorphism `K_w ≃ ℝ`, is its image under the real embedding at `w`. -/
 theorem units_map_ringEquivRealOfIsReal_algebraMap (w : {w : InfinitePlace K // w.IsReal})
     (b : Kˣ) :
-    Units.map (Completion.ringEquivRealOfIsReal w.2 : w.1.Completion →* ℝ)
-      (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = unitAtRealPlace w b :=
+    Units.map (Completion.ringEquivRealOfIsReal w.property : w.val.Completion →* ℝ)
+      (Units.map (algebraMap K w.val.Completion).toMonoidHom b) = unitAtRealPlace w b :=
   Units.ext (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
 
 /-- At a real place `w`, the Hilbert symbol of the images of two global units in the completion
 `K_w` is the real Hilbert symbol of their images under the real embedding at `w`. -/
 theorem hilbertSymbol_completion_eq_unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
-    hilbertSymbol (Units.map (algebraMap K w.1.Completion).toMonoidHom a)
-        (Units.map (algebraMap K w.1.Completion).toMonoidHom b) =
+    hilbertSymbol (Units.map (algebraMap K w.val.Completion).toMonoidHom a)
+        (Units.map (algebraMap K w.val.Completion).toMonoidHom b) =
       hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) := by
-  rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
+  rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.property),
     units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap]
 
 /-- Over the completion at a complex place, every Hilbert symbol is `1`: the completion is
