@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Computability.Jump.Reduction
+import TauCeti.Computability.Jump.Compiler.Reduction
 
 /-!
 # An example of the finite-jump reduction compiler

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Jump.Low
-import TauCeti.Computability.Jump.Reduction
+import TauCeti.Computability.Jump.Compiler.Reduction
 
 /-!
 # Finite iterates of the Turing jump
