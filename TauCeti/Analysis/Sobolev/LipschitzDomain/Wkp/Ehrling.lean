@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Compactness
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.LinearIsometry
 
@@ -39,19 +38,17 @@ every order.
 
 The inequalities hold on every open set where forgetting the highest weak derivative is compact
 (`TauCeti.Wkp.exists_norm_toOrderL_le_of_isCompactOperator`,
-`TauCeti.Wkp.exists_norm_lowerOrder_le_of_isCompactOperator` and
+`TauCeti.Wkp.exists_norm_lowerOrder_le_of_isCompactOperator`,
+`TauCeti.Wkp.exists_norm_iteratedGradient_lowerOrder_le_of_isCompactOperator` and
 `TauCeti.Wkp.exists_norm_le_of_norm_iteratedGradient_le_of_isCompactOperator`, by Ehrling's
 inequality). This file supplies that compactness up to the boundary from the higher-order
 Rellich–Kondrachov theorem
-`TauCeti.Wkp.isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image`.
+`TauCeti.Wkp.isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image` and its consequence
+`TauCeti.Wkp.isCompactOperator_toOrderL_of_isLipschitzDomainWith_image`.
 The model case `F = WithLp 2 (ℝ × E)` is `e = LinearIsometryEquiv.refl`.
 
 ## Main declarations
 
-* `TauCeti.Wkp.isCompactOperator_toOrderL_of_isLipschitzDomainWith_image` and
-  `TauCeti.Wkp.isCompactOperator_valueL_of_isLipschitzDomainWith_image`: truncation
-  `W^{k,p}(Ω) → W^{j,p}(Ω)` for `j < k`, in particular the `Lᵖ` value map on `W^{k+1,p}(Ω)`, is
-  compact.
 * `TauCeti.Wkp.exists_norm_toOrderL_le_of_isLipschitzDomainWith_image`: Ehrling's inequality
   `‖u‖_{W^{j,p}} ≤ ε ‖u‖_{W^{k,p}} + C ‖u‖_{Lᵖ}` for `j < k`.
 * `TauCeti.Wkp.exists_norm_lowerOrder_le_of_isLipschitzDomainWith_image`: the lower-order part is
@@ -87,28 +84,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace Wkp
 
-/-- **Compactness of truncation on Lipschitz domains.** Let `Ω` be a bounded open set whose
-isometric image in the model space is a Lipschitz domain, and `1 ≤ p ≤ ∞`. For `j < k`, forgetting
-the weak derivatives above order `j` is a compact operator `W^{k,p}(Ω) → W^{j,p}(Ω)`. -/
-theorem isCompactOperator_toOrderL_of_isLipschitzDomainWith_image
-    (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) {Ω : Opens F}
-    (hΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F))
-    {j k : ℕ} (h : j < k) :
-    IsCompactOperator (toOrderL (mu := volume) (Omega := Ω) (p := p) h.le) := by
-  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
-  rw [toOrderL_succ (Nat.le_of_lt_succ h) h.le]
-  exact (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb m).clm_comp _
-
-/-- **Rellich–Kondrachov into `Lᵖ` at every order.** On a bounded open set whose isometric image in
-the model space is a Lipschitz domain, the `Lᵖ` value map `W^{k+1,p}(Ω) → Lᵖ(Ω)` is compact, for
-`1 ≤ p ≤ ∞`. -/
-theorem isCompactOperator_valueL_of_isLipschitzDomainWith_image
-    (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) {Ω : Opens F}
-    (hΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) (k : ℕ) :
-    IsCompactOperator (valueL (mu := volume) (Omega := Ω) (p := p) (k + 1)) := by
-  rw [← toOrderL_zero_left (k + 1) (Nat.zero_le _)]
-  exact isCompactOperator_toOrderL_of_isLipschitzDomainWith_image e hΩ hb (Nat.succ_pos k)
-
 /-- **Ehrling's inequality on Lipschitz domains.** Let `Ω` be a bounded open set whose isometric
 image in the model space is a Lipschitz domain, `1 ≤ p ≤ ∞` and `j < k`. For every `ε > 0` there is
 `C` with `‖u‖_{W^{j,p}(Ω)} ≤ ε ‖u‖_{W^{k,p}(Ω)} + C ‖u‖_{Lᵖ(Ω)}` for every `u ∈ W^{k,p}(Ω)`. -/
@@ -143,10 +118,9 @@ theorem exists_norm_iteratedGradient_lowerOrder_le_of_isLipschitzDomainWith_imag
     {ε : ℝ} (hε : 0 < ε) :
     ∃ C, 0 ≤ C ∧ ∀ u : Wkp volume Ω p (k + 2),
       ‖iteratedGradient k (lowerOrder (k + 1) u)‖ ≤
-        ε * ‖iteratedGradient (k + 1) u‖ + C * ‖value (k + 2) u‖ := by
-  obtain ⟨C, hC, hle⟩ :=
-    exists_norm_lowerOrder_le_of_isLipschitzDomainWith_image (p := p) e hΩ hb (k + 1) hε
-  exact ⟨C, hC, fun u ↦ (norm_iteratedGradient_le k _).trans (hle u)⟩
+        ε * ‖iteratedGradient (k + 1) u‖ + C * ‖value (k + 2) u‖ :=
+  exists_norm_iteratedGradient_lowerOrder_le_of_isCompactOperator
+    (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb (k + 1)) hε
 
 /-- **Absorbing lower-order terms in a global estimate.** Let `Ω` be a bounded open set whose
 isometric image in the model space is a Lipschitz domain, and `1 ≤ p ≤ ∞`. If the top derivative
