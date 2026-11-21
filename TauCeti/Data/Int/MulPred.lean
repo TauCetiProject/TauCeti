@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Group.Unbundled.Int
-public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.LinearCombination
@@ -22,10 +21,10 @@ fails at `t = 1 / 2`, and over `ℕ` it is vacuous.
 More generally `0 ≤ s * (s - δ)` for every integer `δ` with `|δ| ≤ 1`: the shifts `δ = 1` and
 `δ = -1` give consecutive products, and `δ = 0` gives a square. The bound on `δ` is sharp.
 
-The same product is always even, so every integer satisfies `c ^ 2 ≡ c` modulo `2`, and the
-halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the addition law
-`T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural numbers it is
-the binomial coefficient `n.choose 2`.
+The consecutive product `t * (t - 1)` is always even, so every integer satisfies `c ^ 2 ≡ c`
+modulo `2`, and the halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the
+addition law `T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural
+numbers it is the binomial coefficient `n.choose 2`.
 
 ## Main results
 
