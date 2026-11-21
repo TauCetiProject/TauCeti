@@ -36,6 +36,14 @@ sequence of curves with energy at most `E` blows up, and the first gives every b
 least `δ`. Neither the counting argument nor the rescaling that produces bubbles is carried out
 here.
 
+Both statements hold with one threshold for a family of structures `J p`, jointly `C²` in `(p, x)`
+near `C × K` for a compact set `C` of parameters in a normed space, since the threshold of the
+mean-value inequality depends only on bounds for `J` and its first two derivatives. For
+concentration the curves of the family may be holomorphic for different structures `J pᵢ`, as for
+a sequence of curves along a converging sequence of structures. Bubbles of an inhomogeneous
+equation are holomorphic for the structure frozen at their bubbling point, which ranges over a
+compact window of the domain.
+
 ## Main results
 
 * `TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne`: a nonconstant
@@ -43,6 +51,9 @@ here.
 * `TauCeti.exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball`: energy at least
   `δ` concentrates near every point at which the derivatives of a family of `J`-holomorphic
   curves blow up.
+* `TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric`,
+  `TauCeti.exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball_parametric`: the
+  same with one threshold for a compact family of structures.
 
 ## References
 
@@ -61,21 +72,27 @@ open Complex Metric MeasureTheory Set Filter Topology
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V}
 
-/-- **Energy quantization for `J`-holomorphic planes.** Let `J` be `C²` on an open set `W`
-containing a compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `δ > 0` such that
-every nonconstant `C³` solution `u : ℂ → V` of `∂ₜu = J(u) ∂ₛu` with image in `K` and integrable
+section Parametric
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+
+/-- **Energy quantization for a compact family of structures.** Let `J p` be structures depending
+on a parameter `p` in a normed space, jointly `C²` on an open set `W` containing `C × K` for compact
+sets `C` and `K`, with `J p (x)² = -1` on `C × K`. There is one threshold `δ > 0` for all `p ∈ C`:
+every nonconstant `C³` solution `u : ℂ → V` of `∂ₜu = J p (u) ∂ₛu` with image in `K` and integrable
 energy density has energy `∫ ‖∂ₛu‖² ≥ δ`. -/
-theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
-    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄, ContDiff ℝ 3 u →
-      (∀ z, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) → range u ⊆ K →
+theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric
+    {J : P → V → V →L[ℝ] V} {W : Set (P × V)} {C : Set P} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W) (hC : IsCompact C) (hK : IsCompact K)
+    (hCKW : C ×ˢ K ⊆ W) (hJsq : ∀ p ∈ C, ∀ x ∈ K, ∀ v, J p x (J p x v) = -v) :
+    ∃ δ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℂ → V⦄, ContDiff ℝ 3 u →
+      (∀ z, fderiv ℝ u z I = J p (u z) (fderiv ℝ u z 1)) → range u ⊆ K →
       Integrable (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) → ∀ ⦃z w : ℂ⦄, u z ≠ u w →
       δ ≤ ∫ y, ‖fderiv ℝ u y 1‖ ^ 2 := by
   obtain ⟨δ, hδ, hmean⟩ :=
-    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      hW hJ hK hKW hJsq
-  refine ⟨δ, hδ, fun u hu hCR huK hInt z w hzw ↦ ?_⟩
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+      hW hJ hC hK hCKW hJsq
+  refine ⟨δ, hδ, fun p hp u hu hCR huK hInt z w hzw ↦ ?_⟩
   by_contra! hE
   set E := ∫ y, ‖fderiv ℝ u y 1‖ ^ 2
   have hE0 : 0 ≤ E := integral_nonneg fun _ ↦ sq_nonneg _
@@ -88,7 +105,7 @@ theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
       intro r hr
       have hball : ∫ y in ball x r, ‖fderiv ℝ u y 1‖ ^ 2 ≤ E :=
         setIntegral_le_integral hInt (Eventually.of_forall fun _ ↦ sq_nonneg _)
-      exact (hmean hr.le hu.contDiffOn (hDu.clm_apply continuous_const).continuousOn
+      exact (hmean hp hr.le hu.contDiffOn (hDu.clm_apply continuous_const).continuousOn
         (fun y _ ↦ hCR y) (fun y _ ↦ huK (mem_range_self y)) (hball.trans_lt hE)).trans
         (by gcongr)
     by_contra! hx
@@ -109,26 +126,29 @@ theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
     simpa [hzero x, hCR x] using (fderiv ℝ u x).norm_apply_le_norm_one_add_norm_I v
   exact hzw (is_const_of_fderiv_eq_zero (hu.differentiable (by norm_num)) hfderiv z w)
 
-/-- **Energy concentration at blow-up points.** Let `J` be `C²` on an open set `W` containing a
-compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `δ > 0` with the following
-property. Let `uᵢ` be a family of `C³` solutions of `∂ₜu = J(u) ∂ₛu` on a disk `B_r(z₀)`, with
-image in `K` and integrable energy density, and let `zᵢ → z₀` be points at which the differentials
-blow up, `‖duᵢ(zᵢ)‖ → ∞`. Then for every `0 < ε ≤ r`, eventually `∫_{B_ε(z₀)} ‖∂ₛuᵢ‖² ≥ δ`. -/
-theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
-    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
-    ∃ δ > 0, ∀ ⦃ι : Type*⦄ ⦃l : Filter ι⦄ ⦃u : ι → ℂ → V⦄ ⦃z : ι → ℂ⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄,
-      (∀ i, ContDiffOn ℝ 3 (u i) (ball z₀ r)) →
-      (∀ i, ∀ y ∈ ball z₀ r, fderiv ℝ (u i) y I = J (u i y) (fderiv ℝ (u i) y 1)) →
+/-- **Energy concentration for a compact family of structures.** Let `J p` be structures depending
+on a parameter `p` in a normed space, jointly `C²` on an open set `W` containing `C × K` for compact
+sets `C` and `K`, with `J p (x)² = -1` on `C × K`. There is a threshold `δ > 0` with the following
+property. Let `uᵢ` be a family of `C³` solutions of `∂ₜu = J pᵢ (u) ∂ₛu` on a disk `B_r(z₀)`, for
+parameters `pᵢ ∈ C`, with image in `K` and integrable energy density, and let `zᵢ → z₀` be points
+at which the differentials blow up, `‖duᵢ(zᵢ)‖ → ∞`. Then for every `0 < ε ≤ r`, eventually
+`∫_{B_ε(z₀)} ‖∂ₛuᵢ‖² ≥ δ`. -/
+theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball_parametric
+    {J : P → V → V →L[ℝ] V} {W : Set (P × V)} {C : Set P} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W) (hC : IsCompact C) (hK : IsCompact K)
+    (hCKW : C ×ˢ K ⊆ W) (hJsq : ∀ p ∈ C, ∀ x ∈ K, ∀ v, J p x (J p x v) = -v) :
+    ∃ δ > 0, ∀ ⦃ι : Type*⦄ ⦃l : Filter ι⦄ ⦃p : ι → P⦄ ⦃u : ι → ℂ → V⦄ ⦃z : ι → ℂ⦄ ⦃z₀ : ℂ⦄
+      ⦃r : ℝ⦄, (∀ i, p i ∈ C) → (∀ i, ContDiffOn ℝ 3 (u i) (ball z₀ r)) →
+      (∀ i, ∀ y ∈ ball z₀ r, fderiv ℝ (u i) y I = J (p i) (u i y) (fderiv ℝ (u i) y 1)) →
       (∀ i, MapsTo (u i) (ball z₀ r) K) →
       (∀ i, IntegrableOn (fun y ↦ ‖fderiv ℝ (u i) y 1‖ ^ 2) (ball z₀ r)) →
       Tendsto z l (𝓝 z₀) → Tendsto (fun i ↦ ‖fderiv ℝ (u i) (z i)‖) l atTop →
       ∀ ε, 0 < ε → ε ≤ r → ∀ᶠ i in l, δ ≤ ∫ y in ball z₀ ε, ‖fderiv ℝ (u i) y 1‖ ^ 2 := by
   obtain ⟨δ, hδ, hmean⟩ :=
-    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      hW hJ hK hKW hJsq
-  obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  refine ⟨δ, hδ, fun ι l u z z₀ r hu hCR huK hInt hz hblow ε hε hεr ↦ ?_⟩
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+      hW hJ hC hK hCKW hJsq
+  obtain ⟨a, ha⟩ := (hC.prod hK).exists_bound_of_continuousOn (hJ.continuousOn.mono hCKW)
+  refine ⟨δ, hδ, fun ι l p u z z₀ r hp hu hCR huK hInt hz hblow ε hε hεr ↦ ?_⟩
   -- A small-energy disk of radius `ε / 2` bounds `‖∂ₛu‖` at its centre by `B`, and then the
   -- Cauchy--Riemann equation bounds `‖du‖` there by `(1 + max a 0) * B`.
   set B := 1 + 8 * δ / (Real.pi * (ε / 2) ^ 2)
@@ -146,19 +166,61 @@ theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
       ∫ y in ball z₀ ε, ‖fderiv ℝ (u i) y 1‖ ^ 2 :=
     setIntegral_mono_set ((hInt i).mono_set hεr')
       (Eventually.of_forall fun _ ↦ sq_nonneg _) (Eventually.of_forall hsub')
-  have h := hmean (half_pos hε).le ((hu i).mono (hsub'.trans hεr'))
+  have h := hmean (hp i) (half_pos hε).le ((hu i).mono (hsub'.trans hεr'))
     ((hDu.mono (hsub.trans hεr')).clm_apply continuousOn_const)
     (fun y hy ↦ hCR i y (hεr' (hsub' hy))) (fun y hy ↦ huK i (hεr' (hsub' hy)))
     (hmono.trans_lt hE)
-  have hp : 0 < Real.pi * (ε / 2) ^ 2 := by positivity
+  have hpi : 0 < Real.pi * (ε / 2) ^ 2 := by positivity
   have hsq : ‖fderiv ℝ (u i) (z i) 1‖ ^ 2 ≤ 8 * δ / (Real.pi * (ε / 2) ^ 2) := by
-    rw [le_div_iff₀ hp]
+    rw [le_div_iff₀ hpi]
     nlinarith
   have hreal : ‖fderiv ℝ (u i) (z i) 1‖ ≤ B := by
     nlinarith [sq_nonneg (‖fderiv ℝ (u i) (z i) 1‖ - 1)]
   have hop : ‖fderiv ℝ (u i) (z i)‖ ≤ (1 + max a 0) * B :=
     (fderiv ℝ (u i) (z i)).norm_le_of_apply_I_eq (hCR i (z i) hzr)
-      ((ha _ (huK i hzr)).trans (le_max_left _ _)) hreal
+      ((ha (p i, u i (z i)) ⟨hp i, huK i hzr⟩).trans (le_max_left _ _)) hreal
   linarith
+
+end Parametric
+
+/-- **Energy quantization for `J`-holomorphic planes.** Let `J` be `C²` on an open set `W`
+containing a compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `δ > 0` such that
+every nonconstant `C³` solution `u : ℂ → V` of `∂ₜu = J(u) ∂ₛu` with image in `K` and integrable
+energy density has energy `∫ ‖∂ₛu‖² ≥ δ`. -/
+theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄, ContDiff ℝ 3 u →
+      (∀ z, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) → range u ⊆ K →
+      Integrable (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) → ∀ ⦃z w : ℂ⦄, u z ≠ u w →
+      δ ≤ ∫ y, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  obtain ⟨δ, hδ, h⟩ := exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric
+    (J := fun (_ : Unit) ↦ J) (hW.preimage continuous_snd)
+    (hJ.comp contDiffOn_snd fun _ hq ↦ hq) isCompact_univ hK (fun q hq ↦ hKW hq.2)
+    fun _ _ ↦ hJsq
+  exact ⟨δ, hδ, h (mem_univ ())⟩
+
+/-- **Energy concentration at blow-up points.** Let `J` be `C²` on an open set `W` containing a
+compact set `K`, with `J(x)² = -1` on `K`. There is a threshold `δ > 0` with the following
+property. Let `uᵢ` be a family of `C³` solutions of `∂ₜu = J(u) ∂ₛu` on a disk `B_r(z₀)`, with
+image in `K` and integrable energy density, and let `zᵢ → z₀` be points at which the differentials
+blow up, `‖duᵢ(zᵢ)‖ → ∞`. Then for every `0 < ε ≤ r`, eventually `∫_{B_ε(z₀)} ‖∂ₛuᵢ‖² ≥ δ`. -/
+theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∀ ⦃ι : Type*⦄ ⦃l : Filter ι⦄ ⦃u : ι → ℂ → V⦄ ⦃z : ι → ℂ⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄,
+      (∀ i, ContDiffOn ℝ 3 (u i) (ball z₀ r)) →
+      (∀ i, ∀ y ∈ ball z₀ r, fderiv ℝ (u i) y I = J (u i y) (fderiv ℝ (u i) y 1)) →
+      (∀ i, MapsTo (u i) (ball z₀ r) K) →
+      (∀ i, IntegrableOn (fun y ↦ ‖fderiv ℝ (u i) y 1‖ ^ 2) (ball z₀ r)) →
+      Tendsto z l (𝓝 z₀) → Tendsto (fun i ↦ ‖fderiv ℝ (u i) (z i)‖) l atTop →
+      ∀ ε, 0 < ε → ε ≤ r → ∀ᶠ i in l, δ ≤ ∫ y in ball z₀ ε, ‖fderiv ℝ (u i) y 1‖ ^ 2 := by
+  obtain ⟨δ, hδ, h⟩ :=
+    exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball_parametric
+    (J := fun (_ : Unit) ↦ J) (hW.preimage continuous_snd)
+    (hJ.comp contDiffOn_snd fun _ hq ↦ hq) isCompact_univ hK (fun q hq ↦ hKW hq.2)
+    fun _ _ ↦ hJsq
+  exact ⟨δ, hδ, fun ι l u z z₀ r hu hCR huK hInt hz hblow ↦
+    h (p := fun _ ↦ ()) (fun _ ↦ mem_univ ()) hu hCR huK hInt hz hblow⟩
 
 end TauCeti

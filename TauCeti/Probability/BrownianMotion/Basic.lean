@@ -5,28 +5,65 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Independence.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Independence.Pi
 
 /-!
-# Basic closure properties of real Brownian motion
+# Basic properties of real Brownian motion
 
-Complements Mathlib's `Mathlib.Probability.BrownianMotion.Basic` with orthogonal linear
-combinations of two independent real pre-Brownian or Brownian motions: if `B₁` and `B₂` are
-independent and `a ^ 2 + b ^ 2 = 1`, then `t ↦ a * B₁ t + b * B₂ t` is again pre-Brownian
-(`ProbabilityTheory.IsPreBrownianReal.const_mul_add_const_mul_of_indepFun`) and Brownian
-(`ProbabilityTheory.IsBrownianReal.const_mul_add_const_mul_of_indepFun`).
+Complements Mathlib's `Mathlib.Probability.BrownianMotion.Basic` with basic unfiltered
+properties and closure properties of standard real pre-Brownian and Brownian motions:
+
+* any measure supporting a pre-Brownian motion assigns zero mass to every singleton
+  (`MeasureTheory.NullSingletonClass`), since evaluation at time `1` has the nondegenerate
+  Gaussian law `gaussianReal 0 1`;
+* every even moment `(B s - B t) ^ (2 * m)` of a pre-Brownian increment equals
+  `(2 * m - 1)‼ * dist s t ^ m`, regardless of the order of `s` and `t`;
+* orthogonal linear combinations `t ↦ a * B₁ t + b * B₂ t` (`a ^ 2 + b ^ 2 = 1`) of two
+  independent real pre-Brownian or Brownian motions are again pre-Brownian and Brownian.
+
+## Main results
+
+* `ProbabilityTheory.IsPreBrownianReal.nullSingletonClass`: any measure supporting a pre-Brownian
+  motion assigns zero mass to singletons.
+* `ProbabilityTheory.IsPreBrownianReal.integral_pow_two_mul_sub`: even moments of pre-Brownian
+  increments in either time order.
+* `ProbabilityTheory.IsPreBrownianReal.const_mul_add_const_mul_of_indepFun`: orthogonal linear
+  combinations of independent pre-Brownian motions are pre-Brownian.
+* `ProbabilityTheory.IsBrownianReal.const_mul_add_const_mul_of_indepFun`: orthogonal linear
+  combinations of independent Brownian motions are Brownian.
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory
-open scoped NNReal
+open MeasureTheory
+open scoped Nat NNReal
 
 namespace ProbabilityTheory
+
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+
+/-- Any measure supporting a pre-Brownian motion assigns zero mass to every single sample point. -/
+theorem IsPreBrownianReal.nullSingletonClass {B : ℝ≥0 → Ω → ℝ} (hB : IsPreBrownianReal B P) :
+    NullSingletonClass P where
+  measure_singleton ω := by
+    have := nullSingletonClass_gaussianReal (μ := 0) one_ne_zero
+    exact (hB.hasLaw_eval 1).measure_singleton_eq_zero ω
+
+/-- Every even moment `(B s - B t) ^ (2 m)` of a pre-Brownian increment equals
+`(2 m - 1)‼ * dist s t ^ m`, regardless of the order of `s` and `t`. -/
+theorem IsPreBrownianReal.integral_pow_two_mul_sub {B : ℝ≥0 → Ω → ℝ} (hB : IsPreBrownianReal B P)
+    (s t : ℝ≥0) (m : ℕ) :
+    ∫ ω, (B s ω - B t ω) ^ (2 * m) ∂P = (2 * m - 1 : ℕ)‼ * dist s t ^ m := by
+  have h := (hB.hasLaw_sub s t).integral_comp (f := fun x : ℝ ↦ x ^ (2 * m)) (by fun_prop)
+  have hm := TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal 0 (nndist s t) m
+  simp only [sub_zero, coe_nndist] at hm
+  simpa only [Function.comp_apply, Pi.sub_apply, mul_comm] using h.trans hm
 
 /-- An orthogonal linear combination `t ↦ a * B₁ t + b * B₂ t` (`a ^ 2 + b ^ 2 = 1`) of two
 independent real pre-Brownian motions is a real pre-Brownian motion. -/

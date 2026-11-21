@@ -177,7 +177,7 @@ theorem continuous_orthonormalBasis (i : ι) :
   have hv (j : ι) : Continuous
       (fun y : e.baseSet ↦ TotalSpace.mk' F (y : B) (e.symmL 𝕜 y (c j))) := by
     have H := e.continuousOn_symm_prodMk_left (v := c j)
-    exact (H.comp_continuous continuous_subtype_val (fun y ↦ y.property)).congr fun y ↦
+    exact (H.comp_continuous continuous_subtypeVal (fun y ↦ y.property)).congr fun y ↦
       (e.mk_symm y.property (c j)).symm.trans
         (congrArg (TotalSpace.mk (y : B)) (e.symmL_apply y.property (c j)).symm)
   have hli (y : e.baseSet) : LinearIndependent 𝕜 (fun j ↦ e.symmL 𝕜 y (c j)) := by

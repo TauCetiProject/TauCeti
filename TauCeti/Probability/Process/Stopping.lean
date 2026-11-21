@@ -14,16 +14,18 @@ A stopping time remains a stopping time for a larger filtration. This transports
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
 the stopping-time property.
 
-Stopping preserves right continuity at each time, including when the stopping time is infinite.
-This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
-arguments retain the right continuity of their native stopped stages.
+Stopping preserves path continuity and right continuity at each time, including when the stopping
+time is infinite. These pathwise facts require no measurability or stopping-time hypothesis and let
+local-martingale arguments retain the continuity or right continuity of their native stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 Pathwise set membership up to the random time also passes to the stopped process. Neither
 fact requires a stopping-time or measurability assumption. Restricting a strongly progressive
 process to `{⊥ < τ}` before stopping preserves strong progressivity
-(`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`).
+(`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`). Under a finite measure,
+truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound
+`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -53,6 +55,20 @@ theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
 
 open Filter Set TopologicalSpace
 open scoped Topology
+
+/-- Stopping preserves continuity of a path, without any measurability or stopping-time
+assumption on the random time. At an infinite stopping time the path is unchanged. -/
+theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : Continuous (X · ω)) :
+    Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
+  | coe u =>
+    simpa only [MeasureTheory.stoppedProcess, hτ, ← WithTop.coe_min,
+      WithTop.untopA, WithTop.untopD_coe, Function.comp_def, id_eq] using
+      hX.comp (continuous_id.min continuous_const)
 
 /-- Stopping preserves right continuity of a path at a given time, without any measurability
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
@@ -139,5 +155,20 @@ theorem IsStronglyProgressive.stoppedProcess_indicator_pos
   ext ⟨t, ω⟩
   rw [stoppedProcess_indicator_comm]
   by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
+
+open scoped NNReal
+
+/-- For any almost everywhere measurable `WithTop ℝ≥0`-valued function and deterministic horizon
+`T`, the truncated value `(min T (τ ω)).untopA` is integrable under any finite measure. -/
+theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsFiniteMeasure P] {τ : Ω → WithTop ℝ≥0} (hτ : AEMeasurable τ P) (T : ℝ≥0) :
+    Integrable (fun ω ↦ ((min (T : WithTop ℝ≥0) (τ ω)).untopA : ℝ)) P :=
+  Integrable.of_bound
+    ((measurable_subtypeVal.comp
+      (measurable_const.min hτ.measurable_mk).untopA).aestronglyMeasurable.congr
+      (hτ.ae_eq_mk.symm.fun_comp fun x : WithTop ℝ≥0 ↦ ((min (T : WithTop ℝ≥0) x).untopA : ℝ))) T
+    (.of_forall fun ω ↦ by
+      rw [Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _), NNReal.coe_le_coe]
+      exact WithTop.untopA_le (min_le_left _ _))
 
 end MeasureTheory

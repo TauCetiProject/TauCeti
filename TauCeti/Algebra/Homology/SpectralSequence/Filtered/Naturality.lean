@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
+public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 
 /-!
-# Naturality of the spectral object of a filtered complex on graded pieces
+# Naturality of the spectral object and spectral sequence of a filtered complex
 
 A natural transformation `α : F ⟶ G` of functors `ι ⥤ CochainComplex C ℤ` induces a morphism of
 spectral objects `CochainComplex.spectralObjectMap α` (in
@@ -25,7 +27,15 @@ into the piece `G n` of an increasing filtration of `L` induces a morphism of th
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
 their spectral sequences. On the first page, whose objects are the cohomology of graded pieces,
 that morphism is the map in cohomology of the induced morphisms of graded pieces
-(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`).
+(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`). On the abutment,
+identified with the cohomology of the filtered complex by `filtrationAbutmentIso`, the morphism of
+spectral objects is the map in cohomology of the morphism of complexes
+(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`).
+
+A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
+spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
+cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the five lemma
+(`CochainComplex.mappingCone.quasiIso_map`).
 
 ## Main definitions
 
@@ -34,6 +44,8 @@ that morphism is the map in cohomology of the induced morphisms of graded pieces
 
 ## Main results
 
+* `CochainComplex.isIso_spectralObjectMap`: a natural transformation by quasi-isomorphisms induces
+  an isomorphism of spectral objects.
 * `CochainComplex.spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom`: on graded pieces,
   the morphism of spectral objects is the map in cohomology of the morphism of cokernels.
 * `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
@@ -41,6 +53,11 @@ that morphism is the map in cohomology of the induced morphisms of graded pieces
   of graded pieces.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
+* `CochainComplex.quasiIso_filtrationFunctorMap_app`: a quasi-isomorphism of filtered complexes
+  restricting to quasi-isomorphisms of the stages indexed by `ℤ` does so on all stages.
+* `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`:
+  on the abutment, the morphism of spectral objects is the map in cohomology of the morphism of
+  complexes.
 -/
 
 public section
@@ -59,13 +76,13 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
     ((spectralObjectMap α).hom n).app (mk₁ f) ≫ (spectralObjectHIsoCokernel G f n).hom =
       (spectralObjectHIsoCokernel F f n).hom ≫
         HomologicalComplex.homologyMap
-          (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) n := by
+          (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f).symm) n := by
   -- The square of mapping cones and cokernels, from `mappingCone.map_descShortComplex`.
   have key₀ := mappingCone.map_descShortComplex (ShortComplex.cokernelSequence (F.map f))
     (ShortComplex.cokernelSequence (G.map f))
     { τ₁ := α.app i
       τ₂ := α.app j
-      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
+      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f).symm
       comm₁₂ := (α.naturality f).symm
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
   have key := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
@@ -76,6 +93,17 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
     (congrArg (· ≫ _) (spectralObjectMap_hom_app_hIso α f n)).trans <|
     (Category.assoc _ _ _).trans <|
     (congrArg ((spectralObjectHIso F f n).hom ≫ ·) key).trans (Category.assoc _ _ _).symm
+
+/-- **A quasi-isomorphism of functors to cochain complexes induces an isomorphism of spectral
+objects.** If every component of `α : F ⟶ G` is a quasi-isomorphism, then `spectralObjectMap α`
+is an isomorphism. -/
+instance isIso_spectralObjectMap (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
+    IsIso (spectralObjectMap α) := by
+  refine Abelian.SpectralObject.isIso_of_isIso_hom_app _ fun n i j f ↦ ?_
+  have h := spectralObjectMap_hom_app_hIso α f n
+  rw [← Iso.eq_comp_inv] at h
+  rw [h]
+  infer_instance
 
 section FiltrationMap
 
@@ -138,6 +166,45 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     NatTrans.comp_app, Category.assoc, filtrationFunctorMap_app_comp,
     filtrationFunctorMap_app_comp_assoc]
 
+/-- A quasi-isomorphism of filtered complexes `f : K ⟶ L` which restricts to quasi-isomorphisms
+`F n ⟶ G n` on every stage restricts to quasi-isomorphisms on every stage indexed by `EInt`: the
+stages at `⊥` are zero and those at `⊤` are `K` and `L`. -/
+lemma quasiIso_filtrationFunctorMap_app (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f))
+    [QuasiIso f] (h : ∀ n : ℤ, QuasiIso ((filtrationFunctorMap hF hG f hf).app n)) (a : EInt) :
+    QuasiIso ((filtrationFunctorMap hF hG f hf).app a) := by
+  induction a using WithBotTop.rec with
+  | bot =>
+    have : IsIso ((filtrationFunctorMap hF hG f hf).app ⊥) :=
+      isIso_of_source_target_iso_zero _ (isZero_filtrationFunctor_obj_bot _ _).isoZero
+        (isZero_filtrationFunctor_obj_bot _ _).isoZero
+    infer_instance
+  | coe n => exact h n
+  | top =>
+    have : IsIso (filtrationEInt F ⊤).arrow :=
+      (Subobject.isIso_arrow_iff_eq_top _).2 (filtrationEInt_top _)
+    have : IsIso (filtrationEInt G ⊤).arrow :=
+      (Subobject.isIso_arrow_iff_eq_top _).2 (filtrationEInt_top _)
+    rw [← quasiIso_iff_comp_right _
+      ((filtrationFunctorObjIso G hG ⊤).hom ≫ (filtrationEInt G ⊤).arrow),
+      filtrationFunctorMap_app_comp]
+    infer_instance
+
+/-- **The induced morphism on the abutment.** Through `filtrationAbutmentIso`, which identifies
+the abutment `H^n(⊥ ≤ ⊤)` with `H^n(K)`, the morphism of spectral objects induced by a morphism
+`f : K ⟶ L` of filtered complexes is the map `H^n(f)`. -/
+@[reassoc]
+lemma spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom (f : K ⟶ L)
+    (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (n : ℤ) :
+    ((spectralObjectMap (filtrationFunctorMap hF hG f hf)).hom n).app
+        (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (filtrationAbutmentIso G hG n).hom =
+      (filtrationAbutmentIso F hF n).hom ≫ HomologicalComplex.homologyMap f n := by
+  rw [filtrationAbutmentIso_hom, filtrationAbutmentIso_hom, ← Category.assoc,
+    spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom, Category.assoc, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  congr 2
+  refine coequalizer.hom_ext ?_
+  simp [filtrationFunctorArrow]
+
 end FiltrationMap
 
 section FirstPage
@@ -158,7 +225,7 @@ lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
         (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
         HomologicalComplex.homologyMap
-          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _).symm) n := by
   simp only [spectralSequenceMap_hom, spectralSequencePageMap_f,
     spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom]
   -- The degree of the recipe `coreE₂Cohomological` at `pq` is only definitionally
