@@ -203,6 +203,14 @@ theorem unitizationFunctional_zero_mem_stateSpace :
   unitizationFunctional_mem_stateSpace_iff.2
     ⟨fun _ _ => by simp [← toStrongDual_apply], by simp⟩
 
+private theorem pullbackFunctional_inr_pos_and_norm_le_one {ψ : WeakDual ℂ A⁺¹}
+    (hψ : ψ ∈ stateSpace A⁺¹) :
+    (∀ a, 0 ≤ a → 0 ≤ pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a) ∧
+      ‖toStrongDual (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ)‖ ≤ 1 :=
+  unitizationFunctional_mem_stateSpace_iff.1 <|
+    (unitizationFunctional_pullbackFunctional_inr_of_map_one
+      (map_one_of_mem_stateSpace hψ)).symm ▸ hψ
+
 /-- `WeakDual.unitizationFunctional` maps the positive contractive functionals of `A` bijectively
 onto the state space of `A⁺¹`. -/
 theorem bijOn_unitizationFunctional :
@@ -211,11 +219,9 @@ theorem bijOn_unitizationFunctional :
       (stateSpace A⁺¹) := by
   refine ⟨fun φ hφ => unitizationFunctional_mem_stateSpace_iff.2 hφ,
     unitizationFunctional_injective.injOn, fun ψ hψ => ?_⟩
-  refine ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ, ?_,
+  exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ,
+    pullbackFunctional_inr_pos_and_norm_le_one hψ,
     unitizationFunctional_pullbackFunctional_inr_of_map_one (map_one_of_mem_stateSpace hψ)⟩
-  exact unitizationFunctional_mem_stateSpace_iff.1 <|
-    (unitizationFunctional_pullbackFunctional_inr_of_map_one
-      (map_one_of_mem_stateSpace hψ)).symm ▸ hψ
 
 /-- States of `A⁺¹` are determined by their restrictions to `A`. -/
 theorem injOn_pullbackFunctional_inr_stateSpace :
@@ -246,9 +252,7 @@ theorem map_nonneg_pullbackFunctional_inr_of_mem_stateSpace {ψ : WeakDual ℂ A
 theorem norm_toStrongDual_pullbackFunctional_inr_le_one_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}
     (hψ : ψ ∈ stateSpace A⁺¹) :
     ‖toStrongDual (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ)‖ ≤ 1 :=
-  (unitizationFunctional_mem_stateSpace_iff.1 <|
-    (unitizationFunctional_pullbackFunctional_inr_of_map_one
-      (map_one_of_mem_stateSpace hψ)).symm ▸ hψ).2
+  (pullbackFunctional_inr_pos_and_norm_le_one hψ).2
 
 /-- The restriction of a state of `A⁺¹` to `A` is a state of `A` if and only if its norm on `A` is
 one. -/

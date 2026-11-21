@@ -195,7 +195,7 @@ theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) {z : ℂ}
     rw [star_star] at hv
     have hl : (↑u⁻¹ * star x) * x = 1 := by rw [mul_assoc, ← hu, u.inv_mul]
     have hr : x * (star x * ↑v⁻¹) = 1 := by rw [← mul_assoc, ← hv, v.mul_inv]
-    exact hz ⟨⟨x, star x * ↑v⁻¹, hr, left_inv_eq_right_inv hl hr ▸ hl⟩, rfl⟩
+    exact hz (isUnit_iff_exists_and_exists.2 ⟨⟨star x * ↑v⁻¹, hr⟩, ⟨↑u⁻¹ * star x, hl⟩⟩)
   have ⟨φ, hφ, hφx⟩ : ∃ φ ∈ stateSpace B, φ x = 0 := by
     rcases hnot with h1 | h2
     · exact hvanish h1
@@ -281,17 +281,19 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal [Nontrivial A] 
 the value `‖a‖` at `a`. -/
 theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha : 0 ≤ a) :
     ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
-  have := ha.isSelfAdjoint.isStarNormal
-  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal a
-  exact ⟨φ, hφ, (Complex.norm_of_nonneg' (map_nonneg_of_mem_stateSpace hφ ha)).symm.trans
-    (congr_arg Complex.ofReal hφa)⟩
+  rcases eq_or_ne a 0 with rfl | ha0
+  · obtain ⟨φ, hφ⟩ := stateSpace_nonempty (A := A)
+    exact ⟨φ, hφ, by simp⟩
+  · exact exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero ha ha0
 
 /-- On a nontrivial C⋆-algebra, every element `a` has a state taking the value `‖a‖ ^ 2` at
 `star a * a`. -/
 theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq [Nontrivial A] (a : A) :
     ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 := by
-  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (star_mul_self_nonneg a)
-  exact ⟨φ, hφ, by simpa [CStarRing.norm_star_mul_self, sq] using hφa⟩
+  rcases eq_or_ne a 0 with rfl | ha
+  · obtain ⟨φ, hφ⟩ := stateSpace_nonempty (A := A)
+    exact ⟨φ, hφ, by simp⟩
+  · exact exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero ha
 
 /-- **Norm recovery from states.** For every normal element `a` of a C⋆-algebra `A` (possibly
 nonunital or trivial), `‖a‖` is the supremum of `‖φ a‖` over all states `φ ∈ stateSpace A`. -/
