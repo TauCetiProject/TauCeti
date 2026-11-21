@@ -77,13 +77,13 @@ namespace UnitSimpleClasses
 variable {C}
 
 /-- The chosen representative in `C` of a simple unit summand class. -/
-abbrev repr (I : UnitSimpleClasses C) : C := I.1.repr
+abbrev repr (I : UnitSimpleClasses C) : C := I.val.repr
 
-instance (I : UnitSimpleClasses C) : Simple I.repr := I.1.2
+instance (I : UnitSimpleClasses C) : Simple I.repr := I.val.property
 
 /-- Every unit summand representative admits a nonzero morphism to `𝟙_ C`. -/
 theorem exists_hom_to_unit_ne_zero (I : UnitSimpleClasses C) :
-    ∃ f : I.repr ⟶ 𝟙_ C, f ≠ 0 := I.2
+    ∃ f : I.repr ⟶ 𝟙_ C, f ≠ 0 := I.property
 
 @[simp]
 theorem eq_iff_nonempty_iso (I J : UnitSimpleClasses C) :
@@ -98,7 +98,7 @@ def mkOfHomNeZero {X : C} [Simple X] {f : X ⟶ 𝟙_ C} (hf : f ≠ 0) : UnitSi
 
 @[simp]
 theorem val_mkOfHomNeZero {X : C} [Simple X] {f : X ⟶ 𝟙_ C} (hf : f ≠ 0) :
-    (mkOfHomNeZero hf).1 = SimpleClasses.classOf X :=
+    (mkOfHomNeZero hf).val = SimpleClasses.classOf X :=
   (rfl)
 
 /-- When `𝟙_ C` is simple, its isomorphism class as a unit summand. -/
@@ -107,7 +107,7 @@ def unit [Simple (𝟙_ C)] : UnitSimpleClasses C :=
 
 @[simp]
 theorem val_unit [Simple (𝟙_ C)] :
-    (unit (C := C)).1 = SimpleClasses.classOf (𝟙_ C) :=
+    (unit (C := C)).val = SimpleClasses.classOf (𝟙_ C) :=
   (rfl)
 
 section Equivalence
@@ -116,11 +116,11 @@ variable {D : Type u₂} [Category.{v₂} D] [HasZeroMorphisms D] [MonoidalCateg
 
 private theorem map_unit_hom_ne_zero (e : C ≌ D) [e.functor.Monoidal]
     (I : UnitSimpleClasses C) :
-    ∃ g : (SimpleClasses.equiv e I.1).repr ⟶ 𝟙_ D, g ≠ 0 := by
-  obtain ⟨f, hf⟩ := I.2
+    ∃ g : (SimpleClasses.equiv e I.val).repr ⟶ 𝟙_ D, g ≠ 0 := by
+  obtain ⟨f, hf⟩ := I.property
   have : e.functor.PreservesZeroMorphisms :=
     e.functor.preservesZeroMorphisms_of_isLeftAdjoint
-  let d := SimpleClasses.equivApplyReprIso e I.1
+  let d := SimpleClasses.equivApplyReprIso e I.val
   let u := Functor.Monoidal.εIso e.functor
   refine ⟨d.hom ≫ e.functor.map f ≫ u.inv, fun h ↦ hf ?_⟩
   apply e.functor.map_injective
@@ -131,22 +131,22 @@ private theorem map_unit_hom_ne_zero (e : C ≌ D) [e.functor.Monoidal]
 units. -/
 def equiv (e : C ≌ D) [e.functor.Monoidal] :
     UnitSimpleClasses C ≃ UnitSimpleClasses D where
-  toFun I := ⟨SimpleClasses.equiv e I.1, map_unit_hom_ne_zero e I⟩
+  toFun I := ⟨SimpleClasses.equiv e I.val, map_unit_hom_ne_zero e I⟩
   invFun J :=
     letI := e.inverseMonoidal
-    ⟨SimpleClasses.equiv e.symm J.1, map_unit_hom_ne_zero e.symm J⟩
+    ⟨SimpleClasses.equiv e.symm J.val, map_unit_hom_ne_zero e.symm J⟩
   left_inv I := Subtype.ext <| (SimpleClasses.eq_iff_nonempty_iso _ _).2
     ⟨SimpleClasses.equivApplyReprIso e.symm _ ≪≫
-      e.inverse.mapIso (SimpleClasses.equivApplyReprIso e I.1) ≪≫
+      e.inverse.mapIso (SimpleClasses.equivApplyReprIso e I.val) ≪≫
       (e.unitIso.app I.repr).symm⟩
   right_inv J := Subtype.ext <| (SimpleClasses.eq_iff_nonempty_iso _ _).2
     ⟨SimpleClasses.equivApplyReprIso e _ ≪≫
-      e.functor.mapIso (SimpleClasses.equivApplyReprIso e.symm J.1) ≪≫
+      e.functor.mapIso (SimpleClasses.equivApplyReprIso e.symm J.val) ≪≫
       e.counitIso.app J.repr⟩
 
 @[simp]
 theorem val_equiv_apply (e : C ≌ D) [e.functor.Monoidal] (I : UnitSimpleClasses C) :
-    (equiv e I).1 = SimpleClasses.equiv e I.1 :=
+    (equiv e I).val = SimpleClasses.equiv e I.val :=
   (rfl)
 
 @[simp]
@@ -168,8 +168,8 @@ variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [HasKernels C]
 instance UnitSimpleClasses.instUnique : Unique (UnitSimpleClasses C) where
   default := UnitSimpleClasses.unit
   uniq I := Subtype.ext <| by
-    rw [val_unit, ← SimpleClasses.classOf_repr I.1, SimpleClasses.classOf_eq_iff_exists_ne_zero]
-    exact I.2
+    rw [val_unit, ← SimpleClasses.classOf_repr I.val, SimpleClasses.classOf_eq_iff_exists_ne_zero]
+    exact I.property
 
 end SimpleUnit
 
@@ -183,16 +183,16 @@ attribute [local instance] Abelian.hasFiniteBiproducts
 instance : Finite (UnitSimpleClasses C) := by
   refine Finite.of_injective
     (fun I : UnitSimpleClasses C ↦
-      (⟨I.1, Finsupp.mem_support_iff.2 <| by
-        simpa using (simpleMultiplicities_apply_classOf_ne_zero_iff (𝟙_ C) I.repr).2 I.2⟩ :
+      (⟨I.val, Finsupp.mem_support_iff.2 <| by
+        simpa using (simpleMultiplicities_apply_classOf_ne_zero_iff (𝟙_ C) I.repr).2 I.property⟩ :
         (simpleMultiplicities (𝟙_ C)).support))
-    fun I J h ↦ Subtype.ext (congrArg (fun x : (simpleMultiplicities (𝟙_ C)).support ↦ x.1) h)
+    fun I J h ↦ Subtype.ext (congrArg (fun x : (simpleMultiplicities (𝟙_ C)).support ↦ x.val) h)
 
 /-- The tensor unit has a simple summand if and only if it is not a zero object. -/
 theorem UnitSimpleClasses.nonempty_iff :
     Nonempty (UnitSimpleClasses C) ↔ ¬ IsZero (𝟙_ C) := by
   refine ⟨fun ⟨I⟩ h0 ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨f, hf⟩ := I.2
+  · obtain ⟨f, hf⟩ := I.property
     exact hf (h0.eq_of_tgt _ _)
   · obtain ⟨S, _, f, hf⟩ := exists_simple_hom_ne_zero h
     exact ⟨UnitSimpleClasses.mkOfHomNeZero hf⟩
@@ -234,22 +234,22 @@ theorem simpleMultiplicities_tensorUnit_le_one (S : SimpleClasses C) :
 
 @[simp]
 theorem UnitSimpleClasses.simpleMultiplicities_tensorUnit (I : UnitSimpleClasses C) :
-    simpleMultiplicities (𝟙_ C) I.1 = 1 := by
-  have hne : simpleMultiplicities (𝟙_ C) I.1 ≠ 0 := by
-    simpa using (simpleMultiplicities_apply_classOf_ne_zero_iff (𝟙_ C) I.repr).2 I.2
-  have hle := simpleMultiplicities_tensorUnit_le_one I.1
+    simpleMultiplicities (𝟙_ C) I.val = 1 := by
+  have hne : simpleMultiplicities (𝟙_ C) I.val ≠ 0 := by
+    simpa using (simpleMultiplicities_apply_classOf_ne_zero_iff (𝟙_ C) I.repr).2 I.property
+  have hle := simpleMultiplicities_tensorUnit_le_one I.val
   omega
 
 /-- Distinct simple summands of `𝟙_ C` have zero tensor product. -/
 theorem UnitSimpleClasses.isZero_tensorObj_of_ne {I J : UnitSimpleClasses C} (h : I ≠ J) :
     IsZero (I.repr ⊗ J.repr) := by
-  obtain ⟨f, hf⟩ := I.2
-  obtain ⟨g, hg⟩ := J.2
+  obtain ⟨f, hf⟩ := I.property
+  obtain ⟨g, hg⟩ := J.property
   have := isSplitMono_of_nonzero_from_simple hf
   have := isSplitMono_of_nonzero_from_simple hg
   let p := retraction f
   let q := retraction g
-  have hIJ : I.1 ≠ J.1 := mt Subtype.ext h
+  have hIJ : I.val ≠ J.val := mt Subtype.ext h
   have hfq : f ≫ q = 0 :=
     @Subsingleton.elim _ (SimpleClasses.homOrthogonal_repr hIJ) _ _
   have he₁₂ : p ≫ f ≫ q ≫ g = 0 := by simp [reassoc_of% hfq]
@@ -431,11 +431,11 @@ def UnitSimpleClasses.tensorSelfIso (I : UnitSimpleClasses C) :
 /-- Every simple summand of the tensor unit has trivial degree in `universalGradingGroup C`. -/
 @[simp]
 theorem universalGradingGroup.degree_unitSummand (I : UnitSimpleClasses C) :
-    universalGradingGroup.degree I.1 = 1 := by
+    universalGradingGroup.degree I.val = 1 := by
   let a := (UnitSimpleClasses.tensorSelfIso I).symm
   have ha : a.hom ≠ 0 := fun h ↦
     CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
-  exact mul_eq_left.mp (universalGradingGroup.degree_mul I.1 I.1 I.1 a.hom ha).symm
+  exact mul_eq_left.mp (universalGradingGroup.degree_mul I.val I.val I.val a.hom ha).symm
 
 /-- Any simple object mapping nontrivially into `𝟙_ C` has trivial degree in
 `universalGradingGroup C`. -/
@@ -565,7 +565,7 @@ theorem leftUnitClass_equiv_obj (e : C ≌ D) [e.functor.Monoidal] (X : C) [Simp
   rw [leftUnitClass_eq_iff]
   let I := leftUnitClass X
   let iso : (UnitSimpleClasses.equiv e I).repr ⊗ e.functor.obj X ≅ e.functor.obj X :=
-    whiskerRightIso (SimpleClasses.equivApplyReprIso e I.1) (e.functor.obj X) ≪≫
+    whiskerRightIso (SimpleClasses.equivApplyReprIso e I.val) (e.functor.obj X) ≪≫
       Functor.Monoidal.μIso e.functor I.repr X ≪≫
       e.functor.mapIso (leftUnitClassReprIso X)
   exact fun h ↦ Simple.not_isZero (e.functor.obj X) (h.of_iso iso.symm)
@@ -579,7 +579,7 @@ theorem rightUnitClass_equiv_obj (e : C ≌ D) [e.functor.Monoidal] (X : C) [Sim
   rw [rightUnitClass_eq_iff]
   let I := rightUnitClass X
   let iso : e.functor.obj X ⊗ (UnitSimpleClasses.equiv e I).repr ≅ e.functor.obj X :=
-    whiskerLeftIso (e.functor.obj X) (SimpleClasses.equivApplyReprIso e I.1) ≪≫
+    whiskerLeftIso (e.functor.obj X) (SimpleClasses.equivApplyReprIso e I.val) ≪≫
       Functor.Monoidal.μIso e.functor X I.repr ≪≫
       e.functor.mapIso (rightUnitClassReprIso X)
   exact fun h ↦ Simple.not_isZero (e.functor.obj X) (h.of_iso iso.symm)

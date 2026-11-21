@@ -224,12 +224,12 @@ theorem degreeOf_comp {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : U ⟶ X 
 /-- Every simple summand of the tensor unit has trivial universal degree. -/
 @[simp]
 theorem degree_unitSummand (I : UnitSimpleClasses C) :
-    degree I.1 = eqToHom (by simp) := by
+    degree I.val = eqToHom (by simp) := by
   let a := (UnitSimpleClasses.tensorSelfIso I).symm
   have ha : a.hom ≠ 0 := fun h ↦
     CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
   let g : mkObj I ⟶ mkObj I :=
-    eqToHom (by simp) ≫ degree I.1 ≫ eqToHom (by simp)
+    eqToHom (by simp) ≫ degree I.val ≫ eqToHom (by simp)
   have hidem : g = g ≫ g := by
     dsimp only [g]
     nth_rw 1 [degree_comp a.hom ha]
@@ -513,7 +513,7 @@ theorem exists_degree_eq {x y : universalGradingGroupoid C} (g : x ⟶ y) :
     exact (conj_eqToHom_iff_heq' _ _ _ _).2 (quotFunctor_map_inv_of S)
   | id u =>
     rcases u with ⟨I⟩
-    exact ⟨I.1,
+    exact ⟨I.val,
       (congrArg mkObj (leftUnitClass_unitRepr I)).trans (quotFunctor_obj_of _).symm,
       (congrArg mkObj (rightUnitClass_unitRepr I)).trans (quotFunctor_obj_of _).symm,
       by simp⟩
@@ -560,7 +560,7 @@ instance [Finite (SimpleClasses C)] (x y : universalGradingGroupoid C) : Finite 
   refine Finite.of_surjective
     (fun p : {S : SimpleClasses C //
         mkObj (leftUnitClass S.repr) = x ∧ mkObj (rightUnitClass S.repr) = y} ↦
-      eqToHom p.2.1.symm ≫ degree p.1 ≫ eqToHom p.2.2)
+      eqToHom p.property.left.symm ≫ degree p.val ≫ eqToHom p.property.right)
     fun g ↦ ?_
   obtain ⟨S, hL, hR, hg⟩ := exists_degree_eq g
   exact ⟨⟨S, hL, hR⟩, hg.symm⟩
