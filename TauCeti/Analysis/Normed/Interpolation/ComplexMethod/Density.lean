@@ -21,6 +21,12 @@ This file proves Bergh–Löfström §4.2 (Lemmas 4.2.1 and 4.2.3, Theorem 4.2.2
 * **Calderón's density lemma:** for a Banach couple `(X₀, X₁)`, `elementaryStripTraces` (the span
   of `z ↦ exp (δ z² + ω z) x`, `δ > 0`, `ω : ℝ`, `x ∈ X₀ ∩ X₁`) is dense in `stripTraces`, so
   `X₀ ∩ X₁` is dense in `[X₀, X₁]_θ`, feeding endpoint identifications and regularization.
+* **Maps from elementary traces:** a continuous linear map `L` of the ambient spaces restricts to
+  a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at most `K` as soon as every elementary admissible
+  function `G` is matched by a bounded-boundary strip function with value `L (G θ)` at `θ` and
+  traces of norm at most `K ‖G‖`
+  (`TauCeti.CompatibleCouple.ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces`). This
+  is Stein's interpolation theorem for analytic families defined on `X₀ ∩ X₁`.
 
 ## References
 
@@ -432,6 +438,77 @@ theorem denseRange_ofInter [CompleteSpace X₀] [CompleteSpace X₁] (θ : ℝ) 
     C.dense_elementaryStripTraces).mono ?_
   rintro _ ⟨g, hg, rfl⟩
   exact Set.mem_range.2 (by simpa [ContinuousLinearMap.coe_coe] using hle hg)
+
+/-! ### Maps of interpolation spaces from elementary traces -/
+
+section ElementaryMap
+
+variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁]
+  [NormedSpace ℂ Y₁] [AddCommGroup W] [Module ℂ W] [TopologicalSpace W] [ContinuousAdd W]
+  [T2Space W] {D : CompatibleCouple ℂ Y₀ Y₁ W}
+
+/-- **Maps of complex interpolation spaces defined by elementary traces.** Let `(X₀, X₁)` and
+`(Y₀, Y₁)` be Banach couples in Hausdorff ambient spaces `V` and `W`, let `L : V →L[ℂ] W` and
+`0 ≤ θ ≤ 1`. Suppose that every elementary admissible function `G` of `(X₀, X₁)`
+(`CompatibleCouple.elementaryStripTraces`) is matched by a bounded-boundary strip function `Ψ` of
+`(Y₀, Y₁)` with `Ψ θ = L (G θ)` in `W`, whose boundary traces have norm at most `K` times those of
+`G`. Then `L` restricts to a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at most `K`.
+
+This is the form of Stein's interpolation theorem in which the analytic family `z ↦ T z` is only
+applied to functions with values in `X₀ ∩ X₁`: the strip function `Ψ` is typically
+`z ↦ T z (G z)`, and Calderón's density lemma (`CompatibleCouple.dense_elementaryStripTraces`)
+extends the estimate to all admissible functions. -/
+theorem exists_map_of_forall_elementaryStripTraces [CompleteSpace X₀]
+    [CompleteSpace X₁] [CompleteSpace Y₀] [CompleteSpace Y₁] {θ : ℝ} (hθ : θ ∈ Icc 0 1)
+    (L : V →L[ℂ] W) {K : ℝ} (hK : 0 ≤ K)
+    (h : ∀ G ∈ C.elementaryStripTraces, ∃ (Ψ : ℂ → D.SumSpace) (g : (ℝ →ᵇ Y₀) × (ℝ →ᵇ Y₁)),
+      D.IsBoundedStripFunction Ψ g ∧ D.sumSpaceEmbed (Ψ θ) = L (C.sumSpaceEmbed (C.stripEval θ G)) ∧
+        ‖g‖ ≤ K * ‖G‖) :
+    ∃ T : C.ComplexMethodSpace θ →L[ℂ] D.ComplexMethodSpace θ, ‖T‖ ≤ K ∧
+      ∀ u, D.sumSpaceEmbed (toSum (T u)) = L (C.sumSpaceEmbed (toSum u)) := by
+  set S := C.elementaryStripTraces
+  -- `J` embeds `[Y₀, Y₁]_θ` injectively into `W`.
+  set J : D.ComplexMethodSpace θ →L[ℂ] W := D.sumSpaceEmbed ∘L toSum
+  have hJ : Function.Injective J := D.sumSpaceEmbed_injective.comp toSum_injective
+  have hex : ∀ G : S, ∃ v : D.ComplexMethodSpace θ,
+      J v = L (C.sumSpaceEmbed (C.stripEval θ G)) ∧ ‖v‖ ≤ K * ‖G‖ := by
+    rintro ⟨G, hG⟩
+    obtain ⟨Ψ, g, hΨ, hΨθ, hg⟩ := h G hG
+    obtain ⟨v, hv⟩ := (exists_toSum_eq_iff_isBoundedStripFunction hθ).2 ⟨Ψ, g, hΨ, rfl⟩
+    exact ⟨v, by simpa [J, hv] using hΨθ,
+      (norm_le_of_isBoundedStripFunction hθ hΨ hv).trans hg⟩
+  choose φ hφ hφn using hex
+  -- `φ` is linear since `J` is injective; extend it from the dense subspace `S` by continuity.
+  have hdense : DenseRange (Subtype.val : S → C.stripTraces) := by
+    simpa [DenseRange] using C.dense_elementaryStripTraces
+  set Φ := LinearMap.extendOfNorm (𝕜 := ℂ) (σ₁₂ := RingHom.id ℂ) (E := S)
+    (Eₗ := C.stripTraces) (F := D.ComplexMethodSpace θ)
+    ⟨⟨φ, fun G H ↦ hJ <| by simp [hφ]⟩, fun c G ↦ hJ <| by simp [hφ]⟩
+    ⟨⟨Subtype.val, fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩
+  have hΦ : ∀ G : S, Φ G = φ G := fun G ↦
+    LinearMap.extendOfNorm_eq hdense ⟨K, fun G ↦ hφn G⟩ G
+  have hΦn : ∀ g, ‖Φ g‖ ≤ K * ‖g‖ :=
+    LinearMap.norm_extendOfNorm_apply_le hdense K fun G ↦ hφn G
+  have hΦJ : ∀ g, J (Φ g) = L (C.sumSpaceEmbed (C.stripEval θ g)) := fun g ↦
+    hdense.induction_on g (isClosed_eq (by fun_prop) (by fun_prop)) fun G ↦ by
+      simpa [hΦ] using hφ G
+  refine ⟨ComplexMethodSpace.lift Φ fun g hg ↦ hJ (by simp [hΦJ, hg]), ?_, fun u ↦ ?_⟩
+  · refine ContinuousLinearMap.opNorm_le_bound _ hK fun u ↦ ?_
+    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+    obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 (lt_add_of_pos_right ‖u‖ (div_pos hε (by linarith :
+      (0 : ℝ) < K + 1)))
+    calc ‖lift Φ _ (mk θ g)‖ = ‖Φ g‖ := by rw [lift_mk]
+      _ ≤ K * ‖g‖ := hΦn g
+      _ ≤ K * (‖mk θ g‖ + ε / (K + 1)) := by gcongr
+      _ ≤ K * ‖mk θ g‖ + ε := by
+        rw [mul_add, mul_div_assoc']
+        gcongr
+        rw [div_le_iff₀ (by linarith)]
+        nlinarith
+  · obtain ⟨g, rfl⟩ := mk_surjective u
+    simpa [J] using hΦJ g
+
+end ElementaryMap
 
 end ComplexMethodSpace
 

@@ -49,7 +49,9 @@ holomorphy in `z`.
 * `TauCeti.exists_fourierMultiplierCLM_japaneseBracketCpow_eq_and_norm_le`: for `re z ≤ 0`, the
   Bessel potential `J^z` is bounded on `Lᵖ` with norm at most `C (1 + ‖z‖) ^ N`.
 * `TemperedDistribution.besselPotential_fourierMultiplierCLM_japaneseBracketCpow`:
-  `J^{s - re z} J^z u = J^{i im z} J^s u` on tempered distributions.
+  `J^{s - re z} J^z u = J^{i im z} J^s u` on tempered distributions, and the composition law
+  `J^w J^v u = J^{v + w} u`
+  (`fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow`).
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_japaneseBracketCpow`: `J^z` maps
   `H^{s,p}` into `H^{s - re z,p}`.
 * `BesselPotentialSpace.besselPotentialCLM`: `J^z` as a bounded operator
@@ -112,6 +114,30 @@ theorem besselPotential_fourierMultiplierCLM_japaneseBracketCpow (s : ℝ) (z : 
     congr 1
     apply Complex.ext <;> simp
   rw [hsym]
+
+
+/-- Fourier multipliers with complex powers of the Japanese bracket compose by adding the orders:
+`J^w (J^v u) = J^{v + w} u` on tempered distributions. -/
+theorem fourierMultiplierCLM_japaneseBracketCpow_fourierMultiplierCLM_japaneseBracketCpow
+    (v w : ℂ) (u : 𝓢'(E, F)) :
+    fourierMultiplierCLM F (TauCeti.japaneseBracketCpow w)
+        (fourierMultiplierCLM F (TauCeti.japaneseBracketCpow v) u) =
+      fourierMultiplierCLM F (TauCeti.japaneseBracketCpow (v + w)) u := by
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply
+    (TauCeti.hasTemperateGrowth_japaneseBracketCpow v)
+    (TauCeti.hasTemperateGrowth_japaneseBracketCpow w)]
+  congr 2
+  funext ξ
+  simp only [Pi.mul_apply, TauCeti.japaneseBracketCpow_add]
+
+/-- Mathlib's Bessel potential of real order `s` is the Fourier multiplier with the complex power
+`⟨ξ⟩ ^ s` of the Japanese bracket. -/
+theorem besselPotential_eq_fourierMultiplierCLM_japaneseBracketCpow (s : ℝ) (u : 𝓢'(E, F)) :
+    besselPotential E F s u = fourierMultiplierCLM F (TauCeti.japaneseBracketCpow (s : ℂ)) u := by
+  rw [besselPotential]
+  congr 2
+  funext ξ
+  exact (TauCeti.japaneseBracketCpow_ofReal s ξ).symm
 
 end TemperedDistribution
 
